@@ -151,8 +151,9 @@ var (
 	docKeys     = []string{"sections", "site"}
 	sectionKeys = []string{"id", "kind", "name", "hidden", "content", "items", "style", "box", "els", "grid", "bg"}
 	itemKeys    = []string{"id", "title", "text", "icon", "box", "href", "node", "parent", "tag", "lay", "sub", "dyn"}
-	dynKeys     = []string{"tag", "link", "format", "size", "ratio", "fields", "sep", "tax", "location", "menuLayout", "burgerAt", "words", "prefix", "placeholder", "button", "empty"}
-	styleKeys   = []string{"palette", "align", "padding", "titleSize", "titleWeight", "letterSpacing", "titleColor", "bodySize", "bg", "hideOn", "cssId", "css", "anim", "motion"}
+	dynKeys     = []string{"tag", "link", "format", "size", "ratio", "fields", "sep", "tax", "location", "menuLayout", "burgerAt", "words", "prefix", "placeholder", "button", "empty",
+		"dropdown", "flags", "names", "hideCurrent", "source", "columns", "limit", "orderBy", "order", "cats", "tags", "ids", "product", "paginate", "showPrice", "hideEmpty", "parent", "showTotal", "gallery"}
+	styleKeys = []string{"palette", "align", "padding", "titleSize", "titleWeight", "letterSpacing", "titleColor", "bodySize", "bg", "hideOn", "cssId", "css", "anim", "motion"}
 )
 
 func dropCaseVariants(m map[string]any, known []string) {
@@ -350,6 +351,8 @@ var enums = map[string]map[string]bool{
 	"dynSize":     toSet(DynImageSizes),
 	"dynField":    toSet(DynMetaFields),
 	"menuLayout":  toSet(DynMenuLayouts),
+	"shopSource":  toSet(ShopSources),
+	"shopOrderBy": toSet(ShopOrderBys),
 	"loopSource":  toSet(LoopSources),
 	"loopOrderBy": toSet(LoopOrderBys),
 	"loopOrder":   toSet(LoopOrders),

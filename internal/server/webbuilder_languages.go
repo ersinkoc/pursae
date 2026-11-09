@@ -54,6 +54,15 @@ func wbCanCreateLike(u *store.User, p *store.Post) bool {
 	return u != nil && p != nil && u.Can("edit_"+restBaseFor(p.Type), nil)
 }
 
+// wbCanTranslate reports whether u may create a translation of p: a Theme Builder template needs
+// the template capability (edit_theme_options), any other post the create capability of its type.
+func wbCanTranslate(u *store.User, p *store.Post) bool {
+	if wbIsTemplate(p) {
+		return u != nil && u.Can(webbuilder.TemplateCap, nil)
+	}
+	return wbCanCreateLike(u, p)
+}
+
 // wbTranslationOf looks up the live translation id of lang in tr. A translation that is gone or in the
 // trash does not count (gone = true, so the language is offered again); a failed read is returned as err.
 func (s *Server) wbTranslationOf(c *gin.Context, tr map[string]int64, lang string) (post *store.Post, gone bool, err error) {
@@ -77,7 +86,7 @@ func wbLangRefOf(l *pllLanguage) wbLangRef {
 	return wbLangRef{Slug: l.Slug, Name: l.Name, Flag: l.FlagEmoji(), RTL: l.RTL}
 }
 
-// wbLanguagesFor builds the panel data of p (Theme Builder templates only show their language).
+// wbLanguagesFor builds the panel data of p.
 func (s *Server) wbLanguagesFor(c *gin.Context, u *store.User, p *store.Post) wbLanguagesInfo {
 	info := wbLanguagesInfo{Translations: []wbLangTranslation{}, Missing: []wbLangRef{}}
 	if !s.golylangOn() || !s.pllTranslatedType(p.Type) {
@@ -96,7 +105,7 @@ func (s *Server) wbLanguagesFor(c *gin.Context, u *store.User, p *store.Post) wb
 	}
 	tr := s.pllTranslations(c, pllPost, p.ID)
 	tr[cur] = p.ID
-	info.CanTranslate = !wbIsTemplate(p) && wbCanCreateLike(u, p)
+	info.CanTranslate = wbCanTranslate(u, p)
 	for _, l := range langs {
 		t := &store.Post{ID: p.ID, Title: p.Title, Status: p.Status}
 		if tr[l.Slug] != p.ID {
@@ -106,9 +115,7 @@ func (s *Server) wbLanguagesFor(c *gin.Context, u *store.User, p *store.Post) wb
 			}
 			if gone {
 				// No translation, or one that was trashed: it can be created (again).
-				if !wbIsTemplate(p) {
-					info.Missing = append(info.Missing, wbLangRefOf(l))
-				}
+				info.Missing = append(info.Missing, wbLangRefOf(l))
 				continue
 			}
 			t = got
@@ -136,17 +143,19 @@ func (s *Server) wbRESTLanguages(c *gin.Context, r *restRequest) {
 }
 
 // wbRESTTranslate is POST documents/{id}/translations: a draft translation of the page in lang that
-// starts from the page's builder doc (Pursae Multi Language "Duplicate content"), linked to it.
+// starts from the page's builder doc (Pursae Multi Language "Duplicate content"), linked to it. A
+// Theme Builder template is translated the same way: the copy is a draft (disabled) template with
+// the source's type, display conditions and priority, and renders for its language once published.
 func (s *Server) wbRESTTranslate(c *gin.Context, r *restRequest) {
 	u, p := s.wbPost(c, r)
 	if p == nil {
 		return
 	}
-	if wbIsTemplate(p) || !s.golylangOn() || !s.pllTranslatedType(p.Type) {
+	if !s.golylangOn() || !s.pllTranslatedType(p.Type) {
 		restErr(c, http.StatusBadRequest, webbuilder.ErrNotBuilder, "This page cannot be translated.")
 		return
 	}
-	if !wbCanCreateLike(u, p) {
+	if !wbCanTranslate(u, p) {
 		wbForbidden(c, u)
 		return
 	}
@@ -186,6 +195,9 @@ func (s *Server) wbRESTTranslate(c *gin.Context, r *restRequest) {
 		return
 	}
 	s.pllCopyForTranslation(c, p, cp, l, true)
+	if wbIsTemplate(p) {
+		s.wbTemplatesChanged(c) // the source's translation group changed
+	}
 	if fresh, err := s.store.GetPost(c, cp.ID); err == nil {
 		cp = fresh
 	}

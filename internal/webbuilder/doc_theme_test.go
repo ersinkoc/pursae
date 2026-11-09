@@ -192,3 +192,60 @@ func TestFallbackSkipsDynamic(t *testing.T) {
 		t.Errorf("unbound nav: %s", out)
 	}
 }
+
+const shopDoc = `{"sections":[{"id":"S1","kind":"layout","name":"Shop","hidden":false,"content":{},
+	"items":[{"id":"p1","title":"shop-products","text":"","dyn":{"source":"ids","columns":3,"limit":6,"orderBy":"price-desc","order":"asc","cats":"4,5","tags":"7","ids":"10,11","paginate":true}},
+	         {"id":"p2","title":"shop-categories","text":"","dyn":{"columns":4,"hideEmpty":false,"parent":"0"}},
+	         {"id":"p3","title":"product-add-to-cart","text":"","dyn":{"product":42}},
+	         {"id":"p4","title":"shop-cart","text":"","dyn":{"showTotal":true,"dropdown":true}},
+	         {"id":"p5","title":"language-switcher","text":"","dyn":{"dropdown":false,"flags":true,"names":true,"hideCurrent":true}},
+	         {"id":"p6","title":"shop-cart-page","text":""},
+	         {"id":"p7","title":"product-images","text":"","dyn":{"gallery":false}}],
+	"style":{"palette":"light","align":"left","padding":0,"titleSize":0,"hideOn":[]}}],
+	"site":{"brand":"#2271b1","fontPair":"modern","corners":"soft"}}`
+
+// Commerce and language-switcher settings validate and round-trip.
+func TestShopDocValid(t *testing.T) {
+	r := parseDocT(t, shopDoc)
+	if !r.Valid() {
+		t.Fatalf("errors: %s", errPaths(r))
+	}
+	d := r.Doc.Sections[0].Items[0].Dyn
+	if d == nil || d.Source != "ids" || *d.Columns != 3 || *d.Limit != 6 || d.OrderBy != "price-desc" || d.Cats != "4,5" || d.IDs != "10,11" || !*d.Paginate {
+		t.Errorf("dyn %+v", d)
+	}
+	if !IsShopWidget("product-price") || IsShopWidget("post-title") || !IsItemWidget("language-switcher") || IsItemWidget("nav-menu") {
+		t.Error("IsShopWidget / IsItemWidget")
+	}
+	if got := ParseShopIDs("3,4,5", 2); len(got) != 2 || got[0] != 3 || got[1] != 4 {
+		t.Errorf("ParseShopIDs %v", got)
+	}
+	if ParseShopIDs("1,,2", 24) != nil || ParseShopIDs("01", 24) != nil {
+		t.Error("ParseShopIDs accepted a bad list")
+	}
+	out := FallbackHTML(&r.Doc)
+	if !strings.Contains(out, "[goocommerce_cart]") {
+		t.Errorf("cart page fallback: %s", out)
+	}
+}
+
+func TestShopDocInvalid(t *testing.T) {
+	bad := strings.NewReplacer(
+		`"source":"ids"`, `"source":"all"`,
+		`"columns":3`, `"columns":7`,
+		`"limit":6`, `"limit":2.5`,
+		`"orderBy":"price-desc"`, `"orderBy":"id; drop"`,
+		`"order":"asc"`, `"order":"up"`,
+		`"cats":"4,5"`, `"cats":"4,x"`,
+		`"ids":"10,11"`, `"ids":"`+strings.Repeat("1,", 24)+`1"`,
+		`"parent":"0"`, `"parent":"-1"`,
+		`"product":42`, `"product":-3`,
+	).Replace(shopDoc)
+	got := errPaths(parseDocT(t, bad))
+	for _, want := range []string{"/items/0/dyn/source=", "/items/0/dyn/columns=", "/items/0/dyn/limit=", "/items/0/dyn/orderBy=", "/items/0/dyn/order=",
+		"/items/0/dyn/cats=", "/items/0/dyn/ids=", "/items/1/dyn/parent=", "/items/2/dyn/product="} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s in %s", want, got)
+		}
+	}
+}

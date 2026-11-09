@@ -60,18 +60,7 @@ func (s *Server) gooProductBody(c *gin.Context, p *gooProduct, showTitle bool) s
 	if showTitle {
 		b.WriteString(`<h1 class="product_title entry-title">` + s.pllUC(c, gooEsc(p.Name), 0) + `</h1>`)
 	}
-	if s.gooOptBool("enable_review_rating") && p.RatingCount > 0 {
-		b.WriteString(`<div class="woocommerce-product-rating">` + gooRatingHTML(p.AverageRating, p.RatingCount))
-		if s.gooReviewsOpen(p) {
-			n := strconv.Itoa(p.RatingCount)
-			word := "customer reviews"
-			if p.RatingCount == 1 {
-				word = "customer review"
-			}
-			b.WriteString(`<a href="#reviews" class="woocommerce-review-link" rel="nofollow">(<span class="count">` + n + `</span> ` + word + `)</a>`)
-		}
-		b.WriteString(`</div>`)
-	}
+	b.WriteString(s.gooRatingBlockHTML(p))
 	b.WriteString(`<p class="price">` + string(s.gooPriceHTML(c, p)) + `</p>`)
 	if ex := strings.TrimSpace(p.Post.Excerpt); ex != "" {
 		b.WriteString(`<div class="woocommerce-product-details__short-description">` + s.gooRenderContent(ctx, c, ex) + `</div>`)
@@ -83,6 +72,26 @@ func (s *Server) gooProductBody(c *gin.Context, p *gooProduct, showTitle bool) s
 	b.WriteString(s.gooTabsHTML(c, p))
 	b.WriteString(s.gooUpsellsHTML(c, p))
 	b.WriteString(s.gooRelatedHTML(c, p))
+	b.WriteString(`</div>`)
+	return b.String()
+}
+
+// gooRatingBlockHTML is single-product/rating.php: the stars and the review link ("" while
+// ratings are off or the product has none).
+func (s *Server) gooRatingBlockHTML(p *gooProduct) string {
+	if !s.gooOptBool("enable_review_rating") || p.RatingCount <= 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(`<div class="woocommerce-product-rating">` + gooRatingHTML(p.AverageRating, p.RatingCount))
+	if s.gooReviewsOpen(p) {
+		n := strconv.Itoa(p.RatingCount)
+		word := "customer reviews"
+		if p.RatingCount == 1 {
+			word = "customer review"
+		}
+		b.WriteString(`<a href="#reviews" class="woocommerce-review-link" rel="nofollow">(<span class="count">` + n + `</span> ` + word + `)</a>`)
+	}
 	b.WriteString(`</div>`)
 	return b.String()
 }

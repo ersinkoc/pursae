@@ -169,8 +169,20 @@ before the Theme Builder that have their own navigation or footer section stay c
 shows two headers.
 
 A static front page built in the builder shows its own design; a Front Page template is used when
-the front page has none (or when the front page is the blog). Pursae Commerce store pages (shop,
-product, cart, checkout, account) keep their store layout inside the header and footer templates.
+the front page has none (or when the front page is the blog).
+
+Pursae Commerce store pages: the product page takes a **Single Product** template and the shop and
+product category / tag pages a **Product Archive** template (both offered while Pursae Commerce is
+on); no other main template (Single Page, Archive, …) ever replaces a store page, so the cart and
+the checkout keep working. The cart, checkout and account pages keep their store layout inside the
+header and footer templates; a Cart or Checkout page designed in the builder shows its design
+only when it contains the **Cart** / **Checkout** widget. Product templates are built from the
+**Product** widgets (title, images, price, add to cart, rating, stock, meta, descriptions, tabs,
+related products, upsells, sale badge) and the **Product archive** widgets (the store's product
+grid of the page, title, description, breadcrumb). The **Shop** widgets (products, categories,
+add-to-cart button, cart icon with mini cart, store notices) work on any page and template, and
+the **Language switcher** (Pursae Multi Language) sits in the Site group. The settings and slots
+are in the contract (§11.12).
 
 ## Preview, publish and cache
 
@@ -188,8 +200,12 @@ product, cart, checkout, account) keep their store layout inside the header and 
 - Forms in a header or footer template work on every page they appear on.
 - Tools › Export includes templates (with their conditions); on import, ids in conditions are
   mapped to the imported posts and terms, and rules that cannot be mapped are dropped.
-- With Pursae Multi Language, a template can be translated like a page; each language shows its
-  translation of the winning template when one is published.
+- With Pursae Multi Language, a template can be translated like a page from the builder's
+  **Page tools › Languages** tab (the translation starts as a disabled copy with the same
+  conditions); each language shows its translation of the winning template when one is published.
+  A template in another language never shows on a page: a template in the page's language beats
+  one in the default language, which stays the fallback. Conditions that name a page, post or
+  term also match its translations.
 
 ## Limits
 

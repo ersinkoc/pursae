@@ -421,6 +421,7 @@ func (s *Server) gooFragments(c *gin.Context) map[string]string {
 		"div.widget_shopping_cart_content": string(s.gooMiniCart(c)),
 		"a.cart-contents":                  string(s.gooCartLink(c)),
 		"span.goo-cart-count":              `<span class="goo-cart-count">` + strconv.Itoa(cart.Count()) + `</span>`,
+		"span.goo-cart-subtotal":           `<span class="goo-cart-subtotal">` + string(s.gooPrice(cart.SubtotalDisplay())) + `</span>`,
 	}
 }
 

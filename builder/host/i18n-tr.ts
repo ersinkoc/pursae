@@ -114,6 +114,14 @@ const tr: Record<string, string> = {
   "Single": "Tekil", // i18n-ignore
   "Single Page": "Tek sayfa", // i18n-ignore
   "Single Post": "Tek yazı", // i18n-ignore
+  "Single Product": "Tek ürün", // i18n-ignore
+  "Product Archive": "Ürün arşivi", // i18n-ignore
+  "A product category (by ID)": "Bir ürün kategorisi (ID ile)", // i18n-ignore
+  "A product tag (by ID)": "Bir ürün etiketi (ID ile)", // i18n-ignore
+  "Shop": "Mağaza", // i18n-ignore
+  "Product: {name}": "Ürün: {name}", // i18n-ignore
+  "Product category: {name}": "Ürün kategorisi: {name}", // i18n-ignore
+  "Product tag: {name}": "Ürün etiketi: {name}", // i18n-ignore
   "Singular": "Tekil", // i18n-ignore
   "Specific author": "Belirli bir yazar", // i18n-ignore
   "Specific item": "Belirli bir öğe", // i18n-ignore

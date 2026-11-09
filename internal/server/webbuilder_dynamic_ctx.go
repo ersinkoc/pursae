@@ -121,6 +121,8 @@ func wbTemplatePostType(t *store.WBTemplate) string {
 		return "post"
 	case webbuilder.TemplateSinglePage:
 		return "page"
+	case webbuilder.TemplateSingleProduct:
+		return "product"
 	case webbuilder.TemplateSingle:
 		for _, c := range webbuilder.ParseConditions(t.Conditions) {
 			if !c.Exclude && c.PostType != "" {
@@ -176,6 +178,15 @@ func (s *Server) wbResolvePreview(c *gin.Context, pv wbPreview, t *store.WBTempl
 		if err != nil || tm.Taxonomy != pv.Name {
 			return nil, errWBPreviewNone
 		}
+		if tm.Taxonomy == "product_cat" || tm.Taxonomy == "product_tag" {
+			if !s.gooOn() {
+				return nil, errWBPreviewNone
+			}
+			post := s.gooSyntheticPost(ctx, tm.ID, tm.Name, "", nil)
+			post.Excerpt = tm.Description
+			post.Meta[wbPreviewURLMeta] = s.gooTermLink(ctx, tm)
+			return &siteQuery{Preview: true, Kind: "page", Post: post, Store: tm.Taxonomy, StoreTax: tm.Taxonomy, StoreTerm: tm.ID}, nil
+		}
 		switch tm.Taxonomy {
 		case "category":
 			q.Kind = "category"
@@ -194,6 +205,21 @@ func (s *Server) wbResolvePreview(c *gin.Context, pv wbPreview, t *store.WBTempl
 		q.Kind, q.Author = "author", au
 		return q, nil
 	case "type":
+		if pv.Name == "product" {
+			if !s.gooOn() {
+				return nil, errWBPreviewNone
+			}
+			title, slug, id := s.gooL10nText(ctx, "Shop"), "shop", s.gooPageIDIn(ctx, "shop")
+			var src *store.Post
+			if id > 0 {
+				if pg, err := s.store.GetPost(ctx, id); err == nil {
+					title, slug, src = pg.Title, pg.Slug, pg
+				}
+			}
+			post := s.gooSyntheticPost(ctx, max(id, 0), html.UnescapeString(title), slug, src)
+			post.Meta[wbPreviewURLMeta] = s.gooShopURL(ctx)
+			return &siteQuery{Preview: true, Kind: "page", Post: post, Store: webbuilder.StoreKindShop}, nil
+		}
 		if siteArchiveType(pv.Name) == nil {
 			return nil, errWBPreviewNone
 		}
@@ -222,8 +248,15 @@ func (s *Server) wbResolvePreview(c *gin.Context, pv wbPreview, t *store.WBTempl
 	return nil, errWBBadPreview
 }
 
-// wbPreviewSingular is singular() for a preview: the static front page keeps its front-page kind.
+// wbPreviewURLMeta carries the front URL of a synthetic store preview (wbPreviewURL).
+const wbPreviewURLMeta = "_wb_preview_url"
+
+// wbPreviewSingular is singular() for a preview: the static front page keeps its front-page kind;
+// a product is the store's product view (Pursae Commerce).
 func (s *Server) wbPreviewSingular(c *gin.Context, q *siteQuery, p *store.Post) (*siteQuery, error) {
+	if p.Type == "product" {
+		return s.wbPreviewProduct(c, q, p)
+	}
 	sq, err := s.singular(c, q, p)
 	if err != nil {
 		return nil, errWBPreviewNone
@@ -234,8 +267,42 @@ func (s *Server) wbPreviewSingular(c *gin.Context, q *siteQuery, p *store.Post) 
 	return sq, nil
 }
 
+// wbPreviewProduct is the store's single product view of p as a preview query.
+func (s *Server) wbPreviewProduct(c *gin.Context, q *siteQuery, p *store.Post) (*siteQuery, error) {
+	ctx := c.Request.Context()
+	if !s.gooOn() {
+		return nil, errWBPreviewNone
+	}
+	gp, err := s.gooGetProduct(ctx, p.ID)
+	if err != nil || gp.Type == gooTypeVariation {
+		return nil, errWBPreviewNone
+	}
+	post := s.gooSyntheticPost(ctx, gp.ID, gp.Name, s.gooProductBase()+"/"+gp.Slug, p)
+	post.Excerpt = wp.StripTags(p.Excerpt)
+	u := s.gooPermalink(ctx, gp)
+	if p.Status != "publish" && p.Status != "private" {
+		u += previewSep(u) + "preview=true"
+	}
+	post.Meta[wbPreviewURLMeta] = u
+	sq := *q
+	sq.Kind, sq.Post, sq.Store = "page", post, webbuilder.StoreKindProduct
+	return &sq, nil
+}
+
 // wbPreviewLabel is the "Preview as" label of a resolved preview ("Post: Hello world").
 func (s *Server) wbPreviewLabel(q *siteQuery) string {
+	if q.Post != nil {
+		switch q.Store {
+		case webbuilder.StoreKindProduct:
+			return "Product: " + wbPlain(q.Post.Title)
+		case webbuilder.StoreKindShop:
+			return "Shop"
+		case webbuilder.StoreKindProductCat:
+			return "Product category: " + wbPlain(q.Post.Title)
+		case webbuilder.StoreKindProductTag:
+			return "Product tag: " + wbPlain(q.Post.Title)
+		}
+	}
 	switch q.Kind {
 	case "single", "page":
 		if q.Post != nil {
@@ -270,8 +337,12 @@ func (s *Server) wbPreviewLabel(q *siteQuery) string {
 // ?wb_template_preview=<id>.
 func (s *Server) wbPreviewURL(lb *links.Builder, q *siteQuery, templateID int64) string {
 	var u string
-	switch q.Kind {
-	case "single", "page", "front-page":
+	if q.Store != "" && q.Post != nil {
+		u, _ = q.Post.Meta[wbPreviewURLMeta].(string)
+	}
+	switch {
+	case u != "":
+	case q.Kind == "single", q.Kind == "page", q.Kind == "front-page":
 		if q.Kind == "front-page" {
 			u = lb.HomeURL("/")
 		} else {
@@ -280,21 +351,21 @@ func (s *Server) wbPreviewURL(lb *links.Builder, q *siteQuery, templateID int64)
 				u += previewSep(u) + "preview=true"
 			}
 		}
-	case "home":
+	case q.Kind == "home":
 		if q.PostsPage != nil {
 			u = lb.Permalink(q.PostsPage)
 		} else {
 			u = lb.HomeURL("/")
 		}
-	case "category", "tag", "taxonomy":
+	case q.Kind == "category", q.Kind == "tag", q.Kind == "taxonomy":
 		u = lb.TermLink(q.Term)
-	case "author":
+	case q.Kind == "author":
 		u = lb.AuthorLink(q.Author.ID, q.Author.Nicename)
-	case "post-type-archive":
+	case q.Kind == "post-type-archive":
 		u = lb.PostTypeArchiveLink(q.PostType)
-	case "search":
+	case q.Kind == "search":
 		u = lb.SearchLink(q.Search)
-	case "404":
+	case q.Kind == "404":
 		u = lb.HomeURL("/?p=0") // no post has id 0: the 404 view
 	}
 	if u == "" {
@@ -364,7 +435,8 @@ func wbTypePlural(typ string) string {
 // wbEmptyDyn is a DynContext with the contract's empty shape.
 func wbEmptyDyn(lb *links.Builder) webbuilder.DynContext {
 	return webbuilder.DynContext{Site: webbuilder.DynSite{Home: strings.TrimRight(lb.HomeURL("/"), "/")},
-		Locations: []webbuilder.MenuLocation{}, Menus: map[string][]webbuilder.DynMenuItem{}, Posts: []webbuilder.DynPost{}}
+		Locations: []webbuilder.MenuLocation{}, Menus: map[string][]webbuilder.DynMenuItem{}, Posts: []webbuilder.DynPost{},
+		Languages: []webbuilder.DynLanguage{}}
 }
 
 // wbDynContext builds the sample data of a resolved preview (object is echoed in the result).
@@ -433,7 +505,117 @@ func (s *Server) wbDynContext(c *gin.Context, object string, q *siteQuery) (webb
 		cur = 1
 	}
 	out.Pagination = webbuilder.DynPaging{Current: cur, Total: v.TotalPages}
+	var preview *gooProduct
+	if q.Store == webbuilder.StoreKindProduct && q.Post != nil && s.gooOn() {
+		preview, _ = s.gooGetProduct(ctx, q.Post.ID)
+	}
+	out.Shop = s.wbDynShop(c, preview)
+	out.Languages = s.wbDynLanguages(c, q)
 	return out, nil
+}
+
+// wbDynLanguages are the language switcher's sample: the active languages with the URL of the
+// preview object in each ([] while Pursae Multi Language is off).
+func (s *Server) wbDynLanguages(c *gin.Context, q *siteQuery) []webbuilder.DynLanguage {
+	out := []webbuilder.DynLanguage{}
+	if !s.golylangOn() || len(s.pllLanguages(c.Request.Context())) == 0 {
+		return out
+	}
+	a := pllDefaultArgs()
+	a.HideIfEmpty = false
+	for _, it := range s.pllSwitcherItems(c, q, a) {
+		if it.Lang == nil {
+			continue
+		}
+		out = append(out, webbuilder.DynLanguage{Slug: it.Lang.Slug, Name: it.Lang.Name, Flag: it.Lang.FlagEmoji(), URL: it.URL, Current: it.Current})
+	}
+	return out
+}
+
+// wbDynShop is the Pursae Commerce sample data (nil while it is off): the newest catalog
+// products, the product categories, an empty cart and the store URLs; preview is the product a
+// single-product template or a product's own doc is drawn for.
+func (s *Server) wbDynShop(c *gin.Context, preview *gooProduct) *webbuilder.DynShop {
+	if !s.gooOn() {
+		return nil
+	}
+	ctx := c.Request.Context()
+	out := &webbuilder.DynShop{Products: []webbuilder.DynProduct{}, Categories: []webbuilder.DynProductCat{},
+		Cart:    webbuilder.DynCart{SubtotalHTML: string(s.gooPrice(0))},
+		ShopURL: s.gooShopURL(ctx), CartURL: s.gooPageURL(ctx, "cart"), CheckoutURL: s.gooPageURL(ctx, "checkout")}
+	list, _, err := s.gooQueryProducts(ctx, gooProductQuery{Visibility: "catalog", OrderBy: "date", Order: "DESC", Page: 1, PerPage: webbuilder.MaxShopLimit})
+	if err != nil {
+		log.Printf("web builder: shop sample: %v", err)
+	}
+	ids := make([]int64, 0, len(list)+1)
+	for _, p := range list {
+		ids = append(ids, p.ID)
+	}
+	if preview != nil {
+		ids = append(ids, preview.ID)
+	}
+	cats := map[int64][]*store.Term{}
+	if len(ids) > 0 {
+		cats, _ = s.store.TermsForPosts(ctx, ids, "product_cat")
+	}
+	for _, p := range list {
+		out.Products = append(out.Products, s.wbDynProduct(c, p, cats[p.ID], false))
+	}
+	if preview != nil {
+		dp := s.wbDynProduct(c, preview, cats[preview.ID], true)
+		out.Product = &dp
+	}
+	terms, _ := s.store.HierarchicalTerms(ctx, "product_cat", false)
+	for i, t := range terms {
+		if i >= 100 {
+			break
+		}
+		out.Categories = append(out.Categories, webbuilder.DynProductCat{ID: t.ID, Name: t.Name, URL: s.gooTermLink(ctx, t), Count: t.Count, Parent: t.ParentID})
+	}
+	return out
+}
+
+// wbDynProduct is DynProduct of a product; full adds the rendered descriptions and the gallery.
+func (s *Server) wbDynProduct(c *gin.Context, p *gooProduct, cats []*store.Term, full bool) webbuilder.DynProduct {
+	ctx := c.Request.Context()
+	dp := webbuilder.DynProduct{ID: p.ID, Type: p.Type, Title: p.Name, URL: s.gooPermalink(ctx, p), SKU: p.SKU,
+		PriceHTML: s.gooL10n(c, string(s.gooPriceHTML(c, p))), OnSale: s.gooOnSale(c, p), InStock: p.StockStatus != "outofstock",
+		StockHTML: s.gooL10n(c, s.gooFrontStockHTML(c, p)), Rating: p.AverageRating, RatingCount: p.RatingCount,
+		Gallery: []webbuilder.DynImage{}, Categories: []int64{}, AddToCartText: s.gooL10nText(ctx, s.gooAddToCartText(c, p, true))}
+	img := func(id int64) *webbuilder.DynImage {
+		a, err := s.store.GetAttachment(ctx, id)
+		if err != nil {
+			return nil
+		}
+		alt := a.Alt
+		if alt == "" {
+			alt = p.Name
+		}
+		return &webbuilder.DynImage{URL: s.uploadURL(ctx, a.FilePath), Width: a.Width, Height: a.Height, Alt: alt}
+	}
+	if p.ImageID > 0 {
+		dp.Image = img(p.ImageID)
+	}
+	for _, t := range cats {
+		dp.Categories = append(dp.Categories, t.ID)
+	}
+	if full {
+		for i, id := range p.GalleryIDs {
+			if i >= 8 {
+				break
+			}
+			if im := img(id); im != nil && id != p.ImageID {
+				dp.Gallery = append(dp.Gallery, *im)
+			}
+		}
+		if p.Post != nil {
+			if ex := strings.TrimSpace(p.Post.Excerpt); ex != "" {
+				dp.ShortHTML = strings.TrimSpace(wbUGC().Sanitize(s.gooRenderContent(ctx, c, ex)))
+			}
+			dp.ContentHTML = strings.TrimSpace(wbUGC().Sanitize(s.gooRenderContent(ctx, c, p.Post.Content)))
+		}
+	}
+	return dp
 }
 
 // wbDynSamplePosts are the sample posts of a singular preview: the recent published entries of the
@@ -595,6 +777,12 @@ func (s *Server) wbSiteBoot(c *gin.Context, dyn *webbuilder.DynContext) webbuild
 		}
 	}
 	out.Taxonomies = append(out.Taxonomies, cats, tags)
+	if s.gooOn() { // Pursae Commerce: the conditions dialog offers products and their taxonomies
+		out.PostTypes = append(out.PostTypes, webbuilder.PostTypeInfo{Slug: "product", Label: "Products", Archive: s.gooShopURL(c.Request.Context())})
+		out.Taxonomies = append(out.Taxonomies,
+			webbuilder.TaxonomyInfo{Slug: "product_cat", Label: "Product categories", Types: []string{"product"}},
+			webbuilder.TaxonomyInfo{Slug: "product_tag", Label: "Product tags", Types: []string{"product"}})
+	}
 	return out
 }
 

@@ -189,9 +189,11 @@ func (s *Server) gooBodyClasses(c *gin.Context, q *siteQuery) []string {
 	return out
 }
 
-// gooIsStorePage reports whether the request shows store markup (styles and scripts are printed).
+// gooIsStorePage reports whether the request shows store markup (styles and scripts are printed):
+// a store view, a page with store shortcodes, or a Web Builder page whose Commerce widgets render
+// store markup (ctxWBShop, set by wbFill).
 func (s *Server) gooIsStorePage(c *gin.Context, q *siteQuery) bool {
-	if gooViewFrom(c) != nil {
+	if gooViewFrom(c) != nil || (c != nil && c.GetBool(ctxWBShop)) {
 		return true
 	}
 	return q != nil && q.Post != nil && s.gooHasShortcode(q.Post.Content)
@@ -203,16 +205,21 @@ func (s *Server) gooHead(c *gin.Context, q *siteQuery) string {
 	if !s.gooOn() || !s.gooIsStorePage(c, q) {
 		return ""
 	}
-	v := "?ver=" + gooAssetVer()
 	var b strings.Builder
-	b.WriteString(`<link rel="stylesheet" id="woocommerce-layout-css" href="` + gooAssets + `/css/goocommerce-layout.css` + v + `" media="all" />` + "\n")
-	b.WriteString(`<link rel="stylesheet" id="woocommerce-smallscreen-css" href="` + gooAssets + `/css/goocommerce-smallscreen.css` + v + `" media="only screen and (max-width: 768px)" />` + "\n")
-	b.WriteString(`<link rel="stylesheet" id="woocommerce-general-css" href="` + gooAssets + `/css/goocommerce.css` + v + `" media="all" />` + "\n")
-	b.WriteString(`<noscript><style>.woocommerce-product-gallery{ opacity: 1 !important; }</style></noscript>` + "\n")
+	b.WriteString(gooStyleTags())
 	if fv := gooViewFrom(c); fv != nil && fv.Kind == "product" && fv.Product != nil {
 		b.WriteString(s.gooProductJSONLD(c, fv.Product))
 	}
 	return b.String()
+}
+
+// gooStyleTags are the store's stylesheets.
+func gooStyleTags() string {
+	v := "?ver=" + gooAssetVer()
+	return `<link rel="stylesheet" id="woocommerce-layout-css" href="` + gooAssets + `/css/goocommerce-layout.css` + v + `" media="all" />` + "\n" +
+		`<link rel="stylesheet" id="woocommerce-smallscreen-css" href="` + gooAssets + `/css/goocommerce-smallscreen.css` + v + `" media="only screen and (max-width: 768px)" />` + "\n" +
+		`<link rel="stylesheet" id="woocommerce-general-css" href="` + gooAssets + `/css/goocommerce.css` + v + `" media="all" />` + "\n" +
+		`<noscript><style>.woocommerce-product-gallery{ opacity: 1 !important; }</style></noscript>` + "\n"
 }
 
 // gooFooter prints the store notice, the module footer markup and the store scripts.
@@ -283,11 +290,25 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 	}
 	raw, _ := jsonMarshalNoEscape(params)
 	b.WriteString(`<script id="goocommerce-params">var goocommerce_params = ` + string(raw) + `; var wc_add_to_cart_params = goocommerce_params;</script>` + "\n")
-	js := func(name string) {
-		b.WriteString(`<script src="` + gooAssets + `/js/frontend/` + name + `.js?ver=` + gooAssetVer() + `" id="goo-` + name + `-js" defer></script>` + "\n")
-	}
-	js("cart-fragments") // header counts on cached pages
+	b.WriteString(gooScriptTag("cart-fragments")) // header counts on cached pages
 	if s.gooIsStorePage(c, q) {
+		b.WriteString(s.gooStoreScripts(c, q))
+	}
+	return b.String()
+}
+
+func gooScriptTag(name string) string {
+	return `<script src="` + gooAssets + `/js/frontend/` + name + `.js?ver=` + gooAssetVer() + `" id="goo-` + name + `-js" defer></script>` + "\n"
+}
+
+// gooStoreScripts are the scripts of a page that shows store markup (gooIsStorePage); the
+// goocommerce_params script and cart-fragments come before them (gooFooter).
+func (s *Server) gooStoreScripts(c *gin.Context, q *siteQuery) string {
+	ctx := c.Request.Context()
+	fv := gooViewFrom(c)
+	var b strings.Builder
+	js := func(name string) { b.WriteString(gooScriptTag(name)) }
+	{
 		js("woocommerce")
 		js("add-to-cart")
 		js("single-product")        // gallery, tabs, rating stars (also [product_page])
@@ -965,9 +986,18 @@ func (s *Server) gooNoticesHTML(c *gin.Context) string {
 	}
 	if len(errs)+len(msgs)+len(infos) > 0 {
 		c.Header(cache.HeaderControl, "no-store") // a visitor's notices never reach the page cache
+		out := gooNoticesMarkup(errs, msgs, infos)
+		// Kept for a Web Builder store template, which replaces the store body that took them
+		// (wbShopNotices, wbProductWrap).
+		c.Set(gooCtxNoticesTaken, c.GetString(gooCtxNoticesTaken)+out)
+		return out
 	}
 	return gooNoticesMarkup(errs, msgs, infos)
 }
+
+// gooCtxNoticesTaken holds the notices markup gooNoticesHTML took in this request and nothing
+// printed yet through a Web Builder template.
+const gooCtxNoticesTaken = "goo.notices.taken"
 
 func gooNoticesMarkup(errs, msgs, infos []string) string {
 	var b strings.Builder

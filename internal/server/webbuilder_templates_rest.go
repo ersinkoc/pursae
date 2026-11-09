@@ -114,6 +114,10 @@ func (s *Server) wbRESTTemplateCreate(c *gin.Context, r *restRequest) {
 		wbBadTemplate(c, "Unknown template type.")
 		return
 	}
+	if !s.wbTemplateTypeOffered(body.Type) {
+		wbBadTemplate(c, "Product templates need Pursae Commerce.")
+		return
+	}
 	if body.Starter != "" && !slices.Contains(webbuilder.StarterIDs, body.Starter) {
 		wbBadTemplate(c, "Unknown starter design.")
 		return

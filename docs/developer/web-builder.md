@@ -136,7 +136,9 @@ Not in the builder (yet):
 - **Sub-menus**: menus bound to a menu location show their top level only (no drop-downs yet);
   archives of Pursae Custom Fields taxonomies are not routed, so conditions on them match nothing.
 - **Form integrations** (mailing lists, webhooks, CRMs), stored form submissions and **payments**.
-- **Pursae Commerce widgets** (product grids, cart, checkout); store pages use the store theme.
+- Pursae Commerce: product templates and widgets exist (Theme Builder), but not a product loop
+  card designed widget by widget (the products grid uses the store's own cards), filters or the
+  account page as a widget.
 - **Global classes and variables**, **kits** and site-wide design settings; colours and fonts are
   set per page or template.
 - A setup wizard, a template library beyond saved sections, and a revisions panel in the editor.
@@ -153,7 +155,7 @@ that introduced this one ([upgrading](getting-started/upgrading.md)).
 | `internal/webbuilder/` | server-independent pieces: contract types (`contract.go`), doc validation, HTML and CSS sanitizers, fallback HTML, forms, fonts; Theme Builder engine: `dynamic.go` (placeholder fill), `conditions.go` (display conditions) |
 | `internal/store/webbuilder.go`, `webbuilder_templates.go` | storage (docs, drafts, revisions, library; templates and their index) |
 | `internal/server/webbuilder_*.go` | plugin switch and settings, admin entry points, editor screen, assets, REST, front-end render, forms, hooks (drift, copies, export, cache), redirects of old URLs, one-time upgrade and cleanup |
-| `internal/server/webbuilder_templates*.go`, `webbuilder_dynamic_ctx.go`, `webbuilder_theme_front.go`, `webbuilder_slots.go` | Theme Builder: template index and pick, template REST, editor sample data, front assembly, slot resolver and loops |
+| `internal/server/webbuilder_templates*.go`, `webbuilder_dynamic_ctx.go`, `webbuilder_theme_front.go`, `webbuilder_slots.go`, `webbuilder_shop.go` | Theme Builder: template index and pick, template REST, editor sample data, front assembly, slot resolver and loops, Commerce and language-switcher slots |
 | `internal/server/theme_hellopursae.go`, `web/themes/hello-pursae/` | the Hello Pursae theme |
 | `builder/` | Node workspace: `upstream/` (git submodule, pinned by `UPSTREAM_SHA`), `patches/`, `host/` (CMS adapter), `vite/`, `scripts/`, `test/` |
 | `web/web-builder/` | the committed build output, embedded in the binary |

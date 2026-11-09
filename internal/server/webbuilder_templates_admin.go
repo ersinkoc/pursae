@@ -225,6 +225,9 @@ func (s *Server) wbTemplatesList(c *gin.Context) {
 	base := wbThemeBuilderURL()
 	d.Views = append(d.Views, wbTBView{Key: "all", Label: "All", URL: base, Count: counts.All, Current: !d.IsTrash && d.Type == ""})
 	for _, t := range webbuilder.TemplateTypes {
+		if !s.wbTemplateTypeOffered(t) && counts.ByType[t] == 0 {
+			continue
+		}
 		d.Views = append(d.Views, wbTBView{Key: string(t), Label: webbuilder.TemplateTypeLabels[t], URL: base + "&" + wbTBTypeParam + "=" + string(t),
 			Count: counts.ByType[t], Current: !d.IsTrash && d.Type == string(t)})
 	}
@@ -360,6 +363,9 @@ func (s *Server) wbTemplatesDialogs(c *gin.Context, d *wbTemplatesData, site web
 	}
 	types := make([]map[string]string, 0, len(webbuilder.TemplateTypes))
 	for _, t := range webbuilder.TemplateTypes {
+		if !s.wbTemplateTypeOffered(t) {
+			continue
+		}
 		d.Types = append(d.Types, wbTBOption{Value: string(t), Label: webbuilder.TemplateTypeLabels[t], Selected: t == sel})
 		types = append(types, map[string]string{"slug": string(t), "label": webbuilder.TemplateTypeLabels[t], "starter": string(webbuilder.DefaultStarters[t])})
 	}
@@ -796,7 +802,7 @@ func (s *Server) wbTemplateCreate(c *gin.Context) {
 	u := currentUser(c)
 	typ := webbuilder.TemplateType(c.Query("type"))
 	starter := webbuilder.StarterID(c.Query("starter"))
-	if _, ok := webbuilder.TemplateTypeLabels[typ]; !ok || (starter != "" && !slices.Contains(webbuilder.StarterIDs, starter)) {
+	if _, ok := webbuilder.TemplateTypeLabels[typ]; !ok || !s.wbTemplateTypeOffered(typ) || (starter != "" && !slices.Contains(webbuilder.StarterIDs, starter)) {
 		s.wbTBRedirect(c, false, url.Values{"wb_error": {"create"}})
 		return
 	}

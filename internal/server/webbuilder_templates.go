@@ -145,8 +145,10 @@ func (s *Server) wbBuildTemplateIndex(ctx context.Context) (*wbTemplateIndex, er
 
 // candidates are the index's candidates for one request language. A template without a snapshot
 // (an import not rendered yet) never renders, so it never competes and does not hide the next best
-// one. Of each translation group only one usable member competes — the one in lang, else the one
-// in the default language, else the oldest. Templates without a group always compete.
+// one. With a request language, a template in a language that is neither lang nor the default
+// never competes (a Turkish header must not win on English pages). Of each translation group only
+// one usable member competes — the one in lang, else the one in the default language (without a
+// request language: the oldest). Templates without a group always compete.
 func (idx *wbTemplateIndex) candidates(lang, def string) []webbuilder.TemplateCandidate {
 	rank := func(id int64) int {
 		l := idx.lang[id]
@@ -158,7 +160,15 @@ func (idx *wbTemplateIndex) candidates(lang, def string) []webbuilder.TemplateCa
 		}
 		return 0
 	}
-	usable := func(i int) bool { return i < len(idx.entries) && idx.entries[i].HasHTML }
+	usable := func(i int) bool {
+		if i >= len(idx.entries) || !idx.entries[i].HasHTML {
+			return false
+		}
+		if l := idx.lang[idx.cands[i].ID]; lang != "" && l != "" && l != lang && l != def {
+			return false
+		}
+		return true
+	}
 	best := map[int64]int64{} // group → representative id
 	for i, c := range idx.cands {
 		g, ok := idx.group[c.ID]
@@ -265,7 +275,23 @@ func (s *Server) wbPickTemplate(c *gin.Context, location string, q *siteQuery) (
 	}
 	facts := s.wbQueryFacts(c, q, idx.needTerms)
 	usable := idx.candidates(lang, def)
-	i := webbuilder.PickTemplate(location, usable, facts)
+	i := -1
+	if lang != "" && lang != def {
+		// A template in the request language (or one without a language) beats one in the
+		// default language, whatever their scores: those are only the fallback.
+		own := make([]webbuilder.TemplateCandidate, 0, len(usable))
+		for _, cand := range usable {
+			if l := idx.lang[cand.ID]; l == "" || l == lang {
+				own = append(own, cand)
+			}
+		}
+		if j := webbuilder.PickTemplate(location, own, facts); j >= 0 {
+			usable, i = own, j
+		}
+	}
+	if i < 0 {
+		i = webbuilder.PickTemplate(location, usable, facts)
+	}
 	if i < 0 {
 		return nil, 0
 	}
@@ -305,6 +331,11 @@ func (s *Server) wbTemplatePreview(c *gin.Context, location string) (*store.WebB
 	if err != nil || t.Status == "trash" || t.Type == "" || webbuilder.TemplateLocation(t.Type) != location {
 		return nil, 0, false
 	}
+	// The store gate also holds for a previewed main template: a generic type never replaces a
+	// store view (the checkout form), a store type never shows off the store.
+	if q := siteQueryFrom(c); location == webbuilder.LocationMain && q != nil && !webbuilder.StoreGateOK(t.Type, wbFactsOf(q)) {
+		return nil, 0, false
+	}
 	d, err := s.store.WebBuilder().Doc(ctx, id)
 	if err != nil || d.HTML == "" {
 		return nil, 0, false
@@ -340,6 +371,10 @@ func (s *Server) wbQueryFacts(c *gin.Context, q *siteQuery, needTerms bool) webb
 		}
 	}
 	f := wbFactsOf(q)
+	ml := s.golylangOn()
+	if ml {
+		s.wbTranslatedFacts(c.Request.Context(), &f)
+	}
 	if needTerms && f.View == webbuilder.ViewSingular && f.PostID > 0 {
 		f.Terms = map[string][]int64{}
 		rows, err := s.store.Pool.Query(c.Request.Context(), `SELECT t.taxonomy, t.id FROM post_terms pt JOIN terms t ON t.id = pt.term_id
@@ -354,14 +389,93 @@ func (s *Server) wbQueryFacts(c *gin.Context, q *siteQuery, needTerms bool) webb
 			}
 			rows.Close()
 		}
+		if ml {
+			s.wbTranslatedTerms(c.Request.Context(), f.Terms)
+		}
 	}
 	c.Set(ctxWBFacts, &wbFactsMemo{q: q, terms: needTerms, facts: f})
 	return f
 }
 
+// wbTranslatedFacts adds the Pursae Multi Language translations of the entry, its parent and the
+// archived term to f (PostIDs, ParentIDs, TermIDs), so a display condition naming one language
+// version of a page, post or term matches its translations too. One query per kind, none when
+// the request names no such object.
+func (s *Server) wbTranslatedFacts(ctx context.Context, f *webbuilder.QueryFacts) {
+	if f.View == webbuilder.ViewSingular && (f.PostID > 0 || f.ParentID > 0) {
+		rows, err := s.store.Pool.Query(ctx, `SELECT a.post_id, b.post_id FROM pll_post_langs a
+			JOIN pll_post_langs b ON b.grp = a.grp AND b.post_id <> a.post_id
+			WHERE a.post_id = ANY($1)`, []int64{f.PostID, f.ParentID})
+		if err == nil {
+			for rows.Next() {
+				var src, tr int64
+				if rows.Scan(&src, &tr) != nil {
+					continue
+				}
+				if src == f.PostID {
+					f.PostIDs = append(f.PostIDs, tr)
+				}
+				if src == f.ParentID {
+					f.ParentIDs = append(f.ParentIDs, tr)
+				}
+			}
+			rows.Close()
+		}
+	}
+	if f.View == webbuilder.ViewArchive && f.Archive == webbuilder.ArchiveTerm && f.TermID > 0 {
+		rows, err := s.store.Pool.Query(ctx, `SELECT b.term_id FROM pll_term_langs a
+			JOIN pll_term_langs b ON b.grp = a.grp AND b.term_id <> a.term_id
+			WHERE a.term_id = $1`, f.TermID)
+		if err == nil {
+			for rows.Next() {
+				var tr int64
+				if rows.Scan(&tr) == nil {
+					f.TermIDs = append(f.TermIDs, tr)
+				}
+			}
+			rows.Close()
+		}
+	}
+}
+
+// wbTranslatedTerms adds the Pursae Multi Language translations of each term in terms (taxonomy →
+// term ids, the entry's terms) to its taxonomy's list, in one query.
+func (s *Server) wbTranslatedTerms(ctx context.Context, terms map[string][]int64) {
+	var ids []int64
+	taxOf := map[int64]string{}
+	for tax, list := range terms {
+		for _, id := range list {
+			ids = append(ids, id)
+			taxOf[id] = tax
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT a.term_id, b.term_id FROM pll_term_langs a
+		JOIN pll_term_langs b ON b.grp = a.grp AND b.term_id <> a.term_id
+		WHERE a.term_id = ANY($1)`, ids)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var src, tr int64
+		if rows.Scan(&src, &tr) != nil {
+			continue
+		}
+		if _, own := taxOf[tr]; own {
+			continue
+		}
+		tax := taxOf[src]
+		terms[tax] = append(terms[tax], tr)
+		taxOf[tr] = tax
+	}
+}
+
 // wbFactsOf maps a siteQuery to QueryFacts (no database access).
 func wbFactsOf(q *siteQuery) webbuilder.QueryFacts {
-	f := webbuilder.QueryFacts{Store: q.Store != ""}
+	f := webbuilder.QueryFacts{Store: q.Store != "", StoreKind: q.Store}
 	singular := func(p *store.Post) {
 		f.View, f.PostType, f.PostID, f.ParentID, f.AuthorID = webbuilder.ViewSingular, p.Type, p.ID, p.ParentID, p.AuthorID
 	}
@@ -434,6 +548,12 @@ func (s *Server) wbEditable(u *store.User, p *store.Post) bool {
 		return u.Can(webbuilder.TemplateCap, nil)
 	}
 	return s.wbEnabledType(p.Type) && u.Can("edit_post", p)
+}
+
+// wbTemplateTypeOffered: the store types (single-product, product-archive) exist only while
+// Pursae Commerce is on.
+func (s *Server) wbTemplateTypeOffered(t webbuilder.TemplateType) bool {
+	return !webbuilder.IsStoreTemplate(t) || s.gooOn()
 }
 
 // wbIsTemplate reports whether p is a Theme Builder template.

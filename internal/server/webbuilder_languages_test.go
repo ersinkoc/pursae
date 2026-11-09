@@ -217,15 +217,46 @@ func TestWebBuilderLanguagesPermissions(t *testing.T) {
 		t.Fatalf("a refused request created %d page(s)", got-pages)
 	}
 
-	// Templates cannot be translated from the builder, not even by an administrator; the panel is
-	// read-only (no "missing" languages, canTranslate false).
-	if code, v := translate(admin, tpl.ID, "fr"); code != http.StatusBadRequest || wbrCode(v) != webbuilder.ErrNotBuilder {
-		t.Errorf("admin translating a template: %d %v", code, v)
-	}
+	// A template is translated by a user with edit_theme_options: the copy is a disabled template
+	// with the same type, conditions and priority, linked to the source; once published it is the
+	// header of its language.
 	_, v, _ := admin.do(http.MethodGet, wbrDocPath(tpl.ID, "/languages"), nil, nil)
 	o := wbrObj(v)
-	if m, _ := o["missing"].([]any); o["enabled"] != true || o["canTranslate"] != false || len(m) != 0 {
+	if m, _ := o["missing"].([]any); o["enabled"] != true || o["canTranslate"] != true || len(m) != 2 {
 		t.Errorf("template languages: %v", o)
+	}
+	code, v := translate(admin, tpl.ID, "fr")
+	tplFr, _ := wbrObj(v)["postId"].(float64)
+	if code != http.StatusCreated || tplFr <= 0 || wbrObj(v)["status"] != "draft" {
+		t.Fatalf("admin translating a template: %d %v", code, v)
+	}
+	got, err := srv.store.WebBuilder().Template(ctx, int64(tplFr))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Type != webbuilder.TemplateHeader || got.Status != "draft" || strings.Join(got.Conditions, ",") != "include/general" {
+		t.Errorf("template translation: %+v", got)
+	}
+	if tr := srv.pllTranslations(ctx, pllPost, tpl.ID); tr["fr"] != int64(tplFr) {
+		t.Errorf("template translation not linked: %v", tr)
+	}
+	_, v, _ = admin.do(http.MethodGet, wbrDocPath(tpl.ID, "/languages"), nil, nil)
+	if m, _ := wbrObj(v)["missing"].([]any); len(m) != 1 || wbrObj(m[0])["slug"] != "de" {
+		t.Errorf("template missing after fr: %v", v)
+	}
+	if code, v := translate(admin, tpl.ID, "fr"); code != http.StatusConflict {
+		t.Errorf("second fr template translation: %d %v", code, v)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE posts SET status = 'publish' WHERE id = $1`, int64(tplFr)); err != nil {
+		t.Fatal(err)
+	}
+	srv.wbTemplatesChanged(ctx)
+	for lang, want := range map[string]int64{"fr": int64(tplFr), "en": tpl.ID, "de": tpl.ID} {
+		c, _ := wbtCtx(srv, nil, "/")
+		pllSet(c, &pllReq{srv: srv, Lang: srv.pllLang(ctx, lang), Filter: true, Front: true})
+		if _, id := srv.wbPickTemplate(c, webbuilder.LocationHeader, &siteQuery{Kind: "home"}); id != want {
+			t.Errorf("%s header: %d, want %d", lang, id, want)
+		}
 	}
 
 	// A contributor translates their own draft: the copy is a draft of the contributor's page tree.

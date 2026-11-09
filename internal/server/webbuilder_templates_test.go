@@ -51,7 +51,7 @@ func TestWBTemplateFactsOf(t *testing.T) {
 		got := wbFactsOf(tc.q)
 		if got.View != tc.want.View || got.FrontPage != tc.want.FrontPage || got.Store != tc.want.Store || got.PostType != tc.want.PostType ||
 			got.PostID != tc.want.PostID || got.ParentID != tc.want.ParentID || got.AuthorID != tc.want.AuthorID ||
-			got.Archive != tc.want.Archive || got.Taxonomy != tc.want.Taxonomy || got.TermID != tc.want.TermID {
+			got.Archive != tc.want.Archive || got.Taxonomy != tc.want.Taxonomy || got.TermID != tc.want.TermID || got.StoreKind != tc.q.Store {
 			t.Errorf("%d (%s): %+v, want %+v", i, tc.q.Kind, got, tc.want)
 		}
 	}
@@ -105,9 +105,26 @@ func TestWBTemplateCandidatesLanguage(t *testing.T) {
 	if got := ids(idx.candidates("fr", "en")); got != "2,4,5" {
 		t.Errorf("fr: %s", got)
 	}
-	if got := ids(idx.candidates("en", "en")); got != "1,3,5" { // group 200 has no en member: the oldest
+	// Group 200 has no member in en (the request and default language): it does not compete.
+	if got := ids(idx.candidates("en", "en")); got != "1,5" {
 		t.Errorf("en: %s", got)
 	}
+	if got := ids(idx.candidates("de", "en")); got != "1,3,5" {
+		t.Errorf("de: %s", got)
+	}
+	// A template alone in its group, in a third language, never competes.
+	idx.entries = append(idx.entries, store.WBTemplateIndexEntry{ID: 6, HasHTML: true})
+	idx.cands = append(idx.cands, cand(6))
+	idx.lang[6], idx.group[6] = "it", 300
+	if got := ids(idx.candidates("fr", "en")); got != "2,4,5" {
+		t.Errorf("fr with an it template: %s", got)
+	}
+	if got := ids(idx.candidates("it", "en")); got != "1,5,6" {
+		t.Errorf("it: %s", got)
+	}
+	idx.entries, idx.cands = idx.entries[:5], idx.cands[:5]
+	delete(idx.lang, 6)
+	delete(idx.group, 6)
 	if got := ids(idx.candidates("", "de")); got != "1,3,5" {
 		t.Errorf("no language, default de: %s", got)
 	}
@@ -760,6 +777,122 @@ func TestWBTemplateGolylang(t *testing.T) {
 	}
 	if got.Type != webbuilder.TemplateFooter || strings.Join(got.Conditions, ",") != "include/general,exclude/404" || got.Priority != 9 {
 		t.Errorf("translation template meta: %+v", got)
+	}
+}
+
+// Separately made (unlinked) templates in different languages: a template never shows in another
+// language, and one in the request language beats the default-language one. Integration test.
+func TestWBTemplateGolylangUnlinked(t *testing.T) {
+	srv, base, admin := wbrStart(t)
+	ctx := context.Background()
+	golylangToggle(t, admin.c, base, "activate")
+	pllAddLanguage(t, admin.c, base, "English", "en_US", "en", "us")
+	pllAddLanguage(t, admin.c, base, "Français", "fr_FR", "fr", "fr")
+	pick := func(lang string, q *siteQuery) int64 {
+		c, _ := wbtCtx(srv, nil, "/")
+		pllSet(c, &pllReq{srv: srv, Lang: srv.pllLang(ctx, lang), Filter: true, Front: true})
+		_, id := srv.wbPickTemplate(c, webbuilder.LocationHeader, q)
+		return id
+	}
+	page := wbrPost(t, srv, "page", "Unlinked Page", "publish", 1)
+	_ = srv.pllSetLang(ctx, pllPost, page.ID, "en")
+	en := wbtTemplate(t, srv, webbuilder.TemplateHeader, "Header EN", []string{"include/general"}, 0, "")
+	_ = srv.pllSetLang(ctx, pllPost, en.ID, "en")
+	fr := wbtTemplate(t, srv, webbuilder.TemplateHeader, "Header FR", []string{"include/general"}, 0, "") // newer
+	_ = srv.pllSetLang(ctx, pllPost, fr.ID, "fr")
+	srv.wbTemplatesChanged(ctx)
+	home := &siteQuery{Kind: "home"}
+	if id := pick("en", home); id != en.ID {
+		t.Errorf("en pages: %d, want the en header %d (fr %d)", id, en.ID, fr.ID)
+	}
+	if id := pick("fr", home); id != fr.ID {
+		t.Errorf("fr pages: %d, want %d", id, fr.ID)
+	}
+	// A newer, more specific and higher-priority default-language header is only the fallback on
+	// French pages; it wins on English ones.
+	en2 := wbtTemplate(t, srv, webbuilder.TemplateHeader, "Header EN 2", []string{"include/singular/page/" + itoa64(page.ID)}, 5, "")
+	_ = srv.pllSetLang(ctx, pllPost, en2.ID, "en")
+	srv.wbTemplatesChanged(ctx)
+	pageQ := &siteQuery{Kind: "page", Post: page}
+	if id := pick("fr", pageQ); id != fr.ID {
+		t.Errorf("fr page: %d, want %d", id, fr.ID)
+	}
+	if id := pick("en", pageQ); id != en2.ID {
+		t.Errorf("en page: %d, want %d", id, en2.ID)
+	}
+	// Without a French header, French pages fall back to the default-language one.
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE posts SET status = 'draft' WHERE id = $1`, fr.ID)
+	srv.wbTemplatesChanged(ctx)
+	if id := pick("fr", home); id != en.ID {
+		t.Errorf("fr fallback: %d, want %d", id, en.ID)
+	}
+}
+
+// Display conditions that name a page, post or term match its Pursae Multi Language translations.
+// Integration test.
+func TestWBTemplateConditionsTranslations(t *testing.T) {
+	srv, base, admin := wbrStart(t)
+	ctx := context.Background()
+	golylangToggle(t, admin.c, base, "activate")
+	pllAddLanguage(t, admin.c, base, "English", "en_US", "en", "us")
+	pllAddLanguage(t, admin.c, base, "Français", "fr_FR", "fr", "fr")
+	link := func(k pllKind, enID, frID int64) {
+		t.Helper()
+		_ = srv.pllSetLang(ctx, k, enID, "en")
+		_ = srv.pllSetLang(ctx, k, frID, "fr")
+		if err := srv.pllSaveTranslations(ctx, k, map[string]int64{"en": enID, "fr": frID}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	about := wbrPost(t, srv, "page", "About", "publish", 1)
+	aPropos := wbrPost(t, srv, "page", "A propos", "publish", 1)
+	link(pllPost, about.ID, aPropos.ID)
+	team := &store.Post{Type: "page", Title: "Team", Slug: "team", Status: "publish", AuthorID: 1, ParentID: about.ID}
+	equipe := &store.Post{Type: "page", Title: "Equipe", Slug: "equipe", Status: "publish", AuthorID: 1, ParentID: aPropos.ID}
+	for _, p := range []*store.Post{team, equipe} {
+		if err := srv.store.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	news := &store.Term{Taxonomy: "category", Slug: "news", Name: "News"}
+	actu := &store.Term{Taxonomy: "category", Slug: "actualites", Name: "Actualites"}
+	for _, term := range []*store.Term{news, actu} {
+		if err := srv.store.InsertTerm(ctx, term); err != nil {
+			t.Fatal(err)
+		}
+	}
+	link(pllTerm, news.ID, actu.ID)
+	frPost := wbrPost(t, srv, "post", "Article", "publish", 1)
+	_ = srv.pllSetLang(ctx, pllPost, frPost.ID, "fr")
+	_ = srv.store.SetPostTerms(ctx, frPost.ID, "category", []int64{actu.ID})
+	other := wbrPost(t, srv, "post", "Other", "publish", 1)
+	_ = srv.pllSetLang(ctx, pllPost, other.ID, "fr")
+
+	pageHeader := wbtTemplate(t, srv, webbuilder.TemplateHeader, "About header", []string{"include/singular/page/" + itoa64(about.ID)}, 0, "")
+	childHeader := wbtTemplate(t, srv, webbuilder.TemplateHeader, "About children", []string{"include/singular/page/child_of/" + itoa64(about.ID)}, 0, "")
+	newsSingle := wbtTemplate(t, srv, webbuilder.TemplateSinglePost, "News single", []string{"include/singular/post/in/category/" + itoa64(news.ID)}, 0, "")
+	newsArchive := wbtTemplate(t, srv, webbuilder.TemplateArchive, "News archive", []string{"include/archive/category/" + itoa64(news.ID)}, 0, "")
+	srv.wbTemplatesChanged(ctx)
+	pick := func(location string, q *siteQuery) int64 {
+		c, _ := wbtCtx(srv, nil, "/")
+		pllSet(c, &pllReq{srv: srv, Lang: srv.pllLang(ctx, "fr"), Filter: true, Front: true})
+		_, id := srv.wbPickTemplate(c, location, q)
+		return id
+	}
+	if id := pick(webbuilder.LocationHeader, &siteQuery{Kind: "page", Post: aPropos}); id != pageHeader.ID {
+		t.Errorf("translated page: %d, want %d", id, pageHeader.ID)
+	}
+	if id := pick(webbuilder.LocationHeader, &siteQuery{Kind: "page", Post: equipe}); id != childHeader.ID {
+		t.Errorf("child of the translated page: %d, want %d", id, childHeader.ID)
+	}
+	if id := pick(webbuilder.LocationMain, &siteQuery{Kind: "single", Post: frPost}); id != newsSingle.ID {
+		t.Errorf("post in the translated category: %d, want %d", id, newsSingle.ID)
+	}
+	if id := pick(webbuilder.LocationMain, &siteQuery{Kind: "single", Post: other}); id != 0 {
+		t.Errorf("post outside the category: %d", id)
+	}
+	if id := pick(webbuilder.LocationMain, &siteQuery{Kind: "category", Term: actu}); id != newsArchive.ID {
+		t.Errorf("translated category archive: %d, want %d", id, newsArchive.ID)
 	}
 }
 

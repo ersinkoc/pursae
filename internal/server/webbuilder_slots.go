@@ -128,6 +128,8 @@ type wbSlotEnv struct {
 
 	logo     map[string]string
 	logoDone bool
+
+	shop *wbShopEnv // Commerce and language-switcher state (webbuilder_shop.go), lazy
 }
 
 // wbSlotPost is one post a resolver shows: the request's singular post, a main-loop item (both
@@ -214,6 +216,9 @@ func (r *wbSlotResolver) nearestPost() *wbSlotPost {
 
 func (r *wbSlotResolver) Text(slot webbuilder.SlotName, a webbuilder.SlotArgs) (string, bool) {
 	e := r.env
+	if wbItemSlot(slot) {
+		return e.shopText(slot, a)
+	}
 	v := e.v
 	switch slot {
 	case webbuilder.SlotSiteTitle:
@@ -273,6 +278,9 @@ func (r *wbSlotResolver) Text(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 
 func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (string, bool) {
 	e := r.env
+	if wbItemSlot(slot) {
+		return e.shopHTML(slot, a)
+	}
 	v := e.v
 	switch slot {
 	case webbuilder.SlotArchiveTitle:
@@ -341,9 +349,13 @@ func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 
 func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) (map[string]string, bool) {
 	e := r.env
+	if wbItemSlot(slot) {
+		return e.shopAttrs(slot, a)
+	}
 	switch slot {
 	case webbuilder.SlotSiteURL:
-		return map[string]string{"href": e.lb.HomeURL("/")}, true
+		// The home page in the request language (Pursae Multi Language), as themes link it.
+		return map[string]string{"href": e.lb.Front()}, true
 	case webbuilder.SlotSiteLogo:
 		m := e.siteLogo()
 		return m, len(m) > 0
@@ -863,6 +875,9 @@ func (e *wbSlotEnv) queryLoop(id string) ([]*wbSlotPost, bool) {
 type wbFilled struct {
 	html  string
 	loops bool // it has a post loop (cache tag wb-loop)
+	// shop: it renders store markup (Commerce widgets beyond the cart icon: store assets);
+	// catalog: it shows catalog data (cache tag goo:shop).
+	shop, catalog bool
 }
 
 // wbFill fills a published snapshot over the request's view, then applies
@@ -882,9 +897,13 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 		return wbFilled{html: s.filterContentTags(ctx, static)}
 	}
 	env := newWBSlotEnv(s, c, v, d, prog, own)
+	shop := s.gooOn() && wbProgramShop(prog)
+	if shop {
+		c.Set(ctxWBShop, true) // before the canvas builds its head (gooIsStorePage)
+	}
 	out, err := prog.ExecString(env.root())
 	if err != nil {
 		log.Printf("web builder: fill %d: %v", d.PostID, err)
 	}
-	return wbFilled{html: s.filterContentTags(ctx, out), loops: env.loops}
+	return wbFilled{html: s.filterContentTags(ctx, out), loops: env.loops, shop: shop, catalog: env.shop != nil && env.shop.catalog}
 }

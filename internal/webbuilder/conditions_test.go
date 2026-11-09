@@ -155,7 +155,7 @@ func TestConditionMatch(t *testing.T) {
 		"include/singular/post/by_author/2":   {"post"},
 		"include/singular/page/by_author/2":   {},
 		"include/singular/book":               {"book"},
-		"include/singular/product":            {},
+		"include/singular/product":            {"product"},
 		"include/singular/wb_template":        {},
 		"include/archive":                     {"frontIndex", "home", "cat", "author", "date", "search", "books"},
 		"include/archive/home":                {"frontIndex", "home"},
@@ -325,7 +325,11 @@ func TestTemplatesConflict(t *testing.T) {
 		{mk(1, TemplateFrontPage, "include/singular/front_page"), mk(2, TemplateSinglePost, "include/singular/post"), false},
 		{mk(1, Template404, "include/404"), mk(2, Template404, "include/general"), true},
 		{mk(1, TemplateHeader, "include/404"), mk(2, TemplateHeader, "include/singular"), false},
-		{mk(1, TemplateSingle, "include/singular/product"), mk(2, TemplateSingle, "include/singular"), false},
+		{mk(1, TemplateSingle, "include/singular/product"), mk(2, TemplateSingle, "include/singular"), true},
+		// A store type and a generic type never render on one view.
+		{mk(1, TemplateSingleProduct, "include/singular/product"), mk(2, TemplateSinglePost, "include/singular"), false},
+		{mk(1, TemplateProductArchive, "include/archive/product_cat"), mk(2, TemplateArchive, "include/archive"), false},
+		{mk(1, TemplateSingleProduct, "include/singular/product"), mk(2, TemplateSingleProduct, "include/singular"), true},
 	}
 	for i, c := range cases {
 		if got := TemplatesConflict(c.a, c.b); got != c.want {
@@ -372,5 +376,81 @@ func checkConditionAgainstPattern(t *testing.T, rule string) {
 func TestConditionPatternAgreement(t *testing.T) {
 	for _, r := range []string{"include/singular/post/in/category/3", "include/archive/type", "include/singular/in", "include/archive/author/5", "include/singular/post/9999999999999999999", "include/archive/home"} {
 		checkConditionAgainstPattern(t, r)
+	}
+}
+
+// Rules naming a post, parent or term match the aliases (Pursae Multi Language translations).
+func TestConditionMatchAliases(t *testing.T) {
+	parse := func(rule string) Condition {
+		c := ParseConditions([]string{rule})
+		if len(c) != 1 {
+			t.Fatalf("parse %q", rule)
+		}
+		return c[0]
+	}
+	single := QueryFacts{View: ViewSingular, PostType: "page", PostID: 40, PostIDs: []int64{12}, ParentID: 41, ParentIDs: []int64{13}}
+	if !parse("include/singular/page/12").Match(single) || !parse("include/singular/page/40").Match(single) || parse("include/singular/page/14").Match(single) {
+		t.Error("entry aliases")
+	}
+	if !parse("include/singular/page/child_of/13").Match(single) || parse("include/singular/page/child_of/12").Match(single) {
+		t.Error("parent aliases")
+	}
+	orphan := QueryFacts{View: ViewSingular, PostType: "page", PostID: 40}
+	if parse("include/singular/page/child_of/40").Match(orphan) {
+		t.Error("child_of matched a page without parent")
+	}
+	arch := QueryFacts{View: ViewArchive, Archive: ArchiveTerm, Taxonomy: "category", TermID: 9, TermIDs: []int64{5}}
+	if !parse("include/archive/category/5").Match(arch) || !parse("include/archive/category/9").Match(arch) || parse("include/archive/category/6").Match(arch) {
+		t.Error("term aliases")
+	}
+}
+
+// The store gate: generic main types never on store views, store types only on their kinds;
+// headers and footers everywhere.
+func TestStoreGate(t *testing.T) {
+	product := QueryFacts{View: ViewSingular, PostType: "product", PostID: 3, Store: true, StoreKind: StoreKindProduct}
+	shop := QueryFacts{View: ViewArchive, Archive: ArchivePostType, PostType: "product", Store: true, StoreKind: StoreKindShop}
+	cat := QueryFacts{View: ViewArchive, Archive: ArchiveTerm, Taxonomy: "product_cat", TermID: 4, Store: true, StoreKind: StoreKindProductCat}
+	cart := QueryFacts{View: ViewSingular, PostType: "page", PostID: 9, Store: true, StoreKind: StoreKindCart}
+	page := QueryFacts{View: ViewSingular, PostType: "page", PostID: 9}
+	cands := []TemplateCandidate{
+		{ID: 1, Type: TemplateHeader, Conditions: ParseConditions([]string{"include/general"})},
+		{ID: 2, Type: TemplateSinglePage, Conditions: ParseConditions([]string{"include/general"})},
+		{ID: 3, Type: TemplateArchive, Conditions: ParseConditions([]string{"include/general"})},
+		{ID: 4, Type: TemplateSingle, Conditions: ParseConditions([]string{"include/singular/product"})},
+		{ID: 5, Type: TemplateSingleProduct, Conditions: ParseConditions([]string{"include/general"})},
+		{ID: 6, Type: TemplateProductArchive, Conditions: ParseConditions(DefaultConditions[TemplateProductArchive])},
+	}
+	id := func(loc string, q QueryFacts) int64 {
+		if i := PickTemplate(loc, cands, q); i >= 0 {
+			return cands[i].ID
+		}
+		return 0
+	}
+	for name, c := range map[string]struct {
+		q          QueryFacts
+		main, head int64
+	}{
+		"product": {product, 5, 1}, "shop": {shop, 6, 1}, "cat": {cat, 6, 1}, "cart": {cart, 0, 1}, "page": {page, 2, 1},
+	} {
+		if got := id(LocationMain, c.q); got != c.main {
+			t.Errorf("%s: main = %d, want %d", name, got, c.main)
+		}
+		if got := id(LocationHeader, c.q); got != c.head {
+			t.Errorf("%s: header = %d, want %d", name, got, c.head)
+		}
+	}
+	// A store type off the store: never, even with include/general.
+	if StoreGateOK(TemplateSingleProduct, page) || !StoreGateOK(TemplateHeader, cart) || StoreGateOK(TemplateSinglePost, product) {
+		t.Error("StoreGateOK")
+	}
+	// The product tag archive is in the default rules; an attribute archive needs its own rule.
+	tag := QueryFacts{View: ViewArchive, Archive: ArchiveTerm, Taxonomy: "product_tag", TermID: 8, Store: true, StoreKind: StoreKindProductTag}
+	if id(LocationMain, tag) != 6 {
+		t.Error("product_tag")
+	}
+	attr := QueryFacts{View: ViewArchive, Archive: ArchiveTerm, Taxonomy: "pa_color", TermID: 8, Store: true, StoreKind: StoreKindProductAttr}
+	if id(LocationMain, attr) != 0 {
+		t.Error("product_attr without a rule")
 	}
 }

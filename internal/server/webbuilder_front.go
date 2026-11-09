@@ -81,7 +81,20 @@ func (s *Server) wbFrontFor(c *gin.Context, q *siteQuery, p *store.Post) *wbFron
 	return fp
 }
 
+// wbStoreView reports whether q is a Pursae Commerce store view other than a single product: the
+// shop, a product taxonomy archive, the cart, the checkout or the account page. Those always get
+// the store markup (or a store main template), never a builder doc of q.Post: on a term archive
+// q.Post is synthetic and its id is a term id, and a builder snapshot of the shop, cart, checkout
+// or account page would replace the store itself. A single product's synthetic id is the real
+// product id, so a product designed in the builder keeps its doc.
+func wbStoreView(q *siteQuery) bool {
+	return q != nil && q.Store != "" && q.Store != webbuilder.StoreKindProduct
+}
+
 func (s *Server) wbFrontDecide(c *gin.Context, q *siteQuery, p *store.Post) *wbFrontPage {
+	if wbStoreView(q) && !s.wbStorePageDoc(c, q, p) {
+		return nil
+	}
 	// Pages and posts, plus any type the builder is enabled for (a product, an ACF-Go type): the
 	// builder publishes those too, so their singular view must show the snapshot.
 	if (p.Type != "page" && p.Type != "post" && !s.wbEnabledType(p.Type)) || p.Status == "trash" {
@@ -110,6 +123,30 @@ func (s *Server) wbFrontDecide(c *gin.Context, q *siteQuery, p *store.Post) *wbF
 		}
 	}
 	return fp
+}
+
+// wbStorePageDoc: the Cart or Checkout page (q.Post is the real page there) keeps its builder doc
+// when the doc shows the matching store widget (shop-cart-page / shop-checkout-page), so the page
+// can be designed around the cart or the checkout form without losing it.
+func (s *Server) wbStorePageDoc(c *gin.Context, q *siteQuery, p *store.Post) bool {
+	var slot webbuilder.SlotName
+	switch q.Store {
+	case webbuilder.StoreKindCart:
+		slot = webbuilder.SlotShopCartPage
+	case webbuilder.StoreKindCheckout:
+		slot = webbuilder.SlotShopCheckoutPage
+	default:
+		return false
+	}
+	if q.Post == nil || p.ID != q.Post.ID || p.Type != "page" || p.Meta["_goo_synthetic"] != nil || !s.gooPageIs(c.Request.Context(), p.ID, q.Store) {
+		return false
+	}
+	doc, err := s.store.WebBuilder().Doc(c.Request.Context(), p.ID)
+	if err != nil || doc.Detached || strings.TrimSpace(doc.HTML) == "" {
+		return false
+	}
+	prog, err := wbPrograms.Compile(doc.PostID, doc.Rev, doc.HTML)
+	return err == nil && prog.Uses.Has(slot)
 }
 
 // wbContent is theContent's hook: the snapshot is the content of the main query's singular post
@@ -164,7 +201,14 @@ func (s *Server) wbRenderPage(c *gin.Context, v *siteView, status int) bool {
 	}
 	filled := s.wbFill(c, v, fp.doc, true)
 	wbAddCacheTags(c, false, filled.loops)
-	out := s.wbCanvas(c, v, fp, s.pllUC(c, filled.html, v.Q.Post.ID)) // Multi Language user content (golylang_uc.go)
+	if filled.catalog {
+		wbAddTags(c, "goo:shop")
+	}
+	body := s.pllUC(c, filled.html, v.Q.Post.ID) // Multi Language user content (golylang_uc.go)
+	if fv := gooViewFrom(c); fv != nil && fv.Kind == webbuilder.StoreKindProduct && fv.Product != nil && v.Q.Store == webbuilder.StoreKindProduct {
+		body = s.wbProductWrap(c, fv.Product, body) // a product designed in the builder
+	}
+	out := s.wbCanvas(c, v, fp, body)
 	c.Data(status, "text/html; charset=UTF-8", s.asStripVersion(c, s.golylangHTML(c, s.gooikeFilterPage(c, []byte(out)))))
 	return true
 }

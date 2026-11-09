@@ -166,9 +166,6 @@ type wbDraft struct {
 // wbDocumentFor is the document of p as user u sees it: the stored doc and its rev, u's own draft
 // when it is newer, and another user's live edit lock.
 func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User) (*wbDocument, error) {
-	postPage := wbPostPage(p)
-	d := &wbDocument{PostID: p.ID, PostType: p.Type, Status: p.Status, Page: postPage,
-		Modified: p.ModifiedAt.UTC().Format(time.RFC3339)}
 	wb := s.store.WebBuilder()
 	row, err := wb.Doc(ctx, p.ID)
 	switch {
@@ -176,13 +173,23 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 		row = nil
 	case err != nil:
 		return nil, err
-	default:
+	}
+	prevDesc := ""
+	if row != nil {
+		prev, _ := wbPage(row.Page)
+		prevDesc = prev.Description
+	}
+	postPage := wbPostPage(p, prevDesc)
+	d := &wbDocument{PostID: p.ID, PostType: p.Type, Status: p.Status, Page: postPage,
+		Modified: p.ModifiedAt.UTC().Format(time.RFC3339)}
+	if row != nil {
 		d.Rev, d.Doc, d.Detached, d.Renderer = row.Rev, row.Doc, row.Detached, row.Renderer
 		d.DocModified = row.UpdatedAt.UTC().Format(time.RFC3339) // seconds, like draft.savedAt
 		// The post owns title, slug, description and noindex: a rename through /wp/v2/pages (which
 		// does not detach) must not be reverted by the next builder publish.
 		d.Page = wbPageOverlay(row.Page, postPage)
 	}
+	var draftLoaded *wbPageLoaded
 	if u != nil {
 		dr, err := wb.Draft(ctx, p.ID, u.ID)
 		switch {
@@ -194,21 +201,71 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 			if dr.UpdatedAt.Before(p.ModifiedAt) {
 				// The post changed after the draft was saved: its own fields win.
 				page = wbPageOverlay(page, postPage)
+			} else if l, ok := wbPageLoadedOf(page); ok && l.Rev == dr.BaseRev {
+				// The draft keeps what its own session loaded (autosave stores it): a Pursae SEO
+				// edit made since is not mistaken for a builder change of the draft's old values.
+				draftLoaded = &l
 			}
 			d.Draft = &wbDraft{Doc: dr.Doc, Page: page, BaseRev: dr.BaseRev,
 				SavedAt: dr.UpdatedAt.UTC().Format(time.RFC3339)}
 		}
 		d.Lock = s.wbLockHolder(ctx, p, u.ID)
 	}
+	// What this session loads of the post-owned fields Pursae SEO shares, echoed back on publish
+	// (wbPageChanged): a later Pursae SEO edit is not overwritten by the unchanged loaded value.
+	var ps webbuilder.PageSettings
+	_ = json.Unmarshal(postPage, &ps)
+	loaded := wbPageLoaded{Rev: d.Rev, Description: ps.Description, Indexable: ps.Indexable}
+	d.Page = wbPageStamp(d.Page, loaded)
+	if d.Draft != nil {
+		if draftLoaded != nil {
+			loaded = *draftLoaded
+		}
+		d.Draft.Page = wbPageStamp(d.Draft.Page, loaded)
+	}
 	return d, nil
 }
 
-// wbPostPage is the PageSettings of a post without a builder doc: title, slug, the excerpt (or the
-// Pursae SEO description) and the Pursae SEO noindex flag.
-func wbPostPage(p *store.Post) json.RawMessage {
-	desc := p.Excerpt
-	if desc == "" {
-		desc = seogoMeta(p.Meta, "description")
+// wbPageLoadedOf is the _loaded key of a page object, if it has a valid one.
+func wbPageLoadedOf(raw json.RawMessage) (wbPageLoaded, bool) {
+	var obj map[string]json.RawMessage
+	var l wbPageLoaded
+	if json.Unmarshal(raw, &obj) != nil {
+		return l, false
+	}
+	v, ok := obj[wbPageLoadedKey]
+	if !ok || json.Unmarshal(v, &l) != nil {
+		return l, false
+	}
+	return l, true
+}
+
+// wbPageStamp is the page object raw with its _loaded key set to l.
+func wbPageStamp(raw json.RawMessage, l wbPageLoaded) json.RawMessage {
+	m := map[string]any{}
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &m)
+	}
+	if m == nil {
+		m = map[string]any{}
+	}
+	m[wbPageLoadedKey] = l
+	b, err := json.Marshal(m)
+	if err != nil {
+		return raw
+	}
+	return b
+}
+
+// wbPostPage is the PageSettings the post owns: title, slug, the description and the Pursae SEO
+// noindex flag. A builder publish writes the description to both the excerpt and the Pursae SEO
+// description; prevDesc is that last published value ("" without a doc). The description is the
+// one changed outside the builder since: the Pursae SEO description when it differs from prevDesc
+// (Pursae SEO owns the field), else the excerpt (a core edit), else the Pursae SEO description.
+func wbPostPage(p *store.Post, prevDesc string) json.RawMessage {
+	desc := seogoMeta(p.Meta, "description")
+	if (desc == "" || desc == prevDesc) && p.Excerpt != "" {
+		desc = p.Excerpt
 	}
 	b, _ := json.Marshal(webbuilder.PageSettings{Title: p.Title, Slug: p.Slug, Description: desc,
 		Indexable: seogoMeta(p.Meta, "noindex") != "noindex"})

@@ -39,8 +39,9 @@ When the site already has published templates of the same types, the dialog asks
 Your posts, pages, categories, users and settings are never touched. Importing the same theme again is
 idempotent: it finds its own templates and pages (post meta `_wb_theme`, `_wb_theme_key`) and updates them
 instead of making copies; images already in the Media Library are reused. Shop pages of Pursae Commerce
-(product, cart, checkout) still use the store's own views; the theme designs the header, footer and the
-pages around them.
+(product, cart, checkout) use the store's own views unless a Single Product or Product Archive template
+exists (the library themes do not ship one yet); the theme designs the header, footer and the pages around
+them.
 
 Needs `edit_theme_options`, plus `edit_pages` and `publish_pages` for the demo pages.
 
