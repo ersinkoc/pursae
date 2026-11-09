@@ -214,7 +214,7 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 		}
 		// Application Passwords skip the second factor: they are the way REST clients sign in.
 		if s.checkAppPassword(c, u, pass) {
-			s.auth.DropAttempt(c, attemptID) // not a failure
+			s.auth.DropAttempt(c, attemptID)         // not a failure
 			return scopedUser(u, restScopes(c)), nil // scopes only narrow the user's capabilities
 		}
 		s.restLoginFailed(c, user, u, "Wrong application password (REST API).", attemptID)
