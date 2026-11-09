@@ -121,7 +121,11 @@ func Restore(exe string, cause error) {
 		return
 	}
 	st.Status = "rolled_back"
-	st.Message = fmt.Sprintf("Pursae %s could not be started (%v), so the site stayed on %s.", st.To, cause, st.From)
+	if Stopped() { // the server was already shut down: the process exits and restarts on the old binary
+		st.Message = fmt.Sprintf("Pursae %s could not be started (%v), so the site restarted on %s.", st.To, cause, st.From)
+	} else {
+		st.Message = fmt.Sprintf("Pursae %s could not be started (%v), so the site stayed on %s.", st.To, cause, st.From)
+	}
 	st.At = time.Now().UTC()
 	_ = write(exe, st)
 }

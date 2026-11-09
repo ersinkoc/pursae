@@ -23,6 +23,7 @@ var (
 	listener   net.Listener
 	drain      func(context.Context) error
 	restarting atomic.Bool
+	stopped    atomic.Bool
 )
 
 // Listen returns the socket inherited from the previous binary, or a new one on addr.
@@ -53,6 +54,11 @@ func Serving(ln net.Listener, shutdown func(context.Context) error) {
 // then waits instead of exiting.
 func Restarting() bool { return restarting.Load() }
 
+// Stopped reports whether a Restart shut the HTTP server down. It stays true when the exec then
+// failed: the server cannot serve again, so the caller must exit and let the supervisor restart
+// the process (main is parked waiting for an exec that never happened).
+func Stopped() bool { return stopped.Load() }
+
 // Restart re-executes exe with the listening socket inherited (when Serving registered one): it
 // drains requests in flight for up to drainFor, then execs. It returns only on error.
 func Restart(exe string, drainFor time.Duration) error {
@@ -70,6 +76,7 @@ func Restart(exe string, drainFor time.Duration) error {
 					ctx, cancel := context.WithTimeout(context.Background(), drainFor)
 					_ = stop(ctx)
 					cancel()
+					stopped.Store(true)
 				}
 			}
 		}

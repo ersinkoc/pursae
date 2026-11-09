@@ -203,11 +203,17 @@ var unstoredHeaders = []string{
 	HeaderTags, HeaderTTL, HeaderControl, HeaderStatus,
 }
 
+// requestIDHeader is server.HeaderRequestID (the cache package cannot import server). It is set per request
+// by the outer ops handler before the cache runs, so it is neither stored nor replayed on a hit; unlike
+// unstoredHeaders it is not deleted from the live response either.
+const requestIDHeader = "X-Request-Id"
+
 func filterHeader(h http.Header) http.Header {
 	out := h.Clone()
 	for _, k := range unstoredHeaders {
 		out.Del(k)
 	}
+	out.Del(requestIDHeader)
 	return out
 }
 
