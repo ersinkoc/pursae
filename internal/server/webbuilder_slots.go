@@ -891,10 +891,10 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	prog, err := wbPrograms.Compile(d.PostID, d.Rev, d.HTML)
 	if err != nil {
 		log.Printf("web builder: compile %d: %v", d.PostID, err)
-		return wbFilled{html: s.filterContentTags(ctx, d.HTML)}
+		return wbFilled{html: s.wbSearchForms(ctx, s.filterContentTags(ctx, d.HTML))}
 	}
 	if static, ok := prog.Static(); ok {
-		return wbFilled{html: s.filterContentTags(ctx, static)}
+		return wbFilled{html: s.wbSearchForms(ctx, s.filterContentTags(ctx, static))}
 	}
 	env := newWBSlotEnv(s, c, v, d, prog, own)
 	shop := s.gooOn() && wbProgramShop(prog)
@@ -905,5 +905,5 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	if err != nil {
 		log.Printf("web builder: fill %d: %v", d.PostID, err)
 	}
-	return wbFilled{html: s.filterContentTags(ctx, out), loops: env.loops, shop: shop, catalog: env.shop != nil && env.shop.catalog}
+	return wbFilled{html: s.wbSearchForms(ctx, s.filterContentTags(ctx, out)), loops: env.loops, shop: shop, catalog: env.shop != nil && env.shop.catalog}
 }

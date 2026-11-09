@@ -202,6 +202,16 @@ func TestWBShopWidgetsOnPage(t *testing.T) {
 	// Cart page slot off the cart page, product slots without a product: empty.
 	wbtfWant(t, "page", out, `data-wb-item="c5"></div>`, `data-wb-item="c6"></h2>`)
 
+	// Another theme (the canvas builds its head after the fill): the store assets still come along.
+	if err := srv.switchTheme(ctx, defaultTheme); err != nil {
+		t.Fatal(err)
+	}
+	_, out, _ = get(t, v, base+"/store-front/?canvas=1")
+	wbtfWant(t, "canvas", out, `<main id="wb-main">`, `<ul class="products columns-2">`, `goocommerce.css`, `goo-add-to-cart-js`)
+	if err := srv.switchTheme(ctx, webbuilder.HelloPursaeTheme); err != nil {
+		t.Fatal(err)
+	}
+
 	// Commerce off: every store slot is empty and the sample has no shop.
 	if err := srv.settings.Set(ctx, map[string]any{gooSetting: false}); err != nil {
 		t.Fatal(err)
@@ -283,7 +293,8 @@ func TestWBShopTemplateCreateGate(t *testing.T) {
 	}
 }
 
-// The site link follows the request language; the language switcher lists the languages.
+// The site link and the search form follow the request language; the language switcher lists the
+// languages.
 func TestWBLanguageSwitcherWidget(t *testing.T) {
 	srv, base, admin := wbtfStart(t)
 	golylangToggle(t, admin, base, "activate")
@@ -292,16 +303,18 @@ func TestWBLanguageSwitcherWidget(t *testing.T) {
 	pllCreatePost(t, admin, base, "?lang=en", "Hello there")
 	pllCreatePost(t, admin, base, "?lang=fr", "Bonjour")
 	wbtfTemplate(t, srv, webbuilder.TemplateHeader, "Header", []string{"include/general"},
-		`<header><a class="home" data-wb-slot="site.url">Home</a><nav class="langs" data-wb-slot="site.languages" data-wb-item="ls"></nav>LANG-HDR</header>`,
+		`<header><a class="home" data-wb-slot="site.url">Home</a><nav class="langs" data-wb-slot="site.languages" data-wb-item="ls"></nav>LANG-HDR`+
+			`<form data-wb-search="" role="search" method="get" action="`+base+`/"><input type="search" name="s"/><button type="submit">Go</button></form></header>`,
 		wbShopLayout(`{"id":"ls","title":"language-switcher","text":"","dyn":{"names":true}}`), "", nil)
 	code, body := wbtfGet(t, base+"/fr/")
 	if code != http.StatusOK {
 		t.Fatalf("/fr/: %d", code)
 	}
-	wbtfWant(t, "fr home", body, "LANG-HDR", `href="`+base+`/fr/">Home</a>`, `<ul class="wb-lang-switcher">`, `hreflang="fr-FR"`, `hreflang="en-US"`)
+	wbtfWant(t, "fr home", body, "LANG-HDR", `href="`+base+`/fr/">Home</a>`, `<ul class="wb-lang-switcher">`, `hreflang="fr-FR"`, `hreflang="en-US"`,
+		`<form data-wb-search="" role="search" method="get" action="`+base+`/fr/">`)
 	// Multi Language off: no switcher, the plain home link.
 	golylangToggle(t, admin, base, "deactivate")
 	_, body = wbtfGet(t, base+"/")
-	wbtfWant(t, "off", body, `href="`+base+`/">Home</a>`)
+	wbtfWant(t, "off", body, `href="`+base+`/">Home</a>`, `method="get" action="`+base+`/">`)
 	wbtfBad(t, "off", body, "wb-lang-switcher")
 }

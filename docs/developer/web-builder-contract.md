@@ -1000,7 +1000,10 @@ The menu binding is **not** `data-wb-menu`: that name is the runtime's disclosur
 The search form is the one sanitizer exception: a `form[data-wb-search]` is kept with
 `method="get"`, `action` equal to the site's home URL (with a trailing slash) and only
 `input[type=search][name=s]` plus a submit button; any other form still needs the builder form
-action of §8.2.
+action of §8.2. At render time the server sets that `action` to the home URL of the request
+language (Pursae Multi Language, the same action core search forms use); in the query language
+mode (`/?lang=fr`) the language goes into a hidden `lang` input, so a search started on a
+translated page stays in that language.
 
 Slots:
 
