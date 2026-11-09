@@ -36,6 +36,7 @@ const (
 	DefaultPublicTTL    = 604800 * time.Second
 	DefaultFrontPageTTL = 604800 * time.Second
 	DefaultNotFoundTTL  = 3600 * time.Second
+	searchTTL           = 3600 * time.Second // upper bound for search result pages (?s=)
 	DefaultLoginCookie  = "wpgo_logged_in"
 	DefaultMaxEntries   = 10000
 	DefaultMaxBytes     = 256 << 20
