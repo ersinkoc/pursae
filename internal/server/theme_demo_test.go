@@ -352,7 +352,7 @@ func TestThemeLibraryAndDemoContent(t *testing.T) {
 		int64(srv.settings.Int("page_for_posts")) != page("blog") || srv.settings.String("blogname") != "Fixture Journal" || srv.settings.Int("posts_per_page") != 5 {
 		t.Fatal("reading settings and options not set")
 	}
-	if n := count(`SELECT count(*) FROM menus m JOIN menu_items i ON i.menu_id = m.id WHERE m.location = 'primary' AND m.name = 'Main menu'`); n != 6 {
+	if n := count(`SELECT count(*) FROM menus m JOIN menu_locations l ON l.menu_id = m.id JOIN menu_items i ON i.menu_id = m.id WHERE l.location = 'primary' AND m.name = 'Main menu'`); n != 6 {
 		t.Fatalf("menu items %d", n)
 	}
 	if n := count(`SELECT count(*) FROM menu_items WHERE label = 'Contact' AND parent_id IS NOT NULL`); n != 1 {

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"slices"
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
@@ -11,12 +12,18 @@ import (
 
 // Menu is a navigation menu (a nav_menu term in WordPress).
 type Menu struct {
-	ID       int64
-	Slug     string
-	Name     string
-	Location string
-	AutoAdd  bool
-	Count    int
+	ID   int64
+	Slug string
+	Name string
+	// Locations are the theme locations the menu is assigned to, sorted (a menu may serve several).
+	Locations []string
+	AutoAdd   bool
+	Count     int
+}
+
+// HasLocation reports whether the menu is assigned to the theme location loc.
+func (m *Menu) HasLocation(loc string) bool {
+	return slices.Contains(m.Locations, loc)
 }
 
 // EditItem is a menu item as the Menus screen edits it (wp_setup_nav_menu_item()).
@@ -30,7 +37,8 @@ type EditItem struct {
 
 // Menus lists all menus by name.
 func (s *Store) Menus(ctx context.Context) ([]*Menu, error) {
-	rows, err := s.Pool.Query(ctx, `SELECT m.id, m.slug, m.name, coalesce(m.location,''), m.auto_add,
+	rows, err := s.Pool.Query(ctx, `SELECT m.id, m.slug, m.name,
+		coalesce((SELECT array_agg(l.location ORDER BY l.location) FROM menu_locations l WHERE l.menu_id = m.id), '{}'), m.auto_add,
 		(SELECT count(*) FROM menu_items i WHERE i.menu_id = m.id AND i.status = 'publish') FROM menus m ORDER BY lower(m.name), m.id`)
 	if err != nil {
 		return nil, err
@@ -39,7 +47,7 @@ func (s *Store) Menus(ctx context.Context) ([]*Menu, error) {
 	var out []*Menu
 	for rows.Next() {
 		m := &Menu{}
-		if err := rows.Scan(&m.ID, &m.Slug, &m.Name, &m.Location, &m.AutoAdd, &m.Count); err != nil {
+		if err := rows.Scan(&m.ID, &m.Slug, &m.Name, &m.Locations, &m.AutoAdd, &m.Count); err != nil {
 			return nil, err
 		}
 		out = append(out, m)
@@ -79,15 +87,18 @@ func (s *Store) DeleteMenu(ctx context.Context, id int64) error {
 	return err
 }
 
-// SetMenuLocations assigns theme locations: location -> menu id (0 unassigns).
+// SetMenuLocations assigns theme locations: location -> menu id (0 unassigns). Each location holds one
+// menu; one menu may hold several locations (nav_menu_locations).
 func (s *Store) SetMenuLocations(ctx context.Context, locs map[string]int64) error {
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
 		for loc, id := range locs {
-			if _, err := tx.Exec(ctx, `UPDATE menus SET location = NULL WHERE location = $1`, loc); err != nil {
+			// An id that names no menu leaves the location unassigned, like 0.
+			if _, err := tx.Exec(ctx, `DELETE FROM menu_locations WHERE location = $1`, loc); err != nil {
 				return err
 			}
 			if id > 0 {
-				if _, err := tx.Exec(ctx, `UPDATE menus SET location = $2 WHERE id = $1`, id, loc); err != nil {
+				if _, err := tx.Exec(ctx, `INSERT INTO menu_locations (location, menu_id)
+					SELECT $1, id FROM menus WHERE id = $2`, loc, id); err != nil {
 					return err
 				}
 			}

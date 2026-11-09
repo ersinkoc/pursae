@@ -214,6 +214,36 @@ func TestMenusREST(t *testing.T) {
 	if code, m, _ := rest("POST", "/wp/v2/menus/"+itoa64(menuID), map[string]any{"locations": []string{}}); code != http.StatusOK || len(m["locations"].([]any)) != 0 {
 		t.Errorf("unassign through menu: %d %v", code, m)
 	}
+	// One menu can hold several locations; every one of them renders it.
+	if len(theme.MenuLocations) > 1 {
+		second := theme.MenuLocations[1]
+		for range 3 { // map order used to decide which location survived
+			code, m, _ := rest("POST", "/wp/v2/menus/"+itoa64(menuID), map[string]any{"locations": []string{first.Slug, second.Slug}})
+			if got, _ := m["locations"].([]any); code != http.StatusOK || len(got) != 2 {
+				t.Fatalf("two locations through menu: %d %v", code, m)
+			}
+			for _, l := range []string{first.Slug, second.Slug} {
+				if items, err := srv.store.MenuAt(context.Background(), l); err != nil || len(items) == 0 {
+					t.Errorf("MenuAt(%s) = %v, %v", l, items, err)
+				}
+			}
+		}
+		_, all, _ := rest("GET", "/wp/v2/menu-locations", nil)
+		for _, l := range []string{first.Slug, second.Slug} {
+			if all[l].(map[string]any)["menu"] != float64(menuID) {
+				t.Errorf("menu-locations %s = %v", l, all[l])
+			}
+		}
+		if code, m, _ := rest("POST", "/wp/v2/menus/"+itoa64(menuID), map[string]any{"locations": []string{second.Slug}}); code != http.StatusOK || len(m["locations"].([]any)) != 1 {
+			t.Errorf("drop one location: %d %v", code, m)
+		}
+		if items, _ := srv.store.MenuAt(context.Background(), first.Slug); len(items) != 0 {
+			t.Errorf("dropped location still renders the menu: %v", items)
+		}
+		rest("POST", "/wp/v2/menus/"+itoa64(menuID), map[string]any{"locations": []string{}})
+	} else {
+		t.Error("active theme has fewer than two menu locations")
+	}
 	if code, body, _ := rest("POST", "/wp/v2/menus/"+itoa64(menuID), map[string]any{"locations": []string{"no-such-location"}}); code != http.StatusBadRequest || body["code"] != "invalid_menu_location" {
 		t.Errorf("bad location: %d %v", code, body)
 	}

@@ -144,7 +144,8 @@ func (s *Server) profile(c *gin.Context) {
 		want, _ := rec["hash"].(string)
 		ne, _ := rec["newemail"].(string)
 		if want != "" && ne != "" && subtle.ConstantTimeCompare([]byte(want), []byte(hash)) == 1 {
-			if _, _, err := s.store.LoginOrEmailTaken(c, "", ne); err == nil {
+			// The address was free when the change was requested; someone may have registered it since.
+			if _, taken, err := s.store.LoginOrEmailTaken(c, "", ne); err == nil && (!taken || strings.EqualFold(ne, u.Email)) {
 				u.Email = ne
 				if err := s.store.UpdateUserProfile(c, u); err == nil {
 					_ = s.setUserMeta(c, u, "_new_email", nil)

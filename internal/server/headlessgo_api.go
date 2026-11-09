@@ -1202,10 +1202,10 @@ func (s *Server) hgWP(c *gin.Context, a *hgAuth, segs []string, method string) {
 	}
 	brief := func(m *store.Menu) map[string]any {
 		var loc any
-		if m.Location != "" {
-			loc = m.Location
+		if len(m.Locations) > 0 {
+			loc = m.Locations[0]
 		}
-		return map[string]any{"id": m.ID, "name": m.Name, "slug": m.Slug, "location": loc, "count": m.Count}
+		return map[string]any{"id": m.ID, "name": m.Name, "slug": m.Slug, "location": loc, "locations": m.Locations, "count": m.Count}
 	}
 	if len(segs) == 1 {
 		out := []any{}
@@ -1222,9 +1222,9 @@ func (s *Server) hgWP(c *gin.Context, a *hgAuth, segs []string, method string) {
 	key := segs[1]
 	var menu *store.Menu
 	for _, m := range menus {
-		if itoa64(m.ID) == key || m.Location == key || m.Slug == key {
+		if itoa64(m.ID) == key || m.HasLocation(key) || m.Slug == key {
 			menu = m
-			if m.Location == key || itoa64(m.ID) == key {
+			if m.HasLocation(key) || itoa64(m.ID) == key {
 				break
 			}
 		}

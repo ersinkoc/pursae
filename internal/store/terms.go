@@ -168,10 +168,15 @@ func (s *Store) HierarchicalTerms(ctx context.Context, taxonomy string, hideEmpt
 		}
 		children[parent] = append(children[parent], t)
 	}
+	seen := map[int64]bool{}
 	var out []*Term
 	var walk func(parent int64, depth int)
 	walk = func(parent int64, depth int) {
 		for _, t := range children[parent] {
+			if seen[t.ID] {
+				continue
+			}
+			seen[t.ID] = true
 			t.Depth = depth
 			if !hideEmpty || t.Count > 0 {
 				out = append(out, t)
@@ -180,6 +185,14 @@ func (s *Store) HierarchicalTerms(ctx context.Context, taxonomy string, hideEmpt
 		}
 	}
 	walk(0, 0)
+	// Terms caught in a parent loop (stored before UpdateTerm broke loops) are never reached from the
+	// top: list them at the top level so they stay visible and editable.
+	for _, t := range all {
+		if !seen[t.ID] {
+			children[-1] = []*Term{t}
+			walk(-1, 0)
+		}
+	}
 	return out, nil
 }
 
@@ -212,7 +225,28 @@ func (s *Store) UpdateTerm(ctx context.Context, t *Term) error {
 		return err
 	}
 	t.Slug = slug
-	t.ParentID = checkHierarchyLoop(ctx, s.Pool, "terms", t.ID, t.ParentID) // wp_update_term_parent
+	if t.ParentID == t.ID {
+		t.ParentID = 0
+	}
+	if t.ParentID != 0 {
+		// wp_check_term_hierarchy_for_loops(): a parent that is the term's own descendant would close a
+		// loop (and hide both terms from every tree), so the term goes back to the top level. A parent
+		// that does not exist or belongs to another taxonomy is dropped too. The depth bound keeps a
+		// loop already in the data from spinning the walk.
+		var parentOK, loop bool
+		if err := s.Pool.QueryRow(ctx, `WITH RECURSIVE up(id, parent_id, taxonomy, depth) AS (
+				SELECT id, parent_id, taxonomy, 0 FROM terms WHERE id = $1
+				UNION ALL
+				SELECT p.id, p.parent_id, p.taxonomy, up.depth + 1 FROM terms p JOIN up ON p.id = up.parent_id
+				WHERE up.depth < 1000)
+			SELECT EXISTS(SELECT 1 FROM up WHERE depth = 0 AND taxonomy = $3), EXISTS(SELECT 1 FROM up WHERE id = $2)`,
+			t.ParentID, t.ID, t.Taxonomy).Scan(&parentOK, &loop); err != nil {
+			return err
+		}
+		if !parentOK || loop {
+			t.ParentID = 0
+		}
+	}
 	meta, _ := json.Marshal(orEmpty(t.Meta))
 	_, err = s.Pool.Exec(ctx, `UPDATE terms SET parent_id=$2, slug=$3, name=$4, description=$5, meta=$6 WHERE id=$1`,
 		t.ID, nullable(t.ParentID), t.Slug, t.Name, t.Description, meta)

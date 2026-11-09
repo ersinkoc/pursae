@@ -48,9 +48,9 @@ func (s *Server) restMenu(c *gin.Context, m *store.Menu) map[string]any {
 	home := s.links(c).Home
 	locations := []string{}
 	locLinks := []map[string]any{}
-	if m.Location != "" {
-		locations = append(locations, m.Location)
-		locLinks = append(locLinks, map[string]any{"embeddable": true, "href": home + "/wp-json/wp/v2/menu-locations/" + m.Location})
+	for _, l := range m.Locations {
+		locations = append(locations, l)
+		locLinks = append(locLinks, map[string]any{"embeddable": true, "href": home + "/wp-json/wp/v2/menu-locations/" + l})
 	}
 	extra := map[string]any{"about": []map[string]any{{"href": home + "/wp-json/wp/v2/taxonomies/nav_menu"}}}
 	if len(locLinks) > 0 {
@@ -202,8 +202,12 @@ func (api *restAPI) assignMenuLocations(c *gin.Context, r *restRequest, menuID i
 		locs[l] = menuID
 	}
 	// Locations the menu held before and that are no longer listed are unassigned.
-	if m := s.menuByID(c, menuID); m != nil && m.Location != "" && !menuHas(want, m.Location) {
-		locs[m.Location] = 0
+	if m := s.menuByID(c, menuID); m != nil {
+		for _, l := range m.Locations {
+			if !menuHas(want, l) {
+				locs[l] = 0
+			}
+		}
 	}
 	_ = s.store.SetMenuLocations(c, locs)
 	return true
@@ -650,8 +654,8 @@ func (api *restAPI) menuLocations(c *gin.Context, r *restRequest) {
 	assigned := map[string]int64{}
 	menus, _ := s.store.Menus(c)
 	for _, m := range menus {
-		if m.Location != "" {
-			assigned[m.Location] = m.ID
+		for _, l := range m.Locations {
+			assigned[l] = m.ID
 		}
 	}
 	mk := func(l MenuLocation) map[string]any {
