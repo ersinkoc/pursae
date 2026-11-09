@@ -60,7 +60,8 @@ end. Classic's `assets/editor-style.css` is a worked example.
 
 Block markup is rendered by the core (`the_content`): static blocks come out as saved, dynamic
 blocks (latest posts, search, archives, categories, synced patterns, shortcode) are rendered in
-Go, and the block library stylesheet is always loaded. Your theme styles the result:
+Go, and the block library stylesheet is loaded (or, with `"block_styles": true` in theme.json,
+only the styles of the blocks on the page). Your theme styles the result:
 `.wp-block-*` classes, `.alignwide`, `.has-*-color`, `.wp-block-image figcaption`, and so on.
 
 ## Patterns and templates

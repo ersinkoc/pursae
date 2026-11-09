@@ -99,6 +99,7 @@ func (s *Server) wpFooter(c *gin.Context, q *siteQuery, lb *links.Builder, admin
 	sb.WriteString(s.gooikeFooter(c))                         // Gooike: banner, preferences, footer scripts (gooike_front.go)
 	sb.WriteString(s.pixelFooter(c, q))                       // Pursae Pixel: page config and pixelgo.js (pixelgo_front.go)
 	sb.WriteString(s.gooFooter(c, q))                         // Goocommerce: store scripts, store notice (goo_front.go)
+	sb.WriteString(s.pllCookieScript(c))                      // Multi Language: the language cookie behind a page cache (golylang.go)
 	return template.HTML(sb.String())
 }
 

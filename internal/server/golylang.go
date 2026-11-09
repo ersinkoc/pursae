@@ -467,6 +467,8 @@ type pllReq struct {
 	cache  sync.Map
 
 	alternates []pllAlternate // hreflang links of the page (golylangView)
+
+	cookieScript bool // the page sets the language cookie with pllCookieScript (page cache on)
 }
 
 type pllCtxKey struct{}
@@ -696,10 +698,14 @@ func (s *Server) pllFront(c *gin.Context) bool {
 		}
 		lang = def
 	}
-	if ck, _ := c.Cookie(pllCookie); ck != lang.Slug && get {
+	// Polylang with a page cache: a Set-Cookie header would keep every first visit out of the cache,
+	// so the page remembers its language with a script instead (pllCookieScript), printed on every
+	// page so the cached copy is the same for all visitors.
+	cookieScript := get && s.pageCacheOn()
+	if ck, _ := c.Cookie(pllCookie); ck != lang.Slug && get && !cookieScript {
 		s.pllSetCookie(c, lang)
 	}
-	pllSet(c, &pllReq{srv: s, Lang: lang, Filter: true, Front: true, Path: stripped})
+	pllSet(c, &pllReq{srv: s, Lang: lang, Filter: true, Front: true, Path: stripped, cookieScript: cookieScript})
 	return true
 }
 
@@ -709,6 +715,24 @@ func pllSameURL(target string, c *gin.Context) bool {
 		return false
 	}
 	return (u.Host == "" || strings.EqualFold(u.Host, c.Request.Host)) && strings.TrimSuffix(u.Path, "/") == strings.TrimSuffix(c.Request.URL.Path, "/") && u.RawQuery == c.Request.URL.RawQuery
+}
+
+// pageCacheOn reports whether Pursae Cache stores pages.
+func (s *Server) pageCacheOn() bool {
+	pc := s.currentCache()
+	return pc != nil && pc.Config().Enabled
+}
+
+// pllCookieScript is Polylang's cookie script for sites behind a page cache: the language cookie is
+// written in the browser (same name, lifetime, path and SameSite as pllSetCookie), so the page itself
+// sends no Set-Cookie header and stays cacheable.
+func (s *Server) pllCookieScript(c *gin.Context) string {
+	r := pllFrom(c.Request.Context())
+	if r == nil || !r.cookieScript || r.Lang == nil {
+		return ""
+	}
+	return `<script id="pll-cookie-js">(function(){var d=new Date();d.setTime(d.getTime()+31536000000);document.cookie="` +
+		pllCookie + `=` + url.QueryEscape(r.Lang.Slug) + `; expires="+d.toUTCString()+"; path=/; SameSite=Lax"+("https:"===location.protocol?"; secure":"");}());</script>` + "\n"
 }
 
 func (s *Server) pllSetCookie(c *gin.Context, l *pllLanguage) {

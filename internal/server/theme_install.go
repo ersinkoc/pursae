@@ -349,7 +349,15 @@ func (s *Server) packageThemeAsset(c *gin.Context) {
 	if st, err := fs.Stat(sub, file); err != nil || st.IsDir() {
 		return
 	}
-	c.Header("Cache-Control", "no-cache") // files may be edited in the Theme File Editor: revalidate
+	// The theme's styles and scripts are linked with ?ver=<theme version>, and a new version is a new
+	// directory: such a URL never changes, like the core's versioned assets. Files edited in the Theme
+	// File Editor keep the version, and unversioned URLs (fonts and images from url(), the
+	// screenshot) may change under the same URL, so those revalidate (Last-Modified).
+	if v, ok := c.GetQuery("ver"); ok && v == t.Version && !t.Package.isEdited(file) {
+		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+	} else {
+		c.Header("Cache-Control", "no-cache")
+	}
 	http.StripPrefix(t.URI(), http.FileServer(http.FS(sub))).ServeHTTP(c.Writer, c.Request)
 	c.Abort()
 }

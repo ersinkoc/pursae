@@ -36,7 +36,7 @@ translation](#machine-translation) with DeepL, Google or an OpenAI-compatible AP
 | Registered strings (the `polylang_strings` option) | `pll_string_sources` (`original`, `context`, `domain`, `source`, `first_seen`, `last_seen`, `url`); the old option `golylang_strings` is still read and copied into the table | ✅ |
 | Option `polylang` | Option `golylang`, same keys: `force_lang`, `hide_default`, `rewrite`, `redirect_lang`, `browser`, `media_support`, `post_types`, `taxonomies`, `sync`, `domains`, `default_lang`, `nav_menus`, plus Pro `media_duplicate`; Pursae adds `string_capture`, `machine_translation`, `mt_provider`, `mt_key` (sealed with AES-GCM, never shown back), `mt_endpoint`, `mt_model`, `mt_formality` | ✅ |
 | User meta `pll_filter_content` (admin language filter) | Same key in the user's meta | ✅ |
-| Cookie `pll_language`, 1 year, SameSite Lax | Same | ✅ |
+| Cookie `pll_language`, 1 year, SameSite Lax | Same; with Pursae Cache on it is set by an inline script instead of `Set-Cookie` (Polylang's cache mode), so first visits are cached | ✅ |
 | Objects without a language are hidden on the front end; admin offers "You can set them all to the default language." | The notice and the action are the same. An object with no row is treated as the default language instead of hidden, so nothing vanishes before the admin acts. The first language added takes all existing content. | ◐ |
 
 ## Languages > Languages

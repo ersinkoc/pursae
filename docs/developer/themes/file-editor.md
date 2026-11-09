@@ -23,7 +23,9 @@ Assets (`style.css`, `js/…`) saved in the overlay are served with `Cache-Contr
 browsers revalidate and pick up the change.
 
 For a theme package, the overlay directory and the package directory are the same, so edits
-are edits of the installed files.
+are edits of the installed files. An edited asset keeps its `?ver=<version>` URL, which is
+otherwise cached for a year, so the package records it in `.edited-files` and serves it with
+`no-cache` until the package is updated or reinstalled.
 
 ## Editing on disk
 

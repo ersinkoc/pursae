@@ -35,7 +35,7 @@ query so browsers refetch after an update.
 
 | Handle | What |
 |--------|------|
-| `wp-block-library` | the block library stylesheet (`/wp-includes/css/dist/block-library/style.min.css`), printed on every page |
+| `wp-block-library` | the block library stylesheet (`/wp-includes/css/dist/block-library/style.min.css`), printed on every page unless `block_styles` is on (then the used blocks' styles are inlined instead) |
 | `dashicons` | the icon font (loaded with the admin bar) |
 | `jquery` | jQuery from `/wp-includes/js/jquery/` |
 | `comment-reply` | threaded comment replies; the core enqueues it itself on singular pages with threaded comments |
@@ -44,8 +44,10 @@ query so browsers refetch after an update.
 
 1. the theme's `head_top` (bundled themes only: e.g. a no-js class swap script),
 2. `robots`, feed links, the admin-bar styles for logged-in users,
-3. the block library stylesheet and the inline theme/global styles,
-4. **your `styles[]` and head `scripts[]`**, then `css_var` custom properties from the Customizer,
+3. the block library stylesheet and the inline theme/global styles (with `block_styles`: only the
+   styles of the blocks the page uses, inline),
+4. **your `preload_fonts[]` preloads, `styles[]` and head `scripts[]`**, then `css_var` custom
+   properties from the Customizer,
 5. `rel="https://api.w.org/"`, the generator meta, canonical and shortlink,
 6. custom background, site icon, Additional CSS,
 7. plugin stylesheets and head scripts.
@@ -65,11 +67,32 @@ exactly as for WordPress; the core scopes them for you.
 ## Fonts
 
 Put font files under `assets/fonts/` and reference them from your CSS with relative URLs.
-`preload_fonts[]` adds `<link rel="preload" as="font">` for the files Pursae Cache's page
-optimisation considers critical. No external font service is contacted unless you add one.
+`preload_fonts[]` adds `<link rel="preload" as="font" crossorigin>` in `wp_head` on every page for
+the fonts the first screen paints with. The preload URL is the URL the font is served from
+(`assets/fonts/inter.woff2` → `/wp-content/themes/<slug>/fonts/inter.woff2`), which is also what a
+relative `url(fonts/inter.woff2)` in `assets/style.css` resolves to, so the browser reuses the
+preloaded file. No external font service is contacted unless you add one.
+
+## Per-block styles
+
+`"block_styles": true` switches the core's block styles to per-block loading, as Twenty
+Twenty-Five does: the 140 KB render-blocking `block-library/style.min.css` is no longer printed,
+and each page inlines only the styles of the core blocks it contains. List block names instead
+(`"block_styles": ["navigation", "post-title"]`) to leave out blocks your own stylesheet styles
+completely. With it on, also drop `wp-block-library` from your `deps`.
+
+## Browser caching
+
+Your `styles[]` and `scripts[]` are linked with `?ver=<theme version>` and served with
+`Cache-Control: public, max-age=31536000, immutable`; bump `version` when you ship changes.
+Files saved in the Theme File Editor and unversioned URLs (fonts, images from `url()`) are served
+with `no-cache` and revalidate.
 
 ## Pursae Cache
 
 Page optimisation (lazy images, deferred scripts, minified HTML) applies to your output too.
+With "Defer JavaScript" on and its handle list left empty, your `scripts[]` are deferred along
+with the core's safe defaults; only scripts in the body are deferred, so put scripts that can
+wait in the footer (`in_footer`).
 Mark a script that must not be deferred by listing it in Pursae Cache › Page Optimization ›
 exclusions, or inline it.

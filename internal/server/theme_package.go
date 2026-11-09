@@ -54,6 +54,9 @@ type themeManifest struct {
 	Scripts      []themeAsset `json:"scripts"`
 	EditorStyles []string     `json:"editor_styles"`
 	PreloadFonts []string     `json:"preload_fonts"`
+	// BlockStyles switches core's block styles to per-block loading (Theme.BlockStyles): true, or the
+	// list of blocks whose styles the theme's own stylesheet carries ("block_styles": ["navigation"]).
+	BlockStyles themeBlockStyles `json:"block_styles"`
 
 	Palette  []themePaletteColor `json:"palette"`
 	Supports map[string]any      `json:"supports"`
@@ -77,6 +80,28 @@ type themeManifestArea struct {
 type themeManifestLocation struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+// themeBlockStyles is theme.json's block_styles: false/absent (the whole block library, the classic
+// behaviour), true (per-block styles) or an array of block names the theme styles itself (per-block
+// styles minus those blocks).
+type themeBlockStyles struct {
+	On     bool
+	Blocks []string
+}
+
+func (b *themeBlockStyles) UnmarshalJSON(raw []byte) error {
+	var on bool
+	if err := json.Unmarshal(raw, &on); err == nil {
+		*b = themeBlockStyles{On: on}
+		return nil
+	}
+	var list []string
+	if err := json.Unmarshal(raw, &list); err != nil {
+		return errors.New("block_styles must be true, false or an array of block names")
+	}
+	*b = themeBlockStyles{On: true, Blocks: list}
+	return nil
 }
 
 // themeAsset is one wp_enqueue_style() / wp_enqueue_script() call.
@@ -293,6 +318,11 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 	for i, f := range m.PreloadFonts {
 		if !themeAssetPathOK(f) || !strings.HasSuffix(f, ".woff2") {
 			bad("preload_fonts[%d] %q must be a .woff2 file under assets/", i, f)
+		}
+	}
+	for i, n := range m.BlockStyles.Blocks {
+		if !themeSlugRe.MatchString(n) {
+			bad("block_styles[%d] %q must be a core block name without the core/ prefix (\"navigation\", \"post-title\")", i, n)
 		}
 	}
 	for i, p := range m.Palette {
@@ -540,11 +570,65 @@ type themePackage struct {
 	scripts  []themeAsset
 	settings []themeCzSettings // every Customizer setting, in section order
 	spec     *czThemeSpec
+
+	editedMu sync.Mutex
+	edited   map[string]bool // assets changed in the Theme File Editor (themeEditedFile)
+}
+
+// themeEditedFile lists, one per line, the files under assets/ of a package that were changed in the
+// Theme File Editor. Their content changed while the version did not, so browsers must revalidate
+// them instead of keeping the ?ver= URL for a year (packageThemeAsset). Installing or updating the
+// package replaces the directory and so starts a clean list.
+const themeEditedFile = ".edited-files"
+
+// loadEdited reads themeEditedFile.
+func (pkg *themePackage) loadEdited() {
+	pkg.editedMu.Lock()
+	defer pkg.editedMu.Unlock()
+	pkg.edited = map[string]bool{}
+	b, err := os.ReadFile(filepath.Join(pkg.Dir, themeEditedFile))
+	if err != nil {
+		return
+	}
+	for _, l := range strings.Split(string(b), "\n") {
+		if l = strings.TrimSpace(l); l != "" {
+			pkg.edited[l] = true
+		}
+	}
+}
+
+// isEdited reports whether an asset (a path under assets/, "css/style.css") was edited.
+func (pkg *themePackage) isEdited(file string) bool {
+	pkg.editedMu.Lock()
+	defer pkg.editedMu.Unlock()
+	return pkg.edited[file]
+}
+
+// markEdited records an edited asset in themeEditedFile.
+func (pkg *themePackage) markEdited(file string) error {
+	pkg.editedMu.Lock()
+	defer pkg.editedMu.Unlock()
+	if pkg.edited[file] {
+		return nil
+	}
+	f, err := os.OpenFile(filepath.Join(pkg.Dir, themeEditedFile), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString(file + "\n")
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err == nil {
+		pkg.edited[file] = true
+	}
+	return err
 }
 
 // newPackageTheme builds the Theme for a validated manifest living in dir.
 func newPackageTheme(m *themeManifest, dir string) *Theme {
 	pkg := &themePackage{Manifest: m, Dir: dir}
+	pkg.loadEdited()
 	pkg.styles, _ = orderThemeAssets(m.Styles)
 	pkg.scripts, _ = orderThemeAssets(m.Scripts)
 	t := &Theme{
@@ -573,6 +657,9 @@ func newPackageTheme(m *themeManifest, dir string) *Theme {
 	}
 	for _, f := range m.PreloadFonts {
 		t.PreloadFonts = append(t.PreloadFonts, strings.TrimPrefix(f, "assets/"))
+	}
+	if m.BlockStyles.On {
+		t.BlockStyles = append([]string{}, m.BlockStyles.Blocks...) // non-nil: per-block loading
 	}
 	for _, p := range m.Palette {
 		t.Palette = append(t.Palette, map[string]string{"name": p.Name, "slug": p.Slug, "color": sanitizeHex(p.Color)})
@@ -627,6 +714,13 @@ func (pkg *themePackage) assetURL(t *Theme, src string) string {
 
 func (pkg *themePackage) head(s *Server, c *gin.Context, v *siteView) string {
 	var sb strings.Builder
+	// preload_fonts, like Twenty Twenty-Five's own preload: on every page, also those the page cache
+	// does not optimize (bypassed, logged in). The URL is the one the font is served from (assets/
+	// dropped) and that the stylesheet's url() resolves to, so the preload is reused, not refetched;
+	// Pursae Cache's "Preload Fonts" skips fonts that are already preloaded.
+	for _, f := range v.Theme.PreloadFonts {
+		fmt.Fprintf(&sb, "<link rel=\"preload\" href=\"%s\" as=\"font\" type=\"font/woff2\" crossorigin>\n", html.EscapeString(v.Theme.URI()+"/"+f))
+	}
 	for _, st := range pkg.styles {
 		media := st.Media
 		if media == "" {

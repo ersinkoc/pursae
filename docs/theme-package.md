@@ -53,6 +53,7 @@ is no "Restore original": the package's files are the originals).
   ],
   "editor_styles": ["assets/editor-style.css"],
   "preload_fonts": ["assets/fonts/inter.woff2"],
+  "block_styles": true,
 
   "palette": [
     {"name": "Ink", "slug": "ink", "color": "#1d2327"}
@@ -95,7 +96,22 @@ Rules:
   `wp_enqueue_*` (a cycle is an error), in declared order otherwise. Styles print in
   `wp_head`, scripts in `wp_head` or, with `in_footer`, in `wp_footer`. Every referenced
   theme file must exist in the package. `editor_styles` are `.css` files, `preload_fonts`
-  `.woff2` files, both under `assets/`.
+  `.woff2` files, both under `assets/`. Each `preload_fonts` file gets a
+  `<link rel="preload" as="font">` in `wp_head` at its served URL (the theme URI plus the path
+  without `assets/`); Pursae Cache's "Preload Fonts" does not add it a second time.
+- `block_styles`: `true`, `false` (default) or an array of core block names without `core/`
+  (`^[a-z0-9]+(-[a-z0-9]+)*$`). When on, the theme sets `Theme.BlockStyles` like Twenty
+  Twenty-Five: `wp_head` drops the block library stylesheet and the classic theme/global
+  styles, and each page inlines the `style.min.css` of the core blocks it uses, minus the listed
+  blocks (their styles are the theme's own).
+- Browser caching: assets requested with `?ver=<version>` are served with
+  `Cache-Control: public, max-age=31536000, immutable` (an update installs a new version). A file
+  saved in the Theme File Editor keeps the version, so it is listed in `.edited-files` in the
+  package directory and served with `no-cache` until the package is updated or reinstalled;
+  unversioned requests (fonts and images from `url()`) are `no-cache` too.
+- Pursae Cache "Defer JavaScript" with an empty handle list defers the active package's
+  `scripts` along with the core's safe defaults, under the usual exclusions (scripts in the
+  body only, so use `in_footer`; not when an inline `<handle>-js-after` script follows).
 - `widget_areas[].id` and `menu_locations[].id` are handles (same pattern), unique; `name`
   is required. Widget areas use the `<section id class="widget …">` / `<h2 class="widget-title">`
   markup of the bundled themes.

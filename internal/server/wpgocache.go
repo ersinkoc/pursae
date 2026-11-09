@@ -66,7 +66,7 @@ func (s *Server) cacheConfig() cache.Config {
 		LazyImages:         st.Bool("wpgo_opt_lazy"),
 		LazySkipFirst:      st.Int("wpgo_opt_lazy_skip"),
 		DeferScripts:       st.Bool("wpgo_opt_defer"),
-		DeferAllowlist:     deferList(lines(st.String("wpgo_opt_defer_list"))),
+		DeferAllowlist:     s.deferList(lines(st.String("wpgo_opt_defer_list"))),
 		CollapseWhitespace: st.Bool("wpgo_opt_minify_html"),
 	}
 	if st.Bool("wpgo_opt_preload_fonts") {
@@ -86,11 +86,22 @@ func (s *Server) cacheConfig() cache.Config {
 // "Defer JavaScript" is on and the list is left empty.
 var cacheSafeDefer = []string{"comment-reply", "wp-embed", "twentytwentyfive-navigation", "skip-link-focus-fix", "keyboard-image-navigation"}
 
-func deferList(v []string) []string {
-	if len(v) == 0 {
-		return cacheSafeDefer
+// deferList is the "Defer JavaScript" allowlist: the list from the settings, or when it is left empty
+// the safe defaults plus the scripts of the active theme package (its theme.json scripts, which, like
+// Twenty Twenty-Five's navigation script, nothing inline depends on). The engine's exclusions apply
+// to all of them: only scripts in the body, none with an "-js-after" inline script, async, defer,
+// nomodule or data-no-defer.
+func (s *Server) deferList(v []string) []string {
+	if len(v) > 0 {
+		return v
 	}
-	return v
+	out := append([]string{}, cacheSafeDefer...)
+	if t := s.activeTheme(); t != nil && t.Package != nil {
+		for _, sc := range t.Package.scripts {
+			out = append(out, sc.Handle)
+		}
+	}
+	return out
 }
 
 func lines(v string) []string {

@@ -36,6 +36,7 @@ section: themes
   ],
   "editor_styles": ["assets/editor-style.css"],
   "preload_fonts": ["assets/fonts/inter.woff2"],
+  "block_styles": true,
 
   "palette": [
     {"name": "Ink", "slug": "ink", "color": "#1d2327"}
@@ -90,7 +91,8 @@ section: themes
 | `styles[]` | `wp_enqueue_style()`: `handle`, `src` (a path in the package, served under the theme URI, or an absolute URL), `deps` (core handles such as `wp-block-library`, or the theme's own), `media` |
 | `scripts[]` | `wp_enqueue_script()`: `handle`, `src`, `deps` (`jquery`, the theme's own), `in_footer` |
 | `editor_styles[]` | `add_editor_style()`: stylesheets loaded into the block editor and TinyMCE |
-| `preload_fonts[]` | font files Pursae Cache preloads with `<link rel="preload">` |
+| `preload_fonts[]` | `.woff2` files under `assets/` preloaded with `<link rel="preload">` in `wp_head` on every page, at the URL they are served from (`assets/` dropped: `assets/fonts/inter.woff2` is `/wp-content/themes/<slug>/fonts/inter.woff2`) |
+| `block_styles` | `true` loads core's block styles per block, like Twenty Twenty-Five: no render-blocking `block-library/style.min.css`, only the styles of the blocks a page uses, inlined. An array of block names (`["navigation", "post-title"]`) does the same and leaves out the blocks your own stylesheet styles. Default `false`: the whole block library on every page |
 
 Order follows dependencies, like `wp_enqueue_*`. See [styles and scripts](styles-and-scripts.md).
 

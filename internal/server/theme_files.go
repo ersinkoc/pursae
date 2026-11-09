@@ -169,6 +169,15 @@ func (s *Server) saveThemeFile(c *gin.Context, slug, file, content string) error
 		}
 	}
 
+	if th.Package != nil {
+		if asset, ok := strings.CutPrefix(webPath, "themes/"+slug+"/assets/"); ok {
+			// Same URL and ?ver=, new content: browsers must revalidate it from now on.
+			if err := th.Package.markEdited(asset); err != nil {
+				restore()
+				return &themeFileError{"unable_to_write", "Unable to write to file: " + err.Error()}
+			}
+		}
+	}
 	if strings.HasPrefix(clean, "templates/") {
 		if err := s.tmpl.load(); err != nil {
 			restore()
