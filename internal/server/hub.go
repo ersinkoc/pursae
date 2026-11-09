@@ -389,6 +389,12 @@ func (s *Server) hubPing(ctx context.Context) error {
 	if base == "" || s.sandbox != nil {
 		return nil
 	}
+	// Before the installer has run there is no site address: the Manager would refuse the ping
+	// (bad_url) and the retries would run out before anyone installs. installSubmit queues a
+	// check as soon as the address is known.
+	if hubSiteURL(s.settings.String("home")) == "" {
+		return nil
+	}
 	body, _ := json.Marshal(s.hubPingBody(ctx))
 	req, err := s.hubNewRequest(ctx, http.MethodPost, base+"/api/v1/sites/ping", bytes.NewReader(body))
 	if err != nil {
@@ -409,6 +415,23 @@ func (s *Server) hubPing(ctx context.Context) error {
 	s.hubFlushEvents(ctx)
 	_, err = s.hubFetchIndex(ctx)
 	return err
+}
+
+// queueHubCheck runs the Manager check now (a fresh install): a queued one-off check is moved to
+// now, otherwise one is queued, so the new site shows on the Manager within the scheduler tick
+// instead of at the next daily check.
+func (s *Server) queueHubCheck(ctx context.Context) {
+	if s.hubBase() == "" {
+		return
+	}
+	tag, err := s.store.Pool.Exec(ctx, `UPDATE jobs SET run_at = now(), attempts = 0, last_error = ''
+		WHERE name = 'wpgo_hub_check' AND recurrence = '' AND status = 'queued'`)
+	if err == nil && tag.RowsAffected() > 0 {
+		return
+	}
+	if err := s.queueJob(ctx, "wpgo_hub_check", nil, time.Time{}); err != nil {
+		slog.Error("queue hub check", "err", err)
+	}
 }
 
 // hubDropCaches forgets every cached Manager answer (index, catalogs, under any license key).

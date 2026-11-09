@@ -117,6 +117,7 @@ func (s *Server) installSubmit(c *gin.Context) {
 		_ = s.settings.Set(c, map[string]any{"WPLANG": v.Language}) // the site's language
 	}
 	s.preinstallThemesAsync() // the Manager's recommended themes, in the background (theme_library.go)
+	s.queueHubCheck(c)        // the site's address is known now: tell the Manager right away (hub.go)
 	v.Done = true
 	s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)
 }
