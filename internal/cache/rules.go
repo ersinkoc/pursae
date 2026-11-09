@@ -208,6 +208,19 @@ func hasToken(v, token string) bool {
 	return false
 }
 
+// cacheableVary permits only the encoding variation that serve negotiates itself. Other
+// request headers are not represented in the cache key, so those responses must pass through.
+func cacheableVary(h http.Header) bool {
+	for _, line := range h.Values("Vary") {
+		for _, field := range strings.Split(line, ",") {
+			if field = strings.TrimSpace(field); field != "" && !strings.EqualFold(field, "Accept-Encoding") {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func mediaType(h http.Header) string {
 	ct := h.Get("Content-Type")
 	if ct == "" {

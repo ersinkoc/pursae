@@ -230,7 +230,7 @@ func (cw *captureWriter) finish() {
 
 // storableTTL decides whether a response may be stored and for how long.
 func (c *Cache) storableTTL(r *http.Request, code int, h http.Header) (time.Duration, bool) {
-	if len(h.Values("Set-Cookie")) > 0 || h.Get("Content-Encoding") != "" {
+	if r.Method == http.MethodHead || len(h.Values("Set-Cookie")) > 0 || h.Get("Content-Encoding") != "" || !cacheableVary(h) {
 		return 0, false
 	}
 	if v := strings.ToLower(h.Get(HeaderControl)); v != "" {

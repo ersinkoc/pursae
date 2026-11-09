@@ -156,6 +156,9 @@ func PrunePrev(exe string, now time.Time) bool {
 	st := Read(exe)
 	switch {
 	case st == nil:
+		if _, err := os.Stat(statePath(exe)); !os.IsNotExist(err) {
+			return false // unreadable or corrupt state is not proof that the binary is orphaned
+		}
 	case st.Status == "confirmed" && now.Sub(st.At) >= PrevRetention:
 	default:
 		return false // pending or rolled back: the rollback may still need it; or still retained
@@ -309,22 +312,46 @@ func binaryVersion(bin string) string {
 	return f[len(f)-1]
 }
 
-// Less compares dotted versions numerically (0.10.0 > 0.9.9); a missing part counts as 0.
+// Less compares dotted versions numerically, then prerelease identifiers; a missing core part
+// counts as 0. A prerelease precedes its final release, and build metadata is ignored.
 func Less(a, b string) bool {
-	pa, pb := strings.Split(strings.TrimPrefix(a, "v"), "."), strings.Split(strings.TrimPrefix(b, "v"), ".")
+	a, _, _ = strings.Cut(strings.TrimPrefix(a, "v"), "+")
+	b, _, _ = strings.Cut(strings.TrimPrefix(b, "v"), "+")
+	a, preA, _ := strings.Cut(a, "-")
+	b, preB, _ := strings.Cut(b, "-")
+	pa, pb := strings.Split(a, "."), strings.Split(b, ".")
 	for i := 0; i < max(len(pa), len(pb)); i++ {
 		var x, y int
 		if i < len(pa) {
-			x, _ = strconv.Atoi(strings.SplitN(pa[i], "-", 2)[0])
+			x, _ = strconv.Atoi(pa[i])
 		}
 		if i < len(pb) {
-			y, _ = strconv.Atoi(strings.SplitN(pb[i], "-", 2)[0])
+			y, _ = strconv.Atoi(pb[i])
 		}
 		if x != y {
 			return x < y
 		}
 	}
-	return false
+	if preA == "" || preB == "" {
+		return preA != "" && preB == ""
+	}
+	ia, ib := strings.Split(preA, "."), strings.Split(preB, ".")
+	for i := 0; i < min(len(ia), len(ib)); i++ {
+		if ia[i] == ib[i] {
+			continue
+		}
+		x, errA := strconv.Atoi(ia[i])
+		y, errB := strconv.Atoi(ib[i])
+		switch {
+		case errA == nil && errB == nil:
+			return x < y
+		case errA == nil || errB == nil:
+			return errA == nil
+		default:
+			return ia[i] < ib[i]
+		}
+	}
+	return len(ia) < len(ib)
 }
 
 func copyFile(src, dst string) error {
