@@ -258,6 +258,45 @@ func wbPage(raw json.RawMessage) (webbuilder.PageSettings, json.RawMessage) {
 	return ps, wbPageMerge(obj, ps)
 }
 
+// wbPageLoadedKey is the page object key the editor's boot page carries (wbDocumentFor) and the
+// editor sends back unchanged: the post's description and indexable flag as that session loaded
+// them, and the rev it loaded. It is never stored.
+const wbPageLoadedKey = "_loaded"
+
+type wbPageLoaded struct {
+	Rev         int    `json:"rev"`
+	Description string `json:"description"`
+	Indexable   bool   `json:"indexable"`
+}
+
+// wbPageChanged reports whether the posted page settings change the description and the indexable
+// flag the editor last knew: the values its session loaded (the page's _loaded key) while it has
+// not published since (_loaded.rev = baseRev), else the last published page object (row.Page, the
+// session's own publish). Without either, or a page object that lacks the key, the field counts
+// as changed. Pursae SEO edits made after the editor loaded the page then survive a publish that
+// did not touch the field.
+func wbPageChanged(row *store.WebBuilderDoc, body json.RawMessage, baseRev int, ps webbuilder.PageSettings) (desc, indexable bool) {
+	var obj map[string]json.RawMessage
+	_ = json.Unmarshal(body, &obj)
+	if raw, ok := obj[wbPageLoadedKey]; ok {
+		var l wbPageLoaded
+		if json.Unmarshal(raw, &l) == nil && l.Rev == baseRev {
+			return wbClip(strings.TrimSpace(l.Description), wbDescriptionMax) != ps.Description, l.Indexable != ps.Indexable
+		}
+	}
+	if row == nil {
+		return true, true
+	}
+	obj = nil
+	if len(row.Page) == 0 || json.Unmarshal(row.Page, &obj) != nil {
+		return true, true
+	}
+	prev, _ := wbPage(row.Page)
+	_, hasDesc := obj["description"]
+	_, hasIndex := obj["indexable"]
+	return !hasDesc || prev.Description != ps.Description, !hasIndex || prev.Indexable != ps.Indexable
+}
+
 // wbPageMissing reports a request without page settings (absent or null).
 func wbPageMissing(raw json.RawMessage) bool {
 	t := strings.TrimSpace(string(raw))
@@ -265,6 +304,7 @@ func wbPageMissing(raw json.RawMessage) bool {
 }
 
 func wbPageMerge(obj map[string]any, ps webbuilder.PageSettings) json.RawMessage {
+	delete(obj, wbPageLoadedKey) // boot-only, never stored
 	obj["title"], obj["slug"], obj["description"], obj["indexable"] = ps.Title, ps.Slug, ps.Description, ps.Indexable
 	b, _ := json.Marshal(obj)
 	return b
@@ -660,7 +700,14 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	if ps.Slug != "" {
 		fresh.Slug = ps.Slug
 	}
-	fresh.Excerpt = ps.Description
+	// The description and noindex are shared with Pursae SEO (its metabox and the editor's Page
+	// tools › SEO tab write them straight to the post meta): publish writes them only when the
+	// builder's own page settings changed them since the last publish, so a stale value the editor
+	// loaded never overwrites what Pursae SEO saved in the meantime.
+	descChanged, indexChanged := wbPageChanged(row, body.Page, body.BaseRev, ps)
+	if pageMissing || descChanged {
+		fresh.Excerpt = ps.Description
+	}
 	fresh.Content = content
 	fresh.Status = status
 	if fresh.Meta == nil {
@@ -668,13 +715,15 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	}
 	fresh.Meta[webbuilder.PostMarkerMeta] = "1"
 	fresh.Meta[webbuilder.EditLockMeta] = strconv.FormatInt(time.Now().Unix(), 10) + ":" + itoa64(u.ID)
-	if !pageMissing {
+	if !pageMissing && descChanged {
 		fresh.Meta[seogoKey("description")] = ps.Description
 	}
-	if !ps.Indexable {
-		fresh.Meta[seogoKey("noindex")] = "noindex"
-	} else if seogoMeta(fresh.Meta, "noindex") == "noindex" {
-		fresh.Meta[seogoKey("noindex")] = "" // back to the site default
+	if !pageMissing && indexChanged {
+		if !ps.Indexable {
+			fresh.Meta[seogoKey("noindex")] = "noindex"
+		} else if seogoMeta(fresh.Meta, "noindex") == "noindex" {
+			fresh.Meta[seogoKey("noindex")] = "" // back to the site default
+		}
 	}
 	if err := store.UpdatePostTx(c, tx, fresh, u.ID); err != nil {
 		restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")

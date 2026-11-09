@@ -374,3 +374,29 @@ func TestConditionPatternAgreement(t *testing.T) {
 		checkConditionAgainstPattern(t, r)
 	}
 }
+
+// Rules naming a post, parent or term match the aliases (Pursae Multi Language translations).
+func TestConditionMatchAliases(t *testing.T) {
+	parse := func(rule string) Condition {
+		c := ParseConditions([]string{rule})
+		if len(c) != 1 {
+			t.Fatalf("parse %q", rule)
+		}
+		return c[0]
+	}
+	single := QueryFacts{View: ViewSingular, PostType: "page", PostID: 40, PostIDs: []int64{12}, ParentID: 41, ParentIDs: []int64{13}}
+	if !parse("include/singular/page/12").Match(single) || !parse("include/singular/page/40").Match(single) || parse("include/singular/page/14").Match(single) {
+		t.Error("entry aliases")
+	}
+	if !parse("include/singular/page/child_of/13").Match(single) || parse("include/singular/page/child_of/12").Match(single) {
+		t.Error("parent aliases")
+	}
+	orphan := QueryFacts{View: ViewSingular, PostType: "page", PostID: 40}
+	if parse("include/singular/page/child_of/40").Match(orphan) {
+		t.Error("child_of matched a page without parent")
+	}
+	arch := QueryFacts{View: ViewArchive, Archive: ArchiveTerm, Taxonomy: "category", TermID: 9, TermIDs: []int64{5}}
+	if !parse("include/archive/category/5").Match(arch) || !parse("include/archive/category/9").Match(arch) || parse("include/archive/category/6").Match(arch) {
+		t.Error("term aliases")
+	}
+}

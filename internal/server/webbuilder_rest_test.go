@@ -713,6 +713,75 @@ func TestWebBuilderRESTPublishWithoutPage(t *testing.T) {
 	}
 }
 
+// The meta description and noindex Pursae SEO saved after the editor loaded the page (its SEO tab,
+// the classic metabox) survive a publish whose page settings did not change them; a publish that
+// does change them still writes them.
+func TestWebBuilderRESTPublishKeepsSEO(t *testing.T) {
+	srv, _, admin := wbrStart(t)
+	ctx := context.Background()
+	page := wbrPost(t, srv, "page", "SEO Page", "draft", 1)
+	doc, render := wbrFixture(t, "initial")
+	publish := func(rev int, ps map[string]any) {
+		t.Helper()
+		if code, v, _ := admin.do(http.MethodPost, wbrDocPath(page.ID, "/publish"), wbrPublishBody(doc, render, rev, "publish", ps), nil); code != http.StatusOK {
+			t.Fatalf("publish %d: %d %v", rev, code, v)
+		}
+	}
+	boot := func() map[string]any {
+		t.Helper()
+		_, v, _ := admin.do(http.MethodGet, wbrDocPath(page.ID, ""), nil, nil)
+		return wbrObj(wbrObj(v)["page"])
+	}
+	meta := func() (string, string) {
+		t.Helper()
+		p, err := srv.store.GetPost(ctx, page.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return seogoMeta(p.Meta, "description"), seogoMeta(p.Meta, "noindex")
+	}
+	publish(0, map[string]any{"title": "SEO Page", "slug": "seo-page", "description": "A", "indexable": true})
+	if d, n := meta(); d != "A" || n == "noindex" {
+		t.Fatalf("first publish: %q %q", d, n)
+	}
+	// The editor session loads A / indexable; then Pursae SEO writes B + noindex straight to the meta.
+	session := boot()
+	if l := wbrObj(session["_loaded"]); session["description"] != "A" || l["rev"] != float64(1) || l["description"] != "A" || l["indexable"] != true {
+		t.Fatalf("boot page: %v", session)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE posts SET meta = meta || jsonb_build_object($2::text, 'B', $3::text, 'noindex') WHERE id = $1`,
+		page.ID, seogoKey("description"), seogoKey("noindex")); err != nil {
+		t.Fatal(err)
+	}
+	publish(1, session)
+	if d, n := meta(); d != "B" || n != "noindex" {
+		t.Errorf("stale publish overwrote Pursae SEO: %q %q, want B noindex", d, n)
+	}
+	publish(2, session) // the same session publishes again
+	if d, n := meta(); d != "B" || n != "noindex" {
+		t.Errorf("second stale publish overwrote Pursae SEO: %q %q, want B noindex", d, n)
+	}
+	row, err := srv.store.WebBuilder().Doc(ctx, page.ID)
+	if err != nil || strings.Contains(string(row.Page), "_loaded") {
+		t.Errorf("stored page keeps the boot-only key: %s %v", row.Page, err)
+	}
+	// A new session loads B / hidden; changing them in the builder writes them.
+	session = boot()
+	if session["description"] != "B" || session["indexable"] != false {
+		t.Fatalf("boot page after the SEO edit: %v", session)
+	}
+	session["description"], session["indexable"] = "C", true
+	publish(3, session)
+	if d, n := meta(); d != "C" || n == "noindex" {
+		t.Errorf("changed in the builder: %q %q, want C, indexable", d, n)
+	}
+	// A client without the boot key is compared with the last publish.
+	publish(4, map[string]any{"title": "SEO Page", "slug": "seo-page", "description": "C", "indexable": false})
+	if d, n := meta(); d != "C" || n != "noindex" {
+		t.Errorf("hidden by a REST client: %q %q", d, n)
+	}
+}
+
 func TestWebBuilderPageOverlay(t *testing.T) {
 	post := json.RawMessage(`{"title":"New","slug":"new","description":"D","indexable":false}`)
 	got := map[string]any{}

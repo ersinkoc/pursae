@@ -308,12 +308,31 @@ type QueryFacts struct {
 	ParentID int64
 	// AuthorID is the entry's author (singular) or the archived author (ArchiveAuthor).
 	AuthorID int64
-	Terms    map[string][]int64 // singular: taxonomy → the entry's term ids
+	Terms    map[string][]int64 // singular: taxonomy → the entry's term ids (and their translations)
+	// PostIDs / ParentIDs: other ids that stand for PostID / ParentID, the translations of the
+	// entry and of its parent (Pursae Multi Language), so a rule naming one language version of a
+	// post or page matches all of them.
+	PostIDs   []int64
+	ParentIDs []int64
 
 	// Archive views.
-	Archive  string // Archive* constant ("" on other views)
-	Taxonomy string // ArchiveTerm
-	TermID   int64  // ArchiveTerm
+	Archive  string  // Archive* constant ("" on other views)
+	Taxonomy string  // ArchiveTerm
+	TermID   int64   // ArchiveTerm
+	TermIDs  []int64 // ArchiveTerm: translations of TermID (Pursae Multi Language)
+}
+
+// hasID reports whether want is the scalar id or one of its aliases.
+func hasID(scalar int64, aliases []int64, want int64) bool {
+	if scalar == want {
+		return true
+	}
+	for _, id := range aliases {
+		if id == want {
+			return true
+		}
+	}
+	return false
 }
 
 // Match reports whether the rule's scope covers the request (include and exclude alike).
@@ -335,7 +354,7 @@ func (c Condition) Match(q QueryFacts) bool {
 	case ScopePostType:
 		return singular && q.PostType == c.PostType
 	case ScopeEntry:
-		return singular && q.PostType == c.PostType && q.PostID == c.ID
+		return singular && q.PostType == c.PostType && hasID(q.PostID, q.PostIDs, c.ID)
 	case ScopeInTerm:
 		if !singular || q.PostType != c.PostType {
 			return false
@@ -347,7 +366,7 @@ func (c Condition) Match(q QueryFacts) bool {
 		}
 		return false
 	case ScopeChildOf:
-		return singular && q.PostType == c.PostType && q.ParentID == c.ID
+		return singular && q.PostType == c.PostType && q.ParentID > 0 && hasID(q.ParentID, q.ParentIDs, c.ID)
 	case ScopeByAuthor:
 		return singular && q.PostType == c.PostType && q.AuthorID == c.ID
 	case ScopeArchive:
@@ -363,7 +382,7 @@ func (c Condition) Match(q QueryFacts) bool {
 	case ScopeTypeArchive:
 		return archive && q.Archive == ArchivePostType && q.PostType == c.PostType
 	case ScopeTaxonomy:
-		return archive && q.Archive == ArchiveTerm && q.Taxonomy == c.Taxonomy && (c.ID == 0 || q.TermID == c.ID)
+		return archive && q.Archive == ArchiveTerm && q.Taxonomy == c.Taxonomy && (c.ID == 0 || hasID(q.TermID, q.TermIDs, c.ID))
 	}
 	return false
 }

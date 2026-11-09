@@ -150,7 +150,7 @@ Request bodies of document routes are capped at **4 MiB** (`413 wb_too_large`, `
 | POST | `/documents/{id}/revisions/{rid}/restore` | `edit_post` | RestoreRequest → DraftState |
 | GET | `/documents/{id}/plugins` | `edit_post` | — → PagePanels (§3.7) |
 | GET | `/documents/{id}/languages` | `edit_post` | — → LanguagesInfo (§3.7) |
-| POST | `/documents/{id}/translations` | `edit_post` + `edit_posts` | `{lang}` → Translation (201, §3.7) |
+| POST | `/documents/{id}/translations` | `edit_post` + `edit_posts` (a template: `edit_theme_options`) | `{lang}` → Translation (201, §3.7) |
 | GET | `/library` | `edit_posts` | — → LibraryItem[] |
 | POST | `/library` | `edit_posts` | LibraryCreateRequest → LibraryItem (201) |
 | DELETE | `/library/{id}` | author, or `edit_others_posts` | — → `{deleted: true}` |
@@ -191,7 +191,7 @@ DocumentResponse:
 | `status` | string | core status |
 | `rev` | number | published builder revision counter; `0` = never published from the builder |
 | `doc` | DocState \| null | `null` = new page, the editor starts from its default doc |
-| `page` | PageSettings | from the post when there is no doc yet (title, slug, excerpt, SEO noindex) |
+| `page` | PageSettings | the stored page object with the post-owned fields (title, slug, description, indexable) taken from the post; the description is the Pursae SEO description when it was changed since the last builder publish, else the excerpt. It (and `draft.page`) also carries `_loaded: {rev, description, indexable}`, the post's values as loaded, which the editor sends back unchanged (see Publish step 6); `_loaded` is never stored |
 | `draft` | DraftState \| null | the **current user's** autosave, only when newer than `doc` |
 | `detached` | bool | `posts.content` was edited outside the builder (§6.3) |
 | `modified` | string | `posts.modified_at` |
@@ -231,7 +231,11 @@ Server steps, in one transaction:
    sends `utilityCss` empty).
 5. Sanitize `render.html` (§8.2) and `utilityCss` + `render.css` (§8.3).
 6. Map PageSettings: `title` → post title, `slug` → `post_name`, `description` → excerpt and
-   Pursae SEO description, `indexable=false` → Pursae SEO noindex.
+   Pursae SEO description, `indexable=false` → Pursae SEO noindex. `description` and `indexable`
+   are written only when the editor changed them: compared with `page._loaded` while
+   `_loaded.rev == baseRev`, else with the last published page object (no previous publish = changed).
+   A Pursae SEO edit made while the editor was open (its SEO tab, the classic metabox) is not
+   overwritten by the unchanged value the editor loaded.
 7. `posts.content` = fallback HTML generated in Go from the doc (§6.2); store
    `content_hash` = sha256 hex of exactly that string. The core update creates a
    `post_revisions` row; a `web_builder_revisions` row is written for it.
@@ -354,10 +358,10 @@ Both off, or a capability missing, answer `200` with `false` values, never an er
 | Field | Type | Notes |
 |-------|------|-------|
 | `enabled` | bool | `false` (and nothing else filled) while Multi Language is off, the type is not translated or no language is active |
-| `canTranslate` | bool | the post is not a template and the user has the post type's create capability (`edit_pages` for pages, `edit_posts` for the other types), which is not implied by being able to edit this post |
+| `canTranslate` | bool | the user has the post type's create capability (`edit_pages` for pages, `edit_posts` for the other types), which is not implied by being able to edit this post; for a template, `edit_theme_options` |
 | `current` | LangRef | the page's own language (assigned the default one when it has none); absent when `enabled` is `false` |
 | `translations` | LangTranslation[] | the page itself and every live translation, in language order. One the user may not `edit_post` is listed with `readOnly: true` and empty `title`, `status` and `editUrl`; a trashed or deleted one is not listed |
-| `missing` | LangRef[] | active languages with no live translation (a trashed translation counts as missing), always `[]` for a template |
+| `missing` | LangRef[] | active languages with no live translation (a trashed translation counts as missing) |
 
 LangRef: `{slug, name, flag, rtl?}` (`flag` is an emoji). LangTranslation: LangRef +
 `{postId, title, status, editUrl, current?, readOnly?}`; `editUrl` is the builder URL
@@ -368,13 +372,15 @@ translation Pursae Multi Language's "Duplicate content" would: a **draft** of th
 by the current user, linked to the page's translation group, with title, slug, content, excerpt,
 discussion settings, format, terms and custom fields copied like Add translation does, and the
 page's builder doc and snapshot copied to it (§6.4), so the translation opens in the builder with
-the same layout. Answer **201** with a LangTranslation (`status: "draft"`, no `current`).
+the same layout. Answer **201** with a LangTranslation (`status: "draft"`, no `current`). A
+template's translation is a draft (disabled) template with the same type, display conditions and
+priority; it renders in its language once it is published (§11.3).
 
 | Status | Code | When |
 |--------|------|------|
 | 400 | `wb_bad_language` | `lang` missing, unknown or not an active language |
-| 400 | `wb_not_enabled` | the post is a `wb_template`, Multi Language is off or the type is not translated (nothing is created) |
-| 403 | `rest_forbidden` | no `edit_post` on the page, no create capability for its type (`edit_pages` / `edit_posts`), or a template without `edit_theme_options` |
+| 400 | `wb_not_enabled` | Multi Language is off or the type is not translated (nothing is created) |
+| 403 | `rest_forbidden` | no `edit_post` on the page, no create capability for its type (`edit_pages` / `edit_posts`), or a template without `edit_theme_options` (the only capability a template's translation needs) |
 | 409 | `wb_translation_exists` | the page already has a live translation in `lang` (the page's own language included); a trashed translation does not count, the new draft replaces it in the group |
 | 500 | `db_error` | the draft could not be created or linked to the group; the draft is removed again (or trashed), so no unlinked copy is left |
 
@@ -860,7 +866,15 @@ A rule is `<mode>/<scope>`, mode `include` or `exclude`. Scopes:
 Resolution for one location and request (pure code over a `QueryFacts` struct, package TA):
 
 1. Candidates: published templates of the location's types whose view gate admits the view.
-2. Any matching `exclude` rule vetoes the template.
+   With Pursae Multi Language and a request language, a template in a language that is neither
+   the request's nor the default one is no candidate, and of each translation group only one
+   member competes (the request language's, else the default language's). When the request
+   language is not the default one, the templates in the request language (and those without a
+   language) are resolved first; the default-language templates are only the fallback when none
+   of them matches.
+2. Any matching `exclude` rule vetoes the template. With Pursae Multi Language a rule that names
+   a post, page, parent or term (`singular/<ptype>/<id>`, `singular/<ptype>/in/<tax>/<id>`,
+   `singular/<ptype>/child_of/<id>`, `archive/<tax>/<id>`) also matches that object's translations.
 3. The template's score is its best matching `include` score; no include match = not a
    candidate. On a search view a `search-results` template gets **+1** (`SearchTypeBonus`), so it
    beats an `archive` template with the same rule.

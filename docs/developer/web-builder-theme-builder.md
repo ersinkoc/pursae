@@ -188,8 +188,12 @@ product, cart, checkout, account) keep their store layout inside the header and 
 - Forms in a header or footer template work on every page they appear on.
 - Tools › Export includes templates (with their conditions); on import, ids in conditions are
   mapped to the imported posts and terms, and rules that cannot be mapped are dropped.
-- With Pursae Multi Language, a template can be translated like a page; each language shows its
-  translation of the winning template when one is published.
+- With Pursae Multi Language, a template can be translated like a page from the builder's
+  **Page tools › Languages** tab (the translation starts as a disabled copy with the same
+  conditions); each language shows its translation of the winning template when one is published.
+  A template in another language never shows on a page: a template in the page's language beats
+  one in the default language, which stays the fallback. Conditions that name a page, post or
+  term also match its translations.
 
 ## Limits
 
