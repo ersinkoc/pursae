@@ -3,7 +3,7 @@
 		{{with theme_mod . "hero_kicker"}}<p class="hero__kicker"><span>{{.}}</span><span class="hero__caret" aria-hidden="true"></span></p>{{end}}
 		<h2 class="hero__title">{{theme_mod . "hero_title"}}</h2>
 		{{with theme_mod . "hero_text"}}<p class="hero__text">{{.}}</p>{{end}}
-		<form role="search" method="get" class="hero__search search-form" action="{{.HomeURL}}">
+		<form role="search" method="get" class="hero__search search-form" action="{{.SearchAction}}">{{.SearchHidden}}
 			<label for="hero-search" class="screen-reader-text">Search for:</label>
 			<span class="hero__prompt" aria-hidden="true">/</span>
 			<input type="search" id="hero-search" class="search-field" placeholder="Search notes&hellip;" name="s" />

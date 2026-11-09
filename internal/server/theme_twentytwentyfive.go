@@ -224,7 +224,7 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 	if q.Kind == "search" {
 		d["QueryTitle"] = template.HTML("Search results for: &#8220;" + esc(q.Search) + "&#8221;")
 	}
-	d["SearchForm"] = tt5SearchForm(v.HomeURL, q.Search)
+	d["SearchForm"] = tt5SearchForm(v.SearchAction, v.SearchHidden, q.Search)
 
 	// "More posts" (single and search).
 	if v.Template == "single" || v.Template == "search" {
@@ -307,9 +307,9 @@ func tt5PageListItems(list string) string {
 }
 
 // tt5SearchForm is core/search as twentytwentyfive/hidden-search configures it.
-func tt5SearchForm(home, query string) template.HTML {
+func tt5SearchForm(home string, hidden template.HTML, query string) template.HTML {
 	return template.HTML(`<form role="search" method="get" action="` + html.EscapeString(home) + `" class="wp-block-search__button-outside wp-block-search__text-button wp-block-search"><label class="wp-block-search__label screen-reader-text" for="wp-block-search__input-1">Search</label><div class="wp-block-search__inside-wrapper"><input class="wp-block-search__input" id="wp-block-search__input-1" placeholder="Type here..." value="` +
-		html.EscapeString(query) + `" type="search" name="s" required /><button aria-label="Search" class="wp-block-search__button wp-element-button" type="submit">Search</button></div></form>`)
+		html.EscapeString(query) + `" type="search" name="s" required /><button aria-label="Search" class="wp-block-search__button wp-element-button" type="submit">Search</button></div>` + string(hidden) + `</form>`)
 }
 
 // tt5PostData builds the block outputs of one post.

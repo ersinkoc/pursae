@@ -26,27 +26,123 @@ func (s *Server) golylangRESTFields(c *gin.Context, k pllKind, id int64, typ str
 	out["translations"] = s.pllTranslations(c, k, id)
 }
 
+const (
+	pllRESTLangKey         = "pll_rest_lang"         // lang sent in a wp/v2 write body (golylangRESTParams)
+	pllRESTTranslationsKey = "pll_rest_translations" // translations sent in a wp/v2 write body
+)
+
+// golylangRESTParams reads the lang and translations fields of a wp/v2 write from the JSON or form
+// body, as Polylang registers them as REST fields: {"title": …, "lang": "fr", "translations": {"en": 12}}.
+// The body wins over the query string like every other REST parameter (restRequest.get). A valid
+// lang becomes the request language before the handler runs, exactly as ?lang= does in pllDetect,
+// so the Share slugs check and the term name check see the right language.
+func (s *Server) golylangRESTParams(c *gin.Context, rt *restRoute, req *restRequest) {
+	if !s.golylangOn() || rt.Namespace != "wp/v2" || req.Method == http.MethodGet || req.Method == http.MethodHead {
+		return
+	}
+	ct := c.ContentType()
+	form := ct == "application/x-www-form-urlencoded" || ct == "multipart/form-data" // never parse a raw upload body
+	lang := ""
+	if v, ok := req.Body["lang"]; ok {
+		lang, _ = v.(string)
+	} else if form {
+		lang = c.PostForm("lang")
+	}
+	if l := s.pllLang(c, lang); lang != "" && l != nil {
+		c.Set(pllRESTLangKey, l.Slug)
+		pllSet(c, &pllReq{srv: s, Lang: l, Filter: true})
+	}
+	m := map[string]int64{}
+	if v, ok := req.Body["translations"].(map[string]any); ok {
+		for lang, raw := range v {
+			var id int64
+			switch t := raw.(type) {
+			case float64:
+				id = int64(t)
+			case string:
+				id, _ = strconv.ParseInt(t, 10, 64)
+			}
+			if id > 0 {
+				m[lang] = id
+			}
+		}
+	} else if form {
+		for lang, raw := range c.PostFormMap("translations") {
+			if id, _ := strconv.ParseInt(raw, 10, 64); id > 0 {
+				m[lang] = id
+			}
+		}
+	}
+	if len(m) > 0 {
+		c.Set(pllRESTTranslationsKey, m)
+	}
+}
+
+// pllRESTLang is the lang parameter of a REST write: the body field, else ?lang=.
+func pllRESTLang(c *gin.Context) string {
+	if v := c.GetString(pllRESTLangKey); v != "" {
+		return v
+	}
+	return c.Query("lang")
+}
+
+// pllRESTTranslations is the translations parameter of a REST write: the body field, else
+// ?translations[lang]=id. Ids that do not parse are dropped.
+func pllRESTTranslations(c *gin.Context) map[string]int64 {
+	if v, ok := c.Get(pllRESTTranslationsKey); ok {
+		if m, ok := v.(map[string]int64); ok {
+			return m
+		}
+	}
+	out := map[string]int64{}
+	for lang, raw := range c.QueryMap("translations") {
+		if id, _ := strconv.ParseInt(raw, 10, 64); id > 0 {
+			out[lang] = id
+		}
+	}
+	return out
+}
+
 // golylangRESTSaved applies the lang and translations[lang]=id parameters of a term write.
 func (s *Server) golylangRESTSaved(c *gin.Context, k pllKind, id int64) {
 	if !s.golylangOn() || len(s.pllLanguages(c)) == 0 {
 		return
 	}
-	if l := s.pllLang(c, c.Query("lang")); l != nil {
+	if l := s.pllLang(c, pllRESTLang(c)); l != nil {
 		_ = s.pllSetLang(c, k, id, l.Slug)
 	} else if s.pllObjLangRow(c, k, id) == "" {
 		if d := s.pllDefault(c); d != nil {
 			_ = s.pllSetLang(c, k, id, d.Slug)
 		}
 	}
-	if m := c.QueryMap("translations"); len(m) > 0 {
+	if m := pllRESTTranslations(c); len(m) > 0 {
 		tr := s.pllTranslations(c, k, id)
-		for lang, v := range m {
-			if oid, _ := strconv.ParseInt(v, 10, 64); oid > 0 && s.pllObjLang(c, k, oid) == lang {
+		for lang, oid := range m {
+			if s.pllObjLang(c, k, oid) == lang && s.pllRESTLinkable(c, k, id, oid) {
 				tr[lang] = oid
 			}
 		}
 		_ = s.pllSaveTranslations(c, k, tr)
 	}
+}
+
+// pllRESTLinkable reports whether oid may join the translation group of the saved object id: for a term,
+// a term of the same taxonomy that the user may edit (edit_term maps to manage_categories), as
+// golylangSaved requires of posts.
+func (s *Server) pllRESTLinkable(c *gin.Context, k pllKind, id, oid int64) bool {
+	if k != pllTerm {
+		return true
+	}
+	u := restCurrent(c)
+	if u == nil || !u.Can("manage_categories", nil) {
+		return false
+	}
+	saved, err := s.store.GetTerm(c, id)
+	if err != nil {
+		return false
+	}
+	t, err := s.store.GetTerm(c, oid)
+	return err == nil && t.Taxonomy == saved.Taxonomy
 }
 
 // pllObjLangRow is the stored language of an object, "" when it has none.

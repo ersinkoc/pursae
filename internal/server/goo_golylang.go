@@ -234,6 +234,37 @@ func (s *Server) gooPllResolvedLang(c *gin.Context, q *siteQuery) (string, bool)
 	return "", true
 }
 
+// gooPllObjectLang makes the language of a product or product term the request language before its
+// page is built (the page body is rendered before golylangResolved runs). A URL under another
+// language's code redirects to the object's own URL, as the canonical redirect does for posts and
+// terms (/tr/product/mug/ of an English mug => /product/mug/); where the URL carries no language
+// (language set from content) the language just switches.
+func (s *Server) gooPllObjectLang(c *gin.Context, k pllKind, id int64) bool {
+	r := pllFrom(c)
+	if r == nil || !r.Front || r.Lang == nil || id <= 0 || !s.golylangOn() {
+		return false
+	}
+	l := s.pllLang(c, s.pllObjLang(c, k, id))
+	if l == nil || l.Slug == r.Lang.Slug {
+		return false
+	}
+	if c.Request.Method == "GET" || c.Request.Method == "HEAD" {
+		root := s.links(c.Request.Context()).Home
+		cur := root + c.Request.URL.RequestURI()
+		kind := "post"
+		if k == pllTerm {
+			kind = "term"
+		}
+		if target := s.pllConvert(c, root, cur, l, kind, s.pllOpts()); target != cur && strings.HasPrefix(target, root) {
+			c.Redirect(301, target)
+			return true
+		}
+	}
+	pllSet(c, &pllReq{srv: s, Lang: l, Filter: true, Front: true, Path: r.Path, cookieScript: r.cookieScript})
+	s.pllResetCookie(c, l)
+	return false
+}
+
 // gooPllTranslationURL is the URL of a store view in another language (switcher, hreflang); ok is false
 // for other views.
 func (s *Server) gooPllTranslationURL(c *gin.Context, q *siteQuery, l *pllLanguage) (u string, has, ok bool) {

@@ -691,6 +691,7 @@ func (s *Server) mainPosts(ctx context.Context, q *siteQuery, u *store.User) ([]
 	if err == nil && q.Kind == "home" && q.Paged <= 1 {
 		posts, err = s.prependSticky(ctx, posts, pq)
 	}
+	s.pllPrimePosts(ctx, posts) // Golylang: the loop's languages in one query
 	return posts, total, perPage, err
 }
 

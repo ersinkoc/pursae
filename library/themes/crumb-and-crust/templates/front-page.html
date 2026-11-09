@@ -9,7 +9,7 @@
 				{{with theme_mod $ "hero_text"}}<p class="hero__lead">{{.}}</p>{{end}}
 				<div class="hero__actions">
 					{{with theme_mod $ "hero_button_label"}}<a class="button" href="{{theme_mod $ "hero_button_url"}}">{{.}}</a>{{end}}
-					<form role="search" method="get" class="hero-search" action="{{$.HomeURL}}">
+					<form role="search" method="get" class="hero-search" action="{{$.SearchAction}}">{{$.SearchHidden}}
 						<label for="hero-search-field" class="screen-reader-text">Search recipes</label>
 						<input type="search" id="hero-search-field" name="s" placeholder="Try &ldquo;lemon&rdquo; or &ldquo;bread&rdquo;" />
 						<button type="submit" class="button button--dark">Search</button>

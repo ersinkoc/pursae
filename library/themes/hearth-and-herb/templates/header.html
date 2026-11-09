@@ -12,7 +12,7 @@
 	<div class="utility-bar">
 		<div class="wrap utility-bar__inner">
 			<p class="utility-bar__text">{{with theme_mod . "tagline_bar"}}{{.}}{{else}}{{$.Description}}{{end}}</p>
-			<form role="search" method="get" class="header-search" action="{{.HomeURL}}">
+			<form role="search" method="get" class="header-search" action="{{.SearchAction}}">{{.SearchHidden}}
 				<label for="header-search-field" class="screen-reader-text">Search recipes</label>
 				<input type="search" id="header-search-field" name="s" placeholder="Search recipes&hellip;" value="{{.SearchQuery}}" />
 				<button type="submit"><span class="screen-reader-text">Search</span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>

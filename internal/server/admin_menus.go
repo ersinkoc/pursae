@@ -522,6 +522,8 @@ func (s *Server) resolveMenu(ctx context.Context, items []*store.MenuItem, lb *l
 		}
 	}
 	collect(items)
+	s.pllPrimeObjLangs(ctx, pllPost, postIDs) // Golylang: the targets' languages in one query each
+	s.pllPrimeObjLangs(ctx, pllTerm, termIDs)
 	posts, err := s.store.PostsByIDs(ctx, postIDs)
 	if err != nil {
 		posts = map[int64]*store.Post{}

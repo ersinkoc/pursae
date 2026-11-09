@@ -369,6 +369,7 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		if req.Body == nil {
 			req.Body = map[string]any{}
 		}
+		s.golylangRESTParams(c, r, req) // Golylang: lang and translations sent in the body
 		h(c, req)
 		return
 	}

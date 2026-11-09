@@ -28,8 +28,8 @@ const (
 
 // feedTitle is get_wp_title_rss() (wp_get_document_title() on a feed request): the archive title and
 // the site name joined by an en dash; the main feed is the site name alone.
-func (s *Server) feedTitle(q *siteQuery) string {
-	site := html.EscapeString(s.settings.String("blogname"))
+func (s *Server) feedTitle(ctx context.Context, q *siteQuery) string {
+	site := html.EscapeString(s.feedBlogInfo(ctx, "blogname"))
 	var title string
 	switch q.Kind {
 	case "search":
@@ -165,10 +165,10 @@ func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *
 
 <channel>
 `)
-	fmt.Fprintf(&sb, "\t<title>%s</title>\n", s.feedTitle(q))
+	fmt.Fprintf(&sb, "\t<title>%s</title>\n", s.feedTitle(ctx, q))
 	fmt.Fprintf(&sb, "\t<atom:link href=\"%s\" rel=\"self\" type=\"application/rss+xml\" />\n", html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())))
-	fmt.Fprintf(&sb, "\t<link>%s</link>\n\t<description>%s</description>\n\t<lastBuildDate>%s</lastBuildDate>\n\t<language>en-US</language>\n",
-		html.EscapeString(lb.HomeURL("/")), html.EscapeString(s.settings.String("blogdescription")), feedBuildDate(posts).Format(rssTime))
+	fmt.Fprintf(&sb, "\t<link>%s</link>\n\t<description>%s</description>\n\t<lastBuildDate>%s</lastBuildDate>\n\t<language>%s</language>\n",
+		html.EscapeString(lb.Front()), html.EscapeString(s.feedBlogInfo(ctx, "blogdescription")), feedBuildDate(posts).Format(rssTime), html.EscapeString(s.feedLanguage(ctx)))
 	sb.WriteString("\t<sy:updatePeriod>\n\thourly\t</sy:updatePeriod>\n\t<sy:updateFrequency>\n\t1\t</sy:updateFrequency>\n\t<generator>https://wordpress.org/?v=wpgo-" + s.publicVersion() + "</generator>\n")
 	for _, p := range posts {
 		name, _ := s.postAuthorName(ctx, p)
@@ -203,13 +203,13 @@ func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *
 // atomFeed is feed-atom.php.
 func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	posts := s.feedPosts(ctx, q)
-	home := lb.HomeURL("/")
+	home := lb.Front() // the language home; xml:base keeps the unfiltered root (bloginfo_rss('url'))
 	var sb strings.Builder
 	sb.WriteString(xml.Header)
 	fmt.Fprintf(&sb, `<feed
 	xmlns="http://www.w3.org/2005/Atom"
 	xmlns:thr="http://purl.org/syndication/thread/1.0"
-	xml:lang="en-US"
+	xml:lang="%s"
 	xml:base="%s/wp-atom.php"
 	>
 	<title type="text">%s</title>
@@ -222,7 +222,7 @@ func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb 
 	<link rel="self" type="application/atom+xml" href="%s" />
 
 	<generator uri="https://wordpress.org/" version="wpgo-%s">WordPress</generator>
-`, html.EscapeString(strings.TrimSuffix(home, "/")), s.feedTitle(q), html.EscapeString(s.settings.String("blogdescription")), feedBuildDate(posts).Format(atomTime),
+`, html.EscapeString(s.feedLanguage(ctx)), html.EscapeString(strings.TrimSuffix(lb.HomeURL("/"), "/")), s.feedTitle(ctx, q), html.EscapeString(s.feedBlogInfo(ctx, "blogdescription")), feedBuildDate(posts).Format(atomTime),
 		html.EscapeString(home), html.EscapeString(lb.FeedLink("atom")), html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())), s.publicVersion())
 	for _, p := range posts {
 		name, authorURL := s.postAuthorName(ctx, p)
@@ -265,14 +265,14 @@ func (s *Server) feedComments(ctx context.Context, q *siteQuery) []*store.Commen
 }
 
 // commentsFeedTitle is the <title> of feed-rss2-comments.php / feed-atom-comments.php.
-func (s *Server) commentsFeedTitle(q *siteQuery) string {
+func (s *Server) commentsFeedTitle(ctx context.Context, q *siteQuery) string {
 	switch {
 	case q.Post != nil:
 		return "Comments on: " + html.EscapeString(q.Post.Title)
 	case q.Kind == "search":
-		return "Comments for " + html.EscapeString(s.settings.String("blogname")) + " searching on " + html.EscapeString(q.Search)
+		return "Comments for " + html.EscapeString(s.feedBlogInfo(ctx, "blogname")) + " searching on " + html.EscapeString(q.Search)
 	}
-	return "Comments for " + s.feedTitle(q)
+	return "Comments for " + s.feedTitle(ctx, q)
 }
 
 // commentFeedText is comment_text_rss(): the plain comment text, HTML-escaped.
@@ -290,7 +290,7 @@ const protectedCommentsText = "Protected Comments: Please enter your password to
 // rssCommentsFeed is feed-rss2-comments.php.
 func (s *Server) rssCommentsFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	comments := s.feedComments(ctx, q)
-	link := lb.HomeURL("/")
+	link := lb.Front()
 	if q.Post != nil {
 		link = lb.Permalink(q.Post)
 	}
@@ -309,7 +309,7 @@ func (s *Server) rssCommentsFeed(ctx context.Context, c *gin.Context, q *siteQue
 <channel>
 `)
 	fmt.Fprintf(&sb, "\t<title>%s</title>\n\t<atom:link href=\"%s\" rel=\"self\" type=\"application/rss+xml\" />\n\t<link>%s</link>\n\t<description>%s</description>\n\t<lastBuildDate>%s</lastBuildDate>\n",
-		s.commentsFeedTitle(q), html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())), html.EscapeString(link), html.EscapeString(s.settings.String("blogdescription")), built.Format(rssTime))
+		s.commentsFeedTitle(ctx, q), html.EscapeString(lb.HomeURL(c.Request.URL.RequestURI())), html.EscapeString(link), html.EscapeString(s.feedBlogInfo(ctx, "blogdescription")), built.Format(rssTime))
 	sb.WriteString("\t<sy:updatePeriod>\n\thourly\t</sy:updatePeriod>\n\t<sy:updateFrequency>\n\t1\t</sy:updateFrequency>\n\t<generator>https://wordpress.org/?v=wpgo-" + s.publicVersion() + "</generator>\n")
 	for _, cm := range comments {
 		p := q.Post
@@ -347,8 +347,8 @@ func (s *Server) atomCommentsFeed(ctx context.Context, c *gin.Context, q *siteQu
 	}
 	var sb strings.Builder
 	sb.WriteString(xml.Header)
-	fmt.Fprintf(&sb, "<feed\n\txmlns=\"http://www.w3.org/2005/Atom\"\n\txmlns:thr=\"http://purl.org/syndication/thread/1.0\"\n\txml:lang=\"en-US\"\n\t>\n\t<title type=\"text\">%s</title>\n\t<subtitle type=\"text\">%s</subtitle>\n\n\t<updated>%s</updated>\n",
-		s.commentsFeedTitle(q), html.EscapeString(s.settings.String("blogdescription")), built.Format(atomTime))
+	fmt.Fprintf(&sb, "<feed\n\txmlns=\"http://www.w3.org/2005/Atom\"\n\txmlns:thr=\"http://purl.org/syndication/thread/1.0\"\n\txml:lang=\"%s\"\n\t>\n\t<title type=\"text\">%s</title>\n\t<subtitle type=\"text\">%s</subtitle>\n\n\t<updated>%s</updated>\n",
+		html.EscapeString(s.feedLanguage(ctx)), s.commentsFeedTitle(ctx, q), html.EscapeString(s.feedBlogInfo(ctx, "blogdescription")), built.Format(atomTime))
 	switch {
 	case q.Post != nil:
 		self := lb.PostCommentsFeedFormat(q.Post, "atom")
@@ -361,7 +361,7 @@ func (s *Server) atomCommentsFeed(ctx context.Context, c *gin.Context, q *siteQu
 	default:
 		self := lb.CommentsFeedLink("atom")
 		fmt.Fprintf(&sb, "\t<link rel=\"alternate\" type=\"text/html\" href=\"%s\" />\n\t<link rel=\"self\" type=\"application/atom+xml\" href=\"%s\" />\n\t<id>%s</id>\n",
-			html.EscapeString(lb.HomeURL("/")), html.EscapeString(self), html.EscapeString(self))
+			html.EscapeString(lb.Front()), html.EscapeString(self), html.EscapeString(self))
 	}
 	for _, cm := range comments {
 		p := q.Post

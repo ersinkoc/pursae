@@ -31,7 +31,7 @@
 				<button type="button" class="menu-toggle" aria-controls="site-navigation" aria-expanded="false"><span class="pa-burger" aria-hidden="true"></span>Menu</button>
 				{{nav_menu . "primary"}}
 			</nav><!-- #site-navigation -->{{end}}
-			<form role="search" method="get" class="pa-header-search" action="{{.HomeURL}}">
+			<form role="search" method="get" class="pa-header-search" action="{{.SearchAction}}">{{.SearchHidden}}
 				<label><span class="screen-reader-text">Search for:</span><input type="search" name="s" value="{{.SearchQuery}}" placeholder="Search games&hellip;" /></label>
 			</form>
 		</div>

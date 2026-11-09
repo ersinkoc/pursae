@@ -42,7 +42,7 @@
 {{define "main-open"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{if $wb.HasMain}}<div id="content" class="site-main wb-main-part">{{else}}<main id="content" class="site-main wb-main-part">{{end}}{{else}}<main id="content" class="site-main">{{end}}{{end}}
 {{define "main-close"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main $wb.HasMain}}</div>{{else}}</main>{{end}}{{end}}
 
-{{define "searchform"}}<form role="search" method="get" class="search-form" action="{{.HomeURL}}">
+{{define "searchform"}}<form role="search" method="get" class="search-form" action="{{.SearchAction}}">{{.SearchHidden}}
 	<label><span class="screen-reader-text">{{_x . "Search for:" "label"}}</span>
 		<input type="search" class="search-field" placeholder="Search &hellip;" value="{{.SearchQuery}}" name="s" />
 	</label>

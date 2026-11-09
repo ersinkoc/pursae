@@ -83,11 +83,11 @@ func (s *Server) gooTemplateFuncs() template.FuncMap {
 			if !s.gooOn() {
 				return ""
 			}
-			home := html.EscapeString(s.links(ctx).HomeURL("/"))
-			return template.HTML(`<form role="search" method="get" class="woocommerce-product-search" action="` + home + `">` +
+			action, hidden := searchFormAction(s.links(ctx)) // Golylang: the language home
+			return template.HTML(`<form role="search" method="get" class="woocommerce-product-search" action="` + html.EscapeString(action) + `">` +
 				`<label class="screen-reader-text" for="woocommerce-product-search-field">Search for:</label>` +
 				`<input type="search" id="woocommerce-product-search-field" class="search-field" placeholder="Search products&hellip;" value="" name="s">` +
-				`<button type="submit" value="Search">Search</button><input type="hidden" name="post_type" value="product"></form>`)
+				`<button type="submit" value="Search">Search</button><input type="hidden" name="post_type" value="product">` + string(hidden) + `</form>`)
 		},
 		"goo_language_switcher": func(v *siteView) template.HTML { // Golylang: the languages of the current page (goo_golylang.go)
 			_, c := gooViewCtx(v)

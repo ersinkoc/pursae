@@ -476,6 +476,26 @@ func (s *Server) gooAttrRowFor(ctx context.Context, a gooProductAttr, index stri
 			selected[o] = true
 		}
 		terms, _ := s.gooAttributeTerms(ctx, a.Taxonomy)
+		// The editor lists the terms of the product's language (pllEditorLang), but a selected term must
+		// never drop out of the form: a translation keeps the source slug of an untranslated term, and
+		// terms made before Multi Language have no language. Saving would otherwise wipe the attribute.
+		listed := map[string]bool{}
+		for _, t := range terms {
+			listed[t.Slug] = true
+		}
+		for _, o := range a.Options {
+			if !listed[o] {
+				if all, err := s.gooAttributeTerms(gooPllUnfiltered(ctx), a.Taxonomy); err == nil {
+					for _, t := range all {
+						if selected[t.Slug] && !listed[t.Slug] {
+							listed[t.Slug] = true
+							terms = append(terms, t)
+						}
+					}
+				}
+				break
+			}
+		}
 		for _, t := range terms {
 			row.Terms = append(row.Terms, gooTermOpt{ID: t.ID, Slug: t.Slug, Name: t.Name, Selected: selected[t.Slug]})
 			if selected[t.Slug] {
@@ -927,7 +947,7 @@ func (s *Server) gooProductSave(c *gin.Context, id int64) {
 	}
 	_ = s.store.SetPostTerms(ctx, p.ID, "product_cat", catIDs)
 	if f.has("tax_input[product_tag]") {
-		tagIDs, _ := s.store.TermIDsByNames(ctx, "product_tag", strings.Split(f.raw("tax_input[product_tag]"), ","))
+		tagIDs := s.postTermIDsByNames(ctx, p.Post, "product_tag", strings.Split(f.raw("tax_input[product_tag]"), ","))
 		_ = s.store.SetPostTerms(ctx, p.ID, "product_tag", tagIDs)
 	}
 

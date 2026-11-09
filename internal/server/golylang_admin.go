@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
@@ -966,7 +967,16 @@ document.addEventListener('change', function(e){
 	if (!box) { return; }
 	var id = box.querySelector('#pll-language').getAttribute('data-post');
 	if (t.id === 'post_lang_choice') {
-		post({action: 'pll_post_lang', post_id: id, lang: t.value}, function(h){ box.innerHTML = h; });
+		var lang = t.value;
+		post({action: 'pll_post_lang', post_id: id, lang: lang}, function(h){
+			box.innerHTML = h;
+			if (window.pllPostLang !== undefined) {
+				// Block editor: the term panels and the parent selector follow the new language.
+				window.pllPostLang = lang;
+				var core = window.wp && wp.data && wp.data.dispatch('core');
+				if (core && core.invalidateResolutionForStoreSelector) { core.invalidateResolutionForStoreSelector('getEntityRecords'); }
+			}
+		});
 	} else if (t.classList.contains('tr_lang')) {
 		post({action: 'pll_link_translation', post_id: id, lang: t.getAttribute('data-lang'), target: t.value}, function(h){ box.innerHTML = h; });
 	} else if (t.id === 'pll_duplicate_content') {
@@ -1001,7 +1011,47 @@ func (s *Server) golylangBlockEditor(c *gin.Context, p *store.Post) {
 			el( 'div', { className: 'pll-box-inner', id: 'ml_box_inner', dangerouslySetInnerHTML: { __html: `+inner+` } } ) );
 	} } );
 } )();`)
+	a.AddInline("wp-edit-post", s.pllEditorFetchScript(c, p))
 	addBodyHTML(c, template.HTML(pllBoxScript(s.nonce(c, "pll_language"))+`<style>`+pllAdminCSS+`</style>`))
+}
+
+// pllEditorFetchScript is Polylang's block editor apiFetch middleware: the term panels and the parent
+// page selector ask for the edited post's language (lang=<post language>), so they list that
+// language's categories, tags and pages, and a term created from a panel gets that language. Single
+// object reads and the post's own saves are left alone. window.pllPostLang follows the Languages panel
+// (pllBoxScript).
+func (s *Server) pllEditorFetchScript(c *gin.Context, p *store.Post) string {
+	bases := []string{}
+	for _, tax := range s.pllTaxonomies() {
+		switch tax {
+		case "category":
+			bases = append(bases, "categories")
+		case "post_tag":
+			bases = append(bases, "tags")
+		default:
+			bases = append(bases, tax)
+		}
+	}
+	rawBases, _ := json.Marshal(bases)
+	return `( function() {
+	window.pllPostLang = ` + strconvQuote(s.pllObjLang(c, pllPost, p.ID)) + `;
+	var terms = ` + string(rawBases) + `;
+	if ( ! wp.apiFetch || ! wp.url ) { return; }
+	wp.apiFetch.use( function( options, next ) {
+		var lang = window.pllPostLang, key = options.path ? 'path' : ( options.url ? 'url' : '' );
+		if ( ! lang || ! key ) { return next( options ); }
+		var target = options[ key ], method = ( options.method || 'GET' ).toUpperCase();
+		var route = key === 'path' ? target : ( wp.url.getQueryArg( target, 'rest_route' ) || target );
+		var m = /\/wp\/v2\/([\w-]+)\/?(?:\?|$)/.exec( route );
+		if ( ! m || wp.url.getQueryArg( target, 'lang' ) !== undefined ) { return next( options ); }
+		var add = ( terms.indexOf( m[1] ) >= 0 && ( method === 'GET' || method === 'POST' ) ) || ( m[1] === 'pages' && method === 'GET' );
+		if ( add ) {
+			options = Object.assign( {}, options );
+			options[ key ] = wp.url.addQueryArgs( target, { lang: lang } );
+		}
+		return next( options );
+	} );
+} )();`
 }
 
 // golylangAjax answers the Languages box actions.

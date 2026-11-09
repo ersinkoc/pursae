@@ -34,7 +34,7 @@
 			</div>
 		</div>
 		<div id="header-search-panel" class="header-search-panel" hidden>
-			<form role="search" method="get" class="search-form bn-container" action="{{.HomeURL}}">
+			<form role="search" method="get" class="search-form bn-container" action="{{.SearchAction}}">{{.SearchHidden}}
 				<label for="header-search-field" class="screen-reader-text">Search for:</label>
 				<input type="search" id="header-search-field" class="search-field" placeholder="Search notes&hellip;" name="s" />
 				<button type="submit" class="search-submit">Search</button>

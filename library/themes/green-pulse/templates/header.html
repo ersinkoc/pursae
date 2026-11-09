@@ -18,7 +18,7 @@
 			</nav><!-- #site-navigation -->{{end}}
 			<details class="gp-search">
 				<summary class="gp-search__toggle"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="screen-reader-text">Search</span></summary>
-				<form role="search" method="get" class="gp-search__form" action="{{.HomeURL}}"><label><span class="screen-reader-text">Search for:</span><input type="search" name="s" placeholder="Search stories, data and guides…" value="{{.SearchQuery}}" /></label><button type="submit">Search</button></form>
+				<form role="search" method="get" class="gp-search__form" action="{{.SearchAction}}">{{.SearchHidden}}<label><span class="screen-reader-text">Search for:</span><input type="search" name="s" placeholder="Search stories, data and guides…" value="{{.SearchQuery}}" /></label><button type="submit">Search</button></form>
 			</details>
 		</div>
 	</header><!-- #masthead -->

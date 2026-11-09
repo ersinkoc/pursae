@@ -18,6 +18,13 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 | `/posts/{parent}/autosaves/{id}`, … | GET | |
 | `/posts/{id}/revisions`, `/pages/{id}/revisions`, … | GET | |
 
+With Pursae Multi Language on, posts, pages, categories and tags (and the translated custom types and
+taxonomies) carry `lang` and `translations` (`{"en": 12, "fr": 15}`). Collections take `?lang=fr` (that
+language only; objects without a language count as the default language). Writes take `lang` and
+`translations` in the JSON or form body, as Polylang's REST fields, or in the query string
+(`?lang=fr&translations[en]=12`); the body wins. A translation link is only made to an object in that
+language, of the same type, that the user may edit.
+
 ## Media
 
 | Route | Methods | Notes |

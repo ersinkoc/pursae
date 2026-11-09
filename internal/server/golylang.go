@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/cache"
 	"wpgo/internal/store"
 )
 
@@ -311,6 +312,62 @@ func (s *Server) pllObjLang(ctx context.Context, k pllKind, id int64) string {
 	return lang
 }
 
+// pllPrimeObjLangs loads the languages of many objects in one query into the request cache, so a loop,
+// a menu or a page list does not ask for each link's language on its own (pllObjLang). Objects without
+// a language row get the default language, as pllObjLang gives them.
+func (s *Server) pllPrimeObjLangs(ctx context.Context, k pllKind, ids []int64) {
+	r := pllFrom(ctx)
+	if r == nil || len(ids) == 0 || !s.golylangOn() {
+		return
+	}
+	var need []int64
+	for _, id := range ids {
+		if _, ok := r.cache.Load(string(k) + ":" + strconv.FormatInt(id, 10)); !ok && id > 0 {
+			need = append(need, id)
+		}
+	}
+	if len(need) == 0 {
+		return
+	}
+	tbl, col := k.table()
+	rows, err := s.store.Pool.Query(ctx, `SELECT `+col+`, lang FROM `+tbl+` WHERE `+col+` = ANY($1)`, need)
+	if err != nil {
+		return
+	}
+	found := make(map[int64]string, len(need))
+	for rows.Next() {
+		var id int64
+		var lang string
+		if rows.Scan(&id, &lang) == nil {
+			found[id] = lang
+		}
+	}
+	rows.Close()
+	def := ""
+	if d := s.pllDefault(ctx); d != nil {
+		def = d.Slug
+	}
+	for _, id := range need {
+		lang := found[id]
+		if lang == "" {
+			lang = def
+		}
+		r.cache.Store(string(k)+":"+strconv.FormatInt(id, 10), lang)
+	}
+}
+
+// pllPrimePosts is pllPrimeObjLangs for a list of posts.
+func (s *Server) pllPrimePosts(ctx context.Context, posts []*store.Post) {
+	if len(posts) == 0 || !s.golylangOn() {
+		return
+	}
+	ids := make([]int64, 0, len(posts))
+	for _, p := range posts {
+		ids = append(ids, p.ID)
+	}
+	s.pllPrimeObjLangs(ctx, pllPost, ids)
+}
+
 // pllTranslations is pll_get_post_translations(): language => id, the object itself included.
 func (s *Server) pllTranslations(ctx context.Context, k pllKind, id int64) map[string]int64 {
 	tbl, col := k.table()
@@ -365,10 +422,28 @@ func (s *Server) pllSetLang(ctx context.Context, k pllKind, id int64, lang strin
 		ON CONFLICT (`+col+`) DO UPDATE SET lang = EXCLUDED.lang,
 		grp = CASE WHEN EXISTS (SELECT 1 FROM `+tbl+` o WHERE o.grp = `+tbl+`.grp AND o.lang = EXCLUDED.lang AND o.`+col+` <> $1)
 			THEN EXCLUDED.grp ELSE `+tbl+`.grp END`, id, lang)
-	if r := pllFrom(ctx); r != nil {
+	pllForget(ctx, k, id) // the object's language, and translation maps it may have left
+	return err
+}
+
+// pllForget drops what the request cache knows about the languages and translation groups of the given
+// objects after a write: their "<kind>:<id>" language keys and the cached front page translations
+// ("fronttr:"). Other request state in the cache (gettext "known:" strings, the string capture counter,
+// media translations) is left alone, so a lazy language assignment mid-render does not reset it.
+func pllForget(ctx context.Context, k pllKind, ids ...int64) {
+	r := pllFrom(ctx)
+	if r == nil {
+		return
+	}
+	for _, id := range ids {
 		r.cache.Delete(string(k) + ":" + strconv.FormatInt(id, 10))
 	}
-	return err
+	r.cache.Range(func(key, _ any) bool {
+		if ks, _ := key.(string); strings.HasPrefix(ks, "fronttr:") {
+			r.cache.Delete(key)
+		}
+		return true
+	})
 }
 
 // pllSaveTranslations is pll_save_post_translations(): the given objects (language => id) become one group.
@@ -404,16 +479,18 @@ func (s *Server) pllSaveTranslations(ctx context.Context, k pllKind, m map[strin
 			return err
 		}
 	}
-	if r := pllFrom(ctx); r != nil {
-		r.cache.Range(func(key, _ any) bool { r.cache.Delete(key); return true })
+	if err := tx.Commit(ctx); err != nil {
+		return err
 	}
-	return tx.Commit(ctx)
+	pllForget(ctx, k, ids...)
+	return nil
 }
 
 // pllUnlink takes an object out of its translation group.
 func (s *Server) pllUnlink(ctx context.Context, k pllKind, id int64) error {
 	tbl, col := k.table()
 	_, err := s.store.Pool.Exec(ctx, `UPDATE `+tbl+` SET grp = nextval('pll_translation_groups') WHERE `+col+` = $1`, id)
+	pllForget(ctx, k, id)
 	return err
 }
 
@@ -573,6 +650,9 @@ func (s *Server) pllDetect(c *gin.Context) bool {
 			r.Lang = s.pllLang(ctx, s.pllUserFilter(u))
 		}
 		r.Filter = r.Lang != nil && pllAdminFiltered[strings.TrimSuffix(p, ".php")]
+		if c.Request.Method == http.MethodGet && u != nil {
+			s.pllEditorLang(c, r)
+		}
 		if c.Request.Method == http.MethodPost && (p == "/wp-admin/edit-tags" || p == "/wp-admin/term") {
 			// A term is unique by name within its language: the duplicate check sees that language only.
 			if l := s.pllLang(ctx, c.PostForm("term_lang_choice")); l != nil {
@@ -594,6 +674,81 @@ func (s *Server) pllDetect(c *gin.Context) bool {
 		return true
 	}
 	return s.pllFront(c)
+}
+
+// pllEditorLang scopes the editor screens to the language of the edited post, as Polylang does: the
+// category checklist, the tags and the parent page dropdown list that language only (and objects
+// without a language when it is the default one). post-new uses new_lang, the admin filter or the
+// default language, the language golylangNewPost gives the new post.
+func (s *Server) pllEditorLang(c *gin.Context, r *pllReq) {
+	ctx := c.Request.Context()
+	switch strings.TrimSuffix(c.Request.URL.Path, ".php") {
+	case "/wp-admin/post":
+		id, _ := strconv.ParseInt(c.Query("post"), 10, 64)
+		if id <= 0 || c.Query("action") != "edit" {
+			return
+		}
+		var typ string
+		if s.store.Pool.QueryRow(ctx, `SELECT type FROM posts WHERE id = $1`, id).Scan(&typ) != nil || !s.pllTranslatedType(typ) {
+			return
+		}
+		if l := s.pllLang(ctx, s.pllObjLang(ctx, pllPost, id)); l != nil {
+			r.Lang, r.Filter = l, true
+		}
+	case "/wp-admin/post-new":
+		if !s.pllTranslatedType(c.DefaultQuery("post_type", "post")) {
+			return
+		}
+		l := s.pllLang(ctx, c.Query("new_lang"))
+		if l == nil {
+			l = r.Lang
+		}
+		if l == nil {
+			l = s.pllDefault(ctx)
+		}
+		if l != nil {
+			r.Lang, r.Filter = l, true
+		}
+	}
+}
+
+// postTermIDsByNames is the tag box of a post save (classic editor, Quick Edit, Bulk Edit, product
+// editor): names resolve among the terms of the post's language and new terms get that language, as
+// Polylang's tag box does. Without Multi Language, or for untranslated types and taxonomies, it is
+// store.TermIDsByNames.
+func (s *Server) postTermIDsByNames(ctx context.Context, p *store.Post, tax string, names []string) []int64 {
+	if p == nil || !s.golylangOn() || !s.pllTranslatedType(p.Type) || !s.pllTranslatedTaxonomy(tax) || len(s.pllLanguages(ctx)) == 0 {
+		ids, _ := s.store.TermIDsByNames(ctx, tax, names)
+		return ids
+	}
+	l := s.pllLang(ctx, s.pllObjLang(ctx, pllPost, p.ID))
+	if l == nil {
+		ids, _ := s.store.TermIDsByNames(ctx, tax, names)
+		return ids
+	}
+	ids, _ := s.store.TermIDsByNames(context.WithValue(ctx, pllCtxKey{}, &pllReq{srv: s, Lang: l, Filter: true}), tax, names)
+	if len(ids) == 0 {
+		return ids
+	}
+	// Terms without a language row are the ones just made (or, in the default language, terms from
+	// before Multi Language, which count as default anyway).
+	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM unnest($1::bigint[]) AS t(id)
+		WHERE NOT EXISTS (SELECT 1 FROM pll_term_langs l WHERE l.term_id = t.id)`, ids)
+	if err != nil {
+		return ids
+	}
+	var bare []int64
+	for rows.Next() {
+		var id int64
+		if rows.Scan(&id) == nil {
+			bare = append(bare, id)
+		}
+	}
+	rows.Close()
+	for _, id := range bare {
+		_ = s.pllSetLang(ctx, pllTerm, id, l.Slug)
+	}
+	return ids
 }
 
 // pllUserFilter is the user's admin language filter (user meta pll_filter_content), "" for all languages.
@@ -694,6 +849,13 @@ func (s *Server) pllFront(c *gin.Context) bool {
 					c.Redirect(http.StatusFound, target)
 					return false
 				}
+			}
+			if o.Browser && o.HideDefault {
+				// The home page served in place is this visitor's answer only (Accept-Language and the
+				// language cookie decide it, and the cache key holds neither): a stored copy would answer
+				// every later visitor before this redirect runs.
+				c.Header(cache.HeaderControl, "no-store")
+				c.Header("Vary", "Accept-Language, Cookie")
 			}
 		}
 		lang = def
@@ -814,8 +976,33 @@ func (s *Server) golylangResolved(c *gin.Context, q *siteQuery) {
 		slug = s.pllObjLang(c, pllTerm, q.Term.ID)
 	}
 	if l := s.pllLang(c, slug); l != nil && l.Slug != r.Lang.Slug {
-		nr := &pllReq{srv: s, Lang: l, Filter: true, Front: true, Path: r.Path}
+		nr := &pllReq{srv: s, Lang: l, Filter: true, Front: true, Path: r.Path, cookieScript: r.cookieScript}
 		pllSet(c, nr)
+		s.pllResetCookie(c, l)
+	}
+}
+
+// pllResetCookie remembers the resolved language instead of the one pllFront read from the URL: it
+// drops the pll_language Set-Cookie pllFront may have added and sets l's when the visitor's cookie
+// differs. Behind the page cache the cookie script (cookieScript, kept on the new pllReq) does this.
+func (s *Server) pllResetCookie(c *gin.Context, l *pllLanguage) {
+	if r := pllFrom(c); r != nil && r.cookieScript {
+		return
+	}
+	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
+		return
+	}
+	h := c.Writer.Header()
+	if old := h.Values("Set-Cookie"); len(old) > 0 {
+		h.Del("Set-Cookie")
+		for _, v := range old {
+			if !strings.HasPrefix(v, pllCookie+"=") {
+				h.Add("Set-Cookie", v)
+			}
+		}
+	}
+	if ck, _ := c.Cookie(pllCookie); ck != l.Slug {
+		s.pllSetCookie(c, l)
 	}
 }
 
@@ -844,43 +1031,85 @@ func (s *Server) pllHomeURL(ctx context.Context, l *pllLanguage) string {
 }
 
 // golylangLinkFilter is the links.Builder hook: post, term and archive URLs carry their language.
+// Everything that does not depend on the link (options, languages, translated types, the front page and
+// its translations) is read once per builder, not once per link: a menu or a page list converts
+// hundreds of links on one page.
 func (s *Server) golylangLinkFilter(ctx context.Context, root string) func(kind string, obj any, link string) string {
-	if !s.golylangOn() || len(s.pllLanguages(ctx)) == 0 {
+	if !s.golylangOn() {
+		return nil
+	}
+	langs := s.pllLanguages(ctx)
+	if len(langs) == 0 {
 		return nil
 	}
 	o := s.pllOpts()
+	bySlug := make(map[string]*pllLanguage, len(langs))
+	for _, l := range langs {
+		bySlug[l.Slug] = l
+	}
+	types := map[string]bool{}
+	for _, t := range s.pllPostTypes() {
+		types[t] = true
+	}
+	taxes := map[string]bool{}
+	for _, t := range s.pllTaxonomies() {
+		taxes[t] = true
+	}
+	var front int64
+	if s.settings.String("show_on_front") == "page" {
+		front = int64(s.settings.Int("page_on_front"))
+	}
 	return func(kind string, obj any, link string) string {
 		var lang *pllLanguage
 		switch kind {
 		case "post":
 			p, ok := obj.(*store.Post)
-			if !ok || !s.pllTranslatedType(p.Type) {
+			if !ok || !types[p.Type] {
 				return link
 			}
-			lang = s.pllLang(ctx, s.pllObjLang(ctx, pllPost, p.ID))
-			if lang != nil && p.Type == "page" && s.settings.String("show_on_front") == "page" && p.Status == "publish" {
-				if front := int64(s.settings.Int("page_on_front")); front > 0 && (front == p.ID || s.pllGet(ctx, pllPost, front, lang.Slug) == p.ID) {
-					return s.pllConvert(ctx, root, root+"/", lang, "home", o) // the front page of a language is its home
+			lang = bySlug[s.pllObjLang(ctx, pllPost, p.ID)]
+			if lang != nil && p.Type == "page" && front > 0 && p.Status == "publish" {
+				if front == p.ID || s.pllFrontTranslations(ctx, front)[lang.Slug] == p.ID {
+					return s.pllConvertLangs(ctx, root, root+"/", lang, "home", o, langs) // the front page of a language is its home
 				}
 			}
 		case "term":
 			t, ok := obj.(*store.Term)
-			if !ok || !s.pllTranslatedTaxonomy(t.Taxonomy) {
+			if !ok || !taxes[t.Taxonomy] {
 				return link
 			}
-			lang = s.pllLang(ctx, s.pllObjLang(ctx, pllTerm, t.ID))
+			lang = bySlug[s.pllObjLang(ctx, pllTerm, t.ID)]
 		default:
 			lang = s.pllCurrent(ctx)
 		}
 		if lang == nil {
 			return link
 		}
-		return s.pllConvert(ctx, root, link, lang, kind, o)
+		return s.pllConvertLangs(ctx, root, link, lang, kind, o, langs)
 	}
 }
 
+// pllFrontTranslations are the translations of the static front page, read once per request (the
+// request cache is emptied whenever translation groups change).
+func (s *Server) pllFrontTranslations(ctx context.Context, front int64) map[string]int64 {
+	r := pllFrom(ctx)
+	key := "fronttr:" + strconv.FormatInt(front, 10)
+	if r != nil {
+		if v, ok := r.cache.Load(key); ok {
+			return v.(map[string]int64)
+		}
+	}
+	tr := s.pllTranslations(ctx, pllPost, front)
+	if r != nil {
+		r.cache.Store(key, tr)
+	}
+	return tr
+}
+
 // pllLangHome is the URL a language's paths hang from (no trailing slash).
-func (s *Server) pllLangHome(root string, l *pllLanguage, o pllOptions) string {
+func (s *Server) pllLangHome(root string, l *pllLanguage, o pllOptions) string { return pllLangHomeOf(root, l, o) }
+
+func pllLangHomeOf(root string, l *pllLanguage, o pllOptions) string {
 	if l.IsDefault && o.HideDefault && o.ForceLang != 3 {
 		return root
 	}
@@ -905,7 +1134,12 @@ func (s *Server) pllLangHome(root string, l *pllLanguage, o pllOptions) string {
 
 // pllConvert moves a URL of this site to a language: it strips whatever language it carries and adds l's.
 func (s *Server) pllConvert(ctx context.Context, root, link string, l *pllLanguage, kind string, o pllOptions) string {
-	rel, ok := s.pllRelative(ctx, root, link, o)
+	return s.pllConvertLangs(ctx, root, link, l, kind, o, s.pllLanguages(ctx))
+}
+
+// pllConvertLangs is pllConvert with the languages already read.
+func (s *Server) pllConvertLangs(ctx context.Context, root, link string, l *pllLanguage, kind string, o pllOptions, langs []*pllLanguage) string {
+	rel, ok := pllRelativeLangs(root, link, o, langs)
 	if !ok {
 		return link
 	}
@@ -929,14 +1163,22 @@ func (s *Server) pllConvert(ctx context.Context, root, link string, l *pllLangua
 		}
 		return u.String()
 	}
+	if !o.TranslateSlugs {
+		return s.pllLangHome(root, l, o) + rel
+	}
 	return s.pllLangHome(root, l, o) + s.pllTranslateBase(ctx, rel, l.Slug, true)
 }
 
 // pllRelative strips the site home or a language home off a URL; ok is false for foreign URLs.
 func (s *Server) pllRelative(ctx context.Context, root, link string, o pllOptions) (string, bool) {
+	return pllRelativeLangs(root, link, o, s.pllLanguages(ctx))
+}
+
+// pllRelativeLangs is pllRelative with the languages already read.
+func pllRelativeLangs(root, link string, o pllOptions, langs []*pllLanguage) (string, bool) {
 	homes := []string{}
-	for _, l := range s.pllLanguages(ctx) {
-		if h := s.pllLangHome(root, l, o); h != root {
+	for _, l := range langs {
+		if h := pllLangHomeOf(root, l, o); h != root {
 			homes = append(homes, h)
 		}
 		if o.ForceLang == 1 { // both /fr and /language/fr, so a changed setting still converts

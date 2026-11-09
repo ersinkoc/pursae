@@ -4,7 +4,7 @@
 			{{with .hero_kicker}}<p class="cc-hero__kicker">{{.}}</p>{{end}}
 			<p class="cc-hero__title">{{with .hero_title}}{{.}}{{else}}{{$.SiteName}}{{end}}</p>
 			{{with .hero_text}}<p class="cc-hero__lead">{{.}}</p>{{end}}
-			<form role="search" method="get" class="cc-hero__search" action="{{$.HomeURL}}">
+			<form role="search" method="get" class="cc-hero__search" action="{{$.SearchAction}}">{{$.SearchHidden}}
 				<label for="cc-course-search" class="cc-hero__search-label">Find a course, event or teacher</label>
 				<span class="cc-hero__search-row"><input type="search" id="cc-course-search" name="s" placeholder="e.g. watercolour, biology, Spanish" /><button type="submit">Search</button></span>
 			</form>

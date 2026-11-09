@@ -4,7 +4,7 @@
 		<p class="hd-page-head__label">Search</p>
 		<h1 class="hd-page-head__title">&ldquo;{{.SearchQuery}}&rdquo;</h1>
 		<p class="hd-page-head__desc">{{plural .TotalPosts "%s story found" "%s stories found"}}</p>
-		<div class="hd-page-head__search">{{template "searchform" (dict "HomeURL" .HomeURL "SearchQuery" .SearchQuery "ID" "results")}}</div>
+		<div class="hd-page-head__search">{{template "searchform" (dict "HomeURL" .HomeURL "SearchAction" .SearchAction "SearchHidden" .SearchHidden "SearchQuery" .SearchQuery "ID" "results")}}</div>
 	</header>
 	{{if .Posts}}<div class="hd-river">
 		{{range .Posts}}{{template "content" .}}
