@@ -212,9 +212,7 @@ func (s *Store) UpdateTerm(ctx context.Context, t *Term) error {
 		return err
 	}
 	t.Slug = slug
-	if t.ParentID == t.ID {
-		t.ParentID = 0
-	}
+	t.ParentID = checkHierarchyLoop(ctx, s.Pool, "terms", t.ID, t.ParentID) // wp_update_term_parent
 	meta, _ := json.Marshal(orEmpty(t.Meta))
 	_, err = s.Pool.Exec(ctx, `UPDATE terms SET parent_id=$2, slug=$3, name=$4, description=$5, meta=$6 WHERE id=$1`,
 		t.ID, nullable(t.ParentID), t.Slug, t.Name, t.Description, meta)

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -13,6 +15,7 @@ import (
 
 	"wpgo/internal/blocks"
 	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // The Classic Editor ships as a native plugin: wp_editor() with TinyMCE and Quicktags, exactly as
@@ -84,4 +87,48 @@ func addLateFooterHTML(c *gin.Context, h template.HTML) {
 // classicEditorEnabled reports whether the Classic Editor plugin is active.
 func (s *Server) classicEditorEnabled() bool {
 	return s.settings.String("classic-editor-replace") == "classic" || s.settings.String("classic-editor-allow-users") == "allow"
+}
+
+// wpLinkAjax is wp_ajax_wp_link_ajax() / _WP_Editors::wp_link_query(): the classic editor's
+// Insert/edit link dialog lists recent content and searches it, 20 published items of the public
+// post types per page. No results answer false, which tells wplink.js the list is complete.
+func (s *Server) wpLinkAjax(c *gin.Context) {
+	u := currentUser(c)
+	if !s.checkNonceValue(c, c.PostForm("_ajax_linking_nonce"), "internal-linking") {
+		c.String(http.StatusForbidden, "-1")
+		return
+	}
+	if !u.Can("edit_posts", nil) {
+		c.String(http.StatusForbidden, "0")
+		return
+	}
+	page, _ := strconv.Atoi(c.PostForm("page"))
+	if page < 1 {
+		page = 1
+	}
+	types := siteSearchTypes()
+	if s.gooOn() {
+		types = append(types, "product")
+	}
+	q := store.PostQuery{Types: types, Statuses: []string{"publish"}, Search: strings.TrimSpace(c.PostForm("search")),
+		OrderBy: "date", Order: "DESC", Page: page, PerPage: 20}
+	posts, _, err := s.store.QueryPosts(c, q)
+	if err != nil || len(posts) == 0 {
+		c.String(http.StatusOK, "false\n")
+		return
+	}
+	lb := s.links(c)
+	loc := s.loc()
+	out := make([]gin.H, 0, len(posts))
+	for _, p := range posts {
+		info := labelsFor(p.Type).Singular
+		switch p.Type {
+		case "post":
+			info = p.Date().In(loc).Format("2006/01/02")
+		case "product":
+			info = "Product"
+		}
+		out = append(out, gin.H{"ID": p.ID, "title": strings.TrimSpace(html.EscapeString(wp.StripTags(p.Title))), "permalink": lb.Permalink(p), "info": info})
+	}
+	c.JSON(http.StatusOK, out)
 }

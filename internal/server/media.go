@@ -100,6 +100,30 @@ func (s *Server) createImageSubsizes(ctx context.Context, a *store.Attachment) {
 	}
 }
 
+// ksesAttachmentText is excerpt_save_pre / content_save_pre for an attachment: a user without
+// unfiltered_html can't store raw HTML in its caption or description (both end up in post content
+// when the item is inserted into the editor).
+func ksesAttachmentText(u *store.User, a *store.Attachment) {
+	if u != nil && u.Can("unfiltered_html", nil) {
+		return
+	}
+	a.Caption = wp.KsesPost(a.Caption)
+	a.Description = wp.KsesPost(a.Description)
+}
+
+// ksesMediaPatch is ksesAttachmentText for the per-language texts of Pursae Multi Language.
+func ksesMediaPatch(u *store.User, patch pllMediaText) {
+	if u != nil && u.Can("unfiltered_html", nil) {
+		return
+	}
+	for _, k := range []string{"caption", "description"} {
+		if v := patch[k]; v != nil {
+			t := wp.KsesPost(*v)
+			patch[k] = &t
+		}
+	}
+}
+
 // uploadURL is wp_get_attachment_url() for a path relative to the uploads dir.
 func (s *Server) uploadURL(c context.Context, rel string) string {
 	return s.links(c).HomeURL("/wp-content/uploads/" + rel)
@@ -444,6 +468,7 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 		if v, ok := c.GetPostForm("changes[menuOrder]"); ok {
 			a.MenuOrder, _ = strconv.Atoi(v)
 		}
+		ksesAttachmentText(u, a)
 		if err := s.store.UpdateAttachment(c, a); err != nil {
 			jsonError(c, http.StatusOK, nil)
 			return true

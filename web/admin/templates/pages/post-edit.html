@@ -58,6 +58,7 @@
 			<div id="minor-publishing-actions">
 				{{if and (ne $p.Status "publish") (ne $p.Status "future") (ne $p.Status "private")}}<div id="save-action"><input type="submit" name="save" id="save-post" value="{{if eq $p.Status "pending"}}Save as Pending{{else}}Save Draft{{end}}" class="button" /></div>{{end}}
 				{{if .ViewURL}}<div id="preview-action"><a class="preview button" href="{{.ViewURL}}" target="wp-preview-{{$p.ID}}" id="post-preview">{{if eq $p.Status "publish"}}Preview Changes{{else}}Preview{{end}}<span class="screen-reader-text"> (opens in a new tab)</span></a></div>{{end}}
+				<input type="hidden" name="wp-preview" id="wp-preview" value="" />
 				<div class="clear"></div>
 			</div>
 			<div id="misc-publishing-actions">

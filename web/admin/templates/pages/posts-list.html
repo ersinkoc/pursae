@@ -41,7 +41,7 @@
 		</select>{{end}}
 		<input type="submit" name="filter_action" id="post-query-submit" class="button button-compact" value="Filter" />
 	</div>{{end}}
-	{{if .IsTrash}}<div class="alignleft actions"></div>{{end}}
+	{{if .IsTrash}}<div class="alignleft actions">{{if and .Rows .CanEmptyTrash}}<input type="submit" name="delete_all" id="delete_all" class="button apply" value="Empty Trash" />{{end}}</div>{{end}}
 	{{template "tablenav-pages" .Pagination}}
 	<br class="clear" />
 </div>
@@ -59,7 +59,7 @@
 </table>
 <div class="tablenav bottom">
 	{{template "posts-bulk" dict "Pos" "bottom" "Trash" .IsTrash}}
-	<div class="alignleft actions"></div>
+	<div class="alignleft actions">{{if and .IsTrash .Rows .CanEmptyTrash}}<input type="submit" name="delete_all" id="delete_all" class="button apply" value="Empty Trash" />{{end}}</div>
 	{{template "tablenav-pages" .Pagination}}
 	<br class="clear" />
 </div>

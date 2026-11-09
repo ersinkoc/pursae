@@ -576,6 +576,7 @@ func (s *Server) singular(c *gin.Context, q *siteQuery, p *store.Post) (*siteQue
 	if !siteViewableType(p.Type) {
 		return nil, errNotFound
 	}
+	p = s.previewAutosave(c, q, p, u)
 	q.Post = p
 	q.Kind = "single"
 	if p.Type == "page" {
@@ -585,6 +586,26 @@ func (s *Server) singular(c *gin.Context, q *siteQuery, p *store.Post) (*siteQue
 		}
 	}
 	return q, nil
+}
+
+// previewAutosave is _set_preview(): a preview link of an autosave (preview_id + a valid
+// post_preview_<id> nonce, from the editor's Preview button) shows the current user's autosave
+// title, content and excerpt instead of the stored ones. The post is copied, never changed in place.
+func (s *Server) previewAutosave(c *gin.Context, q *siteQuery, p *store.Post, u *store.User) *store.Post {
+	if !q.Preview || c.Query("preview_id") != itoa64(p.ID) || u == nil || u.ID == 0 || !u.Can("edit_post", p) {
+		return p
+	}
+	if !s.checkNonceValue(c, c.Query("preview_nonce"), "post_preview_"+itoa64(p.ID)) {
+		return p
+	}
+	revs, err := s.revisions(c, p.ID, true, u.ID)
+	// An autosave older than the post's last save is stale: the saved post is newer.
+	if err != nil || len(revs) == 0 || revs[0].CreatedAt.Before(p.ModifiedAt) {
+		return p
+	}
+	cp := *p
+	cp.Title, cp.Content, cp.Excerpt = revs[0].Title, revs[0].Content, revs[0].Excerpt
+	return &cp
 }
 
 // mainPosts runs the archive query for a non-singular request.

@@ -239,12 +239,18 @@ func (s *Server) quickDraft(c *gin.Context) {
 	title := strings.TrimSpace(c.PostForm("post_title"))
 	content := strings.TrimSpace(c.PostForm("content"))
 	if title != "" || content != "" {
-		p := &store.Post{Type: "post", AuthorID: u.ID, Status: "draft", Title: title, Content: paragraphsToBlocks(content)}
+		content = paragraphsToBlocks(content)
+		// Same content_save_pre filter as every other save path: no raw HTML without unfiltered_html.
+		if !u.Can("unfiltered_html", nil) {
+			content = wp.KsesPost(content)
+		}
+		p := &store.Post{Type: "post", AuthorID: u.ID, Status: "draft", Title: title, Content: content}
 		if err := s.store.InsertPost(c, p); err != nil {
 			c.String(http.StatusInternalServerError, "Could not save draft.")
 			return
 		}
 		_ = s.store.SetPostTerms(c, p.ID, "category", []int64{int64(s.settings.Int("default_category"))})
+		s.afterPostSave(c, p)
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/")
 }

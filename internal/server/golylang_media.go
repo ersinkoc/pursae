@@ -657,6 +657,7 @@ func (s *Server) golylangMediaSaveForm(c *gin.Context, a *store.Attachment, pref
 		if len(patch) == 0 {
 			continue
 		}
+		ksesMediaPatch(currentUser(c), patch)
 		if ch, err := s.pllMediaPatch(c, a.ID, l.Slug, patch); err == nil && ch {
 			changed = true
 		}
@@ -879,6 +880,9 @@ func (s *Server) golylangMediaRESTParse(c *gin.Context, r *restRequest) (patches
 		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): pll_i18n ("+err.Error()+")")
 		return nil, false
 	}
+	for _, patch := range patches {
+		ksesMediaPatch(restCurrent(c), patch)
+	}
 	return patches, true
 }
 
@@ -934,7 +938,15 @@ func (s *Server) registerGolylangMediaREST(api *restAPI) {
 			if in, ok := body["i18n"].(map[string]any); ok {
 				body = in
 			}
-			if err := s.pllMediaRESTPatch(c, a.ID, body); err != nil {
+			patches, err := s.pllMediaRESTParse(c, body)
+			if err != nil {
+				restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error())
+				return
+			}
+			for _, patch := range patches {
+				ksesMediaPatch(restCurrent(c), patch)
+			}
+			if err := s.pllMediaRESTApply(c, a.ID, patches); err != nil {
 				restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error())
 				return
 			}
