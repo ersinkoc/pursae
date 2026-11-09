@@ -142,7 +142,10 @@ func (api *restAPI) listComments(c *gin.Context, r *restRequest) {
 		}
 	}
 	page, per := pageArgs(c)
-	q := store.CommentQuery{Search: c.Query("search"), SearchPublic: !canModerate(u), Order: c.DefaultQuery("order", "desc"), OrderBy: c.DefaultQuery("orderby", "date_gmt"), PerPage: 100000}
+	// Every filter runs in SQL, so a page costs one count and one page query whatever the
+	// number of comments on the site.
+	q := store.CommentQuery{Search: c.Query("search"), SearchPublic: !canModerate(u), Order: c.DefaultQuery("order", "desc"),
+		OrderBy: c.DefaultQuery("orderby", "date_gmt"), Page: page, PerPage: per}
 	switch status {
 	case "approve", "approved":
 		q.Status = "approved"
@@ -164,71 +167,45 @@ func (api *restAPI) listComments(c *gin.Context, r *restRequest) {
 			return
 		}
 	}
-	if len(postIDs) == 1 {
-		q.PostID = postIDs[0]
+	q.PostIDs = postIDs
+	q.IDs, _ = r.IDs(c, "include")
+	q.ExcludeIDs, _ = r.IDs(c, "exclude")
+	q.UserIDs, _ = r.IDs(c, "author")
+	q.ExcludeUserIDs, _ = r.IDs(c, "author_exclude")
+	q.ParentIDs, _ = r.IDs(c, "parent")
+	q.ExcludeParentIDs, _ = r.IDs(c, "parent_exclude")
+	q.AuthorEmail = c.Query("author_email")
+	q.ExactType = c.Query("type")
+	if offset, _ := strconv.Atoi(c.Query("offset")); offset > 0 {
+		q.Offset = offset
 	}
-	if a := c.Query("author"); a != "" && !strings.Contains(a, ",") {
-		q.UserID, _ = strconv.ParseInt(a, 10, 64)
+	if len(postIDs) == 0 && !canModerate(u) {
+		// Everybody who cannot moderate sees only comments of posts they may read: public posts in
+		// SQL, plus the non-public posts with comments that this user may read (none for visitors).
+		q.PublicPosts = true
+		if u != nil {
+			hidden, err := s.store.NonPublicCommentedPosts(c, q.Status)
+			if err != nil {
+				restErr(c, http.StatusInternalServerError, "rest_query_error", err.Error())
+				return
+			}
+			for _, p := range hidden {
+				if api.postReadableWithPassword(c, p, "") {
+					q.ReadablePostIDs = append(q.ReadablePostIDs, p.ID)
+				}
+			}
+		}
 	}
-	list, _, err := s.store.QueryComments(c, q)
+	list, total, err := s.store.QueryComments(c, q)
 	if err != nil {
 		restErr(c, http.StatusInternalServerError, "rest_query_error", err.Error())
 		return
 	}
-	include, hasInclude := r.IDs(c, "include")
-	exclude, _ := r.IDs(c, "exclude")
-	authors, _ := r.IDs(c, "author")
-	authorsEx, _ := r.IDs(c, "author_exclude")
-	parents, hasParent := r.IDs(c, "parent")
-	parentsEx, _ := r.IDs(c, "parent_exclude")
-	inSet := func(ids []int64, id int64) bool {
-		for _, x := range ids {
-			if x == id {
-				return true
-			}
-		}
-		return false
-	}
-	var filtered []*store.Comment
-	for _, cm := range list {
-		if len(postIDs) > 1 && !inSet(postIDs, cm.PostID) {
-			continue
-		}
-		if hasInclude && !inSet(include, cm.ID) || inSet(exclude, cm.ID) {
-			continue
-		}
-		if len(authors) > 0 && !inSet(authors, cm.UserID) || inSet(authorsEx, cm.UserID) {
-			continue
-		}
-		if hasParent && !inSet(parents, cm.ParentID) || inSet(parentsEx, cm.ParentID) {
-			continue
-		}
-		if ae := c.Query("author_email"); ae != "" && !strings.EqualFold(ae, cm.AuthorEmail) {
-			continue
-		}
-		if t := c.Query("type"); t != "" && t != cm.Type {
-			continue
-		}
-		if len(postIDs) == 0 && !canModerate(u) {
-			// Everybody who cannot moderate sees only comments of posts they may read.
-			if p, err := s.store.GetPost(c, cm.PostID); err != nil || !api.postReadableWithPassword(c, p, "") {
-				continue
-			}
-		}
-		filtered = append(filtered, cm)
-	}
-	offset, _ := strconv.Atoi(c.Query("offset"))
-	if offset <= 0 {
-		offset = (page - 1) * per
-	}
 	out := []map[string]any{}
-	for i, cm := range filtered {
-		if i < offset || i >= offset+per {
-			continue
-		}
+	for _, cm := range list {
 		out = append(out, s.restComment(c, cm, ctxName))
 	}
-	paginate(c, len(filtered), per, page)
+	paginate(c, total, per, page)
 	restJSON(c, http.StatusOK, out)
 }
 

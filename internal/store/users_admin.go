@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+
+	"wpgo/internal/caps"
 )
 
 // Role is a row of the roles table.
@@ -50,6 +53,38 @@ type UserQuery struct {
 	Exclude           []int64
 	Nicenames         []string
 	HasPublishedPosts bool
+	// PublicSearch limits Search to id, login, nicename and display name, the columns
+	// WP_REST_Users_Controller searches for callers without list_users (email would be an oracle).
+	PublicSearch bool
+	// Caps keeps users who have every one of these capabilities (roles + allow exceptions,
+	// minus deny exceptions, exactly as caps.Resolve), resolved in SQL so the page stays a page.
+	Caps []string
+	// Offset, when positive, replaces the page-based offset (REST "offset").
+	Offset int
+}
+
+// likeEscaper escapes LIKE metacharacters so a search term matches literally.
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+// capCondition is the SQL for "user u has cap" with caps.Resolve's precedence: a deny exception
+// wins, otherwise a role granting it or an allow exception. Meta capabilities that need a post
+// (edit_post, ...) map to do_not_allow without one, as in User.Can(cap, nil).
+func capCondition(cap string, arg func(any) string) string {
+	var conds []string
+	for _, prim := range caps.MapMetaCap(0, cap, nil) {
+		if prim == "do_not_allow" {
+			return "false"
+		}
+		p := arg(prim)
+		conds = append(conds, `((EXISTS (SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+			WHERE ur.user_id = u.id AND r.capabilities @> jsonb_build_object(`+p+`::text, true))
+			OR EXISTS (SELECT 1 FROM user_capabilities uc WHERE uc.user_id = u.id AND uc.capability = `+p+` AND uc.effect = 'allow'))
+			AND NOT EXISTS (SELECT 1 FROM user_capabilities uc WHERE uc.user_id = u.id AND uc.capability = `+p+` AND uc.effect = 'deny'))`)
+	}
+	if len(conds) == 0 {
+		return "true"
+	}
+	return strings.Join(conds, " AND ")
 }
 
 // QueryUsers returns one page of users (with roles and capabilities loaded) and the total.
@@ -61,9 +96,23 @@ func (s *Store) QueryUsers(ctx context.Context, q UserQuery) ([]*User, int, erro
 	if q.Role != "" {
 		where = append(where, `EXISTS (SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = u.id AND r.slug = `+arg(q.Role)+`)`)
 	}
-	if q.Search != "" {
-		p := arg("%" + strings.ToLower(strings.Trim(q.Search, "*")) + "%")
-		where = append(where, "(lower(u.login) LIKE "+p+" OR lower(u.email) LIKE "+p+" OR lower(u.display_name) LIKE "+p+" OR lower(u.url) LIKE "+p+")")
+	if term := strings.Trim(q.Search, "*"); term != "" {
+		p := arg("%" + likeEscaper.Replace(strings.ToLower(term)) + "%")
+		like := func(col string) string { return "lower(" + col + ") LIKE " + p + ` ESCAPE '\'` }
+		if q.PublicSearch {
+			conds := []string{like("u.login"), like("u.nicename"), like("u.display_name")}
+			if id, err := strconv.ParseInt(term, 10, 64); err == nil && id > 0 {
+				conds = append(conds, "u.id = "+arg(id))
+			}
+			where = append(where, "("+strings.Join(conds, " OR ")+")")
+		} else {
+			where = append(where, "("+like("u.login")+" OR "+like("u.email")+" OR "+like("u.display_name")+" OR "+like("u.url")+")")
+		}
+	}
+	for _, cp := range q.Caps {
+		if cp = strings.TrimSpace(cp); cp != "" {
+			where = append(where, capCondition(cp, arg))
+		}
 	}
 	if len(q.Roles) > 0 {
 		where = append(where, `EXISTS (SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = u.id AND r.slug = ANY(`+arg(q.Roles)+`))`)
@@ -116,8 +165,12 @@ func (s *Store) QueryUsers(ctx context.Context, q UserQuery) ([]*User, int, erro
 	if q.Page < 1 {
 		q.Page = 1
 	}
+	window := limitOffset(q.PerPage, q.Page)
+	if q.Offset > 0 {
+		window = fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, q.Offset)
+	}
 	rows, err := s.Pool.Query(ctx, `SELECT `+prefixed("u", userCols)+` FROM users u WHERE `+cond+` ORDER BY `+order+` `+dir+
-		limitOffset(q.PerPage, q.Page), args...)
+		`, u.id`+window, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -131,10 +184,11 @@ func (s *Store) QueryUsers(ctx context.Context, q UserQuery) ([]*User, int, erro
 		list = append(list, u)
 	}
 	rows.Close()
-	for _, u := range list {
-		if err := s.loadGrants(ctx, u); err != nil {
-			return nil, 0, err
-		}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	if err := s.loadGrantsBatch(ctx, list); err != nil {
+		return nil, 0, err
 	}
 	return list, total, nil
 }
@@ -255,8 +309,36 @@ func (s *Store) DeleteUser(ctx context.Context, id, reassignTo int64) error {
 				return err
 			}
 		} else {
-			if _, err := tx.Exec(ctx, `DELETE FROM posts WHERE author_id = $1`, id); err != nil {
+			// wp_delete_user(): only post types that support "author" (delete_with_user unset) go
+			// with the user. Products, variations, patterns, forms and field groups stay; the
+			// users FK sets their author_id to NULL below.
+			const withUser = `author_id = $1 AND type IN (SELECT slug FROM content_types WHERE supports @> '{"author": true}'::jsonb)`
+			var termIDs []int64
+			rows, err := tx.Query(ctx, `SELECT DISTINCT term_id FROM post_terms WHERE post_id IN (SELECT id FROM posts WHERE `+withUser+`)`, id)
+			if err != nil {
 				return err
+			}
+			for rows.Next() {
+				var t int64
+				if err := rows.Scan(&t); err != nil {
+					rows.Close()
+					return err
+				}
+				termIDs = append(termIDs, t)
+			}
+			rows.Close()
+			if err := rows.Err(); err != nil {
+				return err
+			}
+			if _, err := tx.Exec(ctx, `DELETE FROM posts WHERE `+withUser, id); err != nil {
+				return err
+			}
+			if len(termIDs) > 0 {
+				if _, err := tx.Exec(ctx, `UPDATE terms t SET post_count = (SELECT count(*) FROM post_terms pt
+					JOIN posts p ON p.id = pt.post_id WHERE pt.term_id = t.id AND p.status = 'publish')
+					WHERE t.id = ANY($1)`, termIDs); err != nil {
+					return err
+				}
 			}
 		}
 		_, err := tx.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)

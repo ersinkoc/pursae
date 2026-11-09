@@ -801,6 +801,28 @@ func (s *Store) Revisions(ctx context.Context, postID int64) (int, error) {
 	return n, err
 }
 
+// RevisionCounts is Revisions for many posts in one query; posts without revisions are absent.
+func (s *Store) RevisionCounts(ctx context.Context, postIDs []int64) (map[int64]int, error) {
+	out := map[int64]int{}
+	if len(postIDs) == 0 {
+		return out, nil
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT post_id, count(*) FROM post_revisions WHERE post_id = ANY($1) AND NOT is_autosave GROUP BY post_id`, postIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var n int
+		if err := rows.Scan(&id, &n); err != nil {
+			return nil, err
+		}
+		out[id] = n
+	}
+	return out, rows.Err()
+}
+
 // PublishDuePosts flips scheduled posts whose date has passed (the publish_future_post cron hook).
 func (s *Store) PublishDuePosts(ctx context.Context) (int64, error) {
 	tag, err := s.Pool.Exec(ctx, `UPDATE posts SET status = 'publish' WHERE status = 'future' AND published_at <= now()`)

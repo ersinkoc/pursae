@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,8 +27,12 @@ const (
 	oauthRefreshTTL = 30 * 24 * time.Hour
 	oauthCodeTTL    = 5 * time.Minute
 	oauthMaxClients = 500
-	oauthMCPPath    = "/wp-json/pursae/v1/mcp"
-	restOAuthKey    = "wpgo.restOAuthGrant" // oauth_tokens.id that authenticated the request
+	// oauthRegisterLimit registrations per address per oauthRegisterWindow: a real client registers
+	// once per connection, so a flood cannot fill the oauthMaxClients cap from one address.
+	oauthRegisterLimit  = 10
+	oauthRegisterWindow = time.Hour
+	oauthMCPPath        = "/wp-json/pursae/v1/mcp"
+	restOAuthKey        = "wpgo.restOAuthGrant" // oauth_tokens.id that authenticated the request
 )
 
 func (s *Server) registerOAuth(r *gin.Engine) {
@@ -118,6 +123,10 @@ func (s *Server) oauthRegister(c *gin.Context) {
 	if oauthCORS(c) {
 		return
 	}
+	if !oauthRegisterAllow(clientIP(c), time.Now()) {
+		oauthErr(c, http.StatusTooManyRequests, "temporarily_unavailable", "Too many client registrations from this address. Try again later.")
+		return
+	}
 	var in struct {
 		ClientName   string   `json:"client_name"`
 		RedirectURIs []string `json:"redirect_uris"`
@@ -141,9 +150,11 @@ func (s *Server) oauthRegister(c *gin.Context) {
 		name = name[:100]
 	}
 	ctx := c.Request.Context()
-	// Keep the table small: drop clients that never got a token, then cap what is left.
-	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_clients WHERE created_at < now() - interval '7 days'
-		AND NOT EXISTS (SELECT 1 FROM oauth_tokens t WHERE t.client_id = oauth_clients.client_id)`)
+	// Keep the table small: drop clients that never got a token within an hour (a pending code,
+	// which lives 5 minutes, keeps a client in the middle of its consent flow), then cap what is left.
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_clients WHERE created_at < now() - interval '1 hour'
+		AND NOT EXISTS (SELECT 1 FROM oauth_tokens t WHERE t.client_id = oauth_clients.client_id)
+		AND NOT EXISTS (SELECT 1 FROM oauth_codes k WHERE k.client_id = oauth_clients.client_id AND k.expires_at > now())`)
 	var n int
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM oauth_clients`).Scan(&n)
 	if n >= oauthMaxClients {
@@ -158,6 +169,36 @@ func (s *Server) oauthRegister(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
 	c.JSON(http.StatusCreated, gin.H{"client_id": id, "client_name": name, "redirect_uris": in.RedirectURIs,
 		"token_endpoint_auth_method": "none", "grant_types": []string{"authorization_code", "refresh_token"}, "response_types": []string{"code"}})
+}
+
+// oauthRegisterLimiter counts registrations per address in fixed windows.
+var oauthRegisterLimiter = struct {
+	sync.Mutex
+	hits map[string]oauthRegisterHits
+}{hits: map[string]oauthRegisterHits{}}
+
+type oauthRegisterHits struct {
+	start time.Time
+	n     int
+}
+
+func oauthRegisterAllow(key string, now time.Time) bool {
+	oauthRegisterLimiter.Lock()
+	defer oauthRegisterLimiter.Unlock()
+	if len(oauthRegisterLimiter.hits) > 10000 { // bound memory: drop expired windows
+		for k, h := range oauthRegisterLimiter.hits {
+			if now.Sub(h.start) > oauthRegisterWindow {
+				delete(oauthRegisterLimiter.hits, k)
+			}
+		}
+	}
+	h := oauthRegisterLimiter.hits[key]
+	if now.Sub(h.start) > oauthRegisterWindow {
+		h = oauthRegisterHits{start: now}
+	}
+	h.n++
+	oauthRegisterLimiter.hits[key] = h
+	return h.n <= oauthRegisterLimit
 }
 
 type oauthClient struct {

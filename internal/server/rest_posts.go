@@ -96,16 +96,15 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		"comment_status": p.CommentStatus,
 		"ping_status":    p.PingStatus,
 		"template":       "",
-		"meta":           map[string]any{"footnotes": ""},
+		"meta":           map[string]any{"footnotes": metaString(p.Meta, "footnotes")},
 		"class_list":     []string{"post-" + itoa64(p.ID), p.Type, "type-" + p.Type, "status-" + p.Status, "hentry"},
 	}
 	if p.Type == "post" {
 		out["sticky"] = p.Sticky
 		out["format"] = p.Format
-		cats, _ := s.store.TermsForPosts(c, []int64{p.ID}, "category")
-		tags, _ := s.store.TermsForPosts(c, []int64{p.ID}, "post_tag")
-		out["categories"] = termIDs(cats[p.ID])
-		out["tags"] = termIDs(tags[p.ID])
+		ctx := c.Request.Context() // request memo when a list prefetched its posts (listPosts)
+		out["categories"] = termIDs(s.postTerms(ctx, p.ID, "category"))
+		out["tags"] = termIDs(s.postTerms(ctx, p.ID, "post_tag"))
 	}
 	if p.Type == "page" {
 		out["parent"] = p.ParentID
@@ -143,7 +142,10 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		"replies":       []map[string]any{{"embeddable": true, "href": home + "/wp-json/wp/v2/comments?post=" + itoa64(p.ID)}},
 		"wp:attachment": []map[string]any{{"href": home + "/wp-json/wp/v2/media?parent=" + itoa64(p.ID)}},
 	}
-	revs, _ := s.store.Revisions(c, p.ID)
+	revs, ok := restRevisionCount(c.Request.Context(), p.ID)
+	if !ok {
+		revs, _ = s.store.Revisions(c, p.ID)
+	}
 	extra["version-history"] = []map[string]any{{"count": revs, "href": self + "/revisions"}}
 	if p.FeaturedMediaID != 0 {
 		extra["wp:featuredmedia"] = []map[string]any{{"embeddable": true, "href": home + "/wp-json/wp/v2/media/" + itoa64(p.FeaturedMediaID)}}
@@ -267,25 +269,38 @@ func (api *restAPI) getPost(c *gin.Context, r *restRequest, typ string) {
 	restJSON(c, http.StatusOK, item)
 }
 
+// restRevisionCountsKey carries a list page's revision counts (store.RevisionCounts) to restPost.
+type restRevisionCountsKey struct{}
+
+// restRevisionCount is the prefetched revision count of a post; ok is false without a prefetch.
+func restRevisionCount(ctx context.Context, postID int64) (int, bool) {
+	m, ok := ctx.Value(restRevisionCountsKey{}).(map[int64]int)
+	if !ok {
+		return 0, false
+	}
+	return m[postID], true
+}
+
 // embedPost adds the _embedded author, featured media and terms (?_embed).
+// The embed views read only display fields, so they go through the request memo (site_memo.go),
+// which listPosts fills for the whole page in a few queries.
 func (api *restAPI) embedPost(c *gin.Context, p *store.Post, item map[string]any) map[string]any {
+	ctx := c.Request.Context()
 	emb := map[string]any{}
-	if u, err := api.s.store.UserByID(c, p.AuthorID); err == nil {
+	if u := api.s.displayUser(ctx, p.AuthorID); u != nil {
 		emb["author"] = []any{api.s.restUser(c, u, "embed")}
 	}
 	if p.FeaturedMediaID != 0 {
-		if a, err := api.s.store.GetAttachment(c, p.FeaturedMediaID); err == nil {
+		if a, err := api.s.attachment(ctx, p.FeaturedMediaID); err == nil {
 			emb["wp:featuredmedia"] = []any{api.s.restMedia(c, a, "embed")}
 		}
 	}
 	if p.Type == "post" {
-		cats, _ := api.s.store.TermsForPosts(c, []int64{p.ID}, "category")
-		tags, _ := api.s.store.TermsForPosts(c, []int64{p.ID}, "post_tag")
 		var cl, tl []any
-		for _, t := range cats[p.ID] {
+		for _, t := range api.s.postTerms(ctx, p.ID, "category") {
 			cl = append(cl, api.s.restTerm(c, t, "embed"))
 		}
-		for _, t := range tags[p.ID] {
+		for _, t := range api.s.postTerms(ctx, p.ID, "post_tag") {
 			tl = append(tl, api.s.restTerm(c, t, "embed"))
 		}
 		if cl == nil {
@@ -309,9 +324,20 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 	if q.OrderBy == "include" || q.OrderBy == "relevance" {
 		q.OrderBy = "date"
 	}
+	plural := restBaseFor(typ)
+	if typ == "wp_block" {
+		plural = "posts" // wp_block maps its primitive caps to the post ones
+	}
+	ctxName := restContext(c)
+	// WP_REST_Posts_Controller::get_items_permissions_check(): the edit context carries
+	// passwords and raw content, so it needs edit_{type}s.
+	if ctxName == "edit" && (u == nil || !u.Can("edit_"+plural, nil)) {
+		forbidden(c, "rest_forbidden_context", "Sorry, you are not allowed to edit posts in this post type.")
+		return
+	}
 	statuses := strings.Split(c.DefaultQuery("status", "publish"), ",")
 	for _, st := range statuses {
-		if st != "publish" && (u == nil || !u.Can("edit_"+restBaseFor(typ), nil)) {
+		if st != "publish" && (u == nil || !u.Can("edit_"+plural, nil)) {
 			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): status", map[string]any{"params": map[string]string{"status": "Status is forbidden."}})
 			return
 		}
@@ -371,14 +397,29 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 		restErr(c, http.StatusInternalServerError, "rest_query_error", err.Error())
 		return
 	}
-	ctxName := restContext(c)
+	// Terms, authors, featured images and revision counts for the whole page in one query each,
+	// instead of several per post in restPost/embedPost.
+	ctx := withViewMemo(c.Request.Context())
+	s.prefetchPosts(ctx, posts)
+	ids := make([]int64, 0, len(posts))
+	for _, p := range posts {
+		ids = append(ids, p.ID)
+	}
+	if revs, err := s.store.RevisionCounts(ctx, ids); err == nil {
+		ctx = context.WithValue(ctx, restRevisionCountsKey{}, revs)
+	}
+	c.Request = c.Request.WithContext(ctx)
 	out := []map[string]any{}
 	_, embed := c.GetQuery("_embed")
 	for _, p := range posts {
 		if p.Status != "publish" && !u.Can("read_post", p) {
 			continue
 		}
-		item := s.restPost(c, p, ctxName)
+		itemCtx := ctxName
+		if itemCtx == "edit" && !u.Can("edit_post", p) {
+			itemCtx = "view" // a contributor listing others' posts gets no password or raw content
+		}
+		item := s.restPost(c, p, itemCtx)
 		if embed {
 			item = api.embedPost(c, p, item)
 		}
@@ -407,7 +448,7 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 			restErr(c, http.StatusForbidden, "rest_cannot_create", "Sorry, you are not allowed to create posts as this user.")
 			return
 		}
-		p = &store.Post{Type: typ, AuthorID: u.ID, Status: "draft", CommentStatus: s.settings.String("default_comment_status"), PingStatus: s.settings.String("default_ping_status")}
+		p = &store.Post{Type: typ, AuthorID: u.ID, Status: "draft", Meta: map[string]any{}, CommentStatus: s.settings.String("default_comment_status"), PingStatus: s.settings.String("default_ping_status")}
 	} else {
 		var err error
 		p, err = s.store.GetPost(c, id)
@@ -486,8 +527,18 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		}
 		p.AuthorID = v
 	}
+	if p.Meta == nil {
+		p.Meta = map[string]any{}
+	}
 	if v, ok := r.Str(c, "wp_pattern_sync_status"); ok && typ == "wp_block" {
 		p.Meta["wp_pattern_sync_status"] = v
+	}
+	// Registered REST meta: only "footnotes" (a string), where the block editor keeps the
+	// core/footnotes texts. Other keys are ignored, as WordPress ignores unregistered meta.
+	if meta, ok := r.Body["meta"].(map[string]any); ok {
+		if v, ok := meta["footnotes"].(string); ok {
+			p.Meta["footnotes"] = sanitizePostMeta(u, "footnotes", v)
+		}
 	}
 	if v, ok := r.Str(c, "date"); ok && v != "" {
 		if t, err := time.ParseInLocation("2006-01-02T15:04:05", v, s.loc()); err == nil {
@@ -588,10 +639,13 @@ func (api *restAPI) deletePost(c *gin.Context, r *restRequest, typ string) {
 	}
 	prev := s.restPost(c, p, "edit")
 	if force, _ := r.Bool(c, "force"); force || typ == "wp_block" {
+		// Purge while the post and its terms still exist (the admin delete paths do the same).
+		s.afterPostSave(c, p)
 		if err := s.store.DeletePost(c, p.ID); err != nil {
 			restErr(c, http.StatusInternalServerError, "rest_cannot_delete", "The post cannot be deleted.")
 			return
 		}
+		s.wbAfterStatusChange(c, p)
 		restJSON(c, http.StatusOK, map[string]any{"deleted": true, "previous": prev})
 		return
 	}
@@ -602,6 +656,7 @@ func (api *restAPI) deletePost(c *gin.Context, r *restRequest, typ string) {
 	_ = s.store.TrashPost(c, p.ID)
 	p, _ = s.store.GetPost(c, p.ID)
 	s.afterPostSave(c, p)
+	s.wbAfterStatusChange(c, p)
 	restJSON(c, http.StatusOK, s.restPost(c, p, "edit"))
 }
 
@@ -661,7 +716,7 @@ func (s *Server) restRevision(c *gin.Context, rv revision, p *store.Post) map[st
 		"title":   map[string]any{"rendered": wp.EscText(rv.Title), "raw": rv.Title},
 		"content": map[string]any{"rendered": blocks.Render(c.Request.Context(), rv.Content), "raw": rv.Content},
 		"excerpt": map[string]any{"rendered": wp.Autop(wp.KsesPost(rv.Excerpt)), "raw": rv.Excerpt},
-		"meta":    map[string]any{"footnotes": ""}, "preview_link": preview,
+		"meta":    map[string]any{"footnotes": metaString(p.Meta, "footnotes")}, "preview_link": preview,
 		"_links": map[string]any{"parent": []map[string]any{{"href": home + "/wp-json/wp/v2/" + base + "/" + itoa64(p.ID)}}},
 	}
 }

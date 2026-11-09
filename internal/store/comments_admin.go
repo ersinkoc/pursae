@@ -23,6 +23,22 @@ type CommentQuery struct {
 	Order        string
 	Page         int
 	PerPage      int
+	// REST filters (WP_REST_Comments_Controller); an empty list means no filter.
+	PostIDs          []int64
+	IDs              []int64
+	ExcludeIDs       []int64
+	UserIDs          []int64 // 0 matches guest comments
+	ExcludeUserIDs   []int64
+	ParentIDs        []int64 // 0 matches top-level comments
+	ExcludeParentIDs []int64
+	AuthorEmail      string // case-insensitive exact match
+	ExactType        string // comment type as stored (comment, pingback, review, ...)
+	// PublicPosts limits the result to comments on published posts without a password, plus the
+	// posts in ReadablePostIDs (non-public posts the caller may read).
+	PublicPosts     bool
+	ReadablePostIDs []int64
+	// Offset, when positive, replaces the page-based offset (REST "offset").
+	Offset int
 }
 
 // QueryComments returns one page of comments and the total count.
@@ -38,6 +54,40 @@ func (s *Store) QueryComments(ctx context.Context, q CommentQuery) ([]*Comment, 
 	}
 	if q.PostID > 0 {
 		where = append(where, "c.post_id = "+arg(q.PostID))
+	}
+	if len(q.PostIDs) > 0 {
+		where = append(where, "c.post_id = ANY("+arg(q.PostIDs)+")")
+	}
+	if len(q.IDs) > 0 {
+		where = append(where, "c.id = ANY("+arg(q.IDs)+")")
+	}
+	if len(q.ExcludeIDs) > 0 {
+		where = append(where, "NOT (c.id = ANY("+arg(q.ExcludeIDs)+"))")
+	}
+	if len(q.UserIDs) > 0 {
+		where = append(where, "coalesce(c.user_id,0) = ANY("+arg(q.UserIDs)+")")
+	}
+	if len(q.ExcludeUserIDs) > 0 {
+		where = append(where, "NOT (coalesce(c.user_id,0) = ANY("+arg(q.ExcludeUserIDs)+"))")
+	}
+	if len(q.ParentIDs) > 0 {
+		where = append(where, "coalesce(c.parent_id,0) = ANY("+arg(q.ParentIDs)+")")
+	}
+	if len(q.ExcludeParentIDs) > 0 {
+		where = append(where, "NOT (coalesce(c.parent_id,0) = ANY("+arg(q.ExcludeParentIDs)+"))")
+	}
+	if q.AuthorEmail != "" {
+		where = append(where, "lower(c.author_email) = lower("+arg(q.AuthorEmail)+")")
+	}
+	if q.ExactType != "" {
+		where = append(where, "c.type = "+arg(q.ExactType))
+	}
+	if q.PublicPosts {
+		pub := "c.post_id IN (SELECT id FROM posts WHERE status = 'publish' AND password = '')"
+		if len(q.ReadablePostIDs) > 0 {
+			pub = "(" + pub + " OR c.post_id = ANY(" + arg(q.ReadablePostIDs) + "))"
+		}
+		where = append(where, pub)
 	}
 	if q.PostAuthorID > 0 {
 		where = append(where, "c.post_id IN (SELECT id FROM posts WHERE author_id = "+arg(q.PostAuthorID)+")")
@@ -81,8 +131,12 @@ func (s *Store) QueryComments(ctx context.Context, q CommentQuery) ([]*Comment, 
 	if q.Page < 1 {
 		q.Page = 1
 	}
+	window := limitOffset(q.PerPage, q.Page)
+	if q.Offset > 0 {
+		window = fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, q.Offset)
+	}
 	rows, err := s.Pool.Query(ctx, `SELECT `+prefixed("c", commentCols)+` FROM comments c WHERE `+cond+
-		` ORDER BY `+order+` `+dir+`, c.id `+dir+limitOffset(q.PerPage, q.Page), args...)
+		` ORDER BY `+order+` `+dir+`, c.id `+dir+window, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -135,4 +189,31 @@ func (s *Store) DeleteComment(ctx context.Context, id int64) error {
 		return err
 	}
 	return s.RecountComments(ctx, c.PostID)
+}
+
+// NonPublicCommentedPosts returns the posts that are not public (unpublished or password
+// protected) and have at least one comment in status ("" or "all": pending or approved). The REST
+// comments list checks these one by one for callers who cannot moderate.
+func (s *Store) NonPublicCommentedPosts(ctx context.Context, status string) ([]*Post, error) {
+	cond := "c.status IN ('pending','approved')"
+	var args []any
+	if status != "" && status != "all" {
+		cond = "c.status = $1"
+		args = append(args, status)
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT `+postCols+` FROM posts WHERE (status <> 'publish' OR password <> '')
+		AND EXISTS (SELECT 1 FROM comments c WHERE c.post_id = posts.id AND `+cond+`)`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*Post
+	for rows.Next() {
+		p, err := scanPost(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
 }

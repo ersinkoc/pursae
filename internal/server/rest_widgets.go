@@ -726,6 +726,11 @@ func (api *restAPI) widgetTypeRender(c *gin.Context, r *restRequest) {
 // with the caller's credentials.
 func (api *restAPI) batch(c *gin.Context, r *restRequest) {
 	s := api.s
+	if c.Request.Context().Value(restBatchCtxKey{}) != nil {
+		// A batch inside a batch (any spelling of the path) would multiply one request into many.
+		restErr(c, http.StatusBadRequest, "rest_batch_not_allowed", "The requested route does not support batch requests.")
+		return
+	}
 	list, _ := r.Body["requests"].([]any)
 	if len(list) == 0 {
 		restErr(c, http.StatusBadRequest, "rest_missing_callback_param", "Missing parameter(s): requests", map[string]any{"params": []string{"requests"}})
@@ -744,17 +749,24 @@ func (api *restAPI) batch(c *gin.Context, r *restRequest) {
 		}
 		method = strings.ToUpper(method)
 		path, _ := m["path"].(string)
-		if path == "" || !strings.HasPrefix(path, "/") || strings.HasPrefix(path, "/batch/") ||
-			(method != http.MethodPost && method != http.MethodPut && method != http.MethodPatch && method != http.MethodDelete) {
-			responses = append(responses, map[string]any{"body": restError{Code: "rest_batch_not_allowed", Message: "The requested route does not support batch requests.",
-				Data: map[string]any{"status": http.StatusBadRequest}}, "status": http.StatusBadRequest, "headers": map[string]string{}})
-			continue
-		}
 		var body []byte
 		if b, ok := m["body"]; ok && b != nil {
 			body, _ = json.Marshal(b)
 		}
-		req := httptest.NewRequest(method, "/wp-json"+path, bytes.NewReader(body)).WithContext(c.Request.Context())
+		var req *http.Request
+		if strings.HasPrefix(path, "/") && !batchRoute(path) &&
+			(method == http.MethodPost || method == http.MethodPut || method == http.MethodPatch || method == http.MethodDelete) {
+			// The router trims slashes, so "//batch/v1" must be caught here as well (batchRoute).
+			path = "/" + strings.TrimLeft(path, "/")
+			req, _ = http.NewRequestWithContext(context.WithValue(c.Request.Context(), restBatchCtxKey{}, true),
+				method, "/wp-json"+path, bytes.NewReader(body))
+		}
+		if req == nil {
+			responses = append(responses, map[string]any{"body": restError{Code: "rest_batch_not_allowed", Message: "The requested route does not support batch requests.",
+				Data: map[string]any{"status": http.StatusBadRequest}}, "status": http.StatusBadRequest, "headers": map[string]string{}})
+			continue
+		}
+		req.RequestURI = req.URL.RequestURI()
 		if len(body) > 0 {
 			req.Header.Set("Content-Type", "application/json")
 		}
@@ -790,6 +802,22 @@ func (api *restAPI) batch(c *gin.Context, r *restRequest) {
 		responses = append(responses, map[string]any{"body": out, "status": rec.Code, "headers": headers})
 	}
 	restJSON(c, http.StatusMultiStatus, map[string]any{"responses": responses})
+}
+
+// restBatchCtxKey marks the context of a batch sub-request, so batch/v1 refuses to run nested.
+type restBatchCtxKey struct{}
+
+// batchRoute reports whether a sub-request path points at the batch route itself, whatever the
+// slashes, case or percent-encoding.
+func batchRoute(p string) bool {
+	if i := strings.IndexAny(p, "?#"); i >= 0 {
+		p = p[:i]
+	}
+	if u, err := url.PathUnescape(p); err == nil {
+		p = u
+	}
+	p = strings.ToLower(strings.Trim(p, "/"))
+	return p == "batch" || strings.HasPrefix(p, "batch/")
 }
 
 // batchReservedHeader reports whether a header of a batch sub-request is ignored: credentials, and the

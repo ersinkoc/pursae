@@ -12,7 +12,7 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 
 | Route | Methods | Notes |
 |-------|---------|-------|
-| `/posts`, `/pages`, `/blocks` | GET, POST | `page`, `per_page`, `search`, `author`, `categories`, `tags`, `status`, `orderby`, `order`, `slug`, `include`, `exclude`, `parent`, `sticky`, `_embed`, `_fields`; `context=edit` for raw content |
+| `/posts`, `/pages`, `/blocks` | GET, POST | `page`, `per_page`, `search`, `author`, `categories`, `tags`, `status`, `orderby`, `order`, `slug`, `include`, `exclude`, `parent`, `sticky`, `_embed`, `_fields`; `context=edit` for raw content (needs `edit_posts`/`edit_pages`; items the caller cannot edit come back in the view context). `meta.footnotes` (the block editor's footnotes, a JSON string) is read and written |
 | `/posts/{id}`, `/pages/{id}`, `/blocks/{id}` | GET, POST, DELETE | `?force=true` deletes instead of trashing. Pages read and write `template` (`_wp_page_template`): `""` is the default template, otherwise one of the theme's page templates (a package's `page_templates`) or the page's current template; another value is a 400 |
 | `/posts/{id}/autosaves`, `/pages/{id}/autosaves`, `/blocks/{id}/autosaves` | GET, POST | the editor's autosave |
 | `/posts/{parent}/autosaves/{id}`, … | GET | |
@@ -31,17 +31,17 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 | Route | Methods | Notes |
 |-------|---------|-------|
 | `/categories`, `/tags` | GET, POST | `search`, `parent`, `post`, `slug`, `hide_empty`, `orderby` |
-| `/categories/{id}`, `/tags/{id}` | GET, POST, DELETE | |
+| `/categories/{id}`, `/tags/{id}` | GET, POST, DELETE | updating or deleting needs `manage_categories` (creating a tag only needs `edit_posts`) |
 | `/taxonomies`, `/taxonomies/{taxonomy}` | GET | |
 
 ## Users and comments
 
 | Route | Methods | Notes |
 |-------|---------|-------|
-| `/users` | GET | public profiles (`who=authors`), or all users with `list_users` |
+| `/users` | GET | public profiles (`who=authors`), or all users with `list_users`; `capabilities`, `offset`. Without `list_users`, `search` matches only the id, login, slug and display name |
 | `/users/{id}` | GET | |
-| `/users/me` | GET, POST | the current user; `context=edit` for the full record |
-| `/comments` | GET, POST | `post`, `parent`, `status`, `author_email`; anonymous comments honour the Discussion settings |
+| `/users/me` | GET, POST | the current user; `context=edit` for the full record (and `meta.persisted_preferences`, which only that context returns) |
+| `/comments` | GET, POST | `post`, `parent`, `parent_exclude`, `include`, `exclude`, `author`, `author_exclude`, `author_email`, `type`, `status`, `offset`; anonymous comments honour the Discussion settings |
 | `/comments/{id}` | GET, POST, DELETE | |
 
 ## Site
@@ -92,7 +92,7 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | Route | Methods | Notes |
 |-------|---------|-------|
 | `/` (`/wp-json/`) | GET | the index: site info, namespaces, every route with its methods |
-| `/batch/v1` | POST | up to 25 requests in one call |
+| `/batch/v1` | POST | up to 25 requests in one call; a sub-request cannot be another batch |
 | `/oembed/1.0/proxy` | GET | `url=` — fetches the provider's oEmbed for the editor |
 | `/wp-block-editor/v1/url-details` | GET | `url=` — title, icon, description of a link |
 | `/pll/v1/languages`, `/pll/v1/languages/{id or code}`, `/pll/v1/settings` | GET, POST, DELETE | Pursae Multi Language (Polylang's routes); only while the plugin is on |

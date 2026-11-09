@@ -462,8 +462,15 @@ func (api *restAPI) listTerms(c *gin.Context, r *restRequest, tax string) {
 func (api *restAPI) saveTerm(c *gin.Context, r *restRequest, tax string, id int64) {
 	s := api.s
 	u := restCurrent(c)
-	if !(u.Can("manage_categories", nil) || (tax == "post_tag" && u.Can("edit_posts", nil))) {
-		restErr(c, http.StatusForbidden, "rest_cannot_create", "Sorry, you are not allowed to create terms in this taxonomy.")
+	if id != 0 {
+		// update_item_permissions_check(): edit_term maps to the taxonomy's edit_terms cap, which is
+		// manage_categories for both categories and tags (assign_terms only allows creating tags).
+		if !u.Can("manage_categories", nil) {
+			forbidden(c, "rest_cannot_update", "Sorry, you are not allowed to edit this term.")
+			return
+		}
+	} else if !(u.Can("manage_categories", nil) || (tax == "post_tag" && u.Can("edit_posts", nil))) {
+		forbidden(c, "rest_cannot_create", "Sorry, you are not allowed to create terms in this taxonomy.")
 		return
 	}
 	t := &store.Term{Taxonomy: tax}
@@ -543,10 +550,12 @@ func (s *Server) restUser(c *gin.Context, u *store.User, ctxName string) map[str
 	home := s.links(c).Home
 	out := map[string]any{"id": u.ID, "name": u.DisplayName, "url": u.URL, "description": u.Profile["description"],
 		"link": s.links(c).AuthorLink(u.ID, u.Nicename), "slug": u.Nicename,
-		"avatar_urls": map[string]string{"24": s.avatarURL(c, u.Email, 24), "48": s.avatarURL(c, u.Email, 48), "96": s.avatarURL(c, u.Email, 96)},
-		"meta":        map[string]any{"persisted_preferences": orEmptyAny(u.Meta["persisted_preferences"])},
+		"avatar_urls": map[string]string{"24": s.avatarFor(c.Request.Context(), u.Email, 24), "48": s.avatarFor(c.Request.Context(), u.Email, 48), "96": s.avatarFor(c.Request.Context(), u.Email, 96)},
+		"meta":        map[string]any{},
 		"_links":      restLinks(home+"/wp-json/wp/v2/users/"+itoa64(u.ID), home+"/wp-json/wp/v2/users", nil)}
 	if ctxName == "edit" {
+		// persisted_preferences is registered with context ['edit'] only.
+		out["meta"] = map[string]any{"persisted_preferences": orEmptyAny(u.Meta["persisted_preferences"])}
 		out["username"] = u.Login
 		out["email"] = u.Email
 		out["first_name"] = u.Profile["first_name"]
@@ -570,11 +579,11 @@ func (s *Server) restUser(c *gin.Context, u *store.User, ctxName string) map[str
 		}
 		out["extra_capabilities"] = extra
 	}
-	s.acfgoRESTUser(c, u, out) // ACF-Go
 	if ctxName == "embed" {
 		return map[string]any{"id": u.ID, "name": u.DisplayName, "url": u.URL, "description": u.Profile["description"],
 			"link": out["link"], "slug": u.Nicename, "avatar_urls": out["avatar_urls"], "_links": out["_links"]}
 	}
+	s.acfgoRESTUser(c, u, out) // ACF-Go
 	return out
 }
 
@@ -685,49 +694,20 @@ func (api *restAPI) listUsers(c *gin.Context, r *restRequest) {
 	}
 	if !canList {
 		q.HasPublishedPosts = true
+		q.PublicSearch = true // no email/url search for callers without list_users
 	}
-	var wantCaps []string
 	for _, cp := range caps {
 		if cp = strings.TrimSpace(cp); cp != "" {
-			wantCaps = append(wantCaps, cp)
+			q.Caps = append(q.Caps, cp) // resolved in SQL (roles + exceptions), so pagination stays in SQL
 		}
 	}
-	if len(wantCaps) > 0 {
-		// Capabilities are resolved per user (roles + exceptions): fetch everything matching the rest and filter here.
-		q.Page, q.PerPage = 1, 100000
-	}
-	if offset, _ := strconv.Atoi(c.Query("offset")); offset > 0 && len(wantCaps) == 0 {
-		q.Page, q.PerPage = 1, 100000
+	if offset, _ := strconv.Atoi(c.Query("offset")); offset > 0 {
+		q.Offset = offset
 	}
 	users, total, err := s.store.QueryUsers(c, q)
 	if err != nil {
 		restErr(c, http.StatusInternalServerError, "rest_query_error", err.Error())
 		return
-	}
-	if len(wantCaps) > 0 || q.PerPage == 100000 {
-		var kept []*store.User
-		for _, u := range users {
-			ok := true
-			for _, cp := range wantCaps {
-				if !u.Can(cp, nil) {
-					ok = false
-				}
-			}
-			if ok {
-				kept = append(kept, u)
-			}
-		}
-		total = len(kept)
-		offset, _ := strconv.Atoi(c.Query("offset"))
-		if offset <= 0 {
-			offset = (page - 1) * per
-		}
-		users = nil
-		for i, u := range kept {
-			if i >= offset && i < offset+per {
-				users = append(users, u)
-			}
-		}
 	}
 	out := []map[string]any{}
 	for _, u := range users {
@@ -1263,6 +1243,10 @@ func (api *restAPI) uploadMedia(c *gin.Context, r *restRequest) {
 func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 	s := api.s
 	u := restCurrent(c)
+	if u == nil || !u.Can("upload_files", nil) {
+		forbidden(c, "rest_cannot_edit", "Sorry, you are not allowed to edit this post.")
+		return
+	}
 	a, err := s.store.GetAttachment(c, r.ID())
 	if err != nil {
 		restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
@@ -1297,6 +1281,10 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 func (api *restAPI) deleteMedia(c *gin.Context, r *restRequest) {
 	s := api.s
 	u := restCurrent(c)
+	if u == nil || !u.Can("upload_files", nil) {
+		forbidden(c, "rest_cannot_delete", "Sorry, you are not allowed to delete this post.")
+		return
+	}
 	a, err := s.store.GetAttachment(c, r.ID())
 	if err != nil {
 		restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")

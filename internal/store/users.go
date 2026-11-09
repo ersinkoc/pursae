@@ -77,41 +77,81 @@ func scanUser(row pgx.Row) (*User, error) {
 
 // loadGrants fills Roles and Caps from user_roles, roles and user_capabilities.
 func (s *Store) loadGrants(ctx context.Context, u *User) error {
-	rows, err := s.Pool.Query(ctx, `SELECT r.slug, r.capabilities FROM user_roles ur
-		JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = $1 ORDER BY ur.is_primary DESC, r.id`, u.ID)
+	return s.loadGrantsBatch(ctx, []*User{u})
+}
+
+// loadGrantsBatch is loadGrants for a page of users: two queries in all, whatever the page size.
+func (s *Store) loadGrantsBatch(ctx context.Context, list []*User) error {
+	if len(list) == 0 {
+		return nil
+	}
+	ids := make([]int64, 0, len(list))
+	byID := make(map[int64][]*User, len(list))
+	for _, u := range list {
+		if _, seen := byID[u.ID]; !seen {
+			ids = append(ids, u.ID)
+		}
+		byID[u.ID] = append(byID[u.ID], u)
+		u.Roles = nil
+	}
+	type grant struct {
+		roles    []string
+		roleCaps []map[string]bool
+		exc      map[string]string
+	}
+	grants := make(map[int64]*grant, len(ids))
+	for _, id := range ids {
+		grants[id] = &grant{exc: map[string]string{}}
+	}
+	// is_primary DESC within each user keeps Roles[0] the primary role.
+	rows, err := s.Pool.Query(ctx, `SELECT ur.user_id, r.slug, r.capabilities FROM user_roles ur
+		JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ANY($1) ORDER BY ur.user_id, ur.is_primary DESC, r.id`, ids)
 	if err != nil {
 		return err
 	}
-	var roleCaps []map[string]bool
 	for rows.Next() {
+		var uid int64
 		var slug string
 		var raw []byte
-		if err := rows.Scan(&slug, &raw); err != nil {
+		if err := rows.Scan(&uid, &slug, &raw); err != nil {
 			rows.Close()
 			return err
 		}
 		m := map[string]bool{}
 		_ = json.Unmarshal(raw, &m)
-		u.Roles = append(u.Roles, slug)
-		roleCaps = append(roleCaps, m)
+		g := grants[uid]
+		g.roles = append(g.roles, slug)
+		g.roleCaps = append(g.roleCaps, m)
 	}
 	rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
 
-	exc := map[string]string{}
-	rows, err = s.Pool.Query(ctx, `SELECT capability, effect FROM user_capabilities WHERE user_id = $1`, u.ID)
+	rows, err = s.Pool.Query(ctx, `SELECT user_id, capability, effect FROM user_capabilities WHERE user_id = ANY($1)`, ids)
 	if err != nil {
 		return err
 	}
 	for rows.Next() {
+		var uid int64
 		var c, e string
-		if err := rows.Scan(&c, &e); err != nil {
+		if err := rows.Scan(&uid, &c, &e); err != nil {
 			rows.Close()
 			return err
 		}
-		exc[c] = e
+		grants[uid].exc[c] = e
 	}
 	rows.Close()
-	u.Caps = caps.Resolve(roleCaps, exc)
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for id, g := range grants {
+		resolved := caps.Resolve(g.roleCaps, g.exc)
+		for _, u := range byID[id] {
+			u.Roles = append([]string(nil), g.roles...)
+			u.Caps = resolved
+		}
+	}
 	return nil
 }
 
