@@ -107,7 +107,9 @@ func (s *Server) site(c *gin.Context) {
 	case "sitemap.xml":
 		// Core sends the conventional address to its own index (WP_Sitemaps::redirect_sitemapxml).
 		if s.settings.Bool("blog_public") {
-			c.Redirect(http.StatusMovedPermanently, strings.TrimSuffix(c.Request.URL.Path, "sitemap.xml")+"wp-sitemap.xml")
+			// Built from the slash-trimmed path (keeps a /fr/ language prefix): the raw one could start
+			// with "//" and turn the Location into a protocol-relative off-site URL.
+			c.Redirect(http.StatusMovedPermanently, "/"+strings.TrimSuffix(raw, "sitemap.xml")+"wp-sitemap.xml")
 			return
 		}
 	case "favicon.ico":

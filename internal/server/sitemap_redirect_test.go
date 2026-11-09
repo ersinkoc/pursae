@@ -20,6 +20,10 @@ func TestCoreSitemapXMLRedirect(t *testing.T) {
 	if code, _, _ = get(t, c, ts.URL+loc); code != http.StatusOK {
 		t.Errorf("the index: %d", code)
 	}
+	// A doubled leading slash must not become a protocol-relative (off-site) Location.
+	if code, _, loc = get(t, c, ts.URL+"//sitemap.xml"); code != http.StatusMovedPermanently || loc != "/wp-sitemap.xml" {
+		t.Errorf("//sitemap.xml: %d %q, want 301 to /wp-sitemap.xml", code, loc)
+	}
 	if err := srv.settings.Set(context.Background(), map[string]any{"blog_public": false}); err != nil {
 		t.Fatal(err)
 	}
