@@ -1142,7 +1142,7 @@ func (s *Server) importDemoRun(ctx context.Context, uid int64, t *Theme, src *de
 				if _, ok := rec.Locations[mn.Location]; !ok {
 					rec.Locations[mn.Location] = 0
 					for _, m := range existing {
-						if m.Location == mn.Location {
+						if m.HasLocation(mn.Location) {
 							rec.Locations[mn.Location] = m.ID
 						}
 					}

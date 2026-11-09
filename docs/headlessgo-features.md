@@ -106,7 +106,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Writes: `{"data": {...}}`; `?status=published` publishes, `?locale=` writes that locale's version (a new translation of an existing document); partial updates; relations as id, list or `{connect, disconnect, set}`; media as id or list | ✓ |
 | Password fields: hashed (argon2id), never returned; an empty value keeps the hash | ✓ |
 | Private fields: never returned, not filterable or sortable, but writable | ✓ |
-| WordPress content: posts, pages and media are in the core REST API (`/wp-json/wp/v2/posts`, `/pages`, `/media`) and stay reachable in headless mode; Pursae Headless adds the missing menus: `GET /wp/menus` (menus and theme locations) and `GET /wp/menus/{id|location|slug}` (published items as a tree with resolved URLs) | ✓ |
+| WordPress content: posts, pages and media are in the core REST API (`/wp-json/wp/v2/posts`, `/pages`, `/media`) and stay reachable in headless mode; Pursae Headless adds the missing menus: `GET /wp/menus` (menus with their theme `locations`, plus the theme's locations) and `GET /wp/menus/{id|location|slug}` (published items as a tree with resolved URLs) | ✓ |
 | `GET /` lists the routes the caller may read | ✓ |
 | `?rest_route=/headlessgo/v1/…` | ✓ |
 

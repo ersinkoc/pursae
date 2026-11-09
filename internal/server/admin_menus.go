@@ -149,7 +149,7 @@ func (s *Server) navMenus(c *gin.Context) {
 		row := locationRow{Slug: loc.Slug, Name: loc.Name}
 		row.Options = append(row.Options, menuChoice{Value: "0", Label: "&mdash; Select a Menu &mdash;"})
 		for _, m := range menus {
-			if m.Location == loc.Slug {
+			if m.HasLocation(loc.Slug) {
 				row.MenuID, row.CurrentName = m.ID, m.Name
 				row.Assigned = d.Selected != nil && m.ID == d.Selected.ID
 			}
@@ -369,7 +369,7 @@ func (s *Server) navMenusSave(c *gin.Context) {
 			continue
 		}
 		for _, m := range menus {
-			if m.ID == id && m.Location == loc.Slug {
+			if m.ID == id && m.HasLocation(loc.Slug) {
 				locs[loc.Slug] = 0
 			}
 		}

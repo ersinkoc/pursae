@@ -236,6 +236,26 @@ func TestUserRegistrationAndEmailConfirmations(t *testing.T) {
 	if _, body, _ := get(t, c, base+"/wp-admin/profile"); strings.Contains(body, "There is a pending change of your email") {
 		t.Error("pending change still shown after Cancel")
 	}
+	// The confirmation link refuses an address someone registered (in another case) after the request.
+	_, body, _ = get(t, c, base+"/wp-admin/profile")
+	form.Set("_wpnonce", formNonce(t, body))
+	form.Set("email", "Taken-Later@example.test")
+	post(t, c, base+"/wp-admin/profile", form)
+	raced := firstURL(t, lastMail(t, "[Users Site] Email Change Request").Body, "newuseremail=")
+	if _, err := getPool(t).Exec(context.Background(), `INSERT INTO users (login, email, password_hash, nicename, display_name)
+		VALUES ('latecomer', 'taken-later@example.test', 'x', 'latecomer', 'latecomer')`); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, loc := get(t, c, raced); code != http.StatusFound || loc != "/wp-admin/profile?error=new-email" {
+		t.Errorf("confirm a taken address: %d %s", code, loc)
+	}
+	_ = getPool(t).QueryRow(context.Background(), `SELECT email FROM users WHERE login = 'admin'`).Scan(&email)
+	if email != "new-admin@example.test" {
+		t.Errorf("email after confirming a taken address = %q", email)
+	}
+	if _, err := getPool(t).Exec(context.Background(), `DELETE FROM users WHERE login = 'latecomer'`); err != nil {
+		t.Fatal(err)
+	}
 
 	// Settings › General: new_admin_email + the options.php?adminhash= confirmation.
 	_, body, _ = get(t, c, base+"/wp-admin/options-general")

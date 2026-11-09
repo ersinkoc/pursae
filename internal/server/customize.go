@@ -430,7 +430,7 @@ func (s *Server) customizeScreen(c *gin.Context) {
 	d.Pages, _, _ = s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish"}, OrderBy: "title", Order: "asc", PerPage: -1})
 	for _, loc := range t.MenuLocations {
 		ml := czMenuLocation{Name: loc.Name}
-		_ = s.store.Pool.QueryRow(ctx, `SELECT name FROM menus WHERE location = $1 LIMIT 1`, loc.Slug).Scan(&ml.Menu)
+		_ = s.store.Pool.QueryRow(ctx, `SELECT m.name FROM menus m JOIN menu_locations l ON l.menu_id = m.id WHERE l.location = $1`, loc.Slug).Scan(&ml.Menu)
 		d.MenuLocations = append(d.MenuLocations, ml)
 	}
 	d.WidgetAreas = t.WidgetAreas

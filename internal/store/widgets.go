@@ -67,8 +67,8 @@ type MenuItem struct {
 // MenuAt returns the items of the menu assigned to a theme location, nested; nil when none is assigned.
 func (s *Store) MenuAt(ctx context.Context, location string) ([]*MenuItem, error) {
 	rows, err := s.Pool.Query(ctx, `SELECT i.id, coalesce(i.parent_id,0), i.kind, i.object, coalesce(i.target_id,0),
-		i.url, i.label, i.target, i.css_classes FROM menu_items i JOIN menus m ON m.id = i.menu_id
-		WHERE m.location = $1 AND i.status = 'publish' ORDER BY i.sort_order, i.id`, location)
+		i.url, i.label, i.target, i.css_classes FROM menu_items i JOIN menu_locations ml ON ml.menu_id = i.menu_id
+		WHERE ml.location = $1 AND i.status = 'publish' ORDER BY i.sort_order, i.id`, location)
 	if err != nil {
 		return nil, err
 	}

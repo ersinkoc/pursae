@@ -377,7 +377,10 @@ func TestMenuAndContentImagesBatched(t *testing.T) {
 	var admin int64
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM users ORDER BY id LIMIT 1`).Scan(&admin)
 	var menu int64
-	if err := srv.store.Pool.QueryRow(ctx, `INSERT INTO menus (slug, name, location) VALUES ('main', 'Main', 'primary') RETURNING id`).Scan(&menu); err != nil {
+	if err := srv.store.Pool.QueryRow(ctx, `INSERT INTO menus (slug, name) VALUES ('main', 'Main') RETURNING id`).Scan(&menu); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO menu_locations (location, menu_id) VALUES ('primary', $1)`, menu); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < 4; i++ {

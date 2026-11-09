@@ -125,9 +125,11 @@ func (s *Store) UserByID(ctx context.Context, id int64) (*User, error) {
 
 // UserByLoginOrEmail finds a user the way the login form does: by username, or by email when it contains "@".
 func (s *Store) UserByLoginOrEmail(ctx context.Context, login string) (*User, error) {
-	q := `SELECT ` + userCols + ` FROM users WHERE lower(login) = lower($1)`
+	// ORDER BY id: rows that differ only by case (stored before the checks were case-insensitive)
+	// resolve to the same, oldest account every time.
+	q := `SELECT ` + userCols + ` FROM users WHERE lower(login) = lower($1) ORDER BY id LIMIT 1`
 	if strings.Contains(login, "@") {
-		q = `SELECT ` + userCols + ` FROM users WHERE lower(email) = lower($1)`
+		q = `SELECT ` + userCols + ` FROM users WHERE lower(email) = lower($1) ORDER BY id LIMIT 1`
 	}
 	u, err := scanUser(s.Pool.QueryRow(ctx, q, login))
 	if err != nil {

@@ -84,7 +84,7 @@
 	{{else}}<form method="get" action="/wp-admin/nav-menus">
 		<input type="hidden" name="action" value="edit" />
 		<label for="select-menu-to-edit" class="selected-menu">Select a menu to edit:</label>
-		<select name="menu" id="select-menu-to-edit">{{if .AddNew}}<option value="0" selected="selected">&mdash; Select &mdash;</option>{{end}}{{$sel := .Selected}}{{range .Menus}}<option value="{{.ID}}"{{if and $sel (eq .ID $sel.ID)}} selected="selected"{{end}}>{{.Name}}{{if .Location}} (Set as a location){{end}}</option>{{end}}</select>
+		<select name="menu" id="select-menu-to-edit">{{if .AddNew}}<option value="0" selected="selected">&mdash; Select &mdash;</option>{{end}}{{$sel := .Selected}}{{range .Menus}}<option value="{{.ID}}"{{if and $sel (eq .ID $sel.ID)}} selected="selected"{{end}}>{{.Name}}{{if .Locations}} (Set as a location){{end}}</option>{{end}}</select>
 		<span class="submit-btn"><input type="submit" class="button" value="Select"></span>
 		<span class="add-new-menu-action">or <a href="/wp-admin/nav-menus?action=edit&amp;menu=0">create a new menu</a>. Do not forget to save your changes! <span class="screen-reader-text">Click the Save Menu button to save your changes.</span></span><!-- /add-new-menu-action -->
 	</form>{{end}}
