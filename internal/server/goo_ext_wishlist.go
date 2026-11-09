@@ -12,6 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+
+	"wpgo/internal/cache"
 )
 
 // Goocommerce Wishlists (WooCommerce Wishlists): customers — and guests, through a wishlist key kept in
@@ -213,6 +215,7 @@ func (s *Server) gooWLGuestKey(c *gin.Context, create bool) string {
 		return k
 	}
 	if ck, err := c.Cookie(gooWLCookie); err == nil && len(ck) == 32 && gooHexOnly(ck) {
+		c.Header(cache.HeaderControl, "no-store") // a page built from the visitor's own list stays private
 		if currentUser(c) == nil {
 			if sess.Data.Extra == nil {
 				sess.Data.Extra = map[string]any{}

@@ -268,7 +268,7 @@
 			</div>
 			{{.Extra}}
 			<div class="show_if_variation_manage_stock">
-				<p class="form-row form-row-first"><label for="variable_stock{{$i}}">Stock quantity</label><input type="number" id="variable_stock{{$i}}" name="variable_stock[{{$i}}]" value="{{.Stock}}" step="any" /></p>
+				<p class="form-row form-row-first"><label for="variable_stock{{$i}}">Stock quantity</label><input type="number" id="variable_stock{{$i}}" name="variable_stock[{{$i}}]" value="{{.Stock}}" step="any" /><input type="hidden" name="variable_original_stock[{{$i}}]" value="{{.Stock}}" /></p>
 				<p class="form-row form-row-last"><label for="variable_backorders{{$i}}">Allow backorders?</label><select id="variable_backorders{{$i}}" name="variable_backorders[{{$i}}]">
 					{{range list "no" "notify" "yes"}}<option value="{{.}}"{{if eq . $v.Backorders}} selected="selected"{{end}}>{{if eq . "no"}}Do not allow{{else if eq . "notify"}}Allow, but notify customer{{else}}Allow{{end}}</option>{{end}}
 				</select></p>

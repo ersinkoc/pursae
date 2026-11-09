@@ -310,16 +310,14 @@ func (s *Server) gooPaymentHTML(c *gin.Context, cart *gooCart) string {
 	if txt := strings.TrimSpace(s.gooOptString("checkout_privacy_policy_text")); txt != "" {
 		b.WriteString(`<div class="woocommerce-privacy-policy-text">` + wp.Autop(s.gooPrivacyText(c, txt)) + `</div>`)
 	}
-	if tid := s.gooPageIDIn(ctx, "terms"); tid > 0 {
-		if tp, err := s.store.GetPost(ctx, tid); err == nil && tp.Status == "publish" {
-			chk := ""
-			if c.PostForm("terms") != "" {
-				chk = ` checked="checked"`
-			}
-			b.WriteString(`<p class="form-row validate-required"><label class="woocommerce-form__label woocommerce-form__label-for-checkbox checkbox"><input type="checkbox" class="woocommerce-form__input woocommerce-form__input-checkbox input-checkbox" name="terms"` + chk + ` id="terms" />` +
-				` <span class="woocommerce-terms-and-conditions-checkbox-text">I have read and agree to the website <a href="` + gooEsc(s.links(ctx).Permalink(tp)) + `" class="woocommerce-terms-and-conditions-link" target="_blank">` + gooEsc(s.gooL10nText(ctx, "terms and conditions")) + `</a></span>&nbsp;<abbr class="required" title="required">*</abbr></label>` +
-				`<input type="hidden" name="terms-field" value="1" /></p>`)
+	if tp := s.gooTermsPage(ctx); tp != nil {
+		chk := ""
+		if c.PostForm("terms") != "" {
+			chk = ` checked="checked"`
 		}
+		b.WriteString(`<p class="form-row validate-required"><label class="woocommerce-form__label woocommerce-form__label-for-checkbox checkbox"><input type="checkbox" class="woocommerce-form__input woocommerce-form__input-checkbox input-checkbox" name="terms"` + chk + ` id="terms" />` +
+			` <span class="woocommerce-terms-and-conditions-checkbox-text">I have read and agree to the website <a href="` + gooEsc(s.links(ctx).Permalink(tp)) + `" class="woocommerce-terms-and-conditions-link" target="_blank">` + gooEsc(s.gooL10nText(ctx, "terms and conditions")) + `</a></span>&nbsp;<abbr class="required" title="required">*</abbr></label>` +
+			`<input type="hidden" name="terms-field" value="1" /></p>`)
 	}
 	b.WriteString(`</div>`)
 	place := gooEsc(s.gooL10nText(ctx, "Place order")) // the script puts it back when the payment method changes
@@ -444,6 +442,17 @@ func (s *Server) gooThankYouHTML(c *gin.Context, id int64) string {
 		return `<div class="woocommerce-order"><p class="woocommerce-notice woocommerce-notice--success woocommerce-thankyou-order-received">Thank you. Your order has been received.</p></div>`
 	}
 	u := currentUser(c)
+	if o.CustomerID != 0 && (u == nil || (u.ID != o.CustomerID && !u.Can("edit_shop_orders", nil))) {
+		// woocommerce_order_received_verify_known_shoppers: a registered customer's order shows its
+		// details (addresses, e-mail, downloads) only to that customer, not to anyone holding the URL.
+		out := `<div class="woocommerce-order"><p class="woocommerce-notice woocommerce-notice--success woocommerce-thankyou-order-received">Thank you. Your order has been received.</p>`
+		if u == nil {
+			out += `<div class="woocommerce-info">Please log in to your account to view this order.</div>` + s.gooLoginFormHTML(c, s.gooCurrentURL(c), false)
+		} else {
+			out += `<div class="woocommerce-info">This order belongs to a different account. Please log in with the account that placed it to view it.</div>`
+		}
+		return out + `</div>`
+	}
 	var b strings.Builder
 	b.WriteString(`<div class="woocommerce-order">`)
 	if o.Status == "failed" {
@@ -694,8 +703,8 @@ func (s *Server) gooOrderPayHTML(c *gin.Context, id int64) string {
 		b.WriteString(`</ul>`)
 	}
 	b.WriteString(`<div class="form-row"><input type="hidden" name="woocommerce_pay" value="1" /><input type="hidden" name="order_id" value="` + itoa64(o.ID) + `" /><input type="hidden" name="key" value="` + gooEsc(o.OrderKey) + `" />`)
-	if tid := s.gooPageID("terms"); tid > 0 {
-		b.WriteString(`<p class="form-row validate-required"><label class="woocommerce-form__label woocommerce-form__label-for-checkbox checkbox"><input type="checkbox" class="woocommerce-form__input woocommerce-form__input-checkbox input-checkbox" name="terms" id="terms" /> <span class="woocommerce-terms-and-conditions-checkbox-text">I have read and agree to the website terms and conditions</span>&nbsp;<abbr class="required" title="required">*</abbr></label></p>`)
+	if s.gooTermsPage(c.Request.Context()) != nil {
+		b.WriteString(`<p class="form-row validate-required"><label class="woocommerce-form__label woocommerce-form__label-for-checkbox checkbox"><input type="checkbox" class="woocommerce-form__input woocommerce-form__input-checkbox input-checkbox" name="terms" id="terms" /> <span class="woocommerce-terms-and-conditions-checkbox-text">I have read and agree to the website terms and conditions</span>&nbsp;<abbr class="required" title="required">*</abbr></label><input type="hidden" name="terms-field" value="1" /></p>`)
 	}
 	b.WriteString(`<button type="submit" class="button alt" id="place_order" value="Pay for order" data-value="Pay for order">Pay for order</button>`)
 	b.WriteString(`<input type="hidden" name="woocommerce-pay-nonce" value="` + s.nonce(c, "woocommerce-pay") + `" /></div></div></form>`)
@@ -718,7 +727,7 @@ func (s *Server) gooPayPost(c *gin.Context) {
 		s.gooRedirect(c, back)
 		return
 	}
-	if s.gooPageID("terms") > 0 && c.PostForm("terms") == "" {
+	if c.PostForm("terms-field") != "" && c.PostForm("terms") == "" && s.gooTermsPage(ctx) != nil {
 		s.gooAddNotice(c, "error", "Please read and accept the terms and conditions to proceed with your order.")
 		s.gooRedirect(c, back)
 		return

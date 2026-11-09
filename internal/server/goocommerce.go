@@ -465,7 +465,8 @@ func gooTaxLabels(tax string) (taxLabels, bool) {
 // Cache ------------------------------------------------------------------------------------------------
 
 // gooCacheExcludes adds the store's private pages and cookies to the page cache exclusions
-// (cart, checkout and my account are never cached; a visitor with items in the cart bypasses the cache).
+// (cart, checkout and my account are never cached; a visitor with items in the cart, a store session or
+// a wishlist bypasses the cache).
 func (s *Server) gooCacheExcludes(paths, cookies []string) ([]string, []string) {
 	if !s.gooOn() {
 		return paths, cookies
@@ -482,7 +483,9 @@ func (s *Server) gooCacheExcludes(paths, cookies []string) ([]string, []string) 
 			}
 		}
 	}
-	return append(paths, "/?goo-ajax*", "/wp-json/wc/*"), append(cookies, gooItemsCookie, gooSessionCookie)
+	// The wishlist cookie outlives the session cookie (365 days against 48 hours): a guest who has one
+	// sees their own list and hearts, so their pages are neither served from nor stored in the cache.
+	return append(paths, "/?goo-ajax*", "/wp-json/wc/*"), append(cookies, gooItemsCookie, gooSessionCookie, gooWLCookie)
 }
 
 // gooPurgeProduct drops the cached pages showing a product: its page, the shop, its categories and tags.

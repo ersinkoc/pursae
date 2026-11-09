@@ -625,7 +625,9 @@ func (s *Server) gooIsPurchasable(ctx context.Context, p *gooProduct) bool {
 	}
 	if p.Type == gooTypeVariation {
 		parent := s.gooParent(ctx, p)
-		if parent == nil || parent.Status == "trash" || p.Status != "publish" {
+		// WC_Product_Variation::is_purchasable(): the parent must be published (a private one is
+		// limited to those who can read it by the cart's mayBuyPrivate).
+		if parent == nil || (parent.Status != "publish" && parent.Status != "private") || p.Status != "publish" {
 			return false
 		}
 		// A variation of a module's variable type (variable subscriptions) needs the module on.
@@ -648,6 +650,12 @@ func (s *Server) gooStockOwner(ctx context.Context, p *gooProduct) *gooProduct {
 		}
 	}
 	return p
+}
+
+// gooStockWriteOwner is the row a stock change is written to: the stock owner, or with Multi Language
+// the canonical translation of it (gooPllStockCanonical), so every language takes from one counter.
+func (s *Server) gooStockWriteOwner(ctx context.Context, p *gooProduct) *gooProduct {
+	return s.gooPllStockCanonical(ctx, s.gooStockOwner(ctx, p))
 }
 
 // gooManagingStock is managing_stock(): the product (or the parent of a variation) tracks quantities.
@@ -846,7 +854,8 @@ func (s *Server) gooProductBase() string {
 // gooUpdateStock is wc_update_product_stock(): an atomic change (delta) or set of the managed quantity,
 // then the stock status, the variable parent and the low / no stock notifications. Returns the new quantity.
 func (s *Server) gooUpdateStock(ctx context.Context, p *gooProduct, delta int, set bool) (int, error) {
-	owner := s.gooStockOwner(ctx, p)
+	local := s.gooStockOwner(ctx, p)
+	owner := s.gooPllStockCanonical(ctx, local)
 	if !owner.ManageStock {
 		return -1, nil
 	}
@@ -868,6 +877,9 @@ func (s *Server) gooUpdateStock(ctx context.Context, p *gooProduct, delta int, s
 		was = *old
 	}
 	s.gooStockAfter(ctx, owner, was, qty, !set && delta < 0)
+	if local != owner { // the caller's copy (a translation) follows the shared counter
+		local.StockQuantity, local.StockStatus = &qty, owner.StockStatus
+	}
 	return qty, nil
 }
 

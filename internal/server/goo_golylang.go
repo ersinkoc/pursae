@@ -104,6 +104,19 @@ func (s *Server) gooPllProductCond(ctx context.Context, alias string, add func(a
 	return c + ")"
 }
 
+// gooTermsPage is the published Terms and conditions page in the request language, or nil:
+// wc_terms_and_conditions_checkbox_enabled(). The checkbox is shown, and required, only when it is set.
+func (s *Server) gooTermsPage(ctx context.Context) *store.Post {
+	tid := s.gooPageIDIn(ctx, "terms")
+	if tid <= 0 {
+		return nil
+	}
+	if tp, err := s.store.GetPost(ctx, tid); err == nil && tp.Status == "publish" {
+		return tp
+	}
+	return nil
+}
+
 // gooPageIDIn is the store page of a key in the current front-end language (wc_get_page_id() filtered
 // by Polylang for WooCommerce): its translation when it has a published one, the page itself otherwise.
 func (s *Server) gooPageIDIn(ctx context.Context, key string) int64 {
@@ -605,6 +618,29 @@ func (s *Server) gooPllSyncVariations(ctx context.Context, src, dst *gooProduct,
 	}
 }
 
+// gooPllStockCanonical is the row every stock write of a translated product goes to: the lowest
+// post id among its translations. Each translation keeps a synced copy of the stock (gooPllStockSync),
+// but the atomic delta and the strict last-unit check (gooStockDelta) must lock one shared row, or two
+// orders in different languages could both take the last unit.
+func (s *Server) gooPllStockCanonical(ctx context.Context, p *gooProduct) *gooProduct {
+	if p == nil || !s.gooPllOn(ctx) {
+		return p
+	}
+	low := p.ID
+	for _, id := range s.pllTranslations(ctx, pllPost, p.ID) {
+		if id > 0 && id < low {
+			low = id
+		}
+	}
+	if low == p.ID {
+		return p
+	}
+	if c, err := s.gooGetProduct(ctx, low); err == nil && c.ManageStock == p.ManageStock {
+		return c
+	}
+	return p
+}
+
 // gooPllStockSync gives the translations of a product (or variation) its stock after a change.
 func (s *Server) gooPllStockSync(ctx context.Context, owner *gooProduct) {
 	if owner == nil || !s.gooPllOn(ctx) {
@@ -642,6 +678,47 @@ func (s *Server) gooPllSiblings(ctx context.Context, id int64) []int64 {
 	for _, t := range s.pllTranslations(ctx, pllPost, id) {
 		if t != id {
 			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// gooPllTermSiblings are the ids of a term's translations, itself included.
+func (s *Server) gooPllTermSiblings(ctx context.Context, id int64) []int64 {
+	out := []int64{id}
+	if id <= 0 || !s.golylangOn() {
+		return out
+	}
+	for _, t := range s.pllTranslations(ctx, pllTerm, id) {
+		if t != id {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// gooCouponItemIDs are the product ids a coupon's product lists are matched against for an item: the
+// product and the variation with, under Multi Language, their translations (coupons are set up with
+// one language's ids, like Polylang for WooCommerce maps them).
+func (s *Server) gooCouponItemIDs(ctx context.Context, productID, variationID int64) []int64 {
+	ids := s.gooPllSiblings(ctx, productID)
+	if variationID != 0 {
+		ids = append(ids, s.gooPllSiblings(ctx, variationID)...)
+	}
+	return ids
+}
+
+// gooCouponItemCats are an item's product_cat ids with, under Multi Language, their translations.
+func (s *Server) gooCouponItemCats(ctx context.Context, cats []int64) []int64 {
+	if !s.golylangOn() {
+		return cats
+	}
+	var out []int64
+	for _, c := range cats {
+		for _, t := range s.gooPllTermSiblings(ctx, c) {
+			if !gooInt64In(t, out) {
+				out = append(out, t)
+			}
 		}
 	}
 	return out

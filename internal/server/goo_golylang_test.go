@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
+	"errors"
 	"html"
 	"net/http"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"wpgo/internal/store"
@@ -437,5 +439,165 @@ func TestGooGolylangSlugsAndVariations(t *testing.T) {
 	vars, _ := srv.gooVariations(ctx, pulli.ID, true)
 	if len(vars) != 2 {
 		t.Errorf("German product has %d variations, want 2 (blue and the new one)", len(vars))
+	}
+}
+
+// Stock of a translated product is one counter: sales in either language take from the same row, so
+// two orders in different languages cannot both take the last unit.
+func TestGooGolylangSharedStockCounter(t *testing.T) {
+	base, c, srv, f := gooPllSite(t)
+	ctx := context.Background()
+	hemd := gooPllTranslate(t, c, base, srv, f.shirt, "de", "Hemd")
+	order := func(p *gooProduct) *gooOrder {
+		return gooRaceOrder(t, srv, "s@example.test", 0, map[*gooProduct]int{p: 1})
+	}
+	for _, p := range []*gooProduct{f.shirt, hemd} {
+		if err := srv.gooReduceStock(ctx, order(p), true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, id := range []int64{f.shirt.ID, hemd.ID} {
+		if qty, _ := gooStockOf(t, srv, id); qty != 8 {
+			t.Errorf("stock of %d after an English and a German sale: %d, want 8", id, qty)
+		}
+	}
+	// The last unit: the second language's strict reduction is refused.
+	if _, err := srv.gooUpdateStock(ctx, hemd, 1, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooReduceStock(ctx, order(f.shirt), true); err != nil {
+		t.Fatal(err)
+	}
+	var short *gooStockShortage
+	if err := srv.gooReduceStock(ctx, order(hemd), true); !errors.As(err, &short) {
+		t.Errorf("a German order took the unit an English order already took: %v", err)
+	}
+	// Concurrent sales in both languages: exactly the stock is sold.
+	if _, err := srv.gooUpdateStock(ctx, f.shirt, 3, true); err != nil {
+		t.Fatal(err)
+	}
+	var orders []*gooOrder
+	for i := range 8 {
+		p := f.shirt
+		if i%2 == 1 {
+			p = hemd
+		}
+		orders = append(orders, order(p))
+	}
+	var sold atomic.Int32
+	var fns []func()
+	for _, o := range orders {
+		fns = append(fns, func() {
+			if srv.gooReduceStock(ctx, o, true) == nil {
+				sold.Add(1)
+			}
+		})
+	}
+	gooRace(fns...)
+	if sold.Load() != 3 {
+		t.Errorf("%d orders took stock, want 3", sold.Load())
+	}
+	for _, id := range []int64{f.shirt.ID, hemd.ID} {
+		if qty, _ := gooStockOf(t, srv, id); qty != 0 {
+			t.Errorf("stock of %d after the race: %d, want 0", id, qty)
+		}
+	}
+}
+
+// Coupon product and category restrictions match the items' translations.
+func TestGooGolylangCouponTranslations(t *testing.T) {
+	base, c, srv, f := gooPllSite(t)
+	ctx := context.Background()
+	becher := gooPllTranslate(t, c, base, srv, f.mug, "de", "Becher")
+	hemd := gooPllTranslate(t, c, base, srv, f.shirt, "de", "Hemd")
+	kleidung := &store.Term{Taxonomy: "product_cat", Name: "Kleidung", Slug: "kleidung", Meta: map[string]any{}}
+	if err := srv.store.InsertTerm(ctx, kleidung); err != nil {
+		t.Fatal(err)
+	}
+	_ = srv.pllSetLang(ctx, pllTerm, kleidung.ID, "de")
+	_ = srv.pllSaveTranslations(ctx, pllTerm, map[string]int64{"en": f.cat.ID, "de": kleidung.ID})
+	_ = srv.store.SetPostTerms(ctx, hemd.ID, "product_cat", []int64{kleidung.ID})
+	for _, cp := range []*gooCoupon{
+		{Code: "onlymug", DiscountType: "percent", Amount: 10, ProductIDs: []int64{f.mug.ID}},
+		{Code: "nomug", DiscountType: "percent", Amount: 20, ExcludedProductIDs: []int64{f.mug.ID}},
+		{Code: "nocloth", DiscountType: "percent", Amount: 20, ExcludedProductCategories: []int64{f.cat.ID}},
+		{Code: "cartnomug", DiscountType: "fixed_cart", Amount: 5, ExcludedProductIDs: []int64{f.mug.ID}},
+	} {
+		if err := srv.gooSaveCoupon(ctx, cp); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cartWith := func(p *gooProduct) *gooCart {
+		cart := srv.gooCartFor(gooTestCtx())
+		if _, err := cart.Add(ctx, p.ID, 1, 0, nil, nil, nil); err != nil {
+			t.Fatal(err)
+		}
+		return cart
+	}
+	if err := cartWith(becher).ApplyCoupon(ctx, "onlymug"); err != nil {
+		t.Errorf("a coupon for the mug refused for its German translation: %v", err)
+	}
+	for _, code := range []string{"nomug", "cartnomug"} {
+		if err := cartWith(becher).ApplyCoupon(ctx, code); err == nil {
+			t.Errorf("%s: a coupon excluding the mug applied to its German translation", code)
+		}
+	}
+	if err := cartWith(hemd).ApplyCoupon(ctx, "nocloth"); err == nil {
+		t.Error("a coupon excluding Clothing applied to a product in its German translation")
+	}
+	// The admin's order recalculation matches the translations too.
+	nomug, _ := srv.gooCouponByCode(ctx, "nomug")
+	if srv.gooCouponValidForItem(ctx, nomug, &gooOrderItem{Type: "line_item", ProductID: becher.ID}) {
+		t.Error("the order recalculation applies a coupon excluding the mug to its German translation")
+	}
+	nocloth, _ := srv.gooCouponByCode(ctx, "nocloth")
+	if srv.gooCouponValidForItem(ctx, nocloth, &gooOrderItem{Type: "line_item", ProductID: hemd.ID}) {
+		t.Error("the order recalculation applies a coupon excluding Clothing to the German category")
+	}
+}
+
+// The storefront AJAX endpoints sit on the language home, so an order placed through the AJAX
+// checkout of the German checkout page is German.
+func TestGooGolylangAjaxLanguage(t *testing.T) {
+	base, _, srv, f := gooPllSite(t)
+	ctx := context.Background()
+	gooPllTranslatePage(t, srv, srv.gooPageID("checkout"), "de", "Kasse", "kasse")
+	_ = srv.gooSetOpts(ctx, map[string]any{"goo_test_settings": map[string]any{"enabled": "yes"}})
+	z := &gooZone{Name: "US", Locations: []gooZoneLocation{{Code: "US", Type: "country"}}}
+	_ = srv.gooSaveZone(ctx, z)
+	_, _ = srv.gooAddMethod(ctx, z.ID, "flat_rate", map[string]any{"cost": "5"})
+	v := gooFrontClient()
+	get(t, v, base+"/?add-to-cart="+itoa64(f.mug.ID))
+	code, page, _ := get(t, v, base+"/de/kasse/")
+	if code != http.StatusOK {
+		t.Fatalf("German checkout: %d", code)
+	}
+	m := regexp.MustCompile(`"goo_ajax_url":"([^"]+)"`).FindStringSubmatch(page)
+	if m == nil {
+		t.Fatal("no goo_ajax_url in the German checkout")
+	}
+	ajax := strings.ReplaceAll(m[1], `&`, "&")
+	if !strings.HasPrefix(ajax, base+"/de/?goo-ajax=") {
+		t.Fatalf("German goo_ajax_url %s", ajax)
+	}
+	_, en, _ := get(t, v, base+"/shop/")
+	if !strings.Contains(en, `"goo_ajax_url":"`+base+`/?goo-ajax=%%endpoint%%"`) {
+		t.Error("the English goo_ajax_url is not on the site root")
+	}
+	form := gooFrontCheckoutForm(gooHidden(t, page, "woocommerce-process-checkout-nonce"))
+	code, body, _ := post(t, v, strings.ReplaceAll(ajax, "%%endpoint%%", "checkout"), form)
+	if code != http.StatusOK || !strings.Contains(body, `"result":"success"`) {
+		t.Fatalf("German AJAX checkout: %d %s", code, body)
+	}
+	om := regexp.MustCompile(`order-received\\?/(\d+)`).FindStringSubmatch(body)
+	if om == nil {
+		t.Fatalf("no order in %s", body)
+	}
+	o, err := srv.gooGetOrder(ctx, gooAtoi64(om[1]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.Meta[gooPllOrderLang] != "de" {
+		t.Errorf("order language %v, want de", o.Meta[gooPllOrderLang])
 	}
 }

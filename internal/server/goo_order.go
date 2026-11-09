@@ -620,7 +620,7 @@ func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) e
 		if err != nil || !s.gooManagingStock(ctx, p) || it.Qty() <= 0 {
 			continue
 		}
-		owner := s.gooStockOwner(ctx, p)
+		owner := s.gooStockWriteOwner(ctx, p)
 		n, err := s.gooStockDelta(ctx, owner, -it.Qty(), false, strict)
 		if errors.Is(err, errGooNoStock) {
 			for _, d := range done {
@@ -877,7 +877,20 @@ func (s *Server) gooTotalRefunded(ctx context.Context, orderID int64) float64 {
 
 // gooCreateRefund is wc_create_refund(): a refund order with negative lines, optional stock restock,
 // the gateway's refund when apiRefund is set, and the order becomes refunded when fully refunded.
+// Refunds of one order are serialized (the order lock), and the refunded total is read inside the
+// lock, so a double-submitted form or a retried API call cannot refund more than the order total or
+// call the gateway twice.
 func (s *Server) gooCreateRefund(ctx context.Context, o *gooOrder, amount float64, reason string, lines []gooRefundLine, restock, apiRefund bool, by int64) (*gooOrder, error) {
+	var r *gooOrder
+	err := gooWithOrderLock(ctx, o.ID, func(ctx context.Context) error {
+		var err error
+		r, err = s.gooCreateRefundLocked(ctx, o, amount, reason, lines, restock, apiRefund, by)
+		return err
+	})
+	return r, err
+}
+
+func (s *Server) gooCreateRefundLocked(ctx context.Context, o *gooOrder, amount float64, reason string, lines []gooRefundLine, restock, apiRefund bool, by int64) (*gooOrder, error) {
 	dp := s.gooDecimals()
 	amount = gooRound(amount, dp)
 	already := s.gooTotalRefunded(ctx, o.ID)

@@ -544,6 +544,13 @@ func (s *Server) gooEditNotices(c *gin.Context, view string) []notice {
 			out = append(out, notice{Type: "error", Message: "Invalid or duplicated SKU.", Dismissible: true})
 		case strings.HasPrefix(code, "vsku"):
 			out = append(out, notice{Type: "error", Message: template.HTML("#" + template.HTMLEscapeString(strings.TrimPrefix(code, "vsku")) + " &ndash; Variation SKU must be unique."), Dismissible: true})
+		case strings.HasPrefix(code, "stock"):
+			id, qty, _ := strings.Cut(strings.TrimPrefix(code, "stock"), "_")
+			if _, err := strconv.ParseInt(id, 10, 64); err == nil {
+				if n, err := strconv.Atoi(qty); err == nil {
+					out = append(out, notice{Type: "error", Message: template.HTML(fmt.Sprintf("The stock has not been updated because the value has changed since editing. Product %s has %d units in stock.", id, n)), Dismissible: true})
+				}
+			}
 		case code == "noattrs":
 			out = append(out, notice{Type: "error", Message: "Before you can add a variation you need to add some variation attributes on the <strong>Attributes</strong> tab.", Dismissible: true})
 		}
@@ -640,6 +647,31 @@ func gooLimitFrom(v string) int {
 		return -1
 	}
 	return n
+}
+
+// gooStockEditedMeanwhile reports that the stock quantity stored now differs from the one the edit
+// screen was rendered with (the hidden original-stock field), as wc_stock_amount() compares them.
+func gooStockEditedMeanwhile(f gooForm, origKey string, stored *int) bool {
+	if !f.has(origKey) {
+		return false
+	}
+	orig, now := 0, 0
+	if v := gooIntPtrFrom(f.str(origKey)); v != nil {
+		orig = *v
+	}
+	if stored != nil {
+		now = *stored
+	}
+	return orig != now
+}
+
+// gooStockChangedCode is the goo_error code of a refused stock change: "stock<id>_<quantity>".
+func gooStockChangedCode(p *gooProduct) string {
+	qty := 0
+	if p.StockQuantity != nil {
+		qty = *p.StockQuantity
+	}
+	return "stock" + itoa64(p.ID) + "_" + strconv.Itoa(qty)
 }
 
 // gooProductSave is the POST of the product editor (editpost() + WC_Meta_Box_Product_Data::save()).
@@ -788,7 +820,13 @@ func (s *Server) gooProductSave(c *gin.Context, id int64) {
 	}
 	p.ManageStock = f.on("_manage_stock")
 	if p.ManageStock {
-		p.StockQuantity = gooIntPtrFrom(f.str("_stock"))
+		if gooStockEditedMeanwhile(f, "_original_stock", p.StockQuantity) {
+			// WC_Meta_Box_Product_Data::save(): an order changed the stock while the screen was open, so
+			// the posted quantity is stale; the stored one is kept.
+			errs = append(errs, gooStockChangedCode(p))
+		} else {
+			p.StockQuantity = gooIntPtrFrom(f.str("_stock"))
+		}
 		p.Backorders = defaultStr(f.str("_backorders"), "no")
 		p.LowStockAmount = gooIntPtrFrom(f.str("_low_stock_amount"))
 	} else {
@@ -1131,7 +1169,11 @@ func (s *Server) gooSaveVariationsForm(c *gin.Context, f gooForm, parent *gooPro
 		v.SaleFrom = s.gooSaleDate(f.str(k("variable_sale_price_dates_from")), false)
 		v.SaleTo = s.gooSaleDate(f.str(k("variable_sale_price_dates_to")), true)
 		if v.ManageStock {
-			v.StockQuantity = gooIntPtrFrom(f.str(k("variable_stock")))
+			if gooStockEditedMeanwhile(f, k("variable_original_stock"), v.StockQuantity) {
+				errs = append(errs, gooStockChangedCode(v))
+			} else {
+				v.StockQuantity = gooIntPtrFrom(f.str(k("variable_stock")))
+			}
 			v.LowStockAmount = gooIntPtrFrom(f.str(k("variable_low_stock_amount")))
 		} else {
 			v.StockQuantity, v.LowStockAmount = nil, nil

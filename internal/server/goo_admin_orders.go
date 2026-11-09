@@ -1605,13 +1605,19 @@ func (s *Server) gooOrderApplyCoupons(ctx context.Context, o *gooOrder) {
 	sequential := s.gooOptBool("calc_discounts_sequentially")
 	for _, ci := range o.ItemsOf("coupon") {
 		cp, err := s.gooCouponByCode(ctx, ci.Name)
-		if err != nil {
-			continue
+		gone := err != nil
+		if gone {
+			// The coupon was deleted since the order was placed: its recorded discount stays, spread over
+			// the lines by their share, so the coupon line and the line totals keep agreeing.
+			if ci.Total <= 0 {
+				continue
+			}
+			cp = &gooCoupon{DiscountType: "fixed_cart", Amount: ci.Total}
 		}
 		var eligible []*gooOrderItem
 		var base float64
 		for _, it := range lines {
-			if s.gooCouponValidForItem(ctx, cp, it) {
+			if gone || s.gooCouponValidForItem(ctx, cp, it) {
 				eligible = append(eligible, it)
 				if sequential {
 					base += it.Total
@@ -1644,21 +1650,24 @@ func (s *Server) gooOrderApplyCoupons(ctx context.Context, o *gooOrder) {
 		ci.Total = gooRound(total, dp)
 		ci.Subtotal = ci.Total
 		ci.Meta["discount_amount"] = ci.Total
-		ci.Meta["coupon_id"] = float64(cp.ID)
+		if !gone {
+			ci.Meta["coupon_id"] = float64(cp.ID)
+		}
 	}
 }
 
 func (s *Server) gooCouponValidForItem(ctx context.Context, cp *gooCoupon, it *gooOrderItem) bool {
-	ids := []int64{it.ProductID}
-	if it.VariationID != 0 {
-		ids = append(ids, it.VariationID)
-	}
+	ids := s.gooCouponItemIDs(ctx, it.ProductID, it.VariationID)
 	var cats []int64
 	if terms, err := s.store.TermsForPosts(ctx, []int64{it.ProductID}, "product_cat"); err == nil {
 		for _, t := range terms[it.ProductID] {
 			cats = append(cats, t.ID)
+			if t.ParentID > 0 { // like the cart: a parent category's coupon covers its children
+				cats = append(cats, t.ParentID)
+			}
 		}
 	}
+	cats = s.gooCouponItemCats(ctx, cats)
 	valid := len(cp.ProductIDs) == 0 && len(cp.ProductCategories) == 0
 	for _, id := range ids {
 		if gooInt64In(id, cp.ProductIDs) {
