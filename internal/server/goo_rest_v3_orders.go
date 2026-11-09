@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"math"
 	"net/http"
 	"net/mail"
 	"sort"
@@ -255,52 +254,9 @@ func gooTaxKeys(m map[int64]float64) map[string]float64 {
 func (s *Server) gooOrderTaxes(ctx context.Context, o *gooOrder) {
 	dp := s.gooDecimals()
 	loc := s.gooOrderLocation(o)
-	// Coupons: discounts over the line items (subtotal → total).
-	lines := o.ItemsOf("line_item")
-	for _, it := range lines {
-		it.Total = it.Subtotal
-	}
-	for _, ci := range o.ItemsOf("coupon") {
-		cp, err := s.gooCouponByCode(ctx, ci.Name)
-		if err != nil {
-			continue
-		}
-		var base float64
-		for _, it := range lines {
-			base += it.Total
-		}
-		discount := 0.0
-		switch cp.DiscountType {
-		case "percent":
-			for _, it := range lines {
-				d := gooRound(it.Total*cp.Amount/100, dp)
-				it.Total -= d
-				discount += d
-			}
-		case "fixed_product":
-			for _, it := range lines {
-				d := math.Min(cp.Amount*it.Quantity, it.Total)
-				it.Total -= d
-				discount += d
-			}
-		default: // fixed_cart: spread over the lines by their share
-			amount := math.Min(cp.Amount, base)
-			left := amount
-			for i, it := range lines {
-				d := gooRound(amount*it.Total/math.Max(base, 0.000001), dp)
-				if i == len(lines)-1 {
-					d = left
-				}
-				d = math.Min(d, it.Total)
-				it.Total -= d
-				left -= d
-				discount += d
-			}
-		}
-		ci.Total = gooRound(discount, dp)
-		ci.Meta["discount_amount"] = ci.Total
-		ci.Meta["coupon_id"] = float64(cp.ID)
-	}
+	// Coupons: discounts over the line items (subtotal → total), with the coupons' product, category and
+	// sale restrictions and the sequential setting, exactly like the admin's Recalculate.
+	s.gooOrderApplyCoupons(ctx, o)
 	all := map[int64]float64{}
 	ship := map[int64]float64{}
 	for _, it := range o.Items {

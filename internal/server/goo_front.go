@@ -236,11 +236,19 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 	b.WriteString(string(s.gooPageHTML(c, "footer")))
 	// woocommerce-no-js → woocommerce-js
 	b.WriteString(`<script>(function(){var c=document.body.className;c=c.replace(/woocommerce-no-js/,'woocommerce-js');document.body.className=c;})();</script>` + "\n")
-	lb := s.links(ctx)
+	// The AJAX endpoints sit on the language home (Multi Language: /de/, de.example.com/ or /?lang=de),
+	// so cart, checkout and order requests carry the visitor's language and stay same-origin.
+	ajaxBase := s.links(ctx).Front()
+	ajaxSep := "?"
+	if strings.Contains(ajaxBase, "?") {
+		ajaxSep = "&"
+	} else if !strings.HasSuffix(ajaxBase, "/") {
+		ajaxBase += "/"
+	}
 	params := map[string]any{
-		"ajax_url":                         lb.HomeURL("/"),
-		"goo_ajax_url":                     lb.HomeURL("/?goo-ajax=%%endpoint%%"),
-		"wc_ajax_url":                      lb.HomeURL("/?wc-ajax=%%endpoint%%"),
+		"ajax_url":                         ajaxBase,
+		"goo_ajax_url":                     ajaxBase + ajaxSep + "goo-ajax=%%endpoint%%",
+		"wc_ajax_url":                      ajaxBase + ajaxSep + "wc-ajax=%%endpoint%%",
 		"cart_url":                         s.gooPageURL(ctx, "cart"),
 		"checkout_url":                     s.gooPageURL(ctx, "checkout"),
 		"is_cart":                          false,

@@ -310,7 +310,7 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 			}
 		}
 		p, err = s.gooGetProduct(ctx, productID)
-		if err != nil || !cart.mayBuyPrivate(p) {
+		if err != nil || (p.Status != "publish" && p.Status != "private") || !cart.mayBuyPrivate(p) {
 			return "", gooCartErr("Sorry, this product cannot be purchased.")
 		}
 	}
@@ -776,8 +776,13 @@ func (cart *gooCart) Calculate() {
 		} else {
 			it.LineTotal = entered
 		}
-		it.LineTotal = gooRound(it.LineTotal, dp)
-		it.LineSubtotal = gooRound(it.LineSubtotal, dp)
+		if !roundAtSubtotal {
+			// Rounding per line. Rounding at subtotal keeps the lines unrounded, like their taxes, and
+			// rounds the sums once (step 6), so prices entered with tax add up to the shelf total
+			// (WC_Cart_Totals::round_item_subtotal is skipped).
+			it.LineTotal = gooRound(it.LineTotal, dp)
+			it.LineSubtotal = gooRound(it.LineSubtotal, dp)
+		}
 		it.LineTax = gooSumTaxes(it.LineTaxes)
 		cart.CartContentsTotal += it.LineTotal
 		cart.CartContentsTax += it.LineTax

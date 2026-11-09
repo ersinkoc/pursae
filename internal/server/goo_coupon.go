@@ -216,7 +216,11 @@ func (s *Server) gooValidateCoupon(ctx context.Context, c *gooCoupon, cart *gooC
 	}
 	if c.DiscountType == "fixed_cart" || c.DiscountType == "percent" {
 		for _, it := range cart.Items {
-			if gooInt64In(it.ProductID, c.ExcludedProductIDs) || gooInt64In(it.VariationID, c.ExcludedProductIDs) {
+			excluded := false
+			for _, id := range s.gooCouponItemIDs(ctx, it.ProductID, it.VariationID) {
+				excluded = excluded || gooInt64In(id, c.ExcludedProductIDs)
+			}
+			if excluded {
 				if c.DiscountType == "fixed_cart" {
 					return gooCouponErr("Sorry, this coupon is not applicable to the products: %s.", it.product.Name)
 				}
@@ -271,11 +275,8 @@ func (s *Server) gooCouponAppliesTo(ctx context.Context, c *gooCoupon, it *gooCa
 	if p == nil {
 		return false
 	}
-	productIDs := []int64{it.ProductID}
-	if it.VariationID != 0 {
-		productIDs = append(productIDs, it.VariationID)
-	}
-	cats := it.categories
+	productIDs := s.gooCouponItemIDs(ctx, it.ProductID, it.VariationID)
+	cats := s.gooCouponItemCats(ctx, it.categories)
 	valid := false
 	if len(c.ProductIDs) == 0 && len(c.ProductCategories) == 0 {
 		valid = true

@@ -87,6 +87,7 @@ type gooCheckoutData struct {
 	ShipToDifferent bool
 	CreateAccount   bool
 	Terms           bool
+	TermsField      bool // the form showed the terms checkbox (terms-field)
 	PaymentMethod   string
 	OrderComments   string
 	ShippingMethods map[string]string
@@ -110,6 +111,7 @@ func gooPostedCheckout(form map[string][]string) *gooCheckoutData {
 	d.ShipToDifferent = get("ship_to_different_address") != ""
 	d.CreateAccount = get("createaccount") != ""
 	d.Terms = get("terms") != ""
+	d.TermsField = get("terms-field") != ""
 	d.PaymentMethod = get("payment_method")
 	d.OrderComments = get("order_comments")
 	for k, v := range form {
@@ -242,7 +244,9 @@ func (s *Server) gooValidateCheckout(c *gin.Context, cart *gooCart, d *gooChecko
 			errs = append(errs, err.Error())
 		}
 	}
-	if s.gooOptInt("terms_page_id") > 0 && !d.Terms {
+	// WC_Checkout::validate_checkout(): the box is required when the form showed it (terms-field) and
+	// the terms page is still published, so an unpublished page does not block every checkout.
+	if d.TermsField && !d.Terms && s.gooTermsPage(c.Request.Context()) != nil {
 		errs = append(errs, "Please read and accept the terms and conditions to proceed with your order.")
 	}
 	if u == nil {
@@ -485,8 +489,8 @@ func (s *Server) gooOrderItemsFromCart(ctx context.Context, cart *gooCart) []*go
 			}
 		}
 		items = append(items, &gooOrderItem{Type: "line_item", Name: name, ProductID: it.ProductID, VariationID: it.VariationID,
-			Quantity: float64(it.Quantity), TaxClass: it.TaxClass, Subtotal: it.LineSubtotal, SubtotalTax: it.LineSubtotalTax,
-			Total: it.LineTotal, TotalTax: it.LineTax, Taxes: gooItemTaxes{Total: key(it.LineTaxes), Subtotal: key(it.LineSubtotalTaxes)}, Meta: meta})
+			Quantity: float64(it.Quantity), TaxClass: it.TaxClass, Subtotal: gooRound(it.LineSubtotal, s.gooDecimals()), SubtotalTax: it.LineSubtotalTax,
+			Total: gooRound(it.LineTotal, s.gooDecimals()), TotalTax: it.LineTax, Taxes: gooItemTaxes{Total: key(it.LineTaxes), Subtotal: key(it.LineSubtotalTaxes)}, Meta: meta})
 	}
 	for _, f := range cart.Fees {
 		items = append(items, &gooOrderItem{Type: "fee", Name: f.Name, TaxClass: f.TaxClass, Total: f.Total, TotalTax: f.Tax,
