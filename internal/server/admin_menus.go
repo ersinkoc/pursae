@@ -104,6 +104,9 @@ func (s *Server) navMenus(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/nav-menus?deleted=1")
 		return
 	}
+	// Drafts abandoned more than a day ago (added, menu never saved) are dropped instead of coming back
+	// on the screen and being published by whoever saves next (_wp_delete_orphaned_draft_menu_items).
+	_ = s.store.DeleteOrphanedDraftMenuItems(ctx)
 	menus, _ := s.store.Menus(ctx)
 	d := navMenusData{Menus: menus, Tab: "edit", ColumnNonce: s.nonce(c, "add-menu_item"), UpdateNonce: s.nonce(c, "update-nav_menu"),
 		LocationsNon: s.nonce(c, "save-menu-locations")}

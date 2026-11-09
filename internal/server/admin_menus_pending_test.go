@@ -28,10 +28,25 @@ func TestNavMenusListsPendingItems(t *testing.T) {
 		t.Fatal(err)
 	}
 	id := itoa64(it.ID)
+	// A draft abandoned more than a day ago is deleted when the screen loads, not listed.
+	old := &store.EditItem{MenuID: menu, Kind: "custom", Object: "custom", URL: "https://example.org/old", Label: "Abandoned", Status: "draft"}
+	if err := srv.store.AddMenuItem(ctx, old); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE menu_items SET created_at = now() - interval '2 days' WHERE id = $1`, old.ID); err != nil {
+		t.Fatal(err)
+	}
 	_, body, _ := get(t, c, base+"/wp-admin/nav-menus?menu="+itoa64(menu))
 	if !regexp.MustCompile(`<li id="menu-item-`+id+`" class="[^"]*\bpending\b`).MatchString(body) ||
 		!strings.Contains(body, `name="menu-item-db-id[`+id+`]"`) {
 		t.Fatal("the pending item is missing from the Menus screen")
+	}
+	if strings.Contains(body, `menu-item-`+itoa64(old.ID)+`"`) {
+		t.Error("the abandoned draft is still listed")
+	}
+	var n int
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM menu_items WHERE id = $1`, old.ID).Scan(&n); err != nil || n != 0 {
+		t.Errorf("the abandoned draft was not deleted: count %d (%v)", n, err)
 	}
 	nonce := regexp.MustCompile(`name="update-nav-menu-nonce" value="([^"]+)"`).FindStringSubmatch(body)
 	if nonce == nil {
