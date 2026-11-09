@@ -1,10 +1,12 @@
 package coreupdate
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 )
 
 // fakeBinary writes a script that prints "Pursae <version>" for `version`.
@@ -67,8 +69,8 @@ func TestConfirmEndsTheUpdate(t *testing.T) {
 	execs := stubExec(t)
 	Guard(exe, "0.3.1")
 	Confirm(exe, "0.3.1")
-	if Read(exe) != nil {
-		t.Fatal("a confirmed update keeps its state file")
+	if st := Read(exe); st == nil || st.Status != "confirmed" || st.From != "0.3.0" || st.To != "0.3.1" {
+		t.Fatalf("a confirmed update is not recorded as confirmed: %+v", st)
 	}
 	Guard(exe, "0.3.1")
 	if len(*execs) != 0 {
@@ -135,5 +137,106 @@ func TestLess(t *testing.T) {
 		if got := Less(c.a, c.b); got != c.want {
 			t.Errorf("Less(%s, %s) = %v", c.a, c.b, got)
 		}
+	}
+}
+
+// updated leaves exe at version to after a confirmed update from, with from kept as <exe>.prev.
+func updated(t *testing.T, from, to string) string {
+	t.Helper()
+	exe := filepath.Join(t.TempDir(), "wpgo")
+	fakeBinary(t, exe, from)
+	if err := Prepare(exe, from, to); err != nil {
+		t.Fatal(err)
+	}
+	fakeBinary(t, exe+".new", to)
+	if err := os.Rename(exe+".new", exe); err != nil {
+		t.Fatal(err)
+	}
+	Confirm(exe, to)
+	return exe
+}
+
+func TestPrunePrevAfterRetention(t *testing.T) {
+	exe := updated(t, "0.3.0", "0.3.1")
+	confirmed := Read(exe).At
+	if PrunePrev(exe, confirmed.Add(PrevRetention-time.Minute)) {
+		t.Fatal("the previous binary was removed before the retention ended")
+	}
+	if from, until := Previous(exe, "0.3.1"); from != "0.3.0" || !until.Equal(confirmed.Add(PrevRetention)) {
+		t.Fatalf("Previous while kept: %q %v", from, until)
+	}
+	if !PrunePrev(exe, confirmed.Add(PrevRetention)) {
+		t.Fatal("the previous binary was not removed after the retention")
+	}
+	if _, err := os.Stat(PrevPath(exe)); !os.IsNotExist(err) {
+		t.Fatalf("the previous binary is still there: %v", err)
+	}
+	// The state still names the previous version (it can be downloaded again), without a local copy.
+	if from, until := Previous(exe, "0.3.1"); from != "0.3.0" || !until.IsZero() {
+		t.Fatalf("Previous after pruning: %q %v", from, until)
+	}
+	if v := binaryVersion(exe); v != "0.3.1" {
+		t.Fatalf("pruning touched the running binary: %q", v)
+	}
+	if from, _ := Previous(exe, "0.3.2"); from != "" {
+		t.Fatalf("Previous for another running version: %q", from)
+	}
+}
+
+func TestPrunePrevKeepsPendingAndRemovesOrphans(t *testing.T) {
+	exe := filepath.Join(t.TempDir(), "wpgo")
+	fakeBinary(t, exe, "0.3.0")
+	if err := Prepare(exe, "0.3.0", "0.3.1"); err != nil {
+		t.Fatal(err)
+	}
+	if PrunePrev(exe, time.Now().Add(48*time.Hour)) {
+		t.Fatal("the previous binary of a pending update was removed")
+	}
+	Clear(exe) // a .prev left by a release that deleted the state on confirmation
+	if !PrunePrev(exe, time.Now()) {
+		t.Fatal("an orphan previous binary was kept")
+	}
+	if PrunePrev(exe, time.Now()) {
+		t.Fatal("PrunePrev reported a removal without a file")
+	}
+}
+
+func TestSwapPrevReinstallsThePreviousBinary(t *testing.T) {
+	exe := updated(t, "0.3.0", "0.3.1")
+	if err := SwapPrev(exe, "0.3.1", "0.3.0"); err != nil {
+		t.Fatal(err)
+	}
+	if v := binaryVersion(exe); v != "0.3.0" {
+		t.Fatalf("the executable is %q after the reinstall", v)
+	}
+	if v := binaryVersion(PrevPath(exe)); v != "0.3.1" {
+		t.Fatalf("the replaced binary is %q, want 0.3.1 kept", v)
+	}
+	if st := Read(exe); st == nil || st.Status != "pending" || st.From != "0.3.1" || st.To != "0.3.0" {
+		t.Fatalf("state after the reinstall: %+v", st)
+	}
+	// The reinstalled binary that does not start goes back like any update.
+	execs := stubExec(t)
+	Guard(exe, "0.3.0")
+	Guard(exe, "0.3.0")
+	if v := binaryVersion(exe); v != "0.3.1" || len(*execs) != 1 {
+		t.Fatalf("no rollback of a failed reinstall: %q %v", v, *execs)
+	}
+}
+
+func TestSwapPrevWithoutPreviousChangesNothing(t *testing.T) {
+	exe := updated(t, "0.3.0", "0.3.1")
+	if err := os.Remove(PrevPath(exe)); err != nil {
+		t.Fatal(err)
+	}
+	before := Read(exe)
+	if err := SwapPrev(exe, "0.3.1", "0.3.0"); err == nil || !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("SwapPrev without a previous binary: %v", err)
+	}
+	if v := binaryVersion(exe); v != "0.3.1" {
+		t.Fatalf("the executable changed: %q", v)
+	}
+	if st := Read(exe); st == nil || *st != *before {
+		t.Fatalf("the state changed: %+v (was %+v)", st, before)
 	}
 }

@@ -41,6 +41,27 @@ previous binary is put back at once. Without a supervisor nothing restarts a cra
 run Pursae under one. Migrations are forward-only: a rolled-back site keeps any migration the new
 version applied, which is why releases only add schema.
 
+**Keeping the previous binary.** Once the update is confirmed, `.update.json` records it as
+*confirmed* (with the version the site came from) and `<executable>.prev` is kept for **24 hours**;
+then it is removed (checked at start and every hour), so a site never holds more than one extra
+binary, and only for a day. A `.prev` left by an older release with no update record is removed
+the same way.
+
+**Reinstall the previous version.** Dashboard › Updates › *Previous version* offers **Reinstall
+version Y** (Y = the version the site was updated from, when it is older than the running one):
+
+- within the 24 hours the kept `.prev` is checked (`version`) and swapped back over the running
+  binary, which becomes the new `.prev`; no download;
+- later the signed build of Y is downloaded again from Pursae Manager
+  (`GET /api/v1/core/{version}`, [Hub API](../hub/index.md)) and verified exactly like an update;
+  without a Manager the button is not shown once `.prev` is gone.
+
+Either way the reinstall is recorded as a *pending* update, so a reinstalled binary that does not
+start goes back like any update, and the site restarts with *Reinstalled Pursae Y, restarting…*.
+It never happens on its own: a crash after the confirmation is left to the supervisor and to you.
+Database migrations of the newer version are **not** undone (the button asks for confirmation);
+restore a backup when the older version cannot work with them.
+
 Nothing is replaced when a check fails. The button is replaced by the reason when the executable
 cannot be replaced: a `go run` build, or a directory the server may not write. Beta releases are
 offered only to sites whose license includes the beta channel. Back up first, as for any upgrade.

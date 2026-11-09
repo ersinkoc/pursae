@@ -38,6 +38,8 @@ func (s *Server) updateCore(c *gin.Context) {
 			s.updateThemes(c)
 		case "do-core-upgrade": // core_update.go
 			s.upgradeCore(c)
+		case "do-core-reinstall": // core_update.go
+			s.reinstallCore(c)
 		default:
 			c.Redirect(http.StatusFound, "/wp-admin/update-core")
 		}
@@ -94,6 +96,14 @@ func (s *Server) updateCore(c *gin.Context) {
 	}
 	if v := c.Query("error"); v != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(v))})
+	}
+	if exe, err := coreExecutable(); err == nil && coreReplaceable(exe) == nil { // back to the version before the update (core_update.go)
+		if prev, kept := s.corePrevious(exe); prev != "" {
+			d["Previous"] = prev
+			if !kept.IsZero() {
+				d["PreviousKept"] = kept.In(s.loc()).Format("January 2, 2006 at 3:04 pm")
+			}
+		}
 	}
 	if exe, err := coreExecutable(); err == nil { // a core update that did not start was rolled back (core_update.go)
 		if st := coreupdate.Read(exe); st != nil && st.Status == "rolled_back" {

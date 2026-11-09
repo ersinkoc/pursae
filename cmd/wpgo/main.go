@@ -138,6 +138,7 @@ func serve(ctx context.Context, cfg config.Config) error {
 		srv.RunScheduler(schedCtx)
 	}()
 	go confirmUpdate(ctx, cfg.Addr)
+	go prunePrevBinary(ctx)
 	ln, err := coreupdate.Listen(cfg.Addr) // inherited across a core update's restart
 	if err != nil {
 		stopSched()
@@ -206,6 +207,27 @@ func executable() (string, error) {
 		return "", err
 	}
 	return filepath.EvalSymlinks(exe)
+}
+
+// prunePrevBinary removes the binary a core update replaced once it has been kept for
+// coreupdate.PrevRetention after the update was confirmed: checked at start and every hour.
+func prunePrevBinary(ctx context.Context) {
+	exe, err := executable()
+	if err != nil {
+		return
+	}
+	t := time.NewTicker(time.Hour)
+	defer t.Stop()
+	for {
+		if coreupdate.PrunePrev(exe, time.Now()) {
+			log.Printf("core update: removed the previous binary %s", coreupdate.PrevPath(exe))
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
 }
 
 // confirmUpdate ends a pending core update once this binary answers requests (internal/coreupdate).

@@ -2,7 +2,9 @@
 // <exe>.prev, and a state file (<exe>.update.json) records the update until the new binary has
 // started and answered requests. If the new binary dies before that and is started again (by
 // Docker's restart policy, systemd, …), Guard puts the previous binary back and runs it, and the
-// Updates screen says what happened.
+// Updates screen says what happened. Once confirmed, the previous binary stays for PrevRetention
+// (a manual "Reinstall" goes back to it without a download) and is then removed (PrunePrev); the
+// state file keeps recording which version the site came from.
 //
 // It also picks the binary a container runs (Launch): the image's copy is installed into a
 // persistent directory, so an update made from the admin survives container restarts, while a
@@ -29,7 +31,7 @@ import (
 type State struct {
 	From     string    `json:"from"`
 	To       string    `json:"to"`
-	Status   string    `json:"status"` // pending | rolled_back
+	Status   string    `json:"status"` // pending | rolled_back | confirmed
 	Attempts int       `json:"attempts"`
 	At       time.Time `json:"at"`
 	Message  string    `json:"message,omitempty"`
@@ -130,11 +132,81 @@ func Restore(exe string, cause error) {
 	_ = write(exe, st)
 }
 
-// Confirm ends a pending update once the new binary serves requests.
+// PrevRetention is how long the previous binary is kept after an update was confirmed.
+const PrevRetention = 24 * time.Hour
+
+// Confirm ends a pending update once the new binary serves requests. The state stays as
+// "confirmed" (At is the confirmation time): it names the previous version and starts the
+// retention of the previous binary.
 func Confirm(exe, version string) {
 	if st := Read(exe); st != nil && st.Status == "pending" && st.To == version {
-		Clear(exe)
+		st.Status, st.Attempts, st.At, st.Message = "confirmed", 0, time.Now().UTC(), ""
+		_ = write(exe, st)
 	}
+}
+
+// PrunePrev removes the previous binary once a confirmed update is PrevRetention old, and a
+// previous binary no update state refers to (left by a release before the retention). It reports
+// whether a file was removed.
+func PrunePrev(exe string, now time.Time) bool {
+	prev := PrevPath(exe)
+	if _, err := os.Stat(prev); err != nil {
+		return false
+	}
+	st := Read(exe)
+	switch {
+	case st == nil:
+	case st.Status == "confirmed" && now.Sub(st.At) >= PrevRetention:
+	default:
+		return false // pending or rolled back: the rollback may still need it; or still retained
+	}
+	return os.Remove(prev) == nil
+}
+
+// Previous is the version the running one (version) was updated from, with the time until which
+// its binary is kept next to exe (zero when it is no longer there). from is "" when unknown.
+func Previous(exe, version string) (from string, keptUntil time.Time) {
+	st := Read(exe)
+	if st == nil || st.Status != "confirmed" || st.To != version {
+		return "", time.Time{}
+	}
+	if _, err := os.Stat(PrevPath(exe)); err == nil {
+		keptUntil = st.At.Add(PrevRetention)
+	}
+	return st.From, keptUntil
+}
+
+// SwapPrev puts the kept previous binary (version to) back over exe, keeping the running one
+// (version from) as the new previous binary, and records the change as a pending update, so a
+// previous binary that does not start goes back like any update (Guard).
+func SwapPrev(exe, from, to string) error {
+	before := Read(exe)
+	undo := func() {
+		if before != nil {
+			_ = write(exe, before)
+		} else {
+			Clear(exe)
+		}
+	}
+	prev := PrevPath(exe)
+	tmp := exe + ".reinstall"
+	_ = os.Remove(tmp)
+	if err := os.Rename(prev, tmp); err != nil {
+		return fmt.Errorf("the previous binary is gone: %w", err)
+	}
+	if err := Prepare(exe, from, to); err != nil {
+		_ = os.Remove(prev)
+		_ = os.Rename(tmp, prev)
+		undo()
+		return err
+	}
+	if err := os.Rename(tmp, exe); err != nil {
+		_ = os.Remove(prev)
+		_ = os.Rename(tmp, prev)
+		undo()
+		return err
+	}
+	return nil
 }
 
 // WaitHealthy asks url until it answers below 500 (true) or ctx ends (false).

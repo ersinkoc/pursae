@@ -25,6 +25,14 @@
 {{else}}
 <h2>You have the latest version of Pursae.</h2>
 {{end}}
+{{if .Previous}}
+<h2>Previous version</h2>
+<form method="post" action="/wp-admin/update-core?action=do-core-reinstall" name="reinstall" class="upgrade" onsubmit="return confirm('Reinstall Pursae {{.Previous}}? Database changes made by {{.Version}} are not undone, so features of {{.Version}} may stop working until you update again.')">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<p>This site was updated from Pursae {{.Previous}}.{{if .PreviousKept}} Its binary is kept on this server until {{.PreviousKept}}, so going back needs no download.{{else}} Going back downloads its signed build from Pursae Manager again.{{end}} Database migrations of {{.Version}} are not undone.</p>
+<p><input name="version" value="{{.Previous}}" type="hidden" /><input type="submit" name="reinstall" id="reinstall" class="button" value="Reinstall version {{.Previous}}" /></p>
+</form>
+{{end}}
 {{if not .Hub}}<p class="description">Update checks are off: no Pursae Manager is configured (<code>WPGO_HUB_URL</code>).</p>{{end}}
 <h2>Plugins</h2>
 {{if .PluginUpdates}}
@@ -80,7 +88,7 @@
 {{define "admin/update-core-restart"}}{{template "admin-header" .}}{{with .Data}}
 <div class="wrap">
 <h1>Pursae Updates</h1>
-<div class="notice notice-success inline"><p>Updated to Pursae {{.Version}}, restarting&hellip;</p></div>
+<div class="notice notice-success inline"><p>{{if .Reinstall}}Reinstalled Pursae {{.Version}}{{else}}Updated to Pursae {{.Version}}{{end}}, restarting&hellip;</p></div>
 <p>The new version is starting. This page goes back to Dashboard &rsaquo; Updates in a few seconds; if it does not, <a href="/wp-admin/update-core">reload it</a>.</p>
 <script>setTimeout(function(){location.href="/wp-admin/update-core"},6000)</script>
 </div>

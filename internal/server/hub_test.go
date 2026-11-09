@@ -37,7 +37,8 @@ type fakeManager struct {
 	keys     []map[string]string
 	core     map[string]any
 	coreBin  []byte
-	coreAt   string // when set, core downloads redirect here (a GitHub release asset)
+	coreAt   string                    // when set, core downloads redirect here (a GitHub release asset)
+	releases map[string]map[string]any // GET /api/v1/core/{version}
 	access   string
 	channel  string
 	validKey string
@@ -98,6 +99,13 @@ func (m *fakeManager) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/zip")
 		w.Write(zip)
+	case strings.HasPrefix(r.URL.Path, "/api/v1/core/") && strings.Count(r.URL.Path, "/") == 4: // GET /api/v1/core/{version}
+		if rel, ok := m.releases[strings.TrimPrefix(r.URL.Path, "/api/v1/core/")]; ok {
+			json.NewEncoder(w).Encode(map[string]any{"core": rel})
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"error":"not_found"}`))
+		}
 	case strings.HasPrefix(r.URL.Path, "/api/v1/core/") && m.coreAt != "":
 		http.Redirect(w, r, m.coreAt, http.StatusFound)
 	case strings.HasPrefix(r.URL.Path, "/api/v1/core/"):

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -282,7 +283,13 @@ func (s *Server) upgradeCore(c *gin.Context) {
 	}
 	slog.Info("core updated, restarting", "from", Version, "to", version, "exe", target)
 	s.hubEvent("core_update", "core", "", version)
-	s.adminPage(c, "update-core", "Pursae Updates", "update-core-php", "admin/update-core-restart", map[string]any{"Version": version})
+	s.coreRestartInto(c, target, version, false)
+}
+
+// coreRestartInto answers the "restarting" page and hands the site over to the binary now at target
+// (an update or a reinstall of the previous version).
+func (s *Server) coreRestartInto(c *gin.Context, target, version string, reinstall bool) {
+	s.adminPage(c, "update-core", "Pursae Updates", "update-core-php", "admin/update-core-restart", map[string]any{"Version": version, "Reinstall": reinstall})
 	c.Writer.Flush()
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -319,4 +326,121 @@ func realCoreTryBinary(path, version string) error {
 		return fmt.Errorf("the new binary reports %q instead of %s; nothing was changed", strings.TrimSpace(string(out)), version)
 	}
 	return nil
+}
+
+// corePrevious is the version the running core was updated from and can go back to: its binary is
+// still kept next to target (keptUntil set) or it can be downloaded again from Pursae Manager. from
+// is "" when there is none (no update recorded, already the older version, or nowhere to get it).
+func (s *Server) corePrevious(target string) (from string, keptUntil time.Time) {
+	from, keptUntil = coreupdate.Previous(target, Version)
+	if from == "" || !coreupdate.Less(from, Version) || (keptUntil.IsZero() && s.hubBase() == "") {
+		return "", time.Time{}
+	}
+	return from, keptUntil
+}
+
+// reinstallCore is Dashboard › Updates › Reinstall version X (action=do-core-reinstall): back to the
+// version the site was updated from. The kept binary is swapped back while it is there (24 hours
+// after the update); later the signed build is downloaded again from Pursae Manager
+// (GET /api/v1/core/{version}). Database migrations of the newer version are not undone.
+func (s *Server) reinstallCore(c *gin.Context) {
+	if !s.checkNonce(c, "upgrade-core") {
+		s.denyNonce(c)
+		return
+	}
+	fail := func(msg string) {
+		c.Redirect(http.StatusFound, "/wp-admin/update-core?error="+url.QueryEscape(s.updateFailed(c, msg)))
+	}
+	exe, err := coreExecutable()
+	if err != nil {
+		fail("the running executable cannot be found: " + err.Error())
+		return
+	}
+	if err := coreReplaceable(exe); err != nil {
+		fail(err.Error())
+		return
+	}
+	prev, kept := s.corePrevious(exe)
+	if prev == "" || c.PostForm("version") != prev {
+		fail("there is no previous version to reinstall")
+		return
+	}
+	if !kept.IsZero() {
+		if err := coreTryBinary(coreupdate.PrevPath(exe), prev); err != nil {
+			fail(err.Error())
+			return
+		}
+		err = coreupdate.SwapPrev(exe, Version, prev)
+	} else {
+		var target string
+		if target, err = coreUpdateTarget(); err == nil {
+			err = s.coreDownload(c.Request.Context(), target, prev)
+		}
+	}
+	if err != nil {
+		fail(err.Error())
+		return
+	}
+	slog.Info("core reinstalled, restarting", "from", Version, "to", prev, "exe", exe, "local", !kept.IsZero())
+	s.hubEvent("core_update", "core", "", prev)
+	s.coreRestartInto(c, exe, prev, true)
+}
+
+// coreDownload installs the signed build of one release, fetched from Pursae Manager's
+// GET /api/v1/core/{version}, over target; the running binary is kept as <exe>.prev.
+func (s *Server) coreDownload(ctx context.Context, target, version string) error {
+	base := s.hubBase()
+	if base == "" {
+		return errHubOff
+	}
+	idx, err := s.hubFetchIndex(ctx) // fresh keys
+	if err != nil {
+		return err
+	}
+	keys, err := coreReleaseKeys(idx.Keys)
+	if err != nil {
+		return err
+	}
+	req, err := s.hubNewRequest(ctx, http.MethodGet, base+"/api/v1/core/"+url.PathEscape(version), nil)
+	if err != nil {
+		return err
+	}
+	resp, err := (&http.Client{CheckRedirect: hubCheckRedirect, Timeout: 30 * time.Second}).Do(req)
+	if err != nil {
+		return err
+	}
+	var rel struct {
+		Core *hubCore `json:"core"`
+	}
+	err = json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&rel)
+	resp.Body.Close()
+	switch {
+	case resp.StatusCode == http.StatusForbidden:
+		return fmt.Errorf("Pursae %s needs a license for its channel (Settings › License)", version)
+	case resp.StatusCode == http.StatusNotFound:
+		return fmt.Errorf("Pursae Manager does not offer %s (any more)", version)
+	case resp.StatusCode != http.StatusOK || err != nil || rel.Core == nil || rel.Core.Latest != version:
+		return fmt.Errorf("Pursae Manager: no release information for %s (HTTP %d)", version, resp.StatusCode)
+	}
+	art := rel.Core.artifactFor(runtime.GOOS, runtime.GOARCH)
+	if art == nil {
+		return fmt.Errorf("the release %s has no build for %s/%s", version, runtime.GOOS, runtime.GOARCH)
+	}
+	if !strings.HasPrefix(art.URL, base+"/") { // only the Manager itself serves binaries
+		return errors.New("the release binary is not served by Pursae Manager")
+	}
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+	if req, err = s.hubNewRequest(ctx, http.MethodGet, art.URL, nil); err != nil {
+		return err
+	}
+	if resp, err = (&http.Client{CheckRedirect: hubCheckRedirect}).Do(req); err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("download: HTTP %d", resp.StatusCode)
+	}
+	keep := func() error { return coreupdate.Prepare(target, Version, version) }
+	return installCoreArtifact(target, version, art, keys, resp.Body, keep)
 }

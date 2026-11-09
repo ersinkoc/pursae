@@ -20,6 +20,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"wpgo/internal/coreupdate"
 )
 
 // managerSite starts a site connected to a fake Pursae Manager, installed and logged in.
@@ -513,6 +515,133 @@ func TestCoreSelfUpdate(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(target); string(b) != "old binary" {
 		t.Error("a replaced GitHub asset was installed")
+	}
+}
+
+// replaceFile writes path through a rename, like an update (path may be hard-linked as <exe>.prev).
+func replaceFile(t *testing.T, path string, b []byte) {
+	t.Helper()
+	if err := os.WriteFile(path+".tmp", b, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(path+".tmp", path); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Dashboard › Updates › Reinstall version X: back to the version the site was updated from, from
+// the kept binary within 24 hours, then from Pursae Manager.
+func TestCoreReinstallPrevious(t *testing.T) {
+	withRootKeys(t)
+	withTrustHubKeys(t, true)
+	base, c, srv, hub := managerSite(t)
+	ctx := context.Background()
+	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
+	hub.keys = append(hub.keys, map[string]string{"id": "hub-2026", "public": base64.StdEncoding.EncodeToString(pub)})
+	hub.core["latest"] = Version // no newer release: only the reinstall is offered
+	srv.hubDropCaches(ctx)
+
+	oldBin, newBin := []byte("\x7fELF pursae 0.0.1"), []byte("\x7fELF pursae "+Version)
+	target := filepath.Join(t.TempDir(), "pursae")
+	updatedFrom := func() { // an update 0.0.1 → Version that was confirmed
+		t.Helper()
+		replaceFile(t, target, oldBin)
+		if err := coreupdate.Prepare(target, "0.0.1", Version); err != nil {
+			t.Fatal(err)
+		}
+		replaceFile(t, target, newBin)
+		coreupdate.Confirm(target, Version)
+	}
+	restarted := make(chan string, 1)
+	oldExe, oldRestart := coreExecutable, coreRestart
+	t.Cleanup(func() { coreExecutable, coreRestart = oldExe, oldRestart })
+	coreRestart = func(exe string) error { restarted <- exe; return nil }
+	coreExecutable = func() (string, error) { return target, nil }
+	waitRestart := func() {
+		t.Helper()
+		select {
+		case <-restarted:
+		case <-time.After(10 * time.Second):
+			t.Fatal("no restart")
+		}
+	}
+
+	// Within the retention: the kept binary goes back over the running one, which is kept instead.
+	updatedFrom()
+	_, body, _ := get(t, c, base+"/wp-admin/update-core")
+	if !strings.Contains(body, `value="Reinstall version 0.0.1"`) || !strings.Contains(body, "kept on this server until") {
+		t.Fatal("no Reinstall button for the kept previous version")
+	}
+	nonce := formNonce(t, body[strings.Index(body, "do-core-reinstall"):])
+	if _, _, loc := post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {nonce}, "version": {"0.0.2"}}); !strings.Contains(loc, "error=") {
+		t.Errorf("reinstall of another version: %s", loc)
+	}
+	if code, _, _ := post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {"bad"}, "version": {"0.0.1"}}); code == http.StatusOK {
+		t.Error("reinstall without a valid nonce")
+	}
+	code, body, _ := post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {nonce}, "version": {"0.0.1"}})
+	if code != http.StatusOK || !strings.Contains(body, "Reinstalled Pursae 0.0.1, restarting") {
+		t.Fatalf("local reinstall: %d %s", code, body)
+	}
+	waitRestart()
+	if b, _ := os.ReadFile(target); !bytes.Equal(b, oldBin) {
+		t.Errorf("the executable is %q after the local reinstall", b)
+	}
+	if b, _ := os.ReadFile(coreupdate.PrevPath(target)); !bytes.Equal(b, newBin) {
+		t.Errorf("the replaced binary was not kept: %q", b)
+	}
+	if st := coreupdate.Read(target); st == nil || st.Status != "pending" || st.From != Version || st.To != "0.0.1" {
+		t.Errorf("state after the local reinstall: %+v", st)
+	}
+
+	// After the retention the kept binary is gone: the signed build comes from Pursae Manager.
+	updatedFrom()
+	if !coreupdate.PrunePrev(target, time.Now().Add(coreupdate.PrevRetention)) {
+		t.Fatal("the previous binary was not pruned")
+	}
+	_, body, _ = get(t, c, base+"/wp-admin/update-core")
+	if !strings.Contains(body, `value="Reinstall version 0.0.1"`) || !strings.Contains(body, "downloads its signed build from Pursae Manager") {
+		t.Fatal("no download Reinstall button after the retention")
+	}
+	// Not offered by the Manager: refused, nothing changed.
+	_, _, loc := post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {nonce}, "version": {"0.0.1"}})
+	if !strings.Contains(loc, "error=") || !strings.Contains(loc, "does+not+offer") {
+		t.Errorf("reinstall of a release the Manager lacks: %s", loc)
+	}
+	art := signedCore("0.0.1", runtime.GOOS, runtime.GOARCH, oldBin, priv, "hub-2026")
+	art.URL = hub.URL + "/api/v1/core/0.0.1/" + runtime.GOOS + "-" + runtime.GOARCH
+	hub.mu.Lock()
+	hub.releases = map[string]map[string]any{"0.0.1": {"latest": "0.0.1", "channel": "stable", "artifacts": []*coreArtifact{art}}}
+	hub.coreBin = []byte("\x7fELF pursae 6.6.6") // tampered: same size, other bytes
+	hub.mu.Unlock()
+	_, _, loc = post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {nonce}, "version": {"0.0.1"}})
+	if !strings.Contains(loc, "error=") || !strings.Contains(loc, "SHA-256") {
+		t.Errorf("tampered previous build: %s", loc)
+	}
+	if b, _ := os.ReadFile(target); !bytes.Equal(b, newBin) {
+		t.Error("a tampered build replaced the executable")
+	}
+	hub.mu.Lock()
+	hub.coreBin = oldBin
+	hub.mu.Unlock()
+	code, body, _ = post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {nonce}, "version": {"0.0.1"}})
+	if code != http.StatusOK || !strings.Contains(body, "Reinstalled Pursae 0.0.1, restarting") {
+		t.Fatalf("download reinstall: %d %s", code, body)
+	}
+	waitRestart()
+	if b, _ := os.ReadFile(target); !bytes.Equal(b, oldBin) {
+		t.Errorf("the executable is %q after the download reinstall", b)
+	}
+	if st := coreupdate.Read(target); st == nil || st.Status != "pending" || st.To != "0.0.1" {
+		t.Errorf("state after the download reinstall: %+v", st)
+	}
+
+	// Without a Manager and without the kept binary there is nothing to go back to.
+	updatedFrom()
+	coreupdate.PrunePrev(target, time.Now().Add(coreupdate.PrevRetention))
+	srv.cfg.HubURL = ""
+	if _, body, _ = get(t, c, base+"/wp-admin/update-core"); strings.Contains(body, "Reinstall version") {
+		t.Error("a Reinstall button without a Manager and without the kept binary")
 	}
 }
 
