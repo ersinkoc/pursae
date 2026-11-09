@@ -772,6 +772,30 @@ func (api *restAPI) createAutosave(c *gin.Context, r *restRequest, typ string) {
 	if _, ok := r.get(c, "excerpt"); !ok {
 		excerpt = p.Excerpt
 	}
+	rv, wrotePost, err := s.saveAutosave(c, p, u, title, content, excerpt)
+	if err != nil {
+		if wrotePost {
+			restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")
+		} else {
+			restErr(c, http.StatusInternalServerError, "db_insert_error", "Could not save the autosave.")
+		}
+		return
+	}
+	if wrotePost {
+		out := s.restRevision(c, rv, p)
+		out["id"] = p.ID
+		restJSON(c, http.StatusOK, out)
+		return
+	}
+	restJSON(c, http.StatusOK, s.restRevision(c, rv, p))
+}
+
+// saveAutosave stores an autosave the way wp_create_post_autosave() / post_preview() do: a draft or
+// pending post edited by its author is updated in place (title, content and excerpt only; the status
+// stays), any other post gets the user's single autosave revision and is left untouched, so nothing
+// goes live. Content and excerpt are kses'd for users without unfiltered_html. wrotePost reports
+// which of the two happened; on success with wrotePost the returned revision mirrors the post.
+func (s *Server) saveAutosave(c *gin.Context, p *store.Post, u *store.User, title, content, excerpt string) (rv revision, wrotePost bool, err error) {
 	if !u.Can("unfiltered_html", nil) {
 		content = wp.KsesPost(content)
 		excerpt = wp.KsesPost(excerpt)
@@ -783,30 +807,25 @@ func (api *restAPI) createAutosave(c *gin.Context, r *restRequest, typ string) {
 			p.Status = "draft"
 		}
 		if err := s.store.UpdatePost(c, p, u.ID); err != nil {
-			restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")
-			return
+			return rv, true, err
 		}
 		// Pursae Web Builder drift: this autosave writes posts.content. Only the drift check: the
 		// post stays a draft or pending, so no loop or template a visitor sees changes (purging
 		// wb-loop on every autosave would empty most of the page cache once a minute).
 		_, _ = s.wbDetectDrift(c, p.ID)
-		p, _ = s.store.GetPost(c, p.ID)
-		rv := revision{ID: p.ID, PostID: p.ID, AuthorID: u.ID, Title: p.Title, Excerpt: p.Excerpt, Content: p.Content, IsAutosave: true, CreatedAt: p.ModifiedAt}
-		out := s.restRevision(c, rv, p)
-		out["id"] = p.ID
-		restJSON(c, http.StatusOK, out)
-		return
+		if fresh, err := s.store.GetPost(c, p.ID); err == nil {
+			*p = *fresh
+		}
+		return revision{ID: p.ID, PostID: p.ID, AuthorID: u.ID, Title: p.Title, Excerpt: p.Excerpt, Content: p.Content, IsAutosave: true, CreatedAt: p.ModifiedAt}, true, nil
 	}
-	var rv revision
 	err = s.store.Pool.QueryRow(c, `WITH del AS (DELETE FROM post_revisions WHERE post_id = $1 AND author_id = $2 AND is_autosave)
 		INSERT INTO post_revisions(post_id, author_id, title, excerpt, content, is_autosave) VALUES ($1,$2,$3,$4,$5,true)
 		RETURNING id, created_at`, p.ID, u.ID, title, excerpt, content).Scan(&rv.ID, &rv.CreatedAt)
 	if err != nil {
-		restErr(c, http.StatusInternalServerError, "db_insert_error", "Could not save the autosave.")
-		return
+		return rv, false, err
 	}
 	rv.PostID, rv.AuthorID, rv.Title, rv.Excerpt, rv.Content, rv.IsAutosave = p.ID, u.ID, title, excerpt, content, true
-	restJSON(c, http.StatusOK, s.restRevision(c, rv, p))
+	return rv, false, nil
 }
 
 func (api *restAPI) listRevisions(c *gin.Context, r *restRequest, typ string) {

@@ -596,6 +596,7 @@ func UpdatePostTx(ctx context.Context, tx pgx.Tx, p *Post, editorID int64) error
 	if err != nil {
 		return err
 	}
+	p.ParentID = checkHierarchyLoop(ctx, tx, "posts", p.ID, p.ParentID) // wp_insert_post_parent
 	tree, err := prepareIn(ctx, tx, p)
 	if err != nil {
 		return err

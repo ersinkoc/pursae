@@ -444,6 +444,8 @@ func (s *Server) adminAjax(c *gin.Context) {
 		c.String(http.StatusOK, s.nonce(c, "wp_rest"))
 	case "sample-permalink":
 		s.samplePermalinkAjax(c)
+	case "wp-link-ajax": // the classic editor's link dialog (editor_classic.go)
+		s.wpLinkAjax(c)
 	case "wp-remove-post-lock":
 		c.String(http.StatusOK, "1")
 	case "inline-save":

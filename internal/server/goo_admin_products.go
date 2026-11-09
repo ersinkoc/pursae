@@ -127,6 +127,9 @@ func (s *Server) gooAdminProducts(c *gin.Context) {
 
 // gooBulkAction is the bulk action chosen with Apply (bulk_action) or Bulk Edit's Update (bulk_edit).
 func gooBulkAction(c *gin.Context) string {
+	if c.Query("doaction") == "undo" && c.Query("action") == "untrash" { // the trash notice's Undo link
+		return "untrash"
+	}
 	if c.Query("bulk_action") == "" && c.Query("bulk_edit") == "" {
 		return ""
 	}
@@ -495,7 +498,7 @@ func gooSaleHTML(regular, sale template.HTML, regPlain, salePlain string) templa
 
 // gooProductListNotices are the list's result notices (trashed, restored, deleted, updated, duplicated…).
 func (s *Server) gooProductListNotices(c *gin.Context) []notice {
-	out := postNotices(c, typeLabels{Type: "product", Name: "Products", Singular: "Product"})
+	out := postNotices(c, typeLabels{Type: "product", Name: "Products", Singular: "Product"}, s.nonce(c, "bulk-posts"))
 	if c.Query("goo_error") == "duplicate" {
 		out = append(out, notice{Type: "error", Message: "Product creation failed, could not find original product.", Dismissible: true})
 	}
@@ -778,8 +781,8 @@ func (s *Server) gooProductsBulk(c *gin.Context, action string) {
 	}
 	var ids []int64
 	seen := map[int64]bool{}
-	for _, raw := range c.QueryArray("post[]") {
-		if id, _ := strconv.ParseInt(raw, 10, 64); id > 0 && !seen[id] {
+	for _, raw := range bulkPostIDs(c) {
+		if id, _ := strconv.ParseInt(strings.TrimSpace(raw), 10, 64); id > 0 && !seen[id] {
 			seen[id] = true
 			ids = append(ids, id)
 		}

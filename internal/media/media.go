@@ -140,17 +140,64 @@ func Save(uploadsDir string, dated bool, now time.Time, filename string, r io.Re
 }
 
 // uniqueName is wp_unique_filename(): name.ext, name-1.ext, name-2.ext …, also avoiding
-// collisions with generated size variants of other files.
+// collisions with generated size variants of other files (_wp_check_existing_file_names()): a
+// name is taken when the directory already holds a file one of its sub-sizes or its -scaled copy
+// would overwrite, e.g. logo.png is not free while logo-150x150.png exists.
 func uniqueName(dir, name string) string {
 	ext := filepath.Ext(name)
 	base := strings.TrimSuffix(name, ext)
+	var existing []string
+	if entries, err := os.ReadDir(dir); err == nil {
+		for _, e := range entries {
+			existing = append(existing, strings.ToLower(e.Name()))
+		}
+	}
 	cand := name
 	for i := 1; ; i++ {
-		if _, err := os.Stat(filepath.Join(dir, cand)); os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(dir, cand)); os.IsNotExist(err) && !variantTaken(existing, strings.TrimSuffix(cand, ext)) {
 			return cand
 		}
 		cand = base + "-" + strconv.Itoa(i) + ext
 	}
+}
+
+// variantTaken reports whether names (lower-cased) hold a generated variant of base:
+// base-<w>x<h>.<image ext> or base-scaled.<image ext>, in any output format.
+func variantTaken(names []string, base string) bool {
+	prefix := strings.ToLower(base) + "-"
+	for _, n := range names {
+		rest, ok := strings.CutPrefix(n, prefix)
+		if !ok {
+			continue
+		}
+		dot := strings.LastIndexByte(rest, '.')
+		if dot <= 0 {
+			continue
+		}
+		switch rest[dot+1:] {
+		case "jpg", "jpeg", "jpe", "png", "gif", "webp", "avif", "heic", "bmp", "tif", "tiff":
+		default:
+			continue
+		}
+		if mid := rest[:dot]; mid == "scaled" || isSizeSuffix(mid) {
+			return true
+		}
+	}
+	return false
+}
+
+// isSizeSuffix matches <digits>x<digits>.
+func isSizeSuffix(s string) bool {
+	w, h, ok := strings.Cut(s, "x")
+	if !ok || w == "" || h == "" {
+		return false
+	}
+	for _, r := range w + h {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // Size is a registered image size (add_image_size()).

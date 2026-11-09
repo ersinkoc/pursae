@@ -183,3 +183,35 @@ func TestProcessImagePixelLimit(t *testing.T) {
 		t.Errorf("info %+v", info)
 	}
 }
+
+// A new upload must not take a name whose generated sizes would overwrite another file:
+// logo-150x150.png already exists, so logo.png is stored as logo-1.png (wp_unique_filename()).
+func TestSaveAvoidsSizeVariantCollision(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "logo-150x150.png"), []byte("first"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	st, err := Save(dir, false, time.Now(), "logo.png", bytes.NewReader([]byte("second")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.RelPath != "logo-1.png" {
+		t.Errorf("stored as %q, want logo-1.png", st.RelPath)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "photo-scaled.JPG"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := uniqueName(dir, "photo.jpg"); got != "photo-1.jpg" {
+		t.Errorf("uniqueName next to a -scaled copy = %q", got)
+	}
+	// Unrelated names that only share a prefix stay free.
+	if err := os.WriteFile(filepath.Join(dir, "cat-photo.png"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := uniqueName(dir, "cat.png"); got != "cat.png" {
+		t.Errorf("uniqueName(cat.png) = %q", got)
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "logo-150x150.png")); string(b) != "first" {
+		t.Errorf("existing file changed")
+	}
+}

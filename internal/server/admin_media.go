@@ -264,6 +264,7 @@ func (s *Server) attachmentSave(c *gin.Context, a *store.Attachment) {
 	a.Caption = c.PostForm("excerpt")
 	a.Description = c.PostForm("content")
 	a.Alt = c.PostForm("_wp_attachment_image_alt")
+	ksesAttachmentText(u, a)
 	if err := s.store.UpdateAttachment(c, a); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

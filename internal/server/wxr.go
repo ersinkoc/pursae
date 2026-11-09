@@ -154,6 +154,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 	default:
 		what = "all"
 		types = []string{"post", "page", "wp_block", "wb_template"} // + Theme Builder templates
+		types = append(types, wxrCustomTypes()...)                  // + Pursae Custom Fields post types
 	}
 	if f.Status == "0" {
 		f.Status = ""
@@ -220,6 +221,21 @@ func (s *Server) exportScreen(c *gin.Context) {
 				m.ID, cdata("nav_menu"), cdata(m.Slug), cdata(""), cdata(m.Name))
 		}
 	}
+	customTaxes := wxrCustomTaxonomies()
+	if what == "all" {
+		// wxr_term(): the terms of Pursae Custom Fields taxonomies, parents before children.
+		for _, tax := range customTaxes {
+			terms, _, _ := s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: tax, PerPage: 100000})
+			slugs := map[int64]string{}
+			for _, t := range terms {
+				slugs[t.ID] = t.Slug
+			}
+			for _, t := range wxrTermsParentsFirst(terms) {
+				fmt.Fprintf(&b, "\t<wp:term><wp:term_id>%d</wp:term_id><wp:term_taxonomy>%s</wp:term_taxonomy><wp:term_slug>%s</wp:term_slug><wp:term_parent>%s</wp:term_parent><wp:term_name>%s</wp:term_name>%s</wp:term>\n",
+					t.ID, cdata(tax), cdata(t.Slug), cdata(slugs[t.ParentID]), cdata(t.Name), optDesc("wp:term_description", t.Description))
+			}
+		}
+	}
 	b.WriteString("\n\t<generator>https://wordpress.org/?v=" + Version + "</generator>\n\n")
 
 	wpDate := func(t time.Time) string { return t.In(loc).Format("2006-01-02 15:04:05") }
@@ -250,6 +266,10 @@ func (s *Server) exportScreen(c *gin.Context) {
 		posts = kept
 		cats, _ := s.store.TermsForPosts(ctx, ids, "category")
 		tags, _ := s.store.TermsForPosts(ctx, ids, "post_tag")
+		customTerms := map[string]map[int64][]*store.Term{}
+		for _, tax := range customTaxes {
+			customTerms[tax], _ = s.store.TermsForPosts(ctx, ids, tax)
+		}
 		if what != "all" {
 			// wxr_cat_name() etc. for the terms of a filtered export only.
 			seen := map[int64]bool{}
@@ -296,6 +316,11 @@ func (s *Server) exportScreen(c *gin.Context) {
 			}
 			for _, t := range tags[p.ID] {
 				fmt.Fprintf(&b, "\t\t<category domain=\"post_tag\" nicename=\"%s\">%s</category>\n", xmlEsc(t.Slug), cdata(t.Name))
+			}
+			for _, tax := range customTaxes {
+				for _, t := range customTerms[tax][p.ID] {
+					fmt.Fprintf(&b, "\t\t<category domain=\"%s\" nicename=\"%s\">%s</category>\n", xmlEsc(tax), xmlEsc(t.Slug), cdata(t.Name))
+				}
 			}
 			if p.Format != "" && p.Format != "standard" {
 				fmt.Fprintf(&b, "\t\t<category domain=\"post_format\" nicename=\"post-format-%s\">%s</category>\n", xmlEsc(p.Format), cdata(strings.ToUpper(p.Format[:1])+p.Format[1:]))
@@ -397,6 +422,69 @@ func scalarMeta(v any) (string, bool) {
 	return "", false
 }
 
+// wxrCustomTypes are the post types registered by Pursae Custom Fields (empty while it is off),
+// exported with "All content" like WordPress exports every post type with can_export.
+func wxrCustomTypes() []string {
+	acfgoRegistry.RLock()
+	defer acfgoRegistry.RUnlock()
+	out := make([]string, 0, len(acfgoRegistry.types))
+	for name := range acfgoRegistry.types {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// wxrCustomTaxonomies are the taxonomies registered by Pursae Custom Fields (empty while it is off).
+func wxrCustomTaxonomies() []string {
+	acfgoRegistry.RLock()
+	defer acfgoRegistry.RUnlock()
+	out := make([]string, 0, len(acfgoRegistry.taxes))
+	for name := range acfgoRegistry.taxes {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// wxrIsCustomTaxonomy reports whether tax is registered by Pursae Custom Fields.
+func wxrIsCustomTaxonomy(tax string) bool {
+	acfgoRegistry.RLock()
+	defer acfgoRegistry.RUnlock()
+	return acfgoRegistry.taxes[tax] != nil
+}
+
+// wxrTermsParentsFirst orders terms so every parent comes before its children (the importer
+// resolves a parent by slug when it reads the child).
+func wxrTermsParentsFirst(terms []*store.Term) []*store.Term {
+	byID := map[int64]bool{}
+	for _, t := range terms {
+		byID[t.ID] = true
+	}
+	done := map[int64]bool{}
+	out := make([]*store.Term, 0, len(terms))
+	for len(out) < len(terms) {
+		progress := false
+		for _, t := range terms {
+			if done[t.ID] || (t.ParentID != 0 && byID[t.ParentID] && !done[t.ParentID]) {
+				continue
+			}
+			done[t.ID] = true
+			out = append(out, t)
+			progress = true
+		}
+		if !progress { // a parent loop: emit the rest as they are
+			for _, t := range terms {
+				if !done[t.ID] {
+					done[t.ID] = true
+					out = append(out, t)
+				}
+			}
+		}
+	}
+	return out
+}
+
 func optDesc(tag, v string) string {
 	if v == "" {
 		return ""
@@ -477,6 +565,7 @@ type wxrDoc struct {
 			TermID   int64  `xml:"term_id"`
 			Taxonomy string `xml:"term_taxonomy"`
 			Slug     string `xml:"term_slug"`
+			Parent   string `xml:"term_parent"`
 			Name     string `xml:"term_name"`
 		} `xml:"term"`
 		Items []wxrItem `xml:"item"`
@@ -644,6 +733,17 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 		if t.Taxonomy == "nav_menu" && t.Slug != "" {
 			ensureMenu(t.Slug, t.Name)
 		}
+		// Terms of taxonomies registered here (Pursae Custom Fields); others are skipped like posts
+		// of unknown types.
+		if t.Slug != "" && wxrIsCustomTaxonomy(t.Taxonomy) {
+			var parent int64
+			if t.Parent != "" {
+				parent = ensureTerm(t.Taxonomy, t.Parent, t.Parent, 0)
+			}
+			if id := ensureTerm(t.Taxonomy, t.Slug, t.Name, parent); t.TermID != 0 {
+				oldTerms[t.TermID] = id
+			}
+		}
 	}
 	idMap := map[int64]int64{}
 	loc := s.loc()
@@ -659,8 +759,12 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	var menuItems []menuItemRef
 	for i := range doc.Channel.Items {
 		it := &doc.Channel.Items[i]
-		switch it.Type {
-		case "post", "page", "wp_block", "wb_template":
+		kind := it.Type
+		if acfgoIsPostType(kind) { // a post type registered here by Pursae Custom Fields
+			kind = "custom"
+		}
+		switch kind {
+		case "post", "page", "wp_block", "wb_template", "custom":
 		case "attachment":
 			if it.Status == "trash" {
 				rep.Skipped++
@@ -713,6 +817,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			menuItems = append(menuItems, menuItemRef{item: it, menu: menuID})
 			continue
 		default:
+			rep.Log = append(rep.Log, fmt.Sprintf("Failed to import “%s”: Invalid post type %s", it.Title, it.Type))
 			rep.Skipped++
 			continue
 		}
@@ -753,6 +858,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			p.ParentID = parent
 		}
 		var catIDs, tagIDs []int64
+		customIDs := map[string][]int64{} // terms of Pursae Custom Fields taxonomies
 		for _, cat := range it.Categories {
 			switch cat.Domain {
 			case "category":
@@ -761,6 +867,12 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 				tagIDs = append(tagIDs, ensureTerm("post_tag", cat.Nicename, cat.Name, 0))
 			case "post_format":
 				p.Format = strings.TrimPrefix(cat.Nicename, "post-format-")
+			default:
+				if wxrIsCustomTaxonomy(cat.Domain) {
+					if id := ensureTerm(cat.Domain, cat.Nicename, cat.Name, 0); id != 0 {
+						customIDs[cat.Domain] = append(customIDs[cat.Domain], id)
+					}
+				}
 			}
 		}
 		// Post meta: everything but the editor locks; _thumbnail_id is remapped once the media is in.
@@ -787,7 +899,10 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 		if it.Parent != 0 && p.ParentID == 0 {
 			postParents[p.ID] = it.Parent
 		}
-		switch it.Type {
+		for tax, ids := range customIDs {
+			_ = s.store.SetPostTerms(ctx, p.ID, tax, ids)
+		}
+		switch kind {
 		case "post":
 			if len(catIDs) == 0 {
 				catIDs = []int64{int64(s.settings.Int("default_category"))}
@@ -799,6 +914,8 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			rep.Pages++
 		case "wb_template":
 			rep.Templates++
+		case "custom":
+			rep.Posts++
 		default:
 			rep.Blocks++
 		}

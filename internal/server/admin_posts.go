@@ -79,30 +79,31 @@ type inlineData struct {
 }
 
 type postsListData struct {
-	Labels       typeLabels
-	Statuses     []statusLink
-	Rows         []postRow
-	Search       string
-	Status       string
-	Months       []monthOption
-	Month        string
-	Categories   []*store.Term
-	Cat          int64
-	Pagination   pagination
-	BulkNonce    string
-	CanCreate    bool
-	IsTrash      bool
-	Orderby      string
-	Order        string
-	SortLinks    map[string]sortLink
-	ShowCatCols  bool
-	EditorSwitch bool
-	Hidden       map[string]bool // columns hidden through Screen Options
-	Mode         string          // list or excerpt (Compact / Extended view)
-	Formats      []formatOption  // the post-format filter, only formats in use
-	Format       string
-	Sticky       bool // the "Sticky" view
-	ColCount     int  // visible columns, for the inline editor's colspan
+	Labels        typeLabels
+	Statuses      []statusLink
+	Rows          []postRow
+	Search        string
+	Status        string
+	Months        []monthOption
+	Month         string
+	Categories    []*store.Term
+	Cat           int64
+	Pagination    pagination
+	BulkNonce     string
+	CanCreate     bool
+	IsTrash       bool
+	CanEmptyTrash bool // the Empty Trash button (edit_others_posts, WP_Posts_List_Table::extra_tablenav())
+	Orderby       string
+	Order         string
+	SortLinks     map[string]sortLink
+	ShowCatCols   bool
+	EditorSwitch  bool
+	Hidden        map[string]bool // columns hidden through Screen Options
+	Mode          string          // list or excerpt (Compact / Extended view)
+	Formats       []formatOption  // the post-format filter, only formats in use
+	Format        string
+	Sticky        bool // the "Sticky" view
+	ColCount      int  // visible columns, for the inline editor's colspan
 
 	PluginHeads []template.HTML // headers of plugin columns (Golylang's languages), before Comments
 	// Quick Edit / Bulk Edit (inline_edit()).
@@ -279,7 +280,7 @@ func (s *Server) postsList(c *gin.Context) {
 	}
 
 	d := postsListData{Labels: lab, Search: search, Status: status, BulkNonce: s.nonce(c, "bulk-posts"),
-		CanCreate: u.Can("edit_"+typ+"s", nil), IsTrash: status == "trash", Month: c.Query("m"), Cat: cat,
+		CanCreate: u.Can("edit_"+typ+"s", nil), IsTrash: status == "trash", CanEmptyTrash: u.Can("edit_others_"+typ+"s", nil), Month: c.Query("m"), Cat: cat,
 		Orderby: q.OrderBy, Order: strings.ToLower(q.Order), ShowCatCols: typ == "post", EditorSwitch: s.settings.String("classic-editor-allow-users") == "allow",
 		Hidden: s.hiddenColumns(u, "edit-"+typ), Mode: mode, Format: q.Format, Sticky: showSticky}
 
@@ -360,7 +361,7 @@ func (s *Server) postsList(c *gin.Context) {
 	s.setScreenOptions(c, screenOptions{Screen: "edit-" + typ, Columns: postListColumns(typ), Hidden: d.Hidden,
 		PerPageOption: "edit_" + typ + "_per_page", PerPage: perPage, ViewMode: mode})
 	s.pageAssets(c).Script("inline-edit-post")
-	s.adminPage(c, screen, lab.Name, "edit-php post-type-"+typ, "admin/posts-list", d, postNotices(c, lab)...)
+	s.adminPage(c, screen, lab.Name, "edit-php post-type-"+typ, "admin/posts-list", d, postNotices(c, lab, s.nonce(c, "bulk-posts"))...)
 }
 
 // inlineEditData fills what the Quick Edit and Bulk Edit rows need: categories, authors, parent
@@ -653,15 +654,30 @@ func (s *Server) pageTree(c *gin.Context, q store.PostQuery, page, perPage int) 
 		}
 	}
 	var ordered []*store.Post
+	placed := map[int64]bool{}
 	var walk func(parent int64, depth int)
 	walk = func(parent int64, depth int) {
 		for _, p := range children[parent] {
+			if placed[p.ID] {
+				continue
+			}
+			placed[p.ID] = true
 			p.Meta["_depth"] = depth
 			ordered = append(ordered, p)
 			walk(p.ID, depth+1)
 		}
 	}
 	walk(0, 0)
+	// Pages in a parent loop stored before loops were refused are never reached from the top:
+	// list them (and their subtrees) at the top level so they can still be found and fixed.
+	for _, p := range all {
+		if !placed[p.ID] {
+			placed[p.ID] = true
+			p.Meta["_depth"] = 0
+			ordered = append(ordered, p)
+			walk(p.ID, 1)
+		}
+	}
 	total := len(ordered)
 	start := (page - 1) * perPage
 	if start > total {
@@ -688,6 +704,12 @@ func termLinksHTML(terms []*store.Term, base string) template.HTML {
 // bulkAction is WP_List_Table::current_action(): the chosen bulk action when Apply (bulk_action)
 // or Bulk Edit's Update (bulk_edit) submitted the form.
 func bulkAction(c *gin.Context) string {
+	if c.Query("delete_all") != "" || c.Query("delete_all2") != "" { // WP_Posts_List_Table::current_action()
+		return "delete_all"
+	}
+	if c.Query("doaction") == "undo" && c.Query("action") == "untrash" { // the trash notice's Undo link
+		return "untrash"
+	}
 	if c.Query("bulk_action") == "" && c.Query("bulk_edit") == "" {
 		return ""
 	}
@@ -697,6 +719,16 @@ func bulkAction(c *gin.Context) string {
 		}
 	}
 	return ""
+}
+
+// bulkPostIDs are the posts a bulk action applies to: the checked rows (post[]), or edit.php's
+// comma-separated ids (the trash notice's Undo link).
+func bulkPostIDs(c *gin.Context) []string {
+	ids := c.QueryArray("post[]")
+	if len(ids) == 0 && c.Query("ids") != "" {
+		ids = strings.Split(c.Query("ids"), ",")
+	}
+	return ids
 }
 
 // postsBulk answers POSTs to edit.php: the Screen Options form (set_screen_options()).
@@ -717,11 +749,15 @@ func (s *Server) postsBulkAction(c *gin.Context, typ, action string) {
 		s.bulkEditPosts(c, typ)
 		return
 	}
+	if action == "delete_all" {
+		s.postsEmptyTrash(c, typ)
+		return
+	}
 	u := currentUser(c)
 	n := 0
 	var done []string
-	for _, raw := range c.QueryArray("post[]") {
-		id, _ := strconv.ParseInt(raw, 10, 64)
+	for _, raw := range bulkPostIDs(c) {
+		id, _ := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
 		p, err := s.store.GetPost(c, id)
 		if err != nil || p.Type != typ || !u.Can("delete_post", p) {
 			continue
@@ -740,7 +776,7 @@ func (s *Server) postsBulkAction(c *gin.Context, typ, action string) {
 		if err == nil {
 			s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 			n++
-			done = append(done, raw)
+			done = append(done, itoa64(id))
 		}
 	}
 	key := map[string]string{"trash": "trashed", "untrash": "untrashed", "delete": "deleted"}[action]
@@ -751,7 +787,39 @@ func (s *Server) postsBulkAction(c *gin.Context, typ, action string) {
 	c.Redirect(http.StatusFound, target)
 }
 
-func postNotices(c *gin.Context, lab typeLabels) []notice {
+// postsEmptyTrash is edit.php's delete_all (the Empty Trash button): every trashed post of the type
+// the user may delete is deleted permanently.
+func (s *Server) postsEmptyTrash(c *gin.Context, typ string) {
+	u := currentUser(c)
+	var ids []int64
+	rows, err := s.store.Pool.Query(c, `SELECT id FROM posts WHERE type = $1 AND status = 'trash' ORDER BY id`, typ)
+	if err == nil {
+		for rows.Next() {
+			var id int64
+			if rows.Scan(&id) == nil {
+				ids = append(ids, id)
+			}
+		}
+		rows.Close()
+	}
+	n := 0
+	for _, id := range ids {
+		p, err := s.store.GetPost(c, id)
+		if err != nil || p.Type != typ || p.Status != "trash" || !u.Can("delete_post", p) {
+			continue
+		}
+		s.afterPostSave(c, p)
+		if s.store.DeletePost(c, id) == nil {
+			s.wbAfterStatusChange(c, p)
+			n++
+		}
+	}
+	c.Redirect(http.StatusFound, "/wp-admin/edit?post_type="+typ+"&deleted="+strconv.Itoa(n))
+}
+
+// postNotices are the list's result notices; bulkNonce signs the Undo link of the trash notice
+// (wp_nonce_url(..., 'bulk-posts')).
+func postNotices(c *gin.Context, lab typeLabels, bulkNonce string) []notice {
 	var out []notice
 	lower := strings.ToLower(lab.Singular)
 	lowers := strings.ToLower(lab.Name)
@@ -764,7 +832,7 @@ func postNotices(c *gin.Context, lab typeLabels) []notice {
 	if n, _ := strconv.Atoi(c.Query("trashed")); n > 0 {
 		msg := one(n, "moved to the Trash.", "moved to the Trash.")
 		if ids := c.Query("ids"); ids != "" {
-			msg += ` <a href="/wp-admin/edit?post_type=` + lab.Type + `&amp;doaction=undo&amp;action=untrash&amp;ids=` + template.HTMLEscapeString(ids) + `">Undo</a>`
+			msg += ` <a href="/wp-admin/edit?post_type=` + lab.Type + `&amp;doaction=undo&amp;action=untrash&amp;ids=` + template.HTMLEscapeString(ids) + `&amp;_wpnonce=` + template.HTMLEscapeString(bulkNonce) + `">Undo</a>`
 		}
 		out = append(out, notice{Type: "success", Message: template.HTML(msg), Dismissible: true})
 	}
@@ -1882,8 +1950,55 @@ func (s *Server) editNotices(c *gin.Context, lab typeLabels, view string) []noti
 	return []notice{{Type: "success", Message: template.HTML(msg), Dismissible: true}}
 }
 
+// postPreview is post_preview(): the classic Preview / Preview Changes button. A draft or pending post
+// of the current user is saved in place (it is not live); any other post gets an autosave revision and
+// stays as it is, then the browser is sent to the preview, which shows the autosave. Nothing is
+// published, no terms or meta change, no cache is purged.
+func (s *Server) postPreview(c *gin.Context) {
+	u := currentUser(c)
+	id, _ := strconv.ParseInt(c.PostForm("post_ID"), 10, 64)
+	p, err := s.store.GetPost(c, id)
+	if err != nil {
+		c.String(http.StatusNotFound, "You attempted to edit an item that does not exist. Perhaps it was deleted?")
+		return
+	}
+	if !s.checkNonce(c, "update-post_"+itoa64(p.ID)) {
+		s.denyNonce(c)
+		return
+	}
+	if !u.Can("edit_post", p) {
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit this item.")
+		return
+	}
+	// Fields the form does not carry (no excerpt box, say) keep their stored values.
+	field := func(key, stored string) string {
+		if v, ok := c.GetPostForm(key); ok {
+			return v
+		}
+		return stored
+	}
+	title := strings.TrimSpace(field("post_title", p.Title))
+	content := strings.ReplaceAll(field("content", p.Content), "\r\n", "\n")
+	_, wrotePost, err := s.saveAutosave(c, p, u, title, content, field("excerpt", p.Excerpt))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Could not save the preview.")
+		return
+	}
+	link := s.links(c).Permalink(p)
+	if wrotePost {
+		link += previewSep(link) + "preview=true"
+	} else {
+		link += previewSep(link) + "preview_id=" + itoa64(p.ID) + "&preview_nonce=" + s.nonce(c, "post_preview_"+itoa64(p.ID)) + "&preview=true"
+	}
+	c.Redirect(http.StatusFound, link)
+}
+
 // postSave handles the classic edit form (editpost()).
 func (s *Server) postSave(c *gin.Context) {
+	if c.PostForm("wp-preview") == "dopreview" { // post.js' Preview button submits the form here
+		s.postPreview(c)
+		return
+	}
 	if s.gooAdminScreen(c, "post") { // Goocommerce: the product editor's save
 		return
 	}

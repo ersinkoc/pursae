@@ -1113,8 +1113,8 @@ func (s *Server) restMedia(c *gin.Context, a *store.Attachment, ctxName string) 
 		"slug": a.Slug, "status": "inherit", "type": "attachment", "link": home + "/?attachment_id=" + itoa64(a.ID),
 		"title":  map[string]any{"rendered": wp.EscText(a.Title), "raw": a.Title},
 		"author": a.UploaderID, "featured_media": 0, "comment_status": "open", "ping_status": "closed", "template": "", "meta": []any{},
-		"description": map[string]any{"rendered": wp.Autop(a.Description), "raw": a.Description},
-		"caption":     map[string]any{"rendered": wp.Autop(a.Caption), "raw": a.Caption},
+		"description": map[string]any{"rendered": wp.Autop(wp.KsesPost(a.Description)), "raw": a.Description},
+		"caption":     map[string]any{"rendered": wp.Autop(wp.KsesPost(a.Caption)), "raw": a.Caption},
 		"alt_text":    a.Alt, "media_type": mediaType, "mime_type": a.Mime, "media_details": details, "post": nullIntJSON(a.PostID),
 		"source_url": url, "missing_image_sizes": []any{},
 		"_links": restLinks(home+"/wp-json/wp/v2/media/"+itoa64(a.ID), home+"/wp-json/wp/v2/media", nil),
@@ -1234,6 +1234,7 @@ func (api *restAPI) uploadMedia(c *gin.Context, r *restRequest) {
 		}
 	}
 	if changed {
+		ksesAttachmentText(restCurrent(c), a)
 		_ = s.store.UpdateAttachment(c, a)
 	}
 	c.Header("Location", s.links(c).HomeURL("/wp-json/wp/v2/media/"+itoa64(a.ID)))
@@ -1264,6 +1265,7 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 	if v, ok := r.Int(c, "post"); ok {
 		a.PostID = v
 	}
+	ksesAttachmentText(u, a)
 	pllPatches, ok := s.golylangMediaRESTParse(c, r) // pll_i18n: checked before anything is saved
 	if !ok {
 		return

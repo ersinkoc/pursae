@@ -234,7 +234,7 @@ func (s *Server) routes() *gin.Engine {
 	s.static(r, "/wp-admin/js", "wp-admin/js")
 	s.static(r, "/wp-admin/css", "wp-admin/css")
 	s.static(r, "/wp-admin/images", "wp-admin/images")
-	uploads := http.StripPrefix("/wp-content/uploads", http.FileServer(http.Dir(s.cfg.UploadsDir)))
+	uploads := http.StripPrefix("/wp-content/uploads", http.FileServer(noListFS{http.Dir(s.cfg.UploadsDir)}))
 	serveUpload := func(c *gin.Context) {
 		// Uploaded files are data, never code: HTML or SVG uploads run in a sandbox.
 		c.Header("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'")
