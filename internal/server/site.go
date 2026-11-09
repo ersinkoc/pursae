@@ -204,6 +204,23 @@ func (s *Server) resolve(c *gin.Context, path string) (*siteQuery, error) {
 		return nil, errNotFound
 	}
 
+	// "/page/N/" and "/feed/" with no slug before them belong to whatever the query
+	// vars select ("/page/2/?taxonomy=genre&term=fiction" is links.Builder.Paged of a
+	// query-var archive), so apply them before the query-var switch returns.
+	if m := feedRe.FindStringSubmatch(path); m != nil && m[1] == "" {
+		path = ""
+		if q.Feed == "" {
+			q.Feed = "rss2"
+			if m[2] == "atom" {
+				q.Feed = "atom"
+			}
+		}
+	}
+	if m := pagedRe.FindStringSubmatch(path); m != nil && m[1] == "" {
+		path = ""
+		q.Paged, _ = strconv.Atoi(m[2])
+	}
+
 	// Query-var URLs (plain permalinks).
 	switch {
 	case v.Get("p") != "" || v.Get("page_id") != "":

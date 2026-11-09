@@ -367,8 +367,14 @@ func (s *Server) exportScreen(c *gin.Context) {
 		}
 	}
 	b.WriteString("</channel>\n</rss>\n")
-	name := wp.SanitizeTitle(s.settings.String("blogname"))
-	if name == "" {
+	// sanitize_key(): an ASCII-only file name (a raw UTF-8 header parameter reads as Latin-1).
+	name := strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '_' || r == '-' {
+			return r
+		}
+		return -1
+	}, wp.SanitizeTitle(s.settings.String("blogname")))
+	if name = strings.Trim(name, "-"); name == "" {
 		name = "pursae"
 	}
 	c.Header("Content-Description", "File Transfer")
@@ -589,6 +595,11 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	termID := map[string]int64{}
 	oldTerms := map[int64]int64{} // processed_terms: term ids in the file -> ours
 	ensureTerm := func(tax, slug, name string, parent int64) int64 {
+		if strings.Contains(slug, "%") {
+			// WXR writes non-ASCII slugs as %xx octets (WordPress' stored form); Pursae keeps
+			// the decoded UTF-8, so look up and create by the decoded slug.
+			slug = wp.SanitizeTitle(slug)
+		}
 		key := tax + ":" + slug
 		if id, ok := termID[key]; ok {
 			return id

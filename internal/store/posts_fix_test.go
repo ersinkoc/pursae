@@ -143,3 +143,20 @@ func TestExcludePassworded(t *testing.T) {
 		t.Errorf("all %d, without protected %d", len(all), len(open))
 	}
 }
+
+// TestQueryPostsNoContent: NoContent lists posts without their bodies but keeps titles and slugs.
+func TestQueryPostsNoContent(t *testing.T) {
+	s, _, u1, _ := wbTestStore(t)
+	ctx := context.Background()
+	p := &Post{Type: "page", AuthorID: u1, Title: "Light", Content: "<p>long body</p>", Excerpt: "short", Status: "publish", MenuOrder: 3}
+	if err := s.InsertPost(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	got, n, err := s.QueryPosts(ctx, PostQuery{Types: []string{"page"}, Statuses: []string{"publish"}, PerPage: -1, NoContent: true})
+	if err != nil || n != 1 || len(got) != 1 {
+		t.Fatalf("query: %v, %d", err, n)
+	}
+	if g := got[0]; g.ID != p.ID || g.Title != "Light" || g.Slug != p.Slug || g.MenuOrder != 3 || g.Content != "" || g.Excerpt != "" {
+		t.Errorf("light post = %+v", g)
+	}
+}

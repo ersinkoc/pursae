@@ -56,6 +56,9 @@ const postCols = `id, type, coalesce(author_id,0), coalesce(parent_id,0), slug, 
 	coalesce(trashed_status,''), password, published_at, modified_at, created_at, coalesce(featured_media_id,0),
 	menu_order, comment_status, ping_status, comment_count, sticky, format, meta`
 
+// postColsNoContent is postCols with empty excerpt and content (PostQuery.NoContent).
+var postColsNoContent = strings.Replace(postCols, "excerpt, content,", "''::text, ''::text,", 1)
+
 func scanPost(row pgx.Row) (*Post, error) {
 	p := &Post{}
 	var meta []byte
@@ -238,6 +241,9 @@ type PostQuery struct {
 	// ExcludePassworded leaves out password-protected posts (WP_Query::parse_search() for logged-out
 	// visitors: searching their hidden text would reveal it).
 	ExcludePassworded bool
+	// NoContent leaves Excerpt and Content empty, for lists that only print titles and links
+	// (the Page List block) and would otherwise load every body.
+	NoContent bool
 }
 
 func (q *PostQuery) where(args *[]any) string {
@@ -425,7 +431,11 @@ func (s *Store) QueryPosts(ctx context.Context, q PostQuery) ([]*Post, int, erro
 	if err := s.Pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE `+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	sql := `SELECT ` + postCols + ` FROM posts WHERE ` + where + ` ORDER BY ` + q.orderBy()
+	cols := postCols
+	if q.NoContent {
+		cols = postColsNoContent
+	}
+	sql := `SELECT ` + cols + ` FROM posts WHERE ` + where + ` ORDER BY ` + q.orderBy()
 	if q.PerPage > 0 {
 		sql += limitOffset(q.PerPage, q.Page)
 	}

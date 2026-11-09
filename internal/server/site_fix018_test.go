@@ -3,8 +3,11 @@ package server
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
 )
@@ -123,6 +126,9 @@ func TestFrontRelease018(t *testing.T) {
 	if _, body, _ := get(t, anon, base+"/wp-json/wp/v2/posts?search=Quetzalcoatl"); strings.Contains(body, "Locked memo") {
 		t.Error("anonymous REST search finds a protected post by its hidden text")
 	}
+	if _, body, _ := get(t, anon, base+"/wp-json/wp/v2/search?search=Quetzalcoatl"); strings.Contains(body, "Locked memo") {
+		t.Error("anonymous /wp/v2/search finds a protected post by its hidden text")
+	}
 	if _, body, _ := get(t, c, base+"/?s=Quetzalcoatl"); !strings.Contains(body, "search-results") || strings.Contains(body, "search-no-results") {
 		t.Error("a logged-in search should still find the protected post")
 	}
@@ -200,6 +206,40 @@ func TestFrontRelease018(t *testing.T) {
 	if code != http.StatusOK || !strings.Contains(body, "Dune") || strings.Contains(body, "Chicken Feed") || !strings.Contains(body, "Genre: <span>Fiction</span>") {
 		t.Errorf("%s: %d", termURL, code)
 	}
+	// Paging and feeds of a query-var taxonomy archive: links.Builder.Paged gives
+	// /page/2/?taxonomy=genre&term=fiction, the feed link /feed/?taxonomy=genre&term=fiction.
+	foundation := mustInsertPost(t, srv, &store.Post{Type: "book", AuthorID: adminID, Title: "Foundation", Content: "<p>Psychohistory.</p>"})
+	if err := srv.store.SetPostTerms(ctx, foundation.ID, "genre", []int64{fiction.ID}); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.settings.Set(ctx, map[string]any{"posts_per_page": 1}); err != nil {
+		t.Fatal(err)
+	}
+	srv.purgeAll(ctx)
+	_, page1, _ := get(t, anon, termURL)
+	page2URL := srv.links(ctx).Paged(termURL, 2)
+	if !strings.Contains(page2URL, "/page/2/") {
+		t.Fatalf("paged term URL = %s", page2URL)
+	}
+	code, page2, _ := get(t, anon, page2URL)
+	if code != http.StatusOK {
+		t.Errorf("%s: %d", page2URL, code)
+	}
+	for _, title := range []string{"Dune", "Foundation"} {
+		if strings.Contains(page1, ">"+title+"<") == strings.Contains(page2, ">"+title+"<") {
+			t.Errorf("%q should be on exactly one of the two genre pages", title)
+		}
+	}
+	if code, _, _ := get(t, anon, srv.links(ctx).Paged(termURL, 3)); code != http.StatusNotFound {
+		t.Errorf("genre page 3: %d, want 404", code)
+	}
+	if err := srv.settings.Set(ctx, map[string]any{"posts_per_page": 10}); err != nil {
+		t.Fatal(err)
+	}
+	srv.purgeAll(ctx)
+	if _, body, _ := get(t, anon, base+"/feed/?taxonomy=genre&term=fiction"); !strings.Contains(body, "<title>Dune</title>") || strings.Contains(body, "Chicken Feed") {
+		t.Error("the genre feed should list the genre's books only")
+	}
 	if code, _, _ := get(t, anon, base+"/?taxonomy=genre&term=nope"); code != http.StatusNotFound {
 		t.Errorf("unknown genre term: %d, want 404", code)
 	}
@@ -252,5 +292,78 @@ func TestFrontRelease018(t *testing.T) {
 	if code != http.StatusOK || strings.Contains(body, "&amp;#8217;") || strings.Contains(body, "&amp;amp;") ||
 		!strings.Contains(body, ">Ben&#8217;s Blog &amp; News</h1>") {
 		t.Errorf("blog heading double-escaped or missing: %d", code)
+	}
+}
+
+// TestWXRTermSlugsAndFileName: importing a WXR whose non-ASCII slugs are %xx octets reuses the
+// existing terms, and the export file name stays ASCII for a non-Latin site name.
+func TestWXRTermSlugsAndFileName(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	ctx := context.Background()
+	adminID := installFrontSite(t, base, c, srv)
+	tag := &store.Term{Taxonomy: "post_tag", Name: "мир"}
+	if err := srv.store.InsertTerm(ctx, tag); err != nil {
+		t.Fatal(err)
+	}
+	cat := &store.Term{Taxonomy: "category", Name: "Новости"}
+	if err := srv.store.InsertTerm(ctx, cat); err != nil {
+		t.Fatal(err)
+	}
+	doc := `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wp="http://wordpress.org/export/1.2/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+	<wp:category><wp:term_id>7</wp:term_id><wp:category_nicename>` + wxrSlug(cat.Slug) + `</wp:category_nicename><wp:category_parent></wp:category_parent><wp:cat_name>Новости</wp:cat_name></wp:category>
+	<wp:tag><wp:term_id>8</wp:term_id><wp:tag_slug>` + wxrSlug(tag.Slug) + `</wp:tag_slug><wp:tag_name>мир</wp:tag_name></wp:tag>
+	<item>
+		<title>Imported news</title>
+		<dc:creator>admin</dc:creator>
+		<content:encoded><![CDATA[<p>Hello.</p>]]></content:encoded>
+		<wp:post_id>501</wp:post_id>
+		<wp:post_name>imported-news</wp:post_name>
+		<wp:status>publish</wp:status>
+		<wp:post_type>post</wp:post_type>
+		<category domain="category" nicename="` + wxrSlug(cat.Slug) + `"><![CDATA[Новости]]></category>
+		<category domain="post_tag" nicename="` + wxrSlug(tag.Slug) + `"><![CDATA[мир]]></category>
+	</item>
+</channel>
+</rss>`
+	if !strings.Contains(doc, "%d0%bc") {
+		t.Fatalf("wxrSlug should write %%xx octets: %s", wxrSlug(tag.Slug))
+	}
+	admin, err := srv.store.UserByID(ctx, adminID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gc, _ := gin.CreateTestContext(httptest.NewRecorder())
+	gc.Request = httptest.NewRequest(http.MethodPost, "/wp-admin/import", nil)
+	if _, err := srv.importWXR(gc, admin, []byte(doc)); err != nil {
+		t.Fatal(err)
+	}
+	var tags, cats int
+	pool := getPool(t)
+	_ = pool.QueryRow(ctx, `SELECT count(*) FROM terms WHERE taxonomy = 'post_tag'`).Scan(&tags)
+	_ = pool.QueryRow(ctx, `SELECT count(*) FROM terms WHERE taxonomy = 'category' AND name = 'Новости'`).Scan(&cats)
+	if tags != 1 || cats != 1 {
+		t.Errorf("re-import duplicated terms: %d tags, %d Новости categories", tags, cats)
+	}
+	var linked int
+	_ = pool.QueryRow(ctx, `SELECT count(*) FROM post_terms pt JOIN posts p ON p.id = pt.post_id
+		WHERE p.title = 'Imported news' AND pt.term_id = ANY($1)`, []int64{tag.ID, cat.ID}).Scan(&linked)
+	if linked != 2 {
+		t.Errorf("imported post linked to %d of the existing terms, want 2", linked)
+	}
+
+	if err := srv.settings.Set(ctx, map[string]any{"blogname": "Блог"}); err != nil {
+		t.Fatal(err)
+	}
+	resp, err := c.Get(base + "/wp-admin/export?download=true&content=all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	cd := resp.Header.Get("Content-Disposition")
+	if !strings.HasPrefix(cd, "attachment; filename=pursae.WordPress.") {
+		t.Errorf("Content-Disposition = %q", cd)
 	}
 }

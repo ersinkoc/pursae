@@ -354,7 +354,8 @@ func (api *restAPI) search(c *gin.Context, r *restRequest) {
 		if st := c.Query("subtype"); st != "" && st != "any" {
 			types = strings.Split(st, ",")
 		}
-		posts, n, _ := s.store.QueryPosts(c, store.PostQuery{Types: types, Statuses: []string{"publish"}, Search: c.Query("search"), PerPage: per, Page: page})
+		posts, n, _ := s.store.QueryPosts(c, store.PostQuery{Types: types, Statuses: []string{"publish"}, Search: c.Query("search"), PerPage: per, Page: page,
+			ExcludePassworded: c.Query("search") != "" && restCurrent(c) == nil}) // WP_Query::parse_search() for logged-out requests
 		total = n
 		for _, p := range posts {
 			out = append(out, map[string]any{"id": p.ID, "title": p.Title, "url": s.links(c).Permalink(p), "type": "post", "subtype": p.Type})
