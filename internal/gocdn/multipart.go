@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 )
 
 // Multipart upload (CreateMultipartUpload, UploadPart, CompleteMultipartUpload,
@@ -191,13 +190,16 @@ func errorInBody(resp *http.Response) error {
 	if err != nil {
 		return err
 	}
-	if !strings.Contains(string(data), "<Error>") {
-		return nil
-	}
 	var x struct {
+		XMLName xml.Name
 		Code    string `xml:"Code"`
 		Message string `xml:"Message"`
 	}
-	_ = xml.Unmarshal(data, &x)
+	if err := xml.Unmarshal(data, &x); err != nil {
+		return fmt.Errorf("S3 response: %w", err)
+	}
+	if x.XMLName.Local != "Error" {
+		return nil
+	}
 	return &Error{Status: resp.StatusCode, Code: x.Code, Message: x.Message}
 }

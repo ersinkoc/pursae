@@ -240,3 +240,74 @@ func TestSwapPrevWithoutPreviousChangesNothing(t *testing.T) {
 		t.Fatalf("the state changed: %+v (was %+v)", st, before)
 	}
 }
+
+func TestLessPrereleases(t *testing.T) {
+	for _, tc := range []struct {
+		a, b string
+		want bool
+	}{
+		{"0.3.0-beta.1", "0.3.0", true},
+		{"0.3.0", "0.3.0-beta.1", false},
+		{"0.3.0-beta.2", "0.3.0-beta.10", true},
+		{"0.3.0-alpha", "0.3.0-beta", true},
+		{"0.3.0-1", "0.3.0-alpha", true},
+		{"0.3.0-beta", "0.3.0-beta.1", true},
+		{"0.3.0+build.9", "0.3.0+build.1", false},
+	} {
+		if got := Less(tc.a, tc.b); got != tc.want {
+			t.Errorf("Less(%q, %q) = %v, want %v", tc.a, tc.b, got, tc.want)
+		}
+	}
+}
+
+func TestLaunchStableAndPrerelease(t *testing.T) {
+	for _, tc := range []struct{ image, installed, want string }{
+		{"0.3.0", "0.3.0-beta.1", "0.3.0"},
+		{"0.3.0-beta.1", "0.3.0", "0.3.0"},
+	} {
+		t.Run(tc.image+"-over-"+tc.installed, func(t *testing.T) {
+			dir := t.TempDir()
+			image := filepath.Join(dir, "wpgo")
+			data := filepath.Join(dir, "installed")
+			if err := os.Mkdir(data, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			fakeBinary(t, image, tc.image)
+			installed := filepath.Join(data, "wpgo")
+			fakeBinary(t, installed, tc.installed)
+			stubExec(t)
+			if err := Launch(image, data, nil); err != nil {
+				t.Fatal(err)
+			}
+			if got := binaryVersion(installed); got != tc.want {
+				t.Fatalf("installed %s, want %s", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestPrunePrevKeepsUnknownState(t *testing.T) {
+	for _, state := range []string{"corrupt", "unreadable"} {
+		t.Run(state, func(t *testing.T) {
+			exe := filepath.Join(t.TempDir(), "wpgo")
+			if err := os.WriteFile(PrevPath(exe), []byte("rollback"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			var err error
+			if state == "corrupt" {
+				err = os.WriteFile(statePath(exe), []byte("{"), 0o600)
+			} else {
+				err = os.Mkdir(statePath(exe), 0o700)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if PrunePrev(exe, time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC)) {
+				t.Fatal("unknown state authorized deletion")
+			}
+			if b, err := os.ReadFile(PrevPath(exe)); err != nil || string(b) != "rollback" {
+				t.Fatalf("rollback binary lost: %q, %v", b, err)
+			}
+		})
+	}
+}

@@ -545,3 +545,67 @@ func TestRepeatedQueryValueOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestColdHeadPreservesRepresentationHeaders(t *testing.T) {
+	c := New(DefaultConfig(), Options{})
+	h := c.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Content-Length", "5")
+		w.Header().Set("ETag", `"application-etag"`)
+		w.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodGet {
+			io.WriteString(w, "hello")
+		}
+	}))
+	cold := do(h, "HEAD", "http://example.com/head/")
+	if cold.Header().Get("Content-Length") != "5" || cold.Header().Get("ETag") != `"application-etag"` || cold.Body.Len() != 0 {
+		t.Fatalf("cold HEAD changed representation headers: %v, body=%q", cold.Header(), cold.Body.String())
+	}
+	if c.Stats().Entries != 0 {
+		t.Fatal("HEAD populated the cache")
+	}
+	do(h, "GET", "http://example.com/head/")
+	warm := do(h, "HEAD", "http://example.com/head/")
+	if status(warm) != "hit" || warm.Header().Get("Content-Length") != "5" || warm.Body.Len() != 0 {
+		t.Fatalf("cached HEAD changed: %v, body=%q", warm.Header(), warm.Body.String())
+	}
+}
+
+func TestUnsupportedVaryBypassesCache(t *testing.T) {
+	for _, vary := range []string{"Accept-Language", "*", "Accept-Encoding, Cookie"} {
+		t.Run(vary, func(t *testing.T) {
+			c := New(DefaultConfig(), Options{})
+			h := c.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/html")
+				w.Header().Set("Vary", vary)
+				io.WriteString(w, r.Header.Get("Accept-Language"))
+			}))
+			for _, lang := range []string{"en", "fr", "en"} {
+				w := do(h, "GET", "http://example.com/vary/", "Accept-Language", lang)
+				if got := w.Body.String(); got != lang || status(w) != "bypass" {
+					t.Fatalf("got %q (%s), want %q (bypass)", got, status(w), lang)
+				}
+			}
+		})
+	}
+}
+
+func TestLegacyVaryEntryNotServed(t *testing.T) {
+	c := New(DefaultConfig(), Options{})
+	r := httptest.NewRequest("GET", "http://example.com/vary/", nil)
+	e, err := NewEntry(c.Key(r), 200, http.Header{"Content-Type": {"text/html"}, "Vary": {"Accept-Language"}}, []byte("stale"), nil, time.Now(), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Store().Set(e); err != nil {
+		t.Fatal(err)
+	}
+	h := c.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Vary", "Accept-Language")
+		io.WriteString(w, "fresh")
+	}))
+	if w := do(h, "GET", r.URL.String()); w.Body.String() != "fresh" {
+		t.Fatalf("legacy entry was replayed: %q", w.Body.String())
+	}
+}

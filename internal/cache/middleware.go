@@ -147,7 +147,7 @@ func (c *Cache) Middleware(next http.Handler) http.Handler {
 			pw.finish()
 			return
 		}
-		if e, ok := c.store.Get(d.Key); ok {
+		if e, ok := c.store.Get(d.Key); ok && cacheableVary(e.Header) {
 			c.serve(w, r, e, "hit", d.Private)
 			return
 		}
@@ -168,7 +168,7 @@ func (c *Cache) Middleware(next http.Handler) http.Handler {
 					return
 				}
 				t.Stop()
-				if e, ok := c.store.Get(d.Key); ok {
+				if e, ok := c.store.Get(d.Key); ok && cacheableVary(e.Header) {
 					c.serve(w, r, e, "hit", d.Private)
 					return
 				}
