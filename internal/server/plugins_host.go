@@ -245,11 +245,14 @@ func (h *pluginHost) CurrentUser(ctx context.Context, _ string) (*plugins.UserIn
 
 // Plugin events are rows of the jobs table named after the hook; the payload carries the owning
 // plugin and the arguments. runDueJobs fires them as actions (scheduler.go).
+//
+// Plugins schedule from OnInit, which runs on every instantiation (start, activation, re-instantiation
+// after a trap), so scheduling an identical recurring event again keeps the queued row and its run_at:
+// otherwise every restart would push the next run back by a full interval. Only a changed interval or
+// arguments (or a one-off event) replaces the schedule.
 func (h *pluginHost) ScheduleEvent(ctx context.Context, plugin string, ev plugins.ScheduledEvent) error {
-	if err := h.UnscheduleEvent(ctx, plugin, ev.Hook); err != nil {
-		return err
-	}
 	payload, _ := json.Marshal(map[string]any{"plugin": plugin, "args": ev.Args})
+	args, _ := json.Marshal(ev.Args)
 	runAt := time.Now()
 	if ev.At > 0 {
 		runAt = time.Unix(ev.At, 0)
@@ -260,12 +263,40 @@ func (h *pluginHost) ScheduleEvent(ctx context.Context, plugin string, ev plugin
 	if ev.Interval > 0 {
 		rec = "every:" + strconv.FormatInt(ev.Interval, 10)
 	}
-	_, err := h.s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, payload, run_at, recurrence) VALUES ($1, $2, $3, $4)`, ev.Hook, payload, runAt, rec)
-	return err
+	tx, err := h.s.store.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	// Two instances (or two instantiations) scheduling at once must not both insert.
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('plugin-event:' || $1 || ':' || $2))`, plugin, ev.Hook); err != nil {
+		return err
+	}
+	if ev.At == 0 && rec != "" {
+		var total, same int
+		if err := tx.QueryRow(ctx, `SELECT count(*), count(*) FILTER (WHERE recurrence = $3 AND payload->'args' = $4::jsonb AND status <> 'failed')
+			FROM jobs WHERE name = $1 AND payload->>'plugin' = $2`, ev.Hook, plugin, rec, string(args)).Scan(&total, &same); err != nil {
+			return err
+		}
+		if total == 1 && same == 1 {
+			return tx.Commit(ctx) // already scheduled exactly like this: keep its next run
+		}
+	}
+	// Replace: every row of the hook, a running one too (finishJob then finds no row to re-queue, so the old
+	// schedule cannot come back next to the new one).
+	if _, err := tx.Exec(ctx, `DELETE FROM jobs WHERE name = $1 AND payload->>'plugin' = $2`, ev.Hook, plugin); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO jobs(name, payload, run_at, recurrence) VALUES ($1, $2, $3, $4)`, ev.Hook, payload, runAt, rec); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
+// UnscheduleEvent removes the hook's rows in any status: a run in progress finishes, but finishJob finds no
+// row to put back in the queue.
 func (h *pluginHost) UnscheduleEvent(ctx context.Context, plugin, hook string) error {
-	_, err := h.s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = $1 AND status = 'queued' AND payload->>'plugin' = $2`, hook, plugin)
+	_, err := h.s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = $1 AND payload->>'plugin' = $2`, hook, plugin)
 	return err
 }
 
