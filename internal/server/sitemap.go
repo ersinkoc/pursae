@@ -259,9 +259,10 @@ func (s *Server) sitemapIndex(c *gin.Context) {
 	lb := s.links(ctx)
 	var sb strings.Builder
 	sb.WriteString(xml.Header + `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`)
-	if r := pllFrom(c); r != nil && r.Front && s.golylangOn() && strings.Trim(c.Request.URL.Path, "/") == "wp-sitemap.xml" && c.Query("lang") == "" {
+	if r := pllFrom(c); r != nil && r.Front && s.golylangOn() && s.pllOpts().ForceLang <= 1 && strings.Trim(c.Request.URL.Path, "/") == "wp-sitemap.xml" && c.Query("lang") == "" {
 		// Golylang: the root index (the one robots.txt names) lists every language's sitemaps, like
-		// Polylang's multilingual sitemaps provider; /fr/wp-sitemap.xml keeps to French.
+		// Polylang's multilingual sitemaps provider; /fr/wp-sitemap.xml keeps to French. With a subdomain
+		// or a domain per language each host lists only its own language (PLL_Sitemaps_Domain).
 		o := s.pllOpts()
 		for _, l := range s.pllActiveLanguages(ctx) {
 			lctx := context.WithValue(ctx, pllCtxKey{}, &pllReq{srv: s, Lang: l, Filter: true, Front: true, Path: r.Path})

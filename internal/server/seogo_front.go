@@ -85,7 +85,7 @@ func (s *Server) seogoRobotsDefault(ctx context.Context) string {
 	}
 	out := "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax"
 	if s.seogoOpts().Modules["sitemap"] {
-		out += "\n\nSitemap: " + lb.HomeURL("/sitemap_index.xml")
+		out += "\n\nSitemap: " + s.seogoHostURL(ctx, lb.HomeURL("/sitemap_index.xml")) // this host's index
 	}
 	return out
 }
@@ -94,8 +94,9 @@ func (s *Server) seogoRobotsDefault(ctx context.Context) string {
 //
 // One index lists every sitemap: one per public post type (products and Pursae Custom Fields types
 // included, the way core's wp-sitemap.xml does), per public taxonomy and the authors. With Pursae
-// Multi Language the sitemaps list every language's objects with their own URLs and hreflang
-// alternates (Polylang's behaviour with Yoast in directory and subdomain modes). A sitemap page is
+// Multi Language in directory or query mode the sitemaps list every language's objects with their
+// own URLs and hreflang alternates (Polylang's behaviour with Yoast); with a subdomain or a domain
+// per language each host's sitemaps keep to that host's language. A sitemap page is
 // built from one LIMIT/OFFSET query; the index only counts.
 
 type seogoURL struct {
@@ -107,8 +108,22 @@ type seogoURL struct {
 
 type seogoAlt struct{ Lang, URL string }
 
-// seogoSitemapCtx is the context sitemaps query with: no language filter.
-func seogoSitemapCtx(ctx context.Context) context.Context { return gooPllUnfiltered(ctx) }
+// seogoAllLanguages reports whether one sitemap lists every language: Pursae Multi Language in
+// directory or query mode. With a subdomain or a domain per language (force_lang 2/3) each host keeps
+// to its own language, like Polylang filtering home_url per domain, since a sitemap may not list
+// URLs of another host.
+func (s *Server) seogoAllLanguages() bool {
+	return s.golylangOn() && s.pllOpts().ForceLang <= 1
+}
+
+// seogoSitemapCtx is the context sitemaps query with: no language filter when one sitemap lists
+// every language, else the request language.
+func (s *Server) seogoSitemapCtx(ctx context.Context) context.Context {
+	if s.golylangOn() && !s.seogoAllLanguages() {
+		return ctx
+	}
+	return gooPllUnfiltered(ctx)
+}
 
 // seogoSitemapTypes are the sitemaps of the index, in order: post types, taxonomies, authors.
 func (s *Server) seogoSitemapTypes(ctx context.Context) []string {
@@ -124,6 +139,9 @@ func (s *Server) seogoSitemapTypes(ctx context.Context) []string {
 	}
 	var out []string
 	for _, t := range cand {
+		if (t == "news" && o.Modules["news_sitemap"]) || (t == "video" && o.Modules["video_sitemap"]) {
+			continue // /news-sitemap.xml and /video-sitemap.xml are the News and Video sitemaps then
+		}
 		if to := o.seogoType(t); to.Sitemap && !to.Noindex && !to.Disabled {
 			out = append(out, t)
 		}
@@ -248,8 +266,8 @@ func (s *Server) seogoHreflang(ctx context.Context, slug string) string {
 // seogoTranslationGroups maps each object to its translations (language => id, itself included),
 // for the objects that have at least one; nil while Pursae Multi Language is off.
 func (s *Server) seogoTranslationGroups(ctx context.Context, k pllKind, ids []int64) map[int64]map[string]int64 {
-	if !s.golylangOn() || len(ids) == 0 || len(s.pllActiveLanguages(ctx)) < 2 {
-		return nil
+	if !s.seogoAllLanguages() || len(ids) == 0 || len(s.pllActiveLanguages(ctx)) < 2 {
+		return nil // a host per language: the other hosts' URLs stay out of this sitemap
 	}
 	tbl, col := k.table()
 	rows, err := s.store.Pool.Query(ctx, `SELECT a.`+col+`, b.`+col+`, b.lang FROM `+tbl+` a JOIN `+tbl+` b ON b.grp = a.grp
@@ -295,7 +313,7 @@ func (s *Server) seogoAltsFor(ctx context.Context, group map[string]int64, locs 
 
 // seogoSitemapChunks is the index entry data of one type: the last modification of each page.
 func (s *Server) seogoSitemapChunks(ctx context.Context, typ string, per int) []time.Time {
-	ctx = seogoSitemapCtx(ctx)
+	ctx = s.seogoSitemapCtx(ctx)
 	var q string
 	switch s.seogoSitemapKind(ctx, typ) {
 	case "author":
@@ -348,7 +366,7 @@ func (s *Server) seogoSitemapChunks(ctx context.Context, typ string, per int) []
 
 // seogoSitemapURLs lists the URLs of one page of a sitemap type (page 1 is the first).
 func (s *Server) seogoSitemapURLs(reqCtx context.Context, typ string, page int) []seogoURL {
-	ctx := seogoSitemapCtx(reqCtx)
+	ctx := s.seogoSitemapCtx(reqCtx)
 	o := s.seogoOpts()
 	lb := s.links(reqCtx)
 	per := o.SitemapPerPage
@@ -367,7 +385,9 @@ func (s *Server) seogoSitemapURLs(reqCtx context.Context, typ string, page int) 
 			front = int64(s.settings.Int("page_on_front"))
 		}
 		if typ == "page" && front == 0 && page == 1 { // the home page leads the page sitemap, like Yoast
-			if s.golylangOn() && len(s.pllActiveLanguages(reqCtx)) > 0 {
+			if cur := s.pllCurrent(reqCtx); s.golylangOn() && !s.seogoAllLanguages() && cur != nil {
+				out = append(out, seogoURL{Loc: s.pllHomeURL(reqCtx, cur)}) // this host's language only
+			} else if s.golylangOn() && len(s.pllActiveLanguages(reqCtx)) > 0 {
 				var homes []seogoAlt
 				for _, l := range s.pllActiveLanguages(reqCtx) {
 					homes = append(homes, seogoAlt{Lang: s.pllHreflang(reqCtx, l), URL: s.pllHomeURL(reqCtx, l)})
@@ -515,7 +535,20 @@ func (s *Server) seogoSitemapURLs(reqCtx context.Context, typ string, page int) 
 }
 
 func (s *Server) seogoXMLHead(ctx context.Context) string {
-	return xml.Header + `<?xml-stylesheet type="text/xsl" href="` + xmlEsc(s.links(ctx).HomeURL("/main-sitemap.xsl")) + `"?>` + "\n"
+	return xml.Header + `<?xml-stylesheet type="text/xsl" href="` + xmlEsc(s.seogoHostURL(ctx, s.links(ctx).HomeURL("/main-sitemap.xsl"))) + `"?>` + "\n"
+}
+
+// seogoHostURL moves a sitemap file URL to the request's host while each language has its own
+// subdomain or domain (an index and its stylesheet stay on the host that serves them).
+func (s *Server) seogoHostURL(ctx context.Context, link string) string {
+	if !s.golylangOn() || s.seogoAllLanguages() {
+		return link
+	}
+	l := s.pllCurrent(ctx)
+	if l == nil {
+		return link
+	}
+	return s.pllConvert(ctx, s.links(ctx).Home, link, l, "home", s.pllOpts())
 }
 
 func (s *Server) seogoSitemapIndex(c *gin.Context) {
@@ -534,7 +567,7 @@ func (s *Server) seogoSitemapIndex(c *gin.Context) {
 			if i > 0 {
 				name = typ + "-sitemap" + strconv.Itoa(i+1) + ".xml"
 			}
-			fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n", xmlEsc(lb.HomeURL("/"+name)))
+			fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n", xmlEsc(s.seogoHostURL(ctx, lb.HomeURL("/"+name))))
 			if !last.IsZero() {
 				fmt.Fprintf(&sb, "\t\t<lastmod>%s</lastmod>\n", last.UTC().Format(time.RFC3339))
 			}
@@ -542,10 +575,10 @@ func (s *Server) seogoSitemapIndex(c *gin.Context) {
 		}
 	}
 	if o.Modules["news_sitemap"] {
-		fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n\t</sitemap>\n", xmlEsc(lb.HomeURL("/news-sitemap.xml")))
+		fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n\t</sitemap>\n", xmlEsc(s.seogoHostURL(ctx, lb.HomeURL("/news-sitemap.xml"))))
 	}
 	if o.Modules["video_sitemap"] {
-		fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n\t</sitemap>\n", xmlEsc(lb.HomeURL("/video-sitemap.xml")))
+		fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n\t</sitemap>\n", xmlEsc(s.seogoHostURL(ctx, lb.HomeURL("/video-sitemap.xml"))))
 	}
 	sb.WriteString("</sitemapindex>\n<!-- XML Sitemap generated by Pursae SEO -->\n")
 	c.Header("X-Robots-Tag", "noindex, follow")
@@ -564,19 +597,15 @@ func (s *Server) seogoSitemap(c *gin.Context, path string) bool {
 		typ = m[1]
 		page, _ = strconv.Atoi(m[2])
 	}
-	switch typ {
-	case "news":
-		if !o.Modules["news_sitemap"] {
-			return false
+	if page == 1 && path == typ+"-sitemap.xml" { // a post type or taxonomy of the same name yields to these
+		switch {
+		case typ == "news" && o.Modules["news_sitemap"]:
+			s.seogoNewsSitemap(c)
+			return true
+		case typ == "video" && o.Modules["video_sitemap"]:
+			s.seogoVideoSitemap(c)
+			return true
 		}
-		s.seogoNewsSitemap(c)
-		return true
-	case "video":
-		if !o.Modules["video_sitemap"] {
-			return false
-		}
-		s.seogoVideoSitemap(c)
-		return true
 	}
 	if !slices.Contains(s.seogoSitemapTypes(ctx), typ) || page < 1 {
 		return false
@@ -621,7 +650,7 @@ func (s *Server) seogoPostLocale(ctx context.Context, p *store.Post) string {
 
 func (s *Server) seogoNewsSitemap(c *gin.Context) {
 	reqCtx := c.Request.Context()
-	ctx := seogoSitemapCtx(reqCtx)
+	ctx := s.seogoSitemapCtx(reqCtx)
 	o := s.seogoOpts()
 	lb := s.links(reqCtx)
 	name := o.SitemapNewsTypes
@@ -653,10 +682,27 @@ var (
 
 func (s *Server) seogoVideoSitemap(c *gin.Context) {
 	reqCtx := c.Request.Context()
-	ctx := seogoSitemapCtx(reqCtx)
+	ctx := s.seogoSitemapCtx(reqCtx)
 	o := s.seogoOpts()
 	lb := s.links(reqCtx)
-	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post", "page"}, Statuses: []string{"publish"}, PerPage: 50000, Page: 1, OrderBy: "id", Order: "asc"})
+	// Only posts that embed a video are loaded (matched in SQL first), at most 5000 of them, from
+	// every sitemap post type.
+	var posts []*store.Post
+	var ids []int64
+	types := s.sitemapPostTypes(ctx)
+	if rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE type = ANY($1) AND status = 'publish'
+		AND (content ILIKE '%youtu%' OR content ILIKE '%vimeo.com%') ORDER BY id LIMIT 5000`, types); err == nil {
+		for rows.Next() {
+			var id int64
+			if rows.Scan(&id) == nil {
+				ids = append(ids, id)
+			}
+		}
+		rows.Close()
+	}
+	if len(ids) > 0 {
+		posts, _, _ = s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, Types: types, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc"})
+	}
 	excluded := idSet(o.SitemapExclude)
 	var sb strings.Builder
 	sb.WriteString(s.seogoXMLHead(ctx) + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">` + "\n")

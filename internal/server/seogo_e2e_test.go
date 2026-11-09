@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"html"
+	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -502,6 +504,148 @@ func TestSEOGoEndToEndMultiLanguage(t *testing.T) {
 	}
 	if _, fr, _ := get(t, c, base+"/tr/wp-sitemap.xml"); strings.Contains(fr, base+"/wp-sitemap-posts-post-1.xml") {
 		t.Error("/tr/wp-sitemap.xml lists other languages")
+	}
+
+	// A subdomain per language: each host's sitemaps keep to its own language (a sitemap may not
+	// list another host's URLs), for the core index and for Pursae SEO's.
+	o := srv.pllOpts()
+	o.ForceLang = 2
+	if err := srv.pllSaveOpts(ctx, o); err != nil {
+		t.Fatal(err)
+	}
+	bu, _ := url.Parse(base)
+	trHost := "tr." + bu.Host
+	getHost := func(host, u string) string {
+		t.Helper()
+		req, _ := http.NewRequest(http.MethodGet, u, nil)
+		req.Host = host
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("%s %s: %d", host, u, resp.StatusCode)
+		}
+		return string(b)
+	}
+	onlyHost := func(what, body, host string) []string {
+		t.Helper()
+		locs, alts := seogoSitemapLocs(t, body)
+		for _, l := range locs {
+			if lu, err := url.Parse(l); err != nil || lu.Host != host {
+				t.Errorf("%s lists %s (host %s only)", what, l, host)
+			}
+		}
+		for loc, a := range alts {
+			t.Errorf("%s: %s has cross-host alternates %v", what, loc, a)
+		}
+		return locs
+	}
+	onlyHost("default host core index", getHost(bu.Host, base+"/wp-sitemap.xml"), bu.Host)
+	onlyHost("tr host core index", getHost(trHost, base+"/wp-sitemap.xml"), trHost)
+	if robots := getHost(trHost, base+"/robots.txt"); !strings.Contains(robots, "Sitemap: http://"+trHost+"/wp-sitemap.xml") {
+		t.Errorf("tr host core robots.txt: %s", robots)
+	}
+	seogoToggle(t, c, base, "activate")
+	trPath := strings.TrimPrefix(trLink, base+"/tr")
+	if robots := getHost(trHost, base+"/robots.txt"); !strings.Contains(robots, "Sitemap: http://"+trHost+"/sitemap_index.xml") {
+		t.Errorf("tr host robots.txt: %s", robots)
+	}
+	if robots := getHost(bu.Host, base+"/robots.txt"); !strings.Contains(robots, "Sitemap: "+base+"/sitemap_index.xml") {
+		t.Errorf("default host robots.txt: %s", robots)
+	}
+	for _, sm := range []string{"/sitemap_index.xml", "/post-sitemap.xml", "/page-sitemap.xml", "/category-sitemap.xml"} {
+		onlyHost("default host "+sm, getHost(bu.Host, base+sm), bu.Host)
+		locs := onlyHost("tr host "+sm, getHost(trHost, base+sm), trHost)
+		if sm == "/post-sitemap.xml" && !containsLoc(locs, "http://"+trHost+trPath) {
+			t.Errorf("tr host post sitemap lacks the Turkish post %s: %v", trPath, locs)
+		}
+		if sm == "/page-sitemap.xml" && !containsLoc(locs, "http://"+trHost+"/") {
+			t.Errorf("tr host page sitemap lacks its home: %v", locs)
+		}
+	}
+}
+
+// A public custom post type named "news" or "video" keeps its own sitemap while the News or Video
+// sitemap module is off and yields the name to the module while it is on; the Video sitemap looks
+// at every sitemap post type.
+func TestSEOGoSitemapNameCollisions(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	ctx := context.Background()
+	installAndLogin(t, ts, c)
+	seogoToggle(t, c, base, "activate")
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO content_types (slug, name, hierarchical, public, rest_base, is_builtin, supports, labels)
+		VALUES ('news', 'News', false, true, 'news', false, '{"title":true,"editor":true}', '{"name":"News"}') ON CONFLICT (slug) DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	acfgoRegistry.Lock()
+	acfgoRegistry.types["news"] = &acfgoPostTypeDef{Name: "news", Public: true, ShowUI: true, Slug: "news-items",
+		Labels: map[string]string{"name": "News", "singular_name": "News item"}}
+	acfgoRegistry.Unlock()
+	t.Cleanup(func() {
+		acfgoRegistry.Lock()
+		delete(acfgoRegistry.types, "news")
+		acfgoRegistry.Unlock()
+	})
+	item := &store.Post{Type: "news", AuthorID: 1, Slug: "launch", Title: "Launch", Status: "publish",
+		Content: `<p>Watch https://www.youtube.com/watch?v=dQw4w9WgXcQ</p>`, Meta: map[string]any{}}
+	if err := srv.store.InsertPost(ctx, item); err != nil {
+		t.Fatal(err)
+	}
+	itemURL := srv.links(ctx).Permalink(item)
+	setModules := func(news, video bool) {
+		t.Helper()
+		o := *srv.seogoOpts()
+		o.Modules = maps.Clone(o.Modules)
+		o.Modules["news_sitemap"], o.Modules["video_sitemap"] = news, video
+		if err := srv.seogoSave(ctx, &o); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	setModules(false, true)
+	_, idx, _ := get(t, c, base+"/sitemap_index.xml")
+	if l, _ := seogoSitemapLocs(t, idx); !containsLoc(l, base+"/news-sitemap.xml") {
+		t.Errorf("index lacks the news post type sitemap: %v", l)
+	}
+	code, sm, _ := get(t, c, base+"/news-sitemap.xml")
+	if l, _ := seogoSitemapLocs(t, sm); code != http.StatusOK || !containsLoc(l, itemURL) {
+		t.Errorf("news post type sitemap: %d %v", code, l)
+	}
+	if _, vs, _ := get(t, c, base+"/video-sitemap.xml"); !strings.Contains(vs, xmlEsc(itemURL)) || !strings.Contains(vs, "dQw4w9WgXcQ") {
+		t.Errorf("video sitemap lacks the custom post type entry:\n%s", vs)
+	}
+
+	setModules(true, false)
+	_, idx, _ = get(t, c, base+"/sitemap_index.xml")
+	if n := strings.Count(idx, base+"/news-sitemap.xml"); n > 1 {
+		t.Errorf("index lists /news-sitemap.xml %d times", n)
+	}
+	if _, sm, _ = get(t, c, base+"/news-sitemap.xml"); !strings.Contains(sm, "sitemap-news/0.9") {
+		t.Errorf("/news-sitemap.xml is not the News sitemap while the module is on:\n%s", sm)
+	}
+}
+
+// The scores a classic product save stores are computed with the submitted title and the product URL.
+func TestSEOGoProductSaveScores(t *testing.T) {
+	base, c, srv := gooSite(t)
+	ctx := context.Background()
+	seogoToggle(t, c, base, "activate")
+	id, nonce, _ := gooCatEditor(t, c, base+"/wp-admin/post-new?post_type=product")
+	gooCatSave(t, c, base, id, nonce, url.Values{"post_title": {"Linen Shirt"}, "content": {"<p>A linen shirt for summer.</p>"},
+		"publish": {"Publish"}, "product-type": {"simple"}, "_regular_price": {"30"},
+		"seogo_present": {"1"}, "seogo[focus]": {"linen shirt"}})
+	p, err := srv.store.GetPost(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored := seogoMeta(p.Meta, "seo_score")
+	srv.seogoStoreScores(ctx, p)
+	if want := seogoMeta(p.Meta, "seo_score"); stored == "" || stored != want {
+		t.Errorf("stored seo_score %q, want %q (computed from the saved product)", stored, want)
 	}
 }
 

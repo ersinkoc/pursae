@@ -857,6 +857,7 @@ func (s *Server) gooProductSave(c *gin.Context, id int64) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	s.seogoRescoreSaved(c, post) // the scores again, now with the saved title, slug and status
 
 	// Categories and tags.
 	var catIDs []int64
@@ -925,9 +926,7 @@ func (s *Server) gooProductSave(c *gin.Context, id int64) {
 	if f.str("goo_save_attributes") != "" {
 		tab = "attributes"
 	}
-	s.afterPostSave(ctx, post)
-
-	s.seogoAfterSave(ctx, p.Post) // Pursae SEO: slug-change redirect, IndexNow
+	s.afterPostSave(ctx, post) // runs Pursae SEO's after-save (slug-change redirect, IndexNow) too
 
 	msg := "1"
 	switch {
