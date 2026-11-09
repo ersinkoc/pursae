@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"mime"
 	"net/http"
 	"path"
 	"slices"
@@ -1218,7 +1219,26 @@ func (api *restAPI) uploadMedia(c *gin.Context, r *restRequest) {
 		return
 	}
 	postID, _ := strconv.ParseInt(c.PostForm("post"), 10, 64)
-	a, err := s.saveUpload(c, "file", postID)
+	param := c.GetPostForm
+	var a *store.Attachment
+	var err error
+	if name, ok := restRawUploadName(c); ok {
+		// The raw request body is the file, named by Content-Disposition (WP_REST_Attachments_Controller::upload_from_data);
+		// the other fields come as query parameters.
+		param = c.GetQuery
+		postID, _ = strconv.ParseInt(c.Query("post"), 10, 64)
+		a, err = s.insertAttachmentFile(c, name, c.Request.Body, u.ID, postID)
+		switch {
+		case errors.Is(err, errUploadEmpty):
+			restErr(c, http.StatusBadRequest, "rest_upload_no_data", "No data supplied.")
+			return
+		case errors.Is(err, errUploadTooLarge):
+			restErr(c, http.StatusBadRequest, "rest_upload_file_too_big", "The uploaded file exceeds the maximum upload size for this site.")
+			return
+		}
+	} else {
+		a, err = s.saveUpload(c, "file", postID)
+	}
 	if err != nil {
 		code := "rest_upload_unknown_error"
 		if strings.Contains(err.Error(), "file type") {
@@ -1229,7 +1249,7 @@ func (api *restAPI) uploadMedia(c *gin.Context, r *restRequest) {
 	}
 	changed := false
 	for field, dst := range map[string]*string{"title": &a.Title, "caption": &a.Caption, "description": &a.Description, "alt_text": &a.Alt} {
-		if v, ok := c.GetPostForm(field); ok && v != "" {
+		if v, ok := param(field); ok && v != "" {
 			*dst = v
 			changed = true
 		}
@@ -1240,6 +1260,24 @@ func (api *restAPI) uploadMedia(c *gin.Context, r *restRequest) {
 	}
 	c.Header("Location", s.links(c).HomeURL("/wp-json/wp/v2/media/"+itoa64(a.ID)))
 	restJSON(c, http.StatusCreated, s.restMedia(c, a, "edit"))
+}
+
+// restRawUploadName is the file name of a media upload sent as the raw request body: any body that is not
+// a form, with a "Content-Disposition: attachment; filename=…" header.
+func restRawUploadName(c *gin.Context) (string, bool) {
+	switch c.ContentType() {
+	case "multipart/form-data", "application/x-www-form-urlencoded":
+		return "", false
+	}
+	_, params, err := mime.ParseMediaType(c.GetHeader("Content-Disposition"))
+	if err != nil {
+		return "", false
+	}
+	name := strings.TrimSpace(path.Base(strings.ReplaceAll(params["filename"], "\\", "/")))
+	if name == "" || name == "." || name == "/" {
+		return "", false
+	}
+	return name, true
 }
 
 func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
