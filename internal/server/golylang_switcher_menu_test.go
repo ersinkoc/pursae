@@ -43,7 +43,7 @@ func TestGolylangSwitcherMenuItemIDs(t *testing.T) {
 	}
 	// Each id once per menu rendering (the menu may sit in several locations, so compare with the en item).
 	en := strings.Count(body, `id="menu-item-`+id+`-en"`)
-	if n := len(regexp.MustCompile(`id="menu-item-` + id + `"`).FindAllString(body, -1)); n != 0 || en == 0 {
+	if n := len(regexp.MustCompile(`id="menu-item-`+id+`"`).FindAllString(body, -1)); n != 0 || en == 0 {
 		t.Errorf("bare id menu-item-%s printed %d times (en item %d times)", id, n, en)
 	}
 }
