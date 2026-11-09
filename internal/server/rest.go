@@ -201,20 +201,23 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 		if s.adminsecRESTLocked(c, user) { // AdminSecGo: block list and lockouts apply to the API too
 			return nil, errors.New("adminsec_locked")
 		}
-		if s.restLoginThrottled(c) { // the core login throttle applies to Basic auth too (app_password_auth.go)
+		// The login throttle applies to Basic auth too, counted before any hashing (app_password_auth.go).
+		attemptID, refused := s.restBeginAttempt(c, user)
+		if refused {
 			return nil, errors.New("adminsec_locked")
 		}
 		u, err := s.store.UserByLoginOrEmail(c, user)
 		if err != nil {
 			auth.CheckDummyPassword(c.Request.Context(), pass) // no timing difference for unknown users
-			s.restLoginFailed(c, user, nil, "Unknown user (REST API).")
+			s.restLoginFailed(c, user, nil, "Unknown user (REST API).", attemptID)
 			return nil, errors.New("incorrect_password")
 		}
 		// Application Passwords skip the second factor: they are the way REST clients sign in.
 		if s.checkAppPassword(c, u, pass) {
+			s.auth.DropAttempt(c, attemptID) // not a failure
 			return scopedUser(u, restScopes(c)), nil // scopes only narrow the user's capabilities
 		}
-		s.restLoginFailed(c, user, u, "Wrong application password (REST API).")
+		s.restLoginFailed(c, user, u, "Wrong application password (REST API).", attemptID)
 		return nil, errors.New("incorrect_password")
 	}
 	u := currentUser(c)

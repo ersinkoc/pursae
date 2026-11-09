@@ -174,6 +174,22 @@ func (m *Manager) BeginAttempt(ctx context.Context, ip, login string) (id int64,
 	return id, false, nil
 }
 
+// ProvisionalAttempt stores a login attempt as a failure before its password is checked, like BeginAttempt
+// but without the core thresholds: Pursae Security counts it against its own limits.
+func (m *Manager) ProvisionalAttempt(ctx context.Context, ip, login string) (int64, error) {
+	var id int64
+	err := m.pool.QueryRow(ctx, `INSERT INTO login_attempts(ip, login, success) VALUES ($1,$2,false) RETURNING id`, ip, login).Scan(&id)
+	return id, err
+}
+
+// DropAttempt removes an attempt stored by BeginAttempt or ProvisionalAttempt that turned out not to be a
+// failed guess: a correct password (the sign-in records its own success) or a request refused unchecked.
+func (m *Manager) DropAttempt(ctx context.Context, id int64) {
+	if id != 0 {
+		_, _ = m.pool.Exec(ctx, `DELETE FROM login_attempts WHERE id = $1`, id)
+	}
+}
+
 // AttemptSucceeded turns the attempt BeginAttempt stored into a success and clears this login's
 // earlier failures from the address (RecordAttempt with success).
 func (m *Manager) AttemptSucceeded(ctx context.Context, id int64, ip, login string) {

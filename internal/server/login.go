@@ -124,7 +124,14 @@ func (s *Server) login(c *gin.Context) {
 	// Core throttle: the attempt is recorded (as a failure) before the password is checked, so parallel
 	// guesses cannot all slip past the count; see auth.BeginAttempt.
 	var attemptID int64
-	if !secOn {
+	if secOn { // Pursae Security: the same count-first rule against its own limits
+		id, msg := s.adminsecBeginAttempt(c, login)
+		if msg != "" {
+			fail(string(msg))
+			return
+		}
+		attemptID = id
+	} else {
 		id, throttled, _ := s.auth.BeginAttempt(c, ip, login)
 		if throttled {
 			fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
@@ -137,7 +144,7 @@ func (s *Server) login(c *gin.Context) {
 	if errors.Is(err, store.ErrNotFound) {
 		auth.CheckDummyPassword(c.Request.Context(), pass) // same argon2 work as a wrong password: no timing difference
 		if secOn {
-			s.adminsecLoginFailed(c, login, nil, "Unknown username or e-mail address.")
+			s.adminsecLoginFailed(c, login, nil, "Unknown username or e-mail address.", attemptID)
 		}
 		if msg, ok := s.adminsecGenericError(); ok {
 			fail(string(msg))
@@ -155,7 +162,7 @@ func (s *Server) login(c *gin.Context) {
 	ok, _ := auth.CheckPasswordCtx(c.Request.Context(), pass, u.PasswordHash)
 	if !ok {
 		if secOn {
-			s.adminsecLoginFailed(c, login, u, "Wrong password.")
+			s.adminsecLoginFailed(c, login, u, "Wrong password.", attemptID)
 		}
 		if msg, ok := s.adminsecGenericError(); ok {
 			fail(string(msg))
@@ -169,6 +176,7 @@ func (s *Server) login(c *gin.Context) {
 		return
 	}
 	if secOn { // AdminSecGo: password policy, second factor, alerts and the activity log
+		s.auth.DropAttempt(c, attemptID) // not a failure; the finished sign-in records its success
 		s.adminsecPasswordOK(c, v, u, pass)
 		return
 	}

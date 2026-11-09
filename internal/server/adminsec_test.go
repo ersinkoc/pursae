@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -843,6 +844,60 @@ func TestAdminSecLockouts(t *testing.T) {
 		}
 	}
 	asConfigure(t, srv, func(st *asSettings) { st.BlockList, st.BlockListSite = "", false })
+}
+
+// With Pursae Security on, parallel guesses are counted before their passwords are hashed (as the core
+// throttle does): no more than the limit get a password check, on wp-login and on REST Basic auth.
+func TestAdminSecParallelGuessesLimited(t *testing.T) {
+	base, _, srv := asStart(t)
+	asConfigure(t, srv, func(st *asSettings) { st.IPMaxFailures, st.UserMaxFailures, st.LockoutMinutes = 3, 0, 20 })
+	burst := func(do func() (checked bool)) int {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		checked := 0
+		for i := 0; i < 12; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if do() {
+					mu.Lock()
+					checked++
+					mu.Unlock()
+				}
+			}()
+		}
+		wg.Wait()
+		return checked
+	}
+	n := burst(func() bool {
+		resp, err := asNewClient().PostForm(base+"/wp-login", url.Values{"log": {"admin"}, "pwd": {"wrong"}})
+		if err != nil {
+			return false
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return !strings.Contains(string(b), "Too many failed login attempts")
+	})
+	if n > 3 {
+		t.Errorf("wp-login: %d parallel passwords checked, limit 3", n)
+	}
+	if asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE kind = 'ip' AND NOT released AND until > now()`) == 0 {
+		t.Error("no lockout after the burst")
+	}
+	_, _ = getPool(t).Exec(context.Background(), `UPDATE adminsec_lockouts SET released = true; DELETE FROM login_attempts`)
+	n = burst(func() bool {
+		req, _ := http.NewRequest("GET", base+"/wp-json/wp/v2/users/me", nil)
+		req.SetBasicAuth("admin", "abcd efgh ijkl mnop qrst uvwx")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return false
+		}
+		resp.Body.Close()
+		return resp.StatusCode != http.StatusTooManyRequests
+	})
+	if n > 3 {
+		t.Errorf("REST Basic: %d parallel passwords checked, limit 3", n)
+	}
 }
 
 func TestAdminSecEnumerationAndREST(t *testing.T) {

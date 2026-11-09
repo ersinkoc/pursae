@@ -287,13 +287,51 @@ func (s *Server) adminsecPreLogin(c *gin.Context, login string) template.HTML {
 	return ""
 }
 
+// adminsecBeginAttempt counts a password attempt before the password is checked, as the core throttle does
+// (auth.BeginAttempt): parallel guesses cannot all pass adminsecPreLogin before any is recorded. The attempt is
+// stored as a failure first; when the attempts in flight go past the IP or username limit, the lockout starts
+// now and this request is refused without checking its password, so at most max passwords are checked per
+// window. It returns the stored attempt (pass it to adminsecLoginFailed, or drop it on a correct password) or
+// the lockout message.
+func (s *Server) adminsecBeginAttempt(c *gin.Context, login string) (int64, template.HTML) {
+	st := s.asLoad()
+	ip := clientIP(c)
+	u, _ := s.store.UserByLoginOrEmail(c, login)
+	name := s.asNormLogin(c, login, u)
+	id, err := s.auth.ProvisionalAttempt(c, ip, name)
+	if err != nil {
+		return 0, "" // adminsecLoginFailed records the failure the old way
+	}
+	if maintIPAllowed(st.AllowList, ip) {
+		return id, ""
+	}
+	over := func(max int) int { // this attempt is in the count: lock once more than max are in flight
+		if max <= 0 {
+			return 0
+		}
+		return max + 1
+	}
+	s.asMaybeLock(c, st, "ip", ip, over(st.IPMaxFailures))
+	s.asMaybeLock(c, st, "user", name, over(st.UserMaxFailures))
+	for _, kv := range [][2]string{{"ip", ip}, {"user", name}} {
+		if until, ok := s.asLockedUntil(c, kv[0], kv[1]); ok {
+			s.auth.DropAttempt(c, id) // refused unchecked: not a guess
+			return 0, template.HTML("<strong>Error:</strong> Too many failed login attempts. Please try again in " + asWait(until) + ".")
+		}
+	}
+	return id, ""
+}
+
 // adminsecLoginFailed records a failed attempt (wrong user, password or code) and locks the IP
-// or the username out once it has too many recent failures.
-func (s *Server) adminsecLoginFailed(c *gin.Context, login string, u *store.User, reason string) {
+// or the username out once it has too many recent failures. attemptID is the attempt
+// adminsecBeginAttempt already stored as a failure (0: record it now).
+func (s *Server) adminsecLoginFailed(c *gin.Context, login string, u *store.User, reason string, attemptID int64) {
 	st := s.asLoad()
 	ip := clientIP(c)
 	name := s.asNormLogin(c, login, u)
-	s.auth.RecordAttempt(c, ip, name, false)
+	if attemptID == 0 {
+		s.auth.RecordAttempt(c, ip, name, false)
+	}
 	if !st.LogFailedSkip {
 		s.asAudit(c, asEvent{Event: "login_failed", Severity: "notice", User: u, Username: login, Object: name, Message: reason})
 	}
@@ -696,7 +734,7 @@ func (s *Server) adminsecChallengePost(c *gin.Context, v loginView) {
 		}
 	}
 	if !ok {
-		s.adminsecLoginFailed(c, u.Login, u, "Wrong or expired "+map[string]string{"totp": "authenticator", "email": "e-mailed", "backup": "backup"}[provider]+" code.")
+		s.adminsecLoginFailed(c, u.Login, u, "Wrong or expired "+map[string]string{"totp": "authenticator", "email": "e-mailed", "backup": "backup"}[provider]+" code.", 0)
 		if ch.Attempts >= asMaxCodeAttempts {
 			s.asDropChallenge(c, ch)
 			v.Error = "<strong>Error:</strong> Too many wrong codes. Please log in again."

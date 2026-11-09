@@ -348,7 +348,14 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 	// Core throttle, as on wp-login: the attempt is recorded before the password is checked so parallel
 	// guesses cannot all pass the count (auth.BeginAttempt).
 	var attemptID int64
-	if !secOn {
+	if secOn { // Pursae Security: the same count-first rule against its own limits
+		id, msg := s.adminsecBeginAttempt(c, login)
+		if msg != "" {
+			fail(string(msg))
+			return
+		}
+		attemptID = id
+	} else {
 		id, throttled, _ := s.auth.BeginAttempt(c, ip, login)
 		if throttled {
 			fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
@@ -369,7 +376,7 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 			if err == nil {
 				uu = u
 			}
-			s.adminsecLoginFailed(c, login, uu, "Wrong username or password.")
+			s.adminsecLoginFailed(c, login, uu, "Wrong username or password.", attemptID)
 		}
 		if errors.Is(err, store.ErrNotFound) {
 			if strings.Contains(login, "@") {
@@ -384,6 +391,7 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 	}
 	target := s.gooSafeURL(ctx, c.PostForm("redirect"), account)
 	if secOn { // AdminSecGo: password policy, second factor, alerts (it answers the request)
+		s.auth.DropAttempt(c, attemptID)
 		s.gooSaveSession(c)
 		s.adminsecPasswordOK(c, loginView{Title: "Log In", Action: "login", SiteName: s.settings.String("blogname"), HomeURL: s.links(ctx).HomeURL("/"),
 			RedirectTo: target, Login: login, Remember: remember}, u, pass)
