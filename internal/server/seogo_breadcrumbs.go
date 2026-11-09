@@ -3,9 +3,11 @@ package server
 import (
 	"context"
 	"html"
+	"strconv"
 	"strings"
 
 	"wpgo/internal/blocks"
+	"wpgo/internal/store"
 )
 
 // Breadcrumbs: the trail of a context (also BreadcrumbList in the schema graph), rendered by the
@@ -27,11 +29,12 @@ func (sc *seogoCtx) crumbName(metaTitle, fallback string) string {
 func (sc *seogoCtx) breadcrumbs() []seogoCrumb {
 	o := sc.s.seogoOpts()
 	lb := sc.lb
-	home := o.BCHome
+	tr := func(v string) string { return sc.s.seogoTr(sc.ctx, v) }
+	home := tr(o.BCHome)
 	if home == "" {
 		home = "Home"
 	}
-	trail := []seogoCrumb{{Name: home, URL: lb.HomeURL("/")}}
+	trail := []seogoCrumb{{Name: home, URL: sc.homeURL()}}
 	blog := func() {
 		if !o.BCShowBlog || sc.s.settings.String("show_on_front") != "page" {
 			return
@@ -42,19 +45,66 @@ func (sc *seogoCtx) breadcrumbs() []seogoCrumb {
 			}
 		}
 	}
+	termLink := func(t *store.Term) string {
+		if sc.s.sitemapGooTaxonomy(t.Taxonomy) {
+			return sc.s.gooTermLink(sc.ctx, t)
+		}
+		return lb.TermLink(t)
+	}
 	termChain := func(id int64) {
 		var chain []seogoCrumb
 		seen := map[int64]bool{}
 		for id > 0 && !seen[id] {
 			seen[id] = true
-			t, err := sc.s.store.GetTerm(sc.ctx, id)
+			t, err := sc.s.store.GetTerm(gooPllUnfiltered(sc.ctx), id)
 			if err != nil {
 				break
 			}
-			chain = append([]seogoCrumb{{Name: sc.crumbName(seogoMeta(t.Meta, "bc_title"), t.Name), URL: lb.TermLink(t)}}, chain...)
+			chain = append([]seogoCrumb{{Name: sc.crumbName(seogoMeta(t.Meta, "bc_title"), t.Name), URL: termLink(t)}}, chain...)
 			id = t.ParentID
 		}
 		trail = append(trail, chain...)
+	}
+	// shop is the Pursae Commerce shop crumb (WooCommerce's breadcrumb puts it before products and
+	// product terms when the shop page is set).
+	shop := func() {
+		id := sc.s.gooPageIDIn(sc.ctx, "shop")
+		if id <= 0 {
+			return
+		}
+		if p, err := sc.s.store.GetPost(gooPllUnfiltered(sc.ctx), id); err == nil && p.Status == "publish" {
+			trail = append(trail, seogoCrumb{Name: sc.crumbName(seogoMeta(p.Meta, "bc_title"), p.Title), URL: sc.s.gooShopURL(sc.ctx)})
+		}
+	}
+	switch {
+	case sc.Store == "shop" && sc.Post != nil:
+		trail = append(trail, seogoCrumb{Name: sc.crumbName(seogoMeta(sc.Post.Meta, "bc_title"), sc.Post.Title), URL: sc.url()})
+		return trail
+	case sc.Store == "product" && sc.Post != nil:
+		shop()
+		if m, _ := sc.s.store.TermsForPosts(gooPllUnfiltered(sc.ctx), []int64{sc.Post.ID}, "product_cat"); len(m[sc.Post.ID]) > 0 {
+			cats := m[sc.Post.ID]
+			pick := cats[0]
+			if id, _ := strconv.ParseInt(seogoMeta(sc.Post.Meta, "primary_category"), 10, 64); id > 0 {
+				for _, t := range cats {
+					if t.ID == id {
+						pick = t
+					}
+				}
+			}
+			termChain(pick.ID)
+		}
+		trail = append(trail, seogoCrumb{Name: sc.crumbName(seogoMeta(sc.Post.Meta, "bc_title"), sc.Post.Title), URL: sc.url()})
+		return trail
+	case sc.Kind == "taxonomy" && sc.Term != nil:
+		if sc.storeArchive() {
+			shop()
+		}
+		termChain(sc.Term.ID)
+		return trail
+	case sc.Kind == "post-type-archive" && sc.PostType != "":
+		trail = append(trail, seogoCrumb{Name: seogoTypeLabels(sc.PostType).Name, URL: sc.url()})
+		return trail
 	}
 	switch sc.Kind {
 	case "front-page":
@@ -87,7 +137,7 @@ func (sc *seogoCtx) breadcrumbs() []seogoCrumb {
 		trail = append(trail, seogoCrumb{Name: sc.crumbName(seogoMeta(p.Meta, "bc_title"), p.Title), URL: lb.Permalink(p)})
 	case "category", "tag":
 		blog()
-		prefix := strings.TrimSpace(o.BCArchive)
+		prefix := strings.TrimSpace(tr(o.BCArchive))
 		if sc.Term.Taxonomy == "category" {
 			termChain(sc.Term.ID)
 		} else {
@@ -99,21 +149,21 @@ func (sc *seogoCtx) breadcrumbs() []seogoCrumb {
 	case "author":
 		if a := sc.author(); a != nil {
 			name := a.DisplayName
-			if p := strings.TrimSpace(o.BCArchive); p != "" {
+			if p := strings.TrimSpace(tr(o.BCArchive)); p != "" {
 				name = p + " " + name
 			}
 			trail = append(trail, seogoCrumb{Name: name, URL: sc.url()})
 		}
 	case "date":
 		name := sc.archiveDate()
-		if p := strings.TrimSpace(o.BCArchive); p != "" {
+		if p := strings.TrimSpace(tr(o.BCArchive)); p != "" {
 			name = p + " " + name
 		}
 		trail = append(trail, seogoCrumb{Name: name, URL: sc.url()})
 	case "search":
-		trail = append(trail, seogoCrumb{Name: strings.TrimSpace(o.BCSearch + " " + sc.Search)})
+		trail = append(trail, seogoCrumb{Name: strings.TrimSpace(tr(o.BCSearch) + " " + sc.Search)})
 	case "404":
-		trail = append(trail, seogoCrumb{Name: o.BC404})
+		trail = append(trail, seogoCrumb{Name: tr(o.BC404)})
 	}
 	return trail
 }
@@ -150,7 +200,7 @@ func (sc *seogoCtx) breadcrumbHTML() string {
 	}
 	prefix := ""
 	if o.BCPrefix != "" {
-		prefix = `<span class="label">` + esc(o.BCPrefix) + `</span> `
+		prefix = `<span class="label">` + esc(sc.s.seogoTr(sc.ctx, o.BCPrefix)) + `</span> `
 	}
 	return `<nav aria-label="breadcrumbs" class="seogo-breadcrumb rank-math-breadcrumb"><p id="breadcrumbs">` + prefix +
 		strings.Join(parts, ` <span class="separator"> `+esc(sep)+` </span> `) + `</p></nav>`

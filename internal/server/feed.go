@@ -409,7 +409,11 @@ func (s *Server) robots(c *gin.Context) {
 	var sb strings.Builder
 	sb.WriteString("User-agent: *\n")
 	if s.settings.Bool("blog_public") {
-		sb.WriteString("Disallow: /wp-admin/\nAllow: /wp-admin/admin-ajax\n\nSitemap: " + lb.HomeURL("/wp-sitemap.xml") + "\n")
+		sm := lb.HomeURL("/wp-sitemap.xml")
+		if s.golylangOn() && s.pllOpts().ForceLang >= 2 { // a host per language: this host's index
+			sm = s.golylangURL(c, sm)
+		}
+		sb.WriteString("Disallow: /wp-admin/\nAllow: /wp-admin/admin-ajax\n\nSitemap: " + sm + "\n")
 	} else {
 		sb.WriteString("Disallow: /\n")
 	}

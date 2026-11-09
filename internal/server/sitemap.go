@@ -259,8 +259,21 @@ func (s *Server) sitemapIndex(c *gin.Context) {
 	lb := s.links(ctx)
 	var sb strings.Builder
 	sb.WriteString(xml.Header + `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`)
-	for _, name := range s.sitemapIndexNames(ctx) {
-		fmt.Fprintf(&sb, "<sitemap><loc>%s</loc></sitemap>", html.EscapeString(s.golylangURL(c, lb.HomeURL("/wp-sitemap-"+name+".xml")))) // Golylang: per language
+	if r := pllFrom(c); r != nil && r.Front && s.golylangOn() && s.pllOpts().ForceLang <= 1 && strings.Trim(c.Request.URL.Path, "/") == "wp-sitemap.xml" && c.Query("lang") == "" {
+		// Golylang: the root index (the one robots.txt names) lists every language's sitemaps, like
+		// Polylang's multilingual sitemaps provider; /fr/wp-sitemap.xml keeps to French. With a subdomain
+		// or a domain per language each host lists only its own language (PLL_Sitemaps_Domain).
+		o := s.pllOpts()
+		for _, l := range s.pllActiveLanguages(ctx) {
+			lctx := context.WithValue(ctx, pllCtxKey{}, &pllReq{srv: s, Lang: l, Filter: true, Front: true, Path: r.Path})
+			for _, name := range s.sitemapIndexNames(lctx) {
+				fmt.Fprintf(&sb, "<sitemap><loc>%s</loc></sitemap>", html.EscapeString(s.pllConvert(ctx, lb.Home, lb.HomeURL("/wp-sitemap-"+name+".xml"), l, "home", o)))
+			}
+		}
+	} else {
+		for _, name := range s.sitemapIndexNames(ctx) {
+			fmt.Fprintf(&sb, "<sitemap><loc>%s</loc></sitemap>", html.EscapeString(s.golylangURL(c, lb.HomeURL("/wp-sitemap-"+name+".xml")))) // Golylang: per language
+		}
 	}
 	sb.WriteString("</sitemapindex>\n")
 	c.Data(http.StatusOK, "application/xml; charset=UTF-8", []byte(sb.String()))

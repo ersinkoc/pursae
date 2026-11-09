@@ -163,7 +163,7 @@ func TestSEOGoBlockSchemaAndCustom(t *testing.T) {
 <!-- wp:yoast/how-to-block {"jsonTitle":"Brew tea","steps":[{"id":"s1","jsonName":"Boil","jsonText":"Boil water."}]} -->
 <div></div>
 <!-- /wp:yoast/how-to-block -->`
-	qs, hs := seogoBlockSchema(content, "https://example.test/p/")
+	qs, hs := seogoBlockSchema(content, "https://example.test/p/", "en-US")
 	if len(qs) != 1 || qs[0]["name"] != "What is Pursae SEO?" || qs[0]["@id"] != "https://example.test/p/#faq-question-1" {
 		t.Fatalf("faq: %v", qs)
 	}

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -126,7 +127,7 @@ func (s *Server) seogoAdmin(c *gin.Context) {
 		d.Data["Users"] = s.seogoAdmins(ctx)
 	case "sitemap":
 		var links []string
-		for _, t := range s.seogoSitemapTypes() {
+		for _, t := range s.seogoSitemapTypes(ctx) {
 			links = append(links, s.links(c).HomeURL("/"+t+"-sitemap.xml"))
 		}
 		d.Data["Index"] = s.links(c).HomeURL("/sitemap_index.xml")
@@ -232,8 +233,31 @@ func (s *Server) seogoTypeRows() []seogoTypeRow {
 		{Key: "author", Label: "Author archives", Archive: true}, {Key: "date", Label: "Date archives", Archive: true},
 		{Key: "search", Label: "Search results", Special: true}, {Key: "404", Label: "404 pages", Special: true},
 	}
+	if s.gooOn() { // Pursae Commerce
+		rows = append(rows, seogoTypeRow{Key: "product", Label: "Products"},
+			seogoTypeRow{Key: "product_cat", Label: "Product categories", Archive: true}, seogoTypeRow{Key: "product_tag", Label: "Product tags", Archive: true})
+	}
+	// Public Pursae Custom Fields post types: their entries and, with an archive, the archive.
+	acfgoRegistry.RLock()
+	var cpts []string
+	for slug := range acfgoRegistry.types {
+		cpts = append(cpts, slug)
+	}
+	acfgoRegistry.RUnlock()
+	sort.Strings(cpts)
+	for _, slug := range cpts {
+		pt := siteCPT(slug)
+		if pt == nil {
+			continue
+		}
+		l := labelsFor(slug)
+		rows = append(rows, seogoTypeRow{Key: slug, Label: l.Name})
+		if pt.HasArchive {
+			rows = append(rows, seogoTypeRow{Key: "pta_" + slug, Label: l.Name + " archive", Archive: true})
+		}
+	}
 	for i := range rows {
-		rows[i].Opts = o.Types[rows[i].Key]
+		rows[i].Opts = o.seogoType(rows[i].Key)
 	}
 	return rows
 }
@@ -845,20 +869,17 @@ func (s *Server) seogoToolsPost(c *gin.Context, o *seogoOptions) (string, error)
 		}
 		return "robots.txt saved.", nil
 	case "import_settings":
-		var in seogoOptions
 		raw := c.PostForm("settings_json")
 		if f, _, err := c.Request.FormFile("file"); err == nil {
 			b, _ := io.ReadAll(io.LimitReader(f, 1<<20))
 			f.Close()
 			raw = string(b)
 		}
-		if err := json.Unmarshal([]byte(raw), &in); err != nil {
-			return "", fmt.Errorf("the settings file is not valid JSON")
+		in, err := seogoImportOptions(o, raw)
+		if err != nil {
+			return "", err
 		}
-		if in.IndexNowKey == "" {
-			in.IndexNowKey = o.IndexNowKey
-		}
-		if err := s.seogoSave(ctx, &in); err != nil {
+		if err := s.seogoSave(ctx, in); err != nil {
 			return "", err
 		}
 		return "Settings imported.", nil
@@ -1024,4 +1045,32 @@ func (s *Server) seogoFillImageAlts(ctx context.Context, o *seogoOptions) (int, 
 		}
 	}
 	return n, nil
+}
+
+// seogoImportOptions merges an imported settings JSON over the current options: keys the file
+// leaves out keep their values, and only a JSON object is accepted.
+func seogoImportOptions(cur *seogoOptions, raw string) (*seogoOptions, error) {
+	if !strings.HasPrefix(strings.TrimSpace(raw), "{") {
+		return nil, fmt.Errorf("the settings file is not valid JSON")
+	}
+	in := cur.clone()
+	if err := json.Unmarshal([]byte(raw), in); err != nil {
+		return nil, fmt.Errorf("the settings file is not valid JSON")
+	}
+	if in.IndexNowKey == "" {
+		in.IndexNowKey = cur.IndexNowKey
+	}
+	if in.Types == nil {
+		in.Types = cur.clone().Types
+	}
+	if in.Modules == nil {
+		in.Modules = cur.clone().Modules
+	}
+	if in.Verify == nil {
+		in.Verify = map[string]string{}
+	}
+	if in.Roles == nil {
+		in.Roles = cur.clone().Roles
+	}
+	return in, nil
 }

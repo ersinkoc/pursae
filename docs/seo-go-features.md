@@ -68,7 +68,7 @@ gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-
 
 | Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
-| Search appearance per type | Content types, taxonomies, archives, special pages | Titles & Meta | ✓ Home, posts, pages, categories, tags, author archives, date archives, search, 404: title and description templates, noindex, sitemap inclusion, schema defaults (posts/pages), disable author/date archives (301 to home). |
+| Search appearance per type | Content types, taxonomies, archives, special pages | Titles & Meta | ✓ Home, posts, pages, categories, tags, author archives, date archives, search, 404, Pursae Commerce products and product categories/tags (while Commerce is on), public Pursae Custom Fields post types and their archives (`pta_<type>`, default title "%pt_plural% Archive"): title and description templates, noindex, sitemap inclusion, schema defaults (posts/pages), disable author/date archives (301 to home). Posts, pages and products default to `%excerpt%` as description (Rank Math's default). |
 | Separator | 14 choices | ✓ | ✓ The same 14 characters. |
 | Knowledge Graph / site representation | Organization or person, logo, other profiles | Local SEO & Knowledge Graph | ✓ Organization (name, alternate name, logo) or person (a user), social profiles as `sameAs`. |
 | Social settings | Facebook (default image, front page), X card type, other profiles | Same | ✓ Open Graph on/off, X cards on/off, card type, default image, home image, Facebook page URL and app ID, X username. |
@@ -87,7 +87,7 @@ gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-
 | Meta description, robots, canonical, rel prev | ✓ | ✓ | ✓ Core's robots meta and canonical link are replaced (one canonical); no canonical on noindexed pages. |
 | Open Graph, article times, image size/type | ✓ | ✓ | ✓ |
 | X cards, "Written by" and "Est. reading time" labels | ✓ | ✓ | ✓ |
-| Schema graph | WebSite, Organization/Person, WebPage, ImageObject, BreadcrumbList, Article, Person, with Yoast's @id scheme | Similar | ✓ Yoast's @ids (`#website`, `#organization`, `#/schema/person/<hash>`, the permalink for WebPage, `#article`, `#breadcrumb`, `#primaryimage`). CollectionPage, ProfilePage and SearchResultsPage on archives. The person hash is stable (md5 of login + "user"), not Yoast's salted `wp_hash`. |
+| Schema graph | WebSite, Organization/Person, WebPage, ImageObject, BreadcrumbList, Article, Person, with Yoast's @id scheme | Similar | ✓ Yoast's @ids (`#website`, `#organization`, `#/schema/person/<hash>`, the permalink for WebPage, `#article`, `#breadcrumb`, `#primaryimage`). CollectionPage, ProfilePage and SearchResultsPage on archives. The person hash is stable and built from the user id (md5 of id + "user"), never the login, so it cannot confirm a guessed login name. |
 | FAQ block | FAQ block | FAQ block | ✓ `seogo/faq` block, which adds FAQPage and Question nodes. Yoast's `yoast/faq-block` and Rank Math's `rank-math/faq-block` in imported content are read too. |
 | How-to block | How-to block | HowTo block | ✓ `seogo/howto` block and the imported `yoast/how-to-block` and `rank-math/howto-block`. |
 | Product schema | (WooCommerce SEO) | ✓ | ✓ Per post (article type Product). |
@@ -105,7 +105,7 @@ gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-
 
 | Feature | Yoast | Rank Math | Pursae SEO |
 |---|---|---|---|
-| XML sitemap index and per-type sitemaps | ✓ | ✓ | ✓ post, page, category, post_tag and author sitemaps; paged at the configured size; lastmod; image entries (featured image and content images). The XSL stylesheet shows them in a browser. |
+| XML sitemap index and per-type sitemaps | ✓ | ✓ | ✓ One sitemap per public post type (posts, pages, Pursae Commerce products, public Pursae Custom Fields types) and public taxonomy (categories, tags, product categories/tags/attributes, custom taxonomies), the same sources as core's `wp-sitemap.xml`, plus authors (left out while user enumeration is blocked, the core default). Paged at the configured size with one LIMIT/OFFSET query per page (the index only counts); lastmod; image entries (featured image and content images). Cart, Checkout and My account are never listed. With Pursae Multi Language in directory or query mode every language's content is listed with its own URL and `xhtml:link` hreflang alternates, each language's home leads the page sitemap, and `/{lang}/sitemap_index.xml` serves the same index; with a subdomain or a domain per language each host's sitemaps list only that host's language (a sitemap may not list another host's URLs). While the News or Video sitemap module is on, a public custom post type or taxonomy named `news` or `video` gets no per-type sitemap (`/news-sitemap.xml` and `/video-sitemap.xml` belong to those modules). The XSL stylesheet shows them in a browser. |
 | Exclusions | noindex, per type | Per post/term IDs, per type | ✓ Noindexed, password-protected and canonicalized-elsewhere content, excluded post and term IDs, types switched off in Search Appearance, empty terms. |
 | Replace core sitemaps | Disables `wp-sitemap.xml` and redirects | — | ✓ 301 from `/wp-sitemap*.xml` and `/sitemap.xml` to `/sitemap_index.xml`. |
 | News sitemap | News SEO add-on | Pro | ✓ `news-sitemap.xml`: posts of the last 48 hours, publication name and language. |
@@ -172,3 +172,16 @@ gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-
 Hooks into shared files are one or two lines each and are marked "Pursae SEO". They are in
 `plugins.go`, `admin.go`, `server.go`, `site.go`, `site_head.go`, `site_view.go`, `feed.go`,
 `admin_posts.go`, `rest_posts.go`, `admin_terms.go` and `wxr.go`.
+
+### Pursae Commerce and Pursae Multi Language
+
+- **Commerce views.** A product page reads the product's own SEO meta (and imported Yoast/Rank Math
+  meta), featured image and description; `og:type` is `product`. Product category/tag archives use the
+  term's SEO fields. Canonicals of products, product terms and the shop come from the store URLs (paged
+  on page 2+, with `rel="prev"`), never from the synthetic page id. Cart, Checkout and My account are
+  `noindex, follow` (WooCommerce's `wc_page_noindex`), also with Pursae SEO off. The product editor has
+  the Pursae SEO box.
+- **Languages.** `og:locale`, `og:locale:alternate` (the page's other languages), schema `inLanguage`
+  (FAQ and HowTo included), `%sitename%`/`%sitedesc%`, `og:site_name` and the WebSite node follow the
+  request language; the Home crumb links to the language's home. The Search Appearance templates and
+  breadcrumb labels are listed in Languages › Translations (group "Pursae SEO").

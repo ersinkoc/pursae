@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/links"
 	"wpgo/internal/store"
 )
 
@@ -44,6 +46,8 @@ func (s *Server) seogoIntercept(c *gin.Context, path string) bool {
 	if !o.Modules["sitemap"] {
 		return false
 	}
+	// The sitemaps list every language, so /fr/sitemap_index.xml is the same index (Pursae Multi Language).
+	path = s.golylangSitePath(c, path)
 	switch {
 	case path == "sitemap_index.xml":
 		s.seogoSitemapIndex(c)
@@ -81,31 +85,79 @@ func (s *Server) seogoRobotsDefault(ctx context.Context) string {
 	}
 	out := "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax"
 	if s.seogoOpts().Modules["sitemap"] {
-		out += "\n\nSitemap: " + lb.HomeURL("/sitemap_index.xml")
+		out += "\n\nSitemap: " + s.seogoHostURL(ctx, lb.HomeURL("/sitemap_index.xml")) // this host's index
 	}
 	return out
 }
 
 // --- XML sitemaps ------------------------------------------------------------------------------
+//
+// One index lists every sitemap: one per public post type (products and Pursae Custom Fields types
+// included, the way core's wp-sitemap.xml does), per public taxonomy and the authors. With Pursae
+// Multi Language in directory or query mode the sitemaps list every language's objects with their
+// own URLs and hreflang alternates (Polylang's behaviour with Yoast); with a subdomain or a domain
+// per language each host's sitemaps keep to that host's language. A sitemap page is
+// built from one LIMIT/OFFSET query; the index only counts.
 
 type seogoURL struct {
 	Loc    string
 	Mod    time.Time
 	Images []string
-	Post   *store.Post
+	Alts   []seogoAlt // hreflang alternates (Pursae Multi Language)
 }
 
-// seogoSitemapTypes are the sitemaps of the index, in order.
-func (s *Server) seogoSitemapTypes() []string {
+type seogoAlt struct{ Lang, URL string }
+
+// seogoAllLanguages reports whether one sitemap lists every language: Pursae Multi Language in
+// directory or query mode. With a subdomain or a domain per language (force_lang 2/3) each host keeps
+// to its own language, like Polylang filtering home_url per domain, since a sitemap may not list
+// URLs of another host.
+func (s *Server) seogoAllLanguages() bool {
+	return s.golylangOn() && s.pllOpts().ForceLang <= 1
+}
+
+// seogoSitemapCtx is the context sitemaps query with: no language filter when one sitemap lists
+// every language, else the request language.
+func (s *Server) seogoSitemapCtx(ctx context.Context) context.Context {
+	if s.golylangOn() && !s.seogoAllLanguages() {
+		return ctx
+	}
+	return gooPllUnfiltered(ctx)
+}
+
+// seogoSitemapTypes are the sitemaps of the index, in order: post types, taxonomies, authors.
+func (s *Server) seogoSitemapTypes(ctx context.Context) []string {
 	o := s.seogoOpts()
+	cand := append([]string{}, s.sitemapPostTypes(ctx)...)
+	for _, t := range s.sitemapTaxonomies(ctx) {
+		if t != "post_format" {
+			cand = append(cand, t)
+		}
+	}
+	if !s.asBlockAuthorSitemap() { // the core's user enumeration block covers the author sitemap too
+		cand = append(cand, "author")
+	}
 	var out []string
-	for _, t := range []string{"post", "page", "category", "post_tag", "author"} {
-		to := o.Types[t]
-		if to.Sitemap && !to.Noindex && !to.Disabled {
+	for _, t := range cand {
+		if (t == "news" && o.Modules["news_sitemap"]) || (t == "video" && o.Modules["video_sitemap"]) {
+			continue // /news-sitemap.xml and /video-sitemap.xml are the News and Video sitemaps then
+		}
+		if to := o.seogoType(t); to.Sitemap && !to.Noindex && !to.Disabled {
 			out = append(out, t)
 		}
 	}
 	return out
+}
+
+// seogoSitemapKind is how a sitemap type is listed: "post" (a post type), "term" or "author".
+func (s *Server) seogoSitemapKind(ctx context.Context, typ string) string {
+	if typ == "author" {
+		return "author"
+	}
+	if slices.Contains(s.sitemapPostTypes(ctx), typ) {
+		return "post"
+	}
+	return "term"
 }
 
 func idSet(list string) map[int64]bool {
@@ -119,32 +171,74 @@ func idSet(list string) map[int64]bool {
 }
 
 // seogoIndexable reports whether a published post belongs in sitemaps (no noindex, no password,
-// not excluded, no canonical elsewhere).
-func (s *Server) seogoIndexable(ctx context.Context, p *store.Post, excluded map[int64]bool) bool {
+// not excluded, no canonical elsewhere). loc is the post's URL.
+func (s *Server) seogoIndexable(o *seogoOptions, p *store.Post, loc string, excluded map[int64]bool) bool {
 	if p.Status != "publish" || p.Password != "" || excluded[p.ID] {
 		return false
 	}
-	o := s.seogoOpts()
 	switch seogoMeta(p.Meta, "noindex") {
 	case "noindex":
 		return false
 	case "":
-		if o.Types[p.Type].Noindex {
+		if o.seogoType(p.Type).Noindex {
 			return false
 		}
 	}
-	if can := seogoMeta(p.Meta, "canonical"); can != "" && can != s.links(ctx).Permalink(p) {
+	if can := seogoMeta(p.Meta, "canonical"); can != "" && can != loc {
 		return false
 	}
 	return true
 }
 
-func postImages(s *Server, ctx context.Context, p *store.Post) []string {
+// seogoStorePrivatePages are the Cart, Checkout and My account pages and their translations: never
+// in a sitemap (WooCommerce keeps them out with wc_page_noindex).
+func (s *Server) seogoStorePrivatePages(ctx context.Context) map[int64]bool {
+	out := map[int64]bool{}
+	if !s.gooOn() {
+		return out
+	}
+	for _, key := range []string{"cart", "checkout", "myaccount"} {
+		id := s.gooPageID(key)
+		if id <= 0 {
+			continue
+		}
+		out[id] = true
+		if s.golylangOn() {
+			for _, t := range s.pllTranslations(ctx, pllPost, id) {
+				out[t] = true
+			}
+		}
+	}
+	return out
+}
+
+// seogoPostLoc is the URL of a post in a sitemap.
+func (s *Server) seogoPostLoc(ctx context.Context, lb *links.Builder, p *store.Post) string {
+	if p.Type == "product" {
+		return s.gooPermalink(ctx, &gooProduct{ID: p.ID, Post: p, Slug: p.Slug, Status: p.Status, Type: "simple"})
+	}
+	return lb.Permalink(p)
+}
+
+// seogoTermLoc is the URL of a term in a sitemap.
+func (s *Server) seogoTermLoc(ctx context.Context, t *store.Term) string {
+	if s.sitemapGooTaxonomy(t.Taxonomy) {
+		return s.gooTermLink(ctx, t)
+	}
+	return s.links(ctx).TermLink(t)
+}
+
+var seogoAllImgRe = regexp.MustCompile(`(?i)<img[^>]+src=["']([^"']+)["']`)
+
+// seogoPostImages are the image entries of a post: its featured image (from the page's batch) and
+// the images of its content.
+func (s *Server) seogoPostImages(ctx context.Context, p *store.Post, media map[int64]*store.Attachment) []string {
 	var out []string
 	seen := map[string]bool{}
-	if img := s.seogoAttachmentImage(ctx, p.FeaturedMediaID); img != nil {
-		out = append(out, img.URL)
-		seen[img.URL] = true
+	if a := media[p.FeaturedMediaID]; a != nil && strings.HasPrefix(a.Mime, "image/") {
+		u := s.uploadURL(ctx, a.FilePath)
+		out = append(out, u)
+		seen[u] = true
 	}
 	for _, m := range seogoAllImgRe.FindAllStringSubmatch(p.Content, -1) {
 		u := html.UnescapeString(m[1])
@@ -159,52 +253,272 @@ func postImages(s *Server, ctx context.Context, p *store.Post) []string {
 	return out
 }
 
-var seogoAllImgRe = regexp.MustCompile(`(?i)<img[^>]+src=["']([^"']+)["']`)
+// seogoHreflang is the hreflang code of a language slug ("" for an inactive language).
+func (s *Server) seogoHreflang(ctx context.Context, slug string) string {
+	for _, l := range s.pllActiveLanguages(ctx) {
+		if l.Slug == slug {
+			return s.pllHreflang(ctx, l)
+		}
+	}
+	return ""
+}
 
-// seogoSitemapURLs lists every URL of one sitemap type.
-func (s *Server) seogoSitemapURLs(ctx context.Context, typ string) []seogoURL {
+// seogoTranslationGroups maps each object to its translations (language => id, itself included),
+// for the objects that have at least one; nil while Pursae Multi Language is off.
+func (s *Server) seogoTranslationGroups(ctx context.Context, k pllKind, ids []int64) map[int64]map[string]int64 {
+	if !s.seogoAllLanguages() || len(ids) == 0 || len(s.pllActiveLanguages(ctx)) < 2 {
+		return nil // a host per language: the other hosts' URLs stay out of this sitemap
+	}
+	tbl, col := k.table()
+	rows, err := s.store.Pool.Query(ctx, `SELECT a.`+col+`, b.`+col+`, b.lang FROM `+tbl+` a JOIN `+tbl+` b ON b.grp = a.grp
+		WHERE a.`+col+` = ANY($1)`, ids)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	out := map[int64]map[string]int64{}
+	for rows.Next() {
+		var id, other int64
+		var lang string
+		if rows.Scan(&id, &other, &lang) != nil {
+			continue
+		}
+		if out[id] == nil {
+			out[id] = map[string]int64{}
+		}
+		out[id][lang] = other
+	}
+	for id, g := range out {
+		if len(g) < 2 {
+			delete(out, id)
+		}
+	}
+	return out
+}
+
+// seogoAltsFor turns a translation group into hreflang alternates; locs has the URL of every
+// indexable member. Fewer than two languages give none.
+func (s *Server) seogoAltsFor(ctx context.Context, group map[string]int64, locs map[int64]string) []seogoAlt {
+	var out []seogoAlt
+	for _, l := range s.pllActiveLanguages(ctx) {
+		if id, ok := group[l.Slug]; ok && locs[id] != "" {
+			out = append(out, seogoAlt{Lang: s.pllHreflang(ctx, l), URL: locs[id]})
+		}
+	}
+	if len(out) < 2 {
+		return nil
+	}
+	return out
+}
+
+// seogoSitemapChunks is the index entry data of one type: the last modification of each page.
+func (s *Server) seogoSitemapChunks(ctx context.Context, typ string, per int) []time.Time {
+	ctx = s.seogoSitemapCtx(ctx)
+	var q string
+	switch s.seogoSitemapKind(ctx, typ) {
+	case "author":
+		var n int
+		var mod *time.Time
+		if s.store.Pool.QueryRow(ctx, `SELECT count(DISTINCT author_id), max(modified_at) FROM posts WHERE type = 'post' AND status = 'publish'`).Scan(&n, &mod) != nil || n == 0 {
+			return nil
+		}
+		out := make([]time.Time, (n+per-1)/per)
+		if mod != nil {
+			for i := range out {
+				out[i] = *mod
+			}
+		}
+		return out
+	case "post":
+		q = `SELECT ((rn - 1) / $2)::int, max(modified_at) FROM (SELECT modified_at, row_number() OVER (ORDER BY id) AS rn
+			FROM posts WHERE type = $1 AND status = 'publish') x GROUP BY 1 ORDER BY 1`
+	default:
+		q = `SELECT ((rn - 1) / $2)::int, max(m) FROM (SELECT row_number() OVER (ORDER BY t.id) AS rn,
+			(SELECT max(p.modified_at) FROM post_terms pt JOIN posts p ON p.id = pt.post_id WHERE pt.term_id = t.id AND p.status = 'publish') AS m
+			FROM terms t WHERE t.taxonomy = $1 AND t.post_count > 0) x GROUP BY 1 ORDER BY 1`
+	}
+	rows, err := s.store.Pool.Query(ctx, q, typ, per)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []time.Time
+	for rows.Next() {
+		var n int
+		var mod *time.Time
+		if rows.Scan(&n, &mod) != nil {
+			continue
+		}
+		for len(out) < n {
+			out = append(out, time.Time{})
+		}
+		if mod != nil {
+			out = append(out, *mod)
+		} else {
+			out = append(out, time.Time{})
+		}
+	}
+	if typ == "page" && len(out) == 0 && s.settings.String("show_on_front") != "page" {
+		out = append(out, time.Time{}) // the home page alone
+	}
+	return out
+}
+
+// seogoSitemapURLs lists the URLs of one page of a sitemap type (page 1 is the first).
+func (s *Server) seogoSitemapURLs(reqCtx context.Context, typ string, page int) []seogoURL {
+	ctx := s.seogoSitemapCtx(reqCtx)
 	o := s.seogoOpts()
-	lb := s.links(ctx)
+	lb := s.links(reqCtx)
+	per := o.SitemapPerPage
 	var out []seogoURL
-	switch typ {
-	case "post", "page":
-		posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"}, PerPage: 50000, Page: 1, OrderBy: "id", Order: "asc"})
+	switch s.seogoSitemapKind(ctx, typ) {
+	case "post":
+		posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"}, PerPage: per, Page: page, OrderBy: "id", Order: "asc"})
 		excluded := idSet(o.SitemapExclude)
+		if typ == "page" {
+			for id := range s.seogoStorePrivatePages(ctx) {
+				excluded[id] = true
+			}
+		}
 		front := int64(0)
 		if s.settings.String("show_on_front") == "page" {
 			front = int64(s.settings.Int("page_on_front"))
 		}
-		if typ == "page" && front == 0 { // the home page leads the page sitemap, like Yoast
-			out = append(out, seogoURL{Loc: lb.HomeURL("/")})
+		if typ == "page" && front == 0 && page == 1 { // the home page leads the page sitemap, like Yoast
+			if cur := s.pllCurrent(reqCtx); s.golylangOn() && !s.seogoAllLanguages() && cur != nil {
+				out = append(out, seogoURL{Loc: s.pllHomeURL(reqCtx, cur)}) // this host's language only
+			} else if s.golylangOn() && len(s.pllActiveLanguages(reqCtx)) > 0 {
+				var homes []seogoAlt
+				for _, l := range s.pllActiveLanguages(reqCtx) {
+					homes = append(homes, seogoAlt{Lang: s.pllHreflang(reqCtx, l), URL: s.pllHomeURL(reqCtx, l)})
+				}
+				for _, h := range homes {
+					u := seogoURL{Loc: h.URL}
+					if len(homes) > 1 {
+						u.Alts = homes
+					}
+					out = append(out, u)
+				}
+			} else {
+				out = append(out, seogoURL{Loc: lb.HomeURL("/")})
+			}
 		}
+		var keep []*store.Post
+		locs := map[int64]string{}
+		var mediaIDs []int64
 		for _, p := range posts {
-			if !s.seogoIndexable(ctx, p, excluded) {
+			loc := s.seogoPostLoc(reqCtx, lb, p)
+			if p.ID == front && !s.golylangOn() {
+				loc = lb.HomeURL("/")
+			}
+			if !s.seogoIndexable(o, p, loc, excluded) {
 				continue
 			}
-			u := seogoURL{Loc: lb.Permalink(p), Mod: p.ModifiedAt, Post: p}
-			if p.ID == front {
-				u.Loc = lb.HomeURL("/")
+			keep = append(keep, p)
+			locs[p.ID] = loc
+			if p.FeaturedMediaID > 0 {
+				mediaIDs = append(mediaIDs, p.FeaturedMediaID)
 			}
+		}
+		var media map[int64]*store.Attachment
+		if o.SitemapImages && len(mediaIDs) > 0 {
+			media, _ = s.store.GetAttachments(ctx, mediaIDs)
+		}
+		ids := make([]int64, 0, len(keep))
+		for _, p := range keep {
+			ids = append(ids, p.ID)
+		}
+		groups := s.seogoTranslationGroups(ctx, pllPost, ids)
+		if len(groups) > 0 { // translations on other sitemap pages
+			var missing []int64
+			for _, g := range groups {
+				for _, id := range g {
+					if _, ok := locs[id]; !ok {
+						missing = append(missing, id)
+					}
+				}
+			}
+			if len(missing) > 0 {
+				others, _, _ := s.store.QueryPosts(ctx, store.PostQuery{IDs: missing, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc"})
+				for _, p := range others {
+					if loc := s.seogoPostLoc(reqCtx, lb, p); s.seogoIndexable(o, p, loc, excluded) {
+						locs[p.ID] = loc
+					}
+				}
+			}
+		}
+		for _, p := range keep {
+			u := seogoURL{Loc: locs[p.ID], Mod: p.ModifiedAt}
 			if o.SitemapImages {
-				u.Images = postImages(s, ctx, p)
+				u.Images = s.seogoPostImages(reqCtx, p, media)
+			}
+			if g := groups[p.ID]; g != nil {
+				u.Alts = s.seogoAltsFor(reqCtx, g, locs)
 			}
 			out = append(out, u)
 		}
-	case "category", "post_tag":
-		terms, _, _ := s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: typ, HideEmpty: true, PerPage: 50000, Page: 1})
+	case "term":
+		terms, _, _ := s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: typ, HideEmpty: true, OrderBy: "id", PerPage: per, Page: page})
 		excluded := idSet(o.SitemapExcludeT)
+		var keep []*store.Term
+		locs := map[int64]string{}
 		for _, t := range terms {
 			if excluded[t.ID] || seogoMeta(t.Meta, "noindex") == "noindex" {
 				continue
 			}
-			u := seogoURL{Loc: lb.TermLink(t)}
-			_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(max(p.modified_at), now()) FROM posts p JOIN post_terms pt ON pt.post_id = p.id
-				WHERE pt.term_id = $1 AND p.status = 'publish'`, t.ID).Scan(&u.Mod)
+			keep = append(keep, t)
+			locs[t.ID] = s.seogoTermLoc(reqCtx, t)
+		}
+		ids := make([]int64, 0, len(keep))
+		for _, t := range keep {
+			ids = append(ids, t.ID)
+		}
+		mods := map[int64]time.Time{}
+		if len(ids) > 0 {
+			if rows, err := s.store.Pool.Query(ctx, `SELECT pt.term_id, max(p.modified_at) FROM post_terms pt JOIN posts p ON p.id = pt.post_id
+				WHERE pt.term_id = ANY($1) AND p.status = 'publish' GROUP BY pt.term_id`, ids); err == nil {
+				for rows.Next() {
+					var id int64
+					var mod time.Time
+					if rows.Scan(&id, &mod) == nil {
+						mods[id] = mod
+					}
+				}
+				rows.Close()
+			}
+		}
+		groups := s.seogoTranslationGroups(ctx, pllTerm, ids)
+		if len(groups) > 0 {
+			var missing []int64
+			for _, g := range groups {
+				for _, id := range g {
+					if _, ok := locs[id]; !ok {
+						missing = append(missing, id)
+					}
+				}
+			}
+			if len(missing) > 0 {
+				others, _, _ := s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: typ, HideEmpty: true, IDs: missing, PerPage: len(missing), Page: 1})
+				for _, t := range others {
+					if !excluded[t.ID] && seogoMeta(t.Meta, "noindex") != "noindex" {
+						locs[t.ID] = s.seogoTermLoc(reqCtx, t)
+					}
+				}
+			}
+		}
+		for _, t := range keep {
+			u := seogoURL{Loc: locs[t.ID], Mod: mods[t.ID]}
+			if g := groups[t.ID]; g != nil {
+				u.Alts = s.seogoAltsFor(reqCtx, g, locs)
+			}
 			out = append(out, u)
 		}
 	case "author":
+		if s.asBlockAuthorSitemap() {
+			return nil
+		}
 		rows, err := s.store.Pool.Query(ctx, `SELECT u.id, u.nicename, max(p.modified_at) FROM users u JOIN posts p ON p.author_id = u.id
-			WHERE p.type = 'post' AND p.status = 'publish' GROUP BY u.id, u.nicename ORDER BY u.id`)
+			WHERE p.type = 'post' AND p.status = 'publish' GROUP BY u.id, u.nicename ORDER BY u.id LIMIT $1 OFFSET $2`, per, (page-1)*per)
 		if err == nil {
 			for rows.Next() {
 				var id int64
@@ -221,7 +535,20 @@ func (s *Server) seogoSitemapURLs(ctx context.Context, typ string) []seogoURL {
 }
 
 func (s *Server) seogoXMLHead(ctx context.Context) string {
-	return xml.Header + `<?xml-stylesheet type="text/xsl" href="` + xmlEsc(s.links(ctx).HomeURL("/main-sitemap.xsl")) + `"?>` + "\n"
+	return xml.Header + `<?xml-stylesheet type="text/xsl" href="` + xmlEsc(s.seogoHostURL(ctx, s.links(ctx).HomeURL("/main-sitemap.xsl"))) + `"?>` + "\n"
+}
+
+// seogoHostURL moves a sitemap file URL to the request's host while each language has its own
+// subdomain or domain (an index and its stylesheet stay on the host that serves them).
+func (s *Server) seogoHostURL(ctx context.Context, link string) string {
+	if !s.golylangOn() || s.seogoAllLanguages() {
+		return link
+	}
+	l := s.pllCurrent(ctx)
+	if l == nil {
+		return link
+	}
+	return s.pllConvert(ctx, s.links(ctx).Home, link, l, "home", s.pllOpts())
 }
 
 func (s *Server) seogoSitemapIndex(c *gin.Context) {
@@ -234,25 +561,13 @@ func (s *Server) seogoSitemapIndex(c *gin.Context) {
 	o := s.seogoOpts()
 	var sb strings.Builder
 	sb.WriteString(s.seogoXMLHead(ctx) + `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
-	for _, typ := range s.seogoSitemapTypes() {
-		urls := s.seogoSitemapURLs(ctx, typ)
-		if len(urls) == 0 {
-			continue
-		}
-		pages := (len(urls) + o.SitemapPerPage - 1) / o.SitemapPerPage
-		for n := 1; n <= pages; n++ {
+	for _, typ := range s.seogoSitemapTypes(ctx) {
+		for i, last := range s.seogoSitemapChunks(ctx, typ, o.SitemapPerPage) {
 			name := typ + "-sitemap.xml"
-			if n > 1 {
-				name = typ + "-sitemap" + strconv.Itoa(n) + ".xml"
+			if i > 0 {
+				name = typ + "-sitemap" + strconv.Itoa(i+1) + ".xml"
 			}
-			chunk := urls[(n-1)*o.SitemapPerPage : min(n*o.SitemapPerPage, len(urls))]
-			var last time.Time
-			for _, u := range chunk {
-				if u.Mod.After(last) {
-					last = u.Mod
-				}
-			}
-			fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n", xmlEsc(lb.HomeURL("/"+name)))
+			fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n", xmlEsc(s.seogoHostURL(ctx, lb.HomeURL("/"+name))))
 			if !last.IsZero() {
 				fmt.Fprintf(&sb, "\t\t<lastmod>%s</lastmod>\n", last.UTC().Format(time.RFC3339))
 			}
@@ -260,10 +575,10 @@ func (s *Server) seogoSitemapIndex(c *gin.Context) {
 		}
 	}
 	if o.Modules["news_sitemap"] {
-		fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n\t</sitemap>\n", xmlEsc(lb.HomeURL("/news-sitemap.xml")))
+		fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n\t</sitemap>\n", xmlEsc(s.seogoHostURL(ctx, lb.HomeURL("/news-sitemap.xml"))))
 	}
 	if o.Modules["video_sitemap"] {
-		fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n\t</sitemap>\n", xmlEsc(lb.HomeURL("/video-sitemap.xml")))
+		fmt.Fprintf(&sb, "\t<sitemap>\n\t\t<loc>%s</loc>\n\t</sitemap>\n", xmlEsc(s.seogoHostURL(ctx, lb.HomeURL("/video-sitemap.xml"))))
 	}
 	sb.WriteString("</sitemapindex>\n<!-- XML Sitemap generated by Pursae SEO -->\n")
 	c.Header("X-Robots-Tag", "noindex, follow")
@@ -282,39 +597,32 @@ func (s *Server) seogoSitemap(c *gin.Context, path string) bool {
 		typ = m[1]
 		page, _ = strconv.Atoi(m[2])
 	}
-	switch typ {
-	case "news":
-		if !o.Modules["news_sitemap"] {
-			return false
+	if page == 1 && path == typ+"-sitemap.xml" { // a post type or taxonomy of the same name yields to these
+		switch {
+		case typ == "news" && o.Modules["news_sitemap"]:
+			s.seogoNewsSitemap(c)
+			return true
+		case typ == "video" && o.Modules["video_sitemap"]:
+			s.seogoVideoSitemap(c)
+			return true
 		}
-		s.seogoNewsSitemap(c)
-		return true
-	case "video":
-		if !o.Modules["video_sitemap"] {
-			return false
-		}
-		s.seogoVideoSitemap(c)
-		return true
 	}
-	allowed := false
-	for _, t := range s.seogoSitemapTypes() {
-		allowed = allowed || t == typ
-	}
-	if !allowed || page < 1 {
+	if !slices.Contains(s.seogoSitemapTypes(ctx), typ) || page < 1 {
 		return false
 	}
-	urls := s.seogoSitemapURLs(ctx, typ)
-	from := (page - 1) * o.SitemapPerPage
-	if from >= len(urls) {
+	if page > len(s.seogoSitemapChunks(ctx, typ, o.SitemapPerPage)) {
 		return false
 	}
-	urls = urls[from:min(from+o.SitemapPerPage, len(urls))]
+	urls := s.seogoSitemapURLs(ctx, typ, page) // a page whose URLs are all noindex stays an empty urlset
 	var sb strings.Builder
-	sb.WriteString(s.seogoXMLHead(ctx) + `<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-image/1.1 http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
+	sb.WriteString(s.seogoXMLHead(ctx) + `<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-image/1.1 http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
 	for _, u := range urls {
 		fmt.Fprintf(&sb, "\t<url>\n\t\t<loc>%s</loc>\n", xmlEsc(u.Loc))
 		if !u.Mod.IsZero() {
 			fmt.Fprintf(&sb, "\t\t<lastmod>%s</lastmod>\n", u.Mod.UTC().Format(time.RFC3339))
+		}
+		for _, a := range u.Alts {
+			fmt.Fprintf(&sb, "\t\t<xhtml:link rel=\"alternate\" hreflang=\"%s\" href=\"%s\" />\n", xmlEsc(a.Lang), xmlEsc(a.URL))
 		}
 		for _, img := range u.Images {
 			fmt.Fprintf(&sb, "\t\t<image:image>\n\t\t\t<image:loc>%s</image:loc>\n\t\t</image:image>\n", xmlEsc(img))
@@ -327,10 +635,24 @@ func (s *Server) seogoSitemap(c *gin.Context, path string) bool {
 	return true
 }
 
+// seogoPostLocale is the locale of a post: its Pursae Multi Language language, else the site's.
+func (s *Server) seogoPostLocale(ctx context.Context, p *store.Post) string {
+	if s.golylangOn() && s.pllTranslatedType(p.Type) {
+		if l := s.pllLang(ctx, s.pllObjLang(ctx, pllPost, p.ID)); l != nil && l.Locale != "" {
+			return l.Locale
+		}
+	}
+	if l := s.settings.String("WPLANG"); l != "" {
+		return l
+	}
+	return "en_US"
+}
+
 func (s *Server) seogoNewsSitemap(c *gin.Context) {
-	ctx := c.Request.Context()
+	reqCtx := c.Request.Context()
+	ctx := s.seogoSitemapCtx(reqCtx)
 	o := s.seogoOpts()
-	lb := s.links(ctx)
+	lb := s.links(reqCtx)
 	name := o.SitemapNewsTypes
 	if name == "" {
 		name = s.settings.String("blogname")
@@ -341,11 +663,13 @@ func (s *Server) seogoNewsSitemap(c *gin.Context) {
 	sb.WriteString(s.seogoXMLHead(ctx) + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">` + "\n")
 	cutoff := time.Now().Add(-48 * time.Hour)
 	for _, p := range posts {
-		if p.PublishedAt == nil || p.PublishedAt.Before(cutoff) || !s.seogoIndexable(ctx, p, excluded) {
+		loc := s.seogoPostLoc(reqCtx, lb, p)
+		if p.PublishedAt == nil || p.PublishedAt.Before(cutoff) || !s.seogoIndexable(o, p, loc, excluded) {
 			continue
 		}
+		locale := s.seogoPostLocale(ctx, p)
 		fmt.Fprintf(&sb, "\t<url>\n\t\t<loc>%s</loc>\n\t\t<news:news>\n\t\t\t<news:publication>\n\t\t\t\t<news:name>%s</news:name>\n\t\t\t\t<news:language>%s</news:language>\n\t\t\t</news:publication>\n\t\t\t<news:publication_date>%s</news:publication_date>\n\t\t\t<news:title>%s</news:title>\n\t\t</news:news>\n\t</url>\n",
-			xmlEsc(lb.Permalink(p)), xmlEsc(name), strings.SplitN(s.seogoLocale(), "_", 2)[0], p.PublishedAt.UTC().Format(time.RFC3339), xmlEsc(p.Title))
+			xmlEsc(loc), xmlEsc(name), strings.SplitN(locale, "_", 2)[0], p.PublishedAt.UTC().Format(time.RFC3339), xmlEsc(p.Title))
 	}
 	sb.WriteString("</urlset>\n")
 	c.Data(http.StatusOK, "text/xml; charset=UTF-8", []byte(sb.String()))
@@ -357,14 +681,37 @@ var (
 )
 
 func (s *Server) seogoVideoSitemap(c *gin.Context) {
-	ctx := c.Request.Context()
-	lb := s.links(ctx)
-	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post", "page"}, Statuses: []string{"publish"}, PerPage: 50000, Page: 1, OrderBy: "id", Order: "asc"})
-	excluded := idSet(s.seogoOpts().SitemapExclude)
+	reqCtx := c.Request.Context()
+	ctx := s.seogoSitemapCtx(reqCtx)
+	o := s.seogoOpts()
+	lb := s.links(reqCtx)
+	// Only posts that embed a video are loaded (matched in SQL first), at most 5000 of them, from
+	// every sitemap post type.
+	var posts []*store.Post
+	var ids []int64
+	types := s.sitemapPostTypes(ctx)
+	if rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE type = ANY($1) AND status = 'publish'
+		AND (content ILIKE '%youtu%' OR content ILIKE '%vimeo.com%') ORDER BY id LIMIT 5000`, types); err == nil {
+		for rows.Next() {
+			var id int64
+			if rows.Scan(&id) == nil {
+				ids = append(ids, id)
+			}
+		}
+		rows.Close()
+	}
+	if len(ids) > 0 {
+		posts, _, _ = s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, Types: types, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc"})
+	}
+	excluded := idSet(o.SitemapExclude)
 	var sb strings.Builder
 	sb.WriteString(s.seogoXMLHead(ctx) + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">` + "\n")
 	for _, p := range posts {
-		if !s.seogoIndexable(ctx, p, excluded) {
+		if !strings.Contains(p.Content, "youtu") && !strings.Contains(p.Content, "vimeo.com") {
+			continue
+		}
+		loc := s.seogoPostLoc(reqCtx, lb, p)
+		if !s.seogoIndexable(o, p, loc, excluded) {
 			continue
 		}
 		var vids []string
@@ -381,7 +728,7 @@ func (s *Server) seogoVideoSitemap(c *gin.Context) {
 				xmlEsc(thumb), xmlEsc(p.Title), xmlEsc(cut(plainText(p.Content), 2000)), m[1]))
 		}
 		if len(vids) > 0 {
-			fmt.Fprintf(&sb, "\t<url>\n\t\t<loc>%s</loc>\n%s\t</url>\n", xmlEsc(lb.Permalink(p)), strings.Join(vids, ""))
+			fmt.Fprintf(&sb, "\t<url>\n\t\t<loc>%s</loc>\n%s\t</url>\n", xmlEsc(loc), strings.Join(vids, ""))
 		}
 	}
 	sb.WriteString("</urlset>\n")
@@ -591,18 +938,17 @@ func (s *Server) seogoAfterSave(ctx context.Context, p *store.Post) {
 	}
 	o := s.seogoOpts()
 	if p.Status == "publish" && o.Modules["redirections"] && o.AutoRedirect {
-		lb := s.links(ctx)
 		pathOf := func(link string) string {
 			if u, err := url.Parse(link); err == nil && u.Path != "" {
 				return u.Path
 			}
 			return "/" + normPath(link)
 		}
-		newPath := pathOf(lb.Permalink(p))
+		newPath := pathOf(s.seogoPostLoc(ctx, s.links(ctx), p))
 		for _, old := range p.OldSlugs() {
 			cp := *p
 			cp.Slug = old
-			src := pathOf(lb.Permalink(&cp))
+			src := pathOf(s.seogoPostLoc(ctx, s.links(ctx), &cp))
 			if normPath(src) == normPath(newPath) || strings.Trim(src, "/") == "" {
 				continue
 			}
@@ -618,7 +964,7 @@ func (s *Server) seogoAfterSave(ctx context.Context, p *store.Post) {
 		}
 	}
 	if p.Status == "publish" && o.Modules["indexnow"] {
-		s.seogoIndexNow(ctx, []string{s.links(ctx).Permalink(p)})
+		s.seogoIndexNow(ctx, []string{s.seogoPostLoc(ctx, s.links(ctx), p)})
 	}
 }
 

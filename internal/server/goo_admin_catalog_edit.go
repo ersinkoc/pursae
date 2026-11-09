@@ -431,6 +431,7 @@ func (s *Server) gooRenderEditor(c *gin.Context, p *gooProduct, isNew bool) {
 	if isNew {
 		title, screen = "Add new product", "post-new?post_type=product"
 	}
+	s.seogoEditor(c, post, false) // Pursae SEO box (seogo_editor.go)
 	s.adminPage(c, screen, title, "post-php post-type-product", "admin/goo-product-edit", d, s.gooEditNotices(c, d.ViewURL)...)
 }
 
@@ -889,10 +890,12 @@ func (s *Server) gooProductSave(c *gin.Context, id int64) {
 		pn.Save(s, c, p)
 	}
 
+	s.seogoClassicSave(c, post) // Pursae SEO box fields
 	if err := s.gooSaveProduct(ctx, p, u.ID); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	s.seogoRescoreSaved(c, post) // the scores again, now with the saved title, slug and status
 
 	// Categories and tags.
 	var catIDs []int64
@@ -961,7 +964,7 @@ func (s *Server) gooProductSave(c *gin.Context, id int64) {
 	if f.str("goo_save_attributes") != "" {
 		tab = "attributes"
 	}
-	s.afterPostSave(ctx, post)
+	s.afterPostSave(ctx, post) // runs Pursae SEO's after-save (slug-change redirect, IndexNow) too
 
 	msg := "1"
 	switch {

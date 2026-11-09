@@ -103,7 +103,7 @@ func (s *Server) seogoRenderPartial(name string, data any) template.HTML {
 
 // seogoEditor adds the Pursae SEO box to the classic editor or Gotenberg (renderEdit).
 func (s *Server) seogoEditor(c *gin.Context, p *store.Post, block bool) {
-	if !s.seogoOn() || p == nil || (p.Type != "post" && p.Type != "page") || !s.seogoCan(currentUser(c), "seogo_onpage_general") {
+	if !s.seogoOn() || p == nil || (p.Type != "post" && p.Type != "page" && p.Type != "product" && siteCPT(p.Type) == nil) || !s.seogoCan(currentUser(c), "seogo_onpage_general") {
 		return
 	}
 	d := s.seogoBoxFor(c, p.Meta, p.Type)
@@ -179,6 +179,23 @@ func (s *Server) seogoClassicSave(c *gin.Context, p *store.Post) {
 	}
 }
 
+// seogoRescoreSaved recomputes the stored scores of a post its save has just written (the title,
+// slug and status a save fills in are known only then) when the save carried the Pursae SEO box.
+func (s *Server) seogoRescoreSaved(c *gin.Context, p *store.Post) {
+	if _, ok := c.GetPostForm("seogo_present"); !ok || !s.seogoOn() || p == nil || p.ID == 0 {
+		return
+	}
+	if p.Meta == nil {
+		p.Meta = map[string]any{}
+	}
+	s.seogoStoreScores(c, p)
+	scores := map[string]any{}
+	for _, k := range []string{"seo_score", "read_score", "rm_score"} {
+		scores[seogoKey(k)] = p.Meta[seogoKey(k)]
+	}
+	_, _ = s.store.Pool.Exec(c, `UPDATE posts SET meta = coalesce(meta, '{}'::jsonb) || $2::jsonb WHERE id = $1`, p.ID, scores)
+}
+
 // seogoStoreScores keeps the current scores in meta for the dashboard and the bulk editor.
 func (s *Server) seogoStoreScores(ctx context.Context, p *store.Post) {
 	sc := &seogoCtx{s: s, ctx: ctx, lb: s.links(ctx), Kind: s.seogoQueryForPost(p).Kind, Post: p}
@@ -200,7 +217,7 @@ func (s *Server) seogoAnalysisInputFor(ctx context.Context, sc *seogoCtx) seogoA
 		in.SiteHost = hu.Host
 	}
 	if p.Status != "auto-draft" && p.Slug != "" {
-		in.URL = sc.lb.Permalink(p)
+		in.URL = s.seogoPostLoc(ctx, sc.lb, p)
 	}
 	if len(in.Keywords) > 0 {
 		rows, err := s.store.Pool.Query(ctx, `SELECT title FROM posts WHERE id <> $1 AND type IN ('post','page') AND status IN ('publish','future','draft','pending','private')
@@ -535,7 +552,7 @@ func (s *Server) seogoHeadJSON(sc *seogoCtx, title string) map[string]any {
 			rm[d] = d
 		}
 	}
-	out := map[string]any{"title": title, "robots": rm, "og_locale": s.seogoLocale(), "og_title": title, "og_site_name": s.settings.String("blogname"),
+	out := map[string]any{"title": title, "robots": rm, "og_locale": s.seogoLocale(sc.ctx), "og_title": title, "og_site_name": s.seogoSiteName(sc.ctx),
 		"twitter_card": o.TwitterCard}
 	if desc != "" {
 		out["description"], out["og_description"] = desc, desc

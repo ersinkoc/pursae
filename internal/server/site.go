@@ -47,6 +47,9 @@ type siteQuery struct {
 	Store     string
 	StoreTax  string
 	StoreTerm int64
+	// StoreURL is the unpaged canonical URL of a store view: the product permalink, the term link or
+	// the shop URL ("" for a store search and for the Cart, Checkout and My account pages).
+	StoreURL string
 }
 
 var (
