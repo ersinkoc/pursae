@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"html/template"
-	"net/http"
 	"net"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -35,8 +35,8 @@ const (
 	// oauthRegisterGlobalLimit caps registrations from all addresses together per window, below
 	// oauthMaxClients, so rotating addresses (an IPv6 /48, many IPv4 hosts) cannot fill the cap alone.
 	oauthRegisterGlobalLimit = 100
-	oauthMCPPath        = "/wp-json/pursae/v1/mcp"
-	restOAuthKey        = "wpgo.restOAuthGrant" // oauth_tokens.id that authenticated the request
+	oauthMCPPath             = "/wp-json/pursae/v1/mcp"
+	restOAuthKey             = "wpgo.restOAuthGrant" // oauth_tokens.id that authenticated the request
 )
 
 func (s *Server) registerOAuth(r *gin.Engine) {

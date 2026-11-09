@@ -1107,7 +1107,9 @@ func (s *Server) pllFrontTranslations(ctx context.Context, front int64) map[stri
 }
 
 // pllLangHome is the URL a language's paths hang from (no trailing slash).
-func (s *Server) pllLangHome(root string, l *pllLanguage, o pllOptions) string { return pllLangHomeOf(root, l, o) }
+func (s *Server) pllLangHome(root string, l *pllLanguage, o pllOptions) string {
+	return pllLangHomeOf(root, l, o)
+}
 
 func pllLangHomeOf(root string, l *pllLanguage, o pllOptions) string {
 	if l.IsDefault && o.HideDefault && o.ForceLang != 3 {
