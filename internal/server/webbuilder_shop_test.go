@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"strings"
 	"testing"
@@ -317,4 +318,53 @@ func TestWBLanguageSwitcherWidget(t *testing.T) {
 	_, body = wbtfGet(t, base+"/")
 	wbtfWant(t, "off", body, `href="`+base+`/">Home</a>`, `method="get" action="`+base+`/">`)
 	wbtfBad(t, "off", body, "wb-lang-switcher")
+}
+
+// A notice taken by a builder widget (shop.notices on a page, the cart widget on a Cart page doc)
+// is gone from the session afterwards: it shows once, not on every later request.
+func TestWBShopNoticesTakenOnce(t *testing.T) {
+	base, _, srv, f := wbShopStart(t)
+	ctx := context.Background()
+	wbtfPage(t, srv, "page", "Notice board", `<p>BOARD-MARK</p><div class="nb" data-wb-slot="shop.notices" data-wb-item="n1"></div>`,
+		wbShopLayout(`{"id":"n1","title":"shop-notices","text":""}`), `{"layout":"site"}`)
+	cartID := srv.gooPageIDIn(ctx, "cart")
+	if cartID <= 0 {
+		t.Fatal("no cart page")
+	}
+	wbtfPublish(t, srv, cartID, `<p>CART-DOC-MARK</p><div class="wb-shop" data-wb-slot="shop.cart-page" data-wb-item="cp"></div>`,
+		wbShopLayout(`{"id":"cp","title":"shop-cart-page","text":""}`), "", nil)
+	v := gooFrontClient()
+	addToCart := func() {
+		t.Helper()
+		code, _, _ := post(t, v, base+"/product/mug/", url.Values{"add-to-cart": {itoa64(f.mug.ID)}, "quantity": {"1"}})
+		if code != http.StatusFound {
+			t.Fatalf("add to cart: %d", code)
+		}
+	}
+	storedNotices := func() int {
+		t.Helper()
+		var n int
+		if err := srv.store.Pool.QueryRow(ctx, `SELECT coalesce(max(CASE WHEN jsonb_typeof(data->'notices') = 'array' THEN jsonb_array_length(data->'notices') ELSE 0 END),0) FROM goo_sessions`).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	const notice = "has been added to your cart"
+	for _, path := range []string{"/notice-board/", "/cart/"} {
+		addToCart()
+		if storedNotices() == 0 {
+			t.Fatalf("%s: the add-to-cart notice is not in the session", path)
+		}
+		_, body, _ := get(t, v, base+path)
+		if !strings.Contains(body, notice) {
+			t.Errorf("%s: no notice on the first view", path)
+		}
+		if n := storedNotices(); n != 0 {
+			t.Errorf("%s: %d notices still stored after they were shown", path, n)
+		}
+		_, body, _ = get(t, v, base+path)
+		if strings.Contains(body, notice) {
+			t.Errorf("%s: the notice shows again on the next view", path)
+		}
+	}
 }

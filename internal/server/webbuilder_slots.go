@@ -905,5 +905,9 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	if err != nil {
 		log.Printf("web builder: fill %d: %v", d.PostID, err)
 	}
+	// Store widgets may take notices or drop unbuyable cart items: save the session now, before
+	// the body is written (store views and shortcodes save their own; a builder page or template
+	// takes neither path). No-op without a loaded, changed session.
+	s.gooSaveSession(c)
 	return wbFilled{html: s.wbSearchForms(ctx, s.filterContentTags(ctx, out)), loops: env.loops, shop: shop, catalog: env.shop != nil && env.shop.catalog}
 }
