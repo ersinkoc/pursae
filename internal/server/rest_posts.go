@@ -51,7 +51,8 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 	rc := &renderCtx{s: s, lb: lb}
 	rendered := ""
 	protected := p.Password != ""
-	if !protected || u.Can("edit_post", p) {
+	canEdit := u.Can("edit_post", p)
+	if !protected || canEdit {
 		rendered = blocks.Render(withRender(c.Request.Context(), rc), p.Content)
 		if !blocks.HasBlocks(p.Content) {
 			rendered = wp.Autop(p.Content)
@@ -61,11 +62,14 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 	if excerpt == "" {
 		excerpt = wp.TrimWords(stripBlocks(p.Content), 55, " [&hellip;]")
 	}
-	if protected && !u.Can("edit_post", p) {
+	if protected && !canEdit {
 		excerpt = "" // the first words of a password-protected post are as private as the rest of it
 	}
-	if !u.Can("edit_post", p) {
+	restricted := false // Goocommerce Memberships hid (part of) the content from this caller
+	if !canEdit {
+		r0, e0 := rendered, excerpt
 		rendered, excerpt = s.gooRESTRestrict(c.Request.Context(), u, p, rendered, excerpt) // Goocommerce Memberships
+		restricted = rendered != r0 || excerpt != e0
 	}
 	date := p.Date().In(loc)
 	var dateGMT any = gmt(p.Date())
@@ -121,10 +125,19 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 	if ctxName == "edit" {
 		out["guid"].(map[string]any)["raw"] = home + "/?p=" + itoa64(p.ID)
 		out["title"].(map[string]any)["raw"] = title
-		out["content"].(map[string]any)["raw"] = p.Content
+		// A collection in the edit context (any edit_posts caller) also lists items the caller
+		// cannot edit: like WordPress they keep their raw fields, except the post password and
+		// the raw text of a password-protected or members-only post. Patterns (wp_block) always
+		// keep content.raw, which the inserter builds other users' patterns from.
+		hideRaw := !canEdit && (protected || restricted) && p.Type != "wp_block"
+		if !hideRaw {
+			out["content"].(map[string]any)["raw"] = p.Content
+			out["excerpt"].(map[string]any)["raw"] = p.Excerpt
+		}
 		out["content"].(map[string]any)["block_version"] = boolInt(blocks.HasBlocks(p.Content))
-		out["excerpt"].(map[string]any)["raw"] = p.Excerpt
-		out["password"] = p.Password
+		if canEdit {
+			out["password"] = p.Password
+		}
 		out["permalink_template"] = lb.PermalinkTemplate(p)
 		gen := wp.SanitizeTitle(title)
 		if gen == "" {
@@ -415,11 +428,7 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 		if p.Status != "publish" && !u.Can("read_post", p) {
 			continue
 		}
-		itemCtx := ctxName
-		if itemCtx == "edit" && !u.Can("edit_post", p) {
-			itemCtx = "view" // a contributor listing others' posts gets no password or raw content
-		}
-		item := s.restPost(c, p, itemCtx)
+		item := s.restPost(c, p, ctxName) // restPost hides passwords and protected raw text from non-editors
 		if embed {
 			item = api.embedPost(c, p, item)
 		}

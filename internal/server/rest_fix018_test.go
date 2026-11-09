@@ -25,6 +25,7 @@ func TestRESTPostsFix018(t *testing.T) {
 	_, author := s.user("arthur", "author")
 
 	secret := s.post("Protected one", "publish", "hunter2pw")
+	open := s.post("Open one", "publish", "")
 
 	// Collections refuse the edit context without edit_posts (it carries passwords and raw content).
 	for _, path := range []string{"/wp/v2/posts?context=edit", "/wp/v2/pages?context=edit", "/wp/v2/blocks?context=edit"} {
@@ -35,27 +36,56 @@ func TestRESTPostsFix018(t *testing.T) {
 	if code, e, _, _ := sub.do("GET", "/wp/v2/posts?context=edit", nil); code != http.StatusForbidden || e["code"] != "rest_forbidden_context" {
 		t.Errorf("subscriber edit context: %d %v", code, e)
 	}
-	// A contributor may use it, but another author's post comes back in the view context.
+	// A contributor may use it; another author's post keeps its raw fields but never its password,
+	// and a password-protected one also hides its raw content.
 	code, _, list, _ := contrib.do("GET", "/wp/v2/posts?context=edit&per_page=100", nil)
 	if code != http.StatusOK {
 		t.Fatalf("contributor edit context: %d", code)
 	}
-	found := false
+	found, foundOpen := false, false
 	for _, it := range list {
 		m := it.(map[string]any)
-		if m["id"] != secret {
-			continue
-		}
-		found = true
-		if _, ok := m["password"]; ok {
-			t.Errorf("contributor reads another author's post password: %v", m["password"])
-		}
-		if _, ok := m["content"].(map[string]any)["raw"]; ok {
-			t.Error("contributor reads another author's raw content")
+		switch m["id"] {
+		case secret:
+			found = true
+			if _, ok := m["password"]; ok {
+				t.Errorf("contributor reads another author's post password: %v", m["password"])
+			}
+			if _, ok := m["content"].(map[string]any)["raw"]; ok {
+				t.Error("contributor reads another author's protected raw content")
+			}
+			if _, ok := m["excerpt"].(map[string]any)["raw"]; ok {
+				t.Error("contributor reads another author's protected raw excerpt")
+			}
+		case open:
+			foundOpen = true
+			if _, ok := m["password"]; ok {
+				t.Errorf("contributor gets the password field of another author's post: %v", m["password"])
+			}
+			if m["content"].(map[string]any)["raw"] != "Open one body words" || m["title"].(map[string]any)["raw"] != "Open one" {
+				t.Errorf("contributor misses raw fields of an unprotected post: %v %v", m["title"], m["content"])
+			}
 		}
 	}
-	if !found {
-		t.Error("protected post missing from the contributor's list")
+	if !found || !foundOpen {
+		t.Errorf("posts missing from the contributor's list: protected %v, open %v", found, foundOpen)
+	}
+	// The block editor's inserter builds other users' patterns from content.raw (context=edit).
+	pat := `<!-- wp:paragraph --><p>Admin pattern</p><!-- /wp:paragraph -->`
+	code, made, _, _ := s.admin.do("POST", "/wp/v2/blocks", map[string]any{"title": "Admin pattern", "content": pat, "status": "publish"})
+	if code != http.StatusCreated {
+		t.Fatalf("admin create pattern: %d %v", code, made)
+	}
+	code, _, list, _ = author.do("GET", "/wp/v2/blocks?context=edit&per_page=100", nil)
+	gotPat := false
+	for _, it := range list {
+		m := it.(map[string]any)
+		if m["id"] == made["id"] {
+			gotPat = m["content"].(map[string]any)["raw"] == pat && m["title"].(map[string]any)["raw"] == "Admin pattern"
+		}
+	}
+	if code != http.StatusOK || !gotPat {
+		t.Errorf("author lists an admin pattern without content.raw: %d %v", code, list)
 	}
 	code, _, list, _ = s.admin.do("GET", "/wp/v2/posts?context=edit&include="+strconv.Itoa(int(secret)), nil)
 	if code != http.StatusOK || len(list) != 1 || list[0].(map[string]any)["password"] != "hunter2pw" {

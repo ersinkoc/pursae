@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"html/template"
 	"net/http"
+	"net"
 	"net/url"
 	"strings"
 	"sync"
@@ -31,6 +32,9 @@ const (
 	// once per connection, so a flood cannot fill the oauthMaxClients cap from one address.
 	oauthRegisterLimit  = 10
 	oauthRegisterWindow = time.Hour
+	// oauthRegisterGlobalLimit caps registrations from all addresses together per window, below
+	// oauthMaxClients, so rotating addresses (an IPv6 /48, many IPv4 hosts) cannot fill the cap alone.
+	oauthRegisterGlobalLimit = 100
 	oauthMCPPath        = "/wp-json/pursae/v1/mcp"
 	restOAuthKey        = "wpgo.restOAuthGrant" // oauth_tokens.id that authenticated the request
 )
@@ -123,7 +127,7 @@ func (s *Server) oauthRegister(c *gin.Context) {
 	if oauthCORS(c) {
 		return
 	}
-	if !oauthRegisterAllow(clientIP(c), time.Now()) {
+	if !oauthRegisterAllow(oauthRegisterKey(clientIP(c)), time.Now()) {
 		oauthErr(c, http.StatusTooManyRequests, "temporarily_unavailable", "Too many client registrations from this address. Try again later.")
 		return
 	}
@@ -171,11 +175,23 @@ func (s *Server) oauthRegister(c *gin.Context) {
 		"token_endpoint_auth_method": "none", "grant_types": []string{"authorization_code", "refresh_token"}, "response_types": []string{"code"}})
 }
 
-// oauthRegisterLimiter counts registrations per address in fixed windows.
+// oauthRegisterLimiter counts registrations per address in fixed windows, plus one window for all
+// addresses together.
 var oauthRegisterLimiter = struct {
 	sync.Mutex
-	hits map[string]oauthRegisterHits
+	hits   map[string]oauthRegisterHits
+	global oauthRegisterHits
 }{hits: map[string]oauthRegisterHits{}}
+
+// oauthRegisterKey is the limiter key for a client address: IPv4 as is, IPv6 by its /64 prefix
+// (one subscriber usually holds a whole /64, so per-address counting would never trigger).
+func oauthRegisterKey(addr string) string {
+	ip := net.ParseIP(addr)
+	if ip == nil || ip.To4() != nil {
+		return addr
+	}
+	return ip.Mask(net.CIDRMask(64, 128)).String() + "/64"
+}
 
 type oauthRegisterHits struct {
 	start time.Time
@@ -196,9 +212,21 @@ func oauthRegisterAllow(key string, now time.Time) bool {
 	if now.Sub(h.start) > oauthRegisterWindow {
 		h = oauthRegisterHits{start: now}
 	}
+	if h.n >= oauthRegisterLimit {
+		return false // a refused request does not use up the global budget
+	}
+	g := oauthRegisterLimiter.global
+	if now.Sub(g.start) > oauthRegisterWindow {
+		g = oauthRegisterHits{start: now}
+	}
+	if g.n >= oauthRegisterGlobalLimit {
+		return false
+	}
 	h.n++
+	g.n++
 	oauthRegisterLimiter.hits[key] = h
-	return h.n <= oauthRegisterLimit
+	oauthRegisterLimiter.global = g
+	return true
 }
 
 type oauthClient struct {
