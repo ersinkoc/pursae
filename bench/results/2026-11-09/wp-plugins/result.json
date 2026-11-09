@@ -1,0 +1,920 @@
+{
+ "label": "WordPress + 6 plugins (Woo, Yoast, Polylang, ACF, Elementor, CF7)",
+ "pages": {
+  "home": {
+   "url": "/",
+   "status": 200,
+   "bytes": 152819,
+   "title": "Bench -",
+   "cache": null
+  },
+  "single": {
+   "url": "/hello-world/",
+   "status": 200,
+   "bytes": 136745,
+   "title": "Hello world! - Bench",
+   "cache": null
+  },
+  "archive": {
+   "url": "/category/botany/",
+   "status": 200,
+   "bytes": 157796,
+   "title": "Botany Archives - Bench",
+   "cache": null
+  },
+  "search": {
+   "url": "/?s=garden",
+   "status": 200,
+   "bytes": 163698,
+   "title": "You searched for garden - Bench",
+   "cache": null
+  },
+  "rest-posts": {
+   "url": "/wp-json/wp/v2/posts",
+   "status": 200,
+   "bytes": 154989,
+   "title": null,
+   "cache": null
+  },
+  "product": {
+   "url": "/product/product-1/",
+   "status": 200,
+   "bytes": 184451,
+   "title": "Weekend Plant Design - Bench",
+   "cache": null
+  },
+  "admin-dashboard": {
+   "url": "/wp-admin/",
+   "status": 200,
+   "bytes": 346362,
+   "title": "Dashboard \u2039 Bench \u2014 WordPress",
+   "cache": null
+  },
+  "admin-posts": {
+   "url": "/wp-admin/edit.php",
+   "status": 200,
+   "bytes": 431850,
+   "title": "Posts \u2039 Bench \u2014 WordPress",
+   "cache": null
+  }
+ },
+ "queries": {
+  "home": {
+   "cold_queries": 139,
+   "warm_queries": 135,
+   "cold_ttfb_ms": 125.49,
+   "warm_ttfb_ms": 125.79,
+   "samples": [
+    {
+     "url": "/",
+     "cold": {
+      "queries": 139,
+      "ttfb_ms": 125.49,
+      "status": 200
+     },
+     "warm": {
+      "queries": 135,
+      "ttfb_ms": 125.79,
+      "status": 200
+     }
+    },
+    {
+     "url": "/",
+     "warm": {
+      "queries": 135,
+      "ttfb_ms": 120.4,
+      "status": 200
+     }
+    },
+    {
+     "url": "/",
+     "warm": {
+      "queries": 135,
+      "ttfb_ms": 126.84,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "single": {
+   "cold_queries": 156,
+   "warm_queries": 151,
+   "cold_ttfb_ms": 120.65,
+   "warm_ttfb_ms": 118.52,
+   "samples": [
+    {
+     "url": "/post-1/",
+     "cold": {
+      "queries": 154,
+      "ttfb_ms": 120.65,
+      "status": 200
+     },
+     "warm": {
+      "queries": 153,
+      "ttfb_ms": 118.52,
+      "status": 200
+     }
+    },
+    {
+     "url": "/post-107/",
+     "cold": {
+      "queries": 156,
+      "ttfb_ms": 116.84,
+      "status": 200
+     },
+     "warm": {
+      "queries": 151,
+      "ttfb_ms": 118.09,
+      "status": 200
+     }
+    },
+    {
+     "url": "/post-116/",
+     "cold": {
+      "queries": 156,
+      "ttfb_ms": 128.42,
+      "status": 200
+     },
+     "warm": {
+      "queries": 151,
+      "ttfb_ms": 120.18,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "archive": {
+   "cold_queries": 145,
+   "warm_queries": 140,
+   "cold_ttfb_ms": 125.86,
+   "warm_ttfb_ms": 120.04,
+   "samples": [
+    {
+     "url": "/category/botany/",
+     "cold": {
+      "queries": 144,
+      "ttfb_ms": 125.86,
+      "status": 200
+     },
+     "warm": {
+      "queries": 140,
+      "ttfb_ms": 120.3,
+      "status": 200
+     }
+    },
+    {
+     "url": "/category/craft/",
+     "cold": {
+      "queries": 145,
+      "ttfb_ms": 124.66,
+      "status": 200
+     },
+     "warm": {
+      "queries": 140,
+      "ttfb_ms": 120.04,
+      "status": 200
+     }
+    },
+    {
+     "url": "/category/design/",
+     "cold": {
+      "queries": 145,
+      "ttfb_ms": 136.65,
+      "status": 200
+     },
+     "warm": {
+      "queries": 140,
+      "ttfb_ms": 118.44,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "search": {
+   "cold_queries": 146,
+   "warm_queries": 146,
+   "cold_ttfb_ms": 133.07,
+   "warm_ttfb_ms": 128.52,
+   "samples": [
+    {
+     "url": "/?s=meadow",
+     "cold": {
+      "queries": 146,
+      "ttfb_ms": 130.49,
+      "status": 200
+     },
+     "warm": {
+      "queries": 146,
+      "ttfb_ms": 127.86,
+      "status": 200
+     }
+    },
+    {
+     "url": "/?s=river",
+     "cold": {
+      "queries": 146,
+      "ttfb_ms": 137.82,
+      "status": 200
+     },
+     "warm": {
+      "queries": 146,
+      "ttfb_ms": 135.83,
+      "status": 200
+     }
+    },
+    {
+     "url": "/?s=stone",
+     "cold": {
+      "queries": 146,
+      "ttfb_ms": 133.07,
+      "status": 200
+     },
+     "warm": {
+      "queries": 146,
+      "ttfb_ms": 128.52,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "rest-posts": {
+   "cold_queries": 205,
+   "warm_queries": 155,
+   "cold_ttfb_ms": 172.23,
+   "warm_ttfb_ms": 141.63,
+   "samples": [
+    {
+     "url": "/wp-json/wp/v2/posts?page=2",
+     "cold": {
+      "queries": 155,
+      "ttfb_ms": 259.18,
+      "status": 200
+     },
+     "warm": {
+      "queries": 155,
+      "ttfb_ms": 153.22,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-json/wp/v2/posts?page=3",
+     "cold": {
+      "queries": 205,
+      "ttfb_ms": 150.51,
+      "status": 200
+     },
+     "warm": {
+      "queries": 159,
+      "ttfb_ms": 141.63,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-json/wp/v2/posts?page=4",
+     "cold": {
+      "queries": 205,
+      "ttfb_ms": 172.23,
+      "status": 200
+     },
+     "warm": {
+      "queries": 155,
+      "ttfb_ms": 127.0,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "product": {
+   "cold_queries": 177,
+   "warm_queries": 172,
+   "cold_ttfb_ms": 147.68,
+   "warm_ttfb_ms": 138.47,
+   "samples": [
+    {
+     "url": "/product/product-10/",
+     "cold": {
+      "queries": 177,
+      "ttfb_ms": 148.52,
+      "status": 200
+     },
+     "warm": {
+      "queries": 172,
+      "ttfb_ms": 139.7,
+      "status": 200
+     }
+    },
+    {
+     "url": "/product/product-103/",
+     "cold": {
+      "queries": 183,
+      "ttfb_ms": 147.68,
+      "status": 200
+     },
+     "warm": {
+      "queries": 174,
+      "ttfb_ms": 136.59,
+      "status": 200
+     }
+    },
+    {
+     "url": "/product/product-107/",
+     "cold": {
+      "queries": 177,
+      "ttfb_ms": 138.53,
+      "status": 200
+     },
+     "warm": {
+      "queries": 172,
+      "ttfb_ms": 138.47,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "admin-dashboard": {
+   "cold_queries": 213,
+   "warm_queries": 213,
+   "cold_ttfb_ms": 242.53,
+   "warm_ttfb_ms": 140.16,
+   "samples": [
+    {
+     "url": "/wp-admin/",
+     "cold": {
+      "queries": 213,
+      "ttfb_ms": 242.53,
+      "status": 200
+     },
+     "warm": {
+      "queries": 217,
+      "ttfb_ms": 140.67,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/",
+     "warm": {
+      "queries": 213,
+      "ttfb_ms": 140.16,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/",
+     "warm": {
+      "queries": 213,
+      "ttfb_ms": 127.69,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "admin-posts": {
+   "cold_queries": 205,
+   "warm_queries": 205,
+   "cold_ttfb_ms": 185.26,
+   "warm_ttfb_ms": 170.06,
+   "samples": [
+    {
+     "url": "/wp-admin/edit.php",
+     "cold": {
+      "queries": 205,
+      "ttfb_ms": 185.26,
+      "status": 200
+     },
+     "warm": {
+      "queries": 205,
+      "ttfb_ms": 170.06,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/edit.php",
+     "warm": {
+      "queries": 209,
+      "ttfb_ms": 171.42,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/edit.php",
+     "warm": {
+      "queries": 205,
+      "ttfb_ms": 164.05,
+      "status": 200
+     }
+    }
+   ]
+  }
+ },
+ "mem_idle_mb": 329.9,
+ "load": {
+  "home": {
+   "median": {
+    "rps": 18.6,
+    "requests": 381,
+    "ttfb_p50": 505.58,
+    "ttfb_p95": 574.73,
+    "ttfb_p99": 586.13,
+    "p50": 517.35,
+    "p95": 585.87,
+    "p99": 594.79,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 18.6,
+     "requests": 381,
+     "ttfb_p50": 506.01,
+     "ttfb_p95": 574.43,
+     "ttfb_p99": 580.71,
+     "p50": 518.8,
+     "p95": 585.87,
+     "p99": 591.35,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 18.6,
+     "requests": 381,
+     "ttfb_p50": 505.58,
+     "ttfb_p95": 574.73,
+     "ttfb_p99": 586.13,
+     "p50": 517.35,
+     "p95": 584.68,
+     "p99": 594.79,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 18.7,
+     "requests": 382,
+     "ttfb_p50": 504.7,
+     "ttfb_p95": 575.53,
+     "ttfb_p99": 603.21,
+     "p50": 516.49,
+     "p95": 589.21,
+     "p99": 623.34,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "single": {
+   "median": {
+    "rps": 19.2,
+    "requests": 393,
+    "ttfb_p50": 500.95,
+    "ttfb_p95": 562.54,
+    "ttfb_p99": 572.34,
+    "p50": 511.33,
+    "p95": 574.84,
+    "p99": 582.19,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 19.3,
+     "requests": 395,
+     "ttfb_p50": 499.04,
+     "ttfb_p95": 560.44,
+     "ttfb_p99": 568.25,
+     "p50": 509.19,
+     "p95": 573.87,
+     "p99": 580.32,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 19.2,
+     "requests": 393,
+     "ttfb_p50": 501.0,
+     "ttfb_p95": 562.54,
+     "ttfb_p99": 572.34,
+     "p50": 511.75,
+     "p95": 574.84,
+     "p99": 582.19,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 19.0,
+     "requests": 388,
+     "ttfb_p50": 500.95,
+     "ttfb_p95": 565.22,
+     "ttfb_p99": 629.89,
+     "p50": 511.33,
+     "p95": 577.62,
+     "p99": 668.18,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "archive": {
+   "median": {
+    "rps": 18.4,
+    "requests": 375,
+    "ttfb_p50": 511.67,
+    "ttfb_p95": 578.89,
+    "ttfb_p99": 611.15,
+    "p50": 524.95,
+    "p95": 589.2,
+    "p99": 619.9,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 18.4,
+     "requests": 375,
+     "ttfb_p50": 511.79,
+     "ttfb_p95": 578.89,
+     "ttfb_p99": 616.29,
+     "p50": 524.95,
+     "p95": 589.2,
+     "p99": 628.38,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 18.2,
+     "requests": 373,
+     "ttfb_p50": 511.67,
+     "ttfb_p95": 583.2,
+     "ttfb_p99": 611.15,
+     "p50": 527.31,
+     "p95": 593.79,
+     "p99": 619.9,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 18.5,
+     "requests": 378,
+     "ttfb_p50": 510.15,
+     "ttfb_p95": 574.59,
+     "ttfb_p99": 580.52,
+     "p50": 523.2,
+     "p95": 584.5,
+     "p99": 589.4,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "product": {
+   "median": {
+    "rps": 16.4,
+    "requests": 336,
+    "ttfb_p50": 592.74,
+    "ttfb_p95": 613.63,
+    "ttfb_p99": 671.08,
+    "p50": 603.78,
+    "p95": 669.58,
+    "p99": 681.31,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 16.4,
+     "requests": 335,
+     "ttfb_p50": 592.74,
+     "ttfb_p95": 613.63,
+     "ttfb_p99": 662.1,
+     "p50": 603.78,
+     "p95": 669.58,
+     "p99": 676.31,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 16.5,
+     "requests": 340,
+     "ttfb_p50": 590.62,
+     "ttfb_p95": 609.1,
+     "ttfb_p99": 671.08,
+     "p50": 600.83,
+     "p95": 668.24,
+     "p99": 681.31,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 16.4,
+     "requests": 336,
+     "ttfb_p50": 593.69,
+     "ttfb_p95": 618.04,
+     "ttfb_p99": 671.98,
+     "p50": 604.05,
+     "p95": 671.29,
+     "p99": 684.17,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "search": {
+   "median": {
+    "rps": 17.7,
+    "requests": 363,
+    "ttfb_p50": 527.69,
+    "ttfb_p95": 586.59,
+    "ttfb_p99": 593.76,
+    "p50": 579.08,
+    "p95": 596.76,
+    "p99": 603.73,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 17.5,
+     "requests": 358,
+     "ttfb_p50": 559.81,
+     "ttfb_p95": 596.17,
+     "ttfb_p99": 651.49,
+     "p50": 584.11,
+     "p95": 608.5,
+     "p99": 662.75,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 17.8,
+     "requests": 363,
+     "ttfb_p50": 522.71,
+     "ttfb_p95": 586.59,
+     "ttfb_p99": 593.76,
+     "p50": 575.88,
+     "p95": 596.76,
+     "p99": 603.73,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 17.7,
+     "requests": 364,
+     "ttfb_p50": 527.69,
+     "ttfb_p95": 584.22,
+     "ttfb_p99": 591.29,
+     "p50": 579.08,
+     "p95": 596.19,
+     "p99": 603.58,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "rest-posts": {
+   "median": {
+    "rps": 18.4,
+    "requests": 377,
+    "ttfb_p50": 522.68,
+    "ttfb_p95": 587.59,
+    "ttfb_p99": 622.78,
+    "p50": 524.76,
+    "p95": 589.11,
+    "p99": 623.94,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 18.5,
+     "requests": 377,
+     "ttfb_p50": 520.55,
+     "ttfb_p95": 586.06,
+     "ttfb_p99": 650.04,
+     "p50": 522.11,
+     "p95": 587.61,
+     "p99": 651.48,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 18.2,
+     "requests": 373,
+     "ttfb_p50": 526.26,
+     "ttfb_p95": 592.78,
+     "ttfb_p99": 622.78,
+     "p50": 527.96,
+     "p95": 594.06,
+     "p99": 623.94,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 18.4,
+     "requests": 377,
+     "ttfb_p50": 522.68,
+     "ttfb_p95": 587.59,
+     "ttfb_p99": 594.08,
+     "p50": 524.76,
+     "p95": 589.11,
+     "p99": 595.21,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "admin-dashboard": {
+   "median": {
+    "rps": 18.9,
+    "requests": 386,
+    "ttfb_p50": 513.45,
+    "ttfb_p95": 577.74,
+    "ttfb_p99": 589.1,
+    "p50": 514.93,
+    "p95": 579.28,
+    "p99": 590.77,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 18.6,
+     "requests": 380,
+     "ttfb_p50": 517.24,
+     "ttfb_p95": 581.17,
+     "ttfb_p99": 630.42,
+     "p50": 519.05,
+     "p95": 582.48,
+     "p99": 632.19,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 18.9,
+     "requests": 386,
+     "ttfb_p50": 511.86,
+     "ttfb_p95": 577.74,
+     "ttfb_p99": 586.22,
+     "p50": 513.5,
+     "p95": 579.28,
+     "p99": 587.59,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 18.9,
+     "requests": 387,
+     "ttfb_p50": 513.45,
+     "ttfb_p95": 576.57,
+     "ttfb_p99": 589.1,
+     "p50": 514.93,
+     "p95": 578.01,
+     "p99": 590.77,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "admin-posts": {
+   "median": {
+    "rps": 13.7,
+    "requests": 283,
+    "ttfb_p50": 709.77,
+    "ttfb_p95": 784.32,
+    "ttfb_p99": 796.56,
+    "p50": 711.29,
+    "p95": 786.17,
+    "p99": 799.07,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 13.8,
+     "requests": 284,
+     "ttfb_p50": 709.67,
+     "ttfb_p95": 774.7,
+     "ttfb_p99": 783.16,
+     "p50": 711.14,
+     "p95": 776.11,
+     "p99": 784.57,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 13.7,
+     "requests": 283,
+     "ttfb_p50": 709.77,
+     "ttfb_p95": 784.32,
+     "ttfb_p99": 797.28,
+     "p50": 711.29,
+     "p95": 786.17,
+     "p99": 799.07,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 13.6,
+     "requests": 279,
+     "ttfb_p50": 715.02,
+     "ttfb_p95": 785.73,
+     "ttfb_p99": 796.56,
+     "p50": 716.75,
+     "p95": 787.35,
+     "p99": 800.7,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  }
+ },
+ "mem_peak_mb": 427.9,
+ "lighthouse": {
+  "version": "12.8.2",
+  "performance": 0.67,
+  "accessibility": 0.96,
+  "best_practices": 0.96,
+  "seo": 0.92,
+  "lcp_ms": 5705.378000000002,
+  "page_bytes": 888017
+ },
+ "cold_start": [
+  {
+   "full_stack_s": 3.94,
+   "app_only_s": 1.8
+  },
+  {
+   "full_stack_s": 3.88,
+   "app_only_s": 1.79
+  },
+  {
+   "full_stack_s": 4.03,
+   "app_only_s": 1.77
+  }
+ ],
+ "cold_start_median": {
+  "full_stack_s": 3.94,
+  "app_only_s": 1.79
+ },
+ "sizes": {
+  "images_mb": {
+   "mariadb:11.4": 101.4,
+   "nginx:1.27-alpine": 21.8,
+   "bench-wp-php:7.1.4-php8.3": 265.6
+  },
+  "images_total_mb": 388.9,
+  "install_mb": 342.0,
+  "plugins_mb": 226.5,
+  "uploads_mb": 1.7,
+  "db_mb": 16.3,
+  "db_tables": 59
+ },
+ "versions": {
+  "wordpress": "7.1.4",
+  "php": "8.3.36",
+  "opcache": "on",
+  "mariadb": "11.4.13-MariaDB-ubu2404",
+  "nginx": "1.27 (nginx:1.27-alpine)",
+  "plugins": [
+   {
+    "name": "advanced-custom-fields",
+    "version": "6.8.11"
+   },
+   {
+    "name": "contact-form-7",
+    "version": "6.2.4.1"
+   },
+   {
+    "name": "elementor",
+    "version": "4.3.6"
+   },
+   {
+    "name": "polylang",
+    "version": "3.9.2"
+   },
+   {
+    "name": "redis-cache",
+    "version": "3.0.0"
+   },
+   {
+    "name": "woocommerce",
+    "version": "11.2.2"
+   },
+   {
+    "name": "wordpress-importer",
+    "version": "0.9.7"
+   },
+   {
+    "name": "wp-super-cache",
+    "version": "3.1.5"
+   },
+   {
+    "name": "wordpress-seo",
+    "version": "28.8"
+   }
+  ],
+  "theme": [
+   {
+    "name": "twentytwentyfive",
+    "version": "1.5"
+   }
+  ]
+ }
+}

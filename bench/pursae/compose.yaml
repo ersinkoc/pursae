@@ -1,0 +1,49 @@
+# Pursae stack for `make bench` (bench/run.py): the production image built from this checkout
+# (no devhub tag, WPGO_HUB=off so nothing talks to hub.pursae.com) + PostgreSQL 17 as in
+# docker/compose.yaml. Same limits as the WordPress stack: app 2 CPU / 1 GiB, database 1 CPU / 1 GiB.
+# pg_stat_statements is preloaded only so run.py can count queries per page.
+name: bench-pursae
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: wpgo
+      POSTGRES_USER: wpgo
+      POSTGRES_PASSWORD: wpgo
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements", "-c", "pg_stat_statements.track=all"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wpgo -d wpgo"]
+      interval: 2s
+      retries: 60
+    deploy: {resources: {limits: {cpus: "1", memory: 1g}}}
+
+  wpgo:
+    image: bench-pursae-wpgo:${PURSAE_TAG:-local}
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+      args: {VERSION: "${PURSAE_VERSION:-}"}
+    depends_on: {db: {condition: service_healthy}}
+    environment:
+      DATABASE_URL: postgres://wpgo:wpgo@db:5432/wpgo?sslmode=disable
+      WPGO_SITE_URL: http://localhost:${PURSAE_PORT:-18082}
+      WPGO_UPLOADS_DIR: /data/uploads
+      WPGO_HUB: "off"
+    ports: ["127.0.0.1:${PURSAE_PORT:-18082}:8080"]
+    volumes:
+      - bin:/data/bin
+      - uploads:/data/uploads
+      - plugins:/data/plugins
+      - themes:/data/themes
+      - pagecache:/data/wpgo-cache
+    deploy: {resources: {limits: {cpus: "2", memory: 1g}}}
+
+volumes:
+  pgdata:
+  bin:
+  uploads:
+  plugins:
+  themes:
+  pagecache:

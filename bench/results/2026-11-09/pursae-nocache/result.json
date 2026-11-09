@@ -1,0 +1,766 @@
+{
+ "label": "Pursae, Pursae Cache off",
+ "pages": {
+  "home": {
+   "url": "/",
+   "status": 200,
+   "bytes": 63433,
+   "title": "Bench",
+   "cache": null
+  },
+  "single": {
+   "url": "/hello-world/",
+   "status": 200,
+   "bytes": 38944,
+   "title": "Hello world! \u2013 Bench",
+   "cache": null
+  },
+  "archive": {
+   "url": "/category/botany/",
+   "status": 200,
+   "bytes": 67300,
+   "title": "Botany \u2013 Bench",
+   "cache": null
+  },
+  "search": {
+   "url": "/?s=garden",
+   "status": 200,
+   "bytes": 74119,
+   "title": "Search Results for \u201cgarden\u201d \u2013 Bench",
+   "cache": null
+  },
+  "rest-posts": {
+   "url": "/wp-json/wp/v2/posts",
+   "status": 200,
+   "bytes": 45732,
+   "title": null,
+   "cache": null
+  },
+  "admin-dashboard": {
+   "url": "/wp-admin/",
+   "status": 200,
+   "bytes": 42626,
+   "title": "Dashboard \u2039 Bench \u2014 Pursae",
+   "cache": null
+  },
+  "admin-posts": {
+   "url": "/wp-admin/edit",
+   "status": 200,
+   "bytes": 119577,
+   "title": "Posts \u2039 Bench \u2014 Pursae",
+   "cache": null
+  }
+ },
+ "queries": {
+  "home": {
+   "cold_queries": 13,
+   "warm_queries": 13,
+   "cold_ttfb_ms": 13.56,
+   "warm_ttfb_ms": 9.24,
+   "samples": [
+    {
+     "url": "/",
+     "cold": {
+      "queries": 13,
+      "ttfb_ms": 13.56,
+      "status": 200
+     },
+     "warm": {
+      "queries": 13,
+      "ttfb_ms": 9.24,
+      "status": 200
+     }
+    },
+    {
+     "url": "/",
+     "warm": {
+      "queries": 13,
+      "ttfb_ms": 9.6,
+      "status": 200
+     }
+    },
+    {
+     "url": "/",
+     "warm": {
+      "queries": 13,
+      "ttfb_ms": 9.2,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "single": {
+   "cold_queries": 19,
+   "warm_queries": 19,
+   "cold_ttfb_ms": 9.39,
+   "warm_ttfb_ms": 8.69,
+   "samples": [
+    {
+     "url": "/post-1/",
+     "cold": {
+      "queries": 19,
+      "ttfb_ms": 10.96,
+      "status": 200
+     },
+     "warm": {
+      "queries": 19,
+      "ttfb_ms": 8.87,
+      "status": 200
+     }
+    },
+    {
+     "url": "/post-107/",
+     "cold": {
+      "queries": 19,
+      "ttfb_ms": 9.39,
+      "status": 200
+     },
+     "warm": {
+      "queries": 19,
+      "ttfb_ms": 8.69,
+      "status": 200
+     }
+    },
+    {
+     "url": "/post-116/",
+     "cold": {
+      "queries": 19,
+      "ttfb_ms": 8.85,
+      "status": 200
+     },
+     "warm": {
+      "queries": 19,
+      "ttfb_ms": 8.41,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "archive": {
+   "cold_queries": 15,
+   "warm_queries": 15,
+   "cold_ttfb_ms": 10.72,
+   "warm_ttfb_ms": 12.36,
+   "samples": [
+    {
+     "url": "/category/botany/",
+     "cold": {
+      "queries": 15,
+      "ttfb_ms": 11.49,
+      "status": 200
+     },
+     "warm": {
+      "queries": 15,
+      "ttfb_ms": 12.36,
+      "status": 200
+     }
+    },
+    {
+     "url": "/category/craft/",
+     "cold": {
+      "queries": 15,
+      "ttfb_ms": 10.72,
+      "status": 200
+     },
+     "warm": {
+      "queries": 15,
+      "ttfb_ms": 25.86,
+      "status": 200
+     }
+    },
+    {
+     "url": "/category/design/",
+     "cold": {
+      "queries": 15,
+      "ttfb_ms": 9.85,
+      "status": 200
+     },
+     "warm": {
+      "queries": 15,
+      "ttfb_ms": 11.14,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "search": {
+   "cold_queries": 14,
+   "warm_queries": 14,
+   "cold_ttfb_ms": 30.15,
+   "warm_ttfb_ms": 26.11,
+   "samples": [
+    {
+     "url": "/?s=meadow",
+     "cold": {
+      "queries": 14,
+      "ttfb_ms": 42.12,
+      "status": 200
+     },
+     "warm": {
+      "queries": 14,
+      "ttfb_ms": 26.11,
+      "status": 200
+     }
+    },
+    {
+     "url": "/?s=river",
+     "cold": {
+      "queries": 14,
+      "ttfb_ms": 26.28,
+      "status": 200
+     },
+     "warm": {
+      "queries": 14,
+      "ttfb_ms": 25.56,
+      "status": 200
+     }
+    },
+    {
+     "url": "/?s=stone",
+     "cold": {
+      "queries": 14,
+      "ttfb_ms": 30.15,
+      "status": 200
+     },
+     "warm": {
+      "queries": 14,
+      "ttfb_ms": 26.14,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "rest-posts": {
+   "cold_queries": 7,
+   "warm_queries": 7,
+   "cold_ttfb_ms": 7.01,
+   "warm_ttfb_ms": 5.3,
+   "samples": [
+    {
+     "url": "/wp-json/wp/v2/posts?page=2",
+     "cold": {
+      "queries": 7,
+      "ttfb_ms": 6.54,
+      "status": 200
+     },
+     "warm": {
+      "queries": 7,
+      "ttfb_ms": 6.43,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-json/wp/v2/posts?page=3",
+     "cold": {
+      "queries": 7,
+      "ttfb_ms": 7.61,
+      "status": 200
+     },
+     "warm": {
+      "queries": 7,
+      "ttfb_ms": 5.3,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-json/wp/v2/posts?page=4",
+     "cold": {
+      "queries": 7,
+      "ttfb_ms": 7.01,
+      "status": 200
+     },
+     "warm": {
+      "queries": 7,
+      "ttfb_ms": 4.73,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "admin-dashboard": {
+   "cold_queries": 21,
+   "warm_queries": 20,
+   "cold_ttfb_ms": 13.0,
+   "warm_ttfb_ms": 7.04,
+   "samples": [
+    {
+     "url": "/wp-admin/",
+     "cold": {
+      "queries": 21,
+      "ttfb_ms": 13.0,
+      "status": 200
+     },
+     "warm": {
+      "queries": 20,
+      "ttfb_ms": 6.81,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/",
+     "warm": {
+      "queries": 20,
+      "ttfb_ms": 7.68,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/",
+     "warm": {
+      "queries": 20,
+      "ttfb_ms": 7.04,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "admin-posts": {
+   "cold_queries": 20,
+   "warm_queries": 20,
+   "cold_ttfb_ms": 17.4,
+   "warm_ttfb_ms": 11.35,
+   "samples": [
+    {
+     "url": "/wp-admin/edit",
+     "cold": {
+      "queries": 20,
+      "ttfb_ms": 17.4,
+      "status": 200
+     },
+     "warm": {
+      "queries": 20,
+      "ttfb_ms": 15.24,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/edit",
+     "warm": {
+      "queries": 20,
+      "ttfb_ms": 10.58,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/edit",
+     "warm": {
+      "queries": 20,
+      "ttfb_ms": 11.35,
+      "status": 200
+     }
+    }
+   ]
+  }
+ },
+ "mem_idle_mb": 95.3,
+ "load": {
+  "home": {
+   "median": {
+    "rps": 397.2,
+    "requests": 7953,
+    "ttfb_p50": 24.25,
+    "ttfb_p95": 35.25,
+    "ttfb_p99": 50.17,
+    "p50": 24.31,
+    "p95": 35.36,
+    "p99": 50.25,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 397.2,
+     "requests": 7953,
+     "ttfb_p50": 24.01,
+     "ttfb_p95": 35.25,
+     "ttfb_p99": 50.17,
+     "p50": 24.07,
+     "p95": 35.36,
+     "p99": 50.25,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 369.6,
+     "requests": 7399,
+     "ttfb_p50": 25.05,
+     "ttfb_p95": 40.85,
+     "ttfb_p99": 66.51,
+     "p50": 25.12,
+     "p95": 40.92,
+     "p99": 66.63,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 398.0,
+     "requests": 7971,
+     "ttfb_p50": 24.25,
+     "ttfb_p95": 34.85,
+     "ttfb_p99": 43.11,
+     "p50": 24.31,
+     "p95": 34.91,
+     "p99": 43.21,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "single": {
+   "median": {
+    "rps": 394.4,
+    "requests": 7901,
+    "ttfb_p50": 15.7,
+    "ttfb_p95": 64.76,
+    "ttfb_p99": 81.31,
+    "p50": 15.75,
+    "p95": 64.81,
+    "p99": 81.54,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 353.1,
+     "requests": 7068,
+     "ttfb_p50": 16.71,
+     "ttfb_p95": 69.42,
+     "ttfb_p99": 82.89,
+     "p50": 16.76,
+     "p95": 69.49,
+     "p99": 82.97,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 395.9,
+     "requests": 7924,
+     "ttfb_p50": 15.43,
+     "ttfb_p95": 64.76,
+     "ttfb_p99": 81.31,
+     "p50": 15.48,
+     "p95": 64.81,
+     "p99": 81.54,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 394.4,
+     "requests": 7901,
+     "ttfb_p50": 15.7,
+     "ttfb_p95": 63.97,
+     "ttfb_p99": 74.8,
+     "p50": 15.75,
+     "p95": 64.06,
+     "p99": 74.86,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "archive": {
+   "median": {
+    "rps": 394.8,
+    "requests": 7904,
+    "ttfb_p50": 24.42,
+    "ttfb_p95": 34.58,
+    "ttfb_p99": 42.85,
+    "p50": 24.51,
+    "p95": 34.74,
+    "p99": 42.98,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 386.6,
+     "requests": 7741,
+     "ttfb_p50": 24.68,
+     "ttfb_p95": 36.45,
+     "ttfb_p99": 46.46,
+     "p50": 24.78,
+     "p95": 36.62,
+     "p99": 46.55,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 423.1,
+     "requests": 8472,
+     "ttfb_p50": 23.01,
+     "ttfb_p95": 31.79,
+     "ttfb_p99": 37.43,
+     "p50": 23.1,
+     "p95": 31.87,
+     "p99": 37.54,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 394.8,
+     "requests": 7904,
+     "ttfb_p50": 24.42,
+     "ttfb_p95": 34.58,
+     "ttfb_p99": 42.85,
+     "p50": 24.51,
+     "p95": 34.74,
+     "p99": 42.98,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "search": {
+   "median": {
+    "rps": 119.1,
+    "requests": 2385,
+    "ttfb_p50": 93.31,
+    "ttfb_p95": 107.01,
+    "ttfb_p99": 166.81,
+    "p50": 93.47,
+    "p95": 107.21,
+    "p99": 166.89,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 111.2,
+     "requests": 2232,
+     "ttfb_p50": 94.88,
+     "ttfb_p95": 118.63,
+     "ttfb_p99": 187.39,
+     "p50": 95.07,
+     "p95": 119.1,
+     "p99": 187.59,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 119.1,
+     "requests": 2385,
+     "ttfb_p50": 93.31,
+     "ttfb_p95": 107.01,
+     "ttfb_p99": 166.81,
+     "p50": 93.47,
+     "p95": 107.21,
+     "p99": 166.89,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 121.9,
+     "requests": 2447,
+     "ttfb_p50": 92.36,
+     "ttfb_p95": 105.78,
+     "ttfb_p99": 165.03,
+     "p50": 92.51,
+     "p95": 105.95,
+     "p99": 165.18,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "rest-posts": {
+   "median": {
+    "rps": 1046.4,
+    "requests": 20937,
+    "ttfb_p50": 8.38,
+    "ttfb_p95": 17.76,
+    "ttfb_p99": 26.99,
+    "p50": 8.43,
+    "p95": 17.84,
+    "p99": 27.06,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 1084.6,
+     "requests": 21700,
+     "ttfb_p50": 8.21,
+     "ttfb_p95": 16.49,
+     "ttfb_p99": 25.13,
+     "p50": 8.26,
+     "p95": 16.54,
+     "p99": 25.16,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 1046.4,
+     "requests": 20937,
+     "ttfb_p50": 8.38,
+     "ttfb_p95": 17.76,
+     "ttfb_p99": 26.99,
+     "p50": 8.43,
+     "p95": 17.84,
+     "p99": 27.06,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 980.8,
+     "requests": 19626,
+     "ttfb_p50": 8.62,
+     "ttfb_p95": 20.09,
+     "ttfb_p99": 34.77,
+     "p50": 8.67,
+     "p95": 20.19,
+     "p99": 34.82,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "admin-dashboard": {
+   "median": {
+    "rps": 626.9,
+    "requests": 12544,
+    "ttfb_p50": 8.47,
+    "ttfb_p95": 55.9,
+    "ttfb_p99": 62.7,
+    "p50": 8.53,
+    "p95": 55.95,
+    "p99": 62.77,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 641.4,
+     "requests": 12832,
+     "ttfb_p50": 8.43,
+     "ttfb_p95": 55.34,
+     "ttfb_p99": 62.7,
+     "p50": 8.47,
+     "p95": 55.42,
+     "p99": 62.77,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 626.9,
+     "requests": 12544,
+     "ttfb_p50": 8.58,
+     "ttfb_p95": 55.9,
+     "ttfb_p99": 62.45,
+     "p50": 8.62,
+     "p95": 55.95,
+     "p99": 62.49,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 624.4,
+     "requests": 12512,
+     "ttfb_p50": 8.47,
+     "ttfb_p95": 56.91,
+     "ttfb_p99": 63.31,
+     "p50": 8.53,
+     "p95": 56.97,
+     "p99": 63.36,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "admin-posts": {
+   "median": {
+    "rps": 209.6,
+    "requests": 4206,
+    "ttfb_p50": 27.3,
+    "ttfb_p95": 84.41,
+    "ttfb_p99": 90.59,
+    "p50": 27.56,
+    "p95": 84.69,
+    "p99": 91.07,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 222.7,
+     "requests": 4459,
+     "ttfb_p50": 24.69,
+     "ttfb_p95": 81.96,
+     "ttfb_p99": 87.42,
+     "p50": 24.97,
+     "p95": 82.27,
+     "p99": 87.94,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 209.6,
+     "requests": 4206,
+     "ttfb_p50": 27.55,
+     "ttfb_p95": 84.41,
+     "ttfb_p99": 90.59,
+     "p50": 27.84,
+     "p95": 84.69,
+     "p99": 91.07,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 209.0,
+     "requests": 4183,
+     "ttfb_p50": 27.3,
+     "ttfb_p95": 84.76,
+     "ttfb_p99": 91.74,
+     "p50": 27.56,
+     "p95": 85.0,
+     "p99": 92.05,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  }
+ },
+ "mem_peak_mb": 202.5,
+ "lighthouse": {
+  "version": "12.8.2",
+  "performance": 1,
+  "accessibility": 0.96,
+  "best_practices": 1,
+  "seo": 0.92,
+  "lcp_ms": 1880.4802999999997,
+  "page_bytes": 175414
+ },
+ "cold_start": [
+  {
+   "full_stack_s": 3.26,
+   "app_only_s": 1.03
+  },
+  {
+   "full_stack_s": 3.0,
+   "app_only_s": 0.83
+  },
+  {
+   "full_stack_s": 3.05,
+   "app_only_s": 1.08
+  }
+ ],
+ "cold_start_median": {
+  "full_stack_s": 3.05,
+  "app_only_s": 1.03
+ },
+ "sizes": {
+  "images_mb": {
+   "postgres:17-alpine": 115.0,
+   "bench-pursae-wpgo:local": 56.0
+  },
+  "images_total_mb": 171.0,
+  "install_mb": 139.0,
+  "uploads_mb": 2.0,
+  "db_mb": 30.1,
+  "db_tables": 92
+ },
+ "versions": {
+  "pursae": "Pursae 0.1.9",
+  "commit": "cb856438",
+  "postgres": "17.11"
+ }
+}

@@ -2,7 +2,7 @@ COMPOSE = docker compose -f docker/compose.yaml
 # Production: the development file plus compose.prod.yaml, settings from docker/.env (see docker/.env.example).
 PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f docker/compose.yaml -f docker/compose.prod.yaml
 
-.PHONY: dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-bump release
+.PHONY: bench dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-bump release
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -10,6 +10,12 @@ dev: db
 
 db:
 	$(COMPOSE) up -d db
+
+## bench: Pursae vs WordPress benchmark (bench/run.py, about an hour; docs/developer/benchmarks.md).
+## Builds both stacks in Docker on ports 18081/18082, results in bench/results/<date>/. BENCH_ARGS passes
+## options, e.g. BENCH_ARGS="--setups wp-stock,pursae-cache --runs 1 --duration 5s" for a smoke test.
+bench:
+	python3 bench/run.py $(BENCH_ARGS)
 
 build:
 	CGO_ENABLED=0 go build -buildmode=exe -tags nodynamic -o bin/wpgo ./cmd/wpgo

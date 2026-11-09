@@ -1,0 +1,872 @@
+{
+ "label": "Pursae + 6 built-ins (Commerce, SEO, Multi Language, Custom Fields, Web Builder, Contact Form)",
+ "pages": {
+  "home": {
+   "url": "/",
+   "status": 200,
+   "bytes": 66919,
+   "title": "Bench",
+   "cache": null
+  },
+  "single": {
+   "url": "/hello-world/",
+   "status": 200,
+   "bytes": 45448,
+   "title": "Hello world! - Bench",
+   "cache": null
+  },
+  "archive": {
+   "url": "/category/botany/",
+   "status": 200,
+   "bytes": 70962,
+   "title": "Botany Archives - Bench",
+   "cache": null
+  },
+  "search": {
+   "url": "/?s=garden",
+   "status": 200,
+   "bytes": 77227,
+   "title": "You searched for garden - Bench",
+   "cache": null
+  },
+  "rest-posts": {
+   "url": "/wp-json/wp/v2/posts",
+   "status": 200,
+   "bytes": 45732,
+   "title": null,
+   "cache": null
+  },
+  "product": {
+   "url": "/product/product-1/",
+   "status": 200,
+   "bytes": 41055,
+   "title": "Weekend Plant Design - Bench",
+   "cache": null
+  },
+  "admin-dashboard": {
+   "url": "/wp-admin/",
+   "status": 200,
+   "bytes": 52314,
+   "title": "Dashboard \u2039 Bench \u2014 Pursae",
+   "cache": null
+  },
+  "admin-posts": {
+   "url": "/wp-admin/edit",
+   "status": 200,
+   "bytes": 134649,
+   "title": "Posts \u2039 Bench \u2014 Pursae",
+   "cache": null
+  }
+ },
+ "queries": {
+  "home": {
+   "cold_queries": 16,
+   "warm_queries": 16,
+   "cold_ttfb_ms": 17.05,
+   "warm_ttfb_ms": 16.64,
+   "samples": [
+    {
+     "url": "/",
+     "cold": {
+      "queries": 16,
+      "ttfb_ms": 17.05,
+      "status": 200
+     },
+     "warm": {
+      "queries": 16,
+      "ttfb_ms": 11.45,
+      "status": 200
+     }
+    },
+    {
+     "url": "/",
+     "warm": {
+      "queries": 16,
+      "ttfb_ms": 16.64,
+      "status": 200
+     }
+    },
+    {
+     "url": "/",
+     "warm": {
+      "queries": 16,
+      "ttfb_ms": 17.35,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "single": {
+   "cold_queries": 37,
+   "warm_queries": 37,
+   "cold_ttfb_ms": 13.98,
+   "warm_ttfb_ms": 13.34,
+   "samples": [
+    {
+     "url": "/post-1/",
+     "cold": {
+      "queries": 37,
+      "ttfb_ms": 13.98,
+      "status": 200
+     },
+     "warm": {
+      "queries": 37,
+      "ttfb_ms": 15.99,
+      "status": 200
+     }
+    },
+    {
+     "url": "/post-107/",
+     "cold": {
+      "queries": 37,
+      "ttfb_ms": 13.5,
+      "status": 200
+     },
+     "warm": {
+      "queries": 37,
+      "ttfb_ms": 13.34,
+      "status": 200
+     }
+    },
+    {
+     "url": "/post-116/",
+     "cold": {
+      "queries": 37,
+      "ttfb_ms": 15.51,
+      "status": 200
+     },
+     "warm": {
+      "queries": 37,
+      "ttfb_ms": 12.03,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "archive": {
+   "cold_queries": 24,
+   "warm_queries": 24,
+   "cold_ttfb_ms": 17.13,
+   "warm_ttfb_ms": 13.65,
+   "samples": [
+    {
+     "url": "/category/botany/",
+     "cold": {
+      "queries": 24,
+      "ttfb_ms": 17.18,
+      "status": 200
+     },
+     "warm": {
+      "queries": 24,
+      "ttfb_ms": 12.17,
+      "status": 200
+     }
+    },
+    {
+     "url": "/category/craft/",
+     "cold": {
+      "queries": 24,
+      "ttfb_ms": 17.13,
+      "status": 200
+     },
+     "warm": {
+      "queries": 24,
+      "ttfb_ms": 13.65,
+      "status": 200
+     }
+    },
+    {
+     "url": "/category/design/",
+     "cold": {
+      "queries": 24,
+      "ttfb_ms": 11.27,
+      "status": 200
+     },
+     "warm": {
+      "queries": 24,
+      "ttfb_ms": 16.65,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "search": {
+   "cold_queries": 17,
+   "warm_queries": 17,
+   "cold_ttfb_ms": 38.54,
+   "warm_ttfb_ms": 34.69,
+   "samples": [
+    {
+     "url": "/?s=meadow",
+     "cold": {
+      "queries": 17,
+      "ttfb_ms": 38.54,
+      "status": 200
+     },
+     "warm": {
+      "queries": 17,
+      "ttfb_ms": 43.14,
+      "status": 200
+     }
+    },
+    {
+     "url": "/?s=river",
+     "cold": {
+      "queries": 17,
+      "ttfb_ms": 48.21,
+      "status": 200
+     },
+     "warm": {
+      "queries": 17,
+      "ttfb_ms": 34.69,
+      "status": 200
+     }
+    },
+    {
+     "url": "/?s=stone",
+     "cold": {
+      "queries": 17,
+      "ttfb_ms": 27.56,
+      "status": 200
+     },
+     "warm": {
+      "queries": 17,
+      "ttfb_ms": 19.84,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "rest-posts": {
+   "cold_queries": 37,
+   "warm_queries": 37,
+   "cold_ttfb_ms": 9.16,
+   "warm_ttfb_ms": 10.67,
+   "samples": [
+    {
+     "url": "/wp-json/wp/v2/posts?page=2",
+     "cold": {
+      "queries": 37,
+      "ttfb_ms": 11.85,
+      "status": 200
+     },
+     "warm": {
+      "queries": 37,
+      "ttfb_ms": 13.35,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-json/wp/v2/posts?page=3",
+     "cold": {
+      "queries": 37,
+      "ttfb_ms": 8.54,
+      "status": 200
+     },
+     "warm": {
+      "queries": 37,
+      "ttfb_ms": 10.67,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-json/wp/v2/posts?page=4",
+     "cold": {
+      "queries": 37,
+      "ttfb_ms": 9.16,
+      "status": 200
+     },
+     "warm": {
+      "queries": 37,
+      "ttfb_ms": 10.43,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "product": {
+   "cold_queries": 55,
+   "warm_queries": 55,
+   "cold_ttfb_ms": 20.04,
+   "warm_ttfb_ms": 15.28,
+   "samples": [
+    {
+     "url": "/product/product-10/",
+     "cold": {
+      "queries": 55,
+      "ttfb_ms": 20.13,
+      "status": 200
+     },
+     "warm": {
+      "queries": 55,
+      "ttfb_ms": 15.28,
+      "status": 200
+     }
+    },
+    {
+     "url": "/product/product-103/",
+     "cold": {
+      "queries": 55,
+      "ttfb_ms": 20.04,
+      "status": 200
+     },
+     "warm": {
+      "queries": 55,
+      "ttfb_ms": 14.27,
+      "status": 200
+     }
+    },
+    {
+     "url": "/product/product-107/",
+     "cold": {
+      "queries": 55,
+      "ttfb_ms": 13.8,
+      "status": 200
+     },
+     "warm": {
+      "queries": 55,
+      "ttfb_ms": 15.8,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "admin-dashboard": {
+   "cold_queries": 25,
+   "warm_queries": 24,
+   "cold_ttfb_ms": 15.12,
+   "warm_ttfb_ms": 9.56,
+   "samples": [
+    {
+     "url": "/wp-admin/",
+     "cold": {
+      "queries": 25,
+      "ttfb_ms": 15.12,
+      "status": 200
+     },
+     "warm": {
+      "queries": 24,
+      "ttfb_ms": 11.4,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/",
+     "warm": {
+      "queries": 24,
+      "ttfb_ms": 9.56,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/",
+     "warm": {
+      "queries": 24,
+      "ttfb_ms": 9.51,
+      "status": 200
+     }
+    }
+   ]
+  },
+  "admin-posts": {
+   "cold_queries": 25,
+   "warm_queries": 25,
+   "cold_ttfb_ms": 16.39,
+   "warm_ttfb_ms": 13.49,
+   "samples": [
+    {
+     "url": "/wp-admin/edit",
+     "cold": {
+      "queries": 25,
+      "ttfb_ms": 16.39,
+      "status": 200
+     },
+     "warm": {
+      "queries": 25,
+      "ttfb_ms": 14.57,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/edit",
+     "warm": {
+      "queries": 25,
+      "ttfb_ms": 13.49,
+      "status": 200
+     }
+    },
+    {
+     "url": "/wp-admin/edit",
+     "warm": {
+      "queries": 25,
+      "ttfb_ms": 12.25,
+      "status": 200
+     }
+    }
+   ]
+  }
+ },
+ "mem_idle_mb": 79.2,
+ "load": {
+  "home": {
+   "median": {
+    "rps": 273.2,
+    "requests": 5473,
+    "ttfb_p50": 34.32,
+    "ttfb_p95": 54.18,
+    "ttfb_p99": 89.08,
+    "p50": 34.45,
+    "p95": 54.35,
+    "p99": 89.19,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 276.0,
+     "requests": 5528,
+     "ttfb_p50": 33.62,
+     "ttfb_p95": 53.9,
+     "ttfb_p99": 89.08,
+     "p50": 33.74,
+     "p95": 54.06,
+     "p99": 89.19,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 273.2,
+     "requests": 5473,
+     "ttfb_p50": 34.32,
+     "ttfb_p95": 54.18,
+     "ttfb_p99": 80.96,
+     "p50": 34.45,
+     "p95": 54.35,
+     "p99": 81.93,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 257.8,
+     "requests": 5168,
+     "ttfb_p50": 34.83,
+     "ttfb_p95": 64.02,
+     "ttfb_p99": 101.45,
+     "p50": 34.95,
+     "p95": 64.42,
+     "p99": 101.62,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "single": {
+   "median": {
+    "rps": 232.0,
+    "requests": 4654,
+    "ttfb_p50": 27.75,
+    "ttfb_p95": 79.03,
+    "ttfb_p99": 104.44,
+    "p50": 27.81,
+    "p95": 79.14,
+    "p99": 104.52,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 232.0,
+     "requests": 4654,
+     "ttfb_p50": 27.75,
+     "ttfb_p95": 79.03,
+     "ttfb_p99": 104.44,
+     "p50": 27.81,
+     "p95": 79.14,
+     "p99": 104.52,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 226.2,
+     "requests": 4537,
+     "ttfb_p50": 28.78,
+     "ttfb_p95": 83.25,
+     "ttfb_p99": 112.8,
+     "p50": 28.87,
+     "p95": 83.34,
+     "p99": 112.92,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 256.9,
+     "requests": 5145,
+     "ttfb_p50": 25.96,
+     "ttfb_p95": 72.77,
+     "ttfb_p99": 88.33,
+     "p50": 26.02,
+     "p95": 72.9,
+     "p99": 88.39,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "archive": {
+   "median": {
+    "rps": 311.7,
+    "requests": 6243,
+    "ttfb_p50": 31.0,
+    "ttfb_p95": 43.94,
+    "ttfb_p99": 57.02,
+    "p50": 31.14,
+    "p95": 44.12,
+    "p99": 57.11,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 311.7,
+     "requests": 6243,
+     "ttfb_p50": 31.13,
+     "ttfb_p95": 43.94,
+     "ttfb_p99": 51.5,
+     "p50": 31.3,
+     "p95": 44.12,
+     "p99": 51.6,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 305.1,
+     "requests": 6122,
+     "ttfb_p50": 31.0,
+     "ttfb_p95": 44.27,
+     "ttfb_p99": 57.02,
+     "p50": 31.14,
+     "p95": 44.46,
+     "p99": 57.11,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 311.9,
+     "requests": 6255,
+     "ttfb_p50": 30.81,
+     "ttfb_p95": 43.89,
+     "ttfb_p99": 57.51,
+     "p50": 30.95,
+     "p95": 44.09,
+     "p99": 57.69,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "product": {
+   "median": {
+    "rps": 194.2,
+    "requests": 3887,
+    "ttfb_p50": 60.74,
+    "ttfb_p95": 85.66,
+    "ttfb_p99": 94.53,
+    "p50": 60.77,
+    "p95": 85.74,
+    "p99": 94.6,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 194.2,
+     "requests": 3887,
+     "ttfb_p50": 60.74,
+     "ttfb_p95": 85.66,
+     "ttfb_p99": 94.53,
+     "p50": 60.77,
+     "p95": 85.74,
+     "p99": 94.6,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 179.6,
+     "requests": 3600,
+     "ttfb_p50": 67.03,
+     "ttfb_p95": 90.27,
+     "ttfb_p99": 108.51,
+     "p50": 67.1,
+     "p95": 90.35,
+     "p99": 108.6,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 199.6,
+     "requests": 3996,
+     "ttfb_p50": 57.92,
+     "ttfb_p95": 82.25,
+     "ttfb_p99": 88.51,
+     "p50": 57.99,
+     "p95": 82.32,
+     "p99": 88.58,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "search": {
+   "median": {
+    "rps": 116.2,
+    "requests": 2329,
+    "ttfb_p50": 92.41,
+    "ttfb_p95": 157.08,
+    "ttfb_p99": 192.69,
+    "p50": 92.62,
+    "p95": 157.69,
+    "p99": 192.96,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 108.6,
+     "requests": 2178,
+     "ttfb_p50": 94.84,
+     "ttfb_p95": 164.87,
+     "ttfb_p99": 209.86,
+     "p50": 95.05,
+     "p95": 165.57,
+     "p99": 210.23,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 116.2,
+     "requests": 2329,
+     "ttfb_p50": 92.41,
+     "ttfb_p95": 157.08,
+     "ttfb_p99": 192.69,
+     "p50": 92.62,
+     "p95": 157.69,
+     "p99": 192.96,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 126.1,
+     "requests": 2533,
+     "ttfb_p50": 89.56,
+     "ttfb_p95": 105.07,
+     "ttfb_p99": 115.7,
+     "p50": 89.74,
+     "p95": 105.33,
+     "p99": 115.96,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "rest-posts": {
+   "median": {
+    "rps": 348.7,
+    "requests": 6978,
+    "ttfb_p50": 14.93,
+    "ttfb_p95": 70.99,
+    "ttfb_p99": 76.79,
+    "p50": 14.99,
+    "p95": 71.05,
+    "p99": 76.84,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 360.5,
+     "requests": 7213,
+     "ttfb_p50": 14.38,
+     "ttfb_p95": 70.84,
+     "ttfb_p99": 75.33,
+     "p50": 14.42,
+     "p95": 70.89,
+     "p99": 75.38,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 348.7,
+     "requests": 6978,
+     "ttfb_p50": 14.93,
+     "ttfb_p95": 71.05,
+     "ttfb_p99": 76.79,
+     "p50": 14.99,
+     "p95": 71.11,
+     "p99": 76.84,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 343.6,
+     "requests": 6875,
+     "ttfb_p50": 15.18,
+     "ttfb_p95": 70.99,
+     "ttfb_p99": 78.35,
+     "p50": 15.23,
+     "p95": 71.05,
+     "p99": 78.46,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "admin-dashboard": {
+   "median": {
+    "rps": 510.3,
+    "requests": 10212,
+    "ttfb_p50": 11.11,
+    "ttfb_p95": 56.68,
+    "ttfb_p99": 66.74,
+    "p50": 11.17,
+    "p95": 56.75,
+    "p99": 66.82,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 537.2,
+     "requests": 10752,
+     "ttfb_p50": 10.84,
+     "ttfb_p95": 55.54,
+     "ttfb_p99": 63.39,
+     "p50": 10.89,
+     "p95": 55.61,
+     "p99": 63.44,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 510.3,
+     "requests": 10212,
+     "ttfb_p50": 11.11,
+     "ttfb_p95": 56.68,
+     "ttfb_p99": 67.52,
+     "p50": 11.17,
+     "p95": 56.75,
+     "p99": 67.59,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 499.6,
+     "requests": 9999,
+     "ttfb_p50": 11.36,
+     "ttfb_p95": 58.29,
+     "ttfb_p99": 66.74,
+     "p50": 11.43,
+     "p95": 58.37,
+     "p99": 66.82,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  },
+  "admin-posts": {
+   "median": {
+    "rps": 202.9,
+    "requests": 4075,
+    "ttfb_p50": 34.24,
+    "ttfb_p95": 83.69,
+    "ttfb_p99": 91.64,
+    "p50": 34.47,
+    "p95": 84.12,
+    "p99": 92.12,
+    "failed": 0,
+    "non200": 0
+   },
+   "runs": [
+    {
+     "rps": 207.3,
+     "requests": 4151,
+     "ttfb_p50": 31.98,
+     "ttfb_p95": 83.69,
+     "ttfb_p99": 91.64,
+     "p50": 32.4,
+     "p95": 84.12,
+     "p99": 92.12,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 202.9,
+     "requests": 4075,
+     "ttfb_p50": 34.24,
+     "ttfb_p95": 83.41,
+     "ttfb_p99": 89.89,
+     "p50": 34.47,
+     "p95": 83.77,
+     "p99": 90.38,
+     "failed": 0,
+     "non200": 0
+    },
+    {
+     "rps": 193.8,
+     "requests": 3880,
+     "ttfb_p50": 58.51,
+     "ttfb_p95": 86.51,
+     "ttfb_p99": 96.63,
+     "p50": 59.07,
+     "p95": 86.89,
+     "p99": 97.0,
+     "failed": 0,
+     "non200": 0
+    }
+   ]
+  }
+ },
+ "mem_peak_mb": 184.3,
+ "lighthouse": {
+  "version": "12.8.2",
+  "performance": 1,
+  "accessibility": 0.96,
+  "best_practices": 1,
+  "seo": 0.92,
+  "lcp_ms": 1881.2302999999997,
+  "page_bytes": 179650
+ },
+ "cold_start": [
+  {
+   "full_stack_s": 3.08,
+   "app_only_s": 0.95
+  },
+  {
+   "full_stack_s": 3.05,
+   "app_only_s": 0.83
+  },
+  {
+   "full_stack_s": 3.05,
+   "app_only_s": 0.84
+  }
+ ],
+ "cold_start_median": {
+  "full_stack_s": 3.05,
+  "app_only_s": 0.84
+ },
+ "sizes": {
+  "images_mb": {
+   "postgres:17-alpine": 115.0,
+   "bench-pursae-wpgo:local": 56.0
+  },
+  "images_total_mb": 171.0,
+  "install_mb": 139.0,
+  "uploads_mb": 2.0,
+  "db_mb": 30.1,
+  "db_tables": 92
+ },
+ "versions": {
+  "pursae": "Pursae 0.1.9",
+  "commit": "cb856438",
+  "postgres": "17.11"
+ }
+}
