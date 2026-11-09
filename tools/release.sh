@@ -63,9 +63,13 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
 	fi
 fi
 src_version="$(sed -n 's/^var Version = "\(.*\)"$/\1/p' internal/server/server.go)"
-if [[ "$src_version" != "$VERSION" ]]; then
-	echo "release: note: internal/server/server.go says $src_version; the binaries report $VERSION (set by -ldflags)."
+# The version in the source is what a build from the repository (docker compose, make build) reports;
+# publishing sets it to this release in a "Pursae x.y.z" commit, which the tag then points to.
+bump=0
+if [[ "$src_version" != "$VERSION" ]] && ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+	bump=1
 fi
+branch="$(git symbolic-ref --quiet --short HEAD || true)"
 
 OUT="dist/release/$TAG"
 rm -rf "$OUT"
@@ -120,7 +124,12 @@ done
 
 echo
 echo "About to publish Pursae $VERSION:"
-echo "  tag $TAG on $(git rev-parse --short=12 HEAD), pushed to: ${push_to[*]}"
+if [[ $bump == 1 ]]; then
+	echo "  commit \"Pursae $VERSION\" on ${branch:-HEAD} setting internal/server/server.go from $src_version to $VERSION"
+	echo "  tag $TAG on that commit; tag${branch:+ and $branch} pushed to: ${push_to[*]}"
+else
+	echo "  tag $TAG on $(git rev-parse --short=12 HEAD), pushed to: ${push_to[*]}"
+fi
 echo "  GitHub release $REPO $TAG$([[ $BETA == 1 ]] && echo ' (pre-release)') with $(ls "$OUT" | wc -l | tr -d ' ') files"
 if [[ "${YES:-}" != 1 ]]; then
 	ok=""
@@ -128,9 +137,17 @@ if [[ "${YES:-}" != 1 ]]; then
 	[[ "$ok" == y || "$ok" == Y ]] || { echo "Cancelled; the binaries stay in $OUT."; exit 1; }
 fi
 
+if [[ $bump == 1 ]]; then
+	sed -i.bak "s/^var Version = \".*\"$/var Version = \"$VERSION\"/" internal/server/server.go && rm -f internal/server/server.go.bak
+	git commit -q -m "Pursae $VERSION" -- internal/server/server.go
+fi
 git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || git tag -a "$TAG" -m "Pursae $VERSION"
 for r in "${push_to[@]}"; do
-	git push "$r" "refs/tags/$TAG"
+	if [[ $bump == 1 && -n "$branch" ]]; then
+		git push "$r" "refs/heads/$branch" "refs/tags/$TAG"
+	else
+		git push "$r" "refs/tags/$TAG"
+	fi
 done
 
 args=(release create "$TAG" -R "$REPO" --verify-tag --title "Pursae $VERSION")

@@ -27,15 +27,17 @@ make release VERSION=0.2.0 DRY_RUN=1   # only build and check, into dist/release
    `CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags nodynamic -ldflags "-s -w -X wpgo/internal/server.Version=0.2.0"`,
    checks that the Linux binaries are static and that the binary for your machine reports the version;
 3. writes `SHA256SUMS`;
-4. asks before publishing, then tags `v0.2.0`, pushes the tag to the `public` remote (github.com/pursae/pursae)
+4. asks before publishing, then sets `Version` in `internal/server/server.go` to `0.2.0` in a
+   "Pursae 0.2.0" commit (so a build straight from the repository, e.g. `docker compose`, reports
+   the release too), tags that commit `v0.2.0`, pushes both to the `public` remote (github.com/pursae/pursae)
    and creates the GitHub release in `pursae/pursae` with the binaries (`pursae-<os>-<arch>`,
    `.exe` on Windows) and `SHA256SUMS`.
 
 It needs Go, git and the GitHub CLI (`gh auth login`). Settings: `RELEASE_REPO` (default
 `pursae/pursae`; it must be public, sites download without credentials), `RELEASE_REMOTES`,
 `TARGETS`, `NOTES_FILE` (release notes; default GitHub's generated notes) and `YES=1` (no
-question). The version in `internal/server/server.go` only matters for `go run` builds; the
-release binaries get theirs from `-ldflags`.
+question). The release binaries get their version from `-ldflags`; the source keeps the latest release's version
+for builds made from the repository.
 
 ## 2. Import it in Pursae Manager
 
