@@ -243,7 +243,7 @@
 <tr><th scope="row">File editors</th><td><label><input type="checkbox" name="disable_file_edit" value="1"{{if .S.DisableFileEdit}} checked{{end}}> Disable the Theme File Editor and Plugin File Editor (DISALLOW_FILE_EDIT)</label></td></tr>
 <tr><th scope="row">Version</th><td><label><input type="checkbox" name="hide_version" value="1"{{if .S.HideVersion}} checked{{end}}> Hide the Pursae version from front-end markup and feeds (generator tag, <code>?ver=</code>)</label></td></tr>
 <tr><th scope="row">REST API</th><td><label><input type="checkbox" name="rest_restrict" value="1"{{if .S.RESTVisitors}} checked{{end}}> Only logged-in users and Application Passwords may use the REST API</label>
-	<p class="description">Visitors keep oEmbed and the contact form routes, plus the route prefixes below (one per line, like <code>wp/v2/posts</code>). The block editor, headless front ends and apps that read the API without logging in stop working.</p>
+	<p class="description">Visitors keep oEmbed, the contact form, Pursae Cookie consent logging and Pursae Pixel server events, plus the route prefixes below (one per line, like <code>wp/v2/posts</code>). The block editor, headless front ends and apps that read the API without logging in stop working.</p>
 	<textarea name="rest_allow" rows="3" class="large-text code" aria-label="Extra REST routes for visitors">{{.S.RESTAllow}}</textarea></td></tr>
 </table>
 {{else if eq .Tab "alerts"}}

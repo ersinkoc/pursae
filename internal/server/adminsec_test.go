@@ -827,6 +827,21 @@ func TestAdminSecLockouts(t *testing.T) {
 	if code, _, _ := get(t, asNewClient(), base+"/"); code != http.StatusForbidden {
 		t.Errorf("blocked IP on the site: %d", code)
 	}
+	// Behind a reverse proxy (the test client is on loopback, a default trusted proxy) the visitor's
+	// forwarded address is what the site block list matches, as in the rest of the site.
+	asConfigure(t, srv, func(st *asSettings) { st.BlockList = "203.0.113.9" })
+	for xff, want := range map[string]int{"203.0.113.9": http.StatusForbidden, "198.51.100.7": http.StatusOK} {
+		req, _ := http.NewRequest("GET", base+"/", nil)
+		req.Header.Set("X-Forwarded-For", xff)
+		resp, err := asNewClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != want {
+			t.Errorf("site block list, visitor %s behind the proxy: %d, want %d", xff, resp.StatusCode, want)
+		}
+	}
 	asConfigure(t, srv, func(st *asSettings) { st.BlockList, st.BlockListSite = "", false })
 }
 
@@ -843,6 +858,22 @@ func TestAdminSecEnumerationAndREST(t *testing.T) {
 	if code, _, _, _ := rc.do("GET", "/wp/v2/users", nil); code != http.StatusUnauthorized {
 		t.Errorf("REST users for visitors: %d", code)
 	}
+	// The dispatcher routes by the effective method, so _method=GET / X-HTTP-Method-Override must not skip the block.
+	for _, id := range []string{"", "/1"} {
+		if code, _, _, _ := rc.do("POST", "/wp/v2/users"+id+"?_method=GET", nil); code != http.StatusUnauthorized {
+			t.Errorf("REST users%s via POST ?_method=GET for visitors: %d", id, code)
+		}
+		req, _ := http.NewRequest("POST", base+"/wp-json/wp/v2/users"+id, nil)
+		req.Header.Set("X-HTTP-Method-Override", "GET")
+		resp, err := anon.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Errorf("REST users%s via X-HTTP-Method-Override for visitors: %d", id, resp.StatusCode)
+		}
+	}
 	if code, _, _, _ := rc.do("GET", "/wp/v2/posts", nil); code != http.StatusOK {
 		t.Errorf("REST posts for visitors: %d", code)
 	}
@@ -855,6 +886,15 @@ func TestAdminSecEnumerationAndREST(t *testing.T) {
 	}
 	if code, _, _, _ := rc.do("GET", "/oembed/1.0/embed?url="+url.QueryEscape(base+"/?p=1"), nil); code == http.StatusUnauthorized {
 		t.Error("oEmbed blocked")
+	}
+	// Native front-end visitor endpoints (Pursae Cookie consent/geo, Pursae Pixel events) stay open.
+	for _, p := range []string{"/gooike/v1/consent", "/gooike/v1/geo", "/pixelgo/v1/event"} {
+		if code, m, _, _ := rc.do("POST", p, map[string]any{}); code == http.StatusUnauthorized && m["code"] == "rest_login_required" {
+			t.Errorf("%s blocked for visitors", p)
+		}
+	}
+	if code, m, _, _ := rc.do("GET", "/gooike/v1/settings", nil); code != http.StatusUnauthorized || m["code"] != "rest_login_required" {
+		t.Errorf("non-visitor gooike route open: %d %v", code, m["code"])
 	}
 	asConfigure(t, srv, func(st *asSettings) { st.RESTAllow = "wp/v2/posts" })
 	if code, _, _, _ := rc.do("GET", "/wp/v2/posts", nil); code != http.StatusOK {

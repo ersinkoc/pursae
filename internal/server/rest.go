@@ -311,7 +311,7 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		c.Header("X-WP-Nonce", s.nonce(c, "wp_rest"))
 	}
 
-	if s.adminsecRESTBlocked(c, route, u) { // AdminSecGo: user enumeration, REST only for logged-in users
+	if s.adminsecRESTBlocked(c, route, method, u) { // AdminSecGo: user enumeration, REST only for logged-in users
 		return
 	}
 	if route == "" || route == "/" {

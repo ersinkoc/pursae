@@ -272,7 +272,7 @@ func (s *Server) adminsecFront(w http.ResponseWriter, r *http.Request) (http.Res
 	}
 	st := s.asLoad()
 	w = &asWriter{ResponseWriter: w, s: s, st: st, r: r}
-	ip := maintRemoteIP(r)
+	ip := s.requestIP(r)
 	if st.BlockListSite && st.BlockList != "" && maintIPAllowed(st.BlockList, ip) && !maintIPAllowed(st.AllowList, ip) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusForbidden)
@@ -566,16 +566,21 @@ func (s *Server) asStripVersion(c *gin.Context, b []byte) []byte {
 
 // --- REST and enumeration --------------------------------------------------------------------
 
-var asRESTVisitorRoutes = []string{"/oembed/", "/" + gontactNamespace + "/", "/web-builder/v2/forms/"}
+// asRESTVisitorRoutes are the REST routes the front end calls for anonymous visitors: oEmbed, the contact form,
+// Web Builder forms, Pursae Cookie's consent log and geo check, and Pursae Pixel's server events. Exact route
+// prefixes, not whole namespaces, so admin routes those namespaces gain later stay blocked.
+var asRESTVisitorRoutes = []string{"/oembed/", "/" + gontactNamespace + "/", "/web-builder/v2/forms/",
+	"/" + gooikeNamespace + "/consent", "/" + gooikeNamespace + "/geo", "/" + pixelNamespace + "/event"}
 
 // adminsecRESTBlocked answers REST requests visitors may not make: user listing (enumeration) and,
-// when opted in, everything but the routes the front end needs.
-func (s *Server) adminsecRESTBlocked(c *gin.Context, route string, u *store.User) bool {
+// when opted in, everything but the routes the front end needs. method is the effective method after
+// X-HTTP-Method-Override / ?_method= (the one the dispatcher routes by), not the raw request method.
+func (s *Server) adminsecRESTBlocked(c *gin.Context, route, method string, u *store.User) bool {
 	if u != nil {
 		return false
 	}
 	r := "/" + strings.Trim(route, "/")
-	reading := c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead
+	reading := method == http.MethodGet || method == http.MethodHead
 	if reading && s.blockEnumeration() && (r == "/wp/v2/users" || strings.HasPrefix(r, "/wp/v2/users/")) {
 		restErr(c, http.StatusUnauthorized, "rest_user_cannot_view", "Sorry, you are not allowed to list users.")
 		return true
