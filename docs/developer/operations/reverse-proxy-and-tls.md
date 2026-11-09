@@ -11,7 +11,8 @@ Pursae serves plain HTTP. Terminate TLS in a proxy and set `WPGO_SITE_URL` to th
 The server trusts `X-Forwarded-Proto: https` to decide that a request is secure: it then sets
 `Strict-Transport-Security` and secure cookies, and generates `https://` links.
 
-Send `X-Forwarded-For` so login throttling, the comment flood check and the logs see the visitor's address
+Send `X-Forwarded-For` so login throttling, the comment flood check, the Pursae Security IP block list, the
+maintenance IP whitelist and the logs see the visitor's address
 instead of the proxy's. The header is believed only when the request comes from a **trusted proxy**: by
 default loopback and the private ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`,
 `fc00::/7`), which is where a proxy next to the server normally sits. A client that reaches the server directly

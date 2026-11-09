@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,8 +17,8 @@ import (
 // with argon2id (64 MiB). Without care a client could make the server hash every stored password of a
 // user on every request, from any number of requests at once. Here:
 //
-//   - the core login throttle (auth.Throttled / RecordAttempt) applies to Basic auth, unless Pursae
-//     Security handles lockouts itself;
+//   - the core login throttle (auth.BeginAttempt) applies to Basic auth, or Pursae Security's limits when
+//     it is active; a password that matched recently (the cache below) is not counted;
 //   - auth bounds how many argon2 computations run at once (auth.argonSem);
 //   - the most recently used password is tried first, and a successful match is remembered for a few
 //     minutes, keyed by a SHA-256 of user and password: a working client then costs no argon2 at all
@@ -119,22 +120,36 @@ func (s *Server) matchAppPassword(c *gin.Context, userID int64, pass string) (ap
 	return appPassMatch{}, false
 }
 
-// restLoginThrottled is the core login throttle for Basic auth: too many recent failures from the
-// address refuse the request before any password is hashed. Pursae Security, when active, replaces it
-// with its own lockouts (adminsecRESTLocked).
-func (s *Server) restLoginThrottled(c *gin.Context) bool {
+// restBeginAttempt is the login throttle for Basic auth: the attempt is stored as a failure before any
+// password is hashed and the counts include it, so parallel requests cannot all slip past (auth.BeginAttempt,
+// or Pursae Security's own limits when it is active). refused means too many recent failures; otherwise pass
+// id to restLoginFailed, or drop it when the password is right.
+func (s *Server) restBeginAttempt(c *gin.Context, login string) (id int64, refused bool) {
 	if s.adminsecOn() {
-		return false
+		id, msg := s.adminsecBeginAttempt(c, login)
+		return id, msg != ""
 	}
-	throttled, _ := s.auth.Throttled(c, clientIP(c))
-	return throttled
+	id, throttled, _ := s.auth.BeginAttempt(c, clientIP(c), login)
+	return id, throttled
 }
 
 // restLoginFailed records a failed Basic-auth sign-in for the throttle (or Pursae Security's log).
-func (s *Server) restLoginFailed(c *gin.Context, login string, u *store.User, reason string) {
+func (s *Server) restLoginFailed(c *gin.Context, login string, u *store.User, reason string, attemptID int64) {
 	if s.adminsecOn() {
-		s.adminsecLoginFailed(c, login, u, reason)
+		s.adminsecLoginFailed(c, login, u, reason, attemptID)
 		return
 	}
-	s.auth.RecordAttempt(c, clientIP(c), login, false)
+	if attemptID == 0 {
+		s.auth.RecordAttempt(c, clientIP(c), login, false)
+	} else {
+		s.auth.AttemptFailed(c, attemptID)
+	}
+}
+
+// appPassKnown reports whether pass is an Application Password of the user that already matched recently
+// (the match cache). Such a request is not a guess: it skips the login throttle, so a client sending many
+// requests at once with a working password is never counted against the limits.
+func appPassKnown(userID int64, pass string) bool {
+	_, ok := appPassCached(appPassCacheKey(userID, strings.ReplaceAll(pass, " ", ""))) // as checkAppPassword
+	return ok
 }

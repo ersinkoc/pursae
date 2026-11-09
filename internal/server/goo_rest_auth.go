@@ -102,6 +102,14 @@ func gooKeyRoute(route string) bool {
 	return strings.HasPrefix(route, "wc/") || strings.HasPrefix(route, "wc-")
 }
 
+// gooQueryKeyRoute reports whether route authenticates consumer_key / consumer_secret query parameters:
+// only the management API (wc/v3, through gooV3User). The Store API (wc/store/…) and the other wc routes
+// ignore them, so a query key there is no credential.
+func gooQueryKeyRoute(route string) bool {
+	route = strings.TrimLeft(route, "/")
+	return route == gooV3NS || strings.HasPrefix(route, gooV3NS+"/")
+}
+
 // gooSecureRequest reports whether keys may be sent: HTTPS (directly or behind a proxy) or a local
 // development host.
 func gooSecureRequest(c *gin.Context) bool {

@@ -176,7 +176,7 @@ func (s *Server) asDashboard(c *gin.Context, d *asAdminData) {
 	st := d.S
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM users`).Scan(&d.Users)
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FILTER (WHERE totp_enabled AND email_enabled), count(*) FILTER (WHERE email_enabled) FROM adminsec_factors`).Scan(&d.With2FA, &d.WithMFA)
-	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM login_attempts WHERE NOT success AND attempted_at > now() - interval '24 hours'`).Scan(&d.Failed24)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM login_attempts WHERE NOT success AND NOT pending AND attempted_at > now() - interval '24 hours'`).Scan(&d.Failed24)
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM adminsec_lockouts WHERE until > now() AND NOT released`).Scan(&d.ActiveLockouts)
 	d.Recent, _, _ = s.asLogQuery(ctx, asLogFilter{}, 8, 0)
 

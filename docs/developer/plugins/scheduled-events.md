@@ -33,9 +33,9 @@ func init() {
 
 | Function | Effect |
 |----------|--------|
-| `ScheduleEvent(hook, interval, args)` | runs every `interval` (≥ 1 minute, ≤ 1 year), first run one interval from now |
+| `ScheduleEvent(hook, interval, args)` | runs every `interval` (≥ 1 minute, ≤ 1 year), first run one interval from now. Calling it again with the same interval and args keeps the existing schedule and its next run (safe in `OnInit`, which runs on every start); a different interval or args replaces it |
 | `ScheduleSingleEvent(hook, at, args)` | runs once at `at` (zero time = as soon as possible; at most a year ahead) |
-| `UnscheduleEvent(hook)` | removes the plugin's pending runs of the hook |
+| `UnscheduleEvent(hook)` | removes the plugin's runs of the hook; a run in progress finishes and is not rescheduled |
 
 `args` (≤64 KiB of JSON) is delivered in the action's single argument under `"args"`.
 

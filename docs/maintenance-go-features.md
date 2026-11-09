@@ -81,7 +81,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Login form on the page | ✓ Slide-in panel, posts to `wp_signon` | ✓ A padlock button opens a panel that posts to `/wp-login` with `redirect_to` set to the current URL. The tooltip is configurable. |
 | Custom login URL | PRO | ✗ Pursae has no login-URL hiding |
 | Password-protect the maintenance page itself | PRO | ✗ Rarely useful; the site password covers the need |
-| REST API | Free: never gated; PRO: toggle | ✓ Anonymous REST requests get a JSON 503 (Advanced, default on). Logged-in users keep REST, which the editor needs. |
+| REST API | Free: never gated; PRO: toggle | ✓ Anonymous REST requests get a JSON 503 (Advanced, default on). Logged-in users keep REST, which the editor needs, and requests with Basic or Bearer credentials (Application Passwords, OAuth/MCP tokens, Commerce API keys, Headless tokens; Commerce `consumer_key` query parameters only on `wc/v3`, the routes that check them) reach the REST layer, which checks them. |
 | Feeds and sitemaps | never gated | ✓ Gated by default (Advanced › Feeds & Sitemaps) so content doesn't leak while the site is closed |
 | `?maintenance-preview` | Anyone, even while off | ✓ Same. `&theme=` previews a theme without activating it. |
 

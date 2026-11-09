@@ -13,6 +13,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"wpgo/internal/store"
 )
 
 func TestBmgrCategoriesAndPaths(t *testing.T) {
@@ -274,4 +276,58 @@ func formNonceOrLink(t *testing.T, body string) string {
 		t.Fatal("no download link on the Backups screen")
 	}
 	return m[1]
+}
+
+// A partial restore must not wipe links from tables outside the restored set: ON DELETE SET NULL fires during
+// the restore's DELETE even on a deferred key, so restoring Users alone used to null every post author,
+// Media alone every featured image, and Content alone every attachment's parent post.
+func TestBmgrPartialRestoreKeepsLinks(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	pool := srv.store.Pool
+
+	p := &store.Post{Type: "post", Status: "publish", Title: "Linked", Slug: "linked", AuthorID: 1, Meta: map[string]any{}}
+	if err := srv.store.InsertPost(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	a := &store.Attachment{UploaderID: 1, PostID: p.ID, Slug: "pic", FilePath: "2026/11/pic.png", Mime: "image/png", Title: "Pic"}
+	if err := srv.store.InsertAttachment(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE posts SET featured_media_id = $1 WHERE id = $2`, a.ID, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	var archive string
+	bmgrRun(t, srv, "backup", func(j *bmgrJob) (err error) {
+		archive, err = srv.bmgrRunBackup(ctx, j, bmgrSelection{Categories: allCats(), UserMode: "all"})
+		return err
+	})
+	check := func(after string) {
+		t.Helper()
+		var author, featured, uploader, parent *int64
+		if err := pool.QueryRow(ctx, `SELECT p.author_id, p.featured_media_id, m.uploader_id, m.post_id FROM posts p, media m WHERE p.id = $1 AND m.id = $2`,
+			p.ID, a.ID).Scan(&author, &featured, &uploader, &parent); err != nil {
+			t.Fatalf("after %s: %v", after, err)
+		}
+		if author == nil || *author != 1 || featured == nil || *featured != a.ID || uploader == nil || *uploader != 1 || parent == nil || *parent != p.ID {
+			t.Errorf("after restoring %s: author %v, featured %v, uploader %v, parent %v", after, author, featured, uploader, parent)
+		}
+	}
+	for _, cat := range []string{"users", "media", "content"} {
+		bmgrRun(t, srv, "restore", func(j *bmgrJob) error {
+			return srv.bmgrRunRestore(ctx, j, bmgrRestoreReq{File: archive, Categories: []string{cat}, Me: 1})
+		})
+		check(cat)
+	}
+	// The lifted keys are back in their original form.
+	var def string
+	if err := pool.QueryRow(ctx, `SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'media_post_fk'`).Scan(&def); err != nil ||
+		!strings.Contains(def, "ON DELETE SET NULL") || strings.Contains(def, "DEFERRABLE") {
+		t.Errorf("media_post_fk after the restores: %q %v", def, err)
+	}
 }

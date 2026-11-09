@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/mail"
+	"net/textproto"
 	"net/url"
 	"strings"
 	"time"
@@ -19,9 +21,54 @@ import (
 type Email struct {
 	FromName, FromEmail string
 	To                  []string // addresses, "Name <a@b>" allowed
+	Cc, Bcc             []string // extra recipients; Bcc never shows in the headers
 	ReplyTo             string
 	Subject, Text, HTML string
-	Raw                 []byte // RFC 5322 message (Gmail, Microsoft Graph, Amazon SES)
+	Attachments         []Attachment
+	Raw                 []byte // RFC 5322 message (Gmail, Microsoft Graph, Amazon SES); it has no Bcc header
+}
+
+func b64(d []byte) string { return base64.StdEncoding.EncodeToString(d) }
+
+func ctype(a Attachment) string {
+	if a.ContentType == "" {
+		return "application/octet-stream"
+	}
+	return a.ContentType
+}
+
+// withBcc adds a Bcc header to a raw message for the APIs that take the recipients from the headers
+// and strip Bcc before delivery (Gmail, Microsoft Graph).
+func withBcc(raw []byte, bcc []addr) []byte {
+	if len(bcc) == 0 {
+		return raw
+	}
+	var l []string
+	for _, b := range bcc {
+		l = append(l, (&mail.Address{Name: b.Name, Address: b.Email}).String())
+	}
+	return append([]byte("Bcc: "+strings.Join(l, ", ")+"\r\n"), raw...)
+}
+
+// people lists addresses as JSON objects with the provider's key names; the name is left out when empty.
+func people(list []addr, nameKey, emailKey string) []map[string]string {
+	var out []map[string]string
+	for _, t := range list {
+		m := map[string]string{emailKey: t.Email}
+		if t.Name != "" {
+			m[nameKey] = t.Name
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
+func emails(list []addr) []string {
+	var out []string
+	for _, t := range list {
+		out = append(out, t.Email)
+	}
+	return out
 }
 
 // API sends through a mail provider's HTTP API. Mailer is WP Mail SMTP's mailer slug; Opts holds
@@ -90,6 +137,11 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 	if r := parseAddrs([]string{e.ReplyTo}); len(r) == 1 {
 		reply = &r[0]
 	}
+	cc, bcc := parseAddrs(e.Cc), parseAddrs(e.Bcc)
+	if len(cc) != len(e.Cc) || len(bcc) != len(e.Bcc) {
+		return "", fmt.Errorf("invalid Cc or Bcc recipient")
+	}
+	atts := e.Attachments
 	from := (&mail.Address{Name: e.FromName, Address: e.FromEmail}).String()
 	text, html := e.Text, e.HTML
 	var r apiReq
@@ -122,6 +174,16 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		if reply != nil {
 			body["ReplyTo"] = []map[string]string{{"name": reply.Name, "email": reply.Email}}
 		}
+		if len(cc) > 0 {
+			body["CC"] = people(cc, "name", "email")
+		}
+		if len(bcc) > 0 {
+			body["BCC"] = people(bcc, "name", "email")
+		}
+		for _, at := range atts {
+			l, _ := body["Attachments"].([]map[string]string)
+			body["Attachments"] = append(l, map[string]string{"Content": b64(at.Data), "Type": ctype(at), "Filename": at.Name, "Disposition": "attachment"})
+		}
 		r.body = jsonBody(body)
 	case "smtpcom":
 		if err := need("api_key", "channel"); err != nil {
@@ -141,8 +203,23 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		if reply != nil {
 			orig["reply_to"] = map[string]string{"name": reply.Name, "address": reply.Email}
 		}
-		r.body = jsonBody(map[string]any{"channel": a.opt("channel"), "recipients": map[string]any{"to": tos}, "originator": orig,
-			"subject": e.Subject, "body": map[string]any{"parts": parts}})
+		rcpts := map[string]any{"to": tos}
+		if len(cc) > 0 {
+			rcpts["cc"] = people(cc, "name", "address")
+		}
+		if len(bcc) > 0 {
+			rcpts["bcc"] = people(bcc, "name", "address")
+		}
+		mb := map[string]any{"parts": parts}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"content": b64(at.Data), "type": ctype(at), "encoding": "base64", "filename": at.Name, "disposition": "attachment"})
+		}
+		if al != nil {
+			mb["attachments"] = al
+		}
+		r.body = jsonBody(map[string]any{"channel": a.opt("channel"), "recipients": rcpts, "originator": orig,
+			"subject": e.Subject, "body": mb})
 	case "sendinblue":
 		if err := need("api_key"); err != nil {
 			return "", err
@@ -163,6 +240,19 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		}
 		if reply != nil {
 			body["replyTo"] = map[string]string{"email": reply.Email}
+		}
+		if len(cc) > 0 {
+			body["cc"] = people(cc, "name", "email")
+		}
+		if len(bcc) > 0 {
+			body["bcc"] = people(bcc, "name", "email")
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"content": b64(at.Data), "name": at.Name})
+		}
+		if al != nil {
+			body["attachment"] = al
 		}
 		r.body = jsonBody(body)
 	case "mailgun":
@@ -185,8 +275,37 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		if reply != nil {
 			f.Set("h:Reply-To", e.ReplyTo)
 		}
-		r.header["Content-Type"] = "application/x-www-form-urlencoded"
-		r.body = []byte(f.Encode())
+		for _, c := range e.Cc {
+			f.Add("cc", c)
+		}
+		for _, b := range e.Bcc {
+			f.Add("bcc", b)
+		}
+		if len(atts) == 0 {
+			r.header["Content-Type"] = "application/x-www-form-urlencoded"
+			r.body = []byte(f.Encode())
+			break
+		}
+		var mb bytes.Buffer
+		mw := multipart.NewWriter(&mb)
+		for k, vs := range f {
+			for _, v := range vs {
+				_ = mw.WriteField(k, v)
+			}
+		}
+		for _, at := range atts {
+			h := make(textproto.MIMEHeader)
+			h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="attachment"; filename=%q`, at.Name))
+			h.Set("Content-Type", ctype(at))
+			pw, err := mw.CreatePart(h)
+			if err != nil {
+				return "", err
+			}
+			_, _ = pw.Write(at.Data)
+		}
+		_ = mw.Close()
+		r.header["Content-Type"] = mw.FormDataContentType()
+		r.body = mb.Bytes()
 	case "sendgrid":
 		if err := need("api_key"); err != nil {
 			return "", err
@@ -205,10 +324,24 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		if html != "" {
 			content = append(content, map[string]string{"type": "text/html", "value": html})
 		}
-		body := map[string]any{"personalizations": []any{map[string]any{"to": tos}}, "from": map[string]string{"email": e.FromEmail, "name": e.FromName},
+		pers := map[string]any{"to": tos}
+		if len(cc) > 0 {
+			pers["cc"] = people(cc, "name", "email")
+		}
+		if len(bcc) > 0 {
+			pers["bcc"] = people(bcc, "name", "email")
+		}
+		body := map[string]any{"personalizations": []any{pers}, "from": map[string]string{"email": e.FromEmail, "name": e.FromName},
 			"subject": e.Subject, "content": content}
 		if reply != nil {
 			body["reply_to"] = map[string]string{"email": reply.Email}
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"content": b64(at.Data), "type": ctype(at), "filename": at.Name, "disposition": "attachment"})
+		}
+		if al != nil {
+			body["attachments"] = al
 		}
 		r.body = jsonBody(body)
 	case "postmark":
@@ -227,6 +360,19 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		if s := a.opt("message_stream"); s != "" {
 			body["MessageStream"] = s
 		}
+		if len(e.Cc) > 0 {
+			body["Cc"] = strings.Join(e.Cc, ",")
+		}
+		if len(e.Bcc) > 0 {
+			body["Bcc"] = strings.Join(e.Bcc, ",")
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"Name": at.Name, "Content": b64(at.Data), "ContentType": ctype(at)})
+		}
+		if al != nil {
+			body["Attachments"] = al
+		}
 		r.body = jsonBody(body)
 	case "sparkpost":
 		if err := need("api_key"); err != nil {
@@ -242,12 +388,26 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		for _, t := range to {
 			rcpts = append(rcpts, map[string]any{"address": map[string]string{"email": t.Email, "name": t.Name}})
 		}
+		headerTo := strings.Join(emails(to), ",")
+		for _, t := range append(append([]addr{}, cc...), bcc...) { // carbon copies: header_to names the primary recipients
+			rcpts = append(rcpts, map[string]any{"address": map[string]string{"email": t.Email, "name": t.Name, "header_to": headerTo}})
+		}
 		content := map[string]any{"from": map[string]string{"email": e.FromEmail, "name": e.FromName}, "subject": e.Subject, "text": text}
 		if html != "" {
 			content["html"] = html
 		}
 		if reply != nil {
 			content["reply_to"] = e.ReplyTo
+		}
+		if len(e.Cc) > 0 {
+			content["headers"] = map[string]string{"CC": strings.Join(e.Cc, ", ")}
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"name": at.Name, "type": ctype(at), "data": b64(at.Data)})
+		}
+		if al != nil {
+			content["attachments"] = al
 		}
 		r.body = jsonBody(map[string]any{"content": content, "recipients": rcpts})
 	case "amazonses":
@@ -260,7 +420,14 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		for _, t := range to {
 			tos = append(tos, t.Email)
 		}
-		r.body = jsonBody(map[string]any{"FromEmailAddress": from, "Destination": map[string]any{"ToAddresses": tos},
+		dest := map[string]any{"ToAddresses": tos}
+		if len(cc) > 0 {
+			dest["CcAddresses"] = emails(cc)
+		}
+		if len(bcc) > 0 {
+			dest["BccAddresses"] = emails(bcc)
+		}
+		r.body = jsonBody(map[string]any{"FromEmailAddress": from, "Destination": dest,
 			"Content": map[string]any{"Raw": map[string]string{"Data": base64.StdEncoding.EncodeToString(e.Raw)}}})
 		key, secret := a.opt("client_id"), a.opt("client_secret")
 		r.sign = func(req *http.Request, body []byte) { SignV4(req, body, key, secret, region, "ses", time.Now()) }
@@ -270,7 +437,7 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		}
 		r.url = a.url("https://gmail.googleapis.com/gmail/v1/users/me/messages/send")
 		r.header["Authorization"] = "Bearer " + a.opt("access_token")
-		r.body = jsonBody(map[string]string{"raw": base64.RawURLEncoding.EncodeToString(e.Raw)})
+		r.body = jsonBody(map[string]string{"raw": base64.RawURLEncoding.EncodeToString(withBcc(e.Raw, bcc))})
 	case "outlook":
 		if err := need("access_token"); err != nil {
 			return "", fmt.Errorf("Outlook is not connected: authorize the plugin with your Microsoft account first")
@@ -278,7 +445,7 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		r.url = a.url("https://graph.microsoft.com/v1.0/me/sendMail")
 		r.header["Authorization"] = "Bearer " + a.opt("access_token")
 		r.header["Content-Type"] = "text/plain"
-		r.body = []byte(base64.StdEncoding.EncodeToString(e.Raw))
+		r.body = []byte(base64.StdEncoding.EncodeToString(withBcc(e.Raw, bcc)))
 	case "zoho":
 		if err := need("access_token", "account_id"); err != nil {
 			return "", fmt.Errorf("Zoho Mail is not connected: authorize the plugin with your Zoho account first")
@@ -293,6 +460,15 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 			"content": firstNonEmpty(html, text), "mailFormat": map[bool]string{true: "html", false: "plaintext"}[html != ""]}
 		if reply != nil {
 			body["replyTo"] = reply.Email
+		}
+		if len(cc) > 0 {
+			body["ccAddress"] = strings.Join(emails(cc), ",")
+		}
+		if len(bcc) > 0 {
+			body["bccAddress"] = strings.Join(emails(bcc), ",")
+		}
+		if len(atts) > 0 { // Zoho needs each file uploaded first: refuse instead of sending without them
+			return "", fmt.Errorf("the Zoho Mail mailer cannot send attachments; use another mailer for this email")
 		}
 		r.body = jsonBody(body)
 	case "elasticemail":
@@ -309,7 +485,21 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		if reply != nil {
 			content["ReplyTo"] = e.ReplyTo
 		}
-		r.body = jsonBody(map[string]any{"Recipients": map[string]any{"To": e.To}, "Content": content})
+		rcpts := map[string]any{"To": e.To}
+		if len(e.Cc) > 0 {
+			rcpts["CC"] = e.Cc
+		}
+		if len(e.Bcc) > 0 {
+			rcpts["BCC"] = e.Bcc
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"BinaryContent": b64(at.Data), "Name": at.Name, "ContentType": ctype(at)})
+		}
+		if al != nil {
+			content["Attachments"] = al
+		}
+		r.body = jsonBody(map[string]any{"Recipients": rcpts, "Content": content})
 	case "mailjet":
 		if err := need("api_key", "secret_key"); err != nil {
 			return "", err
@@ -326,6 +516,19 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		}
 		if reply != nil {
 			m["ReplyTo"] = map[string]string{"Email": reply.Email, "Name": reply.Name}
+		}
+		if len(cc) > 0 {
+			m["Cc"] = people(cc, "Name", "Email")
+		}
+		if len(bcc) > 0 {
+			m["Bcc"] = people(bcc, "Name", "Email")
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"ContentType": ctype(at), "Filename": at.Name, "Base64Content": b64(at.Data)})
+		}
+		if al != nil {
+			m["Attachments"] = al
 		}
 		r.body = jsonBody(map[string]any{"Messages": []any{m}})
 	case "mailersend":
@@ -349,6 +552,19 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		if reply != nil {
 			body["reply_to"] = map[string]string{"email": reply.Email}
 		}
+		if len(cc) > 0 {
+			body["cc"] = people(cc, "name", "email")
+		}
+		if len(bcc) > 0 {
+			body["bcc"] = people(bcc, "name", "email")
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"content": b64(at.Data), "filename": at.Name, "disposition": "attachment"})
+		}
+		if al != nil {
+			body["attachments"] = al
+		}
 		r.body = jsonBody(body)
 	case "resend":
 		if err := need("api_key"); err != nil {
@@ -362,6 +578,19 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		}
 		if reply != nil {
 			body["reply_to"] = e.ReplyTo
+		}
+		if len(e.Cc) > 0 {
+			body["cc"] = e.Cc
+		}
+		if len(e.Bcc) > 0 {
+			body["bcc"] = e.Bcc
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"filename": at.Name, "content": b64(at.Data)})
+		}
+		if al != nil {
+			body["attachments"] = al
 		}
 		r.body = jsonBody(body)
 	case "smtp2go":
@@ -377,6 +606,19 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		if reply != nil {
 			body["custom_headers"] = []map[string]string{{"header": "Reply-To", "value": e.ReplyTo}}
 		}
+		if len(e.Cc) > 0 {
+			body["cc"] = e.Cc
+		}
+		if len(e.Bcc) > 0 {
+			body["bcc"] = e.Bcc
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"filename": at.Name, "fileblob": b64(at.Data), "mimetype": ctype(at)})
+		}
+		if al != nil {
+			body["attachments"] = al
+		}
 		r.body = jsonBody(body)
 	case "mandrill":
 		if err := need("api_key"); err != nil {
@@ -387,12 +629,28 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 		for _, t := range to {
 			tos = append(tos, map[string]string{"email": t.Email, "name": t.Name, "type": "to"})
 		}
+		for _, t := range cc {
+			tos = append(tos, map[string]string{"email": t.Email, "name": t.Name, "type": "cc"})
+		}
+		for _, t := range bcc {
+			tos = append(tos, map[string]string{"email": t.Email, "name": t.Name, "type": "bcc"})
+		}
 		m := map[string]any{"from_email": e.FromEmail, "from_name": e.FromName, "to": tos, "subject": e.Subject, "text": text}
 		if html != "" {
 			m["html"] = html
 		}
 		if reply != nil {
 			m["headers"] = map[string]string{"Reply-To": e.ReplyTo}
+		}
+		if len(cc) > 0 {
+			m["preserve_recipients"] = true // show the Cc header to every recipient
+		}
+		var al []map[string]string
+		for _, at := range atts {
+			al = append(al, map[string]string{"type": ctype(at), "name": at.Name, "content": b64(at.Data)})
+		}
+		if al != nil {
+			m["attachments"] = al
 		}
 		r.body = jsonBody(map[string]any{"key": a.opt("api_key"), "message": m})
 	default:

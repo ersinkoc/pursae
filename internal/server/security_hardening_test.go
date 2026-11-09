@@ -94,10 +94,26 @@ func TestClientIPTrustedProxies(t *testing.T) {
 		{"explicit list, listed proxy", "198.51.100.0/24", "198.51.100.7:5555", "203.0.113.9", "203.0.113.9"},
 		{"explicit list, unlisted private peer", "198.51.100.0/24", "10.0.0.2:5555", "203.0.113.9", "10.0.0.2"},
 		{"garbage header from a trusted proxy", "", "10.0.0.2:5555", "not-an-ip", "10.0.0.2"},
+		{"all hops trusted: the leftmost", "", "10.0.0.2:5555", "192.168.1.5, 10.0.0.9", "192.168.1.5"},
+		{"bare IP in the list", "10.0.0.2", "10.0.0.2:5555", "203.0.113.9", "203.0.113.9"},
+		{"IPv6 proxy", "", "[::1]:5555", "2001:db8::7", "2001:db8::7"},
 	}
 	for _, c := range cases {
 		if got := clientIPFor(t, c.spec, c.remote, c.xff); got != c.want {
 			t.Errorf("%s: clientIP = %q, want %q", c.name, got, c.want)
+		}
+		// The handler-level gates (site block list, maintenance whitelist) must resolve the same address.
+		nets, err := trustedProxyNets(c.spec)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest("GET", "/", nil)
+		req.RemoteAddr = c.remote
+		if c.xff != "" {
+			req.Header.Set("X-Forwarded-For", c.xff)
+		}
+		if got := (&Server{trustedNets: nets}).requestIP(req); got != c.want {
+			t.Errorf("%s: requestIP = %q, want %q", c.name, got, c.want)
 		}
 	}
 }
@@ -105,6 +121,9 @@ func TestClientIPTrustedProxies(t *testing.T) {
 func TestApplyTrustedProxiesRejectsGarbage(t *testing.T) {
 	if err := applyTrustedProxies(gin.New(), "10.0.0.0/8, not-a-cidr"); err == nil {
 		t.Error("an unparsable entry must be an error, not silently ignored")
+	}
+	if _, err := trustedProxyNets("10.0.0.0/8, not-a-cidr"); err == nil {
+		t.Error("trustedProxyNets accepts what gin refuses")
 	}
 }
 

@@ -47,6 +47,7 @@ type Server struct {
 	library      libraryState
 	tmpl         *templates
 	engine       *gin.Engine
+	trustedNets  []*net.IPNet // WPGO_TRUSTED_PROXIES as parsed for gin; requestIP uses the same list
 	rest         *restAPI
 	// staticRoots are the URL prefixes of the embedded asset directories (rtlStylesheets).
 	staticRoots []staticRoot
@@ -215,9 +216,13 @@ func (s *Server) routes() *gin.Engine {
 	if err := applyTrustedProxies(r, s.cfg.TrustedProxies); err != nil {
 		log.Printf("wpgo: WPGO_TRUSTED_PROXIES: %v; trusting no proxy", err)
 		_ = r.SetTrustedProxies(nil)
-	} else if strings.TrimSpace(s.cfg.TrustedProxies) == "" && strings.HasPrefix(s.cfg.SiteURL, "https://") {
-		log.Printf("wpgo: WPGO_TRUSTED_PROXIES is not set: X-Forwarded-For is believed from loopback and private networks; " +
-			"set it to your proxy's address, or \"none\" (docs: operations/reverse-proxy-and-tls)")
+		s.trustedNets = nil
+	} else {
+		s.trustedNets, _ = trustedProxyNets(s.cfg.TrustedProxies) // parsed the same way, so it cannot fail here
+		if strings.TrimSpace(s.cfg.TrustedProxies) == "" && strings.HasPrefix(s.cfg.SiteURL, "https://") {
+			log.Printf("wpgo: WPGO_TRUSTED_PROXIES is not set: X-Forwarded-For is believed from loopback and private networks; " +
+				"set it to your proxy's address, or \"none\" (docs: operations/reverse-proxy-and-tls)")
+		}
 	}
 	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall(), s.acfgoMiddleware(), s.golylangRequest())
 	r.HandleMethodNotAllowed = false
@@ -640,6 +645,11 @@ const defaultTrustedProxies = "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.
 // list of IPs and CIDRs; empty means defaultTrustedProxies; "none" trusts nobody). Without this gin would
 // believe X-Forwarded-For from every client, and behind a proxy every visitor would share the proxy's address.
 func applyTrustedProxies(r *gin.Engine, spec string) error {
+	return r.SetTrustedProxies(trustedProxyList(spec))
+}
+
+// trustedProxyList splits WPGO_TRUSTED_PROXIES (see applyTrustedProxies) into its entries.
+func trustedProxyList(spec string) []string {
 	spec = strings.TrimSpace(spec)
 	if spec == "" {
 		spec = defaultTrustedProxies
@@ -650,7 +660,82 @@ func applyTrustedProxies(r *gin.Engine, spec string) error {
 			list = append(list, p)
 		}
 	}
-	return r.SetTrustedProxies(list)
+	return list
+}
+
+// trustedProxyNets parses WPGO_TRUSTED_PROXIES the way gin does: a bare IP becomes a /32 or /128 network.
+func trustedProxyNets(spec string) ([]*net.IPNet, error) {
+	var nets []*net.IPNet
+	for _, p := range trustedProxyList(spec) {
+		if !strings.Contains(p, "/") {
+			ip := net.ParseIP(p)
+			if ip == nil {
+				return nil, &net.ParseError{Type: "IP address", Text: p}
+			}
+			if ip.To4() != nil {
+				p += "/32"
+			} else {
+				p += "/128"
+			}
+		}
+		_, n, err := net.ParseCIDR(p)
+		if err != nil {
+			return nil, err
+		}
+		nets = append(nets, n)
+	}
+	return nets, nil
+}
+
+// requestIP is clientIP for the http.Handler-level gates that run before gin (the Pursae Security site block
+// list, the maintenance IP whitelist). It follows gin's ClientIP with the same trusted proxies: a peer that is a
+// trusted proxy may report the visitor in X-Forwarded-For (then X-Real-IP), read right to left up to the first
+// untrusted hop; any other peer is the visitor.
+func (s *Server) requestIP(r *http.Request) string {
+	peer, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		peer = r.RemoteAddr
+	}
+	trusted := false
+	if la, ok := r.Context().Value(http.LocalAddrContextKey).(net.Addr); ok && strings.HasPrefix(la.Network(), "unix") {
+		trusted = true // gin always trusts a unix socket peer
+	}
+	if !trusted {
+		ip := net.ParseIP(strings.TrimSpace(peer))
+		if ip == nil {
+			return peer
+		}
+		trusted = s.isTrustedProxy(ip)
+	}
+	if !trusted {
+		return peer
+	}
+	for _, name := range []string{"X-Forwarded-For", "X-Real-IP"} {
+		items := strings.Split(strings.Join(r.Header.Values(name), ","), ",")
+		if len(items) == 1 && strings.TrimSpace(items[0]) == "" {
+			continue
+		}
+		for i := len(items) - 1; i >= 0; i-- {
+			v := strings.TrimSpace(items[i])
+			ip := net.ParseIP(v)
+			if ip == nil {
+				break
+			}
+			if i == 0 || !s.isTrustedProxy(ip) {
+				return v
+			}
+		}
+	}
+	return peer
+}
+
+func (s *Server) isTrustedProxy(ip net.IP) bool {
+	for _, n := range s.trustedNets {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }
 
 // safeRedirect keeps redirects on this site (wp_safe_redirect()).

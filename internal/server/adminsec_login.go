@@ -287,13 +287,85 @@ func (s *Server) adminsecPreLogin(c *gin.Context, login string) template.HTML {
 	return ""
 }
 
+// adminsecBeginAttempt counts a password attempt before the password is checked, as the core throttle does
+// (auth.BeginAttempt): parallel guesses cannot all pass adminsecPreLogin before any is recorded. The attempt is
+// stored as pending first; when the recent failures plus the attempts in flight (this one included) go past
+// the IP or username limit, this request alone is refused without checking its password, so at most max
+// passwords are checked per window. In-flight attempts never start a lockout: only adminsecLoginFailed does,
+// once a password was really checked and was wrong (parallel requests with a correct password must not lock
+// anyone out). It returns the stored attempt (pass it to adminsecLoginFailed, or drop it on a correct
+// password) or the message to show.
+func (s *Server) adminsecBeginAttempt(c *gin.Context, login string) (int64, template.HTML) {
+	st := s.asLoad()
+	ip := clientIP(c)
+	u, _ := s.store.UserByLoginOrEmail(c, login)
+	name := s.asNormLogin(c, login, u)
+	for _, kv := range [][2]string{{"ip", ip}, {"user", name}} {
+		if kv[1] == "" {
+			continue
+		}
+		if until, ok := s.asLockedUntil(c, kv[0], kv[1]); ok && !maintIPAllowed(st.AllowList, ip) {
+			return 0, template.HTML("<strong>Error:</strong> Too many failed login attempts. Please try again in " + asWait(until) + ".")
+		}
+	}
+	id, err := s.auth.ProvisionalAttempt(c, ip, name)
+	if err != nil {
+		return 0, "" // adminsecLoginFailed records the failure the old way
+	}
+	if maintIPAllowed(st.AllowList, ip) {
+		return id, ""
+	}
+	if s.asAttemptsOver(c, st, "ip", ip, st.IPMaxFailures) || s.asAttemptsOver(c, st, "user", name, st.UserMaxFailures) {
+		s.auth.DropAttempt(c, id) // refused unchecked: not a guess, and no lockout
+		return 0, "<strong>Error:</strong> Too many login attempts. Please try again in a minute."
+	}
+	return id, ""
+}
+
+// asFailWindowStart is where the failures counted for kind/value begin: the failure window, or the last
+// lockout when it is more recent (failures before it were already counted by it).
+func (s *Server) asFailWindowStart(c *gin.Context, st asSettings, kind, value string) time.Time {
+	since := time.Now().Add(-time.Duration(max1(st.FailWindow)) * time.Minute)
+	var last time.Time
+	if err := s.store.Pool.QueryRow(c, `SELECT max(created_at) FROM adminsec_lockouts WHERE kind = $1 AND value = $2`, kind, value).Scan(&last); err == nil && last.After(since) {
+		since = last
+	}
+	return since
+}
+
+func asAttemptCol(kind string) string {
+	if kind == "user" {
+		return "lower(login) = $1"
+	}
+	return "ip = $1"
+}
+
+// asAttemptsOver reports whether the recent failures of kind/value plus the attempts still in flight go
+// past max (the caller's own pending attempt is one of them).
+func (s *Server) asAttemptsOver(c *gin.Context, st asSettings, kind, value string, max int) bool {
+	if max <= 0 || value == "" {
+		return false
+	}
+	var n int
+	if err := s.store.Pool.QueryRow(c, `SELECT count(*) FROM login_attempts WHERE `+asAttemptCol(kind)+` AND NOT success AND attempted_at > $2`,
+		value, s.asFailWindowStart(c, st, kind, value)).Scan(&n); err != nil {
+		return false
+	}
+	return n > max
+}
+
 // adminsecLoginFailed records a failed attempt (wrong user, password or code) and locks the IP
-// or the username out once it has too many recent failures.
-func (s *Server) adminsecLoginFailed(c *gin.Context, login string, u *store.User, reason string) {
+// or the username out once it has too many recent failures. attemptID is the attempt
+// adminsecBeginAttempt stored as pending (0: record it now); it becomes a completed failure here.
+func (s *Server) adminsecLoginFailed(c *gin.Context, login string, u *store.User, reason string, attemptID int64) {
 	st := s.asLoad()
 	ip := clientIP(c)
 	name := s.asNormLogin(c, login, u)
-	s.auth.RecordAttempt(c, ip, name, false)
+	if attemptID == 0 {
+		s.auth.RecordAttempt(c, ip, name, false)
+	} else {
+		s.auth.AttemptFailed(c, attemptID)
+	}
 	if !st.LogFailedSkip {
 		s.asAudit(c, asEvent{Event: "login_failed", Severity: "notice", User: u, Username: login, Object: name, Message: reason})
 	}
@@ -313,17 +385,10 @@ func (s *Server) asMaybeLock(c *gin.Context, st asSettings, kind, value string, 
 	if _, ok := s.asLockedUntil(c, kind, value); ok {
 		return
 	}
-	since := time.Now().Add(-time.Duration(max1(st.FailWindow)) * time.Minute)
-	var last time.Time
-	if err := s.store.Pool.QueryRow(c, `SELECT max(created_at) FROM adminsec_lockouts WHERE kind = $1 AND value = $2`, kind, value).Scan(&last); err == nil && last.After(since) {
-		since = last // failures before the last lockout were already counted by it
-	}
-	col := "ip = $1"
-	if kind == "user" {
-		col = "lower(login) = $1"
-	}
+	// Completed failures only: attempts still being checked (pending) may turn out to be correct passwords.
 	var n int
-	if err := s.store.Pool.QueryRow(c, `SELECT count(*) FROM login_attempts WHERE `+col+` AND NOT success AND attempted_at > $2`, value, since).Scan(&n); err != nil || n < max {
+	if err := s.store.Pool.QueryRow(c, `SELECT count(*) FROM login_attempts WHERE `+asAttemptCol(kind)+` AND NOT success AND NOT pending AND attempted_at > $2`,
+		value, s.asFailWindowStart(c, st, kind, value)).Scan(&n); err != nil || n < max {
 		return
 	}
 	var recent int
@@ -696,7 +761,7 @@ func (s *Server) adminsecChallengePost(c *gin.Context, v loginView) {
 		}
 	}
 	if !ok {
-		s.adminsecLoginFailed(c, u.Login, u, "Wrong or expired "+map[string]string{"totp": "authenticator", "email": "e-mailed", "backup": "backup"}[provider]+" code.")
+		s.adminsecLoginFailed(c, u.Login, u, "Wrong or expired "+map[string]string{"totp": "authenticator", "email": "e-mailed", "backup": "backup"}[provider]+" code.", 0)
 		if ch.Attempts >= asMaxCodeAttempts {
 			s.asDropChallenge(c, ch)
 			v.Error = "<strong>Error:</strong> Too many wrong codes. Please log in again."

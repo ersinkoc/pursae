@@ -494,3 +494,38 @@ func BenchmarkCacheHit(b *testing.B) {
 		}
 	}
 }
+
+// The ops handler sets X-Request-ID before the cache runs; a hit must return its own ID, not the one of the
+// request that filled the cache.
+func TestRequestIDNotReplayed(t *testing.T) {
+	_, _, h := newTestCache(t, nil)
+	var n atomic.Int64
+	outer := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Request-ID", "req-"+string(rune('a'+n.Add(1))))
+		h.ServeHTTP(w, r)
+	})
+	w1 := do(outer, "GET", "http://example.com/rid/")
+	w2 := do(outer, "GET", "http://example.com/rid/")
+	if status(w2) != "hit" {
+		t.Fatalf("second: %q", status(w2))
+	}
+	if w1.Header().Get("X-Request-ID") != "req-b" || w2.Header().Get("X-Request-ID") != "req-c" {
+		t.Fatalf("request ids: %q then %q", w1.Header().Get("X-Request-ID"), w2.Header().Get("X-Request-ID"))
+	}
+}
+
+// Search result pages are cached for at most searchTTL, whatever the public TTL.
+func TestSearchTTLCapped(t *testing.T) {
+	c, _, h := newTestCache(t, nil)
+	do(h, "GET", "http://example.com/?s=gopher")
+	do(h, "GET", "http://example.com/about/")
+	now := time.Now()
+	e, ok := c.store.Get(c.Key(httptest.NewRequest("GET", "http://example.com/?s=gopher", nil)))
+	if !ok || e.Expires.Sub(now) > searchTTL+time.Minute {
+		t.Fatalf("search entry: ok=%v expires in %s", ok, e.Expires.Sub(now))
+	}
+	e, ok = c.store.Get(c.Key(httptest.NewRequest("GET", "http://example.com/about/", nil)))
+	if !ok || e.Expires.Sub(now) <= searchTTL+time.Minute {
+		t.Fatalf("page entry: ok=%v expires in %s", ok, e.Expires.Sub(now))
+	}
+}

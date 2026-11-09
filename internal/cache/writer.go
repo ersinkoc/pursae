@@ -274,5 +274,9 @@ func (c *Cache) storableTTL(r *http.Request, code int, h http.Header) (time.Dura
 			ttl = time.Duration(n) * time.Second
 		}
 	}
+	// Search results: every ?s= value is its own entry, so they expire soon instead of piling up for days.
+	if ttl > searchTTL && r.URL.Query().Has("s") {
+		ttl = searchTTL
+	}
 	return ttl, ttl > 0
 }

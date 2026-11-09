@@ -60,6 +60,12 @@ func (s *Server) msLogResult(ctx context.Context, o *msOptions, msg gomail.Messa
 		return false
 	}
 	headers := fmt.Sprintf("From: %s\nTo: %s\n", res.From, strings.Join(msg.To, ", "))
+	if len(msg.Cc) > 0 {
+		headers += "Cc: " + strings.Join(msg.Cc, ", ") + "\n"
+	}
+	if len(msg.Bcc) > 0 {
+		headers += "Bcc: " + strings.Join(msg.Bcc, ", ") + "\n"
+	}
 	if msg.ReplyTo != "" {
 		headers += "Reply-To: " + msg.ReplyTo + "\n"
 	}
@@ -290,14 +296,29 @@ func (s *Server) msResend(ctx context.Context, e *msLogEntry, to []string) error
 	if !e.HasContent {
 		return fmt.Errorf("the content of this email was not logged (enable \"Log Email Content\"), so it can't be resent")
 	}
-	if len(to) == 0 {
-		to = e.To
-	}
 	msg := gomail.Message{To: to, Subject: e.Subject, Body: e.Plain, HTML: e.HTML, ReplyTo: e.ReplyTo}
+	if len(to) == 0 { // to the original recipients: the carbon copies too
+		msg.To = e.To
+		msg.Cc, msg.Bcc = msLogHeaderList(e.Headers, "Cc"), msLogHeaderList(e.Headers, "Bcc")
+	}
 	err := s.mailer().Send(ctx, msg)
 	_, _ = s.store.Pool.Exec(ctx, `UPDATE wpmailsmtp_emails_log SET parent_id = $1 WHERE id = (SELECT max(id) FROM wpmailsmtp_emails_log WHERE hash = $2) AND id <> $1`,
 		e.ID, msHash(msg))
 	return err
+}
+
+// msLogHeaderList reads an address list header ("Cc", "Bcc") from a log entry's recorded headers.
+func msLogHeaderList(headers, name string) []string {
+	for _, l := range strings.Split(headers, "\n") {
+		if v, ok := strings.CutPrefix(l, name+": "); ok {
+			var out []string
+			for _, a := range parseAddrList(strings.Split(v, ",")) {
+				out = append(out, a.String())
+			}
+			return out
+		}
+	}
+	return nil
 }
 
 // msEML renders a logged e-mail as an .eml file.

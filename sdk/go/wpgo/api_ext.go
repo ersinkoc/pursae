@@ -307,8 +307,10 @@ func CurrentUser() (*User, error) {
 // ScheduleEvent runs the action hook every interval (at least a minute),
 // starting one interval from now. hook must start with "cron_", be listed in
 // plugin.json "hooks" and have an action registered with AddAction; args is
-// passed to it as its single argument. Scheduling a hook that is already
-// scheduled replaces the schedule. Requires the "cron" permission.
+// passed to it as its single argument. Scheduling a hook again with the same
+// interval and args keeps the existing schedule (so calling it from OnInit on
+// every start does not push the next run back); a changed interval or args
+// replaces it. Requires the "cron" permission.
 func ScheduleEvent(hook string, interval time.Duration, args map[string]any) error {
 	_, err := hostCall("schedule_event", map[string]any{"hook": hook, "interval": int64(interval / time.Second), "args": args})
 	return err

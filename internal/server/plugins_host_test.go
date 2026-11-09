@@ -384,3 +384,57 @@ func TestPluginPostsAPIAndTransientsOnDatabase(t *testing.T) {
 		t.Errorf("the plugin does not read back its own option: %v", v)
 	}
 }
+
+// Plugins schedule from OnInit, which runs on every instantiation: an identical schedule must keep its
+// next run, and replacing a schedule while its row is running must not leave two rows behind.
+func TestPluginScheduleEventIdempotent(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	h := &pluginHost{s: srv}
+	ev := plugins.ScheduledEvent{Hook: "cron_idem_tick", Interval: 3600, Args: map[string]any{"a": 1}}
+	if err := h.ScheduleEvent(ctx, "idem", ev); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE jobs SET run_at = now() + interval '5 minutes' WHERE name = 'cron_idem_tick'`)
+	runAt := func() time.Time {
+		var at time.Time
+		_ = srv.store.Pool.QueryRow(ctx, `SELECT run_at FROM jobs WHERE name = 'cron_idem_tick'`).Scan(&at)
+		return at
+	}
+	before := runAt()
+	if err := h.ScheduleEvent(ctx, "idem", ev); err != nil {
+		t.Fatal(err)
+	}
+	if n := countJobs(t, srv, "cron_idem_tick"); n != 1 || !runAt().Equal(before) {
+		t.Errorf("re-scheduling the same event: %d rows, run_at %s -> %s", n, before, runAt())
+	}
+	// A running row replaced by a new interval: one row, and the old run cannot be re-queued.
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'running', locked_by = 'w' WHERE name = 'cron_idem_tick'`)
+	ev.Interval = 7200
+	if err := h.ScheduleEvent(ctx, "idem", ev); err != nil {
+		t.Fatal(err)
+	}
+	var rec, status string
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT recurrence, status FROM jobs WHERE name = 'cron_idem_tick'`).Scan(&rec, &status)
+	if n := countJobs(t, srv, "cron_idem_tick"); n != 1 || rec != "every:7200" || status != "queued" {
+		t.Errorf("replacing a running schedule: %d rows, %s %s", n, rec, status)
+	}
+	// Changed args replace the schedule too.
+	ev.Args = map[string]any{"a": 2}
+	if err := h.ScheduleEvent(ctx, "idem", ev); err != nil {
+		t.Fatal(err)
+	}
+	var args string
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT payload->'args'->>'a' FROM jobs WHERE name = 'cron_idem_tick'`).Scan(&args)
+	if n := countJobs(t, srv, "cron_idem_tick"); n != 1 || args != "2" {
+		t.Errorf("changed args: %d rows, a=%s", n, args)
+	}
+	// Unschedule removes a running row as well.
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'running' WHERE name = 'cron_idem_tick'`)
+	if err := h.UnscheduleEvent(ctx, "idem", "cron_idem_tick"); err != nil {
+		t.Fatal(err)
+	}
+	if n := countJobs(t, srv, "cron_idem_tick"); n != 0 {
+		t.Errorf("unschedule left %d rows", n)
+	}
+}

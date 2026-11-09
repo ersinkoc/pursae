@@ -157,7 +157,10 @@ the Block location rule.
 `acf` object for field groups with "Show in REST API": **✓** `/wp/v2/posts` and `/pages` read and
 write (`POST {"acf": {"field_name": value}}` with sub fields by name, validated before the post is
 saved, unknown names rejected), `/users` and `/categories` / `/tags` read. `?acf_format=standard`
-returns formatted values, the default (`light`) stored values with typed IDs/numbers/booleans.
+returns formatted values, the default (`light`) stored values with typed IDs/numbers/booleans. In the
+standard format related posts the requester may not read (drafts, private, future) are left out, password
+protected posts have empty content and excerpt, and user fields omit `user_email` / `user_registered`
+unless the requester is that user or can `list_users` (theme `get_field` output is unchanged).
 ◐ Writes to users/terms and the `/comments`, `/media` objects are not built.
 
 ## 11. Template functions

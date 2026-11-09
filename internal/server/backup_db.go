@@ -217,8 +217,34 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 			touched = append(touched, fk)
 		}
 	}
+	// A key from a table outside the set to a restored one with ON DELETE SET NULL / SET DEFAULT would fire
+	// during the DELETE below (PostgreSQL never defers referential actions), wiping every link even though the
+	// parent rows come back with the same ids: restoring Users alone would orphan every post's author. Such keys
+	// are dropped for the restore and added back afterwards (which validates them); links whose parent is
+	// really gone are repaired by the key's own rule first.
+	type bridge struct {
+		fk  bmgrFK
+		def string
+	}
+	var bridges []bridge
+	bridged := map[string]bool{}
 	for _, fk := range touched {
-		if fk.Rule == 'r' {
+		if !o.Tables[fk.Parent] || o.Tables[fk.Child] || (fk.Rule != 'n' && fk.Rule != 'd') || fk.Composite || !sc.has(fk.Child) {
+			continue
+		}
+		var def string
+		if err := tx.QueryRow(ctx, `SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = $1 AND conrelid = $2::regclass`,
+			fk.Name, bmgrQ(fk.Child)).Scan(&def); err != nil {
+			return fmt.Errorf("reading %s: %w", fk.Name, err)
+		}
+		if _, err := tx.Exec(ctx, `ALTER TABLE `+bmgrQ(fk.Child)+` DROP CONSTRAINT `+pgx.Identifier{fk.Name}.Sanitize()); err != nil {
+			return fmt.Errorf("lifting %s: %w", fk.Name, err)
+		}
+		bridges = append(bridges, bridge{fk, def})
+		bridged[fk.Child+"\x00"+fk.Name] = true
+	}
+	for _, fk := range touched {
+		if fk.Rule == 'r' || bridged[fk.Child+"\x00"+fk.Name] {
 			continue
 		}
 		if _, err := tx.Exec(ctx, `ALTER TABLE `+bmgrQ(fk.Child)+` ALTER CONSTRAINT `+pgx.Identifier{fk.Name}.Sanitize()+` DEFERRABLE INITIALLY DEFERRED`); err != nil {
@@ -359,6 +385,13 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 		}
 	}
 
+	// The keys lifted for the restore come back in their original form (validated: orphans were just repaired).
+	for _, b := range bridges {
+		if _, err := tx.Exec(ctx, `ALTER TABLE `+bmgrQ(b.fk.Child)+` ADD CONSTRAINT `+pgx.Identifier{b.fk.Name}.Sanitize()+` `+b.def); err != nil {
+			return fmt.Errorf("restoring %s: %w", b.fk.Name, err)
+		}
+	}
+
 	// The next generated id must clear the restored ones.
 	for _, t := range tables {
 		for _, col := range sc.Serials[t] {
@@ -373,7 +406,7 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 		return fmt.Errorf("the restored data breaks a relation: %w", err)
 	}
 	for _, fk := range touched {
-		if fk.Rule == 'r' {
+		if fk.Rule == 'r' || bridged[fk.Child+"\x00"+fk.Name] {
 			continue
 		}
 		if _, err := tx.Exec(ctx, `ALTER TABLE `+bmgrQ(fk.Child)+` ALTER CONSTRAINT `+pgx.Identifier{fk.Name}.Sanitize()+` NOT DEFERRABLE`); err != nil {

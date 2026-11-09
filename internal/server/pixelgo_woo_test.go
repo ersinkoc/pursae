@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // pixelPageConfig parses the pixelgo-config block of a page.
@@ -155,3 +158,59 @@ func TestPixelWooFunnel(t *testing.T) {
 }
 
 func pixelJSON(v any) string { b, _ := json.Marshal(v); return string(b) }
+
+// When the payment completes in the checkout request itself (a free order, the test gateway, a card gateway),
+// pixelPaymentComplete sees the snapshot pixelOrderCreated just put on the same *gooOrder, not a copy reloaded
+// from the database: the visitor's identifiers must still reach the platform.
+func TestPixelPurchaseSameRequest(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	fake := pixelFakeAPIs(t)
+	if err := srv.pixelActivate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	st := srv.pixelLoad()
+	st.Platforms["meta"] = pixelPlatformCfg{Enabled: true, IDs: []string{"123456789012345"}, Token: "META_TOKEN", ServerSide: true}
+	if err := srv.pixelSave(ctx, st); err != nil {
+		t.Fatal(err)
+	}
+	p := gooMakeSimple(t, srv, "Mug", 5, nil)
+	o := gooTestOrder(t, srv, p, 1)
+	delete(o.Meta, pixelOrderMeta)
+
+	gin.SetMode(gin.TestMode)
+	gc, _ := gin.CreateTestContext(httptest.NewRecorder())
+	gc.Request = httptest.NewRequest("POST", "http://example.test/checkout", nil)
+	gc.Request.AddCookie(&http.Cookie{Name: "_fbp", Value: "fb.1.1700000000.42"})
+	srv.pixelOrderCreated(gc, o)
+	if err := srv.gooPaymentComplete(ctx, o, "tx-same"); err != nil {
+		t.Fatal(err)
+	}
+	var hit *pixelHit
+	for i := 0; i < 50 && hit == nil; i++ {
+		time.Sleep(100 * time.Millisecond)
+		hit = fake.find("/meta/123456789012345/events")
+	}
+	if hit == nil {
+		t.Fatal("the Purchase never reached the Conversions API")
+	}
+	ud := hit.Body["data"].([]any)[0].(map[string]any)["user_data"].(map[string]any)
+	if ud["fbp"] != "fb.1.1700000000.42" {
+		t.Errorf("the visitor's _fbp was lost: %v", ud)
+	}
+}
+
+func TestPixelSnapshotTypes(t *testing.T) {
+	if got := pixelSnapStrings([]string{"meta", ""}); len(got) != 1 || got[0] != "meta" {
+		t.Errorf("[]string: %v", got)
+	}
+	if got := pixelSnapStrings([]any{"meta", 3}); len(got) != 1 || got[0] != "meta" {
+		t.Errorf("[]any: %v", got)
+	}
+	if got := pixelSnapStringMap(map[string]string{"fbp": "x"}); got["fbp"] != "x" {
+		t.Errorf("map[string]string: %v", got)
+	}
+	if got := pixelSnapStringMap(map[string]any{"fbp": "x", "n": 1}); got["fbp"] != "x" || len(got) != 1 {
+		t.Errorf("map[string]any: %v", got)
+	}
+}

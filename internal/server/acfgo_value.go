@@ -1010,13 +1010,21 @@ func (s *Server) acfgoFormat(ctx context.Context, f acfField, v any) any {
 			if err != nil || p.Status == "trash" {
 				continue
 			}
+			rv := acfgoRESTViewerFrom(ctx)
+			if rv != nil && !rv.canReadPost(p) { // REST: drafts, private and future posts stay hidden
+				continue
+			}
 			switch {
 			case typ == "page_link":
 				out = append(out, s.links(ctx).Permalink(p))
 			case rf == "id":
 				out = append(out, id)
 			default:
-				out = append(out, s.acfgoPostMap(ctx, p))
+				m := s.acfgoPostMap(ctx, p)
+				if rv != nil && p.Password != "" && !(rv.u != nil && rv.u.Can("edit_post", p)) {
+					m["post_content"], m["post_excerpt"] = "", "" // password protected
+				}
+				out = append(out, m)
 			}
 		}
 		if typ != "relationship" && !acfgoBool(f["multiple"]) {
@@ -1066,7 +1074,12 @@ func (s *Server) acfgoFormat(ctx context.Context, f acfField, v any) any {
 				continue
 			}
 			if u := s.acfgoUserByID(ctx, id); u != nil {
-				out = append(out, s.acfgoUserMap(ctx, u))
+				m := s.acfgoUserMap(ctx, u)
+				if rv := acfgoRESTViewerFrom(ctx); rv != nil && !(rv.u != nil && (rv.u.ID == u.ID || rv.u.Can("list_users", nil))) {
+					delete(m, "user_email") // REST: not public, like the core users endpoint
+					delete(m, "user_registered")
+				}
+				out = append(out, m)
 			}
 		}
 		if !acfgoBool(f["multiple"]) {

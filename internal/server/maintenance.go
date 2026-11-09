@@ -297,8 +297,11 @@ func (s *Server) maintenanceServe(w http.ResponseWriter, r *http.Request) bool {
 	}
 	switch {
 	case strings.HasPrefix(p, "/wp-json") || (r.URL.Query().Has("rest_route") && strings.Trim(p, "/") == ""):
-		if !st.BlockREST || u != nil {
-			return false // the block editor's REST calls keep working for every logged-in user
+		if !st.BlockREST || u != nil || maintRESTCredentials(r) {
+			// The block editor's REST calls keep working for every logged-in user, and clients that
+			// authenticate per request (Application Passwords, OAuth/MCP tokens, Commerce API keys, Headless
+			// tokens) reach the REST layer, which validates them and enforces capabilities.
+			return false
 		}
 		s.maintHeaders(w, st, "application/json; charset=utf-8")
 		s.maintStatus(w, st, http.StatusServiceUnavailable)
@@ -315,6 +318,27 @@ func (s *Server) maintenanceServe(w http.ResponseWriter, r *http.Request) bool {
 	}
 	s.maintRender(w, r, st, status)
 	return true
+}
+
+// maintRESTCredentials reports whether a REST request carries credentials a REST layer validates: Basic
+// (Application Passwords, Commerce ck_/cs_ keys) or Bearer (OAuth/MCP, Headless API tokens) authorization, or
+// Commerce consumer_key query parameters on a management API route (wc/v3, the only routes that validate them;
+// on the public Store API they are ignored). A bad credential is refused there with 401, so
+// letting it through exposes nothing; an unknown scheme would be treated as anonymous, so it is not let through.
+func maintRESTCredentials(r *http.Request) bool {
+	h := strings.TrimSpace(r.Header.Get("Authorization"))
+	if len(h) > 6 && strings.EqualFold(h[:6], "basic ") || len(h) > 7 && strings.EqualFold(h[:7], "bearer ") {
+		return true
+	}
+	q := r.URL.Query()
+	if q.Get("consumer_key") == "" {
+		return false
+	}
+	route := strings.TrimPrefix(r.URL.Path, "/wp-json")
+	if q.Has("rest_route") {
+		route = q.Get("rest_route")
+	}
+	return gooQueryKeyRoute(route)
 }
 
 // maintAlwaysOpen are the paths the gate never closes: wp-admin, the login screen, uploads and
@@ -371,7 +395,7 @@ func (s *Server) maintBypass(w http.ResponseWriter, r *http.Request, st maintSet
 			}
 		}
 	}
-	if maintIPAllowed(st.IPWhitelist, maintRemoteIP(r)) {
+	if maintIPAllowed(st.IPWhitelist, s.requestIP(r)) {
 		return true
 	}
 	if st.SecretKey != "" {
@@ -418,15 +442,6 @@ func maintIsCrawler(ua string) bool {
 		}
 	}
 	return false
-}
-
-// maintRemoteIP is the client address the rest of the site uses (clientIP): the connection's peer.
-func maintRemoteIP(r *http.Request) string {
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
-	}
-	return host
 }
 
 // maintIPAllowed matches an address against the whitelist: one IP or CIDR range per line, # comments.

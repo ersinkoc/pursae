@@ -33,6 +33,10 @@ func TestRestartHandsOverTheSocket(t *testing.T) {
 	if !drained {
 		t.Fatal("requests in flight were not drained")
 	}
+	if !Stopped() {
+		t.Error("a failed exec after the drain does not report the server as stopped")
+	}
+	stopped.Store(false)
 	var fdv string
 	for _, e := range env {
 		if v, ok := strings.CutPrefix(e, listenEnv+"="); ok {
@@ -69,5 +73,20 @@ func TestRestartHandsOverTheSocket(t *testing.T) {
 	}
 	if fd, _ := strconv.Atoi(fdv); fd <= 2 {
 		t.Errorf("odd fd %d", fd)
+	}
+}
+
+// Without a registered TCP listener nothing is shut down, so a failed exec leaves the server serving.
+func TestRestartFailureWithoutListenerKeepsServing(t *testing.T) {
+	Serving(nil, nil)
+	stopped.Store(false)
+	old := execFn
+	execFn = func(string, []string, []string) error { return os.ErrPermission }
+	defer func() { execFn = old }()
+	if err := Restart("/bin/true", time.Second); err == nil {
+		t.Fatal("no error")
+	}
+	if Stopped() || Restarting() {
+		t.Error("server reported stopped although it never was")
 	}
 }

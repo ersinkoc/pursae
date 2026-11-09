@@ -62,6 +62,7 @@ var (
 	// The listening socket goes to the new binary and requests in flight finish first, so visitors
 	// wait a moment instead of getting an error (internal/coreupdate/listener.go).
 	coreRestart = func(exe string) error { return coreupdate.Restart(exe, 10*time.Second) }
+	coreExit    = os.Exit
 )
 
 // artifactFor is the release's binary for this platform.
@@ -292,6 +293,12 @@ func (s *Server) upgradeCore(c *gin.Context) {
 			// Still running the old code: put the old binary back so the next start is not the new one.
 			slog.Error("core update: restart failed, going back to the previous binary", "err", err)
 			coreupdate.Restore(target, err)
+			if coreupdate.Stopped() {
+				// The listener was already shut down for the hand-over and an http.Server cannot serve
+				// again: exit so the supervisor (Docker, systemd) starts the restored binary.
+				slog.Error("core update: server already stopped; exiting so the supervisor restarts it")
+				coreExit(1)
+			}
 		}
 	}()
 }

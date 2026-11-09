@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -827,7 +828,151 @@ func TestAdminSecLockouts(t *testing.T) {
 	if code, _, _ := get(t, asNewClient(), base+"/"); code != http.StatusForbidden {
 		t.Errorf("blocked IP on the site: %d", code)
 	}
+	// Behind a reverse proxy (the test client is on loopback, a default trusted proxy) the visitor's
+	// forwarded address is what the site block list matches, as in the rest of the site.
+	asConfigure(t, srv, func(st *asSettings) { st.BlockList = "203.0.113.9" })
+	for xff, want := range map[string]int{"203.0.113.9": http.StatusForbidden, "198.51.100.7": http.StatusOK} {
+		req, _ := http.NewRequest("GET", base+"/", nil)
+		req.Header.Set("X-Forwarded-For", xff)
+		resp, err := asNewClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != want {
+			t.Errorf("site block list, visitor %s behind the proxy: %d, want %d", xff, resp.StatusCode, want)
+		}
+	}
 	asConfigure(t, srv, func(st *asSettings) { st.BlockList, st.BlockListSite = "", false })
+}
+
+// With Pursae Security on, parallel guesses are counted before their passwords are hashed (as the core
+// throttle does): no more than the limit get a password check, on wp-login and on REST Basic auth.
+func TestAdminSecParallelGuessesLimited(t *testing.T) {
+	base, _, srv := asStart(t)
+	asConfigure(t, srv, func(st *asSettings) { st.IPMaxFailures, st.UserMaxFailures, st.LockoutMinutes = 3, 0, 20 })
+	burst := func(do func() (checked bool)) int {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		checked := 0
+		for i := 0; i < 12; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if do() {
+					mu.Lock()
+					checked++
+					mu.Unlock()
+				}
+			}()
+		}
+		wg.Wait()
+		return checked
+	}
+	n := burst(func() bool {
+		resp, err := asNewClient().PostForm(base+"/wp-login", url.Values{"log": {"admin"}, "pwd": {"wrong"}})
+		if err != nil {
+			return false
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return !strings.Contains(string(b), "Too many")
+	})
+	if n > 3 {
+		t.Errorf("wp-login: %d parallel passwords checked, limit 3", n)
+	}
+	// Requests refused unchecked are no guesses; the checked ones are failures, and reaching the limit locks.
+	if failed := asCount(t, `SELECT count(*) FROM login_attempts WHERE NOT success AND NOT pending`); failed != n {
+		t.Errorf("%d completed failures, want %d", failed, n)
+	}
+	if n == 3 && asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE kind = 'ip' AND NOT released AND until > now()`) == 0 {
+		t.Error("no lockout after 3 checked wrong passwords")
+	}
+	_, _ = getPool(t).Exec(context.Background(), `UPDATE adminsec_lockouts SET released = true; DELETE FROM login_attempts`)
+	n = burst(func() bool {
+		req, _ := http.NewRequest("GET", base+"/wp-json/wp/v2/users/me", nil)
+		req.SetBasicAuth("admin", "abcd efgh ijkl mnop qrst uvwx")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return false
+		}
+		resp.Body.Close()
+		return resp.StatusCode != http.StatusTooManyRequests
+	})
+	if n > 3 {
+		t.Errorf("REST Basic: %d parallel passwords checked, limit 3", n)
+	}
+}
+
+// Parallel requests with a correct Application Password are no guesses: their in-flight attempts must not
+// lock the IP or the user out, and once the password has matched, a burst larger than the limit all succeeds.
+func TestAdminSecParallelValidAppPassword(t *testing.T) {
+	base, c, srv := asStart(t)
+	_, body, _ := get(t, c, base+"/wp-admin/profile")
+	_, body, _ = post(t, c, base+"/wp-admin/profile", url.Values{"_wpnonce": {formNonce(t, body)}, "do_new_application_password": {"1"}, "new_application_password_name": {"Deploy"}})
+	shown := regexp.MustCompile(`id="new-application-password-value" type="text" class="code" readonly="readonly" value="([^"]+)"`).FindStringSubmatch(body)
+	if shown == nil {
+		t.Fatal("no application password")
+	}
+	asConfigure(t, srv, func(st *asSettings) { st.IPMaxFailures, st.UserMaxFailures, st.LockoutMinutes = 3, 3, 20 })
+	_, _ = getPool(t).Exec(context.Background(), `DELETE FROM login_attempts`)
+	call := func() int {
+		req, _ := http.NewRequest("GET", base+"/wp-json/wp/v2/users/me", nil)
+		req.SetBasicAuth("admin", shown[1])
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return 0
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	burst := func(n int) (ok int) {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		for i := 0; i < n; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if call() == http.StatusOK {
+					mu.Lock()
+					ok++
+					mu.Unlock()
+				}
+			}()
+		}
+		wg.Wait()
+		return ok
+	}
+	// Cold: some requests may be refused while others are still being checked, but nobody is locked out.
+	appPassCache.Lock()
+	appPassCache.m = map[[32]byte]appPassHit{}
+	appPassCache.Unlock()
+	burst(8)
+	if n := asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE NOT released AND until > now()`); n != 0 {
+		t.Fatalf("parallel valid requests created %d lockouts", n)
+	}
+	if n := asCount(t, `SELECT count(*) FROM login_attempts WHERE NOT success`); n != 0 {
+		t.Errorf("%d failures left by valid requests", n)
+	}
+	// Warm: the password matched once, so a burst over the limit all succeeds.
+	if code := call(); code != http.StatusOK {
+		t.Fatalf("valid request: %d", code)
+	}
+	if ok := burst(12); ok != 12 {
+		t.Errorf("warm burst: %d of 12 succeeded", ok)
+	}
+	if n := asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE NOT released AND until > now()`); n != 0 {
+		t.Errorf("warm burst created %d lockouts", n)
+	}
+	// A wrong password while valid requests are in flight counts only itself: no lockout below the limit.
+	req, _ := http.NewRequest("GET", base+"/wp-json/wp/v2/users/me", nil)
+	req.SetBasicAuth("admin", "wrong wrong wrong")
+	if resp, err := http.DefaultClient.Do(req); err == nil {
+		resp.Body.Close()
+	}
+	if n := asCount(t, `SELECT count(*) FROM adminsec_lockouts WHERE NOT released AND until > now()`); n != 0 {
+		t.Errorf("one wrong password created %d lockouts", n)
+	}
 }
 
 func TestAdminSecEnumerationAndREST(t *testing.T) {
@@ -843,6 +988,22 @@ func TestAdminSecEnumerationAndREST(t *testing.T) {
 	if code, _, _, _ := rc.do("GET", "/wp/v2/users", nil); code != http.StatusUnauthorized {
 		t.Errorf("REST users for visitors: %d", code)
 	}
+	// The dispatcher routes by the effective method, so _method=GET / X-HTTP-Method-Override must not skip the block.
+	for _, id := range []string{"", "/1"} {
+		if code, _, _, _ := rc.do("POST", "/wp/v2/users"+id+"?_method=GET", nil); code != http.StatusUnauthorized {
+			t.Errorf("REST users%s via POST ?_method=GET for visitors: %d", id, code)
+		}
+		req, _ := http.NewRequest("POST", base+"/wp-json/wp/v2/users"+id, nil)
+		req.Header.Set("X-HTTP-Method-Override", "GET")
+		resp, err := anon.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Errorf("REST users%s via X-HTTP-Method-Override for visitors: %d", id, resp.StatusCode)
+		}
+	}
 	if code, _, _, _ := rc.do("GET", "/wp/v2/posts", nil); code != http.StatusOK {
 		t.Errorf("REST posts for visitors: %d", code)
 	}
@@ -855,6 +1016,15 @@ func TestAdminSecEnumerationAndREST(t *testing.T) {
 	}
 	if code, _, _, _ := rc.do("GET", "/oembed/1.0/embed?url="+url.QueryEscape(base+"/?p=1"), nil); code == http.StatusUnauthorized {
 		t.Error("oEmbed blocked")
+	}
+	// Native front-end visitor endpoints (Pursae Cookie consent/geo, Pursae Pixel events) stay open.
+	for _, p := range []string{"/gooike/v1/consent", "/gooike/v1/geo", "/pixelgo/v1/event"} {
+		if code, m, _, _ := rc.do("POST", p, map[string]any{}); code == http.StatusUnauthorized && m["code"] == "rest_login_required" {
+			t.Errorf("%s blocked for visitors", p)
+		}
+	}
+	if code, m, _, _ := rc.do("GET", "/gooike/v1/settings", nil); code != http.StatusUnauthorized || m["code"] != "rest_login_required" {
+		t.Errorf("non-visitor gooike route open: %d %v", code, m["code"])
 	}
 	asConfigure(t, srv, func(st *asSettings) { st.RESTAllow = "wp/v2/posts" })
 	if code, _, _, _ := rc.do("GET", "/wp/v2/posts", nil); code != http.StatusOK {

@@ -214,6 +214,71 @@ func TestAPIMailers(t *testing.T) {
 	}
 }
 
+// Cc, Bcc and attachments reach every API mailer in its own format (WP Mail SMTP's mailers do the same).
+func TestAPIMailersCcBccAttachments(t *testing.T) {
+	opts := map[string]map[string]string{
+		"sendlayer": {"api_key": "k"}, "smtpcom": {"api_key": "k", "channel": "c"}, "sendinblue": {"api_key": "k"}, "mailgun": {"api_key": "k", "domain": "d"},
+		"sendgrid": {"api_key": "k"}, "postmark": {"server_api_token": "k"}, "sparkpost": {"api_key": "k"},
+		"amazonses": {"client_id": "a", "client_secret": "s", "region": "eu-west-1"}, "gmail": {"access_token": "t"}, "outlook": {"access_token": "t"},
+		"zoho": {"access_token": "t", "account_id": "1"}, "elasticemail": {"api_key": "k"}, "mailjet": {"api_key": "k", "secret_key": "s"},
+		"mailersend": {"api_key": "k"}, "resend": {"api_key": "k"}, "smtp2go": {"api_key": "k"}, "mandrill": {"api_key": "k"},
+	}
+	rawCarried := map[string]bool{"gmail": true, "outlook": true, "amazonses": true} // attachments travel in the raw message
+	for _, m := range mail.APIMailers {
+		t.Run(m, func(t *testing.T) {
+			var gotBody string
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				b, _ := io.ReadAll(r.Body)
+				gotBody = string(b)
+				switch m {
+				case "mailjet":
+					_, _ = w.Write([]byte(`{"Messages":[{"Status":"success"}]}`))
+				case "mandrill":
+					_, _ = w.Write([]byte(`[{"status":"sent"}]`))
+				default:
+					_, _ = w.Write([]byte(`{}`))
+				}
+			}))
+			defer ts.Close()
+			api := &mail.API{Mailer: m, Opts: opts[m], Base: ts.URL}
+			e := mail.Email{FromName: "Site", FromEmail: "from@example.test", To: []string{"to@example.test"}, Cc: []string{"cc@example.test"},
+				Bcc: []string{"bcc@example.test"}, Subject: "Hello", Text: "Hi", Raw: []byte("From: x\r\n\r\nHi"),
+				Attachments: []mail.Attachment{{Name: "note.txt", ContentType: "text/plain", Data: []byte("hello attachment")}}}
+			_, err := api.Send(context.Background(), e)
+			if m == "zoho" {
+				if err == nil {
+					t.Fatal("zoho sent a message without its attachment")
+				}
+				e.Attachments = nil
+				_, err = api.Send(context.Background(), e)
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			body := gotBody
+			switch m {
+			case "gmail":
+				var v map[string]string
+				_ = json.Unmarshal([]byte(gotBody), &v)
+				raw, _ := base64.RawURLEncoding.DecodeString(v["raw"])
+				body = string(raw)
+			case "outlook":
+				raw, _ := base64.StdEncoding.DecodeString(gotBody)
+				body = string(raw)
+			}
+			for _, want := range []string{"cc@example.test", "bcc@example.test"} {
+				if !strings.Contains(body, want) {
+					t.Errorf("body lacks %s:\n%s", want, body)
+				}
+			}
+			if m != "zoho" && !rawCarried[m] && !strings.Contains(body, base64.StdEncoding.EncodeToString([]byte("hello attachment"))) &&
+				!strings.Contains(body, "hello attachment") {
+				t.Errorf("attachment missing:\n%s", body)
+			}
+		})
+	}
+}
+
 func TestAPIErrors(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "mandrill") || strings.HasSuffix(r.URL.Path, "send.json") {

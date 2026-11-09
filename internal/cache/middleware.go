@@ -223,6 +223,9 @@ func (c *Cache) serve(w http.ResponseWriter, r *http.Request, e *Entry, status s
 		h.Del(k)
 	}
 	for k, vs := range e.Header {
+		if k == requestIDHeader { // entries stored before it was filtered: keep the live request's ID
+			continue
+		}
 		h[k] = append([]string(nil), vs...)
 	}
 	now := c.now()

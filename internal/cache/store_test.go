@@ -195,3 +195,40 @@ func TestWildcard(t *testing.T) {
 		}
 	}
 }
+
+// Disk persistence is bounded too: arbitrary query values (?s=, ?page=) must not grow the files and the
+// in-memory index without limit; the oldest disk-only entries go first.
+func TestDiskEntriesBounded(t *testing.T) {
+	dir := t.TempDir()
+	s, _ := NewStore(StoreOptions{DiskDir: dir, MaxEntries: 2, MaxDiskEntries: 3})
+	for i := 0; i < 20; i++ {
+		if err := s.Set(mkEntry(t, fmt.Sprintf("http://h/?s=%d#d", i), 10, "search")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	st := s.Stats()
+	if st.Entries != 2 || st.DiskEntries != 3 || st.Tags["search"] != 5 {
+		t.Fatalf("stats %+v", st)
+	}
+	files, _ := os.ReadDir(dir)
+	if len(files) != 5 {
+		t.Fatalf("%d files on disk, want 5", len(files))
+	}
+	if _, ok := s.Get("http://h/?s=0#d"); ok {
+		t.Error("the oldest entry survived the disk bound")
+	}
+	if _, ok := s.Get("http://h/?s=17#d"); !ok {
+		t.Error("a recent disk-only entry was dropped")
+	}
+	// After a restart the scan applies the same bound.
+	s2, err := NewStore(StoreOptions{DiskDir: dir, MaxEntries: 2, MaxDiskEntries: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st := s2.Stats(); st.DiskEntries != 2 {
+		t.Fatalf("after restart: %+v", st)
+	}
+	if files, _ := os.ReadDir(dir); len(files) != 2 {
+		t.Fatalf("after restart: %d files", len(files))
+	}
+}
