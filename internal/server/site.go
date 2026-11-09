@@ -104,6 +104,12 @@ func (s *Server) site(c *gin.Context) {
 	case "wp-sitemap.xml":
 		s.sitemapIndex(c)
 		return
+	case "sitemap.xml":
+		// Core sends the conventional address to its own index (WP_Sitemaps::redirect_sitemapxml).
+		if s.settings.Bool("blog_public") {
+			c.Redirect(http.StatusMovedPermanently, strings.TrimSuffix(c.Request.URL.Path, "sitemap.xml")+"wp-sitemap.xml")
+			return
+		}
 	case "favicon.ico":
 		// No site icon is a 404 in WordPress; WordPress Go answers with the Gopher.
 		if b, ct, err := s.brandFavicon(); err == nil {
