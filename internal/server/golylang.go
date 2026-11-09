@@ -1196,6 +1196,7 @@ func (s *Server) pllRelative(ctx context.Context, root, link string, o pllOption
 
 // pllRelativeLangs is pllRelative with the languages already read.
 func pllRelativeLangs(root, link string, o pllOptions, langs []*pllLanguage) (string, bool) {
+	link, fragment, hasFragment := strings.Cut(link, "#")
 	homes := []string{}
 	for _, l := range langs {
 		if h := pllLangHomeOf(root, l, o); h != root {
@@ -1228,6 +1229,9 @@ func pllRelativeLangs(root, link string, o pllOptions, langs []*pllLanguage) (st
 				rel += "?" + q.Encode()
 			}
 		}
+	}
+	if hasFragment {
+		rel += "#" + fragment
 	}
 	return rel, true
 }
