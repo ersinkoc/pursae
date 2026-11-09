@@ -213,6 +213,33 @@ func TestMailSMTPPlugin(t *testing.T) {
 		}
 	})
 
+	t.Run("Cc and Bcc are delivered and kept on resend", func(t *testing.T) {
+		before := len(smtp.Messages())
+		if err := srv.mailer().Send(ctx, gomail.Message{To: []string{"to@example.test"}, Cc: []string{"cc@example.test"}, Bcc: []string{"bcc@example.test"},
+			Subject: "carbon copies", Body: "x"}); err != nil {
+			t.Fatal(err)
+		}
+		msgs := smtp.Messages()
+		if len(msgs) != before+1 {
+			t.Fatal("not delivered")
+		}
+		last := msgs[len(msgs)-1]
+		if strings.Join(last.To, ",") != "to@example.test,cc@example.test,bcc@example.test" || strings.Contains(last.Data, "bcc@example.test") {
+			t.Fatalf("RCPT %v\n%s", last.To, last.Data)
+		}
+		logs, _, err := srv.msLogList(ctx, msLogFilter{Search: "carbon copies"}, 10, 0)
+		if err != nil || len(logs) != 1 {
+			t.Fatalf("log %+v %v", logs, err)
+		}
+		if err := srv.msResend(ctx, logs[0], nil); err != nil {
+			t.Fatal(err)
+		}
+		msgs = smtp.Messages()
+		if last := msgs[len(msgs)-1]; strings.Join(last.To, ",") != "to@example.test,cc@example.test,bcc@example.test" {
+			t.Fatalf("resend RCPT %v", last.To)
+		}
+	})
+
 	t.Run("form From is kept unless forced", func(t *testing.T) {
 		m := srv.mailer()
 		m.From = "Visitor Form <form@example.test>"

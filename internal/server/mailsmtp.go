@@ -546,7 +546,7 @@ func (s *Server) msSendVia(ctx context.Context, o *msOptions, conn *msConn, base
 			return res
 		}
 		var rcpt []string
-		for _, a := range parseAddrList(msg.To) {
+		for _, a := range parseAddrList(append(append(append([]string{}, msg.To...), msg.Cc...), msg.Bcc...)) { // like mail.go
 			rcpt = append(rcpt, a.Address)
 		}
 		c := &gomail.SMTP{Host: opts["host"], Port: opts["port"], Encryption: opts["encryption"], AutoTLS: opts["autotls"] != "",
@@ -568,8 +568,8 @@ func (s *Server) msSendVia(ctx context.Context, o *msOptions, conn *msConn, base
 		return res
 	}
 	api := &gomail.API{Mailer: conn.Mailer, Opts: opts, Client: msHTTP, Base: msTestBase, Debug: debug}
-	res.MessageID, res.Err = api.Send(ctx, gomail.Email{FromName: from.Name, FromEmail: from.Address, To: msg.To, ReplyTo: msg.ReplyTo,
-		Subject: msg.Subject, Text: msg.Body, HTML: msg.HTML, Raw: raw})
+	res.MessageID, res.Err = api.Send(ctx, gomail.Email{FromName: from.Name, FromEmail: from.Address, To: msg.To, Cc: msg.Cc, Bcc: msg.Bcc,
+		ReplyTo: msg.ReplyTo, Subject: msg.Subject, Text: msg.Body, HTML: msg.HTML, Attachments: msg.Attachments, Raw: raw})
 	return res
 }
 

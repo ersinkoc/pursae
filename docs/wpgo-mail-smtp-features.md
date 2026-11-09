@@ -77,6 +77,13 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Gmail / Microsoft **One-Click Setup** (Pro) | — needs WPForms' hosted OAuth relay and a license; the "own app" flow above is supported instead | — |
 | Pepipost (deprecated upstream) | — removed upstream | — |
 
+Every mailer delivers Cc and Bcc recipients and attachments (Contact Form additional headers, Commerce
+e-mails): SMTP adds them to the envelope, the JSON APIs get them in each provider's own fields, SES in
+`Destination`, Gmail and Microsoft Graph through a Bcc header they strip. Zoho Mail cannot attach files
+without a separate upload, so a message with attachments fails there (and the backup connection is tried)
+instead of going out without them. The log records Cc/Bcc in the headers and *Resend* to the original
+recipients keeps them.
+
 OAuth: the settings screen shows the redirect URI to register
 (`{site}/wp-admin/admin?page=wp-mail-smtp&tab=auth`), a *Connect* button after the client
 credentials are saved, the connected account and *Remove OAuth Connection*. Refresh tokens and
