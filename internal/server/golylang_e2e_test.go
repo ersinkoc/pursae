@@ -293,6 +293,36 @@ func TestGolylangEndToEnd(t *testing.T) {
 	if r := anonGet(t, base+"/", &http.Cookie{Name: pllCookie, Value: "tr"}); r.StatusCode != http.StatusFound {
 		t.Errorf("visitor with pll_language=tr on /: %d, want 302", r.StatusCode)
 	}
+	// Choosing English in the language switcher on /tr/ (a link to / with this site as Referer) opens
+	// the English home page and remembers English, whatever the cookie and the browser say; a reload of
+	// / or a link from another site still follows the cookie (Polylang's get_home_language).
+	trVisitor := func(ref, cookie string) *http.Response {
+		t.Helper()
+		req, _ := http.NewRequest(http.MethodGet, base+"/", nil)
+		req.Header.Set("Accept-Language", "tr-TR,tr;q=0.9")
+		req.AddCookie(&http.Cookie{Name: pllCookie, Value: cookie})
+		if ref != "" {
+			req.Header.Set("Referer", ref)
+		}
+		resp, err := (&http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}).Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return resp
+	}
+	if r := trVisitor(base+"/tr/", "tr"); r.StatusCode != http.StatusOK {
+		t.Errorf("English chosen in the switcher on /tr/: %d %s, want 200", r.StatusCode, r.Header.Get("Location"))
+	} else if b := bodyOf(r); !strings.Contains(b, `id="pll-cookie-js"`) || !strings.Contains(b, pllCookie+`=en`) {
+		t.Error("the English home page opened from the switcher does not set pll_language=en")
+	}
+	if r := trVisitor("", "en"); r.StatusCode != http.StatusOK {
+		t.Errorf("Turkish browser with pll_language=en on /: %d %s, want 200", r.StatusCode, r.Header.Get("Location"))
+	}
+	for _, ref := range []string{base + "/", "https://elsewhere.example/tr/"} {
+		if r := trVisitor(ref, "tr"); r.StatusCode != http.StatusFound || r.Header.Get("Location") != base+"/tr/" {
+			t.Errorf("Referer %s with pll_language=tr on /: %d %s, want 302 to /tr/", ref, r.StatusCode, r.Header.Get("Location"))
+		}
+	}
 
 	// Synchronization of custom fields keeps each translation's SEO text.
 	_, body, _ = get(t, c, base+"/wp-admin/admin?page=mlang_settings")

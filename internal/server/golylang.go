@@ -834,10 +834,14 @@ func (s *Server) pllFront(c *gin.Context) bool {
 		home := path == "/" && c.Request.URL.RawQuery == ""
 		if home && get {
 			// Without browser detection a hidden default language is served in place (no redirect).
+			// Polylang's get_home_language: with the default language hidden, a click from another page of
+			// this site (the language switcher's link to /) is an explicit choice of the default language,
+			// so neither the cookie nor the browser language sends it away again.
 			pref := def
-			if ck, err := c.Cookie(pllCookie); err == nil && pllFind(langs, ck) != nil && (o.Browser || !o.HideDefault) {
+			chosen := o.HideDefault && pllSameSiteReferer(c)
+			if ck, err := c.Cookie(pllCookie); !chosen && err == nil && pllFind(langs, ck) != nil && (o.Browser || !o.HideDefault) {
 				pref = pllFind(langs, ck)
-			} else if o.Browser {
+			} else if !chosen && o.Browser {
 				if l := pllBrowserLang(c.GetHeader("Accept-Language"), langs); l != nil {
 					pref = l
 				}
@@ -869,6 +873,20 @@ func (s *Server) pllFront(c *gin.Context) bool {
 	}
 	pllSet(c, &pllReq{srv: s, Lang: lang, Filter: true, Front: true, Path: stripped, cookieScript: cookieScript})
 	return true
+}
+
+// pllSameSiteReferer is WordPress' wp_get_referer as Polylang uses it: a Referer on this host that is
+// not the requested URL itself (a reload is no navigation).
+func pllSameSiteReferer(c *gin.Context) bool {
+	ref := c.GetHeader("Referer")
+	if ref == "" {
+		return false
+	}
+	u, err := url.Parse(ref)
+	if err != nil || u.Host == "" || !strings.EqualFold(u.Host, c.Request.Host) {
+		return false
+	}
+	return u.RequestURI() != c.Request.URL.RequestURI()
 }
 
 func pllSameURL(target string, c *gin.Context) bool {
