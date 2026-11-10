@@ -450,7 +450,9 @@ func TestWXRExportFailsOnReadError(t *testing.T) {
 	if _, err := srv.store.Pool.Exec(ctx, `ALTER TABLE comments RENAME TO comments_gone`); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _, _ = srv.store.Pool.Exec(context.Background(), `ALTER TABLE comments_gone RENAME TO comments`) })
+	t.Cleanup(func() {
+		_, _ = srv.store.Pool.Exec(context.Background(), `ALTER TABLE comments_gone RENAME TO comments`)
+	})
 	if code, body, _ := get(t, c, base+"/wp-admin/export?download=true&content=all"); code != http.StatusInternalServerError || strings.Contains(body, "<rss") {
 		t.Fatalf("export with a failing read: %d", code)
 	}
