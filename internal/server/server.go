@@ -449,7 +449,11 @@ func (s *Server) loadUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie(auth.CookieName)
 		if err == nil && token != "" {
-			if sess, err := s.auth.Lookup(c, token); err == nil {
+			lookup := s.auth.Lookup
+			if isBackgroundPoll(c) { // polling is no activity: the idle timeout still runs
+				lookup = s.auth.LookupPassive
+			}
+			if sess, err := lookup(c, token); err == nil {
 				if u, err := s.store.UserByID(c, sess.UserID); err == nil {
 					c.Set(ctxUser, u)
 					c.Set(ctxSession, sess)
@@ -459,6 +463,24 @@ func (s *Server) loadUser() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+// isBackgroundPoll reports requests a page sends on its own while it stays open: the admin
+// heartbeat (action in the query or, as heartbeat.js sends it, the POST body) and the Headless
+// entry lock heartbeat.
+func isBackgroundPoll(c *gin.Context) bool {
+	p := strings.TrimSuffix(c.Request.URL.Path, ".php")
+	switch p {
+	case "/wp-admin/admin-ajax":
+		action := c.Query("action")
+		if action == "" && c.Request.Method == http.MethodPost {
+			action = c.PostForm("action")
+		}
+		return action == "heartbeat"
+	case "/wp-admin/headlessgo/lock":
+		return true
+	}
+	return false
 }
 
 func (s *Server) requireInstall() gin.HandlerFunc {

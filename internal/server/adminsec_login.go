@@ -213,7 +213,7 @@ func (s *Server) adminsecGate(c *gin.Context, u *store.User) bool {
 	}
 	p := strings.TrimSuffix(c.Request.URL.Path, ".php")
 	page := c.Query("page")
-	if p == "/wp-admin/admin-ajax" && c.Query("action") == "heartbeat" {
+	if p == "/wp-admin/admin-ajax" && isBackgroundPoll(c) {
 		return false
 	}
 	if s.asForcePassword(c, u) {
