@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	netmail "net/mail"
 	"net/url"
 	"path/filepath"
 	"regexp"
@@ -240,6 +241,19 @@ func TestMailSMTPPlugin(t *testing.T) {
 		}
 	})
 
+	t.Run("site title with specials still makes a valid From", func(t *testing.T) {
+		if srv.cfg.MailFrom != "" {
+			t.Skip("WPGO_MAIL_FROM is set")
+		}
+		old := srv.settings.String("blogname")
+		_ = srv.settings.Set(ctx, map[string]any{"blogname": "Acme, Inc.: News"})
+		defer func() { _ = srv.settings.Set(ctx, map[string]any{"blogname": old}) }()
+		a, err := netmail.ParseAddress(srv.mailer().From)
+		if err != nil || a.Name != "Acme, Inc.: News" || !strings.HasPrefix(a.Address, "wordpress@") {
+			t.Fatalf("From %q: %v %v", srv.mailer().From, a, err)
+		}
+	})
+
 	t.Run("form From is kept unless forced", func(t *testing.T) {
 		m := srv.mailer()
 		m.From = "Visitor Form <form@example.test>"
@@ -260,6 +274,27 @@ func TestMailSMTPPlugin(t *testing.T) {
 		if !strings.Contains(last.Data, "From: \"News\" <news@example.test>") {
 			t.Fatalf("forced:\n%s", last.Data)
 		}
+		// Forms queue their From on the message itself (Message.From): Force From Email applies too.
+		if err := srv.mailer().Send(ctx, gomail.Message{From: "Visitor <visitor@evil.test>", To: []string{"a@example.test"}, Subject: "form3", Body: "x"}); err != nil {
+			t.Fatal(err)
+		}
+		last = smtp.Messages()[len(smtp.Messages())-1]
+		if !strings.Contains(last.Data, "From: \"News\" <news@example.test>") || strings.Contains(last.Data, "evil.test") {
+			t.Fatalf("forced message From:\n%s", last.Data)
+		}
+		raw = srv.msLoadRaw()
+		raw.Mail.FromEmailForce, raw.Mail.FromNameForce = false, false
+		_ = srv.msSave(ctx, raw)
+		if err := srv.mailer().Send(ctx, gomail.Message{From: "Visitor Form <form@example.test>", To: []string{"a@example.test"}, Subject: "form4", Body: "x"}); err != nil {
+			t.Fatal(err)
+		}
+		last = smtp.Messages()[len(smtp.Messages())-1]
+		if !strings.Contains(last.Data, "From: \"Visitor Form\" <form@example.test>") || last.From != "form@example.test" {
+			t.Fatalf("message From not kept: from %q\n%s", last.From, last.Data)
+		}
+		raw = srv.msLoadRaw()
+		raw.Mail.FromEmailForce, raw.Mail.FromNameForce = true, true
+		_ = srv.msSave(ctx, raw)
 	})
 
 	t.Run("failure: alerts, notice, retry updates the entry, backup connection", func(t *testing.T) {

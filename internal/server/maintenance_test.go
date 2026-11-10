@@ -211,7 +211,9 @@ func TestMaintenanceGate(t *testing.T) {
 		t.Errorf("REST for the admin: %d", code)
 	}
 	// Per-request credentials reach the REST layer (which refuses bad ones itself); an unknown scheme does not.
-	for auth, want := range map[string]int{"Basic YWRtaW46d3Jvbmc=": http.StatusUnauthorized, "Bearer not-a-token": http.StatusUnauthorized, "Token x": http.StatusServiceUnavailable} {
+	for auth, want := range map[string]int{"Basic YWRtaW46d3Jvbmc=": http.StatusUnauthorized, "Bearer not-a-token": http.StatusUnauthorized, "Token x": http.StatusServiceUnavailable,
+		"Basic x": http.StatusServiceUnavailable, "Basic bm9jb2xvbg==": http.StatusServiceUnavailable} { // undecodable / no colon: anonymous for REST
+
 		req, _ := http.NewRequest("GET", base+"/wp-json/wp/v2/posts", nil)
 		req.Header.Set("Authorization", auth)
 		r, err := http.DefaultClient.Do(req)
@@ -512,6 +514,15 @@ func TestMaintenanceSubscribeAndExport(t *testing.T) {
 	if err != nil || len(subs) != 1 || subs[0].Email != "fan@example.test" || !subs[0].Consent {
 		t.Fatalf("subscribers: %v %v", subs, err)
 	}
+	// A script looping over the form is slowed down per network.
+	var limited bool
+	for i := 0; i < 8 && !limited; i++ {
+		limited = strings.Contains(send(url.Values{"_wpnonce": {nonce}, "email": {"flood" + strconv.Itoa(i) + "@example.test"}, "gdpr": {"1"}}), "mtnc_error=busy")
+	}
+	if !limited {
+		t.Error("subscriptions are not rate limited")
+	}
+	_, _ = srv.store.Pool.Exec(context.Background(), `DELETE FROM maintenance_subscribers WHERE email LIKE 'flood%'`)
 	_, body, _ := get(t, c, base+"/wp-admin/admin?page=maintenance&tab=subscribers")
 	if !strings.Contains(body, "fan@example.test") {
 		t.Error("subscriber not listed")
@@ -559,4 +570,19 @@ func maintImportFile(t *testing.T, c *http.Client, base, nonce, content string) 
 	}
 	resp.Body.Close()
 	return strings.Contains(resp.Header.Get("Location"), "mtnc-msg=imported")
+}
+
+func TestMaintAlwaysOpenWholeSegments(t *testing.T) {
+	for _, p := range []string{"/wp-admin", "/wp-admin/", "/wp-admin/edit", "/wp-login", "/wp-login.php", "/xmlrpc.php", "/wp-cron.php",
+		"/wp-content/uploads/a.png", "/wp-includes/css/x.css", "/robots.txt"} {
+		if !maintAlwaysOpen(p) {
+			t.Errorf("%s should stay open", p)
+		}
+	}
+	// The site router serves ?p= / ?page_id= on any unknown path: these must stay behind the gate.
+	for _, p := range []string{"/wp-login-x", "/wp-loginx", "/xmlrpcs", "/wp-cron-job", "/wp-admin-page", "/"} {
+		if maintAlwaysOpen(p) {
+			t.Errorf("%s must not bypass maintenance", p)
+		}
+	}
 }

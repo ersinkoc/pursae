@@ -189,9 +189,10 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 	ctx := c.Request.Context()
 	u := currentUser(c)
 	unfiltered := u.Can("unfiltered_html", nil)
+	editorCtx := acfgoWithEditor(ctx, u)
 	save := func(o *acfObject) {
 		if o != nil {
-			_ = s.acfgoSaveInput(ctx, o, in, unfiltered)
+			_ = s.acfgoSaveInput(editorCtx, o, in, unfiltered)
 		}
 	}
 	switch screen {
@@ -245,6 +246,11 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 		}
 		tax, name, login := c.DefaultPostForm("taxonomy", "post_tag"), strings.TrimSpace(c.PostForm("tag-name")), strings.TrimSpace(c.PostForm("user_login"))
 		c.Next() // the object exists after the core's handler
+		// Only when the core created it (it redirects on success): a refused add ("already exists",
+		// no permission) must not write the fields onto the existing term or user of that name.
+		if c.Writer.Status() != http.StatusFound {
+			return
+		}
 		if screen == "edit-tags" {
 			if t, err := s.store.TermByName(ctx, tax, name); err == nil {
 				save(&acfObject{Kind: "term", ID: t.ID, meta: orEmptyMap(t.Meta)})
@@ -557,7 +563,7 @@ func (s *Server) acfgoMetaBoxSave(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"success": false, "data": gin.H{"errors": errs}})
 		return
 	}
-	if err := s.acfgoSaveInput(ctx, s.acfgoPostObject(p), in, currentUser(c).Can("unfiltered_html", nil)); err != nil {
+	if err := s.acfgoSaveInput(acfgoWithEditor(ctx, currentUser(c)), s.acfgoPostObject(p), in, currentUser(c).Can("unfiltered_html", nil)); err != nil {
 		c.String(http.StatusInternalServerError, "0")
 		return
 	}
@@ -654,7 +660,7 @@ func (s *Server) acfgoAdminPage(c *gin.Context) bool {
 			}
 			notices = append(notices, notice{Type: "error", Message: template.HTML("<strong>Validation failed.</strong> " + strings.Join(msgs, "; "))})
 		} else {
-			if err := s.acfgoSaveInput(ctx, o, in, u.Can("unfiltered_html", nil)); err != nil {
+			if err := s.acfgoSaveInput(acfgoWithEditor(ctx, u), o, in, u.Can("unfiltered_html", nil)); err != nil {
 				notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(err.Error()))})
 			} else {
 				s.purgeAll(ctx)

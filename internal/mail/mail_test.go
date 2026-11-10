@@ -36,3 +36,24 @@ func TestBuildAndFileDelivery(t *testing.T) {
 		t.Error("html part missing")
 	}
 }
+
+func TestBuildReplyToAndAttachmentNameAreHeaderSafe(t *testing.T) {
+	m := &Mailer{From: "Site <wordpress@example.test>"}
+	raw, err := m.Build(Message{To: []string{"a@example.test"}, Subject: "s", Body: "b",
+		ReplyTo:     "x@example.test\r\nBcc: victim@example.test\r\nContent-Type: text/html",
+		Attachments: []Attachment{{Name: `a".exe"; x="y.pdf`, Data: []byte("d")}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(raw)
+	if strings.Contains(s, "Bcc:") || strings.Contains(s, "Reply-To") || strings.Contains(s, "victim@") {
+		t.Fatalf("Reply-To injected headers:\n%s", s)
+	}
+	if strings.Contains(s, `filename="a"`) {
+		t.Fatalf("attachment name broke out of its quotes:\n%s", s)
+	}
+	raw, _ = m.Build(Message{To: []string{"a@example.test"}, Subject: "s", Body: "b", ReplyTo: "Jo Doe <jo@example.test>"})
+	if !strings.Contains(string(raw), "Reply-To: \"Jo Doe\" <jo@example.test>\r\n") {
+		t.Fatalf("valid Reply-To lost:\n%s", raw)
+	}
+}

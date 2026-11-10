@@ -198,6 +198,12 @@ func TestPixelPurchaseSameRequest(t *testing.T) {
 	if ud["fbp"] != "fb.1.1700000000.42" {
 		t.Errorf("the visitor's _fbp was lost: %v", ud)
 	}
+	// Advanced matching is off here: no hashed e-mail, phone, name or address leaves the server.
+	for _, k := range []string{"em", "ph", "fn", "ln", "ct", "st", "zp", "country", "external_id"} {
+		if _, ok := ud[k]; ok {
+			t.Errorf("user_data has %s without Advanced matching: %v", k, ud)
+		}
+	}
 }
 
 func TestPixelSnapshotTypes(t *testing.T) {
