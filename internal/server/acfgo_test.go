@@ -537,6 +537,24 @@ func TestACFGoPlugin(t *testing.T) {
 	if !strings.Contains(body, `"acf":{"color":"#ff0000"}`) {
 		t.Errorf("term REST: %s", body)
 	}
+	// Add New Term: a refused add (the name exists) leaves the existing term's fields alone; a real add saves them.
+	_, body, _ = get(t, c, base+"/wp-admin/edit-tags?taxonomy=category")
+	addNonce := regexp.MustCompile(`id="addtag"[\s\S]*?name="_wpnonce" value="([^"]+)"`).FindStringSubmatch(body)
+	if addNonce == nil {
+		t.Fatal("no add-tag nonce")
+	}
+	post(t, c, base+"/wp-admin/edit-tags", url.Values{"_wpnonce": {addNonce[1]}, "action": {"add-tag"}, "taxonomy": {"category"},
+		"tag-name": {term.Name}, "acf[field_color]": {"#00ff00"}})
+	if v := srv.acfGetField(ctx, "color", "term_"+itoa64(term.ID), true); v != "#ff0000" {
+		t.Errorf("a refused Add New Term overwrote the existing term's field: %v", v)
+	}
+	post(t, c, base+"/wp-admin/edit-tags", url.Values{"_wpnonce": {addNonce[1]}, "action": {"add-tag"}, "taxonomy": {"category"},
+		"tag-name": {"Fresh Term"}, "acf[field_color]": {"#0000ff"}})
+	if fresh, err := srv.store.TermByName(ctx, "category", "Fresh Term"); err != nil {
+		t.Errorf("new term: %v", err)
+	} else if v := srv.acfGetField(ctx, "color", "term_"+itoa64(fresh.ID), true); v != "#0000ff" {
+		t.Errorf("new term value = %v", v)
+	}
 	code, body, _ = get(t, c, base+"/wp-admin/profile")
 	if code != http.StatusOK || !strings.Contains(body, `name="acf[field_color]"`) {
 		t.Fatalf("profile screen: %d", code)

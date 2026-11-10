@@ -327,7 +327,12 @@ func (s *Server) maintenanceServe(w http.ResponseWriter, r *http.Request) bool {
 // letting it through exposes nothing; an unknown scheme would be treated as anonymous, so it is not let through.
 func maintRESTCredentials(r *http.Request) bool {
 	h := strings.TrimSpace(r.Header.Get("Authorization"))
-	if len(h) > 6 && strings.EqualFold(h[:6], "basic ") || len(h) > 7 && strings.EqualFold(h[:7], "bearer ") {
+	if len(h) > 7 && strings.EqualFold(h[:7], "bearer ") {
+		return true
+	}
+	// Only a decodable user:password pair: the REST layer reads a malformed Basic header as no
+	// credentials at all and would answer the request anonymously.
+	if _, _, ok := r.BasicAuth(); ok {
 		return true
 	}
 	q := r.URL.Query()
@@ -343,9 +348,16 @@ func maintRESTCredentials(r *http.Request) bool {
 
 // maintAlwaysOpen are the paths the gate never closes: wp-admin, the login screen, uploads and
 // the static assets the maintenance page and wp-login use, robots.txt and the favicon.
+// Each entry is a whole path segment (or its .php form): "/wp-login-x?p=5" or "/xmlrpcs?page_id=2"
+// would otherwise pass the gate and reach the site router, which serves ?p= on any unknown path.
 func maintAlwaysOpen(p string) bool {
-	for _, pre := range []string{"/wp-admin", "/wp-login", "/wp-content/", "/wp-includes/", "/wp-cron", "/xmlrpc"} {
+	for _, pre := range []string{"/wp-content/", "/wp-includes/"} {
 		if strings.HasPrefix(p, pre) {
+			return true
+		}
+	}
+	for _, seg := range []string{"/wp-admin", "/wp-login", "/wp-cron", "/xmlrpc"} {
+		if p == seg || p == seg+".php" || strings.HasPrefix(p, seg+"/") {
 			return true
 		}
 	}

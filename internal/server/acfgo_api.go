@@ -294,7 +294,7 @@ func (s *Server) acfgoRESTSave(c *gin.Context, body map[string]any, p *store.Pos
 	}
 	in, _ := s.acfgoRESTInput(c.Request.Context(), raw, p)
 	u := restCurrent(c)
-	_ = s.acfgoSaveInput(c.Request.Context(), s.acfgoPostObject(p), in, u != nil && u.Can("unfiltered_html", nil))
+	_ = s.acfgoSaveInput(acfgoWithEditor(c.Request.Context(), u), s.acfgoPostObject(p), in, u != nil && u.Can("unfiltered_html", nil))
 }
 
 // Template functions --------------------------------------------------------------------------------

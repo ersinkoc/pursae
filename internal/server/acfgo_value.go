@@ -141,6 +141,19 @@ func (s *Server) acfgoPostObject(p *store.Post) *acfObject {
 
 // Writes -------------------------------------------------------------------------------------
 
+type acfgoAddTermsKey struct{}
+
+// acfgoWithEditor marks a save as made by u: a taxonomy field's "new:<name>" input creates the term
+// only for users who may manage terms (ACF's add_term ajax checks the taxonomy's manage_terms).
+func acfgoWithEditor(ctx context.Context, u *store.User) context.Context {
+	return context.WithValue(ctx, acfgoAddTermsKey{}, u != nil && u.Can("manage_categories", nil))
+}
+
+func acfgoCanAddTerms(ctx context.Context) bool {
+	ok, _ := ctx.Value(acfgoAddTermsKey{}).(bool)
+	return ok
+}
+
 // acfWrite collects meta changes; deletes of keys that are also set are dropped.
 type acfWrite struct {
 	set   map[string]any
@@ -498,7 +511,7 @@ func (s *Server) acfgoSanitize(ctx context.Context, o *acfObject, w *acfWrite, f
 		var ids []int64
 		var vals []any
 		for _, v := range acfgoList(in) {
-			if name, ok := strings.CutPrefix(acfgoStr(v), "new:"); ok && acfgoBool(f["add_term"]) && strings.TrimSpace(name) != "" {
+			if name, ok := strings.CutPrefix(acfgoStr(v), "new:"); ok && acfgoBool(f["add_term"]) && acfgoCanAddTerms(ctx) && strings.TrimSpace(name) != "" {
 				tax := defaultStr(acfgoStr(f["taxonomy"]), "category")
 				t, err := s.store.TermByName(ctx, tax, strings.TrimSpace(name))
 				if err != nil {

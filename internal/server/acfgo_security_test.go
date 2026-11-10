@@ -139,3 +139,40 @@ func TestACFGoRESTStandardFormatHidesPrivateData(t *testing.T) {
 		t.Errorf("get_field related = %v", v)
 	}
 }
+
+// A taxonomy field with "Create Terms" turns "new:<name>" input into a new term only for users who may
+// manage terms; an author saving a post must not create categories through it.
+func TestACFGoTaxonomyAddTermNeedsManageTerms(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	ctx := context.Background()
+	installAndLogin(t, ts, c)
+	acfgoActivate(t, c, base)
+	acfgoSaveGroupForm(t, c, base, 0, map[string]any{"title": "Topics",
+		"location": []any{[]any{map[string]any{"param": "post_type", "operator": "==", "value": "post"}}},
+		"fields": []any{map[string]any{"key": "field_topics", "label": "Topics", "name": "topics", "type": "taxonomy",
+			"taxonomy": "category", "field_type": "checkbox", "add_term": 1}}})
+	authorID := asCreateUser(t, srv, "writer2", "author", asStrongPass)
+	author, err := srv.store.UserByID(ctx, authorID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := &store.Post{Type: "post", Title: "Mine", Status: "draft", AuthorID: author.ID}
+	if err := srv.store.InsertPost(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	in := map[string]any{"field_topics": []any{"new:Author Made"}}
+	_ = srv.acfgoSaveInput(acfgoWithEditor(ctx, author), srv.acfgoPostObject(p), in, false)
+	if _, err := srv.store.TermByName(ctx, "category", "Author Made"); err == nil {
+		t.Error("an author created a category through a taxonomy field")
+	}
+	admin, err := srv.store.UserByID(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in = map[string]any{"field_topics": []any{"new:Admin Made"}}
+	_ = srv.acfgoSaveInput(acfgoWithEditor(ctx, admin), srv.acfgoPostObject(p), in, true)
+	if _, err := srv.store.TermByName(ctx, "category", "Admin Made"); err != nil {
+		t.Errorf("an administrator could not create a term: %v", err)
+	}
+}

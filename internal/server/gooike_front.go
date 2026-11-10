@@ -348,7 +348,7 @@ func (s *Server) gooikeShortcodes(ctx context.Context, content string) string {
 var (
 	gooikeIframeRe    = regexp.MustCompile(`(?is)<iframe\b([^>]*)>(.*?)</iframe\s*>`)
 	gooikeEmbedStyle  = `<link rel="stylesheet" id="gooike-css"`
-	gooikeIframeSrcRe = regexp.MustCompile(`(?is)(\s)src(\s*=\s*)("[^"]*"|'[^']*')`)
+	gooikeIframeSrcRe = regexp.MustCompile(`(?is)(\s)src(\s*=)`) // any quoting: an unquoted src=… must not keep loading
 )
 
 // gooikeFilterPage holds back the iframes of YouTube, Vimeo and Google Maps on a rendered page:
@@ -386,7 +386,7 @@ func (s *Server) gooikeFilterPage(c *gin.Context, page []byte) []byte {
 		if key == "" {
 			return tag
 		}
-		attrs = gooikeIframeSrcRe.ReplaceAllString(attrs, "${1}data-gooike-src${2}${3}")
+		attrs = gooikeIframeSrcRe.ReplaceAllString(attrs, "${1}data-gooike-src${2}")
 		text := st.Texts.EmbedText
 		if strings.Count(text, "%s") == 2 {
 			text = fmt.Sprintf(text, name, strings.ToLower(catLabel))

@@ -431,7 +431,7 @@ func (s *Server) msDeliver(ctx context.Context, base *gomail.Mailer, msg gomail.
 	source := "Pursae"
 	if label != "" {
 		source = "Pursae: " + label
-	} else if base.From != defaultFrom {
+	} else if msOwnFrom(base, msg, defaultFrom) != "" {
 		source = "Form"
 	}
 	if ctrl != "" && o.Controls[ctrl] {
@@ -443,7 +443,7 @@ func (s *Server) msDeliver(ctx context.Context, base *gomail.Mailer, msg gomail.
 	}
 	conn := o.primary()
 	if o.SmartRouting.Enabled {
-		if c := o.route(base, msg, source); c != nil {
+		if c := o.route(base, msg, source, defaultFrom); c != nil {
 			conn = c
 		}
 	}
@@ -494,8 +494,22 @@ type msErrorState struct {
 
 var msLastError sync.Map // *Server -> msErrorState
 
+// msOwnFrom is the From a sender chose for one message (a form's "From" field travels as
+// Message.From through the mail queue; older callers set it on the Mailer), "" when none.
+func msOwnFrom(base *gomail.Mailer, msg gomail.Message, defaultFrom string) string {
+	if msg.From != "" {
+		if _, err := mail.ParseAddress(msg.From); err == nil {
+			return msg.From
+		}
+	}
+	if base.From != defaultFrom {
+		return base.From
+	}
+	return ""
+}
+
 // msFrom works out the From of a message on a connection, honouring Force From Email / Name.
-func (s *Server) msFrom(o *msOptions, conn *msConn, base *gomail.Mailer, defaultFrom string) (from *mail.Address, envelope string) {
+func (s *Server) msFrom(o *msOptions, conn *msConn, base *gomail.Mailer, msg gomail.Message, defaultFrom string) (from *mail.Address, envelope string) {
 	def, _ := mail.ParseAddress(defaultFrom)
 	if def == nil {
 		def = &mail.Address{Name: s.settings.String("blogname"), Address: "wordpress@localhost"}
@@ -508,8 +522,8 @@ func (s *Server) msFrom(o *msOptions, conn *msConn, base *gomail.Mailer, default
 		from.Name = def.Name
 	}
 	envelope = from.Address
-	if base.From != defaultFrom { // the sender chose its own From (a form's "From Email")
-		if own, err := mail.ParseAddress(base.From); err == nil {
+	if ownFrom := msOwnFrom(base, msg, defaultFrom); ownFrom != "" { // the sender chose its own From (a form's "From Email")
+		if own, err := mail.ParseAddress(ownFrom); err == nil {
 			if !o.Mail.FromEmailForce {
 				from.Address = own.Address
 				if o.Mail.ReturnPath {
@@ -526,11 +540,12 @@ func (s *Server) msFrom(o *msOptions, conn *msConn, base *gomail.Mailer, default
 
 // msSendVia sends one message through one connection.
 func (s *Server) msSendVia(ctx context.Context, o *msOptions, conn *msConn, base *gomail.Mailer, msg gomail.Message, defaultFrom string, debug io.Writer) msResult {
-	from, envelope := s.msFrom(o, conn, base, defaultFrom)
+	from, envelope := s.msFrom(o, conn, base, msg, defaultFrom)
 	res := msResult{From: from.String(), Envelope: envelope, Conn: conn}
 	core := *base
 	core.Transport = nil
 	core.From = from.String()
+	msg.From = "" // the header shows the From worked out above (Force From Email applies to it)
 	opts := s.msRevealed(conn.Opts)
 	if debug != nil {
 		fmt.Fprintf(debug, "Mailer: %s\nFrom: %s\n", msMailerTitle(conn.Mailer), from.String())
@@ -648,8 +663,12 @@ func (s *Server) msStoreToken(ctx context.Context, connID, mailer string, tok *g
 // --- smart routing ---------------------------------------------------------------------------
 
 // route returns the connection of the first enabled route whose conditions match.
-func (o *msOptions) route(base *gomail.Mailer, msg gomail.Message, source string) *msConn {
-	from, _ := mail.ParseAddress(base.From)
+func (o *msOptions) route(base *gomail.Mailer, msg gomail.Message, source, defaultFrom string) *msConn {
+	own := msOwnFrom(base, msg, defaultFrom)
+	if own == "" {
+		own = base.From
+	}
+	from, _ := mail.ParseAddress(own)
 	if from == nil {
 		from = &mail.Address{}
 	}

@@ -35,6 +35,7 @@ var maintSubscribeErrors = map[string]string{
 	"email":   "Please enter a valid e-mail address.",
 	"consent": "Please tick the consent box to subscribe.",
 	"expired": "The form expired. Please try again.",
+	"busy":    "Too many sign-ups from your network. Please try again in a minute.",
 }
 
 // maintBack is where a form returns to: the page it was sent from, with flags added.
@@ -82,6 +83,12 @@ func (s *Server) maintSubscribe(w http.ResponseWriter, r *http.Request) {
 	consent := r.PostFormValue("gdpr") == "1"
 	if st.GDPR && !consent {
 		fail("consent")
+		return
+	}
+	// One nonce is good for a day and the page is public: without a limit a script could fill the
+	// table and, with "notify", the administrator's mailbox.
+	if !gooikeAllow("mtnc:"+gooikeTruncateIP(s.requestIP(r)), 5) {
+		fail("busy")
 		return
 	}
 	ctx := r.Context()

@@ -217,8 +217,10 @@ func (sub *gfSubmission) composeMail(m gfMail) (wpmail.Message, bool) {
 			msg.From = a.String()
 		}
 	}
-	for _, h := range strings.Split(sub.mailTags(m.AdditionalHeaders, false, nil), "\n") {
-		k, v, ok := strings.Cut(strings.TrimSpace(h), ":")
+	// Split the template first and put each line on one line: a multi-line value ([your-message])
+	// must not start header lines of its own (a visitor-chosen Bcc).
+	for _, h := range strings.Split(strings.ReplaceAll(m.AdditionalHeaders, "\r", ""), "\n") {
+		k, v, ok := strings.Cut(oneLine(h), ":")
 		if !ok {
 			continue
 		}

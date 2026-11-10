@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -50,8 +51,14 @@ var pixelHTTP = &http.Client{
 	CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 }
 
-// pixelSlots bounds concurrent deliveries.
-var pixelSlots = make(chan struct{}, 8)
+// pixelSlots bounds concurrent deliveries; pixelBacklog bounds the deliveries waiting for a slot, so a
+// flood of browser events (the endpoint is public; its rate limit is per network) cannot pile up
+// goroutines without end while the platforms answer slowly.
+var (
+	pixelSlots      = make(chan struct{}, 8)
+	pixelBacklog    atomic.Int64
+	pixelBacklogMax = int64(512)
+)
 
 var (
 	pixelEventIDRe = regexp.MustCompile(`^[A-Za-z0-9_.:-]{8,64}$`)
@@ -296,7 +303,12 @@ func (s *Server) pixelDispatch(ev pixelServerEvent) {
 			continue
 		}
 		def, cfg := def, st.Platforms[def.Key]
+		if pixelBacklog.Add(1) > pixelBacklogMax && ev.Source == "browser" { // order Purchases are never dropped
+			pixelBacklog.Add(-1)
+			continue
+		}
 		go func() {
+			defer pixelBacklog.Add(-1)
 			pixelSlots <- struct{}{}
 			defer func() { <-pixelSlots }()
 			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -860,7 +872,10 @@ func (s *Server) pixelPaymentComplete(ctx context.Context, o *gooOrder) {
 		return
 	}
 	ev := pixelServerEvent{Name: "Purchase", ID: pixelPurchaseEventID(o.ID), Source: "order", Time: time.Now(), IP: o.CustomerIP, UA: o.UserAgent,
-		Params: s.pixelOrderParamsAny(ctx, &st, o), Cookies: map[string]string{}, User: pixelUserFromOrder(o), Platforms: platforms}
+		Params: s.pixelOrderParamsAny(ctx, &st, o), Cookies: map[string]string{}, User: map[string]string{}, Platforms: platforms}
+	if st.Advanced { // hashed customer data only with Advanced matching, as on the order-received page
+		ev.User = pixelUserFromOrder(o)
+	}
 	if snap != nil {
 		if v, _ := snap["ip"].(string); v != "" {
 			ev.IP = v
@@ -873,7 +888,7 @@ func (s *Server) pixelPaymentComplete(ctx context.Context, o *gooOrder) {
 			ev.Cookies[k] = v
 		}
 	}
-	if o.CustomerID > 0 {
+	if o.CustomerID > 0 && st.Advanced {
 		ev.User["external_id"] = pixelHash(strconv.FormatInt(o.CustomerID, 10))
 	}
 	o.Meta[pixelSentMeta] = time.Now().UTC().Format(time.RFC3339)

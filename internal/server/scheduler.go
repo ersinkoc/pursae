@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	netmail "net/mail"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -139,7 +140,9 @@ func (s *Server) mailer() *mail.Mailer {
 				host = h
 			}
 		}
-		from = fmt.Sprintf("%s <wordpress@%s>", s.settings.String("blogname"), host)
+		// Quoted and encoded: a site title such as "Acme, Inc." or "News: Daily" is not a valid bare
+		// display name, and an unparsable From breaks the envelope sender of every mailer.
+		from = (&netmail.Address{Name: s.settings.String("blogname"), Address: "wordpress@" + host}).String()
 	}
 	dir := s.cfg.MailDir
 	if dir == "" {

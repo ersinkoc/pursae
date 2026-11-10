@@ -213,6 +213,11 @@ func TestGontactSubmitFlow(t *testing.T) {
 	if code, out, _ := multipartPost(t, anon, feedback, map[string]string{}, nil, testUA); code != http.StatusBadRequest || out["code"] != "wpcf7_unit_tag_not_found" {
 		t.Fatalf("no unit tag: %d %v", code, out)
 	}
+	// A body far beyond what the form accepts (it has no file field) is not read to the end.
+	if code, out, _ := multipartPost(t, anon, feedback, map[string]string{"_wpcf7_unit_tag": hidden["_wpcf7_unit_tag"]},
+		[]upload{{field: "junk", name: "big.bin", data: bytes.Repeat([]byte("x"), 3<<20)}}, testUA); code != http.StatusBadRequest {
+		t.Fatalf("oversized body: %d %v", code, out)
+	}
 
 	// Invalid input.
 	fields := func(kv ...string) map[string]string {
@@ -481,5 +486,24 @@ func TestGontactFormTags(t *testing.T) {
 	}
 	if gfCanonicalize(" To-kyo ") != "tokyo" {
 		t.Fatal("canonicalize")
+	}
+}
+
+// A multi-line field value used in Additional Headers stays on its header line: it cannot add a
+// Bcc (or any other header) of the visitor's choosing.
+func TestGontactAdditionalHeadersStayOneLine(t *testing.T) {
+	sub := &gfSubmission{form: &gfForm{}, tags: []*gfTag{{Name: "your-message", BaseType: "textarea"}, {Name: "your-email", BaseType: "email"}},
+		posted: map[string][]string{"your-message": {"hello\nBcc: victim@example.org"}, "your-email": {"v@example.com"}},
+		raw:    map[string][]string{}, files: map[string][]gfUpload{}}
+	msg, ok := sub.composeMail(gfMail{Recipient: "admin@example.com", Subject: "s", Body: "b",
+		AdditionalHeaders: "X-Note: [your-message]\nReply-To: [your-email]"})
+	if !ok {
+		t.Fatal("not composed")
+	}
+	if len(msg.Bcc) != 0 || len(msg.Cc) != 0 {
+		t.Errorf("a field value added recipients: cc %v bcc %v", msg.Cc, msg.Bcc)
+	}
+	if msg.ReplyTo != "<v@example.com>" && msg.ReplyTo != "v@example.com" {
+		t.Errorf("Reply-To = %q", msg.ReplyTo)
 	}
 }

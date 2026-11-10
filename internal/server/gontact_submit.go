@@ -646,6 +646,10 @@ func (s *Server) gontactFeedback(c *gin.Context, r *restRequest) {
 	if f == nil {
 		return
 	}
+	// The body is read before anything is checked: bound it by what the form can accept (its file
+	// fields' limit: options plus room for the text fields), so an anonymous post cannot stream
+	// gigabytes into temporary files.
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, gfBodyLimit(f))
 	if gfUnitTagClean(c.PostForm("_wpcf7_unit_tag")) == "" {
 		restErr(c, http.StatusBadRequest, "wpcf7_unit_tag_not_found", "There is no valid unit tag.")
 		return
@@ -654,6 +658,19 @@ func (s *Server) gontactFeedback(c *gin.Context, r *restRequest) {
 	// logged-in visitor without a valid nonce is a visitor here, exactly as in WordPress.
 	sub := s.gontactSubmit(c, f, restCurrent(c), true)
 	restJSON(c, http.StatusOK, sub.result())
+}
+
+// gfBodyLimit is the largest request body a form's submission needs: every file field at its limit:
+// plus 2 MiB for the text fields and the multipart framing.
+func gfBodyLimit(f *gfForm) int64 {
+	n := int64(2 << 20)
+	_, tags := gfScan(f.Form, nil)
+	for _, t := range tags {
+		if t.BaseType == "file" && t.Name != "" {
+			n += t.limitOption() + 4<<10
+		}
+	}
+	return n
 }
 
 // gontactFallbackPost handles a form posted without JavaScript to the page that shows it

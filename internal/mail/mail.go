@@ -81,8 +81,8 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 	if len(msg.Cc) > 0 {
 		h("Cc", strings.Join(msg.Cc, ", "))
 	}
-	if msg.ReplyTo != "" {
-		h("Reply-To", msg.ReplyTo)
+	if rt := cleanReplyTo(msg.ReplyTo); rt != "" {
+		h("Reply-To", rt)
 	}
 	h("Subject", mime.QEncoding.Encode("utf-8", msg.Subject))
 	h("Date", time.Now().Format(time.RFC1123Z))
@@ -112,7 +112,8 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 			if ct == "" {
 				ct = "application/octet-stream"
 			}
-			name := mime.QEncoding.Encode("utf-8", a.Name)
+			// A quote or backslash would end the quoted parameter early; QEncoding leaves both alone.
+			name := mime.QEncoding.Encode("utf-8", strings.NewReplacer(`"`, "_", `\`, "_").Replace(a.Name))
 			b.WriteString("\r\n--" + mixed + "\r\nContent-Type: " + ct + `; name="` + name + `"` + "\r\nContent-Transfer-Encoding: base64\r\n" +
 				`Content-Disposition: attachment; filename="` + name + `"` + "\r\n\r\n")
 			enc := base64.StdEncoding.EncodeToString(a.Data)
@@ -131,6 +132,20 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 	}
 	b.Write(part)
 	return b.Bytes(), nil
+}
+
+// cleanReplyTo is a Reply-To value safe for a header: one valid address, re-encoded, or "" when the
+// value is not an address (PHPMailer's addReplyTo() drops those too). Callers pass visitor input
+// (a comment author's e-mail, a form field), which must never carry line breaks into the headers.
+func cleanReplyTo(v string) string {
+	if strings.TrimSpace(v) == "" {
+		return ""
+	}
+	a, err := mail.ParseAddress(v)
+	if err != nil {
+		return ""
+	}
+	return a.String()
 }
 
 // from is the From header: the message's own From when set, else the mailer's.
@@ -163,6 +178,7 @@ func (m *Mailer) bodyPart(msg Message, id []byte, qp func(string) string) ([]byt
 
 // Send delivers a message by SMTP, or writes it to Dir when SMTP is not configured.
 func (m *Mailer) Send(ctx context.Context, msg Message) error {
+	msg.ReplyTo = cleanReplyTo(msg.ReplyTo) // the API mailers put it into their own headers too
 	if m.Transport != nil {
 		return m.Transport.Deliver(ctx, m, msg)
 	}

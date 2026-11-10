@@ -236,7 +236,7 @@ func TestGooikeFrontAndScripts(t *testing.T) {
 
 	// Shortcodes and embed blocking.
 	p := &store.Post{Type: "page", Title: "Cookies", Slug: "cookies", Status: "publish", AuthorID: 1,
-		Content: "[gooike_cookie_table]\n\n[gooike_preferences text=\"Manage cookies\"]\n\n<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/xyz\"></iframe>\n\n<iframe src=\"https://example.org/widget\"></iframe>"}
+		Content: "[gooike_cookie_table]\n\n[gooike_preferences text=\"Manage cookies\"]\n\n<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/xyz\"></iframe>\n\n<iframe src=\"https://example.org/widget\"></iframe>\n\n<iframe src=https://player.vimeo.com/video/42></iframe>"}
 	if err := srv.store.InsertPost(context.Background(), p); err != nil {
 		t.Fatal(err)
 	}
@@ -250,6 +250,9 @@ func TestGooikeFrontAndScripts(t *testing.T) {
 	}
 	if strings.Contains(page, `src="https://www.youtube.com/embed/xyz"`) && !strings.Contains(page, `data-gooike-src="https://www.youtube.com/embed/xyz"`) {
 		t.Error("the YouTube iframe loads before consent")
+	}
+	if regexp.MustCompile(`\ssrc=https://player\.vimeo\.com`).MatchString(page) || !strings.Contains(page, `data-gooike-src=https://player.vimeo.com/video/42`) {
+		t.Error("an iframe with an unquoted src loads before consent")
 	}
 
 	// Deactivating: nothing on the site, settings kept.
