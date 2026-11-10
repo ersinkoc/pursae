@@ -91,7 +91,7 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/pursae/v1/seo/redirects` | GET, POST | list; create or update (`id`) with `source`, `target`, `code` (301, 302, 307, 410, 451), `match_type`, `status` |
 | `/pursae/v1/seo/redirects/{id}` | DELETE | |
 | `/pursae/v1/options` | GET | the option groups below (`manage_options`) |
-| `/pursae/v1/options/{group}` | GET, POST | `gocdn`, `headless`, `maintenance`, `security`, `seo`, `smtp`: the built-in plugin's settings object. Secrets (passwords, keys, tokens) read as `********`; `POST {"settings": {…}}` deep-merges a partial object, and a `********` sent back keeps the stored secret |
+| `/pursae/v1/options/{group}` | GET, POST | `gocdn`, `headless`, `maintenance`, `security`, `seo`, `smtp`: the built-in plugin's settings object. Secrets (passwords, keys, tokens) read as `********`; `POST {"settings": {…}}` deep-merges a partial object, and a `********` sent back keeps the stored secret. `security` changes follow the settings screen's rules (number ranges, login slug, IP lists, idle timeout, alert address; the caller's own IP on the block list or a two-step requirement while no e-mail can be delivered is refused): a 400 `rest_invalid_param` saves nothing |
 | `/pursae/v1/mcp` | POST, GET, DELETE | the [MCP server](../operations/ai-mcp.md) (streamable HTTP) |
 
 ## Other namespaces

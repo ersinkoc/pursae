@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"html/template"
 	"net"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 // OAuth 2.1 for the MCP endpoint, as the MCP authorization spec asks: protected-resource and
@@ -28,6 +30,8 @@ const (
 	oauthRefreshTTL = 30 * 24 * time.Hour
 	oauthCodeTTL    = 5 * time.Minute
 	oauthMaxClients = 500
+	// oauthMaxGrantsPerUser connected applications per user; a new grant beyond it ends the oldest.
+	oauthMaxGrantsPerUser = 20
 	// oauthRegisterLimit registrations per address per oauthRegisterWindow: a real client registers
 	// once per connection, so a flood cannot fill the oauthMaxClients cap from one address.
 	oauthRegisterLimit  = 10
@@ -38,6 +42,10 @@ const (
 	oauthMCPPath             = "/wp-json/pursae/v1/mcp"
 	restOAuthKey             = "wpgo.restOAuthGrant" // oauth_tokens.id that authenticated the request
 )
+
+// oauthReuseGrace is how long after a rotation the replaced refresh token is refused without ending
+// the grant (a variable for tests).
+var oauthReuseGrace = 30 * time.Second
 
 func (s *Server) registerOAuth(r *gin.Engine) {
 	for _, m := range []string{http.MethodGet, http.MethodOptions} {
@@ -135,6 +143,9 @@ func (s *Server) oauthRegister(c *gin.Context) {
 		ClientName   string   `json:"client_name"`
 		RedirectURIs []string `json:"redirect_uris"`
 	}
+	// Anonymous endpoint: a client's metadata is a few hundred bytes, so do not read more than 64 KB
+	// (the JSON decoder would otherwise buffer a body of any size).
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 64<<10)
 	if err := c.ShouldBindJSON(&in); err != nil || len(in.RedirectURIs) == 0 || len(in.RedirectURIs) > 10 {
 		oauthErr(c, http.StatusBadRequest, "invalid_client_metadata", "redirect_uris is required (1 to 10 entries).")
 		return
@@ -154,8 +165,10 @@ func (s *Server) oauthRegister(c *gin.Context) {
 		name = name[:100]
 	}
 	ctx := c.Request.Context()
-	// Keep the table small: drop clients that never got a token within an hour (a pending code,
-	// which lives 5 minutes, keeps a client in the middle of its consent flow), then cap what is left.
+	// Keep the table small: drop grants whose refresh token has expired (they can never be used again),
+	// then clients without a grant after an hour (a pending code, which lives 5 minutes, keeps a client
+	// in the middle of its consent flow), then cap what is left.
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE refresh_expires_at < now()`)
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_clients WHERE created_at < now() - interval '1 hour'
 		AND NOT EXISTS (SELECT 1 FROM oauth_tokens t WHERE t.client_id = oauth_clients.client_id)
 		AND NOT EXISTS (SELECT 1 FROM oauth_codes k WHERE k.client_id = oauth_clients.client_id AND k.expires_at > now())`)
@@ -330,14 +343,21 @@ func (s *Server) oauthToken(c *gin.Context) {
 	}
 	var userID int64
 	var scopes []string
-	var grantID int64 // an existing grant to rotate (refresh)
+	access, refresh := oauthRandom("pat_"), oauthRandom("prt_")
+	now := time.Now()
 	switch grant {
 	case "authorization_code":
 		var redirect, challenge string
 		var exp time.Time
+		codeHash := oauthHash(c.PostForm("code"))
 		// The code is single use: it is deleted by the lookup whatever happens next.
 		err := s.store.Pool.QueryRow(ctx, `DELETE FROM oauth_codes WHERE code_hash = $1 AND client_id = $2
-			RETURNING user_id, redirect_uri, scopes, challenge, expires_at`, oauthHash(c.PostForm("code")), clientID).Scan(&userID, &redirect, &scopes, &challenge, &exp)
+			RETURNING user_id, redirect_uri, scopes, challenge, expires_at`, codeHash, clientID).Scan(&userID, &redirect, &scopes, &challenge, &exp)
+		if errors.Is(err, pgx.ErrNoRows) {
+			// A code presented again was intercepted or replayed: revoke the grant its first redemption
+			// issued (OAuth 2.1 §4.1.3).
+			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE code_hash = $1 AND client_id = $2`, codeHash, clientID)
+		}
 		if err != nil || time.Now().After(exp) || redirect != c.PostForm("redirect_uri") {
 			oauthErr(c, http.StatusBadRequest, "invalid_grant", "The authorization code is invalid, expired or used.")
 			return
@@ -348,30 +368,35 @@ func (s *Server) oauthToken(c *gin.Context) {
 			oauthErr(c, http.StatusBadRequest, "invalid_grant", "PKCE verification failed.")
 			return
 		}
+		if _, err := s.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, scopes, access_expires_at, refresh_expires_at, code_hash)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, clientID, userID, oauthHash(access), oauthHash(refresh), scopes,
+			now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL), codeHash); err != nil {
+			oauthErr(c, http.StatusInternalServerError, "server_error", "Could not issue a token.")
+			return
+		}
+		// One user keeps at most oauthMaxGrantsPerUser connected applications: the oldest go, and with
+		// them (after an hour) their clients, so one account cannot fill the oauthMaxClients cap.
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE user_id = $1 AND id NOT IN
+			(SELECT id FROM oauth_tokens WHERE user_id = $1 ORDER BY id DESC LIMIT $2)`, userID, oauthMaxGrantsPerUser)
 	case "refresh_token":
-		var exp time.Time
-		err := s.store.Pool.QueryRow(ctx, `SELECT id, user_id, scopes, refresh_expires_at FROM oauth_tokens WHERE refresh_hash = $1 AND client_id = $2`,
-			oauthHash(c.PostForm("refresh_token")), clientID).Scan(&grantID, &userID, &scopes, &exp)
-		if err != nil || time.Now().After(exp) {
+		old := oauthHash(c.PostForm("refresh_token"))
+		// Rotate in one statement, so two requests with the same refresh token cannot both get a pair.
+		err := s.store.Pool.QueryRow(ctx, `UPDATE oauth_tokens SET access_hash = $3, refresh_hash = $4, prev_refresh_hash = refresh_hash,
+			access_expires_at = $5, refresh_expires_at = $6
+			WHERE refresh_hash = $1 AND client_id = $2 AND refresh_expires_at > now() RETURNING user_id, scopes`,
+			old, clientID, oauthHash(access), oauthHash(refresh), now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL)).Scan(&userID, &scopes)
+		if err != nil {
+			// A refresh token that a rotation already replaced is being used again: it was stolen, or the
+			// thief already rotated it. End the grant for both (OAuth 2.1 §4.3.1). Within oauthReuseGrace
+			// of the rotation it is only refused: that is a client refreshing twice at once or retrying a
+			// lost answer. (A rotation sets access_expires_at to its time plus oauthAccessTTL.)
+			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE prev_refresh_hash = $1 AND client_id = $2 AND access_expires_at <= $3`,
+				old, clientID, now.Add(oauthAccessTTL-oauthReuseGrace))
 			oauthErr(c, http.StatusBadRequest, "invalid_grant", "The refresh token is invalid or expired.")
 			return
 		}
 	default:
 		oauthErr(c, http.StatusBadRequest, "unsupported_grant_type", "Use authorization_code or refresh_token.")
-		return
-	}
-	access, refresh := oauthRandom("pat_"), oauthRandom("prt_")
-	now := time.Now()
-	var err error
-	if grantID != 0 { // rotate in place: the old refresh token stops working
-		_, err = s.store.Pool.Exec(ctx, `UPDATE oauth_tokens SET access_hash = $2, refresh_hash = $3, access_expires_at = $4, refresh_expires_at = $5 WHERE id = $1`,
-			grantID, oauthHash(access), oauthHash(refresh), now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL))
-	} else {
-		_, err = s.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, scopes, access_expires_at, refresh_expires_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)`, clientID, userID, oauthHash(access), oauthHash(refresh), scopes, now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL))
-	}
-	if err != nil {
-		oauthErr(c, http.StatusInternalServerError, "server_error", "Could not issue a token.")
 		return
 	}
 	c.Header("Cache-Control", "no-store")

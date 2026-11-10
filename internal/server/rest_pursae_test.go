@@ -232,6 +232,39 @@ func TestPursaeREST(t *testing.T) {
 		t.Errorf("unknown group: %d", code)
 	}
 
+	// The security group follows the settings screen's rules, so the API cannot lock everyone out.
+	if code, body, _ := api("POST", "/pursae/v1/options/security", map[string]any{"settings": map[string]any{"idle_minutes": 30, "block_list": "203.0.113.7"}}); code != http.StatusOK {
+		t.Errorf("valid security update: %d %v", code, body)
+	}
+	if st := srv.asLoad(); st.IdleMinutes != 30 || st.BlockList != "203.0.113.7" {
+		t.Errorf("security update not stored: %d %q", st.IdleMinutes, st.BlockList)
+	}
+	for name, patch := range map[string]map[string]any{
+		"own address blocked": {"block_list": "10.0.0.1\n127.0.0.1"},
+		"bad IP entry":        {"allow_list": "not-an-ip"},
+		"reserved login slug": {"hide_login": true, "login_slug": "wp-admin"},
+		"bad login slug":      {"hide_login": true, "login_slug": "a b"},
+		"idle below minimum":  {"idle_minutes": 2},
+		"window out of range": {"fail_window": 0},
+		"bad alert address":   {"alert_email": "nobody"},
+		"bad frame options":   {"frame_options": "ALLOWALL"},
+	} {
+		if code, body, _ := api("POST", "/pursae/v1/options/security", map[string]any{"settings": patch}); code != http.StatusBadRequest {
+			t.Errorf("security %s: %d %v", name, code, body)
+		}
+	}
+	if ok, _ := srv.asMailReady(); !ok {
+		if code, _, _ := api("POST", "/pursae/v1/options/security", map[string]any{"settings": map[string]any{"require_roles": map[string]any{"editor": "mfa"}}}); code != http.StatusBadRequest {
+			t.Errorf("two-step requirement without mail: %d", code)
+		}
+		if got := srv.asLoad().RequireRoles["editor"]; got != "" { // a refused update must not reach the cached settings
+			t.Errorf("refused require_roles is live: %q", got)
+		}
+	}
+	if st := srv.asLoad(); st.BlockList != "203.0.113.7" || st.HideLogin || st.IdleMinutes != 30 || st.FailWindow == 0 {
+		t.Errorf("refused security settings were stored: %+v", st)
+	}
+
 	// SEO settings and redirects.
 	if code, body, _ := api("POST", "/pursae/v1/seo/settings", map[string]any{"settings": map[string]any{"separator": "|"}}); code != http.StatusOK ||
 		body["settings"].(map[string]any)["separator"] != "|" {
