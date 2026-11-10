@@ -50,6 +50,25 @@ func TestReadMP3CBRAndID3(t *testing.T) {
 	}
 }
 
+func TestReadMP3XingAfterCRC(t *testing.T) {
+	for _, crc := range []bool{false, true} {
+		data := make([]byte, 417)
+		copy(data, []byte{0xff, 0xfb, 0x90, 0})
+		off := 4 + 32
+		if crc {
+			data[1] = 0xfa
+			off += 2
+		}
+		copy(data[off:], "Xing")
+		binary.BigEndian.PutUint32(data[off+4:], 1)
+		binary.BigEndian.PutUint32(data[off+8:], 1000)
+		info := readAV(bytes.NewReader(data), int64(len(data)), ".mp3")
+		if info.Length != 26 || info.BitrateMode != "vbr" {
+			t.Errorf("CRC %v: %+v", crc, info)
+		}
+	}
+}
+
 func TestReadMatroska(t *testing.T) {
 	el := func(id []byte, body []byte) []byte {
 		return append(append(append([]byte{}, id...), 0x80|byte(len(body))), body...)
