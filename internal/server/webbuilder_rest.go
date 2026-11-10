@@ -722,15 +722,21 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	}
 	fresh.Meta[webbuilder.PostMarkerMeta] = "1"
 	fresh.Meta[webbuilder.EditLockMeta] = strconv.FormatInt(time.Now().Unix(), 10) + ":" + itoa64(u.ID)
-	if !pageMissing && descChanged {
+	// The Pursae SEO fields keep their own capabilities (seogoEditFields): the builder's page
+	// settings write the meta description only with seogo_onpage_general and noindex only with
+	// seogo_onpage_advanced, as the SEO box and seogo/v1/meta do (an author must not noindex a
+	// page through the builder when the Role Manager does not let them).
+	if !pageMissing && descChanged && s.seogoCan(u, seogoEditFields["description"]) {
 		fresh.Meta[seogoKey("description")] = ps.Description
 	}
-	if !pageMissing && indexChanged {
+	if !pageMissing && indexChanged && s.seogoCan(u, seogoEditFields["noindex"]) {
 		if !ps.Indexable {
 			fresh.Meta[seogoKey("noindex")] = "noindex"
 		} else if seogoMeta(fresh.Meta, "noindex") == "noindex" {
 			fresh.Meta[seogoKey("noindex")] = "" // back to the site default
 		}
+	} else if !pageMissing && indexChanged {
+		ps.Indexable = seogoMeta(fresh.Meta, "noindex") != "noindex" // the stored page keeps what the post has
 	}
 	if err := store.UpdatePostTx(c, tx, fresh, u.ID); err != nil {
 		restErr(c, http.StatusInternalServerError, "db_update_error", "Could not update post in the database.")

@@ -801,6 +801,41 @@ func TestWebBuilderRESTPublishKeepsSEO(t *testing.T) {
 	}
 }
 
+// The builder's page settings write Pursae SEO's noindex and meta description only with the SEO
+// capabilities of those fields (Role Manager): by default an author has seogo_onpage_general but
+// not seogo_onpage_advanced, so a builder publish must not noindex the author's post.
+func TestWebBuilderRESTPublishSEOCaps(t *testing.T) {
+	srv, base, _ := wbrStart(t)
+	ctx := context.Background()
+	author := wbrUser(t, srv, base, "seoauthor", "author")
+	u, _ := srv.store.UserByLoginOrEmail(ctx, "seoauthor")
+	if srv.seogoCan(u, "seogo_onpage_advanced") || !srv.seogoCan(u, "seogo_onpage_general") {
+		t.Fatal("default Role Manager: an author has the general but not the advanced on-page capability")
+	}
+	post := wbrPost(t, srv, "post", "Author Post", "draft", u.ID)
+	doc, render := wbrFixture(t, "initial")
+	ps := map[string]any{"title": "Author Post", "slug": "author-post", "description": "Mine", "indexable": false}
+	code, v, _ := author.do(http.MethodPost, wbrDocPath(post.ID, "/publish"), wbrPublishBody(doc, render, 0, "publish", ps), nil)
+	if code != http.StatusOK {
+		t.Fatalf("author publish: %d %v", code, v)
+	}
+	p, _ := srv.store.GetPost(ctx, post.ID)
+	if seogoMeta(p.Meta, "noindex") == "noindex" {
+		t.Errorf("an author without seogo_onpage_advanced set noindex through the builder")
+	}
+	if seogoMeta(p.Meta, "description") != "Mine" || p.Excerpt != "Mine" {
+		t.Errorf("description (seogo_onpage_general) not saved: %q %q", seogoMeta(p.Meta, "description"), p.Excerpt)
+	}
+	row, err := srv.store.WebBuilder().Doc(ctx, post.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stored webbuilder.PageSettings
+	if json.Unmarshal(row.Page, &stored) != nil || !stored.Indexable {
+		t.Errorf("stored page claims a noindex the post does not have: %s", row.Page)
+	}
+}
+
 func TestWebBuilderPageOverlay(t *testing.T) {
 	post := json.RawMessage(`{"title":"New","slug":"new","description":"D","indexable":false}`)
 	got := map[string]any{}
