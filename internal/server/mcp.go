@@ -146,8 +146,7 @@ func (s *Server) mcpHandle(c *gin.Context, req *mcpRequest) *mcpResponse {
 	case "tools/list":
 		var tools []map[string]any
 		for _, t := range mcpTools {
-			tools = append(tools, map[string]any{"name": t.Name, "description": t.Desc, "inputSchema": t.schema(),
-				"annotations": map[string]any{"readOnlyHint": t.Method == http.MethodGet, "destructiveHint": t.Method == http.MethodDelete}})
+			tools = append(tools, map[string]any{"name": t.Name, "description": t.Desc, "inputSchema": t.schema(), "annotations": t.annotations()})
 		}
 		resp.Result = map[string]any{"tools": tools}
 	case "tools/call":
@@ -210,6 +209,18 @@ func (t *mcpTool) schema() map[string]any {
 		sch["additionalProperties"] = false
 	}
 	return sch
+}
+
+// mcpAdditiveTools only add something new; every other tool that writes may change or remove existing
+// data (an update overwrites, an install replaces a version, rest_request can do anything).
+var mcpAdditiveTools = map[string]bool{"create_post": true, "create_page": true, "create_term": true, "create_menu_item": true, "upload_media": true}
+
+// annotations are the MCP tool hints clients use to decide what needs the user's approval. Per the spec
+// destructiveHint means "may change or delete existing data", so it is true for every write that is not
+// purely additive.
+func (t *mcpTool) annotations() map[string]any {
+	readOnly := t.Method == http.MethodGet || t.Name == "seo_analyze" // seo_analyze POSTs unsaved input but stores nothing
+	return map[string]any{"readOnlyHint": readOnly, "destructiveHint": !readOnly && !mcpAdditiveTools[t.Name]}
 }
 
 func str(desc string) map[string]any  { return map[string]any{"type": "string", "description": desc} }
@@ -392,6 +403,15 @@ func (s *Server) mcpCall(c *gin.Context, t *mcpTool, args map[string]any) map[st
 	method, route := t.Method, t.Path
 	rest := map[string]any{}
 	for k, v := range args {
+		// The arguments become query or body parameters of a fixed method. _method would override it
+		// (rest.go), turning a read-only tool such as get_post into a DELETE; rest_request is the tool
+		// that chooses the method.
+		if t.special != "rest" && strings.EqualFold(k, "_method") {
+			return toolErr("Unknown argument: " + k)
+		}
+		if _, known := t.Props[k]; !known && !t.Open {
+			return toolErr("Unknown argument: " + k) // the schema says additionalProperties: false
+		}
 		rest[k] = v
 	}
 	var bad string

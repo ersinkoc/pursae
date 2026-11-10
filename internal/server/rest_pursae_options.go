@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -145,13 +146,16 @@ func (s *Server) pursaeCacheSettings(c *gin.Context, r *restRequest) {
 type optionGroup struct {
 	Plugin, Label string
 	load          func(s *Server) any
-	save          func(s *Server, ctx context.Context, v []byte) error
+	save          func(s *Server, c *gin.Context, v []byte) error
 }
 
-func groupOf[T any](plugin, label string, load func(s *Server) T, save func(s *Server, ctx context.Context, v T) error) optionGroup {
+// groupOf builds an option group. check, when given, refuses a merged value its settings screen would
+// refuse (the screen's own form parser cannot run on a JSON patch).
+func groupOf[T any](plugin, label string, load func(s *Server) T, save func(s *Server, ctx context.Context, v T) error,
+	check ...func(s *Server, c *gin.Context, old, v T) []string) optionGroup {
 	return optionGroup{Plugin: plugin, Label: label,
 		load: func(s *Server) any { return load(s) },
-		save: func(s *Server, ctx context.Context, b []byte) error {
+		save: func(s *Server, c *gin.Context, b []byte) error {
 			// Deep-merge the patch into the current value, so fields and nested map entries the update
 			// leaves out (a masked secret, say) keep their values.
 			var patch map[string]any
@@ -165,11 +169,18 @@ func groupOf[T any](plugin, label string, load func(s *Server) T, save func(s *S
 			}
 			deepMerge(merged, patch)
 			mb, _ := json.Marshal(merged)
-			v := load(s)
+			// Decode into a fresh value: decoding into load(s) would write into the maps it shares with
+			// the loader's cache (asLoad), making a refused or failed update live anyway.
+			var v T
 			if err := json.Unmarshal(mb, &v); err != nil {
 				return err
 			}
-			return save(s, ctx, v)
+			for _, chk := range check {
+				if errs := chk(s, c, load(s), v); len(errs) > 0 {
+					return errors.New(strings.Join(errs, " "))
+				}
+			}
+			return save(s, c.Request.Context(), v)
 		}}
 }
 
@@ -193,7 +204,7 @@ var optionGroups = map[string]optionGroup{
 	"gocdn": groupOf(gocdnSlug, "Pursae CDN", (*Server).gocdnLoad,
 		func(s *Server, ctx context.Context, v gocdnSettings) error { return s.gocdnSave(ctx, v) }),
 	"security": groupOf(asSlug, "Pursae Security", (*Server).asLoad,
-		func(s *Server, ctx context.Context, v asSettings) error { return s.asSave(ctx, v) }),
+		func(s *Server, ctx context.Context, v asSettings) error { return s.asSave(ctx, v) }, (*Server).asCheckAPISettings),
 	"smtp": groupOf(msSlug, "Pursae SMTP", (*Server).msLoadRaw,
 		func(s *Server, ctx context.Context, v *msOptions) error { return s.msSave(ctx, v) }),
 	"maintenance": groupOf(maintSlug, "Pursae Maintenance", (*Server).maintLoad,
@@ -240,7 +251,7 @@ func (s *Server) pursaeOptionsHandler(fixed string) restHandler {
 			}
 			patch = dropMasked(patch).(map[string]any)
 			b, _ := json.Marshal(patch)
-			if err := g.save(s, c.Request.Context(), b); err != nil {
+			if err := g.save(s, c, b); err != nil {
 				restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error())
 				return
 			}
@@ -377,4 +388,82 @@ func (s *Server) pursaeRedirectDelete(c *gin.Context, r *restRequest) {
 	}
 	s.seogoRedirectsChanged()
 	restJSON(c, http.StatusOK, map[string]any{"deleted": true, "id": id})
+}
+
+// asCheckAPISettings applies the Pursae Security settings screen's rules (asParseSettings) to a value
+// sent to /pursae/v1/options/security, for the fields the update changes: number ranges, the login
+// slug, the redirect, the IP lists, the idle timeout, the alert address, and the two guards against
+// locking everyone out (the caller's own address on the block list, a two-step requirement while no
+// e-mail can be delivered).
+func (s *Server) asCheckAPISettings(c *gin.Context, old, st asSettings) []string {
+	var errs []string
+	inRange := func(name string, v, lo, hi int) {
+		if v < lo || v > hi {
+			errs = append(errs, fmt.Sprintf("%s must be between %d and %d.", name, lo, hi))
+		}
+	}
+	inRange("grace_days", st.GraceDays, 0, 90)
+	inRange("remember_days", st.RememberDays, 0, 365)
+	inRange("ip_max_failures", st.IPMaxFailures, 0, 100)
+	inRange("user_max_failures", st.UserMaxFailures, 0, 100)
+	inRange("fail_window", st.FailWindow, 1, 1440)
+	inRange("lockout_minutes", st.LockoutMinutes, 1, 10080)
+	inRange("long_lockout_after", st.LongLockoutAfter, 0, 100)
+	inRange("long_lockout_hours", st.LongLockoutHours, 1, 8760)
+	inRange("idle_minutes", st.IdleMinutes, 0, 10080)
+	inRange("hsts_max_age", st.HSTSMaxAge, 0, 63072000)
+	inRange("log_retention", st.LogRetention, 0, 3650)
+	for role, n := range st.PwMinLength {
+		inRange("pw_min_length."+role, n, 0, 128)
+	}
+	for role, n := range st.PwMinStrength {
+		inRange("pw_min_strength."+role, n, 0, 4)
+	}
+	required := false
+	for role, v := range st.RequireRoles {
+		switch v {
+		case "":
+		case "mfa", "2fa":
+			required = required || old.RequireRoles[role] != v
+		default:
+			errs = append(errs, "require_roles."+role+" must be \"\", \"mfa\" or \"2fa\".")
+		}
+	}
+	if ok, why := s.asMailReady(); required && !ok {
+		errs = append(errs, "Two-step login can only be required once e-mail can be delivered. "+why)
+	}
+	if (st.HideLogin != old.HideLogin || st.LoginSlug != old.LoginSlug) && (st.HideLogin || st.LoginSlug != "") {
+		switch slug := st.LoginSlug; {
+		case !asSlugRe.MatchString(slug):
+			errs = append(errs, "The login URL must be 3 to 64 lowercase letters, digits, dashes or underscores.")
+		case asReservedSlug(slug):
+			errs = append(errs, "“"+slug+"” is a reserved path. Choose another login URL.")
+		default:
+			if p, err := s.store.PostBySlug(c, "page", slug); err == nil && p != nil {
+				errs = append(errs, "A page or post already uses “"+slug+"”. Choose another login URL.")
+			}
+		}
+	}
+	if r := st.HideRedirect; r != old.HideRedirect && r != "" && !(strings.HasPrefix(r, "/") && !strings.HasPrefix(r, "//")) &&
+		!strings.HasPrefix(r, "https://") && !strings.HasPrefix(r, "http://") {
+		errs = append(errs, "The redirect must be a path on this site (like /404) or a full URL.")
+	}
+	if st.AllowList != old.AllowList || st.BlockList != old.BlockList {
+		for _, b := range append(validIPList(st.AllowList), validIPList(st.BlockList)...) {
+			errs = append(errs, "“"+b+"” is not an IP address or CIDR range.")
+		}
+		if ip := clientIP(c); maintIPAllowed(st.BlockList, ip) && !maintIPAllowed(st.AllowList, ip) {
+			errs = append(errs, "The block list contains your own IP address ("+ip+"); you would lock yourself out.")
+		}
+	}
+	if st.IdleMinutes != old.IdleMinutes && st.IdleMinutes > 0 && st.IdleMinutes < 5 {
+		errs = append(errs, "The idle timeout must be at least 5 minutes (or 0 for none).")
+	}
+	if st.FrameOptions != old.FrameOptions && st.FrameOptions != "SAMEORIGIN" && st.FrameOptions != "DENY" {
+		errs = append(errs, "frame_options must be SAMEORIGIN or DENY.")
+	}
+	if st.AlertEmail != old.AlertEmail && st.AlertEmail != "" && !validEmail(st.AlertEmail) {
+		errs = append(errs, "The alert address is not a valid e-mail address.")
+	}
+	return errs
 }

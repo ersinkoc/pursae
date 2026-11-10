@@ -105,7 +105,7 @@ Application Password and are narrowed by scopes the same way; Basic auth keeps w
 |----------|-|
 | `/.well-known/oauth-protected-resource` (also `…/wp-json/pursae/v1/mcp`) | protected-resource metadata (RFC 9728) |
 | `/.well-known/oauth-authorization-server` | authorization-server metadata (RFC 8414) |
-| `POST /oauth/register` | dynamic client registration (RFC 7591), public clients only; 10 per address (an IPv6 /64 counts as one address) and 100 in total per hour, and a client that gets no token within an hour is removed |
+| `POST /oauth/register` | dynamic client registration (RFC 7591), public clients only, a JSON body of at most 64 KB; 10 per address (an IPv6 /64 counts as one address) and 100 in total per hour, and a client that gets no token within an hour is removed |
 | `/wp-admin/oauth-authorize` | consent screen: who asks, scope checkboxes, approve or deny |
 | `POST /oauth/token` | `authorization_code` (PKCE) and `refresh_token` grants |
 | `POST /oauth/revoke` | token revocation (RFC 7009): ends the whole grant |
@@ -114,6 +114,12 @@ Application Password and are narrowed by scopes the same way; Basic auth keeps w
   must match a registered one exactly (https, http on localhost, or an app scheme such as `cursor://`).
 - Access tokens (`pat_…`) last one hour and are sent as `Authorization: Bearer …`; refresh tokens
   (`prt_…`) last 30 days and are rotated on every use. Only SHA-256 hashes are stored.
+- Reuse detection (OAuth 2.1): a refresh token that a rotation already replaced gets `invalid_grant`, and
+  more than 30 seconds after that rotation it also ends the whole grant (a client that refreshes twice
+  at once, or retries a lost answer, is only refused). An authorization code presented a second time
+  revokes the grant its first exchange created.
+- A user keeps at most 20 grants: a new one ends the oldest. Grants whose refresh token has expired are
+  deleted, and so are clients left without a grant.
 - Scopes are the same names as above. Unticked means all of the user's permissions.
 - An unauthenticated request to `/wp-json/pursae/v1/mcp` gets `401` with
   `WWW-Authenticate: Bearer resource_metadata="…"`, which is how clients find the flow. A bad or

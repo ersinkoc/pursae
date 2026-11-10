@@ -137,7 +137,9 @@ go to stderr.
   `Accept` header lists `text/event-stream` before `application/json` (or without it).
 - `GET` with `Accept: text/event-stream` and a session opens the server→client stream: JSON-RPC
   notifications and a `: keep-alive` comment every 25 seconds. Every event has an `id`; the last 64 are
-  kept, so a client that reconnects with `Last-Event-ID` gets what it missed.
+  kept, so a client that reconnects with `Last-Event-ID` gets what it missed. A session has one stream:
+  opening a second ends the first. The stream ends when the OAuth token or Application Password that
+  opened it is revoked or expires (checked with every keep-alive); reconnect with a fresh token.
 - `DELETE` with the session id ends the session and closes its stream (`204`).
 
 ## Tools
@@ -159,6 +161,13 @@ go to stderr.
 
 Each tool maps to a REST route listed in [Endpoints](../rest-api/endpoints.md); a refused call comes
 back as a tool error with the REST error code (`rest_forbidden`, `rest_scope_forbidden`, …).
+A tool whose schema has `additionalProperties: false` refuses arguments it does not list, and no tool
+but `rest_request` accepts `_method` (it would change the HTTP method of the route).
+
+Tool annotations follow the MCP spec, so clients can ask before risky calls: `readOnlyHint` is true for
+the reading tools (and `seo_analyze`, which stores nothing); `destructiveHint` is true for every other
+tool except the purely additive `create_post`, `create_page`, `create_term`, `create_menu_item` and
+`upload_media` — updates overwrite, installs replace versions and `rest_request` can do anything.
 
 ## Safety
 

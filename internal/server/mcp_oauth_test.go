@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -42,7 +43,7 @@ func TestScopePickerHelpers(t *testing.T) {
 }
 
 func TestMCPOAuthAndSSE(t *testing.T) {
-	ts, c, _ := testServerBuilderOff(t)
+	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	if code, _, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{
 		"weblog_title": {"MCP Site"}, "user_name": {"admin"}, "admin_password": {"correct horse"}, "admin_email": {"admin@example.test"},
@@ -89,6 +90,10 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 	resp, b = send("POST", base+"/oauth/register", strings.NewReader(`{"client_name":"Test AI","redirect_uris":["javascript:alert(1)"]}`), map[string]string{"Content-Type": "application/json"})
 	if resp.StatusCode != 400 {
 		t.Errorf("bad redirect accepted: %d %s", resp.StatusCode, b)
+	}
+	big := `{"client_name":"` + strings.Repeat("x", 100<<10) + `","redirect_uris":["http://localhost:9999/cb"]}`
+	if resp, b = send("POST", base+"/oauth/register", strings.NewReader(big), map[string]string{"Content-Type": "application/json"}); resp.StatusCode != 400 {
+		t.Errorf("oversized registration accepted: %d %.80s", resp.StatusCode, b)
 	}
 	resp, b = send("POST", base+"/oauth/register", strings.NewReader(`{"client_name":"Test AI","redirect_uris":["http://localhost:9999/cb"]}`), map[string]string{"Content-Type": "application/json"})
 	cl := asJSON(b)
@@ -278,12 +283,73 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 	if st != 200 || access2 == "" || access2 == access || tok2["refresh_token"] == refresh {
 		t.Fatalf("refresh: %d %v", st, tok2)
 	}
-	if st, _ := token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {refresh}}); st != 400 {
-		t.Errorf("old refresh token still works: %d", st)
-	}
 	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, bearer); resp.StatusCode != 401 {
 		t.Errorf("rotated access token still works: %d", resp.StatusCode)
 	}
+	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, map[string]string{"Authorization": "Bearer " + access2}); resp.StatusCode != 200 {
+		t.Errorf("rotated pair does not work: %d", resp.StatusCode)
+	}
+	// Reuse detection: the replaced refresh token is refused and, after the grace period, ends the whole
+	// grant (OAuth 2.1 §4.3.1).
+	prevGrace := oauthReuseGrace
+	oauthReuseGrace = 0
+	if st, _ := token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {refresh}}); st != 400 {
+		t.Errorf("old refresh token still works: %d", st)
+	}
+	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, map[string]string{"Authorization": "Bearer " + access2}); resp.StatusCode != 401 {
+		t.Errorf("grant survives a reused refresh token: %d", resp.StatusCode)
+	}
+	if st, _ := token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {tok2["refresh_token"].(string)}}); st != 400 {
+		t.Errorf("current refresh token works after reuse detection: %d", st)
+	}
+	oauthReuseGrace = prevGrace
+
+	// Two refreshes with the same token at once: exactly one gets a pair.
+	newGrant := func() map[string]any {
+		t.Helper()
+		_, _, loc := post(t, c, base+"/wp-admin/oauth-authorize", form(url.Values{"approve": {"1"}}))
+		lu, _ := url.Parse(loc)
+		exchange.Set("code", lu.Query().Get("code"))
+		st, tk := token(exchange)
+		if st != 200 {
+			t.Fatalf("new grant: %d %v", st, tk)
+		}
+		return tk
+	}
+	race := newGrant()["refresh_token"].(string)
+	results := make(chan int, 4)
+	for i := 0; i < 4; i++ {
+		go func() {
+			st, _ := token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {race}})
+			results <- st
+		}()
+	}
+	ok200 := 0
+	for i := 0; i < 4; i++ {
+		if <-results == 200 {
+			ok200++
+		}
+	}
+	if ok200 != 1 {
+		t.Errorf("concurrent refreshes with one token: %d succeeded, want 1", ok200)
+	}
+	// Within the grace period the losers were only refused: the grant lives on.
+	var grants int
+	_ = srv.store.Pool.QueryRow(context.Background(), `SELECT count(*) FROM oauth_tokens WHERE prev_refresh_hash = $1`, oauthHash(race)).Scan(&grants)
+	if grants != 1 {
+		t.Errorf("grant after concurrent refreshes: %d rows, want 1", grants)
+	}
+	_, _ = srv.store.Pool.Exec(context.Background(), `DELETE FROM oauth_tokens WHERE prev_refresh_hash = $1`, oauthHash(race)) // the profile below revokes its first grant
+
+	// Replaying an authorization code revokes the grant issued for it (OAuth 2.1 §4.1.3).
+	tk4 := newGrant()
+	if st, _ := token(exchange); st != 400 {
+		t.Errorf("replayed code accepted: %d", st)
+	}
+	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, map[string]string{"Authorization": "Bearer " + tk4["access_token"].(string)}); resp.StatusCode != 401 {
+		t.Errorf("grant survives a replayed code: %d", resp.StatusCode)
+	}
+	access2 = newGrant()["access_token"].(string) // the grant the profile revokes below
 
 	// Revoking from the profile cuts the grant off.
 	_, prof, _ := get(t, c, base+"/wp-admin/profile")
@@ -315,11 +381,69 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, h3); resp.StatusCode != 200 {
 		t.Fatalf("fresh token: %d", resp.StatusCode)
 	}
+	// A session has one GET stream: a second replaces the first. A stream ends when its token is revoked.
+	prevKeepAlive := mcpStreamKeepAlive
+	mcpStreamKeepAlive = 100 * time.Millisecond
+	defer func() { mcpStreamKeepAlive = prevKeepAlive }()
+	resp, _ = send("POST", base+"/wp-json/pursae/v1/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize"}`),
+		map[string]string{"Authorization": h3["Authorization"], "Content-Type": "application/json"})
+	sid3 := resp.Header.Get("Mcp-Session-Id")
+	openStream := func() (chan struct{}, func()) {
+		t.Helper()
+		req, _ := http.NewRequest("GET", base+"/wp-json/pursae/v1/mcp", nil)
+		req.Header.Set("Authorization", h3["Authorization"])
+		req.Header.Set("Accept", "text/event-stream")
+		req.Header.Set("Mcp-Session-Id", sid3)
+		r, err := anon.Do(req)
+		if err != nil || r.StatusCode != 200 {
+			t.Fatalf("stream: %v %v", err, r)
+		}
+		ended := make(chan struct{})
+		go func() { _, _ = io.Copy(io.Discard, r.Body); close(ended) }()
+		return ended, func() { r.Body.Close() }
+	}
+	waitEnd := func(ch chan struct{}, what string) {
+		t.Helper()
+		select {
+		case <-ch:
+		case <-time.After(3 * time.Second):
+			t.Errorf("stream still open: %s", what)
+		}
+	}
+	first, closeFirst := openStream()
+	defer closeFirst()
+	time.Sleep(150 * time.Millisecond)
+	second, closeSecond := openStream()
+	defer closeSecond()
+	waitEnd(first, "after a second stream opened")
 	rv := url.Values{"token": {tok3["refresh_token"].(string)}, "client_id": {clientID}}
 	if resp, _ := send("POST", base+"/oauth/revoke", strings.NewReader(rv.Encode()), map[string]string{"Content-Type": "application/x-www-form-urlencoded"}); resp.StatusCode != 200 {
 		t.Errorf("revoke: %d", resp.StatusCode)
 	}
 	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, h3); resp.StatusCode != 401 {
 		t.Errorf("token works after RFC 7009 revoke: %d", resp.StatusCode)
+	}
+	waitEnd(second, "after its token was revoked")
+
+	// Housekeeping: a user keeps at most oauthMaxGrantsPerUser grants, and registration removes expired
+	// grants and then the clients left without one, so old connections cannot fill the client cap.
+	ctx := context.Background()
+	for i := 0; i < oauthMaxGrantsPerUser+5; i++ {
+		_, _ = srv.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, access_expires_at, refresh_expires_at)
+			VALUES ($1, 1, $2, $3, now(), now() + interval '1 day')`, clientID, oauthRandom("a"), oauthRandom("r"))
+	}
+	newGrant()
+	var n int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM oauth_tokens WHERE user_id = 1`).Scan(&n)
+	if n != oauthMaxGrantsPerUser {
+		t.Errorf("grants of one user: %d, want %d", n, oauthMaxGrantsPerUser)
+	}
+	_, _ = srv.store.Pool.Exec(ctx, `INSERT INTO oauth_clients (client_id, name, redirect_uris, created_at) VALUES ('00000000-0000-4000-8000-0000000000aa', 'Old', '{http://localhost/cb}', now() - interval '60 days')`)
+	_, _ = srv.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, access_expires_at, refresh_expires_at)
+		VALUES ('00000000-0000-4000-8000-0000000000aa', 1, 'x1', 'y1', now() - interval '31 days', now() - interval '1 day')`)
+	send("POST", base+"/oauth/register", strings.NewReader(`{"client_name":"Next","redirect_uris":["http://localhost:9999/cb"]}`), map[string]string{"Content-Type": "application/json"})
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM oauth_clients WHERE client_id = '00000000-0000-4000-8000-0000000000aa'`).Scan(&n)
+	if n != 0 {
+		t.Error("a client whose only grant expired is kept")
 	}
 }
