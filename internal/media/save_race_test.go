@@ -20,7 +20,7 @@ func TestSaveSameNameInParallel(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			<-start
-			st, err := Save(dir, false, time.Now(), "image.png", bytes.NewReader([]byte{byte(i)}))
+			st, err := Save(dir, false, time.Now(), "image.png", bytes.NewReader([]byte(pngMagic+string(rune(i+1)))))
 			errs[i] = err
 			if err == nil {
 				names[i] = st.RelPath
