@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -162,10 +163,15 @@ func (s *Server) wbImportDocs(ctx context.Context, u *store.User, postIDs []int6
 		if !keep {
 			drop = append(drop, webbuilder.PostMarkerMeta)
 		}
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET meta = meta - $2::text[] WHERE id = $1`, p.ID, drop)
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE posts SET meta = meta - $2::text[] WHERE id = $1`, p.ID, drop); err != nil {
+			slog.Warn("web builder import: could not clear the WXR meta", "post", p.ID, "err", err)
+			log = append(log, "The temporary Pursae Web Builder import data of “"+p.Title+"” could not be removed.")
+		}
 		if keep {
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET meta = meta || jsonb_build_object($2::text, '1') WHERE id = $1`,
-				p.ID, webbuilder.PostMarkerMeta)
+			if _, err := s.store.Pool.Exec(ctx, `UPDATE posts SET meta = meta || jsonb_build_object($2::text, '1') WHERE id = $1`,
+				p.ID, webbuilder.PostMarkerMeta); err != nil {
+				slog.Warn("web builder import: could not set the marker", "post", p.ID, "err", err)
+			}
 		}
 	}
 	if kept > 0 {
@@ -228,7 +234,10 @@ func (s *Server) wbImportTemplateMeta(ctx context.Context, u *store.User, p *sto
 	if len(rules) > webbuilder.MaxConditions {
 		rules = rules[:webbuilder.MaxConditions]
 	}
-	_ = wb.SetTemplateConditions(ctx, p.ID, rules, t.Priority)
+	if err := wb.SetTemplateConditions(ctx, p.ID, rules, t.Priority); err != nil {
+		slog.Warn("web builder import: could not save template conditions", "post", p.ID, "err", err)
+		log = append(log, "The display conditions of the template “"+p.Title+"” could not be saved.")
+	}
 	preview := ""
 	if pv, err := wbParsePreview(t.Preview); err == nil {
 		preview = t.Preview
@@ -249,9 +258,18 @@ func (s *Server) wbImportTemplateMeta(ctx context.Context, u *store.User, p *sto
 			preview = ""
 		}
 	}
-	_ = wb.SetTemplatePreview(ctx, p.ID, preview)
+	if err := wb.SetTemplatePreview(ctx, p.ID, preview); err != nil {
+		slog.Warn("web builder import: could not save template preview", "post", p.ID, "err", err)
+	}
 	if (u == nil || !u.Can(webbuilder.TemplateCap, nil)) && p.Status != "draft" {
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET status = 'draft' WHERE id = $1`, p.ID)
+		// Fail closed: if the template cannot be disabled, trash it rather than leave it live.
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE posts SET status = 'draft' WHERE id = $1`, p.ID); err != nil {
+			slog.Error("web builder import: could not disable the template", "post", p.ID, "err", err)
+			if _, err2 := s.store.Pool.Exec(ctx, `UPDATE posts SET status = 'trash' WHERE id = $1`, p.ID); err2 != nil {
+				slog.Error("web builder import: could not trash the template", "post", p.ID, "err", err2)
+			}
+			log = append(log, "The template “"+p.Title+"” could not be saved as a draft and was not activated.")
+		}
 	}
 	return log
 }

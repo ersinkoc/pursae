@@ -1,0 +1,49 @@
+{{define "admin/web-builder-popup"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap web-builder-popup-settings">
+<h1 class="wp-heading-inline">Popup Settings</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<p class="description">&ldquo;{{.Title}}&rdquo; shows on the pages its display conditions match (Edit Conditions in the Theme Builder list).</p>
+<form method="get" action="/wp-admin/themes">
+<input type="hidden" name="page" value="{{.Page}}" /><input type="hidden" name="action" value="{{.Action}}" />
+<input type="hidden" name="post" value="{{.ID}}" /><input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="wb-popup-trigger">Opens</label></th><td>
+<select name="trigger" id="wb-popup-trigger">
+<option value="load"{{if eq .S.Trigger "load"}} selected{{end}}>When the page has loaded</option>
+<option value="scroll"{{if eq .S.Trigger "scroll"}} selected{{end}}>After scrolling down</option>
+<option value="exit"{{if eq .S.Trigger "exit"}} selected{{end}}>When the visitor is about to leave</option>
+<option value="click"{{if eq .S.Trigger "click"}} selected{{end}}>When an element is clicked</option>
+</select></td></tr>
+<tr><th scope="row"><label for="wb-popup-delay">Delay (seconds)</label></th><td><input name="delay" type="number" min="0" max="300" id="wb-popup-delay" value="{{.S.Delay}}" class="small-text" />
+<p class="description">Used by the page load trigger, and by the leave trigger on touch screens.</p></td></tr>
+<tr><th scope="row"><label for="wb-popup-scroll">Scroll depth (%)</label></th><td><input name="scroll" type="number" min="1" max="100" id="wb-popup-scroll" value="{{.S.Scroll}}" class="small-text" /></td></tr>
+<tr><th scope="row"><label for="wb-popup-selector">Click selector</label></th><td><input name="selector" type="text" id="wb-popup-selector" value="{{.S.Selector}}" class="regular-text code" placeholder="#open-popup" />
+<p class="description">An element id (#open-popup) or class (.open-popup); clicking it opens the popup.</p></td></tr>
+<tr><th scope="row"><label for="wb-popup-frequency">Shown</label></th><td>
+<select name="frequency" id="wb-popup-frequency">
+<option value="always"{{if eq .S.Frequency "always"}} selected{{end}}>On every page view</option>
+<option value="session"{{if eq .S.Frequency "session"}} selected{{end}}>Once per visit (browser session)</option>
+<option value="once"{{if eq .S.Frequency "once"}} selected{{end}}>Only once per visitor</option>
+<option value="days"{{if eq .S.Frequency "days"}} selected{{end}}>Again after some days</option>
+</select>
+<p class="description">A click trigger always opens the popup. The visitor's choice is kept in the browser (local storage), not in a cookie.</p></td></tr>
+<tr><th scope="row"><label for="wb-popup-days">Days</label></th><td><input name="days" type="number" min="1" max="365" id="wb-popup-days" value="{{.S.Days}}" class="small-text" /></td></tr>
+<tr><th scope="row"><label for="wb-popup-version">Version</label></th><td><input name="version" type="number" min="0" id="wb-popup-version" value="{{.S.Version}}" class="small-text" />
+<p class="description">Raise it to show a popup again to visitors who already saw or closed it.</p></td></tr>
+<tr><th scope="row"><label for="wb-popup-position">Position</label></th><td>
+<select name="position" id="wb-popup-position">
+<option value="center"{{if eq .S.Position "center"}} selected{{end}}>Center</option>
+<option value="top"{{if eq .S.Position "top"}} selected{{end}}>Top</option>
+<option value="bottom"{{if eq .S.Position "bottom"}} selected{{end}}>Bottom</option>
+</select></td></tr>
+<tr><th scope="row"><label for="wb-popup-width">Width (px)</label></th><td><input name="width" type="number" min="200" max="1600" id="wb-popup-width" value="{{.S.Width}}" class="small-text" /></td></tr>
+<tr><th scope="row">Closing</th><td><label for="wb-popup-overlay"><input name="overlay" type="checkbox" id="wb-popup-overlay" value="1"{{if .S.Overlay}} checked{{end}} /> Clicking outside the popup closes it</label>
+<p class="description">The close button and the Esc key always work.</p></td></tr>
+<tr><th scope="row">Cookie banner</th><td><label for="wb-popup-consent"><input name="after_consent" type="checkbox" id="wb-popup-consent" value="1"{{if .S.AfterConsent}} checked{{end}} /> Wait until the visitor has answered the Pursae Cookie banner</label>
+<p class="description">{{if .CookieOn}}Pursae Cookie is on: the popup stays hidden until a choice is made.{{else}}Takes effect while Pursae Cookie is on.{{end}}</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /> <a href="{{.Back}}" class="button">Back to Theme Builder</a></p>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

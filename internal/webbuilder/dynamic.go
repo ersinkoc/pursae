@@ -46,6 +46,7 @@ type SlotArgs struct {
 	Tax    string // data-wb-tax, SlugPattern; "" = category
 	Sep    string // data-wb-sep, ≤ MaxDynSepRunes runes; "" = the resolver's default
 	Words  int    // data-wb-words, MinDynWords…MaxDynWords; 0 = not set
+	Field  string // data-wb-field, FieldPattern: a custom field name; "" = none
 	Item   string // data-wb-item, IDPattern: the cell whose stored DynSettings apply; "" = none
 }
 
@@ -177,6 +178,7 @@ var dynMarkers = []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrMenuLoc}
 var (
 	dynFormatRE  = regexp.MustCompile(DynFormatPattern)
 	slugRE       = regexp.MustCompile(SlugPattern)
+	fieldRE      = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 	menuLocRE    = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 	classTokenRE = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 	dynSizeSet   = toSet(DynImageSizes)
@@ -414,6 +416,9 @@ func slotArgs(n *html.Node) SlotArgs {
 	}
 	if v, ok := getAttr(n, AttrSep); ok && utf8.ValidString(v) && utf8.RuneCountInString(v) <= MaxDynSepRunes {
 		a.Sep = v
+	}
+	if v, ok := getAttr(n, AttrField); ok && fieldRE.MatchString(v) {
+		a.Field = v
 	}
 	if v, ok := getAttr(n, AttrItem); ok && idPatternRE.MatchString(v) {
 		a.Item = v

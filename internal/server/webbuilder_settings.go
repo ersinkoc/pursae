@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,63 @@ const (
 	// wbSettingsNonce is the nonce action of the settings form.
 	wbSettingsNonce = "web-builder-settings"
 )
+
+const (
+	// wbRevisionsKeepOption is how many builder revisions (stored docs) each post keeps; 0 keeps all.
+	wbRevisionsKeepOption  = "web_builder_revisions_keep"
+	wbRevisionsKeepDefault = 50
+	wbRevisionsKeepMax     = 1000
+)
+
+// wbRevisionsKeep is the number of builder revisions kept per post (Settings › Web Builder).
+func (s *Server) wbRevisionsKeep() int {
+	v := s.settings.Get(wbRevisionsKeepOption)
+	switch n := v.(type) {
+	case nil:
+		return wbRevisionsKeepDefault
+	case float64:
+		return clampKeep(int(n))
+	case int:
+		return clampKeep(n)
+	case int64:
+		return clampKeep(int(n))
+	case string:
+		if n = strings.TrimSpace(n); n == "" {
+			return wbRevisionsKeepDefault
+		}
+		if i, err := strconv.Atoi(n); err == nil {
+			return clampKeep(i)
+		}
+	}
+	return wbRevisionsKeepDefault
+}
+
+func clampKeep(n int) int {
+	if n < 0 {
+		return wbRevisionsKeepDefault
+	}
+	return min(n, wbRevisionsKeepMax)
+}
+
+// Form defaults of Settings › Web Builder (a form's own content keys, webbuilder.FormKey*, win).
+const (
+	wbFormToOption       = "web_builder_form_to"       // recipients; empty = admin_email
+	wbFormCcOption       = "web_builder_form_cc"       // copy recipients
+	wbFormSuccessOption  = "web_builder_form_success"  // message after a sent form
+	wbFormFailureOption  = "web_builder_form_error"    // message when the form could not be sent
+	wbFormRedirectOption = "web_builder_form_redirect" // page opened after a sent form
+	wbFormStoreOption    = "web_builder_form_store"    // keep submissions (default on)
+	wbFormListPer        = 50
+)
+
+// wbFormStoreOn reports whether form submissions are kept in the database (on unless switched off).
+func (s *Server) wbFormStoreOn() bool {
+	v := s.settings.Get(wbFormStoreOption)
+	if v == nil {
+		return true
+	}
+	return s.settings.Bool(wbFormStoreOption)
+}
 
 // wbEnabledTypes are the post types the builder edits (Settings › Web Builder; pages and posts by
 // default).
@@ -329,6 +387,17 @@ type wbSettingsData struct {
 	OutdatedMore    bool
 	OutdatedErr     bool
 	RendererVersion int
+	RevisionsKeep   int
+	FormTo, FormCc  string
+	FormSuccess     string
+	FormError       string
+	FormRedirect    string
+	FormStore       bool
+	RegenerateURL   string
+	TokenFields     []wbTokenField
+	Submissions     []wbSubmissionRow
+	SubmissionTotal int
+	SubmissionMore  bool
 }
 
 // wbSettingsScreen renders Settings › Web Builder (GET options-general?page=web-builder; the caller
@@ -347,15 +416,27 @@ func (s *Server) wbSettingsScreen(c *gin.Context) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
 		return
 	}
+	if c.Query("regenerate-frame") == "1" { // the bulk regenerate screen (webbuilder_regenerate.go)
+		s.wbBundleFrame(c, "__WEB_BUILDER_REGENERATE__", "Regenerate pages")
+		return
+	}
 	ctx := c.Request.Context()
 	d := wbSettingsData{Nonce: s.nonce(c, wbSettingsNonce), OptionPage: pluginSettingsSlug + wbSettingsPage,
-		Types: s.wbPostTypeChoices(ctx), RendererVersion: webbuilder.RendererVersion}
+		Types: s.wbPostTypeChoices(ctx), RendererVersion: webbuilder.RendererVersion, RevisionsKeep: s.wbRevisionsKeep(),
+		FormTo: s.settings.String(wbFormToOption), FormCc: s.settings.String(wbFormCcOption), FormSuccess: s.settings.String(wbFormSuccessOption),
+		FormError: s.settings.String(wbFormFailureOption), FormRedirect: s.settings.String(wbFormRedirectOption), FormStore: s.wbFormStoreOn()}
+	d.RegenerateURL = wbSettingsURL + "&regenerate-frame=1"
+	d.TokenFields = s.wbTokenFields()
+	s.wbLoadSubmissions(c, &d)
 	var err error
 	if d.Outdated, d.OutdatedTotal, err = s.wbOutdatedPages(ctx); err != nil {
 		d.OutdatedErr = true
 	}
 	d.OutdatedMore = d.OutdatedTotal > len(d.Outdated)
 	var notices []notice
+	if c.Query("submissions-deleted") != "" {
+		notices = append(notices, notice{Type: "success", Message: "<strong>Submissions deleted.</strong>", Dismissible: true})
+	}
 	if c.Query("settings-updated") == "true" {
 		notices = append(notices, notice{Type: "success", Message: "<strong>Settings saved.</strong>", Dismissible: true})
 	}
@@ -375,6 +456,10 @@ func (s *Server) wbSettingsSave(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
+	if c.PostForm("wb_submissions") != "" {
+		s.wbSubmissionsAction(c)
+		return
+	}
 	sent := c.PostFormArray(wbPostTypesOption + "[]")
 	var keep []string
 	for _, ch := range s.wbPostTypeChoices(ctx) {
@@ -382,7 +467,30 @@ func (s *Server) wbSettingsSave(c *gin.Context) {
 			keep = append(keep, ch.Slug)
 		}
 	}
-	if err := s.settings.Set(ctx, map[string]any{wbPostTypesOption: strings.Join(keep, ",")}); err != nil {
+	revKeep := wbRevisionsKeepDefault
+	if v := strings.TrimSpace(c.PostForm(wbRevisionsKeepOption)); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			revKeep = min(n, wbRevisionsKeepMax)
+		}
+	}
+	if err := s.settings.Set(ctx, map[string]any{wbPostTypesOption: strings.Join(keep, ","), wbRevisionsKeepOption: revKeep,
+		wbFormToOption:       strings.Join(webbuilder.FormAddresses(c.PostForm(wbFormToOption)), ", "),
+		wbFormCcOption:       strings.Join(webbuilder.FormAddresses(c.PostForm(wbFormCcOption)), ", "),
+		wbFormSuccessOption:  wbFormLine(c.PostForm(wbFormSuccessOption)),
+		wbFormFailureOption:  wbFormLine(c.PostForm(wbFormFailureOption)),
+		wbFormRedirectOption: strings.TrimSpace(c.PostForm(wbFormRedirectOption)),
+		wbFormStoreOption:    c.PostForm(wbFormStoreOption) != ""}); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	tok := wbTokens{Colors: map[string]string{}, Fonts: map[string]string{}}
+	for _, k := range wbTokenColors {
+		tok.Colors[k] = c.PostForm("wb_token_color_" + k)
+	}
+	for _, k := range wbTokenFonts {
+		tok.Fonts[k] = c.PostForm("wb_token_font_" + k)
+	}
+	if err := s.wbSetTokens(ctx, tok); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}

@@ -13,8 +13,10 @@
  *
  * The Theme Library screen (Web Builder › Theme Library) loads the same bundle: its page sets
  * window.__WEB_BUILDER_LIBRARY__ and gets ./library-main (the gallery alone) instead of the editor.
+ * Settings › Web Builder › Regenerate pages does the same with window.__WEB_BUILDER_REGENERATE__ and ./regenerate-main.
  */
 import './locale'
 import '@/index.css'
 
-void ((window as { __WEB_BUILDER_LIBRARY__?: unknown }).__WEB_BUILDER_LIBRARY__ ? import('./library-main') : import('./editor-main'))
+const flags = window as { __WEB_BUILDER_LIBRARY__?: unknown; __WEB_BUILDER_REGENERATE__?: unknown }
+void (flags.__WEB_BUILDER_LIBRARY__ ? import('./library-main') : flags.__WEB_BUILDER_REGENERATE__ ? import('./regenerate-main') : import('./editor-main'))

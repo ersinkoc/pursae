@@ -27,6 +27,41 @@ type FormSchema struct {
 	Variant   string      `json:"variant"`
 	Title     string      `json:"title"` // section title as plain text (mail subject)
 	Fields    []FormField `json:"fields"`
+
+	// Per-form overrides of Settings › Web Builder (section content keys, FormKey*); "" = site default.
+	To       string `json:"to,omitempty"`       // recipient address(es), comma separated
+	Cc       string `json:"cc,omitempty"`       // copy address(es), comma separated
+	Success  string `json:"success,omitempty"`  // message after a sent form
+	Failure  string `json:"failure,omitempty"`  // message when the form could not be sent
+	Redirect string `json:"redirect,omitempty"` // URL or path to open after a sent form
+}
+
+// Section content keys that tune a form without changing its fields.
+const (
+	FormKeyTo       = "formTo"
+	FormKeyCc       = "formCc"
+	FormKeySuccess  = "formSuccess"
+	FormKeyFailure  = "formError"
+	FormKeyRedirect = "formRedirect"
+)
+
+// FormAddresses parses a comma/semicolon/newline separated list of plain addresses and returns the
+// valid ones, de-duplicated (name parts and anything that is not a bare address are dropped).
+func FormAddresses(list string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, part := range strings.FieldsFunc(list, func(r rune) bool { return r == ',' || r == ';' || r == '\n' }) {
+		v := strings.TrimSpace(part)
+		a, err := mail.ParseAddress(v)
+		if err != nil || a.Name != "" || a.Address != v || !strings.Contains(v[strings.LastIndexByte(v, '@')+1:], ".") {
+			continue
+		}
+		if k := strings.ToLower(v); !seen[k] {
+			seen[k] = true
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 // Field reasons in FormSchema.Validate (data.fields of wb_form_invalid).
@@ -113,7 +148,10 @@ func schemaOf(s *Section) FormSchema {
 		variant = "default"
 		names = formVariants[variant]
 	}
-	fs := FormSchema{SectionID: s.ID, Variant: variant, Title: ToPlain(s.Content["title"])}
+	fs := FormSchema{SectionID: s.ID, Variant: variant, Title: ToPlain(s.Content["title"]),
+		To: strings.TrimSpace(s.Content[FormKeyTo]), Cc: strings.TrimSpace(s.Content[FormKeyCc]),
+		Success: strings.TrimSpace(ToPlain(s.Content[FormKeySuccess])), Failure: strings.TrimSpace(ToPlain(s.Content[FormKeyFailure])),
+		Redirect: strings.TrimSpace(s.Content[FormKeyRedirect])}
 	for _, n := range names {
 		f := fieldDefaults[n]
 		if n == "choice" && choiceLabels[variant] != "" {

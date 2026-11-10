@@ -694,8 +694,9 @@ const (
 
 // FormResponse answers a JSON (Accept: application/json) form submit.
 type FormResponse struct {
-	OK      bool   `json:"ok"`
-	Message string `json:"message"`
+	OK       bool   `json:"ok"`
+	Message  string `json:"message"`
+	Redirect string `json:"redirect,omitempty"` // absolute URL of this site to open after a sent form
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -952,6 +953,7 @@ const (
 	MetaPriority     = "_wb_priority"      // decimal PriorityMin…PriorityMax, default 0
 	MetaPreview      = "_wb_preview"       // preview object (PreviewObject grammar), "" = the type's default
 	MetaStarter      = "_wb_starter"       // the StarterID the template was created from
+	MetaPopup        = "_wb_popup"         // popup templates: PopupSettings as JSON, "" = the defaults
 
 	// HelloPursaeTheme is the bundled blank-canvas theme that renders the template parts.
 	HelloPursaeTheme = "hello-pursae"
@@ -1004,19 +1006,22 @@ const (
 	TemplateArchive    TemplateType = "archive"
 	TemplateSearch     TemplateType = "search-results"
 	Template404        TemplateType = "error-404"
+	// TemplatePopup is a popup (modal) printed before </body> on every view its conditions match;
+	// several popups can show on one page. Its trigger and frequency are PopupSettings.
+	TemplatePopup TemplateType = "popup"
 	// Pursae Commerce store views (StoreTemplateKinds); offered only while Pursae Commerce is on.
 	TemplateSingleProduct  TemplateType = "single-product"
 	TemplateProductArchive TemplateType = "product-archive"
 )
 
 // TemplateTypes in display order (Theme Builder tabs, Add New select).
-var TemplateTypes = []TemplateType{TemplateHeader, TemplateFooter, TemplateSinglePost, TemplateSinglePage, TemplateSingle, TemplateSingleProduct, TemplateFrontPage, TemplateArchive, TemplateProductArchive, TemplateSearch, Template404}
+var TemplateTypes = []TemplateType{TemplateHeader, TemplateFooter, TemplateSinglePost, TemplateSinglePage, TemplateSingle, TemplateSingleProduct, TemplateFrontPage, TemplateArchive, TemplateProductArchive, TemplateSearch, Template404, TemplatePopup}
 
 // TemplateTypeLabels are the English UI labels (the admin and the editor badge).
 var TemplateTypeLabels = map[TemplateType]string{
 	TemplateHeader: "Header", TemplateFooter: "Footer", TemplateSinglePost: "Single Post",
 	TemplateSinglePage: "Single Page", TemplateSingle: "Single", TemplateFrontPage: "Front Page",
-	TemplateArchive: "Archive", TemplateSearch: "Search Results", Template404: "404 Page",
+	TemplateArchive: "Archive", TemplateSearch: "Search Results", Template404: "404 Page", TemplatePopup: "Popup",
 	TemplateSingleProduct: "Single Product", TemplateProductArchive: "Product Archive",
 }
 
@@ -1053,6 +1058,7 @@ const (
 	LocationHeader = "header"
 	LocationMain   = "main"
 	LocationFooter = "footer"
+	LocationPopup  = "popup" // popup templates: any number can fill it on one page
 )
 
 // TemplateLocation returns the location a template type fills.
@@ -1062,6 +1068,8 @@ func TemplateLocation(t TemplateType) string {
 		return LocationHeader
 	case TemplateFooter:
 		return LocationFooter
+	case TemplatePopup:
+		return LocationPopup
 	}
 	return LocationMain
 }
@@ -1086,6 +1094,7 @@ var TemplateTypeViews = map[TemplateType][]string{
 	TemplateArchive:    {ViewArchive},
 	TemplateSearch:     {ViewArchive},
 	Template404:        {View404},
+	TemplatePopup:      {ViewSingular, ViewArchive, View404},
 
 	TemplateSingleProduct:  {ViewSingular},
 	TemplateProductArchive: {ViewArchive},
@@ -1110,6 +1119,7 @@ var DefaultConditions = map[TemplateType][]string{
 	TemplateArchive:    {"include/archive"},
 	TemplateSearch:     {"include/archive/search"},
 	Template404:        {"include/404"},
+	TemplatePopup:      {"include/general"},
 
 	TemplateSingleProduct:  {"include/singular/product"},
 	TemplateProductArchive: {"include/archive/type/product", "include/archive/product_cat", "include/archive/product_tag"},
@@ -1140,7 +1150,7 @@ var StarterIDs = []StarterID{StarterBlank, StarterHeader, StarterFooter, Starter
 var DefaultStarters = map[TemplateType]StarterID{
 	TemplateHeader: StarterHeader, TemplateFooter: StarterFooter, TemplateSinglePost: StarterSingle,
 	TemplateSinglePage: StarterSingle, TemplateSingle: StarterSingle, TemplateFrontPage: StarterBlank,
-	TemplateArchive: StarterArchive, TemplateSearch: StarterSearch, Template404: StarterBlank,
+	TemplateArchive: StarterArchive, TemplateSearch: StarterSearch, Template404: StarterBlank, TemplatePopup: StarterBlank,
 	TemplateSingleProduct: StarterProduct, TemplateProductArchive: StarterProductArchive,
 }
 
@@ -1204,7 +1214,7 @@ const (
 var DefaultPreviews = map[TemplateType]string{
 	TemplateHeader: PreviewFront, TemplateFooter: PreviewFront, TemplateSinglePost: PreviewLatest,
 	TemplateSinglePage: PreviewLatest, TemplateSingle: PreviewLatest, TemplateFrontPage: PreviewFront,
-	TemplateArchive: PreviewHome, TemplateSearch: PreviewSearch + "a", Template404: Preview404,
+	TemplateArchive: PreviewHome, TemplateSearch: PreviewSearch + "a", Template404: Preview404, TemplatePopup: PreviewFront,
 	TemplateSingleProduct: PreviewLatest, TemplateProductArchive: PreviewType + "product",
 }
 
@@ -1440,6 +1450,7 @@ const (
 	AttrTax      = "data-wb-tax"       // DynSettings.Tax
 	AttrSep      = "data-wb-sep"       // DynSettings.Sep
 	AttrWords    = "data-wb-words"     // DynSettings.Words
+	AttrField    = "data-wb-field"     // post.field / post.field-url: the Pursae Custom Fields field name (FieldPattern)
 	AttrSearch   = "data-wb-search"    // on the search <form method="get" action="<home>/"> with <input type="search" name="s">
 	// AttrItem is the Item.id of the cell a slot element belongs to (IDPattern). Commerce and
 	// language-switcher slots read that cell's DynSettings from the STORED doc by this id; an id
@@ -1460,6 +1471,11 @@ const (
 	SlotSiteURL     SlotName = "site.url"
 	SlotSiteLogo    SlotName = "site.logo"
 	SlotSiteYear    SlotName = "site.year"
+
+	// SlotPostField prints a Pursae Custom Fields value of the post (data-wb-field = the field
+	// name) as escaped text; SlotPostFieldURL sets href/src from a link, URL or image field.
+	SlotPostField    SlotName = "post.field"
+	SlotPostFieldURL SlotName = "post.field-url"
 
 	SlotMenuLabel SlotName = "menu.label"
 	SlotMenuURL   SlotName = "menu.url"
@@ -1542,6 +1558,7 @@ const (
 var Slots = map[SlotName]SlotMode{
 	SlotSiteTitle: SlotText, SlotSiteTagline: SlotText, SlotSiteURL: SlotAttr, SlotSiteLogo: SlotAttr, SlotSiteYear: SlotText,
 	SlotMenuLabel: SlotText, SlotMenuURL: SlotAttr,
+	SlotPostField: SlotText, SlotPostFieldURL: SlotAttr,
 	SlotPostTitle: SlotHTML, SlotPostURL: SlotAttr, SlotPostContent: SlotHTML, SlotPostExcerpt: SlotHTML,
 	SlotPostDate: SlotText, SlotPostModified: SlotText, SlotPostAuthor: SlotText, SlotPostAuthorURL: SlotAttr,
 	SlotPostAvatar: SlotAttr, SlotPostAuthorBio: SlotText, SlotPostImage: SlotAttr, SlotPostTerms: SlotHTML,

@@ -14,19 +14,82 @@
 {{end}}<p class="description">Items of these post types can be opened in Pursae Web Builder. Pages built with a type that is switched off keep their published content.</p>
 </fieldset></td>
 </tr>
+<tr>
+<th scope="row"><label for="web_builder_revisions_keep">Revisions to keep</label></th>
+<td><input name="web_builder_revisions_keep" type="number" step="1" min="0" max="1000" id="web_builder_revisions_keep" value="{{.RevisionsKeep}}" class="small-text" />
+<p class="description">The newest builder revisions kept for each page; older ones are removed when a page is published. 0 keeps every revision.</p></td>
+</tr>
+{{range .TokenFields}}<tr>
+<th scope="row"><label for="{{.Name}}">{{.Label}}</label></th>
+<td><input name="{{.Name}}" type="text" id="{{.Name}}" value="{{.Value}}" class="regular-text code" placeholder="{{if .Color}}#2271b1{{else}}Inter, sans-serif{{end}}" />
+<p class="description">Available to every page and template as <code>var({{.CSSVar}})</code>; a change applies at once, without publishing again. Leave empty to leave it unset.</p></td>
+</tr>
+{{end}}<tr>
+<th scope="row"><label for="web_builder_form_to">Form recipients</label></th>
+<td><input name="web_builder_form_to" type="text" id="web_builder_form_to" value="{{.FormTo}}" class="regular-text" />
+<p class="description">Email addresses (comma separated) that receive the messages of forms built with Pursae Web Builder. Leave empty to use the site administration email address.</p></td>
+</tr>
+<tr>
+<th scope="row"><label for="web_builder_form_cc">Form copies (Cc)</label></th>
+<td><input name="web_builder_form_cc" type="text" id="web_builder_form_cc" value="{{.FormCc}}" class="regular-text" /></td>
+</tr>
+<tr>
+<th scope="row"><label for="web_builder_form_success">Success message</label></th>
+<td><input name="web_builder_form_success" type="text" id="web_builder_form_success" value="{{.FormSuccess}}" class="large-text" />
+<p class="description">Shown after a form was sent. Leave empty for the default text, which follows the site language.</p></td>
+</tr>
+<tr>
+<th scope="row"><label for="web_builder_form_error">Failure message</label></th>
+<td><input name="web_builder_form_error" type="text" id="web_builder_form_error" value="{{.FormError}}" class="large-text" /></td>
+</tr>
+<tr>
+<th scope="row"><label for="web_builder_form_redirect">Redirect after sending</label></th>
+<td><input name="web_builder_form_redirect" type="text" id="web_builder_form_redirect" value="{{.FormRedirect}}" class="regular-text code" placeholder="/thank-you/" />
+<p class="description">A path (or full URL) on this site to open after a form was sent. Leave empty to stay on the page.</p></td>
+</tr>
+<tr>
+<th scope="row">Submissions</th>
+<td><label for="web_builder_form_store"><input name="web_builder_form_store" type="checkbox" id="web_builder_form_store" value="1"{{if .FormStore}} checked="checked"{{end}} /> Keep every submitted form in the database</label>
+<p class="description">A message stays listed below even when the email cannot be delivered.</p></td>
+</tr>
 </table>
 <p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /></p>
 </form>
 
 <h2 class="title">Regenerate pages</h2>
-<p>Pursae Web Builder publishes each page as static HTML that the editor renders. When an update brings a new renderer, pages published before it keep their markup until they are opened in the editor and updated; nothing can regenerate them on the server.</p>
+<p>Pursae Web Builder publishes each page as static HTML that the editor renders. When an update brings a new renderer, pages published before it keep their markup until they are published again, and pages imported from a WordPress export have no markup yet. The editor does the drawing, in your browser.</p>
 {{if .OutdatedErr}}<div class="notice notice-error inline"><p>The pages to regenerate could not be listed.</p></div>
-{{else if .Outdated}}<p>{{if eq .OutdatedTotal 1}}1 item was{{else}}{{.OutdatedTotal}} items were{{end}} published with an older renderer (current: version {{.RendererVersion}}). Open each one and click Update:</p>
+{{else if .Outdated}}<p><button type="button" class="button button-primary" id="web-builder-regenerate-start" data-src="{{.RegenerateURL}}">Regenerate all {{.OutdatedTotal}} items</button></p>
+<iframe id="web-builder-regenerate-frame" title="Regenerate pages" hidden style="display:none;width:100%;height:220px;margin:12px 0;border:1px solid #c3c4c7;border-radius:8px;background:#17181c"></iframe>
+<script>document.getElementById('web-builder-regenerate-start').addEventListener('click',function(){var f=document.getElementById('web-builder-regenerate-frame');f.hidden=false;f.style.display='block';f.src=this.getAttribute('data-src');this.disabled=true;});</script>
+<p>{{if eq .OutdatedTotal 1}}1 item was{{else}}{{.OutdatedTotal}} items were{{end}} published with an older renderer (current: version {{.RendererVersion}}). Or open each one and click Update:</p>
 <ul class="ul-disc" id="web-builder-outdated">
 {{range .Outdated}}<li><a href="{{.EditURL}}">{{.Title}}</a> &mdash; {{.Type}}{{if ne .Status "publish"}}, {{.Status}}{{end}} (renderer {{.Renderer}})</li>
 {{end}}</ul>
 {{if .OutdatedMore}}<p class="description">Only the {{len .Outdated}} most recently modified items are listed.</p>{{end}}
 {{else}}<p id="web-builder-outdated-none">All built pages use the current renderer (version {{.RendererVersion}}).</p>
+{{end}}
+
+<h2 class="title">Form submissions</h2>
+{{if .Submissions}}<form method="post" action="/wp-admin/options" id="web-builder-submissions">
+<input type="hidden" name="option_page" value="{{.OptionPage}}" /><input type="hidden" name="action" value="update" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="wp-list-table widefat fixed striped">
+<thead><tr><td class="manage-column column-cb check-column"></td><th scope="col">Date</th><th scope="col">Form</th><th scope="col">Message</th><th scope="col">Email</th></tr></thead>
+<tbody>
+{{range .Submissions}}<tr>
+<th scope="row" class="check-column"><input type="checkbox" name="submission[]" value="{{.ID}}" /></th>
+<td>{{.Date}}</td>
+<td><a href="{{.PageURL}}">{{.Form}}</a></td>
+<td>{{range .Fields}}<strong>{{.Name}}:</strong> {{.Value}}<br />{{end}}</td>
+<td>{{if .Mailed}}Sent{{else}}Not sent{{end}}</td>
+</tr>
+{{end}}</tbody></table>
+{{if .SubmissionMore}}<p class="description">Showing the newest {{len .Submissions}} of {{.SubmissionTotal}} submissions.</p>{{end}}
+<p class="submit"><button type="submit" name="wb_submissions" value="delete" class="button">Delete selected</button>
+<button type="submit" name="wb_submissions" value="delete-all" class="button button-link-delete">Delete all</button></p>
+</form>
+{{else}}<p id="web-builder-submissions-none">No form has been submitted yet.</p>
 {{end}}
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

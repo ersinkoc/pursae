@@ -22,6 +22,7 @@ func (s *Server) wbRegisterTemplateREST(reg func(pattern string, methods map[str
 	reg(`/web-builder/v2/templates`, map[string]restHandler{http.MethodGet: s.wbRESTTemplates, http.MethodPost: s.wbRESTTemplateCreate}, true)
 	reg(tpl+`/conditions`, map[string]restHandler{http.MethodPut: s.wbRESTTemplateConditions}, true)
 	reg(tpl+`/preview`, map[string]restHandler{http.MethodPut: s.wbRESTTemplatePreview}, true)
+	reg(tpl+`/popup`, map[string]restHandler{http.MethodGet: s.wbRESTPopupGet, http.MethodPut: s.wbRESTPopupPut}, true)
 	reg(tpl+`/conflicts`, map[string]restHandler{http.MethodGet: s.wbRESTTemplateConflicts}, true)
 	reg(`/web-builder/v2/navigator`, map[string]restHandler{http.MethodGet: s.wbRESTNavigator}, true)
 	reg(`/web-builder/v2/preview-context`, map[string]restHandler{http.MethodGet: s.wbRESTPreviewContext}, true)

@@ -34,6 +34,7 @@ type wbSiteSettings struct {
 	PageOnFront     int64        `json:"page_on_front"`
 	PageForPosts    int64        `json:"page_for_posts"`
 	CustomCSS       string       `json:"custom_css"`
+	Tokens          wbTokens     `json:"tokens"`
 	Pages           []wbSitePage `json:"pages"`
 	CanUpload       bool         `json:"can_upload"`
 }
@@ -59,6 +60,7 @@ func (s *Server) wbSiteSettingsView(c *gin.Context, u *store.User) wbSiteSetting
 		PageOnFront:     int64(s.settings.Int("page_on_front")),
 		PageForPosts:    int64(s.settings.Int("page_for_posts")),
 		CustomCSS:       modString(mods, "custom_css", ""),
+		Tokens:          s.wbSiteTokens(),
 		Pages:           []wbSitePage{},
 		CanUpload:       u.Can("upload_files", nil),
 	}
@@ -87,7 +89,7 @@ func (s *Server) wbRESTSiteSettings(c *gin.Context, _ *restRequest) {
 
 // wbRESTSiteSettingsSave is PUT site-settings: a partial object of blogname, blogdescription,
 // site_icon (attachment id, 0 removes), custom_logo, show_on_front, page_on_front, page_for_posts and
-// custom_css. It answers with the new state.
+// custom_css, plus tokens ({colors, fonts}: the design tokens, webbuilder_tokens.go). It answers with the new state.
 func (s *Server) wbRESTSiteSettingsSave(c *gin.Context, r *restRequest) {
 	u := wbUser(c, "edit_theme_options")
 	if u == nil {
@@ -103,6 +105,16 @@ func (s *Server) wbRESTSiteSettingsSave(c *gin.Context, r *restRequest) {
 		return
 	}
 	values := map[string]string{}
+	var tokens *wbTokens
+	if tv, ok := in["tokens"]; ok {
+		var t wbTokens
+		if err := json.Unmarshal(tv, &t); err != nil {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "tokens must be an object of colors and fonts.", map[string]any{"key": "tokens"})
+			return
+		}
+		tokens = &t
+		delete(in, "tokens")
+	}
 	for key, v := range in {
 		id := key
 		switch key {
@@ -133,6 +145,12 @@ func (s *Server) wbRESTSiteSettingsSave(c *gin.Context, r *restRequest) {
 	if err != nil {
 		restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error())
 		return
+	}
+	if tokens != nil {
+		if err := s.wbSetTokens(c, *tokens); err != nil {
+			restErr(c, http.StatusInternalServerError, "db_error", "Could not save the settings.")
+			return
+		}
 	}
 	save := map[string]any{"theme_mods_" + t.Slug: mods}
 	for k, v := range opts {

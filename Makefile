@@ -93,10 +93,10 @@ builder-test: builder/node_modules/.package-lock.json
 ## preview and as the static snapshot, pixel-compared at 1280/820/400 px (≤ 0.1 % differing pixels), the snapshot
 ## without JavaScript, and the site runtime's behaviours. Needs `make builder` (run here when its scratch copy is
 ## missing) and Playwright's Chromium; skips with a message when the browser is not installed
-## (cd builder && npx playwright install chromium). Report: builder/.work/parity/report.json.
+## (cd builder && npx playwright install chromium); set PARITY_STRICT=1 (CI) to make a skip fail. Report: builder/.work/parity/report.json.
 builder-parity: builder/node_modules/.package-lock.json
 	@test -d builder/.work/upstream/src/builder/live || $(MAKE) builder
-	@cd builder && { node test/parity/check-browsers.mjs; rc=$$?; if [ $$rc -eq 3 ]; then exit 0; elif [ $$rc -ne 0 ]; then exit $$rc; fi; \
+	@cd builder && { node test/parity/check-browsers.mjs; rc=$$?; if [ $$rc -eq 3 ]; then if [ -n "$$PARITY_STRICT" ]; then echo '[parity] PARITY_STRICT set: skip counts as failure'; exit 1; fi; exit 0; elif [ $$rc -ne 0 ]; then exit $$rc; fi; \
 		npx playwright test -c test/parity/playwright.config.ts; }
 
 ## builder-bump SHA=<commit>: move builder/upstream and builder/UPSTREAM_SHA to an upstream commit, then

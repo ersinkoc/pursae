@@ -332,6 +332,21 @@ func (w WebBuilderDB) AddRevision(ctx context.Context, r *WebBuilderRevision) er
 		r.RevisionID, r.PostID, r.Rev, []byte(r.Doc), rawOr(r.Page, "{}"), r.Renderer).Scan(&r.CreatedAt)
 }
 
+// PruneRevisions deletes the builder docs of a post's revisions beyond the newest keep (<= 0 keeps
+// all) and returns how many it removed. The core post revisions stay: only the stored doc (up to
+// MaxDocBytes each) goes, so the older revisions can still be read as plain content.
+func (w WebBuilderDB) PruneRevisions(ctx context.Context, postID int64, keep int) (int64, error) {
+	if keep <= 0 {
+		return 0, nil
+	}
+	tag, err := w.q.Exec(ctx, `DELETE FROM web_builder_revisions WHERE post_id = $1 AND revision_id NOT IN (
+		SELECT revision_id FROM web_builder_revisions WHERE post_id = $1 ORDER BY rev DESC, revision_id DESC LIMIT $2)`, postID, keep)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
 // LatestPostRevisionID is the newest non-autosave core revision of a post (0 when there is none),
 // the row a publish links its doc to after the core update recorded it.
 func (w WebBuilderDB) LatestPostRevisionID(ctx context.Context, postID int64) (int64, error) {
