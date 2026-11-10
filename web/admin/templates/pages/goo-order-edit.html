@@ -78,7 +78,7 @@
 {{if .SKU}}<div class="wc-order-item-sku"><strong>SKU:</strong> {{.SKU}}</div>{{end}}
 {{if .VariationID}}<div class="wc-order-item-variation"><strong>Variation ID:</strong> {{.VariationID}}</div>{{end}}
 <input type="hidden" class="order_item_id" name="order_item_id[]" value="{{.ID}}">
-<div class="view">{{if .Meta}}<table cellspacing="0" class="display_meta">{{range .Meta}}<tr><th>{{.Key}}:</th><td><p>{{.Value}}</p></td></tr>{{end}}</table>{{end}}</div></td>
+<div class="view">{{if .Meta}}<table cellspacing="0" class="display_meta">{{range .Meta}}<tr><th>{{.Key}}:</th><td><p>{{if contains .Value "/goocommerce_uploads/"}}<a href="{{.Value}}" target="_blank" rel="noopener noreferrer">{{.Value}}</a>{{else}}{{.Value}}{{end}}</p></td></tr>{{end}}</table>{{end}}</div></td>
 <td class="item_cost" width="1%"><div class="view">{{.Cost}}</div></td>
 <td class="quantity" width="1%"><div class="view"><small class="times">&times;</small> {{.Qty}}{{if .RefundedQty}} <small class="refunded">-{{.RefundedQty}}</small>{{end}}</div>
 <div class="edit" style="display:none"><input type="number" step="1" min="0" autocomplete="off" name="order_item_qty[{{.ID}}]" placeholder="0" value="{{.Qty}}" data-qty="{{.Qty}}" size="4" class="quantity"></div>

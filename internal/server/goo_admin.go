@@ -179,9 +179,25 @@ func gooCSV(c *gin.Context, filename string, header []string, rows [][]string) {
 	c.Header("Content-Type", "text/csv; charset=utf-8")
 	c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
 	w := csv.NewWriter(c.Writer)
-	_ = w.Write(header)
-	_ = w.WriteAll(rows)
+	_ = w.Write(gooCSVEscapeRow(header))
+	for _, r := range rows {
+		_ = w.Write(gooCSVEscapeRow(r))
+	}
 	w.Flush()
+}
+
+// gooCSVEscapeRow neutralises formula cells (customer names, cities, coupon codes, …) in an export;
+// numbers, including negative amounts, stay numeric.
+func gooCSVEscapeRow(row []string) []string {
+	out := make([]string, len(row))
+	for i, v := range row {
+		if _, err := strconv.ParseFloat(v, 64); err == nil {
+			out[i] = v
+			continue
+		}
+		out[i] = gooCSVEscape(v)
+	}
+	return out
 }
 
 // Formatting ----------------------------------------------------------------------------------------------

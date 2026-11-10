@@ -78,15 +78,19 @@ func (s *Server) gooCSVHeaderKey(header string) string {
 }
 
 // gooCSVEscape is WC_CSV_Exporter::escape_data(): cells starting with = + - @ get a leading quote.
+// gooCSVEscape prefixes cells that a spreadsheet would run as a formula with a quote, like
+// WC_CSV_Exporter::escape_data (triggers = + - @ tab CR).
 func gooCSVEscape(v string) string {
-	if v != "" && strings.ContainsAny(v[:1], "=+-@") {
+	if v != "" && strings.ContainsAny(v[:1], gooCSVTriggers) {
 		return "'" + v
 	}
 	return v
 }
 
+const gooCSVTriggers = "=+-@\t\r"
+
 func gooCSVUnescape(v string) string {
-	if len(v) > 1 && v[0] == '\'' && strings.ContainsAny(v[1:2], "=+-@") {
+	if len(v) > 1 && v[0] == '\'' && strings.ContainsAny(v[1:2], gooCSVTriggers) {
 		return v[1:]
 	}
 	return v

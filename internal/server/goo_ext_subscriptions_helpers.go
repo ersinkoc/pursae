@@ -196,7 +196,9 @@ func (s *Server) gxaParseTime(v string) *time.Time {
 	return nil
 }
 
-// gxaAddPeriod adds n periods (day, week, month, year; plurals accepted) to a time.
+// gxaAddPeriod adds n periods (day, week, month, year; plurals accepted) to a time. Months and
+// years clamp to the last day of the target month like wcs_add_months (Jan 31 + 1 month = Feb 28,
+// Feb 29 + 1 year = Feb 28) instead of overflowing into the next month as time.AddDate does.
 func gxaAddPeriod(t time.Time, period string, n int) time.Time {
 	switch strings.TrimSuffix(period, "s") {
 	case "day":
@@ -204,9 +206,16 @@ func gxaAddPeriod(t time.Time, period string, n int) time.Time {
 	case "week":
 		return t.AddDate(0, 0, 7*n)
 	case "year":
-		return t.AddDate(n, 0, 0)
+		return gxaAddMonths(t, 12*n)
 	}
-	return t.AddDate(0, n, 0)
+	return gxaAddMonths(t, n)
+}
+
+// gxaAddMonths adds n calendar months keeping the wall clock and clamping the day to the target month.
+func gxaAddMonths(t time.Time, n int) time.Time {
+	first := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, n, 0)
+	day := min(t.Day(), gooSubsDaysIn(first.Month(), first.Year()))
+	return time.Date(first.Year(), first.Month(), day, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 }
 
 // gxaPeriodLabel is "month" / "6 months".

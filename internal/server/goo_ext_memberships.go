@@ -294,8 +294,8 @@ func (m *gooUserMembership) addNote(note string) {
 func (s *Server) gmemGrant(ctx context.Context, userID int64, plan *gooMembershipPlan, orderID, productID int64, note string) (*gooUserMembership, error) {
 	now := time.Now()
 	for _, m := range s.gmemUMList(ctx, userID, plan.ID, "") {
-		if orderID != 0 && m.OrderID == orderID {
-			return m, nil // already granted by this order
+		if orderID != 0 && m.OrderID == orderID && m.HasAccess(now) {
+			return m, nil // already granted by this order (a cancelled grant is reactivated below)
 		}
 		if m.HasAccess(now) {
 			if orderID != 0 {
@@ -811,10 +811,22 @@ func init() {
 
 	gooOn("order_status_changed", 30, func(s *Server, ctx context.Context, arg any) {
 		ch, ok := arg.(*gooStatusChange)
-		if !ok || !s.gooExtOn(gmemKey) || !containsStr(gooPaidStatuses, ch.To) {
+		if !ok || !s.gooExtOn(gmemKey) {
 			return
 		}
-		s.gmemGrantFromOrder(ctx, ch.Order)
+		switch {
+		case containsStr(gooPaidStatuses, ch.To):
+			s.gmemGrantFromOrder(ctx, ch.Order)
+		case ch.To == "cancelled" || ch.To == "refunded":
+			s.gmemRevokeFromOrder(ctx, ch.Order, ch.To)
+		}
+	})
+	gooOn("subscription_status_changed", 30, func(s *Server, ctx context.Context, arg any) {
+		ch, ok := arg.(*gsubStatusChange)
+		if !ok || !s.gooExtOn(gmemKey) {
+			return
+		}
+		s.gmemFollowSubscription(ctx, ch)
 	})
 	gooOn("customer_created", 30, func(s *Server, ctx context.Context, arg any) {
 		if !s.gooExtOn(gmemKey) {
@@ -888,12 +900,134 @@ func (s *Server) gmemGrantFromOrder(ctx context.Context, o *gooOrder) {
 				continue
 			}
 			if gxaHasID(p.ProductIDs, it.ProductID) || (it.VariationID != 0 && gxaHasID(p.ProductIDs, it.VariationID)) {
-				if _, err := s.gmemGrant(ctx, o.CustomerID, p, o.ID, it.ProductID, fmt.Sprintf("Membership access granted from purchasing %s (Order #%d).", gooEsc(it.Name), o.ID)); err == nil {
-					_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Customer granted access to the %s membership plan.", gooEsc(p.Name)), false, "")
+				// One grant per order and plan: the order flag is claimed atomically, so processing then
+				// completed (or another order granted in between) never extends the access length twice.
+				flag := gmemGrantFlag(p.ID)
+				if claimed, err := s.gooClaimOrderFlag(ctx, o, flag, true); err != nil || !claimed {
+					continue
 				}
+				if _, err := s.gmemGrant(ctx, o.CustomerID, p, o.ID, it.ProductID, fmt.Sprintf("Membership access granted from purchasing %s (Order #%d).", gooEsc(it.Name), o.ID)); err != nil {
+					_, _ = s.gooClaimOrderFlag(ctx, o, flag, false)
+					continue
+				}
+				_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Customer granted access to the %s membership plan.", gooEsc(p.Name)), false, "")
 			}
 		}
 	}
+}
+
+// gmemGrantFlag is the order meta flag marking that the order granted (or extended) a plan.
+func gmemGrantFlag(planID int64) string {
+	return fmt.Sprintf("_membership_granted_%d", planID)
+}
+
+// gmemRevokeFromOrder cancels the memberships an order granted when the order is cancelled or
+// refunded (WooCommerce Memberships), and releases the order's grant flags so paying it again grants
+// access again.
+func (s *Server) gmemRevokeFromOrder(ctx context.Context, o *gooOrder, to string) {
+	if o.CustomerID == 0 {
+		return
+	}
+	for _, m := range s.gmemUMList(ctx, o.CustomerID, 0, "") {
+		if m.OrderID != o.ID || m.Status == "cancelled" || m.Status == "expired" {
+			continue
+		}
+		m.addNote(fmt.Sprintf("Membership cancelled because Order #%d was %s.", o.ID, strings.ToLower(gooStatusLabel(to))))
+		m.Status = "cancelled"
+		now := time.Now()
+		if m.End == nil || m.End.After(now) {
+			m.End = &now
+		}
+		_ = s.gmemSaveUM(ctx, m)
+	}
+	for k, v := range o.Meta {
+		if strings.HasPrefix(k, "_membership_granted_") && v == true {
+			_, _ = s.gooClaimOrderFlag(ctx, o, k, false)
+		}
+	}
+}
+
+// gmemFollowSubscription keeps the memberships granted by a subscription's parent or renewal orders in
+// step with the subscription (WooCommerce Memberships for Subscriptions): on hold pauses them,
+// reactivation resumes them, pending cancellation ends them with the prepaid period, and a cancelled
+// or expired subscription cancels or expires them.
+func (s *Server) gmemFollowSubscription(ctx context.Context, ch *gsubStatusChange) {
+	sub := ch.Sub
+	if sub == nil || sub.CustomerID == 0 {
+		return
+	}
+	orders := map[int64]bool{sub.ParentOrderID: true}
+	if rows, err := s.store.Pool.Query(ctx, `SELECT id FROM goo_orders WHERE (meta->>'_subscription_renewal')::numeric = $1
+		OR (meta->>'_subscription_switch')::numeric = $1`, sub.ID); err == nil {
+		for rows.Next() {
+			var id int64
+			if rows.Scan(&id) == nil {
+				orders[id] = true
+			}
+		}
+		rows.Close()
+	}
+	now := time.Now()
+	for _, m := range s.gmemUMList(ctx, sub.CustomerID, 0, "") {
+		if m.OrderID == 0 || !orders[m.OrderID] {
+			continue
+		}
+		from, prevEnd := m.Status, ""
+		switch ch.To {
+		case "on-hold":
+			if m.Status == "active" {
+				m.Status = "paused"
+			}
+		case "active":
+			if m.Status == "paused" || m.Status == "pending-cancel" {
+				m.Status = "active"
+			}
+			if from == "pending-cancel" {
+				m.End = gmemPrevEnd(m)
+			}
+		case "pending-cancel":
+			if containsStr([]string{"active", "paused"}, m.Status) {
+				m.Status = "pending-cancel"
+				if m.End != nil {
+					prevEnd = m.End.UTC().Format(time.RFC3339)
+				}
+				if sub.End != nil && (m.End == nil || sub.End.Before(*m.End)) {
+					end := *sub.End
+					m.End = &end
+				}
+			}
+		case "cancelled", "expired":
+			if !containsStr([]string{"cancelled", "expired"}, m.Status) {
+				m.Status = ch.To
+				if m.End == nil || m.End.After(now) {
+					m.End = &now
+				}
+			}
+		}
+		if m.Status != from {
+			m.addNote(fmt.Sprintf("Membership status changed from %s to %s because subscription #%d is now %s.",
+				gmemStatusLabel(from), gmemStatusLabel(m.Status), sub.ID, strings.ToLower(gsubStatusLabel(ch.To))))
+			if m.Status == "pending-cancel" {
+				m.Notes[0]["prev_end"] = prevEnd // restored if the subscription is reactivated
+			}
+			_ = s.gmemSaveUM(ctx, m)
+		}
+	}
+}
+
+// gmemPrevEnd is the end date a membership had before its subscription went pending cancellation.
+func gmemPrevEnd(m *gooUserMembership) *time.Time {
+	for _, n := range m.Notes {
+		v, ok := n["prev_end"].(string)
+		if !ok {
+			continue
+		}
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			return &t
+		}
+		return nil
+	}
+	return m.End
 }
 
 // gmemScheduler activates delayed memberships and expires ended ones.
