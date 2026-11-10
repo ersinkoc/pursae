@@ -472,6 +472,11 @@ func (s *Server) menuAjax(c *gin.Context, action string) bool {
 		}
 		s.adminHTML(c, http.StatusOK, sb.String())
 	case "menu-locations-save":
+		// wp_ajax_menu_locations_save(): check_ajax_referer( 'add-menu_item', 'menu-settings-column-nonce' ).
+		if !s.checkNonceValue(c, c.PostForm("menu-settings-column-nonce"), "add-menu_item") {
+			c.String(http.StatusForbidden, "-1")
+			return true
+		}
 		locs := map[string]int64{}
 		for _, loc := range s.activeTheme().MenuLocations {
 			if v, ok := c.GetPostForm("menu-locations[" + loc.Slug + "]"); ok {

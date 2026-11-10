@@ -382,9 +382,22 @@ func (s *Server) asyncUpload(c *gin.Context) {
 		return
 	}
 	postID, _ := strconv.ParseInt(c.PostForm("post_id"), 10, 64)
+	// The post an upload is attached to must be one the user may edit (wp_ajax_upload_attachment(),
+	// async-upload.php): otherwise anyone who uploads could add files to another user's gallery.
+	attachOK := true
+	if postID > 0 {
+		p, err := s.store.GetPost(c, postID)
+		attachOK = err == nil && u.Can("edit_post", p)
+	} else if postID < 0 {
+		postID = 0
+	}
 	if c.PostForm("action") == "upload-attachment" {
 		if !s.checkNonce(c, "media-form") {
 			c.JSON(http.StatusOK, gin.H{"success": false, "data": gin.H{"message": "The link you followed has expired.", "filename": ""}})
+			return
+		}
+		if !attachOK {
+			c.JSON(http.StatusOK, gin.H{"success": false, "data": gin.H{"message": "Sorry, you are not allowed to attach files to this post.", "filename": ""}})
 			return
 		}
 		a, err := s.saveUpload(c, "async-upload", postID)
@@ -403,6 +416,9 @@ func (s *Server) asyncUpload(c *gin.Context) {
 	if !s.checkNonce(c, "media-form") {
 		c.String(http.StatusForbidden, "The link you followed has expired.")
 		return
+	}
+	if !attachOK {
+		postID = 0 // async-upload.php: the file is uploaded unattached
 	}
 	a, err := s.saveUpload(c, "async-upload", postID)
 	if err != nil {

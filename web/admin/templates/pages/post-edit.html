@@ -86,7 +86,7 @@
 						{{if eq $p.Type "post"}}<input type="checkbox" style="display:none" name="hidden_post_sticky" id="hidden-post-sticky" value="sticky"{{if $p.Sticky}} checked="checked"{{end}} />{{end}}
 						<input type="hidden" name="hidden_post_visibility" id="hidden-post-visibility" value="{{.Visibility}}" />
 						<input type="radio" name="visibility" id="visibility-radio-public" value="public"{{if eq .Visibility "public"}} checked="checked"{{end}} /> <label for="visibility-radio-public" class="selectit">Public</label><br />
-						{{if eq $p.Type "post"}}<span id="sticky-span"><input id="sticky" name="sticky" type="checkbox" value="sticky"{{if $p.Sticky}} checked="checked"{{end}} /> <label for="sticky" class="selectit">Stick this post to the front page</label><br /></span>{{end}}
+						{{if and (eq $p.Type "post") .CanAuthor}}<span id="sticky-span"><input id="sticky" name="sticky" type="checkbox" value="sticky"{{if $p.Sticky}} checked="checked"{{end}} /> <label for="sticky" class="selectit">Stick this post to the front page</label><br /></span>{{end}}
 						<input type="radio" name="visibility" id="visibility-radio-password" value="password"{{if eq .Visibility "password"}} checked="checked"{{end}} /> <label for="visibility-radio-password" class="selectit">Password protected</label><br />
 						<span id="password-span"><label for="post_password">Password:</label> <input type="text" name="post_password" id="post_password" value="{{$p.Password}}" maxlength="255" /><br /></span>
 						<input type="radio" name="visibility" id="visibility-radio-private" value="private"{{if eq .Visibility "private"}} checked="checked"{{end}} /> <label for="visibility-radio-private" class="selectit">Private</label><br />

@@ -49,6 +49,10 @@ func TestWXRExport(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// A subscriber who wrote nothing: wxr_authors_list() leaves them out of every export.
+	if _, err := srv.store.CreateUser(ctx, store.NewUser{Login: "reader", Email: "reader@example.test", PasswordHash: "x", Role: "subscriber"}); err != nil {
+		t.Fatal(err)
+	}
 	menuID, err := srv.store.CreateMenu(ctx, "Primary")
 	if err != nil {
 		t.Fatal(err)
@@ -101,6 +105,15 @@ func TestWXRExport(t *testing.T) {
 		if !strings.Contains(xml, want) {
 			t.Errorf("all export misses %q", want)
 		}
+	}
+	if !strings.Contains(xml, "<wp:author_login><![CDATA[admin]]></wp:author_login><wp:author_email><![CDATA[admin@example.test]]>") {
+		t.Errorf("all export misses the author")
+	}
+	if strings.Contains(xml, "reader@example.test") || strings.Contains(xml, "[reader]") {
+		t.Errorf("a user who wrote nothing is in the export")
+	}
+	if i, j := strings.Index(xml, "<wp:author>"), strings.Index(xml, "<item>"); i < 0 || j < i {
+		t.Errorf("authors must come before the items")
 	}
 	if strings.Count(xml, "<wp:post_type>nav_menu_item</wp:post_type>") != 2 {
 		t.Errorf("expected 2 menu items in the export")
@@ -427,6 +440,17 @@ func TestWXRImport(t *testing.T) {
 	}
 	if strings.Contains(string(body), "Template error") {
 		t.Error("template error on the import screen")
+	}
+
+	// Importing the same file again does not download the media a second time (post_exists()).
+	again := wxrImportBody(t, c, base, wxrFixture)
+	if !strings.Contains(again, "Media “Imported photo” already exists.") {
+		t.Errorf("re-import did not report the existing media")
+	}
+	var media int
+	_ = pool.QueryRow(ctx, `SELECT count(*) FROM media WHERE title = 'Imported photo'`).Scan(&media)
+	if media != 1 {
+		t.Errorf("re-import added the media again: %d copies", media)
 	}
 }
 

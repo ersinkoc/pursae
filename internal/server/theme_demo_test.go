@@ -418,6 +418,14 @@ func TestThemeLibraryAndDemoContent(t *testing.T) {
 	}
 	_ = srv.store.SetPostTerms(ctx, own.ID, "category", []int64{travel.ID})
 	ownID := own.ID
+	// A copy of a demo page made by the user (a Multi Language translation copies the custom fields,
+	// demo marks included) is the user's content: removal keeps it.
+	aboutPost := mustPost(t, srv, about)
+	copied := &store.Post{Type: "page", AuthorID: 1, Title: "Über uns", Content: "Meine Seite", Status: "publish", CommentStatus: "closed", PingStatus: "closed",
+		Format: "standard", Meta: map[string]any{demoMetaKey: aboutPost.Meta[demoMetaKey], demoMetaRef: aboutPost.Meta[demoMetaRef]}}
+	if err := srv.store.InsertPost(ctx, copied); err != nil {
+		t.Fatal(err)
+	}
 
 	// Remove Demo Content: everything imported goes, the settings come back.
 	_, body, _ = get(t, c, base+"/wp-admin/themes")
@@ -431,8 +439,14 @@ func TestThemeLibraryAndDemoContent(t *testing.T) {
 	if loc != "/wp-admin/themes?demo=removed" {
 		t.Fatalf("remove redirect %q", loc)
 	}
-	if got := demoCounts(); got != [4]int{} {
-		t.Fatalf("left after removal %v", got)
+	if got := demoCounts(); got != [4]int{1, 0, 0, 0} {
+		t.Fatalf("left after removal %v (want only the user's copy)", got)
+	}
+	if _, err := srv.store.GetPost(ctx, copied.ID); err != nil {
+		t.Fatal("the user's copy of a demo page was deleted")
+	}
+	if _, err := srv.store.GetPost(ctx, about); err == nil {
+		t.Fatal("the demo page itself was not deleted")
 	}
 	if count(`SELECT count(*) FROM posts WHERE slug IN ('hello-world','sample-page') AND status = 'publish'`) != 2 {
 		t.Error("Remove Demo Content did not bring the install samples back")

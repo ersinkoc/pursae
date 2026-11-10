@@ -33,7 +33,10 @@ func TestACFGoAttachmentFieldsNeedOwnership(t *testing.T) {
 	}
 	send := func(cl *http.Client, value string) {
 		t.Helper()
-		_, body, _ := get(t, cl, base+"/wp-admin/post?post="+itoa64(a.ID)+"&action=edit")
+		code, body, _ := get(t, cl, base+"/wp-admin/post?post="+itoa64(a.ID)+"&action=edit")
+		if cl != c && code == http.StatusForbidden {
+			return // the edit screen itself is refused to a user who may not edit the attachment
+		}
 		m := nonceRe.FindStringSubmatch(body)
 		if m == nil {
 			t.Fatal("no nonce on the attachment screen")

@@ -1678,6 +1678,11 @@ func (s *Server) postEdit(c *gin.Context) {
 				c.Redirect(http.StatusFound, "/wp-admin/upload?deleted=1")
 				return
 			}
+			// The same rule as saving it (attachmentSave): edit_post on the attachment.
+			if a.UploaderID != u.ID && !u.Can("edit_others_posts", nil) {
+				c.String(http.StatusForbidden, "Sorry, you are not allowed to edit this item.")
+				return
+			}
 			s.attachmentEdit(c, a)
 			return
 		}
@@ -2096,7 +2101,11 @@ func (s *Server) postSave(c *gin.Context) {
 	if visibility == "password" {
 		p.Password = c.PostForm("post_password")
 	}
-	p.Sticky = p.Type == "post" && c.PostForm("sticky") == "sticky" && visibility == "public"
+	// edit_post(): only a user who may edit others' posts and publish sticks or unsticks a post;
+	// for anyone else the stored flag stays (the checkbox is not on their form).
+	if p.Type == "post" && u.Can("edit_others_posts", nil) && u.Can("publish_posts", nil) {
+		p.Sticky = c.PostForm("sticky") == "sticky" && visibility == "public"
+	}
 
 	// Status from the button that was pressed, like _wp_translate_postdata().
 	switch {
