@@ -113,6 +113,8 @@ jobs:
     env:
       CGO_ENABLED: "0"
     steps:
+      # Byte-identical checkout: golden files, patch hashes and templates are compared as LF.
+      - run: git config --global core.autocrlf false
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:

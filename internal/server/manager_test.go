@@ -387,7 +387,7 @@ func TestCoreArtifactInstall(t *testing.T) {
 	if b, _ := os.ReadFile(target); !bytes.Equal(b, bin) {
 		t.Error("the executable was not replaced")
 	}
-	if fi, _ := os.Stat(target); fi.Mode().Perm() != 0o755 {
+	if fi, _ := os.Stat(target); runtime.GOOS != "windows" && fi.Mode().Perm() != 0o755 {
 		t.Errorf("mode %v", fi.Mode().Perm())
 	}
 
@@ -398,7 +398,7 @@ func TestCoreArtifactInstall(t *testing.T) {
 	if err := coreReplaceable(goRun); err == nil || !strings.Contains(err.Error(), "go run") {
 		t.Errorf("go run binary: %v", err)
 	}
-	if os.Geteuid() != 0 {
+	if os.Geteuid() != 0 && runtime.GOOS != "windows" { // Windows has no read-only directories for this
 		ro := filepath.Join(t.TempDir(), "ro")
 		os.MkdirAll(ro, 0o755)
 		roExe := filepath.Join(ro, "pursae")

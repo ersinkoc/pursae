@@ -7,6 +7,7 @@ import (
 	"html"
 	"html/template"
 	"io/fs"
+	"mime"
 	"path"
 	"regexp"
 	"strings"
@@ -51,6 +52,10 @@ var registry struct {
 }
 
 func init() {
+	// Windows reads MIME types from the registry, which maps .js to application/javascript; keep the
+	// standard type every platform serves.
+	_ = mime.AddExtensionType(".js", "text/javascript; charset=utf-8")
+	_ = mime.AddExtensionType(".mjs", "text/javascript; charset=utf-8")
 	if err := json.Unmarshal(registryJSON, &registry); err != nil {
 		panic("wp-registry.json: " + err.Error())
 	}

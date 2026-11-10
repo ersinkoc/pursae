@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -127,7 +128,7 @@ func TestMCPLoginAndRefresh(t *testing.T) {
 	}
 	path, _ := mcpTokenPath(ts.URL)
 	st, err := os.Stat(path)
-	if err != nil || st.Mode().Perm() != 0o600 {
+	if err != nil || (runtime.GOOS != "windows" && st.Mode().Perm() != 0o600) {
 		t.Fatalf("token file: %v %v", st, err)
 	}
 

@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -173,7 +174,7 @@ func extract(zipData []byte, dir string) (int, error) {
 			err = os.Chmod(tmp, 0o644)
 		}
 		if err == nil {
-			err = os.Rename(tmp, filepath.Join(dir, name))
+			err = renameReplace(tmp, filepath.Join(dir, name))
 		}
 		if err != nil {
 			_ = os.Remove(tmp)
@@ -313,4 +314,15 @@ func localeData(b []byte, brand bool) []byte {
 	}
 	out, _ := json.Marshal(msgs)
 	return out
+}
+
+// renameReplace moves tmp over dst. On Windows a rename onto a file that another install is replacing
+// at the same moment fails with "Access is denied", so it retries briefly there.
+func renameReplace(tmp, dst string) error {
+	err := os.Rename(tmp, dst)
+	for i := 0; err != nil && runtime.GOOS == "windows" && i < 50; i++ {
+		time.Sleep(10 * time.Millisecond)
+		err = os.Rename(tmp, dst)
+	}
+	return err
 }
