@@ -64,6 +64,9 @@ func init() {
 	// Registered only while the probe_conditional option is on, so a re-instantiated
 	// instance may register less than the first one.
 	wpgo.OnInit(func() {
+		if wpgo.OptionBool("probe_init_fail", false) {
+			os.Exit(3) // the SDK recovers panics; exiting fails wpgo_init
+		}
 		if wpgo.OptionBool("probe_conditional", false) {
 			wpgo.AddFilter("probe_conditional", 10, func(_ wpgo.Context, v string, _ []any) string { return v + " conditional" })
 		}

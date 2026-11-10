@@ -1,6 +1,8 @@
 package plugins
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"strings"
 
 	"wpgo/internal/wp"
@@ -15,7 +17,9 @@ import (
 // the core's rendered HTML, which may legitimately hold markup KSES removes (contact forms,
 // embeds, store widgets), so only the part the plugin changed is sanitised: the common prefix and
 // suffix of the value before and after the filter are kept as they are, widened so that the
-// changed part never starts or ends inside a tag.
+// changed part never starts or ends inside a tag. When the original value is still there as a
+// whole (the plugin added something above and below it, or wrapped it), only what was added
+// around it is sanitised, so the core's markup is never run through KSES.
 
 // sanitizeHTML is the sanitiser (a variable for tests).
 var sanitizeHTML = wp.KsesPost
@@ -41,7 +45,7 @@ func (p *Plugin) sanitizeFilter(hook string, before, after any) any {
 	}
 	clean, ok := sanitizeChange(in, out)
 	if !ok {
-		p.logs.add("warning", "runtime", hook+": a change inside a script, style or comment was dropped (needs the content:html permission)")
+		p.logs.add("warning", "runtime", hook+": a change inside a tag, script, style or comment was dropped (needs the content:html permission)")
 	}
 	return clean
 }
@@ -56,6 +60,11 @@ var rawTextElements = []string{"script", "style", "textarea", "title", "noscript
 func sanitizeChange(in, out string) (string, bool) {
 	if in == out {
 		return out, true
+	}
+	if in != "" {
+		if i := strings.Index(out, in); i >= 0 {
+			return sanitizeAround(in, out[:i], out[i+len(in):])
+		}
 	}
 	pre := 0
 	for pre < len(in) && pre < len(out) && in[pre] == out[pre] {
@@ -84,6 +93,27 @@ func sanitizeChange(in, out string) (string, bool) {
 		return in, false
 	}
 	return head + sanitizeHTML(out[pre:len(out)-suf]) + out[len(out)-suf:], true
+}
+
+// sanitizeAround sanitises what a filter put before and after the unchanged original value in,
+// as one fragment so that a wrapper (<div>…</div>) stays intact. The original is kept out of the
+// sanitiser through a random marker, and is put back only where the marker ends up as text; when
+// it does not (the plugin opened a tag, an attribute, a comment or a script around it) the
+// change is dropped.
+func sanitizeAround(in, before, after string) (string, bool) {
+	var nonce [12]byte
+	_, _ = rand.Read(nonce[:])
+	mark := "wpgokeep" + hex.EncodeToString(nonce[:])
+	clean := sanitizeHTML(before + mark + after)
+	i := strings.Index(clean, mark)
+	if i < 0 || strings.Count(clean, mark) != 1 {
+		return in, false
+	}
+	head := clean[:i]
+	if lt, gt := strings.LastIndexByte(head, '<'), strings.LastIndexByte(head, '>'); lt > gt || insideRawText(head) {
+		return in, false
+	}
+	return head + in + clean[i+len(mark):], true
 }
 
 // insideRawText reports whether html ends inside a raw-text element or a comment.

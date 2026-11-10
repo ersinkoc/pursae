@@ -89,7 +89,7 @@ addresses or password hashes.
 | `AddShortcode(tag, fn)` | `register_shortcode` | `content:filter` + tag in manifest | [shortcodes](shortcodes.md) |
 | `RegisterRestRoute(ns, route, methods, handler)` | `register_rest_route` | `rest:routes` | [REST routes](rest-routes.md) |
 | `RegisterSettingsPage(page)`, `Setting(id)`, `SettingString/Bool/Float`, `SettingName(id)` | `register_settings_page`, `get_option` | `admin:settings`, `options:read` | [settings pages](settings-pages.md) |
-| `EnqueueStyle(Style)`, `EnqueueScript(Script)` | `enqueue_style`, `enqueue_script` | `content:filter` | [assets](assets.md) |
+| `EnqueueStyle(Style)`, `EnqueueScript(Script)` | `enqueue_style`, `enqueue_script` | `content:filter` (+ `admin:settings` for admin styles, `content:html` / `admin:scripts` for scripts) | [assets](assets.md) |
 
 ## Scheduled events
 

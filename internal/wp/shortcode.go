@@ -1,6 +1,7 @@
 package wp
 
 import (
+	"html"
 	"regexp"
 	"sort"
 	"strconv"
@@ -35,6 +36,11 @@ var shortcodeTagRe = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 // It mirrors do_shortcode(): escaped shortcodes ([[tag]]) lose one pair of
 // brackets, unknown tags are left alone, and a <p> that holds nothing but a
 // shortcode is removed first (shortcode_unautop()).
+//
+// Like do_shortcodes_in_html_tags(), shortcodes inside HTML markup are not
+// expanded as text: inside an attribute value the output is escaped for the
+// attribute (and dropped when the attribute cannot safely hold it), and
+// brackets anywhere else in a tag, comment or CDATA section are left alone.
 func DoShortcode(content string, tags []string, fn ShortcodeFunc) string {
 	if len(tags) == 0 || !strings.Contains(content, "[") {
 		return content
@@ -44,15 +50,267 @@ func DoShortcode(content string, tags []string, fn ShortcodeFunc) string {
 		return content
 	}
 	content = unautopShortcodes(content, re)
-	return re.ReplaceAllStringFunc(content, func(m string) string {
+	expand := func(m string) string {
 		sub := re.FindStringSubmatch(m)
 		// sub: 1 = leading "[", 2 = tag, 3 = attrs, 4 = self-closing "/", 5 = content, 6 = trailing "]"
 		if sub[1] == "[" && sub[6] == "]" {
 			return m[1 : len(m)-1] // escaped
 		}
 		attrs := ParseShortcodeAttrs(sub[3])
-		return sub[1] + fn(sub[2], attrs, sub[5]) + sub[6]
+		return sub[1] + fn(sub[2], attrs, unhideBrackets(sub[5])) + sub[6]
+	}
+	if !strings.Contains(content, "<") {
+		return re.ReplaceAllStringFunc(content, expand)
+	}
+	content = shortcodesInHTMLTags(content, re, expand)
+	return unhideBrackets(re.ReplaceAllStringFunc(content, expand))
+}
+
+// Brackets inside markup are swapped for these private-use characters while
+// the text is expanded (WordPress uses &#91; / &#93;), then swapped back.
+const (
+	hiddenOpen  = "\uE000"
+	hiddenClose = "\uE001"
+)
+
+var (
+	hideBrackets   = strings.NewReplacer("[", hiddenOpen, "]", hiddenClose)
+	unhideReplacer = strings.NewReplacer(hiddenOpen, "[", hiddenClose, "]")
+	// sentinelEscaper keeps characters that are already in the content intact.
+	sentinelEscaper = strings.NewReplacer(hiddenOpen, "&#xE000;", hiddenClose, "&#xE001;")
+)
+
+func unhideBrackets(s string) string {
+	if !strings.ContainsAny(s, hiddenOpen+hiddenClose) {
+		return s
+	}
+	return unhideReplacer.Replace(s)
+}
+
+// shortcodesInHTMLTags is do_shortcodes_in_html_tags(): it expands shortcodes
+// found in attribute values (escaped for the attribute) and hides every other
+// bracket inside tags, comments and CDATA sections from the text pass.
+func shortcodesInHTMLTags(content string, re *regexp.Regexp, expand func(string) string) string {
+	if strings.ContainsAny(content, hiddenOpen+hiddenClose) {
+		content = sentinelEscaper.Replace(content)
+	}
+	var b strings.Builder
+	b.Grow(len(content))
+	for i := 0; i < len(content); {
+		lt := strings.IndexByte(content[i:], '<')
+		if lt < 0 {
+			b.WriteString(content[i:])
+			break
+		}
+		b.WriteString(content[i : i+lt])
+		i += lt
+		end, kind := htmlElementEnd(content, i)
+		if kind == elemText {
+			b.WriteByte('<')
+			i++
+			continue
+		}
+		el := content[i:end]
+		i = end
+		if strings.Contains(el, "[") && strings.Contains(el, "]") && kind == elemStartTag {
+			el = shortcodesInAttributes(el, re, expand)
+		}
+		b.WriteString(hideBrackets.Replace(el))
+	}
+	return b.String()
+}
+
+type elemKind int
+
+const (
+	elemText elemKind = iota // a "<" that does not open markup
+	elemStartTag
+	elemOther // end tag, comment, CDATA, doctype, processing instruction
+)
+
+// htmlElementEnd returns the end of the markup starting at content[i] == '<'.
+// Attribute values are skipped as a browser does, so a ">" inside a quoted
+// value does not end the tag. Unterminated markup runs to the end.
+func htmlElementEnd(content string, i int) (int, elemKind) {
+	rest := content[i:]
+	closeAt := func(marker string, from int) int {
+		if j := strings.Index(rest[from:], marker); j >= 0 {
+			return i + from + j + len(marker)
+		}
+		return len(content)
+	}
+	switch {
+	case strings.HasPrefix(rest, "<!--"):
+		return closeAt("-->", 4), elemOther
+	case strings.HasPrefix(rest, "<![CDATA["):
+		return closeAt("]]>", 9), elemOther
+	case len(rest) > 1 && (rest[1] == '/' || rest[1] == '!' || rest[1] == '?'):
+		return closeAt(">", 1), elemOther
+	case len(rest) > 1 && isASCIILetter(rest[1]):
+	default:
+		return i + 1, elemText
+	}
+	j := 1
+	for j < len(rest) {
+		switch c := rest[j]; c {
+		case '>':
+			return i + j + 1, elemStartTag
+		case '"', '\'':
+			// Only a quote that starts a value (after "=") is a delimiter.
+			k := j - 1
+			for k > 0 && isHTMLSpace(rest[k]) {
+				k--
+			}
+			if rest[k] == '=' {
+				if q := strings.IndexByte(rest[j+1:], c); q >= 0 {
+					j += q + 2
+					continue
+				}
+				return len(content), elemStartTag
+			}
+		}
+		j++
+	}
+	return len(content), elemStartTag
+}
+
+func isASCIILetter(c byte) bool { return (c|0x20) >= 'a' && (c|0x20) <= 'z' }
+
+func isHTMLSpace(c byte) bool {
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f'
+}
+
+// uriAttributes is wp_kses_uri_attributes().
+var uriAttributes = map[string]bool{
+	"action": true, "archive": true, "background": true, "cite": true, "classid": true, "codebase": true,
+	"data": true, "formaction": true, "href": true, "icon": true, "longdesc": true, "manifest": true,
+	"poster": true, "profile": true, "src": true, "usemap": true, "xmlns": true,
+}
+
+// shortcodesInAttributes expands shortcodes in the attribute values of one
+// start tag. The output is sanitised like wp_kses_one_attr(): escaped for the
+// attribute, URL attributes keep allowed protocols only and style goes through
+// SafeCSS. An attribute that cannot hold it (event handlers, srcdoc, a bad
+// URL) keeps its original text.
+func shortcodesInAttributes(el string, re *regexp.Regexp, expand func(string) string) string {
+	var b strings.Builder
+	j := 1
+	for j < len(el) && !isHTMLSpace(el[j]) && el[j] != '>' && el[j] != '/' {
+		j++
+	}
+	b.WriteString(el[:j])
+	for j < len(el) {
+		// Whitespace and stray slashes between attributes.
+		k := j
+		for k < len(el) && (isHTMLSpace(el[k]) || el[k] == '/') {
+			k++
+		}
+		b.WriteString(el[j:k])
+		j = k
+		if j >= len(el) || el[j] == '>' {
+			b.WriteString(el[j:])
+			return b.String()
+		}
+		// Attribute name.
+		k = j
+		for k < len(el) && !isHTMLSpace(el[k]) && el[k] != '=' && el[k] != '>' && el[k] != '/' {
+			k++
+		}
+		if k == j { // a lone "=": copy it
+			k++
+		}
+		name := strings.ToLower(el[j:k])
+		b.WriteString(el[j:k])
+		j = k
+		// Optional "= value".
+		k = j
+		for k < len(el) && isHTMLSpace(el[k]) {
+			k++
+		}
+		if k >= len(el) || el[k] != '=' {
+			continue
+		}
+		k++
+		for k < len(el) && isHTMLSpace(el[k]) {
+			k++
+		}
+		eq := el[j:k]
+		var raw string
+		quote := byte(0)
+		if k < len(el) && (el[k] == '"' || el[k] == '\'') {
+			quote = el[k]
+			q := strings.IndexByte(el[k+1:], quote)
+			if q < 0 {
+				b.WriteString(el[j:])
+				return b.String()
+			}
+			raw = el[k+1 : k+1+q]
+			j = k + q + 2
+		} else {
+			e := k
+			for e < len(el) && !isHTMLSpace(el[e]) && el[e] != '>' {
+				e++
+			}
+			raw = el[k:e]
+			j = e
+		}
+		if v, ok := attrWithShortcodes(name, raw, re, expand); ok {
+			b.WriteString("=\"" + v + "\"")
+			continue
+		}
+		b.WriteString(eq)
+		if quote != 0 {
+			b.WriteByte(quote)
+			b.WriteString(raw)
+			b.WriteByte(quote)
+		} else {
+			b.WriteString(raw)
+		}
+	}
+	return b.String()
+}
+
+// attrWithShortcodes expands the shortcodes in one attribute value and
+// returns the value escaped for a double-quoted attribute; ok is false when
+// nothing was expanded or the result is not safe for this attribute.
+func attrWithShortcodes(name, raw string, re *regexp.Regexp, expand func(string) string) (string, bool) {
+	if !strings.Contains(raw, "[") || !strings.Contains(raw, "]") {
+		return "", false
+	}
+	if strings.HasPrefix(name, "on") || name == "srcdoc" {
+		return "", false
+	}
+	n := 0
+	out := re.ReplaceAllStringFunc(raw, func(m string) string {
+		n++
+		return expand(m)
 	})
+	if n == 0 || out == raw {
+		return "", false
+	}
+	val := html.UnescapeString(out)
+	switch {
+	case uriAttributes[name]:
+		if scheme, ok := urlScheme(val); ok && !protocolAllowed(scheme) {
+			return "", false
+		}
+	case name == "style":
+		val = SafeCSS(val)
+	}
+	if strings.TrimSpace(val) == "" {
+		return "", false
+	}
+	return html.EscapeString(val), true
+}
+
+func protocolAllowed(scheme string) bool {
+	scheme = strings.ToLower(scheme)
+	for _, p := range AllowedProtocols {
+		if p == scheme {
+			return true
+		}
+	}
+	return false
 }
 
 // shortcodeRegex builds the WordPress shortcode regex for the given tags.

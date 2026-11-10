@@ -291,9 +291,17 @@ func (s *Server) runJob(ctx context.Context, handlers map[string]jobHandler, j d
 		}
 	}()
 	h := handlers[j.name]
+	owner, _ := j.payload["plugin"].(string)
 	switch {
 	case h != nil:
 		return h(ctx, j.payload)
+	case owner != "":
+		// A plugin's event (ScheduleEvent) goes to that plugin only; while the plugin is not
+		// running (deactivated, disabled) the run is skipped rather than failing every time.
+		if s.plugins != nil {
+			s.plugins.hooks.DoActionOwner(ctx, owner, j.name, j.payload)
+		}
+		return nil
 	case s.plugins != nil && s.plugins.hooks.HasAction(j.name):
 		s.plugins.hooks.DoAction(ctx, j.name, j.payload)
 		return nil

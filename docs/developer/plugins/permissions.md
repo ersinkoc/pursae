@@ -20,9 +20,9 @@ with `permission_denied` — logged, not fatal.
 | `forms:access` | See what visitors submit in contact forms and decide what counts as spam | hooks `wpcf7_*` (Pursae Contact Form): `wpcf7_mail_sent` carries the submitted fields, `wpcf7_spam` the fields, IP and user agent and lets the plugin change the spam verdict |
 | `content:filter` | Modify content shown to visitors | hooks `the_*`, `comment_text`, `widget_text`, `widget_title`, `get_the_excerpt`, `wp_title`, `document_title_parts`, `body_class`, `post_class`; `AddShortcode`; `EnqueueStyle`, `EnqueueScript` (scripts also need one of the two below). HTML the plugin adds goes through KSES (`wp_kses_post`) |
 | `content:html` | Show unfiltered HTML and scripts to visitors (they also run for logged-in administrators: full control of the site) | shortcode and content-filter output is not sanitised; `EnqueueScript` on the front end. **Not ticked by default** |
-| `admin:scripts` | Run code in the admin (full control of the site) | `EnqueueScript` with `wpgo.Admin` or `wpgo.Both`. **Not ticked by default** |
+| `admin:scripts` | Run code in the admin (full control of the site) | `EnqueueScript` with `wpgo.Admin` or `wpgo.Both`; admin styles on every admin screen. **Not ticked by default** |
 | `rest:routes` | Add REST API endpoints | `RegisterRestRoute` |
-| `admin:settings` | Add a settings page to the admin | `RegisterSettingsPage` |
+| `admin:settings` | Add a settings page to the admin | `RegisterSettingsPage`; `EnqueueStyle` with `wpgo.Admin` or `wpgo.Both` (printed on the plugin's own settings page only) |
 | `admin:notices` | Show notices in the admin dashboard | hook `admin_notices` (and `all_admin_notices`, …); `AdminNotice` |
 | `cron` | Run scheduled tasks | hooks `cron_*`, `wpgo_cron*`; `ScheduleEvent`, `ScheduleSingleEvent`, `UnscheduleEvent` |
 | `storage` | Store private plugin data | `Storage`, `Transients` |

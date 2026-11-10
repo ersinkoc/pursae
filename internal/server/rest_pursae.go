@@ -139,14 +139,15 @@ func (s *Server) pursaePluginGet(c *gin.Context, r *restRequest) {
 	restJSON(c, http.StatusOK, pluginJSON(row))
 }
 
-// pursaePluginInstall installs a signed package sent as base64 ("package"); it is stored inactive.
+// pursaePluginInstall installs a signed package sent as base64 ("package"); a new plugin is stored
+// inactive, a new version of an active one is loaded right away (installAndReload).
 func (s *Server) pursaePluginInstall(c *gin.Context, r *restRequest) {
 	data, err := restBase64(c, r, "package")
 	if err != nil {
 		restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error())
 		return
 	}
-	m, err := s.installPackage(c.Request.Context(), data)
+	m, _, err := s.installAndReload(c.Request.Context(), data, pluginSourceUpload, "", false)
 	if err != nil {
 		restErr(c, http.StatusBadRequest, "rest_plugin_install_failed", err.Error())
 		return

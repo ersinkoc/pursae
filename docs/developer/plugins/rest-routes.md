@@ -58,7 +58,11 @@ func facts(_ wpgo.Context, req *wpgo.RestRequest) *wpgo.RestResponse {
 
 `wpgo.JSON(status, v)` encodes `v`; `wpgo.RestError(status, code, message)` builds the WordPress
 error shape `{"code":…,"message":…,"data":{"status":…}}`. Set `Headers` for extra response
-headers (`Set-Cookie` and `Content-Type` are ignored). Bodies are limited to 1 MiB; a handler
+headers. Only these are sent: `Cache-Control`, `Expires`, `ETag`, `Last-Modified`, `Vary`, `Link`,
+`Retry-After`, `Content-Language`, `Content-Disposition`, `X-WP-Total`, `X-WP-TotalPages`,
+`Location` (a same-site path starting with `/`) and the plugin's own `X-<Slug>-*` headers; any
+other header (cookies, CORS, CSP, `Content-Type`, …) is dropped and logged once in the plugin's
+log. Bodies are limited to 1 MiB; a handler
 that panics, times out (10 s) or returns something malformed yields `500 rest_plugin_error`.
 
 ## Authentication and permissions

@@ -1,6 +1,9 @@
 package plugins
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // A plugin's route pattern is text it supplies. It must stay inside the plugin's own namespace: "|" and
 // unbalanced parentheses must not let it match another plugin's or the core's paths.
@@ -53,5 +56,18 @@ func TestContactFormHooksNeedAPermission(t *testing.T) {
 	}
 	if !PermForms.Valid() {
 		t.Error("forms:access is not a valid permission")
+	}
+}
+
+// A package slugged after a core REST namespace root could answer under that namespace.
+func TestReservedSlugsAreRefused(t *testing.T) {
+	for _, slug := range []string{"core", "wp", "wc", "pll", "contact-form-7", "oembed", "pursae", "web-builder"} {
+		_, err := ParseManifest([]byte(`{"slug":"` + slug + `","name":"X","version":"1.0.0","permissions":["rest:routes"],"hooks":[]}`))
+		if err == nil || !strings.Contains(err.Error(), "reserved") {
+			t.Errorf("slug %q accepted: %v", slug, err)
+		}
+	}
+	if _, err := ParseManifest([]byte(`{"slug":"wp-tools","name":"X","version":"1.0.0","permissions":[],"hooks":[]}`)); err != nil {
+		t.Errorf("ordinary slug refused: %v", err)
 	}
 }

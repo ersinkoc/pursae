@@ -378,19 +378,21 @@ func (s *Server) hubDownload(ctx context.Context, it *hubItem) ([]byte, error) {
 }
 
 // hubInstallPlugin installs a plugin from the marketplace: download, checksum, signature, install.
-func (s *Server) hubInstallPlugin(ctx context.Context, slug string) (*plugins.Manifest, error) {
+// An installed active plugin is reloaded with the new package (installAndReload); updated reports
+// that the plugin was installed before.
+func (s *Server) hubInstallPlugin(ctx context.Context, slug string) (*plugins.Manifest, bool, error) {
 	if _, err := s.hubIndexCached(ctx); err != nil { // the Hub's signing keys
-		return nil, err
+		return nil, false, err
 	}
 	it, err := s.hubItemFor(ctx, "plugins", slug)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	data, err := s.hubDownload(ctx, it)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return s.installPackageFrom(ctx, data, pluginSourceHub, slug)
+	return s.installAndReload(ctx, data, pluginSourceHub, slug, false)
 }
 
 // hubPing is the daily wpgo_hub_check event (WordPress does the same against api.wordpress.org): it
