@@ -33,7 +33,7 @@ docker run --rm -p 8080:8080 \
 |---------|---------|
 | `db` | `postgres:17-alpine`, database `wpgo`, user and password `wpgo`, health-checked with `pg_isready`, published on `127.0.0.1:${WPGO_DB_PORT:-5432}` |
 | `wpgo` | the site, built from the Dockerfile (`GO_TAGS=devhub`), waits for the database to be healthy, `restart: unless-stopped` |
-| `test` | profile `test`: runs `go test ./...` in a Go container against the same database (`make docker-test`) |
+| `test` | profile `test`: runs `go test ./... -p 1` in a Go container against the same database (`make docker-test`; one package at a time, since the integration tests recreate `wpgo_test`) |
 
 Environment of the `wpgo` service:
 
@@ -104,8 +104,9 @@ send `Cache-Control: no-store` and are not written to the access log. The image'
 On SIGTERM the server stops accepting connections and lets requests in flight finish (up to 10 s),
 then stops the job runner (the job in hand finishes or goes back to the queue, up to 10 s), drains
 the background writes (404 log, counters, pending CDN purges; up to 5 s) and closes the database
-pool. Docker's default grace period is 10 s; give the service `stop_grace_period: 30s` if long jobs
-should get the full time.
+pool. Docker's default grace period is 10 s, so `compose.prod.yaml` gives the `wpgo` service
+`stop_grace_period: 35s`; set the same (or Kubernetes' `terminationGracePeriodSeconds`) when you run
+the image another way.
 
 The HTTP server limits request headers to 10 s, idle keep-alive connections to 120 s, and a request
 body that makes no progress for 60 s fails. There is deliberately no overall read or write timeout:

@@ -20,11 +20,15 @@ bench:
 build:
 	CGO_ENABLED=0 go build -buildmode=exe -tags nodynamic -o bin/wpgo ./cmd/wpgo
 
-## test: unit tests plus the Postgres integration test against the compose database
+## test: unit tests plus the Postgres integration tests against the compose database. -p 1: the packages
+## with integration tests (server, store, settings) each drop and recreate WPGO_TEST_DB, so they must not
+## run at the same time; the internal/server suite alone takes about ten minutes, past go test's default
+## timeout. TEST_DB names the database (default wpgo_test): give parallel checkouts their own.
+TEST_DB ?= wpgo_test
 test: db
-	WPGO_TEST_ADMIN_DB=postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable \
-	WPGO_TEST_DB=postgres://wpgo:wpgo@localhost:5432/wpgo_test?sslmode=disable \
-	go test ./...
+	WPGO_TEST_ADMIN_DB=postgres://wpgo:wpgo@localhost:$${WPGO_DB_PORT:-5432}/wpgo?sslmode=disable \
+	WPGO_TEST_DB=postgres://wpgo:wpgo@localhost:$${WPGO_DB_PORT:-5432}/$(TEST_DB)?sslmode=disable \
+	go test ./... -p 1 -count=1 -timeout 40m
 
 docker-up:
 	$(COMPOSE) up -d --build
@@ -75,8 +79,11 @@ builder-watch: builder/node_modules/.package-lock.json
 
 ## builder-test: host unit tests (vitest), UI string lint (no Turkish outside the i18n catalog), audit the built dist
 ## (no AI provider strings, manifest/BUILD.json shape, size budgets) and check BUILD.json against builder/UPSTREAM_SHA
-## and the patch hashes
+## and the patch hashes. The host tests import the patched upstream copy (builder/.work/upstream), so it is
+## prepared first from the pinned submodule and builder/patches (the dist in web/web-builder is not touched).
 builder-test: builder/node_modules/.package-lock.json
+	git submodule update --init builder/upstream
+	cd builder && node scripts/build.mjs --prepare
 	cd builder && npm test --silent
 	node builder/scripts/lint-strings.mjs
 	node builder/test/audit.mjs

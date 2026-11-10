@@ -160,8 +160,15 @@ func TestFlightWaitBounded(t *testing.T) {
 			<-gate
 		}
 	}
+	defer close(gate)
 	go do(h, "GET", "http://example.com/stuck/")
-	time.Sleep(20 * time.Millisecond)
+	// Wait until the first render is stuck; after a fixed sleep a slow (-race) run could make the
+	// second request the leader, which would then block on the gate itself.
+	for deadline := time.Now().Add(5 * time.Second); app.calls.Load() < 1; time.Sleep(time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatal("the first render did not start")
+		}
+	}
 	start := time.Now()
 	if w := do(h, "GET", "http://example.com/stuck/"); w.Code != 200 {
 		t.Fatalf("waiting request: %d", w.Code)
@@ -169,5 +176,4 @@ func TestFlightWaitBounded(t *testing.T) {
 	if d := time.Since(start); d > time.Second {
 		t.Fatalf("waited %v for a stuck render", d)
 	}
-	close(gate)
 }

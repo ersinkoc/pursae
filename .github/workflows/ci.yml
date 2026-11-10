@@ -36,8 +36,62 @@ jobs:
         run: test -z "$(gofmt -l $(git ls-files '*.go'))"
       - name: vet
         run: go vet ./...
+      # Development builds (make dev, the development compose file) compile the devhub files, which the
+      # default build never sees.
+      - name: vet and test (devhub build)
+        run: |
+          go vet -tags devhub ./...
+          go test -tags devhub -count=1 ./internal/config
+      # The release and Docker binary: static, -tags nodynamic (tools/release.sh, docker/Dockerfile).
+      - name: build (release flags)
+        run: go build -trimpath -buildmode=exe -tags nodynamic -o /dev/null ./cmd/wpgo
+      # The plugin SDK and the example plugins compile to WASI reactors (tools/build-plugins.sh).
+      - name: SDK and example plugins (wasip1)
+        env:
+          GOOS: wasip1
+          GOARCH: wasm
+        run: |
+          go vet ./sdk/... ./examples/plugins/...
+          for d in examples/plugins/*/; do
+            if [ -f "$d/plugin.json" ]; then go build -buildmode=c-shared -o /dev/null "./$d"; fi
+          done
+      # -p 1: the server, store and settings packages each drop and recreate WPGO_TEST_DB.
       - name: test
         run: go test ./... -p 1 -count=1 -timeout 40m
+
+  # Data races in the unit tests (no database: the integration tests skip without WPGO_TEST_DB).
+  race:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      CGO_ENABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: test -race
+        run: go test -race -count=1 -timeout 30m ./...
+
+  # Pursae Web Builder: host unit tests, UI string lint, dist audit and BUILD.json against the pin
+  # (make builder-test; needs the public builder/upstream submodule and Node 22).
+  builder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: builder/.nvmrc
+          cache: npm
+          cache-dependency-path: builder/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: make builder-test
+        run: make builder-test
 
   vulncheck:
     runs-on: ubuntu-latest

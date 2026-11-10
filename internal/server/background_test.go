@@ -14,10 +14,12 @@ func TestAsyncWriterBounded(t *testing.T) {
 	var a asyncWriter
 	block := make(chan struct{})
 	var ran atomic.Int64
+	var started sync.WaitGroup
+	started.Add(asyncWorkers)
 	for range asyncWorkers { // occupy the workers
-		a.submit(func(context.Context) { <-block; ran.Add(1) })
+		a.submit(func(context.Context) { started.Done(); <-block; ran.Add(1) })
 	}
-	time.Sleep(50 * time.Millisecond)
+	started.Wait() // every worker holds one write, so the queue is empty
 	accepted := 0
 	for i := 0; i < asyncQueueSize+100; i++ {
 		if a.submit(func(context.Context) { ran.Add(1) }) {
@@ -63,9 +65,24 @@ func TestCDNPurgeCoalesced(t *testing.T) {
 		calls = append(calls, urls)
 		mu.Unlock()
 	}
+	// waitCall waits for the timer's purge instead of sleeping a fixed time (slow or -race runs).
+	waitCall := func() {
+		t.Helper()
+		for deadline := time.Now().Add(5 * time.Second); ; time.Sleep(10 * time.Millisecond) {
+			mu.Lock()
+			n := len(calls)
+			mu.Unlock()
+			if n > 0 {
+				return
+			}
+			if time.Now().After(deadline) {
+				t.Fatal("no purge ran")
+			}
+		}
+	}
 	s.gocdnQueuePurge(gocdnSettings{}, []string{"/a", "/b"})
 	s.gocdnQueuePurge(gocdnSettings{}, []string{"/b", "/c"})
-	time.Sleep(200 * time.Millisecond)
+	waitCall()
 	mu.Lock()
 	if len(calls) != 1 || len(calls[0]) != 3 {
 		t.Fatalf("calls %v, want one purge of /a /b /c", calls)
@@ -76,7 +93,7 @@ func TestCDNPurgeCoalesced(t *testing.T) {
 	s.gocdnQueuePurge(gocdnSettings{}, []string{"/x"})
 	s.gocdnQueuePurge(gocdnSettings{}, nil)
 	s.gocdnQueuePurge(gocdnSettings{}, []string{"/y"})
-	time.Sleep(200 * time.Millisecond)
+	waitCall()
 	mu.Lock()
 	if len(calls) != 1 || calls[0] != nil {
 		t.Fatalf("calls %v, want one purge of everything", calls)
