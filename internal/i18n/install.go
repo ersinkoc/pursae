@@ -158,11 +158,25 @@ func extract(zipData []byte, dir string) (int, error) {
 		if err != nil {
 			return n, err
 		}
-		tmp := filepath.Join(dir, "."+name+".tmp")
-		if err := os.WriteFile(tmp, b, 0o644); err != nil {
+		// A temporary file of its own: two installs of one locale (two saves of Settings › General,
+		// the background plugin packs) must not write into each other's file before the rename.
+		tf, err := os.CreateTemp(dir, "."+name+".*.tmp")
+		if err != nil {
 			return n, err
 		}
-		if err := os.Rename(tmp, filepath.Join(dir, name)); err != nil {
+		tmp := tf.Name()
+		_, err = tf.Write(b)
+		if cerr := tf.Close(); err == nil {
+			err = cerr
+		}
+		if err == nil {
+			err = os.Chmod(tmp, 0o644)
+		}
+		if err == nil {
+			err = os.Rename(tmp, filepath.Join(dir, name))
+		}
+		if err != nil {
+			_ = os.Remove(tmp)
 			return n, err
 		}
 		n++

@@ -6,11 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -52,6 +54,29 @@ var pixelHTTP = &http.Client{
 
 // pixelSlots bounds concurrent deliveries.
 var pixelSlots = make(chan struct{}, 8)
+
+// pixelQueueMax bounds the deliveries waiting for a slot. When the platforms answer slowly, browser
+// events (anonymous, up to 150 a minute per address) would otherwise pile up as goroutines without
+// limit; past it they are dropped. Purchases from orders are always queued.
+const pixelQueueMax = 512
+
+var (
+	pixelQueued  atomic.Int64 // deliveries started and not finished
+	pixelDropped atomic.Int64
+)
+
+// pixelAdmit reserves a place in the delivery queue for an event from source; the caller releases
+// it with pixelQueued.Add(-1) once the delivery ends.
+func pixelAdmit(source string) bool {
+	if n := pixelQueued.Add(1); n > pixelQueueMax && source != "order" {
+		pixelQueued.Add(-1)
+		if d := pixelDropped.Add(1); d == 1 || d%1000 == 0 {
+			slog.Warn("pixelgo: delivery queue full, browser events dropped", "dropped", d)
+		}
+		return false
+	}
+	return true
+}
 
 var (
 	pixelEventIDRe = regexp.MustCompile(`^[A-Za-z0-9_.:-]{8,64}$`)
@@ -296,7 +321,11 @@ func (s *Server) pixelDispatch(ev pixelServerEvent) {
 			continue
 		}
 		def, cfg := def, st.Platforms[def.Key]
+		if !pixelAdmit(ev.Source) {
+			continue
+		}
 		go func() {
+			defer pixelQueued.Add(-1)
 			pixelSlots <- struct{}{}
 			defer func() { <-pixelSlots }()
 			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)

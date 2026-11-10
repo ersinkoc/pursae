@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // Per-block core styles (Theme.BlockStyles): like WordPress with should_load_separate_core_block_assets,
@@ -24,7 +25,14 @@ var (
 		set  map[string]bool
 	}
 	blockStyleCache sync.Map // sorted block list -> CSS
+	// blockStyleCacheN counts the cached lists. The list comes from the rendered page, and
+	// visitor text is part of it (a search for "wp-block-quote wp-block-code" is echoed by the
+	// search title), so every subset of the block names could be a key: past blockStyleCacheMax the
+	// cache starts over.
+	blockStyleCacheN atomic.Int64
 )
+
+const blockStyleCacheMax = 512
 
 // blockStyleDirs lists the blocks that have a style.min.css under wp-includes/blocks.
 func (s *Server) blockStyleDirs() map[string]bool {
@@ -95,7 +103,10 @@ func (s *Server) blockStylesFor(data any, page []byte) []byte {
 				sb.WriteString(s.webFile("wp-includes/blocks/" + n + "/style.min.css"))
 			}
 			css = sb.String()
-			blockStyleCache.Store(key, css)
+			if _, loaded := blockStyleCache.Swap(key, css); !loaded && blockStyleCacheN.Add(1) > blockStyleCacheMax {
+				blockStyleCache.Clear()
+				blockStyleCacheN.Store(0)
+			}
 		}
 	}
 	repl := []byte{}

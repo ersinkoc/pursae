@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -785,15 +786,17 @@ type seogoRedirectCache struct {
 	loaded bool
 }
 
+// seogoRedirects is shared by every Server of the process (a theme preview sandbox is one), so it
+// has its own lock: a Server's runtime lock would not keep two Servers apart.
 var seogoRedirects = struct {
+	sync.Mutex
 	m map[*Server]*seogoRedirectCache
 }{m: map[*Server]*seogoRedirectCache{}}
 
 func (s *Server) seogoActiveRedirects(ctx context.Context) []*seogoRedirectRow {
-	rt := s.seogoRT()
-	rt.mu.Lock()
+	seogoRedirects.Lock()
 	cache := seogoRedirects.m[s]
-	rt.mu.Unlock()
+	seogoRedirects.Unlock()
 	if cache != nil && cache.loaded {
 		return cache.rows
 	}
@@ -801,17 +804,16 @@ func (s *Server) seogoActiveRedirects(ctx context.Context) []*seogoRedirectRow {
 	if err != nil {
 		return nil
 	}
-	rt.mu.Lock()
+	seogoRedirects.Lock()
 	seogoRedirects.m[s] = &seogoRedirectCache{rows: rows, loaded: true}
-	rt.mu.Unlock()
+	seogoRedirects.Unlock()
 	return rows
 }
 
 func (s *Server) seogoRedirectsChanged() {
-	rt := s.seogoRT()
-	rt.mu.Lock()
+	seogoRedirects.Lock()
 	delete(seogoRedirects.m, s)
-	rt.mu.Unlock()
+	seogoRedirects.Unlock()
 }
 
 // normPath is a redirect source or request path without slashes at either end, decoded.
@@ -1075,7 +1077,8 @@ type seogoIndexNowLog struct {
 }
 
 var seogoIndexNowHistory = struct {
-	m map[*Server][]seogoIndexNowLog
+	sync.Mutex // shared by every Server of the process, like seogoRedirects
+	m          map[*Server][]seogoIndexNowLog
 }{m: map[*Server][]seogoIndexNowLog{}}
 
 // seogoIndexNow submits URLs in the background and keeps the last 20 results.
@@ -1109,9 +1112,8 @@ func (s *Server) seogoIndexNow(ctx context.Context, urls []string) {
 }
 
 func (s *Server) seogoIndexNowRecord(urls []string, status string) {
-	rt := s.seogoRT()
-	rt.mu.Lock()
-	defer rt.mu.Unlock()
+	seogoIndexNowHistory.Lock()
+	defer seogoIndexNowHistory.Unlock()
 	h := append([]seogoIndexNowLog{{Time: time.Now(), URLs: urls, Status: status}}, seogoIndexNowHistory.m[s]...)
 	if len(h) > 20 {
 		h = h[:20]
@@ -1120,9 +1122,8 @@ func (s *Server) seogoIndexNowRecord(urls []string, status string) {
 }
 
 func (s *Server) seogoIndexNowLog() []seogoIndexNowLog {
-	rt := s.seogoRT()
-	rt.mu.Lock()
-	defer rt.mu.Unlock()
+	seogoIndexNowHistory.Lock()
+	defer seogoIndexNowHistory.Unlock()
 	return append([]seogoIndexNowLog{}, seogoIndexNowHistory.m[s]...)
 }
 

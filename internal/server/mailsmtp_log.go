@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	gomail "wpgo/internal/mail"
@@ -27,6 +28,24 @@ func msHash(msg gomail.Message) string {
 }
 
 var msSeenFailures sync.Map // hash -> time.Time, alert de-duplication when the log is off
+
+// msSeenSwept is when msSeenFailures was last cleared of entries older than a day; without it
+// every distinct failed message (contact form spam while SMTP is down) would stay forever.
+var msSeenSwept atomic.Int64
+
+func msSweepSeenFailures() {
+	now := time.Now()
+	last := msSeenSwept.Load()
+	if now.UnixNano()-last < int64(time.Hour) || !msSeenSwept.CompareAndSwap(last, now.UnixNano()) {
+		return
+	}
+	msSeenFailures.Range(func(k, v any) bool {
+		if t, ok := v.(time.Time); !ok || now.Sub(t) >= 24*time.Hour {
+			msSeenFailures.Delete(k)
+		}
+		return true
+	})
+}
 
 // msLogResult records a delivery in the email log. The job runner retries a failed e-mail; a retry
 // updates the entry of the earlier attempt instead of adding a new one. It reports whether this
@@ -50,6 +69,7 @@ func (s *Server) msLogResult(ctx context.Context, o *msOptions, msg gomail.Messa
 			return false
 		}
 		msSeenFailures.Store(hash, time.Now())
+		msSweepSeenFailures()
 		return true
 	}
 	var id int64
