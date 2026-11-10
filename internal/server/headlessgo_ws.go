@@ -93,6 +93,12 @@ func (s *Server) hgGQLWebSocket(c *gin.Context, a *hgAuth, st hgSettings) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, hgGQLErrorDoc("Use the WebSocket sub-protocol "+hgWSProtocol+".", "BAD_REQUEST"))
 		return
 	}
+	addr := clientIP(c)
+	if !s.hgBroker().openConn(addr) {
+		c.AbortWithStatusJSON(http.StatusTooManyRequests, hgGQLErrorDoc("Too many open WebSocket connections from this address.", "TOO_MANY_REQUESTS"))
+		return
+	}
+	defer s.hgBroker().closeConn(addr)
 	srv := websocket.Server{
 		Handshake: func(cfg *websocket.Config, r *http.Request) error {
 			cfg.Protocol = []string{hgWSProtocol}

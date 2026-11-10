@@ -324,11 +324,47 @@ func (s *Server) hgProcessQueue(ctx context.Context) int {
 		}
 	}
 	rows.Close()
-	for _, q := range due {
-		s.hgAttemptQueued(ctx, q, false)
-	}
+	s.hgAttemptBatch(ctx, due, hgTickWorkers, hgTickBudget)
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM hg_webhook_queue WHERE status IN ('done', 'failed') AND updated_at < now() - interval '1 day'`)
 	return len(due)
+}
+
+// The tick runs inside the site's job runner (scheduled posts and every other job wait for it):
+// it delivers its batch with a few workers and stops starting new attempts after hgTickBudget.
+// Rows it did not get to go back to the queue for the next tick.
+const (
+	hgTickWorkers = 8
+	hgTickBudget  = 30 * time.Second
+)
+
+// hgAttemptBatch makes an attempt for each claimed row, workers at a time, starting none after
+// budget; the rows left over are released (pending again).
+func (s *Server) hgAttemptBatch(ctx context.Context, due []*hgQueued, workers int, budget time.Duration) {
+	deadline := time.Now().Add(budget)
+	next := make(chan *hgQueued)
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for q := range next {
+				s.hgAttemptQueued(ctx, q, false)
+			}
+		}()
+	}
+	var left []int64
+	for _, q := range due {
+		if time.Now().After(deadline) || ctx.Err() != nil {
+			left = append(left, q.ID)
+			continue
+		}
+		next <- q
+	}
+	close(next)
+	wg.Wait()
+	if len(left) > 0 {
+		_, _ = s.store.Pool.Exec(context.WithoutCancel(ctx), `UPDATE hg_webhook_queue SET status = 'pending', locked_at = NULL WHERE id = ANY($1) AND status = 'running'`, left)
+	}
 }
 
 // hgAttemptQueued posts a claimed delivery and records the outcome: done, another try after the

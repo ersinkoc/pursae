@@ -53,7 +53,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Field types: text (short/long), rich text (blocks or Markdown), number (integer, big integer, decimal, float), boolean, date, date-time, time, email, password, enumeration, media (single/multiple, allowed types), relation, JSON, UID (derived from a text field), component (single/repeatable), dynamic zone | ✓ |
 | Relations: one-to-one, one-to-many, many-to-one, many-to-many, to content types (self included) and to WordPress posts, pages and users | ✓ |
 | Bidirectional relations: an owning field with `inversedBy` gets an inverse field (`mappedBy`) on the target type with the mirrored kind (one-to-one ↔ one-to-one, one-to-many ↔ many-to-one, many-to-many ↔ many-to-many); self relations too. The builder offers "Inverse field (optional)" on relations between content types. Both sides stay in step on every save: renaming either side renames the link, removing the inverse field clears `inversedBy`, removing (or retargeting) the owning field removes the inverse field, changing the kind changes the mirror. Export / import keeps them | ✓ |
-| The inverse side stores nothing: its value is the owning entries pointing at the document (in the matching locale and status), so it can never disagree. It is populated, filterable and sortable like any relation, shown and editable in the Content Manager, and writable through the API (id, list, `{connect, disconnect, set}`, `null` clears); a write changes the owning entries' draft and published version (a link belongs to both documents). Cardinality is enforced (a single-valued inverse side takes one entry) | ✓ |
+| The inverse side stores nothing: its value is the owning entries pointing at the document (in the matching locale and status), so it can never disagree. It is populated, filterable and sortable like any relation, shown and editable in the Content Manager, and writable through the API (id, list, `{connect, disconnect, set}`, `null` clears); a write changes the owning entries' draft and published version (a link belongs to both documents; for an owning type with **Review before publishing** only the draft). An API caller needs `update` on the owning type too (otherwise 400 naming the field), and every owning entry that changed is announced (`entry.update`, plus `entry.publish` when its published version changed) to webhooks and subscriptions — also the entries that lose their link to a deleted document. Cardinality is enforced (a single-valued inverse side takes one entry) | ✓ |
 | Deleting a document (its last locale) removes it from every relation pointing at it: owning fields of every type, also inside components and dynamic zones, drafts and published versions | ✓ |
 | One-to-one / one-to-many exclusivity (a target belongs to one entry) | ✓ |
 | Options: required, unique, min/max (length, value or item count), default, private (never in the API), regex (text, UID, email) | ✓ |
@@ -81,7 +81,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Content history: every save, publish, unpublish, discard, restore, review step and scheduled (un)publication records the draft (last 50 per document version); the edit screen lists the latest, the History screen shows a version next to the current draft with changed fields marked, and restores it as the draft. Inverse relation fields are not part of a version; a change of a two-way relation is recorded on **both** sides as a "Relations changed" version with a note: on the entry whose data changed and on every entry whose inverse field now lists something else ("Linked by Book "Dune" via books"). That includes the entry that loses a link when another one takes it through the inverse field ("Unlinked by Book "Dune" via books: it now belongs to Writer "Bob""), the entries a deleted owner pointed at ("…: it was deleted"), and the entries that lose their link to a deleted document, also inside components ("Unlinked Writer "Bob" via writer: it was deleted") | ✓ |
 | Links across a two-way relation: saving an entry through its owning relation field adds a "Relations changed" version, with a note (`Linked by Book "Dune" via books`), to every entry that was linked or unlinked (their inverse field now lists something else); writing the inverse side adds one, with the new draft and a note (`Linked Writer "Ada" via writer`), to every owning entry whose data changed. Works from the admin, REST and GraphQL alike | ✓ |
 | Restoring a version checks its values against the **current** schema first (types and formats, required, min / max, regex, enumerations, media and relation targets that still exist, unique fields). If something no longer fits, nothing is restored and the mismatches are listed; the History screen shows them before you click, and offers "Restore the fields that still fit": the mismatching fields keep their current values and the message names them. Values of fields the type no longer has (removed or renamed) are left out; the History screen lists them before you click and the restore message names them. Password hashes are carried over untouched | ✓ |
-| Scheduled publishing: "Publish on" / "Unpublish on" per document version (site time zone) in the edit screen, `POST …/{documentId}/schedule` in the API. The `headlessgo_tick` job of the site's job runner (every minute, rows claimed with `FOR UPDATE SKIP LOCKED`, safe across restarts and instances) publishes the draft as it is then, or unpublishes; a publication that fails validation is cleared and its reason shown on the edit screen; the list shows pending schedules | ✓ |
+| Scheduled publishing: "Publish on" / "Unpublish on" per document version (site time zone) in the edit screen, `POST …/{documentId}/schedule` in the API. The `headlessgo_tick` job of the site's job runner (every minute, rows claimed with `FOR UPDATE SKIP LOCKED`, safe across restarts and instances) publishes the draft as it is then, or unpublishes; a publication that fails validation is cleared and its reason shown on the edit screen; the list shows pending schedules. Publishing by hand (any route) clears a pending scheduled publication, unpublishing by hand clears a pending scheduled unpublication, and a due unpublication of an entry that is already a draft does nothing | ✓ |
 | Edit lock (WordPress post-lock style): opening an existing entry takes its lock (one per document version); the page's script renews it every 15 s (`POST /wp-admin/headlessgo/lock`, nonce-checked) and releases it when the page closes; a lock nobody renewed for 90 s is free. While someone else holds it the entry opens read-only with "X is currently editing this entry" and a **Take over editing** button; the server refuses every change from another user (save, publish, unpublish, discard, schedule, restore, delete), and a taken-over editor's open page is told by its next heartbeat and switches to read-only. A form also carries the version it was loaded from: a save on top of a newer one is refused ("changed by someone else"), also without a lock. The REST and GraphQL APIs are not locked (tokens have no user) | ✓ |
 | Review flow: the type option **Review before publishing** (needs draft & publish). A draft is *submitted for review*; a user who can edit others' posts (editor and above) *approves* or *rejects* it (optional note). Publishing needs an approved draft, whatever the route: the form's Publish button (it saves the draft and publishes when that draft is approved, otherwise it says the draft was saved but not published), the REST `publish` route and `?status=published` writes, GraphQL `publish…` / `status: PUBLISHED`, bulk publish, and scheduled publication (the schedule is cleared with the reason in the edit screen). Approval is bound to the exact draft: any later change (form, API, restore, relation link) makes it "not reviewed" again. Submit, approve and reject appear in the entry history with the reviewer's note. The APIs have no user, so they can neither submit nor approve; a type without the option is unchanged | ✓ |
 
@@ -140,7 +140,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Deliveries go to public addresses only: the address is checked when the connection is made (after DNS resolution), so loopback, private, link-local (cloud metadata) and carrier-grade NAT addresses fail with an error; redirects are not followed | ✓ |
 | Payload `{event, createdAt, model, uid, entry}` (public scalar attributes; private fields never sent) | ✓ |
 | `X-HeadlessGo-Signature: sha256=<hex HMAC-SHA256 of the body>`, `X-HeadlessGo-Event`, `X-HeadlessGo-Delivery` | ✓ |
-| Durable delivery queue (`hg_webhook_queue`): the first attempt starts at once in the background; a network error or a non-2xx answer is retried with an exponential backoff (10 s, 40 s, 160 s, 640 s…, at most 6 h) up to the "Attempts per delivery" setting (5 by default, 1–10), then the delivery is failed. Short backoffs are retried in-process; the `headlessgo_tick` job delivers whatever is due, so retries survive restarts (rows claimed with `FOR UPDATE SKIP LOCKED`; rows left running by a crashed instance return after 5 minutes). Finished rows are removed after a day | ✓ |
+| Durable delivery queue (`hg_webhook_queue`): the first attempt starts at once in the background; a network error or a non-2xx answer is retried with an exponential backoff (10 s, 40 s, 160 s, 640 s…, at most 6 h) up to the "Attempts per delivery" setting (5 by default, 1–10), then the delivery is failed. Short backoffs are retried in-process; the `headlessgo_tick` job delivers whatever is due (8 deliveries at a time, starting none after 30 s so the site's other jobs are not held up; what is left waits for the next tick), so retries survive restarts (rows claimed with `FOR UPDATE SKIP LOCKED`; rows left running by a crashed instance return after 5 minutes). Finished rows are removed after a day | ✓ |
 | The webhook screen lists waiting and failed deliveries (attempts, next attempt, last error) with "Retry now" | ✓ |
 | Delivery log per webhook: date, event, attempt, status code, duration, the first 1 KB of the response or the error | ✓ |
 | "Send test" (`trigger-test`, synchronous, result shown as a notice) | ✓ |
@@ -155,7 +155,8 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - `{previewToken}`: a signed, short-lived token (lifetime setting, 60 min by default) that reads one
   document's draft in the entry's locale: `findOne` of that document, or `find` restricted to it, with
   `status=draft`; another `locale=` is 403. Related entries, `localizations` and relation filters see
-  only what the public role may read, in their published version. Sent as `Authorization: Bearer`,
+  only what the public role may read, in their published version — other entries of the token's own type
+  (through a self-relation) included. Sent as `Authorization: Bearer`,
   `X-Preview-Token` or `?previewToken=`. Rotating the secret revokes every preview token. ✓
 
 ## 10. GraphQL
@@ -163,7 +164,14 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - `POST|GET /wp-json/headlessgo/v1/graphql` with `{query, variables, operationName}`. Root query fields:
   `articles` (camelCase plural id), `article(documentId:)`, single types (`homepage`), `articles_connection {
   nodes pageInfo { total page pageSize pageCount } }`. Arguments `filters` (operators without `$`), `sort`,
-  `pagination`, `locale`, `status`. Selections drive populate; aliases and `__typename` work. ✓
+  `pagination`, `locale`, `status`. Selections drive populate; aliases and `__typename` work. A relation,
+  component, dynamic zone or media field under an alias is loaded on its own, so
+  `recent: posts(sort: …) { … } all: posts { … }` returns two lists; the same response key selected
+  twice (directly and through a fragment) is merged, and with differing arguments it is an error. ✓
+- Literals follow the spec: string escapes `\" \\ \/ \b \f \n \r \t \uXXXX` (surrogate pairs combined,
+  also `\u{…}`), anything else is a syntax error; `"""block strings"""` with the common indentation and
+  blank first and last lines removed; an integer literal beyond 2^53 keeps its digits (for `biginteger`
+  fields). ✓
 - Mutations (POST only), with the REST permissions: `createArticle(data:, locale:, status:)`,
   `updateArticle(documentId:, data:, locale:, status:)`, `deleteArticle(documentId:, locale:)` →
   `{ documentId }`, `publishArticle` / `unpublishArticle(documentId:, locale:)`; single types
@@ -212,8 +220,11 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
     subscription as a `GET` (`?query=…`, works with `EventSource`) or a `POST` (JSON body, works with `fetch`)
     with the usual `Authorization: Bearer` header and read the stream (`Content-Type: text/event-stream`):
     `event: next` / `data: {"data":{"articleCreated":{…}}}`, `: ping` comments every 20 s, `event: complete`
-    when the server ends the stream. Validation errors, 403 and a full server (503 beyond 500 open
-    subscriptions, both transports together) answer as plain JSON before the stream starts.
+    when the server ends the stream. Validation errors, 403 and a full server answer as plain JSON before
+    the stream starts. Admission (both transports together): at most 500 open subscriptions, of which
+    callers without a token share 400 (100 are kept for tokens); one client holds at most 20 (an address,
+    without a token) or 100 (one API token); an address opens at most 10 WebSocket connections (429).
+    Beyond a cap: 503 "Too many open subscriptions".
 
   Root fields per content type: `articleCreated`, `articleUpdated`, `articlePublished` and
   `articleUnpublished` (the last two only with draft & publish) return the entry, `articleDeleted` returns an
@@ -256,3 +267,16 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   them errors, they are harmless here); scalar argument values are not type-checked during validation (the
   resolvers report them).
 - Translations of Pursae Headless's own admin strings exist only in Turkish.
+- Read budget: one REST read, one GraphQL operation (all its root fields together) or one subscription
+  event may run at most 1000 queries (finds, populated relations, inverse lookups) and load at most 20000
+  related entries; beyond that it answers 400 "The request is too expensive…". Populated relations are
+  still loaded per parent entry (no batching across parents). A read stops when its client disconnects
+  (writes and GraphQL mutations run to the end).
+- Errors never show database or network messages (GraphQL answers "Internal server error" and logs the
+  cause); a numeric filter value must be a decimal number (`id` an integer), `pagination[page]` at most
+  10^9; a write with `?status=published` on a type with the review flow is a 400 with the reason.
+- Large integers: JSON numbers arrive as 64-bit floats, so a `biginteger` value of 2^53 or more must be sent
+  as a string (a JSON number that large is refused, 400); `integer` fields take at most 2^53 - 1.
+- API updates of one entry do not overwrite each other: an update applies only to the version it read and is
+  merged again over a newer one (409 after five tries). Unique checks are still a separate read, so two
+  simultaneous creates with the same unique value can both pass.

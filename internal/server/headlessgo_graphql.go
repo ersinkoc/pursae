@@ -1,15 +1,26 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log"
+	"math"
+	"math/big"
+	"net"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // A GraphQL endpoint over the same data as the REST API:
@@ -90,6 +101,9 @@ func (s *Server) hgGQLExecute(c *gin.Context, a *hgAuth, st hgSettings, req hgGQ
 	if op.kind == "mutation" && c.Request.Method == http.MethodGet {
 		return fail(http.StatusMethodNotAllowed, "Mutations need a POST request")
 	}
+	if op.kind == "mutation" {
+		c.Request = c.Request.WithContext(context.WithoutCancel(c.Request.Context())) // a write runs to the end
+	}
 	ex, sel, status, errDoc := s.hgGQLPrepare(c, a, st, req, doc, op)
 	if errDoc != nil {
 		return status, errDoc
@@ -131,11 +145,32 @@ func (ex *hgGQLExec) run(op *hgGQLOp, sel []*hgGQLField) map[string]any {
 			v, err = ex.root(f)
 		}
 		if err != nil {
-			return map[string]any{"data": nil, "errors": []any{map[string]any{"message": err.Error(), "path": []string{f.key()}}}}
+			return map[string]any{"data": nil, "errors": []any{map[string]any{"message": hgGQLErrorMessage(err), "path": []string{f.key()}}}}
 		}
 		out[f.key()] = v
 	}
 	return map[string]any{"data": out}
+}
+
+// hgGQLErrorMessage is the message a GraphQL error shows the caller: the executor's and the
+// store's own messages as they are, but never a database or network error (its text can name the
+// database, its user or host): those are logged and answered with a generic message.
+func hgGQLErrorMessage(err error) string {
+	var pe *pgconn.PgError
+	if errors.As(err, &pe) {
+		if strings.HasPrefix(pe.Code, "22") { // data exception: a value the query could not use
+			return "Invalid value in the arguments"
+		}
+	} else {
+		var ce *pgconn.ConnectError
+		var ne net.Error
+		if !errors.As(err, &ce) && !errors.As(err, &ne) && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) &&
+			!errors.Is(err, pgx.ErrNoRows) && !pgconn.Timeout(err) && !strings.Contains(err.Error(), "SQLSTATE") {
+			return err.Error()
+		}
+	}
+	log.Printf("headlessgo: graphql: %v", err)
+	return "Internal server error"
 }
 
 // hgGQLRootFlat merges the root's inline fragments (on the root type, or without a condition).
@@ -689,30 +724,7 @@ func (p *hgGQLParser) value(depth int) (any, error) {
 		p.pos++
 		return hgGQLVar(p.name()), nil
 	case ch == '"':
-		p.pos++
-		var b strings.Builder
-		for p.pos < len(p.src) && p.src[p.pos] != '"' {
-			if p.src[p.pos] == '\\' && p.pos+1 < len(p.src) {
-				p.pos++
-				switch p.src[p.pos] {
-				case 'n':
-					b.WriteByte('\n')
-				case 't':
-					b.WriteByte('\t')
-				default:
-					b.WriteByte(p.src[p.pos])
-				}
-				p.pos++
-				continue
-			}
-			b.WriteByte(p.src[p.pos])
-			p.pos++
-		}
-		if p.pos >= len(p.src) {
-			return nil, fmt.Errorf("Syntax error: unterminated string")
-		}
-		p.pos++
-		return b.String(), nil
+		return p.stringValue()
 	case ch == '[':
 		p.pos++
 		list := []any{}
@@ -759,9 +771,16 @@ func (p *hgGQLParser) value(depth int) (any, error) {
 		for p.pos < len(p.src) && strings.IndexByte("0123456789.eE+-", p.src[p.pos]) >= 0 {
 			p.pos++
 		}
-		n, err := strconv.ParseFloat(p.src[start:p.pos], 64)
+		lit := p.src[start:p.pos]
+		n, err := strconv.ParseFloat(lit, 64)
 		if err != nil {
 			return nil, fmt.Errorf("Syntax error: bad number")
+		}
+		if math.Abs(n) >= 1<<53 && !strings.ContainsAny(lit, ".eE") {
+			// An integer a float64 cannot hold exactly: keep its digits (biginteger fields).
+			if _, ok := new(big.Int).SetString(lit, 10); ok {
+				return json.Number(lit), nil
+			}
 		}
 		return n, nil
 	case hgIsNameStart(ch):
@@ -779,6 +798,150 @@ func (p *hgGQLParser) value(depth int) (any, error) {
 	return nil, fmt.Errorf("Syntax error: unexpected %q", ch)
 }
 
+// stringValue reads a string literal: "..." with the spec's escape sequences, or a """block
+// string""" (raw text, common indentation and blank first / last lines removed).
+func (p *hgGQLParser) stringValue() (any, error) {
+	if strings.HasPrefix(p.src[p.pos:], `"""`) {
+		p.pos += 3
+		var raw strings.Builder
+		for {
+			if p.pos >= len(p.src) {
+				return nil, fmt.Errorf("Syntax error: unterminated string")
+			}
+			rest := p.src[p.pos:]
+			if strings.HasPrefix(rest, `"""`) {
+				p.pos += 3
+				return hgGQLBlockString(raw.String()), nil
+			}
+			if strings.HasPrefix(rest, `\"""`) {
+				raw.WriteString(`"""`)
+				p.pos += 4
+				continue
+			}
+			raw.WriteByte(p.src[p.pos])
+			p.pos++
+		}
+	}
+	p.pos++ // "
+	var b strings.Builder
+	for {
+		if p.pos >= len(p.src) {
+			return nil, fmt.Errorf("Syntax error: unterminated string")
+		}
+		ch := p.src[p.pos]
+		switch ch {
+		case '"':
+			p.pos++
+			return b.String(), nil
+		case '\n', '\r':
+			return nil, fmt.Errorf("Syntax error: unterminated string")
+		case '\\':
+		default:
+			b.WriteByte(ch)
+			p.pos++
+			continue
+		}
+		p.pos++
+		if p.pos >= len(p.src) {
+			return nil, fmt.Errorf("Syntax error: unterminated string")
+		}
+		esc := p.src[p.pos]
+		p.pos++
+		switch esc {
+		case '"', '\\', '/':
+			b.WriteByte(esc)
+		case 'b':
+			b.WriteByte('\b')
+		case 'f':
+			b.WriteByte('\f')
+		case 'n':
+			b.WriteByte('\n')
+		case 'r':
+			b.WriteByte('\r')
+		case 't':
+			b.WriteByte('\t')
+		case 'u':
+			r, err := p.unicodeEscape()
+			if err != nil {
+				return nil, err
+			}
+			if utf16.IsSurrogate(r) {
+				if r >= 0xDC00 || !strings.HasPrefix(p.src[p.pos:], `\u`) {
+					return nil, fmt.Errorf("Syntax error: invalid Unicode escape sequence")
+				}
+				p.pos += 2
+				lo, err := p.unicodeEscape()
+				if err != nil {
+					return nil, err
+				}
+				if r = utf16.DecodeRune(r, lo); r == utf8.RuneError {
+					return nil, fmt.Errorf("Syntax error: invalid Unicode escape sequence")
+				}
+			}
+			b.WriteRune(r)
+		default:
+			return nil, fmt.Errorf("Syntax error: invalid escape sequence \\%c", esc)
+		}
+	}
+}
+
+// unicodeEscape reads the code of a \u escape (after the u): four hex digits or {hex digits}.
+func (p *hgGQLParser) unicodeEscape() (rune, error) {
+	bad := fmt.Errorf("Syntax error: invalid Unicode escape sequence")
+	hex := ""
+	if strings.HasPrefix(p.src[p.pos:], "{") {
+		end := strings.IndexByte(p.src[p.pos:], '}')
+		if end < 2 || end > 9 {
+			return 0, bad
+		}
+		hex = p.src[p.pos+1 : p.pos+end]
+		p.pos += end + 1
+	} else {
+		if p.pos+4 > len(p.src) {
+			return 0, bad
+		}
+		hex = p.src[p.pos : p.pos+4]
+		p.pos += 4
+	}
+	n, err := strconv.ParseUint(hex, 16, 32)
+	if err != nil || n > utf8.MaxRune || strings.ContainsAny(hex, "+-_xX") {
+		return 0, bad
+	}
+	return rune(n), nil
+}
+
+// hgGQLBlockString is the value of a block string's raw text (the spec's BlockStringValue).
+func hgGQLBlockString(raw string) string {
+	lines := strings.Split(strings.ReplaceAll(strings.ReplaceAll(raw, "\r\n", "\n"), "\r", "\n"), "\n")
+	indent := -1
+	for i, l := range lines {
+		if i == 0 {
+			continue
+		}
+		n := len(l) - len(strings.TrimLeft(l, " \t"))
+		if n < len(l) && (indent < 0 || n < indent) {
+			indent = n
+		}
+	}
+	if indent > 0 {
+		for i := 1; i < len(lines); i++ {
+			if len(lines[i]) >= indent {
+				lines[i] = lines[i][indent:]
+			} else {
+				lines[i] = ""
+			}
+		}
+	}
+	blank := func(l string) bool { return strings.Trim(l, " \t") == "" }
+	for len(lines) > 0 && blank(lines[0]) {
+		lines = lines[1:]
+	}
+	for len(lines) > 0 && blank(lines[len(lines)-1]) {
+		lines = lines[:len(lines)-1]
+	}
+	return strings.Join(lines, "\n")
+}
+
 // Execution ---------------------------------------------------------------------------------------------
 
 type hgGQLExec struct {
@@ -790,6 +953,16 @@ type hgGQLExec struct {
 	sch  *hgGQLSchema // built on first use
 	// nodes counts the selections expand produced (hgGQLMaxNodes).
 	nodes int
+	// budget is what the operation (or one subscription event) may still spend on queries.
+	budget *hgReadBudget
+}
+
+// readBudget is the operation's read budget, shared by all its root fields.
+func (ex *hgGQLExec) readBudget() *hgReadBudget {
+	if ex.budget == nil {
+		ex.budget = newHGReadBudget()
+	}
+	return ex.budget
 }
 
 // resolve replaces variables in an argument value.
@@ -885,7 +1058,7 @@ func (ex *hgGQLExec) root(f *hgGQLField) (any, error) {
 
 // params converts GraphQL arguments to REST read parameters.
 func (ex *hgGQLExec) params(sc *hgSchema, f *hgGQLField, sel []*hgGQLField) (*hgReadParams, error) {
-	p := &hgReadParams{Auth: ex.a, Status: "published"}
+	p := &hgReadParams{Auth: ex.a, Status: "published", Budget: ex.readBudget()}
 	args := map[string]any{}
 	for k, v := range f.args {
 		args[k] = ex.resolve(v)
@@ -933,7 +1106,9 @@ func (ex *hgGQLExec) params(sc *hgSchema, f *hgGQLField, sel []*hgGQLField) (*hg
 	if p.Page, err = hgParsePagination(pag, ex.st.DefaultPageSize, ex.st.MaxPageSize); err != nil {
 		return nil, err
 	}
-	p.Populate = ex.populate(sc, sel)
+	if p.Populate, err = ex.populate(sc, sel); err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 
@@ -1003,24 +1178,42 @@ func hgGQLFlat(sel []*hgGQLField) []*hgGQLField {
 	return out
 }
 
-// populate derives what to load from a selection set.
-func (ex *hgGQLExec) populate(sc *hgSchema, sel []*hgGQLField) *hgPop {
+// populate derives what to load from a selection set. A relation, media, component or dynamic
+// zone selected under an alias is loaded under its own key ("@" + alias), so aliases with
+// different arguments get their own data; selections of the same response key are merged, and
+// differing arguments for one response key are an error (the spec's OverlappingFieldsCanBeMerged).
+func (ex *hgGQLExec) populate(sc *hgSchema, sel []*hgGQLField) (*hgPop, error) {
 	pop := &hgPop{Populate: map[string]*hgPop{}}
 	reg := ex.s.hgReg(ex.c)
+	args := map[string]any{} // response key => the arguments it was first selected with
 	for _, f := range hgGQLFlat(sel) {
 		if f.name == "localizations" && sc.Localized {
-			pop.Populate["localizations"] = &hgPop{Populate: map[string]*hgPop{}}
+			if pop.Populate["localizations"] == nil {
+				pop.Populate["localizations"] = &hgPop{Populate: map[string]*hgPop{}}
+			}
 			continue
 		}
 		fd := sc.Field(f.name)
 		if fd == nil || fd.scalar() || fd.Private {
 			continue
 		}
+		key := hgGQLPopKey(f)
+		resolved := ex.resolve(f.args)
+		if m, ok := resolved.(map[string]any); ok && len(m) == 0 {
+			resolved = nil
+		}
+		if prev, seen := args[key]; seen && !reflect.DeepEqual(prev, resolved) {
+			return nil, fmt.Errorf("Fields %q conflict because they have differing arguments. Use different aliases on the fields to fetch both if this was intentional.", f.key())
+		}
+		args[key] = resolved
 		var sub *hgPop
+		var err error
 		switch fd.Type {
 		case "relation":
 			if t := reg.Get(fd.Target); t != nil {
-				sub = ex.populate(t, f.sel)
+				if sub, err = ex.populate(t, f.sel); err != nil {
+					return nil, err
+				}
 			} else {
 				sub = &hgPop{Populate: map[string]*hgPop{}}
 			}
@@ -1034,7 +1227,9 @@ func (ex *hgGQLExec) populate(sc *hgSchema, sel []*hgGQLField) *hgPop {
 			}
 		case "component":
 			if comp := reg.Get(fd.Component); comp != nil {
-				sub = ex.populate(comp, f.sel)
+				if sub, err = ex.populate(comp, f.sel); err != nil {
+					return nil, err
+				}
 			}
 		case "dynamiczone":
 			sub = &hgPop{Populate: map[string]*hgPop{}, On: map[string]*hgPop{}}
@@ -1048,17 +1243,85 @@ func (ex *hgGQLExec) populate(sc *hgSchema, sel []*hgGQLField) *hgPop {
 							fsel = append(fsel, x)
 						}
 					}
-					sub.On[cu] = ex.populate(comp, fsel)
+					if sub.On[cu], err = ex.populate(comp, fsel); err != nil {
+						return nil, err
+					}
 				}
 			}
 		default:
 			sub = &hgPop{Populate: map[string]*hgPop{}}
 		}
-		if sub != nil {
-			pop.Populate[f.name] = sub
+		if sub == nil {
+			continue
+		}
+		if key != f.name {
+			if pop.Alias == nil {
+				pop.Alias = map[string]string{}
+			}
+			pop.Alias[key] = f.name
+		}
+		if prev := pop.Populate[key]; prev != nil {
+			sub = hgMergePop(prev, sub)
+		}
+		pop.Populate[key] = sub
+	}
+	return pop, nil
+}
+
+// hgGQLPopKey is the populate key of a field: its name, or "@" + alias when it has an alias.
+func hgGQLPopKey(f *hgGQLField) string {
+	if f.alias != "" && f.alias != f.name {
+		return "@" + f.alias
+	}
+	return f.name
+}
+
+// hgMergePop merges two populates of the same response key (both selections are loaded).
+func hgMergePop(a, b *hgPop) *hgPop {
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
+	out := *a
+	out.All = a.All || b.All
+	if a.Fields == nil || b.Fields == nil {
+		out.Fields = nil
+	} else {
+		out.Fields = append([]string(nil), a.Fields...)
+		for _, f := range b.Fields {
+			if !containsStr(out.Fields, f) {
+				out.Fields = append(out.Fields, f)
+			}
 		}
 	}
-	return pop
+	out.Populate = map[string]*hgPop{}
+	for k, v := range a.Populate {
+		out.Populate[k] = v
+	}
+	for k, v := range b.Populate {
+		out.Populate[k] = hgMergePop(out.Populate[k], v)
+	}
+	if a.On != nil || b.On != nil {
+		out.On = map[string]*hgPop{}
+		for k, v := range a.On {
+			out.On[k] = v
+		}
+		for k, v := range b.On {
+			out.On[k] = hgMergePop(out.On[k], v)
+		}
+	}
+	if a.Alias != nil || b.Alias != nil {
+		out.Alias = map[string]string{}
+		for k, v := range a.Alias {
+			out.Alias[k] = v
+		}
+		for k, v := range b.Alias {
+			out.Alias[k] = v
+		}
+	}
+	return &out
 }
 
 func (ex *hgGQLExec) list(sc *hgSchema, f *hgGQLField, connection bool) (any, error) {
@@ -1152,7 +1415,8 @@ func (ex *hgGQLExec) one(sc *hgSchema, f *hgGQLField) (any, error) {
 	return ex.project(sc, obj, f.sel), nil
 }
 
-// project keeps the selected keys of a serialized object (with aliases and __typename).
+// project keeps the selected keys of a serialized object (with aliases and __typename). Values
+// selected more than once under one response key (fragments) are merged.
 func (ex *hgGQLExec) project(sc *hgSchema, obj map[string]any, sel []*hgGQLField) map[string]any {
 	reg := ex.s.hgReg(ex.c)
 	out := map[string]any{}
@@ -1160,7 +1424,7 @@ func (ex *hgGQLExec) project(sc *hgSchema, obj map[string]any, sel []*hgGQLField
 		if f.name == "..." {
 			if sc != nil && (f.on == "" || f.on == hgPascal(sc)) {
 				for k, v := range ex.project(sc, obj, f.sel) {
-					out[k] = v
+					hgGQLMergeInto(out, k, v)
 				}
 			}
 			continue
@@ -1173,21 +1437,30 @@ func (ex *hgGQLExec) project(sc *hgSchema, obj map[string]any, sel []*hgGQLField
 			}
 			continue
 		}
-		v, ok := obj[f.name]
+		var fd *hgField
+		if sc != nil {
+			fd = sc.Field(f.name)
+		}
+		src := f.name
+		if fd != nil && !fd.scalar() && !fd.Private {
+			src = hgGQLPopKey(f) // loaded under the alias (populate)
+		}
+		v, ok := obj[src]
 		if !ok {
-			out[f.key()] = nil
+			if _, set := out[f.key()]; !set {
+				out[f.key()] = nil
+			}
 			continue
 		}
 		if len(f.sel) == 0 || sc == nil {
 			if len(f.sel) > 0 {
-				out[f.key()] = hgGQLProjectAny(v, f.sel)
+				hgGQLMergeInto(out, f.key(), hgGQLProjectAny(v, f.sel))
 			} else {
 				out[f.key()] = v
 			}
 			continue
 		}
 		var sub *hgSchema
-		fd := sc.Field(f.name)
 		if fd != nil {
 			switch fd.Type {
 			case "relation":
@@ -1201,7 +1474,7 @@ func (ex *hgGQLExec) project(sc *hgSchema, obj map[string]any, sel []*hgGQLField
 		}
 		switch t := v.(type) {
 		case map[string]any:
-			out[f.key()] = ex.project(sub, t, f.sel)
+			hgGQLMergeInto(out, f.key(), ex.project(sub, t, f.sel))
 		case []any:
 			list := make([]any, 0, len(t))
 			for _, x := range t {
@@ -1216,12 +1489,38 @@ func (ex *hgGQLExec) project(sc *hgSchema, obj map[string]any, sel []*hgGQLField
 				}
 				list = append(list, ex.project(s2, m, f.sel))
 			}
-			out[f.key()] = list
+			hgGQLMergeInto(out, f.key(), list)
 		default:
 			out[f.key()] = v
 		}
 	}
 	return out
+}
+
+// hgGQLMergeInto sets out[k] = v, merging objects (and lists of objects, item by item) that are
+// already there: the same field selected twice, e.g. directly and through a fragment.
+func hgGQLMergeInto(out map[string]any, k string, v any) {
+	out[k] = hgGQLMergeValues(out[k], v)
+}
+
+func hgGQLMergeValues(old, v any) any {
+	switch t := v.(type) {
+	case map[string]any:
+		if om, ok := old.(map[string]any); ok {
+			for k, x := range t {
+				om[k] = hgGQLMergeValues(om[k], x)
+			}
+			return om
+		}
+	case []any:
+		if ol, ok := old.([]any); ok && len(ol) == len(t) {
+			for i := range t {
+				ol[i] = hgGQLMergeValues(ol[i], t[i])
+			}
+			return ol
+		}
+	}
+	return v
 }
 
 // hgGQLProjectAny projects plain objects (media, WordPress objects) by selection.
