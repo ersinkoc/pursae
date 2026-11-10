@@ -161,10 +161,37 @@ func TestWBThemeImportEndToEnd(t *testing.T) {
 		t.Errorf("a foreign template was touched: %s", p.Status)
 	}
 
+	liveHTML := map[int64]string{}
+	for _, id := range append(append([]int64{}, tpl...), pg...) {
+		row, err := srv.store.WebBuilder().Doc(ctx, id)
+		if err != nil || row.HTML == "" {
+			t.Fatalf("published part %d has no snapshot: %v", id, err)
+		}
+		liveHTML[id] = row.HTML
+	}
 	// Idempotent: the same posts come back, no new images, no copies.
 	o2, tpl2, pg2 := importIt("replace")
 	if len(tpl2) != len(tpl) || tpl2[0] != tpl[0] || pg2[0] != pg[0] || o2["media"].(float64) != 0 {
 		t.Errorf("second import: %v %v media %v (first %v %v)", tpl2, pg2, o2["media"], tpl, pg)
+	}
+	// Until the editor publishes the re-imported designs the live templates and pages keep their
+	// snapshots (a stopped import must not blank the site's header), and nothing reads as drift.
+	for id, html := range liveHTML {
+		row, err := srv.store.WebBuilder().Doc(ctx, id)
+		if err != nil || row.HTML != html {
+			t.Errorf("re-import blanked or changed the live snapshot of %d: %v", id, err)
+		}
+		if drifted, _ := srv.wbDetectDrift(ctx, id); drifted {
+			t.Errorf("re-imported %d reads as edited outside the builder", id)
+		}
+	}
+	if idx := srv.wbTemplateIndex(ctx); idx.entry(tpl[0]) == nil || !idx.entry(tpl[0]).HasHTML {
+		t.Errorf("the re-imported live header left the template index")
+	}
+	// A fresh import's drafts do not read as drift either (content_hash is the post's content).
+	_, fresh, _ := importIt("keep")
+	if drifted, _ := srv.wbDetectDrift(ctx, fresh[0]); drifted {
+		t.Errorf("a freshly imported template reads as edited outside the builder")
 	}
 	// Keep: drafts of their own, the live templates stay.
 	_, kept, _ := importIt("keep")

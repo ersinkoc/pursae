@@ -465,7 +465,21 @@ func (s *Server) wbRESTThemeImport(c *gin.Context, r *restRequest) {
 			return 0, key + ": " + msg
 		}
 		baseRev, _ := wb.DocRev(c, id)
-		d := &store.WebBuilderDoc{PostID: id, Doc: res.JSON, Page: page, Renderer: 0, SnapshotUser: u.ID, SnapshotUnfiltered: unfiltered}
+		var content, status string
+		_ = s.store.Pool.QueryRow(c, `SELECT content, status FROM posts WHERE id = $1`, id).Scan(&content, &status)
+		// content_hash is that of the post's content as it is (an empty hash reads as drift: the
+		// first save of the post would detach the doc before the editor publishes it).
+		d := &store.WebBuilderDoc{PostID: id, Doc: res.JSON, Page: page, Renderer: 0, ContentHash: store.WebBuilderContentHash(content),
+			SnapshotUser: u.ID, SnapshotUnfiltered: unfiltered}
+		if status == webbuilder.StatusPublish {
+			// A re-import over a live template or page keeps its published snapshot until the editor
+			// publishes the imported design (step 2): a stopped or failed import must not blank the
+			// site's header, footer or page (contract: nothing changes visibly before step 3).
+			if old, err := wb.Doc(c, id); err == nil && strings.TrimSpace(old.HTML) != "" {
+				d.HTML, d.CSS, d.Fonts, d.Features, d.Renderer = old.HTML, old.CSS, old.Fonts, old.Features, old.Renderer
+				d.SnapshotUser, d.SnapshotUnfiltered = old.SnapshotUser, old.SnapshotUnfiltered
+			}
+		}
 		if err := wb.PublishDoc(c, d, baseRev); err != nil {
 			return 0, key + ": the design could not be saved"
 		}

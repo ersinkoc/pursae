@@ -22,7 +22,8 @@ Plugins › Pursae Web Builder › **Activate** turns it on and switches the sit
 the blank theme the Theme Builder designs on; the theme it leaves is remembered
 (`web_builder_previous_theme`) and a notice on the Dashboard, Plugins and Themes screens offers
 **Switch back**. **Deactivate** puts that theme back (or the default theme when it is gone) while
-the site is still on Hello Pursae; if you picked another theme in between, it stays. Sites that had
+the site is still on Hello Pursae; if you picked another theme in between, it stays (leaving Hello Pursae
+forgets the remembered theme, so choosing Hello Pursae again later is your own choice and stays too). Sites that had
 the plugin on before the Theme Builder existed are not switched: they get a one-time **Switch to
 Hello Pursae** notice instead ([upgrading](getting-started/upgrading.md#release-notes)). There is
 no setup wizard. While the plugin is off there are no menu entries, "Edit with" links, routes,
