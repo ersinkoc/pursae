@@ -9,7 +9,9 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -27,8 +29,16 @@ func (s *Server) lostPassword(c *gin.Context, v loginView) {
 		if login == "" {
 			v.Error = "<strong>Error:</strong> Please enter a username or email address."
 		} else {
+			if msg := s.loginCaptchaFailed(c); msg != "" {
+				v.Error = msg
+				s.renderAdminTemplate(c, http.StatusOK, "admin/login-lost", v)
+				return
+			}
 			if u, err := s.store.UserByLoginOrEmail(c, login); err == nil {
-				s.sendResetLink(c, u)
+				if s.resetRequestAllowed(c, u) {
+					s.asAudit(c, asEvent{Event: "password_reset_requested", Severity: "notice", User: u, Username: u.Login, Message: "A password reset link was requested."})
+					s.sendResetLink(c, u)
+				}
 			}
 			// The same answer whether or not the account exists, so the form can't be used to find accounts.
 			c.Redirect(http.StatusFound, s.loginPath()+"?checkemail=confirm")
@@ -72,6 +82,9 @@ func (s *Server) register(c *gin.Context, v loginView) {
 		email := strings.TrimSpace(c.PostForm("user_email"))
 		v.Login, v.Email, v.RedirectTo = login, email, c.PostForm("redirect_to")
 		var errs []string
+		if msg := s.loginCaptchaFailed(c); msg != "" {
+			errs = append(errs, string(msg))
+		}
 		lt, et, _ := s.store.LoginOrEmailTaken(c, login, email)
 		switch {
 		case login == "":
@@ -230,4 +243,48 @@ func (s *Server) notifyNewUser(c *gin.Context, u *store.User, sendUser bool) {
 		body := fmt.Sprintf("Username: %s\n\nTo set your password, visit the following address:\n\n%s\n\n%s\n", u.Login, link, s.links(c).HomeURL(s.loginPath()))
 		s.sendMail(c, mail.Message{To: []string{u.Email}, Subject: "[" + site + "] Login Details", Body: body})
 	}
+}
+
+// Password reset requests are limited per IP address and per account so the form cannot be used to
+// flood a mailbox (every request mails the owner and replaces the previous key). The answer shown to
+// the visitor stays the same whether or not a request was throttled or the account exists.
+const (
+	resetRequestMax    = 3
+	resetRequestWindow = 15 * time.Minute
+)
+
+var (
+	resetReqMu   sync.Mutex
+	resetReqSeen = map[string][]time.Time{}
+)
+
+// resetRequestAllowed reports whether a reset mail may be sent for u from this request, and records it.
+func (s *Server) resetRequestAllowed(c *gin.Context, u *store.User) bool {
+	ip := clientIP(c)
+	if st := s.asLoad(); s.adminsecOn() && st.BlockList != "" && maintIPAllowed(st.BlockList, ip) && !maintIPAllowed(st.AllowList, ip) {
+		return false
+	}
+	now := time.Now()
+	resetReqMu.Lock()
+	defer resetReqMu.Unlock()
+	for k, v := range resetReqSeen { // drop expired entries
+		for len(v) > 0 && now.Sub(v[0]) > resetRequestWindow {
+			v = v[1:]
+		}
+		if len(v) == 0 {
+			delete(resetReqSeen, k)
+		} else {
+			resetReqSeen[k] = v
+		}
+	}
+	keys := []string{"ip:" + ip, "user:" + strconv.FormatInt(u.ID, 10)}
+	for _, k := range keys {
+		if len(resetReqSeen[k]) >= resetRequestMax {
+			return false
+		}
+	}
+	for _, k := range keys {
+		resetReqSeen[k] = append(resetReqSeen[k], now)
+	}
+	return true
 }

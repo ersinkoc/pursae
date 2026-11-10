@@ -160,19 +160,19 @@ func (s *Server) adminsecPasswordChanged(c *gin.Context, u *store.User) {
 	if u.Meta["adminsec_force_password"] != nil {
 		_ = s.setUserMeta(c, u, "adminsec_force_password", nil)
 	}
+	// A new password also ends every "Remember this device" trust: a stolen device must be challenged again.
+	_, _ = s.store.Pool.Exec(c, `DELETE FROM adminsec_devices WHERE user_id = $1`, u.ID)
 	s.asAudit(c, asEvent{Event: "password_changed", Severity: "notice", Object: u.Login, Message: "Password changed for " + u.Login + "."})
 }
 
 // asForcePassword reports a pending forced change: true when the policy asked for it, "admin"
 // when an administrator did. With weak passwords allowed only the administrator's request stays,
-// and a user who signs in with a second factor (2FA or MFA) is never asked.
+// and the policy's request (not an administrator's) is skipped for a user with a second factor (2FA or MFA).
 func (s *Server) asForcePassword(ctx context.Context, u *store.User) bool {
-	if u.Meta["adminsec_force_password"] == nil || s.asFactors(ctx, u.ID).any() {
-		return false
-	}
 	switch v := u.Meta["adminsec_force_password"].(type) {
 	case bool:
-		return v && !s.asLoad().PwAllowWeak
+		// The policy's own request is skipped for users who sign in with a second factor.
+		return v && !s.asLoad().PwAllowWeak && !s.asFactors(ctx, u.ID).any()
 	case string:
 		return v == "admin"
 	}

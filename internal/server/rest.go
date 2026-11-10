@@ -335,7 +335,7 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		return
 	}
 	builderOn := s.wbOn()
-	for _, r := range api.routes {
+	for _, r := range append(api.routes[:len(api.routes):len(api.routes)], api.acfgoTypeRoutes()...) {
 		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) || s.pixelRESTHidden(r.Namespace) {
 			continue
 		}

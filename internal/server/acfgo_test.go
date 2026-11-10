@@ -353,6 +353,19 @@ func TestACFGoPlugin(t *testing.T) {
 	if code, _, loc := post(t, c, base+"/wp-admin/post", form); code != http.StatusFound || !strings.Contains(loc, "message=") {
 		t.Fatalf("classic save: %d %s", code, loc)
 	}
+	// The classic form is validated on the server too: a failing value stores nothing.
+	bad := url.Values{}
+	for k, v := range form {
+		bad[k] = v
+	}
+	bad.Set("acf[field_subtitle]", "Should not be stored")
+	bad.Set("acf[field_price]", "-4")
+	if code, bbody, _ := post(t, c, base+"/wp-admin/post", bad); code != http.StatusUnprocessableEntity || !strings.Contains(bbody, "Validation failed") {
+		t.Fatalf("invalid classic save: %d", code)
+	}
+	if after, _ := srv.store.GetPost(ctx, p.ID); after.Meta["subtitle"] != "Best widget" {
+		t.Errorf("invalid save stored: %v", after.Meta["subtitle"])
+	}
 	saved, _ := srv.store.GetPost(ctx, p.ID)
 	meta := saved.Meta
 	want := map[string]any{"subtitle": "Best widget", "_subtitle": "field_subtitle", "price": "19.5", "featured": float64(1), "launch": "20261105",
@@ -601,7 +614,7 @@ func TestACFGoPostTypes(t *testing.T) {
 
 	_, body, _ := get(t, c, base+"/wp-admin/acf-post-type")
 	if code, _, loc := post(t, c, base+"/wp-admin/acf-post-type", url.Values{"_wpnonce": {formNonce(t, body)}, "plural_label": {"Books"}, "singular_label": {"Book"},
-		"slug": {"book"}, "active": {"1"}, "public": {"1"}, "show_in_rest": {"1"}, "supports[]": {"title", "editor"}}); code != http.StatusFound {
+		"slug": {"book"}, "active": {"1"}, "public": {"1"}, "show_in_rest": {"1"}, "supports[]": {"title", "editor", "author"}}); code != http.StatusFound {
 		t.Fatalf("create post type: %d %s", code, loc)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/acf-taxonomy")
@@ -613,6 +626,41 @@ func TestACFGoPostTypes(t *testing.T) {
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM content_types WHERE slug = 'book') AND EXISTS (SELECT 1 FROM taxonomies WHERE slug = 'genre')`).Scan(&exists)
 	if !exists {
 		t.Fatal("post type / taxonomy not registered")
+	}
+	// delete_with_user: unchecked keeps the author's books when the user is deleted.
+	uid, err := srv.store.CreateUser(ctx, store.NewUser{Login: "leaver", Email: "leaver@example.test", PasswordHash: "x", Role: "author"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	book := &store.Post{Type: "book", AuthorID: uid, Status: "publish", Title: "Kept", Content: "x"}
+	if err := srv.store.InsertPost(ctx, book); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.store.DeleteUser(ctx, uid, 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.GetPost(ctx, book.ID); err != nil {
+		t.Errorf("book deleted although delete_with_user is off: %v", err)
+	}
+	// REST: /wp/v2/<rest_base> of a "Show in REST" type (create, read, list, delete).
+	code, rb := restSend(t, c, base, http.MethodPost, "/wp-json/wp/v2/book", `{"title":"REST book","status":"publish"}`)
+	var rbook map[string]any
+	_ = json.Unmarshal([]byte(rb), &rbook)
+	if code != http.StatusCreated || rbook["type"] != "book" || rbook["title"].(map[string]any)["raw"] != "REST book" {
+		t.Fatalf("REST create book: %d %s", code, rb)
+	}
+	bid := strconv.FormatInt(int64(rbook["id"].(float64)), 10)
+	if code, _ := restGet(t, c, base, "/wp-json/wp/v2/book/"+bid); code != http.StatusOK {
+		t.Errorf("REST get book: %d", code)
+	}
+	if code, lb := restGet(t, c, base, "/wp-json/wp/v2/book"); code != http.StatusOK || !strings.Contains(lb, "REST book") {
+		t.Errorf("REST list books: %d", code)
+	}
+	if code, _ := restGet(t, c, base, "/wp-json/wp/v2/posts/"+bid); code != http.StatusNotFound {
+		t.Errorf("a book answered on /posts: %d", code)
+	}
+	if code, _ := restSend(t, c, base, http.MethodDelete, "/wp-json/wp/v2/book/"+bid+"?force=true", ""); code != http.StatusOK {
+		t.Errorf("REST delete book: %d", code)
 	}
 	_, body, _ = get(t, c, base+"/wp-admin/")
 	if !strings.Contains(body, `href="/wp-admin/edit?post_type=book"`) || !strings.Contains(body, "edit-tags?taxonomy=genre") {

@@ -92,6 +92,7 @@ func (s *Server) restCommentOf(c *gin.Context, cm *store.Comment, p *store.Post,
 		out["author_ip"] = cm.AuthorIP
 		out["author_user_agent"] = cm.UserAgent
 	}
+	s.acfgoRESTComment(c, cm, p, out) // ACF-Go
 	if ctxName == "embed" {
 		return map[string]any{"id": cm.ID, "parent": cm.ParentID, "author": cm.UserID, "author_name": cm.AuthorName, "author_url": cm.AuthorURL,
 			"date": out["date"], "content": map[string]any{"rendered": commentText(cm.Content)}, "link": link, "type": cm.Type,
@@ -343,6 +344,9 @@ func (api *restAPI) createComment(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusTooManyRequests, "comment_flood", "You are posting comments too quickly. Slow down.")
 		return
 	}
+	if !s.acfgoRESTValidateFor(c, r.Body, acfgoCommentScreen(p)) { // ACF-Go: the "acf" object
+		return
+	}
 	if st, ok := r.Str(c, "status"); ok {
 		if mapped, ok := storeCommentStatus(st); ok {
 			cm.Status = mapped
@@ -358,6 +362,10 @@ func (api *restAPI) createComment(c *gin.Context, r *restRequest) {
 	if date, ok := commentDateParam(c, r, s); ok {
 		_, _ = s.store.Pool.Exec(c, `UPDATE comments SET created_at = $2 WHERE id = $1`, cm.ID, date)
 		cm.CreatedAt = date
+	}
+	if _, has := r.Body["acf"]; has {
+		s.acfgoRESTSaveFor(c, r.Body, acfgoCommentScreen(p), &acfObject{Kind: "comment", ID: cm.ID, meta: map[string]any{}})
+		cm, _ = s.store.GetComment(c, cm.ID)
 	}
 	s.afterPostSave(c, p)
 	c.Header("Location", s.links(c).HomeURL("/wp-json/wp/v2/comments/"+itoa64(cm.ID)))
@@ -486,6 +494,9 @@ func (api *restAPI) updateComment(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusBadRequest, "rest_comment_content_invalid", "Invalid comment content.")
 		return
 	}
+	if !s.acfgoRESTValidateFor(c, r.Body, acfgoCommentScreen(p)) { // ACF-Go: the "acf" object
+		return
+	}
 	if date, ok := commentDateParam(c, r, s); ok {
 		cm.CreatedAt = date
 	}
@@ -517,6 +528,9 @@ func (api *restAPI) updateComment(c *gin.Context, r *restRequest) {
 	if oldPost.ID != cm.PostID {
 		_ = s.store.RecountComments(c, oldPost.ID)
 		s.afterPostSave(c, oldPost)
+	}
+	if _, has := r.Body["acf"]; has {
+		s.acfgoRESTSaveFor(c, r.Body, acfgoCommentScreen(p), &acfObject{Kind: "comment", ID: cm.ID, meta: orEmptyMap(cm.Meta)})
 	}
 	cm, _ = s.store.GetComment(c, cm.ID)
 	s.afterPostSave(c, p)

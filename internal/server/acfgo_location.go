@@ -345,9 +345,9 @@ func (s *Server) acfgoLocationValues(ctx context.Context) map[string][]acfgoChoi
 	}
 	out["taxonomy"] = taxes
 	out["attachment"] = []acfgoChoice{{"all", "All", ""}, {"image", "Image", ""}, {"video", "Video", ""}, {"audio", "Audio", ""}, {"application", "Application", ""}, {"text", "Text", ""}}
-	out["widget"] = []acfgoChoice{{"all", "All (not available in Pursae)", ""}}
-	out["nav_menu"] = []acfgoChoice{{"all", "All (not available in Pursae)", ""}}
-	out["nav_menu_item"] = []acfgoChoice{{"all", "All (not available in Pursae)", ""}}
+	out["widget"] = []acfgoChoice{{"all", "All (no such screen in Pursae)", ""}}
+	out["nav_menu"] = []acfgoChoice{{"all", "All (no such screen in Pursae)", ""}}
+	out["nav_menu_item"] = []acfgoChoice{{"all", "All (no such screen in Pursae)", ""}}
 	blocks := []acfgoChoice{{"all", "All", ""}}
 	for _, b := range s.acfgoBlocks() {
 		blocks = append(blocks, acfgoChoice{b.Name, b.Title, ""})
@@ -370,6 +370,20 @@ func (s *Server) acfgoLocationValues(ctx context.Context) map[string][]acfgoChoi
 }
 
 // acfgoLocationSummary is the Location column of the field group list ("Post Type is equal to Post").
+// acfgoUnsupportedLocation reports whether a group has a location rule whose screen does not exist in
+// Pursae (widgets, menus, menu items), so the group would never be shown there.
+func acfgoUnsupportedLocation(g *acfGroup) bool {
+	for _, grp := range g.Location {
+		for _, r := range grp {
+			switch r.Param {
+			case "widget", "nav_menu", "nav_menu_item":
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (s *Server) acfgoLocationSummary(g *acfGroup, values map[string][]acfgoChoice) []string {
 	params := map[string]string{}
 	for _, p := range acfgoLocationParams {

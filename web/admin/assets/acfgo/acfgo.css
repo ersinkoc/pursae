@@ -254,3 +254,7 @@ tr.acf-inactive .row-title { color: var(--acf-muted); }
 	.acf-relationship .selection { flex-direction: column; }
 	.li-field-key, .li-field-name { display: none !important; }
 }
+
+/* Repeater pagination: rows of the other pages stay in the form but are not shown. */
+.acf-repeater .acf-row.acf-row-paged-out { display: none; }
+.acf-repeater-pagination { float: right; line-height: 28px; }

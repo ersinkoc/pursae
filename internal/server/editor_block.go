@@ -165,7 +165,7 @@ func (s *Server) useBlockEditor(c *gin.Context, p *store.Post) bool {
 		return true
 	}
 	def := s.settings.String("classic-editor-replace") != "classic"
-	if s.settings.String("classic-editor-allow-users") != "allow" {
+	if !s.classicSwitchAllowed() {
 		return def
 	}
 	if _, ok := c.GetQuery("classic-editor"); ok {
@@ -365,7 +365,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 }
 
 func (s *Server) classicSwitchURL(p *store.Post) string {
-	if s.settings.String("classic-editor-allow-users") != "allow" || !s.settings.Bool("native_classic_editor") {
+	if !s.classicSwitchAllowed() {
 		return ""
 	}
 	return "/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit&classic-editor"

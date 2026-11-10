@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"net/mail"
 	"net/url"
@@ -190,9 +191,22 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 	u := currentUser(c)
 	unfiltered := u.Can("unfiltered_html", nil)
 	editorCtx := acfgoWithEditor(ctx, u)
+	// valid is acf_validate_save_post(): input that fails the fields' rules is not stored and the
+	// request ends with the list of problems (the form's JS check is only a convenience).
+	valid := func() bool {
+		errs := s.acfgoValidate(ctx, in)
+		if len(errs) == 0 {
+			return true
+		}
+		s.acfgoValidationDie(c, errs)
+		return false
+	}
 	save := func(o *acfObject) {
-		if o != nil {
-			_ = s.acfgoSaveInput(editorCtx, o, in, unfiltered)
+		if o == nil || !valid() {
+			return
+		}
+		if err := s.acfgoSaveInput(editorCtx, o, in, unfiltered); err != nil {
+			log.Printf("acf-go: save %s %d: %v", o.Kind, o.ID, err)
 		}
 	}
 	switch screen {
@@ -244,6 +258,9 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 		if (screen == "edit-tags" && !s.checkNonce(c, "add-tag")) || (screen == "user-new" && !s.checkNonce(c, "create-user")) {
 			return
 		}
+		if !valid() { // before the core creates the object
+			return
+		}
 		tax, name, login := c.DefaultPostForm("taxonomy", "post_tag"), strings.TrimSpace(c.PostForm("tag-name")), strings.TrimSpace(c.PostForm("user_login"))
 		c.Next() // the object exists after the core's handler
 		// Only when the core created it (it redirects on success): a refused add ("already exists",
@@ -264,6 +281,19 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 			}
 		}
 	}
+}
+
+// acfgoValidationDie ends a classic form POST whose acf[...] values failed validation.
+func (s *Server) acfgoValidationDie(c *gin.Context, errs []acfgoError) {
+	var li strings.Builder
+	for _, e := range errs {
+		li.WriteString("<li>" + template.HTMLEscapeString(e.Message) + "</li>")
+	}
+	s.adminHTML(c, http.StatusUnprocessableEntity, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Validation failed</title>`+
+		`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page">`+
+		`<div class="wp-die-message"><p><strong>Validation failed.</strong> Nothing was saved.</p><ul>`+li.String()+`</ul></div>`+
+		`<p><a href="javascript:history.back()">Go back and correct the fields.</a></p></body></html>`)
+	c.Abort()
 }
 
 // acfgoSaveInput stores parsed acf[...] input (keyed by field key) on an object: every posted
@@ -584,8 +614,17 @@ func (s *Server) acfgoQueryPostsAjax(c *gin.Context) {
 	type item struct {
 		ID   int64  `json:"id"`
 		HTML string `json:"html"`
+		Text string `json:"text"`
 	}
 	out := []item{}
+	if acfgoStr(f["type"]) == "user" { // user field: search users (the ajax select)
+		for _, tu := range s.acfgoUserChoices(ctx, f, strings.TrimSpace(c.Query("s"))) {
+			t := tu.DisplayName + " (" + tu.Login + ")"
+			out = append(out, item{tu.ID, esc(t), t})
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": out})
+		return
+	}
 	typ := c.Query("post_type")
 	if typ != "" && !containsStr(acfgoAllowedTypes(f), typ) {
 		typ = "-" // the type filter narrows the field's post types; it cannot name another one
@@ -597,7 +636,7 @@ func (s *Server) acfgoQueryPostsAjax(c *gin.Context) {
 		if p.Status != "publish" && !u.Can("read_post", p) {
 			continue
 		}
-		out = append(out, item{p.ID, s.acfgoRelItemLabel(ctx, f, p)})
+		out = append(out, item{p.ID, s.acfgoRelItemLabel(ctx, f, p), defaultStr(p.Title, "(no title)")})
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": out})
 }
