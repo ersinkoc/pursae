@@ -131,18 +131,24 @@ func (s *Server) gocdnReRemove(rel string) {
 	}
 }
 
-// gocdnRemovedCount is the number of files that exist only in the bucket.
-func (s *Server) gocdnRemovedCount(ctx context.Context) int {
+// gocdnRemovedCount is the number of files that exist only in the bucket. Callers treat an error as
+// "some": turning the uploads fallback off on a failed count would break every such file.
+func (s *Server) gocdnRemovedCount(ctx context.Context) (int, error) {
 	var n int
-	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM gocdn_items WHERE local_removed`).Scan(&n)
-	return n
+	err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM gocdn_items WHERE local_removed`).Scan(&n)
+	return n, err
+}
+
+// gocdnHasRemoved reports whether files may exist only in the bucket (true when the count fails).
+func (s *Server) gocdnHasRemoved(ctx context.Context) bool {
+	n, err := s.gocdnRemovedCount(ctx)
+	return err != nil || n > 0
 }
 
 // gocdnDeactivate turns the plugin off, with the uploads fallback when files are left only in
 // the bucket.
 func (s *Server) gocdnDeactivate(ctx context.Context) error {
-	removed := s.gocdnRemovedCount(ctx)
-	if err := s.settings.Set(ctx, map[string]any{gocdnSetting: false, gocdnFallbackOption: removed > 0}); err != nil {
+	if err := s.settings.Set(ctx, map[string]any{gocdnSetting: false, gocdnFallbackOption: s.gocdnHasRemoved(ctx)}); err != nil {
 		return err
 	}
 	s.gocdnStopJob()

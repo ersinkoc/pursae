@@ -143,7 +143,7 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 		d.Removed = d.Stats.Removed
 	case "deactivate":
 		title = "Deactivate Pursae CDN"
-		d.Removed = s.gocdnRemovedCount(c)
+		d.Removed, _ = s.gocdnRemovedCount(c)
 		d.Job = s.gocdnJob()
 	case "images":
 		title = "Image Service"

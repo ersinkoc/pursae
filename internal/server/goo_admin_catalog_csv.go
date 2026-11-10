@@ -546,13 +546,25 @@ func (s *Server) gooImportMapping(c *gin.Context, d *gooImportData) {
 		d.Error = err.Error()
 		return
 	}
-	_, _ = tmp.Write(data)
-	tmp.Close()
+	// A short write (full disk) would import only the rows that made it to the file.
+	_, err = tmp.Write(data)
+	if cerr := tmp.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		os.Remove(tmp.Name())
+		d.Error = "The uploaded file could not be saved: " + err.Error()
+		return
+	}
 	// os.CreateTemp's random part is digits: rename to keep the token pattern strict.
 	d.File = filepath.Base(tmp.Name())
 	if !gooImportTokenRe.MatchString(d.File) {
 		name := "goo-import-" + strconv.FormatInt(time.Now().UnixNano(), 10) + ".csv"
-		_ = os.Rename(tmp.Name(), filepath.Join(os.TempDir(), name))
+		if err := os.Rename(tmp.Name(), filepath.Join(os.TempDir(), name)); err != nil {
+			os.Remove(tmp.Name())
+			d.Error = "The uploaded file could not be saved: " + err.Error()
+			return
+		}
 		d.File = name
 	}
 	d.Step = "mapping"

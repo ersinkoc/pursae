@@ -349,3 +349,16 @@ func TestTitleParts(t *testing.T) {
 		}
 	}
 }
+
+// A .mo header announcing more messages than the file holds is rejected before anything is sized
+// from it (a 4-billion-message count used to size the catalog map).
+func TestParseMOHugeCount(t *testing.T) {
+	b := make([]byte, 28)
+	binary.LittleEndian.PutUint32(b[0:], 0x950412de)
+	binary.LittleEndian.PutUint32(b[8:], 0xffffffff)
+	binary.LittleEndian.PutUint32(b[12:], 28)
+	binary.LittleEndian.PutUint32(b[16:], 28)
+	if _, err := parseMO(b); err == nil {
+		t.Fatal("a corrupt message count was accepted")
+	}
+}

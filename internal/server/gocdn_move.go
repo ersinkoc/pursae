@@ -94,10 +94,9 @@ func (s *Server) gocdnRememberConn(ctx context.Context, prev, next gocdnSettings
 		}
 	}
 	if prev.Bucket != "" && !pc.same(nc) {
-		var n int
-		_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM gocdn_items WHERE bucket = $1 AND provider = $2 AND (endpoint = '' OR endpoint = $3)`,
-			pc.Bucket, pc.Provider, pc.Endpoint).Scan(&n)
-		if n > 0 {
+		// A count that fails keeps the connection: forgetting it would leave the files in the old
+		// bucket without credentials.
+		if n, err := s.gocdnConnItems(ctx, pc); err != nil || n > 0 {
 			keep = append(keep, pc)
 		}
 	}
@@ -332,15 +331,23 @@ func (s *Server) gocdnPrunePrevious(ctx context.Context) {
 	}
 	var keep []gocdnConn
 	for _, c := range st.Previous {
-		var n int
-		_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM gocdn_items WHERE bucket = $1 AND provider = $2 AND (endpoint = '' OR endpoint = $3)`,
-			c.Bucket, c.Provider, c.Endpoint).Scan(&n)
-		if n > 0 && !c.same(gocdnConnOf(st)) {
-			keep = append(keep, c)
+		if c.same(gocdnConnOf(st)) {
+			continue
+		}
+		if n, err := s.gocdnConnItems(ctx, c); err != nil || n > 0 {
+			keep = append(keep, c) // still used, or unknown: kept
 		}
 	}
 	if len(keep) != len(st.Previous) {
 		st.Previous = keep
 		_ = s.gocdnSave(ctx, st)
 	}
+}
+
+// gocdnConnItems counts the items that live in the bucket of connection c.
+func (s *Server) gocdnConnItems(ctx context.Context, c gocdnConn) (int, error) {
+	var n int
+	err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM gocdn_items WHERE bucket = $1 AND provider = $2 AND (endpoint = '' OR endpoint = $3)`,
+		c.Bucket, c.Provider, c.Endpoint).Scan(&n)
+	return n, err
 }
