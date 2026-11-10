@@ -129,6 +129,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 		{name: "link", typ: str}, {name: "date", typ: gqlNamed("DateTime")}, {name: "modified", typ: gqlNamed("DateTime")}, {name: "featuredMedia", typ: intT}}})
 	g.add(&hgGQLTypeDef{kind: "OBJECT", name: "WpUser", desc: "A WordPress user", fields: []*hgGQLFieldDef{
 		{name: "id", typ: gqlNonNull(gqlNamed("ID"))}, {name: "username", typ: str}, {name: "name", typ: str}}})
+	g.addWPTypes()
 	// Scalar filter inputs.
 	for _, sc := range []string{"ID", "String", "Int", "Long", "Float", "Boolean", "Date", "DateTime", "Time", "JSON"} {
 		name := sc + "FilterInput"
@@ -148,7 +149,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 			{name: "null", typ: boolT}, {name: "notNull", typ: boolT}}
 	}
 	for name, cols := range map[string][]string{"UploadFileFiltersInput": {"name", "mime", "alternativeText", "caption"},
-		"WpPostFiltersInput": {"slug", "title", "status"}, "WpUserFiltersInput": {"username", "slug", "name"}} {
+		"WpPostFiltersInput": {"slug", "title", "status"}, "WpTermFiltersInput": {"slug", "name"}, "WpUserFiltersInput": {"username", "slug", "name"}} {
 		t := &hgGQLTypeDef{kind: "INPUT_OBJECT", name: name, inputs: []*hgGQLInput{{name: "id", typ: gqlNamed("IDFilterInput")}}}
 		for _, c := range cols {
 			t.inputs = append(t.inputs, &hgGQLInput{name: c, typ: gqlNamed("StringFilterInput")})
@@ -159,11 +160,13 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 	g.add(&hgGQLTypeDef{kind: "INPUT_OBJECT", name: "DynamicZoneFiltersInput", desc: "Dynamic zones can only be tested for being empty",
 		inputs: []*hgGQLInput{{name: "null", typ: boolT}, {name: "notNull", typ: boolT}}})
 	filterName := func(uid string) string {
-		switch uid {
-		case "wp:post", "wp:page":
+		switch {
+		case hgIsWPPost(uid):
 			return "WpPostFiltersInput"
-		case "wp:user":
+		case uid == "wp:user":
 			return "WpUserFiltersInput"
+		case hgIsWPTerm(uid):
+			return "WpTermFiltersInput"
 		}
 		if t := reg.Get(uid); t != nil {
 			return hgPascal(t) + "FiltersInput"
@@ -171,11 +174,13 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 		return ""
 	}
 	typeName := func(uid string) string {
-		switch uid {
-		case "wp:post", "wp:page":
+		switch {
+		case hgIsWPPost(uid):
 			return "WpPost"
-		case "wp:user":
+		case uid == "wp:user":
 			return "WpUser"
+		case hgIsWPTerm(uid):
+			return "WpTerm"
 		}
 		if t := reg.Get(uid); t != nil {
 			return hgPascal(t)
@@ -318,6 +323,7 @@ func (ex *hgGQLExec) schema() *hgGQLSchema {
 				&hgGQLFieldDef{name: "unpublish" + p, args: []*hgGQLInput{{name: "locale", typ: str}}, typ: gqlNamed(p)})
 		}
 	}
+	q.fields = append(q.fields, g.wpQueryFields()...)
 	if len(q.fields) == 0 {
 		q.fields = append(q.fields, &hgGQLFieldDef{name: "_empty", desc: "No content types yet", typ: str})
 	}
@@ -656,6 +662,9 @@ func (ex *hgGQLExec) mutation(f *hgGQLField) (any, error) {
 		if err != nil {
 			return nil, err
 		}
+		if op != "create" && !ex.s.hgOwnerAllows(ex.c, ex.a, sc, doc, map[bool]string{true: "delete", false: "update"}[op == "delete"]) {
+			return nil, fmt.Errorf("Forbidden access")
+		}
 		status := "draft"
 		if st, _ := args["status"].(string); strings.EqualFold(st, "published") || !sc.DraftAndPublish {
 			status = "published"
@@ -668,7 +677,7 @@ func (ex *hgGQLExec) mutation(f *hgGQLField) (any, error) {
 				return nil, fmt.Errorf("The argument data is required")
 			}
 			var events []string
-			e, events, err = ex.s.hgSaveEntry(ex.c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: status == "published", Auth: ex.a})
+			e, events, err = ex.s.hgSaveEntry(ex.c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: status == "published", Auth: ex.a, UserID: ex.a.userID()})
 			if err != nil {
 				return nil, hgGQLWriteError(err)
 			}
@@ -699,7 +708,7 @@ func (ex *hgGQLExec) mutation(f *hgGQLField) (any, error) {
 				return nil
 			}}, f.sel), nil
 		case "publish":
-			e, err = ex.s.hgPublishEntry(ex.c, sc, doc, loc, 0)
+			e, err = ex.s.hgPublishEntry(ex.c, sc, doc, loc, ex.a.userID())
 			if err != nil {
 				return nil, hgGQLWriteError(err)
 			}

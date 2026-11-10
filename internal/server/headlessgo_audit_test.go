@@ -241,7 +241,7 @@ func TestHeadlessGoAuditGraphQL(t *testing.T) {
 		t.Errorf("escapes: %s", raw)
 	}
 
-	// Thousands of root aliases run out of the read budget instead of running a query each.
+	// Thousands of root aliases are refused (root field cap, then the read budget) instead of running a query each.
 	var b strings.Builder
 	b.WriteString("{")
 	for i := 0; i <= hgReadMaxQueries; i++ {
@@ -249,7 +249,7 @@ func TestHeadlessGoAuditGraphQL(t *testing.T) {
 	}
 	b.WriteString(" }")
 	out = hgGQL(t, base, full, b.String())
-	if raw, _ := json.Marshal(out); out["data"] != nil || !strings.Contains(string(raw), "too expensive") {
+	if raw, _ := json.Marshal(out); out["data"] != nil || (!strings.Contains(string(raw), "too expensive") && !strings.Contains(string(raw), "root fields")) {
 		t.Errorf("root aliases over the budget: %.300s", raw)
 	}
 

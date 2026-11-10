@@ -45,13 +45,19 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Logged-in users who can edit posts still see the front end (setting, on by default) so previews and theme work go on | ✓ |
 | Runs in `Server.Handler` before the page cache (`headlessServe`); answers are `no-store` and `noindex` | ✓ |
 
+| Delivery API reads carry a strong `ETag` and answer `If-None-Match` with 304; token-less reads get `Cache-Control: public, max-age=0, s-maxage=N` when a public cache lifetime is set (Settings), others `no-cache`, previews `no-store` | ✓ |
+| Rate limit (Settings, requests per minute): per token, per client address without one; 429 with `Retry-After` | ✓ |
+| GraphQL: at most 20 root fields per operation (aliases count), plus the node and depth limits; optional "disable introspection for callers without a token" | ✓ |
+| Populated relations are loaded per request with a shared cache and a list-level prefetch (one query per relation field, not per entry); WordPress posts and users are read once per id | ✓ |
+| Admin entry actions follow WordPress capabilities: publish/unpublish/schedule need `publish_posts`, changing another user's entry `edit_others_posts`, deleting `delete_posts` (`delete_others_posts` for others'); administrators are unrestricted | ✓ |
+
 ## 3. Content-Type Builder
 
 | Feature | Status |
 |---|---|
 | Collection types (many entries), single types (one entry), components (category.name), dynamic zones | ✓ |
 | Field types: text (short/long), rich text (blocks or Markdown), number (integer, big integer, decimal, float), boolean, date, date-time, time, email, password, enumeration, media (single/multiple, allowed types), relation, JSON, UID (derived from a text field), component (single/repeatable), dynamic zone | ✓ |
-| Relations: one-to-one, one-to-many, many-to-one, many-to-many, to content types (self included) and to WordPress posts, pages and users | ✓ |
+| Relations: one-to-one, one-to-many, many-to-one, many-to-many, to content types (self included) and to WordPress posts, pages and users, to the posts of any other public post type (`wp:type:<post type>`, e.g. products) and to the terms of a public taxonomy (`wp:term:<taxonomy>`, e.g. categories, tags, product categories); the target must be registered when the schema is saved, populate returns the term (`id`, `name`, `slug`, `description`, `count`, `parent`, `taxonomy`, `link`), and the term relations are filterable (`id`, `slug`, `name`), sortable and in the GraphQL schema as `WpTerm` | ✓ |
 | Bidirectional relations: an owning field with `inversedBy` gets an inverse field (`mappedBy`) on the target type with the mirrored kind (one-to-one ↔ one-to-one, one-to-many ↔ many-to-one, many-to-many ↔ many-to-many); self relations too. The builder offers "Inverse field (optional)" on relations between content types. Both sides stay in step on every save: renaming either side renames the link, removing the inverse field clears `inversedBy`, removing (or retargeting) the owning field removes the inverse field, changing the kind changes the mirror. Export / import keeps them | ✓ |
 | The inverse side stores nothing: its value is the owning entries pointing at the document (in the matching locale and status), so it can never disagree. It is populated, filterable and sortable like any relation, shown and editable in the Content Manager, and writable through the API (id, list, `{connect, disconnect, set}`, `null` clears); a write changes the owning entries' draft and published version (a link belongs to both documents; for an owning type with **Review before publishing** only the draft). An API caller needs `update` on the owning type too (otherwise 400 naming the field), and every owning entry that changed is announced (`entry.update`, plus `entry.publish` when its published version changed) to webhooks and subscriptions — also the entries that lose their link to a deleted document. Cardinality is enforced (a single-valued inverse side takes one entry) | ✓ |
 | Deleting a document (its last locale) removes it from every relation pointing at it: owning fields of every type, also inside components and dynamic zones, drafts and published versions | ✓ |
@@ -62,6 +68,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Validation: kebab-case API ids, unique singular/plural ids, reserved names (`id`, `documentId`, `locale`, …), valid targets, no component cycles, no dynamic zone in components | ✓ |
 | Schema changes migrate data: renamed fields (the builder sends `renamedFrom`) move their values; removed fields are dropped — in the type's entries, or inside every component value when a component changes (also nested and in dynamic zones); i18n on/off converts locales; draft & publish off publishes every draft | ✓ |
 | Delete: a type (with its entries) or a component; refused while another schema uses or relates to it | ✓ |
+| Export and import entries: Settings › "Export and import entries", or `wpgo headless export [--type uid]… > entries.ndjson` / `wpgo headless import [--overwrite] < entries.ndjson`. NDJSON, one entry version per line (`type`, `documentId`, `locale`, draft `data`, `publishedData`, dates, and the URLs of referenced media in `media`). Relations to entries are document ids and survive a move between sites; relations to posts, pages and users are numeric ids. Import needs the schemas first, creates missing entries, skips (default) or overwrites existing ones, drops unknown attributes and media ids that do not exist on the target (warnings), and keeps drafts as drafts; it writes directly, so it fires no webhooks or hooks | ✓ |
 | Export all schemas as JSON; import (file or paste): components first in dependency order, then types in two passes so they may relate to each other | ✓ |
 | Changing a field (type, number format, rich-text format, single ↔ multiple media or relation, relation target, enumeration values, component, repeatable, dynamic zone components) converts the stored values of drafts and published versions, also inside components: text ↔ number ↔ boolean (`yes/no`, `on/off`, `1/0`), dates ↔ date-times, text → UID (slugified), text → e-mail / enumeration (when valid, case-insensitive), blocks ↔ Markdown/text (plain text), anything → JSON, decimals → integers (rounded), multiple → single (first kept), repeatable → single component (first item). Values that cannot be converted are removed | ✓ |
 | The builder lets an existing field change type, renames enumeration values changed on their line (`enumRenames`), shows a warning under the field when the change loses data and asks for confirmation on Save with the list of lossy changes | ✓ |
@@ -96,6 +103,8 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Response `{data, meta}`; entries carry `id`, `documentId`, attributes, `createdAt`, `updatedAt`, `publishedAt`, `locale`; errors `{data:null, error:{status, name, message, details}}` with `ValidationError` details `{errors:[{path, message}]}` | ✓ |
 | `filters[field][$eq|$eqi|$ne|$nei|$lt|$lte|$gt|$gte|$in|$notIn|$contains|$notContains|$containsi|$notContainsi|$startsWith(i)|$endsWith(i)|$null|$notNull|$between]`, `$and`, `$or`, `$not`, implicit `$eq` | ✓ |
 | Filtering through relations (`filters[author][name][$eq]`, nested), components (single and repeatable), media (`id`, `name`, `mime`), WordPress pages/posts (`id`, `slug`, `title`, `status`; only published posts/pages of the target type match) and users (`id`, `slug`, `name`; the login name is not filterable); `$null` on relations, media, components. A relation to a type the caller may not read (find/findOne) is an invalid key (400); a draft read sees related drafts only with a token allowed to read drafts, otherwise their published version | ✓ |
+| `_q=text`: full-text search, a case-insensitive "contains" over every public text, UID, e-mail, enumeration and Markdown attribute plus an exact `documentId` match; private attributes are never searched; combines (AND) with `filters` | ✓ |
+| `GET /openapi.json` (OpenAPI 3.0) and `GET /typescript` (a `.d.ts` with an interface per type, component and write input) generated from the content model; they describe only the types and actions the caller may use (public role, token or signed-in user). The admin offers "Download TypeScript types" under Settings | ✓ |
 | `sort=a:asc,b:desc`, `sort[0]=…`, `sort[a]=desc` on scalar attributes and system fields | ✓ |
 | Sorting through relations and single components: `sort=author.name:asc`, `author.company.name`, `seo.metaTitle`, `page.title` (WordPress posts/pages: `id`, `slug`, `title`, published ones only; users: `id`, `slug`, `name`), also through single-valued inverse relations. The same permission rules as for filtering apply. To-many relations and repeatable components are refused (400). Entries without the related value sort last | ✓ |
 | Filtering through inverse relations (`filters[books][title][$eq]`, `filters[books][$null]=true`) | ✓ |
@@ -121,7 +130,8 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Only a SHA-256 of the token is stored; it is shown once (on the response page, never in a URL) with its last four characters in the list | ✓ |
 | `Authorization: Bearer <token>`; a bad token is 401 `UnauthorizedError`, a missing permission 403 `ForbiddenError` | ✓ |
 | Populated relations to a type the caller may not read are left out (not an error). Related entries (and other locales) of a draft response — a draft read or the answer to a write — are shown as drafts only to tokens allowed to read drafts; other callers get their published versions | ✓ |
-| Cookie / Application Password auth on this namespace | ✗ tokens only (the admin uses its own screens) |
+| Signed-in users (off by default): Settings › "Signed-in users". `POST /auth/local {"identifier","password"}` (username or e-mail) returns `{jwt, expiresIn, user}`, an HS256 JWT valid for the configured lifetime (default 60 minutes) that is sent as a Bearer token; optional `POST /auth/local/register {"username","email","password"}` (default role, password 8+ characters) returns the same. `GET /users/me` says who the token belongs to. A user may do what the public role and the **Authenticated** matrix allow; **own entries only** restricts `update` and `delete` (and the inverse-relation edits they cause) to entries the user created (`created_by` is set from the token). The login uses the same throttle as wp-login (and Pursae Security's lockouts); accounts with a second factor are refused; changing the account's password, or switching the feature off, invalidates its tokens. The account's WordPress role gives nothing here, and users cannot read drafts, upload, or create tokens. Works for REST, GraphQL and subscriptions | ✓ |
+| Cookie / Application Password auth on this namespace | ✗ tokens and user tokens only (the admin uses its own screens) |
 
 ## 7. CORS
 
@@ -177,6 +187,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   `{ documentId }`, `publishArticle` / `unpublishArticle(documentId:, locale:)`; single types
   `updateHomepage`, `deleteHomepage`, `publishHomepage`, `unpublishHomepage` (no documentId). Relations
   and media take ids, components and dynamic zones JSON. Validation errors come back as GraphQL errors. ✓
+- WordPress content, read-only and always on while GraphQL is: `wpPosts`, `wpPosts_connection`, `wpPost(id:|slug:)`, `wpPages`, `wpPages_connection`, `wpPage(…)` (arguments `search`, `slug`, `category` and `tag` slugs, `author`, `orderBy` date/title/modified, `order`, `page`, `pageSize`; fields `title`, `slug`, `excerpt`, rendered `content`, `link`, dates, `featuredImage`, `author`, `categories`, `tags`), `wpCategories`, `wpTags`, `wpMediaItems`, `wpMediaItem(id:)`, `wpMenus`, `wpMenu(id:|slug:|location:)` (items as a tree) and `wpUsers` / `wpUser(id:)` (authors of published content). They return what a visitor can see: published, not password-protected content, public media, published menu items. ✓
 - Named fragments (`fragment Card on Article {…}`, nested, cycles refused), inline fragments with or
   without a type condition (`... on ComponentBlocksQuote`), `@include(if:)` / `@skip(if:)`, variables
   with default values, several operations selected by `operationName`. ✓
@@ -262,6 +273,11 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
   cannot submit, approve or reject (they are refused when publishing an unapproved draft). The review
   capability is "may edit others' posts" and is not configurable per type; a reviewer may approve a draft
   they submitted themselves.
+- Signed-in users: no refresh tokens (sign in again), no per-user read rules (`find` of "own entries only"), no
+  e-mail confirmation or password reset through the API, and users cannot read their own drafts (create with
+  `?status=published` or let an editor publish). A GraphQL subscription opened with a user token is not closed
+  when the token expires. Entry import writes directly: no webhooks, plugin hooks or history, and it does not
+  re-upload media (the `media` URLs are there for a migration script).
 - GraphQL: custom directives; subscriptions only see the writes of the process they are connected to
   (see §10); component inputs are JSON; unused variables and fragments are not reported (the spec calls
   them errors, they are harmless here); scalar argument values are not type-checked during validation (the
@@ -280,3 +296,9 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - API updates of one entry do not overwrite each other: an update applies only to the version it read and is
   merged again over a newer one (409 after five tries). Unique checks are still a separate read, so two
   simultaneous creates with the same unique value can both pass.
+
+## Managing Pursae Headless from AI tools and REST
+
+Content types and entries can be managed with the site REST API (`/wp-json/pursae/v1/headless/types`, `.../entries/{uid}`),
+so Application Passwords, OAuth tokens (settings scope) and the Pursae MCP tools `headless_*` work without the admin screens.
+The delivery API keeps its own API tokens. See `docs/developer/rest-api/endpoints.md` and `operations/ai-mcp.md`.

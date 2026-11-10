@@ -371,12 +371,25 @@
 <tr><th scope="row">GraphQL</th><td><label><input type="checkbox" name="graphql" value="1"{{if .Settings.GraphQL}} checked{{end}}> <span>GraphQL endpoint: queries, mutations and introspection</span></label> <code>{{.APIBase}}/graphql</code> &middot; <a href="/wp-admin/headlessgo?page=graphql">Open the playground</a></td></tr>
 <tr><th scope="row">Webhooks</th><td><label><input type="checkbox" name="schema_webhooks" value="1"{{if .Settings.SchemaWebhooks}} checked{{end}}> <span>Send <code>schema.update</code> when a content type or component changes</span></label>
 	<p><label for="hg-attempts">Attempts per delivery</label> <input type="number" id="hg-attempts" name="webhook_attempts" min="1" max="10" value="{{.Settings.WebhookAttempts}}" class="small-text"></p></td></tr>
+<tr><th scope="row">Limits and caching</th><td><p><label for="hg-rate">Requests per minute</label> <input type="number" id="hg-rate" name="rate_limit" min="0" value="{{.Settings.RateLimit}}" class="small-text"> <span class="description">per token (or per address without one); 0 means unlimited.</span></p>
+	<p><label for="hg-cache">Public cache lifetime (seconds)</label> <input type="number" id="hg-cache" name="cache_max_age" min="0" value="{{.Settings.CacheMaxAge}}" class="small-text"> <span class="description">Sent as <code>s-maxage</code> on token-less reads; responses always carry an <code>ETag</code> and answer <code>If-None-Match</code> with 304.</span></p>
+	<p><label><input type="checkbox" name="no_public_introspection" value="1"{{if .Settings.NoPublicIntro}} checked{{end}}> <span>Disable GraphQL introspection for callers without a token</span></label></p></td></tr>
 {{if not .GolylangOn}}<tr><th scope="row"><label for="hg-loc">Default locale</label></th><td><input type="text" id="hg-loc" name="default_locale" value="{{.Settings.DefaultLocale}}" class="small-text"><p class="description">The locale of entries of translatable types while Pursae Multi Language is off. With Pursae Multi Language active, its languages are the locales.</p></td></tr>{{else}}<input type="hidden" name="default_locale" value="{{.Settings.DefaultLocale}}">{{end}}
 </table>
 <h2>Public access</h2>
 <p class="description">What anyone may do without a token. By default nothing is public: tick <em>find</em> and <em>findOne</em> to publish a type's published entries.</p>
 <table class="widefat striped hg-matrix"><thead><tr><th>Content type</th>{{range .Actions}}<th>{{.}}</th>{{end}}</tr></thead><tbody>
 {{range .Types}}{{$t := .}}<tr><td translate="no">{{.DisplayName}}</td>{{range $.Data.Actions}}<td><input type="checkbox" aria-label="{{.}}" name="public[{{$t.UID}}][{{.}}]" value="1"{{if $.Data.Allowed $t.UID .}} checked{{end}}></td>{{end}}</tr>{{else}}<tr><td colspan="6">No content types yet.</td></tr>{{end}}
+</tbody></table>
+<h2>Signed-in users</h2>
+<p class="description">Front-end users with a WordPress account. They sign in with <code>POST {{.APIBase}}/auth/local</code> (<code>identifier</code> and <code>password</code>) and send the returned token as a Bearer token. Their access is this matrix plus the public role; their WordPress role gives them nothing here.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Accounts</th><td><label><input type="checkbox" name="user_auth" value="1"{{if .Settings.UserAuth}} checked{{end}}> <span>Let users sign in to the API</span></label><br>
+	<label><input type="checkbox" name="user_register" value="1"{{if .Settings.UserRegister}} checked{{end}}> <span>Let visitors register (<code>POST {{.APIBase}}/auth/local/register</code>)</span></label></td></tr>
+<tr><th scope="row"><label for="hg-utl">Token lifetime</label></th><td><input type="number" id="hg-utl" name="user_token_ttl" min="1" max="10080" value="{{.Settings.UserTokenTTL}}" class="small-text"> minutes</td></tr>
+</table>
+<table class="widefat striped hg-matrix"><thead><tr><th>Content type</th>{{range .Actions}}<th>{{.}}</th>{{end}}<th>update and delete: own entries only</th></tr></thead><tbody>
+{{range .Types}}{{$t := .}}<tr><td translate="no">{{.DisplayName}}</td>{{range $.Data.Actions}}<td><input type="checkbox" aria-label="{{.}}" name="authd[{{$t.UID}}][{{.}}]" value="1"{{if $.Data.AuthAllowed $t.UID .}} checked{{end}}></td>{{end}}<td><label><input type="checkbox" name="owner[{{$t.UID}}][update]" value="1"{{if $.Data.OwnerOnlyOn $t.UID "update"}} checked{{end}}> update</label> <label><input type="checkbox" name="owner[{{$t.UID}}][delete]" value="1"{{if $.Data.OwnerOnlyOn $t.UID "delete"}} checked{{end}}> delete</label></td></tr>{{else}}<tr><td colspan="7">No content types yet.</td></tr>{{end}}
 </tbody></table>
 <h2>Preview</h2>
 <table class="form-table" role="presentation">
@@ -389,6 +402,15 @@
 <div class="hg-panel" id="hg-import">
 <h2>Export and import schemas</h2>
 <p><a class="button" href="/wp-admin/headlessgo?action=export&amp;_wpnonce={{.Nonce}}">Download the schemas (JSON)</a></p>
+<p><a class="button" href="/wp-admin/headlessgo?action=types&amp;_wpnonce={{.Nonce}}">Download TypeScript types</a> <span class="description">The OpenAPI document is at <code>/headlessgo/v1/openapi.json</code>.</span></p>
+<h2>Export and import entries</h2>
+<p><a class="button" href="/wp-admin/headlessgo?action=export_entries&amp;_wpnonce={{.Nonce}}">Download all entries (NDJSON)</a> <span class="description">Or from a shell: <code>wpgo headless export</code>. Import the schemas first.</span></p>
+<form method="post" action="/wp-admin/headlessgo" enctype="multipart/form-data">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="import_entries">
+	<p><label for="hg-import-entries">Import an entry export:</label> <input type="file" id="hg-import-entries" name="file" accept=".ndjson,.jsonl,application/x-ndjson,application/json"></p>
+	<p><label><input type="checkbox" name="overwrite" value="1"> Overwrite entries that already exist</label></p>
+	<p><button type="submit" class="button">Import entries</button></p>
+</form>
 <form method="post" action="/wp-admin/headlessgo" enctype="multipart/form-data">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="import_schemas">
 	<p><label for="hg-import-file">Import a schema export:</label> <input type="file" id="hg-import-file" name="file" accept="application/json,.json"></p>

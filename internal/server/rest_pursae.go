@@ -87,12 +87,15 @@ func (s *Server) registerPursaeREST() {
 		http.MethodPost: guard("manage_options", s.pursaeOptionsHandler("")),
 	}, nil)
 
+	s.registerPursaeOps(guard)
+
 	// MCP over streamable HTTP (mcp.go). Authentication is the REST API's: an Application Password.
 	api.register(pursaeNS, "/pursae/v1/mcp", map[string]restHandler{
 		http.MethodPost:   s.mcpHTTP,
 		http.MethodGet:    s.mcpHTTP,
 		http.MethodDelete: s.mcpHTTP,
 	}, nil)
+	api.register(pursaeNS, "/pursae/v1/mcp/activity", map[string]restHandler{http.MethodGet: guard("manage_options", s.pursaeMCPActivity)}, nil)
 }
 
 // --- plugins ---------------------------------------------------------------------------------

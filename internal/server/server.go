@@ -364,6 +364,7 @@ func (s *Server) routes() *gin.Engine {
 	s.registerGooREST()      // Goocommerce: wc/store/v1 and wc/v3 (goo_rest.go)
 	// Pursae Web Builder: web-builder/v2 (webbuilder_rest.go)
 	s.registerWebBuilderREST()
+	s.registerPursaeHeadlessREST()
 	s.registerPursaeREST() // pursae/v1: plugins, themes, cache, SEO settings, option groups, MCP (rest_pursae*.go, mcp.go)
 	s.registerOAuth(r)
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }

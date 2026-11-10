@@ -68,13 +68,14 @@ scope still cannot activate plugins.
 
 | Scope | Routes | Capabilities kept |
 |-------|--------|-------------------|
-| `content` | `/wp/v2/posts`, `pages`, `blocks`, `categories`, `tags`, `comments`, `types`, `taxonomies`, `search`, `block-renderer`, `/web-builder/v2`, `/headlessgo/v1`, `/pll/v1`, `/batch/v1` | post and page caps, `manage_categories`, `moderate_comments`, `unfiltered_html` |
+| `content` | `/wp/v2/posts`, `pages`, `blocks`, `categories`, `tags`, `comments`, `types`, `taxonomies`, `search`, `block-renderer`, `/web-builder/v2`, `/pll/v1`, `/batch/v1` | post and page caps, `manage_categories`, `moderate_comments`, `unfiltered_html` |
 | `media` | `/wp/v2/media` | `upload_files` and the post caps attachments use |
 | `themes` | `/wp/v2/templates`, `template-parts`, `global-styles`, `themes`, `menus`, `menu-items`, `menu-locations`, `navigation`, `sidebars`, `widgets`, `/pursae/v1/themes` | `switch_themes`, `edit_theme_options`, `edit_themes`, `install_themes`, `delete_themes` |
-| `plugins` | `/pursae/v1/plugins` | `activate_plugins`, `install_plugins`, `delete_plugins` |
+| `plugins` | `/pursae/v1/plugins`, `/pursae/v1/updates` | `activate_plugins`, `install_plugins`, `delete_plugins` |
 | `cache` | `/pursae/v1/cache` | `manage_options` |
 | `seo` | `/seogo/v1`, `/pursae/v1/seo` | post caps, `manage_options`, the `seogo_*` caps |
-| `settings` | `/wp/v2/settings`, `/pursae/v1/options` | `manage_options` |
+| `settings` | `/wp/v2/settings`, `/pursae/v1/options`, `/pursae/v1/headless`, `/pursae/v1/health`, `/pursae/v1/backups`, `/pursae/v1/mcp/activity` | `manage_options` |
+| `commerce` | `/wc/v3` | `manage_woocommerce`, `view_woocommerce_reports`, the product and shop order caps, `manage_product_terms`, `moderate_comments` |
 | `users` | `/wp/v2/users` | `list_users`, `create_users`, `edit_users`, `promote_users`, `delete_users` |
 
 Every scoped password may also read the REST index, `/wp/v2/users/me` and use the MCP endpoint
@@ -120,7 +121,7 @@ Application Password and are narrowed by scopes the same way; Basic auth keeps w
   revokes the grant its first exchange created.
 - A user keeps at most 20 grants: a new one ends the oldest. Grants whose refresh token has expired are
   deleted, and so are clients left without a grant.
-- Scopes are the same names as above. Unticked means all of the user's permissions.
+- Scopes are the same names as above. For an Application Password, unticked means all of the user's permissions. The OAuth consent screen preselects `content` and `media` when the client asks for no scope, treats an empty selection as those two, and gives everything only when the separate **Full access** box is ticked. The Pursae Headless delivery API (`/wp-json/headlessgo/v1`) has its own API tokens and does not accept Application Passwords or OAuth tokens; manage Headless content types and entries with `/pursae/v1/headless/...` instead.
 - An unauthenticated request to `/wp-json/pursae/v1/mcp` gets `401` with
   `WWW-Authenticate: Bearer resource_metadata="…"`, which is how clients find the flow. A bad or
   expired token gets `error="invalid_token"`.

@@ -81,17 +81,26 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/pursae/v1/plugins/{slug}` | GET, DELETE | one plugin; `DELETE` removes an installed Wasm plugin (`delete_plugins`; built-in plugins only deactivate) |
 | `/pursae/v1/plugins/{slug}/activate`, `/deactivate` | POST | the Plugins screen's own action; a Wasm plugin gets `permissions` (array; default: all its manifest asks for) |
 | `/pursae/v1/themes` | GET, POST | list themes (`switch_themes`); `POST {"package": "<base64 zip>", "activate": true}` installs a [theme package](../themes/index.md) (`install_themes`) |
+| `/pursae/v1/themes/{slug}` | DELETE | delete an inactive theme (`delete_themes`) |
 | `/pursae/v1/themes/{slug}/activate` | POST | switch theme |
 | `/pursae/v1/themes/{slug}/files` | GET | editable files (`edit_themes`): `style.css`, asset paths, `templates/…` |
 | `/pursae/v1/themes/{slug}/file?file=…` | GET, POST, DELETE | read; `POST {"file", "content"}` saves like the Theme File Editor (template parse + render check, rolled back on failure); `DELETE` restores the original. Refused while file editing is disabled (`WPGO_DISALLOW_FILE_EDIT` or Pursae Security) |
 | `/pursae/v1/cache` | GET | Pursae Cache status, stats and crawler (`manage_options`) |
 | `/pursae/v1/cache/purge` | POST | `{"all": true}`, `{"url": "/about/"}`, `{"post": 12}` or `{"tags": ["home"]}` |
 | `/pursae/v1/cache/settings` | GET, POST | the `wpgo_cache_*` / `wpgo_opt_*` options (typed); saving rebuilds the cache |
+| `/pursae/v1/headless/types` | GET, POST | Pursae Headless content types and components (`manage_options`, plugin active); POST creates from `{"schema": {...}}` |
+| `/pursae/v1/headless/types/{uid}` | GET, POST, DELETE | read, replace (entries are migrated) or delete (`force=true`) a schema |
+| `/pursae/v1/headless/entries/{uid}` | GET, POST | list (`status`, `locale`, `page`, `per_page`) or create `{"data": {...}, "publish": true}` |
+| `/pursae/v1/headless/entries/{uid}/{doc}` | GET, POST, DELETE | read, update (merge) or delete (`force=true`) an entry; `/publish` and `/unpublish` POST |
 | `/pursae/v1/seo/settings` | GET, POST | Pursae SEO site-wide settings; `POST {"settings": {…}}` merges a partial object |
 | `/pursae/v1/seo/redirects` | GET, POST | list; create or update (`id`) with `source`, `target`, `code` (301, 302, 307, 410, 451), `match_type`, `status` |
 | `/pursae/v1/seo/redirects/{id}` | DELETE | |
+| `/pursae/v1/health` | GET | version, database, cron queue (`queued`, `running`, `failed`, `overdue`, `last_error`), Site Health score, plugins, cache, `updates_available`, last backup (`manage_options`) |
+| `/pursae/v1/updates` | GET, POST | updates Pursae Manager offers (`update_plugins`); `POST {"type": "plugin"\|"theme"\|"core", "slug": "…"}` installs one. Core replaces the binary and restarts the site a second after the answer (`update_core`) |
+| `/pursae/v1/backups` | GET, POST | stored archives, or `?job=<id>` for a running backup; `POST {"categories": [...], "note": "…"}` starts one in the background (202 with `job`; default: every category) (`manage_options`) |
+| `/pursae/v1/mcp/activity` | GET | audit log of MCP tool calls that wrote: `tool`, `client`, `per_page`, `page` filters (`manage_options`) |
 | `/pursae/v1/options` | GET | the option groups below (`manage_options`) |
-| `/pursae/v1/options/{group}` | GET, POST | `gocdn`, `headless`, `maintenance`, `security`, `seo`, `smtp`: the built-in plugin's settings object. Secrets (passwords, keys, tokens) read as `********`; `POST {"settings": {…}}` deep-merges a partial object, and a `********` sent back keeps the stored secret. `security` changes follow the settings screen's rules (number ranges, login slug, IP lists, idle timeout, alert address; the caller's own IP on the block list or a two-step requirement while no e-mail can be delivered is refused): a 400 `rest_invalid_param` saves nothing |
+| `/pursae/v1/options/{group}` | GET, POST | `contact` (reCAPTCHA / Turnstile keys), `cookie`, `gocdn`, `headless`, `maintenance`, `multilang`, `pixel`, `security`, `seo`, `smtp`: the built-in plugin's settings object. Secrets (passwords, keys, tokens) read as `********`; `POST {"settings": {…}}` deep-merges a partial object, and a `********` sent back keeps the stored secret. `security` changes follow the settings screen's rules (number ranges, login slug, IP lists, idle timeout, alert address; the caller's own IP on the block list or a two-step requirement while no e-mail can be delivered is refused): a 400 `rest_invalid_param` saves nothing |
 | `/pursae/v1/mcp` | POST, GET, DELETE | the [MCP server](../operations/ai-mcp.md) (streamable HTTP) |
 
 ## Other namespaces

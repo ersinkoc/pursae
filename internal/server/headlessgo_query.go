@@ -502,12 +502,14 @@ func (q *hgQuery) in(status string, fn func() (string, error)) (string, error) {
 // and sorts on; the login name is not one of them (the API's username is the public nicename,
 // and private attributes are not filterable).
 func hgWPPostCond(a, target string) string {
-	typ := "post"
-	if target == "wp:page" {
-		typ = "page"
+	typ, ok := hgWPPostType(target)
+	if !ok {
+		typ = "post"
 	}
 	return a + ".status = 'publish' AND " + a + ".type = '" + typ + "'"
 }
+
+var hgWPTermCols = map[string][2]string{"id": {"id", "bigint"}, "slug": {"slug", "text"}, "name": {"name", "text"}}
 
 var hgWPUserCols = map[string][2]string{"id": {"id", "bigint"}, "slug": {"nicename", "text"}, "name": {"display_name", "text"}}
 
@@ -728,15 +730,23 @@ func (q *hgQuery) relation(f *hgField, m map[string]any, expr string) (string, e
 		}
 		return "EXISTS (SELECT 1 FROM media " + a + " WHERE " + a + ".id IN (SELECT (" + ids + ")::bigint) AND " + inner + ")", nil
 	}
-	switch f.Target {
-	case "wp:post", "wp:page":
+	if tax, ok := hgWPTaxonomy(f.Target); ok {
+		a := q.sql.next("t")
+		inner, err := q.table(m, a, hgWPTermCols)
+		if err != nil {
+			return "", err
+		}
+		return "EXISTS (SELECT 1 FROM terms " + a + " WHERE " + a + ".id IN (SELECT (" + ids + ")::bigint) AND " + a + ".taxonomy = " + q.sql.arg(tax) + " AND " + inner + ")", nil
+	}
+	switch {
+	case hgIsWPPost(f.Target):
 		a := q.sql.next("p")
 		inner, err := q.table(m, a, map[string][2]string{"id": {"id", "bigint"}, "slug": {"slug", "text"}, "title": {"title", "text"}, "status": {"status", "text"}})
 		if err != nil {
 			return "", err
 		}
 		return "EXISTS (SELECT 1 FROM posts " + a + " WHERE " + a + ".id IN (SELECT (" + ids + ")::bigint) AND " + hgWPPostCond(a, f.Target) + " AND " + inner + ")", nil
-	case "wp:user":
+	case f.Target == "wp:user":
 		a := q.sql.next("u")
 		inner, err := q.table(m, a, hgWPUserCols)
 		if err != nil {
@@ -1088,4 +1098,25 @@ func (q *hgQuery) orderBy(sc *hgSchema, keys []hgSortKey, alias string) (string,
 	}
 	parts = append(parts, alias+".id ASC")
 	return strings.Join(parts, ", "), nil
+}
+
+// hgSearchFilter builds the filter behind the _q parameter: a case-insensitive "contains" over every
+// public text-like attribute of the type (private attributes are never searched, so the search
+// cannot be used to probe them), or'ed. It is nil for a blank query.
+func hgSearchFilter(sc *hgSchema, q string) map[string]any {
+	q = strings.TrimSpace(q)
+	if q == "" {
+		return nil
+	}
+	var or []any
+	for _, f := range sc.Fields {
+		if f.Private {
+			continue
+		}
+		if f.Type == "text" || f.Type == "uid" || f.Type == "email" || f.Type == "enumeration" || (f.Type == "richtext" && f.Format == "markdown") {
+			or = append(or, map[string]any{f.Name: map[string]any{"$containsi": q}})
+		}
+	}
+	or = append(or, map[string]any{"documentId": map[string]any{"$eq": q}})
+	return map[string]any{"$or": or}
 }

@@ -311,6 +311,12 @@ func (s *Server) upgradeCore(c *gin.Context) {
 func (s *Server) coreRestartInto(c *gin.Context, target, version string, reinstall bool) {
 	s.adminPage(c, "update-core", "Pursae Updates", "update-core-php", "admin/update-core-restart", map[string]any{"Version": version, "Reinstall": reinstall})
 	c.Writer.Flush()
+	s.coreRestartLater(target)
+}
+
+// coreRestartLater hands the site over to the binary at target a second from now (after the answer has
+// left); coreBusy is released only when the hand-over did not happen.
+func (s *Server) coreRestartLater(target string) {
 	go func() {
 		defer coreBusy.Store(false) // reached only when the exec did not happen (or in tests)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

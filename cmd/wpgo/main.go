@@ -86,8 +86,20 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println(out)
+	case "headless": // Pursae Headless: export / import entries as NDJSON
+		pool, err := db.Connect(ctx, cfg.DatabaseURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer pool.Close()
+		if err := server.HeadlessCLI(ctx, pool, os.Args[2:], os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, "wpgo headless:", err)
+			os.Exit(1)
+		}
 	default:
-		flag.Usage = func() { fmt.Fprintln(os.Stderr, "usage: wpgo [serve|launch|migrate|version|healthcheck|adminsec|mcp]") }
+		flag.Usage = func() {
+			fmt.Fprintln(os.Stderr, "usage: wpgo [serve|launch|migrate|version|healthcheck|adminsec|mcp|headless]")
+		}
 		flag.Usage()
 		os.Exit(2)
 	}

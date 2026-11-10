@@ -54,6 +54,10 @@ const (
 	// PermForms allows subscribing to the contact form hooks (names starting
 	// with "wpcf7_"): what visitors submitted, and the spam verdict.
 	PermForms Permission = "forms:access"
+	// PermHeadless allows subscribing to the Pursae Headless entry hooks (names starting with
+	// "headless_entry_"): the content of entries as they are validated, saved, published and
+	// deleted, and rejecting or deriving values before an entry is stored.
+	PermHeadless Permission = "headless:entries"
 	// PermContentHTML lets the plugin's shortcodes and content filters print
 	// HTML the core does not sanitise (scripts, iframes, forms, event
 	// handlers) and enqueue scripts on the front end. Without it their
@@ -82,6 +86,7 @@ var permissionDescriptions = map[Permission]string{
 	PermUsersRead:     "See who the current user is",
 	PermAdminSettings: "Add a settings page to the admin",
 	PermForms:         "See what visitors submit in contact forms and decide what counts as spam",
+	PermHeadless:      "See Pursae Headless entries as they are saved, published and deleted, and validate or derive their values",
 	PermContentHTML:   "Show unfiltered HTML and scripts to visitors (they also run for logged-in administrators: full control of the site)",
 	PermAdminScripts:  "Run code in the admin (full control of the site)",
 }
@@ -180,6 +185,8 @@ func HookPermission(hook string) Permission {
 		return PermCron
 	case strings.HasPrefix(hook, "wpcf7_"):
 		return PermForms // submissions carry visitors' names, e-mail addresses and messages
+	case strings.HasPrefix(hook, "headless_entry_"):
+		return PermHeadless // entries hold whatever the site stores in its content types
 	}
 	return ""
 }
