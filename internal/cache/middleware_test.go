@@ -609,3 +609,50 @@ func TestLegacyVaryEntryNotServed(t *testing.T) {
 		t.Fatalf("legacy entry was replayed: %q", w.Body.String())
 	}
 }
+
+// TestKeySchemeFollowsRender: the key holds the scheme the application renders for (TLS or
+// X-Forwarded-Proto exactly "https"), so a plain-HTTP request cannot store its page under the https
+// key with an absolute-form request line or an upper-case header.
+func TestKeySchemeFollowsRender(t *testing.T) {
+	c, _, _ := newTestCache(t, nil)
+	for _, tc := range []struct {
+		target, xfp, want string
+	}{
+		{"http://example.com/a/", "", "http://"},
+		{"http://example.com/a/", "https", "https://"},
+		{"http://example.com/a/", "HTTPS", "http://"},
+		{"https://example.com/a/", "", "http://"}, // absolute-form request line, no TLS
+	} {
+		r := httptest.NewRequest("GET", tc.target, nil)
+		r.TLS = nil
+		if tc.xfp != "" {
+			r.Header.Set("X-Forwarded-Proto", tc.xfp)
+		}
+		if k := c.Key(r); !strings.HasPrefix(k, tc.want) {
+			t.Errorf("%s with X-Forwarded-Proto %q: key %q, want prefix %q", tc.target, tc.xfp, k, tc.want)
+		}
+	}
+}
+
+// TestOnPurgeAnnouncesPurges: PurgeAll, PurgeTags and PurgeURL are announced through OnPurge (for
+// the other instances); Apply, used for their announcements, is not.
+func TestOnPurgeAnnouncesPurges(t *testing.T) {
+	var got []Purge
+	cfg := DefaultConfig()
+	cfg.ServerHint = HintNone
+	c := New(cfg, Options{OnPurge: func(p Purge) { got = append(got, p) }})
+	h := c.Middleware(&testApp{})
+	do(h, "GET", "http://example.com/a/")
+	c.PurgeTags("post:12")
+	c.PurgeURL("http://example.com/a/")
+	c.PurgeAll()
+	c.Apply(Purge{All: true})
+	c.Apply(Purge{Tags: []string{"home"}})
+	if len(got) != 3 || len(got[0].Tags) != 1 || got[0].Tags[0] != "post:12" || got[1].URL != "http://example.com/a/" || !got[2].All {
+		t.Fatalf("announced %+v", got)
+	}
+	do(h, "GET", "http://example.com/a/")
+	if n := c.Apply(Purge{Tags: []string{"home"}}); n != 1 {
+		t.Fatalf("Apply purged %d pages, want 1", n)
+	}
+}

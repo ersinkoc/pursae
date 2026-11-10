@@ -552,6 +552,9 @@ func (api *restAPI) saveTerm(c *gin.Context, r *restRequest, tax string, id int6
 		return
 	}
 	s.golylangRESTSaved(c, pllTerm, t.ID) // Golylang: lang and translations parameters
+	if id != 0 {
+		s.purgeTerm(t, false) // a renamed term or a new slug: its archive and every page linking it
+	}
 	status := http.StatusOK
 	if id == 0 {
 		status = http.StatusCreated
@@ -576,6 +579,7 @@ func (api *restAPI) deleteTerm(c *gin.Context, r *restRequest, tax string) {
 	}
 	prev := s.restTerm(c, t, "edit")
 	_ = s.store.DeleteTerm(c, t, int64(s.settings.Int("default_category")))
+	s.purgeTerm(t, true)
 	restJSON(c, http.StatusOK, map[string]any{"deleted": true, "previous": prev})
 }
 
@@ -1349,6 +1353,7 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 	if !s.golylangMediaRESTSave(c, a, pllPatches) { // per-language texts
 		return
 	}
+	s.purgeAttachment(a)
 	restJSON(c, http.StatusOK, s.restMedia(c, a, "edit"))
 }
 
@@ -1375,5 +1380,6 @@ func (api *restAPI) deleteMedia(c *gin.Context, r *restRequest) {
 	prev := s.restMedia(c, a, "edit")
 	s.deleteAttachmentFiles(a)
 	_ = s.store.DeleteAttachment(c, a.ID)
+	s.purgeAttachment(a)
 	restJSON(c, http.StatusOK, map[string]any{"deleted": true, "previous": prev})
 }

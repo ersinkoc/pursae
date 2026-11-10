@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"io"
 	"net/http"
 	"sync"
 	"testing"
@@ -175,5 +176,34 @@ func TestFlightWaitBounded(t *testing.T) {
 	}
 	if d := time.Since(start); d > time.Second {
 		t.Fatalf("waited %v for a stuck render", d)
+	}
+}
+
+// TestFlightReleasedWhenNotCacheable: once the first render turns out not to be cacheable, the
+// requests waiting for it render their own copy at once instead of waiting until that response
+// has been streamed to its (possibly slow) client.
+func TestFlightReleasedWhenNotCacheable(t *testing.T) {
+	c, app, h := newTestCache(t, nil)
+	c.flightWait = 5 * time.Second
+	gate := make(chan struct{})
+	defer close(gate)
+	first := make(chan struct{})
+	app.mod = func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Set-Cookie", "v=1") // never stored
+		if app.calls.Load() == 1 {
+			w.WriteHeader(http.StatusOK)
+			io.WriteString(w, "<html>")
+			close(first)
+			<-gate // a slow client: the body of the first response is still being written
+		}
+	}
+	go do(h, "GET", "http://example.com/personal/")
+	<-first
+	start := time.Now()
+	if w := do(h, "GET", "http://example.com/personal/"); w.Code != 200 || status(w) != "bypass" {
+		t.Fatalf("second request: %d %q", w.Code, status(w))
+	}
+	if d := time.Since(start); d > 2*time.Second {
+		t.Fatalf("the second request waited %v for the first, uncacheable, response", d)
 	}
 }

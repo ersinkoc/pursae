@@ -166,6 +166,7 @@ func (s *Server) mediaBulkDelete(c *gin.Context) {
 		}
 		s.deleteAttachmentFiles(a)
 		if s.store.DeleteAttachment(c, id) == nil {
+			s.purgeAttachment(a)
 			n++
 		}
 	}
@@ -270,5 +271,6 @@ func (s *Server) attachmentSave(c *gin.Context, a *store.Attachment) {
 		return
 	}
 	s.golylangMediaSaved(c, a) // pll_i18n[lang][field]
+	s.purgeAttachment(a)
 	c.Redirect(http.StatusFound, "/wp-admin/post?post="+itoa64(a.ID)+"&action=edit&message=4")
 }

@@ -36,6 +36,17 @@ type Options struct {
 	Store *Store
 	// IsLiteSpeed overrides detection of a LiteSpeed front server for HintAuto.
 	IsLiteSpeed func(*http.Request) bool
+	// OnPurge, when set, is called after every purge made through PurgeAll, PurgeTags and
+	// PurgeURL (not Apply, PurgeExpired or the store's own methods), so the core can pass it on
+	// to the other processes that serve the same site from their own memory.
+	OnPurge func(Purge)
+}
+
+// Purge describes one purge: everything, a set of tags, or every cached variant of a URL.
+type Purge struct {
+	All  bool     `json:"a,omitempty"`
+	Tags []string `json:"t,omitempty"`
+	URL  string   `json:"u,omitempty"`
 }
 
 // Cache is the wpgo-cache engine: a middleware plus the purge API.
@@ -49,6 +60,8 @@ type Cache struct {
 	allowedQuery  map[string]bool
 	detectLS      func(*http.Request) bool
 	lsEnv         bool
+
+	onPurge func(Purge)
 
 	flight     flightGroup
 	flightWait time.Duration // how long a request waits for a concurrent render of its page
@@ -64,6 +77,7 @@ func New(cfg Config, opts Options) *Cache {
 		now:         opts.Now,
 		loginCookie: opts.LoginCookie,
 		detectLS:    opts.IsLiteSpeed,
+		onPurge:     opts.OnPurge,
 	}
 	if c.log == nil {
 		c.log = slog.Default()
@@ -103,13 +117,40 @@ func (c *Cache) Config() Config { return c.cfg }
 func (c *Cache) Store() *Store { return c.store }
 
 // PurgeAll empties the cache.
-func (c *Cache) PurgeAll() int { return c.store.PurgeAll() }
+func (c *Cache) PurgeAll() int { return c.purge(Purge{All: true}) }
 
 // PurgeTags removes every page carrying any of tags.
-func (c *Cache) PurgeTags(tags ...string) int { return c.store.PurgeTags(tags...) }
+func (c *Cache) PurgeTags(tags ...string) int {
+	if len(tags) == 0 {
+		return 0
+	}
+	return c.purge(Purge{Tags: tags})
+}
 
 // PurgeURL removes every cached variant of a URL's path.
-func (c *Cache) PurgeURL(u string) int { return c.store.PurgeURL(u) }
+func (c *Cache) PurgeURL(u string) int { return c.purge(Purge{URL: u}) }
+
+func (c *Cache) purge(p Purge) int {
+	n := c.Apply(p)
+	if c.onPurge != nil {
+		c.onPurge(p)
+	}
+	return n
+}
+
+// Apply runs a purge on this cache only, without calling [Options.OnPurge]: the core uses it for
+// purges another process announced.
+func (c *Cache) Apply(p Purge) int {
+	switch {
+	case p.All:
+		return c.store.PurgeAll()
+	case p.URL != "":
+		return c.store.PurgeURL(p.URL)
+	case len(p.Tags) > 0:
+		return c.store.PurgeTags(p.Tags...)
+	}
+	return 0
+}
 
 // PurgeExpired removes expired entries.
 func (c *Cache) PurgeExpired() int { return c.store.PurgeExpired() }

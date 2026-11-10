@@ -774,6 +774,7 @@ func (s *Server) postsBulkAction(c *gin.Context, typ, action string) {
 			continue
 		}
 		if err == nil {
+			s.purgePostAgain(c, p)
 			s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 			n++
 			done = append(done, itoa64(id))
@@ -810,6 +811,7 @@ func (s *Server) postsEmptyTrash(c *gin.Context, typ string) {
 		}
 		s.afterPostSave(c, p)
 		if s.store.DeletePost(c, id) == nil {
+			s.purgePostAgain(c, p)
 			s.wbAfterStatusChange(c, p)
 			n++
 		}
@@ -1672,6 +1674,7 @@ func (s *Server) postEdit(c *gin.Context) {
 				}
 				s.deleteAttachmentFiles(a)
 				_ = s.store.DeleteAttachment(c, id)
+				s.purgeAttachment(a)
 				c.Redirect(http.StatusFound, "/wp-admin/upload?deleted=1")
 				return
 			}
@@ -1713,6 +1716,7 @@ func (s *Server) postEdit(c *gin.Context) {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+		s.purgePostAgain(c, p)
 		s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 		c.Redirect(http.StatusFound, "/wp-admin/edit?post_type="+p.Type+"&"+key+"=1&ids="+itoa64(p.ID))
 		return

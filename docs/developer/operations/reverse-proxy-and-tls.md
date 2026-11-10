@@ -134,5 +134,8 @@ same `WPGO_SECRET`. Settings are cached in memory per process; a change saved on
 reaches the others through PostgreSQL `LISTEN`/`NOTIFY` within moments (each instance holds one
 extra database connection for it, and reloads every minute in case a notification was lost). Side
 effects of saving a setting, such as starting a plugin or reconfiguring the page cache, run only on
-the instance that saved it; restart the others after switching plugins on or off. Pursae Headless's GraphQL subscriptions only see the changes made through the instance a
+the instance that saved it; restart the others after switching plugins on or off. Every Pursae Cache
+purge (a post saved, a menu changed, Purge All) is announced on the `wpgo_cache_purge` channel and
+applied by the other instances too, through a second listening connection; an instance whose
+listener was disconnected empties its page cache when it reconnects, since it may have missed purges. Pursae Headless's GraphQL subscriptions only see the changes made through the instance a
 client is connected to; use its webhooks to follow changes across instances.

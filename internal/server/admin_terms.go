@@ -281,8 +281,8 @@ func (s *Server) termsAction(c *gin.Context) {
 			if err != nil || t.Taxonomy != lab.Tax || (lab.Tax == "category" && id == def) {
 				continue
 			}
-			s.purgeTags("term:"+itoa64(t.ID), "widgets")
 			_ = s.store.DeleteTerm(ctx, t, def)
+			s.purgeTerm(t, true)
 		}
 		c.Redirect(http.StatusFound, back+"&message=6")
 		return
@@ -421,8 +421,8 @@ func (s *Server) termDeleteFromQuery(c *gin.Context) bool {
 	}
 	def := int64(s.settings.Int("default_category"))
 	if t, err := s.store.GetTerm(ctx, id); err == nil && t.Taxonomy == lab.Tax && !(lab.Tax == "category" && id == def) {
-		s.purgeTags("term:"+itoa64(t.ID), "widgets")
 		_ = s.store.DeleteTerm(ctx, t, def)
+		s.purgeTerm(t, true)
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/edit-tags?taxonomy="+lab.Tax+"&message=2")
 	return true

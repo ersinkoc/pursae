@@ -473,6 +473,7 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 			jsonError(c, http.StatusOK, nil)
 			return true
 		}
+		s.purgeAttachment(a)
 		if action == "save-attachment-compat" {
 			s.golylangMediaCompatSave(c, a) // attachments[ID][pll_i18n][lang][field]
 			jsonSuccess(c, s.attachmentJS(c, a))
@@ -494,6 +495,7 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 			}
 			s.deleteAttachmentFiles(a)
 			_ = s.store.DeleteAttachment(c, id)
+			s.purgeAttachment(a)
 			c.String(http.StatusOK, "1")
 			return true
 		}

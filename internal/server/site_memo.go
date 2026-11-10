@@ -183,12 +183,14 @@ func (s *Server) displayUser(ctx context.Context, id int64) *store.User {
 	return u
 }
 
-// attachment is GetAttachment through the request memo.
+// attachment is GetAttachment through the request memo. The page then depends on the media item
+// (Pursae Cache: editing or deleting it purges "media:<id>", purgeAttachment).
 func (s *Server) attachment(ctx context.Context, id int64) (*store.Attachment, error) {
 	m := viewMemoFrom(ctx)
 	if m == nil {
 		return s.store.GetAttachment(ctx, id)
 	}
+	cacheDep(ctx, "media:"+itoa64(id))
 	m.mu.Lock()
 	a, ok := m.attachments[id]
 	m.mu.Unlock()
@@ -304,6 +306,7 @@ func (s *Server) attachmentsByIDs(ctx context.Context, ids []int64) map[int64]*s
 			continue
 		}
 		seen[id] = true
+		cacheDep(ctx, "media:"+itoa64(id)) // Pursae Cache: the page shows this media item
 		if m != nil {
 			m.mu.Lock()
 			a, ok := m.attachments[id]

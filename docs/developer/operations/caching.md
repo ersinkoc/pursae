@@ -40,10 +40,13 @@ defer scripts (with an exclusion list), minify HTML, preload the theme's fonts.
 
 ## Tags and purging
 
-Every cached page is tagged (`home`, `post:12`, `term:3`, `author:1`, `feed`, `date:2026-10`,
-`archive:post`, `404`, `search`). Publishing or editing a post purges its own page, the home
-page, feeds, its author and term archives and the dates it belongs to; comments purge the post;
-settings, theme, menu and widget changes purge everything. Plugins that change posts through the
+Every cached page is tagged (`home`, `post:12`, `term:3`, `author:1`, `media:7`, `feed`,
+`date:2026-10`, `archive:post`, `404`, `search`). Publishing or editing a post purges its own
+page, the home page, feeds, its author and term archives and the dates it belongs to; comments purge the post; editing or deleting a term purges
+the pages listing or linking it (deleting a category also its posts' new default category);
+editing or deleting a media item purges the pages showing it as a featured image; settings,
+theme, menu and widget changes purge everything. With several instances on one database every
+purge reaches all of them ([several instances](reverse-proxy-and-tls.md#several-instances)). Plugins that change posts through the
 [posts API](../plugins/host-api.md) trigger the same purges, and saving a plugin settings page
 purges everything.
 
