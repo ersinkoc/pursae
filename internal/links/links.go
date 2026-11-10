@@ -332,6 +332,9 @@ func (b *Builder) feedLink(feed string) string {
 		if feed == "" || feed == "rss2" {
 			return b.HomeURL("/?feed=rss2")
 		}
+		if feed == "comments_rss2" {
+			return b.HomeURL("/?feed=comments-rss2")
+		}
 		return b.HomeURL("/?feed=" + feed)
 	}
 	switch feed {
@@ -346,9 +349,9 @@ func (b *Builder) feedLink(feed string) string {
 // PostCommentsFeed is get_post_comments_feed_link().
 func (b *Builder) PostCommentsFeed(p *store.Post) string {
 	if !b.Pretty() || draftLike(p) {
-		return b.HomeURL("/?feed=rss2&p=" + strconv.FormatInt(p.ID, 10))
+		return b.addQueryArg(b.Permalink(p), "feed", "rss2")
 	}
-	return strings.TrimSuffix(b.Permalink(p), "/") + b.trailing("/feed")
+	return appendURLPath(b.Permalink(p), b.trailing("/feed"))
 }
 
 // Trailing is user_trailingslashit(): the path gets the trailing slash of the permalink structure.
@@ -360,9 +363,21 @@ func (b *Builder) PostCommentsFeedFormat(p *store.Post, feed string) string {
 		return b.PostCommentsFeed(p)
 	}
 	if !b.Pretty() || draftLike(p) {
-		return b.HomeURL("/?feed=" + feed + "&p=" + strconv.FormatInt(p.ID, 10))
+		return b.addQueryArg(b.Permalink(p), "feed", feed)
 	}
-	return strings.TrimSuffix(b.Permalink(p), "/") + b.trailing("/feed/"+feed)
+	return appendURLPath(b.Permalink(p), b.trailing("/feed/"+feed))
+}
+
+func appendURLPath(link, suffix string) string {
+	u, err := url.Parse(link)
+	if err != nil {
+		return link
+	}
+	u.Path = strings.TrimSuffix(u.Path, "/") + suffix
+	if u.RawPath != "" {
+		u.RawPath = strings.TrimSuffix(u.RawPath, "/") + suffix
+	}
+	return u.String()
 }
 
 // CommentsFeedLink is get_feed_link('comments_' . $feed): the site comments feed in a format.
@@ -447,7 +462,11 @@ func (b *Builder) Paged(base string, n int) string {
 		}
 		return s
 	}
+	previousPath := u.Path
 	u.Path = regexp.MustCompile(`/page/\d+/?$`).ReplaceAllString(u.Path, "/")
+	if n <= 1 && u.Path != previousPath {
+		u.Path = b.trailing(u.Path)
+	}
 	if n > 1 {
 		u.Path = strings.TrimSuffix(u.Path, "/") + b.trailing("/page/"+strconv.Itoa(n))
 	}
