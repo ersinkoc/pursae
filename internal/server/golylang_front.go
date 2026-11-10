@@ -541,12 +541,36 @@ func (s *Server) pllFlushStrings() {
 
 // pllSlugBases are the URL bases Translate slugs translates: name and base.
 func (s *Server) pllSlugBases() [][2]string {
-	return append([][2]string{
+	out := append([][2]string{
 		{"category", strings.Trim(defaultStr(s.settings.String("category_base"), "category"), "/")},
 		{"post_tag", strings.Trim(defaultStr(s.settings.String("tag_base"), "tag"), "/")},
 		{"author", "author"},
 		{"search", "search"},
 	}, s.gooPllSlugBases()...) // Goocommerce: product, product category and tag bases (goo_golylang.go)
+	return append(out, s.pllCPTSlugBases()...)
+}
+
+// pllCPTSlugBases are the rewrite and archive slugs of the Pursae Custom Fields post types ticked
+// in Languages > Settings (Custom post types), such as /portfolio/. The first URL segment is what
+// gets translated, so a slug with a slash is left out.
+func (s *Server) pllCPTSlugBases() [][2]string { return pllCPTBasesFor(s.pllOpts().PostTypes) }
+
+func pllCPTBasesFor(types []string) [][2]string {
+	var out [][2]string
+	for _, typ := range types {
+		pt := siteCPT(typ)
+		if pt == nil {
+			continue
+		}
+		base, archive := siteCPTSlugs(pt)
+		if base != "" && !strings.Contains(base, "/") {
+			out = append(out, [2]string{typ, base})
+		}
+		if archive != "" && archive != base && !strings.Contains(archive, "/") {
+			out = append(out, [2]string{typ + "_archive", archive})
+		}
+	}
+	return out
 }
 
 // pllTranslateBase swaps the first path segment of rel between a base and its translation in lang.

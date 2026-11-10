@@ -81,7 +81,7 @@ func (s *Server) pllVisualFrom(c *gin.Context) *pllVisualSession {
 	}
 	var vs *pllVisualSession
 	if s.golylangOn() {
-		if u := currentUser(c); u != nil && u.Can("manage_options", nil) {
+		if u := currentUser(c); pllCanTranslateAny(u) {
 			pllVisualSessions.Lock()
 			cur := pllVisualSessions.m[tok]
 			pllVisualSessions.Unlock()
@@ -206,7 +206,7 @@ func (s *Server) pllVisualScreen(c *gin.Context) {
 	d := &pllVisualShell{Title: "Translate visually", SiteName: s.settings.String("blogname"), Param: pllVisualParam, Version: Version}
 	d.Path = pllVisualPath(c.Query("url"))
 	d.Close = d.Path
-	d.Langs = s.pllVisualTargets(ctx)
+	d.Langs = pllTranslatableLangs(u, s.pllVisualTargets(ctx))
 	if def := s.pllDefault(ctx); def != nil {
 		d.DefaultLangName = def.Name
 	}
@@ -245,10 +245,10 @@ func (s *Server) pllVisualScreen(c *gin.Context) {
 
 // pllVisualAdminBarNode is the front toolbar's "Translate Page" with one item per language.
 func (s *Server) pllVisualAdminBarNode(c *gin.Context, u *store.User) string {
-	if c == nil || u == nil || !s.golylangOn() || !u.Can("manage_options", nil) {
+	if c == nil || u == nil || !s.golylangOn() || !pllCanTranslateAny(u) {
 		return ""
 	}
-	langs := s.pllVisualTargets(c)
+	langs := pllTranslatableLangs(u, s.pllVisualTargets(c))
 	if len(langs) == 0 {
 		return ""
 	}
@@ -275,10 +275,10 @@ func (s *Server) pllVisualAdminBarNode(c *gin.Context, u *store.User) string {
 
 // pllVisualRowAction is the posts list's "Translate visually" of a published post (view URL).
 func (s *Server) pllVisualRowAction(c *gin.Context, viewURL, own string) string {
-	if viewURL == "" || !currentUser(c).Can("manage_options", nil) {
+	if viewURL == "" || !pllCanTranslateAny(currentUser(c)) {
 		return ""
 	}
-	langs := s.pllVisualTargets(c)
+	langs := pllTranslatableLangs(currentUser(c), s.pllVisualTargets(c))
 	if len(langs) == 0 {
 		return ""
 	}
@@ -594,7 +594,7 @@ func (s *Server) registerPllVisualREST() {
 	s.rest.register(pllRESTNamespace, "/pll/v1/visual/strings", map[string]restHandler{
 		http.MethodPost: func(c *gin.Context, r *restRequest) {
 			u := restCurrent(c)
-			if u == nil || !u.Can("manage_options", nil) {
+			if !pllCanTranslateAny(u) {
 				restErr(c, http.StatusForbidden, "rest_forbidden", "Sorry, you are not allowed to do that.")
 				return
 			}
@@ -603,6 +603,10 @@ func (s *Server) registerPllVisualREST() {
 			l := s.pllLang(ctx, slug)
 			if l == nil || l.IsDefault {
 				restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): lang")
+				return
+			}
+			if !pllCanTranslate(u, l.Slug) {
+				restErr(c, http.StatusForbidden, "rest_forbidden", "Sorry, you are not allowed to do that.")
 				return
 			}
 			raw, ok := r.Body["items"].([]any)

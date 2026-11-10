@@ -342,9 +342,12 @@
 
 {{/* ============================== Bulk editor ============================== */}}
 {{if eq .Page "bulk"}}
-<ul class="subsubsub"><li><a href="/wp-admin/seogo?page=bulk&amp;post_type=post"{{if eq .Data.Type "post"}} class="current"{{end}}>Posts</a> |</li> <li><a href="/wp-admin/seogo?page=bulk&amp;post_type=page"{{if eq .Data.Type "page"}} class="current"{{end}}>Pages</a></li></ul>
+<ul class="subsubsub">{{$cur := .Data.Type}}{{range $i, $t := .Data.TypeLinks}}<li>{{if $i}} | {{end}}<a href="/wp-admin/seogo?page=bulk&amp;post_type={{$t.Slug}}"{{if eq $t.Slug $cur}} class="current"{{end}}>{{$t.Label}}</a></li>{{end}}</ul>
+<form method="get" action="/wp-admin/seogo"><input type="hidden" name="page" value="bulk" /><input type="hidden" name="post_type" value="{{.Data.Type}}" />
+<p class="search-box"><label class="screen-reader-text" for="seogo-bulk-search">Search:</label><input type="search" id="seogo-bulk-search" name="s" value="{{.Data.Search}}" /> <input type="submit" class="button" value="Search" /></p></form>
 <form method="post" action="/wp-admin/seogo?page=bulk">
-<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="post_type" value="{{.Data.Type}}" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="post_type" value="{{.Data.Type}}" /><input type="hidden" name="s" value="{{.Data.Search}}" /><input type="hidden" name="paged" value="{{.Data.Paged}}" />
+<div class="tablenav top">{{template "tablenav-pages" .Data.Pagination}}<br class="clear"></div>
 <table class="wp-list-table widefat fixed striped table-view-list seogo-bulk">
 <thead><tr><th scope="col" class="column-primary" style="width:20%">Title</th><th scope="col" style="width:14%">Focus keyphrase</th><th scope="col">SEO title</th><th scope="col">Meta description</th><th scope="col" style="width:6em">SEO</th><th scope="col" style="width:7em">Readability</th></tr></thead>
 <tbody>
@@ -355,6 +358,7 @@
 	<td>{{template "seogo-score" .SEOScore}}</td><td>{{template "seogo-score" .ReadScore}}</td></tr>
 {{else}}<tr class="no-items"><td class="colspanchange" colspan="6">Nothing found.</td></tr>{{end}}
 </tbody></table>
+<div class="tablenav bottom">{{template "tablenav-pages" .Data.Pagination}}<br class="clear"></div>
 <p class="submit"><input type="submit" class="button button-primary" value="Save All" /></p>
 </form>
 {{end}}

@@ -78,11 +78,12 @@ func (s *Server) pllCopyForTranslation(ctx context.Context, src, dst *store.Post
 	if duplicate {
 		dst.Title, dst.Content, dst.Excerpt = src.Title, src.Content, src.Excerpt
 	}
-	_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET menu_order = $2, parent_id = $3, featured_media_id = $4, format = $5, comment_status = $6,
+	_, err := s.store.Pool.Exec(ctx, `UPDATE posts SET menu_order = $2, parent_id = $3, featured_media_id = $4, format = $5, comment_status = $6,
 		ping_status = $7, meta = meta || $8::jsonb,
 		title = CASE WHEN $9 THEN $10 ELSE title END, content = CASE WHEN $9 THEN $11 ELSE content END, excerpt = CASE WHEN $9 THEN $12 ELSE excerpt END
 		WHERE id = $1`, dst.ID, dst.MenuOrder, nullable64(parent), nullable64(featured), dst.Format, dst.CommentStatus, dst.PingStatus, rawMeta,
 		duplicate, src.Title, src.Content, src.Excerpt)
+	_ = pllLog("copying fields to a new translation", err)
 	if duplicate {
 		s.wbCopyDoc(ctx, src, dst) // Pursae Web Builder: the translation starts from the source's doc
 	}

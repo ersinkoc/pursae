@@ -51,7 +51,12 @@ func (s *Server) golylangAdmin(c *gin.Context, page string) bool {
 	if _, ok := pllPages[page]; !ok {
 		return false
 	}
-	if !s.golylangOn() || !currentUser(c).Can("manage_options", nil) {
+	u := currentUser(c)
+	allowed := u.Can("manage_options", nil)
+	if page == "mlang_strings" || page == "mlang_visual" {
+		allowed = pllCanTranslateAny(u) // translators: golylang_caps.go
+	}
+	if !s.golylangOn() || !allowed {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
 		return true
 	}
@@ -74,9 +79,15 @@ func (s *Server) golylangAdminView(c *gin.Context, v *adminView) {
 		return
 	}
 	u := v.User
-	if u.Can("manage_options", nil) {
-		top := &menuTop{Slug: "admin?page=mlang", Title: "Languages", ID: "toplevel_page_mlang", Icon: "dashicons-translation"}
-		for i, p := range []string{"mlang", "mlang_strings", "mlang_settings"} {
+	if pllCanTranslateAny(u) {
+		admin := u.Can("manage_options", nil)
+		first := "admin?page=mlang"
+		pages := []string{"mlang", "mlang_strings", "mlang_settings"}
+		if !admin { // a translator only sees the Translations screen
+			first, pages = "admin?page=mlang_strings", []string{"mlang_strings"}
+		}
+		top := &menuTop{Slug: first, Title: "Languages", ID: "toplevel_page_mlang", Icon: "dashicons-translation"}
+		for i, p := range pages {
 			title := pllPages[p]
 			if p == "mlang_strings" {
 				title = "Translations"
@@ -137,6 +148,7 @@ func pllWithLang(c *gin.Context, lang string) string {
 type pllLangRow struct {
 	*pllLanguage
 	Count                int
+	Missing, Outdated    int // published default-language items without a translation / whose translation is older
 	EditURL, DeleteURL   string
 	DefaultURL           string
 	ToggleURL, ToggleLbl string
@@ -172,6 +184,9 @@ var pllLangNotices = map[string]string{"added": "Language added.", "updated": "L
 	"default": "Default language changed.", "content": "Content without language now uses the default language.",
 	"activated": "Language activated.", "deactivated": "Language deactivated."}
 
+// pllLangErrorNotice is the ?pll_msg=save_error notice: a database write of the action failed.
+const pllLangErrorNotice = "The change could not be saved. Please try again."
+
 func (s *Server) pllLanguagesScreen(c *gin.Context) {
 	ctx := c.Request.Context()
 	if c.Request.Method == http.MethodPost || c.Query("pll_action") != "" && c.Query("pll_action") != "edit" {
@@ -181,9 +196,27 @@ func (s *Server) pllLanguagesScreen(c *gin.Context) {
 	var notices []notice
 	if m := pllLangNotices[c.Query("pll_msg")]; m != "" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML(m), Dismissible: true})
+	} else if c.Query("pll_msg") == "save_error" {
+		notices = append(notices, notice{Type: "error", Message: pllLangErrorNotice, Dismissible: true})
 	}
 	s.pllRenderLanguages(c, nil, notices...)
 	_ = ctx
+}
+
+// pllTranslationStatus counts, for a non-default language, the published posts of the default language that
+// have no translation into it yet, and those whose translation was last edited before the source changed.
+func (s *Server) pllTranslationStatus(ctx context.Context, l *pllLanguage) (missing, outdated int) {
+	def := defaultSlug(s.pllDefault(ctx))
+	if def == "" || def == l.Slug {
+		return
+	}
+	const src = `SELECT p.id, p.modified_at, coalesce(sl.grp, 0) AS grp FROM posts p LEFT JOIN pll_post_langs sl ON sl.post_id = p.id
+		WHERE p.type = ANY($1) AND p.status = 'publish' AND coalesce(sl.lang, $2) = $2`
+	_ = s.store.Pool.QueryRow(ctx, `WITH src AS (`+src+`) SELECT count(*) FROM src s WHERE NOT EXISTS
+		(SELECT 1 FROM pll_post_langs t WHERE t.grp = s.grp AND s.grp <> 0 AND t.lang = $3)`, s.pllPostTypes(), def, l.Slug).Scan(&missing)
+	_ = s.store.Pool.QueryRow(ctx, `WITH src AS (`+src+`) SELECT count(*) FROM src s JOIN pll_post_langs t ON t.grp = s.grp AND t.lang = $3
+		JOIN posts tp ON tp.id = t.post_id WHERE s.grp <> 0 AND tp.modified_at < s.modified_at`, s.pllPostTypes(), def, l.Slug).Scan(&outdated)
+	return
 }
 
 func (s *Server) pllRenderLanguages(c *gin.Context, form *pllLanguage, notices ...notice) {
@@ -208,6 +241,7 @@ func (s *Server) pllRenderLanguages(c *gin.Context, form *pllLanguage, notices .
 			DeleteURL: "/wp-admin/admin?page=mlang&pll_action=delete&lang=" + id + "&_wpnonce=" + s.nonce(c, "delete-lang"),
 		}
 		if !l.IsDefault {
+			r.Missing, r.Outdated = s.pllTranslationStatus(ctx, l)
 			r.DefaultURL = "/wp-admin/admin?page=mlang&pll_action=default-lang&lang=" + id + "&_wpnonce=" + s.nonce(c, "default-lang")
 			r.ToggleURL = "/wp-admin/admin?page=mlang&pll_action=toggle&lang=" + id + "&_wpnonce=" + s.nonce(c, "toggle-lang")
 			r.ToggleLbl = map[bool]string{true: "Deactivate", false: "Activate"}[l.Active]
@@ -275,8 +309,23 @@ func (s *Server) pllLanguagesAction(c *gin.Context) {
 			s.denyNonce(c)
 			return
 		}
-		if l := lang(); l != nil {
-			_ = s.pllDeleteLanguage(ctx, l)
+		l := lang()
+		if l == nil {
+			back("deleted")
+			return
+		}
+		posts, terms := s.pllLangContentCount(ctx, l)
+		mode := c.Query("content")
+		if (posts+terms) > 0 && s.pllHasOtherLanguage(ctx, l) && mode != "trash" && mode != "draft" && mode != "default" {
+			base := "/wp-admin/admin?page=mlang&pll_action=delete&lang=" + itoa64(l.ID) + "&_wpnonce=" + s.nonce(c, "delete-lang") + "&content="
+			msg := fmt.Sprintf("%s has %d post(s) and %d term(s). Choose what happens to them: <a href=\"%s\">move the posts to the Trash</a> | <a href=\"%s\">turn the posts into drafts</a> | <a href=\"%s\">move the content to the default language</a>. Nothing was deleted.",
+				html.EscapeString(l.Name), posts, terms, html.EscapeString(base+"trash"), html.EscapeString(base+"draft"), html.EscapeString(base+"default"))
+			s.pllRenderLanguages(c, nil, notice{Type: "error", Message: template.HTML(msg)})
+			return
+		}
+		if err := s.pllDeleteLanguageWith(ctx, l, mode); err != nil {
+			s.pllRenderLanguages(c, nil, notice{Type: "error", Message: template.HTML(html.EscapeString("The language could not be deleted: " + err.Error()))})
+			return
 		}
 		back("deleted")
 	case "default-lang":
@@ -287,9 +336,15 @@ func (s *Server) pllLanguagesAction(c *gin.Context) {
 		if l := lang(); l != nil {
 			o := s.pllOpts()
 			o.DefaultLang = l.Slug
-			_ = s.pllSaveOpts(ctx, o)
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE pll_languages SET active = true WHERE id = $1`, l.ID)
+			err := pllLog("saving the default language", s.pllSaveOpts(ctx, o))
+			if _, e := s.store.Pool.Exec(ctx, `UPDATE pll_languages SET active = true WHERE id = $1`, l.ID); err == nil {
+				err = pllLog("activating the default language", e)
+			}
 			s.pllFlush()
+			if err != nil {
+				back("save_error")
+				return
+			}
 		}
 		back("default")
 	case "toggle":
@@ -299,7 +354,11 @@ func (s *Server) pllLanguagesAction(c *gin.Context) {
 		}
 		msg := "updated"
 		if l := lang(); l != nil && !l.IsDefault {
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE pll_languages SET active = NOT active, updated_at = now() WHERE id = $1`, l.ID)
+			_, err := s.store.Pool.Exec(ctx, `UPDATE pll_languages SET active = NOT active, updated_at = now() WHERE id = $1`, l.ID)
+			if pllLog("toggling a language", err) != nil {
+				back("save_error")
+				return
+			}
 			s.pllFlush()
 			s.purgeAll(ctx)
 			msg = map[bool]string{true: "deactivated", false: "activated"}[l.Active]
@@ -416,7 +475,69 @@ func (s *Server) pllDefaultCategory(ctx context.Context, l *pllLanguage) {
 // pllDeleteLanguage removes a language: its content stays (in the default language), translation links to
 // it, its string translations and its menu locations go. Deleting the default language picks another.
 func (s *Server) pllDeleteLanguage(ctx context.Context, l *pllLanguage) error {
-	if _, err := s.store.Pool.Exec(ctx, `DELETE FROM pll_languages WHERE id = $1`, l.ID); err != nil {
+	return s.pllDeleteLanguageWith(ctx, l, "")
+}
+
+// pllLangContentCount counts the posts (any status but auto-draft) and terms that belong to a language.
+func (s *Server) pllLangContentCount(ctx context.Context, l *pllLanguage) (posts, terms int) {
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM pll_post_langs pl JOIN posts p ON p.id = pl.post_id
+		WHERE pl.lang = $1 AND p.status <> 'auto-draft'`, l.Slug).Scan(&posts)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM pll_term_langs WHERE lang = $1`, l.Slug).Scan(&terms)
+	return
+}
+
+func (s *Server) pllHasOtherLanguage(ctx context.Context, l *pllLanguage) bool {
+	for _, o := range s.pllLanguages(ctx) {
+		if o.ID != l.ID {
+			return true
+		}
+	}
+	return false
+}
+
+// pllDeleteLanguageWith deletes a language after dealing with its content in one transaction: mode "trash"
+// moves its posts to the Trash, "draft" turns them into drafts, "default" (and, for terms, every mode) moves
+// them to the default language as untranslated items. An empty mode touches nothing (the language is empty).
+func (s *Server) pllDeleteLanguageWith(ctx context.Context, l *pllLanguage, mode string) error {
+	tx, err := s.store.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	target := ""
+	for _, o := range s.pllLanguages(ctx) {
+		if o.ID != l.ID && (target == "" || o.IsDefault) {
+			target = o.Slug
+		}
+	}
+	if mode != "" && target != "" {
+		switch mode {
+		case "trash":
+			_, err = tx.Exec(ctx, `UPDATE posts SET trashed_status = status, status = 'trash', deleted_at = now() WHERE status NOT IN ('trash','auto-draft')
+				AND id IN (SELECT post_id FROM pll_post_langs WHERE lang = $1)`, l.Slug)
+		case "draft":
+			_, err = tx.Exec(ctx, `UPDATE posts SET status = 'draft' WHERE status NOT IN ('trash','auto-draft')
+				AND id IN (SELECT post_id FROM pll_post_langs WHERE lang = $1)`, l.Slug)
+		case "default":
+			_, err = tx.Exec(ctx, `UPDATE pll_post_langs SET lang = $2, grp = nextval('pll_translation_groups') WHERE lang = $1`, l.Slug, target)
+		}
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(ctx, `UPDATE pll_term_langs SET lang = $2, grp = nextval('pll_translation_groups') WHERE lang = $1`, l.Slug, target); err != nil {
+			return err
+		}
+		if mode != "default" {
+			// the posts stay in the database; detach them from the deleted language as default-language items
+			if _, err = tx.Exec(ctx, `UPDATE pll_post_langs SET lang = $2, grp = nextval('pll_translation_groups') WHERE lang = $1`, l.Slug, target); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM pll_languages WHERE id = $1`, l.ID); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 	s.pllFlush()
@@ -576,7 +697,6 @@ func (s *Server) pllSettingsSave(c *gin.Context) {
 		}
 		o.HideDefault = c.PostForm("hide_default") == "1"
 		o.Rewrite = c.PostForm("rewrite") != "0"
-		o.RedirectLang = c.PostForm("redirect_lang") == "1"
 		o.Domains = map[string]string{}
 		var missing []string
 		for _, l := range s.pllLanguages(ctx) {
@@ -603,7 +723,7 @@ func (s *Server) pllSettingsSave(c *gin.Context) {
 			o.ForceLang = 1
 		}
 	case "media":
-		o.MediaDuplicate = c.PostForm("media_duplicate") == "1"
+		// nothing to save: media is never duplicated (one item per upload, texts translated per language)
 	case "machine-translation":
 		if msg := s.pllMTSettingsSave(c, &o); msg != "" {
 			c.Redirect(http.StatusFound, "/wp-admin/admin?page=mlang_settings&module=machine-translation&pll_error="+url.QueryEscape(msg))
@@ -1091,7 +1211,10 @@ func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 	switch action {
 	case "pll_post_lang":
 		if l := s.pllLang(c, c.PostForm("lang")); l != nil {
-			_ = s.pllSetLang(c, pllPost, p.ID, l.Slug)
+			if pllLog("setting the post language", s.pllSetLang(c, pllPost, p.ID, l.Slug)) != nil {
+				c.String(http.StatusInternalServerError, "-1")
+				return true
+			}
 			s.pllReslug(c, p) // Share slugs: the slug may be taken in the new language
 		}
 	case "pll_link_translation":
@@ -1111,7 +1234,10 @@ func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 				}
 			}
 			tr[s.pllObjLang(c, pllPost, p.ID)] = p.ID
-			_ = s.pllSaveTranslations(c, pllPost, tr)
+			if pllLog("linking the translation", s.pllSaveTranslations(c, pllPost, tr)) != nil {
+				c.String(http.StatusInternalServerError, "-1")
+				return true
+			}
 		}
 	case "pll_toggle_duplicate":
 		u := currentUser(c)

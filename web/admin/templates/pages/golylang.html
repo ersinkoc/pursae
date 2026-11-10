@@ -73,6 +73,8 @@
 		<th scope="col" id="term_group" class="manage-column column-term_group" style="width:4em">Order</th>
 		<th scope="col" id="flag" class="manage-column column-flag" style="width:3em">Flag</th>
 		<th scope="col" id="count" class="manage-column column-count num" style="width:4em">Posts</th>
+		<th scope="col" id="untranslated" class="manage-column column-untranslated num" style="width:6em">Untranslated</th>
+		<th scope="col" id="outdated" class="manage-column column-outdated num" style="width:5em">Outdated</th>
 	</tr></thead>
 	<tbody id="the-list">
 	{{range .Rows}}<tr id="lang-{{.ID}}"{{if not .Active}}{{if not .IsDefault}} class="inactive"{{end}}{{end}}>
@@ -85,7 +87,9 @@
 		<td class="term_group column-term_group" data-colname="Order">{{.Order}}</td>
 		<td class="flag column-flag" data-colname="Flag">{{.FlagHTML}}</td>
 		<td class="count column-count num" data-colname="Posts">{{.Count}}</td>
-	</tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="7">No languages found.</td></tr>{{end}}
+		<td class="untranslated column-untranslated num" data-colname="Untranslated">{{if .IsDefault}}&mdash;{{else}}{{.Missing}}{{end}}</td>
+		<td class="outdated column-outdated num" data-colname="Outdated">{{if .IsDefault}}&mdash;{{else}}{{.Outdated}}{{end}}</td>
+	</tr>{{else}}<tr class="no-items"><td class="colspanchange" colspan="9">No languages found.</td></tr>{{end}}
 	</tbody>
 	</table>
 	<div class="card" style="max-width:none">
@@ -156,14 +160,13 @@
 		<label><input name="hide_default" type="checkbox" value="1"{{if $d.O.HideDefault}} checked="checked"{{end}} /> Hide URL language information for default language</label>
 		{{if $d.Pretty}}<p><label><input name="rewrite" type="radio" value="1"{{if $d.O.Rewrite}} checked="checked"{{end}} /> Remove /language/ in pretty permalinks</label><br /><code class="description">{{trimSlash $.HomeURL}}/en/</code><br />
 		<label><input name="rewrite" type="radio" value="0"{{if not $d.O.Rewrite}} checked="checked"{{end}} /> Keep /language/ in pretty permalinks</label><br /><code class="description">{{trimSlash $.HomeURL}}/language/en/</code></p>{{end}}
-		{{if $d.StaticFront}}<p><label><input name="redirect_lang" type="checkbox" value="1"{{if $d.O.RedirectLang}} checked="checked"{{end}} /> The front page URL contains the language code instead of the page name or page id</label></p>{{end}}
 	</fieldset>
 	<p class="submit" style="clear:both"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" /></p>
 	</form>
 {{else if eq .Key "media"}}
 	<form method="post" action="/wp-admin/admin?page=mlang_settings">
 	<input type="hidden" name="module" value="media" /><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
-	<label><input name="media_duplicate" type="checkbox" value="1"{{if $d.O.MediaDuplicate}} checked="checked"{{end}} /> Automatically duplicate media in all languages when uploading a new file</label>
+	<p class="description">Pursae keeps one Media Library item and one file per upload and translates its alternative text, title, caption and description per language, so media never needs to be duplicated.</p>
 	<p class="submit"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" /></p>
 	</form>
 {{else if eq .Key "cpt"}}

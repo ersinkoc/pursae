@@ -26,6 +26,7 @@ type seogoAnalysisInput struct {
 	Taxonomy    bool     `json:"taxonomy"`
 	UsedBy      []string `json:"-"` // titles of other posts with the same focus keyphrase
 	SiteHost    string   `json:"-"`
+	Locale      string   `json:"-"` // post locale (en_US, tr_TR, ...); "" means English
 }
 
 type seogoResult struct {
@@ -154,6 +155,9 @@ func paragraphs(content string) []string {
 var functionWords = map[string]bool{}
 
 func init() {
+	for _, w := range strings.Fields(`ve veya ile bir bu şu o için gibi kadar de da ki mi mı mu mü ne ben sen biz siz onlar daha çok en her hiç ama fakat ancak`) {
+		functionWords[w] = true
+	}
 	for _, w := range strings.Fields(`a an the and or but nor of in on at to for from by with without about as into onto over under is are was were be been being am do does did
 		have has had i you he she it we they me him her us them my your his its our their this that these those what which who whom whose how why when where
 		not no so than too very can could will would shall should may might must just also then there here all any each few more most other some such only own same`) {
@@ -348,6 +352,7 @@ func linkResults(id, label string, total, follow int) seogoResult {
 }
 
 func seogoAnalyzeSEO(in seogoAnalysisInput) seogoAnalysis {
+	in = seogoLocalizeInput(in)
 	var out []seogoResult
 	text := plainText(in.Content)
 	tw := words(text)
@@ -864,6 +869,8 @@ func seogoRankMathPoints(in seogoAnalysisInput, kw string, tw []string, st linkS
 // --- Readability analysis (Yoast's content assessor) --------------------------------------------
 
 func seogoAnalyzeReadability(in seogoAnalysisInput) seogoAnalysis {
+	in = seogoLocalizeInput(in)
+	lang := seogoLang(in.Locale)
 	var out []seogoResult
 	text := plainText(in.Content)
 	tw := words(text)
@@ -938,12 +945,21 @@ func seogoAnalyzeReadability(in seogoAnalysisInput) seogoAnalysis {
 			out = append(out, scored(3, "textSentenceLength", "Sentence length: %.1f%% of the sentences contain more than 20 words, which is more than the recommended maximum of %.0f%%. Try to shorten the sentences.", pct, good))
 		}
 
-		// Transition words (texts over 200 words)
-		if len(tw) > 200 {
+		// Transition words (texts over 200 words); only for languages with a word list
+		tlist := transitionWords
+		if lang == "tr" {
+			tlist = turkishTransitionWords
+		}
+		if lang != "en" && lang != "tr" {
+			tlist = nil
+		}
+		if tlist == nil {
+			// unsupported language: the test is skipped, like Yoast does
+		} else if len(tw) > 200 {
 			with := 0
 			for _, s := range sens {
 				ls := " " + strings.Join(words(s), " ") + " "
-				for _, t := range transitionWords {
+				for _, t := range tlist {
 					if strings.Contains(ls, " "+strings.ToLower(t)+" ") {
 						with++
 						break
@@ -963,7 +979,7 @@ func seogoAnalyzeReadability(in seogoAnalysisInput) seogoAnalysis {
 			out = append(out, scored(9, "textTransitionWords", "Transition words: Well done!"))
 		}
 
-		// Passive voice
+		// Passive voice (English patterns only)
 		passive := 0
 		for _, s := range sens {
 			if passiveRe.MatchString(s) {
@@ -972,6 +988,7 @@ func seogoAnalyzeReadability(in seogoAnalysisInput) seogoAnalysis {
 		}
 		pp := float64(passive) / float64(len(sens)) * 100
 		switch {
+		case lang != "en":
 		case pp <= 10:
 			out = append(out, scored(9, "passiveVoice", "Passive voice: You are not using too much passive voice. That's great!"))
 		case pp <= 15:
@@ -1003,7 +1020,7 @@ func seogoAnalyzeReadability(in seogoAnalysisInput) seogoAnalysis {
 	}
 
 	// Flesch reading ease: an insight (Yoast shows it outside the score since 19.3; Rank Math's legacy test)
-	if len(sens) > 0 && len(tw) > 0 {
+	if lang == "en" && len(sens) > 0 && len(tw) > 0 {
 		syl := 0
 		for _, w := range tw {
 			syl += syllables(w)
@@ -1062,3 +1079,33 @@ func seogoAnalyzeReadability(in seogoAnalysisInput) seogoAnalysis {
 	}
 	return seogoAnalysis{Score: score, Rating: rating, Results: out}
 }
+
+// seogoLang is the two-letter language of a locale ("tr_TR" -> "tr"); an empty locale is English.
+func seogoLang(locale string) string {
+	l := strings.ToLower(strings.TrimSpace(locale))
+	if l == "" {
+		return "en"
+	}
+	if i := strings.IndexAny(l, "_-"); i > 0 {
+		l = l[:i]
+	}
+	return l
+}
+
+// seogoLocalizeInput lowercases the analysed texts with the language's own case rules, so the
+// Turkish dotted/dotless I (I -> ı, İ -> i) matches correctly before the generic strings.ToLower.
+func seogoLocalizeInput(in seogoAnalysisInput) seogoAnalysisInput {
+	if l := seogoLang(in.Locale); l != "tr" && l != "az" {
+		return in
+	}
+	lc := func(s string) string { return strings.ToLowerSpecial(unicode.TurkishCase, s) }
+	in.SEOTitle, in.PostTitle, in.Description, in.Slug, in.Content = lc(in.SEOTitle), lc(in.PostTitle), lc(in.Description), lc(in.Slug), lc(in.Content)
+	kws := make([]string, len(in.Keywords))
+	for i, k := range in.Keywords {
+		kws[i] = lc(k)
+	}
+	in.Keywords = kws
+	return in
+}
+
+var turkishTransitionWords = strings.Split(`ama|fakat|ancak|lakin|ve|veya|ayrıca|üstelik|dahası|hatta|çünkü|bu yüzden|bu nedenle|dolayısıyla|sonuç olarak|sonuçta|böylece|nitekim|örneğin|mesela|yani|özellikle|öncelikle|ilk olarak|ikinci olarak|son olarak|sonra|daha sonra|ardından|ayrıca|bununla birlikte|buna rağmen|oysa|halbuki|aksine|tersine|diğer yandan|öte yandan|kısacası|özetle|genel olarak|gerçekten|elbette|tabii ki|zaten|ne var ki|yine de|üstelik|nihayet|sonunda|bu sırada|aynı zamanda|buna karşın|ki|çünkü|eğer|madem|şayet|ise`, "|")

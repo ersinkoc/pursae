@@ -48,6 +48,9 @@ type seogoCtx struct {
 	Store    string
 	StoreTax string
 	StoreURL string
+
+	// storeProduct is the Pursae Commerce Product node of a store product page; it joins the @graph.
+	storeProduct map[string]any
 }
 
 func (s *Server) seogoCtxFor(ctx context.Context, q *siteQuery) *seogoCtx {

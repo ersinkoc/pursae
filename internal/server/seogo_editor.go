@@ -210,6 +210,7 @@ func (s *Server) seogoAnalysisInputFor(ctx context.Context, sc *seogoCtx) seogoA
 	p := sc.Post
 	in := seogoAnalysisInput{SEOTitle: sc.title(), PostTitle: p.Title, Description: sc.description(), Slug: p.Slug, Content: p.Content,
 		Keywords: seogoFocusList(seogoMeta(p.Meta, "focus")), Cornerstone: seogoMeta(p.Meta, "cornerstone") == "1"}
+	in.Locale = s.seogoPostLocale(ctx, p)
 	if sc.Focus != "" {
 		in.Keywords = seogoFocusList(sc.Focus)
 	}

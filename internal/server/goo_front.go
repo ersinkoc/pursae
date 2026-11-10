@@ -207,7 +207,7 @@ func (s *Server) gooHead(c *gin.Context, q *siteQuery) string {
 	}
 	var b strings.Builder
 	b.WriteString(gooStyleTags())
-	if fv := gooViewFrom(c); fv != nil && fv.Kind == "product" && fv.Product != nil {
+	if fv := gooViewFrom(c); fv != nil && fv.Kind == "product" && fv.Product != nil && !s.seogoOwnsProductSchema() {
 		b.WriteString(s.gooProductJSONLD(c, fv.Product))
 	}
 	return b.String()

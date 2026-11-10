@@ -864,6 +864,13 @@ func (s *Server) gooSubmitReview(c *gin.Context) {
 
 // gooProductJSONLD is WC_Structured_Data's product markup.
 func (s *Server) gooProductJSONLD(c *gin.Context, p *gooProduct) string {
+	raw, _ := json.Marshal(s.gooProductLD(c, p))
+	return `<script type="application/ld+json">` + gooScriptSafe(raw) + `</script>` + "\n"
+}
+
+// gooProductLD is the Product node (with @context) built from the store's own price, stock and reviews;
+// Pursae SEO folds it into its @graph.
+func (s *Server) gooProductLD(c *gin.Context, p *gooProduct) map[string]any {
 	ctx := c.Request.Context()
 	lb := s.links(ctx)
 	link := s.gooPermalink(ctx, p)
@@ -951,6 +958,5 @@ func (s *Server) gooProductJSONLD(c *gin.Context, p *gooProduct) string {
 			}
 		}
 	}
-	raw, _ := json.Marshal(d)
-	return `<script type="application/ld+json">` + gooScriptSafe(raw) + `</script>` + "\n"
+	return d
 }
