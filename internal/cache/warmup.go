@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"sync"
@@ -87,9 +88,15 @@ func Warmup(ctx context.Context, urls []string, opts WarmupOptions) (WarmupProgr
 
 	var tick <-chan time.Time
 	if opts.RatePerSecond > 0 {
-		interval := time.Duration(float64(time.Second) / opts.RatePerSecond)
-		if interval <= 0 {
+		nanos := float64(time.Second) / opts.RatePerSecond
+		var interval time.Duration
+		switch {
+		case nanos >= float64(math.MaxInt64):
+			interval = time.Duration(math.MaxInt64)
+		case nanos < 1:
 			interval = time.Nanosecond
+		default:
+			interval = time.Duration(nanos)
 		}
 		t := time.NewTicker(interval)
 		defer t.Stop()
