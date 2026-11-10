@@ -242,6 +242,7 @@
 <div class="card"><h2 class="title">Import and export</h2><p>Move content between WordPress sites and Pursae with the standard WordPress eXtended RSS (WXR) format.</p>
 <p><a class="button" href="/wp-admin/import">Import</a> <a class="button" href="/wp-admin/export">Export</a></p></div>
 <div class="card"><h2 class="title">Site Health</h2><p>Check the status of the binary, the database, uploads, cache and plugin sandbox.</p><p><a class="button" href="/wp-admin/site-health">Open Site Health</a></p></div>
+<div class="card"><h2 class="title">Scheduled Actions</h2><p>See queued, running and failed background jobs (mail, cron events, imports) with their last error, and retry or delete them.</p><p><a class="button" href="/wp-admin/scheduled-actions">Open Scheduled Actions</a></p></div>
 <div class="card"><h2 class="title">Page cache</h2><p>Purge or warm the Pursae Cache.</p><p><a class="button" href="/wp-admin/admin?page=wpgo-cache-toolbox">Cache Toolbox</a></p></div>
 </div>
 {{template "admin-footer" .}}{{end}}
@@ -647,11 +648,36 @@
 <div class="wrap">
 <h1>Import</h1>
 {{if .Error}}<div class="notice notice-error"><p>{{.Error}}</p></div>{{end}}
-{{with .Report}}
+{{if .Running}}{{if .State}}<meta http-equiv="refresh" content="5" />
+<div class="notice notice-info inline"><p><strong>{{if eq .State "running"}}Importing&hellip;{{else}}Waiting for the import to start&hellip;{{end}}</strong> The import runs in the background and this page refreshes on its own. You can leave it and come back to this address; the report stays available for a week.</p></div>{{end}}
+{{else if .Report}}{{with .Report}}
 <div class="notice notice-success"><p><strong>All done.</strong> Have fun!</p></div>
 <p>Imported {{.Posts}} posts, {{.Pages}} pages, {{.Blocks}} patterns, {{if .Templates}}{{.Templates}} Theme Builder templates, {{end}}{{.MenuItems}} menu items, {{.Attachments}} media files, {{.Comments}} comments and {{.Terms}} new categories and tags.{{if .Skipped}} {{.Skipped}} items were skipped.{{end}}</p>
 {{if .Log}}<ul>{{range .Log}}<li>{{.}}</li>{{end}}</ul>{{end}}
 <p><a href="/wp-admin/edit">View posts</a> &middot; <a href="/wp-admin/import">Import another file</a></p>
+{{end}}
+{{else if eq .Step "authors"}}
+<h2>Assign Authors</h2>
+<p>To make it easier for you to edit and save the imported content, you may want to reassign the author of the imported item to an existing user of this site, or create a new user. {{.Counts}} will be imported.</p>
+<form method="post" action="/wp-admin/import">
+<input type="hidden" name="_wpnonce" value="{{.ImportNonce}}" />
+<input type="hidden" name="import_id" value="{{.Token}}" />
+{{if .Authors}}<ol id="authors">
+{{range .Authors}}<li><input type="hidden" name="imported_authors" value="{{.Login}}" />Import author: <strong>{{.DisplayName}} ({{.Login}})</strong><br />
+<label for="user_map_{{.Index}}">Assign posts to an existing user:</label>
+<select id="user_map_{{.Index}}" name="user_map[{{.Index}}]">
+<option value="0"{{if eq .Selected ""}} selected{{end}}>&ndash; Select (the importer) &ndash;</option>
+<option value="new"{{if eq .Selected "new"}} selected{{end}}>Create new user &hellip;</option>
+{{$sel := .Selected}}{{range $.Data.Users}}<option value="{{.ID}}"{{if eq (printf "%d" .ID) $sel}} selected{{end}}>{{.Label}}</option>{{end}}
+</select>
+<br /><label for="user_new_{{.Index}}">or create new user with login name:</label> <input type="text" id="user_new_{{.Index}}" name="user_new[{{.Index}}]" value="{{.Login}}" />
+</li>{{end}}
+</ol>{{else}}<p>The file lists no authors; everything is assigned to you.</p>{{end}}
+<h2>Import Attachments</h2>
+<p><input type="checkbox" value="1" name="fetch_attachments" id="import-attachments" checked />
+<label for="import-attachments">Download and import file attachments</label></p>
+<p class="submit"><input type="submit" class="button button-primary" value="Submit" /></p>
+</form>
 {{else}}
 <p>If you have posts or comments in another system, Pursae can import those into this site. The WordPress importer is built in.</p>
 <table class="widefat importers striped">
@@ -870,4 +896,27 @@
 	} );
 } )();
 </script>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/scheduled-actions"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Scheduled Actions</h1>
+<hr class="wp-header-end" />
+<ul class="subsubsub">
+<li><a href="/wp-admin/scheduled-actions"{{if eq .Status ""}} class="current" aria-current="page"{{end}}>All <span class="count">({{.Total}})</span></a>{{range $st := .Statuses}} | </li>
+<li><a href="/wp-admin/scheduled-actions?status={{$st}}"{{if eq $.Data.Status $st}} class="current" aria-current="page"{{end}}>{{$st}} <span class="count">({{index $.Data.Counts $st}})</span></a>{{end}}</li>
+</ul>
+{{if index .Counts "failed"}}<form method="post" action="/wp-admin/scheduled-actions" class="alignright" onsubmit="return confirm('Delete all failed actions?');"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="do" value="delete-failed" /><input type="submit" class="button" value="Delete all failed" /></form>{{end}}
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr><th scope="col" class="manage-column column-primary">Hook</th><th scope="col">Status</th><th scope="col">Next / last run</th><th scope="col">Recurrence</th><th scope="col">Attempts</th><th scope="col">Last error</th><th scope="col">Actions</th></tr></thead>
+<tbody>
+{{range .Actions}}<tr>
+<td class="column-primary"><strong>{{.Name}}</strong> <span class="description">#{{.ID}}</span></td>
+<td>{{.Status}}</td><td>{{.RunAt}}</td><td>{{if .Recurrence}}{{.Recurrence}}{{else}}&mdash;{{end}}</td><td>{{.Attempts}}</td>
+<td>{{if .LastError}}<code>{{.LastError}}</code>{{else}}&mdash;{{end}}</td>
+<td><form method="post" action="/wp-admin/scheduled-actions"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="job" value="{{.ID}}" /><input type="hidden" name="status" value="{{$.Data.Status}}" />{{if .CanRetry}}<button type="submit" name="do" value="retry" class="button button-small">Retry</button> {{end}}{{if .CanDelete}}<button type="submit" name="do" value="delete" class="button button-small">Delete</button>{{end}}</form></td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="7">No scheduled actions found.</td></tr>{{end}}
+</tbody></table>
+</div>
 {{end}}{{template "admin-footer" .}}{{end}}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/hmac"
 	"fmt"
 	"html"
 	"html/template"
@@ -379,6 +380,11 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 			fmt.Fprintf(&sb, "\n"+`<p class="comment-form-cookies-consent"><input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes"%s /> <label for="wp-comment-cookies-consent">%s</label></p>`, checked, s.frontE(c, "Save my name, email, and website in this browser for the next time I comment."))
 		}
 	}
+	if u == nil {
+		// Spam traps: a field humans never see (bots fill every input) and a signed timestamp (bots post at once).
+		sb.WriteString("\n" + `<p class="wpgo-hp" style="display:none !important" aria-hidden="true"><label for="wpgo_hp">Leave this field empty</label><input type="text" name="` + commentHoneypot + `" id="wpgo_hp" value="" tabindex="-1" autocomplete="off" /></p>`)
+		sb.WriteString(`<input type="hidden" name="` + commentTimeField + `" value="` + s.commentTimeToken(p.ID, time.Now()) + `" />`)
+	}
 	fmt.Fprintf(&sb, "\n"+`<p class="form-submit"><input name="submit" type="submit" id="submit" class="submit" value="%s" /> <input type='hidden' name='comment_post_ID' value='%d' id='comment_post_ID' />
 <input type='hidden' name='comment_parent' id='comment_parent' value='%d' />
 </p></form>	</div><!-- #respond -->
@@ -487,11 +493,15 @@ func (s *Server) commentPost(c *gin.Context) {
 				s.commentDie(c, http.StatusBadRequest, "<strong>Error:</strong> Please fill the required fields.")
 				return
 			}
-			if !strings.Contains(cm.AuthorEmail, "@") {
+			if !validEmail(cm.AuthorEmail) {
 				s.commentDie(c, http.StatusBadRequest, "<strong>Error:</strong> Please enter a valid email address.")
 				return
 			}
 		}
+	}
+	if u == nil && !s.commentTrapsPassed(c, p.ID) {
+		s.commentDie(c, http.StatusForbidden, "<strong>Error:</strong> Your comment looks like spam.")
+		return
 	}
 	if cm.Content == "" {
 		s.commentDie(c, http.StatusBadRequest, "<strong>Error:</strong> Please type your comment text.")
@@ -513,9 +523,25 @@ func (s *Server) commentPost(c *gin.Context) {
 		return
 	}
 	cm.Status = s.commentStatus(c, cm, u)
+	// pre_comment_approved: a plugin (an antispam service) may turn the verdict into approved, hold, spam or trash.
+	if s.plugins != nil && s.plugins.hooks.HasFilter("pre_comment_approved") {
+		if v, ok := s.applyFilters(ctx, "pre_comment_approved", cm.Status, commentHookArgs(cm)).(string); ok {
+			switch v {
+			case "approved", "pending", "spam", "trash":
+				cm.Status = v
+			case "1":
+				cm.Status = "approved"
+			case "0":
+				cm.Status = "pending"
+			}
+		}
+	}
 	if err := s.store.InsertComment(ctx, cm); err != nil {
 		s.commentDie(c, http.StatusInternalServerError, "Could not save the comment.")
 		return
+	}
+	if s.plugins != nil {
+		s.plugins.hooks.DoAction(ctx, "comment_post", cm.ID, cm.Status, commentHookArgs(cm))
 	}
 	if cm.Status == "approved" {
 		s.purgeTags("post:"+itoa64(cm.PostID), "feed", "widgets")
@@ -588,4 +614,41 @@ func (s *Server) commentDie(c *gin.Context, status int, msg string) {
 	c.String(status, `<!DOCTYPE html><html lang="en-US"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Comment Submission Failure</title>`+
 		`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page"><div class="wp-die-message"><p>`+msg+
 		`</p></div><p><a href="javascript:history.back()">&laquo; Back</a></p></body></html>`)
+}
+
+// Comment spam traps. The honeypot input is hidden with CSS; the time field is "<unix>.<hmac>" signed
+// for the post, so it cannot be forged and carries no expiry (a cached page keeps working).
+const (
+	commentHoneypot  = "wpgo_website"
+	commentTimeField = "wpgo_ct"
+	commentMinAge    = 2 * time.Second
+)
+
+func (s *Server) commentTimeToken(postID int64, at time.Time) string {
+	ts := strconv.FormatInt(at.Unix(), 10)
+	return ts + "." + s.asHash("comment-time", ts+"|"+itoa64(postID))
+}
+
+// commentTrapsPassed is false when the honeypot is filled, the timestamp is forged, or the form was
+// submitted faster than a person can. A form without the timestamp (a cached or custom theme form) passes.
+func (s *Server) commentTrapsPassed(c *gin.Context, postID int64) bool {
+	if c.PostForm(commentHoneypot) != "" {
+		return false
+	}
+	tok := c.PostForm(commentTimeField)
+	if tok == "" {
+		return true
+	}
+	ts, sig, ok := strings.Cut(tok, ".")
+	n, err := strconv.ParseInt(ts, 10, 64)
+	if !ok || err != nil || !hmac.Equal([]byte(sig), []byte(s.asHash("comment-time", ts+"|"+itoa64(postID)))) {
+		return false
+	}
+	return time.Since(time.Unix(n, 0)) >= commentMinAge
+}
+
+// commentHookArgs is the comment as plugins see it.
+func commentHookArgs(cm *store.Comment) map[string]any {
+	return map[string]any{"post_id": cm.PostID, "parent": cm.ParentID, "user_id": cm.UserID, "author": cm.AuthorName,
+		"email": cm.AuthorEmail, "url": cm.AuthorURL, "content": cm.Content, "ip": cm.AuthorIP, "user_agent": cm.UserAgent}
 }

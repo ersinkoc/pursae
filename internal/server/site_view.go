@@ -604,6 +604,9 @@ func (s *Server) postView(ctx context.Context, c *gin.Context, p *store.Post, si
 }
 
 func (s *Server) avatarImg(ctx context.Context, email string, size int) string {
+	if !s.settings.Bool("show_avatars") { // get_avatar() returns false when Show Avatars is off
+		return ""
+	}
 	return fmt.Sprintf(`<img alt='' src='%s' srcset='%s 2x' class='avatar avatar-%d photo' height='%d' width='%d' loading='lazy' decoding='async'/>`,
 		html.EscapeString(s.avatarFor(ctx, email, size)), html.EscapeString(s.avatarFor(ctx, email, size*2)), size, size, size)
 }

@@ -49,7 +49,7 @@ func TestValidSlug(t *testing.T) {
 
 // The contact form hooks carry visitors' personal data and the spam verdict, so they need a permission.
 func TestContactFormHooksNeedAPermission(t *testing.T) {
-	for _, h := range []string{"wpcf7_mail_sent", "wpcf7_spam", "wpcf7_anything"} {
+	for _, h := range []string{"wpcf7_mail_sent", "wpcf7_spam", "wpcf7_anything", "pre_comment_approved", "comment_post"} {
 		if HookPermission(h) != PermForms {
 			t.Errorf("HookPermission(%q) = %q, want %q", h, HookPermission(h), PermForms)
 		}

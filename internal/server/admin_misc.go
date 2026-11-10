@@ -204,70 +204,10 @@ func (s *Server) siteHealth(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	var tests []healthTest
-	add := func(t healthTest) { tests = append(tests, t) }
-
-	add(healthTest{Label: "Your site is running the current version of Pursae (" + Version + ")", Status: "good", Badge: "Performance",
-		Description: "Pursae is a single compiled binary; updating means replacing it and restarting."})
-	add(healthTest{Label: "Your site is running on " + runtime.Version(), Status: "good", Badge: "Performance",
-		Description: "The Go runtime is compiled into the binary. There is no interpreter to keep up to date."})
-	var pgVersion string
-	_ = s.store.Pool.QueryRow(ctx, `SHOW server_version`).Scan(&pgVersion)
-	pgMajor, _ := strconv.Atoi(strings.SplitN(pgVersion, ".", 2)[0])
-	if pgMajor >= 15 {
-		add(healthTest{Label: "PostgreSQL " + pgVersion + " is supported", Status: "good", Badge: "Performance", Description: "The database server is a recent, supported release."})
-	} else {
-		add(healthTest{Label: "PostgreSQL " + pgVersion + " is old", Status: "recommended", Badge: "Performance", Description: "PostgreSQL 15 or newer is recommended."})
-	}
-	if strings.HasPrefix(s.links(c).Home, "https://") {
-		add(healthTest{Label: "Your website is using an active HTTPS connection", Status: "good", Badge: "Security", Description: "An HTTPS connection helps keep your site and its visitors safe."})
-	} else {
-		add(healthTest{Label: "Your website does not use HTTPS", Status: "recommended", Badge: "Security",
-			Description: "HTTPS is already supported by most hosts and makes your site more secure. Put Pursae behind a TLS-terminating proxy and set WPGO_SITE_URL to an https:// address."})
-	}
-	if f, err := os.CreateTemp(s.cfg.UploadsDir, ".health-*"); err == nil {
-		f.Close()
-		os.Remove(f.Name())
-		add(healthTest{Label: "The uploads directory is writable", Status: "good", Badge: "Performance", Description: "Media files can be uploaded."})
-	} else {
-		add(healthTest{Label: "The uploads directory is not writable", Status: "critical", Badge: "Performance", Description: "Uploads will fail: " + err.Error()})
-	}
-	if s.settings.Bool("wpgo_cache_enabled") {
-		st := s.currentCache().Stats()
-		add(healthTest{Label: "Page cache is enabled", Status: "good", Badge: "Performance",
-			Description: fmt.Sprintf("Pursae Cache serves pages from memory (%d cached, %.0f%% hit ratio since start).", st.Entries, st.HitRatio*100)})
-	} else {
-		add(healthTest{Label: "Page cache is not enabled", Status: "recommended", Badge: "Performance",
-			Description: "Page cache can improve your site performance by caching pages in memory.", Action: `<a href="/wp-admin/admin?page=wpgo-cache-settings">Turn on Pursae Cache</a>`})
-	}
-	if s.plugins != nil && s.plugins.initErr == nil {
-		add(healthTest{Label: "The plugin sandbox is running", Status: "good", Badge: "Security", Description: "Plugins run as WebAssembly with only the permissions you granted."})
-	} else {
-		add(healthTest{Label: "The plugin sandbox could not start", Status: "critical", Badge: "Security", Description: "Wasm plugins are disabled."})
-	}
-	if s.settings.String("timezone_string") != "" {
-		add(healthTest{Label: "Your site uses a named time zone", Status: "good", Badge: "Performance", Description: "Dates follow daylight saving changes automatically."})
-	} else {
-		add(healthTest{Label: "Your site uses a fixed UTC offset", Status: "recommended", Badge: "Performance",
-			Description: "Choose a city-based time zone so dates follow daylight saving time.", Action: `<a href="/wp-admin/options-general">General Settings</a>`})
-	}
-	if !s.settings.Bool("blog_public") {
-		add(healthTest{Label: "Search engines are discouraged from indexing this site", Status: "recommended", Badge: "Privacy",
-			Description: "Your site is hidden from search engines.", Action: `<a href="/wp-admin/options-reading">Reading Settings</a>`})
-	}
-	var inactivePlugins int
-	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM plugins WHERE status = 'inactive'`).Scan(&inactivePlugins)
-	if inactivePlugins > 0 {
-		add(healthTest{Label: "You should remove inactive plugins", Status: "recommended", Badge: "Security",
-			Description: fmt.Sprintf("Your site has %d inactive plugin(s). Inactive plugins are not run, but removing what you don't use keeps things tidy.", inactivePlugins),
-			Action:      `<a href="/wp-admin/plugins?plugin_status=inactive">Manage inactive plugins</a>`})
-	}
-	if s.settings.Int("wp_page_for_privacy_policy") == 0 {
-		add(healthTest{Label: "No privacy policy page is set", Status: "recommended", Badge: "Privacy", Action: `<a href="/wp-admin/options-privacy">Privacy Settings</a>`})
-	}
+	tests := s.healthTests(c)
 
 	if t, ok := s.msHealthTest(ctx); ok {
-		add(t)
+		tests = append(tests, t)
 	}
 
 	var byStatus = map[string][]healthTest{}
@@ -346,10 +286,10 @@ func (s *Server) healthInfo(ctx context.Context) []healthSection {
 		{"Pursae", [][2]string{{"Version", Version}, {"Site URL", s.settings.String("siteurl")}, {"Home URL", s.settings.String("home")},
 			{"Permalink structure", defaultStr(s.settings.String("permalink_structure"), "No permalink structure set")},
 			{"Is this site discouraging search engines?", map[bool]string{true: "No", false: "Yes"}[s.settings.Bool("blog_public")]},
-			{"Default comment status", s.settings.String("default_comment_status")}, {"Environment type", "production"},
+			{"Default comment status", s.settings.String("default_comment_status")}, {"Environment type", s.environmentType()},
 			{"User count", strconv.Itoa(users)}, {"Content items", strconv.Itoa(posts)}, {"Comments", strconv.Itoa(comments)}}},
 		{"Active Theme", [][2]string{{"Name", t.Name + " (" + t.Slug + ")"}, {"Version", t.Version}, {"Author", t.Author}, {"Widget areas", strconv.Itoa(len(t.WidgetAreas))}}},
-		{"Plugins", [][2]string{{"Built-in", "Classic Editor 1.6.7, Pursae Cache 1.0.0"}, {"Active Wasm plugins", defaultStr(strings.Join(pluginList, ", "), "None")}}},
+		{"Plugins", [][2]string{{"Built-in", s.builtinPluginSummary()}, {"Active Wasm plugins", defaultStr(strings.Join(pluginList, ", "), "None")}}},
 		{"Media Handling", [][2]string{{"Image library", "Go image (golang.org/x/image) – JPEG, PNG, GIF, WebP decode"}, {"Max upload size", media.HumanSize(maxUploadBytes)},
 			{"Attachments", strconv.Itoa(attachments)}, {"Uploads size", media.HumanSize(uploadBytes)}}},
 		{"Server", [][2]string{{"Server architecture", runtime.GOOS + " " + runtime.GOARCH}, {"Host name", host}, {"Go version", runtime.Version()},

@@ -212,6 +212,7 @@
 	{{template "edit-postbox-start" dict "ID" "trackbacksdiv" "Title" "Send Trackbacks" "Class" (index .BoxClass "trackbacksdiv")}}
 		<p><label for="trackback_url">Send trackbacks to:</label> <input type="text" name="trackback_url" id="trackback_url" class="code" value="{{.ToPing}}" aria-describedby="trackback-url-desc" /></p>
 		<p id="trackback-url-desc">Separate multiple URLs with spaces</p>
+		<p><em>Pursae does not send trackbacks or pingbacks yet; the URLs are only stored.</em></p>
 		<p>Trackbacks are a way to notify legacy blog systems that you&#8217;ve linked to them. If you link other WordPress sites, they&#8217;ll be notified automatically using <a href="https://wordpress.org/documentation/article/introduction-to-blogging/#comments">pingbacks</a>, no other action necessary.</p>
 	{{template "edit-postbox-end"}}
 	{{end}}

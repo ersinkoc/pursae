@@ -61,3 +61,18 @@ SELECT name, recurrence, status, run_at, attempts, last_error FROM jobs ORDER BY
 ```
 
 A recurring event that went missing is recreated at the next start (`ensureEvents`).
+
+## Scheduled Actions screen and background imports
+
+**Tools › Scheduled Actions** (`/wp-admin/scheduled-actions`, `manage_options`) lists the core job queue
+(queued mail, cron events, plugin events, importer runs) with status, next or last run, attempts and the
+last error. A job that failed for good (five attempts) can be retried, which puts it back on the queue
+with a clean attempt count, or deleted; running jobs cannot be deleted. Pursae Commerce keeps its own
+list on its Status screen.
+
+**Tools › Import** runs in three steps: upload the WXR file, assign authors (existing user, new user,
+or the importer) and choose "Download and import file attachments", then the import runs as the
+`wxr_import` job while the screen shows progress and, at the end, the report (kept for a week). The
+uploaded file is stored in `wxr-imports/` next to the uploads directory (not served) and removed when
+the import is over. Re-importing a file is safe: posts and media that exist already are skipped, so a
+run without attachments can be followed by one with them.

@@ -190,6 +190,8 @@ func HookPermission(hook string) Permission {
 		return PermContentFilter
 	case strings.HasPrefix(hook, "cron_") || strings.HasPrefix(hook, "wpgo_cron"):
 		return PermCron
+	case hook == "pre_comment_approved" || hook == "comment_post" || hook == "pursae_personal_data_export" || hook == "pursae_personal_data_erase":
+		return PermForms // visitors' comments carry names, e-mail addresses and IPs
 	case strings.HasPrefix(hook, "wpcf7_"):
 		return PermForms // submissions carry visitors' names, e-mail addresses and messages
 	case strings.HasPrefix(hook, "headless_entry_"):

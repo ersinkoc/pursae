@@ -14,7 +14,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,17 +38,50 @@ const czParam = "customize_changeset_uuid"
 
 // czChangeset is an unpublished set of values used by the preview.
 type czChangeset struct {
-	UserID  int64
-	Theme   string
-	Options map[string]any // sanitized core options
-	Mods    map[string]any // the theme's full theme mods with the changes applied
-	Expires time.Time
+	UserID  int64          `json:"user_id"`
+	Theme   string         `json:"theme"`
+	Status  string         `json:"status,omitempty"` // "" (a live preview session) or "draft" (saved with Save Draft)
+	Options map[string]any `json:"options"`          // sanitized core options
+	Mods    map[string]any `json:"mods"`             // the theme's full theme mods with the changes applied
+	Expires time.Time      `json:"expires"`
 }
 
-var czChangesets = struct {
-	sync.Mutex
-	m map[string]*czChangeset
-}{m: map[string]*czChangeset{}}
+// Changesets live in the transients table (like WordPress' customize_changeset posts they survive a
+// restart and are visible to every instance); previews last 12 hours, drafts 30 days.
+const (
+	czPreviewTTL = 12 * time.Hour
+	czDraftTTL   = 30 * 24 * time.Hour
+)
+
+var czUUIDValid = regexp.MustCompile(`^[0-9a-f]{32}$`)
+
+func czKey(uuid string) string { return "customize_changeset:" + uuid }
+
+// czSave stores a changeset under its uuid.
+func (s *Server) czSave(ctx context.Context, uuid string, cs *czChangeset) error {
+	if !czUUIDValid.MatchString(uuid) {
+		return errors.New("invalid changeset id")
+	}
+	ttl := czPreviewTTL
+	if cs.Status == "draft" {
+		ttl = czDraftTTL
+	}
+	cs.Expires = time.Now().Add(ttl)
+	return s.store.SetTransient(ctx, czKey(uuid), cs, ttl)
+}
+
+// czLoad returns the unexpired changeset stored under uuid, or nil.
+func (s *Server) czLoad(ctx context.Context, uuid string) *czChangeset {
+	if !czUUIDValid.MatchString(uuid) {
+		return nil
+	}
+	var cs czChangeset
+	ok, err := s.store.GetTransient(ctx, czKey(uuid), &cs)
+	if err != nil || !ok || time.Now().After(cs.Expires) {
+		return nil
+	}
+	return &cs
+}
 
 func newChangesetID() string {
 	b := make([]byte, 16)
@@ -340,14 +372,10 @@ func (s *Server) customizeScreen(c *gin.Context) {
 	lb := s.links(ctx)
 
 	uuid := newChangesetID()
-	czChangesets.Lock()
-	for k, cs := range czChangesets.m {
-		if time.Now().After(cs.Expires) {
-			delete(czChangesets.m, k)
-		}
+	if err := s.czSave(ctx, uuid, &czChangeset{UserID: u.ID, Theme: t.Slug, Mods: mods, Options: map[string]any{}}); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
-	czChangesets.m[uuid] = &czChangeset{UserID: u.ID, Theme: t.Slug, Mods: mods, Options: map[string]any{}, Expires: time.Now().Add(12 * time.Hour)}
-	czChangesets.Unlock()
 
 	preview := "/"
 	if p := c.Query("url"); strings.HasPrefix(p, "/") && !strings.HasPrefix(p, "//") && !strings.HasPrefix(p, "/wp-admin") {
@@ -492,20 +520,30 @@ func (s *Server) customizeSave(c *gin.Context) {
 	switch c.PostForm("action") {
 	case "preview":
 		uuid := c.PostForm("uuid")
-		czChangesets.Lock()
-		cs := czChangesets.m[uuid]
-		if cs != nil && cs.UserID == u.ID {
-			// Replace, never change in place: preview requests read the changeset they got without
-			// the lock.
-			cs = &czChangeset{UserID: cs.UserID, Theme: t.Slug, Options: opts, Mods: mods, Expires: time.Now().Add(12 * time.Hour)}
-			czChangesets.m[uuid] = cs
-		}
-		czChangesets.Unlock()
+		cs := s.czLoad(c, uuid)
 		if cs == nil || cs.UserID != u.ID {
 			c.JSON(http.StatusBadRequest, gin.H{"success": false, "data": gin.H{"message": "The changeset has expired. Reload the Customizer."}})
 			return
 		}
+		if err := s.czSave(c, uuid, &czChangeset{UserID: cs.UserID, Theme: t.Slug, Status: cs.Status, Options: opts, Mods: mods}); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"message": err.Error()}})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"uuid": uuid}})
+	case "draft":
+		// Save Draft: keep the changes as a persistent changeset (30 days) the owner can preview
+		// with ?customize_changeset_uuid=<uuid> without publishing.
+		uuid := c.PostForm("uuid")
+		cs := s.czLoad(c, uuid)
+		if cs == nil || cs.UserID != u.ID {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "data": gin.H{"message": "The changeset has expired. Reload the Customizer."}})
+			return
+		}
+		if err := s.czSave(c, uuid, &czChangeset{UserID: cs.UserID, Theme: t.Slug, Status: "draft", Options: opts, Mods: mods}); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"message": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"uuid": uuid, "status": "draft", "message": "Draft saved."}})
 	case "publish":
 		values := map[string]any{"theme_mods_" + t.Slug: mods}
 		for k, v := range opts {
@@ -595,10 +633,8 @@ func (s *Server) customizeChangeset(c *gin.Context) *czChangeset {
 	if !u.Can("edit_theme_options", nil) {
 		return nil
 	}
-	czChangesets.Lock()
-	cs := czChangesets.m[uuid]
-	czChangesets.Unlock()
-	if cs == nil || cs.UserID != u.ID || time.Now().After(cs.Expires) {
+	cs := s.czLoad(c, uuid)
+	if cs == nil || cs.UserID != u.ID {
 		return nil
 	}
 	// Never cache a preview.
@@ -680,6 +716,8 @@ func (s *Server) customizeView(c *gin.Context, v *siteView, cs *czChangeset) {
 	switch n := cs.option("site_icon", nil).(type) {
 	case int64:
 		icon = n
+	case float64: // a changeset read back from the transients table
+		icon = int64(n)
 	default:
 		icon = int64(s.settings.Int("site_icon"))
 	}

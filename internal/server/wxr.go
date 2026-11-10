@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -696,44 +695,32 @@ func (it *wxrItem) meta(key string) string {
 	return ""
 }
 
-// importScreen is import.php with the WordPress importer built in.
-func (s *Server) importScreen(c *gin.Context) {
-	u := currentUser(c)
-	if !u.Can("import", nil) {
-		c.String(http.StatusForbidden, "Sorry, you are not allowed to import content into this site.")
-		return
-	}
-	d := map[string]any{"Nonce": s.nonce(c, "import-upload")}
-	if c.Request.Method == http.MethodPost {
-		if !s.checkNonce(c, "import-upload") {
-			s.denyNonce(c)
-			return
-		}
-		f, _, err := c.Request.FormFile("import")
-		if err != nil {
-			d["Error"] = "No file was uploaded."
-		} else {
-			data, _ := io.ReadAll(io.LimitReader(f, 256<<20))
-			f.Close()
-			report, err := s.importWXR(c, u, data)
-			if err != nil {
-				d["Error"] = "Sorry, there has been an error. " + err.Error()
-			} else {
-				d["Report"] = report
-				s.purgeAll(c)
-			}
-		}
-	}
-	s.adminPage(c, "import", "Import", "import-php", "admin/import", d)
-}
-
 type importReport struct {
 	Posts, Pages, Blocks, Templates, Skipped, Terms, Comments, Attachments, MenuItems int // Templates: Theme Builder (wb_template)
 	Log                                                                               []string
 }
 
+// importWXR runs an import with the defaults of the old one-step importer: unknown authors go to
+// the importer and attachments are downloaded.
 func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importReport, error) {
-	ctx := c.Request.Context()
+	return s.importWXRWith(c.Request.Context(), u, data, wxrImportOptions{FetchAttachments: true})
+}
+
+// wxrAuthorChoice is the "Assign Authors" answer for one author of the file: an existing user
+// (UserID), a new user (NewLogin), or neither, which assigns the author's content to the importer.
+type wxrAuthorChoice struct {
+	UserID   int64  `json:"user_id,omitempty"`
+	NewLogin string `json:"new_login,omitempty"`
+}
+
+// wxrImportOptions are the choices of the second importer step. A login that is not in Authors
+// keeps the default: the user with that login when it exists here, the importer otherwise.
+type wxrImportOptions struct {
+	Authors          map[string]wxrAuthorChoice
+	FetchAttachments bool // "Download and import file attachments"
+}
+
+func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, opts wxrImportOptions) (*importReport, error) {
 	var doc wxrDoc
 	dec := xml.NewDecoder(strings.NewReader(string(data)))
 	dec.Strict = false
@@ -744,6 +731,22 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 	authors := map[string]int64{}
 	matched := map[string]bool{} // logins that exist on this site (not mapped to the importer)
 	for _, a := range doc.Channel.Authors {
+		choice, chosen := opts.Authors[a.Login]
+		switch {
+		case chosen && choice.UserID != 0:
+			if ex, err := s.store.UserByID(ctx, choice.UserID); err == nil {
+				authors[a.Login], matched[a.Login] = ex.ID, true
+				continue
+			}
+		case chosen && choice.NewLogin != "":
+			if id := s.wxrCreateAuthor(ctx, choice.NewLogin, a.Email, a.DisplayName); id != 0 {
+				authors[a.Login], matched[a.Login] = id, true
+				continue
+			}
+		case chosen: // assigned to the importer
+			authors[a.Login] = u.ID
+			continue
+		}
 		if ex, err := s.store.UserByLoginOrEmail(ctx, a.Login); err == nil {
 			authors[a.Login], matched[a.Login] = ex.ID, true
 		} else {
@@ -854,6 +857,10 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 		case "post", "page", "wp_block", "wb_template", "custom":
 		case "attachment":
 			if it.Status == "trash" {
+				rep.Skipped++
+				continue
+			}
+			if !opts.FetchAttachments {
 				rep.Skipped++
 				continue
 			}
@@ -1140,6 +1147,9 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 		if pid, ok := menuItemIDs[parentOld]; ok {
 			_, _ = s.store.Pool.Exec(ctx, `UPDATE menu_items SET parent_id = $2 WHERE id = $1`, id, pid)
 		}
+	}
+	if !opts.FetchAttachments {
+		rep.Log = append(rep.Log, "File attachments were not downloaded; links keep pointing at the old site. Import the file again with “Download and import file attachments” checked to fetch them.")
 	}
 	var all []int64
 	for _, id := range termID {

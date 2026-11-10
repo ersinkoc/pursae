@@ -139,6 +139,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 			{slug: "import", title: "Import", cap: "import"},
 			{slug: "export", title: "Export", cap: "export"},
 			{slug: "site-health", title: "Site Health", cap: "manage_options"},
+			{slug: "scheduled-actions", title: "Scheduled Actions", cap: "manage_options"},
 			{slug: "export-personal-data", title: "Export Personal Data", cap: "manage_options"},
 			{slug: "erase-personal-data", title: "Erase Personal Data", cap: "manage_options"},
 		}},

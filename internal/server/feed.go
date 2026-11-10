@@ -104,6 +104,7 @@ func (s *Server) feedPosts(ctx context.Context, q *siteQuery) []*store.Post {
 			return nil
 		}
 		pq.Search = q.Search
+		pq.OrderBy = "relevance"
 		pq.Types = siteSearchTypes()
 		pq.ExcludePassworded = true // feeds are anonymous (WP_Query::parse_search())
 	}

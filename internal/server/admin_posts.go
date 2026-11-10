@@ -1650,6 +1650,12 @@ func (s *Server) postNew(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	if typ == "post" { // Settings > Writing > Default Post Format
+		if f := s.settings.String("default_post_format"); f != "" && f != "0" && postFormatLabels[f] != "" {
+			p.Format = f
+			_ = s.store.UpdatePost(c, p, u.ID)
+		}
+	}
 	p.Title = c.Query("post_title")
 	p.Content = c.Query("content")
 	s.golylangNewPost(c, p) // Golylang: language, translation link and copied content (from_post, new_lang)

@@ -322,6 +322,8 @@ func (s *Server) routes() *gin.Engine {
 		admin.Any("/theme-preview/*rest", s.themePreviewSite)
 	}
 	admin.GET("/site-health", s.siteHealth)
+	admin.GET("/scheduled-actions", s.scheduledActionsScreen)
+	admin.POST("/scheduled-actions", s.scheduledActionsScreen)
 	admin.GET("/export", s.exportScreen)
 	admin.GET("/theme-editor", s.themeEditor)
 	admin.GET("/plugin-editor", s.pluginEditor)

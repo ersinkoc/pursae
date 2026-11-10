@@ -701,6 +701,7 @@ func (s *Server) mainPosts(ctx context.Context, q *siteQuery, u *store.User) ([]
 	case "search":
 		pq.Types = siteSearchTypes()
 		pq.Search = q.Search
+		pq.OrderBy = "relevance" // title matches first, then ts_rank, then newest
 		// WP_Query::parse_search(): logged-out visitors do not search password-protected posts, or
 		// search would reveal the hidden text word by word.
 		pq.ExcludePassworded = u == nil

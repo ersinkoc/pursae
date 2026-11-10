@@ -125,6 +125,7 @@ Discourage search engines from indexing this site</label>
 {{define "options-discussion"}}<table class="form-table indent-children" role="presentation">
 <tr><th scope="row">Default post settings</th>
 <td><fieldset><legend class="screen-reader-text"><span>Default post settings</span></legend>
+<em>Pursae does not send or receive pingbacks and trackbacks yet; these options are only stored.</em><br />
 <label for="default_pingback_flag"><input name="default_pingback_flag" type="checkbox" id="default_pingback_flag" value="1"{{if settingBool "default_pingback_flag"}} checked="checked"{{end}} /> Attempt to notify any blogs linked to from the post</label><br />
 <label for="default_ping_status"><input name="default_ping_status" type="checkbox" id="default_ping_status" value="open"{{if eq (settingStr "default_ping_status") "open"}} checked="checked"{{end}} /> Allow link notifications from other blogs (pingbacks and trackbacks) on new posts</label><br />
 <label for="default_comment_status"><input name="default_comment_status" type="checkbox" id="default_comment_status" value="open"{{if eq (settingStr "default_comment_status") "open"}} checked="checked"{{end}} /> Allow people to submit comments on new posts</label><br />
@@ -182,25 +183,8 @@ Discourage search engines from indexing this site</label>
 <td><fieldset><legend class="screen-reader-text"><span>Avatar Display</span></legend>
 <label for="show_avatars"><input type="checkbox" id="show_avatars" name="show_avatars" value="1"{{if settingBool "show_avatars"}} checked="checked"{{end}} /> Show Avatars</label>
 </fieldset></td></tr>
-<tr class="avatar-settings"><th scope="row">Maximum Rating</th>
-<td><fieldset><legend class="screen-reader-text"><span>Maximum Rating</span></legend>
-<label><input type="radio" name="avatar_rating" value="G"{{if eq (settingStr "avatar_rating") "G"}} checked="checked"{{end}} /> G &#8212; Suitable for all audiences</label><br />
-<label><input type="radio" name="avatar_rating" value="PG"{{if eq (settingStr "avatar_rating") "PG"}} checked="checked"{{end}} /> PG &#8212; Possibly offensive, usually for audiences 13 and above</label><br />
-<label><input type="radio" name="avatar_rating" value="R"{{if eq (settingStr "avatar_rating") "R"}} checked="checked"{{end}} /> R &#8212; Intended for adult audiences above 17</label><br />
-<label><input type="radio" name="avatar_rating" value="X"{{if eq (settingStr "avatar_rating") "X"}} checked="checked"{{end}} /> X &#8212; Even more mature than above</label><br />
-</fieldset></td></tr>
 <tr class="avatar-settings"><th scope="row">Default Avatar</th>
-<td class="defaultavatarpicker"><fieldset><legend class="screen-reader-text"><span>Default Avatar</span></legend>
-<p>For users without a custom avatar of their own, you can either display a generic logo or a generated one based on their email address.</p>
-<label><input type="radio" name="avatar_default" id="avatar_mystery" value="mystery"{{if eq (settingStr "avatar_default") "mystery"}} checked="checked"{{end}} /> Mystery Person</label><br />
-<label><input type="radio" name="avatar_default" id="avatar_blank" value="blank"{{if eq (settingStr "avatar_default") "blank"}} checked="checked"{{end}} /> Blank</label><br />
-<label><input type="radio" name="avatar_default" id="avatar_gravatar_default" value="gravatar_default"{{if eq (settingStr "avatar_default") "gravatar_default"}} checked="checked"{{end}} /> Gravatar Logo</label><br />
-<label><input type="radio" name="avatar_default" id="avatar_identicon" value="identicon"{{if eq (settingStr "avatar_default") "identicon"}} checked="checked"{{end}} /> Identicon (Generated)</label><br />
-<label><input type="radio" name="avatar_default" id="avatar_wavatar" value="wavatar"{{if eq (settingStr "avatar_default") "wavatar"}} checked="checked"{{end}} /> Wavatar (Generated)</label><br />
-<label><input type="radio" name="avatar_default" id="avatar_monsterid" value="monsterid"{{if eq (settingStr "avatar_default") "monsterid"}} checked="checked"{{end}} /> MonsterID (Generated)</label><br />
-<label><input type="radio" name="avatar_default" id="avatar_retro" value="retro"{{if eq (settingStr "avatar_default") "retro"}} checked="checked"{{end}} /> Retro (Generated)</label><br />
-<label><input type="radio" name="avatar_default" id="avatar_robohash" value="robohash"{{if eq (settingStr "avatar_default") "robohash"}} checked="checked"{{end}} /> RoboHash (Generated)</label><br />
-</fieldset></td></tr>
+<td class="defaultavatarpicker"><p class="description">Pursae never contacts Gravatar. Users without a profile picture show a generic silhouette; each user can choose a picture from the Media Library on their profile.</p></td></tr>
 </table>{{end}}
 
 {{define "options-media"}}<h2 class="title">Image sizes</h2>
