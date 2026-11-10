@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	_ "embed"
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
@@ -99,6 +100,7 @@ func maintFontStack(k string) string {
 
 // maintPageView is the page template's data.
 type maintPageView struct {
+	RTL          bool
 	S            maintSettings
 	Title        string
 	Heading      string
@@ -123,6 +125,9 @@ type maintPageView struct {
 	LoginAction  string
 	RedirectTo   string
 	PolicyURL    string
+	ConsentHead  template.HTML // Pursae Cookie's consent defaults and styles (when the plugin is on)
+	AnalyticsTag template.HTML // the Google Analytics snippet, inert until the visitor accepts statistics when Pursae Cookie is on
+	ConsentFoot  template.HTML // Pursae Cookie's banner and script
 	HasModules   bool
 }
 
@@ -156,6 +161,16 @@ func (s *Server) maintVars(v string) string {
 func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSettings, status int) {
 	ctx := r.Context()
 	home := s.links(ctx).HomeURL("/")
+	lang := s.maintTranslate(r, &st) // Pursae Multi Language: the visitor's language, when it is active
+	if st.WBTemplate > 0 {
+		wl := strings.ReplaceAll(s.settings.String("WPLANG"), "_", "-")
+		if lang != nil {
+			wl = lang.W3C()
+		}
+		if s.maintRenderWB(w, r, st, status, wl) {
+			return
+		}
+	}
 	v := maintPageView{
 		S:            st,
 		Title:        s.maintVars(st.Title),
@@ -177,6 +192,10 @@ func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSet
 		RedirectTo:   r.URL.RequestURI(),
 	}
 	_, v.Preview = r.URL.Query()[maintPreviewParam]
+	if lang != nil {
+		v.Lang, v.RTL = lang.W3C(), lang.RTL
+		w.Header().Add("Vary", "Accept-Language, Cookie")
+	}
 	if v.Lang == "" {
 		v.Lang = "en-US"
 	}
@@ -200,6 +219,22 @@ func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSet
 				v.PolicyURL = s.links(ctx).Permalink(p)
 			}
 		}
+	}
+	if st.Analytics != "" {
+		tag := `<script async src="https://www.googletagmanager.com/gtag/js?id=` + template.HTMLEscapeString(st.Analytics) + `"></script>` + "\n" +
+			`<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',` + maintJSString(st.Analytics) + `);</script>`
+		if s.gooikeOn() {
+			// Analytics must not run before consent: Consent Mode defaults, the tag held back in the
+			// statistics category and the banner, exactly as on the site's own pages.
+			gs := s.gooikeLoad()
+			v.ConsentHead = template.HTML(gooikeConsentModeScript(&gs) +
+				`<link rel="stylesheet" id="gooike-css" href="` + gooikeAssets + `/gooike.css?ver=` + gooikeVersion + `" media="all" />` + "\n" +
+				`<style id="gooike-inline-css">` + gooikeCSSVars(gs.Design) + gooikeCustomCSS(gs.Design) + "</style>\n")
+			tag = gooikeInert(tag, "statistics")
+			v.ConsentFoot = template.HTML(s.gooikeMarkup(ctx, &gs, false) + gooikeConfigScript(&gs, false) +
+				`<script src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" id="gooike-js" defer></script>` + "\n")
+		}
+		v.AnalyticsTag = template.HTML(tag)
 	}
 	v.HasModules = v.EndUnix > 0 || st.Progress || st.Subscribe || len(v.Social) > 0
 	v.CSS = template.CSS(s.maintCSS(st))
@@ -272,4 +307,10 @@ func (s *Server) maintCSS(st maintSettings) string {
 	// The admin's own CSS cannot close the style element.
 	b.WriteString(strings.ReplaceAll(st.CustomCSS, "</", `<\/`))
 	return b.String()
+}
+
+// maintJSString is a JavaScript string literal of a short, already validated identifier.
+func maintJSString(v string) string {
+	raw, _ := json.Marshal(v)
+	return string(raw)
 }

@@ -6,12 +6,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
+	"maps"
 	"net"
 	"net/http"
 	"net/url"
 	"path"
+	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"wpgo/internal/auth"
@@ -73,6 +77,12 @@ type maintSettings struct {
 	AccentColor     string `json:"controls_color"` // buttons, countdown, progress bar
 	CustomCSS       string `json:"custom_css"`
 
+	// Pursae Web Builder: the post id of a published Theme Builder template used as the page (0 = built-in page).
+	WBTemplate int64 `json:"web_builder_page"`
+
+	// Schedule: with the mode on, the page appears at StartDate (site time zone) instead of at once.
+	StartDate string `json:"start_date"` // "2006-01-02T15:04"; empty = from now on
+
 	// Modules
 	Countdown       bool              `json:"countdown"`
 	CountdownEnd    string            `json:"expiry_date"` // "2006-01-02T15:04" in the site's time zone
@@ -86,6 +96,10 @@ type maintSettings struct {
 	SubscribeButton string            `json:"subscribe_button"`
 	SubscribeThanks string            `json:"subscribe_thanks"`
 	SubscribeNotify bool              `json:"subscribe_notify"` // e-mail the site admin about each subscriber
+	DoubleOptIn     bool              `json:"double_optin"`     // subscribers confirm their address by a link before they count
+	NotifyOnOpen    bool              `json:"notify_on_open"`   // e-mail the subscribers when maintenance mode ends
+	NotifySubject   string            `json:"notify_subject"`
+	NotifyBody      string            `json:"notify_body"`
 	GDPR            bool              `json:"gdpr"`
 	GDPRText        string            `json:"gdpr_text"`
 	GDPRPolicyLink  bool              `json:"gdpr_policy_link"`
@@ -163,6 +177,8 @@ func maintDefaults() maintSettings {
 		SubscribeTitle:  "Get notified when we're back",
 		SubscribeButton: "Notify me",
 		SubscribeThanks: "Thank you! We'll let you know.",
+		NotifySubject:   "%sitetitle% is open again",
+		NotifyBody:      "Good news: %sitetitle% is back online.\n\nVisit us: %siteurl%",
 		GDPRText:        "I agree that my e-mail address is stored to notify me when the site opens.",
 		Social:          map[string]string{},
 		SocialNewTab:    true,
@@ -192,9 +208,24 @@ func (s *Server) maintOn() bool {
 }
 
 // maintLoad returns the saved settings over the defaults.
+//
+// The decoded value is cached against the settings store's cached option value, which is replaced
+// (never mutated) by every save: while the option is unchanged, the gate that runs for every request
+// does not marshal and unmarshal about sixty fields again.
 func (s *Server) maintLoad() maintSettings {
+	v := s.settings.Get(maintOptions)
+	if m, ok := v.(map[string]any); ok {
+		maintCache.Lock()
+		if maintCache.src != nil && reflect.ValueOf(maintCache.src).Pointer() == reflect.ValueOf(m).Pointer() {
+			st := maintCache.st
+			maintCache.Unlock()
+			st.Social = maps.Clone(st.Social)
+			return st
+		}
+		maintCache.Unlock()
+	}
 	st := maintDefaults()
-	if v := s.settings.Get(maintOptions); v != nil {
+	if v != nil {
 		if raw, err := json.Marshal(v); err == nil {
 			_ = json.Unmarshal(raw, &st)
 		}
@@ -208,7 +239,21 @@ func (s *Server) maintLoad() maintSettings {
 	if maintThemeByKey(st.Theme) == nil {
 		st.Theme = "default"
 	}
+	if m, ok := v.(map[string]any); ok {
+		cached := st
+		cached.Social = maps.Clone(st.Social)
+		maintCache.Lock()
+		maintCache.src, maintCache.st = m, cached
+		maintCache.Unlock()
+	}
 	return st
+}
+
+// maintCache holds the last decoded settings with the option map they were decoded from.
+var maintCache struct {
+	sync.Mutex
+	src map[string]any
+	st  maintSettings
 }
 
 // maintSave stores the settings and drops every cached page: what visitors see changes.
@@ -216,6 +261,7 @@ func (s *Server) maintSave(ctx context.Context, st maintSettings) error {
 	if err := s.settings.Set(ctx, map[string]any{maintOptions: st}); err != nil {
 		return err
 	}
+	s.maintRegisterStrings(ctx, st)
 	s.purgeAll(ctx)
 	return nil
 }
@@ -223,8 +269,15 @@ func (s *Server) maintSave(ctx context.Context, st maintSettings) error {
 // maintSetMode switches maintenance mode on or off.
 func (s *Server) maintSetMode(ctx context.Context, on bool) error {
 	st := s.maintLoad()
+	was := st.Enabled
 	st.Enabled = on
-	return s.maintSave(ctx, st)
+	if err := s.maintSave(ctx, st); err != nil {
+		return err
+	}
+	if was && !on {
+		s.maintNotifyOpen(ctx, st)
+	}
+	return nil
 }
 
 // maintClosed reports whether visitors currently get the maintenance page: the plugin is active,
@@ -238,14 +291,32 @@ func (s *Server) maintClosed(ctx context.Context) (maintSettings, bool) {
 	if !st.Enabled {
 		return st, false
 	}
+	if start, ok := s.maintStart(st); ok && time.Now().Before(start) { // scheduled: the site is open until then
+		return st, false
+	}
 	if end, ok := s.maintEnd(st); ok && st.AutoDisable && !time.Now().Before(end) {
 		st.Enabled = false
 		if err := s.maintSave(context.WithoutCancel(ctx), st); err != nil {
 			log.Printf("maintenance: auto-disable: %v", err)
+		} else {
+			s.maintNotifyOpen(context.WithoutCancel(ctx), st)
 		}
 		return st, false
 	}
 	return st, true
+}
+
+// maintStart is the scheduled start of maintenance mode, when one is set.
+func (s *Server) maintStart(st maintSettings) (time.Time, bool) {
+	return s.maintParseTime(st.StartDate)
+}
+
+// maintTick is run by the scheduler: it applies the schedule without waiting for a visitor, so the
+// auto-disable at the end of the countdown happens (and subscribers are told) on a quiet site too.
+func (s *Server) maintTick(ctx context.Context) {
+	if s.maintOn() && s.settings.Installed() {
+		s.maintClosed(ctx)
+	}
 }
 
 // maintEnd is the countdown's end, when the countdown is on and has one.
@@ -253,8 +324,15 @@ func (s *Server) maintEnd(st maintSettings) (time.Time, bool) {
 	if !st.Countdown || st.CountdownEnd == "" {
 		return time.Time{}, false
 	}
+	return s.maintParseTime(st.CountdownEnd)
+}
+
+func (s *Server) maintParseTime(v string) (time.Time, bool) {
+	if v == "" {
+		return time.Time{}, false
+	}
 	for _, layout := range []string{"2006-01-02T15:04", "2006-01-02T15:04:05", "2006-01-02 15:04", "2006-01-02"} {
-		if t, err := time.ParseInLocation(layout, st.CountdownEnd, s.loc()); err == nil {
+		if t, err := time.ParseInLocation(layout, v, s.loc()); err == nil {
 			return t, true
 		}
 	}
@@ -276,12 +354,18 @@ func (s *Server) maintenanceServe(w http.ResponseWriter, r *http.Request) bool {
 		case "mtnc_unlock":
 			s.maintUnlock(w, r)
 			return true
+		case "mtnc_confirm", "mtnc_unsubscribe":
+			s.maintSubLink(w, r, r.URL.Query().Get("action"))
+			return true
 		}
+		return false
+	}
+	if maintAlwaysOpen(p) { // before the settings are read: static files and wp-admin cost nothing here
 		return false
 	}
 	_, preview := r.URL.Query()[maintPreviewParam]
 	st, closed := s.maintClosed(r.Context())
-	if (!closed && !preview) || maintAlwaysOpen(p) {
+	if !closed && !preview {
 		return false
 	}
 	if preview { // the settings screen's Preview (the Themes tab passes &theme=)
@@ -303,9 +387,15 @@ func (s *Server) maintenanceServe(w http.ResponseWriter, r *http.Request) bool {
 			// tokens) reach the REST layer, which validates them and enforces capabilities.
 			return false
 		}
+		// Coming Soon answers pages with 200 so search engines keep what they know; the REST API gets a plain
+		// 403 there instead of a 503 that would tell clients and crawlers the site is down.
+		code := http.StatusServiceUnavailable
+		if st.Mode == "coming_soon" {
+			code = http.StatusForbidden
+		}
 		s.maintHeaders(w, st, "application/json; charset=utf-8")
-		s.maintStatus(w, st, http.StatusServiceUnavailable)
-		_, _ = w.Write([]byte(`{"code":"maintenance_mode","message":"The site is undergoing maintenance.","data":{"status":503}}`))
+		s.maintStatus(w, st, code)
+		_, _ = fmt.Fprintf(w, `{"code":"maintenance_mode","message":"The site is undergoing maintenance.","data":{"status":%d}}`, code)
 		return true
 	case maintIsFeed(r) || strings.HasPrefix(path.Base(p), "wp-sitemap"):
 		if !st.BlockFeeds {

@@ -219,8 +219,15 @@ func (s *Server) gontactCaptchaHash(prefix, answer string) string {
 	return hex.EncodeToString(m.Sum(nil))
 }
 
+// gontactCaptchaMaxRows bounds the open challenges (each holds a PNG); they expire after an hour.
+var gontactCaptchaMaxRows = 5000
+
 // gontactCaptchaNew creates a challenge and returns its prefix (wpcf7_generate_captcha()).
 func (s *Server) gontactCaptchaNew(ctx context.Context, o gfCaptchaOpts) (string, error) {
+	var n int
+	if _ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM gontact_captcha`).Scan(&n); n >= gontactCaptchaMaxRows {
+		return "", errors.New("too many open CAPTCHA challenges")
+	}
 	word := gfCaptchaWord()
 	png, err := gfCaptchaRender(word, o)
 	if err != nil {
@@ -283,7 +290,10 @@ func (s *Server) gontactCaptchaImage(c *gin.Context) {
 // gontactCaptchaCleanup is the gontact_captcha_cleanup event (wpcf7_cleanup_captcha_files()).
 func (s *Server) gontactCaptchaCleanup(ctx context.Context) error {
 	_, err := s.store.Pool.Exec(ctx, `DELETE FROM gontact_captcha WHERE created_at < now() - $1::interval`, gfCaptchaInterval())
-	return err
+	if err != nil {
+		return err
+	}
+	return s.gontactEntriesCleanup(ctx) // the hourly event also applies the entries retention
 }
 
 // gontactCaptchaRefill is wpcf7_captcha_ajax_refill(): a new image URL per [captchac] tag.

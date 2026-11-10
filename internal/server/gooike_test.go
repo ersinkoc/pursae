@@ -443,3 +443,92 @@ func TestGooikeScanAndGeo(t *testing.T) {
 		}
 	}
 }
+
+func TestGooikeBlockScripts(t *testing.T) {
+	st := gooikeDefaults()
+	doc := `<p>x</p><script async src="https://www.googletagmanager.com/gtag/js?id=G-ABCD1234"></script>` +
+		`<script>fbq('init','1234567');/* connect.facebook.net */</script>` +
+		`<script src="https://www.googletagmanager.com/gtag/js?id=AW-1234567"></script>` +
+		`<script src="https://www.google.com/recaptcha/api.js?render=k"></script>` +
+		`<script data-gooike-category="marketing" src="https://x.example/a.js"></script>` +
+		`<script type="text/plain" data-gooike-category="statistics" data-gooike-src="https://static.hotjar.com/a.js"></script>` +
+		`<script src="/wp-content/themes/t/app.js"></script>`
+	out := gooikeBlockScripts(&st, doc)
+	for _, want := range []string{
+		`<script type="text/plain" data-gooike-category="statistics" async data-gooike-src="https://www.googletagmanager.com/gtag/js?id=G-ABCD1234">`,
+		`<script type="text/plain" data-gooike-category="marketing">fbq('init'`,
+		`<script type="text/plain" data-gooike-category="marketing" data-gooike-src="https://www.googletagmanager.com/gtag/js?id=AW-1234567">`,
+		`data-gooike-category="` + st.EmbedCategory + `" data-gooike-src="https://www.google.com/recaptcha/api.js?render=k"`,
+		`<script type="text/plain" data-gooike-category="marketing" data-gooike-src="https://x.example/a.js">`,
+		`<script src="/wp-content/themes/t/app.js"></script>`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %s\n%s", want, out)
+		}
+	}
+	if strings.Count(out, "data-gooike-category") != 6 {
+		t.Errorf("an inert script was handled twice:\n%s", out)
+	}
+	// A service the script manager runs as necessary is left alone.
+	st.Scripts = []gooikeScript{{Enabled: true, Category: "necessary", Service: "ga4", ServiceID: "G-ABCD1234"}}
+	if got := gooikeBlockScripts(&st, `<script async src="https://www.googletagmanager.com/gtag/js?id=G-ABCD1234"></script>`); strings.Contains(got, "text/plain") {
+		t.Errorf("necessary service blocked: %s", got)
+	}
+}
+
+func TestGooikeNewServices(t *testing.T) {
+	for key, id := range map[string]string{"gads": "AW-1234567", "pinterest": "2612345678901", "uet": "12345678"} {
+		sv := gooikeServiceByKey(key)
+		if sv == nil || !sv.IDPattern.MatchString(id) {
+			t.Fatalf("service %s missing or pattern rejects %s", key, id)
+		}
+		sc := gooikeScript{Service: key, ServiceID: id}
+		if c := sc.code(); !strings.Contains(c, id) || !strings.Contains(strings.ToLower(c), sv.Detect[0]) {
+			t.Errorf("%s: code does not carry its id and detect signature: %s", key, c)
+		}
+		if len(sv.Cookies) == 0 || len(sv.Script) == 0 {
+			t.Errorf("%s lacks cookies or CSP sources", key)
+		}
+	}
+}
+
+func TestGooikeScheduledScan(t *testing.T) {
+	base, c, srv := gooikeSite(t)
+	scanPost := func(f url.Values) {
+		_, b, _ := get(t, c, base+"/wp-admin/gooike?page=categories&tab=scan")
+		f.Set("_wpnonce", formNonce(t, b))
+		f.Set("page", "categories")
+		f.Set("tab", "scan")
+		f.Set("do", "scan_schedule")
+		if code, _, loc := post(t, c, base+"/wp-admin/gooike", f); code != http.StatusFound || strings.Contains(loc, "gooike-error") {
+			t.Fatalf("scan_schedule: %d %s", code, loc)
+		}
+	}
+	scanPost(url.Values{"scan_auto": {"1"}})
+	ctx := context.Background()
+	var n int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM jobs WHERE name = $1 AND recurrence = 'weekly'`, gooikeScanJob).Scan(&n)
+	if n != 1 {
+		t.Fatalf("weekly scan job not scheduled: %d", n)
+	}
+	st := srv.gooikeLoad()
+	st.Cookies = []gooikeCookieRow{}
+	_ = srv.gooikeSave(ctx, st)
+	if err := srv.jobHandlers()[gooikeScanJob](ctx, nil); err != nil {
+		t.Fatal(err)
+	}
+	st = srv.gooikeLoad()
+	if st.ScanLast == "" {
+		t.Error("scheduled scan stored no result")
+	}
+	// Geo status on the settings screen.
+	_, body, _ := get(t, c, base+"/wp-admin/gooike?page=settings")
+	if !strings.Contains(body, "Country header on this request") || !strings.Contains(body, "missing") {
+		t.Error("settings screen lacks the geo header indicator")
+	}
+	scanPost(url.Values{})
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM jobs WHERE name = $1`, gooikeScanJob).Scan(&n)
+	if n != 0 {
+		t.Error("job not removed when the weekly scan is switched off")
+	}
+}

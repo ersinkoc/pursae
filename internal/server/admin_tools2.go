@@ -462,7 +462,7 @@ func (s *Server) sendUserRequest(c *gin.Context, r personalRequest) personalRequ
 		"You can safely ignore and delete this email if you do not want to\ntake this action.\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"
 	body = strings.NewReplacer("###DESCRIPTION###", privacyActionDescription(r.Type), "###CONFIRM_URL###", confirm,
 		"###SITENAME###", site, "###SITEURL###", s.links(c).HomeURL("/")).Replace(body)
-	s.sendMail(c, mail.Message{To: []string{r.Email}, Subject: fmt.Sprintf("[%s] Confirm Action: %s", site, privacyActionDescription(r.Type)), Body: body})
+	s.sendMail(c, mail.Message{Kind: "privacy_confirm", To: []string{r.Email}, Subject: fmt.Sprintf("[%s] Confirm Action: %s", site, privacyActionDescription(r.Type)), Body: body})
 	return r
 }
 
@@ -524,7 +524,7 @@ func (s *Server) notifyRequestConfirmed(c *gin.Context, r personalRequest) {
 		"You can view and manage these data privacy requests here:\n\n###MANAGE_URL###\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"
 	body = strings.NewReplacer("###SITENAME###", site, "###USER_EMAIL###", r.Email, "###DESCRIPTION###", privacyActionDescription(r.Type),
 		"###MANAGE_URL###", s.privacyAdminURL(c, r.Type), "###SITEURL###", s.links(c).HomeURL("/")).Replace(body)
-	s.sendMail(c, mail.Message{To: []string{s.settings.String("admin_email")}, Subject: fmt.Sprintf("[%s] Action Confirmed: %s", site, privacyActionDescription(r.Type)), Body: body})
+	s.sendMail(c, mail.Message{Kind: "privacy_confirmed", To: []string{s.settings.String("admin_email")}, Subject: fmt.Sprintf("[%s] Action Confirmed: %s", site, privacyActionDescription(r.Type)), Body: body})
 }
 
 // completePersonalRequest is _wp_privacy_completed_request().
@@ -898,7 +898,7 @@ func (s *Server) sendPersonalDataExport(c *gin.Context, r personalRequest) (pers
 	body := "Howdy,\n\nYour request for an export of personal data has been completed. You may\ndownload your personal data by clicking on the link below. For privacy\nand security, we will automatically delete the file on ###EXPIRATION###,\nso please download it before then.\n\n###LINK###\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"
 	body = strings.NewReplacer("###EXPIRATION###", expires, "###LINK###", s.uploadURL(c, "wp-personal-data-exports/"+r.ExportFile),
 		"###SITENAME###", site, "###SITEURL###", s.links(c).HomeURL("/")).Replace(body)
-	s.sendMail(c, mail.Message{To: []string{r.Email}, Subject: "[" + site + "] Personal Data Export", Body: body})
+	s.sendMail(c, mail.Message{Kind: "privacy_export", To: []string{r.Email}, Subject: "[" + site + "] Personal Data Export", Body: body})
 	return r, nil
 }
 
@@ -960,7 +960,7 @@ func (s *Server) notifyErasureFulfilled(c *gin.Context, r personalRequest) {
 	}
 	body += "Regards,\nAll at ###SITENAME###\n###SITEURL###\n"
 	body = strings.NewReplacer("###SITENAME###", site, "###SITEURL###", s.links(c).HomeURL("/")).Replace(body)
-	s.sendMail(c, mail.Message{To: []string{r.Email}, Subject: "[" + site + "] Erasure Request Fulfilled", Body: body})
+	s.sendMail(c, mail.Message{Kind: "privacy_erased", To: []string{r.Email}, Subject: "[" + site + "] Erasure Request Fulfilled", Body: body})
 }
 
 // Privacy Policy Guide (options-privacy.php?tab=policyguide) ---------------------------

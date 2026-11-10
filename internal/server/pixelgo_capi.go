@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -44,8 +45,66 @@ var (
 
 const (
 	pixelOrderMeta = "_pixelgo"      // order meta: the visitor snapshot taken at checkout
-	pixelSentMeta  = "_pixelgo_sent" // order meta: the Purchase went out
+	pixelSentMeta  = "_pixelgo_sent" // order meta: platform → time the platform accepted the Purchase
 )
+
+// pixelRetryDelays are the waits before the 2nd, 3rd and 4th delivery attempt of an event whose platform
+// answered 429, 5xx or not at all. A variable so tests can shorten it.
+var pixelRetryDelays = []time.Duration{2 * time.Second, 15 * time.Second, 90 * time.Second}
+
+// pixelInflight holds "<order id>:<platform>" of the Purchases being delivered right now, so a second
+// payment_complete (a webhook retry) does not send the same Purchase again before the first is marked.
+var (
+	pixelInflight sync.Map
+	pixelSentMu   sync.Mutex
+)
+
+// pixelRetryable: a failure that may pass by itself (network error, rate limit, server error).
+func pixelRetryable(status string, code int) bool {
+	return status == "error" && (code == 0 || code == http.StatusTooManyRequests || code >= 500)
+}
+
+// pixelSentSet reads the order meta of the platforms that already accepted the Purchase. The first
+// version stored one timestamp string for all platforms; it counts as "all sent".
+func pixelSentSet(o *gooOrder) (all bool, set map[string]bool) {
+	set = map[string]bool{}
+	switch v := o.Meta[pixelSentMeta].(type) {
+	case string:
+		return v != "", set
+	case map[string]any:
+		for k := range v {
+			set[k] = true
+		}
+	case map[string]string:
+		for k := range v {
+			set[k] = true
+		}
+	}
+	return false, set
+}
+
+// pixelMarkSent records that a platform accepted the Purchase of an order, in a fresh copy of the order.
+func (s *Server) pixelMarkSent(ctx context.Context, orderID int64, platform string) {
+	pixelSentMu.Lock()
+	defer pixelSentMu.Unlock()
+	o, err := s.gooGetOrder(ctx, orderID)
+	if err != nil || o == nil {
+		return
+	}
+	if o.Meta == nil {
+		o.Meta = map[string]any{}
+	}
+	m := map[string]any{}
+	switch v := o.Meta[pixelSentMeta].(type) {
+	case map[string]any:
+		m = v
+	case string:
+		return // legacy: everything is sent
+	}
+	m[platform] = time.Now().UTC().Format(time.RFC3339)
+	o.Meta[pixelSentMeta] = m
+	_ = s.gooSaveOrder(ctx, o, false)
+}
 
 var pixelHTTP = &http.Client{
 	Timeout:       8 * time.Second,
@@ -94,6 +153,7 @@ type pixelServerEvent struct {
 	User                  map[string]string // hashed: em, ph, fn, ln, ct, st, zp, country, external_id
 	Platforms             []string          // limit to these (empty: all that deliver server-side)
 	Test                  bool
+	OrderID               int64 // Source "order": the order whose Purchase this is; a platform's 2xx is recorded on it
 }
 
 func (s *Server) registerPixelREST() {
@@ -158,7 +218,7 @@ func (s *Server) pixelEventREST(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusBadRequest, "pixelgo_invalid_event", "Unknown event.")
 		return
 	}
-	if len(ready) == 0 || name == "Purchase" { // purchases are sent from the order
+	if len(ready) == 0 || name == "Purchase" || name == "Refund" { // purchases and refunds are sent from the order
 		c.JSON(http.StatusAccepted, gin.H{"queued": 0})
 		return
 	}
@@ -231,11 +291,22 @@ func (s *Server) pixelRequestCookies(c *gin.Context) map[string]string {
 				}
 			}
 			if m["fbc"] == "" && m["fbclid"] != "" {
-				m["fbc"] = "fb.1." + strconv.FormatInt(time.Now().UnixMilli(), 10) + "." + m["fbclid"]
+				m["fbc"] = pixelFbc(a["fbts"], m["fbclid"], time.Now())
 			}
 		}
 	}
 	return m
+}
+
+// pixelFbc builds Meta's click id value fb.1.<ms the click was first seen>.<fbclid>. firstSeen is the
+// pixelgo_attr time (milliseconds) of the click; without it (a cookie from before it was recorded, or a
+// malformed value) the current time is used, which is the best the server knows.
+func pixelFbc(firstSeen, fbclid string, now time.Time) string {
+	ms := now.UnixMilli()
+	if v, err := strconv.ParseInt(firstSeen, 10, 64); err == nil && v > 1e12 && v <= ms {
+		ms = v
+	}
+	return "fb.1." + strconv.FormatInt(ms, 10) + "." + fbclid
 }
 
 // pixelCleanParams keeps only the canonical, well-formed parameters of an event and bounds their size.
@@ -321,20 +392,53 @@ func (s *Server) pixelDispatch(ev pixelServerEvent) {
 			continue
 		}
 		def, cfg := def, st.Platforms[def.Key]
+		claim := ""
+		if ev.OrderID > 0 && ev.Source == "order" {
+			claim = strconv.FormatInt(ev.OrderID, 10) + ":" + def.Key
+			if _, busy := pixelInflight.LoadOrStore(claim, true); busy {
+				continue
+			}
+		}
 		if !pixelAdmit(ev.Source) {
+			if claim != "" {
+				pixelInflight.Delete(claim)
+			}
 			continue
 		}
 		go func() {
 			defer pixelQueued.Add(-1)
-			pixelSlots <- struct{}{}
-			defer func() { <-pixelSlots }()
+			if claim != "" {
+				defer pixelInflight.Delete(claim)
+			}
+			status, code, msg := s.pixelDeliverRetry(def.Key, cfg, ev)
 			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 			defer cancel()
-			status, code, msg := s.pixelDeliver(ctx, def.Key, cfg, ev)
+			if claim != "" && (status == "ok" || status == "skipped") {
+				s.pixelMarkSent(ctx, ev.OrderID, def.Key)
+			}
 			if status != "skipped" || ev.Test {
 				s.pixelLog(ctx, &st, def.Key, ev, status, code, msg)
 			}
 		}()
+	}
+}
+
+// pixelDeliverRetry delivers an event and, while the platform fails in a way that can pass (network
+// error, 429, 5xx), tries again after growing waits. A delivery slot is held only during an attempt.
+func (s *Server) pixelDeliverRetry(platform string, cfg pixelPlatformCfg, ev pixelServerEvent) (string, int, string) {
+	for attempt := 0; ; attempt++ {
+		pixelSlots <- struct{}{}
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		status, code, msg := s.pixelDeliver(ctx, platform, cfg, ev)
+		cancel()
+		<-pixelSlots
+		if ev.Test || attempt >= len(pixelRetryDelays) || !pixelRetryable(status, code) {
+			if attempt > 0 && status == "error" {
+				msg = "After " + strconv.Itoa(attempt+1) + " attempts: " + msg
+			}
+			return status, code, msg
+		}
+		time.Sleep(pixelRetryDelays[attempt])
 	}
 }
 
@@ -358,8 +462,8 @@ func (s *Server) pixelDeliver(ctx context.Context, platform string, cfg pixelPla
 	case "pinterest":
 		code, body, err = pixelSendPinterest(ctx, cfg, name, ev)
 	case "ga4":
-		if ev.Name != "Purchase" {
-			return "skipped", 0, "GA4 gets Purchase server-side only."
+		if ev.Name != "Purchase" && ev.Name != "Refund" {
+			return "skipped", 0, "GA4 gets Purchase and Refund server-side only."
 		}
 		code, body, err = pixelSendGA4(ctx, cfg, name, ev, false)
 	default:
@@ -784,6 +888,125 @@ func (s *Server) pixelSendTest(ctx context.Context, platform string) (string, in
 func init() {
 	gooOn("order_created", 90, func(s *Server, ctx context.Context, arg any) { s.pixelOrderCreated(ctx, arg.(*gooOrder)) })
 	gooOn("payment_complete", 90, func(s *Server, ctx context.Context, arg any) { s.pixelPaymentComplete(ctx, arg.(*gooOrder)) })
+	gooOn("order_fully_refunded", 90, func(s *Server, ctx context.Context, arg any) { s.pixelRefunded(ctx, arg.(*gooRefundEvent)) })
+	gooOn("order_partially_refunded", 90, func(s *Server, ctx context.Context, arg any) { s.pixelRefunded(ctx, arg.(*gooRefundEvent)) })
+	gooOn("hourly", 90, func(s *Server, ctx context.Context, _ any) { s.pixelRetryPurchases(ctx) })
+}
+
+// pixelRetryPurchases sends again the Purchases of orders paid in the last 24 hours that a platform has
+// not accepted yet: the attempts of pixelDispatch ran out, or the process stopped in the middle of one.
+// Orders without a checkout snapshot (no platform was ready at checkout) are not touched.
+func (s *Server) pixelRetryPurchases(ctx context.Context) int {
+	if !s.pixelOn() {
+		return 0
+	}
+	st := s.pixelLoad()
+	if len(st.serverReady()) == 0 || !st.Woo["purchase"] {
+		return 0
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM goo_orders WHERE type = 'shop_order' AND meta->'`+pixelOrderMeta+`' IS NOT NULL
+		AND COALESCE(date_paid, date_created) BETWEEN now() - interval '24 hours' AND now() - interval '5 minutes' ORDER BY id LIMIT 200`)
+	if err != nil {
+		return 0
+	}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if rows.Scan(&id) == nil {
+			ids = append(ids, id)
+		}
+	}
+	rows.Close()
+	n := 0
+	for _, id := range ids {
+		if o, err := s.gooGetOrder(ctx, id); err == nil && s.pixelRetryOrder(ctx, o) {
+			n++
+		}
+	}
+	return n
+}
+
+// pixelRetryOrder sends the Purchase of one order again to the platforms that have not accepted it;
+// false when nothing is pending.
+func (s *Server) pixelRetryOrder(ctx context.Context, o *gooOrder) bool {
+	if o == nil || !pixelPurchaseWanted(o) {
+		return false
+	}
+	all, sent := pixelSentSet(o)
+	if all || !s.pixelPendingAny(o, sent) {
+		return false
+	}
+	s.pixelPaymentComplete(ctx, o)
+	return true
+}
+
+// pixelPendingAny: a platform the Purchase may go to (the consented ones of the checkout snapshot, or every
+// server-side platform without a consent gate) is missing from the sent set.
+func (s *Server) pixelPendingAny(o *gooOrder, sent map[string]bool) bool {
+	st := s.pixelLoad()
+	if !s.pixelConsentOn(&st) { // no consent gate: every server-side platform is a target
+		for _, d := range st.serverReady() {
+			if !sent[d.Key] {
+				return true
+			}
+		}
+		return false
+	}
+	snap, _ := o.Meta[pixelOrderMeta].(map[string]any)
+	for _, k := range pixelSnapStrings(snap["platforms"]) {
+		if !sent[k] {
+			return true
+		}
+	}
+	return false
+}
+
+// pixelRefunded sends a refund to Google Analytics 4 (the Measurement Protocol "refund" event, with the
+// transaction id of the Purchase) when GA4 received that Purchase from the server. Meta, TikTok and
+// Pinterest have no refund event; their reports keep the order's revenue.
+func (s *Server) pixelRefunded(ctx context.Context, e *gooRefundEvent) {
+	if !s.pixelOn() || e == nil || e.Order == nil || e.Refund == nil {
+		return
+	}
+	st := s.pixelLoad()
+	cfg := st.Platforms["ga4"]
+	if !st.Woo["purchase"] || !cfg.Enabled || len(cfg.IDs) == 0 || !cfg.ServerSide || cfg.Token == "" {
+		return
+	}
+	o, r := e.Order, e.Refund
+	if all, sent := pixelSentSet(o); !all && !sent["ga4"] {
+		return // GA4 never recorded the sale: there is nothing to take back
+	}
+	cur := o.Currency
+	if cur == "" {
+		cur = s.gooCurrency()
+	}
+	params := map[string]any{"value": pixelMoney(-r.Total), "currency": cur, "order_id": strconv.FormatInt(o.ID, 10)}
+	if len(r.Items) > 0 && r.Total != o.Total { // a partial refund names what came back
+		var items []pixelItem
+		for _, it := range r.Items {
+			pid := it.ProductID
+			if st.VariationIDs && it.VariationID > 0 {
+				pid = it.VariationID
+			}
+			if pid <= 0 || it.Type != "line_item" && it.Type != "" {
+				continue
+			}
+			sku := ""
+			if p, err := s.gooGetProduct(ctx, pid); err == nil && p != nil {
+				sku = p.SKU
+			}
+			qty := max(int(-it.Quantity), 1)
+			items = append(items, pixelItem{ID: pixelItemID(&st, pid, sku), Name: it.Name, Price: -it.Total / float64(qty), Qty: qty})
+		}
+		if len(items) > 0 {
+			params["items"] = pixelItems(items)
+		}
+	}
+	snap, _ := o.Meta[pixelOrderMeta].(map[string]any)
+	ev := pixelServerEvent{Name: "Refund", ID: "refund_" + strconv.FormatInt(r.ID, 10), Source: "refund", Time: time.Now(), Params: params,
+		Cookies: pixelSnapStringMap(snap["cookies"]), User: map[string]string{}, Platforms: []string{"ga4"}}
+	s.pixelDispatch(ev)
 }
 
 // pixelOrderCreated keeps what the checkout request knows about the visitor (identifiers, address,
@@ -873,7 +1096,8 @@ func (s *Server) pixelPaymentComplete(ctx context.Context, o *gooOrder) {
 	}
 	st := s.pixelLoad()
 	ready := st.serverReady()
-	if len(ready) == 0 || !st.Woo["purchase"] || o.Meta[pixelSentMeta] != nil {
+	allSent, sent := pixelSentSet(o)
+	if len(ready) == 0 || !st.Woo["purchase"] || allSent {
 		return
 	}
 	snap, _ := o.Meta[pixelOrderMeta].(map[string]any)
@@ -885,10 +1109,16 @@ func (s *Server) pixelPaymentComplete(ctx context.Context, o *gooOrder) {
 			platforms = append(platforms, d.Key)
 		}
 	}
-	if len(platforms) == 0 {
+	var pending []string // the platforms that have not accepted the Purchase yet
+	for _, k := range platforms {
+		if !sent[k] {
+			pending = append(pending, k)
+		}
+	}
+	if platforms = pending; len(platforms) == 0 {
 		return
 	}
-	ev := pixelServerEvent{Name: "Purchase", ID: pixelPurchaseEventID(o.ID), Source: "order", Time: time.Now(), IP: o.CustomerIP, UA: o.UserAgent,
+	ev := pixelServerEvent{Name: "Purchase", ID: pixelPurchaseEventID(o.ID), Source: "order", OrderID: o.ID, Time: time.Now(), IP: o.CustomerIP, UA: o.UserAgent,
 		Params: s.pixelOrderParamsAny(ctx, &st, o), Cookies: map[string]string{}, User: map[string]string{}, Platforms: platforms}
 	if st.Advanced { // hashed customer data only with Advanced matching, as on the order-received page
 		ev.User = pixelUserFromOrder(o)
@@ -908,8 +1138,6 @@ func (s *Server) pixelPaymentComplete(ctx context.Context, o *gooOrder) {
 	if o.CustomerID > 0 && st.Advanced {
 		ev.User["external_id"] = pixelHash(strconv.FormatInt(o.CustomerID, 10))
 	}
-	o.Meta[pixelSentMeta] = time.Now().UTC().Format(time.RFC3339)
-	_ = s.gooSaveOrder(ctx, o, false)
 	s.pixelDispatch(ev)
 }
 

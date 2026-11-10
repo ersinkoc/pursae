@@ -233,7 +233,7 @@ func (s *Server) gooSendEmail(ctx context.Context, id string, o *gooOrder, args 
 		return false, nil
 	}
 	from := (&mail.Address{Name: s.gooEmailFromName(), Address: s.gooEmailFromAddress()}).String()
-	msg := wpmail.Message{To: e.To, Subject: e.Subject, Body: e.Plain, ReplyTo: e.ReplyTo}
+	msg := wpmail.Message{Kind: "goo_" + id, To: e.To, Subject: e.Subject, Body: e.Plain, ReplyTo: e.ReplyTo}
 	if _, err := mail.ParseAddress(s.gooEmailFromAddress()); err == nil {
 		msg.From = from
 	}

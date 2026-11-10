@@ -109,6 +109,16 @@ func (s *Server) siteHealthSummary(ctx context.Context) healthSummary {
 	if s.settings.Int("wp_page_for_privacy_policy") == 0 {
 		recommended()
 	}
+	if t, ok := s.msHealthTest(ctx); ok {
+		switch t.Status {
+		case "good":
+			good()
+		case "recommended":
+			recommended()
+		default:
+			h.Critical++
+		}
+	}
 	h.Issues = h.Recommended + h.Critical
 	// site-health.js recalculateProgression().
 	total := float64(h.Good) + float64(h.Recommended) + 1.5*float64(h.Critical)

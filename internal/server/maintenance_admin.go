@@ -49,6 +49,7 @@ type maintAdminData struct {
 	CanUpload    bool
 	MyIP         string
 	CacheEnabled bool
+	WBChoices    []maintWBChoice // Pursae Web Builder templates that can be the page
 }
 
 type maintAdminNetwork struct{ Key, Label, Icon, URL string }
@@ -59,6 +60,9 @@ type maintAdminRole struct {
 }
 
 // maintMenu adds the top-level Maintenance menu, just above Settings, while the plugin is active.
+// maintMinPassword is the shortest site password the Access tab accepts.
+const maintMinPassword = 8
+
 func (s *Server) maintMenu(menu []*menuTop, u *store.User, screen string) []*menuTop {
 	if !s.maintOn() || !u.Can("manage_options", nil) {
 		return menu
@@ -168,7 +172,7 @@ func (s *Server) maintAdmin(c *gin.Context) {
 	if !valid {
 		tab = "general"
 	}
-	d := maintAdminData{Tab: tab, Tabs: maintTabs, S: st, Nonce: s.nonce(c, maintNonce), HomeURL: s.links(c).HomeURL("/"),
+	d := maintAdminData{WBChoices: s.maintWBChoices(c.Request.Context()), Tab: tab, Tabs: maintTabs, S: st, Nonce: s.nonce(c, maintNonce), HomeURL: s.links(c).HomeURL("/"),
 		Themes: maintThemes, Fonts: maintFonts, TimeZone: s.loc().String(), CanUpload: u.Can("upload_files", nil),
 		MyIP: clientIP(c), CacheEnabled: s.settings.Bool("wpgo_cache_enabled")}
 	d.PreviewURL = d.HomeURL + "?" + maintPreviewParam
@@ -211,6 +215,9 @@ func (s *Server) maintAdmin(c *gin.Context) {
 		notices = append(notices, notice{Type: "success", Message: "Theme activated. Its colors and layout are now on the Design tab.", Dismissible: true})
 	case "deleted":
 		notices = append(notices, notice{Type: "success", Message: "Subscribers deleted.", Dismissible: true})
+	case "notified":
+		n, _ := strconv.Atoi(c.Query("mtnc-count"))
+		notices = append(notices, notice{Type: "success", Message: template.HTML(strconv.Itoa(n) + " subscriber(s) queued for e-mail."), Dismissible: true})
 	}
 	if e := c.Query("mtnc-error"); e != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(e))})
@@ -241,6 +248,23 @@ func (s *Server) maintAdminPost(c *gin.Context) {
 	switch tab {
 	case "general":
 		st.Enabled = on("status")
+		st.WBTemplate = 0
+		if v := str("web_builder_page"); v != "" && v != "0" {
+			id, _ := strconv.ParseInt(v, 10, 64)
+			if _, _, ok := s.maintWBSnapshot(c.Request.Context(), id); !ok {
+				c.Redirect(http.StatusFound, back+"&mtnc-error="+url.QueryEscape("That Web Builder template cannot be the maintenance page: it must be published and have no dynamic widgets."))
+				return
+			}
+			st.WBTemplate = id
+		}
+		st.StartDate = ""
+		if v := str("start_date"); v != "" {
+			if _, ok := s.maintParseTime(v); !ok {
+				c.Redirect(http.StatusFound, back+"&mtnc-error="+url.QueryEscape("That is not a valid start date."))
+				return
+			}
+			st.StartDate = v
+		}
 		st.Mode = map[bool]string{true: "coming_soon", false: "maintenance"}[str("mode") == "coming_soon"]
 		st.Heading = str("header_text")
 		st.Content = text("content")
@@ -283,6 +307,14 @@ func (s *Server) maintAdminPost(c *gin.Context) {
 		st.Subscribe = on("subscribe")
 		st.SubscribeTitle, st.SubscribeButton, st.SubscribeThanks = str("subscribe_title"), str("subscribe_button"), str("subscribe_thanks")
 		st.SubscribeNotify = on("subscribe_notify")
+		st.DoubleOptIn, st.NotifyOnOpen = on("double_optin"), on("notify_on_open")
+		st.NotifySubject, st.NotifyBody = str("notify_subject"), text("notify_body")
+		if st.NotifySubject == "" {
+			st.NotifySubject = maintDefaults().NotifySubject
+		}
+		if st.NotifyBody == "" {
+			st.NotifyBody = maintDefaults().NotifyBody
+		}
 		st.GDPR, st.GDPRText, st.GDPRPolicyLink = on("gdpr"), str("gdpr_text"), on("gdpr_policy_link")
 		st.Social = map[string]string{}
 		for _, n := range maintSocialNetworks {
@@ -317,10 +349,21 @@ func (s *Server) maintAdminPost(c *gin.Context) {
 		st.URLList = text("per_url_enable_disable")
 		st.SecretKey = maintSecretKey(str("direct_access_link"))
 		st.SecretHours = num("direct_access_hours", 24, 1, 24*365)
-		st.SitePassword = c.PostForm("site_password")
-		if st.SitePassword != "" && len(st.SitePassword) < 4 {
-			c.Redirect(http.StatusFound, back+"&mtnc-error="+url.QueryEscape("The site password must have at least 4 characters."))
-			return
+		// The saved password is a hash and never goes back into the form: a typed one replaces it, the
+		// remove box clears it, an empty field keeps it.
+		if pw := c.PostForm("site_password"); pw != "" {
+			if len(pw) < maintMinPassword {
+				c.Redirect(http.StatusFound, back+"&mtnc-error="+url.QueryEscape("The site password must have at least 8 characters."))
+				return
+			}
+			h, err := maintPasswordHash(pw)
+			if err != nil {
+				c.Redirect(http.StatusFound, back+"&mtnc-error="+url.QueryEscape("The site password is too long (72 bytes at most)."))
+				return
+			}
+			st.SitePassword = h
+		} else if on("site_password_remove") {
+			st.SitePassword = ""
 		}
 		st.PasswordButton = on("password_button")
 		st.PasswordMessage, st.PasswordButtonT, st.PasswordWrong = str("login_message"), str("login_button_text"), str("login_wrong_password_text")
@@ -337,6 +380,15 @@ func (s *Server) maintAdminPost(c *gin.Context) {
 			if n, err := strconv.ParseInt(v, 10, 64); err == nil {
 				ids = append(ids, n)
 			}
+		}
+		if c.PostForm("action") == "notify" {
+			n, err := s.maintNotifySubscribers(c, c.PostForm("notify_subject"), c.PostForm("notify_body"))
+			if err != nil || strings.TrimSpace(c.PostForm("notify_subject")) == "" || strings.TrimSpace(c.PostForm("notify_body")) == "" {
+				c.Redirect(http.StatusFound, back+"&mtnc-error="+url.QueryEscape("Enter a subject and a message to notify the subscribers."))
+				return
+			}
+			c.Redirect(http.StatusFound, back+"&mtnc-msg=notified&mtnc-count="+strconv.Itoa(n))
+			return
 		}
 		if c.PostForm("action") == "delete" && len(ids) > 0 {
 			_, _ = s.store.Pool.Exec(c, `DELETE FROM maintenance_subscribers WHERE id = ANY($1)`, ids)

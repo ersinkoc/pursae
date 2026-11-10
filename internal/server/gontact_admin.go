@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/mail"
@@ -19,7 +20,7 @@ import (
 // gontactAdmin dispatches the admin?page=wpcf7… screens; ok is false for other pages.
 func (s *Server) gontactAdmin(c *gin.Context) bool {
 	page := c.Query("page")
-	if page != "wpcf7" && page != "wpcf7-new" && page != "wpcf7-integration" {
+	if page != "wpcf7" && page != "wpcf7-new" && page != "wpcf7-integration" && page != gontactEntriesPage {
 		return false
 	}
 	u := currentUser(c)
@@ -28,6 +29,8 @@ func (s *Server) gontactAdmin(c *gin.Context) bool {
 		return true
 	}
 	switch {
+	case page == gontactEntriesPage:
+		s.gontactEntriesScreen(c)
 	case page == "wpcf7-integration":
 		s.gontactIntegration(c)
 	case page == "wpcf7-new":
@@ -201,16 +204,22 @@ func (s *Server) gontactList(c *gin.Context) {
 }
 
 func (s *Server) gontactNotices(c *gin.Context) []notice {
+	var extra []notice
+	if c.Query("page") == "wpcf7" {
+		if n := s.gontactFailedMails(c); n > 0 {
+			extra = append(extra, notice{Type: "warning", Message: template.HTML(fmt.Sprintf("%d form submission(s) in the last 7 days could not be delivered by e-mail. See <a href=\"%s\">Entries</a>.", n, gontactAdminURL(gontactEntriesPage, url.Values{"mail_status": {"failed"}})))})
+		}
+	}
 	msg := map[string]string{"created": "Contact form created.", "saved": "Contact form saved.", "deleted": "Contact form deleted.",
 		"failed": "There was an error saving the contact form.", "integration": "Settings saved."}[c.Query("message")]
 	if msg == "" {
-		return nil
+		return extra
 	}
 	typ := "success"
 	if c.Query("message") == "failed" {
 		typ = "error"
 	}
-	return []notice{{Type: typ, Message: template.HTML(template.HTMLEscapeString(msg)), Dismissible: true}}
+	return append(extra, notice{Type: typ, Message: template.HTML(template.HTMLEscapeString(msg)), Dismissible: true})
 }
 
 // Editor -------------------------------------------------------------------------------

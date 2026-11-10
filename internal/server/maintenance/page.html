@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{.Lang}}">
+<html lang="{{.Lang}}"{{if .RTL}} dir="rtl"{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -96,9 +96,7 @@ h1{font-size:clamp(2rem,5.2vw,3.4rem);line-height:1.12;font-weight:300;letter-sp
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 {{.CSS}}
 </style>
-{{if .S.Analytics}}<script async src="https://www.googletagmanager.com/gtag/js?id={{.S.Analytics}}"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',{{.S.Analytics}});</script>
-{{end}}</head>
+{{.ConsentHead}}{{.AnalyticsTag}}</head>
 <body class="mtnc theme-{{.S.Theme}} pos-{{.S.ContentPosition}}{{if eq .S.BgType "gradient"}} bg-gradient{{end}}{{if .S.ContentBox}} box{{end}}">
 {{if .Preview}}<div class="mtnc-preview" role="status">Maintenance page preview{{if not .S.Enabled}} &middot; maintenance mode is off{{end}} &middot; <a href="/wp-admin/admin?page=maintenance">Settings</a></div>
 {{end}}<div class="mtnc-bg" aria-hidden="true"></div><div class="mtnc-overlay" aria-hidden="true"></div>
@@ -194,5 +192,5 @@ h1{font-size:clamp(2rem,5.2vw,3.4rem);line-height:1.12;font-weight:300;letter-sp
 	var t=setInterval(tick,1000);tick();
 })();
 </script>
-</body>
+{{.ConsentFoot}}</body>
 </html>

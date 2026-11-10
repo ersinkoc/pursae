@@ -266,6 +266,10 @@ func (s *Server) siteHealth(c *gin.Context) {
 		add(healthTest{Label: "No privacy policy page is set", Status: "recommended", Badge: "Privacy", Action: `<a href="/wp-admin/options-privacy">Privacy Settings</a>`})
 	}
 
+	if t, ok := s.msHealthTest(ctx); ok {
+		add(t)
+	}
+
 	var byStatus = map[string][]healthTest{}
 	for i, t := range tests {
 		t.Slug = healthSlug(t.Label)

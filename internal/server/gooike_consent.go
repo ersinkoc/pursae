@@ -59,6 +59,19 @@ func gooikeAllow(key string, limit int) bool {
 	return gooikeLimiter.hits[key] <= limit
 }
 
+// gooikeConsentAllowed limits the consent endpoint per consent ID (a visitor changes their mind a few
+// times a minute), per full address, and, far looser, per network (/24 or /48) so that visitors behind
+// one NAT or carrier-grade NAT do not lose their consent record to each other.
+func gooikeConsentAllowed(ip, id string) bool {
+	if !gooikeAllow("consent-id:"+id, 8) {
+		return false
+	}
+	if full := net.ParseIP(strings.TrimSpace(ip)); full != nil && !gooikeAllow("consent-ip:"+full.String(), 60) {
+		return false
+	}
+	return gooikeAllow("consent-net:"+gooikeTruncateIP(ip), 1200)
+}
+
 // gooikeConsentREST logs one decision.
 func (s *Server) gooikeConsentREST(c *gin.Context, r *restRequest) {
 	c.Header("Cache-Control", "no-store")
@@ -72,14 +85,14 @@ func (s *Server) gooikeConsentREST(c *gin.Context, r *restRequest) {
 		return
 	}
 	ip := clientIP(c)
-	if !gooikeAllow(gooikeTruncateIP(ip), 30) {
-		restErr(c, http.StatusTooManyRequests, "gooike_rate_limited", "Too many consent records from this address.")
-		return
-	}
 	id, _ := r.Str(c, "consent_id")
 	id = strings.ToLower(strings.TrimSpace(id))
 	if !gooikeConsentIDRe.MatchString(id) {
 		restErr(c, http.StatusBadRequest, "gooike_invalid_id", "Invalid consent ID.")
+		return
+	}
+	if !gooikeConsentAllowed(ip, id) {
+		restErr(c, http.StatusTooManyRequests, "gooike_rate_limited", "Too many consent records from this address.")
 		return
 	}
 	action, _ := r.Str(c, "action")

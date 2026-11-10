@@ -165,6 +165,13 @@ func (s *Server) gooikeScan(ctx context.Context, st *gooikeSettings, extra []str
 			add(ck, sv.Name+": "+found[k])
 		}
 	}
+	if strings.Contains(html, "google.com/recaptcha/api.js") {
+		res.Services = append(res.Services, "Google reCAPTCHA (Detected in the page)")
+		for _, ck := range gooikeRecaptchaCookies {
+			ck.Category = st.EmbedCategory
+			add(ck, "Google reCAPTCHA")
+		}
+	}
 	for _, e := range gooikeEmbeds {
 		for _, h := range e.Hosts {
 			if strings.Contains(html, h+"/embed") || strings.Contains(html, "//"+h+"/video") || (e.Key == "maps" && strings.Contains(html, "google.com/maps/embed")) {

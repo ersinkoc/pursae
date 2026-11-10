@@ -331,7 +331,7 @@ func (s *Server) sendNewAdminEmail(c *gin.Context, email string) {
 		"This email has been sent to ###EMAIL###\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"
 	body = strings.NewReplacer("###USERNAME###", currentUser(c).Login, "###ADMIN_URL###", s.links(c).HomeURL("/wp-admin/options?adminhash="+hash),
 		"###EMAIL###", email, "###SITENAME###", site, "###SITEURL###", s.links(c).HomeURL("/")).Replace(body)
-	s.sendMail(c, mail.Message{To: []string{email}, Subject: "[" + site + "] New Admin Email Address", Body: body})
+	s.sendMail(c, mail.Message{Kind: "admin_email_change", To: []string{email}, Subject: "[" + site + "] New Admin Email Address", Body: body})
 }
 
 // optionsConfirm is options.php's GET side: ?adminhash= confirms the pending admin e-mail, ?dismiss=new_admin_email cancels it.

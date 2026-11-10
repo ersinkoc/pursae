@@ -98,6 +98,7 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		},
 		"wpgo_hub_check":          func(ctx context.Context, _ map[string]any) error { return s.hubPing(ctx) },
 		"gontact_captcha_cleanup": func(ctx context.Context, _ map[string]any) error { return s.gontactCaptchaCleanup(ctx) },
+		gontactWebhookJob:         func(ctx context.Context, p map[string]any) error { return s.gontactWebhookRun(ctx, p) },
 		"seogo_404_trim":          func(ctx context.Context, _ map[string]any) error { return s.seogo404Trim(ctx) },
 		"wp_mail": func(ctx context.Context, p map[string]any) error {
 			var msg mail.Message
@@ -105,9 +106,12 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 			if err := json.Unmarshal(raw, &msg); err != nil {
 				return err
 			}
-			return s.mailer().Send(ctx, msg)
+			err := s.mailer().Send(ctx, msg)
+			s.gontactJobDelivered(context.WithoutCancel(ctx), p, err)
+			return err
 		},
 		"wp_mail_smtp_daily": func(ctx context.Context, _ map[string]any) error { return s.mailSMTPDaily(ctx) },
+		gooikeScanJob:        func(ctx context.Context, _ map[string]any) error { return s.gooikeScanRun(ctx) },
 		gooikePurgeJob:       func(ctx context.Context, _ map[string]any) error { _, err := s.gooikePurge(ctx); return err }, // Gooike consent log retention
 		pixelPurgeJob:        func(ctx context.Context, _ map[string]any) error { _, err := s.pixelPurge(ctx); return err },  // Pursae Pixel delivery log retention
 		"adminsecgo_daily":   func(ctx context.Context, _ map[string]any) error { return s.adminsecDaily(ctx) },
@@ -227,6 +231,7 @@ func (s *Server) RunScheduler(ctx context.Context) {
 			s.purgeAll(ctx)
 		}
 		s.runDueJobs(ctx, worker, handlers)
+		s.maintTick(ctx)
 		select {
 		case <-ctx.Done():
 			return

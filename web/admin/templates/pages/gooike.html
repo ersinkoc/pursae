@@ -173,6 +173,8 @@
 </script>
 {{end}}
 {{if eq .Tab "texts"}}
+<form method="post" action="/wp-admin/gooike" id="gk-preset" onsubmit="return confirm('Replace every text with this language set?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts_preset">
+<p><label for="gk-preset-lang">Fill all texts from a ready-made language set:</label> <select id="gk-preset-lang" name="preset"><option value="en">English</option><option value="tr">T&uuml;rk&ccedil;e</option><option value="de">Deutsch</option><option value="fr">Fran&ccedil;ais</option><option value="es">Espa&ntilde;ol</option></select> <button type="submit" class="button">Apply language set</button></p></form>
 <form method="post" action="/wp-admin/gooike">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts">
 <p class="gk-subtitle">Every word visitors see. On a multilingual site translate them here per language. HTML is not allowed; links come from Settings.</p>
@@ -251,6 +253,15 @@
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="categories"><input type="hidden" name="tab" value="scan"><input type="hidden" name="do" value="scan">
 <p><label for="gk-scan-paths">More paths to scan (one per line, optional)</label><br><textarea id="gk-scan-paths" name="paths" rows="3" class="large-text code" placeholder="/contact/&#10;/shop/"></textarea></p>
 <p><button type="submit" class="button button-primary">Scan Now</button></p>
+</form>
+<form method="post" action="/wp-admin/gooike">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="categories"><input type="hidden" name="tab" value="scan"><input type="hidden" name="do" value="scan_schedule">
+<h2>Weekly scan</h2>
+{{if .S.ScanNew}}<div class="notice notice-warning inline"><p>The last scheduled scan ({{.S.ScanLast}}) found cookies that are not declared: {{range $i, $n := .S.ScanNew}}{{if $i}}, {{end}}<code>{{$n}}</code>{{end}}. Run a scan below and add them to the declaration.</p></div>{{end}}
+<p><label><input type="checkbox" name="scan_auto" value="1"{{if .S.ScanAuto}} checked{{end}}> Scan the site every week and report new cookies here</label><br>
+<label><input type="checkbox" name="scan_email" value="1"{{if .S.ScanEmail}} checked{{end}}> Email the site admin when a scan finds undeclared cookies</label></p>
+<p><label for="gk-scan-auto-paths">Paths for the weekly scan (one per line, optional)</label><br><textarea id="gk-scan-auto-paths" name="scan_paths" rows="2" class="large-text code">{{.S.ScanPaths}}</textarea></p>
+<p><button type="submit" class="button">Save Weekly Scan</button></p>
 </form>
 {{with .Scan}}
 <h2>Scan results <span class="description">({{.At}})</span></h2>
@@ -398,6 +409,7 @@
 	<label><input type="radio" name="regulation" value="ccpa"{{if eq .S.Regulation "ccpa"}} checked{{end}}> <strong>CCPA / CPRA</strong> (California): opt-out, with a "Do Not Sell or Share My Personal Information" choice</label></fieldset></td></tr>
 <tr><th scope="row">Geo targeting</th><td><label><input type="checkbox" name="geo" value="1"{{if .S.Geo}} checked{{end}}> Pick the regulation from the visitor's country</label>
 	<p class="description">Needs a country header from your CDN or proxy (Cloudflare <code>CF-IPCountry</code>, CloudFront, Vercel, Fastly or <code>X-Country-Code</code>). EU/EEA/UK/CH get GDPR, Turkey KVKK, the US CCPA.</p>
+	<p class="description" id="gk-geo-status">Country header on this request: {{if .GeoCountry}}<strong>present</strong> (<code>{{.GeoCountry}}</code>), geo targeting can work.{{else}}<strong>missing</strong>: this request carries no country header, so visitors get the main regulation. Check your CDN or proxy.{{end}}</p>
 	<p><label>Everyone else: <select name="geo_other" aria-label="Regulation for other countries"><option value="none"{{if eq .S.GeoOther "none"}} selected{{end}}>no banner</option><option value="gdpr"{{if eq .S.GeoOther "gdpr"}} selected{{end}}>GDPR</option><option value="kvkk"{{if eq .S.GeoOther "kvkk"}} selected{{end}}>KVKK</option><option value="ccpa"{{if eq .S.GeoOther "ccpa"}} selected{{end}}>CCPA</option></select></label></p></td></tr>
 <tr><th scope="row">Browser signals</th><td><label><input type="checkbox" name="respect_gpc" value="1"{{if .S.RespectGPC}} checked{{end}}> Respect Global Privacy Control</label><br>
 	<label><input type="checkbox" name="respect_dnt" value="1"{{if .S.RespectDNT}} checked{{end}}> Respect Do Not Track</label>
@@ -408,6 +420,7 @@
 <tr><th scope="row"><label for="gk-reload">After withdrawal</label></th><td><label><input type="checkbox" id="gk-reload" name="reload_on_withdraw" value="1"{{if .S.ReloadOnChange}} checked{{end}}> Reload the page, so scripts that already ran stop</label></td></tr>
 </table>
 <h2 class="title">Links</h2>
+<p><button type="submit" form="gk-policy" class="button">Create cookie policy page{{if eq .S.Regulation "kvkk"}} and KVKK notice{{end}}</button> <span class="description">Adds draft pages for the selected regulation with <code>[gooike_cookie_table]</code> and <code>[gooike_preferences]</code>; review, publish and link them below.</span></p>
 <table class="form-table" role="presentation">
 <tr><th scope="row"><label for="gk-privacy">Privacy policy page</label></th><td><select id="gk-privacy" name="privacy_page"><option value="0">&mdash; The site's Privacy Policy page (Settings &rsaquo; Privacy) &mdash;</option>{{range .PagesList}}<option value="{{.ID}}"{{if eq .ID $.Data.S.PrivacyPage}} selected{{end}}>{{.Title}}</option>{{end}}</select>
 	<p><label>Or a URL: <input type="url" name="privacy_url" class="regular-text" value="{{.S.PrivacyURL}}" placeholder="https://"></label></p></td></tr>
@@ -436,6 +449,7 @@
 </table>
 <p class="submit"><button type="submit" class="button button-primary">Save Changes</button></p>
 </form>
+<form method="post" action="/wp-admin/gooike" id="gk-policy"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="policy_pages"></form>
 <form method="post" action="/wp-admin/gooike" id="gk-bump" onsubmit="return confirm('Ask every visitor for consent again?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="bump_version"></form>
 {{end}}
 </div>

@@ -15,7 +15,7 @@ Legend: ✅ implemented · ◐ implemented differently / partly · ✗ left out 
 | Post meta `_form`, `_mail`, `_mail_2`, `_messages`, `_additional_settings`, `_locale`, `_hash` | ✅ same keys in the post's `meta` jsonb; `post_content` keeps the form template too |
 | Default form, Mail, Mail (2), messages templates (`WPCF7_ContactFormTemplate`) | ✅ identical defaults |
 | "Contact form 1" created on first activation | ✅ |
-| Flamingo storage of submissions | ✗ Flamingo is a separate plugin; not part of CF7 |
+| Flamingo storage of submissions | ✅ built in: table `gontact_entries` (accepted submissions only, stored before the mail is queued); Contact › Entries lists, filters, searches, shows, deletes and exports them as CSV (formula-safe); retention in days (hourly event); `do_not_store: true` turns it off per form |
 | Capabilities `wpcf7_edit_contact_form(s)`, `wpcf7_read_contact_forms`, `wpcf7_delete_contact_form`, `wpcf7_manage_integration`, `wpcf7_submit` | ◐ mapped like CF7's `map_meta_cap` defaults: edit/delete → `publish_pages`, read → `edit_posts`, integration → `manage_options`, submit → `read` |
 
 ## 2. Admin screens (menu **Contact**, `dashicons-email`, after Comments)
@@ -58,7 +58,7 @@ pipes `"Label|value"`, `default:get` / `default:post_meta` / `default:user_*` / 
 | `textarea` | `cols/rows` (`40x10`), `maxlength` (2000), `minlength`, placeholder, default, enclosed content as default | ✅ |
 | `number`, `range` | `min:`, `max:`, `step:`, placeholder | ✅ |
 | `date` | `min:`, `max:` (YYYY-MM-DD or `today`, `today+7days`…), `step:` | ✅ |
-| `select` | `multiple`, `include_blank`, `first_as_label`, `default:N`, `data:` | ◐ `data:` lists (countries etc.) not shipped |
+| `select` | `multiple`, `include_blank`, `first_as_label`, `default:N`, `data:` | ✅ `data:countries` and `data:states:XX` fill the list from Pursae Commerce's country data (values are the names; explicit values win) |
 | `checkbox`, `radio` | `label_first`, `use_label_element`, `exclusive`, `free_text`, `default:` | ✅ |
 | `acceptance` | `optional`, `invert`, enclosed condition text | ✅ |
 | `quiz` | `"Question|answer"` pairs, random question, hashed answer | ✅ |
@@ -91,11 +91,17 @@ wpcf7-validates-as-required …` classes, `wpcf7-not-valid-tip`, `wpcf7-response
 | Non-JS fallback (plain POST back to the page, `#unit-tag` action) with "hangover" values and inline errors | ✅ |
 | `posted_data_hash` | ✅ |
 | Mail-tags `[field]`, `[_raw_field]`, `[_format_field "Y-m-d"]` (date), pipes, special tags `_remote_ip`, `_user_agent`, `_url`, `_date`, `_time`, `_invalid_fields`, `_contact_form_title`, `_serial_number`, `_post_id/_name/_title/_url/_author/_author_email`, `_site_title/_description/_url/_domain/_admin_email`, `_user_login/_email/_url/_first_name/_last_name/_nickname/_display_name` | ✅ (`_serial_number` = submission count kept in meta) |
+| Delivery status | ✅ the queued job reports back: entry `mail_status` is queued, sent, failed or skipped; Contact Forms and Entries warn about failures of the last 7 days; Mail (2) failures are logged |
+| Spam: honeypot and minimum fill time | ✅ on by default: a hidden `_wpcf7_website` input and an HMAC-signed render time `_wpcf7_ts` (posts faster than 3 s, or with a forged stamp, are spam; posts without the fields, e.g. API clients, are still accepted) |
+| Rate limits | ✅ per address: 30 submissions and 30 refills per minute (HTTP 429, `wpcf7_rate_limited`); at most 5000 open CAPTCHA challenges |
 | Mail sent through `wp_mail()` | ✅ the core mailer queue (`sendMail`), From/Reply-To/Cc/Bcc from the template |
 | Exclude blank lines, HTML mail (body wrapped in CF7's HTML template) | ✅ |
-| File attachments (`[your-file]` in the attachments field, plus `uploads/…` paths) | ✅ attached to the queued mail; temporary files removed afterwards |
-| Upload dir `wpcf7_uploads` with deny-all, random sub-dirs, file name sanitizing | ✅ under `<data>/gontact_uploads` (never web-served) |
-| Hooks `wpcf7_before_send_mail`, `wpcf7_spam`, `wpcf7_validate_*`, `wpcf7_mail_sent`… | ◐ the Wasm plugin filters `wpcf7_spam` and `wpcf7_mail_sent` actions are fired through the core plugin registry |
+| File attachments (`[your-file]` in the attachments field, plus `uploads/…` paths) | ✅ held in memory (per field `limit:`, 25 MiB for all fields of a submission) and attached to the queued `wp_mail` job; the hourly event removes the attachments from finished jobs |
+| Upload dir `wpcf7_uploads` with deny-all, random sub-dirs, file name sanitizing | ◐ no upload directory: files never touch the disk (see above); file names are sanitized |
+| Hooks `wpcf7_before_send_mail`, `wpcf7_spam`, `wpcf7_validate_*`, `wpcf7_mail_sent`… | ✅ Wasm hooks (permission `forms:access`): `wpcf7_validate` (filter: extra errors `{field: message}`), `wpcf7_before_send_mail` (filter: change `posted_data`, set `skip_mail`, or `abort` with a message), `wpcf7_spam` (filter), `wpcf7_mail_sent` (action) |
+| Webhook out | ✅ Additional Settings `webhook_url: https://…` (repeatable) and optional `webhook_secret:`; JSON POST after the mail is sent, queued with retries, signed `X-Pursae-Signature: sha256=<hmac>`, public addresses only |
+| Conditional fields | ✅ `[group id]…[/group]` plus `conditional: group \| field \| equals\|not equals\|is empty\|not empty\|contains\|greater than\|less than \| value` settings; hidden groups are not validated or mailed (checked again on the server) |
+| Upload content check | ✅ the first 512 bytes must fit the extension for common types (images, pdf, zip/Office, mp3, txt/csv) |
 
 ## 6. Additional settings
 
@@ -105,7 +111,7 @@ wpcf7-validates-as-required …` classes, `wpcf7-not-valid-tip`, `wpcf7-response
 | `skip_mail: on` | ✅ |
 | `subscribers_only: true` | ✅ form replaced with the notice; REST answers `error` for visitors; spam checks skipped for members |
 | `acceptance_as_validation: on` | ✅ |
-| `do_not_store: true` | ✅ accepted (nothing is stored anyway) |
+| `do_not_store: true` | ✅ the submission is not written to Contact › Entries |
 | `flamingo_*`, `akismet: …`, `on_sent_ok`/`on_submit` (removed in CF7 5.0) | ✗ |
 
 ## 7. JavaScript (own file, same behaviour and DOM events)
@@ -126,7 +132,7 @@ change via the schema. ✅
 | Short User-Agent → spam; nonce check for logged-in users | ✅ |
 | Disallowed comment keys (Settings › Discussion `disallowed_keys`) | ✅ |
 | Quiz | ✅ |
-| reCAPTCHA v3 (Integration: site key / secret, score threshold 0.5, `wpcf7_recaptcha_response`) | ✅ keys on Integration, server verification against Google |
+| reCAPTCHA v3 (Integration: site key / secret, score threshold 0.5, `wpcf7_recaptcha_response`) | ✅ keys on Integration, server verification against Google; with Pursae Cookie active the script loads only after consent (Pursae Cookie's embed category) and its cookies appear in the cookie scan |
 | Cloudflare Turnstile (site key / secret, `_wpcf7_turnstile_response`) | ✅ |
 | Akismet (`akismet:author` …) | ✗ no Akismet in Pursae |
 | Constant Contact, Brevo (Sendinblue), Stripe | ✗ third-party marketing/payment accounts, not relevant to a contact form clone here |
@@ -162,7 +168,7 @@ CF7 needs the Really Simple CAPTCHA plugin for these tags; Pursae Contact Form g
 
 ## 9. Not ported (summary)
 
-Flamingo, Akismet, Constant Contact, Brevo, Stripe, `data:` option lists, reflection/listo,
+Flamingo, Akismet, Constant Contact, Brevo, Stripe, reflection/listo,
 translations (UI is English), CF7's welcome panel and promotional notices, multisite bits.
 
 ## 10. Implementation map

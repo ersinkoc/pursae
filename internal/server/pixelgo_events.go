@@ -51,6 +51,16 @@ var pixelEventMap = map[string]map[string]string{
 	"TimeOnPage":           {"meta": "TimeOnPage", "ga4": "time_on_page", "bing": "time_on_page"},
 	"VideoPlay":            {"meta": "VideoPlay", "ga4": "video_start", "bing": "video_start"},
 	"VideoComplete":        {"meta": "VideoComplete", "ga4": "video_complete", "bing": "video_complete"},
+	"Refund":               {"ga4": "refund"}, // server-side only, from a refunded order
+}
+
+func init() {
+	// Google Tag Manager gets every event GA4 gets, under the same (GA4) name, as a data layer push.
+	for ev, m := range pixelEventMap {
+		if n := m["ga4"]; n != "" && ev != "Refund" {
+			m["gtm"] = n
+		}
+	}
 }
 
 // pixelMetaStandard are the names Meta tracks with track() instead of trackCustom().
@@ -64,7 +74,7 @@ func pixelPlatformEvent(platform, event string) (string, bool) {
 		return n, n != ""
 	}
 	n := strings.TrimSpace(event)
-	if platform == "ga4" {
+	if platform == "ga4" || platform == "gtm" {
 		n = strings.ToLower(strings.NewReplacer(" ", "_", "-", "_").Replace(n))
 	}
 	if platform == "pinterest" {
@@ -146,7 +156,7 @@ func (s *Server) pixelProductCategory(c *gin.Context, id int64) string {
 func (s *Server) pixelProductItem(c *gin.Context, st *pixelSettings, p *gooProduct, qty int) pixelItem {
 	pid := p.ID
 	parent := p
-	if p.ParentID > 0 {
+	if p.ParentID > 0 && !st.VariationIDs {
 		pid = p.ParentID
 	}
 	return pixelItem{ID: pixelItemID(st, pid, parent.SKU), Name: p.Name, Price: pixelBasePrice(p), Qty: qty, Category: s.pixelProductCategory(c, pid)}
@@ -160,12 +170,15 @@ func (s *Server) pixelOrderLineItems(ctx context.Context, st *pixelSettings, o *
 		if it.Type != "line_item" && it.Type != "" || it.ProductID <= 0 {
 			continue
 		}
-		sku := ""
-		if p, err := s.gooGetProduct(ctx, it.ProductID); err == nil && p != nil {
+		sku, pid := "", it.ProductID
+		if st.VariationIDs && it.VariationID > 0 {
+			pid = it.VariationID
+		}
+		if p, err := s.gooGetProduct(ctx, pid); err == nil && p != nil {
 			sku = p.SKU
 		}
 		qty := max(it.Qty(), 1)
-		items = append(items, pixelItem{ID: pixelItemID(st, it.ProductID, sku), Name: it.Name, Price: it.Total / float64(qty), Qty: qty})
+		items = append(items, pixelItem{ID: pixelItemID(st, pid, sku), Name: it.Name, Price: it.Total / float64(qty), Qty: qty})
 		net += it.Total
 		withTax += it.Total + it.TotalTax
 	}

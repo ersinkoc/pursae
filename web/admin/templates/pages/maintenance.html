@@ -50,6 +50,9 @@
 <table class="form-table" role="presentation">
 <tr><th scope="row">Status</th><td><label class="mtnc-switch"><input type="checkbox" name="status" value="1"{{if .S.Enabled}} checked{{end}}><span></span></label> <span>Maintenance mode is on</span>
 	<p class="description">While it is on, visitors see the maintenance page. wp-admin and the login screen always stay reachable.</p></td></tr>
+<tr><th scope="row"><label for="web_builder_page">Page Design</label></th><td><select id="web_builder_page" name="web_builder_page"><option value="0">Built-in page (this screen's Design tab)</option>{{range .WBChoices}}<option value="{{.ID}}"{{if eq $.Data.S.WBTemplate .ID}} selected{{end}}>{{.Title}}</option>{{end}}</select>
+	<p class="description">Use a published Pursae Web Builder template (Web Builder &rsaquo; Theme Builder) as the whole page. Only templates without dynamic widgets are listed. The Design and Modules tabs then do not apply; the title, SEO, access and status settings still do.</p></td></tr>
+<tr><th scope="row"><label for="start_date">Starts</label></th><td><input type="datetime-local" id="start_date" name="start_date" value="{{.S.StartDate}}"> <span class="description">Optional. Site time zone: {{.TimeZone}}. With the switch on, visitors see the page from this moment; until then the site stays open. Pair it with <em>Ends</em> on the Modules tab to schedule a maintenance window.</span></td></tr>
 <tr><th scope="row">Mode</th><td><fieldset><legend class="screen-reader-text">Mode</legend>
 	<label><input type="radio" name="mode" value="maintenance"{{if eq .S.Mode "maintenance"}} checked{{end}}> <strong>Maintenance</strong> &mdash; HTTP 503 Service Unavailable with <code>Retry-After</code>, so search engines come back later and keep the site's rankings</label><br>
 	<label><input type="radio" name="mode" value="coming_soon"{{if eq .S.Mode "coming_soon"}} checked{{end}}> <strong>Coming Soon</strong> &mdash; HTTP 200, for a site that is not launched yet</label></fieldset></td></tr>
@@ -138,6 +141,11 @@
 <tr><th scope="row"><label for="subscribe_button">Button Text</label></th><td><input type="text" id="subscribe_button" name="subscribe_button" class="regular-text" value="{{.S.SubscribeButton}}"></td></tr>
 <tr><th scope="row"><label for="subscribe_thanks">Thank You Message</label></th><td><input type="text" id="subscribe_thanks" name="subscribe_thanks" class="large-text" value="{{.S.SubscribeThanks}}"></td></tr>
 <tr><th scope="row">Notification</th><td><label><input type="checkbox" name="subscribe_notify" value="1"{{if .S.SubscribeNotify}} checked{{end}}> E-mail the site admin about each new subscriber</label></td></tr>
+<tr><th scope="row">Double Opt-in</th><td><label><input type="checkbox" name="double_optin" value="1"{{if .S.DoubleOptIn}} checked{{end}}> Send a confirmation link; an address only counts once its owner clicks it</label></td></tr>
+<tr><th scope="row">When the Site Opens</th><td><label><input type="checkbox" name="notify_on_open" value="1"{{if .S.NotifyOnOpen}} checked{{end}}> E-mail the subscribers automatically when maintenance mode is switched off</label>
+	<p><label>Subject <input type="text" name="notify_subject" class="large-text" value="{{.S.NotifySubject}}"></label></p>
+	<p><label>Message <textarea name="notify_body" class="large-text" rows="4">{{.S.NotifyBody}}</textarea></label></p>
+	<p class="description">Placeholders: %sitetitle%, %siteurl%. Every mail carries an unsubscribe link, and each subscriber is told once.</p></td></tr>
 <tr><th scope="row">GDPR</th><td><label><input type="checkbox" name="gdpr" value="1"{{if .S.GDPR}} checked{{end}}> Require a consent checkbox</label>
 	<p><input type="text" name="gdpr_text" class="large-text" value="{{.S.GDPRText}}" aria-label="Consent text"></p>
 	<label><input type="checkbox" name="gdpr_policy_link" value="1"{{if .S.GDPRPolicyLink}} checked{{end}}> Link the <a href="/wp-admin/options-privacy">Privacy Policy page</a> (when it is published)</label>
@@ -191,12 +199,12 @@
 <tr><th scope="row"><label for="direct_access_link">Secret Access Link</label></th><td><div class="mtnc-copy"><code>{{.HomeURL}}?</code><input type="text" id="direct_access_link" name="direct_access_link" class="regular-text" value="{{.S.SecretKey}}" placeholder="preview-full-site" pattern="[A-Za-z0-9_\-]*">{{if .SecretURL}} <button type="button" class="button" data-copy="{{.SecretURL}}"><span class="dashicons dashicons-clipboard" style="vertical-align:text-bottom"></span> Copy link</button>{{end}}</div>
 	<p><label>Valid for <input type="number" name="direct_access_hours" class="small-text" min="1" value="{{.S.SecretHours}}"> hours</label> after the link is opened.</p>
 	<p class="description">Anyone who opens the link sees the normal site without logging in. Change the key to lock old links out.</p></td></tr>
-<tr><th scope="row"><label for="site_password">Direct Access Password</label></th><td><input type="password" id="site_password" name="site_password" class="regular-text" value="{{.S.SitePassword}}" autocomplete="new-password">
+<tr><th scope="row"><label for="site_password">Direct Access Password</label></th><td><input type="password" id="site_password" name="site_password" class="regular-text" value="" placeholder="{{if .S.SitePassword}}Password saved (type a new one to replace it){{end}}" autocomplete="new-password">{{if .S.SitePassword}} <label><input type="checkbox" name="site_password_remove" value="1"> Remove the password</label>{{end}}
 	<p><label><input type="checkbox" name="password_button" value="1"{{if .S.PasswordButton}} checked{{end}}> Show a password button on the maintenance page</label></p>
 	<p><label>Popup message <input type="text" name="login_message" class="regular-text" value="{{.S.PasswordMessage}}"></label></p>
 	<p><label>Button text <input type="text" name="login_button_text" class="regular-text" value="{{.S.PasswordButtonT}}"></label></p>
 	<p><label>Wrong password text <input type="text" name="login_wrong_password_text" class="regular-text" value="{{.S.PasswordWrong}}"></label></p>
-	<p class="description">Visitors who enter it see the normal site, for as long as the access link lasts. At least 4 characters; leave empty to turn it off.</p></td></tr>
+	<p class="description">Visitors who enter it see the normal site, for as long as the access link lasts. At least 8 characters; leave empty to turn it off.</p></td></tr>
 <tr><th scope="row">Login Button</th><td><label><input type="checkbox" name="login_button" value="1"{{if .S.LoginButton}} checked{{end}}> Show a login button that opens a login form on the maintenance page</label>
 	<p><label>Tooltip <input type="text" name="wplogin_button_tooltip" class="regular-text" value="{{.S.LoginTooltip}}"></label></p></td></tr>
 </table>
@@ -238,12 +246,21 @@
 	<br class="clear">
 </div>
 <table class="wp-list-table widefat fixed striped table-view-list">
-<thead><tr><td id="cb" class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox"><label for="cb-select-all-1"><span class="screen-reader-text">Select All</span></label></td><th scope="col" class="manage-column column-primary">E-mail</th><th scope="col" class="manage-column">Consent</th><th scope="col" class="manage-column">Subscribed</th></tr></thead>
+<thead><tr><td id="cb" class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox"><label for="cb-select-all-1"><span class="screen-reader-text">Select All</span></label></td><th scope="col" class="manage-column column-primary">E-mail</th><th scope="col" class="manage-column">Consent</th><th scope="col" class="manage-column">Status</th><th scope="col" class="manage-column">Subscribed</th></tr></thead>
 <tbody id="the-list">
-{{range .Subscribers}}<tr><th scope="row" class="check-column"><input type="checkbox" name="subscriber[]" value="{{.ID}}" id="sub-{{.ID}}"><label for="sub-{{.ID}}"><span class="screen-reader-text">Select {{.Email}}</span></label></th><td class="column-primary"><a href="mailto:{{.Email}}">{{.Email}}</a></td><td>{{if .Consent}}Yes{{else}}&mdash;{{end}}</td><td>{{.Created.Format "2006/01/02 \\a\\t 3:04 pm"}}</td></tr>
-{{else}}<tr class="no-items"><td class="colspanchange" colspan="4">No subscribers yet. {{if not $.Data.S.Subscribe}}Turn on the subscribe form on the <a href="/wp-admin/admin?page=maintenance&amp;tab=modules">Modules</a> tab.{{end}}</td></tr>
+{{range .Subscribers}}<tr><th scope="row" class="check-column"><input type="checkbox" name="subscriber[]" value="{{.ID}}" id="sub-{{.ID}}"><label for="sub-{{.ID}}"><span class="screen-reader-text">Select {{.Email}}</span></label></th><td class="column-primary"><a href="mailto:{{.Email}}">{{.Email}}</a></td><td>{{if .Consent}}Yes{{else}}&mdash;{{end}}</td><td>{{if .Pending}}Unconfirmed{{else if .Notified}}Notified{{else}}Confirmed{{end}}</td><td>{{.Created.Format "2006/01/02 \\a\\t 3:04 pm"}}</td></tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">No subscribers yet. {{if not $.Data.S.Subscribe}}Turn on the subscribe form on the <a href="/wp-admin/admin?page=maintenance&amp;tab=modules">Modules</a> tab.{{end}}</td></tr>
 {{end}}</tbody>
 </table>
+</form>
+<h2 class="title">Notify subscribers</h2>
+<form method="post" action="/wp-admin/admin?page=maintenance">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="tab" value="subscribers"><input type="hidden" name="action" value="notify">
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="notify_subject_now">Subject</label></th><td><input type="text" id="notify_subject_now" name="notify_subject" class="large-text" value="{{.S.NotifySubject}}"></td></tr>
+<tr><th scope="row"><label for="notify_body_now">Message</label></th><td><textarea id="notify_body_now" name="notify_body" class="large-text" rows="5">{{.S.NotifyBody}}</textarea><p class="description">Sent once to every confirmed subscriber that has not been notified yet, through the mail queue.</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Send to subscribers" onclick="return confirm('Queue this e-mail for all confirmed subscribers?')"></p>
 </form>
 {{end}}
 </div>

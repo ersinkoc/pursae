@@ -458,7 +458,14 @@
 
 	function initRecaptcha() {
 		var conf = wpcf7.recaptcha;
-		if ( ! conf || ! conf.sitekey || typeof window.grecaptcha === 'undefined' ) {
+		if ( ! conf || ! conf.sitekey ) {
+			return;
+		}
+		if ( typeof window.grecaptcha === 'undefined' ) {
+			// Pursae Cookie holds the script back until the visitor consents: wait for it.
+			if ( document.getElementById( 'google-recaptcha-js' ) && ( initRecaptcha.tries = ( initRecaptcha.tries || 0 ) + 1 ) < 240 ) {
+				setTimeout( initRecaptcha, 500 );
+			}
 			return;
 		}
 		var execute = function ( action ) {
@@ -473,6 +480,83 @@
 			setInterval( function () { execute( conf.actions.homepage ); }, 110000 );
 		} );
 		document.addEventListener( 'wpcf7submit', function () { execute( conf.actions.contactform ); } );
+	}
+
+	// Conditional groups: [group id] wrappers shown or hidden by the form's `conditional:` rules.
+	function initConditional( form ) {
+		var holder = form.querySelector( 'script.wpcf7cf-rules' );
+		if ( ! holder ) {
+			return;
+		}
+		var rules = [];
+		try {
+			rules = JSON.parse( holder.textContent );
+		} catch ( e ) {
+			return;
+		}
+		var groups = {};
+		form.querySelectorAll( '[data-wpcf7cf-group]' ).forEach( function ( el ) {
+			groups[ el.getAttribute( 'data-wpcf7cf-group' ) ] = el;
+		} );
+		var visible = function ( name, seen ) {
+			var el = groups[ name ];
+			if ( ! el || seen[ name ] ) {
+				return false;
+			}
+			seen[ name ] = true;
+			var parent = el.parentElement && el.parentElement.closest( '[data-wpcf7cf-group]' );
+			if ( parent && ! visible( parent.getAttribute( 'data-wpcf7cf-group' ), seen ) ) {
+				return false;
+			}
+			return rules.every( function ( r ) {
+				return r.group !== name || holds( r, valuesOf( r.field, seen ) );
+			} );
+		};
+		var valuesOf = function ( field, seen ) {
+			var out = [];
+			form.querySelectorAll( '[name="' + field + '"], [name="' + field + '[]"]' ).forEach( function ( el ) {
+				var wrap = el.closest( '[data-wpcf7cf-group]' );
+				if ( wrap && ! visible( wrap.getAttribute( 'data-wpcf7cf-group' ), Object.assign( {}, seen ) ) ) {
+					return;
+				}
+				if ( ( 'checkbox' === el.type || 'radio' === el.type ) && ! el.checked ) {
+					return;
+				}
+				if ( 'file' === el.type ) {
+					el.files && el.files.length && out.push( el.files[ 0 ].name );
+				} else if ( el.value !== '' ) {
+					out.push( el.value );
+				}
+			} );
+			return out;
+		};
+		var holds = function ( r, vals ) {
+			var joined = vals.join( '' ).trim();
+			switch ( r.op ) {
+				case 'is empty': return joined === '';
+				case 'not empty': return joined !== '';
+				case 'equals': return vals.some( function ( v ) { return v.trim() === r.value; } );
+				case 'not equals': return ! vals.some( function ( v ) { return v.trim() === r.value; } );
+				case 'contains': return vals.some( function ( v ) { return v.toLowerCase().indexOf( r.value.toLowerCase() ) !== -1; } );
+				case 'greater than': return joined !== '' && parseFloat( joined ) > parseFloat( r.value );
+				case 'less than': return joined !== '' && parseFloat( joined ) < parseFloat( r.value );
+			}
+			return false;
+		};
+		var update = function () {
+			Object.keys( groups ).forEach( function ( name ) {
+				var show = visible( name, {} ), el = groups[ name ];
+				el.hidden = ! show;
+				el.classList.toggle( 'wpcf7cf-hidden', ! show );
+				el.querySelectorAll( 'input, select, textarea' ).forEach( function ( c ) {
+					c.disabled = ! show;
+				} );
+			} );
+		};
+		form.addEventListener( 'input', update );
+		form.addEventListener( 'change', update );
+		form.addEventListener( 'wpcf7reset', function () { setTimeout( update, 0 ); } );
+		update();
 	}
 
 	function init( form ) {
@@ -568,6 +652,7 @@
 		} );
 		document.querySelectorAll( '.wpcf7 > form' ).forEach( function ( form ) {
 			wpcf7.init( form );
+			initConditional( form );
 			form.closest( '.wpcf7' ).classList.replace( 'no-js', 'js' );
 		} );
 		initRecaptcha();

@@ -8,10 +8,12 @@ import (
 	"html/template"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/mail"
 	"wpgo/internal/store"
 )
 
@@ -39,6 +41,7 @@ const (
 	gooikeNamespace = "gooike/v1"
 	gooikeAssets    = "/wp-content/plugins/gooike/assets"
 	gooikePurgeJob  = "gooike_purge_logs"
+	gooikeScanJob   = "gooike_scan_cookies"
 )
 
 // gooikeCategory is a consent category. The four built-in ones cannot be deleted; necessary is
@@ -123,30 +126,35 @@ type gooikeDesign struct {
 
 // gooikeSettings are the plugin's options.
 type gooikeSettings struct {
-	PolicyVersion   int    `json:"policy_version"`
-	ExpiryMonths    int    `json:"expiry_months"`
-	PrivacyPage     int64  `json:"privacy_page"`
-	PrivacyURL      string `json:"privacy_url"`
-	CookiePolicyURL string `json:"cookie_policy_url"`
-	NoticeURL       string `json:"notice_url"`
-	Regulation      string `json:"regulation"` // gdpr (opt-in), ccpa (opt-out), kvkk (opt-in, Turkey)
-	Geo             bool   `json:"geo"`
-	GeoOther        string `json:"geo_other"` // regulation for visitors outside the EU/EEA/UK, Turkey and the US: none, gdpr, ccpa, kvkk
-	RespectGPC      bool   `json:"respect_gpc"`
-	RespectDNT      bool   `json:"respect_dnt"`
-	ConsentMode     bool   `json:"consent_mode"`
-	WaitForUpdate   int    `json:"wait_for_update"`
-	AdsRedaction    bool   `json:"ads_data_redaction"`
-	URLPassthrough  bool   `json:"url_passthrough"`
-	LogConsent      bool   `json:"log_consent"`
-	IPMode          string `json:"ip_mode"` // truncate, hash, none
-	RetentionMonths int    `json:"retention_months"`
-	ReloadOnChange  bool   `json:"reload_on_withdraw"`
-	BlockYouTube    bool   `json:"block_youtube"`
-	BlockVimeo      bool   `json:"block_vimeo"`
-	BlockMaps       bool   `json:"block_maps"`
-	EmbedCategory   string `json:"embed_category"`
-	ExtraHosts      string `json:"extra_hosts"` // more sources for the CSP (connect-src / script-src)
+	PolicyVersion   int      `json:"policy_version"`
+	ExpiryMonths    int      `json:"expiry_months"`
+	PrivacyPage     int64    `json:"privacy_page"`
+	PrivacyURL      string   `json:"privacy_url"`
+	CookiePolicyURL string   `json:"cookie_policy_url"`
+	NoticeURL       string   `json:"notice_url"`
+	Regulation      string   `json:"regulation"` // gdpr (opt-in), ccpa (opt-out), kvkk (opt-in, Turkey)
+	Geo             bool     `json:"geo"`
+	GeoOther        string   `json:"geo_other"` // regulation for visitors outside the EU/EEA/UK, Turkey and the US: none, gdpr, ccpa, kvkk
+	RespectGPC      bool     `json:"respect_gpc"`
+	RespectDNT      bool     `json:"respect_dnt"`
+	ConsentMode     bool     `json:"consent_mode"`
+	WaitForUpdate   int      `json:"wait_for_update"`
+	AdsRedaction    bool     `json:"ads_data_redaction"`
+	URLPassthrough  bool     `json:"url_passthrough"`
+	LogConsent      bool     `json:"log_consent"`
+	IPMode          string   `json:"ip_mode"` // truncate, hash, none
+	RetentionMonths int      `json:"retention_months"`
+	ReloadOnChange  bool     `json:"reload_on_withdraw"`
+	BlockYouTube    bool     `json:"block_youtube"`
+	BlockVimeo      bool     `json:"block_vimeo"`
+	BlockMaps       bool     `json:"block_maps"`
+	EmbedCategory   string   `json:"embed_category"`
+	ExtraHosts      string   `json:"extra_hosts"` // more sources for the CSP (connect-src / script-src)
+	ScanAuto        bool     `json:"scan_auto"`   // weekly background scan
+	ScanEmail       bool     `json:"scan_email"`  // mail the admin when a scan finds undeclared cookies
+	ScanPaths       string   `json:"scan_paths"`  // extra paths for the weekly scan
+	ScanLast        string   `json:"scan_last"`
+	ScanNew         []string `json:"scan_new"` // undeclared cookies of the last scheduled scan
 
 	Texts      gooikeTexts       `json:"texts"`
 	Design     gooikeDesign      `json:"design"`
@@ -450,6 +458,11 @@ func (s *Server) gooikeActivate(ctx context.Context) error {
 		SELECT $1, now() + interval '5 minutes', 'daily' WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = $1 AND recurrence <> '')`, gooikePurgeJob); err != nil {
 		return err
 	}
+	if st := s.gooikeLoad(); st.ScanAuto {
+		if err := s.gooikeScheduleScan(ctx, true); err != nil {
+			return err
+		}
+	}
 	s.purgeAll(ctx)
 	return nil
 }
@@ -459,7 +472,7 @@ func (s *Server) gooikeDeactivate(ctx context.Context) error {
 	if err := s.settings.Set(ctx, map[string]any{gooikeSetting: false}); err != nil {
 		return err
 	}
-	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = $1`, gooikePurgeJob)
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name IN ($1, $2)`, gooikePurgeJob, gooikeScanJob)
 	s.purgeAll(ctx)
 	return nil
 }
@@ -529,4 +542,53 @@ func (s *Server) registerGooike(r *gin.Engine, admin *gin.RouterGroup) {
 	s.static(r, gooikeAssets, "gooike", s.gooikeOnly())
 	admin.GET("/gooike", s.gooikeOnly(), s.gooikeAdmin)
 	admin.POST("/gooike", s.gooikeOnly(), s.gooikeAdmin)
+}
+
+// gooikeScheduleScan adds or removes the weekly cookie scan job.
+func (s *Server) gooikeScheduleScan(ctx context.Context, on bool) error {
+	if !on {
+		_, err := s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = $1`, gooikeScanJob)
+		return err
+	}
+	_, err := s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, run_at, recurrence)
+		SELECT $1, now() + interval '1 hour', 'weekly' WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = $1 AND recurrence <> '')`, gooikeScanJob)
+	return err
+}
+
+// gooikeScanRun is the weekly scan: it remembers the undeclared cookies it finds (shown on the
+// Cookie Scanner tab) and, when asked to, mails the site admin once per new set of cookies.
+func (s *Server) gooikeScanRun(ctx context.Context) error {
+	if !s.gooikeOn() {
+		return nil
+	}
+	st := s.gooikeLoad()
+	if !st.ScanAuto {
+		return nil
+	}
+	var extra []string
+	for _, l := range strings.Split(st.ScanPaths, "\n") {
+		if l = strings.TrimSpace(l); l != "" {
+			extra = append(extra, l)
+		}
+	}
+	res := s.gooikeScan(ctx, &st, extra)
+	var found []string
+	for _, it := range res.Items {
+		if !it.Declared {
+			found = append(found, it.Name)
+		}
+	}
+	sort.Strings(found)
+	changed := strings.Join(found, ",") != strings.Join(st.ScanNew, ",")
+	st.ScanLast, st.ScanNew = res.At, found
+	if err := s.gooikeSave(ctx, st); err != nil {
+		return err
+	}
+	if changed && len(found) > 0 && st.ScanEmail {
+		site := s.settings.String("blogname")
+		s.sendMail(ctx, mail.Message{Kind: "gooike_scan", To: []string{s.settings.String("admin_email")},
+			Subject: "[" + site + "] Pursae Cookie found undeclared cookies",
+			Body:    "The weekly cookie scan found cookies that are not in your cookie declaration:\n\n" + strings.Join(found, "\n") + "\n\nReview them: " + s.links(ctx).HomeURL("/wp-admin/gooike?page=categories&tab=scan") + "\n"})
+	}
+	return nil
 }

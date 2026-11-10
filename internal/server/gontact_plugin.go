@@ -429,6 +429,9 @@ func (s *Server) gontactMenu(menu []*menuTop, u *store.User, screen string) []*m
 	if u.Can("publish_pages", nil) {
 		subs = append(subs, struct{ slug, title string }{"admin?page=wpcf7-new", "Add Contact Form"})
 	}
+	if u.Can("publish_pages", nil) {
+		subs = append(subs, struct{ slug, title string }{"admin?page=" + gontactEntriesPage, "Entries"})
+	}
 	if u.Can("manage_options", nil) {
 		subs = append(subs, struct{ slug, title string }{"admin?page=wpcf7-integration", "Integration"})
 	}
