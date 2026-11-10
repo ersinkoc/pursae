@@ -121,17 +121,7 @@ var gooWebhookAllowPrivate atomic.Bool
 var gooWebhookWG sync.WaitGroup
 
 func init() {
-	// Module topics: subscription / booking / membership .created and .updated.
-	gooOn("subscription_created", 50, func(s *Server, ctx context.Context, arg any) {
-		if sub, ok := arg.(*gooSubscription); ok && s.gooWebhooksFor(ctx, "subscription.created") {
-			s.gooWebhookFire(ctx, "subscription.created", sub.ID, s.gooV3SubscriptionJSON(ctx, sub))
-		}
-	})
-	gooOn("subscription_updated", 50, func(s *Server, ctx context.Context, arg any) {
-		if sub, ok := arg.(*gooSubscription); ok && s.gooWebhooksFor(ctx, "subscription.updated") {
-			s.gooWebhookFire(ctx, "subscription.updated", sub.ID, s.gooV3SubscriptionJSON(ctx, sub))
-		}
-	})
+	// Module topics: booking / membership .created and .updated (subscription.* is fired by gsubWebhook).
 	gooOn("booking_created", 50, func(s *Server, ctx context.Context, arg any) {
 		if b, ok := arg.(*bkBooking); ok && s.gooWebhooksFor(ctx, "booking.created") {
 			s.gooWebhookFire(ctx, "booking.created", b.ID, s.gooV3BookingJSON(ctx, b))

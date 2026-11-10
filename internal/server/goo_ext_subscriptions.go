@@ -1522,6 +1522,10 @@ func (s *Server) gsubAdmin(c *gin.Context) {
 		s.gsubAdminEdit(c)
 		return
 	}
+	if c.Query("action") == "export_csv" {
+		s.gooExportSubscriptionsCSV(c)
+		return
+	}
 	ctx := c.Request.Context()
 	status := c.Query("status")
 	search := strings.TrimSpace(c.Query("s"))
@@ -1580,7 +1584,8 @@ func (s *Server) gsubAdmin(c *gin.Context) {
 		b.WriteString(`<td class="end_date column-end_date">` + s.gxaDate(sub.End) + `</td><td class="orders column-orders">` + strconv.Itoa(len(s.gsubRelatedOrders(ctx, sub))) + `</td></tr>`)
 	}
 	b.WriteString(`</tbody></table>`)
-	head := `<h1 class="wp-heading-inline">Subscriptions</h1> <a href="` + base + `&action=new" class="page-title-action">Add Subscription</a>`
+	head := `<h1 class="wp-heading-inline">Subscriptions</h1> <a href="` + base + `&action=new" class="page-title-action">Add Subscription</a> <a href="` +
+		gooEsc(gooAdminURL("subscriptions", "action", "export_csv", "status", status, "s", search, "_wpnonce", s.nonce(c, gooStoreNonce))) + `" class="page-title-action">Export CSV</a>`
 	if search != "" {
 		head += `<span class="subtitle">Search results for: <strong>` + gooEsc(search) + `</strong></span>`
 	}

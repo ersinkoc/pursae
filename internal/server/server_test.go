@@ -45,6 +45,11 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 	if adminURL == "" || testURL == "" {
 		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
 	}
+	// Every test gets a fresh site, so the in-process password reset throttle starts empty too
+	// (it is keyed by IP and user id, both of which repeat across tests).
+	resetReqMu.Lock()
+	clear(resetReqSeen)
+	resetReqMu.Unlock()
 	ctx := context.Background()
 	u, err := url.Parse(testURL)
 	if err != nil {

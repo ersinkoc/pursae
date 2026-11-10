@@ -78,6 +78,9 @@ language pack, downloaded with the site language, translates it, and Pursae's ow
 names, descriptions, reviews and the theme around it stay as written. E-mails and the optional
 modules' front-end texts are still English.
 
+A password reset requested for an account with the `customer` role sends the store's "Reset password"
+e-mail (Settings > Emails) when it is enabled; every other account gets the core "[Site] Password Reset" message.
+
 A store theme may also ship demo content with a `goocommerce` section in `demo/demo.json` (products,
 reviews, coupons, shipping), imported with the rest of the demo. The package format is in
 `docs/theme-package.md`.
@@ -103,7 +106,7 @@ Webhook deliveries run on a small pool of background workers; a failed delivery 
 webhook is disabled after 5 consecutive failed deliveries. Deliveries still waiting are lost on restart.
 
 Webhook topics: `coupon|customer|order|product` `.created/.updated/.deleted` (+ `.restored`), the module
-topics `subscription.created|updated`, `booking.created|updated` and `membership.created|updated`
+topics `subscription.created|updated|deleted`, `booking.created|updated` and `membership.created|updated`
 (offered while the module is on; in-cart bookings are not delivered), and `action.<hook>`, which
 delivers `{"action": hook, "arg": id}` when the internal action of that name fires (with or without
 the `woocommerce_` prefix, for example `action.woocommerce_order_status_changed`). Every attempt
@@ -112,8 +115,9 @@ transport error; the last 50 per webhook), shown on the webhook edit screen with
 delivery" button; REST: `GET /wc/v3/webhooks/{id}/deliveries`, `POST /wc/v3/webhooks/{id}/ping`.
 
 Module REST (wc/v3, `manage_woocommerce`, 404 while the module is off): `/subscriptions`, `/bookings`,
-`/memberships` (user memberships) and `/gift-cards` with list (filters `status`, `customer`, ...),
-read and update (status, dates). The Store API add-item body passes `extensions.<namespace>` objects
+`/memberships` (user memberships) and `/gift-cards` with list (filters `status`, `customer`, ...; an
+unknown `status` is a 400), read and update (status, dates); subscriptions and gift cards have the
+fuller APIs described under Modules. The Store API add-item body passes `extensions.<namespace>` objects
 (`product_addons`, `bookings`, `gift_cards`, ...) to the add-to-cart validation as the posted form.
 
 ## Orders under concurrency

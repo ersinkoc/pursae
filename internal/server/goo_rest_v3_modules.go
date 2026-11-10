@@ -11,10 +11,10 @@ import (
 
 // wc/v3 endpoints of the optional modules, for ERP / CRM / mobile integrations:
 //
-//	(subscriptions live in goo_rest_v3_subscriptions.go)
-//	/bookings        (WooCommerce Bookings)        list, read, update status / dates
+//	/bookings        (WooCommerce Bookings)        list, read, update status
 //	/memberships     (WooCommerce Memberships, user memberships) list, read, update status / end date
-//	/gift-cards      (WooCommerce Gift Cards)      list, read, update status / expiry / recipient
+//
+// /subscriptions lives in goo_rest_v3_subscriptions.go and /gift-cards in goo_ext_gift_cards_rest.go.
 //
 // Each answers 404 rest_no_route while its module is off and needs manage_woocommerce.
 
@@ -38,7 +38,6 @@ func (s *Server) registerGooV3Modules() {
 	}
 	reg("bookings", bkKey, s.gooV3BookingsList, s.gooV3BookingGet, s.gooV3BookingUpdate)
 	reg("memberships", gmemKey, s.gooV3MembershipsList, s.gooV3MembershipGet, s.gooV3MembershipUpdate)
-	reg("gift-cards", gcKey, s.gooV3GiftCardsList, s.gooV3GiftCardGet, s.gooV3GiftCardUpdate)
 }
 
 func gooTimeVal(v any, s *Server) (*time.Time, bool) {
@@ -201,80 +200,4 @@ func (s *Server) gooV3MembershipUpdate(c *gin.Context, id int64, b map[string]an
 		return nil, gooErr(500, "woocommerce_rest_cannot_edit", err.Error())
 	}
 	return s.gooV3MembershipJSON(ctx, m), nil
-}
-
-// Gift cards -------------------------------------------------------------------------------------------------
-
-func (s *Server) gooV3GiftCardJSON(ctx context.Context, g *gcCard) map[string]any {
-	return map[string]any{"id": g.ID, "code": g.Code, "status": g.Status, "currency": g.Currency,
-		"initial_balance": s.gooDec(g.Initial), "balance": s.gooDec(g.Balance), "order_id": g.OrderID,
-		"recipient_email": g.Recipient, "recipient_name": g.RecipientName, "sender_name": g.Sender, "sender_email": g.SenderEmail, "message": g.Message,
-		"delivery_date": s.gooDate(g.DeliverDate), "delivered": g.Delivered, "expires": s.gooDate(g.Expires),
-		"date_created": s.gooDate(&g.Created), "date_created_gmt": gooDateGMT(&g.Created)}
-}
-
-func (s *Server) gooV3GiftCardGet(c *gin.Context, id int64) (map[string]any, *gooAPIErr) {
-	g, err := s.gcGet(c.Request.Context(), id)
-	if err != nil {
-		return nil, gooErr(404, "woocommerce_rest_invalid_id", "Invalid ID.")
-	}
-	return s.gooV3GiftCardJSON(c.Request.Context(), g), nil
-}
-
-func (s *Server) gooV3GiftCardsList(c *gin.Context, req *restRequest) {
-	ctx := c.Request.Context()
-	conds, args := []string{"true"}, []any{}
-	if st := strings.TrimSpace(c.Query("status")); st != "" && st != "any" && st != "all" {
-		if st != "active" && st != "disabled" && st != "redeemed" {
-			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): status")
-			return
-		}
-		args = append(args, st)
-		conds = append(conds, "status = $1")
-	}
-	if q := strings.TrimSpace(c.Query("search")); q != "" {
-		args = append(args, "%"+strings.ToLower(q)+"%")
-		conds = append(conds, "(lower(code) LIKE $"+itoa64(int64(len(args)))+" OR lower(recipient) LIKE $"+itoa64(int64(len(args)))+")")
-	}
-	out := []any{}
-	for _, g := range gooPaginateSlice(c, s.gcQuery(ctx, strings.Join(conds, " AND ")+` ORDER BY id DESC`, args...)) {
-		out = append(out, s.gooV3GiftCardJSON(ctx, g))
-	}
-	restJSON(c, http.StatusOK, out)
-}
-
-func (s *Server) gooV3GiftCardUpdate(c *gin.Context, id int64, b map[string]any) (map[string]any, *gooAPIErr) {
-	ctx := c.Request.Context()
-	g, err := s.gcGet(ctx, id)
-	if err != nil {
-		return nil, gooErr(404, "woocommerce_rest_invalid_id", "Invalid ID.")
-	}
-	if v, ok := b["expires"]; ok {
-		t, valid := gooTimeVal(v, s)
-		if !valid {
-			return nil, gooErr(400, "rest_invalid_param", "Invalid parameter(s): expires")
-		}
-		g.Expires = t
-	}
-	if v, ok := b["status"]; ok {
-		switch st := gooStr(v); st {
-		case "active":
-			if g.Status == "disabled" {
-				g.Status = "active"
-				if g.Balance <= 0 {
-					g.Status = "redeemed"
-				}
-			}
-		case "disabled":
-			g.Status = "disabled"
-		default:
-			return nil, gooErr(400, "rest_invalid_param", "Invalid parameter(s): status")
-		}
-	}
-	if _, err := s.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET status = $2, expires = $3 WHERE id = $1`, g.ID, g.Status, g.Expires); err != nil {
-		return nil, gooErr(500, "woocommerce_rest_cannot_edit", err.Error())
-	}
-	_ = s.gcLog(ctx, g.ID, "updated", 0, 0, gooActorID(c), "Updated through the REST API.")
-	fresh, _ := s.gcGet(ctx, id)
-	return s.gooV3GiftCardJSON(ctx, fresh), nil
 }

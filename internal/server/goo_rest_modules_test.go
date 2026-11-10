@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -188,14 +189,17 @@ func TestGooV3ModuleEndpoints(t *testing.T) {
 	if err := srv.gcCreate(ctx, card, 1, "test"); err != nil {
 		t.Fatal(err)
 	}
-	if r := v3("GET", fmt.Sprintf("/gift-cards/%d", card.ID), nil); r.Code != 200 || r.obj()["balance"] != "40.00" {
+	if r := v3("GET", fmt.Sprintf("/gift-cards/%d", card.ID), nil); r.Code != 200 || r.obj()["balance"] != float64(40) || len(r.obj()["activity"].([]any)) != 1 {
 		t.Fatalf("gift card: %d %s", r.Code, r.Raw)
 	}
-	if r := v3("PUT", fmt.Sprintf("/gift-cards/%d", card.ID), map[string]any{"status": "disabled", "expires": "2031-01-02T00:00:00"}); r.Code != 200 || r.obj()["status"] != "disabled" || r.obj()["expires"] == nil {
+	if r := v3("PUT", fmt.Sprintf("/gift-cards/%d", card.ID), map[string]any{"status": "disabled", "date_expires": "2031-01-02"}); r.Code != 200 || r.obj()["status"] != "disabled" || r.obj()["date_expires"] != "2031-01-02" {
 		t.Errorf("gift card update: %d %s", r.Code, r.Raw)
 	}
 	if r := v3("GET", "/gift-cards?status=disabled", nil); len(r.list()) != 1 {
 		t.Errorf("gift card filter: %s", r.Raw)
+	}
+	if r := v3("GET", "/gift-cards?status=bogus", nil); r.Code != 400 {
+		t.Errorf("gift card bad status: %d", r.Code)
 	}
 	if r := v3("GET", "/subscriptions/99999", nil); r.Code != 404 {
 		t.Errorf("unknown id: %d", r.Code)
@@ -210,5 +214,25 @@ func TestPaoStoreFormAllModules(t *testing.T) {
 	}})
 	if gxForm(f, "wc_gc_giftcard_to") != "a@example.test" || gxForm(f, "wc_gc_giftcard_amount") != "50" || gxForm(f, "wc_bookings_field_start_date_year") != "2031" {
 		t.Errorf("flattened form: %v", f)
+	}
+}
+
+// A store customer gets the store's "Reset password" e-mail; any other account gets the core message.
+func TestGooResetPasswordMailByRole(t *testing.T) {
+	base, c, srv := gooSite(t)
+	anon := &http.Client{CheckRedirect: c.CheckRedirect}
+	gxaCustomer(t, srv, "shopper@example.test")
+	for login, subject := range map[string]string{"shopper@example.test": "Password Reset Request for", "admin": "] Password Reset"} {
+		if code, _, _ := post(t, anon, base+"/wp-login?action=lostpassword", url.Values{"user_login": {login}}); code != http.StatusFound {
+			t.Fatalf("lost password %s: %d", login, code)
+		}
+		if m := lastMail(t, subject); !strings.Contains(m.Body, "action=rp") {
+			t.Errorf("%s: no reset link in %q", login, m.Subject)
+		}
+	}
+	for _, m := range sentMail(t) {
+		if strings.Contains(m.Subject, "] Password Reset") && m.To[0] == "shopper@example.test" {
+			t.Errorf("the customer also got the core message")
+		}
 	}
 }

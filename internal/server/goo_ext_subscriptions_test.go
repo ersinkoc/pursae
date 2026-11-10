@@ -880,8 +880,9 @@ func TestGooViewSubscriptionTitle(t *testing.T) {
 
 type gsubFakeCardGateway struct{ gooTestGateway }
 
-func (gsubFakeCardGateway) ID() string             { return "fake_card" }
-func (gsubFakeCardGateway) Supports(f string) bool { return f == "subscriptions" }
+func (gsubFakeCardGateway) ID() string              { return "fake_card" }
+func (gsubFakeCardGateway) Supports(f string) bool  { return f == "subscriptions" }
+func (gsubFakeCardGateway) RenewalNeedsToken() bool { return true }
 func (gsubFakeCardGateway) ProcessRenewal(s *Server, ctx context.Context, o *gooOrder, token string) (string, error) {
 	return "tx_" + token, nil
 }

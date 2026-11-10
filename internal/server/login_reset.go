@@ -60,8 +60,9 @@ func (s *Server) resetLink(c *gin.Context, u *store.User) string {
 // sendResetLink is retrieve_password(): the "[Site] Password Reset" message.
 func (s *Server) sendResetLink(c *gin.Context, u *store.User) {
 	link := s.resetLink(c, u)
-	// The store's own "Reset password" e-mail (Settings > Emails) replaces the core message when it is enabled.
-	if s.gooOn() {
+	// A store customer gets the store's own "Reset password" e-mail (Settings > Emails) when it is
+	// enabled; every other account, and every site without the store, gets the core message.
+	if s.gooOn() && containsStr(u.Roles, "customer") {
 		if sent, err := s.gooSendEmail(c, "customer_reset_password", nil, map[string]any{"user_id": u.ID, "login": u.Login, "to": u.Email, "reset_url": link}); err == nil && sent {
 			return
 		}

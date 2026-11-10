@@ -445,6 +445,10 @@ func (s *Server) gooV3SubscriptionsList(c *gin.Context, req *restRequest) {
 	if st := gooQueryList(c, "status"); len(st) > 0 && !containsStr(st, "any") && !containsStr(st, "all") {
 		for i := range st {
 			st[i] = strings.TrimPrefix(st[i], "wc-")
+			if gooOptLabel(gsubStatuses, st[i]) == st[i] {
+				restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): status")
+				return
+			}
 		}
 		q.Status = st
 	}

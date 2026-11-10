@@ -133,6 +133,10 @@ func (s *Server) gcV3List(c *gin.Context, req *restRequest) {
 		where = append(where, "status = "+arg(st))
 	case "expired":
 		where = append(where, "expires < current_date")
+	case "", "any", "all":
+	default:
+		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): status")
+		return
 	}
 	if q := strings.TrimSpace(c.Query("search")); q != "" {
 		where = append(where, "(code ILIKE "+arg("%"+q+"%")+" OR recipient ILIKE "+arg("%"+q+"%")+")")
