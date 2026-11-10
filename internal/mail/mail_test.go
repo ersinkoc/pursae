@@ -1,12 +1,66 @@
 package mail
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"io"
+	"mime/quotedprintable"
+	"net/http"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+type auditRoundTripper func(*http.Request) (*http.Response, error)
+
+func (f auditRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+type auditFailingBody struct{ err error }
+
+func (b auditFailingBody) Read([]byte) (int, error) { return 0, b.err }
+func (b auditFailingBody) Close() error             { return nil }
+
+func TestAPIReportsResponseReadError(t *testing.T) {
+	want := errors.New("response interrupted")
+	a := &API{Mailer: "mandrill", Opts: map[string]string{"api_key": "key"}, Client: &http.Client{Transport: auditRoundTripper(func(*http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: auditFailingBody{want}}, nil
+	})}}
+	_, err := a.Send(context.Background(), Email{FromEmail: "f@example.test", To: []string{"t@example.test"}, Text: "hello"})
+	if !errors.Is(err, want) {
+		t.Fatalf("error=%v, want %v", err, want)
+	}
+}
+
+func TestAPIRejectsMixedInvalidToRecipients(t *testing.T) {
+	calls := 0
+	a := &API{Mailer: "resend", Opts: map[string]string{"api_key": "key"}, Client: &http.Client{Transport: auditRoundTripper(func(*http.Request) (*http.Response, error) {
+		calls++
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(`{"id":"ok"}`))}, nil
+	})}}
+	_, err := a.Send(context.Background(), Email{FromEmail: "f@example.test", To: []string{"good@example.test", "invalid address"}, Text: "hello"})
+	if err == nil || calls != 0 {
+		t.Fatalf("error=%v requests=%d", err, calls)
+	}
+}
+
+func TestBuildNormalizesMixedLineEndings(t *testing.T) {
+	m := &Mailer{From: "sender@example.test"}
+	raw, err := m.Build(Message{To: []string{"a@example.test"}, Body: "one\r\ntwo\nthree"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg, err := mail.ReadMessage(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := io.ReadAll(quotedprintable.NewReader(msg.Body))
+	if err != nil || string(body) != "one\r\ntwo\r\nthree" {
+		t.Fatalf("decoded body=%q err=%v", body, err)
+	}
+}
 
 func TestBuildAndFileDelivery(t *testing.T) {
 	dir := t.TempDir()

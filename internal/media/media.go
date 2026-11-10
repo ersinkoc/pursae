@@ -628,7 +628,7 @@ func ApplyOps(img image.Image, ops []Op) image.Image {
 
 func rotate(src image.Image, angle int) image.Image {
 	angle = ((angle % 360) + 360) % 360
-	if angle == 0 {
+	if angle != 90 && angle != 180 && angle != 270 {
 		return src
 	}
 	b := src.Bounds()

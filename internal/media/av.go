@@ -115,6 +115,9 @@ func readMP3(r io.ReaderAt, size int64) AVInfo {
 		mono := buf[i+3]>>6 == 3
 		side := map[[2]bool]int{{true, true}: 17, {true, false}: 32, {false, true}: 9, {false, false}: 17}[[2]bool{ver == 1, mono}]
 		off := i + 4 + side
+		if buf[i+1]&1 == 0 { // protected frames include a two-byte CRC after the header
+			off += 2
+		}
 		if off+16 <= len(buf) {
 			tag := string(buf[off : off+4])
 			if tag == "Xing" || tag == "Info" {

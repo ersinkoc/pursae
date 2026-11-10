@@ -35,6 +35,17 @@ func TestResizeDims(t *testing.T) {
 	}
 }
 
+func TestApplyOpsUnsupportedRotationPreservesImage(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 2, 1))
+	img.Set(0, 0, color.RGBA{255, 0, 0, 255})
+	for _, angle := range []int{45, -45, 405} {
+		got := ApplyOps(img, []Op{{Rotate: angle}})
+		if got.Bounds() != img.Bounds() || got.At(0, 0) != img.At(0, 0) {
+			t.Errorf("rotation %d changed the image", angle)
+		}
+	}
+}
+
 func TestSaveAndProcess(t *testing.T) {
 	dir := t.TempDir()
 	img := image.NewRGBA(image.Rect(0, 0, 1200, 800))

@@ -95,6 +95,7 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 	qp := func(s string) string {
 		var q bytes.Buffer
 		w := quotedprintable.NewWriter(&q)
+		s = strings.ReplaceAll(s, "\r\n", "\n")
 		_, _ = w.Write([]byte(strings.ReplaceAll(s, "\n", "\r\n")))
 		_ = w.Close()
 		return q.String()

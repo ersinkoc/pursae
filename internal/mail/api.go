@@ -133,6 +133,9 @@ func (a *API) Send(ctx context.Context, e Email) (string, error) {
 	if len(to) == 0 {
 		return "", fmt.Errorf("no valid recipients")
 	}
+	if len(to) != len(e.To) {
+		return "", fmt.Errorf("invalid To recipient")
+	}
 	var reply *addr
 	if r := parseAddrs([]string{e.ReplyTo}); len(r) == 1 {
 		reply = &r[0]
@@ -696,7 +699,10 @@ func (a *API) do(ctx context.Context, r apiReq) (int, http.Header, []byte, error
 		return 0, nil, nil, err
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return 0, nil, nil, err
+	}
 	if a.Debug != nil {
 		fmt.Fprintf(a.Debug, "HTTP %d\n%s\n", resp.StatusCode, truncate(string(body), 2000))
 	}
