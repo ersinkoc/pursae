@@ -34,6 +34,7 @@ silently drop a permission.
 | `description` | no | up to 2000 characters, plain text |
 | `author`, `author_uri`, `plugin_uri` | no | URIs must be absolute `http(s)` URLs |
 | `requires` | no | minimum Pursae version; the site refuses to install or activate a plugin that needs a newer core |
+| `requires_plugins` | no | slugs of plugins that must be active before this one can be activated (a Wasm plugin slug or a built-in plugin's Plugins screen slug, e.g. `contact-form-7`); activation is refused and lists the missing ones |
 | `license` | no | an SPDX identifier |
 | `permissions` | yes (may be empty) | from the [permission vocabulary](permissions.md); no duplicates |
 | `hooks` | yes (may be empty) | every hook the plugin may subscribe to (letters, digits, `_ . : / -`, max 128). Registering a hook that is not listed is refused at runtime. A hook that needs a permission requires that permission to be declared |

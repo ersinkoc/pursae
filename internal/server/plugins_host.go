@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -236,6 +237,17 @@ func (s *Server) pluginSavePost(ctx context.Context, p *store.Post) {
 	hooks.DoAction(ctx, "save_post", p.ID, data)
 }
 
+// pluginUserAction fires the user lifecycle actions user_register and wp_login for Wasm plugins
+// (users:read): the user id and the user as CurrentUser returns it.
+func (s *Server) pluginUserAction(ctx context.Context, hook string, u *store.User) {
+	if s.plugins == nil || u == nil || !s.plugins.hooks.HasAction(hook) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer cancel()
+	s.plugins.hooks.DoAction(ctx, hook, u.ID, userInfo(u))
+}
+
 // Current user --------------------------------------------------------------------
 
 func (h *pluginHost) CurrentUser(ctx context.Context, _ string) (*plugins.UserInfo, error) {
@@ -276,16 +288,23 @@ func (h *pluginHost) ScheduleEvent(ctx context.Context, plugin string, ev plugin
 	if ev.At == 0 && rec != "" {
 		var total, same int
 		if err := tx.QueryRow(ctx, `SELECT count(*), count(*) FILTER (WHERE recurrence = $3 AND payload->'args' = $4::jsonb AND status <> 'failed')
-			FROM jobs WHERE name = $1 AND payload->>'plugin' = $2`, ev.Hook, plugin, rec, string(args)).Scan(&total, &same); err != nil {
+			FROM jobs WHERE name = $1 AND payload->>'plugin' = $2 AND COALESCE(recurrence, '') <> ''`, ev.Hook, plugin, rec, string(args)).Scan(&total, &same); err != nil {
 			return err
 		}
 		if total == 1 && same == 1 {
 			return tx.Commit(ctx) // already scheduled exactly like this: keep its next run
 		}
 	}
-	// Replace: every row of the hook, a running one too (finishJob then finds no row to re-queue, so the old
-	// schedule cannot come back next to the new one).
-	if _, err := tx.Exec(ctx, `DELETE FROM jobs WHERE name = $1 AND payload->>'plugin' = $2`, ev.Hook, plugin); err != nil {
+	// Replace, a running row too (finishJob then finds no row to re-queue, so the old schedule cannot come
+	// back next to the new one). A recurring event replaces the hook's recurring rows only; a one-off event
+	// replaces only the one-off rows with the same args, so "one reminder per order" can be queued.
+	if rec != "" {
+		_, err = tx.Exec(ctx, `DELETE FROM jobs WHERE name = $1 AND payload->>'plugin' = $2 AND COALESCE(recurrence, '') <> ''`, ev.Hook, plugin)
+	} else {
+		_, err = tx.Exec(ctx, `DELETE FROM jobs WHERE name = $1 AND payload->>'plugin' = $2 AND COALESCE(recurrence, '') = ''
+			AND COALESCE(NULLIF(payload->'args', 'null'::jsonb), '{}'::jsonb) = $3::jsonb`, ev.Hook, plugin, normalizedEventArgs(ev.Args))
+	}
+	if err != nil {
 		return err
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO jobs(name, payload, run_at, recurrence) VALUES ($1, $2, $3, $4)`, ev.Hook, payload, runAt, rec); err != nil {
@@ -298,6 +317,22 @@ func (h *pluginHost) ScheduleEvent(ctx context.Context, plugin string, ev plugin
 // row to put back in the queue.
 func (h *pluginHost) UnscheduleEvent(ctx context.Context, plugin, hook string) error {
 	_, err := h.s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = $1 AND payload->>'plugin' = $2`, hook, plugin)
+	return err
+}
+
+// normalizedEventArgs is the JSON used to compare event args: nil and empty are the same.
+func normalizedEventArgs(args map[string]any) string {
+	if len(args) == 0 {
+		return "{}"
+	}
+	raw, _ := json.Marshal(args)
+	return string(raw)
+}
+
+// UnscheduleEventArgs removes the runs of hook scheduled with exactly args.
+func (h *pluginHost) UnscheduleEventArgs(ctx context.Context, plugin, hook string, args map[string]any) error {
+	_, err := h.s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = $1 AND payload->>'plugin' = $2
+		AND COALESCE(NULLIF(payload->'args', 'null'::jsonb), '{}'::jsonb) = $3::jsonb`, hook, plugin, normalizedEventArgs(args))
 	return err
 }
 
@@ -382,9 +417,20 @@ func (s *Server) servePluginRest(c *gin.Context, route, method string) bool {
 	for k, v := range c.Request.URL.Query() {
 		if len(v) > 0 {
 			req.Query[k] = v[0]
+			if len(v) > 1 {
+				if req.QueryAll == nil {
+					req.QueryAll = map[string][]string{}
+				}
+				req.QueryAll[k] = v
+			}
 		}
 	}
 	for _, h := range restHeaderSubset {
+		if v := c.GetHeader(h); v != "" {
+			req.Headers[h] = v
+		}
+	}
+	for _, h := range r.Headers { // headers the route declared (webhook signatures)
 		if v := c.GetHeader(h); v != "" {
 			req.Headers[h] = v
 		}
@@ -396,6 +442,7 @@ func (s *Server) servePluginRest(c *gin.Context, route, method string) bool {
 			return true
 		}
 		if len(body) > 0 {
+			req.RawBody = base64.StdEncoding.EncodeToString(body)
 			var decoded any
 			if c.ContentType() == "application/json" && json.Unmarshal(body, &decoded) == nil {
 				req.Body = decoded
@@ -420,6 +467,16 @@ func (s *Server) servePluginRest(c *gin.Context, route, method string) bool {
 			continue
 		}
 		c.Header(k, v)
+	}
+	if resp.ContentType != "" { // validated by ServeRest: allow-listed type, string body
+		var text string
+		_ = json.Unmarshal(resp.Body, &text)
+		c.Header("X-Content-Type-Options", "nosniff")
+		if resp.ContentType == "text/html" {
+			c.Header("Content-Security-Policy", "sandbox")
+		}
+		c.Data(resp.Status, resp.ContentType+"; charset=UTF-8", []byte(text))
+		return true
 	}
 	c.Data(resp.Status, "application/json; charset=UTF-8", resp.Body)
 	return true
@@ -702,7 +759,55 @@ func (s *Server) pluginScriptTags(where string, footer bool) template.HTML {
 			continue
 		}
 		id := a.Plugin + "-" + a.Asset.Handle
-		fmt.Fprintf(&sb, "<script src=\"%s\" id=\"%s-js\"></script>\n", html.EscapeString(pluginAssetURL(a.Plugin, a.Asset.Src, a.Version)), html.EscapeString(id))
+		sb.WriteString(pluginScriptTag(a, id, where, footer))
 	}
 	return template.HTML(sb.String())
+}
+
+// pluginScriptTag renders one enqueued script: an optional data block (wp_localize_script), then the
+// tag with type="module" / defer / async. Head scripts on the front end default to defer.
+func pluginScriptTag(a plugins.PluginAsset, id, where string, footer bool) string {
+	var sb strings.Builder
+	if len(a.Asset.Data) > 0 {
+		raw, err := json.Marshal(a.Asset.Data) // escapes <, > and & so the data cannot close the tag
+		if err == nil {
+			fmt.Fprintf(&sb, "<script id=\"%s-js-extra\">window.%s = %s;</script>\n", html.EscapeString(id), pluginDataVar(a.Asset.Handle), raw)
+		}
+	}
+	attrs := ""
+	switch {
+	case a.Asset.Module:
+		attrs = " type=\"module\""
+		if a.Asset.Strategy == "async" {
+			attrs += " async"
+		}
+	case a.Asset.Strategy == "async":
+		attrs = " async"
+	case a.Asset.Strategy == "defer", a.Asset.Strategy == "" && where == "front" && !footer:
+		attrs = " defer"
+	}
+	fmt.Fprintf(&sb, "<script src=\"%s\" id=\"%s-js\"%s></script>\n", html.EscapeString(pluginAssetURL(a.Plugin, a.Asset.Src, a.Version)), html.EscapeString(id), attrs)
+	return sb.String()
+}
+
+// pluginDataVar turns a handle ("my-plugin_x") into the global name "myPluginXData".
+func pluginDataVar(handle string) string {
+	var sb strings.Builder
+	up := false
+	for _, r := range handle {
+		if r == '-' || r == '_' {
+			up = true
+			continue
+		}
+		if up && r >= 'a' && r <= 'z' && sb.Len() > 0 {
+			r -= 'a' - 'A'
+		}
+		up = false
+		sb.WriteRune(r)
+	}
+	name := sb.String()
+	if name == "" || (name[0] >= '0' && name[0] <= '9') {
+		name = "_" + name
+	}
+	return name + "Data"
 }

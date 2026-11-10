@@ -130,3 +130,10 @@ The `wpgo` service has `restart: unless-stopped` (it also brings back a core upd
 start, see [upgrading](../getting-started/upgrading.md)); `compose.prod.yaml` adds it to `db` too.
 If containers still do not come back after the Docker daemon restarts, `docker compose up -d`
 (or `make prod-up`) starts them again with their data intact.
+
+## Several instances
+
+Instances that share one database see each other's plugin changes: every process compares the
+`plugins` table with what it has loaded every 10 seconds and loads, unloads or reloads the
+difference. Plugin packages live in the plugins directory (`WPGO_PLUGINS_DIR`), so every instance
+needs the same volume; an instance cannot load a package it does not have on disk.

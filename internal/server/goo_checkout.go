@@ -604,6 +604,7 @@ func (s *Server) gooCreateCustomer(ctx context.Context, email, username, passwor
 		return 0, err
 	}
 	if u, err := s.store.UserByID(ctx, id); err == nil {
+		s.pluginUserAction(ctx, "user_register", u)
 		if u.Profile == nil {
 			u.Profile = map[string]string{}
 		}

@@ -85,6 +85,22 @@ func OnInit(fn func()) {
 	mu.Unlock()
 }
 
+// OnActivate registers fn to run when an administrator activates the plugin (not on every
+// start-up: use OnInit for that). Use it to create default data.
+func OnActivate(fn func()) { lifecycle("activate", fn) }
+
+// OnDeactivate registers fn to run when an administrator deactivates the plugin, before it is
+// unloaded. Use it to unschedule events or tell an external service. It has a short time budget.
+func OnDeactivate(fn func()) { lifecycle("deactivate", fn) }
+
+// OnUninstall registers fn to run when the plugin is deleted: the plugin is loaded one last time
+// (even if inactive), fn runs, then its options, transients and events are removed.
+func OnUninstall(fn func()) { lifecycle("uninstall", fn) }
+
+func lifecycle(hook string, fn func()) {
+	AddAction(hook, 10, func(Context, []any) { fn() })
+}
+
 func register(kind, hook string, priority int, cb rawCallback) {
 	mu.Lock()
 	nextID++

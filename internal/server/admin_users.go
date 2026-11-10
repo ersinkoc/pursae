@@ -375,6 +375,7 @@ func (s *Server) userNew(c *gin.Context) {
 			}
 			if err == nil {
 				if nu, e := s.store.UserByID(c, newID); e == nil {
+					s.pluginUserAction(c, "user_register", nu)
 					s.notifyNewUser(c, nu, c.PostForm("send_user_notification") == "1")
 					s.asAudit(c, asEvent{Event: "user_created", Severity: "notice", Object: nu.Login, Message: "User " + nu.Login + " created with the role " + role + "."})
 				}

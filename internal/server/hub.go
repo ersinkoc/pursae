@@ -78,6 +78,7 @@ type hubItem struct {
 	TestedCore    string   `json:"tested_core"`
 	Permissions   []string `json:"permissions"`
 	Tags          []string `json:"tags"`
+	Changelog     string   `json:"changelog"` // what the listed version changes (plain text)
 	Downloads     int      `json:"downloads"`
 	Updated       string   `json:"updated"`
 	Size          int64    `json:"size"`
@@ -112,7 +113,7 @@ func (s *Server) hubBase() string {
 
 // errHubOff: WPGO_HUB=off, a devhub build with WPGO_DEV_HUB_URL=off or a test has no Manager; the message keeps
 // its translated wording.
-var errHubOff = errors.New("Pursae Manager is switched off (WPGO_HUB_URL)")
+var errHubOff = errors.New("Pursae Manager is switched off in this build")
 
 func (s *Server) hubClient() *http.Client {
 	return &http.Client{Timeout: 20 * time.Second, CheckRedirect: hubCheckRedirect}
@@ -431,7 +432,11 @@ func (s *Server) hubPing(ctx context.Context) error {
 		_ = s.settings.Set(ctx, map[string]any{hubReportedVersionOption: Version})
 	}
 	s.hubFlushEvents(ctx)
+	s.licenseWatch(ctx) // expiring / revoked license: notice + one e-mail (license_watch.go)
 	_, err = s.hubFetchIndex(ctx)
+	if err == nil {
+		s.hubAutoUpdatePlugins(ctx) // plugins with auto-updates on (hub_updates.go)
+	}
 	return err
 }
 

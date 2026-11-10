@@ -1,0 +1,12 @@
+{
+  "slug": "feed-digest",
+  "name": "Feed Digest",
+  "version": "1.0.0",
+  "description": "Example of the host API: a scheduled event fetches a JSON feed with HTTPGet, caches it in a transient and the [feed-digest] shortcode shows it.",
+  "author": "Pursae Contributors",
+  "requires": "0.1.0",
+  "license": "GPL-2.0-or-later",
+  "permissions": ["http:outbound", "storage", "cron", "content:filter", "options:read", "options:write"],
+  "hooks": ["cron_feed_digest_refresh"],
+  "shortcodes": ["feed-digest"]
+}

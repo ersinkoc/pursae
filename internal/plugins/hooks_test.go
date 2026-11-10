@@ -130,3 +130,13 @@ func TestDoActionOwner(t *testing.T) {
 		t.Fatal("owner without callbacks reported as run")
 	}
 }
+
+func TestLifecycleActionsAreOwnerScoped(t *testing.T) {
+	r := NewRegistry()
+	var got []string
+	r.Owner("a").AddAction("uninstall", 10, func(context.Context, ...any) { got = append(got, "a") })
+	r.Owner("b").AddAction("uninstall", 10, func(context.Context, ...any) { got = append(got, "b") })
+	if !r.DoActionOwner(context.Background(), "b", "uninstall") || strings.Join(got, ",") != "b" {
+		t.Fatalf("got %v", got)
+	}
+}

@@ -28,10 +28,21 @@ type Host interface {
 	// HTTPGet performs an outbound GET request. Implementations should apply
 	// destination allow-lists (e.g. block private networks) and size limits.
 	HTTPGet(ctx context.Context, plugin, url string) (*HTTPResponse, error)
+	// HTTPRequest performs an outbound request with any allowed method, headers
+	// and body (wp_remote_request). The same destination rules and size limits as
+	// HTTPGet apply.
+	HTTPRequest(ctx context.Context, plugin string, req HTTPRequest) (*HTTPResponse, error)
+	// SendMail queues an e-mail through the site's mail settings (wp_mail).
+	SendMail(ctx context.Context, plugin string, msg MailMessage) error
 	// StorageGet reads from the plugin-private key/value store.
 	StorageGet(ctx context.Context, plugin, key string) (value string, found bool, err error)
 	// StorageSet writes to the plugin-private key/value store.
 	StorageSet(ctx context.Context, plugin, key, value string) error
+	// StorageDelete removes a key from the plugin-private key/value store (no error when absent).
+	StorageDelete(ctx context.Context, plugin, key string) error
+	// StorageList returns the keys that start with prefix in ascending order, at most limit of
+	// them, starting after the key "after" (keyset pagination; empty = from the start).
+	StorageList(ctx context.Context, plugin, prefix, after string, limit int) ([]string, error)
 	// AdminNotice queues a dashboard notice. Message is plain text and must
 	// be escaped by the core when rendered.
 	AdminNotice(ctx context.Context, plugin string, notice Notice) error
@@ -51,11 +62,14 @@ type Host interface {
 	CurrentUser(ctx context.Context, plugin string) (*UserInfo, error)
 	// ScheduleEvent schedules a recurring (Interval > 0) or one-off event.
 	// When it fires, the core runs the hook named ev.Hook as an action with
-	// ev.Args as its single argument. Scheduling the same hook again
-	// replaces the earlier schedule.
+	// ev.Args as its single argument. Scheduling a recurring hook again
+	// replaces the earlier recurring schedule; one-off events are keyed by
+	// (hook, args), so several can be queued for one hook with different args.
 	ScheduleEvent(ctx context.Context, plugin string, ev ScheduledEvent) error
-	// UnscheduleEvent removes the plugin's schedule for hook.
+	// UnscheduleEvent removes every schedule of hook.
 	UnscheduleEvent(ctx context.Context, plugin, hook string) error
+	// UnscheduleEventArgs removes only the runs of hook scheduled with exactly args.
+	UnscheduleEventArgs(ctx context.Context, plugin, hook string, args map[string]any) error
 	// TransientGet reads a plugin-scoped transient; expired values are
 	// reported as not found.
 	TransientGet(ctx context.Context, plugin, key string) (value json.RawMessage, found bool, err error)
@@ -67,6 +81,38 @@ type Host interface {
 
 // MaxQueryPerPage caps PostQuery.PerPage.
 const MaxQueryPerPage = 100
+
+// HTTPRequest is the input of Host.HTTPRequest. Method is GET, POST, PUT,
+// PATCH, DELETE or HEAD; Body is at most MaxHTTPRequestBody bytes.
+type HTTPRequest struct {
+	Method  string            `json:"method"`
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers,omitempty"`
+	Body    string            `json:"body,omitempty"`
+}
+
+// MailMessage is the input of Host.SendMail. Body is plain text, HTML (optional)
+// the HTML alternative; the host sets the sender.
+type MailMessage struct {
+	To      []string `json:"to"`
+	Subject string   `json:"subject"`
+	Body    string   `json:"body"`
+	HTML    string   `json:"html,omitempty"`
+	ReplyTo string   `json:"reply_to,omitempty"`
+}
+
+// Limits of send_mail.
+const (
+	MaxMailRecipients = 10
+	MaxMailSubject    = 255
+	MaxMailBody       = 256 << 10
+)
+
+// MaxHTTPRequestBody caps the body a plugin may send (1 MiB).
+const MaxHTTPRequestBody = 1 << 20
+
+// MaxHTTPRequestHeaders caps the number of request headers.
+const MaxHTTPRequestHeaders = 32
 
 // HTTPResponse is the result of Host.HTTPGet.
 type HTTPResponse struct {
@@ -205,7 +251,18 @@ type Asset struct {
 	Deps     []string `json:"deps,omitempty"`
 	Media    string   `json:"media,omitempty"`     // style only
 	InFooter bool     `json:"in_footer,omitempty"` // script only
+	// Strategy is "", "defer" or "async" (script only). Empty means defer for head scripts on the
+	// front end, so a plugin script never blocks rendering.
+	Strategy string `json:"strategy,omitempty"`
+	// Module prints type="module" (script only; modules are deferred by the browser).
+	Module bool `json:"module,omitempty"`
+	// Data is printed as JSON in front of the script: window.<handle camel-cased>Data = {...}
+	// (script only, wp_localize_script). At most MaxAssetData bytes of JSON.
+	Data map[string]any `json:"data,omitempty"`
 }
+
+// MaxAssetData caps the JSON of Asset.Data.
+const MaxAssetData = 16 << 10
 
 // RestRequest is what the core sends a plugin REST route handler.
 type RestRequest struct {
@@ -215,7 +272,11 @@ type RestRequest struct {
 	Query   map[string]string `json:"query"`
 	Headers map[string]string `json:"headers"`
 	Body    any               `json:"body"` // decoded JSON body, or a string for other content types
-	User    *UserInfo         `json:"user"` // nil for anonymous requests
+	// QueryAll holds every value of each query parameter (Query keeps the first one).
+	QueryAll map[string][]string `json:"query_all,omitempty"`
+	// RawBody is the unmodified request body, base64-encoded (webhook signatures are computed over it).
+	RawBody string    `json:"raw_body,omitempty"`
+	User    *UserInfo `json:"user"` // nil for anonymous requests
 }
 
 // RestResponse is what a plugin REST route handler returns.
@@ -223,6 +284,15 @@ type RestResponse struct {
 	Status  int               `json:"status"`
 	Body    json.RawMessage   `json:"body,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`
+	// ContentType switches the response from JSON to one of RestContentTypes; Body must then be a
+	// JSON string holding the text to send (CSV, XML, feeds, embeds).
+	ContentType string `json:"content_type,omitempty"`
+}
+
+// RestContentTypes is the allow-list of non-JSON response content types a plugin route may use.
+var RestContentTypes = map[string]bool{
+	"text/plain": true, "text/csv": true, "text/html": true, "text/xml": true,
+	"application/xml": true, "application/rss+xml": true, "application/atom+xml": true,
 }
 
 // ErrHTTPDisabled is returned by MemoryHost.HTTPGet when no HTTP function is
@@ -233,6 +303,10 @@ var ErrHTTPDisabled = errors.New("outbound HTTP is not configured")
 type MemoryHost struct {
 	// HTTP serves HTTPGet; nil makes HTTPGet fail with ErrHTTPDisabled.
 	HTTP func(ctx context.Context, url string) (*HTTPResponse, error)
+	// Mails collects what SendMail received.
+	Mails []MailMessage
+	// HTTPReq serves HTTPRequest; nil falls back to HTTP.
+	HTTPReq func(ctx context.Context, req HTTPRequest) (*HTTPResponse, error)
 	// User is returned by CurrentUser; nil means anonymous.
 	User *UserInfo
 	// Now is the clock used for transients and post dates; nil uses time.Now.
@@ -329,6 +403,26 @@ func (h *MemoryHost) UpdateOption(_ context.Context, _, name string, value any) 
 	return nil
 }
 
+// SendMail implements Host by recording the message in Mails.
+func (h *MemoryHost) SendMail(_ context.Context, _ string, msg MailMessage) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.Mails = append(h.Mails, msg)
+	return nil
+}
+
+// HTTPRequest implements Host; it uses the HTTP function with the URL only
+// unless HTTPReq is set.
+func (h *MemoryHost) HTTPRequest(ctx context.Context, _ string, req HTTPRequest) (*HTTPResponse, error) {
+	if h.HTTPReq != nil {
+		return h.HTTPReq(ctx, req)
+	}
+	if h.HTTP == nil {
+		return nil, ErrHTTPDisabled
+	}
+	return h.HTTP(ctx, req.URL)
+}
+
 // HTTPGet implements Host.
 func (h *MemoryHost) HTTPGet(ctx context.Context, _, url string) (*HTTPResponse, error) {
 	if h.HTTP == nil {
@@ -354,6 +448,31 @@ func (h *MemoryHost) StorageSet(_ context.Context, plugin, key, value string) er
 	}
 	h.storage[plugin][key] = value
 	return nil
+}
+
+// StorageDelete implements Host.
+func (h *MemoryHost) StorageDelete(_ context.Context, plugin, key string) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.storage[plugin], key)
+	return nil
+}
+
+// StorageList implements Host.
+func (h *MemoryHost) StorageList(_ context.Context, plugin, prefix, after string, limit int) ([]string, error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	keys := []string{}
+	for k := range h.storage[plugin] {
+		if strings.HasPrefix(k, prefix) && k > after {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+	if limit > 0 && len(keys) > limit {
+		keys = keys[:limit]
+	}
+	return keys, nil
 }
 
 // AdminNotice implements Host.
@@ -525,7 +644,30 @@ func (h *MemoryHost) ScheduleEvent(_ context.Context, plugin string, ev Schedule
 	if h.events[plugin] == nil {
 		h.events[plugin] = map[string]ScheduledEvent{}
 	}
-	h.events[plugin][ev.Hook] = ev
+	h.events[plugin][memoryEventKey(ev.Hook, ev.Interval, ev.Args)] = ev
+	return nil
+}
+
+// memoryEventKey keys recurring events by hook and one-off events by hook and args.
+func memoryEventKey(hook string, interval int64, args map[string]any) string {
+	if interval > 0 {
+		return hook
+	}
+	raw, _ := json.Marshal(args)
+	return hook + "\x00" + string(raw)
+}
+
+// UnscheduleEventArgs implements Host.
+func (h *MemoryHost) UnscheduleEventArgs(_ context.Context, plugin, hook string, args map[string]any) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	want, _ := json.Marshal(args)
+	for k, ev := range h.events[plugin] {
+		got, _ := json.Marshal(ev.Args)
+		if ev.Hook == hook && string(got) == string(want) {
+			delete(h.events[plugin], k)
+		}
+	}
 	return nil
 }
 
@@ -533,7 +675,11 @@ func (h *MemoryHost) ScheduleEvent(_ context.Context, plugin string, ev Schedule
 func (h *MemoryHost) UnscheduleEvent(_ context.Context, plugin, hook string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	delete(h.events[plugin], hook)
+	for k, ev := range h.events[plugin] {
+		if ev.Hook == hook {
+			delete(h.events[plugin], k)
+		}
+	}
 	return nil
 }
 

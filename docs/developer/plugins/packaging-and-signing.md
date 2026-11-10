@@ -23,6 +23,7 @@ A package is a zip with these files at its root and nothing else:
 The tool lives in the Pursae repository:
 
 ```bash
+wpgo plugin keygen|pack|verify|new|build   # the same tool is built into the wpgo binary
 go build -o wpgo-pkg ./internal/plugins/cmd/wpgo-pkg
 
 wpgo-pkg keygen -out mykey [-comment "My plugins key"]
@@ -89,3 +90,10 @@ version, author and permissions read from the package, and the last lines of its
 
 Bump `version` for every release. The Hub refuses a version that already exists or is lower than
 the latest published one; a site re-installing the same slug replaces the package file.
+
+## Trusting a publisher's key
+
+Site owners add keys under Plugins > Trusted Keys (public key plus a comment). The list is the
+`plugin_trusted_keys` option and takes effect immediately, without a restart; keys from
+`WPGO_PLUGIN_KEYS` are always trusted in addition. Removing a key does not uninstall plugins already
+signed with it. A package larger than 64 MiB is refused on upload and from the Manager alike.

@@ -449,7 +449,7 @@ func (s *Server) themeInstall(c *gin.Context) {
 		library, libErr := s.libraryThemesErr(c)
 		switch {
 		case errors.Is(libErr, errLibraryOff):
-			libraryNotice = "The theme library comes from Pursae Manager, and no Pursae Manager is configured (WPGO_HUB_URL)."
+			libraryNotice = "The theme library comes from Pursae Manager, and no Pursae Manager is configured in this build."
 		case libErr != nil:
 			libraryNotice = "The theme library comes from Pursae Manager, and Pursae Manager is not reachable right now. Try again later."
 			slog.Warn("theme library", "err", libErr)

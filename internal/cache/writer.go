@@ -254,6 +254,9 @@ func (c *Cache) storableTTL(r *http.Request, code int, h http.Header) (time.Dura
 	if hasToken(cc, "private") || hasToken(cc, "no-store") || hasToken(cc, "no-cache") {
 		return 0, false
 	}
+	if Degraded(r) {
+		return 0, false
+	}
 	mt := mediaType(h)
 	switch code {
 	case http.StatusOK, http.StatusNotFound:

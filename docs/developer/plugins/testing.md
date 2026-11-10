@@ -61,8 +61,33 @@ to defaults — which the `Setting*` helpers do.
 The repository's `internal/plugins` tests show how to run a real `plugin.wasm` without a site:
 build it, wrap it with `plugins.WritePackage`, load it into `plugins.NewRuntime` with a
 `plugins.MemoryHost` (in-memory options, storage, posts, transients, events and a configurable
-current user), then fire hooks on `rt.Hooks()` and check the results. `MemoryHost` is exported
-for exactly this purpose.
+current user), then fire hooks on `rt.Hooks()` and check the results. That package is `internal/`,
+so this only works for tests inside the Pursae repository; plugin authors use `wpgotest` below.
+
+## Faking the host: `wpgotest`
+
+`wpgo/sdk/go/wpgo/wpgotest` fakes the host for plain `go test`, so code that calls `GetOption`,
+`Storage`, `Transients`, `GetPost`, `QueryPosts`, `CurrentUser`, `HTTPGet`/`HTTPRequest`,
+`SendMail` or `AdminNotice` runs without Wasm or a site. The host is removed when the test ends.
+
+```go
+func TestRates(t *testing.T) {
+	h := wpgotest.New(t)
+	h.SetOption("plugin_rates_currency", "EUR")
+	h.StubHTTP("https://api.example.com/rates", 200, `{"eur":1.1}`)
+	h.AddPost(wpgo.Post{Title: "Hello", Content: "body"})
+	h.SetUser(&wpgo.User{ID: 1, Caps: []string{"edit_posts"}})
+
+	// ... call your code, then inspect what it did:
+	_ = h.Storage()  // plugin storage
+	_ = h.Mails()    // queued mail
+	_ = h.Notices()  // admin notices
+	_ = h.Requests() // outbound HTTP requests
+}
+```
+
+An outbound URL without a stub fails like a refused request. Permissions are not enforced by the
+fake; declare them in `plugin.json` as usual.
 
 ## On a site
 

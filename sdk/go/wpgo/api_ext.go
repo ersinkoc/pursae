@@ -1,6 +1,7 @@
 package wpgo
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -58,6 +59,10 @@ type RestRequest struct {
 	Headers map[string]string `json:"headers"`
 	// Body is the decoded JSON body, or a string for other content types.
 	Body json.RawMessage `json:"body"`
+	// QueryAll holds every value of each query parameter that was sent more than once.
+	QueryAll map[string][]string `json:"query_all,omitempty"`
+	// RawBody is the unmodified request body, base64-encoded; use RawBodyBytes.
+	RawBody string `json:"raw_body,omitempty"`
 	// User is the authenticated user (cookie + nonce or Application
 	// Password), nil for anonymous requests.
 	User *User `json:"user"`
@@ -71,6 +76,13 @@ func (r *RestRequest) BindJSON(v any) error {
 	return json.Unmarshal(r.Body, v)
 }
 
+// RawBodyBytes returns the unmodified request body, the input of webhook
+// signature checks (HMAC over the raw bytes).
+func (r *RestRequest) RawBodyBytes() []byte {
+	b, _ := base64.StdEncoding.DecodeString(r.RawBody)
+	return b
+}
+
 // Param returns a named path parameter.
 func (r *RestRequest) Param(name string) string { return r.Params[name] }
 
@@ -79,6 +91,16 @@ type RestResponse struct {
 	Status  int               `json:"status"`
 	Body    json.RawMessage   `json:"body,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`
+	// ContentType, when set, replaces the JSON encoding: one of text/plain, text/csv,
+	// text/html, text/xml, application/xml, application/rss+xml, application/atom+xml.
+	// Body must then be a JSON string holding the text (see Text).
+	ContentType string `json:"content_type,omitempty"`
+}
+
+// Text builds a non-JSON response (CSV export, XML feed, ...) with an allow-listed content type.
+func Text(status int, contentType, text string) *RestResponse {
+	body, _ := json.Marshal(text)
+	return &RestResponse{Status: status, Body: body, ContentType: contentType}
 }
 
 // JSON builds a response with a JSON body.
@@ -108,6 +130,13 @@ type RestHandler func(ctx Context, req *RestRequest) *RestResponse
 // The core authenticates the request like any other REST request; the
 // handler decides what anonymous users may do by checking req.User.
 func RegisterRestRoute(namespace, route string, methods []string, handler RestHandler) {
+	RegisterRestRouteWithHeaders(namespace, route, methods, nil, handler)
+}
+
+// RegisterRestRouteWithHeaders is RegisterRestRoute plus extra request headers the
+// handler wants in req.Headers (for example "Stripe-Signature" or
+// "X-Hub-Signature-256" on a webhook receiver). Cookie and Authorization are refused.
+func RegisterRestRouteWithHeaders(namespace, route string, methods, headers []string, handler RestHandler) {
 	name := addCallback("rest", strings.Trim(namespace, "/")+route, func(ctx Context, _ json.RawMessage, _ []any, raw []json.RawMessage) (json.RawMessage, error) {
 		var req RestRequest
 		if len(raw) > 0 {
@@ -125,7 +154,7 @@ func RegisterRestRoute(namespace, route string, methods []string, handler RestHa
 		methods = []string{http.MethodGet}
 	}
 	queueRegistration(func() {
-		_, err := hostCall("register_rest_route", map[string]any{"namespace": namespace, "route": route, "methods": methods, "callback": name})
+		_, err := hostCall("register_rest_route", map[string]any{"namespace": namespace, "route": route, "methods": methods, "callback": name, "headers": headers})
 		if err != nil {
 			Log("error", "register_rest_route "+route+": "+err.Error())
 		}
@@ -330,7 +359,18 @@ func ScheduleSingleEvent(hook string, at time.Time, args map[string]any) error {
 
 // UnscheduleEvent removes every pending run of hook. Requires "cron".
 func UnscheduleEvent(hook string) error {
-	_, err := hostCall("unschedule_event", map[string]string{"hook": hook})
+	_, err := hostCall("unschedule_event", map[string]any{"hook": hook})
+	return err
+}
+
+// UnscheduleEventArgs removes only the pending runs of hook that were
+// scheduled with exactly args (one-off events are keyed by hook and args).
+// Requires "cron".
+func UnscheduleEventArgs(hook string, args map[string]any) error {
+	if args == nil {
+		args = map[string]any{}
+	}
+	_, err := hostCall("unschedule_event", map[string]any{"hook": hook, "args": args})
 	return err
 }
 
@@ -508,6 +548,9 @@ type Script struct {
 	Deps     []string
 	Where    string
 	InFooter bool
+	Strategy string         // "" (defer on the front end), "defer" or "async"
+	Module   bool           // print type="module"
+	Data     map[string]any // printed as window.<handle camelCased>Data (<=16 KiB of JSON)
 }
 
 // EnqueueStyle adds a stylesheet to the front end and/or admin pages. It is
@@ -528,7 +571,7 @@ func EnqueueStyle(s Style) {
 // "admin:scripts" for the admin (Both needs the two).
 func EnqueueScript(s Script) {
 	queueRegistration(func() {
-		if _, err := hostCall("enqueue_script", map[string]any{"handle": s.Handle, "src": s.Src, "deps": s.Deps, "where": s.Where, "in_footer": s.InFooter}); err != nil {
+		if _, err := hostCall("enqueue_script", map[string]any{"handle": s.Handle, "src": s.Src, "deps": s.Deps, "where": s.Where, "in_footer": s.InFooter, "strategy": s.Strategy, "module": s.Module, "data": s.Data}); err != nil {
 			Log("error", "enqueue_script "+s.Handle+": "+err.Error())
 		}
 	})

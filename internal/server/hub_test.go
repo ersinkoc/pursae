@@ -42,7 +42,8 @@ type fakeManager struct {
 	access   string
 	channel  string
 	validKey string
-	themeLib fakeThemes // GET /api/v1/themes… (theme_manager_test.go)
+	extra    map[string]any // more listing fields (changelog, tags, requires_core, …)
+	themeLib fakeThemes     // GET /api/v1/themes… (theme_manager_test.go)
 }
 
 type managerReq struct{ Method, Path, Site, License string }
@@ -86,6 +87,9 @@ func (m *fakeManager) serve(w http.ResponseWriter, r *http.Request) {
 		item := map[string]any{"slug": "word-counter", "name": "Word Counter", "version": m.latest, "description": "Counts words.", "author": "Gopher",
 			"permissions": []string{"posts:read"}, "downloads": 42, "updated": "2026-10-20T10:00:00Z", "sha256": sha,
 			"download_url": m.URL + "/api/v1/plugins/word-counter/download/" + m.latest, "access": m.access, "channel": m.channel, "homepage": "https://example.test/word-counter"}
+		for k, v := range m.extra {
+			item[k] = v
+		}
 		if r.URL.Path == "/api/v1/plugins" {
 			json.NewEncoder(w).Encode(map[string]any{"total": 1, "items": []any{item}})
 		} else {

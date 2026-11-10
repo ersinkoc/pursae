@@ -34,8 +34,9 @@ func init() {
 | Function | Effect |
 |----------|--------|
 | `ScheduleEvent(hook, interval, args)` | runs every `interval` (≥ 1 minute, ≤ 1 year), first run one interval from now. Calling it again with the same interval and args keeps the existing schedule and its next run (safe in `OnInit`, which runs on every start); a different interval or args replaces it |
-| `ScheduleSingleEvent(hook, at, args)` | runs once at `at` (zero time = as soon as possible; at most a year ahead) |
-| `UnscheduleEvent(hook)` | removes the plugin's runs of the hook; a run in progress finishes and is not rescheduled |
+| `ScheduleSingleEvent(hook, at, args)` | runs once at `at` (zero time = as soon as possible; at most a year ahead). One-off events are keyed by hook **and args**: several can be queued for one hook with different args (one reminder per order); the same args again replaces the earlier run. A recurring `ScheduleEvent` of the same hook is independent of them |
+| `UnscheduleEvent(hook)` | removes the plugin's runs of the hook, one-off and recurring; a run in progress finishes and is not rescheduled |
+| `UnscheduleEventArgs(hook, args)` | removes only the runs of the hook scheduled with exactly these args |
 
 `args` (≤64 KiB of JSON) is delivered in the action's single argument under `"args"`.
 
@@ -49,7 +50,7 @@ func init() {
   hook name never receives it.
 - A deactivated plugin's events stay in the table and are skipped (not counted as failures) until
   it is active again. Deleting the plugin removes its events, options and transients.
-- The 2-second callback timeout applies. Split long work into smaller events or keep state in
+- A `cron_*` callback has 30 seconds (enough for an `HTTPGet` / `HTTPRequest`) and is exempt from the slow-call failure rule. Split long work into smaller events or keep state in
   storage between runs.
 
 Inspect pending events in Tools › Site Health or with

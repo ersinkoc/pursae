@@ -65,6 +65,9 @@ const (
 	// (enqueue_script with where "admin" or "both"). Code running in the
 	// admin acts with the administrator's session: full control of the site.
 	PermAdminScripts Permission = "admin:scripts"
+	// PermMailSend allows sending e-mail through the site's mail settings
+	// (send_mail, the wp_mail equivalent). The host limits recipients and rate.
+	PermMailSend Permission = "mail:send"
 )
 
 // permissionDescriptions documents every permission for admin screens.
@@ -84,6 +87,7 @@ var permissionDescriptions = map[Permission]string{
 	PermForms:         "See what visitors submit in contact forms and decide what counts as spam",
 	PermContentHTML:   "Show unfiltered HTML and scripts to visitors (they also run for logged-in administrators: full control of the site)",
 	PermAdminScripts:  "Run code in the admin (full control of the site)",
+	PermMailSend:      "Send e-mail from the site",
 }
 
 // Dangerous reports whether p gives the plugin the equivalent of an
@@ -151,8 +155,9 @@ var (
 	}
 	contentHooks = map[string]bool{
 		"comment_text": true, "widget_text": true, "widget_title": true, "get_the_excerpt": true,
-		"wp_title": true, "document_title_parts": true, "body_class": true, "post_class": true,
+		"wp_head": true, "wp_footer": true, "wp_title": true, "document_title_parts": true, "body_class": true, "post_class": true,
 	}
+	userHooks     = map[string]bool{"user_register": true, "wp_login": true}
 	postReadHooks = map[string]bool{
 		"save_post": true, "wp_insert_post": true, "publish_post": true, "transition_post_status": true,
 		"before_delete_post": true, "deleted_post": true, "trashed_post": true, "untrashed_post": true,
@@ -170,6 +175,8 @@ func HookPermission(hook string) Permission {
 	switch {
 	case adminNoticeHooks[hook]:
 		return PermAdminNotices
+	case userHooks[hook]:
+		return PermUsersRead
 	case postWriteHooks[hook]:
 		return PermPostsWrite
 	case postReadHooks[hook] || strings.HasPrefix(hook, "save_post_"):

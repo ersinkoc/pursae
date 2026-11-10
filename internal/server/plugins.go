@@ -25,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 
+	"wpgo/internal/mail"
 	"wpgo/internal/plugins"
 	"wpgo/internal/settings"
 	"wpgo/internal/store"
@@ -48,6 +49,7 @@ type pluginSystem struct {
 	// and the Manager's, replaced on every index refresh (hubTrustKeys). Read them with trusted().
 	keyMu    sync.RWMutex
 	siteKeys []ed25519.PublicKey
+	envKeys  []ed25519.PublicKey // WPGO_PLUGIN_KEYS and the dev key: siteKeys without the option's keys
 	hubKeys  []ed25519.PublicKey
 }
 
@@ -95,9 +97,9 @@ func (s *Server) startPlugins(ctx context.Context) {
 	// verifying it, so whoever can write that directory could run code outside the sandbox. The
 	// directory of earlier versions is removed.
 	_ = os.RemoveAll(cacheDir)
-	for _, k := range strings.FieldsFunc(os.Getenv("WPGO_PLUGIN_KEYS")+","+s.settings.String("plugin_trusted_keys"), func(r rune) bool { return r == ',' || r == '\n' || r == ' ' }) {
+	for _, k := range strings.FieldsFunc(os.Getenv("WPGO_PLUGIN_KEYS"), func(r rune) bool { return r == ',' || r == '\n' || r == ' ' }) {
 		if pub, err := plugins.ParsePublicKey(k); err == nil {
-			ps.siteKeys = append(ps.siteKeys, pub)
+			ps.envKeys = append(ps.envKeys, pub)
 		}
 	}
 	// Marketplace demo: packages shipped next to the binary (or built by tools/build-plugins.sh).
@@ -109,16 +111,17 @@ func (s *Server) startPlugins(ctx context.Context) {
 			ps.market = m
 			if pub, err := os.ReadFile(filepath.Join(dir, "dev-key.pub")); err == nil && os.Getenv("WPGO_TRUST_DEV_KEY") == "1" {
 				if k, err := plugins.ParsePublicKey(lastLine(string(pub))); err == nil {
-					ps.siteKeys = append(ps.siteKeys, k)
+					ps.envKeys = append(ps.envKeys, k)
 				}
 			}
 			break
 		}
 	}
+	s.applySiteKeys() // the environment's keys plus the Trusted Keys screen's
 	rt, err := plugins.NewRuntime(ctx, ps.hooks, plugins.Config{CoreVersion: Version, MaxHTTPBody: pluginHTTPMaxBody, Logger: slog.Default(),
 		OnDisable: func(slug, reason string) {
 			slog.Warn("plugin disabled by the runtime", "plugin", slug, "reason", reason)
-			_, _ = s.store.Pool.Exec(context.Background(), `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug)
+			s.recordPluginDisabled(context.Background(), slug, reason)
 		}})
 	if err != nil {
 		ps.initErr = err
@@ -149,6 +152,96 @@ func (s *Server) startPlugins(ctx context.Context) {
 		}
 	}
 	ps.hooks.DoAction(ctx, "init")
+	go s.pluginSyncLoop(ctx)
+}
+
+// pluginSyncInterval is how often a process compares the plugins table with what it has loaded, so
+// that activating, deactivating, updating or deleting a plugin on one instance reaches the others
+// (several replicas share one database and a package directory).
+var pluginSyncInterval = 10 * time.Second
+
+func (s *Server) pluginSyncLoop(ctx context.Context) {
+	t := time.NewTicker(pluginSyncInterval)
+	defer t.Stop()
+	pending := map[string]string{} // slug -> wanted state seen on the previous tick
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			s.syncPluginsOnce(ctx, pending)
+		}
+	}
+}
+
+// syncPluginsOnce loads, unloads or reloads plugins whose database state differs from the loaded
+// state. A difference must be seen on two consecutive ticks before it is acted on, so a local
+// activate (load first, UPDATE a moment later) is never undone by the poll.
+func (s *Server) syncPluginsOnce(ctx context.Context, pending map[string]string) {
+	rt := s.plugins.rt
+	if rt == nil {
+		return
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT slug, status, version, permissions FROM plugins`)
+	if err != nil {
+		return
+	}
+	type row struct {
+		status, version string
+		perms           []byte
+	}
+	db := map[string]row{}
+	for rows.Next() {
+		var slug string
+		var r row
+		if rows.Scan(&slug, &r.status, &r.version, &r.perms) == nil {
+			db[slug] = r
+		}
+	}
+	rows.Close()
+	want := map[string]string{} // slug -> action
+	for slug, r := range db {
+		p, loaded := rt.Plugin(slug)
+		switch {
+		case r.status == "active" && !loaded:
+			want[slug] = "load"
+		case r.status == "active" && loaded && p.Manifest().Version != r.version:
+			want[slug] = "reload"
+		case r.status != "active" && loaded:
+			want[slug] = "unload"
+		}
+	}
+	for _, p := range rt.Plugins() { // deleted elsewhere
+		if _, ok := db[p.Slug()]; !ok {
+			want[p.Slug()] = "unload"
+		}
+	}
+	for slug, act := range want {
+		if pending[slug] != act {
+			pending[slug] = act // first sighting: act only if it is still there next tick
+			continue
+		}
+		delete(pending, slug)
+		switch act {
+		case "unload":
+			_ = rt.Unload(ctx, slug)
+		case "load", "reload":
+			if act == "reload" {
+				_ = rt.Unload(ctx, slug)
+			}
+			if err := s.loadPlugin(ctx, slug, db[slug].perms); err != nil {
+				slog.Error("plugin sync load", "plugin", slug, "err", err)
+				continue
+			}
+			s.plugins.hooks.DoActionOwner(ctx, slug, "init")
+		}
+		s.purgeAll(ctx)
+	}
+	for slug := range pending {
+		if _, ok := want[slug]; !ok {
+			delete(pending, slug)
+		}
+	}
 }
 
 func lastLine(v string) string {
@@ -315,12 +408,23 @@ var pluginHTTP = &http.Client{
 }
 
 func (h *pluginHost) HTTPGet(ctx context.Context, plugin, url string) (*plugins.HTTPResponse, error) {
-	if !strings.HasPrefix(url, "https://") && !strings.HasPrefix(url, "http://") {
+	return h.HTTPRequest(ctx, plugin, plugins.HTTPRequest{Method: http.MethodGet, URL: url})
+}
+
+func (h *pluginHost) HTTPRequest(ctx context.Context, plugin string, r plugins.HTTPRequest) (*plugins.HTTPResponse, error) {
+	if !strings.HasPrefix(r.URL, "https://") && !strings.HasPrefix(r.URL, "http://") {
 		return nil, errors.New("only http(s) URLs are allowed")
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	var body io.Reader
+	if r.Body != "" {
+		body = strings.NewReader(r.Body)
+	}
+	req, err := http.NewRequestWithContext(ctx, r.Method, r.URL, body)
 	if err != nil {
 		return nil, err
+	}
+	for k, v := range r.Headers {
+		req.Header.Set(k, v)
 	}
 	req.Header.Set("User-Agent", "Pursae/"+Version+" plugin/"+plugin)
 	resp, err := pluginHTTP.Do(req)
@@ -328,18 +432,42 @@ func (h *pluginHost) HTTPGet(ctx context.Context, plugin, url string) (*plugins.
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, pluginHTTPMaxBody+1))
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, pluginHTTPMaxBody+1))
 	if err != nil {
 		return nil, err
 	}
-	if len(body) > pluginHTTPMaxBody {
+	if len(respBody) > pluginHTTPMaxBody {
 		return nil, fmt.Errorf("the response body is larger than %d bytes", pluginHTTPMaxBody)
 	}
 	hdr := map[string]string{}
 	for k := range resp.Header {
 		hdr[k] = resp.Header.Get(k)
 	}
-	return &plugins.HTTPResponse{Status: resp.StatusCode, Header: hdr, Body: string(body)}, nil
+	return &plugins.HTTPResponse{Status: resp.StatusCode, Header: hdr, Body: string(respBody)}, nil
+}
+
+// pluginMailLimit caps the messages one plugin may queue per hour.
+const pluginMailLimit = 60
+
+var pluginMailCount = struct {
+	sync.Mutex
+	hour map[string]int
+	at   time.Time
+}{hour: map[string]int{}}
+
+func (h *pluginHost) SendMail(ctx context.Context, plugin string, m plugins.MailMessage) error {
+	pluginMailCount.Lock()
+	if time.Since(pluginMailCount.at) > time.Hour {
+		pluginMailCount.hour, pluginMailCount.at = map[string]int{}, time.Now()
+	}
+	pluginMailCount.hour[plugin]++
+	over := pluginMailCount.hour[plugin] > pluginMailLimit
+	pluginMailCount.Unlock()
+	if over {
+		return fmt.Errorf("mail limit of %d per hour reached", pluginMailLimit)
+	}
+	h.s.sendMail(ctx, mail.Message{To: m.To, Subject: m.Subject, Body: m.Body, HTML: m.HTML, ReplyTo: m.ReplyTo})
+	return nil
 }
 
 func (h *pluginHost) StorageGet(ctx context.Context, plugin, key string) (string, bool, error) {
@@ -359,6 +487,30 @@ func (h *pluginHost) StorageSet(ctx context.Context, plugin, key, value string) 
 	_, err := h.s.store.Pool.Exec(ctx, `INSERT INTO plugin_data (plugin_id, key, value) SELECT id, $2, $3::jsonb FROM plugins WHERE slug = $1
 		ON CONFLICT (plugin_id, key) DO UPDATE SET value = EXCLUDED.value`, plugin, key, raw)
 	return err
+}
+
+func (h *pluginHost) StorageDelete(ctx context.Context, plugin, key string) error {
+	_, err := h.s.store.Pool.Exec(ctx, `DELETE FROM plugin_data d USING plugins p WHERE p.id = d.plugin_id AND p.slug = $1 AND d.key = $2`, plugin, key)
+	return err
+}
+
+func (h *pluginHost) StorageList(ctx context.Context, plugin, prefix, after string, limit int) ([]string, error) {
+	esc := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(prefix)
+	rows, err := h.s.store.Pool.Query(ctx, `SELECT d.key FROM plugin_data d JOIN plugins p ON p.id = d.plugin_id
+		WHERE p.slug = $1 AND d.key LIKE $2 || '%' AND d.key > $3 ORDER BY d.key COLLATE "C" LIMIT $4`, plugin, esc, after, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	keys := []string{}
+	for rows.Next() {
+		var k string
+		if err := rows.Scan(&k); err != nil {
+			return nil, err
+		}
+		keys = append(keys, k)
+	}
+	return keys, rows.Err()
 }
 
 func (h *pluginHost) AdminNotice(ctx context.Context, plugin string, n plugins.Notice) error {
@@ -383,11 +535,14 @@ type pluginRow struct {
 	Like                                                           string // "Like WP Mail SMTP": the WordPress plugin it replaces
 	Native, Active, Disabled                                       bool
 	DisabledWhy                                                    string
+	MissingPerms                                                   []string // asked by an update, never granted (reloadPlugin)
 	Permissions                                                    []permRow
 	ActivateURL, DeactivateURL, DeleteURL, SettingsURL             string
 	Logs                                                           []plugins.LogEntry
 	Source                                                         string        // native | hub | upload
 	Update                                                         *pluginUpdate // a newer version on Pursae Manager (hub_updates.go)
+	AutoUpdate                                                     bool          // updates itself (Manager-installed plugins only)
+	AutoUpdateURL                                                  string
 }
 
 type permRow struct {
@@ -490,21 +645,32 @@ func nativeSettingsLinks(rows []pluginRow) {
 // screen adds them; the Manager ping sends the inventory).
 func (s *Server) pluginInventory(ctx context.Context) []pluginRow {
 	rows := s.nativePluginRows()
-	dbRows, err := s.store.Pool.Query(ctx, `SELECT slug, status, version, source FROM plugins ORDER BY slug`)
+	dbRows, err := s.store.Pool.Query(ctx, `SELECT slug, status, version, source, disabled_reason, missing_permissions FROM plugins ORDER BY slug`)
 	if err != nil {
 		return rows
 	}
-	type inst struct{ slug, status, version, source string }
+	type inst struct {
+		slug, status, version, source, why string
+		missing                            []byte
+	}
 	var list []inst
 	for dbRows.Next() {
 		var r inst
-		if dbRows.Scan(&r.slug, &r.status, &r.version, &r.source) == nil {
+		if dbRows.Scan(&r.slug, &r.status, &r.version, &r.source, &r.why, &r.missing) == nil {
 			list = append(list, r)
 		}
 	}
 	dbRows.Close()
 	for _, r := range list {
 		row := pluginRow{Slug: r.slug, Name: r.slug, Version: r.version, Active: r.status == "active", Source: r.source}
+		var missing []plugins.Permission
+		_ = json.Unmarshal(r.missing, &missing)
+		for _, p := range missing {
+			row.MissingPerms = append(row.MissingPerms, string(p))
+		}
+		if !row.Active && r.why != "" {
+			row.Disabled, row.DisabledWhy = true, r.why
+		}
 		if pkg, err := plugins.LoadPackageFile(filepath.Join(s.plugins.dir, r.slug+".zip"), s.plugins.trusted(), false); err == nil {
 			m := pkg.Manifest
 			row.Name, row.Version, row.Description, row.Author, row.AuthorURI, row.PluginURI = m.Name, m.Version, template.HTMLEscapeString(m.Description), m.Author, m.AuthorURI, m.PluginURI
@@ -534,6 +700,10 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	}
 	if c.Query("action") == "upgrade-plugin" && c.Request.Method == http.MethodGet { // hub_updates.go
 		s.pluginUpgrade(c)
+		return
+	}
+	if a := c.Query("action"); c.Request.Method == http.MethodGet && (a == "enable-auto-update" || a == "disable-auto-update") { // hub_updates.go
+		s.pluginAutoUpdateToggle(c, a == "enable-auto-update")
 		return
 	}
 	if a := c.Query("action"); a != "" && c.Request.Method == http.MethodGet && a != "activate" {
@@ -771,31 +941,51 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 			}
 		}
 		raw, _ := json.Marshal(granted)
+		if missing := s.missingPluginDependencies(ctx, slug); len(missing) > 0 {
+			fail(fmt.Errorf("The plugin could not be activated: it requires %s to be active first.", strings.Join(missing, ", ")))
+			return
+		}
 		if s.plugins.rt != nil {
-			_ = s.plugins.rt.Unload(ctx, slug)
+			_ = s.plugins.rt.Unload(ctx, slug) // not loaded yet is fine
 		}
 		if err := s.loadPlugin(ctx, slug, raw); err != nil {
 			fail(err)
 			return
 		}
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'active', permissions = $2 WHERE slug = $1`, slug, raw)
-		s.plugins.hooks.DoAction(ctx, "init")
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'active', permissions = $2, disabled_reason = '', disabled_at = NULL, missing_permissions = '[]' WHERE slug = $1`, slug, raw); err != nil {
+			if s.plugins.rt != nil { // the database is the truth: do not keep it running in memory only
+				_ = s.plugins.rt.Unload(ctx, slug)
+			}
+			fail(fmt.Errorf("The plugin could not be activated: %v", err))
+			return
+		}
+		s.firePluginLifecycle(ctx, slug, "activate")
+		s.plugins.hooks.DoActionOwner(ctx, slug, "init")
 		s.purgeAll(ctx)
 	case "deactivate":
+		s.firePluginLifecycle(ctx, slug, "deactivate") // while it is still loaded
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug); err != nil {
+			fail(fmt.Errorf("The plugin could not be deactivated: %v", err))
+			return
+		}
 		if s.plugins.rt != nil {
 			_ = s.plugins.rt.Unload(ctx, slug)
 		}
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug)
 		s.purgeAll(ctx)
 	case "delete":
 		if !currentUser(c).Can("delete_plugins", nil) { // activate_plugins alone does not allow deleting
 			fail(errors.New("Sorry, you are not allowed to delete plugins on this site."))
 			return
 		}
+		s.uninstallPluginHook(ctx, slug)
 		if s.plugins.rt != nil {
 			_ = s.plugins.rt.Unload(ctx, slug)
 		}
-		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM plugins WHERE slug = $1`, slug)
+		// Database first: a failed DELETE keeps the package, so the row never points at a missing file.
+		if _, err := s.store.Pool.Exec(ctx, `DELETE FROM plugins WHERE slug = $1`, slug); err != nil {
+			fail(fmt.Errorf("The plugin could not be deleted: %v", err))
+			return
+		}
 		s.purgePluginData(ctx, slug)
 		_ = os.Remove(filepath.Join(s.plugins.dir, filepath.Base(slug)+".zip"))
 		_ = os.Remove(filepath.Join(s.plugins.dir, filepath.Base(slug)+".zip.prev"))
@@ -807,6 +997,39 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		return
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+}
+
+// pluginLifecycleBudget bounds one activate/deactivate/uninstall callback.
+const pluginLifecycleBudget = 5 * time.Second
+
+// firePluginLifecycle runs the plugin's own callbacks for hook ("activate", "deactivate",
+// "uninstall") and nobody else's, with a short budget. A callback that fails or hangs never blocks
+// the state change.
+func (s *Server) firePluginLifecycle(ctx context.Context, slug, hook string) {
+	if s.plugins == nil || s.plugins.rt == nil {
+		return
+	}
+	lctx, cancel := context.WithTimeout(ctx, pluginLifecycleBudget)
+	defer cancel()
+	s.plugins.hooks.DoActionOwner(lctx, slug, hook)
+}
+
+// uninstallPluginHook gives a plugin about to be deleted its "uninstall" action: an inactive plugin
+// is loaded just for that call (with the permissions it was last granted) and unloaded again.
+func (s *Server) uninstallPluginHook(ctx context.Context, slug string) {
+	if s.plugins == nil || s.plugins.rt == nil {
+		return
+	}
+	if _, loaded := s.plugins.rt.Plugin(slug); !loaded {
+		var perms []byte
+		if err := s.store.Pool.QueryRow(ctx, `SELECT permissions FROM plugins WHERE slug = $1`, slug).Scan(&perms); err != nil {
+			return
+		}
+		if err := s.loadPlugin(ctx, slug, perms); err != nil {
+			return
+		}
+	}
+	s.firePluginLifecycle(ctx, slug, "uninstall")
 }
 
 // purgePluginData removes what a deleted Wasm plugin left outside plugin_data (which cascades with
@@ -891,7 +1114,7 @@ func (s *Server) installPackageChecked(ctx context.Context, data []byte, source,
 	pkg, err := plugins.LoadPackage(bytes.NewReader(data), int64(len(data)), s.plugins.trusted(), !s.settings.Bool("plugin_allow_unsigned"))
 	if err != nil {
 		if errors.Is(err, plugins.ErrUnsigned) || errors.Is(err, plugins.ErrBadSignature) {
-			return nil, fmt.Errorf("the package signature could not be verified (%v); only plugins signed with a trusted key can be installed", err)
+			return nil, fmt.Errorf("the package signature could not be verified (%v); only plugins signed with a trusted key can be installed; a site owner can trust a publisher's key under Plugins > Trusted Keys", err)
 		}
 		return nil, err
 	}
@@ -939,23 +1162,17 @@ func (s *Server) pluginPendingPath(slug string) string {
 func (s *Server) reloadPlugin(ctx context.Context, slug string, m *plugins.Manifest, perms []byte) error {
 	var granted []plugins.Permission
 	_ = json.Unmarshal(perms, &granted)
-	keep := []plugins.Permission{}
-	for _, p := range granted {
-		for _, want := range m.Permissions {
-			if p == want {
-				keep = append(keep, p)
-			}
-		}
-	}
+	keep, missing := splitPermissions(granted, m.Permissions)
 	raw, _ := json.Marshal(keep)
+	missingRaw, _ := json.Marshal(missing)
 	if s.plugins.rt != nil {
 		_ = s.plugins.rt.Unload(ctx, slug)
 	}
 	if err := s.loadPlugin(ctx, slug, raw); err != nil {
 		return err
 	}
-	_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET permissions = $2 WHERE slug = $1`, slug, raw)
-	s.plugins.hooks.DoAction(ctx, "init")
+	_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET permissions = $2, missing_permissions = $3 WHERE slug = $1`, slug, raw, missingRaw)
+	s.plugins.hooks.DoActionOwner(ctx, slug, "init")
 	return nil
 }
 
@@ -1022,7 +1239,7 @@ func (s *Server) installAndReload(ctx context.Context, data []byte, source, want
 				_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET version = $2, signature = $3, signer = $4, permissions = $5, source = $6 WHERE slug = $1`,
 					slug, installed, digest, signer, perms, oldSource)
 				if lerr := s.loadPlugin(ctx, slug, perms); lerr == nil {
-					s.plugins.hooks.DoAction(ctx, "init")
+					s.plugins.hooks.DoActionOwner(ctx, slug, "init")
 					s.purgeAll(ctx)
 					return nil, updated, fmt.Errorf("%s %s could not be activated (%v); version %s was restored", m.Name, m.Version, err, installed)
 				}
@@ -1089,13 +1306,28 @@ type marketItem struct {
 	Updated   string
 	Access    string // public | pro | private (Manager listings)
 	Channel   string // stable | beta
+	// Compatibility with the running core (Manager listings): "Requires Pursae X", "Tested up to Y".
+	RequiresCore, TestedCore string
+	Incompatible             bool // the listing needs a newer core than this one: Install is disabled
+	Tags                     []string
 	// Native (built-in) plugins.
 	Native, Active           bool
 	SettingsURL, ActivateURL string
 	NativeKind               string // "Built in" note shown in the card footer
 }
 
+// hubIncompatible reports whether a listing that requires core version req cannot run on this build.
+// A build without a release version number (a dev build) is never reported incompatible.
+func hubIncompatible(req string) bool {
+	req = strings.TrimSpace(req)
+	if req == "" || Version == "" || Version[0] < '0' || Version[0] > '9' {
+		return false
+	}
+	return versionLess(Version, req)
+}
+
 type pluginInstallData struct {
+	Tag         string
 	Tab         string
 	Search      string
 	Items       []marketItem
@@ -1122,8 +1354,12 @@ func (s *Server) pluginInstall(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("No package was uploaded."))
 			return
 		}
-		data, _ := io.ReadAll(io.LimitReader(f, 32<<20))
+		data, err := io.ReadAll(io.LimitReader(f, pluginMaxPackage+1))
 		f.Close()
+		if err != nil || len(data) > pluginMaxPackage {
+			c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape(fmt.Sprintf("The package is larger than %d MiB.", pluginMaxPackage>>20)))
+			return
+		}
 		m, updated, err := s.installAndReload(ctx, data, pluginSourceUpload, "", false)
 		var replace *pluginReplaceError
 		if errors.As(err, &replace) {
@@ -1186,7 +1422,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/plugin-install?error=notfound")
 		return
 	}
-	d := pluginInstallData{Tab: c.DefaultQuery("tab", "featured"), Search: strings.TrimSpace(c.Query("s")), UploadNonce: s.nonce(c, "plugin-upload")}
+	d := pluginInstallData{Tag: strings.ToLower(strings.TrimSpace(c.Query("tag"))), Tab: c.DefaultQuery("tab", "featured"), Search: strings.TrimSpace(c.Query("s")), UploadNonce: s.nonce(c, "plugin-upload")}
 	installed := map[string]bool{}
 	var native []marketItem
 	icons := map[string][2]string{"classic-editor": {"dashicons-edit-page", "blue"}, "wpgo-cache": {"dashicons-performance", "green"}, webbuilder.PluginSlug: {"dashicons-layout", "purple"}, maintSlug: {"dashicons-hammer", "teal"}, msSlug: {"dashicons-email-alt", "blue"}, gontactSlug: {"dashicons-email", "teal"}, acfgoSlug: {"dashicons-welcome-widgets-menus", "green"}, golylangSlug: {"dashicons-translation", "teal"}, seogoSlug: {"dashicons-chart-line", "blue"}, gooikeSlug: {"dashicons-shield", "orange"}, pixelSlug: {"dashicons-chart-area", "purple"}, gooSlug: {"dashicons-cart", "purple"}, gocdnSlug: {"dashicons-cloud-upload", "blue"}, hgSlug: {"dashicons-rest-api", "blue"}}
@@ -1204,11 +1440,12 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	if s.hubBase() != "" {
 		items, err := s.hubCatalog(ctx, "plugins")
 		if err != nil {
-			notices = append(notices, notice{Type: "warning", Message: template.HTML("The Pursae Hub could not be reached (" + html.EscapeString(err.Error()) + "). Only locally available packages are listed."), Dismissible: true})
+			notices = append(notices, notice{Type: "warning", Message: template.HTML("Pursae Manager could not be reached (" + html.EscapeString(err.Error()) + "). Only locally available packages are listed."), Dismissible: true})
 		}
 		for _, h := range items {
 			it := marketItem{Slug: h.Slug, Name: h.Name, Version: h.Version, Description: h.Description, Author: h.Author, Hub: true,
 				IconURL: h.IconURL, Homepage: h.Homepage, Downloads: h.Downloads, Access: h.Access, Channel: h.Channel, Installed: installed[h.Slug], Icon: "dashicons-admin-plugins", IconColor: "teal",
+				RequiresCore: h.RequiresCore, TestedCore: h.TestedCore, Incompatible: hubIncompatible(h.RequiresCore), Tags: h.Tags,
 				InstallURL: "/wp-admin/plugin-install?action=install-plugin&source=hub&plugin=" + h.Slug + "&_wpnonce=" + s.nonce(c, "install-plugin_"+h.Slug)}
 			if t, err := time.Parse(time.RFC3339, h.Updated); err == nil {
 				it.Updated = t.In(s.loc()).Format("January 2, 2006")
@@ -1245,6 +1482,18 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		}
 		return featured[i].Name < featured[j].Name
 	})
+	if d.Tag != "" { // filter the marketplace by tag
+		kept := featured[:0:0]
+		for _, it := range featured {
+			for _, t := range it.Tags {
+				if strings.EqualFold(t, d.Tag) {
+					kept = append(kept, it)
+					break
+				}
+			}
+		}
+		featured = kept
+	}
 	d.HubEnabled = s.hubBase() != ""
 	d.Counts = map[string]int{"featured": len(featured), "native": len(native)}
 	switch d.Tab {

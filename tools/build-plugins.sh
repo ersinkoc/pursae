@@ -33,7 +33,7 @@ fi
 if [[ $# -gt 0 ]]; then
   plugins=("$@")
 else
-  plugins=(examples/plugins/hello-gopher examples/plugins/word-counter examples/plugins/shortcode-demo)
+  plugins=(examples/plugins/hello-gopher examples/plugins/word-counter examples/plugins/shortcode-demo examples/plugins/feed-digest examples/plugins/publish-notifier)
 fi
 
 tmp="$(mktemp -d)"

@@ -152,8 +152,18 @@ func TestScheduledEvents(t *testing.T) {
 	if got := hooks.ApplyFilters(context.Background(), "probe_cron", "single"); got != "ok" {
 		t.Fatalf("single: %q", got)
 	}
-	if ev := host.Events("probe")["cron_probe"]; ev.Interval != 0 || ev.At < time.Now().Unix()+3000 {
-		t.Fatalf("single event %+v", ev)
+	// A one-off event no longer replaces the recurring schedule of the same hook.
+	if ev := host.Events("probe")["cron_probe"]; ev.Interval != 3600 {
+		t.Fatalf("recurring event replaced: %+v", ev)
+	}
+	foundSingle := false
+	for _, ev := range host.Events("probe") {
+		if ev.Hook == "cron_probe" && ev.Interval == 0 && ev.At >= time.Now().Unix()+3000 {
+			foundSingle = true
+		}
+	}
+	if !foundSingle {
+		t.Fatalf("single event missing: %+v", host.Events("probe"))
 	}
 	if got := hooks.ApplyFilters(context.Background(), "probe_cron", "undeclared"); !strings.Contains(got.(string), "not declared") {
 		t.Fatalf("undeclared hook: %q", got)

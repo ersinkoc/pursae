@@ -1048,6 +1048,7 @@ func (api *restAPI) createUser(c *gin.Context, r *restRequest) {
 		_ = s.store.SetUserRoles(c, id, roles[0], roles[1:])
 	}
 	u, _ := s.store.UserByID(c, id)
+	s.pluginUserAction(c, "user_register", u)
 	changed := false
 	for field, dst := range map[string]*string{"url": &u.URL, "locale": &u.Locale} {
 		if v, ok := r.Str(c, field); ok {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/mail"
 	"net/url"
 	"strings"
 
@@ -70,8 +71,12 @@ func (rt *Runtime) instantiateHostModule(ctx context.Context) error {
 		{"update_option", PermOptionsWrite, hostUpdateOption},
 		{"log", "", hostLog},
 		{"http_get", PermHTTPOutbound, hostHTTPGet},
+		{"http_request", PermHTTPOutbound, hostHTTPRequest},
+		{"send_mail", PermMailSend, hostSendMail},
 		{"storage_get", PermStorage, hostStorageGet},
 		{"storage_set", PermStorage, hostStorageSet},
+		{"storage_delete", PermStorage, hostStorageDelete},
+		{"storage_list", PermStorage, hostStorageList},
 		{"add_admin_notice", PermAdminNotices, hostAdminNotice},
 		// ABI 1 additions (all additive; see README "Host imports").
 		{"register_shortcode", PermContentFilter, hostRegisterShortcode},
@@ -317,6 +322,94 @@ func hostHTTPGet(ctx context.Context, p *Plugin, req []byte) (any, error) {
 	return resp, nil
 }
 
+// forbiddenRequestHeaders are set by the host and cannot be chosen by a plugin.
+var forbiddenRequestHeaders = map[string]bool{
+	"host": true, "content-length": true, "transfer-encoding": true, "connection": true,
+	"upgrade": true, "te": true, "trailer": true, "proxy-authorization": true, "proxy-connection": true,
+}
+
+func hostHTTPRequest(ctx context.Context, p *Plugin, req []byte) (any, error) {
+	var r HTTPRequest
+	if err := decodeRequest(req, &r); err != nil {
+		return nil, err
+	}
+	r.Method = strings.ToUpper(strings.TrimSpace(r.Method))
+	if r.Method == "" {
+		r.Method = "GET"
+	}
+	switch r.Method {
+	case "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD":
+	default:
+		return nil, invalid("method must be GET, POST, PUT, PATCH, DELETE or HEAD")
+	}
+	u, err := url.Parse(r.URL)
+	if err != nil || len(r.URL) > maxURLLength || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return nil, invalid("url must be an absolute http(s) URL of at most %d characters", maxURLLength)
+	}
+	r.URL = u.String()
+	if len(r.Body) > MaxHTTPRequestBody {
+		return nil, invalid("body must be at most %d bytes", MaxHTTPRequestBody)
+	}
+	if len(r.Headers) > MaxHTTPRequestHeaders {
+		return nil, invalid("at most %d headers are allowed", MaxHTTPRequestHeaders)
+	}
+	for k, v := range r.Headers {
+		if k == "" || strings.ContainsAny(k, " \t\r\n:") || strings.ContainsAny(v, "\r\n") || len(k) > 128 || len(v) > 8192 {
+			return nil, invalid("invalid header %q", k)
+		}
+		if forbiddenRequestHeaders[strings.ToLower(k)] {
+			return nil, invalid("header %q cannot be set", k)
+		}
+	}
+	resp, err := p.host.HTTPRequest(ctx, p.Slug(), r)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil {
+		return nil, errors.New("host returned no response")
+	}
+	if len(resp.Body) > p.rt.cfg.MaxHTTPBody {
+		return nil, &CallError{Code: CodeHostError, Message: fmt.Sprintf("response body exceeds %d bytes", p.rt.cfg.MaxHTTPBody)}
+	}
+	return resp, nil
+}
+
+func validMailAddress(a string) bool {
+	if a == "" || len(a) > 254 || strings.ContainsAny(a, "\r\n<>,;\" ") {
+		return false
+	}
+	_, err := mail.ParseAddress(a)
+	return err == nil
+}
+
+func hostSendMail(ctx context.Context, p *Plugin, req []byte) (any, error) {
+	var m MailMessage
+	if err := decodeRequest(req, &m); err != nil {
+		return nil, err
+	}
+	if len(m.To) == 0 || len(m.To) > MaxMailRecipients {
+		return nil, invalid("to must list 1-%d recipients", MaxMailRecipients)
+	}
+	for _, a := range m.To {
+		if !validMailAddress(a) {
+			return nil, invalid("invalid recipient %q", a)
+		}
+	}
+	if m.ReplyTo != "" && !validMailAddress(m.ReplyTo) {
+		return nil, invalid("invalid reply_to address")
+	}
+	if m.Subject == "" || len(m.Subject) > MaxMailSubject || strings.ContainsAny(m.Subject, "\r\n") {
+		return nil, invalid("subject must be 1-%d characters on one line", MaxMailSubject)
+	}
+	if (m.Body == "" && m.HTML == "") || len(m.Body) > MaxMailBody || len(m.HTML) > MaxMailBody {
+		return nil, invalid("body or html is required and at most %d bytes", MaxMailBody)
+	}
+	if err := p.host.SendMail(ctx, p.Slug(), m); err != nil {
+		return nil, err
+	}
+	return map[string]bool{"queued": true}, nil
+}
+
 func checkStorageKey(key string) error {
 	if key == "" || len(key) > maxStorageKey {
 		return invalid("storage key must be 1-%d characters", maxStorageKey)
@@ -356,6 +449,55 @@ func hostStorageSet(ctx context.Context, p *Plugin, req []byte) (any, error) {
 		return nil, invalid("storage value exceeds %d bytes", maxStorageValue)
 	}
 	return nil, p.host.StorageSet(ctx, p.Slug(), r.Key, r.Value)
+}
+
+func hostStorageDelete(ctx context.Context, p *Plugin, req []byte) (any, error) {
+	var r struct {
+		Key string `json:"key"`
+	}
+	if err := decodeRequest(req, &r); err != nil {
+		return nil, err
+	}
+	if err := checkStorageKey(r.Key); err != nil {
+		return nil, err
+	}
+	return nil, p.host.StorageDelete(ctx, p.Slug(), r.Key)
+}
+
+// maxStorageList caps one page of storage_list.
+const maxStorageList = 500
+
+func hostStorageList(ctx context.Context, p *Plugin, req []byte) (any, error) {
+	var r struct {
+		Prefix string `json:"prefix"`
+		After  string `json:"after"`
+		Limit  int    `json:"limit"`
+	}
+	if err := decodeRequest(req, &r); err != nil {
+		return nil, err
+	}
+	if len(r.Prefix) > maxStorageKey || len(r.After) > maxStorageKey {
+		return nil, invalid("prefix and after must be at most %d characters", maxStorageKey)
+	}
+	if r.Limit <= 0 || r.Limit > maxStorageList {
+		r.Limit = maxStorageList
+	}
+	keys, err := p.host.StorageList(ctx, p.Slug(), r.Prefix, r.After, r.Limit+1)
+	if err != nil {
+		return nil, err
+	}
+	more := len(keys) > r.Limit
+	if more {
+		keys = keys[:r.Limit]
+	}
+	if keys == nil {
+		keys = []string{}
+	}
+	next := ""
+	if more {
+		next = keys[len(keys)-1]
+	}
+	return map[string]any{"keys": keys, "next": next}, nil
 }
 
 func hostAdminNotice(ctx context.Context, p *Plugin, req []byte) (any, error) {

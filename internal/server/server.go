@@ -340,6 +340,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/plugins", s.pluginsScreen)
 	admin.GET("/plugin-install", s.pluginInstall)
 	admin.POST("/plugin-install", s.pluginInstall)
+	admin.GET("/plugin-keys", s.pluginKeys)
+	admin.POST("/plugin-keys", s.pluginKeys)
 	admin.GET("/admin", s.pluginAdmin)
 	admin.POST("/admin", s.pluginAdmin)
 	s.acfgoRegisterRoutes(admin)    // ACF-Go screens (acfgo.go)

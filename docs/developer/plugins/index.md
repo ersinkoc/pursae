@@ -29,13 +29,15 @@ through a small host API gated by **permissions** the administrator approves whe
   out or fails, the filter keeps its original value, the module is re-instantiated. After five
   consecutive failures the plugin is disabled and the admin sees why.
 - **Portability.** One `plugin.wasm` runs on every platform Pursae runs on. The SDK is Go
-  today (`wpgo/sdk/go/wpgo`); the ABI is plain JSON, so other languages can follow.
+  today (`wpgo/sdk/go/wpgo`); the ABI is plain JSON and documented in [the ABI page](abi.md), so other languages can follow.
+  Test plugin code on a normal toolchain with `wpgotest` ([testing](testing.md)); scaffold and
+  package with `wpgo plugin new|build`.
 
 ## What a plugin can do
 
 | Need | SDK | Permission |
 |------|-----|------------|
-| change rendered content, titles, excerpts | `AddFilter("the_content", …)` | `content:filter` |
+| change rendered post content (`the_title` / `the_excerpt` are reserved but not fired yet) | `AddFilter("the_content", …)` | `content:filter` |
 | run code at start-up or on admin screens | `AddAction("init", …)`, `AddAction("admin_notices", …)` | — / `admin:notices` |
 | shortcodes `[tag attr="v"]…[/tag]` | `AddShortcode` | `content:filter` |
 | REST endpoints under `/wp-json/<slug>/v1/` | `RegisterRestRoute` | `rest:routes` |

@@ -1,0 +1,11 @@
+{
+  "slug": "publish-notifier",
+  "name": "Publish Notifier",
+  "version": "1.0.0",
+  "description": "Example of the save_post action: POSTs a JSON notification to the webhook in the option publish_notifier_webhook whenever a post is published.",
+  "author": "Pursae Contributors",
+  "requires": "0.1.0",
+  "license": "GPL-2.0-or-later",
+  "permissions": ["posts:read", "http:outbound", "options:read"],
+  "hooks": ["save_post"]
+}

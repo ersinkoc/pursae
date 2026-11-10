@@ -1,0 +1,26 @@
+{{define "admin/plugin-keys"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>Trusted Keys</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<p>Plugin packages must be signed. A package is accepted when it is signed with one of the keys below, with a key set in the server environment, or with a Pursae Manager key. Only add the public key of a publisher you trust: a plugin signed with it can be installed and then granted permissions.</p>
+{{if .FixedKeys}}<p class="description">{{.FixedKeys}} more key(s) come from the server environment and cannot be changed here.</p>{{end}}
+<table class="wp-list-table widefat fixed striped">
+<thead><tr><th scope="col">Fingerprint</th><th scope="col">Comment</th><th scope="col">Public key</th><th scope="col"></th></tr></thead>
+<tbody>
+{{range .Keys}}<tr><td><code>{{.Fingerprint}}</code></td><td>{{.Comment}}</td><td><code style="word-break:break-all">{{.Key}}</code></td>
+<td><form method="post" action="/wp-admin/plugin-keys"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="remove" /><input type="hidden" name="fingerprint" value="{{.Fingerprint}}" /><input type="submit" class="button-link-delete button-link" value="Remove" onclick="return confirm('Remove this key?');" /></form></td></tr>
+{{else}}<tr class="no-items"><td colspan="4">No keys added.</td></tr>{{end}}
+</tbody>
+</table>
+<h2>Trust a new key</h2>
+<form method="post" action="/wp-admin/plugin-keys">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="add" />
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="plugin-key">Public key</label></th><td><textarea name="key" id="plugin-key" rows="2" class="large-text code" required></textarea><p class="description">Base64 of the 32-byte Ed25519 public key.</p></td></tr>
+<tr><th scope="row"><label for="plugin-key-comment">Comment</label></th><td><input type="text" name="comment" id="plugin-key-comment" class="regular-text" maxlength="100" /></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Trust key" /></p>
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

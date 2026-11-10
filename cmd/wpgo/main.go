@@ -19,6 +19,7 @@ import (
 	"wpgo/internal/config"
 	"wpgo/internal/coreupdate"
 	"wpgo/internal/db"
+	"wpgo/internal/plugins/pkgtool"
 	"wpgo/internal/server"
 )
 
@@ -68,6 +69,11 @@ func main() {
 	case "healthcheck": // container HEALTHCHECK: GET /healthz on WPGO_ADDR (healthcheck.go)
 		if err := healthcheck(cfg.Addr, os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, "wpgo healthcheck:", err)
+			os.Exit(1)
+		}
+	case "plugin": // plugin tooling: new, build, keygen, pack, verify (internal/plugins/pkgtool)
+		if err := pkgtool.Run(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "wpgo plugin:", err)
 			os.Exit(1)
 		}
 	case "mcp": // stdio MCP bridge to a site's /wp-json/pursae/v1/mcp (mcp.go)

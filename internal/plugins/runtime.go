@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -26,8 +27,12 @@ type Config struct {
 	// MemoryLimitPages caps each plugin's linear memory in 64 KiB pages.
 	// Default 1024 (64 MiB).
 	MemoryLimitPages uint32
-	// CallTimeout bounds every hook callback. Default 2s.
+	// CallTimeout bounds every hook and shortcode callback. Default 2s.
 	CallTimeout time.Duration
+	// RestTimeout bounds a REST route handler. Default 10s.
+	RestTimeout time.Duration
+	// CronTimeout bounds a scheduled-event (cron_*) callback. Default 30s.
+	CronTimeout time.Duration
 	// InitTimeout bounds instantiation plus wpgo_init. Default 10s.
 	InitTimeout time.Duration
 	// MaxFailures is the number of consecutive failed callbacks (trap,
@@ -66,6 +71,12 @@ func (c *Config) setDefaults() {
 	}
 	if c.CallTimeout <= 0 {
 		c.CallTimeout = 2 * time.Second
+	}
+	if c.RestTimeout <= 0 {
+		c.RestTimeout = 10 * time.Second
+	}
+	if c.CronTimeout <= 0 {
+		c.CronTimeout = 30 * time.Second
 	}
 	if c.InitTimeout <= 0 {
 		c.InitTimeout = 10 * time.Second
@@ -342,4 +353,22 @@ func checkModuleShape(c wazero.CompiledModule) error {
 		return fmt.Errorf("plugin.wasm export %s must return i64", exportHandle)
 	}
 	return nil
+}
+
+// budget is the time limit of one callback: REST handlers and scheduled events
+// (which typically call HTTPGet) get longer budgets than content hooks.
+func (c *Config) budget(req *handleRequest) time.Duration {
+	switch {
+	case req.Type == "rest":
+		return c.RestTimeout
+	case strings.HasPrefix(req.Hook, "cron_") || strings.HasPrefix(req.Hook, "wpgo_cron"):
+		return c.CronTimeout
+	}
+	return c.CallTimeout
+}
+
+// slowExempt reports whether the slow-call penalty is skipped: long-running
+// REST and cron callbacks are legitimate and only the hard timeout applies.
+func (c *Config) slowExempt(req *handleRequest) bool {
+	return c.budget(req) != c.CallTimeout
 }

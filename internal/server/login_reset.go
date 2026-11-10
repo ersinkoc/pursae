@@ -100,6 +100,7 @@ func (s *Server) register(c *gin.Context, v loginView) {
 				errs = append(errs, "<strong>Error:</strong> Could not register you&hellip; please contact the site administrator!")
 			} else {
 				if nu, e := s.store.UserByID(c, id); e == nil {
+					s.pluginUserAction(c, "user_register", nu)
 					s.notifyNewUser(c, nu, true)
 				}
 				target := s.loginPath() + "?checkemail=registered"

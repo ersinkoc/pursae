@@ -102,7 +102,9 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	}
 	sb.WriteString(customizeHead(v))                                                                    // custom background, site icon, Additional CSS
 	sb.WriteString(string(s.pluginStyleTags("front", "")) + string(s.pluginScriptTags("front", false))) // plugin assets
-	return template.HTML(sb.String())
+	// Wasm plugins (content:filter): the filter receives the head markup so far and returns it with
+	// their additions; without content:html the additions are sanitised like any content filter.
+	return template.HTML(s.applyFilters(c.Request.Context(), "wp_head", sb.String()).(string))
 }
 
 // wpFooter is wp_footer(): comment-reply on singular views with threaded comments, and the admin bar script.
@@ -115,12 +117,12 @@ func (s *Server) wpFooter(c *gin.Context, q *siteQuery, lb *links.Builder, admin
 		sb.WriteString("<script src=\"/wp-includes/js/hoverintent-js.min.js?ver=2.2.1\" id=\"hoverintent-js-js\"></script>\n") // admin-bar.js dependency
 		sb.WriteString("<script src=\"/wp-includes/js/admin-bar.min.js?ver=" + Version + "\" id=\"admin-bar-js\"></script>\n")
 	}
-	sb.WriteString(string(s.pluginScriptTags("front", true))) // plugin footer scripts
-	sb.WriteString(s.gooikeFooter(c))                         // Gooike: banner, preferences, footer scripts (gooike_front.go)
-	sb.WriteString(s.pixelFooter(c, q))                       // Pursae Pixel: page config and pixelgo.js (pixelgo_front.go)
-	sb.WriteString(s.gooFooter(c, q))                         // Goocommerce: store scripts, store notice (goo_front.go)
-	sb.WriteString(s.pllCookieScript(c))                      // Multi Language: the language cookie behind a page cache (golylang.go)
-	return template.HTML(sb.String())
+	sb.WriteString(string(s.pluginScriptTags("front", true)))                                    // plugin footer scripts
+	sb.WriteString(s.gooikeFooter(c))                                                            // Gooike: banner, preferences, footer scripts (gooike_front.go)
+	sb.WriteString(s.pixelFooter(c, q))                                                          // Pursae Pixel: page config and pixelgo.js (pixelgo_front.go)
+	sb.WriteString(s.gooFooter(c, q))                                                            // Goocommerce: store scripts, store notice (goo_front.go)
+	sb.WriteString(s.pllCookieScript(c))                                                         // Multi Language: the language cookie behind a page cache (golylang.go)
+	return template.HTML(s.applyFilters(c.Request.Context(), "wp_footer", sb.String()).(string)) // Wasm plugins, see wpHead
 }
 
 // webFile returns an embedded asset as text (inline styles).

@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -37,7 +39,100 @@ import (
 // pluginUpdate is a newer version of an installed plugin on the Manager.
 type pluginUpdate struct {
 	Version, Channel, Homepage string
+	Changelog                  string // what changed, from the listing (shown under the row)
 	URL                        string // Update now (Plugins screen), with its nonce
+}
+
+// Automatic plugin updates: the slugs of Manager-installed plugins that update themselves in the
+// daily wpgo_hub_check (option pursae_plugin_auto_updates, comma separated). An active plugin only
+// updates by itself when the new version asks for no permission it was not granted; otherwise the
+// administrator reviews it from the Plugins screen.
+const pluginAutoUpdatesOption = "pursae_plugin_auto_updates"
+
+func (s *Server) pluginAutoUpdates() map[string]bool {
+	out := map[string]bool{}
+	for _, v := range strings.Split(s.settings.String(pluginAutoUpdatesOption), ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out[v] = true
+		}
+	}
+	return out
+}
+
+func (s *Server) setPluginAutoUpdate(ctx context.Context, slug string, on bool) error {
+	m := s.pluginAutoUpdates()
+	if on {
+		m[slug] = true
+	} else {
+		delete(m, slug)
+	}
+	list := make([]string, 0, len(m))
+	for k := range m {
+		list = append(list, k)
+	}
+	sort.Strings(list)
+	return s.settings.Set(ctx, map[string]any{pluginAutoUpdatesOption: strings.Join(list, ",")})
+}
+
+// hubAutoUpdatePlugins applies the updates of plugins with auto-updates on; it returns the slugs it
+// updated. Failures are logged and leave the plugin as it was.
+func (s *Server) hubAutoUpdatePlugins(ctx context.Context) []string {
+	auto := s.pluginAutoUpdates()
+	if len(auto) == 0 || s.sandbox != nil {
+		return nil
+	}
+	ups := s.hubPluginUpdates(ctx)
+	var done []string
+	for slug, it := range ups {
+		if !auto[slug] {
+			continue
+		}
+		var status string
+		var perms []byte
+		if s.store.Pool.QueryRow(ctx, `SELECT status, permissions FROM plugins WHERE slug = $1`, slug).Scan(&status, &perms) != nil {
+			continue
+		}
+		if status == "active" {
+			var granted []plugins.Permission
+			_ = json.Unmarshal(perms, &granted)
+			declared := make([]plugins.Permission, 0, len(it.Permissions))
+			for _, p := range it.Permissions {
+				declared = append(declared, plugins.Permission(p))
+			}
+			if _, missing := splitPermissions(granted, declared); len(missing) > 0 {
+				continue // asks for something new: needs the administrator
+			}
+		}
+		if _, err := s.hubUpdatePlugin(ctx, slug); err != nil {
+			slog.Warn("plugin auto-update failed", "plugin", slug, "err", err)
+			continue
+		}
+		done = append(done, slug)
+	}
+	sort.Strings(done)
+	return done
+}
+
+// pluginAutoUpdateToggle is Plugins › "Enable/Disable auto-updates" for one plugin.
+func (s *Server) pluginAutoUpdateToggle(c *gin.Context, on bool) {
+	slug := c.Query("plugin")
+	if !s.checkNonce(c, "auto-update-plugin_"+slug) {
+		s.denyNonce(c)
+		return
+	}
+	if !currentUser(c).Can("update_plugins", nil) {
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to update plugins for this site.")
+		return
+	}
+	if !plugins.ValidSlug(slug) {
+		c.Redirect(http.StatusFound, "/wp-admin/plugins")
+		return
+	}
+	if err := s.setPluginAutoUpdate(c.Request.Context(), slug, on); err != nil {
+		c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("The setting could not be saved."))
+		return
+	}
+	c.Redirect(http.StatusFound, "/wp-admin/plugins")
 }
 
 // hubPluginUpdates maps the slug of every Manager-installed plugin with a newer published version to
@@ -77,12 +172,18 @@ func (s *Server) hubPluginUpdates(ctx context.Context) map[string]hubItem {
 // pluginsWithUpdates marks the rows that have a Manager update (Plugins screen, Dashboard › Updates).
 func (s *Server) pluginsWithUpdates(c *gin.Context, rows []pluginRow) []pluginRow {
 	ups := s.hubPluginUpdates(c.Request.Context())
-	if len(ups) == 0 {
-		return rows
-	}
+	auto := s.pluginAutoUpdates()
 	for i := range rows {
+		if rows[i].Source == pluginSourceHub && !rows[i].Native {
+			rows[i].AutoUpdate = auto[rows[i].Slug]
+			act := "enable-auto-update"
+			if rows[i].AutoUpdate {
+				act = "disable-auto-update"
+			}
+			rows[i].AutoUpdateURL = "/wp-admin/plugins?action=" + act + "&plugin=" + url.QueryEscape(rows[i].Slug) + "&_wpnonce=" + s.nonce(c, "auto-update-plugin_"+rows[i].Slug)
+		}
 		if it, ok := ups[rows[i].Slug]; ok && !rows[i].Native {
-			rows[i].Update = &pluginUpdate{Version: it.Version, Channel: it.Channel, Homepage: it.Homepage,
+			rows[i].Update = &pluginUpdate{Version: it.Version, Channel: it.Channel, Homepage: it.Homepage, Changelog: it.Changelog,
 				URL: "/wp-admin/plugins?action=upgrade-plugin&plugin=" + url.QueryEscape(rows[i].Slug) + "&_wpnonce=" + s.nonce(c, "upgrade-plugin_"+rows[i].Slug)}
 		}
 	}
@@ -142,7 +243,7 @@ func (s *Server) hubUpdatePlugin(ctx context.Context, slug string) (*plugins.Man
 			if prevErr == nil && writeFileAtomic(zipPath, prev, 0o644) == nil { // roll back to the previous package
 				_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET version = $2, signature = $3, signer = $4, permissions = $5 WHERE slug = $1`, slug, installed, digest, signer, perms)
 				if lerr := s.loadPlugin(ctx, slug, perms); lerr == nil {
-					s.plugins.hooks.DoAction(ctx, "init")
+					s.plugins.hooks.DoActionOwner(ctx, slug, "init")
 					return nil, fmt.Errorf("%s %s could not be activated (%v); version %s was restored", m.Name, m.Version, err, installed)
 				}
 			}

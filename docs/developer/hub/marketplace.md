@@ -13,6 +13,11 @@ name, slug, description and author) next to the built-in plugins and any package
 the plugin asks for**, download count and minimum core version; the detail view shows the
 package's `readme.md`.
 
+Cards show *Requires Pursae X* and *Tested up to Y* from the listing's `requires_core` and
+`tested_core`; a listing that needs a newer core than the running one shows a disabled
+**Incompatible** button (a dev build is never reported incompatible). The listing's `tags` are links
+that filter the screen (`?tag=<tag>`). Not built yet: a detail modal and server-side paging/sorting.
+
 Listings that need a license carry a **Pro** (a Pro license) or **Private** (granted to your
 license) badge, and a beta version a **Beta** badge; they only appear once the key is entered under
 Settings › License ([licenses](index.md#licenses)).
@@ -57,7 +62,13 @@ Updating downloads the package and verifies its SHA-256 and signature exactly li
 nothing is replaced when either does not match. The package is then replaced and, if the plugin was
 active, the new version is loaded straight away with the permissions granted before (only those the
 new version still asks for; if it asks for more, deactivate and activate it to review them). Plugins
-that were uploaded are updated by uploading the new version.
+that were uploaded are updated by uploading the new version. The update row shows the listing's
+optional `changelog` (plain text) under the message.
+
+**Automatic updates.** Plugins installed from the Hub have an *Enable auto-updates* link on the
+Plugins screen (option `pursae_plugin_auto_updates`). The daily `wpgo_hub_check` then updates them
+by itself. An active plugin is only updated this way when the new version asks for no permission that
+was not granted before; otherwise the administrator reviews it from the Plugins screen.
 
 Themes installed from the Hub (and library themes installed before the source was recorded) are
 updated the same way: Appearance › Themes shows *New version available. Update now* on the card and

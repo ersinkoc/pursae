@@ -533,3 +533,102 @@ func TestPluginInsertPostRunsAfterPostSave(t *testing.T) {
 		t.Fatalf("plugin-inserted post language %q, want en", got)
 	}
 }
+
+// One-off events are keyed by (hook, args): "one reminder per order" must not overwrite each other, and a
+// recurring schedule of the same hook leaves them alone.
+func TestPluginSingleEventsKeyedByArgs(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	h := &pluginHost{s: srv}
+	at := time.Now().Add(time.Hour).Unix()
+	for _, id := range []int{1, 2} {
+		if err := h.ScheduleEvent(ctx, "single", plugins.ScheduledEvent{Hook: "cron_single_x", At: at, Args: map[string]any{"order": id}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := countJobs(t, srv, "cron_single_x"); n != 2 {
+		t.Fatalf("two one-off events with different args: %d rows", n)
+	}
+	// Same args again replaces, not duplicates.
+	if err := h.ScheduleEvent(ctx, "single", plugins.ScheduledEvent{Hook: "cron_single_x", At: at + 60, Args: map[string]any{"order": 1}}); err != nil {
+		t.Fatal(err)
+	}
+	if n := countJobs(t, srv, "cron_single_x"); n != 2 {
+		t.Fatalf("same args replaced wrongly: %d rows", n)
+	}
+	if err := h.ScheduleEvent(ctx, "single", plugins.ScheduledEvent{Hook: "cron_single_x", Interval: 3600}); err != nil {
+		t.Fatal(err)
+	}
+	if n := countJobs(t, srv, "cron_single_x"); n != 3 {
+		t.Fatalf("recurring event must not remove one-offs: %d rows", n)
+	}
+	if err := h.UnscheduleEventArgs(ctx, "single", "cron_single_x", map[string]any{"order": 2}); err != nil {
+		t.Fatal(err)
+	}
+	if n := countJobs(t, srv, "cron_single_x"); n != 2 {
+		t.Fatalf("unschedule by args: %d rows", n)
+	}
+	if err := h.UnscheduleEvent(ctx, "single", "cron_single_x"); err != nil {
+		t.Fatal(err)
+	}
+	if n := countJobs(t, srv, "cron_single_x"); n != 0 {
+		t.Fatalf("unschedule all: %d rows", n)
+	}
+}
+
+func TestPluginScriptTag(t *testing.T) {
+	a := plugins.PluginAsset{Plugin: "p", Version: "1", Asset: plugins.Asset{Handle: "my-lib_x", Src: "a.js",
+		Data: map[string]any{"t": "</script><b>"}}}
+	got := pluginScriptTag(a, "p-my-lib_x", "front", false)
+	if !strings.Contains(got, "window.myLibXData = ") || strings.Contains(got, "</script><b>") {
+		t.Errorf("data block: %s", got)
+	}
+	if !strings.Contains(got, `-js" defer>`) {
+		t.Errorf("front head script should default to defer: %s", got)
+	}
+	if got := pluginScriptTag(a, "p-x", "front", true); strings.Contains(got, "defer") {
+		t.Errorf("footer script deferred: %s", got)
+	}
+	if got := pluginScriptTag(a, "p-x", "admin", false); strings.Contains(got, "defer") {
+		t.Errorf("admin script deferred by default: %s", got)
+	}
+	a.Asset.Strategy, a.Asset.Module = "async", true
+	if got := pluginScriptTag(a, "p-x", "front", false); !strings.Contains(got, `type="module" async>`) {
+		t.Errorf("module async: %s", got)
+	}
+}
+
+// Another instance changes the plugins table; this process follows after two ticks, and a plugin's
+// lifecycle actions reach only that plugin.
+func TestPluginSyncFollowsDatabaseAndLifecycleIsOwned(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	installDemo(t, srv)
+	ctx := context.Background()
+	pending := map[string]string{}
+
+	// Deactivated elsewhere: unloaded on the second sighting only.
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'inactive' WHERE slug = 'shortcode-demo'`)
+	srv.syncPluginsOnce(ctx, pending)
+	if _, ok := srv.plugins.rt.Plugin("shortcode-demo"); !ok {
+		t.Fatal("unloaded on the first sighting")
+	}
+	srv.syncPluginsOnce(ctx, pending)
+	if _, ok := srv.plugins.rt.Plugin("shortcode-demo"); ok {
+		t.Fatal("still loaded after the second sighting")
+	}
+	// Activated elsewhere: loaded.
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'active' WHERE slug = 'shortcode-demo'`)
+	srv.syncPluginsOnce(ctx, pending)
+	srv.syncPluginsOnce(ctx, pending)
+	if _, ok := srv.plugins.rt.Plugin("shortcode-demo"); !ok {
+		t.Fatal("not loaded after activation elsewhere")
+	}
+	// Deleted elsewhere: unloaded.
+	_, _ = srv.store.Pool.Exec(ctx, `DELETE FROM plugins WHERE slug = 'shortcode-demo'`)
+	srv.syncPluginsOnce(ctx, pending)
+	srv.syncPluginsOnce(ctx, pending)
+	if _, ok := srv.plugins.rt.Plugin("shortcode-demo"); ok {
+		t.Fatal("still loaded after delete elsewhere")
+	}
+}
