@@ -128,6 +128,7 @@ type bmgrJob struct {
 	Error    string    `json:"error,omitempty"`
 	File     string    `json:"file,omitempty"` // the archive a backup produced
 	Log      []string  `json:"log"`
+	Warnings int       `json:"warnings,omitempty"` // files skipped etc.: the job is done, but not perfectly
 	Started  time.Time `json:"started"`
 	Finished time.Time `json:"finished,omitempty"`
 }
@@ -137,6 +138,8 @@ type bmgrRuntime struct {
 	mu   sync.Mutex
 	jobs map[string]*bmgrJob
 	busy bool
+	// cancels stops a running backup (restores are not cancelable once they touch the database).
+	cancels map[string]context.CancelFunc
 }
 
 // bmgrOn reports whether the plugin is active.
@@ -177,7 +180,7 @@ func (s *Server) bmgrPluginAction(ctx context.Context, action string) error {
 	if err := s.settings.Set(ctx, map[string]any{bmgrSetting: action == "activate"}); err != nil {
 		return err
 	}
-	return s.bmgrSyncSchedule(ctx)
+	return s.bmgrSyncSchedule(ctx, false)
 }
 
 // bmgrMenu adds the top-level Backup Manager menu above Settings while the plugin is active.

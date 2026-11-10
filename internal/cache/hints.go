@@ -39,6 +39,9 @@ func (c *Cache) prefixed(tags []string) []string {
 // writePublicHints adds front-proxy headers for a cacheable public response.
 // remaining is the entry's remaining lifetime, lifetime its full TTL.
 func (c *Cache) writePublicHints(h http.Header, r *http.Request, remaining, lifetime time.Duration, tags []string) {
+	if m := c.cfg.ProxyMaxAge; m > 0 {
+		remaining, lifetime = min(remaining, m), min(lifetime, m)
+	}
 	rem := secs(remaining)
 	switch c.effectiveHint(r) {
 	case HintLiteSpeed:

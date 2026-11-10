@@ -145,6 +145,11 @@ type Config struct {
 	// ServerHint selects the front-proxy headers: auto, litespeed, nginx, generic or
 	// none. Default auto.
 	ServerHint ServerHint
+	// ProxyMaxAge, when positive, caps the lifetime advertised to a front proxy
+	// (s-maxage, X-Accel-Expires, X-LiteSpeed-Cache-Control). Use it while purges are not
+	// forwarded to the proxy, so a changed page goes stale for minutes, not days.
+	ProxyMaxAge time.Duration
+
 	// TagPrefix is prepended to every tag sent to a front proxy (X-LiteSpeed-Tag,
 	// Surrogate-Key, Cache-Tag, X-LiteSpeed-Purge) so several sites can share one
 	// proxy. Internal tags are not prefixed. Default "wpgo_".
@@ -172,6 +177,27 @@ type OptimizeConfig struct {
 	// or "<handle>-js" (WordPress's convention), or its file name without ".min.js" /
 	// ".js" equals the handle; an entry with "/" or "." also matches as a URL fragment.
 	DeferAllowlist []string
+	// DeferAll defers every classic external <script> in <body> except those matching
+	// DeferExclude (same matching as DeferAllowlist), instead of only the allowlisted
+	// ones. Scripts with a dependent "<handle>-js-after" inline script stay untouched.
+	DeferAll bool
+	// DeferExclude lists handles or URL fragments DeferAll leaves alone (jquery, a
+	// script that inline code relies on, ...).
+	DeferExclude []string
+	// DelayScripts lists patterns of scripts (analytics, pixels, chat widgets) held back
+	// until the visitor's first interaction (mouse, touch, scroll, key) or DelayTimeout
+	// seconds. An external script matches when its handle, id or URL contains the
+	// pattern; an inline script matches when its text contains it.
+	DelayScripts []string
+	// DelayTimeout is the number of seconds after which delayed scripts load without an
+	// interaction; 0 waits for an interaction only.
+	DelayTimeout int
+	// MinifyInlineCSS strips comments and whitespace from <style> elements.
+	MinifyInlineCSS bool
+	// Preconnect and DNSPrefetch list origins injected as <link rel="preconnect"> and
+	// <link rel="dns-prefetch"> right after <head>.
+	Preconnect  []string
+	DNSPrefetch []string
 	// CollapseWhitespace collapses runs of whitespace between tags into one space,
 	// outside <pre>, <textarea>, <script>, <style> and comments, and drops HTML
 	// comments except conditional and <!--noptimize--> ones.
@@ -193,7 +219,8 @@ type PreloadAsset struct {
 }
 
 func (o OptimizeConfig) enabled() bool {
-	return o.LazyImages || o.DeferScripts || o.CollapseWhitespace || len(o.Preload) > 0
+	return o.LazyImages || o.DeferScripts || o.DeferAll || o.CollapseWhitespace || o.MinifyInlineCSS || len(o.Preload) > 0 ||
+		len(o.DelayScripts) > 0 || len(o.Preconnect) > 0 || len(o.DNSPrefetch) > 0
 }
 
 // DefaultConfig returns an enabled configuration with LiteSpeed-like defaults.

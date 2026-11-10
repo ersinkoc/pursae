@@ -257,6 +257,7 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	}
 	cacheFile := filepath.Join(s.gocdnCacheDir(), key[:2], key+gocdn.Ext(out))
 	if data, err := os.ReadFile(cacheFile); err == nil {
+		gocdnTouch(cacheFile)
 		gocdnImgWrite(w, r, out, data, "disk")
 		return
 	}
@@ -270,6 +271,7 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 				rc.Close()
 				if rerr == nil {
 					gocdnImgStore(cacheFile, data)
+					s.gocdnMaybePrune(st)
 					gocdnImgWrite(w, r, out, data, "bucket")
 					return
 				}
@@ -334,6 +336,7 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	}
 	data := buf.Bytes()
 	gocdnImgStore(cacheFile, data)
+	s.gocdnMaybePrune(st)
 	if cl != nil {
 		go func(data []byte) {
 			o := gocdnPutOptions(st, "variant"+gocdn.Ext(out))

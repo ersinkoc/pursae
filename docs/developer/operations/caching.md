@@ -62,11 +62,29 @@ cache after a purge.
 
 | `wpgo_cache_server` | Headers emitted |
 |---------------------|-----------------|
-| `litespeed` | `X-LiteSpeed-Cache-Control`, `X-LiteSpeed-Tag`, and `X-LiteSpeed-Purge` on admin responses |
+| `litespeed` | `X-LiteSpeed-Cache-Control`, `X-LiteSpeed-Tag` |
 | `nginx` | `X-Accel-Expires` for `proxy_cache` / `fastcgi_cache` |
 | `generic` | `Cache-Control: s-maxage`, `Surrogate-Key` and `Cache-Tag` (Varnish, Fastly, Cloudflare) |
 | `auto` | LiteSpeed headers only when the request came through LiteSpeed; nothing otherwise |
 | `none` | in-process cache only |
 
-A CDN in front of the site should honour `Cache-Control` and purge by `Cache-Tag` /
-`Surrogate-Key` when it receives the purge; without tag support, set a short `s-maxage`.
+**Purges reach the proxy.** Set *Front Server Purge URL* in Cache Settings and every purge of the
+in-process cache is forwarded there as a `PURGE` request: a URL purge goes to the purge URL plus
+the page path, a tag purge carries `Surrogate-Key` (Varnish, Fastly), `Cache-Tag` (Cloudflare) and
+`X-LiteSpeed-Purge` headers listing the prefixed tags (`wpgo_` by default), a full purge sends
+`X-Purge-All: 1` and `X-LiteSpeed-Purge: *`. Requests are sent in the background with a 5 s
+timeout. While no purge URL is set, *Front Server Lifetime* (default 300 s) caps `s-maxage`,
+`X-Accel-Expires` and `X-LiteSpeed-Cache-Control` so a changed page is stale for minutes, not days,
+and Cache Settings shows a warning.
+
+## Cache Settings and Page Optimization options
+
+Besides the TTLs: *Enable Cache* (stops caching but keeps the plugin and its screens; the plugin
+itself is switched on the Plugins screen, option `wpgo_cache_enabled`; the cache switch is
+`wpgo_cache_serve`), *Cache Query Strings*, *Do Not Cache Cookies*, *Do Not Cache User Agents*,
+*Browser Cache TTL*, *301 Redirect TTL*, *Memory Limit*, and *Preload* (after every purge, 30 s
+debounced, and daily). The crawler takes its URLs from the core sitemap providers (home, every
+public post type, taxonomy and author) and stores its last result in `wpgo_cache_warm_result`.
+Page Optimization adds *Defer All JavaScript* with an exclude list, *Delay JavaScript* (scripts that
+contain a listed fragment load on the first interaction or after a timeout), inline CSS
+minification and preconnect / dns-prefetch origins.

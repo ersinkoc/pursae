@@ -3,6 +3,7 @@ package cache
 import (
 	"html"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -32,7 +33,8 @@ func Optimize(doc []byte, o OptimizeConfig) []byte {
 	out.Grow(len(src) + 256)
 	imgs := 0
 	inBody := false
-	headDone := len(o.Preload) == 0
+	headDone := len(o.Preload) == 0 && len(o.Preconnect) == 0 && len(o.DNSPrefetch) == 0
+	delayed := false
 	for i, sg := range segs {
 		text := src[sg.start:sg.end]
 		ltext := lc[sg.start:sg.end]
@@ -40,8 +42,18 @@ func Optimize(doc []byte, o OptimizeConfig) []byte {
 			continue
 		}
 		if sg.raw != "" {
-			if sg.raw == "script" && o.DeferScripts && inBody {
-				text = deferScript(text, lc, o.DeferAllowlist)
+			if sg.raw == "script" && len(o.DelayScripts) > 0 {
+				if t, ok := delayScript(text, o.DelayScripts); ok {
+					text, delayed = t, true
+					out.WriteString(text)
+					continue
+				}
+			}
+			if sg.raw == "script" && (o.DeferScripts || o.DeferAll) && inBody {
+				text = deferScript(text, lc, o)
+			}
+			if sg.raw == "style" && o.MinifyInlineCSS {
+				text = minifyStyle(text)
 			}
 			out.WriteString(text)
 			continue
@@ -49,7 +61,7 @@ func Optimize(doc []byte, o OptimizeConfig) []byte {
 		if !headDone {
 			if at := findTag(ltext, "head", 0); at >= 0 {
 				if end := tagEnd(text, at); end >= 0 {
-					text = text[:end+1] + preloadLinks(o.Preload, src) + text[end+1:]
+					text = text[:end+1] + originHints(o) + preloadLinks(o.Preload, src) + text[end+1:]
 					ltext = asciiLower(text)
 					headDone = true
 				}
@@ -68,7 +80,11 @@ func Optimize(doc []byte, o OptimizeConfig) []byte {
 		}
 		out.WriteString(text)
 	}
-	return []byte(out.String())
+	res := out.String()
+	if delayed {
+		res = injectBeforeBodyEnd(res, delayLoader(o.DelayTimeout))
+	}
+	return []byte(res)
 }
 
 // splitSegments partitions src into normal and protected segments. lc is the
@@ -317,7 +333,7 @@ func lazyImages(text string, count *int, skip int) string {
 // deferScript adds defer to a classic external <script> whose handle is allowlisted.
 // seg is the whole script element; docLC the lowercased document, used to refuse
 // handles that have a dependent inline "<handle>-js-after" script.
-func deferScript(seg, docLC string, allow []string) string {
+func deferScript(seg, docLC string, o OptimizeConfig) string {
 	gt := tagEnd(seg, 0)
 	if gt < 0 {
 		return seg
@@ -338,7 +354,19 @@ func deferScript(seg, docLC string, allow []string) string {
 	default:
 		return seg // modules, JSON, templates
 	}
-	handle := matchHandle(attrs["id"], src, allow)
+	handle := ""
+	if o.DeferScripts {
+		handle = matchHandle(attrs["id"], src, o.DeferAllowlist)
+	}
+	if handle == "" && o.DeferAll && matchHandle(attrs["id"], src, o.DeferExclude) == "" {
+		if handle = strings.TrimSuffix(attrs["id"], "-js"); handle == "" {
+			file := src
+			if k := strings.IndexAny(file, "?#"); k >= 0 {
+				file = file[:k]
+			}
+			handle = strings.TrimSuffix(strings.TrimSuffix(path.Base(file), ".js"), ".min")
+		}
+	}
 	if handle == "" {
 		return seg
 	}
@@ -468,4 +496,133 @@ func asciiLower(s string) string {
 		}
 	}
 	return s
+}
+
+// delayScript turns a script that matches a delay pattern into an inert one that the delay loader
+// starts on the first interaction: an external script keeps its URL in data-wpgo-src, an inline one
+// its type in data-wpgo-type. Scripts of other types (JSON, modules, templates) are left alone.
+func delayScript(seg string, patterns []string) (string, bool) {
+	gt := tagEnd(seg, 0)
+	if gt < 0 {
+		return seg, false
+	}
+	open := seg[:gt+1]
+	attrs := parseAttrs(open)
+	if _, ok := attrs["data-no-delay"]; ok {
+		return seg, false
+	}
+	typ := strings.ToLower(strings.TrimSpace(attrs["type"]))
+	if typ != "" && typ != "text/javascript" && typ != "application/javascript" {
+		return seg, false
+	}
+	if src := attrs["src"]; src != "" {
+		if matchPattern(attrs["id"]+" "+src, patterns) == "" {
+			return seg, false
+		}
+		o := strings.Replace(open, "src=", "data-wpgo-src=", 1)
+		return insertAttrs(o, len(o)-1, ` type="wpgo/delayed"`) + seg[gt+1:], true
+	}
+	if strings.Contains(seg, "wpgoDelayLoad") || matchPattern(seg[gt+1:], patterns) == "" {
+		return seg, false
+	}
+	return insertAttrs(open, gt, ` type="wpgo/delayed"`) + seg[gt+1:], true
+}
+
+func matchPattern(s string, patterns []string) string {
+	for _, p := range patterns {
+		if p != "" && strings.Contains(s, p) {
+			return p
+		}
+	}
+	return ""
+}
+
+// delayLoader is the inline script that starts the delayed scripts, in document order, on the first
+// interaction or after the timeout.
+func delayLoader(timeout int) string {
+	t := ""
+	if timeout > 0 {
+		t = "setTimeout(wpgoDelayLoad," + strconv.Itoa(timeout*1000) + ");"
+	}
+	return `<script data-no-defer data-no-delay>(function(){var ev=["mousemove","keydown","touchstart","scroll","click","wheel"],done=false;` +
+		`function wpgoDelayLoad(){if(done)return;done=true;ev.forEach(function(e){removeEventListener(e,wpgoDelayLoad)});` +
+		`var l=[].slice.call(document.querySelectorAll('script[type="wpgo/delayed"]'));` +
+		`(function next(){var o=l.shift();if(!o)return;var n=document.createElement("script");` +
+		`[].slice.call(o.attributes).forEach(function(a){if(a.name==="data-wpgo-src")n.src=a.value;else if(a.name!=="type")n.setAttribute(a.name,a.value)});` +
+		`if(o.src||o.hasAttribute("data-wpgo-src")){n.onload=n.onerror=next;o.parentNode.replaceChild(n,o);}` +
+		`else{n.text=o.text;o.parentNode.replaceChild(n,o);next();}})();}` +
+		`ev.forEach(function(e){addEventListener(e,wpgoDelayLoad,{passive:true})});` + t + `})();</script>`
+}
+
+func injectBeforeBodyEnd(doc, add string) string {
+	if i := strings.LastIndex(asciiLower(doc), "</body>"); i >= 0 {
+		return doc[:i] + add + doc[i:]
+	}
+	return doc + add
+}
+
+// originHints renders <link rel="preconnect"> and <link rel="dns-prefetch"> for the configured origins.
+func originHints(o OptimizeConfig) string {
+	var b strings.Builder
+	for _, u := range o.Preconnect {
+		if u = strings.TrimSpace(u); u != "" {
+			b.WriteString(`<link rel="preconnect" href="` + html.EscapeString(u) + `" crossorigin>`)
+		}
+	}
+	for _, u := range o.DNSPrefetch {
+		if u = strings.TrimSpace(u); u != "" {
+			b.WriteString(`<link rel="dns-prefetch" href="` + html.EscapeString(u) + `">`)
+		}
+	}
+	return b.String()
+}
+
+// minifyStyle strips comments and redundant whitespace from a whole <style> element. Strings and
+// url() contents are kept as they are; anything unusual leaves the element unchanged.
+func minifyStyle(seg string) string {
+	gt := tagEnd(seg, 0)
+	end := strings.LastIndex(asciiLower(seg), "</style")
+	if gt < 0 || end <= gt {
+		return seg
+	}
+	css := seg[gt+1 : end]
+	var b strings.Builder
+	var quote byte
+	pending := false // whitespace waiting to be written
+	last := byte(0)
+	for i := 0; i < len(css); i++ {
+		ch := css[i]
+		if quote != 0 {
+			b.WriteByte(ch)
+			if ch == '\\' && i+1 < len(css) {
+				i++
+				b.WriteByte(css[i])
+			} else if ch == quote {
+				quote = 0
+			}
+			continue
+		}
+		switch {
+		case ch == '/' && i+1 < len(css) && css[i+1] == '*':
+			j := strings.Index(css[i+2:], "*/")
+			if j < 0 {
+				return seg
+			}
+			i += j + 3
+			pending = true
+		case isSpace(ch):
+			pending = true
+		default:
+			if pending && last != 0 && !strings.ContainsRune("{};,>:", rune(last)) && !strings.ContainsRune("{};,>", rune(ch)) {
+				b.WriteByte(' ')
+			}
+			pending = false
+			if ch == '"' || ch == '\'' {
+				quote = ch
+			}
+			b.WriteByte(ch)
+			last = ch
+		}
+	}
+	return seg[:gt+1] + b.String() + seg[end:]
 }

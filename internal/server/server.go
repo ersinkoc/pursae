@@ -143,6 +143,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	s.startPlugins(ctx)
 	s.bmgrRegisterSchedule() // Backup Manager: the scheduled-backup job action (backup_schedule.go)
 	s.adminsecStart()
+	s.gocdnStartHousekeeping(ctx)
 	return s, nil
 }
 

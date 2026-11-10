@@ -383,6 +383,7 @@ func TestBmgrRestoreLegacyMenuLocations(t *testing.T) {
 				t.Fatal(err)
 			}
 			m["schema"], m["version"] = "0036_golylang_translate", "0.1.7"
+			delete(m, "checksums") // an archive of that age has none
 			var tables []any
 			for _, raw := range m["tables"].([]any) {
 				tb := raw.(map[string]any)
@@ -445,5 +446,74 @@ func TestBmgrRestoreLegacyMenuLocations(t *testing.T) {
 	rows.Close()
 	if len(got) != 2 || got["primary"] != mainID || got["footer"] != footID {
 		t.Errorf("menu locations after restoring a 0.1.7 archive: %v, want primary=%d footer=%d", got, mainID, footID)
+	}
+}
+
+// A backup carries SHA-256 checksums, warns about media that only exists in the CDN bucket, and a
+// tampered archive is refused before anything on the site changes.
+func TestBmgrChecksumsRemoteOnlyAndTamper(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO gocdn_items(path, provider, bucket, object_key, local_removed)
+		VALUES ('2026/01/a.jpg', 's3', 'b', 'k', true)`); err != nil {
+		t.Skipf("cannot seed gocdn_items: %v", err)
+	}
+	var archive string
+	var j *bmgrJob
+	bmgrRun(t, srv, "backup", func(jb *bmgrJob) (err error) {
+		j = jb
+		archive, err = srv.bmgrRunBackup(ctx, jb, bmgrSelection{Categories: []string{"content", "media"}, UserMode: "all"})
+		return err
+	})
+	m, err := bmgrReadManifest(filepath.Join(srv.bmgrDir(), archive))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Checksums) == 0 || m.Checksums["database/posts.jsonl"] == "" {
+		t.Errorf("manifest has no checksums: %v", m.Checksums)
+	}
+	if m.RemoteOnly != 1 {
+		t.Errorf("remote_only = %d, want 1", m.RemoteOnly)
+	}
+	if log := strings.Join(srv.bmgrJobByID(j.ID).Log, "\n"); !strings.Contains(log, "only in the Pursae CDN bucket") {
+		t.Errorf("no remote-only warning in the log:\n%s", log)
+	}
+
+	// Tamper with one table: the restore refuses it and leaves the site alone.
+	src, err := zip.OpenReader(filepath.Join(srv.bmgrDir(), archive))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for _, f := range src.File {
+		rc, _ := f.Open()
+		data, _ := io.ReadAll(rc)
+		rc.Close()
+		if f.Name == "database/posts.jsonl" {
+			data = append(data, []byte("\n")...)
+		}
+		w, _ := zw.Create(f.Name)
+		_, _ = w.Write(data)
+	}
+	src.Close()
+	_ = zw.Close()
+	bad := "tampered.zip"
+	if err := os.WriteFile(filepath.Join(srv.bmgrDir(), bad), buf.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	jr, err := srv.bmgrStart("restore")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = srv.bmgrRunRestore(ctx, jr, bmgrRestoreReq{File: bad, Categories: []string{"content"}, Me: 1})
+	srv.bmgrFinish(jr, err)
+	if err == nil || !strings.Contains(err.Error(), "checksum") {
+		t.Errorf("tampered archive: %v", err)
 	}
 }

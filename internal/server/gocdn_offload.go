@@ -233,12 +233,17 @@ func (s *Server) gocdnRemoveLocal(ctx context.Context, mediaID int64) {
 		if it.LocalRemoved {
 			continue
 		}
+		// The row says "removed" first: a crash between the two steps leaves a stray file (the
+		// housekeeping deletes it), never a row that claims the file is on disk when it is not.
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE gocdn_items SET local_removed = true WHERE id = $1`, it.ID); err != nil {
+			slog.Warn("gocdn: marking a file as removed", "path", it.Path, "err", err)
+			continue
+		}
 		if p := s.gocdnLocalPath(it.Path); p != "" {
 			if err := os.Remove(p); err != nil && !errors.Is(err, os.ErrNotExist) {
-				continue
+				_, _ = s.store.Pool.Exec(ctx, `UPDATE gocdn_items SET local_removed = false WHERE id = $1`, it.ID)
 			}
 		}
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE gocdn_items SET local_removed = true WHERE id = $1`, it.ID)
 	}
 }
 
@@ -295,6 +300,8 @@ func (s *Server) gocdnBeforeDelete(a *store.Attachment) {
 		}
 		if err := cl.Delete(ctx, it.Key); err != nil {
 			slog.Warn("gocdn: deleting an object", "key", it.Key, "err", err)
+			s.gocdnAddPendingDelete(ctx, it) // the row goes with the attachment: retry the delete later
+			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
 			continue
 		}
 		urls = append(urls, gocdnItemURL(st, it))

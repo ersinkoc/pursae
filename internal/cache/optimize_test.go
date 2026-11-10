@@ -156,3 +156,55 @@ func TestStrayLessThanKeepsOptimizing(t *testing.T) {
 		}
 	}
 }
+
+func TestDeferAllExcept(t *testing.T) {
+	doc := `<html><head><script src="/head.js"></script></head><body>` +
+		`<script src="/jquery.min.js" id="jquery-core-js"></script>` +
+		`<script src="/vendor/chat.js"></script>` +
+		`<script src="/a.js" id="a-js"></script><script id="a-js-after">a()</script>` +
+		`<script src="/m.js" type="module"></script></body></html>`
+	got := opt(doc, OptimizeConfig{DeferAll: true, DeferExclude: []string{"jquery-core"}})
+	for _, want := range []string{`<script src="/head.js"></script>`, `<script src="/jquery.min.js" id="jquery-core-js"></script>`,
+		`<script src="/vendor/chat.js" defer></script>`, `<script src="/a.js" id="a-js"></script>`, `<script src="/m.js" type="module"></script>`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s in\n%s", want, got)
+		}
+	}
+}
+
+func TestDelayScripts(t *testing.T) {
+	doc := `<html><head><script src="https://www.googletagmanager.com/gtag/js?id=G-1" id="gtag"></script>` +
+		`<script>fbq('init','1')</script><script>var keep=1</script><script type="application/ld+json">{"fbq":1}</script></head>` +
+		`<body><p>x</p></body></html>`
+	got := opt(doc, OptimizeConfig{DelayScripts: []string{"googletagmanager", "fbq("}, DelayTimeout: 5})
+	for _, want := range []string{`data-wpgo-src="https://www.googletagmanager.com/gtag/js?id=G-1"`, `type="wpgo/delayed"`,
+		`<script type="wpgo/delayed">fbq('init','1')</script>`, `<script>var keep=1</script>`, `<script type="application/ld+json">{"fbq":1}</script>`,
+		`setTimeout(wpgoDelayLoad,5000)`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s in\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, ` src="https://www.googletagmanager`) {
+		t.Errorf("the delayed script still loads: %s", got)
+	}
+	if !strings.HasSuffix(got, "</script></body></html>") {
+		t.Errorf("loader not before </body>: %s", got)
+	}
+	// Optimizing the output again must not delay the loader itself.
+	if again := opt(got, OptimizeConfig{DelayScripts: []string{"wpgoDelayLoad"}}); strings.Count(again, "wpgo/delayed") != strings.Count(got, "wpgo/delayed") {
+		t.Errorf("loader was delayed: %s", again)
+	}
+}
+
+func TestOriginHintsAndStyleMinify(t *testing.T) {
+	doc := `<html><head><style>/* c */ a { color : red; }
+ .b   >  .c { margin: 0 auto }
+ .d::after{content:"a  b /* x */"}</style></head><body></body></html>`
+	got := opt(doc, OptimizeConfig{Preconnect: []string{"https://fonts.gstatic.com"}, DNSPrefetch: []string{"//cdn.example.com"}, MinifyInlineCSS: true})
+	for _, want := range []string{`<head><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="dns-prefetch" href="//cdn.example.com">`,
+		`<style>a{color :red;}.b>.c{margin:0 auto}.d::after{content:"a  b /* x */"}</style>`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s in\n%s", want, got)
+		}
+	}
+}

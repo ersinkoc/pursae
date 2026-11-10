@@ -43,6 +43,8 @@ type gocdnTestSite struct {
 // gocdnSite installs a site, activates GoCDN from the Plugins screen and points it at a fake S3.
 func gocdnSite(t *testing.T) *gocdnTestSite {
 	t.Helper()
+	gocdnOffloadInline = true // tests read the bucket right after an upload
+	t.Cleanup(func() { gocdnOffloadInline = false })
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	_, body, _ := get(t, c, ts.URL+"/wp-admin/plugins")
@@ -510,7 +512,8 @@ func TestGoCDNJobResumesAndReportsFailures(t *testing.T) {
 		t.Fatal("resume")
 	}
 	j := s.waitJob()
-	if j["total"].(float64) != 3 || j["done"].(float64)+j["failed"].(float64) != 3 || j["failed"].(float64) != 1 {
+	// The failed attachment is retried once when the list is done, so nothing is left failed.
+	if j["total"].(float64) != 3 || j["done"].(float64)+j["failed"].(float64) != 3 || j["failed"].(float64) != 0 {
 		t.Fatalf("resumed job: %v", j)
 	}
 	if errs, _ := j["errors"].([]any); len(errs) != 1 || !strings.Contains(errs[0].(string), "InternalError") {
@@ -518,8 +521,89 @@ func TestGoCDNJobResumesAndReportsFailures(t *testing.T) {
 	}
 	var offloaded int
 	_ = s.srv.store.Pool.QueryRow(context.Background(), `SELECT count(DISTINCT media_id) FROM gocdn_items`).Scan(&offloaded)
-	if offloaded != 1 {
-		t.Fatalf("resumed job offloaded %d attachments, want 1 (one skipped as done, one failed)", offloaded)
+	if offloaded != 2 {
+		t.Fatalf("resumed job offloaded %d attachments, want 2 (one skipped as done, one failed then retried)", offloaded)
+	}
+	if code, csv, _ := get(t, s.c, s.ts.URL+"/wp-admin/gocdn?page=offload&action=errors-csv"); code != http.StatusOK || !strings.Contains(csv, "InternalError") {
+		t.Fatalf("errors CSV: %d %q", code, csv)
+	}
+}
+
+// TestGoCDNJobPermanentFailureAndParallel: a job processes attachments in parallel batches and
+// keeps what still fails after the retry pass.
+func TestGoCDNJobPermanentFailureAndParallel(t *testing.T) {
+	s := gocdnSite(t)
+	for i := 0; i < 5; i++ {
+		s.upload("pic.png", gocdnTestImage(50+i, 50, "png"))
+	}
+	s.configure(nil)
+	s.fake.FailNext = 1000
+	if err := s.srv.gocdnStartJob(context.Background(), "offload", false); err != nil {
+		t.Fatal(err)
+	}
+	j := s.waitJob()
+	if j["finished"] != true || j["failed"].(float64) != 5 || j["done"].(float64) != 0 {
+		t.Fatalf("job: %v", j)
+	}
+	if csv := s.srv.gocdnErrorsCSV(); strings.Count(csv, "InternalError") < 5 {
+		t.Fatalf("CSV lacks the failures: %q", csv)
+	}
+	s.fake.FailNext = 0
+	if err := s.srv.gocdnStartJob(context.Background(), "offload", false); err != nil {
+		t.Fatal(err)
+	}
+	if j := s.waitJob(); j["done"].(float64) != 5 || j["failed"].(float64) != 0 {
+		t.Fatalf("second run: %v", j)
+	}
+}
+
+// TestGoCDNHousekeeping: strays are deleted, a failed bucket delete is retried, and an interrupted
+// job continues without anyone pressing Resume.
+func TestGoCDNHousekeeping(t *testing.T) {
+	s := gocdnSite(t)
+	id := int64(s.upload("keep.png", gocdnTestImage(60, 60, "png"))["id"].(float64))
+	s.configure(nil)
+	ctx := context.Background()
+	if code, _, _ := s.pageForm("offload", url.Values{"copy-to-s3": {"1"}, "remove-local-file": {"1"}, "serve-from-s3": {"1"}}); code != http.StatusFound {
+		t.Fatal("save offload settings")
+	}
+	if err := s.srv.gocdnStartJob(ctx, "offload", false); err != nil {
+		t.Fatal(err)
+	}
+	s.waitJob()
+	rel := mustAttachment(t, s, id).FilePath
+	local := filepath.Join(s.srv.cfg.UploadsDir, filepath.FromSlash(rel))
+	if _, err := os.Stat(local); err == nil {
+		t.Fatal("local copy was not removed")
+	}
+	// A fetched-back copy left on disk (the timer was lost): old enough, it goes; a fresh one stays.
+	if err := os.WriteFile(local, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if n := s.srv.gocdnCleanupLocal(ctx); n != 0 {
+		t.Fatalf("a fresh file was removed (%d)", n)
+	}
+	old := time.Now().Add(-time.Hour)
+	_ = os.Chtimes(local, old, old)
+	if n := s.srv.gocdnCleanupLocal(ctx); n != 1 {
+		t.Fatalf("cleanup removed %d files, want 1", n)
+	}
+	if _, err := os.Stat(local); err == nil {
+		t.Fatal("stray file still on disk")
+	}
+	// Deleting the attachment while the bucket refuses: the object is remembered and retried.
+	s.fake.FailNext = 1000
+	a, _ := s.srv.store.GetAttachment(ctx, id)
+	s.srv.gocdnBeforeDelete(a)
+	s.fake.FailNext = 0
+	if len(s.srv.gocdnPendingDeletes()) == 0 {
+		t.Fatal("failed delete not remembered")
+	}
+	if left := s.srv.gocdnRetryPendingDeletes(ctx); left != 0 {
+		t.Fatalf("%d deletes still pending", left)
+	}
+	if keys := s.fake.Keys("media"); len(keys) != 0 {
+		t.Fatalf("objects left in the bucket: %v", keys)
 	}
 }
 

@@ -55,6 +55,7 @@ type bmgrAdminData struct {
 	Users       []bmgrUserView
 	Entries     []bmgrEntryView
 	Job         string // a job id to follow right away
+	UsedText    string // total size of the stored archives
 	MaxUpload   string
 	SiteURL     string
 	Restore     *bmgrRestoreView
@@ -98,6 +99,13 @@ func (s *Server) bmgrAdmin(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusNotFound, gin.H{"error": "unknown job"})
 		}
+		return
+	case "cancel":
+		if !s.checkNonce(c, bmgrNonce) {
+			s.denyNonce(c)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"canceled": s.bmgrCancel(c.Query("job"))})
 		return
 	case "download":
 		if !s.checkNonce(c, bmgrNonce) {
@@ -238,7 +246,7 @@ func (s *Server) bmgrPostBackup(c *gin.Context) {
 		return
 	}
 	go func() {
-		name, err := s.bmgrRunBackup(context.Background(), j, sel)
+		name, err := s.bmgrRunBackup(s.bmgrCancelable(j), j, sel)
 		s.bmgrUpdate(j, func(j *bmgrJob) { j.File = name })
 		s.bmgrFinish(j, err)
 	}()
@@ -309,6 +317,7 @@ func (s *Server) bmgrScreen(c *gin.Context) {
 			rows.Close()
 		}
 	case "backups":
+		d.UsedText = bmgrHuman(s.bmgrUsage())
 		for _, e := range s.bmgrList() {
 			d.Entries = append(d.Entries, s.bmgrEntryView(c, e))
 		}

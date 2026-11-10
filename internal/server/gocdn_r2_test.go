@@ -223,3 +223,26 @@ func TestDeleteAttachmentRemovesEditorFiles(t *testing.T) {
 		}
 	}
 }
+
+// With an image CDN URL the content images' /cdn-img/ URLs are written to that host.
+func TestGoCDNImageCDNURL(t *testing.T) {
+	s := gocdnSite(t)
+	s.configure(nil)
+	att := s.upload("cdnimg.jpg", gocdnTestImage(400, 300, "jpeg"))
+	src := att["source_url"].(string)
+	if code, _, _ := s.pageForm("images", url.Values{"img-enabled": {"1"}, "img-sign": {"1"}, "img-max-width": {"2000"}, "img-max-height": {"2000"},
+		"img-quality": {"70"}, "img-webp": {"1"}, "img-rewrite": {"1"}, "img-rewrite-quality": {"77"}, "img-max-source-mp": {"60"},
+		"img-cdn-url": {"https://img.example.com/"}}); code != http.StatusFound {
+		t.Fatal("save image settings")
+	}
+	st := s.srv.gocdnLoad()
+	if st.ImgCDNURL != "https://img.example.com" {
+		t.Fatalf("ImgCDNURL %q", st.ImgCDNURL)
+	}
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, s.ts.URL+"/", nil)
+	out := string(s.srv.gocdnRewriteBody(c, st, []byte(`<img src="`+src+`">`), false, false, true, false))
+	if !strings.Contains(out, `src="https://img.example.com/cdn-img/`) {
+		t.Fatalf("not on the image CDN: %s", out)
+	}
+}

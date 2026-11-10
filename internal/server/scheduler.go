@@ -37,6 +37,7 @@ var coreEvents = []struct{ Name, Recurrence string }{
 	{"delete_expired_transients", "daily"},
 	{"wp_session_gc", "hourly"},           // expired login sessions and old login attempts
 	{"wpgo_cache_janitor", "hourly"},      // expired page-cache entries
+	{"wpgo_cache_preload", "daily"},       // Pursae Cache: daily preload (when switched on)
 	{"wpgo_hub_check", "daily"},           // ping the Hub and refresh the release / marketplace cache
 	{"gontact_captcha_cleanup", "hourly"}, // expired Gontact Form CAPTCHA challenges
 	{"seogo_404_trim", "hourly"},          // Pursae SEO: keep the 404 log at its limit (seogo_front.go)
@@ -93,6 +94,12 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		"wpgo_cache_janitor": func(context.Context, map[string]any) error {
 			if c := s.currentCache(); c != nil {
 				c.PurgeExpired()
+			}
+			return nil
+		},
+		"wpgo_cache_preload": func(context.Context, map[string]any) error {
+			if s.settings.Bool("wpgo_cache_preload_daily") {
+				s.preloadCache()
 			}
 			return nil
 		},

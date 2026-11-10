@@ -294,6 +294,10 @@ func (s *Server) gocdnRewriteMedia(c *gin.Context, st gocdnSettings, body []byte
 	if home == "" {
 		home = strings.TrimRight(s.cfg.SiteURL, "/")
 	}
+	imgBase := home
+	if st.ImgCDNURL != "" { // a CDN pull zone whose origin is this site: /cdn-img/ URLs are written to it
+		imgBase = st.ImgCDNURL
+	}
 	var b bytes.Buffer
 	last := 0
 	for _, h := range hits {
@@ -301,7 +305,7 @@ func (s *Server) gocdnRewriteMedia(c *gin.Context, st gocdnSettings, body []byte
 		hasQuery := h.end < len(body) && body[h.end] == '?'
 		if st.ImgRewrite && !hasQuery && gocdnImageExt[strings.ToLower(path.Ext(h.rel))] {
 			p := gocdn.ImageParams{Q: st.ImgRewriteQ, Format: "auto"}
-			repl = home + gocdnSignedPath(key, h.rel, p, st.ImgSign)
+			repl = imgBase + gocdnSignedPath(key, h.rel, p, st.ImgSign)
 			if isXML { // a raw "&" makes the whole sitemap or feed invalid XML
 				repl = strings.ReplaceAll(repl, "&", "&amp;")
 			}

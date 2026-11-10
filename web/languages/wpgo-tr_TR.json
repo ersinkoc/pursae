@@ -3674,5 +3674,14 @@
  "Website": "İnternet sitesi",
  "Save my name, email, and website in this browser for the next time I comment.": "Bir dahaki sefere yorum yaptığımda kullanılmak üzere adımı, e-posta adresimi ve web site adresimi bu tarayıcıya kaydet.",
  "Post Comment": "Yorum gönder",
- "You must be <a href=\"%s\">logged in</a> to post a comment.": "Yorum yapabilmek için <a href=\"%s\">oturum açmalısınız</a>."
+ "You must be <a href=\"%s\">logged in</a> to post a comment.": "Yorum yapabilmek için <a href=\"%s\">oturum açmalısınız</a>.",
+ "Up": "Yukarı",
+ "copy into the Media Library": "Ortam Kitaplığı'na kopyala",
+ "link (stays in the bucket)": "bağlantı (bucket'ta kalır)",
+ "In library": "Kitaplıkta",
+ "This folder is empty.": "Bu klasör boş.",
+ "Load more": "Daha fazla yükle",
+ "The file could not be imported.": "Dosya içe aktarılamadı.",
+ "Remote storage": "Uzak depolama",
+ "Download all errors (CSV)": "Tüm hataları indir (CSV)"
 }
