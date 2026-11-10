@@ -384,6 +384,10 @@ func (s *Server) pllSaveLanguage(ctx context.Context, f *pllLanguage, isNew bool
 			}
 		}
 		_ = s.pllSaveOpts(ctx, o)
+		// The string translations are cached by language code (the rows followed the code by ON
+		// UPDATE CASCADE): the old code's cache would leave the language untranslated.
+		s.pllFlushStrings()
+		s.pllMediaLangsForget()
 	}
 	s.pllFlush()
 	s.purgeAll(ctx)
@@ -416,6 +420,8 @@ func (s *Server) pllDeleteLanguage(ctx context.Context, l *pllLanguage) error {
 		return err
 	}
 	s.pllFlush()
+	s.pllFlushStrings() // its string translations went with it (ON DELETE CASCADE)
+	s.pllMediaLangsForget()
 	o := s.pllOpts()
 	delete(o.Domains, l.Slug)
 	for _, locs := range o.NavMenus {
@@ -858,9 +864,16 @@ func (s *Server) golylangTermSaved(c *gin.Context, t *store.Term) {
 		}
 	} else if form := c.PostFormMap("term_tr_lang"); len(form) > 0 {
 		for lang, v := range form {
-			if id, _ := strconv.ParseInt(v, 10, 64); id > 0 && s.pllLang(c, lang) != nil {
-				tr[lang] = id
+			id, _ := strconv.ParseInt(v, 10, 64)
+			if id <= 0 || id == t.ID || lang == l.Slug || s.pllLang(c, lang) == nil {
+				continue
 			}
+			// Polylang's validate_translations: only a term of the same taxonomy that is in that
+			// language joins the group; a posted id is never relabelled into another language.
+			if ot, err := s.store.GetTerm(c, id); err != nil || ot.Taxonomy != t.Taxonomy || s.pllObjLang(c, pllTerm, id) != lang {
+				continue
+			}
+			tr[lang] = id
 		}
 	} else {
 		return
@@ -1079,6 +1092,7 @@ func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 	case "pll_post_lang":
 		if l := s.pllLang(c, c.PostForm("lang")); l != nil {
 			_ = s.pllSetLang(c, pllPost, p.ID, l.Slug)
+			s.pllReslug(c, p) // Share slugs: the slug may be taken in the new language
 		}
 	case "pll_link_translation":
 		l := s.pllLang(c, c.PostForm("lang"))
@@ -1092,6 +1106,7 @@ func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 			if target > 0 {
 				if tp, err := s.store.GetPost(c, target); err == nil && tp.Type == p.Type && currentUser(c).Can("edit_post", tp) {
 					_ = s.pllSetLang(c, pllPost, tp.ID, l.Slug)
+					s.pllReslug(c, tp)
 					tr[l.Slug] = tp.ID
 				}
 			}

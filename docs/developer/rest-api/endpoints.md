@@ -23,7 +23,7 @@ taxonomies) carry `lang` and `translations` (`{"en": 12, "fr": 15}`). Collection
 language only; objects without a language count as the default language). Writes take `lang` and
 `translations` in the JSON or form body, as Polylang's REST fields, or in the query string
 (`?lang=fr&translations[en]=12`); the body wins. A translation link is only made to an object in that
-language, of the same type, that the user may edit.
+language, of the same type, that the user may edit; an entry for the saved object's own language is ignored.
 
 ## Media
 
@@ -102,7 +102,7 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/batch/v1` | POST | up to 25 requests in one call; a sub-request cannot be another batch |
 | `/oembed/1.0/proxy` | GET | `url=` — fetches the provider's oEmbed for the editor |
 | `/wp-block-editor/v1/url-details` | GET | `url=` — title, icon, description of a link |
-| `/pll/v1/languages`, `/pll/v1/languages/{id or code}`, `/pll/v1/settings` | GET, POST, DELETE | Pursae Multi Language (Polylang's routes); only while the plugin is on |
+| `/pll/v1/languages`, `/pll/v1/languages/{id or code}`, `/pll/v1/settings` | GET, POST, DELETE | Pursae Multi Language (Polylang's routes); only while the plugin is on. Settings are checked like the URL modifications form: `domains` are http(s) URLs, `force_lang` 2 and 3 need pretty permalinks, 3 a domain for every language (else 400 `rest_invalid_param`) |
 | `/pll/v1/media/{id}/i18n` | GET, POST | per-language `alt_text`, `title`, `caption`, `description` of a media item: `{"fr":{"alt_text":"…"}}`, null or blank falls back to the item; `upload_files` plus own item or `edit_others_posts`; 404 while the Media module is off |
 | `/pll/v1/translate`, `/pll/v1/translate/test` | POST | machine translation proxy: `{texts[], target, source?, html?}` → `{translations, target}`; `manage_options`, cookie auth with the `wp_rest` nonce, 60 calls per user per minute, 200 texts / 200 KB, never saves |
 | `/pll/v1/visual/strings` | POST | saves string translations `{lang, items:[{original, translation}]}` (visual translation); `manage_options` and the `wp_rest` nonce, ≤200 items |

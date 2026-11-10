@@ -69,3 +69,22 @@ func (s *Server) pllShareSlugs() bool {
 	o := s.pllOpts()
 	return o.ShareSlugs && o.ForceLang > 0
 }
+
+// pllReslug re-checks the slug of a post whose language just changed. With Share slugs a slug is
+// unique per language only, so the new language may already have a post with it, and the URL would
+// then show that other post (Polylang runs wp_unique_post_slug on the save that changes the
+// language). p.Slug is updated in place.
+func (s *Server) pllReslug(ctx context.Context, p *store.Post) {
+	if p == nil || p.Slug == "" || p.Status == "auto-draft" || p.Status == "trash" || !s.pllShareSlugs() {
+		return
+	}
+	// A request cache of its own: the language was just written, a cached one would be stale.
+	sctx := context.WithValue(ctx, pllCtxKey{}, &pllReq{srv: s})
+	slug, err := s.store.UniqueSlug(sctx, p.Type, p.ParentID, p.Slug, p.ID)
+	if err != nil || slug == "" || slug == p.Slug {
+		return
+	}
+	if _, err := s.store.Pool.Exec(ctx, `UPDATE posts SET slug = $2 WHERE id = $1`, p.ID, slug); err == nil {
+		p.Slug = slug
+	}
+}

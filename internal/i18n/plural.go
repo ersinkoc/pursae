@@ -21,6 +21,11 @@ func (r *pluralRule) index(n int64) int {
 // compilePlural parses the C subset gettext allows: n, integers, ! * / % + - < <= > >= == !=
 // && || ?: and parentheses.
 func compilePlural(src string) (*pluralRule, error) {
+	// Real rules are under 200 bytes; the parser recurses per parenthesis and operator, so a
+	// header of thousands of "(" would otherwise exhaust the stack (a fatal error, not a panic).
+	if len(src) > maxPluralExpr {
+		return nil, errors.New("plural: expression too long")
+	}
 	p := &plParser{src: src}
 	f, err := p.ternary()
 	if err != nil {
@@ -32,6 +37,9 @@ func compilePlural(src string) (*pluralRule, error) {
 	}
 	return &pluralRule{eval: f}, nil
 }
+
+// maxPluralExpr bounds a Plural-Forms expression.
+const maxPluralExpr = 1024
 
 type plFn func(n int64) int64
 
