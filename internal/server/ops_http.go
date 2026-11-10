@@ -52,10 +52,37 @@ func (s *Server) opsHandler(next http.Handler) http.Handler {
 		}
 		w.Header().Set(HeaderRequestID, id)
 		if r.Body != nil && r.Body != http.NoBody && r.ContentLength != 0 {
+			if limit := requestBodyLimit(r); limit > 0 {
+				if r.ContentLength > limit {
+					w.Header().Set("Connection", "close")
+					http.Error(w, "Request Entity Too Large", http.StatusRequestEntityTooLarge)
+					return
+				}
+				r.Body = http.MaxBytesReader(w, r.Body, limit)
+			}
 			r.Body = &idleBody{ReadCloser: r.Body, rc: http.NewResponseController(w), idle: bodyIdleTimeout}
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// maxRequestBody bounds every request body (PHP's post_max_size): without it any visitor could stream
+// an endless multipart body to a form handler, which net/http spools to temporary files with no size
+// limit, or an endless JSON body into memory. It clears the largest upload a handler accepts (a 256 MB
+// WXR import, 4 x 64 MB Headless uploads) with room for the multipart framing. A variable for tests.
+var maxRequestBody int64 = 512 << 20
+
+// requestBodyLimit is the body limit of a request, 0 for none: the Backup Manager import streams
+// archives of up to 16 GB to disk and enforces that limit itself (bmgrUpload).
+func requestBodyLimit(r *http.Request) int64 {
+	switch r.URL.Path {
+	case "/wp-admin/admin", "/wp-admin/admin.php":
+		q := r.URL.Query()
+		if q.Get("page") == bmgrSlug && q.Get("action") == "upload" {
+			return 0
+		}
+	}
+	return maxRequestBody
 }
 
 func newRequestID() string {

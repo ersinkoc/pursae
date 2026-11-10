@@ -62,6 +62,15 @@ public uploads). Scheduled backups
 stay on the same server: copy them elsewhere (for example with the `tar` command above) — remote
 storage such as S3 or FTP is not included.
 
+A restore keeps this site's own secret (`auth_secret`), address and Backup Manager settings. Secrets
+the built-in plugins store encrypted under the archive site's secret (Pursae SMTP passwords and
+tokens, Pursae CDN credentials, the Multi Language translation key, Pursae Security authenticator
+apps) are re-encrypted for this site, so they keep working after a move; Pursae Security backup codes
+are only stored as hashes and have to be generated again. If the archive's site encrypted with
+`WPGO_SECRET`, start this site with the same value instead. An archive with accounts whose username or
+e-mail differs only by case restores too: those columns then stay non-unique regardless of case, as
+on the site the archive came from.
+
 ## Content export
 
 Tools › Export writes a WXR file with posts, pages, media references, comments and terms; "All

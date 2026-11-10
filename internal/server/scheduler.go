@@ -179,8 +179,11 @@ func (s *Server) ensureEvents(ctx context.Context) {
 	_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET status = 'queued', attempts = 0, locked_by = NULL, run_at = now() + interval '1 minute'
 		WHERE status = 'failed' AND recurrence <> ''`)
 	for _, e := range coreEvents {
+		// Two instances starting together both pass NOT EXISTS: the unique index jobs_recurring_name (0079)
+		// turns the second insert into a no-op.
 		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, run_at, recurrence)
-			SELECT $1, now() + interval '1 minute', $2 WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = $1 AND recurrence <> '')`, e.Name, e.Recurrence)
+			SELECT $1, now() + interval '1 minute', $2 WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = $1 AND recurrence <> '')
+			ON CONFLICT (name) WHERE recurrence <> '' AND NOT (payload ? 'plugin') DO NOTHING`, e.Name, e.Recurrence)
 	}
 	// A version the Manager has not heard of yet (the first start after a core update): ping it
 	// in a minute instead of at the next daily check, so its Sites screen shows the new version.
@@ -321,8 +324,11 @@ func (s *Server) finishJob(wctx, ctx context.Context, worker string, j dueJob, r
 	case runErr != nil && ctx.Err() != nil:
 		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', locked_by = NULL WHERE id = $1 AND locked_by = $2`, j.id, worker)
 	case runErr == nil && j.rec != "":
+		// The next slot of the schedule after now (wp_reschedule_event()): runs missed while the site was
+		// down are not caught up one by one, and the run that just caught up is not repeated at once.
 		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', attempts = 0, last_error = '', locked_by = NULL,
-			run_at = greatest(run_at + make_interval(secs => $2), now()) WHERE id = $1`, j.id, secs)
+			run_at = run_at + make_interval(secs => ($2 * (floor(greatest(extract(epoch FROM now() - run_at), 0) / $2) + 1))::double precision)
+			WHERE id = $1`, j.id, secs)
 	case runErr == nil:
 		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'done', locked_by = NULL WHERE id = $1`, j.id)
 	case j.rec != "":

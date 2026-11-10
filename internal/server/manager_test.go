@@ -670,3 +670,43 @@ func TestCoreTryBinary(t *testing.T) {
 		t.Errorf("a binary that cannot start was accepted: %v", err)
 	}
 }
+
+// A second core update while one is running is refused before anything is downloaded or kept as
+// <exe>.prev.
+func TestCoreUpdateRefusedWhileBusy(t *testing.T) {
+	withRootKeys(t)
+	withTrustHubKeys(t, true)
+	base, c, srv, hub := managerSite(t)
+	ctx := context.Background()
+	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
+	hub.keys = append(hub.keys, map[string]string{"id": "hub-2026", "public": base64.StdEncoding.EncodeToString(pub)})
+	bin := []byte("\x7fELF pursae 9.9.9")
+	art := signedCore("9.9.9", runtime.GOOS, runtime.GOARCH, bin, priv, "hub-2026")
+	art.URL = hub.URL + "/api/v1/core/9.9.9/" + runtime.GOOS + "-" + runtime.GOARCH
+	hub.coreBin = bin
+	hub.core["artifacts"] = []*coreArtifact{art}
+	srv.hubDropCaches(ctx)
+	target := filepath.Join(t.TempDir(), "pursae")
+	os.WriteFile(target, []byte("old binary"), 0o755)
+	oldExe, oldRestart := coreExecutable, coreRestart
+	t.Cleanup(func() { coreExecutable, coreRestart = oldExe, oldRestart; coreBusy.Store(false) })
+	coreExecutable = func() (string, error) { return target, nil }
+	coreRestart = func(string) error { return nil }
+
+	_, body, _ := get(t, c, base+"/wp-admin/update-core")
+	nonce := formNonce(t, body[strings.Index(body, "do-core-upgrade"):])
+	coreBusy.Store(true) // an update in another request
+	_, body, _ = post(t, c, base+"/wp-admin/update-core?action=do-core-upgrade", url.Values{"_wpnonce": {nonce}})
+	if !strings.Contains(body, "already running") {
+		t.Errorf("a concurrent update was not refused")
+	}
+	if b, _ := os.ReadFile(target); string(b) != "old binary" {
+		t.Error("the executable was replaced")
+	}
+	if _, err := os.Stat(target + ".prev"); err == nil {
+		t.Error("a .prev was written")
+	}
+	if !coreBusy.Load() {
+		t.Error("the refused request released the other update's lock")
+	}
+}

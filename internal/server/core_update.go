@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -65,6 +66,14 @@ var (
 	coreRestart = func(exe string) error { return coreupdate.Restart(exe, 10*time.Second) }
 	coreExit    = os.Exit
 )
+
+// coreBusy is held from the start of a core update or reinstall until the restart (or the failure):
+// two at once would each keep "the running binary" as <exe>.prev, the second one keeping the first
+// one's new binary, so a rollback would go back to the version it is rolling back from.
+var coreBusy atomic.Bool
+
+// errCoreBusy refuses a second core update while one is running.
+var errCoreBusy = errors.New("another core update is already running; wait for the site to restart")
 
 // artifactFor is the release's binary for this platform.
 func (c *hubCore) artifactFor(goos, goarch string) *coreArtifact {
@@ -271,6 +280,16 @@ func (s *Server) upgradeCore(c *gin.Context) {
 	fail := func(msg string) {
 		c.Redirect(http.StatusFound, "/wp-admin/update-core?error="+url.QueryEscape(s.updateFailed(c, msg)))
 	}
+	if !coreBusy.CompareAndSwap(false, true) {
+		fail(errCoreBusy.Error())
+		return
+	}
+	handedOver := false
+	defer func() {
+		if !handedOver {
+			coreBusy.Store(false)
+		}
+	}()
 	target, err := coreUpdateTarget()
 	if err != nil {
 		fail(err.Error())
@@ -283,6 +302,7 @@ func (s *Server) upgradeCore(c *gin.Context) {
 	}
 	slog.Info("core updated, restarting", "from", Version, "to", version, "exe", target)
 	s.hubEvent("core_update", "core", "", version)
+	handedOver = true
 	s.coreRestartInto(c, target, version, false)
 }
 
@@ -292,6 +312,7 @@ func (s *Server) coreRestartInto(c *gin.Context, target, version string, reinsta
 	s.adminPage(c, "update-core", "Pursae Updates", "update-core-php", "admin/update-core-restart", map[string]any{"Version": version, "Reinstall": reinstall})
 	c.Writer.Flush()
 	go func() {
+		defer coreBusy.Store(false) // reached only when the exec did not happen (or in tests)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		s.hubFlushEvents(ctx)
 		cancel()
@@ -351,6 +372,16 @@ func (s *Server) reinstallCore(c *gin.Context) {
 	fail := func(msg string) {
 		c.Redirect(http.StatusFound, "/wp-admin/update-core?error="+url.QueryEscape(s.updateFailed(c, msg)))
 	}
+	if !coreBusy.CompareAndSwap(false, true) {
+		fail(errCoreBusy.Error())
+		return
+	}
+	handedOver := false
+	defer func() {
+		if !handedOver {
+			coreBusy.Store(false)
+		}
+	}()
 	exe, err := coreExecutable()
 	if err != nil {
 		fail("the running executable cannot be found: " + err.Error())
@@ -383,6 +414,7 @@ func (s *Server) reinstallCore(c *gin.Context) {
 	}
 	slog.Info("core reinstalled, restarting", "from", Version, "to", prev, "exe", exe, "local", !kept.IsZero())
 	s.hubEvent("core_update", "core", "", prev)
+	handedOver = true
 	s.coreRestartInto(c, exe, prev, true)
 }
 

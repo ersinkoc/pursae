@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 )
@@ -163,5 +164,53 @@ func TestJobHeartbeatAndShutdown(t *testing.T) {
 	}
 	if n != 2 {
 		t.Fatalf("%d rows", n)
+	}
+}
+
+// A recurring job that missed runs (the site was down) runs once and then waits for the next slot of
+// its schedule; it does not run again right away.
+func TestRecurringJobCatchUpRunsOnce(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	pool := srv.store.Pool
+	if _, err := pool.Exec(ctx, `INSERT INTO jobs(name, run_at, recurrence) VALUES ('wpgo_test_missed', now() - interval '3 hours 10 minutes', 'hourly')`); err != nil {
+		t.Fatal(err)
+	}
+	runs := 0
+	h := map[string]jobHandler{"wpgo_test_missed": func(context.Context, map[string]any) error { runs++; return nil }}
+	srv.runDueJobs(ctx, "test", h)
+	srv.runDueJobs(ctx, "test", h)
+	if runs != 1 {
+		t.Fatalf("the missed job ran %d times in two ticks, want 1", runs)
+	}
+	var inSecs float64
+	if err := pool.QueryRow(ctx, `SELECT extract(epoch FROM run_at - now()) FROM jobs WHERE name = 'wpgo_test_missed'`).Scan(&inSecs); err != nil {
+		t.Fatal(err)
+	}
+	if inSecs < 49*60 || inSecs > 51*60 {
+		t.Fatalf("next run in %.0fs, want the next hourly slot (~50 minutes)", inSecs)
+	}
+}
+
+// Two instances starting together schedule each core event once (migration 0079).
+func TestEnsureEventsOnce(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	pool := srv.store.Pool
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); srv.ensureEvents(ctx) }()
+	}
+	wg.Wait()
+	var dups int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM (SELECT name FROM jobs WHERE recurrence <> '' GROUP BY name HAVING count(*) > 1) d`).Scan(&dups); err != nil {
+		t.Fatal(err)
+	}
+	if dups != 0 {
+		t.Fatalf("%d recurring events are scheduled more than once", dups)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO jobs(name, run_at, recurrence) VALUES ('wp_session_gc', now(), 'hourly')`); err == nil {
+		t.Fatal("a second wp_session_gc row was accepted")
 	}
 }

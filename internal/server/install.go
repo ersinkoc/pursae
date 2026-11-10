@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/mail"
@@ -36,6 +37,12 @@ type installView struct {
 }
 
 var validUsername = regexp.MustCompile(`^[A-Za-z0-9 _.\-@]+$`)
+
+// installLockID is the advisory lock the installer holds (db.Migrate uses 7_356_001).
+const installLockID = 7_356_002
+
+// errAlreadyInstalled: the site was installed while this submission waited.
+var errAlreadyInstalled = errors.New("the site is already installed")
 
 func (s *Server) installForm(c *gin.Context) {
 	if s.settings.Installed() {
@@ -109,6 +116,10 @@ func (s *Server) installSubmit(c *gin.Context) {
 		v.SiteTitle = "My Pursae Site"
 	}
 	if err := s.install(c, v); err != nil {
+		if errors.Is(err, errAlreadyInstalled) { // another request (or instance) installed the site first
+			c.Redirect(http.StatusFound, "/wp-login")
+			return
+		}
 		v.Error = "Installation failed: " + err.Error()
 		s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)
 		return
@@ -129,6 +140,26 @@ func (s *Server) install(ctx context.Context, v installView) error {
 	hash, err := auth.HashPassword(v.Password)
 	if err != nil {
 		return err
+	}
+	// Two submissions racing (two tabs, or a stranger next to the owner, on one instance or several)
+	// would both pass the Installed() check and each create an administrator: the install runs under a
+	// database-wide lock and checks the database itself, not this process's settings cache.
+	conn, err := s.store.Pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock($1)`, installLockID); err != nil {
+		return err
+	}
+	defer conn.Exec(context.WithoutCancel(ctx), `SELECT pg_advisory_unlock($1)`, installLockID) //nolint:errcheck
+	var installed bool
+	if err := conn.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM settings WHERE key = 'siteurl')`).Scan(&installed); err != nil {
+		return err
+	}
+	if installed {
+		_ = s.settings.Load(ctx)
+		return errAlreadyInstalled
 	}
 	userID, err := s.store.CreateUser(ctx, store.NewUser{
 		Login: v.UserName, Email: v.Email, PasswordHash: hash, Role: "administrator",
