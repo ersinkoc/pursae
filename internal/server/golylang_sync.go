@@ -154,11 +154,16 @@ func (s *Server) golylangSaved(ctx context.Context, p *store.Post) {
 	if gc, ok := ctx.(*gin.Context); ok && pllIsREST(gc) {
 		if l := s.pllLang(ctx, pllRESTLang(gc)); l != nil {
 			_ = s.pllSetLang(ctx, pllPost, p.ID, l.Slug)
+			s.pllReslug(ctx, p) // Share slugs: the slug was checked in the post's former language
 		}
 		if m := pllRESTTranslations(gc); len(m) > 0 {
 			u := pllActor(ctx)
 			tr := s.pllTranslations(ctx, pllPost, p.ID)
+			own := s.pllObjLang(ctx, pllPost, p.ID)
 			for lang, id := range m {
+				if lang == own || id == p.ID {
+					continue // the saved post keeps its own place in the group
+				}
 				// Linking moves the other post into this translation group (and under its
 				// synchronization): only for posts the user may edit, as the admin-ajax linking checks.
 				if t, err := s.store.GetPost(ctx, id); err == nil && t.Type == p.Type && s.pllObjLang(ctx, pllPost, id) == lang && u != nil && u.Can("edit_post", t) {
@@ -174,16 +179,31 @@ func (s *Server) golylangSaved(ctx context.Context, p *store.Post) {
 	}
 }
 
-// pllActor is the user saving: the REST user, else the cookie user; nil outside a request.
+// pllActor is the user saving: the REST user, else the cookie user; nil outside a request. A
+// wp-admin save that passes the request context (classic editor, Quick Edit, Bulk Edit, custom
+// fields) is known by the user pllDetect put on its pllReq.
 func pllActor(ctx context.Context) *store.User {
 	gc, ok := ctx.(*gin.Context)
 	if !ok {
+		if r := pllFrom(ctx); r != nil && r.actorSet {
+			return r.actor
+		}
 		return nil
 	}
 	if u := restCurrent(gc); u != nil {
 		return u
 	}
 	return currentUser(gc)
+}
+
+// pllUserRequest reports whether ctx belongs to a user's request (a *gin.Context, or the request
+// context of a wp-admin screen), as opposed to background work (cron, imports) that has no user.
+func pllUserRequest(ctx context.Context) bool {
+	if _, ok := ctx.(*gin.Context); ok {
+		return true
+	}
+	r := pllFrom(ctx)
+	return r != nil && r.actorSet
 }
 
 func pllIsREST(c *gin.Context) bool {
@@ -197,7 +217,7 @@ func (s *Server) pllSync(ctx context.Context, p *store.Post) {
 		return
 	}
 	own := s.pllObjLang(ctx, pllPost, p.ID)
-	_, inRequest := ctx.(*gin.Context)
+	inRequest := pllUserRequest(ctx)
 	u := pllActor(ctx)
 	for lang, id := range s.pllTranslations(ctx, pllPost, p.ID) {
 		if id == p.ID || lang == own {

@@ -545,6 +545,11 @@ type pllReq struct {
 
 	alternates []pllAlternate // hreflang links of the page (golylangView)
 
+	// actor is the logged-in user of a wp-admin request (actorSet): the admin save paths hand the
+	// request context, not the gin context, to afterPostSave, and pllSync still has to know who saves.
+	actor    *store.User
+	actorSet bool
+
 	cookieScript bool // the page sets the language cookie with pllCookieScript (page cache on)
 }
 
@@ -638,8 +643,8 @@ func (s *Server) pllDetect(c *gin.Context) bool {
 	p := c.Request.URL.Path
 	switch {
 	case strings.HasPrefix(p, "/wp-admin"):
-		r := &pllReq{srv: s}
 		u := currentUser(c)
+		r := &pllReq{srv: s, actor: u, actorSet: true}
 		if u != nil {
 			if v, ok := c.GetQuery("lang"); ok && (v == "all" || s.pllLang(ctx, v) != nil) && c.Query("page") != "mlang" {
 				if v == "all" { // the admin bar filter: Show all languages

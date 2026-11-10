@@ -49,7 +49,13 @@ func parseMO(b []byte) (*moFile, error) {
 		}
 		return string(b[o : o+l]), true
 	}
-	f := &moFile{entries: make(map[string]entry, n), plurals: map[string]string{}}
+	// n comes from the file: a count no table of this size can hold must not size the map (a
+	// 28-byte file claiming 2^31 entries would allocate gigabytes before the first read fails).
+	hint := n
+	if max := (len(b) - 28) / 16; hint > max || hint < 0 {
+		hint = max
+	}
+	f := &moFile{entries: make(map[string]entry, hint), plurals: map[string]string{}}
 	for i := 0; i < n; i++ {
 		orig, ok1 := str(origOff, i)
 		trans, ok2 := str(transOff, i)

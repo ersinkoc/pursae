@@ -2,7 +2,9 @@ package server
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -117,7 +119,11 @@ func (s *Server) golylangRESTSaved(c *gin.Context, k pllKind, id int64) {
 	}
 	if m := pllRESTTranslations(c); len(m) > 0 {
 		tr := s.pllTranslations(c, k, id)
+		own := s.pllObjLang(c, k, id)
 		for lang, oid := range m {
+			if lang == own || oid == id {
+				continue // the saved object keeps its own place in the group
+			}
 			if s.pllObjLang(c, k, oid) == lang && s.pllRESTLinkable(c, k, id, oid) {
 				tr[lang] = oid
 			}
@@ -336,8 +342,30 @@ func (s *Server) registerGolylangREST() {
 			if v, ok := r.Body["domains"].(map[string]any); ok {
 				o.Domains = map[string]string{}
 				for k, d := range v {
-					if ds, ok := d.(string); ok && s.pllLang(c, k) != nil {
-						o.Domains[k] = ds
+					ds, ok := d.(string)
+					if !ok || s.pllLang(c, k) == nil {
+						continue
+					}
+					// The checks of the URL modifications form (pllSettingsSave): an http(s) URL with a host.
+					if ds = strings.TrimRight(strings.TrimSpace(ds), "/"); ds == "" {
+						continue
+					}
+					if u, err := url.Parse(ds); err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
+						restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): domains")
+						return
+					}
+					o.Domains[k] = ds
+				}
+			}
+			if (o.ForceLang == 2 || o.ForceLang == 3) && s.settings.String("permalink_structure") == "" {
+				restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): force_lang (subdomains and domains need pretty permalinks)")
+				return
+			}
+			if o.ForceLang == 3 {
+				for _, l := range s.pllLanguages(c) {
+					if o.Domains[l.Slug] == "" {
+						restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): domains (every language needs a domain)")
+						return
 					}
 				}
 			}

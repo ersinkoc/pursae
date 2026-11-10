@@ -240,8 +240,16 @@ func (s *Server) pllTranslationURL(c *gin.Context, q *siteQuery, l *pllLanguage)
 		return "", false
 	}
 	// Archives (date, author, search) exist in every language: the same URL in l.
+	o := s.pllOpts()
 	cur := lb.Home + c.Request.URL.RequestURI()
-	return s.pllConvert(ctx, lb.Home, cur, l, "home", s.pllOpts()), true
+	if r := pllFrom(c); r != nil && r.Lang != nil && o.TranslateSlugs {
+		// The request path carries the current language's base (/fr/auteur/bob): turn it back into
+		// the base itself first, so pllConvert can translate it into l (/de/autor/bob).
+		if rel, ok := s.pllRelative(ctx, lb.Home, cur, o); ok {
+			cur = lb.Home + s.pllTranslateBase(ctx, rel, r.Lang.Slug, false)
+		}
+	}
+	return s.pllConvert(ctx, lb.Home, cur, l, "home", o), true
 }
 
 // pllExpandSwitcher replaces "#pll_switcher" custom links (the Language switcher menu item) with one item
