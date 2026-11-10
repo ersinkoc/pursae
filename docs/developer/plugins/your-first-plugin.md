@@ -118,6 +118,11 @@ screen) tells you when a call was refused or failed.
 
 ## 7. Iterate
 
+`wpgo plugin new -slug my-plugin -sdk /path/to/pursae` writes `plugin.json`, `main.go`, a unit
+test that uses `wpgotest`, `readme.md` and a `go.mod`; `wpgo plugin build -dir my-plugin [-key
+mykey.key]` compiles to Wasm and packs in one step (`wpgo plugin keygen|pack|verify` are the
+`wpgo-pkg` commands, so the released `wpgo` binary is enough to package a plugin).
+
 Rebuild, re-pack, upload again (the same slug replaces the package), deactivate and activate.
 During development run the site with `plugin_allow_unsigned` and skip the key. Unit-test your
 callbacks on a normal Go toolchain with `wpgo.Dispatch` ([testing](testing.md)).

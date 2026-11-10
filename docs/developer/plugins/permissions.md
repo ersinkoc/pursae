@@ -27,7 +27,8 @@ with `permission_denied` — logged, not fatal.
 | `admin:notices` | Show notices in the admin dashboard | hook `admin_notices` (and `all_admin_notices`, …); `AdminNotice` |
 | `cron` | Run scheduled tasks | hooks `cron_*`, `wpgo_cron*`; `ScheduleEvent`, `ScheduleSingleEvent`, `UnscheduleEvent` |
 | `storage` | Store private plugin data | `Storage`, `Transients` |
-| `http:outbound` | Make outbound HTTP requests | `HTTPGet` |
+| `http:outbound` | Make outbound HTTP requests | `HTTPGet`, `HTTPRequest` |
+| `mail:send` | Send e-mail from the site | `SendMail` |
 
 No permission is needed for `Log`, for `init`, or for hooks the vocabulary does not classify.
 

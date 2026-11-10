@@ -63,17 +63,19 @@
 		{{if .Active}}{{if .SettingsURL}}<span class="settings"><a href="{{.SettingsURL}}">Settings</a> | </span>{{end}}<span class="deactivate"><a href="{{.DeactivateURL}}" aria-label="Deactivate {{.Name}}">Deactivate</a></span>
 		{{else}}<span class="activate"><a href="{{.ActivateURL}}" class="edit" aria-label="Activate {{.Name}}">Activate</a></span>{{if .DeleteURL}} | <span class="delete"><a href="{{.DeleteURL}}" class="delete" aria-label="Delete {{.Name}}" onclick="return confirm('Are you sure you want to delete {{.Name}} and its data?');">Delete</a></span>{{end}}{{end}}
 		</div>
+		{{if .AutoUpdateURL}}<div class="row-actions visible"><span class="autoupdate"><a href="{{.AutoUpdateURL}}" class="toggle-auto-update">{{if .AutoUpdate}}Disable auto-updates{{else}}Enable auto-updates{{end}}</a></span></div>{{end}}
 	</td>
 	<td class="column-description desc">
 		<div class="plugin-description"><p>{{safe .Description}}</p></div>
 		<div class="active second plugin-version-author-uri"><span>Version {{.Version}}</span> | <span>By {{if .AuthorURI}}<a href="{{.AuthorURI}}">{{.Author}}</a>{{else}}{{.Author}}{{end}}</span>{{if .Native}} | <span style="color:#2271b1">Built-in</span>{{if .Like}} | <span style="color:#50575e;font-weight:600">Like {{.Like}}</span>{{end}}{{else}} | <span style="color:#8c8f94">WebAssembly sandbox</span>{{end}}{{if .PluginURI}} | <a href="{{.PluginURI}}">Visit plugin site</a>{{end}}</div>
 		{{if .Permissions}}<p class="description" style="margin-top:6px"><span>Permissions:</span> {{range $i, $p := .Permissions}}{{if $i}}, {{end}}<code title="{{$p.Description}}">{{$p.Name}}</code>{{end}}</p>{{end}}
 		{{if .Disabled}}<div class="notice inline notice-error notice-alt"><p>Stopped by the sandbox: {{.DisabledWhy}}</p></div>{{end}}
+		{{if .MissingPerms}}<div class="notice inline notice-warning notice-alt"><p>This version asks for new permissions that were not granted: {{range $i, $p := .MissingPerms}}{{if $i}}, {{end}}<code>{{$p}}</code>{{end}}. Calls that need them are refused. <a href="{{.DeactivateURL}}">Deactivate</a> and activate it again to review them.</p></div>{{end}}
 		{{if .Logs}}<details style="margin-top:6px"><summary>Recent log</summary><pre style="white-space:pre-wrap;font-size:12px">{{range .Logs}}{{.Time.Format "15:04:05"}} [{{.Level}}] {{.Message}}
 {{end}}</pre></details>{{end}}
 	</td>
 </tr>
-{{with .Update}}<tr class="plugin-update-tr {{if $row.Active}}active{{else}}inactive{{end}}" id="{{$row.Slug}}-update" data-slug="{{$row.Slug}}" data-plugin="{{$row.Slug}}"><td colspan="3" class="plugin-update colspanchange"><div class="update-message notice inline notice-warning notice-alt"><p>There is a new version of {{$row.Name}} available.{{if .Homepage}} <a href="{{.Homepage}}" class="thickbox open-plugin-details-modal" aria-label="View {{$row.Name}} version {{.Version}} details">View version {{.Version}} details</a> or{{end}} <a href="{{.URL}}" class="update-link" aria-label="Update {{$row.Name}} now">{{if .Homepage}}update now{{else}}Update now{{end}}</a>.</p></div></td></tr>{{end}}
+{{with .Update}}<tr class="plugin-update-tr {{if $row.Active}}active{{else}}inactive{{end}}" id="{{$row.Slug}}-update" data-slug="{{$row.Slug}}" data-plugin="{{$row.Slug}}"><td colspan="3" class="plugin-update colspanchange"><div class="update-message notice inline notice-warning notice-alt"><p>There is a new version of {{$row.Name}} available.{{if .Homepage}} <a href="{{.Homepage}}" class="thickbox open-plugin-details-modal" aria-label="View {{$row.Name}} version {{.Version}} details">View version {{.Version}} details</a> or{{end}} <a href="{{.URL}}" class="update-link" aria-label="Update {{$row.Name}} now">{{if .Homepage}}update now{{else}}Update now{{end}}</a>.</p>{{if .Changelog}}<p class="wpgo-plugin-changelog"><strong>What's new in {{.Version}}:</strong> {{.Changelog}}</p>{{end}}</div></td></tr>{{end}}
 {{else}}<tr class="no-items"><td class="colspanchange" colspan="3">No plugins found.</td></tr>{{end}}
 </tbody>
 <tfoot>{{template "plugins-head" false}}</tfoot>

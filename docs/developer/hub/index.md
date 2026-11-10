@@ -109,9 +109,17 @@ the beta versions and core releases the license unlocks (cards show **Pro**, **P
 **Beta** badges). Because the answers depend on the key, the cached catalog and index are kept per
 key and dropped when it changes.
 
+The daily `wpgo_hub_check` also re-asks the Hub about the license. An expiring (14 days), expired,
+revoked, wrong-site or unknown key shows a notice to administrators on every admin screen and sends
+the site's admin address one e-mail per alert (options `pursae_license_alert`,
+`pursae_license_alert_sent`). A Hub that cannot be reached changes nothing. Settings › License shows
+a Pro/Beta badge next to *Valid*.
+
 ## What a site sends (statistics)
 
-Statistics are always on; there is no opt-out. Only a development build with `WPGO_DEV_HUB_URL=off` sends
+Statistics are on by default and can be switched off under Settings › License › "Send usage
+statistics" (option `pursae_send_stats`). Off, the ping carries only `url`, `version` and `license`
+(what updates need), with empty `plugins`/`themes`, and no events are queued. Only a development build with `WPGO_DEV_HUB_URL=off` sends
 nothing — it then has no marketplace, no license and no update notices either.
 
 **Every request** carries the site's home URL and, if one is entered, its license key (above).

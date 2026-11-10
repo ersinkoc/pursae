@@ -52,6 +52,7 @@
 				{{if .Native}}{{if .Active}}<li><button type="button" class="button button-disabled button-compact" disabled="disabled">Active</button></li>{{else if .ActivateURL}}<li><a class="button activate-now button-primary button-compact" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a></li>{{end}}
 				{{if .SettingsURL}}<li><a href="{{.SettingsURL}}" aria-label="{{.Name}} settings">Settings</a></li>{{end}}
 				{{else if .Installed}}<li><button type="button" class="button button-disabled button-compact" disabled="disabled">Installed</button></li><li><a href="/wp-admin/plugins">Manage</a></li>
+				{{else if .Incompatible}}<li><button type="button" class="button button-disabled button-compact" disabled="disabled" title="Requires Pursae {{.RequiresCore}} or newer">Incompatible</button></li>
 				{{else}}<li><a class="install-now button button-compact" data-slug="{{.Slug}}" href="{{.InstallURL}}" aria-label="Install {{.Name}} {{.Version}} now" data-name="{{.Name}} {{.Version}}" role="button">Install Now</a></li>{{end}}
 				</ul>
 			</div>
@@ -70,7 +71,7 @@
 			<div class="vers column-rating">{{if .Permissions}}<span class="wpgo-plugin-permissions">Permissions: {{range $i, $p := .Permissions}}{{if $i}}, {{end}}<code title="{{$p.Description}}">{{$p.Name}}</code>{{end}}</span>{{else}}No special permissions{{end}}</div>
 			<div class="column-updated"><strong>Version:</strong> {{.Version}}{{if .Updated}} &middot; <strong>Last Updated:</strong> {{.Updated}}{{end}}</div>
 			<div class="column-downloaded">{{if .Hub}}{{.Downloads}} Installations{{else}}Signed package{{end}}</div>
-			<div class="column-compatibility"><span class="compatibility-compatible"><strong>Sandboxed</strong> WebAssembly plugin</span></div>
+			<div class="column-compatibility">{{if .Incompatible}}<span class="compatibility-incompatible"><strong>Incompatible</strong> Requires Pursae {{.RequiresCore}} or newer</span>{{else}}<span class="compatibility-compatible"><strong>Sandboxed</strong> WebAssembly plugin{{if .RequiresCore}}, requires Pursae {{.RequiresCore}}{{end}}{{if .TestedCore}}, tested up to {{.TestedCore}}{{end}}</span>{{end}}{{if .Tags}}<div class="wpgo-plugin-tags">{{range $i, $t := .Tags}}{{if $i}}, {{end}}<a href="/wp-admin/plugin-install?tag={{$t}}">{{$t}}</a>{{end}}</div>{{end}}</div>
 		{{end}}
 		</div>
 	</div>

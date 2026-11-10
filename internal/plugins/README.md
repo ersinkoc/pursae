@@ -45,7 +45,8 @@ that are both declared and granted.
 | `options:write` | `update_option` (only `<slug>_*` and `plugin_<slug>_*` options, stored by the core as `wasm:<slug>:<name>`) |
 | `posts:read` | `get_post`, `query_posts`, and hooks that expose post data (`save_post`, `save_post_*`, `wp_insert_post`, `transition_post_status`, `wpgo_post_stats`, …) |
 | `posts:write` | `insert_post`, `update_post`, and hooks that change post data before saving (`wp_insert_post_data`, `content_save_pre`, …) |
-| `http:outbound` | `http_get` |
+| `http:outbound` | `http_get`, `http_request` |
+| `mail:send` | `send_mail` |
 | `cron` | hooks named `cron_*` / `wpgo_cron*`, `schedule_event`, `unschedule_event` |
 | `admin:notices` | `admin_notices` hooks and `add_admin_notice` |
 | `content:filter` | display filters: `the_*`, `comment_text`, `widget_text`, `body_class`, …; `register_shortcode`, `enqueue_style`, `enqueue_script`. Shortcode output and what string content filters change go through KSES |
@@ -143,6 +144,8 @@ The import returns `0` if no response could be delivered.
 | `get_option` | `{"name":"…"}` | `{"found":bool,"value":…}` | `options:read` |
 | `update_option` | `{"name":"…","value":…}` | – | `options:write` |
 | `log` | `{"level":"debug\|info\|warning\|error","message":"…"}` | – | none |
+| `http_request` | `{"method":"POST","url":"https://…","headers":{…},"body":"…"}` | same as `http_get` | `http:outbound` |
+| `send_mail` | `{"to":["a@b.c"],"subject":"…","body":"…","html":"…","reply_to":"…"}` | `{"queued":true}` | `mail:send` |
 | `http_get` | `{"url":"https://…"}` | `{"status":200,"header":{…},"body":"…"}` | `http:outbound` |
 | `storage_get` | `{"key":"…"}` | `{"found":bool,"value":"…"}` | `storage` |
 | `storage_set` | `{"key":"…","value":"…"}` | – | `storage` |
@@ -155,7 +158,7 @@ The import returns `0` if no response could be delivered.
 | `update_post` | `{"id":7, …fields}` | the post | `posts:write` |
 | `get_current_user` | `{}` | `{"found":bool,"user":{"id","login","display_name","roles","caps"}}` | `users:read` |
 | `schedule_event` | `{"hook":"cron_x","interval":3600,"at":0,"args":{…}}` | – | `cron` + hook in manifest; `interval` 0 = one-off at `at` (unix) |
-| `unschedule_event` | `{"hook":"cron_x"}` | – | `cron` |
+| `unschedule_event` | `{"hook":"cron_x","args":{…}?}` (args: only runs with exactly these args) | – | `cron` |
 | `register_settings_page` | `{"page_title","menu_title","description","fields":[…]}` | `{"option_prefix":"plugin_<slug>_"}` | `admin:settings` |
 | `transient_get` | `{"key":"…"}` | `{"found":bool,"value":…}` | `storage` |
 | `transient_set` | `{"key":"…","value":…,"ttl":60}` | – | `storage`; `ttl` seconds, 0 = no expiry |

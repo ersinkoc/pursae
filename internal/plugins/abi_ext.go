@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"path"
 	"regexp"
 	"regexp/syntax"
@@ -76,8 +77,13 @@ func hostRegisterRestRoute(_ context.Context, p *Plugin, req []byte) (any, error
 		Route     string   `json:"route"`
 		Methods   []string `json:"methods"`
 		Callback  string   `json:"callback"`
+		Headers   []string `json:"headers"`
 	}
 	if err := decodeRequest(req, &r); err != nil {
+		return nil, err
+	}
+	hdrs, err := checkRouteHeaders(r.Headers)
+	if err != nil {
 		return nil, err
 	}
 	r.Namespace = strings.Trim(r.Namespace, "/")
@@ -105,7 +111,7 @@ func hostRegisterRestRoute(_ context.Context, p *Plugin, req []byte) (any, error
 	if r.Callback == "" || len(r.Callback) > maxCallbackName {
 		return nil, invalid("callback name must be 1-%d characters", maxCallbackName)
 	}
-	return nil, p.registerRestRoute(RestRoute{Namespace: r.Namespace, Route: r.Route, Methods: methods, Callback: r.Callback, re: re})
+	return nil, p.registerRestRoute(RestRoute{Namespace: r.Namespace, Route: r.Route, Methods: methods, Callback: r.Callback, Headers: hdrs, re: re})
 }
 
 func hostGetPost(ctx context.Context, p *Plugin, req []byte) (any, error) {
@@ -277,13 +283,21 @@ func hostScheduleEvent(ctx context.Context, p *Plugin, req []byte) (any, error) 
 
 func hostUnscheduleEvent(ctx context.Context, p *Plugin, req []byte) (any, error) {
 	var r struct {
-		Hook string `json:"hook"`
+		Hook string          `json:"hook"`
+		Args json.RawMessage `json:"args"` // absent: every run of the hook
 	}
 	if err := decodeRequest(req, &r); err != nil {
 		return nil, err
 	}
 	if err := checkCronHook(p, r.Hook); err != nil {
 		return nil, err
+	}
+	if len(r.Args) > 0 {
+		var args map[string]any
+		if err := json.Unmarshal(r.Args, &args); err != nil {
+			return nil, invalid("args must be an object")
+		}
+		return nil, p.host.UnscheduleEventArgs(ctx, p.Slug(), r.Hook, args)
 	}
 	return nil, p.host.UnscheduleEvent(ctx, p.Slug(), r.Hook)
 }
@@ -473,6 +487,18 @@ func hostEnqueue(p *Plugin, req []byte, kind string) (any, error) {
 			return nil, invalid("dep %q is not a handle", d)
 		}
 	}
+	if kind == "script" {
+		if a.Strategy != "" && a.Strategy != "defer" && a.Strategy != "async" {
+			return nil, invalid(`strategy must be "", "defer" or "async"`)
+		}
+		if a.Data != nil {
+			if raw, err := json.Marshal(a.Data); err != nil || len(raw) > MaxAssetData {
+				return nil, invalid("data must be JSON of at most %d bytes", MaxAssetData)
+			}
+		}
+	} else {
+		a.Strategy, a.Module, a.Data = "", false, nil
+	}
 	if kind == "style" {
 		a.InFooter = false
 		if a.Media == "" {
@@ -485,4 +511,33 @@ func hostEnqueue(p *Plugin, req []byte, kind string) (any, error) {
 		a.Media = ""
 	}
 	return nil, p.enqueue(a)
+}
+
+// maxRouteHeaders caps the extra request headers one route may ask for.
+const maxRouteHeaders = 16
+
+var headerNameRe = regexp.MustCompile(`^[A-Za-z0-9-]{1,64}$`)
+
+// secretRequestHeaders never reach a plugin: they carry the visitor's credentials.
+var secretRequestHeaders = map[string]bool{"Cookie": true, "Authorization": true, "Proxy-Authorization": true}
+
+// checkRouteHeaders validates the headers a route asks for (webhook signatures such as
+// Stripe-Signature or X-Hub-Signature-256) and returns their canonical names.
+func checkRouteHeaders(in []string) ([]string, error) {
+	if len(in) > maxRouteHeaders {
+		return nil, invalid("a route may ask for at most %d headers", maxRouteHeaders)
+	}
+	out := make([]string, 0, len(in))
+	for _, h := range in {
+		h = strings.TrimSpace(h)
+		if !headerNameRe.MatchString(h) {
+			return nil, invalid("header name %q is not valid", h)
+		}
+		h = http.CanonicalHeaderKey(h)
+		if secretRequestHeaders[h] {
+			return nil, invalid("header %q carries credentials and cannot be requested", h)
+		}
+		out = append(out, h)
+	}
+	return out, nil
 }

@@ -87,7 +87,7 @@ addresses or password hashes.
 | SDK | Host import | Permission | Guide |
 |-----|-------------|------------|-------|
 | `AddShortcode(tag, fn)` | `register_shortcode` | `content:filter` + tag in manifest | [shortcodes](shortcodes.md) |
-| `RegisterRestRoute(ns, route, methods, handler)` | `register_rest_route` | `rest:routes` | [REST routes](rest-routes.md) |
+| `RegisterRestRoute(ns, route, methods, handler)`, `RegisterRestRouteWithHeaders(ns, route, methods, headers, handler)` | `register_rest_route` | `rest:routes` | [REST routes](rest-routes.md) |
 | `RegisterSettingsPage(page)`, `Setting(id)`, `SettingString/Bool/Float`, `SettingName(id)` | `register_settings_page`, `get_option` | `admin:settings`, `options:read` | [settings pages](settings-pages.md) |
 | `EnqueueStyle(Style)`, `EnqueueScript(Script)` | `enqueue_style`, `enqueue_script` | `content:filter` (+ `admin:settings` for admin styles, `content:html` / `admin:scripts` for scripts) | [assets](assets.md) |
 
@@ -98,6 +98,7 @@ addresses or password hashes.
 | `ScheduleEvent(hook, interval, args) error` | `schedule_event` | `cron` + hook in manifest |
 | `ScheduleSingleEvent(hook, at, args) error` | `schedule_event` | `cron` |
 | `UnscheduleEvent(hook) error` | `unschedule_event` | `cron` |
+| `UnscheduleEventArgs(hook, args) error` | `unschedule_event` with `args` | `cron` |
 
 See [scheduled events](scheduled-events.md).
 
@@ -106,6 +107,7 @@ See [scheduled events](scheduled-events.md).
 | SDK | Host import | Permission |
 |-----|-------------|------------|
 | `Storage.Get(key) (string, found, error)`, `Storage.Set(key, value) error` | `storage_get`, `storage_set` | `storage` |
+| `Storage.Delete(key) error`, `Storage.List(prefix, after, limit) (keys, next, error)` | `storage_delete`, `storage_list` | `storage` |
 | `Transients.Get(key, &v) (found, error)`, `Transients.Set(key, value, ttl) error`, `Transients.Delete(key) error` | `transient_get`, `transient_set`, `transient_delete` | `storage` |
 
 Storage is a private key/value table per plugin (keys ≤256 chars, values ≤1 MiB, strings); it
@@ -116,6 +118,8 @@ chars, values ≤1 MiB) in the site's transients table, scoped to the plugin and
 
 | SDK | Host import | Permission |
 |-----|-------------|------------|
+| `HTTPRequest(HTTPRequestArgs{Method, URL, Headers, Body})` — GET, POST, PUT, PATCH, DELETE or HEAD; at most 32 headers (`Host`, `Content-Length` and hop-by-hop headers are refused), body ≤1 MiB; same response, timeout and address rules as `HTTPGet` | `http_request` | `http:outbound` |
+| `SendMail(Mail{To, Subject, Body, HTML, ReplyTo})` — queues an e-mail through the site's mail settings; 1-10 recipients, the sender is set by the site, 60 messages per plugin per hour | `send_mail` | `mail:send` |
 | `HTTPGet(url) (*HTTPResponse, error)` — `Status`, `Header`, `Body` (≤1 MiB; a larger body is an error, not truncated), 8 s timeout, private and loopback addresses are blocked | `http_get` | `http:outbound` |
 | `AdminNotice(kind, message) error` — kinds `NoticeInfo/Success/Warning/Error`, plain text ≤2000 chars, only meaningful inside an `admin_notices` callback | `add_admin_notice` | `admin:notices` |
 

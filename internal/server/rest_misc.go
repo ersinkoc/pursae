@@ -1073,6 +1073,7 @@ func (api *restAPI) createUser(c *gin.Context, r *restRequest) {
 		s.acfgoRESTSaveFor(c, r.Body, acfgoUserRESTScreen(id, roles, "add"), &acfObject{Kind: "user", ID: id, meta: map[string]any{}})
 	}
 	u, _ := s.store.UserByID(c, id)
+	s.pluginUserAction(c, "user_register", u)
 	changed := false
 	for field, dst := range map[string]*string{"url": &u.URL, "locale": &u.Locale} {
 		if v, ok := r.Str(c, field); ok {

@@ -123,6 +123,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 		{slug: "plugins", title: `Plugins <span class="update-plugins count-0"><span class="plugin-count">0</span></span>`, cap: "activate_plugins", id: "menu-plugins", icon: "dashicons-admin-plugins", sub: []subDef{
 			{slug: "plugins", title: "Installed Plugins", cap: "activate_plugins"},
 			{slug: "plugin-install", title: "Add Plugin", cap: "install_plugins"},
+			{slug: "plugin-keys", title: "Trusted Keys", cap: "install_plugins"},
 			{slug: "plugin-editor", title: "Plugin File Editor", cap: "edit_plugins"},
 		}},
 		{slug: "users", title: "Users", cap: "list_users", id: "menu-users", icon: "dashicons-admin-users", sub: []subDef{
@@ -294,7 +295,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		Avatar64:  s.avatarURL(c, u.Email, 64),
 		SiteName:  s.settings.String("blogname"),
 		HomeURL:   s.links(c).HomeURL("/"),
-		Notices:   append(append(flashNotices(c), s.pluginNotices(c)...), notices...),
+		Notices:   append(append(append(flashNotices(c), s.pluginNotices(c)...), s.licenseNotices(c)...), notices...),
 		Pending:   counts["pending"],
 		Data:      data,
 

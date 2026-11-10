@@ -2,12 +2,42 @@
 
 package wpgo
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sync"
+)
+
+var (
+	testHostMu sync.RWMutex
+	testHost   func(name string, body []byte) ([]byte, error)
+)
+
+// SetHostForTest routes every host function call of a non-Wasm build to fn, which receives the
+// import name and the JSON request and returns the JSON response envelope
+// ({"ok":true,"result":...} or {"ok":false,"code":...,"error":...}). It returns a function that
+// removes the hook again. Use the wpgotest package instead of calling this directly.
+func SetHostForTest(fn func(name string, body []byte) ([]byte, error)) (restore func()) {
+	testHostMu.Lock()
+	prev := testHost
+	testHost = fn
+	testHostMu.Unlock()
+	return func() {
+		testHostMu.Lock()
+		testHost = prev
+		testHostMu.Unlock()
+	}
+}
 
 // invokeHost is the non-Wasm stub: there is no host to talk to, so every host
 // function fails with ErrNotInHost. Hook registration and Dispatch still work,
 // which lets plugin authors unit test callbacks with a normal toolchain.
 func invokeHost(name string, body []byte) ([]byte, error) {
+	testHostMu.RLock()
+	th := testHost
+	testHostMu.RUnlock()
+	if th != nil {
+		return th(name, body)
+	}
 	switch name {
 	case "add_hook", "log", "register_shortcode", "register_rest_route", "enqueue_style", "enqueue_script":
 		// Registration and logging are best-effort outside the host.

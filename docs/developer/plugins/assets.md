@@ -44,6 +44,9 @@ func init() {
 | `Deps` | handles of this plugin's assets of the same kind that must load first (≤10) |
 | `Media` | the stylesheet's `media` attribute, default `all` |
 | `InFooter` | print the script before `</body>` instead of in `<head>` |
+| `Strategy` | scripts only: `""`, `"defer"` or `"async"`. Empty means `defer` for head scripts on the front end (never render-blocking); footer and admin scripts stay plain |
+| `Module` | scripts only: print `type="module"` |
+| `Data` | scripts only: a map (≤16 KiB of JSON) printed before the script as `window.<handle>Data` (handle camel-cased, `my-plugin` gives `myPluginData`); `<`, `>` and `&` are escaped. Use it for settings, REST nonces and translated strings (`wp_localize_script`) |
 
 Front-end tags are printed by `wp_head` after the theme's own assets (styles and head scripts)
 and by `wp_footer` (footer scripts); admin tags after the core admin bundle. Call the enqueue

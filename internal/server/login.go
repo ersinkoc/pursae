@@ -200,6 +200,7 @@ func (s *Server) login(c *gin.Context) {
 		return
 	}
 	s.setLoginCookie(c, sess.Token, v.Remember, int(auth.SessionRemember.Seconds()))
+	s.pluginUserAction(c, "wp_login", u)
 
 	target := safeRedirect(v.RedirectTo, "/wp-admin/")
 	// Users without dashboard capabilities land on their profile, like WordPress.

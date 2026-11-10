@@ -32,8 +32,18 @@ the manifest's `hooks` array.
 
 | Hook | Type | Value | Arguments | Permission |
 |------|------|-------|-----------|------------|
-| `admin_notices` | action | — | none. Queue a notice with `wpgo.AdminNotice`; it is escaped and shown on the current admin screen | `admin:notices` |
+| `admin_notices` | action | — | none. Queue a notice with `wpgo.AdminNotice`; it is escaped and shown on the current admin screen | `users:read` | `user_register`, `wp_login` (action arguments: the user id and the user as `CurrentUser` returns it) |
+| `admin:notices` |
 | `wpgo_post_stats` | filter | `map[string]any` of statistics shown in the classic editor's publish box (key → value; underscores become spaces) | `post`: `{"id", "title", "content"}` | `posts:read` |
+
+### Forms
+
+Fired by Pursae Contact Form. The permission is `forms:access` for both.
+
+| Hook | Type | Value | Arguments | Permission |
+|------|------|-------|-----------|------------|
+| `wpcf7_mail_sent` | action | — | one map: `contact_form_id` (int), `title` (string), `posted_data` (map of field name → submitted value). Fired after the mail was sent | `forms:access` |
+| `wpcf7_spam` | filter | the spam verdict (bool, `true` = spam); return a bool to override it | `contact_form_id` (int), `posted_data` (map), `remote_ip` (string), `user_agent` (string) | `forms:access` |
 
 ### Media
 
@@ -63,7 +73,10 @@ are never passed to a plugin.
 
 | Hook | Type | Arguments | Permission |
 |------|------|-----------|------------|
-| `init` | action | none. Fired after all active plugins are loaded at start-up and after a plugin is activated | — |
+| `init` | action | none. Fired after all active plugins are loaded at start-up; after a plugin is activated, updated or loaded by another instance it fires for that plugin only | — |
+| `activate` | action | none. Fired for the plugin itself when an administrator activates it (SDK: `wpgo.OnActivate`) | — |
+| `deactivate` | action | none. Fired for the plugin itself when it is deactivated, before it is unloaded (`wpgo.OnDeactivate`); 5 s budget | — |
+| `uninstall` | action | none. Fired for the plugin itself when it is deleted; an inactive plugin is loaded just for this call (`wpgo.OnUninstall`); 5 s budget. Afterwards its options, transients and events are removed | — |
 | `cron_<name>` | action | the event payload: `{"plugin": "<slug>", "args": {…}}` as the single argument. Fired by the scheduler for events the plugin created with `ScheduleEvent` ([scheduled events](scheduled-events.md)) | `cron` |
 
 Hooks fire with the request's user attached, so `wpgo.CurrentUser()` works inside `the_content`
@@ -85,16 +98,23 @@ versions, so a manifest written today stays valid:
 
 Subscribing to a hook the core does not fire yet is allowed; the callback simply never runs. Of the
 names above the core fires today `the_content`, `save_post`, `save_post_<type>`,
-`wpgo_post_stats`, `admin_notices` and the `cron_*` events; `the_title`, `wp_head`,
+`wpgo_post_stats`, `admin_notices`, the `cron_*` events, `user_register` and `wp_login`
+(actions), and the `wp_head` / `wp_footer` filters (`content:filter`): the value is the markup
+printed so far, return it with your additions; without `content:html` the additions are
+sanitised like any content filter (scripts and styles are dropped). `the_title`,
 `transition_post_status`, `wp_insert_post_data` and the rest are reserved.
 
 ## Behaviour to know
 
-- **Timeouts.** A callback has 2 seconds. A callback that overruns is killed, the filter keeps
+- **Timeouts.** A content hook or shortcode callback has 2 seconds, a REST route handler 10
+  seconds and a `cron_*` callback 30 seconds (REST and cron calls are exempt from the slow-call
+  rule below; only the hard timeout applies). A callback that overruns is killed, the filter keeps
   its value, and the plugin is re-instantiated on the next call.
 - **Failures count.** Five consecutive failures (panic, timeout, malformed response) disable the
   plugin until it is activated again. A call that succeeds but takes 75 % of its budget (1.5 s)
   counts too: it held up every other request to the plugin. Permission errors do not count.
+- **A skipped call is never cached.** When a callback is skipped because the instance stayed busy for a
+  call timeout, the request is flagged and Pursae Cache does not store that (incomplete) page.
 - **One call at a time.** A plugin instance runs one callback at a time (its memory is its state,
   so there is no pool of instances). A request that finds the plugin busy waits at most one call
   timeout, or less if the request's own deadline is nearer, then skips the callback (logged) and

@@ -79,3 +79,16 @@ curl -u admin:'xxxx xxxx xxxx xxxx xxxx xxxx' -H 'Content-Type: application/json
 
 Plugin routes are listed under their namespace in `/wp-json/` and are only served while the
 plugin is active. See also [plugin routes](../rest-api/plugin-routes.md) from the API side.
+
+## Webhook receivers and non-JSON responses
+
+- `RegisterRestRouteWithHeaders` asks for extra request headers (for example `Stripe-Signature`,
+  `X-Hub-Signature-256`); they appear in `req.Headers`. At most 16 per route; `Cookie`,
+  `Authorization` and `Proxy-Authorization` are refused.
+- `req.RawBodyBytes()` returns the unmodified body (the wire field `raw_body` is base64) so an HMAC can
+  be verified over the exact bytes. `req.QueryAll` lists every value of a parameter sent more than once
+  (`req.Query` keeps the first).
+- `wpgo.Text(status, contentType, text)` answers with CSV, XML, a feed or HTML instead of JSON. Allowed
+  types: `text/plain`, `text/csv`, `text/html`, `text/xml`, `application/xml`, `application/rss+xml`,
+  `application/atom+xml`. Responses are sent with `X-Content-Type-Options: nosniff`; HTML is sandboxed by a
+  `Content-Security-Policy: sandbox` header.

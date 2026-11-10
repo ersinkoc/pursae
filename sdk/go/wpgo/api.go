@@ -97,6 +97,45 @@ func HTTPGet(url string) (*HTTPResponse, error) {
 	return &out, nil
 }
 
+// HTTPRequestArgs describes an outbound request for HTTPRequest.
+type HTTPRequestArgs struct {
+	Method  string            `json:"method"` // GET (default), POST, PUT, PATCH, DELETE or HEAD
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers,omitempty"` // at most 32; Host, Content-Length and hop-by-hop headers are refused
+	Body    string            `json:"body,omitempty"`    // at most 1 MiB
+}
+
+// HTTPRequest performs an outbound request with any allowed method, headers
+// and body (the wp_remote_post / wp_remote_request equivalent).
+// Requires the "http:outbound" permission.
+func HTTPRequest(args HTTPRequestArgs) (*HTTPResponse, error) {
+	res, err := hostCall("http_request", args)
+	if err != nil {
+		return nil, err
+	}
+	var out HTTPResponse
+	if err := json.Unmarshal(res, &out); err != nil {
+		return nil, fmt.Errorf("wpgo: decode http_request result: %w", err)
+	}
+	return &out, nil
+}
+
+// Mail is a message for SendMail.
+type Mail struct {
+	To      []string `json:"to"` // 1-10 addresses
+	Subject string   `json:"subject"`
+	Body    string   `json:"body"`           // plain text
+	HTML    string   `json:"html,omitempty"` // optional HTML alternative
+	ReplyTo string   `json:"reply_to,omitempty"`
+}
+
+// SendMail queues an e-mail through the site's mail settings (wp_mail).
+// The sender is set by the site. Requires the "mail:send" permission.
+func SendMail(m Mail) error {
+	_, err := hostCall("send_mail", m)
+	return err
+}
+
 // Notice types accepted by AdminNotice.
 const (
 	NoticeInfo    = "info"
@@ -140,6 +179,30 @@ func (KVStore) Get(key string) (string, bool, error) {
 func (KVStore) Set(key, value string) error {
 	_, err := hostCall("storage_set", map[string]string{"key": key, "value": value})
 	return err
+}
+
+// Delete removes key (no error when it does not exist).
+func (KVStore) Delete(key string) error {
+	_, err := hostCall("storage_delete", map[string]string{"key": key})
+	return err
+}
+
+// List returns the keys that start with prefix in ascending order, at most limit
+// (default and maximum 500) starting after the key "after". next is non-empty
+// when more keys follow: pass it as "after" to get the next page.
+func (KVStore) List(prefix, after string, limit int) (keys []string, next string, err error) {
+	res, err := hostCall("storage_list", map[string]any{"prefix": prefix, "after": after, "limit": limit})
+	if err != nil {
+		return nil, "", err
+	}
+	var out struct {
+		Keys []string `json:"keys"`
+		Next string   `json:"next"`
+	}
+	if err := json.Unmarshal(res, &out); err != nil {
+		return nil, "", fmt.Errorf("wpgo: decode storage_list result: %w", err)
+	}
+	return out.Keys, out.Next, nil
 }
 
 // hostCall marshals req, invokes the named host import and decodes the

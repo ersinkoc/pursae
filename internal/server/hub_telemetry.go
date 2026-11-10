@@ -15,8 +15,10 @@ import (
 )
 
 // Statistics for Pursae Manager (pursae-manager/API.md, "POST /api/v1/sites/ping (extended)" and
-// "POST /api/v1/sites/events"). They are always on: the owner decided there is no opt-out; only a
-// site without a Manager (a devhub build with WPGO_DEV_HUB_URL=off, or a test) sends nothing.
+// "POST /api/v1/sites/events"). They are on by default; Settings › License has a "Send usage
+// statistics" switch (statsOption). Off, the ping carries only what updates need (site address,
+// version, license key) and no events are queued. A site without a Manager (a devhub build with
+// WPGO_DEV_HUB_URL=off, or a test) sends nothing.
 //
 // The daily ping carries the site's URL, version, locale, OS and architecture, license key, active
 // theme and its plugin and theme inventory. Events (a plugin installed, a theme previewed, a demo
@@ -38,6 +40,12 @@ const (
 	pluginSourceHub    = "hub"
 	pluginSourceUpload = "upload"
 )
+
+// statsOption is the Settings › License switch: "off" stops inventory and events; anything else is on.
+const statsOption = "pursae_send_stats"
+
+// statsEnabled reports whether the site sends usage statistics (the default).
+func (s *Server) statsEnabled() bool { return s.settings.String(statsOption) != "off" }
 
 // managerState is the Pursae Manager client's in-memory state of one Server.
 type managerState struct {
@@ -63,7 +71,7 @@ type hubEventQueue struct {
 
 // hubEvent queues a statistics event: typ is one of the contract's types, kind plugin|theme|core.
 func (s *Server) hubEvent(typ, kind, slug, version string) {
-	if s.sandbox != nil || s.hubBase() == "" {
+	if s.sandbox != nil || s.hubBase() == "" || !s.statsEnabled() {
 		return
 	}
 	q := &s.mgr.events
@@ -183,6 +191,9 @@ type hubPingPayload struct {
 
 // hubPingBody is the daily ping: the site, its platform and license, and what it has installed.
 func (s *Server) hubPingBody(ctx context.Context) hubPingPayload {
+	if !s.statsEnabled() { // the minimum updates need: where, which version, which license
+		return hubPingPayload{URL: s.settings.String("home"), Version: Version, License: s.licenseKey(), Plugins: []hubPackageInfo{}, Themes: []hubPackageInfo{}}
+	}
 	p := hubPingPayload{URL: s.settings.String("home"), Version: Version, Locale: s.siteLocale(),
 		OS: runtime.GOOS, Arch: runtime.GOARCH, License: s.licenseKey(), Plugins: []hubPackageInfo{}, Themes: []hubPackageInfo{}}
 	if t := s.activeTheme(); t != nil {

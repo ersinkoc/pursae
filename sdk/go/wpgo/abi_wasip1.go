@@ -88,11 +88,23 @@ func hostLog(ptr, size uint32) uint64
 //go:wasmimport wpgo http_get
 func hostHTTPGet(ptr, size uint32) uint64
 
+//go:wasmimport wpgo http_request
+func hostHTTPRequest(ptr, size uint32) uint64
+
+//go:wasmimport wpgo send_mail
+func hostSendMail(ptr, size uint32) uint64
+
 //go:wasmimport wpgo storage_get
 func hostStorageGet(ptr, size uint32) uint64
 
 //go:wasmimport wpgo storage_set
 func hostStorageSet(ptr, size uint32) uint64
+
+//go:wasmimport wpgo storage_delete
+func hostStorageDelete(ptr, size uint32) uint64
+
+//go:wasmimport wpgo storage_list
+func hostStorageList(ptr, size uint32) uint64
 
 //go:wasmimport wpgo add_admin_notice
 func hostAddAdminNotice(ptr, size uint32) uint64
@@ -151,8 +163,12 @@ var imports = map[string]func(ptr, size uint32) uint64{
 	"update_option":          hostUpdateOption,
 	"log":                    hostLog,
 	"http_get":               hostHTTPGet,
+	"http_request":           hostHTTPRequest,
+	"send_mail":              hostSendMail,
 	"storage_get":            hostStorageGet,
 	"storage_set":            hostStorageSet,
+	"storage_delete":         hostStorageDelete,
+	"storage_list":           hostStorageList,
 	"add_admin_notice":       hostAddAdminNotice,
 	"register_shortcode":     hostRegisterShortcode,
 	"register_rest_route":    hostRegisterRestRoute,

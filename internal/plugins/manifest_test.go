@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -86,7 +87,8 @@ func TestHookPermission(t *testing.T) {
 		"wp_insert_post_data": PermPostsWrite,
 		"cron_hourly":         PermCron,
 		"init":                "",
-		"wp_head":             "",
+		"wp_head":             PermContentFilter,
+		"wp_login":            PermUsersRead,
 	}
 	for hook, want := range cases {
 		if got := HookPermission(hook); got != want {
@@ -96,6 +98,19 @@ func TestHookPermission(t *testing.T) {
 	for _, p := range AllPermissions() {
 		if p.Description() == "" {
 			t.Errorf("permission %q has no description", p)
+		}
+	}
+}
+
+func TestManifestRequiresPlugins(t *testing.T) {
+	base := `{"slug":"dep-test","name":"Dep","version":"1.0.0","permissions":[],"hooks":[],"requires_plugins":%s}`
+	for _, tc := range []struct {
+		list string
+		ok   bool
+	}{{`["contact-form-7"]`, true}, {`["Bad Slug"]`, false}, {`["dep-test"]`, false}, {`["a-b","a-b"]`, false}} {
+		_, err := ParseManifest([]byte(fmt.Sprintf(base, tc.list)))
+		if (err == nil) != tc.ok {
+			t.Errorf("requires_plugins %s: err = %v", tc.list, err)
 		}
 	}
 }

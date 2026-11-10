@@ -17,8 +17,9 @@ import (
 // Pursae Manager checks it (GET /api/v1/license, pursae-manager/API.md "Licenses, channels, telemetry
 // and core builds"). The key goes with every request to the Manager (hubNewRequest), which then also
 // lists the pro and private packages and the beta versions and releases the license unlocks. The
-// answer is cached for 12 hours (and re-checked when the key is saved or on "Check now"); other code
-// asks licensePro / licenseBeta.
+// answer is cached for 12 hours (and re-checked when the key is saved, on "Check now" and by the daily
+// wpgo_hub_check, license_watch.go, which warns before expiry). licensePro / licenseBeta are what
+// Pro- or beta-gated site features ask; today they drive the plan badge on the License screen.
 
 const (
 	licenseOption   = "pursae_license_key"
@@ -106,7 +107,7 @@ func (s *Server) licenseFetch(ctx context.Context) *licenseStatus {
 	err := s.hubGet(ctx, "/api/v1/license", l)
 	switch {
 	case errors.Is(err, errHubOff):
-		return &licenseStatus{Error: "off", Message: "Pursae Manager is switched off (WPGO_HUB_URL), so the license cannot be checked."}
+		return &licenseStatus{Error: "off", Message: "Pursae Manager is switched off in this build, so the license cannot be checked."}
 	case err != nil:
 		l = &licenseStatus{Error: "unreachable", Message: "Pursae Manager could not be reached: " + err.Error()}
 	case !l.Valid && l.Error == "":
@@ -164,6 +165,8 @@ type licenseView struct {
 	Expires    string
 	Checked    string
 	Hub        bool
+	Badge      string // Pro and/or Beta, from licensePro / licenseBeta
+	SendStats  bool
 }
 
 // optionsLicense is Settings › License.
@@ -191,6 +194,13 @@ func (s *Server) optionsLicense(c *gin.Context) {
 			}
 			q = "settings-updated=true"
 		}
+		if vals := c.Request.PostForm[statsOption]; c.PostForm("check") == "" && len(vals) > 0 { // hidden 0, then the checkbox's 1
+			stats := "off"
+			if vals[len(vals)-1] == "1" {
+				stats = "on"
+			}
+			_ = s.settings.Set(ctx, map[string]any{statsOption: stats})
+		}
 		s.licenseForget(ctx)
 		if s.licenseKey() != "" {
 			s.licenseFetch(ctx)
@@ -199,8 +209,17 @@ func (s *Server) optionsLicense(c *gin.Context) {
 		return
 	}
 	v := licenseView{Key: s.licenseKey(), Nonce: s.nonce(c, "pursae-license"), Hub: s.hubBase() != ""}
+	v.SendStats = s.statsEnabled()
 	if v.Key != "" {
 		v.Status = s.license(ctx)
+		switch {
+		case s.licensePro() && s.licenseBeta():
+			v.Badge = "Pro + Beta"
+		case s.licensePro():
+			v.Badge = "Pro"
+		case s.licenseBeta():
+			v.Badge = "Beta"
+		}
 		v.Message = v.Status.Message
 		if t, ok := licenseErrorText[v.Status.Error]; ok && v.Message == "" {
 			v.Message = t

@@ -181,6 +181,7 @@ func (c *Cache) RunJanitor(ctx context.Context, interval time.Duration) {
 // internal X-WPGo-Cache-* headers.
 func (c *Cache) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = WithDegradedFlag(r)
 		d := c.Classify(r)
 		if d.Key == "" {
 			pw := &passWriter{ResponseWriter: w, c: c, r: r}

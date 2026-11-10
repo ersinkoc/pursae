@@ -51,6 +51,10 @@ type Manifest struct {
 	PluginURI string `json:"plugin_uri,omitempty"`
 	// Requires is the minimum wpgo version the plugin needs (e.g. "0.1.0").
 	Requires string `json:"requires,omitempty"`
+	// RequiresPlugins lists the slugs of plugins (Wasm packages or built-in
+	// ones such as "contact-form-7" are matched by their Plugins screen slug)
+	// that must be active before this plugin can be activated.
+	RequiresPlugins []string `json:"requires_plugins,omitempty"`
 	// License is an SPDX license identifier.
 	License string `json:"license,omitempty"`
 	// Permissions lists the capabilities the plugin asks for.
@@ -159,6 +163,18 @@ func (m *Manifest) Validate() error {
 	}
 	if m.Requires != "" && !versionRe.MatchString(m.Requires) {
 		add(`"requires" %q is not a version number like "0.1.0"`, m.Requires)
+	}
+	reqSeen := map[string]bool{}
+	for _, r := range m.RequiresPlugins {
+		switch {
+		case !ValidSlug(r):
+			add(`"requires_plugins" entry %q is not a plugin slug`, r)
+		case r == m.Slug:
+			add(`"requires_plugins" lists the plugin itself`)
+		case reqSeen[r]:
+			add(`"requires_plugins" lists %q twice`, r)
+		}
+		reqSeen[r] = true
 	}
 	if len(m.Description) > 2000 {
 		add(`"description" is longer than 2000 characters`)

@@ -14,7 +14,7 @@ the host chose to give it.
 | | |
 |---|---|
 | Filesystem | none: no preopens, so WASI file calls fail |
-| Network | none: the only way out is `HTTPGet`, with the `http:outbound` permission, through the site's client (8 s timeout, 1 MiB body, loopback and private addresses blocked) |
+| Network | none: the only way out is `HTTPGet` / `HTTPRequest`, with the `http:outbound` permission, through the site's client (8 s timeout, 1 MiB body, loopback and private addresses blocked) |
 | Environment, arguments | none |
 | Clocks and randomness | available (`time.Now`, `crypto/rand`) |
 | stdout / stderr | captured into the plugin log |
@@ -30,6 +30,7 @@ the host chose to give it.
 | Compiled code | kept in memory, compiled again at start-up (never loaded from a disk cache) |
 | Hook, shortcode callback | 2 s |
 | REST route handler | 10 s |
+| `cron_*` callback | 30 s |
 | Instantiation + `wpgo_init` | 10 s |
 | Message across the boundary | 8 MiB |
 | Post content | 1 MiB; title 1000, excerpt 10 000, slug 200 characters |

@@ -14,6 +14,8 @@ import (
 
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
+
+	"wpgo/internal/cache"
 )
 
 // RegisteredHook describes one hook a plugin subscribed to.
@@ -239,13 +241,14 @@ func (p *Plugin) call(ctx context.Context, req *handleRequest) (json.RawMessage,
 		// Waiting for the instance is not the plugin's fault (another request holds it), so it
 		// does not count as a failure; the hook keeps its value.
 		p.logs.add("warning", "runtime", fmt.Sprintf("%s (%s) skipped: %v", req.Hook, req.Callback, err))
+		cache.MarkDegraded(ctx) // the page lacks this plugin's output: do not cache it
 		return nil, err
 	}
 	defer p.unlock()
 	if p.disabled.Load() {
 		return nil, ErrPluginDisabled
 	}
-	value, took, err := p.callGuest(ctx, body)
+	value, took, err := p.callGuest(ctx, body, p.rt.cfg.budget(req))
 	if err != nil {
 		p.logs.add("error", "runtime", fmt.Sprintf("%s (%s) failed: %v", req.Hook, req.Callback, err))
 		// The caller giving up is not the plugin's fault; a failed re-instantiation always is
@@ -258,7 +261,7 @@ func (p *Plugin) call(ctx context.Context, req *handleRequest) (json.RawMessage,
 	}
 	// A call that used most of its time budget blocked every other request to this plugin
 	// for that long; it counts toward the failure limit like a timeout (the value is kept).
-	if took >= p.rt.cfg.slowCall() {
+	if !p.rt.cfg.slowExempt(req) && took >= p.rt.cfg.slowCall() {
 		slow := fmt.Errorf("%s (%s) took %s of its %s budget", req.Hook, req.Callback, took.Round(time.Millisecond), p.rt.cfg.CallTimeout)
 		p.logs.add("warning", "runtime", slow.Error())
 		p.recordFailure(ctx, slow)
@@ -274,7 +277,7 @@ func (p *Plugin) call(ctx context.Context, req *handleRequest) (json.RawMessage,
 // response. Callers hold the instance lock.
 // took is the time spent in wpgo_handle (a re-instantiation before it is not
 // counted).
-func (p *Plugin) callGuest(parent context.Context, body []byte) (value json.RawMessage, took time.Duration, err error) {
+func (p *Plugin) callGuest(parent context.Context, body []byte, budget time.Duration) (value json.RawMessage, took time.Duration, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("host panic while calling plugin: %v", r)
@@ -290,7 +293,7 @@ func (p *Plugin) callGuest(parent context.Context, body []byte) (value json.RawM
 			return nil, 0, fmt.Errorf("%w: %w", errReinstantiate, err)
 		}
 	}
-	ctx, cancel := context.WithTimeout(withActive(parent, p), p.rt.cfg.CallTimeout)
+	ctx, cancel := context.WithTimeout(withActive(parent, p), budget)
 	defer cancel()
 
 	start := time.Now()

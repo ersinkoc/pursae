@@ -33,7 +33,7 @@
 <p><input name="version" value="{{.Previous}}" type="hidden" /><input type="submit" name="reinstall" id="reinstall" class="button" value="Reinstall version {{.Previous}}" /></p>
 </form>
 {{end}}
-{{if not .Hub}}<p class="description">Update checks are off: no Pursae Manager is configured (<code>WPGO_HUB_URL</code>).</p>{{end}}
+{{if not .Hub}}<p class="description">Update checks are off: no Pursae Manager is configured.</p>{{end}}
 <h2>Plugins</h2>
 {{if .PluginUpdates}}
 <p>The following plugins have new versions available. Check the ones you want to update and then click &#8220;Update Plugins&#8221;.</p>
@@ -109,7 +109,7 @@
 <tr>
 <th scope="row">Status</th>
 <td>{{if not .Key}}<p>No license key entered. Pursae Manager shows public plugins and themes and stable releases only.</p>
-{{else if .Status.Valid}}<p class="pursae-license-status pursae-license-valid"><span class="dashicons dashicons-yes-alt" style="color:#00a32a" aria-hidden="true"></span> <strong>Valid</strong></p>
+{{else if .Status.Valid}}<p class="pursae-license-status pursae-license-valid"><span class="dashicons dashicons-yes-alt" style="color:#00a32a" aria-hidden="true"></span> <strong>Valid</strong>{{if .Badge}} <span class="wpgo-badge wpgo-badge-pro">{{.Badge}}</span>{{end}}</p>
 {{else}}<div class="notice notice-error inline pursae-license-status pursae-license-invalid"><p><strong>{{if eq .Status.Error "unreachable"}}Not checked{{else if eq .Status.Error "off"}}Not checked{{else}}Not valid{{end}}:</strong> {{.Message}}</p></div>{{end}}</td>
 </tr>
 {{if and .Key .Status.Valid}}
@@ -121,8 +121,14 @@
 {{if .Status.Packages}}<tr><th scope="row">Private packages</th><td>{{range $i, $p := .Status.Packages}}{{if $i}}, {{end}}<code>{{$p}}</code>{{end}}</td></tr>{{end}}
 {{end}}
 {{if .Checked}}<tr><th scope="row">Last checked</th><td>{{.Checked}}</td></tr>{{end}}
+<tr>
+<th scope="row">Usage statistics</th>
+<td><fieldset><legend class="screen-reader-text"><span>Usage statistics</span></legend>
+<input type="hidden" name="pursae_send_stats" value="0" /><label for="pursae_send_stats"><input name="pursae_send_stats" type="checkbox" id="pursae_send_stats" value="1"{{if .SendStats}} checked="checked"{{end}} /> Send usage statistics to Pursae Manager</label>
+<p class="description">On: the daily check sends the site address, Pursae version, language, operating system, active theme, the list of installed plugins and themes, and install, activate and update events. Off: only the site address, Pursae version and license key are sent, which updates need; no inventory and no events.</p></fieldset></td>
+</tr>
 </table>
-{{if not .Hub}}<p class="description">No Pursae Manager is configured (<code>WPGO_HUB_URL</code>), so the key cannot be checked.</p>{{end}}
+{{if not .Hub}}<p class="description">No Pursae Manager is configured, so the key cannot be checked.</p>{{end}}
 <p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /> {{if .Key}}<input type="submit" name="check" id="check" class="button" value="Check now" />{{end}}</p>
 </form>
 </div>

@@ -22,6 +22,7 @@ type RestRoute struct {
 	Route     string   `json:"route"`     // regexp path under the namespace, e.g. /items/(?P<id>\d+)
 	Methods   []string `json:"methods"`
 	Callback  string   `json:"callback"`
+	Headers   []string `json:"headers,omitempty"` // extra request headers the handler wants to see (canonical names)
 	re        *regexp.Regexp
 }
 
@@ -205,6 +206,14 @@ func (p *Plugin) ServeRest(ctx context.Context, route RestRoute, req RestRequest
 	}
 	if len(resp.Body) > maxRestBody {
 		return nil, fmt.Errorf("REST response body exceeds %d bytes", maxRestBody)
+	}
+	if resp.ContentType != "" {
+		ct := strings.ToLower(strings.TrimSpace(strings.SplitN(resp.ContentType, ";", 2)[0]))
+		var text string
+		if !RestContentTypes[ct] || json.Unmarshal(resp.Body, &text) != nil {
+			return nil, fmt.Errorf("REST response content_type %q is not allowed or its body is not a string", resp.ContentType)
+		}
+		resp.ContentType = ct
 	}
 	if len(resp.Body) == 0 {
 		resp.Body = json.RawMessage("null")
