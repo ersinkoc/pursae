@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -102,3 +103,52 @@ jobs:
           go-version-file: go.mod
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  # The Windows release binary: vet, unit tests (integration tests skip without WPGO_TEST_DB), then a
+  # smoke run of the release build against the runner's preinstalled PostgreSQL: migrate, serve,
+  # /healthz and the install screen.
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: vet
+        run: go vet ./...
+      - name: unit tests
+        run: go test -count=1 -timeout 30m ./...
+      - name: build (release flags)
+        run: go build -trimpath -buildmode=exe -tags nodynamic -o pursae.exe ./cmd/wpgo
+      - name: smoke run
+        shell: pwsh
+        env:
+          DATABASE_URL: postgres://postgres:root@localhost:5432/postgres?sslmode=disable
+          WPGO_ADDR: 127.0.0.1:8080
+          WPGO_SITE_URL: http://127.0.0.1:8080
+          WPGO_HUB: "off"
+        run: |
+          $svc = Get-Service -Name "postgresql*" | Select-Object -First 1
+          Set-Service -Name $svc.Name -StartupType Manual
+          Start-Service -Name $svc.Name
+          .\pursae.exe version
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          .\pursae.exe migrate
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $p = Start-Process -FilePath .\pursae.exe -ArgumentList serve -PassThru -NoNewWindow -RedirectStandardError serve.err -RedirectStandardOutput serve.out
+          $ok = $false
+          for ($i = 0; $i -lt 60; $i++) {
+            Start-Sleep -Seconds 1
+            .\pursae.exe healthcheck 2>$null
+            if ($LASTEXITCODE -eq 0) { $ok = $true; break }
+          }
+          if (-not $ok) { Get-Content serve.out, serve.err; exit 1 }
+          $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/wp-admin/install
+          if ($r.StatusCode -ne 200 -or $r.Content -notmatch "Pursae") { Write-Output $r.StatusCode; exit 1 }
+          $r = Invoke-WebRequest -UseBasicParsing -MaximumRedirection 0 -SkipHttpErrorCheck http://127.0.0.1:8080/
+          Write-Output "front page: $($r.StatusCode)"
+          Stop-Process -Id $p.Id
+          Get-Content serve.err | Select-Object -Last 20
