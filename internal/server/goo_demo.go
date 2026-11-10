@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -279,9 +280,9 @@ func (s *Server) gooImportDemo(ctx context.Context, uid int64, slug string, raw 
 	if len(d.Settings) > 0 {
 		vals := map[string]any{}
 		prevKey := gooOptPrefix + "demo_prev_" + slug
-		prev, _ := s.settings.Get(prevKey).(map[string]any)
-		if prev == nil {
-			prev = map[string]any{}
+		prev := map[string]any{} // a copy: the cached option is shared with concurrent readers
+		if m, ok := s.settings.Get(prevKey).(map[string]any); ok {
+			maps.Copy(prev, m)
 		}
 		for k, v := range d.Settings {
 			if gooDemoSettings[k] {

@@ -321,12 +321,15 @@ func (s *Server) hgGQLSubscribe(c *gin.Context, a *hgAuth, st hgSettings, req hg
 		return
 	}
 	defer sub.close()
+	arm, reset := sseStreamDeadlines(c.Writer)
+	defer reset()
 	h := c.Writer.Header()
 	h.Set("Content-Type", "text/event-stream")
 	h.Set("Cache-Control", "no-cache, no-store, no-transform")
 	h.Set("Connection", "keep-alive")
 	h.Set("X-Accel-Buffering", "no")
 	c.Status(http.StatusOK)
+	arm()
 	if _, err := c.Writer.WriteString(": connected\n\n"); err != nil {
 		return
 	}
@@ -341,9 +344,11 @@ func (s *Server) hgGQLSubscribe(c *gin.Context, a *hgAuth, st hgSettings, req hg
 		case <-c.Request.Context().Done():
 			return
 		case <-end.C:
+			arm()
 			hgSSE(c, "complete", nil)
 			return
 		case <-ping.C:
+			arm()
 			if !s.hgOn() || !s.hgLoad().GraphQL {
 				hgSSE(c, "complete", nil)
 				return
@@ -353,6 +358,7 @@ func (s *Server) hgGQLSubscribe(c *gin.Context, a *hgAuth, st hgSettings, req hg
 			}
 			c.Writer.Flush()
 		case ev, ok := <-sub.bs.ch:
+			arm()
 			if !ok {
 				hgSSE(c, "next", hgSubFellBehind)
 				hgSSE(c, "complete", nil)

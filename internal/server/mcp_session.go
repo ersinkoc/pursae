@@ -188,16 +188,34 @@ func sseHeaders(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// sseWriteTimeout bounds each write of a long-lived event stream. The http.Server has no
+// WriteTimeout (uploads and backups run for minutes), so without it a client that keeps the
+// connection open but stops reading blocks the handler in a write forever once the socket buffer
+// is full; a failed write cancels the request context and the stream loop ends.
+var sseWriteTimeout = 30 * time.Second
+
+// sseStreamDeadlines returns arm, called before each write, and the reset to defer: the
+// deadline would otherwise stay on a keep-alive connection for its next request.
+func sseStreamDeadlines(w http.ResponseWriter) (arm, reset func()) {
+	rc := http.NewResponseController(w)
+	return func() { _ = rc.SetWriteDeadline(time.Now().Add(sseWriteTimeout)) },
+		func() { _ = rc.SetWriteDeadline(time.Time{}) }
+}
+
 // mcpStream is the GET stream of a session.
 func (s *Server) mcpStream(c *gin.Context, sess *mcpSession) {
 	replaced := sess.takeStream()
+	arm, reset := sseStreamDeadlines(c.Writer)
+	defer reset()
 	sseHeaders(c)
+	arm()
 	c.Writer.Flush()
 	_, last := sess.after(0) // a new stream only sees new messages …
 	if v, err := strconv.ParseInt(c.GetHeader("Last-Event-ID"), 10, 64); err == nil && v >= 0 && v <= last {
 		last = v // … a resumed one also the ones it missed
 	}
 	flush := func() {
+		arm()
 		msgs, _ := sess.after(last)
 		for _, m := range msgs {
 			_, _ = c.Writer.WriteString("id: " + strconv.FormatInt(m.id, 10) + "\nevent: message\ndata: " + string(m.data) + "\n\n")
@@ -216,6 +234,7 @@ func (s *Server) mcpStream(c *gin.Context, sess *mcpSession) {
 			if !s.restCredentialLive(c) {
 				return // the grant or password was revoked or has expired: the client must sign in again
 			}
+			arm()
 			_, _ = c.Writer.WriteString(": keep-alive\n\n")
 			c.Writer.Flush()
 		case <-replaced:

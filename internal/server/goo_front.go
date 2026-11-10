@@ -934,17 +934,22 @@ func (s *Server) gooTermLinkIn(ctx context.Context, t *store.Term) string {
 
 // Templates ---------------------------------------------------------------------------------------------
 
+// gooTplCache holds each Server's set: the template functions are bound to their Server, and a
+// theme preview sandbox (its own Server in this process) has its own settings, store and files.
 var gooTplCache struct {
 	sync.Mutex
-	set *template.Template
+	sets map[*Server]*template.Template
 }
 
 // gooTemplates is the storefront template set (web/goocommerce/templates), reloaded in development.
 func (s *Server) gooTemplates() *template.Template {
 	gooTplCache.Lock()
 	defer gooTplCache.Unlock()
-	if gooTplCache.set != nil && s.cfg.WebDir == "" {
-		return gooTplCache.set
+	if gooTplCache.sets == nil {
+		gooTplCache.sets = map[*Server]*template.Template{}
+	}
+	if set := gooTplCache.sets[s]; set != nil && s.cfg.WebDir == "" {
+		return set
 	}
 	funcs := s.tmpl.coreFuncs(s)
 	for k, f := range s.gooTplFuncs() {
@@ -953,12 +958,12 @@ func (s *Server) gooTemplates() *template.Template {
 	set, err := parseTree(s.web, "goocommerce/templates", funcs)
 	if err != nil {
 		log.Printf("goocommerce templates: %v", err)
-		if gooTplCache.set != nil {
-			return gooTplCache.set
+		if prev := gooTplCache.sets[s]; prev != nil {
+			return prev
 		}
 		set = template.Must(template.New("").Parse(""))
 	}
-	gooTplCache.set = set
+	gooTplCache.sets[s] = set
 	return set
 }
 

@@ -495,7 +495,10 @@ func (s *Server) customizeSave(c *gin.Context) {
 		czChangesets.Lock()
 		cs := czChangesets.m[uuid]
 		if cs != nil && cs.UserID == u.ID {
-			cs.Theme, cs.Options, cs.Mods, cs.Expires = t.Slug, opts, mods, time.Now().Add(12*time.Hour)
+			// Replace, never change in place: preview requests read the changeset they got without
+			// the lock.
+			cs = &czChangeset{UserID: cs.UserID, Theme: t.Slug, Options: opts, Mods: mods, Expires: time.Now().Add(12 * time.Hour)}
+			czChangesets.m[uuid] = cs
 		}
 		czChangesets.Unlock()
 		if cs == nil || cs.UserID != u.ID {

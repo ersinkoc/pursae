@@ -10,6 +10,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -125,11 +126,24 @@ func SaveWith(uploadsDir string, dated bool, now time.Time, filename string, r i
 	if reserved != nil {
 		taken = reserved(sub)
 	}
-	name := uniqueName(dir, SanitizeFileName(filename), taken...)
-	dst := filepath.Join(dir, name)
-	f, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
-	if err != nil {
-		return nil, err
+	// uniqueName only checks; O_EXCL claims the name. A parallel upload of the same file name can
+	// claim it in between (the editor uploads several files at once, pasted images are all
+	// "image.png"): pick the next free name then instead of failing.
+	var (
+		name, dst string
+		f         *os.File
+		err       error
+	)
+	for try := 0; ; try++ {
+		name = uniqueName(dir, SanitizeFileName(filename), taken...)
+		dst = filepath.Join(dir, name)
+		f, err = os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+		if err == nil {
+			break
+		}
+		if !errors.Is(err, fs.ErrExist) || try >= 20 {
+			return nil, err
+		}
 	}
 	n, err := io.Copy(f, r)
 	if cerr := f.Close(); err == nil {

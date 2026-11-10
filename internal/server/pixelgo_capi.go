@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -51,14 +52,31 @@ var pixelHTTP = &http.Client{
 	CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 }
 
-// pixelSlots bounds concurrent deliveries; pixelBacklog bounds the deliveries waiting for a slot, so a
-// flood of browser events (the endpoint is public; its rate limit is per network) cannot pile up
-// goroutines without end while the platforms answer slowly.
+// pixelSlots bounds concurrent deliveries.
+var pixelSlots = make(chan struct{}, 8)
+
+// pixelQueueMax bounds the deliveries waiting for a slot. When the platforms answer slowly, browser
+// events (anonymous, up to 150 a minute per address) would otherwise pile up as goroutines without
+// limit; past it they are dropped. Purchases from orders are always queued.
+const pixelQueueMax = 512
+
 var (
-	pixelSlots      = make(chan struct{}, 8)
-	pixelBacklog    atomic.Int64
-	pixelBacklogMax = int64(512)
+	pixelQueued  atomic.Int64 // deliveries started and not finished
+	pixelDropped atomic.Int64
 )
+
+// pixelAdmit reserves a place in the delivery queue for an event from source; the caller releases
+// it with pixelQueued.Add(-1) once the delivery ends.
+func pixelAdmit(source string) bool {
+	if n := pixelQueued.Add(1); n > pixelQueueMax && source != "order" {
+		pixelQueued.Add(-1)
+		if d := pixelDropped.Add(1); d == 1 || d%1000 == 0 {
+			slog.Warn("pixelgo: delivery queue full, browser events dropped", "dropped", d)
+		}
+		return false
+	}
+	return true
+}
 
 var (
 	pixelEventIDRe = regexp.MustCompile(`^[A-Za-z0-9_.:-]{8,64}$`)
@@ -303,12 +321,11 @@ func (s *Server) pixelDispatch(ev pixelServerEvent) {
 			continue
 		}
 		def, cfg := def, st.Platforms[def.Key]
-		if pixelBacklog.Add(1) > pixelBacklogMax && ev.Source == "browser" { // order Purchases are never dropped
-			pixelBacklog.Add(-1)
+		if !pixelAdmit(ev.Source) {
 			continue
 		}
 		go func() {
-			defer pixelBacklog.Add(-1)
+			defer pixelQueued.Add(-1)
 			pixelSlots <- struct{}{}
 			defer func() { <-pixelSlots }()
 			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
