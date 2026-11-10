@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"wpgo/internal/blocks"
 	"wpgo/internal/wp"
@@ -214,25 +216,26 @@ func (f QueryFilterFunc) cond(ctx context.Context, kind string, args *[]any) str
 }
 
 type PostQuery struct {
-	Types       []string
-	Statuses    []string
-	AuthorID    int64
-	ParentID    *int64
-	Search      string
-	TermIDs     []int64 // posts in any of these terms
-	Year        int
-	Month       int
-	Day         int
-	IDs         []int64
-	ExcludeID   []int64
-	OrderBy     string // date, title, modified, menu_order, id, comment_count
-	Order       string // ASC or DESC
-	Page        int
-	PerPage     int // -1 for all
-	StickyFirst bool
-	Loc         *time.Location // site time zone for year/month/day filters
-	Format      string         // post format slug (edit.php?post_format=aside)
-	Sticky      *bool          // only sticky (true) or only non-sticky (false) posts (edit.php?show_sticky=1)
+	Types                    []string
+	Statuses                 []string
+	AuthorID                 int64
+	ParentID                 *int64
+	Search                   string
+	searchArg, searchLikeArg string  // placeholders where() bound for Search, reused by the relevance order
+	TermIDs                  []int64 // posts in any of these terms
+	Year                     int
+	Month                    int
+	Day                      int
+	IDs                      []int64
+	ExcludeID                []int64
+	OrderBy                  string // date, title, modified, menu_order, id, comment_count
+	Order                    string // ASC or DESC
+	Page                     int
+	PerPage                  int // -1 for all
+	StickyFirst              bool
+	Loc                      *time.Location // site time zone for year/month/day filters
+	Format                   string         // post format slug (edit.php?post_format=aside)
+	Sticky                   *bool          // only sticky (true) or only non-sticky (false) posts (edit.php?show_sticky=1)
 	// ReadableBy limits the result to what that user may read without a capability of their own: published
 	// posts (and private ones when ReadablePrivate) of anybody, and their own posts of any status. This is
 	// WordPress' perm=readable, used by the list screens for users who cannot edit others' posts.
@@ -301,7 +304,8 @@ func (q *PostQuery) where(args *[]any) string {
 		conds = append(conds, "coalesce(parent_id,0) = "+add(*q.ParentID))
 	}
 	if q.Search != "" {
-		conds = append(conds, "(search @@ plainto_tsquery('simple', "+add(q.Search)+") OR title ILIKE "+add(likeContains(q.Search))+")")
+		q.searchArg, q.searchLikeArg = add(q.Search), add(likeContains(q.Search))
+		conds = append(conds, "(search @@ plainto_tsquery('simple', "+q.searchArg+") OR title ILIKE "+q.searchLikeArg+")")
 	}
 	if q.ExcludePassworded {
 		conds = append(conds, "coalesce(password, '') = ''")
@@ -436,6 +440,10 @@ func (q *PostQuery) orderBy() string {
 	col := "coalesce(published_at, created_at)"
 	if q.datedOnly() {
 		col = "published_at" // published, private and scheduled posts always have a date (migration 0032)
+	}
+	if q.Search != "" && q.OrderBy == "relevance" {
+		// WordPress 6.x puts title matches first; ts_rank uses the A/B/C weights of the search vector.
+		return "(title ILIKE " + q.searchLikeArg + ") DESC, ts_rank(search, plainto_tsquery('simple', " + q.searchArg + ")) DESC, " + col + " " + dir + ", id " + dir
 	}
 	switch q.OrderBy {
 	case "title":
@@ -739,8 +747,53 @@ func UpdatePostTx(ctx context.Context, tx pgx.Tx, p *Post, editorID int64) error
 	if changed && old.Status != "auto-draft" {
 		_, err = tx.Exec(ctx, `INSERT INTO post_revisions(post_id, author_id, title, excerpt, content)
 			VALUES ($1,$2,$3,$4,$5)`, p.ID, nullable(editorID), p.Title, p.Excerpt, p.Content)
+		if err == nil {
+			err = pruneRevisions(ctx, tx, p.ID, RevisionsLimit())
+		}
 	}
 	return err
+}
+
+// RevisionsLimit is how many revisions a post keeps (WP_POST_REVISIONS): WPGO_POST_REVISIONS, default 25;
+// a negative value keeps them all.
+func RevisionsLimit() int {
+	if v := strings.TrimSpace(os.Getenv("WPGO_POST_REVISIONS")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return 25
+}
+
+// pruneRevisions deletes a post's oldest revisions beyond keep (autosaves are not counted). The newest
+// revision always stays so the history never loses the current content.
+func pruneRevisions(ctx context.Context, q interface {
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+}, postID int64, keep int) error {
+	if keep < 0 {
+		return nil
+	}
+	if keep < 1 {
+		keep = 1
+	}
+	_, err := q.Exec(ctx, `DELETE FROM post_revisions WHERE post_id = $1 AND NOT is_autosave AND id NOT IN
+		(SELECT id FROM post_revisions WHERE post_id = $1 AND NOT is_autosave ORDER BY id DESC LIMIT $2)`, postID, keep)
+	return err
+}
+
+// PruneRevisions trims every post to keep revisions (the "clean up old revisions" maintenance run) and
+// returns how many rows it deleted.
+func (s *Store) PruneRevisions(ctx context.Context, keep int) (int64, error) {
+	if keep < 0 {
+		return 0, nil
+	}
+	if keep < 1 {
+		keep = 1
+	}
+	tag, err := s.Pool.Exec(ctx, `DELETE FROM post_revisions r WHERE NOT r.is_autosave AND r.id IN
+		(SELECT id FROM (SELECT id, row_number() OVER (PARTITION BY post_id ORDER BY id DESC) AS n
+			FROM post_revisions WHERE NOT is_autosave) x WHERE x.n > $1)`, keep)
+	return tag.RowsAffected(), err
 }
 
 // OldSlugMeta is the post meta key WordPress uses for previous slugs (_wp_old_slug).
@@ -962,28 +1015,31 @@ func (s *Store) RevisionCounts(ctx context.Context, postIDs []int64) (map[int64]
 // It runs every scheduler tick: the posts_future index keeps it off the posts table, and only the terms
 // of the posts it published are recounted.
 func (s *Store) PublishDuePosts(ctx context.Context) (int64, error) {
-	rows, err := s.Pool.Query(ctx, `WITH due AS (UPDATE posts SET status = 'publish' WHERE status = 'future' AND published_at <= now() RETURNING id)
-		SELECT (SELECT count(*) FROM due), coalesce(array_agg(DISTINCT pt.term_id) FILTER (WHERE pt.term_id IS NOT NULL), '{}')
-		FROM due LEFT JOIN post_terms pt ON pt.post_id = due.id`)
+	ids, err := s.PublishDuePostIDs(ctx)
+	return int64(len(ids)), err
+}
+
+// PublishDuePostIDs is PublishDuePosts returning the ids of the posts it published, so the caller can
+// run the save/transition side effects (webhooks, plugins, SEO) for each of them.
+func (s *Store) PublishDuePostIDs(ctx context.Context) ([]int64, error) {
+	rows, err := s.Pool.Query(ctx, `UPDATE posts SET status = 'publish' WHERE status = 'future' AND published_at <= now() RETURNING id`)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	var n int64
+	ids, err := pgx.CollectRows(rows, pgx.RowTo[int64])
+	if err != nil || len(ids) == 0 {
+		return nil, err
+	}
 	var termIDs []int64
-	for rows.Next() {
-		if err := rows.Scan(&n, &termIDs); err != nil {
-			rows.Close()
-			return 0, err
-		}
+	trows, err := s.Pool.Query(ctx, `SELECT DISTINCT term_id FROM post_terms WHERE post_id = ANY($1)`, ids)
+	if err != nil {
+		return ids, err
 	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return 0, err
+	termIDs, err = pgx.CollectRows(trows, pgx.RowTo[int64])
+	if err != nil {
+		return ids, err
 	}
-	if n > 0 {
-		err = s.RecountTerms(ctx, termIDs)
-	}
-	return n, err
+	return ids, s.RecountTerms(ctx, termIDs)
 }
 
 type ArchiveMonth struct {

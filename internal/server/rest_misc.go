@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/blocks"
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
 )
@@ -67,7 +68,18 @@ func (api *restAPI) registerMisc() {
 			restJSON(c, http.StatusOK, map[string]any{"id": r.ID(), "title": map[string]any{"raw": "Custom Styles", "rendered": "Custom Styles"}, "settings": map[string]any{}, "styles": map[string]any{}})
 		},
 	}, nil)
-	api.register("wp/v2", "/wp/v2/block-types", g(func(c *gin.Context, r *restRequest) { restJSON(c, http.StatusOK, []any{}) }), nil)
+	// Server-registered (dynamic) blocks; blocks the editor registers in JS only are not known here.
+	api.register("wp/v2", "/wp/v2/block-types", g(func(c *gin.Context, r *restRequest) {
+		ns := c.Query("namespace")
+		out := []any{}
+		for _, n := range blocks.DynamicNames() {
+			if ns != "" && !strings.HasPrefix(n, ns+"/") {
+				continue
+			}
+			out = append(out, blockTypeObject(n))
+		}
+		restJSON(c, http.StatusOK, out)
+	}), nil)
 	api.register("oembed/1.0", "/oembed/1.0/proxy", g(api.oembedProxy), nil)
 	api.register("wp-block-editor/v1", "/wp-block-editor/v1/url-details", g(func(c *gin.Context, r *restRequest) {
 		restJSON(c, http.StatusOK, map[string]any{"title": "", "icon": "", "description": "", "image": ""})
@@ -1382,4 +1394,15 @@ func (api *restAPI) deleteMedia(c *gin.Context, r *restRequest) {
 	_ = s.store.DeleteAttachment(c, a.ID)
 	s.purgeAttachment(a)
 	restJSON(c, http.StatusOK, map[string]any{"deleted": true, "previous": prev})
+}
+
+// blockTypeObject is the WP_REST_Block_Types_Controller item for a server-rendered block.
+func blockTypeObject(name string) map[string]any {
+	ns, base := name, name
+	if i := strings.Index(name, "/"); i >= 0 {
+		ns, base = name[:i], name[i+1:]
+	}
+	return map[string]any{"api_version": 3, "name": name, "namespace": ns, "is_dynamic": true,
+		"title":    strings.ReplaceAll(base, "-", " "),
+		"supports": map[string]any{}, "attributes": map[string]any{}, "styles": []any{}, "variations": []any{}}
 }

@@ -1,11 +1,8 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"reflect"
 	"strings"
@@ -245,7 +242,7 @@ func TestWebBuilderHooksWXRRoundTrip(t *testing.T) {
 		`<wp:postmeta><wp:meta_key><![CDATA[_web_builder]]></wp:meta_key><wp:meta_value><![CDATA[1]]></wp:meta_value></wp:postmeta>`+
 		`<wp:postmeta><wp:meta_key><![CDATA[_web_builder_doc]]></wp:meta_key><wp:meta_value><![CDATA[{"sections":[{"id":"x","kind":"evil"}]}]]></wp:meta_value></wp:postmeta>`+
 		`</item></channel>`, 1)
-	body := wbhImport(t, admin, base, broken)
+	body := wbhImport(t, srv, admin, base, broken)
 	if !strings.Contains(body, "The Pursae Web Builder design of “Broken” could not be imported") {
 		t.Errorf("import report lacks the broken doc line")
 	}
@@ -290,27 +287,9 @@ func TestWebBuilderHooksWXRRoundTrip(t *testing.T) {
 	}
 }
 
-func wbhImport(t *testing.T, admin *wbrClient, base, xml string) string {
+func wbhImport(t *testing.T, srv *Server, admin *wbrClient, base, xml string) string {
 	t.Helper()
-	_, form, _ := get(t, admin.c, base+"/wp-admin/import")
-	var buf bytes.Buffer
-	mw := multipart.NewWriter(&buf)
-	_ = mw.WriteField("_wpnonce", formNonce(t, form))
-	fw, _ := mw.CreateFormFile("import", "site.xml")
-	_, _ = io.WriteString(fw, xml)
-	_ = mw.Close()
-	req, _ := http.NewRequest(http.MethodPost, base+"/wp-admin/import", &buf)
-	req.Header.Set("Content-Type", mw.FormDataContentType())
-	resp, err := admin.c.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK || !strings.Contains(string(body), "All done.") {
-		t.Fatalf("import: %d %s", resp.StatusCode, body)
-	}
-	return string(body)
+	return wxrImportBody(t, admin.c, srv, base, xml)
 }
 
 func TestWebBuilderHooksGolylangCopy(t *testing.T) {

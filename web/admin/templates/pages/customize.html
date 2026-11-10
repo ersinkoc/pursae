@@ -35,6 +35,7 @@
 <form id="customize-controls" class="wrap wp-full-overlay-sidebar" onsubmit="return false;">
 	<div id="customize-header-actions" class="wp-full-overlay-header">
 		<div id="customize-save-button-wrapper" class="customize-save-button-wrapper">
+			<button type="button" id="wpgo-save-draft" class="button button-secondary">Save Draft</button>
 			<input type="submit" name="save" id="save" class="button button-primary save" value="Published" disabled>
 		</div>
 		<span class="spinner"></span>
@@ -312,6 +313,19 @@ var wpgoCustomize = ( function( $ ) {
 			} );
 	}
 
+	function saveDraft() {
+		$.post( '/wp-admin/customize', { action: 'draft', uuid: uuid, _wpnonce: nonce, customized: JSON.stringify( dirty() ) } )
+			.done( function( r ) {
+				if ( r && r.success ) {
+					notify( 'Draft saved. Your changes are kept for 30 days and are not published.', 'success' );
+					wp.a11y && wp.a11y.speak( 'Draft saved.' );
+				}
+			} )
+			.fail( function( x ) {
+				notify( ( x.responseJSON && x.responseJSON.data && x.responseJSON.data.message ) || 'Looks like something’s gone wrong. Wait a couple seconds, and then try again.' );
+			} );
+	}
+
 	function publish() {
 		var values = dirty();
 		$( document.body ).addClass( 'saving' );
@@ -459,6 +473,12 @@ var wpgoCustomize = ( function( $ ) {
 		} );
 
 		$save.on( 'click', function( e ) { e.preventDefault(); publish(); } );
+		$( '#wpgo-save-draft' ).on( 'click', function( e ) { e.preventDefault(); saveDraft(); } );
+		$( '.wpgo-control-links a[target="_top"]' ).on( 'click', function( e ) {
+			if ( isDirty() && ! window.confirm( 'The changes you made will be lost if you navigate away from this page.' ) ) {
+				e.preventDefault();
+			}
+		} );
 		$( '.customize-controls-close' ).on( 'click', function( e ) {
 			if ( isDirty() && ! window.confirm( 'The changes you made will be lost if you navigate away from this page.' ) ) {
 				e.preventDefault();

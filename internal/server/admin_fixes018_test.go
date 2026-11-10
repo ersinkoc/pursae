@@ -299,8 +299,15 @@ func TestAdminFixes018Posts(t *testing.T) {
 	}
 }
 
-// wxrImportBody posts an export file to Tools › Import and returns the result page.
-func wxrImportBody(t *testing.T, c *http.Client, base, xml string) string {
+// wxrImportBody imports an export file through Tools › Import (upload, author step, background
+// job) and returns the report page.
+func wxrImportBody(t *testing.T, c *http.Client, srv *Server, base, xml string) string {
+	t.Helper()
+	return wxrImportFlow(t, c, srv, base, xml, true, nil)
+}
+
+// wxrImportFlow drives the three importer steps; the background job is run by hand.
+func wxrImportFlow(t *testing.T, c *http.Client, srv *Server, base, xml string, fetch bool, authors url.Values) string {
 	t.Helper()
 	_, form, _ := get(t, c, base+"/wp-admin/import")
 	var buf bytes.Buffer
@@ -315,12 +322,35 @@ func wxrImportBody(t *testing.T, c *http.Client, base, xml string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK || !strings.Contains(string(b), "All done.") {
-		t.Fatalf("import: %d %s", resp.StatusCode, b)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || !strings.Contains(string(b), "Assign Authors") {
+		t.Fatalf("import upload: %d %s", resp.StatusCode, b)
 	}
-	return string(b)
+	vals := url.Values{"_wpnonce": {formNonce(t, string(b))}, "import_id": {regexp.MustCompile(`name="import_id" value="([a-f0-9]+)"`).FindStringSubmatch(string(b))[1]}}
+	if fetch {
+		vals.Set("fetch_attachments", "1")
+	}
+	for _, m := range regexp.MustCompile(`name="imported_authors" value="([^"]*)"`).FindAllStringSubmatch(string(b), -1) {
+		vals.Add("imported_authors", m[1])
+	}
+	for k, v := range authors {
+		vals[k] = v
+	}
+	code, _, loc := post(t, c, base+"/wp-admin/import", vals)
+	if code != http.StatusSeeOther || !strings.Contains(loc, "run=") {
+		t.Fatalf("import queue: %d %s", code, loc)
+	}
+	_, running, _ := get(t, c, base+loc)
+	if !strings.Contains(running, "Waiting for the import to start") {
+		t.Errorf("progress page while queued: %s", running)
+	}
+	srv.runDueJobs(context.Background(), "test", srv.jobHandlers())
+	code, body, _ := get(t, c, base+loc)
+	if code != http.StatusOK || !strings.Contains(body, "All done.") {
+		t.Fatalf("import: %d %s", code, body)
+	}
+	return body
 }
 
 // Posts and media share one id space (migration 0003), so every item of an export has its own
@@ -381,7 +411,7 @@ func TestWXRAttachmentIDsDoNotCollide(t *testing.T) {
 		return http.DefaultTransport.RoundTrip(r2)
 	})
 	t.Cleanup(func() { wxrFetchTransport = old })
-	body := wxrImportBody(t, c, ts.URL, xml)
+	body := wxrImportBody(t, c, srv, ts.URL, xml)
 	if strings.Contains(body, "Failed to import Media") {
 		t.Fatalf("media import failed: %s", regexp.MustCompile(`Failed to import Media[^<]*`).FindString(body))
 	}
@@ -452,7 +482,7 @@ func TestWXRCustomPostTypes(t *testing.T) {
 	exec(`DELETE FROM posts WHERE id = $1`, book.ID)
 	exec(`DELETE FROM terms WHERE taxonomy = 'wxgenre'`)
 	unknown := `<item><title><![CDATA[Ghost]]></title><wp:post_id>999999</wp:post_id><wp:status><![CDATA[publish]]></wp:status><wp:post_type><![CDATA[ghost_type]]></wp:post_type></item>`
-	body := wxrImportBody(t, c, ts.URL, strings.Replace(xml, "</channel>", unknown+"\n</channel>", 1))
+	body := wxrImportBody(t, c, srv, ts.URL, strings.Replace(xml, "</channel>", unknown+"\n</channel>", 1))
 	if !strings.Contains(body, "Invalid post type ghost_type") {
 		t.Errorf("an unknown post type is not reported")
 	}

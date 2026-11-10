@@ -661,7 +661,7 @@ func TestWBTemplateWXRRoundTrip(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	body := wbhImport(t, admin, base, xml)
+	body := wbhImport(t, srv, admin, base, xml)
 	if !strings.Contains(body, " 1 patterns, 1 Theme Builder templates, ") && !strings.Contains(body, " 0 patterns, 1 Theme Builder templates, ") {
 		t.Errorf("the report does not count the template on its own: %s", body)
 	}
@@ -690,7 +690,7 @@ func TestWBTemplateWXRRoundTrip(t *testing.T) {
 		t.Errorf("snapshot-less import rendered: %d", id)
 	}
 	// Importing the same file again does not add a second copy of a template without a slug.
-	wbhImport(t, admin, base, xml)
+	wbhImport(t, srv, admin, base, xml)
 	if list, _ = srv.store.WebBuilder().Templates(ctx, store.WBTemplateFilter{Type: webbuilder.TemplateSinglePost}); len(list) != 1 {
 		t.Errorf("templates after a second import: %d", len(list))
 	}
@@ -703,7 +703,7 @@ func TestWBTemplateWXRRoundTrip(t *testing.T) {
 	if ghost == xml {
 		t.Fatal("no admin author in the export")
 	}
-	body = wbhImport(t, admin, base, ghost)
+	body = wbhImport(t, srv, admin, base, ghost)
 	list, _ = srv.store.WebBuilder().Templates(ctx, store.WBTemplateFilter{Type: webbuilder.TemplateSinglePost})
 	if len(list) != 1 {
 		t.Fatalf("templates after the ghost import: %d", len(list))

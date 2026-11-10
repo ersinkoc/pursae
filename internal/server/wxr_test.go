@@ -336,25 +336,8 @@ func TestWXRImport(t *testing.T) {
 	})
 	t.Cleanup(func() { wxrFetchTransport = old })
 
-	_, form, _ := get(t, c, base+"/wp-admin/import")
-	nonce := formNonce(t, form)
-	var buf bytes.Buffer
-	mw := multipart.NewWriter(&buf)
-	_ = mw.WriteField("_wpnonce", nonce)
-	fw, _ := mw.CreateFormFile("import", "old-site.xml")
-	_, _ = io.WriteString(fw, wxrFixture)
-	_ = mw.Close()
-	req, _ := http.NewRequest(http.MethodPost, base+"/wp-admin/import", &buf)
-	req.Header.Set("Content-Type", mw.FormDataContentType())
-	resp, err := c.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK || !strings.Contains(string(body), "All done.") {
-		t.Fatalf("import: %d %s", resp.StatusCode, body)
-	}
+	bodyStr := wxrImportFlow(t, c, srv, base, wxrFixture, true, nil)
+	body := []byte(bodyStr)
 	if !strings.Contains(string(body), "Imported 1 posts, 0 pages, 1 patterns, 2 menu items, 1 media files, 0 comments and 1 new categories and tags.") {
 		t.Errorf("report: %s", regexp.MustCompile(`<p>Imported[^<]*</p>`).FindString(string(body)))
 	}
@@ -443,7 +426,7 @@ func TestWXRImport(t *testing.T) {
 	}
 
 	// Importing the same file again does not download the media a second time (post_exists()).
-	again := wxrImportBody(t, c, base, wxrFixture)
+	again := wxrImportBody(t, c, srv, base, wxrFixture)
 	if !strings.Contains(again, "Media “Imported photo” already exists.") {
 		t.Errorf("re-import did not report the existing media")
 	}
@@ -479,5 +462,93 @@ func TestWXRExportFailsOnReadError(t *testing.T) {
 	})
 	if code, body, _ := get(t, c, base+"/wp-admin/export?download=true&content=all"); code != http.StatusInternalServerError || strings.Contains(body, "<rss") {
 		t.Fatalf("export with a failing read: %d", code)
+	}
+}
+
+const wxrAuthorsFixture = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:excerpt="http://wordpress.org/export/1.2/excerpt/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wp="http://wordpress.org/export/1.2/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+	<wp:wxr_version>1.2</wp:wxr_version>
+	<wp:author><wp:author_id>7</wp:author_id><wp:author_login><![CDATA[newwriter]]></wp:author_login><wp:author_email><![CDATA[newwriter@example.test]]></wp:author_email><wp:author_display_name><![CDATA[New Writer]]></wp:author_display_name></wp:author>
+	<item>
+		<title>By a new writer</title><dc:creator><![CDATA[newwriter]]></dc:creator>
+		<content:encoded><![CDATA[<p>Hi <img src="https://files.example.test/a.png" /></p>]]></content:encoded>
+		<wp:post_id>10</wp:post_id><wp:post_date>2021-03-01 10:00:00</wp:post_date><wp:post_name>by-new-writer</wp:post_name><wp:status>publish</wp:status><wp:post_type>post</wp:post_type>
+	</item>
+	<item>
+		<title>a</title><wp:post_id>11</wp:post_id><wp:post_date>2021-03-01 10:00:00</wp:post_date><wp:post_name>a</wp:post_name><wp:status>inherit</wp:status><wp:post_type>attachment</wp:post_type>
+		<wp:attachment_url>https://files.example.test/a.png</wp:attachment_url>
+	</item>
+</channel>
+</rss>`
+
+// The author step creates the user the importer is told to create, the attachment box off keeps
+// the importer from downloading anything, and a failed job can be retried from Scheduled Actions.
+func TestWXRImportAuthorStepAndNoAttachments(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	fetched := false
+	old := wxrFetchTransport
+	wxrFetchTransport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		fetched = true
+		return nil, io.ErrUnexpectedEOF
+	})
+	t.Cleanup(func() { wxrFetchTransport = old })
+	body := wxrImportFlow(t, c, srv, ts.URL, wxrAuthorsFixture, false, url.Values{"user_map[0]": {"new"}, "user_new[0]": {"imported-writer"}})
+	if fetched {
+		t.Error("attachments were downloaded although the box was off")
+	}
+	if !strings.Contains(body, "Imported 1 posts") || !strings.Contains(body, "File attachments were not downloaded") {
+		t.Errorf("report: %s", regexp.MustCompile(`<p>Imported[^<]*</p>`).FindString(body))
+	}
+	var login string
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT u.login FROM posts p JOIN users u ON u.id = p.author_id WHERE p.slug = 'by-new-writer'`).Scan(&login); err != nil || login != "imported-writer" {
+		t.Errorf("post author = %q (%v), want the new user imported-writer", login, err)
+	}
+	if ents, _ := os.ReadDir(srv.wxrImportDir()); len(ents) != 0 {
+		t.Errorf("the uploaded file was not removed after the import: %d left", len(ents))
+	}
+}
+
+func TestWXRImportRejectsNonWXRAndBadToken(t *testing.T) {
+	ts, c, _ := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	_, form, _ := get(t, c, ts.URL+"/wp-admin/import")
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	_ = mw.WriteField("_wpnonce", formNonce(t, form))
+	fw, _ := mw.CreateFormFile("import", "x.xml")
+	_, _ = io.WriteString(fw, "not xml at all")
+	_ = mw.Close()
+	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/wp-admin/import", &buf)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(b), "does not appear to be a WXR file") {
+		t.Errorf("non-WXR upload: %s", b)
+	}
+	// A token that is not 32 hex digits never reaches the file system.
+	buf.Reset()
+	mw = multipart.NewWriter(&buf)
+	_ = mw.WriteField("_wpnonce", formNonce(t, form))
+	fw, _ = mw.CreateFormFile("import", "x.xml")
+	_, _ = io.WriteString(fw, wxrAuthorsFixture)
+	_ = mw.Close()
+	req, _ = http.NewRequest(http.MethodPost, ts.URL+"/wp-admin/import", &buf)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	resp, err = c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	code, body, _ := post(t, c, ts.URL+"/wp-admin/import", url.Values{"_wpnonce": {formNonce(t, string(b))}, "import_id": {"../../etc/passwd"}})
+	if code != http.StatusOK || !strings.Contains(body, "Invalid import file.") {
+		t.Errorf("bad token: %d", code)
 	}
 }

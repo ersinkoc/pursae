@@ -394,3 +394,21 @@ func (s *Store) ReplaceAttachmentFile(ctx context.Context, a *Attachment) error 
 		return nil
 	})
 }
+
+// ImageAttachmentIDs lists the ids of all image attachments (oldest first).
+func (s *Store) ImageAttachmentIDs(ctx context.Context) ([]int64, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT id FROM media WHERE mime_type LIKE 'image/%' ORDER BY id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}

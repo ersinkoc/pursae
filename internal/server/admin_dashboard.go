@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"math"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -43,7 +42,8 @@ type dashboardData struct {
 	Closed                            map[string]bool // collapsed widgets
 	ThemeName                         string
 	Health                            healthSummary
-	MailSMTP                          template.HTML // WPGO Mail SMTP widget
+	MailSMTP                          template.HTML  // WPGO Mail SMTP widget
+	News                              *dashboardNews // Pursae News box: the latest release the Hub announced
 }
 
 // healthSummary is what the Site Health Status widget shows: the counts of the Site Health tests
@@ -60,54 +60,15 @@ type healthSummary struct {
 // do not need the screen's details and scores them the way site-health.js does.
 func (s *Server) siteHealthSummary(ctx context.Context) healthSummary {
 	var h healthSummary
-	good := func() { h.Good++ }
-	recommended := func() { h.Recommended++ }
-	good() // current WordPress Go version
-	good() // Go runtime
-	var pgVersion string
-	_ = s.store.Pool.QueryRow(ctx, `SHOW server_version`).Scan(&pgVersion)
-	if pgMajor, _ := strconv.Atoi(strings.SplitN(pgVersion, ".", 2)[0]); pgMajor >= 15 {
-		good()
-	} else {
-		recommended()
-	}
-	if strings.HasPrefix(s.links(ctx).Home, "https://") {
-		good()
-	} else {
-		recommended()
-	}
-	if f, err := os.CreateTemp(s.cfg.UploadsDir, ".health-*"); err == nil {
-		f.Close()
-		os.Remove(f.Name())
-		good()
-	} else {
-		h.Critical++
-	}
-	if s.settings.Bool("wpgo_cache_enabled") {
-		good()
-	} else {
-		recommended()
-	}
-	if s.plugins != nil && s.plugins.initErr == nil {
-		good()
-	} else {
-		h.Critical++
-	}
-	if s.settings.String("timezone_string") != "" {
-		good()
-	} else {
-		recommended()
-	}
-	if !s.settings.Bool("blog_public") {
-		recommended()
-	}
-	var inactivePlugins int
-	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM plugins WHERE status = 'inactive'`).Scan(&inactivePlugins)
-	if inactivePlugins > 0 {
-		recommended()
-	}
-	if s.settings.Int("wp_page_for_privacy_policy") == 0 {
-		recommended()
+	for _, t := range s.healthTests(ctx) {
+		switch t.Status {
+		case "good":
+			h.Good++
+		case "recommended":
+			h.Recommended++
+		default:
+			h.Critical++
+		}
 	}
 	h.Issues = h.Recommended + h.Critical
 	// site-health.js recalculateProgression().
@@ -220,6 +181,7 @@ func (s *Server) dashboard(c *gin.Context) {
 		})
 	}
 
+	d.News = s.dashboardNewsCached(ctx)
 	d.Normal, d.Side, d.Col3, d.Col4 = dashboardLayout(u, d.MailSMTP != "")
 	d.Closed = userMetaSet(u, "closedpostboxes_dashboard")
 	// Drag, collapse and move up/down of the boxes (postbox.js on top of jquery-ui-sortable).
@@ -354,4 +316,22 @@ func (s *Server) metaBoxOrderAjax(c *gin.Context) {
 		_ = s.setUserMeta(c, u, "screen_layout_"+page, cols)
 	}
 	c.String(http.StatusOK, "1")
+}
+
+// dashboardNews is the Pursae News box: the latest core release the Hub announced in /api/v1/index.
+type dashboardNews struct {
+	Version, Released, Notes, NotesURL string
+	Newer                              bool // newer than the running version
+}
+
+// dashboardNewsCached reads the cached Hub index only: the Dashboard never waits on the network.
+// Nil while the site has not contacted the Hub (or the Hub is off).
+func (s *Server) dashboardNewsCached(ctx context.Context) *dashboardNews {
+	var idx hubIndex
+	if !s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_index"), &idx) || idx.Core == nil || idx.Core.Latest == "" {
+		return nil
+	}
+	n := &dashboardNews{Version: idx.Core.Latest, Released: idx.Core.Released, Notes: wp.TrimWords(idx.Core.Notes, 60, "…"), NotesURL: idx.Core.NotesURL}
+	n.Newer = versionLess(Version, idx.Core.Latest)
+	return n
 }

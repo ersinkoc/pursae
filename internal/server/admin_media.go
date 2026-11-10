@@ -67,7 +67,18 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		s.mediaBulkDelete(c)
 		return
 	}
+	if c.Query("action") == "regenerate" || c.Query("action2") == "regenerate" || c.Query("action") == "regenerate-all" {
+		s.mediaRegenerate(c)
+		return
+	}
 	var notices []notice
+	if c.Query("regenerated") != "" || c.Query("regenerating") != "" {
+		msg := "Thumbnails regenerated for " + c.Query("regenerated") + " image(s)."
+		if c.Query("regenerating") != "" {
+			msg = "Regenerating thumbnails for the whole library in the background."
+		}
+		notices = append(notices, notice{Type: "success", Message: template.HTML(msg), Dismissible: true})
+	}
 	if n, _ := strconv.Atoi(c.Query("deleted")); n > 0 {
 		msg := "Media file permanently deleted."
 		if n > 1 {
@@ -181,6 +192,32 @@ func (s *Server) mediaBulkDelete(c *gin.Context) {
 		}
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/upload?mode=list&deleted="+strconv.Itoa(n))
+}
+
+// mediaRegenerate is the "Regenerate thumbnails" bulk action (selected items) and its "all" variant.
+func (s *Server) mediaRegenerate(c *gin.Context) {
+	u := currentUser(c)
+	if !s.checkNonce(c, "bulk-media") {
+		s.denyNonce(c)
+		return
+	}
+	if !u.Can("manage_options", nil) {
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to regenerate thumbnails.")
+		return
+	}
+	if c.Query("action") == "regenerate-all" {
+		s.regenerateAllAsync()
+		c.Redirect(http.StatusFound, "/wp-admin/upload?mode=list&regenerating=1")
+		return
+	}
+	var ids []int64
+	for _, raw := range c.QueryArray("media[]") {
+		if id, _ := strconv.ParseInt(raw, 10, 64); id > 0 {
+			ids = append(ids, id)
+		}
+	}
+	done, _, _ := s.regenerateAttachments(c, ids)
+	c.Redirect(http.StatusFound, "/wp-admin/upload?mode=list&regenerated="+strconv.Itoa(done))
 }
 
 type mediaNewData struct {

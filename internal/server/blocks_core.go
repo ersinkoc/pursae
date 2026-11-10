@@ -179,6 +179,7 @@ func registerCoreBlocks(s *Server) {
 		return content
 	})
 	registerSiteBlocks(s)
+	registerQueryBlocks(s)
 }
 
 func renderSearchBlock(ctx context.Context, b *blocks.Block, _ string) string {

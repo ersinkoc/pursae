@@ -9,6 +9,7 @@ import (
 	"html"
 	"html/template"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -75,12 +76,16 @@ func (s *Server) imageEditorOptions(ctx context.Context, file, mime string) medi
 
 // createImageSubsizes is wp_create_image_subsizes() for a new attachment: its dimensions, the
 // "-scaled" or converted main file and the registered sizes.
-func (s *Server) createImageSubsizes(ctx context.Context, a *store.Attachment) {
+//
+// It returns a warning for the uploader ("" when everything worked): the image could not be
+// processed (the error is logged), or its format has no sub-sizes (AVIF, HEIC).
+func (s *Server) createImageSubsizes(ctx context.Context, a *store.Attachment) string {
 	opts := s.imageEditorOptions(ctx, path.Base(a.FilePath), a.Mime)
 	opts.Reserved = s.uploadReserved(ctx)(strings.TrimPrefix(path.Dir(a.FilePath), "."))
 	info, err := media.ProcessImageWith(s.cfg.UploadsDir, a.FilePath, s.imageSizes(), opts)
 	if err != nil {
-		return
+		slog.Warn("image sizes could not be generated", "file", a.FilePath, "mime", a.Mime, "err", err)
+		return imageProcessWarning
 	}
 	a.Width, a.Height = info.Width, info.Height
 	a.FilePath = info.RelPath
@@ -100,6 +105,22 @@ func (s *Server) createImageSubsizes(ctx context.Context, a *store.Attachment) {
 		a.Variants = append(a.Variants, store.AttachmentVariant{Name: v.Name, FilePath: path.Join(dir, v.File),
 			Width: v.Width, Height: v.Height, Mime: v.Mime, FileSize: v.Size})
 	}
+	if len(info.Variants) == 0 && noSubsizeFormat(a.Mime) {
+		return "No smaller image sizes can be generated for this file format, so the full-size file is used everywhere."
+	}
+	return ""
+}
+
+// imageProcessWarning is WordPress' message for an image the server cannot process.
+const imageProcessWarning = "The server cannot process the image. This can happen if the server is busy or does not have enough resources to complete the task. Uploading a smaller image may help."
+
+// noSubsizeFormat reports the formats that are decoded by browsers but not here.
+func noSubsizeFormat(mime string) bool {
+	switch mime {
+	case "image/avif", "image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence":
+		return true
+	}
+	return false
 }
 
 // ksesAttachmentText is excerpt_save_pre / content_save_pre for an attachment: a user without
@@ -192,7 +213,11 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	a := &store.Attachment{UploaderID: u.ID, PostID: postID, FilePath: st.RelPath, Mime: st.Mime, FileSize: st.Size,
 		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
 	if strings.HasPrefix(st.Mime, "image/") {
-		s.createImageSubsizes(c, a)
+		if w := s.createImageSubsizes(c, a); w != "" {
+			c.Set("upload_warning", w)
+		}
+	} else if strings.HasPrefix(st.Mime, "audio/") || strings.HasPrefix(st.Mime, "video/") {
+		s.readAVMeta(s.cfg.UploadsDir, a)
 	}
 	if err := s.store.InsertAttachment(c, a); err != nil {
 		return nil, err
@@ -227,6 +252,8 @@ func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Rea
 		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
 	if strings.HasPrefix(st.Mime, "image/") {
 		s.createImageSubsizes(ctx, a)
+	} else if strings.HasPrefix(st.Mime, "audio/") || strings.HasPrefix(st.Mime, "video/") {
+		s.readAVMeta(s.cfg.UploadsDir, a)
 	}
 	if err := s.store.InsertAttachment(ctx, a); err != nil {
 		return nil, err
@@ -336,7 +363,15 @@ func (s *Server) attachmentJS(c *gin.Context, a *store.Attachment) map[string]an
 	}
 	if typ == "audio" || typ == "video" {
 		icon := mimeIcon(a.Mime)
-		r["meta"] = map[string]any{"artist": false, "album": false, "bitrate": false, "bitrate_mode": false}
+		r["meta"] = avModalMeta(a)
+		if typ == "video" {
+			if w, h := metaInt(a.Meta["width"]), metaInt(a.Meta["height"]); w > 0 && h > 0 {
+				r["width"], r["height"] = w, h
+			}
+		}
+		if l := metaInt(a.Meta["length"]); l > 0 {
+			r["fileLength"], r["fileLengthHumanReadable"] = mediaLengthFormatted(l), mediaLengthHuman(l)
+		}
 		r["image"] = map[string]any{"src": icon, "width": 48, "height": 64}
 		r["thumb"] = map[string]any{"src": icon, "width": 48, "height": 64}
 	}
@@ -410,7 +445,11 @@ func (s *Server) asyncUpload(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"success": false, "data": gin.H{"message": err.Error(), "filename": name}})
 			return
 		}
-		jsonSuccess(c, s.attachmentJS(c, a))
+		js := s.attachmentJS(c, a)
+		if w, ok := c.Get("upload_warning"); ok {
+			js["uploadWarning"] = w
+		}
+		jsonSuccess(c, js)
 		return
 	}
 	if !s.checkNonce(c, "media-form") {
@@ -761,4 +800,72 @@ func (s *Server) enqueueMedia(c *gin.Context, postID int64) {
 // editableImage reports whether the image editor can open and save a file of this type.
 func editableImage(mime string) bool {
 	return mime == "image/jpeg" || mime == "image/png" || mime == "image/gif"
+}
+
+// readAVMeta stores wp_read_audio_metadata() / wp_read_video_metadata() values in the attachment's
+// metadata: length, length_formatted, bitrate, the video size and the ID3 artist and album.
+func (s *Server) readAVMeta(uploadsDir string, a *store.Attachment) {
+	i := media.ReadAV(uploadsDir, a.FilePath)
+	if a.Meta == nil {
+		a.Meta = map[string]any{}
+	}
+	if i.Length > 0 {
+		a.Meta["length"] = i.Length
+		a.Meta["length_formatted"] = mediaLengthFormatted(i.Length)
+	}
+	if i.Bitrate > 0 {
+		a.Meta["bitrate"] = i.Bitrate
+		a.Meta["bitrate_mode"] = i.BitrateMode
+	}
+	if i.Width > 0 && i.Height > 0 {
+		a.Meta["width"], a.Meta["height"] = i.Width, i.Height
+		a.Width, a.Height = i.Width, i.Height
+	}
+	if i.Format != "" {
+		a.Meta["fileformat"] = i.Format
+	}
+	for k, v := range map[string]string{"artist": i.Artist, "album": i.Album, "genre": i.Genre} {
+		if v != "" {
+			a.Meta[k] = v
+		}
+	}
+	if a.Title != "" && i.Title != "" && a.Meta["title"] == nil {
+		a.Meta["title"] = i.Title
+	}
+}
+
+// avModalMeta is the "meta" of an audio/video item in the media modal.
+func avModalMeta(a *store.Attachment) map[string]any {
+	m := map[string]any{"artist": false, "album": false, "bitrate": false, "bitrate_mode": false}
+	for _, k := range []string{"artist", "album", "bitrate", "bitrate_mode"} {
+		if v, ok := a.Meta[k]; ok && v != "" && v != nil {
+			m[k] = v
+		}
+	}
+	return m
+}
+
+func metaInt(v any) int {
+	switch n := v.(type) {
+	case int:
+		return n
+	case int64:
+		return int(n)
+	case float64:
+		return int(n)
+	}
+	return 0
+}
+
+// mediaLengthFormatted is wp_get_attachment_metadata()'s length_formatted: "m:ss" or "h:mm:ss".
+func mediaLengthFormatted(sec int) string {
+	if sec >= 3600 {
+		return fmt.Sprintf("%d:%02d:%02d", sec/3600, sec%3600/60, sec%60)
+	}
+	return fmt.Sprintf("%d:%02d", sec/60, sec%60)
+}
+
+// mediaLengthHuman is human_readable_duration(): "1 minute, 5 seconds" style.
+func mediaLengthHuman(sec int) string {
+	return mediaLengthFormatted(sec)
 }

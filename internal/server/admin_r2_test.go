@@ -193,7 +193,7 @@ func TestWXRImportWithoutIDs(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	ctx := context.Background()
-	wxrImportBody(t, c, ts.URL, wxrNoIDsFixture)
+	wxrImportBody(t, c, srv, ts.URL, wxrNoIDsFixture)
 	var parent int64
 	var demo string
 	if err := srv.store.Pool.QueryRow(ctx, `SELECT coalesce(parent_id,0), coalesce(meta->>'_wpgo_demo','') FROM posts WHERE slug = 'second-page'`).Scan(&parent, &demo); err != nil {

@@ -10,7 +10,7 @@
 					<label for="dashboard_right_now-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_right_now-hide" checked="checked" />At a Glance</label>
 					<label for="dashboard_activity-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_activity-hide" checked="checked" />Activity</label>
 					<label for="dashboard_quick_press-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_quick_press-hide" checked="checked" /><span class="hide-if-no-js">Quick Draft</span> <span class="hide-if-js">Your Recent Drafts</span></label>
-					<label for="dashboard_primary-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_primary-hide" checked="checked" />WordPress Events and News</label>
+					<label for="dashboard_primary-hide"><input class="hide-postbox-tog" type="checkbox" id="dashboard_primary-hide" checked="checked" />Pursae News</label>
 					<label for="wp_welcome_panel-hide"><input type="checkbox" id="wp_welcome_panel-hide" checked="checked" />Welcome</label>
 				</div>
 			</fieldset>
@@ -276,13 +276,11 @@
 				<ul>{{range .Drafts}}<li><div class="draft-title"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;" translate="no">{{.Title}}</a><time datetime="{{.ISO}}">{{.When}}</time></div>{{if .Excerpt}}<p translate="no">{{.Excerpt}}</p>{{end}}</li>{{end}}</ul>
 			</div>{{end}}
 		{{template "dashboard-postbox-end"}}{{end}}
-{{define "dw-dashboard_primary"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_primary" "Title" "WordPress Events and News" "Closed" (index .Closed "dashboard_primary")}}
+{{define "dw-dashboard_primary"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_primary" "Title" "Pursae News" "Closed" (index .Closed "dashboard_primary")}}
 			<div class="wordpress-news hide-if-no-js">
-				<div class="rss-widget"><p>News feeds are not loaded yet.</p></div>
+				<div class="rss-widget">{{with .News}}<ul><li><a class="rsswidget" href="{{if .NotesURL}}{{.NotesURL}}{{else}}/wp-admin/update-core{{end}}">Pursae {{.Version}}</a>{{if .Released}} <span class="rss-date">{{.Released}}</span>{{end}}{{if .Notes}}<div class="rssSummary">{{.Notes}}</div>{{end}}{{if .Newer}}<div class="rssSummary"><a href="/wp-admin/update-core">A new version is available. Update now.</a></div>{{end}}</li></ul>{{else}}<p>Release news from Pursae Hub appears here once this site has checked for updates.</p>{{end}}</div>
 			</div>
 			<p class="community-events-footer">
-				<a href="https://make.wordpress.org/community/meetups-landing-page" target="_blank">Meetups<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a> |
-				<a href="https://central.wordcamp.org/schedule/" target="_blank">WordCamps<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a> |
-				<a href="https://wordpress.org/news/" target="_blank">News<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a>
+				<a href="/wp-admin/update-core">Updates</a>
 			</p>
 		{{template "dashboard-postbox-end"}}{{end}}

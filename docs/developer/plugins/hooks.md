@@ -35,6 +35,22 @@ the manifest's `hooks` array.
 | `admin_notices` | action | — | none. Queue a notice with `wpgo.AdminNotice`; it is escaped and shown on the current admin screen | `admin:notices` |
 | `wpgo_post_stats` | filter | `map[string]any` of statistics shown in the classic editor's publish box (key → value; underscores become spaces) | `post`: `{"id", "title", "content"}` | `posts:read` |
 
+### Comments
+
+| Hook | Type | Value | Arguments | Permission |
+|------|------|-------|-----------|------------|
+| `pre_comment_approved` | filter | the verdict the core reached (`approved`, `pending`, `spam` or `trash`); return one of them (or WordPress' `1` / `0`) to change it, e.g. to send a comment to spam | the comment: `{"post_id", "parent", "user_id", "author", "email", "url", "content", "ip", "user_agent"}` | `forms:access` |
+| `comment_post` | action | — | comment id, final status, the comment object as above | `forms:access` |
+
+Visitors' comment forms also carry a hidden honeypot field and a signed timestamp; submissions that fill the honeypot, forge the timestamp or arrive within two seconds are refused before these hooks run.
+
+### Privacy
+
+| Hook | Type | Value | Arguments | Permission |
+|------|------|-------|-----------|------------|
+| `pursae_personal_data_export` | filter | list of groups `{"group_id", "group_label", "group_description", "items": [[{"name", "value"}]]}` already built by the core and the built-in plugins; append your own group | the e-mail address | `forms:access` |
+| `pursae_personal_data_erase` | action | — | the e-mail address. Erase or anonymize the person's data you store (Tools › Erase Personal Data) | `forms:access` |
+
 ### Media
 
 | Hook | Type | Value | Arguments | Permission |

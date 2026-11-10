@@ -343,7 +343,7 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 	page, per := pageArgs(c)
 	q := store.PostQuery{Types: []string{typ}, Page: page, PerPage: per, Search: c.Query("search"),
 		OrderBy: c.DefaultQuery("orderby", "date"), Order: c.DefaultQuery("order", "desc"), Loc: s.loc()}
-	if q.OrderBy == "include" || q.OrderBy == "relevance" {
+	if q.OrderBy == "relevance" && q.Search == "" || q.OrderBy == "include" {
 		q.OrderBy = "date"
 	}
 	plural := restBaseFor(typ)

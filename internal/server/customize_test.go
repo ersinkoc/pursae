@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestCustomizeColorScheme checks Twenty Twenty-Five's color schemes: the default palette prints no
@@ -113,6 +114,26 @@ func TestCustomize(t *testing.T) {
 		t.Error("anonymous visitor sees the changeset")
 	}
 
+	// The changeset is persisted (transients), not process memory, and Save Draft keeps it for 30 days.
+	var n int
+	if err := getPool(t).QueryRow(context.Background(), `SELECT count(*) FROM transients WHERE key = $1`, "customize_changeset:"+uuid[1]).Scan(&n); err != nil || n != 1 {
+		t.Errorf("changeset not stored in transients: n=%d err=%v", n, err)
+	}
+	if code, body := send("draft", map[string]any{"blogname": "Draft Title"}); code != http.StatusOK || !strings.Contains(body, `"status":"draft"`) {
+		t.Errorf("draft: %d %s", code, body)
+	}
+	var ttl float64
+	_ = getPool(t).QueryRow(context.Background(), `SELECT extract(epoch FROM expires_at - now()) FROM transients WHERE key = $1`, "customize_changeset:"+uuid[1]).Scan(&ttl)
+	if ttl < 20*24*3600 {
+		t.Errorf("draft TTL too short: %.0fs", ttl)
+	}
+	if _, body, _ = get(t, c, base+"/?"+czParam+"="+uuid[1]); !strings.Contains(body, "Draft Title") {
+		t.Error("draft changeset not previewable")
+	}
+	if code, _ := send("preview", map[string]any{"blogname": "Preview Title"}); code != http.StatusOK {
+		t.Errorf("preview after draft: %d", code)
+	}
+
 	// Site icon: an image attachment.
 	ctx := context.Background()
 	db := getPool(t)
@@ -161,5 +182,66 @@ func TestCustomize(t *testing.T) {
 	_, body, _ = get(t, anon, base+"/")
 	if strings.Contains(body, "page-id-") {
 		t.Error("homepage preview leaked")
+	}
+}
+
+func TestShowAvatarsAndDefaultFormat(t *testing.T) {
+	if !czUUIDValid.MatchString("0123456789abcdef0123456789abcdef") || czUUIDValid.MatchString("../x") {
+		t.Error("changeset id validation")
+	}
+	ts, c, s := testServerBuilderOff(t)
+	base := ts.URL
+	if code, _, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{
+		"weblog_title": {"Test Site"}, "user_name": {"admin"}, "admin_password": {"correct horse"}, "admin_email": {"admin@example.test"},
+	}); code != http.StatusOK {
+		t.Fatalf("install failed: %d", code)
+	}
+	if code, _, _ := post(t, c, base+"/wp-login", url.Values{"log": {"admin"}, "pwd": {"correct horse"}}); code != http.StatusFound {
+		t.Fatalf("login failed: %d", code)
+	}
+	ctx := context.Background()
+	if got := s.avatarImg(ctx, "a@example.test", 32); !strings.Contains(got, "<img") {
+		t.Errorf("avatar missing with Show Avatars on: %q", got)
+	}
+	if err := s.settings.Set(ctx, map[string]any{"show_avatars": false, "default_post_format": "aside"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.avatarImg(ctx, "a@example.test", 32); got != "" {
+		t.Errorf("avatar shown with Show Avatars off: %q", got)
+	}
+	get(t, c, base+"/wp-admin/post-new")
+	var format string
+	if err := getPool(t).QueryRow(ctx, `SELECT format FROM posts WHERE status = 'auto-draft' ORDER BY id DESC LIMIT 1`).Scan(&format); err != nil || format != "aside" {
+		t.Errorf("new post format = %q (err %v), want aside", format, err)
+	}
+}
+
+// A changeset that expired, or belongs to another user, cannot be previewed or saved as a draft.
+func TestCustomizeForeignAndExpiredChangeset(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, body, _ := get(t, c, base+"/wp-admin/customize")
+	nonce := czNonceRe.FindStringSubmatch(body)
+	if nonce == nil {
+		t.Fatal("no nonce")
+	}
+	ctx := context.Background()
+	theme := srv.activeTheme().Slug
+	foreign, expired := newChangesetID(), newChangesetID()
+	if err := srv.czSave(ctx, foreign, &czChangeset{UserID: 99999, Theme: theme, Mods: map[string]any{}, Options: map[string]any{}}); err != nil {
+		t.Fatal(err)
+	}
+	cs := &czChangeset{UserID: 1, Theme: theme, Mods: map[string]any{}, Options: map[string]any{}, Expires: time.Now().Add(-time.Hour)}
+	if err := srv.store.SetTransient(ctx, czKey(expired), cs, time.Hour); err != nil {
+		t.Fatal(err)
+	}
+	for name, uuid := range map[string]string{"foreign": foreign, "expired": expired, "malformed": "../x"} {
+		for _, action := range []string{"preview", "draft"} {
+			code, _, _ := post(t, c, base+"/wp-admin/customize", url.Values{"action": {action}, "uuid": {uuid}, "_wpnonce": {nonce[1]}, "customized": {`{"blogname":"x"}`}})
+			if code != http.StatusBadRequest {
+				t.Errorf("%s changeset, action %s: %d, want 400", name, action, code)
+			}
+		}
 	}
 }

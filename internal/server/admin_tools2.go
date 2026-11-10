@@ -3,6 +3,7 @@ package server
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
@@ -20,9 +21,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/auth"
 	"wpgo/internal/blocks"
@@ -347,6 +350,32 @@ const (
 	privacyExportExpiration = 3 * 24 * time.Hour
 )
 
+var privacyRequestsMu sync.Mutex
+
+// privacyRequestsLockKey is the advisory-lock id of the request list's read-modify-write.
+const privacyRequestsLockKey = 0x70727631
+
+// lockPrivacyRequests serializes read-modify-write of the request list (wpgo_privacy_requests), so two
+// requests touching it at once cannot overwrite each other's change, across instances sharing the
+// database too. Call the returned func to release.
+func (s *Server) lockPrivacyRequests(ctx context.Context) func() {
+	privacyRequestsMu.Lock()
+	conn, err := s.store.Pool.Acquire(context.WithoutCancel(ctx))
+	if err == nil {
+		if _, err = conn.Exec(context.WithoutCancel(ctx), `SELECT pg_advisory_lock($1)`, int64(privacyRequestsLockKey)); err != nil {
+			conn.Release()
+			conn = nil
+		}
+	}
+	return func() {
+		if conn != nil {
+			_, _ = conn.Exec(context.WithoutCancel(ctx), `SELECT pg_advisory_unlock($1)`, int64(privacyRequestsLockKey))
+			conn.Release()
+		}
+		privacyRequestsMu.Unlock()
+	}
+}
+
 func (s *Server) loadPersonalRequests() []personalRequest {
 	raw, _ := s.settings.Get("wpgo_privacy_requests").([]any)
 	var out []personalRequest
@@ -390,6 +419,7 @@ func (s *Server) personalRequest(id int64) (personalRequest, bool) {
 
 // updatePersonalRequest stores one request (replacing the record with the same ID).
 func (s *Server) updatePersonalRequest(c *gin.Context, r personalRequest) {
+	defer s.lockPrivacyRequests(c)()
 	list := s.loadPersonalRequests()
 	for i := range list {
 		if list[i].ID == r.ID {
@@ -402,6 +432,7 @@ func (s *Server) updatePersonalRequest(c *gin.Context, r personalRequest) {
 }
 
 func (s *Server) deletePersonalRequest(c *gin.Context, id int64) {
+	defer s.lockPrivacyRequests(c)()
 	list := s.loadPersonalRequests()
 	var keep []personalRequest
 	for _, r := range list {
@@ -416,6 +447,7 @@ func (s *Server) deletePersonalRequest(c *gin.Context, id int64) {
 
 // createUserRequest is wp_create_user_request(): one open request per e-mail and action.
 func (s *Server) createUserRequest(c *gin.Context, typ, email, status string) (personalRequest, error) {
+	defer s.lockPrivacyRequests(c)()
 	list := s.loadPersonalRequests()
 	var next int64 = 1
 	for _, r := range list {
@@ -633,9 +665,18 @@ func (s *Server) privacyTool(typ string) gin.HandlerFunc {
 				case "erase":
 					if typ == "remove_personal_data" {
 						n := s.erasePersonalData(c, r.Email)
+						res := s.erasePersonalDataRegistered(c, r.Email)
 						s.completePersonalRequest(c, r)
 						s.notifyErasureFulfilled(c, r)
-						note("success", template.HTMLEscapeString(fmt.Sprintf("Personal data was erased: %d comments anonymized.", n)))
+						msg := fmt.Sprintf("Personal data was erased: %d comments anonymized", n)
+						if res.Removed > 0 {
+							msg += fmt.Sprintf(", %d other items removed or anonymized", res.Removed)
+						}
+						msg += "."
+						if res.Retained > 0 {
+							msg += fmt.Sprintf(" %d items were retained. %s", res.Retained, strings.Join(res.Messages, " "))
+						}
+						note("success", template.HTMLEscapeString(msg))
 					}
 				}
 			}
@@ -776,12 +817,9 @@ func (s *Server) personalDataGroups(c *gin.Context, email string) []exportGroup 
 			}
 		}
 	}
-	comments, _, _ := s.store.QueryComments(c, store.CommentQuery{Status: "all", PerPage: 100000, Order: "asc"})
+	comments := s.commentsByEmail(c, email)
 	cg := exportGroup{ID: "comments", Label: "Comments", Description: "User&#8217;s comment data."}
 	for _, cm := range comments {
-		if !strings.EqualFold(cm.AuthorEmail, email) {
-			continue
-		}
 		link := ""
 		if p, err := s.store.GetPost(c, cm.PostID); err == nil {
 			link = s.links(c).Permalink(p) + "#comment-" + itoa64(cm.ID)
@@ -802,7 +840,7 @@ func (s *Server) personalDataGroups(c *gin.Context, email string) []exportGroup 
 			groups = append(groups, mg)
 		}
 	}
-	return groups
+	return append(groups, s.registeredPersonalData(c, email)...)
 }
 
 // personalDataExportHTML is wp_privacy_generate_personal_data_export_file()'s index.html.
@@ -902,6 +940,25 @@ func (s *Server) sendPersonalDataExport(c *gin.Context, r personalRequest) (pers
 	return r, nil
 }
 
+// commentsByEmail is the comments written under an e-mail address, matched in SQL.
+func (s *Server) commentsByEmail(c context.Context, email string) []store.Comment {
+	rows, err := s.store.Pool.Query(c, `SELECT id FROM comments WHERE lower(author_email) = lower($1) ORDER BY id`, email)
+	if err != nil {
+		return nil
+	}
+	ids, err := pgx.CollectRows(rows, pgx.RowTo[int64])
+	if err != nil {
+		return nil
+	}
+	var out []store.Comment
+	for _, id := range ids {
+		if cm, err := s.store.GetComment(c, id); err == nil && cm != nil {
+			out = append(out, *cm)
+		}
+	}
+	return out
+}
+
 // erasePersonalData runs wp_comments_personal_data_eraser(): every comment by the address is anonymized
 // with wp_anonymize_comment() and detached from the user account.
 func (s *Server) erasePersonalData(c *gin.Context, email string) int {
@@ -980,4 +1037,27 @@ func (s *Server) privacyPolicyGuide(c *gin.Context) {
 	content := strings.ReplaceAll(privacyPolicyContent, "SITE_URL", s.links(c).HomeURL("/"))
 	sections := []policySection{{Name: "WordPress", HTML: template.HTML(blocks.Render(c.Request.Context(), content))}}
 	s.adminPage(c, "options-privacy", "Privacy Policy Guide", "privacy-policy-guide-php privacy-settings", "admin/privacy-policy-guide", map[string]any{"Sections": sections})
+}
+
+// privacyDeleteOldExports is wp_privacy_delete_old_export_files(): export zips older than the
+// expiration the e-mail promises are removed, and the request forgets the file.
+func (s *Server) privacyDeleteOldExports(ctx context.Context) error {
+	dir := s.privacyExportsDir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	cutoff := time.Now().Add(-privacyExportExpiration)
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".zip") {
+			continue
+		}
+		if fi, err := e.Info(); err == nil && fi.ModTime().Before(cutoff) {
+			_ = os.Remove(filepath.Join(dir, e.Name()))
+		}
+	}
+	return nil
 }

@@ -54,8 +54,9 @@
 <div class="tablenav top">
 	<div class="alignleft actions bulkactions">
 		<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
-		<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option><option value="delete">Delete permanently</option></select>
+		<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option><option value="delete">Delete permanently</option><option value="regenerate">Regenerate thumbnails</option></select>
 		<input type="submit" name="bulk_action" id="doaction" class="button action button-compact" value="Apply" />
+		<a class="button button-compact" href="/wp-admin/upload?mode=list&action=regenerate-all&_wpnonce={{.BulkNonce}}">Regenerate all</a>
 	</div>
 	{{template "tablenav-pages" .Pagination}}
 	<br class="clear" />
@@ -86,7 +87,7 @@
 <div class="tablenav bottom">
 	<div class="alignleft actions bulkactions">
 		<label for="bulk-action-selector-bottom" class="screen-reader-text">Select bulk action</label>
-		<select name="action2" id="bulk-action-selector-bottom"><option value="-1">Bulk actions</option><option value="delete">Delete permanently</option></select>
+		<select name="action2" id="bulk-action-selector-bottom"><option value="-1">Bulk actions</option><option value="delete">Delete permanently</option><option value="regenerate">Regenerate thumbnails</option></select>
 		<input type="submit" name="bulk_action" id="doaction2" class="button action button-compact" value="Apply" />
 	</div>
 	{{template "tablenav-pages" .Pagination}}
