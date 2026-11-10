@@ -695,9 +695,11 @@ func (s *Server) gooDownloadRows(c *gin.Context, where string, args ...any) []go
 	return out
 }
 
-// gooCustomerDownloads is wc_get_customer_available_downloads().
+// gooCustomerDownloads is wc_get_customer_available_downloads(): the account's own permissions only.
+// Guest purchases are not matched by e-mail, since the account's address is not proven to be the
+// buyer's (registration and Edit Account take any address).
 func (s *Server) gooCustomerDownloads(c *gin.Context, u *store.User) []gooFrontDownloadRow {
-	return s.gooDownloadRows(c, "(dp.user_id = $1 OR (dp.user_id = 0 AND lower(dp.user_email) = lower($2)))", u.ID, u.Email)
+	return s.gooDownloadRows(c, "dp.user_id = $1", u.ID)
 }
 
 // gooOrderDownloads are an order's downloads (order received / view order).

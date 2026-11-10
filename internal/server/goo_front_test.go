@@ -545,6 +545,18 @@ func TestGooFrontAccount(t *testing.T) {
 	if code, _, _ = get(t, v, base+"/?download_file="+itoa64(f.ebook.ID)+"&order="+o.OrderKey+"&key=nope"); code != http.StatusForbidden {
 		t.Errorf("download with a bad key: %d", code)
 	}
+	// A guest purchase with the account's (unverified) e-mail is not listed under the account.
+	guest := &gooOrder{Status: "completed", Billing: map[string]string{"email": "LINUS@example.test"}}
+	if err := srv.gooSaveOrder(ctx, guest, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO goo_download_permissions (download_id, product_id, order_id, order_key, user_email, user_id)
+		VALUES ($1, $2, $3, $4, $5, 0)`, f.ebook.Downloads[0].ID, f.ebook.ID, guest.ID, guest.OrderKey, "linus@example.test"); err != nil {
+		t.Fatal(err)
+	}
+	if _, body, _ = get(t, v, base+"/my-account/downloads/"); strings.Contains(body, guest.OrderKey) {
+		t.Error("a guest order's downloads are listed for an account with the same e-mail")
+	}
 
 	// Edit the billing address.
 	_, body, _ = get(t, v, base+"/my-account/edit-address/billing/")
