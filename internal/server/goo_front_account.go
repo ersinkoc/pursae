@@ -348,6 +348,7 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 	// Core throttle, as on wp-login: the attempt is recorded before the password is checked so parallel
 	// guesses cannot all pass the count (auth.BeginAttempt).
 	var attemptID int64
+	attemptKey := login
 	if secOn { // Pursae Security: the same count-first rule against its own limits
 		id, msg := s.adminsecBeginAttempt(c, login)
 		if msg != "" {
@@ -356,12 +357,12 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 		}
 		attemptID = id
 	} else {
-		id, throttled, _ := s.auth.BeginAttempt(c, ip, login)
+		id, key, throttled := s.coreBeginAttempt(c, login)
 		if throttled {
 			fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
 			return
 		}
-		attemptID = id
+		attemptID, attemptKey = id, key
 	}
 	u, err := s.store.UserByLoginOrEmail(ctx, login)
 	ok := false
@@ -399,7 +400,7 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 			RedirectTo: target, Login: login, Remember: remember}, u, pass)
 		return
 	}
-	s.auth.AttemptSucceeded(c, attemptID, ip, login)
+	s.auth.AttemptSucceeded(c, attemptID, ip, attemptKey)
 	if err := s.loginUserCookie(c, u.ID, remember); err != nil {
 		fail("<strong>Error:</strong> Could not start a session. Please try again.")
 		return

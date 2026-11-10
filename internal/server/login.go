@@ -4,6 +4,7 @@ import (
 	"errors"
 	"html"
 	"html/template"
+	"log"
 	"net/http"
 	"strings"
 
@@ -124,6 +125,7 @@ func (s *Server) login(c *gin.Context) {
 	// Core throttle: the attempt is recorded (as a failure) before the password is checked, so parallel
 	// guesses cannot all slip past the count; see auth.BeginAttempt.
 	var attemptID int64
+	attemptKey := login
 	if secOn { // Pursae Security: the same count-first rule against its own limits
 		id, msg := s.adminsecBeginAttempt(c, login)
 		if msg != "" {
@@ -132,12 +134,12 @@ func (s *Server) login(c *gin.Context) {
 		}
 		attemptID = id
 	} else {
-		id, throttled, _ := s.auth.BeginAttempt(c, ip, login)
+		id, key, throttled := s.coreBeginAttempt(c, login)
 		if throttled {
 			fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
 			return
 		}
-		attemptID = id
+		attemptID, attemptKey = id, key
 	}
 
 	u, err := s.store.UserByLoginOrEmail(c, login)
@@ -184,7 +186,7 @@ func (s *Server) login(c *gin.Context) {
 		s.adminsecPasswordOK(c, v, u, pass)
 		return
 	}
-	s.auth.AttemptSucceeded(c, attemptID, ip, login)
+	s.auth.AttemptSucceeded(c, attemptID, ip, attemptKey)
 
 	sess, err := s.auth.Create(c, u.ID, v.Remember, ip, c.Request.UserAgent())
 	if err != nil {
@@ -231,4 +233,19 @@ func (s *Server) logout(c *gin.Context) {
 	}
 	http.SetCookie(c.Writer, &http.Cookie{Name: auth.CookieName, Value: "", Path: "/", MaxAge: -1, HttpOnly: true})
 	c.Redirect(http.StatusFound, s.loginPath()+"?loggedout=true")
+}
+
+// coreBeginAttempt is auth.BeginAttempt keyed by the account (its lowercased login) when the typed
+// name or e-mail address resolves to one, so the username and the e-mail share one per-login budget.
+// A storage error refuses the attempt instead of letting it through unthrottled.
+func (s *Server) coreBeginAttempt(c *gin.Context, typed string) (id int64, key string, throttled bool) {
+	u, _ := s.store.UserByLoginOrEmail(c, typed)
+	key = s.asNormLogin(c, typed, u)
+	id, throttled, err := s.auth.BeginAttempt(c, clientIP(c), key)
+	if err != nil {
+		log.Printf("wpgo: login throttle: %v; attempt refused", err)
+		s.auth.DropAttempt(c, id)
+		return 0, key, true
+	}
+	return id, key, throttled
 }

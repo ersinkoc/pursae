@@ -2,10 +2,14 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
+
+	"wpgo/internal/auth"
 )
 
 // The heartbeat (action in the POST body, as heartbeat.js sends it) is no activity: it must not
@@ -37,5 +41,28 @@ func TestHeartbeatDoesNotRefreshSession(t *testing.T) {
 	}
 	if got := seen(); time.Since(got) > time.Minute {
 		t.Errorf("a page load did not refresh last_seen_at (%v)", got)
+	}
+}
+
+// The core per-login throttle keys on the account: failures recorded under the username also
+// count when the same account is tried by its e-mail address. Integration test.
+func TestCoreLoginThrottleSharesUsernameAndEmail(t *testing.T) {
+	ts, c, _ := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	for i := 0; i < auth.MaxFailedLoginsPerLogin; i++ {
+		if _, err := getPool(t).Exec(ctx, `INSERT INTO login_attempts(ip, login, success, pending) VALUES ($1, 'admin', false, false)`, fmt.Sprintf("203.0.113.%d", i+1)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	anon := asNewClient()
+	_, body, _ := post(t, anon, ts.URL+"/wp-login", url.Values{"log": {"ADMIN@example.test"}, "pwd": {"wrong"}})
+	if !strings.Contains(body, "Too many failed login attempts") {
+		t.Error("the e-mail address has its own per-login budget")
+	}
+	var n int
+	_ = getPool(t).QueryRow(ctx, `SELECT count(*) FROM login_attempts WHERE login <> 'admin'`).Scan(&n)
+	if n != 0 {
+		t.Errorf("%d attempts stored under a non-canonical key", n)
 	}
 }

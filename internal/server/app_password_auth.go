@@ -129,7 +129,7 @@ func (s *Server) restBeginAttempt(c *gin.Context, login string) (id int64, refus
 		id, msg := s.adminsecBeginAttempt(c, login)
 		return id, msg != ""
 	}
-	id, throttled, _ := s.auth.BeginAttempt(c, clientIP(c), login)
+	id, _, throttled := s.coreBeginAttempt(c, login)
 	return id, throttled
 }
 
