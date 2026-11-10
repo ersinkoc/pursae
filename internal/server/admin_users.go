@@ -301,6 +301,18 @@ type userNewData struct {
 	Def    string
 	Error  template.HTML
 	Values url.Values
+	// CanPromote shows the Role field (user-new.php: current_user_can( 'promote_users' )).
+	CanPromote bool
+}
+
+// roleListed reports whether slug is one of the site's roles.
+func roleListed(roles []store.Role, slug string) bool {
+	for _, r := range roles {
+		if r.Slug == slug {
+			return true
+		}
+	}
+	return false
 }
 
 // userNew is user-new.php.
@@ -311,7 +323,8 @@ func (s *Server) userNew(c *gin.Context) {
 		return
 	}
 	roles, _ := s.store.Roles(c)
-	d := userNewData{Nonce: s.nonce(c, "create-user"), Roles: roles, Def: s.settings.String("default_role"), Values: url.Values{}}
+	d := userNewData{Nonce: s.nonce(c, "create-user"), Roles: roles, Def: s.settings.String("default_role"), Values: url.Values{},
+		CanPromote: u.Can("promote_users", nil)}
 	if c.Request.Method == http.MethodPost {
 		if !s.checkNonce(c, "create-user") {
 			s.denyNonce(c)
@@ -323,11 +336,20 @@ func (s *Server) userNew(c *gin.Context) {
 		email := strings.TrimSpace(c.PostForm("email"))
 		pass := c.PostForm("pass1")
 		role := c.PostForm("role")
+		// edit_user(): the posted role counts only for users who can promote, and must exist.
+		if !u.Can("promote_users", nil) || role == "" {
+			role = d.Def
+		}
 		var errs []string
+		if !roleListed(roles, role) {
+			errs = append(errs, "<strong>Error:</strong> Sorry, you are not allowed to give users that role.")
+		}
 		if login == "" {
 			errs = append(errs, "<strong>Error:</strong> Please enter a username.")
+		} else if !validUsername.MatchString(login) {
+			errs = append(errs, "<strong>Error:</strong> This username is invalid because it uses illegal characters. Please enter a valid username.")
 		}
-		if _, err := mail.ParseAddress(email); err != nil || email == "" {
+		if _, err := mail.ParseAddress(email); err != nil || email == "" || !validEmail(email) {
 			errs = append(errs, "<strong>Error:</strong> The email address is not correct.")
 		}
 		if pass == "" {
@@ -339,9 +361,6 @@ func (s *Server) userNew(c *gin.Context) {
 			errs = append(errs, "<strong>Error:</strong> This username is already registered. Please choose another one.")
 		} else if et {
 			errs = append(errs, "<strong>Error:</strong> This email is already registered. Please choose another one.")
-		}
-		if role == "administrator" && !u.Can("promote_users", nil) {
-			role = d.Def
 		}
 		if len(errs) == 0 {
 			hash, err := auth.HashPassword(pass)

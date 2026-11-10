@@ -98,8 +98,9 @@
 		<button type="button" class="button wp-generate-pw" onclick="var a=new Uint8Array(18);crypto.getRandomValues(a);document.getElementById('pass1').value=btoa(String.fromCharCode.apply(null,a)).replace(/[+/=]/g,'');">Generate password</button></td></tr>
 	<tr><th scope="row">Send User Notification</th>
 		<td><input type="checkbox" name="send_user_notification" id="send_user_notification" value="1" checked="checked" /> <label for="send_user_notification">Send the new user an email about their account</label></td></tr>
+{{if .CanPromote}}
 	<tr><th scope="row"><label for="role">Role</label></th>
-		<td><select name="role" id="role">{{$sel := .Values.Get "role"}}{{range .Roles}}<option value="{{.Slug}}"{{if eq .Slug $sel}} selected="selected"{{end}}>{{.Name}}</option>{{end}}</select></td></tr>
+		<td><select name="role" id="role">{{$sel := .Values.Get "role"}}{{range .Roles}}<option value="{{.Slug}}"{{if eq .Slug $sel}} selected="selected"{{end}}>{{.Name}}</option>{{end}}</select></td></tr>{{end}}
 </table>
 <p class="submit"><input type="submit" name="createuser" id="createusersub" class="button button-primary" value="Add User" /></p>
 </form>
