@@ -603,6 +603,11 @@ func (s *Server) bmgrRunRestore(ctx context.Context, j *bmgrJob, req bmgrRestore
 
 	// Database: one transaction, all or nothing.
 	if len(plan.Tables) > 0 {
+		// Secrets sealed under the archive's site secret are re-encrypted for this site (backup_secrets.go).
+		var reseal *bmgrResealer
+		if from, to := bmgrArchiveSecret(byName["database/settings.jsonl"]), s.siteSecret(); from != "" && to != "" && from != to {
+			reseal = &bmgrResealer{from: from, to: to}
+		}
 		conn, err := s.store.Pool.Acquire(ctx)
 		if err != nil {
 			return err
@@ -626,7 +631,9 @@ func (s *Server) bmgrRunRestore(ctx context.Context, j *bmgrJob, req bmgrRestore
 				}
 				return rc, err
 			},
-			Progress: func(i, n int, t string) { s.bmgrProgress(j, "Database: "+t, 5+i*55/max(n, 1)) },
+			Progress:  func(i, n int, t string) { s.bmgrProgress(j, "Database: "+t, 5+i*55/max(n, 1)) },
+			LogWriter: func(msg string) { s.bmgrLog(j, "%s", msg) },
+			Reseal:    reseal,
 		})
 		for _, c := range open {
 			c.Close()
@@ -642,6 +649,9 @@ func (s *Server) bmgrRunRestore(ctx context.Context, j *bmgrJob, req bmgrRestore
 		}
 		conn.Release()
 		s.bmgrLog(j, "database restored: %d tables", len(plan.Tables))
+		if reseal != nil && reseal.n > 0 {
+			s.bmgrLog(j, "%d stored secrets (mail, CDN, translation keys, two-factor apps) were re-encrypted for this site; Pursae Security backup codes made on the other site must be generated again", reseal.n)
+		}
 		if err := s.settings.Load(ctx); err != nil {
 			slog.Warn("backup: reloading settings", "err", err)
 		}

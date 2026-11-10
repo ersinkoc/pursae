@@ -10,6 +10,11 @@ WordPress runs scheduled tasks when a visitor happens to load a page. Pursae has
 of the `jobs` table with `FOR UPDATE SKIP LOCKED`, so several instances share one database
 without running a job twice. No visitor, no `wp-cron.php`, no system crontab needed.
 
+A recurring event exists once: instances that start together do not schedule it twice (a unique
+index on the job name of non-plugin recurring rows). Runs missed while the site was down are not
+caught up one by one: the event runs once, then waits for the next slot of its schedule, as
+`wp_reschedule_event()` does.
+
 ## Built-in events
 
 | Job | Recurrence | Does |

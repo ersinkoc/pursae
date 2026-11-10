@@ -110,7 +110,10 @@ should get the full time.
 The HTTP server limits request headers to 10 s, idle keep-alive connections to 120 s, and a request
 body that makes no progress for 60 s fails. There is deliberately no overall read or write timeout:
 backup downloads and imports, uploads over slow links and the Pursae Headless subscription
-streams run for minutes. Put per-request limits in the reverse proxy if you need them.
+streams run for minutes. Put per-request limits in the reverse proxy if you need them. A request
+body is limited to 512 MB (PHP's `post_max_size`; the largest upload a screen accepts is a 256 MB
+WXR import), except the Backup Manager import, which takes archives of up to 16 GB; a larger body
+is answered `413`.
 
 Every response carries an `X-Request-ID` (the proxy's, when it sends a sane one, else a generated
 one); the access log line ends with `id=<request id>`.

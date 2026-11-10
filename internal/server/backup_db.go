@@ -197,6 +197,7 @@ type bmgrRestoreOpts struct {
 	Open      func(table string) (io.Reader, error) // the table's JSON lines from the archive; nil when the archive lacks it
 	Progress  func(i, n int, table string)
 	LogWriter func(string)
+	Reseal    *bmgrResealer // re-encrypts sealed secrets from the archive's site secret to this site's (nil: none)
 }
 
 // bmgrRestoreDB replaces the chosen tables from the archive inside one transaction. Foreign keys are
@@ -262,6 +263,17 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 		}
 		if _, err := tx.Exec(ctx, `DELETE FROM `+bmgrQ(t)); err != nil {
 			return fmt.Errorf("clearing %s: %w", t, err)
+		}
+	}
+
+	// Migration 0048 made lower(login) and lower(email) unique, but only on a site without accounts that
+	// differ by case. An archive of such a site (or of a version before 0048) may hold them: the indexes are
+	// lifted for the restore and put back afterwards the way 0048 does, unique when the restored rows allow.
+	var liftedCI []string
+	if o.Tables["users"] && sc.has("users") {
+		var err error
+		if liftedCI, err = bmgrLiftUserCIIndexes(ctx, tx); err != nil {
+			return err
 		}
 	}
 
@@ -340,7 +352,7 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 					}
 				}
 				if line != "" {
-					batch = append(batch, rewrite(line))
+					batch = append(batch, rewrite(o.Reseal.line(line)))
 					size += len(line)
 					if len(batch) >= 500 || size > 8<<20 {
 						if ferr := flush(); ferr != nil {
@@ -363,6 +375,12 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 
 	if legacyLocs && !inArchive["menu_locations"] && len(menuLocs) > 0 {
 		if err := bmgrRestoreLegacyMenuLocations(ctx, tx, menuLocs); err != nil {
+			return err
+		}
+	}
+
+	if len(liftedCI) > 0 {
+		if err := bmgrRestoreUserCIIndexes(ctx, tx, liftedCI, o.LogWriter); err != nil {
 			return err
 		}
 	}
@@ -463,6 +481,65 @@ func bmgrRestoreLegacyMenuLocations(ctx context.Context, tx pgx.Tx, locs []bmgrL
 		if _, err := tx.Exec(ctx, `INSERT INTO menu_locations (location, menu_id) SELECT $1, id FROM menus WHERE id = $2
 			ON CONFLICT (location) DO NOTHING`, strings.TrimSpace(l.Location), l.ID); err != nil {
 			return fmt.Errorf("restoring the menu locations: %w", err)
+		}
+	}
+	return nil
+}
+
+// bmgrUserCIColumns are the users columns migration 0048 indexes case-insensitively: the unique index
+// and the plain lookup index (0032) a site with case duplicates keeps instead.
+var bmgrUserCIColumns = []struct{ Col, Unique, Plain string }{
+	{"login", "users_lower_login_key", "users_lower_login"},
+	{"email", "users_lower_email_key", "users_lower_email"},
+}
+
+// bmgrLiftUserCIIndexes drops the case-insensitive unique indexes of users for a restore (a plain lookup
+// index takes their place) and returns the columns bmgrRestoreUserCIIndexes settles afterwards: all of
+// them, so a site left non-unique by older data becomes unique again once the restored accounts allow it.
+func bmgrLiftUserCIIndexes(ctx context.Context, tx pgx.Tx) ([]string, error) {
+	var cols []string
+	for _, ci := range bmgrUserCIColumns {
+		var exists bool
+		if err := tx.QueryRow(ctx, `SELECT to_regclass($1) IS NOT NULL`, "public."+ci.Unique).Scan(&exists); err != nil {
+			return nil, err
+		}
+		if exists {
+			if _, err := tx.Exec(ctx, `DROP INDEX `+pgx.Identifier{"public", ci.Unique}.Sanitize()); err != nil {
+				return nil, fmt.Errorf("lifting %s: %w", ci.Unique, err)
+			}
+		}
+		// The plain lookup index serves the login form while the unique one is gone (and stays when it cannot come back).
+		if _, err := tx.Exec(ctx, `CREATE INDEX IF NOT EXISTS `+pgx.Identifier{ci.Plain}.Sanitize()+` ON users (lower(`+pgx.Identifier{ci.Col}.Sanitize()+`))`); err != nil {
+			return nil, fmt.Errorf("indexing users.%s: %w", ci.Col, err)
+		}
+		cols = append(cols, ci.Col)
+	}
+	return cols, nil
+}
+
+// bmgrRestoreUserCIIndexes puts the lifted unique indexes back as migration 0048 does: unique when the
+// restored accounts have no case duplicates in that column, otherwise the plain lookup index stays.
+func bmgrRestoreUserCIIndexes(ctx context.Context, tx pgx.Tx, cols []string, logf func(string)) error {
+	for _, ci := range bmgrUserCIColumns {
+		if !contains(cols, ci.Col) {
+			continue
+		}
+		col := pgx.Identifier{ci.Col}.Sanitize()
+		var dup bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM users GROUP BY lower(`+col+`) HAVING count(*) > 1)`).Scan(&dup); err != nil {
+			return err
+		}
+		if dup {
+			if logf != nil {
+				logf("note: the backup has accounts whose " + ci.Col + " differs only by case; " + ci.Col + " stays non-unique regardless of case")
+			}
+			continue
+		}
+		if _, err := tx.Exec(ctx, `CREATE UNIQUE INDEX `+pgx.Identifier{ci.Unique}.Sanitize()+` ON users (lower(`+col+`))`); err != nil {
+			return fmt.Errorf("restoring %s: %w", ci.Unique, err)
+		}
+		if _, err := tx.Exec(ctx, `DROP INDEX IF EXISTS `+pgx.Identifier{"public", ci.Plain}.Sanitize()); err != nil {
+			return err
 		}
 	}
 	return nil

@@ -129,3 +129,37 @@ func TestReadyz(t *testing.T) {
 		t.Fatalf("/readyz with an unusable database context: %d", rec.Code)
 	}
 }
+
+// Every request body is bounded, declared or streamed; the Backup Manager import is not.
+func TestRequestBodyLimit(t *testing.T) {
+	old := maxRequestBody
+	maxRequestBody = 1 << 10
+	t.Cleanup(func() { maxRequestBody = old })
+	s := &Server{}
+	var read int64
+	var readErr error
+	h := s.opsHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		read, readErr = io.Copy(io.Discard, r.Body)
+	}))
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/wp-login", strings.NewReader(strings.Repeat("a", 2<<10))))
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Errorf("declared oversize body: %d", rec.Code)
+	}
+
+	read, readErr = 0, nil
+	req := httptest.NewRequest(http.MethodPost, "/wp-comments-post", io.MultiReader(strings.NewReader(strings.Repeat("a", 4<<10))))
+	req.ContentLength = -1 // chunked: the size is not known up front
+	h.ServeHTTP(httptest.NewRecorder(), req)
+	if readErr == nil || read > 1<<10 {
+		t.Errorf("streamed oversize body: read %d, err %v", read, readErr)
+	}
+
+	read, readErr = 0, nil
+	req = httptest.NewRequest(http.MethodPost, "/wp-admin/admin?page=backup-manager&action=upload&_wpnonce=x", strings.NewReader(strings.Repeat("a", 4<<10)))
+	h.ServeHTTP(httptest.NewRecorder(), req)
+	if readErr != nil || read != 4<<10 {
+		t.Errorf("backup import: read %d, err %v", read, readErr)
+	}
+}
