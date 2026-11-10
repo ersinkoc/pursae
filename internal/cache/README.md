@@ -60,7 +60,7 @@ covering the page (all, one of its tags, its URL, its key) ran meanwhile. Concur
 anonymous GET key are coalesced (`flightGroup`): one renders, the others wait up to `flightWait`
 and are served from the store, or render themselves when nothing was stored.
 
-With a LiteSpeed front server, forward the same purge on the admin response:
+The core forwards purges to a configured front proxy as PURGE requests (see operations/caching.md). To purge a LiteSpeed server through an admin response instead:
 
 ```go
 if v := c.PurgeHeader(tags...); v != "" { w.Header().Set("X-LiteSpeed-Purge", v) }

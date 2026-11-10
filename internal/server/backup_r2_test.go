@@ -79,7 +79,15 @@ func bmgrRewriteArchive(t *testing.T, dir, from, to string, edit func(name strin
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, _ = w.Write(edit(f.Name, data))
+		out := edit(f.Name, data)
+		if f.Name == "manifest.json" { // an edited archive no longer matches its checksums
+			var m map[string]any
+			if json.Unmarshal(out, &m) == nil {
+				delete(m, "checksums")
+				out, _ = json.Marshal(m)
+			}
+		}
+		_, _ = w.Write(out)
 	}
 	if err := zw.Close(); err != nil {
 		t.Fatal(err)

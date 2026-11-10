@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -52,6 +53,14 @@ type bmgrManifest struct {
 	Users      int             `json:"users,omitempty"`
 	Tables     []bmgrTableInfo `json:"tables"`
 	Files      []bmgrFilesInfo `json:"files"`
+	// Checksums holds the SHA-256 (hex) of every archive entry but the manifest, so a damaged or
+	// half-copied archive is caught before a restore starts. Older archives have none.
+	Checksums map[string]string `json:"checksums,omitempty"`
+	// RemoteOnly counts media files that live only in the Pursae CDN bucket ("Remove files from the
+	// server"): the archive holds their rows and the CDN index but not the files themselves.
+	RemoteOnly int `json:"remote_only,omitempty"`
+	// Skipped counts files that could not be read and are therefore NOT in the archive.
+	Skipped int `json:"skipped,omitempty"`
 }
 
 // bmgrSelection is what a backup is asked to contain.
@@ -126,12 +135,78 @@ func (s *Server) bmgrFinish(j *bmgrJob, err error) {
 	s.bmgr.mu.Lock()
 	defer s.bmgr.mu.Unlock()
 	j.Finished = time.Now()
-	if err != nil {
+	if cancel := s.bmgr.cancels[j.ID]; cancel != nil {
+		cancel()
+		delete(s.bmgr.cancels, j.ID)
+	}
+	switch {
+	case errors.Is(err, context.Canceled):
+		j.State, j.Error, j.Phase = "error", "Canceled by an administrator", "Canceled"
+	case err != nil:
 		j.State, j.Error, j.Phase = "error", err.Error(), "Failed"
-	} else {
+	case j.Warnings > 0:
+		j.State, j.Phase, j.Percent = "done", "Done with warnings", 100
+	default:
 		j.State, j.Phase, j.Percent = "done", "Done", 100
 	}
 	s.bmgr.busy = false
+}
+
+// bmgrCancelable returns a context for a running backup job that bmgrCancel can stop.
+func (s *Server) bmgrCancelable(j *bmgrJob) context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	s.bmgr.mu.Lock()
+	defer s.bmgr.mu.Unlock()
+	if s.bmgr.cancels == nil {
+		s.bmgr.cancels = map[string]context.CancelFunc{}
+	}
+	s.bmgr.cancels[j.ID] = cancel
+	return ctx
+}
+
+// bmgrCancel stops a running backup; false when the job is unknown, finished or not cancelable.
+func (s *Server) bmgrCancel(id string) bool {
+	s.bmgr.mu.Lock()
+	defer s.bmgr.mu.Unlock()
+	cancel := s.bmgr.cancels[id]
+	if cancel == nil {
+		return false
+	}
+	cancel()
+	return true
+}
+
+// bmgrPartMaxAge is how old a leftover ".part" file must be before it is swept: a crashed backup or
+// upload leaves one behind and nothing else ever removes it.
+const bmgrPartMaxAge = time.Hour
+
+// bmgrSweepParts deletes stale half-written archives and returns how many it removed.
+func (s *Server) bmgrSweepParts() int {
+	ents, _ := os.ReadDir(s.bmgrDir())
+	n := 0
+	for _, e := range ents {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".zip.part") {
+			continue
+		}
+		if fi, err := e.Info(); err == nil && time.Since(fi.ModTime()) > bmgrPartMaxAge {
+			if os.Remove(filepath.Join(s.bmgrDir(), e.Name())) == nil {
+				n++
+			}
+		}
+	}
+	return n
+}
+
+// bmgrSafetyKeep is how many pre-restore snapshots are kept.
+const bmgrSafetyKeep = 3
+
+// bmgrUsage is the total size of the archives in the backups directory.
+func (s *Server) bmgrUsage() int64 {
+	var n int64
+	for _, e := range s.bmgrList() {
+		n += e.Size
+	}
+	return n
 }
 
 func (s *Server) bmgrJobByID(id string) *bmgrJob {
@@ -183,6 +258,9 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 	if len(set) == 0 && len(groups) == 0 {
 		return "", errors.New("nothing is selected")
 	}
+	if err := s.bmgrCheckSpace(ctx, dir, sc, set, groups); err != nil {
+		return "", err
+	}
 	kind := sel.Kind
 	if kind == "" {
 		kind = "manual"
@@ -208,6 +286,7 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 		}
 	}()
 	zw := zip.NewWriter(f)
+	sums := map[string]string{}
 
 	var ids []int64
 	if set["users"] {
@@ -246,7 +325,9 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 		if err != nil {
 			return "", err
 		}
-		n, err := bmgrExportTable(ctx, tx, t, filters[t], ids, w)
+		hw := sha256.New()
+		n, err := bmgrExportTable(ctx, tx, t, filters[t], ids, io.MultiWriter(w, hw))
+		sums["database/"+t+".jsonl"] = hex.EncodeToString(hw.Sum(nil))
 		if err != nil {
 			return "", fmt.Errorf("exporting %s: %w", t, err)
 		}
@@ -259,7 +340,22 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 	}
 	_ = tx.Rollback(ctx)
 
+	if contains(groups, "uploads") {
+		var n int
+		if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM gocdn_items WHERE local_removed`).Scan(&n); err == nil && n > 0 {
+			m.RemoteOnly = n
+			s.bmgrLog(j, "WARNING: %d media files exist only in the Pursae CDN bucket (\"Remove files from the server\"). This archive holds their database rows and the CDN index but NOT the files: keep the bucket, or copy them back to the server (Pursae CDN > Bulk) before relying on this backup.", n)
+		}
+	}
+
 	roots := s.bmgrFileRoots()
+	skip := func(g, rel string, err error) {
+		m.Skipped++
+		s.bmgrUpdate(j, func(j *bmgrJob) { j.Warnings++ })
+		if m.Skipped <= 50 {
+			s.bmgrLog(j, "WARNING: skipped %s/%s, it could not be read: %v", g, filepath.ToSlash(rel), err)
+		}
+	}
 	for gi, g := range groups {
 		root := roots[g]
 		info := bmgrFilesInfo{Group: g}
@@ -286,6 +382,12 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 			rel, _ := filepath.Rel(root, p)
 			fi, err := d.Info()
 			if err != nil {
+				skip(g, rel, err)
+				return nil
+			}
+			src, err := os.Open(p)
+			if err != nil {
+				skip(g, rel, err)
 				return nil
 			}
 			method := zip.Deflate
@@ -296,14 +398,13 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 			hdr.Name, hdr.Method = "files/"+g+"/"+filepath.ToSlash(rel), method
 			w, err := zw.CreateHeader(hdr)
 			if err != nil {
+				src.Close()
 				return err
 			}
-			src, err := os.Open(p)
-			if err != nil {
-				return nil
-			}
-			_, err = io.Copy(w, src)
+			hw := sha256.New()
+			_, err = io.Copy(io.MultiWriter(w, hw), src)
 			src.Close()
+			sums[hdr.Name] = hex.EncodeToString(hw.Sum(nil))
 			if err != nil {
 				return err
 			}
@@ -322,11 +423,15 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 		s.bmgrLog(j, "%s files: %d (%s)", g, info.Count, bmgrHuman(info.Bytes))
 	}
 
+	if m.Skipped > 0 {
+		s.bmgrLog(j, "WARNING: %d files could not be read and are NOT in this archive", m.Skipped)
+	}
 	s.bmgrProgress(j, "Finishing", 98)
 	w, err := zw.CreateHeader(&zip.FileHeader{Name: "manifest.json", Method: zip.Deflate, Modified: time.Now()})
 	if err != nil {
 		return "", err
 	}
+	m.Checksums = sums
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(m); err != nil {
@@ -422,6 +527,7 @@ func bmgrManifestOf(zr *zip.Reader) (*bmgrManifest, error) {
 
 // bmgrList is every archive in the backups directory, newest first.
 func (s *Server) bmgrList() []bmgrEntry {
+	s.bmgrSweepParts()
 	ents, _ := os.ReadDir(s.bmgrDir())
 	var out []bmgrEntry
 	for _, e := range ents {
@@ -572,6 +678,16 @@ func (s *Server) bmgrRunRestore(ctx context.Context, j *bmgrJob, req bmgrRestore
 		s.bmgrLog(j, "note: %s", n)
 	}
 
+	s.bmgrProgress(j, "Verifying the archive", 1)
+	if err := bmgrVerifyArchive(ctx, &zr.Reader, m); err != nil {
+		return fmt.Errorf("the archive failed verification, nothing was restored: %w", err)
+	}
+	s.bmgrLog(j, "archive verified")
+	if m.RemoteOnly > 0 {
+		s.bmgrLog(j, "note: %d media files of the source site were only in its Pursae CDN bucket and are not in this archive", m.RemoteOnly)
+	}
+
+	safetyName := ""
 	if req.Safety {
 		s.bmgrProgress(j, "Safety snapshot of this site", 1)
 		var cats []string
@@ -582,7 +698,11 @@ func (s *Server) bmgrRunRestore(ctx context.Context, j *bmgrJob, req bmgrRestore
 		if err != nil {
 			return fmt.Errorf("the safety snapshot failed, nothing was restored: %w", err)
 		}
+		safetyName = name
 		s.bmgrLog(j, "safety snapshot saved as %s", name)
+		if removed := s.bmgrPruneKind("safety", "pre-restore-", bmgrSafetyKeep); len(removed) > 0 {
+			s.bmgrLog(j, "removed %d older safety snapshots (the newest %d are kept)", len(removed), bmgrSafetyKeep)
+		}
 	}
 
 	byName := map[string]*zip.File{}
@@ -598,6 +718,52 @@ func (s *Server) bmgrRunRestore(ctx context.Context, j *bmgrJob, req bmgrRestore
 		oldURL, newURL = strings.TrimRight(m.SiteURL, "/"), strings.TrimRight(bmgrSiteURL(s), "/")
 		if oldURL != "" && oldURL != newURL {
 			s.bmgrLog(j, "rewriting %s to %s", oldURL, newURL)
+		}
+	}
+
+	// Files are unpacked into a staging folder first: a full disk, a bad permission or an unsafe path
+	// stops the restore before the database is touched. After the database commit only renames remain.
+	roots := s.bmgrFileRoots()
+	staged := map[string]string{} // group -> staging folder
+	defer func() {
+		for _, d := range staged {
+			os.RemoveAll(d)
+		}
+	}()
+	for gi, g := range plan.Groups {
+		root := roots[g]
+		if root == "" {
+			continue
+		}
+		if err := os.MkdirAll(root, 0o755); err != nil {
+			return err
+		}
+		stage, err := os.MkdirTemp(filepath.Dir(root), ".wpgo-restore-"+g+"-")
+		if err != nil {
+			return fmt.Errorf("preparing the %s files, nothing was restored: %w", g, err)
+		}
+		staged[g] = stage
+		prefix := "files/" + g + "/"
+		var n int
+		for _, f := range zr.File {
+			rel, ok := strings.CutPrefix(f.Name, prefix)
+			if !ok || f.FileInfo().IsDir() {
+				continue
+			}
+			dst, err := bmgrSafeJoin(stage, rel)
+			if err != nil {
+				return fmt.Errorf("unsafe path in the archive, nothing was restored: %s", f.Name)
+			}
+			if err := bmgrExtract(f, dst); err != nil {
+				return fmt.Errorf("unpacking %s, nothing was restored: %w", f.Name, err)
+			}
+			n++
+			if n%25 == 0 {
+				s.bmgrProgress(j, "Unpacking files: "+g, 2+gi*3/max(len(plan.Groups), 1))
+			}
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -658,37 +824,37 @@ func (s *Server) bmgrRunRestore(ctx context.Context, j *bmgrJob, req bmgrRestore
 		s.purgeAll(ctx)
 	}
 
-	// Files.
-	roots := s.bmgrFileRoots()
+	// Files: move the staged files into place.
 	for gi, g := range plan.Groups {
-		root := roots[g]
-		if root == "" {
+		stage, root := staged[g], roots[g]
+		if stage == "" {
 			continue
 		}
-		if err := os.MkdirAll(root, 0o755); err != nil {
-			return err
-		}
-		prefix := "files/" + g + "/"
 		var n int
-		for _, f := range zr.File {
-			rel, ok := strings.CutPrefix(f.Name, prefix)
-			if !ok || f.FileInfo().IsDir() {
-				continue
+		err := filepath.WalkDir(stage, func(p string, d fs.DirEntry, err error) error {
+			if err != nil || !d.Type().IsRegular() {
+				return err
 			}
-			dst, err := bmgrSafeJoin(root, rel)
-			if err != nil {
-				return fmt.Errorf("unsafe path in the archive: %s", f.Name)
+			rel, _ := filepath.Rel(stage, p)
+			dst := filepath.Join(root, rel)
+			if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+				return err
 			}
-			if err := bmgrExtract(f, dst); err != nil {
-				return fmt.Errorf("restoring %s: %w", f.Name, err)
+			if err := os.Rename(p, dst); err != nil {
+				return err
 			}
 			n++
 			if n%25 == 0 {
 				s.bmgrProgress(j, "Files: "+g, 60+gi*35/max(len(plan.Groups), 1))
 			}
-			if err := ctx.Err(); err != nil {
-				return err
+			return ctx.Err()
+		})
+		if err != nil {
+			msg := fmt.Sprintf("the database was restored but moving the %s files failed: %v", g, err)
+			if safetyName != "" {
+				msg += "; to roll back, restore the safety snapshot " + safetyName + " from the Backups tab"
 			}
+			return errors.New(msg)
 		}
 		s.bmgrLog(j, "%s files restored: %d", g, n)
 	}
@@ -757,4 +923,39 @@ func bmgrHuman(n int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGTPE"[exp])
+}
+
+// bmgrVerifyArchive reads every entry of an archive and compares it with the manifest's SHA-256
+// (archives without checksums are still read through, which checks the zip CRCs): a damaged or
+// half-copied archive is refused before anything on the site changes.
+func bmgrVerifyArchive(ctx context.Context, zr *zip.Reader, m *bmgrManifest) error {
+	seen := map[string]bool{}
+	for _, f := range zr.File {
+		if f.FileInfo().IsDir() || f.Name == "manifest.json" {
+			continue
+		}
+		seen[f.Name] = true
+		rc, err := f.Open()
+		if err != nil {
+			return fmt.Errorf("%s cannot be read: %w", f.Name, err)
+		}
+		h := sha256.New()
+		_, err = io.Copy(h, rc)
+		rc.Close()
+		if err != nil {
+			return fmt.Errorf("%s is damaged: %w", f.Name, err)
+		}
+		if want, ok := m.Checksums[f.Name]; ok && want != hex.EncodeToString(h.Sum(nil)) {
+			return fmt.Errorf("%s does not match its checksum", f.Name)
+		}
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+	}
+	for name := range m.Checksums {
+		if !seen[name] {
+			return fmt.Errorf("%s is listed in the manifest but missing from the archive", name)
+		}
+	}
+	return nil
 }

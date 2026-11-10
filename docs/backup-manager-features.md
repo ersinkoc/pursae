@@ -92,9 +92,20 @@ The **Schedule** tab turns on automatic local backups:
 * A backup holds password hashes and site secrets; the screen says so.
 * Uploads are streamed to disk (no memory buffering, 16 GB cap). Very large archives can instead be copied into
   the backups folder and appear in the list.
+* The manifest lists a SHA-256 for every archive entry. A restore first reads the whole archive and
+  refuses a damaged, tampered or half-copied one before anything changes (older archives without checksums
+  are still read through, which checks the zip CRCs).
+* Media that exists only in the Pursae CDN bucket ("Remove files from the server") is not in the archive;
+  the job log warns about it and the manifest records `remote_only`.
+* A restore unpacks files into a staging folder next to their target first; the database is replaced only
+  after that succeeds, and only renames follow. If moving files then fails, the error names the safety
+  snapshot to restore.
+* Scheduled backups: hourly, daily or weekly, with a time of day (site time zone) and an e-mail to the
+  admin address on failure (or after every run).
 * One backup or restore runs at a time; progress is polled from `action=status`.
 
 ## Not included (yet)
 
-Remote storage (S3, FTP, cloud drives) for scheduled or manual backups, restoring on a site that is not
+Archive encryption with a password, bundling the CDN bucket's files into the archive, remote storage
+(S3, FTP, cloud drives) for scheduled or manual backups, restoring on a site that is not
 installed yet, merge (non-destructive) restore.

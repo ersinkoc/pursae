@@ -37,51 +37,72 @@ var WatchFullReload = time.Minute
 // Defaults mirrors populate_options() of a fresh WordPress install. Keys keep
 // the WordPress option names so REST and import code can map 1:1.
 var Defaults = map[string]any{
-	"blogname":                      "My Pursae Site",
-	"blogdescription":               "",
-	"siteurl":                       "",
-	"home":                          "",
-	"admin_email":                   "",
-	"users_can_register":            false,
-	"default_role":                  "subscriber",
-	"WPLANG":                        "",
-	"timezone_string":               "",
-	"gmt_offset":                    0.0,
-	"date_format":                   "F j, Y",
-	"time_format":                   "g:i a",
-	"start_of_week":                 1,
-	"use_smilies":                   true,
-	"default_category":              1,
-	"default_post_format":           "0",
-	"classic-editor-replace":        "block",
-	"classic-editor-allow-users":    "disallow",
-	"native_classic_editor":         true,
-	"native_golementor":             false,       // Pursae Web Builder is a plugin that starts switched off
-	"web_builder_post_types":        "page,post", // Settings › Web Builder: the post types it edits
-	"native_golylang":               false,       // the multilingual plugin (Polylang Pro clone) starts switched off
-	"native_gooike":                 false,       // Gooike, the cookie consent plugin, starts switched off
-	"native_goocommerce":            false,       // Goocommerce, the e-commerce plugin, starts switched off
-	"native_headlessgo":             false,       // HeadlessGo, the headless CMS plugin, starts switched off
-	"plugin_trusted_keys":           "",
-	"plugin_allow_unsigned":         false,
-	"pursae_license_key":            "",   // Settings › License: the key sent to Pursae Manager
-	"wpgo_hub_trust_keys":           true, // packages signed by the Hub install without extra setup
-	"wpgo_cache_enabled":            true,
-	"wpgo_cache_ttl_public":         604800,
-	"wpgo_cache_ttl_front":          604800,
-	"wpgo_cache_ttl_feed":           604800,
-	"wpgo_cache_ttl_404":            3600,
-	"wpgo_cache_mobile":             false,
-	"wpgo_cache_logged_in":          false,
-	"wpgo_cache_exclude_uri":        "",
-	"wpgo_cache_drop_qs":            "",
-	"wpgo_cache_server":             "auto",
-	"wpgo_cache_disk":               true, // warm pages survive restarts and updates
+	"blogname":                   "My Pursae Site",
+	"blogdescription":            "",
+	"siteurl":                    "",
+	"home":                       "",
+	"admin_email":                "",
+	"users_can_register":         false,
+	"default_role":               "subscriber",
+	"WPLANG":                     "",
+	"timezone_string":            "",
+	"gmt_offset":                 0.0,
+	"date_format":                "F j, Y",
+	"time_format":                "g:i a",
+	"start_of_week":              1,
+	"use_smilies":                true,
+	"default_category":           1,
+	"default_post_format":        "0",
+	"classic-editor-replace":     "block",
+	"classic-editor-allow-users": "disallow",
+	"native_classic_editor":      true,
+	"native_golementor":          false,       // Pursae Web Builder is a plugin that starts switched off
+	"web_builder_post_types":     "page,post", // Settings › Web Builder: the post types it edits
+	"native_golylang":            false,       // the multilingual plugin (Polylang Pro clone) starts switched off
+	"native_gooike":              false,       // Gooike, the cookie consent plugin, starts switched off
+	"native_goocommerce":         false,       // Goocommerce, the e-commerce plugin, starts switched off
+	"native_headlessgo":          false,       // HeadlessGo, the headless CMS plugin, starts switched off
+	"plugin_trusted_keys":        "",
+	"plugin_allow_unsigned":      false,
+	"pursae_license_key":         "",   // Settings › License: the key sent to Pursae Manager
+	"wpgo_hub_trust_keys":        true, // packages signed by the Hub install without extra setup
+	"wpgo_cache_enabled":         true,
+	"wpgo_cache_ttl_public":      604800,
+	"wpgo_cache_ttl_front":       604800,
+	"wpgo_cache_ttl_feed":        604800,
+	"wpgo_cache_ttl_404":         3600,
+	"wpgo_cache_mobile":          false,
+	"wpgo_cache_logged_in":       false,
+	"wpgo_cache_exclude_uri":     "",
+	"wpgo_cache_drop_qs":         "",
+	"wpgo_cache_server":          "auto",
+	"wpgo_cache_disk":            true, // warm pages survive restarts and updates
+	// "wpgo_cache_enabled" is the plugin switch (Plugins screen); "wpgo_cache_serve" turns page caching
+	// on or off while the plugin stays active, so its screens remain reachable.
+	"wpgo_cache_serve":              true,
+	"wpgo_cache_query_strings":      "", // extra query parameters that are part of the cache key
+	"wpgo_cache_exclude_cookies":    "",
+	"wpgo_cache_exclude_ua":         "",
+	"wpgo_cache_browser_ttl":        0,   // seconds, Cache-Control for static assets; 0 leaves them alone
+	"wpgo_cache_redirect_ttl":       0,   // seconds, 301 responses; 0 does not cache them
+	"wpgo_cache_max_mb":             256, // memory limit of the in-process cache
+	"wpgo_cache_purge_url":          "",  // front proxy/CDN endpoint that receives purge requests
+	"wpgo_cache_proxy_ttl":          300, // seconds a front proxy may keep a page while no purge URL is set
+	"wpgo_cache_preload_purge":      false,
+	"wpgo_cache_preload_daily":      false,
+	"wpgo_cache_warm_result":        "",
 	"wpgo_opt_lazy":                 true,
 	"wpgo_opt_lazy_skip":            1,
 	"wpgo_opt_defer":                true, // an empty list defers only scripts nothing depends on
 	"wpgo_opt_defer_list":           "",
 	"wpgo_opt_minify_html":          true,
+	"wpgo_opt_defer_all":            false, // defer every body script except the exclude list
+	"wpgo_opt_defer_exclude":        "",
+	"wpgo_opt_delay_list":           "", // scripts held back until the first interaction
+	"wpgo_opt_delay_timeout":        0,
+	"wpgo_opt_minify_css":           false,
+	"wpgo_opt_preconnect":           "",
+	"wpgo_opt_dns_prefetch":         "",
 	"wpgo_opt_preload_fonts":        true,
 	"posts_per_page":                10,
 	"posts_per_rss":                 10,

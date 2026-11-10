@@ -90,19 +90,21 @@ type gocdnSettings struct {
 	LocalDelivery string `json:"local-delivery"` // /wp-content/uploads for removed files: redirect, proxy or signed
 
 	// Image service
-	Img          bool   `json:"img-enabled"`
-	ImgSign      bool   `json:"img-sign"`
-	ImgMaxW      int    `json:"img-max-width"`
-	ImgMaxH      int    `json:"img-max-height"`
-	ImgQuality   int    `json:"img-quality"`
-	ImgWebP      bool   `json:"img-webp"`
-	ImgBucket    bool   `json:"img-cache-bucket"` // keep variants in the bucket too
-	ImgKey       string `json:"img-key"`          // sealed random HMAC key of the signed URLs
-	ImgRewrite   bool   `json:"img-rewrite"`      // serve content images through the service (WebP)
-	ImgRewriteQ  int    `json:"img-rewrite-quality"`
-	ImgMaxSource int    `json:"img-max-source-mp"` // megapixels
-	ImgAVIF      bool   `json:"img-avif"`          // send AVIF to browsers that accept it (slower to encode)
-	ImgMaxFrames int    `json:"img-max-frames"`    // animated GIFs with more frames are flattened
+	Img           bool   `json:"img-enabled"`
+	ImgSign       bool   `json:"img-sign"`
+	ImgMaxW       int    `json:"img-max-width"`
+	ImgMaxH       int    `json:"img-max-height"`
+	ImgQuality    int    `json:"img-quality"`
+	ImgWebP       bool   `json:"img-webp"`
+	ImgBucket     bool   `json:"img-cache-bucket"` // keep variants in the bucket too
+	ImgKey        string `json:"img-key"`          // sealed random HMAC key of the signed URLs
+	ImgRewrite    bool   `json:"img-rewrite"`      // serve content images through the service (WebP)
+	ImgRewriteQ   int    `json:"img-rewrite-quality"`
+	ImgMaxSource  int    `json:"img-max-source-mp"` // megapixels
+	ImgAVIF       bool   `json:"img-avif"`          // send AVIF to browsers that accept it (slower to encode)
+	ImgMaxFrames  int    `json:"img-max-frames"`    // animated GIFs with more frames are flattened
+	ImgCDNURL     string `json:"img-cdn-url"`       // origin of a CDN pull zone in front of the site: content image URLs are written to it
+	ImgCacheMaxMB int    `json:"img-cache-max-mb"`  // size limit of the processed image cache (0 = unlimited)
 
 	// Assets CDN
 	Assets        bool   `json:"assets-enabled"`
@@ -160,6 +162,7 @@ func gocdnProviderByKey(k string) *gocdnProvider {
 
 func gocdnDefaults() gocdnSettings {
 	return gocdnSettings{
+		ImgCacheMaxMB: 2048,
 		Provider:      "aws",
 		Prefix:        "wp-content/uploads/",
 		PublicRead:    true,
@@ -229,6 +232,10 @@ func gocdnSanitize(st gocdnSettings) gocdnSettings {
 	}
 	st.CDNDomain = strings.TrimRight(strings.TrimSpace(st.CDNDomain), "/")
 	st.AssetsURL = strings.TrimRight(strings.TrimSpace(st.AssetsURL), "/")
+	st.ImgCDNURL = strings.TrimRight(strings.TrimSpace(st.ImgCDNURL), "/")
+	if st.ImgCacheMaxMB < 0 {
+		st.ImgCacheMaxMB = 0
+	}
 	clamp := func(v *int, lo, hi, def int) {
 		if *v < lo || *v > hi {
 			*v = def

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log/slog"
@@ -35,22 +36,26 @@ type warmState struct {
 	running bool
 	last    cache.WarmupProgress
 	at      time.Time
+	timer   *time.Timer
 }
 
 // cacheOptionKeys are the plugin's options, saved from its settings screens.
 var cacheOptionKeys = map[string][]string{
-	"wpgo-cache-settings": {"wpgo_cache_enabled", "wpgo_cache_ttl_public", "wpgo_cache_ttl_front", "wpgo_cache_ttl_feed",
+	"wpgo-cache-settings": {"wpgo_cache_serve", "wpgo_cache_ttl_public", "wpgo_cache_ttl_front", "wpgo_cache_ttl_feed",
 		"wpgo_cache_ttl_404", "wpgo_cache_mobile", "wpgo_cache_logged_in", "wpgo_cache_exclude_uri", "wpgo_cache_drop_qs",
-		"wpgo_cache_server", "wpgo_cache_disk"},
+		"wpgo_cache_server", "wpgo_cache_disk", "wpgo_cache_query_strings", "wpgo_cache_exclude_cookies", "wpgo_cache_exclude_ua",
+		"wpgo_cache_browser_ttl", "wpgo_cache_redirect_ttl", "wpgo_cache_max_mb", "wpgo_cache_purge_url", "wpgo_cache_proxy_ttl",
+		"wpgo_cache_preload_purge", "wpgo_cache_preload_daily"},
 	"wpgo-cache-optimize": {"wpgo_opt_lazy", "wpgo_opt_lazy_skip", "wpgo_opt_defer", "wpgo_opt_defer_list", "wpgo_opt_minify_html",
-		"wpgo_opt_preload_fonts"},
+		"wpgo_opt_preload_fonts", "wpgo_opt_defer_all", "wpgo_opt_defer_exclude", "wpgo_opt_delay_list", "wpgo_opt_delay_timeout",
+		"wpgo_opt_minify_css", "wpgo_opt_preconnect", "wpgo_opt_dns_prefetch"},
 }
 
 // cacheConfig turns the plugin options into the engine configuration.
 func (s *Server) cacheConfig() cache.Config {
 	cfg := cache.DefaultConfig()
 	st := s.settings
-	cfg.Enabled = st.Bool("wpgo_cache_enabled")
+	cfg.Enabled = st.Bool("wpgo_cache_enabled") && st.Bool("wpgo_cache_serve")
 	sec := func(k string) time.Duration { return time.Duration(st.Int(k)) * time.Second }
 	cfg.PublicTTL, cfg.FrontPageTTL, cfg.FeedTTL, cfg.NotFoundTTL = sec("wpgo_cache_ttl_public"), sec("wpgo_cache_ttl_front"), sec("wpgo_cache_ttl_feed"), sec("wpgo_cache_ttl_404")
 	cfg.CacheMobileSeparately = st.Bool("wpgo_cache_mobile")
@@ -58,7 +63,19 @@ func (s *Server) cacheConfig() cache.Config {
 	cfg.ExcludePaths = append(cfg.ExcludePaths, lines(st.String("wpgo_cache_exclude_uri"))...)
 	cfg.ExcludePaths, cfg.ExcludeCookies = s.gooCacheExcludes(cfg.ExcludePaths, cfg.ExcludeCookies) // Goocommerce: cart, checkout, my account
 	cfg.DropQueryStrings = append(cfg.DropQueryStrings, lines(st.String("wpgo_cache_drop_qs"))...)
+	cfg.CacheQueryStrings = append(cfg.CacheQueryStrings, lines(st.String("wpgo_cache_query_strings"))...)
+	cfg.ExcludeCookies = append(cfg.ExcludeCookies, lines(st.String("wpgo_cache_exclude_cookies"))...)
+	cfg.ExcludeUserAgents = append(cfg.ExcludeUserAgents, lines(st.String("wpgo_cache_exclude_ua"))...)
+	cfg.BrowserCacheTTL, cfg.RedirectTTL = sec("wpgo_cache_browser_ttl"), sec("wpgo_cache_redirect_ttl")
+	if mb := st.Int("wpgo_cache_max_mb"); mb > 0 {
+		cfg.MaxBytes = int64(mb) << 20
+	}
 	cfg.ServerHint = cache.ServerHint(st.String("wpgo_cache_server"))
+	if proxyPurgeConfigured(cfg.ServerHint, st.String("wpgo_cache_purge_url")) {
+		// purges are forwarded (wpgocache_proxy.go)
+	} else if ttl := st.Int("wpgo_cache_proxy_ttl"); ttl > 0 && (cfg.ServerHint == cache.HintLiteSpeed || cfg.ServerHint == cache.HintNginx || cfg.ServerHint == cache.HintGeneric) {
+		cfg.ProxyMaxAge = time.Duration(ttl) * time.Second // nothing purges the proxy: keep its copy short-lived
+	}
 	if st.Bool("wpgo_cache_disk") {
 		cfg.DiskDir = s.cfg.UploadsDir + "/../wpgo-cache"
 	}
@@ -68,6 +85,13 @@ func (s *Server) cacheConfig() cache.Config {
 		DeferScripts:       st.Bool("wpgo_opt_defer"),
 		DeferAllowlist:     s.deferList(lines(st.String("wpgo_opt_defer_list"))),
 		CollapseWhitespace: st.Bool("wpgo_opt_minify_html"),
+		DeferAll:           st.Bool("wpgo_opt_defer_all"),
+		DeferExclude:       lines(st.String("wpgo_opt_defer_exclude")),
+		DelayScripts:       lines(st.String("wpgo_opt_delay_list")),
+		DelayTimeout:       st.Int("wpgo_opt_delay_timeout"),
+		MinifyInlineCSS:    st.Bool("wpgo_opt_minify_css"),
+		Preconnect:         lines(st.String("wpgo_opt_preconnect")),
+		DNSPrefetch:        lines(st.String("wpgo_opt_dns_prefetch")),
 	}
 	if st.Bool("wpgo_opt_preload_fonts") {
 		// The fonts the active theme paints above the fold, so text renders without a late swap.
@@ -126,7 +150,7 @@ func (s *Server) configureCache() {
 		old.PurgeAll()
 	}
 	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default(),
-		OnPurge: s.announcePurge}) // the other instances purge too (wpgocache_sync.go)
+		OnPurge: s.onCachePurge}) // the other instances purge too (wpgocache_sync.go)
 	s.dropCacheOfOtherCore(c)
 	s.cache.Store(&pageCache{c: c, h: c.Middleware(s.appHandler())})
 }
@@ -232,6 +256,9 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 // purgePost drops the pages a post change can affect: the post, every listing it appears on and,
 // when it is (or was) public, the sidebar widgets that list recent posts.
 func (s *Server) purgePost(ctx context.Context, p *store.Post) {
+	if p != nil {
+		s.gocdnPurgePostPages(ctx, p) // CDNs that cache HTML (gocdn_housekeeping.go)
+	}
 	c := s.currentCache()
 	if c == nil || p == nil {
 		return
@@ -309,6 +336,7 @@ type cacheScreen struct {
 	Server     string
 	ServerOpts []choice
 	TopTags    []tagCount
+	ProxyWarn  string
 }
 
 type tagCount struct {
@@ -360,6 +388,8 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 	}
 	d := cacheScreen{Tab: page, Enabled: s.settings.Bool("wpgo_cache_enabled"), Nonce: s.nonce(c, page+"-options"),
 		PurgeNonce: s.nonce(c, "wpgo-cache-purge"), Server: s.settings.String("wpgo_cache_server")}
+	d.Enabled = s.settings.Bool("wpgo_cache_serve")
+	d.ProxyWarn = s.cacheProxyWarning()
 	if cc := s.currentCache(); cc != nil {
 		d.Stats = cc.Stats()
 		d.HitPct = fmt.Sprintf("%.1f%%", d.Stats.HitRatio*100)
@@ -374,6 +404,7 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		{"nginx", "nginx (fastcgi/proxy cache)"}, {"generic", "Generic CDN or proxy (Cache-Control, Surrogate-Key)"}, {"none", "None: cache inside Pursae only"}} {
 		d.ServerOpts = append(d.ServerOpts, choice{Value: o[0], Label: o[1], Checked: o[0] == d.Server})
 	}
+	s.loadWarmResult()
 	s.warm.mu.Lock()
 	d.Warm, d.Warming = s.warm.last, s.warm.running
 	if !s.warm.at.IsZero() {
@@ -454,7 +485,7 @@ func (s *Server) cacheAction(c *gin.Context, page string) {
 		}
 	case "warm":
 		s.startWarmup(c)
-		msg = "Crawler started: the cache is being warmed from the sitemap."
+		msg = "Crawler started: the cache is being warmed from the sitemap URLs."
 	}
 	if r := c.Query("_wp_http_referer"); r != "" && strings.HasPrefix(r, "/") && !strings.HasPrefix(r, "//") {
 		back = r
@@ -466,8 +497,40 @@ func (s *Server) cacheAction(c *gin.Context, page string) {
 	c.Redirect(http.StatusFound, back+sep+"wpgo-cache-msg="+url.QueryEscape(msg))
 }
 
-// startWarmup crawls every public URL in-process (home, posts, pages, terms, authors) at a gentle rate.
+// warmupURLs lists every public URL of the site from the core sitemap providers: the home page,
+// all public post types (products included), taxonomies and authors, in sitemap pages.
+func (s *Server) warmupURLs(ctx context.Context) []string {
+	const maxURLs = 50000
+	seen := map[string]bool{}
+	var urls []string
+	add := func(u string) {
+		if u != "" && !seen[u] && len(urls) < maxURLs {
+			seen[u] = true
+			urls = append(urls, u)
+		}
+	}
+	add(s.links(ctx).HomeURL("/"))
+	for _, name := range s.sitemapIndexNames(ctx) {
+		provider, subtype, page, ok := parseSitemapName(name)
+		if !ok {
+			continue
+		}
+		for _, e := range s.sitemapURLs(ctx, provider, subtype, page) {
+			add(e.Loc)
+		}
+	}
+	return urls
+}
+
+// startWarmup crawls every public URL in-process at a gentle rate (the Warm Up Cache button).
 func (s *Server) startWarmup(c *gin.Context) {
+	s.runWarmup(context.WithoutCancel(c.Request.Context()))
+}
+
+// preloadCache warms the cache without a request (after a purge, daily).
+func (s *Server) preloadCache() { s.runWarmup(context.Background()) }
+
+func (s *Server) runWarmup(ctx context.Context) {
 	cc := s.currentCache()
 	s.warm.mu.Lock()
 	if s.warm.running || cc == nil {
@@ -476,28 +539,65 @@ func (s *Server) startWarmup(c *gin.Context) {
 	}
 	s.warm.running = true
 	s.warm.mu.Unlock()
-	lb := s.links(c)
-	urls := []string{lb.HomeURL("/")}
-	ctx := context.WithoutCancel(c.Request.Context())
-	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post", "page"}, Statuses: []string{"publish"}, PerPage: 1000, Page: 1})
-	for _, p := range posts {
-		urls = append(urls, lb.Permalink(p))
-	}
-	for _, tax := range []string{"category", "post_tag"} {
-		terms, _, _ := s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: tax, HideEmpty: true})
-		for _, t := range terms {
-			urls = append(urls, lb.TermLink(t))
-		}
-	}
 	go func() {
+		urls := s.warmupURLs(ctx)
 		prog, err := cc.Warm(ctx, s.appHandler(), urls, cache.WarmupOptions{Concurrency: 2, RatePerSecond: 8})
 		if err != nil {
 			slog.Warn("wpgo-cache warmup", "err", err)
 		}
+		now := time.Now()
 		s.warm.mu.Lock()
-		s.warm.running, s.warm.last, s.warm.at = false, prog, time.Now()
+		s.warm.running, s.warm.last, s.warm.at = false, prog, now
 		s.warm.mu.Unlock()
+		if raw, err := json.Marshal(warmResult{At: now, Progress: prog}); err == nil { // survives a restart
+			sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = s.settings.Set(sctx, map[string]any{"wpgo_cache_warm_result": string(raw)})
+		}
 	}()
+}
+
+// warmResult is the stored outcome of the last crawler run.
+type warmResult struct {
+	At       time.Time            `json:"at"`
+	Progress cache.WarmupProgress `json:"p"`
+}
+
+// loadWarmResult restores the last crawler result after a restart.
+func (s *Server) loadWarmResult() {
+	var r warmResult
+	if json.Unmarshal([]byte(s.settings.String("wpgo_cache_warm_result")), &r) != nil || r.At.IsZero() {
+		return
+	}
+	s.warm.mu.Lock()
+	if s.warm.at.IsZero() {
+		s.warm.last, s.warm.at = r.Progress, r.At
+	}
+	s.warm.mu.Unlock()
+}
+
+// schedulePreload re-warms the cache a little after the last purge ("Preload after purge"); purges that
+// arrive within the delay share one crawl.
+func (s *Server) schedulePreload() {
+	s.warm.mu.Lock()
+	defer s.warm.mu.Unlock()
+	if s.warm.timer != nil {
+		s.warm.timer.Stop()
+	}
+	s.warm.timer = time.AfterFunc(cachePreloadDelay, s.preloadCache)
+}
+
+// cachePreloadDelay is how long after a purge the automatic preload starts.
+var cachePreloadDelay = 30 * time.Second
+
+// onCachePurge runs after every purge: announce it to the other instances, forward it to a front
+// proxy or CDN, and schedule the preload.
+func (s *Server) onCachePurge(p cache.Purge) {
+	s.announcePurge(p)
+	s.forwardProxyPurge(p)
+	if s.settings.Bool("wpgo_cache_preload_purge") && (p.All || len(p.Tags) > 0) {
+		s.schedulePreload()
+	}
 }
 
 // cacheAdminBar is the toolbar node with LiteSpeed-style purge shortcuts.

@@ -229,7 +229,7 @@ func (s *Server) imgeditSave(c *gin.Context, a *store.Attachment, scale bool) ma
 	if err := s.store.ReplaceAttachmentFile(c, a); err != nil {
 		return map[string]any{"error": "Unable to save the image."}
 	}
-	s.gocdnAfterUpload(c, a) // GoCDN: offload the edited files (gocdn_offload.go)
+	s.gocdnOffloadAsync(a) // GoCDN: offload the edited files (gocdn_offload.go)
 	s.purgeAll(c)
 	out := map[string]any{"msg": "Image saved", "fw": a.Width, "fh": a.Height}
 	if t := a.Variant("thumbnail"); t != nil {

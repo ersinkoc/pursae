@@ -39,6 +39,7 @@
 	<strong id="bmgr-phase">Starting…</strong> <span id="bmgr-pct"></span>
 	<div class="bmgr-bar"><i id="bmgr-fill"></i></div>
 	<div id="bmgr-result"></div>
+	<p id="bmgr-cancel-wrap"><button type="button" class="button" id="bmgr-cancel" data-nonce="{{.Nonce}}">Cancel</button></p>
 	<pre class="bmgr-log" id="bmgr-log"></pre>
 </div>
 {{end}}
@@ -79,6 +80,7 @@
 
 {{if eq .Tab "backups"}}
 {{if .Entries}}
+<p class="description">Total size of stored backups: <strong>{{.UsedText}}</strong>. Pre-restore safety snapshots: only the newest 3 are kept.</p>
 <table class="wp-list-table widefat fixed striped" style="max-width:1100px;margin-top:12px">
 <thead><tr><th>Backup</th><th>Contains</th><th style="width:90px">Size</th><th style="width:240px">Actions</th></tr></thead>
 <tbody>
@@ -109,6 +111,12 @@
 <tr><th scope="row"><label for="bmgr-schedule">Automatic backups</label></th>
 <td><select name="schedule" id="bmgr-schedule">{{range .Freqs}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
 {{if .Next}}<p class="description">Next backup: <strong>{{.Next}}</strong></p>{{end}}</td></tr>
+<tr><th scope="row"><label for="bmgr-hour">Time of day</label></th>
+<td><select name="hour" id="bmgr-hour">{{range .Hours}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<p class="description">Site time zone. Used by the daily and weekly schedules.</p></td></tr>
+<tr><th scope="row"><label for="bmgr-notify">E-mail me</label></th>
+<td><select name="notify" id="bmgr-notify">{{range .Notifies}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
+<p class="description">Sent to the site administration e-mail address.</p></td></tr>
 <tr><th scope="row"><label for="bmgr-keep">Keep</label></th>
 <td><input type="number" name="keep" id="bmgr-keep" class="small-text" min="1" max="100" step="1" value="{{.Keep}}"> scheduled backups
 <p class="description">When a new scheduled backup is made, the oldest ones beyond this number are deleted.</p></td></tr>
@@ -188,11 +196,13 @@ if(job){
   fetch('/wp-admin/admin?page=backup-manager&action=status&job='+encodeURIComponent(id),{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){
    $('#bmgr-phase').textContent=j.phase;$('#bmgr-pct').textContent=j.percent+'%';fill.style.width=j.percent+'%';
    log.textContent=(j.log||[]).join('\n');log.scrollTop=log.scrollHeight;
-   if(j.state==='running'){setTimeout(tick,1000);return}
+   if(j.state==='running'){$('#bmgr-cancel').style.display=j.kind==='backup'?'':'none';setTimeout(tick,1000);return}
+   $('#bmgr-cancel-wrap').style.display='none';
    if(j.state==='error'){fill.style.background='#d63638';res.innerHTML='<p style="color:#b32d2e"><strong>Failed:</strong> '+esc(j.error)+'</p>';return}
-   if(j.kind==='backup'){res.innerHTML='<p><strong>Backup created.</strong> <a class="button button-primary" href="/wp-admin/admin?page=backup-manager&tab=backups">Go to Backups</a></p>'}
+   if(j.kind==='backup'){res.innerHTML='<p><strong>Backup created'+(j.warnings?' with '+j.warnings+' warning(s): see the log':'')+'.</strong> <a class="button button-primary" href="/wp-admin/admin?page=backup-manager&tab=backups">Go to Backups</a></p>'}
    else{res.innerHTML='<p><strong>Restore finished.</strong> If you restored users or settings, <a href="/wp-login">log in again</a>. Restart Pursae if you restored plugins.</p>'}
   }).catch(function(){setTimeout(tick,2000)});};
+ $('#bmgr-cancel').addEventListener('click',function(){this.disabled=true;fetch('/wp-admin/admin?page=backup-manager&action=cancel&job='+encodeURIComponent(id)+'&_wpnonce='+encodeURIComponent(this.getAttribute('data-nonce')),{credentials:'same-origin'})});
  tick();
 }
 })();

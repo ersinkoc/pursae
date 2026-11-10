@@ -2,11 +2,14 @@ package server
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
+	"sync"
 	"time"
 
 	"wpgo/internal/gocdn"
@@ -41,7 +44,24 @@ type gocdnJobState struct {
 
 	cancel bool
 	live   bool // a goroutine of this process runs it
+
+	failedIDs []int64  // attachments that failed in this run: retried once when the list is done
+	errorLog  []string // every error of this run (the screen shows the last 50; the CSV has all of them)
 }
+
+// gocdnJobWorkers is how many attachments a job processes in parallel (option gocdn_job_workers,
+// 1 to 16).
+var gocdnJobWorkers = 4
+
+func (s *Server) gocdnWorkers() int {
+	n := gocdnJobWorkers
+	if v := s.settings.Int("gocdn_job_workers"); v > 0 {
+		n = v
+	}
+	return max(1, min(n, 16))
+}
+
+const gocdnErrorLogMax = 20000
 
 var gocdnJobKinds = map[string]string{"offload": "Offload existing media", "download": "Download back to the server", "remove": "Remove from the bucket",
 	"move": "Move to the current bucket"}
@@ -157,6 +177,9 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 	fail := func(msg string) {
 		rt.mu.Lock()
 		j.Errors = append(j.Errors, msg)
+		if len(j.errorLog) < gocdnErrorLogMax {
+			j.errorLog = append(j.errorLog, msg)
+		}
 		if len(j.Errors) > 50 {
 			j.Errors = j.Errors[len(j.Errors)-50:]
 		}
@@ -174,7 +197,7 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 		}
 		var ids []int64
 		cond, args := gocdnJobFilter(j.Kind, st)
-		rows, qerr := s.store.Pool.Query(ctx, `SELECT m.id FROM media m WHERE m.id > $1 AND `+cond+` ORDER BY m.id LIMIT 1`, append([]any{last}, args...)...)
+		rows, qerr := s.store.Pool.Query(ctx, `SELECT m.id FROM media m WHERE m.id > $1 AND `+cond+` ORDER BY m.id LIMIT `+fmt.Sprint(s.gocdnWorkers()), append([]any{last}, args...)...)
 		if qerr != nil {
 			fail(qerr.Error())
 			break
@@ -191,25 +214,47 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 			break
 		}
 		if len(ids) == 0 {
+			// One more try for what failed in this run (a hiccup of the bucket, a file that was
+			// still being written), before the job reports it finished.
+			s.gocdnRetryFailed(ctx, j, st, cl, fail)
 			rt.mu.Lock()
 			j.Finished = true
 			rt.mu.Unlock()
 			break
 		}
-		id := ids[0]
-		n, perr := s.gocdnJobOne(ctx, j, st, cl, id)
+		type res struct {
+			id int64
+			n  int
+			er error
+		}
+		out := make([]res, len(ids))
+		var wg sync.WaitGroup
+		for i, id := range ids {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				n, perr := s.gocdnJobOne(ctx, j, st, cl, id)
+				out[i] = res{id, n, perr}
+			}()
+		}
+		wg.Wait()
 		rt.mu.Lock()
-		j.LastID = id
-		j.Files += n
-		if perr != nil {
-			j.Failed++
-		} else {
-			j.Done++
+		j.LastID = ids[len(ids)-1] // the batch is the next ids in order: all of them are processed
+		for _, r := range out {
+			j.Files += r.n
+			if r.er != nil {
+				j.Failed++
+				j.failedIDs = append(j.failedIDs, r.id)
+			} else {
+				j.Done++
+			}
 		}
 		j.Updated = time.Now()
 		rt.mu.Unlock()
-		if perr != nil {
-			fail(fmt.Sprintf("#%d: %v", id, perr))
+		for _, r := range out {
+			if r.er != nil {
+				fail(fmt.Sprintf("#%d: %v", r.id, r.er))
+			}
 		}
 		s.gocdnPersistJob()
 	}
@@ -236,6 +281,73 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 	rt.mu.Unlock()
 	s.gocdnPersistJob()
 	s.gocdnPurge(ctx, true) // URLs on the site changed
+}
+
+// gocdnRetryFailed runs the attachments that failed in this run once more; the ones that work now
+// move from "failed" to "done".
+func (s *Server) gocdnRetryFailed(ctx context.Context, j *gocdnJobState, st gocdnSettings, cl *gocdn.Client, fail func(string)) {
+	rt := s.gocdnRT()
+	rt.mu.Lock()
+	ids := j.failedIDs
+	j.failedIDs = nil
+	cancel := j.cancel
+	rt.mu.Unlock()
+	if cancel {
+		return
+	}
+	for _, id := range ids {
+		n, err := s.gocdnJobOne(ctx, j, st, cl, id)
+		rt.mu.Lock()
+		j.Files += n
+		if err == nil {
+			j.Failed--
+			j.Done++
+		}
+		rt.mu.Unlock()
+		if err != nil {
+			fail(fmt.Sprintf("#%d (retry): %v", id, err))
+		}
+	}
+}
+
+// gocdnErrorsCSV is the complete error list of the current (or last) job as CSV.
+func (s *Server) gocdnErrorsCSV() string {
+	rt := s.gocdnRT()
+	rt.mu.Lock()
+	var lines []string
+	if rt.job != nil {
+		lines = append(lines, rt.job.errorLog...)
+		if len(lines) == 0 {
+			lines = append(lines, rt.job.Errors...)
+		}
+	}
+	rt.mu.Unlock()
+	if len(lines) == 0 {
+		lines = s.gocdnJobStored().Errors
+	}
+	var b strings.Builder
+	w := csv.NewWriter(&b)
+	_ = w.Write([]string{"error"})
+	for _, l := range lines {
+		_ = w.Write([]string{l})
+	}
+	w.Flush()
+	return b.String()
+}
+
+// gocdnResumeInterrupted continues a job that a restart interrupted (running and not finished in
+// the stored state), without waiting for an administrator to press "Resume".
+func (s *Server) gocdnResumeInterrupted(ctx context.Context) {
+	if !s.gocdnOn() {
+		return
+	}
+	prev := s.gocdnJobStored()
+	if !prev.Running || prev.Finished || prev.Kind == "" {
+		return
+	}
+	if err := s.gocdnStartJobWith(ctx, prev.Kind, true, gocdnJobOpts{DeleteOld: prev.DeleteOld, ThenDeactivate: prev.ThenDeactivate}); err != nil {
+		slog.Warn("gocdn: resuming the interrupted job", "kind", prev.Kind, "err", err)
+	}
 }
 
 // gocdnJobOne processes one attachment; it returns the number of files moved.

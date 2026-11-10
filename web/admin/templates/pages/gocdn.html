@@ -118,6 +118,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	<p><strong id="gc-job-label">{{if .Job.Kind}}{{.JobLabel}}{{else}}No job has run yet.{{end}}</strong> <span id="gc-job-state">{{if and .Job.Running .Job.Kind}}running{{else if .Job.Finished}}finished{{else if .Job.Stopped}}stopped{{end}}</span></p>
 	<div class="gc-progress" aria-hidden="true"><span id="gc-job-bar" style="width:{{if .Job.Total}}{{.Job.Percent}}{{else}}0{{end}}%"></span></div>
 	<p id="gc-job-count">{{if .Job.Kind}}{{.Job.Done}} done, {{.Job.Failed}} failed of {{.Job.Total}} ({{.Job.Files}} files){{end}}</p>
+	{{if .Job.Errors}}<p><a href="/wp-admin/gocdn?action=errors-csv">Download all errors (CSV)</a></p>{{end}}
 	<ul class="gc-errors" id="gc-job-errors">{{range .Job.Errors}}<li translate="no">{{.}}</li>{{end}}</ul>
 	<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools">
 		<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
@@ -204,6 +205,10 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	<p class="description">Animations up to this many frames are resized frame by frame and stay animated GIFs. Larger ones (or over three times the source pixel limit in total) get their first frame only.</p></td></tr>
 <tr><th scope="row">Variant cache</th><td><label><input type="checkbox" name="img-cache-bucket" value="1"{{if .S.ImgBucket}} checked{{end}}{{if .Lock "img-cache-bucket"}} disabled{{end}}> Also keep processed images in the bucket (<code>gocdn-cache/</code>), shared by every server</label>
 	<p class="description">Processed images are always cached on disk.</p></td></tr>
+<tr><th scope="row"><label for="gc-icdn">Image CDN URL</label></th><td><input type="url" id="gc-icdn" name="img-cdn-url" class="regular-text code" value="{{.S.ImgCDNURL}}" placeholder="https://img.example.com" translate="no"{{if .Lock "img-cdn-url"}} disabled{{end}}>
+	<p class="description">Optional. A CDN pull zone whose origin is this site: with "Content images" on, image URLs point at it instead of this site, so they are cached at the edge rather than encoded here. Without it, those images are served by this server even when media is offloaded.</p></td></tr>
+<tr><th scope="row"><label for="gc-icm">Image cache limit</label></th><td><input type="number" id="gc-icm" name="img-cache-max-mb" class="small-text" min="0" value="{{.S.ImgCacheMaxMB}}"{{if .Lock "img-cache-max-mb"}} disabled{{end}}> MB
+	<p class="description">The oldest processed variants are deleted when the cache grows past this size. 0 = unlimited.</p></td></tr>
 <tr><th scope="row">Content images</th><td><label><input type="checkbox" name="img-rewrite" value="1"{{if .S.ImgRewrite}} checked{{end}}{{if .Lock "img-rewrite"}} disabled{{end}}> Serve the site's JPEG/PNG/GIF/WebP images through the service</label><br>
 	<label for="gc-rq">Quality of these images</label> <input type="number" id="gc-rq" name="img-rewrite-quality" class="small-text" min="1" max="100" value="{{.S.ImgRewriteQ}}"{{if .Lock "img-rewrite-quality"}} disabled{{end}}>
 	<p class="description">Every <code>/wp-content/uploads</code> image on the site (src and srcset) becomes a signed <code>/cdn-img/</code> URL, so browsers get WebP.</p></td></tr>

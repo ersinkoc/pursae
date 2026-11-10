@@ -141,13 +141,23 @@ func (s *Server) gocdnEnqueueMedia(c *gin.Context, a *assets) {
 		return
 	}
 	cfg, _ := json.Marshal(map[string]any{"list": "/wp-admin/gocdn?action=remote-list", "import": "/wp-admin/gocdn?action=remote-import",
-		"nonce": s.nonce(c, gocdnNonce), "prefix": st.Prefix, "bucket": st.Bucket})
+		"nonce": s.nonce(c, gocdnNonce), "prefix": st.Prefix, "bucket": st.Bucket, "t": s.gocdnModalStrings(c)})
 	a.AddInline("media-views", "window.gocdnModal = "+string(cfg)+";\n"+gocdnModalJS)
+}
+
+// gocdnModalStrings are the tab's texts in the user's language (English where there is no translation).
+func (s *Server) gocdnModalStrings(c *gin.Context) map[string]string {
+	return map[string]string{
+		"loading": s.__(c, "Loading…"), "listFail": s.__(c, "The bucket cannot be listed."), "up": s.__(c, "Up"),
+		"importAs": s.__(c, "Import as"), "copy": s.__(c, "copy into the Media Library"), "link": s.__(c, "link (stays in the bucket)"),
+		"inLibrary": s.__(c, "In library"), "empty": s.__(c, "This folder is empty."), "more": s.__(c, "Load more"),
+		"importFail": s.__(c, "The file could not be imported."), "tab": s.__(c, "Remote storage"),
+	}
 }
 
 const gocdnModalJS = `( function( $, media ) {
 	if ( ! media || ! media.view || ! media.view.MediaFrame || ! window.gocdnModal ) { return; }
-	var cfg = window.gocdnModal, Select = media.view.MediaFrame.Select;
+	var cfg = window.gocdnModal, T = cfg.t || {}, Select = media.view.MediaFrame.Select;
 	function esc( s ) { return String( s == null ? '' : s ).replace( /[&<>"']/g, function( c ) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ c ]; } ); }
 	var View = media.View.extend( {
 		className: 'gocdn-remote-browser',
@@ -155,16 +165,16 @@ const gocdnModalJS = `( function( $, media ) {
 		initialize: function() { this.prefix = cfg.prefix; this.token = ''; this.load( false ); },
 		load: function( append ) {
 			var self = this, url = cfg.list + '&prefix=' + encodeURIComponent( this.prefix ) + ( append && this.token ? '&token=' + encodeURIComponent( this.token ) : '' );
-			if ( ! append ) { this.$el.html( '<p class="gocdn-status"><span class="spinner is-active" style="float:none"></span> Loading…</p>' ); }
-			$.getJSON( url ).done( function( d ) { self.render( d, append ); } ).fail( function() { self.$el.html( '<p class="gocdn-status">The bucket cannot be listed.</p>' ); } );
+			if ( ! append ) { this.$el.html( '<p class="gocdn-status"><span class="spinner is-active" style="float:none"></span> ' + esc( T.loading ) + '</p>' ); }
+			$.getJSON( url ).done( function( d ) { self.render( d, append ); } ).fail( function() { self.$el.html( '<p class="gocdn-status">' + esc( T.listFail ) + '</p>' ); } );
 		},
 		render: function( d, append ) {
 			if ( ! d ) { return this; }
 			this.token = d.next || '';
 			var html = '';
 			if ( ! append ) {
-				html += '<div class="gocdn-bar"><strong translate="no">' + esc( cfg.bucket ) + '/' + esc( d.prefix ) + '</strong>' + ( d.parent !== null && d.parent !== undefined ? ' <button type="button" class="button-link gocdn-up" data-prefix="' + esc( d.parent ) + '">↑ Up</button>' : '' ) +
-					' <label class="gocdn-mode">Import as <select><option value="copy">copy into the Media Library</option><option value="link">link (stays in the bucket)</option></select></label></div>';
+				html += '<div class="gocdn-bar"><strong translate="no">' + esc( cfg.bucket ) + '/' + esc( d.prefix ) + '</strong>' + ( d.parent !== null && d.parent !== undefined ? ' <button type="button" class="button-link gocdn-up" data-prefix="' + esc( d.parent ) + '">↑ ' + esc( T.up ) + '</button>' : '' ) +
+					' <label class="gocdn-mode">' + esc( T.importAs ) + ' <select><option value="copy">' + esc( T.copy ) + '</option><option value="link">' + esc( T.link ) + '</option></select></label></div>';
 				if ( d.error ) { html += '<p class="gocdn-status">' + esc( d.error ) + '</p>'; }
 				html += '<ul class="gocdn-grid">';
 			}
@@ -175,12 +185,12 @@ const gocdnModalJS = `( function( $, media ) {
 			( d.objects || [] ).forEach( function( o ) {
 				var thumb = o.image && o.preview ? '<img src="' + esc( o.preview ) + '" alt="" loading="lazy">' : '<span class="dashicons dashicons-media-default"></span>';
 				items += '<li><button type="button" class="gocdn-object' + ( o.media_id ? ' in-library' : '' ) + '"' + ( o.allowed ? '' : ' disabled' ) + ' data-key="' + esc( o.key ) + '" title="' + esc( o.name ) + ' — ' + esc( o.size ) + '">' + thumb +
-					'<span class="gocdn-name" translate="no">' + esc( o.name ) + '</span>' + ( o.media_id ? '<span class="gocdn-badge">In library</span>' : '' ) + '</button></li>';
+					'<span class="gocdn-name" translate="no">' + esc( o.name ) + '</span>' + ( o.media_id ? '<span class="gocdn-badge">' + esc( T.inLibrary ) + '</span>' : '' ) + '</button></li>';
 			} );
 			if ( append ) { this.$( '.gocdn-grid' ).append( items ); this.$( '.gocdn-more' ).remove(); }
 			else { html += items + '</ul>'; this.$el.html( html ); }
-			if ( ! items && ! append && ! d.error ) { this.$el.append( '<p class="gocdn-status">This folder is empty.</p>' ); }
-			if ( this.token ) { this.$el.append( '<p><button type="button" class="button gocdn-more">Load more</button></p>' ); }
+			if ( ! items && ! append && ! d.error ) { this.$el.append( '<p class="gocdn-status">' + esc( T.empty ) + '</p>' ); }
+			if ( this.token ) { this.$el.append( '<p><button type="button" class="button gocdn-more">' + esc( T.more ) + '</button></p>' ); }
 			return this;
 		},
 		openFolder: function( e ) { this.prefix = $( e.currentTarget ).data( 'prefix' ) || ''; this.token = ''; this.load( false ); },
@@ -198,7 +208,7 @@ const gocdnModalJS = `( function( $, media ) {
 					frame.content.mode( 'browse' );
 				} );
 			} ).fail( function( x ) {
-				var msg = ( x.responseJSON && x.responseJSON.error ) || 'The file could not be imported.';
+				var msg = ( x.responseJSON && x.responseJSON.error ) || T.importFail;
 				btn.prop( 'disabled', false ).removeClass( 'is-busy' );
 				self.$( '.gocdn-bar' ).after( '<div class="notice notice-error inline"><p>' + esc( msg ) + '</p></div>' );
 			} );
@@ -207,7 +217,7 @@ const gocdnModalJS = `( function( $, media ) {
 	var browseRouter = Select.prototype.browseRouter, bindHandlers = Select.prototype.bindHandlers;
 	Select.prototype.browseRouter = function( routerView ) {
 		browseRouter.apply( this, arguments );
-		routerView.set( { gocdn: { text: 'Remote storage', priority: 60 } } );
+		routerView.set( { gocdn: { text: T.tab, priority: 60 } } );
 	};
 	Select.prototype.bindHandlers = function() {
 		bindHandlers.apply( this, arguments );

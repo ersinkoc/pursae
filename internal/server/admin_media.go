@@ -75,6 +75,12 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		}
 		notices = append(notices, notice{Type: "success", Message: template.HTML(msg), Dismissible: true})
 	}
+	if m := c.Query("gocdn-media-msg"); m != "" {
+		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(m)), Dismissible: true})
+	}
+	if m := c.Query("gocdn-media-error"); m != "" {
+		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(m)), Dismissible: true})
+	}
 	if s.mediaMode(c) == "grid" {
 		s.enqueueMedia(c, 0)
 		a := s.pageAssets(c)
@@ -157,6 +163,7 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		d.Rows = append(d.Rows, r)
 	}
 	s.golylangMediaColumns(c, &d, list)
+	s.gocdnMediaColumns(c, &d, list)
 	d.Pagination = newPagination(total, 20, page, *c.Request.URL)
 	s.adminPage(c, "upload", "Media Library", "upload-php", "admin/media-list", d, notices...)
 }

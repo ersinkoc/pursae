@@ -1,7 +1,11 @@
 package server
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"net/url"
 	"os"
@@ -149,5 +153,55 @@ func TestBmgrScheduledBackups(t *testing.T) {
 	}
 	if rec, _, ok := jobRow(); !ok || rec != "daily" {
 		t.Error("reactivating the plugin did not restore the schedule")
+	}
+}
+
+func TestBmgrFirstRunAt(t *testing.T) {
+	loc := time.FixedZone("x", 3*3600)
+	now := time.Date(2026, 1, 10, 12, 0, 0, 0, time.UTC) // 15:00 in loc
+	if got := bmgrFirstRunAt(bmgrScheduleSettings{Freq: "daily", Hour: -1}, now, loc); !got.Equal(now.Add(10 * time.Minute)) {
+		t.Errorf("no hour chosen: %v", got)
+	}
+	if got := bmgrFirstRunAt(bmgrScheduleSettings{Freq: "hourly", Hour: 3}, now, loc); !got.Equal(now.Add(10 * time.Minute)) {
+		t.Errorf("hourly ignores the hour: %v", got)
+	}
+	// 03:00 site time has passed today, so tomorrow.
+	want := time.Date(2026, 1, 11, 3, 0, 0, 0, loc)
+	if got := bmgrFirstRunAt(bmgrScheduleSettings{Freq: "daily", Hour: 3}, now, loc); !got.Equal(want) {
+		t.Errorf("hour 3: %v, want %v", got, want)
+	}
+	want = time.Date(2026, 1, 10, 18, 0, 0, 0, loc)
+	if got := bmgrFirstRunAt(bmgrScheduleSettings{Freq: "weekly", Hour: 18}, now, loc); !got.Equal(want) {
+		t.Errorf("hour 18: %v, want %v", got, want)
+	}
+}
+
+func TestBmgrVerifyArchive(t *testing.T) {
+	build := func(content string) *zip.Reader {
+		var b bytes.Buffer
+		zw := zip.NewWriter(&b)
+		w, _ := zw.Create("database/a.jsonl")
+		_, _ = w.Write([]byte(content))
+		_ = zw.Close()
+		zr, err := zip.NewReader(bytes.NewReader(b.Bytes()), int64(b.Len()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return zr
+	}
+	sum := sha256.Sum256([]byte("one\n"))
+	m := &bmgrManifest{Checksums: map[string]string{"database/a.jsonl": hex.EncodeToString(sum[:])}}
+	if err := bmgrVerifyArchive(context.Background(), build("one\n"), m); err != nil {
+		t.Errorf("intact archive: %v", err)
+	}
+	if err := bmgrVerifyArchive(context.Background(), build("two\n"), m); err == nil {
+		t.Error("a changed entry passed verification")
+	}
+	m.Checksums["database/gone.jsonl"] = "00"
+	if err := bmgrVerifyArchive(context.Background(), build("one\n"), m); err == nil {
+		t.Error("a missing entry passed verification")
+	}
+	if err := bmgrVerifyArchive(context.Background(), build("x"), &bmgrManifest{}); err != nil {
+		t.Errorf("an archive without checksums: %v", err)
 	}
 }

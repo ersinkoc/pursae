@@ -197,7 +197,7 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	if err := s.store.InsertAttachment(c, a); err != nil {
 		return nil, err
 	}
-	s.gocdnAfterUpload(c, a) // GoCDN: copy to the bucket (gocdn_offload.go)
+	s.gocdnOffloadAsync(a) // GoCDN: copy to the bucket (gocdn_offload.go)
 	return a, nil
 }
 
@@ -231,7 +231,7 @@ func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Rea
 	if err := s.store.InsertAttachment(ctx, a); err != nil {
 		return nil, err
 	}
-	s.gocdnAfterUpload(ctx, a) // GoCDN: copy to the bucket (gocdn_offload.go)
+	s.gocdnOffloadAsync(a) // GoCDN: copy to the bucket (gocdn_offload.go)
 	return a, nil
 }
 

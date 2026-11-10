@@ -80,8 +80,16 @@ func (s *Server) gocdnAdmin(c *gin.Context) {
 	case "progress":
 		s.gocdnProgress(c)
 		return
+	case "errors-csv":
+		c.Header("Content-Type", "text/csv; charset=utf-8")
+		c.Header("Content-Disposition", `attachment; filename="gocdn-job-errors.csv"`)
+		c.String(http.StatusOK, s.gocdnErrorsCSV())
+		return
 	case "preview":
 		s.gocdnRemotePreview(c)
+		return
+	case "media-offload", "media-download", "media-remove-local":
+		s.gocdnMediaAction(c)
 		return
 	case "remote-list":
 		s.gocdnRemoteJSON(c)
@@ -316,6 +324,14 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 			setInt("img-max-source-mp", &st.ImgMaxSource)
 			setBool("img-avif", &st.ImgAVIF)
 			setInt("img-max-frames", &st.ImgMaxFrames)
+			setInt("img-cache-max-mb", &st.ImgCacheMaxMB)
+			setStr("img-cdn-url", &st.ImgCDNURL)
+			if st.ImgCDNURL != "" {
+				if u, err := url.Parse(st.ImgCDNURL); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.RawQuery != "" {
+					fail("The image CDN URL must be an http(s) URL such as https://cdn.example.com.")
+					return
+				}
+			}
 		case "assets":
 			setBool("assets-enabled", &st.Assets)
 			setStr("assets-url", &st.AssetsURL)

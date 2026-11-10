@@ -656,3 +656,17 @@ func TestOnPurgeAnnouncesPurges(t *testing.T) {
 		t.Fatalf("Apply purged %d pages, want 1", n)
 	}
 }
+
+func TestProxyMaxAgeCapsHints(t *testing.T) {
+	c, _, h := newTestCache(t, func(cfg *Config) {
+		cfg.ServerHint = HintGeneric
+		cfg.ProxyMaxAge = 300 * time.Second
+	})
+	_ = c
+	for i := 0; i < 2; i++ {
+		w := do(h, "GET", "http://example.com/p/")
+		if got := w.Header().Get("Cache-Control"); got != "public, s-maxage=300, max-age=0" {
+			t.Fatalf("request %d: Cache-Control = %q", i, got)
+		}
+	}
+}
