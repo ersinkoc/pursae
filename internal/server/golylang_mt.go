@@ -372,6 +372,11 @@ func pllOpenAILang(l *pllLanguage, _ bool) string {
 
 // pllMTDo sends a JSON request and decodes a JSON answer. Errors never carry the URL or the key.
 func pllMTDo(ctx context.Context, client *http.Client, req *http.Request, key string, out any, errMsg func([]byte) string) error {
+	if gc, ok := ctx.(*gin.Context); ok && gc.Request != nil {
+		// Never the *gin.Context itself: the transport touches the request's context after the
+		// body is closed, by then gin may have reused it for another request (a data race).
+		ctx = gc.Request.Context()
+	}
 	req = req.WithContext(ctx)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")

@@ -213,11 +213,10 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 		fail(err.Error())
 	}
 	rt.mu.Lock()
-	j.Running, j.live = false, false
-	j.Updated = time.Now()
 	finished, failed := j.Finished, j.Failed
 	rt.mu.Unlock()
-	s.gocdnPersistJob()
+	// The job's consequences come before it reports that it stopped: a status poll that sees the
+	// job done must also see them, and a new job cannot start in between and be undone by them.
 	switch {
 	case j.Kind == "move" && finished:
 		s.gocdnPrunePrevious(ctx)
@@ -227,6 +226,11 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 			_ = s.settings.Set(ctx, map[string]any{gocdnSetting: false})
 		}
 	}
+	rt.mu.Lock()
+	j.Running, j.live = false, false
+	j.Updated = time.Now()
+	rt.mu.Unlock()
+	s.gocdnPersistJob()
 	s.gocdnPurge(ctx, true) // URLs on the site changed
 }
 
