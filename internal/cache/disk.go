@@ -131,7 +131,7 @@ func (d *diskStore) load(key string) (*Entry, error) {
 
 // scan calls fn with the metadata of every readable entry file; corrupt files and
 // leftover temp files are removed.
-func (d *diskStore) scan(fn func(diskMeta)) error {
+func (d *diskStore) scan(fn func(m diskMeta, size int64)) error {
 	des, err := os.ReadDir(d.dir)
 	if err != nil {
 		return err
@@ -150,13 +150,17 @@ func (d *diskStore) scan(fn func(diskMeta)) error {
 		if err != nil {
 			continue
 		}
+		var size int64
+		if fi, err := f.Stat(); err == nil {
+			size = fi.Size()
+		}
 		m, err := readMeta(bufio.NewReaderSize(f, 4096))
 		f.Close()
 		if err != nil || d.path(m.Key) != full {
 			os.Remove(full)
 			continue
 		}
-		fn(m)
+		fn(m, size)
 	}
 	return nil
 }

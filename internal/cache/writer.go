@@ -134,6 +134,7 @@ func (cw *captureWriter) WriteHeader(code int) {
 	stripInternal(h)
 	if !ok {
 		cw.mode = modePass
+		cw.releaseFlight() // nothing will be stored: the waiting requests render their own copy now
 		cw.c.decorateUncached(h, cw.r, code)
 		cw.w.WriteHeader(code)
 		return
@@ -163,11 +164,21 @@ func (cw *captureWriter) Write(b []byte) (int, error) {
 // spill abandons capturing and streams what was buffered.
 func (cw *captureWriter) spill() {
 	cw.mode = modePass
+	cw.releaseFlight()
 	h := cw.w.Header()
 	cw.c.decorateUncached(h, cw.r, cw.status)
 	cw.w.WriteHeader(cw.status)
 	cw.w.Write(cw.buf.Bytes())
 	cw.buf = bytes.Buffer{}
+}
+
+// releaseFlight ends this render's claim on its key. It runs as soon as the outcome is known
+// (stored, or streaming uncached), never after the body went out to a possibly slow client: the
+// requests waiting for this render must not wait for that client too.
+func (cw *captureWriter) releaseFlight() {
+	if cw.release != nil {
+		cw.release()
+	}
 }
 
 // Flush is a no-op while capturing (the page is sent once complete) and passes
@@ -186,6 +197,7 @@ func (cw *captureWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	conn, rw, err := http.NewResponseController(cw.w).Hijack()
 	if err == nil {
 		cw.mode = modeHijacked
+		cw.releaseFlight()
 	}
 	return conn, rw, err
 }
@@ -196,6 +208,7 @@ func (cw *captureWriter) finish() {
 	case modeUndecided:
 		// The handler wrote nothing: an empty 200, which is not worth caching.
 		cw.mode = modePass
+		cw.releaseFlight()
 		h := cw.w.Header()
 		stripInternal(h)
 		cw.w.WriteHeader(http.StatusOK)
@@ -212,6 +225,7 @@ func (cw *captureWriter) finish() {
 	e, err := NewEntry(cw.d.Key, cw.status, cw.w.Header(), body, cw.tags, cw.start, cw.ttl)
 	if err != nil {
 		// Unreachable in practice: storableTTL already rejected Set-Cookie.
+		cw.releaseFlight()
 		cw.c.decorateUncached(cw.w.Header(), cw.r, cw.status)
 		cw.w.WriteHeader(cw.status)
 		cw.w.Write(body)
@@ -222,9 +236,7 @@ func (cw *captureWriter) finish() {
 	if cw.r.Method == http.MethodGet {
 		_ = cw.c.store.SetSince(e, cw.gen)
 	}
-	if cw.release != nil {
-		cw.release()
-	}
+	cw.releaseFlight()
 	cw.c.serve(cw.w, cw.r, e, "miss", cw.d.Private)
 }
 

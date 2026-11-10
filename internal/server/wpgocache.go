@@ -125,7 +125,8 @@ func (s *Server) configureCache() {
 	if old := s.currentCache(); old != nil {
 		old.PurgeAll()
 	}
-	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default()})
+	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default(),
+		OnPurge: s.announcePurge}) // the other instances purge too (wpgocache_sync.go)
 	s.dropCacheOfOtherCore(c)
 	s.cache.Store(&pageCache{c: c, h: c.Middleware(s.appHandler())})
 }
@@ -249,6 +250,41 @@ func (s *Server) purgePost(ctx context.Context, p *store.Post) {
 		tags = append(tags, "widgets")
 	}
 	c.PurgeTags(tags...)
+}
+
+// purgePostAgain repeats purgePost after a trash, restore or delete whose caller purged before
+// making the change (so the terms were still there to purge): a page rendered between that purge
+// and the change (the post's own page, the home page or an archive listing it) was stored with the
+// post as it was and would be served, trashed post included, for the whole TTL. After a delete the
+// terms are gone, but every listing of the post also carries its author's tag.
+func (s *Server) purgePostAgain(ctx context.Context, p *store.Post) {
+	s.purgePost(ctx, p)
+}
+
+// purgeTerm drops the pages a term change can affect: its archive and the pages that list or link
+// it (they carry "term:<id>"), the sidebars, and the cached 404s (a new slug's URL may have one).
+// Run it after the change, never before: a page rendered in between would be stored with the old
+// term. Deleting a category moves its posts that have no other category into the default one,
+// whose archive changes too.
+func (s *Server) purgeTerm(t *store.Term, deleted bool) {
+	if t == nil {
+		return
+	}
+	tags := []string{"term:" + itoa64(t.ID), "widgets", "404"}
+	if deleted {
+		if def := int64(s.settings.Int("default_category")); t.Taxonomy == "category" && def > 0 && def != t.ID {
+			tags = append(tags, "term:"+itoa64(def))
+		}
+	}
+	s.purgeTags(tags...)
+}
+
+// purgeAttachment drops the pages that showed a media item (a featured image, a logo, a gallery the
+// theme builds: site_memo.go tags them "media:<id>") once it was edited or deleted.
+func (s *Server) purgeAttachment(a *store.Attachment) {
+	if a != nil {
+		s.purgeTags("media:" + itoa64(a.ID))
+	}
 }
 
 func (s *Server) purgeTags(tags ...string) {

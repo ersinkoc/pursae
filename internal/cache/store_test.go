@@ -232,3 +232,29 @@ func TestDiskEntriesBounded(t *testing.T) {
 		t.Fatalf("after restart: %d files", len(files))
 	}
 }
+
+// The disk-only entries are bounded by bytes too, not only by count: a few large pages must not
+// fill the disk while staying under the entry count.
+func TestDiskBytesBounded(t *testing.T) {
+	dir := t.TempDir()
+	s, _ := NewStore(StoreOptions{DiskDir: dir, MaxEntries: 1, MaxDiskEntries: 1000, MaxDiskBytes: 3 * 2048})
+	for i := 0; i < 20; i++ {
+		if err := s.Set(mkEntry(t, fmt.Sprintf("http://h/big/%d#d", i), 2000, "big")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if st := s.Stats(); st.DiskEntries > 3 || st.DiskEntries == 0 {
+		t.Fatalf("%d disk-only entries kept, want 1 to 3: %+v", st.DiskEntries, st)
+	}
+	if files, _ := os.ReadDir(dir); len(files) > 4 {
+		t.Fatalf("%d files on disk", len(files))
+	}
+	// After a restart the scan applies the bound by file size.
+	s2, err := NewStore(StoreOptions{DiskDir: dir, MaxEntries: 1, MaxDiskEntries: 1000, MaxDiskBytes: 2048})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st := s2.Stats(); st.DiskEntries > 1 {
+		t.Fatalf("after restart: %+v", st)
+	}
+}

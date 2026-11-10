@@ -66,6 +66,7 @@ type item struct {
 	elem     *list.Element // position in the LRU list while resident in memory
 	diskElem *list.Element // position in the disk-only list while only on disk
 	bytes    int64
+	file     int64 // approximate size of its disk copy, counted in stubBytes while only on disk
 }
 
 // Stats is a snapshot of store counters.
@@ -84,20 +85,22 @@ type Stats struct {
 type Store struct {
 	maxEntries     int
 	maxBytes       int64
-	maxDiskEntries int // bound on records that live only on disk (files and index entries)
+	maxDiskEntries int   // bound on records that live only on disk (files and index entries)
+	maxDiskBytes   int64 // bound on the bytes of those records' files
 	disk           *diskStore
 	now            func() time.Time
 	log            *slog.Logger
 
-	mu     sync.Mutex
-	items  map[string]*item
-	lru    *list.List // front = most recently used; values are *item
-	stubs  *list.List // disk-only records, front = most recently unloaded; values are *item
-	tags   map[string]map[string]struct{}
-	bases  map[string]map[string]struct{}
-	bytes  int64
-	hits   atomic.Int64
-	misses atomic.Int64
+	mu        sync.Mutex
+	items     map[string]*item
+	lru       *list.List // front = most recently used; values are *item
+	stubs     *list.List // disk-only records, front = most recently unloaded; values are *item
+	tags      map[string]map[string]struct{}
+	bases     map[string]map[string]struct{}
+	bytes     int64
+	stubBytes int64 // file bytes of the disk-only records
+	hits      atomic.Int64
+	misses    atomic.Int64
 
 	// Purge generations: gen counts purges; allGen, tagGen, baseGen (host+path) and pathGen (a
 	// path on every host) remember the generation of the last purge of each scope, so SetSince
@@ -120,9 +123,12 @@ type StoreOptions struct {
 	// MaxDiskEntries bounds the entries kept only on disk (default 10 × MaxEntries): past it the oldest
 	// files are deleted, so arbitrary query values (?s=, ?page=) cannot fill the disk and the index.
 	MaxDiskEntries int
-	DiskDir        string           // optional persistence directory
-	Now            func() time.Time // clock, default time.Now
-	Logger         *slog.Logger     // default slog.Default()
+	// MaxDiskBytes bounds the file bytes of those entries (default 4 × MaxBytes): a count alone lets
+	// large pages (up to MaxEntrySize each, plus their gzip copy) fill the disk.
+	MaxDiskBytes int64
+	DiskDir      string           // optional persistence directory
+	Now          func() time.Time // clock, default time.Now
+	Logger       *slog.Logger     // default slog.Default()
 }
 
 // NewStore creates a store. With a DiskDir, the directory is created if needed and the
@@ -132,6 +138,7 @@ func NewStore(o StoreOptions) (*Store, error) {
 		maxEntries:     o.MaxEntries,
 		maxBytes:       o.MaxBytes,
 		maxDiskEntries: o.MaxDiskEntries,
+		maxDiskBytes:   o.MaxDiskBytes,
 		now:            o.Now,
 		log:            o.Logger,
 		items:          make(map[string]*item),
@@ -149,6 +156,9 @@ func NewStore(o StoreOptions) (*Store, error) {
 	if s.maxDiskEntries <= 0 {
 		s.maxDiskEntries = 10 * s.maxEntries
 	}
+	if s.maxDiskBytes <= 0 {
+		s.maxDiskBytes = 4 * s.maxBytes
+	}
 	if s.now == nil {
 		s.now = time.Now
 	}
@@ -162,15 +172,15 @@ func NewStore(o StoreOptions) (*Store, error) {
 		}
 		s.disk = d
 		now := s.now()
-		err = d.scan(func(m diskMeta) {
+		err = d.scan(func(m diskMeta, size int64) {
 			if !now.Before(m.Expires) {
 				d.remove(m.Key)
 				return
 			}
-			it := &item{key: m.Key, base: keyBase(m.Key), tags: m.Tags, expires: m.Expires}
+			it := &item{key: m.Key, base: keyBase(m.Key), tags: m.Tags, expires: m.Expires, file: size}
 			s.items[m.Key] = it
 			s.index(it)
-			it.diskElem = s.stubs.PushFront(it)
+			s.pushStubLocked(it)
 		})
 		if err != nil {
 			return nil, err
@@ -342,7 +352,7 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	if old, ok := s.items[e.Key]; ok {
 		s.removeLocked(old, false)
 	}
-	it := &item{key: e.Key, base: keyBase(e.Key), tags: e.Tags, expires: e.Expires, entry: e, bytes: size}
+	it := &item{key: e.Key, base: keyBase(e.Key), tags: e.Tags, expires: e.Expires, entry: e, bytes: size, file: size}
 	it.elem = s.lru.PushFront(it)
 	s.items[e.Key] = it
 	s.bytes += size
@@ -382,7 +392,7 @@ func (s *Store) evictLocked(keep *item) {
 		}
 		if s.disk != nil {
 			s.unloadLocked(it)
-			it.diskElem = s.stubs.PushFront(it)
+			s.pushStubLocked(it)
 		} else {
 			s.removeLocked(it, false)
 		}
@@ -390,17 +400,24 @@ func (s *Store) evictLocked(keep *item) {
 	s.trimDiskLocked()
 }
 
-// trimDiskLocked deletes the oldest disk-only records (file and index) past maxDiskEntries.
+// trimDiskLocked deletes the oldest disk-only records (file and index) past maxDiskEntries or
+// maxDiskBytes.
 func (s *Store) trimDiskLocked() {
-	for s.stubs.Len() > s.maxDiskEntries {
+	for s.stubs.Len() > 0 && (s.stubs.Len() > s.maxDiskEntries || s.stubBytes > s.maxDiskBytes) {
 		s.removeLocked(s.stubs.Back().Value.(*item), true)
 	}
+}
+
+func (s *Store) pushStubLocked(it *item) {
+	it.diskElem = s.stubs.PushFront(it)
+	s.stubBytes += it.file
 }
 
 func (s *Store) dropStubLocked(it *item) {
 	if it.diskElem != nil {
 		s.stubs.Remove(it.diskElem)
 		it.diskElem = nil
+		s.stubBytes -= it.file
 	}
 }
 
@@ -516,6 +533,7 @@ func (s *Store) PurgeAll() int {
 	s.items = make(map[string]*item)
 	s.lru.Init()
 	s.stubs.Init()
+	s.stubBytes = 0
 	s.tags = make(map[string]map[string]struct{})
 	s.bases = make(map[string]map[string]struct{})
 	s.bytes = 0

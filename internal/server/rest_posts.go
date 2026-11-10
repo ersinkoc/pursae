@@ -727,6 +727,7 @@ func (api *restAPI) deletePost(c *gin.Context, r *restRequest, typ string) {
 			restErr(c, http.StatusInternalServerError, "rest_cannot_delete", "The post cannot be deleted.")
 			return
 		}
+		s.purgePostAgain(c, p)
 		s.wbAfterStatusChange(c, p)
 		restJSON(c, http.StatusOK, map[string]any{"deleted": true, "previous": prev})
 		return
