@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
@@ -342,7 +343,11 @@ func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([
 		return nil, err
 	}
 	defer resp.Body.Close()
-	return io.ReadAll(io.LimitReader(resp.Body, last-first+1))
+	limit := last - first
+	if limit < math.MaxInt64 {
+		limit++
+	}
+	return io.ReadAll(io.LimitReader(resp.Body, limit))
 }
 
 // Head returns an object's metadata.
