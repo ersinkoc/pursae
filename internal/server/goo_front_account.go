@@ -570,6 +570,8 @@ func (s *Server) gooSaveAccountPost(c *gin.Context) {
 		default:
 			if ok, _ := auth.CheckPassword(cur, u.PasswordHash); !ok {
 				errs = append(errs, "Your current password is incorrect.")
+			} else if msg := s.adminsecPasswordProblem(u.Roles, u.Login, email, p1); msg != "" { // Pursae Security password policy
+				errs = append(errs, msg)
 			}
 		}
 	}
@@ -593,6 +595,7 @@ func (s *Server) gooSaveAccountPost(c *gin.Context) {
 	if changePass {
 		if hash, err := auth.HashPassword(p1); err == nil {
 			if s.store.SetUserPassword(ctx, u.ID, hash) == nil {
+				s.adminsecPasswordChanged(c, u)
 				s.endSessionsAfterPasswordChange(ctx, c, u.ID)
 			}
 		}
