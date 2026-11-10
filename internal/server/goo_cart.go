@@ -428,6 +428,11 @@ func (cart *gooCart) Add(ctx context.Context, productID int64, qty int, variatio
 	return key, nil
 }
 
+// soldIndividually is is_sold_individually() of the item: a variation inherits its parent's flag.
+func (it *gooCartItem) soldIndividually() bool {
+	return it.product != nil && (it.product.SoldIndividually || (it.product.parent != nil && it.product.parent.SoldIndividually))
+}
+
 // SetQuantity is WC_Cart::set_quantity(): 0 removes the item. Stock is checked.
 func (cart *gooCart) SetQuantity(ctx context.Context, key string, qty int) error {
 	it := cart.Item(key)
@@ -441,7 +446,7 @@ func (cart *gooCart) SetQuantity(ctx context.Context, key string, qty int) error
 	if qty > gooMaxLineQty {
 		return gooCartErr("You cannot add that amount to the cart.")
 	}
-	if it.product.SoldIndividually && qty > 1 {
+	if it.soldIndividually() && qty > 1 {
 		return gooCartErr("You can only have 1 %s in your cart.", html.EscapeString(it.product.Name))
 	}
 	s := cart.s

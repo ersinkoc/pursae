@@ -794,8 +794,18 @@ func (s *Server) gooDownload(c *gin.Context) {
 		die(http.StatusNotFound, "No file defined")
 		return
 	}
-	_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_download_permissions SET download_count = download_count + 1,
-		downloads_remaining = CASE WHEN downloads_remaining IS NULL THEN NULL ELSE greatest(downloads_remaining - 1, 0) END WHERE id = $1`, id)
+	// The decrement is the gate (a claim): parallel requests cannot all pass the limit check above.
+	var claimed int64
+	if err := s.store.Pool.QueryRow(ctx, `UPDATE goo_download_permissions SET download_count = download_count + 1,
+		downloads_remaining = downloads_remaining - 1
+		WHERE id = $1 AND (downloads_remaining IS NULL OR downloads_remaining > 0) AND (access_expires IS NULL OR access_expires > now())
+		RETURNING id`, id).Scan(&claimed); errors.Is(err, pgx.ErrNoRows) {
+		die(http.StatusForbidden, "Sorry, you have reached your download limit for this file")
+		return
+	} else if err != nil {
+		die(http.StatusInternalServerError, "The download could not be started. Please try again.")
+		return
+	}
 	gooNoStore(c)
 	if s.gooOptString("file_download_method") != "redirect" {
 		if local := s.gooLocalFile(ctx, file.File); local != "" {

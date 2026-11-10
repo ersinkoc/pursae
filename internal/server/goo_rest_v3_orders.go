@@ -249,14 +249,20 @@ func gooTaxKeys(m map[int64]float64) map[string]float64 {
 	return out
 }
 
-// gooOrderTaxes recalculates an order's item taxes, coupon discounts and tax lines, then the totals
-// (WC_Order::calculate_totals() for an order built through the API).
+// gooOrderTaxes recalculates an order's coupon discounts, item taxes and tax lines, then the totals
+// (WC_Order::recalculate_coupons() + calculate_totals() for an order built through the API).
 func (s *Server) gooOrderTaxes(ctx context.Context, o *gooOrder) {
-	dp := s.gooDecimals()
-	loc := s.gooOrderLocation(o)
 	// Coupons: discounts over the line items (subtotal → total), with the coupons' product, category and
 	// sale restrictions and the sequential setting, exactly like the admin's Recalculate.
 	s.gooOrderApplyCoupons(ctx, o)
+	s.gooOrderTaxesKeepTotals(ctx, o)
+}
+
+// gooOrderTaxesKeepTotals is WC_Order::calculate_totals(): item taxes, tax lines and totals from the
+// line totals as they are (posted or stored discounts stay; coupons are not re-applied).
+func (s *Server) gooOrderTaxesKeepTotals(ctx context.Context, o *gooOrder) {
+	dp := s.gooDecimals()
+	loc := s.gooOrderLocation(o)
 	all := map[int64]float64{}
 	ship := map[int64]float64{}
 	for _, it := range o.Items {
@@ -385,7 +391,7 @@ func (s *Server) gooV3ApplyOrder(ctx context.Context, o *gooOrder, b map[string]
 	if v, ok := b["meta_data"]; ok {
 		gooApplyMeta(o.Meta, v)
 	}
-	changed := false
+	changed, linesChanged, couponsChanged := false, false, false
 	byID := map[int64]*gooOrderItem{}
 	for _, it := range o.Items {
 		byID[it.ID] = it
@@ -394,7 +400,7 @@ func (s *Server) gooV3ApplyOrder(ctx context.Context, o *gooOrder, b map[string]
 	// Line items.
 	for _, x := range gooList(b["line_items"]) {
 		m := gooObj(x)
-		changed = true
+		changed, linesChanged = true, true
 		if id := gooInt(m["id"]); id > 0 {
 			it := byID[id]
 			if it == nil || it.Type != "line_item" {
@@ -410,15 +416,23 @@ func (s *Server) gooV3ApplyOrder(ctx context.Context, o *gooOrder, b map[string]
 					remove[id] = true
 					continue
 				}
-				unit := 0.0
+				unit, unitTotal := 0.0, 0.0
 				if it.Quantity != 0 {
-					unit = it.Subtotal / it.Quantity
+					unit, unitTotal = it.Subtotal/it.Quantity, it.Total/it.Quantity
 				}
 				it.Quantity = float64(q)
 				it.Subtotal = gooRound(unit*it.Quantity, s.gooDecimals())
+				it.Total = gooRound(unitTotal*it.Quantity, s.gooDecimals())
 			}
 			if v, ok := m["subtotal"]; ok {
+				undiscounted := gooRound(it.Total-it.Subtotal, s.gooDecimals()) == 0
 				it.Subtotal, _ = gooFloat(v)
+				if _, ok := m["total"]; !ok && undiscounted {
+					it.Total = it.Subtotal // a line without a discount keeps none
+				}
+			}
+			if v, ok := m["total"]; ok {
+				it.Total, _ = gooFloat(v)
 			}
 			if v, ok := m["name"]; ok {
 				it.Name = gooStr(v)
@@ -500,7 +514,7 @@ func (s *Server) gooV3ApplyOrder(ctx context.Context, o *gooOrder, b map[string]
 	// Coupon lines.
 	for _, x := range gooList(b["coupon_lines"]) {
 		m := gooObj(x)
-		changed = true
+		changed, couponsChanged = true, true
 		if id := gooInt(m["id"]); id > 0 {
 			if it := byID[id]; it != nil && it.Type == "coupon" {
 				if cv, ok := m["code"]; ok && cv == nil {
@@ -528,7 +542,13 @@ func (s *Server) gooV3ApplyOrder(ctx context.Context, o *gooOrder, b map[string]
 		o.Items = kept
 	}
 	if changed {
-		s.gooOrderTaxes(ctx, o)
+		// Line totals are re-derived from the coupons only when the coupons change (or lines change on an
+		// order with coupons); otherwise the posted / stored line totals (manual discounts) are kept.
+		if couponsChanged || (linesChanged && len(o.ItemsOf("coupon")) > 0) {
+			s.gooOrderTaxes(ctx, o)
+		} else {
+			s.gooOrderTaxesKeepTotals(ctx, o)
+		}
 	}
 	return nil
 }
@@ -566,11 +586,14 @@ func (s *Server) gooV3NewLineItem(ctx context.Context, o *gooOrder, m map[string
 	it.Subtotal = gooRound(unit*qty, s.gooDecimals())
 	if v, ok := m["subtotal"]; ok {
 		it.Subtotal, _ = gooFloat(v)
-	} else if v, ok := m["total"]; ok {
-		it.Subtotal, _ = gooFloat(v)
 	} else if v, ok := m["price"]; ok {
 		f, _ := gooFloat(v)
 		it.Subtotal = gooRound(f*qty, s.gooDecimals())
+	}
+	// total is the line after discounts (defaults to the subtotal), like WC's set_total().
+	it.Total = it.Subtotal
+	if v, ok := m["total"]; ok {
+		it.Total, _ = gooFloat(v)
 	}
 	if p.Type == gooTypeVariation {
 		var vals []string

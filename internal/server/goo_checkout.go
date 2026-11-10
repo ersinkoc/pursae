@@ -296,9 +296,25 @@ func (s *Server) gooValidateCheckout(c *gin.Context, cart *gooCart, d *gooChecko
 	for _, h := range gooCheckoutValidateHooks {
 		errs = append(errs, h(s, c, cart, d)...)
 	}
-	// Stock may have changed since the items were added (WC_Cart::check_cart_item_stock()).
+	// Stock may have changed since the items were added (WC_Cart::check_cart_item_stock()): the
+	// quantities are summed per stock owner (get_cart_item_quantities() keyed by get_stock_managed_by_id()).
+	need := map[int64]int{}
 	for _, it := range cart.Items {
-		if !s.gooHasEnoughStock(c.Request.Context(), it.product, it.Quantity) {
+		if it.product != nil {
+			need[s.gooStockOwner(c.Request.Context(), it.product).ID] += it.Quantity
+		}
+	}
+	checked := map[int64]bool{}
+	for _, it := range cart.Items {
+		if it.product == nil {
+			continue
+		}
+		owner := s.gooStockOwner(c.Request.Context(), it.product).ID
+		if checked[owner] {
+			continue
+		}
+		checked[owner] = true
+		if !s.gooHasEnoughStock(c.Request.Context(), it.product, need[owner]) {
 			errs = append(errs, fmt.Sprintf("Sorry, we do not have enough &quot;%s&quot; in stock to fulfill your order (%d available). We apologize for any inconvenience caused.",
 				html.EscapeString(s.gooProductTitle(c.Request.Context(), it.product)), max(s.gooStockQty(c.Request.Context(), it.product), 0)))
 		}
@@ -556,10 +572,17 @@ func (s *Server) gooCreateCustomer(ctx context.Context, email, username, passwor
 	if _, err := s.store.UserByLoginOrEmail(ctx, email); err == nil {
 		return 0, fmt.Errorf(`An account is already registered with your email address. <a href="#" class="showlogin">Please log in.</a>`)
 	}
-	if username == "" || s.gooOptBool("registration_generate_username") && username == "" {
+	username = strings.TrimSpace(username)
+	if username == "" {
 		username = s.gooGenerateUsername(ctx, email, fields["billing_first_name"], fields["billing_last_name"])
 	}
-	if _, err := s.store.UserByLoginOrEmail(ctx, username); err == nil {
+	// validate_username(): the same rule as the core's registration and REST users.
+	if !validUsername.MatchString(username) || len(username) > 60 {
+		return 0, fmt.Errorf("Please enter a valid account username.")
+	}
+	if loginTaken, emailTaken, err := s.store.LoginOrEmailTaken(ctx, username, username); err != nil {
+		return 0, err
+	} else if loginTaken || (strings.Contains(username, "@") && emailTaken) {
 		return 0, fmt.Errorf("An account is already registered with that username. Please choose another.")
 	}
 	generated := false

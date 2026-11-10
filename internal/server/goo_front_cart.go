@@ -70,7 +70,7 @@ func (s *Server) gooCartPageHTML(c *gin.Context) string {
 		b.WriteString(`</td>`)
 		b.WriteString(`<td class="product-price" data-title="Price">` + string(s.gooPrice(cart.ItemPriceDisplay(it))) + `</td>`)
 		_, hi := s.gooQtyLimits(ctx, p)
-		b.WriteString(`<td class="product-quantity" data-title="Quantity">` + gooQuantityInput("cart["+it.Key+"][qty]", parentName, it.Quantity, 0, hi, "quantity_"+it.Key[:12], p.SoldIndividually) + `</td>`)
+		b.WriteString(`<td class="product-quantity" data-title="Quantity">` + gooQuantityInput("cart["+it.Key+"][qty]", parentName, it.Quantity, 0, hi, "quantity_"+it.Key[:12], it.soldIndividually()) + `</td>`)
 		b.WriteString(`<td class="product-subtotal" data-title="Subtotal">` + string(s.gooPrice(cart.ItemSubtotalDisplay(it))) + s.gooIncTaxNote(cart, it) + `</td>`)
 		b.WriteString(`</tr>`)
 	}
