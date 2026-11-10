@@ -236,7 +236,7 @@ func (api *restAPI) registerPosts() {
 			http.MethodPost: func(c *gin.Context, r *restRequest) { api.createAutosave(c, r, typ) },
 		}, nil)
 		api.register("wp/v2", "/wp/v2/"+base+`/(?P<parent>[\d]+)/autosaves/(?P<id>[\d]+)`, map[string]restHandler{
-			http.MethodGet: func(c *gin.Context, r *restRequest) { api.listAutosaves(c, r, typ) },
+			http.MethodGet: func(c *gin.Context, r *restRequest) { api.getAutosave(c, r, typ) },
 		}, nil)
 		api.register("wp/v2", "/wp/v2/"+base+`/(?P<id>[\d]+)/revisions`, map[string]restHandler{
 			http.MethodGet: func(c *gin.Context, r *restRequest) { api.listRevisions(c, r, typ) },
@@ -248,12 +248,21 @@ func (api *restAPI) registerPosts() {
 	}
 }
 
+// restCanReadBlocks: wp_block maps read_post to edit_posts (WP_REST_Blocks_Controller::check_read_permission()),
+// so synced patterns are not public even when published.
+func restCanReadBlocks(u *store.User) bool {
+	return u != nil && u.Can("edit_posts", nil)
+}
+
 // readable reports whether the current REST user may see a post (published posts are public).
 func (api *restAPI) readable(c *gin.Context, p *store.Post) bool {
+	u := restCurrent(c)
+	if p.Type == "wp_block" && !restCanReadBlocks(u) {
+		return false
+	}
 	if p.Status == "publish" && p.Password == "" {
 		return true
 	}
-	u := restCurrent(c)
 	if p.Status == "publish" {
 		return true
 	}
@@ -348,6 +357,11 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 		forbidden(c, "rest_forbidden_context", "Sorry, you are not allowed to edit posts in this post type.")
 		return
 	}
+	if typ == "wp_block" && !restCanReadBlocks(u) {
+		paginate(c, 0, per, page) // every item fails check_read_permission()
+		restJSON(c, http.StatusOK, []any{})
+		return
+	}
 	q.ExcludePassworded = q.Search != "" && u == nil // WP_Query::parse_search() for logged-out requests
 	statuses := strings.Split(c.DefaultQuery("status", "publish"), ",")
 	for _, st := range statuses {
@@ -367,44 +381,22 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 		q.ExcludeID = ids
 	}
 	q.ExcludeID = append(q.ExcludeID, s.gooListingExclude(withPluginUser(c.Request.Context(), u), "post")...) // Goocommerce Memberships
-	if ids, ok := r.IDs(c, "author"); ok && len(ids) > 0 {
-		q.AuthorID = ids[0]
+	if !restCollectionFilters(c, r, s.loc(), &q) {
+		return
 	}
-	if p, ok := c.GetQuery("parent"); ok {
-		id, _ := strconv.ParseInt(p, 10, 64)
-		q.ParentID = &id
-	}
-	var termFilter []int64
-	if ids, ok := r.IDs(c, "categories"); ok {
-		termFilter = append(termFilter, ids...)
-	}
-	if ids, ok := r.IDs(c, "tags"); ok {
-		termFilter = append(termFilter, ids...)
-	}
-	if len(termFilter) > 0 {
-		q.TermIDs = termFilter
-	}
-	if slug := c.Query("slug"); slug != "" {
-		p, err := s.store.PostBySlug(c, typ, slug)
-		if err != nil {
-			paginate(c, 0, per, page)
-			restJSON(c, http.StatusOK, []any{})
-			return
-		}
-		q.IDs = []int64{p.ID}
-	}
-	if st, ok := c.GetQuery("sticky"); ok {
-		var stickyIDs []int64
-		posts, _, _ := s.store.QueryPosts(c, store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, PerPage: -1})
-		for _, p := range posts {
-			if p.Sticky == (st == "true" || st == "1") {
-				stickyIDs = append(stickyIDs, p.ID)
+	// Statuses beyond publish: callers who cannot edit others' posts see only what they may read
+	// (published/private posts and their own), filtered in SQL so X-WP-Total matches the items.
+	if u != nil && !u.Can("edit_others_"+plural, nil) {
+		for _, st := range q.Statuses {
+			if st != "publish" {
+				q.ReadableBy, q.ReadablePrivate = u.ID, u.Can("read_private_"+plural, nil)
+				break
 			}
 		}
-		if len(stickyIDs) == 0 {
-			stickyIDs = []int64{-1}
-		}
-		q.IDs = stickyIDs
+	}
+	if st, ok := c.GetQuery("sticky"); ok && typ == "post" {
+		v := st == "true" || st == "1"
+		q.Sticky = &v
 	}
 	posts, total, err := s.store.QueryPosts(c, q)
 	if err != nil {
@@ -437,6 +429,78 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 	}
 	paginate(c, total, per, page)
 	restJSON(c, http.StatusOK, out)
+}
+
+// restCollectionFilters reads the WP_REST_Posts_Controller collection parameters that map to SQL
+// (author, author_exclude, parent, parent_exclude, slug, categories/tags with *_exclude and
+// tax_relation, after/before, modified_after/modified_before, offset) into q. It answers
+// 400 rest_invalid_param and returns false for a malformed value.
+func restCollectionFilters(c *gin.Context, r *restRequest, loc *time.Location, q *store.PostQuery) bool {
+	invalid := func(param, msg string) bool {
+		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): "+param,
+			map[string]any{"params": map[string]string{param: msg}})
+		return false
+	}
+	if ids, ok := r.IDs(c, "author"); ok && len(ids) > 0 {
+		q.AuthorIDs = ids
+	}
+	if ids, ok := r.IDs(c, "author_exclude"); ok && len(ids) > 0 {
+		q.ExcludeAuthorIDs = ids
+	}
+	if ids, ok := r.IDs(c, "parent"); ok && len(ids) > 0 {
+		q.ParentIDs = ids
+	}
+	if ids, ok := r.IDs(c, "parent_exclude"); ok && len(ids) > 0 {
+		q.ExcludeParentIDs = ids
+	}
+	slugs := c.QueryArray("slug[]")
+	if len(slugs) == 0 {
+		if v := c.Query("slug"); v != "" {
+			slugs = strings.Split(v, ",")
+		}
+	}
+	for _, sl := range slugs {
+		if sl = strings.TrimSpace(sl); sl != "" {
+			q.Slugs = append(q.Slugs, wp.SanitizeTitle(sl))
+		}
+	}
+	for _, tax := range []string{"categories", "tags"} {
+		if ids, ok := r.IDs(c, tax); ok && len(ids) > 0 {
+			q.TermClauses = append(q.TermClauses, store.TermClause{IDs: ids})
+		}
+		if ids, ok := r.IDs(c, tax+"_exclude"); ok && len(ids) > 0 {
+			q.TermClauses = append(q.TermClauses, store.TermClause{IDs: ids, Exclude: true})
+		}
+	}
+	switch rel := c.Query("tax_relation"); rel {
+	case "", "AND":
+	case "OR":
+		q.TermRelationOR = true
+	default:
+		return invalid("tax_relation", "tax_relation is not one of AND and OR.")
+	}
+	for _, d := range []struct {
+		param string
+		dst   **time.Time
+	}{{"after", &q.After}, {"before", &q.Before}, {"modified_after", &q.ModifiedAfter}, {"modified_before", &q.ModifiedBefore}} {
+		v, ok := c.GetQuery(d.param)
+		if !ok || v == "" {
+			continue
+		}
+		t, ok := restParseDate(v, loc)
+		if !ok {
+			return invalid(d.param, "Invalid date.")
+		}
+		*d.dst = &t
+	}
+	if v, ok := c.GetQuery("offset"); ok && v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			return invalid("offset", "offset is not of type integer.")
+		}
+		q.Offset = &n
+	}
+	return true
 }
 
 // savePost creates or updates a post (POST /posts, PUT /posts/{id}).
@@ -588,7 +652,7 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 	if p.Status == "auto-draft" {
 		p.Status = "draft"
 	}
-	if typ == "wp_block" && p.Status == "draft" && isNew {
+	if typ == "wp_block" && p.Status == "draft" && isNew && u.Can("publish_posts", nil) {
 		p.Status = "publish"
 	}
 
@@ -856,6 +920,11 @@ func (api *restAPI) listRevisions(c *gin.Context, r *restRequest, typ string) {
 
 // loadRevision is WP_REST_Revisions_Controller::get_revision() + get_parent().
 func (api *restAPI) loadRevision(c *gin.Context, r *restRequest, typ string) (*store.Post, revision, bool) {
+	return api.loadRevisionKind(c, r, typ, false)
+}
+
+// loadRevisionKind loads /{parent}/revisions/{id} (autosave false) or /{parent}/autosaves/{id}.
+func (api *restAPI) loadRevisionKind(c *gin.Context, r *restRequest, typ string, autosave bool) (*store.Post, revision, bool) {
 	s := api.s
 	u := restCurrent(c)
 	parentID, _ := strconv.ParseInt(r.Params["parent"], 10, 64)
@@ -870,12 +939,21 @@ func (api *restAPI) loadRevision(c *gin.Context, r *restRequest, typ string) (*s
 	}
 	var rv revision
 	err = s.store.Pool.QueryRow(c, `SELECT id, post_id, coalesce(author_id,0), title, excerpt, content, is_autosave, created_at FROM post_revisions
-		WHERE id = $1 AND post_id = $2 AND NOT is_autosave`, r.ID(), p.ID).Scan(&rv.ID, &rv.PostID, &rv.AuthorID, &rv.Title, &rv.Excerpt, &rv.Content, &rv.IsAutosave, &rv.CreatedAt)
+		WHERE id = $1 AND post_id = $2 AND is_autosave = $3`, r.ID(), p.ID, autosave).Scan(&rv.ID, &rv.PostID, &rv.AuthorID, &rv.Title, &rv.Excerpt, &rv.Content, &rv.IsAutosave, &rv.CreatedAt)
 	if err != nil {
 		restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid revision ID.")
 		return nil, revision{}, false
 	}
 	return p, rv, true
+}
+
+// getAutosave is WP_REST_Autosaves_Controller::get_item(): one autosave of the parent post.
+func (api *restAPI) getAutosave(c *gin.Context, r *restRequest, typ string) {
+	p, rv, ok := api.loadRevisionKind(c, r, typ, true)
+	if !ok {
+		return
+	}
+	restJSON(c, http.StatusOK, api.s.restRevision(c, rv, p))
 }
 
 func (api *restAPI) getRevision(c *gin.Context, r *restRequest, typ string) {

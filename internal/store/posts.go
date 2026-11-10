@@ -244,6 +244,27 @@ type PostQuery struct {
 	// NoContent leaves Excerpt and Content empty, for lists that only print titles and links
 	// (the Page List block) and would otherwise load every body.
 	NoContent bool
+	// REST collection filters (WP_REST_Posts_Controller::get_items()).
+	AuthorIDs        []int64 // author__in
+	ExcludeAuthorIDs []int64 // author__not_in
+	ParentIDs        []int64 // post_parent__in
+	ExcludeParentIDs []int64 // post_parent__not_in
+	Slugs            []string
+	// TermClauses is a tax_query: each clause matches posts in any of its terms (or, with Exclude, in
+	// none of them); the clauses are AND-joined, or OR-joined when TermRelationOR.
+	TermClauses    []TermClause
+	TermRelationOR bool
+	// After/Before compare published_at, ModifiedAfter/ModifiedBefore modified_at (exclusive, as
+	// WP_Date_Query's after/before without inclusive).
+	After, Before, ModifiedAfter, ModifiedBefore *time.Time
+	// Offset, when set, replaces the page offset (WP_Query's offset).
+	Offset *int
+}
+
+// TermClause is one tax_query clause of PostQuery.TermClauses.
+type TermClause struct {
+	IDs     []int64
+	Exclude bool
 }
 
 func (q *PostQuery) where(args *[]any) string {
@@ -287,6 +308,48 @@ func (q *PostQuery) where(args *[]any) string {
 	}
 	if len(q.TermIDs) > 0 {
 		conds = append(conds, "id IN (SELECT post_id FROM post_terms WHERE term_id = ANY("+add(q.TermIDs)+"))")
+	}
+	if len(q.AuthorIDs) > 0 {
+		conds = append(conds, "author_id = ANY("+add(q.AuthorIDs)+")")
+	}
+	if len(q.ExcludeAuthorIDs) > 0 {
+		conds = append(conds, "NOT (coalesce(author_id,0) = ANY("+add(q.ExcludeAuthorIDs)+"))")
+	}
+	if len(q.ParentIDs) > 0 {
+		conds = append(conds, "coalesce(parent_id,0) = ANY("+add(q.ParentIDs)+")")
+	}
+	if len(q.ExcludeParentIDs) > 0 {
+		conds = append(conds, "NOT (coalesce(parent_id,0) = ANY("+add(q.ExcludeParentIDs)+"))")
+	}
+	if len(q.Slugs) > 0 {
+		conds = append(conds, "slug = ANY("+add(q.Slugs)+")")
+	}
+	if len(q.TermClauses) > 0 {
+		var tc []string
+		for _, cl := range q.TermClauses {
+			in := "id IN (SELECT post_id FROM post_terms WHERE term_id = ANY(" + add(cl.IDs) + "))"
+			if cl.Exclude {
+				in = "NOT " + in
+			}
+			tc = append(tc, in)
+		}
+		join := " AND "
+		if q.TermRelationOR {
+			join = " OR "
+		}
+		conds = append(conds, "("+strings.Join(tc, join)+")")
+	}
+	if q.After != nil {
+		conds = append(conds, "published_at > "+add(*q.After))
+	}
+	if q.Before != nil {
+		conds = append(conds, "published_at < "+add(*q.Before))
+	}
+	if q.ModifiedAfter != nil {
+		conds = append(conds, "modified_at > "+add(*q.ModifiedAfter))
+	}
+	if q.ModifiedBefore != nil {
+		conds = append(conds, "modified_at < "+add(*q.ModifiedBefore))
 	}
 	if len(q.IDs) > 0 {
 		conds = append(conds, "id = ANY("+add(q.IDs)+")")
@@ -436,7 +499,13 @@ func (s *Store) QueryPosts(ctx context.Context, q PostQuery) ([]*Post, int, erro
 		cols = postColsNoContent
 	}
 	sql := `SELECT ` + cols + ` FROM posts WHERE ` + where + ` ORDER BY ` + q.orderBy()
-	if q.PerPage > 0 {
+	switch {
+	case q.Offset != nil:
+		if q.PerPage > 0 {
+			sql += fmt.Sprintf(" LIMIT %d", q.PerPage)
+		}
+		sql += fmt.Sprintf(" OFFSET %d", max(*q.Offset, 0))
+	case q.PerPage > 0:
 		sql += limitOffset(q.PerPage, q.Page)
 	}
 	rows, err := s.Pool.Query(ctx, sql, args...)

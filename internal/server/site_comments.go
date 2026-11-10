@@ -422,6 +422,20 @@ func startsWithPort(s string) bool {
 	return n > 0 && (n == len(s) || s[n] == '/' || s[n] == '?' || s[n] == '#')
 }
 
+// commentFlooded is wp_check_comment_flood(): fifteen seconds between comments from the same visitor
+// (IP, e-mail or user), unless they moderate. Used by the comment form and REST.
+func (s *Server) commentFlooded(ctx context.Context, cm *store.Comment, u *store.User) bool {
+	if u.Can("manage_options", nil) || u.Can("moderate_comments", nil) {
+		return false
+	}
+	var uid int64
+	if u != nil {
+		uid = u.ID
+	}
+	last, ok, _ := s.store.LastCommentAt(ctx, cm.AuthorIP, cm.AuthorEmail, uid)
+	return ok && time.Since(last) < commentFloodInterval
+}
+
 func (s *Server) commentPost(c *gin.Context) {
 	ctx := c.Request.Context()
 	u := currentUser(c)
@@ -484,16 +498,9 @@ func (s *Server) commentPost(c *gin.Context) {
 		s.commentDie(c, http.StatusConflict, "Duplicate comment detected; it looks as though you&#8217;ve already said that!")
 		return
 	}
-	// wp_check_comment_flood(): fifteen seconds between comments from the same visitor, unless they moderate.
-	if !u.Can("manage_options", nil) && !u.Can("moderate_comments", nil) {
-		var uid int64
-		if u != nil {
-			uid = u.ID
-		}
-		if last, ok, _ := s.store.LastCommentAt(ctx, cm.AuthorIP, cm.AuthorEmail, uid); ok && time.Since(last) < commentFloodInterval {
-			s.commentDie(c, http.StatusTooManyRequests, "You are posting comments too quickly. Slow down.")
-			return
-		}
+	if s.commentFlooded(ctx, cm, u) {
+		s.commentDie(c, http.StatusTooManyRequests, "You are posting comments too quickly. Slow down.")
+		return
 	}
 	cm.Status = s.commentStatus(c, cm, u)
 	if err := s.store.InsertComment(ctx, cm); err != nil {

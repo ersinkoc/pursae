@@ -297,7 +297,7 @@ func (api *restAPI) createComment(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusForbidden, "rest_comment_trash_post", "Sorry, you cannot create a comment on this post.")
 		return
 	}
-	if p.CommentStatus != "open" {
+	if !s.commentsOpen(p) { // comments_open(), including "close comments on old posts"
 		restErr(c, http.StatusForbidden, "rest_comment_closed", "Sorry, comments are closed for this item.")
 		return
 	}
@@ -320,6 +320,10 @@ func (api *restAPI) createComment(c *gin.Context, r *restRequest) {
 	}
 	if dup, _ := s.store.IsDuplicateComment(c, cm); dup {
 		restErr(c, http.StatusConflict, "comment_duplicate", "Duplicate comment detected; it looks as though you&#8217;ve already said that!")
+		return
+	}
+	if s.commentFlooded(c, cm, u) { // wp_allow_comment() -> wp_check_comment_flood()
+		restErr(c, http.StatusTooManyRequests, "comment_flood", "You are posting comments too quickly. Slow down.")
 		return
 	}
 	if st, ok := r.Str(c, "status"); ok {
@@ -435,6 +439,7 @@ func (api *restAPI) updateComment(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusBadRequest, "rest_comment_invalid_type", "Sorry, you are not allowed to change the comment type.")
 		return
 	}
+	oldPost := p // the comment may move to another post below; both counts change
 	if pid, ok := r.Int(c, "post"); ok && pid != cm.PostID {
 		np, err := s.store.GetPost(c, pid)
 		if err != nil {
@@ -449,6 +454,7 @@ func (api *restAPI) updateComment(c *gin.Context, r *restRequest) {
 		cm.PostID = np.ID
 		p = np
 	}
+
 	if author, ok := r.Int(c, "author"); ok && author != cm.UserID {
 		if !canModerate(u) {
 			restErr(c, http.StatusForbidden, "rest_comment_invalid_author", "Sorry, you are not allowed to edit 'author' for comments.")
@@ -491,6 +497,10 @@ func (api *restAPI) updateComment(c *gin.Context, r *restRequest) {
 		return
 	}
 	_ = s.store.RecountComments(c, cm.PostID)
+	if oldPost.ID != cm.PostID {
+		_ = s.store.RecountComments(c, oldPost.ID)
+		s.afterPostSave(c, oldPost)
+	}
 	cm, _ = s.store.GetComment(c, cm.ID)
 	s.afterPostSave(c, p)
 	restJSON(c, http.StatusOK, s.restComment(c, cm, "edit"))

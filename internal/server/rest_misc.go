@@ -250,9 +250,33 @@ func (api *restAPI) saveSettings(c *gin.Context, r *restRequest) {
 		return
 	}
 	values := map[string]any{}
+	bad := map[string]string{}
 	for k, opt := range restSettingsMap {
-		if v, ok := r.Body[k]; ok {
-			values[opt] = v
+		v, ok := r.Body[k]
+		if !ok || v == nil { // null resets in WordPress; here it leaves the option unchanged
+			continue
+		}
+		val, msg := api.s.sanitizeRESTSetting(c, k, v)
+		if msg != "" {
+			bad[k] = msg
+			continue
+		}
+		values[opt] = val
+	}
+	if len(bad) > 0 {
+		names := make([]string, 0, len(bad))
+		for k := range bad {
+			names = append(names, k)
+		}
+		slices.Sort(names)
+		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): "+strings.Join(names, ", "), map[string]any{"params": bad})
+		return
+	}
+	if lang, ok := values["WPLANG"].(string); ok {
+		if err := api.s.installLanguage(c.Request.Context(), lang); err != nil {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): language",
+				map[string]any{"params": map[string]string{"language": "The language pack could not be installed."}})
+			return
 		}
 	}
 	if len(values) > 0 {
@@ -343,17 +367,26 @@ func (api *restAPI) search(c *gin.Context, r *restRequest) {
 			if tax != "any" && tax != t && !(tax == "tag" && t == "post_tag") {
 				continue
 			}
-			ts, _, _ := s.store.QueryTerms(c, store.TermQuery{Taxonomy: t, Search: c.Query("search"), PerPage: per, Page: page})
+			ts, n, _ := s.store.QueryTerms(c, store.TermQuery{Taxonomy: t, Search: c.Query("search"), PerPage: per, Page: page})
 			all = append(all, ts...)
+			total += n
 		}
 		for _, t := range all {
 			out = append(out, map[string]any{"id": t.ID, "title": t.Name, "url": s.links(c).TermLink(t), "type": t.Taxonomy, "subtype": t.Taxonomy})
 		}
-		total = len(out)
 	default:
-		types := []string{"post", "page"}
+		// WP_REST_Search_Controller: subtype is an enum of the searchable public types; internal
+		// types (contact forms, field groups, templates, synced patterns) are not searchable.
+		types := siteSearchTypes()
 		if st := c.Query("subtype"); st != "" && st != "any" {
 			types = strings.Split(st, ",")
+			for _, t := range types {
+				if !slices.Contains(siteSearchTypes(), t) {
+					restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): subtype",
+						map[string]any{"params": map[string]string{"subtype": t + " is not one of " + strings.Join(siteSearchTypes(), ", ") + "."}})
+					return
+				}
+			}
 		}
 		posts, n, _ := s.store.QueryPosts(c, store.PostQuery{Types: types, Statuses: []string{"publish"}, Search: c.Query("search"), PerPage: per, Page: page,
 			ExcludePassworded: c.Query("search") != "" && restCurrent(c) == nil}) // WP_Query::parse_search() for logged-out requests

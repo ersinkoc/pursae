@@ -12,10 +12,10 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 
 | Route | Methods | Notes |
 |-------|---------|-------|
-| `/posts`, `/pages`, `/blocks` | GET, POST | `page`, `per_page`, `search`, `author`, `categories`, `tags`, `status`, `orderby`, `order`, `slug`, `include`, `exclude`, `parent`, `sticky`, `_embed`, `_fields`; `context=edit` for raw content (needs `edit_posts`/`edit_pages`; items the caller cannot edit omit `password`, and password-protected or members-only ones also omit `content.raw` and `excerpt.raw`). `meta.footnotes` (the block editor's footnotes, a JSON string) is read and written |
+| `/posts`, `/pages`, `/blocks` | GET, POST | `page`, `per_page`, `offset`, `search`, `author`, `author_exclude`, `categories`, `categories_exclude`, `tags`, `tags_exclude`, `tax_relation` (`AND` default, or `OR`), `after`, `before`, `modified_after`, `modified_before`, `status`, `orderby`, `order`, `slug` (comma list or `slug[]`), `include`, `exclude`, `parent`, `parent_exclude`, `sticky` (posts only), `_embed`, `_fields`; a malformed filter value is a 400 `rest_invalid_param`. Without `edit_others_posts` other statuses list only what the caller may read. `/blocks` (synced patterns) needs `edit_posts` to read, and a new pattern is published only for users with `publish_posts`; `context=edit` for raw content (needs `edit_posts`/`edit_pages`; items the caller cannot edit omit `password`, and password-protected or members-only ones also omit `content.raw` and `excerpt.raw`). `meta.footnotes` (the block editor's footnotes, a JSON string) is read and written |
 | `/posts/{id}`, `/pages/{id}`, `/blocks/{id}` | GET, POST, DELETE | `?force=true` deletes instead of trashing. Pages read and write `template` (`_wp_page_template`): `""` is the default template, otherwise one of the theme's page templates (a package's `page_templates`) or the page's current template; another value is a 400 |
 | `/posts/{id}/autosaves`, `/pages/{id}/autosaves`, `/blocks/{id}/autosaves` | GET, POST | the editor's autosave |
-| `/posts/{parent}/autosaves/{id}`, … | GET | |
+| `/posts/{parent}/autosaves/{id}`, … | GET | one autosave of the parent (404 `rest_post_invalid_id` when it is not one) |
 | `/posts/{id}/revisions`, `/pages/{id}/revisions`, … | GET | |
 
 With Pursae Multi Language on, posts, pages, categories and tags (and the translated custom types and
@@ -55,11 +55,11 @@ language, of the same type, that the user may edit.
 
 | Route | Methods | Notes |
 |-------|---------|-------|
-| `/settings` | GET, POST | `title`, `description`, `timezone`, `date_format`, `posts_per_page`, `default_category`, `show_on_front`, `page_on_front`, … (`manage_options`) |
+| `/settings` | GET, POST | `title`, `description`, `timezone`, `date_format`, `posts_per_page`, `default_category`, `show_on_front`, `page_on_front`, … (`manage_options`); values are typed and validated like the Settings screens (http(s) `url`, valid `email`, known `language`, loadable `timezone`, `posts_per_page` ≥ 1, existing pages); any invalid value is a 400 `rest_invalid_param` and nothing is saved |
 | `/types`, `/types/{type}` | GET | `post`, `page`, `attachment`, `wp_block`, … |
 | `/statuses`, `/statuses/{status}` | GET | |
 | `/themes`, `/themes/{stylesheet}` | GET | `status=active` returns the active theme with its `theme_supports` |
-| `/search` | GET | `search`, `type`, `subtype` |
+| `/search` | GET | `search`, `type`, `subtype`: post subtypes are limited to the searchable public types (posts, pages, public custom types); another subtype is a 400 |
 | `/sidebars`, `/sidebars/{id}` | GET, POST | widget areas |
 | `/widgets`, `/widgets/{id}` | GET, POST, DELETE | |
 | `/widget-types`, `/widget-types/{id}`, `/widget-types/{id}/encode`, `/widget-types/{id}/render` | GET, POST | |
