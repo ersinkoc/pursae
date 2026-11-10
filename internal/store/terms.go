@@ -22,6 +22,9 @@ type Term struct {
 	Count       int
 	Meta        map[string]any
 	Depth       int // set by HierarchicalTerms
+	// TreeCount is Count plus the TreeCount of the term's children (set by HierarchicalTerms). A post
+	// in several terms of one branch adds to it more than once, so only test it against zero.
+	TreeCount int
 }
 
 const termCols = `id, taxonomy, coalesce(parent_id,0), slug, name, description, post_count, meta`
@@ -104,7 +107,7 @@ func (s *Store) QueryTerms(ctx context.Context, q TermQuery) ([]*Term, int, erro
 	args := []any{q.Taxonomy}
 	conds := []string{"taxonomy = $1"}
 	if q.Search != "" {
-		args = append(args, "%"+q.Search+"%")
+		args = append(args, likeContains(q.Search))
 		conds = append(conds, "(name ILIKE $"+strconv.Itoa(len(args))+" OR slug ILIKE $"+strconv.Itoa(len(args))+")")
 	}
 	if q.HideEmpty {
@@ -169,7 +172,7 @@ func (s *Store) HierarchicalTerms(ctx context.Context, taxonomy string, hideEmpt
 		children[parent] = append(children[parent], t)
 	}
 	seen := map[int64]bool{}
-	var out []*Term
+	var order []*Term
 	var walk func(parent int64, depth int)
 	walk = func(parent int64, depth int) {
 		for _, t := range children[parent] {
@@ -178,9 +181,7 @@ func (s *Store) HierarchicalTerms(ctx context.Context, taxonomy string, hideEmpt
 			}
 			seen[t.ID] = true
 			t.Depth = depth
-			if !hideEmpty || t.Count > 0 {
-				out = append(out, t)
-			}
+			order = append(order, t)
 			walk(t.ID, depth+1)
 		}
 	}
@@ -193,6 +194,26 @@ func (s *Store) HierarchicalTerms(ctx context.Context, taxonomy string, hideEmpt
 			walk(-1, 0)
 		}
 	}
+	// Descendants follow their ancestor in order, so a backwards pass sums each branch.
+	tree := map[int64]int{}
+	for i := len(order) - 1; i >= 0; i-- {
+		t := order[i]
+		t.TreeCount = tree[t.ID] + t.Count
+		if ids[t.ParentID] && t.ParentID != t.ID {
+			tree[t.ParentID] += t.TreeCount
+		}
+	}
+	if !hideEmpty {
+		return order, nil
+	}
+	// get_terms( hierarchical, hide_empty ): an empty term stays when a descendant has posts, so
+	// the branch below it does not vanish.
+	out := make([]*Term, 0, len(order))
+	for _, t := range order {
+		if t.TreeCount > 0 {
+			out = append(out, t)
+		}
+	}
 	return out, nil
 }
 
@@ -200,27 +221,38 @@ func (s *Store) HierarchicalTerms(ctx context.Context, taxonomy string, hideEmpt
 var ErrTermExists = errors.New("A term with the name provided already exists with this parent.")
 
 func (s *Store) InsertTerm(ctx context.Context, t *Term) error {
-	var exists bool
-	args := []any{t.Taxonomy, t.Name, t.ParentID}
-	if err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM terms WHERE taxonomy=$1 AND lower(name)=lower($2)
-		AND coalesce(parent_id,0)=$3`+QueryFilter.cond(ctx, "term", &args)+`)`, args...).Scan(&exists); err != nil {
-		return err
-	}
-	if exists {
-		return ErrTermExists
-	}
-	slug, err := s.uniqueTermSlug(ctx, t.Taxonomy, t.Slug, t.Name, 0)
-	if err != nil {
-		return err
-	}
-	t.Slug = slug
-	meta, _ := json.Marshal(orEmpty(t.Meta))
-	return s.Pool.QueryRow(ctx, `INSERT INTO terms(taxonomy, parent_id, slug, name, description, meta)
-		VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, t.Taxonomy, nullable(t.ParentID), t.Slug, t.Name, t.Description, meta).Scan(&t.ID)
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		// Two posts saved at once with the same new tag must not both create it: the name check,
+		// the slug check and the insert run under per-name and per-slug locks (see lockSlug).
+		if err := lockSlug(ctx, tx, "term-name", t.Taxonomy, strings.ToLower(t.Name)); err != nil {
+			return err
+		}
+		var exists bool
+		args := []any{t.Taxonomy, t.Name, t.ParentID}
+		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM terms WHERE taxonomy=$1 AND lower(name)=lower($2)
+			AND coalesce(parent_id,0)=$3`+QueryFilter.cond(ctx, "term", &args)+`)`, args...).Scan(&exists); err != nil {
+			return err
+		}
+		if exists {
+			return ErrTermExists
+		}
+		slug, err := uniqueTermSlug(ctx, tx, t.Taxonomy, t.Slug, t.Name, 0)
+		if err != nil {
+			return err
+		}
+		t.Slug = slug
+		meta, _ := json.Marshal(orEmpty(t.Meta))
+		return tx.QueryRow(ctx, `INSERT INTO terms(taxonomy, parent_id, slug, name, description, meta)
+			VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, t.Taxonomy, nullable(t.ParentID), t.Slug, t.Name, t.Description, meta).Scan(&t.ID)
+	})
 }
 
 func (s *Store) UpdateTerm(ctx context.Context, t *Term) error {
-	slug, err := s.uniqueTermSlug(ctx, t.Taxonomy, t.Slug, t.Name, t.ID)
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error { return updateTermTx(ctx, tx, t) })
+}
+
+func updateTermTx(ctx context.Context, tx pgx.Tx, t *Term) error {
+	slug, err := uniqueTermSlug(ctx, tx, t.Taxonomy, t.Slug, t.Name, t.ID)
 	if err != nil {
 		return err
 	}
@@ -234,7 +266,7 @@ func (s *Store) UpdateTerm(ctx context.Context, t *Term) error {
 		// that does not exist or belongs to another taxonomy is dropped too. The depth bound keeps a
 		// loop already in the data from spinning the walk.
 		var parentOK, loop bool
-		if err := s.Pool.QueryRow(ctx, `WITH RECURSIVE up(id, parent_id, taxonomy, depth) AS (
+		if err := tx.QueryRow(ctx, `WITH RECURSIVE up(id, parent_id, taxonomy, depth) AS (
 				SELECT id, parent_id, taxonomy, 0 FROM terms WHERE id = $1
 				UNION ALL
 				SELECT p.id, p.parent_id, p.taxonomy, up.depth + 1 FROM terms p JOIN up ON p.id = up.parent_id
@@ -248,7 +280,7 @@ func (s *Store) UpdateTerm(ctx context.Context, t *Term) error {
 		}
 	}
 	meta, _ := json.Marshal(orEmpty(t.Meta))
-	_, err = s.Pool.Exec(ctx, `UPDATE terms SET parent_id=$2, slug=$3, name=$4, description=$5, meta=$6 WHERE id=$1`,
+	_, err = tx.Exec(ctx, `UPDATE terms SET parent_id=$2, slug=$3, name=$4, description=$5, meta=$6 WHERE id=$1`,
 		t.ID, nullable(t.ParentID), t.Slug, t.Name, t.Description, meta)
 	return err
 }
@@ -294,7 +326,9 @@ func (s *Store) DeleteTerm(ctx context.Context, t *Term, defaultCategory int64) 
 	})
 }
 
-func (s *Store) uniqueTermSlug(ctx context.Context, taxonomy, slug, name string, excludeID int64) (string, error) {
+// uniqueTermSlug is wp_unique_term_slug(). It takes the slug's lock (lockSlug), so q should be the
+// transaction that writes the term.
+func uniqueTermSlug(ctx context.Context, q DBTX, taxonomy, slug, name string, excludeID int64) (string, error) {
 	slug = wp.SanitizeTitle(slug)
 	if slug == "" {
 		slug = wp.SanitizeTitle(name)
@@ -302,12 +336,15 @@ func (s *Store) uniqueTermSlug(ctx context.Context, taxonomy, slug, name string,
 	if slug == "" {
 		slug = "term"
 	}
+	if err := lockSlug(ctx, q, "term", taxonomy, slug); err != nil {
+		return "", err
+	}
 	cand := slug
 	for i := 2; ; i++ {
 		var taken bool
 		args := []any{taxonomy, cand, excludeID}
 		scope := slugScope(ctx, "term", excludeID, &args)
-		if err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM terms WHERE taxonomy=$1 AND slug=$2 AND id<>$3`+scope+`)`,
+		if err := q.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM terms WHERE taxonomy=$1 AND slug=$2 AND id<>$3`+scope+`)`,
 			args...).Scan(&taken); err != nil {
 			return "", err
 		}

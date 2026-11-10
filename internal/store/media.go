@@ -236,7 +236,7 @@ func (s *Store) QueryAttachments(ctx context.Context, q AttachmentQuery) ([]*Att
 	var args []any
 	add := func(v any) string { args = append(args, v); return "$" + strconv.Itoa(len(args)) }
 	if q.Search != "" {
-		p := add("%" + q.Search + "%")
+		p := add(likeContains(q.Search))
 		conds = append(conds, "(title ILIKE "+p+" OR caption ILIKE "+p+" OR description ILIKE "+p+" OR file_path ILIKE "+p+" OR alt_text ILIKE "+p+")")
 	}
 	if len(q.MimePrefix) > 0 {

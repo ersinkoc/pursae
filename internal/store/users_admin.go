@@ -66,6 +66,10 @@ type UserQuery struct {
 // likeEscaper escapes LIKE metacharacters so a search term matches literally.
 var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
 
+// likeContains is the LIKE/ILIKE pattern "contains term", with term's % and _ matched literally
+// (backslash is PostgreSQL's default LIKE escape).
+func likeContains(term string) string { return "%" + likeEscaper.Replace(term) + "%" }
+
 // capCondition is the SQL for "user u has cap" with caps.Resolve's precedence: a deny exception
 // wins, otherwise a role granting it or an allow exception. Meta capabilities that need a post
 // (edit_post, ...) map to do_not_allow without one, as in User.Can(cap, nil).
@@ -351,7 +355,7 @@ func (s *Store) UpdateUserFields(ctx context.Context, u *User) error {
 	profile, _ := json.Marshal(u.Profile)
 	_, err := s.Pool.Exec(ctx, `UPDATE users SET email=$2, display_name=$3, url=$4, profile=$5, nicename=$6, locale=$7 WHERE id=$1`,
 		u.ID, u.Email, u.DisplayName, u.URL, profile, u.Nicename, u.Locale)
-	return err
+	return userUniqueErr(err)
 }
 
 // NicenameTaken reports whether another user already has this nicename (slug).

@@ -705,7 +705,7 @@ func (s *Server) gooArchiveHTML(c *gin.Context, fv *gooFrontView) string {
 	if (display == "subcategories" || display == "both") && fv.Paged <= 1 && parent >= 0 {
 		all, _ := s.store.HierarchicalTerms(ctx, "product_cat", true)
 		for _, t := range all {
-			if t.ParentID == parent && t.Count > 0 && t.Slug != "uncategorized" {
+			if t.ParentID == parent && t.TreeCount > 0 && t.Slug != "uncategorized" {
 				cats = append(cats, t)
 			}
 		}

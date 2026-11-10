@@ -211,9 +211,7 @@ func (w WebBuilderDB) Templates(ctx context.Context, f WBTemplateFilter) ([]*WBT
 }
 
 // likeEscape escapes the ILIKE wildcards of a search string (backslash is the default escape).
-func likeEscape(s string) string {
-	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
-}
+func likeEscape(s string) string { return likeEscaper.Replace(s) }
 
 // Template loads one template in any status; ErrNotFound when id is not a template.
 func (w WebBuilderDB) Template(ctx context.Context, id int64) (*WBTemplate, error) {

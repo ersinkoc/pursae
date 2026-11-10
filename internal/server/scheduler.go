@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"wpgo/internal/auth"
 	"wpgo/internal/mail"
 )
@@ -55,7 +57,18 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 	return map[string]jobHandler{
 		"wp_scheduled_delete": func(ctx context.Context, _ map[string]any) error {
 			days := emptyTrashDays()
-			_, err := s.store.Pool.Exec(ctx, `DELETE FROM posts WHERE status = 'trash' AND updated_at < now() - make_interval(days => $1)`, days)
+			// One by one through DeletePost, so the children of a deleted page move up to its parent.
+			var ids []int64
+			rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE status = 'trash' AND updated_at < now() - make_interval(days => $1) ORDER BY id`, days)
+			if err == nil {
+				ids, err = pgx.CollectRows(rows, pgx.RowTo[int64])
+			}
+			for _, id := range ids {
+				if err != nil {
+					break
+				}
+				err = s.store.DeletePost(ctx, id)
+			}
 			if err == nil {
 				_, err = s.store.Pool.Exec(ctx, `DELETE FROM comments WHERE status = 'trash' AND updated_at < now() - make_interval(days => $1)`, days)
 			}

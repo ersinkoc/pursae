@@ -19,6 +19,12 @@ type runtimeState struct {
 	cdn    cdnPurgeQueue
 }
 
+// WatchSettings keeps the settings cache in step with the other instances sharing the database
+// until ctx ends (settings.Store.Watch). main runs it for `wpgo serve`.
+func (s *Server) WatchSettings(ctx context.Context) {
+	s.settings.Watch(ctx)
+}
+
 // Close drains the background queues (or gives up when ctx ends). main calls it after the HTTP
 // server and the scheduler stopped, before closing the database pool.
 func (s *Server) Close(ctx context.Context) {

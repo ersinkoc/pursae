@@ -472,6 +472,15 @@ func renderCategories(ctx context.Context, b *blocks.Block, _ string) string {
 		terms = top
 	}
 	if !hier {
+		if hideEmpty { // a flat list has no branch to keep: empty parents go too
+			kept := terms[:0]
+			for _, t := range terms {
+				if t.Count > 0 {
+					kept = append(kept, t)
+				}
+			}
+			terms = kept
+		}
 		// Flat list ordered by name, like wp_list_categories( hierarchical => false ).
 		for i := 1; i < len(terms); i++ {
 			for j := i; j > 0 && strings.ToLower(terms[j].Name) < strings.ToLower(terms[j-1].Name); j-- {

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"wpgo/internal/caps"
@@ -189,6 +190,29 @@ func (s *Store) UserByNicename(ctx context.Context, nicename string) (*User, err
 	return scanUser(s.Pool.QueryRow(ctx, `SELECT `+userCols+` FROM users WHERE nicename = $1`, nicename))
 }
 
+// ErrLoginTaken and ErrEmailTaken are what CreateUser and the user updates return when the database
+// rejects a username or e-mail address another account already has (in any letter case, migration
+// 0048): the race LoginOrEmailTaken alone cannot close.
+var (
+	ErrLoginTaken = errors.New("Sorry, that username already exists!")
+	ErrEmailTaken = errors.New("Sorry, that email address is already used!")
+)
+
+// userUniqueErr maps a unique violation on users.login / users.email to ErrLoginTaken / ErrEmailTaken.
+func userUniqueErr(err error) error {
+	var pe *pgconn.PgError
+	if !errors.As(err, &pe) || pe.Code != "23505" {
+		return err
+	}
+	switch pe.ConstraintName {
+	case "users_login_key", "users_lower_login_key":
+		return ErrLoginTaken
+	case "users_email_key", "users_lower_email_key":
+		return ErrEmailTaken
+	}
+	return err
+}
+
 type NewUser struct {
 	Login, Email, PasswordHash, DisplayName, Role string
 	Profile                                       map[string]string
@@ -226,7 +250,7 @@ func (s *Store) CreateUser(ctx context.Context, nu NewUser) (int64, error) {
 		if err := tx.QueryRow(ctx, `INSERT INTO users(login, email, password_hash, nicename, display_name, profile)
 			VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
 			nu.Login, nu.Email, nu.PasswordHash, nicename, nu.DisplayName, profile).Scan(&id); err != nil {
-			return err
+			return userUniqueErr(err)
 		}
 		_, err := tx.Exec(ctx, `INSERT INTO user_roles(user_id, role_id, is_primary)
 			SELECT $1, id, true FROM roles WHERE slug = $2`, id, nu.Role)
@@ -239,7 +263,7 @@ func (s *Store) UpdateUserProfile(ctx context.Context, u *User) error {
 	profile, _ := json.Marshal(u.Profile)
 	_, err := s.Pool.Exec(ctx, `UPDATE users SET email=$2, display_name=$3, url=$4, profile=$5 WHERE id=$1`,
 		u.ID, u.Email, u.DisplayName, u.URL, profile)
-	return err
+	return userUniqueErr(err)
 }
 
 func (s *Store) SetUserPassword(ctx context.Context, userID int64, hash string) error {
