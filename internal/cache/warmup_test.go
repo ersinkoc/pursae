@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -71,6 +72,15 @@ func TestWarmupRateLimitAndCancel(t *testing.T) {
 	}
 	if prog.Done == 0 || prog.Done >= 20 {
 		t.Fatalf("rate limit not applied: %+v", prog)
+	}
+}
+
+func TestWarmupExtremeRateDoesNotPanic(t *testing.T) {
+	prog, err := Warmup(context.Background(), []string{"https://example.test/"}, WarmupOptions{
+		Handler: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}), Concurrency: 1, RatePerSecond: math.MaxFloat64,
+	})
+	if err != nil || prog.Done != 1 {
+		t.Fatalf("progress=%+v err=%v", prog, err)
 	}
 }
 

@@ -21,7 +21,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -321,15 +320,15 @@ func Less(a, b string) bool {
 	b, preB, _ := strings.Cut(b, "-")
 	pa, pb := strings.Split(a, "."), strings.Split(b, ".")
 	for i := 0; i < max(len(pa), len(pb)); i++ {
-		var x, y int
+		x, y := "0", "0"
 		if i < len(pa) {
-			x, _ = strconv.Atoi(pa[i])
+			x = pa[i]
 		}
 		if i < len(pb) {
-			y, _ = strconv.Atoi(pb[i])
+			y = pb[i]
 		}
-		if x != y {
-			return x < y
+		if c := compareNumber(x, y); c != 0 {
+			return c < 0
 		}
 	}
 	if preA == "" || preB == "" {
@@ -340,18 +339,46 @@ func Less(a, b string) bool {
 		if ia[i] == ib[i] {
 			continue
 		}
-		x, errA := strconv.Atoi(ia[i])
-		y, errB := strconv.Atoi(ib[i])
+		numA, numB := numeric(ia[i]), numeric(ib[i])
 		switch {
-		case errA == nil && errB == nil:
-			return x < y
-		case errA == nil || errB == nil:
-			return errA == nil
+		case numA && numB:
+			return compareNumber(ia[i], ib[i]) < 0
+		case numA || numB:
+			return numA
 		default:
 			return ia[i] < ib[i]
 		}
 	}
 	return len(ia) < len(ib)
+}
+
+func numeric(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i := range len(s) {
+		if s[i] < '0' || s[i] > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func compareNumber(a, b string) int {
+	a, b = strings.TrimLeft(a, "0"), strings.TrimLeft(b, "0")
+	if a == "" {
+		a = "0"
+	}
+	if b == "" {
+		b = "0"
+	}
+	if len(a) != len(b) {
+		if len(a) < len(b) {
+			return -1
+		}
+		return 1
+	}
+	return strings.Compare(a, b)
 }
 
 func copyFile(src, dst string) error {

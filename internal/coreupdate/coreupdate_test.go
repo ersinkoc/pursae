@@ -260,6 +260,18 @@ func TestLessPrereleases(t *testing.T) {
 	}
 }
 
+func TestLessArbitrarySizeNumericIdentifiers(t *testing.T) {
+	if !Less("100000000000000000000.0.0", "200000000000000000000.0.0") {
+		t.Fatal("large core identifiers collapsed")
+	}
+	if !Less("1.0.0-100000000000000000000", "1.0.0-200000000000000000000") {
+		t.Fatal("large prerelease identifiers not ordered numerically")
+	}
+	if Less("1.0.0-200000000000000000000", "1.0.0-100000000000000000000") {
+		t.Fatal("large prerelease ordering is not antisymmetric")
+	}
+}
+
 func TestLaunchStableAndPrerelease(t *testing.T) {
 	for _, tc := range []struct{ image, installed, want string }{
 		{"0.3.0", "0.3.0-beta.1", "0.3.0"},

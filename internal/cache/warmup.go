@@ -87,7 +87,11 @@ func Warmup(ctx context.Context, urls []string, opts WarmupOptions) (WarmupProgr
 
 	var tick <-chan time.Time
 	if opts.RatePerSecond > 0 {
-		t := time.NewTicker(time.Duration(float64(time.Second) / opts.RatePerSecond))
+		interval := time.Duration(float64(time.Second) / opts.RatePerSecond)
+		if interval <= 0 {
+			interval = time.Nanosecond
+		}
+		t := time.NewTicker(interval)
 		defer t.Stop()
 		tick = t.C
 	}
