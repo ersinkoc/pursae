@@ -398,12 +398,37 @@ func (s *Server) gooCacheTags(c *gin.Context, q *siteQuery) []string {
 
 // gooPagePath is the path of a store page ("shop", "my-account"), "" when it has none.
 func (s *Server) gooPagePath(ctx context.Context, key string) string {
-	id := s.gooPageIDIn(ctx, key)
-	if id <= 0 {
-		return ""
+	return s.gooPagePaths(ctx, key)[key]
+}
+
+// gooPagePaths is gooPagePath for several store pages, loaded with one query (the router checks them
+// all on every front-end request).
+func (s *Server) gooPagePaths(ctx context.Context, keys ...string) map[string]string {
+	out := map[string]string{}
+	ids := map[string]int64{}
+	var list []int64
+	for _, k := range keys {
+		if id := s.gooPageIDIn(ctx, k); id > 0 {
+			ids[k] = id
+			list = append(list, id)
+		}
 	}
-	p, err := s.store.GetPost(ctx, id)
-	if err != nil || p.Status != "publish" {
+	if len(list) == 0 {
+		return out
+	}
+	posts, err := s.store.PostsByIDs(ctx, list)
+	if err != nil {
+		return out
+	}
+	for k, id := range ids {
+		out[k] = s.gooPagePathOf(ctx, posts[id])
+	}
+	return out
+}
+
+// gooPagePathOf is the router path of a published store page.
+func (s *Server) gooPagePathOf(ctx context.Context, p *store.Post) string {
+	if p == nil || p.Status != "publish" {
 		return ""
 	}
 	u, err := url.Parse(s.gooPllSitePath(ctx, s.links(ctx).Permalink(p))) // Golylang: without the language part
@@ -506,12 +531,13 @@ func (s *Server) gooFrontRoute(c *gin.Context, path string) bool {
 	if t := s.gooAttributeArchive(ctx, p); t != nil {
 		return s.gooServeTerm(c, t, paged)
 	}
-	if sp := s.gooPagePath(ctx, "shop"); sp != "" && p == sp {
+	paths := s.gooPagePaths(ctx, "shop", "cart", "checkout", "myaccount")
+	if sp := paths["shop"]; sp != "" && p == sp {
 		s.gooServeArchive(c, &gooFrontView{Kind: "shop", Paged: paged, PageID: s.gooPageIDIn(ctx, "shop")})
 		return true
 	}
 	for _, key := range []string{"cart", "checkout", "myaccount"} {
-		pp := s.gooPagePath(ctx, key)
+		pp := paths[key]
 		if pp == "" {
 			continue
 		}

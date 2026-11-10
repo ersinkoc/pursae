@@ -64,6 +64,42 @@ func (s *Store) GetComment(ctx context.Context, id int64) (*Comment, error) {
 	return scanComment(s.Pool.QueryRow(ctx, `SELECT `+commentCols+` FROM comments WHERE id = $1`, id))
 }
 
+// CommentsByIDs loads several comments in one query; missing ids are absent from the map.
+func (s *Store) CommentsByIDs(ctx context.Context, ids []int64) (map[int64]*Comment, error) {
+	out := map[int64]*Comment{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT `+commentCols+` FROM comments WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	list, err := scanComments(rows)
+	for _, c := range list {
+		out[c.ID] = c
+	}
+	return out, err
+}
+
+// ApprovedCommentsByPost loads the approved comments of several posts in one query, oldest first
+// per post (the export's wxr comments).
+func (s *Store) ApprovedCommentsByPost(ctx context.Context, postIDs []int64) (map[int64][]*Comment, error) {
+	out := map[int64][]*Comment{}
+	if len(postIDs) == 0 {
+		return out, nil
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT `+commentCols+` FROM comments WHERE post_id = ANY($1) AND status = 'approved'
+		ORDER BY post_id, created_at, id`, postIDs)
+	if err != nil {
+		return nil, err
+	}
+	list, err := scanComments(rows)
+	for _, c := range list {
+		out[c.PostID] = append(out[c.PostID], c)
+	}
+	return out, err
+}
+
 // ApprovedComments returns a post's approved comments, plus pending ones by the given author email
 // (WordPress shows a commenter their own comment awaiting moderation).
 func (s *Store) ApprovedComments(ctx context.Context, postID int64, order string, pendingEmail string) ([]*Comment, error) {

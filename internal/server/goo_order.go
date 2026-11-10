@@ -185,13 +185,22 @@ func (s *Server) gooOrderByKey(ctx context.Context, key string) (*gooOrder, erro
 }
 
 func (s *Server) gooOrderItems(ctx context.Context, orderID int64) ([]*gooOrderItem, error) {
+	all, err := s.gooOrderItemsOf(ctx, []int64{orderID})
+	return all[orderID], err
+}
+
+// gooOrderItemsOf loads the items of several orders in one query, keyed by order id.
+func (s *Server) gooOrderItemsOf(ctx context.Context, orderIDs []int64) (map[int64][]*gooOrderItem, error) {
+	out := map[int64][]*gooOrderItem{}
+	if len(orderIDs) == 0 {
+		return out, nil
+	}
 	rows, err := s.store.Pool.Query(ctx, `SELECT id, order_id, type, name, product_id, variation_id, quantity::float8, tax_class, subtotal::float8,
-		subtotal_tax::float8, total::float8, total_tax::float8, taxes, meta, position FROM goo_order_items WHERE order_id = $1 ORDER BY position, id`, orderID)
+		subtotal_tax::float8, total::float8, total_tax::float8, taxes, meta, position FROM goo_order_items WHERE order_id = ANY($1) ORDER BY order_id, position, id`, orderIDs)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*gooOrderItem
 	for rows.Next() {
 		it := &gooOrderItem{}
 		var taxes, meta []byte
@@ -205,7 +214,7 @@ func (s *Server) gooOrderItems(ctx context.Context, orderID int64) ([]*gooOrderI
 			it.Meta = map[string]any{}
 		}
 		it.snapshot()
-		out = append(out, it)
+		out[it.OrderID] = append(out[it.OrderID], it)
 	}
 	return out, rows.Err()
 }
@@ -869,10 +878,46 @@ func (s *Server) gooRefunds(ctx context.Context, orderID int64) ([]*gooOrder, er
 		out = append(out, r)
 	}
 	rows.Close()
+	ids := make([]int64, len(out))
+	for i, r := range out {
+		ids[i] = r.ID
+	}
+	items, _ := s.gooOrderItemsOf(ctx, ids)
 	for _, r := range out {
-		r.Items, _ = s.gooOrderItems(ctx, r.ID)
+		r.Items = items[r.ID]
 	}
 	return out, nil
+}
+
+// gooOrderIDs are the ids of the orders.
+func gooOrderIDs(orders []*gooOrder) []int64 {
+	ids := make([]int64, len(orders))
+	for i, o := range orders {
+		ids[i] = o.ID
+	}
+	return ids
+}
+
+// gooTotalsRefunded is gooTotalRefunded for several orders in one query; orders without refunds are absent.
+func (s *Server) gooTotalsRefunded(ctx context.Context, orderIDs []int64) map[int64]float64 {
+	out := map[int64]float64{}
+	if len(orderIDs) == 0 {
+		return out
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT parent_id, coalesce(sum(-total),0)::float8 FROM goo_orders
+		WHERE parent_id = ANY($1) AND type = 'shop_order_refund' GROUP BY parent_id`, orderIDs)
+	if err != nil {
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var t float64
+		if rows.Scan(&id, &t) == nil {
+			out[id] = t
+		}
+	}
+	return out
 }
 
 // gooTotalRefunded is get_total_refunded().
@@ -1084,8 +1129,13 @@ func (s *Server) gooQueryOrders(ctx context.Context, q gooOrderQuery) ([]*gooOrd
 		out = append(out, o)
 	}
 	rows.Close()
+	ids := make([]int64, len(out))
+	for i, o := range out {
+		ids[i] = o.ID
+	}
+	items, _ := s.gooOrderItemsOf(ctx, ids)
 	for _, o := range out {
-		o.Items, _ = s.gooOrderItems(ctx, o.ID)
+		o.Items = items[o.ID]
 	}
 	return out, total, nil
 }

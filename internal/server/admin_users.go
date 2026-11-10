@@ -116,10 +116,14 @@ func (s *Server) usersScreen(c *gin.Context) {
 		}
 	}
 	var ids []int64
+	var emails []string
 	for _, x := range list {
 		ids = append(ids, x.ID)
+		emails = append(emails, x.Email)
 	}
 	postCounts, _ := s.store.UserPostCounts(ctx, ids)
+	ctx = withViewMemo(ctx)
+	s.prefetchAvatars(ctx, emails) // the rows' avatars in one query each for users and images
 	for _, x := range list {
 		var rn []string
 		for _, r := range x.Roles {

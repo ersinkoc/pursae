@@ -12,9 +12,23 @@ const defaultAvatar = "/wp-includes/images/wpgo-avatar.svg"
 
 // avatarURL is get_avatar_url(): a user's chosen avatar from the media library, or the local default.
 // Users pick their avatar on the Profile screen with the same media modal used for featured images.
+// Without a request memo (admin screens, the toolbar) the lookups share one kept on the gin context, so
+// the toolbar's several sizes of one avatar cost one lookup; it is not put on the request, where it
+// would change the page's cache dependencies (pageCacheDeps).
 func (s *Server) avatarURL(c *gin.Context, email string, size int) string {
-	return s.avatarFor(c, email, size)
+	ctx := c.Request.Context()
+	if viewMemoFrom(ctx) == nil {
+		if v, ok := c.Get(avatarMemoKey); ok {
+			ctx = v.(context.Context)
+		} else {
+			ctx = withViewMemo(ctx)
+			c.Set(avatarMemoKey, ctx)
+		}
+	}
+	return s.avatarFor(ctx, email, size)
 }
+
+const avatarMemoKey = "wpgo.avatar.memo"
 
 func (s *Server) avatarFor(ctx context.Context, email string, size int) string {
 	email = strings.ToLower(strings.TrimSpace(email))

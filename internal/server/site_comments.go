@@ -140,7 +140,13 @@ func (s *Server) commentsView(c *gin.Context, p *store.Post, lb *links.Builder, 
 			if perPage > 0 {
 				listPage = page
 			}
-			s.listComments(&sb, tree, p, lb, u, depth, &counter, listPage, s.pllUCOn(c))
+			ctx := withViewMemo(c.Request.Context())
+			emails := make([]string, len(comments))
+			for i, cm := range comments {
+				emails[i] = cm.AuthorEmail
+			}
+			s.prefetchAvatars(ctx, emails)
+			s.listComments(ctx, &sb, tree, p, lb, u, depth, &counter, listPage, s.pllUCOn(c))
 			cv.List = template.HTML(sb.String())
 			cv.Nav = s.commentsNavigation(p, lb, page, maxPage)
 		}
@@ -231,7 +237,7 @@ func (s *Server) pageOfComment(ctx context.Context, cm *store.Comment) int {
 // listComments is wp_list_comments() with the html5 comment markup (avatar size 42).
 // cpage is the comment page being shown (0 when comments are not paged).
 // uc marks each comment body as user content (Pursae Multi Language, golylang_uc.go).
-func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *store.Post, lb *links.Builder, u *store.User, maxDepth int, counter *int, cpage int, uc bool) {
+func (s *Server) listComments(ctx context.Context, sb *strings.Builder, list []*store.Comment, p *store.Post, lb *links.Builder, u *store.User, maxDepth int, counter *int, cpage int, uc bool) {
 	loc := s.loc()
 	permalink := lb.Permalink(p)
 	for _, cm := range list {
@@ -274,7 +280,7 @@ func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *sto
 
 						<div class="comment-metadata">
 							<a href="%s#comment-%d"><time datetime="%s">%s at %s</time></a>`,
-			cm.ID, strings.Join(classes, " "), cm.ID, s.avatarImg(context.Background(), cm.AuthorEmail, 42), author,
+			cm.ID, strings.Join(classes, " "), cm.ID, s.avatarImg(ctx, cm.AuthorEmail, 42), author,
 			html.EscapeString(strings.TrimSuffix(s.commentLink(p, lb, cpage, 0, cm.ID), "#comment-"+itoa64(cm.ID))), cm.ID, t.Format(time.RFC3339), wp.FormatDate(t, s.settings.String("date_format")), wp.FormatDate(t, s.settings.String("time_format")))
 		if u.Can("moderate_comments", nil) {
 			fmt.Fprintf(sb, ` <span class="edit-link"><a class="comment-edit-link" href="/wp-admin/comment?action=editcomment&amp;c=%d">Edit</a></span>`, cm.ID)
@@ -298,7 +304,7 @@ func (s *Server) listComments(sb *strings.Builder, list []*store.Comment, p *sto
 		sb.WriteString("			</article><!-- .comment-body -->\n")
 		if len(cm.Children) > 0 {
 			sb.WriteString("<ol class=\"children\">\n")
-			s.listComments(sb, cm.Children, p, lb, u, maxDepth, counter, cpage, uc)
+			s.listComments(ctx, sb, cm.Children, p, lb, u, maxDepth, counter, cpage, uc)
 			sb.WriteString("</ol><!-- .children -->\n")
 		}
 		sb.WriteString("</li><!-- #comment-## -->\n")

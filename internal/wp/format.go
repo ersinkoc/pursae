@@ -96,11 +96,16 @@ func TrimWords(text string, n int, more string) string {
 	return html.EscapeString(strings.Join(words[:n], " ")) + more
 }
 
+// moreTagRe is the <!--more--> tag with its optional custom link text.
+var moreTagRe = regexp.MustCompile(`<!--more(.*?)?-->`)
+
 // SplitMore splits post content at the <!--more--> tag. teaser is the part before
 // it, or the whole content when there is no tag; hasMore reports whether it was found.
 func SplitMore(content string) (teaser string, rest string, moreText string, hasMore bool) {
-	re := regexp.MustCompile(`<!--more(.*?)?-->`)
-	loc := re.FindStringSubmatchIndex(content)
+	if !strings.Contains(content, "<!--more") {
+		return content, "", "", false
+	}
+	loc := moreTagRe.FindStringSubmatchIndex(content)
 	if loc == nil {
 		return content, "", "", false
 	}
@@ -109,6 +114,7 @@ func SplitMore(content string) (teaser string, rest string, moreText string, has
 }
 
 var (
+	preBlockRe   = regexp.MustCompile(`(?is)<pre[^>]*>.*?</pre>`)
 	blockElems   = `(?:table|thead|tfoot|caption|col|colgroup|tbody|tr|td|th|div|dl|dd|dt|ul|ol|li|pre|form|map|area|blockquote|address|math|style|p|h[1-6]|hr|fieldset|legend|section|article|aside|hgroup|header|footer|nav|figure|figcaption|details|menu|summary)`
 	openBlockRe  = regexp.MustCompile(`(?i)(<` + blockElems + `[\s/>])`)
 	closeBlockRe = regexp.MustCompile(`(?i)(</` + blockElems + `>)`)
@@ -130,8 +136,7 @@ func Autop(text string) string {
 
 	// Keep <pre> contents untouched.
 	var pres []string
-	preRe := regexp.MustCompile(`(?is)<pre[^>]*>.*?</pre>`)
-	text = preRe.ReplaceAllStringFunc(text, func(m string) string {
+	text = preBlockRe.ReplaceAllStringFunc(text, func(m string) string {
 		pres = append(pres, m)
 		return "<pre wp-pre-tag-" + strconv.Itoa(len(pres)-1) + "></pre>"
 	})

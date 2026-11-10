@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Shortcodes follow WordPress' shortcode syntax (get_shortcode_regex()):
@@ -312,8 +313,34 @@ func protocolAllowed(scheme string) bool {
 	return false
 }
 
-// shortcodeRegex builds the WordPress shortcode regex for the given tags.
+// shortcodeRegexes caches shortcodeRegex by tag list: content filters run it for every post they
+// render, and the tag lists are few (they change only when plugins do).
+var (
+	shortcodeRegexMu sync.Mutex
+	shortcodeRegexes = map[string]*regexp.Regexp{}
+)
+
+// shortcodeRegex is the WordPress shortcode regex for the given tags (nil when none is valid).
 func shortcodeRegex(tags []string) *regexp.Regexp {
+	key := strings.Join(tags, "\x00")
+	shortcodeRegexMu.Lock()
+	re, ok := shortcodeRegexes[key]
+	shortcodeRegexMu.Unlock()
+	if ok {
+		return re
+	}
+	re = buildShortcodeRegex(tags)
+	shortcodeRegexMu.Lock()
+	if len(shortcodeRegexes) >= 256 { // a bound against ever-changing tag lists
+		clear(shortcodeRegexes)
+	}
+	shortcodeRegexes[key] = re
+	shortcodeRegexMu.Unlock()
+	return re
+}
+
+// buildShortcodeRegex builds the WordPress shortcode regex for the given tags.
+func buildShortcodeRegex(tags []string) *regexp.Regexp {
 	names := make([]string, 0, len(tags))
 	for _, t := range tags {
 		if ValidShortcodeTag(t) {
@@ -352,15 +379,16 @@ func shortcodeParts(sub []string) (lead, tag, attrs, content, trail string) {
 	return
 }
 
+// lonePShortcodeRe is a whole paragraph (no "</p>" inside), which must be one shortcode.
+var lonePShortcodeRe = regexp.MustCompile(`<p>\s*(\[(?:[^<]|<(?:[^/]|/[^p]|/p[^>]))*?\])\s*</p>`)
+
 // unautopShortcodes removes the <p>…</p> wpautop() wraps around a lone shortcode.
 func unautopShortcodes(content string, re *regexp.Regexp) string {
 	if !strings.Contains(content, "<p>") {
 		return content
 	}
-	// The whole paragraph (no "</p>" inside), which must be one shortcode.
-	p := regexp.MustCompile(`<p>\s*(\[(?:[^<]|<(?:[^/]|/[^p]|/p[^>]))*?\])\s*</p>`)
-	return p.ReplaceAllStringFunc(content, func(m string) string {
-		inner := p.FindStringSubmatch(m)[1]
+	return lonePShortcodeRe.ReplaceAllStringFunc(content, func(m string) string {
+		inner := lonePShortcodeRe.FindStringSubmatch(m)[1]
 		if loc := re.FindStringIndex(inner); loc != nil && loc[0] == 0 && loc[1] == len(inner) {
 			return inner
 		}

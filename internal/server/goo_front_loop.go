@@ -345,21 +345,75 @@ func (s *Server) gooProductTerms(c *gin.Context, id int64) ([]*store.Term, error
 
 // gooAllTerms are a post's terms of every taxonomy (TermsForPosts needs one taxonomy).
 func (s *Server) gooAllTerms(ctx context.Context, id int64) ([]*store.Term, error) {
-	rows, err := s.store.Pool.Query(ctx, `SELECT t.id, t.taxonomy, coalesce(t.parent_id,0), t.slug, t.name, t.description, t.post_count
-		FROM post_terms pt JOIN terms t ON t.id = pt.term_id WHERE pt.post_id = $1 ORDER BY t.taxonomy, lower(t.name)`, id)
+	all, err := s.gooTermsForPosts(ctx, []int64{id})
+	return all[id], err
+}
+
+// gooTermsForPosts is gooAllTerms for several posts in one query.
+func (s *Server) gooTermsForPosts(ctx context.Context, ids []int64) (map[int64][]*store.Term, error) {
+	out := map[int64][]*store.Term{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT pt.post_id, t.id, t.taxonomy, coalesce(t.parent_id,0), t.slug, t.name, t.description, t.post_count
+		FROM post_terms pt JOIN terms t ON t.id = pt.term_id WHERE pt.post_id = ANY($1) ORDER BY pt.post_id, t.taxonomy, lower(t.name)`, ids)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*store.Term
 	for rows.Next() {
+		var pid int64
 		t := &store.Term{Meta: map[string]any{}}
-		if err := rows.Scan(&t.ID, &t.Taxonomy, &t.ParentID, &t.Slug, &t.Name, &t.Description, &t.Count); err != nil {
+		if err := rows.Scan(&pid, &t.ID, &t.Taxonomy, &t.ParentID, &t.Slug, &t.Name, &t.Description, &t.Count); err != nil {
 			return nil, err
 		}
-		out = append(out, t)
+		out[pid] = append(out[pid], t)
 	}
 	return out, rows.Err()
+}
+
+// gooPrefetchLoop loads what each item of a products list reads (its terms for the post classes, its
+// image) with one query per kind instead of one per product.
+func (s *Server) gooPrefetchLoop(c *gin.Context, list []*gooProduct) {
+	var ids, images []int64
+	for _, p := range list {
+		if _, ok := c.Get("goo.terms." + itoa64(p.ID)); !ok {
+			ids = append(ids, p.ID)
+		}
+		if p.ImageID > 0 {
+			images = append(images, p.ImageID)
+		}
+	}
+	if all, err := s.gooTermsForPosts(c.Request.Context(), ids); err == nil {
+		for _, id := range ids {
+			c.Set("goo.terms."+itoa64(id), all[id])
+		}
+	}
+	if len(images) > 0 {
+		atts := s.attachmentsByIDs(c.Request.Context(), images) // fills the request memo when there is one
+		if prev, ok := c.Get(gooLoopImagesKey); ok {
+			for id, a := range prev.(map[int64]*store.Attachment) {
+				if _, ok := atts[id]; !ok {
+					atts[id] = a
+				}
+			}
+		}
+		c.Set(gooLoopImagesKey, atts)
+	}
+}
+
+// gooLoopImagesKey holds the attachments gooPrefetchLoop loaded, for lists rendered without a request memo.
+const gooLoopImagesKey = "goo.loop.images"
+
+// gooLoopImageHTML is gooImageHTML reading the image gooPrefetchLoop loaded.
+func (s *Server) gooLoopImageHTML(c *gin.Context, id int64, size, class string) string {
+	ctx := c.Request.Context()
+	if v, ok := c.Get(gooLoopImagesKey); ok && id > 0 {
+		if a := v.(map[int64]*store.Attachment)[id]; a != nil {
+			return string(s.attachmentImage(ctx, a, size, class))
+		}
+	}
+	return s.gooImageHTML(ctx, id, size, class)
 }
 
 // gooAddToCartText is add_to_cart_text() (single = single_add_to_cart_text()).
@@ -475,7 +529,7 @@ func (s *Server) gooLoopItem(c *gin.Context, p *gooProduct, i, cols int) string 
 	if s.gooOnSale(c, p) {
 		b.WriteString(`<span class="onsale">Sale!</span>`)
 	}
-	b.WriteString(s.gooImageHTML(ctx, p.ImageID, "medium", "attachment-woocommerce_thumbnail size-woocommerce_thumbnail"))
+	b.WriteString(s.gooLoopImageHTML(c, p.ImageID, "medium", "attachment-woocommerce_thumbnail size-woocommerce_thumbnail"))
 	b.WriteString(`<h2 class="woocommerce-loop-product__title">` + s.pllUC(c, gooEsc(p.Name), 0) + `</h2>`)
 	if s.gooOptBool("enable_review_rating") {
 		b.WriteString(gooRatingHTML(p.AverageRating, 0))
@@ -496,6 +550,7 @@ func (s *Server) gooLoopHTML(c *gin.Context, list []*gooProduct, cols int) strin
 		cols = 4
 	}
 	var b strings.Builder
+	s.gooPrefetchLoop(c, list)
 	b.WriteString(`<ul class="products columns-` + strconv.Itoa(cols) + `">`)
 	for i, p := range list {
 		b.WriteString(s.gooLoopItem(c, p, i, cols))
@@ -732,6 +787,7 @@ func (s *Server) gooArchiveHTML(c *gin.Context, fv *gooFrontView) string {
 		for i, t := range cats {
 			b.WriteString(s.gooCategoryItem(c, t, i, cols))
 		}
+		s.gooPrefetchLoop(c, products)
 		for i, p := range products {
 			b.WriteString(s.gooLoopItem(c, p, i+len(cats), cols))
 		}

@@ -80,7 +80,8 @@ func gooFormatAddress(a map[string]string) template.HTML {
 	return template.HTML(strings.Join(lines, "<br/>"))
 }
 
-func (s *Server) gooOrderRowOf(ctx context.Context, o *gooOrder) *gooOrderRow {
+// refunded is the order's refunded total (gooTotalsRefunded loads a page of them at once).
+func (s *Server) gooOrderRowOf(ctx context.Context, o *gooOrder, refunded float64) *gooOrderRow {
 	r := &gooOrderRow{ID: o.ID, Number: o.Number(), Name: o.BillingName(), Status: o.Status, StatusLabel: gooStatusLabel(o.Status),
 		EditURL: gooAdminURL("orders", "action", "edit", "id", itoa64(o.ID)), Email: o.Billing["email"], Phone: o.Billing["phone"],
 		Note: o.CustomerNote, Trashed: o.Status == "trash"}
@@ -112,7 +113,6 @@ func (s *Server) gooOrderRowOf(ctx context.Context, o *gooOrder) *gooOrderRow {
 		ship = append(ship, it.Name)
 	}
 	r.ShipVia = strings.Join(ship, ", ")
-	refunded := s.gooTotalRefunded(ctx, o.ID)
 	tot := string(s.gooPriceIn(o.Total, o.Currency))
 	if refunded > 0 {
 		tot = `<del aria-hidden="true">` + tot + `</del> <ins>` + string(s.gooPriceIn(o.Total-refunded, o.Currency)) + `</ins>`
@@ -248,8 +248,9 @@ func (s *Server) gooAdminOrders(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	refunded := s.gooTotalsRefunded(ctx, gooOrderIDs(orders))
 	for _, o := range orders {
-		d.Rows = append(d.Rows, s.gooOrderRowOf(ctx, o))
+		d.Rows = append(d.Rows, s.gooOrderRowOf(ctx, o, refunded[o.ID]))
 	}
 	d.BaseURL = gooAdminURL("orders", "status", c.Query("status"), "s", d.Search, "m", d.Month, "_customer_user", d.Customer)
 	d.Pager = newGooPager(d.BaseURL, q.Page, q.PerPage, total)

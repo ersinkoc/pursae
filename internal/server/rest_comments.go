@@ -51,12 +51,16 @@ func storeCommentStatus(v string) (string, bool) {
 // restComment is prepare_item_for_response(): view fields, plus author_email/author_ip/author_user_agent and
 // content.raw in the edit context.
 func (s *Server) restComment(c *gin.Context, cm *store.Comment, ctxName string) map[string]any {
+	p, _ := s.store.GetPost(c, cm.PostID)
+	return s.restCommentOf(c, cm, p, ctxName)
+}
+
+// restCommentOf is restComment with the comment's post already loaded (nil when it is gone).
+func (s *Server) restCommentOf(c *gin.Context, cm *store.Comment, p *store.Post, ctxName string) map[string]any {
 	home := s.links(c).Home
 	loc := s.loc()
 	link := ""
-	var p *store.Post
-	if pp, err := s.store.GetPost(c, cm.PostID); err == nil {
-		p = pp
+	if p != nil {
 		link = s.links(c).Permalink(p) + "#comment-" + itoa64(cm.ID)
 	}
 	self := home + "/wp-json/wp/v2/comments/" + itoa64(cm.ID)
@@ -79,7 +83,7 @@ func (s *Server) restComment(c *gin.Context, cm *store.Comment, ctxName string) 
 		"id": cm.ID, "post": cm.PostID, "parent": cm.ParentID, "author": cm.UserID, "author_name": cm.AuthorName,
 		"author_url": cm.AuthorURL, "date": cm.CreatedAt.In(loc).Format("2006-01-02T15:04:05"), "date_gmt": gmt(cm.CreatedAt),
 		"content": content, "link": link, "status": restCommentStatus(cm.Status), "type": cm.Type,
-		"author_avatar_urls": map[string]string{"24": s.avatarURL(c, cm.AuthorEmail, 24), "48": s.avatarURL(c, cm.AuthorEmail, 48), "96": s.avatarURL(c, cm.AuthorEmail, 96)},
+		"author_avatar_urls": map[string]string{"24": s.avatarFor(c.Request.Context(), cm.AuthorEmail, 24), "48": s.avatarFor(c.Request.Context(), cm.AuthorEmail, 48), "96": s.avatarFor(c.Request.Context(), cm.AuthorEmail, 96)},
 		"meta":               []any{},
 		"_links":             restLinks(self, home+"/wp-json/wp/v2/comments", extra),
 	}
@@ -201,9 +205,22 @@ func (api *restAPI) listComments(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusInternalServerError, "rest_query_error", err.Error())
 		return
 	}
+	// The page's posts and commenter avatars load with one query each.
+	c.Request = c.Request.WithContext(withViewMemo(c.Request.Context()))
+	listPostIDs := make([]int64, len(list))
+	emails := make([]string, len(list))
+	for i, cm := range list {
+		listPostIDs[i], emails[i] = cm.PostID, cm.AuthorEmail
+	}
+	posts, perr := s.store.PostsByIDs(c, listPostIDs)
+	if perr != nil {
+		restErr(c, http.StatusInternalServerError, "rest_query_error", perr.Error())
+		return
+	}
+	s.prefetchAvatars(c.Request.Context(), emails)
 	out := []map[string]any{}
 	for _, cm := range list {
-		out = append(out, s.restComment(c, cm, ctxName))
+		out = append(out, s.restCommentOf(c, cm, posts[cm.PostID], ctxName))
 	}
 	paginate(c, total, per, page)
 	restJSON(c, http.StatusOK, out)

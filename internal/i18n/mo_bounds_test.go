@@ -8,7 +8,7 @@ import (
 
 // TestParseMOHugeCount: the entry count of a .mo header does not size an allocation the file
 // cannot back; a short file claiming two billion entries fails fast.
-func TestParseMOHugeCount(t *testing.T) {
+func TestParseMOHugeCountBounded(t *testing.T) {
 	b := make([]byte, 28)
 	binary.LittleEndian.PutUint32(b, 0x950412de)
 	binary.LittleEndian.PutUint32(b[8:], 0x7fffffff)

@@ -110,3 +110,37 @@ func TestDoShortcodeInHTMLTags(t *testing.T) {
 		}
 	}
 }
+
+// TestShortcodeRegexCachedPerTagList: the compiled regex is reused for the same tag list and never
+// shared between different ones.
+func TestShortcodeRegexCachedPerTagList(t *testing.T) {
+	fn := func(tag string, _ map[string]string, _ string) string { return "<" + tag + ">" }
+	if got := DoShortcode("[a] [b]", []string{"a"}, fn); got != "<a> [b]" {
+		t.Errorf("tags a: %q", got)
+	}
+	if got := DoShortcode("[a] [b]", []string{"b"}, fn); got != "[a] <b>" {
+		t.Errorf("tags b: %q", got)
+	}
+	if shortcodeRegex([]string{"a", "b"}) != shortcodeRegex([]string{"a", "b"}) {
+		t.Error("the regex of one tag list is compiled again")
+	}
+	if !HasShortcode("x [gallery ids=\"1\"] y", "gallery") || HasShortcode("[galleryx]", "gallery") {
+		t.Error("HasShortcode")
+	}
+}
+
+func BenchmarkDoShortcode(b *testing.B) {
+	tags := []string{"gallery", "caption", "audio", "video", "playlist", "embed", "contact-form-7", "products", "product_page"}
+	content := strings.Repeat("<p>Clover meadow text with a [caption id=\"1\"]<img src=\"a.jpg\">Hay[/caption] inside.</p>\n", 20)
+	fn := func(tag string, _ map[string]string, inner string) string { return inner }
+	for i := 0; i < b.N; i++ {
+		DoShortcode(content, tags, fn)
+	}
+}
+
+func BenchmarkAutop(b *testing.B) {
+	text := strings.Repeat("Clover meadow line one.\nLine two.\n\n<pre>keep\n\nthis</pre>\n\n", 20)
+	for i := 0; i < b.N; i++ {
+		Autop(text)
+	}
+}

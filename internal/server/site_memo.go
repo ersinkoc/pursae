@@ -231,6 +231,56 @@ func (s *Server) avatarID(ctx context.Context, email string) int64 {
 	return id
 }
 
+// prefetchAvatars loads the avatars of the given emails into the request memo with one query for the
+// users and one for their images, so a comment list does not look each commenter up on its own.
+func (s *Server) prefetchAvatars(ctx context.Context, emails []string) {
+	m := viewMemoFrom(ctx)
+	if m == nil {
+		return
+	}
+	var need []string
+	seen := map[string]bool{}
+	m.mu.Lock()
+	for _, e := range emails {
+		e = strings.ToLower(strings.TrimSpace(e))
+		if _, ok := m.avatarIDs[e]; ok || e == "" || seen[e] {
+			continue
+		}
+		seen[e] = true
+		need = append(need, e)
+	}
+	m.mu.Unlock()
+	if len(need) == 0 {
+		return
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT lower(email), coalesce((meta->>'avatar_id')::bigint, 0) FROM users WHERE lower(email) = ANY($1)`, need)
+	if err != nil {
+		return
+	}
+	found := map[string]int64{}
+	for rows.Next() {
+		var e string
+		var id int64
+		if rows.Scan(&e, &id) == nil {
+			found[e] = id
+		}
+	}
+	rows.Close()
+	if rows.Err() != nil {
+		return
+	}
+	var ids []int64
+	m.mu.Lock()
+	for _, e := range need {
+		m.avatarIDs[e] = found[e]
+		if id := found[e]; id != 0 {
+			ids = append(ids, id)
+		}
+	}
+	m.mu.Unlock()
+	s.attachmentsByIDs(ctx, ids)
+}
+
 // cacheDep records cache tags the page depends on (purging one of them drops the page).
 func cacheDep(ctx context.Context, tags ...string) {
 	if m := viewMemoFrom(ctx); m != nil {

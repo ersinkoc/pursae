@@ -331,6 +331,8 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 		tbl.Headers = []string{"Date", "Order #", "Status", "Customer", "Customer type", "Product(s)", "Items sold", "Coupon(s)", "Net sales"}
 		after, before := from, to
 		orders, _, _ := s.gooQueryOrders(ctx, gooOrderQuery{Status: gooPaidList, After: &after, Before: &before, PerPage: 500, Page: 1})
+		refunded := s.gooTotalsRefunded(ctx, gooOrderIDs(orders))
+		returning := s.gooReturningOrders(ctx, orders)
 		for _, o := range orders {
 			var products, coupons []string
 			for _, it := range o.ItemsOf("line_item") {
@@ -340,13 +342,10 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 				coupons = append(coupons, it.Name)
 			}
 			typ := "new"
-			var earlier bool
-			_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM goo_orders WHERE type = 'shop_order' AND id <> $1 AND date_created < $2 AND status = ANY($3)
-				AND ((customer_id <> 0 AND customer_id = $4) OR (billing_email <> '' AND billing_email = $5)))`, o.ID, o.DateCreated, gooPaidList, o.CustomerID, strings.ToLower(o.Billing["email"])).Scan(&earlier)
-			if earlier {
+			if returning[o.ID] {
 				typ = "returning"
 			}
-			net := o.Total - o.TotalTax - o.ShippingTotal - s.gooTotalRefunded(ctx, o.ID)
+			net := o.Total - o.TotalTax - o.ShippingTotal - refunded[o.ID]
 			name := o.BillingName()
 			tbl.add([]template.HTML{gooH(o.DateCreated.In(s.loc()).Format("January 2, 2006")), template.HTML(`<a href="` + gooAdminURL("orders", "action", "edit", "id", itoa64(o.ID)) + `">` + o.Number() + `</a>`),
 				gooH(gooStatusLabel(o.Status)), gooH(name), gooH(typ), gooH(strings.Join(products, ", ")), gooH(strconv.Itoa(o.ItemCount())), gooH(strings.Join(coupons, ", ")), s.gooPriceIn(net, o.Currency)},
@@ -607,5 +606,33 @@ func (s *Server) gooLeaderboards(ctx context.Context, from, to time.Time) []gooL
 		rows.Close()
 	}
 	out = append(out, lb)
+	return out
+}
+
+// gooReturningOrders reports, in one query, which of the orders have an earlier paid order of the same
+// customer (by account or billing e-mail): the Orders report's "Customer type".
+func (s *Server) gooReturningOrders(ctx context.Context, orders []*gooOrder) map[int64]bool {
+	out := map[int64]bool{}
+	if len(orders) == 0 {
+		return out
+	}
+	ids, customers := make([]int64, len(orders)), make([]int64, len(orders))
+	dates, emails := make([]time.Time, len(orders)), make([]string, len(orders))
+	for i, o := range orders {
+		ids[i], dates[i], customers[i], emails[i] = o.ID, o.DateCreated, o.CustomerID, strings.ToLower(o.Billing["email"])
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT x.id FROM unnest($1::bigint[], $2::timestamptz[], $3::bigint[], $4::text[]) AS x(id, created, customer, email)
+		WHERE EXISTS(SELECT 1 FROM goo_orders WHERE type = 'shop_order' AND id <> x.id AND date_created < x.created AND status = ANY($5)
+			AND ((x.customer <> 0 AND customer_id = x.customer) OR (x.email <> '' AND billing_email = x.email)))`, ids, dates, customers, emails, gooPaidList)
+	if err != nil {
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if rows.Scan(&id) == nil {
+			out[id] = true
+		}
+	}
 	return out
 }

@@ -323,7 +323,33 @@ func (s *Server) exportScreen(c *gin.Context) {
 				}
 			}
 		}
-		for _, p := range posts {
+		// Comments and builder docs load per chunk of posts (wxr_export() pages through posts too).
+		const chunk = 500
+		var chunkComments map[int64][]*store.Comment
+		chunkDocs := map[int64]bool{}
+		for i, p := range posts {
+			if i%chunk == 0 {
+				ids := make([]int64, 0, chunk)
+				for _, q := range posts[i:min(i+chunk, len(posts))] {
+					ids = append(ids, q.ID)
+				}
+				var err error
+				chunkComments, err = s.store.ApprovedCommentsByPost(ctx, ids)
+				check(err)
+				clear(chunkDocs)
+				rows, err := s.store.Pool.Query(ctx, `SELECT post_id FROM web_builder_docs WHERE post_id = ANY($1)`, ids)
+				check(err)
+				if err == nil {
+					for rows.Next() {
+						var id int64
+						if rows.Scan(&id) == nil {
+							chunkDocs[id] = true
+						}
+					}
+					check(rows.Err())
+					rows.Close()
+				}
+			}
 			b.WriteString("\t<item>\n")
 			fmt.Fprintf(&b, "\t\t<title>%s</title>\n\t\t<link>%s</link>\n\t\t<pubDate>%s</pubDate>\n\t\t<dc:creator>%s</dc:creator>\n\t\t<guid isPermaLink=\"false\">%s</guid>\n\t\t<description></description>\n",
 				cdata(p.Title), xmlEsc(lb.Permalink(p)), p.Date().UTC().Format(time.RFC1123Z), cdata(creator(p.AuthorID)), xmlEsc(lb.Home+"/?p="+itoa64(p.ID)))
@@ -366,10 +392,10 @@ func (s *Server) exportScreen(c *gin.Context) {
 					b.WriteString(postmeta(k, v))
 				}
 			}
-			b.WriteString(s.wbExportMeta(ctx, p.ID, postmeta)) // Pursae Web Builder doc (webbuilder_hooks.go)
-			comments, _, err := s.store.QueryComments(ctx, store.CommentQuery{PostID: p.ID, Status: "approved", PerPage: 100000, Order: "asc"})
-			check(err)
-			for _, cm := range comments {
+			if chunkDocs[p.ID] {
+				b.WriteString(s.wbExportMeta(ctx, p.ID, postmeta)) // Pursae Web Builder doc (webbuilder_hooks.go)
+			}
+			for _, cm := range chunkComments[p.ID] {
 				fmt.Fprintf(&b, "\t\t<wp:comment>\n\t\t\t<wp:comment_id>%d</wp:comment_id>\n\t\t\t<wp:comment_author>%s</wp:comment_author>\n\t\t\t<wp:comment_author_email>%s</wp:comment_author_email>\n\t\t\t<wp:comment_author_url>%s</wp:comment_author_url>\n\t\t\t<wp:comment_author_IP>%s</wp:comment_author_IP>\n\t\t\t<wp:comment_date>%s</wp:comment_date>\n\t\t\t<wp:comment_date_gmt>%s</wp:comment_date_gmt>\n\t\t\t<wp:comment_content>%s</wp:comment_content>\n\t\t\t<wp:comment_approved>%s</wp:comment_approved>\n\t\t\t<wp:comment_type>%s</wp:comment_type>\n\t\t\t<wp:comment_parent>%d</wp:comment_parent>\n\t\t\t<wp:comment_user_id>%d</wp:comment_user_id>\n\t\t</wp:comment>\n",
 					cm.ID, cdata(cm.AuthorName), cdata(cm.AuthorEmail), cdata(cm.AuthorURL), cdata(cm.AuthorIP), cdata(wpDate(cm.CreatedAt)), cdata(cm.CreatedAt.UTC().Format("2006-01-02 15:04:05")),
 					cdata(cm.Content), cdata("1"), cdata(cm.Type), cm.ParentID, cm.UserID)
