@@ -146,6 +146,19 @@ func TestLazyImagesSkipsQuotedMarkup(t *testing.T) {
 	}
 }
 
+func TestDeferScriptsSkipsQuotedMarkup(t *testing.T) {
+	for _, attribute := range []string{
+		`data-template="<script src='/slider.js' id='slider-js'></script>"`,
+		`data-template='<script src="/slider.js" id="slider-js"></script>'`,
+	} {
+		doc := `<body><div ` + attribute + `>label</div><script src="/slider.js" id="real-slider-js"></script></body>`
+		got := opt(doc, OptimizeConfig{DeferScripts: true, DeferAllowlist: []string{"slider"}})
+		if !strings.Contains(got, attribute) || !strings.Contains(got, `id="real-slider-js" defer>`) {
+			t.Errorf("quoted script was treated as markup: %s", got)
+		}
+	}
+}
+
 func TestStrayLessThanKeepsOptimizing(t *testing.T) {
 	doc := `<html><head><title>1 < 2</title></head><body><p>a < b</p><img src="a"><img src="b">` +
 		`<script src="/wp-includes/js/jquery/jquery.min.js"></script></body></html>`

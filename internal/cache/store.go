@@ -301,6 +301,10 @@ func (s *Store) get(key string) (*Entry, bool) {
 	if !ok || cur != it {
 		return nil, false
 	}
+	if !s.now().Before(it.expires) {
+		s.removeLocked(it, true)
+		return nil, false
+	}
 	if e == nil {
 		s.removeLocked(it, true)
 		return nil, false

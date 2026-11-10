@@ -141,7 +141,16 @@ func splitSegments(src, lc string) []segment {
 			}
 		}
 		if raw == "" {
-			i++
+			if i+1 >= len(src) || src[i+1] == ' ' || src[i+1] == '\t' || src[i+1] == '\n' || src[i+1] == '\r' {
+				i++
+				continue
+			}
+			end := tagEnd(src, i)
+			if end < 0 {
+				i++
+				continue
+			}
+			i = end + 1
 			continue
 		}
 		if i > normalStart {
