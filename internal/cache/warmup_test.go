@@ -2,10 +2,29 @@ package cache
 
 import (
 	"context"
+	"errors"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 )
+
+type warmupRoundTrip func(*http.Request) (*http.Response, error)
+
+func (f warmupRoundTrip) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+type warmupBrokenBody struct{ read bool }
+
+func (b *warmupBrokenBody) Read(p []byte) (int, error) {
+	if !b.read {
+		b.read = true
+		p[0] = 'x'
+		return 1, nil
+	}
+	return 0, errors.New("body interrupted")
+}
+func (*warmupBrokenBody) Close() error { return nil }
 
 func TestWarmupInProcess(t *testing.T) {
 	c, app, _ := newTestCache(t, nil)
@@ -65,5 +84,29 @@ func TestWarmupOverNetwork(t *testing.T) {
 	}
 	if app.calls.Load() != 2 || c.Stats().Entries != 2 {
 		t.Fatalf("calls=%d entries=%d", app.calls.Load(), c.Stats().Entries)
+	}
+}
+
+func TestWarmupCountsResponseBodyFailure(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		body io.ReadCloser
+		fail int
+		warm int
+	}{
+		{name: "complete", body: io.NopCloser(http.NoBody), warm: 1},
+		{name: "interrupted", body: &warmupBrokenBody{}, fail: 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &http.Client{Transport: warmupRoundTrip(func(*http.Request) (*http.Response, error) {
+				h := http.Header{}
+				h.Set(HeaderStatus, "miss")
+				return &http.Response{StatusCode: http.StatusOK, Header: h, Body: tc.body}, nil
+			})}
+			prog, err := Warmup(context.Background(), []string{"https://example.test/"}, WarmupOptions{Client: client, Concurrency: 1})
+			if err != nil || prog.Failed != tc.fail || prog.Warmed != tc.warm || prog.Done != 1 {
+				t.Fatalf("progress=%+v err=%v", prog, err)
+			}
+		})
 	}
 }

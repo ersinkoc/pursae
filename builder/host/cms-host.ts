@@ -444,6 +444,7 @@ export class HostStorage implements BuilderHostStorage {
   private prefs: Prefs = {}
   private prefsOk = false
   private dirty = new Map<string, unknown>()
+  private prefsFlight: Promise<void> | null = null
   private prefsTimer: unknown = null
   private libraryOk = false
   private saved: SavedComponent[] = []
@@ -547,6 +548,10 @@ export class HostStorage implements BuilderHostStorage {
 
   /** Writes changed user prefs (merged on the server; null deletes). */
   async flushPrefs(opts: { keepalive?: boolean } = {}): Promise<void> {
+    if (this.prefsFlight) {
+      await this.prefsFlight
+      return this.flushPrefs(opts)
+    }
     if (!this.dirty.size) return
     if (this.prefsTimer !== null) {
       this.timers.clear(this.prefsTimer)
@@ -557,6 +562,16 @@ export class HostStorage implements BuilderHostStorage {
       this.dirty.clear()
       return // kept locally only
     }
+    const task = this.sendPrefs(patch, opts)
+    this.prefsFlight = task
+    try {
+      await task
+    } finally {
+      this.prefsFlight = null
+    }
+  }
+
+  private async sendPrefs(patch: Record<string, unknown>, opts: { keepalive?: boolean }) {
     try {
       // keepalive: the pagehide flush must survive the page going away.
       await this.d.rest.request<Prefs>('PUT', routes.prefs(), { json: patch, keepalive: opts.keepalive })
@@ -681,6 +696,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
   const autosaver = new Autosaver({ rest, postId, session, ui, now: deps.now, timers })
   const storage = new HostStorage({ rest, userId: boot.user.id, postId, ui, local: deps.local === undefined ? localStorageOrNull() : deps.local, timers })
   const loadRenderer = deps.loadRenderer ?? loadLiveRenderer
+  let disposed = false
   let lockTimer: unknown = null
   const dyn = new DynStore(rest, boot)
   const template = readTemplate(boot)
@@ -708,12 +724,14 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
   }
 
   const refreshLock = async (take = false): Promise<LockResponse | null> => {
-    if (session.stopped) return null
+    if (disposed || session.stopped) return null
     try {
       const r = await rest.request<LockResponse>('POST', routes.lock(postId), { json: take ? { take: true } : {} })
+      if (disposed) return null
       if (r.data?.lock) showLocked(r.data.lock.user?.name)
       return r.data
     } catch (e) {
+      if (disposed) return null
       if (isRestError(e, ERR.apiMismatch)) {
         session.stop('api')
         ui.showReload()
@@ -724,7 +742,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
 
   let lockedOpen = false
   const showLocked = (name?: string) => {
-    if (lockedOpen) return // the heartbeat must not stack another prompt while one is open
+    if (disposed || lockedOpen) return // the heartbeat must not stack another prompt while one is open
     lockedOpen = true
     void ui
       .ask({
@@ -739,6 +757,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
       })
       .then((a) => {
         lockedOpen = false
+        if (disposed) return
         if (a === 'take') void refreshLock(true)
         else if (a === 'exit') navigate(boot.links.exit)
       })
@@ -791,9 +810,11 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     // (the unload warning covers what stayed unsaved).
     beforeLeave: () => (session.stopped ? Promise.resolve() : autosaver.flush()),
     async start() {
+      if (disposed) return
       // An older boot config without sample data: fetch it instead of drawing empty widgets.
       if (!dyn.fromBoot) void dyn.load(template?.preview?.object || `post:${postId}`).catch(() => undefined)
       await storage.init()
+      if (disposed) return
       if (initial.draft) {
         void ui
           .ask({
@@ -825,12 +846,14 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
       if (boot.document.lock) showLocked(boot.document.lock.user?.name)
       else void refreshLock(false)
       lockTimer = timers.set(function beat() {
+        if (disposed) return
         void refreshLock(false)
         lockTimer = timers.set(beat, LOCK_REFRESH_MS)
       }, LOCK_REFRESH_MS)
     },
     refreshLock,
     dispose() {
+      disposed = true
       if (lockTimer !== null) timers.clear(lockTimer)
       lockTimer = null
     },
