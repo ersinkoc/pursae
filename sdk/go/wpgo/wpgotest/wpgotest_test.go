@@ -1,3 +1,5 @@
+//go:build !(wasip1 && wasm)
+
 package wpgotest_test
 
 import (

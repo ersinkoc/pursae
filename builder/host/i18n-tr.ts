@@ -74,6 +74,7 @@ const tr: Record<string, string> = {
   "ID": "ID", // i18n-ignore
   "In {taxonomy}": "{taxonomy} içinde", // i18n-ignore
   "Include": "Dahil et", // i18n-ignore
+  "Popup": "Açılır pencere", // i18n-ignore
   "Include or exclude": "Dahil et ya da hariç tut", // i18n-ignore
   "Include rules add views, Exclude rules take them out again. Among templates that match a view, the most specific rule wins; on a tie, the higher priority.": "Dahil et kuralları görünüm ekler, Hariç tut kuralları onları yeniden çıkarır. Bir görünüme uyan şablonlar arasında en belirgin kural kazanır; eşitlikte önceliği yüksek olan.", // i18n-ignore
   "Item": "Öğe", // i18n-ignore

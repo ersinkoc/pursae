@@ -1,3 +1,5 @@
+//go:build !(wasip1 && wasm)
+
 // Package wpgotest is an in-memory fake of the Pursae plugin host for unit tests. It lets code that
 // calls wpgo.GetOption, wpgo.Storage, wpgo.Transients, wpgo.GetPost, wpgo.QueryPosts, wpgo.HTTPGet,
 // wpgo.CurrentUser and friends run under a plain `go test` (no Wasm, no site):
