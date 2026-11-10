@@ -349,7 +349,7 @@ func (s *Store) DeleteUser(ctx context.Context, id, reassignTo int64) error {
 // UpdateUserFields is wp_update_user() for the columns the REST users controller edits.
 func (s *Store) UpdateUserFields(ctx context.Context, u *User) error {
 	profile, _ := json.Marshal(u.Profile)
-	_, err := s.Pool.Exec(ctx, `UPDATE users SET email=$2, display_name=$3, url=$4, profile=$5, nicename=$6, locale=$7 WHERE id=$1`,
+	_, err := s.Pool.Exec(ctx, `UPDATE users SET email=$2, display_name=$3, url=$4, profile=$5, nicename=$6, locale=$7, `+clearResetOnEmailChange+` WHERE id=$1`,
 		u.ID, u.Email, u.DisplayName, u.URL, profile, u.Nicename, u.Locale)
 	return err
 }

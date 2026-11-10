@@ -184,6 +184,44 @@ func TestUserRegistrationAndEmailConfirmations(t *testing.T) {
 	if code, body, _ := get(t, anon, rp); code != http.StatusOK || !strings.Contains(body, `id="resetpassform"`) {
 		t.Errorf("set-password link: %d", code)
 	}
+	// A password set by any other path invalidates the pending reset key (wp_set_password()).
+	newbie, err := srv.store.UserByLoginOrEmail(context.Background(), "newbie")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.store.SetUserPassword(context.Background(), newbie.ID, "x"); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, loc := get(t, anon, rp); code != http.StatusFound || !strings.Contains(loc, "error=invalidkey") {
+		t.Errorf("reset link still valid after a password change: %d %s", code, loc)
+	}
+	// So does an e-mail change, and a key resets the password only once.
+	reissue := func() string {
+		if code, _, _ := post(t, anon, base+"/wp-login?action=lostpassword", url.Values{"user_login": {"newbie"}}); code != http.StatusFound {
+			t.Fatalf("lost password: %d", code)
+		}
+		return firstURL(t, lastMail(t, "Password Reset").Body, "action=rp")
+	}
+	rp = reissue()
+	newbie, _ = srv.store.UserByLoginOrEmail(context.Background(), "newbie")
+	newbie.Email = "newbie2@example.test"
+	if err := srv.store.UpdateUserProfile(context.Background(), newbie); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, loc := get(t, anon, rp); code != http.StatusFound || !strings.Contains(loc, "error=invalidkey") {
+		t.Errorf("reset link still valid after an e-mail change: %d %s", code, loc)
+	}
+	newbie.Email = "newbie@example.test"
+	_ = srv.store.UpdateUserProfile(context.Background(), newbie)
+	rp = reissue()
+	ru, _ := url.Parse(rp)
+	resetForm := url.Values{"rp_login": {"newbie"}, "rp_key": {ru.Query().Get("key")}, "pass1": {"Fresh-Pass-1234!"}, "pass2": {"Fresh-Pass-1234!"}}
+	if code, _, loc := post(t, anon, base+"/wp-login?action=resetpass", resetForm); code != http.StatusFound || !strings.Contains(loc, "password=changed") {
+		t.Fatalf("reset: %d %s", code, loc)
+	}
+	if code, _, loc := post(t, anon, base+"/wp-login?action=resetpass", resetForm); code != http.StatusFound || !strings.Contains(loc, "error=invalidkey") {
+		t.Errorf("reset key used twice: %d %s", code, loc)
+	}
 
 	// Profile e-mail change: the old address stays until the link in "[Site] Email Change Request" is followed.
 	_, body, _ = get(t, c, base+"/wp-admin/profile")

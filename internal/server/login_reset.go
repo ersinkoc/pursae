@@ -161,14 +161,21 @@ func (s *Server) resetPassword(c *gin.Context, v loginView) {
 			v.Error = template.HTML("<strong>Error:</strong> " + template.HTMLEscapeString(s.adminsecUserPasswordProblem(u, p1)))
 		default:
 			hash, err := auth.HashPassword(p1)
-			if err == nil {
-				err = s.store.SetUserPassword(c, u.ID, hash)
-			}
 			if err != nil {
 				v.Error = template.HTML("<strong>Error:</strong> " + template.HTMLEscapeString(err.Error()))
 				break
 			}
-			_ = s.setUserMeta(c, u, "password_reset", nil)
+			// Spend the key first and atomically: two requests with the same key can't both reset.
+			sum := sha256.Sum256([]byte(key))
+			if ok, err := s.store.ConsumePasswordReset(c, u.ID, hex.EncodeToString(sum[:])); err != nil || !ok {
+				c.Redirect(http.StatusFound, s.loginPath()+"?action=lostpassword&error=invalidkey")
+				return
+			}
+			if err := s.store.SetUserPassword(c, u.ID, hash); err != nil {
+				v.Error = template.HTML("<strong>Error:</strong> " + template.HTMLEscapeString(err.Error()))
+				break
+			}
+			delete(u.Meta, "password_reset")
 			s.adminsecPasswordChanged(c, u)
 			_, _ = s.store.Pool.Exec(c, `DELETE FROM sessions WHERE user_id = $1`, u.ID)
 			site := s.settings.String("blogname")
