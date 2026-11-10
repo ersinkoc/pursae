@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -662,8 +663,18 @@ func (s *Server) gxbSlots(ctx context.Context, p *gooProduct, c *bkConf, res *go
 		return nil
 	}
 	var out []bkSlot
-	for t := dayStart.Add(time.Duration(first) * time.Minute); !t.Add(step).After(dayEnd); t = t.Add(step) {
+	// Blocks are wall-clock minutes of the day built with time.Date, not elapsed time from midnight:
+	// on a DST day (23 or 25 hours) the 09:00 block stays 09:00, and a time that does not exist
+	// (the spring-forward gap) is skipped.
+	for mins := first; ; mins += c.blockMinutes() {
+		t := time.Date(y, m, d, 0, mins, 0, 0, loc)
 		e := t.Add(step)
+		if e.After(dayEnd) || !t.Before(dayEnd) {
+			break
+		}
+		if t.Hour()*60+t.Minute() != mins%1440 {
+			continue
+		}
 		if t.Before(from) || t.After(to) || !gxbBookable(c, res, t, e) {
 			continue
 		}
@@ -811,7 +822,7 @@ func (s *Server) bkParseRequest(c *bkConf, form map[string][]string) (time.Time,
 		if mins < 0 {
 			return time.Time{}, 0, nil, gooCartErr("Please choose a time.")
 		}
-		start = day.Add(time.Duration(mins) * time.Minute)
+		start = time.Date(day.Year(), day.Month(), day.Day(), mins/60, mins%60, 0, 0, loc) // wall clock, DST-safe
 	}
 	blocks := 1
 	if c.DurationType == "customer" {
@@ -877,6 +888,11 @@ func bkAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form ma
 	if err != nil {
 		return err
 	}
+	ctx, unlock, err := s.bkLock(ctx, p, c)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	resID, err := s.gooBkPickResource(ctx, p, c, gxbRequestedResource(form), start, blocks, bkSumPersons(persons), 0)
 	if err != nil {
 		return err
@@ -901,6 +917,46 @@ func bkAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form ma
 	}
 	return nil
 }
+
+// bkLock serialises the availability check and the insert of a booking for a product and the
+// resources it books (resources are shared between products), so two visitors cannot both take the
+// last place: session advisory locks on one connection, taken in a fixed (sorted) order. The returned
+// context marks the locks as held, so a hook running inside the locked section that books again
+// (an order created or paid there) does not wait on itself.
+func (s *Server) bkLock(ctx context.Context, p *gooProduct, c *bkConf) (context.Context, func(), error) {
+	if ctx.Value(bkLockHeld{}) != nil {
+		return ctx, func() {}, nil
+	}
+	keys := []string{"goo_booking:p:" + itoa64(p.ID)}
+	if c.HasResources {
+		for _, r := range c.Resources {
+			keys = append(keys, "goo_booking:r:"+itoa64(r.ID))
+		}
+	}
+	sort.Strings(keys)
+	keys = slices.Compact(keys)
+	conn, err := s.store.Pool.Acquire(ctx)
+	if err != nil {
+		return ctx, nil, err
+	}
+	var held []string
+	unlock := func() {
+		for i := len(held) - 1; i >= 0; i-- {
+			_, _ = conn.Exec(context.WithoutCancel(ctx), `SELECT pg_advisory_unlock(hashtextextended($1, 0))`, held[i])
+		}
+		conn.Release()
+	}
+	for _, k := range keys {
+		if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock(hashtextextended($1, 0))`, k); err != nil {
+			unlock()
+			return ctx, nil, err
+		}
+		held = append(held, k)
+	}
+	return context.WithValue(ctx, bkLockHeld{}, true), unlock, nil
+}
+
+type bkLockHeld struct{}
 
 // bkItemBooking is a cart item's booking data.
 func bkItemBooking(it *gooCartItem) map[string]any {
@@ -1038,18 +1094,96 @@ func (s *Server) bkOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	if !s.gooExtOn(bkKey) {
 		return
 	}
-	for _, b := range s.bkQuery(ctx, `order_id = $1`, ch.Order.ID) {
+	o := ch.Order
+	for _, b := range s.bkQuery(ctx, `order_id = $1`, o.ID) {
+		flag := fmt.Sprintf("_booking_cancelled_by_order_%d", b.ID)
 		switch ch.To {
 		case "processing", "completed":
 			if b.Status == "unpaid" || b.Status == "confirmed" {
 				_ = s.bkSetStatus(ctx, b, "paid")
+			} else if b.Status == "cancelled" && o.Meta[flag] == true {
+				s.bkRevive(ctx, o, b, flag)
 			}
 		case "cancelled", "refunded", "failed":
-			if b.Status != "cancelled" {
+			if b.Status != "cancelled" && b.Status != "in-cart" {
+				if s.bkSetStatus(ctx, b, "cancelled") == nil {
+					// Remembered so a late payment of the order (Pay for order after a failed
+					// payment, a late gateway callback, the admin) restores the booking.
+					_, _ = s.gooClaimOrderFlag(ctx, o, flag, true)
+				}
+			} else if b.Status == "in-cart" {
 				_ = s.bkSetStatus(ctx, b, "cancelled")
 			}
 		}
 	}
+}
+
+// bkRevive restores a booking the order flow cancelled when the order is paid after all: the block is
+// re-checked (under the booking lock, ignoring the booking itself) and the booking set back to paid;
+// a block sold to someone else meanwhile is left cancelled with an order note and the admin e-mail so
+// the merchant can rebook or refund.
+func (s *Server) bkRevive(ctx context.Context, o *gooOrder, b *bkBooking, flag string) {
+	p, err := s.gooGetProduct(ctx, b.ProductID)
+	if err != nil {
+		return
+	}
+	c := bkConfOf(p)
+	ctx, unlock, err := s.bkLock(ctx, p, c)
+	if err != nil {
+		return
+	}
+	defer unlock()
+	if !s.bkStillFree(ctx, p, c, b) {
+		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d could not be restored: the booked time is no longer available. Please rebook or refund it.", b.ID), false, "")
+		s.bkMail(ctx, "admin_booking_cancelled", b)
+		return
+	}
+	if s.bkSetStatus(ctx, b, "paid") == nil {
+		_, _ = s.gooClaimOrderFlag(ctx, o, flag, false)
+	}
+}
+
+// bkStillFree reports whether a booking's blocks still have room for it next to the other bookings
+// (capacity only: the booking window and rules applied when it was made).
+func (s *Server) bkStillFree(ctx context.Context, p *gooProduct, c *bkConf, b *bkBooking) bool {
+	var res *gooBkResource
+	if b.ResourceID != 0 {
+		if r, err := s.gooBkResource(ctx, b.ResourceID); err == nil {
+			res = r
+		}
+	}
+	need := 1
+	if persons := int(gxaSumNums(b.Persons)); c.PersonQtyMult && persons > 0 {
+		need = persons
+	}
+	capacity := gxbCapacity(c, res)
+	d, days := c.bufferDur()
+	held := s.gooBkExisting(ctx, p.ID, b.ResourceID, b.Start.Add(-d).AddDate(0, 0, -days), b.End.Add(d).AddDate(0, 0, days), b.ID)
+	for t := b.Start; t.Before(b.End); {
+		e := c.blockEnd(t)
+		if !e.After(t) {
+			return false
+		}
+		if !c.timed() {
+			for day := t; day.Before(e); day = day.AddDate(0, 0, 1) {
+				if capacity-c.used(held, day, day.AddDate(0, 0, 1)) < need {
+					return false
+				}
+			}
+		} else if capacity-c.used(held, t, e) < need {
+			return false
+		}
+		t = e
+	}
+	return true
+}
+
+func gxaSumNums(m map[string]any) float64 {
+	var n float64
+	for _, v := range m {
+		n += gxNum(v)
+	}
+	return n
 }
 
 // bkDaily sends the reminders and completes the bookings that ended.

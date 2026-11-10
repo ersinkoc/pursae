@@ -850,7 +850,8 @@ func (s *Server) gsubOrderStatusChanged(ctx context.Context, o *gooOrder, from, 
 				_ = s.gooTriggerEmail(ctx, "customer_processing_renewal_order", o, map[string]any{"subscription": sub})
 			}
 		case "failed":
-			if sub.Status == "active" {
+			// A failed early renewal leaves the paid period alone (the order can still be paid).
+			if sub.Status == "active" && o.Meta["_subscription_renewal_early"] != true {
 				_ = s.gsubUpdateStatus(ctx, sub, "on-hold", fmt.Sprintf("Payment failed for renewal order #%d.", o.ID), "")
 			}
 		case "cancelled", "trash":
@@ -864,10 +865,11 @@ func (s *Server) gsubOrderStatusChanged(ctx context.Context, o *gooOrder, from, 
 		s.gsubCreateFromOrder(ctx, o)
 	}
 	if to == "cancelled" || to == "refunded" {
-		// A parent order cancelled before payment cancels its pending subscriptions.
-		subs, _, _ := s.gsubList(ctx, gsubQuery{ParentOrderID: o.ID, Status: []string{"pending"}})
+		// A cancelled or fully refunded parent order cancels its live subscriptions, like WooCommerce
+		// Subscriptions (cancel_subscriptions_for_order / maybe_cancel_subscription_on_full_refund).
+		subs, _, _ := s.gsubList(ctx, gsubQuery{ParentOrderID: o.ID, Status: gsubLiveStatuses})
 		for _, sub := range subs {
-			_ = s.gsubUpdateStatus(ctx, sub, "cancelled", "Parent order cancelled.", "")
+			_ = s.gsubUpdateStatus(ctx, sub, "cancelled", "Parent order "+strings.ToLower(gooStatusLabel(to))+".", "")
 		}
 	}
 }
@@ -1029,8 +1031,17 @@ func (s *Server) gsubScheduler(ctx context.Context) {
 	// Due renewals.
 	due, _, _ := s.gsubList(ctx, gsubQuery{Due: true})
 	for _, sub := range due {
-		if gxaInt64(sub.Meta, "_pending_renewal") != 0 {
-			continue
+		if oid := gxaInt64(sub.Meta, "_pending_renewal"); oid != 0 {
+			// An unpaid early renewal does not hold back the regular renewal: it is cancelled and the
+			// due renewal order is created instead.
+			o, err := s.gooGetOrder(ctx, oid)
+			if err != nil || o.Meta["_subscription_renewal_early"] != true || !containsStr([]string{"pending", "failed"}, o.Status) {
+				continue
+			}
+			if sub = s.gsubCancelEarlyRenewal(ctx, sub, o, "Early renewal order superseded by the scheduled renewal."); sub == nil ||
+				gxaInt64(sub.Meta, "_pending_renewal") != 0 || sub.NextPayment == nil {
+				continue
+			}
 		}
 		next := *sub.NextPayment
 		np := gxaAddPeriod(next, sub.Period, sub.Interval)
@@ -1071,10 +1082,34 @@ func (s *Server) gsubScheduler(ctx context.Context) {
 		if !containsStr([]string{"pending", "failed"}, o.Status) {
 			continue
 		}
+		if o.Meta["_subscription_renewal_early"] == true {
+			// An abandoned "Renew now" order: the current period is still paid for, so after the grace
+			// period (at least a day, the customer may still be paying) the order is cancelled and the
+			// subscription stays active and renews on its regular date.
+			if now.Sub(o.DateCreated) >= time.Duration(max(grace, 1))*24*time.Hour {
+				s.gsubCancelEarlyRenewal(ctx, sub, o, "Early renewal order was not paid.")
+			}
+			continue
+		}
 		if o.Status == "failed" || now.Sub(o.DateCreated) >= time.Duration(grace)*24*time.Hour {
 			_ = s.gsubUpdateStatus(ctx, sub, "on-hold", fmt.Sprintf("Renewal order #%d has not been paid.", o.ID), "")
 		}
 	}
+}
+
+// gsubCancelEarlyRenewal cancels an unpaid early renewal order and releases the subscription's
+// pending renewal; it returns the subscription as stored afterwards (nil if it is gone).
+func (s *Server) gsubCancelEarlyRenewal(ctx context.Context, sub *gooSubscription, o *gooOrder, note string) *gooSubscription {
+	if o.Status != "cancelled" {
+		_ = s.gooSetStatus(ctx, o, "cancelled", note, "")
+	}
+	fresh, err := s.gsubGet(ctx, sub.ID)
+	if err != nil {
+		return nil
+	}
+	// The order status hook drops the pending renewal; this covers a hook that did not run.
+	s.gsubDropPendingRenewal(ctx, fresh, o.ID, true, fmt.Sprintf("Renewal order #%d was cancelled.", o.ID))
+	return fresh
 }
 
 // Customer actions ----------------------------------------------------------------------------------------

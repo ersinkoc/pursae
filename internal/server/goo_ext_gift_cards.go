@@ -3,12 +3,14 @@ package server
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
 	"math/big"
 	"net/mail"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -250,16 +252,14 @@ func (s *Server) gcUsable(g *gcCard) error {
 }
 
 // gcAdjust changes a balance by delta (negative = debit), keeping the status in step, and logs it.
+// The change is one relative UPDATE on the row, so a checkout debiting the same card meanwhile
+// (gcReserve) is not overwritten by a balance read earlier; g gets the stored values back.
 func (s *Server) gcAdjust(ctx context.Context, g *gcCard, delta float64, typ string, orderID, userID int64, note string) error {
 	dp := s.gooDecimals()
-	g.Balance = gooRound(max(g.Balance+delta, 0), dp)
-	if g.Status != "disabled" {
-		g.Status = "active"
-		if g.Balance <= 0 {
-			g.Status = "redeemed"
-		}
-	}
-	if _, err := s.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET balance = $2, status = $3 WHERE id = $1`, g.ID, g.Balance, g.Status); err != nil {
+	delta = gooRound(delta, dp)
+	if err := s.store.Pool.QueryRow(ctx, `UPDATE goo_gift_cards SET balance = greatest(balance + $2::numeric, 0),
+		status = CASE WHEN $3::bool THEN 'disabled' WHEN balance + $2::numeric <= 0 THEN 'redeemed' ELSE 'active' END
+		WHERE id = $1 RETURNING balance::float8, status`, g.ID, delta, g.Status == "disabled").Scan(&g.Balance, &g.Status); err != nil {
 		return err
 	}
 	amount := delta
@@ -603,6 +603,9 @@ func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 		return
 	}
 	o := ch.Order
+	if !containsStr([]string{"cancelled", "refunded", "trash"}, ch.To) {
+		s.gcRedebit(ctx, o)
+	}
 	switch ch.To {
 	case "processing", "completed":
 		s.gcIssue(ctx, o)
@@ -616,13 +619,85 @@ func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 		for _, id := range ids {
 			list = append(list, due{id, outstanding[id]})
 		}
+		credited := gcStatusCredit(o)
 		for _, d := range list {
 			if g, err := s.gcGet(ctx, d.id); err == nil {
-				_ = s.gcAdjust(ctx, g, d.amt, "refunded", o.ID, o.CustomerID, "Order "+gooStatusLabel(ch.To))
+				if s.gcAdjust(ctx, g, d.amt, "refunded", o.ID, o.CustomerID, "Order "+gooStatusLabel(ch.To)) == nil {
+					credited[itoa64(d.id)] = gooRound(gxNum(credited[itoa64(d.id)])+d.amt, s.gooDecimals())
+				}
 				_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Gift card %s credited: %s.", g.Code, s.gooPricePlain(d.amt, o.Currency)), false, "")
 			}
 		}
+		if len(list) > 0 {
+			s.gcSetStatusCredit(ctx, o, credited)
+		}
 	}
+}
+
+// gcStatusCreditKey is the order meta holding what cancelling or refunding the order credited back to
+// each card (card id → amount), so paying the order again later debits it again.
+const gcStatusCreditKey = "_gc_status_credit"
+
+func gcStatusCredit(o *gooOrder) map[string]any {
+	out := map[string]any{}
+	if m, ok := o.Meta[gcStatusCreditKey].(map[string]any); ok {
+		for k, v := range m {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+// gcSetStatusCredit stores (or with an empty map removes) the order's status credit without saving
+// the rest of the order.
+func (s *Server) gcSetStatusCredit(ctx context.Context, o *gooOrder, m map[string]any) {
+	if o.Meta == nil {
+		o.Meta = map[string]any{}
+	}
+	if len(m) == 0 {
+		delete(o.Meta, gcStatusCreditKey)
+		_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_orders SET meta = meta - $2::text WHERE id = $1`, o.ID, gcStatusCreditKey)
+		return
+	}
+	o.Meta[gcStatusCreditKey] = m
+	b, _ := json.Marshal(m)
+	_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_orders SET meta = jsonb_set(meta, ARRAY[$2::text], $3::jsonb) WHERE id = $1`, o.ID, gcStatusCreditKey, string(b))
+}
+
+// gcRedebit takes back what a cancellation or refund credited to the cards when the order comes back
+// (paid late, reactivated by the admin): the order keeps its gift card discount, so without this one
+// balance would pay twice. Each debit is a conditional UPDATE like gcReserve; a card that no longer
+// covers it is left as it is with an order note for the merchant.
+func (s *Server) gcRedebit(ctx context.Context, o *gooOrder) {
+	credited := gcStatusCredit(o)
+	if len(credited) == 0 {
+		return
+	}
+	dp := s.gooDecimals()
+	for key, v := range credited {
+		id, _ := strconv.ParseInt(key, 10, 64)
+		amt := gooRound(gxNum(v), dp)
+		if id == 0 || amt <= 0 {
+			delete(credited, key)
+			continue
+		}
+		var code string
+		err := s.store.Pool.QueryRow(ctx, `UPDATE goo_gift_cards SET balance = balance - $2::numeric,
+			status = CASE WHEN balance - $2::numeric <= 0 THEN 'redeemed' ELSE status END
+			WHERE id = $1 AND status = 'active' AND balance >= $2::numeric RETURNING code`, id, amt).Scan(&code)
+		if err != nil {
+			if g, gerr := s.gcGet(ctx, id); gerr == nil {
+				code = g.Code
+			}
+			_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Gift card %s could not be debited again (%s): its balance no longer covers it. Please review the order.",
+				code, s.gooPricePlain(amt, o.Currency)), false, "")
+			continue
+		}
+		_ = s.gcLog(ctx, id, "used", amt, o.ID, o.CustomerID, "Order reactivated")
+		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Gift card %s debited again: %s.", code, s.gooPricePlain(amt, o.Currency)), false, "")
+		delete(credited, key)
+	}
+	s.gcSetStatusCredit(ctx, o, credited)
 }
 
 // gcIssue creates the order's gift cards (once per unit) and sends those due today.

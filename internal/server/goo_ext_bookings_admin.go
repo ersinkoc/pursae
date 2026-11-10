@@ -665,6 +665,11 @@ func (s *Server) bkCreateFromAdmin(ctx context.Context, form map[string][]string
 	if err != nil {
 		return nil, err
 	}
+	ctx, unlock, err := s.bkLock(ctx, p, conf)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
 	resID, err := s.gooBkPickResource(ctx, p, conf, gxbRequestedResource(form), start, blocks, bkSumPersons(persons), 0)
 	if err != nil {
 		return nil, err

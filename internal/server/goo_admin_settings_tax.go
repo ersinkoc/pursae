@@ -188,13 +188,13 @@ func (s *Server) gooTaxImport(c *gin.Context, class string) (int, error) {
 			rec = append(rec, "")
 		}
 		star := func(v string) string {
-			if v = strings.TrimSpace(v); v == "*" {
+			if v = gooCSVUnescape(strings.TrimSpace(v)); v == "*" {
 				return ""
 			}
 			return v
 		}
 		rate := &gooTaxRate{Country: star(rec[0]), State: star(rec[1]), Postcodes: gooSplitList(star(rec[2])), Cities: gooSplitList(star(rec[3])),
-			Name: strings.TrimSpace(rec[5]), Compound: rec[7] == "1", Shipping: rec[8] != "0", Class: class}
+			Name: gooCSVUnescape(strings.TrimSpace(rec[5])), Compound: rec[7] == "1", Shipping: rec[8] != "0", Class: class}
 		rate.Rate, _ = strconv.ParseFloat(strings.TrimSpace(rec[4]), 64)
 		rate.Priority, _ = strconv.Atoi(strings.TrimSpace(rec[6]))
 		if cl := strings.TrimSpace(rec[9]); cl != "" && cl != class {

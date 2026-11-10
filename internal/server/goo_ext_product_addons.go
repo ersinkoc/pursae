@@ -49,6 +49,7 @@ func init() {
 	gooAddToCartHooks = append(gooAddToCartHooks, paoAddToCart)
 	gooCartItemPriceHooks = append(gooCartItemPriceHooks, paoCartPrice)
 	gooCartItemDataHooks = append(gooCartItemDataHooks, paoItemData)
+	gooCheckoutHooks = append(gooCheckoutHooks, paoCheckout)
 	gooFrontRoutes = append(gooFrontRoutes, paoFrontRoute)
 	gooProductPanels = append(gooProductPanels, &gooProductPanel{ID: "product_addons", Label: "Add-ons", Module: paoKey, Render: paoPanel, Save: paoPanelSave})
 	gooExtAdminPages["product-addons"] = func(s *Server, c *gin.Context) { s.paoAdmin(c) }
@@ -515,7 +516,9 @@ func paoAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form m
 			}
 			add(a, v, v, paoAdjusted(a), a.PriceType)
 		case "file_upload":
-			if !strings.Contains(v, "/wp-content/uploads/goocommerce_uploads/") || strings.Contains(v, "..") {
+			// Only a file this site stored for an add-on upload: the home URL or a root-relative
+			// uploads path that resolves to an existing file under goocommerce_uploads/.
+			if !s.paoIsUploadedFile(ctx, v) {
 				return gooCartErr(`The file for &quot;%s&quot; could not be found. Please upload it again.`, label)
 			}
 			add(a, v, filepath.Base(v), paoAdjusted(a), a.PriceType)
@@ -528,6 +531,44 @@ func paoAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form m
 }
 
 func paoItemAddons(it *gooCartItem) []map[string]any { return gxList(it.Data["addons"]) }
+
+// paoIsUploadedFile reports whether v is the URL of an existing add-on upload of this site.
+func (s *Server) paoIsUploadedFile(ctx context.Context, v string) bool {
+	local := s.gooLocalFile(ctx, v)
+	if local == "" {
+		return false
+	}
+	rel, err := filepath.Rel(filepath.Join(s.cfg.UploadsDir, "goocommerce_uploads"), local)
+	return err == nil && rel != "." && !strings.HasPrefix(rel, "..")
+}
+
+// paoCheckout shows file upload add-ons as the file's URL in the order item meta (the cart shows the
+// file name only), like Product Add-Ons does, so the merchant can open the customer's file from the
+// order screen and the new order e-mail.
+func paoCheckout(s *Server, ctx context.Context, _ *gooCart, o *gooOrder) error {
+	if !s.gooExtOn(paoKey) {
+		return nil
+	}
+	for _, it := range o.ItemsOf("line_item") {
+		display, _ := it.Meta["_display"].([]any)
+		if len(display) == 0 {
+			continue
+		}
+		for _, a := range gxList(it.Meta["_goo_addons"]) {
+			if gxStr(a["field_type"]) != "file_upload" {
+				continue
+			}
+			url, name := gxStr(a["value"]), gxStr(a["name"])
+			for _, x := range display {
+				if m, ok := x.(map[string]any); ok && gxStr(m["value"]) == gxStr(a["display"]) && strings.HasPrefix(gxStr(m["key"]), name) {
+					m["value"] = url
+					break
+				}
+			}
+		}
+	}
+	return nil
+}
 
 // paoCartPrice adds the add-on prices: flat fees once per line (spread over the quantity), quantity
 // based per unit, percentages of the product's price.
