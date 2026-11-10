@@ -212,6 +212,7 @@ var gooWebhookTopics = []gooOpt{
 	{"customer.created", "Customer created"}, {"customer.updated", "Customer updated"}, {"customer.deleted", "Customer deleted"},
 	{"order.created", "Order created"}, {"order.updated", "Order updated"}, {"order.deleted", "Order deleted"}, {"order.restored", "Order restored"},
 	{"product.created", "Product created"}, {"product.updated", "Product updated"}, {"product.deleted", "Product deleted"}, {"product.restored", "Product restored"},
+	{"subscription.created", "Subscription created"}, {"subscription.updated", "Subscription updated"}, {"subscription.deleted", "Subscription deleted"}, {"subscription.restored", "Subscription restored"},
 	{"action", "Action"},
 }
 

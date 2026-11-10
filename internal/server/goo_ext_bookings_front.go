@@ -150,6 +150,9 @@ func bkFrontRoute(s *Server, c *gin.Context, path string) bool {
 	case c.Query("goo-ajax") == "booking_month":
 		s.gooBkMonthJSON(c)
 		return true
+	case c.Query("goo-ajax") == "booking_ics" || c.Query("goo-ajax") == "booking_feed":
+		s.bkICSRoute(c)
+		return true
 	case c.Query("cancel_booking") == "true" && c.Query("booking_id") != "":
 		s.bkCustomerCancel(c)
 		return true
@@ -351,6 +354,9 @@ func bkAccountBookings(s *Server, c *gin.Context, arg string) template.HTML {
 			cancel := ""
 			if s.bkCanCancel(ctx, b) {
 				cancel = `<a href="` + html.EscapeString(s.bkCancelURL(c, b)) + `" class="button cancel">Cancel</a>`
+			}
+			if b.Status != "cancelled" {
+				cancel += ` <a href="` + html.EscapeString(s.bkICSURL(ctx, b)) + `" class="button add-to-calendar">Add to calendar</a>`
 			}
 			fmt.Fprintf(&out, `<tr><td class="booking-id">%d</td><td class="booked-product">%s</td><td class="order-number">%s</td><td class="booking-start-date">%s</td>`+
 				`<td class="booking-end-date">%s</td><td class="booking-status">%s</td><td class="booking-cancel">%s</td></tr>`,

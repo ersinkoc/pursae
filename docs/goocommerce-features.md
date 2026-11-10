@@ -29,6 +29,16 @@ Fourteen modules sit on **Pursae Commerce › Extensions**, all off by default a
 
 A module that is off changes nothing: every one of its hooks checks that the module is on.
 
+**Gift Cards** disable the cards an order sold when it is cancelled or refunded (or when a refund returns the gift card line; reactivating the order enables them again), remind recipients a week before a card with a balance expires, and expose the Store API (`extensions.gift_cards` fields on `cart/add-item`: `amount`, `custom_amount`, `to`, `to_name`, `from`, `message`, `delivery`; `cart/apply-gift-card`, `cart/remove-gift-card`; applied codes in `extensions.gift_cards`) and `wc/v3/gift-cards` (list, read, `PUT` status / `date_expires`, `POST .../adjust`).
+
+**Subscriptions** also expose `wc/v3/subscriptions` (list, create, read, update, delete with `force=true`, batch,
+`/{id}/notes`, `/{id}/orders`; `manage_woocommerce`, 404 while the module is off) and the webhook topics
+`subscription.created`, `subscription.updated` and `subscription.deleted`. Customers change their billing and shipping
+address and switch the payment method (a gateway that renews without a stored card, or any gateway when manual renewals
+are accepted) on the My Account subscription page, and resubscribe to a cancelled or expired one (its products go back
+into the cart). Store managers add a subscription by hand (Subscriptions › Add Subscription), edit addresses and line
+prices / quantities, and use "Process renewal" on the Edit Subscription screen.
+
 ## Storefront and themes
 
 Store URLs render inside the active theme the way WooCommerce's theme-compatibility mode does: the main
@@ -115,3 +125,16 @@ rendered while the store is off): `goocommerce/products` (attributes `columns`, 
 `goocommerce/product-search` (`title`). They render on the front end from block markup such as
 `<!-- wp:goocommerce/products {"columns":3,"limit":6} /-->`; the editor inserter entries are not
 registered yet (insert them with the code editor or a Custom HTML block holding the comment).
+
+### Bookings: calendar and overnight blocks
+
+Booking e-mails and My Account link to a signed `.ics` download (`/?goo-ajax=booking_ics`); Bookings > Calendar shows a private ICS feed URL (`booking_feed`) for Google/Apple/Outlook. Hour/minute products can allow blocks past midnight ("Allow blocks past midnight"). Cancelling a paid booking adds a "refund required" order note and a line in the admin cancellation e-mail.
+
+Bookings REST (`wc-bookings/v1`): `GET /products/slots?product_id=&date=` (public), `GET /bookings` (filters `product_id`, `customer_id`, `order_id`, `status`, `after`, `before`), `GET|PUT /bookings/{id}` (status changes use the admin flow); all but slots need `manage_woocommerce`. The Store API `cart/add-item` takes the booking form fields in `booking` (or `extensions.bookings`), e.g. `{"id": 12, "booking": {"wc_bookings_field_start_date": "2026-12-01"}}`. The daily reminder job catches up missed runs: every unreminded paid/confirmed booking that has not started and falls on or before today + N days is reminded once.
+
+## Memberships: lifecycle, e-mails and drip
+
+- A cancelled or refunded order cancels the memberships it granted; a subscription status change pauses, resumes, cancels or expires the memberships its orders granted.
+- E-mails (Goocommerce > Settings > Emails): Membership welcome, Membership ending soon (days before the end set by Memberships > Ending soon reminder, 0 = off) and Membership ended. Each is sent once per membership and end date.
+- Plan > Restrict Content > Drip schedule (`post ID:days, tTERMID:days`) opens restricted content N days after the membership start; members see "available on <date>" until then.
+- The plan form checks that every product, post and term ID exists and has search boxes that add IDs to the fields.

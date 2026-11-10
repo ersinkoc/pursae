@@ -3,10 +3,12 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -323,4 +325,293 @@ func TestGooExtGiftCardsPartialRefund(t *testing.T) {
 	if refunds != 2 {
 		t.Errorf("refund activity rows: %d", refunds)
 	}
+}
+
+// A refunded or cancelled order disables the cards it sold; the clamped debit is logged as it
+// happened; an expired card cannot be reserved; the expiry reminder goes out once.
+func TestGooExtGiftCardsLifecycle(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	if err := srv.gooSetExtension(ctx, gcKey, true); err != nil {
+		t.Fatal(err)
+	}
+	gp := gooNewProduct(gcType)
+	gp.Name = "Store gift card"
+	gp = gxSavePanels(t, srv, gp, gcKey, url.Values{"_gift_card_amounts": {"50"}})
+	buyer := gooTestCtx()
+	cart := srv.gooCartFor(buyer)
+	cart.sess.Data.Customer.Billing = map[string]string{"country": "US", "state": "CA", "postcode": "90210", "email": "buyer@example.test"}
+	form := map[string][]string{"wc_gc_giftcard_amount": {"50"}, "wc_gc_giftcard_to": {"grace@example.test"}, "wc_gc_giftcard_from": {"Ada"}}
+	if _, err := cart.Add(ctx, gp.ID, 2, 0, nil, form, nil); err != nil {
+		t.Fatal(err)
+	}
+	o, errs := gxCheckout(t, srv, buyer, "goo_test")
+	if len(errs) > 0 || o == nil {
+		t.Fatalf("checkout: %v", errs)
+	}
+	cards := srv.gcCardsForEmail(ctx, "grace@example.test")
+	if len(cards) != 2 {
+		t.Fatalf("issued cards: %d", len(cards))
+	}
+	status := func(id int64) string { g, _ := srv.gcGet(ctx, id); return g.Status }
+
+	// Refunding one of the two cards' line disables one card only.
+	var item int64
+	for _, it := range o.ItemsOf("line_item") {
+		item = it.ID
+	}
+	if _, err := srv.gooCreateRefund(ctx, o, 50, "one card", []gooRefundLine{{ItemID: item, Qty: 1, Total: 50}}, false, false, 1); err != nil {
+		t.Fatal(err)
+	}
+	disabled := 0
+	for _, g := range cards {
+		if status(g.ID) == "disabled" {
+			disabled++
+		}
+	}
+	if disabled != 1 {
+		t.Fatalf("cards disabled after a one-card refund: %d", disabled)
+	}
+	// Cancelling the order disables the rest; paying it again re-enables only those.
+	o, _ = srv.gooGetOrder(ctx, o.ID)
+	if err := srv.gooSetStatus(ctx, o, "cancelled", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range cards {
+		if status(g.ID) != "disabled" {
+			t.Errorf("card %d still %s after the cancellation", g.ID, status(g.ID))
+		}
+	}
+	o, _ = srv.gooGetOrder(ctx, o.ID)
+	_ = srv.gooSetStatus(ctx, o, "processing", "", "")
+	active := 0
+	for _, g := range cards {
+		if status(g.ID) == "active" {
+			active++
+		}
+	}
+	if active != 1 {
+		t.Errorf("cards active after reactivation: %d, want 1 (the refunded one stays disabled)", active)
+	}
+
+	// The clamped debit logs what really left the card.
+	g := &gcCard{Initial: 5, Recipient: "a@example.test", Sender: "Shop"}
+	if err := srv.gcCreate(ctx, g, 1, "t"); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gcAdjust(ctx, g, -10, "manual", 0, 1, "too much"); err != nil {
+		t.Fatal(err)
+	}
+	if g.Balance != 0 || g.Status != "redeemed" {
+		t.Errorf("after the debit: %v %s", g.Balance, g.Status)
+	}
+	if acts := srv.gcActivities(ctx, g.ID); len(acts) == 0 || acts[0].Type != "manual" || acts[0].Amount != 5 {
+		t.Errorf("activity: %+v", acts)
+	}
+
+	// An expired card is not reserved.
+	e := &gcCard{Initial: 20, Recipient: "e@example.test", Sender: "Shop"}
+	if err := srv.gcCreate(ctx, e, 1, "t"); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET expires = current_date - 3 WHERE id = $1`, e.ID)
+	fee := &gooOrderItem{Type: "fee", Total: -10, Meta: map[string]any{"_fee_id": gcFeePref + strings.ToLower(e.Code)}}
+	if _, err := gcReserve(srv, ctx, nil, &gooOrder{Meta: map[string]any{}, Items: []*gooOrderItem{fee}}); err == nil {
+		t.Error("an expired card was reserved")
+	}
+	if got, _ := srv.gcGet(ctx, e.ID); got.Balance != 20 {
+		t.Errorf("expired card balance %v", got.Balance)
+	}
+
+	// Reminder a week before expiry, once.
+	r := &gcCard{Initial: 20, Recipient: "r@example.test", Sender: "Shop", Delivered: true}
+	if err := srv.gcCreate(ctx, r, 1, "t"); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET expires = current_date + 3, delivered = true WHERE id = $1`, r.ID)
+	srv.gooFire(ctx, "daily", nil)
+	srv.gooFire(ctx, "daily", nil)
+	if n := gxMailCount(t, srv, "gift card expires on"); n != 1 {
+		t.Errorf("reminder e-mails: %d", n)
+	}
+}
+
+func TestGooExtGiftCardsREST(t *testing.T) {
+	base, client, srv := gooSite(t)
+	ctx := context.Background()
+	gooShopSetup(t, srv)
+	if err := srv.gooSetExtension(ctx, gcKey, true); err != nil {
+		t.Fatal(err)
+	}
+	gp := gooNewProduct(gcType)
+	gp.Name = "Store gift card"
+	gp = gxSavePanels(t, srv, gp, gcKey, url.Values{"_gift_card_amounts": {"50"}})
+	card := &gcCard{Initial: 30, Recipient: "r@example.test", Sender: "Shop"}
+	if err := srv.gcCreate(ctx, card, 1, "t"); err != nil {
+		t.Fatal(err)
+	}
+
+	guest := gooGuest()
+	api := base + "/wp-json/wc/store/v1"
+	r := gooReq(t, guest, "GET", api+"/cart", nil, nil)
+	nonce := map[string]string{"Nonce": r.Header.Get("Nonce")}
+	if r := gooReq(t, guest, "POST", api+"/cart/add-item", map[string]any{"id": gp.ID, "quantity": 1}, nonce); r.Code != 400 {
+		t.Fatalf("add without gift card fields: %d %s", r.Code, r.Raw)
+	}
+	r = gooReq(t, guest, "POST", api+"/cart/add-item", map[string]any{"id": gp.ID, "quantity": 1,
+		"extensions": map[string]any{"gift_cards": map[string]any{"amount": "50", "to": "g@example.test", "from": "Ada"}}}, nonce)
+	if r.Code != 201 || gooJS(r.Body, "totals", "total_items") != "5000" {
+		t.Fatalf("add gift card: %d %s", r.Code, r.Raw)
+	}
+	r = gooReq(t, guest, "POST", api+"/cart/apply-gift-card", map[string]any{"code": card.Code}, nonce)
+	if r.Code != 200 || gooJS(r.Body, "extensions", "gift_cards", "applied", 0, "code") != card.Code {
+		t.Fatalf("apply-gift-card: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, guest, "POST", api+"/cart/apply-gift-card", map[string]any{"code": "nope"}, nonce); r.Code != 400 {
+		t.Errorf("unknown gift card: %d", r.Code)
+	}
+	r = gooReq(t, guest, "POST", api+"/cart/remove-gift-card", map[string]any{"code": card.Code}, nonce)
+	if r.Code != 200 || gooJ(r.Body, "extensions", "gift_cards", "applied", 0) != nil {
+		t.Fatalf("remove-gift-card: %d %s", r.Code, r.Raw)
+	}
+
+	v3 := gooAdminAPI(t, base, client)
+	if r := v3("GET", "/gift-cards", nil); r.Code != 200 || len(r.list()) != 1 || r.Header.Get("X-WP-Total") != "1" {
+		t.Fatalf("list: %d %s", r.Code, r.Raw)
+	}
+	id := card.ID
+	if r := v3("POST", "/gift-cards/"+itoa64(id)+"/adjust", map[string]any{"amount": -10, "note": "pos"}); r.Code != 200 || gooJ(r.Body, "balance") != float64(20) {
+		t.Fatalf("adjust: %d %s", r.Code, r.Raw)
+	}
+	if r := v3("PUT", "/gift-cards/"+itoa64(id), map[string]any{"status": "disabled"}); r.Code != 200 || gooJS(r.Body, "status") != "disabled" {
+		t.Fatalf("disable: %d %s", r.Code, r.Raw)
+	}
+	if r := v3("GET", "/gift-cards/"+itoa64(id), nil); r.Code != 200 || len(gooJ(r.Body, "activity").([]any)) < 2 {
+		t.Fatalf("get: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, guest, "GET", base+"/wp-json/wc/v3/gift-cards", nil, nil); r.Code != 401 && r.Code != 403 {
+		t.Errorf("anonymous list: %d", r.Code)
+	}
+}
+
+// A design chosen at purchase is validated, kept on the order item and shown on the signed print page;
+// the print page refuses a wrong token.
+func TestGooExtGiftCardsDesignAndPrint(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	if err := srv.gooSetExtension(ctx, gcKey, true); err != nil {
+		t.Fatal(err)
+	}
+	gp := gooNewProduct(gcType)
+	gp.Name = "Designed card"
+	gp = gxSavePanels(t, srv, gp, gcKey, url.Values{"_gift_card_amounts": {"25"}, "_gift_card_designs": {"birthday, bogus, holiday"}})
+	if got := gcProductDesigns(gp); len(got) != 2 || got[0] != "birthday" || got[1] != "holiday" {
+		t.Fatalf("designs: %v", got)
+	}
+	buyer := gooTestCtx()
+	cart := srv.gooCartFor(buyer)
+	cart.sess.Data.Customer.Billing = map[string]string{"country": "US", "state": "CA", "postcode": "90210", "email": "buyer@example.test"}
+	form := map[string][]string{"wc_gc_giftcard_amount": {"25"}, "wc_gc_giftcard_to": {"ann@example.test"}, "wc_gc_giftcard_from": {"Bo"}, "wc_gc_giftcard_design": {"nope"}}
+	if _, err := cart.Add(ctx, gp.ID, 1, 0, nil, form, nil); err == nil {
+		t.Fatal("an unknown design was accepted")
+	}
+	form["wc_gc_giftcard_design"] = []string{"holiday"}
+	if _, err := cart.Add(ctx, gp.ID, 1, 0, nil, form, nil); err != nil {
+		t.Fatal(err)
+	}
+	if o, errs := gxCheckout(t, srv, buyer, "goo_test"); len(errs) > 0 || o == nil {
+		t.Fatalf("checkout: %v", errs)
+	}
+	cards := srv.gcCardsForEmail(ctx, "ann@example.test")
+	if len(cards) != 1 {
+		t.Fatalf("cards: %d", len(cards))
+	}
+	g := cards[0]
+	if d := srv.gcCardDesign(ctx, g); d != "holiday" {
+		t.Fatalf("stored design %q", d)
+	}
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest("GET", "/?"+url.Values{"card": {fmt.Sprint(g.ID)}, "token": {srv.gcPrintToken(g.ID)}}.Encode(), nil)
+	srv.gcPrintPage(c)
+	if body := rec.Body.String(); rec.Code != 200 || !strings.Contains(body, g.Code) || !strings.Contains(body, "#2e7d32") {
+		t.Errorf("print page %d: %.200s", rec.Code, body)
+	}
+	rec = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest("GET", "/?card="+fmt.Sprint(g.ID)+"&token=bad", nil)
+	srv.gcPrintPage(c)
+	if rec.Code != 404 {
+		t.Errorf("bad token status %d", rec.Code)
+	}
+}
+
+// Concurrent admin adjustments and checkout debits on one card all land: the balance is the sum of the
+// deltas, never an overwritten absolute value.
+func TestGooExtGiftCardsAdjustRace(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	g := &gcCard{Initial: 100, Recipient: "a@example.test", Sender: "Shop"}
+	if err := srv.gcCreate(ctx, g, 1, "t"); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			c, _ := srv.gcGet(ctx, g.ID)
+			_ = srv.gcAdjust(ctx, c, -5, "used", 0, 1, "spend")
+		}()
+		go func() {
+			defer wg.Done()
+			c, _ := srv.gcGet(ctx, g.ID)
+			_ = srv.gcAdjust(ctx, c, 2, "manual", 0, 1, "admin")
+		}()
+	}
+	wg.Wait()
+	got, _ := srv.gcGet(ctx, g.ID)
+	gooAlmost(t, "balance", got.Balance, 100-50+20)
+}
+
+// Refunding the order that sold a card disables it even after part of its balance was spent, and the
+// spent balance is not credited back to anyone.
+func TestGooExtGiftCardsPurchasedRefundSpent(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	if err := srv.gooSetExtension(ctx, gcKey, true); err != nil {
+		t.Fatal(err)
+	}
+	gp := gooNewProduct(gcType)
+	gp.Name = "Card"
+	gp = gxSavePanels(t, srv, gp, gcKey, url.Values{"_gift_card_amounts": {"40"}})
+	buyer := gooTestCtx()
+	cart := srv.gooCartFor(buyer)
+	cart.sess.Data.Customer.Billing = map[string]string{"country": "US", "state": "CA", "postcode": "90210", "email": "buyer@example.test"}
+	form := map[string][]string{"wc_gc_giftcard_amount": {"40"}, "wc_gc_giftcard_to": {"z@example.test"}, "wc_gc_giftcard_from": {"Bo"}}
+	if _, err := cart.Add(ctx, gp.ID, 1, 0, nil, form, nil); err != nil {
+		t.Fatal(err)
+	}
+	o, errs := gxCheckout(t, srv, buyer, "goo_test")
+	if len(errs) > 0 || o == nil {
+		t.Fatalf("checkout: %v", errs)
+	}
+	cards := srv.gcCardsForEmail(ctx, "z@example.test")
+	if len(cards) != 1 {
+		t.Fatalf("cards: %d", len(cards))
+	}
+	if err := srv.gcAdjust(ctx, cards[0], -15, "used", 0, 1, "spent elsewhere"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.gooCreateRefund(ctx, o, o.Total, "full", nil, false, false, 1); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := srv.gcGet(ctx, cards[0].ID)
+	if got.Status != "disabled" {
+		t.Errorf("status %s", got.Status)
+	}
+	gooAlmost(t, "balance untouched", got.Balance, 25)
 }

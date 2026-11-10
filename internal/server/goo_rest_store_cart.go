@@ -37,6 +37,8 @@ func (s *Server) registerGooStoreCartREST() {
 	r("/cart/remove-item", map[string]restHandler{http.MethodPost: s.gooStoreRemoveItem})
 	r("/cart/update-item", map[string]restHandler{http.MethodPost: s.gooStoreUpdateItem})
 	r("/cart/apply-coupon", map[string]restHandler{http.MethodPost: s.gooStoreApplyCoupon})
+	r("/cart/apply-gift-card", map[string]restHandler{http.MethodPost: s.gcStoreApply})
+	r("/cart/remove-gift-card", map[string]restHandler{http.MethodPost: s.gcStoreRemove})
 	r("/cart/remove-coupon", map[string]restHandler{http.MethodPost: s.gooStoreRemoveCoupon})
 	r("/cart/update-customer", map[string]restHandler{http.MethodPost: s.gooStoreUpdateCustomer})
 	r("/cart/select-shipping-rate", map[string]restHandler{http.MethodPost: s.gooStoreSelectRate})
@@ -298,7 +300,7 @@ func (s *Server) gooStoreCartJSON(c *gin.Context, cart *gooCart) map[string]any 
 		"shipping_address": gooAddressJSON(shipping, false), "billing_address": gooAddressJSON(cu.Billing, true),
 		"needs_payment": cart.NeedsPayment(), "needs_shipping": cart.NeedsShipping(), "payment_requirements": []string{"products"},
 		"has_calculated_shipping": cu.CalculatedShip, "shipping_rates": rates, "items_count": cart.Count(), "items_weight": weight,
-		"cross_sells": s.gooStoreCrossSells(ctx, cart), "errors": errs, "payment_methods": methods, "extensions": map[string]any{},
+		"cross_sells": s.gooStoreCrossSells(ctx, cart), "errors": errs, "payment_methods": methods, "extensions": s.gcStoreExtensions(c, cart),
 	}
 }
 
@@ -388,7 +390,11 @@ func (s *Server) gooStoreAdd(c *gin.Context, req *restRequest) (*gooCart, string
 	if _, err := s.gooGetProduct(ctx, id); err != nil {
 		return cart, "", gooErr(http.StatusBadRequest, "woocommerce_rest_cart_invalid_product", "This product cannot be added to the cart.")
 	}
-	key, err := cart.Add(ctx, id, qty, 0, variation, nil, nil)
+	form := gooStoreBookingForm(req.Body)
+	if gf := gcStoreForm(req.Body); gf != nil {
+		form = gf
+	}
+	key, err := cart.Add(ctx, id, qty, 0, variation, form, nil)
 	if err != nil {
 		return cart, "", gooErr(http.StatusBadRequest, "woocommerce_rest_add_to_cart_error", err.Error())
 	}

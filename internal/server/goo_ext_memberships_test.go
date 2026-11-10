@@ -401,3 +401,54 @@ func TestGooExtMembershipGrantPrefersActive(t *testing.T) {
 		t.Errorf("%d memberships give access, want 1", n)
 	}
 }
+
+func TestGmemValidStatus(t *testing.T) {
+	for _, st := range []string{"active", "delayed", "cancelled"} {
+		if !gmemValidStatus(st) {
+			t.Errorf("%q should be valid", st)
+		}
+	}
+	for _, st := range []string{"bogus", "Active", " "} {
+		if gmemValidStatus(st) {
+			t.Errorf("%q should be invalid", st)
+		}
+	}
+}
+
+func TestGooExtMembershipsRefundAndScheduler(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	plan := &gooMembershipPlan{Name: "Bronze", AccessMethod: "manual", AccessLength: "specific", AccessAmount: 1, AccessPeriod: "months"}
+	if err := srv.gmemSavePlan(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	u := gxaCustomer(t, srv, "bronze@example.test")
+	now := time.Now()
+	end := now.AddDate(0, 1, 0)
+	m := &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: "active", Start: now.Add(-time.Hour), End: &end, OrderID: 777}
+	if err := srv.gmemSaveUM(ctx, m); err != nil {
+		t.Fatal(err)
+	}
+	if !m.HasAccess(now) {
+		t.Fatal("fresh membership should give access")
+	}
+	srv.gmemRevokeFromOrder(ctx, &gooOrder{ID: 777, CustomerID: u.ID, Meta: map[string]any{}}, "refunded")
+	got := srv.gmemUMList(ctx, u.ID, plan.ID, "")
+	if len(got) != 1 || got[0].Status != "cancelled" || got[0].HasAccess(time.Now().Add(time.Second)) {
+		t.Errorf("refund should cancel and remove access: %+v", got)
+	}
+
+	// Scheduler only loads due rows: a far-future active one is skipped, an elapsed one is returned.
+	far := now.AddDate(1, 0, 0)
+	_ = srv.gmemSaveUM(ctx, &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: "active", Start: now, End: &far})
+	past := now.Add(-time.Hour)
+	_ = srv.gmemSaveUM(ctx, &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: "active", Start: now.Add(-48 * time.Hour), End: &past})
+	due := srv.gmemUMDue(ctx, now, 0)
+	if len(due) != 1 || due[0].End == nil || !due[0].End.Before(now) {
+		t.Errorf("due = %d rows, want only the elapsed one", len(due))
+	}
+	srv.gmemScheduler(ctx)
+	if n := len(srv.gmemUMList(ctx, u.ID, plan.ID, "expired")); n != 1 {
+		t.Errorf("%d expired memberships, want 1", n)
+	}
+}

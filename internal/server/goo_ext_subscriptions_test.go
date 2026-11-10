@@ -271,7 +271,7 @@ func TestGooExtSubscriptions(t *testing.T) {
 	srv.gooFire(ctx, "hourly", nil)
 	sub, _ = srv.gsubGet(ctx, sub.ID)
 	manual, _ := srv.gooGetOrder(ctx, sub.LastOrderID)
-	if manual.Status != "pending" || !mails.has("customer_invoice") || sub.Status != "active" {
+	if manual.Status != "pending" || !mails.has("customer_renewal_invoice") || sub.Status != "active" {
 		t.Fatalf("manual renewal: order %s, sub %s, mails %v", manual.Status, sub.Status, mails.ids)
 	}
 	_, _ = srv.store.Pool.Exec(ctx, `UPDATE goo_orders SET date_created = now() - interval '10 days' WHERE id = $1`, manual.ID)
@@ -326,6 +326,26 @@ func TestGooExtSubscriptions(t *testing.T) {
 	if len(srv.gsubCustomerActions(ctx, sub)) == 0 || srv.gsubCustomerActions(ctx, sub)[0].Value == "on-hold" {
 		t.Error("a second suspension is offered")
 	}
+	// The allowance is per billing period: a paid renewal order starts a new one.
+	if gxaInt(sub.Meta, "_suspension_count") != 1 {
+		t.Errorf("suspension count before renewal: %v", sub.Meta["_suspension_count"])
+	}
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE goo_subscriptions SET next_payment = $2, payment_method = 'cheque' WHERE id = $1`, sub.ID, past)
+	srv.gooFire(ctx, "hourly", nil)
+	sub, _ = srv.gsubGet(ctx, sub.ID)
+	if ro, err := srv.gooGetOrder(ctx, sub.LastOrderID); err == nil && ro.Status == "pending" {
+		if err := srv.gooPaymentComplete(ctx, ro, "tx2"); err != nil {
+			t.Fatal(err)
+		}
+		sub, _ = srv.gsubGet(ctx, sub.ID)
+	}
+	if gxaInt(sub.Meta, "_suspension_count") != 0 {
+		t.Errorf("suspension count not reset by the paid renewal: %v", sub.Meta["_suspension_count"])
+	}
+	if acts := srv.gsubCustomerActions(ctx, sub); len(acts) == 0 || acts[0].Value != "on-hold" {
+		t.Error("suspension is not offered again in the new period")
+	}
+	mails.reset()
 	act("cancelled")
 	if sub, _ = srv.gsubGet(ctx, sub.ID); sub.Status != "pending-cancel" || sub.End == nil || sub.NextPayment != nil {
 		t.Errorf("cancel: %s end %v next %v", sub.Status, sub.End, sub.NextPayment)
@@ -346,6 +366,9 @@ func TestGooExtSubscriptions(t *testing.T) {
 	srv.gooFire(ctx, "hourly", nil)
 	if sub, _ = srv.gsubGet(ctx, sub.ID); sub.Status != "cancelled" {
 		t.Errorf("pending-cancel at its end: %s", sub.Status)
+	}
+	if !mails.has("cancelled_subscription") {
+		t.Error("no cancelled e-mail when pending-cancel reaches its end")
 	}
 	_, _ = srv.store.Pool.Exec(ctx, `UPDATE goo_subscriptions SET status = 'active', end_date = $2 WHERE id = $1`, sub.ID, past)
 	srv.gooFire(ctx, "hourly", nil)
