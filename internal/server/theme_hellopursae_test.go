@@ -302,6 +302,26 @@ func TestHelloPursaeSwitching(t *testing.T) {
 		t.Errorf("deactivation switched the user's theme to %s", got)
 	}
 
+	// The owner leaves Hello Pursae and later picks it again: activation's switch is over, so no
+	// notice offers the old theme and deactivation keeps the Hello Pursae they chose.
+	togglePlugin(t, c, base, "activate")
+	if err := srv.switchTheme(ctx, defaultTheme); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.switchTheme(ctx, wbHelloSlug); err != nil {
+		t.Fatal(err)
+	}
+	if _, b, _ := get(t, c, base+"/wp-admin/"); strings.Contains(b, "Your site now uses Hello Pursae") {
+		t.Error("a stale Hello Pursae notice after the owner chose Hello Pursae again")
+	}
+	togglePlugin(t, c, base, "deactivate")
+	if got := srv.settings.String("stylesheet"); got != wbHelloSlug {
+		t.Errorf("deactivation moved the owner's Hello Pursae to %s", got)
+	}
+	if err := srv.switchTheme(ctx, "hp-other"); err != nil {
+		t.Fatal(err)
+	}
+
 	// Activation from hp-other remembers it; a previous theme that is gone falls back to the default.
 	togglePlugin(t, c, base, "activate")
 	if srv.settings.String(wbPreviousThemeOption) != "hp-other" {

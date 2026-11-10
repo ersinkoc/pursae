@@ -115,6 +115,19 @@ func (s *Server) wbSwitchBack(ctx context.Context) {
 	}
 }
 
+// wbForgetPreviousTheme drops the theme activation left and its notice (switchTheme calls it when the
+// site leaves Hello Pursae): once the owner moved the site to another theme, deactivation must not
+// later move it from a Hello Pursae they chose again themselves to that old theme, and the notice
+// must not offer to switch back to it.
+func (s *Server) wbForgetPreviousTheme(ctx context.Context) {
+	if s.settings.String(wbPreviousThemeOption) == "" && s.settings.Get(wbThemeNoticeOption) == nil {
+		return
+	}
+	if err := s.settings.Set(ctx, map[string]any{wbPreviousThemeOption: nil, wbThemeNoticeOption: nil}); err != nil {
+		log.Printf("web builder: %v", err)
+	}
+}
+
 // wbPreviousTheme is the theme to go back to from Hello Pursae: the remembered one while it is
 // installed and neither Hello Pursae nor an old builder theme, else the default theme.
 func (s *Server) wbPreviousTheme(ctx context.Context) string {
