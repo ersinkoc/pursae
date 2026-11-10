@@ -85,6 +85,17 @@ func TestUploadMultipart(t *testing.T) {
 	}
 }
 
+func TestUploadRejectsNegativeSize(t *testing.T) {
+	f := newFake(t)
+	c := pathClient(f)
+	if multipart, err := c.Upload(context.Background(), "negative", bytes.NewReader(nil), -1, gocdn.UploadOptions{}); err == nil || multipart {
+		t.Fatalf("multipart=%v error=%v", multipart, err)
+	}
+	if len(f.Requests()) != 0 {
+		t.Fatalf("negative upload made %d requests", len(f.Requests()))
+	}
+}
+
 func TestUploadMultipartRetriesAndAborts(t *testing.T) {
 	f := newFake(t)
 	c := pathClient(f)

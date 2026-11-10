@@ -93,12 +93,13 @@ func Warmup(ctx context.Context, urls []string, opts WarmupOptions) (WarmupProgr
 	}
 
 	var mu sync.Mutex
-	record := func(status string, code int, err error) {
+	var workerErr error
+	record := func(status string, code int, requestErr error) {
 		mu.Lock()
 		defer mu.Unlock()
 		prog.Done++
 		switch {
-		case err != nil || code >= 500:
+		case requestErr != nil || code >= 500:
 			prog.Failed++
 		case status == "miss":
 			prog.Warmed++
@@ -109,6 +110,9 @@ func Warmup(ctx context.Context, urls []string, opts WarmupOptions) (WarmupProgr
 		}
 		if opts.Progress != nil {
 			opts.Progress(prog)
+		}
+		if requestErr != nil && workerErr == nil {
+			workerErr = requestErr
 		}
 	}
 
@@ -147,6 +151,9 @@ feed:
 	wg.Wait()
 	mu.Lock()
 	defer mu.Unlock()
+	if err == nil && workerErr != nil && ctx.Err() != nil {
+		err = ctx.Err()
+	}
 	return prog, err
 }
 

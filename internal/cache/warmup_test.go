@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -71,6 +72,30 @@ func TestWarmupRateLimitAndCancel(t *testing.T) {
 	}
 	if prog.Done == 0 || prog.Done >= 20 {
 		t.Fatalf("rate limit not applied: %+v", prog)
+	}
+}
+
+func TestWarmupReturnsCancellationAfterFinalJobWasDispatched(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		prog, err := Warmup(ctx, []string{"https://example.test/"}, WarmupOptions{Concurrency: 1, Handler: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+			close(started)
+			<-release
+		})})
+		if prog.Done != 1 || prog.Failed != 1 {
+			done <- fmt.Errorf("progress %+v", prog)
+			return
+		}
+		done <- err
+	}()
+	<-started
+	cancel()
+	close(release)
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v, want context.Canceled", err)
 	}
 }
 
