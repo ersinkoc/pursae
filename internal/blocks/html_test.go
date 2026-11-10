@@ -20,3 +20,24 @@ func TestAddClassRejectsUnsafeTokens(t *testing.T) {
 		t.Fatalf("plain classes: %s", got)
 	}
 }
+
+func TestAddClassPreservesSingleQuotedAttribute(t *testing.T) {
+	got := AddClass(`<div CLASS = 'old'>x</div>`, "new")
+	if got != `<div CLASS = 'old new'>x</div>` {
+		t.Fatalf("AddClass = %s", got)
+	}
+}
+
+func TestAddClassPreservesUnquotedAttribute(t *testing.T) {
+	got := AddClass(`<div class=old id=x>x</div>`, "new")
+	if got != `<div class="old new" id=x>x</div>` {
+		t.Fatalf("AddClass = %s", got)
+	}
+}
+
+func TestAddClassIgnoresClassTextInsideAttribute(t *testing.T) {
+	got := AddClass(`<div title=" class='fake'" class='real'>x</div>`, "new")
+	if got != `<div title=" class='fake'" class='real new'>x</div>` {
+		t.Fatalf("AddClass = %s", got)
+	}
+}

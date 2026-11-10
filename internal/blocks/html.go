@@ -7,7 +7,7 @@ import (
 
 var (
 	firstTagRe = regexp.MustCompile(`<([a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*)?>`)
-	classAttr  = regexp.MustCompile(`\sclass="([^"]*)"`)
+	classAttr  = regexp.MustCompile(`(?i)\sclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+))`)
 )
 
 // AddClass adds classes to the first element of html, the way WP_HTML_Tag_Processor::add_class() is used by render callbacks.
@@ -28,14 +28,27 @@ func AddClass(html, classes string, tags ...string) string {
 		}
 		tag := html[loc[0]:loc[1]]
 		var updated string
-		if m := classAttr.FindStringSubmatchIndex(tag); m != nil {
-			existing := strings.Fields(tag[m[2]:m[3]])
+		if m := findClassAttr(tag); m != nil {
+			start, end := m[2], m[3]
+			unquoted := false
+			if start < 0 {
+				start, end = m[4], m[5]
+			}
+			if start < 0 {
+				start, end = m[6], m[7]
+				unquoted = true
+			}
+			existing := strings.Fields(tag[start:end])
 			for _, c := range strings.Fields(classes) { // already filtered by SafeClassTokens
 				if !contains(existing, c) {
 					existing = append(existing, c)
 				}
 			}
-			updated = tag[:m[2]] + strings.Join(existing, " ") + tag[m[3]:]
+			value := strings.Join(existing, " ")
+			if unquoted {
+				value = `"` + value + `"`
+			}
+			updated = tag[:start] + value + tag[end:]
 		} else {
 			end := len(tag) - 1
 			if strings.HasSuffix(tag, "/>") {
@@ -47,6 +60,27 @@ func AddClass(html, classes string, tags ...string) string {
 		return html[:loc[0]] + updated + html[loc[1]:]
 	}
 	return html
+}
+
+// findClassAttr skips matches that occur inside another attribute's quoted value.
+func findClassAttr(tag string) []int {
+	var quote byte
+	pos := 0
+	for _, m := range classAttr.FindAllStringSubmatchIndex(tag, -1) {
+		for pos < m[0] {
+			c := tag[pos]
+			if quote != 0 && c == quote {
+				quote = 0
+			} else if quote == 0 && (c == '\'' || c == '"') {
+				quote = c
+			}
+			pos++
+		}
+		if quote == 0 {
+			return m
+		}
+	}
+	return nil
 }
 
 // SafeClassTokens splits a class list into the tokens that are safe inside a double- or

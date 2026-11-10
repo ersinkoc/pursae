@@ -100,6 +100,13 @@ func TestRenderAndSerializeRoundTrip(t *testing.T) {
 	}
 }
 
+func TestRenderSpacedDelimiter(t *testing.T) {
+	doc := "<!--\nwp:paragraph --><p>Hello</p><!-- /wp:paragraph -->"
+	if got := Render(context.Background(), doc); got != "<p>Hello</p>" {
+		t.Fatalf("render = %q", got)
+	}
+}
+
 func TestAddClass(t *testing.T) {
 	if got := AddClass(`<h2>Hi</h2>`, "wp-block-heading", "h2"); got != `<h2 class="wp-block-heading">Hi</h2>` {
 		t.Errorf("no class: %s", got)
