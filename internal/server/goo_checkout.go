@@ -431,6 +431,7 @@ func (s *Server) gooCreateOrderFromCart(c *gin.Context, cart *gooCart, d *gooChe
 		o.PaymentMethod, o.PaymentMethodTitle = "", ""
 	}
 	o.Items, o.CartHash = s.gooOrderItemsFromCart(ctx, cart), gooCartHash(cart.sess.Data.Cart)
+	s.gooApplyAttribution(c, o)
 	o.DiscountTotal, o.DiscountTax = cart.DiscountTotal, cart.DiscountTax
 	o.ShippingTotal, o.ShippingTax = cart.ShippingTotal, cart.ShippingTax
 	o.CartTax = gooRound(gooSumTaxes(cart.Taxes), s.gooDecimals())
@@ -464,9 +465,22 @@ func (s *Server) gooCreateOrderFromCart(c *gin.Context, cart *gooCart, d *gooChe
 		delete(sess.Data.Extra, gooDraftKey)
 		sess.touch()
 	}
-	if err := s.gooSaveOrder(ctx, o, true); err != nil {
+	// WC_Checkout::create_order(): an unpaid order from the previous attempt with the same cart is
+	// reused, so a declined card does not leave one order per retry.
+	reused := false
+	if o.ID == 0 && cart.sess != nil && cart.sess.Data.OrderAwaitingPayment != 0 {
+		if prev, err := s.gooGetOrder(ctx, cart.sess.Data.OrderAwaitingPayment); err == nil && gooReusableOrder(prev, o) {
+			o.ID, o.OrderKey, o.DateCreated = prev.ID, prev.OrderKey, prev.DateCreated
+			reused = true
+		}
+	}
+	if err := s.gooSaveOrder(ctx, o, o.ID == 0 || reused); err != nil {
 		undo()
 		return nil, err
+	}
+	if reused {
+		_ = s.gooAddOrderNote(ctx, o, "Order updated for a new payment attempt.", false, "")
+		return o, nil
 	}
 	_ = s.gooAddOrderNote(ctx, o, "Order created.", false, "")
 	s.gooFire(ctx, "order_created", o)
@@ -682,4 +696,11 @@ func (s *Server) loginUserCookie(c *gin.Context, userID int64, remember bool) er
 	}
 	s.setLoginCookie(c, sess.Token, remember, int(auth.SessionRemember.Seconds()))
 	return nil
+}
+
+// gooReusableOrder reports whether prev (the session's order awaiting payment) can take the new
+// attempt: still unpaid, same cart contents and same customer.
+func gooReusableOrder(prev, next *gooOrder) bool {
+	return (prev.Status == "pending" || prev.Status == "failed") && prev.CartHash != "" &&
+		prev.CartHash == next.CartHash && prev.CustomerID == next.CustomerID
 }

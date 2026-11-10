@@ -468,7 +468,7 @@ func (s *Server) gooStoreUpdateItem(c *gin.Context, req *restRequest) {
 func (s *Server) gooStoreApplyCoupon(c *gin.Context, req *restRequest) {
 	cart := s.gooCartFor(c)
 	code, _ := req.Str(c, "code")
-	if err := cart.ApplyCoupon(c.Request.Context(), code); err != nil {
+	if err := s.gooApplyCouponLimited(c, cart, code); err != nil {
 		s.gooStoreCartErr(c, http.StatusBadRequest, "woocommerce_rest_cart_coupon_error", err.Error(), cart)
 		return
 	}
@@ -630,7 +630,7 @@ func (s *Server) gooStoreCoupons(c *gin.Context, req *restRequest) {
 func (s *Server) gooStoreCouponsCreate(c *gin.Context, req *restRequest) {
 	cart := s.gooCartFor(c)
 	code, _ := req.Str(c, "code")
-	if err := cart.ApplyCoupon(c.Request.Context(), code); err != nil {
+	if err := s.gooApplyCouponLimited(c, cart, code); err != nil {
 		s.gooStoreCartErr(c, http.StatusBadRequest, "woocommerce_rest_cart_coupon_error", err.Error(), cart)
 		return
 	}

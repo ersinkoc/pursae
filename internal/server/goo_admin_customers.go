@@ -205,6 +205,13 @@ func (s *Server) gooAdminCustomers(c *gin.Context) {
 		return fn(rows[j], rows[i])
 	})
 	for _, r := range rows {
+		if r.UserID == 0 {
+			d.Guests++
+		}
+	}
+	// Display strings (price, country and region names, dates) are built only for the rows that are
+	// shown: the visible page, or everything for the CSV export.
+	format := func(r *gooCustomerRow) {
 		r.SpendFmt, r.AOVFmt = s.gooPrice(r.Spend), s.gooPrice(r.AOV)
 		r.CountryName = gooCountryName(r.Country)
 		r.Region = gooStateName(r.Country, r.Region)
@@ -214,13 +221,11 @@ func (s *Server) gooAdminCustomers(c *gin.Context) {
 		if !r.Registered.IsZero() {
 			r.RegFmt = r.Registered.In(s.loc()).Format("January 2, 2006")
 		}
-		if r.UserID == 0 {
-			d.Guests++
-		}
 	}
 	if c.Query("download") == "csv" {
 		var out [][]string
 		for _, r := range rows {
+			format(r)
 			out = append(out, []string{r.Name, r.Username, r.LastFmt, r.RegFmt, r.Email, strconv.Itoa(r.Orders), s.gooFmtDec(r.Spend), s.gooFmtDec(r.AOV),
 				r.CountryName, r.City, r.Region, r.Postcode})
 		}
@@ -234,6 +239,9 @@ func (s *Server) gooAdminCustomers(c *gin.Context) {
 	d.Pager = newGooPager(base, page, per, len(rows))
 	start := min((page-1)*per, len(rows))
 	d.Rows = rows[start:min(start+per, len(rows))]
+	for _, r := range d.Rows {
+		format(r)
+	}
 	d.CSVURL = gooAdminURL("customers", "s", d.Search, "orderby", d.OrderBy, "order", d.Order, "download", "csv")
 	for _, col := range []gooOpt{{"name", "Name"}, {"username", "Username"}, {"date_last_active", "Last active"}, {"date_registered", "Date registered"},
 		{"email", "Email"}, {"orders_count", "Orders"}, {"total_spend", "Total spend"}, {"avg_order_value", "AOV"}, {"country", "Country / Region"},

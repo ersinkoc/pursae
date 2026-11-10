@@ -686,7 +686,7 @@ func (s *Server) gooUpdateCartAction(c *gin.Context) {
 	cart := s.gooCartFor(c)
 	f := c.Request.PostForm
 	if c.PostForm("apply_coupon") != "" || (c.PostForm("coupon_code") != "" && c.PostForm("update_cart") == "") {
-		if err := cart.ApplyCoupon(ctx, c.PostForm("coupon_code")); err != nil {
+		if err := s.gooApplyCouponLimited(c, cart, c.PostForm("coupon_code")); err != nil {
 			s.gooAddNotice(c, "error", err.Error())
 		} else {
 			s.gooAddNotice(c, "success", "Coupon code applied successfully.")
@@ -760,7 +760,7 @@ func (s *Server) gooApplyCouponPost(c *gin.Context) {
 	ctx := c.Request.Context()
 	target := s.gooPageURL(ctx, "checkout")
 	if s.checkNonceValue(c, c.PostForm("woocommerce-apply-coupon-nonce"), "woocommerce-cart") {
-		if err := s.gooCartFor(c).ApplyCoupon(ctx, c.PostForm("coupon_code")); err != nil {
+		if err := s.gooApplyCouponLimited(c, s.gooCartFor(c), c.PostForm("coupon_code")); err != nil {
 			s.gooAddNotice(c, "error", err.Error())
 		} else {
 			s.gooAddNotice(c, "success", "Coupon code applied successfully.")
@@ -864,7 +864,7 @@ func (s *Server) gooAjax(c *gin.Context, action string) {
 			return
 		}
 		code := c.PostForm("coupon_code")
-		if err := s.gooCartFor(c).ApplyCoupon(ctx, code); err != nil {
+		if err := s.gooApplyCouponLimited(c, s.gooCartFor(c), code); err != nil {
 			s.gooAjaxHTML(c, gooErrorList([]string{err.Error()}))
 			return
 		}

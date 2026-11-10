@@ -123,7 +123,7 @@ func (s *Server) gooCheckoutValue(c *gin.Context, key string) string {
 	}
 	if field == "country" {
 		if def := s.gooOptString("default_customer_address"); def == "base" || def == "geolocation" || def == "geolocation_ajax" {
-			return s.gooBaseCountry()
+			return s.gooDefaultCountry(c)
 		}
 		if list := s.gooAllowedCountries(); len(list) == 1 {
 			return list[0].Code

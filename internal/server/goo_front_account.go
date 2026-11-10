@@ -866,6 +866,8 @@ func (s *Server) gooOrderTrackingHTML(c *gin.Context) string {
 			b.WriteString(gooErrorList([]string{"Please enter a valid order ID"}))
 		case email == "":
 			b.WriteString(gooErrorList([]string{"Please enter a valid email address"}))
+		case gooTrackingThrottle.Blocked(clientIP(c)):
+			b.WriteString(gooErrorList([]string{gooThrottledMsg}))
 		default:
 			o, err := s.gooGetOrder(ctx, gooAtoi64(oid))
 			if err == nil && o.Type == "shop_order" && strings.EqualFold(o.Billing["email"], email) {
@@ -875,6 +877,7 @@ func (s *Server) gooOrderTrackingHTML(c *gin.Context) string {
 				b.WriteString(`</div>`)
 				return b.String()
 			}
+			gooTrackingThrottle.Fail(clientIP(c))
 			b.WriteString(gooErrorList([]string{"Sorry, the order could not be found. Please contact us if you are having difficulty finding your order details."}))
 		}
 	}

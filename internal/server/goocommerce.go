@@ -591,6 +591,7 @@ func (s *Server) gooScheduledSales(ctx context.Context) {
 
 // gooRetention applies Accounts & Privacy › Personal data retention.
 func (s *Server) gooRetention(ctx context.Context) {
+	s.gooDeleteInactiveCustomers(ctx)
 	for status, key := range map[string]string{"pending": "trash_pending_orders", "failed": "trash_failed_orders", "cancelled": "trash_cancelled_orders"} {
 		if days := s.gooOptInt(key); days > 0 {
 			_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_orders SET status = 'trash', meta = meta || jsonb_build_object('_trash_status', status)

@@ -928,6 +928,7 @@ func (s *Server) erasePersonalData(c *gin.Context, email string) int {
 			n++
 		}
 	}
+	s.gooErasePersonalData(c, email)
 	s.purgeAll(c)
 	return n
 }

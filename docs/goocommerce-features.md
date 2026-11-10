@@ -97,4 +97,21 @@ Checkout still validates stock but does not reserve it (WooCommerce's `wc_reserv
 
 ## Known limits
 
-Bookings and some payment methods do not support refunds.
+- Payment methods: the built-in ones are direct bank transfer (BACS), check, cash on delivery and the
+  Test payments gateway. There are no online payment providers yet. Only the Test gateway refunds
+  (simulated); BACS, check and cash on delivery reject automatic refunds, so refund those by hand and
+  record it on the order. Bookings do not support refunds either.
+- Geolocate uses the country from the request headers when available (CDN or proxy header) and falls
+  back to the store base country; there is no GeoIP database lookup.
+- Cart and Checkout have no block editor blocks yet; use the `[goocommerce_cart]` and
+  `[goocommerce_checkout]` shortcodes (the pages are created for you).
+
+## Blocks
+
+Server-rendered blocks for the block editor, reusing the shortcode renderers (same markup, nothing
+rendered while the store is off): `goocommerce/products` (attributes `columns`, `limit`, `category`,
+`orderby`, `order`, `onSale`, `visibility`, `ids`, `tag`), `goocommerce/featured-product` (`productId`),
+`goocommerce/product-categories` (`limit`, `hideEmpty`, `parent`, `orderby`), `goocommerce/mini-cart` and
+`goocommerce/product-search` (`title`). They render on the front end from block markup such as
+`<!-- wp:goocommerce/products {"columns":3,"limit":6} /-->`; the editor inserter entries are not
+registered yet (insert them with the code editor or a Custom HTML block holding the comment).

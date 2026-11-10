@@ -973,18 +973,27 @@ func (s *Server) gooCreateRefundLocked(ctx context.Context, o *gooOrder, amount 
 		r.Items = append(r.Items, ri)
 	}
 	r.TotalTax = -gooRound(taxTotal, dp)
+	var gw *gooGatewayHandle
 	if apiRefund && o.PaymentMethod != "" {
-		gw := s.gooGateway(o.PaymentMethod)
+		gw = s.gooGateway(o.PaymentMethod)
 		if gw == nil || !gw.Supports("refunds") {
 			return nil, errors.New("The payment gateway for this order does not support automatic refunds.")
 		}
+	}
+	// WooCommerce order: the refund record first, then the provider; a provider that rejects the
+	// refund removes the record again, so a failed save can never leave money refunded without a record.
+	if err := s.gooSaveOrder(ctx, r, true); err != nil {
+		return nil, err
+	}
+	if gw != nil {
 		if err := gw.ProcessRefund(s, ctx, o, amount, reason); err != nil {
+			_ = s.gooDeleteRefund(ctx, r.ID)
 			return nil, err
 		}
 		r.Meta["_refunded_payment"] = true
-	}
-	if err := s.gooSaveOrder(ctx, r, true); err != nil {
-		return nil, err
+		if err := s.gooSaveOrder(ctx, r, false); err != nil {
+			return nil, err
+		}
 	}
 	if restock {
 		var changes []string

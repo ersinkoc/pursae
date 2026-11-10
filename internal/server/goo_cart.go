@@ -635,7 +635,10 @@ func (cart *gooCart) shippingDestination() gooLocation {
 	}
 	loc := gooLocation{Country: addr["country"], State: addr["state"], Postcode: addr["postcode"], City: addr["city"]}
 	if loc.Country == "" && cart.s.gooOptString("default_customer_address") != "" {
-		loc = gooLocation{Country: cart.s.gooBaseCountry(), State: cart.s.gooBaseState()}
+		loc = gooLocation{Country: cart.s.gooDefaultCountry(cart.c), State: cart.s.gooBaseState()}
+		if loc.Country != cart.s.gooBaseCountry() {
+			loc.State = ""
+		}
 	}
 	return loc
 }

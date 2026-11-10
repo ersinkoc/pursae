@@ -445,6 +445,7 @@ func gooAtoi64(v string) int64 { n, _ := strconv.ParseInt(strings.TrimSpace(v), 
 // gooFrontRoute maps a GET to a store view.
 func (s *Server) gooFrontRoute(c *gin.Context, path string) bool {
 	ctx := c.Request.Context()
+	s.gooCaptureAttribution(c)
 	v := c.Request.URL.Query()
 	paged := 1
 	if n := gooAtoi(v.Get("paged")); n > 1 {
@@ -678,6 +679,9 @@ func (s *Server) gooServeStorePage(c *gin.Context, key, endpoint, value string) 
 	page, err := s.store.GetPost(ctx, s.gooPageIDIn(ctx, key))
 	if err != nil || page.Status != "publish" {
 		return false
+	}
+	if (key == "checkout" || key == "myaccount") && s.gooForceSSL(c) {
+		return true
 	}
 	gooNoStore(c)
 	kind := key
