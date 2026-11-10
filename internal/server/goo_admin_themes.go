@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"html/template"
 	"net/http"
 	"sort"
@@ -39,10 +40,23 @@ func gooIsStoreManifest(m *themeManifest) bool {
 }
 
 // gooStoreThemes lists the store themes of the library, the active one first, then by name.
-func (s *Server) gooStoreThemes(c *gin.Context) []gooStoreTheme {
+// Installed package themes that declare store support but are not in the library (an uploaded zip,
+// say) are listed too. The error is why the library part may be empty (errLibraryOff or the
+// Manager's failure).
+func (s *Server) gooStoreThemes(c *gin.Context) ([]gooStoreTheme, error) {
 	active := s.activeTheme()
 	var out []gooStoreTheme
-	for _, lt := range s.libraryThemes(c) {
+	library, libErr := s.libraryThemesErr(c)
+	inLibrary := map[string]bool{}
+	for _, lt := range library {
+		inLibrary[lt.Manifest.Slug] = true
+	}
+	for _, t := range allThemes() {
+		if t.Package != nil && gooIsStoreManifest(t.Package.Manifest) && !inLibrary[t.Slug] {
+			library = append(library, libraryTheme{Manifest: t.Package.Manifest})
+		}
+	}
+	for _, lt := range library {
 		m := lt.Manifest
 		if !gooIsStoreManifest(m) {
 			continue
@@ -50,6 +64,11 @@ func (s *Server) gooStoreThemes(c *gin.Context) []gooStoreTheme {
 		st := gooStoreTheme{Slug: m.Slug, Name: m.Name, Version: m.Version, Description: m.Description, Style: m.Style,
 			CategoryLabel: themeCategoryLabel(m.Category), HasDemo: m.Demo != "",
 			Screenshot: libraryScreenshotURL(m)}
+		if !inLibrary[m.Slug] {
+			if t := themeBySlug(m.Slug); t != nil {
+				st.Screenshot = t.ScreenshotSrc()
+			}
+		}
 		if canPreview(currentUser(c), true) {
 			st.PreviewURL = previewURL(m.Slug, false)
 		}
@@ -66,7 +85,19 @@ func (s *Server) gooStoreThemes(c *gin.Context) []gooStoreTheme {
 	sort.SliceStable(out, func(i, j int) bool {
 		return out[i].Active && !out[j].Active
 	})
-	return out
+	return out, libErr
+}
+
+// gooSetupTheme finds the theme a setup request names: a library theme, else an installed store
+// package that is not in the library.
+func (s *Server) gooSetupTheme(c *gin.Context, slug string) *libraryTheme {
+	if lt := s.libraryTheme(c, slug); lt != nil {
+		return lt
+	}
+	if t := themeBySlug(slug); t != nil && t.Package != nil && gooIsStoreManifest(t.Package.Manifest) {
+		return &libraryTheme{Manifest: t.Package.Manifest}
+	}
+	return nil
 }
 
 // gooAdminThemes is the Store Themes screen and its step requests.
@@ -77,7 +108,7 @@ func (s *Server) gooAdminThemes(c *gin.Context) {
 	}
 	ctx := c.Request.Context()
 	u := currentUser(c)
-	themes := s.gooStoreThemes(c)
+	themes, libErr := s.gooStoreThemes(c)
 	data := map[string]any{"Themes": themes, "Nonce": s.nonce(c, gooThemesNonce), "ShopURL": s.gooShopURL(ctx),
 		"HomeURL": s.links(ctx).HomeURL("/"), "CanInstall": u.Can("install_themes", nil) && u.Can("switch_themes", nil) && u.Can("import", nil),
 		"Golylang": s.golylangOn()}
@@ -88,6 +119,13 @@ func (s *Server) gooAdminThemes(c *gin.Context) {
 			` <a href="` + template.HTMLEscapeString(s.gooShopURL(ctx)) + `" target="_blank">Visit your store</a>`)})
 	case "error":
 		notices = append(notices, notice{Type: "error", Dismissible: true, Message: template.HTML(template.HTMLEscapeString(c.Query("msg")))})
+	}
+	if libErr != nil {
+		msg := "The theme library could not be reached: " + libErr.Error() + "."
+		if errors.Is(libErr, errLibraryOff) {
+			msg = "The theme library is not configured, so only installed store themes are listed."
+		}
+		notices = append(notices, notice{Type: "warning", Dismissible: true, Message: template.HTML(template.HTMLEscapeString(msg))})
 	}
 	s.gooStoreRender(c, "goocommerce?page=themes", "wc-store-themes", "Store Themes", "admin/goo-themes", data, notices...)
 }
@@ -128,7 +166,7 @@ func (s *Server) gooThemesPost(c *gin.Context) {
 		return
 	}
 	slug := c.PostForm("theme")
-	lt := s.libraryTheme(c, slug)
+	lt := s.gooSetupTheme(c, slug)
 	if lt == nil || !gooIsStoreManifest(lt.Manifest) {
 		if c.PostForm("action") == "step" {
 			c.JSON(http.StatusBadRequest, gooThemeStep{Message: "The requested theme does not exist."})

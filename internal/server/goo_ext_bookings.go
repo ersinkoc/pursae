@@ -753,15 +753,22 @@ func (s *Server) bkInsert(ctx context.Context, b *bkBooking) error {
 	if b.Persons == nil {
 		b.Persons = map[string]any{}
 	}
-	return s.store.Pool.QueryRow(ctx, `INSERT INTO goo_bookings (product_id, order_id, order_item_id, customer_id, status, start_at, end_at, all_day, persons, cost, resource_id)
+	err := s.store.Pool.QueryRow(ctx, `INSERT INTO goo_bookings (product_id, order_id, order_item_id, customer_id, status, start_at, end_at, all_day, persons, cost, resource_id)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, date_created`, b.ProductID, b.OrderID, b.OrderItemID, b.CustomerID, b.Status, b.Start, b.End,
 		b.AllDay, b.Persons, b.Cost, b.ResourceID).Scan(&b.ID, &b.Created)
+	if err == nil && b.Status != "in-cart" {
+		s.gooFire(ctx, "booking_created", b) // a booking in a cart is not a booking yet
+	}
+	return err
 }
 
 func (s *Server) bkUpdate(ctx context.Context, b *bkBooking) error {
 	_, err := s.store.Pool.Exec(ctx, `UPDATE goo_bookings SET product_id=$2, order_id=$3, order_item_id=$4, customer_id=$5, status=$6, start_at=$7, end_at=$8,
 		all_day=$9, persons=$10, cost=$11, reminder_sent=$12, resource_id=$13, date_modified=now() WHERE id=$1`, b.ID, b.ProductID, b.OrderID, b.OrderItemID, b.CustomerID,
 		b.Status, b.Start, b.End, b.AllDay, b.Persons, b.Cost, b.Reminded, b.ResourceID)
+	if err == nil && b.Status != "in-cart" {
+		s.gooFire(ctx, "booking_updated", b)
+	}
 	return err
 }
 

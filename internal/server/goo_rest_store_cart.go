@@ -394,6 +394,9 @@ func (s *Server) gooStoreAdd(c *gin.Context, req *restRequest) (*gooCart, string
 	if gf := gcStoreForm(req.Body); gf != nil {
 		form = gf
 	}
+	if form == nil {
+		form = paoStoreForm(req.Body)
+	}
 	key, err := cart.Add(ctx, id, qty, 0, variation, form, nil)
 	if err != nil {
 		return cart, "", gooErr(http.StatusBadRequest, "woocommerce_rest_add_to_cart_error", err.Error())

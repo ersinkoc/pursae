@@ -2,6 +2,7 @@
 <div class="wrap woocommerce">
 <h1 class="wp-heading-inline">Coupons</h1>
 <a href="/wp-admin/goocommerce?page=coupons&amp;action=new" class="page-title-action">Add coupon</a>
+<a href="{{.ExportURL}}" class="page-title-action">Export CSV</a>
 {{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
 <hr class="wp-header-end">
 {{template "notices" $}}

@@ -188,6 +188,7 @@ type gooTable struct {
 	Rows    [][]template.HTML
 	CSV     [][]string
 	Empty   string
+	Note    string // shown under the table, e.g. when the screen lists fewer rows than the export
 }
 
 func (t *gooTable) add(html []template.HTML, csv []string) {

@@ -39,6 +39,15 @@ are accepted) on the My Account subscription page, and resubscribe to a cancelle
 into the cart). Store managers add a subscription by hand (Subscriptions › Add Subscription), edit addresses and line
 prices / quantities, and use "Process renewal" on the Edit Subscription screen.
 
+**Product Add-Ons details.** File uploads (`/?goo-ajax=addon_upload`) need the nonce printed on the product page
+(`goo-addon-upload`), are limited to 20 stored files per client address per 10 minutes, and the daily job deletes
+uploads older than 24 hours that no cart session or order item references. A field can be shown conditionally
+(`condition_field` / `condition_value`: another field's title and the option label or text that reveals it; hidden
+fields are neither required nor stored). Date pickers take `date_min_days` (earliest = today + N days) and
+`date_max`, enforced in the HTML and on the server. The Store API product `extensions.product_addons` lists the
+fields (name, label, type, required, options, condition, date limits); `POST /cart/add-item` reads the values from
+`extensions.product_addons` as `{<field name>: value | [values]}`.
+
 ## Storefront and themes
 
 Store URLs render inside the active theme the way WooCommerce's theme-compatibility mode does: the main
@@ -54,7 +63,7 @@ To tell the store that a theme is made for it, declare support in `theme.json`:
 ```
 
 A theme that does so prints the store titles itself through the store templates instead of the page
-title, and is listed under **Pursae Commerce › Store Themes**. Practical rules from the bundled store
+title, and is listed under **Pursae Commerce › Store Themes** (the library's store themes, plus installed packages that declare it; a library that cannot be reached shows a notice). Practical rules from the bundled store
 themes (`library/themes`, published to Pursae Manager; `category: shop`):
 
 - scope the store CSS under `#page` so it wins over `goocommerce.css`;
@@ -92,6 +101,20 @@ compiled-in modules. Outside the binary, integrate through the REST APIs and web
 Webhook deliveries run on a small pool of background workers; a failed delivery is tried twice more
 (after 10 s and 1 min) with the same `X-WC-Webhook-Delivery-ID`, then counts as one failure, and a
 webhook is disabled after 5 consecutive failed deliveries. Deliveries still waiting are lost on restart.
+
+Webhook topics: `coupon|customer|order|product` `.created/.updated/.deleted` (+ `.restored`), the module
+topics `subscription.created|updated`, `booking.created|updated` and `membership.created|updated`
+(offered while the module is on; in-cart bookings are not delivered), and `action.<hook>`, which
+delivers `{"action": hook, "arg": id}` when the internal action of that name fires (with or without
+the `woocommerce_` prefix, for example `action.woocommerce_order_status_changed`). Every attempt
+is logged in `goo_webhook_deliveries` (time, duration, HTTP code, first 1 KB of the response or the
+transport error; the last 50 per webhook), shown on the webhook edit screen with a "Send test
+delivery" button; REST: `GET /wc/v3/webhooks/{id}/deliveries`, `POST /wc/v3/webhooks/{id}/ping`.
+
+Module REST (wc/v3, `manage_woocommerce`, 404 while the module is off): `/subscriptions`, `/bookings`,
+`/memberships` (user memberships) and `/gift-cards` with list (filters `status`, `customer`, ...),
+read and update (status, dates). The Store API add-item body passes `extensions.<namespace>` objects
+(`product_addons`, `bookings`, `gift_cards`, ...) to the add-to-cart validation as the posted form.
 
 ## Orders under concurrency
 
@@ -138,3 +161,30 @@ Bookings REST (`wc-bookings/v1`): `GET /products/slots?product_id=&date=` (publi
 - E-mails (Goocommerce > Settings > Emails): Membership welcome, Membership ending soon (days before the end set by Memberships > Ending soon reminder, 0 = off) and Membership ended. Each is sent once per membership and end date.
 - Plan > Restrict Content > Drip schedule (`post ID:days, tTERMID:days`) opens restricted content N days after the membership start; members see "available on <date>" until then.
 - The plan form checks that every product, post and term ID exists and has search boxes that add IDs to the fields.
+
+Bookings and some payment methods do not support refunds.
+
+## Analytics
+
+The `wc-analytics` REST namespace serves `reports/revenue/stats`, `reports/orders/stats` (totals and per-interval subtotals; `after`, `before`, `interval=hour|day|week|month|quarter|year`) and `reports/products` for external dashboards, authenticated like wc/v3 (consumer key or core auth, `view_woocommerce_reports`). WooCommerce > Settings > Emails > Store summary enables a weekly e-mail (job `goocommerce_weekly`) with last week's orders, sales, refunds and AOV to the stock notification recipient(s).
+
+Analytics reports (Overview, Products, Revenue, Orders, Variations, Categories, Coupons, Taxes, Downloads, Stock, Customers) and
+their CSV downloads carry every row (no server-side cap); the screen lists the first 1,000 rows and says so. Products, Variations
+and Categories subtract refunds, matching the Overview. Revenue computes all days with grouped queries. Subscriptions (active,
+MRR, new, cancelled, churn), Bookings (bookings, booked hours, cancellations, revenue) and Gift Cards (sold, redeemed,
+outstanding balance) tabs appear in the Analytics menu while the module is switched on.
+
+## CSV import and export
+
+- **Products** (Products › Export / Import) use WooCommerce's column names. The exporter has an "Export custom meta" option:
+  every product meta key (subscription, booking, gift card and add-on settings, ...) is written as a `Meta: <key>` column
+  (strings as they are, numbers, booleans, lists and objects as JSON); the importer maps `Meta: ` columns back (an empty cell
+  leaves the stored value alone).
+- The importer downloads remote image URLs (http/https, public addresses only) into the Media Library; the source URL is kept
+  in the attachment meta `_wc_attachment_source_url`, so the same URL is downloaded once. A URL that cannot be fetched or is
+  not an image fails its row.
+- The import runs in batches of 50 rows (`step=batch`, JSON progress; the mapping screen shows a progress bar). Without
+  JavaScript the form still imports in one request. Abandoned uploads (`goo-import-*.csv` and their state files in the temp
+  directory) are deleted after 24 hours by the daily `goo_import_cleanup` event.
+- **Orders**, **Coupons** and **Subscriptions** lists have an "Export CSV" link that exports every row matching the list's
+  filters (status view, search, month, customer); Customers has "Download". The links carry the store nonce.

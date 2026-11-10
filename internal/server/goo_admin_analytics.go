@@ -196,6 +196,13 @@ type gooAnalyticsData struct {
 var gooAnalyticsPages = []gooOpt{{"", "Overview"}, {"products", "Products"}, {"revenue", "Revenue"}, {"orders", "Orders"}, {"variations", "Variations"},
 	{"categories", "Categories"}, {"coupons", "Coupons"}, {"taxes", "Taxes"}, {"downloads", "Downloads"}, {"stock", "Stock"}, {"customers", "Customers"}}
 
+// gooAnalyticsModulePages are the report tabs of the optional modules (path -> extension key); a tab only
+// exists while its module is switched on.
+var gooAnalyticsModulePages = map[string]string{"subscriptions": gsubKey, "bookings": bkKey, "gift-cards": gcKey}
+
+// gooAnalyticsScreenRows caps the rows drawn on screen; the CSV download always carries every row.
+const gooAnalyticsScreenRows = 1000
+
 func gooDelta(cur, prev float64) (string, bool, bool) {
 	if prev == 0 {
 		if cur == 0 {
@@ -216,6 +223,11 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 	valid := false
 	for _, p := range gooAnalyticsPages {
 		if p.Value == path {
+			valid, d.Title = true, p.Label
+		}
+	}
+	for _, p := range []gooOpt{{"subscriptions", "Subscriptions"}, {"bookings", "Bookings"}, {"gift-cards", "Gift Cards"}} {
+		if p.Value == path && s.gooExtOn(gooAnalyticsModulePages[path]) {
 			valid, d.Title = true, p.Label
 		}
 	}
@@ -272,8 +284,9 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 		var items int
 		var sales float64
 		var orders int
-		rows, err := s.store.Pool.Query(ctx, `SELECT `+col+`, max(i.name), sum(i.quantity)::float8, sum(i.total)::float8, count(DISTINCT o.id) FROM goo_order_items i
-			JOIN goo_orders o ON o.id = i.order_id WHERE i.type = 'line_item' AND o.type = 'shop_order' AND o.status = ANY($1) AND o.date_created >= $2 AND o.date_created < $3`+cond+`
+		rows, err := s.store.Pool.Query(ctx, `SELECT `+col+`, max(i.name), sum(i.quantity)::float8, sum(i.total)::float8, count(DISTINCT CASE WHEN o.type = 'shop_order' THEN o.id END)
+			FROM goo_order_items i JOIN goo_orders o ON o.id = i.order_id LEFT JOIN goo_orders po ON po.id = o.parent_id
+			WHERE i.type = 'line_item' AND `+gooSoldOrRefunded+cond+`
 			GROUP BY 1 ORDER BY 4 DESC`, gooPaidList, from, to)
 		if err == nil {
 			type row struct {
@@ -284,21 +297,20 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 				orders int
 			}
 			var list []row
+			ids := []int64{}
 			for rows.Next() {
 				var r row
 				if rows.Scan(&r.id, &r.name, &r.qty, &r.amt, &r.orders) == nil {
 					list = append(list, r)
+					ids = append(ids, r.id)
 				}
 			}
 			rows.Close()
+			info := s.gooAnalyticsStockInfo(ctx, ids)
 			for _, r := range list {
 				sku, status, stock := "", "", "N/A"
-				if p, err := s.gooGetProduct(ctx, r.id); err == nil {
-					sku = p.SKU
-					status = map[string]string{"instock": "In stock", "outofstock": "Out of stock", "onbackorder": "On backorder"}[p.StockStatus]
-					if p.ManageStock && p.StockQuantity != nil {
-						stock = strconv.Itoa(*p.StockQuantity)
-					}
+				if p, ok := info[r.id]; ok {
+					sku, status, stock = p.sku, p.status, p.stock
 				}
 				items += int(r.qty)
 				sales += r.amt
@@ -311,9 +323,10 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 	case "revenue":
 		tbl.Headers = []string{"Date", "Orders", "Gross sales", "Returns", "Coupons", "Net sales", "Taxes", "Shipping", "Total sales"}
 		ivDays := gooRange{From: from, To: to}.Intervals()
+		perDay := s.gooTotalsByInterval(ctx, ivDays)
 		for i := len(ivDays) - 1; i >= 0; i-- {
 			iv := ivDays[i]
-			t := s.gooTotals(ctx, iv.Start, iv.End)
+			t := perDay[i]
 			gross := t.Gross - t.Tax - t.ShippingTax - t.Shipping + t.Discount
 			net := t.Gross - t.Tax - t.ShippingTax - t.Shipping - t.Refunds
 			total := t.Gross - t.Refunds
@@ -330,7 +343,14 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 	case "orders":
 		tbl.Headers = []string{"Date", "Order #", "Status", "Customer", "Customer type", "Product(s)", "Items sold", "Coupon(s)", "Net sales"}
 		after, before := from, to
-		orders, _, _ := s.gooQueryOrders(ctx, gooOrderQuery{Status: gooPaidList, After: &after, Before: &before, PerPage: 500, Page: 1})
+		var orders []*gooOrder
+		for page := 1; ; page++ {
+			batch, total, err := s.gooQueryOrders(ctx, gooOrderQuery{Status: gooPaidList, After: &after, Before: &before, PerPage: 500, Page: page})
+			orders = append(orders, batch...)
+			if err != nil || len(batch) == 0 || len(orders) >= total {
+				break
+			}
+		}
 		refunded := s.gooTotalsRefunded(ctx, gooOrderIDs(orders))
 		returning := s.gooReturningOrders(ctx, orders)
 		for _, o := range orders {
@@ -361,9 +381,10 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 		d.ChartLabel = "Orders"
 	case "categories":
 		tbl.Headers = []string{"Category", "Items sold", "Net sales", "Products", "Orders"}
-		rows, err := s.store.Pool.Query(ctx, `SELECT t.name, sum(i.quantity)::float8, sum(i.total)::float8, count(DISTINCT i.product_id), count(DISTINCT o.id) FROM goo_order_items i
+		rows, err := s.store.Pool.Query(ctx, `SELECT t.name, sum(i.quantity)::float8, sum(i.total)::float8, count(DISTINCT i.product_id), count(DISTINCT CASE WHEN o.type = 'shop_order' THEN o.id END) FROM goo_order_items i
 			JOIN goo_orders o ON o.id = i.order_id JOIN post_terms pt ON pt.post_id = i.product_id JOIN terms t ON t.id = pt.term_id AND t.taxonomy = 'product_cat'
-			WHERE i.type = 'line_item' AND o.type = 'shop_order' AND o.status = ANY($1) AND o.date_created >= $2 AND o.date_created < $3 GROUP BY t.id, t.name ORDER BY 3 DESC`, gooPaidList, from, to)
+			LEFT JOIN goo_orders po ON po.id = o.parent_id
+			WHERE i.type = 'line_item' AND `+gooSoldOrRefunded+` GROUP BY t.id, t.name ORDER BY 3 DESC`, gooPaidList, from, to)
 		var items int
 		var sales float64
 		if err == nil {
@@ -446,7 +467,7 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 	case "downloads":
 		tbl.Headers = []string{"Date", "Product title", "File name", "Order #", "Username", "Downloads"}
 		rows, err := s.store.Pool.Query(ctx, `SELECT dp.access_granted, dp.product_id, dp.download_id, dp.order_id, coalesce(u.login, dp.user_email), dp.download_count
-			FROM goo_download_permissions dp LEFT JOIN users u ON u.id = dp.user_id WHERE dp.access_granted >= $1 AND dp.access_granted < $2 ORDER BY dp.access_granted DESC LIMIT 500`, from, to)
+			FROM goo_download_permissions dp LEFT JOIN users u ON u.id = dp.user_id WHERE dp.access_granted >= $1 AND dp.access_granted < $2 ORDER BY dp.access_granted DESC`, from, to)
 		var downloads int
 		if err == nil {
 			type row struct {
@@ -482,7 +503,7 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 	case "stock":
 		tbl.Headers = []string{"Product / Variation", "SKU", "Status", "Stock"}
 		rows, err := s.store.Pool.Query(ctx, `SELECT po.id, po.title, p.sku, p.stock_status, p.manage_stock, p.stock_quantity FROM goo_products p JOIN posts po ON po.id = p.post_id
-			WHERE po.status = 'publish' AND po.type IN ('product','product_variation') AND p.type <> 'variable' ORDER BY po.title LIMIT 1000`)
+			WHERE po.status = 'publish' AND po.type IN ('product','product_variation') AND p.type <> 'variable' ORDER BY po.title`)
 		counts := map[string]int{}
 		if err == nil {
 			for rows.Next() {
@@ -509,6 +530,12 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 		}
 		d.Cards = []gooCard{{Label: "Products", Value: gooH(strconv.Itoa(len(tbl.Rows)))}, {Label: "Out of stock", Value: gooH(strconv.Itoa(counts["outofstock"]))},
 			{Label: "Low stock", Value: gooH(strconv.Itoa(counts["lowstock"]))}, {Label: "On backorder", Value: gooH(strconv.Itoa(counts["onbackorder"]))}, {Label: "In stock", Value: gooH(strconv.Itoa(counts["instock"]))}}
+	case "subscriptions":
+		s.gooAnalyticsSubscriptions(ctx, d, tbl, from, to)
+	case "bookings":
+		s.gooAnalyticsBookings(ctx, d, tbl, from, to)
+	case "gift-cards":
+		s.gooAnalyticsGiftCards(ctx, d, tbl, from, to)
 	case "customers":
 		tbl.Headers = []string{"Name", "Username", "Last active", "Date registered", "Email", "Orders", "Total spend", "AOV", "Country / Region", "City", "Region", "Postal code"}
 		var spend float64
@@ -542,6 +569,10 @@ func (s *Server) gooAdminAnalytics(c *gin.Context) {
 			name := d.Path
 			gooCSV(c, "wc-"+name+"-report-export.csv", tbl.Headers, tbl.CSV)
 			return
+		}
+		if n := len(tbl.Rows); n > gooAnalyticsScreenRows {
+			tbl.Rows = tbl.Rows[:gooAnalyticsScreenRows]
+			tbl.Note = fmt.Sprintf("Showing the first %s of %s rows. Download the report for every row.", formatNumber(gooAnalyticsScreenRows), formatNumber(n))
 		}
 	}
 	screen := "goocommerce?page=analytics"

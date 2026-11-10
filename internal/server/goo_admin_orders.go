@@ -196,6 +196,27 @@ type gooOrdersListData struct {
 	IsTrash   bool
 	NewURL    string
 	BaseURL   string
+	ExportURL string
+}
+
+// gooOrdersListQuery is the filter of the Orders list (status view, search, month, customer) as an order
+// query; the list and its CSV export share it.
+func (s *Server) gooOrdersListQuery(c *gin.Context) gooOrderQuery {
+	status := strings.TrimPrefix(c.Query("status"), "wc-")
+	q := gooOrderQuery{Search: strings.TrimSpace(c.Query("s"))}
+	if status != "" && status != "all" {
+		q.Status = []string{status}
+	}
+	if m := c.Query("m"); len(m) == 6 {
+		if t, err := time.ParseInLocation("200601", m, s.loc()); err == nil {
+			end := t.AddDate(0, 1, 0)
+			q.After, q.Before = &t, &end
+		}
+	}
+	if id, _ := strconv.ParseInt(c.Query("_customer_user"), 10, 64); id > 0 {
+		q.CustomerID = id
+	}
+	return q
 }
 
 func (s *Server) gooAdminOrders(c *gin.Context) {
@@ -215,6 +236,9 @@ func (s *Server) gooAdminOrders(c *gin.Context) {
 	case "mark_status":
 		s.gooOrderMarkStatus(c)
 		return
+	case "export_csv":
+		s.gooExportOrdersCSV(c)
+		return
 	case "trash", "untrash", "delete":
 		s.gooOrderRowAction(c)
 		return
@@ -227,18 +251,9 @@ func (s *Server) gooAdminOrders(c *gin.Context) {
 	status := strings.TrimPrefix(c.Query("status"), "wc-")
 	d := &gooOrdersListData{Status: status, Search: strings.TrimSpace(c.Query("s")), Month: c.Query("m"), Customer: c.Query("_customer_user"),
 		Nonce: s.nonce(c, gooStoreNonce), IsTrash: status == "trash", NewURL: gooAdminURL("orders", "action", "new")}
-	q := gooOrderQuery{Search: d.Search, Page: gooPaged(c), PerPage: 20}
-	if status != "" && status != "all" {
-		q.Status = []string{status}
-	}
-	if len(d.Month) == 6 {
-		if t, err := time.ParseInLocation("200601", d.Month, s.loc()); err == nil {
-			end := t.AddDate(0, 1, 0)
-			q.After, q.Before = &t, &end
-		}
-	}
-	if id, _ := strconv.ParseInt(d.Customer, 10, 64); id > 0 {
-		q.CustomerID = id
+	q := s.gooOrdersListQuery(c)
+	q.Page, q.PerPage = gooPaged(c), 20
+	if id := q.CustomerID; id > 0 {
 		if u, err := s.store.UserByID(ctx, id); err == nil {
 			d.CustName = u.DisplayName + " (#" + itoa64(u.ID) + " – " + u.Email + ")"
 		}
@@ -254,6 +269,7 @@ func (s *Server) gooAdminOrders(c *gin.Context) {
 	}
 	d.BaseURL = gooAdminURL("orders", "status", c.Query("status"), "s", d.Search, "m", d.Month, "_customer_user", d.Customer)
 	d.Pager = newGooPager(d.BaseURL, q.Page, q.PerPage, total)
+	d.ExportURL = gooAdminURL("orders", "action", "export_csv", "status", c.Query("status"), "s", d.Search, "m", d.Month, "_customer_user", d.Customer, "_wpnonce", d.Nonce)
 
 	counts := s.gooOrderStatusCounts(ctx)
 	all := 0

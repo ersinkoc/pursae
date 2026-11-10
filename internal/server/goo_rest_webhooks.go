@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -120,6 +121,37 @@ var gooWebhookAllowPrivate atomic.Bool
 var gooWebhookWG sync.WaitGroup
 
 func init() {
+	// Module topics: subscription / booking / membership .created and .updated.
+	gooOn("subscription_created", 50, func(s *Server, ctx context.Context, arg any) {
+		if sub, ok := arg.(*gooSubscription); ok && s.gooWebhooksFor(ctx, "subscription.created") {
+			s.gooWebhookFire(ctx, "subscription.created", sub.ID, s.gooV3SubscriptionJSON(ctx, sub))
+		}
+	})
+	gooOn("subscription_updated", 50, func(s *Server, ctx context.Context, arg any) {
+		if sub, ok := arg.(*gooSubscription); ok && s.gooWebhooksFor(ctx, "subscription.updated") {
+			s.gooWebhookFire(ctx, "subscription.updated", sub.ID, s.gooV3SubscriptionJSON(ctx, sub))
+		}
+	})
+	gooOn("booking_created", 50, func(s *Server, ctx context.Context, arg any) {
+		if b, ok := arg.(*bkBooking); ok && s.gooWebhooksFor(ctx, "booking.created") {
+			s.gooWebhookFire(ctx, "booking.created", b.ID, s.gooV3BookingJSON(ctx, b))
+		}
+	})
+	gooOn("booking_updated", 50, func(s *Server, ctx context.Context, arg any) {
+		if b, ok := arg.(*bkBooking); ok && s.gooWebhooksFor(ctx, "booking.updated") {
+			s.gooWebhookFire(ctx, "booking.updated", b.ID, s.gooV3BookingJSON(ctx, b))
+		}
+	})
+	gooOn("membership_created", 50, func(s *Server, ctx context.Context, arg any) {
+		if m, ok := arg.(*gooUserMembership); ok && s.gooWebhooksFor(ctx, "membership.created") {
+			s.gooWebhookFire(ctx, "membership.created", m.ID, s.gooV3MembershipJSON(ctx, m))
+		}
+	})
+	gooOn("membership_updated", 50, func(s *Server, ctx context.Context, arg any) {
+		if m, ok := arg.(*gooUserMembership); ok && s.gooWebhooksFor(ctx, "membership.updated") {
+			s.gooWebhookFire(ctx, "membership.updated", m.ID, s.gooV3MembershipJSON(ctx, m))
+		}
+	})
 	gooOn("order_created", 50, func(s *Server, ctx context.Context, arg any) {
 		if o, ok := arg.(*gooOrder); ok {
 			s.gooWebhookOrder(ctx, "order.created", o)
@@ -187,7 +219,7 @@ func (s *Server) gooWebhooksFor(ctx context.Context, topics ...string) bool {
 		return false
 	}
 	var ok bool
-	_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM goo_webhooks WHERE status = 'active' AND (topic = ANY($1) OR topic = 'action.*'))`, topics).Scan(&ok)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM goo_webhooks WHERE status = 'active' AND topic = ANY($1))`, topics).Scan(&ok)
 	return ok
 }
 
@@ -225,10 +257,15 @@ func (s *Server) gooWebhookProduct(ctx context.Context, topic string, id int64) 
 
 // gooWebhookFire delivers a topic to every active webhook subscribed to it, in the background.
 func (s *Server) gooWebhookFire(ctx context.Context, topic string, resourceID int64, payload any) {
+	s.gooWebhookFireAny(ctx, []string{topic}, resourceID, payload)
+}
+
+// gooWebhookFireAny delivers a payload to every active webhook subscribed to one of the topics.
+func (s *Server) gooWebhookFireAny(ctx context.Context, topics []string, resourceID int64, payload any) {
 	if !s.gooOn() {
 		return
 	}
-	rows, err := s.store.Pool.Query(ctx, `SELECT id, topic, delivery_url, secret, user_id, failures FROM goo_webhooks WHERE status = 'active' AND topic = $1`, topic)
+	rows, err := s.store.Pool.Query(ctx, `SELECT id, topic, delivery_url, secret, user_id, failures FROM goo_webhooks WHERE status = 'active' AND topic = ANY($1)`, topics)
 	if err != nil {
 		return
 	}
@@ -254,6 +291,42 @@ func (s *Server) gooWebhookFire(ctx context.Context, topic string, resourceID in
 	}
 }
 
+// gooWebhookAction delivers an internal action (gooFire) to the "action.<name>" webhooks. The topic
+// event is the hook name, with or without WooCommerce's "woocommerce_" prefix; the body is
+// WC_Webhook::build_payload()'s {"action": hook, "arg": first argument id}.
+func (s *Server) gooWebhookAction(ctx context.Context, name string, arg any) {
+	topics := []string{"action." + name, "action.woocommerce_" + name}
+	if !s.gooWebhooksFor(ctx, topics...) {
+		return
+	}
+	var id int64
+	switch v := arg.(type) {
+	case *gooOrder:
+		if v != nil {
+			id = v.ID
+		}
+	case *gooProduct:
+		if v != nil {
+			id = v.ID
+		}
+	case *gooStatusChange:
+		if v != nil && v.Order != nil {
+			id = v.Order.ID
+		}
+	case *gooRefundEvent:
+		if v != nil && v.Order != nil {
+			id = v.Order.ID
+		}
+	case int64:
+		id = v
+	}
+	var a any
+	if id != 0 {
+		a = id
+	}
+	s.gooWebhookFireAny(ctx, topics, id, map[string]any{"action": name, "arg": a})
+}
+
 // gooWebhookSignature is WC_Webhook::generate_signature(): base64(HMAC-SHA256(body, secret)).
 func gooWebhookSignature(body []byte, secret string) string {
 	m := hmac.New(sha256.New, []byte(secret))
@@ -261,15 +334,28 @@ func gooWebhookSignature(body []byte, secret string) string {
 	return base64.StdEncoding.EncodeToString(m.Sum(nil))
 }
 
-// gooWebhookDeliver posts one attempt of a delivery. retryable is false when trying again cannot
-// help (the URL is malformed or points at a refused address).
+// gooWebhookDeliver posts one attempt of a delivery and logs it. retryable is false when trying again
+// cannot help (the URL is malformed or points at a refused address).
 func (s *Server) gooWebhookDeliver(ctx context.Context, h gooWebhookRow, source string, resourceID int64, body []byte, deliveryID string) (ok, retryable bool) {
+	ok, retryable, _ = s.gooWebhookAttempt(ctx, h, source, body, deliveryID)
+	return ok, retryable
+}
+
+// gooWebhookAttempt makes the request and records it in goo_webhook_deliveries (time, duration, HTTP
+// status, a shortened response body or the transport error).
+func (s *Server) gooWebhookAttempt(ctx context.Context, h gooWebhookRow, source string, body []byte, deliveryID string) (ok, retryable bool, rec gooWebhookDelivery) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
+	rec = gooWebhookDelivery{WebhookID: h.ID, DeliveryID: deliveryID, Topic: h.Topic, URL: h.URL}
+	defer func() {
+		rec.Success = ok
+		s.gooWebhookLog(context.Background(), &rec)
+	}()
 	resource, event, _ := strings.Cut(h.Topic, ".")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, h.URL, bytes.NewReader(body))
 	if err != nil {
-		return false, false
+		rec.Error = err.Error()
+		return false, false, rec
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Goocommerce/"+gooVersion+" Hookshot (Pursae)")
@@ -280,12 +366,76 @@ func (s *Server) gooWebhookDeliver(ctx context.Context, h gooWebhookRow, source 
 	req.Header.Set("X-WC-Webhook-Signature", gooWebhookSignature(body, h.Secret))
 	req.Header.Set("X-WC-Webhook-ID", strconv.FormatInt(h.ID, 10))
 	req.Header.Set("X-WC-Webhook-Delivery-ID", deliveryID)
+	start := time.Now()
 	resp, err := gooWebhookClient.Do(req)
+	rec.DurationMS = int(time.Since(start).Milliseconds())
 	if err != nil {
-		return false, !strings.Contains(err.Error(), "private network address")
+		rec.Error = err.Error()
+		return false, !strings.Contains(err.Error(), "private network address"), rec
 	}
+	rec.StatusCode = resp.StatusCode
+	snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 	_ = resp.Body.Close()
-	return resp.StatusCode >= 200 && resp.StatusCode < 300, true
+	rec.Response = strings.ToValidUTF8(string(snippet), "")
+	return resp.StatusCode >= 200 && resp.StatusCode < 300, true, rec
+}
+
+// gooWebhookDelivery is one logged delivery attempt.
+type gooWebhookDelivery struct {
+	ID         int64
+	WebhookID  int64
+	DeliveryID string
+	Topic, URL string
+	StatusCode int
+	DurationMS int
+	Response   string
+	Error      string
+	Success    bool
+	Created    time.Time
+}
+
+// gooWebhookKeepDeliveries is how many deliveries a webhook's log keeps.
+const gooWebhookKeepDeliveries = 50
+
+func (s *Server) gooWebhookLog(ctx context.Context, d *gooWebhookDelivery) {
+	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO goo_webhook_deliveries (webhook_id, delivery_id, topic, url, status_code, duration_ms, response, error, success)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, d.WebhookID, d.DeliveryID, d.Topic, d.URL, d.StatusCode, d.DurationMS, d.Response, d.Error, d.Success); err != nil {
+		return
+	}
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_webhook_deliveries WHERE webhook_id = $1 AND id NOT IN
+		(SELECT id FROM goo_webhook_deliveries WHERE webhook_id = $1 ORDER BY id DESC LIMIT $2)`, d.WebhookID, gooWebhookKeepDeliveries)
+}
+
+// gooWebhookDeliveries lists a webhook's logged deliveries, newest first.
+func (s *Server) gooWebhookDeliveries(ctx context.Context, webhookID int64, limit int) []gooWebhookDelivery {
+	rows, err := s.store.Pool.Query(ctx, `SELECT id, webhook_id, delivery_id, topic, url, status_code, duration_ms, response, error, success, created_at
+		FROM goo_webhook_deliveries WHERE webhook_id = $1 ORDER BY id DESC LIMIT $2`, webhookID, limit)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []gooWebhookDelivery
+	for rows.Next() {
+		var d gooWebhookDelivery
+		if rows.Scan(&d.ID, &d.WebhookID, &d.DeliveryID, &d.Topic, &d.URL, &d.StatusCode, &d.DurationMS, &d.Response, &d.Error, &d.Success, &d.Created) == nil {
+			out = append(out, d)
+		}
+	}
+	return out
+}
+
+// gooWebhookPing sends WC_Webhook::deliver_ping()'s {"webhook_id": n} body once, synchronously, and
+// returns the logged attempt (it does not count towards the failure limit).
+func (s *Server) gooWebhookPing(ctx context.Context, id int64) (*gooWebhookDelivery, error) {
+	w, err := s.gooWebhookByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	body, _ := json.Marshal(map[string]any{"webhook_id": w.ID})
+	h := gooWebhookRow{ID: w.ID, Topic: w.Topic, URL: w.URL, Secret: w.Secret, UserID: w.UserID, Failures: w.Failures}
+	source := strings.TrimRight(s.links(ctx).Home, "/") + "/"
+	_, _, rec := s.gooWebhookAttempt(ctx, h, source, body, gooRandomKey(32))
+	return &rec, nil
 }
 
 // gooWebhookResult records a delivery's outcome: success resets the failure count, a failure adds one

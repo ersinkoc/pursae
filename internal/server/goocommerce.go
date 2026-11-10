@@ -154,6 +154,7 @@ func (s *Server) gooCreatePages(ctx context.Context, authorID int64) error {
 const (
 	gooDailyJob  = "goocommerce_daily"
 	gooHourlyJob = "goocommerce_hourly"
+	gooWeeklyJob = "goocommerce_weekly" // weekly store summary e-mail
 )
 
 // gooActivate switches the plugin on: pages, version, jobs.
@@ -177,7 +178,7 @@ func (s *Server) gooActivate(c *gin.Context) error {
 	if err := s.settings.Set(ctx, vals); err != nil {
 		return err
 	}
-	for name, rec := range map[string]string{gooDailyJob: "daily", gooHourlyJob: "hourly"} {
+	for name, rec := range map[string]string{gooDailyJob: "daily", gooHourlyJob: "hourly", gooWeeklyJob: "weekly"} {
 		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO jobs(name, run_at, recurrence)
 			SELECT $1, now() + interval '5 minutes', $2 WHERE NOT EXISTS (SELECT 1 FROM jobs WHERE name = $1 AND recurrence <> '')`, name, rec)
 	}
@@ -190,7 +191,7 @@ func (s *Server) gooDeactivate(ctx context.Context) error {
 	if err := s.settings.Set(ctx, map[string]any{gooSetting: false}); err != nil {
 		return err
 	}
-	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = ANY($1)`, []string{gooDailyJob, gooHourlyJob})
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = ANY($1)`, []string{gooDailyJob, gooHourlyJob, gooWeeklyJob})
 	s.configureCache()
 	return nil
 }
@@ -295,7 +296,10 @@ func (s *Server) gooMenu(menu []*menuTop, u *store.User, screen string) []*menuT
 		top := &menuTop{Slug: "goocommerce?page=analytics", Title: "Analytics", ID: "toplevel_page_goo-analytics", Icon: "dashicons-chart-bar"}
 		for _, r := range []struct{ Path, Title string }{{"", "Overview"}, {"products", "Products"}, {"revenue", "Revenue"}, {"orders", "Orders"},
 			{"variations", "Variations"}, {"categories", "Categories"}, {"coupons", "Coupons"}, {"taxes", "Taxes"}, {"downloads", "Downloads"},
-			{"stock", "Stock"}, {"customers", "Customers"}} {
+			{"stock", "Stock"}, {"customers", "Customers"}, {"subscriptions", "Subscriptions"}, {"bookings", "Bookings"}, {"gift-cards", "Gift Cards"}} {
+			if m, ok := gooAnalyticsModulePages[r.Path]; ok && !s.gooExtOn(m) {
+				continue
+			}
 			slug := "goocommerce?page=analytics"
 			if r.Path != "" {
 				slug += "&path=" + r.Path
@@ -519,6 +523,9 @@ func (s *Server) gooDaily(ctx context.Context) error {
 	}
 	_ = s.gooCleanupSessions(ctx)
 	s.gooCleanupDrafts(ctx)
+	if s.gooExtOn(paoKey) {
+		s.paoCleanupUploads(ctx, 24*time.Hour)
+	}
 	s.gooScheduledSales(ctx)
 	s.gooRetention(ctx)
 	s.gooFire(ctx, "daily", nil)

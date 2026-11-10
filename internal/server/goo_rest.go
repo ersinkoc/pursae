@@ -35,6 +35,8 @@ func (s *Server) registerGooREST() {
 	s.registerGooV3Products()
 	s.registerGooV3Orders()
 	s.registerGooV3Misc()
+	s.registerGooV3Modules()     // goo_rest_v3_modules.go
+	s.registerGooAnalyticsREST() // goo_rest_analytics.go
 }
 
 // gooAPIErr is a WP_Error returned by an endpoint.

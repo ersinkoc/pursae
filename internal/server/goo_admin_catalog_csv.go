@@ -4,15 +4,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"mime"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -72,7 +79,7 @@ func (s *Server) gooCSVHeaderKey(header string) string {
 		return "downloads:" + m[2] + m[1]
 	}
 	if strings.HasPrefix(h, "meta: ") {
-		return "meta:" + strings.TrimPrefix(strings.TrimSpace(header), "Meta: ")
+		return "meta:" + strings.TrimSpace(strings.TrimSpace(strings.TrimPrefix(header, "\ufeff"))[len("meta: "):])
 	}
 	return ""
 }
@@ -144,7 +151,7 @@ func (s *Server) gooProductExporter(c *gin.Context) {
 			s.denyNonce(c)
 			return
 		}
-		data, err := s.gooExportCSV(ctx, c.QueryArray("export_types[]"), c.QueryArray("export_category[]"), c.QueryArray("export_columns[]"))
+		data, err := s.gooExportCSVMeta(ctx, c.QueryArray("export_types[]"), c.QueryArray("export_category[]"), c.QueryArray("export_columns[]"), c.Query("export_meta") == "1")
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
@@ -163,6 +170,55 @@ func (s *Server) gooProductExporter(c *gin.Context) {
 
 // gooExportCSV builds the product CSV: products in id order, each variable product followed by its variations.
 func (s *Server) gooExportCSV(ctx context.Context, types, cats, columns []string) ([]byte, error) {
+	return s.gooExportCSVMeta(ctx, types, cats, columns, false)
+}
+
+// gooMetaCell is how a product meta value is written to a "Meta: key" cell: strings as they are,
+// numbers, booleans, lists and objects as JSON. A string that would read back as JSON (a numeric
+// SKU-like "007", "true", "[1]" or a quoted text) is written as a JSON string so the round trip
+// keeps its type.
+func gooMetaCell(v any) string {
+	switch x := v.(type) {
+	case nil:
+		return ""
+	case string:
+		if x == "" {
+			return ""
+		}
+		if gooMetaLooksJSON(x) {
+			b, _ := json.Marshal(x)
+			return string(b)
+		}
+		return x
+	default:
+		b, err := json.Marshal(x)
+		if err != nil {
+			return ""
+		}
+		return string(b)
+	}
+}
+
+func gooMetaLooksJSON(s string) bool {
+	t := strings.TrimSpace(s)
+	return t != "" && (t[0] == '"' || json.Valid([]byte(t)))
+}
+
+// gooMetaFromCell is the inverse of gooMetaCell.
+func gooMetaFromCell(cell string) any {
+	t := strings.TrimSpace(cell)
+	if t != "" && json.Valid([]byte(t)) {
+		var v any
+		if json.Unmarshal([]byte(t), &v) == nil {
+			return v
+		}
+	}
+	return cell
+}
+
+// gooExportCSVMeta is gooExportCSV with WooCommerce's "Export custom meta" option: every product meta
+// key (subscription, booking, gift card, add-on settings, …) becomes a "Meta: key" column.
+func (s *Server) gooExportCSVMeta(ctx context.Context, types, cats, columns []string, withMeta bool) ([]byte, error) {
 	q := gooProductQuery{Status: []string{"publish", "private", "draft", "pending", "future"}, OrderBy: "id", Order: "asc", PerPage: -1}
 	wantVariations := len(types) == 0 || containsStr(types, gooTypeVariation)
 	for _, t := range types {
@@ -227,6 +283,22 @@ func (s *Server) gooExportCSV(ctx context.Context, types, cats, columns []string
 			header = append(header, "Attribute "+n+" name", "Attribute "+n+" value(s)", "Attribute "+n+" visible", "Attribute "+n+" global", "Attribute "+n+" default")
 		}
 	}
+	var metaKeys []string
+	if withMeta {
+		seen := map[string]bool{}
+		for _, p := range all {
+			for k := range p.Meta {
+				if k != "" && !seen[k] {
+					seen[k] = true
+					metaKeys = append(metaKeys, k)
+				}
+			}
+		}
+		sort.Strings(metaKeys)
+		for _, k := range metaKeys {
+			header = append(header, "Meta: "+k)
+		}
+	}
 	var buf bytes.Buffer
 	buf.WriteString("\ufeff")
 	w := csv.NewWriter(&buf)
@@ -249,6 +321,9 @@ func (s *Server) gooExportCSV(ctx context.Context, types, cats, columns []string
 		}
 		if withAttrs {
 			row = append(row, s.gooExportAttributes(ctx, p, maxAttrs)...)
+		}
+		for _, k := range metaKeys {
+			row = append(row, gooCSVEscape(gooMetaCell(p.Meta[k])))
 		}
 		_ = w.Write(row)
 	}
@@ -496,6 +571,9 @@ func (s *Server) gooProductImporter(c *gin.Context) {
 			s.gooImportMapping(c, &d)
 		case "import":
 			s.gooImportRun(c, &d)
+		case "batch":
+			s.gooImportBatch(c, &d)
+			return
 		default:
 			d.Step = "upload"
 		}
@@ -569,6 +647,11 @@ func (s *Server) gooImportMapping(c *gin.Context, d *gooImportData) {
 	}
 	d.Step = "mapping"
 	d.Fields = s.gooImportFields()
+	for _, h := range rows[0] {
+		if k := s.gooCSVHeaderKey(h); strings.HasPrefix(k, "meta:") {
+			d.Fields = append(d.Fields, gooOpt{k, "Meta: " + strings.TrimPrefix(k, "meta:")})
+		}
+	}
 	for i, h := range rows[0] {
 		row := gooImportMapRow{Index: i, Header: strings.TrimPrefix(h, "\ufeff"), Selected: s.gooCSVHeaderKey(h)}
 		if len(rows) > 1 && i < len(rows[1]) {
@@ -613,8 +696,16 @@ func (s *Server) gooImportRun(c *gin.Context, d *gooImportData) {
 // gooImportRows imports CSV rows (WC_Product_CSV_Importer::import()).
 func (s *Server) gooImportRows(ctx context.Context, rows [][]string, mapping []string, update bool, editorID int64) *gooImportResult {
 	res := &gooImportResult{}
-	idMap := map[int64]int64{} // ids of the file → ids created by this import
+	s.gooImportRowsRange(ctx, rows, 0, mapping, update, editorID, map[int64]int64{}, res)
+	return res
+}
+
+// gooImportRowsRange imports rows[from:to] into res; idMap (ids of the file → ids created by this
+// import) and res carry over between the batches of one import. Row numbers in the log are the CSV's.
+func (s *Server) gooImportRowsRange(ctx context.Context, all [][]string, offset int, mapping []string, update bool, editorID int64, idMap map[int64]int64, res *gooImportResult) {
+	rows := all
 	for n, row := range rows {
+		n += offset
 		fields := map[string]string{}
 		empty := true
 		for i, key := range mapping {
@@ -644,7 +735,6 @@ func (s *Server) gooImportRows(ctx context.Context, rows [][]string, mapping []s
 			res.Updated++
 		}
 	}
-	return res
 }
 
 var errGooImportSkip = fmt.Errorf("skip: skipped")
@@ -904,7 +994,11 @@ func (s *Server) gooImportRow(ctx context.Context, f map[string]string, update b
 	if has("images") {
 		var ids []int64
 		for _, u := range gooCSVSplit(f["images"]) {
-			if id := s.gooAttachmentByURL(ctx, u); id > 0 {
+			id, err := s.gooImportImage(ctx, u, editorID)
+			if err != nil {
+				return false, fmt.Errorf("Error getting image %q: %v", u, err)
+			}
+			if id > 0 {
 				ids = append(ids, id)
 			}
 		}
@@ -996,6 +1090,19 @@ func (s *Server) gooImportRow(ctx context.Context, f map[string]string, update b
 				}
 			}
 		}
+	}
+
+	// "Meta: key" columns restore the product meta (modules keep their settings there). An empty
+	// cell leaves the stored value alone.
+	for k, v := range f {
+		key, ok := strings.CutPrefix(k, "meta:")
+		if !ok || strings.TrimSpace(key) == "" || strings.TrimSpace(v) == "" {
+			continue
+		}
+		if p.Meta == nil {
+			p.Meta = map[string]any{}
+		}
+		p.Meta[strings.TrimSpace(key)] = gooMetaFromCell(v)
 	}
 
 	if created && p.Type != gooTypeVariation {
@@ -1188,7 +1295,7 @@ func (s *Server) gooCategoryFromPath(ctx context.Context, path string) int64 {
 	return parent
 }
 
-// gooAttachmentByURL finds the attachment of an uploads URL (images are not downloaded).
+// gooAttachmentByURL finds the attachment of an uploads URL of this site.
 func (s *Server) gooAttachmentByURL(ctx context.Context, u string) int64 {
 	_, rel, ok := strings.Cut(u, "/wp-content/uploads/")
 	if !ok {
@@ -1197,4 +1304,81 @@ func (s *Server) gooAttachmentByURL(ctx context.Context, u string) int64 {
 	var id int64
 	_ = s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE file_path = $1 LIMIT 1`, rel).Scan(&id)
 	return id
+}
+
+const gooImportSourceKey = "_wc_attachment_source_url"
+
+// gooImportAllowPrivate lets tests download images from httptest servers on the loopback address.
+var gooImportAllowPrivate atomic.Bool
+
+// gooImportImageClient fetches product images from public addresses only (checked when the connection is
+// made, so DNS tricks and redirects cannot reach the private network), like the webhook client.
+var gooImportImageClient = &http.Client{
+	Timeout: 30 * time.Second,
+	Transport: &http.Transport{TLSHandshakeTimeout: 10 * time.Second, DialContext: (&net.Dialer{Timeout: 10 * time.Second,
+		Control: publicOnly(gooImportAllowPrivate.Load, "the image URL points at a private network address")}).DialContext},
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 5 {
+			return errors.New("too many redirects")
+		}
+		return nil
+	},
+}
+
+// gooImportImage resolves a CSV image URL to a Media Library attachment like WC_Product_CSV_Importer::
+// get_attachment_id_from_url(): an uploads URL of this site is matched by file, a remote http(s) URL that
+// was imported before is found by its stored source URL, anything else is downloaded into the Media
+// Library (and remembered by URL so the next row with the same image does not download it again).
+func (s *Server) gooImportImage(ctx context.Context, rawURL string, uploaderID int64) (int64, error) {
+	u := strings.TrimSpace(rawURL)
+	if u == "" {
+		return 0, nil
+	}
+	if id := s.gooAttachmentByURL(ctx, u); id > 0 {
+		return id, nil
+	}
+	pu, err := url.Parse(u)
+	if err != nil || (pu.Scheme != "http" && pu.Scheme != "https") || pu.Host == "" {
+		return 0, nil // not a downloadable URL: ignored, as before
+	}
+	var id int64
+	if err := s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE meta->>$1 = $2 ORDER BY id LIMIT 1`, gooImportSourceKey, u).Scan(&id); err == nil && id > 0 {
+		return id, nil
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("User-Agent", "Pursae/"+Version+"; product-importer")
+	req.Header.Set("Accept", "image/*")
+	resp, err := gooImportImageClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("the server answered %d", resp.StatusCode)
+	}
+	mt, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if mt != "" && !strings.HasPrefix(mt, "image/") {
+		return 0, fmt.Errorf("not an image (%s)", mt)
+	}
+	name := path.Base(pu.Path)
+	if name == "" || name == "." || name == "/" {
+		name = "image"
+	}
+	if path.Ext(name) == "" {
+		if exts, _ := mime.ExtensionsByType(mt); len(exts) > 0 {
+			name += exts[0]
+		}
+	}
+	a, err := s.insertAttachmentFile(ctx, name, resp.Body, uploaderID, 0)
+	if err != nil {
+		return 0, err
+	}
+	a.Meta[gooImportSourceKey] = u
+	if err := s.store.UpdateAttachment(ctx, a); err != nil {
+		return a.ID, nil
+	}
+	return a.ID, nil
 }

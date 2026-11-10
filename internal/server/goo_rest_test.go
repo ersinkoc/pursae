@@ -639,6 +639,16 @@ func TestGooAPIConsumerKeys(t *testing.T) {
 	if last == nil {
 		t.Error("last_access was not updated")
 	}
+	// A second request inside a minute does not rewrite last_access.
+	var before, after string
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT last_access::text FROM goo_api_keys WHERE consumer_key = $1`, gooHashKey(ck)).Scan(&before)
+	if r := gooReq(t, anon, "GET", api+"/products?"+q(ck, cs), nil, nil); r.Code != 200 {
+		t.Errorf("second GET: %d", r.Code)
+	}
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT last_access::text FROM goo_api_keys WHERE consumer_key = $1`, gooHashKey(ck)).Scan(&after)
+	if before != after {
+		t.Errorf("last_access rewritten within a minute: %s -> %s", before, after)
+	}
 }
 
 func TestGooAPIPluginOff(t *testing.T) {

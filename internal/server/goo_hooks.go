@@ -66,6 +66,7 @@ func (s *Server) gooFire(ctx context.Context, name string, arg any) {
 			a.fn(s, ctx, arg)
 		}()
 	}
+	s.gooWebhookAction(ctx, name, arg) // "action.<name>" webhooks
 }
 
 // gooStatusChange is the argument of order_status_changed.
