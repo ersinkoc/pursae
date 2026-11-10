@@ -170,7 +170,8 @@ func (s *Server) canonicalRedirect(c *gin.Context, q *siteQuery, requestPath str
 		target = strings.TrimSuffix(base, "/") + lb.Trailing("/comment-page-"+strconv.Itoa(q.CPage))
 	case q.Post != nil && q.Page > 1:
 		target = lb.PostPageLink(q.Post, q.Page)
-	case q.Paged > 1:
+	case q.Paged > 1 && q.Kind != "single":
+		// is_single() drops the paging: /hello-world/page/2/ is the post itself.
 		target = lb.Paged(base, q.Paged)
 	}
 

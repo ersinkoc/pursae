@@ -200,6 +200,12 @@ func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *
 	return sb.String()
 }
 
+// titleRSS is get_the_title_rss(): the title without tags, HTML-escaped. Atom titles are type="html",
+// so a raw title would reach feed readers as markup.
+func titleRSS(title string) string {
+	return html.EscapeString(html.UnescapeString(wp.StripTags(title)))
+}
+
 // atomFeed is feed-atom.php.
 func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	posts := s.feedPosts(ctx, q)
@@ -232,7 +238,7 @@ func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb 
 			fmt.Fprintf(&sb, "\t\t\t<uri>%s</uri>\n", html.EscapeString(authorURL))
 		}
 		fmt.Fprintf(&sb, "\t\t</author>\n\n\t\t<title type=\"html\">%s</title>\n\t\t<link rel=\"alternate\" type=\"text/html\" href=\"%s\" />\n\t\t<id>%s</id>\n\t\t<updated>%s</updated>\n\t\t<published>%s</published>\n",
-			cdata(p.Title), html.EscapeString(link), html.EscapeString(lb.HomeURL("/?p="+itoa64(p.ID))), p.ModifiedAt.UTC().Format(atomTime), p.Date().UTC().Format(atomTime))
+			cdata(titleRSS(p.Title)), html.EscapeString(link), html.EscapeString(lb.HomeURL("/?p="+itoa64(p.ID))), p.ModifiedAt.UTC().Format(atomTime), p.Date().UTC().Format(atomTime))
 		cats, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "category")
 		tags, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "post_tag")
 		for _, t := range append(cats[p.ID], tags[p.ID]...) {

@@ -335,17 +335,29 @@ func renderLatestComments(ctx context.Context, b *blocks.Block, _ string) string
 	}
 	avatar := attrBool(b, "displayAvatar", true)
 	showDate := attrBool(b, "displayDate", true)
-	comments, err := rc.s.store.RecentComments(ctx, attrInt(b, "commentsToShow", 5), false)
+	want := attrInt(b, "commentsToShow", 5)
+	// A few more than shown: comments of password-protected posts are skipped below.
+	comments, err := rc.s.store.RecentComments(ctx, want+20, false)
 	if err != nil {
 		return ""
 	}
 	loc := rc.s.loc()
 	var items strings.Builder
+	shown := 0
 	for _, cm := range comments {
+		if shown >= want {
+			break
+		}
 		p, err := rc.s.store.GetPost(ctx, cm.PostID)
 		if err != nil {
 			continue
 		}
+		// The discussion of a password-protected post is as protected as the post (comments feeds and
+		// REST hide it too): it is not listed for visitors who have not entered the password.
+		if p.Password != "" && (rc.c == nil || rc.s.passwordRequired(rc.c, p)) {
+			continue
+		}
+		shown++
 		items.WriteString(`<li class="wp-block-latest-comments__comment">`)
 		if avatar {
 			fmt.Fprintf(&items, `<img alt='' src='%s' srcset='%s 2x' class='avatar avatar-48 photo wp-block-latest-comments__comment-avatar' height='48' width='48' />`,
@@ -493,7 +505,7 @@ func renderCategories(ctx context.Context, b *blocks.Block, _ string) string {
 		var opts strings.Builder
 		opts.WriteString(`<option value='-1'>Select Category</option>`)
 		for _, t := range terms {
-			text := t.Name
+			text := html.EscapeString(t.Name) // term names are user input (any author can create tags)
 			if showCount {
 				text += fmt.Sprintf("&nbsp;&nbsp;(%d)", t.Count)
 			}

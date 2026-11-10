@@ -179,7 +179,9 @@ func (s *Server) commentsNavigation(p *store.Post, lb *links.Builder, page, maxP
 func (s *Server) commentLink(p *store.Post, lb *links.Builder, cpage, maxPage int, id int64) string {
 	link := lb.Permalink(p)
 	if s.settings.Bool("page_comments") && cpage > 0 {
-		link = lb.CommentPageLink(p, cpage, 0, false)
+		// Only with "oldest" as the default page is page 1 the bare permalink; with "newest" the bare
+		// permalink shows the last page, so every page (1 included) needs its comment-page-N.
+		link = lb.CommentPageLink(p, cpage, 0, s.settings.String("default_comments_page") == "newest")
 	}
 	return link + "#comment-" + itoa64(id)
 }
@@ -312,7 +314,9 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 	sb.WriteString(`<div id="respond" class="comment-respond">` + "\n")
 	title := s.frontE(c, "Leave a Reply")
 	if replyTo > 0 {
-		if parent, err := s.store.GetComment(c, replyTo); err == nil && parent.PostID == p.ID {
+		// _get_comment_reply_id(): only an approved comment of this post can be replied to; a pending, spam
+		// or trashed one must not put its author's name on the page.
+		if parent, err := s.store.GetComment(c, replyTo); err == nil && parent.PostID == p.ID && parent.Status == "approved" {
 			title = s.frontEf(c, "Reply to %s", `<a href="#comment-`+itoa64(parent.ID)+`">`+esc(defaultStr(parent.AuthorName, "Anonymous"))+`</a>`)
 		} else {
 			replyTo = 0
@@ -536,6 +540,12 @@ const commentFloodInterval = 15 * time.Second
 func (s *Server) commentStatus(c *gin.Context, cm *store.Comment, u *store.User) string {
 	if u.Can("moderate_comments", nil) {
 		return "approved"
+	}
+	// "The author and the admins get respect": the post's own author is not moderated on it.
+	if u != nil && u.ID != 0 {
+		if p, err := s.store.GetPost(c.Request.Context(), cm.PostID); err == nil && p.AuthorID == u.ID {
+			return "approved"
+		}
 	}
 	haystack := strings.ToLower(strings.Join([]string{cm.AuthorName, cm.AuthorEmail, cm.AuthorURL, cm.Content, cm.AuthorIP, cm.UserAgent}, "\n"))
 	matches := func(keys string) bool {

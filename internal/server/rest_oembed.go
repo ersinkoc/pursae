@@ -66,6 +66,9 @@ func (s *Server) oembedPost(c *gin.Context, raw string) *store.Post {
 	if err != nil || q == nil || q.Post == nil || q.Post.Status != "publish" {
 		return nil
 	}
+	if s.gooSingleAccess(cc, q.Post.ID, q.Post.Type) != "" { // Memberships: hidden or redirected for visitors
+		return nil
+	}
 	switch q.Kind {
 	case "single", "page", "front-page":
 		return q.Post
@@ -176,7 +179,8 @@ func (s *Server) embedRoute(c *gin.Context) {
 	c.Header("Content-Type", "text/html; charset=UTF-8")
 	q, err := s.resolve(c, path)
 	var p *store.Post
-	if err == nil && q != nil && q.Post != nil && (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") {
+	if err == nil && q != nil && q.Post != nil && (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") &&
+		s.gooSingleAccess(c, q.Post.ID, q.Post.Type) == "" { // Memberships: a hidden or redirected post has no embed
 		p = q.Post
 	}
 	if p == nil {

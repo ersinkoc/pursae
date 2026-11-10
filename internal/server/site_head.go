@@ -27,6 +27,8 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		sb.WriteString(seo)
 	} else if storePrivate && s.settings.Bool("blog_public") && !q.Preview {
 		sb.WriteString("<meta name='robots' content='noindex, follow' />\n") // Pursae Commerce: wc_page_noindex
+	} else if s.settings.Bool("blog_public") && q.Kind == "search" && !q.Preview {
+		sb.WriteString("<meta name='robots' content='noindex, follow, max-image-preview:large' />\n") // wp_robots_noindex_search()
 	} else if s.settings.Bool("blog_public") && q.Kind != "404" && !q.Preview {
 		sb.WriteString("<meta name='robots' content='max-image-preview:large' />\n")
 	} else {

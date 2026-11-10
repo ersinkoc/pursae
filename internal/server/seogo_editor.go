@@ -524,7 +524,7 @@ func (s *Server) seogoRESTHead(flavor string) restHandler {
 		if err != nil || q == nil || strings.HasPrefix(q.Kind, "redirect:") {
 			q, status = &siteQuery{Kind: "404"}, http.StatusNotFound
 		}
-		if q.Post != nil && (q.Post.Status != "publish" || q.Post.Password != "") {
+		if q.Post != nil && (q.Post.Status != "publish" || q.Post.Password != "" || s.gooSingleAccess(c2, q.Post.ID, q.Post.Type) != "") {
 			q, status = &siteQuery{Kind: "404"}, http.StatusNotFound
 		}
 		sc := s.seogoCtxFor(c2.Request.Context(), q)
