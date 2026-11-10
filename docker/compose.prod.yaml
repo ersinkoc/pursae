@@ -39,6 +39,9 @@ services:
     ports: !override
       - "${WPGO_BIND:-127.0.0.1}:${WPGO_PORT:-8088}:8080"
     restart: unless-stopped
+    # On SIGTERM the server drains requests (10 s), the job runner (10 s), background writes and the
+    # pool (5 s each); Docker's default 10 s would kill a job or an upload half-way.
+    stop_grace_period: 35s
     # GET /healthz (process up); `wpgo healthcheck ready` checks /readyz (database + migrations).
     healthcheck:
       test: ["CMD", "/usr/local/lib/pursae/wpgo", "healthcheck"]

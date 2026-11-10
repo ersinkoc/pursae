@@ -89,7 +89,8 @@ services:
       - ..:/src
       - gocache:/root/.cache/go-build
       - gomod:/go/pkg/mod
-    command: ["go", "test", "./..."]
+    # -p 1: the server, store and settings packages each drop and recreate WPGO_TEST_DB.
+    command: ["go", "test", "./...", "-p", "1", "-count=1", "-timeout", "40m"]
 
 volumes:
   bin:

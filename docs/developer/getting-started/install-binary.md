@@ -51,7 +51,9 @@ WPGO_WEB_DIR=web go run ./cmd/wpgo serve
 ```
 
 `make dev` does both. `make test` runs the unit tests and the PostgreSQL integration tests
-against the compose database.
+against the compose database, one package at a time; they drop and recreate the database
+`TEST_DB` names (default `wpgo_test`), so give each checkout running tests at once its own,
+e.g. `make test TEST_DB=wpgo_test_feature`.
 
 ## Environment variables
 

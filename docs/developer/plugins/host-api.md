@@ -134,8 +134,8 @@ calling `T` is always safe. Text ≤10000 bytes, context ≤200 bytes. Pass whol
 fragments you concatenate) and keep placeholders like `%s` inside the string:
 
 ```go
-wpgo.AddFilter("the_content", 10, func(html string) (string, error) {
-	return html + "<p>" + wpgo.T("Thanks for reading!") + "</p>", nil
+wpgo.AddFilter("the_content", 10, func(_ wpgo.Context, html string, _ []any) string {
+	return html + "<p>" + wpgo.T("Thanks for reading!") + "</p>"
 })
 label := wpgo.X("Post", "noun")
 ```

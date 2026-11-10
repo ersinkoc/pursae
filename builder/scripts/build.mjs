@@ -14,8 +14,10 @@
  * → vite build (editor, runtime), site css → manifest + BUILD.json → renderStatic fixtures
  * (internal/webbuilder/testdata/render, scripts/live.mjs) → test/audit.mjs.
  *
- * Usage: node scripts/build.mjs [--watch]   (--watch rebuilds the editor on source changes;
- * edits to upstream/ or patches/ need a restart because the sources are a patched copy.)
+ * Usage: node scripts/build.mjs [--watch | --prepare]   (--watch rebuilds the editor on source
+ * changes; edits to upstream/ or patches/ need a restart because the sources are a patched copy.
+ * --prepare stops after the patched copy in .work/upstream, which the host unit tests import, and
+ * leaves the dist alone: `make builder-test` runs it.)
  */
 import { spawnSync } from 'node:child_process'
 import crypto from 'node:crypto'
@@ -34,6 +36,7 @@ const CONTRACT = path.join(BUILDER, 'host', 'contract.ts')
 const RUNTIME_ENTRY = path.join(WORK, 'src', 'builder', 'live', 'runtime.ts')
 
 const watch = process.argv.includes('--watch')
+const prepareOnly = process.argv.includes('--prepare')
 
 function die(msg) {
   console.error(`\n[web-builder] build failed: ${msg}\n`)
@@ -83,6 +86,7 @@ for (const f of patchFiles) {
   patches[f] = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')
 }
 log(`upstream ${sha.slice(0, 7)}, ${patchFiles.length} patch(es) applied${patchFiles.length ? ': ' + patchFiles.join(', ') : ''}`)
+if (prepareOnly) process.exit(0)
 
 /* ---------- 3. Versions from the contract ---------- */
 
