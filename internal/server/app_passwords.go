@@ -283,6 +283,8 @@ func (s *Server) authorizeApplication(c *gin.Context) {
 			`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page"><div class="wp-die-message"><p>`+template.HTMLEscapeString(strings.Join(errs, " "))+`</p></div></body></html>`)
 		return
 	}
+	// The form's POST answers 302 to these URLs; Chromium checks form-action on that redirect.
+	cspAllowRedirect(c, d["SuccessURL"].(string), d["RejectURL"].(string))
 	if c.Request.Method == http.MethodPost && c.PostForm("action") == "authorize_application_password" {
 		if !s.checkNonce(c, "authorize_application_password") {
 			s.denyNonce(c)

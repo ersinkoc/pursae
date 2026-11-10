@@ -259,16 +259,33 @@ func (s *Store) CreateUser(ctx context.Context, nu NewUser) (int64, error) {
 	return id, err
 }
 
+// clearResetOnEmailChange is the meta expression that drops a pending password-reset key when the
+// e-mail address changes, as wp_insert_user() clears user_activation_key ($2 is the new address).
+const clearResetOnEmailChange = `meta = CASE WHEN lower(email) <> lower($2) THEN meta - 'password_reset' ELSE meta END`
+
 func (s *Store) UpdateUserProfile(ctx context.Context, u *User) error {
 	profile, _ := json.Marshal(u.Profile)
-	_, err := s.Pool.Exec(ctx, `UPDATE users SET email=$2, display_name=$3, url=$4, profile=$5 WHERE id=$1`,
+	_, err := s.Pool.Exec(ctx, `UPDATE users SET email=$2, display_name=$3, url=$4, profile=$5, `+clearResetOnEmailChange+` WHERE id=$1`,
 		u.ID, u.Email, u.DisplayName, u.URL, profile)
 	return userUniqueErr(err)
 }
 
+// SetUserPassword stores a new password hash and, like wp_set_password(), invalidates any pending
+// password-reset key.
 func (s *Store) SetUserPassword(ctx context.Context, userID int64, hash string) error {
-	_, err := s.Pool.Exec(ctx, `UPDATE users SET password_hash=$2 WHERE id=$1`, userID, hash)
+	_, err := s.Pool.Exec(ctx, `UPDATE users SET password_hash=$2, meta = meta - 'password_reset' WHERE id=$1`, userID, hash)
 	return err
+}
+
+// ConsumePasswordReset removes the user's password-reset key if it still has the given hash; it
+// reports whether this call removed it, so one key resets the password once.
+func (s *Store) ConsumePasswordReset(ctx context.Context, userID int64, hash string) (bool, error) {
+	tag, err := s.Pool.Exec(ctx, `UPDATE users SET meta = meta - 'password_reset'
+		WHERE id = $1 AND meta->'password_reset'->>'hash' = $2`, userID, hash)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
 }
 
 func (s *Store) CountUsers(ctx context.Context) (int, error) {

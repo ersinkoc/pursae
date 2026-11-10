@@ -348,6 +348,7 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 	// Core throttle, as on wp-login: the attempt is recorded before the password is checked so parallel
 	// guesses cannot all pass the count (auth.BeginAttempt).
 	var attemptID int64
+	attemptKey := login
 	if secOn { // Pursae Security: the same count-first rule against its own limits
 		id, msg := s.adminsecBeginAttempt(c, login)
 		if msg != "" {
@@ -356,12 +357,12 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 		}
 		attemptID = id
 	} else {
-		id, throttled, _ := s.auth.BeginAttempt(c, ip, login)
+		id, key, throttled := s.coreBeginAttempt(c, login)
 		if throttled {
 			fail("<strong>Error:</strong> Too many failed login attempts. Please try again in 15 minutes.")
 			return
 		}
-		attemptID = id
+		attemptID, attemptKey = id, key
 	}
 	u, err := s.store.UserByLoginOrEmail(ctx, login)
 	ok := false
@@ -399,7 +400,7 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 			RedirectTo: target, Login: login, Remember: remember}, u, pass)
 		return
 	}
-	s.auth.AttemptSucceeded(c, attemptID, ip, login)
+	s.auth.AttemptSucceeded(c, attemptID, ip, attemptKey)
 	if err := s.loginUserCookie(c, u.ID, remember); err != nil {
 		fail("<strong>Error:</strong> Could not start a session. Please try again.")
 		return
@@ -570,6 +571,8 @@ func (s *Server) gooSaveAccountPost(c *gin.Context) {
 		default:
 			if ok, _ := auth.CheckPassword(cur, u.PasswordHash); !ok {
 				errs = append(errs, "Your current password is incorrect.")
+			} else if msg := s.adminsecPasswordProblem(u.Roles, u.Login, email, p1); msg != "" { // Pursae Security password policy
+				errs = append(errs, msg)
 			}
 		}
 	}
@@ -593,6 +596,7 @@ func (s *Server) gooSaveAccountPost(c *gin.Context) {
 	if changePass {
 		if hash, err := auth.HashPassword(p1); err == nil {
 			if s.store.SetUserPassword(ctx, u.ID, hash) == nil {
+				s.adminsecPasswordChanged(c, u)
 				s.endSessionsAfterPasswordChange(ctx, c, u.ID)
 			}
 		}
@@ -695,9 +699,11 @@ func (s *Server) gooDownloadRows(c *gin.Context, where string, args ...any) []go
 	return out
 }
 
-// gooCustomerDownloads is wc_get_customer_available_downloads().
+// gooCustomerDownloads is wc_get_customer_available_downloads(): the account's own permissions only.
+// Guest purchases are not matched by e-mail, since the account's address is not proven to be the
+// buyer's (registration and Edit Account take any address).
 func (s *Server) gooCustomerDownloads(c *gin.Context, u *store.User) []gooFrontDownloadRow {
-	return s.gooDownloadRows(c, "(dp.user_id = $1 OR (dp.user_id = 0 AND lower(dp.user_email) = lower($2)))", u.ID, u.Email)
+	return s.gooDownloadRows(c, "dp.user_id = $1", u.ID)
 }
 
 // gooOrderDownloads are an order's downloads (order received / view order).

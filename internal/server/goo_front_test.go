@@ -545,6 +545,18 @@ func TestGooFrontAccount(t *testing.T) {
 	if code, _, _ = get(t, v, base+"/?download_file="+itoa64(f.ebook.ID)+"&order="+o.OrderKey+"&key=nope"); code != http.StatusForbidden {
 		t.Errorf("download with a bad key: %d", code)
 	}
+	// A guest purchase with the account's (unverified) e-mail is not listed under the account.
+	guest := &gooOrder{Status: "completed", Billing: map[string]string{"email": "LINUS@example.test"}}
+	if err := srv.gooSaveOrder(ctx, guest, false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO goo_download_permissions (download_id, product_id, order_id, order_key, user_email, user_id)
+		VALUES ($1, $2, $3, $4, $5, 0)`, f.ebook.Downloads[0].ID, f.ebook.ID, guest.ID, guest.OrderKey, "linus@example.test"); err != nil {
+		t.Fatal(err)
+	}
+	if _, body, _ = get(t, v, base+"/my-account/downloads/"); strings.Contains(body, guest.OrderKey) {
+		t.Error("a guest order's downloads are listed for an account with the same e-mail")
+	}
 
 	// Edit the billing address.
 	_, body, _ = get(t, v, base+"/my-account/edit-address/billing/")
@@ -648,5 +660,54 @@ func TestGooFrontShortcodes(t *testing.T) {
 	}
 	if strings.Contains(body, "[products") || strings.Contains(body, "[sale_products]") {
 		t.Error("unexpanded shortcodes")
+	}
+}
+
+// My Account and customer creation follow the Pursae Security password policy, and a password
+// changed in My Account ends a forced change. Integration test.
+func TestGooFrontAccountPasswordPolicy(t *testing.T) {
+	base, admin, srv := gooSite(t)
+	ctx := context.Background()
+	asToggle(t, admin, base, "activate")
+	asConfigure(t, srv, func(st *asSettings) {
+		st.PwAllowWeak = false
+		if st.PwMinLength == nil {
+			st.PwMinLength = map[string]int{}
+		}
+		st.PwMinLength["customer"] = 12
+	})
+	if _, err := srv.gooCreateCustomer(ctx, "weak@example.test", "weak", "short", nil); err == nil || !strings.Contains(err.Error(), "at least 12") {
+		t.Errorf("weak customer password accepted: %v", err)
+	}
+	uid, err := srv.gooCreateCustomer(ctx, "ada@example.test", "ada", asStrongPass, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, _ := srv.store.UserByID(ctx, uid)
+	_ = srv.setUserMeta(gooTestCtx(), u, "adminsec_force_password", true)
+	v := gooFrontClient()
+	_, body, _ := get(t, v, base+"/my-account/")
+	if code, _, _ := post(t, v, base+"/my-account/", url.Values{"username": {"ada"}, "password": {asStrongPass}, "woocommerce-login-nonce": {gooHidden(t, body, "woocommerce-login-nonce")}, "login": {"Log in"}}); code != http.StatusFound {
+		t.Fatalf("login: %d", code)
+	}
+	_, body, _ = get(t, v, base+"/my-account/edit-account/")
+	acc := url.Values{"account_first_name": {"Ada"}, "account_last_name": {"L"}, "account_display_name": {"Ada"}, "account_email": {"ada@example.test"},
+		"password_current": {asStrongPass}, "password_1": {"aaaa"}, "password_2": {"aaaa"}, "save-account-details-nonce": {gooHidden(t, body, "save-account-details-nonce")}, "save_account_details": {"1"}}
+	post(t, v, base+"/my-account/edit-account/", acc)
+	if _, body, _ = get(t, v, base+"/my-account/edit-account/"); !strings.Contains(body, "at least 12 characters") {
+		t.Error("weak My Account password accepted")
+	}
+	if u, _ = srv.store.UserByID(ctx, uid); u.Meta["adminsec_force_password"] == nil {
+		t.Fatal("force flag lost on a refused change")
+	}
+	acc.Set("password_1", "Another-Strong-Pass-71!")
+	acc.Set("password_2", "Another-Strong-Pass-71!")
+	acc.Set("save-account-details-nonce", gooHidden(t, body, "save-account-details-nonce"))
+	post(t, v, base+"/my-account/edit-account/", acc)
+	if u, _ = srv.store.UserByID(ctx, uid); u.Meta["adminsec_force_password"] != nil {
+		t.Error("forced password change still pending after a My Account change")
+	}
+	if asCount(t, `SELECT count(*) FROM adminsec_log WHERE event = 'password_changed' AND object = 'ada'`) != 1 {
+		t.Error("no password_changed audit event")
 	}
 }

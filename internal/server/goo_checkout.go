@@ -588,6 +588,8 @@ func (s *Server) gooCreateCustomer(ctx context.Context, email, username, passwor
 	generated := false
 	if password == "" {
 		password, generated = gooRandomKey(24), true
+	} else if msg := s.adminsecPasswordProblem([]string{"customer"}, username, email, password); msg != "" { // Pursae Security password policy
+		return 0, fmt.Errorf("%s", msg)
 	}
 	hash, err := auth.HashPassword(password)
 	if err != nil {

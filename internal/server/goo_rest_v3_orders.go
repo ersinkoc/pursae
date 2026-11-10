@@ -1396,6 +1396,11 @@ func (s *Server) gooV3CustomerUpdate(c *gin.Context, id int64, b map[string]any)
 	if u.Profile == nil {
 		u.Profile = map[string]string{}
 	}
+	if v, ok := b["password"]; ok && gooStr(v) != "" { // Pursae Security password policy, before anything is saved
+		if msg := s.adminsecUserPasswordProblem(u, gooStr(v)); msg != "" {
+			return nil, gooErr(400, "woocommerce_rest_customer_invalid_password", msg)
+		}
+	}
 	if v, ok := b["email"]; ok {
 		email := strings.TrimSpace(gooStr(v))
 		if _, err := mail.ParseAddress(email); err != nil {
@@ -1416,6 +1421,7 @@ func (s *Server) gooV3CustomerUpdate(c *gin.Context, id int64, b map[string]any)
 		hash, err := auth.HashPassword(gooStr(v))
 		if err == nil {
 			if s.store.SetUserPassword(ctx, u.ID, hash) == nil {
+				s.adminsecPasswordChanged(c, u)
 				s.endSessionsAfterPasswordChange(ctx, nil, u.ID) // the API caller is never the customer's own browser session
 			}
 		}

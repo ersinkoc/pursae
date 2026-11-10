@@ -71,6 +71,16 @@ func (m *Manager) Create(ctx context.Context, userID int64, remember bool, ip, u
 
 // Lookup resolves a cookie token to a live session and refreshes last_seen_at at most once a minute.
 func (m *Manager) Lookup(ctx context.Context, token string) (*Session, error) {
+	return m.lookup(ctx, token, true)
+}
+
+// LookupPassive resolves a session like Lookup but does not count the request as activity: for
+// background polling (the heartbeat) that must not keep an unattended session from going idle.
+func (m *Manager) LookupPassive(ctx context.Context, token string) (*Session, error) {
+	return m.lookup(ctx, token, false)
+}
+
+func (m *Manager) lookup(ctx context.Context, token string, touch bool) (*Session, error) {
 	if token == "" {
 		return nil, ErrNoSession
 	}
@@ -90,7 +100,7 @@ func (m *Manager) Lookup(ctx context.Context, token string) (*Session, error) {
 			return nil, ErrNoSession
 		}
 	}
-	if time.Since(lastSeen) > time.Minute {
+	if touch && time.Since(lastSeen) > time.Minute {
 		_, _ = m.pool.Exec(ctx, `UPDATE sessions SET last_seen_at = now() WHERE id = $1`, s.ID)
 	}
 	return s, nil

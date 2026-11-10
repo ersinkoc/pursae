@@ -213,7 +213,7 @@ func (s *Server) adminsecGate(c *gin.Context, u *store.User) bool {
 	}
 	p := strings.TrimSuffix(c.Request.URL.Path, ".php")
 	page := c.Query("page")
-	if p == "/wp-admin/admin-ajax" && c.Query("action") == "heartbeat" {
+	if p == "/wp-admin/admin-ajax" && isBackgroundPoll(c) {
 		return false
 	}
 	if s.asForcePassword(c, u) {
@@ -579,17 +579,36 @@ func (s *Server) asSendCode(c *gin.Context, ch *asChallenge, u *store.User, addr
 	return nil
 }
 
-// asCheckCode verifies an e-mailed code; a correct code is spent, wrong ones count toward the limit.
+// asReserveAttempt counts a code check against the challenge before the code is verified, so
+// parallel requests cannot each test a code against the same remaining budget. It reports false
+// (and drops the challenge) once the limit is used up.
+func (s *Server) asReserveAttempt(ctx context.Context, ch *asChallenge) bool {
+	var n int
+	if err := s.store.Pool.QueryRow(ctx, `UPDATE adminsec_challenges SET attempts = attempts + 1
+		WHERE id = $1 AND attempts < $2 RETURNING attempts`, ch.ID, asMaxCodeAttempts).Scan(&n); err != nil {
+		s.asDropChallenge(ctx, ch)
+		ch.Attempts = asMaxCodeAttempts
+		return false
+	}
+	ch.Attempts = n
+	return true
+}
+
+// asClaimChallenge deletes the challenge and reports whether this request was the one that did,
+// so one challenge yields one session.
+func (s *Server) asClaimChallenge(ctx context.Context, ch *asChallenge) bool {
+	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM adminsec_challenges WHERE id = $1`, ch.ID)
+	return err == nil && tag.RowsAffected() == 1
+}
+
+// asCheckCode verifies an e-mailed code; a correct code is spent. The caller reserves the attempt
+// first (asReserveAttempt).
 func (s *Server) asCheckCode(ctx context.Context, ch *asChallenge, code string) bool {
 	code = normalizeCode(code)
 	if ch.CodeHash == "" || ch.CodeExpires == nil || time.Now().After(*ch.CodeExpires) || len(code) != 6 {
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE adminsec_challenges SET attempts = attempts + 1 WHERE id = $1`, ch.ID)
-		ch.Attempts++
 		return false
 	}
 	if !hmac.Equal([]byte(ch.CodeHash), []byte(s.asHash("code", strconv.FormatInt(ch.ID, 10)+"|"+code))) {
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE adminsec_challenges SET attempts = attempts + 1 WHERE id = $1`, ch.ID)
-		ch.Attempts++
 		return false
 	}
 	tag, err := s.store.Pool.Exec(ctx, `UPDATE adminsec_challenges SET code_hash = '' WHERE id = $1 AND code_hash = $2`, ch.ID, ch.CodeHash)
@@ -740,23 +759,22 @@ func (s *Server) adminsecChallengePost(c *gin.Context, v loginView) {
 		return
 	}
 	code := c.PostForm("authcode")
+	// Count the attempt before checking the code: parallel requests share one budget.
+	if !s.asReserveAttempt(c, ch) {
+		v.Error = "<strong>Error:</strong> Too many wrong codes. Please log in again."
+		s.renderAdminTemplate(c, http.StatusOK, "admin/login", v)
+		return
+	}
 	ok := false
 	method := ""
 	switch provider {
 	case "totp":
 		ok, method = s.asCheckTOTP(c, f, code), "password + authenticator app"
-		if !ok { // a wrong code still counts against the challenge
-			_, _ = s.store.Pool.Exec(c, `UPDATE adminsec_challenges SET attempts = attempts + 1 WHERE id = $1`, ch.ID)
-			ch.Attempts++
-		}
 	case "email":
 		ok, method = s.asCheckCode(c, ch, code), "password + e-mailed code"
 	case "backup":
 		ok, method = s.asUseBackupCode(c, f, code), "password + backup code"
-		if !ok {
-			_, _ = s.store.Pool.Exec(c, `UPDATE adminsec_challenges SET attempts = attempts + 1 WHERE id = $1`, ch.ID)
-			ch.Attempts++
-		} else {
+		if ok {
 			s.asAudit(c, asEvent{Event: "backup_code_used", Severity: "notice", User: u, Message: fmt.Sprintf("Backup code used to log in; %d left.", f.backupLeft())})
 		}
 	}
@@ -771,7 +789,11 @@ func (s *Server) adminsecChallengePost(c *gin.Context, v loginView) {
 		s.asRenderChallenge(c, v, token, ch, f, provider, "<strong>Error:</strong> The code is incorrect or has expired. Please try again.", "")
 		return
 	}
-	s.asDropChallenge(c, ch)
+	if !s.asClaimChallenge(c, ch) { // another request finished this login already
+		v.Error = "<strong>Error:</strong> This login was already completed or has expired. Please log in again."
+		s.renderAdminTemplate(c, http.StatusOK, "admin/login", v)
+		return
+	}
 	if c.PostForm("adminsec_remember") == "1" {
 		s.asRememberDevice(c, u)
 	}

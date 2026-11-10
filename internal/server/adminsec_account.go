@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/mail"
 	"wpgo/internal/store"
 )
 
@@ -216,6 +217,10 @@ func (s *Server) asAccountAction(c *gin.Context, u *store.User, d *asAccountData
 			if !validEmail(addr) {
 				return errNotice("Please enter a valid e-mail address."), ""
 			}
+			// Re-pointing an existing factor is as strong as turning it off: it needs the password.
+			if (f.EmailEnabled || f.TOTPEnabled) && !needPassword() {
+				return errNotice("Your current password is incorrect."), ""
+			}
 			ch = &asChallenge{UserID: u.ID, Purpose: "setup_email", Email: addr, IP: clientIP(c)}
 			token, err := s.asNewChallenge(c, ch)
 			if err != nil {
@@ -240,6 +245,9 @@ func (s *Server) asAccountAction(c *gin.Context, u *store.User, d *asAccountData
 		if err != nil || ch.UserID != u.ID {
 			return errNotice("The confirmation expired. Please start again."), ""
 		}
+		if !s.asReserveAttempt(c, ch) {
+			return errNotice("Too many wrong codes. Please start again."), ""
+		}
 		if !s.asCheckCode(c, ch, c.PostForm("code")) {
 			if ch.Attempts >= asMaxCodeAttempts {
 				s.asDropChallenge(c, ch)
@@ -248,11 +256,22 @@ func (s *Server) asAccountAction(c *gin.Context, u *store.User, d *asAccountData
 			d.Step, d.Token, d.SetupEmail, d.ResendWait = "mfa_verify", c.PostForm("adminsec_token"), ch.Email, int(ch.resendWait().Seconds()+0.99)
 			return errNotice("The code is incorrect or has expired."), ""
 		}
-		s.asDropChallenge(c, ch)
+		if !s.asClaimChallenge(c, ch) {
+			return errNotice("The confirmation expired. Please start again."), ""
+		}
 		now := time.Now()
+		prev := f.Email
+		changed := f.EmailEnabled && prev != "" && !strings.EqualFold(prev, ch.Email)
 		f.EmailEnabled, f.Email, f.EmailVerifiedAt = true, ch.Email, &now
 		if err := s.asSaveFactors(c, f); err != nil {
 			return errNotice(err.Error()), ""
+		}
+		if changed { // the old address learns of the change; remembered devices must pass the new factor
+			_, _ = s.store.Pool.Exec(c, `DELETE FROM adminsec_devices WHERE user_id = $1`, u.ID)
+			site := s.settings.String("blogname")
+			s.sendMail(c, mail.Message{To: []string{prev}, Subject: "[" + site + "] Login codes now go to another address",
+				Body: "Hi " + u.Login + ",\n\nThe e-mail address that receives your login codes on " + site + " was changed from this address to " +
+					asMaskEmail(ch.Email) + ".\n\nIf you did not do this, contact the site administrator right away.\n"})
 		}
 		s.asAudit(c, asEvent{Event: "mfa_enabled", Severity: "notice", Object: u.Login, Message: "E-mailed login codes enabled (" + ch.Email + ")."})
 		if len(f.Backup) == 0 {
