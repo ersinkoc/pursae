@@ -368,7 +368,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.HubOff = s.cfg.HubOff && tmpl != "admin/block-editor" && v.User.Can("update_core", nil)
 	a := s.pageAssets(c)
 	a.Script("common", "admin-bar", "utils", "svg-painter")
-	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin")
+	v.ExtraStyles = s.styleTags(a) + s.pluginStyleTags("admin", screen)
 	v.HeadScripts = template.HTML(s.importMap()) + s.scriptTags(c, a, false) + s.pluginScriptTags("admin", false)
 	v.FooterScripts = s.scriptTags(c, a, true) + s.pluginScriptTags("admin", true)
 	if extra, ok := c.Get("wpgo.bodyHTML"); ok {

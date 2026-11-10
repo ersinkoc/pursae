@@ -120,6 +120,21 @@ func ParseManifest(data []byte) (*Manifest, error) {
 // single dashes.
 func ValidSlug(s string) bool { return len(s) >= 2 && len(s) <= 64 && slugRe.MatchString(s) }
 
+// reservedSlugs are slugs no package may use: the first segment of the core's and the built-in
+// plugins' REST namespaces (a plugin's routes live under its slug, so a package slugged "wp" could
+// answer /wp-json/wp/v2/<anything the core does not implement> as trusted core data), and the
+// names of the core's own directories and owners.
+var reservedSlugs = map[string]bool{
+	CoreOwner: true, "admin": true, "wp": true, "wp-admin": true, "wp-json": true, "wp-content": true, "wp-includes": true,
+	"wp-site-health": true, "wp-block-editor": true, "wp-abilities": true, "oembed": true, "batch": true,
+	"pursae": true, "wpgo": true, "wc": true, "wc-admin": true, "wc-analytics": true, "wc-store": true, "wc-telemetry": true,
+	"pll": true, "contact-form-7": true, "web-builder": true, "elementor": true, "gooike": true, "headlessgo": true,
+	"pixelgo": true, "seogo": true, "rankmath": true, "yoast": true,
+}
+
+// ReservedSlug reports whether slug is reserved for the core and the built-in plugins.
+func ReservedSlug(slug string) bool { return reservedSlugs[slug] }
+
 func (m *Manifest) Validate() error {
 	var p []string
 	add := func(format string, args ...any) { p = append(p, fmt.Sprintf(format, args...)) }
@@ -129,8 +144,8 @@ func (m *Manifest) Validate() error {
 		add(`"slug" is required`)
 	case len(m.Slug) < 2 || len(m.Slug) > 64 || !slugRe.MatchString(m.Slug):
 		add(`"slug" %q must be 2-64 characters of lowercase letters, digits and single dashes (e.g. "my-plugin")`, m.Slug)
-	case m.Slug == CoreOwner:
-		add(`"slug" %q is reserved`, m.Slug)
+	case ReservedSlug(m.Slug):
+		add(`"slug" %q is reserved for the core or a built-in plugin`, m.Slug)
 	}
 	if strings.TrimSpace(m.Name) == "" {
 		add(`"name" is required`)

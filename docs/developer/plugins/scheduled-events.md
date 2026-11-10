@@ -45,9 +45,10 @@ func init() {
   Posts created from cron have no author.
 - A run that fails (panic, timeout) is logged and counts as a plugin failure; the event stays
   scheduled. The job runner's retry logic applies to core jobs, not to plugin actions.
-- A deactivated plugin's events stay in the table and fire nothing until it is active again;
-  deleting the plugin leaves them until you unschedule. Call `UnscheduleEvent` from a
-  deactivation routine if you have one, or keep the schedule idempotent as above.
+- An event fires only the scheduling plugin's own action: another plugin listening on the same
+  hook name never receives it.
+- A deactivated plugin's events stay in the table and are skipped (not counted as failures) until
+  it is active again. Deleting the plugin removes its events, options and transients.
 - The 2-second callback timeout applies. Split long work into smaller events or keep state in
   storage between runs.
 

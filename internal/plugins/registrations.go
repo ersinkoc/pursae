@@ -386,3 +386,50 @@ func (p *Plugin) resetRegistrations() {
 	p.assets = nil
 	p.state.Unlock()
 }
+
+// registrationSnapshot is a copy of a plugin's registrations, taken before a
+// re-instantiation so a failed one can put them back (registrations.go).
+type registrationSnapshot struct {
+	hooks      []RegisteredHook
+	shortcodes map[string]string
+	rest       []RestRoute
+	settings   *SettingsPage
+	assets     []Asset
+}
+
+// snapshotRegistrations copies the current registrations.
+func (p *Plugin) snapshotRegistrations() registrationSnapshot {
+	p.state.Lock()
+	defer p.state.Unlock()
+	snap := registrationSnapshot{
+		shortcodes: make(map[string]string, len(p.shortcodes)),
+		rest:       append([]RestRoute(nil), p.rest...),
+		settings:   p.settings,
+		assets:     append([]Asset(nil), p.assets...),
+	}
+	for h := range p.regs {
+		snap.hooks = append(snap.hooks, h)
+	}
+	for k, v := range p.shortcodes {
+		snap.shortcodes[k] = v
+	}
+	return snap
+}
+
+// restoreRegistrations drops whatever a failed instantiation registered and
+// puts snap back, so the plugin stays reachable and the next call retries the
+// instantiation instead of the plugin silently losing every hook.
+func (p *Plugin) restoreRegistrations(snap registrationSnapshot) {
+	p.resetRegistrations()
+	p.state.Lock()
+	if len(snap.shortcodes) > 0 {
+		p.shortcodes = snap.shortcodes
+	}
+	p.rest = snap.rest
+	p.settings = snap.settings
+	p.assets = snap.assets
+	p.state.Unlock()
+	for _, h := range snap.hooks {
+		_ = p.registerHook(h)
+	}
+}

@@ -446,6 +446,13 @@ func hostEnqueue(p *Plugin, req []byte, kind string) (any, error) {
 	if !assetWhere[a.Where] {
 		return nil, invalid(`where must be "front", "admin" or "both"`)
 	}
+	if kind == "style" && (a.Where == "admin" || a.Where == "both") && !p.perms.Has(PermAdminSettings) && !p.perms.Has(PermAdminScripts) {
+		// A stylesheet in the admin can restyle consent screens and read attribute values
+		// through selectors (nonces, keys): it needs an admin permission, and is shown on the
+		// plugin's own settings page only unless the plugin also holds admin:scripts.
+		return nil, &CallError{Code: CodePermissionDenied,
+			Message: fmt.Sprintf("plugin %s lacks the %q permission required for admin styles", p.Slug(), PermAdminSettings)}
+	}
 	if kind == "script" {
 		// A script runs with the session of whoever views the page. In the admin that is an
 		// administrator; on the front end it is every visitor, logged-in administrators included.

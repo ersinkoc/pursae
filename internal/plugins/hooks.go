@@ -205,6 +205,30 @@ func (r *Registry) DoAction(ctx context.Context, name string, args ...any) {
 	}
 }
 
+// DoActionOwner runs only the callbacks owner registered for name (a plugin's
+// own scheduled event must not reach other plugins listening on the same name).
+// It reports whether owner had any callback there.
+func (r *Registry) DoActionOwner(ctx context.Context, owner, name string, args ...any) bool {
+	ran := false
+	for _, e := range r.snapshot(name, true) {
+		if e.owner != owner {
+			continue
+		}
+		ran = true
+		if e.action != nil {
+			e.action(ctx, args...)
+			continue
+		}
+		var value any
+		var rest []any
+		if len(args) > 0 {
+			value, rest = args[0], args[1:]
+		}
+		e.filter(ctx, value, rest...)
+	}
+	return ran
+}
+
 // ApplyFilters passes value through every callback registered for name and
 // returns the result.
 func (r *Registry) ApplyFilters(ctx context.Context, name string, value any, args ...any) any {

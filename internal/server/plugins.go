@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/plugins"
 	"wpgo/internal/settings"
@@ -344,8 +345,11 @@ func (h *pluginHost) HTTPGet(ctx context.Context, plugin, url string) (*plugins.
 func (h *pluginHost) StorageGet(ctx context.Context, plugin, key string) (string, bool, error) {
 	var v string
 	err := h.s.store.Pool.QueryRow(ctx, `SELECT d.value #>> '{}' FROM plugin_data d JOIN plugins p ON p.id = d.plugin_id WHERE p.slug = $1 AND d.key = $2`, plugin, key).Scan(&v)
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return "", false, nil
+	}
+	if err != nil { // a database error is not "not found": the guest must not overwrite the value
+		return "", false, err
 	}
 	return v, true, nil
 }
@@ -792,6 +796,7 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 			_ = s.plugins.rt.Unload(ctx, slug)
 		}
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM plugins WHERE slug = $1`, slug)
+		s.purgePluginData(ctx, slug)
 		_ = os.Remove(filepath.Join(s.plugins.dir, filepath.Base(slug)+".zip"))
 		_ = os.Remove(filepath.Join(s.plugins.dir, filepath.Base(slug)+".zip.prev"))
 		_ = os.Remove(s.pluginPendingPath(slug))
@@ -802,6 +807,21 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		return
 	}
 	c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
+}
+
+// purgePluginData removes what a deleted Wasm plugin left outside plugin_data (which cascades with
+// its plugins row): its scheduled events, its options (wasm:<slug>:*) and its transients
+// (plugin:<slug>:*). A later package with the same slug, possibly from another publisher, must not
+// inherit them, and the events would otherwise stay in the job table for good.
+func (s *Server) purgePluginData(ctx context.Context, slug string) {
+	if !plugins.ValidSlug(slug) { // slugs are [a-z0-9-]: no LIKE metacharacters
+		return
+	}
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE payload->>'plugin' = $1`, slug)
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM transients WHERE key LIKE $1`, transientKey(slug, "%"))
+	if tag, err := s.store.Pool.Exec(ctx, `DELETE FROM settings WHERE key LIKE $1`, pluginOptionKey(slug, "%")); err == nil && tag.RowsAffected() > 0 {
+		_ = s.settings.Load(ctx)
+	}
 }
 
 // installPackage verifies an uploaded package and stores it as an inactive plugin.
@@ -950,22 +970,81 @@ func (s *Server) pluginReplaceUpload(ctx context.Context, slug string) (*plugins
 	if err != nil {
 		return nil, errors.New("The uploaded package is no longer available; upload it again.")
 	}
-	var status string
-	var perms []byte
-	_ = s.store.Pool.QueryRow(ctx, `SELECT status, permissions FROM plugins WHERE slug = $1`, slug).Scan(&status, &perms)
-	m, err := s.installPackageChecked(ctx, data, pluginSourceUpload, slug, true)
-	if err != nil {
-		return nil, err
+	m, _, err := s.installAndReload(ctx, data, pluginSourceUpload, slug, true)
+	if m != nil {
+		_ = os.Remove(path)
 	}
-	_ = os.Remove(path)
-	if status == "active" {
-		if err := s.reloadPlugin(ctx, slug, m, perms); err != nil {
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug)
-			return m, fmt.Errorf("%s was replaced by %s but could not be activated again: %v", m.Name, m.Version, err)
+	return m, err
+}
+
+// installAndReload installs a package (installPackageChecked) and, when it replaced an active
+// plugin, loads the new version with the permissions it still declares, so the running code always
+// matches the installed version. The previous package stays as <slug>.zip.prev; when the new
+// version cannot be loaded the previous one is put back. updated reports that the slug was already
+// installed. A non-nil manifest with an error means the package was installed but is not running.
+func (s *Server) installAndReload(ctx context.Context, data []byte, source, wantSlug string, confirmed bool) (m *plugins.Manifest, updated bool, err error) {
+	slug := wantSlug
+	if slug == "" {
+		pkg, err := plugins.LoadPackage(bytes.NewReader(data), int64(len(data)), nil, false)
+		if err != nil { // let the checked install report it
+			m, err := s.installPackageChecked(ctx, data, source, wantSlug, confirmed)
+			return m, false, err
+		}
+		slug = pkg.Manifest.Slug
+	}
+	var installed, status, oldSource, digest, signer string
+	var perms []byte
+	if plugins.ValidSlug(slug) {
+		_ = s.store.Pool.QueryRow(ctx, `SELECT version, status, source, permissions, signature, signer FROM plugins WHERE slug = $1`, slug).
+			Scan(&installed, &status, &oldSource, &perms, &digest, &signer)
+	}
+	updated = installed != ""
+	zipPath := filepath.Join(s.plugins.dir, filepath.Base(slug)+".zip")
+	var prev []byte
+	prevErr := errors.New("not installed")
+	if updated {
+		if prev, prevErr = os.ReadFile(zipPath); prevErr == nil {
+			if err := writeFileAtomic(zipPath+".prev", prev, 0o644); err != nil {
+				return nil, updated, err
+			}
 		}
 	}
-	s.purgeAll(ctx)
-	return m, nil
+	m, err = s.installPackageChecked(ctx, data, source, wantSlug, confirmed)
+	if err != nil {
+		return nil, updated, err
+	}
+	if m.Slug != slug { // the package named another plugin than its manifest said on the first read
+		return m, updated, nil
+	}
+	if status == "active" {
+		if err := s.reloadPlugin(ctx, slug, m, perms); err != nil {
+			if prevErr == nil && writeFileAtomic(zipPath, prev, 0o644) == nil { // roll back to the previous package
+				_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET version = $2, signature = $3, signer = $4, permissions = $5, source = $6 WHERE slug = $1`,
+					slug, installed, digest, signer, perms, oldSource)
+				if lerr := s.loadPlugin(ctx, slug, perms); lerr == nil {
+					s.plugins.hooks.DoAction(ctx, "init")
+					s.purgeAll(ctx)
+					return nil, updated, fmt.Errorf("%s %s could not be activated (%v); version %s was restored", m.Name, m.Version, err, installed)
+				}
+			}
+			_, _ = s.store.Pool.Exec(ctx, `UPDATE plugins SET status = 'inactive' WHERE slug = $1`, slug)
+			s.purgeAll(ctx)
+			return m, updated, fmt.Errorf("%s was replaced by %s but could not be activated again: %v", m.Name, m.Version, err)
+		}
+	}
+	if updated {
+		s.purgeAll(ctx)
+	}
+	return m, updated, nil
+}
+
+// pluginInstalledRedirect is where an install from the upload form or the marketplace lands: a new
+// plugin waits for activation, a replaced one reports the version now running.
+func pluginInstalledRedirect(m *plugins.Manifest, updated bool) string {
+	if updated {
+		return "/wp-admin/plugins?updated=" + url.QueryEscape(m.Name+" "+m.Version)
+	}
+	return "/wp-admin/plugins?installed=" + url.QueryEscape(m.Name)
 }
 
 // writeFileAtomic writes a file through a temporary file in the same directory and a rename, so a
@@ -1045,7 +1124,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		}
 		data, _ := io.ReadAll(io.LimitReader(f, 32<<20))
 		f.Close()
-		m, err := s.installPackage(ctx, data)
+		m, updated, err := s.installAndReload(ctx, data, pluginSourceUpload, "", false)
 		var replace *pluginReplaceError
 		if errors.As(err, &replace) {
 			// Like WordPress' "Replace current with uploaded": keep the upload and ask.
@@ -1058,7 +1137,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("Installation failed: "+err.Error()))
 			return
 		}
-		c.Redirect(http.StatusFound, "/wp-admin/plugins?installed="+url.QueryEscape(m.Name))
+		c.Redirect(http.StatusFound, pluginInstalledRedirect(m, updated))
 		return
 	}
 	if c.Query("action") == "replace-plugin" { // Replace current with uploaded
@@ -1082,12 +1161,12 @@ func (s *Server) pluginInstall(c *gin.Context) {
 			return
 		}
 		if c.Query("source") == "hub" {
-			m, err := s.hubInstallPlugin(ctx, slug)
+			m, updated, err := s.hubInstallPlugin(ctx, slug)
 			if err != nil {
 				c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("Installation failed: "+err.Error()))
 				return
 			}
-			c.Redirect(http.StatusFound, "/wp-admin/plugins?installed="+url.QueryEscape(m.Name))
+			c.Redirect(http.StatusFound, pluginInstalledRedirect(m, updated))
 			return
 		}
 		for _, path := range s.plugins.market {
@@ -1096,12 +1175,12 @@ func (s *Server) pluginInstall(c *gin.Context) {
 				continue
 			}
 			data, _ := os.ReadFile(path)
-			m, err := s.installPackage(ctx, data)
+			m, updated, err := s.installAndReload(ctx, data, pluginSourceUpload, slug, false)
 			if err != nil {
 				c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+url.QueryEscape("Installation failed: "+err.Error()))
 				return
 			}
-			c.Redirect(http.StatusFound, "/wp-admin/plugins?installed="+url.QueryEscape(m.Name))
+			c.Redirect(http.StatusFound, pluginInstalledRedirect(m, updated))
 			return
 		}
 		c.Redirect(http.StatusFound, "/wp-admin/plugin-install?error=notfound")

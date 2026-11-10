@@ -11,7 +11,10 @@ enqueued on the front end, in the admin, or both. Permission: `content:filter`; 
 needs `content:html` on the front end and `admin:scripts` in the admin (`wpgo.Both` needs both),
 because a script runs with the session of whoever views the page — on the front end that includes
 logged-in administrators. Both permissions are shown as "full control of the site" on the activation
-screen and are not ticked by default. A refused enqueue is logged and the asset is not printed.
+screen and are not ticked by default. A **stylesheet** in the admin (`wpgo.Admin`, `wpgo.Both`) needs
+`admin:settings` (or `admin:scripts`) and is printed on the plugin's own settings page
+(`/wp-admin/options-general?page=<slug>`) only; with `admin:scripts` it is printed on every admin
+screen. A refused enqueue is logged and the asset is not printed.
 
 ## Rules
 

@@ -117,3 +117,16 @@ func TestRegistryConcurrency(t *testing.T) {
 		t.Fatal("hooks left behind")
 	}
 }
+
+func TestDoActionOwner(t *testing.T) {
+	r := NewRegistry()
+	var got []string
+	r.Owner("a").AddAction("cron_x", 10, func(_ context.Context, args ...any) { got = append(got, "a") })
+	r.Owner("b").AddAction("cron_x", 10, func(_ context.Context, args ...any) { got = append(got, "b") })
+	if !r.DoActionOwner(context.Background(), "a", "cron_x", 1) || strings.Join(got, ",") != "a" {
+		t.Fatalf("owner a ran %v", got)
+	}
+	if r.DoActionOwner(context.Background(), "c", "cron_x") {
+		t.Fatal("owner without callbacks reported as run")
+	}
+}

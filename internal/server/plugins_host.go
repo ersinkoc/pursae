@@ -13,9 +13,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/plugins"
 	"wpgo/internal/store"
@@ -191,7 +193,7 @@ func (h *pluginHost) InsertPost(ctx context.Context, _ string, in plugins.PostIn
 			_ = h.s.store.SetPostTerms(ctx, p.ID, "category", []int64{cat})
 		}
 	}
-	h.s.pluginSavePost(ctx, p)
+	h.s.afterPostSave(ctx, p) // the same save_post chain as every other save path
 	h.s.purgeAll(ctx)
 	return h.GetPost(ctx, "", p.ID)
 }
@@ -211,8 +213,7 @@ func (h *pluginHost) UpdatePost(ctx context.Context, _ string, id int64, in plug
 	if err := h.s.store.UpdatePost(ctx, p, editor); err != nil {
 		return nil, err
 	}
-	h.s.wbAfterPostSave(ctx, p) // Pursae Web Builder drift
-	h.s.pluginSavePost(ctx, p)
+	h.s.afterPostSave(ctx, p) // language, SEO redirects, menus, Web Builder drift, save_post
 	h.s.purgeAll(ctx)
 	return h.GetPost(ctx, "", p.ID)
 }
@@ -307,8 +308,11 @@ func transientKey(plugin, key string) string { return "plugin:" + plugin + ":" +
 func (h *pluginHost) TransientGet(ctx context.Context, plugin, key string) (json.RawMessage, bool, error) {
 	var raw []byte
 	err := h.s.store.Pool.QueryRow(ctx, `SELECT value FROM transients WHERE key = $1 AND (expires_at IS NULL OR expires_at > now())`, transientKey(plugin, key)).Scan(&raw)
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, false, nil
+	}
+	if err != nil { // a database error is not "not found"
+		return nil, false, err
 	}
 	return json.RawMessage(raw), true, nil
 }
@@ -408,12 +412,43 @@ func (s *Server) servePluginRest(c *gin.Context, route, method string) bool {
 		return true
 	}
 	for k, v := range resp.Headers {
-		if k = http.CanonicalHeaderKey(k); k == "Set-Cookie" || k == "Content-Type" || k == "Content-Length" {
+		k = http.CanonicalHeaderKey(k)
+		if !pluginRestHeaderAllowed(p.Slug(), k, v) {
+			if _, seen := pluginRestHeaderDropped.LoadOrStore(p.Slug()+"\x00"+k, true); !seen {
+				p.HostLog("warning", fmt.Sprintf("REST response header %q dropped: not on the allowed list", k))
+			}
 			continue
 		}
 		c.Header(k, v)
 	}
 	c.Data(resp.Status, "application/json; charset=UTF-8", resp.Body)
+	return true
+}
+
+// pluginRestHeaders are the response headers a plugin REST handler may set (besides its own
+// X-<Slug>-* headers). Everything else (cookies, CORS, CSP, Clear-Site-Data, X-Accel-Redirect /
+// X-Sendfile, proxy cache control, Content-Encoding, Refresh, …) is dropped.
+var pluginRestHeaders = map[string]bool{
+	"Cache-Control": true, "Expires": true, "Etag": true, "Last-Modified": true, "Vary": true, "Link": true,
+	"Retry-After": true, "Content-Language": true, "Content-Disposition": true, "X-Wp-Total": true, "X-Wp-Totalpages": true,
+	"Location": true,
+}
+
+// pluginRestHeaderDropped remembers which dropped headers were logged already (slug + name).
+var pluginRestHeaderDropped sync.Map
+
+// pluginRestHeaderAllowed reports whether a plugin REST handler may send header k (canonical) with
+// value v. Location must be a same-site path.
+func pluginRestHeaderAllowed(slug, k, v string) bool {
+	if strings.HasPrefix(k, http.CanonicalHeaderKey("X-"+slug+"-")) {
+		return true
+	}
+	if !pluginRestHeaders[k] {
+		return false
+	}
+	if k == "Location" {
+		return strings.HasPrefix(v, "/") && !strings.HasPrefix(v, "//") && !strings.ContainsAny(v, "\\\r\n")
+	}
 	return true
 }
 
@@ -635,12 +670,19 @@ func (s *Server) pluginAsset(c *gin.Context) {
 }
 
 // pluginStyleTags returns <link> tags for the styles plugins enqueued for where (front|admin).
-func (s *Server) pluginStyleTags(where string) template.HTML {
+// In the admin (screen is the admin screen) a plugin's styles load on its own settings page only,
+// unless it holds admin:scripts (which may change every admin screen anyway).
+func (s *Server) pluginStyleTags(where, screen string) template.HTML {
 	if s.plugins == nil || s.plugins.rt == nil {
 		return ""
 	}
 	var sb strings.Builder
 	for _, a := range s.plugins.rt.EnqueuedAssets(where, "style") {
+		if where == "admin" && screen != "options-general?page="+a.Plugin {
+			if p, ok := s.plugins.rt.Plugin(a.Plugin); !ok || !p.HasPermission(plugins.PermAdminScripts) {
+				continue
+			}
+		}
 		id := a.Plugin + "-" + a.Asset.Handle
 		fmt.Fprintf(&sb, "<link rel='stylesheet' id='%s-css' href='%s' media='%s' />\n",
 			html.EscapeString(id), html.EscapeString(pluginAssetURL(a.Plugin, a.Asset.Src, a.Version)), html.EscapeString(a.Asset.Media))

@@ -275,6 +275,30 @@ func TestPluginShortcodeSettingsAssetsRestAndCron(t *testing.T) {
 	if n := countJobs(t, srv, "cron_shortcode_demo_tick"); n != 1 {
 		t.Errorf("init re-schedule duplicated the job: %d rows", n)
 	}
+
+	// While the plugin is not running its event is skipped, not failed; deleting the plugin
+	// removes its events, options and transients.
+	_ = srv.plugins.rt.Unload(ctx, "shortcode-demo")
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE jobs SET run_at = now() - interval '1 minute' WHERE name = 'cron_shortcode_demo_tick'`)
+	srv.runDueJobs(ctx, "test", srv.jobHandlers())
+	var lastErr string
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT status, last_error FROM jobs WHERE name = 'cron_shortcode_demo_tick'`).Scan(&status, &lastErr)
+	if status != "queued" || lastErr != "" {
+		t.Errorf("event of an unloaded plugin: %s %q", status, lastErr)
+	}
+	h := &pluginHost{s: srv}
+	_ = h.UpdateOption(ctx, "shortcode-demo", "shortcode_demo_secret", "k")
+	_ = h.TransientSet(ctx, "shortcode-demo", "t", json.RawMessage(`1`), 0)
+	srv.purgePluginData(ctx, "shortcode-demo")
+	if n := countJobs(t, srv, "cron_shortcode_demo_tick"); n != 0 {
+		t.Errorf("deleted plugin's events left: %d", n)
+	}
+	if v, _, _ := h.GetOption(ctx, "shortcode-demo", "shortcode_demo_secret"); v != nil {
+		t.Errorf("deleted plugin's option left: %v", v)
+	}
+	if _, ok, _ := h.TransientGet(ctx, "shortcode-demo", "t"); ok {
+		t.Error("deleted plugin's transient left")
+	}
 }
 
 func countJobs(t *testing.T, srv *Server, name string) int {
@@ -436,5 +460,76 @@ func TestPluginScheduleEventIdempotent(t *testing.T) {
 	}
 	if n := countJobs(t, srv, "cron_idem_tick"); n != 0 {
 		t.Errorf("unschedule left %d rows", n)
+	}
+}
+
+// demoPackageVersion repacks the demo plugin with another manifest version.
+func demoPackageVersion(t *testing.T, version string) []byte {
+	t.Helper()
+	data := demoPackage(t)
+	pkg, err := plugins.LoadPackage(bytes.NewReader(data), int64(len(data)), nil, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifest := bytes.Replace(pkg.ManifestJSON, []byte(`"version": "1.0.0"`), []byte(`"version": "`+version+`"`), 1)
+	extras := map[string][]byte{}
+	for k, v := range pkg.Assets {
+		extras["assets/"+strings.TrimPrefix(k, "assets/")] = v
+	}
+	var buf bytes.Buffer
+	if err := plugins.WritePackage(&buf, manifest, pkg.Wasm, extras, nil); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+// Installing a new version of an active plugin (upload, marketplace, REST) loads the new code at
+// once, so the running version always matches the installed one.
+func TestPluginUploadOfActivePluginReloadsIt(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	installDemo(t, srv)
+	ctx := context.Background()
+	m, updated, err := srv.installAndReload(ctx, demoPackageVersion(t, "1.0.1"), pluginSourceUpload, "", false)
+	if err != nil || !updated {
+		t.Fatalf("install new version: %v updated=%v", err, updated)
+	}
+	p, ok := srv.plugins.rt.Plugin(m.Slug)
+	if !ok || p.Version() != "1.0.1" {
+		t.Fatalf("running version not reloaded: ok=%v", ok)
+	}
+	if disabled, _ := p.Disabled(); disabled || !srv.plugins.hooks.HasFilter("the_content") && len(p.Shortcodes()) == 0 {
+		t.Fatal("reloaded plugin has no registrations")
+	}
+	var status, version string
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT status, version FROM plugins WHERE slug = $1`, m.Slug).Scan(&status, &version)
+	if status != "active" || version != "1.0.1" {
+		t.Fatalf("row after reload: %s %s", status, version)
+	}
+	if _, err := os.Stat(filepath.Join(srv.plugins.dir, m.Slug+".zip.prev")); err != nil {
+		t.Fatalf("previous package not kept: %v", err)
+	}
+	if got := pluginInstalledRedirect(m, true); !strings.Contains(got, "updated=") {
+		t.Fatalf("redirect %q", got)
+	}
+}
+
+// Posts a plugin creates go through the same save chain as every other save path: with Pursae
+// Multi Language active they get the default language.
+func TestPluginInsertPostRunsAfterPostSave(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	golylangToggle(t, c, base, "activate")
+	pllAddLanguage(t, c, base, "English", "en_US", "en", "us")
+	ctx := context.Background()
+	h := &pluginHost{s: srv}
+	title, status := "From a plugin", "publish"
+	pd, err := h.InsertPost(ctx, "shortcode-demo", plugins.PostInput{Title: &title, Status: &status})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := srv.pllObjLang(ctx, pllPost, pd.ID); got != "en" {
+		t.Fatalf("plugin-inserted post language %q, want en", got)
 	}
 }

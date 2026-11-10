@@ -28,7 +28,7 @@ silently drop a permission.
 
 | Field | Required | Rules |
 |-------|----------|-------|
-| `slug` | yes | 2–64 characters, `^[a-z0-9]+(-[a-z0-9]+)*$`. Identifies the plugin, owns its hooks, prefixes its REST namespace and option names. `core`, `classic-editor` and `wpgo-cache` are reserved |
+| `slug` | yes | 2–64 characters, `^[a-z0-9]+(-[a-z0-9]+)*$`. Identifies the plugin, owns its hooks, prefixes its REST namespace and option names. Reserved: `core`, the slugs of the built-in plugins (`classic-editor`, `wpgo-cache`, `goocommerce`, …) and the roots of core REST namespaces (`wp`, `wp-admin`, `wp-json`, `wp-content`, `wp-includes`, `wp-site-health`, `wp-block-editor`, `wp-abilities`, `admin`, `oembed`, `batch`, `pursae`, `wpgo`, `wc`, `wc-admin`, `wc-analytics`, `wc-store`, `wc-telemetry`, `pll`, `contact-form-7`, `web-builder`, `elementor`, `gooike`, `headlessgo`, `pixelgo`, `seogo`, `rankmath`, `yoast`); a package using one is refused at install and does not load |
 | `name` | yes | up to 100 characters |
 | `version` | yes | `1.2.3` or `1.2.3-beta.1`; the Hub refuses to publish a version that is not newer than the last |
 | `description` | no | up to 2000 characters, plain text |

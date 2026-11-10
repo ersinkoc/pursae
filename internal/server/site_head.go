@@ -98,8 +98,8 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		}
 		fmt.Fprintf(&sb, "<link rel='shortlink' href='%s' />\n", html.EscapeString(lb.HomeURL(short+itoa64(q.Post.ID))))
 	}
-	sb.WriteString(customizeHead(v))                                                                // custom background, site icon, Additional CSS
-	sb.WriteString(string(s.pluginStyleTags("front")) + string(s.pluginScriptTags("front", false))) // plugin assets
+	sb.WriteString(customizeHead(v))                                                                    // custom background, site icon, Additional CSS
+	sb.WriteString(string(s.pluginStyleTags("front", "")) + string(s.pluginScriptTags("front", false))) // plugin assets
 	return template.HTML(sb.String())
 }
 

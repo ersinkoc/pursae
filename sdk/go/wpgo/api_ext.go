@@ -306,8 +306,9 @@ func CurrentUser() (*User, error) {
 
 // ScheduleEvent runs the action hook every interval (at least a minute),
 // starting one interval from now. hook must start with "cron_", be listed in
-// plugin.json "hooks" and have an action registered with AddAction; args is
-// passed to it as its single argument. Scheduling a hook again with the same
+// plugin.json "hooks" and have an action registered with AddAction. The action
+// receives one argument, {"plugin": "<slug>", "args": args}; only the scheduling
+// plugin's own action runs. Scheduling a hook again with the same
 // interval and args keeps the existing schedule (so calling it from OnInit on
 // every start does not push the next run back); a changed interval or args
 // replaces it. Requires the "cron" permission.
@@ -511,7 +512,9 @@ type Script struct {
 
 // EnqueueStyle adds a stylesheet to the front end and/or admin pages. It is
 // served at /wp-content/plugins/<slug>/assets/<src>. Call it from init or
-// OnInit. Requires the "content:filter" permission.
+// OnInit. Requires the "content:filter" permission, plus "admin:settings" (or
+// "admin:scripts") for the admin, where the stylesheet is printed on the
+// plugin's own settings page only unless the plugin holds "admin:scripts".
 func EnqueueStyle(s Style) {
 	queueRegistration(func() {
 		if _, err := hostCall("enqueue_style", map[string]any{"handle": s.Handle, "src": s.Src, "deps": s.Deps, "where": s.Where, "media": s.Media}); err != nil {

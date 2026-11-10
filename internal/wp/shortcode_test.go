@@ -72,3 +72,41 @@ func TestParseShortcodeAttrs(t *testing.T) {
 		t.Error("ValidShortcodeTag")
 	}
 }
+
+// Shortcodes inside markup follow do_shortcodes_in_html_tags(): attribute values get the output
+// escaped for the attribute, everything else inside tags, comments and CDATA is left alone.
+func TestDoShortcodeInHTMLTags(t *testing.T) {
+	box := func(tag string, attrs map[string]string, content string) string {
+		switch tag {
+		case "box":
+			return `<div class="box box-` + attrs["style"] + `">z</div>`
+		case "url":
+			return attrs["to"]
+		case "css":
+			return "color: red"
+		}
+		return ""
+	}
+	tags := []string{"box", "url", "css"}
+	cases := []struct{ name, in, want string }{
+		{"attribute output is escaped",
+			`<a href="/x" title="[box style=x/onmouseover=alert(1)//]">t</a>`,
+			`<a href="/x" title="&lt;div class=&#34;box box-x/onmouseover=alert(1)//&#34;&gt;z&lt;/div&gt;">t</a>`},
+		{"plain attribute value", `<a title="[url to=hello]">t</a>`, `<a title="hello">t</a>`},
+		{"single-quoted and unquoted values", `<a title='[url to=a]' data-x=[css]>t</a>`, `<a title="a" data-x="color: red">t</a>`},
+		{"bad protocol keeps the original", `<a href="[url to=javascript:alert(1)]">t</a>`, `<a href="[url to=javascript:alert(1)]">t</a>`},
+		{"good protocol", `<a href="[url to=https://e.com/a]">t</a>`, `<a href="https://e.com/a">t</a>`},
+		{"event handler is never expanded", `<a onclick="[url to=x]">t</a>`, `<a onclick="[url to=x]">t</a>`},
+		{"style goes through SafeCSS", `<p style="[css]">t</p>`, `<p style="color: red">t</p>`},
+		{"comment untouched", `<!-- [box style=a] --><p>x [url to=b]</p>`, `<!-- [box style=a] --><p>x b</p>`},
+		{"enclosing shortcode around markup", `[url to=x]<a title="[y]">t</a>`, `x<a title="[y]">t</a>`},
+		{"quoted > does not end the tag", `<a title="a>b [url to=c]">t</a>`, `<a title="a&gt;b c">t</a>`},
+		{"less-than in text", `a < b [url to=c]`, `a < b c`},
+		{"sentinel characters survive", "<p>\uE000[url to=c]</p>", "<p>&#xE000;c</p>"},
+	}
+	for _, tc := range cases {
+		if got := DoShortcode(tc.in, tags, box); got != tc.want {
+			t.Errorf("%s:\n got %q\nwant %q", tc.name, got, tc.want)
+		}
+	}
+}
