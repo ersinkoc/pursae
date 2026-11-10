@@ -390,7 +390,7 @@ export class PageToolsController {
       this.setSeo({ load: 'ready', data: r.data, draft: seoDraftOf(r.data.fields) })
     } catch (e) {
       if (n !== this.seq.seo) return
-      this.setSeo({ load: 'error', data: null, draft: null, error: errorText(e, t('The SEO settings could not be loaded.')) })
+      this.setSeo({ load: this.seoDirty ? 'ready' : 'error', ...(this.seoDirty ? {} : { data: null, draft: null }), error: errorText(e, t('The SEO settings could not be loaded.')) })
     }
   }
 

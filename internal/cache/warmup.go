@@ -191,8 +191,8 @@ func warmOne(ctx context.Context, raw, ua string, base *url.URL, opts WarmupOpti
 		return "", 0, err
 	}
 	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
-	return resp.Header.Get(HeaderStatus), resp.StatusCode, nil
+	_, err = io.Copy(io.Discard, resp.Body)
+	return resp.Header.Get(HeaderStatus), resp.StatusCode, err
 }
 
 // discardWriter is a minimal in-process ResponseWriter that drops the body.

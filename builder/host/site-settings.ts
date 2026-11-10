@@ -141,15 +141,24 @@ export class SiteSettingsController {
   }
 
   async load() {
+    const draft = this.state.draft
     const seq = ++this.loadSeq
     this.set({ loading: true, error: '' })
     try {
       const r = await this.d.rest.request<SiteSettings>('GET', siteSettingsRoute())
       if (seq !== this.loadSeq) return
-      this.set({ loading: false, data: r.data, draft: draftOf(r.data) })
+      const next = draftOf(r.data)
+      const latest = this.state.draft
+      if (draft && latest) {
+        for (const key of Object.keys(draft) as (keyof SiteDraft)[]) {
+          if (latest[key] !== draft[key]) Object.assign(next, { [key]: latest[key] })
+        }
+      }
+      this.set({ loading: false, data: r.data, draft: next })
     } catch (e) {
       if (seq !== this.loadSeq) return
-      this.set({ loading: false, data: null, draft: null, error: errorText(e, t('The site settings could not be loaded.')) })
+      const edited = draft && this.state.draft !== draft
+      this.set({ loading: false, ...(edited ? {} : { data: null, draft: null }), error: errorText(e, t('The site settings could not be loaded.')) })
     }
   }
 
