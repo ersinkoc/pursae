@@ -53,6 +53,7 @@ func TestPixelWooFunnel(t *testing.T) {
 	st.Advanced = true
 	st.ContentID = "sku"
 	st.IDPrefix = "shop_"
+	st.RequireConsent = false // no consent manager in this test site
 	if err := srv.pixelSave(ctx, st); err != nil {
 		t.Fatal(err)
 	}
@@ -171,6 +172,7 @@ func TestPixelPurchaseSameRequest(t *testing.T) {
 	}
 	st := srv.pixelLoad()
 	st.Platforms["meta"] = pixelPlatformCfg{Enabled: true, IDs: []string{"123456789012345"}, Token: "META_TOKEN", ServerSide: true}
+	st.RequireConsent = false // no consent manager in this test site
 	if err := srv.pixelSave(ctx, st); err != nil {
 		t.Fatal(err)
 	}

@@ -102,6 +102,7 @@ type msScreen struct {
 	ConnOpts                                []choice
 	Events                                  []msEvent
 	DomainCheck                             []msDNSCheck
+	WebhookURLs                             [][2]string // Email Log settings: mailer title, bounce webhook URL
 	// Wizard
 	Step, ErrorText string
 	WizardMailers   []msMailerView
@@ -326,6 +327,10 @@ func (s *Server) msSettingsScreen(c *gin.Context) {
 		}
 	case "logs":
 		d.Retention = msChoices(msRetention, strconv.Itoa(o.Logs.Retention))
+		home := strings.TrimRight(s.links(c).Home, "/")
+		for _, m := range [][2]string{{"postmark", "Postmark"}, {"sendgrid", "SendGrid"}, {"mailgun", "Mailgun"}} {
+			d.WebhookURLs = append(d.WebhookURLs, [2]string{m[1], home + msTrackBase + "/webhook/" + m[0] + "?token=" + s.msWebhookToken()})
+		}
 	case "alerts":
 		copy(d.AlertEmail[:], o.Alerts.Email.URLs)
 		copy(d.AlertSlack[:], o.Alerts.Slack.URLs)
@@ -439,6 +444,8 @@ func (s *Server) msSaveSettings(c *gin.Context, tab string) {
 		o.Logs.Enabled = formBool(c, "logs_enabled")
 		o.Logs.LogContent = formBool(c, "log_email_content")
 		o.Logs.Retention = formInt(c, "log_retention_period")
+		o.Logs.TrackOpens = formBool(c, "track_opens")
+		o.Logs.TrackClicks = formBool(c, "track_clicks")
 	case "alerts":
 		o.Alerts.Threshold = formInt(c, "failed_threshold")
 		hook := func(h *msHook, prefix string) {
@@ -509,7 +516,7 @@ func (s *Server) msSaveSettings(c *gin.Context, tab string) {
 		if unlocked("general.do_not_send") {
 			o.General.DoNotSend = formBool(c, "do_not_send")
 		}
-		o.General.HideAnnouncements = formBool(c, "am_notifications_hidden")
+		// "Hide Announcements" has no control any more (Pursae shows none); the stored value is kept for import/export.
 		o.General.HideErrors = formBool(c, "email_delivery_errors_hidden")
 		o.General.HideWidget = formBool(c, "dashboard_widget_hidden")
 		if unlocked("general.summary_report_email_disabled") {
@@ -928,7 +935,7 @@ func (s *Server) msToolsScreen(c *gin.Context) {
 			d.TestTo, d.TestHTML, d.TestConn = strings.TrimSpace(c.PostForm("wp-mail-smtp[test_email]")), formBool(c, "wp-mail-smtp[test_email_html]"), c.PostForm("wp-mail-smtp[test_connection]")
 			s.msRunTest(c, o, d)
 			if d.TestOK && c.PostForm("domain_check") != "" {
-				d.DomainCheck = msCheckDomain(c, s.msTestFromDomain(o, d.TestConn))
+				d.DomainCheck = msCheckDomain(c, s.msTestFromDomain(o, d.TestConn), s.msTestMailer(o, d.TestConn), strings.TrimSpace(c.PostForm("dkim_selector")))
 			}
 		}
 		for i := range d.ConnOpts {
@@ -1016,13 +1023,13 @@ func (s *Server) msRunTest(c *gin.Context, o *msOptions, d *msScreen) {
 	s.msLogResult(ctx, o, msg, res, "Pursae SMTP: Email Test")
 	d.TestDebug = debug.String()
 	if res.Err != nil {
-		msLastError.Store(s, msErrorState{Err: res.Err.Error(), At: time.Now(), Mailer: cn.Mailer})
+		s.msSetLastError(ctx, cn.Mailer, res.Err)
 		s.msDebugEvent(ctx, o, "error", fmt.Sprintf("Email Test (%s): %v", msMailerTitle(cn.Mailer), res.Err), "Pursae SMTP: Email Test")
 		d.TestResult = res.Err.Error()
 		d.TestHints = msHints(cn.Mailer, res.Err.Error())
 		return
 	}
-	msLastError.Delete(s)
+	s.msClearLastError(ctx)
 	d.TestOK = true
 	d.TestResult = "Test HTML email was sent successfully! Please check your inbox to make sure it was delivered."
 	if !d.TestHTML {
@@ -1054,7 +1061,7 @@ func msHints(mailer, err string) []string {
 }
 
 // msCheckDomain is the Domain Check of the Email Test: SPF, DMARC and MX records of the From domain.
-func msCheckDomain(c *gin.Context, domain string) []msDNSCheck {
+func msCheckDomain(c *gin.Context, domain, mailer, selector string) []msDNSCheck {
 	if domain == "" {
 		return nil
 	}
@@ -1086,8 +1093,77 @@ func msCheckDomain(c *gin.Context, domain string) []msDNSCheck {
 		}
 		mx.Status, mx.Detail = "ok", strings.Join(hosts, ", ")
 	}
-	out = append(out, spf, dmarc, mx, msDNSCheck{Name: "DKIM", Status: "warning", Detail: "DKIM depends on your mailer's selector; check the domain verification page of your mailer."})
+	out = append(out, spf, dmarc, mx, msCheckDKIM(ctx, r.LookupTXT, r.LookupCNAME, domain, mailer, selector))
 	return out
+}
+
+// msDKIMSelectors are the DKIM selectors each mailer's setup guide uses, tried in order.
+var msDKIMSelectors = map[string][]string{
+	"sendgrid":     {"s1", "s2", "em"},
+	"mailgun":      {"mx", "k1", "krs", "smtp", "email"},
+	"gmail":        {"google"},
+	"outlook":      {"selector1", "selector2"},
+	"sendinblue":   {"mail", "brevo1", "brevo2"},
+	"mandrill":     {"mandrill"},
+	"resend":       {"resend"},
+	"mailjet":      {"mailjet"},
+	"mailersend":   {"mlsend", "mlsend2"},
+	"postmark":     {"pm"},
+	"zoho":         {"zoho", "zmail"},
+	"sparkpost":    {"scph1119", "sparkpost"},
+	"elasticemail": {"api", "ee"},
+	"smtp2go":      {"s1"},
+}
+
+// msDKIMDefaults are tried after the mailer's own selectors (and for a plain SMTP server).
+var msDKIMDefaults = []string{"default", "selector1", "selector2", "google", "k1", "s1", "s2", "mail", "dkim", "smtp"}
+
+// msCheckDKIM looks for a DKIM key under <selector>._domainkey.<domain>: the selector the user
+// typed, else the ones the mailer is known to use, else common defaults. Amazon SES publishes
+// random-looking CNAME selectors, which cannot be guessed; the user can type theirs.
+func msCheckDKIM(ctx context.Context, txt func(context.Context, string) ([]string, error), cname func(context.Context, string) (string, error), domain, mailer, selector string) msDNSCheck {
+	var sels []string
+	seen := map[string]bool{}
+	add := func(list ...string) {
+		for _, v := range list {
+			if v = strings.ToLower(strings.Trim(strings.TrimSpace(v), ".")); v != "" && !seen[v] {
+				seen[v] = true
+				sels = append(sels, v)
+			}
+		}
+	}
+	if selector = strings.TrimSpace(selector); selector != "" {
+		selector = strings.TrimSuffix(strings.TrimSuffix(strings.ToLower(selector), "."+domain), "._domainkey")
+		add(selector)
+	} else {
+		add(msDKIMSelectors[mailer]...)
+		add(msDKIMDefaults...)
+	}
+	for _, sel := range sels {
+		name := sel + "._domainkey." + domain
+		if recs, err := txt(ctx, name); err == nil {
+			for _, t := range recs {
+				if l := strings.ToLower(t); strings.Contains(l, "v=dkim1") || strings.Contains(l, "p=") {
+					return msDNSCheck{Name: "DKIM", Status: "ok", Detail: "Selector \"" + sel + "\" found at " + name + "."}
+				}
+			}
+		}
+		if target, err := cname(ctx, name); err == nil && strings.TrimSuffix(target, ".") != name {
+			return msDNSCheck{Name: "DKIM", Status: "ok", Detail: "Selector \"" + sel + "\" found at " + name + " (CNAME to " + strings.TrimSuffix(target, ".") + ")."}
+		}
+	}
+	if selector != "" {
+		return msDNSCheck{Name: "DKIM", Status: "warning", Detail: "No DKIM key found at " + selector + "._domainkey." + domain + ". Check the selector and the DNS record your mailer asked you to add."}
+	}
+	return msDNSCheck{Name: "DKIM", Status: "warning", Detail: "No DKIM key found for the usual " + msMailerTitle(mailer) + " selectors. Your mailer may use another selector: enter it under Domain Check and test again."}
+}
+
+// msTestMailer is the mailer slug of a connection ("primary" is the main one).
+func (s *Server) msTestMailer(o *msOptions, connID string) string {
+	if cn := o.conn(connID); cn != nil {
+		return cn.Mailer
+	}
+	return o.Mail.Mailer
 }
 
 // msExport streams the email log as CSV or as a zip of .eml files.
@@ -1193,7 +1269,7 @@ func (s *Server) msWizard(c *gin.Context) {
 			if d.TestOK {
 				raw.WizardDone = true
 				_ = s.msSave(c, raw)
-				d.DomainCheck = msCheckDomain(c, s.msTestFromDomain(o, "primary"))
+				d.DomainCheck = msCheckDomain(c, s.msTestFromDomain(o, "primary"), s.msTestMailer(o, "primary"), "")
 			}
 			s.msRender(c, d, "Pursae SMTP Setup Wizard")
 		default:
@@ -1269,8 +1345,7 @@ func (s *Server) mailSMTPNotices(c *gin.Context) []notice {
 		out = append(out, notice{Type: "error", Message: template.HTML(`<strong>Pursae SMTP:</strong> The "Do Not Send" option is enabled: this site is not sending any emails. <a href="` +
 			msBase + `wp-mail-smtp&amp;tab=misc">Change the setting</a>.`)})
 	}
-	if v, ok := msLastError.Load(s); ok && !o.General.HideErrors {
-		st := v.(msErrorState)
+	if st, ok := s.msGetLastError(); ok && !o.General.HideErrors {
 		out = append(out, notice{Type: "error", Message: template.HTML(`<strong>Heads up! Pursae SMTP has detected an issue: your last email failed to send.</strong><br>` +
 			template.HTMLEscapeString(msMailerTitle(st.Mailer)+": "+st.Err) + `<br><a href="` + msBase + `wp-mail-smtp-logs&amp;status=failed">View Email Log</a> &middot; <a href="` +
 			msBase + `wp-mail-smtp">Fix the settings</a> &middot; <a href="` + msBase + `wp-mail-smtp-tools">Send a test email</a>`)})

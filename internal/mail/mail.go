@@ -34,6 +34,9 @@ type Message struct {
 	Cc          []string     `json:",omitempty"`
 	Bcc         []string     `json:",omitempty"`
 	Attachments []Attachment `json:",omitempty"`
+	// Kind names the kind of notification ("password_reset", "goo_new_order", ...) so mail plugins
+	// can classify a message without parsing its subject; empty for ordinary mail.
+	Kind string `json:",omitempty"`
 }
 
 // Attachment is a file attached to a message.

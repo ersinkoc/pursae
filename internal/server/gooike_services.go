@@ -112,6 +112,49 @@ var gooikeServices = []*gooikeService{
 			{Name: "_tt_enable_cookie", Provider: "TikTok", Purpose: "Records whether the browser accepts TikTok's cookies.", Duration: "13 months"},
 		},
 		Detect: []string{"analytics.tiktok.com"}},
+	{Key: "gads", Name: "Google Ads", Category: "marketing", Placement: "head", IDLabel: "Conversion ID", IDExample: "AW-123456789",
+		IDPattern: regexp.MustCompile(`^AW-[0-9]{6,12}$`),
+		code: func(id string) string {
+			return `<script async src="https://www.googletagmanager.com/gtag/js?id=` + id + `"></script>` + "\n" +
+				`<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','` + id + `');</script>`
+		},
+		Script:  []string{"https://www.googletagmanager.com", "https://googleads.g.doubleclick.net"},
+		Connect: []string{"https://www.googletagmanager.com", "https://*.google.com", "https://googleads.g.doubleclick.net"},
+		Cookies: []gooikeCookieRow{
+			{Name: "_gcl_aw", Provider: "Google Ads", Purpose: "Stores ad click information to attribute conversions.", Duration: "3 months"},
+			{Name: "IDE", Provider: "Google DoubleClick", Purpose: "Measures the effectiveness of ads and shows relevant ads.", Duration: "13 months"},
+		},
+		Detect: []string{"googletagmanager.com/gtag/js?id=aw-"}},
+	{Key: "pinterest", Name: "Pinterest Tag", Category: "marketing", Placement: "head", IDLabel: "Tag ID", IDExample: "2612345678901",
+		IDPattern: regexp.MustCompile(`^[0-9]{10,16}$`),
+		code: func(id string) string {
+			return `<script>!function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");pintrk('load','` + id + `');pintrk('page');</script>`
+		},
+		Script:  []string{"https://s.pinimg.com"},
+		Connect: []string{"https://ct.pinterest.com", "https://*.pinterest.com"},
+		Cookies: []gooikeCookieRow{
+			{Name: "_pin_unauth", Provider: "Pinterest", Purpose: "Groups actions of one visitor for ad measurement.", Duration: "1 year"},
+			{Name: "_epik", Provider: "Pinterest", Purpose: "Stores the ad click ID to attribute conversions.", Duration: "1 year"},
+		},
+		Detect: []string{"s.pinimg.com/ct/core.js"}},
+	{Key: "uet", Name: "Microsoft Advertising (UET)", Category: "marketing", Placement: "head", IDLabel: "UET tag ID", IDExample: "12345678",
+		IDPattern: regexp.MustCompile(`^[0-9]{6,12}$`),
+		code: func(id string) string {
+			return `<script>(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"` + id + `",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","//bat.bing.com/bat.js","uetq");</script>`
+		},
+		Script:  []string{"https://bat.bing.com"},
+		Connect: []string{"https://bat.bing.com", "https://bat.bing.net"},
+		Cookies: []gooikeCookieRow{
+			{Name: "_uetsid", Provider: "Microsoft Advertising", Purpose: "Stores the visit session ID for ad measurement.", Duration: "1 day"},
+			{Name: "_uetvid", Provider: "Microsoft Advertising", Purpose: "Stores a visitor ID for ad measurement.", Duration: "13 months"},
+		},
+		Detect: []string{"bat.bing.com/bat.js"}},
+}
+
+// gooikeRecaptchaCookies are what the reCAPTCHA v3 script of Pursae Contact Form sets once it runs.
+var gooikeRecaptchaCookies = []gooikeCookieRow{
+	{Name: "_GRECAPTCHA", Provider: "Google", Purpose: "Tells humans from bots with Google reCAPTCHA.", Duration: "6 months"},
+	{Name: "rc::*", Provider: "Google", Purpose: "Stores reCAPTCHA risk analysis state in the browser.", Duration: "Persistent"},
 }
 
 // gooikeEmbeds are the third-party iframes Gooike can hold back until consent.
@@ -283,3 +326,57 @@ func gooikeEmbedFor(st *gooikeSettings, src string) (key, name string) {
 	}
 	return "", ""
 }
+
+// gooikeBlockScripts holds back the third-party scripts of known services that a page carries
+// outside the script manager (post content, theme templates, Web Builder custom HTML, other
+// plugins): a script whose src or inline code carries the signature of a known service becomes
+// type="text/plain" with that service's category, like a script manager entry. A script an author
+// tags with data-gooike-category="<key>" is held back in that category. Scripts already inert,
+// the necessary ones of the script manager and Pursae Cookie's own are left alone.
+func gooikeBlockScripts(st *gooikeSettings, doc string) string {
+	if !strings.Contains(doc, "<script") {
+		return doc
+	}
+	necessary := ""
+	for _, sc := range st.Scripts {
+		if sc.Enabled && sc.Category == "necessary" {
+			necessary += strings.ToLower(sc.code()) + "\n"
+		}
+	}
+	return gooikeScriptTagRe.ReplaceAllStringFunc(doc, func(tag string) string {
+		m := gooikeScriptTagRe.FindStringSubmatch(tag)
+		attrs := m[1]
+		if t := gooikeTypeAttrRe.FindStringSubmatch(attrs); t != nil && strings.Contains(strings.ToLower(t[1]), "text/plain") {
+			return tag
+		}
+		if cm := gooikeCategoryAttrRe.FindStringSubmatch(attrs); cm != nil { // an author's manual tag
+			cat := strings.Trim(cm[1], `"'`)
+			if st.category(cat) == nil || cat == "necessary" {
+				return tag
+			}
+			attrs = gooikeCategoryAttrRe.ReplaceAllString(attrs, "")
+			return gooikeInert("<script"+attrs+">"+m[2]+"</script>", cat)
+		}
+		if strings.Contains(attrs, "data-gooike-") || strings.Contains(attrs, "gooike.js") {
+			return tag
+		}
+		low := strings.ToLower(tag)
+		best, bestLen := "", 0
+		for _, sv := range gooikeServices {
+			for _, d := range sv.Detect {
+				if d = strings.ToLower(d); strings.Contains(low, d) && len(d) > bestLen && !strings.Contains(necessary, d) {
+					best, bestLen = sv.Category, len(d)
+				}
+			}
+		}
+		if best == "" && strings.Contains(low, "google.com/recaptcha/") && !strings.Contains(necessary, "google.com/recaptcha/") {
+			best = st.EmbedCategory
+		}
+		if best == "" || best == "necessary" || st.category(best) == nil {
+			return tag
+		}
+		return gooikeInert(tag, best)
+	})
+}
+
+var gooikeCategoryAttrRe = regexp.MustCompile(`(?is)\s+data-gooike-category\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)`)

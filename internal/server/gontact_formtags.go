@@ -141,6 +141,9 @@ func gfParseTag(typ, attr, content string) *gfTag {
 		t.Pipes = append(t.Pipes, gfPipe{Before: before, After: after})
 		t.Values = append(t.Values, strings.TrimSpace(before))
 	}
+	if t.BaseType == "select" && len(t.Values) == 0 {
+		t.Values = gfDataList(t.Options)
+	}
 	t.Labels = append([]string{}, t.Values...)
 	content = strings.TrimSpace(content)
 	content = gfTrailingBrRe.ReplaceAllString(content, "")
@@ -357,3 +360,26 @@ var (
 	gfLimitRe      = regexp.MustCompile(`(?i)^limit:([1-9][0-9]*)([kKmM]?[bB])?$`)
 	gfAbsDateRe    = regexp.MustCompile(`^` + gfOptPatterns["date"] + `$`)
 )
+
+// gfDataList fills a select from a built-in list: `data:countries` (every country, as Pursae
+// Commerce knows them) or `data:states:US` (the states of one country). Values are the names.
+func gfDataList(options []string) []string {
+	var out []string
+	for _, o := range options {
+		kind, ok := strings.CutPrefix(o, "data:")
+		if !ok {
+			continue
+		}
+		switch {
+		case kind == "countries":
+			for _, c := range gooCountryOrder {
+				out = append(out, c.Name)
+			}
+		case strings.HasPrefix(kind, "states:"):
+			for _, st := range gooStates[strings.ToUpper(strings.TrimPrefix(kind, "states:"))] {
+				out = append(out, st.Name)
+			}
+		}
+	}
+	return out
+}

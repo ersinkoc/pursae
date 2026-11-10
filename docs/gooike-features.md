@@ -62,7 +62,8 @@ and settings. It is read from the in-memory settings cache, so rendering a page 
   - touch targets are at least 44px, and the layout is responsive (bottom-sheet modal on phones);
   - banners and the modal are hidden when printing.
 - ✓ **Multilingual-ready texts**: all 26 visitor-facing strings are editable under Banner › Texts,
-  with "Reset to defaults". There is no hard-coded English in the JS: the config carries the strings it
+  with "Reset to defaults" and ready-made language sets (English, Turkish, German, French, Spanish) that
+  fill every text at once; per-language serving stays with Pursae Multi Language's string translation. There is no hard-coded English in the JS: the config carries the strings it
   needs.
 
 ## 2. Themes (14)
@@ -141,6 +142,20 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   mapping per category. Tag Manager receives a `gooike_consent_update` dataLayer event, and the page
   receives a `gooike:consent` DOM event.
 
+### Automatic blocking of other scripts
+
+On every rendered page Pursae Cookie also holds back scripts that did not come from the script
+manager (post content, theme templates, Web Builder custom HTML, other plugins): a `<script>` whose
+`src` or inline code carries the signature of a known service (GA4, Tag Manager, Meta, Hotjar,
+Clarity, LinkedIn, TikTok, Google Ads, Pinterest, Microsoft UET) or the reCAPTCHA script becomes
+`type="text/plain"` in that service's category (reCAPTCHA in the embed category). Services the
+script manager runs as Necessary are left alone. To block any other script by hand, give it
+`data-gooike-category="statistics"` (or another category key). The service list lives in
+`gooike_services.go`; it is Go code, not yet a downloadable data file.
+
+**Not covered:** IAB TCF v2.2. Pursae Cookie has no `__tcfapi` or TC string and is not a registered
+CMP, so it is not suitable for publishers who serve AdSense / Ad Manager ads to EU visitors.
+
 ## 4. Cookie declaration and scanner
 
 - ✓ **Declaration**: an admin-managed list (name, provider, category, purpose, duration). It supports add,
@@ -206,7 +221,9 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   - expiry;
   - reload after withdrawal;
   - privacy policy (a page, a URL, or the site's Settings › Privacy page), cookie policy URL and KVKK
-    notice URL;
+    notice URL, plus **Create cookie policy page** (draft pages per regulation with
+    `[gooike_cookie_table]` and `[gooike_preferences]`; KVKK also adds a Turkish Aydinlatma Metni template to
+    fill in and review before publishing);
   - Consent Mode with `wait_for_update`, ads redaction and URL passthrough;
   - logging, IP storage mode and retention;
   - extra CSP hosts.
@@ -218,7 +235,10 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   - US: CCPA;
   - other countries: configurable (no banner by default).
 
-  Pursae ships no GeoIP database, so without a header everyone gets the main regulation.
+  Pursae ships no GeoIP database, so without a header everyone gets the main regulation. The
+  Settings screen shows whether the current request carries a country header.
+- **Weekly scan** (Cookie Scanner tab): a `gooike_scan_cookies` weekly job scans the home page and the
+  listed paths, shows undeclared cookies on the tab and can mail the site admin when the set changes.
 - ✓ **Privacy signals**: a visitor sending GPC (or DNT, when respected) is treated as having opted out. No
   banner is shown, and the decision is logged as `gpc`. Under GDPR and KVKK nothing optional runs; under
   CCPA marketing (sale and sharing) stops.
@@ -272,3 +292,10 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   the endpoint never cached, and a purge on theme change.
 - **Scanner and geo test**: Clarity cookies are found and added to the declaration; the geo endpoint
   answers DE→gdpr, TR→kvkk, US→ccpa, JP→none and no header→main regulation.
+
+## Tests
+
+`internal/server/gooike_test.go` and `gooike_policy_test.go` cover the server side; `web/gooike/gooike.test.mjs`
+runs gooike.js on a fake DOM with `node --test` (accept, reject, withdraw cookie deletion, GPC, stored choice;
+`TestGooikeJS` runs it when Node is installed). The consent endpoint is rate limited per consent ID (8/min),
+per address (60/min) and per network (1200/min).

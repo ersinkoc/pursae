@@ -353,7 +353,7 @@ func (s *Server) sendEmailChangeConfirmation(c *gin.Context, u *store.User, newE
 		"This email has been sent to ###EMAIL###\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"
 	body = strings.NewReplacer("###USERNAME###", u.Login, "###ADMIN_URL###", s.links(c).HomeURL("/wp-admin/profile?newuseremail="+hash),
 		"###EMAIL###", newEmail, "###SITENAME###", site, "###SITEURL###", s.links(c).HomeURL("/")).Replace(body)
-	s.sendMail(c, mail.Message{To: []string{newEmail}, Subject: "[" + site + "] Email Change Request", Body: body})
+	s.sendMail(c, mail.Message{Kind: "user_email_change", To: []string{newEmail}, Subject: "[" + site + "] Email Change Request", Body: body})
 }
 
 // avatarPicker wires the profile picture field to the media modal (wp.media), the same frame used for

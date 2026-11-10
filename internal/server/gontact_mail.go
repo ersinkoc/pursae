@@ -284,14 +284,16 @@ func (sub *gfSubmission) mail() bool {
 		slog.Warn("gontact form: mail", "form", sub.form.ID, "err", err)
 		return false
 	}
-	if err := sub.s.queueJob(sub.ctx, "wp_mail", msg, time.Time{}); err != nil {
+	if err := sub.s.queueJob(sub.ctx, "wp_mail", gontactMailJob{Message: msg, Entry: sub.entryID}, time.Time{}); err != nil {
 		slog.Error("gontact form: queue mail", "err", err)
 		return false
 	}
 	if sub.form.Mail2.Active {
 		if m2, ok := sub.composeMail(sub.form.Mail2); ok {
-			if _, err := mailer.Build(m2); err == nil {
-				_ = sub.s.queueJob(sub.ctx, "wp_mail", m2, time.Time{})
+			if _, err := mailer.Build(m2); err != nil {
+				slog.Warn("gontact form: mail (2)", "form", sub.form.ID, "err", err)
+			} else if err := sub.s.queueJob(sub.ctx, "wp_mail", m2, time.Time{}); err != nil {
+				slog.Warn("gontact form: queue mail (2)", "form", sub.form.ID, "err", err)
 			}
 		}
 	}

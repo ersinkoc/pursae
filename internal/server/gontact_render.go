@@ -154,6 +154,9 @@ func (r *gfRender) formHTML() string {
 	b.WriteString("<form" + a.String() + ">\n")
 	b.WriteString(r.hiddenFields())
 	b.WriteString(elements)
+	if rules := f.conditionsJSON(); rules != "" {
+		b.WriteString(`<script type="application/json" class="wpcf7cf-rules">` + rules + "</script>\n")
+	}
 	if r.responses == 0 {
 		b.WriteString(r.responseOutput())
 	}
@@ -192,12 +195,15 @@ func (r *gfRender) hiddenFields() string {
 	if r.s.gontactRecaptchaKeys() != "" {
 		fields = append(fields, kv{"_wpcf7_recaptcha_response", ""})
 	}
+	fields = append(fields, kv{gontactTimestampField, r.s.gontactSignTimestamp(time.Now().Unix())})
 	var b strings.Builder
 	b.WriteString(`<fieldset class="hidden-fields-container">`)
 	for _, f := range fields {
 		b.WriteString(`<input type="hidden" name="` + f.k + `" value="` + html.EscapeString(f.v) + `" />`)
 	}
 	b.WriteString("\n</fieldset>\n")
+	// Honeypot: invisible to people and assistive tech, tempting to bots.
+	b.WriteString(`<div class="wpcf7-hp" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><input type="text" name="` + gontactHoneypotField + `" value="" tabindex="-1" autocomplete="off" /></div>` + "\n")
 	return b.String()
 }
 
@@ -262,6 +268,15 @@ func (r *gfRender) formElements() (string, []*gfTag) {
 	form, tags := gfScan(r.f.Form, func(t *gfTag) string {
 		parts = append(parts, r.tagHTML(t))
 		hidden = append(hidden, t.BaseType == "hidden")
+		return "GFPH" + strconv.Itoa(len(parts)-1) + "X"
+	})
+	form = gfGroupMarkRe.ReplaceAllStringFunc(form, func(m string) string {
+		if m == "[/group]" {
+			parts = append(parts, "</div>")
+		} else {
+			parts = append(parts, gfGroupOpen(gfGroupMarkRe.FindStringSubmatch(m)[1]))
+		}
+		hidden = append(hidden, true)
 		return "GFPH" + strconv.Itoa(len(parts)-1) + "X"
 	})
 	out := wp.Autop(form)
@@ -872,7 +887,11 @@ func (s *Server) gontactAssetTags(c *gin.Context) string {
 	out := `<link rel="stylesheet" id="contact-form-7-css" href="` + gontactAssets + `/styles.css?ver=` + gontactVersion + `" media="all" />` + "\n"
 	if site := s.settings.String("gontact_recaptcha_sitekey"); s.gontactRecaptchaKeys() != "" {
 		cfg["recaptcha"] = map[string]any{"sitekey": site, "actions": map[string]string{"homepage": "homepage", "contactform": "contactform"}}
-		out += `<script src="https://www.google.com/recaptcha/api.js?render=` + html.EscapeString(site) + `&amp;ver=3.0" id="google-recaptcha-js" defer></script>` + "\n"
+		tag := `<script src="https://www.google.com/recaptcha/api.js?render=` + html.EscapeString(site) + `&amp;ver=3.0" id="google-recaptcha-js" defer></script>`
+		if s.gooikeOn() { // reCAPTCHA sets Google cookies: with Pursae Cookie active it waits for consent
+			tag = gooikeInert(tag, s.gooikeLoad().EmbedCategory)
+		}
+		out += tag + "\n"
 		cspAllow(c, "script-src", "https://www.google.com", "https://www.gstatic.com")
 		cspAllow(c, "frame-src", "https://www.google.com")
 		cspAllow(c, "connect-src", "https://www.google.com")

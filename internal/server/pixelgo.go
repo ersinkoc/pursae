@@ -112,6 +112,14 @@ var pixelPlatforms = []*pixelPlatformDef{
 			{Name: "_uetsid", Provider: "Microsoft Advertising", Purpose: "Stores the session of a visitor for ad measurement.", Duration: "1 day"},
 			{Name: "_uetvid", Provider: "Microsoft Advertising", Purpose: "Recognizes returning visitors for ad measurement.", Duration: "13 months"},
 		}},
+	{Key: "gtm", Name: "Google Tag Manager (data layer)", IDLabel: "Container ID", IDExample: "GTM-XXXXXXX", Category: "statistics",
+		IDPattern: regexp.MustCompile(`^GTM-[A-Z0-9]{4,12}$`),
+		Script:    []string{"https://www.googletagmanager.com", "https://tagmanager.google.com"},
+		Connect:   []string{"https://www.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com"},
+		Img:       []string{"https://www.googletagmanager.com", "https://*.google-analytics.com"},
+		Cookies: []gooikeCookieRow{
+			{Name: "_ga", Provider: "Google Analytics", Purpose: "Distinguishes visitors to count visits and page views (when your container loads Google Analytics).", Duration: "2 years"},
+		}},
 }
 
 func pixelPlatformByKey(k string) *pixelPlatformDef {
@@ -165,7 +173,8 @@ type pixelSettings struct {
 	ContentID    string          `json:"content_id"` // id, sku
 	IDPrefix     string          `json:"id_prefix"`
 	IDSuffix     string          `json:"id_suffix"`
-	ValueMode    string          `json:"value_mode"` // total, subtotal, net
+	VariationIDs bool            `json:"variation_ids"` // events and feed use the id of the chosen variation
+	ValueMode    string          `json:"value_mode"`    // total, subtotal, net
 	PurchaseOnce bool            `json:"purchase_once"`
 	Advanced     bool            `json:"advanced_matching"`
 
@@ -321,7 +330,7 @@ func pixelSanitize(st pixelSettings) pixelSettings {
 		seen := map[string]bool{}
 		for _, id := range cfg.IDs {
 			id = strings.TrimSpace(id)
-			if def.Key == "ga4" || def.Key == "gads" || def.Key == "tiktok" {
+			if def.Key == "ga4" || def.Key == "gads" || def.Key == "tiktok" || def.Key == "gtm" {
 				id = strings.ToUpper(id)
 			}
 			if id != "" && def.IDPattern.MatchString(id) && !seen[id] && len(ids) < 10 {

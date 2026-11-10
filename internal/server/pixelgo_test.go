@@ -67,7 +67,7 @@ func TestPixelSnippets(t *testing.T) {
 	st := pixelDefaults()
 	for _, def := range pixelPlatforms {
 		cfg := pixelPlatformCfg{Enabled: true, IDs: []string{map[string]string{"meta": "123456789012345", "ga4": "G-ABCD1234", "gads": "AW-1234567890",
-			"tiktok": "C1ABCDEFGHIJ", "pinterest": "2612345678901", "bing": "12345678"}[def.Key]}}
+			"tiktok": "C1ABCDEFGHIJ", "pinterest": "2612345678901", "bing": "12345678", "gtm": "GTM-ABC1234"}[def.Key]}}
 		code := pixelSnippet(def, &st, cfg)
 		if code == "" || !strings.Contains(code, "pixelgoReady."+def.Key+"=1") || !strings.Contains(code, cfg.IDs[0]) {
 			t.Errorf("%s: snippet lacks its id or ready flag:\n%s", def.Key, code)
@@ -91,7 +91,7 @@ func TestPixelSnippets(t *testing.T) {
 	}
 	st.General["page_view"] = false
 	bing := pixelSnippet(pixelPlatformByKey("bing"), &st, pixelPlatformCfg{IDs: []string{"12345678"}})
-	if strings.Contains(bing, "pageLoad") || !strings.Contains(bing, "new UET(o)}") {
+	if strings.Contains(bing, "pageLoad") || !strings.Contains(bing, "w.pixelgoUET.push(x);})") {
 		t.Errorf("bing without page views: %s", bing)
 	}
 }
@@ -340,6 +340,7 @@ func TestPixelPluginLifecycle(t *testing.T) {
 	st.Platforms["meta"] = pixelPlatformCfg{Enabled: true, IDs: []string{"123456789012345"}, Token: "META_TOKEN", ServerSide: true}
 	st.Platforms["ga4"] = pixelPlatformCfg{Enabled: true, IDs: []string{"G-ABCD1234"}}
 	st.Custom = []pixelCustomEvent{{ID: "q1", Name: "Quote Request", Enabled: true, Trigger: "click", Selector: "a.quote", Params: "plan=pro", Platforms: []string{"meta"}}}
+	st.RequireConsent = false // no consent manager in this test site
 	if err := srv.pixelSave(ctx, st); err != nil {
 		t.Fatal(err)
 	}
@@ -374,6 +375,10 @@ func TestPixelPluginLifecycle(t *testing.T) {
 
 	// Pursae Cookie on: the same tags, inert in their consent category.
 	if err := srv.gooikeActivate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	st.RequireConsent = true
+	if err := srv.pixelSave(ctx, st); err != nil {
 		t.Fatal(err)
 	}
 	srv.purgeAll(ctx)

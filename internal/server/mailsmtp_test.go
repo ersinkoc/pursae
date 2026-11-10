@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"html"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	netmail "net/mail"
@@ -352,6 +353,55 @@ func TestMailSMTPPlugin(t *testing.T) {
 		smtp.RejectTo = ""
 	})
 
+	t.Run("gap: threshold alert without log, persisted last error, attachment log, kind", func(t *testing.T) {
+		orig := srv.msLoadRaw()
+		defer func() { _ = srv.msSave(ctx, orig); smtp.RejectTo = "" }()
+		raw := srv.msLoadRaw()
+		raw.Logs.Enabled, raw.Backup, raw.SmartRouting.Enabled = false, "", false
+		raw.Alerts.Slack = msHook{Enabled: true, URLs: []string{api.URL + "/slackthr"}}
+		raw.Alerts.Threshold = 2
+		_ = srv.msSave(ctx, raw)
+		_, _ = getPool(t).Exec(ctx, `DELETE FROM wpmailsmtp_debug_events`)
+		_ = srv.settings.Set(ctx, map[string]any{msLastAlertKey: 0})
+		smtp.RejectTo = "thr@example.test"
+		_ = srv.mailer().Send(ctx, gomail.Message{To: []string{"thr@example.test"}, Subject: "thr one", Body: "1"})
+		if rec.find("/slackthr") != "" {
+			t.Fatal("alert before the threshold was reached")
+		}
+		_ = srv.mailer().Send(ctx, gomail.Message{To: []string{"thr@example.test"}, Subject: "thr two", Body: "2"})
+		if rec.find("/slackthr") == "" {
+			t.Fatal("threshold alert did not fire with the email log off")
+		}
+		if st, ok := srv.msGetLastError(); !ok || st.Err == "" {
+			t.Fatal("last error not persisted")
+		}
+		srv.msClearLastError(ctx)
+		if _, ok := srv.msGetLastError(); ok {
+			t.Fatal("last error not cleared")
+		}
+
+		// Attachments: name and size are logged, the bytes are not.
+		raw = srv.msLoadRaw()
+		raw.Logs.Enabled, raw.Logs.LogContent = true, true
+		_ = srv.msSave(ctx, raw)
+		smtp.RejectTo = ""
+		att := gomail.Message{To: []string{"att@example.test"}, Subject: "With file", Body: "b",
+			Attachments: []gomail.Attachment{{Name: "a.txt", ContentType: "text/plain", Data: []byte("12345")}}}
+		if err := srv.mailer().Send(ctx, att); err != nil {
+			t.Fatal(err)
+		}
+		logs, _, _ := srv.msLogList(ctx, msLogFilter{Search: "With file"}, 10, 0)
+		if len(logs) != 1 || len(logs[0].Attachments) != 1 || logs[0].Attachments[0].Name != "a.txt" || logs[0].Attachments[0].Size != 5 {
+			t.Fatalf("attachment log %+v", logs)
+		}
+		if k, _ := msClassifyMsg(gomail.Message{Kind: "password_reset", Subject: "[S] Something else"}); k != "password_reset" {
+			t.Fatalf("kind classification: %q", k)
+		}
+		if k, _ := msClassifyMsg(gomail.Message{Kind: "goo_new_order", Subject: "[S]: New order #1"}); k != "goo_new_order" {
+			t.Fatalf("commerce kind: %q", k)
+		}
+	})
+
 	t.Run("smart routing", func(t *testing.T) {
 		raw := srv.msLoadRaw()
 		id := raw.Connections[0].ID
@@ -419,6 +469,160 @@ func TestMailSMTPPlugin(t *testing.T) {
 			t.Fatalf("overflow not queued for later: %v %v", runAt, err)
 		}
 		raw.RateLimit.Enabled = false
+		_ = srv.msSave(ctx, raw)
+	})
+
+	t.Run("rate limit slots are reserved atomically", func(t *testing.T) {
+		raw := srv.msLoadRaw()
+		raw.RateLimit.Enabled, raw.RateLimit.Minute = true, 3
+		_ = srv.msSave(ctx, raw)
+		_, _ = getPool(t).Exec(ctx, `DELETE FROM wpmailsmtp_rate`)
+		o := srv.msLoad()
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		var slots []time.Time
+		for i := 0; i < 12; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if slot, _, limited := srv.msReserveRate(ctx, o); !limited {
+					mu.Lock()
+					slots = append(slots, slot)
+					mu.Unlock()
+				}
+			}()
+		}
+		wg.Wait()
+		if len(slots) != 3 {
+			t.Fatalf("%d concurrent sends got a slot, want 3", len(slots))
+		}
+		srv.msReleaseRate(ctx, slots[0]) // a failed delivery gives its slot back
+		if _, _, limited := srv.msReserveRate(ctx, o); limited {
+			t.Fatal("released slot not reusable")
+		}
+		raw.RateLimit.Enabled = false
+		_ = srv.msSave(ctx, raw)
+		_, _ = getPool(t).Exec(ctx, `DELETE FROM wpmailsmtp_rate`)
+	})
+
+	t.Run("site health reports delivery problems", func(t *testing.T) {
+		srv.msClearLastError(ctx)
+		raw := srv.msLoadRaw()
+		prevLogs := raw.Logs
+		defer func() {
+			raw := srv.msLoadRaw()
+			raw.Logs = prevLogs
+			_ = srv.msSave(ctx, raw)
+		}()
+		raw.Logs.Enabled = true
+		_ = srv.msSave(ctx, raw)
+		_, _ = getPool(t).Exec(ctx, `DELETE FROM wpmailsmtp_emails_log WHERE subject = 'health probe'`)
+		if h, ok := srv.msHealthTest(ctx); !ok || h.Status == "critical" {
+			t.Fatalf("health with no failures: %+v %v", h, ok)
+		}
+		_, _ = getPool(t).Exec(ctx, `INSERT INTO wpmailsmtp_emails_log (subject, status, error_text) VALUES ('health probe', 'failed', 'boom')`)
+		if h, _ := srv.msHealthTest(ctx); h.Status != "recommended" || !strings.Contains(h.Label, "1 email") {
+			t.Fatalf("health with a failure: %+v", h)
+		}
+		srv.msSetLastError(ctx, "smtp", io.ErrUnexpectedEOF)
+		h, _ := srv.msHealthTest(ctx)
+		if h.Status != "critical" {
+			t.Fatalf("health with a last error: %+v", h)
+		}
+		if body := msPage(t, c, base+"/wp-admin/site-health"); !strings.Contains(body, "The last email your site tried to send failed") {
+			t.Fatal("Site Health screen lacks the email test")
+		}
+		srv.msClearLastError(ctx)
+		_, _ = getPool(t).Exec(ctx, `DELETE FROM wpmailsmtp_emails_log WHERE subject = 'health probe'`)
+	})
+
+	t.Run("open and click tracking, bounce webhooks", func(t *testing.T) {
+		raw := srv.msLoadRaw()
+		prevLogs := raw.Logs
+		raw.Logs.Enabled = true
+		_ = srv.msSave(ctx, raw)
+		// Off by default: nothing is added to the message and no tracking id is stored.
+		if _, id := srv.msTrackMessage(ctx, srv.msLoad(), gomail.Message{HTML: "<p>hi</p>"}); id != "" {
+			t.Fatal("tracking on by default")
+		}
+		raw.Logs.TrackOpens, raw.Logs.TrackClicks = true, true
+		_ = srv.msSave(ctx, raw)
+		if err := srv.mailer().Send(ctx, gomail.Message{To: []string{"track@example.test"}, Subject: "Tracked mail", Body: "plain",
+			HTML: `<html><body><a href="https://example.test/a?x=1&amp;y=2">go</a></body></html>`}); err != nil {
+			t.Fatal(err)
+		}
+		var id string
+		if err := getPool(t).QueryRow(ctx, `SELECT track_id FROM wpmailsmtp_emails_log WHERE subject = 'Tracked mail'`).Scan(&id); err != nil || len(id) != 24 {
+			t.Fatalf("track id %q %v", id, err)
+		}
+		count := func(col string) int {
+			var n int
+			_ = getPool(t).QueryRow(ctx, `SELECT `+col+` FROM wpmailsmtp_emails_log WHERE track_id = $1`, id).Scan(&n)
+			return n
+		}
+		fetch := func(u string, hdr map[string]string) (int, http.Header) {
+			req, _ := http.NewRequest("GET", base+u, nil)
+			for k, v := range hdr {
+				req.Header.Set(k, v)
+			}
+			cl := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+			resp, err := cl.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			resp.Body.Close()
+			return resp.StatusCode, resp.Header
+		}
+		if code, h := fetch(msTrackBase+"/t/o/"+id+".gif", nil); code != 200 || h.Get("Content-Type") != "image/gif" || count("open_count") != 1 {
+			t.Fatalf("open: %d %v count %d", code, h, count("open_count"))
+		}
+		fetch(msTrackBase+"/t/o/"+id+".gif", map[string]string{"DNT": "1"})
+		if count("open_count") != 1 {
+			t.Fatal("a Do Not Track visit was counted")
+		}
+		target := "https://example.test/a?x=1&y=2"
+		link := msTrackBase + "/t/c/" + id + "?u=" + url.QueryEscape(target) + "&s=" + srv.msSign("c", id, target)
+		if code, h := fetch(link, nil); code != http.StatusFound || h.Get("Location") != target || count("click_count") != 1 {
+			t.Fatalf("click: %d %v count %d", code, h, count("click_count"))
+		}
+		if code, _ := fetch(msTrackBase+"/t/c/"+id+"?u="+url.QueryEscape("https://evil.test/")+"&s="+srv.msSign("c", id, target), nil); code != http.StatusNotFound {
+			t.Fatalf("unsigned redirect target served: %d", code)
+		}
+		webhook := func(mailer, token, body string) int {
+			resp, err := http.Post(base+msTrackBase+"/webhook/"+mailer+"?token="+token, "application/json", strings.NewReader(body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			resp.Body.Close()
+			return resp.StatusCode
+		}
+		_, _ = getPool(t).Exec(ctx, `UPDATE wpmailsmtp_emails_log SET message_id = 'pm-77' WHERE track_id = $1`, id)
+		bounce := `{"RecordType":"Bounce","MessageID":"pm-77","Type":"HardBounce","Description":"The server was unable to deliver your message"}`
+		if webhook("postmark", "wrong", bounce) != http.StatusNotFound {
+			t.Fatal("webhook accepted a wrong token")
+		}
+		if webhook("postmark", srv.msWebhookToken(), bounce) != 200 {
+			t.Fatal("webhook rejected")
+		}
+		var st, detail string
+		_ = getPool(t).QueryRow(ctx, `SELECT delivery_status, delivery_detail FROM wpmailsmtp_emails_log WHERE track_id = $1`, id).Scan(&st, &detail)
+		if st != "bounced" || !strings.Contains(detail, "HardBounce") {
+			t.Fatalf("delivery %q %q", st, detail)
+		}
+		webhook("postmark", srv.msWebhookToken(), `{"RecordType":"Delivery","MessageID":"pm-77"}`)
+		_ = getPool(t).QueryRow(ctx, `SELECT delivery_status FROM wpmailsmtp_emails_log WHERE track_id = $1`, id).Scan(&st)
+		if st != "bounced" {
+			t.Fatal("a late delivered event overwrote the bounce")
+		}
+		if !strings.Contains(msPage(t, c, base+"/wp-admin/admin?page=wp-mail-smtp-logs&mode=view&email_id="+func() string {
+			var n string
+			_ = getPool(t).QueryRow(ctx, `SELECT id::text FROM wpmailsmtp_emails_log WHERE track_id = $1`, id).Scan(&n)
+			return n
+		}()), "Bounced") {
+			t.Fatal("log view lacks the delivery status")
+		}
+		raw = srv.msLoadRaw()
+		raw.Logs = prevLogs
 		_ = srv.msSave(ctx, raw)
 	})
 
@@ -576,6 +780,65 @@ func TestMailSMTPPlugin(t *testing.T) {
 			t.Fatal("settings removed without Uninstall")
 		}
 	})
+}
+
+func TestMailSMTPDKIMCheck(t *testing.T) {
+	txt := func(_ context.Context, name string) ([]string, error) {
+		switch name {
+		case "s1._domainkey.example.test":
+			return []string{"v=DKIM1; k=rsa; p=ABC"}, nil
+		case "custom._domainkey.example.test":
+			return []string{"v=DKIM1; p=XYZ"}, nil
+		}
+		return nil, &net.DNSError{Err: "no such host", Name: name, IsNotFound: true}
+	}
+	cname := func(_ context.Context, name string) (string, error) {
+		if name == "mx._domainkey.cname.test" {
+			return "mx.dkim.mailgun.org.", nil
+		}
+		return name + ".", nil // no CNAME: the resolver returns the name itself
+	}
+	ctx := context.Background()
+	if r := msCheckDKIM(ctx, txt, cname, "example.test", "sendgrid", ""); r.Status != "ok" || !strings.Contains(r.Detail, `"s1"`) {
+		t.Fatalf("sendgrid selector: %+v", r)
+	}
+	if r := msCheckDKIM(ctx, txt, cname, "cname.test", "mailgun", ""); r.Status != "ok" || !strings.Contains(r.Detail, "mailgun.org") {
+		t.Fatalf("cname selector: %+v", r)
+	}
+	if r := msCheckDKIM(ctx, txt, cname, "example.test", "smtp", "custom._domainkey.example.test"); r.Status != "ok" || !strings.Contains(r.Detail, `"custom"`) {
+		t.Fatalf("custom selector: %+v", r)
+	}
+	if r := msCheckDKIM(ctx, txt, cname, "example.test", "smtp", "nope"); r.Status != "warning" || !strings.Contains(r.Detail, "nope._domainkey") {
+		t.Fatalf("missing custom selector: %+v", r)
+	}
+	if r := msCheckDKIM(ctx, txt, cname, "none.test", "postmark", ""); r.Status != "warning" {
+		t.Fatalf("no key: %+v", r)
+	}
+}
+
+func TestMailSMTPTrackingRewrite(t *testing.T) {
+	s := &Server{}
+	s.cfg.Secret = "k"
+	in := gomail.Message{HTML: `<html><body><a class="x" href="https://e.test/p?a=1&amp;b=2">x</a> <a href="mailto:a@b.c">m</a> <a href='#top'>t</a></body></html>`}
+	out := s.msApplyTracking("https://site.test", "abc", true, true, in)
+	if !strings.Contains(out.HTML, "https://site.test"+msTrackBase+"/t/c/abc?u=https%3A%2F%2Fe.test%2Fp%3Fa%3D1%26b%3D2&amp;s="+s.msSign("c", "abc", "https://e.test/p?a=1&b=2")) {
+		t.Fatalf("link not rewritten: %s", out.HTML)
+	}
+	if !strings.Contains(out.HTML, `href="mailto:a@b.c"`) || !strings.Contains(out.HTML, `href='#top'`) {
+		t.Fatalf("non-http link touched: %s", out.HTML)
+	}
+	if !strings.Contains(out.HTML, `/t/o/abc.gif`) || strings.Index(out.HTML, "/t/o/abc.gif") > strings.Index(out.HTML, "</body>") {
+		t.Fatalf("pixel missing or after </body>: %s", out.HTML)
+	}
+	if o := s.msApplyTracking("https://site.test", "abc", false, false, in); o.HTML != in.HTML {
+		t.Fatal("message changed with tracking off")
+	}
+	if ev := msParseWebhook("sendgrid", []byte(`[{"event":"bounce","sg_message_id":"id1.filter0001","reason":"550 no"},{"event":"open","sg_message_id":"id2.f"}]`)); len(ev) != 1 || ev[0].MessageID != "id1" || ev[0].Status != "bounced" {
+		t.Fatalf("sendgrid events %+v", ev)
+	}
+	if ev := msParseWebhook("mailgun", []byte(`{"event-data":{"event":"failed","severity":"permanent","message":{"headers":{"message-id":"abc@x"}}}}`)); len(ev) != 1 || ev[0].MessageID != "<abc@x>" {
+		t.Fatalf("mailgun events %+v", ev)
+	}
 }
 
 func TestMailSMTPUnit(t *testing.T) {

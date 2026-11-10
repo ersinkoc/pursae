@@ -202,3 +202,8 @@ form.submitting .wpcf7-spinner {
 	border: 0;
 	word-wrap: normal !important;
 }
+
+.wpcf7cf-group[hidden],
+.wpcf7cf-hidden {
+	display: none;
+}

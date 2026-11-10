@@ -77,11 +77,11 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | IP whitelist | PRO, exact match | ✓ IPs **and CIDR ranges**, `#` comments. Uses the connection's address, like the rest of Pursae (no `X-Forwarded-For` trust). |
 | URL Based Rules | whitelist / blacklist, exact path | ✓ Same matching (lowercased, `slashit()`, full URLs reduced to their path), plus a trailing `*` for prefixes |
 | Secret access link `home/?<key>` | PRO, 24 h cookie | ✓ The lifetime is configurable. The cookie is an HMAC bound to the key, so changing the key revokes old links. |
-| Direct-access password | PRO | ✓ A password button and popup with the original's texts; the cookie is an HMAC |
+| Direct-access password | PRO | ✓ A password button and popup with the original's texts; the cookie is an HMAC. The password is stored as a bcrypt hash and never printed back into the form (an empty field keeps it, "Remove the password" clears it); at least 8 characters; 10 guesses per address and minute, then HTTP 429 with `Retry-After` (even the right password is refused until the window passes). Plain-text passwords from older versions keep working and are hashed on their first use. |
 | Login form on the page | ✓ Slide-in panel, posts to `wp_signon` | ✓ A padlock button opens a panel that posts to `/wp-login` with `redirect_to` set to the current URL. The tooltip is configurable. |
 | Custom login URL | PRO | ✗ Pursae has no login-URL hiding |
 | Password-protect the maintenance page itself | PRO | ✗ Rarely useful; the site password covers the need |
-| REST API | Free: never gated; PRO: toggle | ✓ Anonymous REST requests get a JSON 503 (Advanced, default on). Logged-in users keep REST, which the editor needs, and requests with Basic or Bearer credentials (Application Passwords, OAuth/MCP tokens, Commerce API keys, Headless tokens; Commerce `consumer_key` query parameters only on `wc/v3`, the routes that check them) reach the REST layer, which checks them. |
+| REST API | Free: never gated; PRO: toggle | ✓ Anonymous REST requests get a JSON 503 (Advanced, default on); in Coming Soon mode, where pages answer 200, they get a JSON 403 without `Retry-After` instead. Logged-in users keep REST, which the editor needs, and requests with Basic or Bearer credentials (Application Passwords, OAuth/MCP tokens, Commerce API keys, Headless tokens; Commerce `consumer_key` query parameters only on `wc/v3`, the routes that check them) reach the REST layer, which checks them. |
 | Feeds and sitemaps | never gated | ✓ Gated by default (Advanced › Feeds & Sitemaps) so content doesn't leak while the site is closed |
 | `?maintenance-preview` | Anyone, even while off | ✓ Same. `&theme=` previews a theme without activating it. |
 
@@ -99,23 +99,26 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Font family and size, colors | Google fonts through Bunny Fonts | ≈ 7 system font stacks. The page loads nothing from other servers, which is also the GDPR-friendly choice. Headline, text, link and accent colors. |
 | Custom CSS | ✓ | ✓ Cannot close the `<style>` element |
 | Preloader | ✓ | ✗ The page is a small self-contained document, so a preloader would only slow it down |
-| Multilingual (Weglot upsell) | upsell | ✗ |
+| Multilingual (Weglot upsell) | upsell | ✓ With Pursae Multi Language active, the page's texts (headline, text, footer, SEO description, countdown, progress, subscribe and password texts) are registered as strings (group "Pursae Maintenance", on every save and render) and shown in the visitor's language: language code in the URL, `?lang=`, the language cookie, `Accept-Language`, then the default language. `<html lang>` and `dir` follow; the response varies on `Accept-Language, Cookie`. Texts without a translation stay as written. |
+| Web Builder page | PRO page builder | ✓ General › Page Design: a published Pursae Web Builder template (Theme Builder) replaces the built-in page. Only templates without dynamic widgets qualify (the gate runs before the router); the static snapshot and its CSS are printed with the usual maintenance headers (503/Retry-After, no-store, noindex, CSP). Design and Modules do not apply to such a page; status, schedule, access, SEO and Retry-After do. A template that is unpublished or deleted falls back to the built-in page. |
 
 ### Modules (PRO in the original)
 
 | Feature | Pursae Maintenance |
 |---|---|
 | Countdown to a date | ✓ Uses the site time zone. Days, hours, minutes and seconds tick in the browser; the label is configurable. |
-| Auto-disable when the countdown ends | ✓ (SeedProd-style). The first request after the end switches the mode off and purges the cache; open pages reload. Without auto-disable, a warning notice explains that the mode stays on. |
+| Scheduled start | SeedProd Pro | ✓ General › Starts (site time zone): with the switch on, the site stays open until that moment. Together with Modules › Ends and auto-disable this is a maintenance window. |
+| Auto-disable when the countdown ends | ✓ (SeedProd-style). The scheduler (every 15 s) or, failing that, the first request after the end switches the mode off, purges the cache and notifies subscribers; open pages reload. Without auto-disable, a warning notice explains that the mode stays on. |
 | Progress bar | ✓ Percent and label |
-| Subscribe form | ✓ E-mails go to the plugin's own `maintenance_subscribers` table, created on activation (no core migration). Nonce, honeypot, address validation, de-duplication. Optional e-mail to the admin for each new subscriber, through the core mail queue. |
+| Subscribe form | ✓ E-mails go to the plugin's own `maintenance_subscribers` table, created on activation (no core migration). Nonce, honeypot, address validation, de-duplication. Per-address rate limit. Optional double opt-in (signed confirmation link; unconfirmed addresses are never mailed). Optional e-mail to the admin for each new (confirmed) subscriber, through the core mail queue. |
+| Notify subscribers | ✓ Subscribers tab: "Send to subscribers" (subject, message, `%sitetitle%`/`%siteurl%`) and an automatic mail when maintenance mode is switched off (manually or by the countdown). One mail per confirmed subscriber, once, through the mail queue (Pursae SMTP), each with a signed unsubscribe link (confirmation button, POST). |
 | GDPR / privacy note | ✓ Optional required-consent checkbox with your text and a link to the published Privacy Policy page. Only the e-mail, the time and the consent are stored, with no IP or user agent. |
 | Subscribers list | ✓ Subscribers tab: list, bulk delete, CSV export (protected against formula injection) |
 | Mailing-list integrations (Mailchimp, Zapier…) | ✗ Needs third-party accounts and API keys; the CSV export covers the handover |
 | Social icons | ✓ Facebook, X, Instagram, LinkedIn, YouTube, Pinterest, WhatsApp, Reddit, Twitch, Spotify and e-mail. They use dashicons served from `/wp-includes`; `javascript:` and other non-http(s) URLs are dropped. |
 | Custom HTML | ✓ |
 | Map, video, 2- and 3-column content, divider | ✗ Map and video need third-party frames; columns and divider are page-builder layout. Pursae Web Builder exists for that. |
-| Drag-and-drop module ordering | ✗ The modules have a fixed order (logo, headline, text, countdown, progress, subscribe, social, custom HTML) |
+| Drag-and-drop module ordering | ≈ The built-in page has a fixed order; use a Web Builder template as the page for any layout. Built-in order (logo, headline, text, countdown, progress, subscribe, social, custom HTML) |
 | reCAPTCHA | ✗ Third party; a honeypot and a nonce are used instead |
 
 ### Advanced
@@ -147,7 +150,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 - **Cache purges.** These all call `purgeAll`: saving any tab, the toolbar toggle, activating or
   deactivating the plugin, import, reset, and the countdown's auto-disable.
 - **The gate runs before the router**, so it resolves the login cookie itself (`maintUser`). Its
-  security headers are the front end's, with Google Analytics added only while an ID is set.
+  security headers are the front end's, with Google Analytics added only while an ID is set. When Pursae Cookie is active the tag is held back in its statistics category, with Consent Mode defaults and the banner on the page.
 - **Hooks into shared files**, one or two lines each:
   - `server.go` (Handler)
   - `plugins.go` (row, activate/deactivate case, reserved slug, icon)

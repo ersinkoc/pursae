@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
@@ -74,8 +75,8 @@ func (s *Server) msLogResult(ctx context.Context, o *msOptions, msg gomail.Messa
 	}
 	var id int64
 	err := s.store.Pool.QueryRow(ctx, `UPDATE wpmailsmtp_emails_log SET status = $2, error_text = $3, mailer = $4, connection = $5, message_id = $6,
-		attempts = attempts + 1, date_sent = now() WHERE id = (SELECT id FROM wpmailsmtp_emails_log WHERE hash = $1 AND status = 'failed'
-		AND date_sent > now() - interval '1 day' ORDER BY id DESC LIMIT 1) RETURNING id`, hash, status, errText, mailer, conn, res.MessageID).Scan(&id)
+		attempts = attempts + 1, date_sent = now(), track_id = CASE WHEN $7 <> '' THEN $7 ELSE track_id END WHERE id = (SELECT id FROM wpmailsmtp_emails_log WHERE hash = $1 AND status = 'failed'
+		AND date_sent > now() - interval '1 day' ORDER BY id DESC LIMIT 1) RETURNING id`, hash, status, errText, mailer, conn, res.MessageID, res.TrackID).Scan(&id)
 	if err == nil {
 		return false
 	}
@@ -93,6 +94,16 @@ func (s *Server) msLogResult(ctx context.Context, o *msOptions, msg gomail.Messa
 	if res.Envelope != "" {
 		headers += "Return-Path: <" + res.Envelope + ">\n"
 	}
+	attJSON := ""
+	if len(msg.Attachments) > 0 {
+		list := make([]msLogAttachment, 0, len(msg.Attachments))
+		for _, at := range msg.Attachments {
+			list = append(list, msLogAttachment{Name: at.Name, Size: len(at.Data)})
+		}
+		if b, err := json.Marshal(list); err == nil {
+			attJSON = string(b)
+		}
+	}
 	plain, html := "", ""
 	if o.Logs.LogContent {
 		plain, html = msg.Body, msg.HTML
@@ -102,8 +113,8 @@ func (s *Server) msLogResult(ctx context.Context, o *msOptions, msg gomail.Messa
 		to = []string{}
 	}
 	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO wpmailsmtp_emails_log (message_id, subject, from_addr, to_addrs, reply_to, headers, content_plain,
-		content_html, has_content, status, error_text, mailer, connection, initiator, hash) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-		res.MessageID, msg.Subject, res.From, to, msg.ReplyTo, headers, plain, html, o.Logs.LogContent, status, errText, mailer, conn, source, hash); err != nil {
+		content_html, has_content, status, error_text, mailer, connection, initiator, hash, attachments, track_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+		res.MessageID, msg.Subject, res.From, to, msg.ReplyTo, headers, plain, html, o.Logs.LogContent, status, errText, mailer, conn, source, hash, attJSON, res.TrackID); err != nil {
 		slog.Error("wp-mail-smtp: email log", "err", err)
 	}
 	return res.Err != nil
@@ -119,7 +130,52 @@ func (s *Server) msDebugEvent(ctx context.Context, _ *msOptions, typ, content, i
 
 // --- alerts ----------------------------------------------------------------------------------
 
-var msLastAlert sync.Map // *Server -> time.Time, for the failure threshold
+// msLastAlertKey is the setting holding the unix time of the last threshold alert (shared by every instance).
+const msLastAlertKey = "wp_mail_smtp_last_alert"
+
+// msRecentFailures counts the failed deliveries of the last 30 minutes: from the email log, or from
+// the debug events (one "Mailer:" error per failed message) while the log is off.
+func (s *Server) msRecentFailures(ctx context.Context, o *msOptions) int {
+	var n int
+	q := `SELECT count(*) FROM wpmailsmtp_emails_log WHERE status = 'failed' AND date_sent > now() - interval '30 minutes'`
+	if !o.Logs.Enabled {
+		q = `SELECT count(*) FROM wpmailsmtp_debug_events WHERE event_type = 'error' AND content LIKE 'Mailer: %' AND created_at > now() - interval '30 minutes'`
+	}
+	_ = s.store.Pool.QueryRow(ctx, q).Scan(&n)
+	return n
+}
+
+// msHealthTest is the Pursae SMTP row of Site Health: is e-mail going out. It reports nothing while
+// the plugin is off. Unlike the admin notice it cannot be hidden by "Hide Email Delivery Errors".
+func (s *Server) msHealthTest(ctx context.Context) (healthTest, bool) {
+	if !s.mailSMTPOn() {
+		return healthTest{}, false
+	}
+	o := s.msLoad()
+	q := `SELECT count(*) FROM wpmailsmtp_emails_log WHERE status = 'failed' AND date_sent > now() - interval '24 hours'`
+	if !o.Logs.Enabled {
+		q = `SELECT count(*) FROM wpmailsmtp_debug_events WHERE event_type = 'error' AND content LIKE 'Mailer: %' AND created_at > now() - interval '24 hours'`
+	}
+	var failed int
+	_ = s.store.Pool.QueryRow(ctx, q).Scan(&failed)
+	action := template.HTML(`<a href="/wp-admin/admin?page=wp-mail-smtp-tools&amp;tab=test">Send a test email</a>`)
+	t := healthTest{Badge: "Performance", Action: action}
+	switch st, hasErr := s.msGetLastError(); {
+	case o.General.DoNotSend:
+		t.Label, t.Status = "Pursae SMTP is set not to send any emails", "critical"
+		t.Description = "Do Not Send is on, so no email leaves the site."
+	case hasErr:
+		t.Label, t.Status = "The last email your site tried to send failed", "critical"
+		t.Description = fmt.Sprintf("%s reported: %s (%d failed in the last 24 hours).", msMailerTitle(st.Mailer), st.Err, failed)
+	case failed > 0:
+		t.Label, t.Status = fmt.Sprintf("%d email(s) failed to send in the last 24 hours", failed), "recommended"
+		t.Description = "Later emails went out, but check the Email Log and Debug Events to find out why some did not."
+	default:
+		t.Label, t.Status = "Your site can send email", "good"
+		t.Description = "No delivery failures were recorded in the last 24 hours."
+	}
+	return t, true
+}
 
 func (s *Server) msAlert(ctx context.Context, o *msOptions, msg gomail.Message, res msResult) {
 	a := &o.Alerts
@@ -127,16 +183,14 @@ func (s *Server) msAlert(ctx context.Context, o *msOptions, msg gomail.Message, 
 		return
 	}
 	if a.Threshold > 1 {
-		var n int
-		_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM wpmailsmtp_emails_log WHERE status = 'failed' AND date_sent > now() - interval '30 minutes'`).Scan(&n)
-		if n < a.Threshold {
+		if s.msRecentFailures(ctx, o) < a.Threshold {
 			return
 		}
-		if t, ok := msLastAlert.Load(s); ok && time.Since(t.(time.Time)) < 30*time.Minute {
+		if t := int64(s.settings.Int(msLastAlertKey)); t > 0 && time.Since(time.Unix(t, 0)) < 30*time.Minute {
 			return
 		}
 	}
-	msLastAlert.Store(s, time.Now())
+	_ = s.settings.Set(ctx, map[string]any{msLastAlertKey: time.Now().Unix()})
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
 	defer cancel()
 	home := strings.TrimRight(s.settings.String("home"), "/")
@@ -217,6 +271,12 @@ func truncateRunes(s string, n int) string {
 
 // --- log entries -----------------------------------------------------------------------------
 
+// msLogAttachment is the name and size of a file a logged e-mail carried (the bytes are not stored).
+type msLogAttachment struct {
+	Name string `json:"name"`
+	Size int    `json:"size"`
+}
+
 type msLogEntry struct {
 	ID                                   int64
 	MessageID, Subject, From, ReplyTo    string
@@ -226,19 +286,31 @@ type msLogEntry struct {
 	Status, Error, Mailer, Conn, Source  string
 	Attempts                             int
 	ParentID                             *int64
+	Attachments                          []msLogAttachment
 	Date                                 time.Time
+	OpenCount, ClickCount                int
+	FirstOpened                          *time.Time
+	Delivery, DeliveryDetail             string // "", delivered, bounced, complained
+	DeliveryAt                           *time.Time
+	Tracked                              bool
 	DateStr, MailerTitle, ToStr, ViewURL string
 }
 
 const msLogCols = `id, message_id, subject, from_addr, to_addrs, reply_to, headers, content_plain, content_html, has_content, status, error_text,
-	mailer, connection, initiator, attempts, parent_id, date_sent`
+	mailer, connection, initiator, attempts, parent_id, date_sent, attachments,
+	open_count, click_count, first_opened_at, delivery_status, delivery_detail, delivery_at, track_id <> ''`
 
 func (s *Server) msScanLog(rows interface{ Scan(...any) error }) (*msLogEntry, error) {
 	e := &msLogEntry{}
+	var att string
 	err := rows.Scan(&e.ID, &e.MessageID, &e.Subject, &e.From, &e.To, &e.ReplyTo, &e.Headers, &e.Plain, &e.HTML, &e.HasContent, &e.Status, &e.Error,
-		&e.Mailer, &e.Conn, &e.Source, &e.Attempts, &e.ParentID, &e.Date)
+		&e.Mailer, &e.Conn, &e.Source, &e.Attempts, &e.ParentID, &e.Date, &att,
+		&e.OpenCount, &e.ClickCount, &e.FirstOpened, &e.Delivery, &e.DeliveryDetail, &e.DeliveryAt, &e.Tracked)
 	if err != nil {
 		return nil, err
+	}
+	if att != "" {
+		_ = json.Unmarshal([]byte(att), &e.Attachments)
 	}
 	e.DateStr = e.Date.In(s.loc()).Format("Jan 2, 2006 3:04 pm")
 	e.MailerTitle = msMailerTitle(e.Mailer)
@@ -446,6 +518,7 @@ func (s *Server) mailSMTPDaily(ctx context.Context) error {
 	if o.General.DebugRetention > 0 {
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM wpmailsmtp_debug_events WHERE created_at < now() - make_interval(days => $1)`, o.General.DebugRetention)
 	}
+	msSweepSeenFailures()
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM wpmailsmtp_rate WHERE sent_at < now() - interval '31 days'`)
 	if o.General.SummaryDisabled {
 		return nil

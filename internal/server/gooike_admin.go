@@ -73,6 +73,7 @@ type gooikeAdminData struct {
 	EditCat    *gooikeCategory
 	EditCookie *gooikeCookieRow
 	Scan       *gooikeScanResult
+	GeoCountry string // country the current request's CDN header reports; empty when there is none
 
 	Services   []*gooikeService
 	Embeds     []string
@@ -170,7 +171,7 @@ func (s *Server) gooikeAdmin(c *gin.Context) {
 func (s *Server) gooikeRender(c *gin.Context, page string, scan *gooikeScanResult) {
 	st := s.gooikeLoad()
 	d := &gooikeAdminData{Page: page, Tab: c.Query("tab"), S: st, Nonce: s.nonce(c, gooikeNonce), Home: s.links(c).HomeURL("/"),
-		CacheOn: s.settings.Bool("wpgo_cache_enabled"), Scan: scan}
+		CacheOn: s.settings.Bool("wpgo_cache_enabled"), Scan: scan, GeoCountry: gooikeCountry(c)}
 	if scan != nil {
 		d.Tab = "scan"
 	}
@@ -372,6 +373,14 @@ func (s *Server) gooikeAdminPost(c *gin.Context) {
 		raw, _ = json.Marshal(tm)
 		_ = json.Unmarshal(raw, &st.Texts)
 		save("Texts saved.")
+	case "texts_preset":
+		pr, ok := gooikeTextPresets[str("preset")]
+		if !ok {
+			fail("Choose a language.")
+			return
+		}
+		st.Texts = pr.Texts()
+		save("Texts replaced with the " + pr.Label + " set.")
 	case "texts_reset":
 		st.Texts = gooikeDefaultTexts()
 		save("Texts reset to the defaults.")
@@ -447,6 +456,17 @@ func (s *Server) gooikeAdminPost(c *gin.Context) {
 		res := s.gooikeScan(c, &st, lines(text("paths")))
 		s.gooikeRender(c, "categories", &res)
 		return
+	case "scan_schedule":
+		st.ScanAuto, st.ScanEmail, st.ScanPaths = on("scan_auto"), on("scan_email"), text("scan_paths")
+		if !st.ScanAuto {
+			st.ScanNew = nil
+		}
+		if err := s.gooikeScheduleScan(c, st.ScanAuto); err != nil {
+			fail(err.Error())
+			return
+		}
+		back, sep = "/wp-admin/gooike?page=categories&tab=scan", "&"
+		save("Scheduled scan settings saved.")
 	case "scan_add":
 		names, provs, cats, purps, durs := c.PostFormArray("row_name[]"), c.PostFormArray("row_provider[]"), c.PostFormArray("row_category[]"), c.PostFormArray("row_purpose[]"), c.PostFormArray("row_duration[]")
 		added := 0
@@ -583,6 +603,13 @@ func (s *Server) gooikeAdminPost(c *gin.Context) {
 		st.ReloadOnChange = on("reload_on_withdraw")
 		st.ExtraHosts = text("extra_hosts")
 		save("Settings saved.")
+	case "policy_pages":
+		made, err := s.gooikeCreatePolicyPages(c, st.Regulation, currentUser(c).ID)
+		if err != nil {
+			fail(err.Error())
+			return
+		}
+		done("Draft pages created: " + strings.Join(made, ", ") + ". Review the text, then publish and link them below.")
 	case "bump_version":
 		st.PolicyVersion++
 		save(fmt.Sprintf("The policy version is now %d: every visitor is asked again.", st.PolicyVersion))

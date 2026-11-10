@@ -34,7 +34,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Plugin features to enable (Email Log, Email Reports/weekly summary, Alerts, Improved deliverability, Smart routing…) | Checkboxes for Email Log, Complete Email Reports (log content), Weekly Email Summary, Instant Email Alert (to the admin e-mail), Detailed Error Reports (debug events) | ✅ |
 | Help improve (usage tracking), license key | — no telemetry, no licensing (everything is included) | — |
 | Check configuration: sends a test e-mail, shows success or the error with fix steps | Sends the test through the chosen mailer, shows the result and the debug output | ✅ |
-| Domain checker (SPF/DKIM/DMARC) | DNS lookups of the From domain after a successful test: SPF (`TXT v=spf1`), DMARC (`_dmarc` TXT), MX; DKIM is shown as "check with your mailer" (it needs the mailer's selector) | ◐ |
+| Domain checker (SPF/DKIM/DMARC) | DNS lookups of the From domain after a successful test: SPF (`TXT v=spf1`), DMARC (`_dmarc` TXT), MX, and DKIM: the selectors the mailer is known to use (SendGrid `s1`/`s2`, Mailgun `mx`/`k1`, Google `google`, Brevo `mail`, Microsoft `selector1`/`selector2`, …) then common defaults, TXT or CNAME at `<selector>._domainkey`; a custom selector can be typed in (Amazon SES uses random selectors) | ✅ |
 | Recommended settings from a hosted service | — no phone-home | — |
 
 ## 3. Settings › General (`admin?page=wp-mail-smtp`)
@@ -48,7 +48,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Other SMTP: SMTP Host, Encryption (None / SSL / TLS), SMTP Port (25 / 465 / 587 suggested per encryption), Auto TLS, Authentication, SMTP Username, SMTP Password | Native `net/smtp` client; SSL = implicit TLS, TLS = STARTTLS required, None + Auto TLS = STARTTLS when the server offers it; AUTH PLAIN (LOGIN fallback when the server only advertises LOGIN) | ✅ |
 | Default (none) = PHP `mail()` | Pursae's built-in transport: `WPGO_SMTP_*` env SMTP, or `.eml` files | ◐ |
 | Backup Connection (Pro) | Pick one Additional Connection; when the primary connection fails the message is retried once through it; the log records which connection delivered it | ✅ |
-| Rate limiting (Pro, per minute/hour/day/week/month) | Under Misc. Sends are counted in `wpmailsmtp_rate`; over a limit the message is re-queued as a `wp_mail` job for when the window allows it (a form's own From is not kept on the re-queued copy) | ✅ |
+| Rate limiting (Pro, per minute/hour/day/week/month) | Under Misc. Each send reserves its slot in `wpmailsmtp_rate` inside a transaction under an advisory lock before it goes out (concurrent sends cannot overshoot; a failed send gives the slot back); over a limit the message is re-queued as a `wp_mail` job for when the window allows it (a form's own From is not kept on the re-queued copy) | ✅ |
 | Optimized email sending (Pro, background queue) | Always on in Pursae: core e-mail is already sent by the job runner | ◐ |
 
 ## 4. Mailers
@@ -100,7 +100,7 @@ access tokens are stored encrypted; access tokens are refreshed automatically.
 
 | | | |
 |---|---|---|
-| Settings › Email Log: Enable Log, Log Email Content, Save Attachments, Open/Click Email Tracking, Log Retention Period (forever, 1 day … 1 year) | Enable, content, retention ✅; attachments — (Pursae messages carry none); open/click tracking — (needs a public tracking endpoint and HTML rewriting; not done) | ◐ |
+| Settings › Email Log: Enable Log, Log Email Content, Save Attachments, Open/Click Email Tracking, Log Retention Period (forever, 1 day … 1 year) | Enable, content, retention ✅; attachments: the name and size of each file are logged and shown on the entry (the bytes are not stored, so a resend does not include them); open/click tracking ✅ (off by default, needs the log: a signed 1x1 pixel and signed link redirects under `/wp-mail-smtp/v1/t/`, Do Not Track / Global Privacy Control visits are never counted, redirect targets are HMAC-signed so it is not an open redirect) | ✅ |
 | List table: Subject, From, To, Status (Sent/Failed/Waiting), Source, Date; status views (All/Sent/Failed), search (subject, recipient, content), date filter, pagination, bulk delete, "Delete All Logs" | ✅ |
 | Single email view: headers, recipients, mailer, connection, attempts, error, plain/HTML content (HTML in a sandboxed iframe), *Resend*, *Delete*, Print | ✅ |
 | Resend (single + bulk), optionally to different recipients ("forward") | ✅ |
@@ -113,7 +113,7 @@ access tokens are stored encrypted; access tokens are refreshed automatically.
 | | | |
 |---|---|---|
 | Chart of sent/failed per day (7/14/30 days, custom range) | Server-rendered SVG chart ✅ |
-| Totals: total, sent, failed (+ open/click rates) | Totals ✅, opens/clicks — (no tracking) |
+| Totals: total, sent, failed (+ open/click rates) | Totals ✅; opens/clicks are counted per log entry and shown on its detail page (no aggregate rate yet) |
 | Table grouped by subject with counts | ✅ |
 | **Weekly Email Summary**: e-mail to the admin every Monday with last week's stats; can be disabled (Misc / constant) | Daily job sends it when 7 days passed ✅ |
 
@@ -127,11 +127,11 @@ access tokens are stored encrypted; access tokens are refreshed automatically.
 | Custom webhook (JSON POST of the failure) | ✅ |
 | Push notifications (browser), WhatsApp | — need hosted services / Meta business templates | — |
 | Failed-email threshold ("alert only after N failures in 30 minutes") | ✅ |
-| Hard-bounce events (needs mailer webhooks) | — | — |
+| Hard-bounce events (needs mailer webhooks) | Delivered / bounced / spam-complaint status on the log entry from Postmark, SendGrid and Mailgun webhooks: `POST /wp-mail-smtp/v1/webhook/<mailer>?token=…` (URLs with the secret token are shown under Settings › Email Log). Amazon SES (SNS signature verification) is not done | ◐ |
 
 ## 9. Email Controls (Pro) (`tab=control`)
 
-Toggles for the notification e-mails Pursae core sends (identified by their subject):
+Toggles for the notification e-mails Pursae core and Pursae Commerce send (identified by `mail.Message.Kind`, set by the sender; mail without a Kind falls back to the subject prefix):
 comment moderation / new comment to author; admin e-mail change confirmation; user e-mail change
 request; password reset request, password changed (to admin), new user registration (admin + user);
 personal data confirm request / action confirmed / export ready / erasure fulfilled. Disabled
@@ -142,7 +142,7 @@ types are dropped silently. Automatic core/plugin/theme update e-mails don't exi
 | | | |
 |---|---|---|
 | Do Not Send (+ confirmation) | Blocks all e-mail; a red notice reminds the admin; blocked messages become debug events | ✅ |
-| Hide Announcements | Stored for parity; Pursae shows no product announcements | ◐ |
+| Hide Announcements | No control: Pursae shows no product announcements (the stored value is kept for import/export) | — |
 | Hide Email Delivery Errors | Hides the admin-wide "last e-mail failed" notice | ✅ |
 | Hide Dashboard Widget | ✅ |
 | Disable Email Summaries | ✅ |
@@ -166,7 +166,7 @@ types are dropped silently. Automatic core/plugin/theme update e-mails don't exi
 | Dashboard widget "Pursae SMTP": sent/failed totals and a 7-day chart, link to the log; can be hidden (Misc) | ✅ |
 | Admin notice when the last e-mail failed (with the error and links to the log / settings) | ✅ |
 | Admin bar "Pursae SMTP" error menu | — notice is used instead | — |
-| Site Health tests | — (core Site Health shows the transport) | — |
+| Site Health tests | A "Pursae SMTP" row on Site Health and the dashboard widget: last delivery failure, failures in the last 24 hours, Do Not Send | ✅ |
 
 ## 13. Constants → environment variables
 
@@ -197,7 +197,7 @@ applicable.
 
 Multisite network settings, license/upgrade screens and "About Us"/product upsells, usage
 tracking, WP-CLI commands, the WordPress Abilities API, importing other SMTP plugins' settings,
-conflicting-plugin detection, attachment storage, open/click tracking, XLSX export, push/WhatsApp
+conflicting-plugin detection, attachment storage, XLSX export, push/WhatsApp
 alerts, one-click Gmail/Microsoft setup through WPForms' relay.
 
 ## 15. Where it lives

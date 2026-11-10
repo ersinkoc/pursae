@@ -1,0 +1,61 @@
+{{define "admin/gontact-entries"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap" id="wpcf7-entries">
+<h1 class="wp-heading-inline">{{if .Detail}}Entry{{else}}Entries{{end}}</h1>
+{{if not .Detail}}<a href="{{.ExportURL}}" class="page-title-action">Export CSV</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+{{if .Detail}}
+<p><a href="{{.BackURL}}">&larr; Back to entries</a></p>
+<table class="widefat striped"><tbody>
+<tr><th scope="row">Form</th><td>{{.Detail.Form}}</td></tr>
+<tr><th scope="row">Date</th><td>{{.Detail.Date}}</td></tr>
+<tr><th scope="row">Mail</th><td>{{.Detail.MailStatus}}</td></tr>
+<tr><th scope="row">IP address</th><td>{{.Detail.IP}}</td></tr>
+<tr><th scope="row">User agent</th><td>{{.Detail.UserAgent}}</td></tr>
+<tr><th scope="row">Page</th><td>{{.Detail.PageURL}}</td></tr>
+{{range .Detail.Fields}}<tr><th scope="row">{{index . 0}}</th><td style="white-space:pre-wrap">{{index . 1}}</td></tr>{{end}}
+</tbody></table>
+{{else}}
+<form method="get" action="/wp-admin/admin">
+	<input type="hidden" name="page" value="wpcf7-entries" />
+	<p class="search-box">
+		<label class="screen-reader-text" for="wpcf7-entries-search-input">Search entries:</label>
+		<input type="search" id="wpcf7-entries-search-input" name="s" value="{{.Search}}" />
+		<select name="form"><option value="">All forms</option>{{range .Forms}}<option value="{{.ID}}"{{if .Selected}} selected{{end}}>{{.Title}}</option>{{end}}</select>
+		<select name="mail_status"><option value="">Any mail status</option>
+			<option value="sent"{{if eq .MailFilter "sent"}} selected{{end}}>Sent</option>
+			<option value="failed"{{if eq .MailFilter "failed"}} selected{{end}}>Failed</option>
+			<option value="queued"{{if eq .MailFilter "queued"}} selected{{end}}>Queued</option>
+			<option value="skipped"{{if eq .MailFilter "skipped"}} selected{{end}}>Skipped</option></select>
+		<input type="submit" id="search-submit" class="button" value="Filter" />
+	</p>
+</form>
+<form method="post" action="/wp-admin/admin?page=wpcf7-entries">
+	<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+	<input type="hidden" name="action" value="delete" />
+	<div class="tablenav top"><div class="alignleft actions bulkactions"><input type="submit" class="button action" value="Delete selected" /></div>
+		{{template "tablenav-pages" .Pagination}}<br class="clear" /></div>
+	<table class="wp-list-table widefat fixed striped table-view-list">
+		<thead><tr><td class="manage-column column-cb check-column"></td><th scope="col">Form</th><th scope="col">Submission</th><th scope="col">Mail</th><th scope="col">IP address</th><th scope="col">Date</th></tr></thead>
+		<tbody id="the-list">
+		{{range .Rows}}<tr>
+			<th scope="row" class="check-column"><input type="checkbox" name="entry[]" value="{{.ID}}" /></th>
+			<td>{{.Form}}</td>
+			<td><a href="{{.ViewURL}}">{{if .Summary}}{{.Summary}}{{else}}(empty){{end}}</a></td>
+			<td>{{.MailStatus}}</td><td>{{.IP}}</td>
+			<td><time datetime="{{.ISODate}}">{{.Date}}</time></td>
+		</tr>
+		{{else}}<tr class="no-items"><td class="colspanchange" colspan="{{.ColCount}}">No entries found.</td></tr>
+		{{end}}</tbody>
+	</table>
+</form>
+{{if .CanManage}}<form method="post" action="/wp-admin/admin?page=wpcf7-entries" style="margin-top:2em">
+	<input type="hidden" name="_wpnonce" value="{{.RetentionNonce}}" />
+	<input type="hidden" name="action" value="retention" />
+	<h2>Retention</h2>
+	<p><label for="retention_days">Delete entries older than</label> <input type="number" min="0" id="retention_days" name="retention_days" value="{{.RetentionDays}}" class="small-text" /> days (0 keeps them until deleted).
+	<input type="submit" class="button" value="Save" /></p>
+</form>{{end}}
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

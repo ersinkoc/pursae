@@ -25,6 +25,9 @@ func (s *Server) pixelFront(c *gin.Context, q *siteQuery) (pixelSettings, bool) 
 	if len(st.active()) == 0 || (q != nil && (q.Preview || q.Kind == "feed")) {
 		return st, false
 	}
+	if st.RequireConsent && !s.gooikeOn() {
+		return st, false // safe default: no consent manager, so no tags until it is activated or the setting is switched off
+	}
 	if u := currentUser(c); u != nil {
 		for _, r := range u.Roles {
 			if pixelHas(st.ExcludeRoles, r) {
@@ -94,11 +97,15 @@ func pixelSnippet(def *pixelPlatformDef, st *pixelSettings, cfg pixelPlatformCfg
 			if def.Key == "ga4" {
 				cf.WriteString("gtag('config'," + js(id) + ",{send_page_view:false});")
 			} else {
-				cf.WriteString("gtag('config'," + js(id) + ");")
+				// enhanced conversions: the hashed customer data set before a conversion (see pixelgo.js) is used
+				cf.WriteString("gtag('config'," + js(id) + ",{allow_enhanced_conversions:true});")
 			}
 		}
 		return `<script async src="https://www.googletagmanager.com/gtag/js?id=` + html.EscapeString(cfg.IDs[0]) + `"></script>` + "\n" +
 			`<script>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};gtag('js',new Date());` + cf.String() + ready + `</script>`
+	case "gtm":
+		// The container, plus the data layer the events are pushed to (GA4 e-commerce schema, see pixelgo.js).
+		return `<script>window.dataLayer=window.dataLayer||[];(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',` + js(cfg.IDs[0]) + `);` + ready + `</script>`
 	case "tiktok":
 		var loads strings.Builder
 		for _, id := range cfg.IDs {
@@ -116,9 +123,17 @@ func pixelSnippet(def *pixelPlatformDef, st *pixelSettings, cfg pixelPlatformCfg
 	case "bing":
 		page := ""
 		if st.General["page_view"] {
-			page = `,w[u].push("pageLoad")`
+			page = `u.push("pageLoad");`
 		}
-		return `<script>(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:` + js(cfg.IDs[0]) + `,enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o)` + page + `},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","https://bat.bing.com/bat.js","uetq");` + ready + `</script>`
+		var ids strings.Builder
+		for i, id := range cfg.IDs {
+			if i > 0 {
+				ids.WriteString(",")
+			}
+			ids.WriteString(js(id))
+		}
+		// One UET instance per tag ID; pixelgo.js sends every event to each (window.pixelgoUET).
+		return `<script>(function(w,d,t,r,u){var f,n,i,ids=[` + ids.String() + `];w.pixelgoUET=[];f=function(){ids.forEach(function(id,k){var o={ti:id,enableAutoSpaTracking:true};if(k===0){o.q=w[u]}var x=new UET(o);w.pixelgoUET.push(x);` + strings.ReplaceAll(page, "u.push", "x.push") + `});w[u]=w.pixelgoUET[0]},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","https://bat.bing.com/bat.js","uetq");` + ready + `</script>`
 	}
 	return ""
 }

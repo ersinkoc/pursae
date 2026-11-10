@@ -17,7 +17,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	gomail "wpgo/internal/mail"
@@ -96,6 +95,10 @@ type msOptions struct {
 		Enabled    bool `json:"enabled"`
 		LogContent bool `json:"log_email_content"`
 		Retention  int  `json:"log_retention_period"` // days, 0 = forever
+		// TrackOpens and TrackClicks add a signed pixel / rewrite links of HTML e-mails (off by default;
+		// they need the log, which holds the counters). See mailsmtp_track.go.
+		TrackOpens  bool `json:"track_opens"`
+		TrackClicks bool `json:"track_clicks"`
 	} `json:"logs"`
 	Alerts struct {
 		Threshold int    `json:"failed_threshold"` // alert after N failures in 30 minutes (0/1 = every failure)
@@ -380,6 +383,7 @@ func (t *msTransport) Deliver(ctx context.Context, m *gomail.Mailer, msg gomail.
 // msResult is one delivery attempt.
 type msResult struct {
 	MessageID, From, Envelope string
+	TrackID                   string // tracking id of the logged message, "" when not tracked
 	Conn                      *msConn
 	Err                       error
 }
@@ -403,6 +407,30 @@ var msEmailControls = []struct {
 	{"privacy_erased", "Personal Data Requests / Users", "Personal Data Erased", "Erasure Request Fulfilled"},
 }
 
+func init() {
+	// Pursae Commerce e-mails carry Message.Kind = "goo_<email id>" and have no subject prefix.
+	for _, e := range [][2]string{{"new_order", "New order"}, {"cancelled_order", "Cancelled order"}, {"failed_order", "Failed order"},
+		{"customer_on_hold_order", "Order on-hold"}, {"customer_processing_order", "Processing order"}, {"customer_completed_order", "Completed order"},
+		{"customer_refunded_order", "Refunded order"}, {"customer_invoice", "Order details"}, {"customer_note", "Customer note"},
+		{"customer_reset_password", "Reset password"}, {"customer_new_account", "New account"}, {"low_stock", "Low stock"},
+		{"no_stock", "Out of stock"}, {"backorder", "Backorder"}} {
+		msEmailControls = append(msEmailControls, struct{ Key, Group, Label, Prefix string }{"goo_" + e[0], "Pursae Commerce", e[1], ""})
+	}
+}
+
+// msClassifyMsg classifies a message by its Kind (set by the sender) and falls back to the subject
+// prefix for mail that carries none (queued before the field existed, or sent by plugins).
+func msClassifyMsg(msg gomail.Message) (key, label string) {
+	if msg.Kind != "" {
+		for _, c := range msEmailControls {
+			if c.Key == msg.Kind {
+				return c.Key, c.Label
+			}
+		}
+	}
+	return msClassify(msg.Subject)
+}
+
 // msClassify names the core notification a subject belongs to ("" for other e-mail) and its label.
 func msClassify(subject string) (key, label string) {
 	if !strings.HasPrefix(subject, "[") {
@@ -412,7 +440,7 @@ func msClassify(subject string) (key, label string) {
 	for i := strings.Index(subject, "] "); i > 0; {
 		rest := subject[i+2:]
 		for _, c := range msEmailControls {
-			if strings.HasPrefix(rest, c.Prefix) {
+			if c.Prefix != "" && strings.HasPrefix(rest, c.Prefix) {
 				return c.Key, c.Label
 			}
 		}
@@ -427,7 +455,7 @@ func msClassify(subject string) (key, label string) {
 
 func (s *Server) msDeliver(ctx context.Context, base *gomail.Mailer, msg gomail.Message, defaultFrom string) error {
 	o := s.msLoad()
-	ctrl, label := msClassify(msg.Subject)
+	ctrl, label := msClassifyMsg(msg)
 	source := "Pursae"
 	if label != "" {
 		source = "Pursae: " + label
@@ -447,7 +475,8 @@ func (s *Server) msDeliver(ctx context.Context, base *gomail.Mailer, msg gomail.
 			conn = c
 		}
 	}
-	if next, limited := s.msRateLimited(ctx, o); limited {
+	slot, next, limited := s.msReserveRate(ctx, o)
+	if limited {
 		s.msDebugEvent(ctx, o, "debug", fmt.Sprintf("Rate limit reached: the e-mail %q was queued until %s.", msg.Subject, next.In(s.loc()).Format("Jan 2, 15:04")), source)
 		return s.queueJob(ctx, "wp_mail", msg, next)
 	}
@@ -456,30 +485,32 @@ func (s *Server) msDeliver(ctx context.Context, base *gomail.Mailer, msg gomail.
 	if o.General.DebugSending {
 		dbg = &debug
 	}
-	res := s.msSendVia(ctx, o, conn, base, msg, defaultFrom, dbg)
+	sendMsg, trackID := s.msTrackMessage(ctx, o, msg)
+	res := s.msSendVia(ctx, o, conn, base, sendMsg, defaultFrom, dbg)
 	if res.Err != nil && o.Backup != "" && o.Backup != conn.ID {
 		if b := o.conn(o.Backup); b != nil {
 			first := res.Err
 			s.msDebugEvent(ctx, o, "error", fmt.Sprintf("%s failed (%v); retrying with the backup connection %q.", msMailerTitle(conn.Mailer), first, b.Name), source)
-			res = s.msSendVia(ctx, o, b, base, msg, defaultFrom, dbg)
+			res = s.msSendVia(ctx, o, b, base, sendMsg, defaultFrom, dbg)
 			if res.Err != nil {
 				res.Err = fmt.Errorf("%v; backup connection: %w", first, res.Err)
 			}
 		}
 	}
-	if res.Err == nil {
-		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO wpmailsmtp_rate(sent_at) VALUES (now())`)
+	if res.Err != nil {
+		s.msReleaseRate(ctx, slot) // a failed delivery does not use up the quota
 	}
+	res.TrackID = trackID
 	firstFailure := s.msLogResult(ctx, o, msg, res, source)
 	if res.Err != nil {
-		msLastError.Store(s, msErrorState{Err: res.Err.Error(), At: time.Now(), Mailer: res.Conn.Mailer})
+		s.msSetLastError(ctx, res.Conn.Mailer, res.Err)
 		s.msDebugEvent(ctx, o, "error", fmt.Sprintf("Mailer: %s\n%v", msMailerTitle(res.Conn.Mailer), res.Err), source)
 		if firstFailure {
 			s.msAlert(ctx, o, msg, res)
 		}
 		return res.Err
 	}
-	msLastError.Delete(s)
+	s.msClearLastError(ctx)
 	if o.General.DebugSending && debug.Len() > 0 {
 		s.msDebugEvent(ctx, o, "debug", debug.String(), source)
 	}
@@ -492,7 +523,32 @@ type msErrorState struct {
 	At          time.Time
 }
 
-var msLastError sync.Map // *Server -> msErrorState
+const msLastErrorKey = "wp_mail_smtp_last_error"
+
+// msSetLastError stores the last delivery failure in the settings table, so it survives a restart
+// and shows on every instance.
+func (s *Server) msSetLastError(ctx context.Context, mailer string, err error) {
+	b, _ := json.Marshal(msErrorState{Err: err.Error(), At: time.Now(), Mailer: mailer})
+	_ = s.settings.Set(context.WithoutCancel(ctx), map[string]any{msLastErrorKey: string(b)})
+}
+
+// msClearLastError forgets the last failure (an e-mail went out, or the plugin was deactivated).
+func (s *Server) msClearLastError(ctx context.Context) {
+	if s.settings.String(msLastErrorKey) == "" {
+		return
+	}
+	_ = s.settings.Set(context.WithoutCancel(ctx), map[string]any{msLastErrorKey: ""})
+}
+
+// msGetLastError returns the stored last delivery failure.
+func (s *Server) msGetLastError() (msErrorState, bool) {
+	var st msErrorState
+	raw := s.settings.String(msLastErrorKey)
+	if raw == "" || json.Unmarshal([]byte(raw), &st) != nil || st.Err == "" {
+		return st, false
+	}
+	return st, true
+}
 
 // msOwnFrom is the From a sender chose for one message (a form's "From" field travels as
 // Message.From through the mail queue; older callers set it on the Mailer), "" when none.
@@ -726,24 +782,36 @@ func msRuleMatch(r msRule, v string) bool {
 
 // --- rate limiting ---------------------------------------------------------------------------
 
-// msRateLimited reports whether sending now would exceed a limit, and when the next slot opens.
-func (s *Server) msRateLimited(ctx context.Context, o *msOptions) (time.Time, bool) {
+// msRateLock serialises the count-and-reserve step of msReserveRate across instances.
+const msRateLock = 7301954
+
+// msReserveRate checks the limits and, when there is room, records the send slot in the same
+// transaction (under an advisory lock), so concurrent deliveries cannot all see the same count and
+// overshoot. It returns the reserved slot (zero when no limit is on), or when the next slot opens.
+func (s *Server) msReserveRate(ctx context.Context, o *msOptions) (slot, next time.Time, limited bool) {
 	if !o.RateLimit.Enabled {
-		return time.Time{}, false
+		return
 	}
 	windows := []struct {
 		limit int
 		d     time.Duration
 	}{{o.RateLimit.Minute, time.Minute}, {o.RateLimit.Hour, time.Hour}, {o.RateLimit.Day, 24 * time.Hour},
 		{o.RateLimit.Week, 7 * 24 * time.Hour}, {o.RateLimit.Month, 30 * 24 * time.Hour}}
-	var next time.Time
+	tx, err := s.store.Pool.Begin(ctx)
+	if err != nil {
+		return
+	}
+	defer tx.Rollback(context.WithoutCancel(ctx))
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, int64(msRateLock)); err != nil {
+		return
+	}
 	for _, w := range windows {
 		if w.limit <= 0 {
 			continue
 		}
 		var oldest *time.Time
 		var n int
-		err := s.store.Pool.QueryRow(ctx, `SELECT count(*), min(sent_at) FROM (SELECT sent_at FROM wpmailsmtp_rate
+		err := tx.QueryRow(ctx, `SELECT count(*), min(sent_at) FROM (SELECT sent_at FROM wpmailsmtp_rate
 			WHERE sent_at > now() - $1::interval ORDER BY sent_at DESC LIMIT $2) x`, fmt.Sprintf("%d seconds", int(w.d.Seconds())), w.limit).Scan(&n, &oldest)
 		if err != nil || n < w.limit || oldest == nil {
 			continue
@@ -752,7 +820,24 @@ func (s *Server) msRateLimited(ctx context.Context, o *msOptions) (time.Time, bo
 			next = t
 		}
 	}
-	return next, !next.IsZero()
+	if !next.IsZero() {
+		return time.Time{}, next, true
+	}
+	if err := tx.QueryRow(ctx, `INSERT INTO wpmailsmtp_rate(sent_at) VALUES (clock_timestamp()) RETURNING sent_at`).Scan(&slot); err != nil {
+		return time.Time{}, time.Time{}, false
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return time.Time{}, time.Time{}, false
+	}
+	return slot, time.Time{}, false
+}
+
+// msReleaseRate gives a reserved slot back (the delivery failed).
+func (s *Server) msReleaseRate(ctx context.Context, slot time.Time) {
+	if slot.IsZero() {
+		return
+	}
+	_, _ = s.store.Pool.Exec(context.WithoutCancel(ctx), `DELETE FROM wpmailsmtp_rate WHERE ctid = (SELECT ctid FROM wpmailsmtp_rate WHERE sent_at = $1 LIMIT 1)`, slot)
 }
 
 // --- activation ------------------------------------------------------------------------------
@@ -771,11 +856,11 @@ func (s *Server) mailSMTPDeactivate(ctx context.Context) error {
 	if err := s.settings.Set(ctx, map[string]any{msSetting: false}); err != nil {
 		return err
 	}
-	msLastError.Delete(s)
+	s.msClearLastError(ctx)
 	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE name = 'wp_mail_smtp_daily'`)
 	if o.General.Uninstall { // Misc › Uninstall WP Mail SMTP: remove every trace
 		for _, q := range []string{`DELETE FROM wpmailsmtp_emails_log`, `DELETE FROM wpmailsmtp_debug_events`, `DELETE FROM wpmailsmtp_rate`,
-			`DELETE FROM settings WHERE key IN ('wp_mail_smtp', 'wp_mail_smtp_summary_sent')`} {
+			`DELETE FROM settings WHERE key IN ('wp_mail_smtp', 'wp_mail_smtp_summary_sent', 'wp_mail_smtp_last_error', 'wp_mail_smtp_last_alert')`} {
 			if _, err := s.store.Pool.Exec(ctx, q); err != nil {
 				return err
 			}

@@ -356,6 +356,7 @@ func (s *Server) routes() *gin.Engine {
 
 	s.rest = s.restRoutes()
 	s.registerGontactREST()
+	s.registerMailSMTPTrack(r) // Pursae SMTP: open/click tracking and delivery webhooks (mailsmtp_track.go)
 	// Pursae Web Builder: public web-builder/v2/forms (webbuilder_forms.go)
 	s.registerWebBuilderForms()
 	s.registerGolylangREST() // pll/v1 (golylang_rest.go)

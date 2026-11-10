@@ -35,6 +35,20 @@ type pixelLogRow struct {
 	Message, When                          string
 }
 
+// CanRetry: a failed Purchase of an order can be sent again from the log.
+func (r pixelLogRow) CanRetry() bool {
+	return r.Stat == "error" && r.Source == "order" && r.Event == "Purchase" && r.OrderID() > 0
+}
+
+// OrderID is the order of a Purchase log row (event id purchase_<order id>).
+func (r pixelLogRow) OrderID() int64 {
+	id, _ := strconv.ParseInt(strings.TrimPrefix(r.EventID, "purchase_"), 10, 64)
+	if !strings.HasPrefix(r.EventID, "purchase_") {
+		return 0
+	}
+	return id
+}
+
 type pixelRoleRow struct {
 	Slug, Name string
 	Excluded   bool
@@ -165,7 +179,7 @@ func (s *Server) pixelRender(c *gin.Context, page string) {
 		_ = s.store.Pool.QueryRow(c, `SELECT count(*) FILTER (WHERE status = 'ok'), count(*) FILTER (WHERE status = 'error') FROM pixelgo_log WHERE created_at > now() - interval '7 days'`).Scan(&d.Delivered, &d.Failed)
 		d.Logs, _, _ = s.pixelLogRows(c, "", "", "", 10, 1)
 		if !d.CookieOn && st.RequireConsent {
-			notices = append(notices, notice{Type: "warning", Message: template.HTML(`<strong>Pursae Pixel:</strong> Pursae Cookie is not active, so the tags load without consent management. Activate it on the <a href="/wp-admin/plugins">Plugins</a> screen, or switch off &ldquo;Require consent&rdquo; under Settings if you handle consent elsewhere.`)})
+			notices = append(notices, notice{Type: "warning", Message: template.HTML(`<strong>Pursae Pixel:</strong> Pursae Cookie is not active, so no tags are printed while &ldquo;Require consent&rdquo; is on. Activate it on the <a href="/wp-admin/plugins">Plugins</a> screen, or switch off &ldquo;Require consent&rdquo; under Settings if you handle consent elsewhere.`)})
 		}
 		if d.WooActive && (!st.Woo["purchase"] || d.ActiveCount == 0) {
 			notices = append(notices, notice{Type: "warning", Message: template.HTML(`<strong>Pursae Pixel:</strong> the store is active but Purchase events are not being sent. Enable a platform and the Purchase event under <a href="/wp-admin/pixelgo?page=events">Events</a>.`)})
@@ -213,7 +227,7 @@ func (s *Server) pixelRender(c *gin.Context, page string) {
 		if st.FeedEnabled && st.FeedToken != "" {
 			d.FeedURL = d.Home + "pixelgo-feed/" + st.FeedToken
 		}
-		_ = s.store.Pool.QueryRow(c, `SELECT count(*) FROM goo_products gp JOIN posts p ON p.id = gp.post_id WHERE p.status = 'publish' AND gp.type <> 'variation'`).Scan(&d.FeedCount)
+		_ = s.store.Pool.QueryRow(c, `SELECT count(*) FROM goo_products gp JOIN posts p ON p.id = gp.post_id WHERE p.status = 'publish' AND (gp.type <> 'variation' OR $1::bool)`, st.VariationIDs).Scan(&d.FeedCount)
 	case "logs":
 		d.FPlatform, d.FStatus, d.FSearch = c.Query("platform"), c.Query("status"), strings.TrimSpace(c.Query("s"))
 		d.PageNum, _ = strconv.Atoi(c.Query("paged"))
@@ -366,6 +380,7 @@ func (s *Server) pixelAdminPost(c *gin.Context) {
 		}
 		st.ScrollDepths, st.TimeSeconds, st.DownloadExts = str("scroll_depths"), str("time_seconds"), str("download_exts")
 		st.ContentID, st.IDPrefix, st.IDSuffix, st.ValueMode = str("content_id"), str("id_prefix"), str("id_suffix"), str("value_mode")
+		st.VariationIDs = on("variation_ids")
 		st.PurchaseOnce, st.Advanced, st.Attribution = on("purchase_once"), on("advanced_matching"), on("attribution")
 		st.CookieDays, _ = strconv.Atoi(str("cookie_days"))
 		save("Events saved.")
@@ -415,6 +430,18 @@ func (s *Server) pixelAdminPost(c *gin.Context) {
 	case "regen_token":
 		st.FeedToken = pixelRandom(24)
 		save("A new feed URL was generated. Update it in Meta Commerce Manager and Google Merchant Center.")
+	case "retry_purchase":
+		id, _ := strconv.ParseInt(c.PostForm("order_id"), 10, 64)
+		o, err := s.gooGetOrder(c, id)
+		if err != nil || o == nil {
+			fail("That order does not exist.")
+			return
+		}
+		if !s.pixelRetryOrder(c, o) {
+			fail("Nothing to send: every platform already has this Purchase, or the order is not eligible.")
+			return
+		}
+		done("The Purchase of order #" + strconv.FormatInt(o.ID, 10) + " was queued again. Check the log in a moment.")
 	case "clear_log":
 		if _, err := s.store.Pool.Exec(c, `DELETE FROM pixelgo_log`); err != nil {
 			fail("The log could not be cleared.")

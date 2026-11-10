@@ -93,6 +93,11 @@
 <tr><th scope="row">Enable Log</th><td>{{template "mailsmtp-locked-check" (dict "Name" "logs_enabled" "On" .O.Logs.Enabled "Locked" (index .Locked "logs.enabled"))}}<label for="logs_enabled">Keep a record of basic details for all emails sent from your site.</label></td></tr>
 <tr><th scope="row">Log Email Content</th><td>{{template "mailsmtp-locked-check" (dict "Name" "log_email_content" "On" .O.Logs.LogContent "Locked" (index .Locked "logs.log_email_content"))}}<label for="log_email_content">Store the content for all sent emails.</label>
 <p class="description">Email content may include personal information, such as plain text passwords. Please carefully consider before enabling this option, as it will store all sent email content to your site's database. Resending and exporting the content require it.</p></td></tr>
+<tr><th scope="row">Open &amp; Click Tracking</th><td><label><input type="checkbox" name="track_opens" id="track_opens" value="1"{{if .O.Logs.TrackOpens}} checked{{end}} /> Count how often HTML emails are opened (adds a 1&times;1 image).</label><br />
+<label><input type="checkbox" name="track_clicks" id="track_clicks" value="1"{{if .O.Logs.TrackClicks}} checked{{end}} /> Count clicks on links in HTML emails (links go through this site first).</label>
+<p class="description">Off by default and only works while the log is enabled. Visitors who send Do Not Track or Global Privacy Control are never counted. Opens are approximate: mail clients may preload or block images.</p></td></tr>
+<tr><th scope="row">Delivery Status</th><td><p class="description">To see delivered, bounced and spam-complaint status in the log, add one of these webhook URLs to your mailer account. Keep the URL private: it contains a secret token.</p>
+{{range .WebhookURLs}}<p><strong>{{index . 0}}</strong><br /><input type="text" class="large-text code" readonly value="{{index . 1}}" onfocus="this.select()" /></p>{{end}}</td></tr>
 <tr><th scope="row"><label for="log_retention_period">Log Retention Period</label></th><td><select name="log_retention_period" id="log_retention_period"{{if index .Locked "logs.log_retention_period"}} disabled{{end}}>{{range .Retention}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
 <p class="description">Email logs older than the selected period will be permanently deleted from the database.</p></td></tr>
 </table>
@@ -236,7 +241,6 @@
 <table class="form-table" role="presentation">
 <tr><th scope="row">Do Not Send</th><td>{{if index .Locked "general.do_not_send"}}<input type="checkbox" disabled{{if .O.General.DoNotSend}} checked{{end}} /> <p class="description">The value of this field was set using a constant ({{index .Locked "general.do_not_send"}}).</p>{{else}}<label><input type="checkbox" name="do_not_send" id="wpms-do-not-send" value="1"{{if .O.General.DoNotSend}} checked{{end}} /> Stop sending all emails</label>{{end}}
 <p class="description">Some plugins, like BuddyPress and Events Manager, are using their own email delivery solutions. By default, this option does not block their emails, as those plugins do not use default wp_mail() function to send emails. In Pursae every e-mail goes through wp_mail(), so this blocks all of them.</p></td></tr>
-<tr><th scope="row">Hide Announcements</th><td><label><input type="checkbox" name="am_notifications_hidden" value="1"{{if .O.General.HideAnnouncements}} checked{{end}} /> Hide plugin announcements and update details.</label></td></tr>
 <tr><th scope="row">Hide Email Delivery Errors</th><td><label><input type="checkbox" name="email_delivery_errors_hidden" value="1"{{if .O.General.HideErrors}} checked{{end}} /> Hide warnings alerting of email delivery errors.</label>
 <p class="description"><strong>This is not recommended</strong> and should only be done for staging or development sites.</p></td></tr>
 <tr><th scope="row">Hide Dashboard Widget</th><td><label><input type="checkbox" name="dashboard_widget_hidden" value="1"{{if .O.General.HideWidget}} checked{{end}} /> Hide the Pursae SMTP Dashboard Widget.</label></td></tr>
@@ -343,8 +347,11 @@
 <p><strong>Mailer:</strong> {{.MailerTitle}}{{if .Conn}} ({{.Conn}}){{end}}</p>
 <p><strong>Source:</strong> {{.Source}}</p>
 {{if gt .Attempts 1}}<p><strong>Attempts:</strong> {{.Attempts}}</p>{{end}}
+{{if .Delivery}}<p><strong>Delivery:</strong> {{if eq .Delivery "delivered"}}Delivered{{else if eq .Delivery "bounced"}}Bounced{{else}}Marked as spam{{end}}{{if .DeliveryDetail}} ({{.DeliveryDetail}}){{end}}</p>{{end}}
+{{if .Tracked}}<p><strong>Opens:</strong> {{.OpenCount}}{{if .FirstOpened}} (first opened {{.FirstOpened.Format "Jan 2, 2006 3:04 pm"}} UTC){{end}}</p><p><strong>Clicks:</strong> {{.ClickCount}}</p>{{end}}
 {{if .MessageID}}<p><strong>Message ID:</strong> <code>{{.MessageID}}</code></p>{{end}}
 {{if .ParentID}}<p><strong>Resent from:</strong> <a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;mode=view&amp;email_id={{.ParentID}}">#{{.ParentID}}</a></p>{{end}}
+{{if .Attachments}}<p><strong>Attachments:</strong></p><ul>{{range .Attachments}}<li>{{.Name}} ({{.Size}} bytes)</li>{{end}}</ul><p class="description">Attachments are listed for reference only: the files are not stored, so a resend does not include them.</p>{{end}}
 {{if .Error}}<div class="notice notice-error inline"><p><strong>Error:</strong> {{.Error}}</p></div>{{end}}
 </div></div>
 <div class="postbox wpms-noprint"><div class="postbox-header"><h2 class="hndle">Actions</h2></div><div class="inside">
@@ -429,7 +436,9 @@
 <p class="description">Enter email address where test email will be sent.</p></td></tr>
 <tr><th scope="row">HTML</th><td><label><input type="checkbox" name="wp-mail-smtp[test_email_html]" value="1"{{if .TestHTML}} checked{{end}} /> Send this email in HTML or in plain text format.</label></td></tr>
 <tr><th scope="row"><label for="wpms-test-conn">Connection</label></th><td><select name="wp-mail-smtp[test_connection]" id="wpms-test-conn">{{range .ConnOpts}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select></td></tr>
-<tr><th scope="row">Domain Check</th><td><label><input type="checkbox" name="domain_check" value="1" /> Also check the SPF, DMARC and MX records of the From domain</label></td></tr>
+<tr><th scope="row">Domain Check</th><td><label><input type="checkbox" name="domain_check" value="1" /> Also check the SPF, DKIM, DMARC and MX records of the From domain</label>
+<p><label for="dkim_selector">DKIM selector (optional)</label> <input type="text" class="regular-text" name="dkim_selector" id="dkim_selector" placeholder="e.g. s1" /></p>
+<p class="description">Leave empty to try the selectors your mailer usually uses.</p></td></tr>
 </table>
 <p class="submit"><input type="submit" class="button button-primary" value="Send Email" /></p>
 </form>

@@ -358,12 +358,12 @@ func (s *Server) gooikeFilterPage(c *gin.Context, page []byte) []byte {
 		return page
 	}
 	st := s.gooikeLoad()
+	doc := gooikeBlockScripts(&st, string(page))
 	if !st.BlockYouTube && !st.BlockVimeo && !st.BlockMaps {
-		return page
+		return []byte(doc)
 	}
-	doc := string(page)
 	if !strings.Contains(doc, "<iframe") {
-		return page
+		return []byte(doc)
 	}
 	cat := st.EmbedCategory
 	catLabel := cat

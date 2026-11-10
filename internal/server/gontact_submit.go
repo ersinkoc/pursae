@@ -52,6 +52,10 @@ type gfSubmission struct {
 	consent  map[string]string
 	spamLog  []map[string]string
 	skipMail bool
+	hidden   map[string]bool // fields inside conditional groups that are hidden
+	entryID  int64           // the stored gontact_entries row (0: not stored)
+	limited  bool            // refused by the per-address rate limit
+	uploaded int64           // bytes of all uploads so far
 
 	remoteIP, userAgent, pageURL string
 	containerPost                int64
@@ -81,6 +85,11 @@ func (s *Server) gontactSubmit(c *gin.Context, f *gfForm, user *store.User, nonc
 		return sub
 	}
 	sub.remoteIP, sub.userAgent = clientIP(c), c.GetHeader("User-Agent")
+	if !gontactRateOK(c, "feedback", gontactFeedbackPerMin) {
+		sub.limited = true
+		sub.status, sub.message = "error", "Too many submissions from your address. Please wait a minute and try again."
+		return sub
+	}
 	sub.pageURL = c.GetHeader("Referer")
 	if c.Request.URL.Path != "" && !strings.HasPrefix(c.Request.URL.Path, "/wp-json") {
 		sub.pageURL = s.links(c).HomeURL(c.Request.URL.RequestURI())
@@ -88,8 +97,11 @@ func (s *Server) gontactSubmit(c *gin.Context, f *gfForm, user *store.User, nonc
 	sub.containerPost, _ = strconv.ParseInt(c.PostForm("_wpcf7_container_post"), 10, 64)
 	_, sub.tags = gfScan(f.Form, nil)
 	sub.setupPostedData()
+	sub.applyConditions()
 
-	if !sub.validate() {
+	valid := sub.validate()
+	sub.pluginValidate()
+	if !valid || len(sub.invalid) > 0 {
 		sub.status, sub.message = "validation_failed", f.message("validation_error")
 	}
 	if sub.is("init") && !sub.accepted() {
@@ -99,8 +111,13 @@ func (s *Server) gontactSubmit(c *gin.Context, f *gfForm, user *store.User, nonc
 		sub.status, sub.message = "spam", f.message("spam")
 		slog.Info("gontact form: spam", "form", f.ID, "log", sub.spamLog)
 	}
+	if sub.is("init") && !sub.beforeSendMail() {
+		return sub
+	}
 	if sub.is("init") {
+		sub.storeEntry()
 		if sub.mail() {
+			sub.queueWebhooks()
 			sub.status, sub.message = "mail_sent", f.message("mail_sent_ok")
 			s.gontactCountSerial(sub.ctx, f)
 			if s.plugins != nil && s.plugins.hooks.HasAction("wpcf7_mail_sent") {
@@ -108,6 +125,7 @@ func (s *Server) gontactSubmit(c *gin.Context, f *gfForm, user *store.User, nonc
 			}
 		} else {
 			sub.status, sub.message = "mail_failed", f.message("mail_sent_ng")
+			s.gontactEntryMailStatus(sub.ctx, sub.entryID, "failed")
 		}
 	}
 	return sub
@@ -210,7 +228,7 @@ func gfIsEmail(v string) bool {
 func (sub *gfSubmission) validate() bool {
 	acceptAsValidation := sub.form.isTrue("acceptance_as_validation")
 	for _, t := range sub.tags {
-		if t.Name == "" {
+		if t.Name == "" || sub.hidden[t.Name] {
 			continue
 		}
 		vals := sub.raw[t.Name]
@@ -382,7 +400,8 @@ func (sub *gfSubmission) validateFile(t *gfTag) {
 			return
 		}
 		total += fh.Size
-		if total > limit {
+		sub.uploaded += fh.Size
+		if total > limit || sub.uploaded > gfUploadTotalMax {
 			sub.invalidate(t, "upload_file_too_large")
 			return
 		}
@@ -401,6 +420,10 @@ func (sub *gfSubmission) validateFile(t *gfTag) {
 			sub.invalidate(t, "upload_file_too_large")
 			return
 		}
+		if !gfSniffMatches(ext, data) {
+			sub.invalidate(t, "upload_file_type_invalid")
+			return
+		}
 		if ctype == "" {
 			ctype = "application/octet-stream"
 		}
@@ -412,6 +435,44 @@ func (sub *gfSubmission) validateFile(t *gfTag) {
 	}
 	sub.raw[t.Name], sub.posted[t.Name] = names, names
 }
+
+// gfSniffTypes lists, per extension, the content types http.DetectContentType may report for a
+// genuine file (the first 512 bytes decide). Extensions not listed are not sniffed.
+var gfSniffTypes = map[string][]string{
+	"jpg": {"image/jpeg"}, "jpeg": {"image/jpeg"}, "jpe": {"image/jpeg"},
+	"png": {"image/png"}, "gif": {"image/gif"}, "webp": {"image/webp"}, "bmp": {"image/bmp"},
+	"pdf": {"application/pdf"},
+	"zip": {"application/zip"}, "docx": {"application/zip"}, "xlsx": {"application/zip"}, "pptx": {"application/zip"},
+	"odt": {"application/zip"}, "ods": {"application/zip"}, "odp": {"application/zip"},
+	"mp3": {"audio/mpeg"},
+	"txt": {"text/plain"}, "csv": {"text/plain"},
+}
+
+// gfSniffMatches reports whether the content of an upload fits its extension.
+func gfSniffMatches(ext string, data []byte) bool {
+	want, ok := gfSniffTypes[ext]
+	if !ok {
+		return true
+	}
+	head := data
+	if len(head) > 512 {
+		head = head[:512]
+	}
+	got := http.DetectContentType(head)
+	if i := strings.Index(got, ";"); i >= 0 {
+		got = got[:i]
+	}
+	if ext == "mp3" && got == "application/octet-stream" { // ID3-less frames are not always recognised
+		return true
+	}
+	if (ext == "txt" || ext == "csv") && len(data) == 0 {
+		return true
+	}
+	return gfContains(want, got)
+}
+
+// gfUploadTotalMax caps all uploads of one submission: they are held in memory and queued with the mail.
+const gfUploadTotalMax = 25 << 20
 
 // gfSanitizeFileName is sanitize_file_name() for uploads: no paths, no odd characters.
 func gfSanitizeFileName(name string) string {
@@ -438,7 +499,7 @@ func gfAntiscript(name string) string {
 func (sub *gfSubmission) accepted() bool {
 	ok := true
 	for _, t := range sub.tags {
-		if t.BaseType != "acceptance" || t.Name == "" {
+		if t.BaseType != "acceptance" || t.Name == "" || sub.hidden[t.Name] {
 			continue
 		}
 		on := strings.Join(sub.raw[t.Name], "") != ""
@@ -475,12 +536,24 @@ func (sub *gfSubmission) spam(nonceOK bool) bool {
 	if !nonceOK {
 		log("wpcf7", "Submitted nonce is invalid.")
 	}
+	if sub.c.PostForm(gontactHoneypotField) != "" {
+		log("honeypot", "The hidden honeypot field was filled in.")
+	}
+	if present, valid, age := sub.s.gontactCheckTimestamp(sub.c.PostForm(gontactTimestampField), sub.timestamp); present {
+		if !valid || age < 0 {
+			log("timestamp", "The signed form timestamp is invalid.")
+		} else if age < int64(gontactMinFillSeconds) {
+			log("timestamp", "The form was submitted faster than a person can fill it.")
+		}
+	}
 	if word := sub.s.gontactDisallowed(sub); word != "" {
 		log("disallowed_list", "Disallowed words ("+word+") are used.")
 	}
 	if secret := sub.s.settings.String("gontact_recaptcha_secret"); secret != "" && sub.s.settings.String("gontact_recaptcha_sitekey") != "" {
 		token := sub.c.PostForm("_wpcf7_recaptcha_response")
-		if token == "" {
+		if token == "" && sub.s.gooikeOn() {
+			// Pursae Cookie holds reCAPTCHA back until the visitor consents; the other checks still apply.
+		} else if token == "" {
 			log("recaptcha", "reCAPTCHA response token is empty.")
 		} else if score, ok := sub.s.gontactVerifyCaptcha(sub.ctx, "https://www.google.com/recaptcha/api/siteverify", secret, token, sub.remoteIP); !ok || score < 0.5 {
 			log("recaptcha", "reCAPTCHA score ("+strconv.FormatFloat(score, 'f', 2, 64)+") is lower than the threshold (0.50).")
@@ -657,6 +730,11 @@ func (s *Server) gontactFeedback(c *gin.Context, r *restRequest) {
 	// Cookie users authenticate through the form's _wpnonce (rest_cookie_check_errors), so a
 	// logged-in visitor without a valid nonce is a visitor here, exactly as in WordPress.
 	sub := s.gontactSubmit(c, f, restCurrent(c), true)
+	if sub.limited {
+		c.Header("Retry-After", "60")
+		restErr(c, http.StatusTooManyRequests, "wpcf7_rate_limited", sub.message)
+		return
+	}
 	restJSON(c, http.StatusOK, sub.result())
 }
 
@@ -774,6 +852,11 @@ func (s *Server) gontactSchemaREST(c *gin.Context, r *restRequest) {
 func (s *Server) gontactRefillREST(c *gin.Context, r *restRequest) {
 	f := s.gontactRESTForm(c, r)
 	if f == nil {
+		return
+	}
+	if !gontactRateOK(c, "refill", gontactRefillPerMin) {
+		c.Header("Retry-After", "60")
+		restErr(c, http.StatusTooManyRequests, "wpcf7_rate_limited", "Too many requests. Please wait a minute and try again.")
 		return
 	}
 	_, tags := gfScan(f.Form, nil)

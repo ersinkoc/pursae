@@ -62,7 +62,7 @@ func (s *Server) sendResetLink(c *gin.Context, u *store.User) {
 	if currentUser(c) == nil {
 		body += fmt.Sprintf("This password reset request originated from the IP address %s.\n", clientIP(c))
 	}
-	s.sendMail(c, mail.Message{To: []string{u.Email}, Subject: "[" + site + "] Password Reset", Body: body})
+	s.sendMail(c, mail.Message{Kind: "password_reset", To: []string{u.Email}, Subject: "[" + site + "] Password Reset", Body: body})
 }
 
 // register is wp-login.php?action=register (register_new_user()).
@@ -185,7 +185,7 @@ func (s *Server) resetPassword(c *gin.Context, v loginView) {
 			s.adminsecPasswordChanged(c, u)
 			_, _ = s.store.Pool.Exec(c, `DELETE FROM sessions WHERE user_id = $1`, u.ID)
 			site := s.settings.String("blogname")
-			s.sendMail(c, mail.Message{To: []string{s.settings.String("admin_email")}, Subject: "[" + site + "] Password Changed",
+			s.sendMail(c, mail.Message{Kind: "password_changed", To: []string{s.settings.String("admin_email")}, Subject: "[" + site + "] Password Changed",
 				Body: fmt.Sprintf("Password changed for user: %s\n", u.Login)})
 			c.Redirect(http.StatusFound, s.loginPath()+"?password=changed")
 			return
@@ -211,7 +211,7 @@ func (s *Server) notifyComment(c *gin.Context, cm *store.Comment) {
 		}
 		body := fmt.Sprintf("A new comment on the post \"%s\" is waiting for your approval\n%s\n\n%s\nApprove it: %s\nTrash it: %s\nSpam it: %s\n\nCurrently 1 comment is waiting for approval. Please visit the moderation panel:\n%s\n",
 			p.Title, link, text, admin+"pending", admin+"pending", admin+"pending", admin+"moderated")
-		s.sendMail(c, mail.Message{To: []string{s.settings.String("admin_email")}, Subject: fmt.Sprintf("[%s] Please moderate: \"%s\"", site, p.Title), Body: body})
+		s.sendMail(c, mail.Message{Kind: "comment_moderation", To: []string{s.settings.String("admin_email")}, Subject: fmt.Sprintf("[%s] Please moderate: \"%s\"", site, p.Title), Body: body})
 	case "approved":
 		if !s.settings.Bool("comments_notify") || cm.UserID == p.AuthorID {
 			return
@@ -221,7 +221,7 @@ func (s *Server) notifyComment(c *gin.Context, cm *store.Comment) {
 			return
 		}
 		body := fmt.Sprintf("New comment on your post \"%s\"\n%s\nYou can see all comments on this post here:\n%s#comments\n\nPermalink: %s#comment-%d\n", p.Title, text, link, link, cm.ID)
-		s.sendMail(c, mail.Message{To: []string{author.Email}, Subject: fmt.Sprintf("[%s] Comment: \"%s\"", site, p.Title), Body: body, ReplyTo: cm.AuthorEmail})
+		s.sendMail(c, mail.Message{Kind: "comment_published", To: []string{author.Email}, Subject: fmt.Sprintf("[%s] Comment: \"%s\"", site, p.Title), Body: body, ReplyTo: cm.AuthorEmail})
 	}
 }
 
@@ -229,11 +229,11 @@ func (s *Server) notifyComment(c *gin.Context, cm *store.Comment) {
 // with a link to set a password.
 func (s *Server) notifyNewUser(c *gin.Context, u *store.User, sendUser bool) {
 	site := s.settings.String("blogname")
-	s.sendMail(c, mail.Message{To: []string{s.settings.String("admin_email")}, Subject: "[" + site + "] New User Registration",
+	s.sendMail(c, mail.Message{Kind: "new_user_admin", To: []string{s.settings.String("admin_email")}, Subject: "[" + site + "] New User Registration",
 		Body: fmt.Sprintf("New user registration on your site %s:\n\nUsername: %s\n\nEmail: %s\n", site, u.Login, u.Email)})
 	if sendUser {
 		link := s.resetLink(c, u)
 		body := fmt.Sprintf("Username: %s\n\nTo set your password, visit the following address:\n\n%s\n\n%s\n", u.Login, link, s.links(c).HomeURL(s.loginPath()))
-		s.sendMail(c, mail.Message{To: []string{u.Email}, Subject: "[" + site + "] Login Details", Body: body})
+		s.sendMail(c, mail.Message{Kind: "new_user_user", To: []string{u.Email}, Subject: "[" + site + "] Login Details", Body: body})
 	}
 }

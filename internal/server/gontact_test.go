@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"wpgo/internal/mail"
 	"wpgo/internal/store"
@@ -32,6 +33,12 @@ func gontactLink(t *testing.T, c *http.Client, base, action string) string {
 // gontactSetup installs the site, logs in and (when on) activates Gontact Form.
 func gontactSetup(t *testing.T, on bool) (string, *http.Client, *Server) {
 	t.Helper()
+	old := gontactMinFillSeconds
+	gontactMinFillSeconds = 0 // tests post the form the moment it is rendered
+	t.Cleanup(func() { gontactMinFillSeconds = old })
+	gooikeLimiter.Lock() // the per-address limiter is process wide: start every test with a clean window
+	gooikeLimiter.window, gooikeLimiter.hits = time.Now(), map[string]int{}
+	gooikeLimiter.Unlock()
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	if on {

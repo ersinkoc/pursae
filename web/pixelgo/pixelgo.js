@@ -72,6 +72,8 @@
 			if (m && m[1]) { try { cur[k] = decodeURIComponent(m[1].replace(/\+/g, ' ')).slice(0, 200); any = true; } catch (e) { /* ignore */ } }
 		});
 		var merged = any ? extend(extend({}, old), cur) : old;
+		// The time a click id was first seen: Meta's fbc value (fb.1.<ms>.<fbclid>) carries it, and it must not change per request.
+		if (cur.fbclid && cur.fbclid !== old.fbclid) { merged.fbts = String(Date.now()); }
 		if (any && !merged.lp) { merged.lp = location.pathname.slice(0, 200); }
 		if (any && anyAllowed()) { setCookie('pixelgo_attr', JSON.stringify(merged), C.attr.days); }
 		return merged;
@@ -148,7 +150,7 @@
 	function platformName(plat, name) {
 		var m = C.map[name];
 		if (m) { return m[plat] || ''; }
-		if (plat === 'ga4') { return name.toLowerCase().replace(/[ -]+/g, '_'); }
+		if (plat === 'ga4' || plat === 'gtm') { return name.toLowerCase().replace(/[ -]+/g, '_'); }
 		if (plat === 'pinterest') { return 'custom'; }
 		return name;
 	}
@@ -168,9 +170,35 @@
 			(PL.ga4.ids || []).forEach(function (id) { var d = extend({ send_to: id }, o); gtag('event', n, d); });
 			return true;
 		},
+		gtm: function (ev, n) {
+			// Data layer push in the GA4 e-commerce schema: { event, ecommerce: { items, value, currency, transaction_id, ... } }.
+			// The ecommerce object is cleared first, as Google's guide asks, so a push never inherits the previous one.
+			var o = build('ga4', ev.p, ev.name), d = { event: n, pixelgo_event_id: ev.id }, k, shop = o.items || o.value != null || o.transaction_id;
+			win.dataLayer = win.dataLayer || [];
+			if (ev.name === 'PageView') { o.page_title = doc.title; o.page_location = location.href; }
+			if (shop) {
+				win.dataLayer.push({ ecommerce: null });
+				d.ecommerce = o;
+			} else {
+				for (k in o) { if (Object.prototype.hasOwnProperty.call(o, k)) { d[k] = o[k]; } }
+			}
+			if (ev.user && ev.name === 'Purchase') { d.user_data = ev.user; }
+			win.dataLayer.push(d);
+			return true;
+		},
 		gads: function (ev) {
 			if (!win.gtag) { return false; }
 			var labels = PL.gads.labels || {}, o = build('gads', ev.p, ev.name), n = platformName('gads', ev.name), sent = false;
+			// Enhanced conversions: the hashed customer data of the order, set before the conversion hit.
+			if (ev.user && ev.name === 'Purchase' && (ev.user.em || ev.user.ph)) {
+				var ud = {}, ad = {};
+				if (ev.user.em) { ud.sha256_email_address = ev.user.em; }
+				if (ev.user.ph) { ud.sha256_phone_number = ev.user.ph; }
+				if (ev.user.fn) { ad.sha256_first_name = ev.user.fn; }
+				if (ev.user.ln) { ad.sha256_last_name = ev.user.ln; }
+				if (ad.sha256_first_name || ad.sha256_last_name) { ud.address = ad; }
+				gtag('set', 'user_data', ud);
+			}
 			(PL.gads.ids || []).forEach(function (id) {
 				if (labels[ev.name]) {
 					var c = { send_to: id + '/' + labels[ev.name] };
@@ -203,8 +231,14 @@
 			return true;
 		},
 		bing: function (ev, n) {
-			win.uetq = win.uetq || [];
-			win.uetq.push('event', n, build('bing', ev.p, ev.name));
+			// One UET instance per tag ID (window.pixelgoUET); before the library loads, the shared queue.
+			var o = build('bing', ev.p, ev.name);
+			if (win.pixelgoUET && win.pixelgoUET.length) {
+				win.pixelgoUET.forEach(function (u) { u.push('event', n, o); });
+			} else {
+				win.uetq = win.uetq || [];
+				win.uetq.push('event', n, o);
+			}
 			return true;
 		}
 	};
@@ -390,6 +424,58 @@
 				fire(t === 'play' ? 'VideoPlay' : 'VideoComplete', { content_name: (v.currentSrc || '').split('/').pop().slice(0, 100), extra: { video_url: (v.currentSrc || '').slice(0, 200) } }, { once: t === 'play' ? '' : '' });
 			}, true);
 		});
+		// YouTube and Vimeo embeds: the players report their state by postMessage. Iframes are watched when
+		// they appear (Pursae Cookie inserts them after consent), YouTube gets enablejsapi=1.
+		var embeds = [], playing = {};
+		var embedHost = function (src) {
+			var m = /^https?:\/\/(?:www\.)?(youtube(?:-nocookie)?\.com\/embed\/([\w-]{6,20})|player\.vimeo\.com\/video\/(\d+))/.exec(src || '');
+			return m ? (m[2] ? { kind: 'youtube', id: m[2] } : { kind: 'vimeo', id: m[3] }) : null;
+		};
+		var embedFire = function (info, t) {
+			var url = info.kind === 'youtube' ? 'https://www.youtube.com/watch?v=' + info.id : 'https://vimeo.com/' + info.id;
+			var key = info.kind + ':' + info.id;
+			if (t === 'play') { if (playing[key]) { return; } playing[key] = 1; } else { playing[key] = 0; }
+			fire(t === 'play' ? 'VideoPlay' : 'VideoComplete', { content_name: info.kind + ' ' + info.id, extra: { video_url: url, video_provider: info.kind } });
+		};
+		var listen = function (f) {
+			if (f.__pixelgoVideo) { return; }
+			var src = f.getAttribute('src') || '', info = embedHost(src);
+			if (!info) { return; }
+			f.__pixelgoVideo = info;
+			embeds.push(f);
+			var hello = function () {
+				try {
+					if (info.kind === 'youtube') {
+						f.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: info.id }), '*');
+						f.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }), '*');
+					} else {
+						['play', 'ended'].forEach(function (n) { f.contentWindow.postMessage(JSON.stringify({ method: 'addEventListener', value: n }), '*'); });
+					}
+				} catch (e) { /* cross-origin window gone */ }
+			};
+			if (info.kind === 'youtube' && src.indexOf('enablejsapi=') === -1) {
+				f.setAttribute('src', src + (src.indexOf('?') === -1 ? '?' : '&') + 'enablejsapi=1');
+			}
+			f.addEventListener('load', hello);
+			hello();
+		};
+		var scan = function () { [].slice.call(doc.getElementsByTagName('iframe')).forEach(listen); };
+		win.addEventListener('message', function (e) {
+			var f = null, i, d = e.data;
+			for (i = 0; i < embeds.length; i++) { if (embeds[i].contentWindow === e.source) { f = embeds[i]; break; } }
+			if (!f) { return; }
+			if (typeof d === 'string') { try { d = JSON.parse(d); } catch (x) { return; } }
+			if (!d || typeof d !== 'object') { return; }
+			var info = f.__pixelgoVideo;
+			if (info.kind === 'youtube') {
+				var st = d.event === 'onStateChange' ? d.info : (d.event === 'infoDelivery' && d.info ? d.info.playerState : undefined);
+				if (st === 1) { embedFire(info, 'play'); } else if (st === 0) { embedFire(info, 'ended'); }
+			} else if (d.event === 'play') { embedFire(info, 'play'); } else if (d.event === 'ended') { embedFire(info, 'ended'); }
+		});
+		scan();
+		doc.addEventListener('gooike:consent', function () { setTimeout(scan, 0); });
+		if (win.MutationObserver) { new MutationObserver(scan).observe(doc.documentElement, { childList: true, subtree: true }); }
+		win.pixelgoVideoEmbeds = embeds;
 	}
 
 	/* ---------- the store ---------- */
