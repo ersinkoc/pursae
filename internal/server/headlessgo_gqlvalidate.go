@@ -66,7 +66,15 @@ type hgGQLValidator struct {
 	seen     map[hgGQLProblem]bool
 	visiting map[string]bool
 	depth    int
+	nodes    int // selections walked, fragments counted at every spread (hgGQLMaxNodes)
 }
+
+// hgGQLMaxNodes bounds the selections one operation may expand to. Fragments spread several times
+// at several levels multiply (2 spreads × 30 levels is 2^30 fields from a 1 KB request), so both
+// the validator and the expander count every selection they walk and give up past this.
+const hgGQLMaxNodes = 10000
+
+const hgGQLTooComplex = "The query is too complex."
 
 // validateOp checks an operation of the document and returns every problem found.
 func (ex *hgGQLExec) validateOp(doc *hgGQLDoc, op *hgGQLOp) []hgGQLProblem {
@@ -153,10 +161,14 @@ func (v *hgGQLValidator) sel(parent string, sel []*hgGQLField, root bool) {
 	v.depth++
 	defer func() { v.depth-- }()
 	t := v.g.types[parent]
-	if t == nil || v.depth > 40 {
+	if t == nil || v.depth > 40 || v.nodes > hgGQLMaxNodes {
 		return
 	}
 	for _, f := range sel {
+		if v.nodes++; v.nodes > hgGQLMaxNodes {
+			v.fail(-1, hgGQLTooComplex)
+			return
+		}
 		v.directives(f.dirs)
 		if f.name == "..." {
 			if f.spread != "" {

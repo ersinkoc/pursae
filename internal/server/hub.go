@@ -235,8 +235,20 @@ func (s *Server) hubTrustCached(ctx context.Context) {
 	if s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_index"), &idx) {
 		s.hubTrustKeys(idx.Keys)
 		s.rememberCoreLatest(ctx, &idx)
+		return
+	}
+	// The index expired (restart more than 12 hours after the last fetch, or the Manager is
+	// unreachable): keep trusting the last fetched keys so Manager-signed plugins still load.
+	// They pass the same endorsement check; the next fetch replaces the set.
+	var keys []hubKey
+	if s.hubCacheGet(ctx, hubLastKeysKey, &keys) {
+		s.hubTrustKeys(keys)
 	}
 }
+
+// hubLastKeysKey is the non-expiring copy of the last fetched index's signing keys (outside the
+// wpgo_hub_ prefix, so hubDropCaches keeps it: the keys do not depend on the license).
+const hubLastKeysKey = "wpgo_hubkeys_last"
 
 func (s *Server) hubFetchIndex(ctx context.Context) (*hubIndex, error) {
 	var idx hubIndex
@@ -244,6 +256,10 @@ func (s *Server) hubFetchIndex(ctx context.Context) (*hubIndex, error) {
 		return nil, err
 	}
 	s.hubCacheSet(ctx, s.hubCacheKey("wpgo_hub_index"), idx, hubCacheTTL)
+	if raw, err := json.Marshal(idx.Keys); err == nil {
+		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO transients(key, value, expires_at) VALUES ($1, $2, NULL)
+			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, expires_at = NULL, updated_at = now()`, hubLastKeysKey, raw)
+	}
 	s.hubTrustKeys(idx.Keys)
 	s.rememberCoreLatest(ctx, &idx) // the admin pages' "Pursae X is available" (core_update_nag.go)
 	s.hubSyncBrand(ctx, idx.Brand)

@@ -167,11 +167,18 @@ func (s *Store) UserByID(ctx context.Context, id int64) (*User, error) {
 func (s *Store) UserByLoginOrEmail(ctx context.Context, login string) (*User, error) {
 	// ORDER BY id: rows that differ only by case (stored before the checks were case-insensitive)
 	// resolve to the same, oldest account every time.
-	q := `SELECT ` + userCols + ` FROM users WHERE lower(login) = lower($1) ORDER BY id LIMIT 1`
+	byLogin := `SELECT ` + userCols + ` FROM users WHERE lower(login) = lower($1) ORDER BY id LIMIT 1`
+	q := byLogin
 	if strings.Contains(login, "@") {
 		q = `SELECT ` + userCols + ` FROM users WHERE lower(email) = lower($1) ORDER BY id LIMIT 1`
 	}
 	u, err := scanUser(s.Pool.QueryRow(ctx, q, login))
+	if errors.Is(err, ErrNotFound) && q != byLogin {
+		// The e-mail wins, so nobody can shadow another account's address with a username;
+		// a username that itself contains "@" is found second (wp_authenticate_email_password
+		// falls back to the login the same way).
+		u, err = scanUser(s.Pool.QueryRow(ctx, byLogin, login))
+	}
 	if err != nil {
 		return nil, err
 	}

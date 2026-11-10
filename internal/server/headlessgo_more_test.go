@@ -1208,3 +1208,35 @@ func TestHeadlessGoTurkishAdmin(t *testing.T) {
 		t.Error("no translate=no on user content")
 	}
 }
+
+// A fragment spread twice per level doubles the work at every level: the expander must stop at
+// hgGQLMaxNodes instead of walking 2^29 fields.
+func TestHeadlessGoGraphQLFragmentBomb(t *testing.T) {
+	var b strings.Builder
+	b.WriteString("query { ...F0 }\n")
+	for i := 0; i < 28; i++ {
+		fmt.Fprintf(&b, "fragment F%d on Query { ...F%d ...F%d }\n", i, i+1, i+1)
+	}
+	b.WriteString("fragment F28 on Query { __typename }\n")
+	doc, err := hgGQLParse(b.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	op, err := doc.operation("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		_, err := doc.expand(op.sel, &hgGQLExec{vars: map[string]any{}}, 0, map[string]bool{})
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if err == nil || !strings.Contains(err.Error(), "too complex") {
+			t.Fatalf("expand: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("expand did not stop")
+	}
+}

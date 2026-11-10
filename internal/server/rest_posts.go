@@ -550,15 +550,23 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 			p.Meta["footnotes"] = sanitizePostMeta(u, "footnotes", v)
 		}
 	}
-	if v, ok := r.Str(c, "date"); ok && v != "" {
-		if t, err := time.ParseInLocation("2006-01-02T15:04:05", v, s.loc()); err == nil {
-			p.PublishedAt = &t
+	dv, dok := r.Str(c, "date")
+	gv, gok := r.Str(c, "date_gmt")
+	if dok && dv != "" {
+		t, ok := restParseDate(dv, s.loc())
+		if !ok {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): date")
+			return
 		}
-	} else if v, ok := r.Str(c, "date_gmt"); ok && v != "" {
-		if t, err := time.ParseInLocation("2006-01-02T15:04:05", v, time.UTC); err == nil {
-			p.PublishedAt = &t
+		p.PublishedAt = &t
+	} else if gok && gv != "" {
+		t, ok := restParseDate(gv, time.UTC)
+		if !ok {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): date_gmt")
+			return
 		}
-	} else if ok {
+		p.PublishedAt = &t
+	} else if dok || gok {
 		// date sent as null: a floating date ("Immediately") for unpublished posts.
 		if !wasPublished {
 			p.PublishedAt = nil

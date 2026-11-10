@@ -560,13 +560,20 @@ func (s *Server) gooSetStatusLocked(ctx context.Context, o *gooOrder, from []str
 	return nil
 }
 
+// gooDownloadPermitted is WC_Order::is_download_permitted(): files are released on completed
+// orders, and on processing ones too when "Grant access to downloadable products after payment"
+// is on. On-hold (unpaid) orders never get access.
+func (s *Server) gooDownloadPermitted(status string) bool {
+	return status == "completed" || (status == "processing" && s.gooOptBool("downloads_grant_access_after_payment"))
+}
+
 // gooStatusTransition is WooCommerce's status hooks: stock is reduced when an order becomes
 // processing / completed / on-hold (taken in gooSetStatusLocked) and restored when it is cancelled
 // (or pending again); coupons count their uses likewise; downloads are granted when paid.
 func (s *Server) gooStatusTransition(ctx context.Context, o *gooOrder, from, to string) {
 	switch to {
 	case "processing", "completed", "on-hold":
-		if to != "on-hold" || !s.gooOptBool("downloads_grant_access_after_payment") {
+		if s.gooDownloadPermitted(to) {
 			s.gooGrantDownloads(ctx, o)
 		}
 		if containsStr(gooPaidStatuses, to) {

@@ -644,9 +644,13 @@ type gooFrontDownloadRow struct {
 // gooDownloadRows reads permission rows (with the order paid, not exhausted, not expired).
 func (s *Server) gooDownloadRows(c *gin.Context, where string, args ...any) []gooFrontDownloadRow {
 	ctx := c.Request.Context()
+	statuses := "'completed'"
+	if s.gooDownloadPermitted("processing") {
+		statuses = "'processing','completed'"
+	}
 	rows, err := s.store.Pool.Query(ctx, `SELECT dp.product_id, dp.download_id, dp.order_id, dp.order_key, dp.user_email, dp.downloads_remaining, dp.access_expires
 		FROM goo_download_permissions dp JOIN goo_orders o ON o.id = dp.order_id
-		WHERE o.status IN ('processing','completed') AND (dp.downloads_remaining IS NULL OR dp.downloads_remaining > 0)
+		WHERE o.status IN (`+statuses+`) AND (dp.downloads_remaining IS NULL OR dp.downloads_remaining > 0)
 		AND (dp.access_expires IS NULL OR dp.access_expires > now()) AND `+where+` ORDER BY dp.order_id DESC, dp.id`, args...)
 	if err != nil {
 		return nil
@@ -753,7 +757,7 @@ func (s *Server) gooDownload(c *gin.Context) {
 		return
 	}
 	o, err := s.gooGetOrder(ctx, oid)
-	if err != nil || (s.gooOptBool("downloads_grant_access_after_payment") && !o.IsPaid() && o.Status != "completed") || o.Status == "cancelled" || o.Status == "refunded" || o.Status == "failed" {
+	if err != nil || !s.gooDownloadPermitted(o.Status) {
 		die(http.StatusForbidden, "Invalid order.")
 		return
 	}

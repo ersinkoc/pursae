@@ -254,6 +254,9 @@ func (d *hgGQLDoc) expand(sel []*hgGQLField, ex *hgGQLExec, depth int, visiting 
 	}
 	var out []*hgGQLField
 	for _, f := range sel {
+		if ex.nodes++; ex.nodes > hgGQLMaxNodes {
+			return nil, fmt.Errorf("%s", hgGQLTooComplex)
+		}
 		inc, err := ex.included(f.dirs)
 		if err != nil {
 			return nil, err
@@ -785,6 +788,8 @@ type hgGQLExec struct {
 	st   hgSettings
 	vars map[string]any
 	sch  *hgGQLSchema // built on first use
+	// nodes counts the selections expand produced (hgGQLMaxNodes).
+	nodes int
 }
 
 // resolve replaces variables in an argument value.

@@ -600,6 +600,18 @@ func (s *Server) gooRESTRestrict(ctx context.Context, u *store.User, p *store.Po
 	return gmemFilterContent(s, ctx, rendered), excerpt
 }
 
+// gmemRestrictsPost reports whether Memberships hides a post's content from the current visitor.
+// Paths that bypass the_content (the Web Builder snapshot) use it to fall back to the theme, whose
+// content filter shows the restriction message.
+func (s *Server) gmemRestrictsPost(c *gin.Context, postID int64) bool {
+	if !s.gooOn() || !s.gooExtOn(gmemKey) {
+		return false
+	}
+	ctx := c.Request.Context()
+	plans := s.gmemPostPlans(ctx, postID)
+	return len(plans) > 0 && !s.gmemCanAccess(ctx, currentUser(c), plans)
+}
+
 // gmemRestrictedContent is what a non-member sees instead of restricted content: the excerpt (per
 // setting) and the restriction message.
 func (s *Server) gmemRestrictedContent(ctx context.Context, postID int64, plans []*gooMembershipPlan, u *store.User) string {

@@ -387,15 +387,33 @@ func (api *restAPI) applyCommentFields(c *gin.Context, r *restRequest, cm *store
 	return true
 }
 
-// commentDateParam reads date / date_gmt (Y-m-d\TH:i:s).
+// restParseDate parses a REST date like WordPress' rest_parse_date: Y-m-d\TH:i:s in loc,
+// or RFC 3339 with a Z / ±hh:mm offset (the offset wins over loc).
+func restParseDate(v string, loc *time.Location) (time.Time, bool) {
+	if len(v) > 10 && (v[10] == ' ' || v[10] == 't') { // rest_parse_date accepts [Tt ] as the separator
+		v = v[:10] + "T" + v[11:]
+	}
+	if n := len(v); n > 0 && v[n-1] == 'z' {
+		v = v[:n-1] + "Z"
+	}
+	if t, err := time.ParseInLocation("2006-01-02T15:04:05", v, loc); err == nil {
+		return t, true
+	}
+	if t, err := time.Parse(time.RFC3339Nano, v); err == nil {
+		return t, true
+	}
+	return time.Time{}, false
+}
+
+// commentDateParam reads date / date_gmt (Y-m-d\TH:i:s, optional offset).
 func commentDateParam(c *gin.Context, r *restRequest, s *Server) (time.Time, bool) {
 	if v, ok := r.Str(c, "date_gmt"); ok && v != "" {
-		if t, err := time.Parse("2006-01-02T15:04:05", v); err == nil {
+		if t, ok := restParseDate(v, time.UTC); ok {
 			return t, true
 		}
 	}
 	if v, ok := r.Str(c, "date"); ok && v != "" {
-		if t, err := time.ParseInLocation("2006-01-02T15:04:05", v, s.loc()); err == nil {
+		if t, ok := restParseDate(v, s.loc()); ok {
 			return t, true
 		}
 	}

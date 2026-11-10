@@ -103,6 +103,9 @@ func (s *Server) wbFrontDecide(c *gin.Context, q *siteQuery, p *store.Post) *wbF
 	if s.passwordRequired(c, p) { // the theme prints the password form
 		return nil
 	}
+	if s.gmemRestrictsPost(c, p.ID) { // the theme prints the Memberships restriction message
+		return nil
+	}
 	ctx := c.Request.Context()
 	wb := s.store.WebBuilder()
 	doc, err := wb.Doc(ctx, p.ID)

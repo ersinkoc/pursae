@@ -322,6 +322,12 @@ func (s *Server) gooProcessCheckout(c *gin.Context, form map[string][]string) (*
 	d := gooPostedCheckout(form)
 	s.gooUpdateCustomerFromCheckout(c, d)
 	cart.Calculate()
+	// woocommerce_check_cart_items: a coupon, item or gift card dropped while the cart was
+	// reloaded changes the total the customer saw, so stop and show why (the session already
+	// lost the dropped entry, so the next attempt places the order at the new total).
+	if ce := cart.Errors(); len(ce) > 0 {
+		return nil, nil, ce
+	}
 	errs := s.gooValidateCheckout(c, cart, d)
 	if len(errs) > 0 {
 		return nil, nil, errs

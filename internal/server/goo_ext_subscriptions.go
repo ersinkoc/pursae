@@ -806,6 +806,22 @@ func (s *Server) gsubRecurringTotals(c *gin.Context, cart *gooCart) template.HTM
 
 // Orders → subscriptions ----------------------------------------------------------------------------
 
+// gsubDropPendingRenewal forgets an unpaid renewal order that will never be paid. A regular renewal
+// puts an active subscription on hold (the period was not paid for; the customer can pay from a new
+// renewal or the store reactivates it); an early renewal just leaves the subscription as it was.
+func (s *Server) gsubDropPendingRenewal(ctx context.Context, sub *gooSubscription, orderID int64, early bool, note string) {
+	if gxaInt64(sub.Meta, "_pending_renewal") != orderID {
+		return
+	}
+	delete(sub.Meta, "_pending_renewal")
+	if !early && sub.Status == "active" {
+		_ = s.gsubUpdateStatus(ctx, sub, "on-hold", note, "")
+		return
+	}
+	s.gsubAddNote(ctx, sub, note, false, "")
+	_ = s.gsubSave(ctx, sub)
+}
+
 func (s *Server) gsubOrderStatusChanged(ctx context.Context, o *gooOrder, from, to string) {
 	if subID := gxaInt64(o.Meta, "_subscription_renewal"); subID > 0 {
 		sub, err := s.gsubGet(ctx, subID)
@@ -837,6 +853,9 @@ func (s *Server) gsubOrderStatusChanged(ctx context.Context, o *gooOrder, from, 
 			if sub.Status == "active" {
 				_ = s.gsubUpdateStatus(ctx, sub, "on-hold", fmt.Sprintf("Payment failed for renewal order #%d.", o.ID), "")
 			}
+		case "cancelled", "trash":
+			s.gsubDropPendingRenewal(ctx, sub, o.ID, o.Meta["_subscription_renewal_early"] == true,
+				fmt.Sprintf("Renewal order #%d was cancelled.", o.ID))
 		}
 		return
 	}
@@ -1042,7 +1061,14 @@ func (s *Server) gsubScheduler(ctx context.Context) {
 			continue
 		}
 		o, err := s.gooGetOrder(ctx, oid)
-		if err != nil || !containsStr([]string{"pending", "failed"}, o.Status) {
+		if err != nil || o.Status == "cancelled" || o.Status == "trash" {
+			// The renewal order was deleted or cancelled without the status hook (older data):
+			// without this the subscription would stay active and never renew again.
+			early := err == nil && o.Meta["_subscription_renewal_early"] == true
+			s.gsubDropPendingRenewal(ctx, sub, oid, early, fmt.Sprintf("Renewal order #%d is gone or was cancelled.", oid))
+			continue
+		}
+		if !containsStr([]string{"pending", "failed"}, o.Status) {
 			continue
 		}
 		if o.Status == "failed" || now.Sub(o.DateCreated) >= time.Duration(grace)*24*time.Hour {
