@@ -1209,7 +1209,11 @@ func (s *Server) gooOrderEditPost(c *gin.Context, o *gooOrder) (string, string) 
 		s.gooSumTaxItems(o)
 		msg = "Tax rate added."
 	case do == "recalculate":
-		s.gooOrderApplyCoupons(ctx, o)
+		// WC's Recalculate is calculate_totals(): the line totals (edited by hand or discounted by the
+		// coupons) are kept; only an order with coupons has its discounts re-derived from them.
+		if len(o.ItemsOf("coupon")) > 0 {
+			s.gooOrderApplyCoupons(ctx, o)
+		}
 		s.gooOrderCalcTaxes(ctx, o)
 		msg = "Order totals recalculated."
 	case do == "apply_coupon":
@@ -1431,9 +1435,10 @@ func (s *Server) gooOrderAddProduct(ctx context.Context, o *gooOrder, pid int64,
 	if err != nil {
 		return fmt.Errorf("Invalid product.")
 	}
-	price := p.PriceValue()
+	// Order lines are ex-tax: WC_Order::add_product() uses wc_get_price_excluding_tax().
+	line := s.gooPriceExcludingTax(ctx, p, p.PriceValue(), qty, s.gooOrderTaxLocation(o))
 	it := &gooOrderItem{Type: "line_item", Name: s.gooProductTitle(ctx, p), ProductID: p.ID, Quantity: float64(qty), TaxClass: s.gooTaxClassOf(ctx, p),
-		Subtotal: gooRound(price*float64(qty), s.gooDecimals()), Meta: map[string]any{}}
+		Subtotal: gooRound(line, s.gooDecimals()), Meta: map[string]any{}}
 	it.Total = it.Subtotal
 	if p.Type == gooTypeVariation {
 		it.ProductID, it.VariationID = p.ParentID, p.ID
@@ -1603,6 +1608,28 @@ func (s *Server) gooOrderApplyCoupons(ctx context.Context, o *gooOrder) {
 		it.Total = it.Subtotal
 	}
 	sequential := s.gooOptBool("calc_discounts_sequentially")
+	// When the order's prices include tax, coupon amounts are in tax-inclusive terms like in the cart
+	// (WC_Discounts::set_items_from_order adds the subtotal tax): the discounts are worked out on gross
+	// amounts and turned back into ex-tax amounts with each line's own tax factor.
+	factor := map[*gooOrderItem]float64{}
+	loc := s.gooOrderTaxLocation(o)
+	for _, it := range lines {
+		f := 1.0
+		if o.PricesIncludeTax {
+			pid := it.ProductID
+			if it.VariationID != 0 {
+				pid = it.VariationID
+			}
+			taxable := true
+			if p, err := s.gooGetProduct(ctx, pid); err == nil {
+				taxable = p.TaxStatus == "taxable" || p.TaxStatus == ""
+			}
+			if taxable {
+				f += gooSumTaxes(gooCalcTax(1, s.gooFindRates(ctx, it.TaxClass, loc, false), false))
+			}
+		}
+		factor[it] = f
+	}
 	for _, ci := range o.ItemsOf("coupon") {
 		cp, err := s.gooCouponByCode(ctx, ci.Name)
 		gone := err != nil
@@ -1612,7 +1639,11 @@ func (s *Server) gooOrderApplyCoupons(ctx context.Context, o *gooOrder) {
 			if ci.Total <= 0 {
 				continue
 			}
-			cp = &gooCoupon{DiscountType: "fixed_cart", Amount: ci.Total}
+			amount := ci.Total
+			if o.PricesIncludeTax {
+				amount += ci.TotalTax
+			}
+			cp = &gooCoupon{DiscountType: "fixed_cart", Amount: amount}
 		}
 		var eligible []*gooOrderItem
 		var base float64
@@ -1620,17 +1651,18 @@ func (s *Server) gooOrderApplyCoupons(ctx context.Context, o *gooOrder) {
 			if gone || s.gooCouponValidForItem(ctx, cp, it) {
 				eligible = append(eligible, it)
 				if sequential {
-					base += it.Total
+					base += it.Total * factor[it]
 				} else {
-					base += it.Subtotal
+					base += it.Subtotal * factor[it]
 				}
 			}
 		}
 		var total float64
 		for _, it := range eligible {
-			ref := it.Subtotal
+			f := factor[it]
+			ref := it.Subtotal * f
 			if sequential {
-				ref = it.Total
+				ref = it.Total * f
 			}
 			var disc float64
 			switch cp.DiscountType {
@@ -1643,7 +1675,7 @@ func (s *Server) gooOrderApplyCoupons(ctx context.Context, o *gooOrder) {
 					disc = cp.Amount * ref / base
 				}
 			}
-			disc = gooRound(min(disc, it.Total), dp)
+			disc = gooRound(min(disc/f, it.Total), dp) // gross → ex-tax
 			it.Total = gooRound(it.Total-disc, dp)
 			total += disc
 		}

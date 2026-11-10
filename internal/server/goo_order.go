@@ -952,19 +952,25 @@ func (s *Server) gooCreateRefundLocked(ctx context.Context, o *gooOrder, amount 
 			if it.VariationID != 0 {
 				pid = it.VariationID
 			}
+			// wc_restock_refunded_items(): only what was taken from stock (and not put back yet) returns.
+			red, _ := it.Meta["_reduced_stock"].(float64)
+			if red <= 0 {
+				continue
+			}
+			qty := min(l.Qty, int(red))
 			p, err := s.gooGetProduct(ctx, pid)
 			if err != nil || !s.gooManagingStock(ctx, p) {
 				continue
 			}
 			old := s.gooStockQty(ctx, p)
-			n, _ := s.gooUpdateStock(ctx, p, l.Qty, false)
-			if red, ok := it.Meta["_reduced_stock"].(float64); ok {
-				it.Meta["_reduced_stock"] = red - float64(l.Qty)
+			n, err := s.gooUpdateStock(ctx, p, qty, false)
+			if err != nil {
+				continue
 			}
+			_ = s.gooSetItemReduced(ctx, it, red-float64(qty))
 			changes = append(changes, fmt.Sprintf("%s %d&rarr;%d", html.EscapeString(s.gooProductTitle(ctx, p)), old, n))
 		}
 		if len(changes) > 0 {
-			_ = s.gooSaveOrder(ctx, o, true)
 			_ = s.gooAddOrderNote(ctx, o, "Item #"+itoa64(o.ID)+" stock increased: "+strings.Join(changes, ", "), false, "")
 		}
 	}
