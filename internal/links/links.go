@@ -408,6 +408,11 @@ func (b *Builder) PostPageLink(p *store.Post, n int) string {
 	if !b.Pretty() || draftLike(p) {
 		return b.addQueryArg(link, "page", strconv.Itoa(n))
 	}
+	if b.FrontPageID != 0 && p.ID == b.FrontPageID && p.Type == "page" && p.Status == "publish" {
+		// The static front page's link is the home URL, where "/2/" is no route: WordPress uses the
+		// pagination base there (_wp_link_page()).
+		return strings.TrimSuffix(link, "/") + b.trailing("/page/"+strconv.Itoa(n))
+	}
 	return strings.TrimSuffix(link, "/") + b.trailing("/"+strconv.Itoa(n))
 }
 

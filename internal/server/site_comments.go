@@ -38,7 +38,7 @@ type commentsView struct {
 // without unfiltered_html are already limited to wp.KsesData when saved; the post policy here (with
 // safecss) is the safety net for rows saved before that and for HTML written with unfiltered_html.
 func commentText(content string) string {
-	return wp.Autop(wp.Texturize(wp.KsesPost(content)))
+	return wp.Autop(wp.Texturize(wp.RelUGC(wp.KsesPost(content)))) // pre_comment_content: wp_rel_ugc
 }
 
 // commentsOpen is comments_open() with _close_comments_for_old_post(): the close_comments_for_old_posts

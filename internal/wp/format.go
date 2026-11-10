@@ -138,6 +138,13 @@ func Autop(text string) string {
 
 	text = openBlockRe.ReplaceAllString(text, "\n\n$1")
 	text = closeBlockRe.ReplaceAllString(text, "$1\n\n")
+	// wp_replace_in_html_tags( $text, array( "\n" => ' <!-- wpnl --> ' ) ): a newline inside a tag
+	// or comment neither splits a paragraph nor becomes a <br />.
+	text = protectTagNewlines(text)
+	if strings.Contains(text, "<option") {
+		text = optionBeforeRe.ReplaceAllString(text, "<option")
+		text = optionAfterRe.ReplaceAllString(text, "</option>")
+	}
 	text = multiNL.ReplaceAllString(text, "\n\n")
 
 	var sb strings.Builder
@@ -152,7 +159,9 @@ func Autop(text string) string {
 	out = pEmptyRe.ReplaceAllString(out, "")
 	out = pAroundOpen.ReplaceAllString(out, "$1")
 	out = pAroundClose.ReplaceAllString(out, "$1")
-	// Single newlines inside paragraphs become line breaks.
+	// Single newlines inside paragraphs become line breaks, except inside <script>, <style>, <svg>
+	// and <math> (_autop_newline_preservation_helper()).
+	out = autopPreserveRe.ReplaceAllStringFunc(out, func(m string) string { return strings.ReplaceAll(m, "\n", autopNL) })
 	out = regexp.MustCompile(`(?s)<p>(.*?)</p>`).ReplaceAllStringFunc(out, func(p string) string {
 		inner := p[3 : len(p)-4]
 		return "<p>" + strings.ReplaceAll(strings.TrimSpace(inner), "\n", "<br />\n") + "</p>"
@@ -163,7 +172,44 @@ func Autop(text string) string {
 	for i, pre := range pres {
 		out = strings.Replace(out, "<pre wp-pre-tag-"+strconv.Itoa(i)+"></pre>", pre, 1)
 	}
-	return out
+	return strings.ReplaceAll(out, autopNL, "\n")
+}
+
+// autopNL stands in for a newline that Autop must keep as it is.
+const autopNL = "\x1ewpnl\x1e"
+
+var (
+	optionBeforeRe  = regexp.MustCompile(`\s*<option`)
+	optionAfterRe   = regexp.MustCompile(`</option>\s*`)
+	autopPreserveRe = regexp.MustCompile(`(?is)<(?:script|style|svg|math)\b.*?</(?:script|style|svg|math)>`)
+)
+
+// protectTagNewlines swaps the newlines inside tags and comments for autopNL. Quoted attribute
+// values are skipped as a browser does (htmlElementEnd), so a ">" inside one does not end the tag.
+func protectTagNewlines(text string) string {
+	if !strings.Contains(text, "<") {
+		return text
+	}
+	var b strings.Builder
+	b.Grow(len(text))
+	for i := 0; i < len(text); {
+		lt := strings.IndexByte(text[i:], '<')
+		if lt < 0 {
+			b.WriteString(text[i:])
+			break
+		}
+		b.WriteString(text[i : i+lt])
+		i += lt
+		end, kind := htmlElementEnd(text, i)
+		if kind == elemText {
+			b.WriteByte('<')
+			i++
+			continue
+		}
+		b.WriteString(strings.ReplaceAll(text[i:end], "\n", autopNL))
+		i = end
+	}
+	return b.String()
 }
 
 // EscText escapes <, > and & but leaves quotes alone so Texturize can still curl them.

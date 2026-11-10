@@ -51,13 +51,12 @@ func DoShortcode(content string, tags []string, fn ShortcodeFunc) string {
 	}
 	content = unautopShortcodes(content, re)
 	expand := func(m string) string {
-		sub := re.FindStringSubmatch(m)
-		// sub: 1 = leading "[", 2 = tag, 3 = attrs, 4 = self-closing "/", 5 = content, 6 = trailing "]"
-		if sub[1] == "[" && sub[6] == "]" {
+		lead, tag, rawAttrs, content, trail := shortcodeParts(re.FindStringSubmatch(m))
+		if lead == "[" && trail == "]" {
 			return m[1 : len(m)-1] // escaped
 		}
-		attrs := ParseShortcodeAttrs(sub[3])
-		return sub[1] + fn(sub[2], attrs, unhideBrackets(sub[5])) + sub[6]
+		attrs := ParseShortcodeAttrs(rawAttrs)
+		return lead + fn(tag, attrs, unhideBrackets(content)) + trail
 	}
 	if !strings.Contains(content, "<") {
 		return re.ReplaceAllStringFunc(content, expand)
@@ -325,14 +324,32 @@ func shortcodeRegex(tags []string) *regexp.Regexp {
 		return nil
 	}
 	sort.Slice(names, func(i, j int) bool { return len(names[i]) > len(names[j]) }) // longest first, like WordPress
-	alt := strings.Join(names, "|")
-	// Groups: 1 escape "[", 2 tag, 3 attributes, 4 self-closing "/", 5 content, 6 escape "]".
-	// The attribute group must start with whitespace, so [boxes] never matches the tag "box"
-	// (WordPress uses a lookahead for that). Go's RE2 has no backreferences, so the closing tag
-	// is any registered tag; the content group stops at the first closing shortcode, which also
-	// keeps the same tag from nesting.
-	pattern := `(\[?)\[(` + alt + `)((?:\s(?:[^\]\/]|\/[^\]])*)?)(?:(\/)\]|\](?:((?:[^\[]|\[[^\/])*?)\[\/(?:` + alt + `)\])?)(\]?)`
-	return regexp.MustCompile(pattern)
+	// Go's RE2 has no backreferences, so each tag gets its own alternative that closes with its own
+	// [/tag] (WordPress' \[\/\2\]): [row][col]x[/col][/row] gives row the content [col]x[/col].
+	// Per tag the groups are: tag, attributes, self-closing "/", content. The attribute group must
+	// start with whitespace, so [boxes] never matches the tag "box" (WordPress uses a lookahead).
+	// The content runs to the first [/tag], so the same tag does not nest, as in WordPress.
+	alts := make([]string, len(names))
+	for i, n := range names {
+		alts[i] = `(` + n + `)((?:\s(?:[^\]\/]|\/[^\]])*)?)(?:(\/)\]|\](?:((?s:.*?))\[\/` + n + `\])?)`
+	}
+	// Groups: 1 escape "[", then four per tag, then the escape "]".
+	return regexp.MustCompile(`(\[?)\[(?:` + strings.Join(alts, "|") + `)(\]?)`)
+}
+
+// shortcodeParts splits a shortcodeRegex submatch into its leading "[", tag, attributes, content
+// and trailing "]".
+func shortcodeParts(sub []string) (lead, tag, attrs, content, trail string) {
+	if len(sub) < 6 {
+		return
+	}
+	lead, trail = sub[1], sub[len(sub)-1]
+	for i := 2; i+3 < len(sub)-1; i += 4 {
+		if sub[i] != "" {
+			return lead, sub[i], sub[i+1], sub[i+3], trail
+		}
+	}
+	return
 }
 
 // unautopShortcodes removes the <p>…</p> wpautop() wraps around a lone shortcode.
@@ -340,7 +357,8 @@ func unautopShortcodes(content string, re *regexp.Regexp) string {
 	if !strings.Contains(content, "<p>") {
 		return content
 	}
-	p := regexp.MustCompile(`(?s)<p>\s*(\[[^\]]+\](?:[^\[]*\[/[^\]]+\])?)\s*</p>`)
+	// The whole paragraph (no "</p>" inside), which must be one shortcode.
+	p := regexp.MustCompile(`<p>\s*(\[(?:[^<]|<(?:[^/]|/[^p]|/p[^>]))*?\])\s*</p>`)
 	return p.ReplaceAllStringFunc(content, func(m string) string {
 		inner := p.FindStringSubmatch(m)[1]
 		if loc := re.FindStringIndex(inner); loc != nil && loc[0] == 0 && loc[1] == len(inner) {
@@ -350,7 +368,8 @@ func unautopShortcodes(content string, re *regexp.Regexp) string {
 	})
 }
 
-var shortcodeAttrRe = regexp.MustCompile(`(\w+)\s*=\s*"([^"]*)"|(\w+)\s*=\s*'([^']*)'|(\w+)\s*=\s*([^\s'"]+)|"([^"]*)"|'([^']*)'|(\S+)`)
+// shortcodeAttrRe is get_shortcode_atts_regex(): attribute names may hold dashes (data-id="5").
+var shortcodeAttrRe = regexp.MustCompile(`([\w-]+)\s*=\s*"([^"]*)"|([\w-]+)\s*=\s*'([^']*)'|([\w-]+)\s*=\s*([^\s'"]+)|"([^"]*)"|'([^']*)'|(\S+)`)
 
 // ParseShortcodeAttrs is shortcode_parse_atts(): named attributes keep their
 // (lower-cased) name, bare words and quoted strings become positional "0",

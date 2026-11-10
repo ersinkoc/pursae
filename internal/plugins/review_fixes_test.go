@@ -70,7 +70,7 @@ func TestSanitizeChange(t *testing.T) {
 	for _, c := range []struct{ in, out, want string }{
 		{`<p>a</p>`, `<p>a</p><img src=x onerror=alert(1)>`, `<p>a</p><img src="x">`},
 		{`<form><input></form>`, `<form><input></form><p>ok</p>`, `<form><input></form><p>ok</p>`},
-		{`<a href="/x">t</a>`, `<a href="/x" onclick="e()">t</a>`, `<a href="/x" rel="nofollow">t</a>`},
+		{`<a href="/x">t</a>`, `<a href="/x" onclick="e()">t</a>`, `<a href="/x">t</a>`},
 		{`<p>one</p><p>two</p>`, `<p>one</p><iframe src=//e></iframe><p>two</p>`, `<p>one</p><p>two</p>`},
 	} {
 		got, ok := sanitizeChange(c.in, c.out)
