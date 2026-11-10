@@ -654,7 +654,7 @@ func (s *Server) entryMeta(ctx context.Context, p *store.Post, author *store.Use
 			sb.WriteString(`</span>`)
 		}
 	}
-	if !singular && p.Password == "" && (p.CommentStatus == "open" || p.CommentCount > 0) {
+	if !singular && p.Password == "" && (s.commentsOpen(p) || p.CommentCount > 0) { // comments_open(): old posts may be closed
 		sb.WriteString(`<span class="comments-link">`)
 		link := lb.Permalink(p)
 		switch {
@@ -754,7 +754,8 @@ func renderMenu(items []*store.MenuItem, container, class, before, after string)
 			if it.Classes != "" {
 				classes = it.Classes + " " + classes
 			}
-			fmt.Fprintf(&sb, `<li id="menu-item-%s" class="%s"><a href="%s"`, html.EscapeString(key), classes, html.EscapeString(it.URL))
+			// Menu item classes and URLs are free text (sanitize_html_class() / esc_url() in nav_menu_link_attributes).
+			fmt.Fprintf(&sb, `<li id="menu-item-%s" class="%s"><a href="%s"`, html.EscapeString(key), html.EscapeString(classes), wp.EscURL(it.URL))
 			if it.Target != "" {
 				fmt.Fprintf(&sb, ` target="%s"`, html.EscapeString(it.Target))
 			}

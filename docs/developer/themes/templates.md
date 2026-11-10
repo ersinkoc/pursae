@@ -16,8 +16,8 @@ first template the package has. Only `index.html` is required.
 
 | Request | Templates tried, in order |
 |---------|--------------------------|
-| front page (static page or latest posts) | `front-page.html`, then `home.html` (latest posts) or `page.html` (a static page), `index.html` |
-| blog index (posts page) | `home.html`, `index.html` |
+| front page showing a static page | `front-page.html`, the page's own template, `page.html`, `singular.html`, `index.html` |
+| front page showing the latest posts, or the posts page | `home.html`, `index.html` (`front-page.html` is only used for a static front page, so it may assume `.Post`) |
 | a post | `single.html`, `index.html` |
 | a page | `page.html`, `index.html` |
 | an entry of a custom post type | `single-<type>.html`, `single.html`, `index.html` |

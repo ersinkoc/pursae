@@ -425,7 +425,7 @@ func (s *Server) gooSingleAccess(c *gin.Context, postID int64, postType string) 
 // gooGuardSiteQuery applies gooSingleAccess to the core's singular views: a refusal turns the query
 // into a 404, a redirect answers the request (true).
 func (s *Server) gooGuardSiteQuery(c *gin.Context, q *siteQuery) bool {
-	if q == nil || q.Post == nil || (q.Kind != "single" && q.Kind != "page") {
+	if q == nil || q.Post == nil || (q.Kind != "single" && q.Kind != "page" && q.Kind != "front-page") {
 		return false
 	}
 	switch r := s.gooSingleAccess(c, q.Post.ID, q.Post.Type); r {
