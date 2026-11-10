@@ -309,6 +309,30 @@ func (c *Client) Get(ctx context.Context, key string) (io.ReadCloser, Object, er
 	return resp.Body, objectFromHeaders(key, resp.Header, resp.ContentLength), nil
 }
 
+// Partial is the answer of GetRanged.
+type Partial struct {
+	Body         io.ReadCloser
+	Object       Object // Size is the length of this answer
+	Status       int    // 200, or 206 for a range
+	ContentRange string // "bytes 0-99/1234" with 206
+}
+
+// GetRanged is Get with an HTTP Range header ("bytes=…", "" for the whole object) passed to the
+// storage, for proxying media to players that seek (and Safari, which plays video only from
+// servers that answer ranges). The caller closes the body.
+func (c *Client) GetRanged(ctx context.Context, key, rng string) (*Partial, error) {
+	h := c.withSSEC(http.Header{})
+	if rng != "" {
+		h.Set("Range", rng)
+	}
+	resp, err := c.do(ctx, http.MethodGet, key, nil, nil, h)
+	if err != nil {
+		return nil, err
+	}
+	return &Partial{Body: resp.Body, Object: objectFromHeaders(key, resp.Header, resp.ContentLength), Status: resp.StatusCode,
+		ContentRange: resp.Header.Get("Content-Range")}, nil
+}
+
 // GetRange downloads part of an object (first..last bytes, inclusive).
 func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([]byte, error) {
 	h := c.withSSEC(http.Header{})

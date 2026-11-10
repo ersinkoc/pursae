@@ -57,10 +57,13 @@ func (s *Server) gocdnRemotePreview(c *gin.Context) {
 		c.Status(http.StatusUnsupportedMediaType)
 		return
 	}
-	img, _, err := image.Decode(bytes.NewReader(data))
+	img, imgFormat, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		c.Status(http.StatusUnsupportedMediaType)
 		return
+	}
+	if imgFormat == "jpeg" {
+		img = media.Orient(img, media.JPEGOrientation(bytes.NewReader(data)))
 	}
 	img = gocdn.Transform(img, gocdn.ImageParams{W: 160, H: 160})
 	format := "jpeg"

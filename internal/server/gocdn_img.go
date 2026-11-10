@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"wpgo/internal/gocdn"
+	"wpgo/internal/media"
 )
 
 // The image service: /cdn-img/<path in uploads>?w=&h=&fit=&q=&fm=&s= (and the same parameters on
@@ -47,9 +48,15 @@ var gocdnAnimMemo sync.Map
 
 // gocdnGIFAnimated reports whether GIF data has more than one image, walking the block structure
 // without decoding pixels.
-func gocdnGIFAnimated(b []byte) bool {
+func gocdnGIFAnimated(b []byte) bool { return gocdnGIFFrames(b, 2) > 1 }
+
+// gocdnGIFFrames counts the images of GIF data, walking the block structure without decoding
+// pixels; it stops counting at limit. gif.DecodeAll allocates every frame before the animation
+// budget can be checked, so the count is checked first: LZW packs a uniform 50-megapixel frame
+// into a few kilobytes, and a small file with thousands of them would decode to many gigabytes.
+func gocdnGIFFrames(b []byte, limit int) int {
 	if len(b) < 13 || string(b[:3]) != "GIF" {
-		return false
+		return 0
 	}
 	i := 13
 	if b[10]&0x80 != 0 { // global colour table
@@ -72,15 +79,15 @@ func gocdnGIFAnimated(b []byte) bool {
 		case 0x21: // extension
 			i += 2
 			if !skipSub() {
-				return frames > 1
+				return frames
 			}
 		case 0x2C: // image descriptor
 			frames++
-			if frames > 1 {
-				return true
+			if frames >= limit {
+				return frames
 			}
 			if i+10 > len(b) {
-				return false
+				return frames
 			}
 			flags := b[i+9]
 			i += 10
@@ -89,13 +96,13 @@ func gocdnGIFAnimated(b []byte) bool {
 			}
 			i++ // LZW minimum code size
 			if !skipSub() {
-				return false
+				return frames
 			}
 		default: // 0x3B trailer or garbage
-			return frames > 1
+			return frames
 		}
 	}
-	return frames > 1
+	return frames
 }
 
 const gocdnImgMaxSourceBytes = 64 << 20
@@ -236,7 +243,7 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	if p.Format == "auto" || p.Format == "avif" {
 		h.Add("Vary", "Accept")
 	}
-	sum := sha256.Sum256([]byte(rel + "|" + version + "|" + p.Canonical() + "|q" + strconv.Itoa(p.Q) + "|" + out + "|anim" + strconv.FormatBool(anim) + gocdnAnimKey(anim, st)))
+	sum := sha256.Sum256([]byte(rel + "|" + version + "|" + p.Canonical() + "|q" + strconv.Itoa(p.Q) + "|" + out + "|anim" + strconv.FormatBool(anim) + gocdnAnimKey(anim, st) + "|exif"))
 	key := hex.EncodeToString(sum[:16])
 	etag := `"` + key + `"`
 	h.Set("ETag", etag)
@@ -291,8 +298,11 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	var buf bytes.Buffer
 	animDone := false
 	if anim {
-		if g, err := gif.DecodeAll(bytes.NewReader(src)); err == nil {
-			al := gocdn.AnimLimits{MaxFrames: st.ImgMaxFrames, MaxPixels: 3 * limits.MaxSourcePix}
+		al := gocdn.AnimLimits{MaxFrames: st.ImgMaxFrames, MaxPixels: 3 * limits.MaxSourcePix}
+		n := gocdnGIFFrames(src, al.MaxFrames+1)
+		if n > al.MaxFrames || int64(n)*int64(cfg.Width)*int64(cfg.Height) > al.MaxPixels {
+			// over the budget before decoding: flattened below
+		} else if g, err := gif.DecodeAll(bytes.NewReader(src)); err == nil {
 			if out == "gif" {
 				if ag, err := gocdn.TransformGIF(g, p, al); err == nil {
 					animDone = gif.EncodeAll(&buf, ag) == nil
@@ -311,6 +321,9 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 		if err != nil {
 			gocdnImgError(w, http.StatusUnsupportedMediaType, "the source is not a readable image")
 			return
+		}
+		if srcFormat == "jpeg" { // upright like the original shows in the browser (EXIF orientation)
+			img = media.Orient(img, media.JPEGOrientation(bytes.NewReader(src)))
 		}
 		img = gocdn.Transform(img, p)
 		if err := gocdn.Encode(&buf, img, out, p.Q); err != nil {
@@ -356,9 +369,21 @@ func gocdnImgStore(file string, data []byte) {
 	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
 		return
 	}
-	tmp := file + ".tmp" + strconv.Itoa(os.Getpid())
-	if os.WriteFile(tmp, data, 0o644) == nil {
-		_ = os.Rename(tmp, file)
+	// A temporary file of its own: two requests for the same new variant run at the same time, and
+	// one must not truncate the file the other is renaming into place.
+	f, err := os.CreateTemp(filepath.Dir(file), filepath.Base(file)+".tmp*")
+	if err != nil {
+		return
+	}
+	_, werr := f.Write(data)
+	if cerr := f.Close(); werr == nil {
+		werr = cerr
+	}
+	if werr == nil {
+		werr = os.Chmod(f.Name(), 0o644)
+	}
+	if werr != nil || os.Rename(f.Name(), file) != nil {
+		_ = os.Remove(f.Name())
 	}
 }
 
