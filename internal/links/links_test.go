@@ -1,6 +1,8 @@
 package links
 
 import (
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -33,6 +35,59 @@ func TestPermalinks(t *testing.T) {
 	draft := &store.Post{ID: 8, Type: "post", Status: "draft"}
 	if got := b.Permalink(draft); got != "http://ex.test/?p=8" {
 		t.Errorf("draft permalink = %s", got)
+	}
+}
+
+func TestPagedFirstPageFollowsSlashPolicy(t *testing.T) {
+	for _, tc := range []struct{ structure, base, want string }{
+		{"/%postname%", "https://example.test/cat/page/2?x=1#top", "https://example.test/cat?x=1#top"},
+		{"/%postname%/", "https://example.test/cat/page/2/", "https://example.test/cat/"},
+		{"/%postname%", "https://example.test/page/2", "https://example.test/"},
+	} {
+		b := Builder{Structure: tc.structure}
+		if got := b.Paged(tc.base, 1); got != tc.want {
+			t.Errorf("Paged(%q, 1) = %q, want %q", tc.base, got, tc.want)
+		}
+	}
+}
+
+func TestPlainCommentsFeedLink(t *testing.T) {
+	b := Builder{Home: "https://example.test"}
+	if got := b.FeedLink("comments_rss2"); got != "https://example.test/?feed=comments-rss2" {
+		t.Fatalf("comments feed = %q", got)
+	}
+}
+
+func TestPostCommentsFeedPreservesFilteredURL(t *testing.T) {
+	p := &store.Post{ID: 7, Type: "post", Slug: "мир", Status: "publish"}
+	for _, structure := range []string{"", "/%postname%/"} {
+		b := Builder{Home: "https://example.test", Structure: structure, LinkFilter: func(_ string, _ any, link string) string {
+			sep := "?"
+			if strings.Contains(link, "?") {
+				sep = "&"
+			}
+			return link + sep + "lang=fr#top"
+		}}
+		got := b.PostCommentsFeedFormat(p, "atom")
+		u, err := url.Parse(got)
+		if err != nil || u.Query().Get("lang") != "fr" || u.Fragment != "top" {
+			t.Fatalf("structure %q: %q (%v)", structure, got, err)
+		}
+		if structure == "" && (u.Query().Get("p") != "7" || u.Query().Get("feed") != "atom") {
+			t.Errorf("plain feed = %q", got)
+		}
+		if structure != "" && u.EscapedPath() != "/%D0%BC%D0%B8%D1%80/feed/atom/" {
+			t.Errorf("pretty feed = %q", got)
+		}
+	}
+}
+
+func TestPlainFrontPageCommentsFeedKeepsPageID(t *testing.T) {
+	b := Builder{Home: "https://example.test", FrontPageID: 7}
+	p := &store.Post{ID: 7, Type: "page", Status: "publish", Slug: "home"}
+	u, err := url.Parse(b.PostCommentsFeed(p))
+	if err != nil || u.Query().Get("page_id") != "7" || u.Query().Get("feed") != "rss2" {
+		t.Fatalf("front page feed = %v, err=%v", u, err)
 	}
 }
 

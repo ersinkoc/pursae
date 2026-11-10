@@ -41,7 +41,7 @@ var languages = func() []Language {
 }()
 
 // Languages lists every language with an official WordPress translation, by native name.
-func Languages() []Language { return languages }
+func Languages() []Language { return append([]Language(nil), languages...) }
 
 // LanguageByLocale finds a language of the list.
 func LanguageByLocale(locale string) (Language, bool) {

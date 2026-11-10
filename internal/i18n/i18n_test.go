@@ -182,6 +182,19 @@ func TestPluralRules(t *testing.T) {
 	}
 }
 
+func TestLanguagesReturnsIndependentSlice(t *testing.T) {
+	a, b := Languages(), Languages()
+	if len(a) == 0 {
+		t.Fatal("language list is empty")
+	}
+	original := a[0]
+	a[0] = Language{}
+	got, ok := LanguageByLocale(original.Locale)
+	if !ok || got != original || b[0] != original || Languages()[0] != original {
+		t.Fatal("caller mutation changed the shared language list")
+	}
+}
+
 func TestEscapeAndLanguages(t *testing.T) {
 	if got := escapeText(`a & b <c> &hellip; "q"`); got != `a &amp; b &lt;c&gt; &hellip; &quot;q&quot;` {
 		t.Errorf("escapeText: %s", got)
