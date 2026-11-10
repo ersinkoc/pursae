@@ -63,7 +63,8 @@ type WBTemplateIndexEntry struct {
 	Conditions []string
 	Priority   int
 	ModifiedAt time.Time
-	HasHTML    bool // a builder doc with a non-empty snapshot exists; templates without one never render
+	Popup      string // popup templates: the stored PopupSettings JSON ("" = defaults)
+	HasHTML    bool   // a builder doc with a non-empty snapshot exists; templates without one never render
 }
 
 // WBTemplateCounts are the Theme Builder screen's view counts (subsubsub).
@@ -318,12 +319,29 @@ func (w WebBuilderDB) SetTemplatePreview(ctx context.Context, id int64, object s
 	return w.setTemplateMeta(ctx, id, map[string]string{webbuilder.MetaPreview: object})
 }
 
+// SetTemplatePopup stores a popup template's settings (JSON of webbuilder.PopupSettings).
+func (w WebBuilderDB) SetTemplatePopup(ctx context.Context, id int64, settings string) error {
+	return w.setTemplateMeta(ctx, id, map[string]string{webbuilder.MetaPopup: settings})
+}
+
+// TemplatePopup is a template's stored popup settings JSON ("" = none stored); ErrNotFound when id
+// is not a template.
+func (w WebBuilderDB) TemplatePopup(ctx context.Context, id int64) (string, error) {
+	var raw string
+	err := w.q.QueryRow(ctx, `SELECT coalesce(meta->>'`+webbuilder.MetaPopup+`','') FROM posts
+		WHERE id = $1 AND type = '`+webbuilder.TemplatePostType+`'`, id).Scan(&raw)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return raw, err
+}
+
 // PublishedTemplates is the resolver's template index: every published template of a known type
 // in one query, in id order. HasHTML tells whether its builder snapshot exists and is non-empty.
 func (w WebBuilderDB) PublishedTemplates(ctx context.Context) ([]WBTemplateIndexEntry, error) {
 	rows, err := w.q.Query(ctx, `SELECT p.id, coalesce(p.meta->>'`+webbuilder.MetaTemplateType+`',''),
 		p.meta->'`+webbuilder.MetaConditions+`', p.meta->'`+webbuilder.MetaPriority+`', p.modified_at,
-		coalesce(d.html <> '', false)
+		coalesce(d.html <> '', false), coalesce(p.meta->>'`+webbuilder.MetaPopup+`','')
 		FROM posts p LEFT JOIN web_builder_docs d ON d.post_id = p.id
 		WHERE p.type = '`+webbuilder.TemplatePostType+`' AND p.status = 'publish'
 		ORDER BY p.id`)
@@ -336,7 +354,7 @@ func (w WebBuilderDB) PublishedTemplates(ctx context.Context) ([]WBTemplateIndex
 		var e WBTemplateIndexEntry
 		var typ string
 		var conds, prio []byte
-		if err := rows.Scan(&e.ID, &typ, &conds, &prio, &e.ModifiedAt, &e.HasHTML); err != nil {
+		if err := rows.Scan(&e.ID, &typ, &conds, &prio, &e.ModifiedAt, &e.HasHTML, &e.Popup); err != nil {
 			return nil, err
 		}
 		if e.Type = wbTemplateType(typ); e.Type == "" {

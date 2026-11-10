@@ -17,6 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/i18n"
 	"wpgo/internal/mail"
 	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
@@ -38,11 +39,12 @@ import (
 // (restAuthUser), so a logged-in browser posting the form is not a CSRF vector and needs nothing more.
 
 const (
-	wbFormLimit   = 10               // attempts per address and window
-	wbFormWindow  = 10 * time.Minute // fixed window of the per-address limit
-	wbFormSentMsg = "Thank you, your message was sent."
+	wbFormLimit   = 10                                  // attempts per address and window
+	wbFormWindow  = 10 * time.Minute                    // fixed window of the per-address limit
+	wbFormSentMsg = "Thank you, your message was sent." // default texts; shown translated (wbFormMessage)
 	wbFormBadMsg  = "Please check the highlighted fields."
 	wbFormFailMsg = "Sorry, the message could not be sent."
+	wbFormRateMsg = "Too many messages from this address. Please try again later."
 	wbFormTitle   = 200 // runes of the mail subject's title part
 )
 
@@ -140,7 +142,7 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 			secs = 1
 		}
 		c.Header("Retry-After", strconv.Itoa(secs))
-		restErr(c, http.StatusTooManyRequests, webbuilder.ErrRateLimited, "Too many messages from this address. Please try again later.",
+		restErr(c, http.StatusTooManyRequests, webbuilder.ErrRateLimited, s.frontT(c.Request.Context(), wbFormRateMsg),
 			map[string]any{"retryAfter": secs})
 		return
 	}
@@ -154,7 +156,7 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 		return
 	}
 	finish := func(o wbFormOutcome, fields map[string]string) {
-		s.wbFormRespond(c, p, schema.SectionID, wantJSON, o, fields)
+		s.wbFormRespond(c, p, schema, wantJSON, o, fields)
 	}
 
 	if wbFormSpam(values) || s.wbFormDisallowed(values, clientIP(c), c.Request.UserAgent()) {
@@ -170,10 +172,30 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 		finish(wbFormInvalid, map[string]string{"captcha": reason})
 		return
 	}
-	if err := s.wbFormMail(c.Request.Context(), p, s.wbFormPageURL(c, p), schema, clean, clientIP(c)); err != nil {
+	ctx := c.Request.Context()
+	link := s.wbFormPageURL(c, p)
+	// Keep the message first: a mail that cannot be queued must not lose it.
+	var stored *store.WebBuilderSubmission
+	if s.wbFormStoreOn() {
+		stored = &store.WebBuilderSubmission{PostID: p.ID, SectionID: schema.SectionID, FormTitle: wbFormTitleOf(p, schema),
+			PageURL: link, Fields: clean, IP: clientIP(c)}
+		if err := s.store.WebBuilder().AddSubmission(ctx, stored); err != nil {
+			slog.Error("web builder form: store", "post", p.ID, "section", schema.SectionID, "err", err)
+			stored = nil
+		}
+	}
+	if err := s.wbFormMail(ctx, p, link, schema, clean, clientIP(c)); err != nil {
 		slog.Error("web builder form: mail", "post", p.ID, "section", schema.SectionID, "err", err)
-		finish(wbFormFailed, nil)
+		if stored == nil {
+			finish(wbFormFailed, nil)
+			return
+		}
+		// Stored but not mailed: the visitor's message is safe in Settings › Web Builder.
+		finish(wbFormSent, nil)
 		return
+	}
+	if stored != nil {
+		_ = s.store.WebBuilder().SetSubmissionMailed(ctx, stored.ID, true)
 	}
 	finish(wbFormSent, nil)
 }
@@ -338,14 +360,8 @@ func (s *Server) wbFormCaptcha(ctx context.Context, values map[string]string, ip
 	return ""
 }
 
-// wbFormMail queues the message to admin_email (the wp_mail job of the core mailer). link is the
-// page the form was sent from (wbFormPageURL).
-func (s *Server) wbFormMail(ctx context.Context, p *store.Post, link string, schema webbuilder.FormSchema, clean map[string]string, ip string) error {
-	to := strings.TrimSpace(s.settings.String("admin_email"))
-	if to == "" {
-		return errors.New("no admin_email")
-	}
-	blog := wbFormLine(s.settings.String("blogname"))
+// wbFormTitleOf is the title of a form: its section title, else the page title, else "Form".
+func wbFormTitleOf(p *store.Post, schema webbuilder.FormSchema) string {
 	title := wbFormLine(schema.Title)
 	if title == "" {
 		title = wbFormLine(p.Title)
@@ -356,9 +372,56 @@ func (s *Server) wbFormMail(ctx context.Context, p *store.Post, link string, sch
 	if utf8.RuneCountInString(title) > wbFormTitle {
 		title = string([]rune(title)[:wbFormTitle]) + "…"
 	}
+	return title
+}
+
+// wbFormRecipients are the To and Cc addresses of a form: its own (section content), else the site
+// defaults of Settings › Web Builder, else admin_email.
+func (s *Server) wbFormRecipients(schema webbuilder.FormSchema) (to, cc []string) {
+	to = webbuilder.FormAddresses(schema.To)
+	if len(to) == 0 {
+		to = webbuilder.FormAddresses(s.settings.String(wbFormToOption))
+	}
+	if len(to) == 0 {
+		to = webbuilder.FormAddresses(s.settings.String("admin_email"))
+	}
+	cc = webbuilder.FormAddresses(schema.Cc)
+	if schema.Cc == "" {
+		cc = webbuilder.FormAddresses(s.settings.String(wbFormCcOption))
+	}
+	return to, cc
+}
+
+// wbFormMessage is the text shown after a submit: the form's own, else the site's (Settings › Web
+// Builder), else the default translated with the request language.
+func (s *Server) wbFormMessage(ctx context.Context, custom, option, def string) string {
+	if m := wbFormLine(custom); m != "" {
+		return m
+	}
+	if m := wbFormLine(s.settings.String(option)); m != "" {
+		return m
+	}
+	return s.frontT(ctx, def)
+}
+
+// wbFormMail queues the message to the form's recipients (the wp_mail job of the core mailer). link
+// is the page the form was sent from (wbFormPageURL). The mail text is in the site language.
+func (s *Server) wbFormMail(ctx context.Context, p *store.Post, link string, schema webbuilder.FormSchema, clean map[string]string, ip string) error {
+	to, cc := s.wbFormRecipients(schema)
+	if len(to) == 0 {
+		return errors.New("no recipient")
+	}
+	blog := wbFormLine(s.settings.String("blogname"))
+	title := wbFormTitleOf(p, schema)
+	t := func(msgid string) string {
+		if s.lang == nil {
+			return msgid
+		}
+		return s.lang.Catalog(s.siteLocale()).T(msgid)
+	}
 
 	var b strings.Builder
-	b.WriteString("New message from the form \"" + title + "\" on " + defaultStr(wbFormLine(p.Title), "(no title)") + "\n")
+	b.WriteString(i18n.Sprintf(t(`New message from the form "%s" on %s`), title, defaultStr(wbFormLine(p.Title), t("(no title)"))) + "\n")
 	b.WriteString(link + "\n\n")
 	for _, f := range schema.Fields {
 		v, ok := clean[f.Name]
@@ -372,16 +435,16 @@ func (s *Server) wbFormMail(ctx context.Context, p *store.Post, link string, sch
 			b.WriteString(label + ": " + v + "\n")
 		}
 	}
-	b.WriteString("\n--\nSent by Pursae Web Builder from " + defaultStr(blog, s.links(ctx).HomeURL("/")) + "\n")
+	b.WriteString("\n--\n" + i18n.Sprintf(t("Sent by Pursae Web Builder from %s"), defaultStr(blog, s.links(ctx).HomeURL("/"))) + "\n")
 	if ip != "" {
-		b.WriteString("IP address: " + ip + "\n")
+		b.WriteString(t("IP address") + ": " + ip + "\n")
 	}
 
 	subject := title
 	if blog != "" {
 		subject = "[" + blog + "] " + title
 	}
-	msg := mail.Message{To: []string{to}, Subject: subject, Body: b.String(), ReplyTo: clean["email"]}
+	msg := mail.Message{To: to, Cc: cc, Subject: subject, Body: b.String(), ReplyTo: clean["email"]}
 	if _, err := s.mailer().Build(msg); err != nil {
 		return err
 	}
@@ -399,24 +462,60 @@ func wbFormLine(v string) string {
 	return strings.Join(strings.Fields(v), " ")
 }
 
-// wbFormRespond answers JSON for the runtime and 303 back to the page for a plain form post.
-func (s *Server) wbFormRespond(c *gin.Context, p *store.Post, section string, wantJSON bool, o wbFormOutcome, fields map[string]string) {
+// wbFormRespond answers JSON for the runtime and 303 back to the page (or to the form's redirect
+// URL after a sent form) for a plain form post.
+func (s *Server) wbFormRespond(c *gin.Context, p *store.Post, schema webbuilder.FormSchema, wantJSON bool, o wbFormOutcome, fields map[string]string) {
+	ctx := c.Request.Context()
+	redirect := ""
+	if o == wbFormSent {
+		redirect = s.wbFormRedirectURL(ctx, defaultStr(schema.Redirect, s.settings.String(wbFormRedirectOption)))
+	}
 	if wantJSON {
 		switch o {
 		case wbFormInvalid:
-			restErr(c, http.StatusUnprocessableEntity, webbuilder.ErrFormInvalid, wbFormBadMsg, map[string]any{"fields": fields})
+			restErr(c, http.StatusUnprocessableEntity, webbuilder.ErrFormInvalid, s.frontT(ctx, wbFormBadMsg), map[string]any{"fields": fields})
 		case wbFormFailed:
-			restErr(c, http.StatusInternalServerError, "wb_form_failed", wbFormFailMsg)
+			restErr(c, http.StatusInternalServerError, "wb_form_failed", s.wbFormMessage(ctx, schema.Failure, wbFormFailureOption, wbFormFailMsg))
 		default:
-			c.JSON(http.StatusOK, webbuilder.FormResponse{OK: true, Message: wbFormSentMsg})
+			c.JSON(http.StatusOK, webbuilder.FormResponse{OK: true, Message: s.wbFormMessage(ctx, schema.Success, wbFormSuccessOption, wbFormSentMsg), Redirect: redirect})
 		}
+		return
+	}
+	if redirect != "" {
+		c.Redirect(http.StatusSeeOther, redirect)
 		return
 	}
 	state := "sent"
 	if o != wbFormSent {
 		state = "error"
 	}
-	c.Redirect(http.StatusSeeOther, wbFormBackURL(s.wbFormPageURL(c, p), state, section))
+	c.Redirect(http.StatusSeeOther, wbFormBackURL(s.wbFormPageURL(c, p), state, schema.SectionID))
+}
+
+// wbFormRedirectURL turns a configured redirect into an absolute URL of this site, or "" when it is
+// empty or points elsewhere (a path on this site, or an http(s) URL of the home host).
+func (s *Server) wbFormRedirectURL(ctx context.Context, raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	home := s.links(ctx).HomeURL("/")
+	hu, err := url.Parse(home)
+	if err != nil || hu.Host == "" {
+		return ""
+	}
+	if strings.HasPrefix(raw, "/") {
+		path := safeRedirect(raw, "")
+		if path == "" {
+			return ""
+		}
+		return hu.Scheme + "://" + hu.Host + path
+	}
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil || !strings.EqualFold(u.Host, hu.Host) || hasControlChar(raw) {
+		return ""
+	}
+	return u.String()
 }
 
 // wbFormPageURL is the page a form was sent from: the builder page itself, or for a form inside a

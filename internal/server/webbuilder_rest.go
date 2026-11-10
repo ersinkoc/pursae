@@ -94,6 +94,7 @@ func (s *Server) registerWebBuilderREST() {
 	reg(`/web-builder/v2/prefs`, map[string]restHandler{http.MethodGet: s.wbRESTPrefs, http.MethodPut: s.wbRESTPrefsSave}, true)
 	reg(`/web-builder/v2/fonts/css2`, map[string]restHandler{http.MethodGet: s.wbRESTFontsCSS}, false) // a stylesheet: nonce in ?_wpnonce=
 	reg(`/web-builder/v2/site-settings`, map[string]restHandler{http.MethodGet: s.wbRESTSiteSettings, http.MethodPut: s.wbRESTSiteSettingsSave}, true)
+	reg(`/web-builder/v2/outdated`, map[string]restHandler{http.MethodGet: s.wbRESTOutdated}, true)
 	// Theme Builder (webbuilder_templates_rest.go)
 	s.wbRegisterTemplateREST(reg)
 	// Theme library (webbuilder_themes.go)
@@ -770,6 +771,10 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	if err := wbtx.AddRevision(c, &store.WebBuilderRevision{RevisionID: revisionID, PostID: p.ID, Rev: d.Rev, Doc: res.JSON,
 		Page: pageJSON, Renderer: webbuilder.RendererVersion}); err != nil {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not record the revision.")
+		return
+	}
+	if _, err := wbtx.PruneRevisions(c, p.ID, s.wbRevisionsKeep()); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not prune the old revisions.")
 		return
 	}
 	if err := wbtx.DeleteDraft(c, p.ID, u.ID); err != nil {

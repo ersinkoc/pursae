@@ -140,6 +140,8 @@ func (s *Server) wbTemplatesScreen(c *gin.Context) {
 		s.wbTemplateCreate(c)
 	case action == "activate-hello":
 		s.wbTemplateActivateHello(c)
+	case (action == wbPopupAdminAction || action == wbPopupAdminAction+"-save") && c.Query("post") != "":
+		s.wbPopupAdmin(c, action != wbPopupAdminAction)
 	case action != "" && action != "-1" && c.Query("post") != "":
 		s.wbTemplateRowAction(c, action)
 	default:
@@ -171,6 +173,7 @@ type wbTBRow struct {
 	DateLabel, DateValue              string
 	EditURL, PreviewURL, DuplicateURL string
 	ToggleURL, ToggleLabel            string
+	PopupURL                          string
 	TrashURL, RestoreURL, DeleteURL   string
 	CanDelete                         bool
 	Classes                           string
@@ -313,6 +316,9 @@ func (s *Server) wbTemplateRow(c *gin.Context, u *store.User, t *store.WBTemplat
 	} else {
 		info, _ := s.wbTemplatePreviewInfo(c, t)
 		r.PreviewURL = info.URL
+		if t.Type == webbuilder.TemplatePopup {
+			r.PopupURL = base + wbPopupAdminAction
+		}
 		r.DuplicateURL = base + "duplicate&_wpnonce=" + s.nonce(c, "duplicate-wb-template_"+id)
 		r.TrashURL = base + "trash&_wpnonce=" + s.nonce(c, "trash-wb-template_"+id)
 		if r.Disabled {

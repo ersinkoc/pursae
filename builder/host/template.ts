@@ -57,6 +57,7 @@ export function typeLabel(type: TemplateType): string {
     archive: t('Archive'),
     'search-results': t('Search Results'),
     'error-404': t('404 Page'),
+    popup: t('Popup'),
     'single-product': t('Single Product'),
     'product-archive': t('Product Archive'),
   }

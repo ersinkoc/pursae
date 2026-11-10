@@ -241,7 +241,7 @@ func TestTSThemeBuilderInSync(t *testing.T) {
 	}
 
 	attrs := tsObject(t, ts, "DYN_ATTR")
-	for _, a := range []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrLoopItem, AttrLoopEmpty, AttrMenuLoc, AttrLoopPart, AttrFormat, AttrSize, AttrTax, AttrSep, AttrWords, AttrSearch, AttrItem} {
+	for _, a := range []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrLoopItem, AttrLoopEmpty, AttrMenuLoc, AttrLoopPart, AttrFormat, AttrSize, AttrTax, AttrSep, AttrWords, AttrField, AttrSearch, AttrItem} {
 		found := false
 		for _, v := range attrs {
 			found = found || v == a
@@ -250,8 +250,8 @@ func TestTSThemeBuilderInSync(t *testing.T) {
 			t.Errorf("DYN_ATTR lacks %s", a)
 		}
 	}
-	if len(attrs) != 15 {
-		t.Errorf("DYN_ATTR has %d entries, want 15", len(attrs))
+	if len(attrs) != 16 {
+		t.Errorf("DYN_ATTR has %d entries, want 16", len(attrs))
 	}
 
 	// Regular expressions: the TS literal equals the Go pattern once "\/" is unescaped.
@@ -373,7 +373,7 @@ func TestTemplateTypesComplete(t *testing.T) {
 // runtime's menu feature detection (" data-wb-menu=").
 func TestDynAttrNames(t *testing.T) {
 	keep := regexp.MustCompile(`^data-wb-[a-z0-9-]{1,40}$`)
-	for _, a := range []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrLoopItem, AttrLoopEmpty, AttrMenuLoc, AttrLoopPart, AttrFormat, AttrSize, AttrTax, AttrSep, AttrWords, AttrSearch, AttrItem} {
+	for _, a := range []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrLoopItem, AttrLoopEmpty, AttrMenuLoc, AttrLoopPart, AttrFormat, AttrSize, AttrTax, AttrSep, AttrWords, AttrField, AttrSearch, AttrItem} {
 		if !keep.MatchString(a) {
 			t.Errorf("%s would be dropped by the sanitizer", a)
 		}

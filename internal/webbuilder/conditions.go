@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -554,6 +555,35 @@ func PickTemplate(location string, cands []TemplateCandidate, q QueryFacts) int 
 		}
 	}
 	return best
+}
+
+// PickTemplates returns the indexes of every candidate of location that matches the request, best
+// first (same order as PickTemplate): for locations that several templates fill at once, the
+// popups (LocationPopup).
+func PickTemplates(location string, cands []TemplateCandidate, q QueryFacts) []int {
+	type hit struct{ i, score int }
+	var hits []hit
+	for i := range cands {
+		c := &cands[i]
+		if TemplateLocation(c.Type) != location {
+			continue
+		}
+		if s, ok := TemplateScore(c, q); ok {
+			hits = append(hits, hit{i, s})
+		}
+	}
+	sort.SliceStable(hits, func(a, b int) bool {
+		x, y := hits[a], hits[b]
+		if x.score != y.score {
+			return x.score > y.score
+		}
+		return beats(&cands[x.i], x.score, &cands[y.i], y.score)
+	})
+	out := make([]int, len(hits))
+	for i, h := range hits {
+		out[i] = h.i
+	}
+	return out
 }
 
 func beats(a *TemplateCandidate, as int, b *TemplateCandidate, bs int) bool {

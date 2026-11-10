@@ -142,8 +142,12 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	wasStore := s.gooIsStorePage(c, v.Q) // the head and footer already carry the store assets
 	tp := s.wbThemeParts(c, v)
+	popups := s.wbPopups(c, v)
 	if tp == nil {
-		return false
+		if len(popups) == 0 {
+			return false
+		}
+		tp = &wbThemeParts{view: &wbThemePartsView{}} // popups only: the theme prints its own defaults
 	}
 	v.Data[wbThemePartsKey] = tp.view
 	v.BodyClass = strings.TrimSpace(v.BodyClass + " wb-site")
@@ -173,6 +177,26 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 		catalog = catalog || p.filled.catalog
 		bodies = append(bodies, p.filled.html)
 	}
+	var popupHTML strings.Builder
+	for _, p := range popups {
+		var needs []webbuilder.FontNeed
+		if len(p.doc.Fonts) > 0 && json.Unmarshal(p.doc.Fonts, &needs) == nil {
+			fonts = append(fonts, needs...)
+		}
+		for _, f := range p.doc.Features {
+			feats[f] = true
+		}
+		css.WriteString(s.wbPartCSS(c, p.doc, "wb-css-"+itoa64(p.id), func() bool { return !s.wbTemplatePreviewing(c) }))
+		loops = loops || p.filled.loops
+		shop = shop || p.filled.shop
+		catalog = catalog || p.filled.catalog
+		bodies = append(bodies, p.filled.html)
+		popupHTML.WriteString(s.wbPopupHTML(p))
+	}
+	if len(popups) > 0 {
+		css.WriteString(wbPopupCSS)
+		v.Footer += template.HTML(popupHTML.String() + wbPopupJS)
+	}
 	site, err := s.wbSiteAssets()
 	if err != nil {
 		log.Printf("web builder: %v", err)
@@ -200,6 +224,7 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 			head.WriteString(s.wbFontLinks(c, raw))
 		}
 	}
+	head.WriteString(wbTokenCSS(s.wbSiteTokens()))
 	head.WriteString(css.String())
 	v.Head = template.HTML(head.String())
 	if storeAssets {

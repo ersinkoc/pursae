@@ -127,22 +127,80 @@ Everywhere else — REST `content.rendered`, Pursae Headless, feeds, search, sit
 the theme when the plugin is off or the page is detached — the page is the readable fallback HTML
 the server generates from the document into `posts.content`.
 
+### Popups
+
+A template of type `popup` (Appearance › Theme Builder › Add New › Popup) is a modal dialog. Its display
+conditions pick the pages exactly like any template, but several popups can match one page (up to five
+are printed, best match first). **Popup Settings** in the template's row actions (also
+`GET/PUT web-builder/v2/templates/{id}/popup`) set:
+
+| Setting | Values |
+|---------|--------|
+| Opens | page load (after a delay), scroll depth, exit intent (the pointer leaves through the top; touch screens use the delay), click on `#id` / `.class` |
+| Shown | every page view, once per session, once per visitor, again after N days; raise **Version** to show it again to everyone |
+| Look | position (center, top, bottom), width, close on backdrop click (the close button and Esc always work) |
+| Cookie banner | wait until the visitor has answered the Pursae Cookie banner (while Pursae Cookie is on) |
+
+The markup is the same for every visitor, so Pursae Cache keeps serving the page: the dialog is
+printed hidden before `</body>` with one inline script, and the visitor's choice is kept in the browser
+(`localStorage` / `sessionStorage`, key `wb-popup:<id>`), not in a cookie. The dialog traps focus, closes
+on Esc and gives focus back. A click trigger always opens the popup. While previewing a popup
+(`?wb_template_preview=<id>`) only that popup shows, at once.
+
+### Design tokens
+
+Settings › Web Builder › Design tokens (and `tokens` in `web-builder/v2/site-settings`) define five
+colours (`primary`, `secondary`, `accent`, `text`, `background`) and two fonts (`heading`, `body`) as CSS
+custom properties on `:root` (`--wb-color-primary`, `--wb-font-heading`, …) in one
+`<style id="wb-tokens">` of every page with builder parts. Published snapshots are static, so a snapshot
+or a part's CSS that reads `var(--wb-color-primary)` follows a change at once, without publishing the
+pages again. Values are validated (hex, `rgb()/hsl()` functions, colour keywords; plain font-family
+lists); anything else is dropped.
+
+### Menus and custom fields
+
+A `data-wb-menu-loc` list repeats its card per menu item, depth first: each sub-menu item follows its
+parent (three levels). The link of a sub-item gets the class `wb-menu-d1` / `wb-menu-d2`, a parent's
+link `has-children`, so a card template can indent or fold them (`wb-tokens` indents the two levels).
+
+`data-wb-slot="post.field"` with `data-wb-field="<field name>"` prints a Pursae Custom Fields value of the
+post (text, escaped; lists are joined with a comma); `post.field-url` sets `href` (or `src` on an
+`<img>`) from a URL, link or image field. Hidden fields (`_name`), unset fields, password-protected
+posts and a site with Pursae Custom Fields off print nothing.
+
+### Regenerating pages
+
+Settings › Web Builder › Regenerate pages lists how many pages were published by an older renderer (or
+imported from a WordPress export without markup) and publishes them all again with one button: the
+editor's renderer runs in a frame of that screen, page after page, keeping each page's status, with a
+progress bar and the pages that failed. The work list is `GET web-builder/v2/outdated?after=<id>&limit=<n>`
+(no cap). Only the browser can draw a snapshot, so the tab has to stay open until it is done.
+
 ### Limits
 
 Not in the builder (yet):
 
 - **AI** — the upstream AI assistant, AI images and site cloning are stubbed out of the build; no
   AI request leaves the site. The design for a server-side proxy is in the contract (§9).
-- **Popups**.
-- **Sub-menus**: menus bound to a menu location show their top level only (no drop-downs yet);
-  archives of Pursae Custom Fields taxonomies are not routed, so conditions on them match nothing.
-- **Form integrations** (mailing lists, webhooks, CRMs), stored form submissions and **payments**.
+- **Drop-down menus**: a menu bound to a menu location lists its sub-menu items (three levels, indented
+  by the classes below), but not as fold-out drop-downs; archives of Pursae Custom Fields taxonomies are
+  not routed, so conditions on them match nothing.
+- **Popup designer UI in the editor**: popups are designed like any template; their trigger and
+  frequency are set under Appearance › Theme Builder › Popup Settings (no panel in the editor yet), and
+  they show only with Hello Pursae.
+- **Custom field widget in the editor**: the `post.field` slot works in snapshots and the code widget;
+  the editor has no widget that inserts it yet.
+- **Form integrations** (mailing lists, webhooks, CRMs, auto-replies) and **payments**. Forms keep their
+  designed fields (no field editor); recipients, messages and the redirect are set per site under
+  Settings › Web Builder (or per form through the `formTo`, `formCc`, `formSuccess`, `formError`,
+  `formRedirect` section content keys), and submissions are stored and listed there.
 - Pursae Commerce: product templates and widgets exist (Theme Builder), but not a product loop
   card designed widget by widget (the products grid uses the store's own cards), filters or the
   account page as a widget.
-- **Global classes and variables**, **kits** and site-wide design settings; colours and fonts are
-  set per page or template.
-- A setup wizard, a template library beyond saved sections, and a revisions panel in the editor.
+- **Global classes**, **kits** and a colour picker in the editor that writes design tokens: the
+  tokens themselves exist (below), but the editor's own colour and font fields still write fixed
+  values; use `var(--wb-color-primary)` in custom CSS or an HTML section to follow a token.
+- A setup wizard, a template library beyond saved sections, and a revisions panel in the editor (the REST routes exist; builder revisions are pruned to the newest 50 per page, Settings › Web Builder › Revisions to keep).
 
 These come back as later features. The previous builder and its data were removed in the release
 that introduced this one ([upgrading](getting-started/upgrading.md)).

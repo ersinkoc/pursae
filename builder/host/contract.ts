@@ -53,6 +53,8 @@ export const routes = {
   templates: () => 'web-builder/v2/templates',
   templateConditions: (id: number) => `web-builder/v2/templates/${id}/conditions`,
   templatePreview: (id: number) => `web-builder/v2/templates/${id}/preview`,
+  /** Popup templates: when a popup opens and how often (GET/PUT, webbuilder PopupSettings). */
+  templatePopup: (id: number) => `web-builder/v2/templates/${id}/popup`,
   templateConflicts: (id: number) => `web-builder/v2/templates/${id}/conflicts`,
   navigator: () => 'web-builder/v2/navigator',
   siteSettings: () => 'web-builder/v2/site-settings',
@@ -324,6 +326,8 @@ export type Prefs = Record<string, unknown>
 export interface FormResponse {
   ok: boolean
   message: string
+  /** Absolute URL of this site to open after a sent form (optional). */
+  redirect?: string
 }
 
 /* ---------- Boot: window.__WEB_BUILDER__ ---------- */
@@ -508,7 +512,7 @@ export const THEME_BUILDER_PAGE = 'web-builder-templates'
 export const MENU_LOCATION_PRIMARY = 'primary'
 export const MENU_LOCATION_FOOTER = 'footer'
 
-export const TEMPLATE_TYPES = ['header', 'footer', 'single-post', 'single-page', 'single', 'single-product', 'front-page', 'archive', 'product-archive', 'search-results', 'error-404'] as const
+export const TEMPLATE_TYPES = ['header', 'footer', 'single-post', 'single-page', 'single', 'single-product', 'front-page', 'archive', 'product-archive', 'search-results', 'error-404', 'popup'] as const
 export type TemplateType = (typeof TEMPLATE_TYPES)[number]
 
 export const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
@@ -521,6 +525,7 @@ export const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
   archive: 'Archive',
   'search-results': 'Search Results',
   'error-404': '404 Page',
+  popup: 'Popup',
   'single-product': 'Single Product',
   'product-archive': 'Product Archive',
 }
@@ -533,8 +538,8 @@ export const STORE_TEMPLATE_KINDS: Partial<Record<TemplateType, readonly string[
 }
 export const isStoreTemplate = (t: TemplateType) => t in STORE_TEMPLATE_KINDS
 
-export type TemplateLocation = 'header' | 'main' | 'footer'
-export const templateLocation = (t: TemplateType): TemplateLocation => (t === 'header' ? 'header' : t === 'footer' ? 'footer' : 'main')
+export type TemplateLocation = 'header' | 'main' | 'footer' | 'popup'
+export const templateLocation = (t: TemplateType): TemplateLocation => (t === 'header' ? 'header' : t === 'footer' ? 'footer' : t === 'popup' ? 'popup' : 'main')
 
 /** Default rules written at create; 'single' gets include/singular/<postType> from the request. */
 export const DEFAULT_CONDITIONS: Partial<Record<TemplateType, readonly string[]>> = {
@@ -546,6 +551,7 @@ export const DEFAULT_CONDITIONS: Partial<Record<TemplateType, readonly string[]>
   archive: ['include/archive'],
   'search-results': ['include/archive/search'],
   'error-404': ['include/404'],
+  popup: ['include/general'],
   'single-product': ['include/singular/product'],
   'product-archive': ['include/archive/type/product', 'include/archive/product_cat', 'include/archive/product_tag'],
 }
@@ -563,6 +569,7 @@ export const DEFAULT_STARTERS: Record<TemplateType, StarterId> = {
   archive: 'archive',
   'search-results': 'search',
   'error-404': 'blank',
+  popup: 'blank',
   'single-product': 'product',
   'product-archive': 'product-archive',
 }
@@ -586,6 +593,7 @@ export const DEFAULT_PREVIEWS: Record<TemplateType, PreviewObject> = {
   archive: 'home',
   'search-results': 'search:a',
   'error-404': '404',
+  popup: 'front',
   'single-product': 'latest',
   'product-archive': 'type:product',
 }
@@ -723,6 +731,7 @@ export const DYN_ATTR = {
   tax: 'data-wb-tax',
   sep: 'data-wb-sep',
   words: 'data-wb-words',
+  field: 'data-wb-field',
   search: 'data-wb-search',
   item: 'data-wb-item',
 } as const
@@ -739,6 +748,8 @@ export const SLOTS = {
   'site.year': 'text',
   'menu.label': 'text',
   'menu.url': 'attr',
+  'post.field': 'text',
+  'post.field-url': 'attr',
   'post.title': 'html',
   'post.url': 'attr',
   'post.content': 'html',

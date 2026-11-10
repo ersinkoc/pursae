@@ -166,12 +166,14 @@ Request bodies of document routes are capped at **4 MiB** (`413 wb_too_large`, `
 | PUT | `/templates/{id}/conditions` | `edit_theme_options` | TemplateConditionsRequest → TemplateConditionsResponse |
 | PUT | `/templates/{id}/preview` | `edit_theme_options` | TemplatePreviewRequest → TemplatePreviewResponse |
 | GET | `/templates/{id}/conflicts` | `edit_theme_options` | — → TemplateConflict[] |
+| GET, PUT | `/templates/{id}/popup` | `edit_theme_options` | popup templates only: PopupSettings `{trigger: load\|scroll\|exit\|click, delay 0–300, scroll 1–100, selector (#id\|.class), frequency: always\|session\|once\|days, days 1–365, version, position: center\|top\|bottom, width 200–1600, overlay, afterConsent}`; 422 on an invalid value |
+| GET | `/outdated?after=&limit=` | `manage_options` | pages published by an older renderer → `{renderer, total, items[{id,title,type,status,renderer}]}` (id ascending, keyset) |
 | GET | `/navigator` | `edit_posts` or `edit_theme_options` | — → NavigatorResponse: templates (`edit_theme_options` only, ≤200) and per enabled post type the ≤100 newest-modified posts the user may edit; trash excluded. The editor's page switcher |
 | GET | `/themes` | `edit_theme_options` | — → `{themes, existing, source}` (theme library, [guide](web-builder-theme-library.md)) |
 | POST | `/themes/{slug}/import` | `edit_theme_options` (+ `edit_pages`, `publish_pages`) | `{mode, pages}` → drafts with docs `{templates, pages, media}` |
 | POST | `/themes/{slug}/finish` | `edit_theme_options` | `{mode, templates, pages}` → `{disabled, menus, pages}` |
 | GET | `/site-settings` | `edit_theme_options` | — → SiteSettings (§3.6) |
-| PUT | `/site-settings` | `edit_theme_options` | partial SiteSettingsRequest → SiteSettings |
+| PUT | `/site-settings` | `edit_theme_options` | partial SiteSettingsRequest → SiteSettings; `tokens: {colors:{primary,secondary,accent,text,background}, fonts:{heading,body}}` sets the design tokens (CSS variables `--wb-color-*`, `--wb-font-*`) |
 | GET | `/preview-context?object=` | `edit_posts` (+ `read_post` for `post:<id>`) | — → DynContext (§11.6) |
 
 `{id}` of a document route must be a post of an enabled post type (pages by default, posts
@@ -300,12 +302,24 @@ with that id must be a `form` section of a published builder page), never from t
 
 Body is `application/x-www-form-urlencoded` or `multipart/form-data` (no files), at most 64 KiB.
 Per-IP rate limit → **429** `wb_rate_limited` with `Retry-After`. Invalid → **422**
-`wb_form_invalid`, `data.fields: {field: "required"|"invalid"|"too_long"}`. Mail goes to the
-admin email through the core mailer.
+`wb_form_invalid`, `data.fields: {field: "required"|"invalid"|"too_long"}`. Mail goes through the
+core mailer to the form's recipients: its own `formTo` / `formCc` section content keys, else Settings ›
+Web Builder (Form recipients, Form copies), else the admin email. Every valid submission is also stored
+(`web_builder_form_submissions`, listed on Settings › Web Builder unless switched off), so a message
+survives a failed mail. Texts: `formSuccess` / `formError` content keys, else the site settings, else the
+built-in English defaults, translated with the request language (Pursae Multi Language "Strings" or the
+language pack). `formRedirect` (a path or URL of this site) / the site setting names a page to open after
+a sent form.
 
-- `Accept: application/json` (runtime) → `200 {ok: true, message}`.
+Captcha: when Pursae Contact Form has Turnstile or reCAPTCHA keys the server adds the widget at the end of
+every `form[data-wb-form]` of a filled snapshot (Turnstile `.cf-turnstile`; reCAPTCHA v3 a hidden
+`g-recaptcha-response` filled by a small script before the runtime submits) together with the vendor script.
+
+- `Accept: application/json` (runtime) → `200 {ok: true, message, redirect?}` (`redirect` is an absolute
+  URL of this site; the runtime does not follow it, a small server-added script does via
+  `data-wb-redirect` on the form).
 - Otherwise (no JS) → **303** to the page with `?wb_form=sent` (or `?wb_form=error`) and
-  `#<section id>`.
+  `#<section id>`, or to the redirect URL after a sent form.
 
 ### 3.6 Site settings
 
@@ -812,6 +826,7 @@ single template never renders an archive, even with `include/general`.
 | `search-results` | Search Results | main | archive (search only) | `include/archive/search` | `search` | `search:a` |
 | `error-404` | 404 Page | main | 404 | `include/404` | `blank` | `404` |
 | `single-product` | Single Product | main | singular (store product views only) | `include/singular/product` | `product` | `latest` |
+| `popup` | Popup | popup (any number) | all | `include/general` | `blank` | `front` |
 | `product-archive` | Product Archive | main | archive (store shop and product taxonomy views only) | `include/archive/type/product`, `include/archive/product_cat`, `include/archive/product_tag` | `product-archive` | `type:product` |
 
 Views: **singular** = a single post, page or custom post type entry (a static front page too);
@@ -988,9 +1003,9 @@ existing elements with `data-wb-*` attributes, so the sanitizer allowlist of §8
 | `data-wb-loop="<section id>"` | the loop's list | repeats its `data-wb-loop-item` child per post; spec from the stored doc |
 | `data-wb-loop-item` | exactly one child | the card template |
 | `data-wb-loop-empty` | one child | shown only when the loop has no posts |
-| `data-wb-menu-loc="<location>"` | a link list | repeats its `data-wb-loop-item` (`<a data-wb-slot="menu.url"><span data-wb-slot="menu.label">`) per top-level item |
+| `data-wb-menu-loc="<location>"` | a link list | repeats its `data-wb-loop-item` (`<a data-wb-slot="menu.url"><span data-wb-slot="menu.label">`) per menu item, depth first (three levels; a sub-item's link has class `wb-menu-d<level>`, a parent's `has-children`) |
 | `data-wb-loop-part="1/2"` \| `"2/2"` | a `data-wb-menu-loc` list | first / second half of the items (split-logo navs) |
-| `data-wb-format`, `data-wb-size`, `data-wb-tax`, `data-wb-sep`, `data-wb-words` | a slot element | `Item.dyn` values; the server re-validates them (§11.4 rules) |
+| `data-wb-format`, `data-wb-size`, `data-wb-tax`, `data-wb-sep`, `data-wb-words`, `data-wb-field` | a slot element | `Item.dyn` values; the server re-validates them (§11.4 rules) |
 | `data-wb-search` | `<form method="get" action="<home>/">` | search form; one `<input type="search" name="s">` |
 | `data-wb-item="<item id>"` | a slot element of a Commerce or language-switcher widget | the cell whose `Item.dyn` the server reads from the **stored** doc (§11.12); an id the doc does not have gets the widget defaults |
 
@@ -1015,6 +1030,8 @@ Slots:
 | `site.logo` | attr | `img` attributes of `custom_logo` (`attachmentImage`) |
 | `site.year` | text | current year in the site time zone |
 | `menu.label` | text | menu item label |
+| `post.field` | text | Pursae Custom Fields value of the post named by `data-wb-field` (`[A-Za-z0-9_-]{1,64}`) |
+| `post.field-url` | attr | `href` (`src` on `<img>`) from a URL, link or image field named by `data-wb-field` |
 | `menu.url` | attr | `href`; the current item also gets `aria-current="page"` and class `is-current` |
 | `post.title` | html | `theTitle` |
 | `post.url` | attr | `href` = permalink |

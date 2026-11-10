@@ -53,6 +53,13 @@ type wbLibraryBoot struct {
 
 // wbLibraryFrame writes the bare document the admin screen embeds.
 func (s *Server) wbLibraryFrame(c *gin.Context) {
+	s.wbBundleFrame(c, "__WEB_BUILDER_LIBRARY__", "Theme Library")
+}
+
+// wbBundleFrame writes a bare document that loads the editor bundle in a screen mode: the page sets
+// window.<flag> and ./editor-entry loads that screen instead of the editor (Theme Library,
+// regenerate).
+func (s *Server) wbBundleFrame(c *gin.Context, flag, title string) {
 	c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 	m, err := s.wbManifest()
 	if err == nil {
@@ -67,7 +74,7 @@ func (s *Server) wbLibraryFrame(c *gin.Context) {
 				Locale: s.userLocale(c),
 			}
 			lang := strings.ReplaceAll(boot.Locale, "_", "-")
-			c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(wbLibraryHTML(lang, s.links(c).HomeURL(prefix), entry, wbScriptJSON(boot))))
+			c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(wbLibraryHTML(lang, s.links(c).HomeURL(prefix), entry, wbScriptJSON(boot), flag, title)))
 			return
 		}
 	}
@@ -75,16 +82,16 @@ func (s *Server) wbLibraryFrame(c *gin.Context) {
 }
 
 // wbLibraryHTML is the library frame document. Links leave the frame (<base target="_top">).
-func wbLibraryHTML(lang, base string, entry webbuilder.ManifestEntry, boot string) string {
+func wbLibraryHTML(lang, base string, entry webbuilder.ManifestEntry, boot, flag, title string) string {
 	var b strings.Builder
 	b.WriteString("<!DOCTYPE html>\n<html lang=\"" + html.EscapeString(lang) + "\" dir=\"ltr\">\n<head>\n")
 	b.WriteString("<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
-	b.WriteString("<meta name=\"robots\" content=\"noindex, nofollow\">\n<base target=\"_top\">\n<title>Theme Library</title>\n")
+	b.WriteString("<meta name=\"robots\" content=\"noindex, nofollow\">\n<base target=\"_top\">\n<title>" + html.EscapeString(title) + "</title>\n")
 	for _, css := range entry.CSS {
 		b.WriteString("<link rel=\"stylesheet\" href=\"" + html.EscapeString(base+css) + "\">\n")
 	}
 	b.WriteString("</head>\n<body>\n<div id=\"root\"></div>\n<noscript>Pursae Web Builder needs JavaScript.</noscript>\n")
-	b.WriteString("<script>window.__WEB_BUILDER_LIBRARY__ = true; window." + webbuilder.BootGlobal + " = " + boot + ";</script>\n")
+	b.WriteString("<script>window." + flag + " = true; window." + webbuilder.BootGlobal + " = " + boot + ";</script>\n")
 	b.WriteString("<script type=\"module\" src=\"" + html.EscapeString(base+entry.JS) + "\"></script>\n")
 	b.WriteString("</body>\n</html>\n")
 	return b.String()

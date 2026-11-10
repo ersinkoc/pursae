@@ -188,10 +188,12 @@ func (e *wbSlotEnv) user(id int64) *store.User {
 // wbSlotResolver resolves one scope: the snapshot (post = the singular post), a loop item (post)
 // or a menu item (menu). Slots outside its scope go to the parent.
 type wbSlotResolver struct {
-	env    *wbSlotEnv
-	post   *wbSlotPost
-	menu   *store.MenuItem
-	parent *wbSlotResolver
+	env  *wbSlotEnv
+	post *wbSlotPost
+	menu *store.MenuItem
+	// menuDepth is the item's level in its menu (0 = top).
+	menuDepth int
+	parent    *wbSlotResolver
 }
 
 var _ webbuilder.Resolver = (*wbSlotResolver)(nil)
@@ -250,6 +252,8 @@ func (r *wbSlotResolver) Text(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 	}
 	p := sp.p
 	switch slot {
+	case webbuilder.SlotPostField:
+		return e.fieldText(p, a.Field)
 	case webbuilder.SlotPostDate, webbuilder.SlotPostModified:
 		t := p.Date()
 		if slot == webbuilder.SlotPostModified {
@@ -365,9 +369,24 @@ func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) 
 			return nil, false
 		}
 		out := map[string]string{"href": m.URL}
+		var cls []string
+		for x := r; x != nil; x = x.parent {
+			if x.menu != nil {
+				if x.menuDepth > 0 {
+					cls = append(cls, "wb-menu-d"+strconv.Itoa(x.menuDepth))
+				}
+				break
+			}
+		}
+		if len(m.Children) > 0 {
+			cls = append(cls, "has-children")
+		}
 		if m.Current {
 			out["aria-current"] = "page"
-			out["class"] = "is-current"
+			cls = append(cls, "is-current")
+		}
+		if len(cls) > 0 {
+			out["class"] = strings.Join(cls, " ")
 		}
 		return out, true
 	}
@@ -377,6 +396,15 @@ func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) 
 	}
 	p := sp.p
 	switch slot {
+	case webbuilder.SlotPostFieldURL:
+		u := e.fieldURL(p, a.Field)
+		if u == "" {
+			return nil, false
+		}
+		if a.Tag == "img" {
+			return map[string]string{"src": u}, true
+		}
+		return map[string]string{"href": u}, true
 	case webbuilder.SlotPostURL:
 		return map[string]string{"href": sp.permalinkOf(e)}, true
 	case webbuilder.SlotPostCommentsURL:
@@ -416,16 +444,76 @@ func (r *wbSlotResolver) Loop(id string, _ webbuilder.SlotArgs) (webbuilder.Loop
 	return &webbuilder.SliceIter{Items: items}, true
 }
 
+// wbMenuMaxDepth is how many menu levels a menu-bound list shows (the top level plus sub-menus).
+const wbMenuMaxDepth = 3
+
+// Menu lists the items of a menu location depth first: each item is followed by its sub-menu
+// items, up to wbMenuMaxDepth levels. A sub-item's link gets the classes wb-menu-d<level> (1 and
+// up) and a parent's link has-children, so a card template (or the site CSS) can indent or
+// fold the levels; the top level carries none and renders as before.
 func (r *wbSlotResolver) Menu(location string, _ webbuilder.SlotArgs) (webbuilder.LoopIter, bool) {
 	menu := r.env.v.Menus[location]
 	if len(menu) == 0 {
 		return nil, false
 	}
-	items := make([]webbuilder.Resolver, 0, len(menu))
-	for _, it := range menu { // top level only in v1
-		items = append(items, &wbSlotResolver{env: r.env, menu: it, parent: r})
+	var items []webbuilder.Resolver
+	var walk func(list []*store.MenuItem, depth int)
+	walk = func(list []*store.MenuItem, depth int) {
+		for _, it := range list {
+			if it == nil {
+				continue
+			}
+			items = append(items, &wbSlotResolver{env: r.env, menu: it, menuDepth: depth, parent: r})
+			if depth+1 < wbMenuMaxDepth && len(it.Children) > 0 {
+				walk(it.Children, depth+1)
+			}
+		}
 	}
+	walk(menu, 0)
 	return &webbuilder.SliceIter{Items: items}, true
+}
+
+// fieldValue is the formatted Pursae Custom Fields value of a post's field; nil when the plugin is
+// off, the field is unset, or the post is password protected (its content is not shown either).
+func (e *wbSlotEnv) fieldValue(p *store.Post, name string) any {
+	if e.s == nil || p == nil || name == "" || p.Password != "" || strings.HasPrefix(name, "_") {
+		return nil
+	}
+	return e.s.acfGetField(e.ctx, name, p, true)
+}
+
+// fieldText is the field as plain text (the engine escapes it); lists join with ", ".
+func (e *wbSlotEnv) fieldText(p *store.Post, name string) (string, bool) {
+	var out string
+	switch t := e.fieldValue(p, name).(type) {
+	case nil:
+		return "", false
+	case []any:
+		var parts []string
+		for _, x := range t {
+			if d := acfgoDisplay(x); d != "" {
+				parts = append(parts, d)
+			}
+		}
+		out = strings.Join(parts, ", ")
+	default:
+		out = acfgoDisplay(t)
+	}
+	out = wbPlain(out)
+	return out, out != ""
+}
+
+// fieldURL is a URL of the field: a plain URL string, or the url of a link or image field.
+func (e *wbSlotEnv) fieldURL(p *store.Post, name string) string {
+	switch t := e.fieldValue(p, name).(type) {
+	case string:
+		return strings.TrimSpace(t)
+	case map[string]any:
+		if u, ok := t["url"].(string); ok {
+			return strings.TrimSpace(u)
+		}
+	}
+	return ""
 }
 
 // --- values --------------------------------------------------------------------------------------
@@ -891,10 +979,10 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	prog, err := wbPrograms.Compile(d.PostID, d.Rev, d.HTML)
 	if err != nil {
 		log.Printf("web builder: compile %d: %v", d.PostID, err)
-		return wbFilled{html: s.wbSearchForms(ctx, s.filterContentTags(ctx, d.HTML))}
+		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, d.HTML)))}
 	}
 	if static, ok := prog.Static(); ok {
-		return wbFilled{html: s.wbSearchForms(ctx, s.filterContentTags(ctx, static))}
+		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, static)))}
 	}
 	env := newWBSlotEnv(s, c, v, d, prog, own)
 	shop := s.gooOn() && wbProgramShop(prog)
@@ -909,5 +997,5 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	// the body is written (store views and shortcodes save their own; a builder page or template
 	// takes neither path). No-op without a loaded, changed session.
 	s.gooSaveSession(c)
-	return wbFilled{html: s.wbSearchForms(ctx, s.filterContentTags(ctx, out)), loops: env.loops, shop: shop, catalog: env.shop != nil && env.shop.catalog}
+	return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, out))), loops: env.loops, shop: shop, catalog: env.shop != nil && env.shop.catalog}
 }
