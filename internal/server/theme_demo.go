@@ -1295,7 +1295,19 @@ func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
 		}
 	}
 	s.gooRemoveDemo(ctx, slug) // Goocommerce: demo coupons, shipping methods, reviews (goo_demo.go)
-	posts, err := idsOf(`SELECT id FROM posts WHERE meta->>'` + demoMetaKey + `' = $1 ORDER BY id DESC`)
+	// Only what the import created: the first item of each demo ref. Copies carry the marks too (a
+	// Multi Language translation copies the custom fields, a duplicated product its meta) and are the
+	// user's own content, so they stay.
+	firstOf := func(table, kind string) string {
+		same := ""
+		if kind != "" {
+			same = `o.` + kind + ` = x.` + kind + ` AND `
+		}
+		return `SELECT id FROM ` + table + ` x WHERE meta->>'` + demoMetaKey + `' = $1 AND NOT EXISTS (SELECT 1 FROM ` + table + ` o
+			WHERE ` + same + `o.meta->>'` + demoMetaKey + `' = $1 AND o.meta->>'` + demoMetaRef + `' = x.meta->>'` + demoMetaRef + `'
+			AND o.id < x.id) ORDER BY id DESC`
+	}
+	posts, err := idsOf(firstOf("posts", "type"))
 	if err != nil {
 		return err
 	}
@@ -1304,7 +1316,7 @@ func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
 			return err
 		}
 	}
-	media, err := idsOf(`SELECT id FROM media WHERE meta->>'` + demoMetaKey + `' = $1`)
+	media, err := idsOf(firstOf("media", ""))
 	if err != nil {
 		return err
 	}
@@ -1316,7 +1328,7 @@ func (s *Server) removeThemeDemo(ctx context.Context, slug string) error {
 			return err
 		}
 	}
-	terms, err := idsOf(`SELECT id FROM terms WHERE meta->>'` + demoMetaKey + `' = $1 ORDER BY id DESC`)
+	terms, err := idsOf(firstOf("terms", "taxonomy"))
 	if err != nil {
 		return err
 	}

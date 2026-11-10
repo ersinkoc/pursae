@@ -185,14 +185,21 @@ func (s *Server) exportScreen(c *gin.Context) {
 	fmt.Fprintf(&b, "\t<title>%s</title>\n\t<link>%s</link>\n\t<description>%s</description>\n\t<pubDate>%s</pubDate>\n\t<language>en-US</language>\n\t<wp:wxr_version>1.2</wp:wxr_version>\n\t<wp:base_site_url>%s</wp:base_site_url>\n\t<wp:base_blog_url>%s</wp:base_blog_url>\n\n",
 		xmlEsc(s.settings.String("blogname")), xmlEsc(lb.Home), xmlEsc(s.settings.String("blogdescription")), time.Now().UTC().Format(time.RFC1123Z), xmlEsc(lb.Home), xmlEsc(lb.Home))
 
+	// wxr_authors_list(): only the users who wrote something in the file. The list is written here
+	// once the items are known (authorsAt), so subscribers and customers never end up in an export.
 	users, _, _ := s.store.QueryUsers(ctx, store.UserQuery{PerPage: 10000})
 	logins := map[int64]string{}
 	for _, x := range users {
 		logins[x.ID] = x.Login
-		fmt.Fprintf(&b, "\t<wp:author><wp:author_id>%d</wp:author_id><wp:author_login>%s</wp:author_login><wp:author_email>%s</wp:author_email><wp:author_display_name>%s</wp:author_display_name><wp:author_first_name>%s</wp:author_first_name><wp:author_last_name>%s</wp:author_last_name></wp:author>\n",
-			x.ID, cdata(x.Login), cdata(x.Email), cdata(x.DisplayName), cdata(x.Profile["first_name"]), cdata(x.Profile["last_name"]))
 	}
-	b.WriteString("\n")
+	exported := map[int64]bool{}
+	creator := func(id int64) string {
+		if _, ok := logins[id]; ok {
+			exported[id] = true
+		}
+		return logins[id]
+	}
+	authorsAt := b.Len()
 	termSlugs := map[int64]string{}
 	if what == "all" {
 		// export.php lists every term; a filtered export lists only the terms of the exported posts (below).
@@ -301,7 +308,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 		for _, p := range posts {
 			b.WriteString("\t<item>\n")
 			fmt.Fprintf(&b, "\t\t<title>%s</title>\n\t\t<link>%s</link>\n\t\t<pubDate>%s</pubDate>\n\t\t<dc:creator>%s</dc:creator>\n\t\t<guid isPermaLink=\"false\">%s</guid>\n\t\t<description></description>\n",
-				cdata(p.Title), xmlEsc(lb.Permalink(p)), p.Date().UTC().Format(time.RFC1123Z), cdata(logins[p.AuthorID]), xmlEsc(lb.Home+"/?p="+itoa64(p.ID)))
+				cdata(p.Title), xmlEsc(lb.Permalink(p)), p.Date().UTC().Format(time.RFC1123Z), cdata(creator(p.AuthorID)), xmlEsc(lb.Home+"/?p="+itoa64(p.ID)))
 			fmt.Fprintf(&b, "\t\t<content:encoded>%s</content:encoded>\n\t\t<excerpt:encoded>%s</excerpt:encoded>\n", cdata(p.Content), cdata(p.Excerpt))
 			gmt := "0000-00-00 00:00:00"
 			if p.PublishedAt != nil {
@@ -331,7 +338,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 			// wxr_post_meta(): every meta row except _edit_lock.
 			keys := make([]string, 0, len(p.Meta))
 			for k := range p.Meta {
-				if k != "_edit_lock" && k != "_edit_last" {
+				if k != "_edit_lock" && k != "_edit_last" && k != demoMetaKey && k != demoMetaRef { // demo marks belong to this site's demo import
 					keys = append(keys, k)
 				}
 			}
@@ -360,7 +367,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 			}
 			fileURL := s.uploadURL(ctx, a.FilePath)
 			fmt.Fprintf(&b, "\t<item>\n\t\t<title>%s</title>\n\t\t<link>%s</link>\n\t\t<pubDate>%s</pubDate>\n\t\t<dc:creator>%s</dc:creator>\n\t\t<guid isPermaLink=\"false\">%s</guid>\n\t\t<description></description>\n\t\t<content:encoded>%s</content:encoded>\n\t\t<excerpt:encoded>%s</excerpt:encoded>\n\t\t<wp:post_id>%d</wp:post_id>\n\t\t<wp:post_date>%s</wp:post_date>\n\t\t<wp:post_date_gmt>%s</wp:post_date_gmt>\n\t\t<wp:post_modified>%s</wp:post_modified>\n\t\t<wp:post_modified_gmt>%s</wp:post_modified_gmt>\n\t\t<wp:comment_status>open</wp:comment_status>\n\t\t<wp:ping_status>closed</wp:ping_status>\n\t\t<wp:post_name>%s</wp:post_name>\n\t\t<wp:status>%s</wp:status>\n\t\t<wp:post_parent>%d</wp:post_parent>\n\t\t<wp:menu_order>%d</wp:menu_order>\n\t\t<wp:post_type>%s</wp:post_type>\n\t\t<wp:post_password></wp:post_password>\n\t\t<wp:is_sticky>0</wp:is_sticky>\n\t\t<wp:attachment_url>%s</wp:attachment_url>\n%s\t</item>\n",
-				cdata(a.Title), xmlEsc(fileURL), a.CreatedAt.UTC().Format(time.RFC1123Z), cdata(logins[a.UploaderID]), xmlEsc(fileURL), cdata(a.Description), cdata(a.Caption),
+				cdata(a.Title), xmlEsc(fileURL), a.CreatedAt.UTC().Format(time.RFC1123Z), cdata(creator(a.UploaderID)), xmlEsc(fileURL), cdata(a.Description), cdata(a.Caption),
 				a.ID, cdata(wpDate(a.CreatedAt)), cdata(a.CreatedAt.UTC().Format("2006-01-02 15:04:05")), cdata(wpDate(a.UpdatedAt)), cdata(a.UpdatedAt.UTC().Format("2006-01-02 15:04:05")),
 				cdata(wp.SanitizeTitle(a.Title)), cdata("inherit"), a.PostID, a.MenuOrder, cdata("attachment"), cdata(fileURL), postmeta("_wp_attachment_image_alt", a.Alt)+pllMediaWXRMeta(pllMedia, a.ID, postmeta))
 		}
@@ -377,7 +384,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 				}
 				now := time.Now()
 				fmt.Fprintf(&b, "\t<item>\n\t\t<title>%s</title>\n\t\t<link>%s</link>\n\t\t<pubDate>%s</pubDate>\n\t\t<dc:creator>%s</dc:creator>\n\t\t<guid isPermaLink=\"false\">%s</guid>\n\t\t<description></description>\n\t\t<content:encoded>%s</content:encoded>\n\t\t<excerpt:encoded>%s</excerpt:encoded>\n\t\t<wp:post_id>%d</wp:post_id>\n\t\t<wp:post_date>%s</wp:post_date>\n\t\t<wp:post_date_gmt>%s</wp:post_date_gmt>\n\t\t<wp:post_modified>%s</wp:post_modified>\n\t\t<wp:post_modified_gmt>%s</wp:post_modified_gmt>\n\t\t<wp:comment_status>closed</wp:comment_status>\n\t\t<wp:ping_status>closed</wp:ping_status>\n\t\t<wp:post_name>%d</wp:post_name>\n\t\t<wp:status>publish</wp:status>\n\t\t<wp:post_parent>0</wp:post_parent>\n\t\t<wp:menu_order>%d</wp:menu_order>\n\t\t<wp:post_type>nav_menu_item</wp:post_type>\n\t\t<wp:post_password></wp:post_password>\n\t\t<wp:is_sticky>0</wp:is_sticky>\n\t\t<category domain=\"nav_menu\" nicename=\"%s\">%s</category>\n",
-					cdata(it.Label), xmlEsc(lb.Home+"/?p="+itoa64(id)), now.UTC().Format(time.RFC1123Z), cdata(logins[u.ID]), xmlEsc(lb.Home+"/?p="+itoa64(id)), cdata(it.Description), cdata(it.AttrTitle),
+					cdata(it.Label), xmlEsc(lb.Home+"/?p="+itoa64(id)), now.UTC().Format(time.RFC1123Z), cdata(creator(u.ID)), xmlEsc(lb.Home+"/?p="+itoa64(id)), cdata(it.Description), cdata(it.AttrTitle),
 					id, cdata(wpDate(now)), cdata(now.UTC().Format("2006-01-02 15:04:05")), cdata(wpDate(now)), cdata(now.UTC().Format("2006-01-02 15:04:05")), id, it.Order, xmlEsc(m.Slug), cdata(m.Name))
 				b.WriteString(postmeta("_menu_item_type", it.Kind))
 				b.WriteString(postmeta("_menu_item_menu_item_parent", itoa64(parent)))
@@ -392,6 +399,16 @@ func (s *Server) exportScreen(c *gin.Context) {
 		}
 	}
 	b.WriteString("</channel>\n</rss>\n")
+	var authors strings.Builder
+	for _, x := range users {
+		if exported[x.ID] {
+			fmt.Fprintf(&authors, "\t<wp:author><wp:author_id>%d</wp:author_id><wp:author_login>%s</wp:author_login><wp:author_email>%s</wp:author_email><wp:author_display_name>%s</wp:author_display_name><wp:author_first_name>%s</wp:author_first_name><wp:author_last_name>%s</wp:author_last_name></wp:author>\n",
+				x.ID, cdata(x.Login), cdata(x.Email), cdata(x.DisplayName), cdata(x.Profile["first_name"]), cdata(x.Profile["last_name"]))
+		}
+	}
+	authors.WriteString("\n")
+	out := b.String()
+	out = out[:authorsAt] + authors.String() + out[authorsAt:]
 	// sanitize_key(): an ASCII-only file name (a raw UTF-8 header parameter reads as Latin-1).
 	name := strings.Map(func(r rune) rune {
 		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '_' || r == '-' {
@@ -404,7 +421,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 	}
 	c.Header("Content-Description", "File Transfer")
 	c.Header("Content-Disposition", "attachment; filename="+name+".WordPress."+time.Now().Format("2006-01-02")+".xml")
-	c.Data(http.StatusOK, "text/xml; charset=UTF-8", []byte(b.String()))
+	c.Data(http.StatusOK, "text/xml; charset=UTF-8", []byte(out))
 }
 
 // wxrMenuItemBase offsets menu item ids in exports: in WordPress menu items are posts with their own ids;
@@ -757,6 +774,13 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 		}
 	}
 	idMap := map[int64]int64{}
+	// remember maps an id of the file to ours. An item without wp:post_id (hand-written or third-party
+	// files) has id 0, which every parentless item and unattached file points at: it is not mapped.
+	remember := func(old, id int64) {
+		if old != 0 {
+			idMap[old] = id
+		}
+	}
 	loc := s.loc()
 	urlMap := map[string]string{}    // attachment URLs in the file -> ours (backfill_attachment_urls)
 	featured := map[int64]int64{}    // our post id -> _thumbnail_id in the file
@@ -781,6 +805,22 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 				rep.Skipped++
 				continue
 			}
+			// post_exists(): the same title and date is the same media, so importing a file again (after
+			// a partial run, say) does not download and add every file a second time.
+			if t, err := time.ParseInLocation("2006-01-02 15:04:05", it.PostDate, loc); err == nil && it.Title != "" {
+				var exID int64
+				var exPath string
+				if s.store.Pool.QueryRow(ctx, `SELECT id, file_path FROM media WHERE title = $1 AND date_trunc('second', created_at) = $2 ORDER BY id LIMIT 1`,
+					it.Title, t).Scan(&exID, &exPath) == nil {
+					rep.Log = append(rep.Log, fmt.Sprintf("Media “%s” already exists.", it.Title))
+					remember(it.PostID, exID)
+					if it.AttachmentURL != "" {
+						urlMap[it.AttachmentURL] = s.uploadURL(ctx, exPath)
+					}
+					rep.Skipped++
+					continue
+				}
+			}
 			a, err := s.sideloadURL(ctx, it.AttachmentURL, authors[it.Creator], 0)
 			if err != nil {
 				rep.Log = append(rep.Log, fmt.Sprintf("Failed to import Media “%s”: %v", it.Title, err))
@@ -800,7 +840,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			if t, err := time.ParseInLocation("2006-01-02 15:04:05", it.PostDate, loc); err == nil {
 				_, _ = s.store.Pool.Exec(ctx, `UPDATE media SET created_at = $2, uploader_id = $3 WHERE id = $1`, a.ID, t, nullable64(a.UploaderID))
 			}
-			idMap[it.PostID] = a.ID
+			remember(it.PostID, a.ID)
 			urlMap[it.AttachmentURL] = s.uploadURL(ctx, a.FilePath)
 			if it.Parent != 0 {
 				attParents[a.ID] = it.Parent
@@ -838,7 +878,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 		}
 		if ex, err := s.store.PostBySlug(ctx, it.Type, it.Name); err == nil && it.Name != "" && ex.Title == it.Title {
 			rep.Log = append(rep.Log, fmt.Sprintf("%s “%s” already exists.", wxrTypeLabel(it.Type), it.Title))
-			idMap[it.PostID] = ex.ID
+			remember(it.PostID, ex.ID)
 			rep.Skipped++
 			continue
 		}
@@ -850,7 +890,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			if err := s.store.Pool.QueryRow(ctx, `SELECT id FROM posts WHERE type = 'wb_template' AND status <> 'trash'
 				AND title = $1 AND content = $2 ORDER BY id LIMIT 1`, it.Title, it.Content).Scan(&exID); err == nil {
 				rep.Log = append(rep.Log, fmt.Sprintf("%s “%s” already exists.", wxrTypeLabel(it.Type), it.Title))
-				idMap[it.PostID] = exID
+				remember(it.PostID, exID)
 				rep.Skipped++
 				continue
 			}
@@ -891,6 +931,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 		for _, m := range it.Meta {
 			switch m.Key {
 			case "_edit_lock", "_edit_last":
+			case demoMetaKey, demoMetaRef: // another site's demo marks: Remove Demo Content here must not delete the import
 			case "_thumbnail_id":
 				thumb, _ = strconv.ParseInt(m.Value, 10, 64)
 			default:
@@ -902,7 +943,7 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 			rep.Log = append(rep.Log, fmt.Sprintf("Failed to import “%s”: %v", it.Title, err))
 			continue
 		}
-		idMap[it.PostID] = p.ID
+		remember(it.PostID, p.ID)
 		imported = append(imported, p.ID)
 		if thumb != 0 {
 			featured[p.ID] = thumb
@@ -933,7 +974,10 @@ func (s *Server) importWXR(c *gin.Context, u *store.User, data []byte) (*importR
 		commentIDs := map[int64]int64{}
 		for _, cm := range it.Comments {
 			nc := &store.Comment{PostID: p.ID, AuthorName: cm.Author, AuthorEmail: cm.Email, AuthorURL: cm.URL, AuthorIP: cm.IP,
-				Content: cm.Content, Type: defaultStr(cm.Type, "comment"), Status: "approved", ParentID: commentIDs[cm.Parent]}
+				Content: cm.Content, Type: defaultStr(cm.Type, "comment"), Status: "approved"}
+			if cm.Parent != 0 { // a comment without comment_id must not become every top-level comment's parent
+				nc.ParentID = commentIDs[cm.Parent]
+			}
 			if cm.Approved != "1" {
 				nc.Status = "pending"
 			}

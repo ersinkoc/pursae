@@ -19,13 +19,15 @@ import (
 )
 
 type activityItem struct {
-	Title, EditURL, When, ISO, Excerpt string
+	Title, EditURL, When, ISO string
+	Excerpt                   template.HTML // wp.TrimWords output: already escaped
 }
 
 type dashboardComment struct {
-	ID                                    int64
-	Author, AuthorURL, Avatar, Status     string
-	PostTitle, PostEditURL, Link, Excerpt string
+	ID                                int64
+	Author, AuthorURL, Avatar, Status string
+	PostTitle, PostEditURL, Link      string
+	Excerpt                           template.HTML // wp.TrimWords output: already escaped
 }
 
 type dashboardData struct {
@@ -192,7 +194,7 @@ func (s *Server) dashboard(c *gin.Context) {
 	for _, p := range drafts {
 		d.Drafts = append(d.Drafts, activityItem{
 			Title: title(p), EditURL: links.EditLink(p.ID), ISO: p.ModifiedAt.In(loc).Format(time.RFC3339),
-			When: wp.FormatDate(p.ModifiedAt.In(loc), "F j, Y"), Excerpt: wp.TrimWords(p.Content, 10, "&hellip;"),
+			When: wp.FormatDate(p.ModifiedAt.In(loc), "F j, Y"), Excerpt: template.HTML(wp.TrimWords(p.Content, 10, "&hellip;")),
 		})
 	}
 
@@ -214,7 +216,7 @@ func (s *Server) dashboard(c *gin.Context) {
 		d.RecentComments = append(d.RecentComments, dashboardComment{
 			ID: cm.ID, Author: author, AuthorURL: cm.AuthorURL, Avatar: s.avatarURL(c, cm.AuthorEmail, 50), Status: status,
 			PostTitle: title(p), PostEditURL: links.EditLink(p.ID), Link: lb.Permalink(p) + "#comment-" + itoa64(cm.ID),
-			Excerpt: wp.TrimWords(cm.Content, 20, "&hellip;"),
+			Excerpt: template.HTML(wp.TrimWords(cm.Content, 20, "&hellip;")),
 		})
 	}
 
