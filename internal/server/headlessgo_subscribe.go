@@ -69,37 +69,94 @@ type hgSubEvent struct {
 	WasPublished bool
 }
 
-type hgSub struct{ ch chan hgSubEvent }
+type hgSub struct {
+	ch  chan hgSubEvent
+	key string // the client it counts against (hgSubClient)
+}
 
 type hgBroker struct {
-	mu   sync.Mutex
-	subs map[*hgSub]struct{}
+	mu      sync.Mutex
+	subs    map[*hgSub]struct{}
+	clients map[string]int // open subscriptions per client key
+	conns   map[string]int // open WebSocket connections per client address
 }
 
 var hgBrokers sync.Map // *Server => *hgBroker
 
 func (s *Server) hgBroker() *hgBroker {
-	v, _ := hgBrokers.LoadOrStore(s, &hgBroker{subs: map[*hgSub]struct{}{}})
+	v, _ := hgBrokers.LoadOrStore(s, &hgBroker{subs: map[*hgSub]struct{}{}, clients: map[string]int{}, conns: map[string]int{}})
 	return v.(*hgBroker)
 }
 
-func (b *hgBroker) subscribe() *hgSub {
+// Admission: besides the global cap, one client (an API token, otherwise an address) holds at
+// most hgSubPerClient subscriptions (hgSubPerToken for a token), callers without a token share
+// hgSubMaxConn - hgSubReserved of the slots (the rest is kept for token callers), and an address
+// opens at most hgWSPerAddr WebSocket connections.
+const (
+	hgSubPerClient = 20
+	hgSubPerToken  = 100
+	hgSubReserved  = 100
+	hgWSPerAddr    = 10
+)
+
+// hgSubClient is the key a caller's subscriptions are counted under, and whether it is a token.
+func hgSubClient(c *gin.Context, a *hgAuth) (string, bool) {
+	if a != nil && a.Kind == "token" && a.Token != nil {
+		return fmt.Sprintf("token:%d", a.Token.ID), true
+	}
+	return "ip:" + clientIP(c), false
+}
+
+// subscribe registers a subscription for client key; nil when a cap is reached.
+func (b *hgBroker) subscribe(key string, token bool) *hgSub {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if len(b.subs) >= hgSubMaxConn {
+	limit, global := hgSubPerClient, hgSubMaxConn-hgSubReserved
+	if token {
+		limit, global = hgSubPerToken, hgSubMaxConn
+	}
+	if len(b.subs) >= global || b.clients[key] >= limit {
 		return nil
 	}
-	sub := &hgSub{ch: make(chan hgSubEvent, hgSubBuffer)}
+	sub := &hgSub{ch: make(chan hgSubEvent, hgSubBuffer), key: key}
 	b.subs[sub] = struct{}{}
+	b.clients[key]++
 	return sub
+}
+
+// drop removes a subscription (the caller holds mu).
+func (b *hgBroker) drop(sub *hgSub) {
+	delete(b.subs, sub)
+	close(sub.ch)
+	if b.clients[sub.key]--; b.clients[sub.key] <= 0 {
+		delete(b.clients, sub.key)
+	}
 }
 
 func (b *hgBroker) unsubscribe(sub *hgSub) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if _, ok := b.subs[sub]; ok {
-		delete(b.subs, sub)
-		close(sub.ch)
+		b.drop(sub)
+	}
+}
+
+// openConn counts a WebSocket connection of addr; false when it has too many open.
+func (b *hgBroker) openConn(addr string) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.conns[addr] >= hgWSPerAddr {
+		return false
+	}
+	b.conns[addr]++
+	return true
+}
+
+func (b *hgBroker) closeConn(addr string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.conns[addr]--; b.conns[addr] <= 0 {
+		delete(b.conns, addr)
 	}
 }
 
@@ -112,8 +169,7 @@ func (b *hgBroker) publish(ev hgSubEvent) {
 		select {
 		case sub.ch <- ev:
 		default:
-			delete(b.subs, sub)
-			close(sub.ch)
+			b.drop(sub)
 		}
 	}
 }
@@ -178,7 +234,8 @@ func (s *Server) hgGQLSubscription(c *gin.Context, a *hgAuth, st hgSettings, req
 			return nil, http.StatusBadRequest, hgGQLErrorDoc(err.Error(), "BAD_USER_INPUT")
 		}
 	}
-	if sub.bs = s.hgBroker().subscribe(); sub.bs == nil {
+	key, token := hgSubClient(c, a)
+	if sub.bs = s.hgBroker().subscribe(key, token); sub.bs == nil {
 		return nil, http.StatusServiceUnavailable, hgGQLErrorDoc("Too many open subscriptions; try again later.", "SERVICE_UNAVAILABLE")
 	}
 	return sub, 0, nil
@@ -225,9 +282,10 @@ func (sub *hgSubscription) deliver(ev hgSubEvent) (map[string]any, bool) {
 	}
 	one := &hgGQLField{name: hgCamel(sc.SingularName), sel: f.sel, args: map[string]any{
 		"documentId": ev.Doc, "locale": ev.Locale, "status": hgGQLEnum(status)}}
+	sub.ex.budget = newHGReadBudget() // every event is its own request
 	v, err := sub.ex.one(sc, one)
 	if err != nil {
-		return map[string]any{"data": nil, "errors": []any{map[string]any{"message": err.Error(), "path": []string{f.key()}}}}, true
+		return map[string]any{"data": nil, "errors": []any{map[string]any{"message": hgGQLErrorMessage(err), "path": []string{f.key()}}}}, true
 	}
 	if v == nil {
 		return nil, false // gone again, or not visible to this caller

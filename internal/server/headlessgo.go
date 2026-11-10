@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -309,7 +310,19 @@ func (s *Server) hgEngine() http.Handler {
 	st := v.(*hgEngineState)
 	st.once.Do(func() {
 		r := gin.New()
-		r.Use(gin.Recovery(), requestOrigin())
+		// Handlers use the gin.Context as their context: with the fallback it is the request's, so
+		// a read whose client went away stops querying. Writes run to the end (a half-applied save
+		// with its history and webhooks cut off would be worse than finishing it).
+		r.ContextWithFallback = true
+		if err := applyTrustedProxies(r, s.cfg.TrustedProxies); err != nil {
+			log.Printf("headlessgo: trusted proxies: %v", err)
+		}
+		r.Use(gin.Recovery(), requestOrigin(), func(c *gin.Context) {
+			// GraphQL decides per operation (hgGQLExecute: mutations do not stop).
+			if m := c.Request.Method; m != http.MethodGet && m != http.MethodHead && !strings.HasSuffix(strings.TrimRight(c.Request.URL.Path, "/"), "/graphql") {
+				c.Request = c.Request.WithContext(context.WithoutCancel(c.Request.Context()))
+			}
+		})
 		r.Any(hgAPIPrefix+"/*rest", s.hgAPI)
 		r.Any(hgAPIPrefix, s.hgAPI)
 		st.h = r

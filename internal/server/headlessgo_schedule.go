@@ -124,6 +124,11 @@ func (s *Server) hgRunSchedule(ctx context.Context, id int64, publish bool) bool
 			WHERE id = $1 RETURNING `+hgEntryCols, id))
 		event, action = "entry.publish", "schedule"
 	} else {
+		if e.Published == nil { // already a draft (unpublished by hand): nothing to announce
+			_, _ = tx.Exec(ctx, `UPDATE hg_entries SET unpublish_at = NULL WHERE id = $1`, id)
+			_ = tx.Commit(ctx)
+			return false
+		}
 		e, err = hgScanEntry(tx.QueryRow(ctx, `UPDATE hg_entries SET published_data = NULL, published_at = NULL, unpublish_at = NULL
 			WHERE id = $1 RETURNING `+hgEntryCols, id))
 	}

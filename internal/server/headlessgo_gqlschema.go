@@ -668,7 +668,7 @@ func (ex *hgGQLExec) mutation(f *hgGQLField) (any, error) {
 				return nil, fmt.Errorf("The argument data is required")
 			}
 			var events []string
-			e, events, err = ex.s.hgSaveEntry(ex.c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: status == "published"})
+			e, events, err = ex.s.hgSaveEntry(ex.c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: status == "published", Auth: ex.a})
 			if err != nil {
 				return nil, hgGQLWriteError(err)
 			}
@@ -713,7 +713,11 @@ func (ex *hgGQLExec) mutation(f *hgGQLField) (any, error) {
 			status = "draft"
 			ex.s.hgEmit(ex.c, "entry.unpublish", sc, e)
 		}
-		rp := &hgReadParams{Status: status, Locale: loc, Populate: ex.populate(sc, f.sel)}
+		pop, err := ex.populate(sc, f.sel)
+		if err != nil {
+			return nil, err
+		}
+		rp := &hgReadParams{Auth: ex.a, Status: status, Locale: loc, Populate: pop, Budget: ex.readBudget()}
 		obj, err := ex.s.hgSerializer(ex.c, ex.a, rp).entry(sc, e, rp.Populate, nil)
 		if err != nil {
 			return nil, err

@@ -57,6 +57,10 @@ func hgFail(c *gin.Context, err error) {
 		hgErr(c, http.StatusBadRequest, "ValidationError", qe.msg, nil)
 	case errors.Is(err, errHGNotFound):
 		hgNotFound(c)
+	case errors.Is(err, errHGNotApproved):
+		hgErr(c, http.StatusBadRequest, "ValidationError", err.Error(), nil)
+	case errors.Is(err, errHGConflict):
+		hgErr(c, http.StatusConflict, "ConflictError", err.Error(), nil)
 	default:
 		hgErr(c, http.StatusInternalServerError, "ApplicationError", "Internal Server Error", nil)
 	}
@@ -93,7 +97,12 @@ func (a *hgAuth) can(uid, action string) bool {
 
 // reads reports whether the caller may read entries of a type (find or findOne): filtering,
 // sorting and populating through a relation needs it on the target. nil is the admin (anything).
+// A preview token reads its own document only: related entries (of its own type too, through a
+// self-relation) only as the public role may read them.
 func (a *hgAuth) reads(uid string) bool {
+	if a != nil && a.Kind == "preview" {
+		return containsStr(a.Public[uid], "find") || containsStr(a.Public[uid], "findOne")
+	}
 	return a == nil || a.can(uid, "find") || a.can(uid, "findOne")
 }
 
@@ -284,11 +293,49 @@ type hgReadParams struct {
 	Page     hgPagination
 	Populate *hgPop
 	Fields   []string
+	Budget   *hgReadBudget // what the request may still spend on queries (nil: no limit)
+}
+
+// The read budget bounds what one request (a REST read, a GraphQL operation, one subscription
+// event) may cost: every find, inverse-relation lookup and populated entry counts, so nested
+// populate through cyclic relations or thousands of GraphQL aliases end with a 400 instead of
+// running millions of queries.
+const (
+	hgReadMaxQueries = 1000
+	hgReadMaxObjects = 20000
+)
+
+type hgReadBudget struct{ queries, objs int }
+
+func newHGReadBudget() *hgReadBudget { return &hgReadBudget{} }
+
+var errHGTooExpensive = hgBad("The request is too expensive: it would run more than %d queries or load more than %d related entries. Populate fewer levels or request fewer entries.", hgReadMaxQueries, hgReadMaxObjects)
+
+// query spends one query.
+func (b *hgReadBudget) query() error {
+	if b == nil {
+		return nil
+	}
+	if b.queries++; b.queries > hgReadMaxQueries {
+		return errHGTooExpensive
+	}
+	return nil
+}
+
+// objects spends n loaded entries.
+func (b *hgReadBudget) objects(n int) error {
+	if b == nil {
+		return nil
+	}
+	if b.objs += n; b.objs > hgReadMaxObjects {
+		return errHGTooExpensive
+	}
+	return nil
 }
 
 func (s *Server) hgParseRead(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSettings) (*hgReadParams, bool) {
 	qs := hgParseQS(c.Request.URL.Query())
-	p := &hgReadParams{Auth: a, Status: "published"}
+	p := &hgReadParams{Auth: a, Status: "published", Budget: newHGReadBudget()}
 	if v, _ := qs["status"].(string); v != "" {
 		if v != "draft" && v != "published" {
 			hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid status: use draft or published", nil)
@@ -356,6 +403,9 @@ type hgFindOpts struct {
 
 // hgFind runs a find: the entries of a type in one locale and status matching the filters.
 func (s *Server) hgFind(ctx context.Context, sc *hgSchema, p *hgReadParams, o hgFindOpts) ([]*hgEntry, int, error) {
+	if err := p.Budget.query(); err != nil {
+		return nil, 0, err
+	}
 	reg := s.hgReg(ctx)
 	q := &hgQuery{reg: reg, sql: &hgSQL{}, status: p.Status, locale: p.Locale, a: p.Auth}
 	if p.Locale == "" {
@@ -562,7 +612,7 @@ func (s *Server) hgWrite(c *gin.Context, a *hgAuth, sc *hgSchema, doc, action st
 		hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid status: use draft or published", nil)
 		return
 	}
-	e, events, err := s.hgSaveEntry(c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: status == "published"})
+	e, events, err := s.hgSaveEntry(c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: status == "published", Auth: a})
 	if err != nil {
 		hgFail(c, err)
 		return
@@ -570,7 +620,7 @@ func (s *Server) hgWrite(c *gin.Context, a *hgAuth, sc *hgSchema, doc, action st
 	for _, ev := range events {
 		s.hgEmit(c, ev, sc, e)
 	}
-	p := &hgReadParams{Status: "draft", Locale: loc, Populate: &hgPop{Populate: map[string]*hgPop{}}}
+	p := &hgReadParams{Auth: a, Status: "draft", Locale: loc, Populate: &hgPop{Populate: map[string]*hgPop{}}, Budget: newHGReadBudget()}
 	if !sc.DraftAndPublish || status == "published" {
 		p.Status = "published"
 	}
@@ -818,22 +868,49 @@ func (h *hgSer) object(sc *hgSchema, data map[string]any, pop *hgPop, fields []s
 		if name == "localizations" && sc.Localized && depth == 0 {
 			continue
 		}
-		f := sc.Field(name)
-		if f == nil || f.scalar() || f.Private {
-			return nil, hgBad("Invalid key %s in populate", name)
+		fname := name
+		if a, ok := pop.Alias[name]; ok {
+			fname = a
 		}
+		f := sc.Field(fname)
+		if f == nil || f.scalar() || f.Private {
+			return nil, hgBad("Invalid key %s in populate", fname)
+		}
+	}
+	// fill serializes one relation, media, component or dynamic zone attribute under key.
+	fill := func(f *hgField, key string, sub *hgPop) error {
+		if depth > 8 {
+			return hgBad("Populate is nested too deeply")
+		}
+		v := data[f.Name]
+		if f.MappedBy != "" {
+			if h.cur == nil {
+				return nil
+			}
+			if err := h.p.Budget.query(); err != nil {
+				return err
+			}
+			v = hgAnyStrings(h.s.hgInverseIDs(h.c, f, h.cur.DocumentID, h.cur.Locale, h.relStatus(f.Target)))
+		}
+		val, keep, err := h.populated(sc, f, v, sub, depth)
+		if err != nil {
+			return err
+		}
+		if keep {
+			out[key] = val
+		}
+		return nil
 	}
 	for i := range sc.Fields {
 		f := &sc.Fields[i]
 		if f.Private || f.Type == "password" {
 			continue
 		}
-		v := data[f.Name]
 		if f.scalar() {
 			if !hgWants(fields, f.Name) {
 				continue
 			}
-			out[f.Name] = hgScalarOut(f, v)
+			out[f.Name] = hgScalarOut(f, data[f.Name])
 			continue
 		}
 		sub, explicit := pop.Populate[f.Name]
@@ -843,21 +920,15 @@ func (h *hgSer) object(sc *hgSchema, data map[string]any, pop *hgPop, fields []s
 		if !explicit {
 			sub = &hgPop{Populate: map[string]*hgPop{}} // populate=*: one level
 		}
-		if depth > 8 {
-			return nil, hgBad("Populate is nested too deeply")
-		}
-		if f.MappedBy != "" {
-			if h.cur == nil {
-				continue
-			}
-			v = hgAnyStrings(h.s.hgInverseIDs(h.c, f, h.cur.DocumentID, h.cur.Locale, h.relStatus(f.Target)))
-		}
-		val, keep, err := h.populated(sc, f, v, sub, depth)
-		if err != nil {
+		if err := fill(f, f.Name, sub); err != nil {
 			return nil, err
 		}
-		if keep {
-			out[f.Name] = val
+	}
+	for key, name := range pop.Alias {
+		if sub := pop.Populate[key]; sub != nil {
+			if err := fill(sc.Field(name), key, sub); err != nil {
+				return nil, err
+			}
 		}
 	}
 	return out, nil
@@ -1050,7 +1121,7 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 	if len(pop.Filters) > 0 {
 		filters = map[string]any{"$and": []any{filters, pop.Filters}}
 	}
-	rp := &hgReadParams{Auth: h.a, Status: status, Locale: loc, Filters: filters, Sort: pop.Sort, Page: hgPagination{Page: 1, PageSize: 1000}}
+	rp := &hgReadParams{Auth: h.a, Status: status, Locale: loc, Filters: filters, Sort: pop.Sort, Page: hgPagination{Page: 1, PageSize: 1000}, Budget: h.p.Budget}
 	list, _, err := h.s.hgFind(ctx, target, rp, hgFindOpts{NoLim: true})
 	if err != nil {
 		return nil, false, err
@@ -1063,6 +1134,9 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 		sort.SliceStable(list, func(i, j int) bool { return pos[list[i].DocumentID] < pos[list[j].DocumentID] })
 	}
 	sub := &hgSer{s: h.s, c: h.c, reg: h.reg, a: h.a, p: rp, media: h.media}
+	if err := h.p.Budget.objects(len(list)); err != nil {
+		return nil, false, err
+	}
 	var out []any
 	for _, e := range list {
 		obj, err := sub.entryAt(target, e, pop, depth+1)

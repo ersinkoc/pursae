@@ -559,10 +559,22 @@ func (h *hgCoercer) component(comp *hgSchema, in, old map[string]any, path []str
 	return out
 }
 
+// hgMaxSafeInt is 2^53: integers from here on are not all exact in a float64.
+const hgMaxSafeInt = 1 << 53
+
 func (h *hgCoercer) number(f *hgField, v any, path []string) (any, bool) {
 	var str string
 	switch t := v.(type) {
 	case float64:
+		if f.isInteger() && math.Abs(t) >= hgMaxSafeInt {
+			// JSON numbers arrive as float64: this one may already have been rounded.
+			msg := "This integer is too large to send as a JSON number"
+			if f.Format == "biginteger" {
+				msg += "; send it as a string"
+			}
+			h.fail(path, "%s", msg)
+			return nil, false
+		}
 		str = strconv.FormatFloat(t, 'f', -1, 64)
 	case string:
 		str = strings.TrimSpace(t)
@@ -589,6 +601,10 @@ func (h *hgCoercer) number(f *hgField, v any, path []string) (any, bool) {
 	}
 	if f.Format == "integer" && n != math.Trunc(n) {
 		h.fail(path, "This attribute must be an integer")
+		return nil, false
+	}
+	if f.Format == "integer" && math.Abs(n) >= hgMaxSafeInt {
+		h.fail(path, "This integer is too large; use the biginteger format")
 		return nil, false
 	}
 	return n, true
@@ -934,6 +950,9 @@ type hgSaveOpts struct {
 	Locale  string // the entry locale column ("" for a type without i18n)
 	Publish bool   // also publish (ignored without draft & publish: always published)
 	UserID  int64
+	// Auth is the API caller (nil: the admin). Writing an inverse relation edits the owning
+	// entries, so it needs update access to the owning type too.
+	Auth *hgAuth
 }
 
 var errHGNotFound = errors.New("not found")
@@ -941,7 +960,23 @@ var errHGNotFound = errors.New("not found")
 // hgSaveEntry creates (doc == "") or updates a document's locale version, creating that
 // version when the document exists in another locale only. It returns the saved entry and the
 // webhook events to send.
+//
+// An update is a read-merge-write: it only applies when the stored version is still the one it
+// read (updated_at), otherwise it is merged again over the newer version, so concurrent API writes
+// to different attributes of one entry do not undo each other.
 func (s *Server) hgSaveEntry(ctx context.Context, sc *hgSchema, doc string, input map[string]any, o hgSaveOpts) (*hgEntry, []string, error) {
+	for try := 0; ; try++ {
+		e, events, err := s.hgSaveEntryOnce(ctx, sc, doc, input, o)
+		if !errors.Is(err, errHGConflict) || try >= 4 {
+			return e, events, err
+		}
+	}
+}
+
+// errHGConflict: the entry changed between reading and writing it (hgSaveEntry tries again).
+var errHGConflict = errors.New("The entry was changed by another request at the same time; try again.")
+
+func (s *Server) hgSaveEntryOnce(ctx context.Context, sc *hgSchema, doc string, input map[string]any, o hgSaveOpts) (*hgEntry, []string, error) {
 	reg := s.hgReg(ctx)
 	var existing *hgEntry
 	create := doc == ""
@@ -967,6 +1002,13 @@ func (s *Server) hgSaveEntry(ctx context.Context, sc *hgSchema, doc string, inpu
 	}
 	data := h.object(sc, input, old, nil, true)
 	invChanges := h.inverse(sc, doc, o.Locale)
+	if o.Auth != nil {
+		for _, ch := range invChanges {
+			if !o.Auth.can(ch.owner.UID, "update") {
+				h.fail([]string{ch.inverse}, "Changing this relation edits %s entries: it needs update access to %s", ch.owner.DisplayName, ch.owner.DisplayName)
+			}
+		}
+	}
 	if len(h.errs) > 0 {
 		return nil, nil, h.errs
 	}
@@ -987,11 +1029,14 @@ func (s *Server) hgSaveEntry(ctx context.Context, sc *hgSchema, doc string, inpu
 		e, err = hgScanEntry(s.store.Pool.QueryRow(ctx, `INSERT INTO hg_entries(document_id, type_uid, locale, data, published_data, published_at, created_by, updated_by)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $7) RETURNING `+hgEntryCols, doc, sc.UID, o.Locale, raw, pub, pubAt, o.UserID))
 	} else if publish {
-		e, err = hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET data = $2, published_data = $2, published_at = now(), updated_at = now(), updated_by = $3
-			WHERE id = $1 RETURNING `+hgEntryCols, existing.ID, raw, o.UserID))
+		e, err = hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET data = $2, published_data = $2, published_at = now(), publish_at = NULL, schedule_error = '',
+			updated_at = now(), updated_by = $3 WHERE id = $1 AND updated_at = $4 RETURNING `+hgEntryCols, existing.ID, raw, o.UserID, existing.UpdatedAt))
 	} else {
 		e, err = hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET data = $2, updated_at = now(), updated_by = $3
-			WHERE id = $1 RETURNING `+hgEntryCols, existing.ID, raw, o.UserID))
+			WHERE id = $1 AND updated_at = $4 RETURNING `+hgEntryCols, existing.ID, raw, o.UserID, existing.UpdatedAt))
+	}
+	if errors.Is(err, pgx.ErrNoRows) && existing != nil {
+		return nil, nil, errHGConflict
 	}
 	if err != nil {
 		return nil, nil, err
@@ -1032,7 +1077,9 @@ func (s *Server) hgPublishEntry(ctx context.Context, sc *hgSchema, doc, locale s
 	if len(h.errs) > 0 {
 		return nil, h.errs
 	}
-	pe, err := hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET published_data = data, published_at = now(), updated_by = $2, schedule_error = ''
+	// A manual publication replaces a pending scheduled one: the scheduler would otherwise put
+	// whatever draft exists at that time live.
+	pe, err := hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET published_data = data, published_at = now(), publish_at = NULL, updated_by = $2, schedule_error = ''
 		WHERE id = $1 RETURNING `+hgEntryCols, e.ID, userID))
 	if err == nil {
 		s.hgRecordVersion(ctx, pe, "publish", userID)
@@ -1045,7 +1092,7 @@ func (s *Server) hgUnpublishEntry(ctx context.Context, sc *hgSchema, doc, locale
 	if !sc.DraftAndPublish {
 		return nil, errors.New("This content type does not use draft & publish.")
 	}
-	e, err := hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET published_data = NULL, published_at = NULL
+	e, err := hgScanEntry(s.store.Pool.QueryRow(ctx, `UPDATE hg_entries SET published_data = NULL, published_at = NULL, unpublish_at = NULL
 		WHERE type_uid = $1 AND document_id = $2 AND locale = $3 RETURNING `+hgEntryCols, sc.UID, doc, locale))
 	if err != nil {
 		return nil, errHGNotFound

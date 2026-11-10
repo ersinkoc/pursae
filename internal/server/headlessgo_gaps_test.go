@@ -432,8 +432,8 @@ func TestHeadlessGoSubscriptions(t *testing.T) {
 }
 
 func TestHeadlessGoSubscriptionBrokerOverflow(t *testing.T) {
-	b := &hgBroker{subs: map[*hgSub]struct{}{}}
-	sub := b.subscribe()
+	b := &hgBroker{subs: map[*hgSub]struct{}{}, clients: map[string]int{}, conns: map[string]int{}}
+	sub := b.subscribe("ip:192.0.2.1", false)
 	for i := 0; i < hgSubBuffer+5; i++ {
 		b.publish(hgSubEvent{Event: "entry.create"})
 	}
@@ -441,7 +441,7 @@ func TestHeadlessGoSubscriptionBrokerOverflow(t *testing.T) {
 	for range sub.ch { // closed by the overflow: the buffered events still drain
 		n++
 	}
-	if n != hgSubBuffer || len(b.subs) != 0 {
+	if n != hgSubBuffer || len(b.subs) != 0 || len(b.clients) != 0 {
 		t.Fatalf("overflow: drained %d, subscribers %d", n, len(b.subs))
 	}
 	b.unsubscribe(sub) // a second release must not panic

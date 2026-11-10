@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -155,6 +156,9 @@ type hgPagination struct {
 	WithCount      bool
 }
 
+// hgMaxPage bounds pagination[page], so (page-1)*pageSize cannot overflow into a negative offset.
+const hgMaxPage = 1_000_000_000
+
 // hgParsePagination reads pagination[page|pageSize] or pagination[start|limit].
 func hgParsePagination(node any, def, max int) (hgPagination, error) {
 	p := hgPagination{Page: 1, PageSize: def, Limit: def, WithCount: true}
@@ -213,6 +217,9 @@ func hgParsePagination(node any, def, max int) (hgPagination, error) {
 	if hasPage {
 		if page < 1 {
 			return p, hgBad("Pagination page must be greater than 0")
+		}
+		if page > hgMaxPage {
+			return p, hgBad("Pagination page must be at most %d", hgMaxPage)
 		}
 		p.Page = page
 	}
@@ -319,6 +326,10 @@ type hgPop struct {
 	Sort     []hgSortKey       // sort of a populated relation
 	Populate map[string]*hgPop // nested
 	On       map[string]*hgPop // per component of a dynamic zone
+	// Alias maps Populate keys that are not attribute names to the attribute they load (GraphQL:
+	// the same attribute under several aliases, "@alias" => name); the value is serialized under
+	// that key.
+	Alias map[string]string
 }
 
 // hgParsePopulate reads populate in its string, list and object forms.
@@ -893,11 +904,16 @@ func (q *hgQuery) typed(kind string, v any) (string, error) {
 		}
 	}
 	switch kind {
-	case "numeric", "bigint":
-		if _, err := strconv.ParseFloat(s, 64); err != nil {
+	case "bigint":
+		if _, err := strconv.ParseInt(s, 10, 64); err != nil {
+			return "", hgBad("Invalid integer %q", s)
+		}
+		return q.sql.arg(s) + "::bigint", nil
+	case "numeric":
+		if !hgDecimalRe.MatchString(s) { // no NaN, Infinity or hex floats
 			return "", hgBad("Invalid number %q", s)
 		}
-		return q.sql.arg(s) + "::" + kind, nil
+		return q.sql.arg(s) + "::numeric", nil
 	case "boolean":
 		switch s {
 		case "true", "1":
@@ -920,6 +936,9 @@ func (q *hgQuery) typed(kind string, v any) (string, error) {
 	}
 	return q.sql.arg(s), nil
 }
+
+// hgDecimalRe is a decimal number as a numeric filter value takes it.
+var hgDecimalRe = regexp.MustCompile(`^[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]{1,4})?$`)
 
 func hgParseTime(s string) (time.Time, bool) {
 	for _, layout := range []string{time.RFC3339Nano, "2006-01-02T15:04:05", "2006-01-02T15:04", "2006-01-02"} {

@@ -313,8 +313,10 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 	}
 	defer tx.Rollback(ctx)
 	type linked struct {
-		e    *hgEntry
-		note string
+		e         *hgEntry
+		owner     *hgSchema
+		note      string
+		published bool // the published version changed too
 	}
 	var done []linked
 	type lost struct {
@@ -389,6 +391,9 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 				}
 				nd, c1 := edit(data, ch.field, step.add, ch.single)
 				np, c2 := edit(pub, ch.field, step.add, ch.single)
+				if ch.owner.ReviewWorkflow && ch.owner.DraftAndPublish {
+					c2 = false // a reviewed type changes live only through an approved publication
+				}
 				if !c1 && !c2 {
 					continue
 				}
@@ -410,7 +415,7 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 				if step.add {
 					verb = "Linked"
 				}
-				done = append(done, linked{oe, fmt.Sprintf("%s %s via %s", verb, from, ch.field)})
+				done = append(done, linked{oe, ch.owner, fmt.Sprintf("%s %s via %s", verb, from, ch.field), c2})
 				for _, pd := range prev {
 					losers = append(losers, lost{ch.self, pd, ch.selfLocale,
 						fmt.Sprintf("Unlinked by %s via %s: it now belongs to %s", hgEntryLabel(ch.owner, oe.Data, od), ch.inverse, from)})
@@ -423,6 +428,7 @@ func (s *Server) hgApplyInverse(ctx context.Context, doc string, changes []hgInv
 	}
 	for _, d := range done {
 		s.hgRecordVersionNote(ctx, d.e, "link", userID, d.note)
+		s.hgEmitLinked(ctx, d.owner, d.e, d.published)
 	}
 	for _, l := range losers {
 		if le, err := s.hgGetEntry(ctx, l.uid, l.doc, l.locale); err == nil {
@@ -609,8 +615,21 @@ func (s *Server) hgUnlinkDocument(ctx context.Context, uid, doc, label string, u
 			continue
 		}
 		s.hgRecordVersionNote(ctx, e, "link", userID, fmt.Sprintf("Unlinked %s via %s: it was deleted", label, strings.Join(fields, ", ")))
+		if t := reg.Get(e.TypeUID); t != nil {
+			s.hgEmitLinked(ctx, t, e, e.Published != nil)
+		}
 	}
 	return nil
+}
+
+// hgEmitLinked announces an entry whose relation field another write changed (an inverse-side
+// save, or the deletion of a document it pointed at): entry.update, and entry.publish when its
+// published version changed too, so webhook-driven front ends and subscribers refresh it.
+func (s *Server) hgEmitLinked(ctx context.Context, sc *hgSchema, e *hgEntry, published bool) {
+	s.hgEmit(ctx, "entry.update", sc, e)
+	if published && sc.DraftAndPublish && e.Published != nil {
+		s.hgEmit(ctx, "entry.publish", sc, e)
+	}
 }
 
 // Filtering and sorting through relations -----------------------------------------------------------
