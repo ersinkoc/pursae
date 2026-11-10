@@ -3,6 +3,8 @@ package wp
 import (
 	"html"
 	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -10,11 +12,16 @@ import (
 )
 
 var (
-	ksesOnce    sync.Once
-	ksesPolicy  *bluemonday.Policy
-	blockDelim  = regexp.MustCompile(`<!--\s+/?wp:[^>]*?-->`)
-	moreTagRe   = regexp.MustCompile(`<!--more(.*?)?-->`)
-	blockMarkRe = regexp.MustCompile("\x00WPBLOCK\x00")
+	ksesOnce   sync.Once
+	ksesPolicy *bluemonday.Policy
+	// keptCommentRe finds the comments kses keeps: block delimiters and the <!--more-->,
+	// <!--nextpage--> and <!--noteaser--> tags. None may hold ">", so a kept comment can never be
+	// closed early by "--!>" and let markup inside it through.
+	keptCommentRe = regexp.MustCompile(`<!--\s+/?wp:[^>]*?-->|<!--(?:more[^>]*?|nextpage|noteaser)-->`)
+	// mediaURLRe accepts a relative URL or one with an allowed protocol for the media src/poster
+	// attributes bluemonday does not check itself (wp_kses_bad_protocol() on every URI attribute).
+	mediaURLRe  = regexp.MustCompile(`(?i)^\s*(?:(?:` + strings.Join(AllowedProtocols, "|") + `):|[^:/?#]*(?:[/?#]|$))`)
+	blockMarkRe = regexp.MustCompile("\x00WPBLOCK([0-9]+)\x00")
 	// styleAttrRe finds style attributes in bluemonday output, where attribute values are always
 	// double-quoted and escaped (a literal " never appears inside one, nor in text).
 	styleAttrRe = regexp.MustCompile(`\sstyle="([^"]*)"`)
@@ -36,31 +43,36 @@ func KsesPost(html string) string {
 		p.AllowAttrs("aria-label", "aria-hidden", "aria-describedby", "aria-labelledby").Globally()
 		p.AllowAttrs("data-id", "data-type", "data-align").Globally()
 		p.AllowAttrs("datetime").OnElements("time", "del", "ins")
-		p.AllowAttrs("controls", "src", "poster", "preload", "loop", "muted", "autoplay", "playsinline").OnElements("audio", "video", "source")
+		p.AllowAttrs("controls", "preload", "loop", "muted", "autoplay", "playsinline").OnElements("audio", "video", "source")
 		p.AllowAttrs("srcset", "sizes", "width", "height", "loading", "decoding").OnElements("img", "source")
+		p.AllowAttrs("src", "poster").Matching(mediaURLRe).OnElements("audio", "video", "source")
 		p.AllowAttrs("target", "rel").OnElements("a")
+		p.AllowAttrs("start").Matching(bluemonday.Integer).OnElements("ol")
+		p.AllowAttrs("reversed").Matching(regexp.MustCompile(`(?i)^(|reversed)$`)).OnElements("ol")
+		// WordPress keeps post links as written: every wp_allowed_protocols() scheme (tel:, sms:, …)
+		// and no rel="nofollow" (that is only added to comments).
+		p.AllowURLSchemes(AllowedProtocols...)
+		p.RequireNoFollowOnLinks(false)
 		p.AllowStyling()
 		p.AllowUnsafe(false)
 		ksesPolicy = p
 	})
-	// bluemonday drops comments, so lift block delimiters out and put them back afterwards.
+	// wp_kses_no_null(): a NUL could otherwise forge the placeholder used below.
+	html = strings.ReplaceAll(html, "\x00", "")
+	// bluemonday drops comments, so lift the kept ones out and put them back afterwards. The
+	// placeholders are numbered, so one dropped with its element does not shift the others.
 	var saved []string
-	marked := blockDelim.ReplaceAllStringFunc(html, func(m string) string {
+	marked := keptCommentRe.ReplaceAllStringFunc(html, func(m string) string {
 		saved = append(saved, m)
-		return "\x00WPBLOCK\x00"
-	})
-	marked = moreTagRe.ReplaceAllStringFunc(marked, func(m string) string {
-		saved = append(saved, m)
-		return "\x00WPBLOCK\x00"
+		return "\x00WPBLOCK" + strconv.Itoa(len(saved)-1) + "\x00"
 	})
 	clean := safeStyles(ksesPolicy.Sanitize(marked))
-	i := 0
-	return blockMarkRe.ReplaceAllStringFunc(clean, func(string) string {
-		if i >= len(saved) {
+	return blockMarkRe.ReplaceAllStringFunc(clean, func(m string) string {
+		i, err := strconv.Atoi(m[len("\x00WPBLOCK") : len(m)-1])
+		if err != nil || i >= len(saved) {
 			return ""
 		}
-		i++
-		return saved[i-1]
+		return saved[i]
 	})
 }
 
@@ -97,4 +109,34 @@ func KsesData(s string) string {
 		ksesDataPolicy = p
 	})
 	return ksesDataPolicy.Sanitize(s)
+}
+
+var (
+	anchorTagRe = regexp.MustCompile(`<a\s[^>]*>`)
+	relAttrRe   = regexp.MustCompile(`\srel="([^"]*)"`)
+)
+
+// RelUGC is wp_rel_ugc() for HTML that went through KsesPost or KsesData (attribute values double-
+// quoted, no ">" inside them): every link gets rel="nofollow ugc", keeping the rel values it had.
+// WordPress adds it to comments, which KsesPost itself leaves alone like any post content.
+func RelUGC(clean string) string {
+	if !strings.Contains(clean, "<a ") {
+		return clean
+	}
+	return anchorTagRe.ReplaceAllStringFunc(clean, func(tag string) string {
+		if m := relAttrRe.FindStringSubmatchIndex(tag); m != nil {
+			rel := strings.Fields(tag[m[2]:m[3]])
+			for _, want := range []string{"nofollow", "ugc"} {
+				if !slices.Contains(rel, want) {
+					rel = append(rel, want)
+				}
+			}
+			return tag[:m[2]] + strings.Join(rel, " ") + tag[m[3]:]
+		}
+		end := len(tag) - 1
+		if strings.HasSuffix(tag, "/>") {
+			end--
+		}
+		return tag[:end] + ` rel="nofollow ugc"` + tag[end:]
+	})
 }

@@ -186,3 +186,29 @@ func TestNonLatinSlugLinks(t *testing.T) {
 		t.Errorf("ascii page = %s", got)
 	}
 }
+
+// Page n of a <!--nextpage--> static front page lives under the pagination base: "/2/" after the
+// home URL is no route (_wp_link_page()).
+func TestFrontPagePageLink(t *testing.T) {
+	date := time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
+	home := &store.Post{ID: 7, Type: "page", Slug: "home", Status: "publish", PublishedAt: &date}
+	other := &store.Post{ID: 8, Type: "page", Slug: "about", Status: "publish", PublishedAt: &date}
+	cases := []struct {
+		b    *Builder
+		p    *store.Post
+		n    int
+		want string
+	}{
+		{&Builder{Home: "http://ex.test", Structure: "/%postname%/", FrontPageID: 7}, home, 2, "http://ex.test/page/2/"},
+		{&Builder{Home: "http://ex.test", Structure: "/%postname%", FrontPageID: 7}, home, 3, "http://ex.test/page/3"},
+		{&Builder{Home: "http://ex.test", Structure: "/%postname%/", FrontPageID: 7}, home, 1, "http://ex.test/"},
+		{&Builder{Home: "http://ex.test", Structure: "/%postname%/", FrontPageID: 7}, other, 2, "http://ex.test/about/2/"},
+		{&Builder{Home: "http://ex.test", FrontPageID: 7}, home, 2, "http://ex.test/?page=2"},
+		{&Builder{Home: "http://ex.test", Structure: "/%postname%/"}, home, 2, "http://ex.test/home/2/"},
+	}
+	for _, tc := range cases {
+		if got := tc.b.PostPageLink(tc.p, tc.n); got != tc.want {
+			t.Errorf("PostPageLink(%s, %d) with %q = %s, want %s", tc.p.Slug, tc.n, tc.b.Structure, got, tc.want)
+		}
+	}
+}

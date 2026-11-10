@@ -213,5 +213,5 @@ func HumanTimeDiff(from, to time.Time) string {
 	case d < 365*24*time.Hour:
 		return plural(int(d.Round(30*24*time.Hour).Hours()/(24*30)), "month", "months")
 	}
-	return plural(int(d.Hours()/(24*365)), "year", "years")
+	return plural(int(d.Round(365*24*time.Hour).Hours()/(24*365)), "year", "years") // round(), like the other units
 }

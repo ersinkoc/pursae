@@ -62,6 +62,9 @@ var (
 	singlePageRe  = regexp.MustCompile(`^(.+)/(\d+)$`)
 )
 
+// verbosePageRulesRe is WP_Rewrite::init()'s test for use_verbose_page_rules.
+var verbosePageRulesRe = regexp.MustCompile(`^[^%]*%(?:postname|category|tag|author)%`)
+
 var errNotFound = errors.New("not found")
 
 // ctxSiteQuery is the gin context key of the resolved main query ($wp_query for template tags).
@@ -399,6 +402,14 @@ func (s *Server) resolvePretty(c *gin.Context, q *siteQuery, path string) (*site
 			id, _ := strconv.ParseInt(m["post_id"], 10, 64)
 			p, err = s.store.GetPost(ctx, id)
 		case m["postname"] != "":
+			// use_verbose_page_rules: when the structure starts with %postname%, %category%, %tag% or
+			// %author%, WordPress tries the page rules first, so a page wins over a post of the same shape.
+			if verbosePageRulesRe.MatchString(lb.Structure) {
+				if pg, perr := s.store.PageByPath(ctx, path); perr == nil && (pg.Status == "publish" || pg.Status == "private") {
+					p = pg
+					break
+				}
+			}
 			p, err = s.store.PostBySlug(ctx, "post", m["postname"])
 			if errors.Is(err, store.ErrNotFound) {
 				// "/%postname%/" shares its shape with top-level pages.
@@ -595,6 +606,9 @@ func (s *Server) home(c *gin.Context, q *siteQuery) (*siteQuery, error) {
 	if s.settings.String("show_on_front") == "page" && q.Feed == "" {
 		if id := s.golylangPage(c, int64(s.settings.Int("page_on_front"))); id > 0 {
 			if p, err := s.store.GetPost(c, id); err == nil && p.Status == "publish" {
+				if q.Page == 0 && q.Paged > 1 {
+					q.Page = q.Paged // "/page/2/" is page 2 of a <!--nextpage--> front page (links.PostPageLink)
+				}
 				sq, err := s.singular(c, q, p)
 				if sq != nil {
 					sq.Kind = "front-page"
