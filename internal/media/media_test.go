@@ -191,7 +191,7 @@ func TestSaveAvoidsSizeVariantCollision(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "logo-150x150.png"), []byte("first"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	st, err := Save(dir, false, time.Now(), "logo.png", bytes.NewReader([]byte("second")))
+	st, err := Save(dir, false, time.Now(), "logo.png", bytes.NewReader([]byte("\x89PNG\r\n\x1a\nsecond")))
 	if err != nil {
 		t.Fatal(err)
 	}

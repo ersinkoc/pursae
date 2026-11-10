@@ -39,7 +39,8 @@ func (s *Server) gocdnRewrite() gin.HandlerFunc {
 			return
 		}
 		gocdnBuffer(c, func(body []byte, contentType string) []byte {
-			return s.gocdnRewriteBody(c, st, body, media, assets, strings.Contains(contentType, "html"))
+			ct := strings.ToLower(contentType)
+			return s.gocdnRewriteBody(c, st, body, media, assets, strings.Contains(ct, "html"), strings.Contains(ct, "xml"))
 		})
 	}
 }
@@ -213,12 +214,13 @@ func gocdnBoundary(body []byte, i int) bool {
 
 var gocdnImageExt = map[string]bool{".jpg": true, ".jpeg": true, ".jpe": true, ".png": true, ".gif": true, ".webp": true}
 
-// gocdnRewriteBody rewrites one response body.
-func (s *Server) gocdnRewriteBody(c *gin.Context, st gocdnSettings, body []byte, media, assets, isHTML bool) []byte {
+// gocdnRewriteBody rewrites one response body. isXML: the body is XML (feeds, sitemaps), where the
+// image service's query strings need their "&" escaped.
+func (s *Server) gocdnRewriteBody(c *gin.Context, st gocdnSettings, body []byte, media, assets, isHTML, isXML bool) []byte {
 	hosts := s.gocdnHosts(c)
 	out := body
 	if media || st.ImgRewrite {
-		out = s.gocdnRewriteMedia(c, st, out, hosts, media)
+		out = s.gocdnRewriteMedia(c, st, out, hosts, media, isXML)
 	}
 	if assets && isHTML {
 		out = gocdnRewriteAssets(st, out, hosts)
@@ -245,7 +247,7 @@ func gocdnOrigin(raw string) string {
 	return u.Scheme + "://" + u.Host
 }
 
-func (s *Server) gocdnRewriteMedia(c *gin.Context, st gocdnSettings, body []byte, hosts map[string]bool, media bool) []byte {
+func (s *Server) gocdnRewriteMedia(c *gin.Context, st gocdnSettings, body []byte, hosts map[string]bool, media, isXML bool) []byte {
 	matches := gocdnUploadsURL.FindAllSubmatchIndex(body, -1)
 	if len(matches) == 0 {
 		return body
@@ -300,6 +302,9 @@ func (s *Server) gocdnRewriteMedia(c *gin.Context, st gocdnSettings, body []byte
 		if st.ImgRewrite && !hasQuery && gocdnImageExt[strings.ToLower(path.Ext(h.rel))] {
 			p := gocdn.ImageParams{Q: st.ImgRewriteQ, Format: "auto"}
 			repl = home + gocdnSignedPath(key, h.rel, p, st.ImgSign)
+			if isXML { // a raw "&" makes the whole sitemap or feed invalid XML
+				repl = strings.ReplaceAll(repl, "&", "&amp;")
+			}
 		} else if it := items[h.rel]; it != nil {
 			repl = gocdnItemURL(st, it)
 		}

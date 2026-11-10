@@ -139,6 +139,7 @@ func (s *Server) imgeditPreview(c *gin.Context, a *store.Attachment) {
 // regenerates the sub-sizes and keeps the original for "Restore image".
 func (s *Server) imgeditSave(c *gin.Context, a *store.Attachment, scale bool) map[string]any {
 	_ = s.gocdnEnsureLocal(c, a.FilePath) // GoCDN: the file may live only in the bucket
+	before := gocdnAttachmentFiles(a)
 	img, format, err := media.Decode(s.cfg.UploadsDir, a.FilePath)
 	if err != nil {
 		return map[string]any{"error": "Unable to edit this image."}
@@ -224,6 +225,7 @@ func (s *Server) imgeditSave(c *gin.Context, a *store.Attachment, scale bool) ma
 		a.FilePath, a.Width, a.Height, a.FileSize = info.RelPath, info.Width, info.Height, info.FileSize
 		a.Variants = variants
 	}
+	imgeditRetire(before, a)
 	if err := s.store.ReplaceAttachmentFile(c, a); err != nil {
 		return map[string]any{"error": "Unable to save the image."}
 	}
@@ -245,6 +247,7 @@ func (s *Server) imgeditRestore(c *gin.Context, a *store.Attachment) map[string]
 	if !ok {
 		return map[string]any{"error": "Image metadata is inconsistent."}
 	}
+	before := gocdnAttachmentFiles(a)
 	a.FilePath = backup
 	if sz, ok := a.Meta["backup_size"].([]any); ok && len(sz) == 2 {
 		w, _ := sz[0].(float64)
@@ -259,11 +262,53 @@ func (s *Server) imgeditRestore(c *gin.Context, a *store.Attachment) map[string]
 	delete(a.Meta, "backup_file")
 	delete(a.Meta, "backup_size")
 	delete(a.Meta, "backup_variants")
+	imgeditRetire(before, a)
 	if err := s.store.ReplaceAttachmentFile(c, a); err != nil {
 		return map[string]any{"error": "Image metadata is inconsistent."}
 	}
 	s.purgeAll(c)
 	return map[string]any{"msg": "Image restored successfully."}
+}
+
+// imgeditRetire records in the "edit_files" meta the files of the attachment's previous state that
+// a save or restore leaves unreferenced (an earlier edit, sizes replaced by a thumbnail-only save,
+// the edit undone by Restore). Posts may still show them, so like WordPress' backup sizes they
+// stay on disk, and they are deleted with the attachment (gocdnAttachmentFiles lists them).
+func imgeditRetire(before []string, a *store.Attachment) {
+	if a.Meta == nil {
+		a.Meta = map[string]any{}
+	}
+	now := map[string]bool{}
+	for _, p := range gocdnAttachmentFiles(a) {
+		now[p] = true
+	}
+	list := metaStringList(a.Meta["edit_files"])
+	for _, p := range before {
+		if !now[p] {
+			now[p] = true
+			list = append(list, p)
+		}
+	}
+	if len(list) > 0 {
+		a.Meta["edit_files"] = list
+	}
+}
+
+// metaStringList reads a list of strings from attachment meta ([]string, or []any after JSON).
+func metaStringList(v any) []string {
+	switch l := v.(type) {
+	case []string:
+		return append([]string(nil), l...)
+	case []any:
+		out := make([]string, 0, len(l))
+		for _, x := range l {
+			if s, ok := x.(string); ok && s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	return nil
 }
 
 // looseNumber decodes a JSON number or a numeric string, the way PHP reads the editor's history.

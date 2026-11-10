@@ -76,7 +76,9 @@ func (s *Server) imageEditorOptions(ctx context.Context, file, mime string) medi
 // createImageSubsizes is wp_create_image_subsizes() for a new attachment: its dimensions, the
 // "-scaled" or converted main file and the registered sizes.
 func (s *Server) createImageSubsizes(ctx context.Context, a *store.Attachment) {
-	info, err := media.ProcessImageWith(s.cfg.UploadsDir, a.FilePath, s.imageSizes(), s.imageEditorOptions(ctx, path.Base(a.FilePath), a.Mime))
+	opts := s.imageEditorOptions(ctx, path.Base(a.FilePath), a.Mime)
+	opts.Reserved = s.uploadReserved(ctx)(strings.TrimPrefix(path.Dir(a.FilePath), "."))
+	info, err := media.ProcessImageWith(s.cfg.UploadsDir, a.FilePath, s.imageSizes(), opts)
 	if err != nil {
 		return
 	}
@@ -124,6 +126,34 @@ func ksesMediaPatch(u *store.User, patch pllMediaText) {
 	}
 }
 
+// uploadReserved lists the names of an uploads sub-folder ("" or "2026/11") that live only in
+// the bucket (Pursae CDN removed the local copy, or linked a bucket object): a new upload must not
+// take one of them (or a size name of one), it would overwrite that file's object and take over its
+// gocdn_items row. WP Offload Media hooks wp_unique_filename for the same reason.
+func (s *Server) uploadReserved(ctx context.Context) func(sub string) []string {
+	return func(sub string) []string {
+		prefix := ""
+		if sub != "" {
+			prefix = strings.Trim(sub, "/") + "/"
+		}
+		rows, err := s.store.Pool.Query(ctx, `SELECT path FROM gocdn_items WHERE local_removed AND starts_with(path, $1)`, prefix)
+		if err != nil {
+			return nil
+		}
+		defer rows.Close()
+		var out []string
+		for rows.Next() {
+			var p string
+			if rows.Scan(&p) == nil {
+				if name := strings.TrimPrefix(p, prefix); name != "" && !strings.Contains(name, "/") {
+					out = append(out, name)
+				}
+			}
+		}
+		return out
+	}
+}
+
 // uploadURL is wp_get_attachment_url() for a path relative to the uploads dir.
 func (s *Server) uploadURL(c context.Context, rel string) string {
 	return s.links(c).HomeURL("/wp-content/uploads/" + rel)
@@ -154,7 +184,7 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	if n := c.PostForm("name"); n != "" {
 		name = n
 	}
-	st, err := media.Save(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, f)
+	st, err := media.SaveWith(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, f, s.uploadReserved(c))
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +210,7 @@ var (
 // uploads directory, the image sizes are generated and the attachment is inserted. The importers
 // (WXR, theme demo content) use it.
 func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Reader, uploaderID, postID int64) (*store.Attachment, error) {
-	st, err := media.Save(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, io.LimitReader(r, maxUploadBytes+1))
+	st, err := media.SaveWith(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, io.LimitReader(r, maxUploadBytes+1), s.uploadReserved(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -563,15 +593,14 @@ func (s *Server) checkNonceValue(c *gin.Context, nonce, action string) bool {
 	return s.auth.VerifyNonce(nonce, action, uid, token) > 0
 }
 
+// deleteAttachmentFiles is wp_delete_attachment_files(): the main file, its sizes, the original of a
+// "-scaled"/"-rotated" image and the image editor's backup (the pre-edit file and its sizes).
 func (s *Server) deleteAttachmentFiles(a *store.Attachment) {
 	s.gocdnBeforeDelete(a) // GoCDN: delete the offloaded copies (gocdn_offload.go)
-	base := s.cfg.UploadsDir
-	_ = os.Remove(filepath.Join(base, filepath.FromSlash(a.FilePath)))
-	for _, v := range a.Variants {
-		_ = os.Remove(filepath.Join(base, filepath.FromSlash(v.FilePath)))
-	}
-	if orig, ok := a.Meta["original_image"].(string); ok && orig != "" {
-		_ = os.Remove(filepath.Join(base, filepath.FromSlash(path.Join(path.Dir(a.FilePath), orig))))
+	for _, rel := range gocdnAttachmentFiles(a) {
+		if p := s.gocdnLocalPath(rel); p != "" {
+			_ = os.Remove(p)
+		}
 	}
 }
 

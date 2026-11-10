@@ -217,11 +217,10 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 		fail(err.Error())
 	}
 	rt.mu.Lock()
-	j.Running, j.live = false, false
-	j.Updated = time.Now()
 	finished, failed := j.Finished, j.Failed
 	rt.mu.Unlock()
-	s.gocdnPersistJob()
+	// The follow-up (dropping old connections, clearing the fallback, deactivating) runs before the
+	// job reports that it stopped, so whoever waits for it sees the final state.
 	switch {
 	case j.Kind == "move" && finished:
 		s.gocdnPrunePrevious(ctx)
@@ -231,6 +230,11 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 			_ = s.settings.Set(ctx, map[string]any{gocdnSetting: false})
 		}
 	}
+	rt.mu.Lock()
+	j.Running, j.live = false, false
+	j.Updated = time.Now()
+	rt.mu.Unlock()
+	s.gocdnPersistJob()
 	s.gocdnPurge(ctx, true) // URLs on the site changed
 }
 

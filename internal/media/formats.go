@@ -68,6 +68,50 @@ func formatExt(format string) string {
 	return "." + format
 }
 
+// sniffImage checks the first bytes of an uploaded raster image (JPEG, PNG, GIF, WebP, BMP, TIFF)
+// against the type of its extension: ok is false when they are not an image of any of those
+// types, real is the MIME type the content has when it differs from mime ("" when it matches, or
+// for other types, which are not checked).
+func sniffImage(path, mime string) (real string, ok bool) {
+	switch mime {
+	case "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "image/tiff":
+	default:
+		return "", true
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+	head := make([]byte, 16)
+	n, _ := io.ReadFull(f, head)
+	if n == 0 {
+		return "", true // empty: the callers refuse it with their own message
+	}
+	head = head[:n]
+	var got string
+	switch {
+	case bytes.HasPrefix(head, []byte{0xFF, 0xD8, 0xFF}):
+		got = "image/jpeg"
+	case bytes.HasPrefix(head, []byte("\x89PNG\r\n\x1a\n")):
+		got = "image/png"
+	case bytes.HasPrefix(head, []byte("GIF87a")), bytes.HasPrefix(head, []byte("GIF89a")):
+		got = "image/gif"
+	case len(head) >= 12 && string(head[:4]) == "RIFF" && string(head[8:12]) == "WEBP":
+		got = "image/webp"
+	case bytes.HasPrefix(head, []byte("BM")):
+		got = "image/bmp"
+	case bytes.HasPrefix(head, []byte("II*\x00")), bytes.HasPrefix(head, []byte("MM\x00*")):
+		got = "image/tiff"
+	default:
+		return "", false
+	}
+	if got == mime {
+		return "", true
+	}
+	return got, true
+}
+
 // isoDimensions reads the width and height of an AVIF/HEIC file from its first "ispe" box.
 func isoDimensions(path string) (int, int, bool) {
 	f, err := os.Open(path)
@@ -165,6 +209,32 @@ var svgScriptURL = regexp.MustCompile(`(?i)^\s*(javascript|vbscript|livescript):
 var svgSafeData = regexp.MustCompile(`(?i)^\s*data:image/(png|jpe?g|gif|webp|avif);`)
 var svgBadCSS = regexp.MustCompile(`(?i)(@import|expression\s*\(|javascript:|url\s*\(\s*['"]?\s*(?:javascript|https?:|//))`)
 
+// svgAnimatesURL reports an animation element (set, animate…) that changes a link or other URL
+// attribute: <set attributeName="href" to="javascript:…"> or values="x;javascript:…" would turn a
+// safe link into a script URL after the attribute checks below ran.
+func svgAnimatesURL(name string, attrs []xml.Attr) bool {
+	switch name {
+	case "set", "animate", "animatemotion", "animatetransform", "animatecolor", "discard":
+	default:
+		return false
+	}
+	for _, a := range attrs {
+		if strings.ToLower(a.Name.Local) != "attributename" {
+			continue
+		}
+		v := strings.ToLower(urlAsParsed(a.Value))
+		if i := strings.LastIndexByte(v, ':'); i >= 0 {
+			v = v[i+1:] // xlink:href
+		}
+		switch v {
+		case "href", "src", "action", "formaction", "style":
+			return true
+		}
+		return strings.HasPrefix(v, "on")
+	}
+	return false
+}
+
 func svgName(n xml.Name) string {
 	if n.Space != "" {
 		return n.Space + ":" + n.Local
@@ -204,7 +274,7 @@ func SanitizeSVG(data []byte) ([]byte, error) {
 			continue // DOCTYPE, ENTITY, processing instructions, comments
 		case xml.StartElement:
 			name := strings.ToLower(t.Name.Local)
-			if skip > 0 || svgDropElements[name] {
+			if skip > 0 || svgDropElements[name] || svgAnimatesURL(name, t.Attr) {
 				skip++
 				continue
 			}

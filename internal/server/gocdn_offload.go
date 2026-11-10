@@ -24,7 +24,7 @@ import (
 )
 
 // Media offload: every file of an attachment (the main file, its generated sizes, the original of
-// a "-scaled" image and the image editor's backup) is copied to the bucket when it is uploaded,
+// a "-scaled" image, the image editor's backup and earlier edits) is copied to the bucket when it is uploaded,
 // tracked in gocdn_items, optionally deleted from the server, fetched back when the server needs it
 // (the image editor) and deleted from the bucket with the attachment.
 
@@ -148,6 +148,9 @@ func gocdnAttachmentFiles(a *store.Attachment) []string {
 			}
 		}
 	}
+	for _, p := range metaStringList(a.Meta["edit_files"]) { // earlier image editor states (imgeditRetire)
+		add(p)
+	}
 	return out
 }
 
@@ -270,9 +273,11 @@ func (s *Server) gocdnAfterUploadID(ctx context.Context, id int64) {
 }
 
 // gocdnBeforeDelete is called by deleteAttachmentFiles: the attachment's objects leave the bucket
-// (the rows go with the media row). The CDN is told to forget their URLs (automatic purge).
+// (the rows go with the media row). The CDN is told to forget their URLs (automatic purge). It
+// runs while the plugin is off too: the rows are deleted with the attachment either way, and an
+// object left behind would stay public with nothing pointing at it any more.
 func (s *Server) gocdnBeforeDelete(a *store.Attachment) {
-	if a == nil || !s.gocdnOn() {
+	if a == nil {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -295,7 +300,7 @@ func (s *Server) gocdnBeforeDelete(a *store.Attachment) {
 		urls = append(urls, gocdnItemURL(st, it))
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
 	}
-	if len(gocdnPurgeTargets(st)) > 0 && st.CFAuto && len(urls) > 0 {
+	if s.gocdnOn() && len(gocdnPurgeTargets(st)) > 0 && st.CFAuto && len(urls) > 0 {
 		s.gocdnQueuePurge(st, urls) // coalesced with other purges (gocdn_purge.go)
 	}
 }
@@ -396,17 +401,30 @@ func (s *Server) gocdnProxy(w http.ResponseWriter, r *http.Request, st gocdnSett
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	rc, obj, err := cl.Get(r.Context(), it.Key)
+	// Byte ranges go through to the storage: players seek with them, and Safari plays video only
+	// from a server that answers them.
+	rng := r.Header.Get("Range")
+	if !strings.HasPrefix(rng, "bytes=") || strings.Contains(rng, ",") {
+		rng = "" // no range, or several (multipart/byteranges): the whole object
+	}
+	part, err := cl.GetRanged(r.Context(), it.Key, rng)
 	if err != nil {
-		if gocdn.IsNotFound(err) {
+		var se *gocdn.Error
+		switch {
+		case gocdn.IsNotFound(err):
 			http.NotFound(w, r)
-			return
+		case errors.As(err, &se) && se.Status == http.StatusRequestedRangeNotSatisfiable:
+			w.Header().Set("Content-Range", "bytes */"+strconv.FormatInt(it.Size, 10))
+			w.WriteHeader(http.StatusRequestedRangeNotSatisfiable)
+		default:
+			http.Error(w, "storage error", http.StatusBadGateway)
 		}
-		http.Error(w, "storage error", http.StatusBadGateway)
 		return
 	}
+	rc, obj := part.Body, part.Object
 	defer rc.Close()
 	h := w.Header()
+	h.Set("Accept-Ranges", "bytes")
 	h.Set("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'")
 	h.Set("Cache-Control", "public, max-age=31536000, immutable")
 	h.Set("X-Content-Type-Options", "nosniff")
@@ -419,7 +437,12 @@ func (s *Server) gocdnProxy(w http.ResponseWriter, r *http.Request, st gocdnSett
 	if obj.Size > 0 {
 		h.Set("Content-Length", strconv.FormatInt(obj.Size, 10))
 	}
-	w.WriteHeader(http.StatusOK)
+	status := http.StatusOK
+	if rng != "" && part.Status == http.StatusPartialContent && part.ContentRange != "" {
+		status = http.StatusPartialContent
+		h.Set("Content-Range", part.ContentRange)
+	}
+	w.WriteHeader(status)
 	if r.Method != http.MethodHead {
 		_, _ = io.Copy(w, rc)
 	}

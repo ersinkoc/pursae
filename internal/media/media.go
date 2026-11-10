@@ -102,6 +102,13 @@ type Stored struct {
 
 // Save writes r into the uploads directory under year/month (when dated) with a unique name.
 func Save(uploadsDir string, dated bool, now time.Time, filename string, r io.Reader) (*Stored, error) {
+	return SaveWith(uploadsDir, dated, now, filename, r, nil)
+}
+
+// SaveWith is Save with reserved: the file names (no folder) that count as taken in the target
+// sub-folder ("" or "2026/11") besides the files on disk, e.g. offloaded files whose local copy
+// was removed. A new upload must not take their names: it would overwrite their bucket objects.
+func SaveWith(uploadsDir string, dated bool, now time.Time, filename string, r io.Reader, reserved func(sub string) []string) (*Stored, error) {
 	mime := MimeFor(filename)
 	if mime == "" {
 		return nil, ErrType
@@ -114,7 +121,11 @@ func Save(uploadsDir string, dated bool, now time.Time, filename string, r io.Re
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, err
 	}
-	name := uniqueName(dir, SanitizeFileName(filename))
+	var taken []string
+	if reserved != nil {
+		taken = reserved(sub)
+	}
+	name := uniqueName(dir, SanitizeFileName(filename), taken...)
 	dst := filepath.Join(dir, name)
 	f, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
@@ -123,6 +134,21 @@ func Save(uploadsDir string, dated bool, now time.Time, filename string, r io.Re
 	n, err := io.Copy(f, r)
 	if cerr := f.Close(); err == nil {
 		err = cerr
+	}
+	if err == nil {
+		// wp_check_filetype_and_ext(): an image's content decides its type. A file that is not the
+		// image its extension claims is refused; another image format gets the right extension (a
+		// PNG named .jpg would otherwise get JPEG-named sizes holding PNG data, and the other way
+		// round).
+		if real, ok := sniffImage(dst, mime); !ok {
+			err = ErrType
+		} else if real != "" {
+			ext := formatExt(strings.TrimPrefix(real, "image/"))
+			fixed := uniqueName(dir, strings.TrimSuffix(name, filepath.Ext(name))+ext, taken...)
+			if err = os.Rename(dst, filepath.Join(dir, fixed)); err == nil {
+				name, dst, mime = fixed, filepath.Join(dir, fixed), real
+			}
+		}
 	}
 	if err == nil && mime == "image/svg+xml" && n <= 8<<20 {
 		err = sanitizeSVGFile(dst)
@@ -142,8 +168,9 @@ func Save(uploadsDir string, dated bool, now time.Time, filename string, r io.Re
 // uniqueName is wp_unique_filename(): name.ext, name-1.ext, name-2.ext …, also avoiding
 // collisions with generated size variants of other files (_wp_check_existing_file_names()): a
 // name is taken when the directory already holds a file one of its sub-sizes or its -scaled copy
-// would overwrite, e.g. logo.png is not free while logo-150x150.png exists.
-func uniqueName(dir, name string) string {
+// would overwrite, e.g. logo.png is not free while logo-150x150.png exists. reserved are more
+// names that count as present in dir.
+func uniqueName(dir, name string, reserved ...string) string {
 	ext := filepath.Ext(name)
 	base := strings.TrimSuffix(name, ext)
 	var existing []string
@@ -152,9 +179,15 @@ func uniqueName(dir, name string) string {
 			existing = append(existing, strings.ToLower(e.Name()))
 		}
 	}
+	held := map[string]bool{}
+	for _, r := range reserved {
+		r = strings.ToLower(r)
+		held[r] = true
+		existing = append(existing, r)
+	}
 	cand := name
 	for i := 1; ; i++ {
-		if _, err := os.Stat(filepath.Join(dir, cand)); os.IsNotExist(err) && !variantTaken(existing, strings.TrimSuffix(cand, ext)) {
+		if _, err := os.Stat(filepath.Join(dir, cand)); os.IsNotExist(err) && !held[strings.ToLower(cand)] && !variantTaken(existing, strings.TrimSuffix(cand, ext)) {
 			return cand
 		}
 		cand = base + "-" + strconv.Itoa(i) + ext
@@ -179,7 +212,7 @@ func variantTaken(names []string, base string) bool {
 		default:
 			continue
 		}
-		if mid := rest[:dot]; mid == "scaled" || isSizeSuffix(mid) {
+		if mid := rest[:dot]; mid == "scaled" || mid == "rotated" || isSizeSuffix(mid) {
 			return true
 		}
 	}
@@ -244,6 +277,9 @@ type Options struct {
 	// format, the main image is converted too (wp_create_image_subsizes()) and the uploaded file is
 	// kept as the original image. Mappings to a format that cannot be written are ignored.
 	OutputFormat map[string]string
+	// Reserved are file names in the image's folder that count as taken besides the files on disk
+	// (offloaded files whose local copy was removed), for the converted main file's name.
+	Reserved []string
 }
 
 // ProcessImage is ProcessImageWith with the default options.
@@ -302,6 +338,17 @@ func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*
 		}
 		return nil, err
 	}
+	// A JPEG with an EXIF orientation is turned upright first, like wp_maybe_exif_rotate(): the
+	// sizes and the stored dimensions follow what the browser shows.
+	rotated := false
+	if format == "jpeg" {
+		if rf, err := os.Open(full); err == nil {
+			if o := JPEGOrientation(rf); o > 1 {
+				img, rotated = Orient(img, o), true
+			}
+			rf.Close()
+		}
+	}
 	b := img.Bounds()
 	info := &ImageInfo{Width: b.Dx(), Height: b.Dy(), RelPath: relPath}
 	if st, err := os.Stat(full); err == nil {
@@ -342,9 +389,19 @@ func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*
 			}
 			src = scaled
 		}
+	} else if native && rotated {
+		// Turned upright at its own size: photo.jpg → photo-rotated.jpg, the upload kept as the original.
+		name := base + "-rotated" + outExt
+		if err := encode(filepath.Join(dir, name), img, out); err == nil {
+			info.OriginalFile = filepath.Base(full)
+			info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), name))
+			if st, err := os.Stat(filepath.Join(dir, name)); err == nil {
+				info.FileSize = st.Size()
+			}
+		}
 	} else if convert {
 		// The image converted at its own size: photo.jpg → photo.webp, the upload kept as the original.
-		name := uniqueName(dir, base+outExt)
+		name := uniqueName(dir, base+outExt, opts.Reserved...)
 		if err := encode(filepath.Join(dir, name), img, out); err == nil {
 			info.OriginalFile = filepath.Base(full)
 			info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), name))
@@ -603,13 +660,29 @@ func flip(src image.Image, vertical, horizontal bool) image.Image {
 	return dst
 }
 
-// Decode opens an image file under uploadsDir.
+// ErrTooLarge is returned by Decode for an image over MaxImagePixels.
+var ErrTooLarge = errors.New("the image is too large to be edited")
+
+// Decode opens an image file under uploadsDir. Images over MaxImagePixels are refused before
+// their pixels are decoded, and at most cap(processSem) images are decoded at a time.
 func Decode(uploadsDir, relPath string) (image.Image, string, error) {
 	f, err := os.Open(filepath.Join(uploadsDir, filepath.FromSlash(relPath)))
 	if err != nil {
 		return nil, "", err
 	}
 	defer f.Close()
+	cfg, _, err := image.DecodeConfig(f)
+	if err != nil {
+		return nil, "", err
+	}
+	if int64(cfg.Width)*int64(cfg.Height) > MaxImagePixels {
+		return nil, "", ErrTooLarge
+	}
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		return nil, "", err
+	}
+	processSem <- struct{}{}
+	defer func() { <-processSem }()
 	return image.Decode(f)
 }
 
