@@ -78,7 +78,7 @@ func IsDynamic(name string) bool {
 // Render is do_blocks(): freeform HTML is emitted as is, static blocks emit
 // their saved markup and dynamic blocks call their renderer.
 func Render(ctx context.Context, content string) string {
-	if !HasBlocks(content) {
+	if !HasBlocks(content) && (!strings.Contains(content, "<!--") || !strings.Contains(content, "wp:")) {
 		return content
 	}
 	var sb strings.Builder

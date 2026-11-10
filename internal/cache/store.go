@@ -200,7 +200,7 @@ func NewEntry(key string, status int, header http.Header, body []byte, tags []st
 		Key:     key,
 		Status:  status,
 		Header:  filterHeader(header),
-		Body:    body,
+		Body:    bytes.Clone(body),
 		Created: created,
 		Expires: created.Add(ttl),
 		Tags:    normalizeTags(tags),
