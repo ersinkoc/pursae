@@ -433,6 +433,51 @@ func TestAdminSecMFA(t *testing.T) {
 	if _, body, _ := asAccount(t, c, base, url.Values{"adminsec_do": {"mfa_disable"}, "adminsec_password": {"nope"}}); !strings.Contains(body, "current password is incorrect") {
 		t.Error("MFA disabled without the password")
 	}
+	// Re-pointing the code address is as strong as turning the factor off: it needs the password,
+	// and the old address hears of the change.
+	if _, body, _ := asAccount(t, c, base, url.Values{"adminsec_do": {"mfa_send"}, "email": {"attacker@example.test"}}); !strings.Contains(body, "current password is incorrect") {
+		t.Error("code address re-pointed without the password")
+	}
+	_, body, _ = asAccount(t, c, base, url.Values{"adminsec_do": {"mfa_send"}, "email": {"new@example.test"}, "adminsec_password": {"correct horse"}})
+	tok = asToken(t, body)
+	_, body, _ = asAccount(t, c, base, url.Values{"adminsec_do": {"mfa_verify"}, "adminsec_token": {tok}, "code": {asMailedCode(t, "Confirm your e-mail for login codes")}})
+	if !strings.Contains(body, "E-mailed login codes are on") {
+		t.Fatalf("re-pointing with the password failed: %.400s", body)
+	}
+	if m := lastMail(t, "Login codes now go to another address"); len(m.To) != 1 || m.To[0] != "admin@example.test" {
+		t.Errorf("change notice went to %v", m.To)
+	}
+}
+
+// Parallel second-factor guesses share the challenge's attempt budget (count first, then verify).
+func TestAdminSecParallelCodeGuessesLimited(t *testing.T) {
+	base, c, srv := asStart(t)
+	srv.cfg.SMTPHost = "smtp.example.test"
+	asConfigure(t, srv, func(st *asSettings) { st.IPMaxFailures, st.UserMaxFailures = 1000, 1000 })
+	asEnableMFA(t, c, base, "admin@example.test")
+	anon := asNewClient()
+	_, body, _ := asLogin(t, anon, base, "/wp-login", "admin", "correct horse")
+	tok := asToken(t, body)
+	_, _ = getPool(t).Exec(context.Background(), `DELETE FROM login_attempts`)
+	var wg sync.WaitGroup
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			resp, err := asNewClient().PostForm(base+"/wp-login?action=adminsec_2fa", url.Values{"adminsec_token": {tok}, "provider": {"email"}, "authcode": {"000000"}})
+			if err == nil {
+				_, _ = io.ReadAll(resp.Body)
+				resp.Body.Close()
+			}
+		}()
+	}
+	wg.Wait()
+	if n := asCount(t, `SELECT count(*) FROM login_attempts WHERE NOT success AND NOT pending`); n > asMaxCodeAttempts {
+		t.Errorf("%d parallel codes checked, limit %d", n, asMaxCodeAttempts)
+	}
+	if asCount(t, `SELECT count(*) FROM adminsec_challenges WHERE purpose = 'login'`) != 0 {
+		t.Error("challenge survives the used-up budget")
+	}
 }
 
 // --- 2FA --------------------------------------------------------------------------------

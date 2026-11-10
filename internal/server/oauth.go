@@ -262,6 +262,7 @@ func (s *Server) oauthAuthorize(c *gin.Context) {
 		fail("Unknown application or redirect URI.")
 		return
 	}
+	cspAllowRedirect(c, redirect) // the consent form's POST answers 302 to the client (form-action)
 	state := f.Get("state")
 	back := func(q url.Values) {
 		if state != "" {

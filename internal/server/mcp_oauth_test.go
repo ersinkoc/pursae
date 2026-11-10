@@ -117,6 +117,15 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 			t.Errorf("consent page misses %q", want)
 		}
 	}
+	// The approve/deny POST answers 302 to the client: the page's form-action must allow it.
+	if r, err := c.Get(authURL("http://localhost:9999/cb", challenge)); err != nil {
+		t.Fatal(err)
+	} else {
+		r.Body.Close()
+		if csp := r.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "form-action 'self' http://localhost:9999") {
+			t.Errorf("consent CSP does not allow the redirect origin: %q", csp)
+		}
+	}
 	if strings.Contains(page, `value="plugins" checked`) {
 		t.Error("plugins ticked although not asked for")
 	}

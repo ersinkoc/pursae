@@ -9,6 +9,7 @@ package server
 // to exactly the hosts its player loads from.
 
 import (
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -36,6 +37,41 @@ func cspAllow(c *gin.Context, directive string, sources ...string) {
 	for _, src := range sources {
 		if !cspHas(allow[directive], src) {
 			allow[directive] = append(allow[directive], src)
+		}
+	}
+}
+
+// cspRedirectSource is the CSP source expression that lets a form on this page lead to raw (a
+// redirect after a POST counts as a form-action navigation in Chromium): the origin for http(s)
+// URLs, the bare scheme for an app scheme. Empty when raw cannot be parsed.
+func cspRedirectSource(raw string) string {
+	pu, err := url.Parse(raw)
+	if err != nil || pu.Scheme == "" {
+		return ""
+	}
+	scheme := strings.ToLower(pu.Scheme)
+	for _, r := range scheme {
+		if !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '+' || r == '.' || r == '-') {
+			return ""
+		}
+	}
+	if scheme == "http" || scheme == "https" {
+		if pu.Host == "" || strings.ContainsAny(pu.Host, " ;,'\"") {
+			return ""
+		}
+		return scheme + "://" + strings.ToLower(pu.Host)
+	}
+	return scheme + ":"
+}
+
+// cspAllowRedirect lets the forms of this response submit (and be redirected) to each URL.
+func cspAllowRedirect(c *gin.Context, urls ...string) {
+	for _, raw := range urls {
+		if raw == "" {
+			continue
+		}
+		if src := cspRedirectSource(raw); src != "" {
+			cspAllow(c, "form-action", src)
 		}
 	}
 }
