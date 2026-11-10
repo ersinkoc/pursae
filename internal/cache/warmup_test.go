@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -81,6 +82,30 @@ func TestWarmupExtremeRateDoesNotPanic(t *testing.T) {
 	})
 	if err != nil || prog.Done != 1 {
 		t.Fatalf("progress=%+v err=%v", prog, err)
+	}
+}
+
+func TestWarmupReturnsCancellationAfterFinalJobWasDispatched(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		prog, err := Warmup(ctx, []string{"https://example.test/"}, WarmupOptions{Concurrency: 1, Handler: http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+			close(started)
+			<-release
+		})})
+		if prog.Done != 1 || prog.Failed != 1 {
+			done <- fmt.Errorf("progress %+v", prog)
+			return
+		}
+		done <- err
+	}()
+	<-started
+	cancel()
+	close(release)
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v, want context.Canceled", err)
 	}
 }
 

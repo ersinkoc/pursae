@@ -336,6 +336,9 @@ func (c *Client) GetRanged(ctx context.Context, key, rng string) (*Partial, erro
 
 // GetRange downloads part of an object (first..last bytes, inclusive).
 func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([]byte, error) {
+	if first < 0 || last < first {
+		return nil, errors.New("invalid byte range")
+	}
 	h := c.withSSEC(http.Header{})
 	h.Set("Range", "bytes="+strconv.FormatInt(first, 10)+"-"+strconv.FormatInt(last, 10))
 	resp, err := c.do(ctx, http.MethodGet, key, nil, nil, h)

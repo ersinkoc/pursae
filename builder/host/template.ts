@@ -82,6 +82,7 @@ export class TemplateController {
   private state: TemplateUiState
   private listeners = new Set<() => void>()
   private seq = 0
+  private conflictsSeq = 0
   private dialogResolve: ((saved: boolean) => void) | null = null
 
   constructor(
@@ -166,12 +167,15 @@ export class TemplateController {
 
   /** GET templates/{id}/conflicts (a warning only; failures leave the list empty). */
   async loadConflicts(): Promise<TemplateConflict[]> {
+    const seq = ++this.conflictsSeq
     try {
       const r = await this.rest.request<TemplateConflict[]>('GET', routes.templateConflicts(this.postId))
       const list = Array.isArray(r.data) ? r.data.filter((c) => c && typeof c.id === 'number') : []
+      if (seq !== this.conflictsSeq) return list
       this.set({ conflicts: list })
       return list
     } catch {
+      if (seq !== this.conflictsSeq) return []
       this.set({ conflicts: [] })
       return []
     }

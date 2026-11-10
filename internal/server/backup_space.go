@@ -4,18 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"syscall"
 )
-
-// bmgrFreeBytes is the space available to this process on the filesystem holding dir; ok is false
-// when it cannot be determined.
-func bmgrFreeBytes(dir string) (free int64, ok bool) {
-	var st syscall.Statfs_t
-	if err := syscall.Statfs(dir, &st); err != nil {
-		return 0, false
-	}
-	return int64(st.Bavail) * int64(st.Bsize), true
-}
 
 // bmgrCheckSpace refuses a backup that cannot fit in the backups directory. The estimate is the size of
 // the selected files (mostly already compressed) plus half the selected tables.
