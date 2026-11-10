@@ -150,7 +150,8 @@ jobs:
           if (-not $ok) { Get-Content serve.out, serve.err; exit 1 }
           $r = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/wp-admin/install
           if ($r.StatusCode -ne 200 -or $r.Content -notmatch "Pursae") { Write-Output $r.StatusCode; exit 1 }
-          $r = Invoke-WebRequest -UseBasicParsing -MaximumRedirection 0 -SkipHttpErrorCheck http://127.0.0.1:8080/
-          Write-Output "front page: $($r.StatusCode)"
+          $code = curl.exe -s -o NUL -w "%{http_code}" http://127.0.0.1:8080/
+          Write-Output "front page: $code"
+          if ($code -ne "302" -and $code -ne "200") { exit 1 }
           Stop-Process -Id $p.Id
           Get-Content serve.err | Select-Object -Last 20
