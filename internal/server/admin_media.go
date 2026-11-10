@@ -120,6 +120,16 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		d.Months = append(d.Months, monthOption{fmt.Sprintf("%d%02d", m.Year, m.Month), time.Month(m.Month).String() + " " + strconv.Itoa(m.Year)})
 	}
 	loc := s.loc()
+	// Uploaders (display fields only) and parent posts load with one query each.
+	var userIDs, parentIDs []int64
+	for _, a := range list {
+		userIDs = append(userIDs, a.UploaderID)
+		if a.PostID != 0 {
+			parentIDs = append(parentIDs, a.PostID)
+		}
+	}
+	authors, _ := s.store.UserNames(ctx, userIDs)
+	parents, _ := s.store.PostsByIDs(ctx, parentIDs)
 	for _, a := range list {
 		r := mediaRow{ID: a.ID, Title: a.Title, FileName: path.Base(a.FilePath), FileURL: s.uploadURL(c, a.FilePath),
 			EditURL: "/wp-admin/post?post=" + itoa64(a.ID) + "&action=edit", ViewURL: s.links(c).HomeURL("/?attachment_id=" + itoa64(a.ID)),
@@ -136,11 +146,11 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		default:
 			r.Thumb, r.IsIcon = mimeIcon(a.Mime), true
 		}
-		if author, err := s.store.UserByID(ctx, a.UploaderID); err == nil {
+		if author := authors[a.UploaderID]; author != nil {
 			r.Author, r.AuthorURL = author.DisplayName, "/wp-admin/upload?author="+itoa64(author.ID)
 		}
 		if a.PostID != 0 {
-			if p, err := s.store.GetPost(ctx, a.PostID); err == nil {
+			if p := parents[a.PostID]; p != nil {
 				r.ParentTitle, r.ParentURL = defaultStr(p.Title, "(no title)"), "/wp-admin/post?post="+itoa64(p.ID)+"&action=edit"
 			}
 		}

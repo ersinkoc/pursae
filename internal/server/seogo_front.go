@@ -657,7 +657,8 @@ func (s *Server) seogoNewsSitemap(c *gin.Context) {
 	if name == "" {
 		name = s.settings.String("blogname")
 	}
-	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, PerPage: 1000, Page: 1, OrderBy: "date", Order: "desc"})
+	// Titles, links and dates only: the newest 1000 posts are loaded without their content.
+	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, PerPage: 1000, Page: 1, OrderBy: "date", Order: "desc", NoContent: true})
 	excluded := idSet(o.SitemapExclude)
 	var sb strings.Builder
 	sb.WriteString(s.seogoXMLHead(ctx) + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">` + "\n")

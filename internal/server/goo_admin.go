@@ -289,8 +289,9 @@ func (s *Server) gooAdminHome(c *gin.Context) {
 		d.Stats = append(d.Stats, gooHomeStat{Label: r.label, Sales: s.gooPrice(t.Gross - t.Refunds), Orders: t.Orders, Items: t.Items})
 	}
 	orders, _, _ := s.gooQueryOrders(ctx, gooOrderQuery{PerPage: 5, Page: 1})
+	refunded := s.gooTotalsRefunded(ctx, gooOrderIDs(orders))
 	for _, o := range orders {
-		d.Recent = append(d.Recent, s.gooOrderRowOf(ctx, o))
+		d.Recent = append(d.Recent, s.gooOrderRowOf(ctx, o, refunded[o.ID]))
 	}
 	d.LowStock = s.gooStockReport(ctx, "lowstock", 5)
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_products p JOIN posts po ON po.id = p.post_id

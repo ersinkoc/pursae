@@ -158,3 +158,73 @@ func TestPostListOrderAndIndexes(t *testing.T) {
 		}
 	}
 }
+
+// TestPublishDuePostsRecountsOwnTerms: the scheduler publishes due posts only, recounts the terms of the
+// posts it published (not every term of the site), and finds them through the posts_future index.
+func TestPublishDuePostsRecountsOwnTerms(t *testing.T) {
+	s, _, u1, _ := wbTestStore(t)
+	ctx := context.Background()
+	past, later := time.Now().Add(-time.Minute), time.Now().Add(time.Hour)
+	due := &Post{Type: "post", AuthorID: u1, Title: "Due", Status: "future", PublishedAt: &past}
+	notYet := &Post{Type: "post", AuthorID: u1, Title: "Later", Status: "future", PublishedAt: &later}
+	other := &Post{Type: "post", AuthorID: u1, Title: "Other", Status: "publish"}
+	for _, p := range []*Post{due, notYet, other} {
+		if err := s.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mine := &Term{Taxonomy: "category", Slug: "due-cat", Name: "Due cat"}
+	theirs := &Term{Taxonomy: "category", Slug: "other-cat", Name: "Other cat"}
+	for _, tm := range []*Term{mine, theirs} {
+		if err := s.InsertTerm(ctx, tm); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.SetPostTerms(ctx, due.ID, "category", []int64{mine.ID}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetPostTerms(ctx, other.ID, "category", []int64{theirs.ID}); err != nil {
+		t.Fatal(err)
+	}
+	// A scheduled post whose time has come (inserting one with a past date publishes it at once).
+	if _, err := s.Pool.Exec(ctx, `UPDATE posts SET status = 'future', published_at = now() - interval '1 minute' WHERE id = $1`, due.ID); err != nil {
+		t.Fatal(err)
+	}
+	// A count the scheduler has no business touching.
+	if _, err := s.Pool.Exec(ctx, `UPDATE terms SET post_count = 7 WHERE id = $1`, theirs.ID); err != nil {
+		t.Fatal(err)
+	}
+	n, err := s.PublishDuePosts(ctx)
+	if err != nil || n != 1 {
+		t.Fatalf("PublishDuePosts = %d, %v; want 1", n, err)
+	}
+	if p, _ := s.GetPost(ctx, due.ID); p.Status != "publish" {
+		t.Errorf("due post: %s", p.Status)
+	}
+	if p, _ := s.GetPost(ctx, notYet.ID); p.Status != "future" {
+		t.Errorf("later post: %s", p.Status)
+	}
+	var mineN, theirsN int
+	_ = s.Pool.QueryRow(ctx, `SELECT post_count FROM terms WHERE id = $1`, mine.ID).Scan(&mineN)
+	_ = s.Pool.QueryRow(ctx, `SELECT post_count FROM terms WHERE id = $1`, theirs.ID).Scan(&theirsN)
+	if mineN != 1 || theirsN != 7 {
+		t.Errorf("post_count: due-cat %d (want 1), other-cat %d (want untouched 7)", mineN, theirsN)
+	}
+	if n, err := s.PublishDuePosts(ctx); err != nil || n != 0 {
+		t.Errorf("second run = %d, %v", n, err)
+	}
+	var plan strings.Builder
+	if _, err := s.Pool.Exec(ctx, `SET enable_seqscan = off`); err == nil {
+		rows, _ := s.Pool.Query(ctx, `EXPLAIN SELECT id FROM posts WHERE status = 'future' AND published_at <= now()`)
+		for rows.Next() {
+			var l string
+			_ = rows.Scan(&l)
+			plan.WriteString(l + "\n")
+		}
+		rows.Close()
+		_, _ = s.Pool.Exec(ctx, `RESET enable_seqscan`)
+	}
+	if !strings.Contains(plan.String(), "posts_future") {
+		t.Errorf("due posts do not use posts_future:\n%s", plan.String())
+	}
+}

@@ -377,7 +377,7 @@ func (s *Server) inlineEditData(c *gin.Context, d *postsListData) {
 		d.Categories, _ = s.store.HierarchicalTerms(ctx, "category", false)
 	} else {
 		d.Pages, _, _ = s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish", "private", "draft", "pending", "future"},
-			OrderBy: "menu_order", Order: "asc", PerPage: -1})
+			OrderBy: "menu_order", Order: "asc", PerPage: -1, NoContent: true}) // the Quick Edit parent select: titles only
 		d.Templates = s.pageTemplates()
 		// Quick Edit selects a row's template in this shared select: a template the theme does not
 		// list needs its option here, or saving the row would reset it to the default.
@@ -1788,7 +1788,7 @@ func (s *Server) renderClassicEdit(c *gin.Context, p *store.Post, isNew bool) {
 		}
 		d.TagNames = strings.Join(names, ", ")
 	} else {
-		d.Pages, _, _ = s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish", "private", "draft", "pending", "future"}, ExcludeID: []int64{p.ID}, OrderBy: "title", Order: "asc", PerPage: -1})
+		d.Pages, _, _ = s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish", "private", "draft", "pending", "future"}, ExcludeID: []int64{p.ID}, OrderBy: "title", Order: "asc", PerPage: -1, NoContent: true}) // the Parent select: titles only
 	}
 	if d.CanAuthor {
 		d.Authors, _ = s.store.Authors(ctx)

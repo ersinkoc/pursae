@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // wc/v3 reports, taxes (+ classes), settings, shipping zones (+ locations, methods), shipping
@@ -136,11 +138,6 @@ var gooReportStatuses = []string{"completed", "processing", "on-hold", "refunded
 func (s *Server) gooV3ReportSales(c *gin.Context, req *restRequest) {
 	ctx := c.Request.Context()
 	from, to := s.gooRESTReportRange(c)
-	orders, _, err := s.gooQueryOrders(ctx, gooOrderQuery{Status: gooReportStatuses, After: &from, Before: &to})
-	if err != nil {
-		restErr(c, http.StatusInternalServerError, "woocommerce_rest_cannot_view", err.Error())
-		return
-	}
 	type day struct {
 		Sales, Tax, Shipping, Discount float64
 		Orders, Items, Customers       int
@@ -151,30 +148,43 @@ func (s *Server) gooV3ReportSales(c *gin.Context, req *restRequest) {
 	}
 	var sales, tax, shipping, discount, refunds float64
 	var items, nOrders int
-	customers := map[int64]bool{}
-	for _, o := range orders {
-		k := o.DateCreated.In(s.loc()).Format("2006-01-02")
-		d := days[k]
-		if d == nil {
-			d = &day{}
-			days[k] = d
+	// One aggregate per day of the site time zone: a year of orders is summed by the database instead of
+	// being loaded with every item and refund.
+	rows, err := s.store.Pool.Query(ctx, `SELECT to_char(o.date_created AT TIME ZONE $4, 'YYYY-MM-DD'), count(*),
+		coalesce(sum(o.total), 0)::float8, coalesce(sum(o.total_tax), 0)::float8, coalesce(sum(o.shipping_total), 0)::float8,
+		coalesce(sum(o.discount_total), 0)::float8,
+		coalesce(sum((SELECT sum(trunc(i.quantity)) FROM goo_order_items i WHERE i.order_id = o.id AND i.type = 'line_item')), 0)::bigint,
+		coalesce(sum((SELECT sum(-r.total) FROM goo_orders r WHERE r.parent_id = o.id AND r.type = 'shop_order_refund')), 0)::float8
+		FROM goo_orders o WHERE o.type = 'shop_order' AND o.status = ANY($1) AND o.date_created >= $2 AND o.date_created < $3
+		GROUP BY 1`, gooReportStatuses, from, to, store.PGZone(s.loc()))
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "woocommerce_rest_cannot_view", err.Error())
+		return
+	}
+	for rows.Next() {
+		var k string
+		var r day
+		var n, qty int64
+		var refunded float64
+		if err := rows.Scan(&k, &n, &r.Sales, &r.Tax, &r.Shipping, &r.Discount, &qty, &refunded); err != nil {
+			rows.Close()
+			restErr(c, http.StatusInternalServerError, "woocommerce_rest_cannot_view", err.Error())
+			return
 		}
-		d.Sales += o.Total
-		d.Tax += o.TotalTax
-		d.Shipping += o.ShippingTotal
-		d.Discount += o.DiscountTotal
-		d.Orders++
-		d.Items += o.ItemCount()
-		sales += o.Total
-		tax += o.TotalTax
-		shipping += o.ShippingTotal
-		discount += o.DiscountTotal
-		items += o.ItemCount()
-		nOrders++
-		refunds += s.gooTotalRefunded(ctx, o.ID)
-		if o.CustomerID != 0 {
-			customers[o.CustomerID] = true
-		}
+		r.Orders, r.Items = int(n), int(qty)
+		days[k] = &r
+		sales += r.Sales
+		tax += r.Tax
+		shipping += r.Shipping
+		discount += r.Discount
+		items += r.Items
+		nOrders += r.Orders
+		refunds += refunded
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		restErr(c, http.StatusInternalServerError, "woocommerce_rest_cannot_view", err.Error())
+		return
 	}
 	var newCustomers int
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id

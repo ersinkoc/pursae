@@ -959,16 +959,31 @@ func (s *Store) RevisionCounts(ctx context.Context, postIDs []int64) (map[int64]
 }
 
 // PublishDuePosts flips scheduled posts whose date has passed (the publish_future_post cron hook).
+// It runs every scheduler tick: the posts_future index keeps it off the posts table, and only the terms
+// of the posts it published are recounted.
 func (s *Store) PublishDuePosts(ctx context.Context) (int64, error) {
-	tag, err := s.Pool.Exec(ctx, `UPDATE posts SET status = 'publish' WHERE status = 'future' AND published_at <= now()`)
+	rows, err := s.Pool.Query(ctx, `WITH due AS (UPDATE posts SET status = 'publish' WHERE status = 'future' AND published_at <= now() RETURNING id)
+		SELECT (SELECT count(*) FROM due), coalesce(array_agg(DISTINCT pt.term_id) FILTER (WHERE pt.term_id IS NOT NULL), '{}')
+		FROM due LEFT JOIN post_terms pt ON pt.post_id = due.id`)
 	if err != nil {
 		return 0, err
 	}
-	if tag.RowsAffected() > 0 {
-		_, err = s.Pool.Exec(ctx, `UPDATE terms t SET post_count = (SELECT count(*) FROM post_terms pt
-			JOIN posts p ON p.id = pt.post_id WHERE pt.term_id = t.id AND p.status = 'publish')`)
+	var n int64
+	var termIDs []int64
+	for rows.Next() {
+		if err := rows.Scan(&n, &termIDs); err != nil {
+			rows.Close()
+			return 0, err
+		}
 	}
-	return tag.RowsAffected(), err
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+	if n > 0 {
+		err = s.RecountTerms(ctx, termIDs)
+	}
+	return n, err
 }
 
 type ArchiveMonth struct {

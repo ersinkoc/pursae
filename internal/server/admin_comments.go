@@ -118,9 +118,25 @@ func (s *Server) commentsScreen(c *gin.Context) {
 		d.Counts, _ = s.store.CommentCountsForPostAuthor(ctx, u.ID)
 	}
 	d.All = d.Counts["pending"] + d.Counts["approved"]
-	posts := map[int64]*store.Post{}
+	// One query each for the rows' posts, parent comments and commenter avatars.
+	c.Request = c.Request.WithContext(withViewMemo(ctx))
+	var postIDs, parentIDs []int64
+	emails := make([]string, len(list))
 	for i, cm := range list {
-		d.Rows = append(d.Rows, s.commentRow(c, cm, posts, i%2 == 1))
+		postIDs = append(postIDs, cm.PostID)
+		if cm.ParentID > 0 {
+			parentIDs = append(parentIDs, cm.ParentID)
+		}
+		emails[i] = cm.AuthorEmail
+	}
+	posts, _ := s.store.PostsByIDs(ctx, postIDs)
+	if posts == nil {
+		posts = map[int64]*store.Post{}
+	}
+	parents, _ := s.store.CommentsByIDs(ctx, parentIDs)
+	s.prefetchAvatars(c.Request.Context(), emails)
+	for i, cm := range list {
+		d.Rows = append(d.Rows, s.commentRow(c, cm, posts, parents, i%2 == 1))
 	}
 	d.Pagination = newPagination(total, perPage, max(page, 1), *c.Request.URL)
 	var notices []notice
@@ -151,13 +167,14 @@ func (s *Server) commentsScreen(c *gin.Context) {
 }
 
 // commentRow builds one row of the comments table (WP_Comments_List_Table::single_row()).
-func (s *Server) commentRow(c *gin.Context, cm *store.Comment, posts map[int64]*store.Post, odd bool) commentRow {
+// posts and parents hold the rows' posts and parent comments already loaded (nil: look them up).
+func (s *Server) commentRow(c *gin.Context, cm *store.Comment, posts map[int64]*store.Post, parents map[int64]*store.Comment, odd bool) commentRow {
 	ctx := c.Request.Context()
 	u := currentUser(c)
 	lb := s.links(ctx)
 	loc := s.loc()
-	p := posts[cm.PostID]
-	if p == nil {
+	p, ok := posts[cm.PostID]
+	if !ok {
 		p, _ = s.store.GetPost(ctx, cm.PostID)
 		posts[cm.PostID] = p
 	}
@@ -180,7 +197,11 @@ func (s *Server) commentRow(c *gin.Context, cm *store.Comment, posts map[int64]*
 		r.Permalink = r.PostURL + "#comment-" + itoa64(cm.ID)
 	}
 	if cm.ParentID > 0 {
-		if parent, err := s.store.GetComment(ctx, cm.ParentID); err == nil {
+		parent, ok := parents[cm.ParentID]
+		if !ok {
+			parent, _ = s.store.GetComment(ctx, cm.ParentID)
+		}
+		if parent != nil {
 			r.ParentNote = template.HTML(fmt.Sprintf(`In reply to <a href="%s#comment-%d">%s</a>.`, template.HTMLEscapeString(r.PostURL), parent.ID, template.HTMLEscapeString(parent.AuthorName)))
 		}
 	}
@@ -194,7 +215,7 @@ func (s *Server) commentRow(c *gin.Context, cm *store.Comment, posts map[int64]*
 func (s *Server) commentRowHTML(c *gin.Context, cm *store.Comment) string {
 	d := commentsListData{Hidden: s.hiddenColumns(currentUser(c), "edit-comments"), Mode: s.listMode(c)}
 	var buf bytes.Buffer
-	if err := s.tmpl.get(false).ExecuteTemplate(&buf, "comment-row", map[string]any{"R": s.commentRow(c, cm, map[int64]*store.Post{}, false), "D": d}); err != nil {
+	if err := s.tmpl.get(false).ExecuteTemplate(&buf, "comment-row", map[string]any{"R": s.commentRow(c, cm, map[int64]*store.Post{}, nil, false), "D": d}); err != nil {
 		return err.Error()
 	}
 	return buf.String()

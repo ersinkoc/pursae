@@ -494,9 +494,11 @@ func (s *Server) seogoHeadFor(sc *seogoCtx, preview bool) string {
 	return sb.String()
 }
 
+var seogoVerifyContentRe = regexp.MustCompile(`content=["']([^"']+)["']`)
+
 // seogoVerifyCode accepts either the bare code or the whole <meta> tag a search console shows.
 func seogoVerifyCode(v string) string {
-	if m := regexp.MustCompile(`content=["']([^"']+)["']`).FindStringSubmatch(v); m != nil {
+	if m := seogoVerifyContentRe.FindStringSubmatch(v); m != nil {
 		return m[1]
 	}
 	return v

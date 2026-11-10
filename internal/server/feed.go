@@ -54,6 +54,9 @@ func (s *Server) feedTitle(ctx context.Context, q *siteQuery) string {
 // feed-atom-comments.php. A feed under a post's permalink lists that post's comments.
 func (s *Server) feed(c *gin.Context, q *siteQuery) {
 	s.cacheTags(c, q)
+	// The request memo lets the item loop share one query per kind (authors, terms, posts) with the content
+	// renderer; installed after cacheTags, so the feed keeps the blunt "widgets" tag.
+	c.Request = c.Request.WithContext(withViewMemo(c.Request.Context()))
 	ctx := c.Request.Context()
 	lb := s.links(ctx)
 	rc := &renderCtx{s: s, lb: lb, c: c, user: currentUser(c), q: q, feed: true, mainLoop: true, reqURI: c.Request.URL.RequestURI()}
@@ -142,7 +145,7 @@ func (s *Server) feedExcerpt(p *store.Post) string {
 }
 
 func (s *Server) postAuthorName(ctx context.Context, p *store.Post) (string, string) {
-	author, _ := s.store.UserByID(ctx, p.AuthorID)
+	author := s.displayUser(ctx, p.AuthorID) // display fields through the request memo
 	if author == nil {
 		return "", ""
 	}
@@ -152,6 +155,7 @@ func (s *Server) postAuthorName(ctx context.Context, p *store.Post) (string, str
 // rssFeed is feed-rss2.php.
 func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	posts := s.feedPosts(ctx, q)
+	s.prefetchPosts(ctx, posts)
 	var sb strings.Builder
 	sb.WriteString(xml.Header)
 	sb.WriteString(`<rss version="2.0"
@@ -172,12 +176,11 @@ func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *
 	sb.WriteString("\t<sy:updatePeriod>\n\thourly\t</sy:updatePeriod>\n\t<sy:updateFrequency>\n\t1\t</sy:updateFrequency>\n\t<generator>https://wordpress.org/?v=wpgo-" + s.publicVersion() + "</generator>\n")
 	for _, p := range posts {
 		name, _ := s.postAuthorName(ctx, p)
-		cats, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "category")
-		tags, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "post_tag")
+		cats, tags := s.postTerms(ctx, p.ID, "category"), s.postTerms(ctx, p.ID, "post_tag")
 		link := lb.Permalink(p)
 		fmt.Fprintf(&sb, "\t<item>\n\t\t<title>%s</title>\n\t\t<link>%s</link>\n\t\t<dc:creator>%s</dc:creator>\n\t\t<pubDate>%s</pubDate>\n",
 			html.EscapeString(p.Title), html.EscapeString(link), cdata(name), p.Date().UTC().Format(rssTime))
-		for _, t := range append(cats[p.ID], tags[p.ID]...) {
+		for _, t := range append(cats, tags...) {
 			fmt.Fprintf(&sb, "\t\t<category>%s</category>\n", cdata(t.Name))
 		}
 		fmt.Fprintf(&sb, "\t\t<guid isPermaLink=\"false\">%s</guid>\n", html.EscapeString(lb.HomeURL("/?p="+itoa64(p.ID))))
@@ -203,6 +206,7 @@ func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *
 // atomFeed is feed-atom.php.
 func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	posts := s.feedPosts(ctx, q)
+	s.prefetchPosts(ctx, posts)
 	home := lb.Front() // the language home; xml:base keeps the unfiltered root (bloginfo_rss('url'))
 	var sb strings.Builder
 	sb.WriteString(xml.Header)
@@ -233,9 +237,8 @@ func (s *Server) atomFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb 
 		}
 		fmt.Fprintf(&sb, "\t\t</author>\n\n\t\t<title type=\"html\">%s</title>\n\t\t<link rel=\"alternate\" type=\"text/html\" href=\"%s\" />\n\t\t<id>%s</id>\n\t\t<updated>%s</updated>\n\t\t<published>%s</published>\n",
 			cdata(p.Title), html.EscapeString(link), html.EscapeString(lb.HomeURL("/?p="+itoa64(p.ID))), p.ModifiedAt.UTC().Format(atomTime), p.Date().UTC().Format(atomTime))
-		cats, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "category")
-		tags, _ := s.store.TermsForPosts(ctx, []int64{p.ID}, "post_tag")
-		for _, t := range append(cats[p.ID], tags[p.ID]...) {
+		cats, tags := s.postTerms(ctx, p.ID, "category"), s.postTerms(ctx, p.ID, "post_tag")
+		for _, t := range append(cats, tags...) {
 			fmt.Fprintf(&sb, "\t\t<category scheme=\"%s\" term=\"%s\" />\n", html.EscapeString(home), html.EscapeString(t.Name))
 		}
 		fmt.Fprintf(&sb, "\t\t<summary type=\"html\">%s</summary>\n", cdata(s.feedExcerpt(p)))
@@ -287,9 +290,24 @@ func (s *Server) protectedComment(c *gin.Context, p *store.Post) bool {
 
 const protectedCommentsText = "Protected Comments: Please enter your password to view comments."
 
+// feedCommentPosts loads the posts of a site-wide comment feed's comments in one query (none for a
+// single post's feed, which shows q.Post).
+func (s *Server) feedCommentPosts(ctx context.Context, q *siteQuery, comments []*store.Comment) map[int64]*store.Post {
+	if q.Post != nil || len(comments) == 0 {
+		return nil
+	}
+	ids := make([]int64, len(comments))
+	for i, cm := range comments {
+		ids[i] = cm.PostID
+	}
+	posts, _ := s.store.PostsByIDs(ctx, ids)
+	return posts
+}
+
 // rssCommentsFeed is feed-rss2-comments.php.
 func (s *Server) rssCommentsFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	comments := s.feedComments(ctx, q)
+	posts := s.feedCommentPosts(ctx, q, comments)
 	link := lb.Front()
 	if q.Post != nil {
 		link = lb.Permalink(q.Post)
@@ -314,8 +332,7 @@ func (s *Server) rssCommentsFeed(ctx context.Context, c *gin.Context, q *siteQue
 	for _, cm := range comments {
 		p := q.Post
 		if p == nil {
-			var err error
-			if p, err = s.store.GetPost(ctx, cm.PostID); err != nil {
+			if p = posts[cm.PostID]; p == nil {
 				continue
 			}
 		}
@@ -341,6 +358,7 @@ func (s *Server) rssCommentsFeed(ctx context.Context, c *gin.Context, q *siteQue
 // atomCommentsFeed is feed-atom-comments.php.
 func (s *Server) atomCommentsFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *links.Builder) string {
 	comments := s.feedComments(ctx, q)
+	posts := s.feedCommentPosts(ctx, q, comments)
 	built := time.Now().UTC()
 	if len(comments) > 0 {
 		built = comments[0].CreatedAt.UTC()
@@ -366,8 +384,7 @@ func (s *Server) atomCommentsFeed(ctx context.Context, c *gin.Context, q *siteQu
 	for _, cm := range comments {
 		p := q.Post
 		if p == nil {
-			var err error
-			if p, err = s.store.GetPost(ctx, cm.PostID); err != nil {
+			if p = posts[cm.PostID]; p == nil {
 				continue
 			}
 		}

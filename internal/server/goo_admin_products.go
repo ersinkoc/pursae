@@ -346,6 +346,15 @@ func (s *Server) gooProductRows(c *gin.Context, products []*gooProduct) []gooPro
 	}
 	cats, _ := s.store.TermsForPosts(ctx, ids, "product_cat")
 	tags, _ := s.store.TermsForPosts(ctx, ids, "product_tag")
+	// The thumbnails load with one query through a request memo (gooAttachmentURL reads it).
+	ctx = withViewMemo(ctx)
+	var images []int64
+	for _, p := range products {
+		if p.ImageID > 0 {
+			images = append(images, p.ImageID)
+		}
+	}
+	s.attachmentsByIDs(ctx, images)
 	featNonce := s.nonce(c, "woocommerce-feature-product")
 	var out []gooProductRow
 	for _, p := range products {
@@ -413,7 +422,7 @@ func (s *Server) gooProductRows(c *gin.Context, products []*gooProduct) []gooPro
 
 // gooAttachmentURL is an attachment's URL at a size (the full file when the size is missing).
 func (s *Server) gooAttachmentURL(ctx context.Context, id int64, size string) string {
-	a, err := s.store.GetAttachment(ctx, id)
+	a, err := s.attachment(ctx, id) // the request memo when there is one
 	if err != nil {
 		return ""
 	}
