@@ -43,6 +43,9 @@ type UploadOptions struct {
 // Upload stores size bytes read from r under key: one PUT below the threshold, a multipart upload
 // from it on. It reports whether multipart was used.
 func (c *Client) Upload(ctx context.Context, key string, r io.ReaderAt, size int64, o UploadOptions) (bool, error) {
+	if size < 0 {
+		return false, errors.New("upload size must not be negative")
+	}
 	threshold := o.Threshold
 	if threshold <= 0 {
 		threshold = 16 << 20

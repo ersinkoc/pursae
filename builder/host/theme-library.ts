@@ -132,6 +132,7 @@ export function errorText(e: unknown, fallback: string): string {
 
 export class ThemeLibraryController {
   private state: ThemeLibraryState = INITIAL
+  private loadSeq = 0
   private listeners = new Set<() => void>()
   private d: ThemeLibraryDeps
 
@@ -178,11 +179,14 @@ export class ThemeLibraryController {
   }
 
   async load() {
+    const seq = ++this.loadSeq
     this.set({ loading: true, error: '' })
     try {
       const r = await this.d.rest.request<ThemesResponse>('GET', themeRoutes.list())
+      if (seq !== this.loadSeq) return
       this.set({ data: r.data, loading: false, error: r.data.source || '' })
     } catch (e) {
+      if (seq !== this.loadSeq) return
       this.set({ loading: false, data: null, error: errorText(e, t('The theme library could not be loaded.')) })
     }
   }
