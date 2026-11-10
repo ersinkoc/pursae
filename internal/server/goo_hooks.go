@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -268,6 +269,28 @@ func (s *Server) gooTriggerEmail(ctx context.Context, id string, o *gooOrder, ar
 		return nil
 	}
 	return gooEmailSender(s, ctx, id, o, args)
+}
+
+// gooGatewayFilter narrows the payment methods offered for a cart (woocommerce_available_payment_gateways);
+// Subscriptions keeps only the gateways that can renew automatically when manual renewals are not accepted.
+type gooGatewayFilter func(s *Server, c *gin.Context, cart *gooCart, gws []*gooGatewayHandle) []*gooGatewayHandle
+
+var gooGatewayFilters []gooGatewayFilter
+
+// gooPlaceOrderTextHook returns the checkout button text for a cart ("" keeps the next hook / default):
+// woocommerce_order_button_text of Subscriptions and Pre-Orders.
+type gooPlaceOrderTextHook func(s *Server, ctx context.Context, cart *gooCart) string
+
+var gooPlaceOrderTextHooks []gooPlaceOrderTextHook
+
+// gooPlaceOrderText is the label of the checkout's place order button.
+func (s *Server) gooPlaceOrderText(ctx context.Context, cart *gooCart) string {
+	for _, h := range gooPlaceOrderTextHooks {
+		if t := strings.TrimSpace(h(s, ctx, cart)); t != "" {
+			return t
+		}
+	}
+	return "Place order"
 }
 
 // Content and price filters ----------------------------------------------------------------------------

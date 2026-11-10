@@ -320,7 +320,7 @@ func (s *Server) gooPaymentHTML(c *gin.Context, cart *gooCart) string {
 			`<input type="hidden" name="terms-field" value="1" /></p>`)
 	}
 	b.WriteString(`</div>`)
-	place := gooEsc(s.gooL10nText(ctx, "Place order")) // the script puts it back when the payment method changes
+	place := gooEsc(s.gooL10nText(ctx, s.gooPlaceOrderText(ctx, cart))) // the script puts it back when the payment method changes
 	b.WriteString(`<button type="submit" class="button alt" name="woocommerce_checkout_place_order" id="place_order" value="` + place + `" data-value="` + place + `">` + place + `</button>`)
 	b.WriteString(`<input type="hidden" name="woocommerce-process-checkout-nonce" value="` + s.nonce(c, "woocommerce-process_checkout") + `" />`)
 	b.WriteString(`</div></div>`)

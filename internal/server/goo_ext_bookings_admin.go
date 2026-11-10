@@ -80,6 +80,7 @@ func bkPanelGeneral(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 		bkInput("_wc_booking_max_date", "number", strconv.Itoa(k.MaxDate), ` min="1" step="1" style="width:60px"`)+bkSelect("_wc_booking_max_date_unit", k.MaxDateUnit, bkLimitUnits)+" into the future", ""))
 	b.WriteString(bkField("Require a buffer period of", "_wc_booking_buffer_period", bkInput("_wc_booking_buffer_period", "number", strconv.Itoa(k.Buffer), ` min="0" step="1"`), "blocks (in the duration unit) between bookings."))
 	b.WriteString(bkField("First block starts at", "_wc_booking_first_block_time", bkInput("_wc_booking_first_block_time", "time", k.FirstBlockTime, ""), "For hour and minute blocks: the time of the first block of a day."))
+	b.WriteString(bkField("Allow blocks past midnight", "_wc_booking_allow_overnight", bkCheckbox("_wc_booking_allow_overnight", k.AllowOvernight), "For hour and minute blocks: let a block run into the next day (e.g. 22:00 - 02:00)."))
 	b.WriteString(`</div>`)
 	return template.HTML(b.String())
 }
@@ -96,7 +97,7 @@ func bkSaveGeneral(s *Server, c *gin.Context, p *gooProduct) {
 	for _, k := range []string{"duration", "min_duration", "max_duration", "cancel_limit", "qty", "min_date", "max_date", "buffer_period"} {
 		bkSetMeta(p, k, float64(gxAtoi(c.PostForm("_wc_booking_"+k))))
 	}
-	for _, k := range []string{"requires_confirmation", "user_can_cancel"} {
+	for _, k := range []string{"requires_confirmation", "user_can_cancel", "allow_overnight"} {
 		bkSetMeta(p, k, c.PostForm("_wc_booking_"+k) == "yes")
 	}
 	// Bookable products are virtual unless the editor posted the Virtual box; one booking per cart line.
@@ -745,6 +746,7 @@ func (s *Server) bkAdminCalendar(c *gin.Context) {
 		`<strong class="calendar-month">%s</strong> <a class="button next" href="/wp-admin/goocommerce?page=bookings&amp;action=calendar&amp;calendar_month=%s">&rarr;</a></div></div>`,
 		month.AddDate(0, -1, 0).Format("2006-01"), month.Format("January 2006"), next.Format("2006-01"))
 	out.WriteString(`<style>.wc_bookings_calendar{width:100%;border-collapse:collapse;table-layout:fixed}.wc_bookings_calendar td,.wc_bookings_calendar th{border:1px solid #dcdcde;vertical-align:top;padding:4px;background:#fff}.wc_bookings_calendar td{height:90px}.wc_bookings_calendar .day-number{color:#646970;font-weight:600}.wc_bookings_calendar ul{margin:2px 0}.wc_bookings_calendar li{background:#f0e9f8;border-left:3px solid #7f54b3;padding:1px 4px;margin:2px 0;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}</style>`)
+	out.WriteString(`<p class="description">Subscribe in Google Calendar, Apple Calendar or Outlook: <input type="text" readonly class="large-text code" style="max-width:640px" value="` + html.EscapeString(s.bkFeedURL(ctx)) + `" onfocus="this.select()"> Keep this URL private.</p>`)
 	first := gxAtoi(defaultStr(s.gooExtString(bkKey, "calendar_first_day"), "1"))
 	out.WriteString(`<table class="wc_bookings_calendar widefat"><thead><tr>`)
 	days := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}

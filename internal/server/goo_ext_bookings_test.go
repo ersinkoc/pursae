@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -619,5 +620,130 @@ func TestGooExtBookingsResources(t *testing.T) {
 	}
 	if list := srv.gooBkProductResources(ctx, bkConfOf(p)); len(list) != 1 || list[0].ID != resA.ID {
 		t.Errorf("product resources after delete: %+v", list)
+	}
+}
+
+// TestGooExtBookingsGaps covers the reminder catch-up, the customer's cancellation window, parallel
+// bookings of the last place, and the REST / Store API entry points.
+func TestGooExtBookingsGaps(t *testing.T) {
+	base, client, srv := gooSite(t)
+	ctx := context.Background()
+	gooShopSetup(t, srv)
+	if err := srv.gooSetExtension(ctx, bkKey, true); err != nil {
+		t.Fatal(err)
+	}
+	p := gooNewProduct(bkType)
+	p.Name = "Studio day"
+	p = gxSavePanels(t, srv, p, bkKey, url.Values{"_wc_booking_duration_type": {"fixed"}, "_wc_booking_duration": {"1"}, "_wc_booking_duration_unit": {"day"},
+		"_wc_booking_cost": {"50"}, "_wc_booking_max_date": {"12"}, "_wc_booking_max_date_unit": {"month"}, "_wc_booking_qty": {"1"},
+		"_wc_booking_user_can_cancel": {"yes"}, "_wc_booking_cancel_limit": {"1"}, "_wc_booking_cancel_limit_unit": {"day"}})
+	p.Status = "publish"
+	if err := srv.gooSaveProduct(ctx, p, 1); err != nil {
+		t.Fatal(err)
+	}
+
+	// Reminder: a booking 12 hours out (its day's run was missed) is still reminded; one 5 days out is not.
+	soon := &bkBooking{ProductID: p.ID, Status: "paid", Start: time.Now().Add(12 * time.Hour), End: time.Now().Add(13 * time.Hour), CustomerID: 1}
+	far := &bkBooking{ProductID: p.ID, Status: "paid", Start: time.Now().AddDate(0, 0, 5), End: time.Now().AddDate(0, 0, 5).Add(time.Hour), CustomerID: 1}
+	for _, b := range []*bkBooking{soon, far} {
+		if err := srv.bkInsert(ctx, b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	srv.bkDaily(ctx)
+	if b, _ := srv.bkGet(ctx, soon.ID); !b.Reminded {
+		t.Error("a missed reminder was not caught up")
+	}
+	if b, _ := srv.bkGet(ctx, far.ID); b.Reminded {
+		t.Error("a booking outside the reminder window was reminded")
+	}
+
+	// Customer cancellation: allowed outside the window, refused inside it, refused for other customers.
+	admin, _ := srv.store.UserByID(ctx, 1)
+	cancel := func(b *bkBooking, user bool) {
+		c, _ := gxGetCtx("/?cancel_booking=true&booking_id=" + itoa64(b.ID))
+		if user {
+			c.Set(ctxUser, admin)
+		}
+		c.Request.URL.RawQuery += "&_wpnonce=" + url.QueryEscape(srv.nonce(c, "woocommerce-bookings-cancel-booking"))
+		srv.bkCustomerCancel(c)
+	}
+	okB := &bkBooking{ProductID: p.ID, Status: "paid", Start: time.Now().AddDate(0, 0, 10), End: time.Now().AddDate(0, 0, 11), CustomerID: 1}
+	lateB := &bkBooking{ProductID: p.ID, Status: "paid", Start: time.Now().Add(3 * time.Hour), End: time.Now().Add(4 * time.Hour), CustomerID: 1}
+	otherB := &bkBooking{ProductID: p.ID, Status: "paid", Start: time.Now().AddDate(0, 0, 10), End: time.Now().AddDate(0, 0, 11), CustomerID: 999}
+	for _, b := range []*bkBooking{okB, lateB, otherB} {
+		if err := srv.bkInsert(ctx, b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cancel(lateB, true)
+	cancel(otherB, true)
+	cancel(okB, false)
+	for _, b := range []*bkBooking{lateB, otherB, okB} {
+		if got, _ := srv.bkGet(ctx, b.ID); got.Status != "paid" {
+			t.Errorf("booking %d cancelled although it must not be: %s", b.ID, got.Status)
+		}
+	}
+	cancel(okB, true)
+	if got, _ := srv.bkGet(ctx, okB.ID); got.Status != "cancelled" {
+		t.Errorf("cancellation inside the allowed window: %s", got.Status)
+	}
+
+	// Parallel bookings of the last place: exactly one wins.
+	day := gxNextWeekday(time.Wednesday)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	won := 0
+	for i := 0; i < 6; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			cart := srv.gooCartFor(gooTestCtx())
+			if _, err := cart.Add(ctx, p.ID, 1, 0, nil, map[string][]string{"wc_bookings_field_start_date": {day.Format("2006-01-02")}}, nil); err == nil {
+				mu.Lock()
+				won++
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	if won != 1 {
+		t.Errorf("%d parallel bookings of a single place succeeded, want 1", won)
+	}
+
+	// REST: slots are public, the list needs the capability, status goes through the flow.
+	guest := gooGuest()
+	if r := gooReq(t, guest, "GET", base+"/wp-json/wc-bookings/v1/products/slots?product_id="+itoa64(p.ID)+"&date="+day.AddDate(0, 0, 1).Format("2006-01-02"), nil, nil); r.Code != 200 || r.obj()["product_id"] == nil {
+		t.Errorf("slots: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, guest, "GET", base+"/wp-json/wc-bookings/v1/bookings", nil, nil); r.Code != 401 && r.Code != 403 {
+		t.Errorf("anonymous list: %d", r.Code)
+	}
+	_, nonce, _ := get(t, client, base+"/wp-admin/admin-ajax?action=rest-nonce")
+	hdr := map[string]string{"X-WP-Nonce": strings.TrimSpace(nonce)}
+	r := gooReq(t, client, "GET", base+"/wp-json/wc-bookings/v1/bookings?status=paid&product_id="+itoa64(p.ID), nil, hdr)
+	if r.Code != 200 || len(r.list()) < 3 {
+		t.Fatalf("list: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, client, "PUT", base+"/wp-json/wc-bookings/v1/bookings/"+itoa64(far.ID), map[string]any{"status": "cancelled"}, hdr); r.Code != 200 || gooJS(r.Body, "status") != "cancelled" {
+		t.Errorf("update: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, client, "PUT", base+"/wp-json/wc-bookings/v1/bookings/"+itoa64(far.ID), map[string]any{"status": "nope"}, hdr); r.Code != 400 {
+		t.Errorf("bad status: %d", r.Code)
+	}
+
+	// Store API: the booking fields travel in "booking".
+	cartAPI := base + "/wp-json/wc/store/v1/cart/add-item"
+	g := gooGuest()
+	gr := gooReq(t, g, "GET", base+"/wp-json/wc/store/v1/cart", nil, nil)
+	nh := map[string]string{"Nonce": gr.Header.Get("Nonce"), "Cart-Token": gr.Header.Get("Cart-Token")}
+	r = gooReq(t, g, "POST", cartAPI, map[string]any{"id": p.ID, "quantity": 1}, nh)
+	if r.Code != 400 || !strings.Contains(r.Raw, "Date is required") {
+		t.Errorf("add without booking fields: %d %s", r.Code, r.Raw)
+	}
+	r = gooReq(t, g, "POST", cartAPI, map[string]any{"id": p.ID, "quantity": 1,
+		"booking": map[string]any{"wc_bookings_field_start_date": day.AddDate(0, 0, 14).Format("2006-01-02")}}, nh)
+	if r.Code != 201 && r.Code != 200 {
+		t.Errorf("add with booking fields: %d %s", r.Code, r.Raw)
 	}
 }

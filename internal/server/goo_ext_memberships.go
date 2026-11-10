@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +38,15 @@ var gmemStatuses = []gooOpt{
 // gmemAccessStatuses give access to the plan's content and discounts.
 var gmemAccessStatuses = []string{"active", "complimentary", "pending-cancel"}
 
+func gmemValidStatus(st string) bool {
+	for _, o := range gmemStatuses {
+		if o.Value == st {
+			return true
+		}
+	}
+	return false
+}
+
 func gmemStatusLabel(st string) string {
 	for _, o := range gmemStatuses {
 		if o.Value == st {
@@ -55,12 +66,15 @@ type gmemDiscount struct {
 
 // gmemRules are a plan's rules.
 type gmemRules struct {
-	ContentPostIDs  []int64        `json:"content_post_ids"`
-	ContentTermIDs  []int64        `json:"content_term_ids"`
-	ProductIDs      []int64        `json:"product_ids"`      // member-only products
-	ProductTermIDs  []int64        `json:"product_term_ids"` // member-only product categories
-	ProductRestrict string         `json:"product_restrict"` // purchase, view
-	Discounts       []gmemDiscount `json:"discounts"`
+	ContentPostIDs  []int64 `json:"content_post_ids"`
+	ContentTermIDs  []int64 `json:"content_term_ids"`
+	ProductIDs      []int64 `json:"product_ids"`      // member-only products
+	ProductTermIDs  []int64 `json:"product_term_ids"` // member-only product categories
+	ProductRestrict string  `json:"product_restrict"` // purchase, view
+	// ContentDrip delays restricted content: days after the membership start before an item opens.
+	// Keys: "<post id>" for a post, "t<term id>" for a term.
+	ContentDrip map[string]int `json:"content_drip,omitempty"`
+	Discounts   []gmemDiscount `json:"discounts"`
 }
 
 // gooMembershipPlan is a WC_Memberships_Membership_Plan.
@@ -267,6 +281,27 @@ func (s *Server) gmemUMList(ctx context.Context, userID, planID int64, status st
 	return out
 }
 
+// gmemUMDue lists only the memberships the scheduler may have to act on: delayed ones whose start has
+// come, ones whose end has passed, and (when reminders are on) ones ending within the reminder window.
+func (s *Server) gmemUMDue(ctx context.Context, now time.Time, soon time.Duration) []*gooUserMembership {
+	rows, err := s.store.Pool.Query(ctx, `SELECT `+gmemUMCols+` FROM goo_user_memberships
+		WHERE (status = 'delayed' AND start_date <= $1)
+		   OR (end_date IS NOT NULL AND end_date <= $1 AND status IN ('active','complimentary','paused','pending-cancel'))
+		   OR ($2 > 0 AND end_date IS NOT NULL AND end_date > $1 AND end_date <= $1 + ($2 * interval '1 second') AND status IN ('active','pending-cancel'))
+		ORDER BY id DESC`, now, int64(soon/time.Second))
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []*gooUserMembership
+	for rows.Next() {
+		if m, err := gmemScanUM(rows); err == nil {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
 // gmemSaveUM inserts or updates a user membership.
 func (s *Server) gmemSaveUM(ctx context.Context, m *gooUserMembership) error {
 	if m.Notes == nil {
@@ -318,11 +353,19 @@ func (s *Server) gmemGrant(ctx context.Context, userID int64, plan *gooMembershi
 		m := list[0]
 		m.Status, m.Start, m.End, m.OrderID, m.ProductID = "active", now, plan.endFor(now), orderID, productID
 		m.addNote(defaultStr(note, "Membership reactivated."))
-		return m, s.gmemSaveUM(ctx, m)
+		err := s.gmemSaveUM(ctx, m)
+		if err == nil {
+			s.gmemMail(ctx, m, "membership_welcome")
+		}
+		return m, err
 	}
 	m := &gooUserMembership{UserID: userID, PlanID: plan.ID, Status: "active", Start: now, End: plan.endFor(now), OrderID: orderID, ProductID: productID}
 	m.addNote(defaultStr(note, "Membership access granted."))
-	return m, s.gmemSaveUM(ctx, m)
+	err := s.gmemSaveUM(ctx, m)
+	if err == nil {
+		s.gmemMail(ctx, m, "membership_welcome")
+	}
+	return m, err
 }
 
 // gmemAccessPlans are the ids of the plans a user has access to now.
@@ -376,6 +419,73 @@ func (s *Server) gmemPostPlans(ctx context.Context, postID int64) []*gooMembersh
 		}
 	}
 	return out
+}
+
+// gmemDripDays is the days after the membership start a plan opens a post (0 = immediately): the
+// shortest delay among the rules that restrict the post.
+func gmemDripDays(p *gooMembershipPlan, postID int64, terms []int64) int {
+	if len(p.Rules.ContentDrip) == 0 {
+		return 0
+	}
+	best, found := 0, false
+	consider := func(key string) {
+		if d, ok := p.Rules.ContentDrip[key]; ok {
+			if !found || d < best {
+				best, found = d, true
+			}
+		}
+	}
+	consider(itoa64(postID))
+	for _, t := range terms {
+		consider("t" + itoa64(t))
+	}
+	if best < 0 {
+		return 0
+	}
+	return best
+}
+
+// gmemPostAccess reports whether a user may read a restricted post now, honouring the drip schedule.
+// When the user is a member but the content is still scheduled, availableAt is when it opens.
+func (s *Server) gmemPostAccess(ctx context.Context, u *store.User, postID int64, plans []*gooMembershipPlan) (ok bool, availableAt *time.Time) {
+	if len(plans) == 0 || gmemIsManager(u) {
+		return true, nil
+	}
+	if u == nil {
+		return false, nil
+	}
+	var terms []int64
+	for _, p := range plans {
+		if len(p.Rules.ContentDrip) > 0 {
+			if m, err := s.store.TermsForPosts(ctx, []int64{postID}, ""); err == nil {
+				for _, t := range m[postID] {
+					terms = append(terms, t.ID)
+				}
+			}
+			break
+		}
+	}
+	now := time.Now()
+	for _, p := range plans {
+		days := gmemDripDays(p, postID, terms)
+		for _, m := range s.gmemUMList(ctx, u.ID, p.ID, "") {
+			if !m.HasAccess(now) {
+				continue
+			}
+			at := m.Start.AddDate(0, 0, days)
+			if !at.After(now) {
+				return true, nil
+			}
+			if m.End != nil && !at.Before(*m.End) {
+				continue // the membership ends before the content opens
+			}
+			if availableAt == nil || at.Before(*availableAt) {
+				t := at
+				availableAt = &t
+			}
+		}
+	}
+	return false, availableAt
 }
 
 // gmemProductPlans are the plans keeping a product for members (with the restriction mode).
@@ -573,10 +683,11 @@ func gmemFilterContent(s *Server, ctx context.Context, content string) string {
 		postID = rc.postID
 	}
 	plans := s.gmemPostPlans(ctx, postID)
-	if len(plans) == 0 || s.gmemCanAccess(ctx, u, plans) {
+	ok, at := s.gmemPostAccess(ctx, u, postID, plans)
+	if ok {
 		return content
 	}
-	return s.gmemRestrictedContent(ctx, postID, plans, u)
+	return s.gmemRestrictedContent(ctx, postID, plans, u, at)
 }
 
 // gmemStripShortcodes removes the members shortcodes with what they enclose from text an excerpt or a
@@ -601,7 +712,7 @@ func (s *Server) gooRESTRestrict(ctx context.Context, u *store.User, p *store.Po
 	rc := &renderCtx{s: s, lb: s.links(ctx), user: u, postID: p.ID}
 	ctx = withRender(withPluginUser(ctx, u), rc)
 	plans := s.gmemPostPlans(ctx, p.ID)
-	if len(plans) > 0 && !s.gmemCanAccess(ctx, u, plans) && !s.gooExtBool(gmemKey, "show_excerpts") {
+	if ok, _ := s.gmemPostAccess(ctx, u, p.ID, plans); !ok && !s.gooExtBool(gmemKey, "show_excerpts") {
 		excerpt = ""
 	}
 	return gmemFilterContent(s, ctx, rendered), excerpt
@@ -615,13 +726,13 @@ func (s *Server) gmemRestrictsPost(c *gin.Context, postID int64) bool {
 		return false
 	}
 	ctx := c.Request.Context()
-	plans := s.gmemPostPlans(ctx, postID)
-	return len(plans) > 0 && !s.gmemCanAccess(ctx, currentUser(c), plans)
+	ok, _ := s.gmemPostAccess(ctx, currentUser(c), postID, s.gmemPostPlans(ctx, postID))
+	return !ok
 }
 
 // gmemRestrictedContent is what a non-member sees instead of restricted content: the excerpt (per
 // setting) and the restriction message.
-func (s *Server) gmemRestrictedContent(ctx context.Context, postID int64, plans []*gooMembershipPlan, u *store.User) string {
+func (s *Server) gmemRestrictedContent(ctx context.Context, postID int64, plans []*gooMembershipPlan, u *store.User, availableAt *time.Time) string {
 	out := ""
 	if s.gooExtBool(gmemKey, "show_excerpts") && postID != 0 {
 		if p, err := s.store.GetPost(ctx, postID); err == nil {
@@ -639,7 +750,10 @@ func (s *Server) gmemRestrictedContent(ctx context.Context, postID int64, plans 
 		}
 	}
 	msg := s.gmemMessage(ctx, "content", plans, u)
-	if s.gooExtString(gmemKey, "restriction_mode") == "redirect" {
+	if availableAt != nil {
+		msg = "This content is part of your membership and will be available on " + s.gxaInputDate(availableAt, false) + "."
+	}
+	if s.gooExtString(gmemKey, "restriction_mode") == "redirect" && availableAt == nil {
 		if id := int64(s.gooExtInt(gmemKey, "redirect_page_id")); id > 0 {
 			if p, err := s.store.GetPost(ctx, id); err == nil {
 				msg += ` <a href="` + gooEsc(s.links(ctx).Permalink(p)) + `" class="button">` + gooEsc(p.Title) + `</a>`
@@ -855,12 +969,25 @@ func init() {
 			}
 		}
 	})
-	for _, job := range []string{"hourly", "daily"} {
-		gooOn(job, 30, func(s *Server, ctx context.Context, _ any) {
-			if s.gooExtOn(gmemKey) {
-				s.gmemScheduler(ctx)
-			}
-		})
+	gooOn("hourly", 30, func(s *Server, ctx context.Context, _ any) {
+		if s.gooExtOn(gmemKey) {
+			s.gmemScheduler(ctx)
+		}
+	})
+
+	for _, e := range []*gooEmailDef{
+		{ID: "membership_welcome", Title: "Membership welcome", Customer: true,
+			Description: "Sent to a customer when they are given access to a membership plan.",
+			Subject:     "[{site_title}] Welcome to the {plan} membership", Heading: "Welcome to {plan}"},
+		{ID: "membership_ending_soon", Title: "Membership ending soon", Customer: true,
+			Description: "Sent to a member a few days before their membership ends (see Memberships settings).",
+			Subject:     "[{site_title}] Your {plan} membership ends on {end_date}", Heading: "Your membership is ending soon"},
+		{ID: "membership_ended", Title: "Membership ended", Customer: true,
+			Description: "Sent to a member when their membership has ended.",
+			Subject:     "[{site_title}] Your {plan} membership has ended", Heading: "Your membership has ended"},
+	} {
+		e.Module = gmemKey
+		gooRegisterEmail(e)
 	}
 
 	gooAccountEndpoints = append(gooAccountEndpoints, &gooAccountEndpoint{Slug: "members-area", Title: "Memberships", Module: gmemKey, After: "orders", Render: gmemAccountRender})
@@ -877,6 +1004,7 @@ func gmemFields() []gooField {
 		{ID: "show_excerpts", Title: "Show excerpts", Type: "checkbox", Default: true, Desc: "If enabled, an excerpt of the protected content will be displayed to non-members & search engines."},
 		{ID: "hide_restricted_products", Title: "Restricted products", Type: "checkbox", Default: false, Desc: "Hide restricted products (if enabled, products restricted to members are hidden from the shop for non-members)"},
 		{ID: "apply_discounts_to_sale_items", Title: "Inherit discounts", Type: "checkbox", Default: false, Desc: "Apply member discounts to products on sale"},
+		{ID: "ending_soon_days", Title: "Ending soon reminder", Type: "number", Default: 7.0, Min: "0", Desc: "Days before a membership ends to e-mail the member a reminder. Use 0 to turn the reminder off."},
 		{ID: "general_end", Type: "sectionend"},
 		{ID: "messages_title", Title: "Restriction messages", Type: "title", Desc: "Merge tags: {products} (the products granting access), {login_url}."},
 		{ID: "content_restricted_message", Title: "Content restricted (purchase required)", Type: "textarea",
@@ -1037,10 +1165,12 @@ func gmemPrevEnd(m *gooUserMembership) *time.Time {
 	return m.End
 }
 
-// gmemScheduler activates delayed memberships and expires ended ones.
+// gmemScheduler activates delayed memberships, expires ended ones and sends the ending-soon and ended
+// e-mails.
 func (s *Server) gmemScheduler(ctx context.Context) {
 	now := time.Now()
-	for _, m := range s.gmemUMList(ctx, 0, 0, "") {
+	soon := time.Duration(s.gooExtInt(gmemKey, "ending_soon_days")) * 24 * time.Hour
+	for _, m := range s.gmemUMDue(ctx, now, soon) {
 		switch {
 		case m.Status == "delayed" && !m.Start.After(now):
 			m.Status = "active"
@@ -1050,11 +1180,60 @@ func (s *Server) gmemScheduler(ctx context.Context) {
 			m.addNote("Membership status changed from " + gmemStatusLabel(m.Status) + " to Expired.")
 			m.Status = "expired"
 			_ = s.gmemSaveUM(ctx, m)
+			s.gmemMail(ctx, m, "membership_ended")
 		case m.End != nil && !m.End.After(now) && m.Status == "pending-cancel":
 			m.Status = "cancelled"
 			m.addNote("Membership status changed from Pending Cancellation to Cancelled.")
 			_ = s.gmemSaveUM(ctx, m)
+			s.gmemMail(ctx, m, "membership_ended")
+		case soon > 0 && m.End != nil && m.End.After(now) && m.End.Sub(now) <= soon && containsStr([]string{"active", "pending-cancel"}, m.Status):
+			s.gmemMail(ctx, m, "membership_ending_soon")
 		}
+	}
+}
+
+// gmemMail sends a membership e-mail to the member once per membership (and end date, so a renewal
+// re-arms the reminder); the sent mark is a note on the membership.
+func (s *Server) gmemMail(ctx context.Context, m *gooUserMembership, id string) {
+	mark := id
+	if m.End != nil {
+		mark += "@" + m.End.UTC().Format(time.RFC3339)
+	}
+	for _, n := range m.Notes {
+		if v, _ := n["mail"].(string); v == mark {
+			return
+		}
+	}
+	u, err := s.store.UserByID(ctx, m.UserID)
+	if err != nil || u == nil || u.Email == "" {
+		return
+	}
+	plan, err := s.gmemPlan(ctx, m.PlanID)
+	if err != nil {
+		return
+	}
+	end := ""
+	if m.End != nil {
+		end = s.gxaInputDate(m.End, false)
+	}
+	area := s.links(ctx).HomeURL("/my-account/")
+	if s.gooPageID("myaccount") > 0 {
+		area = s.gooPageURL(ctx, "myaccount")
+	}
+	body := `<p>Hi ` + gooEsc(defaultStr(u.DisplayName, u.Login)) + `,</p>`
+	switch id {
+	case "membership_welcome":
+		body += `<p>You now have access to the <strong>` + gooEsc(plan.Name) + `</strong> membership.</p>`
+	case "membership_ending_soon":
+		body += `<p>Your <strong>` + gooEsc(plan.Name) + `</strong> membership ends on ` + gooEsc(end) + `. Renew it to keep your access.</p>`
+	default:
+		body += `<p>Your <strong>` + gooEsc(plan.Name) + `</strong> membership has ended.</p>`
+	}
+	body += `<p><a href="` + gooEsc(area) + `">View your memberships</a></p>`
+	if s.gxSendEmail(ctx, id, []string{u.Email}, map[string]string{"plan": plan.Name, "end_date": end}, body) {
+		m.addNote(fmt.Sprintf("%s e-mail sent.", defaultStr(gooEmailDefByID(id).Title, id)))
+		m.Notes[0]["mail"] = mark
+		_ = s.gmemSaveUM(ctx, m)
 	}
 }
 
@@ -1192,7 +1371,14 @@ func (s *Server) gmemAdminMembers(c *gin.Context) {
 					return
 				}
 			}
-			m := &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: defaultStr(c.PostForm("status"), "active")}
+			m := &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: "active"}
+			if st := c.PostForm("status"); st != "" {
+				if !gmemValidStatus(st) {
+					gxaAdminRedirect(c, "memberships", "action=new", "Invalid membership status.", true)
+					return
+				}
+				m.Status = st
+			}
 			if st := s.gxaParseTime(c.PostForm("start_date")); st != nil {
 				m.Start = *st
 				if st.After(time.Now()) {
@@ -1359,6 +1545,10 @@ func (s *Server) gmemAdminMembers(c *gin.Context) {
 
 func (s *Server) gmemAdminPlans(c *gin.Context) {
 	ctx := c.Request.Context()
+	if c.Request.Method == "GET" && c.Query("gmem_search") != "" {
+		s.gmemSearchJSON(c)
+		return
+	}
 	if c.Request.Method == "POST" {
 		if !s.checkNonce(c, "gmem-plans") {
 			s.denyNonce(c)
@@ -1382,8 +1572,11 @@ func (s *Server) gmemAdminPlans(c *gin.Context) {
 				return
 			}
 		}
-		s.gmemReadPlanForm(c, p)
-		if err := s.gmemSavePlan(ctx, p); err != nil {
+		err := s.gmemReadPlanForm(c, p)
+		if err == nil {
+			err = s.gmemSavePlan(ctx, p)
+		}
+		if err != nil {
 			params := "action=new"
 			if p.ID != 0 {
 				params = "action=edit&id=" + itoa64(p.ID)
@@ -1455,7 +1648,7 @@ func (s *Server) gmemPlanForm(p *gooMembershipPlan, nonce string) string {
 	b.WriteString(`<h3>General</h3><table class="form-table"><tbody>`)
 	row("Slug", "post_name", `<input type="text" id="post_name" name="post_name" value="`+gooEsc(p.Slug)+`" class="regular-text">`, "Used in shortcodes: [goocommerce_members_only plans=\"slug\"].")
 	row("Grant access upon", "_access_method", gxaSelect("_access_method", "_access_method", []gooOpt{{"manual", "Manual assignment only"}, {"signup", "User account registration"}, {"purchase", "Product(s) purchase"}}, p.AccessMethod, ""), "")
-	row("Products", "_product_ids", `<input type="text" id="_product_ids" name="_product_ids" value="`+gxaJoinIDs(p.ProductIDs)+`" class="regular-text" placeholder="Product IDs, comma separated">`,
+	row("Products", "_product_ids", `<input type="text" id="_product_ids" name="_product_ids" data-gmem-search="product" value="`+gxaJoinIDs(p.ProductIDs)+`" class="regular-text" placeholder="Product IDs, comma separated">`,
 		`Leave empty to only allow members you manually assign. <label><input type="checkbox" name="grant_existing" value="1"> Grant access to customers who already purchased these products</label>`)
 	amount := ""
 	if p.AccessAmount > 0 {
@@ -1467,12 +1660,14 @@ func (s *Server) gmemPlanForm(p *gooMembershipPlan, nonce string) string {
 			gxaSelect("_access_length_period", "_access_length_period", []gooOpt{{"days", "day(s)"}, {"weeks", "week(s)"}, {"months", "month(s)"}, {"years", "year(s)"}}, p.AccessPeriod, "")+
 			` <input type="date" name="_access_end_date" value="`+s.gxaInputDate(p.AccessEnd, false)+`">`, "Specific length: the amount and period. Fixed dates: the end date.")
 	b.WriteString(`</tbody></table><h3>Restrict Content</h3><table class="form-table"><tbody>`)
-	row("Posts and pages", "_content_post_ids", `<input type="text" id="_content_post_ids" name="_content_post_ids" value="`+gxaJoinIDs(p.Rules.ContentPostIDs)+`" class="regular-text" placeholder="Post / page IDs">`, "Content that is restricted to members of this plan.")
-	row("Categories and tags", "_content_term_ids", `<input type="text" id="_content_term_ids" name="_content_term_ids" value="`+gxaJoinIDs(p.Rules.ContentTermIDs)+`" class="regular-text" placeholder="Term IDs (category, tag, product category)">`, "Every post in these terms is restricted.")
+	row("Posts and pages", "_content_post_ids", `<input type="text" id="_content_post_ids" name="_content_post_ids" data-gmem-search="post" value="`+gxaJoinIDs(p.Rules.ContentPostIDs)+`" class="regular-text" placeholder="Post / page IDs">`, "Content that is restricted to members of this plan.")
+	row("Categories and tags", "_content_term_ids", `<input type="text" id="_content_term_ids" name="_content_term_ids" data-gmem-search="term" value="`+gxaJoinIDs(p.Rules.ContentTermIDs)+`" class="regular-text" placeholder="Term IDs (category, tag, product category)">`, "Every post in these terms is restricted.")
+	row("Drip schedule", "_content_drip", `<input type="text" id="_content_drip" name="_content_drip" value="`+gooEsc(gmemDripString(p.Rules.ContentDrip))+`" class="regular-text" placeholder="123:7, t45:30">`,
+		"Opens content only after a number of days of membership: <code>post ID:days</code> or <code>t + term ID:days</code>, comma separated. Content not listed opens immediately.")
 	row("Restriction message", "_restriction_message", `<textarea id="_restriction_message" name="_restriction_message" rows="3" class="large-text">`+gooEsc(p.Message)+`</textarea>`, "Use a custom message for this plan's restricted content. Leave empty for the default message. Merge tags: {products}, {login_url}.")
 	b.WriteString(`</tbody></table><h3>Restrict Products</h3><table class="form-table"><tbody>`)
-	row("Member-only products", "_restricted_product_ids", `<input type="text" id="_restricted_product_ids" name="_restricted_product_ids" value="`+gxaJoinIDs(p.Rules.ProductIDs)+`" class="regular-text" placeholder="Product IDs">`, "")
-	row("Member-only product categories", "_restricted_product_terms", `<input type="text" id="_restricted_product_terms" name="_restricted_product_terms" value="`+gxaJoinIDs(p.Rules.ProductTermIDs)+`" class="regular-text" placeholder="Product category IDs">`, "")
+	row("Member-only products", "_restricted_product_ids", `<input type="text" id="_restricted_product_ids" name="_restricted_product_ids" data-gmem-search="product" value="`+gxaJoinIDs(p.Rules.ProductIDs)+`" class="regular-text" placeholder="Product IDs">`, "")
+	row("Member-only product categories", "_restricted_product_terms", `<input type="text" id="_restricted_product_terms" name="_restricted_product_terms" data-gmem-search="term" value="`+gxaJoinIDs(p.Rules.ProductTermIDs)+`" class="regular-text" placeholder="Product category IDs">`, "")
 	row("Restrict", "_product_restrict", gxaSelect("_product_restrict", "_product_restrict", []gooOpt{{"purchase", "Purchasing"}, {"view", "Viewing (and purchasing)"}}, defaultStr(p.Rules.ProductRestrict, "purchase"), ""), "")
 	b.WriteString(`</tbody></table><h3>Purchasing Discounts</h3><table class="widefat wc-memberships-rules discounts"><thead><tr><th>Type</th><th>Product / category ID</th><th>Discount</th><th>Amount</th></tr></thead><tbody>`)
 	discounts := append([]gmemDiscount{}, p.Rules.Discounts...)
@@ -1493,11 +1688,12 @@ func (s *Server) gmemPlanForm(p *gooMembershipPlan, nonce string) string {
 			`<td><input type="text" name="discount_amount[]" value="` + amt + `" style="width:100px"></td></tr>`)
 	}
 	b.WriteString(`</tbody></table></div></div></div><p class="submit"><button type="submit" class="button button-primary">Save Plan</button></p></form>`)
+	b.WriteString(gmemSearchScript)
 	return b.String()
 }
 
 // gmemReadPlanForm reads the plan editor.
-func (s *Server) gmemReadPlanForm(c *gin.Context, p *gooMembershipPlan) {
+func (s *Server) gmemReadPlanForm(c *gin.Context, p *gooMembershipPlan) error {
 	p.Name = strings.TrimSpace(c.PostForm("post_title"))
 	p.Slug = strings.TrimSpace(c.PostForm("post_name"))
 	p.AccessMethod = c.PostForm("_access_method")
@@ -1540,6 +1736,12 @@ func (s *Server) gmemReadPlanForm(c *gin.Context, p *gooMembershipPlan) {
 		}
 		p.Rules.Discounts = append(p.Rules.Discounts, d)
 	}
+	drip, err := gmemParseDrip(c.PostForm("_content_drip"))
+	if err != nil {
+		return err
+	}
+	p.Rules.ContentDrip = drip
+	return s.gmemValidateRefs(c.Request.Context(), p)
 }
 
 // gmemGrantPastPurchases grants a purchase plan to the customers of earlier paid orders.
@@ -1678,8 +1880,8 @@ func gmemSingleAccessRmode(s *Server, c *gin.Context, postID int64, postType str
 	} else {
 		plans = s.gmemPostPlans(ctx, postID)
 	}
-	if len(plans) == 0 || s.gmemCanAccess(ctx, u, plans) {
-		return ""
+	if ok, at := s.gmemPostAccess(ctx, u, postID, plans); ok || at != nil {
+		return "" // a member waiting for scheduled content sees the "available on" message
 	}
 	switch mode {
 	case "hide":
@@ -1703,3 +1905,166 @@ func gmemSingleAccessRmode(s *Server, c *gin.Context, postID int64, postType str
 	}
 	return ""
 }
+
+// Plan form helpers ---------------------------------------------------------------------------------------
+
+// gmemParseDrip reads "123:7, t45:30" (post id or t+term id, days) into the drip rules.
+func gmemParseDrip(v string) (map[string]int, error) {
+	out := map[string]int{}
+	for _, part := range strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == '\n' || r == ';' }) {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		k, d, ok := strings.Cut(part, ":")
+		k, d = strings.TrimSpace(k), strings.TrimSpace(d)
+		days, err := strconv.Atoi(d)
+		id, err2 := strconv.ParseInt(strings.TrimPrefix(k, "t"), 10, 64)
+		if !ok || err != nil || err2 != nil || days < 0 || id <= 0 {
+			return nil, fmt.Errorf("Invalid drip schedule entry %q: use post ID:days or tTERMID:days.", part)
+		}
+		key := strconv.FormatInt(id, 10)
+		if strings.HasPrefix(k, "t") {
+			key = "t" + key
+		}
+		out[key] = days
+	}
+	if len(out) == 0 {
+		return nil, nil
+	}
+	return out, nil
+}
+
+// gmemDripString is the drip rules as the form field shows them.
+func gmemDripString(m map[string]int) string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, k+":"+strconv.Itoa(m[k]))
+	}
+	return strings.Join(parts, ", ")
+}
+
+// gmemValidateRefs rejects a plan that names products, posts or terms that do not exist, so a mistyped
+// id is not accepted silently.
+func (s *Server) gmemValidateRefs(ctx context.Context, p *gooMembershipPlan) error {
+	var products, posts, terms []int64
+	products = append(products, p.ProductIDs...)
+	products = append(products, p.Rules.ProductIDs...)
+	posts = append(posts, p.Rules.ContentPostIDs...)
+	terms = append(terms, p.Rules.ContentTermIDs...)
+	terms = append(terms, p.Rules.ProductTermIDs...)
+	for k := range p.Rules.ContentDrip {
+		if strings.HasPrefix(k, "t") {
+			id, _ := strconv.ParseInt(k[1:], 10, 64)
+			terms = append(terms, id)
+		} else {
+			id, _ := strconv.ParseInt(k, 10, 64)
+			posts = append(posts, id)
+		}
+	}
+	for _, d := range p.Rules.Discounts {
+		if d.Target == "product_cat" {
+			terms = append(terms, d.ID)
+		} else {
+			products = append(products, d.ID)
+		}
+	}
+	missing := func(what string, ids []int64, exists func([]int64) map[int64]bool) error {
+		have := exists(ids)
+		var bad []string
+		for _, id := range ids {
+			if !have[id] {
+				bad = append(bad, itoa64(id))
+				have[id] = true
+			}
+		}
+		if len(bad) > 0 {
+			return fmt.Errorf("Unknown %s ID(s): %s.", what, strings.Join(bad, ", "))
+		}
+		return nil
+	}
+	postExists := func(types ...string) func([]int64) map[int64]bool {
+		return func(ids []int64) map[int64]bool {
+			out := map[int64]bool{}
+			q := `SELECT id FROM posts WHERE id = ANY($1)`
+			args := []any{ids}
+			if len(types) > 0 {
+				q += ` AND type = ANY($2)`
+				args = append(args, types)
+			}
+			if rows, err := s.store.Pool.Query(ctx, q, args...); err == nil {
+				for rows.Next() {
+					var id int64
+					if rows.Scan(&id) == nil {
+						out[id] = true
+					}
+				}
+				rows.Close()
+			}
+			return out
+		}
+	}
+	if err := missing("product", products, postExists("product", "product_variation")); err != nil {
+		return err
+	}
+	if err := missing("post", posts, postExists()); err != nil {
+		return err
+	}
+	return missing("term", terms, func(ids []int64) map[int64]bool {
+		out := map[int64]bool{}
+		m, _ := s.store.TermsByIDs(ctx, ids)
+		for id := range m {
+			out[id] = true
+		}
+		return out
+	})
+}
+
+// gmemSearchJSON answers the plan form's search boxes: id → label of the products, posts or terms
+// matching ?term=.
+func (s *Server) gmemSearchJSON(c *gin.Context) {
+	ctx := c.Request.Context()
+	term := strings.TrimSpace(c.Query("term"))
+	out := map[string]string{}
+	if len(term) < 2 {
+		c.JSON(http.StatusOK, out)
+		return
+	}
+	like := "%" + strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`).Replace(term) + "%"
+	var rows pgx.Rows
+	var err error
+	switch c.Query("gmem_search") {
+	case "term":
+		rows, err = s.store.Pool.Query(ctx, `SELECT id, name || ' (' || taxonomy || ')' FROM terms WHERE name ILIKE $1 OR slug ILIKE $1 ORDER BY name LIMIT 20`, like)
+	case "product":
+		rows, err = s.store.Pool.Query(ctx, `SELECT id, title FROM posts WHERE type IN ('product','product_variation') AND status <> 'trash' AND title ILIKE $1 ORDER BY title LIMIT 20`, like)
+	default:
+		rows, err = s.store.Pool.Query(ctx, `SELECT id, title || ' (' || type || ')' FROM posts WHERE type NOT IN ('product','product_variation','revision','nav_menu_item','attachment') AND status <> 'trash' AND title ILIKE $1 ORDER BY title LIMIT 20`, like)
+	}
+	if err == nil {
+		for rows.Next() {
+			var id int64
+			var label string
+			if rows.Scan(&id, &label) == nil {
+				out[itoa64(id)] = label
+			}
+		}
+		rows.Close()
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// gmemSearchScript adds a search box under each ID field of the plan form; picking a result appends
+// its ID to the field.
+const gmemSearchScript = `<script>(function(){document.querySelectorAll('input[data-gmem-search]').forEach(function(f){
+var kind=f.getAttribute('data-gmem-search'),box=document.createElement('input');box.type='search';box.className='regular-text';box.placeholder='Search to add\u2026';
+var list=document.createElement('ul');list.className='gmem-search-results';var t;f.parentNode.insertBefore(list,f.nextSibling);f.parentNode.insertBefore(box,f.nextSibling);
+box.addEventListener('input',function(){clearTimeout(t);var q=box.value.trim();list.innerHTML='';if(q.length<2)return;
+t=setTimeout(function(){fetch('/wp-admin/goocommerce?page=membership-plans&gmem_search='+kind+'&term='+encodeURIComponent(q),{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
+list.innerHTML='';Object.keys(d).forEach(function(id){var li=document.createElement('li'),a=document.createElement('a');a.href='#';a.textContent=d[id]+' (#'+id+')';
+a.addEventListener('click',function(e){e.preventDefault();var ids=f.value.split(',').map(function(x){return x.trim()}).filter(Boolean);if(ids.indexOf(id)<0)ids.push(id);f.value=ids.join(', ');list.innerHTML='';box.value='';});li.appendChild(a);list.appendChild(li);});});},250);});});})();</script>`

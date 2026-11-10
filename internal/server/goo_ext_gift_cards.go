@@ -78,6 +78,10 @@ func init() {
 	gooRegisterEmail(&gooEmailDef{ID: "gift_card_received", Title: "Gift card received", Module: gcKey, Customer: true,
 		Description: "Gift card e-mails are sent to gift card recipients when their gift card is issued, or on its delivery date.",
 		Subject:     "You have received a {giftcard_amount} gift card from {sender}", Heading: "You have received a gift card!"})
+	gooRegisterEmail(&gooEmailDef{ID: "gift_card_expiring", Title: "Gift card expiring", Module: gcKey, Customer: true,
+		Description: "Gift card recipients get a reminder a week before a gift card with a remaining balance expires.",
+		Subject:     "Your {giftcard_amount} gift card expires on {expires}", Heading: "Your gift card is about to expire"})
+	gooOn("order_refunded", 20, func(s *Server, ctx context.Context, arg any) { s.gcRefundDisable(ctx, arg.(*gooRefundEvent)) })
 }
 
 // Product -----------------------------------------------------------------------------------------------
@@ -115,6 +119,7 @@ type gcCard struct {
 	Status        string // active, disabled, redeemed (fully used)
 	RedeemedBy    int64
 	Created       time.Time
+	Design        string // design key chosen at purchase; not stored on the card row (see gcCardDesign)
 }
 
 const gcCols = `id, code, initial::float8, balance::float8, currency, order_id, order_item_id, recipient, recipient_name, sender, sender_email, message,
@@ -257,12 +262,16 @@ func (s *Server) gcUsable(g *gcCard) error {
 func (s *Server) gcAdjust(ctx context.Context, g *gcCard, delta float64, typ string, orderID, userID int64, note string) error {
 	dp := s.gooDecimals()
 	delta = gooRound(delta, dp)
-	if err := s.store.Pool.QueryRow(ctx, `UPDATE goo_gift_cards SET balance = greatest(balance + $2::numeric, 0),
-		status = CASE WHEN $3::bool THEN 'disabled' WHEN balance + $2::numeric <= 0 THEN 'redeemed' ELSE 'active' END
-		WHERE id = $1 RETURNING balance::float8, status`, g.ID, delta, g.Status == "disabled").Scan(&g.Balance, &g.Status); err != nil {
+	// The row is locked and its previous balance read in the same statement, so the log can show what
+	// really changed when a debit is clamped at zero.
+	var before float64
+	if err := s.store.Pool.QueryRow(ctx, `UPDATE goo_gift_cards AS t SET balance = greatest(o.balance + $2::numeric, 0),
+		status = CASE WHEN $3::bool THEN 'disabled' WHEN o.balance + $2::numeric <= 0 THEN 'redeemed' ELSE 'active' END
+		FROM (SELECT id, balance FROM goo_gift_cards WHERE id = $1 FOR UPDATE) o
+		WHERE t.id = o.id RETURNING t.balance::float8, t.status, o.balance::float8`, g.ID, delta, g.Status == "disabled").Scan(&g.Balance, &g.Status, &before); err != nil {
 		return err
 	}
-	amount := delta
+	amount := g.Balance - before
 	if amount < 0 {
 		amount = -amount
 	}
@@ -332,6 +341,16 @@ func gcAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form ma
 	}
 	data["gift_card"] = map[string]any{"amount": gooRound(amount, s.gooDecimals()), "to": to, "to_name": gxForm(form, "wc_gc_giftcard_to_name"),
 		"from": from, "message": msg, "deliver": deliver}
+	if d := gxForm(form, "wc_gc_giftcard_design"); d != "" {
+		allowed := false
+		for _, k := range gcProductDesigns(p) {
+			allowed = allowed || k == d
+		}
+		if !allowed {
+			return gooCartErr("Please choose one of the available gift card designs.")
+		}
+		data["gift_card"].(map[string]any)["design"] = d
+	}
 	return nil
 }
 
@@ -560,7 +579,7 @@ func gcReserve(s *Server, ctx context.Context, _ *gooCart, o *gooOrder) (func(),
 		var id int64
 		err := s.store.Pool.QueryRow(ctx, `UPDATE goo_gift_cards SET balance = balance - $2::numeric,
 			status = CASE WHEN balance - $2::numeric <= 0 THEN 'redeemed' ELSE status END
-			WHERE code = $1 AND status = 'active' AND balance >= $2::numeric RETURNING id`, code, amount).Scan(&id)
+			WHERE code = $1 AND status = 'active' AND balance >= $2::numeric AND (expires IS NULL OR expires >= $3::date) RETURNING id`, code, amount, time.Now().In(s.gxLoc()).Format("2006-01-02")).Scan(&id)
 		if err != nil {
 			release()
 			return nil, fmt.Errorf("The balance of gift card %s has changed. Please review your order.", html.EscapeString(code))
@@ -608,8 +627,10 @@ func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	}
 	switch ch.To {
 	case "processing", "completed":
+		s.gcEnableOrderCards(ctx, o)
 		s.gcIssue(ctx, o)
 	case "cancelled", "refunded":
+		s.gcDisableOrderCards(ctx, o, nil, 0, "Order "+gooStatusLabel(ch.To))
 		outstanding, ids := s.gcOutstandingRefx(ctx, o.ID)
 		type due struct {
 			id  int64
@@ -723,7 +744,7 @@ func (s *Server) gcIssue(ctx context.Context, o *gooOrder) {
 		for i := have; i < it.Qty(); i++ {
 			g := &gcCard{Initial: gxNum(m["amount"]), Currency: o.Currency, OrderID: o.ID, OrderItemID: it.ID, Recipient: gxStr(m["to"]),
 				RecipientName: gxStr(m["to_name"]), Sender: gxStr(m["from"]), SenderEmail: o.Billing["email"], Message: gxStr(m["message"]),
-				DeliverDate: deliver, Expires: expires}
+				DeliverDate: deliver, Expires: expires, Design: gxStr(m["design"])}
 			if err := s.gcCreate(ctx, g, o.CustomerID, fmt.Sprintf("Order #%d", o.ID)); err != nil {
 				continue
 			}
@@ -747,12 +768,14 @@ func (s *Server) gcDeliver(ctx context.Context, g *gcCard) {
 	if g.Message != "" {
 		b.WriteString(`<blockquote style="border-left:3px solid #7f54b3;margin:16px 0;padding:8px 16px;font-style:italic">` + strings.ReplaceAll(html.EscapeString(g.Message), "\n", "<br>") + `</blockquote>`)
 	}
-	fmt.Fprintf(&b, `<div style="border:2px dashed #7f54b3;border-radius:8px;padding:20px;text-align:center;margin:20px 0"><div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px">Gift card code</div>`+
-		`<div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#333;margin:8px 0">%s</div><div style="font-size:18px;color:#7f54b3">%s</div>`, g.Code, html.EscapeString(amount))
+	d := gcDesignFor(s.gcCardDesign(ctx, g))
+	fmt.Fprintf(&b, `<div style="border:2px dashed %s;background:%s;border-radius:8px;padding:20px;text-align:center;margin:20px 0"><div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px">%s gift card code</div>`+
+		`<div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#333;margin:8px 0">%s</div><div style="font-size:18px;color:%s">%s</div>`, d.Accent, d.Bg, html.EscapeString(d.Label), g.Code, d.Accent, html.EscapeString(amount))
 	if g.Expires != nil {
 		fmt.Fprintf(&b, `<div style="font-size:12px;color:#888;margin-top:6px">Expires on %s</div>`, html.EscapeString(s.gxDate(*g.Expires)))
 	}
 	b.WriteString(`</div>`)
+	fmt.Fprintf(&b, `<p><a href="%s">Print your gift card</a></p>`, html.EscapeString(s.gcPrintURL(ctx, g)))
 	fmt.Fprintf(&b, `<p>To use your gift card, enter the code in the &quot;Have a gift card?&quot; field of the cart or checkout at <a href="%s">%s</a>.</p>`,
 		html.EscapeString(s.gooShopURL(ctx)), html.EscapeString(s.settings.String("blogname")))
 	if s.gxSendEmail(ctx, "gift_card_received", []string{g.Recipient}, map[string]string{"giftcard_amount": amount, "sender": g.Sender, "giftcard_code": g.Code}, b.String()) {
@@ -769,6 +792,91 @@ func (s *Server) gcDaily(ctx context.Context) {
 	now := time.Now().In(s.gxLoc())
 	for _, g := range s.gcQuery(ctx, `NOT delivered AND status <> 'disabled' AND deliver_date IS NOT NULL AND deliver_date <= $1`, now.Format("2006-01-02")) {
 		s.gcDeliver(ctx, g)
+	}
+	s.gcExpiryReminders(ctx, now)
+}
+
+// gcExpiryReminders e-mails the recipient of a delivered card with a balance a week before it expires
+// (once per card: the reminder is recorded in the activity log).
+func (s *Server) gcExpiryReminders(ctx context.Context, now time.Time) {
+	today := now.Format("2006-01-02")
+	for _, g := range s.gcQuery(ctx, `delivered AND status = 'active' AND balance > 0 AND expires IS NOT NULL AND expires >= $1::date AND expires <= $1::date + 7
+		AND NOT EXISTS (SELECT 1 FROM goo_gift_card_activity a WHERE a.card_id = goo_gift_cards.id AND a.type = 'reminder')`, today) {
+		balance := s.gooPricePlain(g.Balance, g.Currency)
+		body := fmt.Sprintf(`<p>Hi there,</p><p>Your gift card <strong>%s</strong> still has a balance of <strong>%s</strong> and expires on %s.</p>`+
+			`<p>Enter the code in the &quot;Have a gift card?&quot; field of the cart or checkout at <a href="%s">%s</a> before then.</p>`,
+			html.EscapeString(g.Code), html.EscapeString(balance), html.EscapeString(s.gxDate(*g.Expires)),
+			html.EscapeString(s.gooShopURL(ctx)), html.EscapeString(s.settings.String("blogname")))
+		if s.gxSendEmail(ctx, "gift_card_expiring", []string{g.Recipient}, map[string]string{"giftcard_amount": balance, "expires": s.gxDate(*g.Expires), "giftcard_code": g.Code}, body) {
+			_ = s.gcLog(ctx, g.ID, "reminder", 0, 0, 0, "Expiry reminder sent")
+		}
+	}
+}
+
+// gcDisableOrderCards disables the gift cards an order sold (a refunded or cancelled order must not leave
+// spendable codes behind): all of them, or with limit > 0 that many of the item's cards (items != nil
+// restricts to those order items). A card that was already partly spent gets an order note so the
+// merchant can review it.
+func (s *Server) gcDisableOrderCards(ctx context.Context, o *gooOrder, items map[int64]bool, limit int, reason string) {
+	cards := s.gcQuery(ctx, `order_id = $1 AND status <> 'disabled' ORDER BY id DESC`, o.ID)
+	n := 0
+	for _, g := range cards {
+		if items != nil && !items[g.OrderItemID] {
+			continue
+		}
+		if limit > 0 && n >= limit {
+			break
+		}
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET status = 'disabled' WHERE id = $1`, g.ID); err != nil {
+			continue
+		}
+		n++
+		_ = s.gcLog(ctx, g.ID, "manual", 0, o.ID, 0, "Disabled: "+strings.ToLower(reason))
+		note := fmt.Sprintf("Gift card %s disabled (%s).", g.Code, strings.ToLower(reason))
+		if g.Balance < g.Initial {
+			note += fmt.Sprintf(" It was already partly spent (balance %s of %s): please review.", s.gooPricePlain(g.Balance, g.Currency), s.gooPricePlain(g.Initial, g.Currency))
+		}
+		_ = s.gooAddOrderNote(ctx, o, note, false, "")
+	}
+}
+
+// gcEnableOrderCards re-enables the cards an order sold that a cancellation or refund disabled, when the
+// order is paid / reactivated again (cards a merchant disabled by hand stay disabled).
+func (s *Server) gcEnableOrderCards(ctx context.Context, o *gooOrder) {
+	for _, g := range s.gcQuery(ctx, `order_id = $1 AND status = 'disabled' AND (SELECT note FROM goo_gift_card_activity a WHERE a.card_id = goo_gift_cards.id ORDER BY id DESC LIMIT 1) LIKE 'Disabled: order %'`, o.ID) {
+		g.Status = "active"
+		if s.gcAdjust(ctx, g, 0, "manual", o.ID, 0, "Enabled: order reactivated") == nil {
+			_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Gift card %s enabled again.", g.Code), false, "")
+		}
+	}
+}
+
+// gcRefundDisable disables the cards of gift card items a refund returns (quantity or the full line total);
+// a refund of the whole order is handled by the status change.
+func (s *Server) gcRefundDisable(ctx context.Context, ev *gooRefundEvent) {
+	if !s.gooExtOn(gcKey) || ev == nil || ev.Order == nil || ev.Refund == nil {
+		return
+	}
+	o := ev.Order
+	for _, ri := range ev.Refund.ItemsOf("line_item") {
+		src := gooRefundSource(o, ri)
+		var it *gooOrderItem
+		for _, x := range o.Items {
+			if x.ID == src {
+				it = x
+			}
+		}
+		if it == nil || it.Meta["_goo_gift_card"] == nil {
+			continue
+		}
+		n := int(-ri.Quantity)
+		if n <= 0 {
+			if -ri.Total < it.Total-0.0001 {
+				continue
+			}
+			n = it.Qty()
+		}
+		s.gcDisableOrderCards(ctx, o, map[int64]bool{it.ID: true}, n, fmt.Sprintf("Refund #%d of the order item", ev.Refund.ID))
 	}
 }
 

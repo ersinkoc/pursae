@@ -43,6 +43,17 @@ type gooGatewayDef interface {
 	Available(s *Server, c *gin.Context, cart *gooCart) bool
 }
 
+// gooRenewalGateway is implemented by gateways that can charge a stored payment token without the
+// customer present (WC_Gateway::scheduled_subscription_payment). A gateway that implements it and reports
+// Supports("subscriptions") gets automatic subscription renewals; any other gateway renews manually.
+type gooRenewalGateway interface {
+	// ProcessRenewal charges the renewal order o with the token saved on the subscription
+	// (order/subscription meta "_payment_token") and returns the provider's transaction id.
+	ProcessRenewal(s *Server, ctx context.Context, o *gooOrder, token string) (string, error)
+	// RenewalNeedsToken reports whether an empty token means the renewal cannot be automatic.
+	RenewalNeedsToken() bool
+}
+
 var gooGatewayRegistry = map[string]gooGatewayDef{}
 
 // gooRegisterGateway adds a gateway (woocommerce_payment_gateways).
@@ -134,6 +145,9 @@ func (s *Server) gooAvailableGateways(c *gin.Context, cart *gooCart) []*gooGatew
 		if g.Enabled() && g.Available(s, c, cart) {
 			out = append(out, g)
 		}
+	}
+	for _, f := range gooGatewayFilters {
+		out = f(s, c, cart, out)
 	}
 	return out
 }
@@ -259,7 +273,18 @@ func (gooTestGateway) FormFields() []gooField {
 	return append(f[:3], gooField{ID: "status", Title: "Order status after payment", Type: "select", Default: "processing",
 		Options: []gooOpt{{"processing", "Processing (payment complete)"}, {"on-hold", "On hold"}}})
 }
-func (gooTestGateway) Supports(f string) bool { return f == "products" || f == "refunds" }
+func (gooTestGateway) Supports(f string) bool {
+	return f == "products" || f == "refunds" || f == "subscriptions"
+}
+
+// ProcessRenewal: the test gateway renews without a stored token; the token "decline" fails.
+func (gooTestGateway) ProcessRenewal(s *Server, ctx context.Context, o *gooOrder, token string) (string, error) {
+	if token == "decline" {
+		return "", errors.New("the test gateway declined the renewal")
+	}
+	return "test_" + gooRandomKey(16), nil
+}
+func (gooTestGateway) RenewalNeedsToken() bool { return false }
 func (gooTestGateway) PaymentFields(s *Server, c *gin.Context) string {
 	return gooEsc(s.gooT(c, s.gooGatewaySetting("goo_test", "description"))) +
 		`<fieldset id="goo_test-cc-form" class="wc-credit-card-form wc-payment-form"><p class="form-row form-row-wide"><label for="goo_test-card-holder">Card holder</label>` +

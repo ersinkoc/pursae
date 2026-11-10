@@ -144,6 +144,7 @@ type bkConf struct {
 	Buffer           int
 	DefaultAvailable bool
 	FirstBlockTime   string
+	AllowOvernight   bool // hour/minute blocks may run past midnight
 	Rules            []bkRule
 	BaseCost         float64
 	BlockCost        float64
@@ -180,7 +181,7 @@ func bkConfOf(p *gooProduct) *bkConf {
 		CanCancel: gxBool(bkMeta(p, "user_can_cancel")), CancelLimit: num("cancel_limit", 1), CancelUnit: str("cancel_limit_unit", "month"),
 		MaxPerBlock: max(num("qty", 1), 1), MinDate: num("min_date", 0), MinDateUnit: str("min_date_unit", "day"),
 		MaxDate: num("max_date", 12), MaxDateUnit: str("max_date_unit", "month"), Buffer: num("buffer_period", 0),
-		DefaultAvailable: str("default_date_availability", "available") == "available", FirstBlockTime: gxStr(bkMeta(p, "first_block_time")),
+		DefaultAvailable: str("default_date_availability", "available") == "available", FirstBlockTime: gxStr(bkMeta(p, "first_block_time")), AllowOvernight: gxBool(bkMeta(p, "allow_overnight")),
 		BaseCost: gxNum(bkMeta(p, "cost")), BlockCost: gxNum(bkMeta(p, "block_cost")), DisplayCost: gxNum(p.Meta["_wc_display_cost"]),
 		HasPersons: gxBool(bkMeta(p, "has_persons")), MinPersons: max(num("min_persons_group", 1), 1), MaxPersons: num("max_persons_group", 0),
 		PersonCostMult: gxBool(bkMeta(p, "person_cost_multiplier")), PersonQtyMult: gxBool(bkMeta(p, "person_qty_multiplier")),
@@ -493,6 +494,13 @@ func (s *Server) bkExisting(ctx context.Context, productID int64, from, to time.
 // gooBkExisting is bkExisting for a resource: the bookings of every product holding that resource
 // (resource 0: the product's bookings).
 func (s *Server) gooBkExisting(ctx context.Context, productID, resource int64, from, to time.Time, exclude int64) []bkHeld {
+	out, _ := s.gooBkExistingErr(ctx, productID, resource, from, to, exclude)
+	return out
+}
+
+// gooBkExistingErr is gooBkExisting returning the query error, so a check that cannot read the
+// bookings refuses instead of treating every place as free.
+func (s *Server) gooBkExistingErr(ctx context.Context, productID, resource int64, from, to time.Time, exclude int64) ([]bkHeld, error) {
 	mins := max(s.gooExtInt(bkKey, "in_cart_minutes"), 1)
 	col, key := "product_id", productID
 	if resource != 0 {
@@ -502,7 +510,7 @@ func (s *Server) gooBkExisting(ctx context.Context, productID, resource int64, f
 		AND (status <> 'in-cart' OR date_created > now() - make_interval(mins => $3)) AND end_at > $4 AND start_at < $5 AND id <> $6`,
 		key, bkHolding, mins, from, to, exclude)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer rows.Close()
 	var out []bkHeld
@@ -516,7 +524,7 @@ func (s *Server) gooBkExisting(ctx context.Context, productID, resource int64, f
 			out = append(out, h)
 		}
 	}
-	return out
+	return out, rows.Err()
 }
 
 // bkBufferDur is the buffer period as a duration (in the product's unit).
@@ -586,7 +594,10 @@ func (s *Server) gxbCheck(ctx context.Context, p *gooProduct, c *bkConf, res *go
 		end = c.blockEnd(end)
 	}
 	d, days := c.bufferDur()
-	held := s.gooBkExisting(ctx, p.ID, resID, start.Add(-d).AddDate(0, 0, -days), end.Add(d).AddDate(0, 0, days), exclude)
+	held, err := s.gooBkExistingErr(ctx, p.ID, resID, start.Add(-d).AddDate(0, 0, -days), end.Add(d).AddDate(0, 0, days), exclude)
+	if err != nil {
+		return gooCartErr("Availability cannot be checked right now. Please try again in a moment.")
+	}
 	need := 1
 	if c.PersonQtyMult && persons > 0 {
 		need = persons
@@ -606,7 +617,7 @@ func (s *Server) gxbCheck(ctx context.Context, p *gooProduct, c *bkConf, res *go
 				}
 			}
 		} else {
-			if !gxbBookable(c, res, t, e) || t.Day() != e.Add(-time.Nanosecond).Day() {
+			if !gxbBookable(c, res, t, e) || (!c.AllowOvernight && t.Day() != e.Add(-time.Nanosecond).Day()) {
 				return gooCartErr("Sorry, the selected block is not available.")
 			}
 			if left := capacity - c.used(held, t, e); left < need {
@@ -657,7 +668,10 @@ func (s *Server) gxbSlots(ctx context.Context, p *gooProduct, c *bkConf, res *go
 	dayEnd := dayStart.AddDate(0, 0, 1)
 	first := max(bkMinutesOf(c.FirstBlockTime), 0)
 	from, to := s.bkWindow(c)
-	held := s.gooBkExisting(ctx, p.ID, resID, dayStart.Add(-48*time.Hour), dayEnd.Add(48*time.Hour), 0)
+	held, err := s.gooBkExistingErr(ctx, p.ID, resID, dayStart.Add(-48*time.Hour), dayEnd.Add(48*time.Hour), 0)
+	if err != nil {
+		return nil
+	}
 	step := time.Duration(c.blockMinutes()) * time.Minute
 	if step <= 0 {
 		return nil
@@ -669,7 +683,7 @@ func (s *Server) gxbSlots(ctx context.Context, p *gooProduct, c *bkConf, res *go
 	for mins := first; ; mins += c.blockMinutes() {
 		t := time.Date(y, m, d, 0, mins, 0, 0, loc)
 		e := t.Add(step)
-		if e.After(dayEnd) || !t.Before(dayEnd) {
+		if (e.After(dayEnd) && !c.AllowOvernight) || !t.Before(dayEnd) {
 			break
 		}
 		if t.Hour()*60+t.Minute() != mins%1440 {
@@ -767,12 +781,21 @@ func (s *Server) bkSetStatus(ctx context.Context, b *bkBooking, to string) error
 	case "cancelled":
 		if from != "in-cart" {
 			s.bkMail(ctx, "booking_cancelled", b)
-			s.bkMail(ctx, "admin_booking_cancelled", b)
+			refund := ""
+			if b.OrderID != 0 && from == "paid" {
+				if o, err := s.gooGetOrder(ctx, b.OrderID); err == nil && (o.Status == "processing" || o.Status == "completed") {
+					refund = "This booking was already paid. A refund is required: please refund it on the order if the customer is entitled to one."
+				}
+			}
+			s.bkMailWith(ctx, "admin_booking_cancelled", b, refund)
 		}
 	}
 	if b.OrderID != 0 {
 		if o, err := s.gooGetOrder(ctx, b.OrderID); err == nil {
 			_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d status changed from %s to %s.", b.ID, bkStatusLabel(from), bkStatusLabel(to)), false, "")
+			if to == "cancelled" && from == "paid" && (o.Status == "processing" || o.Status == "completed") {
+				_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d was cancelled after payment: a refund is required.", b.ID), false, "")
+			}
 		}
 	}
 	return nil
@@ -1158,7 +1181,10 @@ func (s *Server) bkStillFree(ctx context.Context, p *gooProduct, c *bkConf, b *b
 	}
 	capacity := gxbCapacity(c, res)
 	d, days := c.bufferDur()
-	held := s.gooBkExisting(ctx, p.ID, b.ResourceID, b.Start.Add(-d).AddDate(0, 0, -days), b.End.Add(d).AddDate(0, 0, days), b.ID)
+	held, err := s.gooBkExistingErr(ctx, p.ID, b.ResourceID, b.Start.Add(-d).AddDate(0, 0, -days), b.End.Add(d).AddDate(0, 0, days), b.ID)
+	if err != nil {
+		return false
+	}
 	for t := b.Start; t.Before(b.End); {
 		e := c.blockEnd(t)
 		if !e.After(t) {
@@ -1194,9 +1220,11 @@ func (s *Server) bkDaily(ctx context.Context) {
 	if days := s.gooExtInt(bkKey, "reminder_days"); days > 0 {
 		loc := s.gxLoc()
 		now := time.Now().In(loc)
+		// Catch up after a missed run: everything that has not started and falls on or before the day N days
+		// from today (the reminder_sent flag keeps each booking to one e-mail).
 		y, m, d := now.Date()
-		from := time.Date(y, m, d, 0, 0, 0, 0, loc).AddDate(0, 0, days)
-		for _, b := range s.bkQuery(ctx, `status IN ('paid','confirmed') AND NOT reminder_sent AND start_at >= $1 AND start_at < $2`, from, from.AddDate(0, 0, 1)) {
+		until := time.Date(y, m, d, 0, 0, 0, 0, loc).AddDate(0, 0, days+1)
+		for _, b := range s.bkQuery(ctx, `status IN ('paid','confirmed') AND NOT reminder_sent AND start_at > $1 AND start_at < $2`, now, until) {
 			s.bkMail(ctx, "booking_reminder", b)
 			b.Reminded = true
 			_ = s.bkUpdate(ctx, b)
@@ -1235,6 +1263,11 @@ func (s *Server) bkCustomerEmail(ctx context.Context, b *bkBooking) (string, *go
 
 // bkMail sends a booking e-mail.
 func (s *Server) bkMail(ctx context.Context, id string, b *bkBooking) {
+	s.bkMailWith(ctx, id, b, "")
+}
+
+// bkMailWith is bkMail with an extra paragraph under the booking table (e.g. "refund required").
+func (s *Server) bkMailWith(ctx context.Context, id string, b *bkBooking, extra string) {
 	p, err := s.gooGetProduct(ctx, b.ProductID)
 	if err != nil {
 		return
@@ -1271,6 +1304,12 @@ func (s *Server) bkMail(ctx context.Context, id string, b *bkBooking) {
 	}
 	if id == "new_booking" && b.Status == "pending-confirmation" {
 		body.WriteString(`<p>This booking is awaiting your approval. Please check it and inform the customer if the date is available or not.</p>`)
+	}
+	if extra != "" {
+		body.WriteString(`<p><strong>` + html.EscapeString(extra) + `</strong></p>`)
+	}
+	if id == "booking_confirmed" || id == "booking_reminder" || id == "new_booking" {
+		body.WriteString(`<p>Add to calendar: <a href="` + html.EscapeString(s.bkICSURL(ctx, b)) + `">Download .ics</a></p>`)
 	}
 	s.gxSendEmail(ctx, id, []string{to}, map[string]string{"booking_id": itoa64(b.ID), "product_title": p.Name}, body.String())
 }

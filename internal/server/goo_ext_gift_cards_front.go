@@ -95,6 +95,13 @@ func gcProductForm(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	field := func(id, label, input string) {
 		fmt.Fprintf(&b, `<div class="wc_gc_field %s"><label for="%s">%s</label>%s</div>`, id, id, label, input)
 	}
+	if ds := gcProductDesigns(p); len(ds) > 1 {
+		var o strings.Builder
+		for _, k := range ds {
+			fmt.Fprintf(&o, `<option value="%s">%s</option>`, k, html.EscapeString(gcDesignFor(k).Label))
+		}
+		field("wc_gc_giftcard_design", "Design", `<select id="wc_gc_giftcard_design" name="wc_gc_giftcard_design">`+o.String()+`</select>`)
+	}
 	field("wc_gc_giftcard_to", "To", `<input type="email" id="wc_gc_giftcard_to" name="wc_gc_giftcard_to" placeholder="Enter recipient e-mail" class="input-text" required>`)
 	field("wc_gc_giftcard_to_name", "Recipient name", `<input type="text" id="wc_gc_giftcard_to_name" name="wc_gc_giftcard_to_name" class="input-text">`)
 	from := ""
@@ -153,6 +160,9 @@ func gcFrontRoute(s *Server, c *gin.Context, path string) bool {
 		return false
 	}
 	switch c.Query("goo-ajax") {
+	case "print_gift_card":
+		s.gcPrintPage(c)
+		return true
 	case "apply_gift_card":
 		if c.Request.Method != http.MethodPost {
 			return false
@@ -344,6 +354,7 @@ func gcPanel(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	}
 	b.WriteString(bkField("Minimum amount", "_gift_card_min", bkInput("_gift_card_min", "text", num("_gift_card_min"), ` class="wc_input_price"`), ""))
 	b.WriteString(bkField("Maximum amount", "_gift_card_max", bkInput("_gift_card_max", "text", num("_gift_card_max"), ` class="wc_input_price"`), "Leave empty for no maximum."))
+	b.WriteString(bkField("Designs", "_gift_card_designs", bkInput("_gift_card_designs", "text", gxStr(p.Meta["_gift_card_designs"]), ` placeholder="classic, birthday, holiday"`), "Designs the buyer can choose from, separated by commas: "+strings.Join(gcDesignKeys(), ", ")+". Leave empty for the classic design only."))
 	b.WriteString(bkField("Expire in (days)", "_gift_card_expiration_days", bkInput("_gift_card_expiration_days", "number", num("_gift_card_expiration_days"), ` min="0" step="1"`), "Days a gift card can be used after it is issued. Leave empty for gift cards that never expire."))
 	b.WriteString(`<p class="form-field"><label>Delivery</label><span class="description">Gift cards are delivered by e-mail; physical delivery is not available.</span></p></div>`)
 	return template.HTML(b.String())
@@ -362,6 +373,7 @@ func gcPanelSave(s *Server, c *gin.Context, p *gooProduct) {
 	p.Meta["_gift_card_custom_amount"] = c.PostForm("_gift_card_custom_amount") == "yes"
 	p.Meta["_gift_card_min"] = gxAtof(c.PostForm("_gift_card_min"))
 	p.Meta["_gift_card_max"] = gxAtof(c.PostForm("_gift_card_max"))
+	p.Meta["_gift_card_designs"] = strings.Join(gcParseDesigns(c.PostForm("_gift_card_designs")), ", ")
 	p.Meta["_gift_card_expiration_days"] = float64(gxAtoi(c.PostForm("_gift_card_expiration_days")))
 	p.Virtual, p.ManageStock, p.Backorders = true, false, "no"
 	// The catalog price is the smallest amount.

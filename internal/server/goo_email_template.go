@@ -210,7 +210,7 @@ func (s *Server) gooEmailContent(ctx context.Context, d *gooEmailDef, o *gooOrde
 		h += gooEmailP(msg)
 		p += gooPlainMsg(msg) + "\n"
 		withOrder(false)
-	case "customer_invoice":
+	case "customer_invoice", "customer_renewal_invoice":
 		h, p = hi()
 		if o.IsPaid() || o.Total <= 0 {
 			msg := gooET(ctx, "Here are the details of your order placed on %s:", gooEsc(s.gooEmailDate(ctx, o.DateCreated)))

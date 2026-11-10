@@ -76,6 +76,7 @@ func (s *Server) gpreMessage(field string, po gpreProduct) string {
 }
 
 func init() {
+	gooPlaceOrderTextHooks = append(gooPlaceOrderTextHooks, gprePlaceOrderText)
 	gooOrderStatuses = append(gooOrderStatuses, gooOpt{"pre-ordered", "Pre-ordered"})
 
 	gooRegisterExtension(&gooExtension{
@@ -252,6 +253,18 @@ func init() {
 		e.Module = gpreKey
 		gooRegisterEmail(e)
 	}
+}
+
+func gprePlaceOrderText(s *Server, ctx context.Context, cart *gooCart) string {
+	if cart == nil || !s.gooExtOn(gpreKey) {
+		return ""
+	}
+	for _, it := range cart.Items {
+		if _, ok := s.gpreActive(ctx, it.Product()); ok {
+			return s.gooExtString(gpreKey, "place_order_button_text")
+		}
+	}
+	return ""
 }
 
 func gpreFields() []gooField {
