@@ -268,6 +268,7 @@ func (s *Server) postsList(c *gin.Context) {
 			}
 		}
 	}
+	seoFilter := s.seogoListFilter(c, typ, &q) // Pursae SEO: "No focus keyphrase", "SEO: Needs improvement" …
 	posts, total, err := s.store.QueryPosts(ctx, q)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
@@ -346,7 +347,8 @@ func (s *Server) postsList(c *gin.Context) {
 		}
 	}
 	s.inlineEditData(c, &d)
-	s.golylangPostColumns(c, &d, posts) // Golylang: one column per language
+	s.golylangPostColumns(c, &d, posts)                    // Golylang: one column per language
+	s.seogoPostColumns(c, &d, posts, typ, base, seoFilter) // Pursae SEO: score columns and filter views
 	cur := *c.Request.URL
 	d.Pagination = newPagination(total, perPage, page, cur)
 	d.SortLinks = map[string]sortLink{}

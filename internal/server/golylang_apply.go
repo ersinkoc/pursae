@@ -30,6 +30,9 @@ import (
 type pllFrontTable struct {
 	tr  map[string]string // whitespace-normalised original => translation
 	rev map[string]bool   // whitespace-normalised translations (already translated text)
+
+	// Translated Date Format / Time Format settings (golylang_dates.go): source and target format.
+	dateSrc, dateDst, timeSrc, timeDst string
 }
 
 var pllFrontTables = map[*Server]map[string]*pllFrontTable{} // guarded by pllStringsMu; cleared by pllFlushStrings
@@ -64,6 +67,16 @@ func (s *Server) pllFrontTableFor(ctx context.Context, lang string) *pllFrontTab
 		t.rev[pllCollapseWS(v)] = true
 		if v != k {
 			t.tr[k] = v
+		}
+	}
+	for _, f := range []struct {
+		opt      string
+		src, dst *string
+	}{{"date_format", &t.dateSrc, &t.dateDst}, {"time_format", &t.timeSrc, &t.timeDst}} {
+		if o := s.settings.String(f.opt); o != "" {
+			if tr := strings.TrimSpace(src[o]); tr != "" && tr != o {
+				*f.src, *f.dst = o, tr
+			}
 		}
 	}
 	pllStringsMu.Lock()
@@ -133,6 +146,9 @@ func (s *Server) pllApplyStrings(c *gin.Context, page []byte, l *pllLanguage, vi
 	}
 	lookup := func(k string, record bool) (string, bool) {
 		if v, ok := t.tr[k]; ok {
+			return v, true
+		}
+		if v, ok := s.pllReformatDate(t, k, l); ok {
 			return v, true
 		}
 		if record && capture && !t.rev[k] && !names[k] && !pllKnown(r, k) {

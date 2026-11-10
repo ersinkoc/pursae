@@ -44,7 +44,7 @@ Legend: **✓** implemented · **◐** partly (see note) · **✗** left out (se
 | Snippet preview | Google preview, mobile and desktop | Google preview, desktop and mobile | ✓ Mobile and desktop, server-resolved title and description, breadcrumb-style URL, keyphrase highlighted, length/width bars. |
 | SEO title and meta description with variables | ✓ | ✓ | ✓ An "Insert variable" menu; empty fields fall back to the Search Appearance template. |
 | SEO analysis | 17 assessments | Basic SEO, Additional, Title Readability tests | ✓ All of Yoast's (keyphrase in introduction, length, density with the keyphrase-length factor, in meta description, in subheading, in SEO title, in slug, meta description length, SEO title width, text length for post/cornerstone/taxonomy, outbound and internal links, images, image keyphrase, single H1, competing links, previously used keyphrase) plus Rank Math's keyword in first 10%, URL length, number in title, power words, short paragraphs, table of contents. |
-| Readability analysis | Subheading distribution, paragraph length, sentence length, transition words, passive voice, consecutive sentences, text presence; Flesch as an insight | Content readability tests, legacy Flesch | ✓ Yoast's 7 assessments with Yoast's thresholds, including the cornerstone variants. Flesch reading ease and reading time are shown as insights, as Yoast does since 19.3. English only. |
+| Readability analysis | Subheading distribution, paragraph length, sentence length, transition words, passive voice, consecutive sentences, text presence; Flesch as an insight | Content readability tests, legacy Flesch | ✓ Yoast's 7 assessments with Yoast's thresholds, including the cornerstone variants. Flesch reading ease and reading time are shown as insights, as Yoast does since 19.3. The post's language (Pursae Multi Language, else `WPLANG`) is respected: English gets every test; Turkish gets transition words with a Turkish list and Turkish-aware lowercasing (I/ı, İ/i); passive voice and Flesch are English-only and skipped elsewhere, and the transition test is skipped for languages without a word list. |
 | Traffic lights | Bullets in box, posts list, admin bar | Score badge | ✓ Bullets in the box header, in the Pursae Editor document panel, in the bulk editor and on the dashboard. Scores are stored in `_seogo_seo_score`, `_seogo_read_score` and `_seogo_rm_score`. |
 | Cornerstone / pillar content | Cornerstone (stricter analysis) | Pillar content | ✓ Stricter thresholds; shown first in internal linking suggestions; starred in the Link Counter. |
 | Canonical URL | ✓ | ✓ | ✓ |
@@ -109,8 +109,8 @@ gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-
 | Exclusions | noindex, per type | Per post/term IDs, per type | ✓ Noindexed, password-protected and canonicalized-elsewhere content, excluded post and term IDs, types switched off in Search Appearance, empty terms. |
 | Replace core sitemaps | Disables `wp-sitemap.xml` and redirects | — | ✓ 301 from `/wp-sitemap*.xml` and `/sitemap.xml` to `/sitemap_index.xml`. |
 | News sitemap | News SEO add-on | Pro | ✓ `news-sitemap.xml`: posts of the last 48 hours, publication name and language. |
-| Video sitemap | Video SEO add-on | Pro | ◐ `video-sitemap.xml` for YouTube/Vimeo embeds, with title, description, thumbnail and player URL. No duration or video metadata lookup. |
-| IndexNow | Yoast IndexNow (Premium) | Instant Indexing | ✓ Key file at `/<key>.txt`, automatic submission on publish/update, manual submission, last 20 responses, key regeneration. |
+| Video sitemap | Video SEO add-on | Pro | ◐ `video-sitemap.xml` for YouTube/Vimeo embeds, with title, description, thumbnail and player URL. Entries are de-duplicated per post, self-hosted `<video>`/core/video files are listed with `content_loc`, and an entry without a thumbnail (Vimeo or file with no featured image) is skipped because `thumbnail_loc` is required. No duration or video metadata lookup. |
+| IndexNow | Yoast IndexNow (Premium) | Instant Indexing | ✓ Key file at `/<key>.txt`, automatic submission on publish/update, manual submission, last 20 responses (kept in the `seogo_indexnow_log` option), key regeneration. Only URLs the sitemap lists are submitted (sitemap post types, not noindex/password/excluded); 429, 5xx and network errors are retried up to three times. |
 
 ### Redirections and 404 monitor
 
@@ -130,7 +130,7 @@ gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-
 |---|---|---|---|
 | Link counter | Text link counter (internal/received) | Link counter | ✓ Internal, outbound and received links per post and page. |
 | Orphaned content | Premium | — | ✓ Filter of the Link Counter, count on the dashboard. |
-| Bulk editor | Tools › Bulk editor (titles, descriptions) | Bulk edit in posts list | ✓ SEO title, meta description and focus keyphrase for all posts or pages on one screen, with SEO and readability scores. |
+| Bulk editor | Tools › Bulk editor (titles, descriptions) | Bulk edit in posts list | ✓ SEO title, meta description and focus keyphrase for every sitemap post type (posts, pages, products, custom types), 50 per page with search and pagination, with SEO and readability scores. The dashboard, Link Counter and score recalculation cover the same types without a row limit (recalculation runs in batches; the orphan count is cached for five minutes and refreshed on every post save). |
 
 ### Images, import, REST
 
@@ -141,13 +141,20 @@ gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-
 | REST head endpoint | `GET /wp-json/yoast/v1/get_head?url=` → `{html, json, status}` | `GET /wp-json/rankmath/v1/getHead?url=` → `{success, head}` | ✓ Both, with the same shapes, plus `/wp-json/seogo/v1/get_head`. Only for URLs of this site; unpublished or protected content answers like a 404. |
 | Term SEO fields | ✓ | ✓ | ✓ Edit Category / Edit Tag: focus keyphrase, title, description, noindex, canonical, breadcrumbs title, social fields. |
 
+## Posts list, Commerce graph and automatic redirects
+
+- **Posts list:** SEO and Readability traffic-light columns (from the stored `_seogo_seo_score` / `_seogo_read_score`) and filter views (`?seo_filter=nofocus|seo_bad|seo_good|read_bad|noindex`) on every sitemap post type.
+- **Product schema:** a Pursae Commerce product page gets one `@graph` whose Product node is built from the store (real price, stock, reviews, `@id` `<url>#product`); the store's separate JSON-LD block is not printed while the schema module is on. The hand-filled Schema tab Product prints `aggregateRating` only when a rating and a real review count are both set.
+- **Automatic redirects** also cover a changed term slug or parent (category, tag, custom taxonomies), next to the post slug redirect. Trashed or deleted content and Search Console reporting are not covered.
+
 ## Left out (and why)
+
 
 - **Rank Math Analytics, Search Console, keyword rank tracking, Content AI, Yoast AI features, SEMrush/Wincher integrations.** These need external accounts and services; out of scope for a self-contained single site.
 - **Yoast Insights, word complexity, inclusive language, text alignment, keyphrase distribution, Premium word forms and synonyms.** The analysis uses simple English stemming. Separate synonym fields and non-English language rules are not implemented.
 - **Visual schema generator and schema templates (Rank Math Pro).** Covered by page/article type, Product, the FAQ and How-to blocks and custom JSON-LD.
 - **`yoast_head` / `yoast_head_json` fields on `wp/v2` responses.** Adding them would change core REST output; headless clients use the get_head endpoints instead.
-- **SEO columns and filters in the posts list, the admin bar SEO menu, the per-post redirect field, author-profile SEO fields, crawl optimization (removing feeds, shortlinks…), social image overlays, `llms.txt`, multiple local locations / KML.** The bulk editor and dashboard cover the list use; the rest is small and can follow.
+- **The admin bar SEO menu, the per-post redirect field, author-profile SEO fields, crawl optimization (removing feeds, shortlinks…), social image overlays, `llms.txt`, multiple local locations / KML.** The rest is small and can follow.
 - **SEO analysis on the term edit screen.** Terms get the fields and head output, not the live traffic lights.
 - **.htaccess editor.** Not applicable to Pursae.
 

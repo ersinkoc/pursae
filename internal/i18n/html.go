@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"wpgo/internal/wp"
 )
 
 // TranslateHTML translates a rendered admin page: text between tags and the user-facing
@@ -233,7 +235,7 @@ var (
 func (c *Catalog) translateDate(plain string) (string, bool) {
 	m := dateRe.FindStringSubmatch(plain)
 	if m == nil {
-		return "", false
+		return c.translateDateNames(plain)
 	}
 	month, ok := c.lookup(m[1])
 	if !ok {
@@ -944,4 +946,73 @@ func indexClose(s string, i int, name string) int {
 		}
 		k = after
 	}
+}
+
+// dateWordRe splits a date into words and the separators between them.
+var dateWordRe = regexp.MustCompile(`[A-Za-z]+|\d+|[^A-Za-z\d]+`)
+
+// dateNames are the English month and weekday names (full and abbreviated) date_i18n() writes.
+var dateNames = func() map[string]bool {
+	m := map[string]bool{}
+	en := wp.EnglishDateNames()
+	for _, l := range [][]string{en.Months[:], en.MonthsShort[:], en.Weekdays[:], en.WeekdaysShort[:]} {
+		for _, n := range l {
+			m[n] = true
+		}
+	}
+	return m
+}()
+
+// translateDateNames translates the month and weekday names of a date written in any format
+// ("5 October 2026", "Monday, October 5", "Oct 5, 2026 3:04 pm"). Only text made of date words
+// qualifies, so "May I help" or "March" in a sentence stay untouched.
+func (c *Catalog) translateDateNames(plain string) (string, bool) {
+	if len(plain) > 48 || !strings.ContainsAny(plain, "0123456789") {
+		return "", false
+	}
+	var out strings.Builder
+	named := false
+	for _, w := range dateWordRe.FindAllString(plain, -1) {
+		switch {
+		case dateNames[w]:
+			tr, ok := c.lookup(w)
+			if !ok {
+				return "", false
+			}
+			named = true
+			out.WriteString(tr)
+		case w[0] >= '0' && w[0] <= '9', !isLetterByte(w[0]):
+			out.WriteString(w)
+		case w == "st" || w == "nd" || w == "rd" || w == "th" || w == "am" || w == "pm" || w == "AM" || w == "PM" || w == "at":
+			out.WriteString(w)
+		default:
+			return "", false
+		}
+	}
+	if !named {
+		return "", false
+	}
+	return out.String(), true
+}
+
+func isLetterByte(b byte) bool { return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' }
+
+// DateNames are the month, weekday and am/pm names of the catalog's language, for wp.FormatDateNames;
+// a name the catalog does not translate stays English.
+func (c *Catalog) DateNames() *wp.DateNames {
+	en := wp.EnglishDateNames()
+	tr := func(v string) string {
+		if t, ok := c.lookup(v); ok {
+			return t
+		}
+		return v
+	}
+	d := &wp.DateNames{AM: tr(en.AM), PM: tr(en.PM)}
+	for i := range en.Months {
+		d.Months[i], d.MonthsShort[i] = tr(en.Months[i]), tr(en.MonthsShort[i])
+	}
+	for i := range en.Weekdays {
+		d.Weekdays[i], d.WeekdaysShort[i] = tr(en.Weekdays[i]), tr(en.WeekdaysShort[i])
+	}
+	return d
 }

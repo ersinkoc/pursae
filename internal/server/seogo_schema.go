@@ -206,7 +206,20 @@ func (s *Server) seogoGraph(sc *seogoCtx, title, desc string) []ldNode {
 		graph = append(graph, imgNode)
 	}
 
-	if artType == "Product" {
+	if sc.storeProduct != nil {
+		// One graph: the store's Product (real price, stock and reviews) replaces the hand-filled one.
+		n := ldNode{}
+		for k, v := range sc.storeProduct {
+			if k != "@context" {
+				n[k] = v
+			}
+		}
+		n["mainEntityOfPage"] = ldNode{"@id": url}
+		if imgNode != nil {
+			n["image"] = ldNode{"@id": url + "#primaryimage"}
+		}
+		graph = append(graph, n)
+	} else if artType == "Product" {
 		graph = append(graph, s.seogoProductNode(sc, url, title, desc, primaryImg))
 	} else if artType != "" && artType != "None" {
 		p := sc.Post
@@ -377,11 +390,8 @@ func (s *Server) seogoProductNode(sc *seogoCtx, url, title, desc string, img *se
 		}
 		n["offers"] = ldNode{"@type": "Offer", "price": price, "priceCurrency": cur, "availability": "https://schema.org/" + avail, "url": url}
 	}
-	if r := get("rating"); r != "" {
-		cnt := get("review_count")
-		if cnt == "" {
-			cnt = "1"
-		}
+	// Without a real review count there is no aggregateRating: Google forbids made-up review data.
+	if r, cnt := get("rating"), get("review_count"); r != "" && cnt != "" && cnt != "0" {
 		n["aggregateRating"] = ldNode{"@type": "AggregateRating", "ratingValue": r, "reviewCount": cnt}
 	}
 	return n
@@ -544,4 +554,9 @@ func (s *Server) seogoSchemaScript(sc *seogoCtx, title, desc string) string {
 	// JSON-LD inside <script>: no "</" may end the element early.
 	out := strings.ReplaceAll(string(b), "</", `<\/`)
 	return `<script type="application/ld+json" class="seogo-schema-graph">` + out + "</script>\n"
+}
+
+// seogoOwnsProductSchema reports whether Pursae SEO prints the store product's structured data in its graph.
+func (s *Server) seogoOwnsProductSchema() bool {
+	return s.seogoOn() && s.seogoOpts().Modules["schema"]
 }

@@ -806,6 +806,9 @@ func (s *Server) pllMTStrings(ctx context.Context, texts []string, dst *pllLangu
 // pllMTFillMax is the most strings one "Translate all empty strings" run translates.
 const pllMTFillMax = 1000
 
+// pllMTFillBatch is how many strings one batch of a fill run translates and saves.
+var pllMTFillBatch = 50
+
 // pllMTFillStrings translates the registered strings without a translation in lang and saves them.
 func (s *Server) pllMTFillStrings(ctx context.Context, l *pllLanguage) (int, error) {
 	have := s.pllStringMap(ctx, l.Slug)
@@ -828,21 +831,29 @@ func (s *Server) pllMTFillStrings(ctx context.Context, l *pllLanguage) (int, err
 	if len(todo) == 0 {
 		return 0, nil
 	}
-	res, err := s.pllMTStrings(ctx, todo, l)
-	if err != nil {
-		return 0, err
-	}
+	// Translate and save batch by batch: a provider failure (quota, timeout) keeps what the earlier
+	// batches already translated (and paid for). A translation identical to the source (brand names,
+	// "OK") is saved too, so the string no longer counts as empty and is not sent again.
 	n := 0
-	for i, orig := range todo {
-		if tr := strings.TrimSpace(res[i]); tr != "" && tr != orig {
-			if s.pllSetString(ctx, l.Slug, keys[i], tr) == nil {
+	var ferr error
+	for i := 0; i < len(todo); i += pllMTFillBatch {
+		j := min(i+pllMTFillBatch, len(todo))
+		res, err := s.pllMTStrings(ctx, todo[i:j], l)
+		if err != nil {
+			ferr = err
+			break
+		}
+		for k, tr := range res {
+			if tr = strings.TrimSpace(tr); tr != "" && s.pllSetString(ctx, l.Slug, keys[i+k], tr) == nil {
 				n++
 			}
 		}
 	}
-	s.pllFlushStrings()
-	s.purgeAll(ctx)
-	return n, nil
+	if n > 0 {
+		s.pllFlushStrings()
+		s.purgeAll(ctx)
+	}
+	return n, ferr
 }
 
 // REST proxy -----------------------------------------------------------------------------------
@@ -852,7 +863,7 @@ func (s *Server) registerPllMTREST() {
 	guard := func(c *gin.Context) *store.User {
 		c.Header("Cache-Control", "no-store")
 		u := restCurrent(c)
-		if u == nil || !u.Can("manage_options", nil) {
+		if !pllCanTranslateAny(u) {
 			restErr(c, http.StatusForbidden, "rest_forbidden", "Sorry, you are not allowed to do that.")
 			return nil
 		}
@@ -865,7 +876,8 @@ func (s *Server) registerPllMTREST() {
 	}
 	s.rest.register(pllRESTNamespace, "/pll/v1/translate", map[string]restHandler{
 		http.MethodPost: func(c *gin.Context, r *restRequest) {
-			if guard(c) == nil {
+			gu := guard(c)
+			if gu == nil {
 				return
 			}
 			if !s.pllMTEnabled() {
@@ -900,6 +912,10 @@ func (s *Server) registerPllMTREST() {
 			dst := s.pllLang(c, tgt)
 			if dst == nil {
 				restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): target")
+				return
+			}
+			if !pllCanTranslate(gu, dst.Slug) {
+				restErr(c, http.StatusForbidden, "rest_forbidden", "Sorry, you are not allowed to do that.")
 				return
 			}
 			var src *pllLanguage
@@ -1042,7 +1058,15 @@ func (s *Server) pllMTStringsFill(c *gin.Context) {
 		c.Redirect(http.StatusFound, back+"&pll_msg=import_error&err="+url.QueryEscape("Choose a language."))
 		return
 	}
+	if !pllCanTranslate(currentUser(c), l.Slug) {
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to do that.")
+		return
+	}
 	n, err := s.pllMTFillStrings(c, l)
+	if err != nil && n > 0 {
+		c.Redirect(http.StatusFound, back+"&pll_msg=import_error&err="+url.QueryEscape(strconv.Itoa(n)+" strings were translated and saved before machine translation failed: "+err.Error()+" Run it again to translate the rest."))
+		return
+	}
 	if err != nil {
 		c.Redirect(http.StatusFound, back+"&pll_msg=import_error&err="+url.QueryEscape("Machine translation failed: "+err.Error()))
 		return

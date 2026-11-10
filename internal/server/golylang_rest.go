@@ -286,7 +286,16 @@ func (s *Server) registerGolylangREST() {
 				return
 			}
 			prev := s.pllRESTLanguage(c, l)
-			if err := s.pllDeleteLanguage(c, l); err != nil {
+			mode, _ := r.Str(c, "content")
+			if mode != "trash" && mode != "draft" && mode != "default" {
+				if p, t := s.pllLangContentCount(c, l); p+t > 0 && s.pllHasOtherLanguage(c, l) {
+					restErr(c, http.StatusConflict, "pll_rest_language_has_content",
+						"The language still has content. Pass content=trash, draft or default to say what happens to it.")
+					return
+				}
+				mode = ""
+			}
+			if err := s.pllDeleteLanguageWith(c, l, mode); err != nil {
 				restErr(c, http.StatusInternalServerError, "pll_rest_error", err.Error())
 				return
 			}
@@ -296,9 +305,9 @@ func (s *Server) registerGolylangREST() {
 	settingsOut := func(c *gin.Context) map[string]any {
 		o := s.pllOpts()
 		return map[string]any{"force_lang": o.ForceLang, "domains": o.Domains, "hide_default": o.HideDefault, "rewrite": o.Rewrite,
-			"redirect_lang": o.RedirectLang, "browser": o.Browser, "media_support": o.MediaSupport, "post_types": o.PostTypes,
+			"redirect_lang": false, "browser": o.Browser, "media_support": o.MediaSupport, "post_types": o.PostTypes,
 			"taxonomies": o.Taxonomies, "sync": o.Sync, "default_lang": defaultSlug(s.pllDefault(c)), "nav_menus": o.NavMenus,
-			"media": map[string]any{"duplicate": o.MediaDuplicate}, "version": Version}
+			"media": map[string]any{"duplicate": false}, "version": Version}
 	}
 	api.register(pllRESTNamespace, "/pll/v1/settings", map[string]restHandler{
 		http.MethodGet: func(c *gin.Context, r *restRequest) {
@@ -314,7 +323,7 @@ func (s *Server) registerGolylangREST() {
 			if v, ok := r.Int(c, "force_lang"); ok && v >= 0 && v <= 3 {
 				o.ForceLang = int(v)
 			}
-			for key, dst := range map[string]*bool{"hide_default": &o.HideDefault, "rewrite": &o.Rewrite, "redirect_lang": &o.RedirectLang,
+			for key, dst := range map[string]*bool{"hide_default": &o.HideDefault, "rewrite": &o.Rewrite,
 				"browser": &o.Browser, "media_support": &o.MediaSupport} {
 				if v, ok := r.Bool(c, key); ok {
 					*dst = v

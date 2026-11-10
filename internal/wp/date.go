@@ -9,8 +9,41 @@ import (
 	"time"
 )
 
+// DateNames are the month, weekday and meridiem names date_i18n() uses for a language; nil fields
+// fall back to English.
+type DateNames struct {
+	Months, MonthsShort     [12]string // January.., Jan..
+	Weekdays, WeekdaysShort [7]string  // Sunday.., Sun..
+	AM, PM                  string
+}
+
+// EnglishDateNames are the names FormatDate produces.
+func EnglishDateNames() *DateNames {
+	d := &DateNames{AM: "am", PM: "pm"}
+	for i := 0; i < 12; i++ {
+		m := time.Month(i + 1).String()
+		d.Months[i], d.MonthsShort[i] = m, m[:3]
+	}
+	for i := 0; i < 7; i++ {
+		w := time.Weekday(i).String()
+		d.Weekdays[i], d.WeekdaysShort[i] = w, w[:3]
+	}
+	return d
+}
+
 // FormatDate formats t with a PHP date() format string, as date_i18n() does for English.
-func FormatDate(t time.Time, format string) string {
+func FormatDate(t time.Time, format string) string { return FormatDateNames(t, format, nil) }
+
+// FormatDateNames is FormatDate with the month, weekday and meridiem names of a language (nil:
+// English); empty names fall back to English too.
+func FormatDateNames(t time.Time, format string, names *DateNames) string {
+	en := EnglishDateNames()
+	pick := func(v, def string) string {
+		if v != "" {
+			return v
+		}
+		return def
+	}
 	var sb strings.Builder
 	for i := 0; i < len(format); i++ {
 		c := format[i]
@@ -23,11 +56,11 @@ func FormatDate(t time.Time, format string) string {
 		case 'd':
 			fmt.Fprintf(&sb, "%02d", t.Day())
 		case 'D':
-			sb.WriteString(t.Weekday().String()[:3])
+			sb.WriteString(pickName(names, func(n *DateNames) string { return n.WeekdaysShort[t.Weekday()] }, en.WeekdaysShort[t.Weekday()], pick))
 		case 'j':
 			sb.WriteString(strconv.Itoa(t.Day()))
 		case 'l':
-			sb.WriteString(t.Weekday().String())
+			sb.WriteString(pickName(names, func(n *DateNames) string { return n.Weekdays[t.Weekday()] }, en.Weekdays[t.Weekday()], pick))
 		case 'N':
 			wd := int(t.Weekday())
 			if wd == 0 {
@@ -44,11 +77,11 @@ func FormatDate(t time.Time, format string) string {
 			_, w := t.ISOWeek()
 			fmt.Fprintf(&sb, "%02d", w)
 		case 'F':
-			sb.WriteString(t.Month().String())
+			sb.WriteString(pickName(names, func(n *DateNames) string { return n.Months[t.Month()-1] }, en.Months[t.Month()-1], pick))
 		case 'm':
 			fmt.Fprintf(&sb, "%02d", int(t.Month()))
 		case 'M':
-			sb.WriteString(t.Month().String()[:3])
+			sb.WriteString(pickName(names, func(n *DateNames) string { return n.MonthsShort[t.Month()-1] }, en.MonthsShort[t.Month()-1], pick))
 		case 'n':
 			sb.WriteString(strconv.Itoa(int(t.Month())))
 		case 't':
@@ -69,15 +102,15 @@ func FormatDate(t time.Time, format string) string {
 			fmt.Fprintf(&sb, "%02d", t.Year()%100)
 		case 'a':
 			if t.Hour() < 12 {
-				sb.WriteString("am")
+				sb.WriteString(pickName(names, func(n *DateNames) string { return n.AM }, "am", pick))
 			} else {
-				sb.WriteString("pm")
+				sb.WriteString(pickName(names, func(n *DateNames) string { return n.PM }, "pm", pick))
 			}
 		case 'A':
 			if t.Hour() < 12 {
-				sb.WriteString("AM")
+				sb.WriteString(strings.ToUpper(pickName(names, func(n *DateNames) string { return n.AM }, "am", pick)))
 			} else {
-				sb.WriteString("PM")
+				sb.WriteString(strings.ToUpper(pickName(names, func(n *DateNames) string { return n.PM }, "pm", pick)))
 			}
 		case 'g':
 			sb.WriteString(strconv.Itoa(hour12(t)))
@@ -135,6 +168,13 @@ func FormatDate(t time.Time, format string) string {
 		}
 	}
 	return sb.String()
+}
+
+func pickName(n *DateNames, get func(*DateNames) string, def string, pick func(v, def string) string) string {
+	if n == nil {
+		return def
+	}
+	return pick(get(n), def)
 }
 
 func hour12(t time.Time) int {

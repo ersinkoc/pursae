@@ -52,6 +52,10 @@ const pllStringsPerPage = 20
 func (s *Server) pllStringsScreen(c *gin.Context) {
 	ctx := c.Request.Context()
 	if c.Request.Method == http.MethodPost {
+		if a := c.PostForm("pll_action"); (a == "export" || a == "import") && !currentUser(c).Can("manage_options", nil) {
+			c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
+			return
+		}
 		switch c.PostForm("pll_action") {
 		case "export":
 			s.pllExportPO(c)
@@ -66,10 +70,10 @@ func (s *Server) pllStringsScreen(c *gin.Context) {
 	}
 	d := pllStringsData{Visual: s.pllVisualSupported(), Tabs: pllTabs("mlang_strings"), Group: c.Query("group"), Search: strings.TrimSpace(c.Query("s")),
 		Nonce: s.nonce(c, "string-translation"), IENonce: s.nonce(c, "pll-import-export"), MT: s.pllMTViewFor(c)}
-	langs := s.pllLanguages(ctx)
+	langs := pllTranslatableLangs(currentUser(c), s.pllLanguages(ctx))
 	d.Langs = langs
 	if cur := s.pllCurrent(c); cur != nil { // the admin bar filter shows one language
-		d.Langs = []*pllLanguage{cur}
+		d.Langs = pllTranslatableLangs(currentUser(c), []*pllLanguage{cur})
 	}
 	all := s.pllStrings(ctx)
 	groups := map[string]bool{}
@@ -121,6 +125,8 @@ func (s *Server) pllStringsScreen(c *gin.Context) {
 		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(c.Query("n")) + " translations imported."), Dismissible: true})
 	case "mt_filled":
 		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(c.Query("n")) + " strings translated by machine translation."), Dismissible: true})
+	case "save_error":
+		notices = append(notices, notice{Type: "error", Message: "Some translations could not be saved. Please try again.", Dismissible: true})
 	case "import_error":
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(c.Query("err"))), Dismissible: true})
 	}
@@ -135,28 +141,36 @@ func (s *Server) pllStringsSave(c *gin.Context) {
 		s.denyNonce(c)
 		return
 	}
+	var saveErr error
 	if c.PostForm("action") == "delete" || c.PostForm("action2") == "delete" {
-		_ = s.pllDeleteStrings(ctx, c.PostFormArray("strings[]")) // golylang_strtable.go
+		saveErr = pllLog("deleting strings", s.pllDeleteStrings(ctx, c.PostFormArray("strings[]"))) // golylang_strtable.go
 	}
 	for i := 0; ; i++ {
 		orig, ok := c.GetPostForm("original[" + strconv.Itoa(i) + "]")
 		if !ok {
 			break
 		}
-		for _, l := range s.pllLanguages(ctx) {
+		for _, l := range pllTranslatableLangs(currentUser(c), s.pllLanguages(ctx)) {
 			v, ok := c.GetPostForm("translation[" + l.Slug + "][" + strconv.Itoa(i) + "]")
 			if !ok {
 				continue
 			}
-			_ = s.pllSetString(ctx, l.Slug, orig, v)
+			if err := pllLog("saving a string translation", s.pllSetString(ctx, l.Slug, orig, v)); err != nil && saveErr == nil {
+				saveErr = err
+			}
 		}
 	}
 	if c.PostForm("clean") == "1" {
-		_ = s.pllCleanStrings(ctx) // golylang_strtable.go
+		if err := pllLog("cleaning strings", s.pllCleanStrings(ctx)); err != nil && saveErr == nil { // golylang_strtable.go
+			saveErr = err
+		}
 	}
 	s.pllFlushStrings()
 	s.purgeAll(ctx)
 	back := "/wp-admin/admin?page=mlang_strings&pll_msg=updated"
+	if saveErr != nil {
+		back = "/wp-admin/admin?page=mlang_strings&pll_msg=save_error"
+	}
 	if g := c.PostForm("group"); g != "" {
 		back += "&group=" + urlQueryEscape(g)
 	}

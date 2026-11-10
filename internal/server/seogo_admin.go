@@ -10,9 +10,11 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -172,12 +174,33 @@ func (s *Server) seogoAdmin(c *gin.Context) {
 		d.Data["Rows"] = rows
 		d.Data["Filter"] = c.Query("filter")
 	case "bulk":
+		types := s.sitemapPostTypes(ctx)
 		typ := c.DefaultQuery("post_type", "post")
-		if typ != "page" {
+		if !slices.Contains(types, typ) {
 			typ = "post"
 		}
-		d.Data["Type"] = typ
-		d.Data["Rows"] = s.seogoBulkRows(ctx, typ)
+		search := strings.TrimSpace(c.Query("s"))
+		page, _ := strconv.Atoi(c.Query("paged"))
+		page = max(page, 1)
+		const per = 50
+		rows, total := s.seogoBulkRows(ctx, typ, search, per, page)
+		var links []map[string]string
+		for _, t := range types {
+			label := strings.ToUpper(t[:1]) + t[1:] + "s"
+			switch t {
+			case "post":
+				label = "Posts"
+			case "page":
+				label = "Pages"
+			}
+			links = append(links, map[string]string{"Slug": t, "Label": label})
+		}
+		q := url.Values{"page": {"bulk"}, "post_type": {typ}}
+		if search != "" {
+			q.Set("s", search)
+		}
+		d.Data["Type"], d.Data["Rows"], d.Data["TypeLinks"], d.Data["Search"], d.Data["Paged"] = typ, rows, links, search, page
+		d.Data["Pagination"] = newPagination(total, per, page, url.URL{Path: "/wp-admin/seogo", RawQuery: q.Encode()})
 	case "tools":
 		d.Data["Detected"] = s.seogoDetectImport(ctx)
 		d.Data["RobotsDefault"] = s.seogoRobotsDefault(ctx)
@@ -207,6 +230,11 @@ func (s *Server) seogoBack(c *gin.Context, page, kind, msg string) {
 	}
 	if t := c.PostForm("post_type"); t != "" && page == "bulk" {
 		q.Set("post_type", t)
+		for _, k := range []string{"s", "paged"} {
+			if v := c.PostForm(k); v != "" {
+				q.Set(k, v)
+			}
+		}
 	}
 	q.Set("seogo-"+kind, msg)
 	c.Redirect(http.StatusFound, "/wp-admin/seogo?"+q.Encode())
@@ -315,7 +343,7 @@ func (s *Server) seogoDashboardStats(ctx context.Context) map[string]any {
 	seo, read := bucket{}, bucket{}
 	rows, err := s.store.Pool.Query(ctx, `SELECT coalesce(meta->>'_seogo_seo_score', meta->>'_yoast_wpseo_linkdex', ''), coalesce(meta->>'_seogo_read_score', meta->>'_yoast_wpseo_content_score', ''),
 		coalesce(meta->>'_seogo_focus', meta->>'_yoast_wpseo_focuskw', meta->>'rank_math_focus_keyword', '')
-		FROM posts WHERE type IN ('post','page') AND status = 'publish'`)
+		FROM posts WHERE type = ANY($1) AND status = 'publish'`, s.sitemapPostTypes(ctx))
 	total := 0
 	if err == nil {
 		for rows.Next() {
@@ -346,16 +374,10 @@ func (s *Server) seogoDashboardStats(ctx context.Context) map[string]any {
 	var redirects, r404, cornerstone int
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM redirects`).Scan(&redirects)
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM seogo_404`).Scan(&r404)
-	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE status='publish' AND type IN ('post','page')
-		AND coalesce(meta->>'_seogo_cornerstone', meta->>'_yoast_wpseo_is_cornerstone', '') = '1'`).Scan(&cornerstone)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE status='publish' AND type = ANY($1)
+		AND coalesce(meta->>'_seogo_cornerstone', meta->>'_yoast_wpseo_is_cornerstone', '') = '1'`, s.sitemapPostTypes(ctx)).Scan(&cornerstone)
 	out["Redirects"], out["NotFound"], out["Cornerstone"] = redirects, r404, cornerstone
-	orphans := 0
-	for _, r := range s.seogoLinkCounts(ctx) {
-		if r.Inbound == 0 {
-			orphans++
-		}
-	}
-	out["Orphans"] = orphans
+	out["Orphans"] = s.seogoOrphanCount(ctx)
 	var problems []string
 	if !s.settings.Bool("blog_public") {
 		problems = append(problems, "Search engines are discouraged from indexing this site (Settings › Reading). Nothing will be indexed.")
@@ -410,29 +432,48 @@ type seogoLinkRow struct {
 	Cornerstone                 bool
 }
 
-// seogoLinkCounts counts the links of every published post and page (Yoast's text link counter).
+// seogoLinkCounts counts the links of every published post of the sitemap post types (Yoast's text
+// link counter). Posts are read in pages so memory stays flat on big sites; only the anchors of
+// each post are kept, not its content.
 func (s *Server) seogoLinkCounts(ctx context.Context) []seogoLinkRow {
-	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post", "page"}, Statuses: []string{"publish"}, PerPage: 5000, Page: 1, OrderBy: "id", Order: "asc"})
 	lb := s.links(ctx)
 	home := strings.TrimSuffix(lb.HomeURL("/"), "/")
 	byPath := map[string]int{}
-	rows := make([]seogoLinkRow, len(posts))
-	for i, p := range posts {
-		u := lb.Permalink(p)
-		rows[i] = seogoLinkRow{ID: p.ID, Title: p.Title, URL: u, Type: p.Type, EditURL: "/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit",
-			Cornerstone: seogoMeta(p.Meta, "cornerstone") == "1"}
-		byPath["/"+normPath(u)] = i
-		byPath["/?p="+itoa64(p.ID)] = i
-		byPath["/?page_id="+itoa64(p.ID)] = i
+	var rows []seogoLinkRow
+	var hrefs [][]string
+	types := s.sitemapPostTypes(ctx)
+	const per = 500
+	for page := 1; ; page++ {
+		posts, _, err := s.store.QueryPosts(ctx, store.PostQuery{Types: types, Statuses: []string{"publish"}, PerPage: per, Page: page, OrderBy: "id", Order: "asc"})
+		if err != nil || len(posts) == 0 {
+			break
+		}
+		for _, p := range posts {
+			i := len(rows)
+			u := lb.Permalink(p)
+			rows = append(rows, seogoLinkRow{ID: p.ID, Title: p.Title, URL: u, Type: p.Type, EditURL: "/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit",
+				Cornerstone: seogoMeta(p.Meta, "cornerstone") == "1"})
+			byPath["/"+normPath(u)] = i
+			byPath["/?p="+itoa64(p.ID)] = i
+			byPath["/?page_id="+itoa64(p.ID)] = i
+			var hs []string
+			for _, m := range anchorRe.FindAllStringSubmatch(p.Content, -1) {
+				hs = append(hs, m[1])
+			}
+			hrefs = append(hrefs, hs)
+		}
+		if len(posts) < per {
+			break
+		}
 	}
 	front := int64(0)
 	if s.settings.String("show_on_front") == "page" {
 		front = int64(s.settings.Int("page_on_front"))
 	}
-	for i, p := range posts {
+	for i := range rows {
 		seen := map[int]bool{}
-		for _, m := range anchorRe.FindAllStringSubmatch(p.Content, -1) {
-			href := strings.TrimSpace(m[1])
+		for _, raw := range hrefs[i] {
+			href := strings.TrimSpace(raw)
 			if href == "" || strings.HasPrefix(href, "#") || strings.HasPrefix(href, "mailto:") {
 				continue
 			}
@@ -465,6 +506,47 @@ func (s *Server) seogoLinkCounts(ctx context.Context) []seogoLinkRow {
 	return rows
 }
 
+// The Dashboard's orphan count is cached for a few minutes (and dropped whenever a post is saved),
+// so opening the screen does not rescan every post.
+var seogoOrphanCache = struct {
+	sync.Mutex
+	m map[*Server]struct {
+		n  int
+		at time.Time
+	}
+}{m: map[*Server]struct {
+	n  int
+	at time.Time
+}{}}
+
+func (s *Server) seogoOrphanCount(ctx context.Context) int {
+	seogoOrphanCache.Lock()
+	if e, ok := seogoOrphanCache.m[s]; ok && time.Since(e.at) < 5*time.Minute {
+		seogoOrphanCache.Unlock()
+		return e.n
+	}
+	seogoOrphanCache.Unlock()
+	n := 0
+	for _, r := range s.seogoLinkCounts(ctx) {
+		if r.Inbound == 0 {
+			n++
+		}
+	}
+	seogoOrphanCache.Lock()
+	seogoOrphanCache.m[s] = struct {
+		n  int
+		at time.Time
+	}{n, time.Now()}
+	seogoOrphanCache.Unlock()
+	return n
+}
+
+func (s *Server) seogoOrphanCacheDrop() {
+	seogoOrphanCache.Lock()
+	delete(seogoOrphanCache.m, s)
+	seogoOrphanCache.Unlock()
+}
+
 type seogoBulkRow struct {
 	ID                                int64
 	Title, URL, Status                string
@@ -474,8 +556,9 @@ type seogoBulkRow struct {
 	Noindex                           bool
 }
 
-func (s *Server) seogoBulkRows(ctx context.Context, typ string) []seogoBulkRow {
-	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish", "draft", "future", "pending", "private"}, PerPage: 500, Page: 1, OrderBy: "date", Order: "desc"})
+// seogoBulkRows is one page of the Bulk Editor list (with the total for the pager).
+func (s *Server) seogoBulkRows(ctx context.Context, typ, search string, per, page int) ([]seogoBulkRow, int) {
+	posts, total, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish", "draft", "future", "pending", "private"}, Search: search, PerPage: per, Page: page, OrderBy: "date", Order: "desc"})
 	lb := s.links(ctx)
 	var out []seogoBulkRow
 	for _, p := range posts {
@@ -491,7 +574,7 @@ func (s *Server) seogoBulkRows(ctx context.Context, typ string) []seogoBulkRow {
 		}
 		out = append(out, r)
 	}
-	return out
+	return out, total
 }
 
 // --- import from Yoast SEO / Rank Math ---------------------------------------------------------
@@ -903,15 +986,37 @@ func (s *Server) seogoToolsPost(c *gin.Context, o *seogoOptions) (string, error)
 		}
 		return "A new IndexNow key was generated.", nil
 	case "recalc":
-		posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post", "page"}, Statuses: []string{"publish", "draft", "future", "pending", "private"}, PerPage: 5000, Page: 1})
-		for _, p := range posts {
-			if p.Meta == nil {
-				p.Meta = map[string]any{}
+		// Every sitemap post type, in batches ordered by id (keyset) so nothing is skipped or cut off.
+		types := s.sitemapPostTypes(ctx)
+		done, after := 0, int64(0)
+		for {
+			rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE type = ANY($1) AND id > $2 AND status IN ('publish','draft','future','pending','private') ORDER BY id LIMIT 200`, types, after)
+			if err != nil {
+				return "", err
 			}
-			s.seogoStoreScores(ctx, p)
-			_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET meta = $2 WHERE id = $1`, p.ID, seogoJSON(p.Meta))
+			var ids []int64
+			for rows.Next() {
+				var id int64
+				if rows.Scan(&id) == nil {
+					ids = append(ids, id)
+				}
+			}
+			rows.Close()
+			if len(ids) == 0 {
+				break
+			}
+			after = ids[len(ids)-1]
+			posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, Types: types, Statuses: []string{"publish", "draft", "future", "pending", "private"}, PerPage: -1, OrderBy: "id", Order: "asc"})
+			for _, p := range posts {
+				if p.Meta == nil {
+					p.Meta = map[string]any{}
+				}
+				s.seogoStoreScores(ctx, p)
+				_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET meta = $2 WHERE id = $1`, p.ID, seogoJSON(p.Meta))
+				done++
+			}
 		}
-		return fmt.Sprintf("Scores of %d item(s) recalculated.", len(posts)), nil
+		return fmt.Sprintf("Scores of %d item(s) recalculated.", done), nil
 	case "image_alt":
 		n, err := s.seogoFillImageAlts(ctx, o)
 		if err != nil {
@@ -1073,4 +1178,113 @@ func seogoImportOptions(cur *seogoOptions, raw string) (*seogoOptions, error) {
 		in.Roles = cur.clone().Roles
 	}
 	return in, nil
+}
+
+// --- posts list: score columns and filters -----------------------------------------------------
+
+// seogoScoreBand maps a stored 0-100 score to its traffic light (the thresholds of the dashboard).
+func seogoScoreBand(v string, na bool) (class, label string) {
+	n, err := strconv.Atoi(strings.TrimSpace(v))
+	switch {
+	case na || err != nil || strings.TrimSpace(v) == "":
+		return "na", "Not available"
+	case n >= 71:
+		return "good", "Good"
+	case n >= 41:
+		return "ok", "OK"
+	default:
+		return "bad", "Needs improvement"
+	}
+}
+
+// seogoListFilters are the filter views of the posts list: query value, label, SQL condition on posts.
+var seogoListFilters = []struct{ Key, Label, Cond string }{
+	{"nofocus", "No focus keyphrase", `coalesce(meta->>'_seogo_focus', meta->>'_yoast_wpseo_focuskw', meta->>'rank_math_focus_keyword', '') = ''`},
+	{"seo_bad", "SEO: Needs improvement", `coalesce(meta->>'_seogo_seo_score', meta->>'_yoast_wpseo_linkdex', '') ~ '^[0-9]+$' AND coalesce(meta->>'_seogo_seo_score', meta->>'_yoast_wpseo_linkdex')::int < 41 AND coalesce(meta->>'_seogo_focus', meta->>'_yoast_wpseo_focuskw', meta->>'rank_math_focus_keyword', '') <> ''`},
+	{"seo_good", "SEO: Good", `coalesce(meta->>'_seogo_seo_score', meta->>'_yoast_wpseo_linkdex', '') ~ '^[0-9]+$' AND coalesce(meta->>'_seogo_seo_score', meta->>'_yoast_wpseo_linkdex')::int >= 71`},
+	{"read_bad", "Readability: Needs improvement", `coalesce(meta->>'_seogo_read_score', meta->>'_yoast_wpseo_content_score', '') ~ '^[0-9]+$' AND coalesce(meta->>'_seogo_read_score', meta->>'_yoast_wpseo_content_score')::int < 41`},
+	{"noindex", "Set to noindex", `coalesce(meta->>'_seogo_noindex', meta->>'_yoast_wpseo_meta-robots-noindex', '') IN ('1','2')`},
+}
+
+// seogoListFilter narrows the posts list query by the seo_filter parameter and returns the active key.
+func (s *Server) seogoListFilter(c *gin.Context, typ string, q *store.PostQuery) string {
+	key := c.Query("seo_filter")
+	if key == "" || !s.seogoOn() || !s.seogoCan(currentUser(c), "seogo_onpage_general") {
+		return ""
+	}
+	for _, f := range seogoListFilters {
+		if f.Key != key {
+			continue
+		}
+		ids := []int64{-1}
+		rows, err := s.store.Pool.Query(c.Request.Context(), `SELECT id FROM posts WHERE type = $1 AND `+f.Cond, typ)
+		if err == nil {
+			for rows.Next() {
+				var id int64
+				if rows.Scan(&id) == nil {
+					ids = append(ids, id)
+				}
+			}
+			rows.Close()
+		}
+		q.IDs = ids
+		return key
+	}
+	return ""
+}
+
+// seogoPostColumns adds the SEO and Readability score columns to the posts list and the filter views.
+func (s *Server) seogoPostColumns(c *gin.Context, d *postsListData, posts []*store.Post, typ, base, active string) {
+	if !s.seogoOn() || len(posts) == 0 || !s.seogoCan(currentUser(c), "seogo_onpage_general") || !slices.Contains(s.sitemapPostTypes(c.Request.Context()), typ) {
+		return
+	}
+	sep := "?"
+	if strings.Contains(base, "?") {
+		sep = "&"
+	}
+	for _, f := range seogoListFilters {
+		var n int
+		_ = s.store.Pool.QueryRow(c.Request.Context(), `SELECT count(*) FROM posts WHERE type = $1 AND status <> 'trash' AND `+f.Cond, typ).Scan(&n)
+		if n > 0 || active == f.Key {
+			d.Statuses = append(d.Statuses, statusLink{"seo_" + f.Key, f.Label, base + sep + "seo_filter=" + f.Key, n, active == f.Key})
+			if active == f.Key {
+				for i := range d.Statuses {
+					if d.Statuses[i].Key != "seo_"+f.Key {
+						d.Statuses[i].Current = false
+					}
+				}
+			}
+		}
+	}
+	d.PluginHeads = append(d.PluginHeads,
+		template.HTML(`<th scope="col" id="seogo-seo" class="manage-column column-seogo-seo"><span class="seogo-col-title" title="SEO score">SEO</span></th>`),
+		template.HTML(`<th scope="col" id="seogo-readability" class="manage-column column-seogo-readability"><span class="seogo-col-title" title="Readability score">Readability</span></th>`))
+	d.ColCount += 2
+	dot := func(class, label string) string {
+		color := map[string]string{"good": "#00a32a", "ok": "#dba617", "bad": "#d63638", "na": "#a7aaad"}[class]
+		return `<span class="seogo-score-dot ` + class + `" title="` + label + `" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:` + color + `"></span><span class="screen-reader-text">` + label + `</span>`
+	}
+	for i := range d.Rows {
+		if i >= len(posts) {
+			break
+		}
+		m := posts[i].Meta
+		sv, _ := seogoRaw(m, "_seogo_seo_score")
+		if sv == "" {
+			sv, _ = seogoRaw(m, "_yoast_wpseo_linkdex")
+		}
+		rv, _ := seogoRaw(m, "_seogo_read_score")
+		if rv == "" {
+			rv, _ = seogoRaw(m, "_yoast_wpseo_content_score")
+		}
+		fk, _ := seogoRaw(m, "_seogo_focus")
+		if fk == "" {
+			fk, _ = seogoRaw(m, "_yoast_wpseo_focuskw")
+		}
+		sc, sl := seogoScoreBand(sv, strings.TrimSpace(fk) == "")
+		rc, rl := seogoScoreBand(rv, false)
+		d.Rows[i].PluginCols = append(d.Rows[i].PluginCols,
+			template.HTML(`<td class="seogo-seo column-seogo-seo" data-colname="SEO">`+dot(sc, "SEO: "+sl)+`</td>`),
+			template.HTML(`<td class="seogo-readability column-seogo-readability" data-colname="Readability">`+dot(rc, "Readability: "+rl)+`</td>`))
+	}
 }

@@ -680,6 +680,8 @@ func (s *Server) seogoNewsSitemap(c *gin.Context) {
 var (
 	ytRe    = regexp.MustCompile(`(?i)(?:youtube\.com/(?:watch\?v=|embed/)|youtu\.be/)([A-Za-z0-9_-]{11})`)
 	vimeoRe = regexp.MustCompile(`(?i)vimeo\.com/(?:video/)?(\d+)`)
+	// videoFileRe finds self-hosted video files (<video src>, <source src>).
+	videoFileRe = regexp.MustCompile(`(?i)<(?:video|source)\s[^>]*src=["']([^"']+\.(?:mp4|webm|ogv|m4v|mov)(?:\?[^"']*)?)["']`)
 )
 
 func (s *Server) seogoVideoSitemap(c *gin.Context) {
@@ -693,7 +695,7 @@ func (s *Server) seogoVideoSitemap(c *gin.Context) {
 	var ids []int64
 	types := s.sitemapPostTypes(ctx)
 	if rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE type = ANY($1) AND status = 'publish'
-		AND (content ILIKE '%youtu%' OR content ILIKE '%vimeo.com%') ORDER BY id LIMIT 5000`, types); err == nil {
+		AND (content ILIKE '%youtu%' OR content ILIKE '%vimeo.com%' OR content ILIKE '%<video%') ORDER BY id LIMIT 5000`, types); err == nil {
 		for rows.Next() {
 			var id int64
 			if rows.Scan(&id) == nil {
@@ -709,7 +711,7 @@ func (s *Server) seogoVideoSitemap(c *gin.Context) {
 	var sb strings.Builder
 	sb.WriteString(s.seogoXMLHead(ctx) + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">` + "\n")
 	for _, p := range posts {
-		if !strings.Contains(p.Content, "youtu") && !strings.Contains(p.Content, "vimeo.com") {
+		if !strings.Contains(p.Content, "youtu") && !strings.Contains(p.Content, "vimeo.com") && !strings.Contains(strings.ToLower(p.Content), "<video") {
 			continue
 		}
 		loc := s.seogoPostLoc(reqCtx, lb, p)
@@ -717,17 +719,39 @@ func (s *Server) seogoVideoSitemap(c *gin.Context) {
 			continue
 		}
 		var vids []string
+		seenVid := map[string]bool{}
 		for _, m := range ytRe.FindAllStringSubmatch(p.Content, -1) {
+			if seenVid["y"+m[1]] {
+				continue
+			}
+			seenVid["y"+m[1]] = true
 			vids = append(vids, fmt.Sprintf("\t\t<video:video>\n\t\t\t<video:thumbnail_loc>https://i.ytimg.com/vi/%s/hqdefault.jpg</video:thumbnail_loc>\n\t\t\t<video:title>%s</video:title>\n\t\t\t<video:description>%s</video:description>\n\t\t\t<video:player_loc>https://www.youtube.com/embed/%s</video:player_loc>\n\t\t</video:video>\n",
 				m[1], xmlEsc(p.Title), xmlEsc(cut(plainText(p.Content), 2000)), m[1]))
 		}
+		thumb := ""
+		if img := s.seogoAttachmentImage(ctx, p.FeaturedMediaID); img != nil {
+			thumb = img.URL
+		}
 		for _, m := range vimeoRe.FindAllStringSubmatch(p.Content, -1) {
-			thumb := ""
-			if img := s.seogoAttachmentImage(ctx, p.FeaturedMediaID); img != nil {
-				thumb = img.URL
+			if seenVid["v"+m[1]] {
+				continue
+			}
+			seenVid["v"+m[1]] = true
+			if thumb == "" {
+				continue // thumbnail_loc is required: no featured image, no entry
 			}
 			vids = append(vids, fmt.Sprintf("\t\t<video:video>\n\t\t\t<video:thumbnail_loc>%s</video:thumbnail_loc>\n\t\t\t<video:title>%s</video:title>\n\t\t\t<video:description>%s</video:description>\n\t\t\t<video:player_loc>https://player.vimeo.com/video/%s</video:player_loc>\n\t\t</video:video>\n",
 				xmlEsc(thumb), xmlEsc(p.Title), xmlEsc(cut(plainText(p.Content), 2000)), m[1]))
+		}
+		// Self-hosted files of core/video blocks (and <video> tags): content_loc, needs a thumbnail too.
+		for _, m := range videoFileRe.FindAllStringSubmatch(p.Content, -1) {
+			src := html.UnescapeString(m[1])
+			if seenVid["f"+src] || thumb == "" {
+				continue
+			}
+			seenVid["f"+src] = true
+			vids = append(vids, fmt.Sprintf("\t\t<video:video>\n\t\t\t<video:thumbnail_loc>%s</video:thumbnail_loc>\n\t\t\t<video:title>%s</video:title>\n\t\t\t<video:description>%s</video:description>\n\t\t\t<video:content_loc>%s</video:content_loc>\n\t\t</video:video>\n",
+				xmlEsc(thumb), xmlEsc(p.Title), xmlEsc(cut(plainText(p.Content), 2000)), xmlEsc(seogoAbsURL(lb.HomeURL("/"), src))))
 		}
 		if len(vids) > 0 {
 			fmt.Fprintf(&sb, "\t<url>\n\t\t<loc>%s</loc>\n%s\t</url>\n", xmlEsc(loc), strings.Join(vids, ""))
@@ -939,6 +963,7 @@ func (s *Server) seogoAfterSave(ctx context.Context, p *store.Post) {
 	if !s.seogoOn() || p == nil {
 		return
 	}
+	s.seogoOrphanCacheDrop()
 	o := s.seogoOpts()
 	if p.Status == "publish" && o.Modules["redirections"] && o.AutoRedirect {
 		pathOf := func(link string) string {
@@ -967,7 +992,11 @@ func (s *Server) seogoAfterSave(ctx context.Context, p *store.Post) {
 		}
 	}
 	if p.Status == "publish" && o.Modules["indexnow"] {
-		s.seogoIndexNow(ctx, []string{s.seogoPostLoc(ctx, s.links(ctx), p)})
+		// Only what the sitemap lists: public post types, no noindex/password/excluded/canonical elsewhere.
+		loc := s.seogoPostLoc(ctx, s.links(ctx), p)
+		if slices.Contains(s.sitemapPostTypes(ctx), p.Type) && s.seogoIndexable(o, p, loc, idSet(o.SitemapExclude)) {
+			s.seogoIndexNow(ctx, []string{loc})
+		}
 	}
 }
 
@@ -1071,6 +1100,14 @@ func (s *Server) seogoFeedContent(ctx context.Context, p *store.Post, content st
 // seogoIndexNowEndpoint is the shared IndexNow API (tests replace it).
 var seogoIndexNowEndpoint = "https://api.indexnow.org/indexnow"
 
+// IndexNow retries a submission that failed with a network error, 429 or 5xx.
+var (
+	seogoIndexNowAttempts = 3
+	seogoIndexNowBackoff  = 30 * time.Second
+)
+
+const seogoIndexNowLogKey = "seogo_indexnow_log"
+
 type seogoIndexNowLog struct {
 	Time   time.Time
 	URLs   []string
@@ -1100,13 +1137,23 @@ func (s *Server) seogoIndexNow(ctx context.Context, urls []string) {
 	endpoint := seogoIndexNowEndpoint
 	go func() {
 		cl := &http.Client{Timeout: 10 * time.Second}
-		resp, err := cl.Post(endpoint, "application/json; charset=utf-8", bytes.NewReader(body))
 		status := ""
-		if err != nil {
-			status = "error: " + err.Error()
-		} else {
-			status = resp.Status
-			resp.Body.Close()
+		for attempt := 0; attempt < seogoIndexNowAttempts; attempt++ {
+			if attempt > 0 {
+				time.Sleep(seogoIndexNowBackoff * time.Duration(attempt))
+			}
+			retry := false
+			resp, err := cl.Post(endpoint, "application/json; charset=utf-8", bytes.NewReader(body))
+			if err != nil {
+				status, retry = "error: "+err.Error(), true
+			} else {
+				status = resp.Status
+				retry = resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500
+				resp.Body.Close()
+			}
+			if !retry {
+				break
+			}
 		}
 		s.seogoIndexNowRecord(urls, status)
 	}()
@@ -1115,17 +1162,37 @@ func (s *Server) seogoIndexNow(ctx context.Context, urls []string) {
 func (s *Server) seogoIndexNowRecord(urls []string, status string) {
 	seogoIndexNowHistory.Lock()
 	defer seogoIndexNowHistory.Unlock()
-	h := append([]seogoIndexNowLog{{Time: time.Now(), URLs: urls, Status: status}}, seogoIndexNowHistory.m[s]...)
+	h := append([]seogoIndexNowLog{{Time: time.Now(), URLs: urls, Status: status}}, s.seogoIndexNowLoad()...)
 	if len(h) > 20 {
 		h = h[:20]
 	}
 	seogoIndexNowHistory.m[s] = h
+	// Persist so a restart or a second process keeps the last submissions (best effort).
+	if s.store != nil && s.store.Pool != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = s.settings.Set(ctx, map[string]any{seogoIndexNowLogKey: h})
+	}
+}
+
+// seogoIndexNowLoad is the history: the process copy, else the persisted option. Callers hold the lock.
+func (s *Server) seogoIndexNowLoad() []seogoIndexNowLog {
+	if h, ok := seogoIndexNowHistory.m[s]; ok {
+		return h
+	}
+	var h []seogoIndexNowLog
+	if v := s.settings.Get(seogoIndexNowLogKey); v != nil {
+		if raw, err := json.Marshal(v); err == nil {
+			_ = json.Unmarshal(raw, &h)
+		}
+	}
+	return h
 }
 
 func (s *Server) seogoIndexNowLog() []seogoIndexNowLog {
 	seogoIndexNowHistory.Lock()
 	defer seogoIndexNowHistory.Unlock()
-	return append([]seogoIndexNowLog{}, seogoIndexNowHistory.m[s]...)
+	return append([]seogoIndexNowLog{}, s.seogoIndexNowLoad()...)
 }
 
 // sortedKeys returns a map's keys in order (templates).
@@ -1185,3 +1252,45 @@ a{color:#2271b1;text-decoration:none}a:hover{text-decoration:underline}
 </xsl:template>
 </xsl:stylesheet>
 `
+
+// seogoAbsURL resolves a (possibly relative) URL against the home URL.
+func seogoAbsURL(home, ref string) string {
+	b, err := url.Parse(home)
+	r, err2 := url.Parse(ref)
+	if err != nil || err2 != nil {
+		return ref
+	}
+	return b.ResolveReference(r).String()
+}
+
+// seogoTermMoved redirects the old address of a category/tag/custom term to the new one when its slug
+// (or parent) changed: the term counterpart of the post slug redirect in seogoAfterSave.
+func (s *Server) seogoTermMoved(ctx context.Context, old, cur *store.Term) {
+	if !s.seogoOn() || old == nil || cur == nil || old.Slug == cur.Slug && old.ParentID == cur.ParentID {
+		return
+	}
+	o := s.seogoOpts()
+	if !o.Modules["redirections"] || !o.AutoRedirect {
+		return
+	}
+	pathOf := func(link string) string {
+		if u, err := url.Parse(link); err == nil && u.Path != "" {
+			return u.Path
+		}
+		return "/" + normPath(link)
+	}
+	src := pathOf(s.seogoTermLoc(ctx, old))
+	dst := pathOf(s.seogoTermLoc(ctx, cur))
+	if normPath(src) == normPath(dst) || strings.Trim(src, "/") == "" {
+		return
+	}
+	var exists bool
+	_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM redirects WHERE trim(both '/' from source) = $1)`, normPath(src)).Scan(&exists)
+	if !exists {
+		_ = s.seogoAddRedirect(ctx, &seogoRedirectRow{Source: src, Target: dst, Code: 301, Origin: "auto"})
+	}
+	// A redirect away from the term's current address would hide it: drop it.
+	if tag, _ := s.store.Pool.Exec(ctx, `DELETE FROM redirects WHERE trim(both '/' from source) = $1 AND match_type = 'exact'`, normPath(dst)); tag.RowsAffected() > 0 {
+		s.seogoRedirectsChanged()
+	}
+}

@@ -381,6 +381,7 @@ func (s *Server) termSave(c *gin.Context) {
 		return
 	}
 	t.Name = strings.TrimSpace(c.PostForm("name"))
+	oldTerm := *t
 	t.Slug = c.PostForm("slug")
 	t.Description = c.PostForm("description")
 	if lab.Hierarchical {
@@ -398,7 +399,8 @@ func (s *Server) termSave(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	s.golylangTermSaved(c, t) // Golylang: language and translations from the form
+	s.golylangTermSaved(c, t)          // Golylang: language and translations from the form
+	s.seogoTermMoved(ctx, &oldTerm, t) // Pursae SEO: automatic redirect of a changed term slug
 	s.purgeTags("term:"+itoa64(t.ID), "widgets")
 	c.Redirect(http.StatusFound, "/wp-admin/term?taxonomy="+lab.Tax+"&tag_ID="+itoa64(t.ID)+"&message=3")
 }
