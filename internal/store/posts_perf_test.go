@@ -150,7 +150,7 @@ func TestPostListOrderAndIndexes(t *testing.T) {
 	if !strings.Contains(plan.String(), "posts_title_trgm") || !strings.Contains(plan.String(), "posts_search") {
 		t.Errorf("search plan:\n%s", plan.String())
 	}
-	for _, idx := range []string{"users_lower_email", "users_lower_login", "comments_parent", "posts_featured_media", "widgets_area", "posts_title_trgm"} {
+	for _, idx := range []string{"users_lower_email_key", "users_lower_login_key", "comments_parent", "posts_featured_media", "widgets_area", "posts_title_trgm"} {
 		var ok bool
 		_ = s.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = $1)`, idx).Scan(&ok)
 		if !ok {

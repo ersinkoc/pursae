@@ -137,6 +137,7 @@ func serve(ctx context.Context, cfg config.Config) error {
 		defer close(schedDone)
 		srv.RunScheduler(schedCtx)
 	}()
+	go srv.WatchSettings(ctx) // settings changed by other instances (settings.Store.Watch)
 	go confirmUpdate(ctx, cfg.Addr)
 	go prunePrevBinary(ctx)
 	ln, err := coreupdate.Listen(cfg.Addr) // inherited across a core update's restart

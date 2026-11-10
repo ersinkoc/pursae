@@ -301,7 +301,7 @@ func (q *PostQuery) where(args *[]any) string {
 		conds = append(conds, "coalesce(parent_id,0) = "+add(*q.ParentID))
 	}
 	if q.Search != "" {
-		conds = append(conds, "(search @@ plainto_tsquery('simple', "+add(q.Search)+") OR title ILIKE "+add("%"+q.Search+"%")+")")
+		conds = append(conds, "(search @@ plainto_tsquery('simple', "+add(q.Search)+") OR title ILIKE "+add(likeContains(q.Search))+")")
 	}
 	if q.ExcludePassworded {
 		conds = append(conds, "coalesce(password, '') = ''")
@@ -599,12 +599,19 @@ func nullable(id int64) any {
 	return id
 }
 
-// prepare normalizes a post before writing: slug, block tree and publish date.
-func (s *Store) prepare(ctx context.Context, p *Post) ([]byte, error) {
-	return prepareIn(ctx, s.Pool, p)
+// lockSlug serializes the unique-slug check and the write of one slug: since migration 0020 no
+// index keeps slugs unique (Multi Language's Share slugs lets translations share one), so two
+// concurrent saves of "hello" would otherwise both find it free. The lock is transaction scoped:
+// q must be the transaction that also writes the row (on a bare pool it is released at once).
+func lockSlug(ctx context.Context, q DBTX, kind, scope, slug string) error {
+	_, err := q.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, kind+":"+scope+":"+slug)
+	return err
 }
 
 func prepareIn(ctx context.Context, q DBTX, p *Post) ([]byte, error) {
+	// Sanitize first: a slug of only punctuation or emoji is empty, and wp_insert_post() then falls
+	// back to the title and the id just as for a slug never given.
+	p.Slug = wp.SanitizeTitle(p.Slug)
 	if p.Status != "auto-draft" && p.Status != "draft" && p.Status != "pending" {
 		if p.Slug == "" {
 			p.Slug = wp.SanitizeTitle(p.Title)
@@ -614,7 +621,10 @@ func prepareIn(ctx context.Context, q DBTX, p *Post) ([]byte, error) {
 		}
 	}
 	if p.Slug != "" {
-		slug, err := uniqueSlug(ctx, q, p.Type, p.ParentID, wp.SanitizeTitle(p.Slug), p.ID)
+		if err := lockSlug(ctx, q, "post", p.Type, p.Slug); err != nil {
+			return nil, err
+		}
+		slug, err := uniqueSlug(ctx, q, p.Type, p.ParentID, p.Slug, p.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -651,12 +661,16 @@ func prepareIn(ctx context.Context, q DBTX, p *Post) ([]byte, error) {
 
 // InsertPost creates a post and returns its id.
 func (s *Store) InsertPost(ctx context.Context, p *Post) error {
-	tree, err := s.prepare(ctx, p)
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error { return insertPostTx(ctx, tx, p) })
+}
+
+func insertPostTx(ctx context.Context, tx pgx.Tx, p *Post) error {
+	tree, err := prepareIn(ctx, tx, p)
 	if err != nil {
 		return err
 	}
 	meta, _ := json.Marshal(p.Meta)
-	if err := s.Pool.QueryRow(ctx, `INSERT INTO posts(type, author_id, parent_id, slug, title, excerpt, content, blocks,
+	if err := tx.QueryRow(ctx, `INSERT INTO posts(type, author_id, parent_id, slug, title, excerpt, content, blocks,
 		status, password, published_at, featured_media_id, menu_order, comment_status, ping_status, sticky, format, meta)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id, created_at, modified_at`,
 		p.Type, nullable(p.AuthorID), nullable(p.ParentID), p.Slug, p.Title, p.Excerpt, p.Content, tree,
@@ -666,11 +680,11 @@ func (s *Store) InsertPost(ctx context.Context, p *Post) error {
 	}
 	if p.Slug == "" && p.Status != "auto-draft" && p.Status != "draft" && p.Status != "pending" {
 		// A title with nothing slug-worthy: wp_insert_post() falls back to the post id.
-		slug, err := uniqueSlug(ctx, s.Pool, p.Type, p.ParentID, strconv.FormatInt(p.ID, 10), p.ID)
+		slug, err := uniqueSlug(ctx, tx, p.Type, p.ParentID, strconv.FormatInt(p.ID, 10), p.ID)
 		if err != nil {
 			return err
 		}
-		if _, err := s.Pool.Exec(ctx, `UPDATE posts SET slug = $2 WHERE id = $1`, p.ID, slug); err != nil {
+		if _, err := tx.Exec(ctx, `UPDATE posts SET slug = $2 WHERE id = $1`, p.ID, slug); err != nil {
 			return err
 		}
 		p.Slug = slug
@@ -887,12 +901,21 @@ func (s *Store) UntrashPost(ctx context.Context, id int64) error {
 	return err
 }
 
+// DeletePost deletes a post permanently. Like wp_delete_post(), its children of the same type and
+// its attachments move up to its parent (the foreign key alone would make them top level).
 func (s *Store) DeletePost(ctx context.Context, id int64) error {
 	termIDs, err := s.postTermIDs(ctx, id)
 	if err != nil {
 		return err
 	}
-	if _, err := s.Pool.Exec(ctx, `DELETE FROM posts WHERE id = $1`, id); err != nil {
+	if err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		if _, err := tx.Exec(ctx, `UPDATE posts c SET parent_id = d.parent_id FROM posts d
+			WHERE d.id = $1 AND c.parent_id = $1 AND (c.type = d.type OR c.type = 'attachment')`, id); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `DELETE FROM posts WHERE id = $1`, id)
+		return err
+	}); err != nil {
 		return err
 	}
 	return s.RecountTerms(ctx, termIDs)

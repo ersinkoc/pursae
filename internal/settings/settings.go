@@ -1,17 +1,38 @@
 // Package settings is the typed counterpart of WordPress options: every value is
 // stored as JSONB, autoloaded rows are cached in memory and the cache is
 // refreshed on write.
+//
+// Several processes may share one database. Reads never leave memory; to keep
+// the caches in step, a statement trigger on the settings table (migration
+// 0047) sends NOTIFY wpgo_settings when its transaction commits, and Watch
+// (started by `wpgo serve`) listens on a dedicated connection and reloads the
+// cache on each notification, after every (re)connect and every
+// WatchFullReload as a safety net. A change made by another instance therefore
+// shows up here within moments, at worst after WatchFullReload. Watch only
+// refreshes values: side effects a process runs when it saves a setting itself
+// (starting a plugin, reconfiguring the page cache) still happen only there.
 package settings
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"sort"
 	"strconv"
 	"sync"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// NotifyChannel is the channel the settings trigger notifies (migration 0047).
+const NotifyChannel = "wpgo_settings"
+
+// WatchFullReload is how often Watch reloads the cache even without a
+// notification, in case one was lost.
+var WatchFullReload = time.Minute
 
 // Defaults mirrors populate_options() of a fresh WordPress install. Keys keep
 // the WordPress option names so REST and import code can map 1:1.
@@ -118,6 +139,9 @@ type Store struct {
 	pool  *pgxpool.Pool
 	mu    sync.RWMutex
 	cache map[string]any
+	// writeMu orders Set's commit and cache update, so the cache ends with the
+	// value committed last when two Sets of one key race.
+	writeMu sync.Mutex
 }
 
 func New(pool *pgxpool.Pool) *Store {
@@ -230,12 +254,20 @@ func (s *Store) Bool(key string) bool {
 
 // Set writes the given values in one transaction and refreshes the cache.
 func (s *Store) Set(ctx context.Context, values map[string]any) error {
+	// Upsert in key order: two concurrent saves of the same screen lock the rows
+	// in the same order and cannot deadlock.
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
-	for k, v := range values {
+	for _, k := range keys {
+		v := values[k]
 		raw, err := json.Marshal(v)
 		if err != nil {
 			return err
@@ -245,6 +277,10 @@ func (s *Store) Set(ctx context.Context, values map[string]any) error {
 			return err
 		}
 	}
+	// Commit and refresh the cache under writeMu: a Set blocked on our row locks
+	// commits after us and so also updates the cache after us.
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
@@ -261,4 +297,66 @@ func (s *Store) Set(ctx context.Context, values map[string]any) error {
 	}
 	s.mu.Unlock()
 	return nil
+}
+
+// Watch keeps the cache in step with changes other processes commit (see the
+// package comment). It blocks until ctx ends. The LISTEN connection is opened
+// outside the pool, so closing the pool never waits for it.
+func (s *Store) Watch(ctx context.Context) {
+	stop := make(chan struct{})
+	defer close(stop)
+	go func() { // safety net for lost notifications and a broken listener
+		t := time.NewTicker(WatchFullReload)
+		defer t.Stop()
+		for {
+			select {
+			case <-t.C:
+				if err := s.Load(ctx); err != nil && ctx.Err() == nil {
+					slog.Warn("settings: periodic reload", "err", err)
+				}
+			case <-stop:
+				return
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	backoff := time.Second
+	for ctx.Err() == nil {
+		err := s.listen(ctx)
+		if ctx.Err() != nil {
+			return
+		}
+		slog.Warn("settings: change listener stopped, reconnecting", "err", err, "in", backoff)
+		select {
+		case <-time.After(backoff):
+		case <-ctx.Done():
+			return
+		}
+		backoff = min(backoff*2, 30*time.Second)
+	}
+}
+
+// listen runs one LISTEN session until it fails or ctx ends.
+func (s *Store) listen(ctx context.Context) error {
+	conn, err := pgx.ConnectConfig(ctx, s.pool.Config().ConnConfig.Copy())
+	if err != nil {
+		return err
+	}
+	defer conn.Close(context.WithoutCancel(ctx))
+	if _, err := conn.Exec(ctx, "LISTEN "+NotifyChannel); err != nil {
+		return err
+	}
+	// Changes made while nobody listened are only visible through a reload.
+	if err := s.Load(ctx); err != nil {
+		return err
+	}
+	for {
+		if _, err := conn.WaitForNotification(ctx); err != nil {
+			return err
+		}
+		if err := s.Load(ctx); err != nil {
+			return err
+		}
+	}
 }

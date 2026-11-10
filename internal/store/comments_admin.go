@@ -102,7 +102,7 @@ func (s *Store) QueryComments(ctx context.Context, q CommentQuery) ([]*Comment, 
 		where = append(where, "c.type IN ('pingback','trackback')")
 	}
 	if q.Search != "" {
-		p := arg("%" + strings.ToLower(q.Search) + "%")
+		p := arg(likeContains(strings.ToLower(q.Search)))
 		if q.SearchPublic {
 			where = append(where, "(lower(c.content) LIKE "+p+" OR lower(c.author_name) LIKE "+p+")")
 		} else {
@@ -152,10 +152,16 @@ func (s *Store) SetCommentStatus(ctx context.Context, id int64, status string) e
 	}
 	switch status {
 	case "trash", "spam":
+		// Only a real change remembers the previous status: trashing a trashed comment again (a stale
+		// list) must not make "trash" the status Restore goes back to.
 		_, err = s.Pool.Exec(ctx, `UPDATE comments SET status = $2, meta = meta || jsonb_build_object('_wp_trash_meta_status', status::text)
-			WHERE id = $1`, id, status)
+			WHERE id = $1 AND status <> $2`, id, status)
 	case "restore":
-		_, err = s.Pool.Exec(ctx, `UPDATE comments SET status = coalesce(nullif(meta->>'_wp_trash_meta_status', ''), 'pending'),
+		// A remembered status equal to the current one (written before the guard above) would leave
+		// the comment where it is: such a comment comes back as pending.
+		_, err = s.Pool.Exec(ctx, `UPDATE comments SET status = CASE
+				WHEN meta->>'_wp_trash_meta_status' IN ('approved', 'pending', 'spam', 'trash') AND meta->>'_wp_trash_meta_status' <> status::text
+				THEN meta->>'_wp_trash_meta_status' ELSE 'pending' END,
 			meta = meta - '_wp_trash_meta_status' WHERE id = $1`, id)
 	default:
 		_, err = s.Pool.Exec(ctx, `UPDATE comments SET status = $2 WHERE id = $1`, id, status)

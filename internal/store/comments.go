@@ -147,20 +147,30 @@ func (s *Store) RecountComments(ctx context.Context, postID int64) error {
 	return err
 }
 
-// HasApprovedComment reports whether this author already has an approved comment (comment_previously_approved).
+// HasApprovedComment is check_comment()'s comment_previously_approved test: the author already has
+// an approved comment. Like WordPress it needs both a name and an e-mail (an anonymous visitor never
+// counts as known), and when the e-mail belongs to a user it looks at that user's comments.
 func (s *Store) HasApprovedComment(ctx context.Context, name, email string) (bool, error) {
+	if name == "" || email == "" {
+		return false, nil
+	}
 	var ok bool
-	err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM comments WHERE author_name = $1 AND author_email = $2
-		AND status = 'approved')`, name, email).Scan(&ok)
+	err := s.Pool.QueryRow(ctx, `WITH u AS (SELECT id FROM users WHERE lower(email) = lower($2) ORDER BY id LIMIT 1)
+		SELECT CASE WHEN EXISTS(SELECT 1 FROM u)
+			THEN EXISTS(SELECT 1 FROM comments WHERE user_id = (SELECT id FROM u) AND status = 'approved')
+			ELSE EXISTS(SELECT 1 FROM comments WHERE author_name = $1 AND author_email = $2 AND status = 'approved') END`,
+		name, email).Scan(&ok)
 	return ok, err
 }
 
-// IsDuplicateComment detects the same text posted twice by the same author on a post.
+// IsDuplicateComment is wp_allow_comment()'s duplicate test: the same text by the same author (the
+// same user, or the same name and, when one was given, e-mail) in reply to the same comment.
 func (s *Store) IsDuplicateComment(ctx context.Context, c *Comment) (bool, error) {
 	var ok bool
-	err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM comments WHERE post_id = $1 AND content = $2
-		AND (author_email = $3 OR (user_id IS NOT NULL AND user_id = $4)) AND status <> 'trash')`,
-		c.PostID, c.Content, c.AuthorEmail, c.UserID).Scan(&ok)
+	err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM comments WHERE post_id = $1 AND coalesce(parent_id, 0) = $5
+		AND content = $2 AND status <> 'trash'
+		AND ((user_id IS NOT NULL AND user_id = $4) OR (author_name = $6 AND ($3 = '' OR author_email = $3))))`,
+		c.PostID, c.Content, c.AuthorEmail, c.UserID, c.ParentID, c.AuthorName).Scan(&ok)
 	return ok, err
 }
 
