@@ -626,6 +626,7 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 }
 
 func (s *Server) pluginAction(c *gin.Context, action, slug string) {
+	defer mcpPushAll("notifications/tools/list_changed") // MCP tools of built-in plugins appear and disappear
 	if !s.checkNonce(c, action+"-plugin_"+slug) {
 		s.denyNonce(c)
 		return

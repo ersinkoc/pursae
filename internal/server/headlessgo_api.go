@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -10,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -76,10 +79,16 @@ type hgAuth struct {
 	PrevUID string
 	PrevDoc string
 	PrevLoc string // the locale a preview token reads ("" for a type without i18n)
+	// A signed-in front-end user (Kind "user", headlessgo_users.go).
+	UserID        int64
+	Authenticated map[string][]string
+	OwnerOnly     map[string][]string
 }
 
 func (a *hgAuth) can(uid, action string) bool {
 	switch a.Kind {
+	case hgUserKind:
+		return containsStr(a.Public[uid], action) || containsStr(a.Authenticated[uid], action)
 	case "preview": // its own type; other types (populate, relation filters) as the public role
 		return (action == "find" || action == "findOne") && (uid == a.PrevUID || containsStr(a.Public[uid], action))
 	case "token":
@@ -139,6 +148,9 @@ func (a *hgAuth) drafts(uid string) bool {
 // hgAuthenticate reads the bearer token (an API token or a preview token).
 func (s *Server) hgAuthenticate(c *gin.Context, st hgSettings) (*hgAuth, bool) {
 	a := &hgAuth{Kind: "public", Public: st.Public}
+	if strings.HasPrefix(strings.Trim(c.Param("rest"), "/"), "auth/") {
+		return a, true // signing in: a stale token in the header must not stop it
+	}
 	tok := ""
 	if h := c.GetHeader("Authorization"); h != "" {
 		scheme, val, _ := strings.Cut(h, " ")
@@ -156,6 +168,16 @@ func (s *Server) hgAuthenticate(c *gin.Context, st hgSettings) (*hgAuth, bool) {
 		tok = c.Query("previewToken")
 	}
 	if tok == "" {
+		return a, true
+	}
+	if !previewOnly && !strings.HasPrefix(tok, hgPreviewPrefix) && strings.Count(tok, ".") == 2 {
+		// Not an API token: a user token (JWT).
+		u := s.hgUserFromToken(c, st, tok)
+		if u == nil {
+			hgErr(c, http.StatusUnauthorized, "UnauthorizedError", "Missing or invalid credentials", nil)
+			return nil, false
+		}
+		a.Kind, a.UserID, a.Authenticated, a.OwnerOnly = hgUserKind, u.ID, st.Authenticated, st.OwnerOnly
 		return a, true
 	}
 	if previewOnly && !strings.HasPrefix(tok, hgPreviewPrefix) {
@@ -203,6 +225,15 @@ func (s *Server) hgAPI(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if !s.hgRateAllow(c, a, st) {
+		return
+	}
+	switch {
+	case a.Kind == "preview":
+		c.Set(hgCacheKey, "no-store")
+	case a.Kind == "public" && st.CacheMaxAge > 0:
+		c.Set(hgCacheKey, "public, max-age=0, s-maxage="+strconv.Itoa(st.CacheMaxAge))
+	}
 	if len(segs) == 0 {
 		s.hgIndex(c, a)
 		return
@@ -214,6 +245,28 @@ func (s *Server) hgAPI(c *gin.Context) {
 			return
 		}
 		s.hgGraphQL(c, a, st)
+		return
+	case "openapi.json", "typescript":
+		if method != http.MethodGet || len(segs) != 1 {
+			hgErr(c, http.StatusMethodNotAllowed, "MethodNotAllowedError", "Method Not Allowed", nil)
+			return
+		}
+		s.hgOpenAPIEndpoint(c, a, segs[0] == "typescript")
+		return
+	case "auth":
+		s.hgAuthAPI(c, a, st, segs[1:], method)
+		return
+	case "users":
+		if len(segs) == 2 && segs[1] == "me" && method == http.MethodGet && a.Kind == hgUserKind {
+			u, err := s.store.UserByID(c, a.UserID)
+			if err != nil {
+				hgNotFound(c)
+				return
+			}
+			hgWriteJSON(c, http.StatusOK, hgUserJSON(u))
+			return
+		}
+		hgNotFound(c)
 		return
 	case "wp":
 		s.hgWP(c, a, segs[1:], method)
@@ -280,7 +333,7 @@ func (s *Server) hgIndex(c *gin.Context, a *hgAuth) {
 	if out == nil {
 		out = []map[string]any{}
 	}
-	c.JSON(http.StatusOK, map[string]any{"data": out, "meta": map[string]any{"namespace": hgNamespace}})
+	hgWriteJSON(c, http.StatusOK, map[string]any{"data": out, "meta": map[string]any{"namespace": hgNamespace}})
 }
 
 // hgReadParams are the parsed read parameters of a request.
@@ -367,6 +420,20 @@ func (s *Server) hgParseRead(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSetti
 	} else if _, ok := qs["filters"]; ok {
 		hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid filters", nil)
 		return nil, false
+	}
+	if _, ok := qs["_q"]; ok {
+		q, isStr := qs["_q"].(string)
+		if !isStr {
+			hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid _q: use one search string", nil)
+			return nil, false
+		}
+		if sf := hgSearchFilter(sc, q); sf != nil {
+			if len(p.Filters) > 0 {
+				p.Filters = map[string]any{"$and": []any{p.Filters, sf}}
+			} else {
+				p.Filters = sf
+			}
+		}
 	}
 	if p.Sort, err = hgParseSort(qs["sort"]); err != nil {
 		hgFail(c, err)
@@ -487,6 +554,7 @@ func (s *Server) hgFindMany(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSettin
 		return
 	}
 	ser := s.hgSerializer(c, a, p)
+	ser.prefetch(sc, list, p.Populate)
 	data := []any{}
 	for _, e := range list {
 		obj, err := ser.entry(sc, e, p.Populate, p.Fields)
@@ -496,7 +564,7 @@ func (s *Server) hgFindMany(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSettin
 		}
 		data = append(data, obj)
 	}
-	c.JSON(http.StatusOK, map[string]any{"data": data, "meta": map[string]any{"pagination": p.Page.meta(total)}})
+	hgWriteJSON(c, http.StatusOK, map[string]any{"data": data, "meta": map[string]any{"pagination": p.Page.meta(total)}})
 }
 
 // hgOneEntry loads one document version in the requested status.
@@ -542,7 +610,7 @@ func (s *Server) hgRespondOne(c *gin.Context, a *hgAuth, sc *hgSchema, doc strin
 		hgFail(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, map[string]any{"data": obj, "meta": map[string]any{}})
+	hgWriteJSON(c, http.StatusOK, map[string]any{"data": obj, "meta": map[string]any{}})
 }
 
 func (s *Server) hgFindSingle(c *gin.Context, a *hgAuth, sc *hgSchema, st hgSettings) {
@@ -591,7 +659,7 @@ func hgBody(c *gin.Context) (map[string]any, bool) {
 // hgWrite creates or updates a document. ?status=published also publishes (a type without draft &
 // publish always publishes); ?locale= writes that locale's version.
 func (s *Server) hgWrite(c *gin.Context, a *hgAuth, sc *hgSchema, doc, action string) {
-	if !a.can(sc.UID, action) || a.Kind == "preview" {
+	if !a.can(sc.UID, action) || a.Kind == "preview" || (action == "update" && !s.hgOwnerAllows(c, a, sc, doc, "update")) {
 		hgForbidden(c, a)
 		return
 	}
@@ -612,7 +680,7 @@ func (s *Server) hgWrite(c *gin.Context, a *hgAuth, sc *hgSchema, doc, action st
 		hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid status: use draft or published", nil)
 		return
 	}
-	e, events, err := s.hgSaveEntry(c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: status == "published", Auth: a})
+	e, events, err := s.hgSaveEntry(c, sc, doc, data, hgSaveOpts{Locale: loc, Publish: status == "published", Auth: a, UserID: a.userID()})
 	if err != nil {
 		hgFail(c, err)
 		return
@@ -638,12 +706,12 @@ func (s *Server) hgWrite(c *gin.Context, a *hgAuth, sc *hgSchema, doc, action st
 	if action == "create" || (sc.IsSingle() && doc == "") {
 		code = http.StatusCreated
 	}
-	c.JSON(code, map[string]any{"data": obj, "meta": map[string]any{}})
+	hgWriteJSON(c, code, map[string]any{"data": obj, "meta": map[string]any{}})
 }
 
 // hgDelete deletes a document: the given ?locale= version, or every locale (locale=* or none).
 func (s *Server) hgDelete(c *gin.Context, a *hgAuth, sc *hgSchema, doc string) {
-	if !a.can(sc.UID, "delete") || a.Kind == "preview" {
+	if !a.can(sc.UID, "delete") || a.Kind == "preview" || !s.hgOwnerAllows(c, a, sc, doc, "delete") {
 		hgForbidden(c, a)
 		return
 	}
@@ -673,7 +741,7 @@ func (s *Server) hgDelete(c *gin.Context, a *hgAuth, sc *hgSchema, doc string) {
 
 // hgPublishAPI is POST /{plural}/{documentId}/publish|unpublish (needs update).
 func (s *Server) hgPublishAPI(c *gin.Context, a *hgAuth, sc *hgSchema, doc, action string) {
-	if !a.can(sc.UID, "update") || a.Kind == "preview" {
+	if !a.can(sc.UID, "update") || a.Kind == "preview" || !s.hgOwnerAllows(c, a, sc, doc, "update") {
 		hgForbidden(c, a)
 		return
 	}
@@ -688,7 +756,7 @@ func (s *Server) hgPublishAPI(c *gin.Context, a *hgAuth, sc *hgSchema, doc, acti
 	var e *hgEntry
 	status := "published"
 	if action == "publish" {
-		e, err = s.hgPublishEntry(c, sc, doc, loc, 0)
+		e, err = s.hgPublishEntry(c, sc, doc, loc, a.userID())
 	} else {
 		e, err = s.hgUnpublishEntry(c, sc, doc, loc)
 		status = "draft"
@@ -713,14 +781,14 @@ func (s *Server) hgPublishAPI(c *gin.Context, a *hgAuth, sc *hgSchema, doc, acti
 		hgFail(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, map[string]any{"data": obj, "meta": map[string]any{}})
+	hgWriteJSON(c, http.StatusOK, map[string]any{"data": obj, "meta": map[string]any{}})
 }
 
 // hgScheduleAPI is POST /{plural}/{documentId}/schedule (needs update) with {"data": {"publishAt":
 // "<RFC 3339>"|null, "unpublishAt": …}}: when the scheduler publishes and unpublishes the
 // ?locale= version. null (or leaving a key out) clears it.
 func (s *Server) hgScheduleAPI(c *gin.Context, a *hgAuth, sc *hgSchema, doc string) {
-	if !a.can(sc.UID, "update") || a.Kind == "preview" {
+	if !a.can(sc.UID, "update") || a.Kind == "preview" || !s.hgOwnerAllows(c, a, sc, doc, "update") {
 		hgForbidden(c, a)
 		return
 	}
@@ -768,7 +836,7 @@ func (s *Server) hgScheduleAPI(c *gin.Context, a *hgAuth, sc *hgSchema, doc stri
 	if e.UnpublishAt != nil {
 		out["unpublishAt"] = hgTime(*e.UnpublishAt)
 	}
-	c.JSON(http.StatusOK, map[string]any{"data": out, "meta": map[string]any{}})
+	hgWriteJSON(c, http.StatusOK, map[string]any{"data": out, "meta": map[string]any{}})
 }
 
 // Serialization --------------------------------------------------------------------------------------
@@ -781,6 +849,24 @@ type hgSer struct {
 	p     *hgReadParams
 	media map[int64]*store.Attachment
 	cur   *hgEntry // the entry being serialized (inverse relations are looked up from it)
+	cache *hgSerCache
+}
+
+// hgSerCache is the request-lived loader state shared by a serializer and its sub-serializers:
+// related entries (by target, status, locale and document), posts and users are read once per
+// request instead of once per entry and relation.
+type hgSerCache struct {
+	ents  map[string]*hgEntry // nil value: looked up, not visible
+	posts map[int64]*store.Post
+	users map[int64]*store.User
+	terms map[int64]*store.Term
+}
+
+func (h *hgSer) ca() *hgSerCache {
+	if h.cache == nil {
+		h.cache = &hgSerCache{ents: map[string]*hgEntry{}, posts: map[int64]*store.Post{}, users: map[int64]*store.User{}, terms: map[int64]*store.Term{}}
+	}
+	return h.cache
 }
 
 func (s *Server) hgSerializer(c *gin.Context, a *hgAuth, p *hgReadParams) *hgSer {
@@ -843,7 +929,7 @@ func (h *hgSer) localizations(sc *hgSchema, e *hgEntry) []any {
 	if status != h.p.Status {
 		p := *h.p
 		p.Status = status
-		sub = &hgSer{s: h.s, c: h.c, reg: h.reg, a: h.a, p: &p, media: h.media}
+		sub = &hgSer{s: h.s, c: h.c, reg: h.reg, a: h.a, p: &p, media: h.media, cache: h.ca()}
 	}
 	for _, l := range locs {
 		v := versions[l]
@@ -1055,29 +1141,68 @@ func (h *hgSer) component(comp *hgSchema, m map[string]any, pop *hgPop, depth in
 // relation loads related entries (in the request's status and locale), posts or users.
 func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, bool, error) {
 	ctx := h.c
-	switch f.Target {
-	case "wp:post", "wp:page":
+	switch {
+	case hgIsWPPost(f.Target):
+		typ, _ := hgWPPostType(f.Target)
 		var out []any
 		for _, x := range ids {
 			id, ok := hgToInt(x)
 			if !ok {
 				continue
 			}
-			p, err := h.s.store.GetPost(ctx, id)
-			if err != nil || p.Status != "publish" {
+			p, seen := h.ca().posts[id]
+			if !seen {
+				var err error
+				if p, err = h.s.store.GetPost(ctx, id); err != nil {
+					p = nil
+				}
+				h.ca().posts[id] = p
+			}
+			if p == nil || p.Status != "publish" || p.Type != typ {
 				continue
 			}
 			out = append(out, h.s.hgPostObj(h.c, p, pop.Fields))
 		}
 		return out, true, nil
-	case "wp:user":
+	case hgIsWPTerm(f.Target):
+		tax, _ := hgWPTaxonomy(f.Target)
 		var out []any
 		for _, x := range ids {
 			id, ok := hgToInt(x)
 			if !ok {
 				continue
 			}
-			if u, err := h.s.store.UserByID(ctx, id); err == nil {
+			t, seen := h.ca().terms[id]
+			if !seen {
+				var err error
+				if t, err = h.s.store.GetTerm(ctx, id); err != nil {
+					t = nil
+				}
+				h.ca().terms[id] = t
+			}
+			if t == nil || t.Taxonomy != tax {
+				continue
+			}
+			out = append(out, hgPick(map[string]any{"id": t.ID, "name": t.Name, "slug": t.Slug, "description": t.Description,
+				"count": t.Count, "parent": t.ParentID, "taxonomy": t.Taxonomy, "link": h.s.links(h.c).TermLink(t)}, pop.Fields))
+		}
+		return out, true, nil
+	case f.Target == "wp:user":
+		var out []any
+		for _, x := range ids {
+			id, ok := hgToInt(x)
+			if !ok {
+				continue
+			}
+			u, seen := h.ca().users[id]
+			if !seen {
+				var err error
+				if u, err = h.s.store.UserByID(ctx, id); err != nil {
+					u = nil
+				}
+				h.ca().users[id] = u
+			}
+			if u != nil {
 				out = append(out, hgPick(map[string]any{"id": u.ID, "username": u.Nicename, "name": u.DisplayName}, pop.Fields))
 			}
 		}
@@ -1117,26 +1242,42 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 			loc = h.s.hgDefaultLocale(ctx)
 		}
 	}
-	filters := map[string]any{"documentId": map[string]any{"$in": hgAnyStrings(docs)}}
-	if len(pop.Filters) > 0 {
-		filters = map[string]any{"$and": []any{filters, pop.Filters}}
-	}
-	rp := &hgReadParams{Auth: h.a, Status: status, Locale: loc, Filters: filters, Sort: pop.Sort, Page: hgPagination{Page: 1, PageSize: 1000}, Budget: h.p.Budget}
-	list, _, err := h.s.hgFind(ctx, target, rp, hgFindOpts{NoLim: true})
-	if err != nil {
-		return nil, false, err
-	}
-	if len(pop.Sort) == 0 { // keep the stored order
-		pos := map[string]int{}
-		for i, d := range docs {
-			pos[d] = i
+	rp := &hgReadParams{Auth: h.a, Status: status, Locale: loc, Page: hgPagination{Page: 1, PageSize: 1000}, Budget: h.p.Budget}
+	var list []*hgEntry
+	if len(pop.Filters) == 0 && len(pop.Sort) == 0 {
+		// Plain relation: documents already loaded in this request come from the cache, the rest in one query.
+		if err := h.loadRel(target, docs, rp); err != nil {
+			return nil, false, err
 		}
-		sort.SliceStable(list, func(i, j int) bool { return pos[list[i].DocumentID] < pos[list[j].DocumentID] })
+		for _, d := range docs {
+			if e := h.ca().ents[hgRelCacheKey(target.UID, status, loc, d)]; e != nil {
+				list = append(list, e)
+			}
+		}
+	} else {
+		filters := map[string]any{"documentId": map[string]any{"$in": hgAnyStrings(docs)}}
+		if len(pop.Filters) > 0 {
+			filters = map[string]any{"$and": []any{filters, pop.Filters}}
+		}
+		rp.Filters, rp.Sort = filters, pop.Sort
+		var err error
+		list, _, err = h.s.hgFind(ctx, target, rp, hgFindOpts{NoLim: true})
+		if err != nil {
+			return nil, false, err
+		}
+		if len(pop.Sort) == 0 { // keep the stored order
+			pos := map[string]int{}
+			for i, d := range docs {
+				pos[d] = i
+			}
+			sort.SliceStable(list, func(i, j int) bool { return pos[list[i].DocumentID] < pos[list[j].DocumentID] })
+		}
 	}
-	sub := &hgSer{s: h.s, c: h.c, reg: h.reg, a: h.a, p: rp, media: h.media}
+	sub := &hgSer{s: h.s, c: h.c, reg: h.reg, a: h.a, p: rp, media: h.media, cache: h.ca()}
 	if err := h.p.Budget.objects(len(list)); err != nil {
 		return nil, false, err
 	}
+	sub.prefetch(target, list, pop)
 	var out []any
 	for _, e := range list {
 		obj, err := sub.entryAt(target, e, pop, depth+1)
@@ -1146,6 +1287,92 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 		out = append(out, obj)
 	}
 	return out, true, nil
+}
+
+func hgRelCacheKey(uid, status, loc, doc string) string {
+	return uid + "|" + status + "|" + loc + "|" + doc
+}
+
+// loadRel reads the not yet cached documents of target in one query (rp carries status, locale, budget).
+func (h *hgSer) loadRel(target *hgSchema, docs []string, rp *hgReadParams) error {
+	var need []string
+	seen := map[string]bool{}
+	for _, d := range docs {
+		if seen[d] {
+			continue
+		}
+		seen[d] = true
+		if _, ok := h.ca().ents[hgRelCacheKey(target.UID, rp.Status, rp.Locale, d)]; !ok {
+			need = append(need, d)
+		}
+	}
+	if len(need) == 0 {
+		return nil
+	}
+	q := *rp
+	q.Filters = map[string]any{"documentId": map[string]any{"$in": hgAnyStrings(need)}}
+	list, _, err := h.s.hgFind(h.c, target, &q, hgFindOpts{NoLim: true})
+	if err != nil {
+		return err
+	}
+	for _, d := range need {
+		h.ca().ents[hgRelCacheKey(target.UID, rp.Status, rp.Locale, d)] = nil
+	}
+	for _, e := range list {
+		h.ca().ents[hgRelCacheKey(target.UID, rp.Status, rp.Locale, e.DocumentID)] = e
+	}
+	return nil
+}
+
+// prefetch loads, for all entries of a list at once, the plain relations that pop populates, so
+// serializing the entries one by one finds them in the cache (one query per relation field
+// instead of one per entry and field). Anything it cannot prove safe is left to relation().
+func (h *hgSer) prefetch(sc *hgSchema, list []*hgEntry, pop *hgPop) {
+	if len(list) < 2 || pop == nil {
+		return
+	}
+	for key, sub := range pop.Populate {
+		name := key
+		if n, ok := pop.Alias[key]; ok {
+			name = n
+		}
+		f := sc.Field(name)
+		if f == nil || f.Type != "relation" || sub == nil || len(sub.Filters) > 0 || len(sub.Sort) > 0 {
+			continue
+		}
+		target := h.reg.Get(f.Target)
+		if target == nil || !h.a.reads(target.UID) {
+			continue
+		}
+		var docs []string
+		for _, e := range list {
+			data := e.Version(h.p.Status)
+			if data == nil {
+				data = e.Data
+			}
+			for _, x := range hgList(data[f.Name]) {
+				if d, ok := x.(string); ok {
+					docs = append(docs, d)
+				}
+			}
+		}
+		if len(docs) < 2 {
+			continue
+		}
+		status := h.relStatus(target.UID)
+		if !target.DraftAndPublish {
+			status = "published"
+		}
+		loc := ""
+		if target.Localized {
+			loc = h.p.Locale
+			if loc == "" {
+				loc = h.s.hgDefaultLocale(h.c)
+			}
+		}
+		rp := &hgReadParams{Auth: h.a, Status: status, Locale: loc, Page: hgPagination{Page: 1, PageSize: 1000}, Budget: h.p.Budget}
+		_ = h.loadRel(target, docs, rp) // an error here resurfaces from relation()
+	}
 }
 
 // relStatus is the status related entries of a type are shown in: the request's, except that a
@@ -1274,13 +1501,7 @@ func (s *Server) hgWP(c *gin.Context, a *hgAuth, segs []string, method string) {
 		hgFail(c, err)
 		return
 	}
-	brief := func(m *store.Menu) map[string]any {
-		var loc any
-		if len(m.Locations) > 0 {
-			loc = m.Locations[0]
-		}
-		return map[string]any{"id": m.ID, "name": m.Name, "slug": m.Slug, "location": loc, "locations": m.Locations, "count": m.Count}
-	}
+	brief := hgMenuBrief
 	if len(segs) == 1 {
 		out := []any{}
 		for _, m := range menus {
@@ -1290,10 +1511,32 @@ func (s *Server) hgWP(c *gin.Context, a *hgAuth, segs []string, method string) {
 		for _, l := range s.activeTheme().MenuLocations {
 			locs = append(locs, map[string]any{"slug": l.Slug, "name": l.Name})
 		}
-		c.JSON(http.StatusOK, map[string]any{"data": out, "meta": map[string]any{"locations": locs}})
+		hgWriteJSON(c, http.StatusOK, map[string]any{"data": out, "meta": map[string]any{"locations": locs}})
 		return
 	}
-	key := segs[1]
+	m, err := s.hgMenuFull(c, menus, segs[1])
+	if err != nil {
+		hgFail(c, err)
+		return
+	}
+	if m == nil {
+		hgNotFound(c)
+		return
+	}
+	hgWriteJSON(c, http.StatusOK, map[string]any{"data": m, "meta": map[string]any{}})
+}
+
+func hgMenuBrief(m *store.Menu) map[string]any {
+	var loc any
+	if len(m.Locations) > 0 {
+		loc = m.Locations[0]
+	}
+	return map[string]any{"id": m.ID, "name": m.Name, "slug": m.Slug, "location": loc, "locations": m.Locations, "count": m.Count}
+}
+
+// hgMenuFull finds a menu by id, theme location or slug and returns it with its published items as a
+// tree (nil when there is none).
+func (s *Server) hgMenuFull(c *gin.Context, menus []*store.Menu, key string) (map[string]any, error) {
 	var menu *store.Menu
 	for _, m := range menus {
 		if itoa64(m.ID) == key || m.HasLocation(key) || m.Slug == key {
@@ -1304,13 +1547,11 @@ func (s *Server) hgWP(c *gin.Context, a *hgAuth, segs []string, method string) {
 		}
 	}
 	if menu == nil {
-		hgNotFound(c)
-		return
+		return nil, nil
 	}
 	items, err := s.store.AllMenuItems(c, menu.ID)
 	if err != nil {
-		hgFail(c, err)
-		return
+		return nil, err
 	}
 	byParent := map[int64][]*store.EditItem{}
 	for _, it := range items {
@@ -1336,7 +1577,95 @@ func (s *Server) hgWP(c *gin.Context, a *hgAuth, segs []string, method string) {
 		}
 		return out
 	}
-	m := brief(menu)
+	m := hgMenuBrief(menu)
 	m["items"] = build(0, 0)
-	c.JSON(http.StatusOK, map[string]any{"data": m, "meta": map[string]any{}})
+	return m, nil
+}
+
+// Rate limit and HTTP caching ---------------------------------------------------------------------
+
+const hgCacheKey = "hg.cache"
+
+type hgBucket struct {
+	count  int
+	window time.Time
+}
+
+var hgRateBuckets sync.Map // *Server => *hgRateState
+
+type hgRateState struct {
+	mu sync.Mutex
+	m  map[string]*hgBucket
+}
+
+// hgRateAllow applies the fixed-window limit (settings: requests per minute) per token, or per
+// client address for token-less and preview calls. It answers 429 itself when the limit is hit.
+func (s *Server) hgRateAllow(c *gin.Context, a *hgAuth, st hgSettings) bool {
+	if st.RateLimit <= 0 {
+		return true
+	}
+	v, _ := hgRateBuckets.LoadOrStore(s, &hgRateState{m: map[string]*hgBucket{}})
+	rs := v.(*hgRateState)
+	key := "ip:" + clientIP(c)
+	if a.Kind == "token" && a.Token != nil {
+		key = "tok:" + strconv.FormatInt(a.Token.ID, 10)
+	}
+	if a.Kind == hgUserKind {
+		key = "user:" + strconv.FormatInt(a.UserID, 10)
+	}
+	now := time.Now()
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+	if len(rs.m) > 10000 {
+		for k, b := range rs.m {
+			if now.Sub(b.window) >= time.Minute {
+				delete(rs.m, k)
+			}
+		}
+	}
+	b := rs.m[key]
+	if b == nil || now.Sub(b.window) >= time.Minute {
+		b = &hgBucket{window: now}
+		rs.m[key] = b
+	}
+	b.count++
+	if b.count > st.RateLimit {
+		wait := int(time.Minute.Seconds() - now.Sub(b.window).Seconds())
+		if wait < 1 {
+			wait = 1
+		}
+		c.Header("Retry-After", strconv.Itoa(wait))
+		hgErr(c, http.StatusTooManyRequests, "RateLimitError", "Too many requests", nil)
+		return false
+	}
+	return true
+}
+
+// hgWriteJSON writes a JSON response. Successful GET/HEAD answers carry a strong ETag of the body and
+// are answered with 304 when If-None-Match matches, so clients revalidate without the body.
+func hgWriteJSON(c *gin.Context, code int, obj any) {
+	if cc, ok := c.Get(hgCacheKey); ok {
+		c.Header("Cache-Control", cc.(string))
+	}
+	if code != http.StatusOK || (c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead) {
+		c.JSON(code, obj)
+		return
+	}
+	raw, err := json.Marshal(obj)
+	if err != nil {
+		c.JSON(code, obj)
+		return
+	}
+	sum := sha256.Sum256(raw)
+	etag := `"` + hex.EncodeToString(sum[:16]) + `"`
+	c.Header("ETag", etag)
+	c.Header("Vary", "Authorization, Origin")
+	for _, tag := range strings.Split(c.GetHeader("If-None-Match"), ",") {
+		tag = strings.TrimPrefix(strings.TrimSpace(tag), "W/")
+		if tag == etag || tag == "*" {
+			c.Status(http.StatusNotModified)
+			return
+		}
+	}
+	c.Data(http.StatusOK, "application/json; charset=utf-8", raw)
 }

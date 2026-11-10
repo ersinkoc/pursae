@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -128,6 +129,14 @@ func (d *hgAdminData) Allowed(uid, action string) bool {
 	return containsStr(d.Settings.Public[uid], action)
 }
 
+// AuthAllowed and OwnerOnlyOn are the checkboxes of the signed-in users matrix.
+func (d *hgAdminData) AuthAllowed(uid, action string) bool {
+	return containsStr(d.Settings.Authenticated[uid], action)
+}
+func (d *hgAdminData) OwnerOnlyOn(uid, action string) bool {
+	return containsStr(d.Settings.OwnerOnly[uid], action)
+}
+
 func (d *hgAdminData) TokenCan(uid, action string) bool {
 	return d.Token != nil && d.Token.Can(uid, action)
 }
@@ -188,6 +197,31 @@ func (s *Server) hgAdmin(c *gin.Context) {
 		raw, _ := json.MarshalIndent(s.hgExportSchemas(c), "", "  ")
 		c.Header("Content-Disposition", `attachment; filename="headlessgo-schemas-`+time.Now().Format("2006-01-02")+`.json"`)
 		c.Data(http.StatusOK, "application/json; charset=utf-8", raw)
+		return
+	}
+	if a := c.Query("action"); a == "export_entries" || a == "types" {
+		if !s.checkNonce(c, hgNonce) || !u.Can("manage_options", nil) {
+			s.denyNonce(c)
+			return
+		}
+		day := time.Now().Format("2006-01-02")
+		if a == "types" {
+			full := &hgAuth{Kind: "token", Token: &hgToken{Kind: "full-access"}}
+			c.Header("Content-Disposition", `attachment; filename="headlessgo-types-`+day+`.d.ts"`)
+			c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(hgTypeScript(s.hgOpenAPI(c, full))))
+			return
+		}
+		var uids []string
+		if t := c.Query("type"); t != "" {
+			uids = []string{t}
+		}
+		var buf bytes.Buffer
+		if _, err := s.hgExportEntries(c, &buf, uids); err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+		c.Header("Content-Disposition", `attachment; filename="headlessgo-entries-`+day+`.ndjson"`)
+		c.Data(http.StatusOK, "application/x-ndjson; charset=utf-8", buf.Bytes())
 		return
 	}
 	if c.Request.Method == http.MethodPost {
@@ -628,15 +662,21 @@ func (s *Server) hgMediaBrief(c *gin.Context, a *store.Attachment) map[string]an
 
 // hgRelLabel is the label of a related object in the editor.
 func (s *Server) hgRelLabel(c *gin.Context, reg *hgRegistry, target string, x any) string {
-	switch target {
-	case "wp:post", "wp:page":
+	switch {
+	case hgIsWPTerm(target):
+		if id, ok := hgToInt(x); ok {
+			if t, err := s.store.GetTerm(c, id); err == nil {
+				return t.Name + " #" + itoa64(id)
+			}
+		}
+	case hgIsWPPost(target):
 		if id, ok := hgToInt(x); ok {
 			if p, err := s.store.GetPost(c, id); err == nil && currentUser(c).Can("read_post", p) {
 				return defaultStr(p.Title, "(no title)") + " #" + itoa64(id)
 			}
 			return "#" + itoa64(id) // a post the user may not read: no title
 		}
-	case "wp:user":
+	case target == "wp:user":
 		if id, ok := hgToInt(x); ok {
 			if u, err := s.store.UserByID(c, id); err == nil {
 				return hgUserLabel(currentUser(c), u.DisplayName, u.Login)
@@ -684,9 +724,17 @@ func (s *Server) hgAdminSearch(c *gin.Context) {
 	}
 	target, q := c.Query("target"), strings.TrimSpace(c.Query("q"))
 	out := []map[string]any{}
-	switch target {
-	case "wp:post", "wp:page":
-		typ := strings.TrimPrefix(target, "wp:")
+	switch {
+	case hgIsWPTerm(target):
+		tax, _ := hgWPTaxonomy(target)
+		terms, _, err := s.store.QueryTerms(c, store.TermQuery{Taxonomy: tax, Search: q, OrderBy: "name", Order: "ASC", Page: 1, PerPage: 20})
+		if err == nil {
+			for _, t := range terms {
+				out = append(out, map[string]any{"id": t.ID, "label": t.Name + " #" + itoa64(t.ID)})
+			}
+		}
+	case hgIsWPPost(target):
+		typ, _ := hgWPPostType(target)
 		pq := store.PostQuery{Types: []string{typ}, Statuses: []string{"publish", "draft", "future", "private", "pending"},
 			Search: q, PerPage: 20, Page: 1, OrderBy: "date", Order: "DESC"}
 		readPrivate := u.Can("read_private_"+typ+"s", nil)
@@ -702,7 +750,7 @@ func (s *Server) hgAdminSearch(c *gin.Context) {
 				out = append(out, map[string]any{"id": p.ID, "label": defaultStr(p.Title, "(no title)") + " #" + itoa64(p.ID), "status": p.Status})
 			}
 		}
-	case "wp:user":
+	case target == "wp:user":
 		cond := `display_name ILIKE '%' || $1 || '%' OR nicename ILIKE '%' || $1 || '%'`
 		if u.Can("list_users", nil) {
 			cond += ` OR login ILIKE '%' || $1 || '%'`
@@ -794,8 +842,9 @@ func (s *Server) hgAdminBuilder(c *gin.Context, d *hgAdminData) {
 	for i, r := range hgRelations {
 		relations[i] = struct{ Key, Label string }{r.Key, s.__(c, r.Label)}
 	}
-	wpTargets := make([]struct{ Key, Label string }, len(hgWPTargets))
-	for i, r := range hgWPTargets {
+	wpTargetList := s.hgWPTargetList(c)
+	wpTargets := make([]struct{ Key, Label string }, len(wpTargetList))
+	for i, r := range wpTargetList {
 		wpTargets[i] = struct{ Key, Label string }{r.Key, s.__(c, r.Label)}
 	}
 	model := map[string]any{"schema": cur, "isNew": d.Type == nil, "all": types, "fieldTypes": fieldTypes, "relations": relations,
@@ -881,6 +930,28 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 			return
 		}
 		hgRedirect(c, url.Values{"page": {"builder"}}, fmt.Sprintf("%d schemas imported.", n), nil)
+	case "import_entries":
+		fh, err := c.FormFile("file")
+		if err != nil {
+			hgRedirect(c, url.Values{"page": {"settings"}}, "", errors.New("Choose a file to import."))
+			return
+		}
+		f, err := fh.Open()
+		if err != nil {
+			hgRedirect(c, url.Values{"page": {"settings"}}, "", err)
+			return
+		}
+		defer f.Close()
+		res, err := s.hgImportEntries(c, io.LimitReader(f, 256<<20), c.PostForm("overwrite") == "1", u.ID)
+		if err != nil {
+			hgRedirect(c, url.Values{"page": {"settings"}}, "", err)
+			return
+		}
+		msg := fmt.Sprintf("Entries imported: %d created, %d updated, %d skipped.", res.Created, res.Updated, res.Skipped)
+		if len(res.Warnings) > 0 {
+			msg += " " + strings.Join(res.Warnings[:min(3, len(res.Warnings))], " ")
+		}
+		hgRedirect(c, url.Values{"page": {"settings"}}, msg, nil)
 	case "save_settings":
 		st := s.hgLoad()
 		st.FrontMode = c.PostForm("front_mode")
@@ -895,6 +966,9 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 		st.GraphQL = c.PostForm("graphql") == "1"
 		st.SchemaWebhooks = c.PostForm("schema_webhooks") == "1"
 		st.WebhookAttempts, _ = strconv.Atoi(c.PostForm("webhook_attempts"))
+		st.RateLimit, _ = strconv.Atoi(c.PostForm("rate_limit"))
+		st.CacheMaxAge, _ = strconv.Atoi(c.PostForm("cache_max_age"))
+		st.NoPublicIntro = c.PostForm("no_public_introspection") == "1"
 		if st.FrontMode == "redirect" && !hgHTTPURL(st.RedirectURL) {
 			hgRedirect(c, back, "", errors.New("The redirect URL must be a full http:// or https:// address."))
 			return
@@ -914,6 +988,23 @@ func (s *Server) hgAdminPost(c *gin.Context, page string) {
 			}
 		}
 		st.Public = pub
+		st.UserAuth = c.PostForm("user_auth") == "1"
+		st.UserRegister = c.PostForm("user_register") == "1"
+		st.UserTokenTTL, _ = strconv.Atoi(c.PostForm("user_token_ttl"))
+		authd, owner := map[string][]string{}, map[string][]string{}
+		for _, t := range reg.Types() {
+			for _, a := range hgActions {
+				if c.PostForm("authd["+t.UID+"]["+a+"]") == "1" {
+					authd[t.UID] = append(authd[t.UID], a)
+				}
+			}
+			for _, a := range []string{"update", "delete"} {
+				if c.PostForm("owner["+t.UID+"]["+a+"]") == "1" {
+					owner[t.UID] = append(owner[t.UID], a)
+				}
+			}
+		}
+		st.Authenticated, st.OwnerOnly = authd, owner
 		if err := s.hgSaveSettings(c, st); err != nil {
 			hgRedirect(c, back, "", err)
 			return
@@ -1055,6 +1146,10 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 			q.Set("locale", loc)
 		}
 		return q
+	}
+	if err := s.hgAdminCaps(c, u, sc, do, doc, loc); err != nil {
+		hgRedirect(c, entryURL(doc), "", err)
+		return
 	}
 	switch do {
 	case "save_entry", "publish_entry", "unpublish_entry", "discard_entry", "schedule_entry", "restore_version", "delete_entry":
@@ -1246,6 +1341,17 @@ func (s *Server) hgAdminEntryPost(c *gin.Context, sc *hgSchema, do string) {
 			hgRedirect(c, back, "", errors.New("Select entries first."))
 			return
 		}
+		var allowed []string
+		for _, d := range docs {
+			if s.hgAdminCaps(c, u, sc, "bulk:"+action, d, loc) == nil {
+				allowed = append(allowed, d)
+			}
+		}
+		if len(allowed) == 0 {
+			hgRedirect(c, back, "", errors.New("You are not allowed to do this with the selected entries."))
+			return
+		}
+		docs = allowed
 		res, err := s.hgBulk(c, sc, action, docs, loc, c.PostForm("all_locales") == "1", u.ID)
 		if err != nil {
 			hgRedirect(c, back, "", err)
@@ -1404,4 +1510,49 @@ func (s *Server) hgGQLTranslateErrors(c *gin.Context, out map[string]any) {
 			}
 		}
 	}
+}
+
+// hgAdminCaps maps an entry action of the admin screen to WordPress capabilities: publishing,
+// unpublishing and scheduling need publish_posts, changing another user's entry needs
+// edit_others_posts, deleting needs delete_posts (delete_others_posts for another user's entry).
+// Administrators (manage_options) are always allowed.
+func (s *Server) hgAdminCaps(c *gin.Context, u *store.User, sc *hgSchema, do, doc, loc string) error {
+	if u.Can("manage_options", nil) {
+		return nil
+	}
+	action := strings.TrimPrefix(do, "bulk:")
+	var own = true
+	if sc.IsSingle() {
+		doc = s.hgSingleDoc(c, sc.UID)
+	}
+	if doc != "" {
+		if e, err := s.hgGetEntry(c, sc.UID, doc, loc); err == nil && e.CreatedBy != u.ID {
+			own = false
+		}
+	}
+	deny := errors.New("Sorry, you are not allowed to do that.")
+	switch action {
+	case "lock_takeover", "submit_review", "approve_review", "reject_review":
+		return nil // approve/reject are gated by hgCanReview
+	case "publish_entry", "unpublish_entry", "schedule_entry", "publish", "unpublish":
+		if !u.Can("publish_posts", nil) || (!own && !u.Can("edit_others_posts", nil)) {
+			return deny
+		}
+	case "delete_entry", "delete":
+		if !u.Can("delete_posts", nil) || (!own && !u.Can("delete_others_posts", nil)) {
+			return deny
+		}
+	case "save_entry":
+		if !own && !u.Can("edit_others_posts", nil) {
+			return deny
+		}
+		if c.PostForm("publish") == "1" && !sc.ReviewWorkflow && !u.Can("publish_posts", nil) {
+			return deny
+		}
+	default: // discard_entry, restore_version
+		if !own && !u.Can("edit_others_posts", nil) {
+			return deny
+		}
+	}
+	return nil
 }

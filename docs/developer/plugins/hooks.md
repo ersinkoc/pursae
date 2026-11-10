@@ -47,6 +47,18 @@ the manifest's `hooks` array.
 |------|------|-----------|------------|
 | `save_post_<type>`, then `save_post` | action | the post id and the post (the shape `GetPost` returns). Fired after a post or page was saved — editor, REST, quick edit, scheduled publishing, a plugin's `InsertPost`/`UpdatePost` — never for other post types | `posts:read` |
 
+### Pursae Headless entries
+
+Fired for the entries of the Headless content types (REST, GraphQL, admin, uploads, the scheduler and
+relation changes alike). All need the `headless:entries` permission. Private and password attributes
+are never passed to a plugin.
+
+| Hook | Type | Value / arguments | Permission |
+|------|------|-------------------|------------|
+| `headless_entry_validate` | filter | Before an entry is stored. Value: `{"type": "<uid>", "documentId": "" (new entry) or the id, "locale", "action": "create"/"update"/"publish", "data": {…attributes}}`. Return the same object. Add `"errors": ["message", {"field": "title", "message": "…"}]` to reject the save with a 400 `ValidationError` (at most 20 errors); change scalar attributes in `data` to derive values (they are validated again like API input; a bad value rejects the save). Changes to relations, media, components and other keys are ignored. 5 s budget | `headless:entries` |
+| `headless_entry_saved` | action | After an entry was created or updated: `{"event": "entry.create"/"entry.update", "type", "documentId", "locale", "status", "entry": {…}}` (the entry as webhooks carry it) | `headless:entries` |
+| `headless_entry_published`, `headless_entry_unpublished`, `headless_entry_deleted` | action | Same payload, with `event` `entry.publish`, `entry.unpublish`, `entry.delete` | `headless:entries` |
+
 ### Lifecycle
 
 | Hook | Type | Arguments | Permission |
@@ -69,6 +81,7 @@ versions, so a manifest written today stays valid:
 | `posts:write` | `wp_insert_post_data`, `wp_insert_attachment_data`, `pre_post_update`, `content_save_pre`, `title_save_pre`, `excerpt_save_pre` |
 | `admin:notices` | `admin_notices`, `all_admin_notices`, `network_admin_notices`, `user_admin_notices` |
 | `cron` | everything starting with `cron_` or `wpgo_cron` |
+| `headless:entries` | everything starting with `headless_entry_` |
 
 Subscribing to a hook the core does not fire yet is allowed; the callback simply never runs. Of the
 names above the core fires today `the_content`, `save_post`, `save_post_<type>`,

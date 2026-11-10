@@ -130,7 +130,18 @@ func (s *Server) hgGQLPrepare(c *gin.Context, a *hgAuth, st hgSettings, req hgGQ
 		return nil, nil, http.StatusBadRequest, hgGQLRequestError(err)
 	}
 	rootType := map[string]string{"query": "Query", "mutation": "Mutation", "subscription": "Subscription"}[op.kind]
-	return ex, hgGQLRootFlat(sel, rootType), 0, nil
+	root := hgGQLRootFlat(sel, rootType)
+	if len(root) > hgGQLMaxRootFields {
+		return nil, nil, http.StatusBadRequest, map[string]any{"errors": []any{map[string]any{"message": fmt.Sprintf("Operation has %d root fields (aliases included); the limit is %d.", len(root), hgGQLMaxRootFields)}}}
+	}
+	if a.Kind == "public" && st.NoPublicIntro {
+		for _, f := range root {
+			if f.name == "__schema" || f.name == "__type" {
+				return nil, nil, http.StatusForbidden, map[string]any{"errors": []any{map[string]any{"message": "Introspection is disabled for callers without a token."}}}
+			}
+		}
+	}
+	return ex, root, 0, nil
 }
 
 // run executes a validated query or mutation and returns the response document.
@@ -174,6 +185,10 @@ func hgGQLErrorMessage(err error) string {
 }
 
 // hgGQLRootFlat merges the root's inline fragments (on the root type, or without a condition).
+// hgGQLMaxRootFields bounds the root fields (aliases count) of one operation, so a single request
+// cannot fan out into dozens of paged queries.
+const hgGQLMaxRootFields = 20
+
 func hgGQLRootFlat(sel []*hgGQLField, rootType string) []*hgGQLField {
 	var out []*hgGQLField
 	for _, f := range sel {
@@ -1037,6 +1052,9 @@ func (ex *hgGQLExec) root(f *hgGQLField) (any, error) {
 	if strings.HasPrefix(f.name, "__") {
 		return nil, fmt.Errorf("Cannot query field %q on type \"Query\"", f.name)
 	}
+	if v, ok, err := ex.wpRoot(f); ok {
+		return v, err
+	}
 	reg := ex.s.hgReg(ex.c)
 	name, connection := strings.CutSuffix(f.name, "_connection")
 	for _, sc := range reg.Types() {
@@ -1354,6 +1372,7 @@ func (ex *hgGQLExec) list(sc *hgSchema, f *hgGQLField, connection bool) (any, er
 		return nil, err
 	}
 	ser := ex.s.hgSerializer(ex.c, ex.a, p)
+	ser.prefetch(sc, list, p.Populate)
 	items := []any{}
 	for _, e := range list {
 		obj, err := ser.entry(sc, e, p.Populate, nil)

@@ -232,7 +232,7 @@
 {{define "scope-picker"}}<fieldset class="form-field application-password-scopes">
 	<legend>Limit access to</legend>
 	{{$n := .Name}}{{range .Scopes}}<label style="display:block;margin:2px 0"><input type="checkbox" name="{{$n}}" value="{{.Slug}}"{{if .Checked}} checked{{end}} /> {{.Label}} <span class="description">&mdash; {{.Description}}</span></label>
-	{{end}}<p class="description">Leave every box unticked to give all of this user&#8217;s permissions. Scopes only narrow what the user can already do.</p>
+	{{end}}{{if .Narrow}}<p class="description">Scopes only narrow what the user can already do.</p>{{else}}<p class="description">Leave every box unticked to give all of this user&#8217;s permissions. Scopes only narrow what the user can already do.</p>{{end}}
 </fieldset>{{end}}
 
 {{define "admin/oauth-authorize"}}{{template "admin-header" .}}{{with .Data}}
@@ -246,7 +246,8 @@
 		<input type="hidden" name="action" value="oauth_authorize" />
 		{{range $k, $v := .Fields}}<input type="hidden" name="{{$k}}" value="{{$v}}" />
 		{{end}}
-		{{template "scope-picker" (dict "Name" "scopes[]" "Scopes" .AppScopes)}}
+		{{template "scope-picker" (dict "Name" "scopes[]" "Scopes" .AppScopes "Narrow" true)}}
+		<p class="form-field"><label style="display:block"><input type="checkbox" name="full_access" value="1" /> <strong>Full access</strong> &mdash; everything this user can do, including installing plugins, editing theme files and managing users. Ignores the boxes above.</label></p>
 		<p class="submit"><input type="submit" name="approve" id="approve" class="button button-primary" value="Yes, I approve of this connection" /></p>
 		<p class="description">You will be sent back to <strong>{{.Redirect}}</strong>.</p>
 		<p class="submit"><input type="submit" name="deny" id="deny" class="button button-secondary" value="No, I do not approve of this connection" /></p>

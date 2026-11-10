@@ -345,6 +345,12 @@ func (s *Store) DeleteUser(ctx context.Context, id, reassignTo int64) error {
 				}
 			}
 		}
+		// OAuth grants and pending codes have no foreign key on the user: a deleted user's tokens must not outlive it.
+		for _, q := range []string{`DELETE FROM oauth_tokens WHERE user_id = $1`, `DELETE FROM oauth_codes WHERE user_id = $1`} {
+			if _, err := tx.Exec(ctx, q, id); err != nil {
+				return err
+			}
+		}
 		_, err := tx.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
 		return err
 	})

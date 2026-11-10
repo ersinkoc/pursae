@@ -205,6 +205,7 @@ func (s *Server) hgEmit(ctx context.Context, event string, sc *hgSchema, e *hgEn
 	if event == "entry.publish" || !sc.DraftAndPublish || event == "entry.delete" && e.Published != nil {
 		status = "published"
 	}
+	s.hgFireHook(ctx, event, sc, e, status)
 	s.hgEmitPayload(ctx, event, map[string]any{"model": sc.SingularName, "uid": sc.UID, "entry": s.hgEntryPayload(ctx, sc, e, status)})
 }
 

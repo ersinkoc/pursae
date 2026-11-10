@@ -34,7 +34,7 @@ type hgField struct {
 	Multiple    bool     `json:"multiple,omitempty"`     // media: several files
 	Allowed     []string `json:"allowedTypes,omitempty"` // media: images, videos, audios, files
 	Relation    string   `json:"relation,omitempty"`     // oneToOne, oneToMany, manyToOne, manyToMany
-	Target      string   `json:"target,omitempty"`       // relation: a type uid or wp:post, wp:page, wp:user
+	Target      string   `json:"target,omitempty"`       // relation: a type uid, wp:post, wp:page, wp:user, wp:type:<post type> or wp:term:<taxonomy>
 	InversedBy  string   `json:"inversedBy,omitempty"`   // relation (owning side): the inverse field on the target type
 	MappedBy    string   `json:"mappedBy,omitempty"`     // relation (inverse side): the owning field on the target type; nothing is stored
 	TargetField string   `json:"targetField,omitempty"`  // uid: the text field it is derived from
@@ -526,7 +526,7 @@ func hgValidateSchema(reg *hgRegistry, sc, prev *hgSchema) error {
 				add("Field %s: choose the kind of relation.", label)
 			}
 			if strings.HasPrefix(f.Target, "wp:") {
-				if f.Target != "wp:post" && f.Target != "wp:page" && f.Target != "wp:user" {
+				if !hgWPTargetKnown(f.Target) {
 					add("Field %s: unknown WordPress target %q.", label, f.Target)
 				}
 			} else if t := reg.Get(f.Target); (t == nil || t.IsComponent()) && f.Target != sc.UID {
@@ -632,6 +632,9 @@ func (s *Server) hgSaveSchema(ctx context.Context, sc *hgSchema) error {
 		return err
 	}
 	if err := hgValidateSchema(reg, sc, prev); err != nil {
+		return err
+	}
+	if err := s.hgCheckWPTargets(ctx, sc); err != nil {
 		return err
 	}
 	var removed []string

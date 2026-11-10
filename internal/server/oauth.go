@@ -301,7 +301,12 @@ func (s *Server) oauthAuthorize(c *gin.Context) {
 		return
 	}
 	asked := normalizeAppScopes(strings.Fields(strings.ReplaceAll(f.Get("scope"), ",", " ")))
+	// Without a scope request the consent screen starts from a narrow default; full access needs its own
+	// explicit tick (a client that sends no scope must not get everything by default).
 	chosen := asked
+	if len(chosen) == 0 {
+		chosen = oauthDefaultScopes
+	}
 	if c.Request.Method == http.MethodPost && c.PostForm("action") == "oauth_authorize" {
 		if !s.checkNonce(c, "oauth_authorize") {
 			s.denyNonce(c)
@@ -312,6 +317,11 @@ func (s *Server) oauthAuthorize(c *gin.Context) {
 			return
 		}
 		chosen = normalizeAppScopes(c.PostFormArray("scopes[]"))
+		if c.PostForm("full_access") == "1" {
+			chosen = []string{} // every permission of the user, as the ticked box says
+		} else if len(chosen) == 0 {
+			chosen = oauthDefaultScopes
+		}
 		code := oauthRandom("")
 		if _, err := s.store.Pool.Exec(c, `INSERT INTO oauth_codes (code_hash, client_id, user_id, redirect_uri, scopes, challenge, expires_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)`, oauthHash(code), cl.ID, u.ID, redirect, chosen, challenge, time.Now().Add(oauthCodeTTL)); err != nil {
@@ -327,6 +337,10 @@ func (s *Server) oauthAuthorize(c *gin.Context) {
 			"code_challenge": challenge, "code_challenge_method": "S256", "scope": f.Get("scope"), "resource": f.Get("resource")}}
 	s.adminPage(c, "oauth-authorize", "Authorize Application", "authorize-application-php", "admin/oauth-authorize", d)
 }
+
+// oauthDefaultScopes is what an authorization gets when the client asked for no scope and the user
+// ticked nothing.
+var oauthDefaultScopes = []string{"content", "media"}
 
 // oauthToken is the token endpoint: authorization_code (with the PKCE verifier) and refresh_token.
 func (s *Server) oauthToken(c *gin.Context) {

@@ -17,10 +17,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 
 	"wpgo/docs"
+	"wpgo/internal/webbuilder"
 )
 
 // MCP (Model Context Protocol) server: AI tools such as Claude and Cursor manage the site through it.
@@ -135,10 +137,10 @@ func (s *Server) mcpHandle(c *gin.Context, req *mcpRequest) *mcpResponse {
 		}
 		resp.Result = map[string]any{
 			"protocolVersion": v,
-			"capabilities":    map[string]any{"tools": map[string]any{}, "resources": map[string]any{}},
+			"capabilities":    map[string]any{"tools": map[string]any{"listChanged": true}, "resources": map[string]any{}},
 			"serverInfo":      map[string]any{"name": mcpServerName, "title": "Pursae", "version": Version},
 			"instructions": "Tools manage this Pursae site (a WordPress-compatible CMS written in Go): content, media, menus, " +
-				"themes and theme files, plugins, Pursae Cache, Pursae SEO and the settings of the built-in plugins. " +
+				"themes and theme files, plugins, updates, backups and health, comments, users, Pursae Commerce products and orders, Web Builder drafts, Pursae Cache, Pursae SEO and the settings of the built-in plugins. " +
 				"Read the pursae-docs:// resources before writing theme templates or plugins. rest_request reaches any other REST route.",
 		}
 	case "ping":
@@ -146,6 +148,9 @@ func (s *Server) mcpHandle(c *gin.Context, req *mcpRequest) *mcpResponse {
 	case "tools/list":
 		var tools []map[string]any
 		for _, t := range mcpTools {
+			if !s.mcpToolAvailable(c, t) {
+				continue
+			}
 			tools = append(tools, map[string]any{"name": t.Name, "description": t.Desc, "inputSchema": t.schema(), "annotations": t.annotations()})
 		}
 		resp.Result = map[string]any{"tools": tools}
@@ -213,7 +218,7 @@ func (t *mcpTool) schema() map[string]any {
 
 // mcpAdditiveTools only add something new; every other tool that writes may change or remove existing
 // data (an update overwrites, an install replaces a version, rest_request can do anything).
-var mcpAdditiveTools = map[string]bool{"create_post": true, "create_page": true, "create_term": true, "create_menu_item": true, "upload_media": true}
+var mcpAdditiveTools = map[string]bool{"create_user": true, "create_comment": true, "commerce_create_product": true, "create_backup": true, "create_post": true, "create_page": true, "create_term": true, "create_menu_item": true, "upload_media": true}
 
 // annotations are the MCP tool hints clients use to decide what needs the user's approval. Per the spec
 // destructiveHint means "may change or delete existing data", so it is true for every write that is not
@@ -306,10 +311,8 @@ var mcpTools = func() []*mcpTool {
 	add(&mcpTool{Name: "delete_menu_item", Desc: "Delete a menu item.", Method: http.MethodDelete, Path: "/wp/v2/menu-items/{id}",
 		Props: map[string]any{"id": num("Menu item ID."), "force": flag("Must be true.")}, Required: []string{"id"}})
 
-	add(&mcpTool{Name: "get_global_styles", Desc: "Get the active theme's global styles (theme.json styles and settings), including its id for update_global_styles.",
+	add(&mcpTool{Name: "get_global_styles", Desc: "Get the active theme's global styles (theme.json styles and settings). Read only: the core has no user global-styles store to write to.",
 		Method: http.MethodGet, Path: "/wp/v2/global-styles/themes/{stylesheet}", Props: map[string]any{"stylesheet": str("Theme slug (see list_themes).")}, Required: []string{"stylesheet"}})
-	add(&mcpTool{Name: "update_global_styles", Desc: "Update the user global styles (colors, typography, spacing) by id.", Method: http.MethodPost, Path: "/wp/v2/global-styles/{id}",
-		Props: withID(map[string]any{"styles": obj("theme.json styles."), "settings": obj("theme.json settings.")}), Required: []string{"id"}})
 
 	add(&mcpTool{Name: "get_settings", Desc: "Get the site settings (title, tagline, front page, permalinks, …).", Method: http.MethodGet, Path: "/wp/v2/settings"})
 	add(&mcpTool{Name: "update_settings", Desc: "Update site settings, e.g. {\"title\": \"…\", \"show_on_front\": \"page\", \"page_on_front\": 12}.",
@@ -362,13 +365,99 @@ var mcpTools = func() []*mcpTool {
 	add(&mcpTool{Name: "restore_theme_file", Desc: "Undo edits to a theme file (back to the theme's original).", Method: http.MethodDelete, Path: "/pursae/v1/themes/{slug}/file",
 		Props: map[string]any{"slug": theme, "file": file}, Required: []string{"slug", "file"}})
 
+	add(&mcpTool{Name: "delete_theme", Desc: "Delete an installed theme (not the active one).", Method: http.MethodDelete, Path: "/pursae/v1/themes/{slug}", Props: map[string]any{"slug": theme}, Required: []string{"slug"}})
+
+	add(&mcpTool{Name: "site_health", Desc: "Health summary: version, database, cron queue and its last error, Site Health score, plugins, cache, updates waiting and the last backup. Run it after an update to see whether something broke.",
+		Method: http.MethodGet, Path: "/pursae/v1/health"})
+	add(&mcpTool{Name: "list_updates", Desc: "List the core, plugin and theme updates Pursae Manager offers.", Method: http.MethodGet, Path: "/pursae/v1/updates"})
+	add(&mcpTool{Name: "run_update", Desc: "Install an update: type plugin or theme with its slug, or type core (replaces the binary; the site restarts a second after the answer). Take a backup first.",
+		Method: http.MethodPost, Path: "/pursae/v1/updates", Props: map[string]any{"type": str("plugin, theme or core."), "slug": str("Plugin or theme slug (not for core).")}, Required: []string{"type"}})
+	add(&mcpTool{Name: "list_backups", Desc: "List stored backups, or with job=<id> the state of a running backup.", Method: http.MethodGet, Path: "/pursae/v1/backups",
+		Props: map[string]any{"job": str("Job id returned by create_backup.")}})
+	add(&mcpTool{Name: "create_backup", Desc: "Start a backup in the background (all parts, or the categories given: content, media, users, settings, themes, plugins, …). Returns a job id for list_backups.",
+		Method: http.MethodPost, Path: "/pursae/v1/backups", Props: map[string]any{"categories": strList("Parts to back up (default: all)."), "note": str("Note stored with the archive.")}})
+	add(&mcpTool{Name: "ai_activity", Desc: "The audit log of tool calls that wrote: when, which client (OAuth application or Application Password), tool, route and status.",
+		Method: http.MethodGet, Path: "/pursae/v1/mcp/activity", Props: map[string]any{"tool": str("Only this tool."), "client": str("Part of the client name."), "per_page": num("1-100, default 25."), "page": num("Page number.")}})
+
+	add(&mcpTool{Name: "list_comments", Desc: "List comments. Filters: status (approve, hold, spam, trash, all), post, search, per_page, page.", Method: http.MethodGet, Path: "/wp/v2/comments",
+		Props: listProps(map[string]any{"status": str("approve, hold, spam, trash or all."), "post": num("Post ID.")}), Open: true})
+	add(&mcpTool{Name: "create_comment", Desc: "Add a comment (or a reply with parent) to a post.", Method: http.MethodPost, Path: "/wp/v2/comments",
+		Props:    map[string]any{"post": num("Post ID."), "content": str("Comment text."), "parent": num("Parent comment ID."), "author_name": str("Author name."), "author_email": str("Author email.")},
+		Required: []string{"post", "content"}})
+	add(&mcpTool{Name: "moderate_comment", Desc: "Change a comment's status (approved, hold, spam, trash) or edit its content.", Method: http.MethodPost, Path: "/wp/v2/comments/{id}",
+		Props: map[string]any{"id": num("Comment ID."), "status": str("approved, hold, spam or trash."), "content": str("New text.")}, Required: []string{"id"}})
+	add(&mcpTool{Name: "delete_comment", Desc: "Move a comment to the trash, or delete it permanently with force=true.", Method: http.MethodDelete, Path: "/wp/v2/comments/{id}",
+		Props: map[string]any{"id": num("Comment ID."), "force": flag("Skip the trash.")}, Required: []string{"id"}})
+
+	userFields := map[string]any{"username": str("Login name (create only)."), "email": str("Email address."), "password": str("Password."), "name": str("Display name."),
+		"first_name": str("First name."), "last_name": str("Last name."), "roles": strList("Roles, e.g. editor."), "description": str("Biography.")}
+	add(&mcpTool{Name: "create_user", Desc: "Create a user.", Method: http.MethodPost, Path: "/wp/v2/users", Props: userFields, Required: []string{"username", "email", "password"}})
+	add(&mcpTool{Name: "update_user", Desc: "Update a user (only the fields given change).", Method: http.MethodPost, Path: "/wp/v2/users/{id}", Props: withID(userFields), Required: []string{"id"}})
+	add(&mcpTool{Name: "delete_user", Desc: "Delete a user permanently (force=true); reassign gives their content to another user ID.", Method: http.MethodDelete, Path: "/wp/v2/users/{id}",
+		Props: map[string]any{"id": num("User ID."), "force": flag("Must be true."), "reassign": num("User ID that receives the content.")}, Required: []string{"id", "force"}})
+
+	prodFields := map[string]any{"name": str("Product name."), "type": str("simple, variable, grouped or external."), "status": str("publish, draft, pending or private."),
+		"regular_price": str("Regular price, e.g. 19.90."), "sale_price": str("Sale price."), "description": str("Long description (HTML)."), "short_description": str("Short description."),
+		"sku": str("SKU."), "manage_stock": flag("Track stock."), "stock_quantity": num("Stock quantity."), "stock_status": str("instock, outofstock or onbackorder."),
+		"categories": map[string]any{"type": "array", "items": map[string]any{"type": "object"}, "description": "Categories as [{\"id\": 12}]."},
+		"images":     map[string]any{"type": "array", "items": map[string]any{"type": "object"}, "description": "Images as [{\"id\": media ID}] or [{\"src\": url}]."}}
+	add(&mcpTool{Name: "commerce_list_products", Desc: "List Pursae Commerce products (wc/v3). Filters: search, status, sku, category, stock_status, type, per_page, page.", Method: http.MethodGet, Path: "/wc/v3/products",
+		Props: listProps(map[string]any{"status": str("any, publish, draft, …"), "sku": str("Exact SKU."), "category": str("Category ID."), "stock_status": str("instock, outofstock, onbackorder."), "type": str("Product type.")}), Open: true})
+	add(&mcpTool{Name: "commerce_get_product", Desc: "Get one product.", Method: http.MethodGet, Path: "/wc/v3/products/{id}", Props: map[string]any{"id": num("Product ID.")}, Required: []string{"id"}})
+	add(&mcpTool{Name: "commerce_create_product", Desc: "Create a product.", Method: http.MethodPost, Path: "/wc/v3/products", Props: prodFields, Required: []string{"name"}, Open: true})
+	add(&mcpTool{Name: "commerce_update_product", Desc: "Update a product (only the fields given change).", Method: http.MethodPut, Path: "/wc/v3/products/{id}", Props: withID(prodFields), Required: []string{"id"}, Open: true})
+	add(&mcpTool{Name: "commerce_update_stock", Desc: "Set a product's stock quantity (stock management is switched on if it was off).", Method: http.MethodPut, Path: "/wc/v3/products/{id}",
+		Props:    map[string]any{"id": num("Product ID."), "stock_quantity": num("New stock quantity."), "manage_stock": flag("Default true."), "stock_status": str("instock, outofstock or onbackorder.")},
+		Required: []string{"id", "stock_quantity"}})
+	add(&mcpTool{Name: "commerce_delete_product", Desc: "Move a product to the trash, or delete it permanently with force=true.", Method: http.MethodDelete, Path: "/wc/v3/products/{id}",
+		Props: map[string]any{"id": num("Product ID."), "force": flag("Skip the trash.")}, Required: []string{"id"}})
+	add(&mcpTool{Name: "commerce_list_orders", Desc: "List orders. Filters: status (pending, processing, on-hold, completed, cancelled, refunded, failed), customer, search, after, before, per_page, page.", Method: http.MethodGet, Path: "/wc/v3/orders",
+		Props: listProps(map[string]any{"status": str("Order status."), "customer": num("Customer user ID."), "after": str("ISO 8601 date."), "before": str("ISO 8601 date.")}), Open: true})
+	add(&mcpTool{Name: "commerce_get_order", Desc: "Get one order with its lines, totals and addresses.", Method: http.MethodGet, Path: "/wc/v3/orders/{id}", Props: map[string]any{"id": num("Order ID.")}, Required: []string{"id"}})
+	add(&mcpTool{Name: "commerce_update_order", Desc: "Update an order: status, customer_note, set_paid, addresses.", Method: http.MethodPut, Path: "/wc/v3/orders/{id}",
+		Props: map[string]any{"id": num("Order ID."), "status": str("New status."), "customer_note": str("Note to the customer."), "set_paid": flag("Mark paid."),
+			"billing": obj("Billing address."), "shipping": obj("Shipping address.")}, Required: []string{"id"}})
+	add(&mcpTool{Name: "commerce_sales_report", Desc: "Sales report (totals, orders, items) for a period.", Method: http.MethodGet, Path: "/wc/v3/reports/sales",
+		Props: map[string]any{"period": str("week, month, last_month or year."), "date_min": str("YYYY-MM-DD."), "date_max": str("YYYY-MM-DD.")}})
+
+	add(&mcpTool{Name: "web_builder_get_document", Desc: "Get a Pursae Web Builder document (the page's layout tree) with its revision (rev).", Method: http.MethodGet, Path: "/web-builder/v2/documents/{id}",
+		Props: map[string]any{"id": num("Post ID of the page.")}, Required: []string{"id"}})
+	add(&mcpTool{Name: "web_builder_save_draft", Desc: "Save a Web Builder document as the caller's draft (the live page is untouched). Publishing renders the page in the editor, so open the page in Pursae Web Builder to publish. Read the contract in the pursae-docs resources first.",
+		Method: http.MethodPut, Path: "/web-builder/v2/documents/{id}/autosave", Props: map[string]any{"id": num("Post ID of the page."), "doc": obj("The full document."), "page": obj("Page settings (optional)."), "baseRev": num("rev the document was read at.")},
+		Required: []string{"id", "doc"}})
+
 	add(&mcpTool{Name: "cache_status", Desc: "Pursae Cache status: enabled, entries, size, hit ratio, crawler state.", Method: http.MethodGet, Path: "/pursae/v1/cache"})
 	add(&mcpTool{Name: "cache_purge", Desc: "Purge the page cache: all=true, or url, or post (ID), or tags.", Method: http.MethodPost, Path: "/pursae/v1/cache/purge",
 		Props: map[string]any{"all": flag("Purge everything."), "url": str("A page URL or path."), "post": num("Purge the pages of this post."), "tags": strList("Cache tags, e.g. home, post:12.")}})
 	add(&mcpTool{Name: "cache_get_settings", Desc: "Get Pursae Cache settings (wpgo_cache_* and wpgo_opt_* options).", Method: http.MethodGet, Path: "/pursae/v1/cache/settings"})
 	add(&mcpTool{Name: "cache_update_settings", Desc: "Update Pursae Cache settings; keys as in cache_get_settings.", Method: http.MethodPost, Path: "/pursae/v1/cache/settings", Open: true})
 
-	group := str("Option group: gocdn, headless, maintenance, security, seo or smtp.")
+	hgUID := str("Content type or component UID, e.g. blog (see headless_list_types).")
+	hgDoc := str("Entry document ID.")
+	hgLoc := str("Locale code (types with i18n only; default: the default locale).")
+	add(&mcpTool{Name: "headless_list_types", Desc: "List Pursae Headless content types and components with their fields (the schema).", Method: http.MethodGet, Path: "/pursae/v1/headless/types"})
+	add(&mcpTool{Name: "headless_save_type", Desc: "Create a Pursae Headless content type or component from a schema, e.g. {\"schema\": {\"kind\": \"collectionType\", \"displayName\": \"Blog\", \"singularName\": \"blog\", \"pluralName\": \"blogs\", \"draftAndPublish\": true, \"attributes\": [{\"name\": \"title\", \"type\": \"text\", \"required\": true}]}}. Field types: text, richtext, number, boolean, date, datetime, time, email, uid, enumeration, json, media, relation, component, dynamiczone. Read an existing one with headless_list_types for the exact shape.",
+		Method: http.MethodPost, Path: "/pursae/v1/headless/types", Props: map[string]any{"schema": obj("The schema (kind, displayName, singularName, pluralName, draftAndPublish, localized, attributes).")}, Required: []string{"schema"}})
+	add(&mcpTool{Name: "headless_update_type", Desc: "Replace the schema of an existing content type or component (stored entries are migrated). Fields are matched by name; set renamedFrom to rename one.",
+		Method: http.MethodPost, Path: "/pursae/v1/headless/types/{uid}", Props: map[string]any{"uid": hgUID, "schema": obj("The full new schema.")}, Required: []string{"uid", "schema"}})
+	add(&mcpTool{Name: "headless_delete_type", Desc: "Delete a content type or component and all its entries. Pass force=true.", Method: http.MethodDelete, Path: "/pursae/v1/headless/types/{uid}",
+		Props: map[string]any{"uid": hgUID, "force": flag("Must be true.")}, Required: []string{"uid"}})
+	add(&mcpTool{Name: "headless_find", Desc: "List the entries of a content type (draft versions by default).", Method: http.MethodGet, Path: "/pursae/v1/headless/entries/{uid}",
+		Props: map[string]any{"uid": hgUID, "status": str("draft (default) or published."), "locale": hgLoc, "page": num("Page number."), "per_page": num("Entries per page (1-100, default 25).")}, Required: []string{"uid"}})
+	add(&mcpTool{Name: "headless_get_entry", Desc: "Get one entry (draft and published values).", Method: http.MethodGet, Path: "/pursae/v1/headless/entries/{uid}/{doc}",
+		Props: map[string]any{"uid": hgUID, "doc": hgDoc, "locale": hgLoc}, Required: []string{"uid", "doc"}})
+	add(&mcpTool{Name: "headless_create_entry", Desc: "Create an entry; data holds the attribute values. publish=true also publishes it.", Method: http.MethodPost, Path: "/pursae/v1/headless/entries/{uid}",
+		Props: map[string]any{"uid": hgUID, "data": obj("Attribute values."), "publish": flag("Publish right away."), "locale": hgLoc}, Required: []string{"uid", "data"}})
+	add(&mcpTool{Name: "headless_save_entry", Desc: "Update an entry: the values in data are merged over the stored ones. publish=true also publishes.", Method: http.MethodPost, Path: "/pursae/v1/headless/entries/{uid}/{doc}",
+		Props: map[string]any{"uid": hgUID, "doc": hgDoc, "data": obj("Attribute values to change."), "publish": flag("Publish after saving."), "locale": hgLoc}, Required: []string{"uid", "doc", "data"}})
+	add(&mcpTool{Name: "headless_publish", Desc: "Publish an entry's current draft.", Method: http.MethodPost, Path: "/pursae/v1/headless/entries/{uid}/{doc}/publish",
+		Props: map[string]any{"uid": hgUID, "doc": hgDoc, "locale": hgLoc}, Required: []string{"uid", "doc"}})
+	add(&mcpTool{Name: "headless_unpublish", Desc: "Unpublish an entry (the draft is kept).", Method: http.MethodPost, Path: "/pursae/v1/headless/entries/{uid}/{doc}/unpublish",
+		Props: map[string]any{"uid": hgUID, "doc": hgDoc, "locale": hgLoc}, Required: []string{"uid", "doc"}})
+	add(&mcpTool{Name: "headless_delete_entry", Desc: "Delete an entry. Pass force=true.", Method: http.MethodDelete, Path: "/pursae/v1/headless/entries/{uid}/{doc}",
+		Props: map[string]any{"uid": hgUID, "doc": hgDoc, "locale": hgLoc, "force": flag("Must be true.")}, Required: []string{"uid", "doc"}})
+
+	group := str("Option group: contact, cookie, gocdn, headless, maintenance, multilang, pixel, security, seo or smtp.")
 	add(&mcpTool{Name: "list_option_groups", Desc: "List the built-in plugins whose settings get_options/update_options can change.", Method: http.MethodGet, Path: "/pursae/v1/options"})
 	add(&mcpTool{Name: "get_options", Desc: "Get a built-in plugin's settings (secrets are masked as ********).", Method: http.MethodGet, Path: "/pursae/v1/options/{group}",
 		Props: map[string]any{"group": group}, Required: []string{"group"}})
@@ -413,6 +502,11 @@ func (s *Server) mcpCall(c *gin.Context, t *mcpTool, args map[string]any) map[st
 			return toolErr("Unknown argument: " + k) // the schema says additionalProperties: false
 		}
 		rest[k] = v
+	}
+	if t.Name == "commerce_update_stock" {
+		if _, ok := rest["manage_stock"]; !ok {
+			rest["manage_stock"] = true
+		}
 	}
 	var bad string
 	route = mcpPathArg.ReplaceAllStringFunc(route, func(m string) string {
@@ -483,7 +577,9 @@ func (s *Server) mcpCall(c *gin.Context, t *mcpTool, args map[string]any) map[st
 			contentType = "application/json"
 		}
 	}
+	started := time.Now()
 	status, out := s.mcpDispatch(c, method, route, body, contentType)
+	s.mcpLogActivity(c, t.Name, method, route, status, time.Since(started))
 	if t.special == "info" && status < 400 {
 		var idx map[string]any
 		if json.Unmarshal(out, &idx) == nil {
@@ -491,14 +587,11 @@ func (s *Server) mcpCall(c *gin.Context, t *mcpTool, args map[string]any) map[st
 				"namespaces": idx["namespaces"], "version": Version, "scopes": restScopes(c)})
 		}
 	}
-	text := string(out)
-	if len(text) > 400_000 {
-		text = text[:400_000] + "\n…(truncated; ask for fewer items with per_page / _fields)"
-	}
+	text, truncated := mcpTruncate(string(out), mcpMaxText)
 	res := map[string]any{"content": []map[string]any{{"type": "text", "text": text}}}
 	if status >= 400 {
 		res["isError"] = true
-	} else {
+	} else if !truncated { // a cut answer must not travel again, whole, as structuredContent
 		var v any
 		if json.Unmarshal(out, &v) == nil {
 			if m, ok := v.(map[string]any); ok {
@@ -507,6 +600,21 @@ func (s *Server) mcpCall(c *gin.Context, t *mcpTool, args map[string]any) map[st
 		}
 	}
 	return res
+}
+
+// mcpMaxText is the longest tool answer sent as text.
+const mcpMaxText = 400_000
+
+// mcpTruncate cuts text to at most max bytes on a rune boundary and says whether it cut.
+func mcpTruncate(text string, max int) (string, bool) {
+	if len(text) <= max {
+		return text, false
+	}
+	cut := max
+	for cut > 0 && !utf8.RuneStart(text[cut]) { // never split a multi-byte character
+		cut--
+	}
+	return text[:cut] + "\n…(truncated; ask for fewer items with per_page / _fields)", true
 }
 
 // mcpDispatch runs a REST request in-process with the caller's credentials.
@@ -522,6 +630,9 @@ func (s *Server) mcpDispatch(c *gin.Context, method, route string, body []byte, 
 		if v := c.GetHeader(h); v != "" {
 			req.Header.Set(h, v)
 		}
+	}
+	if strings.HasPrefix(route, "/web-builder/v2") {
+		req.Header.Set(webbuilder.APIHeader, strconv.Itoa(webbuilder.APIVersion)) // the editor handshake: the tool speaks the current contract
 	}
 	req.Host = c.Request.Host
 	req.RemoteAddr = c.Request.RemoteAddr

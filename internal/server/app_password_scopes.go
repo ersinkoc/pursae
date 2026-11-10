@@ -46,8 +46,12 @@ var appScopes = []appScope{
 	{"seo", "SEO", "Pursae SEO meta, analysis, site-wide settings and redirects.",
 		append(slices.Clone(postCaps), "manage_options", "seogo_onpage_general", "seogo_onpage_advanced", "seogo_onpage_snippet", "seogo_onpage_social",
 			"seogo_titles", "seogo_general", "seogo_sitemap", "seogo_redirections", "seogo_404_monitor", "seogo_link_builder", "seogo_onpage_analysis")},
-	{"settings", "Settings", "Site settings and the options of the built-in plugins.",
+	{"settings", "Settings", "Site settings, the options of the built-in plugins and Pursae Headless content types and entries.",
 		[]string{"read", "manage_options"}},
+	{"commerce", "Commerce", "Pursae Commerce products, orders, coupons, customers, reports and store settings (the wc/v3 REST API).",
+		[]string{"read", "manage_woocommerce", "view_woocommerce_reports", "edit_products", "edit_others_products", "publish_products", "read_private_products",
+			"delete_products", "delete_others_products", "delete_published_products", "delete_private_products", "edit_published_products", "edit_private_products",
+			"manage_product_terms", "edit_shop_orders", "edit_shop_coupons", "moderate_comments", "list_users", "edit_users", "delete_users"}},
 	{"users", "Users", "List, create and edit users.",
 		[]string{"read", "list_users", "create_users", "edit_users", "promote_users", "delete_users"}},
 }
@@ -119,7 +123,7 @@ var appScopeRoutes = map[string]string{
 	"/wp/v2/tags": "content", "/wp/v2/comments": "content", "/wp/v2/taxonomies": "content", "/wp/v2/types": "content",
 	"/wp/v2/statuses": "content", "/wp/v2/search": "content", "/wp/v2/block-renderer": "content", "/wp/v2/block-types": "content",
 	"/wp/v2/block-patterns": "content", "/wp/v2/pattern-directory": "content", "/wp/v2/wp_pattern_category": "content",
-	"/web-builder/v2": "content", "/headlessgo/v1": "content", "/pll/v1": "content", "/batch/v1": "content", "/oembed/1.0": "content",
+	"/web-builder/v2": "content", "/pll/v1": "content", "/batch/v1": "content", "/oembed/1.0": "content",
 	"/wp/v2/media":     "media",
 	"/wp/v2/templates": "themes", "/wp/v2/template-parts": "themes", "/wp/v2/global-styles": "themes", "/wp/v2/themes": "themes",
 	"/wp/v2/menus": "themes", "/wp/v2/menu-items": "themes", "/wp/v2/menu-locations": "themes", "/wp/v2/navigation": "themes",
@@ -127,8 +131,10 @@ var appScopeRoutes = map[string]string{
 	"/pursae/v1/plugins": "plugins",
 	"/pursae/v1/cache":   "cache",
 	"/seogo/v1":          "seo", "/pursae/v1/seo": "seo",
-	"/wp/v2/settings": "settings", "/pursae/v1/options": "settings",
-	"/wp/v2/users": "users",
+	"/wp/v2/settings": "settings", "/pursae/v1/options": "settings", "/pursae/v1/mcp/activity": "settings", "/pursae/v1/headless": "settings",
+	"/wp/v2/users":      "users",
+	"/wc/v3":            "commerce",
+	"/pursae/v1/health": "settings", "/pursae/v1/backups": "settings", "/pursae/v1/updates": "plugins",
 }
 
 // appScopeForRoute is the scope a route belongs to: "" for routes no scope covers, "*" for routes any

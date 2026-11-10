@@ -731,8 +731,7 @@ func (q *hgQuery) sortExpr(sc *hgSchema, path []string, col, alias string, depth
 		if len(path) != 2 && strings.HasPrefix(f.Target, "wp:") {
 			return "", hgBad("Invalid sort key %s", key)
 		}
-		switch f.Target {
-		case "wp:post", "wp:page", "wp:user":
+		if hgIsWPPost(f.Target) || f.Target == "wp:user" || hgIsWPTerm(f.Target) {
 			cols := map[string]string{"id": "id", "slug": "slug", "title": "title"}
 			table := "posts"
 			if f.Target == "wp:user" {
@@ -740,6 +739,8 @@ func (q *hgQuery) sortExpr(sc *hgSchema, path []string, col, alias string, depth
 				for k, c := range hgWPUserCols {
 					cols[k] = c[0]
 				}
+			} else if hgIsWPTerm(f.Target) {
+				cols, table = map[string]string{"id": "id", "slug": "slug", "name": "name"}, "terms"
 			}
 			c, ok := cols[path[1]]
 			if !ok {
@@ -753,6 +754,8 @@ func (q *hgQuery) sortExpr(sc *hgSchema, path []string, col, alias string, depth
 			cond := a + ".id::text = " + first
 			if table == "posts" {
 				cond += " AND " + hgWPPostCond(a, f.Target)
+			} else if tax, ok := hgWPTaxonomy(f.Target); ok {
+				cond += " AND " + a + ".taxonomy = " + q.sql.arg(tax)
 			}
 			return "(SELECT " + expr + " FROM " + table + " " + a + " WHERE " + cond + ")", nil
 		}

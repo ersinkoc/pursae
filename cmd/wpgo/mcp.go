@@ -21,6 +21,9 @@ import (
 // /wp-json/pursae/v1/mcp, signed in with an Application Password, so the tools run on the site with
 // that password's capabilities and scopes. The site can be local or remote.
 func runMCP(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) error {
+	if len(args) > 0 && args[0] == "login" {
+		return runMCPLogin(ctx, args[1:], stdout, stderr)
+	}
 	fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	site := fs.String("url", os.Getenv("PURSAE_URL"), "site URL, e.g. https://example.com (env PURSAE_URL)")
@@ -34,9 +37,19 @@ func runMCP(ctx context.Context, args []string, stdin io.Reader, stdout, stderr 
 	} else {
 		*pass = os.Getenv("PURSAE_APP_PASSWORD")
 	}
-	if *site == "" || *user == "" || *pass == "" {
-		return errors.New("wpgo mcp needs --url, --user and PURSAE_APP_PASSWORD (or PURSAE_URL, PURSAE_USER; --password also works)")
+	var tok *mcpToken
+	tokPath := ""
+	if *site != "" && *user == "" && *pass == "" { // no Application Password: use the token from `wpgo mcp login`
+		if p, err := mcpTokenPath(strings.TrimRight(*site, "/")); err == nil {
+			if t, err := loadMCPToken(p); err == nil {
+				tok, tokPath = t, p
+			}
+		}
 	}
+	if *site == "" || (tok == nil && (*user == "" || *pass == "")) {
+		return errors.New("wpgo mcp needs --url and either `wpgo mcp login` first, or --user and PURSAE_APP_PASSWORD (or PURSAE_URL, PURSAE_USER; --password also works)")
+	}
+	auth := &mcpAuth{user: *user, pass: *pass, tok: tok, path: tokPath}
 	u, err := url.Parse(strings.TrimRight(*site, "/"))
 	if err != nil || u.Host == "" {
 		return fmt.Errorf("wpgo mcp: invalid --url %q", *site)
@@ -56,7 +69,7 @@ func runMCP(ctx context.Context, args []string, stdin io.Reader, stdout, stderr 
 	for {
 		line, err := in.ReadBytes('\n')
 		if len(bytes.TrimSpace(line)) > 0 {
-			if resp := forwardMCP(ctx, client, endpoint, *user, *pass, bytes.TrimSpace(line)); resp != nil {
+			if resp := forwardMCP(ctx, client, endpoint, auth, bytes.TrimSpace(line)); resp != nil {
 				if werr := out.Encode(resp); werr != nil {
 					return werr
 				}
@@ -93,7 +106,7 @@ func mcpURLAllowed(u *url.URL) error {
 
 // forwardMCP posts one message and returns the answer to print (nil for notifications). Transport
 // failures become JSON-RPC errors so the client sees them.
-func forwardMCP(ctx context.Context, client *http.Client, endpoint, user, pass string, msg []byte) json.RawMessage {
+func forwardMCP(ctx context.Context, client *http.Client, endpoint string, auth *mcpAuth, msg []byte) json.RawMessage {
 	var probe struct {
 		ID json.RawMessage `json:"id"`
 	}
@@ -107,15 +120,26 @@ func forwardMCP(ctx context.Context, client *http.Client, endpoint, user, pass s
 		b, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": probe.ID, "error": map[string]any{"code": -32000, "message": text}})
 		return b
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(msg))
-	if err != nil {
-		return fail(err.Error())
+	do := func() (*http.Response, string, error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(msg))
+		if err != nil {
+			return nil, "", err
+		}
+		auth.sign(req)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept", "application/json, text/event-stream")
+		req.Header.Set("User-Agent", "wpgo-mcp")
+		resp, err := client.Do(req)
+		return resp, strings.TrimPrefix(req.Header.Get("Authorization"), "Bearer "), err
 	}
-	req.SetBasicAuth(user, pass)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json, text/event-stream")
-	req.Header.Set("User-Agent", "wpgo-mcp")
-	resp, err := client.Do(req)
+	resp, used, err := do()
+	if err == nil && resp.StatusCode == http.StatusUnauthorized && auth.tok != nil {
+		resp.Body.Close() // the access token expired: refresh once and retry
+		if rerr := auth.refresh(ctx, client, used); rerr != nil {
+			return fail(rerr.Error())
+		}
+		resp, _, err = do()
+	}
 	if err != nil {
 		return fail(err.Error())
 	}

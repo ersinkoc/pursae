@@ -867,18 +867,29 @@ func hgAnyIn(x any, list []any) bool {
 // relTarget resolves one relation reference to its stored id.
 func (h *hgCoercer) relTarget(f *hgField, x any) (any, bool) {
 	ctx := h.ctx
-	switch f.Target {
-	case "wp:post", "wp:page":
+	switch {
+	case hgIsWPPost(f.Target):
 		id, ok := hgToInt(x)
 		if !ok {
 			return nil, false
 		}
+		typ, _ := hgWPPostType(f.Target)
 		p, err := h.s.store.GetPost(ctx, id)
-		if err != nil || p.Type != strings.TrimPrefix(f.Target, "wp:") {
+		if err != nil || p.Type != typ {
 			return nil, false
 		}
 		return float64(id), true
-	case "wp:user":
+	case hgIsWPTerm(f.Target):
+		id, ok := hgToInt(x)
+		if !ok {
+			return nil, false
+		}
+		tax, _ := hgWPTaxonomy(f.Target)
+		if t, err := h.s.store.GetTerm(ctx, id); err != nil || t.Taxonomy != tax {
+			return nil, false
+		}
+		return float64(id), true
+	case f.Target == "wp:user":
 		id, ok := hgToInt(x)
 		if !ok {
 			return nil, false
@@ -1004,13 +1015,28 @@ func (s *Server) hgSaveEntryOnce(ctx context.Context, sc *hgSchema, doc string, 
 	invChanges := h.inverse(sc, doc, o.Locale)
 	if o.Auth != nil {
 		for _, ch := range invChanges {
-			if !o.Auth.can(ch.owner.UID, "update") {
+			if !o.Auth.can(ch.owner.UID, "update") || o.Auth.ownerOnly(ch.owner.UID, "update") {
 				h.fail([]string{ch.inverse}, "Changing this relation edits %s entries: it needs update access to %s", ch.owner.DisplayName, ch.owner.DisplayName)
 			}
 		}
 	}
 	if len(h.errs) > 0 {
 		return nil, nil, h.errs
+	}
+	hookAction := "update"
+	if existing == nil {
+		hookAction = "create"
+	}
+	if publish {
+		hookAction = "publish"
+	}
+	hookDoc := doc
+	if existing == nil {
+		hookDoc = ""
+	}
+	var herrs hgValidationError
+	if data, herrs = s.hgValidateHook(ctx, sc, h, hookDoc, o.Locale, hookAction, data, old); len(herrs) > 0 {
+		return nil, nil, herrs
 	}
 	if errs := s.hgCheckUnique(ctx, sc, doc, o.Locale, data); len(errs) > 0 {
 		return nil, nil, errs

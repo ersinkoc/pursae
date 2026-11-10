@@ -170,6 +170,16 @@ func mcpPush(userID int64, method string, params any) {
 	}
 }
 
+// mcpPushAll sends a notification to every open stream (tool lists change for all users alike).
+func mcpPushAll(method string) {
+	msg, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "method": method})
+	mcpSess.mu.Lock()
+	defer mcpSess.mu.Unlock()
+	for _, x := range mcpSess.list {
+		x.push(msg)
+	}
+}
+
 // wantsSSE reports whether a POST should be answered as an event stream.
 func wantsSSE(accept string) bool {
 	sse, js := strings.Index(accept, "text/event-stream"), strings.Index(accept, "application/json")

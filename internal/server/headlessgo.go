@@ -63,6 +63,16 @@ type hgSettings struct {
 	GraphQL          bool                `json:"graphql"`
 	SchemaWebhooks   bool                `json:"schema_webhooks"`  // send schema.update events
 	WebhookAttempts  int                 `json:"webhook_attempts"` // attempts per delivery, the first included
+	RateLimit        int                 `json:"rate_limit"`       // requests per minute per token or address; 0 = unlimited
+	CacheMaxAge      int                 `json:"cache_max_age"`    // seconds of s-maxage on public reads; 0 = revalidate always
+	NoPublicIntro    bool                `json:"no_public_introspection"`
+	// Front-end users (headlessgo_users.go): WordPress accounts sign in at /auth/local and get a
+	// short-lived token; the Authenticated matrix says what they may do on top of the public role.
+	UserAuth      bool                `json:"user_auth"`
+	UserRegister  bool                `json:"user_register"`  // POST /auth/local/register creates accounts
+	UserTokenTTL  int                 `json:"user_token_ttl"` // minutes a user token stays valid
+	Authenticated map[string][]string `json:"authenticated"`  // type uid -> actions any signed-in user may use
+	OwnerOnly     map[string][]string `json:"owner_only"`     // type uid -> update/delete only on entries the user created
 }
 
 func hgDefaults() hgSettings {
@@ -103,21 +113,11 @@ func hgSanitize(st hgSettings) hgSettings {
 	if st.FrontMode == "redirect" && !hgHTTPURL(st.RedirectURL) {
 		st.FrontMode = "json"
 	}
-	if st.Public == nil {
-		st.Public = map[string][]string{}
-	}
-	for uid, acts := range st.Public {
-		var ok []string
-		for _, a := range acts {
-			if containsStr(hgActions, a) && !containsStr(ok, a) {
-				ok = append(ok, a)
-			}
-		}
-		if len(ok) == 0 {
-			delete(st.Public, uid)
-		} else {
-			st.Public[uid] = ok
-		}
+	st.Public = hgCleanMatrix(st.Public, hgActions)
+	st.Authenticated = hgCleanMatrix(st.Authenticated, hgActions)
+	st.OwnerOnly = hgCleanMatrix(st.OwnerOnly, []string{"update", "delete"})
+	if st.UserTokenTTL <= 0 || st.UserTokenTTL > 7*24*60 {
+		st.UserTokenTTL = 60
 	}
 	var origins []string
 	for _, o := range st.CORSOrigins {
@@ -139,10 +139,33 @@ func hgSanitize(st hgSettings) hgSettings {
 	if st.WebhookAttempts <= 0 || st.WebhookAttempts > 10 {
 		st.WebhookAttempts = 5
 	}
+	if st.RateLimit < 0 || st.RateLimit > 1000000 {
+		st.RateLimit = 0
+	}
+	if st.CacheMaxAge < 0 || st.CacheMaxAge > 31536000 {
+		st.CacheMaxAge = 0
+	}
 	if st.DefaultPageSize <= 0 || st.DefaultPageSize > st.MaxPageSize {
 		st.DefaultPageSize = min(25, st.MaxPageSize)
 	}
 	return st
+}
+
+// hgCleanMatrix keeps the known actions of a permission matrix, once each, and drops empty rows.
+func hgCleanMatrix(m map[string][]string, known []string) map[string][]string {
+	out := map[string][]string{}
+	for uid, acts := range m {
+		var ok []string
+		for _, a := range acts {
+			if containsStr(known, a) && !containsStr(ok, a) {
+				ok = append(ok, a)
+			}
+		}
+		if len(ok) > 0 {
+			out[uid] = ok
+		}
+	}
+	return out
 }
 
 func hgHTTPURL(v string) bool {
@@ -390,10 +413,10 @@ func (s *Server) headlessServe(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-// hgAlwaysOpen are the paths headless mode never closes.
+// hgAlwaysOpen are the paths headless mode never closes (the OAuth endpoints too: MCP clients sign in there).
 func hgAlwaysOpen(r *http.Request) bool {
 	p := r.URL.Path
-	for _, pre := range []string{"/wp-admin", "/wp-login", "/wp-json", "/wp-content/", "/wp-includes/", "/wp-cron", "/xmlrpc"} {
+	for _, pre := range []string{"/wp-admin", "/wp-login", "/wp-json", "/wp-content/", "/wp-includes/", "/wp-cron", "/xmlrpc", "/oauth/", "/.well-known/oauth-"} {
 		if strings.HasPrefix(p, pre) {
 			return true
 		}

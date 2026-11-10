@@ -242,6 +242,14 @@ func (wc *hgWSConn) init(payload json.RawMessage) bool {
 	if strings.HasPrefix(tok, hgPreviewPrefix) {
 		return false // preview tokens read one entry; they cannot subscribe
 	}
+	if strings.Count(tok, ".") == 2 { // a signed-in user's token (headlessgo_users.go)
+		u := wc.s.hgUserFromToken(wc.c, wc.st, tok)
+		if u == nil {
+			return false
+		}
+		wc.a = &hgAuth{Kind: hgUserKind, UserID: u.ID, Public: wc.st.Public, Authenticated: wc.st.Authenticated, OwnerOnly: wc.st.OwnerOnly}
+		return true
+	}
 	t := wc.s.hgTokenByValue(wc.c, tok)
 	if t == nil {
 		return false
