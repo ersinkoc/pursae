@@ -40,6 +40,7 @@ var coreEvents = []struct{ Name, Recurrence string }{
 	{"wpgo_hub_check", "daily"},           // ping the Hub and refresh the release / marketplace cache
 	{"gontact_captcha_cleanup", "hourly"}, // expired Gontact Form CAPTCHA challenges
 	{"seogo_404_trim", "hourly"},          // Pursae SEO: keep the 404 log at its limit (seogo_front.go)
+	{"goo_import_cleanup", "daily"},       // Pursae Commerce: delete abandoned product-import uploads (goo_admin_catalog_csv_batch.go)
 }
 
 // recurrenceInterval maps a recurrence name to its interval: the WordPress names above, or
@@ -99,6 +100,7 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		"wpgo_hub_check":          func(ctx context.Context, _ map[string]any) error { return s.hubPing(ctx) },
 		"gontact_captcha_cleanup": func(ctx context.Context, _ map[string]any) error { return s.gontactCaptchaCleanup(ctx) },
 		"seogo_404_trim":          func(ctx context.Context, _ map[string]any) error { return s.seogo404Trim(ctx) },
+		"goo_import_cleanup":      func(ctx context.Context, _ map[string]any) error { return s.gooImportCleanup(ctx) },
 		"wp_mail": func(ctx context.Context, p map[string]any) error {
 			var msg mail.Message
 			raw, _ := json.Marshal(p)
@@ -111,9 +113,10 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		gooikePurgeJob:       func(ctx context.Context, _ map[string]any) error { _, err := s.gooikePurge(ctx); return err }, // Gooike consent log retention
 		pixelPurgeJob:        func(ctx context.Context, _ map[string]any) error { _, err := s.pixelPurge(ctx); return err },  // Pursae Pixel delivery log retention
 		"adminsecgo_daily":   func(ctx context.Context, _ map[string]any) error { return s.adminsecDaily(ctx) },
-		gooDailyJob:          func(ctx context.Context, _ map[string]any) error { return s.gooDaily(ctx) },  // Goocommerce
-		gooHourlyJob:         func(ctx context.Context, _ map[string]any) error { return s.gooHourly(ctx) }, // Goocommerce: held stock
-		hgTickJob:            func(ctx context.Context, _ map[string]any) error { return s.hgTick(ctx) },    // HeadlessGo: schedules, webhook queue
+		gooDailyJob:          func(ctx context.Context, _ map[string]any) error { return s.gooDaily(ctx) },                     // Goocommerce
+		gooWeeklyJob:         func(ctx context.Context, _ map[string]any) error { return s.gooWeeklySummary(ctx, time.Now()) }, // Goocommerce: weekly summary e-mail
+		gooHourlyJob:         func(ctx context.Context, _ map[string]any) error { return s.gooHourly(ctx) },                    // Goocommerce: held stock
+		hgTickJob:            func(ctx context.Context, _ map[string]any) error { return s.hgTick(ctx) },                       // HeadlessGo: schedules, webhook queue
 	}
 }
 

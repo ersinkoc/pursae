@@ -43,6 +43,15 @@ type gooGatewayDef interface {
 	Available(s *Server, c *gin.Context, cart *gooCart) bool
 }
 
+// gooRenewalGateway is implemented by gateways that can charge a saved payment token (card on file)
+// without the customer present (WC_Gateway scheduled_subscription_payment). Such a gateway also
+// reports Supports("subscriptions") and stores the token in the order meta "_payment_token", which the
+// subscription copies; without a token renewals stay manual.
+type gooRenewalGateway interface {
+	// ProcessRenewal charges the renewal order and returns the provider's transaction id.
+	ProcessRenewal(s *Server, ctx context.Context, o *gooOrder, token string) (string, error)
+}
+
 var gooGatewayRegistry = map[string]gooGatewayDef{}
 
 // gooRegisterGateway adds a gateway (woocommerce_payment_gateways).

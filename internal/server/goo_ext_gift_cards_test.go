@@ -324,3 +324,25 @@ func TestGooExtGiftCardsPartialRefund(t *testing.T) {
 		t.Errorf("refund activity rows: %d", refunds)
 	}
 }
+
+func TestGooExtGiftCardsSoldCardDisabledOnRefund(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.gooSetExtension(ctx, gcKey, true); err != nil {
+		t.Fatal(err)
+	}
+	lamp := gooMakeSimple(t, srv, "Lamp", 100, nil)
+	o := gooTestOrder(t, srv, lamp, 1)
+	card := &gcCard{Initial: 100, Recipient: "r@example.test", Sender: "Shop", OrderID: o.ID}
+	if err := srv.gcCreate(ctx, card, 1, "test"); err != nil {
+		t.Fatal(err)
+	}
+	srv.gcOrderStatus(ctx, &gooStatusChange{Order: o, From: "processing", To: "refunded"})
+	if g, _ := srv.gcGet(ctx, card.ID); g.Status != "disabled" {
+		t.Fatalf("sold card after refund: %s", g.Status)
+	}
+	srv.gcOrderStatus(ctx, &gooStatusChange{Order: o, From: "refunded", To: "processing"})
+	if g, _ := srv.gcGet(ctx, card.ID); g.Status != "active" {
+		t.Fatalf("sold card after the order is paid again: %s", g.Status)
+	}
+}

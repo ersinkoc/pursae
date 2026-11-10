@@ -33,6 +33,27 @@ func (s *Server) registerGooV3Webhooks() {
 		http.MethodPut:    s.gooV3Update(s.gooV3WebhookUpdate),
 		http.MethodDelete: s.gooV3Delete(s.gooV3WebhookDelete),
 	})
+	// The delivery log and a test delivery (WC_REST_Webhooks_V1's deliveries, WC_Webhook::deliver_ping()).
+	s.gooV3("/webhooks/(?P<id>[\\d]+)/deliveries", mw, map[string]restHandler{http.MethodGet: func(c *gin.Context, req *restRequest) {
+		ctx := c.Request.Context()
+		if _, err := s.gooWebhookByID(ctx, req.ID()); err != nil {
+			restErr(c, http.StatusNotFound, "woocommerce_rest_webhook_invalid_id", "Invalid ID.")
+			return
+		}
+		out := []any{}
+		for _, d := range s.gooWebhookDeliveries(ctx, req.ID(), gooWebhookKeepDeliveries) {
+			out = append(out, gooV3DeliveryJSON(&d))
+		}
+		restJSON(c, http.StatusOK, out)
+	}})
+	s.gooV3("/webhooks/(?P<id>[\\d]+)/ping", mw, map[string]restHandler{http.MethodPost: func(c *gin.Context, req *restRequest) {
+		rec, err := s.gooWebhookPing(c.Request.Context(), req.ID())
+		if err != nil {
+			restErr(c, http.StatusNotFound, "woocommerce_rest_webhook_invalid_id", "Invalid ID.")
+			return
+		}
+		restJSON(c, http.StatusOK, gooV3DeliveryJSON(rec))
+	}})
 }
 
 // gooWebhook is a stored webhook as the API sees it.
@@ -83,7 +104,7 @@ func (s *Server) gooV3ApplyWebhook(w *gooWebhook, b map[string]any) *gooAPIErr {
 	}
 	if v, ok := b["topic"]; ok {
 		t := strings.TrimSpace(gooStr(v))
-		if gooOptLabel(gooWebhookTopics, t) == t && !(strings.HasPrefix(t, "action.") && len(t) > len("action.")) {
+		if !s.gooWebhookTopicValid(t) {
 			return gooErr(400, "woocommerce_rest_webhook_invalid_topic", "Webhook topic is required and must be valid.")
 		}
 		w.Topic = t
@@ -160,6 +181,7 @@ func (s *Server) gooV3WebhookDelete(c *gin.Context, id int64, force bool) (map[s
 	if _, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_webhooks WHERE id = $1`, id); err != nil {
 		return nil, gooErr(500, "woocommerce_rest_cannot_delete", err.Error())
 	}
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_webhook_deliveries WHERE webhook_id = $1`, id)
 	return obj, nil
 }
 
@@ -204,4 +226,14 @@ func (s *Server) gooV3WebhooksList(c *gin.Context, req *restRequest) {
 		out = append(out, s.gooV3WebhookJSON(ctx, w))
 	}
 	restJSON(c, http.StatusOK, out)
+}
+
+func gooV3DeliveryJSON(d *gooWebhookDelivery) map[string]any {
+	t := d.Created
+	if t.IsZero() {
+		t = time.Now()
+	}
+	return map[string]any{"id": d.ID, "webhook_id": d.WebhookID, "delivery_id": d.DeliveryID, "topic": d.Topic, "delivery_url": d.URL,
+		"success": d.Success, "response_code": d.StatusCode, "response_body": d.Response, "error": d.Error,
+		"duration_ms": d.DurationMS, "date_created_gmt": gooDateGMT(&t)}
 }

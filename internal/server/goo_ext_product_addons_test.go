@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -122,6 +123,7 @@ func TestGooExtAddons(t *testing.T) {
 	var body bytes.Buffer
 	mw := multipart.NewWriter(&body)
 	_ = mw.WriteField("goo_module", "product_addons")
+	_ = mw.WriteField("_wpnonce", srv.nonce(gooTestCtx(), paoUploadNonce))
 	fw, _ := mw.CreateFormFile("file", "my logo.png")
 	_, _ = fw.Write([]byte("\x89PNG\r\n\x1a\nfake"))
 	_ = mw.Close()
@@ -144,6 +146,7 @@ func TestGooExtAddons(t *testing.T) {
 	// A disallowed type is refused.
 	body.Reset()
 	mw = multipart.NewWriter(&body)
+	_ = mw.WriteField("_wpnonce", srv.nonce(gooTestCtx(), paoUploadNonce))
 	fw, _ = mw.CreateFormFile("file", "shell.php")
 	_, _ = fw.Write([]byte("<?php"))
 	_ = mw.Close()
@@ -280,5 +283,234 @@ func TestGooExtAddonsFormUpload(t *testing.T) {
 	rel := v[strings.Index(v, "goocommerce_uploads/"):]
 	if _, err := os.Stat(filepath.Join(srv.cfg.UploadsDir, filepath.FromSlash(rel))); err != nil {
 		t.Errorf("the posted file was not stored: %v", err)
+	}
+}
+
+func paoTestUpload(srv *Server, nonce, ip string) (int, string) {
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	if nonce != "" {
+		_ = mw.WriteField("_wpnonce", nonce)
+	}
+	fw, _ := mw.CreateFormFile("file", "a.png")
+	_, _ = fw.Write([]byte("\x89PNG\r\n\x1a\nfake"))
+	_ = mw.Close()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/?goo-ajax=addon_upload", &body)
+	c.Request.RemoteAddr = ip + ":1234"
+	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
+	paoFrontRoute(srv, c, "")
+	return w.Code, w.Body.String()
+}
+
+// The upload endpoint needs the page's nonce, is rate limited per address, and abandoned uploads are
+// removed by the daily job while referenced ones stay.
+func TestGooExtAddonsUploadHardening(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.gooSetExtension(ctx, paoKey, true); err != nil {
+		t.Fatal(err)
+	}
+	if code, _ := paoTestUpload(srv, "", "203.0.113.10"); code != http.StatusForbidden {
+		t.Errorf("no nonce: %d", code)
+	}
+	if code, _ := paoTestUpload(srv, "bogus", "203.0.113.10"); code != http.StatusForbidden {
+		t.Errorf("bad nonce: %d", code)
+	}
+	nonce := srv.nonce(gooTestCtx(), paoUploadNonce)
+	for i := 0; i < paoUploadMax; i++ {
+		if code, body := paoTestUpload(srv, nonce, "203.0.113.11"); code != http.StatusOK {
+			t.Fatalf("upload %d: %d %s", i, code, body)
+		}
+	}
+	if code, _ := paoTestUpload(srv, nonce, "203.0.113.11"); code != http.StatusBadRequest {
+		t.Errorf("over the rate limit: %d", code)
+	}
+	if code, _ := paoTestUpload(srv, nonce, "203.0.113.12"); code != http.StatusOK {
+		t.Errorf("another address: %d", code)
+	}
+
+	root := filepath.Join(srv.cfg.UploadsDir, "goocommerce_uploads")
+	mk := func(dir string, age time.Duration) string {
+		d := filepath.Join(root, dir)
+		_ = os.MkdirAll(d, 0o755)
+		_ = os.WriteFile(filepath.Join(d, "f.png"), []byte("x"), 0o644)
+		old := time.Now().Add(-age)
+		_ = os.Chtimes(d, old, old)
+		return d
+	}
+	stale, fresh, ordered := mk("staledir", 48*time.Hour), mk("freshdir", time.Hour), mk("ordereddir", 48*time.Hour)
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO goo_orders (status) VALUES ('processing')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO goo_order_items (order_id, type, name, meta) SELECT max(id), 'line_item', 'x', '{"_goo_addons":[{"value":"http://x/wp-content/uploads/goocommerce_uploads/ordereddir/f.png"}]}'::jsonb FROM goo_orders`); err != nil {
+		t.Fatal(err)
+	}
+	srv.paoCleanupUploads(ctx, 24*time.Hour)
+	if _, err := os.Stat(stale); err == nil {
+		t.Error("an abandoned upload was kept")
+	}
+	if _, err := os.Stat(fresh); err != nil {
+		t.Error("a recent upload was deleted")
+	}
+	if _, err := os.Stat(ordered); err != nil {
+		t.Error("an ordered upload was deleted")
+	}
+}
+
+func TestPaoActiveFields(t *testing.T) {
+	addons := []paoAddon{
+		{Name: "Engrave?", Type: "multiple_choice", Options: []paoOption{{Label: "Yes"}, {Label: "No"}}},
+		{Name: "Text", Type: "custom_text", Required: true, ConditionField: "Engrave?", ConditionValue: "yes"},
+		{Name: "Font", Type: "custom_text", ConditionField: "Text"}, // chained: needs Text active and filled
+		{Name: "Loop A", Type: "custom_text", ConditionField: "Loop B"},
+		{Name: "Loop B", Type: "custom_text", ConditionField: "Loop A"},
+	}
+	f := func(k string, v ...string) map[string][]string {
+		return map[string][]string{paoFieldName(1, addons[0], 0): v, k: v}
+	}
+	_ = f
+	form := map[string][]string{paoFieldName(1, addons[0], 0): {"yes-1"}, paoFieldName(1, addons[1], 1): {"Hi"}, paoFieldName(1, addons[2], 2): {"Arial"}}
+	got := paoActiveFields(1, addons, form)
+	if !got[0] || !got[1] || !got[2] || got[3] || got[4] {
+		t.Errorf("yes: %v", got)
+	}
+	form[paoFieldName(1, addons[0], 0)] = []string{"no-2"}
+	if got := paoActiveFields(1, addons, form); !got[0] || got[1] || got[2] {
+		t.Errorf("no: %v", got)
+	}
+	if got := paoActiveFields(1, addons, map[string][]string{}); got[1] || got[2] {
+		t.Errorf("nothing chosen: %v", got)
+	}
+}
+
+func TestPaoStoreForm(t *testing.T) {
+	f := paoStoreForm(map[string]any{"extensions": map[string]any{"product_addons": map[string]any{"a": "x", "b": []any{"1", "2"}, "c": nil}}})
+	if len(f["a"]) != 1 || f["a"][0] != "x" || len(f["b"]) != 2 || len(f["c"]) != 0 {
+		t.Errorf("form: %v", f)
+	}
+	if paoStoreForm(map[string]any{}) != nil {
+		t.Error("no extensions should give nil")
+	}
+}
+
+// Conditional fields, date limits and the Store API (add-item body, product schema) end to end.
+func TestGooExtAddonsConditionalDatesStore(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.gooSetExtension(ctx, paoKey, true); err != nil {
+		t.Fatal(err)
+	}
+	p := gooMakeSimple(t, srv, "Watch", 100, func(p *gooProduct) { p.Virtual = true })
+	p = gxSavePanels(t, srv, p, paoKey, url.Values{
+		"product_addon_name[]":            {"Engrave", "Message", "Delivery"},
+		"product_addon_type[]":            {"multiple_choice", "custom_text", "datepicker"},
+		"product_addon_display[]":         {"radiobutton", "select", "select"},
+		"product_addon_required[]":        {"yes", "yes", "no"},
+		"product_addon_options[]":         {"Yes | 0\nNo | 0", "", ""},
+		"product_addon_condition_field[]": {"", "Engrave", ""},
+		"product_addon_condition_value[]": {"", "Yes", ""},
+		"product_addon_date_min_days[]":   {"", "", "2"},
+		"product_addon_date_max[]":        {"", "", "2099-01-01"},
+	})
+	addons := srv.paoAddonsFor(ctx, p)
+	if len(addons) != 3 || addons[1].ConditionField != "Engrave" || addons[2].DateMinDays == nil || *addons[2].DateMinDays != 2 || addons[2].DateMax != "2099-01-01" {
+		t.Fatalf("saved: %+v", addons)
+	}
+	n := func(i int) string { return paoFieldName(p.ID, addons[i], i) }
+	html := string(srv.gooHTML(gooTestCtx(), "single_before_add_to_cart", p))
+	lo := time.Now().In(srv.loc()).AddDate(0, 0, 2).Format("2006-01-02")
+	for _, want := range []string{`data-pao-condition-field="` + n(0) + `"`, `data-pao-condition-value="Yes"`, `min="` + lo + `"`, `max="2099-01-01"`, `data-option-label="Yes"`} {
+		if !strings.Contains(html, want) {
+			t.Errorf("front markup misses %s", want)
+		}
+	}
+	cart := srv.gooCartFor(gooTestCtx())
+	add := func(form map[string][]string) error {
+		_, err := cart.Add(ctx, p.ID, 1, 0, nil, form, nil)
+		return err
+	}
+	if err := add(map[string][]string{n(0): {"no-2"}}); err != nil {
+		t.Errorf("hidden required field must not be required: %v", err)
+	}
+	if err := add(map[string][]string{n(0): {"yes-1"}}); err == nil || !strings.Contains(err.Error(), "required") {
+		t.Errorf("visible required field: %v", err)
+	}
+	if err := add(map[string][]string{n(0): {"no-2"}, n(1): {"ignored"}}); err != nil {
+		t.Fatal(err)
+	}
+	for _, it := range cart.Items {
+		for _, a := range paoItemAddons(it) {
+			if gxStr(a["name"]) == "Message" {
+				t.Errorf("a hidden field's value was stored: %v", a)
+			}
+		}
+	}
+	if err := add(map[string][]string{n(0): {"no-2"}, n(2): {time.Now().In(srv.loc()).Format("2006-01-02")}}); err == nil || !strings.Contains(err.Error(), "earliest date") {
+		t.Errorf("a date before the minimum: %v", err)
+	}
+	if err := add(map[string][]string{n(0): {"no-2"}, n(2): {"2099-06-01"}}); err == nil || !strings.Contains(err.Error(), "latest date") {
+		t.Errorf("a date after the maximum: %v", err)
+	}
+	if err := add(map[string][]string{n(0): {"yes-1"}, n(1): {"Hi"}, n(2): {lo}}); err != nil {
+		t.Errorf("valid add-ons: %v", err)
+	}
+
+	// Store API: the product schema lists the fields, add-item carries the values.
+	ext := srv.paoStoreExtensions(ctx, p)
+	fields, _ := ext["product_addons"].([]any)
+	if len(fields) != 3 || gxStr(fields[1].(map[string]any)["name"]) != n(1) || fields[1].(map[string]any)["condition"] == nil {
+		t.Errorf("store schema: %v", ext)
+	}
+	req := &restRequest{Body: map[string]any{"id": float64(p.ID), "quantity": float64(1)}}
+	c := gooTestCtx()
+	if _, _, e := srv.gooStoreAdd(c, req); e == nil {
+		t.Error("a required add-on without values was added through the Store API")
+	}
+	req.Body["extensions"] = map[string]any{"product_addons": map[string]any{n(0): "yes-1", n(1): "Hi"}}
+	cart2, key, e := srv.gooStoreAdd(c, req)
+	if e != nil {
+		t.Fatalf("store add-item with add-ons: %v", e)
+	}
+	if got := paoItemAddons(cart2.Item(key)); len(got) != 2 {
+		t.Errorf("stored add-ons: %v", got)
+	}
+}
+
+// Field names stay the same when a global group is added or removed after the product page was
+// rendered, so a form posted from an open page still maps to the right add-ons.
+func TestGooExtAddonsStableFieldNames(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.gooSetExtension(ctx, paoKey, true); err != nil {
+		t.Fatal(err)
+	}
+	p := gooMakeSimple(t, srv, "Cup", 10, func(p *gooProduct) { p.Virtual = true })
+	p = gxSavePanels(t, srv, p, paoKey, url.Values{
+		"product_addon_name[]": {"Engraving"}, "product_addon_type[]": {"custom_text"}, "product_addon_required[]": {"yes"},
+	})
+	names := func() map[string]string {
+		m := map[string]string{}
+		for i, a := range srv.paoAddonsFor(ctx, p) {
+			m[a.Name] = paoFieldName(p.ID, a, i)
+		}
+		return m
+	}
+	before := names()
+	g := &paoGroup{Name: "Wrapping", Priority: 5, AllProducts: true, Fields: []paoAddon{{Name: "Gift note", Type: "custom_text"}}}
+	if err := srv.paoSaveGroup(ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	after := names()
+	if after["Engraving"] != before["Engraving"] {
+		t.Errorf("field name changed after adding a global group: %q -> %q", before["Engraving"], after["Engraving"])
+	}
+	if after["Gift note"] == after["Engraving"] {
+		t.Errorf("field names collide: %v", after)
+	}
+	// A form posted with the pre-change name still fills the engraving field.
+	if _, err := srv.gooCartFor(gooTestCtx()).Add(ctx, p.ID, 1, 0, nil, map[string][]string{before["Engraving"]: {"Hi"}}, nil); err != nil {
+		t.Errorf("stale-page form rejected: %v", err)
 	}
 }

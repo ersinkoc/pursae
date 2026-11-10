@@ -277,11 +277,18 @@ func (s *Server) gmemSaveUM(ctx context.Context, m *gooUserMembership) error {
 		if m.Start.IsZero() {
 			m.Start = time.Now()
 		}
-		return s.store.Pool.QueryRow(ctx, `INSERT INTO goo_user_memberships (user_id, plan_id, status, start_date, end_date, order_id, product_id, notes)
+		err := s.store.Pool.QueryRow(ctx, `INSERT INTO goo_user_memberships (user_id, plan_id, status, start_date, end_date, order_id, product_id, notes)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, date_created`, m.UserID, m.PlanID, m.Status, m.Start, m.End, m.OrderID, m.ProductID, notes).Scan(&m.ID, &m.DateCreated)
+		if err == nil {
+			s.gooFire(ctx, "membership_created", m)
+		}
+		return err
 	}
 	_, err := s.store.Pool.Exec(ctx, `UPDATE goo_user_memberships SET status=$2, start_date=$3, end_date=$4, order_id=$5, product_id=$6, notes=$7 WHERE id=$1`,
 		m.ID, m.Status, m.Start, m.End, m.OrderID, m.ProductID, notes)
+	if err == nil {
+		s.gooFire(ctx, "membership_updated", m)
+	}
 	return err
 }
 

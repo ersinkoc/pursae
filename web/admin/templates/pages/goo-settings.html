@@ -238,10 +238,16 @@
 <tr valign="top"><th scope="row" class="titledesc"><label for="webhook_name">Name</label></th><td class="forminp"><input name="webhook_name" id="webhook_name" type="text" class="input-text regular-input" value="{{.Name}}"></td></tr>
 <tr valign="top"><th scope="row" class="titledesc"><label for="webhook_status">Status</label></th><td class="forminp"><select name="webhook_status" id="webhook_status" class="wc-enhanced-select">{{template "goo-store-options" (dict "Opts" .Statuses "Sel" .Status)}}</select></td></tr>
 <tr valign="top"><th scope="row" class="titledesc"><label for="webhook_topic">Topic</label></th><td class="forminp"><select name="webhook_topic" id="webhook_topic" class="wc-enhanced-select">{{template "goo-store-options" (dict "Opts" .Topics "Sel" .Topic)}}</select></td></tr>
+<tr valign="top"><th scope="row" class="titledesc"><label for="webhook_action_event">Action event</label></th><td class="forminp"><input name="webhook_action_event" id="webhook_action_event" type="text" class="input-text regular-input" value="{{.ActionEvent}}"><p class="description">Only for the Action topic: the name of the hook that triggers the webhook, for example <code>order_status_changed</code> or <code>woocommerce_payment_complete</code>.</p></td></tr>
 <tr valign="top"><th scope="row" class="titledesc"><label for="webhook_delivery_url">Delivery URL</label></th><td class="forminp"><input name="webhook_delivery_url" id="webhook_delivery_url" type="url" class="input-text regular-input" value="{{.URL}}" required></td></tr>
 <tr valign="top"><th scope="row" class="titledesc"><label for="webhook_secret">Secret</label></th><td class="forminp"><input name="webhook_secret" id="webhook_secret" type="text" class="input-text regular-input" value="{{.Secret}}"></td></tr>
 {{if .Created}}<tr valign="top"><th scope="row" class="titledesc">Created at</th><td class="forminp">{{.Created}}</td></tr>{{end}}
 </tbody></table>
-{{if .ID}}<p><button type="submit" class="button-link submitdelete" name="goo_do" value="delete:{{.ID}}" data-confirm="Are you sure you want to delete this webhook?" style="color:#a00">Delete permanently</button></p>{{end}}
+{{if .ID}}<p><button type="submit" class="button" name="goo_do" value="ping">Send test delivery</button></p>
+<h2>Delivery log</h2>
+{{if .Deliveries}}<table class="widefat striped"><thead><tr><th>Time</th><th>Topic</th><th>Result</th><th>Duration</th><th>Response</th></tr></thead><tbody>
+{{range .Deliveries}}<tr><td>{{.Time}}</td><td>{{.Topic}}</td><td>{{if .OK}}&#10003; {{end}}{{.Result}}</td><td>{{.Duration}}</td><td><code>{{.Body}}</code></td></tr>
+{{end}}</tbody></table>{{else}}<p class="description">No deliveries yet.</p>{{end}}
+<p><button type="submit" class="button-link submitdelete" name="goo_do" value="delete:{{.ID}}" data-confirm="Are you sure you want to delete this webhook?" style="color:#a00">Delete permanently</button></p>{{end}}
 </div>
 {{end}}{{end}}

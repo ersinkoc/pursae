@@ -314,7 +314,7 @@ func (s *Server) gooStoreProductJSON(ctx context.Context, p *gooProduct, terms m
 		"sold_individually": p.SoldIndividually,
 		"add_to_cart": map[string]any{"text": text, "description": desc, "url": addURL, "single_text": "Add to cart",
 			"minimum": 1, "maximum": maxQty, "multiple_of": 1},
-		"extensions": map[string]any{},
+		"extensions": s.paoStoreExtensions(ctx, p),
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,6 +38,10 @@ func paoEditorRow(a paoAddon) string {
 	if a.Max != 0 {
 		maxV = gxFmt(a.Max)
 	}
+	dmin, dmax := "", a.DateMax
+	if a.DateMinDays != nil {
+		dmin = strconv.Itoa(*a.DateMinDays)
+	}
 	return `<div class="wc-pao-addon wc-pao-addon-editor postbox" style="padding:10px 12px;margin:10px 0"><table class="form-table" style="margin:0"><tbody>` +
 		`<tr><th>Type</th><td>` + bkSelectName("product_addon_type[]", a.Type, paoTypes) + ` Display as ` +
 		bkSelectName("product_addon_display[]", a.Display, []gooOpt{{"select", "Dropdowns"}, {"radiobutton", "Radio Buttons"}, {"images", "Images"}}) +
@@ -52,7 +57,11 @@ func paoEditorRow(a paoAddon) string {
 		`<tr><th>Restrictions</th><td>` + yn("product_addon_restrictions", a.Restrictions) + ` ` +
 		bkSelectName("product_addon_restrictions_type[]", a.RestrictionsType, []gooOpt{{"any_text", "Any Text"}, {"only_letters", "Only Letters"}, {"only_numbers", "Only Numbers"}, {"only_letters_numbers", "Only Letters and Numbers"}, {"email", "Only Email Address"}}) +
 		` Min <input type="number" step="any" name="product_addon_min[]" value="` + minV + `" style="width:80px"> Max <input type="number" step="any" name="product_addon_max[]" value="` + maxV + `" style="width:80px">` +
-		` <span class="description">Character limits for text, amount limits for prices and quantities.</span></td></tr></tbody></table></div>`
+		` <span class="description">Character limits for text, amount limits for prices and quantities.</span></td></tr>` +
+		`<tr><th>Date limits</th><td>Earliest: today + <input type="number" name="product_addon_date_min_days[]" value="` + esc(dmin) + `" style="width:70px"> days ` +
+		`Latest <input type="date" name="product_addon_date_max[]" value="` + esc(dmax) + `"> <span class="description">Date picker only. Leave empty for no limit; a negative number allows past dates.</span></td></tr>` +
+		`<tr><th>Conditional logic</th><td>Show only if the field <input type="text" name="product_addon_condition_field[]" value="` + esc(a.ConditionField) + `" class="regular-text" placeholder="Title of another field"> has the value ` +
+		`<input type="text" name="product_addon_condition_value[]" value="` + esc(a.ConditionValue) + `" class="regular-text" placeholder="Option label or text (empty: any value)"></td></tr></tbody></table></div>`
 }
 
 // paoEditor is the add-on fields editor with its "Add Field" button.
@@ -87,6 +96,17 @@ func paoReadEditor(form url.Values) []paoAddon {
 			DescEnable: at("description_enable") == "yes", Description: at("description"), Required: at("required") == "yes", Position: len(out),
 			AdjustPrice: at("adjust_price") == "yes", PriceType: defaultStr(at("price_type"), "flat_fee"), Price: gxAtof(at("price")),
 			Restrictions: at("restrictions") == "yes", RestrictionsType: defaultStr(at("restrictions_type"), "any_text"), Min: gxAtof(at("min")), Max: gxAtof(at("max"))}
+		a.ConditionField, a.ConditionValue = at("condition_field"), at("condition_value")
+		if v := at("date_min_days"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				a.DateMinDays = &n
+			}
+		}
+		if v := at("date_max"); v != "" {
+			if _, err := time.Parse("2006-01-02", v); err == nil {
+				a.DateMax = v
+			}
+		}
 		if a.Type == "multiple_choice" || a.Type == "checkbox" {
 			for _, line := range strings.Split(at("options"), "\n") {
 				parts := strings.Split(line, "|")

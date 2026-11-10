@@ -388,7 +388,7 @@ func (s *Server) gooStoreAdd(c *gin.Context, req *restRequest) (*gooCart, string
 	if _, err := s.gooGetProduct(ctx, id); err != nil {
 		return cart, "", gooErr(http.StatusBadRequest, "woocommerce_rest_cart_invalid_product", "This product cannot be added to the cart.")
 	}
-	key, err := cart.Add(ctx, id, qty, 0, variation, nil, nil)
+	key, err := cart.Add(ctx, id, qty, 0, variation, paoStoreForm(req.Body), nil)
 	if err != nil {
 		return cart, "", gooErr(http.StatusBadRequest, "woocommerce_rest_add_to_cart_error", err.Error())
 	}

@@ -28,21 +28,25 @@ type gooCouponRow struct {
 }
 
 type gooCouponsData struct {
-	Rows    []gooCouponRow
-	Views   []gooView
-	Status  string
-	Search  string
-	Pager   gooPager
-	Nonce   string
-	IsTrash bool
-	Bulk    []gooOpt
-	Enabled bool
+	Rows      []gooCouponRow
+	Views     []gooView
+	Status    string
+	Search    string
+	Pager     gooPager
+	Nonce     string
+	IsTrash   bool
+	Bulk      []gooOpt
+	Enabled   bool
+	ExportURL string
 }
 
 func (s *Server) gooAdminCoupons(c *gin.Context) {
 	switch c.Query("action") {
 	case "edit", "new":
 		s.gooAdminCouponEdit(c)
+		return
+	case "export_csv":
+		s.gooExportCouponsCSV(c)
 		return
 	case "trash", "untrash", "delete":
 		if !s.checkNonce(c, gooStoreNonce) {
@@ -77,6 +81,7 @@ func (s *Server) gooAdminCoupons(c *gin.Context) {
 	status := c.Query("post_status")
 	d := &gooCouponsData{Status: status, Search: strings.TrimSpace(c.Query("s")), Nonce: s.nonce(c, gooStoreNonce), IsTrash: status == "trash",
 		Enabled: s.gooCouponsEnabled()}
+	d.ExportURL = gooAdminURL("coupons", "action", "export_csv", "post_status", status, "s", d.Search, "_wpnonce", d.Nonce)
 	page := gooPaged(c)
 	coupons, total, err := s.gooQueryCoupons(ctx, status, d.Search, page, 20)
 	if err != nil {

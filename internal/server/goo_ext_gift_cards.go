@@ -608,8 +608,10 @@ func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 	}
 	switch ch.To {
 	case "processing", "completed":
+		s.gcEnableSold(ctx, o)
 		s.gcIssue(ctx, o)
 	case "cancelled", "refunded":
+		s.gcDisableSold(ctx, o)
 		outstanding, ids := s.gcOutstandingRefx(ctx, o.ID)
 		type due struct {
 			id  int64
@@ -632,6 +634,28 @@ func (s *Server) gcOrderStatus(ctx context.Context, ch *gooStatusChange) {
 			s.gcSetStatusCredit(ctx, o, credited)
 		}
 	}
+}
+
+// gcDisableSold disables the gift cards this order sold (cancelled or refunded order): the buyer got
+// the money back, so the code must stop working. A card already spent in part is flagged to the merchant.
+func (s *Server) gcDisableSold(ctx context.Context, o *gooOrder) {
+	for _, g := range s.gcQuery(ctx, `order_id = $1 AND status <> 'disabled'`, o.ID) {
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET status = 'disabled' WHERE id = $1`, g.ID); err != nil {
+			continue
+		}
+		_ = s.gcLog(ctx, g.ID, "order_disabled", 0, o.ID, o.CustomerID, "Order "+gooStatusLabel(o.Status))
+		note := fmt.Sprintf("Gift card %s sold by this order was disabled.", g.Code)
+		if g.Balance < g.Initial {
+			note += fmt.Sprintf(" It had already been used for %s; review it manually.", s.gooPricePlain(g.Initial-g.Balance, o.Currency))
+		}
+		_ = s.gooAddOrderNote(ctx, o, note, false, "")
+	}
+}
+
+// gcEnableSold re-enables the cards gcDisableSold disabled when the order is paid again.
+func (s *Server) gcEnableSold(ctx context.Context, o *gooOrder) {
+	_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_gift_cards c SET status = CASE WHEN balance <= 0 THEN 'redeemed' ELSE 'active' END
+		WHERE order_id = $1 AND status = 'disabled' AND (SELECT type FROM goo_gift_card_activity a WHERE a.card_id = c.id ORDER BY a.id DESC LIMIT 1) = 'order_disabled'`, o.ID)
 }
 
 // gcStatusCreditKey is the order meta holding what cancelling or refunding the order credited back to

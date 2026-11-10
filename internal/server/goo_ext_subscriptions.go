@@ -201,19 +201,26 @@ func (s *Server) gsubSave(ctx context.Context, sub *gooSubscription) error {
 		if sub.Start.IsZero() {
 			sub.Start = time.Now()
 		}
-		return s.store.Pool.QueryRow(ctx, `INSERT INTO goo_subscriptions (parent_order_id, customer_id, status, billing_period, billing_interval,
+		err := s.store.Pool.QueryRow(ctx, `INSERT INTO goo_subscriptions (parent_order_id, customer_id, status, billing_period, billing_interval,
 			items, currency, recurring_total, recurring_tax, start_date, trial_end, next_payment, end_date, last_order_id, billing, shipping,
 			payment_method, payment_method_title, meta, sync_day) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
 			RETURNING id, date_created, date_modified`,
 			sub.ParentOrderID, sub.CustomerID, sub.Status, sub.Period, sub.Interval, items, sub.Currency, sub.RecurringTotal, sub.RecurringTax,
 			sub.Start, sub.TrialEnd, sub.NextPayment, sub.End, sub.LastOrderID, billing, shipping, sub.PaymentMethod, sub.PaymentMethodTitle,
 			meta, sub.SyncDay).Scan(&sub.ID, &sub.DateCreated, &sub.DateModified)
+		if err == nil {
+			s.gooFire(ctx, "subscription_created", sub)
+		}
+		return err
 	}
 	_, err := s.store.Pool.Exec(ctx, `UPDATE goo_subscriptions SET customer_id=$2, status=$3, billing_period=$4, billing_interval=$5, items=$6,
 		currency=$7, recurring_total=$8, recurring_tax=$9, start_date=$10, trial_end=$11, next_payment=$12, end_date=$13, last_order_id=$14,
 		billing=$15, shipping=$16, payment_method=$17, payment_method_title=$18, meta=$19, sync_day=$20, date_modified=now() WHERE id=$1`,
 		sub.ID, sub.CustomerID, sub.Status, sub.Period, sub.Interval, items, sub.Currency, sub.RecurringTotal, sub.RecurringTax, sub.Start,
 		sub.TrialEnd, sub.NextPayment, sub.End, sub.LastOrderID, billing, shipping, sub.PaymentMethod, sub.PaymentMethodTitle, meta, sub.SyncDay)
+	if err == nil {
+		s.gooFire(ctx, "subscription_updated", sub)
+	}
 	return err
 }
 
@@ -906,6 +913,9 @@ func (s *Server) gsubCreateFromOrder(ctx context.Context, o *gooOrder) []*gooSub
 			sub = &gooSubscription{ParentOrderID: o.ID, CustomerID: o.CustomerID, Status: "active", Period: period, Interval: interval,
 				Currency: o.Currency, Start: now, Billing: o.Billing, Shipping: o.Shipping, PaymentMethod: o.PaymentMethod,
 				PaymentMethodTitle: o.PaymentMethodTitle, LastOrderID: o.ID, Meta: map[string]any{}}
+			if tok := gxaStr(o.Meta, "_payment_token"); tok != "" {
+				sub.Meta["_payment_token"] = tok
+			}
 			if trialLen > 0 {
 				te := gxaAddPeriod(now, trialPer, trialLen)
 				sub.TrialEnd = &te
@@ -1010,7 +1020,39 @@ func (s *Server) gsubManualRenewal(sub *gooSubscription) bool {
 	if s.gooExtBool(gsubKey, "turn_off_automatic_payments") || sub.Meta["_requires_manual_renewal"] == true {
 		return true
 	}
-	return sub.PaymentMethod != "goo_test"
+	if sub.PaymentMethod == "goo_test" {
+		return false
+	}
+	_, ok := gooGatewayRegistry[sub.PaymentMethod].(gooRenewalGateway)
+	if !ok || !gooGatewayRegistry[sub.PaymentMethod].Supports("subscriptions") {
+		return true
+	}
+	return gsubPaymentToken(sub) == ""
+}
+
+// gsubPaymentToken is the saved payment token (card on file) the gateway charges for renewals.
+func gsubPaymentToken(sub *gooSubscription) string {
+	return gxaStr(sub.Meta, "_payment_token")
+}
+
+// gsubChargeRenewal takes the automatic payment of a renewal order and completes or fails it.
+func (s *Server) gsubChargeRenewal(ctx context.Context, sub *gooSubscription, o *gooOrder) {
+	tx := "test_" + gooRandomKey(16)
+	if sub.PaymentMethod != "goo_test" {
+		g, ok := gooGatewayRegistry[sub.PaymentMethod].(gooRenewalGateway)
+		if !ok {
+			_ = s.gooSetStatus(ctx, o, "failed", "Renewal payment failed: the gateway cannot charge renewals.", "")
+			return
+		}
+		var err error
+		if tx, err = g.ProcessRenewal(s, ctx, o, gsubPaymentToken(sub)); err != nil {
+			_ = s.gooSetStatus(ctx, o, "failed", "Renewal payment failed: "+err.Error(), "")
+			return
+		}
+	}
+	if err := s.gooPaymentComplete(ctx, o, tx); err != nil {
+		_ = s.gooSetStatus(ctx, o, "failed", "Renewal payment failed.", "")
+	}
 }
 
 // gsubScheduler is the hourly subscription job: expirations, due renewals and the grace period.
@@ -1055,9 +1097,7 @@ func (s *Server) gsubScheduler(ctx context.Context) {
 			continue
 		}
 		if !s.gsubManualRenewal(sub) {
-			if err := s.gooPaymentComplete(ctx, o, "test_"+gooRandomKey(16)); err != nil {
-				_ = s.gooSetStatus(ctx, o, "failed", "Renewal payment failed.", "")
-			}
+			s.gsubChargeRenewal(ctx, sub, o)
 			continue
 		}
 		_ = s.gooAddOrderNote(ctx, o, "Awaiting payment of the renewal order by the customer.", false, "")
@@ -1386,6 +1426,10 @@ func (s *Server) gsubAdmin(c *gin.Context) {
 		s.gsubAdminEdit(c)
 		return
 	}
+	if c.Query("action") == "export_csv" {
+		s.gooExportSubscriptionsCSV(c)
+		return
+	}
 	ctx := c.Request.Context()
 	status := c.Query("status")
 	search := strings.TrimSpace(c.Query("s"))
@@ -1413,6 +1457,7 @@ func (s *Server) gsubAdmin(c *gin.Context) {
 		b.WriteString(`<input type="hidden" name="status" value="` + gooEsc(status) + `">`)
 	}
 	b.WriteString(`<p class="search-box"><label class="screen-reader-text" for="post-search-input">Search Subscriptions:</label><input type="search" id="post-search-input" name="s" value="` + gooEsc(search) + `"><input type="submit" id="search-submit" class="button" value="Search Subscriptions"></p></form>`)
+	b.WriteString(`<p><a class="button" href="` + gooEsc(gooAdminURL("subscriptions", "action", "export_csv", "status", status, "s", search, "_wpnonce", s.nonce(c, gooStoreNonce))) + `">Export CSV</a></p>`)
 	b.WriteString(`<div class="tablenav top">` + gxaPagination(base+"&status="+status+"&s="+search, q.Page, q.PerPage, total) + `<br class="clear"></div>`)
 	b.WriteString(`<table class="wp-list-table widefat fixed striped posts"><thead><tr><th scope="col" class="manage-column column-status">Status</th>` +
 		`<th scope="col" class="manage-column column-order_title column-primary">Subscription</th><th scope="col" class="manage-column column-order_items">Items</th>` +

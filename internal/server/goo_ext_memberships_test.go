@@ -401,3 +401,28 @@ func TestGooExtMembershipGrantPrefersActive(t *testing.T) {
 		t.Errorf("%d memberships give access, want 1", n)
 	}
 }
+
+// A cancelled or refunded order revokes the membership it granted, and only that one.
+func TestGooExtMembershipRevokedOnRefund(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	plan := &gooMembershipPlan{Name: "Gold", AccessMethod: "manual", AccessLength: "unlimited"}
+	if err := srv.gmemSavePlan(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	u := gxaCustomer(t, srv, "gold@example.test")
+	mine := &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: "active", Start: time.Now().Add(-time.Hour), OrderID: 777}
+	other := &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: "active", Start: time.Now().Add(-time.Hour), OrderID: 778}
+	for _, m := range []*gooUserMembership{mine, other} {
+		if err := srv.gmemSaveUM(ctx, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	srv.gmemRevokeFromOrder(ctx, &gooOrder{ID: 777, CustomerID: u.ID}, "refunded")
+	if m, _ := srv.gmemUM(ctx, mine.ID); m.Status != "cancelled" {
+		t.Errorf("refunded order membership: %s, want cancelled", m.Status)
+	}
+	if m, _ := srv.gmemUM(ctx, other.ID); m.Status != "active" {
+		t.Errorf("unrelated membership: %s, want active", m.Status)
+	}
+}

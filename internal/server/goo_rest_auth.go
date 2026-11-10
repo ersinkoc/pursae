@@ -89,7 +89,7 @@ func (s *Server) gooKeyAuth(c *gin.Context, ck, cs, method string) (*store.User,
 	if err != nil {
 		return nil, gooErr(http.StatusUnauthorized, "woocommerce_rest_authentication_error", "Consumer key is invalid.")
 	}
-	_, _ = s.store.Pool.Exec(c, `UPDATE goo_api_keys SET last_access = now() WHERE id = $1`, id)
+	_, _ = s.store.Pool.Exec(c, `UPDATE goo_api_keys SET last_access = now() WHERE id = $1 AND (last_access IS NULL OR last_access < now() - interval '1 minute')`, id)
 	c.Set(restUserKey, u)
 	c.Set(gooCtxAPIKey, id)
 	return u, nil

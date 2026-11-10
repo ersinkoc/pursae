@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -31,6 +32,9 @@ import (
 // groups (all products or product categories, by priority) and from the product itself.
 
 const paoKey = "product_addons"
+
+// paoUploadNonce is the nonce action of the AJAX file upload.
+const paoUploadNonce = "goo-addon-upload"
 
 func init() {
 	gooRegisterExtension(&gooExtension{
@@ -80,6 +84,16 @@ type paoAddon struct {
 	Min              float64     `json:"min"`
 	Max              float64     `json:"max"`
 	Options          []paoOption `json:"options"`
+	// Conditional logic: show this field only when the field named ConditionField has the option
+	// (label) or text ConditionValue selected; an empty ConditionValue means "has any value".
+	ConditionField string `json:"condition_field,omitempty"`
+	ConditionValue string `json:"condition_value,omitempty"`
+	// Date picker limits: the earliest date is today + DateMinDays, the latest DateMax (YYYY-MM-DD).
+	DateMinDays *int   `json:"date_min_days,omitempty"`
+	DateMax     string `json:"date_max,omitempty"`
+	// key is the add-on's stable identity (global group id + position in the group, or position in
+	// the product's own list); set by paoAddonsFor so form names survive group changes.
+	key string
 }
 
 var paoTypes = []gooOpt{{"multiple_choice", "Multiple Choice"}, {"checkbox", "Checkboxes"}, {"custom_text", "Short Text"}, {"custom_textarea", "Long Text"},
@@ -177,13 +191,15 @@ func (s *Server) paoAddonsFor(ctx context.Context, p *gooProduct) []paoAddon {
 				}
 			}
 			if ok {
-				for _, a := range g.Fields {
+				for fi, a := range g.Fields {
+					a.key = fmt.Sprintf("g%dx%d", g.ID, fi)
 					all = append(all, pri{a, g.Priority})
 				}
 			}
 		}
 	}
-	for _, a := range paoDecode(owner.Meta["_product_addons"]) {
+	for pi, a := range paoDecode(owner.Meta["_product_addons"]) {
+		a.key = fmt.Sprintf("p%d", pi)
 		all = append(all, pri{a, 10})
 	}
 	sort.SliceStable(all, func(i, j int) bool { return all[i].p < all[j].p })
@@ -196,6 +212,9 @@ func (s *Server) paoAddonsFor(ctx context.Context, p *gooProduct) []paoAddon {
 
 // paoFieldName is the add-on's input name ("addon-<product>-<name>-<position>").
 func paoFieldName(productID int64, a paoAddon, i int) string {
+	if a.key != "" {
+		return fmt.Sprintf("addon-%d-%s-%s", productID, paoSlug(a.Name), a.key)
+	}
 	return fmt.Sprintf("addon-%d-%s-%d", productID, paoSlug(a.Name), i)
 }
 
@@ -223,6 +242,92 @@ func paoAbs(v float64) float64 {
 	return v
 }
 
+// paoCondSource is the index of the field a conditional field depends on (-1 when it has no condition
+// or the named field does not exist).
+func paoCondSource(addons []paoAddon, i int) int {
+	want := paoSlug(addons[i].ConditionField)
+	if addons[i].ConditionField == "" {
+		return -1
+	}
+	for j, o := range addons {
+		if j != i && o.Type != "heading" && paoSlug(o.Name) == want {
+			return j
+		}
+	}
+	return -1
+}
+
+// paoCondMatches reports whether the posted values of a source field satisfy a condition value.
+func paoCondMatches(src paoAddon, vals []string, want string) bool {
+	if len(vals) == 0 {
+		return false
+	}
+	want = strings.TrimSpace(want)
+	if want == "" {
+		return true
+	}
+	for _, v := range vals {
+		if src.Type == "multiple_choice" || src.Type == "checkbox" {
+			for oi, o := range src.Options {
+				if paoOptionValue(o, oi) == v && (strings.EqualFold(o.Label, want) || v == want) {
+					return true
+				}
+			}
+			continue
+		}
+		if strings.EqualFold(v, want) {
+			return true
+		}
+	}
+	return false
+}
+
+// paoActiveFields tells which fields apply to the posted form: a conditional field is active only when
+// its source field is active and satisfies the condition. A condition on a missing field or a cycle
+// leaves the field inactive.
+func paoActiveFields(productID int64, addons []paoAddon, form map[string][]string) []bool {
+	state := make([]int, len(addons)) // 0 unknown, 1 visiting, 2 active, 3 inactive
+	var eval func(i int) bool
+	eval = func(i int) bool {
+		switch state[i] {
+		case 2:
+			return true
+		case 3, 1:
+			return false
+		}
+		state[i] = 1
+		ok := true
+		if addons[i].ConditionField != "" {
+			j := paoCondSource(addons, i)
+			ok = j >= 0 && eval(j) &&
+				paoCondMatches(addons[j], paoValues(form, paoFieldName(productID, addons[j], j), addons[j].Type == "checkbox"), addons[i].ConditionValue)
+		}
+		state[i] = 3
+		if ok {
+			state[i] = 2
+		}
+		return ok
+	}
+	out := make([]bool, len(addons))
+	for i := range addons {
+		out[i] = eval(i)
+	}
+	return out
+}
+
+// paoDateBounds are the earliest and latest dates a date picker accepts ("" = no limit).
+func (s *Server) paoDateBounds(a paoAddon) (string, string) {
+	lo := ""
+	if a.DateMinDays != nil {
+		lo = time.Now().In(s.loc()).AddDate(0, 0, *a.DateMinDays).Format("2006-01-02")
+	}
+	hi := ""
+	if _, err := time.Parse("2006-01-02", a.DateMax); err == nil {
+		hi = a.DateMax
+	}
+	return lo, hi
+}
+
 // Front ------------------------------------------------------------------------------------------------
 
 // paoProductFields prints the add-on fields inside the add-to-cart form, with the totals box.
@@ -240,7 +345,11 @@ func paoProductFields(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	for i, a := range addons {
 		name := paoFieldName(p.ID, a, i)
 		esc := html.EscapeString
-		fmt.Fprintf(&b, `<div class="wc-pao-addon-container wc-pao-addon wc-pao-addon-%s%s" data-product-name="%s">`, esc(paoSlug(a.Name)), map[bool]string{true: " wc-pao-required-addon", false: ""}[a.Required], esc(p.Name))
+		cond := ""
+		if j := paoCondSource(addons, i); j >= 0 {
+			cond = fmt.Sprintf(` data-pao-condition-field="%s" data-pao-condition-value="%s"`, esc(paoFieldName(p.ID, addons[j], j)), esc(a.ConditionValue))
+		}
+		fmt.Fprintf(&b, `<div class="wc-pao-addon-container wc-pao-addon wc-pao-addon-%s%s" data-product-name="%s"%s>`, esc(paoSlug(a.Name)), map[bool]string{true: " wc-pao-required-addon", false: ""}[a.Required], esc(p.Name), cond)
 		if a.Type == "heading" {
 			fmt.Fprintf(&b, `<h2 class="wc-pao-addon-heading">%s</h2>`, esc(a.Name))
 			if a.DescEnable && a.Description != "" {
@@ -272,6 +381,9 @@ func paoProductFields(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 		data := func(price float64, typ string) string {
 			return fmt.Sprintf(` data-price="%s" data-price-type="%s" data-label="%s"`, gxFmt(price), esc(defaultStr(typ, "flat_fee")), esc(a.Name))
 		}
+		optData := func(o paoOption) string {
+			return data(o.Price, o.PriceType) + ` data-option-label="` + esc(o.Label) + `"`
+		}
 		b.WriteString(`<p class="form-row form-row-wide wc-pao-addon-wrap wc-pao-addon-` + esc(paoSlug(a.Name)) + `">`)
 		switch a.Type {
 		case "multiple_choice":
@@ -285,20 +397,20 @@ func paoProductFields(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 						}
 					}
 					fmt.Fprintf(&b, `<label class="wc-pao-addon-option"><input type="radio" class="wc-pao-addon-field wc-pao-addon-radio" name="%s" value="%s"%s%s> %s%s %s</label><br>`,
-						esc(name), esc(paoOptionValue(o, oi)), data(o.Price, o.PriceType), req, img, esc(o.Label), esc(s.paoPriceLabel(o.Price, o.PriceType)))
+						esc(name), esc(paoOptionValue(o, oi)), optData(o), req, img, esc(o.Label), esc(s.paoPriceLabel(o.Price, o.PriceType)))
 				}
 			default:
 				fmt.Fprintf(&b, `<select class="wc-pao-addon-field wc-pao-addon-select" name="%s" id="%s"%s><option value="">%s</option>`, esc(name), esc(name), req,
 					map[bool]string{true: "Select an option...", false: "None"}[a.Required])
 				for oi, o := range a.Options {
-					fmt.Fprintf(&b, `<option value="%s"%s>%s %s</option>`, esc(paoOptionValue(o, oi)), data(o.Price, o.PriceType), esc(o.Label), esc(s.paoPriceLabel(o.Price, o.PriceType)))
+					fmt.Fprintf(&b, `<option value="%s"%s>%s %s</option>`, esc(paoOptionValue(o, oi)), optData(o), esc(o.Label), esc(s.paoPriceLabel(o.Price, o.PriceType)))
 				}
 				b.WriteString(`</select>`)
 			}
 		case "checkbox":
 			for oi, o := range a.Options {
 				fmt.Fprintf(&b, `<label class="wc-pao-addon-option"><input type="checkbox" class="wc-pao-addon-field wc-pao-addon-checkbox" name="%s[]" value="%s"%s> %s %s</label><br>`,
-					esc(name), esc(paoOptionValue(o, oi)), data(o.Price, o.PriceType), esc(o.Label), esc(s.paoPriceLabel(o.Price, o.PriceType)))
+					esc(name), esc(paoOptionValue(o, oi)), optData(o), esc(o.Label), esc(s.paoPriceLabel(o.Price, o.PriceType)))
 			}
 		case "custom_text":
 			attrs := ""
@@ -318,8 +430,8 @@ func paoProductFields(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 		case "file_upload":
 			// The file input posts with the form (multipart) when scripts are off; the script uploads it
 			// right away instead and keeps only the hidden field's URL.
-			fmt.Fprintf(&b, `<input type="file" name="%s" class="wc-pao-addon-file-upload input-text wc-pao-addon-field" data-target="%s" data-upload="%s"%s%s> <small>(max file size %d MB)</small><input type="hidden" name="%s" value="">`,
-				esc(name), esc(name), esc(s.links(c).HomeURL("/")+"?goo-ajax=addon_upload"), data(paoAdjusted(a), a.PriceType), req, max(s.gooExtInt(paoKey, "max_upload_mb"), 1), esc(name))
+			fmt.Fprintf(&b, `<input type="file" name="%s" class="wc-pao-addon-file-upload input-text wc-pao-addon-field" data-target="%s" data-upload="%s" data-nonce="%s"%s%s> <small>(max file size %d MB)</small><input type="hidden" name="%s" value="">`,
+				esc(name), esc(name), esc(s.links(c).HomeURL("/")+"?goo-ajax=addon_upload"), esc(s.nonce(c, paoUploadNonce)), data(paoAdjusted(a), a.PriceType), req, max(s.gooExtInt(paoKey, "max_upload_mb"), 1), esc(name))
 		case "custom_price":
 			attrs := ` min="0"`
 			if a.Restrictions && a.Min > 0 {
@@ -339,7 +451,15 @@ func paoProductFields(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 			}
 			fmt.Fprintf(&b, `<input type="number" step="1" class="input-text wc-pao-addon-field wc-pao-addon-input-multiplier" name="%s" id="%s" data-multiplier="1"%s%s%s>`, esc(name), esc(name), data(paoAdjusted(a), a.PriceType), attrs, req)
 		case "datepicker":
-			fmt.Fprintf(&b, `<input type="date" class="input-text wc-pao-addon-field wc-pao-addon-datepicker" name="%s" id="%s"%s%s>`, esc(name), esc(name), data(paoAdjusted(a), a.PriceType), req)
+			lo, hi := s.paoDateBounds(a)
+			attrs := ""
+			if lo != "" {
+				attrs += ` min="` + lo + `"`
+			}
+			if hi != "" {
+				attrs += ` max="` + hi + `"`
+			}
+			fmt.Fprintf(&b, `<input type="date" class="input-text wc-pao-addon-field wc-pao-addon-datepicker" name="%s" id="%s"%s%s%s>`, esc(name), esc(name), data(paoAdjusted(a), a.PriceType), req, attrs)
 		}
 		b.WriteString(`</p></div>`)
 	}
@@ -364,8 +484,12 @@ func paoAdjusted(a paoAddon) float64 {
 const paoJS = `<script>(function(){var box=document.currentScript.previousElementSibling;if(!box||box.dataset.paoInit)return;box.dataset.paoInit=1;
 var form=box.closest('form')||document,tot=box.querySelector('#product-addons-total');
 function money(v){var t=tot?tot.dataset.currency:'';var n=v.toFixed(tot?+tot.dataset.decimals:2);return t.replace(/[0-9.,]+/,n)}
-function calc(){if(!tot)return;var base=+tot.dataset.price,qty=+((form.querySelector('input.qty')||{}).value||1),opt=0;
-box.querySelectorAll('.wc-pao-addon-field').forEach(function(f){var el=f,price=0,type;
+function labels(n){var out=[];form.querySelectorAll('[name="'+n+'"],[name="'+n+'[]"]').forEach(function(f){if(f.disabled)return;
+if(f.tagName==='SELECT'){var o=f.options[f.selectedIndex];if(f.value)out.push(o.dataset.optionLabel||f.value)}else if(f.type==='checkbox'||f.type==='radio'){if(f.checked)out.push(f.dataset.optionLabel||f.value)}else if(f.value)out.push(f.value)});return out}
+function cond(){box.querySelectorAll('[data-pao-condition-field]').forEach(function(w){var l=labels(w.dataset.paoConditionField),v=(w.dataset.paoConditionValue||'').toLowerCase(),
+ok=l.length>0&&(!v||l.some(function(x){return x.toLowerCase()===v}));w.style.display=ok?'':'none';w.querySelectorAll('.wc-pao-addon-field,input[type=hidden]').forEach(function(f){f.disabled=!ok})})}
+function calc(){cond();if(!tot)return;var base=+tot.dataset.price,qty=+((form.querySelector('input.qty')||{}).value||1),opt=0;
+box.querySelectorAll('.wc-pao-addon-field').forEach(function(f){var el=f,price=0,type;if(f.disabled)return;
 if(f.tagName==='SELECT'){el=f.options[f.selectedIndex];if(!f.value)return}else if((f.type==='checkbox'||f.type==='radio')&&!f.checked)return;
 else if(f.type!=='checkbox'&&f.type!=='radio'&&!f.value)return;
 if(f.dataset.customPrice){opt+=(+f.value||0)*qty;return}
@@ -373,7 +497,7 @@ price=+(el.dataset.price||0);type=el.dataset.priceType||f.dataset.priceType;if(f
 if(type==='percentage_based')opt+=base*price/100*qty;else if(type==='flat_fee')opt+=price;else opt+=price*qty});
 tot.innerHTML=opt?'<div class="product-addon-totals"><ul><li><div class="wc-pao-col1"><strong>Options total</strong></div><div class="wc-pao-col2"><strong>'+money(opt)+'</strong></div></li><li class="wc-pao-subtotal-line"><div class="wc-pao-col1"><strong>Grand total</strong></div><div class="wc-pao-col2"><strong class="price amount">'+money(base*qty+opt)+'</strong></div></li></ul></div>':''}
 box.querySelectorAll('input[type=file].wc-pao-addon-file-upload').forEach(function(f){f.addEventListener('change',function(){if(!f.files.length)return;var d=new FormData();
-d.append('file',f.files[0]);d.append('goo_module','product_addons');fetch(f.dataset.upload,{method:'POST',body:d,credentials:'same-origin'}).then(function(r){return r.json()}).then(function(r){
+d.append('file',f.files[0]);d.append('goo_module','product_addons');d.append('_wpnonce',f.dataset.nonce||'');fetch(f.dataset.upload,{method:'POST',body:d,credentials:'same-origin'}).then(function(r){return r.json()}).then(function(r){
 var h=form.querySelector('input[type=hidden][name="'+f.dataset.target+'"]');if(r.url){h.value=r.url;h.dataset.price=f.dataset.price;f.removeAttribute('name');calc()}else{alert(r.error||'Upload failed');f.value=''}})})});
 form.addEventListener('change',calc);form.addEventListener('input',calc);calc()})();</script>`
 
@@ -420,11 +544,12 @@ func paoAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form m
 	add := func(a paoAddon, value, display string, price float64, priceType string) {
 		chosen = append(chosen, map[string]any{"name": a.Name, "value": value, "display": display, "price": price, "price_type": defaultStr(priceType, "flat_fee"), "field_type": a.Type})
 	}
+	active := paoActiveFields(p.ID, addons, form)
 	for i, a := range addons {
 		name := paoFieldName(p.ID, a, i)
 		label := html.EscapeString(a.Name)
 		vals := paoValues(form, name, a.Type == "checkbox")
-		if a.Type == "heading" {
+		if a.Type == "heading" || !active[i] { // a hidden conditional field is neither required nor stored
 			continue
 		}
 		if a.Required && len(vals) == 0 {
@@ -513,6 +638,13 @@ func paoAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form m
 		case "datepicker":
 			if _, err := time.Parse("2006-01-02", v); err != nil {
 				return gooCartErr(`Please enter a valid date for &quot;%s&quot;.`, label)
+			}
+			lo, hi := s.paoDateBounds(a)
+			if lo != "" && v < lo {
+				return gooCartErr(`The earliest date allowed for &quot;%s&quot; is %s.`, label, lo)
+			}
+			if hi != "" && v > hi {
+				return gooCartErr(`The latest date allowed for &quot;%s&quot; is %s.`, label, hi)
 			}
 			add(a, v, v, paoAdjusted(a), a.PriceType)
 		case "file_upload":
@@ -623,6 +755,11 @@ func paoFrontRoute(s *Server, c *gin.Context, path string) bool {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "Invalid request."})
 		return true
 	}
+	// The upload form carries the nonce the product page printed; a script posting blindly has none.
+	if !s.checkNonceValue(c, c.PostForm("_wpnonce"), paoUploadNonce) && !s.checkNonceValue(c, c.GetHeader("X-WP-Nonce"), paoUploadNonce) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "The upload link has expired. Please reload the page and try again."})
+		return true
+	}
 	url, name, err := s.paoStoreUpload(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -641,6 +778,72 @@ func (s *Server) paoStoreUpload(c *gin.Context) (string, string, error) {
 		return "", "", fmt.Errorf("No file was uploaded.")
 	}
 	return s.paoSaveUploadMpf(c, fh)
+}
+
+// Upload rate limit: at most paoUploadMax stored files per client address in paoUploadWindow.
+const (
+	paoUploadMax    = 20
+	paoUploadWindow = 10 * time.Minute
+)
+
+var paoUploadHits = struct {
+	sync.Mutex
+	m map[string][]time.Time
+}{m: map[string][]time.Time{}}
+
+// paoUploadAllowed records an upload attempt of ip and reports whether it is within the limit.
+func paoUploadAllowed(ip string, now time.Time) bool {
+	paoUploadHits.Lock()
+	defer paoUploadHits.Unlock()
+	keep := paoUploadHits.m[ip][:0]
+	for _, t := range paoUploadHits.m[ip] {
+		if now.Sub(t) < paoUploadWindow {
+			keep = append(keep, t)
+		}
+	}
+	if len(keep) >= paoUploadMax {
+		paoUploadHits.m[ip] = keep
+		return false
+	}
+	paoUploadHits.m[ip] = append(keep, now)
+	if len(paoUploadHits.m) > 10000 { // bound the table: drop addresses with no recent hit
+		for k, v := range paoUploadHits.m {
+			if len(v) == 0 || now.Sub(v[len(v)-1]) >= paoUploadWindow {
+				delete(paoUploadHits.m, k)
+			}
+		}
+	}
+	return true
+}
+
+// paoCleanupUploads deletes add-on uploads older than maxAge that no cart session and no order item
+// refers to (the daily job): files from abandoned uploads would otherwise stay forever.
+func (s *Server) paoCleanupUploads(ctx context.Context, maxAge time.Duration) int {
+	if s.cfg.UploadsDir == "" {
+		return 0
+	}
+	root := filepath.Join(s.cfg.UploadsDir, "goocommerce_uploads")
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return 0
+	}
+	removed := 0
+	for _, e := range entries {
+		info, err := e.Info()
+		if err != nil || !e.IsDir() || time.Since(info.ModTime()) < maxAge {
+			continue
+		}
+		var used bool
+		pat := "%goocommerce_uploads/" + e.Name() + "/%"
+		if err := s.store.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM goo_order_items WHERE meta::text LIKE $1)
+			OR EXISTS (SELECT 1 FROM goo_sessions WHERE data::text LIKE $1)`, pat).Scan(&used); err != nil || used {
+			continue // when unsure keep the file
+		}
+		if os.RemoveAll(filepath.Join(root, e.Name())) == nil {
+			removed++
+		}
+	}
+	return removed
 }
 
 // paoFormUploadsMpf stores the files of file upload add-ons posted with the add-to-cart form itself
@@ -682,6 +885,9 @@ func (s *Server) paoFormUploadsMpf(ctx context.Context, p *gooProduct, addons []
 // paoSaveUploadMpf validates an uploaded file (size, allowed extension) and saves it under
 // uploads/goocommerce_uploads/<random>/: its URL and clean name.
 func (s *Server) paoSaveUploadMpf(c *gin.Context, fh *multipart.FileHeader) (string, string, error) {
+	if !paoUploadAllowed(clientIP(c), time.Now()) {
+		return "", "", fmt.Errorf("Too many uploads. Please try again later.")
+	}
 	limit := int64(max(s.gooExtInt(paoKey, "max_upload_mb"), 1)) << 20
 	if fh.Size > limit {
 		return "", "", fmt.Errorf("The file is too large (maximum %d MB).", limit>>20)
@@ -732,4 +938,74 @@ func (s *Server) paoSaveUploadMpf(c *gin.Context, fh *multipart.FileHeader) (str
 		return "", "", err
 	}
 	return s.uploadURL(c, rel), clean + "." + ext, nil
+}
+
+// Store API ---------------------------------------------------------------------------------------------
+
+// paoStoreExtensions is the product's "extensions" object of the Store API: the add-on fields a client
+// must send in the add-item body as extensions.product_addons {<field name>: value | [values]}.
+func (s *Server) paoStoreExtensions(ctx context.Context, p *gooProduct) map[string]any {
+	out := map[string]any{}
+	if !s.gooExtOn(paoKey) {
+		return out
+	}
+	addons := s.paoAddonsFor(ctx, p)
+	if len(addons) == 0 {
+		return out
+	}
+	fields := make([]any, 0, len(addons))
+	for i, a := range addons {
+		if a.Type == "heading" {
+			continue
+		}
+		f := map[string]any{"name": paoFieldName(p.ID, a, i), "label": a.Name, "type": a.Type, "required": a.Required}
+		if a.Description != "" {
+			f["description"] = a.Description
+		}
+		if j := paoCondSource(addons, i); j >= 0 {
+			f["condition"] = map[string]any{"field": paoFieldName(p.ID, addons[j], j), "value": a.ConditionValue}
+		}
+		if a.Type == "multiple_choice" || a.Type == "checkbox" {
+			opts := make([]any, 0, len(a.Options))
+			for oi, o := range a.Options {
+				opts = append(opts, map[string]any{"value": paoOptionValue(o, oi), "label": o.Label, "price": o.Price, "price_type": defaultStr(o.PriceType, "flat_fee")})
+			}
+			f["options"] = opts
+		}
+		if a.Type == "datepicker" {
+			lo, hi := s.paoDateBounds(a)
+			f["min_date"], f["max_date"] = lo, hi
+		}
+		if a.Restrictions {
+			f["min"], f["max"] = a.Min, a.Max
+		}
+		fields = append(fields, f)
+	}
+	out["product_addons"] = fields
+	return out
+}
+
+// paoStoreForm turns the add-item body's extensions.product_addons object into the posted-form shape
+// the add-to-cart validation reads (nil when there is none).
+func paoStoreForm(body map[string]any) map[string][]string {
+	// Every extensions.<namespace> object (product_addons, bookings, gift_cards, subscriptions,
+	// memberships, bundles, pre_orders, ...) carries the module's posted-form fields, flattened together.
+	var form map[string][]string
+	for _, ns := range gooObj(body["extensions"]) {
+		for k, v := range gooObj(ns) {
+			if form == nil {
+				form = map[string][]string{}
+			}
+			switch x := v.(type) {
+			case []any:
+				for _, e := range x {
+					form[k] = append(form[k], gooStr(e))
+				}
+			case nil:
+			default:
+				form[k] = []string{gooStr(x)}
+			}
+		}
+	}
+	return form
 }

@@ -113,3 +113,26 @@ func TestGooStoreThemesNoJSSetup(t *testing.T) {
 		t.Error("the result notice is missing")
 	}
 }
+
+// A library that cannot be read is said so on the screen, and an installed store package that is
+// not in the library is still listed.
+func TestGooStoreThemesLibraryOffAndInstalledOnly(t *testing.T) {
+	base, c, srv := gooSite(t)
+	srv.themeLibrary = nil // no directory source; the test server has no Manager either
+	th := &Theme{Slug: "zipstore", Name: "Zip Store", Version: "1.0.0",
+		Package: &themePackage{Manifest: &themeManifest{Slug: "zipstore", Name: "Zip Store", Version: "1.0.0",
+			Supports: map[string]any{"woocommerce": true}}}}
+	registerTheme(th)
+	t.Cleanup(func() {
+		themesMu.Lock()
+		delete(themes, th.Slug)
+		themesMu.Unlock()
+	})
+	_, body, _ := get(t, c, base+"/wp-admin/goocommerce?page=themes")
+	if !strings.Contains(body, "The theme library is not configured") {
+		t.Error("no notice that the library is off")
+	}
+	if !strings.Contains(body, `id="goo-theme-zipstore"`) {
+		t.Error("an installed store theme outside the library is not listed")
+	}
+}

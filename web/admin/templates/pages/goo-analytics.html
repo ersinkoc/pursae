@@ -19,7 +19,7 @@
 {{if .Table}}<div class="postbox woocommerce-table"><div class="postbox-header"><h2 class="hndle">{{.Title}}</h2></div><div class="inside">
 <table class="widefat striped woocommerce-table__table"><thead><tr>{{range .Table.Headers}}<th scope="col">{{.}}</th>{{end}}</tr></thead><tbody>
 {{range .Table.Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>{{else}}<tr><td colspan="{{len .Table.Headers}}">{{.Table.Empty}}</td></tr>{{end}}
-</tbody></table></div></div>{{end}}
+</tbody></table>{{if .Table.Note}}<p class="description">{{.Table.Note}}</p>{{end}}</div></div>{{end}}
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}
 

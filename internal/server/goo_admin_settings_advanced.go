@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"html/template"
 	"net/url"
 	"strconv"
@@ -194,15 +195,23 @@ type gooHookRow struct {
 }
 
 type gooHookEdit struct {
-	ID       int64
-	Name     string
-	Status   string
-	Topic    string
-	URL      string
-	Secret   string
-	Statuses []gooOpt
-	Topics   []gooOpt
-	Created  string
+	ID          int64
+	Name        string
+	Status      string
+	Topic       string
+	ActionEvent string
+	Deliveries  []gooHookDelivery
+	URL         string
+	Secret      string
+	Statuses    []gooOpt
+	Topics      []gooOpt
+	Created     string
+}
+
+// gooHookDelivery is a row of a webhook's delivery log.
+type gooHookDelivery struct {
+	Time, Topic, Result, Duration, Body string
+	OK                                  bool
 }
 
 var gooWebhookStatuses = []gooOpt{{"active", "Active"}, {"paused", "Paused"}, {"disabled", "Disabled"}}
@@ -213,6 +222,40 @@ var gooWebhookTopics = []gooOpt{
 	{"order.created", "Order created"}, {"order.updated", "Order updated"}, {"order.deleted", "Order deleted"}, {"order.restored", "Order restored"},
 	{"product.created", "Product created"}, {"product.updated", "Product updated"}, {"product.deleted", "Product deleted"}, {"product.restored", "Product restored"},
 	{"action", "Action"},
+}
+
+// gooWebhookModuleTopics are the topics of the optional modules, offered while the module is on.
+var gooWebhookModuleTopics = []struct {
+	Module string
+	Topics []gooOpt
+}{
+	{gsubKey, []gooOpt{{"subscription.created", "Subscription created"}, {"subscription.updated", "Subscription updated"}}},
+	{bkKey, []gooOpt{{"booking.created", "Booking created"}, {"booking.updated", "Booking updated"}}},
+	{gmemKey, []gooOpt{{"membership.created", "Membership created"}, {"membership.updated", "Membership updated"}}},
+}
+
+// gooWebhookTopicOpts are the topics a webhook can listen to now: the core ones plus those of the
+// modules that are switched on (kept before the generic "Action" entry).
+func (s *Server) gooWebhookTopicOpts() []gooOpt {
+	out := make([]gooOpt, 0, len(gooWebhookTopics)+6)
+	out = append(out, gooWebhookTopics[:len(gooWebhookTopics)-1]...)
+	for _, m := range gooWebhookModuleTopics {
+		if s.gooExtOn(m.Module) {
+			out = append(out, m.Topics...)
+		}
+	}
+	return append(out, gooWebhookTopics[len(gooWebhookTopics)-1])
+}
+
+// gooWebhookTopicValid reports whether topic can be stored: a listed topic or action.<hook>.
+func (s *Server) gooWebhookTopicValid(topic string) bool {
+	if strings.HasPrefix(topic, "action.") {
+		return len(topic) > len("action.")
+	}
+	if topic == "action" {
+		return false // an action webhook needs the hook name
+	}
+	return gooOptLabel(s.gooWebhookTopicOpts(), topic) != topic
 }
 
 func gooOptLabel(list []gooOpt, v string) string {
@@ -229,12 +272,23 @@ func (s *Server) gooWebhooksView(c *gin.Context, d *gooSettingsData) {
 	d.Title = "Webhooks"
 	if raw := c.Query("edit-webhook"); raw != "" {
 		d.Kind = "webhook"
-		h := &gooHookEdit{Status: "active", Topic: "order.created", Statuses: gooWebhookStatuses, Topics: gooWebhookTopics, Secret: gooRandHex(16)}
+		h := &gooHookEdit{Status: "active", Topic: "order.created", Statuses: gooWebhookStatuses, Topics: s.gooWebhookTopicOpts(), Secret: gooRandHex(16)}
 		if id, _ := strconv.ParseInt(raw, 10, 64); id > 0 {
 			var created time.Time
 			if err := s.store.Pool.QueryRow(ctx, `SELECT id, name, status, topic, delivery_url, secret, created_at FROM goo_webhooks WHERE id = $1`, id).
 				Scan(&h.ID, &h.Name, &h.Status, &h.Topic, &h.URL, &h.Secret, &created); err == nil {
 				h.Created = created.In(s.loc()).Format("January 2, 2006 @ 3:04 pm")
+				if ev, ok := strings.CutPrefix(h.Topic, "action."); ok {
+					h.Topic, h.ActionEvent = "action", ev
+				}
+				for _, dl := range s.gooWebhookDeliveries(ctx, id, 20) {
+					res := fmt.Sprintf("HTTP %d", dl.StatusCode)
+					if dl.Error != "" {
+						res = dl.Error
+					}
+					h.Deliveries = append(h.Deliveries, gooHookDelivery{Time: dl.Created.In(s.loc()).Format("Jan 2, 2006 3:04:05 pm"), Topic: dl.Topic, Result: res,
+						Duration: fmt.Sprintf("%d ms", dl.DurationMS), Body: dl.Response, OK: dl.Success})
+				}
 			}
 		}
 		if h.ID == 0 {
@@ -268,12 +322,33 @@ func (s *Server) gooWebhooksPost(c *gin.Context) {
 	if raw, ok := strings.CutPrefix(c.PostForm("goo_do"), "delete:"); ok {
 		n, _ := strconv.ParseInt(raw, 10, 64)
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_webhooks WHERE id = $1`, n)
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_webhook_deliveries WHERE webhook_id = $1`, n)
 		gooRedirect(c, back, "Webhook permanently deleted.", "")
+		return
+	}
+	if c.PostForm("goo_do") == "ping" && id > 0 {
+		rec, err := s.gooWebhookPing(ctx, id)
+		if err != nil {
+			gooRedirect(c, back, "", "Webhook not found.")
+			return
+		}
+		if rec.Success {
+			gooRedirect(c, back+"&edit-webhook="+itoa64(id), fmt.Sprintf("Test delivery sent: HTTP %d.", rec.StatusCode), "")
+		} else {
+			msg := rec.Error
+			if msg == "" {
+				msg = fmt.Sprintf("HTTP %d", rec.StatusCode)
+			}
+			gooRedirect(c, back+"&edit-webhook="+itoa64(id), "", "Test delivery failed: "+msg)
+		}
 		return
 	}
 	name := strings.TrimSpace(c.PostForm("webhook_name"))
 	status := c.PostForm("webhook_status")
 	topic := c.PostForm("webhook_topic")
+	if topic == "action" {
+		topic += "." + strings.TrimSpace(c.PostForm("webhook_action_event"))
+	}
 	delivery := strings.TrimSpace(c.PostForm("webhook_delivery_url"))
 	secret := strings.TrimSpace(c.PostForm("webhook_secret"))
 	editURL := back + "&edit-webhook=" + itoa64(id)
@@ -284,7 +359,7 @@ func (s *Server) gooWebhooksPost(c *gin.Context) {
 	if gooOptLabel(gooWebhookStatuses, status) == status {
 		status = "active"
 	}
-	if gooOptLabel(gooWebhookTopics, topic) == topic {
+	if !s.gooWebhookTopicValid(topic) {
 		gooRedirect(c, editURL, "", "Webhook topic unknown. Please select a valid topic.")
 		return
 	}

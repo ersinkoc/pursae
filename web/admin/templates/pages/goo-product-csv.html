@@ -37,6 +37,11 @@
 							{{range .Categories}}<option value="{{.Slug}}">{{repeat "&nbsp;&nbsp;&nbsp;" .Depth | safe}}{{.Name}}</option>{{end}}
 						</select></td>
 					</tr>
+					<tr>
+						<th scope="row"><label for="woocommerce-exporter-meta">Export custom meta?</label></th>
+						<td><input type="checkbox" id="woocommerce-exporter-meta" name="export_meta" value="1" />
+						<label for="woocommerce-exporter-meta">Yes, export all custom meta (subscription, booking, gift card and other module settings)</label></td>
+					</tr>
 				</tbody>
 			</table>
 		</section>
@@ -87,7 +92,7 @@
 		</div>
 	</form>
 	{{else if eq .Step "mapping"}}{{$fields := .Fields}}
-	<form class="wc-progress-form-content woocommerce-importer" method="post" action="/wp-admin/goocommerce?page=product_importer">
+	<form class="wc-progress-form-content woocommerce-importer" id="goo-importer-mapping" method="post" action="/wp-admin/goocommerce?page=product_importer">
 		<header>
 			<h2>Map CSV fields to products</h2>
 			<p>Select fields from your CSV file to map against products fields, or to ignore during import.</p>
@@ -117,6 +122,49 @@
 			<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 		</div>
 	</form>
+	<div id="goo-importer-progress" class="wc-progress-form-content woocommerce-importer" hidden>
+		<section>
+			<h2>Importing</h2>
+			<p class="woocommerce-importer-warning">Your products are now being imported...</p>
+			<progress id="goo-importer-bar" class="woocommerce-importer-progress" max="100" value="0" style="width:100%"></progress>
+			<p id="goo-importer-status" class="description" aria-live="polite"></p>
+			<div id="goo-importer-error" class="error inline" hidden><p></p></div>
+		</section>
+	</div>
+	<script>
+	(function () {
+		var form = document.getElementById('goo-importer-mapping');
+		if (!form || !window.fetch || !window.FormData) { return; }
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			var box = document.getElementById('goo-importer-progress'), bar = document.getElementById('goo-importer-bar'),
+				status = document.getElementById('goo-importer-status'), err = document.getElementById('goo-importer-error');
+			form.hidden = true; box.hidden = false;
+			function fail(msg) { err.hidden = false; err.firstElementChild.textContent = msg; }
+			function done(r) {
+				var h = document.createElement('div'), s = document.createElement('section'), p = document.createElement('p');
+				p.textContent = 'Import complete! ' + [[r.imported, 'imported'], [r.updated, 'updated'], [r.skipped, 'skipped'], [r.failed, 'failed']]
+					.filter(function (x) { return x[0]; }).map(function (x) { return x[0] + ' ' + x[1]; }).join(', ');
+				s.appendChild(p);
+				(r.log || []).forEach(function (l) { var q = document.createElement('p'); q.textContent = l; s.appendChild(q); });
+				var a = document.createElement('a'); a.className = 'button button-primary'; a.href = '/wp-admin/edit?post_type=product'; a.textContent = 'View products';
+				s.appendChild(a); h.appendChild(s); box.replaceChildren(h);
+			}
+			function step() {
+				var fd = new FormData(form); fd.set('step', 'batch');
+				fetch(form.action, { method: 'POST', body: new URLSearchParams(fd), credentials: 'same-origin', headers: { Accept: 'application/json' } })
+					.then(function (res) { return res.json().then(function (j) { if (!res.ok) { throw new Error(j.error || res.statusText); } return j; }); })
+					.then(function (r) {
+						bar.value = r.total ? Math.round(100 * r.position / r.total) : 100;
+						status.textContent = r.position + ' / ' + r.total + ' rows processed';
+						if (r.done) { done(r); } else { step(); }
+					})
+					.catch(function (ex) { fail('The import stopped: ' + ex.message + ' You can run the importer again; rows already imported are skipped.'); });
+			}
+			step();
+		});
+	})();
+	</script>
 	{{else if eq .Step "done"}}{{with .Result}}
 	<div class="wc-progress-form-content woocommerce-importer">
 		<section class="woocommerce-importer-done">

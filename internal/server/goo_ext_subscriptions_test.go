@@ -854,3 +854,32 @@ func TestGooViewSubscriptionTitle(t *testing.T) {
 		t.Errorf("view-subscription title: %q", got)
 	}
 }
+
+type gsubFakeCardGateway struct{ gooTestGateway }
+
+func (gsubFakeCardGateway) ID() string             { return "fake_card" }
+func (gsubFakeCardGateway) Supports(f string) bool { return f == "subscriptions" }
+func (gsubFakeCardGateway) ProcessRenewal(s *Server, ctx context.Context, o *gooOrder, token string) (string, error) {
+	return "tx_" + token, nil
+}
+
+func TestGsubManualRenewalTokenGateway(t *testing.T) {
+	gooRegisterGateway(gsubFakeCardGateway{})
+	defer delete(gooGatewayRegistry, "fake_card")
+	_, _, s := gooSite(t)
+	sub := &gooSubscription{PaymentMethod: "fake_card", Meta: map[string]any{}}
+	if !s.gsubManualRenewal(sub) {
+		t.Fatal("no token: renewal must stay manual")
+	}
+	sub.Meta["_payment_token"] = "tok_1"
+	if s.gsubManualRenewal(sub) {
+		t.Fatal("token + renewal gateway: renewal must be automatic")
+	}
+	sub.Meta["_requires_manual_renewal"] = true
+	if !s.gsubManualRenewal(sub) {
+		t.Fatal("manual flag wins")
+	}
+	if !s.gsubManualRenewal(&gooSubscription{PaymentMethod: "bacs", Meta: map[string]any{"_payment_token": "x"}}) {
+		t.Fatal("gateway without renewal support is manual")
+	}
+}
