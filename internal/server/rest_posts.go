@@ -24,6 +24,9 @@ func restTypeFor(base string) string {
 	case "blocks":
 		return "wp_block"
 	}
+	if typ := acfgoRESTTypeFor(base); typ != "" {
+		return typ
+	}
 	return "post"
 }
 
@@ -34,7 +37,25 @@ func restBaseFor(typ string) string {
 	case "wp_block":
 		return "blocks"
 	}
+	if base := acfgoRESTBaseFor(typ); base != "" {
+		return base
+	}
 	return "posts"
+}
+
+// restCapPlural is the plural of the edit_/delete_ capabilities of a REST post type: wp_block maps
+// to the post ones and an ACF-registered type uses its own key ("book" -> edit_books).
+func restCapPlural(typ string) string {
+	switch typ {
+	case "wp_block":
+		return "posts"
+	case "post", "page":
+		return restBaseFor(typ)
+	}
+	if acfgoRESTBaseFor(typ) != "" {
+		return typ + "s"
+	}
+	return restBaseFor(typ)
 }
 
 func gmt(t time.Time) string { return t.UTC().Format("2006-01-02T15:04:05") }
@@ -346,10 +367,7 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 	if q.OrderBy == "include" || q.OrderBy == "relevance" {
 		q.OrderBy = "date"
 	}
-	plural := restBaseFor(typ)
-	if typ == "wp_block" {
-		plural = "posts" // wp_block maps its primitive caps to the post ones
-	}
+	plural := restCapPlural(typ)
 	ctxName := restContext(c)
 	// WP_REST_Posts_Controller::get_items_permissions_check(): the edit context carries
 	// passwords and raw content, so it needs edit_{type}s.
@@ -511,10 +529,7 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		restErr(c, http.StatusUnauthorized, "rest_cannot_create", "Sorry, you are not allowed to create posts as this user.")
 		return
 	}
-	plural := restBaseFor(typ)
-	if typ == "wp_block" {
-		plural = "posts"
-	}
+	plural := restCapPlural(typ)
 	var p *store.Post
 	isNew := id == 0
 	if isNew {

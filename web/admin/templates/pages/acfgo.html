@@ -48,7 +48,7 @@
 		{{else if .InDB}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="duplicate"><a href="{{.DuplicateURL}}">Duplicate</a> | </span><span class="toggle"><a href="{{.ToggleURL}}">{{if .Active}}Deactivate{{else}}Activate{{end}}</a> | </span><span class="trash"><a class="submitdelete" href="{{.TrashURL}}">Trash</a></span>{{if .SyncURL}}<span class="sync"> | <a href="{{.SyncURL}}">Sync changes</a></span>{{end}}
 		{{else}}<span class="sync"><a href="{{.SyncURL}}">Sync</a></span>{{end}}</div></td>
 	<td class="column-acf-key"><code>{{.Key}}</code></td>
-	<td class="column-acf-location">{{range .Locations}}<span class="acf-location">{{.}}</span><br />{{else}}—{{end}}</td>
+	<td class="column-acf-location">{{range .Locations}}<span class="acf-location">{{.}}</span><br />{{else}}—{{end}}{{if .UnsupportedLocation}}<span class="acf-js-tooltip dashicons dashicons-warning" title="A location rule of this group (widget, menu or menu item) has no screen in Pursae, so the group is not shown there."></span> <span class="description">Not available in Pursae</span>{{end}}</td>
 	<td class="column-acf-json">{{if .SyncAvailable}}<span class="acf-sync-available">{{if .InDB}}Sync available{{else}}Local only — Sync to edit{{end}}</span>{{else if .LocalFile}}Saved{{else if eq .Local "go"}}Registered in code{{else}}—{{end}}</td>
 	<td class="column-acf-count">{{.Fields}}</td>
 </tr>
@@ -162,7 +162,6 @@
 <tr><th scope="row"><label for="updated_message">Updated Message</label></th><td><input type="text" name="updated_message" id="updated_message" class="regular-text" value="{{with .Str "updated_message"}}{{.}}{{else}}Options Updated{{end}}" /></td></tr>
 <tr><th scope="row">Data Storage</th><td>{{$ds := .Str "data_storage"}}<label><input type="radio" name="data_storage" value="options"{{if ne $ds "post_id"}} checked{{end}} /> Options</label> <label><input type="radio" name="data_storage" value="post_id"{{if eq $ds "post_id"}} checked{{end}} /> Custom storage</label>
 <p><input type="text" name="post_id" class="regular-text" value="{{.Str "post_id"}}" placeholder="123, user_1, term_5 or an options prefix" /></p></td></tr>
-<tr><th scope="row">Autoload Options</th><td><label><input type="checkbox" name="autoload" value="1"{{if .Bool "autoload"}} checked{{end}} /> Load the values when Pursae starts</label></td></tr>
 {{else}}
 <tr><th scope="row">Labels</th><td><table class="acf-labels-table">{{range .Labels}}<tr><td><label for="label-{{.Name}}">{{.Label}}</label></td><td><input type="text" id="label-{{.Name}}" name="labels[{{.Name}}]" class="regular-text" value="{{.Value}}" /></td></tr>{{end}}</table><p class="description">Generated from the singular and plural labels when left empty.</p></td></tr>
 <tr><th scope="row">Show In UI</th><td><label><input type="hidden" name="show_ui" value="0" /><input type="checkbox" name="show_ui" value="1"{{if .Bool "show_ui"}} checked{{end}} /> Items can be edited and managed in the admin dashboard.</label></td></tr>
@@ -216,6 +215,14 @@
 <p>Select the ACF JSON file you would like to import. When you click the import button below, Pursae Custom Fields will import the items in that file (existing items with the same key are updated).</p>
 <p><label for="acf_import_file">Select File</label><br /><input type="file" name="acf_import_file" id="acf_import_file" accept=".json,application/json" /></p>
 <p class="acf-submit"><input type="submit" class="button button-primary" value="Import JSON" /></p>
+</form>
+</div></div>
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Settings</h2></div><div class="inside">
+<form method="post" action="/wp-admin/acf-tools" id="acf-settings-form">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="tool" value="settings" />
+<p><label for="acfgo_show_admin"><input type="checkbox" name="acfgo_show_admin" id="acfgo_show_admin" value="1"{{if .ShowAdmin}} checked{{end}} /> Show admin menu</label></p>
+<p class="description">Uncheck to hide the ACF menu from the admin sidebar, for example on client sites. This page stays reachable at /wp-admin/acf-tools.</p>
+<p class="acf-submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
 </form>
 </div></div>
 </div></div>

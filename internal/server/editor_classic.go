@@ -84,11 +84,6 @@ func addLateFooterHTML(c *gin.Context, h template.HTML) {
 	c.Set("wpgo.lateFooterHTML", cur+h)
 }
 
-// classicEditorEnabled reports whether the Classic Editor plugin is active.
-func (s *Server) classicEditorEnabled() bool {
-	return s.settings.String("classic-editor-replace") == "classic" || s.settings.String("classic-editor-allow-users") == "allow"
-}
-
 // wpLinkAjax is wp_ajax_wp_link_ajax() / _WP_Editors::wp_link_query(): the classic editor's
 // Insert/edit link dialog lists recent content and searches it, 20 published items of the public
 // post types per page. No results answer false, which tells wplink.js the list is complete.

@@ -60,6 +60,7 @@ type asSettings struct {
 	HideRedirect     string `json:"hide_redirect"` // empty: 404
 	GenericErrors    bool   `json:"generic_errors"`
 	BlockEnumeration bool   `json:"block_enumeration"`
+	CaptchaForms     bool   `json:"captcha_forms"` // CAPTCHA on login, register and lost password (Contact Form keys)
 
 	// Lockouts
 	IPMaxFailures    int    `json:"ip_max_failures"`
@@ -567,10 +568,11 @@ func (s *Server) asStripVersion(c *gin.Context, b []byte) []byte {
 // --- REST and enumeration --------------------------------------------------------------------
 
 // asRESTVisitorRoutes are the REST routes the front end calls for anonymous visitors: oEmbed, the contact form,
-// Web Builder forms, Pursae Cookie's consent log and geo check, and Pursae Pixel's server events. Exact route
+// Web Builder forms, Pursae Cookie's consent log and geo check, and Pursae Pixel's server events and the public Commerce Store API (cart, checkout; its own permission checks apply). Exact route
 // prefixes, not whole namespaces, so admin routes those namespaces gain later stay blocked.
 var asRESTVisitorRoutes = []string{"/oembed/", "/" + gontactNamespace + "/", "/web-builder/v2/forms/",
-	"/" + gooikeNamespace + "/consent", "/" + gooikeNamespace + "/geo", "/" + pixelNamespace + "/event"}
+	"/" + gooikeNamespace + "/consent", "/" + gooikeNamespace + "/geo", "/" + pixelNamespace + "/event",
+	"/" + gooStoreNS + "/"}
 
 // adminsecRESTBlocked answers REST requests visitors may not make: user listing (enumeration) and,
 // when opted in, everything but the routes the front end needs. method is the effective method after

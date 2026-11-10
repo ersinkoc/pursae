@@ -375,6 +375,9 @@ func (s *Server) acfgoUpdate(ctx context.Context, o *acfObject, w *acfWrite, f a
 		}
 	default:
 		v := s.acfgoSanitize(ctx, o, w, f, in, unfiltered)
+		if base == "" {
+			s.acfgoBidirectional(ctx, o, f, name, v)
+		}
 		w.put(name, key, v)
 	}
 }

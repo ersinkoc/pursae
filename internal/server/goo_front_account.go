@@ -381,6 +381,10 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 		} else {
 			s.auth.AttemptFailed(c, attemptID)
 		}
+		if msg, ok := s.adminsecGenericError(); ok { // same single answer as /wp-login: no account enumeration
+			fail(string(msg))
+			return
+		}
 		if errors.Is(err, store.ErrNotFound) {
 			if strings.Contains(login, "@") {
 				fail("<strong>Error:</strong> Unknown email address. Check again or try your username.")

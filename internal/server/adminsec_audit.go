@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -248,6 +249,14 @@ func (s *Server) asLockoutAlert(c *gin.Context, kind, value string, until time.T
 	if !st.AlertLockout {
 		return
 	}
+	if kind == "user" { // a made-up username is not worth a mail: an attacker could fill the inbox with them
+		if _, err := s.store.UserByLoginOrEmail(c, value); err != nil {
+			return
+		}
+	}
+	if !asLockoutAlertSlot(time.Now()) { // at most asAlertsPerHour mails an hour; the lockouts stay in the log
+		return
+	}
 	site := s.settings.String("blogname")
 	what := "The IP address " + value
 	if kind == "user" {
@@ -274,4 +283,30 @@ func (s *Server) adminsecDaily(ctx context.Context) error {
 		return err
 	}
 	return nil
+}
+
+// asAlertsPerHour caps the lockout alert e-mails: a distributed attack opens many lockouts at once.
+const asAlertsPerHour = 5
+
+var (
+	asAlertMu    sync.Mutex
+	asAlertTimes []time.Time
+)
+
+// asLockoutAlertSlot takes one of the hourly alert slots; false when they are used up.
+func asLockoutAlertSlot(now time.Time) bool {
+	asAlertMu.Lock()
+	defer asAlertMu.Unlock()
+	keep := asAlertTimes[:0]
+	for _, t := range asAlertTimes {
+		if now.Sub(t) < time.Hour {
+			keep = append(keep, t)
+		}
+	}
+	asAlertTimes = keep
+	if len(asAlertTimes) >= asAlertsPerHour {
+		return false
+	}
+	asAlertTimes = append(asAlertTimes, now)
+	return true
 }

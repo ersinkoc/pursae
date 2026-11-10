@@ -49,18 +49,18 @@ General settings on every field: Label, Name, Key, Type, Instructions, Required,
 | WYSIWYG Editor | default, tabs (all/visual/text), toolbar (full/basic), media upload, delay | ◐ TinyMCE (with the basic/full toolbar) on screens that load the classic editor; a textarea with formatting buttons elsewhere (Pursae Editor, users, terms, options pages) |
 | oEmbed | width, height | ✓ (preview through Pursae's oEmbed proxy) |
 | Gallery | return format, library, min/max, insert, min/max dimensions/size, types | ✓ |
-| Select | choices, default, return format (value/label/array), allow null, multiple, stylised UI, ajax, placeholder | ✓ (stylised UI / ajax ◐: settings are kept, the control is a native select) |
+| Select | choices, default, return format (value/label/array), allow null, multiple, stylised UI, ajax, placeholder | ✓ (stylised UI / ajax ◐: settings are kept, flagged "not available" in the editor; the control is a native select) |
 | Checkbox | choices, default, return format, layout, toggle all, allow custom, save custom | ✓ |
 | Radio Button | choices, default, return format, layout, allow null, other, save other | ✓ |
 | Button Group | choices, default, return format, allow null, layout | ✓ |
 | True / False | default, message, stylised UI, on/off text | ✓ |
 | Link | return format (array/url) | ◐ URL / link text / new-tab inputs instead of the wpLink modal |
-| Post Object | post type, post status, taxonomy filter, return format (object/id), allow null, multiple, bidirectional | ✓ (bidirectional ✗) |
-| Page Link | post type, taxonomy, allow null, allow archives URLs, multiple | ✓ |
-| Relationship | post type, post status, taxonomy, filters (search/post type/taxonomy), elements (featured image), min/max, return format, bidirectional | ✓ (bidirectional ✗) |
+| Post Object | post type, post status, taxonomy filter, return format (object/id), allow null, multiple, ajax lazy load, bidirectional | ✓ (ajax: only the chosen values are rendered, the rest is searched while typing; bidirectional: see below; stylised UI ◐ native select) |
+| Page Link | post type, taxonomy, allow null, allow archives URLs, multiple, ajax lazy load | ✓ |
+| Relationship | post type, post status, taxonomy, filters (search/post type/taxonomy), elements (featured image), min/max, return format, bidirectional | ✓ (bidirectional: see below) |
 | Taxonomy | taxonomy, appearance (checkbox/multi select/radio/select), create terms, save terms, load terms, return format (object/id), allow null | ✓ (new terms are created when the post is saved) |
-| User | role filter, allow null, multiple, return format (array/object/id) | ✓ |
-| Google Map | center lat/lng, zoom, height | ◐ address + lat/lng/zoom inputs with a map preview link; the Google Maps JS picker needs an API key (`acfgo_google_api_key` setting enables the picker) |
+| User | role filter, allow null, multiple, ajax lazy load, return format (array/object/id), bidirectional | ✓ (ajax search by name or login) |
+| Google Map | center lat/lng, zoom, height | ◐ address + lat/lng/zoom inputs with a map preview link; there is no Google Maps JS picker (and no API key setting) |
 | Date Picker | display format, return format, week starts on | ✓ stored `Ymd` like ACF, return format applied; ◐ the editing control is the browser's date input (display format / week start are kept but the browser decides) |
 | Date Time Picker | display format, return format, week starts on | ✓ stored `Y-m-d H:i:s`; ◐ browser datetime input |
 | Time Picker | display format, return format | ✓ stored `H:i:s`; ◐ browser time input |
@@ -69,7 +69,7 @@ General settings on every field: Label, Name, Key, Type, Instructions, Required,
 | Accordion | open, multi-expand, endpoint | ✓ |
 | Tab | placement (top/left), endpoint, selected | ✓ |
 | Group | sub fields, layout (block/table/row) | ✓ |
-| Repeater (PRO) | sub fields, collapsed, min/max rows, layout (table/block/row), button label, pagination, rows per page | ✓ add / insert / duplicate / remove / drag / collapse rows; pagination ◐ setting kept, all rows on one page |
+| Repeater (PRO) | sub fields, collapsed, min/max rows, layout (table/block/row), button label, pagination, rows per page | ✓ add / insert / duplicate / remove / drag / collapse rows; pagination ✓ rows per page, a pager under the rows (the other pages are only hidden, so every row is still posted and saved) |
 | Flexible Content (PRO) | layouts (label, name, layout, sub fields, min/max), button label, min/max | ✓ layout picker, insert / duplicate / remove / drag / collapse |
 | Clone (PRO) | fields/groups to clone, display (seamless/group), layout, prefix label, prefix field names | ✓ |
 | Icon Picker (6.3) | tabs (dashicons/media library/url), return format (string/array), library | ✓ |
@@ -92,7 +92,7 @@ OR groups of AND rules, operators `==` / `!=`.
 | Taxonomy (term edit/add screens) | ✓ |
 | Attachment | ✓ (attachment edit screen; values in the media item's meta) |
 | Comment | ✓ (comment edit screen; values in comment meta) |
-| Widget, Menu, Menu Item | ✗ widgets and nav menu items in Pursae have no meta storage that ACF could attach to; the rule types are listed (marked unavailable) and never match |
+| Widget, Menu, Menu Item | ✗ widgets and nav menu items in Pursae have no meta storage that ACF could attach to; the rule types are listed (marked unavailable) and never match. Groups with such a rule get a "Not available in Pursae" badge in the field group list |
 | Block (ACF Blocks) | ✓ |
 | Options Page | ✓ |
 
@@ -117,14 +117,14 @@ so their stored values stay untouched, as in ACF).
 
 Required, character limit, min/max number, email/URL format, min/max rows/selections/images, image
 dimensions/size, file types — **✓** ajax validation before submit (`acf/validate_save_post`
-equivalent) and server-side on REST writes. Custom `acf/validate_value` filters ✗ (no PHP hooks;
+equivalent) and server-side on classic form saves (post, user, term, comment, attachment) and REST writes. Custom `acf/validate_value` filters ✗ (no PHP hooks;
 Wasm plugins can use REST).
 
 ## 7. Options pages (PRO, UI-created since 6.2)
 
 ACF › Options Pages: page title, menu slug, parent page (top level or under any menu), menu
 position, icon (dashicon), menu title, capability, redirect to first child, update button label,
-updated message, description, data storage (options or a custom post id `post_id`), autoload — **✓**.
+updated message, description, data storage (options or a custom post id `post_id`) — **✓**. The ACF "autoload" setting is kept in imports/exports but has no effect (values are read on demand).
 Each options page is `/wp-admin/admin?page=<slug>` with the field groups whose location is that page.
 
 ## 8. Post Types and Taxonomies UI (6.1+)
@@ -139,8 +139,10 @@ Public custom post types are routed on the front end: entries at `/<rewrite slug
 ancestors for hierarchical types), the archive at `/<archive slug>/` or `?post_type=` when the type
 has one, with pagination, feed, body classes and the "Archives: <plural>" title; `?p=<id>` redirects
 to the pretty permalink. Pursae Web Builder's Theme Builder can design their single and archive
-templates. ◐ Pursae Editor and REST routes (`/wp/v2/<rest_base>`) of custom post types need core
-support for arbitrary types and are not built (see "Left out").
+templates. Types with "Show in REST" get `/wp/v2/<rest_base>` (list, read, create, update, delete,
+the `acf` object included; capabilities `edit_<type>s` and friends). ◐ Pursae Editor editing of custom
+post types is not built (they open in the classic editor; see "Left out"). "Delete with user" is honoured
+by user deletion.
 
 ## 9. ACF Blocks (PRO)
 
@@ -156,12 +158,20 @@ the Block location rule.
 
 `acf` object for field groups with "Show in REST API": **✓** `/wp/v2/posts` and `/pages` read and
 write (`POST {"acf": {"field_name": value}}` with sub fields by name, validated before the post is
-saved, unknown names rejected), `/users` and `/categories` / `/tags` read. `?acf_format=standard`
+saved, unknown names rejected), `/users`, `/categories` / `/tags`, `/comments` and `/media` read and write (the same validation; a user create
+validates against the "add" user form, a comment against its post type; `POST /media` with a file upload does not
+take `acf`, send it with the following `POST /media/<id>`). `?acf_format=standard`
 returns formatted values, the default (`light`) stored values with typed IDs/numbers/booleans. In the
 standard format related posts the requester may not read (drafts, private, future) are left out, password
 protected posts have empty content and excerpt, and user fields omit `user_email` / `user_registered`
 unless the requester is that user or can `list_users` (theme `get_field` output is unchanged).
-◐ Writes to users/terms and the `/comments`, `/media` objects are not built.
+
+### Bidirectional relationships
+
+Relationship, Post Object and User fields with "Bidirectional" on mirror their value into the "Target Field"
+(field keys, picked in the editor) of the related objects: saving post A with B selected adds A to B's target
+field, deselecting B removes A again (single-value targets are set and cleared). Works for top-level fields
+on posts and users and for every save path (admin form, REST, `update_field`).
 
 ## 11. Template functions
 
@@ -193,8 +203,8 @@ CPT UI ✗.
 
 ## 13. Settings / misc
 
-The ACF menu needs `manage_options`; option `acfgo_show_admin` = "0" hides it (ACF's `show_admin`
-setting) ✓. Field group / field keys visible in the editor and list ✓. ACF › Updates (licence) ✗ —
+The ACF menu needs `manage_options`; the "Show admin menu" checkbox in ACF › Tools (option `acfgo_show_admin`
+= "0" hides it, ACF's `show_admin` setting) ✓. Field group / field keys visible in the editor and list ✓. ACF › Updates (licence) ✗ —
 nothing to license.
 
 ## How it is wired
@@ -216,9 +226,8 @@ types/taxonomies, the Wasm `get_post` payload.
 - Bidirectional relationships (6.2): updating the other post's field on save.
 - PHP APIs/hooks (`acf/load_value`, `acf/format_value`, `acf/validate_value` filters, `acf_form()`
   front-end forms): there is no PHP; Wasm plugins read values through `get_post` and write through REST.
-- Repeater pagination, select2 "stylised UI"/ajax selects, the wpLink modal, jQuery UI date
+- select2 "stylised UI" (the ajax lazy load of Post Object / Page Link / User exists, as a search box above a native select), the wpLink modal, jQuery UI date
   pickers and the Google Maps JS picker: replaced by simpler native controls (settings are kept
   and exported unchanged).
-- Custom post types: Pursae Editor editing and REST routes. ACF taxonomies on posts/pages work
+- Custom post types: Pursae Editor editing (REST routes exist), autosaves/revisions routes. ACF taxonomies on posts/pages work
   everywhere the core's term screens and post terms do; their front-end archives are not routed.
-- REST writes for users and terms; `acf` on `/comments` and `/media` responses.

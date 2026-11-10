@@ -528,6 +528,9 @@ func (api *restAPI) saveTerm(c *gin.Context, r *restRequest, tax string, id int6
 	if v, ok := r.Int(c, "parent"); ok && tax == "category" {
 		t.ParentID = v
 	}
+	if !s.acfgoRESTValidateFor(c, r.Body, &acfScreen{Taxonomy: tax}) { // ACF-Go: the "acf" object
+		return
+	}
 	var err error
 	if id == 0 {
 		if t.Name == "" {
@@ -552,6 +555,12 @@ func (api *restAPI) saveTerm(c *gin.Context, r *restRequest, tax string, id int6
 		return
 	}
 	s.golylangRESTSaved(c, pllTerm, t.ID) // Golylang: lang and translations parameters
+	if _, has := r.Body["acf"]; has {
+		s.acfgoRESTSaveFor(c, r.Body, &acfScreen{Taxonomy: tax}, &acfObject{Kind: "term", ID: t.ID, meta: orEmptyMap(t.Meta)})
+		if nt, err := s.store.GetTerm(c, t.ID); err == nil {
+			t = nt
+		}
+	}
 	if id != 0 {
 		s.purgeTerm(t, false) // a renamed term or a new slug: its archive and every page linking it
 	}
@@ -911,6 +920,13 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 	if hasRoles && !api.checkRoleUpdate(c, u, roles) {
 		return
 	}
+	valRoles := u.Roles
+	if hasRoles && len(roles) > 0 {
+		valRoles = roles
+	}
+	if !s.acfgoRESTValidateFor(c, r.Body, acfgoUserRESTScreen(u.ID, valRoles, "edit")) { // ACF-Go: the "acf" object
+		return
+	}
 	if v, ok := r.Str(c, "password"); ok {
 		if v == "" {
 			restErr(c, http.StatusBadRequest, "rest_user_invalid_password", "Passwords cannot be empty.")
@@ -963,6 +979,9 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 				return
 			}
 		}
+	}
+	if _, has := r.Body["acf"]; has {
+		s.acfgoRESTSaveFor(c, r.Body, acfgoUserRESTScreen(u.ID, valRoles, "edit"), &acfObject{Kind: "user", ID: u.ID, meta: orEmptyMap(u.Meta)})
 	}
 	s.purgeAll(c)
 	u, _ = s.store.UserByID(c, u.ID)
@@ -1027,6 +1046,9 @@ func (api *restAPI) createUser(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusBadRequest, "rest_user_invalid_password", msg)
 		return
 	}
+	if !s.acfgoRESTValidateFor(c, r.Body, acfgoUserRESTScreen(0, roles, "add")) { // ACF-Go: the "acf" object
+		return
+	}
 	hash, err := auth.HashPassword(pass)
 	if err != nil {
 		restErr(c, http.StatusInternalServerError, "rest_user_create", err.Error())
@@ -1046,6 +1068,9 @@ func (api *restAPI) createUser(c *gin.Context, r *restRequest) {
 	}
 	if len(roles) > 1 {
 		_ = s.store.SetUserRoles(c, id, roles[0], roles[1:])
+	}
+	if _, has := r.Body["acf"]; has {
+		s.acfgoRESTSaveFor(c, r.Body, acfgoUserRESTScreen(id, roles, "add"), &acfObject{Kind: "user", ID: id, meta: map[string]any{}})
 	}
 	u, _ := s.store.UserByID(c, id)
 	changed := false
@@ -1159,6 +1184,7 @@ func (s *Server) restMedia(c *gin.Context, a *store.Attachment, ctxName string) 
 		"_links": restLinks(home+"/wp-json/wp/v2/media/"+itoa64(a.ID), home+"/wp-json/wp/v2/media", nil),
 	}
 	s.golylangMediaREST(c, a, ctxName, out) // pll_i18n in context=edit
+	s.acfgoRESTMedia(c, a, out)             // ACF-Go
 	if ctxName == "embed" {
 		return map[string]any{"id": a.ID, "date": out["date"], "slug": a.Slug, "type": "attachment", "link": out["link"], "title": out["title"],
 			"author": a.UploaderID, "caption": out["caption"], "alt_text": a.Alt, "media_type": mediaType, "mime_type": a.Mime,
@@ -1342,6 +1368,9 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 		a.PostID = v
 	}
 	ksesAttachmentText(u, a)
+	if !s.acfgoRESTValidateFor(c, r.Body, &acfScreen{Attachment: a.Mime}) { // ACF-Go: the "acf" object
+		return
+	}
 	pllPatches, ok := s.golylangMediaRESTParse(c, r) // pll_i18n: checked before anything is saved
 	if !ok {
 		return
@@ -1352,6 +1381,10 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 	}
 	if !s.golylangMediaRESTSave(c, a, pllPatches) { // per-language texts
 		return
+	}
+	if _, has := r.Body["acf"]; has {
+		s.acfgoRESTSaveFor(c, r.Body, &acfScreen{Attachment: a.Mime}, &acfObject{Kind: "attachment", ID: a.ID, meta: orEmptyMap(a.Meta)})
+		a, _ = s.store.GetAttachment(c, a.ID)
 	}
 	s.purgeAttachment(a)
 	restJSON(c, http.StatusOK, s.restMedia(c, a, "edit"))

@@ -282,7 +282,7 @@ func (s *Server) postsList(c *gin.Context) {
 
 	d := postsListData{Labels: lab, Search: search, Status: status, BulkNonce: s.nonce(c, "bulk-posts"),
 		CanCreate: u.Can("edit_"+typ+"s", nil), IsTrash: status == "trash", CanEmptyTrash: u.Can("edit_others_"+typ+"s", nil), Month: c.Query("m"), Cat: cat,
-		Orderby: q.OrderBy, Order: strings.ToLower(q.Order), ShowCatCols: typ == "post", EditorSwitch: s.settings.String("classic-editor-allow-users") == "allow",
+		Orderby: q.OrderBy, Order: strings.ToLower(q.Order), ShowCatCols: typ == "post", EditorSwitch: s.classicSwitchAllowed(),
 		Hidden: s.hiddenColumns(u, "edit-"+typ), Mode: mode, Format: q.Format, Sticky: showSticky}
 
 	counts, _ := s.store.StatusCounts(ctx, typ, 0)
@@ -1092,7 +1092,7 @@ func (s *Server) postRowHTML(c *gin.Context, p *store.Post, mode string) string 
 	if p.Type == "page" {
 		base += "?post_type=page"
 	}
-	d := postsListData{Labels: labelsFor(p.Type), ShowCatCols: p.Type == "post", EditorSwitch: s.settings.String("classic-editor-allow-users") == "allow",
+	d := postsListData{Labels: labelsFor(p.Type), ShowCatCols: p.Type == "post", EditorSwitch: s.classicSwitchAllowed(),
 		Hidden: s.hiddenColumns(u, "edit-"+p.Type), Mode: defaultStr(mode, "list")}
 	s.postRows(c, &d, []*store.Post{p}, base)
 	var buf bytes.Buffer
@@ -1382,6 +1382,7 @@ type editData struct {
 	LatestRevision int64             // the "Browse" link of the publish box
 	BoxClass       map[string]string // extra postbox classes: " hide-if-js" (Screen Options) and " closed"
 	ToPing         string            // Send Trackbacks (to_ping)
+	ActiveLock     string            // active_post_lock: "<unix>:<user id>" of the lock this editor holds
 	ClosedNonce    string            // closedpostboxes
 	OrderNonce     string            // meta-box-order
 	PluginBoxes    template.HTML     // side meta boxes of native plugins (Golylang's Languages)
@@ -1765,7 +1766,7 @@ func (s *Server) renderEdit(c *gin.Context, p *store.Post, isNew bool) {
 
 // rememberEditor stores the editor last used for a post when users may switch editors.
 func (s *Server) rememberEditor(c *gin.Context, p *store.Post, which string) {
-	if s.settings.String("classic-editor-allow-users") != "allow" || p.Meta["classic-editor-remember"] == which {
+	if !s.classicSwitchAllowed() || p.Meta["classic-editor-remember"] == which {
 		return
 	}
 	p.Meta["classic-editor-remember"] = which
@@ -1924,8 +1925,10 @@ func (s *Server) renderClassicEdit(c *gin.Context, p *store.Post, isNew bool) {
 	}
 	d.PluginStats = statsLine(s.pluginPostStats(c, p))
 	d.Editor = s.wpEditor(c, p)
+	s.pageAssets(c).Script("autosave") // heartbeat autosave + post lock refresh (core features, not the plugin's)
+	d.ActiveLock = s.classicPostLock(c, p, u)
 	d.Thumbnail = s.postThumbnailHTML(c, p, p.FeaturedMediaID)
-	if s.settings.String("classic-editor-allow-users") == "allow" {
+	if s.classicSwitchAllowed() {
 		d.BlockURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit&classic-editor__forget"
 	}
 	if !isNew {
@@ -2168,6 +2171,7 @@ func (s *Server) postSave(c *gin.Context) {
 		msg = "10"
 	}
 	s.afterPostSave(ctx, p)
+	s.queueTrackbacks(p, s.links(c).Permalink(p))    // Send Trackbacks box
 	if target, ok := s.wbClassicRedirect(c, p); ok { // classic editor's "Edit with Pursae Web Builder" on a new post
 		c.Redirect(http.StatusFound, target)
 		return

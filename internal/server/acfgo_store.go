@@ -225,6 +225,7 @@ func acfgoUniqid(prefix string) string {
 type acfgoCacheEntry struct {
 	mu     sync.Mutex
 	groups []*acfGroup
+	loaded bool // an empty result is a result too: it is cached for the TTL like any other
 	at     time.Time
 }
 
@@ -238,7 +239,7 @@ func (s *Server) acfgoCache() *acfgoCacheEntry {
 func (s *Server) acfgoFlush() {
 	e := s.acfgoCache()
 	e.mu.Lock()
-	e.groups = nil
+	e.groups, e.loaded = nil, false
 	e.mu.Unlock()
 }
 
@@ -248,15 +249,12 @@ func (s *Server) acfgoFlush() {
 func (s *Server) acfgoAllGroups(ctx context.Context, withTrash bool) []*acfGroup {
 	e := s.acfgoCache()
 	e.mu.Lock()
-	cached := e.groups
-	if cached != nil && time.Since(e.at) > 5*time.Second {
-		cached = nil // local JSON files may have changed on disk
-	}
+	cached, fresh := e.groups, e.loaded && time.Since(e.at) <= 5*time.Second // local JSON files may change on disk
 	e.mu.Unlock()
-	if cached == nil {
+	if !fresh {
 		cached = s.acfgoLoadGroups(ctx)
 		e.mu.Lock()
-		e.groups, e.at = cached, time.Now()
+		e.groups, e.loaded, e.at = cached, true, time.Now()
 		e.mu.Unlock()
 	}
 	out := make([]*acfGroup, 0, len(cached))

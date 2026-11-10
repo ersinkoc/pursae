@@ -28,14 +28,17 @@ type profileData struct {
 	Avatar96       string
 	ShowToolbar    bool
 	// Language: the user's "locale" meta ("" = Site Default) and the installed languages.
-	Locale        string
-	Languages     []langChoice
-	SyntaxOff     bool // "Disable syntax highlighting when editing code"
-	Colors        []adminColor
-	Color         string // admin_color
-	OtherSessions int
-	AvatarID      int64
-	CanUpload     bool
+	Locale    string
+	Languages []langChoice
+	// Pursae Classic Editor: the "Default Editor" row, shown while users may switch editors.
+	ShowEditorChoice bool
+	DefaultEditor    string // "classic" or "block"
+	SyntaxOff        bool   // "Disable syntax highlighting when editing code"
+	Colors           []adminColor
+	Color            string // admin_color
+	OtherSessions    int
+	AvatarID         int64
+	CanUpload        bool
 	// Role editing (user-edit.php, for users who can promote_users)
 	CanPromote bool
 	Roles      []roleChoice
@@ -73,6 +76,7 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 	}
 	d.Locale, _ = target.Meta["locale"].(string)
 	d.Languages, _ = s.languageChoices(d.Locale, true)
+	d.ShowEditorChoice, d.DefaultEditor = s.classicSwitchAllowed(), s.userDefaultEditor(target)
 	d.SyntaxOff, d.Colors, d.Color = !syntaxHighlighting(target), adminColors, adminColorFor(target).Slug
 	seen := map[string]bool{}
 	add := func(v string) {
@@ -299,6 +303,9 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 		if loc == "" || loc == "en_US" || validLanguage(loc) && s.lang.IsInstalled(loc) {
 			_ = s.setUserMeta(c, target, "locale", loc)
 		}
+	}
+	if v := c.PostForm("classic-editor-user-settings"); s.classicSwitchAllowed() && (v == "classic" || v == "block") {
+		_ = s.setUserMeta(c, target, "classic-editor-settings", v)
 	}
 	if c.PostForm("syntax_highlighting") == "false" {
 		_ = s.setUserMeta(c, target, "syntax_highlighting", "false")

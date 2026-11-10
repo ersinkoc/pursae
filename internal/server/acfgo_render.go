@@ -305,12 +305,30 @@ func (r *acfgoRender) input(f acfField, name string, v any) {
 			nm += "[]"
 			r.w(`<input type="hidden" name="%s" value="" />`, name)
 		}
-		r.w(`<select id="%s" name="%s"%s class="acf-select-search">`, esc(id), nm, attrIf(multi, `multiple size="6"`))
+		ajax := acfgoBool(f["ajax"])
+		if ajax { // large sites: only the chosen values are rendered, the rest is searched while typing
+			r.w(`<input type="search" class="acf-select-ajax-search" placeholder="Search..." autocomplete="off" data-key="%s" />`, esc(acfgoStr(f["key"])))
+		}
+		r.w(`<select id="%s" name="%s"%s class="acf-select-search"%s>`, esc(id), nm, attrIf(multi, `multiple size="6"`), attrIf(ajax, `data-ajax="1"`))
 		if acfgoBool(f["allow_null"]) || !multi {
 			r.w(`<option value="">- Select -</option>`)
 		}
-		if typ == "user" {
-			for _, u := range s.acfgoUserChoices(ctx, f) {
+		if ajax {
+			for _, x := range acfgoList(v) {
+				id := acfgoInt(x)
+				if id <= 0 {
+					continue
+				}
+				if typ == "user" {
+					if u := s.acfgoUserByID(ctx, id); u != nil {
+						r.w(`<option value="%d" selected>%s</option>`, u.ID, esc(u.DisplayName+" ("+u.Login+")"))
+					}
+				} else if p, err := s.store.GetPost(ctx, id); err == nil {
+					r.w(`<option value="%d" selected>%s</option>`, p.ID, esc(defaultStr(p.Title, "(no title)")))
+				}
+			}
+		} else if typ == "user" {
+			for _, u := range s.acfgoUserChoices(ctx, f, "") {
 				r.w(`<option value="%d"%s>%s</option>`, u.ID, attrIf(sel[itoa64(u.ID)], "selected"), esc(u.DisplayName+" ("+u.Login+")"))
 			}
 		} else {
@@ -614,8 +632,8 @@ func (r *acfgoRender) repeater(f acfField, name string, v any) {
 	subs := acfgoSubFields(f)
 	layout := defaultStr(acfgoStr(f["layout"]), "table")
 	rows := acfgoList(v)
-	r.w(`<div class="acf-repeater -%s" data-min="%d" data-max="%d" data-collapsed="%s" data-name="%s" data-placeholder="acfcloneindex-%s"><input type="hidden" name="%s" value="" />`,
-		esc(layout), acfgoInt(f["min"]), acfgoInt(f["max"]), esc(acfgoStr(f["collapsed"])), name, acfgoInputID(acfgoStr(f["key"])), name)
+	r.w(`<div class="acf-repeater -%s" data-min="%d" data-max="%d" data-collapsed="%s" data-name="%s" data-placeholder="acfcloneindex-%s"%s><input type="hidden" name="%s" value="" />`,
+		esc(layout), acfgoInt(f["min"]), acfgoInt(f["max"]), esc(acfgoStr(f["collapsed"])), name, acfgoInputID(acfgoStr(f["key"])), acfgoRepeaterPageAttrs(f), name)
 	r.w(`<table class="acf-table"><thead><tr><th class="acf-row-handle"></th>`)
 	if layout == "table" {
 		for _, sf := range subs {
@@ -644,7 +662,24 @@ func (r *acfgoRender) repeater(f acfField, name string, v any) {
 	r.w(`<template class="acf-clone-tpl">`)
 	r.repeaterRow(f, subs, layout, name, "acfcloneindex-"+acfgoInputID(acfgoStr(f["key"])), 0, nil)
 	r.w(`</template>`)
-	r.w(`<div class="acf-actions"><a class="acf-button button button-primary acf-repeater-add" href="#">%s</a></div></div>`, esc(defaultStr(acfgoStr(f["button_label"]), "Add Row")))
+	r.w(`<div class="acf-actions"><a class="acf-button button button-primary acf-repeater-add" href="#">%s</a>`, esc(defaultStr(acfgoStr(f["button_label"]), "Add Row")))
+	if acfgoBool(f["pagination"]) {
+		r.w(`<span class="acf-tablenav tablenav-pages acf-repeater-pagination"><a href="#" class="acf-repeater-prev button" aria-label="Previous page">&lsaquo;</a> <span class="acf-repeater-page-info"></span> <a href="#" class="acf-repeater-next button" aria-label="Next page">&rsaquo;</a></span>`)
+	}
+	r.w(`</div></div>`)
+}
+
+// acfgoRepeaterPageAttrs are the data attributes that switch a repeater's row pagination on: the
+// rows of the other pages stay in the form (hidden by acfgo-input.js) so every row is saved.
+func acfgoRepeaterPageAttrs(f acfField) string {
+	if !acfgoBool(f["pagination"]) {
+		return ""
+	}
+	per := acfgoInt(f["rows_per_page"])
+	if per < 1 {
+		per = 20
+	}
+	return fmt.Sprintf(` data-pagination="1" data-per-page="%d"`, per)
 }
 
 func (r *acfgoRender) repeaterRow(f acfField, subs []acfField, layout, name, rowID string, i int, vals map[string]any) {
@@ -832,9 +867,10 @@ func (s *Server) acfgoRelItemLabel(ctx context.Context, f acfField, p *store.Pos
 	return label
 }
 
-func (s *Server) acfgoUserChoices(ctx context.Context, f acfField) []*store.User {
+func (s *Server) acfgoUserChoices(ctx context.Context, f acfField, search string) []*store.User {
 	roles := acfgoStrList(f["role"])
-	rows, err := s.store.Pool.Query(ctx, `SELECT u.id FROM users u ORDER BY u.display_name LIMIT 500`)
+	like := "%" + strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`).Replace(strings.TrimSpace(search)) + "%"
+	rows, err := s.store.Pool.Query(ctx, `SELECT u.id FROM users u WHERE $1 = '%%' OR u.display_name ILIKE $1 OR u.login ILIKE $1 ORDER BY u.display_name LIMIT 500`, like)
 	if err != nil {
 		return nil
 	}

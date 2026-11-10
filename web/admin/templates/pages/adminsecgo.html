@@ -188,6 +188,7 @@
 <table class="form-table" role="presentation">
 <tr><th scope="row">Error messages</th><td><label><input type="checkbox" name="generic_errors" value="1"{{if .S.GenericErrors}} checked{{end}}> Say only “the username or password is incorrect”, never whether the account exists</label></td></tr>
 <tr><th scope="row">User enumeration</th><td><label><input type="checkbox" name="block_enumeration" value="1"{{if .S.BlockEnumeration}} checked{{end}}> Block <code>/?author=N</code>, the REST users list (<code>/wp-json/wp/v2/users</code>) and the users sitemap for visitors</label></td></tr>
+<tr><th scope="row">CAPTCHA</th><td><label><input type="checkbox" name="captcha_forms" value="1"{{if .S.CaptchaForms}} checked{{end}}> Ask for a CAPTCHA on the login, registration and lost-password forms</label><p class="description">Uses the Cloudflare Turnstile or Google reCAPTCHA keys saved in Pursae Contact Form &rsaquo; Integration. Without keys nothing is asked.</p></td></tr>
 </table>
 {{else if eq .Tab "lockouts"}}
 <h2 class="title">Limit login attempts</h2>

@@ -202,11 +202,16 @@ func (s *Server) acfgoRESTUser(c *gin.Context, u *store.User, out map[string]any
 
 // acfgoRESTInput maps a REST "acf" object (by field name) to field-key input for a post screen.
 func (s *Server) acfgoRESTInput(ctx context.Context, raw any, p *store.Post) (map[string]any, []string) {
+	return s.acfgoRESTInputFor(ctx, raw, s.acfgoPostScreen(ctx, p, nil))
+}
+
+// acfgoRESTInputFor is acfgoRESTInput for any object: screen says which field groups apply to it.
+func (s *Server) acfgoRESTInputFor(ctx context.Context, raw any, screen *acfScreen) (map[string]any, []string) {
 	m, ok := raw.(map[string]any)
 	if !ok {
 		return nil, nil
 	}
-	fields := s.acfgoRESTFields(ctx, s.acfgoPostScreen(ctx, p, nil))
+	fields := s.acfgoRESTFields(ctx, screen)
 	in := map[string]any{}
 	var unknown []string
 	for name, v := range m {
@@ -270,11 +275,16 @@ func acfgoKeyed(ctx context.Context, s *Server, f acfField, v any) any {
 // acfgoRESTValidate checks the "acf" object of a REST write before the post is saved; false
 // means an error response was sent.
 func (s *Server) acfgoRESTValidate(c *gin.Context, body map[string]any, p *store.Post) bool {
+	return s.acfgoRESTValidateFor(c, body, s.acfgoPostScreen(c.Request.Context(), p, nil))
+}
+
+// acfgoRESTValidateFor is acfgoRESTValidate for any object (user, term, comment, attachment).
+func (s *Server) acfgoRESTValidateFor(c *gin.Context, body map[string]any, screen *acfScreen) bool {
 	raw, ok := body["acf"]
 	if !ok || !s.acfgoOn() {
 		return true
 	}
-	in, unknown := s.acfgoRESTInput(c.Request.Context(), raw, p)
+	in, unknown := s.acfgoRESTInputFor(c.Request.Context(), raw, screen)
 	if len(unknown) > 0 {
 		restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): acf ("+strings.Join(unknown, ", ")+" is not a field of this object)")
 		return false
@@ -295,6 +305,49 @@ func (s *Server) acfgoRESTSave(c *gin.Context, body map[string]any, p *store.Pos
 	in, _ := s.acfgoRESTInput(c.Request.Context(), raw, p)
 	u := restCurrent(c)
 	_ = s.acfgoSaveInput(acfgoWithEditor(c.Request.Context(), u), s.acfgoPostObject(p), in, u != nil && u.Can("unfiltered_html", nil))
+}
+
+// acfgoRESTSaveFor stores the "acf" object of a REST write on a user, term, comment or attachment.
+func (s *Server) acfgoRESTSaveFor(c *gin.Context, body map[string]any, screen *acfScreen, o *acfObject) {
+	raw, ok := body["acf"]
+	if !ok || !s.acfgoOn() || o == nil {
+		return
+	}
+	in, _ := s.acfgoRESTInputFor(c.Request.Context(), raw, screen)
+	u := restCurrent(c)
+	_ = s.acfgoSaveInput(acfgoWithEditor(c.Request.Context(), u), o, in, u != nil && u.Can("unfiltered_html", nil))
+}
+
+// acfgoRESTComment adds "acf" to a comment's REST response.
+func (s *Server) acfgoRESTComment(c *gin.Context, cm *store.Comment, p *store.Post, out map[string]any) {
+	if !s.acfgoOn() {
+		return
+	}
+	fields := s.acfgoRESTFields(c.Request.Context(), acfgoCommentScreen(p))
+	if len(fields) == 0 {
+		return
+	}
+	out["acf"] = s.acfgoRESTValues(c, &acfObject{Kind: "comment", ID: cm.ID, meta: orEmptyMap(cm.Meta)}, fields)
+}
+
+// acfgoRESTMedia adds "acf" to a media item's REST response.
+func (s *Server) acfgoRESTMedia(c *gin.Context, a *store.Attachment, out map[string]any) {
+	if !s.acfgoOn() {
+		return
+	}
+	fields := s.acfgoRESTFields(c.Request.Context(), &acfScreen{Attachment: a.Mime})
+	if len(fields) == 0 {
+		return
+	}
+	out["acf"] = s.acfgoRESTValues(c, &acfObject{Kind: "attachment", ID: a.ID, meta: orEmptyMap(a.Meta)}, fields)
+}
+
+// acfgoCommentScreen is the comment edit screen of a comment on post p (the rule value is the post type).
+func acfgoCommentScreen(p *store.Post) *acfScreen {
+	if p == nil {
+		return &acfScreen{Comment: "all"}
+	}
+	return &acfScreen{Comment: p.Type}
 }
 
 // Template functions --------------------------------------------------------------------------------
@@ -445,4 +498,9 @@ func (s *Server) acfgoPluginPostACF(ctx context.Context, p *store.Post) map[stri
 		return nil
 	}
 	return vals
+}
+
+// acfgoUserRESTScreen is the user edit (or add) screen ACF evaluates user_form / user_role rules on.
+func acfgoUserRESTScreen(id int64, roles []string, form string) *acfScreen {
+	return &acfScreen{UserForm: form, UserRoles: roles, UserID: id}
 }

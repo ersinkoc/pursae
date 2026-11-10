@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"regexp"
@@ -15,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"wpgo/internal/auth"
 	"wpgo/internal/db"
 	"wpgo/internal/store"
@@ -1071,6 +1073,9 @@ func TestAdminSecEnumerationAndREST(t *testing.T) {
 	if code, m, _, _ := rc.do("GET", "/gooike/v1/settings", nil); code != http.StatusUnauthorized || m["code"] != "rest_login_required" {
 		t.Errorf("non-visitor gooike route open: %d %v", code, m["code"])
 	}
+	if code, m, _, _ := rc.do("GET", "/wc/store/v1/cart", nil); code == http.StatusUnauthorized && m["code"] == "rest_login_required" {
+		t.Error("Commerce Store API blocked for visitors")
+	}
 	asConfigure(t, srv, func(st *asSettings) { st.RESTAllow = "wp/v2/posts" })
 	if code, _, _, _ := rc.do("GET", "/wp/v2/posts", nil); code != http.StatusOK {
 		t.Errorf("allowed REST prefix: %d", code)
@@ -1289,7 +1294,21 @@ func TestAdminSecPolicyAuditHardening(t *testing.T) {
 	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO adminsec_factors (user_id, email_enabled, email_address) VALUES ($1, true, 'twofactor@example.test')`, tfID); err != nil {
 		t.Fatal(err)
 	}
+	if !srv.asForcePassword(ctx, tfUser) {
+		t.Error("administrator's forced change ignored for a user with 2FA/MFA")
+	}
+	tfUser.Meta["adminsec_force_password"] = true
 	if srv.asForcePassword(ctx, tfUser) {
-		t.Error("forced password change for a user with 2FA/MFA")
+		t.Error("policy-forced change asked of a user with 2FA/MFA")
+	}
+	// A password change forgets remembered devices.
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO adminsec_devices (user_id, token_hash, user_agent, ip, expires_at) VALUES ($1,'h','ua','127.0.0.1', now() + interval '1 day')`, tfID); err != nil {
+		t.Fatal(err)
+	}
+	gc, _ := gin.CreateTestContext(httptest.NewRecorder())
+	gc.Request = httptest.NewRequest("POST", "/", nil)
+	srv.adminsecPasswordChanged(gc, tfUser)
+	if asCount(t, `SELECT count(*) FROM adminsec_devices WHERE user_id = $1`, tfID) != 0 {
+		t.Error("remembered devices survived a password change")
 	}
 }

@@ -23,6 +23,7 @@ type loginView struct {
 	// CanRegister is get_option( 'users_can_register' ): the "Register" link and the registration form.
 	CanRegister bool
 	Email       string // user_email on the registration form
+	Captcha     template.HTML
 }
 
 // login handles wp-login.php: the form, the POST and ?action=logout.
@@ -46,6 +47,7 @@ func (s *Server) login(c *gin.Context) {
 		HomeURL:     s.links(c).HomeURL("/"),
 		RedirectTo:  c.Query("redirect_to"),
 		CanRegister: s.settings.Bool("users_can_register"),
+		Captcha:     s.loginCaptchaWidget(),
 	}
 	switch action {
 	case "lostpassword", "retrievepassword":
@@ -103,6 +105,10 @@ func (s *Server) login(c *gin.Context) {
 	fail := func(msg string) {
 		v.Error = template.HTML(msg)
 		s.renderAdminTemplate(c, http.StatusOK, "admin/login", v)
+	}
+	if msg := s.loginCaptchaFailed(c); msg != "" {
+		fail(string(msg))
+		return
 	}
 	secOn := s.adminsecOn()
 	if secOn { // AdminSecGo: block list and lockouts replace the core throttle
@@ -221,7 +227,7 @@ func (s *Server) setLoginCookie(c *gin.Context, token string, persistent bool, m
 
 func (s *Server) logout(c *gin.Context) {
 	if currentUser(c) != nil && !s.checkNonce(c, "log-out") {
-		s.adminHTML(c, http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>WordPress &rsaquo; Error</title>`+
+		s.adminHTML(c, http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Pursae &rsaquo; Error</title>`+
 			`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page">`+
 			`<div class="wp-die-message"><p>You are attempting to log out of `+html.EscapeString(s.settings.String("blogname"))+`</p>`+
 			`<p>Do you really want to <a href="`+s.loginPath()+`?action=logout&amp;_wpnonce=`+s.nonce(c, "log-out")+`">log out</a>?</p></div></body></html>`)

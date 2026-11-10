@@ -84,7 +84,8 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Lockouts screen | Active lockouts with release / release all, manual IP lockout, lockout history | ✅ |
 | Generic error messages | “The username or password you entered is incorrect.” for unknown users and wrong passwords (default on) | ✅ |
 | User enumeration | `/?author=N` → 404, REST `wp/v2/users` → 401 and an empty users sitemap for visitors. **The core does this by default** (and the login form gives one message for an unknown account and a wrong password); `WPGO_EXPOSE_USERS=1` opts out. While Pursae Security is active its "block enumeration" and "generic errors" settings decide instead, so an administrator can relax them on purpose | ✅ |
-| CAPTCHA on the login | — not included (Pursae Contact Form has reCAPTCHA/Turnstile for forms; lockouts cover brute force) | — |
+| CAPTCHA on the login | Optional (Login tab): Turnstile or reCAPTCHA v3 on the login, registration and lost-password forms, using the keys and verifier of Pursae Contact Form. Not on the Pursae Commerce My Account forms | ✅ |
+| Password reset requests | At most 3 reset mails per account and per IP in 15 minutes (silently dropped, same answer), block list applied, `password_reset_requested` logged. Lockout alert mails: at most 5 an hour, none for unknown usernames | ✅ |
 
 ## 7. Password policy
 
@@ -111,7 +112,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Security headers | X-Frame-Options (SAMEORIGIN/DENY), Referrer-Policy, Permissions-Policy, X-Content-Type-Options, HSTS (max-age, includeSubDomains, preload; HTTPS requests only). Set by a response wrapper, so cached pages get them too. **The core Content-Security-Policy (and its per-response allow-list) is left untouched** | ✅ |
 | Disable the file editors | Theme File Editor and Plugin File Editor: menu entries removed, screens 403, `edit-theme-plugin-file` ajax refused (default on) | ✅ |
 | Hide the version | No generator meta tag, feeds without the version, front-end `?ver=0.1.0` replaced by a site-specific hash (default on) | ✅ |
-| REST only for logged-in users | Opt-in; visitors keep oEmbed and the contact-form routes plus configurable prefixes | ✅ |
+| REST only for logged-in users | Opt-in; visitors keep oEmbed, the contact-form routes, Cookie/Pixel visitor routes and the Commerce Store API plus configurable prefixes | ✅ |
 | Alerts | E-mail to the admin (or a configured address) on an administrator's login from a new IP (not the very first login) and on every lockout | ✅ |
 | Firewall, malware scan, file-change detection | — out of scope by design | — |
 

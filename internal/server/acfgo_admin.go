@@ -36,6 +36,7 @@ type acfgoGroupRow struct {
 	Fields                                     int
 	Local                                      string
 	SyncAvailable, Active, InDB                bool
+	UnsupportedLocation                        bool // a rule type Pursae has no screen for (widget, menu, menu item)
 	EditURL, DuplicateURL, TrashURL            string
 	RestoreURL, DeleteURL, SyncURL, ToggleURL  string
 }
@@ -125,7 +126,7 @@ func (s *Server) acfgoGroupsScreen(c *gin.Context) {
 		count := 0
 		acfgoWalkFields(g.Fields, func(acfField) { count++ })
 		r := acfgoGroupRow{ID: g.ID, Key: g.Key, Title: g.Title, Description: g.Description, Status: g.Status, Fields: count, Local: g.Local,
-			SyncAvailable: g.SyncAvailable, Active: g.Active, InDB: g.ID != 0, LocalFile: g.LocalFile, Locations: s.acfgoLocationSummary(g, values)}
+			SyncAvailable: g.SyncAvailable, Active: g.Active, InDB: g.ID != 0, LocalFile: g.LocalFile, Locations: s.acfgoLocationSummary(g, values), UnsupportedLocation: acfgoUnsupportedLocation(g)}
 		if g.ID != 0 {
 			r.EditURL = "/wp-admin/acf-field-group?post=" + itoa64(g.ID)
 			r.DuplicateURL, r.TrashURL, r.RestoreURL, r.DeleteURL = n("duplicate", g.ID), n("trash", g.ID), n("untrash", g.ID), n("delete", g.ID)
@@ -465,8 +466,8 @@ var acfgoFieldTypes = []acfgoFieldType{
 		{Name: "min_width", Label: "Minimum width (px)", Type: "number", Tab: "validation"}, {Name: "min_height", Label: "Minimum height (px)", Type: "number", Tab: "validation"},
 		{Name: "max_width", Label: "Maximum width (px)", Type: "number", Tab: "validation"}, {Name: "max_height", Label: "Maximum height (px)", Type: "number", Tab: "validation"}, setMime,
 		{Name: "insert", Label: "Insert", Type: "select", Tab: "presentation", Choices: ch("append", "Append to the end", "prepend", "Prepend to the beginning"), Default: "append"}, setPreviewSize}},
-	{"select", "Select", "Choice", []acfgoSetting{setChoices, setChoiceDef, setChoiceRF, setMultiple, setAllowNull, {Name: "ui", Label: "Stylized UI", Type: "true_false", Tab: "presentation"},
-		{Name: "ajax", Label: "Use AJAX to lazy load choices?", Type: "true_false", Tab: "presentation", ShowIf: []string{"ui=1"}}, {Name: "placeholder", Label: "Placeholder Text", Type: "text", Tab: "presentation"}}},
+	{"select", "Select", "Choice", []acfgoSetting{setChoices, setChoiceDef, setChoiceRF, setMultiple, setAllowNull, {Name: "ui", Label: "Stylized UI", Type: "true_false", Tab: "presentation", Instructions: "Not available in Pursae: the native select is always used"},
+		{Name: "ajax", Label: "Use AJAX to lazy load choices?", Type: "true_false", Tab: "presentation", ShowIf: []string{"ui=1"}, Instructions: "Not available in Pursae: the choices are the field's own list"}, {Name: "placeholder", Label: "Placeholder Text", Type: "text", Tab: "presentation"}}},
 	{"checkbox", "Checkbox", "Choice", []acfgoSetting{setChoices, setChoiceDef, setChoiceRF, {Name: "allow_custom", Label: "Allow Custom Values", Type: "true_false", Tab: "general", Instructions: "Allow 'custom' values to be added"},
 		{Name: "save_custom", Label: "Save Custom Values", Type: "true_false", Tab: "general", ShowIf: []string{"allow_custom=1"}, Instructions: "Save 'custom' values to the field's choices"},
 		setLayoutVH, {Name: "toggle", Label: "Add Toggle All", Type: "true_false", Tab: "presentation", Instructions: "Prepend an extra checkbox to toggle all choices"}}},
@@ -478,12 +479,17 @@ var acfgoFieldTypes = []acfgoFieldType{
 		{Name: "ui_off_text", Label: "Off Text", Type: "text", Tab: "presentation", ShowIf: []string{"ui=1"}}}},
 	{"link", "Link", "Relational", []acfgoSetting{{Name: "return_format", Label: "Return Value", Type: "radio", Tab: "general", Choices: ch("array", "Link Array", "url", "Link URL"), Default: "array"}}},
 	{"post_object", "Post Object", "Relational", []acfgoSetting{setPostType, setPostStatus, setTaxFilter, {Name: "return_format", Label: "Return Format", Type: "radio", Tab: "general", Choices: ch("object", "Post Object", "id", "Post ID"), Default: "object"},
-		setMultiple, setAllowNull, {Name: "ui", Label: "Stylized UI", Type: "true_false", Tab: "presentation", Default: 1}}},
-	{"page_link", "Page Link", "Relational", []acfgoSetting{setPostType, setPostStatus, setTaxFilter, {Name: "allow_archives", Label: "Allow Archives URLs", Type: "true_false", Tab: "general", Default: 1}, setMultiple, setAllowNull}},
+		setMultiple, setAllowNull, {Name: "ui", Label: "Stylized UI", Type: "true_false", Tab: "presentation", Default: 1, Instructions: "Not available in Pursae: the native select is always used"},
+		{Name: "ajax", Label: "Use AJAX to lazy load choices?", Type: "true_false", Tab: "presentation", Instructions: "Search the choices while typing instead of loading all of them (large sites)"},
+		{Name: "bidirectional", Label: "Bidirectional", Type: "true_false", Tab: "general", Instructions: "Update the selected fields of the related objects too, so the relationship shows on both sides"},
+		{Name: "bidirectional_target", Label: "Target Field", Type: "groups", Tab: "general", ShowIf: []string{"bidirectional=1"}, Instructions: "Select the field(s) to be updated on the related objects (pick fields, not groups)"}}},
+	{"page_link", "Page Link", "Relational", []acfgoSetting{setPostType, setPostStatus, setTaxFilter, {Name: "allow_archives", Label: "Allow Archives URLs", Type: "true_false", Tab: "general", Default: 1}, setMultiple, setAllowNull, {Name: "ajax", Label: "Use AJAX to lazy load choices?", Type: "true_false", Tab: "presentation", Instructions: "Search the choices while typing instead of loading all of them (large sites)"}}},
 	{"relationship", "Relationship", "Relational", []acfgoSetting{setPostType, setPostStatus, setTaxFilter, {Name: "return_format", Label: "Return Format", Type: "radio", Tab: "general", Choices: ch("object", "Post Object", "id", "Post ID"), Default: "object"},
 		{Name: "min", Label: "Minimum Posts", Type: "number", Tab: "validation"}, {Name: "max", Label: "Maximum Posts", Type: "number", Tab: "validation"},
 		{Name: "filters", Label: "Filters", Type: "checkbox", Tab: "presentation", Choices: ch("search", "Search", "post_type", "Post Type", "taxonomy", "Taxonomy"), Default: []any{"search", "post_type", "taxonomy"}},
-		{Name: "elements", Label: "Elements", Type: "checkbox", Tab: "presentation", Choices: ch("featured_image", "Featured Image"), Instructions: "Selected elements will be displayed in each result"}}},
+		{Name: "elements", Label: "Elements", Type: "checkbox", Tab: "presentation", Choices: ch("featured_image", "Featured Image"), Instructions: "Selected elements will be displayed in each result"},
+		{Name: "bidirectional", Label: "Bidirectional", Type: "true_false", Tab: "general", Instructions: "Update the selected fields of the related objects too, so the relationship shows on both sides"},
+		{Name: "bidirectional_target", Label: "Target Field", Type: "groups", Tab: "general", ShowIf: []string{"bidirectional=1"}, Instructions: "Select the field(s) to be updated on the related objects (pick fields, not groups)"}}},
 	{"taxonomy", "Taxonomy", "Relational", []acfgoSetting{{Name: "taxonomy", Label: "Taxonomy", Type: "taxonomies", Tab: "general", Default: "category", Instructions: "Select the taxonomy to be displayed"},
 		{Name: "field_type", Label: "Appearance", Type: "select", Tab: "general", Choices: ch("checkbox", "Checkbox", "multi_select", "Multi Select", "radio", "Radio Buttons", "select", "Select"), Default: "checkbox", Instructions: "Select the appearance of this field"},
 		{Name: "add_term", Label: "Create Terms", Type: "true_false", Tab: "general", Default: 1, Instructions: "Allow new terms to be created whilst editing"},
@@ -491,7 +497,9 @@ var acfgoFieldTypes = []acfgoFieldType{
 		{Name: "load_terms", Label: "Load Terms", Type: "true_false", Tab: "general", Instructions: "Load value from posts terms"},
 		{Name: "return_format", Label: "Return Value", Type: "radio", Tab: "general", Choices: ch("object", "Term Object", "id", "Term ID"), Default: "id"}, setAllowNull}},
 	{"user", "User", "Relational", []acfgoSetting{{Name: "role", Label: "Filter by Role", Type: "roles", Tab: "general", Multiple: true},
-		{Name: "return_format", Label: "Return Format", Type: "radio", Tab: "general", Choices: ch("array", "User Array", "object", "User Object", "id", "User ID"), Default: "array"}, setMultiple, setAllowNull}},
+		{Name: "return_format", Label: "Return Format", Type: "radio", Tab: "general", Choices: ch("array", "User Array", "object", "User Object", "id", "User ID"), Default: "array"}, setMultiple, setAllowNull, {Name: "ajax", Label: "Use AJAX to lazy load choices?", Type: "true_false", Tab: "presentation", Instructions: "Search the choices while typing instead of loading all of them (large sites)"},
+		{Name: "bidirectional", Label: "Bidirectional", Type: "true_false", Tab: "general", Instructions: "Update the selected fields of the related objects too, so the relationship shows on both sides"},
+		{Name: "bidirectional_target", Label: "Target Field", Type: "groups", Tab: "general", ShowIf: []string{"bidirectional=1"}, Instructions: "Select the field(s) to be updated on the related objects (pick fields, not groups)"}}},
 	{"google_map", "Google Map", "Advanced", []acfgoSetting{{Name: "center_lat", Label: "Center (lat)", Type: "text", Tab: "presentation", Instructions: "Center the initial map"}, {Name: "center_lng", Label: "Center (lng)", Type: "text", Tab: "presentation"},
 		{Name: "zoom", Label: "Zoom", Type: "number", Tab: "presentation", Instructions: "Set the initial zoom level"}, {Name: "height", Label: "Height", Type: "number", Tab: "presentation", Instructions: "Customize the map height"}}},
 	{"date_picker", "Date Picker", "Advanced", []acfgoSetting{{Name: "display_format", Label: "Display Format", Type: "radio", Tab: "general", Choices: setDateFormats, Default: "d/m/Y", Instructions: "The format displayed when editing a post"},
@@ -515,7 +523,7 @@ var acfgoFieldTypes = []acfgoFieldType{
 		{Name: "selected", Label: "Open by default", Type: "true_false", Tab: "general"}}},
 	{"group", "Group", "Layout", []acfgoSetting{setSubFields, setLayoutTBR}},
 	{"repeater", "Repeater", "Layout", []acfgoSetting{setSubFields, {Name: "layout", Label: "Layout", Type: "radio", Tab: "presentation", Choices: ch("table", "Table", "block", "Block", "row", "Row"), Default: "table"},
-		{Name: "pagination", Label: "Pagination", Type: "true_false", Tab: "presentation", Instructions: "Useful for fields with a large number of rows."},
+		{Name: "pagination", Label: "Pagination", Type: "true_false", Tab: "presentation", Instructions: "Show the rows in pages (the rows of other pages stay in the form and are saved)"},
 		{Name: "rows_per_page", Label: "Rows Per Page", Type: "number", Tab: "presentation", ShowIf: []string{"pagination=1"}, Default: 20},
 		{Name: "min", Label: "Minimum Rows", Type: "number", Tab: "validation"}, {Name: "max", Label: "Maximum Rows", Type: "number", Tab: "validation"},
 		{Name: "collapsed", Label: "Collapsed", Type: "sub_field_choice", Tab: "presentation", Instructions: "Select a sub field to show when row is collapsed"},
@@ -893,7 +901,7 @@ func (s *Server) acfgoTypeFromForm(c *gin.Context, kind string, old map[string]a
 		d["updated_message"] = defaultStr(f("updated_message"), "Options Updated")
 		d["data_storage"] = defaultStr(f("data_storage"), "options")
 		d["post_id"] = f("post_id")
-		d["autoload"] = b("autoload")
+		// "autoload" is kept as imported: options are always read on demand here.
 		d["advanced_configuration"] = b("advanced_configuration")
 	}
 	return d, errs
@@ -907,6 +915,7 @@ type acfgoToolsData struct {
 	Nonce       string
 	ExportJSON  string
 	ImportCount int
+	ShowAdmin   bool // "Show admin menu" setting (acfgo_show_admin)
 }
 
 // acfgoTools is ACF › Tools: export field groups (and post types, taxonomies, options pages) as
@@ -917,6 +926,7 @@ func (s *Server) acfgoTools(c *gin.Context) {
 	}
 	ctx := c.Request.Context()
 	d := acfgoToolsData{Groups: s.acfgoAllGroups(ctx, false), Nonce: s.nonce(c, "acfgo-tools")}
+	d.ShowAdmin = s.settings.String("acfgo_show_admin") != "0"
 	for _, k := range []string{acfgoPostType, acfgoTaxType, acfgoOptionsType} {
 		d.Items = append(d.Items, s.acfgoItems(ctx, k, false)...)
 	}
@@ -927,6 +937,17 @@ func (s *Server) acfgoTools(c *gin.Context) {
 			return
 		}
 		switch c.PostForm("tool") {
+		case "settings":
+			v := "0"
+			if c.PostForm("acfgo_show_admin") == "1" {
+				v = "1"
+			}
+			if err := s.settings.Set(ctx, map[string]any{"acfgo_show_admin": v}); err != nil {
+				notices = append(notices, notice{Type: "error", Message: "Could not save the settings"})
+				break
+			}
+			c.Redirect(http.StatusFound, "/wp-admin/acf-tools?saved=1")
+			return
 		case "export":
 			out := s.acfgoExport(c, c.PostFormArray("keys[]"))
 			if len(out) == 0 {
@@ -957,6 +978,9 @@ func (s *Server) acfgoTools(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/wp-admin/acf-tools?imported="+strconv.Itoa(n))
 			return
 		}
+	}
+	if c.Query("saved") != "" {
+		notices = append(notices, notice{Type: "success", Message: "Settings saved", Dismissible: true})
 	}
 	if n := c.Query("imported"); n != "" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML("Imported " + template.HTMLEscapeString(n) + " item(s)"), Dismissible: true})

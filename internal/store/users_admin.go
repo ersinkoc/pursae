@@ -316,7 +316,10 @@ func (s *Store) DeleteUser(ctx context.Context, id, reassignTo int64) error {
 			// wp_delete_user(): only post types that support "author" (delete_with_user unset) go
 			// with the user. Products, variations, patterns, forms and field groups stay; the
 			// users FK sets their author_id to NULL below.
-			const withUser = `author_id = $1 AND type IN (SELECT slug FROM content_types WHERE supports @> '{"author": true}'::jsonb)`
+			// An explicit delete_with_user (Pursae Custom Fields post types) overrides that default.
+			const withUser = `author_id = $1 AND type IN (SELECT slug FROM content_types WHERE
+				(supports @> '{"author": true}'::jsonb AND NOT supports @> '{"delete_with_user": false}'::jsonb)
+				OR supports @> '{"delete_with_user": true}'::jsonb)`
 			var termIDs []int64
 			rows, err := tx.Query(ctx, `SELECT DISTINCT term_id FROM post_terms WHERE post_id IN (SELECT id FROM posts WHERE `+withUser+`)`, id)
 			if err != nil {

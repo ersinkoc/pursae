@@ -316,11 +316,34 @@
 		return $rep.children( 'table' ).children( 'tbody' ).children( '.acf-row' );
 	}
 
+	// repeaterPage shows one page of rows when the field has pagination on. Rows of the other
+	// pages are only hidden, so they are still submitted and saved.
+	function repeaterPage( $rep, page ) {
+		if ( ! $rep.attr( 'data-pagination' ) ) {
+			return;
+		}
+		var per = parseInt( $rep.attr( 'data-per-page' ), 10 ) || 20, $rows = repeaterRows( $rep );
+		var pages = Math.max( 1, Math.ceil( $rows.length / per ) );
+		page = Math.min( Math.max( page || $rep.data( 'page' ) || 1, 1 ), pages );
+		$rep.data( 'page', page );
+		$rows.each( function ( i ) {
+			$( this ).toggleClass( 'acf-row-paged-out', Math.floor( i / per ) + 1 !== page );
+		} );
+		$rep.find( '.acf-repeater-pagination' ).first().toggle( pages > 1 ).find( '.acf-repeater-page-info' ).text( page + ' / ' + pages );
+	}
+
 	function repeaterState( $rep ) {
 		var n = repeaterRows( $rep ).length, max = parseInt( $rep.data( 'max' ), 10 ) || 0;
 		$rep.toggleClass( '-empty', n === 0 ).toggleClass( 'is-full', max > 0 && n >= max );
 		renumber( $rep.children( 'table' ).children( 'tbody' ), '.acf-row', '.acf-row-number' );
+		repeaterPage( $rep );
 	}
+
+	$( document ).on( 'click', '.acf-repeater-prev, .acf-repeater-next', function ( e ) {
+		e.preventDefault();
+		var $rep = $( this ).closest( '.acf-repeater' );
+		repeaterPage( $rep, ( $rep.data( 'page' ) || 1 ) + ( $( this ).hasClass( 'acf-repeater-next' ) ? 1 : -1 ) );
+	} );
 
 	function addFromTemplate( tpl, placeholder ) {
 		var html = tpl.innerHTML.split( placeholder ).join( newRowID() );
@@ -343,6 +366,10 @@
 		}
 		init( $row[ 0 ] );
 		repeaterState( $rep );
+		if ( $rep.attr( 'data-pagination' ) ) { // jump to the page of the new row
+			var per = parseInt( $rep.attr( 'data-per-page' ), 10 ) || 20;
+			repeaterPage( $rep, Math.floor( repeaterRows( $rep ).index( $row.first() ) / per ) + 1 );
+		}
 		return $row;
 	}
 
@@ -565,6 +592,26 @@
 			} );
 		} );
 	}
+
+	/* Post Object / Page Link / User with "AJAX lazy load": search while typing ----------------------- */
+
+	var selectTimer;
+	$( document ).on( 'input', '.acf-select-ajax-search', function () {
+		var $in = $( this ), $sel = $in.nextAll( 'select[data-ajax]' ).first();
+		clearTimeout( selectTimer );
+		selectTimer = setTimeout( function () {
+			$.getJSON( ajaxurl, { action: 'acfgo/query_posts', field_key: $in.data( 'key' ), s: $in.val() || '' }, function ( r ) {
+				$sel.children( 'option:not(:selected):not([value=""])' ).remove();
+				( r.data || [] ).forEach( function ( it ) {
+					if ( ! $sel.children( 'option' ).filter( function () {
+						return this.value === String( it.id );
+					} ).length ) {
+						$sel.append( $( '<option></option>' ).val( it.id ).text( it.text ) );
+					}
+				} );
+			} );
+		}, 300 );
+	} );
 
 	var relTimer;
 	$( document ).on( 'input change', '.acf-rel-search, .acf-rel-type', function () {

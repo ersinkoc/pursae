@@ -12,7 +12,12 @@
 <table class="form-table" role="presentation">
 <tr class="user-syntax-highlighting-wrap"><th scope="row">Syntax Highlighting</th>
 <td><label for="syntax_highlighting"><input name="syntax_highlighting" type="checkbox" id="syntax_highlighting" value="false"{{if .SyntaxOff}} checked="checked"{{end}} /> Disable syntax highlighting when editing code</label></td></tr>
-<tr class="user-admin-color-wrap"><th scope="row">Administration Color Scheme</th>
+{{if .ShowEditorChoice}}<tr class="user-classic-editor-settings-wrap"><th scope="row">Default Editor</th>
+<td><fieldset id="classic-editor-user-settings"><legend class="screen-reader-text"><span>Default Editor</span></legend>
+<p><label for="classic-editor-user-classic"><input type="radio" name="classic-editor-user-settings" id="classic-editor-user-classic" value="classic"{{if eq .DefaultEditor "classic"}} checked="checked"{{end}} /> Classic editor</label></p>
+<p><label for="classic-editor-user-block"><input type="radio" name="classic-editor-user-settings" id="classic-editor-user-block" value="block"{{if ne .DefaultEditor "classic"}} checked="checked"{{end}} /> Pursae Editor (block editor)</label></p>
+<p class="description">Used for posts and pages that have not been opened in an editor yet.</p></fieldset></td></tr>
+{{end}}<tr class="user-admin-color-wrap"><th scope="row">Administration Color Scheme</th>
 <td><fieldset id="color-picker" class="scheme-list">
 	<legend class="screen-reader-text"><span>Administration Color Scheme</span></legend>
 	{{$cur := .Color}}{{range .Colors}}<div class="color-option{{if eq .Slug $cur}} selected{{end}}">

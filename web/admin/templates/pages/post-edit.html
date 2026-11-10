@@ -14,6 +14,7 @@
 {{if eq $p.Status "auto-draft"}}<input type="hidden" id="auto_draft" name="auto_draft" value="1" />{{end}}
 <input type="hidden" id="post_type" name="post_type" value="{{$p.Type}}" />
 <input type="hidden" id="post_ID" name="post_ID" value="{{$p.ID}}" />
+{{if .ActiveLock}}<input type="hidden" id="active_post_lock" value="{{.ActiveLock}}" />{{end}}
 <input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="{{.OrderNonce}}" />
 <input type="hidden" id="closedpostboxesnonce" name="closedpostboxesnonce" value="{{.ClosedNonce}}" />
 <div id="poststuff">

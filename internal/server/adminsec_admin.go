@@ -318,7 +318,7 @@ func (s *Server) asParseSettings(c *gin.Context, st asSettings, tab string) (asS
 		st.HideLogin = on("hide_login")
 		st.LoginSlug = slug
 		st.HideRedirect = strings.TrimSpace(c.PostForm("hide_redirect"))
-		st.GenericErrors, st.BlockEnumeration = on("generic_errors"), on("block_enumeration")
+		st.GenericErrors, st.BlockEnumeration, st.CaptchaForms = on("generic_errors"), on("block_enumeration"), on("captcha_forms")
 		if st.HideLogin || slug != "" {
 			switch {
 			case !asSlugRe.MatchString(slug):

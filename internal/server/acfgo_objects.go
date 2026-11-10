@@ -48,6 +48,7 @@ type acfgoPostTypeDef struct {
 	ShowUI, ShowInREST   bool
 	RestBase             string
 	Supports             []string
+	DeleteWithUser       *bool // nil = the WordPress default (delete when the type supports author)
 	Taxonomies           []string
 	HasArchive           bool
 	ArchiveSlug, Slug    string
@@ -215,6 +216,10 @@ func acfgoPostTypeFrom(d map[string]any) *acfgoPostTypeDef {
 		Public: acfgoBool(d["public"]), Hierarchical: acfgoBool(d["hierarchical"]), ShowUI: true, ShowInREST: true,
 		RestBase: acfgoStr(d["rest_base"]), Supports: acfgoStrList(d["supports"]), Taxonomies: acfgoStrList(d["taxonomies"]),
 		HasArchive: acfgoBool(d["has_archive"]), ArchiveSlug: acfgoStr(d["has_archive_slug"])}
+	if v, ok := d["delete_with_user"]; ok {
+		b := acfgoBool(v)
+		pt.DeleteWithUser = &b
+	}
 	if v, ok := d["show_ui"]; ok {
 		pt.ShowUI = acfgoBool(v)
 	}
@@ -366,6 +371,9 @@ func (s *Server) acfgoRegisterTypes(ctx context.Context) {
 		sup := map[string]bool{}
 		for _, f := range pt.Supports {
 			sup[f] = true
+		}
+		if pt.DeleteWithUser != nil { // read by Store.DeleteUser
+			sup["delete_with_user"] = *pt.DeleteWithUser
 		}
 		supJSON, _ := json.Marshal(sup)
 		labJSON, _ := json.Marshal(pt.Labels)

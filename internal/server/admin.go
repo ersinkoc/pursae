@@ -447,7 +447,7 @@ func (s *Server) adminAjax(c *gin.Context) {
 	case "wp-link-ajax": // the classic editor's link dialog (editor_classic.go)
 		s.wpLinkAjax(c)
 	case "wp-remove-post-lock":
-		c.String(http.StatusOK, "1")
+		s.removePostLock(c)
 	case "inline-save":
 		s.inlineSave(c)
 	case "inline-save-tax":
@@ -507,5 +507,7 @@ func (s *Server) heartbeat(c *gin.Context) {
 		out["rest_nonce"] = s.nonce(c, "wp_rest")
 		out["heartbeat_nonce"] = s.nonce(c, "heartbeat-nonce")
 	}
+	s.heartbeatAutosave(c, out)
+	s.heartbeatPostLock(c, out)
 	c.JSON(http.StatusOK, out)
 }
