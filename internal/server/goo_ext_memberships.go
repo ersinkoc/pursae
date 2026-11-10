@@ -293,22 +293,29 @@ func (m *gooUserMembership) addNote(note string) {
 // membership of the plan is renewed, else one is created.
 func (s *Server) gmemGrant(ctx context.Context, userID int64, plan *gooMembershipPlan, orderID, productID int64, note string) (*gooUserMembership, error) {
 	now := time.Now()
-	for _, m := range s.gmemUMList(ctx, userID, plan.ID, "") {
-		if orderID != 0 && m.OrderID == orderID && m.HasAccess(now) {
+	list := s.gmemUMList(ctx, userID, plan.ID, "")
+	// A membership that gives access now is renewed, whichever row it is (an older one can be
+	// active while the newest was cancelled or is delayed); else the newest one is reactivated.
+	for _, m := range list {
+		if !m.HasAccess(now) {
+			continue
+		}
+		if orderID != 0 && m.OrderID == orderID {
 			return m, nil // already granted by this order (a cancelled grant is reactivated below)
 		}
-		if m.HasAccess(now) {
-			if orderID != 0 {
-				// A repeat purchase extends a relative access length from the current end date.
-				if m.End != nil && plan.AccessLength == "specific" {
-					m.End = plan.endFor(*m.End)
-				}
-				m.OrderID, m.ProductID = orderID, productID
-				m.addNote(note)
-				return m, s.gmemSaveUM(ctx, m)
+		if orderID != 0 {
+			// A repeat purchase extends a relative access length from the current end date.
+			if m.End != nil && plan.AccessLength == "specific" {
+				m.End = plan.endFor(*m.End)
 			}
-			return m, nil
+			m.OrderID, m.ProductID = orderID, productID
+			m.addNote(note)
+			return m, s.gmemSaveUM(ctx, m)
 		}
+		return m, nil
+	}
+	if len(list) > 0 {
+		m := list[0]
 		m.Status, m.Start, m.End, m.OrderID, m.ProductID = "active", now, plan.endFor(now), orderID, productID
 		m.addNote(defaultStr(note, "Membership reactivated."))
 		return m, s.gmemSaveUM(ctx, m)

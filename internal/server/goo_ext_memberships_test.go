@@ -363,3 +363,41 @@ func TestGooExtMembershipsHideEverywhere(t *testing.T) {
 		t.Errorf("member previous post: %v %v", prev, err)
 	}
 }
+
+// gmemGrant renews the membership that gives access even when it is not the newest row (the newest
+// was cancelled), instead of reactivating the cancelled one into a second active membership.
+func TestGooExtMembershipGrantPrefersActive(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	plan := &gooMembershipPlan{Name: "Silver", AccessMethod: "manual", AccessLength: "specific", AccessAmount: 1, AccessPeriod: "months"}
+	if err := srv.gmemSavePlan(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	u := gxaCustomer(t, srv, "silver@example.test")
+	now := time.Now()
+	end := now.AddDate(0, 1, 0)
+	active := &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: "active", Start: now.Add(-time.Hour), End: &end}
+	if err := srv.gmemSaveUM(ctx, active); err != nil {
+		t.Fatal(err)
+	}
+	cancelled := &gooUserMembership{UserID: u.ID, PlanID: plan.ID, Status: "cancelled", Start: now.Add(-time.Hour)}
+	if err := srv.gmemSaveUM(ctx, cancelled); err != nil {
+		t.Fatal(err)
+	}
+	m, err := srv.gmemGrant(ctx, u.ID, plan, 4242, 0, "Repeat purchase.")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.ID != active.ID {
+		t.Errorf("granted membership %d, want the active one %d", m.ID, active.ID)
+	}
+	n := 0
+	for _, x := range srv.gmemUMList(ctx, u.ID, plan.ID, "") {
+		if x.HasAccess(time.Now()) {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Errorf("%d memberships give access, want 1", n)
+	}
+}
