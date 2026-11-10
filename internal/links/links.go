@@ -349,7 +349,7 @@ func (b *Builder) feedLink(feed string) string {
 // PostCommentsFeed is get_post_comments_feed_link().
 func (b *Builder) PostCommentsFeed(p *store.Post) string {
 	if !b.Pretty() || draftLike(p) {
-		return b.addQueryArg(b.Permalink(p), "feed", "rss2")
+		return b.addQueryArg(b.commentFeedPermalink(p), "feed", "rss2")
 	}
 	return appendURLPath(b.Permalink(p), b.trailing("/feed"))
 }
@@ -363,9 +363,16 @@ func (b *Builder) PostCommentsFeedFormat(p *store.Post, feed string) string {
 		return b.PostCommentsFeed(p)
 	}
 	if !b.Pretty() || draftLike(p) {
-		return b.addQueryArg(b.Permalink(p), "feed", feed)
+		return b.addQueryArg(b.commentFeedPermalink(p), "feed", feed)
 	}
 	return appendURLPath(b.Permalink(p), b.trailing("/feed/"+feed))
+}
+
+func (b *Builder) commentFeedPermalink(p *store.Post) string {
+	if p.Type == "page" && p.ID != 0 && p.ID == b.FrontPageID && p.Status == "publish" {
+		return b.filter("post", p, b.HomeURL("/?page_id="+strconv.FormatInt(p.ID, 10)))
+	}
+	return b.Permalink(p)
 }
 
 func appendURLPath(link, suffix string) string {

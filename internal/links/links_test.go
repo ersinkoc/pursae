@@ -82,6 +82,15 @@ func TestPostCommentsFeedPreservesFilteredURL(t *testing.T) {
 	}
 }
 
+func TestPlainFrontPageCommentsFeedKeepsPageID(t *testing.T) {
+	b := Builder{Home: "https://example.test", FrontPageID: 7}
+	p := &store.Post{ID: 7, Type: "page", Status: "publish", Slug: "home"}
+	u, err := url.Parse(b.PostCommentsFeed(p))
+	if err != nil || u.Query().Get("page_id") != "7" || u.Query().Get("feed") != "rss2" {
+		t.Fatalf("front page feed = %v, err=%v", u, err)
+	}
+}
+
 func TestMatcher(t *testing.T) {
 	m := NewMatcher("/%year%/%monthnum%/%day%/%postname%/")
 	got, ok := m.Match("2026/10/03/hello-world")
