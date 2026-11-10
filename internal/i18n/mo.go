@@ -38,6 +38,11 @@ func parseMO(b []byte) (*moFile, error) {
 	}
 	n := int(bo.Uint32(b[8:]))
 	origOff, transOff := int(bo.Uint32(b[12:])), int(bo.Uint32(b[16:]))
+	// Each message takes 8 bytes in each of the two tables: a count the file cannot hold is corrupt
+	// (and would otherwise size the map below, up to an allocation that kills the process).
+	if n < 0 || n > len(b)/16 {
+		return nil, errors.New("mo: truncated string table")
+	}
 	str := func(table, i int) (string, bool) {
 		p := table + i*8
 		if p+8 > len(b) {

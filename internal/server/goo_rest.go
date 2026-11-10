@@ -363,9 +363,9 @@ func gooQueryBool(c *gin.Context, key string) (bool, bool) {
 // gooPage reads page / per_page (WooCommerce: per_page 1..100, default 10) and offset.
 func gooPage(c *gin.Context) (page, per, offset int) {
 	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
-	if page < 1 {
-		page = 1
-	}
+	// Bounded like store.MaxPage: (page-1)*per and offset+per must not overflow into a negative
+	// offset or limit (a panic on in-memory lists, the whole table read for SQL ones).
+	page = min(max(page, 1), store.MaxPage)
 	per, _ = strconv.Atoi(c.DefaultQuery("per_page", "10"))
 	if per == -1 {
 		per = 100
@@ -379,6 +379,7 @@ func gooPage(c *gin.Context) (page, per, offset int) {
 	offset = -1
 	if v, ok := c.GetQuery("offset"); ok {
 		offset, _ = strconv.Atoi(v)
+		offset = min(offset, store.MaxPage*100)
 	}
 	return
 }

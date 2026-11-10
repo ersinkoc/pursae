@@ -723,10 +723,13 @@ func (s *Server) paoSaveUploadMpf(c *gin.Context, fh *multipart.FileHeader) (str
 	if err != nil {
 		return "", "", err
 	}
-	if _, err := io.Copy(out, io.LimitReader(src, limit)); err != nil {
-		out.Close()
+	_, err = io.Copy(out, io.LimitReader(src, limit))
+	if cerr := out.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil { // a short file must not be linked from the order
+		os.Remove(dst)
 		return "", "", err
 	}
-	out.Close()
 	return s.uploadURL(c, rel), clean + "." + ext, nil
 }

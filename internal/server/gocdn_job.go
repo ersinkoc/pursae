@@ -186,6 +186,10 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 			}
 		}
 		rows.Close()
+		if qerr := rows.Err(); qerr != nil { // not the end of the list: the job stops unfinished
+			fail(qerr.Error())
+			break
+		}
 		if len(ids) == 0 {
 			rt.mu.Lock()
 			j.Finished = true
@@ -221,7 +225,7 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 	switch {
 	case j.Kind == "move" && finished:
 		s.gocdnPrunePrevious(ctx)
-	case j.Kind == "download" && finished && s.gocdnRemovedCount(ctx) == 0:
+	case j.Kind == "download" && finished && !s.gocdnHasRemoved(ctx):
 		_ = s.settings.Set(ctx, map[string]any{gocdnFallbackOption: false})
 		if j.ThenDeactivate && failed == 0 {
 			_ = s.settings.Set(ctx, map[string]any{gocdnSetting: false})

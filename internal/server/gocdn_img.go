@@ -11,6 +11,7 @@ import (
 	"image"
 	"image/gif"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -352,14 +353,42 @@ func (s *Server) gocdnFetchSource(ctx context.Context, st gocdnSettings, rel str
 	return data, err
 }
 
+// gocdnImgStore caches a variant. Concurrent misses for one variant each write their own temp file:
+// a shared one could be truncated by the second writer after the first renamed it into place, and
+// a cache hit is served as immutable.
 func gocdnImgStore(file string, data []byte) {
 	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
 		return
 	}
-	tmp := file + ".tmp" + strconv.Itoa(os.Getpid())
-	if os.WriteFile(tmp, data, 0o644) == nil {
-		_ = os.Rename(tmp, file)
+	if err := gocdnWriteFileAtomic(file, bytes.NewReader(data), -1); err != nil {
+		slog.Warn("gocdn: caching an image variant", "file", file, "err", err)
 	}
+}
+
+// gocdnWriteFileAtomic writes r to a temp file unique to this call next to file and renames it into
+// place; with limit >= 0 at most limit bytes are read.
+func gocdnWriteFileAtomic(file string, r io.Reader, limit int64) error {
+	f, err := os.CreateTemp(filepath.Dir(file), "."+filepath.Base(file)+".tmp*")
+	if err != nil {
+		return err
+	}
+	if limit >= 0 {
+		r = io.LimitReader(r, limit)
+	}
+	_, err = io.Copy(f, r)
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err == nil {
+		err = os.Chmod(f.Name(), 0o644)
+	}
+	if err == nil {
+		err = os.Rename(f.Name(), file)
+	}
+	if err != nil {
+		os.Remove(f.Name())
+	}
+	return err
 }
 
 func gocdnImgWrite(w http.ResponseWriter, r *http.Request, format string, data []byte, cache string) {

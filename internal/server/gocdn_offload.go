@@ -327,20 +327,8 @@ func (s *Server) gocdnDownload(ctx context.Context, st gocdnSettings, it *gocdnI
 	if err := os.MkdirAll(filepath.Dir(local), 0o755); err != nil {
 		return err
 	}
-	tmp := local + ".gocdn-tmp"
-	f, err := os.Create(tmp)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(f, io.LimitReader(rc, 4<<30))
-	if cerr := f.Close(); err == nil {
-		err = cerr
-	}
-	if err != nil {
-		os.Remove(tmp)
-		return err
-	}
-	return os.Rename(tmp, local)
+	// A temp file of its own: two requests can bring the same file back at once (image editor).
+	return gocdnWriteFileAtomic(local, rc, 4<<30)
 }
 
 // gocdnEnsureAttachmentLocal brings every removed file of an attachment back.

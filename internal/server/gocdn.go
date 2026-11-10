@@ -539,7 +539,7 @@ func (s *Server) gocdnPluginRow() pluginRow {
 // answering those files from the bucket (the uploads fallback, gocdn_fetch.go).
 func (s *Server) gocdnPluginAction(c *gin.Context, action string) {
 	if action != "activate" {
-		if c.Request.Method == http.MethodGet && c.Query("gocdn-confirm") == "" && s.gocdnRemovedCount(c) > 0 {
+		if c.Request.Method == http.MethodGet && c.Query("gocdn-confirm") == "" && s.gocdnHasRemoved(c) {
 			c.Redirect(http.StatusFound, "/wp-admin/gocdn?page=deactivate")
 			return
 		}

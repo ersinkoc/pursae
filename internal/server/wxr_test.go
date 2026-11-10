@@ -429,3 +429,29 @@ func TestWXRImport(t *testing.T) {
 		t.Error("template error on the import screen")
 	}
 }
+
+// TestWXRExportFailsOnReadError: a read that fails mid-export answers 500 instead of a well-formed
+// file that silently lacks items (here the comments of every post).
+func TestWXRExportFailsOnReadError(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{
+		"weblog_title": {"Export Site"}, "user_name": {"admin"}, "admin_password": {"correct horse"}, "admin_email": {"admin@example.test"},
+	}); code != http.StatusOK || !strings.Contains(body, "Success!") {
+		t.Fatalf("install: %d", code)
+	}
+	if code, _, _ := post(t, c, base+"/wp-login", url.Values{"log": {"admin"}, "pwd": {"correct horse"}}); code != http.StatusFound {
+		t.Fatalf("login: %d", code)
+	}
+	ctx := context.Background()
+	if code, body, _ := get(t, c, base+"/wp-admin/export?download=true&content=all"); code != http.StatusOK || !strings.Contains(body, "<wp:post_type>") {
+		t.Fatalf("export before the failure: %d", code)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `ALTER TABLE comments RENAME TO comments_gone`); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _, _ = srv.store.Pool.Exec(context.Background(), `ALTER TABLE comments_gone RENAME TO comments`) })
+	if code, body, _ := get(t, c, base+"/wp-admin/export?download=true&content=all"); code != http.StatusInternalServerError || strings.Contains(body, "<rss") {
+		t.Fatalf("export with a failing read: %d", code)
+	}
+}
