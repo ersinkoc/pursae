@@ -62,6 +62,23 @@ func pathOf(t *testing.T, base, absolute string) string {
 	return strings.TrimPrefix(absolute, base)
 }
 
+func TestStaticFrontPageCommentFeeds(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	installFrontSite(t, ts.URL, c, srv)
+	front := mustInsertPost(t, srv, &store.Post{Type: "page", Slug: "front", Title: "Front page"})
+	if err := srv.settings.Set(ctx, map[string]any{"permalink_structure": "/%postname%/", "show_on_front": "page", "page_on_front": front.ID}); err != nil {
+		t.Fatal(err)
+	}
+	for _, format := range []string{"rss2", "atom"} {
+		link := srv.links(ctx).PostCommentsFeedFormat(front, format)
+		code, body, loc := get(t, c, link)
+		if code != http.StatusOK || !strings.Contains(body, "Comments on: Front page") {
+			t.Errorf("%s feed: status=%d location=%q body=%q", format, code, loc, body)
+		}
+	}
+}
+
 func TestFrontFeedsAndRedirects(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL

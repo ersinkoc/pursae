@@ -97,7 +97,7 @@ func FormatDateNames(t time.Time, format string, names *DateNames) string {
 			y, _ := t.ISOWeek()
 			sb.WriteString(strconv.Itoa(y))
 		case 'Y':
-			sb.WriteString(strconv.Itoa(t.Year()))
+			fmt.Fprintf(&sb, "%04d", t.Year())
 		case 'y':
 			fmt.Fprintf(&sb, "%02d", t.Year()%100)
 		case 'a':
