@@ -30,7 +30,7 @@ func RemoveAccents(s string) string {
 			continue
 		}
 		if unicode.Is(unicode.Mn, r) {
-			if base < 0x80 || unicode.Is(unicode.Latin, base) {
+			if unicode.Is(unicode.Latin, base) {
 				continue
 			}
 		} else {
@@ -42,11 +42,12 @@ func RemoveAccents(s string) string {
 }
 
 var (
-	tagRe       = regexp.MustCompile(`<[^>]*>`)
-	entityRe    = regexp.MustCompile(`&[^;\s]+;`)
-	dashesRe    = regexp.MustCompile(`-+`)
-	pctOctetRe  = regexp.MustCompile(`%[0-9A-Fa-f]{2}`)
-	slugReplace = strings.NewReplacer(".", "-", "/", "-", " ", "-", "\u00a0", "-", "–", "-", "—", "-")
+	tagRe        = regexp.MustCompile(`<[^>]*>`)
+	rawContentRe = regexp.MustCompile(`(?is)<script\b[^>]*>.*?</script\s*>|<style\b[^>]*>.*?</style\s*>`)
+	entityRe     = regexp.MustCompile(`&[^;\s]+;`)
+	dashesRe     = regexp.MustCompile(`-+`)
+	pctOctetRe   = regexp.MustCompile(`%[0-9A-Fa-f]{2}`)
+	slugReplace  = strings.NewReplacer(".", "-", "/", "-", " ", "-", "\u00a0", "-", "–", "-", "—", "-")
 )
 
 // SanitizeTitle is sanitize_title_with_dashes(): a lowercase, dash-separated slug. Latin accents become
@@ -82,7 +83,7 @@ func SanitizeTitle(title string) string {
 
 // StripTags is wp_strip_all_tags() without whitespace collapsing.
 func StripTags(s string) string {
-	s = regexp.MustCompile(`(?is)<(script|style)[^>]*?>.*?</(script|style)>`).ReplaceAllString(s, "")
+	s = rawContentRe.ReplaceAllString(s, "")
 	return tagRe.ReplaceAllString(s, "")
 }
 

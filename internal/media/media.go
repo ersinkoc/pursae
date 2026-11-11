@@ -650,6 +650,11 @@ func PreviewRatio(w, h int) float64 {
 func ApplyOps(img image.Image, ops []Op) image.Image {
 	var merged []Op
 	for _, op := range ops {
+		// Unsupported rotations are no-ops individually; do not let merging turn
+		// two unsupported angles into a supported one.
+		if !op.Crop && op.Flip == 0 && op.Rotate%90 != 0 {
+			continue
+		}
 		if n := len(merged); n > 0 && !op.Crop && !merged[n-1].Crop {
 			last := &merged[n-1]
 			if op.Flip == 0 && last.Flip == 0 {
@@ -666,6 +671,9 @@ func ApplyOps(img image.Image, ops []Op) image.Image {
 	for _, op := range merged {
 		switch {
 		case op.Crop:
+			if op.W <= 0 || op.H <= 0 {
+				continue
+			}
 			b := img.Bounds()
 			scale := op.Ratio
 			if scale == 0 {

@@ -37,3 +37,12 @@ func TestDefaultsKeepWordPressNames(t *testing.T) {
 		}
 	}
 }
+
+func TestGetReturnsIndependentNestedValues(t *testing.T) {
+	s := &Store{cache: map[string]any{"nested": map[string]any{"items": []any{map[string]any{"name": "original"}}}}}
+	got := s.Get("nested").(map[string]any)
+	got["items"].([]any)[0].(map[string]any)["name"] = "changed"
+	if name := s.Get("nested").(map[string]any)["items"].([]any)[0].(map[string]any)["name"]; name != "original" {
+		t.Fatalf("cached name changed: %v", name)
+	}
+}

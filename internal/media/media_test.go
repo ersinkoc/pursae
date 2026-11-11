@@ -46,6 +46,28 @@ func TestApplyOpsUnsupportedRotationPreservesImage(t *testing.T) {
 	}
 }
 
+func TestApplyOpsRejectsNegativeCropDimensions(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 8, 6))
+	for _, op := range []Op{{Crop: true, X: 5, Y: 1, W: -3, H: 2, Ratio: 1}, {Crop: true, X: 1, Y: 4, W: 2, H: -2, Ratio: 1}} {
+		if got := ApplyOps(img, []Op{op}).Bounds(); got != img.Bounds() {
+			t.Errorf("crop %+v changed bounds to %v", op, got)
+		}
+	}
+}
+
+func TestApplyOpsDoesNotMergeUnsupportedRotations(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 3, 2))
+	for _, ops := range [][]Op{{{Rotate: 45}, {Rotate: 45}}, {{Rotate: 90}, {Rotate: 45}}} {
+		separate := image.Image(img)
+		for _, op := range ops {
+			separate = ApplyOps(separate, []Op{op})
+		}
+		if got := ApplyOps(img, ops).Bounds(); got != separate.Bounds() {
+			t.Errorf("operations %v: bounds %v, want %v", ops, got, separate.Bounds())
+		}
+	}
+}
+
 func TestSaveAndProcess(t *testing.T) {
 	dir := t.TempDir()
 	img := image.NewRGBA(image.Rect(0, 0, 1200, 800))
