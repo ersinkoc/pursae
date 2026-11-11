@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 // LogEntry is one line in a plugin's log.
@@ -35,7 +36,11 @@ func newLogRing(size int, sink func(LogEntry)) *logRing {
 
 func (l *logRing) add(level, source, msg string) {
 	if len(msg) > maxLogMessage {
-		msg = msg[:maxLogMessage] + "…"
+		end := maxLogMessage
+		for end > 0 && !utf8.RuneStart(msg[end]) {
+			end--
+		}
+		msg = msg[:end] + "…"
 	}
 	e := LogEntry{Time: time.Now(), Level: level, Source: source, Message: msg}
 	l.mu.Lock()
@@ -63,16 +68,26 @@ func (l *logRing) list() []LogEntry {
 // lineWriter turns a byte stream (guest stdout/stderr) into log entries, one
 // per line. Partial lines are buffered up to maxLogMessage bytes.
 type lineWriter struct {
-	mu     sync.Mutex
-	ring   *logRing
-	level  string
-	source string
-	buf    []byte
+	mu      sync.Mutex
+	ring    *logRing
+	level   string
+	source  string
+	buf     []byte
+	discard bool // rest of an already-truncated line, until its newline
 }
 
 func (w *lineWriter) Write(p []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	n := len(p)
+	if w.discard {
+		i := bytes.IndexByte(p, '\n')
+		if i < 0 {
+			return n, nil
+		}
+		w.discard = false
+		p = p[i+1:]
+	}
 	w.buf = append(w.buf, p...)
 	for {
 		i := bytes.IndexByte(w.buf, '\n')
@@ -85,6 +100,7 @@ func (w *lineWriter) Write(p []byte) (int, error) {
 	if len(w.buf) > maxLogMessage {
 		w.ring.add(w.level, w.source, string(w.buf))
 		w.buf = nil
+		w.discard = true
 	}
-	return len(p), nil
+	return n, nil
 }

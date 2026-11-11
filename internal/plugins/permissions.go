@@ -136,8 +136,10 @@ func (s PermissionSet) Has(p Permission) bool { return s[p] }
 // List returns the set's members sorted.
 func (s PermissionSet) List() []Permission {
 	out := make([]Permission, 0, len(s))
-	for p := range s {
-		out = append(out, p)
+	for p, enabled := range s {
+		if enabled {
+			out = append(out, p)
+		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i] < out[j] })
 	return out
@@ -146,8 +148,8 @@ func (s PermissionSet) List() []Permission {
 // Intersect returns the permissions present in both sets.
 func (s PermissionSet) Intersect(other PermissionSet) PermissionSet {
 	out := PermissionSet{}
-	for p := range s {
-		if other[p] {
+	for p, enabled := range s {
+		if enabled && other[p] {
 			out[p] = true
 		}
 	}
