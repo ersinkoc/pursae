@@ -41,3 +41,20 @@ func TestAddClassIgnoresClassTextInsideAttribute(t *testing.T) {
 		t.Fatalf("AddClass = %s", got)
 	}
 }
+
+func TestAddClassScansRealTagsWithQuotedDelimiters(t *testing.T) {
+	for _, tc := range []struct{ in, want string }{
+		{`<div title="a > b" class="old">x</div>`, `<div title="a > b" class="old new">x</div>`},
+		{`<!-- <div> --><div>x</div>`, `<!-- <div> --><div class="new">x</div>`},
+	} {
+		if got := AddClass(tc.in, "new"); got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+}
+
+func TestAddClassMatchesTagFiltersCaseInsensitively(t *testing.T) {
+	if got := AddClass(`<h2>Hi</h2>`, "new", "H2"); got != `<h2 class="new">Hi</h2>` {
+		t.Fatalf("got %q", got)
+	}
+}

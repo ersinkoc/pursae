@@ -3,11 +3,12 @@ package blocks
 import (
 	"regexp"
 	"strings"
+
+	xhtml "golang.org/x/net/html"
 )
 
 var (
-	firstTagRe = regexp.MustCompile(`<([a-zA-Z][a-zA-Z0-9-]*)(\s[^>]*)?>`)
-	classAttr  = regexp.MustCompile(`(?i)\sclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+))`)
+	classAttr = regexp.MustCompile(`(?i)\sclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+))`)
 )
 
 // AddClass adds classes to the first element of html, the way WP_HTML_Tag_Processor::add_class() is used by render callbacks.
@@ -20,13 +21,33 @@ func AddClass(html, classes string, tags ...string) string {
 	if classes == "" {
 		return html
 	}
-	locs := firstTagRe.FindAllStringSubmatchIndex(html, -1)
-	for _, loc := range locs {
-		name := strings.ToLower(html[loc[2]:loc[3]])
-		if len(tags) > 0 && !contains(tags, name) {
+	z := xhtml.NewTokenizer(strings.NewReader(html))
+	offset := 0
+	for {
+		typ := z.Next()
+		if typ == xhtml.ErrorToken {
+			return html
+		}
+		tag := string(z.Raw())
+		start := offset
+		offset += len(tag)
+		if typ != xhtml.StartTagToken && typ != xhtml.SelfClosingTagToken {
 			continue
 		}
-		tag := html[loc[0]:loc[1]]
+		nameBytes, _ := z.TagName()
+		name := strings.ToLower(string(nameBytes))
+		if len(tags) > 0 {
+			match := false
+			for _, tag := range tags {
+				if strings.EqualFold(tag, name) {
+					match = true
+					break
+				}
+			}
+			if !match {
+				continue
+			}
+		}
 		var updated string
 		if m := findClassAttr(tag); m != nil {
 			start, end := m[2], m[3]
@@ -50,16 +71,14 @@ func AddClass(html, classes string, tags ...string) string {
 			}
 			updated = tag[:start] + value + tag[end:]
 		} else {
-			end := len(tag) - 1
-			if strings.HasSuffix(tag, "/>") {
-				end--
+			nameEnd := 1
+			for nameEnd < len(tag) && !strings.ContainsRune(" \t\r\n\f/>", rune(tag[nameEnd])) {
+				nameEnd++
 			}
-			updated = tag[:loc[3]-loc[0]] + ` class="` + classes + `"` + tag[loc[3]-loc[0]:]
-			_ = end
+			updated = tag[:nameEnd] + ` class="` + classes + `"` + tag[nameEnd:]
 		}
-		return html[:loc[0]] + updated + html[loc[1]:]
+		return html[:start] + updated + html[offset:]
 	}
-	return html
 }
 
 // findClassAttr skips matches that occur inside another attribute's quoted value.
