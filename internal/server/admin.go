@@ -296,7 +296,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		Avatar64:  s.avatarURL(c, u.Email, 64),
 		SiteName:  s.settings.String("blogname"),
 		HomeURL:   s.links(c).HomeURL("/"),
-		Notices:   append(append(append(flashNotices(c), s.pluginNotices(c)...), s.licenseNotices(c)...), notices...),
+		Notices:   append(append(append(flashNotices(c), s.pluginNotices(c)...), s.licenseNotices(c)...), append(s.updateEmailsNotices(c), notices...)...),
 		Pending:   counts["pending"],
 		Data:      data,
 

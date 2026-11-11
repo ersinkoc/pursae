@@ -167,6 +167,10 @@ func (s *Server) install(ctx context.Context, v installView) error {
 	if err != nil {
 		return err
 	}
+	// The install screen told the owner their address is kept for Pursae update e-mails (hub_contacts.go).
+	if _, err := s.store.Pool.Exec(ctx, `UPDATE users SET meta = meta || jsonb_build_object($2::text, true) WHERE id = $1`, userID, updateEmailsMeta); err != nil {
+		return err
+	}
 
 	site := s.cfg.SiteURL
 	now := time.Now()

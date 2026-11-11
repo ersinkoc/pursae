@@ -132,8 +132,15 @@ nothing — it then has no marketplace, no license and no update notices either.
  "license": "PRS-…", "theme": "twentytwentyfive",
  "plugins": [{"slug": "goocommerce", "version": "1.0.0", "active": true, "source": "native"},
              {"slug": "word-counter", "version": "1.0.0", "active": false, "source": "hub"}],
- "themes":  [{"slug": "twentytwentyfive", "version": "1.5", "active": true, "source": "native"}]}
+ "themes":  [{"slug": "twentytwentyfive", "version": "1.5", "active": true, "source": "native"}],
+ "contacts": [{"email": "owner@shop.example.com", "name": "Owner", "role": "administrator"}]}
 ```
+
+`contacts` are the users who get Pursae product update e-mails: users who can `edit_posts`, after
+they were told (the install screen for the owner, a one-time admin notice for everyone else). It is
+on by default; each user turns it off under Users › Profile › "Pursae updates" (user meta
+`pursae_update_emails`), and the next ping no longer lists them. The list is always sent (empty when
+no one gets updates) and does not depend on the statistics switch. The Hub shows it on the site's page.
 
 `plugins` lists every plugin, built-in (`native`), installed from the Hub (`hub`) or uploaded
 (`upload`); `themes` lists the installed themes (bundled themes are `native`, library themes

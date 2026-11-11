@@ -27,6 +27,8 @@ type profileData struct {
 	DisplayOptions []string
 	Avatar96       string
 	ShowToolbar    bool
+	// UpdateEmails: the "Pursae updates" row is shown (eligible user) and its switch is on.
+	UpdateEmailsRow, UpdateEmails bool
 	// Language: the user's "locale" meta ("" = Site Default) and the installed languages.
 	Locale    string
 	Languages []langChoice
@@ -73,6 +75,12 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 	}
 	if v, ok := target.Meta["show_admin_bar_front"].(bool); ok {
 		d.ShowToolbar = v
+	}
+	d.UpdateEmailsRow = updateEmailsEligible(target)
+	if v, ok := target.Meta[updateEmailsMeta].(bool); ok {
+		d.UpdateEmails = v
+	} else {
+		d.UpdateEmails = true // the default once the user has been told
 	}
 	d.Locale, _ = target.Meta["locale"].(string)
 	d.Languages, _ = s.languageChoices(d.Locale, true)
@@ -296,6 +304,9 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 		return
 	}
 	_ = s.setUserMeta(c, target, "show_admin_bar_front", c.PostForm("admin_bar_front") == "1")
+	if _, shown := c.GetPostForm("pursae_update_emails_shown"); shown && updateEmailsEligible(target) {
+		_ = s.setUserMeta(c, target, updateEmailsMeta, c.PostForm("pursae_update_emails") == "1") // hub_contacts.go
+	}
 	if loc, ok := c.GetPostForm("locale"); ok {
 		if loc == "site-default" {
 			loc = ""

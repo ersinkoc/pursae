@@ -187,15 +187,20 @@ type hubPingPayload struct {
 	Theme   string           `json:"theme"`
 	Plugins []hubPackageInfo `json:"plugins"`
 	Themes  []hubPackageInfo `json:"themes"`
+	// Contacts are the addresses of users who get Pursae update e-mails (hub_contacts.go). Always
+	// sent, an empty list included, so a user who turned it off is removed from the Manager.
+	Contacts []hubContact `json:"contacts"`
 }
 
 // hubPingBody is the daily ping: the site, its platform and license, and what it has installed.
 func (s *Server) hubPingBody(ctx context.Context) hubPingPayload {
 	if !s.statsEnabled() { // the minimum updates need: where, which version, which license
-		return hubPingPayload{URL: s.settings.String("home"), Version: Version, License: s.licenseKey(), Plugins: []hubPackageInfo{}, Themes: []hubPackageInfo{}}
+		return hubPingPayload{URL: s.settings.String("home"), Version: Version, License: s.licenseKey(), Plugins: []hubPackageInfo{}, Themes: []hubPackageInfo{},
+			Contacts: s.hubContacts(ctx)} // a per-user choice, not part of the statistics switch
 	}
 	p := hubPingPayload{URL: s.settings.String("home"), Version: Version, Locale: s.siteLocale(),
-		OS: runtime.GOOS, Arch: runtime.GOARCH, License: s.licenseKey(), Plugins: []hubPackageInfo{}, Themes: []hubPackageInfo{}}
+		OS: runtime.GOOS, Arch: runtime.GOARCH, License: s.licenseKey(), Plugins: []hubPackageInfo{}, Themes: []hubPackageInfo{},
+		Contacts: s.hubContacts(ctx)}
 	if t := s.activeTheme(); t != nil {
 		p.Theme = t.Slug
 	}
