@@ -62,3 +62,9 @@ func TestSplitMore(t *testing.T) {
 		t.Errorf("got %q %q %q %v", teaser, rest, text, ok)
 	}
 }
+
+func TestTrimWordsNegativeLimit(t *testing.T) {
+	if got := TrimWords("hello world", -1, "…"); got != "…" {
+		t.Fatalf("got %q", got)
+	}
+}

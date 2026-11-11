@@ -31,6 +31,33 @@ func TestConvertSmilies(t *testing.T) {
 	}
 }
 
+func TestConvertSmiliesProtectedTagsIgnoreCase(t *testing.T) {
+	in := "<CoDe> :) </cOdE> :) "
+	if got := ConvertSmilies(in, ""); got != "<CoDe> :) </cOdE> 🙂 " {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestConvertSmiliesClosingTagWhitespace(t *testing.T) {
+	in := "<pre> :) </pre > :) "
+	if got := ConvertSmilies(in, ""); got != "<pre> :) </pre > 🙂 " {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestConvertSmiliesQuotedGreaterThan(t *testing.T) {
+	in := `<a title="x > :) "> :) </a>`
+	if got := ConvertSmilies(in, ""); got != `<a title="x > :) "> 🙂 </a>` {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestConvertSmiliesTextStartingWithLessThan(t *testing.T) {
+	if got := ConvertSmilies("< 1 :) ", ""); got != "< 1 🙂 " {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestParseFeed(t *testing.T) {
 	rss := `<?xml version="1.0"?><rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Site</title>
 	<item><title>One &amp; two</title><link>https://example.com/one</link><description><![CDATA[<p>First &amp; best</p>]]></description><pubDate>Mon, 02 Jan 2006 15:04:05 +0000</pubDate><dc:creator><![CDATA[Ann]]></dc:creator></item>

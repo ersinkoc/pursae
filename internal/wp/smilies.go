@@ -72,8 +72,7 @@ var smileyKeys = func() []string {
 }()
 
 var (
-	smileyTagRe    = regexp.MustCompile(`<[^>]*>`)
-	smileyIgnoreRe = regexp.MustCompile(`^<(code|pre|style|script|textarea)[^>]*>`)
+	smileyIgnoreRe = regexp.MustCompile(`(?i)^<(code|pre|style|script|textarea)(?:[\t\n\f\r ][^>]*|/?)>`)
 )
 
 // smileySpaceBefore reports whether position i follows wp_spaces_regexp() (a space, newline, tab,
@@ -149,17 +148,20 @@ func ConvertSmilies(text, imgBase string) string {
 	var sb strings.Builder
 	ignore := ""
 	last := 0
-	emit := func(chunk string) {
+	emit := func(chunk string, markup bool) {
 		if chunk == "" {
 			return
 		}
-		if chunk[0] == '<' {
+		if markup {
 			if ignore == "" {
 				if m := smileyIgnoreRe.FindStringSubmatch(chunk); m != nil {
 					ignore = m[1]
 				}
-			} else if chunk == "</"+ignore+">" {
-				ignore = ""
+			} else if strings.HasPrefix(chunk, "</") && strings.HasSuffix(chunk, ">") {
+				name := strings.TrimSpace(chunk[2 : len(chunk)-1])
+				if strings.EqualFold(name, ignore) {
+					ignore = ""
+				}
 			}
 			sb.WriteString(chunk)
 			return
@@ -170,11 +172,21 @@ func ConvertSmilies(text, imgBase string) string {
 		}
 		sb.WriteString(convertSmileyText(chunk, imgBase))
 	}
-	for _, loc := range smileyTagRe.FindAllStringIndex(text, -1) {
-		emit(text[last:loc[0]])
-		emit(text[loc[0]:loc[1]])
-		last = loc[1]
+	for i := 0; i < len(text); {
+		at := strings.IndexByte(text[i:], '<')
+		if at < 0 {
+			break
+		}
+		i += at
+		end, kind := htmlElementEnd(text, i)
+		if kind == elemText {
+			i++
+			continue
+		}
+		emit(text[last:i], false)
+		emit(text[i:end], true)
+		i, last = end, end
 	}
-	emit(text[last:])
+	emit(text[last:], false)
 	return sb.String()
 }

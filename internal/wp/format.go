@@ -88,6 +88,9 @@ func StripTags(s string) string {
 
 // TrimWords is wp_trim_words(): the first n words of the text content followed by more.
 func TrimWords(text string, n int, more string) string {
+	if n < 0 {
+		n = 0
+	}
 	text = html.UnescapeString(StripTags(text))
 	words := strings.Fields(text)
 	if len(words) <= n {
