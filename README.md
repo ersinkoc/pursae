@@ -279,7 +279,6 @@ against Pursae 0.1.9, Apple M2 Pro under Docker, 2026-11-09:
 | Single post with the usual plugins (Woo, Yoast, Polylang, ACF, Elementor, CF7 vs built-ins) | 19 req/s | **232 req/s** |
 | DB queries, home page with those plugins | 139 | **16** |
 | Memory idle, whole stack | 233 MiB | **95 MiB** |
-| Lighthouse, home (mobile) | 96 | **100** |
 
 Cached pages tie (WP Super Cache + nginx ≈ Pursae Cache), cold start is the same, and WordPress' page cache serves
 search while Pursae's does not. Method, every config, all tables and `make bench`: [benchmarks](docs/developer/benchmarks.md).
