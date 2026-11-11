@@ -77,6 +77,15 @@ func TestSigV4PresignVector(t *testing.T) {
 	}
 }
 
+func TestPresignReplacesOldSignature(t *testing.T) {
+	u, _ := url.Parse("https://examplebucket.s3.amazonaws.com/test.txt?versionId=1")
+	first := awsExampleSigner.Presign(http.MethodGet, u, awsExampleTime, time.Minute)
+	again := awsExampleSigner.Presign(http.MethodGet, first, awsExampleTime, time.Minute)
+	if again.String() != first.String() {
+		t.Fatalf("re-signed URL differs: %s", again)
+	}
+}
+
 func TestURIEncoding(t *testing.T) {
 	for in, want := range map[string]string{
 		"/a b/c+d$e.txt": "/a%20b/c%2Bd%24e.txt",

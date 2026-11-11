@@ -109,6 +109,9 @@ func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
 	transparentOut := false
 	for i, f := range frames {
 		pal := framePalette(g, f.src)
+		if composed := exactPalette(f.img); composed != nil {
+			pal = composed
+		}
 		ti := transparentIndex(pal)
 		if ti < 0 && hasTransparentPixels(f.img) && len(pal) < 256 {
 			pal = append(pal, color.RGBA{})
@@ -136,6 +139,31 @@ func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
 		out.Disposal = append(out.Disposal, disp)
 	}
 	return out, nil
+}
+
+// exactPalette preserves all visible colors when the composed frame fits a GIF palette.
+func exactPalette(img *image.RGBA) color.Palette {
+	var palette color.Palette
+	seen := make(map[color.RGBA]bool)
+	for y := 0; y < img.Bounds().Dy(); y++ {
+		for x := 0; x < img.Bounds().Dx(); x++ {
+			c := img.RGBAAt(img.Bounds().Min.X+x, img.Bounds().Min.Y+y)
+			if c.A < 128 {
+				c = color.RGBA{}
+			} else {
+				n := color.NRGBAModel.Convert(c).(color.NRGBA)
+				c = color.RGBA{R: n.R, G: n.G, B: n.B, A: 255}
+			}
+			if !seen[c] {
+				if len(palette) == 256 {
+					return nil
+				}
+				seen[c] = true
+				palette = append(palette, c)
+			}
+		}
+	}
+	return palette
 }
 
 // TransformGIFTo is TransformGIF for an animated WebP or AVIF answer (format "webp" or "avif"):

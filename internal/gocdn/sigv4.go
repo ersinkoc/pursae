@@ -83,6 +83,7 @@ func (s Signer) Presign(method string, u *url.URL, t time.Time, expires time.Dur
 	t = t.UTC()
 	out := *u
 	q := out.Query()
+	q.Del("X-Amz-Signature")
 	q.Set("X-Amz-Algorithm", sigAlgorithm)
 	q.Set("X-Amz-Credential", s.AccessKey+"/"+s.Scope(t))
 	q.Set("X-Amz-Date", t.Format(amzDateFormat))
