@@ -122,10 +122,35 @@ func (p *plParser) and() (plFn, error) {
 }
 
 func (p *plParser) cmp() (plFn, error) {
+	l, err := p.relational()
+	for err == nil {
+		var op string
+		if p.eat("==") {
+			op = "=="
+		} else if p.eat("!=") {
+			op = "!="
+		} else {
+			return l, nil
+		}
+		var r plFn
+		if r, err = p.relational(); err != nil {
+			break
+		}
+		ll := l
+		if op == "==" {
+			l = func(n int64) int64 { return b2i(ll(n) == r(n)) }
+		} else {
+			l = func(n int64) int64 { return b2i(ll(n) != r(n)) }
+		}
+	}
+	return l, err
+}
+
+func (p *plParser) relational() (plFn, error) {
 	l, err := p.add()
 	for err == nil {
 		var op string
-		for _, o := range []string{"==", "!=", "<=", ">=", "<", ">"} {
+		for _, o := range []string{"<=", ">=", "<", ">"} {
 			if p.eat(o) {
 				op = o
 				break
@@ -140,10 +165,6 @@ func (p *plParser) cmp() (plFn, error) {
 		}
 		ll := l
 		switch op {
-		case "==":
-			l = func(n int64) int64 { return b2i(ll(n) == r(n)) }
-		case "!=":
-			l = func(n int64) int64 { return b2i(ll(n) != r(n)) }
 		case "<=":
 			l = func(n int64) int64 { return b2i(ll(n) <= r(n)) }
 		case ">=":
@@ -225,6 +246,16 @@ func (p *plParser) mul() (plFn, error) {
 }
 
 func (p *plParser) unary() (plFn, error) {
+	if p.eat("+") {
+		return p.unary()
+	}
+	if p.eat("-") {
+		f, err := p.unary()
+		if err != nil {
+			return nil, err
+		}
+		return func(n int64) int64 { return -f(n) }, nil
+	}
 	if p.eat("!") {
 		f, err := p.unary()
 		if err != nil {

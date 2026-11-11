@@ -256,6 +256,13 @@ func (m *Manager) load(locale string) *Catalog {
 		// plural forms, "context\u0004msgid" keys for a context).
 		if b, err := fs.ReadFile(m.Extra, "wpgo-"+locale+".json"); err == nil {
 			if f := parseJSONCatalog(b); f != nil {
+				// JSON catalogs have no Plural-Forms header; use the core locale's rule.
+				for _, l := range c.layers {
+					if l.domain == "default" && l.mo.plural != nil {
+						f.plural = l.mo.plural
+						break
+					}
+				}
 				c.layers = append(c.layers, layer{domain: "wpgo", mo: f})
 			}
 		}

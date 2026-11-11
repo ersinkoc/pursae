@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 // writeMO builds a little-endian .mo file from msgid -> msgstr ("\x00" separates plural forms;
@@ -42,7 +43,7 @@ func writeMO(entries map[string]string) []byte {
 	}
 	var b bytes.Buffer
 	w := func(v int) { _ = binary.Write(&b, binary.LittleEndian, uint32(v)) }
-	w(0x950412de)
+	_ = binary.Write(&b, binary.LittleEndian, uint32(0x950412de))
 	w(0)
 	w(n)
 	w(28)
@@ -113,6 +114,21 @@ func TestCatalogLookups(t *testing.T) {
 	}
 }
 
+func TestJSONCatalogUsesLocalePluralRule(t *testing.T) {
+	dir := t.TempDir()
+	core := writeMO(map[string]string{"": "Plural-Forms: nplurals=3; plural=n==1 ? 0 : n<5 ? 1 : 2;\n"})
+	if err := os.WriteFile(filepath.Join(dir, "admin-pl_PL.mo"), core, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	extra := fstest.MapFS{"wpgo-pl_PL.json": {Data: []byte(`{"item":["one","few","many"]}`)}}
+	c := NewManager(dir, extra).Catalog("pl_PL")
+	for n, want := range map[int]string{1: "one", 3: "few", 5: "many"} {
+		if got := c.N("item", "items", n); got != want {
+			t.Errorf("N(%d) = %q, want %q", n, got, want)
+		}
+	}
+}
+
 // TestLabelAfterControl: a checkbox label whose text has markup is one message, not the
 // fragments on each side of the <code>; without that message the fragments still translate.
 func TestLabelAfterControl(t *testing.T) {
@@ -162,9 +178,13 @@ func TestTranslateHTML(t *testing.T) {
 
 func TestPluralRules(t *testing.T) {
 	for expr, cases := range map[string]map[int64]int{
-		"n != 1": {0: 1, 1: 0, 2: 1},
-		"n > 1":  {0: 0, 1: 0, 2: 1},
-		"0":      {5: 0},
+		"n != 1":       {0: 1, 1: 0, 2: 1},
+		"n > 1":        {0: 0, 1: 0, 2: 1},
+		"n > -1":       {0: 1, 2: 1},
+		"n + -1 == +1": {1: 0, 2: 1},
+		"n == 1 < 2":   {0: 0, 1: 1, 2: 0},
+		"n < 2 == 1":   {1: 1, 2: 0},
+		"0":            {5: 0},
 		"(n==1 ? 0 : n==2 ? 1 : (n>=3 && n<=10) ? 2 : 3)": {1: 0, 2: 1, 7: 2, 11: 3},
 	} {
 		r, err := compilePlural(expr)
