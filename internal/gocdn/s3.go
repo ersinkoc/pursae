@@ -346,6 +346,9 @@ func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusPartialContent {
+		return nil, fmt.Errorf("GetRange: expected partial response, got HTTP %d", resp.StatusCode)
+	}
 	limit := last - first
 	if limit < math.MaxInt64 {
 		limit++

@@ -174,7 +174,10 @@ func (o *OAuth) do(req *http.Request) (int, []byte, error) {
 		return 0, nil, err
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return 0, nil, err
+	}
 	return resp.StatusCode, body, nil
 }
 

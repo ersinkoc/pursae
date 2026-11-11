@@ -17,6 +17,19 @@ func (r *rangeTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	return &http.Response{StatusCode: http.StatusPartialContent, Header: http.Header{}, Body: io.NopCloser(strings.NewReader("ell"))}, nil
 }
 
+type ignoredRangeTransport struct{}
+
+func (ignoredRangeTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: io.NopCloser(strings.NewReader("hello"))}, nil
+}
+
+func TestGetRangeRejectsIgnoredRange(t *testing.T) {
+	c := &gocdn.Client{Endpoint: "https://s3.example.test", Region: "auto", Bucket: "b", AccessKey: "a", SecretKey: "s", PathStyle: true, HTTP: &http.Client{Transport: ignoredRangeTransport{}}}
+	if b, err := c.GetRange(context.Background(), "x", 1, 3); err == nil {
+		t.Fatalf("ignored range returned %q without an error", b)
+	}
+}
+
 func TestGetRangeRejectsInvalidBoundsWithoutRequest(t *testing.T) {
 	transport := &rangeTransport{}
 	c := &gocdn.Client{Endpoint: "https://s3.example.test", Region: "auto", Bucket: "b", AccessKey: "a", SecretKey: "s", PathStyle: true, HTTP: &http.Client{Transport: transport}}

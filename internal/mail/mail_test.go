@@ -34,6 +34,16 @@ func TestAPIReportsResponseReadError(t *testing.T) {
 	}
 }
 
+func TestOAuthReportsResponseReadError(t *testing.T) {
+	want := errors.New("response interrupted")
+	o := &OAuth{Mailer: "gmail", Client: &http.Client{Transport: auditRoundTripper(func(*http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: auditFailingBody{want}}, nil
+	})}}
+	if _, err := o.Exchange(context.Background(), "code"); !errors.Is(err, want) {
+		t.Fatalf("error=%v, want %v", err, want)
+	}
+}
+
 func TestAPIRejectsMixedInvalidToRecipients(t *testing.T) {
 	calls := 0
 	a := &API{Mailer: "resend", Opts: map[string]string{"api_key": "key"}, Client: &http.Client{Transport: auditRoundTripper(func(*http.Request) (*http.Response, error) {

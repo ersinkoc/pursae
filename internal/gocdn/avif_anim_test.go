@@ -105,6 +105,21 @@ func animGIF(frames, w, h int, transparent bool) *gif.GIF {
 	return g
 }
 
+func TestTransformGIFRetainsColorsFromPreviousFrame(t *testing.T) {
+	red := color.RGBA{R: 255, A: 255}
+	blue := color.RGBA{B: 255, A: 255}
+	first := image.NewPaletted(image.Rect(0, 0, 2, 1), color.Palette{red})
+	second := image.NewPaletted(image.Rect(1, 0, 2, 1), color.Palette{blue, color.Black})
+	g := &gif.GIF{Image: []*image.Paletted{first, second}, Delay: []int{1, 1}, Config: image.Config{Width: 2, Height: 1}}
+	out, err := TransformGIF(g, ImageParams{}, AnimLimits{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := color.RGBAModel.Convert(out.Image[1].At(0, 0)); got != red {
+		t.Fatalf("retained pixel = %v, want %v", got, red)
+	}
+}
+
 func TestTransformGIFKeepsAnimation(t *testing.T) {
 	src := animGIF(5, 200, 100, true)
 	out, err := TransformGIF(src, ImageParams{W: 50}, AnimLimits{})
