@@ -10,12 +10,14 @@
 <link rel="stylesheet" href="/wp-admin/css/forms.min.css">
 <link rel="stylesheet" href="/wp-admin/css/themes.min.css">
 <link rel="stylesheet" href="/wp-admin/css/customize-controls.min.css">
+<link rel="stylesheet" href="/wp-includes/css/dist/base-styles/admin-schemes.min.css">
 <link rel="stylesheet" href="/wp-admin/assets/css/colors/modern/colors.min.css">
 <style>
 /* The 40px admin buttons are taller than the Customizer's 46px header: keep Publish compact and centred there. */
 #customize-header-actions #customize-save-button-wrapper { margin-top: 8px; }
 #customize-header-actions #customize-save-button-wrapper .button { min-height: 30px; height: 30px; line-height: 28px; padding: 0 12px; }
 #customize-header-actions .spinner { margin-top: 12px; }
+#customize-header-actions #customize-save-button-wrapper #publish-settings { padding: 0; width: 30px; font-size: 14px; line-height: 28px; border-left: 1px solid rgba(255,255,255,.4); }
 </style>
 {{.Styles}}<style>
 #customize-controls .customize-control-code_editor textarea { width: 100%; min-height: 300px; font-family: Consolas, Monaco, monospace; font-size: 12px; tab-size: 4; }
@@ -35,13 +37,26 @@
 <form id="customize-controls" class="wrap wp-full-overlay-sidebar" onsubmit="return false;">
 	<div id="customize-header-actions" class="wp-full-overlay-header">
 		<div id="customize-save-button-wrapper" class="customize-save-button-wrapper">
-			<button type="button" id="wpgo-save-draft" class="button button-secondary">Save Draft</button>
-			<input type="submit" name="save" id="save" class="button button-primary save" value="Published" disabled>
+			<input type="submit" name="save" id="save" class="button button-primary save has-next-sibling" value="Published" disabled>
+			<button id="publish-settings" class="publish-settings button-primary button dashicons dashicons-admin-generic" aria-label="Publish Settings" aria-expanded="false" type="button"></button>
 		</div>
 		<span class="spinner"></span>
 		<a class="customize-controls-close" href="{{.ReturnURL}}">
 			<span class="screen-reader-text">Close the Customizer and go back to the previous page</span>
 		</a>
+	</div>
+
+	<div id="customize-sidebar-outer-content">
+		<div id="customize-outer-theme-controls">
+			<ul id="sub-accordion-section-publish_settings" class="customize-pane-child accordion-section-content accordion-section control-section control-section-outer">
+				<li id="customize-control-changeset_status" class="customize-control customize-control-radio">
+					<span class="customize-control-title">Action</span>
+					<span class="customize-inside-control-row"><input id="_customize-input-changeset_status-radio-publish" type="radio" value="publish" name="_customize-radio-changeset_status" checked="checked"><label for="_customize-input-changeset_status-radio-publish">Publish</label></span>
+					<span class="customize-inside-control-row"><input id="_customize-input-changeset_status-radio-draft" type="radio" value="draft" name="_customize-radio-changeset_status"><label for="_customize-input-changeset_status-radio-draft">Save Draft</label></span>
+					<span class="description customize-control-description">A draft keeps your changes for 30 days without publishing them.</span>
+				</li>
+			</ul>
+		</div>
 	</div>
 
 	<div id="widgets-right" class="wp-clearfix">
@@ -210,6 +225,12 @@ var wpgoCustomize = ( function( $ ) {
 		return out;
 	}
 	function isDirty() { return Object.keys( dirty() ).length > 0; }
+	function status() { return $( 'input[name="_customize-radio-changeset_status"]:checked' ).val() || 'publish'; }
+	// Same labels as WordPress: Publish / Published, Save Draft / Saved.
+	function updateSave() {
+		var d = isDirty(), draft = 'draft' === status();
+		$save.prop( 'disabled', ! d ).val( draft ? ( d ? 'Save Draft' : 'Saved' ) : ( d ? 'Publish' : 'Published' ) );
+	}
 
 	function syncControl( id, value ) {
 		$( '[data-setting="' + id + '"]' ).each( function() {
@@ -269,8 +290,7 @@ var wpgoCustomize = ( function( $ ) {
 	}
 
 	function changed() {
-		var d = isDirty();
-		$save.prop( 'disabled', ! d ).val( d ? 'Publish' : 'Published' );
+		updateSave();
 		$( '#wpgo-site-title' ).text( settings.blogname || '(Untitled)' );
 		clearTimeout( timer );
 		timer = setTimeout( refresh, 300 );
@@ -343,8 +363,7 @@ var wpgoCustomize = ( function( $ ) {
 			} )
 			.always( function() {
 				$( document.body ).removeClass( 'saving' );
-				var d = isDirty();
-				$save.prop( 'disabled', ! d ).val( d ? 'Publish' : 'Published' );
+				updateSave();
 			} );
 	}
 
@@ -472,8 +491,20 @@ var wpgoCustomize = ( function( $ ) {
 			$( this ).addClass( 'active' ).attr( 'aria-pressed', 'true' );
 		} );
 
-		$save.on( 'click', function( e ) { e.preventDefault(); publish(); } );
-		$( '#wpgo-save-draft' ).on( 'click', function( e ) { e.preventDefault(); saveDraft(); } );
+		$save.on( 'click', function( e ) { e.preventDefault(); if ( 'draft' === status() ) { saveDraft(); } else { publish(); } } );
+		// Publish Settings: an outer section that slides out beside the sidebar, as in WordPress.
+		function togglePublishSettings( open ) {
+			$( document.body ).toggleClass( 'outer-section-open', open );
+			$( '#sub-accordion-section-publish_settings' ).toggleClass( 'open', open );
+			$( '#publish-settings' ).attr( 'aria-expanded', String( open ) );
+			if ( open ) { $( '#sub-accordion-section-publish_settings input:checked' ).trigger( 'focus' ); }
+		}
+		$( '#publish-settings' ).on( 'click', function( e ) {
+			e.preventDefault();
+			togglePublishSettings( ! $( document.body ).hasClass( 'outer-section-open' ) );
+		} );
+		$( document ).on( 'keydown', function( e ) { if ( 27 === e.which && $( document.body ).hasClass( 'outer-section-open' ) ) { togglePublishSettings( false ); $( '#publish-settings' ).trigger( 'focus' ); } } );
+		$( 'input[name="_customize-radio-changeset_status"]' ).on( 'change', updateSave );
 		$( '.wpgo-control-links a[target="_top"]' ).on( 'click', function( e ) {
 			if ( isDirty() && ! window.confirm( 'The changes you made will be lost if you navigate away from this page.' ) ) {
 				e.preventDefault();

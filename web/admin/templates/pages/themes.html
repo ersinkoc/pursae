@@ -36,6 +36,12 @@
 .theme-overlay .theme-actions .wpgo-delete-theme{color:#b32d2e;text-decoration:none;border-color:transparent;box-shadow:none;background:transparent;position:absolute;right:10px;bottom:5px}
 .theme-overlay .theme-actions .wpgo-delete-theme:hover,.theme-overlay .theme-actions .wpgo-delete-theme:focus{background:#b32d2e;color:#fff;border-color:#b32d2e;box-shadow:0 0 0 1px #b32d2e}
 @media only screen and (max-width:1080px){.theme-overlay .theme-actions .wpgo-delete-theme{position:relative;right:auto;bottom:auto}}
+/* Active card: the name gets the full width on its own row and the buttons sit on a row below it, on the
+   same (color-scheme) background, so long names and extra buttons (demo import) never cover the name. */
+.theme-browser .theme.active .theme-name{padding-right:15px;padding-bottom:58px}
+.theme-browser .theme.active .theme-actions{top:auto;bottom:0;left:0;right:auto;transform:none;padding:0 15px 14px;white-space:nowrap}
+.theme-browser .theme.active .theme-actions .button{margin:0 6px 0 0}
+@media only screen and (max-width:782px){.theme-browser .theme.active .theme-name span{display:inline}.theme-browser .theme.active .theme-name{padding-bottom:62px}}
 </style>
 <p class="no-themes">No themes found. Try a different search.</p>
 </div><!-- .wrap -->
