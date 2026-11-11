@@ -53,6 +53,9 @@
 </script></td></tr>
 <tr class="show-admin-bar user-admin-bar-front-wrap"><th scope="row">Toolbar</th>
 <td><label for="admin_bar_front"><input name="admin_bar_front" type="checkbox" id="admin_bar_front" value="1"{{if .ShowToolbar}} checked="checked"{{end}} /> Show Toolbar when viewing site</label><br /></td></tr>
+{{if .UpdateEmailsRow}}<tr class="user-pursae-update-emails-wrap" id="pursae-update-emails"><th scope="row">Pursae updates</th>
+<td><input type="hidden" name="pursae_update_emails_shown" value="1" /><label for="pursae_update_emails"><input name="pursae_update_emails" type="checkbox" id="pursae_update_emails" value="1"{{if .UpdateEmails}} checked="checked"{{end}} /> Email me Pursae product updates</label>
+<p class="description">Pursae keeps this account&#8217;s email address to send product updates. Untick to stop them; the address is removed from Pursae within a day.</p></td></tr>{{end}}
 {{if .Languages}}<tr class="user-language-wrap"><th scope="row"><label for="locale">Language<span class="dashicons dashicons-translation" aria-hidden="true"></span></label></th>
 <td><select name="locale" id="locale"><option value="site-default"{{if eq .Locale ""}} selected="selected"{{end}}>Site Default</option>
 <option value="en_US" lang="en" translate="no"{{if eq .Locale "en_US"}} selected="selected"{{end}}>English (United States)</option>
