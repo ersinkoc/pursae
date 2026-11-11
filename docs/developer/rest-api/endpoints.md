@@ -96,6 +96,7 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/pursae/v1/seo/settings` | GET, POST | Pursae SEO site-wide settings; `POST {"settings": {…}}` merges a partial object |
 | `/pursae/v1/seo/redirects` | GET, POST | list; create or update (`id`) with `source`, `target`, `code` (301, 302, 307, 410, 451), `match_type`, `status` |
 | `/pursae/v1/seo/redirects/{id}` | DELETE | |
+| `/pursae/v1/analytics` | GET | Pursae Analytics overview for `?range=today\|7d\|30d\|month\|90d\|12m`: `summary`, `reports` (pages, entry, sources, campaigns, countries, devices, browsers, os, goals, outbound, downloads, notfound), `web_vitals` p75 (`manage_options`, plugin active, scope `settings`) |
 | `/pursae/v1/health` | GET | version, database, cron queue (`queued`, `running`, `failed`, `overdue`, `last_error`), Site Health score, plugins, cache, `updates_available`, last backup (`manage_options`) |
 | `/pursae/v1/updates` | GET, POST | updates Pursae Manager offers (`update_plugins`); `POST {"type": "plugin"\|"theme"\|"core", "slug": "…"}` installs one. Core replaces the binary and restarts the site a second after the answer (`update_core`) |
 | `/pursae/v1/backups` | GET, POST | stored archives, or `?job=<id>` for a running backup; `POST {"categories": [...], "note": "…"}` starts one in the background (202 with `job`; default: every category) (`manage_options`) |

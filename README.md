@@ -113,6 +113,7 @@ Native, off on a fresh install, one click under **Plugins**. Click a row to open
 | 🔌 | **Pursae Headless** | Content types, REST, GraphQL, webhooks | [→](docs/headlessgo-features.md) |
 | 🍪 | **Pursae Cookie** | GDPR/KVKK banner, Consent Mode v2 | [→](docs/gooike-features.md) |
 | 📈 | **Pursae Pixel** | Meta, GA4, Ads, TikTok + server-side | [→](docs/pixelgo-features.md) |
+| 📊 | **Pursae Analytics** | Cookieless stats + real-user Core Web Vitals | [→](docs/analytics-features.md) |
 | ✉️ | **Pursae SMTP** | Mailers, email log, reports | [→](docs/wpgo-mail-smtp-features.md) |
 | 🗂️ | **Pursae Custom Fields** | Field groups, CPTs, options pages | [→](docs/acf-go-features.md) |
 | 🌍 | **Pursae Multi Language** | Languages, translations, hreflang | [→](docs/golylang-features.md) |
@@ -206,6 +207,21 @@ Native, off on a fresh install, one click under **Plugins**. Click a row to open
 </details>
 
 <details>
+<summary><h3>📊 Pursae Analytics</h3></summary>
+
+Privacy-friendly site statistics on one page (**Analytics** in the admin menu), without cookies, without
+storing IP addresses and without a consent banner — in the class of Plausible and Jetpack Stats:
+
+- **Visitors, visits, page views**, views per visit, bounce rate and visit duration, each compared with the previous period, a chart and live visitors.
+- **Top and entry pages, sources** (Google, ChatGPT, social networks, other sites), **UTM campaigns**, countries, devices, browsers and operating systems.
+- **Goals**: outbound link clicks, file downloads, form submissions and 404s.
+- **Real-user Core Web Vitals**: LCP, INP, CLS, FCP and TTFB at the 75th percentile, site-wide and for the slowest pages.
+- A 2.3 KB script (1.2 KB gzipped) that works behind the page cache; visitors are counted with a daily salted hash that cannot be followed across days. JSON summary at `GET /pursae/v1/analytics`.
+
+<p align="right"><a href="docs/analytics-features.md">All features →</a></p>
+</details>
+
+<details>
 <summary><h3>✉️ Pursae SMTP</h3></summary>
 <table><tr>
 <td width="50%"><img src="docs/readme/smtp.webp" alt="SMTP settings"><p align="center">Pick a mailer</p></td>
@@ -249,7 +265,7 @@ Native, off on a fresh install, one click under **Plugins**. Click a row to open
 ## 🧩 The WordPress ecosystem without PHP
 
 - **Plugins** are Go compiled to signed Wasm, sandboxed and permission-gated — [plugin docs](docs/developer/plugins/index.md), [signing](docs/developer/plugins/packaging-and-signing.md).
-- **Built in**: Commerce, Web Builder, SEO, Cache, Security, CDN, Headless, Cookie, Pixel, SMTP, Custom Fields, Multi Language, Contact Form, Maintenance, Backup Manager, Classic Editor ([table below](#-built-in-plugins); [what each replaces](docs/developer/benchmarks.md#whats-built-in)).
+- **Built in**: Commerce, Web Builder, SEO, Cache, Security, CDN, Headless, Cookie, Pixel, Analytics, SMTP, Custom Fields, Multi Language, Contact Form, Maintenance, Backup Manager, Classic Editor ([table below](#-built-in-plugins); [what each replaces](docs/developer/benchmarks.md#whats-built-in)).
 - **Themes** are zip packages of templates and assets with no code in them — [theme packages](docs/theme-package.md); a marketplace of both on the [Hub](docs/developer/hub/index.md).
 
 ## 📊 Performance benchmarks

@@ -1,0 +1,119 @@
+{{define "admin/analytics"}}{{template "admin-header" .}}{{with .Data}}{{$d := .}}
+<style>
+.pa-wrap .pa-h1-icon{font-size:28px;width:28px;height:28px;margin-right:6px;color:#00a32a;vertical-align:-4px}
+.pa-wrap .pa-sub{color:#646970;margin:4px 0 14px}
+.pa-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:14px 0}
+.pa-ranges{display:flex;flex-wrap:wrap;gap:4px}
+.pa-ranges a{padding:4px 10px;border:1px solid #c3c4c7;border-radius:3px;background:#fff;text-decoration:none;color:#2c3338}
+.pa-ranges a.current{background:#2271b1;border-color:#2271b1;color:#fff}
+.pa-live{display:inline-flex;align-items:center;gap:6px;color:#2c3338}
+.pa-live:before{content:"";width:8px;height:8px;border-radius:50%;background:#00a32a;box-shadow:0 0 0 3px rgba(0,163,42,.2)}
+.pa-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 16px}
+.pa-card{background:#fff;border:1px solid #c3c4c7;padding:12px 14px}
+.pa-card .pa-label{color:#646970;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.pa-card .pa-value{font-size:24px;font-weight:600;margin:4px 0 2px;color:#1d2327}
+.pa-card .pa-change{font-size:12px}
+.pa-change.good{color:#008a20}.pa-change.bad{color:#d63638}.pa-change.flat{color:#646970}
+.pa-chart{background:#fff;border:1px solid #c3c4c7;padding:12px 12px 4px;margin-bottom:16px}
+.pa-chart-svg{width:100%;height:240px;display:block}
+.pa-chart .pa-legend{display:flex;gap:16px;font-size:12px;color:#50575e;margin:0 0 6px}
+.pa-legend span:before{content:"";display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.pa-legend .v:before{background:rgba(34,113,177,.25);border:1px solid #2271b1}.pa-legend .p:before{background:#00a32a;height:2px;vertical-align:3px}
+.pa-grid{stroke:#e0e0e0;stroke-width:1}.pa-axis{font-size:11px;fill:#646970}
+.pa-area{fill:rgba(34,113,177,.18);stroke:#2271b1;stroke-width:2;vector-effect:non-scaling-stroke}
+.pa-line{fill:none;stroke:#00a32a;stroke-width:2;vector-effect:non-scaling-stroke}
+.pa-dot{fill:#2271b1;opacity:0}.pa-dot:hover{opacity:1}
+.pa-boxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px}
+.pa-box{background:#fff;border:1px solid #c3c4c7}
+.pa-box h2{font-size:14px;margin:0;padding:10px 12px;border-bottom:1px solid #f0f0f1}
+.pa-box table{width:100%;border-collapse:collapse}
+.pa-box th,.pa-box td{padding:6px 12px;text-align:left;font-size:13px}
+.pa-box th{color:#646970;font-weight:400;border-bottom:1px solid #f0f0f1}
+.pa-box td.num,.pa-box th.num{text-align:right;width:80px;white-space:nowrap}
+.pa-bar{position:relative}
+.pa-bar>i{position:absolute;left:0;top:2px;bottom:2px;background:rgba(34,113,177,.1);border-radius:2px}
+.pa-bar>span{position:relative;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px}
+.pa-bar small{color:#646970;margin-left:6px}
+.pa-empty{color:#646970;padding:10px 12px;margin:0}
+.pa-vitals{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;padding:12px}
+.pa-vital{border:1px solid #dcdcde;border-left-width:4px;padding:10px 12px}
+.pa-vital.good{border-left-color:#00a32a}.pa-vital.needs-improvement{border-left-color:#dba617}.pa-vital.poor{border-left-color:#d63638}.pa-vital.none{border-left-color:#c3c4c7}
+.pa-vital b{display:block;font-size:20px;margin:2px 0}
+.pa-vital .pa-label{font-size:12px;color:#50575e}
+.pa-vital p{margin:4px 0 0;font-size:12px;color:#646970}
+.pa-r{font-weight:600}.pa-r.good{color:#008a20}.pa-r.needs-improvement{color:#996800}.pa-r.poor{color:#d63638}.pa-r.none{color:#646970}
+.pa-wide{grid-column:1/-1}
+.pa-notice{background:#fff;border:1px solid #c3c4c7;border-left:4px solid #72aee6;padding:10px 12px;margin:0 0 16px}
+@media (max-width:782px){.pa-boxes{grid-template-columns:1fr}.pa-chart-svg{height:180px}}
+</style>
+<div class="wrap pa-wrap">
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-chart-bar pa-h1-icon" aria-hidden="true"></span>Analytics</h1>
+<p class="pa-sub">Privacy-friendly statistics without cookies, and how fast your pages are for real visitors.</p>
+<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
+	<a href="/wp-admin/analytics" class="nav-tab{{if ne .Tab "settings"}} nav-tab-active{{end}}"{{if ne .Tab "settings"}} aria-current="page"{{end}}>Overview</a>
+	<a href="/wp-admin/analytics?tab=settings" class="nav-tab{{if eq .Tab "settings"}} nav-tab-active{{end}}"{{if eq .Tab "settings"}} aria-current="page"{{end}}>Settings</a>
+</nav>
+{{template "notices" $}}
+{{if eq .Tab "settings"}}
+{{if .Saved}}<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>{{end}}
+<form method="post" action="/wp-admin/analytics?tab=settings">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr><th scope="row">Who is counted</th><td><fieldset>
+	<label><input type="checkbox" name="exclude_logged_in" value="1"{{if .Settings.ExcludeLoggedIn}} checked{{end}} /> Do not count signed-in users (you and your editors)</label><br />
+	<label><input type="checkbox" name="respect_dnt" value="1"{{if .Settings.RespectDNT}} checked{{end}} /> Respect “Do Not Track” and Global Privacy Control</label>
+</fieldset></td></tr>
+<tr><th scope="row"><label for="pa-exclude-ips">Excluded IP addresses</label></th><td>
+	<textarea name="exclude_ips" id="pa-exclude-ips" rows="4" cols="40" class="code" placeholder="203.0.113.7&#10;198.51.100.0/24">{{.Settings.ExcludeIPs}}</textarea>
+	<p class="description">One address or range (CIDR) per line, for example your office. The addresses are only compared, never stored with a visit.</p>
+</td></tr>
+<tr><th scope="row">Goals</th><td><fieldset>
+	<label><input type="checkbox" name="track_outbound" value="1"{{if .Settings.TrackOutbound}} checked{{end}} /> Clicks on links to other sites</label><br />
+	<label><input type="checkbox" name="track_downloads" value="1"{{if .Settings.TrackDownloads}} checked{{end}} /> File downloads (PDF, ZIP, Office documents, media…)</label><br />
+	<label><input type="checkbox" name="track_forms" value="1"{{if .Settings.TrackForms}} checked{{end}} /> Form submissions</label><br />
+	<label><input type="checkbox" name="track_404" value="1"{{if .Settings.Track404}} checked{{end}} /> Visits to pages that do not exist (404)</label>
+</fieldset></td></tr>
+<tr><th scope="row">Core Web Vitals</th><td><fieldset>
+	<label><input type="checkbox" name="vitals" value="1"{{if .Settings.Vitals}} checked{{end}} /> Measure loading, responsiveness and stability (LCP, INP, CLS, FCP, TTFB) in visitors’ browsers</label><br />
+	<label for="pa-sample">Measure</label> <input type="number" name="vitals_sample" id="pa-sample" min="1" max="100" value="{{.Settings.VitalsSample}}" class="small-text" /> % of page views
+</fieldset></td></tr>
+<tr><th scope="row"><label for="pa-retention">Keep statistics for</label></th><td>
+	<input type="number" name="retention_days" id="pa-retention" min="30" max="3650" value="{{.Settings.RetentionDays}}" class="small-text" /> days
+	<p class="description">Older visits are deleted every night.</p>
+</td></tr>
+<tr><th scope="row">Privacy</th><td><p class="description" style="max-width:640px">Pursae Analytics sets no cookies and stores nothing in the browser. A visitor is counted with a hash of the IP address and the browser, mixed with a secret that is replaced every day and then deleted, so nobody — not even you — can follow a visitor from one day to the next or find out who they are. IP addresses are never stored. That is why no consent banner is needed for it. Countries are shown when your proxy or CDN reports them (Cloudflare <code>CF-IPCountry</code>, CloudFront, Vercel or an <code>X-Country-Code</code> header).</p></td></tr>
+</table>
+<p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+<hr />
+<form method="post" action="/wp-admin/analytics?tab=settings" onsubmit="return confirm('Delete all statistics? This cannot be undone.');">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="reset" />
+<h2>Delete statistics</h2>
+<p>Removes every recorded visit and Web Vitals measurement. Settings stay.</p>
+<p><input type="submit" class="button button-link-delete" value="Delete all statistics" /></p>
+</form>
+{{else}}
+<div class="pa-top">
+	<div class="pa-ranges" role="group" aria-label="Period">{{range .Ranges}}<a href="/wp-admin/analytics?range={{.Key}}"{{if eq .Key $d.Range.Key}} class="current" aria-current="true"{{end}}>{{.Label}}</a>{{end}}</div>
+	<span class="pa-live" title="Visitors in the last 5 minutes">{{.Realtime}} current visitor{{if ne .Realtime 1}}s{{end}}</span>
+</div>
+{{if not .HasData}}<div class="pa-notice"><p><strong>No visits recorded for {{.Range.Label}} yet.</strong> Visits are counted from the moment Pursae Analytics was activated. Signed-in users are not counted{{if not .Settings.ExcludeLoggedIn}} unless you change it in Settings{{end}}: open your site in a private window to see your own visit.</p></div>{{end}}
+<div class="pa-cards">{{range .Cards}}<div class="pa-card"><div class="pa-label">{{.Label}}</div><div class="pa-value">{{.Value}}</div>{{if .Change}}<div class="pa-change {{if .Flat}}flat{{else if .Good}}good{{else}}bad{{end}}">{{if not .Flat}}{{if .Up}}▲{{else}}▼{{end}} {{end}}{{.Change}} <span class="screen-reader-text">compared with the previous period</span></div>{{end}}</div>{{end}}</div>
+{{if .Chart}}<div class="pa-chart"><div class="pa-legend"><span class="v">Unique visitors</span><span class="p">Page views</span></div>{{.Chart}}</div>{{end}}
+<div class="pa-boxes">
+<div class="pa-box pa-wide" id="pa-vitals"><h2>Core Web Vitals <span style="font-weight:400;color:#646970">— 75th percentile of real visits</span></h2>
+	<div class="pa-vitals">{{range .Vitals}}<div class="pa-vital {{.Rating}}"><span class="pa-label">{{.Name}}</span><b>{{.Value}}</b><span class="pa-r {{.Rating}}">{{if eq .Rating "good"}}Good{{else if eq .Rating "needs-improvement"}}Needs improvement{{else if eq .Rating "poor"}}Poor{{else}}No data yet{{end}}</span>{{if .Samples}} <small>({{.Samples}} views)</small>{{end}}<p>{{.Help}}</p></div>{{end}}</div>
+	{{if .VitalPages}}<table><thead><tr><th>Slowest pages (LCP)</th><th class="num">LCP</th><th class="num">INP</th><th class="num">CLS</th><th class="num">Views</th></tr></thead><tbody>
+	{{range .VitalPages}}<tr><td><a href="{{.Path}}" target="_blank" rel="noopener">{{.Path}}</a></td><td class="num pa-r {{.LCPR}}">{{.LCP}}</td><td class="num pa-r {{.INPR}}">{{.INP}}</td><td class="num pa-r {{.CLSR}}">{{.CLS}}</td><td class="num">{{.Samples}}</td></tr>{{end}}
+	</tbody></table>{{end}}
+</div>
+{{range .Tables}}<div class="pa-box" id="pa-{{.ID}}"><h2>{{.Title}}</h2>
+{{if .Rows}}<table><thead><tr><th>{{.Col}}</th><th class="num">Visitors</th>{{if .ShowViews}}<th class="num">{{if eq .ID "pages"}}Views{{else}}Count{{end}}</th>{{end}}</tr></thead><tbody>
+{{$t := .}}{{range .Rows}}<tr><td class="pa-bar"><i style="width:{{printf "%.1f" .Pct}}%"></i><span>{{if .Flag}}{{.Flag}} {{end}}{{if .Link}}<a href="{{.Link}}" target="_blank" rel="noopener">{{.Label}}</a>{{else}}{{.Label}}{{end}}{{if .Sub}}<small>{{.Sub}}</small>{{end}}</span></td><td class="num">{{.Visitors}}</td>{{if $t.ShowViews}}<td class="num">{{.Views}}</td>{{end}}</tr>{{end}}
+</tbody></table>{{else}}<p class="pa-empty">{{if eq .ID "campaigns"}}No visits with UTM parameters (?utm_source=…) in this period.{{else}}Nothing recorded in this period.{{end}}</p>{{end}}
+{{if and (eq .ID "countries") $d.CountryOff}}<p class="pa-empty">Countries need a proxy or CDN that reports them, such as Cloudflare. See Settings › Privacy.</p>{{end}}
+</div>{{end}}
+</div>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

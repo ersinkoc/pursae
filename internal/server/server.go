@@ -362,6 +362,7 @@ func (s *Server) routes() *gin.Engine {
 	s.registerSEOGoAdmin(admin)     // Pursae SEO screens (seogo_admin.go)
 	s.registerGooike(r, admin)      // Gooike: assets and screens (gooike.go)
 	s.registerPixel(r, admin)       // Pursae Pixel: assets, screens, product feed (pixelgo.go)
+	s.registerAnalytics(r, admin)   // Pursae Analytics: collector and screen (analytics.go)
 	s.registerGoocommerce(r, admin) // Goocommerce: assets and screens (goocommerce.go)
 	s.registerGoCDN(admin)          // GoCDN screens (gocdn.go)
 	s.registerHeadlessGo(admin)     // HeadlessGo screens (headlessgo.go)

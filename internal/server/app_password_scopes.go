@@ -134,7 +134,7 @@ var appScopeRoutes = map[string]string{
 	"/wp/v2/settings": "settings", "/pursae/v1/options": "settings", "/pursae/v1/mcp/activity": "settings", "/pursae/v1/headless": "settings",
 	"/wp/v2/users":      "users",
 	"/wc/v3":            "commerce",
-	"/pursae/v1/health": "settings", "/pursae/v1/backups": "settings", "/pursae/v1/updates": "plugins",
+	"/pursae/v1/health": "settings", "/pursae/v1/analytics": "settings", "/pursae/v1/backups": "settings", "/pursae/v1/updates": "plugins",
 }
 
 // appScopeForRoute is the scope a route belongs to: "" for routes no scope covers, "*" for routes any
