@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/url"
 	"sort"
@@ -154,10 +155,18 @@ func NewStore(o StoreOptions) (*Store, error) {
 		s.maxBytes = DefaultMaxBytes
 	}
 	if s.maxDiskEntries <= 0 {
-		s.maxDiskEntries = 10 * s.maxEntries
+		if s.maxEntries > math.MaxInt/10 {
+			s.maxDiskEntries = math.MaxInt
+		} else {
+			s.maxDiskEntries = 10 * s.maxEntries
+		}
 	}
 	if s.maxDiskBytes <= 0 {
-		s.maxDiskBytes = 4 * s.maxBytes
+		if s.maxBytes > math.MaxInt64/4 {
+			s.maxDiskBytes = math.MaxInt64
+		} else {
+			s.maxDiskBytes = 4 * s.maxBytes
+		}
 	}
 	if s.now == nil {
 		s.now = time.Now
@@ -222,7 +231,8 @@ func NewEntry(key string, status int, header http.Header, body []byte, tags []st
 // or recomputed when serving.
 var unstoredHeaders = []string{
 	"Set-Cookie", "Content-Length", "Content-Encoding", "Transfer-Encoding", "Connection",
-	"Keep-Alive", "Date", "Age", "Etag", "Trailer", "Upgrade", "Proxy-Connection",
+	"Keep-Alive", "Date", "Age", "Etag", "Trailer", "Upgrade", "Proxy-Connection", "Te",
+	"Proxy-Authenticate", "Proxy-Authorization",
 	HeaderTags, HeaderTTL, HeaderControl, HeaderStatus,
 }
 
@@ -233,6 +243,11 @@ const requestIDHeader = "X-Request-Id"
 
 func filterHeader(h http.Header) http.Header {
 	out := h.Clone()
+	for _, value := range h.Values("Connection") {
+		for _, name := range strings.Split(value, ",") {
+			out.Del(strings.TrimSpace(name))
+		}
+	}
 	for _, k := range unstoredHeaders {
 		out.Del(k)
 	}

@@ -289,11 +289,20 @@ func TestGzipNegotiationAndETag(t *testing.T) {
 	if etag == "" || gz.Header().Get("ETag") == etag {
 		t.Fatalf("etags plain=%q gzip=%q", etag, gz.Header().Get("ETag"))
 	}
-	for _, inm := range []string{etag, gz.Header().Get("ETag"), `W/` + etag, `"nope", ` + etag} {
+	for _, inm := range []string{etag, `W/` + etag, `"nope", ` + etag} {
 		w := do(h, "GET", "http://example.com/g/", "If-None-Match", inm)
 		if w.Code != http.StatusNotModified || w.Body.Len() != 0 {
 			t.Fatalf("If-None-Match %s: %d", inm, w.Code)
 		}
+	}
+	if w := do(h, "GET", "http://example.com/g/", "If-None-Match", gz.Header().Get("ETag")); w.Code != 200 {
+		t.Fatalf("gzip validator for identity response: %d", w.Code)
+	}
+	if w := do(h, "GET", "http://example.com/g/", "Accept-Encoding", "gzip", "If-None-Match", gz.Header().Get("ETag")); w.Code != http.StatusNotModified {
+		t.Fatalf("matching gzip validator: %d", w.Code)
+	}
+	if w := do(h, "GET", "http://example.com/g/", "Accept-Encoding", "gzip", "If-None-Match", etag); w.Code != 200 {
+		t.Fatalf("identity validator for gzip response: %d", w.Code)
 	}
 	if w := do(h, "GET", "http://example.com/g/", "If-None-Match", `"other"`); w.Code != 200 {
 		t.Fatalf("non-matching etag: %d", w.Code)
