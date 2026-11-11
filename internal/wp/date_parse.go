@@ -33,7 +33,7 @@ func ParseDate(text, format string) (time.Time, bool) {
 		case '\\':
 			if i+1 < len(format) {
 				i++
-				re.WriteString(regexp.QuoteMeta(string(format[i])))
+				re.WriteString(regexp.QuoteMeta(format[i : i+1]))
 			}
 		case 'd':
 			group(`\d{2}`, 'd')
@@ -77,7 +77,7 @@ func ParseDate(text, format string) (time.Time, bool) {
 			if strings.ContainsRune("NwzWtLoeIOPpTZcrUuv", rune(c)) {
 				return time.Time{}, false
 			}
-			re.WriteString(regexp.QuoteMeta(string(c)))
+			re.WriteString(regexp.QuoteMeta(format[i : i+1]))
 		}
 	}
 	re.WriteString(`$`)
@@ -104,6 +104,9 @@ func ParseDate(text, format string) (time.Time, bool) {
 		case 'M':
 			month = indexOf(en.MonthsShort[:], v) + 1
 		case 'h':
+			if n < 1 || n > 12 {
+				return time.Time{}, false
+			}
 			hour, has12 = n%12, true
 		case 'H':
 			hour = n
@@ -121,7 +124,11 @@ func ParseDate(text, format string) (time.Time, bool) {
 	if month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || min > 59 || sec > 59 {
 		return time.Time{}, false
 	}
-	return time.Date(year, time.Month(month), day, hour, min, sec, 0, time.UTC), true
+	result := time.Date(year, time.Month(month), day, hour, min, sec, 0, time.UTC)
+	if result.Year() != year || int(result.Month()) != month || result.Day() != day {
+		return time.Time{}, false
+	}
+	return result, true
 }
 
 func indexOf(list []string, v string) int {
