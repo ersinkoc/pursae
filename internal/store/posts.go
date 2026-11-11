@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -417,19 +418,50 @@ func DateArchiveRange(year, month, day int, loc *time.Location) (from, to time.T
 	}
 	switch {
 	case month == 0:
-		from = time.Date(year, 1, 1, 0, 0, 0, 0, loc)
-		to = time.Date(year+1, 1, 1, 0, 0, 0, 0, loc)
+		from, _ = localDayBoundary(time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC), loc)
+		to, _ = localDayBoundary(time.Date(year+1, 1, 1, 0, 0, 0, 0, time.UTC), loc)
 	case day == 0:
-		from = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, loc)
-		to = time.Date(year, time.Month(month)+1, 1, 0, 0, 0, 0, loc)
+		from, _ = localDayBoundary(time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC), loc)
+		to, _ = localDayBoundary(time.Date(year, time.Month(month)+1, 1, 0, 0, 0, 0, time.UTC), loc)
 	default:
-		from = time.Date(year, time.Month(month), day, 0, 0, 0, 0, loc)
-		if from.Month() != time.Month(month) { // 31 February
+		calendarDay := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+		if calendarDay.Year() != year || calendarDay.Month() != time.Month(month) || calendarDay.Day() != day {
 			return from, to, false
 		}
-		to = time.Date(year, time.Month(month), day+1, 0, 0, 0, 0, loc)
+		var exists bool
+		from, exists = localDayBoundary(calendarDay, loc)
+		if !exists {
+			return from, to, false
+		}
+		to, _ = localDayBoundary(calendarDay.AddDate(0, 0, 1), loc)
 	}
 	return from, to, true
+}
+
+// localDayBoundary finds the first instant on or after a civil date. Midnight
+// can be skipped by a timezone transition, including a transition skipping an
+// entire date; time.Date may normalize such a midnight into the previous day.
+func localDayBoundary(day time.Time, loc *time.Location) (time.Time, bool) {
+	y, m, d := day.Date()
+	guess := time.Date(y, m, d, 0, 0, 0, 0, loc)
+	if gy, gm, gd := guess.Date(); gy == y && gm == m && gd == d {
+		return guess, true
+	}
+	target := y*10000 + int(m)*100 + d
+	lo, hi := guess.Add(-48*time.Hour).Unix(), guess.Add(48*time.Hour).Unix()
+	for lo < hi {
+		mid := lo + (hi-lo)/2
+		v := time.Unix(mid, 0).In(loc)
+		vy, vm, vd := v.Date()
+		if vy*10000+int(vm)*100+vd < target {
+			lo = mid + 1
+		} else {
+			hi = mid
+		}
+	}
+	v := time.Unix(lo, 0).In(loc)
+	vy, vm, vd := v.Date()
+	return v, vy == y && vm == m && vd == d
 }
 
 func (q *PostQuery) orderBy() string {
@@ -491,7 +523,13 @@ func limitOffset(perPage, page int) string {
 	if page > MaxPage {
 		page = MaxPage
 	}
-	return fmt.Sprintf(" LIMIT %d OFFSET %d", perPage, int64(page-1)*int64(perPage))
+	offset := int64(page - 1)
+	if perPage > 0 && offset > math.MaxInt64/int64(perPage) {
+		offset = math.MaxInt64
+	} else {
+		offset *= int64(perPage)
+	}
+	return fmt.Sprintf(" LIMIT %d OFFSET %d", perPage, offset)
 }
 
 // QueryPosts is WP_Query for the parts the admin and the theme need.
