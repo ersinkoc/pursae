@@ -235,9 +235,53 @@
 {{end}}{{template "admin-footer" .}}{{end}}
 
 {{define "scope-picker"}}<fieldset class="form-field application-password-scopes">
-	<legend>Limit access to</legend>
-	{{$n := .Name}}{{range .Scopes}}<label style="display:block;margin:2px 0"><input type="checkbox" name="{{$n}}" value="{{.Slug}}"{{if .Checked}} checked{{end}} /> {{.Label}} <span class="description">&mdash; {{.Description}}</span></label>
-	{{end}}{{if .Narrow}}<p class="description">Scopes only narrow what the user can already do.</p>{{else}}<p class="description">Leave every box unticked to give all of this user&#8217;s permissions. Scopes only narrow what the user can already do.</p>{{end}}
+	<legend class="screen-reader-text">Limit access to</legend>
+	<style>
+	fieldset.form-field.application-password-scopes{margin:1em 0 1.5em;padding:0;border:0;max-width:960px}
+	.application-password-scopes .scopes-title{font-weight:600;margin:0 0 6px}
+	.application-password-scopes table{table-layout:fixed}
+	.application-password-scopes .check-column{width:2.2em;padding:8px 0 0 3px;vertical-align:top}
+	.application-password-scopes thead .check-column{padding-top:10px;vertical-align:middle}
+	.application-password-scopes .column-area{width:9em}
+	.application-password-scopes tbody td{padding:8px 10px;vertical-align:top}
+	.application-password-scopes tbody label{font-weight:600;display:block}
+	.application-password-scopes tbody td.column-allows{color:#50575e}
+	.application-password-scopes tbody tr.is-checked{background:#f0f6fc}
+	.application-password-scopes .scopes-summary{margin:6px 0 0}
+	@media screen and (max-width:782px){.application-password-scopes .column-area{width:7em}.application-password-scopes .check-column{width:2.5em}}
+	</style>
+	<p class="scopes-title">Limit access to</p>
+	{{$n := .Name}}<table class="widefat fixed striped scopes-table">
+	<thead><tr>
+		<td class="manage-column column-cb check-column"><input type="checkbox" class="scopes-toggle-all" aria-label="Select all areas" /></td>
+		<th scope="col" class="manage-column column-area">Area</th>
+		<th scope="col" class="manage-column column-allows">Allows</th>
+	</tr></thead>
+	<tbody>
+	{{range .Scopes}}<tr{{if .Checked}} class="is-checked"{{end}}>
+		<th scope="row" class="check-column"><input type="checkbox" id="scope-{{$n}}-{{.Slug}}" name="{{$n}}" value="{{.Slug}}"{{if .Checked}} checked{{end}} /></th>
+		<td class="column-area"><label for="scope-{{$n}}-{{.Slug}}">{{.Label}}</label></td>
+		<td class="column-allows">{{.Description}}</td>
+	</tr>
+	{{end}}</tbody>
+	</table>
+	{{if .Narrow}}<p class="description scopes-summary">Scopes only narrow what the user can already do.</p>{{else}}<p class="description scopes-summary"><span class="scopes-state">Nothing ticked: full access (all of this user&#8217;s permissions).</span> Scopes only narrow what the user can already do.</p>{{end}}
+	<script>
+	(function(fs){
+		if(!fs)return;
+		var all=fs.querySelector('.scopes-toggle-all'),boxes=fs.querySelectorAll('tbody input[type=checkbox]'),state=fs.querySelector('.scopes-state');
+		function sync(){
+			var n=0;
+			boxes.forEach(function(b){b.closest('tr').classList.toggle('is-checked',b.checked);if(b.checked)n++;});
+			all.checked=n===boxes.length;all.indeterminate=n>0&&n<boxes.length;
+			if(state)state.textContent=n?('Limited to '+n+' of '+boxes.length+' areas.'):'Nothing ticked: full access (all of this user’s permissions).';
+		}
+		all.addEventListener('change',function(e){e.stopPropagation();boxes.forEach(function(b){b.checked=all.checked;});sync();});
+		boxes.forEach(function(b){b.addEventListener('change',sync);});
+		fs.querySelectorAll('tbody td').forEach(function(td){td.addEventListener('click',function(e){if(e.target.tagName==='LABEL'||e.target.tagName==='A')return;var b=td.closest('tr').querySelector('input');b.checked=!b.checked;sync();});});
+		sync();
+	})(document.currentScript.closest('fieldset'));
+	</script>
 </fieldset>{{end}}
 
 {{define "admin/oauth-authorize"}}{{template "admin-header" .}}{{with .Data}}
