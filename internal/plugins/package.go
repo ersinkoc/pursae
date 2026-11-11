@@ -303,6 +303,15 @@ func WritePackage(w io.Writer, manifestJSON, wasm []byte, extras map[string][]by
 	if err != nil {
 		return err
 	}
+	if len(wasm) == 0 {
+		return errors.New("plugin package has no plugin.wasm")
+	}
+	if !bytes.HasPrefix(wasm, []byte("\x00asm")) {
+		return errors.New("plugin.wasm is not a WebAssembly binary")
+	}
+	if int64(len(wasm)) > fileLimits[WasmFile] {
+		return fmt.Errorf("%s is %d bytes, limit is %d", WasmFile, len(wasm), fileLimits[WasmFile])
+	}
 	files := map[string][]byte{ManifestFile: manifestJSON, WasmFile: wasm}
 	digests := map[string]string{}
 	var assetTotal int
@@ -323,6 +332,9 @@ func WritePackage(w io.Writer, manifestJSON, wasm []byte, extras map[string][]by
 		}
 		if name != ReadmeFile && name != IconFile {
 			return fmt.Errorf("unsupported extra file %q (allowed: %s, %s, %s/…)", name, ReadmeFile, IconFile, AssetsDir)
+		}
+		if int64(len(data)) > fileLimits[name] {
+			return fmt.Errorf("%s is %d bytes, limit is %d", name, len(data), fileLimits[name])
 		}
 		files[name] = data
 	}

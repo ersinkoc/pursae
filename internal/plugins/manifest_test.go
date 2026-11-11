@@ -66,12 +66,34 @@ func TestManifestRejectsUnknownFieldsAndBadJSON(t *testing.T) {
 	}
 }
 
+func TestManifestRejectsTrailingData(t *testing.T) {
+	base := `{"slug":"ok-slug","name":"x","version":"1.0.0","permissions":[],"hooks":[]}`
+	for _, suffix := range []string{"]", "}", " {}", " null", " garbage"} {
+		if _, err := ParseManifest([]byte(base + suffix)); err == nil {
+			t.Errorf("accepted suffix %q", suffix)
+		}
+	}
+	if _, err := ParseManifest([]byte(base + " \n\t")); err != nil {
+		t.Fatalf("whitespace rejected: %v", err)
+	}
+}
+
 func TestCheckCompatible(t *testing.T) {
 	m := &Manifest{Slug: "x", Requires: "0.2.0"}
 	for core, ok := range map[string]bool{"0.1.9": false, "0.2.0": true, "0.10.0": true, "1.0.0-beta": true, "": true} {
 		if err := m.CheckCompatible(core); (err == nil) != ok {
 			t.Errorf("core %q: err=%v, want ok=%v", core, err, ok)
 		}
+	}
+}
+
+func TestCheckCompatibleLargeComponents(t *testing.T) {
+	m := &Manifest{Slug: "x", Requires: "999999999999999999999999999999.0.0"}
+	if err := m.CheckCompatible("999999999999999999999999999998.0.0"); err == nil {
+		t.Fatal("accepted older version")
+	}
+	if err := m.CheckCompatible("999999999999999999999999999999.0.0"); err != nil {
+		t.Fatal(err)
 	}
 }
 

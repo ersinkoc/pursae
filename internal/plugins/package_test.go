@@ -120,6 +120,36 @@ func TestPackageStructureChecks(t *testing.T) {
 	}
 }
 
+func TestWritePackageRejectsInvalidWasm(t *testing.T) {
+	for _, wasm := range [][]byte{nil, []byte("not wasm")} {
+		var b bytes.Buffer
+		if err := WritePackage(&b, testManifest, wasm, nil, nil); err == nil || b.Len() != 0 {
+			t.Fatalf("wasm=%q err=%v output=%d", wasm, err, b.Len())
+		}
+	}
+}
+
+func TestWritePackageRejectsOversizedExtras(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		size int
+	}{{ReadmeFile, (1 << 20) + 1}, {IconFile, (256 << 10) + 1}} {
+		var b bytes.Buffer
+		if err := WritePackage(&b, testManifest, testWasm, map[string][]byte{tc.name: make([]byte, tc.size)}, nil); err == nil || b.Len() != 0 {
+			t.Fatalf("name=%s err=%v output=%d", tc.name, err, b.Len())
+		}
+	}
+}
+
+func TestWritePackageRejectsOversizedWasm(t *testing.T) {
+	wasm := make([]byte, (64<<20)+1)
+	copy(wasm, "\x00asm")
+	var b bytes.Buffer
+	if err := WritePackage(&b, testManifest, wasm, nil, nil); err == nil || b.Len() != 0 {
+		t.Fatalf("err=%v output=%d", err, b.Len())
+	}
+}
+
 func TestKeyEncoding(t *testing.T) {
 	pub, priv, _ := GenerateKey()
 	p2, err := ParsePublicKey("# comment\n" + EncodeKey(pub) + "\n")
