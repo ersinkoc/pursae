@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -9,6 +10,16 @@ import (
 	"testing"
 	"time"
 )
+
+func TestDefaultDiskLimitsDoNotOverflow(t *testing.T) {
+	s, err := NewStore(StoreOptions{MaxEntries: math.MaxInt, MaxBytes: math.MaxInt64})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.maxDiskEntries != math.MaxInt || s.maxDiskBytes != math.MaxInt64 {
+		t.Fatalf("limits: entries=%d bytes=%d", s.maxDiskEntries, s.maxDiskBytes)
+	}
+}
 
 func mkEntry(t *testing.T, key string, size int, tags ...string) *Entry {
 	t.Helper()
@@ -34,6 +45,28 @@ func TestNewEntryFilters(t *testing.T) {
 	_, err := NewEntry("k", 200, http.Header{"Set-Cookie": {"a=b"}}, nil, nil, time.Now(), time.Hour)
 	if err != ErrNotCacheable {
 		t.Fatalf("Set-Cookie entry: %v", err)
+	}
+}
+
+func TestNewEntryFiltersConnectionHeaders(t *testing.T) {
+	h := http.Header{"Connection": {"keep-alive, X-First", "x-second"}, "X-First": {"one"}, "X-Second": {"two"}, "X-Keep": {"yes"}}
+	e, err := NewEntry("key", 200, h, nil, nil, time.Now(), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Header.Get("X-First") != "" || e.Header.Get("X-Second") != "" || e.Header.Get("X-Keep") != "yes" || h.Get("X-First") != "one" {
+		t.Fatalf("filtered=%v original=%v", e.Header, h)
+	}
+}
+
+func TestNewEntryFiltersStandardHopHeaders(t *testing.T) {
+	for _, name := range []string{"Te", "Proxy-Authenticate", "Proxy-Authorization"} {
+		h := http.Header{}
+		h.Set(name, "value")
+		e, err := NewEntry("key", 200, h, nil, nil, time.Now(), time.Hour)
+		if err != nil || e.Header.Get(name) != "" {
+			t.Errorf("%s: entry=%v err=%v", name, e, err)
+		}
 	}
 }
 

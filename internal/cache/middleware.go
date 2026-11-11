@@ -295,7 +295,7 @@ func (c *Cache) serve(w http.ResponseWriter, r *http.Request, e *Entry, status s
 	}
 	if e.Status == http.StatusOK {
 		h.Set("ETag", etag)
-		if inm := r.Header.Get("If-None-Match"); inm != "" && etagMatch(inm, e.ETag) {
+		if inm := r.Header.Get("If-None-Match"); inm != "" && etagMatch(inm, etag) {
 			h.Del("Content-Type")
 			h.Del("Content-Encoding")
 			w.WriteHeader(http.StatusNotModified)
@@ -309,8 +309,7 @@ func (c *Cache) serve(w http.ResponseWriter, r *http.Request, e *Entry, status s
 	}
 }
 
-// etagMatch implements weak comparison for If-None-Match against the entry's base
-// ETag; the gzip variant ("…-gz") matches too.
+// etagMatch implements weak comparison for If-None-Match against the selected representation.
 func etagMatch(header, etag string) bool {
 	base := strings.Trim(etag, `"`)
 	for _, part := range strings.Split(header, ",") {
@@ -320,7 +319,7 @@ func etagMatch(header, etag string) bool {
 		}
 		part = strings.TrimPrefix(part, "W/")
 		part = strings.Trim(part, `"`)
-		if part == base || part == base+"-gz" {
+		if part == base {
 			return true
 		}
 	}

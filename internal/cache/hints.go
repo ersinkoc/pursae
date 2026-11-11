@@ -45,15 +45,15 @@ func (c *Cache) writePublicHints(h http.Header, r *http.Request, remaining, life
 	rem := secs(remaining)
 	switch c.effectiveHint(r) {
 	case HintLiteSpeed:
-		h.Set("X-LiteSpeed-Cache-Control", "public,max-age="+strconv.Itoa(rem))
+		h.Set("X-LiteSpeed-Cache-Control", "public,max-age="+strconv.FormatInt(rem, 10))
 		if len(tags) > 0 {
 			h.Set("X-LiteSpeed-Tag", strings.Join(c.prefixed(tags), ","))
 		}
 	case HintNginx:
-		h.Set("X-Accel-Expires", strconv.Itoa(rem))
+		h.Set("X-Accel-Expires", strconv.FormatInt(rem, 10))
 	case HintGeneric:
 		// Age (set by the caller) plus s-maxage give shared caches the true freshness.
-		h.Set("Cache-Control", "public, s-maxage="+strconv.Itoa(secs(lifetime))+", max-age=0")
+		h.Set("Cache-Control", "public, s-maxage="+strconv.FormatInt(secs(lifetime), 10)+", max-age=0")
 		if len(tags) > 0 {
 			p := c.prefixed(tags)
 			h.Set("Surrogate-Key", strings.Join(p, " "))
@@ -105,12 +105,16 @@ func (c *Cache) BrowserCacheHeader() string {
 	if c.cfg.BrowserCacheTTL <= 0 {
 		return ""
 	}
-	return "public, max-age=" + strconv.Itoa(secs(c.cfg.BrowserCacheTTL))
+	return "public, max-age=" + strconv.FormatInt(secs(c.cfg.BrowserCacheTTL), 10)
 }
 
-func secs(d time.Duration) int {
+func secs(d time.Duration) int64 {
 	if d <= 0 {
 		return 0
 	}
-	return int((d + time.Second - 1) / time.Second)
+	seconds := int64(d / time.Second)
+	if d%time.Second != 0 {
+		seconds++
+	}
+	return seconds
 }
