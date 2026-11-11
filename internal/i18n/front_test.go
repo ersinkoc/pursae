@@ -74,6 +74,14 @@ func TestTranslateFrontPreservesBytes(t *testing.T) {
 	}
 }
 
+func TestTranslateFrontSkipsRawTextInsideUntranslatedSubtree(t *testing.T) {
+	in := `<div translate="no"><script>let x = "</div>";</script>Search</div><p>Search</p>`
+	want := `<div translate="no"><script>let x = "</div>";</script>Search</div><p>Suchen</p>`
+	if got := string(TranslateFront([]byte(in), frontTable(map[string]string{"Search": "Suchen"}), nil)); got != want {
+		t.Fatalf("got %s, want %s", got, want)
+	}
+}
+
 func TestTranslateFrontVisit(t *testing.T) {
 	type seen struct{ s, attr string }
 	var got []seen

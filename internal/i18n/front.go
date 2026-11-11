@@ -97,6 +97,17 @@ func (w *frontWalker) run() {
 			}
 		}
 	}
+	copySkippedRaw := func(name string) {
+		if !frontRaw[name] && name != "title" {
+			return
+		}
+		end := indexClose(src, i, name)
+		if end < 0 {
+			end = len(src)
+		}
+		w.out.WriteString(src[i:end])
+		i, textStart = end, end
+	}
 	for i < len(src) {
 		lt := strings.IndexByte(src[i:], '<')
 		if lt < 0 {
@@ -144,6 +155,9 @@ func (w *frontWalker) run() {
 				skipDepth++
 			}
 			w.out.WriteString(tag)
+			if !selfClosing {
+				copySkippedRaw(name)
+			}
 			continue
 		}
 		attrs := scanAttrs(tag)
@@ -151,6 +165,7 @@ func (w *frontWalker) run() {
 			w.out.WriteString(tag)
 			if !selfClosing {
 				skipName, skipDepth = name, 1
+				copySkippedRaw(name)
 			}
 			continue
 		}

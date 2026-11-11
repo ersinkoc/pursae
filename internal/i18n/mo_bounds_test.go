@@ -19,6 +19,20 @@ func TestParseMOHugeCountBounded(t *testing.T) {
 	}
 }
 
+func TestParseMOBadTableOffset(t *testing.T) {
+	for _, table := range []int{12, 16} {
+		b := make([]byte, 44)
+		binary.LittleEndian.PutUint32(b, 0x950412de)
+		binary.LittleEndian.PutUint32(b[8:], 1)
+		binary.LittleEndian.PutUint32(b[12:], 28)
+		binary.LittleEndian.PutUint32(b[16:], 36)
+		binary.LittleEndian.PutUint32(b[table:], 0xffffffff)
+		if _, err := parseMO(b); err == nil {
+			t.Errorf("offset at %d was accepted", table)
+		}
+	}
+}
+
 // TestCompilePluralTooLong: a Plural-Forms expression of thousands of parentheses is refused
 // instead of recursing until the stack limit kills the process.
 func TestCompilePluralTooLong(t *testing.T) {
