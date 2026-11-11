@@ -180,7 +180,9 @@ func (s *Server) canonicalRedirect(c *gin.Context, q *siteQuery, requestPath str
 	if err != nil {
 		return ""
 	}
-	rest := url.Values{}
+	// Some canonical links (such as a static front page's comment feed) require
+	// query vars to identify the resource even with pretty permalinks enabled.
+	rest := tu.Query()
 	for k, vals := range v {
 		keep := true
 		for _, ck := range consumed {

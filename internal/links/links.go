@@ -348,7 +348,7 @@ func (b *Builder) feedLink(feed string) string {
 
 // PostCommentsFeed is get_post_comments_feed_link().
 func (b *Builder) PostCommentsFeed(p *store.Post) string {
-	if !b.Pretty() || draftLike(p) {
+	if !b.Pretty() || draftLike(p) || b.isStaticFrontPage(p) {
 		return b.addQueryArg(b.commentFeedPermalink(p), "feed", "rss2")
 	}
 	return appendURLPath(b.Permalink(p), b.trailing("/feed"))
@@ -362,17 +362,21 @@ func (b *Builder) PostCommentsFeedFormat(p *store.Post, feed string) string {
 	if feed == "" || feed == "rss2" {
 		return b.PostCommentsFeed(p)
 	}
-	if !b.Pretty() || draftLike(p) {
+	if !b.Pretty() || draftLike(p) || b.isStaticFrontPage(p) {
 		return b.addQueryArg(b.commentFeedPermalink(p), "feed", feed)
 	}
 	return appendURLPath(b.Permalink(p), b.trailing("/feed/"+feed))
 }
 
 func (b *Builder) commentFeedPermalink(p *store.Post) string {
-	if p.Type == "page" && p.ID != 0 && p.ID == b.FrontPageID && p.Status == "publish" {
+	if b.isStaticFrontPage(p) {
 		return b.filter("post", p, b.HomeURL("/?page_id="+strconv.FormatInt(p.ID, 10)))
 	}
 	return b.Permalink(p)
+}
+
+func (b *Builder) isStaticFrontPage(p *store.Post) bool {
+	return p.Type == "page" && p.ID != 0 && p.ID == b.FrontPageID && p.Status == "publish"
 }
 
 func appendURLPath(link, suffix string) string {
@@ -418,7 +422,7 @@ func (b *Builder) CommentPageLink(p *store.Post, page, maxPage int, newestFirst 
 	if !b.Pretty() || draftLike(p) {
 		return b.addQueryArg(result, "cpage", strconv.Itoa(page))
 	}
-	return strings.TrimSuffix(result, "/") + b.trailing("/comment-page-"+strconv.Itoa(page))
+	return appendURLPath(result, b.trailing("/comment-page-"+strconv.Itoa(page)))
 }
 
 // PostPageLink is _wp_link_page(): the URL of page n of a <!--nextpage--> split post.
@@ -433,9 +437,9 @@ func (b *Builder) PostPageLink(p *store.Post, n int) string {
 	if b.FrontPageID != 0 && p.ID == b.FrontPageID && p.Type == "page" && p.Status == "publish" {
 		// The static front page's link is the home URL, where "/2/" is no route: WordPress uses the
 		// pagination base there (_wp_link_page()).
-		return strings.TrimSuffix(link, "/") + b.trailing("/page/"+strconv.Itoa(n))
+		return appendURLPath(link, b.trailing("/page/"+strconv.Itoa(n)))
 	}
-	return strings.TrimSuffix(link, "/") + b.trailing("/"+strconv.Itoa(n))
+	return appendURLPath(link, b.trailing("/"+strconv.Itoa(n)))
 }
 
 func (b *Builder) addQueryArg(link, key, value string) string {
@@ -469,17 +473,20 @@ func (b *Builder) Paged(base string, n int) string {
 		}
 		return s
 	}
-	previousPath := u.Path
-	u.Path = regexp.MustCompile(`/page/\d+/?$`).ReplaceAllString(u.Path, "/")
-	if n <= 1 && u.Path != previousPath {
-		u.Path = b.trailing(u.Path)
+	path := u.EscapedPath()
+	previousPath := path
+	path = regexp.MustCompile(`/page/\d+/?$`).ReplaceAllString(path, "/")
+	if n <= 1 && path != previousPath {
+		path = b.trailing(path)
 	}
 	if n > 1 {
-		u.Path = strings.TrimSuffix(u.Path, "/") + b.trailing("/page/"+strconv.Itoa(n))
+		path = strings.TrimSuffix(path, "/") + b.trailing("/page/"+strconv.Itoa(n))
 	}
-	if u.Path == "" {
-		u.Path = "/"
+	if path == "" {
+		path = "/"
 	}
+	u.Path, _ = url.PathUnescape(path) // EscapedPath always returns valid escaping.
+	u.RawPath = path
 	return u.String()
 }
 

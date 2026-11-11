@@ -51,6 +51,23 @@ func TestPagedFirstPageFollowsSlashPolicy(t *testing.T) {
 	}
 }
 
+func TestPagedPreservesEscapedPath(t *testing.T) {
+	b := Builder{Structure: "/%postname%/"}
+	for _, tc := range []struct {
+		base string
+		page int
+		want string
+	}{
+		{"https://example.test/a%2Fb/?x=1#top", 2, "https://example.test/a%2Fb/page/2/?x=1#top"},
+		{"https://example.test/a%2Fb/page/3/", 1, "https://example.test/a%2Fb/"},
+		{"https://example.test/a%2Fpage%2F3/", 2, "https://example.test/a%2Fpage%2F3/page/2/"},
+	} {
+		if got := b.Paged(tc.base, tc.page); got != tc.want {
+			t.Errorf("Paged(%q, %d) = %q, want %q", tc.base, tc.page, got, tc.want)
+		}
+	}
+}
+
 func TestPlainCommentsFeedLink(t *testing.T) {
 	b := Builder{Home: "https://example.test"}
 	if got := b.FeedLink("comments_rss2"); got != "https://example.test/?feed=comments-rss2" {
@@ -88,6 +105,43 @@ func TestPlainFrontPageCommentsFeedKeepsPageID(t *testing.T) {
 	u, err := url.Parse(b.PostCommentsFeed(p))
 	if err != nil || u.Query().Get("page_id") != "7" || u.Query().Get("feed") != "rss2" {
 		t.Fatalf("front page feed = %v, err=%v", u, err)
+	}
+}
+
+func TestPrettyFrontPageCommentsFeedKeepsPageID(t *testing.T) {
+	b := Builder{Home: "https://example.test", Structure: "/%postname%/", FrontPageID: 7}
+	p := &store.Post{ID: 7, Type: "page", Status: "publish", Slug: "home"}
+	for _, feed := range []string{"rss2", "atom"} {
+		u, err := url.Parse(b.PostCommentsFeedFormat(p, feed))
+		if err != nil || u.Query().Get("page_id") != "7" || u.Query().Get("feed") != feed {
+			t.Fatalf("%s front page feed = %v, err=%v", feed, u, err)
+		}
+	}
+}
+
+func TestPostPageLinkPreservesFilteredURL(t *testing.T) {
+	for _, front := range []bool{false, true} {
+		p := &store.Post{ID: 7, Type: "post", Slug: "hello", Status: "publish"}
+		b := Builder{Home: "https://example.test", Structure: "/%postname%/", LinkFilter: func(_ string, _ any, link string) string { return link + "?lang=fr#top" }}
+		want := "/hello/2/"
+		if front {
+			p.Type = "page"
+			b.FrontPageID = 7
+			want = "/page/2/"
+		}
+		u, err := url.Parse(b.PostPageLink(p, 2))
+		if err != nil || u.Path != want || u.Query().Get("lang") != "fr" || u.Fragment != "top" {
+			t.Fatalf("front=%v: %v (%v)", front, u, err)
+		}
+	}
+}
+
+func TestCommentPageLinkPreservesFilteredURL(t *testing.T) {
+	p := &store.Post{ID: 7, Type: "post", Slug: "hello", Status: "publish"}
+	b := Builder{Home: "https://example.test", Structure: "/%postname%/", LinkFilter: func(_ string, _ any, link string) string { return link + "?lang=fr#top" }}
+	u, err := url.Parse(b.CommentPageLink(p, 2, 3, false))
+	if err != nil || u.Path != "/hello/comment-page-2/" || u.Query().Get("lang") != "fr" || u.Fragment != "top" {
+		t.Fatalf("comment page: %v (%v)", u, err)
 	}
 }
 

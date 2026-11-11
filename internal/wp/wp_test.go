@@ -22,6 +22,13 @@ func TestFormatDate(t *testing.T) {
 	}
 }
 
+func TestFormatDatePadsSmallYears(t *testing.T) {
+	d := time.Date(42, 1, 2, 0, 0, 0, 0, time.UTC)
+	if got := FormatDate(d, "Y-m-d"); got != "0042-01-02" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestSanitizeTitle(t *testing.T) {
 	cases := map[string]string{
 		"Hello world!":             "hello-world",
