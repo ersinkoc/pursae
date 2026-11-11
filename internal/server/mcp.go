@@ -282,8 +282,14 @@ var mcpTools = func() []*mcpTool {
 		Props: map[string]any{"filename": str("File name with extension, e.g. hero.jpg."), "data_base64": str("File contents, base64."),
 			"source_url": str("Instead of data_base64: an http(s) URL to fetch."), "title": str("Title."), "alt_text": str("Alternative text."),
 			"caption": str("Caption."), "description": str("Description."), "post": num("Attach to this post ID.")}, Required: []string{"filename"}})
-	add(&mcpTool{Name: "update_media", Desc: "Update a media item's title, alt_text, caption or description.", Method: http.MethodPost, Path: "/wp/v2/media/{id}",
-		Props: withID(map[string]any{"title": str("Title."), "alt_text": str("Alt text."), "caption": str("Caption."), "description": str("Description.")}), Required: []string{"id"}})
+	add(&mcpTool{Name: "update_media", Desc: "Update a media item's title, alt_text, caption, description or focal point.", Method: http.MethodPost, Path: "/wp/v2/media/{id}",
+		Props: withID(map[string]any{"title": str("Title."), "alt_text": str("Alt text."), "caption": str("Caption."), "description": str("Description."),
+			"focal_point": map[string]any{"type": []string{"object", "null"}, "description": "Images only: the point cropped sizes and cover images keep in view, {x, y} from 0 to 1 (0,0 = top left); null resets it to the centre.",
+				"properties": map[string]any{"x": map[string]any{"type": "number", "minimum": 0, "maximum": 1}, "y": map[string]any{"type": "number", "minimum": 0, "maximum": 1}}}}), Required: []string{"id"}})
+	add(&mcpTool{Name: "replace_media_file", Desc: "Replace the file of a media item with a new one of the same kind, from base64 data or a public URL. The item keeps its ID, so every post, page and featured image using it shows the new file; a file of the same type also keeps its URL.",
+		Method: http.MethodPost, Path: "/pursae/v1/media/{id}/replace", special: "upload",
+		Props: map[string]any{"id": num("Attachment ID."), "filename": str("File name with extension, e.g. logo.png."), "data_base64": str("File contents, base64."),
+			"source_url": str("Instead of data_base64: an http(s) URL to fetch.")}, Required: []string{"id", "filename"}})
 	add(&mcpTool{Name: "delete_media", Desc: "Delete a media item permanently.", Method: http.MethodDelete, Path: "/wp/v2/media/{id}",
 		Props: map[string]any{"id": num("Attachment ID."), "force": flag("Must be true for media.")}, Required: []string{"id"}})
 

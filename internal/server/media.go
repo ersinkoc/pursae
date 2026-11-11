@@ -175,9 +175,15 @@ func (s *Server) uploadReserved(ctx context.Context) func(sub string) []string {
 	}
 }
 
-// uploadURL is wp_get_attachment_url() for a path relative to the uploads dir.
+// uploadURL is wp_get_attachment_url() for a path relative to the uploads dir. A file that was
+// replaced or re-cropped under the same name carries its version (?v=…, media_replace.go): uploads
+// are cached as immutable, so the changed file needs a URL of its own.
 func (s *Server) uploadURL(c context.Context, rel string) string {
-	return s.links(c).HomeURL("/wp-content/uploads/" + rel)
+	u := s.links(c).HomeURL("/wp-content/uploads/" + rel)
+	if v := s.mediaIdx.version(rel); v != "" {
+		u += "?v=" + v
+	}
+	return u
 }
 
 // saveUpload stores an uploaded file, generates image sizes and inserts the attachment (media_handle_upload()).
@@ -311,7 +317,8 @@ func (s *Server) attachmentJS(c *gin.Context, a *store.Attachment) map[string]an
 		"dateFormatted": wp.FormatDate(a.CreatedAt.In(s.loc()), "F j, Y"),
 		"nonces":        map[string]any{"update": false, "delete": false, "edit": false},
 		"editLink":      false, "meta": false, "context": "",
-		"compat": map[string]string{"item": s.golylangMediaCompat(c, a), "meta": ""}, // Pursae Multi Language fields
+		"compat":     map[string]string{"item": s.golylangMediaCompat(c, a) + s.focalCompatHTML(c, a), "meta": ""}, // Pursae Multi Language fields, focal point
+		"focalPoint": focalJSON(a),
 	}
 	if author, err := s.store.UserByID(c, a.UploaderID); err == nil {
 		r["authorName"] = author.DisplayName
@@ -339,6 +346,7 @@ func (s *Server) attachmentJS(c *gin.Context, a *store.Attachment) map[string]an
 			r["nonces"].(map[string]any)["edit"] = s.nonce(c, "image_editor-"+id)
 		}
 		r["editLink"] = "/wp-admin/post?post=" + id + "&action=edit"
+		r["replaceLink"] = "/wp-admin/post?post=" + id + "&action=edit#wpgo-replace-media" // media_replace_admin.go
 	}
 	if typ == "image" {
 		sizes := map[string]any{}
@@ -560,7 +568,11 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 		}
 		s.purgeAttachment(a)
 		if action == "save-attachment-compat" {
-			s.golylangMediaCompatSave(c, a) // attachments[ID][pll_i18n][lang][field]
+			s.golylangMediaCompatSave(c, a)                 // attachments[ID][pll_i18n][lang][field]
+			if err := s.focalCompatSave(c, a); err != nil { // attachments[ID][focal_point]
+				jsonError(c, http.StatusOK, nil)
+				return true
+			}
 			jsonSuccess(c, s.attachmentJS(c, a))
 		} else {
 			jsonSuccess(c, nil)
@@ -651,7 +663,8 @@ func (s *Server) checkNonceValue(c *gin.Context, nonce, action string) bool {
 // deleteAttachmentFiles is wp_delete_attachment_files(): the main file, its sizes, the original of a
 // "-scaled"/"-rotated" image and the image editor's backup (the pre-edit file and its sizes).
 func (s *Server) deleteAttachmentFiles(a *store.Attachment) {
-	s.gocdnBeforeDelete(a) // GoCDN: delete the offloaded copies (gocdn_offload.go)
+	s.mediaIdx.put(a.ID, nil) // its versions, focal point and moved paths (media_replace.go)
+	s.gocdnBeforeDelete(a)    // GoCDN: delete the offloaded copies (gocdn_offload.go)
 	for _, rel := range gocdnAttachmentFiles(a) {
 		if p := s.gocdnLocalPath(rel); p != "" {
 			_ = os.Remove(p)
@@ -795,6 +808,7 @@ func (s *Server) enqueueMedia(c *gin.Context, postID int64) {
 	plupload = uploadErrorFlag.ReplaceAllString(plupload, "")
 	a.AddBefore("wp-plupload", plupload)
 	addBodyHTML(c, template.HTML(mediaTemplates))
+	addBodyHTML(c, template.HTML(focalAssets)) // the Focal point field of the details sidebar (media_replace_admin.go)
 }
 
 // editableImage reports whether the image editor can open and save a file of this type.

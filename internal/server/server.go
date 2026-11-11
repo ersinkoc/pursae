@@ -75,6 +75,10 @@ type Server struct {
 
 	// rt is the bounded background work: async writes, coalesced CDN purges (background.go).
 	rt runtimeState
+
+	// mediaIdx holds the uploads paths of replaced and re-cropped attachments: their file version,
+	// focal point and moved paths (media_replace.go).
+	mediaIdx mediaIndex
 }
 
 // New builds the server of the site.
@@ -116,6 +120,9 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 		s.themeLibrary = os.DirFS(cfg.ThemeLibraryDir)
 	}
 	s.initLanguages()
+	if err := s.loadMediaIndex(ctx); err != nil { // replaced files' versions, focal points (media_replace.go)
+		slog.Warn("media index could not be loaded", "err", err)
+	}
 	if sb != nil {
 		return s.startSandbox(ctx)
 	}
@@ -244,8 +251,11 @@ func (s *Server) routes() *gin.Engine {
 	serveUpload := func(c *gin.Context) {
 		// Uploaded files are data, never code: HTML or SVG uploads run in a sandbox.
 		c.Header("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'")
-		c.Header("Cache-Control", "public, max-age=31536000, immutable")
 		c.Request.URL.Path = legacyUploadPath(c.Request.URL.Path)
+		if s.serveMovedUpload(c) { // a path a replaced file left: redirect to its successor (media_replace.go)
+			return
+		}
+		c.Header("Cache-Control", s.uploadCacheControl(c))
 		uploads.ServeHTTP(c.Writer, c.Request)
 	}
 	r.GET("/wp-content/uploads/*filepath", serveUpload)
@@ -294,6 +304,7 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/upload", s.mediaLibrary)
 	admin.GET("/media-new", s.mediaNew)
 	admin.POST("/media-new", s.mediaNew)
+	admin.POST("/media-replace", s.mediaReplaceSubmit) // Replace media box of the attachment edit screen (media_replace_admin.go)
 	admin.GET("/async-upload", s.asyncUpload)
 	admin.POST("/async-upload", s.asyncUpload)
 	admin.GET("/admin-ajax", s.adminAjax)

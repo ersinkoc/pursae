@@ -64,6 +64,9 @@ func (s *Server) registerPursaeREST() {
 		http.MethodDelete: guard("edit_themes", s.pursaeThemeFileRestore),
 	}, nil)
 
+	// Media: a new file for an existing item (media_replace_admin.go).
+	api.register(pursaeNS, `/pursae/v1/media/(?P<id>[\d]+)/replace`, map[string]restHandler{http.MethodPost: guard("upload_files", s.pursaeMediaReplace)}, nil)
+
 	api.register(pursaeNS, "/pursae/v1/cache", map[string]restHandler{http.MethodGet: guard("manage_options", s.pursaeCacheStatus)}, nil)
 	api.register(pursaeNS, "/pursae/v1/cache/purge", map[string]restHandler{http.MethodPost: guard("manage_options", s.pursaeCachePurge)}, nil)
 	api.register(pursaeNS, "/pursae/v1/cache/settings", map[string]restHandler{

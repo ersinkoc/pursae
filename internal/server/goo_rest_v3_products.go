@@ -684,6 +684,8 @@ func (s *Server) gooV3ImageIDs(ctx context.Context, list []any) ([]int64, *gooAP
 			continue
 		}
 		_, rel, ok := strings.Cut(src, "/wp-content/uploads/")
+		rel, _, _ = strings.Cut(rel, "?") // a replaced file's URL carries ?v= (media_replace.go)
+		rel, _, _ = strings.Cut(rel, "#")
 		var id int64
 		if ok {
 			_ = s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE file_path = $1`, rel).Scan(&id)

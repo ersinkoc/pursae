@@ -15,9 +15,6 @@ func TestMCPToolRoutesAreRegistered(t *testing.T) {
 			continue // chosen at call time / served by the index
 		}
 		route, method := tool.Path, tool.Method
-		if tool.special == "upload" {
-			route, method = "/wp/v2/media", "POST"
-		}
 		found := false
 		// Placeholders become a number, a slug and a hex-like word, so numeric and word patterns both match.
 		for _, v := range []string{"1", "categories", "abc123"} {

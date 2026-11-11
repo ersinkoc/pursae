@@ -30,7 +30,7 @@ language, of the same type, that the user may edit; an entry for the saved objec
 | Route | Methods | Notes |
 |-------|---------|-------|
 | `/media` | GET, POST | upload with `multipart/form-data` (`file`) or a raw body with `Content-Disposition: attachment; filename=…`; image sizes are generated (in the format of Settings › Media › Image output format) |
-| `/media/{id}` | GET, POST, DELETE | `title`, `caption`, `alt_text`, `description`, `post`; with Pursae Multi Language and its Media module on: `?lang=` returns that language's texts, `context=edit` adds `pll_i18n` (per-language overrides) and updates accept it |
+| `/media/{id}` | GET, POST, DELETE | `title`, `caption`, `alt_text`, `description`, `post`; images also `focal_point` (`{"x": 0.3, "y": 0.2}` from the top left, 0–1, or `null` for the centre): cropped sizes are made again around it, and `media_details.focal_point` returns it. A replaced or re-cropped file has `media_details.file_version`, and its URLs end in `?v=<version>`. With Pursae Multi Language and its Media module on: `?lang=` returns that language's texts, `context=edit` adds `pll_i18n` (per-language overrides) and updates accept it |
 | `/media/{id}/post-process` | POST | |
 
 ## Terms
@@ -85,6 +85,7 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/pursae/v1/themes/{slug}/activate` | POST | switch theme |
 | `/pursae/v1/themes/{slug}/files` | GET | editable files (`edit_themes`): `style.css`, asset paths, `templates/…` |
 | `/pursae/v1/themes/{slug}/file?file=…` | GET, POST, DELETE | read; `POST {"file", "content"}` saves like the Theme File Editor (template parse + render check, rolled back on failure); `DELETE` restores the original. Refused while file editing is disabled (`WPGO_DISALLOW_FILE_EDIT` or Pursae Security) |
+| `/pursae/v1/media/{id}/replace` | POST | a new file for a media item, as `multipart/form-data` (`file`) or a raw body with `Content-Disposition: attachment; filename=…` (`upload_files`, plus own item or `edit_others_posts`; scope `media`). The item keeps its ID; a file of the same type keeps its URL and size names, another type (or aspect ratio) gets new names and the old paths redirect (301) to them. Same kind only: image for image, video for video, audio for audio, other files for other files. Answers like `GET /wp/v2/media/{id}` (`upload_warning` when no sizes could be made) |
 | `/pursae/v1/cache` | GET | Pursae Cache status, stats and crawler (`manage_options`) |
 | `/pursae/v1/cache/purge` | POST | `{"all": true}`, `{"url": "/about/"}`, `{"post": 12}` or `{"tags": ["home"]}` |
 | `/pursae/v1/cache/settings` | GET, POST | the `wpgo_cache_*` / `wpgo_opt_*` options (typed); saving rebuilds the cache |

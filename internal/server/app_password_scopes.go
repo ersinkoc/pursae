@@ -124,7 +124,7 @@ var appScopeRoutes = map[string]string{
 	"/wp/v2/statuses": "content", "/wp/v2/search": "content", "/wp/v2/block-renderer": "content", "/wp/v2/block-types": "content",
 	"/wp/v2/block-patterns": "content", "/wp/v2/pattern-directory": "content", "/wp/v2/wp_pattern_category": "content",
 	"/web-builder/v2": "content", "/pll/v1": "content", "/batch/v1": "content", "/oembed/1.0": "content",
-	"/wp/v2/media":     "media",
+	"/wp/v2/media": "media", "/pursae/v1/media": "media",
 	"/wp/v2/templates": "themes", "/wp/v2/template-parts": "themes", "/wp/v2/global-styles": "themes", "/wp/v2/themes": "themes",
 	"/wp/v2/menus": "themes", "/wp/v2/menu-items": "themes", "/wp/v2/menu-locations": "themes", "/wp/v2/navigation": "themes",
 	"/wp/v2/sidebars": "themes", "/wp/v2/widgets": "themes", "/wp/v2/widget-types": "themes", "/pursae/v1/themes": "themes",

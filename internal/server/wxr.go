@@ -410,7 +410,7 @@ func (s *Server) exportScreen(c *gin.Context) {
 			if !f.keep(a.CreatedAt, loc) {
 				continue
 			}
-			fileURL := s.uploadURL(ctx, a.FilePath)
+			fileURL := s.uploadURLPlain(ctx, a.FilePath) // the file name, without a replaced file's ?v=
 			fmt.Fprintf(&b, "\t<item>\n\t\t<title>%s</title>\n\t\t<link>%s</link>\n\t\t<pubDate>%s</pubDate>\n\t\t<dc:creator>%s</dc:creator>\n\t\t<guid isPermaLink=\"false\">%s</guid>\n\t\t<description></description>\n\t\t<content:encoded>%s</content:encoded>\n\t\t<excerpt:encoded>%s</excerpt:encoded>\n\t\t<wp:post_id>%d</wp:post_id>\n\t\t<wp:post_date>%s</wp:post_date>\n\t\t<wp:post_date_gmt>%s</wp:post_date_gmt>\n\t\t<wp:post_modified>%s</wp:post_modified>\n\t\t<wp:post_modified_gmt>%s</wp:post_modified_gmt>\n\t\t<wp:comment_status>open</wp:comment_status>\n\t\t<wp:ping_status>closed</wp:ping_status>\n\t\t<wp:post_name>%s</wp:post_name>\n\t\t<wp:status>%s</wp:status>\n\t\t<wp:post_parent>%d</wp:post_parent>\n\t\t<wp:menu_order>%d</wp:menu_order>\n\t\t<wp:post_type>%s</wp:post_type>\n\t\t<wp:post_password></wp:post_password>\n\t\t<wp:is_sticky>0</wp:is_sticky>\n\t\t<wp:attachment_url>%s</wp:attachment_url>\n%s\t</item>\n",
 				cdata(a.Title), xmlEsc(fileURL), a.CreatedAt.UTC().Format(time.RFC1123Z), cdata(creator(a.UploaderID)), xmlEsc(fileURL), cdata(a.Description), cdata(a.Caption),
 				a.ID, cdata(wpDate(a.CreatedAt)), cdata(a.CreatedAt.UTC().Format("2006-01-02 15:04:05")), cdata(wpDate(a.UpdatedAt)), cdata(a.UpdatedAt.UTC().Format("2006-01-02 15:04:05")),

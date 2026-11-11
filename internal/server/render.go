@@ -135,6 +135,7 @@ func (s *Server) renderTemplateFiltered(c *gin.Context, status int, set *templat
 		out = s.withLoginLanguageSwitcher(c, out) // wp-login's language dropdown (i18n.go)
 	}
 	if front {
+		out = s.mediaRefreshHTML(c, out) // replaced files' versions and new names, focal points (media_front.go)
 		out = s.gooikeFilterPage(c, out) // Gooike: YouTube, Vimeo and Maps iframes wait for consent
 	} else {
 		out = s.translateAdminPage(c, out) // the admin in the user's language (i18n.go)

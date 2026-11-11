@@ -71,6 +71,8 @@ Visitors' comment forms also carry a hidden honeypot field and a signed timestam
 | Hook | Type | Value | Arguments | Permission |
 |------|------|-------|-----------|------------|
 | `image_editor_output_format` | filter | `map[string]any` source MIME type → output MIME type for the generated image sizes, e.g. `{"image/jpeg": "image/webp"}`; it starts as WordPress' default (HEIC → JPEG) plus the Settings › Media › Image output format choice. A mapping that changes the format converts the main image too; `image/jpeg`, `image/png`, `image/gif` and `image/webp` can be written | the upload's file name, its MIME type | — |
+| `pursae_media_replaced` | action | — | the attachment id and `{"id", "url" (with `?v=`), "old_url", "new_url" (both without it; equal unless the file type changed), "file", "mime_type", "original_name"}`. Fired after a media item got a new file (Media › Edit › Replace media, `POST /pursae/v1/media/{id}/replace`); its sizes are made, the page cache is purged | — |
+| `pursae_media_focal_point` | action | — | the attachment id and `{"id", "url", "focal_point": {"x", "y"} or null}`. Fired after an image's focal point changed and its cropped sizes were made again | — |
 
 ### Posts
 

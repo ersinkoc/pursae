@@ -11,6 +11,7 @@ import (
 	"image/png"
 	"io"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -110,15 +111,25 @@ func Save(uploadsDir string, dated bool, now time.Time, filename string, r io.Re
 // sub-folder ("" or "2026/11") besides the files on disk, e.g. offloaded files whose local copy
 // was removed. A new upload must not take their names: it would overwrite their bucket objects.
 func SaveWith(uploadsDir string, dated bool, now time.Time, filename string, r io.Reader, reserved func(sub string) []string) (*Stored, error) {
-	mime := MimeFor(filename)
-	if mime == "" {
-		return nil, ErrType
-	}
 	sub := ""
 	if dated {
 		sub = fmt.Sprintf("%04d/%02d", now.Year(), int(now.Month()))
 	}
-	dir := filepath.Join(uploadsDir, sub)
+	return SaveIn(uploadsDir, sub, filename, r, reserved)
+}
+
+// SaveIn is SaveWith into a given sub-folder of the uploads directory ("" or "2026/11"), e.g. the
+// folder of an attachment whose file is being replaced.
+func SaveIn(uploadsDir, sub, filename string, r io.Reader, reserved func(sub string) []string) (*Stored, error) {
+	mime := MimeFor(filename)
+	if mime == "" {
+		return nil, ErrType
+	}
+	sub = strings.Trim(filepath.ToSlash(sub), "/")
+	if sub == "." {
+		sub = ""
+	}
+	dir := filepath.Join(uploadsDir, filepath.FromSlash(sub))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, err
 	}
@@ -294,6 +305,67 @@ type Options struct {
 	// Reserved are file names in the image's folder that count as taken besides the files on disk
 	// (offloaded files whose local copy was removed), for the converted main file's name.
 	Reserved []string
+	// Focal is the image's focal point: cropped sizes keep it in view instead of cutting the
+	// centre. Nil crops around the centre, like WordPress.
+	Focal *Focal
+}
+
+// Focal is a focal point in fractions of the (upright) image: X 0 = left edge, 1 = right edge;
+// Y 0 = top, 1 = bottom. It has the shape of the block editor's focalPoint attribute.
+type Focal struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+// Valid reports whether both coordinates are within 0…1.
+func (f Focal) Valid() bool { return f.X >= 0 && f.X <= 1 && f.Y >= 0 && f.Y <= 1 }
+
+// Centered reports whether the point is the centre (within half a percent), where a crop is the
+// same as without a focal point.
+func (f Focal) Centered() bool { return math.Abs(f.X-0.5) < 0.005 && math.Abs(f.Y-0.5) < 0.005 }
+
+// CSS is the object-position / background-position value of the point, e.g. "30% 20%".
+func (f Focal) CSS() string {
+	pct := func(v float64) string {
+		return strconv.FormatFloat(math.Round(v*1000)/10, 'f', -1, 64) + "%"
+	}
+	return pct(f.X) + " " + pct(f.Y)
+}
+
+// CropRect is the part of a sw×sh image that a crop to the w:h aspect ratio keeps: as large as
+// the ratio allows, centred on the focal point and moved back inside the image where the point is
+// near an edge. A nil or centred focal point gives WordPress' centre crop. The rectangle starts at
+// 0,0 (add the image bounds' Min).
+func CropRect(sw, sh, w, h int, f *Focal) image.Rectangle {
+	if sw <= 0 || sh <= 0 || w <= 0 || h <= 0 {
+		return image.Rect(0, 0, max(sw, 0), max(sh, 0))
+	}
+	targetRatio := float64(w) / float64(h)
+	focal := f != nil && f.Valid() && !f.Centered()
+	if float64(sw)/float64(sh) > targetRatio {
+		cw := max(1, min(sw, int(float64(sh)*targetRatio)))
+		x := (sw - cw) / 2
+		if focal {
+			x = clampInt(int(math.Round(f.X*float64(sw)-float64(cw)/2)), 0, sw-cw)
+		}
+		return image.Rect(x, 0, x+cw, sh)
+	}
+	ch := max(1, min(sh, int(float64(sw)/targetRatio)))
+	y := (sh - ch) / 2
+	if focal {
+		y = clampInt(int(math.Round(f.Y*float64(sh)-float64(ch)/2)), 0, sh-ch)
+	}
+	return image.Rect(0, y, sw, y+ch)
+}
+
+func clampInt(v, lo, hi int) int {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
 }
 
 // ProcessImage is ProcessImageWith with the default options.
@@ -392,7 +464,7 @@ func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*
 	big := info.Width > BigImageThreshold || info.Height > BigImageThreshold
 	if (native || convert) && big {
 		w, h := fitWithin(info.Width, info.Height, BigImageThreshold, BigImageThreshold)
-		scaled := resize(img, w, h, false)
+		scaled := resize(img, w, h, false, nil)
 		name := base + "-scaled" + outExt
 		if err := encode(filepath.Join(dir, name), scaled, out); err == nil {
 			info.OriginalFile = filepath.Base(full)
@@ -430,7 +502,7 @@ func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*
 		if !ok {
 			continue
 		}
-		resized := resize(src, w, h, sz.Crop)
+		resized := resize(src, w, h, sz.Crop, opts.Focal)
 		name := fmt.Sprintf("%s-%dx%d%s", base, w, h, outExt)
 		path := filepath.Join(dir, name)
 		if err := encode(path, resized, out); err != nil {
@@ -504,22 +576,12 @@ func fitWithin(w, h, maxW, maxH int) (int, int) {
 	return nw, nh
 }
 
-func resize(src image.Image, w, h int, crop bool) image.Image {
+func resize(src image.Image, w, h int, crop bool, focal *Focal) image.Image {
 	sb := src.Bounds()
 	srcRect := sb
 	if crop {
-		// Center crop to the target aspect ratio first.
-		sw, sh := sb.Dx(), sb.Dy()
-		targetRatio := float64(w) / float64(h)
-		if float64(sw)/float64(sh) > targetRatio {
-			cw := int(float64(sh) * targetRatio)
-			x := sb.Min.X + (sw-cw)/2
-			srcRect = image.Rect(x, sb.Min.Y, x+cw, sb.Max.Y)
-		} else {
-			ch := int(float64(sw) / targetRatio)
-			y := sb.Min.Y + (sh-ch)/2
-			srcRect = image.Rect(sb.Min.X, y, sb.Max.X, y+ch)
-		}
+		// Crop to the target aspect ratio first: around the focal point, or the centre.
+		srcRect = CropRect(sb.Dx(), sb.Dy(), w, h, focal).Add(sb.Min)
 	}
 	dst := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.CatmullRom.Scale(dst, dst.Bounds(), src, srcRect, draw.Over, nil)
@@ -701,7 +763,7 @@ func Decode(uploadsDir, relPath string) (image.Image, string, error) {
 }
 
 // Resize scales an image to exactly w×h.
-func Resize(img image.Image, w, h int) image.Image { return resize(img, w, h, false) }
+func Resize(img image.Image, w, h int) image.Image { return resize(img, w, h, false, nil) }
 
 // EncodeTo writes img to w in the given format (jpeg, webp, png or gif), at WordPress' default
 // qualities (WP_Image_Editor::get_default_quality(): 82, WebP 86).
