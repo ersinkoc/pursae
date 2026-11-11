@@ -39,6 +39,7 @@ const (
 	hgSetting   = "native_headlessgo"   // the plugin is active
 	hgOptions   = "headlessgo_settings" // hgSettings as one JSON object
 	hgVersion   = "1.0.0"
+	hgAssetVer  = "1.1.0" // admin script and stylesheet (cache busting)
 	hgNamespace = "headlessgo/v1"
 	hgAPIPrefix = "/wp-json/" + hgNamespace
 	hgAdminPath = "/wp-admin/headlessgo"

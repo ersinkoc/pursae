@@ -15,7 +15,7 @@
 	<ul>{{range .Types}}{{if .IsCollection}}<li><a href="/wp-admin/headlessgo?page=entries&amp;type={{.UID}}"{{if and $.Data.Type (eq $.Data.Type.UID .UID)}} class="current" aria-current="page"{{end}} translate="no">{{.DisplayName}}</a></li>{{end}}{{end}}</ul>
 	<h2>Single types</h2>
 	<ul>{{range .Types}}{{if .IsSingle}}<li><a href="/wp-admin/headlessgo?page=entry&amp;type={{.UID}}"{{if and $.Data.Type (eq $.Data.Type.UID .UID)}} class="current" aria-current="page"{{end}} translate="no">{{.DisplayName}}</a></li>{{end}}{{end}}</ul>
-	{{if .CanAdmin}}<p><a href="/wp-admin/headlessgo?page=builder" class="button button-small">Content-Type Builder</a></p>{{end}}
+	{{if .CanAdmin}}<p class="hg-side-foot"><a href="/wp-admin/headlessgo?page=builder"><span class="dashicons dashicons-layout" aria-hidden="true"></span>Content-Type Builder</a></p>{{end}}
 </nav>
 <div class="hg-main">
 
@@ -108,7 +108,14 @@
 {{end}}
 
 {{if eq .Page "entry"}}
-{{if .Type.IsCollection}}<p><a href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}">&larr; Back to <span translate="no">{{.Type.DisplayName}}</span></a></p>{{end}}
+<header class="hg-entry-head">
+	{{if .Type.IsCollection}}<a class="hg-back" href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}"><span class="dashicons dashicons-arrow-left-alt2" aria-hidden="true"></span>Back to <span translate="no">{{.Type.DisplayName}}</span></a>{{end}}
+	<div class="hg-entry-title-row">
+		{{if .Type.IsSingle}}<h2 class="hg-entry-title" translate="no">{{.Type.DisplayName}}</h2>{{else}}<h2 class="hg-entry-title" id="hg-entry-title" data-field="{{.Type.TitleField}}" data-empty="{{if .Entry}}Untitled{{else}}Create an entry{{end}}"{{if .EntryTitle}} translate="no"{{end}}>{{if .EntryTitle}}{{.EntryTitle}}{{else if .Entry}}Untitled{{else}}Create an entry{{end}}</h2>{{end}}
+		{{if .Type.DraftAndPublish}}{{if .Entry}}<span class="hg-status hg-status-{{.EntryStatus}}">{{if eq .EntryStatus "draft"}}Draft{{else if eq .EntryStatus "modified"}}Modified{{else}}Published{{end}}</span>{{else}}<span class="hg-status hg-status-draft">New</span>{{end}}{{end}}
+	</div>
+	<p class="hg-entry-sub">{{if .Type.IsSingle}}Single type{{else}}Collection type{{end}} &middot; API ID <code translate="no">{{.Type.UID}}</code>{{if .Locale}} &middot; Locale <code translate="no">{{.Locale}}</code>{{end}}</p>
+</header>
 {{if .Lock}}<div class="notice notice-warning hg-lock" id="hg-lock-data" data-by="{{.Lock.Name}}"><p><strong translate="no">{{.Lock.Name}}</strong> is currently editing this entry. You can read it, but saving is switched off so nothing is overwritten.</p>
 <form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="do" value="lock_takeover"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><button class="button button-primary">Take over editing</button></form>
 {{if .Type.IsCollection}}<a class="button" href="/wp-admin/headlessgo?page=entries&amp;type={{.Type.UID}}{{if .Locale}}&amp;locale={{.Locale}}{{end}}">Go back</a>{{end}}</div>{{else if .Entry}}<span id="hg-lock-data" data-beat="{{.LockBeat}}" hidden></span>{{end}}
@@ -121,7 +128,6 @@
 	<div class="hg-fields" id="hg-editor"><p class="description">Loading the form…</p><noscript><p>The entry form needs JavaScript.</p></noscript></div>
 	<aside class="hg-entry-side">
 		<div class="postbox"><h2 class="hndle">Entry</h2><div class="inside">
-			{{if .Type.DraftAndPublish}}<p>Status: {{if .Entry}}<span class="hg-status hg-status-{{.EntryStatus}}">{{if eq .EntryStatus "draft"}}Draft{{else if eq .EntryStatus "modified"}}Modified{{else}}Published{{end}}</span>{{else}}<span class="hg-status hg-status-draft">New</span>{{end}}</p>{{end}}
 			{{if and .Entry .Type.ReviewWorkflow}}<p>Review: <span class="hg-status hg-status-{{if .ReviewState}}{{.ReviewState}}{{else}}draft{{end}}">{{if eq .ReviewState "pending"}}Waiting for review{{else if eq .ReviewState "approved"}}Approved{{else if eq .ReviewState "rejected"}}Rejected{{else}}Not submitted{{end}}</span>
 				{{if and .Entry.ReviewNote (or (eq .ReviewState "approved") (eq .ReviewState "rejected"))}}<br><em translate="no">{{.Entry.ReviewNote}}</em>{{end}}</p>
 			{{else if and .Type.ReviewWorkflow (not .Entry)}}<p class="description">This type is reviewed: save the draft, submit it for review, and publish it once it is approved.</p>{{end}}

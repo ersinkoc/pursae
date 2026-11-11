@@ -33,8 +33,8 @@ const (
 var hgAssetsOnce sync.Once
 
 func hgRegisterAssets() {
-	registry.Scripts["headlessgo"] = &regScript{Src: hgAssetDir + "headlessgo.js", Deps: []string{"jquery"}, Ver: hgVersion, Footer: true}
-	registry.Styles["headlessgo"] = &regStyle{Src: hgAssetDir + "headlessgo.css", Ver: hgVersion}
+	registry.Scripts["headlessgo"] = &regScript{Src: hgAssetDir + "headlessgo.js", Deps: []string{"jquery"}, Ver: hgAssetVer, Footer: true}
+	registry.Styles["headlessgo"] = &regStyle{Src: hgAssetDir + "headlessgo.css", Ver: hgAssetVer}
 }
 
 // hgAdminData is the view of every screen.
@@ -72,6 +72,7 @@ type hgAdminData struct {
 	Versions    map[string]*hgEntry
 	PreviewURL  string
 	EntryStatus string
+	EntryTitle  string // the value of the type's title field, for the editor's header
 	Errors      hgValidationError
 	PublishAt   string // schedule, as datetime-local values in the site's time zone
 	UnpublishAt string
@@ -547,6 +548,7 @@ func (s *Server) hgAdminEntry(c *gin.Context, d *hgAdminData, failed *hgFailedSa
 				}
 			}
 			d.EntryStatus = e.Status()
+			d.EntryTitle, _ = e.Data[sc.TitleField()].(string)
 			d.PreviewURL = s.hgPreviewURL(c, sc, e)
 			d.History = s.hgVersions(c, e.ID, 8)
 			d.BaseStamp = hgLockStamp(e)
@@ -1452,6 +1454,7 @@ func (s *Server) hgAdminHistory(c *gin.Context, d *hgAdminData) bool {
 	}
 	d.Entry = e
 	d.EntryStatus = e.Status()
+	d.EntryTitle, _ = e.Data[sc.TitleField()].(string)
 	d.History = s.hgVersions(c, e.ID, hgHistoryKeep)
 	vid, _ := strconv.ParseInt(c.Query("v"), 10, 64)
 	for _, v := range d.History {

@@ -115,17 +115,13 @@
 				var key = p.join( '.' );
 				var wrap = el( 'div', { class: 'hg-field hg-field-' + f.type + ( errors[ key ] ? ' hg-has-error' : '' ), 'data-path': key } );
 				var id = 'hg-f-' + key.replace( /[^a-zA-Z0-9]/g, '-' );
-				var label = el( 'label', { class: 'hg-label', for: id }, [ el( 'span', { translate: 'no', text: f.name } ), f.required ? el( 'span', { class: 'hg-req', text: ' *' } ) : null,
-					el( 'span', { class: 'hg-type', text: typeLabel( f ) } ) ] );
-				wrap.appendChild( label );
-				wrap.appendChild( control( schema, f, obj, id, p ) );
 				var h = hint( f );
-				if ( h ) {
-					wrap.appendChild( el( 'p', { class: 'description', text: h } ) );
-				}
-				if ( errors[ key ] ) {
-					wrap.appendChild( el( 'p', { class: 'hg-error', text: errors[ key ] } ) );
-				}
+				wrap.appendChild( el( 'div', { class: 'hg-field-head' }, [
+					el( 'label', { class: 'hg-label', for: id }, [ el( 'span', { translate: 'no', text: f.name } ), f.required ? el( 'span', { class: 'hg-req', title: 'Required', text: ' *' } ) : null ] ),
+					el( 'span', { class: 'hg-type', text: typeLabel( f ) } ),
+					h ? el( 'p', { class: 'description hg-hint', text: h } ) : null ] ) );
+				wrap.appendChild( el( 'div', { class: 'hg-field-body' }, [ control( schema, f, obj, id, p ),
+					errors[ key ] ? el( 'p', { class: 'hg-error', text: errors[ key ] } ) : null ] ) );
 				box.appendChild( wrap );
 			} );
 		}
@@ -200,11 +196,9 @@
 					} } );
 				case 'richtext':
 					if ( f.format === 'markdown' ) {
-						return el( 'textarea', { id: id, class: 'large-text code hg-markdown', rows: 10, translate: 'no', oninput: function ( e ) {
-							setVal( obj, f.name, e.target.value );
-						} }, [ v || '' ] );
+						return markdownEditor( f, obj, id );
 					}
-					return blocksEditor( f, obj, id );
+					return richEditor( f, obj, id );
 				case 'number':
 					return el( 'input', { id: id, type: f.format === 'biginteger' ? 'text' : 'number', step: f.format === 'integer' ? '1' : 'any', class: 'regular-text', value: v === null || v === undefined ? '' : v, oninput: function ( e ) {
 						var s = e.target.value.trim();
@@ -215,10 +209,12 @@
 						}
 					} } );
 				case 'boolean':
-					var cb = el( 'input', { id: id, type: 'checkbox', checked: v === true, onchange: function ( e ) {
+					var swText = el( 'span', { class: 'hg-switch-text', text: v === null || v === undefined ? 'Not set' : ( v ? 'True' : 'False' ) } );
+					var cb = el( 'input', { id: id, type: 'checkbox', role: 'switch', checked: v === true, onchange: function ( e ) {
 						obj[ f.name ] = e.target.checked;
+						swText.textContent = e.target.checked ? 'True' : 'False';
 					} } );
-					return el( 'label', { class: 'hg-switch' }, [ cb, v === null || v === undefined ? ' (not set)' : '' ] );
+					return el( 'span', { class: 'hg-switch' }, [ cb, swText ] );
 				case 'date':
 					return el( 'input', { id: id, type: 'date', value: v || '', onchange: function ( e ) {
 						setVal( obj, f.name, e.target.value );
@@ -271,131 +267,852 @@
 			return el( 'span', { text: 'Unsupported field type ' + f.type } );
 		}
 
-		/* Rich text blocks: one item per block; untouched blocks keep their inline formatting. */
+		/* Rich text (blocks): a visual editor in the style of the classic editor. The editable DOM is
+		 * read back into the blocks format on every change (paragraph, heading, list, quote, code, image;
+		 * link nodes; bold, italic, underline, strikethrough and code marks). Blocks it does not know are
+		 * shown as a locked box and kept as they are; an untouched field keeps its stored value. */
+		var RT_MARKS = [ [ 'bold', 'strong' ], [ 'italic', 'em' ], [ 'underline', 'u' ], [ 'strikethrough', 's' ], [ 'code', 'code' ] ];
+		var RT_INLINE = /^(A|ABBR|B|BDI|BDO|BR|CITE|CODE|DATA|DEL|DFN|EM|FONT|I|INS|KBD|MARK|Q|S|SAMP|SMALL|SPAN|STRIKE|STRONG|SUB|SUP|TIME|U|VAR|WBR)$/;
+		var RT_SKIP = /^(SCRIPT|STYLE|TEMPLATE|NOSCRIPT|IFRAME|OBJECT|EMBED|SVG|CANVAS|VIDEO|AUDIO|BUTTON|INPUT|SELECT|TEXTAREA|META|LINK|HR|IMG|PICTURE)$/;
+
+		function rtSafeURL( u ) {
+			u = String( u || '' ).trim();
+			if ( ! u ) {
+				return '';
+			}
+			if ( /^(https?:|mailto:|tel:)/i.test( u ) || /^[/#?.]/.test( u ) ) {
+				return u;
+			}
+			if ( /^[a-z][a-z0-9+.-]*:/i.test( u ) ) {
+				return ''; // javascript:, data:, vbscript: …
+			}
+			return 'https://' + u;
+		}
+
+		function rtInline( nodes, parent ) {
+			( nodes || [] ).forEach( function ( n ) {
+				if ( ! n || typeof n !== 'object' ) {
+					return;
+				}
+				if ( n.type === 'link' ) {
+					var a = el( 'a', { href: rtSafeURL( n.url ) || '#' } );
+					rtInline( n.children, a );
+					parent.appendChild( a );
+					return;
+				}
+				if ( n.type !== 'text' ) {
+					rtInline( n.children, parent );
+					return;
+				}
+				var outer = null, inner = null;
+				RT_MARKS.forEach( function ( m ) {
+					if ( n[ m[ 0 ] ] ) {
+						var w = document.createElement( m[ 1 ] );
+						if ( inner ) {
+							inner.appendChild( w );
+						} else {
+							outer = w;
+						}
+						inner = w;
+					}
+				} );
+				var target = inner || parent;
+				String( n.text || '' ).split( '\n' ).forEach( function ( part, i ) {
+					if ( i ) {
+						target.appendChild( document.createElement( 'br' ) );
+					}
+					if ( part ) {
+						target.appendChild( document.createTextNode( part ) );
+					}
+				} );
+				if ( outer ) {
+					parent.appendChild( outer );
+				}
+			} );
+		}
+
+		function rtFill( node ) {
+			if ( ! node.firstChild ) {
+				node.appendChild( document.createElement( 'br' ) );
+			} else if ( node.lastChild.nodeName === 'BR' ) {
+				node.appendChild( document.createElement( 'br' ) ); // a trailing line break needs a second <br> to show
+			}
+			return node;
+		}
+
+		function rtList( b ) {
+			var list = document.createElement( b.format === 'ordered' ? 'ol' : 'ul' );
+			( b.children || [] ).forEach( function ( c ) {
+				if ( c && c.type === 'list' ) {
+					var host = list.lastElementChild || list.appendChild( document.createElement( 'li' ) );
+					host.appendChild( rtList( c ) );
+					return;
+				}
+				var li = document.createElement( 'li' );
+				rtInline( c && c.children, li );
+				list.appendChild( rtFill( li ) );
+			} );
+			if ( ! list.firstChild ) {
+				list.appendChild( rtFill( document.createElement( 'li' ) ) );
+			}
+			return list;
+		}
+
+		function rtImage( image ) {
+			var src = rtSafeURL( image && image.url );
+			return el( 'figure', { class: 'hg-rt-img', contenteditable: 'false', 'data-hg-image': JSON.stringify( image || {} ) }, [
+				src ? el( 'img', { src: src, alt: ( image && image.alternativeText ) || '' } ) : null,
+				el( 'figcaption', { translate: 'no', text: ( image && ( image.alternativeText || image.name ) ) || '' } ),
+				el( 'button', { type: 'button', class: 'hg-rt-remove', title: 'Remove image', 'aria-label': 'Remove image' }, [ el( 'span', { class: 'dashicons dashicons-no-alt', 'aria-hidden': 'true' } ) ] ) ] );
+		}
+
+		function rtBlock( b ) {
+			if ( ! b || typeof b !== 'object' ) {
+				return null;
+			}
+			var n;
+			switch ( b.type ) {
+				case 'paragraph':
+					n = document.createElement( 'p' );
+					break;
+				case 'heading':
+					n = document.createElement( 'h' + Math.min( 6, Math.max( 1, Number( b.level ) || 2 ) ) );
+					break;
+				case 'quote':
+					n = document.createElement( 'blockquote' );
+					break;
+				case 'code':
+					n = document.createElement( 'pre' );
+					if ( b.language ) {
+						n.setAttribute( 'data-language', b.language );
+					}
+					n.textContent = blockText( b );
+					return n;
+				case 'list':
+					return rtList( b );
+				case 'image':
+					return rtImage( b.image );
+				default:
+					return el( 'div', { class: 'hg-rt-raw', contenteditable: 'false', 'data-hg-raw': JSON.stringify( b ) }, [
+						el( 'span', { class: 'dashicons dashicons-lock', 'aria-hidden': 'true' } ),
+						el( 'span', { text: 'Block “' + b.type + '” — kept as it is' } ),
+						el( 'button', { type: 'button', class: 'hg-rt-remove', title: 'Remove block', 'aria-label': 'Remove block' }, [ el( 'span', { class: 'dashicons dashicons-no-alt', 'aria-hidden': 'true' } ) ] ) ] );
+			}
+			rtInline( b.children, n );
+			return rtFill( n );
+		}
+
 		function blockText( b ) {
 			var out = '';
 			( function walk( nodes ) {
 				( nodes || [] ).forEach( function ( n ) {
 					if ( n.type === 'text' ) {
 						out += n.text || '';
-					} else if ( n.type === 'list-item' ) {
-						walk( n.children );
-						out += '\n';
 					} else {
 						walk( n.children );
 					}
 				} );
 			}( b.children ) );
-			return out.replace( /\n$/, '' );
+			return out;
 		}
 
-		function buildBlock( it ) {
-			if ( ! it.dirty && it.orig ) {
-				return it.orig;
-			}
-			var text = function ( t ) {
-				return [ { type: 'text', text: t } ];
-			};
-			switch ( it.kind ) {
-				case 'heading':
-					return { type: 'heading', level: it.level || 2, children: text( it.text ) };
-				case 'quote':
-					return { type: 'quote', children: text( it.text ) };
-				case 'code':
-					return { type: 'code', children: text( it.text ) };
-				case 'list-ordered':
-				case 'list-unordered':
-					return { type: 'list', format: it.kind === 'list-ordered' ? 'ordered' : 'unordered', children: it.text.split( '\n' ).filter( function ( l ) {
-						return l.trim() !== '';
-					} ).map( function ( l ) {
-						return { type: 'list-item', children: text( l ) };
-					} ) };
-				case 'image':
-					return { type: 'image', image: it.image || {}, children: text( '' ) };
-			}
-			return { type: 'paragraph', children: text( it.text ) };
-		}
-
-		function blocksEditor( f, obj ) {
-			var items = ( Array.isArray( obj[ f.name ] ) ? obj[ f.name ] : [] ).map( function ( b ) {
-				var kind = b.type;
-				if ( b.type === 'list' ) {
-					kind = b.format === 'ordered' ? 'list-ordered' : 'list-unordered';
+		function rtRender( blocks, root ) {
+			root.innerHTML = '';
+			( blocks || [] ).forEach( function ( b ) {
+				var n = rtBlock( b );
+				if ( n ) {
+					root.appendChild( n );
 				}
-				return { orig: b, kind: kind, level: b.level, text: blockText( b ), image: b.image };
 			} );
-			var box = el( 'div', { class: 'hg-blocks' } );
-			function sync() {
-				var keep = items.filter( function ( it ) {
-					return it.kind === 'image' ? !! ( it.image && it.image.url ) : ( it.text || '' ).trim() !== '' || ( it.orig && ! it.dirty );
-				} );
-				obj[ f.name ] = keep.length ? keep.map( buildBlock ) : null;
+		}
+
+		/* Reading the DOM back. paste: input from the clipboard (whitespace collapsed, no images). */
+		function rtPushText( out, text, marks ) {
+			if ( text === '' ) {
+				return;
 			}
-			function render() {
-				box.innerHTML = '';
-				items.forEach( function ( it, i ) {
-					var kindSel = el( 'select', { 'aria-label': 'Block type', onchange: function ( e ) {
-						var v = e.target.value;
-						it.dirty = true;
-						if ( v.indexOf( 'h' ) === 0 && v.length === 2 ) {
-							it.kind = 'heading';
-							it.level = Number( v.charAt( 1 ) );
-						} else {
-							it.kind = v;
-						}
-						sync();
-						render();
-					} } );
-					[ [ 'paragraph', 'Paragraph' ], [ 'h1', 'Heading 1' ], [ 'h2', 'Heading 2' ], [ 'h3', 'Heading 3' ], [ 'h4', 'Heading 4' ], [ 'h5', 'Heading 5' ], [ 'h6', 'Heading 6' ],
-						[ 'quote', 'Quote' ], [ 'code', 'Code' ], [ 'list-unordered', 'Bulleted list' ], [ 'list-ordered', 'Numbered list' ], [ 'image', 'Image' ] ].forEach( function ( o ) {
-						var cur = it.kind === 'heading' ? 'h' + ( it.level || 2 ) : it.kind;
-						kindSel.appendChild( el( 'option', { value: o[ 0 ], selected: cur === o[ 0 ], text: o[ 1 ] } ) );
+			var last = out[ out.length - 1 ];
+			if ( last && last.type === 'text' && RT_MARKS.every( function ( m ) {
+				return !! last[ m[ 0 ] ] === !! marks[ m[ 0 ] ];
+			} ) ) {
+				last.text += text;
+				return;
+			}
+			var t = { type: 'text', text: text };
+			RT_MARKS.forEach( function ( m ) {
+				if ( marks[ m[ 0 ] ] ) {
+					t[ m[ 0 ] ] = true;
+				}
+			} );
+			out.push( t );
+		}
+
+		function rtReadNode( c, marks, out, opt ) {
+			if ( c.nodeType === 3 ) {
+				var s = c.nodeValue.replace( /​/g, '' ).replace( / /g, ' ' );
+				if ( opt.paste && ! opt.pre ) {
+					s = s.replace( /\s+/g, ' ' );
+				}
+				rtPushText( out, s, marks );
+				return;
+			}
+			if ( c.nodeType !== 1 || RT_SKIP.test( c.tagName ) || c.classList.contains( 'hg-rt-remove' ) ) {
+				return;
+			}
+			var tag = c.tagName;
+			if ( tag === 'BR' ) {
+				rtPushText( out, '\n', marks );
+				return;
+			}
+			if ( ! RT_INLINE.test( tag ) && out.length ) {
+				rtPushText( out, '\n', marks ); // a block inside a line (a <p> in a list item, a <div> in a quote)
+			}
+			if ( tag === 'A' ) {
+				var url = rtSafeURL( c.getAttribute( 'href' ) );
+				var kids = [];
+				rtReadKids( c, marks, kids, opt );
+				if ( url && kids.length ) {
+					out.push( { type: 'link', url: url, children: kids } );
+				} else {
+					kids.forEach( function ( k ) {
+						rtPushText( out, k.text, k );
 					} );
-					var body;
-					if ( it.kind === 'image' ) {
-						var img = it.image && it.image.url ? el( 'img', { src: it.image.url, alt: '', class: 'hg-block-img' } ) : null;
-						body = el( 'div', { class: 'hg-row' }, [ img, btn( it.image && it.image.url ? 'Replace image' : 'Choose image', 'button-small', function () {
-							pickMedia( false, 'image', function ( list ) {
-								var a = list[ 0 ];
-								it.dirty = true;
-								it.image = { url: a.url, alternativeText: a.alt || null, width: a.width || null, height: a.height || null, name: a.filename, mime: a.mime };
-								sync();
-								render();
-							} );
-						} ) ] );
-					} else {
-						body = el( 'textarea', { class: 'large-text' + ( it.kind === 'code' ? ' code' : '' ), rows: it.kind.indexOf( 'list' ) === 0 ? 4 : 2, translate: 'no',
-							placeholder: it.kind.indexOf( 'list' ) === 0 ? 'One item per line' : '', oninput: function ( e ) {
-								it.text = e.target.value;
-								it.dirty = true;
-								sync();
-							} }, [ it.text || '' ] );
-					}
-					box.appendChild( el( 'div', { class: 'hg-block' }, [ el( 'div', { class: 'hg-block-bar' }, [ kindSel,
-						btn( '↑', 'button-small', function () {
-							move( items, i, -1 );
-							sync();
-							render();
-						}, 'Move up' ),
-						btn( '↓', 'button-small', function () {
-							move( items, i, 1 );
-							sync();
-							render();
-						}, 'Move down' ),
-						btn( '×', 'button-small hg-del', function () {
-							items.splice( i, 1 );
-							sync();
-							render();
-						}, 'Remove block' ) ] ), body ] ) );
-				} );
-				box.appendChild( btn( '+ Add block', 'button-small', function () {
-					items.push( { kind: 'paragraph', text: '', dirty: true } );
-					sync();
-					render();
-				} ) );
+				}
+				return;
 			}
-			render();
+			var m = Object.assign( {}, marks );
+			if ( tag === 'B' || tag === 'STRONG' ) {
+				m.bold = true;
+			} else if ( tag === 'I' || tag === 'EM' || tag === 'CITE' || tag === 'VAR' || tag === 'DFN' ) {
+				m.italic = true;
+			} else if ( tag === 'U' || tag === 'INS' ) {
+				m.underline = true;
+			} else if ( tag === 'S' || tag === 'STRIKE' || tag === 'DEL' ) {
+				m.strikethrough = true;
+			} else if ( tag === 'CODE' || tag === 'KBD' || tag === 'SAMP' ) {
+				m.code = true;
+			}
+			var st = c.style;
+			if ( st ) {
+				if ( st.fontWeight ) { // <b style="font-weight:normal"> wraps whole Google Docs pastes
+					m.bold = st.fontWeight === 'bold' || st.fontWeight === 'bolder' || Number( st.fontWeight ) >= 600;
+				}
+				if ( st.fontStyle ) {
+					m.italic = st.fontStyle === 'italic' || st.fontStyle === 'oblique';
+				}
+				var deco = ( st.textDecorationLine || '' ) + ' ' + ( st.textDecoration || '' );
+				if ( /underline/.test( deco ) ) {
+					m.underline = true;
+				}
+				if ( /line-through/.test( deco ) ) {
+					m.strikethrough = true;
+				}
+			}
+			rtReadKids( c, m, out, opt );
+		}
+
+		function rtReadKids( node, marks, out, opt ) {
+			Array.prototype.forEach.call( node.childNodes, function ( c ) {
+				rtReadNode( c, marks, out, opt );
+			} );
+		}
+
+		function rtInlineOf( node, opt ) {
+			var out = [];
+			rtReadKids( node, {}, out, opt );
+			return rtFinish( out );
+		}
+
+		function rtFinish( out ) {
+			var last = out[ out.length - 1 ];
+			if ( last && last.type === 'text' && /\n$/.test( last.text ) ) {
+				last.text = last.text.replace( /\n$/, '' ); // the <br> a browser keeps at the end of a line
+				if ( last.text === '' && out.length > 1 ) {
+					out.pop();
+				}
+			}
+			if ( rtLeadingEmpty( out ) ) {
+				out.shift();
+			}
+			return out.length ? out : [ { type: 'text', text: '' } ];
+		}
+
+		function rtLeadingEmpty( out ) {
+			return out.length > 1 && out[ 0 ].type === 'text' && out[ 0 ].text === '';
+		}
+
+		function rtReadList( listEl, indent, opt ) {
+			var b = { type: 'list', format: listEl.tagName === 'OL' ? 'ordered' : 'unordered', children: [] };
+			if ( indent ) {
+				b.indentLevel = indent;
+			}
+			Array.prototype.forEach.call( listEl.childNodes, function ( li ) {
+				if ( li.nodeType !== 1 ) {
+					return;
+				}
+				if ( li.tagName === 'UL' || li.tagName === 'OL' ) {
+					b.children.push( rtReadList( li, indent + 1, opt ) );
+					return;
+				}
+				if ( li.tagName !== 'LI' ) {
+					return;
+				}
+				var kids = [], nested = [];
+				Array.prototype.forEach.call( li.childNodes, function ( c ) {
+					if ( c.nodeType === 1 && ( c.tagName === 'UL' || c.tagName === 'OL' ) ) {
+						nested.push( rtReadList( c, indent + 1, opt ) );
+					} else {
+						rtReadNode( c, {}, kids, opt );
+					}
+				} );
+				b.children.push( { type: 'list-item', children: rtFinish( kids ) } );
+				Array.prototype.push.apply( b.children, nested );
+			} );
+			return b;
+		}
+
+		function rtHasBlocks( node ) {
+			return Array.prototype.some.call( node.children, function ( c ) {
+				return ! RT_INLINE.test( c.tagName ) && ! RT_SKIP.test( c.tagName );
+			} );
+		}
+
+		function rtRead( root, opt ) {
+			opt = opt || {};
+			var blocks = [];
+			var loose = null;
+			function flush() {
+				if ( loose ) {
+					blocks.push( { type: 'paragraph', children: rtFinish( loose ) } );
+					loose = null;
+				}
+			}
+			( function container( node ) {
+				Array.prototype.forEach.call( node.childNodes, function ( c ) {
+					if ( c.nodeType === 3 || ( c.nodeType === 1 && RT_INLINE.test( c.tagName ) ) ) {
+						if ( c.nodeType === 3 && ! loose && ! c.nodeValue.trim() ) {
+							return;
+						}
+						loose = loose || [];
+						rtReadNode( c, {}, loose, opt );
+						return;
+					}
+					if ( c.nodeType !== 1 ) {
+						return;
+					}
+					flush();
+					var tag = c.tagName;
+					if ( c.hasAttribute( 'data-hg-raw' ) && ! opt.paste ) {
+						try {
+							blocks.push( JSON.parse( c.getAttribute( 'data-hg-raw' ) ) );
+						} catch ( err ) {}
+						return;
+					}
+					if ( c.classList.contains( 'hg-rt-img' ) ) {
+						if ( ! opt.paste ) {
+							try {
+								blocks.push( { type: 'image', image: JSON.parse( c.getAttribute( 'data-hg-image' ) ), children: [ { type: 'text', text: '' } ] } );
+							} catch ( err ) {}
+						}
+						return;
+					}
+					if ( RT_SKIP.test( tag ) ) {
+						return;
+					}
+					if ( /^H[1-6]$/.test( tag ) ) {
+						blocks.push( { type: 'heading', level: Number( tag.charAt( 1 ) ), children: rtInlineOf( c, opt ) } );
+					} else if ( tag === 'BLOCKQUOTE' ) {
+						blocks.push( { type: 'quote', children: rtInlineOf( c, opt ) } );
+					} else if ( tag === 'PRE' ) {
+						var code = { type: 'code', children: [ { type: 'text', text: c.textContent.replace( /​/g, '' ).replace( /\n$/, '' ) } ] };
+						if ( c.getAttribute( 'data-language' ) ) {
+							code.language = c.getAttribute( 'data-language' );
+						}
+						blocks.push( code );
+					} else if ( tag === 'UL' || tag === 'OL' ) {
+						blocks.push( rtReadList( c, 0, opt ) );
+					} else if ( rtHasBlocks( c ) ) {
+						container( c ); // <div>, <section>, <table>, a <p> a browser put a list in…
+					} else {
+						blocks.push( { type: 'paragraph', children: rtInlineOf( c, opt ) } );
+					}
+				} );
+			}( root ) );
+			flush();
+			var empty = function ( b ) {
+				return b.type === 'paragraph' && blockText( b ).trim() === '';
+			};
+			while ( blocks.length && empty( blocks[ 0 ] ) ) {
+				blocks.shift();
+			}
+			while ( blocks.length && empty( blocks[ blocks.length - 1 ] ) ) {
+				blocks.pop();
+			}
+			return blocks;
+		}
+
+		function rtTool( icon, title, fn, extra ) {
+			return el( 'button', Object.assign( { type: 'button', class: 'hg-rt-btn', title: title, 'aria-label': title, 'aria-pressed': 'false', onmousedown: function ( e ) {
+				e.preventDefault(); // keep the selection in the text
+			}, onclick: function ( e ) {
+				e.preventDefault();
+				fn();
+			} }, extra || {} ), [ el( 'span', { class: 'dashicons dashicons-' + icon, 'aria-hidden': 'true' } ) ] );
+		}
+
+		function richEditor( f, obj, id ) {
+			var box = el( 'div', { class: 'hg-rt' } );
+			var area = el( 'div', { class: 'hg-rt-area', id: id, contenteditable: model.locked ? 'false' : 'true', role: 'textbox', 'aria-multiline': 'true', 'aria-label': f.name, translate: 'no', spellcheck: 'true' } );
+			var words = el( 'span', { class: 'hg-rt-count' } );
+			var path = el( 'span', { class: 'hg-rt-path', 'aria-hidden': 'true' } );
+			var saved = null;
+			rtRender( Array.isArray( obj[ f.name ] ) ? obj[ f.name ] : [], area );
+
+			function ensureLine() {
+				if ( ! area.querySelector( 'p,h1,h2,h3,h4,h5,h6,blockquote,pre,ul,ol,figure,.hg-rt-raw' ) && area.textContent.trim() === '' ) {
+					area.innerHTML = '';
+					area.appendChild( rtFill( document.createElement( 'p' ) ) );
+				}
+			}
+			function count() {
+				var n = ( area.innerText || area.textContent || '' ).trim().split( /\s+/ ).filter( Boolean ).length;
+				words.textContent = 'Word count: ' + n;
+				box.classList.toggle( 'is-empty', ! n && ! area.querySelector( 'figure,.hg-rt-raw,ul,ol,pre,blockquote,h1,h2,h3,h4,h5,h6' ) );
+			}
+			// Browsers sometimes nest blocks in a <p> (a list started on an empty line): lift them out so
+			// the next edits work on clean blocks. The nodes move as they are, so the caret stays.
+			function tidy() {
+				Array.prototype.slice.call( area.children ).forEach( function ( c ) {
+					if ( ( c.tagName !== 'P' && c.tagName !== 'DIV' ) || c.isContentEditable === false || ! rtHasBlocks( c ) ) {
+						return;
+					}
+					var run = null;
+					while ( c.firstChild ) {
+						var k = c.firstChild;
+						if ( k.nodeType === 1 && ! RT_INLINE.test( k.tagName ) ) {
+							run = null;
+							area.insertBefore( k, c );
+						} else if ( ! run && k.nodeType === 3 && ! k.nodeValue.trim() ) {
+							c.removeChild( k );
+						} else {
+							if ( ! run ) {
+								run = area.insertBefore( document.createElement( 'p' ), c );
+							}
+							run.appendChild( k );
+						}
+					}
+					area.removeChild( c );
+				} );
+			}
+			function sync() {
+				tidy();
+				var blocks = rtRead( area );
+				obj[ f.name ] = blocks.length ? blocks : null;
+				count();
+				refresh();
+			}
+			function inArea( node ) {
+				return node && ( node === area || area.contains( node ) );
+			}
+			function range() {
+				var sel = window.getSelection();
+				if ( sel && sel.rangeCount && inArea( sel.getRangeAt( 0 ).commonAncestorContainer ) ) {
+					return sel.getRangeAt( 0 );
+				}
+				return null;
+			}
+			function focus() {
+				if ( range() ) {
+					return;
+				}
+				area.focus();
+				if ( saved ) {
+					var sel = window.getSelection();
+					sel.removeAllRanges();
+					sel.addRange( saved );
+				}
+			}
+			function closest( sel ) {
+				var r = range();
+				var n = r ? r.startContainer : null;
+				n = n && n.nodeType === 3 ? n.parentNode : n;
+				var hit = n && n.closest ? n.closest( sel ) : null;
+				return hit && inArea( hit ) && hit !== area ? hit : null;
+			}
+			function topBlock() {
+				var r = range();
+				var n = r ? r.startContainer : null;
+				while ( n && n.parentNode && n.parentNode !== area ) {
+					n = n.parentNode;
+				}
+				return n && n.parentNode === area ? n : null;
+			}
+			function exec( cmd, arg ) {
+				focus();
+				document.execCommand( cmd, false, arg === undefined ? null : arg );
+				sync();
+			}
+			function formatBlock( tag ) {
+				focus();
+				if ( tag !== 'blockquote' && closest( 'blockquote' ) ) {
+					document.execCommand( 'formatBlock', false, 'p' ); // leave the quote first
+				}
+				var list = closest( 'ul,ol' );
+				if ( list && tag !== 'p' ) {
+					document.execCommand( list.tagName === 'OL' ? 'insertOrderedList' : 'insertUnorderedList' );
+				}
+				document.execCommand( 'formatBlock', false, tag );
+				sync();
+			}
+			function inlineCode() {
+				focus();
+				var cur = closest( 'code' );
+				var r = range();
+				if ( cur ) {
+					var parent = cur.parentNode;
+					while ( cur.firstChild ) {
+						parent.insertBefore( cur.firstChild, cur );
+					}
+					parent.removeChild( cur );
+					parent.normalize();
+				} else if ( r && ! r.collapsed ) {
+					var code = document.createElement( 'code' );
+					code.appendChild( r.extractContents() );
+					Array.prototype.forEach.call( code.querySelectorAll( 'code' ), function ( c ) {
+						while ( c.firstChild ) {
+							c.parentNode.insertBefore( c.firstChild, c );
+						}
+						c.parentNode.removeChild( c );
+					} );
+					r.insertNode( code );
+					var sel = window.getSelection();
+					var nr = document.createRange();
+					nr.selectNodeContents( code );
+					sel.removeAllRanges();
+					sel.addRange( nr );
+				}
+				sync();
+			}
+			function link() {
+				focus();
+				var a = closest( 'a' );
+				var input = window.prompt( 'Link address (https://…, /path, mailto:…). Leave it empty to remove the link.', a ? a.getAttribute( 'href' ) : 'https://' );
+				if ( input === null ) {
+					return;
+				}
+				focus();
+				if ( input.trim() === '' || input.trim() === 'https://' ) {
+					if ( a ) {
+						var r0 = document.createRange();
+						r0.selectNodeContents( a );
+						var s0 = window.getSelection();
+						s0.removeAllRanges();
+						s0.addRange( r0 );
+						document.execCommand( 'unlink' );
+					}
+					sync();
+					return;
+				}
+				var url = rtSafeURL( input );
+				if ( ! url ) {
+					window.alert( 'This address cannot be used as a link.' );
+					return;
+				}
+				if ( a ) {
+					a.setAttribute( 'href', url );
+				} else {
+					var r = range();
+					if ( r && r.collapsed ) {
+						var t = document.createElement( 'a' );
+						t.setAttribute( 'href', url );
+						t.textContent = input.trim();
+						document.execCommand( 'insertHTML', false, t.outerHTML );
+					} else {
+						document.execCommand( 'createLink', false, url );
+					}
+				}
+				sync();
+			}
+			function image() {
+				var at = topBlock();
+				pickMedia( false, 'image', function ( list ) {
+					var a = list[ 0 ];
+					if ( ! a ) {
+						return;
+					}
+					var fig = rtImage( { url: a.url, alternativeText: a.alt || null, caption: a.caption || null, width: a.width || null, height: a.height || null, name: a.filename, mime: a.mime } );
+					if ( at && at.parentNode === area ) {
+						var empty = at.tagName === 'P' && at.textContent.trim() === '';
+						area.insertBefore( fig, at.nextSibling );
+						if ( empty ) {
+							area.removeChild( at );
+						}
+					} else {
+						area.appendChild( fig );
+					}
+					if ( ! fig.nextSibling ) {
+						area.appendChild( rtFill( document.createElement( 'p' ) ) );
+					}
+					sync();
+				} );
+			}
+
+			var fmt = el( 'select', { class: 'hg-rt-format', 'aria-label': 'Text format', onchange: function ( e ) {
+				formatBlock( e.target.value );
+			} } );
+			[ [ 'p', 'Paragraph' ], [ 'h1', 'Heading 1' ], [ 'h2', 'Heading 2' ], [ 'h3', 'Heading 3' ], [ 'h4', 'Heading 4' ], [ 'h5', 'Heading 5' ], [ 'h6', 'Heading 6' ],
+				[ 'blockquote', 'Quote' ], [ 'pre', 'Code block' ] ].forEach( function ( o ) {
+				fmt.appendChild( el( 'option', { value: o[ 0 ], text: o[ 1 ] } ) );
+			} );
+			var tools = {
+				bold: rtTool( 'editor-bold', 'Bold (Ctrl+B)', function () {
+					exec( 'bold' );
+				} ),
+				italic: rtTool( 'editor-italic', 'Italic (Ctrl+I)', function () {
+					exec( 'italic' );
+				} ),
+				underline: rtTool( 'editor-underline', 'Underline (Ctrl+U)', function () {
+					exec( 'underline' );
+				} ),
+				strike: rtTool( 'editor-strikethrough', 'Strikethrough', function () {
+					exec( 'strikeThrough' );
+				} ),
+				code: rtTool( 'editor-code', 'Inline code', inlineCode ),
+				ul: rtTool( 'editor-ul', 'Bulleted list', function () {
+					if ( closest( 'pre,blockquote,h1,h2,h3,h4,h5,h6' ) ) {
+						document.execCommand( 'formatBlock', false, 'p' );
+					}
+					exec( 'insertUnorderedList' );
+				} ),
+				ol: rtTool( 'editor-ol', 'Numbered list', function () {
+					if ( closest( 'pre,blockquote,h1,h2,h3,h4,h5,h6' ) ) {
+						document.execCommand( 'formatBlock', false, 'p' );
+					}
+					exec( 'insertOrderedList' );
+				} ),
+				quote: rtTool( 'editor-quote', 'Quote', function () {
+					formatBlock( closest( 'blockquote' ) ? 'p' : 'blockquote' );
+				} ),
+				link: rtTool( 'admin-links', 'Insert or edit link (Ctrl+K)', link ),
+				image: rtTool( 'format-image', 'Add image', image ),
+				clear: rtTool( 'editor-removeformatting', 'Clear formatting', function () {
+					exec( 'removeFormat' );
+				} ),
+				undo: rtTool( 'undo', 'Undo (Ctrl+Z)', function () {
+					exec( 'undo' );
+				} ),
+				redo: rtTool( 'redo', 'Redo (Ctrl+Shift+Z)', function () {
+					exec( 'redo' );
+				} )
+			};
+			var group = function ( list ) {
+				return el( 'span', { class: 'hg-rt-group', role: 'group' }, list );
+			};
+			var bar = el( 'div', { class: 'hg-rt-bar', role: 'toolbar', 'aria-label': 'Formatting', 'aria-controls': id }, [
+				group( [ fmt ] ),
+				group( [ tools.bold, tools.italic, tools.underline, tools.strike, tools.code ] ),
+				group( [ tools.ul, tools.ol, tools.quote ] ),
+				group( [ tools.link, tools.image, tools.clear ] ),
+				el( 'span', { class: 'hg-rt-group hg-rt-end', role: 'group' }, [ tools.undo, tools.redo ] ) ] );
+
+			function press( b, on ) {
+				b.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+			}
+			function refresh() {
+				if ( ! range() ) {
+					return;
+				}
+				var q = function ( c ) {
+					try {
+						return document.queryCommandState( c );
+					} catch ( err ) {
+						return false;
+					}
+				};
+				press( tools.bold, q( 'bold' ) );
+				press( tools.italic, q( 'italic' ) );
+				press( tools.underline, q( 'underline' ) );
+				press( tools.strike, q( 'strikeThrough' ) );
+				press( tools.code, !! closest( 'code' ) );
+				press( tools.ul, !! closest( 'ul' ) );
+				press( tools.ol, !! closest( 'ol' ) );
+				press( tools.quote, !! closest( 'blockquote' ) );
+				press( tools.link, !! closest( 'a' ) );
+				var tb = topBlock();
+				var tag = tb && tb.tagName ? tb.tagName.toLowerCase() : 'p';
+				fmt.value = /^(h[1-6]|blockquote|pre)$/.test( tag ) ? tag : 'p';
+				var trail = [];
+				var r = range();
+				for ( var n = r.startContainer; n && n !== area; n = n.parentNode ) {
+					if ( n.nodeType === 1 ) {
+						trail.unshift( n.tagName.toLowerCase() );
+					}
+				}
+				path.textContent = trail.join( ' » ' );
+			}
+
+			area.addEventListener( 'input', function () {
+				ensureLine();
+				sync();
+			} );
+			area.addEventListener( 'focus', function () {
+				try {
+					document.execCommand( 'defaultParagraphSeparator', false, 'p' );
+					document.execCommand( 'styleWithCSS', false, false );
+				} catch ( err ) {}
+			} );
+			document.addEventListener( 'selectionchange', function () {
+				var r = range();
+				if ( r ) {
+					saved = r.cloneRange();
+					refresh();
+				}
+			} );
+			area.addEventListener( 'keydown', function ( e ) {
+				if ( ( e.ctrlKey || e.metaKey ) && ! e.altKey && e.key.toLowerCase() === 'k' ) {
+					e.preventDefault();
+					link();
+				}
+			} );
+			area.addEventListener( 'click', function ( e ) {
+				var rm = e.target.closest && e.target.closest( '.hg-rt-remove' );
+				if ( rm && inArea( rm ) ) {
+					e.preventDefault();
+					var blk = rm.closest( '.hg-rt-img,.hg-rt-raw' );
+					if ( blk ) {
+						blk.parentNode.removeChild( blk );
+						ensureLine();
+						sync();
+					}
+				}
+			} );
+			area.addEventListener( 'drop', function ( e ) {
+				if ( e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length ) {
+					e.preventDefault(); // files go through the media library (the image button)
+				}
+			} );
+			area.addEventListener( 'paste', function ( e ) {
+				var cd = e.clipboardData;
+				if ( ! cd ) {
+					return;
+				}
+				e.preventDefault();
+				var html = cd.getData( 'text/html' );
+				var blocks;
+				if ( html ) {
+					blocks = rtRead( new DOMParser().parseFromString( html, 'text/html' ).body, { paste: true } );
+				} else {
+					blocks = String( cd.getData( 'text/plain' ) || '' ).replace( /\r\n?/g, '\n' ).split( /\n\s*\n/ ).filter( function ( p ) {
+						return p.trim() !== '';
+					} ).map( function ( p ) {
+						return { type: 'paragraph', children: [ { type: 'text', text: p } ] };
+					} );
+				}
+				if ( ! blocks.length ) {
+					return;
+				}
+				var tmp = document.createElement( 'div' );
+				rtRender( blocks, tmp );
+				var single = blocks.length === 1 && blocks[ 0 ].type === 'paragraph';
+				document.execCommand( 'insertHTML', false, single ? tmp.firstChild.innerHTML.replace( /<br>$/, '' ) : tmp.innerHTML );
+				sync();
+			} );
+
+			ensureLine();
+			count();
+			box.appendChild( bar );
+			box.appendChild( area );
+			box.appendChild( el( 'div', { class: 'hg-rt-foot' }, [ path, words ] ) );
 			return box;
+		}
+
+		/* Rich text (Markdown): a textarea with a toolbar that writes the Markdown for you. */
+		function markdownEditor( f, obj, id ) {
+			var ta = el( 'textarea', { id: id, class: 'hg-md-area code', rows: 12, translate: 'no', spellcheck: 'true', oninput: function ( e ) {
+				setVal( obj, f.name, e.target.value );
+			} }, [ obj[ f.name ] || '' ] );
+			function put( text, s, e, selFrom, selTo ) {
+				ta.focus();
+				ta.setSelectionRange( s, e );
+				if ( ! document.execCommand( 'insertText', false, text ) ) {
+					ta.setRangeText( text, s, e, 'end' );
+					ta.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+				}
+				if ( selFrom !== undefined ) {
+					ta.setSelectionRange( selFrom, selTo );
+				}
+			}
+			function wrap( before, after, sample ) {
+				var s = ta.selectionStart, e = ta.selectionEnd;
+				var mid = ta.value.slice( s, e ) || sample;
+				put( before + mid + after, s, e, s + before.length, s + before.length + mid.length );
+			}
+			function lines( prefix ) {
+				var v = ta.value;
+				var s = v.lastIndexOf( '\n', ta.selectionStart - 1 ) + 1;
+				var e = v.indexOf( '\n', ta.selectionEnd );
+				if ( e < 0 ) {
+					e = v.length;
+				}
+				var n = 0;
+				var out = v.slice( s, e ).split( '\n' ).map( function ( l ) {
+					n++;
+					return ( typeof prefix === 'function' ? prefix( n ) : prefix ) + l;
+				} ).join( '\n' );
+				put( out, s, e, s, s + out.length );
+			}
+			var mdTool = function ( icon, title, fn ) {
+				return rtTool( icon, title, fn, { 'aria-pressed': null } );
+			};
+			var bar = el( 'div', { class: 'hg-rt-bar', role: 'toolbar', 'aria-label': 'Markdown', 'aria-controls': id }, [
+				el( 'span', { class: 'hg-rt-group' }, [
+					mdTool( 'heading', 'Heading', function () {
+						lines( '## ' );
+					} ),
+					mdTool( 'editor-bold', 'Bold', function () {
+						wrap( '**', '**', 'bold text' );
+					} ),
+					mdTool( 'editor-italic', 'Italic', function () {
+						wrap( '_', '_', 'italic text' );
+					} ),
+					mdTool( 'editor-strikethrough', 'Strikethrough', function () {
+						wrap( '~~', '~~', 'text' );
+					} ),
+					mdTool( 'editor-code', 'Inline code', function () {
+						wrap( '`', '`', 'code' );
+					} ) ] ),
+				el( 'span', { class: 'hg-rt-group' }, [
+					mdTool( 'editor-ul', 'Bulleted list', function () {
+						lines( '- ' );
+					} ),
+					mdTool( 'editor-ol', 'Numbered list', function () {
+						lines( function ( n ) {
+							return n + '. ';
+						} );
+					} ),
+					mdTool( 'editor-quote', 'Quote', function () {
+						lines( '> ' );
+					} ),
+					mdTool( 'media-code', 'Code block', function () {
+						wrap( '```\n', '\n```', 'code' );
+					} ) ] ),
+				el( 'span', { class: 'hg-rt-group' }, [
+					mdTool( 'admin-links', 'Link', function () {
+						var url = window.prompt( 'Link address', 'https://' );
+						if ( url ) {
+							wrap( '[', '](' + url.trim() + ')', 'link text' );
+						}
+					} ),
+					mdTool( 'format-image', 'Image from the media library', function () {
+						pickMedia( false, 'image', function ( list ) {
+							var a = list[ 0 ];
+							if ( a ) {
+								put( '![' + ( a.alt || a.title || '' ) + '](' + a.url + ')', ta.selectionStart, ta.selectionEnd );
+							}
+						} );
+					} ) ] ),
+				el( 'span', { class: 'hg-rt-group hg-rt-end hg-rt-tag' }, [ 'Markdown' ] ) ] );
+			return el( 'div', { class: 'hg-rt hg-md' }, [ bar, ta ] );
 		}
 
 		/* Media */
@@ -658,6 +1375,14 @@
 
 		root.innerHTML = '';
 		renderObject( model.schema, state, root, [] );
+		var title = document.getElementById( 'hg-entry-title' );
+		var titleField = title && title.getAttribute( 'data-field' );
+		if ( titleField ) {
+			root.addEventListener( 'input', function () {
+				var t = state[ titleField ];
+				title.textContent = t !== null && t !== undefined && String( t ).trim() !== '' ? String( t ) : title.getAttribute( 'data-empty' );
+			} );
+		}
 		var publish = document.getElementById( 'hg-publish' );
 		form.querySelectorAll( '[data-hg-publish]' ).forEach( function ( b ) {
 			b.addEventListener( 'click', function () {
