@@ -7,13 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"wpgo/internal/plugins"
 )
-
-var slugRe = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
 
 const manifestTmpl = `{
   "slug": %q,
@@ -76,8 +73,8 @@ func scaffold(args []string) error {
 	if fs.NArg() == 1 && *slug == "" {
 		*slug = fs.Arg(0)
 	}
-	if !slugRe.MatchString(*slug) {
-		return errors.New("new: -slug must be lowercase letters, digits and dashes")
+	if !plugins.ValidSlug(*slug) || plugins.ReservedSlug(*slug) {
+		return errors.New("new: -slug must be a valid, non-reserved plugin slug")
 	}
 	if *dir == "" {
 		*dir = *slug
@@ -89,8 +86,13 @@ func scaffold(args []string) error {
 		}
 		*name = strings.Join(parts, " ")
 	}
-	if _, err := os.Stat(filepath.Join(*dir, plugins.ManifestFile)); err == nil {
-		return fmt.Errorf("new: %s already has a plugin.json", *dir)
+	for _, name := range []string{plugins.ManifestFile, "main.go", "main_test.go", plugins.ReadmeFile, "go.mod"} {
+		path := filepath.Join(*dir, name)
+		if _, err := os.Lstat(path); err == nil {
+			return fmt.Errorf("new: %s already exists", path)
+		} else if !os.IsNotExist(err) {
+			return err
+		}
 	}
 	if err := os.MkdirAll(*dir, 0o755); err != nil {
 		return err
@@ -100,10 +102,18 @@ func scaffold(args []string) error {
 		"main.go":            fmt.Sprintf(mainTmpl, *slug),
 		"main_test.go":       testTmpl,
 		plugins.ReadmeFile:   "# " + *name + "\n\nDescribe what the plugin does.\n",
-		"go.mod":             fmt.Sprintf("module example.com/%s\n\ngo 1.27\n\nrequire wpgo v0.0.0\n\nreplace wpgo => %s\n", *slug, *sdk),
+		"go.mod":             fmt.Sprintf("module example.com/%s\n\ngo 1.27\n\nrequire wpgo v0.0.0\n\nreplace wpgo => %q\n", *slug, *sdk),
 	}
 	for n, c := range files {
-		if err := os.WriteFile(filepath.Join(*dir, n), []byte(c), 0o644); err != nil {
+		f, err := os.OpenFile(filepath.Join(*dir, n), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+		if err != nil {
+			return err
+		}
+		_, err = f.WriteString(c)
+		if closeErr := f.Close(); err == nil {
+			err = closeErr
+		}
+		if err != nil {
 			return err
 		}
 	}

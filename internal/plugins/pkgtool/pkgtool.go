@@ -49,8 +49,38 @@ func keygen(args []string) error {
 	}
 	pubPath, keyPath := *out+".pub", *out+".key"
 	if _, err := os.Stat(keyPath); err == nil {
+		if _, err := os.Stat(pubPath); os.IsNotExist(err) {
+			text, err := os.ReadFile(keyPath)
+			if err != nil {
+				return err
+			}
+			priv, err := plugins.ParsePrivateKey(string(text))
+			if err != nil {
+				return fmt.Errorf("keygen: %s: %w", keyPath, err)
+			}
+			f, err := os.OpenFile(pubPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+			if err != nil {
+				return err
+			}
+			_, err = f.WriteString(plugins.EncodeKey(priv.Public().(ed25519.PublicKey)) + "\n")
+			if closeErr := f.Close(); err == nil {
+				err = closeErr
+			}
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
 		fmt.Printf("keeping existing key %s\n", keyPath)
 		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	if _, err := os.Lstat(pubPath); err == nil {
+		return fmt.Errorf("keygen: %s already exists", pubPath)
+	} else if !os.IsNotExist(err) {
+		return err
 	}
 	pub, priv, err := plugins.GenerateKey()
 	if err != nil {
@@ -65,14 +95,26 @@ func keygen(args []string) error {
 	if err := os.MkdirAll(filepath.Dir(keyPath), 0o755); err != nil {
 		return err
 	}
-	if err := os.WriteFile(keyPath, []byte(header+plugins.EncodeKey(priv)+"\n"), 0o600); err != nil {
+	if err := writeNewKeyFile(keyPath, header+plugins.EncodeKey(priv)+"\n", 0o600); err != nil {
 		return err
 	}
-	if err := os.WriteFile(pubPath, []byte(header+plugins.EncodeKey(pub)+"\n"), 0o644); err != nil {
+	if err := writeNewKeyFile(pubPath, header+plugins.EncodeKey(pub)+"\n", 0o644); err != nil {
 		return err
 	}
 	fmt.Printf("wrote %s and %s\n", pubPath, keyPath)
 	return nil
+}
+
+func writeNewKeyFile(path, content string, mode os.FileMode) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString(content)
+	if closeErr := f.Close(); err == nil {
+		err = closeErr
+	}
+	return err
 }
 
 func pack(args []string) error {
