@@ -37,6 +37,8 @@ func init() {
 		})
 	optionGroups["pixel"] = groupOf(pixelSlug, "Pursae Pixel", (*Server).pixelLoad,
 		func(s *Server, ctx context.Context, v pixelSettings) error { return s.pixelSave(ctx, v) })
+	optionGroups["analytics"] = groupOf(analyticsSlug, "Pursae Analytics", (*Server).analyticsLoad,
+		func(s *Server, ctx context.Context, v analyticsSettings) error { return s.analyticsSave(ctx, v) })
 	optionGroups["cookie"] = groupOf(gooikeSlug, "Pursae Cookie", (*Server).gooikeLoad,
 		func(s *Server, ctx context.Context, v gooikeSettings) error { return s.gooikeSave(ctx, v) })
 	optionGroups["contact"] = groupOf(gontactSlug, "Pursae Contact Form", (*Server).gontactLoadOptions,

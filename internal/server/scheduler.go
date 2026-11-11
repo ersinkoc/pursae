@@ -124,8 +124,9 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		},
 		"wp_mail_smtp_daily": func(ctx context.Context, _ map[string]any) error { return s.mailSMTPDaily(ctx) },
 		gooikeScanJob:        func(ctx context.Context, _ map[string]any) error { return s.gooikeScanRun(ctx) },
-		gooikePurgeJob:       func(ctx context.Context, _ map[string]any) error { _, err := s.gooikePurge(ctx); return err }, // Gooike consent log retention
-		pixelPurgeJob:        func(ctx context.Context, _ map[string]any) error { _, err := s.pixelPurge(ctx); return err },  // Pursae Pixel delivery log retention
+		gooikePurgeJob:       func(ctx context.Context, _ map[string]any) error { _, err := s.gooikePurge(ctx); return err },    // Gooike consent log retention
+		pixelPurgeJob:        func(ctx context.Context, _ map[string]any) error { _, err := s.pixelPurge(ctx); return err },     // Pursae Pixel delivery log retention
+		analyticsPurgeJob:    func(ctx context.Context, _ map[string]any) error { _, err := s.analyticsPurge(ctx); return err }, // Pursae Analytics retention
 		"adminsecgo_daily":   func(ctx context.Context, _ map[string]any) error { return s.adminsecDaily(ctx) },
 		gooDailyJob:          func(ctx context.Context, _ map[string]any) error { return s.gooDaily(ctx) },                     // Goocommerce
 		gooWeeklyJob:         func(ctx context.Context, _ map[string]any) error { return s.gooWeeklySummary(ctx, time.Now()) }, // Goocommerce: weekly summary e-mail
