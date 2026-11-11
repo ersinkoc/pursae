@@ -155,6 +155,16 @@ func TestBuildPreservesUnicodeAttachmentFilename(t *testing.T) {
 	}
 }
 
+func TestBuildKeepsASCIIAttachmentParametersQuoted(t *testing.T) {
+	raw, err := (&Mailer{From: "a@example.test"}).Build(Message{To: []string{"b@example.test"}, Attachments: []Attachment{{Name: "my-cv.txt", Data: []byte("x")}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(raw, []byte(`filename="my-cv.txt"`)) || !bytes.Contains(raw, []byte(`name="my-cv.txt"`)) {
+		t.Fatalf("missing quoted filename parameters:\n%s", raw)
+	}
+}
+
 func TestBuildEncodesUnicodeDisplayNames(t *testing.T) {
 	m := &Mailer{From: "Gönderen <sender@example.test>"}
 	raw, err := m.Build(Message{To: []string{"Özlem <to@example.test>"}, Cc: []string{"José <cc@example.test>"}})

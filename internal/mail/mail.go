@@ -123,8 +123,8 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 			if ct == "" {
 				ct = "application/octet-stream"
 			}
-			name := strings.TrimPrefix(mime.FormatMediaType("x", map[string]string{"name": a.Name}), "x")
-			disposition := mime.FormatMediaType("attachment", map[string]string{"filename": a.Name})
+			name := attachmentParameter("name", a.Name)
+			disposition := "attachment" + attachmentParameter("filename", a.Name)
 			b.WriteString("\r\n--" + mixed + "\r\nContent-Type: " + ct + name + "\r\nContent-Transfer-Encoding: base64\r\n" +
 				"Content-Disposition: " + disposition + "\r\n\r\n")
 			enc := base64.StdEncoding.EncodeToString(a.Data)
@@ -143,6 +143,20 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 	}
 	b.Write(part)
 	return b.Bytes(), nil
+}
+
+// Keep ASCII token parameters quoted as in earlier messages; extended MIME
+// parameters carry non-ASCII filenames without encoded-word ambiguity.
+func attachmentParameter(key, value string) string {
+	param := strings.TrimPrefix(mime.FormatMediaType("x", map[string]string{key: value}), "x")
+	prefix := "; " + key + "="
+	if strings.HasPrefix(param, prefix) {
+		v := strings.TrimPrefix(param, prefix)
+		if !strings.HasPrefix(v, `"`) {
+			return prefix + `"` + v + `"`
+		}
+	}
+	return param
 }
 
 // Encode non-ASCII display names as MIME encoded words, while retaining the
