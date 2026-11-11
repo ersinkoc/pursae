@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -65,14 +66,16 @@ func WebBuilderContentHash(content string) string {
 
 // rawOr returns raw, or def when raw is empty or JSON null.
 func rawOr(raw json.RawMessage, def string) []byte {
-	if len(raw) == 0 || string(raw) == "null" {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
 		return []byte(def)
 	}
 	return raw
 }
 
 func requireDoc(doc json.RawMessage) error {
-	if len(doc) == 0 || string(doc) == "null" {
+	trimmed := bytes.TrimSpace(doc)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
 		return errors.New("web builder: doc is required")
 	}
 	return nil

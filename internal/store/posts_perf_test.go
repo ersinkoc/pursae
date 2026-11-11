@@ -1,7 +1,12 @@
 package store
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
+	"fmt"
+	"math"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +35,94 @@ func TestDateArchiveRange(t *testing.T) {
 	}
 }
 
+func TestDateArchiveRangeRejectsSkippedLocalDate(t *testing.T) {
+	var b bytes.Buffer
+	b.WriteString("TZif")
+	b.WriteByte(0)
+	b.Write(make([]byte, 15))
+	for _, v := range []uint32{0, 0, 0, 1, 2, 8} {
+		_ = binary.Write(&b, binary.BigEndian, v)
+	}
+	_ = binary.Write(&b, binary.BigEndian, int32(1325239200))
+	b.WriteByte(1)
+	_ = binary.Write(&b, binary.BigEndian, int32(-36000))
+	b.Write([]byte{0, 0})
+	_ = binary.Write(&b, binary.BigEndian, int32(50400))
+	b.Write([]byte{0, 4})
+	b.WriteString("OLD\x00NEW\x00")
+	loc, err := time.LoadLocationFromTZData("synthetic-skip", b.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, ok := DateArchiveRange(2011, 12, 30, loc); ok {
+		t.Fatal("skipped date was accepted")
+	}
+	if _, _, ok := DateArchiveRange(2011, 12, 31, loc); !ok {
+		t.Fatal("valid following date was rejected")
+	}
+	from, to, ok := DateArchiveRange(2011, 12, 29, loc)
+	if !ok || to.Sub(from) != 24*time.Hour {
+		t.Fatalf("previous date: %v..%v ok=%v", from, to, ok)
+	}
+}
+
+func TestDateArchiveRangeWithMidnightGap(t *testing.T) {
+	var b bytes.Buffer
+	b.WriteString("TZif")
+	b.WriteByte(0)
+	b.Write(make([]byte, 15))
+	for _, v := range []uint32{0, 0, 0, 1, 2, 8} {
+		_ = binary.Write(&b, binary.BigEndian, v)
+	}
+	_ = binary.Write(&b, binary.BigEndian, int32(1711854000))
+	b.WriteByte(1)
+	_ = binary.Write(&b, binary.BigEndian, int32(-10800))
+	b.Write([]byte{0, 0})
+	_ = binary.Write(&b, binary.BigEndian, int32(-7200))
+	b.Write([]byte{1, 4})
+	b.WriteString("OLD\x00NEW\x00")
+	loc, err := time.LoadLocationFromTZData("synthetic-midnight", b.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		day      int
+		duration time.Duration
+	}{{30, 24 * time.Hour}, {31, 23 * time.Hour}} {
+		from, to, ok := DateArchiveRange(2024, 3, tc.day, loc)
+		if !ok || to.Sub(from) != tc.duration {
+			t.Errorf("day %d: %v..%v ok=%v", tc.day, from, to, ok)
+		}
+	}
+}
+
+func TestDateArchiveRangeWithSkippedFirstDay(t *testing.T) {
+	var b bytes.Buffer
+	b.WriteString("TZif")
+	b.WriteByte(0)
+	b.Write(make([]byte, 15))
+	for _, v := range []uint32{0, 0, 0, 1, 2, 8} {
+		_ = binary.Write(&b, binary.BigEndian, v)
+	}
+	_ = binary.Write(&b, binary.BigEndian, int32(time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC).Unix()))
+	b.WriteByte(1)
+	_ = binary.Write(&b, binary.BigEndian, int32(-36000))
+	b.Write([]byte{0, 0})
+	_ = binary.Write(&b, binary.BigEndian, int32(50400))
+	b.Write([]byte{0, 4})
+	b.WriteString("OLD\x00NEW\x00")
+	loc, err := time.LoadLocationFromTZData("skip-new-year", b.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, month := range []int{0, 1} {
+		from, _, ok := DateArchiveRange(2024, month, 0, loc)
+		if !ok || from.Year() != 2024 || from.Month() != time.January || from.Day() != 2 {
+			t.Errorf("month=%d from=%v ok=%v", month, from, ok)
+		}
+	}
+}
+
 func TestLimitOffsetClamp(t *testing.T) {
 	if got := limitOffset(10, 0); got != " LIMIT 10 OFFSET 0" {
 		t.Errorf("page 0: %q", got)
@@ -40,6 +133,15 @@ func TestLimitOffsetClamp(t *testing.T) {
 	// A page number near MaxInt used to overflow (page-1)*perPage into a negative OFFSET (a 500).
 	if got := limitOffset(100, int(^uint(0)>>1)); got != " LIMIT 100 OFFSET 99999900" {
 		t.Errorf("huge page: %q", got)
+	}
+}
+
+func TestLimitOffsetLargePageSizeDoesNotOverflow(t *testing.T) {
+	if strconv.IntSize < 64 {
+		t.Skip("requires 64-bit int")
+	}
+	if got := limitOffset(math.MaxInt, 3); got != fmt.Sprintf(" LIMIT %d OFFSET %d", math.MaxInt, int64(math.MaxInt64)) {
+		t.Fatalf("offset overflowed: %q", got)
 	}
 }
 
