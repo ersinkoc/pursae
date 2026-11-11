@@ -64,6 +64,7 @@ type postRow struct {
 	IsTrash              bool
 	ViewLabel            string
 	BuilderURL           string // "Edit with Pursae Web Builder" (webbuilder_admin.go)
+	DuplicateURL         string // "Duplicate": a new draft copy (post_duplicate.go)
 	TranslateURL         string // "Translate visually" (golylang_visual.go)
 	Excerpt              string // shown in the Extended view
 	Inline               inlineData
@@ -470,6 +471,9 @@ func (s *Server) postRows(c *gin.Context, d *postsListData, posts []*store.Post,
 		r.RestoreURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=untrash&_wpnonce=" + s.nonce(c, "untrash-post_"+itoa64(p.ID))
 		r.DeleteURL = "/wp-admin/post?post=" + itoa64(p.ID) + "&action=delete&_wpnonce=" + s.nonce(c, "delete-post_"+itoa64(p.ID))
 		r.BuilderURL = s.wbRowAction(c, p)
+		if s.canDuplicate(u, p) {
+			r.DuplicateURL = duplicateURL(p.ID, s.nonce(c, "duplicate-post_"+itoa64(p.ID)))
+		}
 		if built[p.ID] && s.wbEnabledType(p.Type) {
 			r.States = append(r.States, "Pursae Web Builder")
 		}
@@ -839,6 +843,9 @@ func postNotices(c *gin.Context, lab typeLabels, bulkNonce string) []notice {
 			msg += ` <a href="/wp-admin/edit?post_type=` + lab.Type + `&amp;doaction=undo&amp;action=untrash&amp;ids=` + template.HTMLEscapeString(ids) + `&amp;_wpnonce=` + template.HTMLEscapeString(bulkNonce) + `">Undo</a>`
 		}
 		out = append(out, notice{Type: "success", Message: template.HTML(msg), Dismissible: true})
+	}
+	if id, _ := strconv.ParseInt(c.Query("duplicated"), 10, 64); id > 0 { // post_duplicate.go
+		out = append(out, notice{Type: "success", Message: template.HTML(`1 ` + lower + ` duplicated as a new draft. <a href="/wp-admin/post?post=` + itoa64(id) + `&amp;action=edit">Edit the copy</a>`), Dismissible: true})
 	}
 	if n, _ := strconv.Atoi(c.Query("untrashed")); n > 0 {
 		out = append(out, notice{Type: "success", Message: template.HTML(one(n, "restored from the Trash.", "restored from the Trash.")), Dismissible: true})
@@ -1703,6 +1710,10 @@ func (s *Server) postEdit(c *gin.Context) {
 		return
 	}
 	if s.wbTemplatePostScreen(c, p) { // Theme Builder templates: edit_theme_options, the builder only
+		return
+	}
+	if c.Query("action") == "duplicate" { // a new draft copy (post_duplicate.go)
+		s.duplicatePostAction(c, p)
 		return
 	}
 	switch c.DefaultQuery("action", "edit") {

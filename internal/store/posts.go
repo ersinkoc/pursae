@@ -1091,3 +1091,47 @@ func (s *Store) AdjacentExcept(ctx context.Context, p *Post, previous bool, excl
 		AND (published_at `+cmp+` $2 OR (published_at = $2 AND id `+cmp+` $3)) AND NOT (id = ANY($4))`+filter+`
 		ORDER BY published_at `+dir+`, id `+dir+` LIMIT 1`, args...))
 }
+
+// duplicateSkipMeta are the meta keys a copy does not take: edit locks, old slugs and trash state
+// belong to the original.
+var duplicateSkipMeta = map[string]bool{"_edit_lock": true, "_edit_last": true, "_wp_old_slug": true, "_wp_old_date": true,
+	"_wp_desired_post_slug": true, "_encloseme": true, "_pingme": true}
+
+// DuplicatePost copies a post into a new draft by authorID titled title: content, excerpt, parent,
+// order, format, discussion settings, featured image, meta, terms, the Pursae Web Builder doc and
+// (Pursae Multi Language) the language, in a translation group of its own. Comments, revisions,
+// the password, stickiness and the publish date are not copied. One transaction.
+func (s *Store) DuplicatePost(ctx context.Context, src *Post, authorID int64, title string) (*Post, error) {
+	meta := map[string]any{}
+	for k, v := range src.Meta {
+		if duplicateSkipMeta[k] || strings.HasPrefix(k, "_wp_trash_meta") {
+			continue
+		}
+		meta[k] = v
+	}
+	p := &Post{Type: src.Type, AuthorID: authorID, ParentID: src.ParentID, Title: title, Excerpt: src.Excerpt,
+		Content: src.Content, Status: "draft", FeaturedMediaID: src.FeaturedMediaID, MenuOrder: src.MenuOrder,
+		CommentStatus: src.CommentStatus, PingStatus: src.PingStatus, Format: src.Format, Meta: meta}
+	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		if err := insertPostTx(ctx, tx, p); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO post_terms (post_id, term_id, sort_order)
+			SELECT $2, term_id, sort_order FROM post_terms WHERE post_id = $1`, src.ID, p.ID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO web_builder_docs (post_id, doc, page, html, css, fonts, features, renderer, rev,
+				content_hash, detached, snapshot_user, snapshot_unfiltered)
+			SELECT $2, doc, page, html, css, fonts, features, renderer, 0, content_hash, detached, snapshot_user, snapshot_unfiltered
+			FROM web_builder_docs WHERE post_id = $1`, src.ID, p.ID); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `INSERT INTO pll_post_langs (post_id, lang, grp)
+			SELECT $2, lang, nextval('pll_translation_groups') FROM pll_post_langs WHERE post_id = $1`, src.ID, p.ID)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
