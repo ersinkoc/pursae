@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -109,7 +110,7 @@ func ParseManifest(data []byte) (*Manifest, error) {
 		}
 		return nil, fmt.Errorf("plugin.json: %w", err)
 	}
-	if dec.More() {
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
 		return nil, errors.New("plugin.json: unexpected data after the JSON object")
 	}
 	if err := m.Validate(); err != nil {
@@ -335,24 +336,36 @@ func (m *Manifest) CheckCompatible(coreVersion string) error {
 func compareVersions(a, b string) int {
 	pa, pb := versionParts(a), versionParts(b)
 	for i := range pa {
-		if pa[i] != pb[i] {
-			if pa[i] < pb[i] {
+		if len(pa[i]) != len(pb[i]) {
+			if len(pa[i]) < len(pb[i]) {
 				return -1
 			}
+			return 1
+		}
+		if pa[i] < pb[i] {
+			return -1
+		}
+		if pa[i] > pb[i] {
 			return 1
 		}
 	}
 	return 0
 }
 
-func versionParts(v string) [3]int {
+func versionParts(v string) [3]string {
 	v = strings.TrimPrefix(v, "v")
 	if i := strings.IndexAny(v, "-+"); i >= 0 {
 		v = v[:i]
 	}
-	var out [3]int
+	out := [3]string{"0", "0", "0"}
 	for i, s := range strings.SplitN(v, ".", 3) {
-		out[i], _ = strconv.Atoi(s)
+		if s == "" || strings.Trim(s, "0123456789") != "" {
+			continue
+		}
+		s = strings.TrimLeft(s, "0")
+		if s != "" {
+			out[i] = s
+		}
 	}
 	return out
 }
