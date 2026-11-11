@@ -36,7 +36,7 @@ const (
 	gooikeSlug      = "gooike"
 	gooikeSetting   = "native_gooike"   // the plugin is active
 	gooikeOptions   = "gooike_settings" // gooikeSettings as one JSON object
-	gooikeVersion   = "1.0.0"
+	gooikeVersion   = "1.0.1"
 	gooikeCookie    = "gooike_consent"
 	gooikeNamespace = "gooike/v1"
 	gooikeAssets    = "/wp-content/plugins/gooike/assets"
@@ -77,8 +77,10 @@ type gooikeCookieRow struct {
 	Duration string `json:"duration"`
 }
 
-// gooikeTexts are every visitor-facing string, editable on the Banner screen (and translatable
-// through them: a multilingual site edits them per language or through its string translation).
+// gooikeTexts are every visitor-facing string, editable on the Banner screen. They are one set per
+// site, written in the default language; a multilingual site translates them with Pursae Multi
+// Language's string translations (Languages > Translations), which the page string pass applies
+// to the banner markup like any other page text.
 type gooikeTexts struct {
 	Title          string `json:"title"`
 	Message        string `json:"message"`

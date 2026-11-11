@@ -532,3 +532,47 @@ func TestGooikeScheduledScan(t *testing.T) {
 		t.Error("job not removed when the weekly scan is switched off")
 	}
 }
+
+// TestGooikeMultiLanguage: the banner is one set of texts in the default language; Pursae Multi
+// Language's string translations translate it per language, the saved notice included (it is page
+// text, not part of the JSON config the string pass never touches).
+func TestGooikeMultiLanguage(t *testing.T) {
+	base, c, srv := gooikeSite(t)
+	ctx := context.Background()
+	golylangToggle(t, c, base, "activate")
+	pllAddLanguage(t, c, base, "English", "en_US", "en", "us")
+	pllAddLanguage(t, c, base, "Français", "fr_FR", "fr", "fr")
+
+	tx := gooikeDefaultTexts()
+	fr := map[string]string{
+		tx.Title:          "Nous respectons votre vie privée",
+		tx.Accept:         "Tout accepter",
+		tx.PrefsTitle:     "Préférences de cookies",
+		tx.Close:          "Fermer",
+		tx.WithdrawNotice: "Votre choix a été enregistré.",
+	}
+	for orig, tr := range fr {
+		if err := srv.pllSetString(ctx, "fr", orig, tr); err != nil {
+			t.Fatal(err)
+		}
+	}
+	srv.pllFlushStrings()
+	srv.purgeAll(ctx)
+
+	page := bodyOf(anonGet(t, base+"/fr/"))
+	for _, want := range []string{
+		`<h2 id="gk-title" class="gk-title">Nous respectons votre vie privée</h2>`,
+		`data-gooike="accept">Tout accepter</button>`,
+		`<h2 id="gk-prefs-title" class="gk-title">Préférences de cookies</h2>`,
+		`aria-label="Fermer"`,
+		`<span id="gooike-saved" class="gooike gk-sr" hidden>Votre choix a été enregistré.</span>`,
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("French page lacks %s", want)
+		}
+	}
+	en := bodyOf(anonGet(t, base+"/"))
+	if !strings.Contains(en, `<span id="gooike-saved" class="gooike gk-sr" hidden>`+html.EscapeString(tx.WithdrawNotice)+`</span>`) || strings.Contains(en, "Tout accepter") {
+		t.Error("the English page is not in English")
+	}
+}

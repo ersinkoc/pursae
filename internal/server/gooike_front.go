@@ -142,7 +142,7 @@ func gooikeConfigScript(st *gooikeSettings, preview bool) string {
 		"log": st.LogConsent, "endpoint": "/wp-json/" + gooikeNamespace + "/consent", "geo": st.Geo,
 		"geoEndpoint": "/wp-json/" + gooikeNamespace + "/geo", "reload": st.ReloadOnChange, "float": st.Design.Floating,
 		"modal": t != nil && (t.Layout == "modal" || t.Layout == "wall"), "cookies": cookies, "preview": preview,
-		"saved": st.Texts.WithdrawNotice,
+		"saved": st.Texts.WithdrawNotice, // fallback for cached pages without #gooike-saved
 	}
 	raw, _ := json.Marshal(cfg)
 	return `<script type="application/json" id="gooike-config">` + strings.ReplaceAll(string(raw), "</", `<\/`) + "</script>\n"
@@ -253,6 +253,11 @@ func (s *Server) gooikeMarkup(ctx context.Context, st *gooikeSettings, preview b
 	b.WriteString(`<button type="button" class="gk-btn gk-btn-secondary" data-gooike="save">` + esc(tx.Save) + `</button>`)
 	b.WriteString(`<button type="button" class="gk-btn gk-btn-primary" data-gooike="accept">` + esc(tx.Accept) + `</button>`)
 	b.WriteString(`</div></div></div>` + "\n")
+	// The notice gooike.js announces after a choice: page text (not the JSON config), so Pursae Multi
+	// Language's string pass translates it with the rest of the banner.
+	if tx.WithdrawNotice != "" {
+		b.WriteString(`<span id="gooike-saved" class="gooike gk-sr" hidden>` + esc(tx.WithdrawNotice) + `</span>` + "\n")
+	}
 
 	// Floating button to reopen the preferences and withdraw consent.
 	side := "left"

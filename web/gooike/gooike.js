@@ -176,7 +176,7 @@
 			doc.dispatchEvent(new CustomEvent('gooike:consent', { detail: { id: state.id, categories: state.c.slice(), action: logAction } }));
 		} catch (e) { /* old browsers */ }
 		(window.dataLayer = window.dataLayer || []).push({ event: 'gooike_consent_update', gooike_categories: state.c.slice(), gooike_action: logAction });
-		if (!silent) { announce(C.saved); }
+		if (!silent) { announce(savedText()); }
 		showFloat();
 		if (revoked.length && !C.preview) {
 			deleteCookies(revoked);
@@ -199,6 +199,12 @@
 
 	/* ---------- UI ---------- */
 	var live;
+	// The saved notice is page text (#gooike-saved) so a multilingual site translates it; the config
+	// copy is the fallback for pages cached before it existed.
+	function savedText() {
+		var el = doc.getElementById('gooike-saved');
+		return (el && el.textContent) || C.saved;
+	}
 	function announce(msg) {
 		if (!msg) { return; }
 		if (!live) {

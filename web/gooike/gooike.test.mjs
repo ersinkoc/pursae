@@ -33,7 +33,7 @@ class El {
 	contains() { return true; }
 }
 
-function setup({ cfg = {}, gpc = false, cats = ['statistics', 'marketing'], cookie = '' } = {}) {
+function setup({ cfg = {}, gpc = false, cats = ['statistics', 'marketing'], cookie = '', saved = null, timers = false } = {}) {
 	const C = { cookie: 'gooike_consent', days: 365, v: 1, cats: [{ key: 'necessary', signals: [] }, { key: 'statistics', signals: ['analytics_storage'] }, { key: 'marketing', signals: ['ad_storage'] }],
 		cookies: { statistics: ['_ga', '_gid', '_ga_*'] }, cm: true, log: true, endpoint: '/beacon', mode: 'gdpr', gpc: true, signals: ['analytics_storage', 'ad_storage'], ...cfg };
 	const jar = new Map();
@@ -43,6 +43,7 @@ function setup({ cfg = {}, gpc = false, cats = ['statistics', 'marketing'], cook
 		'gooike-config': Object.assign(new El('script'), { textContent: JSON.stringify(C) }),
 		'gooike-banner': new El('div', { hidden: true }), 'gooike-prefs': new El('div', { hidden: true }), 'gooike-float': new El('button', { hidden: true }),
 	};
+	if (saved !== null) els['gooike-saved'] = new El('span', { hidden: true, text: saved });
 	const blocked = cats.map((c, i) => { const s = new El('script', { type: 'text/plain', 'data-gooike-category': c, 'data-gooike-src': 'https://t.example/' + c + '.js' }); body.appendChild(s); return s; });
 	const listeners = {}; const beacons = []; const gtag = []; const events = [];
 	const doc = {
@@ -66,7 +67,7 @@ function setup({ cfg = {}, gpc = false, cats = ['statistics', 'marketing'], cook
 	const ctx = vm.createContext({
 		document: doc, window: win, crypto: win.crypto, navigator: { globalPrivacyControl: gpc, doNotTrack: '0', sendBeacon: (u, b) => { beacons.push({ u, b }); return true; } },
 		location: { pathname: '/p', protocol: 'https:', hostname: 'example.com', reload() {} }, Blob: class { constructor(p) { this.p = p.join(''); } },
-		CustomEvent: class { constructor(t, o) { this.type = t; this.detail = o.detail; } }, setTimeout: () => 0, JSON, Date, Math, Array, Uint8Array, encodeURIComponent, decodeURIComponent, RegExp,
+		CustomEvent: class { constructor(t, o) { this.type = t; this.detail = o.detail; } }, setTimeout: timers ? (f) => { f(); return 0; } : () => 0, JSON, Date, Math, Array, Uint8Array, encodeURIComponent, decodeURIComponent, RegExp,
 	});
 	vm.runInContext(src, ctx);
 	const click = (attrs) => { const t = new El('button', attrs); for (const f of listeners.click || []) f({ target: t, preventDefault() {} }); };
@@ -123,4 +124,15 @@ test('a stored choice is honoured on load without a banner', () => {
 	assert.equal(t.els['gooike-banner'].hidden, true);
 	assert.deepEqual(t.live().map((s) => s.attrs.src), ['https://t.example/statistics.js']);
 	assert.equal(t.beacons.length, 0, 'restoring a choice is not logged again');
+});
+
+test('the saved notice is read from the page text, so a translated page announces it translated', () => {
+	const status = (t) => t.doc.body.children.find((e) => e.getAttribute('role') === 'status');
+	let t = setup({ cfg: { saved: 'Your choice has been saved.' }, saved: 'Votre choix a été enregistré.', timers: true });
+	t.click({ 'data-gooike': 'reject' });
+	assert.equal(status(t).textContent, 'Votre choix a été enregistré.');
+	// A page cached before #gooike-saved existed falls back to the config copy.
+	t = setup({ cfg: { saved: 'Your choice has been saved.' }, timers: true });
+	t.click({ 'data-gooike': 'reject' });
+	assert.equal(status(t).textContent, 'Your choice has been saved.');
 });
