@@ -209,11 +209,41 @@ func (s *Store) Installed() bool {
 func (s *Store) Get(key string) any {
 	s.mu.RLock()
 	v, ok := s.cache[key]
+	if ok {
+		v = cloneValue(v)
+	}
 	s.mu.RUnlock()
 	if ok {
 		return v
 	}
-	return Defaults[key]
+	return cloneValue(Defaults[key])
+}
+
+// Cached JSON objects and arrays must not escape: callers may modify values while
+// preparing a subsequent Set, and the cache must change only after a commit.
+func cloneValue(v any) any {
+	switch v := v.(type) {
+	case map[string]any:
+		if v == nil {
+			return map[string]any(nil)
+		}
+		out := make(map[string]any, len(v))
+		for k, value := range v {
+			out[k] = cloneValue(value)
+		}
+		return out
+	case []any:
+		if v == nil {
+			return []any(nil)
+		}
+		out := make([]any, len(v))
+		for i, value := range v {
+			out[i] = cloneValue(value)
+		}
+		return out
+	default:
+		return v
+	}
 }
 
 func (s *Store) String(key string) string {

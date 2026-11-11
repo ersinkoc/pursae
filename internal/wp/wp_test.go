@@ -53,6 +53,28 @@ func TestSanitizeTitle(t *testing.T) {
 	}
 }
 
+func TestRemoveAccentsPreservesNonLetterMarks(t *testing.T) {
+	for _, tc := range []struct{ input, want string }{
+		{"café", "cafe"}, {"1\ufe0f\u20e3", "1\ufe0f\u20e3"}, {"\u0301", "\u0301"}, {"!\ufe0f", "!\ufe0f"},
+	} {
+		if got := RemoveAccents(tc.input); got != tc.want {
+			t.Errorf("RemoveAccents(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}
+
+func TestStripTagsRemovesMatchingRawElements(t *testing.T) {
+	for _, tc := range []struct{ in, want string }{
+		{`<script>let x="</style>";ignore</script>Visible`, "Visible"},
+		{`<style>/* </script> */ .x{color:red}</style>Visible`, "Visible"},
+		{`<script>a</script><b>Visible</b>`, "Visible"},
+	} {
+		if got := StripTags(tc.in); got != tc.want {
+			t.Errorf("StripTags(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
 func TestAutop(t *testing.T) {
 	got := Autop("First line\nsecond line\n\nNew para\n\n<ul><li>x</li></ul>")
 	if !strings.Contains(got, "<p>First line<br />\nsecond line</p>") || !strings.Contains(got, "<p>New para</p>") {
