@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -574,5 +575,70 @@ func TestGooikeMultiLanguage(t *testing.T) {
 	en := bodyOf(anonGet(t, base+"/"))
 	if !strings.Contains(en, `<span id="gooike-saved" class="gooike gk-sr" hidden>`+html.EscapeString(tx.WithdrawNotice)+`</span>`) || strings.Contains(en, "Tout accepter") {
 		t.Error("the English page is not in English")
+	}
+
+	// Policy links lead to the page in the visitor's language: the privacy page by id, the cookie
+	// policy by its path, the KVKK notice by ?page_id=; an external URL is left alone.
+	page2 := func(lang, slug string) *store.Post {
+		p := &store.Post{Type: "page", Title: slug, Slug: slug, Status: "publish", AuthorID: 1}
+		if err := srv.store.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+		if err := srv.pllSetLang(ctx, pllPost, p.ID, lang); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	pairs := [][2]string{{"privacy-en", "confidentialite"}, {"cookie-policy", "politique-cookies"}, {"notice-en", "avis-fr"}}
+	ids := map[string]int64{}
+	for _, pr := range pairs {
+		e, f := page2("en", pr[0]), page2("fr", pr[1])
+		ids[pr[0]] = e.ID
+		if err := srv.pllSaveTranslations(ctx, pllPost, map[string]int64{"en": e.ID, "fr": f.ID}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	st := srv.gooikeLoad()
+	st.Regulation = "kvkk"
+	st.PrivacyPage = ids["privacy-en"]
+	st.CookiePolicyURL = "/cookie-policy/"
+	st.NoticeURL = base + "/?page_id=" + strconv.FormatInt(ids["notice-en"], 10)
+	if err := srv.gooikeSave(ctx, st); err != nil {
+		t.Fatal(err)
+	}
+	srv.purgeAll(ctx)
+	page = bodyOf(anonGet(t, base+"/fr/"))
+	for _, slug := range []string{"confidentialite", "politique-cookies", "avis-fr"} {
+		if !regexp.MustCompile(`<p class="gk-links">.*href="[^"]*/` + slug + `/?"`).MatchString(page) {
+			t.Errorf("the French banner does not link to %s", slug)
+		}
+	}
+	en = bodyOf(anonGet(t, base+"/"))
+	if !strings.Contains(en, `href="/cookie-policy/"`) || !strings.Contains(en, `?page_id=`+strconv.FormatInt(ids["notice-en"], 10)+`"`) || !strings.Contains(en, "privacy-en") ||
+		strings.Contains(en, "confidentialite") {
+		t.Error("the English banner does not keep the English policy links")
+	}
+	st.CookiePolicyURL = "https://legal.example.com/cookie-policy/"
+	_ = srv.gooikeSave(ctx, st)
+	srv.purgeAll(ctx)
+	if page = bodyOf(anonGet(t, base+"/fr/")); !strings.Contains(page, `href="https://legal.example.com/cookie-policy/"`) {
+		t.Error("an external cookie policy URL was changed")
+	}
+}
+
+// TestGooikePllLanguageNecessary: Multi Language's language cookie is set before any choice, so it
+// is declared necessary; a row an earlier scan declared as preferences moves unless the owner edited it.
+func TestGooikePllLanguageNecessary(t *testing.T) {
+	if k, ok := gooikeKnownFirstParty(pllCookie); !ok || k.Category != "necessary" {
+		t.Fatalf("pll_language is declared %q", k.Category)
+	}
+	st := gooikeDefaults()
+	st.Cookies = []gooikeCookieRow{
+		{Name: pllCookie, Category: "preferences", Purpose: gooikePllPurpose},
+		{Name: pllCookie, Category: "preferences", Purpose: "Our own wording."},
+	}
+	st = gooikeSanitize(st)
+	if st.Cookies[0].Category != "necessary" || st.Cookies[1].Category != "preferences" {
+		t.Errorf("categories after sanitize: %q, %q", st.Cookies[0].Category, st.Cookies[1].Category)
 	}
 }

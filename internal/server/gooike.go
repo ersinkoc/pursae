@@ -311,6 +311,11 @@ func gooikeSanitize(st gooikeSettings) gooikeSettings {
 	if st.Cookies == nil {
 		st.Cookies = d.Cookies
 	}
+	for i := range st.Cookies { // pll_language as an earlier scan declared it (unchanged by the owner)
+		if ck := &st.Cookies[i]; ck.Name == pllCookie && ck.Category == "preferences" && ck.Purpose == gooikePllPurpose {
+			ck.Category = "necessary"
+		}
+	}
 	if st.PolicyVersion < 1 {
 		st.PolicyVersion = 1
 	}

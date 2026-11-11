@@ -63,8 +63,15 @@ and settings. It is read from the in-memory settings cache, so rendering a page 
   - banners and the modal are hidden when printing.
 - ✓ **Multilingual-ready texts**: all 26 visitor-facing strings are editable under Banner › Texts,
   with "Reset to defaults" and ready-made language sets (English, Turkish, German, French, Spanish) that
-  fill every text at once; per-language serving stays with Pursae Multi Language's string translation. There is no hard-coded English in the JS: the config carries the strings it
-  needs.
+  fill every text at once. The texts are one set per site; with Pursae Multi Language each language
+  gets them through its string translations (Languages › Translations, or "Record strings on pages"),
+  which translate the banner, the preferences modal, the cookie table and the "saved" notice like any
+  other page text. There is no hard-coded English in the JS: it reads the saved notice from the page
+  (`#gooike-saved`), with the config copy as the fallback.
+- ✓ **Policy links per language**: with Pursae Multi Language the privacy policy, cookie policy and KVKK
+  notice links lead to the page's published translation in the visitor's language: the privacy page by
+  its id, and a typed URL when it is a page of this site (its path, with or without a language prefix,
+  or `?page_id=`). External URLs and pages without a translation are left as they are.
 
 ## 2. Themes (14)
 
@@ -165,7 +172,9 @@ CMP, so it is not suitable for publishers who serve AdSense / Ad Manager ads to 
 - ✓ **Scanner**: it requests the home page and any extra paths you list *through the site itself*, as an
   anonymous visitor and bypassing the page cache. It then:
   - lists every `Set-Cookie`, with the duration read from Max-Age or Expires, and known first-party
-    cookies with their purposes;
+    cookies with their purposes (Pursae Multi Language's `pll_language` is declared necessary: it is
+    set before any choice and only keeps the language the visitor asked for; a row an earlier scan
+    declared as preferences moves to necessary unless its purpose was edited);
   - detects known services in the HTML (including in blocked scripts) and in the script manager, and
     adds their JavaScript cookies;
   - detects YouTube, Vimeo and Maps embeds.

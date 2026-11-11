@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -149,10 +151,10 @@ func gooikeConfigScript(st *gooikeSettings, preview bool) string {
 }
 
 // gooikePrivacyURL is the privacy policy link: the URL typed in Gooike's settings, its page, or
-// the site's Privacy Policy page (Settings › Privacy).
+// the site's Privacy Policy page (Settings › Privacy), in the visitor's language.
 func (s *Server) gooikePrivacyURL(ctx context.Context, st *gooikeSettings) string {
 	if st.PrivacyURL != "" {
-		return st.PrivacyURL
+		return s.gooikeLinkIn(ctx, st.PrivacyURL)
 	}
 	id := st.PrivacyPage
 	if id == 0 {
@@ -161,11 +163,74 @@ func (s *Server) gooikePrivacyURL(ctx context.Context, st *gooikeSettings) strin
 	if id == 0 {
 		return ""
 	}
+	id = s.gooikePageIn(ctx, id)
 	p, err := s.store.GetPost(ctx, id)
 	if err != nil || p.Status != "publish" {
 		return ""
 	}
 	return s.links(ctx).Permalink(p)
+}
+
+// gooikePageIn is page id in the visitor's language (Pursae Multi Language): its published
+// translation, the page itself when it has none or the plugin is off.
+func (s *Server) gooikePageIn(ctx context.Context, id int64) int64 {
+	l := s.pllCurrent(ctx)
+	if l == nil || id <= 0 {
+		return id
+	}
+	if t := s.pllGet(ctx, pllPost, id, l.Slug); t > 0 && t != id {
+		if p, err := s.store.GetPost(ctx, t); err == nil && p.Status == "publish" {
+			return t
+		}
+	}
+	return id
+}
+
+// gooikeLinkIn is a policy URL typed in the settings, in the visitor's language: a link to a page
+// of this site becomes its translation's permalink; any other URL comes back as it is.
+func (s *Server) gooikeLinkIn(ctx context.Context, raw string) string {
+	if raw == "" || s.pllCurrent(ctx) == nil {
+		return raw
+	}
+	id := s.gooikeLocalPage(ctx, raw)
+	if t := s.gooikePageIn(ctx, id); t != id {
+		if p, err := s.store.GetPost(ctx, t); err == nil {
+			return s.links(ctx).Permalink(p)
+		}
+	}
+	return raw
+}
+
+// gooikeLocalPage is the page a URL of this site points to (?page_id= or its path, with or without
+// a language prefix), 0 for any other URL.
+func (s *Server) gooikeLocalPage(ctx context.Context, raw string) int64 {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return 0
+	}
+	home, _ := url.Parse(s.settings.String("home"))
+	if u.Host != "" && (home == nil || !strings.EqualFold(u.Hostname(), home.Hostname())) {
+		return 0
+	}
+	if id, err := strconv.ParseInt(u.Query().Get("page_id"), 10, 64); err == nil && id > 0 {
+		return id
+	}
+	path := u.Path
+	if home != nil {
+		path = strings.TrimPrefix(path, strings.TrimRight(home.Path, "/"))
+	}
+	path = strings.Trim(path, "/")
+	if seg, rest, ok := strings.Cut(path, "/"); ok && pllFind(s.pllLanguages(ctx), seg) != nil {
+		path = rest
+	}
+	if path == "" {
+		return 0
+	}
+	p, err := s.typePostByPath(ctx, "page", path)
+	if err != nil {
+		return 0
+	}
+	return p.ID
 }
 
 const gooikeCookieSVG = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.6 11.2a3 3 0 0 1-3.3-2.9 3 3 0 0 1-3-3.4A3 3 0 0 1 13 2.1 10 10 0 1 0 21.9 12a3 3 0 0 1-.3-.8ZM8 7.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm-1 7a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm5.5 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm.5-7a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm4 3.5a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4Z"/></svg>`
@@ -187,10 +252,10 @@ func (s *Server) gooikeMarkup(ctx context.Context, st *gooikeSettings, preview b
 		links = append(links, `<a href="`+esc(u)+`">`+esc(tx.PrivacyLink)+`</a>`)
 	}
 	if st.CookiePolicyURL != "" {
-		links = append(links, `<a href="`+esc(st.CookiePolicyURL)+`">`+esc(tx.CookieLink)+`</a>`)
+		links = append(links, `<a href="`+esc(s.gooikeLinkIn(ctx, st.CookiePolicyURL))+`">`+esc(tx.CookieLink)+`</a>`)
 	}
 	if st.Regulation == "kvkk" && st.NoticeURL != "" {
-		links = append(links, `<a href="`+esc(st.NoticeURL)+`">`+esc(tx.NoticeLink)+`</a>`)
+		links = append(links, `<a href="`+esc(s.gooikeLinkIn(ctx, st.NoticeURL))+`">`+esc(tx.NoticeLink)+`</a>`)
 	}
 
 	role := `role="region"`

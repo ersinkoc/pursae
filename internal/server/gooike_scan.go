@@ -31,17 +31,23 @@ type gooikeScanResult struct {
 	Errors   []string
 }
 
-// gooikeFirstParty are purposes of cookies WordPress Go and its plugins set.
+// gooikeFirstParty are purposes of cookies WordPress Go and its plugins set. pll_language is
+// necessary: Pursae Multi Language sets it on every visit, before any choice, and it only keeps the
+// language the visitor asked for (a user-interface preference, which needs no consent).
 var gooikeFirstParty = map[string]gooikeCookieRow{
 	"wpgo_logged_in":    {Category: "necessary", Purpose: "Keeps a logged-in user signed in.", Duration: "Session / 14 days"},
 	"comment_author_":   {Category: "preferences", Purpose: "Remembers the details you entered when you left a comment.", Duration: "1 year"},
 	"wp-postpass_":      {Category: "necessary", Purpose: "Remembers the password of a protected post.", Duration: "10 days"},
 	"wpgo_mtnc_":        {Category: "necessary", Purpose: "Lets a visitor with the access link or password see the site in maintenance mode.", Duration: "1 day"},
-	"pll_language":      {Category: "preferences", Purpose: "Remembers the language you chose.", Duration: "1 year"},
+	"pll_language":      {Category: "necessary", Purpose: gooikePllPurpose, Duration: "1 year"},
 	gooikeCookie:        {Category: "necessary", Purpose: "Stores your cookie consent choice.", Duration: "12 months"},
 	"wp-settings-":      {Category: "necessary", Purpose: "Keeps the admin interface settings of a logged-in user.", Duration: "1 year"},
 	"wordpress_test_co": {Category: "necessary", Purpose: "Checks that the browser accepts cookies.", Duration: "Session"},
 }
+
+// gooikePllPurpose is the declared purpose of pll_language. Sites scanned before it moved to
+// "necessary" declared it as "preferences" with this purpose; gooikeSanitize moves those rows.
+const gooikePllPurpose = "Remembers the language you chose."
 
 func gooikeKnownFirstParty(name string) (gooikeCookieRow, bool) {
 	for k, v := range gooikeFirstParty {
