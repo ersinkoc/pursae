@@ -696,9 +696,12 @@ func TestCoreUpdateRefusedWhileBusy(t *testing.T) {
 	_, body, _ := get(t, c, base+"/wp-admin/update-core")
 	nonce := formNonce(t, body[strings.Index(body, "do-core-upgrade"):])
 	coreBusy.Store(true) // an update in another request
-	_, body, _ = post(t, c, base+"/wp-admin/update-core?action=do-core-upgrade", url.Values{"_wpnonce": {nonce}})
-	if !strings.Contains(body, "already running") {
-		t.Errorf("a concurrent update was not refused")
+	// The refusal comes back to Dashboard › Updates as ?error=… (upgradeCore's fail).
+	code, _, loc := post(t, c, base+"/wp-admin/update-core?action=do-core-upgrade", url.Values{"_wpnonce": {nonce}})
+	if msg, _ := url.QueryUnescape(loc); code != http.StatusFound || !strings.Contains(msg, "already running") {
+		t.Errorf("a concurrent update was not refused: %d %s", code, loc)
+	} else if _, page, _ := get(t, c, base+loc); !strings.Contains(page, "already running") {
+		t.Error("Dashboard › Updates does not show the refusal")
 	}
 	if b, _ := os.ReadFile(target); string(b) != "old binary" {
 		t.Error("the executable was replaced")
