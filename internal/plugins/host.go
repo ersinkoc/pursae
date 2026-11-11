@@ -375,7 +375,7 @@ func (h *MemoryHost) AddPost(p PostData) int64 {
 	} else if p.ID > h.nextPost {
 		h.nextPost = p.ID
 	}
-	cp := p
+	cp := copyPostTerms(&p)
 	h.posts[p.ID] = &cp
 	return p.ID
 }
@@ -491,8 +491,24 @@ func (h *MemoryHost) GetPost(_ context.Context, _ string, id int64) (*PostData, 
 	if !ok {
 		return nil, nil
 	}
-	cp := *p
+	cp := copyPostTerms(p)
 	return &cp, nil
+}
+
+func copyPostTerms(p *PostData) PostData {
+	cp := *p
+	if p.Terms != nil {
+		cp.Terms = make(map[string][]TermData, len(p.Terms))
+		for taxonomy, terms := range p.Terms {
+			if terms == nil {
+				cp.Terms[taxonomy] = nil
+				continue
+			}
+			cp.Terms[taxonomy] = make([]TermData, len(terms))
+			copy(cp.Terms[taxonomy], terms)
+		}
+	}
+	return cp
 }
 
 // QueryPosts implements Host with a simple in-memory filter.
@@ -527,7 +543,7 @@ func (h *MemoryHost) QueryPosts(_ context.Context, _ string, q PostQuery) (*Post
 				continue
 			}
 		}
-		all = append(all, *p)
+		all = append(all, copyPostTerms(p))
 	}
 	less := func(a, b *PostData) bool {
 		switch q.OrderBy {
@@ -553,13 +569,17 @@ func (h *MemoryHost) QueryPosts(_ context.Context, _ string, q PostQuery) (*Post
 	if page <= 0 {
 		page = 1
 	}
-	out := &PostList{Total: len(all), Pages: (len(all) + per - 1) / per, Posts: []PostData{}}
+	pages := len(all) / per
+	if len(all)%per != 0 {
+		pages++
+	}
+	out := &PostList{Total: len(all), Pages: pages, Posts: []PostData{}}
+	if page > pages {
+		return out, nil
+	}
 	start := (page - 1) * per
 	if start < len(all) {
-		end := start + per
-		if end > len(all) {
-			end = len(all)
-		}
+		end := start + min(per, len(all)-start)
 		out.Posts = all[start:end]
 	}
 	return out, nil
@@ -692,7 +712,7 @@ func (h *MemoryHost) TransientGet(_ context.Context, plugin, key string) (json.R
 		delete(h.transients, plugin+"\x00"+key)
 		return nil, false, nil
 	}
-	return t.value, true, nil
+	return append(json.RawMessage(nil), t.value...), true, nil
 }
 
 // TransientSet implements Host.
