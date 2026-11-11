@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"wpgo/internal/gocdn"
 	"wpgo/internal/mail"
 	"wpgo/internal/mail/smtptest"
 )
@@ -318,6 +319,22 @@ func TestSignV4(t *testing.T) {
 	mail.SignV4(again, body, "AKIDEXAMPLE", "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY", "us-east-1", "ses", time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC))
 	if again.Header.Get("Authorization") != auth {
 		t.Fatal("signature is not deterministic")
+	}
+}
+
+func TestSignV4CanonicalQuery(t *testing.T) {
+	for _, query := range []string{"?name=a%20b", "?x=z&x=a"} {
+		a, _ := http.NewRequest(http.MethodPost, "https://example.test/path"+query, nil)
+		b, _ := http.NewRequest(http.MethodPost, a.URL.String(), nil)
+		a.Header.Set("Content-Type", "application/json")
+		b.Header.Set("Content-Type", "application/json")
+		body := []byte(`{}`)
+		at := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+		mail.SignV4(a, body, "AKID", "secret", "us-east-1", "ses", at)
+		gocdn.Signer{AccessKey: "AKID", SecretKey: "secret", Region: "us-east-1", Service: "ses"}.Sign(b, gocdn.SHA256Hex(body), at)
+		if got, want := a.Header.Get("Authorization"), b.Header.Get("Authorization"); got != want {
+			t.Errorf("query %q: got %q want %q", query, got, want)
+		}
 	}
 }
 
