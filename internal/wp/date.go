@@ -229,10 +229,10 @@ func abs(n int) int {
 
 // HumanTimeDiff is human_time_diff(): "5 mins", "2 hours", "3 days".
 func HumanTimeDiff(from, to time.Time) string {
-	d := to.Sub(from)
-	if d < 0 {
-		d = -d
+	if from.After(to) {
+		from, to = to, from
 	}
+	d := to.Sub(from)
 	plural := func(n int, one, many string) string {
 		if n <= 1 {
 			return "1 " + one

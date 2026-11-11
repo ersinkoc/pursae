@@ -37,8 +37,8 @@ type feedItem struct {
 	Links       []feedLink `xml:"link"`
 	Description string     `xml:"description"`
 	Encoded     string     `xml:"http://purl.org/rss/1.0/modules/content/ encoded"`
-	Summary     string     `xml:"summary"`
-	Content     string     `xml:"content"`
+	Summary     feedText   `xml:"summary"`
+	Content     feedText   `xml:"content"`
 	PubDate     string     `xml:"pubDate"`
 	DCDate      string     `xml:"http://purl.org/dc/elements/1.1/ date"`
 	Published   string     `xml:"published"`
@@ -48,6 +48,26 @@ type feedItem struct {
 		Text string `xml:",chardata"` // RSS <author>
 	} `xml:"author"`
 	Creator string `xml:"http://purl.org/dc/elements/1.1/ creator"`
+}
+
+// feedText preserves nested XHTML while retaining the decoded text behavior of ordinary Atom content.
+type feedText string
+
+func (t *feedText) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var v struct {
+		Type  string `xml:"type,attr"`
+		Text  string `xml:",chardata"`
+		Inner string `xml:",innerxml"`
+	}
+	if err := d.DecodeElement(&v, &start); err != nil {
+		return err
+	}
+	if strings.EqualFold(v.Type, "xhtml") {
+		*t = feedText(v.Inner)
+	} else {
+		*t = feedText(v.Text)
+	}
+	return nil
 }
 
 type feedDoc struct {
@@ -104,10 +124,10 @@ func ParseFeed(data []byte) (*Feed, error) {
 			item.Description = it.Encoded
 		}
 		if item.Description == "" {
-			item.Description = it.Summary
+			item.Description = string(it.Summary)
 		}
 		if item.Description == "" {
-			item.Description = it.Content
+			item.Description = string(it.Content)
 		}
 		for _, l := range it.Links {
 			if l.Href != "" && (l.Rel == "" || l.Rel == "alternate") {

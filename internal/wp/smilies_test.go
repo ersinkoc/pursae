@@ -71,3 +71,10 @@ func TestParseFeed(t *testing.T) {
 		t.Error("HTML accepted as a feed")
 	}
 }
+
+func TestParseFeedAtomXHTML(t *testing.T) {
+	f, err := ParseFeed([]byte(`<feed xmlns="http://www.w3.org/2005/Atom"><entry><content type="xhtml"><div xmlns="http://www.w3.org/1999/xhtml"><p>Hello <b>world</b></p></div></content></entry></feed>`))
+	if err != nil || len(f.Items) != 1 || !strings.Contains(f.Items[0].Description, `<p>Hello <b>world</b></p>`) {
+		t.Fatalf("feed=%+v err=%v", f, err)
+	}
+}
