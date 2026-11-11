@@ -362,7 +362,8 @@ first build; make sure Docker has network access. Later builds are cached.
   passwords, sessions, login throttling, WordPress nonces, security headers, roles and
   capabilities with multi-role union and per-user allow/deny (deny wins).
 - **Admin** (WordPress 7.1 markup and CSS, English) — Dashboard, Posts, Pages, Media Library
-  (grid with the real `wp.media` modal, list, uploads with image sizes), Comments, Appearance
+  (grid with the real `wp.media` modal, list, uploads with image sizes, replacing a file in place with
+  its ID and URL kept, focal points for cropped sizes and cover images), Comments, Appearance
   (Themes with Live Preview, Customize, Widgets, Menus, Theme File Editor), Plugins, Users,
   Tools (Import/Export WXR, Site Health, personal data export/erase), Settings (General,
   Writing, Reading, Discussion, Media, Permalinks, Privacy), Updates, About.

@@ -275,6 +275,12 @@ type attachmentEditData struct {
 	Preview               string
 	IsImage               bool
 	PluginBoxes           template.HTML // Pursae Multi Language: Translations box
+	// Replace media box and Focal point box (media_replace_admin.go).
+	CanReplace    bool
+	ReplaceNonce  string
+	ReplaceAccept string
+	MaxSize       string
+	Focal         *focalPickerData
 }
 
 // attachmentEdit is post.php?action=edit for an attachment.
@@ -300,7 +306,14 @@ func (s *Server) attachmentEdit(c *gin.Context, a *store.Attachment, notices ...
 	if c.Query("message") == "4" {
 		notices = append(notices, notice{Type: "success", Message: "Media file updated.", Dismissible: true})
 	}
+	notices = append(notices, mediaReplaceNotices(c)...)
 	d.PluginBoxes = s.golylangMediaBox(c, a)
+	if canEditAttachment(currentUser(c), a) {
+		d.CanReplace, d.ReplaceNonce = true, s.nonce(c, "media-replace_"+itoa64(a.ID))
+		d.ReplaceAccept, d.MaxSize = mediaReplaceAccept(a.Mime), media.HumanSize(maxUploadBytes)
+		d.Focal = s.focalPicker(c, a)
+		addBodyHTML(c, template.HTML(focalAssets))
+	}
 	s.pageAssets(c).Script("clipboard", "wp-a11y")
 	s.adminPage(c, "upload", "Edit Media", "post-php post-type-attachment", "admin/attachment-edit", d, notices...)
 }
@@ -324,7 +337,15 @@ func (s *Server) attachmentSave(c *gin.Context, a *store.Attachment) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	s.golylangMediaSaved(c, a) // pll_i18n[lang][field]
+	s.golylangMediaSaved(c, a)                       // pll_i18n[lang][field]
+	if raw, ok := c.GetPostForm("focal_point"); ok { // Focal point box (media_replace_admin.go)
+		if f, valid := parseFocal(raw); valid {
+			if err := s.setAttachmentFocal(c, a, f); err != nil {
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+		}
+	}
 	s.purgeAttachment(a)
 	c.Redirect(http.StatusFound, "/wp-admin/post?post="+itoa64(a.ID)+"&action=edit&message=4")
 }

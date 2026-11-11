@@ -395,6 +395,157 @@ func (s *Store) ReplaceAttachmentFile(ctx context.Context, a *Attachment) error 
 	})
 }
 
+// ReplaceAttachmentFiles is ReplaceAttachmentFile for a replaced file: in the same transaction the
+// moved paths (old uploads path → the path that took its place) are recorded, earlier moves that
+// pointed at a path that moved now point at its new target, and paths the attachment has again
+// stop being redirects.
+func (s *Store) ReplaceAttachmentFiles(ctx context.Context, a *Attachment, moves map[string]string, current []string) error {
+	meta, _ := json.Marshal(orEmpty(a.Meta))
+	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		if _, err := tx.Exec(ctx, `UPDATE media SET file_path=$2, mime_type=$3, file_size=$4, width=$5, height=$6, meta=$7 WHERE id=$1`,
+			a.ID, a.FilePath, a.Mime, a.FileSize, nullInt(a.Width), nullInt(a.Height), meta); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM media_variants WHERE media_id = $1`, a.ID); err != nil {
+			return err
+		}
+		for _, v := range a.Variants {
+			if _, err := tx.Exec(ctx, `INSERT INTO media_variants(media_id, name, file_path, width, height, mime_type, file_size)
+				VALUES ($1,$2,$3,$4,$5,$6,$7)`, a.ID, v.Name, v.FilePath, v.Width, v.Height, v.Mime, v.FileSize); err != nil {
+				return err
+			}
+		}
+		for from, to := range moves {
+			if _, err := tx.Exec(ctx, `UPDATE media_moved_files SET target = $3 WHERE media_id = $1 AND target = $2`, a.ID, from, to); err != nil {
+				return err
+			}
+		}
+		for from, to := range moves {
+			if from == to {
+				continue
+			}
+			if _, err := tx.Exec(ctx, `INSERT INTO media_moved_files(path, media_id, target) VALUES ($1,$2,$3)
+				ON CONFLICT (path) DO UPDATE SET media_id = EXCLUDED.media_id, target = EXCLUDED.target, created_at = now()`,
+				from, a.ID, to); err != nil {
+				return err
+			}
+		}
+		if len(current) > 0 {
+			if _, err := tx.Exec(ctx, `DELETE FROM media_moved_files WHERE path = ANY($1)`, current); err != nil {
+				return err
+			}
+		}
+		_, err := tx.Exec(ctx, `DELETE FROM media_moved_files WHERE media_id = $1 AND path = target`, a.ID)
+		return err
+	})
+}
+
+// MovedFile is a path an attachment no longer has after a replace, and where it went.
+type MovedFile struct {
+	Path    string
+	MediaID int64
+	Target  string
+}
+
+// MovedFiles lists the moved paths (of the given attachments; all when ids is nil).
+func (s *Store) MovedFiles(ctx context.Context, ids []int64) ([]MovedFile, error) {
+	q, args := `SELECT path, media_id, target FROM media_moved_files`, []any{}
+	if ids != nil {
+		q, args = q+` WHERE media_id = ANY($1)`, []any{ids}
+	}
+	rows, err := s.Pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []MovedFile
+	for rows.Next() {
+		var m MovedFile
+		if err := rows.Scan(&m.Path, &m.MediaID, &m.Target); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+// MovedFileTarget is the path a moved uploads path redirects to.
+func (s *Store) MovedFileTarget(ctx context.Context, path string) (string, bool) {
+	var t string
+	if err := s.Pool.QueryRow(ctx, `SELECT target FROM media_moved_files WHERE path = $1`, path).Scan(&t); err != nil {
+		return "", false
+	}
+	return t, true
+}
+
+// MovedPathsOfOthers lists which of paths are moved paths of attachments other than id.
+func (s *Store) MovedPathsOfOthers(ctx context.Context, paths []string, id int64) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(paths) == 0 {
+		return out, nil
+	}
+	rows, err := s.Pool.Query(ctx, `SELECT path FROM media_moved_files WHERE path = ANY($1) AND media_id <> $2`, paths, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var p string
+		if err := rows.Scan(&p); err != nil {
+			return nil, err
+		}
+		out[p] = true
+	}
+	return out, rows.Err()
+}
+
+// FileStateAttachments loads the attachments whose files carry a version or a focal point
+// (meta file_version / focal_point), with their sub-sizes; ids limits them to some (nil: all).
+func (s *Store) FileStateAttachments(ctx context.Context, ids []int64) ([]*Attachment, error) {
+	q, args := `SELECT `+attCols+` FROM media WHERE (meta ? 'file_version' OR meta ? 'focal_point')`, []any{}
+	if ids != nil {
+		q, args = q+` AND id = ANY($1)`, []any{ids}
+	}
+	rows, err := s.Pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	var list []*Attachment
+	for rows.Next() {
+		a, err := scanAttachment(rows)
+		if err != nil {
+			rows.Close()
+			return nil, err
+		}
+		list = append(list, a)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return list, s.loadVariants(ctx, list)
+}
+
+// SetAttachmentMeta merges keys into an attachment's meta (a nil value deletes the key) without
+// touching the rest of the row, so it cannot undo a concurrent edit of the texts.
+func (s *Store) SetAttachmentMeta(ctx context.Context, id int64, set map[string]any) error {
+	add := map[string]any{}
+	var del []string
+	for k, v := range set {
+		if v == nil {
+			del = append(del, k)
+		} else {
+			add[k] = v
+		}
+	}
+	raw, _ := json.Marshal(add)
+	if del == nil {
+		del = []string{}
+	}
+	_, err := s.Pool.Exec(ctx, `UPDATE media SET meta = (meta - $3::text[]) || $2::jsonb WHERE id = $1`, id, raw, del)
+	return err
+}
+
 // ImageAttachmentIDs lists the ids of all image attachments (oldest first).
 func (s *Store) ImageAttachmentIDs(ctx context.Context) ([]int64, error) {
 	rows, err := s.Pool.Query(ctx, `SELECT id FROM media WHERE mime_type LIKE 'image/%' ORDER BY id`)

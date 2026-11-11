@@ -303,9 +303,23 @@ func (s *Server) gocdnRewriteMedia(c *gin.Context, st gocdnSettings, body []byte
 	for _, h := range hits {
 		var repl string
 		hasQuery := h.end < len(body) && body[h.end] == '?'
-		if st.ImgRewrite && !hasQuery && gocdnImageExt[strings.ToLower(path.Ext(h.rel))] {
+		// A replaced file's URL carries only its version (?v=…, media_front.go): the image service
+		// takes it over, so the new file gets a new service URL too.
+		verLen := 0
+		if hasQuery {
+			verLen = mediaVersionQueryLen(body[h.end:])
+		}
+		if st.ImgRewrite && (!hasQuery || verLen > 0) && gocdnImageExt[strings.ToLower(path.Ext(h.rel))] {
 			p := gocdn.ImageParams{Q: st.ImgRewriteQ, Format: "auto"}
 			repl = imgBase + gocdnSignedPath(key, h.rel, p, st.ImgSign)
+			if verLen > 0 {
+				sep := "?"
+				if strings.Contains(repl, "?") {
+					sep = "&"
+				}
+				repl += sep + string(body[h.end+1:h.end+verLen])
+				h.end += verLen
+			}
 			if isXML { // a raw "&" makes the whole sitemap or feed invalid XML
 				repl = strings.ReplaceAll(repl, "&", "&amp;")
 			}

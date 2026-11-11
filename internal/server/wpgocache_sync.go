@@ -68,6 +68,15 @@ func (s *Server) applyRemotePurge(payload string) {
 	if m.Origin == cacheOrigin() {
 		return
 	}
+	if m.All {
+		// A whole-site purge is also how another instance announces a replaced file or a new
+		// focal point: reload the media index before pages are rendered again (media_replace.go).
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		if err := s.loadMediaIndex(ctx); err != nil {
+			slog.Warn("media index: reload after a remote purge", "err", err)
+		}
+		cancel()
+	}
 	if c := s.currentCache(); c != nil {
 		c.Apply(m.Purge)
 	}
@@ -106,6 +115,7 @@ func (s *Server) listenCachePurges(ctx context.Context, missed bool) error {
 		return err
 	}
 	if missed { // purges announced while nobody listened are lost
+		_ = s.loadMediaIndex(ctx)
 		if c := s.currentCache(); c != nil {
 			c.Apply(cache.Purge{All: true})
 		}

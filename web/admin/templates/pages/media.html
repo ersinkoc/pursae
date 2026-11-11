@@ -70,7 +70,7 @@
 		<td class="title column-title has-row-actions column-primary" data-colname="File">
 			<strong class="has-media-icon"><a href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)"><span class="media-icon {{if .IsIcon}}document-icon{{else}}image-icon{{end}}"><img width="{{if .IsIcon}}48{{else}}60{{end}}" height="{{if .IsIcon}}64{{else}}60{{end}}" src="{{.Thumb}}" class="attachment-60x60 size-60x60" alt="" decoding="async" loading="lazy" /></span>{{.Title}}</a></strong>
 			<p class="filename"><span class="screen-reader-text">File name: </span>{{.FileName}}</p>
-			<div class="row-actions">{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete aria-button-if-js" onclick="return showNotice.warn();" aria-label="Delete &#8220;{{.Title}}&#8221; permanently" role="button">Delete Permanently</a> | </span>{{end}}<span class="view"><a href="{{.ViewURL}}" aria-label="View &#8220;{{.Title}}&#8221;" rel="bookmark">View</a> | </span><span class="copy"><span class="copy-to-clipboard-container"><button type="button" class="button-link copy-attachment-url media-library" data-clipboard-text="{{.FileURL}}" aria-label="Copy &#8220;{{.Title}}&#8221; URL to clipboard">Copy URL</button><span class="success hidden" aria-hidden="true">Copied!</span></span> | </span><span class="download"><a href="{{.FileURL}}" aria-label="Download &#8220;{{.Title}}&#8221;" download>Download file</a></span></div>
+			<div class="row-actions">{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span><span class="replace"><a href="{{.EditURL}}#wpgo-replace-media" aria-label="Replace the file of &#8220;{{.Title}}&#8221;">Replace</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete aria-button-if-js" onclick="return showNotice.warn();" aria-label="Delete &#8220;{{.Title}}&#8221; permanently" role="button">Delete Permanently</a> | </span>{{end}}<span class="view"><a href="{{.ViewURL}}" aria-label="View &#8220;{{.Title}}&#8221;" rel="bookmark">View</a> | </span><span class="copy"><span class="copy-to-clipboard-container"><button type="button" class="button-link copy-attachment-url media-library" data-clipboard-text="{{.FileURL}}" aria-label="Copy &#8220;{{.Title}}&#8221; URL to clipboard">Copy URL</button><span class="success hidden" aria-hidden="true">Copied!</span></span> | </span><span class="download"><a href="{{.FileURL}}" aria-label="Download &#8220;{{.Title}}&#8221;" download>Download file</a></span></div>
 			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
 		</td>
 		<td class="author column-author" data-colname="Author"><a href="{{.AuthorURL}}">{{.Author}}</a></td>
@@ -204,12 +204,39 @@
 </div>
 </div>
 </div>
+{{if .CanReplace}}<div id="wpgo-replace-media" class="postbox">
+<div class="postbox-header"><h2 class="hndle">Replace media</h2></div>
+<div class="inside">
+	<p>Upload a new version of this file. The media item keeps its ID, so every post, page, gallery and featured image that uses it shows the new file. A file of the same type also keeps the current URL.</p>
+	<p><label class="screen-reader-text" for="wpgo-replacement">Choose the new file</label><input type="file" name="replacement" id="wpgo-replacement" form="wpgo-replace-form"{{if .ReplaceAccept}} accept="{{.ReplaceAccept}}"{{end}} required /></p>
+	<p class="description">Use the same kind of file (an image for an image, a video for a video, a document for a document). A different file type, for example PNG instead of JPEG, gets a new file name; links to the old file are redirected to it. Maximum upload file size: {{.MaxSize}}.</p>
+	<p><button type="submit" class="button" form="wpgo-replace-form" id="wpgo-replace-submit">Replace file</button></p>
+</div>
+</div>{{end}}
 </div>
 </div>
-{{if .PluginBoxes}}<div id="postbox-container-2" class="postbox-container"><div id="normal-sortables" class="meta-box-sortables">{{.PluginBoxes}}</div></div>{{end}}
+{{if or .Focal .PluginBoxes}}<div id="postbox-container-2" class="postbox-container"><div id="normal-sortables" class="meta-box-sortables">{{with .Focal}}<div id="wpgo-focal-point" class="postbox">
+<div class="postbox-header"><h2 class="hndle">Focal point</h2></div>
+<div class="inside wpgo-focal">
+	<p>Click the part of the image that must stay visible when the image is cropped: thumbnails and other cropped sizes, and images that fill a box, such as cover blocks, cards and product grids. Arrow keys move the point; hold Shift for larger steps.</p>
+	<div class="wpgo-focal-picker" tabindex="0" role="button" aria-label="Focal point: click the part of the image to keep in view"><img src="{{.Image}}" alt="" draggable="false" style="max-height:420px;width:auto" /><span class="wpgo-focal-dot" style="left:{{.X}};top:{{.Y}}"></span></div>
+	<input type="hidden" class="wpgo-focal-value" name="focal_point" id="wpgo-focal-value" value="{{.Value}}" />
+	<p><strong>Focal point:</strong> <span class="wpgo-focal-label">{{.Label}}</span> <button type="button" class="button-link wpgo-focal-reset">Reset to center</button></p>
+	<div class="wpgo-focal-previews" aria-hidden="true">
+		<figure><img src="{{.Image}}" alt="" width="120" height="120" style="width:120px;height:120px;object-position:{{.X}} {{.Y}}" />Square</figure>
+		<figure><img src="{{.Image}}" alt="" width="200" height="113" style="width:200px;height:113px;object-position:{{.X}} {{.Y}}" />Wide (16:9)</figure>
+		<figure><img src="{{.Image}}" alt="" width="96" height="128" style="width:96px;height:128px;object-position:{{.X}} {{.Y}}" />Tall (3:4)</figure>
+	</div>
+	<p class="description">Saved with Update. The cropped sizes are made again around the new point.</p>
+</div>
+</div>{{end}}{{.PluginBoxes}}</div></div>{{end}}
 </div>
 <br class="clear" />
 </div>
 </form>
+{{if .CanReplace}}<form id="wpgo-replace-form" method="post" action="/wp-admin/media-replace" enctype="multipart/form-data">
+<input type="hidden" name="_wpnonce" value="{{.ReplaceNonce}}" />
+<input type="hidden" name="post_ID" value="{{.A.ID}}" />
+</form>{{end}}
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

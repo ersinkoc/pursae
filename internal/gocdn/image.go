@@ -31,6 +31,10 @@ type ImageParams struct {
 	Fit    string // inside (default), cover, fill
 	Q      int    // 1–100, 0 = the site's default
 	Format string // auto (default), webp, jpeg, png, gif
+	// Focal, with FX and FY (0…1 from the left / top edge), is the point fit=cover keeps in view
+	// instead of the centre: fx/fy in the URL, or the attachment's focal point.
+	Focal  bool
+	FX, FY float64
 }
 
 // Limits keep the service from being used to burn CPU or memory.
@@ -94,6 +98,14 @@ func ParseImageParams(q url.Values) (ImageParams, error) {
 		return p, fmt.Errorf("%w: fm", ErrBadParam)
 	}
 	p.Format = fm
+	if fx, fy := get("fx"), get("fy"); fx != "" || fy != "" {
+		x, errx := strconv.ParseFloat(fx, 64)
+		y, erry := strconv.ParseFloat(fy, 64)
+		if errx != nil || erry != nil || x < 0 || x > 1 || y < 0 || y > 1 {
+			return p, fmt.Errorf("%w: fx/fy", ErrBadParam)
+		}
+		p.Focal, p.FX, p.FY = true, x, y
+	}
 	return p, nil
 }
 
@@ -125,6 +137,9 @@ func (p ImageParams) Canonical() string {
 	}
 	if p.Format != "" && p.Format != "auto" {
 		parts = append(parts, "fm="+p.Format)
+	}
+	if p.Focal {
+		parts = append(parts, "fx="+strconv.FormatFloat(p.FX, 'f', -1, 64), "fy="+strconv.FormatFloat(p.FY, 'f', -1, 64))
 	}
 	return strings.Join(parts, "&")
 }
@@ -268,12 +283,18 @@ func OutputSize(sw, sh int, p ImageParams) (w, h int, src image.Rectangle) {
 		}
 		target := float64(w) / float64(h)
 		if float64(sw)/float64(sh) > target {
-			cw := int(float64(sh)*target + 0.5)
+			cw := min(sw, int(float64(sh)*target+0.5))
 			x := (sw - cw) / 2
+			if p.Focal { // the focal point in the middle, moved back inside the image near an edge
+				x = min(max(int(p.FX*float64(sw)-float64(cw)/2+0.5), 0), sw-cw)
+			}
 			src = image.Rect(x, 0, x+cw, sh)
 		} else {
-			ch := int(float64(sw)/target + 0.5)
+			ch := min(sh, int(float64(sw)/target+0.5))
 			y := (sh - ch) / 2
+			if p.Focal {
+				y = min(max(int(p.FY*float64(sh)-float64(ch)/2+0.5), 0), sh-ch)
+			}
 			src = image.Rect(0, y, sw, y+ch)
 		}
 		return w, h, src

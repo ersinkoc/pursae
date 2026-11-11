@@ -1301,6 +1301,8 @@ func (s *Server) gooAttachmentByURL(ctx context.Context, u string) int64 {
 	if !ok {
 		return 0
 	}
+	rel, _, _ = strings.Cut(rel, "?") // a replaced file's URL carries ?v= (media_replace.go)
+	rel, _, _ = strings.Cut(rel, "#")
 	var id int64
 	_ = s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE file_path = $1 LIMIT 1`, rel).Scan(&id)
 	return id

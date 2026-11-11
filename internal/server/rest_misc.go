@@ -15,6 +15,7 @@ import (
 
 	"wpgo/internal/auth"
 	"wpgo/internal/blocks"
+	"wpgo/internal/media"
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
 )
@@ -1183,6 +1184,12 @@ func (s *Server) restMedia(c *gin.Context, a *store.Attachment, ctxName string) 
 	if orig, ok := a.Meta["original_image"].(string); ok {
 		details["original_image"] = orig
 	}
+	if mediaType == "image" {
+		details["focal_point"] = focalJSON(a) // {x, y} in 0…1, or null (media_replace.go)
+	}
+	if v := attachmentFileVersion(a); v != "" {
+		details["file_version"] = v // the file was replaced or re-cropped; its URLs carry ?v=
+	}
 	out := map[string]any{
 		"id": a.ID, "date": a.CreatedAt.In(loc).Format("2006-01-02T15:04:05"), "date_gmt": gmt(a.CreatedAt),
 		"guid":     map[string]any{"rendered": url, "raw": url},
@@ -1388,6 +1395,20 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 	if !ok {
 		return
 	}
+	var focal *media.Focal
+	rawFocal, setFocal := r.Body["focal_point"]
+	if !setFocal {
+		if v, ok := c.GetPostForm("focal_point"); ok {
+			rawFocal, setFocal = v, true
+		}
+	}
+	if setFocal {
+		var valid bool
+		if focal, valid = focalFromJSON(rawFocal); !valid || !strings.HasPrefix(a.Mime, "image/") {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): focal_point (an object {x, y} with values from 0 to 1, or null, for images only).")
+			return
+		}
+	}
 	if err := s.store.UpdateAttachment(c, a); err != nil {
 		restErr(c, http.StatusInternalServerError, "rest_cannot_edit", err.Error())
 		return
@@ -1398,6 +1419,12 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 	if _, has := r.Body["acf"]; has {
 		s.acfgoRESTSaveFor(c, r.Body, &acfScreen{Attachment: a.Mime}, &acfObject{Kind: "attachment", ID: a.ID, meta: orEmptyMap(a.Meta)})
 		a, _ = s.store.GetAttachment(c, a.ID)
+	}
+	if setFocal {
+		if err := s.setAttachmentFocal(c, a, focal); err != nil {
+			restErr(c, http.StatusInternalServerError, "rest_cannot_edit", err.Error())
+			return
+		}
 	}
 	s.purgeAttachment(a)
 	restJSON(c, http.StatusOK, s.restMedia(c, a, "edit"))

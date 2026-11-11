@@ -180,6 +180,12 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 			return
 		}
 	}
+	if p.Fit == "cover" && !p.Focal {
+		// The attachment's focal point (media_replace.go) decides the crop unless the URL names one.
+		if fi, ok := s.mediaIdx.lookup(rel); ok && fi.Focal != nil && !fi.Focal.Centered() {
+			p.Focal, p.FX, p.FY = true, fi.Focal.X, fi.Focal.Y
+		}
+	}
 	limits := gocdn.Limits{MaxW: st.ImgMaxW, MaxH: st.ImgMaxH, MaxSourcePix: int64(st.ImgMaxSource) * 1_000_000}
 	if err := p.Check(limits); err != nil {
 		gocdnImgError(w, http.StatusBadRequest, err.Error())

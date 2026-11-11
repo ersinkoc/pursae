@@ -63,6 +63,9 @@ func (s *Server) filterContentTags(ctx context.Context, content string) string {
 		if m := imgClassIDRe.FindStringSubmatch(img); m != nil {
 			id, _ := strconv.ParseInt(m[1], 10, 64)
 			a = attachments[id]
+			if a != nil && !s.mediaIdx.empty() {
+				img = s.mediaContentImg(img, id) // a replaced file's old size names (media_front.go)
+			}
 		}
 		if a != nil && !strings.Contains(img, " width=") && !strings.Contains(img, " height=") {
 			img = s.imgAddWidthHeight(ctx, img, a)

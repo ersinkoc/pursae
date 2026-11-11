@@ -282,6 +282,10 @@
 					<# } #>
 					<a href="{{ data.editLink }}">Edit more details</a>
 				<# } #>
+				<# if ( data.can.save && data.replaceLink ) { #>
+					<span class="links-separator">|</span>
+					<a class="wpgo-replace-attachment" href="{{ data.replaceLink }}">Replace file</a>
+				<# } #>
 				<# if ( data.can.save && data.link ) { #>
 					<span class="links-separator">|</span>
 					<a href="{{ data.url }}" download>Download file</a>
@@ -419,6 +423,10 @@
 					<# if ( data.can.save && data.sizes ) { #>
 						<a class="edit-attachment" href="{{ data.editLink }}&amp;image-editor" target="_blank">Edit Image</a>
 					<# } #>
+				<# } #>
+
+				<# if ( data.can.save && data.replaceLink ) { #>
+					<a class="wpgo-replace-attachment" href="{{ data.replaceLink }}" target="_blank">Replace file</a>
 				<# } #>
 
 				<# if ( data.fileLength && data.fileLengthHumanReadable ) { #>

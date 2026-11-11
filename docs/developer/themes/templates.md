@@ -124,6 +124,14 @@ Every template receives the same **site view** (`.`):
 | `.Thumbnail`, `.ThumbnailURL`, `.ShowFeatured` | HTML, string, bool | the featured image (`post-thumbnails` support) |
 | `.Post` | store post | the raw record: `.Post.Slug`, `.Post.Status`, `.Post.Meta`, `.Post.PublishedAt`, … |
 
+Media Library images can have a **focal point** (Media › Edit › Focal point, or `focal_point` in the
+REST API). The core adds `object-position` to every `<img>` of such an image on the page (unless the
+tag sets its own), so a theme that crops images with `object-fit: cover` keeps the point in view
+without any template code; the cropped image sizes are cut around it as well. A file replaced in
+place (Media › Edit › Replace media) keeps its URL; page markup gets `?v=<version>` on its URLs so
+browsers and CDNs fetch the new file — print image URLs with `.ThumbnailURL` / the core's image
+markup rather than building them from the file name.
+
 ## Functions
 
 | Function | Does |
