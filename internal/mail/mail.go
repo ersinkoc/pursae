@@ -79,10 +79,17 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 		}
 	}
 	h := func(k, v string) { fmt.Fprintf(&b, "%s: %s\r\n", k, v) }
-	h("From", m.from(msg))
-	h("To", strings.Join(msg.To, ", "))
+	h("From", addressHeader(m.from(msg)))
+	addresses := func(in []string) string {
+		out := make([]string, len(in))
+		for i, a := range in {
+			out[i] = addressHeader(a)
+		}
+		return strings.Join(out, ", ")
+	}
+	h("To", addresses(msg.To))
 	if len(msg.Cc) > 0 {
-		h("Cc", strings.Join(msg.Cc, ", "))
+		h("Cc", addresses(msg.Cc))
 	}
 	if rt := cleanReplyTo(msg.ReplyTo); rt != "" {
 		h("Reply-To", rt)
@@ -116,10 +123,10 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 			if ct == "" {
 				ct = "application/octet-stream"
 			}
-			// A quote or backslash would end the quoted parameter early; QEncoding leaves both alone.
-			name := mime.QEncoding.Encode("utf-8", strings.NewReplacer(`"`, "_", `\`, "_").Replace(a.Name))
-			b.WriteString("\r\n--" + mixed + "\r\nContent-Type: " + ct + `; name="` + name + `"` + "\r\nContent-Transfer-Encoding: base64\r\n" +
-				`Content-Disposition: attachment; filename="` + name + `"` + "\r\n\r\n")
+			name := strings.TrimPrefix(mime.FormatMediaType("x", map[string]string{"name": a.Name}), "x")
+			disposition := mime.FormatMediaType("attachment", map[string]string{"filename": a.Name})
+			b.WriteString("\r\n--" + mixed + "\r\nContent-Type: " + ct + name + "\r\nContent-Transfer-Encoding: base64\r\n" +
+				"Content-Disposition: " + disposition + "\r\n\r\n")
 			enc := base64.StdEncoding.EncodeToString(a.Data)
 			for len(enc) > 76 {
 				b.WriteString(enc[:76] + "\r\n")
@@ -136,6 +143,21 @@ func (m *Mailer) Build(msg Message) ([]byte, error) {
 	}
 	b.Write(part)
 	return b.Bytes(), nil
+}
+
+// Encode non-ASCII display names as MIME encoded words, while retaining the
+// original formatting for ordinary ASCII addresses.
+func addressHeader(value string) string {
+	a, err := mail.ParseAddress(value)
+	if err != nil {
+		return value
+	}
+	for _, r := range a.Name {
+		if r > 127 {
+			return a.String()
+		}
+	}
+	return value
 }
 
 // cleanReplyTo is a Reply-To value safe for a header: one valid address, re-encoded, or "" when the

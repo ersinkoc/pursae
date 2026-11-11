@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -44,7 +45,7 @@ func SignV4(req *http.Request, body []byte, accessKey, secretKey, region, servic
 	if path == "" {
 		path = "/"
 	}
-	canonical := strings.Join([]string{req.Method, path, req.URL.Query().Encode(), canonHeaders.String(), signed, payloadHash}, "\n")
+	canonical := strings.Join([]string{req.Method, path, canonicalSignQuery(req.URL.Query()), canonHeaders.String(), signed, payloadHash}, "\n")
 	scope := day + "/" + region + "/" + service + "/aws4_request"
 	ch := sha256.Sum256([]byte(canonical))
 	toSign := "AWS4-HMAC-SHA256\n" + amzDate + "\n" + scope + "\n" + hex.EncodeToString(ch[:])
@@ -56,6 +57,30 @@ func SignV4(req *http.Request, body []byte, accessKey, secretKey, region, servic
 	k := mac(mac(mac(mac([]byte("AWS4"+secretKey), day), region), service), "aws4_request")
 	sig := hex.EncodeToString(mac(k, toSign))
 	req.Header.Set("Authorization", "AWS4-HMAC-SHA256 Credential="+accessKey+"/"+scope+", SignedHeaders="+signed+", Signature="+sig)
+}
+
+// AWS canonical queries use percent-encoded spaces and sort encoded pairs,
+// including repeated values, instead of form encoding's '+' and input order.
+func canonicalSignQuery(q url.Values) string {
+	type pair struct{ key, value string }
+	var pairs []pair
+	escape := func(s string) string { return strings.ReplaceAll(url.QueryEscape(s), "+", "%20") }
+	for key, values := range q {
+		for _, value := range values {
+			pairs = append(pairs, pair{escape(key), escape(value)})
+		}
+	}
+	sort.Slice(pairs, func(i, j int) bool {
+		if pairs[i].key != pairs[j].key {
+			return pairs[i].key < pairs[j].key
+		}
+		return pairs[i].value < pairs[j].value
+	})
+	parts := make([]string, len(pairs))
+	for i, p := range pairs {
+		parts[i] = p.key + "=" + p.value
+	}
+	return strings.Join(parts, "&")
 }
 
 // OAuth is the authorization-code flow of the Gmail, Outlook and Zoho mailers, used with the site
@@ -205,22 +230,37 @@ func (o *OAuth) Account(ctx context.Context, accessToken string) (email, account
 		return "", "", fmt.Errorf("%s account lookup failed (HTTP %d): %s", o.Mailer, status, apiErrorText(body))
 	}
 	var v map[string]any
-	_ = json.Unmarshal(body, &v)
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.UseNumber()
+	if err := dec.Decode(&v); err != nil {
+		return "", "", fmt.Errorf("%s account lookup: invalid response: %w", o.Mailer, err)
+	}
+	if !json.Valid(body) {
+		return "", "", fmt.Errorf("%s account lookup: invalid response", o.Mailer)
+	}
 	s := func(m map[string]any, k string) string { x, _ := m[k].(string); return x }
 	switch o.Mailer {
 	case "gmail":
-		return s(v, "emailAddress"), "", nil
+		email = s(v, "emailAddress")
 	case "outlook":
-		return firstNonEmpty(s(v, "mail"), s(v, "userPrincipalName")), "", nil
+		email = firstNonEmpty(s(v, "mail"), s(v, "userPrincipalName"))
+	default:
+		list, _ := v["data"].([]any)
+		if len(list) == 0 {
+			return "", "", fmt.Errorf("zoho: no mail account found")
+		}
+		acc, _ := list[0].(map[string]any)
+		accountID = s(acc, "accountId")
+		if n, ok := acc["accountId"].(json.Number); ok {
+			accountID = n.String()
+		}
+		email = firstNonEmpty(s(acc, "primaryEmailAddress"), s(acc, "mailboxAddress"))
+		if accountID == "" {
+			return "", "", fmt.Errorf("zoho: account lookup returned no account id")
+		}
 	}
-	list, _ := v["data"].([]any)
-	if len(list) == 0 {
-		return "", "", fmt.Errorf("zoho: no mail account found")
+	if strings.TrimSpace(email) == "" {
+		return "", "", fmt.Errorf("%s account lookup returned no email address", o.Mailer)
 	}
-	acc, _ := list[0].(map[string]any)
-	id := s(acc, "accountId")
-	if f, ok := acc["accountId"].(float64); ok {
-		id = fmt.Sprintf("%.0f", f)
-	}
-	return firstNonEmpty(s(acc, "primaryEmailAddress"), s(acc, "mailboxAddress")), id, nil
+	return email, accountID, nil
 }
