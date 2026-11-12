@@ -31,6 +31,11 @@ func TestForumAdminErr(t *testing.T) {
 	if got := forumAdminErr(errString("forum: the parent must be a top-level category")); got != "The parent must be a top-level category." {
 		t.Errorf("store error: %q", got)
 	}
+	for _, tc := range [][2]string{{"çalışma başarısız", "Çalışma başarısız."}, {"élan", "Élan."}, {"λ error", "Λ error."}, {"🙂 error", "🙂 error."}} {
+		if got := forumAdminErr(errString(tc[0])); got != tc[1] {
+			t.Errorf("store error %q: got %q, want %q", tc[0], got, tc[1])
+		}
+	}
 }
 
 type errString string

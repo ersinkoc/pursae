@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,20 @@ import (
 	"wpgo/internal/auth"
 	"wpgo/internal/store"
 )
+
+func TestForumVerificationExpiresAtDeadline(t *testing.T) {
+	sum := sha256.Sum256([]byte("key"))
+	u := &store.User{Meta: map[string]any{forumUMetaVerify: map[string]any{"hash": hex.EncodeToString(sum[:]), "expires": int64(1000)}}}
+	for _, tc := range []struct {
+		second int64
+		key    string
+		want   bool
+	}{{999, "key", true}, {1000, "key", false}, {1001, "key", false}, {999, "wrong", false}} {
+		if got := forumCheckVerify(u, tc.key, time.Unix(tc.second, 0)); got != tc.want {
+			t.Errorf("second=%d key=%q: got %t, want %t", tc.second, tc.key, got, tc.want)
+		}
+	}
+}
 
 // fakeGoogle is an httptest stand-in for Google's authorize, token and userinfo endpoints. The test
 // plays the browser on the consent screen: it reads state, nonce and code_challenge from the

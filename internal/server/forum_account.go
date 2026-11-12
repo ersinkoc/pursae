@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"errors"
+	"html"
 	"net/http"
 	"net/mail"
 	"net/url"
@@ -163,7 +164,7 @@ func (s *Server) forumAccountFail(c *gin.Context, p *forumPage, tmpl string, sta
 
 // forumPlain turns a core HTML notice ("<strong>Error:</strong> …") into the plain text forum notices use.
 func forumPlain(h string) string {
-	t := strings.TrimSpace(wp.StripTags(h))
+	t := strings.TrimSpace(html.UnescapeString(wp.StripTags(h)))
 	t = strings.TrimSpace(strings.TrimPrefix(t, "Error:"))
 	return t
 }
