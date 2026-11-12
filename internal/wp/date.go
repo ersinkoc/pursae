@@ -265,5 +265,9 @@ func HumanTimeDiffN(from, to time.Time, n func(single, plural string, count int)
 	case d < 365*24*time.Hour:
 		return plural(int(d.Round(30*24*time.Hour).Hours()/(24*30)), "%s month", "%s months")
 	}
-	return plural(int(d.Round(365*24*time.Hour).Hours()/(24*365)), "%s year", "%s years") // round(), like the other units
+	// time.Time.Sub saturates at about 292 years. Unix seconds keep longer
+	// calendar intervals accurate while retaining the same nearest-year rounding.
+	seconds := float64(to.Unix()-from.Unix()) + float64(to.Nanosecond()-from.Nanosecond())/1e9
+	years := int(seconds/(365*24*60*60) + 0.5)
+	return plural(years, "%s year", "%s years")
 }

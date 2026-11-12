@@ -14,7 +14,28 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
+
+func TestTruncatePreservesUTF8(t *testing.T) {
+	for _, s := range []string{
+		"x" + strings.Repeat("€", 200),
+		"xy" + strings.Repeat("😀", 100),
+		strings.Repeat("é", 200) + "tail",
+	} {
+		if got := truncate(s, 300); !utf8.ValidString(got) || !strings.HasSuffix(got, "…") {
+			t.Errorf("truncate produced %q", got)
+		}
+	}
+}
+
+func TestMessageIDPreservesLargeJSONNumber(t *testing.T) {
+	a := &API{Mailer: "sendlayer"}
+	got, err := a.messageID(nil, []byte(`{"MessageID":9007199254740993}`))
+	if err != nil || got != "9007199254740993" {
+		t.Fatalf("message ID=%q err=%v", got, err)
+	}
+}
 
 type auditRoundTripper func(*http.Request) (*http.Response, error)
 

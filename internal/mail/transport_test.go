@@ -338,6 +338,21 @@ func TestSignV4CanonicalQuery(t *testing.T) {
 	}
 }
 
+func TestSignV4CanonicalHeaderWhitespace(t *testing.T) {
+	sign := func(contentType string) string {
+		r, _ := http.NewRequest(http.MethodPost, "https://email.us-east-1.amazonaws.com/v2/email/outbound-emails", nil)
+		r.Header.Set("Content-Type", contentType)
+		mail.SignV4(r, []byte(`{}`), "AKID", "secret", "us-east-1", "ses", time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC))
+		return r.Header.Get("Authorization")
+	}
+	want := sign("application/json; charset=utf-8")
+	for _, value := range []string{"  application/json;   charset=utf-8  ", "application/json;\tcharset=utf-8"} {
+		if got := sign(value); got != want {
+			t.Errorf("header %q signature differs", value)
+		}
+	}
+}
+
 func TestOAuthFlow(t *testing.T) {
 	var form url.Values
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

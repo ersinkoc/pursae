@@ -32,7 +32,7 @@ func SignV4(req *http.Request, body []byte, accessKey, secretKey, region, servic
 		lk := strings.ToLower(k)
 		if lk == "content-type" || strings.HasPrefix(lk, "x-amz-") {
 			names = append(names, lk)
-			vals[lk] = strings.TrimSpace(req.Header.Get(k))
+			vals[lk] = strings.Join(strings.Fields(req.Header.Get(k)), " ")
 		}
 	}
 	sort.Strings(names)
