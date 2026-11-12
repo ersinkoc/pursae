@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -68,18 +69,33 @@ func CheckPasswordCtx(ctx context.Context, password, encoded string) (bool, erro
 	if len(parts) != 6 || parts[1] != "argon2id" {
 		return false, errBadHash
 	}
-	var version int
-	if _, err := fmt.Sscanf(parts[2], "v=%d", &version); err != nil || version != argon2.Version {
+	if !strings.HasPrefix(parts[2], "v=") || len(parts[2]) == 2 {
 		return false, errBadHash
 	}
-	var mem, t uint32
-	var p uint8
-	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &mem, &t, &p); err != nil || t == 0 || p == 0 {
+	version, err := strconv.ParseUint(parts[2][2:], 10, 32)
+	if err != nil || int(version) != argon2.Version {
+		return false, errBadHash
+	}
+	params := strings.Split(parts[3], ",")
+	parse := func(value, prefix string, bits int) (uint64, error) {
+		if !strings.HasPrefix(value, prefix) || len(value) == len(prefix) {
+			return 0, errBadHash
+		}
+		return strconv.ParseUint(value[len(prefix):], 10, bits)
+	}
+	if len(params) != 3 {
+		return false, errBadHash
+	}
+	mem64, err1 := parse(params[0], "m=", 32)
+	t64, err2 := parse(params[1], "t=", 32)
+	p64, err3 := parse(params[2], "p=", 8)
+	mem, t, p := uint32(mem64), uint32(t64), uint8(p64)
+	if err1 != nil || err2 != nil || err3 != nil || mem == 0 || t == 0 || p == 0 || uint64(mem) < 8*uint64(p) {
 		return false, errBadHash
 	}
 	b64 := base64.RawStdEncoding
 	salt, err := b64.DecodeString(parts[4])
-	if err != nil {
+	if err != nil || len(salt) == 0 {
 		return false, errBadHash
 	}
 	want, err := b64.DecodeString(parts[5])
