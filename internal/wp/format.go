@@ -42,7 +42,7 @@ func RemoveAccents(s string) string {
 }
 
 var (
-	tagRe        = regexp.MustCompile(`<[^>]*>`)
+	tagRe        = regexp.MustCompile(`(?s)<!--.*?-->|<(?:"[^"]*"|'[^']*'|[^'">])*>`)
 	rawContentRe = regexp.MustCompile(`(?is)<script\b[^>]*>.*?</script\s*>|<style\b[^>]*>.*?</style\s*>`)
 	entityRe     = regexp.MustCompile(`&[^;\s]+;`)
 	dashesRe     = regexp.MustCompile(`-+`)
