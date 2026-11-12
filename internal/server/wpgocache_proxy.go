@@ -85,7 +85,9 @@ func proxyPurgeRequest(ctx context.Context, endpoint, prefix string, p cache.Pur
 	return req, nil
 }
 
-var proxyPurgeClient = &http.Client{Timeout: 5 * time.Second}
+// proxyPurgeClient: the purge proxy is usually a local Varnish or nginx, so loopback and RFC1918
+// addresses are allowed; link-local (the metadata service) and other non-public addresses are refused.
+var proxyPurgeClient = lanClient(5*time.Second, "the purge URL points at a private network")
 
 // forwardProxyPurge sends a purge to the configured front proxy, in the background.
 func (s *Server) forwardProxyPurge(p cache.Purge) {

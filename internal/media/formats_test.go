@@ -118,3 +118,99 @@ func TestUploadFormats(t *testing.T) {
 		t.Error("MIME table lacks heic/heif/svg")
 	}
 }
+
+func TestSVGDimensionsRejectInfiniteLengths(t *testing.T) {
+	for _, tc := range []struct {
+		svg  string
+		w, h int
+	}{
+		{`<svg width="+Inf" height="10" viewBox="0 0 20 10"/>`, 20, 10},
+		{`<svg width="20" height="Inf" viewBox="0 0 20 10"/>`, 20, 10},
+		{`<svg width="+Inf" height="10"/>`, 0, 0},
+		{`<svg width="20" height="10"/>`, 20, 10},
+	} {
+		if w, h := svgDimensions([]byte(tc.svg)); w != tc.w || h != tc.h {
+			t.Errorf("%s: got %dx%d, want %dx%d", tc.svg, w, h, tc.w, tc.h)
+		}
+	}
+}
+
+func TestSVGDimensionsRejectInfiniteViewBox(t *testing.T) {
+	for _, tc := range []struct {
+		svg  string
+		w, h int
+	}{
+		{`<svg viewBox="0 0 +Inf 10"/>`, 0, 0},
+		{`<svg viewBox="0 0 20 Inf"/>`, 0, 0},
+		{`<svg width="20" viewBox="0 0 Inf 10"/>`, 0, 0},
+		{`<svg viewBox="0 0 20 10"/>`, 20, 10},
+		{`<svg width="40" viewBox="0 0 20 10"/>`, 40, 20},
+	} {
+		if w, h := svgDimensions([]byte(tc.svg)); w != tc.w || h != tc.h {
+			t.Errorf("%s: got %dx%d, want %dx%d", tc.svg, w, h, tc.w, tc.h)
+		}
+	}
+}
+
+func TestSVGDimensionsRejectUnrepresentableSizes(t *testing.T) {
+	for _, tc := range []struct {
+		svg  string
+		w, h int
+	}{
+		{`<svg width="1e100" height="10"/>`, 0, 0},
+		{`<svg width="20" height="1e100"/>`, 0, 0},
+		{`<svg viewBox="0 0 1e100 10"/>`, 0, 0},
+		{`<svg width="1e100" height="10" viewBox="0 0 20 10"/>`, 20, 10},
+		{`<svg width="20" height="10"/>`, 20, 10},
+	} {
+		if w, h := svgDimensions([]byte(tc.svg)); w != tc.w || h != tc.h {
+			t.Errorf("%s: got %dx%d, want %dx%d", tc.svg, w, h, tc.w, tc.h)
+		}
+	}
+}
+
+func TestISODimensionsSkipsInvalidCandidate(t *testing.T) {
+	valid := make([]byte, 20)
+	binary.BigEndian.PutUint32(valid, 20)
+	copy(valid[4:], "ispe")
+	binary.BigEndian.PutUint32(valid[12:], 640)
+	binary.BigEndian.PutUint32(valid[16:], 480)
+	toEOF := append([]byte(nil), valid...)
+	binary.BigEndian.PutUint32(toEOF, 0)
+	invalid := append([]byte{0, 0, 0, 24, 'f', 'r', 'e', 'e', 'i', 's', 'p', 'e'}, make([]byte, 12)...)
+	for _, tc := range []struct {
+		data []byte
+		ok   bool
+	}{
+		{valid, true},
+		{toEOF, true},
+		{append(append([]byte(nil), invalid...), valid...), true},
+		{invalid, false},
+	} {
+		path := filepath.Join(t.TempDir(), "image.avif")
+		if err := os.WriteFile(path, tc.data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		w, h, ok := isoDimensions(path)
+		if ok != tc.ok || (ok && (w != 640 || h != 480)) {
+			t.Errorf("got %dx%d ok=%t", w, h, ok)
+		}
+	}
+}
+
+func TestSVGDimensionsValidatesViewBoxOrigin(t *testing.T) {
+	for _, tc := range []struct {
+		svg  string
+		w, h int
+	}{
+		{`<svg viewBox="junk 2 20 10"/>`, 0, 0},
+		{`<svg viewBox="1 NaN 20 10"/>`, 0, 0},
+		{`<svg viewBox="Inf 1 20 10"/>`, 0, 0},
+		{`<svg viewBox="-5 2 20 10"/>`, 20, 10},
+		{`<svg width="40" viewBox="-5 2 20 10"/>`, 40, 20},
+	} {
+		if w, h := svgDimensions([]byte(tc.svg)); w != tc.w || h != tc.h {
+			t.Errorf("%s: got %dx%d, want %dx%d", tc.svg, w, h, tc.w, tc.h)
+		}
+	}
+}

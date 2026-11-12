@@ -575,6 +575,10 @@ func TestWebBuilderRESTLibraryAndPrefs(t *testing.T) {
 		t.Fatalf("contributor create: %d %v", code, v)
 	}
 	contribItem := wbrObj(v)["id"].(string)
+	code, v, _ = contrib.do(http.MethodGet, "/web-builder/v2/library", nil, nil)
+	if list, _ := v.([]any); code != http.StatusOK || len(list) != 1 || wbrObj(list[0])["id"] != contribItem {
+		t.Fatalf("contributor library list: %d %v", code, v)
+	}
 	// A contributor may not save an html section.
 	htmlSec := map[string]any{}
 	for k, x := range sec {

@@ -95,7 +95,7 @@ func TestMCPToolEdges(t *testing.T) {
 
 	// Tools, through an Application Password.
 	_, nonce, _ := get(t, c, base+"/wp-admin/admin-ajax?action=rest-nonce")
-	req, _ := http.NewRequest("POST", base+"/wp-json/wp/v2/users/me/application-passwords", strings.NewReader(`{"name":"MCP edge"}`))
+	req, _ := http.NewRequest("POST", base+"/wp-json/wp/v2/users/me/application-passwords", strings.NewReader(`{"name":"MCP edge","full_access":true}`))
 	req.Header.Set("X-WP-Nonce", nonce)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.Do(req)
@@ -106,6 +106,9 @@ func TestMCPToolEdges(t *testing.T) {
 	_ = json.NewDecoder(resp.Body).Decode(&ap)
 	resp.Body.Close()
 	pass := strAny(ap["password"])
+	if got := joinAny(ap["scopes"]); got != "full_access" {
+		t.Fatalf("application password scopes: %q body=%v", got, ap)
+	}
 	call := func(id int, tool string, args map[string]any) map[string]any {
 		t.Helper()
 		b, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": id, "method": "tools/call", "params": map[string]any{"name": tool, "arguments": args}})

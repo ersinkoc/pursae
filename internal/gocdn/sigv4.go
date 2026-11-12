@@ -189,10 +189,13 @@ func CanonicalQuery(q url.Values) string {
 	sort.Slice(keys, func(i, j int) bool { return uriEncode(keys[i], true) < uriEncode(keys[j], true) })
 	var parts []string
 	for _, k := range keys {
-		vs := append([]string(nil), q[k]...)
+		vs := make([]string, len(q[k]))
+		for i, v := range q[k] {
+			vs[i] = uriEncode(v, true)
+		}
 		sort.Strings(vs)
 		for _, v := range vs {
-			parts = append(parts, uriEncode(k, true)+"="+uriEncode(v, true))
+			parts = append(parts, uriEncode(k, true)+"="+v)
 		}
 	}
 	return strings.Join(parts, "&")

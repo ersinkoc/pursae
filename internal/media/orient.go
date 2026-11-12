@@ -63,10 +63,14 @@ func tiffOrientation(t []byte) int {
 	default:
 		return 1
 	}
-	off := int(bo.Uint32(t[4:8]))
-	if off < 8 || off+2 > len(t) {
+	if bo.Uint16(t[2:4]) != 42 {
 		return 1
 	}
+	offset := uint64(bo.Uint32(t[4:8]))
+	if offset < 8 || offset > uint64(len(t)-2) {
+		return 1
+	}
+	off := int(offset)
 	n := int(bo.Uint16(t[off : off+2]))
 	for k := 0; k < n; k++ {
 		e := off + 2 + 12*k
@@ -76,7 +80,7 @@ func tiffOrientation(t []byte) int {
 		if bo.Uint16(t[e:e+2]) != 0x0112 {
 			continue
 		}
-		if bo.Uint16(t[e+2:e+4]) != 3 { // SHORT
+		if bo.Uint16(t[e+2:e+4]) != 3 || bo.Uint32(t[e+4:e+8]) != 1 { // one SHORT
 			return 1
 		}
 		if v := int(bo.Uint16(t[e+8 : e+10])); v >= 1 && v <= 8 {

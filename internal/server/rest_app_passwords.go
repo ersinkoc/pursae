@@ -119,9 +119,11 @@ func (api *restAPI) createAppPassword(c *gin.Context, r *restRequest) {
 		return
 	}
 	appID, _ := r.Str(c, "app_id")
-	scopes, err := restScopeParam(c, r)
-	if err != nil {
-		restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error(), map[string]any{"params": map[string]string{"scopes": err.Error()}})
+	scopes, scopeErr := []string(nil), error(nil)
+	if full, ok := r.Bool(c, "full_access"); ok && full {
+		scopes = []string{appScopeFullAccess}
+	} else if scopes, scopeErr = restScopeParam(c, r); scopeErr != nil {
+		restErr(c, http.StatusBadRequest, "rest_invalid_param", scopeErr.Error(), map[string]any{"params": map[string]string{"scopes": scopeErr.Error()}})
 		return
 	}
 	plain, ap, err := api.s.createAppPassword(c, u.ID, name, appID, scopes...)
@@ -168,7 +170,12 @@ func (api *restAPI) updateAppPassword(c *gin.Context, r *restRequest) {
 			return
 		}
 	}
-	if _, has := r.get(c, "scopes"); has {
+	if full, ok := r.Bool(c, "full_access"); ok && full {
+		if err := api.s.setAppPasswordScopes(c, ap, []string{appScopeFullAccess}); err != nil {
+			restErr(c, http.StatusInternalServerError, "rest_cannot_update", err.Error())
+			return
+		}
+	} else if _, has := r.get(c, "scopes"); has {
 		scopes, err := restScopeParam(c, r)
 		if err != nil {
 			restErr(c, http.StatusBadRequest, "rest_invalid_param", err.Error(), map[string]any{"params": map[string]string{"scopes": err.Error()}})

@@ -34,7 +34,13 @@ func TestMCPOpsAndAudit(t *testing.T) {
 	installAndLogin(t, ts, c)
 	_, nonce, _ := get(t, c, base+"/wp-admin/admin-ajax?action=rest-nonce")
 	mkPass := func(name string, scopes []string) string {
-		b, _ := json.Marshal(map[string]any{"name": name, "scopes": scopes})
+		body := map[string]any{"name": name}
+		if scopes == nil {
+			body["full_access"] = true
+		} else {
+			body["scopes"] = scopes
+		}
+		b, _ := json.Marshal(body)
 		req, _ := http.NewRequest("POST", base+"/wp-json/wp/v2/users/me/application-passwords", bytes.NewReader(b))
 		req.Header.Set("X-WP-Nonce", nonce)
 		req.Header.Set("Content-Type", "application/json")

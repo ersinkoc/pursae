@@ -154,3 +154,49 @@ func TestImageFormatAliasesAreDetected(t *testing.T) {
 		t.Fatal("unrelated query classified as transformation")
 	}
 }
+
+func TestParseImageParamsRejectsNaNFocalCoordinates(t *testing.T) {
+	for _, tc := range []struct {
+		x, y    string
+		wantErr bool
+	}{
+		{"NaN", "0.5", true},
+		{"0.5", "NaN", true},
+		{"+Inf", "0", true},
+		{"0", "1", false},
+		{"0.5", "0.5", false},
+	} {
+		_, err := ParseImageParams(url.Values{"fx": {tc.x}, "fy": {tc.y}})
+		if (err != nil) != tc.wantErr {
+			t.Errorf("fx=%q fy=%q: error = %v, want error %t", tc.x, tc.y, err, tc.wantErr)
+		}
+	}
+}
+
+func TestAcceptsTypeRejectsInvalidQuality(t *testing.T) {
+	for _, tc := range []struct {
+		q    string
+		want bool
+	}{
+		{"-0.5", false}, {"0", false}, {"NaN", false}, {"abc", false}, {"2", false}, {"0.1", true}, {"1", true},
+	} {
+		if got := AcceptsType("image/webp;q="+tc.q, "image/webp"); got != tc.want {
+			t.Errorf("q=%q: got %t, want %t", tc.q, got, tc.want)
+		}
+	}
+}
+
+func TestCheckSourceRejectsPixelCountOverflow(t *testing.T) {
+	large := int(^uint(0) >> 1)
+	for _, tc := range []struct {
+		w, h    int
+		wantErr bool
+	}{
+		{large, large, true}, {large, 1, true}, {10, 10, false}, {10, 11, true}, {1, 100, false},
+	} {
+		err := (Limits{MaxSourcePix: 100}).CheckSource(image.Config{Width: tc.w, Height: tc.h})
+		if (err != nil) != tc.wantErr {
+			t.Errorf("%dx%d: error = %v, want error %t", tc.w, tc.h, err, tc.wantErr)
+		}
+	}
+}

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/auth"
 )
 
 // MCP streamable HTTP sessions and server-sent events (mcp.go has the JSON-RPC part).
@@ -24,7 +26,7 @@ import (
 //     without use.
 //   - A session has at most one GET stream: a new one replaces the previous. A stream ends when the
 //     credential that opened it is revoked or expires (checked with every keep-alive), so a revoked
-//     OAuth grant or Application Password cannot keep a connection open.
+//     OAuth grant, Application Password or login session cannot keep a connection open.
 
 const (
 	mcpSessionHeader   = "Mcp-Session-Id"
@@ -257,9 +259,10 @@ func (s *Server) mcpStream(c *gin.Context, sess *mcpSession) {
 	}
 }
 
-// restCredentialLive reports whether the OAuth access token or Application Password that authenticated
-// the request still works. A long-lived response (the MCP GET stream) checks it now and then, because
-// its authentication happened only once, when it opened.
+// restCredentialLive reports whether the credential that authenticated the request still works.
+// A long-lived response (the MCP GET stream) checks it on each keep-alive, because authentication
+// happened only once, when the stream opened. A cookie session is looked up again the same way:
+// logout, expiry and the idle timeout must close the stream.
 func (s *Server) restCredentialLive(c *gin.Context) bool {
 	ctx := c.Request.Context()
 	if _, ok := c.Get(restOAuthKey); ok {
@@ -275,5 +278,10 @@ func (s *Server) restCredentialLive(c *gin.Context) bool {
 		var one int
 		return s.store.Pool.QueryRow(ctx, `SELECT 1 FROM app_passwords WHERE id = $1`, id).Scan(&one) == nil
 	}
-	return true // cookie sign-in: the session cookie is checked on the next request
+	token, err := c.Cookie(auth.CookieName)
+	if err != nil || token == "" {
+		return true // not a cookie session (for example a Commerce API key)
+	}
+	_, err = s.auth.LookupPassive(ctx, token)
+	return err == nil
 }

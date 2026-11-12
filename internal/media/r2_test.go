@@ -80,6 +80,30 @@ func TestJPEGOrientation(t *testing.T) {
 	}
 }
 
+func TestJPEGOrientationRejectsInvalidCount(t *testing.T) {
+	data := exifJPEG(t, 8, 4, 6, false)
+	at := bytes.Index(data, []byte{0x12, 0x01, 0x03, 0x00})
+	if at < 0 {
+		t.Fatal("orientation tag missing")
+	}
+	binary.LittleEndian.PutUint32(data[at+4:], 0)
+	if got := JPEGOrientation(bytes.NewReader(data)); got != 1 {
+		t.Fatalf("invalid count produced orientation %d", got)
+	}
+}
+
+func TestJPEGOrientationRejectsLargeTIFFOffset(t *testing.T) {
+	data := exifJPEG(t, 8, 4, 6, false)
+	at := bytes.Index(data, []byte("Exif\x00\x00II"))
+	if at < 0 {
+		t.Fatal("EXIF missing")
+	}
+	binary.LittleEndian.PutUint32(data[at+10:], 0x7fffffff)
+	if got := JPEGOrientation(bytes.NewReader(data)); got != 1 {
+		t.Fatalf("invalid offset produced orientation %d", got)
+	}
+}
+
 func TestOrient(t *testing.T) {
 	// 3×2: pixel value = x + 10*y in the red channel.
 	src := image.NewRGBA(image.Rect(0, 0, 3, 2))

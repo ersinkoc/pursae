@@ -69,7 +69,7 @@ func forumCheckVerify(u *store.User, key string, now time.Time) bool {
 	}
 	want, _ := m["hash"].(string)
 	exp := forumMetaInt64(m, "expires")
-	if want == "" || exp <= 0 || now.Unix() > exp {
+	if want == "" || exp <= 0 || now.Unix() >= exp {
 		return false
 	}
 	sum := sha256.Sum256([]byte(key))

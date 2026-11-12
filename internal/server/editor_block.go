@@ -317,8 +317,8 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		"codeEditingEnabled":                             true,
 		"canUpdateBlockBindings":                         u.Can("manage_options", nil),
 	}
-	if isNew && p.Type == "post" && p.Format != "" && p.Format != "standard" {
-		settings["template"] = [][]string{{"core/" + p.Format}}
+	if f := store.CanonicalPostFormat(p.Format); isNew && p.Type == "post" && f != "standard" {
+		settings["template"] = [][]string{{"core/" + f}}
 	}
 	settingsJSON, _ := json.Marshal(settings)
 	initial := map[string]any{}

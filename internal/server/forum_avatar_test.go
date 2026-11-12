@@ -208,3 +208,42 @@ func TestForumAvatarUpload(t *testing.T) {
 		t.Errorf("foreign attachment deleted: %v", err)
 	}
 }
+
+func TestForumAvatarGIFUsesLogicalScreen(t *testing.T) {
+	for _, tc := range []struct {
+		width, height int
+		frame         image.Rectangle
+		transparent   bool
+		want          int
+	}{
+		{64, 64, image.Rect(8, 8, 24, 24), false, 64},
+		{80, 40, image.Rect(30, 10, 50, 30), false, 40},
+		{64, 64, image.Rect(4, 4, 20, 20), true, 64},
+	} {
+		palette := color.Palette{color.Black, color.White}
+		if tc.transparent {
+			palette[0] = color.RGBA{}
+		}
+		frame := image.NewPaletted(tc.frame, palette)
+		for y := tc.frame.Min.Y; y < tc.frame.Max.Y; y++ {
+			for x := tc.frame.Min.X; x < tc.frame.Max.X; x++ {
+				frame.SetColorIndex(x, y, 1)
+			}
+		}
+		var src bytes.Buffer
+		if err := gif.EncodeAll(&src, &gif.GIF{Image: []*image.Paletted{frame}, Delay: []int{0}, Config: image.Config{Width: tc.width, Height: tc.height, ColorModel: palette}}); err != nil {
+			t.Fatal(err)
+		}
+		out, ext, err := forumAvatarProcess(src.Bytes())
+		if err != nil {
+			t.Fatal(err)
+		}
+		cfg, _, err := image.DecodeConfig(bytes.NewReader(out))
+		if err != nil || cfg.Width != tc.want || cfg.Height != tc.want {
+			t.Fatalf("case %+v: dimensions=%dx%d error=%v", tc, cfg.Width, cfg.Height, err)
+		}
+		if tc.transparent && ext != "png" {
+			t.Errorf("transparent GIF produced %q", ext)
+		}
+	}
+}

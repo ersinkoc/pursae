@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/wp"
 )
 
 // Goocommerce Quick View (WooCommerce Quick View): a "Quick view" button under catalog items opens a
@@ -286,7 +288,9 @@ func (s *Server) gooQVSummary(c *gin.Context, p *gooProduct) template.HTML {
 	}
 	b.WriteString(`<p class="price">` + string(s.gooXCPriceHTML(ctx, p)) + `</p>`)
 	if p.Post != nil && strings.TrimSpace(p.Post.Excerpt) != "" {
-		b.WriteString(`<div class="woocommerce-product-details__short-description">` + p.Post.Excerpt + `</div>`)
+		// The modal assigns this markup with innerHTML. A short description is plain text there:
+		// tags are stripped, then escaped, so a stored <img onerror> cannot run.
+		b.WriteString(`<div class="woocommerce-product-details__short-description">` + gooEsc(wp.StripTags(p.Post.Excerpt)) + `</div>`)
 	}
 	b.WriteString(string(s.gooQVCartForm(c, p, link)))
 

@@ -637,8 +637,12 @@ func (s *Server) privacyTool(typ string) gin.HandlerFunc {
 					}
 				case "erase":
 					if typ == "remove_personal_data" {
-						n := s.erasePersonalData(c, r.Email)
+						n, err := s.erasePersonalData(c, r.Email)
 						res := s.erasePersonalDataRegistered(c, r.Email)
+						if err != nil || res.Err != nil {
+							note("error", "Personal data could not be fully erased. The request was not marked as completed.")
+							continue
+						}
 						s.completePersonalRequest(c, r)
 						s.notifyErasureFulfilled(c, r)
 						msg := fmt.Sprintf("Personal data was erased: %d comments anonymized", n)
@@ -934,10 +938,11 @@ func (s *Server) commentsByEmail(c context.Context, email string) []store.Commen
 
 // erasePersonalData runs wp_comments_personal_data_eraser(): every comment by the address is anonymized
 // with wp_anonymize_comment() and detached from the user account.
-func (s *Server) erasePersonalData(c *gin.Context, email string) int {
-	rows, err := s.store.Pool.Query(c, `SELECT id, author_ip FROM comments WHERE lower(author_email) = lower($1)`, email)
+func (s *Server) erasePersonalData(c *gin.Context, email string) (int, error) {
+	rows, err := s.store.Pool.Query(c, `SELECT id, author_ip FROM comments WHERE lower(author_email) = lower($1)
+		OR user_id <> 0 AND user_id = (SELECT id FROM users WHERE lower(email) = lower($1) ORDER BY id LIMIT 1)`, email)
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	type row struct {
 		id int64
@@ -951,16 +956,22 @@ func (s *Server) erasePersonalData(c *gin.Context, email string) int {
 		}
 	}
 	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
 	n := 0
 	for _, r := range list {
 		if _, err := s.store.Pool.Exec(c, `UPDATE comments SET author_name = 'Anonymous', author_email = 'deleted@site.invalid', author_url = 'https://site.invalid',
-			author_ip = $2, user_agent = '', user_id = NULL WHERE id = $1`, r.id, anonymizeIP(r.ip)); err == nil {
-			n++
+			author_ip = $2, user_agent = '', user_id = NULL WHERE id = $1`, r.id, anonymizeIP(r.ip)); err != nil {
+			return n, err
 		}
+		n++
 	}
-	s.gooErasePersonalData(c, email)
+	if err := s.gooErasePersonalData(c, email); err != nil {
+		return n, err
+	}
 	s.purgeAll(c)
-	return n
+	return n, nil
 }
 
 // anonymizeIP is wp_privacy_anonymize_ip(): the last octet of an IPv4, the last 80 bits of an IPv6.

@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -320,12 +321,11 @@ func forumTextLen(content string) int {
 }
 
 // forumBlockEnds keeps words of adjacent blocks apart when tags are stripped.
-var forumBlockEnds = strings.NewReplacer("</p>", " </p>", "<br", " <br", "</li>", " </li>", "</blockquote>", " </blockquote>",
-	"</pre>", " </pre>", "</h", " </h", "</div>", " </div>")
+var forumBlockEnds = regexp.MustCompile(`(?i)</p>|<br|</li>|</blockquote>|</pre>|</h|</div>`)
 
 // forumExcerpt is the first words of post HTML as plain text.
 func forumExcerpt(content string, words int) string {
-	content = forumBlockEnds.Replace(content)
+	content = forumBlockEnds.ReplaceAllString(content, " $0")
 	f := strings.Fields(html.UnescapeString(wp.StripTags(content)))
 	if len(f) <= words {
 		return strings.Join(f, " ")

@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // Goocommerce › Orders: the HPOS orders list (page=orders, WooCommerce's admin.php?page=wc-orders) with
@@ -1054,7 +1055,7 @@ func (s *Server) gooOrderEditView(c *gin.Context, o *gooOrder) *gooOrderEditData
 	// Notes.
 	notes, _ := s.gooOrderNotes(ctx, o.ID, false)
 	for _, n := range notes {
-		row := gooNoteRow{ID: n.ID, Content: template.HTML(n.Content), Customer: n.IsCustomer,
+		row := gooNoteRow{ID: n.ID, Content: template.HTML(wp.KsesPost(n.Content)), Customer: n.IsCustomer,
 			Date: "added on " + n.CreatedAt.In(s.loc()).Format("January 2, 2006 \\a\\t 3:04 pm"), By: n.AddedBy}
 		row.Class = "note"
 		if n.IsCustomer {

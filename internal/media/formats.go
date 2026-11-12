@@ -7,6 +7,7 @@ import (
 	"errors"
 	"image"
 	"io"
+	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -68,6 +69,9 @@ func formatExt(format string) string {
 	return "." + format
 }
 
+// MaxSVGBytes is the largest SVG accepted on upload or on a remote-storage link.
+const MaxSVGBytes = 8 << 20
+
 // sniffImage checks the first bytes of an uploaded raster image (JPEG, PNG, GIF, WebP, BMP, TIFF)
 // against the type of its extension: ok is false when they are not an image of any of those
 // types, real is the MIME type the content has when it differs from mime ("" when it matches, or
@@ -85,10 +89,25 @@ func sniffImage(path, mime string) (real string, ok bool) {
 	defer f.Close()
 	head := make([]byte, 16)
 	n, _ := io.ReadFull(f, head)
-	if n == 0 {
+	return sniffBytes(head[:n], mime)
+}
+
+// SniffUpload is sniffImage for bytes already in memory (a remote object that cannot be renamed).
+// real is another raster MIME when the content does not match the extension; ok is false when the
+// bytes are not one of the checked image types.
+func SniffUpload(filename string, head []byte) (real string, ok bool) {
+	return sniffBytes(head, MimeFor(filename))
+}
+
+func sniffBytes(head []byte, mime string) (real string, ok bool) {
+	switch mime {
+	case "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "image/tiff":
+	default:
+		return "", true
+	}
+	if len(head) == 0 {
 		return "", true // empty: the callers refuse it with their own message
 	}
-	head = head[:n]
 	var got string
 	switch {
 	case bytes.HasPrefix(head, []byte{0xFF, 0xD8, 0xFF}):
@@ -122,24 +141,34 @@ func isoDimensions(path string) (int, int, bool) {
 	head := make([]byte, 256<<10) // the meta box sits near the start
 	n, _ := io.ReadFull(f, head)
 	head = head[:n]
-	i := bytes.Index(head, []byte("ispe"))
-	if i < 0 || i+16 > len(head) {
-		return 0, 0, false
+	for start := 0; start < len(head); {
+		found := bytes.Index(head[start:], []byte("ispe"))
+		if found < 0 {
+			break
+		}
+		i := start + found
+		start = i + len("ispe")
+		if i < 4 || i+16 > len(head) {
+			continue
+		}
+		if size := binary.BigEndian.Uint32(head[i-4 : i]); size != 0 && size < 20 {
+			continue
+		}
+		// box: size(4) "ispe" version+flags(4) width(4) height(4)
+		w := binary.BigEndian.Uint32(head[i+8 : i+12])
+		h := binary.BigEndian.Uint32(head[i+12 : i+16])
+		if w > 0 && h > 0 && w <= 1<<16 && h <= 1<<16 {
+			return int(w), int(h), true
+		}
 	}
-	// box: size(4) "ispe" version+flags(4) width(4) height(4)
-	w := binary.BigEndian.Uint32(head[i+8 : i+12])
-	h := binary.BigEndian.Uint32(head[i+12 : i+16])
-	if w == 0 || h == 0 || w > 1<<16 || h > 1<<16 {
-		return 0, 0, false
-	}
-	return int(w), int(h), true
+	return 0, 0, false
 }
 
 // svgLength parses an SVG length ("120", "120px", "12.5"); other units are not measurable.
 func svgLength(v string) (float64, bool) {
 	v = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(v), "px"))
 	f, err := strconv.ParseFloat(v, 64)
-	return f, err == nil && f > 0
+	return f, err == nil && f > 0 && f+0.5 < float64(int(^uint(0)>>1))
 }
 
 // svgDimensions reads width/height (or the viewBox) of a sanitized SVG.
@@ -169,9 +198,12 @@ func svgDimensions(data []byte) (int, int) {
 		}
 		if (!okW || !okH) && vb != "" {
 			if p := strings.Fields(strings.ReplaceAll(vb, ",", " ")); len(p) == 4 {
+				vx, ex := strconv.ParseFloat(p[0], 64)
+				vy, ey := strconv.ParseFloat(p[1], 64)
 				vw, e1 := strconv.ParseFloat(p[2], 64)
 				vh, e2 := strconv.ParseFloat(p[3], 64)
-				if e1 == nil && e2 == nil && vw > 0 && vh > 0 {
+				if ex == nil && ey == nil && !math.IsNaN(vx) && !math.IsNaN(vy) && !math.IsInf(vx, 0) && !math.IsInf(vy, 0) &&
+					e1 == nil && e2 == nil && vw > 0 && vh > 0 && !math.IsInf(vw, 0) && !math.IsInf(vh, 0) {
 					switch {
 					case okW:
 						h, okH = w*vh/vw, true
@@ -183,7 +215,7 @@ func svgDimensions(data []byte) (int, int) {
 				}
 			}
 		}
-		if okW && okH {
+		if okW && okH && w+0.5 < float64(int(^uint(0)>>1)) && h+0.5 < float64(int(^uint(0)>>1)) {
 			return int(w + 0.5), int(h + 0.5)
 		}
 		return 0, 0
@@ -195,19 +227,128 @@ var svgDropElements = map[string]bool{"script": true, "foreignobject": true, "if
 	"object": true, "audio": true, "video": true, "handler": true, "listener": true}
 
 // urlAsParsed is v the way a browser reads it as a URL: ASCII tab, CR, LF and the other control characters
-// are deleted wherever they occur, then surrounding spaces are trimmed. "java&#9;script:" is a script URL.
+// are deleted wherever they occur, backslashes become slashes (so "\\evil" is a protocol-relative URL),
+// then surrounding spaces are trimmed. "java&#9;script:" is a script URL.
 func urlAsParsed(v string) string {
-	return strings.TrimSpace(strings.Map(func(r rune) rune {
+	v = strings.Map(func(r rune) rune {
 		if r < 0x20 || r == 0x7f {
 			return -1
 		}
 		return r
-	}, v))
+	}, v)
+	v = strings.ReplaceAll(v, `\`, "/")
+	return strings.TrimSpace(v)
+}
+
+// urlSchemeFlat collapses slashes inside the scheme. After "\" is normalized to "/", "java\script:"
+// is "java/script:" and a browser that ignores the slash still treats it as a script URL.
+func urlSchemeFlat(v string) string {
+	v = urlAsParsed(v)
+	i := strings.IndexByte(v, ':')
+	if i < 0 {
+		return v
+	}
+	return strings.ReplaceAll(v[:i], "/", "") + v[i:]
 }
 
 var svgScriptURL = regexp.MustCompile(`(?i)^\s*(javascript|vbscript|livescript):`)
 var svgSafeData = regexp.MustCompile(`(?i)^\s*data:image/(png|jpe?g|gif|webp|avif);`)
 var svgBadCSS = regexp.MustCompile(`(?i)(@import|expression\s*\(|javascript:|url\s*\(\s*['"]?\s*(?:javascript|https?:|//))`)
+
+// svgPaintAttrs are presentation attributes that take a paint server, so url() is a resource load.
+var svgPaintAttrs = map[string]bool{
+	"fill": true, "stroke": true, "clip-path": true, "mask": true, "filter": true,
+	"marker": true, "marker-start": true, "marker-mid": true, "marker-end": true,
+	"cursor": true, "color": true, "stop-color": true, "flood-color": true, "lighting-color": true,
+}
+
+func isHex(c byte) bool {
+	return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
+}
+
+func hexVal(c byte) int {
+	switch {
+	case c >= '0' && c <= '9':
+		return int(c - '0')
+	case c >= 'a' && c <= 'f':
+		return int(c-'a') + 10
+	default:
+		return int(c-'A') + 10
+	}
+}
+
+// svgDecodeCSSEscapes decodes CSS escapes (\6a, \6a , \n, \x) so a script URL hidden as
+// "\6a avascript:" is visible to the checks below.
+func svgDecodeCSSEscapes(s string) string {
+	if !strings.Contains(s, `\`) {
+		return s
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i] != '\\' || i+1 >= len(s) {
+			b.WriteByte(s[i])
+			continue
+		}
+		if isHex(s[i+1]) {
+			hex, n, j := 0, 0, i+1
+			for n < 6 && j < len(s) && isHex(s[j]) {
+				hex = hex*16 + hexVal(s[j])
+				j++
+				n++
+			}
+			if hex > 0 && hex <= 0x10FFFF {
+				b.WriteRune(rune(hex))
+			}
+			if j < len(s) && (s[j] == ' ' || s[j] == '\t') {
+				j++
+			}
+			i = j - 1
+			continue
+		}
+		if s[i+1] == '\n' {
+			i++
+			continue
+		}
+		if s[i+1] == '\r' {
+			i++
+			if i+1 < len(s) && s[i+1] == '\n' {
+				i++
+			}
+			continue
+		}
+		b.WriteByte(s[i+1])
+		i++
+	}
+	return b.String()
+}
+
+// svgExternalURLFunc reports a url() that is not a local fragment (#id).
+func svgExternalURLFunc(v string) bool {
+	lower := strings.ToLower(v)
+	for i := 0; i < len(lower); {
+		j := strings.Index(lower[i:], "url(")
+		if j < 0 {
+			return false
+		}
+		rest := strings.TrimLeft(lower[i+j+4:], " \t\"'")
+		if !strings.HasPrefix(rest, "#") {
+			return true
+		}
+		i = i + j + 4
+	}
+	return false
+}
+
+// svgCSSUnsafe reports CSS (a style attribute, a presentation attribute or a style element) that
+// loads a script, an external resource, or a url() hidden by CSS escapes.
+func svgCSSUnsafe(v string) bool {
+	flat := strings.ReplaceAll(svgDecodeCSSEscapes(v), `\`, "/")
+	if svgBadCSS.MatchString(flat) || svgScriptURL.MatchString(urlSchemeFlat(flat)) {
+		return true
+	}
+	return svgExternalURLFunc(flat)
+}
 
 // svgAnimatesURL reports an animation element (set, animate…) that changes a link or other URL
 // attribute: <set attributeName="href" to="javascript:…"> or values="x;javascript:…" would turn a
@@ -229,6 +370,13 @@ func svgAnimatesURL(name string, attrs []xml.Attr) bool {
 		switch v {
 		case "href", "src", "action", "formaction", "style":
 			return true
+		case "fill", "stroke", "clip-path", "mask", "filter", "cursor", "marker", "marker-start", "marker-mid", "marker-end":
+			for _, b := range attrs {
+				if svgCSSUnsafe(b.Value) {
+					return true
+				}
+			}
+			return false
 		}
 		return strings.HasPrefix(v, "on")
 	}
@@ -294,8 +442,9 @@ func SanitizeSVG(data []byte) ([]byte, error) {
 					continue
 				case an == "href" || an == "src" || an == "action" || an == "formaction":
 					v = urlAsParsed(v)
+					flat := urlSchemeFlat(v)
 					lv := strings.ToLower(v)
-					if svgScriptURL.MatchString(v) || (strings.HasPrefix(lv, "data:") && !svgSafeData.MatchString(v)) {
+					if svgScriptURL.MatchString(flat) || (strings.HasPrefix(lv, "data:") && !svgSafeData.MatchString(v)) {
 						continue
 					}
 					if name == "use" && !strings.HasPrefix(v, "#") {
@@ -304,9 +453,11 @@ func SanitizeSVG(data []byte) ([]byte, error) {
 					if (strings.HasPrefix(lv, "http") || strings.HasPrefix(lv, "//")) && name != "a" {
 						continue // no external resources inside the image
 					}
-				case an == "style" && svgBadCSS.MatchString(a.Value):
+				case an == "style" && svgCSSUnsafe(a.Value):
 					continue
-				case svgScriptURL.MatchString(v):
+				case svgPaintAttrs[an] && svgCSSUnsafe(a.Value):
+					continue
+				case svgScriptURL.MatchString(urlSchemeFlat(v)):
 					continue
 				}
 				out.WriteString(" " + svgName(a.Name) + `="` + strings.ReplaceAll(svgEscape(a.Value), `"`, "&#34;") + `"`)
@@ -323,8 +474,8 @@ func SanitizeSVG(data []byte) ([]byte, error) {
 			if skip > 0 || depth == 0 {
 				continue
 			}
-			if svgBadCSS.Match(t) {
-				continue // a <style> body with imports or script URLs
+			if svgCSSUnsafe(string(t)) {
+				continue // a <style> body with imports, script URLs or CSS-escaped url()
 			}
 			out.WriteString(svgEscape(string(t)))
 		}

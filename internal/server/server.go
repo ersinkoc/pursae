@@ -237,7 +237,7 @@ func (s *Server) routes() *gin.Engine {
 				"set it to your proxy's address, or \"none\" (docs: operations/reverse-proxy-and-tls)")
 		}
 	}
-	r.Use(gin.Recovery(), accessLog(), requestOrigin(), securityHeaders(), s.loadUser(), s.requireInstall(), s.acfgoMiddleware(), s.golylangRequest())
+	r.Use(gin.Recovery(), accessLog(), s.requestOrigin(), s.securityHeaders(), s.loadUser(), s.requireInstall(), s.acfgoMiddleware(), s.golylangRequest())
 	r.HandleMethodNotAllowed = false
 	r.Use(s.gocdnRewrite()) // GoCDN: media and asset URLs to the CDN (gocdn_rewrite.go)
 
@@ -326,6 +326,7 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/edit-comments", s.commentsScreen) // Screen Options form
 	admin.GET("/revision", s.revisionScreen)
 	admin.GET("/users", s.usersScreen)
+	admin.POST("/users", s.usersScreen) // bulk role change and the users search form (users.php)
 	admin.GET("/update-core", s.updateCore)
 	admin.POST("/update-core", s.updateCore) // Update Plugins, Update to version X (hub_updates.go, core_update.go)
 	admin.GET("/about", s.about)
@@ -446,7 +447,7 @@ func (s *Server) static(r *gin.Engine, prefix, dir string, guards ...gin.Handler
 }
 
 // securityHeaders sets the default headers from the spec's security section.
-func securityHeaders() gin.HandlerFunc {
+func (s *Server) securityHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h := c.Writer.Header()
 		h.Set("X-Content-Type-Options", "nosniff")
@@ -464,7 +465,7 @@ func securityHeaders() gin.HandlerFunc {
 				"style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline'; "+
 				"frame-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
 		}
-		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
+		if s.requestHTTPS(c.Request) {
 			h.Set("Strict-Transport-Security", "max-age=31536000")
 		}
 		c.Writer = &cspWriter{ResponseWriter: c.Writer, c: c} // per-response CSP allow-list (csp_embed.go)
@@ -480,6 +481,7 @@ const (
 // loadUser resolves the login cookie to a user for every request (admin bar, edit links, comments).
 func (s *Server) loadUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var u *store.User
 		token, err := c.Cookie(auth.CookieName)
 		if err == nil && token != "" {
 			lookup := s.auth.Lookup
@@ -487,13 +489,16 @@ func (s *Server) loadUser() gin.HandlerFunc {
 				lookup = s.auth.LookupPassive
 			}
 			if sess, err := lookup(c, token); err == nil {
-				if u, err := s.store.UserByID(c, sess.UserID); err == nil {
+				if got, err := s.store.UserByID(c, sess.UserID); err == nil {
+					u = got
 					c.Set(ctxUser, u)
 					c.Set(ctxSession, sess)
-					c.Request = c.Request.WithContext(withPluginUser(c.Request.Context(), u)) // get_current_user for plugins
 				}
 			}
 		}
+		// Every request is request-scoped, including anonymous ones, so a plugin cannot publish
+		// or send mail as a visitor merely because it holds posts:write or mail:send.
+		c.Request = c.Request.WithContext(withPluginRequest(c.Request.Context(), u))
 		c.Next()
 	}
 }
@@ -742,6 +747,41 @@ func trustedProxyNets(spec string) ([]*net.IPNet, error) {
 	return nets, nil
 }
 
+// peerTrusted reports whether r's immediate peer may supply forwarded client headers
+// (X-Forwarded-For, X-Forwarded-Proto). A unix-socket peer is trusted, as gin trusts it;
+// any other peer must be in WPGO_TRUSTED_PROXIES (see isTrustedProxy).
+func (s *Server) peerTrusted(r *http.Request) bool {
+	if r == nil {
+		return false
+	}
+	if la, ok := r.Context().Value(http.LocalAddrContextKey).(net.Addr); ok && strings.HasPrefix(la.Network(), "unix") {
+		return true
+	}
+	peer, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		peer = r.RemoteAddr
+	}
+	ip := net.ParseIP(strings.TrimSpace(peer))
+	if ip == nil {
+		return false
+	}
+	return s.isTrustedProxy(ip)
+}
+
+// requestHTTPS is the scheme the application renders for, and the scheme the page cache stores
+// (cache.Options.TrustForwarded is peerTrusted). Real TLS counts. X-Forwarded-Proto counts only
+// when it is exactly "https" and the immediate peer is a trusted proxy; a direct client cannot
+// put its response under the https cache key.
+func (s *Server) requestHTTPS(r *http.Request) bool {
+	if r == nil {
+		return false
+	}
+	if r.TLS != nil {
+		return true
+	}
+	return s.peerTrusted(r) && r.Header.Get("X-Forwarded-Proto") == "https"
+}
+
 // requestIP is clientIP for the http.Handler-level gates that run before gin (the Pursae Security site block
 // list, the maintenance IP whitelist). It follows gin's ClientIP with the same trusted proxies: a peer that is a
 // trusted proxy may report the visitor in X-Forwarded-For (then X-Real-IP), read right to left up to the first
@@ -751,18 +791,7 @@ func (s *Server) requestIP(r *http.Request) string {
 	if err != nil {
 		peer = r.RemoteAddr
 	}
-	trusted := false
-	if la, ok := r.Context().Value(http.LocalAddrContextKey).(net.Addr); ok && strings.HasPrefix(la.Network(), "unix") {
-		trusted = true // gin always trusts a unix socket peer
-	}
-	if !trusted {
-		ip := net.ParseIP(strings.TrimSpace(peer))
-		if ip == nil {
-			return peer
-		}
-		trusted = s.isTrustedProxy(ip)
-	}
-	if !trusted {
+	if !s.peerTrusted(r) {
 		return peer
 	}
 	for _, name := range []string{"X-Forwarded-For", "X-Real-IP"} {
@@ -830,10 +859,10 @@ func (s *Server) purgeAll(ctx context.Context) {
 type originKey struct{}
 
 // requestOrigin remembers scheme://host of the request so links can follow it on local sites.
-func requestOrigin() gin.HandlerFunc {
+func (s *Server) requestOrigin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		scheme := "http"
-		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
+		if s.requestHTTPS(c.Request) {
 			scheme = "https"
 		}
 		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), originKey{}, scheme+"://"+c.Request.Host))

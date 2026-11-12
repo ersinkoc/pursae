@@ -204,10 +204,12 @@ func (s *Server) rssFeed(ctx context.Context, c *gin.Context, q *siteQuery, lb *
 	return sb.String()
 }
 
-// titleRSS is get_the_title_rss(): the title without tags, HTML-escaped. Atom titles are type="html",
-// so a raw title would reach feed readers as markup.
+// titleRSS is get_the_title_rss(): tags stripped, then HTML-escaped once, like an RSS <title>
+// text node (html.EscapeString, no Unescape). Atom entry titles are type="html" inside CDATA,
+// which a feed reader HTML-decodes. Unescaping before that single escape turns a stored
+// &lt;img onerror&gt; back into a tag on the reader's decode.
 func titleRSS(title string) string {
-	return html.EscapeString(html.UnescapeString(wp.StripTags(title)))
+	return html.EscapeString(wp.StripTags(title))
 }
 
 // atomFeed is feed-atom.php.

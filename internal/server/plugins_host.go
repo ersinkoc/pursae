@@ -35,13 +35,46 @@ import (
 // host functions called from hooks, shortcodes and REST handlers can answer get_current_user.
 type pluginUserKey struct{}
 
+// pluginScopeKey is "request" for an HTTP request (including an anonymous one) and "elevated"
+// for a trusted background run (scheduled events). A missing scope is not a visitor request:
+// cron-like callers may draft posts, but publishing still needs an elevated context or a user
+// who can publish. posts:write on its own does not elevate an anonymous request.
+type pluginScopeKey struct{}
+
+const (
+	pluginScopeRequest  = "request"
+	pluginScopeElevated = "elevated"
+)
+
 func withPluginUser(ctx context.Context, u *store.User) context.Context {
 	return context.WithValue(ctx, pluginUserKey{}, u)
+}
+
+// withPluginRequest marks ctx as a visitor request and sets the user plugins act as (nil when
+// the visitor is anonymous). Host writes then require that user's capabilities.
+func withPluginRequest(ctx context.Context, u *store.User) context.Context {
+	ctx = context.WithValue(ctx, pluginScopeKey{}, pluginScopeRequest)
+	return withPluginUser(ctx, u)
+}
+
+// withPluginElevated marks ctx as a trusted background run. Publishing without a current user
+// is allowed only here, not merely because the plugin holds posts:write.
+func withPluginElevated(ctx context.Context) context.Context {
+	return context.WithValue(ctx, pluginScopeKey{}, pluginScopeElevated)
 }
 
 func pluginUserFrom(ctx context.Context) *store.User {
 	u, _ := ctx.Value(pluginUserKey{}).(*store.User)
 	return u
+}
+
+func pluginScope(ctx context.Context) string {
+	s, _ := ctx.Value(pluginScopeKey{}).(string)
+	return s
+}
+
+func pluginPublicStatus(status string) bool {
+	return status == "publish" || status == "future" || status == "private"
 }
 
 func userInfo(u *store.User) *plugins.UserInfo {
@@ -84,6 +117,47 @@ func (h *pluginHost) postData(ctx context.Context, p *store.Post) *plugins.PostD
 		out.Terms[tax] = list
 	}
 	return out
+}
+
+// authorizePostWrite is the capability check for insert_post and update_post when the call runs
+// inside a request. Background callers may still create drafts; publishing (publish, future,
+// private) needs an elevated context or a user who can publish. before is the stored post on
+// update and nil on insert. Creating a draft needs no user; editing an existing post does.
+func (h *pluginHost) authorizePostWrite(ctx context.Context, before, next *store.Post) error {
+	if pluginScope(ctx) == pluginScopeElevated {
+		return nil
+	}
+	publishing := pluginPublicStatus(next.Status) && (before == nil || !pluginPublicStatus(before.Status))
+	if pluginScope(ctx) != pluginScopeRequest {
+		if publishing {
+			return errors.New("publishing requires an elevated context or a user who can publish")
+		}
+		return nil
+	}
+	u := pluginUserFrom(ctx)
+	if before != nil {
+		if u == nil || !u.Can("edit_post", before) {
+			return errors.New("the current user is not allowed to edit this post")
+		}
+	}
+	// A new draft or pending post is allowed for anyone: front-end submission plugins create
+	// them on a visitor's request. Publishing it is checked below.
+	if publishing {
+		capName := "publish_posts"
+		if next.Type == "page" {
+			capName = "publish_pages"
+		}
+		if u == nil || !u.Can(capName, nil) {
+			return errors.New("the current user is not allowed to publish")
+		}
+	}
+	return nil
+}
+
+// authorizeMail is the check for send_mail. mail:send is granted at install time and contact form
+// plugins send a notification on an anonymous visitor's request, so every scope may send.
+func (h *pluginHost) authorizeMail(ctx context.Context) error {
+	return nil
 }
 
 func (h *pluginHost) GetPost(ctx context.Context, _ string, id int64) (*plugins.PostData, error) {
@@ -186,6 +260,9 @@ func (h *pluginHost) InsertPost(ctx context.Context, _ string, in plugins.PostIn
 	if err := applyPostInput(p, in); err != nil {
 		return nil, err
 	}
+	if err := h.authorizePostWrite(ctx, nil, p); err != nil {
+		return nil, err
+	}
 	if err := h.s.store.InsertPost(ctx, p); err != nil {
 		return nil, err
 	}
@@ -204,7 +281,11 @@ func (h *pluginHost) UpdatePost(ctx context.Context, _ string, id int64, in plug
 	if err != nil || p == nil || !pluginPostTypes[p.Type] {
 		return nil, errors.New("post not found")
 	}
+	before := *p
 	if err := applyPostInput(p, in); err != nil {
+		return nil, err
+	}
+	if err := h.authorizePostWrite(ctx, &before, p); err != nil {
 		return nil, err
 	}
 	var editor int64
@@ -455,7 +536,10 @@ func (s *Server) servePluginRest(c *gin.Context, route, method string) bool {
 			}
 		}
 	}
-	ctx, cancel := context.WithTimeout(withPluginUser(c.Request.Context(), restCurrent(c)), 10*time.Second)
+	// REST authentication, not the cookie alone: a cookie without a nonce is anonymous, and the
+	// handler's host calls (insert, update, mail) are checked against that user.
+	actor := restCurrent(c)
+	ctx, cancel := context.WithTimeout(withPluginRequest(c.Request.Context(), actor), 10*time.Second)
 	defer cancel()
 	resp, err := p.ServeRest(ctx, *r, req)
 	if err != nil {

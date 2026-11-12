@@ -92,6 +92,9 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		rendered, excerpt = s.gooRESTRestrict(c.Request.Context(), u, p, rendered, excerpt) // Goocommerce Memberships
 		restricted = rendered != r0 || excerpt != e0
 	}
+	// Password-protected posts must not leak the note text or custom fields to callers
+	// who cannot edit the post (public view, or an edit-context collection of someone else's post).
+	hideProtected := protected && !canEdit
 	date := p.Date().In(loc)
 	var dateGMT any = gmt(p.Date())
 	if p.PublishedAt == nil && (p.Status == "draft" || p.Status == "auto-draft" || p.Status == "pending") {
@@ -121,12 +124,12 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		"comment_status": p.CommentStatus,
 		"ping_status":    p.PingStatus,
 		"template":       "",
-		"meta":           map[string]any{"footnotes": metaString(p.Meta, "footnotes")},
+		"meta":           map[string]any{"footnotes": footnotesForREST(p, hideProtected)},
 		"class_list":     []string{"post-" + itoa64(p.ID), p.Type, "type-" + p.Type, "status-" + p.Status, "hentry"},
 	}
 	if p.Type == "post" {
 		out["sticky"] = p.Sticky
-		out["format"] = p.Format
+		out["format"] = store.CanonicalPostFormat(p.Format)
 		ctx := c.Request.Context() // request memo when a list prefetched its posts (listPosts)
 		out["categories"] = termIDs(s.postTerms(ctx, p.ID, "category"))
 		out["tags"] = termIDs(s.postTerms(ctx, p.ID, "post_tag"))
@@ -219,8 +222,20 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		}
 	}
 	s.acfgoRESTPost(c, p, out) // ACF-Go: the "acf" field
+	if hideProtected {
+		delete(out, "acf")
+	}
 	out["_links"] = restLinks(self, home+"/wp-json/wp/v2/"+base, extra)
 	return out
+}
+
+// footnotesForREST is the registered footnotes meta. Password-protected posts
+// expose it only to callers who can edit the post.
+func footnotesForREST(p *store.Post, hide bool) string {
+	if hide {
+		return ""
+	}
+	return metaString(p.Meta, "footnotes")
 }
 
 func metaString(m map[string]any, k string) string {
@@ -580,6 +595,10 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		p.PingStatus = v
 	}
 	if v, ok := r.Str(c, "format"); ok && v != "" {
+		if store.CanonicalPostFormat(v) != v {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): format")
+			return
+		}
 		p.Format = v
 	}
 	if v, ok := r.Bool(c, "sticky"); ok && typ == "post" {
@@ -831,11 +850,16 @@ func (api *restAPI) listAutosaves(c *gin.Context, r *restRequest, typ string) {
 		pid, _ = strconv.ParseInt(r.Params["parent"], 10, 64)
 	}
 	p, err := s.store.GetPost(c, pid)
-	if err != nil || !u.Can("edit_post", p) {
+	if err != nil || u == nil || !u.Can("edit_post", p) {
 		restErr(c, http.StatusForbidden, "rest_cannot_read", "Sorry, you are not allowed to view autosaves of this post.")
 		return
 	}
-	revs, _ := s.revisions(c, p.ID, true, 0)
+	// An author sees only the autosave they wrote. edit_others_* is required to list someone else's.
+	authorID := u.ID
+	if u.Can("edit_others_"+restCapPlural(p.Type), nil) {
+		authorID = 0
+	}
+	revs, _ := s.revisions(c, p.ID, true, authorID)
 	out := []map[string]any{}
 	for _, rv := range revs {
 		out = append(out, s.restRevision(c, rv, p))
@@ -971,6 +995,11 @@ func (api *restAPI) loadRevisionKind(c *gin.Context, r *restRequest, typ string,
 func (api *restAPI) getAutosave(c *gin.Context, r *restRequest, typ string) {
 	p, rv, ok := api.loadRevisionKind(c, r, typ, true)
 	if !ok {
+		return
+	}
+	u := restCurrent(c)
+	if u == nil || (rv.AuthorID != u.ID && !u.Can("edit_others_"+restCapPlural(p.Type), nil)) {
+		restErr(c, http.StatusForbidden, "rest_cannot_read", "Sorry, you are not allowed to view this autosave.")
 		return
 	}
 	restJSON(c, http.StatusOK, api.s.restRevision(c, rv, p))

@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -429,7 +430,7 @@ func (h *pluginHost) HTTPRequest(ctx context.Context, plugin string, r plugins.H
 	req.Header.Set("User-Agent", "Pursae/"+Version+" plugin/"+plugin)
 	resp, err := pluginHTTP.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, pluginHTTPError(err)
 	}
 	defer resp.Body.Close()
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, pluginHTTPMaxBody+1))
@@ -446,6 +447,36 @@ func (h *pluginHost) HTTPRequest(ctx context.Context, plugin string, r plugins.H
 	return &plugins.HTTPResponse{Status: resp.StatusCode, Header: hdr, Body: string(respBody)}, nil
 }
 
+// pluginNetAddr matches a resolved address so a blocked private or link-local IP is not returned
+// to the plugin (the dial error otherwise includes it: "dial tcp 169.254.169.254:80: …").
+var pluginNetAddr = regexp.MustCompile(`(?:\d{1,3}\.){3}\d{1,3}|(?:[0-9a-fA-F]{0,4}:){2,}[0-9a-fA-F]{0,4}`)
+
+// pluginHTTPError is err with any resolved IP removed. The URL the plugin asked for stays; the
+// address it resolved to does not.
+func pluginHTTPError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var oe *net.OpError
+	if errors.As(err, &oe) {
+		inner := "destination not allowed for plugins"
+		if oe.Err != nil && !pluginNetAddr.MatchString(oe.Err.Error()) {
+			inner = oe.Err.Error()
+		}
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			return fmt.Errorf("%s %q: %s", ue.Op, ue.URL, inner)
+		}
+		return errors.New(inner)
+	}
+	var ue *url.Error
+	if errors.As(err, &ue) && ue.Err != nil {
+		return fmt.Errorf("%s %q: %s", ue.Op, ue.URL, pluginHTTPError(ue.Err).Error())
+	}
+	msg := pluginNetAddr.ReplaceAllString(err.Error(), "[redacted]")
+	return errors.New(msg)
+}
+
 // pluginMailLimit caps the messages one plugin may queue per hour.
 const pluginMailLimit = 60
 
@@ -456,6 +487,9 @@ var pluginMailCount = struct {
 }{hour: map[string]int{}}
 
 func (h *pluginHost) SendMail(ctx context.Context, plugin string, m plugins.MailMessage) error {
+	if err := h.authorizeMail(ctx); err != nil {
+		return err
+	}
 	pluginMailCount.Lock()
 	if time.Since(pluginMailCount.at) > time.Hour {
 		pluginMailCount.hour, pluginMailCount.at = map[string]int{}, time.Now()

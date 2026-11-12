@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"crypto/hmac"
 	"encoding/json"
 	"errors"
+	"html"
 	"log/slog"
 	"mime"
 	"net"
@@ -30,13 +32,14 @@ import (
 //
 // Nothing in the request is trusted: the fields come from the stored doc (webbuilder.FindForm), the
 // values are validated against that schema and every other field is dropped. A filled honeypot, a
-// submit faster than webbuilder.FormMinMillis or a disallowed word (Settings › Discussion) is spam:
-// the visitor sees "sent" and nothing is mailed. Each address gets wbFormLimit attempts per
-// wbFormWindow. When Pursae Contact Form is active with reCAPTCHA or Turnstile keys, the matching
-// token is required. The message goes to admin_email through the core mailer (the wp_mail job).
+// too-fast wb_t, or a disallowed word (Settings › Discussion) is spam: the visitor sees
+// "sent" and nothing is mailed. Each address gets wbFormLimit attempts per wbFormWindow. When
+// Pursae Contact Form is active with reCAPTCHA or Turnstile keys, the matching token is required.
+// The message goes to admin_email through the core mailer (the wp_mail job).
 //
-// The route needs no login and no nonce: a cookie without X-WP-Nonce is a visitor to the REST API
-// (restAuthUser), so a logged-in browser posting the form is not a CSRF vector and needs nothing more.
+// POST requires a same-origin request and wb_nonce. Logged-in visitors get a session nonce
+// (wbFormToken); everyone else gets a signed token of the post and section. A cookie without
+// X-WP-Nonce is still a visitor to the REST API (restAuthUser).
 
 const (
 	wbFormLimit   = 10                                  // attempts per address and window
@@ -159,6 +162,10 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 		s.wbFormRespond(c, p, schema, wantJSON, o, fields)
 	}
 
+	if !s.wbFormOriginOK(c) || !s.wbFormTokenOK(c, p.ID, schema.SectionID, values[webbuilder.FormNonce]) {
+		restErr(c, http.StatusForbidden, webbuilder.ErrInvalidNonce, "The form token is missing or has expired.")
+		return
+	}
 	if wbFormSpam(values) || s.wbFormDisallowed(values, clientIP(c), c.Request.UserAgent()) {
 		finish(wbFormSent, nil) // spam looks like a success and is not mailed
 		return
@@ -310,6 +317,90 @@ func wbFormSpam(values map[string]string) bool {
 		}
 	}
 	return false
+}
+
+// wbFormSignMsg is the signed-token message for an anonymous form post.
+func wbFormSignMsg(postID int64, section string) string {
+	return "wb-form|" + strconv.FormatInt(postID, 10) + "|" + section
+}
+
+// wbFormNonceAction is the session nonce action for a logged-in form post.
+func wbFormNonceAction(postID int64, section string) string {
+	return "wb-form:" + strconv.FormatInt(postID, 10) + ":" + section
+}
+
+// wbFormToken is the hidden wb_nonce value for this visitor: a session nonce when someone is
+// logged in, otherwise a stable signature of the post and section (safe to cache).
+func (s *Server) wbFormToken(c *gin.Context, postID int64, section string) string {
+	if currentUser(c) != nil {
+		return "n." + s.nonce(c, wbFormNonceAction(postID, section))
+	}
+	return "s." + s.auth.Sign(wbFormSignMsg(postID, section))
+}
+
+// wbFormTokenOK reports whether tok was issued for this visitor and this form.
+func (s *Server) wbFormTokenOK(c *gin.Context, postID int64, section, tok string) bool {
+	kind, val, ok := strings.Cut(tok, ".")
+	if !ok || val == "" {
+		return false
+	}
+	switch kind {
+	case "s":
+		// A visitor who logged in after the page loaded still holds the anonymous token.
+		return hmac.Equal([]byte(s.auth.Sign(wbFormSignMsg(postID, section))), []byte(val))
+	case "n":
+		return s.checkNonceValue(c, val, wbFormNonceAction(postID, section))
+	default:
+		return false
+	}
+}
+
+// wbFormOriginOK requires the POST to come from this site. A cross-site form carries the other
+// site's Origin; a same-site post carries this site's Origin or Referer.
+func (s *Server) wbFormOriginOK(c *gin.Context) bool {
+	home := s.links(c).HomeURL("/")
+	hu, err := url.Parse(home)
+	if err != nil || hu.Host == "" {
+		return false
+	}
+	match := func(raw string) bool {
+		u, err := url.Parse(raw)
+		if err != nil || u.Host == "" {
+			return false
+		}
+		return strings.EqualFold(u.Scheme, hu.Scheme) && strings.EqualFold(u.Host, hu.Host)
+	}
+	if o := strings.TrimSpace(c.GetHeader("Origin")); o != "" {
+		return match(o)
+	}
+	if r := strings.TrimSpace(c.GetHeader("Referer")); r != "" {
+		return match(r)
+	}
+	return false
+}
+
+// wbFormNonces appends a hidden wb_nonce to every builder form. The value is bound to the visitor
+// (wbFormToken) and to the post and section in the form's action.
+func (s *Server) wbFormNonces(c *gin.Context, h string) string {
+	if !strings.Contains(h, "data-wb-form") {
+		return h
+	}
+	return wbFormBlockRE.ReplaceAllStringFunc(h, func(m string) string {
+		g := wbFormBlockRE.FindStringSubmatch(m)
+		if len(g) != 4 || strings.Contains(g[2], `name="`+webbuilder.FormNonce+`"`) {
+			return m
+		}
+		am := wbFormActionRE.FindStringSubmatch(g[1])
+		if am == nil {
+			return m
+		}
+		postID, err := strconv.ParseInt(am[1], 10, 64)
+		if err != nil {
+			return m
+		}
+		field := `<input type="hidden" name="` + webbuilder.FormNonce + `" value="` + html.EscapeString(s.wbFormToken(c, postID, am[2])) + `">`
+		return g[1] + g[2] + field + g[3]
+	})
 }
 
 // wbFormDisallowed checks the Discussion screen's disallowed keys (the comment blocklist, which

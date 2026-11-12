@@ -120,7 +120,9 @@ func TestCookieBypass(t *testing.T) {
 	for _, ck := range []string{
 		"wpgo_logged_in=abc",
 		"wp-postpass_123abc=x",
+		"comment_author=Ada",
 		"comment_author_email_abcdef=a%40b.c",
+		"comment_author_url=https%3A%2F%2Fada.example",
 		"woocommerce_items_in_cart=1",
 	} {
 		w := do(h, "GET", "http://example.com/p/", "Cookie", ck)
@@ -131,7 +133,7 @@ func TestCookieBypass(t *testing.T) {
 			t.Errorf("cookie %s: page not served", ck)
 		}
 	}
-	if app.calls.Load() != 5 {
+	if app.calls.Load() != 7 {
 		t.Fatalf("calls %d", app.calls.Load())
 	}
 	// Unrelated cookies do not bypass.
@@ -194,8 +196,8 @@ func TestQueryStringRules(t *testing.T) {
 		t.Fatalf("key %q", k)
 	}
 	r.Header.Set("X-Forwarded-Proto", "https")
-	if k := c.Key(r); !strings.HasPrefix(k, "https://") {
-		t.Fatalf("scheme not honored: %q", k)
+	if k := c.Key(r); strings.HasPrefix(k, "https://") {
+		t.Fatalf("untrusted client chose the scheme: %q", k)
 	}
 }
 
@@ -619,16 +621,16 @@ func TestLegacyVaryEntryNotServed(t *testing.T) {
 	}
 }
 
-// TestKeySchemeFollowsRender: the key holds the scheme the application renders for (TLS or
-// X-Forwarded-Proto exactly "https"), so a plain-HTTP request cannot store its page under the https
-// key with an absolute-form request line or an upper-case header.
+// TestKeySchemeFollowsRender: the key holds the scheme the application renders for (TLS, or
+// X-Forwarded-Proto exactly "https" from a trusted proxy). A direct client, an absolute-form
+// request line or an upper-case header cannot store a plain-HTTP page under the https key.
 func TestKeySchemeFollowsRender(t *testing.T) {
 	c, _, _ := newTestCache(t, nil)
 	for _, tc := range []struct {
 		target, xfp, want string
 	}{
 		{"http://example.com/a/", "", "http://"},
-		{"http://example.com/a/", "https", "https://"},
+		{"http://example.com/a/", "https", "http://"}, // httptest peer is not a trusted proxy
 		{"http://example.com/a/", "HTTPS", "http://"},
 		{"https://example.com/a/", "", "http://"}, // absolute-form request line, no TLS
 	} {
@@ -640,6 +642,18 @@ func TestKeySchemeFollowsRender(t *testing.T) {
 		if k := c.Key(r); !strings.HasPrefix(k, tc.want) {
 			t.Errorf("%s with X-Forwarded-Proto %q: key %q, want prefix %q", tc.target, tc.xfp, k, tc.want)
 		}
+	}
+	trusted := New(func() Config { cfg := DefaultConfig(); cfg.ServerHint = HintNone; return cfg }(), Options{
+		TrustForwarded: func(*http.Request) bool { return true },
+	})
+	r := httptest.NewRequest("GET", "http://example.com/a/", nil)
+	r.Header.Set("X-Forwarded-Proto", "https")
+	if k := trusted.Key(r); !strings.HasPrefix(k, "https://") {
+		t.Errorf("trusted proxy: key %q, want https", k)
+	}
+	r.Header.Set("X-Forwarded-Proto", "HTTPS")
+	if k := trusted.Key(r); !strings.HasPrefix(k, "http://") {
+		t.Errorf("trusted proxy, upper-case proto: key %q, want http", k)
 	}
 }
 

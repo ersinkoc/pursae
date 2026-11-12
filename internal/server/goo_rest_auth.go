@@ -16,10 +16,12 @@ import (
 
 // wc/v3 authentication with WooCommerce API keys (WC_REST_Authentication): a consumer key / secret
 // pair from Settings › Advanced › REST API, sent as HTTP Basic auth (ck_…:cs_…) or as the
-// consumer_key / consumer_secret query parameters. Keys are looked up by hex(sha256(consumer key)),
-// the secret is compared in constant time, the key's permissions (read, write, read_write) are
-// enforced by method and the request runs as the key's user. Like WooCommerce, keys are only
-// accepted over HTTPS — local development hosts (localhost, *.localhost, *.test) excepted.
+// consumer_key / consumer_secret query parameters (WooCommerce supports both). Keys are looked up by
+// hex(sha256(consumer key)); the secret is stored as "sha256$"+hex(sha256(secret)). It is 40 random
+// characters, so a fast hash is enough and every wc/v3 request stays cheap. A secret stored in the
+// clear by an older build still matches and is hashed on that successful use. The key's permissions (read, write, read_write) are enforced by method
+// and the request runs as the key's user. Like WooCommerce, keys are only accepted over HTTPS —
+// local development hosts (localhost, *.localhost, *.test) excepted.
 
 const gooCtxAPIKey = "goo.apiKey"
 
@@ -37,8 +39,9 @@ func (s *Server) gooRESTNewKey(ctx context.Context, userID int64, description, p
 		permissions = "read"
 	}
 	ck, cs = "ck_"+gooRandomKey(40), "cs_"+gooRandomKey(40)
+	hash := gooHashSecret(cs)
 	err = s.store.Pool.QueryRow(ctx, `INSERT INTO goo_api_keys (user_id, description, permissions, consumer_key, consumer_secret, truncated_key)
-		VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, userID, description, permissions, gooHashKey(ck), cs, ck[len(ck)-7:]).Scan(&id)
+		VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, userID, description, permissions, gooHashKey(ck), hash, ck[len(ck)-7:]).Scan(&id)
 	return
 }
 
@@ -62,7 +65,7 @@ func (s *Server) gooV3User(c *gin.Context, method string) (*store.User, *gooAPIE
 
 // gooKeyAuth checks a consumer key / secret and the key's permission for the method.
 func (s *Server) gooKeyAuth(c *gin.Context, ck, cs, method string) (*store.User, *gooAPIErr) {
-	if !gooSecureRequest(c) {
+	if !s.gooSecureRequest(c) {
 		return nil, gooErr(http.StatusUnauthorized, "woocommerce_rest_authentication_error", "API keys are only accepted over HTTPS.")
 	}
 	var id, userID int64
@@ -72,8 +75,17 @@ func (s *Server) gooKeyAuth(c *gin.Context, ck, cs, method string) (*store.User,
 	if err != nil {
 		return nil, gooErr(http.StatusUnauthorized, "woocommerce_rest_authentication_error", "Consumer key is invalid.")
 	}
-	if subtle.ConstantTimeCompare([]byte(secret), []byte(cs)) != 1 {
+	match, legacy := false, false
+	if strings.HasPrefix(secret, gooSecretPrefix) {
+		match = subtle.ConstantTimeCompare([]byte(secret), []byte(gooHashSecret(cs))) == 1
+	} else if subtle.ConstantTimeCompare([]byte(secret), []byte(cs)) == 1 {
+		match, legacy = true, true
+	}
+	if !match {
 		return nil, gooErr(http.StatusUnauthorized, "woocommerce_rest_authentication_error", "Consumer secret is invalid.")
+	}
+	if legacy {
+		_, _ = s.store.Pool.Exec(c, `UPDATE goo_api_keys SET consumer_secret = $2 WHERE id = $1 AND consumer_secret = $3`, id, gooHashSecret(cs), secret)
 	}
 	switch method {
 	case http.MethodGet, http.MethodHead, http.MethodOptions:
@@ -110,10 +122,10 @@ func gooQueryKeyRoute(route string) bool {
 	return route == gooV3NS || strings.HasPrefix(route, gooV3NS+"/")
 }
 
-// gooSecureRequest reports whether keys may be sent: HTTPS (directly or behind a proxy) or a local
-// development host.
-func gooSecureRequest(c *gin.Context) bool {
-	if c.Request.TLS != nil || strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https") {
+// gooSecureRequest reports whether keys may be sent: HTTPS (directly, or X-Forwarded-Proto from a
+// trusted proxy) or a local development host.
+func (s *Server) gooSecureRequest(c *gin.Context) bool {
+	if s.requestHTTPS(c.Request) {
 		return true
 	}
 	host := c.Request.Host
@@ -122,4 +134,12 @@ func gooSecureRequest(c *gin.Context) bool {
 	}
 	host = strings.ToLower(strings.Trim(host, "[]"))
 	return host == "localhost" || host == "127.0.0.1" || host == "::1" || strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".test")
+}
+
+const gooSecretPrefix = "sha256$"
+
+// gooHashSecret is how a consumer secret is stored.
+func gooHashSecret(cs string) string {
+	sum := sha256.Sum256([]byte(cs))
+	return gooSecretPrefix + hex.EncodeToString(sum[:])
 }

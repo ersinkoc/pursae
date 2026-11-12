@@ -21,6 +21,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -56,8 +57,17 @@ const (
 	gocdnSealPrefix = "enc:v1:"
 )
 
-// gocdnHTTP is the client used for the object storage and the Cloudflare API.
-var gocdnHTTP = &http.Client{Timeout: 120 * time.Second}
+// gocdnAllowPrivate lets tests reach httptest. Production stays on public addresses.
+var gocdnAllowPrivate atomic.Bool
+
+// gocdnHTTP is the client of the public CDN APIs and of public object storage. It refuses
+// private addresses at connect time and on every redirect.
+var gocdnHTTP = publicClient(120*time.Second, gocdnAllowPrivate.Load, "CDN address points at a private network")
+
+// gocdnPrivateHTTP is the client for MinIO and every custom S3 endpoint (Ceph, Garage, a private
+// gateway): the bucket often sits on a private network. Link-local and other non-public,
+// non-RFC1918 addresses (the metadata service) stay refused.
+var gocdnPrivateHTTP = lanClient(120*time.Second, "CDN address points at a private network")
 
 // gocdnCFBase is Cloudflare's API base (tests point it at a fake).
 var gocdnCFBase = "https://api.cloudflare.com/client/v4"
@@ -456,8 +466,12 @@ func gocdnRegion(st gocdnSettings) string {
 
 // gocdnClient is the S3 client for the settings.
 func (s *Server) gocdnClient(st gocdnSettings) (*gocdn.Client, error) {
+	httpClient := gocdnHTTP
+	if st.Provider == "minio" || st.Endpoint != "" || gocdnAllowPrivate.Load() {
+		httpClient = gocdnPrivateHTTP
+	}
 	c := &gocdn.Client{Endpoint: gocdnEndpoint(st), Region: gocdnRegion(st), Bucket: st.Bucket, AccessKey: st.AccessKey,
-		SecretKey: s.gocdnReveal(st.SecretKey), PathStyle: st.PathStyle, HTTP: gocdnHTTP}
+		SecretKey: s.gocdnReveal(st.SecretKey), PathStyle: st.PathStyle, HTTP: httpClient}
 	if c.Endpoint == "" {
 		return nil, errors.New("no endpoint: enter the S3 endpoint URL of your provider")
 	}

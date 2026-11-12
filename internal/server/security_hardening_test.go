@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"net"
 	"net/http/httptest"
 	"testing"
@@ -118,6 +119,48 @@ func TestClientIPTrustedProxies(t *testing.T) {
 	}
 }
 
+func TestRequestHTTPSTrustsForwardedProtoOnlyFromProxies(t *testing.T) {
+	nets, err := trustedProxyNets("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{trustedNets: nets}
+	req := httptest.NewRequest("GET", "http://example.com/", nil)
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.RemoteAddr = "198.51.100.7:5555"
+	if s.requestHTTPS(req) {
+		t.Error("an untrusted client chose https")
+	}
+	req.RemoteAddr = "10.0.0.2:5555"
+	if !s.requestHTTPS(req) {
+		t.Error("a trusted proxy's https was ignored")
+	}
+	req.Header.Set("X-Forwarded-Proto", "HTTPS")
+	if s.requestHTTPS(req) {
+		t.Error("an upper-case proto was trusted")
+	}
+	req.Header.Set("X-Forwarded-Proto", "https")
+	none, err := trustedProxyNets("none")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.trustedNets = none
+	if s.requestHTTPS(req) {
+		t.Error(`"none" still trusted the header`)
+	}
+}
+
+func TestWebhookURLRejectsPrivateTargets(t *testing.T) {
+	for _, u := range []string{"javascript:alert(1)", "http://127.0.0.1/hook", "https://169.254.169.254/", "https://user@hooks.example/x", "ftp://hooks.example/"} {
+		if err := msWebhookURL(u); err == nil {
+			t.Errorf("msWebhookURL(%q) accepted", u)
+		}
+	}
+	if err := msWebhookURL("https://hooks.slack.com/services/T/B/x"); err != nil {
+		t.Errorf("public webhook: %v", err)
+	}
+}
+
 func TestApplyTrustedProxiesRejectsGarbage(t *testing.T) {
 	if err := applyTrustedProxies(gin.New(), "10.0.0.0/8, not-a-cidr"); err == nil {
 		t.Error("an unparsable entry must be an error, not silently ignored")
@@ -157,5 +200,32 @@ func TestPluginPostMetaRefusesProtectedKeys(t *testing.T) {
 	p := &store.Post{}
 	if err := applyPostInput(p, plugins.PostInput{Meta: map[string]any{"my_plugin_note": "hello"}}); err != nil || p.Meta["my_plugin_note"] != "hello" {
 		t.Errorf("an ordinary meta key stopped working: %v %v", err, p.Meta)
+	}
+}
+
+func TestHTTPSRequestGatesForwardedProto(t *testing.T) {
+	nets, err := trustedProxyNets(defaultTrustedProxies)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{trustedNets: nets}
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = "203.0.113.5:1234"
+	r.Header.Set("X-Forwarded-Proto", "https")
+	if s.httpsRequest(r) {
+		t.Error("an untrusted peer turned on Secure with X-Forwarded-Proto")
+	}
+	r.RemoteAddr = "127.0.0.1:1234"
+	if !s.httpsRequest(r) {
+		t.Error("a trusted proxy's X-Forwarded-Proto: https was ignored")
+	}
+	r.Header.Set("X-Forwarded-Proto", "http")
+	if s.httpsRequest(r) {
+		t.Error("X-Forwarded-Proto: http was treated as https")
+	}
+	r.Header.Del("X-Forwarded-Proto")
+	r.TLS = &tls.ConnectionState{}
+	if !s.httpsRequest(r) {
+		t.Error("a TLS request was not treated as https")
 	}
 }

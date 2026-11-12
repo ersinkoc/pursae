@@ -329,11 +329,11 @@ func (s *Server) runJob(ctx context.Context, handlers map[string]jobHandler, j d
 		// A plugin's event (ScheduleEvent) goes to that plugin only; while the plugin is not
 		// running (deactivated, disabled) the run is skipped rather than failing every time.
 		if s.plugins != nil {
-			s.plugins.hooks.DoActionOwner(ctx, owner, j.name, j.payload)
+			s.plugins.hooks.DoActionOwner(withPluginElevated(ctx), owner, j.name, j.payload)
 		}
 		return nil
 	case s.plugins != nil && s.plugins.hooks.HasAction(j.name):
-		s.plugins.hooks.DoAction(ctx, j.name, j.payload)
+		s.plugins.hooks.DoAction(withPluginElevated(ctx), j.name, j.payload)
 		return nil
 	}
 	return fmt.Errorf("no handler for %q", j.name)

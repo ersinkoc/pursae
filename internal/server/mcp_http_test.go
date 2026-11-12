@@ -2,11 +2,13 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestMCPHTTPTransport covers /wp-json/pursae/v1/mcp at the HTTP level: GET without a session is 405,
@@ -95,5 +97,56 @@ func TestMCPHTTPTransport(t *testing.T) {
 	}
 	if res := call(8, "get_post", map[string]any{"id": 999999}); res["isError"] != true {
 		t.Errorf("get_post of a missing post: %v", res)
+	}
+}
+
+// A cookie-authenticated GET stream must close after the login session is destroyed.
+// Keep-alive re-reads the session; logout must not leave the connection open.
+func TestMCPCookieStreamEndsWhenSessionEnds(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, nonce, _ := get(t, c, base+"/wp-admin/admin-ajax?action=rest-nonce")
+	prev := mcpStreamKeepAlive
+	mcpStreamKeepAlive = 100 * time.Millisecond
+	t.Cleanup(func() { mcpStreamKeepAlive = prev })
+
+	req, _ := http.NewRequest("POST", base+"/wp-json/pursae/v1/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-WP-Nonce", nonce)
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	sid := resp.Header.Get("Mcp-Session-Id")
+	if resp.StatusCode != http.StatusOK || sid == "" {
+		t.Fatalf("initialize: %d session %q", resp.StatusCode, sid)
+	}
+
+	req, _ = http.NewRequest("GET", base+"/wp-json/pursae/v1/mcp", nil)
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Mcp-Session-Id", sid)
+	req.Header.Set("X-WP-Nonce", nonce)
+	resp, err = c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("stream: %d %s", resp.StatusCode, b)
+	}
+	ended := make(chan struct{})
+	go func() { _, _ = io.Copy(io.Discard, resp.Body); close(ended) }()
+	time.Sleep(150 * time.Millisecond)
+	if _, err := srv.store.Pool.Exec(context.Background(), `DELETE FROM sessions`); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-ended:
+	case <-time.After(3 * time.Second):
+		t.Fatal("cookie SSE stayed open after the session was deleted")
 	}
 }

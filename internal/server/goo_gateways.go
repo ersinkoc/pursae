@@ -167,7 +167,9 @@ func gooGatewayBaseFields(title, desc string) []gooField {
 }
 
 // gooOfflineGateway is the shape shared by BACS, check and cash on delivery: the order goes on-hold
-// (processing for cash on delivery) and the customer pays outside the site.
+// (processing for cash on delivery of physical goods) and the customer pays outside the site.
+// A cash-on-delivery order that contains a downloadable file stays on-hold, as WooCommerce does,
+// so the file is not released before the payment is taken.
 type gooOfflineGateway struct {
 	id, title, desc, methodDesc string
 	status                      string
@@ -225,10 +227,16 @@ func (g *gooOfflineGateway) ProcessPayment(s *Server, c *gin.Context, o *gooOrde
 	ctx := c.Request.Context()
 	if o.Total > 0 {
 		note := "Awaiting " + strings.ToLower(g.title) + " payment"
+		status := g.status
 		if g.id == "cod" {
 			note = "Payment to be made upon delivery."
+			// WC_Gateway_COD: has_downloadable_item() keeps the order on-hold. Processing would
+			// count as paid and, with "Grant access after payment", release the files immediately.
+			if s.gooOrderHasDownloadable(ctx, o) {
+				status = "on-hold"
+			}
 		}
-		if err := s.gooSetStatusFrom(ctx, o, gooNeedsPaymentStatuses, g.status, note, ""); err != nil {
+		if err := s.gooSetStatusFrom(ctx, o, gooNeedsPaymentStatuses, status, note, ""); err != nil {
 			return gooPaymentResult{Result: "failure"}, err
 		}
 	} else if err := s.gooPaymentComplete(ctx, o, ""); err != nil {

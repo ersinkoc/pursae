@@ -113,8 +113,12 @@ func TransformGIF(g *gif.GIF, p ImageParams, l AnimLimits) (*gif.GIF, error) {
 			pal = composed
 		}
 		ti := transparentIndex(pal)
-		if ti < 0 && hasTransparentPixels(f.img) && len(pal) < 256 {
-			pal = append(pal, color.RGBA{})
+		if ti < 0 && hasTransparentPixels(f.img) {
+			if len(pal) < 256 {
+				pal = append(pal, color.RGBA{})
+			} else {
+				pal[len(pal)-1] = color.RGBA{}
+			}
 			ti = len(pal) - 1
 		}
 		pm := image.NewPaletted(f.img.Bounds(), pal)

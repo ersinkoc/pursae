@@ -1241,17 +1241,31 @@ func (s *Server) golylangAjax(c *gin.Context, action string) bool {
 		l := s.pllLang(c, c.PostForm("lang"))
 		target, _ := strconv.ParseInt(c.PostForm("target"), 10, 64)
 		if l != nil {
+			u := currentUser(c)
 			tr := s.pllTranslations(c, pllPost, p.ID)
-			if old := tr[l.Slug]; old > 0 {
+			// Check the replacement before unlinking, so a refused target does not drop the current one.
+			var tp *store.Post
+			if target > 0 {
+				var err error
+				tp, err = s.store.GetPost(c, target)
+				if err != nil || tp.Type != p.Type || !u.Can("edit_post", tp) {
+					c.String(http.StatusForbidden, "-1")
+					return true
+				}
+			}
+			if old := tr[l.Slug]; old > 0 && old != target {
+				// Unlinking changes the other post's translation group: edit_post on that post too.
+				if op, err := s.store.GetPost(c, old); err == nil && !u.Can("edit_post", op) {
+					c.String(http.StatusForbidden, "-1")
+					return true
+				}
 				_ = s.pllUnlink(c, pllPost, old)
 				delete(tr, l.Slug)
 			}
-			if target > 0 {
-				if tp, err := s.store.GetPost(c, target); err == nil && tp.Type == p.Type && currentUser(c).Can("edit_post", tp) {
-					_ = s.pllSetLang(c, pllPost, tp.ID, l.Slug)
-					s.pllReslug(c, tp)
-					tr[l.Slug] = tp.ID
-				}
+			if tp != nil {
+				_ = s.pllSetLang(c, pllPost, tp.ID, l.Slug)
+				s.pllReslug(c, tp)
+				tr[l.Slug] = tp.ID
 			}
 			tr[s.pllObjLang(c, pllPost, p.ID)] = p.ID
 			if pllLog("linking the translation", s.pllSaveTranslations(c, pllPost, tr)) != nil {

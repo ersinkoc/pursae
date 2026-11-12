@@ -357,7 +357,7 @@ func TestWXRTermSlugsAndFileName(t *testing.T) {
 	if err := srv.settings.Set(ctx, map[string]any{"blogname": "Блог"}); err != nil {
 		t.Fatal(err)
 	}
-	resp, err := c.Get(base + "/wp-admin/export?download=true&content=all")
+	resp, err := c.Get(base + "/wp-admin/export?_wpnonce=" + exportNonce(t, c, base) + "&download=true&content=all")
 	if err != nil {
 		t.Fatal(err)
 	}

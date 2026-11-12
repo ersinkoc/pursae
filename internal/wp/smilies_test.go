@@ -105,3 +105,26 @@ func TestParseFeedAtomXHTML(t *testing.T) {
 		t.Fatalf("feed=%+v err=%v", f, err)
 	}
 }
+
+func TestParseFeedAtomInheritedAuthors(t *testing.T) {
+	data := `<feed xmlns="http://www.w3.org/2005/Atom"><author><name>Feed Author</name></author>` +
+		`<entry><title>Feed</title></entry>` +
+		`<entry><source><author><name>Source Author</name></author></source></entry>` +
+		`<entry><author><name>Entry Author</name></author><source><author><name>Source Author</name></author></source></entry></feed>`
+	f, err := ParseFeed([]byte(data))
+	if err != nil || len(f.Items) != 3 {
+		t.Fatalf("feed=%+v err=%v", f, err)
+	}
+	for i, want := range []string{"Feed Author", "Source Author", "Entry Author"} {
+		if got := f.Items[i].Author; got != want {
+			t.Errorf("item %d author=%q, want %q", i, got, want)
+		}
+	}
+}
+
+func TestParseFeedDateWithoutSeconds(t *testing.T) {
+	f, err := ParseFeed([]byte(`<rss><channel><item><pubDate>Mon, 02 Jan 2006 15:04 +0000</pubDate></item></channel></rss>`))
+	if err != nil || len(f.Items) != 1 || f.Items[0].Date.Format("2006-01-02 15:04:05 -0700") != "2006-01-02 15:04:00 +0000" {
+		t.Fatalf("feed=%+v err=%v", f, err)
+	}
+}

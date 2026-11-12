@@ -84,8 +84,8 @@
 	} );
 } )();
 </script>
-<p class="description">The user gets every capability of all their roles. The primary role above is the one shown in lists.</p></td></tr>
-<tr class="user-caps-wrap"><th>Capability Overrides</th>
+<p class="description">The user gets every capability of all their roles. The primary role above is the one shown in lists.</p></td></tr>{{end}}
+{{if .CanEditCaps}}<tr class="user-caps-wrap"><th>Capability Overrides</th>
 <td><table class="widefat striped" style="max-width:520px" id="wpgo-cap-rows"><thead><tr><th>Capability</th><th>Effect</th></tr></thead><tbody>
 {{range .CapRows}}<tr><td><input type="text" name="cap_name[]" value="{{.Cap}}" class="regular-text code" /></td><td><select name="cap_effect[]"><option value="allow"{{if eq .Effect "allow"}} selected{{end}}>Allow</option><option value="deny"{{if eq .Effect "deny"}} selected{{end}}>Deny</option></select></td></tr>{{end}}
 <tr><td><input type="text" name="cap_name[]" value="" class="regular-text code" placeholder="e.g. publish_pages" /></td><td><select name="cap_effect[]"><option value="allow">Allow</option><option value="deny">Deny</option></select></td></tr>
@@ -149,7 +149,8 @@
 		<input type="text" size="30" id="new_application_password_name" name="new_application_password_name" class="input" aria-required="true" aria-describedby="new_application_password_name_desc" />
 		<p class="description" id="new_application_password_name_desc">Required to create an Application Password, but not to update the user.</p>
 	</div>
-	{{template "scope-picker" (dict "Name" "new_application_password_scopes[]" "Scopes" .AppScopes)}}
+	{{template "scope-picker" (dict "Name" "new_application_password_scopes[]" "Scopes" .AppScopes "Narrow" true)}}
+	<p class="form-field"><label style="display:block"><input type="checkbox" name="full_access" value="1" /> <strong>Full access</strong> &mdash; everything this user can do, including installing plugins, editing theme files and managing users. Ignores the boxes above.</label></p>
 	<button type="submit" name="do_new_application_password" value="1" id="do_new_application_password" class="button button-secondary">Add New Application Password</button>
 </div>
 <div class="application-passwords-list-table-wrapper" style="margin-top:20px">
@@ -226,7 +227,8 @@
 			<label for="app_name">New Application Password Name</label>
 			<input type="text" id="app_name" name="app_name" value="{{.AppName}}" required />
 		</div>
-		{{template "scope-picker" (dict "Name" "scopes[]" "Scopes" .AppScopes)}}
+		{{template "scope-picker" (dict "Name" "scopes[]" "Scopes" .AppScopes "Narrow" true)}}
+		<p class="form-field"><label style="display:block"><input type="checkbox" name="full_access" value="1" /> <strong>Full access</strong> &mdash; everything this user can do, including installing plugins, editing theme files and managing users. Ignores the boxes above.</label></p>
 		<p class="submit"><input type="submit" name="approve" id="approve" class="button button-primary" value="Yes, I approve of this connection" aria-describedby="description-approve" /></p>
 		<p class="description" id="description-approve">{{if .SuccessURL}}You will be sent to <strong>{{.SuccessURL}}</strong>{{else}}You will be given a password to manually enter into the application in question.{{end}}</p>
 		<p class="submit"><input type="submit" name="reject" id="reject" class="button button-secondary" value="No, I do not approve of this connection" aria-describedby="description-reject" /></p>

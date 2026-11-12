@@ -303,9 +303,22 @@ func (api *restAPI) saveSettings(c *gin.Context, r *restRequest) {
 	restJSON(c, http.StatusOK, api.settingsObject())
 }
 
+// canSwitchThemes is the full theme directory (WP_REST_Themes_Controller).
+// manage_options covers an administrator whose role was narrowed but still runs the site.
+func canSwitchThemes(u *store.User) bool {
+	return u != nil && (u.Can("switch_themes", nil) || u.Can("edit_themes", nil) || u.Can("manage_options", nil))
+}
+
+// canReadActiveTheme is the block editor's read of the one active theme (edit_posts, or pages).
+func canReadActiveTheme(u *store.User) bool {
+	return u != nil && (u.Can("edit_posts", nil) || u.Can("edit_pages", nil))
+}
+
 func (api *restAPI) themes(c *gin.Context, r *restRequest) {
 	home := api.s.links(c).Home
 	active := api.s.activeTheme()
+	u := restCurrent(c)
+	full := canSwitchThemes(u)
 	themeJSON := func(th *Theme) map[string]any {
 		status := "inactive"
 		if th.Slug == active.Slug {
@@ -349,6 +362,12 @@ func (api *restAPI) themes(c *gin.Context, r *restRequest) {
 		}
 	}
 	if slug := r.Params["stylesheet"]; slug != "" {
+		// Inactive themes are not enumerable without switch_themes. Missing and
+		// forbidden look the same so a subscriber cannot probe the directory.
+		if !full && !(slug == active.Slug && canReadActiveTheme(u)) {
+			forbidden(c, "rest_cannot_view_themes", "Sorry, you are not allowed to view themes.")
+			return
+		}
 		th := api.s.installedTheme(slug)
 		if th == nil {
 			restErr(c, http.StatusNotFound, "rest_theme_not_found", "Theme not found.")
@@ -357,9 +376,16 @@ func (api *restAPI) themes(c *gin.Context, r *restRequest) {
 		restJSON(c, http.StatusOK, themeJSON(th))
 		return
 	}
+	status := c.Query("status")
+	if !full {
+		if status != "active" || !canReadActiveTheme(u) {
+			forbidden(c, "rest_cannot_view_themes", "Sorry, you are not allowed to view themes.")
+			return
+		}
+	}
 	var out []any
 	for _, th := range api.s.installedThemes() {
-		if st := c.Query("status"); st == "active" && th.Slug != active.Slug {
+		if status == "active" && th.Slug != active.Slug {
 			continue
 		}
 		out = append(out, themeJSON(th))
@@ -476,7 +502,22 @@ func (api *restAPI) listTerms(c *gin.Context, r *restRequest, tax string) {
 	var total int
 	var err error
 	if postID := c.Query("post"); postID != "" {
-		id, _ := strconv.ParseInt(postID, 10, 64)
+		id, errParse := strconv.ParseInt(postID, 10, 64)
+		if errParse != nil || id <= 0 {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): post",
+				map[string]any{"params": map[string]string{"post": "Invalid post ID."}})
+			return
+		}
+		p, errPost := s.store.GetPost(c, id)
+		if errPost != nil {
+			restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
+			return
+		}
+		// Terms of a draft or private post are not a public side channel.
+		if !api.readable(c, p) {
+			forbidden(c, "rest_cannot_read", "Sorry, you are not allowed to view terms for this post.")
+			return
+		}
 		m, _ := s.store.TermsForPosts(c, []int64{id}, tax)
 		terms, total = m[id], len(m[id])
 	} else if slug := c.Query("slug"); slug != "" {
@@ -850,26 +891,34 @@ func (r *restRequest) roles(c *gin.Context) ([]string, bool) {
 	return nil, false
 }
 
-// checkRoleUpdate is check_role_update(): every role must exist and the editor must be able to promote users
-// without stripping their own administrator role.
+// checkRoleUpdate is check_role_update(). An empty roles list is still a role
+// change (it wipes every role), so promote_users is required before the loop.
+// The editor also cannot touch a user whose current role sits above theirs,
+// assign a role above theirs, or demote the last administrator.
 func (api *restAPI) checkRoleUpdate(c *gin.Context, target *store.User, roles []string) bool {
 	cur := restCurrent(c)
+	if cur == nil || !cur.Can("promote_users", nil) {
+		restErr(c, http.StatusForbidden, "rest_cannot_edit_roles", "Sorry, you are not allowed to edit the roles of this user.")
+		return false
+	}
+	if target != nil && !api.s.actorMayEditUserRoles(c, cur, target) {
+		restErr(c, http.StatusForbidden, "rest_cannot_edit_roles", "Sorry, you are not allowed to edit the roles of this user.")
+		return false
+	}
 	known, _ := api.s.store.Roles(c)
 	for _, want := range roles {
-		found := false
-		for _, kr := range known {
-			if kr.Slug == want {
-				found = true
-			}
-		}
-		if !found {
+		if !roleListed(known, want) {
 			restErr(c, http.StatusBadRequest, "rest_user_invalid_role", "The role "+want+" does not exist.")
 			return false
 		}
-		if !cur.Can("promote_users", nil) {
-			restErr(c, http.StatusForbidden, "rest_cannot_edit_roles", "Sorry, you are not allowed to give users that role.")
+		if !api.s.actorMayGiveRole(c, cur, want) {
+			restErr(c, http.StatusForbidden, "rest_user_invalid_role", "Sorry, you are not allowed to give users that role.")
 			return false
 		}
+	}
+	if api.s.removingLastAdmin(c, target, roles) {
+		restErr(c, http.StatusForbidden, "rest_user_invalid_role", "Sorry, you are not allowed to remove the last administrator.")
+		return false
 	}
 	if target != nil && target.ID == cur.ID && cur.Can("manage_options", nil) {
 		keeps := false
@@ -957,6 +1006,7 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 		if hash, err := auth.HashPassword(v); err == nil {
 			if s.store.SetUserPassword(c, u.ID, hash) == nil {
 				s.endSessionsAfterPasswordChange(c, c, u.ID)
+				s.revokeCredentialsAfterPasswordChange(c, u.ID)
 				s.adminsecPasswordChanged(c, u)
 			}
 		}
@@ -1191,15 +1241,28 @@ func (s *Server) restMedia(c *gin.Context, a *store.Attachment, ctxName string) 
 	if v := attachmentFileVersion(a); v != "" {
 		details["file_version"] = v // the file was replaced or re-cropped; its URLs carry ?v=
 	}
+	// raw is an edit-context field. A public read of an attachment must not
+	// include the unescaped title, caption, description or guid.
+	editable := ctxName == "edit" && mediaEditable(restCurrent(c), a)
+	guid := map[string]any{"rendered": url}
+	title := map[string]any{"rendered": wp.EscText(a.Title)}
+	description := map[string]any{"rendered": wp.Autop(wp.KsesPost(a.Description))}
+	caption := map[string]any{"rendered": wp.Autop(wp.KsesPost(a.Caption))}
+	if editable {
+		guid["raw"] = url
+		title["raw"] = a.Title
+		description["raw"] = a.Description
+		caption["raw"] = a.Caption
+	}
 	out := map[string]any{
 		"id": a.ID, "date": a.CreatedAt.In(loc).Format("2006-01-02T15:04:05"), "date_gmt": gmt(a.CreatedAt),
-		"guid":     map[string]any{"rendered": url, "raw": url},
+		"guid":     guid,
 		"modified": a.UpdatedAt.In(loc).Format("2006-01-02T15:04:05"), "modified_gmt": gmt(a.UpdatedAt),
 		"slug": a.Slug, "status": "inherit", "type": "attachment", "link": home + "/?attachment_id=" + itoa64(a.ID),
-		"title":  map[string]any{"rendered": wp.EscText(a.Title), "raw": a.Title},
+		"title":  title,
 		"author": a.UploaderID, "featured_media": 0, "comment_status": "open", "ping_status": "closed", "template": "", "meta": []any{},
-		"description": map[string]any{"rendered": wp.Autop(wp.KsesPost(a.Description)), "raw": a.Description},
-		"caption":     map[string]any{"rendered": wp.Autop(wp.KsesPost(a.Caption)), "raw": a.Caption},
+		"description": description,
+		"caption":     caption,
 		"alt_text":    a.Alt, "media_type": mediaType, "mime_type": a.Mime, "media_details": details, "post": nullIntJSON(a.PostID),
 		"source_url": url, "missing_image_sizes": []any{},
 		"_links": restLinks(home+"/wp-json/wp/v2/media/"+itoa64(a.ID), home+"/wp-json/wp/v2/media", nil),
@@ -1230,29 +1293,49 @@ func (api *restAPI) registerMedia() {
 				restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
 				return
 			}
+			if restContext(c) == "edit" && !mediaEditable(restCurrent(c), a) {
+				forbidden(c, "rest_forbidden_context", "Sorry, you are not allowed to edit this post.")
+				return
+			}
 			restJSON(c, http.StatusOK, api.s.restMedia(c, a, restContext(c)))
 		},
 		http.MethodPost:   api.updateMedia,
 		http.MethodDelete: api.deleteMedia,
 	}, nil)
 	api.register("wp/v2", `/wp/v2/media/(?P<id>[\d]+)/post-process`, map[string]restHandler{http.MethodPost: func(c *gin.Context, r *restRequest) {
-		if !restCurrent(c).Can("upload_files", nil) {
-			forbidden(c, "rest_cannot_edit", "Sorry, you are not allowed to edit this attachment.")
-			return
-		}
 		a, err := api.s.store.GetAttachment(c, r.ID())
 		if err != nil {
 			restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
+			return
+		}
+		if !mediaEditable(restCurrent(c), a) {
+			forbidden(c, "rest_cannot_edit", "Sorry, you are not allowed to edit this attachment.")
 			return
 		}
 		restJSON(c, http.StatusOK, api.s.restMedia(c, a, "edit"))
 	}}, nil)
 }
 
-// mediaReadable reports whether the caller may read the attachment: whoever can upload files may, others only when
-// it is unattached or belongs to a published post without a password (what the public site shows anyway).
+// mediaEditable is who may edit an attachment: its uploader, or anyone with edit_others_posts.
+func mediaEditable(u *store.User, a *store.Attachment) bool {
+	if u == nil || a == nil || !u.Can("upload_files", nil) {
+		return false
+	}
+	return a.UploaderID == u.ID || u.Can("edit_others_posts", nil)
+}
+
+// mediaReadable reports whether the caller may read the attachment. Like WordPress, anyone who
+// can upload browses the whole library (editing stays mediaEditable), and visitors see unattached
+// files and files of a published post without a password.
 func (api *restAPI) mediaReadable(c *gin.Context, a *store.Attachment) bool {
-	if restCurrent(c).Can("upload_files", nil) || a.PostID == 0 {
+	if a == nil {
+		return false
+	}
+	u := restCurrent(c)
+	if u != nil && (u.Can("upload_files", nil) || u.Can("edit_others_posts", nil)) {
+		return true
+	}
+	if a.PostID == 0 {
 		return true
 	}
 	p, err := api.s.store.GetPost(c, a.PostID)
@@ -1261,10 +1344,16 @@ func (api *restAPI) mediaReadable(c *gin.Context, a *store.Attachment) bool {
 
 func (api *restAPI) listMedia(c *gin.Context, r *restRequest) {
 	s := api.s
+	u := restCurrent(c)
+	// The edit context carries raw fields. The public library does not.
+	if restContext(c) == "edit" && (u == nil || !u.Can("upload_files", nil)) {
+		forbidden(c, "rest_forbidden_context", "Sorry, you are not allowed to edit media.")
+		return
+	}
 	page, per := pageArgs(c)
 	q := store.AttachmentQuery{Search: c.Query("search"), Page: page, PerPage: per, OrderBy: c.DefaultQuery("orderby", "date"), Order: c.DefaultQuery("order", "desc")}
-	if !restCurrent(c).Can("upload_files", nil) {
-		q.PublicParentsOnly = true // visitors and users who cannot upload see only media of the public site
+	if u == nil || !u.Can("upload_files", nil) {
+		q.PublicParentsOnly = true
 	}
 	if mt := c.Query("media_type"); mt != "" {
 		if mt == "application" || mt == "text" || mt == "image" || mt == "audio" || mt == "video" {

@@ -19,6 +19,8 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // Theme packages (docs/theme-package.md): a theme installed at run time is a directory
@@ -913,8 +915,10 @@ func themeTemplateCandidates(q *siteQuery) []string {
 		if q.Post != nil && q.Post.Type != "" && q.Post.Type != "post" {
 			out = append(out, "single-"+q.Post.Type) // a custom post type entry (single-{post_type})
 		}
-		if q.Post != nil && q.Post.Format != "" && q.Post.Format != "standard" {
-			out = append(out, "single-"+q.Post.Format)
+		if q.Post != nil {
+			if f := store.CanonicalPostFormat(q.Post.Format); f != "standard" {
+				out = append(out, "single-"+f)
+			}
 		}
 		return append(out, "single", "singular", "index")
 	case "post-type-archive":

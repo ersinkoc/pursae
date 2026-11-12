@@ -181,6 +181,11 @@ func TestForumInitialsAvatar(t *testing.T) {
 			t.Errorf("initials(%q,%q) = %q, want %q", c[0], c[1], got, c[2])
 		}
 	}
+	for _, c := range [][3]string{{"e\u0301lodie", "", "E\u0301"}, {"e\u0301lodie o\u0308zturk", "", "E\u0301O\u0308"}, {"नमस्ते", "", "न"}, {"\u0301", "bob", "B"}} {
+		if got := forumInitials(c[0], c[1]); got != c[2] {
+			t.Errorf("initials(%q,%q) = %q, want %q", c[0], c[1], got, c[2])
+		}
+	}
 	a := &forumAuthor{ID: 7, DisplayName: "<b>X</b>", Initials: "<B"}
 	h := string(forumAvatarHTML(a, 48))
 	if !strings.Contains(h, `pf-avatar--initials`) || !strings.Contains(h, "&lt;B") || !strings.Contains(h, "--pf-av-size:48px") || !strings.Contains(h, "hsl(") {

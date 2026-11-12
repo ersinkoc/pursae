@@ -34,6 +34,7 @@ type personalDataEraser func(ctx context.Context, s *Server, email string) erase
 type eraseResult struct {
 	Removed, Retained int
 	Messages          []string
+	Err               error
 }
 
 var personalDataRegistry struct {
@@ -133,6 +134,9 @@ func (s *Server) erasePersonalDataRegistered(ctx context.Context, email string) 
 		total.Removed += r.Removed
 		total.Retained += r.Retained
 		total.Messages = append(total.Messages, r.Messages...)
+		if r.Err != nil && total.Err == nil {
+			total.Err = r.Err
+		}
 	}
 	if s.plugins != nil && s.plugins.hooks.HasAction("pursae_personal_data_erase") {
 		s.plugins.hooks.DoAction(ctx, "pursae_personal_data_erase", email)
@@ -152,8 +156,8 @@ func gooPersonalDataExporter(ctx context.Context, s *Server, email string) []exp
 	dateFmt := s.settings.String("date_format") + " " + s.settings.String("time_format")
 	var groups []exportGroup
 	rows, err := s.store.Pool.Query(ctx, `SELECT id, status, date_created, total::text, currency, billing, shipping, billing_email, customer_ip, user_agent, customer_note, payment_method_title
-		FROM goo_orders WHERE type = 'shop_order' AND lower(billing_email) = lower($1)
-		OR (type = 'shop_order' AND customer_id <> 0 AND customer_id = (SELECT id FROM users WHERE lower(email) = lower($1))) ORDER BY id`, email)
+		FROM goo_orders WHERE type = 'shop_order' AND (lower(billing_email) = lower($1)
+		OR (customer_id <> 0 AND customer_id = (SELECT id FROM users WHERE lower(email) = lower($1) ORDER BY id LIMIT 1))) ORDER BY id`, email)
 	if err == nil {
 		g := exportGroup{ID: "woocommerce-customer-orders", Label: "Orders", Description: "This is a list of orders placed on this site."}
 		for rows.Next() {
@@ -186,7 +190,9 @@ func gooPersonalDataExporter(ctx context.Context, s *Server, email string) []exp
 		}
 	}
 	drows, err := s.store.Pool.Query(ctx, `SELECT product_id, order_id, access_granted, access_expires, download_count FROM goo_download_permissions
-		WHERE lower(user_email) = lower($1) ORDER BY id`, email)
+		WHERE lower(user_email) = lower($1)
+		OR user_id <> 0 AND user_id = (SELECT id FROM users WHERE lower(email) = lower($1) ORDER BY id LIMIT 1)
+		ORDER BY id`, email)
 	if err == nil {
 		g := exportGroup{ID: "woocommerce-customer-downloads", Label: "Customer downloads", Description: "This is a list of downloads purchased on this site."}
 		for drows.Next() {
@@ -212,37 +218,59 @@ func gooPersonalDataExporter(ctx context.Context, s *Server, email string) []exp
 	return groups
 }
 
+// gooPrivacySubject is the person an erasure or export is about: the e-mail address
+// and, when they have an account, that account's id. Orders are matched on both
+// billing_email and customer_id; download permissions on user_email and user_id.
+func gooPrivacySubject(ctx context.Context, s *Server, email string) (int64, string) {
+	var id int64
+	_ = s.store.Pool.QueryRow(ctx, `SELECT id FROM users WHERE lower(email) = lower($1) ORDER BY id LIMIT 1`, email).Scan(&id)
+	// customer_id / user_id 0 is a guest. Never match it.
+	return id, `(lower(billing_email) = lower($1) OR ($2 <> 0 AND customer_id = $2))`
+}
+
 func gooPersonalDataEraser(ctx context.Context, s *Server, email string) eraseResult {
 	var res eraseResult
 	if !s.gooOn() {
 		return res
 	}
+	uid, orderMatch := gooPrivacySubject(ctx, s, email)
+	args := []any{email, uid}
 	if s.gooOptBool("erasure_request_removes_order_data") {
 		var retained int
-		_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_orders WHERE type = 'shop_order' AND lower(billing_email) = lower($1) AND status IN `+gooOpenOrderStatuses, email).Scan(&retained)
+		if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_orders WHERE type = 'shop_order' AND `+orderMatch+` AND status IN `+gooOpenOrderStatuses, args...).Scan(&retained); err != nil {
+			res.Err = err
+			return res
+		}
 		res.Retained += retained
 		if retained > 0 {
 			res.Messages = append(res.Messages, "Personal data within orders that are still pending, processing or on hold has been retained.")
 		}
 		tag, err := s.store.Pool.Exec(ctx, `UPDATE goo_orders SET billing = '{}', shipping = '{}', billing_email = 'deleted@site.invalid', customer_ip = '',
 			user_agent = '', customer_note = '', customer_id = 0, date_modified = now()
-			WHERE type = 'shop_order' AND lower(billing_email) = lower($1) AND status NOT IN `+gooOpenOrderStatuses, email)
-		if err == nil {
-			res.Removed += int(tag.RowsAffected())
+			WHERE type = 'shop_order' AND `+orderMatch+` AND status NOT IN `+gooOpenOrderStatuses, args...)
+		if err != nil {
+			res.Err = err
+			return res
 		}
+		res.Removed += int(tag.RowsAffected())
 	} else {
 		var n int
-		_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_orders WHERE type = 'shop_order' AND lower(billing_email) = lower($1)`, email).Scan(&n)
+		if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_orders WHERE type = 'shop_order' AND `+orderMatch, args...).Scan(&n); err != nil {
+			res.Err = err
+			return res
+		}
 		if n > 0 {
 			res.Retained += n
 			res.Messages = append(res.Messages, "Orders were retained: Settings > Accounts & Privacy does not remove personal data from orders on request.")
 		}
 	}
 	if s.gooOptBool("erasure_request_removes_download_data") {
-		tag, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_download_permissions WHERE lower(user_email) = lower($1)`, email)
-		if err == nil {
-			res.Removed += int(tag.RowsAffected())
+		tag, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_download_permissions WHERE lower(user_email) = lower($1) OR ($2 <> 0 AND user_id = $2)`, email, uid)
+		if err != nil {
+			res.Err = err
+			return res
 		}
+		res.Removed += int(tag.RowsAffected())
 	}
 	return res
 }
@@ -274,7 +302,7 @@ func smtpLogExporter(ctx context.Context, s *Server, email string) []exportGroup
 func smtpLogEraser(ctx context.Context, s *Server, email string) eraseResult {
 	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM wpmailsmtp_emails_log WHERE EXISTS (SELECT 1 FROM unnest(to_addrs) a WHERE lower(a) = lower($1))`, email)
 	if err != nil {
-		return eraseResult{}
+		return eraseResult{Err: err}
 	}
 	return eraseResult{Removed: int(tag.RowsAffected())}
 }

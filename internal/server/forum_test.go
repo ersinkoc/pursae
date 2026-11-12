@@ -48,7 +48,7 @@ func TestForumParsePath(t *testing.T) {
 	for _, path := range []string{
 		"", "forum", "forumsx", "forums-x/f/a", "blog/forums", "forums/page/2", "forums/f", "forums/f/Bad Slug", "forums/f/UPPER",
 		"forums/f/a/b", "forums/f/a/new/page/2", "forums/t/abc", "forums/t/0", "forums/t/012", "forums/t/-1", "forums/t/1/a/b",
-		"forums/r/1/page/2", "forums/edit/x", "forums/login/page/2", "forums/f/a/page/0", "forums/f/a/page/x", "forums/f/a/page/01",
+		"forums/r/1/page/2", "forums/r/1/page/1", "forums/edit/x", "forums/edit/1/page/1", "forums/login/page/2", "forums/login/page/1", "forums/register/page/1", "forums/f/a/new/page/1", "forums/f/a/page/0", "forums/f/a/page/x", "forums/f/a/page/01",
 		"forums/unknown", "forums/u", "forums/f//x", "forums/t/1/<script>",
 	} {
 		if got, found := forumParsePath("forums", path); found {
@@ -56,7 +56,7 @@ func TestForumParsePath(t *testing.T) {
 		}
 	}
 	// Every slug forumSlugOf makes parses back, spacing combining marks of Indic scripts included.
-	for _, title := range []string{"नमस्ते दुनिया", "বাংলা ফোরাম", "தமிழ் மன்றம்", "Çay ocağı", "ไทย ฟอรั่ม"} {
+	for _, title := range []string{"नमस्ते दुनिया", "বাংলা ফোরাম", "தமிழ் மன்றம்", "Çay ocağı", "ไทย ฟอรั่ม", "𝐀 hello", "𝖠 note"} {
 		slug := forumSlugOf(title)
 		if rt, found := forumParsePath("forums", "forums/t/12/"+slug); !found || rt.Slug != slug {
 			t.Errorf("topic slug %q of %q does not parse", slug, title)
@@ -389,5 +389,51 @@ func TestForumPagination(t *testing.T) {
 	}
 	if strings.Contains(out, "page/9/") {
 		t.Error("far page not elided")
+	}
+}
+
+func TestForumPagesAvoidsOverflow(t *testing.T) {
+	maximum := int(^uint(0) >> 1)
+	for _, tc := range []struct{ total, per, want int }{
+		{maximum, 20, maximum/20 + 1}, {maximum, 1, maximum}, {maximum, maximum, 1},
+		{0, 20, 1}, {20, 20, 1}, {21, 20, 2},
+	} {
+		if got := forumPages(tc.total, tc.per); got != tc.want {
+			t.Errorf("forumPages(%d, %d) = %d, want %d", tc.total, tc.per, got, tc.want)
+		}
+	}
+}
+
+func TestForumCanonicalPageOnlyMatchesFinalSuffix(t *testing.T) {
+	for _, tc := range []struct {
+		path, location string
+		page           int
+		redirect       bool
+	}{
+		{"/page/1/forums/f/a/", "", 1, false},
+		{"/page/1/forums/f/a/page/1/?q=go", "/page/1/forums/f/a/?q=go", 1, true},
+		{"/forums/f/a/page/1", "/page/1/forums/f/a/", 1, true},
+		{"/forums/f/a/page/2/", "", 2, false},
+	} {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, tc.path, nil)
+		got := forumCanonicalPage301(c, forumRoute{Page: tc.page}, "https://example.test/page/1/forums/f/a/")
+		if got != tc.redirect || w.Header().Get("Location") != tc.location {
+			t.Errorf("%q: redirect=%t location=%q", tc.path, got, w.Header().Get("Location"))
+		}
+	}
+}
+
+func TestForumExcerptSeparatesUppercaseBlockTags(t *testing.T) {
+	for _, tc := range []struct{ input, want string }{
+		{"<P>one</P><p>two</p>", "one two"},
+		{"one<BR/>two", "one two"},
+		{"<DIV>one</dIV><DIV>two</DIV>", "one two"},
+		{"<p>one</p><p>two</p>", "one two"},
+	} {
+		if got := forumExcerpt(tc.input, 10); got != tc.want {
+			t.Errorf("forumExcerpt(%q) = %q, want %q", tc.input, got, tc.want)
+		}
 	}
 }

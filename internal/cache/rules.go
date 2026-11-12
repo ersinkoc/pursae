@@ -100,7 +100,7 @@ func (c *Cache) Classify(r *http.Request) Decision {
 	}
 
 	var b strings.Builder
-	b.WriteString(requestScheme(r))
+	b.WriteString(c.requestScheme(r))
 	b.WriteString("://")
 	b.WriteString(strings.ToLower(r.Host))
 	b.WriteString(r.URL.EscapedPath())
@@ -180,12 +180,15 @@ func (c *Cache) isMobile(lowerUA string) bool {
 	return false
 }
 
-// requestScheme is the scheme the application renders the page for (server.requestOrigin and the
-// HSTS header use the same test): TLS, or X-Forwarded-Proto exactly "https". Anything else the key
-// trusted but the render did not (an absolute-form request line, "HTTPS") let a plain-HTTP request
-// store its page, without HSTS, under the https key every real visitor reads.
-func requestScheme(r *http.Request) string {
-	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+// requestScheme is the scheme the application renders the page for (server.requestHTTPS, which
+// requestOrigin and the HSTS header use): real TLS, or X-Forwarded-Proto exactly "https" from a
+// peer TrustForwarded accepts. An untrusted client, an absolute-form request line or "HTTPS"
+// cannot store a plain-HTTP page under the https key every real visitor reads.
+func (c *Cache) requestScheme(r *http.Request) string {
+	if r.TLS != nil {
+		return "https"
+	}
+	if c.trustForwarded != nil && c.trustForwarded(r) && r.Header.Get("X-Forwarded-Proto") == "https" {
 		return "https"
 	}
 	return "http"

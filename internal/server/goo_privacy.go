@@ -18,7 +18,7 @@ const gooAttrCookie = "goo_order_attribution"
 
 // gooForceSSL redirects checkout and My account to https when "Force secure checkout" is on.
 func (s *Server) gooForceSSL(c *gin.Context) bool {
-	if !s.gooOptBool("force_ssl_checkout") || c.Request.TLS != nil || strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https") {
+	if !s.gooOptBool("force_ssl_checkout") || s.requestHTTPS(c.Request) {
 		return false
 	}
 	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
@@ -67,7 +67,7 @@ func (s *Server) gooCaptureAttribution(c *gin.Context) {
 	}
 	b, _ := json.Marshal(a)
 	http.SetCookie(c.Writer, &http.Cookie{Name: gooAttrCookie, Value: url.QueryEscape(string(b)), Path: "/", MaxAge: 6 * 30 * 86400,
-		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"})
+		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: s.requestHTTPS(c.Request)})
 }
 
 // gooApplyAttribution copies the remembered touch to the order meta (_wc_order_attribution_*).
@@ -119,15 +119,24 @@ func gooAttributionRows(o *gooOrder) []gooOpt {
 }
 
 // gooErasePersonalData applies the erasure options to an erasure request for email.
-func (s *Server) gooErasePersonalData(ctx context.Context, email string) {
+// Orders are matched on billing_email and, when the address belongs to an account, customer_id.
+// Download permissions are matched on user_email and user_id. A database error is returned
+// so the privacy request is not marked completed.
+func (s *Server) gooErasePersonalData(ctx context.Context, email string) error {
+	uid, orderMatch := gooPrivacySubject(ctx, s, email)
 	if s.gooOptBool("erasure_request_removes_order_data") {
-		_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_orders SET billing = '{}', shipping = '{}', billing_email = '', customer_ip = '', user_agent = '',
-			customer_note = '', meta = meta || '{"_anonymized":true}'
-			WHERE type = 'shop_order' AND lower(billing_email) = lower($1) AND status IN ('completed','cancelled','refunded','failed')`, email)
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE goo_orders SET billing = '{}', shipping = '{}', billing_email = '', customer_ip = '', user_agent = '',
+			customer_note = '', customer_id = 0, meta = meta || '{"_anonymized":true}'
+			WHERE type = 'shop_order' AND `+orderMatch+` AND status IN ('completed','cancelled','refunded','failed')`, email, uid); err != nil {
+			return err
+		}
 	}
 	if s.gooOptBool("erasure_request_removes_download_data") {
-		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_download_permissions WHERE lower(user_email) = lower($1)`, email)
+		if _, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_download_permissions WHERE lower(user_email) = lower($1) OR ($2 <> 0 AND user_id = $2)`, email, uid); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // gooDeleteInactiveCustomers deletes customers with no order for N months (Retain inactive accounts).

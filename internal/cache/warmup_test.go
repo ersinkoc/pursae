@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -29,7 +30,16 @@ func (b *warmupBrokenBody) Read(p []byte) (int, error) {
 func (*warmupBrokenBody) Close() error { return nil }
 
 func TestWarmupInProcess(t *testing.T) {
-	c, app, _ := newTestCache(t, nil)
+	cfg := DefaultConfig()
+	cfg.ServerHint = HintNone
+	c := New(cfg, Options{TrustForwarded: func(r *http.Request) bool {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			host = r.RemoteAddr
+		}
+		return host == "127.0.0.1" || host == "::1"
+	}})
+	app := &testApp{}
 	urls := []string{"https://example.com/", "https://example.com/a/", "https://example.com/b/", "/wp-admin/", "https://example.com/missing"}
 	var calls int
 	prog, err := c.Warm(context.Background(), app, urls, WarmupOptions{
@@ -44,8 +54,10 @@ func TestWarmupInProcess(t *testing.T) {
 	if prog != want || calls != 5 {
 		t.Fatalf("progress %+v (callbacks %d)", prog, calls)
 	}
-	// Pages are now cached under the https key.
+	// Pages are now cached under the https key. Warmup dials from 127.0.0.1, which this
+	// cache treats as a trusted proxy, the same way the server trusts loopback.
 	r := httptest.NewRequest("GET", "http://example.com/a/", nil)
+	r.RemoteAddr = "127.0.0.1:1234"
 	r.Header.Set("X-Forwarded-Proto", "https")
 	w := httptest.NewRecorder()
 	c.Middleware(app).ServeHTTP(w, r)
@@ -143,5 +155,21 @@ func TestWarmupCountsResponseBodyFailure(t *testing.T) {
 				t.Fatalf("progress=%+v err=%v", prog, err)
 			}
 		})
+	}
+}
+
+func TestWarmupEmptyReportsCancellation(t *testing.T) {
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	expired, stop := context.WithDeadline(context.Background(), time.Unix(1, 0))
+	defer stop()
+	for _, tc := range []struct {
+		ctx  context.Context
+		want error
+	}{{context.Background(), nil}, {cancelled, context.Canceled}, {expired, context.DeadlineExceeded}} {
+		p, err := Warmup(tc.ctx, nil, WarmupOptions{MobileUserAgent: "mobile"})
+		if !errors.Is(err, tc.want) || p.Total != 0 || p.Done != 0 {
+			t.Errorf("progress=%+v err=%v want=%v", p, err, tc.want)
+		}
 	}
 }

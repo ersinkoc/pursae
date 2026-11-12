@@ -395,7 +395,7 @@ func TestThemeLibraryAndDemoContent(t *testing.T) {
 	}
 
 	// REST: library metadata on the themes endpoint.
-	_, body, _ = get(t, c, base+"/wp-json/wp/v2/themes/wpgo-fixture")
+	_, body, _ = get(t, c, base+"/wp-json/wp/v2/themes/wpgo-fixture?_wpnonce="+restNonce(t, srv, c, base))
 	for _, want := range []string{`"category":"blog"`, `"style":"Quiet serif journal"`, `"has_demo":true`} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("rest theme lacks %q: %s", want, body)

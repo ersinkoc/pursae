@@ -245,7 +245,7 @@ func TestHubMarketplaceAndUpdates(t *testing.T) {
 		t.Errorf("after a version change %d extra checks are queued, want 1", n)
 	}
 	if p["url"] != base || p["version"] != Version || p["os"] != runtime.GOOS || p["arch"] != runtime.GOARCH || p["locale"] != "en_US" ||
-		p["license"] != "" || p["theme"] != srv.activeTheme().Slug || len(p) != 9 {
+		p["license"] != "" || p["theme"] != srv.activeTheme().Slug || len(p) != 10 { // + contacts (hub_contacts.go)
 		t.Errorf("ping payload %v", p)
 	}
 	inv := map[string]map[string]any{}

@@ -305,9 +305,18 @@ func (s *Server) maintCSS(st maintSettings) string {
 	pos := map[string]bool{"center center": true, "top center": true, "bottom center": true, "center left": true, "center right": true}
 	b.WriteString("--mtnc-bgpos:" + map[bool]string{true: st.BgPosition, false: "center center"}[pos[st.BgPosition]] + ";")
 	b.WriteString("}\n")
-	// The admin's own CSS cannot close the style element.
-	b.WriteString(strings.ReplaceAll(st.CustomCSS, "</", `<\/`))
+	// The admin's own CSS cannot close the style element. The match is case-insensitive and
+	// allows whitespace, so </STYLE> and "< /script>" are stripped along with </style>.
+	b.WriteString(maintSafeCSS(st.CustomCSS))
 	return b.String()
+}
+
+// maintCSSClose matches a closing tag, including a different case and whitespace
+// between "<" and "/", and a bare "</" that never reaches ">".
+var maintCSSClose = regexp.MustCompile(`(?i)<\s*/(?:[^>]*>)?`)
+
+func maintSafeCSS(css string) string {
+	return maintCSSClose.ReplaceAllString(css, "")
 }
 
 // maintJSString is a JavaScript string literal of a short, already validated identifier.

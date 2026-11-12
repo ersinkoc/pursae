@@ -1,11 +1,13 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -132,27 +134,81 @@ func (p *Plugin) Shortcodes() []string {
 func (p *Plugin) RestRoutes() []RestRoute {
 	p.state.Lock()
 	defer p.state.Unlock()
-	return append([]RestRoute(nil), p.rest...)
+	out := slices.Clone(p.rest)
+	for i := range out {
+		out[i].Methods = slices.Clone(out[i].Methods)
+		out[i].Headers = slices.Clone(out[i].Headers)
+	}
+	return out
 }
 
 // SettingsPage returns the plugin's settings page, or nil.
 func (p *Plugin) SettingsPage() *SettingsPage {
 	p.state.Lock()
 	defer p.state.Unlock()
-	return p.settings
+	return cloneSettingsPage(p.settings)
+}
+
+func cloneSettingsPage(page *SettingsPage) *SettingsPage {
+	if page == nil {
+		return nil
+	}
+	out := *page
+	out.Fields = slices.Clone(page.Fields)
+	for i := range out.Fields {
+		f := &out.Fields[i]
+		f.Options = slices.Clone(f.Options)
+		f.Default = cloneRegistrationJSON(f.Default)
+		if f.Min != nil {
+			v := *f.Min
+			f.Min = &v
+		}
+		if f.Max != nil {
+			v := *f.Max
+			f.Max = &v
+		}
+	}
+	return &out
+}
+
+// Registration data comes from JSON, whose containers are maps and slices of any.
+func cloneRegistrationJSON(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(x))
+		for k, value := range x {
+			out[k] = cloneRegistrationJSON(value)
+		}
+		return out
+	case []any:
+		out := make([]any, len(x))
+		for i, value := range x {
+			out[i] = cloneRegistrationJSON(value)
+		}
+		return out
+	default:
+		return v
+	}
 }
 
 // Assets returns the plugin's enqueued styles and scripts.
 func (p *Plugin) Assets() []Asset {
 	p.state.Lock()
 	defer p.state.Unlock()
-	return append([]Asset(nil), p.assets...)
+	out := slices.Clone(p.assets)
+	for i := range out {
+		out[i].Deps = slices.Clone(out[i].Deps)
+		if out[i].Data != nil {
+			out[i].Data = cloneRegistrationJSON(out[i].Data).(map[string]any)
+		}
+	}
+	return out
 }
 
 // PackageAsset returns a file from the package's assets/ directory.
 func (p *Plugin) PackageAsset(path string) ([]byte, bool) {
 	data, ok := p.pkgAssets[path]
-	return data, ok
+	return bytes.Clone(data), ok
 }
 
 // Version returns the plugin version from its manifest.

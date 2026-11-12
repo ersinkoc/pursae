@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -331,8 +332,12 @@ func (s *Server) wbCopyDocErr(ctx context.Context, srcID int64, dst *store.Post)
 	}
 	page["title"], page["slug"] = fresh.Title, fresh.Slug
 	pageJSON, _ := json.Marshal(page)
+	html, err := wbSanitizeCopiedHTML(from.HTML, srcID, dst.ID, from.SnapshotUnfiltered)
+	if err != nil {
+		return err
+	}
 	d := &store.WebBuilderDoc{PostID: dst.ID, Doc: from.Doc, Page: pageJSON,
-		HTML: wbRetargetForms(from.HTML, srcID, dst.ID),
+		HTML: html,
 		CSS:  from.CSS, Fonts: from.Fonts, Features: from.Features, Renderer: from.Renderer,
 		ContentHash:  store.WebBuilderContentHash(fresh.Content),
 		SnapshotUser: from.SnapshotUser, SnapshotUnfiltered: from.SnapshotUnfiltered}
@@ -348,6 +353,52 @@ func (s *Server) wbCopyDocErr(ctx context.Context, srcID int64, dst *store.Post)
 	}
 	s.purgeTags("post:" + itoa64(dst.ID))
 	return nil
+}
+
+// wbSanitizeCopiedHTML retargets form actions at dst and runs the snapshot sanitizer. A copy or
+// translation must not republish HTML that skipped SanitizeSnapshot (a script in a srcdoc, a
+// foreign form action). embed keeps sandboxed srcdoc iframes only when the source snapshot was
+// written with unfiltered_html; their documents are still sanitized.
+func wbSanitizeCopiedHTML(html string, srcID, dstID int64, embed bool) (string, error) {
+	html = wbRetargetForms(html, srcID, dstID)
+	if strings.TrimSpace(html) == "" {
+		return html, nil
+	}
+	opts := webbuilder.SnapshotOptions{
+		FormActionPrefix: wbCopiedFormPrefix(html, dstID),
+		EmbedHTML:        embed,
+		SearchAction:     wbCopiedSearchAction(html, dstID),
+	}
+	out, _, err := webbuilder.SanitizeSnapshot(html, opts)
+	if err != nil {
+		return "", err
+	}
+	return out, nil
+}
+
+// wbCopiedFormPrefix is the form-action prefix already present in a retargeted snapshot, so the
+// sanitizer keeps those actions when the copy runs outside a request (no request origin).
+func wbCopiedFormPrefix(html string, postID int64) string {
+	marker := "/" + webbuilder.RESTNamespace + "/forms/" + itoa64(postID) + "/"
+	i := strings.Index(html, marker)
+	if i < 0 {
+		return ""
+	}
+	start := strings.LastIndex(html[:i], "http")
+	if start < 0 {
+		return ""
+	}
+	return html[start : i+len(marker)]
+}
+
+// wbCopiedSearchAction is the origin of the copied form actions, or "/" when the snapshot has none.
+func wbCopiedSearchAction(html string, postID int64) string {
+	prefix := wbCopiedFormPrefix(html, postID)
+	u, err := url.Parse(prefix)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return "/"
+	}
+	return u.Scheme + "://" + u.Host + "/"
 }
 
 // wbRetargetForms points the form actions of a snapshot (…/web-builder/v2/forms/{src}/{section},

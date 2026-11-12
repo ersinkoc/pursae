@@ -488,7 +488,7 @@ func (s *Server) asRememberDevice(c *gin.Context, u *store.User) {
 		val = strings.Join(append(parts, val), "~")
 	}
 	http.SetCookie(c.Writer, &http.Cookie{Name: asDeviceCookie, Value: val, Path: "/", MaxAge: days * 86400, HttpOnly: true,
-		Secure: c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https", SameSite: http.SameSiteLaxMode})
+		Secure: s.requestHTTPS(c.Request), SameSite: http.SameSiteLaxMode})
 	s.asAudit(c, asEvent{Event: "device_remembered", User: u, Message: fmt.Sprintf("Device remembered for %d days.", days)})
 }
 

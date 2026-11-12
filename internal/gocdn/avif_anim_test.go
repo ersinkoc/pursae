@@ -217,3 +217,27 @@ func webpLoop(b []byte) int {
 	}
 	return int(b[i+12]) | int(b[i+13])<<8
 }
+
+func TestTransformGIFFullPaletteKeepsTransparency(t *testing.T) {
+	first := image.NewPaletted(image.Rect(0, 0, 258, 1), color.Palette{color.RGBA{}, color.RGBA{R: 255, A: 255}})
+	first.SetColorIndex(257, 0, 1)
+	palette := make(color.Palette, 256)
+	for i := range palette {
+		palette[i] = color.RGBA{R: uint8(i), G: 1, A: 255}
+	}
+	second := image.NewPaletted(image.Rect(1, 0, 257, 1), palette)
+	for i := range palette {
+		second.SetColorIndex(i+1, 0, uint8(i))
+	}
+	g := &gif.GIF{Image: []*image.Paletted{first, second}, Config: image.Config{Width: 258, Height: 1}}
+	out, err := TransformGIF(g, ImageParams{}, AnimLimits{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, a := out.Image[1].At(0, 0).RGBA(); a != 0 {
+		t.Fatalf("transparent pixel became opaque: alpha=%d", a)
+	}
+	if _, _, _, a := palette[255].RGBA(); a == 0 {
+		t.Fatal("source palette was modified")
+	}
+}

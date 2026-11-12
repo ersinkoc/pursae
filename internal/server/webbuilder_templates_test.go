@@ -646,7 +646,7 @@ func TestWBTemplateWXRRoundTrip(t *testing.T) {
 		"include/singular/post/in/category/" + itoa64(cat.ID), "exclude/singular/page/999999", "include/singular/post/by_author/1"}, 7, "")
 	_ = srv.store.WebBuilder().SetTemplatePreview(ctx, tp.ID, "post:"+itoa64(post.ID))
 
-	code, xml, _ := get(t, admin.c, base+"/wp-admin/export?download=true&content=all")
+	code, xml, _ := get(t, admin.c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, admin.c, base)+"&download=true&content=all")
 	if code != http.StatusOK {
 		t.Fatalf("export: %d", code)
 	}
