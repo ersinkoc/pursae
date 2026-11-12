@@ -14,6 +14,18 @@ import (
 	"time"
 )
 
+func TestSanitizeFileNameCollapsesSeparatorRuns(t *testing.T) {
+	for in, want := range map[string]string{
+		"photo----one.JPG": "photo-one.jpg",
+		"photo   one.png":  "photo-one.png",
+		"photo\tone.webp":  "photo-one.webp",
+	} {
+		if got := SanitizeFileName(in); got != want {
+			t.Errorf("SanitizeFileName(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestResizeDims(t *testing.T) {
 	cases := []struct {
 		ow, oh, mw, mh int

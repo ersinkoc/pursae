@@ -202,6 +202,20 @@ func TestClientPresignedGet(t *testing.T) {
 	}
 }
 
+func TestClientPresignedGetValidatesExpiry(t *testing.T) {
+	c := &gocdn.Client{Endpoint: "https://s3.example.test", Bucket: "bucket", AccessKey: "key", SecretKey: "secret"}
+	for _, d := range []time.Duration{0, -time.Second, time.Second - 1, 7*24*time.Hour + time.Second} {
+		if u, err := c.PresignGet("object", d); err == nil {
+			t.Errorf("expiry %v produced %s", d, u)
+		}
+	}
+	for _, d := range []time.Duration{time.Second, 7 * 24 * time.Hour} {
+		if _, err := c.PresignGet("object", d); err != nil {
+			t.Errorf("expiry %v: %v", d, err)
+		}
+	}
+}
+
 type listResponseTransport string
 
 func (body listResponseTransport) RoundTrip(*http.Request) (*http.Response, error) {
