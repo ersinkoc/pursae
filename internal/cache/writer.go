@@ -3,6 +3,7 @@ package cache
 import (
 	"bufio"
 	"bytes"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -99,6 +100,7 @@ type captureWriter struct {
 	d      Decision
 	mode   int
 	status int
+	header http.Header // response headers as committed by WriteHeader
 	buf    bytes.Buffer
 	ttl    time.Duration
 	tags   []string
@@ -141,6 +143,7 @@ func (cw *captureWriter) WriteHeader(code int) {
 	}
 	cw.ttl = ttl
 	cw.html = mediaType(h) == "text/html"
+	cw.header = h.Clone()
 	cw.mode = modeCapture
 }
 
@@ -151,7 +154,9 @@ func (cw *captureWriter) Write(b []byte) (int, error) {
 	switch cw.mode {
 	case modeCapture:
 		if int64(cw.buf.Len()+len(b)) > cw.c.cfg.MaxEntrySize {
-			cw.spill()
+			if err := cw.spill(); err != nil {
+				return 0, err
+			}
 			return cw.w.Write(b)
 		}
 		return cw.buf.Write(b)
@@ -162,14 +167,27 @@ func (cw *captureWriter) Write(b []byte) (int, error) {
 }
 
 // spill abandons capturing and streams what was buffered.
-func (cw *captureWriter) spill() {
+func (cw *captureWriter) spill() error {
 	cw.mode = modePass
 	cw.releaseFlight()
+	cw.restoreHeaders()
 	h := cw.w.Header()
 	cw.c.decorateUncached(h, cw.r, cw.status)
 	cw.w.WriteHeader(cw.status)
-	cw.w.Write(cw.buf.Bytes())
+	n, err := cw.w.Write(cw.buf.Bytes())
+	if err == nil && n != cw.buf.Len() {
+		err = io.ErrShortWrite
+	}
 	cw.buf = bytes.Buffer{}
+	return err
+}
+
+func (cw *captureWriter) restoreHeaders() {
+	h := cw.w.Header()
+	clear(h)
+	for k, values := range cw.header {
+		h[k] = append([]string(nil), values...)
+	}
 }
 
 // releaseFlight ends this render's claim on its key. It runs as soon as the outcome is known
@@ -181,15 +199,25 @@ func (cw *captureWriter) releaseFlight() {
 	}
 }
 
-// Flush is a no-op while capturing (the page is sent once complete) and passes
-// through otherwise.
+// Flush streams a response that the handler explicitly flushes.
 func (cw *captureWriter) Flush() {
+	_ = cw.FlushError()
+}
+
+// FlushError also exposes streaming errors through http.ResponseController.
+func (cw *captureWriter) FlushError() error {
 	if cw.mode == modeUndecided {
 		cw.WriteHeader(http.StatusOK)
 	}
-	if cw.mode == modePass {
-		http.NewResponseController(cw.w).Flush()
+	if cw.mode == modeCapture {
+		if err := cw.spill(); err != nil {
+			return err
+		}
 	}
+	if cw.mode == modePass {
+		return http.NewResponseController(cw.w).Flush()
+	}
+	return nil
 }
 
 // Hijack abandons caching and hands the connection to the handler.
@@ -217,6 +245,11 @@ func (cw *captureWriter) finish() {
 	default:
 		return
 	}
+	if Degraded(cw.r) {
+		_ = cw.spill()
+		return
+	}
+	cw.restoreHeaders()
 	body := cw.buf.Bytes()
 	opt := cw.c.cfg.Optimize
 	if cw.html && opt.enabled() && (cw.status == http.StatusOK || cw.status == http.StatusNotFound) {
@@ -242,17 +275,18 @@ func (cw *captureWriter) finish() {
 
 // storableTTL decides whether a response may be stored and for how long.
 func (c *Cache) storableTTL(r *http.Request, code int, h http.Header) (time.Duration, bool) {
-	if r.Method == http.MethodHead || len(h.Values("Set-Cookie")) > 0 || h.Get("Content-Encoding") != "" || !cacheableVary(h) {
+	if r.Method == http.MethodHead || len(h.Values("Set-Cookie")) > 0 || len(h.Values("Trailer")) > 0 || h.Get("Content-Encoding") != "" || !cacheableVary(h) {
 		return 0, false
 	}
-	if v := strings.ToLower(h.Get(HeaderControl)); v != "" {
+	for _, v := range h.Values(HeaderControl) {
 		if hasToken(v, "no-cache") || hasToken(v, "no-store") || hasToken(v, "private") {
 			return 0, false
 		}
 	}
-	cc := h.Get("Cache-Control")
-	if hasToken(cc, "private") || hasToken(cc, "no-store") || hasToken(cc, "no-cache") {
-		return 0, false
+	for _, cc := range h.Values("Cache-Control") {
+		if hasToken(cc, "private") || hasToken(cc, "no-store") || hasToken(cc, "no-cache") {
+			return 0, false
+		}
 	}
 	if Degraded(r) {
 		return 0, false
