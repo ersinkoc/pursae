@@ -48,6 +48,11 @@ type feedItem struct {
 		Text string `xml:",chardata"` // RSS <author>
 	} `xml:"author"`
 	Creator string `xml:"http://purl.org/dc/elements/1.1/ creator"`
+	Source  struct {
+		Author struct {
+			Name string `xml:"name"`
+		} `xml:"author"`
+	} `xml:"source"`
 }
 
 // feedText preserves nested XHTML while retaining the decoded text behavior of ordinary Atom content.
@@ -73,6 +78,9 @@ func (t *feedText) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 type feedDoc struct {
 	XMLName xml.Name
 	Title   string `xml:"title"`
+	Author  struct {
+		Name string `xml:"name"`
+	} `xml:"author"`
 	Channel *struct {
 		Title string     `xml:"title"`
 		Items []feedItem `xml:"item"`
@@ -146,6 +154,12 @@ func ParseFeed(data []byte) (*Feed, error) {
 		if item.Author == "" {
 			item.Author = strings.TrimSpace(it.Author.Text)
 		}
+		if item.Author == "" && strings.EqualFold(doc.XMLName.Local, "feed") {
+			item.Author = strings.TrimSpace(it.Source.Author.Name)
+		}
+		if item.Author == "" && strings.EqualFold(doc.XMLName.Local, "feed") {
+			item.Author = strings.TrimSpace(doc.Author.Name)
+		}
 		for _, d := range []string{it.PubDate, it.DCDate, it.Published, it.Updated} {
 			if t, ok := parseFeedDate(d); ok {
 				item.Date = t
@@ -160,6 +174,7 @@ func ParseFeed(data []byte) (*Feed, error) {
 var feedDateLayouts = []string{
 	time.RFC1123Z, time.RFC1123, time.RFC822Z, time.RFC822, time.RFC3339, time.RFC3339Nano,
 	"Mon, 2 Jan 2006 15:04:05 -0700", "Mon, 2 Jan 2006 15:04:05 MST", "2 Jan 2006 15:04:05 -0700",
+	"Mon, 2 Jan 2006 15:04 -0700", "Mon, 2 Jan 2006 15:04 MST", "2 Jan 2006 15:04 -0700", "2 Jan 2006 15:04 MST",
 	"2006-01-02T15:04:05Z07:00", "2006-01-02T15:04Z07:00", "2006-01-02 15:04:05", "2006-01-02",
 }
 
