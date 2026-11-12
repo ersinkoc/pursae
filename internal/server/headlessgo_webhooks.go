@@ -198,7 +198,7 @@ func (s *Server) hgEntryPayload(ctx context.Context, sc *hgSchema, e *hgEntry, s
 
 // hgEmit sends an entry event to the subscribed webhooks.
 func (s *Server) hgEmit(ctx context.Context, event string, sc *hgSchema, e *hgEntry) {
-	s.hgPurge() // cached public reads (hgWriteJSON tags them)
+	s.hgPurge()                         // cached public reads (hgWriteJSON tags them)
 	if b, ok := hgBrokers.Load(s); ok { // GraphQL subscriptions
 		b.(*hgBroker).publish(hgSubEvent{Event: event, UID: sc.UID, Doc: e.DocumentID, Locale: e.Locale, WasPublished: e.Published != nil})
 	}
