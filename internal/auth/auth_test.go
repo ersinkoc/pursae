@@ -84,9 +84,17 @@ func TestCheckPasswordRejectsInvalidArgonParameters(t *testing.T) {
 	}
 	parts := strings.Split(h, "$")
 	parts[5] = ""
+	noSalt := strings.Split(h, "$")
+	noSalt[4] = ""
 	for _, bad := range []string{
+		strings.Replace(h, "$v=19$", "$v=19junk$", 1),
+		strings.Replace(h, "$m=65536,", "$m=0,", 1),
+		strings.Replace(h, "$m=65536,", "$m=1,", 1),
 		strings.Replace(h, ",t=3,", ",t=0,", 1),
 		strings.Replace(h, ",p=2$", ",p=0$", 1),
+		strings.Replace(h, ",p=2$", ",p=2junk$", 1),
+		strings.Replace(h, ",p=2$", ",p=2,x=1$", 1),
+		strings.Join(noSalt, "$"),
 		strings.Join(parts, "$"),
 	} {
 		if ok, err := CheckPassword("pw", bad); ok || err == nil {
