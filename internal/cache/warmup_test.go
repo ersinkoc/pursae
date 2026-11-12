@@ -145,3 +145,19 @@ func TestWarmupCountsResponseBodyFailure(t *testing.T) {
 		})
 	}
 }
+
+func TestWarmupEmptyReportsCancellation(t *testing.T) {
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	expired, stop := context.WithDeadline(context.Background(), time.Unix(1, 0))
+	defer stop()
+	for _, tc := range []struct {
+		ctx  context.Context
+		want error
+	}{{context.Background(), nil}, {cancelled, context.Canceled}, {expired, context.DeadlineExceeded}} {
+		p, err := Warmup(tc.ctx, nil, WarmupOptions{MobileUserAgent: "mobile"})
+		if !errors.Is(err, tc.want) || p.Total != 0 || p.Done != 0 {
+			t.Errorf("progress=%+v err=%v want=%v", p, err, tc.want)
+		}
+	}
+}
