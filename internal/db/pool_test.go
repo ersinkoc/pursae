@@ -34,6 +34,20 @@ func TestPoolConfigDSNWins(t *testing.T) {
 	}
 }
 
+func TestPoolConfigIgnoresPoolParameterSubstrings(t *testing.T) {
+	base, err := PoolConfig("postgres://u:p@localhost:5432/x?sslmode=disable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := PoolConfig("postgres://u:p@localhost:5432/x?sslmode=disable&xpool_max_conns=2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.MaxConns != base.MaxConns {
+		t.Errorf("xpool_max_conns changed MaxConns from %d to %d", base.MaxConns, got.MaxConns)
+	}
+}
+
 func TestDefaultMaxConns(t *testing.T) {
 	for cpus, want := range map[int]int32{1: 10, 2: 10, 4: 16, 8: 32, 16: 40, 64: 40} {
 		if got := defaultMaxConns(cpus); got != want {

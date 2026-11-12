@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"runtime"
 	"sort"
 	"strings"
@@ -49,12 +50,12 @@ func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 // pgx alone would allow max(4, NumCPU) connections, too few for a site whose requests, scheduler
 // and background writers share one pool. The cap of 40 stays well inside PostgreSQL's default
 // max_connections (100) so a second instance or a backup still gets a connection.
-func PoolConfig(url string) (*pgxpool.Config, error) {
-	cfg, err := pgxpool.ParseConfig(url)
+func PoolConfig(rawURL string) (*pgxpool.Config, error) {
+	cfg, err := pgxpool.ParseConfig(rawURL)
 	if err != nil {
 		return nil, err
 	}
-	set := func(param string) bool { return strings.Contains(url, param+"=") }
+	set := func(param string) bool { return poolParamSet(rawURL, param) }
 	if !set("pool_max_conns") {
 		cfg.MaxConns = defaultMaxConns(runtime.NumCPU())
 	}
@@ -77,6 +78,23 @@ func PoolConfig(url string) (*pgxpool.Config, error) {
 		cfg.HealthCheckPeriod = 30 * time.Second
 	}
 	return cfg, nil
+}
+
+// poolParamSet reports whether param is an exact connection-string key. A substring check would,
+// for example, mistake xpool_max_conns for pool_max_conns and suppress the intended default.
+func poolParamSet(raw, param string) bool {
+	if u, err := url.Parse(raw); err == nil && u.RawQuery != "" {
+		_, ok := u.Query()[param]
+		return ok
+	}
+	// pgx also accepts the PostgreSQL keyword/value connection-string form.
+	for _, field := range strings.Fields(raw) {
+		key, _, ok := strings.Cut(field, "=")
+		if ok && key == param {
+			return true
+		}
+	}
+	return false
 }
 
 // defaultMaxConns is 4 per CPU, at least 10 and at most 40.

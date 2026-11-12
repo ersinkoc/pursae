@@ -323,3 +323,19 @@ func TestPrunePrevKeepsUnknownState(t *testing.T) {
 		})
 	}
 }
+
+func TestPrunePrevKeepsConfirmedStateWithoutTimestamp(t *testing.T) {
+	exe := filepath.Join(t.TempDir(), "wpgo")
+	if err := os.WriteFile(PrevPath(exe), []byte("rollback"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(statePath(exe), []byte(`{"from":"0.3.0","to":"0.3.1","status":"confirmed"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if PrunePrev(exe, time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC)) {
+		t.Fatal("confirmed state without a timestamp authorized deletion")
+	}
+	if b, err := os.ReadFile(PrevPath(exe)); err != nil || string(b) != "rollback" {
+		t.Fatalf("rollback binary lost: %q, %v", b, err)
+	}
+}

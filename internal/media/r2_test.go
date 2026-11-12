@@ -104,6 +104,17 @@ func TestJPEGOrientationRejectsLargeTIFFOffset(t *testing.T) {
 	}
 }
 
+func TestJPEGOrientationAfterLargeAPPMetadata(t *testing.T) {
+	data := exifJPEG(t, 8, 4, 6, false)
+	padding := make([]byte, 65533)
+	segment := []byte{0xff, 0xe2, 0xff, 0xff}
+	segment = append(segment, padding...)
+	data = append(append(append(append([]byte{}, data[:2]...), segment...), segment...), data[2:]...)
+	if got := JPEGOrientation(bytes.NewReader(data)); got != 6 {
+		t.Fatalf("orientation after large APP segments = %d, want 6", got)
+	}
+}
+
 func TestOrient(t *testing.T) {
 	// 3×2: pixel value = x + 10*y in the red channel.
 	src := image.NewRGBA(image.Rect(0, 0, 3, 2))

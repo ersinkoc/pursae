@@ -87,7 +87,10 @@ func TestReadMatroska(t *testing.T) {
 }
 
 func TestReadAVGarbage(t *testing.T) {
-	if i := readAV(bytes.NewReader([]byte("nonsense")), 8, ".mp4"); i.Length != 0 {
-		t.Fatalf("%+v", i)
+	for _, ext := range []string{".mp4", ".m4a", ".m4v", ".mov", ".mp3"} {
+		data := []byte("not a media container")
+		if i := readAV(bytes.NewReader(data), int64(len(data)), ext); i != (AVInfo{}) {
+			t.Errorf("%s: %+v", ext, i)
+		}
 	}
 }
