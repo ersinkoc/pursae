@@ -101,7 +101,7 @@ func ParseImageParams(q url.Values) (ImageParams, error) {
 	if fx, fy := get("fx"), get("fy"); fx != "" || fy != "" {
 		x, errx := strconv.ParseFloat(fx, 64)
 		y, erry := strconv.ParseFloat(fy, 64)
-		if errx != nil || erry != nil || x < 0 || x > 1 || y < 0 || y > 1 {
+		if errx != nil || erry != nil || !(x >= 0 && x <= 1) || !(y >= 0 && y <= 1) {
 			return p, fmt.Errorf("%w: fx/fy", ErrBadParam)
 		}
 		p.Focal, p.FX, p.FY = true, x, y
@@ -164,7 +164,7 @@ func (l Limits) CheckSource(cfg image.Config) error {
 	if max <= 0 {
 		max = DefaultLimits.MaxSourcePix
 	}
-	if int64(cfg.Width)*int64(cfg.Height) > max {
+	if cfg.Width > 0 && int64(cfg.Height) > max/int64(cfg.Width) {
 		return fmt.Errorf("%w: the source image has more than %d pixels", ErrTooLarge, max)
 	}
 	return nil
@@ -229,7 +229,7 @@ func AcceptsType(accept, typ string) bool {
 		}
 		for _, param := range strings.Split(params, ";") {
 			if k, v, ok := strings.Cut(strings.TrimSpace(param), "="); ok && strings.EqualFold(strings.TrimSpace(k), "q") {
-				if f, err := strconv.ParseFloat(strings.TrimSpace(v), 64); err == nil && f == 0 {
+				if f, err := strconv.ParseFloat(strings.TrimSpace(v), 64); err != nil || !(f > 0 && f <= 1) {
 					return false
 				}
 			}

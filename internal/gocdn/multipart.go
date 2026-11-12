@@ -64,6 +64,9 @@ func (c *Client) Upload(ctx context.Context, key string, r io.ReaderAt, size int
 	if part < MinPartSize {
 		part = MinPartSize
 	}
+	if part > size {
+		part = size
+	}
 	for (size+part-1)/part > maxParts {
 		part *= 2
 	}
