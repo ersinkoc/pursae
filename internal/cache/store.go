@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -37,6 +38,15 @@ type Entry struct {
 	Created time.Time
 	Expires time.Time
 	Tags    []string
+}
+
+func (e *Entry) clone() *Entry {
+	copyOfEntry := *e
+	copyOfEntry.Header = e.Header.Clone()
+	copyOfEntry.Body = bytes.Clone(e.Body)
+	copyOfEntry.Gzip = bytes.Clone(e.Gzip)
+	copyOfEntry.Tags = slices.Clone(e.Tags)
+	return &copyOfEntry
 }
 
 // Fresh reports whether the entry has not expired at now.
@@ -273,9 +283,18 @@ func normalizeTags(tags []string) []string {
 	return out
 }
 
-// Get returns the fresh entry for key, loading it from disk if needed, and counts a
-// hit or a miss. Expired entries are removed.
+// Get returns an independent copy of the fresh entry for key, loading it from disk if needed,
+// and counts a hit or a miss. Expired entries are removed.
 func (s *Store) Get(key string) (*Entry, bool) {
+	e, ok := s.getShared(key)
+	if !ok {
+		return nil, false
+	}
+	return e.clone(), true
+}
+
+// getShared is for cache internals that only read immutable stored entries.
+func (s *Store) getShared(key string) (*Entry, bool) {
 	e, ok := s.get(key)
 	if ok {
 		s.hits.Add(1)
@@ -335,7 +354,7 @@ func (s *Store) get(key string) (*Entry, bool) {
 	return it.entry, true
 }
 
-// Set stores e, replacing any entry with the same key, persisting it to disk when
+// Set stores a copy of e, replacing any entry with the same key, persisting it to disk when
 // configured, and evicting least recently used entries to respect the limits.
 // Entries that alone exceed MaxBytes are not stored.
 func (s *Store) Set(e *Entry) error { return s.set(e, false, 0) }
@@ -356,6 +375,7 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	if e == nil || e.Key == "" {
 		return errors.New("cache: entry without key")
 	}
+	e = e.clone()
 	if len(e.Header.Values("Set-Cookie")) > 0 {
 		return ErrNotCacheable
 	}
