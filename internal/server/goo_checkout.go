@@ -374,6 +374,9 @@ func (s *Server) gooProcessCheckout(c *gin.Context, form map[string][]string) (*
 	}
 	sess := s.gooSessionFor(c)
 	sess.Data.OrderAwaitingPayment = o.ID
+	if customerID == 0 {
+		gooRememberGuestOrder(sess, o.ID)
+	}
 	sess.touch()
 	if !cart.NeedsPayment() {
 		if err := s.gooPaymentComplete(ctx, o, ""); err != nil {

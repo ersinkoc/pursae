@@ -23,7 +23,7 @@ var mcpRouteCaps = map[string]string{
 
 // mcpToolAvailable reports whether the caller can use a tool: the scopes of the credential cover its
 // route, the user holds the capability it needs, and the built-in plugin it belongs to is active.
-// tools/call still enforces all of this in the REST layer; the list only hides what would fail.
+// tools/call checks this before running a tool; the REST layer checks the route again.
 func (s *Server) mcpToolAvailable(c *gin.Context, t *mcpTool) bool {
 	if t.special != "" {
 		return true // site_info, rest_request

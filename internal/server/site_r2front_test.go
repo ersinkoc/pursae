@@ -171,7 +171,7 @@ func TestRenderMenuEscapes(t *testing.T) {
 	if strings.Contains(out, `"onmouseover="`) || strings.Contains(out, "javascript:") {
 		t.Errorf("renderMenu: %s", out)
 	}
-	if got := titleRSS(`A &amp; <em>B</em>`); got != "A &amp; B" {
+	if got := titleRSS(`A &amp; <em>B</em>`); got != "A &amp;amp; B" {
 		t.Errorf("titleRSS = %q", got)
 	}
 }

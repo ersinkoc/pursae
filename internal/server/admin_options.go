@@ -288,6 +288,10 @@ func (s *Server) optionsSave(c *gin.Context) {
 		}
 		// The checkbox means "discourage", so blog_public is its inverse.
 		values["blog_public"] = c.PostForm("blog_public") != "0"
+	case "writing":
+		if v, ok := values["default_post_format"].(string); ok && v != "0" && store.CanonicalPostFormat(v) != v {
+			values["default_post_format"] = "0"
+		}
 	case "permalink":
 		sel := c.PostForm("selection")
 		if sel == "custom" {

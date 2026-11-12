@@ -156,14 +156,35 @@ func (s *Server) gocdnImportLink(ctx context.Context, st gocdnSettings, cl *gocd
 	}
 	name := path.Base(key)
 	mime := media.MimeFor(name)
+	if obj.Size > maxUploadBytes {
+		return 0, errors.New("file exceeds the upload size limit")
+	}
+	if mime == "image/svg+xml" && obj.Size > media.MaxSVGBytes {
+		return 0, media.ErrSVG
+	}
 	title := strings.TrimSuffix(name, path.Ext(name))
 	a := &store.Attachment{UploaderID: uid, FilePath: rel, Mime: mime, FileSize: obj.Size, Title: title, Slug: wp.SanitizeTitle(title),
 		Meta: map[string]any{"filesize": obj.Size, "gocdn_remote": true}}
-	if strings.HasPrefix(mime, "image/") {
-		if head, err := cl.GetRange(ctx, key, 0, 512<<10-1); err == nil {
-			if cfg, _, err := image.DecodeConfig(bytes.NewReader(head)); err == nil {
-				a.Width, a.Height = cfg.Width, cfg.Height
-			}
+	if mime == "image/svg+xml" {
+		clean, err := s.gocdnSanitizeRemoteSVG(ctx, cl, key)
+		if err != nil {
+			return 0, err
+		}
+		if int64(len(clean)) != obj.Size {
+			a.FileSize = int64(len(clean))
+			a.Meta["filesize"] = int64(len(clean))
+		}
+	} else if strings.HasPrefix(mime, "image/") {
+		head, err := cl.GetRange(ctx, key, 0, 512<<10-1)
+		if err != nil {
+			return 0, errors.New(gocdnExplain(err))
+		}
+		// A remote key cannot be renamed, so a raster that is not the type its extension claims is refused.
+		if real, ok := media.SniffUpload(name, head); !ok || real != "" {
+			return 0, media.ErrType
+		}
+		if cfg, _, err := image.DecodeConfig(bytes.NewReader(head)); err == nil {
+			a.Width, a.Height = cfg.Width, cfg.Height
 		}
 	}
 	if err := s.store.InsertAttachment(ctx, a); err != nil {
@@ -174,3 +195,30 @@ func (s *Server) gocdnImportLink(ctx context.Context, st gocdnSettings, cl *gocd
 }
 
 var errAlreadyInLibrary = errors.New("already in the library")
+
+// gocdnSanitizeRemoteSVG reads a linked SVG, strips scripts and external URLs, and writes the
+// cleaned bytes back when they differ. The attachment is not registered if the write fails.
+func (s *Server) gocdnSanitizeRemoteSVG(ctx context.Context, cl *gocdn.Client, key string) ([]byte, error) {
+	rc, _, err := cl.Get(ctx, key)
+	if err != nil {
+		return nil, errors.New(gocdnExplain(err))
+	}
+	defer rc.Close()
+	data, err := io.ReadAll(io.LimitReader(rc, media.MaxSVGBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > media.MaxSVGBytes {
+		return nil, media.ErrSVG
+	}
+	clean, err := media.SanitizeSVG(data)
+	if err != nil {
+		return nil, err
+	}
+	if !bytes.Equal(clean, data) {
+		if err := cl.Put(ctx, key, clean, gocdn.PutOptions{ContentType: "image/svg+xml"}); err != nil {
+			return nil, errors.New(gocdnExplain(err))
+		}
+	}
+	return clean, nil
+}

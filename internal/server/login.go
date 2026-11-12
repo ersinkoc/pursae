@@ -211,7 +211,7 @@ func (s *Server) login(c *gin.Context) {
 }
 
 func (s *Server) setLoginCookie(c *gin.Context, token string, persistent bool, maxAge int) {
-	secure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	secure := s.requestHTTPS(c.Request)
 	cookie := &http.Cookie{
 		Name:     auth.CookieName,
 		Value:    token,

@@ -296,7 +296,8 @@ func (s *Server) oauthAuthorize(c *gin.Context) {
 		back(url.Values{"error": {"invalid_request"}, "error_description": {"PKCE with code_challenge_method=S256 is required."}})
 		return
 	}
-	if res := f.Get("resource"); res != "" && res != s.oauthResource(c) && res != s.oauthIssuer(c) && res != s.oauthIssuer(c)+"/" {
+	resource, ok := s.oauthCanonicalResource(c, f.Get("resource"))
+	if !ok {
 		back(url.Values{"error": {"invalid_target"}})
 		return
 	}
@@ -323,8 +324,8 @@ func (s *Server) oauthAuthorize(c *gin.Context) {
 			chosen = oauthDefaultScopes
 		}
 		code := oauthRandom("")
-		if _, err := s.store.Pool.Exec(c, `INSERT INTO oauth_codes (code_hash, client_id, user_id, redirect_uri, scopes, challenge, expires_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)`, oauthHash(code), cl.ID, u.ID, redirect, chosen, challenge, time.Now().Add(oauthCodeTTL)); err != nil {
+		if _, err := s.store.Pool.Exec(c, `INSERT INTO oauth_codes (code_hash, client_id, user_id, redirect_uri, scopes, challenge, expires_at, resource)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, oauthHash(code), cl.ID, u.ID, redirect, chosen, challenge, time.Now().Add(oauthCodeTTL), resource); err != nil {
 			back(url.Values{"error": {"server_error"}})
 			return
 		}
@@ -357,6 +358,7 @@ func (s *Server) oauthToken(c *gin.Context) {
 	}
 	var userID int64
 	var scopes []string
+	var resource string
 	access, refresh := oauthRandom("pat_"), oauthRandom("prt_")
 	now := time.Now()
 	switch grant {
@@ -366,7 +368,7 @@ func (s *Server) oauthToken(c *gin.Context) {
 		codeHash := oauthHash(c.PostForm("code"))
 		// The code is single use: it is deleted by the lookup whatever happens next.
 		err := s.store.Pool.QueryRow(ctx, `DELETE FROM oauth_codes WHERE code_hash = $1 AND client_id = $2
-			RETURNING user_id, redirect_uri, scopes, challenge, expires_at`, codeHash, clientID).Scan(&userID, &redirect, &scopes, &challenge, &exp)
+			RETURNING user_id, redirect_uri, scopes, challenge, expires_at, resource`, codeHash, clientID).Scan(&userID, &redirect, &scopes, &challenge, &exp, &resource)
 		if errors.Is(err, pgx.ErrNoRows) {
 			// A code presented again was intercepted or replayed: revoke the grant its first redemption
 			// issued (OAuth 2.1 §4.1.3).
@@ -382,9 +384,16 @@ func (s *Server) oauthToken(c *gin.Context) {
 			oauthErr(c, http.StatusBadRequest, "invalid_grant", "PKCE verification failed.")
 			return
 		}
-		if _, err := s.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, scopes, access_expires_at, refresh_expires_at, code_hash)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, clientID, userID, oauthHash(access), oauthHash(refresh), scopes,
-			now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL), codeHash); err != nil {
+		if asked := c.PostForm("resource"); asked != "" {
+			canon, ok := s.oauthCanonicalResource(c, asked)
+			if !ok || (resource != "" && canon != resource) {
+				oauthErr(c, http.StatusBadRequest, "invalid_target", "The resource does not match this authorization.")
+				return
+			}
+		}
+		if _, err := s.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, scopes, access_expires_at, refresh_expires_at, code_hash, resource)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, clientID, userID, oauthHash(access), oauthHash(refresh), scopes,
+			now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL), codeHash, resource); err != nil {
 			oauthErr(c, http.StatusInternalServerError, "server_error", "Could not issue a token.")
 			return
 		}
@@ -395,17 +404,40 @@ func (s *Server) oauthToken(c *gin.Context) {
 	case "refresh_token":
 		old := oauthHash(c.PostForm("refresh_token"))
 		// Rotate in one statement, so two requests with the same refresh token cannot both get a pair.
-		err := s.store.Pool.QueryRow(ctx, `UPDATE oauth_tokens SET access_hash = $3, refresh_hash = $4, prev_refresh_hash = refresh_hash,
+		err := s.store.Pool.QueryRow(ctx, `UPDATE oauth_tokens SET access_hash = $3, refresh_hash = $4,
+			prev_refresh_hash = array_to_string((string_to_array(
+				CASE WHEN prev_refresh_hash IS NULL OR prev_refresh_hash = '' THEN refresh_hash
+				ELSE refresh_hash || ',' || prev_refresh_hash END, ','))[1:20], ','),
 			access_expires_at = $5, refresh_expires_at = $6
-			WHERE refresh_hash = $1 AND client_id = $2 AND refresh_expires_at > now() RETURNING user_id, scopes`,
-			old, clientID, oauthHash(access), oauthHash(refresh), now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL)).Scan(&userID, &scopes)
+			WHERE refresh_hash = $1 AND client_id = $2 AND refresh_expires_at > now() RETURNING user_id, scopes, resource`,
+			old, clientID, oauthHash(access), oauthHash(refresh), now.Add(oauthAccessTTL), now.Add(oauthRefreshTTL)).Scan(&userID, &scopes, &resource)
 		if err != nil {
 			// A refresh token that a rotation already replaced is being used again: it was stolen, or the
-			// thief already rotated it. End the grant for both (OAuth 2.1 §4.3.1). Within oauthReuseGrace
-			// of the rotation it is only refused: that is a client refreshing twice at once or retrying a
-			// lost answer. (A rotation sets access_expires_at to its time plus oauthAccessTTL.)
-			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE prev_refresh_hash = $1 AND client_id = $2 AND access_expires_at <= $3`,
-				old, clientID, now.Add(oauthAccessTTL-oauthReuseGrace))
+			// thief already rotated it. End the whole grant family (OAuth 2.1 §4.3.1) — every descendant
+			// of the same authorization, not only the row whose immediate previous hash still matches.
+			// Within oauthReuseGrace of the latest rotation the immediately previous token is only
+			// refused: that is a client refreshing twice at once or retrying a lost answer. An older
+			// token in the chain always burns the family. (A rotation sets access_expires_at to its
+			// time plus oauthAccessTTL.)
+			cutoff := now.Add(oauthAccessTTL - oauthReuseGrace)
+			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens t WHERE t.client_id = $2 AND (
+				t.id IN (
+					SELECT id FROM oauth_tokens
+					WHERE client_id = $2
+					  AND $1 = ANY (string_to_array(coalesce(prev_refresh_hash, ''), ','))
+					  AND NOT (split_part(coalesce(prev_refresh_hash, ''), ',', 1) = $1 AND access_expires_at > $3)
+				)
+				OR (
+					coalesce(t.code_hash, '') <> ''
+					AND t.code_hash IN (
+						SELECT code_hash FROM oauth_tokens
+						WHERE client_id = $2
+						  AND coalesce(code_hash, '') <> ''
+						  AND $1 = ANY (string_to_array(coalesce(prev_refresh_hash, ''), ','))
+						  AND NOT (split_part(coalesce(prev_refresh_hash, ''), ',', 1) = $1 AND access_expires_at > $3)
+					)
+				)
+			)`, old, clientID, cutoff)
 			oauthErr(c, http.StatusBadRequest, "invalid_grant", "The refresh token is invalid or expired.")
 			return
 		}
@@ -419,14 +451,30 @@ func (s *Server) oauthToken(c *gin.Context) {
 		"refresh_token": refresh, "scope": strings.Join(scopes, " ")})
 }
 
+// oauthCanonicalResource is the MCP resource a grant is bound to (RFC 8707). An empty indicator, the
+// MCP URL and the issuer all mean this site's MCP endpoint; any other value is refused.
+func (s *Server) oauthCanonicalResource(c *gin.Context, raw string) (string, bool) {
+	raw = strings.TrimSpace(raw)
+	canon := s.oauthResource(c)
+	iss := s.oauthIssuer(c)
+	if raw == "" || raw == canon || raw == iss || raw == iss+"/" {
+		return canon, true
+	}
+	return "", false
+}
+
 // oauthBearer authenticates "Authorization: Bearer <access token>". The scopes of the grant narrow the
 // user like those of an Application Password.
 func (s *Server) oauthBearer(c *gin.Context, token string) bool {
 	var id, userID int64
 	var scopes []string
+	var resource string
 	var exp time.Time
-	if s.store.Pool.QueryRow(c, `SELECT id, user_id, scopes, access_expires_at FROM oauth_tokens WHERE access_hash = $1`, oauthHash(token)).Scan(&id, &userID, &scopes, &exp) != nil || time.Now().After(exp) {
+	if s.store.Pool.QueryRow(c, `SELECT id, user_id, scopes, access_expires_at, resource FROM oauth_tokens WHERE access_hash = $1`, oauthHash(token)).Scan(&id, &userID, &scopes, &exp, &resource) != nil || time.Now().After(exp) {
 		return false
+	}
+	if resource != "" && resource != s.oauthResource(c) {
+		return false // the grant was issued for a different protected resource
 	}
 	known := normalizeAppScopes(scopes)
 	if len(scopes) > 0 && len(known) == 0 {
@@ -484,8 +532,19 @@ func (s *Server) oauthRevoke(c *gin.Context) {
 	}
 	_ = c.Request.ParseForm()
 	if t := c.PostForm("token"); t != "" && isUUID(c.PostForm("client_id")) {
-		_, _ = s.store.Pool.Exec(c.Request.Context(), `DELETE FROM oauth_tokens WHERE client_id = $1 AND (access_hash = $2 OR refresh_hash = $2)`,
-			c.PostForm("client_id"), oauthHash(t))
+		// The current access or refresh token, or a refresh token a rotation already replaced, ends the
+		// whole grant family (RFC 7009). A client that lost the new pair can still revoke with the old one.
+		_, _ = s.store.Pool.Exec(c.Request.Context(), `WITH hit AS (
+			SELECT id, code_hash FROM oauth_tokens
+			WHERE client_id = $1 AND (
+				access_hash = $2 OR refresh_hash = $2
+				OR $2 = ANY (string_to_array(coalesce(prev_refresh_hash, ''), ','))
+			)
+		)
+		DELETE FROM oauth_tokens t WHERE t.client_id = $1 AND (
+			t.id IN (SELECT id FROM hit)
+			OR (coalesce(t.code_hash, '') <> '' AND t.code_hash IN (SELECT code_hash FROM hit WHERE coalesce(code_hash, '') <> ''))
+		)`, c.PostForm("client_id"), oauthHash(t))
 	}
 	c.Header("Cache-Control", "no-store")
 	c.Status(http.StatusOK)

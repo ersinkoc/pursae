@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -124,7 +125,7 @@ func (s *Server) gooSessionFor(c *gin.Context) *gooSession {
 				sess.dirty = true
 			}
 			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_sessions WHERE session_key = $1`, guestKey)
-			http.SetCookie(c.Writer, &http.Cookie{Name: gooSessionCookie, Value: "", Path: "/", MaxAge: -1})
+			http.SetCookie(c.Writer, &http.Cookie{Name: gooSessionCookie, Value: "", Path: "/", MaxAge: -1, Secure: s.httpsRequest(c.Request)})
 		}
 		if !found {
 			sess.isNew = true
@@ -206,11 +207,12 @@ func (s *Server) gooSaveSession(c *gin.Context) {
 	empty := len(sess.Data.Cart) == 0 && len(sess.Data.AppliedCoupons) == 0 && len(sess.Data.Notices) == 0 &&
 		sess.Data.OrderAwaitingPayment == 0 && len(sess.Data.Extra) == 0 && !sess.Data.Customer.CalculatedShip
 	ctx := c.Request.Context()
+	secure := s.httpsRequest(c.Request)
 	if empty && sess.user == 0 {
 		if !sess.isNew {
 			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_sessions WHERE session_key = $1`, sess.Key)
 		}
-		gooClearCookie(c, gooSessionCookie)
+		s.clearGooCookie(c, gooSessionCookie)
 	} else {
 		raw, _ := json.Marshal(sess.Data)
 		ttl := gooSessionTTL
@@ -221,16 +223,16 @@ func (s *Server) gooSaveSession(c *gin.Context) {
 			ON CONFLICT (session_key) DO UPDATE SET data = EXCLUDED.data, expires_at = EXCLUDED.expires_at`, sess.Key, raw, time.Now().Add(ttl))
 		if sess.user == 0 {
 			http.SetCookie(c.Writer, &http.Cookie{Name: gooSessionCookie, Value: sess.Key, Path: "/", Expires: time.Now().Add(gooSessionTTL),
-				HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: c.Request.TLS != nil})
+				HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: secure})
 		}
 	}
 	if len(sess.Data.Cart) > 0 {
-		http.SetCookie(c.Writer, &http.Cookie{Name: gooItemsCookie, Value: "1", Path: "/", SameSite: http.SameSiteLaxMode, Secure: c.Request.TLS != nil})
-		http.SetCookie(c.Writer, &http.Cookie{Name: gooCartHashCook, Value: gooCartHash(sess.Data.Cart), Path: "/", SameSite: http.SameSiteLaxMode, Secure: c.Request.TLS != nil})
+		http.SetCookie(c.Writer, &http.Cookie{Name: gooItemsCookie, Value: "1", Path: "/", SameSite: http.SameSiteLaxMode, Secure: secure})
+		http.SetCookie(c.Writer, &http.Cookie{Name: gooCartHashCook, Value: gooCartHash(sess.Data.Cart), Path: "/", SameSite: http.SameSiteLaxMode, Secure: secure})
 	} else {
 		if _, err := c.Cookie(gooItemsCookie); err == nil {
-			gooClearCookie(c, gooItemsCookie)
-			gooClearCookie(c, gooCartHashCook)
+			s.clearGooCookie(c, gooItemsCookie)
+			s.clearGooCookie(c, gooCartHashCook)
 		}
 	}
 	sess.dirty, sess.isNew = false, false
@@ -240,6 +242,35 @@ func gooClearCookie(c *gin.Context, name string) {
 	if _, err := c.Cookie(name); err == nil {
 		http.SetCookie(c.Writer, &http.Cookie{Name: name, Value: "", Path: "/", MaxAge: -1})
 	}
+}
+
+func (s *Server) clearGooCookie(c *gin.Context, name string) {
+	if _, err := c.Cookie(name); err == nil {
+		http.SetCookie(c.Writer, &http.Cookie{Name: name, Value: "", Path: "/", MaxAge: -1, Secure: s.httpsRequest(c.Request)})
+	}
+}
+
+// httpsRequest is the login cookie's TLS test (the connection is TLS, or a trusted proxy sent
+// X-Forwarded-Proto: https). An untrusted client cannot turn the Secure flag on.
+func (s *Server) httpsRequest(r *http.Request) bool {
+	if r == nil {
+		return false
+	}
+	if r.TLS != nil {
+		return true
+	}
+	if r.Header.Get("X-Forwarded-Proto") != "https" {
+		return false
+	}
+	if la, ok := r.Context().Value(http.LocalAddrContextKey).(net.Addr); ok && strings.HasPrefix(la.Network(), "unix") {
+		return true
+	}
+	peer, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		peer = r.RemoteAddr
+	}
+	ip := net.ParseIP(strings.TrimSpace(peer))
+	return ip != nil && s.isTrustedProxy(ip)
 }
 
 // gooCartHash is the cart's content hash (the cart fragments' cache key).

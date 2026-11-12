@@ -317,7 +317,7 @@ func TestPluginPostsAPIAndTransientsOnDatabase(t *testing.T) {
 	_ = srv.settings.Set(ctx, map[string]any{"blogname": "t"})
 	title, content := "From a plugin", "<p>safe</p><script>alert(1)</script><a href=\"javascript:x\">x</a>"
 	status := "publish"
-	created, err := h.InsertPost(ctx, "demo", plugins.PostInput{Title: &title, Content: &content, Status: &status, Meta: map[string]any{"k": "v"}})
+	created, err := h.InsertPost(withPluginElevated(ctx), "demo", plugins.PostInput{Title: &title, Content: &content, Status: &status, Meta: map[string]any{"k": "v"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -525,7 +525,7 @@ func TestPluginInsertPostRunsAfterPostSave(t *testing.T) {
 	ctx := context.Background()
 	h := &pluginHost{s: srv}
 	title, status := "From a plugin", "publish"
-	pd, err := h.InsertPost(ctx, "shortcode-demo", plugins.PostInput{Title: &title, Status: &status})
+	pd, err := h.InsertPost(withPluginElevated(ctx), "shortcode-demo", plugins.PostInput{Title: &title, Status: &status})
 	if err != nil {
 		t.Fatal(err)
 	}

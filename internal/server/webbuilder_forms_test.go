@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"wpgo/internal/auth"
 	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
 )
@@ -27,14 +28,16 @@ func TestWebBuilderFormSpam(t *testing.T) {
 		v    map[string]string
 		spam bool
 	}{
-		{map[string]string{}, false},                            // no JS: no timing
-		{map[string]string{"wb_t": "2500"}, false},              // human
-		{map[string]string{"wb_t": "2000"}, false},              // the boundary
-		{map[string]string{"wb_t": "1999"}, true},               // too fast
-		{map[string]string{"wb_t": "abc"}, true},                // tampered
-		{map[string]string{"wb_t": "-5"}, true},                 // tampered
-		{map[string]string{"wb_hp": "x", "wb_t": "9000"}, true}, // honeypot
-		{map[string]string{"wb_hp": "   "}, false},              // whitespace only
+		{map[string]string{}, false},                               // no JS: no timing
+		{map[string]string{"wb_t": ""}, false},                     // empty timing
+		{map[string]string{"wb_t": "   "}, false},                  // blank timing
+		{map[string]string{"wb_t": "2500"}, false},                 // human
+		{map[string]string{"wb_t": "2000"}, false},                 // the boundary
+		{map[string]string{"wb_t": "1999"}, true},                  // too fast
+		{map[string]string{"wb_t": "abc"}, true},                   // tampered
+		{map[string]string{"wb_t": "-5"}, true},                    // tampered
+		{map[string]string{"wb_hp": "x", "wb_t": "9000"}, true},    // honeypot
+		{map[string]string{"wb_hp": "   ", "wb_t": "9000"}, false}, // whitespace honeypot, human timing
 	}
 	for i, tc := range cases {
 		if got := wbFormSpam(tc.v); got != tc.spam {
@@ -127,11 +130,56 @@ func wbformPage(t *testing.T, srv *Server, title, status string) *store.Post {
 	return p
 }
 
+// formToken is the wb_nonce the handler accepts for this client and form.
+func (w *wbformSite) formToken(c *http.Client, postID int64, section string) string {
+	t := ""
+	if c != nil && c.Jar != nil {
+		u, _ := url.Parse(w.base)
+		for _, ck := range c.Jar.Cookies(u) {
+			if ck.Name == auth.CookieName {
+				t = ck.Value
+			}
+		}
+	}
+	if t == "" {
+		return "s." + w.srv.auth.Sign(wbFormSignMsg(postID, section))
+	}
+	sess, err := w.srv.auth.Lookup(context.Background(), t)
+	if err != nil {
+		return "s." + w.srv.auth.Sign(wbFormSignMsg(postID, section))
+	}
+	return "n." + w.srv.auth.Nonce(wbFormNonceAction(postID, section), sess.UserID, sess.Token)
+}
+
 // submit posts form values to a form of the page; json selects the runtime's Accept header.
+// A missing wb_t is filled with a human timing. wb_t or wb_nonce set to "omit" is left out.
+// wb_origin "omit" sends no Origin; any other wb_origin value is sent as the Origin header.
 func (w *wbformSite) submit(t *testing.T, c *http.Client, postID int64, section string, v url.Values, asJSON bool) (int, map[string]any, http.Header) {
 	t.Helper()
+	origin := w.base
+	switch v.Get("wb_origin") {
+	case "":
+	case "omit":
+		origin = ""
+	default:
+		origin = v.Get("wb_origin")
+	}
+	v.Del("wb_origin")
+	if v.Get(webbuilder.FormNonce) == "omit" {
+		v.Del(webbuilder.FormNonce)
+	} else if v.Get(webbuilder.FormNonce) == "" {
+		v.Set(webbuilder.FormNonce, w.formToken(c, postID, section))
+	}
+	if v.Get("wb_t") == "omit" {
+		v.Del("wb_t")
+	} else if _, ok := v["wb_t"]; !ok {
+		v.Set("wb_t", "4200")
+	}
 	req, _ := http.NewRequest(http.MethodPost, w.base+"/wp-json/web-builder/v2/forms/"+strconv.FormatInt(postID, 10)+"/"+section, strings.NewReader(v.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if origin != "" {
+		req.Header.Set("Origin", origin)
+	}
 	if asJSON {
 		req.Header.Set("Accept", "application/json")
 	}
@@ -205,10 +253,40 @@ func TestWebBuilderFormSubmit(t *testing.T) {
 		t.Fatalf("mails after no-JS submit: %d", n)
 	}
 
-	// A logged-in browser posts with its cookies and no nonce: a visitor, no CSRF error.
+	// A logged-in browser posts with its session nonce.
 	code, out, _ = w.submit(t, w.user, w.page.ID, wbfNewsletter, url.Values{"email": {"carol@example.test"}}, true)
 	if code != http.StatusOK || out["ok"] != true {
 		t.Fatalf("with cookies: %d %v", code, out)
+	}
+	// A visitor who logged in after the page loaded still holds the anonymous token.
+	anonTok := url.Values{"email": {"dave@example.test"}, "wb_nonce": {w.formToken(nil, w.page.ID, wbfNewsletter)}}
+	code, out, _ = w.submit(t, w.user, w.page.ID, wbfNewsletter, anonTok, true)
+	if code != http.StatusOK || out["ok"] != true {
+		t.Fatalf("logged-in with anonymous token: %d %v", code, out)
+	}
+}
+
+func TestWebBuilderFormTokenAndTiming(t *testing.T) {
+	w := wbformStart(t)
+	code, out, _ := w.submit(t, nil, w.page.ID, wbfNewsletter, url.Values{"email": {"a@example.test"}, "wb_nonce": {"omit"}}, true)
+	if code != http.StatusForbidden || out["code"] != webbuilder.ErrInvalidNonce {
+		t.Fatalf("missing token: %d %v", code, out)
+	}
+	code, out, _ = w.submit(t, nil, w.page.ID, wbfNewsletter, url.Values{"email": {"a@example.test"}, "wb_origin": {"https://evil.example"}}, true)
+	if code != http.StatusForbidden || out["code"] != webbuilder.ErrInvalidNonce {
+		t.Fatalf("foreign origin: %d %v", code, out)
+	}
+	code, out, _ = w.submit(t, nil, w.page.ID, wbfNewsletter, url.Values{"email": {"a@example.test"}, "wb_origin": {"omit"}}, true)
+	if code != http.StatusForbidden || out["code"] != webbuilder.ErrInvalidNonce {
+		t.Fatalf("missing origin: %d %v", code, out)
+	}
+	code, out, _ = w.submit(t, nil, w.page.ID, wbfNewsletter, url.Values{"email": {"a@example.test"}, "wb_t": {"omit"}}, true)
+	if code != http.StatusOK || out["ok"] != true {
+		t.Fatalf("missing timing: %d %v", code, out)
+	}
+	// Only the post without timing (a no-JS browser) is mailed.
+	if n := len(mailJobs(t, w.srv)); n != 1 {
+		t.Fatalf("rejected posts were mailed: %d", n)
 	}
 }
 

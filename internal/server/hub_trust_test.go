@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"wpgo/internal/config"
 	"wpgo/internal/plugins"
@@ -168,6 +169,27 @@ func TestHubURLAllowed(t *testing.T) {
 	s := &Server{}
 	if _, err := s.hubNewRequest(t.Context(), http.MethodGet, "http://hub.example.com/api/v1/index", nil); !errors.Is(err, errHubInsecure) {
 		t.Errorf("plain http Manager on a public host: %v", err)
+	}
+}
+
+func TestHubRedirectRejectsPrivateAddresses(t *testing.T) {
+	first, _ := http.NewRequest(http.MethodGet, "https://hub.example/api", nil)
+	for _, raw := range []string{"https://10.0.0.1/x", "https://169.254.169.254/", "http://192.168.1.1/"} {
+		next, err := http.NewRequest(http.MethodGet, raw, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := hubCheckRedirect(next, []*http.Request{first}); err == nil {
+			t.Errorf("hubCheckRedirect accepted %s", raw)
+		}
+	}
+	loop, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:9/api", nil)
+	if err := hubCheckRedirect(loop, []*http.Request{first}); err != nil {
+		t.Errorf("loopback development host: %v", err)
+	}
+	req, _ := http.NewRequest(http.MethodGet, "https://10.0.0.5/", nil)
+	if _, err := hubHTTPClient(2 * time.Second).Do(req); err == nil {
+		t.Fatal("the hub client dialed a private address")
 	}
 }
 

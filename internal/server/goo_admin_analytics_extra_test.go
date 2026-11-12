@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -126,10 +125,9 @@ func TestGooAnalyticsRESTAndWeeklySummary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	auth := "consumer_key=" + url.QueryEscape(ck) + "&consumer_secret=" + url.QueryEscape(cs)
 	day := time.Now().In(srv.loc()).Format("2006-01-02")
 	get := func(path string) gooResp {
-		return gooReq(t, &http.Client{}, "GET", base+"/wp-json/wc-analytics"+path+"&"+auth, nil, nil)
+		return gooReq(t, &http.Client{}, "GET", base+"/wp-json/wc-analytics"+path, nil, gooBasic(ck, cs))
 	}
 	r := get("/reports/revenue/stats?after=" + day + "&before=" + day + "&interval=day")
 	if r.Code != http.StatusOK {

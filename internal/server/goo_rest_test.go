@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"wpgo/internal/caps"
 	"wpgo/internal/store"
 )
 
@@ -599,6 +600,46 @@ func TestGooAPIV3OrdersAndMore(t *testing.T) {
 	}
 }
 
+func TestCommerceScopeCannotChangePasswords(t *testing.T) {
+	base, c, srv := gooSite(t)
+	rc := newRESTClient(t, c, base)
+	code, obj, _, _ := rc.do("POST", "/wp/v2/users/me/application-passwords", map[string]any{"name": "Shop", "scopes": []string{"commerce"}})
+	if code != http.StatusCreated {
+		t.Fatalf("create commerce password: %d %v", code, obj)
+	}
+	pass, _ := obj["password"].(string)
+	cust := asCreateUser(t, srv, "cust", "customer", asStrongPass)
+	anon := &http.Client{}
+	hdr := gooBasic("admin", pass)
+	if r := gooReq(t, anon, "PUT", fmt.Sprintf("%s/wp-json/wc/v3/customers/%d", base, cust), map[string]any{"password": "Taken-Over-Pass-99!"}, hdr); r.Code != http.StatusForbidden {
+		t.Fatalf("commerce password change: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, anon, "DELETE", fmt.Sprintf("%s/wp-json/wc/v3/customers/%d?force=true", base, cust), nil, hdr); r.Code != http.StatusForbidden {
+		t.Fatalf("commerce delete: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, anon, "GET", base+"/wp-json/wc/v3/customers", nil, hdr); r.Code != http.StatusOK {
+		t.Errorf("commerce list customers: %d %s", r.Code, r.Raw)
+	}
+	admin := &store.User{ID: 1, Caps: caps.Grants{"level_10": true}}
+	editor := &store.User{ID: 2, Caps: caps.Grants{"level_7": true}}
+	customer := &store.User{ID: cust, Caps: caps.Grants{"level_0": true}}
+	if gooCustomerCredentialAllowed(admin, customer, []string{"commerce"}) {
+		t.Error("commerce scope allowed a password change")
+	}
+	if !gooCustomerCredentialAllowed(admin, customer, []string{"commerce", "users"}) {
+		t.Error("users scope did not allow a customer password change")
+	}
+	if gooCustomerCredentialAllowed(editor, admin, []string{"users"}) {
+		t.Error("a lower role changed a higher role's password")
+	}
+	if gooCustomerCredentialAllowed(admin, admin, []string{"commerce"}) {
+		t.Error("commerce scope changed its own password")
+	}
+	if !gooCustomerCredentialAllowed(admin, customer, nil) {
+		t.Error("an unscoped administrator could not change a customer password")
+	}
+}
+
 func TestGooAPIConsumerKeys(t *testing.T) {
 	base, _, srv := gooSite(t)
 	ctx := context.Background()
@@ -613,26 +654,46 @@ func TestGooAPIConsumerKeys(t *testing.T) {
 		return "consumer_key=" + url.QueryEscape(k) + "&consumer_secret=" + url.QueryEscape(s)
 	}
 	api := base + "/wp-json/wc/v3"
+	var stored string
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT consumer_secret FROM goo_api_keys WHERE consumer_key = $1`, gooHashKey(ck)).Scan(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if stored == cs || stored != gooHashSecret(cs) {
+		t.Fatalf("consumer secret stored in the clear: %q", stored)
+	}
 	if r := gooReq(t, anon, "GET", api+"/products", nil, nil); r.Code != 401 || gooJS(r.Body, "code") != "woocommerce_rest_cannot_view" {
 		t.Errorf("no auth: %d %s", r.Code, r.Raw)
 	}
-	if r := gooReq(t, anon, "GET", api+"/products?"+q(ck, cs), nil, nil); r.Code != 200 || len(r.list()) != 1 {
+	if r := gooReq(t, anon, "GET", api+"/products?"+q(ck, cs), nil, nil); r.Code != 200 {
+		t.Errorf("query-string key (WooCommerce supports it): %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, anon, "GET", api+"/products", nil, gooBasic(ck, cs)); r.Code != 200 || len(r.list()) != 1 {
 		t.Fatalf("good key: %d %s", r.Code, r.Raw)
 	}
-	if r := gooReq(t, anon, "GET", api+"/products?"+q(ck, cs+"x"), nil, nil); r.Code != 401 || gooJS(r.Body, "message") != "Consumer secret is invalid." {
+	if r := gooReq(t, anon, "GET", api+"/products", nil, gooBasic(ck, cs+"x")); r.Code != 401 || gooJS(r.Body, "message") != "Consumer secret is invalid." {
 		t.Errorf("wrong secret: %d %s", r.Code, r.Raw)
 	}
-	if r := gooReq(t, anon, "GET", api+"/products?"+q("ck_nope", cs), nil, nil); r.Code != 401 {
+	if r := gooReq(t, anon, "GET", api+"/products", nil, gooBasic("ck_nope", cs)); r.Code != 401 {
 		t.Errorf("unknown key: %d", r.Code)
 	}
-	if r := gooReq(t, anon, "GET", api+"/products?"+q(rck, rcs), nil, nil); r.Code != 200 {
+	if r := gooReq(t, anon, "GET", api+"/products", nil, gooBasic(rck, rcs)); r.Code != 200 {
 		t.Errorf("read key GET: %d", r.Code)
 	}
-	if r := gooReq(t, anon, "POST", api+"/products?"+q(rck, rcs), map[string]any{"name": "X"}, nil); r.Code != 401 || !strings.Contains(gooJS(r.Body, "message"), "write permissions") {
+	if r := gooReq(t, anon, "POST", api+"/products", map[string]any{"name": "X"}, gooBasic(rck, rcs)); r.Code != 401 || !strings.Contains(gooJS(r.Body, "message"), "write permissions") {
 		t.Errorf("read key POST: %d %s", r.Code, r.Raw)
 	}
-	if r := gooReq(t, anon, "POST", api+"/products?"+q(ck, cs), map[string]any{"name": "Made by key", "regular_price": "4"}, nil); r.Code != 201 {
+	if r := gooReq(t, anon, "POST", api+"/products", map[string]any{"name": "Made by key", "regular_price": "4"}, gooBasic(ck, cs)); r.Code != 201 {
 		t.Errorf("read_write key POST: %d %s", r.Code, r.Raw)
+	}
+	// A secret left in the clear by an older build still matches, and is hashed on that use.
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE goo_api_keys SET consumer_secret = $2 WHERE consumer_key = $1`, gooHashKey(rck), rcs); err != nil {
+		t.Fatal(err)
+	}
+	if r := gooReq(t, anon, "GET", api+"/products", nil, gooBasic(rck, rcs)); r.Code != 200 {
+		t.Fatalf("legacy secret: %d %s", r.Code, r.Raw)
+	}
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT consumer_secret FROM goo_api_keys WHERE consumer_key = $1`, gooHashKey(rck)).Scan(&stored); err != nil || stored != gooHashSecret(rcs) {
+		t.Fatalf("legacy secret was not upgraded: %q %v", stored, err)
 	}
 	var last *string
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT last_access::text FROM goo_api_keys WHERE consumer_key = $1`, gooHashKey(ck)).Scan(&last)
@@ -642,7 +703,7 @@ func TestGooAPIConsumerKeys(t *testing.T) {
 	// A second request inside a minute does not rewrite last_access.
 	var before, after string
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT last_access::text FROM goo_api_keys WHERE consumer_key = $1`, gooHashKey(ck)).Scan(&before)
-	if r := gooReq(t, anon, "GET", api+"/products?"+q(ck, cs), nil, nil); r.Code != 200 {
+	if r := gooReq(t, anon, "GET", api+"/products", nil, gooBasic(ck, cs)); r.Code != 200 {
 		t.Errorf("second GET: %d", r.Code)
 	}
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT last_access::text FROM goo_api_keys WHERE consumer_key = $1`, gooHashKey(ck)).Scan(&after)

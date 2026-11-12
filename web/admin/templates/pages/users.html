@@ -6,13 +6,14 @@
 <hr class="wp-header-end">
 {{template "notices" $}}
 <ul class="subsubsub">{{range $i, $v := .Views}}<li class="{{if $v.Slug}}{{$v.Slug}}{{else}}all{{end}}">{{if $i}} | {{end}}<a href="/wp-admin/users{{if $v.Slug}}?role={{$v.Slug}}{{end}}"{{if $v.Current}} class="current" aria-current="page"{{end}}>{{$v.Name}} <span class="count">({{$v.Count}})</span></a></li>{{end}}</ul>
-<form method="get">
+<form method="post" action="/wp-admin/users">
 <p class="search-box">
 	<label class="screen-reader-text" for="user-search-input">Search Users:</label>
 	<input type="search" id="user-search-input" name="s" value="{{.Search}}" />
 	<input type="submit" id="search-submit" class="button button-compact" value="Search Users" />
 </p>
 <input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+{{if .Role}}<input type="hidden" name="role" value="{{.Role}}" />{{end}}
 <div class="tablenav top">
 	<div class="alignleft actions bulkactions">
 		<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
@@ -108,7 +109,7 @@
 {{end}}{{template "admin-footer" .}}{{end}}
 
 {{define "admin/user-delete"}}{{template "admin-header" .}}{{with .Data}}
-<form method="get" name="updateusers" id="updateusers" action="/wp-admin/users">
+<form method="post" name="updateusers" id="updateusers" action="/wp-admin/users">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <input type="hidden" name="action" value="dodelete" />
 <div class="wrap">

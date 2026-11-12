@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/mail"
+	"wpgo/internal/wp"
 )
 
 // Goocommerce › Pre-Orders (module "pre_orders"): WooCommerce Pre-Orders. A product takes pre-orders
@@ -72,7 +73,15 @@ func (s *Server) gpreDate(po gpreProduct) string {
 }
 
 func (s *Server) gpreMessage(field string, po gpreProduct) string {
-	return strings.ReplaceAll(s.gooExtString(gpreKey, field), "{availability_date}", s.gpreDate(po))
+	// Escape the setting first, then substitute the date (already escaped by gxaDate) so a
+	// message keeps the HTML wp_kses_post allows but no script, and the date's entities are not escaped a second time.
+	return strings.ReplaceAll(wp.KsesPost(s.gooExtString(gpreKey, field)), "{availability_date}", s.gpreDate(po))
+}
+
+// jsQuoteHTML is a JavaScript string literal that can sit in an HTML <script>. strconv.Quote
+// leaves "<", so a button label of "</script>" would close the element. <, > and & are \u escapes.
+func jsQuoteHTML(s string) string {
+	return strings.NewReplacer("<", `\u003c`, ">", `\u003e`, "&", `\u0026`).Replace(strconv.Quote(s))
 }
 
 func init() {
@@ -99,7 +108,7 @@ func init() {
 		if !ok {
 			return ""
 		}
-		btn := s.gooExtString(gpreKey, "add_to_cart_button_text")
+		btn := jsQuoteHTML(s.gooExtString(gpreKey, "add_to_cart_button_text"))
 		charge := s.gooExtString(gpreKey, "upfront_message")
 		if po.WhenToCharge == "upon_release" {
 			charge = s.gooExtString(gpreKey, "upon_release_message")
@@ -109,7 +118,7 @@ func init() {
 			out += `<p class="wc-pre-orders-charge-message">` + gooEsc(charge) + `</p>`
 		}
 		out += `</div><script>(function(){var b=document.querySelectorAll('form.cart .single_add_to_cart_button');for(var i=0;i<b.length;i++){b[i].textContent=` +
-			strconv.Quote(btn) + `;b[i].classList.add('wc-pre-orders-button');}})();</script>`
+			btn + `;b[i].classList.add('wc-pre-orders-button');}})();</script>`
 		return template.HTML(out)
 	})
 	gooOnHTML("loop_after_item", func(s *Server, c *gin.Context, p *gooProduct) template.HTML {

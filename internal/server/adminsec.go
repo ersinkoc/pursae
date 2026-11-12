@@ -404,7 +404,7 @@ func (w *asWriter) finalize() {
 	if st.PermissionsPolicy != "" {
 		h.Set("Permissions-Policy", st.PermissionsPolicy)
 	}
-	if (w.r.TLS != nil || w.r.Header.Get("X-Forwarded-Proto") == "https") && st.HSTSMaxAge > 0 {
+	if w.s.requestHTTPS(w.r) && st.HSTSMaxAge > 0 {
 		v := "max-age=" + strconv.Itoa(st.HSTSMaxAge)
 		if st.HSTSSubdomains {
 			v += "; includeSubDomains"

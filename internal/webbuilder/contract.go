@@ -261,7 +261,8 @@ const (
 	ClassIn         = "wb-in" // set by the runtime when a motion element has entered
 	FormHoneypot    = "wb_hp"
 	FormTiming      = "wb_t"
-	FormSentQuery   = "wb_form" // ?wb_form=sent|error after a no-JS submit (303 back to the page)
+	FormNonce       = "wb_nonce" // signed token or session nonce, required on POST
+	FormSentQuery   = "wb_form"  // ?wb_form=sent|error after a no-JS submit (303 back to the page)
 )
 
 // Form field names a data-wb-form may carry (input name attributes).

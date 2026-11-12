@@ -361,7 +361,7 @@ func TestApplicationPasswords(t *testing.T) {
 		}
 	}
 	nonce := formNonce(t, body)
-	_, body, _ = post(t, c, base+"/wp-admin/profile", url.Values{"_wpnonce": {nonce}, "do_new_application_password": {"1"}, "new_application_password_name": {"Mobile App"}})
+	_, body, _ = post(t, c, base+"/wp-admin/profile", url.Values{"_wpnonce": {nonce}, "do_new_application_password": {"1"}, "new_application_password_name": {"Mobile App"}, "full_access": {"1"}})
 	shown := regexp.MustCompile(`id="new-application-password-value" type="text" class="code" readonly="readonly" value="([^"]+)"`).FindStringSubmatch(body)
 	if shown == nil || !regexp.MustCompile(`^[A-Za-z0-9]{4}( [A-Za-z0-9]{4}){5}$`).MatchString(shown[1]) {
 		t.Fatalf("new password not shown in xxxx xxxx format: %v", shown)

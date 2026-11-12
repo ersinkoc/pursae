@@ -76,6 +76,7 @@ func (s *Server) restCommentOf(c *gin.Context, cm *store.Comment, p *store.Post,
 	}
 	extra["children"] = []map[string]any{{"embeddable": true, "href": home + "/wp-json/wp/v2/comments?parent=" + itoa64(cm.ID)}}
 	content := map[string]any{"rendered": commentText(cm.Content)}
+	viewer := restCurrent(c)
 	if ctxName == "edit" {
 		content["raw"] = cm.Content
 	}
@@ -87,10 +88,17 @@ func (s *Server) restCommentOf(c *gin.Context, cm *store.Comment, p *store.Post,
 		"meta":               []any{},
 		"_links":             restLinks(self, home+"/wp-json/wp/v2/comments", extra),
 	}
+	// author_email / author_ip are edit-context fields and need moderate_comments.
+	// The comment's own account may see the address it already knows (a create response);
+	// the IP and user agent stay with moderators.
 	if ctxName == "edit" {
-		out["author_email"] = cm.AuthorEmail
-		out["author_ip"] = cm.AuthorIP
-		out["author_user_agent"] = cm.UserAgent
+		if canModerate(viewer) || (viewer != nil && cm.UserID != 0 && viewer.ID == cm.UserID) {
+			out["author_email"] = cm.AuthorEmail
+		}
+		if canModerate(viewer) {
+			out["author_ip"] = cm.AuthorIP
+			out["author_user_agent"] = cm.UserAgent
+		}
 	}
 	s.acfgoRESTComment(c, cm, p, out) // ACF-Go
 	if ctxName == "embed" {
@@ -260,7 +268,9 @@ func (api *restAPI) getComment(c *gin.Context, r *restRequest) {
 		}
 	}
 	ctxName := restContext(c)
-	if ctxName == "edit" && !(u != nil && u.Can("edit_post", p)) {
+	// context=edit carries the commenter's e-mail and IP. edit_post on the parent
+	// is not enough: an author of the post must not read other people's addresses.
+	if ctxName == "edit" && !canModerate(u) {
 		forbidden(c, "rest_forbidden_context", "Sorry, you are not allowed to edit this comment.")
 		return
 	}

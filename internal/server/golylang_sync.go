@@ -70,7 +70,7 @@ func (s *Server) pllCopyForTranslation(ctx context.Context, src, dst *store.Post
 	rawMeta, _ := json.Marshal(meta)
 	parent := s.pllTranslatedID(ctx, pllPost, src.ParentID, l.Slug)
 	featured := s.pllTranslatedMedia(ctx, src.FeaturedMediaID, l.Slug)
-	dst.MenuOrder, dst.ParentID, dst.FeaturedMediaID, dst.Format = src.MenuOrder, parent, featured, src.Format
+	dst.MenuOrder, dst.ParentID, dst.FeaturedMediaID, dst.Format = src.MenuOrder, parent, featured, store.CanonicalPostFormat(src.Format)
 	dst.CommentStatus, dst.PingStatus = src.CommentStatus, src.PingStatus
 	for k, v := range meta {
 		dst.Meta[k] = v
@@ -85,7 +85,7 @@ func (s *Server) pllCopyForTranslation(ctx context.Context, src, dst *store.Post
 		duplicate, src.Title, src.Content, src.Excerpt)
 	_ = pllLog("copying fields to a new translation", err)
 	if duplicate {
-		s.wbCopyDoc(ctx, src, dst) // Pursae Web Builder: the translation starts from the source's doc
+		s.wbCopyDoc(ctx, src, dst) // Pursae Web Builder: the translation starts from the source's doc; wbCopyDocErr re-runs SanitizeSnapshot
 	}
 	s.pllCopyTerms(ctx, src.ID, dst.ID, l.Slug)
 }
@@ -246,7 +246,7 @@ func (s *Server) pllSync(ctx context.Context, p *store.Post) {
 			t.PublishedAt = p.PublishedAt
 		}
 		if o.syncs("post_format") {
-			t.Format = p.Format
+			t.Format = store.CanonicalPostFormat(p.Format)
 		}
 		if o.syncs("menu_order") {
 			t.MenuOrder = p.MenuOrder

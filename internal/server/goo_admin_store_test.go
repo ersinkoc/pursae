@@ -311,7 +311,7 @@ func TestGooStoreAPIKeysAndWebhooks(t *testing.T) {
 		t.Fatal(err)
 	}
 	sum := sha256.Sum256([]byte(ck[1]))
-	if hash != hex.EncodeToString(sum[:]) || secret != cs[1] || trunc != ck[1][len(ck[1])-7:] || perm != "read_write" {
+	if hash != hex.EncodeToString(sum[:]) || secret != gooHashSecret(cs[1]) || trunc != ck[1][len(ck[1])-7:] || perm != "read_write" {
 		t.Errorf("stored key: %s %s %s %s", hash, secret, trunc, perm)
 	}
 	// Shown once: the list and the edit screen only show the truncated key.

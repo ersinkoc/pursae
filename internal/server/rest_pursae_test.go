@@ -126,8 +126,8 @@ func TestPursaeREST(t *testing.T) {
 		return do(c, [2]string{}, method, path, payload)
 	}
 	// Application passwords: one with full access, one limited to content.
-	code, full, _ := cookie("POST", "/wp/v2/users/me/application-passwords", map[string]any{"name": "Claude"})
-	if code != http.StatusCreated || len(full["scopes"].([]any)) != 0 {
+	code, full, _ := cookie("POST", "/wp/v2/users/me/application-passwords", map[string]any{"name": "Claude", "full_access": true})
+	if code != http.StatusCreated || joinAny(full["scopes"]) != "full_access" {
 		t.Fatalf("create full password: %d %v", code, full)
 	}
 	code, scoped, _ := cookie("POST", "/wp/v2/users/me/application-passwords", map[string]any{"name": "Cursor", "scopes": []string{"content"}})
@@ -225,7 +225,7 @@ func TestPursaeREST(t *testing.T) {
 	if code, body, _ := api("GET", "/pursae/v1/options/smtp", nil); code != http.StatusOK || body["settings"].(map[string]any)["mailers"].(map[string]any)["smtp"].(map[string]any)["pass"] != secretMask {
 		t.Errorf("smtp after the round trip: %v", body)
 	}
-	if got := srv.msLoadRaw().Mailers["smtp"]["pass"]; got != "s3cret" {
+	if got := srv.msLoadRaw().Mailers["smtp"]["pass"]; !strings.HasPrefix(got, msSealPrefix) || srv.msReveal(got) != "s3cret" {
 		t.Errorf("stored smtp password after sending back the mask = %q", got)
 	}
 	if code, _, _ := api("GET", "/pursae/v1/options/nope", nil); code != http.StatusNotFound {
@@ -335,9 +335,9 @@ func TestPursaeREST(t *testing.T) {
 	if res["isError"] == true || res["structuredContent"].(map[string]any)["alt_text"] != "A dot" {
 		t.Errorf("upload_media = %v", res)
 	}
-	res = rpc(sa, 6, "tools/call", map[string]any{"name": "list_plugins", "arguments": map[string]any{}})
-	if res["isError"] != true || !strings.Contains(res["content"].([]any)[0].(map[string]any)["text"].(string), "rest_scope_forbidden") {
-		t.Errorf("scoped list_plugins = %v", res)
+	code, body, _ := do(anon, sa, "POST", "/pursae/v1/mcp", map[string]any{"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": map[string]any{"name": "list_plugins", "arguments": map[string]any{}}})
+	if errObj, _ := body["error"].(map[string]any); code != http.StatusOK || errObj["code"] != float64(-32602) {
+		t.Errorf("scoped list_plugins: %d %v", code, body)
 	}
 	res = rpc(fa, 7, "tools/call", map[string]any{"name": "get_post", "arguments": map[string]any{"id": "1/../../settings"}})
 	if res["isError"] != true {
@@ -346,6 +346,14 @@ func TestPursaeREST(t *testing.T) {
 	res = rpc(fa, 10, "tools/call", map[string]any{"name": "rest_request", "arguments": map[string]any{"method": "GET", "path": "/wp/v2/../../wp-admin/"}})
 	if res["isError"] != true {
 		t.Errorf("rest_request left /wp-json: %v", res)
+	}
+	res = rpc(fa, 12, "tools/call", map[string]any{"name": "rest_request", "arguments": map[string]any{"method": "GET", "path": "/wp/v2/%2e%2e/%2e%2e/wp-admin/"}})
+	if res["isError"] != true {
+		t.Errorf("encoded rest_request traversal: %v", res)
+	}
+	res = rpc(fa, 13, "tools/call", map[string]any{"name": "rest_request", "arguments": map[string]any{"method": "GET", "path": "/wp/v2/%252e%252e/%252e%252e/wp-admin/"}})
+	if res["isError"] != true {
+		t.Errorf("double-encoded rest_request traversal: %v", res)
 	}
 	res = rpc(fa, 11, "tools/call", map[string]any{"name": "rest_request", "arguments": map[string]any{"method": "GET", "path": "/wp/v2/comments"}})
 	if res["isError"] == true {

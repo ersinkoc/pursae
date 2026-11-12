@@ -251,7 +251,7 @@ func (s *Server) coreUpdate(ctx context.Context, target string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	resp, err := (&http.Client{CheckRedirect: hubCheckRedirect}).Do(req)
+	resp, err := hubHTTPClient(0).Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -443,7 +443,7 @@ func (s *Server) coreDownload(ctx context.Context, target, version string) error
 	if err != nil {
 		return err
 	}
-	resp, err := (&http.Client{CheckRedirect: hubCheckRedirect, Timeout: 30 * time.Second}).Do(req)
+	resp, err := hubHTTPClient(30 * time.Second).Do(req)
 	if err != nil {
 		return err
 	}
@@ -472,7 +472,7 @@ func (s *Server) coreDownload(ctx context.Context, target, version string) error
 	if req, err = s.hubNewRequest(ctx, http.MethodGet, art.URL, nil); err != nil {
 		return err
 	}
-	if resp, err = (&http.Client{CheckRedirect: hubCheckRedirect}).Do(req); err != nil {
+	if resp, err = hubHTTPClient(0).Do(req); err != nil {
 		return err
 	}
 	defer resp.Body.Close()

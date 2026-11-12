@@ -885,8 +885,14 @@ func (s *Server) gooStoreRespondErr(c *gin.Context, status int, code, msg string
 // gooStoreOrderGet is /order/{id}?key=…&billing_email=… (the order confirmation's data).
 func (s *Server) gooStoreOrderGet(c *gin.Context, req *restRequest) {
 	ctx := c.Request.Context()
+	key := c.Query("key")
+	if !s.gooOrderGetAllowed(c, key) {
+		restErr(c, http.StatusTooManyRequests, "woocommerce_rest_order_throttled", gooThrottledMsg)
+		return
+	}
 	o, err := s.gooGetOrder(ctx, req.ID())
-	if err != nil || o.Type != "shop_order" || o.OrderKey != c.Query("key") {
+	if err != nil || o.Type != "shop_order" || o.OrderKey != key {
+		s.gooOrderGetFailed(c, key)
 		restErr(c, http.StatusNotFound, "woocommerce_rest_invalid_order", "Invalid order ID or key provided.")
 		return
 	}
@@ -895,6 +901,7 @@ func (s *Server) gooStoreOrderGet(c *gin.Context, req *restRequest) {
 	case o.CustomerID != 0 && u != nil && u.ID == o.CustomerID:
 	case o.CustomerID == 0 && strings.EqualFold(strings.TrimSpace(c.Query("billing_email")), o.Billing["email"]):
 	default:
+		s.gooOrderGetFailed(c, key)
 		restErr(c, http.StatusUnauthorized, "woocommerce_rest_invalid_user", "This order belongs to a different customer.")
 		return
 	}

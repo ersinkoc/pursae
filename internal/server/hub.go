@@ -116,7 +116,7 @@ func (s *Server) hubBase() string {
 var errHubOff = errors.New("Pursae Manager is switched off in this build")
 
 func (s *Server) hubClient() *http.Client {
-	return &http.Client{Timeout: 20 * time.Second, CheckRedirect: hubCheckRedirect}
+	return hubHTTPClient(20 * time.Second)
 }
 
 // hubNewRequest builds every request to Pursae Manager (JSON documents, package and core downloads,

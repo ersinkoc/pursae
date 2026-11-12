@@ -1511,7 +1511,9 @@ func (s *Server) gooV3ApplyReview(ctx context.Context, cm *store.Comment, b map[
 		cm.PostID = post.ID
 	}
 	if v, ok := b["review"]; ok {
-		cm.Content = gooStr(v)
+		// pre_comment_content: wp_filter_kses. Storefront reviews are public HTML, so the
+		// REST body is limited to $allowedtags even for unfiltered_html.
+		cm.Content = wp.KsesData(gooStr(v))
 	}
 	if v, ok := b["reviewer"]; ok {
 		cm.AuthorName = gooStr(v)

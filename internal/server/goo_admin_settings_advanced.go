@@ -162,7 +162,7 @@ func (s *Server) gooKeysPost(c *gin.Context) {
 	sum := sha256.Sum256([]byte(ck))
 	var id int64
 	if err := s.store.Pool.QueryRow(ctx, `INSERT INTO goo_api_keys (user_id, description, permissions, consumer_key, consumer_secret, truncated_key)
-		VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, uid, desc, perm, hex.EncodeToString(sum[:]), cs, ck[len(ck)-7:]).Scan(&id); err != nil {
+		VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, uid, desc, perm, hex.EncodeToString(sum[:]), gooHashSecret(cs), ck[len(ck)-7:]).Scan(&id); err != nil {
 		gooRedirect(c, back, "", err.Error())
 		return
 	}

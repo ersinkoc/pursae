@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/mail"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 
 	"wpgo/internal/auth"
 	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // wc/v3 orders (+ notes, refunds), coupons and customers.
@@ -861,8 +863,8 @@ func (s *Server) gooV3NoteCreate(c *gin.Context, req *restRequest) {
 		return
 	}
 	b := gooFormBody(c, req)
-	note := strings.TrimSpace(gooStr(b["note"]))
-	if note == "" {
+	note := wp.KsesPost(strings.TrimSpace(gooStr(b["note"])))
+	if strings.TrimSpace(note) == "" {
 		restErr(c, http.StatusBadRequest, "woocommerce_rest_shop_order_note_invalid", "Invalid note.")
 		return
 	}
@@ -1281,6 +1283,35 @@ func (s *Server) gooV3CouponsList(c *gin.Context, req *restRequest) {
 
 // Customers ------------------------------------------------------------------------------------------------
 
+// userLevel is the WordPress user level (level_10 … level_0) implied by the user's capabilities.
+func userLevel(u *store.User) int {
+	if u == nil {
+		return 0
+	}
+	for n := 10; n >= 0; n-- {
+		if u.Can("level_"+strconv.Itoa(n), nil) {
+			return n
+		}
+	}
+	return 0
+}
+
+// gooCustomerCredentialAllowed reports whether actor may set target's password or delete the account.
+// A scoped application password or OAuth grant needs the users scope. Changing someone else also
+// requires a role at least as high as the target's.
+func gooCustomerCredentialAllowed(actor, target *store.User, scopes []string) bool {
+	if actor == nil || target == nil {
+		return false
+	}
+	if len(scopes) > 0 && !slices.Contains(scopes, "users") {
+		return false
+	}
+	if actor.ID == target.ID {
+		return true
+	}
+	return userLevel(actor) >= userLevel(target)
+}
+
 // gooCustomerStats are a customer's paid orders count and total spent.
 func (s *Server) gooCustomerStats(ctx context.Context, userID int64) (count int, spent float64) {
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*), coalesce(sum(total),0)::float8 FROM goo_orders WHERE type = 'shop_order' AND customer_id = $1
@@ -1397,6 +1428,9 @@ func (s *Server) gooV3CustomerUpdate(c *gin.Context, id int64, b map[string]any)
 		u.Profile = map[string]string{}
 	}
 	if v, ok := b["password"]; ok && gooStr(v) != "" { // Pursae Security password policy, before anything is saved
+		if !gooCustomerCredentialAllowed(gooV3Actor(c), u, restScopes(c)) {
+			return nil, gooErr(http.StatusForbidden, "woocommerce_rest_cannot_edit", "Sorry, you are not allowed to change this user's password.")
+		}
 		if msg := s.adminsecUserPasswordProblem(u, gooStr(v)); msg != "" {
 			return nil, gooErr(400, "woocommerce_rest_customer_invalid_password", msg)
 		}
@@ -1449,6 +1483,9 @@ func (s *Server) gooV3CustomerDelete(c *gin.Context, id int64, force bool) (map[
 	if err != nil {
 		return nil, gooErr(400, "woocommerce_rest_invalid_id", "Invalid resource id.")
 	}
+	if !gooCustomerCredentialAllowed(gooV3Actor(c), u, restScopes(c)) {
+		return nil, gooErr(http.StatusForbidden, "woocommerce_rest_cannot_delete", "Sorry, you are not allowed to delete this user.")
+	}
 	obj := s.gooV3CustomerJSON(c, u)
 	reassign := gooInt(c.Query("reassign"))
 	if err := s.store.DeleteUser(ctx, id, reassign); err != nil {
@@ -1499,21 +1536,21 @@ func (s *Server) gooV3CustomersList(c *gin.Context, req *restRequest) {
 
 func (s *Server) gooV3CustomerDownloads(c *gin.Context, req *restRequest) {
 	ctx := c.Request.Context()
-	rows, err := s.store.Pool.Query(ctx, `SELECT d.download_id, d.product_id, d.order_id, d.order_key, coalesce(d.downloads_remaining::text, ''), d.access_expires
+	rows, err := s.store.Pool.Query(ctx, `SELECT d.download_id, d.product_id, d.order_id, d.order_key, coalesce(d.user_email, ''), coalesce(d.downloads_remaining::text, ''), d.access_expires
 		FROM goo_download_permissions d WHERE d.user_id = $1 ORDER BY d.order_id`, req.ID())
 	if err != nil {
 		restJSON(c, http.StatusOK, []any{})
 		return
 	}
 	type row struct {
-		dlID, key, remaining string
-		pid, oid             int64
-		expires              *time.Time
+		dlID, key, email, remaining string
+		pid, oid                    int64
+		expires                     *time.Time
 	}
 	var list []row
 	for rows.Next() {
 		var r row
-		if rows.Scan(&r.dlID, &r.pid, &r.oid, &r.key, &r.remaining, &r.expires) == nil {
+		if rows.Scan(&r.dlID, &r.pid, &r.oid, &r.key, &r.email, &r.remaining, &r.expires) == nil {
 			list = append(list, r)
 		}
 	}
@@ -1537,7 +1574,7 @@ func (s *Server) gooV3CustomerDownloads(c *gin.Context, req *restRequest) {
 		if r.expires != nil {
 			expires = s.gooDate(r.expires)
 		}
-		out = append(out, map[string]any{"download_id": r.dlID, "download_url": s.links(ctx).HomeURL("/?download_file=" + itoa64(r.pid) + "&order=" + r.key + "&key=" + r.dlID),
+		out = append(out, map[string]any{"download_id": r.dlID, "download_url": s.links(ctx).HomeURL("/?download_file=" + itoa64(r.pid) + "&order=" + urlEscape(r.key) + "&email=" + urlEscape(r.email) + "&key=" + urlEscape(r.dlID)),
 			"product_id": r.pid, "product_name": name, "download_name": fileName, "order_id": r.oid, "order_key": r.key,
 			"downloads_remaining": remaining, "access_expires": expires, "access_expires_gmt": expires, "file": map[string]any{"name": fileName, "file": file}})
 	}

@@ -86,6 +86,23 @@ func TestSEOGoRedirectMatch(t *testing.T) {
 	}
 }
 
+func TestSEOGoSafeTarget(t *testing.T) {
+	if got, ok := seogoSafeTarget("/new/?x=1"); !ok || got != "/new/?x=1" {
+		t.Fatalf("path = %q %v", got, ok)
+	}
+	if got, ok := seogoSafeTarget("/landing/"); !ok || got != "/landing/" {
+		t.Fatalf("directory = %q %v", got, ok)
+	}
+	if got, ok := seogoSafeTarget("https://example.com/a"); !ok || got != "https://example.com/a" {
+		t.Fatalf("external = %q %v", got, ok)
+	}
+	for _, bad := range []string{"//evil.example", "javascript:alert(1)", "JaVaScRiPt:alert(1)", `/\evil.example`, "data:text/html,hi", "https://user@evil.example/a", "vbscript:x"} {
+		if got, ok := seogoSafeTarget(bad); ok {
+			t.Errorf("seogoSafeTarget(%q) = %q", bad, got)
+		}
+	}
+}
+
 func TestSEOGoAnalysisScoring(t *testing.T) {
 	para := "Golang SEO is easy when you know the basics. However, many sites forget the details. Therefore we explain them here. " +
 		"First, write a clear title. Then add a short description. Finally, link to related content and to good sources. "

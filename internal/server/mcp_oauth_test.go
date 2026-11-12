@@ -175,6 +175,19 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 		t.Fatalf("token: %d %v", st, tok)
 	}
 	bearer := map[string]string{"Authorization": "Bearer " + access}
+	var gotRes string
+	if err := srv.store.Pool.QueryRow(context.Background(), `SELECT resource FROM oauth_tokens WHERE access_hash = $1`, oauthHash(access)).Scan(&gotRes); err != nil || gotRes != base+"/wp-json/pursae/v1/mcp" {
+		t.Fatalf("grant resource = %q (%v), want the MCP resource", gotRes, err)
+	}
+	if _, err := srv.store.Pool.Exec(context.Background(), `UPDATE oauth_tokens SET resource = $2 WHERE access_hash = $1`, oauthHash(access), "https://evil.example/wp-json/pursae/v1/mcp"); err != nil {
+		t.Fatal(err)
+	}
+	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, bearer); resp.StatusCode != 401 {
+		t.Errorf("token bound to another resource: %d", resp.StatusCode)
+	}
+	if _, err := srv.store.Pool.Exec(context.Background(), `UPDATE oauth_tokens SET resource = $2 WHERE access_hash = $1`, oauthHash(access), gotRes); err != nil {
+		t.Fatal(err)
+	}
 	if resp, b := send("GET", base+"/wp-json/wp/v2/posts", nil, bearer); resp.StatusCode != 200 {
 		t.Errorf("posts with token: %d %s", resp.StatusCode, b)
 	}
@@ -340,6 +353,37 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 		t.Errorf("grant after concurrent refreshes: %d rows, want 1", grants)
 	}
 	_, _ = srv.store.Pool.Exec(context.Background(), `DELETE FROM oauth_tokens WHERE prev_refresh_hash = $1`, oauthHash(race)) // the profile below revokes its first grant
+
+	// A second rotation must not hide the stolen refresh token: any older token in the chain burns the
+	// whole family, even inside the grace window of the latest rotation.
+	fam := newGrant()
+	st, mid := token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {fam["refresh_token"].(string)}})
+	if st != 200 {
+		t.Fatalf("family refresh: %d", st)
+	}
+	st, latest := token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {mid["refresh_token"].(string)}})
+	if st != 200 {
+		t.Fatalf("family second refresh: %d", st)
+	}
+	if st, _ := token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {fam["refresh_token"].(string)}}); st != 400 {
+		t.Errorf("ancestor refresh token still works: %d", st)
+	}
+	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, map[string]string{"Authorization": "Bearer " + latest["access_token"].(string)}); resp.StatusCode != 401 {
+		t.Errorf("grant family survived reuse of an older refresh token: %d", resp.StatusCode)
+	}
+	// RFC 7009: the refresh token a rotation replaced still revokes the grant.
+	alive := newGrant()
+	st, rotated := token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {alive["refresh_token"].(string)}})
+	if st != 200 {
+		t.Fatalf("revoke setup refresh: %d", st)
+	}
+	rvPrev := url.Values{"token": {alive["refresh_token"].(string)}, "client_id": {clientID}}
+	if resp, _ := send("POST", base+"/oauth/revoke", strings.NewReader(rvPrev.Encode()), map[string]string{"Content-Type": "application/x-www-form-urlencoded"}); resp.StatusCode != 200 {
+		t.Errorf("revoke with previous refresh: %d", resp.StatusCode)
+	}
+	if resp, _ := send("GET", base+"/wp-json/wp/v2/posts", nil, map[string]string{"Authorization": "Bearer " + rotated["access_token"].(string)}); resp.StatusCode != 401 {
+		t.Errorf("token works after revoke with the previous refresh token: %d", resp.StatusCode)
+	}
 
 	// Replaying an authorization code revokes the grant issued for it (OAuth 2.1 §4.1.3).
 	tk4 := newGrant()

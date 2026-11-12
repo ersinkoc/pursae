@@ -308,7 +308,7 @@ func TestThemePackageInstallActivateDelete(t *testing.T) {
 	}
 
 	// REST lists it as a classic theme with the declared supports.
-	code, body, _ = get(t, c, base+"/wp-json/wp/v2/themes")
+	code, body, _ = get(t, c, base+"/wp-json/wp/v2/themes?_wpnonce="+restNonce(t, srv, c, base))
 	must("rest themes", code, http.StatusOK, body)
 	for _, want := range []string{`"stylesheet":"starter"`, `"is_block_theme":false`, `"align-wide":true`, `"textdomain":"starter"`} {
 		if !strings.Contains(body, want) {
@@ -474,7 +474,7 @@ func TestThemePackageInstallActivateDelete(t *testing.T) {
 	if code, _, _ := get(t, c, base+"/wp-content/themes/starter/style.css"); code != http.StatusNotFound {
 		t.Fatalf("deleted stylesheet still served: %d", code)
 	}
-	if _, body, _ := get(t, c, base+"/wp-json/wp/v2/themes"); strings.Contains(body, `"stylesheet":"starter"`) {
+	if _, body, _ := get(t, c, base+"/wp-json/wp/v2/themes?_wpnonce="+restNonce(t, srv, c, base)); strings.Contains(body, `"stylesheet":"starter"`) {
 		t.Fatal("REST still lists the deleted theme")
 	}
 	if code, _, _ := get(t, c, base+"/"); code != http.StatusOK {

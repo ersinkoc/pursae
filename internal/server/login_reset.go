@@ -197,6 +197,7 @@ func (s *Server) resetPassword(c *gin.Context, v loginView) {
 				break
 			}
 			delete(u.Meta, "password_reset")
+			s.revokeCredentialsAfterPasswordChange(c, u.ID)
 			s.adminsecPasswordChanged(c, u)
 			_, _ = s.store.Pool.Exec(c, `DELETE FROM sessions WHERE user_id = $1`, u.ID)
 			site := s.settings.String("blogname")

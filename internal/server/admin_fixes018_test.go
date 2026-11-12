@@ -391,7 +391,7 @@ func TestWXRAttachmentIDsDoNotCollide(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, xml, _ := get(t, c, ts.URL+"/wp-admin/export?download=true&content=all")
+	_, xml, _ := get(t, c, ts.URL+"/wp-admin/export?_wpnonce="+exportNonce(t, c, ts.URL)+"&download=true&content=all")
 	seen := map[string]bool{}
 	for _, m := range regexp.MustCompile(`<wp:post_id>(\d+)</wp:post_id>`).FindAllStringSubmatch(xml, -1) {
 		if seen[m[1]] {
@@ -470,7 +470,7 @@ func TestWXRCustomPostTypes(t *testing.T) {
 	}
 	_ = srv.store.SetPostTerms(ctx, book.ID, "wxgenre", []int64{scifi.ID})
 
-	_, xml, _ := get(t, c, ts.URL+"/wp-admin/export?download=true&content=all")
+	_, xml, _ := get(t, c, ts.URL+"/wp-admin/export?_wpnonce="+exportNonce(t, c, ts.URL)+"&download=true&content=all")
 	for _, want := range []string{"<wp:post_type><![CDATA[wxbook]]></wp:post_type>", "<title><![CDATA[Dune]]></title>",
 		"<wp:term_taxonomy><![CDATA[wxgenre]]></wp:term_taxonomy><wp:term_slug><![CDATA[scifi]]></wp:term_slug><wp:term_parent><![CDATA[fiction]]></wp:term_parent>",
 		`<category domain="wxgenre" nicename="scifi"><![CDATA[Sci-fi]]></category>`} {

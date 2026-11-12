@@ -680,7 +680,9 @@ func (s *Server) gooReviewsHTML(c *gin.Context, p *gooProduct) string {
 				t := r.CreatedAt.In(s.loc())
 				b.WriteString(`<span class="woocommerce-review__dash">&ndash;</span> <time class="woocommerce-review__published-date" datetime="` + t.Format(time.RFC3339) + `">` + wp.FormatDate(t, df) + `</time></p>`)
 			}
-			b.WriteString(`<div class="description">` + s.gooKeep(c, wp.Autop(wp.Texturize(r.Content))) + `</div></div></div></li>`)
+			// Reviews are comments: $allowedtags (KsesData) before texturize/autop, or a stored
+			// <script> / on* handler is emitted as HTML. RelUGC matches comment_text().
+			b.WriteString(`<div class="description">` + s.gooKeep(c, wp.Autop(wp.Texturize(wp.RelUGC(wp.KsesData(r.Content))))) + `</div></div></div></li>`)
 		}
 		b.WriteString(`</ol>`)
 	} else {

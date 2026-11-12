@@ -245,6 +245,73 @@ func TestPasswordChangeEndsOtherSessions(t *testing.T) {
 	}
 }
 
+// A password change drops application passwords and OAuth grants the way it drops other sessions.
+// The application password that performed the change stays; a reset link drops that one too.
+func TestPasswordChangeRevokesAppPasswordsAndOAuth(t *testing.T) {
+	s := secStart(t)
+	ctx := context.Background()
+	id := asCreateUser(t, s.srv, "pat", "editor", asStrongPass)
+	plainA, apA, err := s.srv.createAppPassword(gooTestCtx(), id, "Phone", "", appScopeFullAccess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plainB, _, err := s.srv.createAppPassword(gooTestCtx(), id, "Tablet", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.srv.store.Pool.Exec(ctx, `INSERT INTO oauth_clients (client_id, name, redirect_uris) VALUES ('00000000-0000-4000-8000-0000000000bb', 'Phone', '{http://localhost/cb}')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.srv.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, access_expires_at, refresh_expires_at)
+		VALUES ('00000000-0000-4000-8000-0000000000bb', $1, 'acc-pat', 'ref-pat', now() + interval '1 hour', now() + interval '1 day')`, id); err != nil {
+		t.Fatal(err)
+	}
+	const newPass = "Granite-Ribbon-Orbit-71!"
+	anon := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	if r := gooReq(t, anon, "POST", s.base+"/wp-json/wp/v2/users/me", map[string]any{"password": newPass}, gooBasic("pat", plainA)); r.Code != http.StatusOK {
+		t.Fatalf("change password with application password: %d %s", r.Code, r.Raw)
+	}
+	var n int
+	if err := s.srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM app_passwords WHERE user_id = $1`, id).Scan(&n); err != nil || n != 1 {
+		t.Fatalf("application passwords left: %d %v", n, err)
+	}
+	var left int64
+	_ = s.srv.store.Pool.QueryRow(ctx, `SELECT id FROM app_passwords WHERE user_id = $1`, id).Scan(&left)
+	if left != apA.ID {
+		t.Errorf("kept application password %d, want %d", left, apA.ID)
+	}
+	if err := s.srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM oauth_tokens WHERE user_id = $1`, id).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("oauth grants left: %d %v", n, err)
+	}
+	if r := gooReq(t, anon, "GET", s.base+"/wp-json/wp/v2/users/me", nil, gooBasic("pat", plainB)); r.Code != http.StatusUnauthorized {
+		t.Errorf("revoked application password still works: %d", r.Code)
+	}
+	if r := gooReq(t, anon, "GET", s.base+"/wp-json/wp/v2/users/me", nil, gooBasic("pat", plainA)); r.Code != http.StatusOK {
+		t.Errorf("the application password that changed the password was revoked: %d %s", r.Code, r.Raw)
+	}
+	if _, err := s.srv.store.Pool.Exec(ctx, `INSERT INTO oauth_tokens (client_id, user_id, access_hash, refresh_hash, access_expires_at, refresh_expires_at)
+		VALUES ('00000000-0000-4000-8000-0000000000bb', $1, 'acc-pat-2', 'ref-pat-2', now() + interval '1 hour', now() + interval '1 day')`, id); err != nil {
+		t.Fatal(err)
+	}
+	// Default clients follow the 302, so the status the test sees would be the confirmation page.
+	noredir := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	if code, _, _ := post(t, noredir, s.base+"/wp-login?action=lostpassword", url.Values{"user_login": {"pat"}}); code != http.StatusFound {
+		t.Fatalf("lost password: %d", code)
+	}
+	rp := firstURL(t, lastMail(t, "Password Reset").Body, "action=rp")
+	ru, _ := url.Parse(rp)
+	resetForm := url.Values{"rp_login": {"pat"}, "rp_key": {ru.Query().Get("key")}, "pass1": {"Maple-Quartz-Delta-52!"}, "pass2": {"Maple-Quartz-Delta-52!"}}
+	if code, _, loc := post(t, noredir, s.base+"/wp-login?action=resetpass", resetForm); code != http.StatusFound || !strings.Contains(loc, "password=changed") {
+		t.Fatalf("reset: %d %s", code, loc)
+	}
+	if err := s.srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM app_passwords WHERE user_id = $1`, id).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("application passwords after reset: %d %v", n, err)
+	}
+	if err := s.srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM oauth_tokens WHERE user_id = $1`, id).Scan(&n); err != nil || n != 0 {
+		t.Fatalf("oauth grants after reset: %d %v", n, err)
+	}
+}
+
 // Pursae SEO builds the page head from the stored post. For a password-protected post the head must not contain
 // anything derived from the protected body (here the og:image fallback, the first image of the content).
 func TestSEOGoHeadHidesProtectedPostContent(t *testing.T) {
@@ -346,15 +413,14 @@ func TestRESTMediaHidesAttachmentsOfUnpublishedPosts(t *testing.T) {
 		for _, it := range list {
 			titles.WriteString(fmt.Sprint(it.(map[string]any)["title"]))
 		}
+		// Unattached files stay public, like WordPress.
 		for _, hidden := range []string{"Picture draft", "Picture locked"} {
 			if strings.Contains(titles.String(), hidden) {
 				t.Errorf("%s lists %q", who, hidden)
 			}
 		}
-		for _, shown := range []string{"Picture open", "Picture loose"} {
-			if !strings.Contains(titles.String(), shown) {
-				t.Errorf("%s no longer sees %q", who, shown)
-			}
+		if !strings.Contains(titles.String(), "Picture open") {
+			t.Errorf("%s no longer sees the public attachment", who)
 		}
 		for _, hidden := range []string{"draft", "locked"} {
 			if code, _, _, _ := rc.do("GET", fmt.Sprintf("/wp/v2/media/%d", ids[hidden]), nil); code < 400 {

@@ -222,7 +222,7 @@ func (s *Server) embedPage(c *gin.Context, p *store.Post) string {
 		link := html.EscapeString(lb.Permalink(p))
 		classes := []string{"wp-embed", "post-" + itoa64(p.ID), p.Type, "type-" + p.Type, "status-" + p.Status, "hentry"}
 		if p.Type == "post" {
-			classes = append(classes, "format-"+defaultStr(p.Format, "standard"))
+			classes = append(classes, "format-"+store.CanonicalPostFormat(p.Format))
 		}
 		sb.WriteString("<div class=\"" + strings.Join(classes, " ") + "\">\n")
 		if p.FeaturedMediaID > 0 {

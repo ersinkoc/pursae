@@ -756,13 +756,21 @@ func (s *Server) gooDownload(c *gin.Context) {
 		c.String(code, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Download error</title><link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head>`+
 			`<body id="error-page"><div class="wp-die-message"><p>`+msg+`</p><p><a href="`+gooEsc(s.gooPageURL(ctx, "shop"))+`" class="wc-forward">Go to shop</a></p></div></body></html>`)
 	}
+	if !s.gooOrderGetAllowed(c, orderKey) {
+		die(http.StatusTooManyRequests, gooThrottledMsg)
+		return
+	}
 	var id, oid, uid int64
 	var permEmail string
 	var remaining *int
 	var expires *time.Time
 	err := s.store.Pool.QueryRow(ctx, `SELECT id, order_id, user_id, user_email, downloads_remaining, access_expires FROM goo_download_permissions
 		WHERE product_id = $1 AND order_key = $2 AND download_id = $3 ORDER BY id LIMIT 1`, pid, orderKey, key).Scan(&id, &oid, &uid, &permEmail, &remaining, &expires)
-	if errors.Is(err, pgx.ErrNoRows) || err != nil || (email != "" && !strings.EqualFold(email, permEmail)) {
+	// A guest link always has to name the billing e-mail. downloads_require_login replaces that
+	// with a login, but a supplied e-mail that does not match is still refused.
+	emailOK := strings.EqualFold(strings.TrimSpace(email), permEmail)
+	if errors.Is(err, pgx.ErrNoRows) || err != nil || (email != "" && !emailOK) || (!s.gooOptBool("downloads_require_login") && !emailOK) {
+		s.gooOrderGetFailed(c, orderKey)
 		die(http.StatusForbidden, "Invalid download link.")
 		return
 	}
@@ -827,6 +835,23 @@ func (s *Server) gooDownload(c *gin.Context) {
 		}
 	}
 	c.Redirect(http.StatusFound, file.File)
+}
+
+// gooOrderGetAllowed is the sliding window for order-key lookups (downloads and GET /order/{id}).
+// Failures are counted per IP and per key so one visitor cannot guess many keys and one key
+// cannot be hammered from many addresses. Successful lookups are not counted.
+func (s *Server) gooOrderGetAllowed(c *gin.Context, key string) bool {
+	if gooOrderGetThrottle.Blocked(clientIP(c)) {
+		return false
+	}
+	return key == "" || !gooOrderGetThrottle.Blocked("order:"+key)
+}
+
+func (s *Server) gooOrderGetFailed(c *gin.Context, key string) {
+	gooOrderGetThrottle.Fail(clientIP(c))
+	if key != "" {
+		gooOrderGetThrottle.Fail("order:" + key)
+	}
 }
 
 // gooLocalFile maps a file URL in the uploads directory to its path ("" when remote or missing).

@@ -11,6 +11,16 @@ import (
 	"wpgo/internal/cache"
 )
 
+func TestProxyPurgeClientBlocksMetadata(t *testing.T) {
+	req, err := http.NewRequest(http.MethodGet, "http://169.254.169.254/latest/meta-data/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := proxyPurgeClient.Do(req); err == nil {
+		t.Fatal("purge client dialed the link-local metadata address")
+	}
+}
+
 func TestProxyPurgeRequest(t *testing.T) {
 	ctx := context.Background()
 	req, err := proxyPurgeRequest(ctx, "http://proxy:8080/purge", "wpgo_", cache.Purge{Tags: []string{"post:12", "home"}})

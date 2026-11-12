@@ -1230,7 +1230,10 @@ func TestAdminSecPolicyAuditHardening(t *testing.T) {
 	if !strings.Contains(body, "column-adminsec") {
 		t.Error("Users list has no Two-Step column")
 	}
-	get(t, c, base+"/wp-admin/users?action=-1&new_role=author&changeit=Change&users[]=4&_wpnonce="+regexp.MustCompile(`name="_wpnonce" value="([^"]+)"`).FindStringSubmatch(body)[1])
+	if code, _, _ := post(t, c, base+"/wp-admin/users", url.Values{"_wpnonce": {regexp.MustCompile(`name="_wpnonce" value="([^"]+)"`).FindStringSubmatch(body)[1]},
+		"action": {"-1"}, "new_role": {"author"}, "changeit": {"Change"}, "users[]": {"4"}}); code != http.StatusFound {
+		t.Fatalf("bulk role change: %d", code)
+	}
 	_, body, _ = get(t, c, base+"/wp-admin/options-general")
 	post(t, c, base+"/wp-admin/options", url.Values{"option_page": {"general"}, "_wpnonce": {formNonce(t, body)}, "blogname": {"Users Site"}, "blogdescription": {""},
 		"admin_email": {"admin@example.test"}, "timezone_string": {"UTC"}, "date_format": {"F j, Y"}, "time_format": {"g:i a"}, "start_of_week": {"1"}})
