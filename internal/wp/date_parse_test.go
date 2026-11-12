@@ -73,3 +73,19 @@ func TestParseDateUnicodeLiterals(t *testing.T) {
 		t.Fatalf("got %v, valid=%v", got, ok)
 	}
 }
+
+func TestParseDateValidatesWeekday(t *testing.T) {
+	for _, tc := range []struct {
+		text, format string
+		valid        bool
+	}{
+		{"Monday, October 5, 2026", "l, F j, Y", true},
+		{"Mon, Oct 5, 2026", "D, M j, Y", true},
+		{"Tuesday, October 5, 2026", "l, F j, Y", false},
+		{"Sun, Oct 5, 2026", "D, M j, Y", false},
+	} {
+		if _, got := ParseDate(tc.text, tc.format); got != tc.valid {
+			t.Errorf("ParseDate(%q, %q) valid=%v, want %v", tc.text, tc.format, got, tc.valid)
+		}
+	}
+}

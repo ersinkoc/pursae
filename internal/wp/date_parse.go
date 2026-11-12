@@ -52,9 +52,9 @@ func ParseDate(text, format string) (time.Time, bool) {
 		case 'M':
 			group(alt(en.MonthsShort[:]), 'M')
 		case 'D':
-			group(alt(en.WeekdaysShort[:]), '-')
+			group(alt(en.WeekdaysShort[:]), 'D')
 		case 'l':
-			group(alt(en.Weekdays[:]), '-')
+			group(alt(en.Weekdays[:]), 'l')
 		case 'S':
 			group(`st|nd|rd|th`, '-')
 		case 'g':
@@ -86,6 +86,7 @@ func ParseDate(text, format string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	year, month, day, hour, min, sec := 1, 1, 1, 0, 0, 0
+	weekday := -1
 	pm, has12 := false, false
 	for i, k := range kinds {
 		v := m[i+1]
@@ -103,6 +104,10 @@ func ParseDate(text, format string) (time.Time, bool) {
 			month = indexOf(en.Months[:], v) + 1
 		case 'M':
 			month = indexOf(en.MonthsShort[:], v) + 1
+		case 'D':
+			weekday = indexOf(en.WeekdaysShort[:], v)
+		case 'l':
+			weekday = indexOf(en.Weekdays[:], v)
 		case 'h':
 			if n < 1 || n > 12 {
 				return time.Time{}, false
@@ -126,6 +131,9 @@ func ParseDate(text, format string) (time.Time, bool) {
 	}
 	result := time.Date(year, time.Month(month), day, hour, min, sec, 0, time.UTC)
 	if result.Year() != year || int(result.Month()) != month || result.Day() != day {
+		return time.Time{}, false
+	}
+	if weekday >= 0 && result.Weekday() != time.Weekday(weekday) {
 		return time.Time{}, false
 	}
 	return result, true

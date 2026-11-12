@@ -38,6 +38,17 @@ func TestPermalinks(t *testing.T) {
 	}
 }
 
+func TestSearchLinkFollowsPermalinkMode(t *testing.T) {
+	pretty := Builder{Home: "https://example.test", Structure: "/%postname%/"}
+	if got, want := pretty.SearchLink("café tea"), "https://example.test/search/caf%C3%A9+tea/"; got != want {
+		t.Errorf("pretty search=%q, want %q", got, want)
+	}
+	plain := Builder{Home: "https://example.test"}
+	if got, want := plain.SearchLink("café tea"), "https://example.test/?s=caf%C3%A9+tea"; got != want {
+		t.Errorf("plain search=%q, want %q", got, want)
+	}
+}
+
 func TestPagedFirstPageFollowsSlashPolicy(t *testing.T) {
 	for _, tc := range []struct{ structure, base, want string }{
 		{"/%postname%", "https://example.test/cat/page/2?x=1#top", "https://example.test/cat?x=1#top"},
@@ -64,6 +75,22 @@ func TestPagedPreservesEscapedPath(t *testing.T) {
 	} {
 		if got := b.Paged(tc.base, tc.page); got != tc.want {
 			t.Errorf("Paged(%q, %d) = %q, want %q", tc.base, tc.page, got, tc.want)
+		}
+	}
+}
+
+func TestPrettyPagedRemovesStaleQueryArgument(t *testing.T) {
+	b := Builder{Structure: "/%postname%/"}
+	for _, tc := range []struct {
+		base string
+		page int
+		want string
+	}{
+		{"https://example.test/news/?paged=7&lang=tr", 2, "https://example.test/news/page/2/?lang=tr"},
+		{"https://example.test/news/page/3/?paged=3&lang=tr", 1, "https://example.test/news/?lang=tr"},
+	} {
+		if got := b.Paged(tc.base, tc.page); got != tc.want {
+			t.Errorf("Paged(%q, %d)=%q, want %q", tc.base, tc.page, got, tc.want)
 		}
 	}
 }
@@ -229,6 +256,29 @@ func TestCustomPostTypeLinks(t *testing.T) {
 	}
 	if got := plain.Paged(plain.PostTypeArchiveLink("book"), 2); got != "http://ex.test/?paged=2&post_type=book" {
 		t.Errorf("plain archive paged = %s", got)
+	}
+}
+
+func TestUnroutedCustomPostTypePermalinkTemplate(t *testing.T) {
+	b := Builder{Home: "https://example.test", Structure: "/%postname%/"}
+	for _, status := range []string{"publish", "draft"} {
+		p := &store.Post{ID: 7, Type: "custom", Status: status, Slug: "hello"}
+		if got, want := b.PermalinkTemplate(p), b.Permalink(p); got != want {
+			t.Errorf("status %q: template=%q, permalink=%q", status, got, want)
+		}
+	}
+}
+
+func TestHierarchicalPagePermalinkTemplate(t *testing.T) {
+	parent := &store.Post{ID: 3, Type: "page", Slug: "üst", Status: "publish"}
+	b := Builder{
+		Home:      "https://example.test",
+		Structure: "/%postname%/",
+		Ancestors: func(*store.Post) []*store.Post { return []*store.Post{parent} },
+	}
+	child := &store.Post{ID: 4, Type: "page", ParentID: parent.ID, Slug: "child", Status: "publish"}
+	if got, want := b.PermalinkTemplate(child), "https://example.test/%C3%BCst/%pagename%/"; got != want {
+		t.Fatalf("template=%q, want %q", got, want)
 	}
 }
 
