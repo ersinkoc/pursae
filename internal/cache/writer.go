@@ -245,6 +245,10 @@ func (cw *captureWriter) finish() {
 	default:
 		return
 	}
+	if Degraded(cw.r) {
+		_ = cw.spill()
+		return
+	}
 	cw.restoreHeaders()
 	body := cw.buf.Bytes()
 	opt := cw.c.cfg.Optimize
