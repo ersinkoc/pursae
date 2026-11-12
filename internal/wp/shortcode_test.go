@@ -124,6 +124,9 @@ func TestShortcodeRegexCachedPerTagList(t *testing.T) {
 	if shortcodeRegex([]string{"a", "b"}) != shortcodeRegex([]string{"a", "b"}) {
 		t.Error("the regex of one tag list is compiled again")
 	}
+	if got := DoShortcode("[a]", []string{"a\x00b"}, fn); got != "[a]" {
+		t.Errorf("invalid colliding tag reused a cached matcher: %q", got)
+	}
 	if !HasShortcode("x [gallery ids=\"1\"] y", "gallery") || HasShortcode("[galleryx]", "gallery") {
 		t.Error("HasShortcode")
 	}

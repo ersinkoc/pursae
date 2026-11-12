@@ -322,7 +322,13 @@ var (
 
 // shortcodeRegex is the WordPress shortcode regex for the given tags (nil when none is valid).
 func shortcodeRegex(tags []string) *regexp.Regexp {
-	key := strings.Join(tags, "\x00")
+	var kb strings.Builder
+	for _, tag := range tags {
+		kb.WriteString(strconv.Itoa(len(tag)))
+		kb.WriteByte(':')
+		kb.WriteString(tag)
+	}
+	key := kb.String()
 	shortcodeRegexMu.Lock()
 	re, ok := shortcodeRegexes[key]
 	shortcodeRegexMu.Unlock()

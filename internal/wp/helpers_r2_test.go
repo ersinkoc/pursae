@@ -135,6 +135,17 @@ func TestHumanTimeDiffRounds(t *testing.T) {
 	}
 }
 
+func TestHumanTimeDiffBeyondDurationRange(t *testing.T) {
+	from := time.Date(1600, 1, 1, 0, 0, 0, 0, time.UTC)
+	to := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	if got := HumanTimeDiff(from, to); got != "400 years" {
+		t.Fatalf("got %q, want 400 years", got)
+	}
+	if got := HumanTimeDiff(to, from); got != "400 years" {
+		t.Fatalf("reverse got %q, want 400 years", got)
+	}
+}
+
 func TestRelUGC(t *testing.T) {
 	cases := []struct{ in, want string }{
 		{`<a href="https://e.com">x</a>`, `<a href="https://e.com" rel="nofollow ugc">x</a>`},

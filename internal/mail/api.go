@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Email is a message as the HTTP API mailers of WPGO Mail SMTP take it: the parts most APIs want
@@ -713,7 +714,9 @@ func (a *API) do(ctx context.Context, r apiReq) (int, http.Header, []byte, error
 // (Mandrill, Mailjet, SMTP2GO) turn that into an error.
 func (a *API) messageID(hdr http.Header, body []byte) (string, error) {
 	var v any
-	_ = json.Unmarshal(body, &v)
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.UseNumber()
+	_ = dec.Decode(&v)
 	str := func(path ...any) string {
 		cur := v
 		for _, p := range path {
@@ -732,6 +735,8 @@ func (a *API) messageID(hdr http.Header, body []byte) (string, error) {
 		switch t := cur.(type) {
 		case string:
 			return t
+		case json.Number:
+			return t.String()
 		case float64:
 			return fmt.Sprintf("%.0f", t)
 		}
@@ -803,6 +808,9 @@ func apiErrorText(body []byte) string {
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
 	}
 	return s[:n] + "…"
 }
