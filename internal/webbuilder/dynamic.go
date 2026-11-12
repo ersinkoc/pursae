@@ -97,8 +97,8 @@ func (s SlotSet) Has(slot SlotName) bool { return s[slot] }
 
 // HasPrefix reports whether the set contains a slot whose name starts with p ("shop.").
 func (s SlotSet) HasPrefix(p string) bool {
-	for k := range s {
-		if strings.HasPrefix(string(k), p) {
+	for k, present := range s {
+		if present && strings.HasPrefix(string(k), p) {
 			return true
 		}
 	}
@@ -191,6 +191,15 @@ func hasPlaceholders(src string) bool {
 	for _, m := range dynMarkers {
 		if strings.Contains(src, m) {
 			return true
+		}
+	}
+	// HTML attribute names are case-insensitive, including in unsanitized fragments.
+	if strings.ContainsAny(src, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+		lower := strings.ToLower(src)
+		for _, m := range dynMarkers {
+			if strings.Contains(lower, m) {
+				return true
+			}
 		}
 	}
 	return false
@@ -520,7 +529,10 @@ func (x *execer) elem(e *dynElem, r Resolver) {
 	}
 	switch e.slotMode {
 	case SlotText:
-		v, _ := r.Text(e.slot, e.args)
+		v, ok := r.Text(e.slot, e.args)
+		if !ok {
+			v = ""
+		}
 		var extra map[string]string
 		if e.tag == "time" {
 			if m, ok := r.Attrs(e.slot, e.args); ok && m["datetime"] != "" {
@@ -533,7 +545,10 @@ func (x *execer) elem(e *dynElem, r Resolver) {
 		}
 		x.end(e)
 	case SlotHTML:
-		v, _ := r.HTML(e.slot, e.args)
+		v, ok := r.HTML(e.slot, e.args)
+		if !ok {
+			v = ""
+		}
 		x.start(e, nil)
 		if !e.void {
 			x.w.WriteString(v)
@@ -543,6 +558,9 @@ func (x *execer) elem(e *dynElem, r Resolver) {
 		m, ok := r.Attrs(e.slot, e.args)
 		if (!ok || len(m) == 0) && e.tag == "img" {
 			return // an image without a source is dropped
+		}
+		if !ok {
+			m = nil
 		}
 		x.start(e, m)
 		x.segs(e.kids, r)

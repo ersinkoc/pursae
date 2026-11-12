@@ -19,6 +19,21 @@ type fakeResolver struct {
 	calls  *[]string
 }
 
+type unavailableResolver struct{ nopResolver }
+
+func (unavailableResolver) Text(SlotName, SlotArgs) (string, bool) { return "stale", false }
+func (unavailableResolver) HTML(SlotName, SlotArgs) (string, bool) { return "<b>stale</b>", false }
+func (unavailableResolver) Attrs(SlotName, SlotArgs) (map[string]string, bool) {
+	return map[string]string{"href": "/stale"}, false
+}
+
+func TestDynamicUnavailableValuesAreIgnored(t *testing.T) {
+	src := `<p data-wb-slot="site.title">sample</p><div data-wb-slot="post.content">sample</div><a data-wb-slot="site.url">link</a>`
+	if out := run(t, src, unavailableResolver{}); strings.Contains(out, "stale") {
+		t.Fatalf("unavailable value rendered: %s", out)
+	}
+}
+
 func (f *fakeResolver) root() *fakeResolver {
 	for f.parent != nil {
 		f = f.parent
@@ -129,6 +144,20 @@ func TestDynamicStaticFastPath(t *testing.T) {
 	}
 	if out, _ := p.ExecString(nil); out != src {
 		t.Errorf("got %q", out)
+	}
+}
+
+func TestSlotSetHasPrefixIgnoresFalseEntries(t *testing.T) {
+	s := SlotSet{SlotName("post.title"): false, SlotName("site.title"): true}
+	if s.HasPrefix("post.") || !s.HasPrefix("site.") {
+		t.Fatalf("prefix membership = %v", s)
+	}
+}
+
+func TestDynamicMarkerNamesAreCaseInsensitive(t *testing.T) {
+	r := &fakeResolver{text: map[SlotName]string{SlotSiteTitle: "resolved"}}
+	if got := run(t, `<p DATA-WB-SLOT="site.title">sample</p>`, r); !strings.Contains(got, "resolved") {
+		t.Fatalf("dynamic value not rendered: %s", got)
 	}
 }
 
