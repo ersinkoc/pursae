@@ -81,10 +81,10 @@ func (c *Catalog) TranslateHTML(doc []byte) []byte {
 			// The document title: "Page &lsaquo; Plugin &lsaquo; Site &#8212; Pursae" translates every
 			// part but the site's ("Analytics &rsaquo; Orders" part by part).
 			if name == "title" {
-				if end := strings.Index(src[i:], "</title>"); end >= 0 {
-					if tr, ok := c.translateTitle(src[i : i+end]); ok {
+				if end := indexClose(src, i, "title"); end >= 0 {
+					if tr, ok := c.translateTitle(src[i:end]); ok {
 						out.WriteString(tr)
-						i += end
+						i = end
 						continue
 					}
 				}
@@ -194,7 +194,7 @@ func (c *Catalog) translateText(core string) (string, bool) {
 	norm := spaceRun.ReplaceAllString(core, " ")
 	// msgids keep entities as WordPress writes them ("&hellip;"), so try the raw text first.
 	if tr, ok := c.lookup(norm); ok {
-		return tr, true
+		return escapeText(tr), true
 	}
 	plain := html.UnescapeString(norm)
 	if tr, ok := c.lookup(plain); ok {
@@ -492,7 +492,7 @@ func leadingControl(src string, i int) (int, int, bool) {
 	for k < len(src) && isSpace(src[k]) {
 		k++
 	}
-	if !strings.HasPrefix(src[k:], "<input") || k+6 >= len(src) || !(isSpace(src[k+6]) || src[k+6] == '>' || src[k+6] == '/') {
+	if k+6 >= len(src) || !strings.EqualFold(src[k:k+6], "<input") || !(isSpace(src[k+6]) || src[k+6] == '>' || src[k+6] == '/') {
 		return 0, 0, false
 	}
 	gt := tagEndAt(src, k)
@@ -932,19 +932,19 @@ func tagEndAt(s string, i int) int {
 
 // indexClose finds the closing tag of a raw-text element from position i.
 func indexClose(s string, i int, name string) int {
-	lc := s[i:] // templates write lowercase tags
+	rest := s[i:]
 	k := 0
 	for {
-		m := strings.Index(lc[k:], "</"+name)
+		m := strings.Index(rest[k:], "</")
 		if m < 0 {
 			return -1
 		}
 		k += m
 		after := k + 2 + len(name)
-		if after >= len(lc) || lc[after] == '>' || isSpace(lc[after]) {
+		if after <= len(rest) && strings.EqualFold(rest[k+2:after], name) && (after == len(rest) || rest[after] == '>' || rest[after] == '/' || isSpace(rest[after])) {
 			return i + k
 		}
-		k = after
+		k += 2
 	}
 }
 

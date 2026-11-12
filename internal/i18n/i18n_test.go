@@ -141,10 +141,12 @@ func TestLabelAfterControl(t *testing.T) {
 	}
 	c := NewManager(dir, nil).Catalog("tr_TR")
 	in := `<label><input type="checkbox" name="public-read" value="1" checked> Upload objects as <code>public-read</code></label>` +
-		`<label><input type="checkbox" name="p"> Path-style requests (<code>a/b</code>)</label>`
+		`<label><input type="checkbox" name="p"> Path-style requests (<code>a/b</code>)</label>` +
+		`<label><INPUT type="checkbox"> Upload objects as <code>public-read</code></label>`
 	got := string(c.TranslateHTML([]byte(in)))
 	for _, want := range []string{`<label><input type="checkbox" name="public-read" value="1" checked> <code>public-read</code> olarak yükle</label>`,
-		`<input type="checkbox" name="p"> Yol tarzı istekler (<code>a/b</code>)</label>`} {
+		`<input type="checkbox" name="p"> Yol tarzı istekler (<code>a/b</code>)</label>`,
+		`<label><INPUT type="checkbox"> <code>public-read</code> olarak yükle</label>`} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %s\nin %s", want, got)
 		}
@@ -393,5 +395,52 @@ func TestParseMOHugeCount(t *testing.T) {
 	binary.LittleEndian.PutUint32(b[16:], 28)
 	if _, err := parseMO(b); err == nil {
 		t.Fatal("a corrupt message count was accepted")
+	}
+}
+
+func TestTranslateHTMLFindsMixedCaseRawClosingTags(t *testing.T) {
+	c := testManager(t).Catalog("pl_PL")
+	for _, tc := range []struct{ input, want string }{
+		{`<SCRIPT>Settings</SCRIPT><p>Settings</p>`, `<SCRIPT>Settings</SCRIPT><p>Ustawienia</p>`},
+		{`<textarea>Settings</TeXtArEa><p>Settings</p>`, `<textarea>Settings</TeXtArEa><p>Ustawienia</p>`},
+		{`<style>x</stylex>Settings</STYLE><p>Settings</p>`, `<style>x</stylex>Settings</STYLE><p>Ustawienia</p>`},
+		{`<script>Settings</script/><p>Settings</p>`, `<script>Settings</script/><p>Ustawienia</p>`},
+		{`<textarea>Settings</TEXTAREA/><p>Settings</p>`, `<textarea>Settings</TEXTAREA/><p>Ustawienia</p>`},
+		{`<script>Settings</scriptx><p>Settings</p>`, `<script>Settings</scriptx><p>Settings</p>`},
+	} {
+		if got := string(c.TranslateHTML([]byte(tc.input))); got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+}
+
+func TestTranslateHTMLTitleWithMixedCaseClosingTag(t *testing.T) {
+	c := testManager(t).Catalog("pl_PL")
+	for _, tc := range []struct{ input, want string }{
+		{`<title>Settings &lsaquo; Site &#8212; Pursae</TITLE>`, `<title>Ustawienia &lsaquo; Site &#8212; Pursae</TITLE>`},
+		{`<TITLE>Settings &lsaquo; Site &#8212; Pursae</TiTlE>`, `<TITLE>Ustawienia &lsaquo; Site &#8212; Pursae</TiTlE>`},
+		{`<title>Unknown &lsaquo; Site &#8212; Pursae</TITLE>`, `<title>Unknown &lsaquo; Site &#8212; Pursae</TITLE>`},
+	} {
+		if got := string(c.TranslateHTML([]byte(tc.input))); got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+}
+
+func TestTranslateHTMLPlainMessagesStayText(t *testing.T) {
+	dir := t.TempDir()
+	data := writeMO(map[string]string{"Hello": "Merhaba <örnek>", "Quote": `A & B "C"`, "Entities": "Already &amp; done"})
+	if err := os.WriteFile(filepath.Join(dir, "admin-tr_TR.mo"), data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := NewManager(dir, nil).Catalog("tr_TR")
+	for _, tc := range []struct{ input, want string }{
+		{`<p>Hello</p>`, `<p>Merhaba &lt;örnek&gt;</p>`},
+		{`<p>Quote</p>`, `<p>A &amp; B &quot;C&quot;</p>`},
+		{`<p>Entities</p>`, `<p>Already &amp; done</p>`},
+	} {
+		if got := string(c.TranslateHTML([]byte(tc.input))); got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
 	}
 }
