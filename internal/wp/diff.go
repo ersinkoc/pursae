@@ -3,6 +3,7 @@ package wp
 import (
 	"html"
 	"strings"
+	"unicode"
 )
 
 // TextDiff is wp_text_diff() with show_split_view: a side-by-side table of the lines that differ
@@ -10,8 +11,9 @@ import (
 // td.diff-deletedline / td.diff-addedline / td.diff-context cells and <del>/<ins> word
 // highlights). It returns "" when the two texts are the same, like WordPress.
 func TextDiff(left, right string) string {
-	left = strings.ReplaceAll(left, "\r\n", "\n")
-	right = strings.ReplaceAll(right, "\r\n", "\n")
+	lineEndings := strings.NewReplacer("\r\n", "\n", "\r", "\n")
+	left = lineEndings.Replace(left)
+	right = lineEndings.Replace(right)
 	if left == right {
 		return ""
 	}
@@ -158,7 +160,7 @@ func splitWords(s string) []string {
 	start := 0
 	inSpace := false
 	for i, r := range s {
-		sp := r == ' ' || r == '\t'
+		sp := unicode.IsSpace(r)
 		if i > 0 && sp != inSpace {
 			out = append(out, s[start:i])
 			start = i
