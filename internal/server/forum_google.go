@@ -444,13 +444,17 @@ func (s *Server) forumGoogleAccount(ctx context.Context, cl *forumGoogleClaims) 
 		set := map[string]any{forumUMetaGoogleSub: cl.Sub, forumUMetaGoogleEmail: cl.Email, forumUMetaEmailVerified: strings.ToLower(u.Email)}
 		if !forumEmailProven(u) {
 			// Nobody proved they own this address, so whoever made the account may not be the person
-			// Google vouches for now: drop that password and every session of it.
+			// Google vouches for now: drop that password, every session of it and every credential
+			// minted with it (application passwords, OAuth grants and pending codes).
 			hash, err := auth.HashPassword(auth.RandomToken(32))
 			if err == nil {
 				err = s.store.SetUserPassword(ctx, u.ID, hash)
 			}
 			if err == nil {
 				err = s.auth.DestroyOthers(ctx, u.ID, 0)
+			}
+			if err == nil {
+				err = s.revokeUserCredentials(ctx, u.ID, 0, 0)
 			}
 			if err != nil {
 				return nil, "", err

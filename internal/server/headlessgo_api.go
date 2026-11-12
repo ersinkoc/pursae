@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // The delivery REST API: /wp-json/headlessgo/v1/{pluralApiId}[/{documentId}] for collection
@@ -860,6 +861,54 @@ type hgSerCache struct {
 	posts map[int64]*store.Post
 	users map[int64]*store.User
 	terms map[int64]*store.Term
+	// The caller's WordPress user (hgWPUser), looked up once.
+	caller     *store.User
+	callerDone bool
+}
+
+// ctx is the serializer's context (webhook payloads have no request).
+func (h *hgSer) ctx() context.Context {
+	if h.c == nil {
+		return context.Background()
+	}
+	return h.c
+}
+
+// wpUser is the caller's WordPress user: a signed-in front-end user, nil otherwise.
+func (h *hgSer) wpUser() *store.User {
+	ca := h.ca()
+	if !ca.callerDone {
+		ca.callerDone = true
+		ca.caller = h.s.hgWPUser(h.ctx(), h.a)
+	}
+	return ca.caller
+}
+
+// hgWPUser is the WordPress user behind a caller: a signed-in front-end user; nil for API tokens,
+// preview tokens and the public role.
+func (s *Server) hgWPUser(ctx context.Context, a *hgAuth) *store.User {
+	if a == nil || a.Kind != hgUserKind || a.UserID <= 0 {
+		return nil
+	}
+	u, err := s.store.UserByID(ctx, a.UserID)
+	if err != nil {
+		return nil
+	}
+	return u
+}
+
+// hgMediaReadable reports whether a caller may read (and link) an attachment, as core
+// /wp/v2/media decides it (mediaReadable): the admin (a == nil), upload-capable tokens and users
+// who browse the whole library read every file; everyone else reads unattached files and files of
+// a published post without a password.
+func (s *Server) hgMediaReadable(ctx context.Context, a *hgAuth, u *store.User, att *store.Attachment) bool {
+	if att == nil {
+		return false
+	}
+	if a == nil || a.canUpload() || mediaLibraryReader(u) {
+		return true
+	}
+	return s.attachmentPublic(ctx, att)
 }
 
 func (h *hgSer) ca() *hgSerCache {
@@ -1161,7 +1210,7 @@ func (h *hgSer) relation(f *hgField, ids []any, pop *hgPop, depth int) ([]any, b
 			if p == nil || p.Status != "publish" || p.Type != typ {
 				continue
 			}
-			out = append(out, h.s.hgPostObj(h.c, p, pop.Fields))
+			out = append(out, h.s.hgPostObj(h.c, p, pop.Fields, h.wpUser()))
 		}
 		return out, true, nil
 	case hgIsWPTerm(f.Target):
@@ -1445,8 +1494,8 @@ func (h *hgSer) mediaObj(id int64, fields []string) map[string]any {
 		}
 		h.media[id] = a
 	}
-	if a == nil {
-		return nil
+	if a == nil || !h.s.hgMediaReadable(h.ctx(), h.a, h.wpUser(), a) {
+		return nil // like core /wp/v2/media: files of drafts and protected posts stay hidden
 	}
 	return hgPick(h.s.hgMediaJSON(h.c, a), fields)
 }
@@ -1476,11 +1525,28 @@ func hgNilEmpty(s string) any {
 	return s
 }
 
-// hgPostObj is a published post or page as a related object.
-func (s *Server) hgPostObj(c *gin.Context, p *store.Post, fields []string) map[string]any {
-	m := map[string]any{"id": p.ID, "type": p.Type, "slug": p.Slug, "title": p.Title, "excerpt": p.Excerpt,
+// hgPostObj is a published post or page as a related object, for caller u (nil: a token or the
+// public). Its excerpt is what core REST shows the same caller (restPost): KSES-sanitized, empty
+// for a password-protected post the caller cannot edit, and Memberships-restricted.
+func (s *Server) hgPostObj(c *gin.Context, p *store.Post, fields []string, u *store.User) map[string]any {
+	m := map[string]any{"id": p.ID, "type": p.Type, "slug": p.Slug, "title": p.Title,
 		"link": s.links(c).Permalink(p), "date": hgTime(p.Date()), "modified": hgTime(p.ModifiedAt), "featuredMedia": p.FeaturedMediaID}
+	if len(fields) == 0 || containsStr(fields, "excerpt") {
+		m["excerpt"] = s.hgPostExcerpt(c, p, u)
+	}
 	return hgPick(m, fields)
+}
+
+func (s *Server) hgPostExcerpt(ctx context.Context, p *store.Post, u *store.User) string {
+	excerpt := wp.KsesPost(p.Excerpt)
+	if u.Can("edit_post", p) {
+		return excerpt
+	}
+	if p.Password != "" {
+		return "" // the first words of a password-protected post are as private as the rest of it
+	}
+	_, excerpt = s.gooRESTRestrict(ctx, u, p, "", excerpt) // Goocommerce Memberships
+	return excerpt
 }
 
 // WordPress menus --------------------------------------------------------------------------------------

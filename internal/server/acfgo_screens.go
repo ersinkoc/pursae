@@ -201,8 +201,15 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 		s.acfgoValidationDie(c, errs)
 		return false
 	}
-	save := func(o *acfObject) {
-		if o == nil || !valid() {
+	// save stores only the fields of groups whose location rules match the object's screen and
+	// the current user (the groups the screen renders): a posted key from any other group is dropped.
+	save := func(o *acfObject, sc *acfScreen) {
+		if o == nil || sc == nil {
+			return
+		}
+		sc.User = u
+		in := acfgoKeepGroupFields(in, s.acfgoGroupsFor(ctx, sc))
+		if len(in) == 0 || !valid() {
 			return
 		}
 		if err := s.acfgoSaveInput(editorCtx, o, in, unfiltered); err != nil {
@@ -218,15 +225,15 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 		if c.PostForm("post_type") == "attachment" {
 			// The same rule as attachmentSave: one's own uploads, or edit_others_posts.
 			if a, err := s.store.GetAttachment(ctx, id); err == nil && u.Can("upload_files", nil) && (a.UploaderID == u.ID || u.Can("edit_others_posts", nil)) {
-				save(&acfObject{Kind: "attachment", ID: a.ID, meta: orEmptyMap(a.Meta)})
+				save(&acfObject{Kind: "attachment", ID: a.ID, meta: orEmptyMap(a.Meta)}, &acfScreen{Attachment: a.Mime})
 			}
 			return
 		}
 		p, err := s.store.GetPost(ctx, id)
-		if err != nil || !u.Can("edit_post", p) {
+		if err != nil || !u.Can("edit_post", p) || strings.HasPrefix(p.Type, "acf-") {
 			return
 		}
-		save(s.acfgoPostObject(p))
+		save(s.acfgoPostObject(p), s.acfgoPostScreen(ctx, p, u))
 	case "profile", "user-edit":
 		id := u.ID
 		if screen == "user-edit" {
@@ -236,7 +243,7 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 			return
 		}
 		if tu := s.acfgoUserByID(ctx, id); tu != nil {
-			save(&acfObject{Kind: "user", ID: tu.ID, meta: tu.Meta})
+			save(&acfObject{Kind: "user", ID: tu.ID, meta: tu.Meta}, &acfScreen{UserForm: "edit", UserRoles: tu.Roles})
 		}
 	case "term":
 		id, _ := strconv.ParseInt(c.PostForm("tag_ID"), 10, 64)
@@ -244,7 +251,7 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 			return
 		}
 		if t, err := s.store.GetTerm(ctx, id); err == nil {
-			save(&acfObject{Kind: "term", ID: t.ID, meta: orEmptyMap(t.Meta)})
+			save(&acfObject{Kind: "term", ID: t.ID, meta: orEmptyMap(t.Meta)}, &acfScreen{Taxonomy: t.Taxonomy})
 		}
 	case "comment":
 		id, _ := strconv.ParseInt(c.PostForm("comment_ID"), 10, 64)
@@ -252,7 +259,11 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 			return
 		}
 		if cm, err := s.store.GetComment(ctx, id); err == nil {
-			save(&acfObject{Kind: "comment", ID: cm.ID, meta: orEmptyMap(cm.Meta)})
+			typ := "post"
+			if p, err := s.store.GetPost(ctx, cm.PostID); err == nil {
+				typ = p.Type
+			}
+			save(&acfObject{Kind: "comment", ID: cm.ID, meta: orEmptyMap(cm.Meta)}, &acfScreen{Comment: typ})
 		}
 	case "edit-tags", "user-new":
 		if (screen == "edit-tags" && !s.checkNonce(c, "add-tag")) || (screen == "user-new" && !s.checkNonce(c, "create-user")) {
@@ -270,17 +281,34 @@ func (s *Server) acfgoSaveScreen(c *gin.Context, screen string) {
 		}
 		if screen == "edit-tags" {
 			if t, err := s.store.TermByName(ctx, tax, name); err == nil {
-				save(&acfObject{Kind: "term", ID: t.ID, meta: orEmptyMap(t.Meta)})
+				save(&acfObject{Kind: "term", ID: t.ID, meta: orEmptyMap(t.Meta)}, &acfScreen{Taxonomy: tax})
 			}
 			return
 		}
 		var id int64
 		if s.store.Pool.QueryRow(ctx, `SELECT id FROM users WHERE login = $1`, login).Scan(&id) == nil {
 			if tu := s.acfgoUserByID(ctx, id); tu != nil {
-				save(&acfObject{Kind: "user", ID: tu.ID, meta: tu.Meta})
+				save(&acfObject{Kind: "user", ID: tu.ID, meta: tu.Meta}, &acfScreen{UserForm: "add"})
 			}
 		}
 	}
+}
+
+// acfgoKeepGroupFields keeps the posted top-level field keys that belong to one of groups.
+func acfgoKeepGroupFields(in map[string]any, groups []*acfGroup) map[string]any {
+	allowed := map[string]bool{}
+	for _, g := range groups {
+		for _, f := range g.Fields {
+			allowed[acfgoStr(f["key"])] = true
+		}
+	}
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		if allowed[k] {
+			out[k] = v
+		}
+	}
+	return out
 }
 
 // acfgoValidationDie ends a classic form POST whose acf[...] values failed validation.
@@ -583,17 +611,19 @@ func (s *Server) acfgoMetaBoxSave(c *gin.Context) {
 	}
 	ctx := c.Request.Context()
 	id, _ := strconv.ParseInt(c.PostForm("post_ID"), 10, 64)
+	u := currentUser(c)
 	p, err := s.store.GetPost(ctx, id)
-	if err != nil || !currentUser(c).Can("edit_post", p) {
+	if err != nil || !u.Can("edit_post", p) || strings.HasPrefix(p.Type, "acf-") {
 		c.String(http.StatusForbidden, "-1")
 		return
 	}
-	in := acfgoParseForm(c.Request.PostForm, "acf")
+	// Only the fields of the groups this post's screen renders for this user, like acfgoSaveScreen.
+	in := acfgoKeepGroupFields(acfgoParseForm(c.Request.PostForm, "acf"), s.acfgoGroupsFor(ctx, s.acfgoPostScreen(ctx, p, u)))
 	if errs := s.acfgoValidate(ctx, in); len(errs) > 0 {
 		c.JSON(http.StatusOK, gin.H{"success": false, "data": gin.H{"errors": errs}})
 		return
 	}
-	if err := s.acfgoSaveInput(acfgoWithEditor(ctx, currentUser(c)), s.acfgoPostObject(p), in, currentUser(c).Can("unfiltered_html", nil)); err != nil {
+	if err := s.acfgoSaveInput(acfgoWithEditor(ctx, u), s.acfgoPostObject(p), in, u.Can("unfiltered_html", nil)); err != nil {
 		c.String(http.StatusInternalServerError, "0")
 		return
 	}
@@ -691,7 +721,9 @@ func (s *Server) acfgoAdminPage(c *gin.Context) bool {
 			s.denyNonce(c)
 			return true
 		}
-		in := acfgoParseForm(c.Request.PostForm, "acf")
+		// Only the fields of the groups this page renders for this user: every options page shares
+		// the "options" storage, so a key from another page's group must not be written here.
+		in := acfgoKeepGroupFields(acfgoParseForm(c.Request.PostForm, "acf"), groups)
 		if errs := s.acfgoValidate(ctx, in); len(errs) > 0 {
 			var msgs []string
 			for _, e := range errs {

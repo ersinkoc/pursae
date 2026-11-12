@@ -187,9 +187,15 @@ func (s *Server) asLogCSV(c *gin.Context, f asLogFilter) {
 	w := csv.NewWriter(c.Writer)
 	_ = w.Write([]string{"Date (UTC)", "Event", "Severity", "User", "IP", "Object", "Message", "User agent"})
 	for _, r := range rows {
-		_ = w.Write([]string{r.When.UTC().Format(time.RFC3339), r.Event, r.Severity, r.Username, r.IP, csvSafe(r.Object), csvSafe(r.Message), csvSafe(r.UserAgent)})
+		_ = w.Write(asLogCSVRecord(r))
 	}
 	w.Flush()
+}
+
+// asLogCSVRecord renders one log row as CSV cells. Every cell a visitor can
+// influence (the typed login, IP, object, message, user agent) is formula-neutralized.
+func asLogCSVRecord(r asLogRow) []string {
+	return []string{r.When.UTC().Format(time.RFC3339), csvSafe(r.Event), csvSafe(r.Severity), csvSafe(r.Username), csvSafe(r.IP), csvSafe(r.Object), csvSafe(r.Message), csvSafe(r.UserAgent)}
 }
 
 // asAuditPlugin logs a plugin switch from the Plugins screen (AdminSecGo logs its own).

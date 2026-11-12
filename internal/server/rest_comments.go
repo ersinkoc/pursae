@@ -329,11 +329,11 @@ func (api *restAPI) createComment(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusForbidden, "rest_comment_closed", "Sorry, comments are closed for this item.")
 		return
 	}
-	cm := &store.Comment{PostID: p.ID, UserID: u.ID, AuthorName: u.DisplayName, AuthorEmail: u.Email, AuthorURL: u.URL,
+	cm := &store.Comment{PostID: p.ID, UserID: u.ID, AuthorName: u.DisplayName, AuthorEmail: u.Email, AuthorURL: commentAuthorURL(u.URL),
 		AuthorIP: clientIP(c), UserAgent: c.Request.UserAgent(), Type: "comment"}
 	if author, ok := r.Int(c, "author"); ok && author != u.ID {
 		if au, err := s.store.UserByID(c, author); err == nil {
-			cm.UserID, cm.AuthorName, cm.AuthorEmail, cm.AuthorURL = au.ID, au.DisplayName, au.Email, au.URL
+			cm.UserID, cm.AuthorName, cm.AuthorEmail, cm.AuthorURL = au.ID, au.DisplayName, au.Email, commentAuthorURL(au.URL)
 		} else {
 			restErr(c, http.StatusBadRequest, "rest_comment_author_invalid", "Invalid comment author ID.")
 			return

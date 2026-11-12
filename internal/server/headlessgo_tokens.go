@@ -211,8 +211,14 @@ func (s *Server) hgDeleteToken(ctx context.Context, id int64) error {
 
 // Preview -------------------------------------------------------------------------------------------
 
+// hgPreviewKey signs preview tokens with the front-end preview secret and the site secret
+// (WPGO_SECRET, else the generated auth_secret option): nil when either is missing.
 func (s *Server) hgPreviewKey(st hgSettings) []byte {
-	return []byte(st.PreviewSecret + "|" + s.settings.String("auth_secret") + "|headlessgo-preview")
+	secret := s.siteSecret()
+	if st.PreviewSecret == "" || secret == "" {
+		return nil
+	}
+	return []byte(st.PreviewSecret + "|" + secret + "|headlessgo-preview")
 }
 
 // hgPreviewToken signs a short-lived token reading one document's draft.
@@ -227,10 +233,11 @@ func (s *Server) hgPreviewToken(st hgSettings, uid, doc, locale string, ttl time
 // hgCheckPreviewToken verifies a preview token and returns the type, document and locale it reads.
 func (s *Server) hgCheckPreviewToken(st hgSettings, tok string) (uid, doc, locale string, ok bool) {
 	body, sig, found := strings.Cut(strings.TrimPrefix(tok, hgPreviewPrefix), ".")
-	if !found || st.PreviewSecret == "" {
+	key := s.hgPreviewKey(st)
+	if !found || len(key) == 0 {
 		return "", "", "", false
 	}
-	m := hmac.New(sha256.New, s.hgPreviewKey(st))
+	m := hmac.New(sha256.New, key)
 	m.Write([]byte(body))
 	want := base64.RawURLEncoding.EncodeToString(m.Sum(nil))
 	if !hmac.Equal([]byte(sig), []byte(want)) {

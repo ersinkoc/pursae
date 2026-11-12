@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"wpgo/internal/auth"
 	"wpgo/internal/store"
 )
 
@@ -487,5 +488,55 @@ func TestGooXCSafeRefererUnit(t *testing.T) {
 		if got := gooXCSafeReferer(c, "/def"); got != want {
 			t.Errorf("%q: got %q, want %q", ref, got, want)
 		}
+	}
+}
+
+// A customer password change through My Account › Account details or PUT /wc/v3/customers/{id} revokes the
+// customer's application passwords, OAuth grants and pending codes, like every core password change.
+func TestGooPasswordChangeRevokesCredentials(t *testing.T) {
+	base, c, srv := gooSite(t)
+	ctx := context.Background()
+
+	uid, err := srv.gooCreateCustomer(ctx, "ada@example.test", "ada", asStrongPass, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plain := seedUserCredentials(t, srv, uid)
+	v := gooFrontClient()
+	_, body, _ := get(t, v, base+"/my-account/")
+	if code, _, _ := post(t, v, base+"/my-account/", url.Values{"username": {"ada"}, "password": {asStrongPass}, "woocommerce-login-nonce": {gooHidden(t, body, "woocommerce-login-nonce")}, "login": {"Log in"}}); code != http.StatusFound {
+		t.Fatalf("login: %d", code)
+	}
+	_, body, _ = get(t, v, base+"/my-account/edit-account/")
+	post(t, v, base+"/my-account/edit-account/", url.Values{"account_first_name": {"Ada"}, "account_last_name": {"L"}, "account_display_name": {"Ada"}, "account_email": {"ada@example.test"},
+		"password_current": {asStrongPass}, "password_1": {"Another-Strong-Pass-71!"}, "password_2": {"Another-Strong-Pass-71!"},
+		"save-account-details-nonce": {gooHidden(t, body, "save-account-details-nonce")}, "save_account_details": {"1"}})
+	if u, _ := srv.store.UserByID(ctx, uid); u == nil || u.PasswordHash == "" {
+		t.Fatal("customer missing")
+	} else if ok, _ := auth.CheckPasswordCtx(ctx, "Another-Strong-Pass-71!", u.PasswordHash); !ok {
+		t.Fatal("My Account password change did not apply")
+	}
+	assertCredentialsRevoked(t, srv, uid, "My Account password change")
+	if code := basicStatus(t, base, "ada", plain); code == http.StatusOK {
+		t.Errorf("application password survived the My Account password change (%d)", code)
+	}
+
+	cust, err := srv.gooCreateCustomer(ctx, "bob@example.test", "bob", asStrongPass, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seedUserCredentials(t, srv, cust)
+	rc := newRESTClient(t, c, base)
+	code, obj, _, _ := rc.do("POST", "/wp/v2/users/me/application-passwords", map[string]any{"name": "Shop admin", "scopes": []string{"commerce", "users"}})
+	if code != http.StatusCreated {
+		t.Fatalf("create admin password: %d %v", code, obj)
+	}
+	pass, _ := obj["password"].(string)
+	if r := gooReq(t, &http.Client{}, "PUT", fmt.Sprintf("%s/wp-json/wc/v3/customers/%d", base, cust), map[string]any{"password": "Taken-Over-Pass-99!"}, gooBasic("admin", pass)); r.Code != http.StatusOK {
+		t.Fatalf("v3 customer password change: %d %s", r.Code, r.Raw)
+	}
+	assertCredentialsRevoked(t, srv, cust, "REST v3 customer password change")
+	if n := asCount(t, `SELECT count(*) FROM app_passwords WHERE user_id = 1`); n == 0 {
+		t.Error("the administrator's own application password was revoked by a customer password change")
 	}
 }

@@ -279,6 +279,7 @@ func (sub *gfSubmission) mail() bool {
 	if !ok {
 		return false
 	}
+	sub.s.mailOnConfiguredHome(sub.ctx, &msg)
 	mailer := sub.s.mailer()
 	if _, err := mailer.Build(msg); err != nil {
 		slog.Warn("gontact form: mail", "form", sub.form.ID, "err", err)
@@ -290,6 +291,7 @@ func (sub *gfSubmission) mail() bool {
 	}
 	if sub.form.Mail2.Active {
 		if m2, ok := sub.composeMail(sub.form.Mail2); ok {
+			sub.s.mailOnConfiguredHome(sub.ctx, &m2)
 			if _, err := mailer.Build(m2); err != nil {
 				slog.Warn("gontact form: mail (2)", "form", sub.form.ID, "err", err)
 			} else if err := sub.s.queueJob(sub.ctx, "wp_mail", m2, time.Time{}); err != nil {

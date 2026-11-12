@@ -278,6 +278,14 @@ type gooGatewayFilter func(s *Server, c *gin.Context, cart *gooCart, gws []*gooG
 
 var gooGatewayFilters []gooGatewayFilter
 
+// gooPaidValueHook reports whether an order holds an item whose value is released once the order
+// counts as paid (processing): a gift card that is issued and e-mailed, a membership that is granted.
+// Offline gateways that take no payment at checkout (cash on delivery) keep such orders on-hold until
+// the merchant records the payment, as WC_Gateway_COD does for downloadable files.
+type gooPaidValueHook func(s *Server, ctx context.Context, o *gooOrder) bool
+
+var gooPaidValueHooks []gooPaidValueHook
+
 // gooPlaceOrderTextHook returns the checkout button text for a cart ("" keeps the next hook / default):
 // woocommerce_order_button_text of Subscriptions and Pre-Orders.
 type gooPlaceOrderTextHook func(s *Server, ctx context.Context, cart *gooCart) string

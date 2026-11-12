@@ -142,7 +142,7 @@ func (s *Server) maintTellAdmin(ctx context.Context, st maintSettings, email str
 // action and the address to the site secret, so nobody can confirm or remove another address.
 func (s *Server) maintSubURL(ctx context.Context, action, email string) string {
 	q := url.Values{"action": {action}, "e": {email}, "t": {s.maintToken(action, email)}}
-	return s.links(ctx).HomeURL("/wp-admin/admin-post?" + q.Encode())
+	return s.configuredLinks(ctx).HomeURL("/wp-admin/admin-post?" + q.Encode())
 }
 
 // maintSubLink handles the confirm and unsubscribe links. Confirming is idempotent (a GET); the

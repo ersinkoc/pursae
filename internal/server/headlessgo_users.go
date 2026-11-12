@@ -35,8 +35,14 @@ const (
 	hgUserIssuer = "headlessgo"
 )
 
+// hgUserKey signs front-end user tokens with the site secret (WPGO_SECRET, else the generated
+// auth_secret option): nil when there is none, which hgJWTVerify refuses.
 func (s *Server) hgUserKey() []byte {
-	return []byte(s.settings.String("auth_secret") + "|headlessgo-user-jwt")
+	secret := s.siteSecret()
+	if secret == "" {
+		return nil
+	}
+	return []byte(secret + "|headlessgo-user-jwt")
 }
 
 // hgPwTag ties a token to the password it was issued for.
@@ -57,7 +63,7 @@ func hgJWTSign(key []byte, claims map[string]any) string {
 // hgJWTVerify checks the signature and the algorithm and returns the claims; expiry is the caller's.
 func hgJWTVerify(key []byte, tok string) (map[string]any, bool) {
 	parts := strings.Split(tok, ".")
-	if len(parts) != 3 {
+	if len(key) == 0 || len(parts) != 3 {
 		return nil, false
 	}
 	hb, err := base64.RawURLEncoding.DecodeString(parts[0])

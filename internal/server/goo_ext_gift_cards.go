@@ -65,6 +65,17 @@ func init() {
 	gooOn("order_created", 20, func(s *Server, ctx context.Context, arg any) { s.gcOrderCreated(ctx, arg.(*gooOrder)) })
 	gooCheckoutReserveHooks = append(gooCheckoutReserveHooks, gcReserve)
 	gooOn("order_status_changed", 20, func(s *Server, ctx context.Context, arg any) { s.gcOrderStatus(ctx, arg.(*gooStatusChange)) })
+	gooPaidValueHooks = append(gooPaidValueHooks, func(s *Server, ctx context.Context, o *gooOrder) bool {
+		if !s.gooExtOn(gcKey) {
+			return false
+		}
+		for _, it := range o.ItemsOf("line_item") {
+			if it.Meta["_goo_gift_card"] != nil {
+				return true
+			}
+		}
+		return false
+	})
 	gooOn("order_partially_refunded", 20, func(s *Server, ctx context.Context, arg any) { s.gcRefundCreditProp(ctx, arg.(*gooRefundEvent)) })
 	gooOn("cart_emptied", 20, func(s *Server, ctx context.Context, arg any) {
 		if cart, ok := arg.(*gooCart); ok && cart.sess.Data.Extra != nil {

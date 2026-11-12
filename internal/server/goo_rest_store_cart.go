@@ -80,7 +80,13 @@ func (s *Server) gooStore(h restHandler, mutating bool) restHandler {
 // gooCartToken signs the request's session key: base64url(key) "." signature (valid two days).
 func (s *Server) gooCartToken(c *gin.Context) string {
 	key := s.gooSessionFor(c).Key
-	return base64.RawURLEncoding.EncodeToString([]byte(key)) + "." + s.auth.Nonce("wc_cart_token|"+key, 0, "")
+	enc := base64.RawURLEncoding.EncodeToString([]byte(key))
+	if strings.HasPrefix(key, "u:") {
+		// A logged-in customer's session: bind the token to that user's auth session, so it stops
+		// working on logout or a password change (both end the session token).
+		return enc + "." + s.nonce(c, "wc_cart_token|"+key)
+	}
+	return enc + "." + s.auth.Nonce("wc_cart_token|"+key, 0, "")
 }
 
 // gooUseCartToken loads the session a valid Cart-Token names before anything reads the session.
@@ -98,12 +104,16 @@ func (s *Server) gooUseCartToken(c *gin.Context) bool {
 		return false
 	}
 	key := string(raw)
-	if s.auth.VerifyNonce(sig, "wc_cart_token|"+key, 0, "") <= 0 {
-		return false
-	}
 	sess := &gooSession{Key: key}
 	if uid, ok := strings.CutPrefix(key, "u:"); ok {
+		// User sessions only for that same logged-in user, signed with their auth session.
+		u := currentUser(c)
+		if u == nil || u.ID <= 0 || strconv.FormatInt(u.ID, 10) != uid || !s.checkNonceValue(c, sig, "wc_cart_token|"+key) {
+			return false
+		}
 		sess.user = gooInt(uid)
+	} else if s.auth.VerifyNonce(sig, "wc_cart_token|"+key, 0, "") <= 0 {
+		return false
 	} else if len(key) != 32 || !gooHexOnly(key) {
 		return false
 	}

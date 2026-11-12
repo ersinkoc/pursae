@@ -104,6 +104,7 @@ func (s *Server) commentsView(c *gin.Context, p *store.Post, lb *links.Builder, 
 	if pendingEmail, err := url.QueryUnescape(pendingEmail); err == nil {
 		// Comments are fetched oldest first; comment_order reverses the top level of the shown page (wp_list_comments reverse_top_level).
 		comments, _ := s.store.ApprovedComments(c, p.ID, "asc", pendingEmail)
+		comments = s.visiblePendingComments(c, comments, u)
 		cv.Count = len(comments)
 		depth := 1
 		if s.settings.Bool("thread_comments") {
@@ -395,6 +396,11 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 var linkRe = regexp.MustCompile(`(?i)<a\s|https?://`)
 
 // commentPost is wp-comments-post.php: validation, moderation rules and the redirect back to the post.
+// userURL is the pre_user_url filter (esc_url_raw) for a user's profile URL. The profile URL is copied
+// into the user's comments and linked from the front end, so it follows the comment author rule: an
+// http(s) URL with a host, or "".
+func userURL(raw string) string { return commentAuthorURL(raw) }
+
 // commentAuthorURL is esc_url_raw() for a comment author's URL, which is shown as a link: only http and
 // https URLs with a host are kept. Like the comment form, a value without a scheme gets "http://";
 // "javascript:alert(1)" becomes "http://javascript:alert(1)", which does not parse, so it is dropped.
@@ -483,7 +489,7 @@ func (s *Server) commentPost(c *gin.Context) {
 		}
 	}
 	if u != nil {
-		cm.UserID, cm.AuthorName, cm.AuthorEmail, cm.AuthorURL = u.ID, u.DisplayName, u.Email, u.URL
+		cm.UserID, cm.AuthorName, cm.AuthorEmail, cm.AuthorURL = u.ID, u.DisplayName, u.Email, commentAuthorURL(u.URL)
 	} else {
 		cm.AuthorName = strings.TrimSpace(c.PostForm("author"))
 		cm.AuthorEmail = strings.TrimSpace(c.PostForm("email"))
@@ -559,6 +565,9 @@ func (s *Server) commentPost(c *gin.Context) {
 		// Without consent, keep the email for this browser session so the author still sees the pending comment.
 		if maxAge < 0 && cm.Status == "pending" {
 			http.SetCookie(c.Writer, &http.Cookie{Name: "comment_author_email", Value: url.QueryEscape(cm.AuthorEmail), Path: "/", SameSite: http.SameSiteLaxMode})
+		}
+		if cm.Status == "pending" {
+			s.rememberPendingComment(c, cm.ID, maxAge)
 		}
 	}
 	lb := s.links(ctx)

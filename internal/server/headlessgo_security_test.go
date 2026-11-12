@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -239,5 +240,208 @@ func TestHeadlessGoAdminSearchScope(t *testing.T) {
 	_, body, _ = get(t, c, base+"/wp-admin/headlessgo/search?target=wp:user&q=adm")
 	if !strings.Contains(body, "(admin)") {
 		t.Errorf("administrator user search: %s", body)
+	}
+}
+
+// The Headless wp* GraphQL fields must apply the Commerce Memberships restriction like core REST.
+func TestHeadlessGoGraphQLWordPressContentMembershipRestricted(t *testing.T) {
+	base, c, srv := gooSite(t)
+	hgToggle(t, c, base, "activate")
+	ctx := context.Background()
+	news := &store.Post{Type: "post", Title: "Members news", Slug: "members-news", Content: "<p>The secret recipe.</p>", Excerpt: "A teaser.", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
+	if err := srv.store.InsertPost(ctx, news); err != nil {
+		t.Fatal(err)
+	}
+	gold := &gooMembershipPlan{Name: "Gold", AccessMethod: "manual", Rules: gmemRules{ContentPostIDs: []int64{news.ID}}}
+	if err := srv.gmemSavePlan(ctx, gold); err != nil {
+		t.Fatal(err)
+	}
+	gxaOn(t, srv, gmemKey, true)
+	gxaSetExt(t, srv, gmemKey, map[string]any{"show_excerpts": false})
+
+	q := map[string]any{"query": `{ wpPosts { slug content excerpt } wpPost(slug: "members-news") { content } wpPosts_connection { nodes { content } } }`}
+	r := hgCall(t, base, "POST", "/graphql", "", q)
+	if r.Code != 200 || !strings.Contains(r.Raw, "members-news") {
+		t.Fatalf("graphql: %d %s", r.Code, r.Raw)
+	}
+	if strings.Contains(r.Raw, "secret recipe") || strings.Contains(r.Raw, "A teaser.") {
+		t.Errorf("non-member read restricted content: %s", r.Raw)
+	}
+	if !strings.Contains(r.Raw, "wc-memberships-content-restricted-message") {
+		t.Errorf("no restriction message: %s", r.Raw)
+	}
+
+	// A caller with access (a membership manager) still gets the full body.
+	ex := &hgGQLExec{s: srv, c: gooTestCtx(), a: &hgAuth{Kind: "user", UserID: 1}}
+	nodes := ex.wpNodes([]*store.Post{news}, []*hgGQLField{{name: "content"}, {name: "excerpt"}})
+	if got, _ := nodes[0]["content"].(string); !strings.Contains(got, "secret recipe") {
+		t.Errorf("member content: %v", nodes[0])
+	}
+}
+
+// The operators of one attribute ($not, $and, $or) and of a WordPress column filter nest no
+// deeper than the filter tree itself: a long chain is a 400 after a few levels, not quadratic work.
+func TestHeadlessGoFilterOperatorNestingBounded(t *testing.T) {
+	sc := &hgSchema{UID: "api::article.article", Kind: hgKindCollection, Fields: []hgField{{Name: "title", Type: "text"},
+		{Name: "cover", Type: "media"}, {Name: "page", Type: "relation", Relation: "manyToOne", Target: "wp:page"}}}
+	compile := func(key string) error {
+		qs := hgParseQS(url.Values{key: {"x"}})
+		f, _ := qs["filters"].(map[string]any)
+		q := &hgQuery{sql: &hgSQL{}, status: "published"}
+		_, err := q.filters(sc, f, "e.published_data", "e")
+		return err
+	}
+	for _, key := range []string{
+		"filters[title]" + strings.Repeat("[$not]", 64) + "[$eq]",
+		"filters[title]" + strings.Repeat("[$and][0]", 64) + "[$eq]",
+		"filters[title]" + strings.Repeat("[$or][0][$not]", 32) + "[$eq]",
+		"filters[page]" + strings.Repeat("[$not]", 64) + "[title][$eq]",    // WordPress columns (table)
+		"filters[cover]" + strings.Repeat("[$and][0]", 64) + "[name][$eq]", // media columns (table)
+		"filters[title]" + strings.Repeat("[$not]", 100000) + "[$eq]",      // a 1 MiB request line
+	} {
+		start := time.Now()
+		err := compile(key)
+		if err == nil || !strings.Contains(err.Error(), "nested too deeply") {
+			t.Errorf("%.60s...: err = %v, want nested too deeply", key, err)
+		}
+		if el := time.Since(start); el > time.Second {
+			t.Errorf("%.60s...: refusing took %v", key, el)
+		}
+	}
+	// Ordinary operator use still compiles.
+	for _, key := range []string{
+		"filters[title][$not][$eq]", "filters[title][$or][0][$eq]", "filters[title][$and][0][$not][$containsi]",
+		"filters[page][$not][title][$eq]", "filters[page][$or][0][slug][$eq]",
+	} {
+		if err := compile(key); err != nil {
+			t.Errorf("%s: %v", key, err)
+		}
+	}
+}
+
+// Front-end user tokens and preview tokens are signed with the effective server secret: with
+// WPGO_SECRET set (newServer then never writes auth_secret) a token signed without it is refused,
+// and tokens the server issues still verify.
+func TestHeadlessGoUserJWTUsesServerSecret(t *testing.T) {
+	base, _, srv := hgSite(t)
+	ctx := context.Background()
+	asCreateUser(t, srv, "alice", "subscriber", "alice-secret-pw")
+	st := srv.hgLoad()
+	st.UserAuth = true
+	_ = srv.hgSaveSettings(ctx, st)
+	// The state of a site started with WPGO_SECRET from the first boot (server.go newServer).
+	srv.cfg.Secret = "operator-provided-wpgo-secret"
+	if err := srv.settings.Set(ctx, map[string]any{"auth_secret": ""}); err != nil {
+		t.Fatal(err)
+	}
+	r := hgCall(t, base, "POST", "/auth/local", "", map[string]any{"identifier": "alice", "password": "alice-secret-pw"})
+	jwt, _ := r.Body["jwt"].(string)
+	if r.Code != 200 || jwt == "" {
+		t.Fatalf("login: %d %s", r.Code, r.Raw)
+	}
+	if r := hgCall(t, base, "GET", "/users/me", jwt, nil); r.Code != http.StatusOK {
+		t.Fatalf("an issued JWT: %d %s", r.Code, r.Raw)
+	}
+	parts := strings.Split(jwt, ".")
+	raw, _ := base64.RawURLEncoding.DecodeString(parts[1])
+	var claims map[string]any
+	_ = json.Unmarshal(raw, &claims)
+	claims["exp"] = time.Now().Add(10 * 365 * 24 * time.Hour).Unix()
+	for _, key := range []string{"|headlessgo-user-jwt", ""} { // no server secret involved
+		forged := hgJWTSign([]byte(key), claims)
+		if r := hgCall(t, base, "GET", "/users/me", forged, nil); r.Code != http.StatusUnauthorized {
+			t.Fatalf("a JWT signed with %q was accepted: %d %s", key, r.Code, r.Raw)
+		}
+	}
+	// Preview tokens: issued ones verify, ones signed without the server secret do not.
+	st = srv.hgLoad()
+	st.PreviewSecret = "front-end-preview-secret"
+	tok := srv.hgPreviewToken(st, "api::article.article", "doc1", "", time.Minute)
+	if uid, doc, _, ok := srv.hgCheckPreviewToken(st, tok); !ok || uid != "api::article.article" || doc != "doc1" {
+		t.Fatalf("an issued preview token did not verify: %v %s %s", ok, uid, doc)
+	}
+	srv.cfg.Secret = ""
+	if _, _, _, ok := srv.hgCheckPreviewToken(st, tok); ok {
+		t.Fatalf("a preview token verified without the server secret it was signed with")
+	}
+}
+
+// A WordPress post reached through a relation shows no more than core REST shows the same caller
+// (no excerpt of a password-protected page), and media fields neither link nor show files of
+// drafts or protected posts to callers who cannot browse the media library.
+func TestHeadlessGoRelationsNoProtectedPostOrMediaLeak(t *testing.T) {
+	base, _, srv := hgSite(t)
+	ctx := context.Background()
+	hgModel(t, srv)
+	asCreateUser(t, srv, "mallory", "subscriber", "mallory-secret-pw")
+	st := srv.hgLoad()
+	st.UserAuth = true
+	st.Authenticated = map[string][]string{"article": {"find", "findOne", "create"}}
+	st.Public = map[string][]string{"article": {"find", "findOne"}}
+	_ = srv.hgSaveSettings(ctx, st)
+	full := hgNewToken(t, srv, &hgToken{Name: "Full", Kind: "full-access"})
+
+	locked := &store.Post{Type: "page", Title: "Board notes", Slug: "board-notes", Status: "publish", Password: "letmein",
+		Excerpt: "Layoffs start on May 5", Content: "<p>Details</p>", AuthorID: 1, Meta: map[string]any{}}
+	open := &store.Post{Type: "page", Title: "About", Slug: "about", Status: "publish",
+		Excerpt: "Who we are<script>alert(1)</script>", Content: "<p>Hi</p>", AuthorID: 1, Meta: map[string]any{}}
+	draft := &store.Post{Type: "post", Title: "Launch", Slug: "launch", Status: "draft", AuthorID: 1, Meta: map[string]any{}}
+	for _, p := range []*store.Post{locked, open, draft} {
+		if err := srv.store.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	att := &store.Attachment{UploaderID: 1, PostID: draft.ID, Slug: "phone-x", FilePath: "2026/11/unreleased-phone-x.png", Mime: "image/png",
+		FileSize: 2048, Width: 640, Height: 480, Title: "Unreleased Phone X", Caption: "Embargoed until launch"}
+	logo := &store.Attachment{UploaderID: 1, Slug: "logo", FilePath: "2026/11/logo.png", Mime: "image/png",
+		FileSize: 1024, Width: 64, Height: 64, Title: "Logo"}
+	for _, a := range []*store.Attachment{att, logo} {
+		if err := srv.store.InsertAttachment(ctx, a); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r := hgCall(t, base, "POST", "/auth/local", "", map[string]any{"identifier": "mallory", "password": "mallory-secret-pw"})
+	jwt, _ := r.Body["jwt"].(string)
+	if jwt == "" {
+		t.Fatalf("login: %d %s", r.Code, r.Raw)
+	}
+	// The front-end user cannot link the draft's file (it reads as missing).
+	r = hgCall(t, base, "POST", "/articles?status=published&populate[0]=page&populate[1]=cover", jwt,
+		map[string]any{"data": map[string]any{"title": "Probe", "page": locked.ID, "cover": att.ID}})
+	if r.Code != http.StatusBadRequest || strings.Contains(r.Raw, "Unreleased Phone X") || strings.Contains(r.Raw, "unreleased-phone-x.png") {
+		t.Fatalf("linking a draft's file: %d %s", r.Code, r.Raw)
+	}
+	// A protected page and a public file link; the page's excerpt stays hidden.
+	r = hgCall(t, base, "POST", "/articles?status=published&populate[0]=page&populate[1]=cover", jwt,
+		map[string]any{"data": map[string]any{"title": "Probe", "page": locked.ID, "cover": logo.ID}})
+	if r.Code != http.StatusCreated || !strings.Contains(r.Raw, "board-notes") || !strings.Contains(r.Raw, "logo.png") {
+		t.Fatalf("create: %d %s", r.Code, r.Raw)
+	}
+	if strings.Contains(r.Raw, "Layoffs start on May 5") {
+		t.Errorf("the excerpt of a password-protected page leaked through a wp:page relation: %s", r.Raw)
+	}
+	// An editor (full-access token) links the draft's file and the public page; the public reads
+	// neither the file nor the protected excerpt, the open page's excerpt is KSES-sanitized.
+	r = hgCall(t, base, "POST", "/articles?status=published&populate[0]=cover", full,
+		map[string]any{"data": map[string]any{"title": "Linked by an editor", "page": open.ID, "cover": att.ID}})
+	if r.Code != http.StatusCreated || !strings.Contains(r.Raw, "Unreleased Phone X") {
+		t.Fatalf("full-access token linking a draft's file: %d %s", r.Code, r.Raw)
+	}
+	r = hgCall(t, base, "GET", "/articles?populate[0]=page&populate[1]=cover", "", nil)
+	if r.Code != http.StatusOK || !strings.Contains(r.Raw, "Who we are") {
+		t.Fatalf("public read: %d %s", r.Code, r.Raw)
+	}
+	for _, leak := range []string{"Unreleased Phone X", "unreleased-phone-x.png", "Layoffs start on May 5", "<script", `\u003cscript`} {
+		if strings.Contains(r.Raw, leak) {
+			t.Errorf("public read shows %q: %s", leak, r.Raw)
+		}
+	}
+	// Nor can the public filter on the hidden file's metadata.
+	if r := hgCall(t, base, "GET", "/articles?filters[cover][caption][$eq]=Embargoed%20until%20launch", "", nil); r.Code != 200 || len(r.list()) != 0 {
+		t.Errorf("filter on a draft's file: %d %s", r.Code, r.Raw)
+	}
+	// The full-access token still reads everything.
+	if r := hgCall(t, base, "GET", "/articles?populate[0]=cover&filters[cover][caption][$eq]=Embargoed%20until%20launch", full, nil); r.Code != 200 || !strings.Contains(r.Raw, "Unreleased Phone X") {
+		t.Errorf("full-access read: %d %s", r.Code, r.Raw)
 	}
 }

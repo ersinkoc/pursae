@@ -28,6 +28,7 @@ type gooProductQuery struct {
 	InStock     bool
 	StockStatus string
 	Visibility  string // catalog (shop, archives), search, "" (any)
+	ForVisitor  bool   // visitor-facing query with Visibility "" ([products visibility="hidden"]): still drops what Memberships hides
 	OrderBy     string // menu_order, popularity, rating, date, price, price-desc, title, id, rand
 	Order       string
 	Page        int
@@ -64,7 +65,7 @@ func (s *Server) gooQueryProducts(ctx context.Context, q gooProductQuery) ([]*go
 	if len(q.IDs) > 0 {
 		conds = append(conds, "po.id = ANY("+add(q.IDs)+")")
 	}
-	if q.Visibility != "" { // catalog listings: products hidden from this visitor (Memberships)
+	if q.Visibility != "" || q.ForVisitor { // visitor listings: products hidden from this visitor (Memberships)
 		q.Exclude = append(q.Exclude, s.gooListingExclude(ctx, "product")...)
 	}
 	if len(q.Exclude) > 0 {

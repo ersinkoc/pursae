@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"mime"
@@ -1015,6 +1016,7 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 			*dst = v
 		}
 	}
+	u.URL = userURL(u.URL) // pre_user_url: esc_url_raw
 	for _, field := range []string{"first_name", "last_name", "nickname", "description"} {
 		if v, ok := r.Str(c, field); ok {
 			u.Profile[field] = v
@@ -1143,6 +1145,7 @@ func (api *restAPI) createUser(c *gin.Context, r *restRequest) {
 			*dst, changed = v, true
 		}
 	}
+	u.URL = userURL(u.URL) // pre_user_url: esc_url_raw
 	if v, ok := r.Str(c, "slug"); ok && v != "" {
 		u.Nicename, changed = wp.SanitizeTitle(v), true
 	}
@@ -1330,14 +1333,27 @@ func (api *restAPI) mediaReadable(c *gin.Context, a *store.Attachment) bool {
 	if a == nil {
 		return false
 	}
-	u := restCurrent(c)
-	if u != nil && (u.Can("upload_files", nil) || u.Can("edit_others_posts", nil)) {
+	if mediaLibraryReader(restCurrent(c)) {
 		return true
+	}
+	return api.s.attachmentPublic(c, a)
+}
+
+// mediaLibraryReader reports whether u browses the whole media library (upload_files or edit_others_posts).
+func mediaLibraryReader(u *store.User) bool {
+	return u != nil && (u.Can("upload_files", nil) || u.Can("edit_others_posts", nil))
+}
+
+// attachmentPublic reports whether anyone may read an attachment: it is unattached, or attached
+// to a published post without a password.
+func (s *Server) attachmentPublic(ctx context.Context, a *store.Attachment) bool {
+	if a == nil {
+		return false
 	}
 	if a.PostID == 0 {
 		return true
 	}
-	p, err := api.s.store.GetPost(c, a.PostID)
+	p, err := s.store.GetPost(ctx, a.PostID)
 	return err == nil && p.Status == "publish" && p.Password == ""
 }
 

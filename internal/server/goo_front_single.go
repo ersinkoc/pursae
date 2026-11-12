@@ -629,6 +629,7 @@ func (s *Server) gooReviewsHTML(c *gin.Context, p *gooProduct) string {
 		pending, _ = url.QueryUnescape(ck)
 	}
 	all, _ := s.store.ApprovedComments(ctx, p.ID, "asc", pending)
+	all = s.visiblePendingComments(c, all, u)
 	var reviews []*store.Comment
 	for _, cm := range all {
 		if cm.Type == "review" || cm.Type == "comment" || cm.Type == "" {
@@ -792,7 +793,7 @@ func (s *Server) gooSubmitReview(c *gin.Context) {
 	}
 	cm := &store.Comment{PostID: p.ID, Content: strings.TrimSpace(c.PostForm("comment")), AuthorIP: clientIP(c), UserAgent: c.Request.UserAgent(), Type: "review", Meta: map[string]any{}}
 	if u != nil {
-		cm.UserID, cm.AuthorName, cm.AuthorEmail, cm.AuthorURL = u.ID, u.DisplayName, u.Email, u.URL
+		cm.UserID, cm.AuthorName, cm.AuthorEmail, cm.AuthorURL = u.ID, u.DisplayName, u.Email, commentAuthorURL(u.URL)
 	} else {
 		cm.AuthorName, cm.AuthorEmail = strings.TrimSpace(c.PostForm("author")), strings.TrimSpace(c.PostForm("email"))
 		if s.settings.Bool("require_name_email") && (cm.AuthorName == "" || !strings.Contains(cm.AuthorEmail, "@")) {
@@ -854,6 +855,9 @@ func (s *Server) gooSubmitReview(c *gin.Context) {
 		http.SetCookie(c.Writer, &http.Cookie{Name: "comment_author_email", Value: url.QueryEscape(cm.AuthorEmail), Path: "/", MaxAge: maxAge, SameSite: http.SameSiteLaxMode})
 		if maxAge < 0 {
 			http.SetCookie(c.Writer, &http.Cookie{Name: "comment_author_email", Value: url.QueryEscape(cm.AuthorEmail), Path: "/", SameSite: http.SameSiteLaxMode})
+		}
+		if cm.Status == "pending" {
+			s.rememberPendingComment(c, cm.ID, maxAge)
 		}
 	}
 	if cm.Status == "pending" {

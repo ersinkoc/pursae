@@ -88,6 +88,55 @@ func (s *Store) TermBySlug(ctx context.Context, taxonomy, slug string) (*Term, e
 	return scanTerm(s.Pool.QueryRow(ctx, `SELECT `+termCols+` FROM terms WHERE taxonomy = $1 AND slug = $2 ORDER BY `+prefer+`id LIMIT 1`, args...))
 }
 
+// TermIDsBySlugs resolves several slugs of one taxonomy in a single query (slug → term id), with the
+// same per-slug preference as TermBySlug (Golylang: the request language first). Unknown slugs are
+// missing from the map.
+func (s *Store) TermIDsBySlugs(ctx context.Context, taxonomy string, slugs []string) (map[string]int64, error) {
+	out := map[string]int64{}
+	if len(slugs) == 0 {
+		return out, nil
+	}
+	args := []any{taxonomy, slugs}
+	prefer := slugPrefer(ctx, "term", &args)
+	rows, err := s.Pool.Query(ctx, `SELECT DISTINCT ON (slug) slug, id FROM terms WHERE taxonomy = $1 AND slug = ANY($2) ORDER BY slug, `+prefer+`id`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var slug string
+		var id int64
+		if err := rows.Scan(&slug, &id); err != nil {
+			return nil, err
+		}
+		out[slug] = id
+	}
+	return out, rows.Err()
+}
+
+// TermsBySlugs is TermIDsBySlugs returning the whole terms (slug → term).
+func (s *Store) TermsBySlugs(ctx context.Context, taxonomy string, slugs []string) (map[string]*Term, error) {
+	out := map[string]*Term{}
+	if len(slugs) == 0 {
+		return out, nil
+	}
+	args := []any{taxonomy, slugs}
+	prefer := slugPrefer(ctx, "term", &args)
+	rows, err := s.Pool.Query(ctx, `SELECT DISTINCT ON (slug) `+termCols+` FROM terms WHERE taxonomy = $1 AND slug = ANY($2) ORDER BY slug, `+prefer+`id`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		t, err := scanTerm(rows)
+		if err != nil {
+			return nil, err
+		}
+		out[t.Slug] = t
+	}
+	return out, rows.Err()
+}
+
 func (s *Store) TermByName(ctx context.Context, taxonomy, name string) (*Term, error) {
 	return scanTerm(s.Pool.QueryRow(ctx, `SELECT `+termCols+` FROM terms WHERE taxonomy = $1 AND lower(name) = lower($2) ORDER BY id LIMIT 1`, taxonomy, name))
 }

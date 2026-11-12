@@ -536,6 +536,7 @@ func (s *Server) wbFormMail(ctx context.Context, p *store.Post, link string, sch
 		subject = "[" + blog + "] " + title
 	}
 	msg := mail.Message{To: to, Cc: cc, Subject: subject, Body: b.String(), ReplyTo: clean["email"]}
+	s.mailOnConfiguredHome(ctx, &msg)
 	if _, err := s.mailer().Build(msg); err != nil {
 		return err
 	}

@@ -390,7 +390,7 @@ func (s *Server) replyToCommentAjax(c *gin.Context) {
 			}
 		}
 	}
-	cm := &store.Comment{PostID: pid, ParentID: parentID, UserID: u.ID, AuthorName: u.DisplayName, AuthorEmail: u.Email, AuthorURL: u.URL,
+	cm := &store.Comment{PostID: pid, ParentID: parentID, UserID: u.ID, AuthorName: u.DisplayName, AuthorEmail: u.Email, AuthorURL: commentAuthorURL(u.URL),
 		AuthorIP: clientIP(c), UserAgent: c.Request.UserAgent(), Content: content, Status: "approved"}
 	if !u.Can("moderate_comments", nil) {
 		cm.Status = "pending"

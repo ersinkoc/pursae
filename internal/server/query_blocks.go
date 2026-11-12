@@ -178,14 +178,26 @@ func registerQueryBlocks(s *Server) {
 	})
 	blocks.RegisterDynamic("core/post-content", func(ctx context.Context, b *blocks.Block, _ string) string {
 		rc, p := loopPost(ctx)
-		if p == nil || rc.depth >= 3 {
+		// render_block_core_post_content(): a post whose content is already rendering ($seen_ids)
+		// renders empty.
+		if p == nil || rc.depth >= 3 || rc.seenPosts[p.ID] {
 			return ""
 		}
 		if p.Password != "" && (rc.c == nil || rc.s.passwordRequired(rc.c, p)) {
 			return ""
 		}
+		if !rc.enterNested() {
+			return ""
+		}
+		if rc.seenPosts == nil {
+			rc.seenPosts = map[int64]bool{}
+		}
+		rc.seenPosts[p.ID] = true
 		rc.depth++
-		defer func() { rc.depth-- }()
+		defer func() {
+			rc.depth--
+			delete(rc.seenPosts, p.ID)
+		}()
 		return `<div ` + wrapperClass(b, "entry-content") + `>` + blocks.Render(ctx, p.Content) + `</div>`
 	})
 	blocks.RegisterDynamic("core/read-more", func(ctx context.Context, b *blocks.Block, _ string) string {

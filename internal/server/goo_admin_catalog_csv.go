@@ -801,6 +801,12 @@ func (s *Server) gooCSVAmount(v string) *float64 {
 
 func (s *Server) gooImportRow(ctx context.Context, f map[string]string, update bool, idMap map[int64]int64, editorID int64) (bool, error) {
 	has := func(k string) bool { _, ok := f[k]; return ok }
+	// content_save_pre: without unfiltered_html the importer's HTML goes through KSES, as in the
+	// product editor (fail closed when the importing user cannot be loaded).
+	kses := func(v string) string { return v }
+	if eu, err := s.store.UserByID(ctx, editorID); err != nil || eu == nil || !eu.Can("unfiltered_html", nil) {
+		kses = wp.KsesPost
+	}
 	typeParts := gooCSVSplit(strings.ToLower(f["type"]))
 	typ := ""
 	flags := map[string]bool{}
@@ -912,9 +918,9 @@ func (s *Server) gooImportRow(ctx context.Context, f map[string]string, update b
 	}
 	if has("description") {
 		if p.Type == gooTypeVariation {
-			p.Description = f["description"]
+			p.Description = kses(f["description"])
 		} else {
-			p.Post.Content = f["description"]
+			p.Post.Content = kses(f["description"])
 		}
 	}
 	if has("date_on_sale_from") {
@@ -977,7 +983,7 @@ func (s *Server) gooImportRow(ctx context.Context, f map[string]string, update b
 		p.Post.CommentStatus = map[bool]string{true: "open", false: "closed"}[f["reviews_allowed"] == "1"]
 	}
 	if has("purchase_note") {
-		p.PurchaseNote = f["purchase_note"]
+		p.PurchaseNote = kses(f["purchase_note"])
 	}
 	if has("regular_price") {
 		p.RegularPrice = s.gooCSVAmount(f["regular_price"])

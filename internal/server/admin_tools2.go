@@ -488,7 +488,7 @@ func (s *Server) sendUserRequest(c *gin.Context, r personalRequest) personalRequ
 	r.KeyHash, r.KeyAt, r.Status = hex.EncodeToString(sum[:]), time.Now().UTC(), "request-pending"
 	s.updatePersonalRequest(c, r)
 	site := s.settings.String("blogname")
-	confirm := s.links(c).HomeURL(s.loginPath() + "?action=confirmaction&request_id=" + itoa64(r.ID) + "&confirm_key=" + key)
+	confirm := s.configuredLinks(c).HomeURL(s.loginPath() + "?action=confirmaction&request_id=" + itoa64(r.ID) + "&confirm_key=" + key)
 	body := "Howdy,\n\nA request has been made to perform the following action on your account:\n\n     ###DESCRIPTION###\n\n" +
 		"To confirm this, please click on the following link:\n###CONFIRM_URL###\n\n" +
 		"You can safely ignore and delete this email if you do not want to\ntake this action.\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"

@@ -474,6 +474,23 @@ type hgQuery struct {
 	locale string  // the requested locale, for localized relation targets
 	a      *hgAuth // the caller (nil: the admin): relation targets must be readable by it
 	depth  int
+	// opDepth bounds the operator nesting ($not, $and, $or) inside one attribute's or one
+	// WordPress column filter, which ops() and table() compile recursively.
+	opDepth int
+}
+
+// hgMaxFilterDepth is how deep filter objects, and separately the operators of one attribute,
+// may nest: a request costs at most this many levels of compiling before a 400.
+const hgMaxFilterDepth = 12
+
+// enterOps counts one level of operator nesting; leave it with the returned function.
+func (q *hgQuery) enterOps() (func(), error) {
+	q.opDepth++
+	if q.opDepth > hgMaxFilterDepth {
+		q.opDepth--
+		return nil, hgBad("Filters are nested too deeply")
+	}
+	return func() { q.opDepth-- }, nil
 }
 
 // target checks that the caller may read a relation's target type (key names the attribute in
@@ -532,7 +549,7 @@ var hgSystemFields = map[string]struct{ col, kind string }{
 func (q *hgQuery) filters(sc *hgSchema, node map[string]any, col, alias string) (string, error) {
 	q.depth++
 	defer func() { q.depth-- }()
-	if q.depth > 12 {
+	if q.depth > hgMaxFilterDepth {
 		return "", hgBad("Filters are nested too deeply")
 	}
 	keys := make([]string, 0, len(node))
@@ -728,7 +745,12 @@ func (q *hgQuery) relation(f *hgField, m map[string]any, expr string) (string, e
 		if err != nil {
 			return "", err
 		}
-		return "EXISTS (SELECT 1 FROM media " + a + " WHERE " + a + ".id IN (SELECT (" + ids + ")::bigint) AND " + inner + ")", nil
+		visible := ""
+		if q.a != nil && !q.a.canUpload() {
+			// Like the media fields (hgMediaReadable): files of drafts and protected posts are not filterable.
+			visible = " AND (" + a + ".post_id IS NULL OR " + a + ".post_id IN (SELECT id FROM posts WHERE status = 'publish' AND coalesce(password, '') = ''))"
+		}
+		return "EXISTS (SELECT 1 FROM media " + a + " WHERE " + a + ".id IN (SELECT (" + ids + ")::bigint)" + visible + " AND " + inner + ")", nil
 	}
 	if tax, ok := hgWPTaxonomy(f.Target); ok {
 		a := q.sql.next("t")
@@ -781,6 +803,11 @@ func (q *hgQuery) relation(f *hgField, m map[string]any, expr string) (string, e
 
 // table compiles a filter on a WordPress table's columns (posts, users, media).
 func (q *hgQuery) table(m map[string]any, alias string, cols map[string][2]string) (string, error) {
+	leave, err := q.enterOps()
+	if err != nil {
+		return "", err
+	}
+	defer leave()
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -847,6 +874,11 @@ var hgOperators = map[string]bool{"$eq": true, "$eqi": true, "$ne": true, "$nei"
 
 // ops compiles the operators applied to one scalar expression of type kind.
 func (q *hgQuery) ops(expr, kind string, v any) (string, error) {
+	leave, err := q.enterOps()
+	if err != nil {
+		return "", err
+	}
+	defer leave()
 	m, ok := v.(map[string]any)
 	if !ok {
 		m = map[string]any{"$eq": v} // filters[title]=x

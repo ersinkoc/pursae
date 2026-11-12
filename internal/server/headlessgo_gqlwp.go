@@ -430,20 +430,33 @@ func (ex *hgGQLExec) wpNodes(posts []*store.Post, sel []*hgGQLField) []map[strin
 		}
 		return out
 	}
+	// The caller's WP user for Memberships checks: a signed-in front-end user, nil for tokens and anonymous callers.
+	var caller *store.User
+	if ex.a != nil && ex.a.Kind == "user" && ex.a.UserID > 0 {
+		caller, _ = ex.s.store.UserByID(ex.c, ex.a.UserID)
+	}
 	out := make([]map[string]any, len(posts))
 	for i, p := range posts {
 		n := map[string]any{"__typename": "WpContentNode", "id": p.ID, "type": p.Type, "slug": p.Slug, "status": p.Status, "title": p.Title,
 			"link": lb.Permalink(p), "date": hgTime(p.Date()), "modified": hgTime(p.ModifiedAt), "featuredMedia": p.FeaturedMediaID}
-		if want["excerpt"] {
-			n["excerpt"] = wp.KsesPost(p.Excerpt)
-		}
-		if want["content"] {
-			rc := &renderCtx{s: ex.s, lb: lb}
-			html := blocks.Render(withRender(ex.c, rc), p.Content)
-			if !blocks.HasBlocks(p.Content) {
-				html = wp.Autop(p.Content)
+		if want["excerpt"] || want["content"] {
+			html := ""
+			if want["content"] {
+				rc := &renderCtx{s: ex.s, lb: lb, user: caller, postID: p.ID}
+				html = blocks.Render(withRender(ex.c, rc), p.Content)
+				if !blocks.HasBlocks(p.Content) {
+					html = wp.Autop(p.Content)
+				}
 			}
-			n["content"] = html
+			// Goocommerce Memberships: non-members get the restriction message (and no
+			// excerpt when show_excerpts is off), exactly as core REST content.rendered.
+			html, excerpt := ex.s.gooRESTRestrict(ex.c, caller, p, html, wp.KsesPost(p.Excerpt))
+			if want["excerpt"] {
+				n["excerpt"] = excerpt
+			}
+			if want["content"] {
+				n["content"] = html
+			}
 		}
 		if want["author"] && p.AuthorID > 0 {
 			if _, ok := authors[p.AuthorID]; !ok {

@@ -43,6 +43,12 @@ type gooGatewayDef interface {
 	Available(s *Server, c *gin.Context, cart *gooCart) bool
 }
 
+// gooOrderAvailableGateway is implemented by gateways whose availability depends on the order being
+// paid on the Pay for order page (WC_Gateway_COD::is_available reads the order-pay order there).
+type gooOrderAvailableGateway interface {
+	AvailableForOrder(s *Server, ctx context.Context, o *gooOrder) bool
+}
+
 // gooRenewalGateway is implemented by gateways that can charge a stored payment token without the
 // customer present (WC_Gateway::scheduled_subscription_payment). A gateway that implements it and reports
 // Supports("subscriptions") gets automatic subscription renewals; any other gateway renews manually.
@@ -152,6 +158,19 @@ func (s *Server) gooAvailableGateways(c *gin.Context, cart *gooCart) []*gooGatew
 	return out
 }
 
+// gooAvailableGatewaysForOrder is the gateway list of the Pay for order page: the gateways available
+// without a cart, narrowed by each gateway's rules for the order being paid.
+func (s *Server) gooAvailableGatewaysForOrder(c *gin.Context, o *gooOrder) []*gooGatewayHandle {
+	var out []*gooGatewayHandle
+	for _, g := range s.gooAvailableGateways(c, nil) {
+		if og, ok := g.gooGatewayDef.(gooOrderAvailableGateway); ok && !og.AvailableForOrder(s, c.Request.Context(), o) {
+			continue
+		}
+		out = append(out, g)
+	}
+	return out
+}
+
 func gooGatewayBaseFields(title, desc string) []gooField {
 	return []gooField{
 		{ID: "enabled", Title: "Enable/Disable", Type: "checkbox", Default: "no", Desc: "Enable " + title},
@@ -218,6 +237,52 @@ func (g *gooOfflineGateway) Available(s *Server, c *gin.Context, cart *gooCart) 
 	}
 	return false
 }
+
+// AvailableForOrder applies the cash-on-delivery rules of Available to an order on the Pay for order
+// page: virtual orders only when enabled, and only the selected shipping methods of the order's
+// shipping lines (method_id:instance_id), as WC_Gateway_COD::is_available does there.
+func (g *gooOfflineGateway) AvailableForOrder(s *Server, ctx context.Context, o *gooOrder) bool {
+	if g.id != "cod" {
+		return true
+	}
+	needsShipping := false
+	if s.gooShippingEnabled() {
+		for _, it := range o.ItemsOf("line_item") {
+			pid := it.ProductID
+			if it.VariationID != 0 {
+				pid = it.VariationID
+			}
+			if p, err := s.gooGetProduct(ctx, pid); err == nil && s.gooNeedsShipping(ctx, p) {
+				needsShipping = true
+				break
+			}
+		}
+	}
+	if !needsShipping {
+		return s.gooGatewaySetting("cod", "enable_for_virtual") == "yes"
+	}
+	list, _ := s.gooGatewaySettings("cod")["enable_for_methods"].([]any)
+	if len(list) == 0 {
+		return true
+	}
+	for _, it := range o.ItemsOf("shipping") {
+		mid := gxStr(it.Meta["method_id"])
+		if mid == "" {
+			continue
+		}
+		rate := mid
+		if inst := gxStr(it.Meta["instance_id"]); inst != "" {
+			rate += ":" + inst
+		}
+		for _, m := range list {
+			if ms, _ := m.(string); ms != "" && (rate == ms || strings.HasPrefix(rate, ms+":")) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (g *gooOfflineGateway) ProcessPayment(s *Server, c *gin.Context, o *gooOrder) (gooPaymentResult, error) {
 	ctx := c.Request.Context()
 	if o.Total > 0 {
@@ -226,8 +291,9 @@ func (g *gooOfflineGateway) ProcessPayment(s *Server, c *gin.Context, o *gooOrde
 		if g.id == "cod" {
 			note = "Payment to be made upon delivery."
 			// WC_Gateway_COD: has_downloadable_item() keeps the order on-hold. Processing would
-			// count as paid and, with "Grant access after payment", release the files immediately.
-			if s.gooOrderHasDownloadable(ctx, o) {
+			// count as paid and, with "Grant access after payment", release the files immediately;
+			// the same holds for gift cards and memberships, which are issued on processing.
+			if s.gooOrderReleasesValueOnPayment(ctx, o) {
 				status = "on-hold"
 			}
 		}

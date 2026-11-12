@@ -7,6 +7,7 @@ import (
 	"html"
 	"net/mail"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -115,8 +116,8 @@ func gooPostedCheckout(form map[string][]string) *gooCheckoutData {
 	d.PaymentMethod = get("payment_method")
 	d.OrderComments = get("order_comments")
 	for k, v := range form {
-		if strings.HasPrefix(k, "shipping_method[") && len(v) > 0 {
-			d.ShippingMethods[strings.TrimSuffix(strings.TrimPrefix(k, "shipping_method["), "]")] = v[0]
+		if idx, ok := gooPostedShippingIndex(k); ok && len(v) > 0 {
+			d.ShippingMethods[strconv.Itoa(idx)] = v[0]
 		}
 	}
 	return d
@@ -143,8 +144,13 @@ func (s *Server) gooUpdateCustomerFromCheckout(c *gin.Context, d *gooCheckoutDat
 	}
 	cu.ShipToDifferent = d.ShipToDifferent
 	cu.CalculatedShip = true
+	// Only the cart's packages: the rates themselves are checked when the cart is recalculated with the
+	// posted address, but an unbounded set of indexes must not be stored in the session.
+	packages := len(s.gooCartFor(c).Packages)
 	for k, v := range d.ShippingMethods {
-		sess.Data.ChosenShipping[k] = v
+		if idx, err := strconv.Atoi(k); err == nil && idx < packages {
+			sess.Data.ChosenShipping[k] = v
+		}
 	}
 	if d.PaymentMethod != "" {
 		sess.Data.ChosenPayment = d.PaymentMethod

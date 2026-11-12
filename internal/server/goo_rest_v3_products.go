@@ -355,7 +355,17 @@ func (s *Server) gooV3ProductJSON(ctx context.Context, p *gooProduct) map[string
 var gooProductStatuses = []string{"draft", "pending", "private", "publish", "future"}
 
 // gooV3ApplyProduct writes the request fields onto a product (prepare_object_for_database).
-func (s *Server) gooV3ApplyProduct(ctx context.Context, p *gooProduct, b map[string]any) (cats, tags []int64, setCats, setTags bool, aerr *gooAPIErr) {
+func (s *Server) gooV3ApplyProduct(c *gin.Context, p *gooProduct, b map[string]any) (cats, tags []int64, setCats, setTags bool, aerr *gooAPIErr) {
+	ctx := c.Request.Context()
+	// Like the admin product editor (and wp_filter_post_kses): HTML fields are filtered for callers
+	// without unfiltered_html, which includes any scoped token whose scopes do not grant it.
+	if u := gooV3Actor(c); u == nil || !u.Can("unfiltered_html", nil) {
+		for _, k := range []string{"description", "short_description", "purchase_note"} {
+			if v, ok := b[k]; ok {
+				b[k] = wp.KsesPost(gooStr(v))
+			}
+		}
+	}
 	if p.Post == nil {
 		p.Post = &store.Post{Type: "product", CommentStatus: "open", PingStatus: "closed", Meta: map[string]any{}}
 		if p.Type == gooTypeVariation {
@@ -388,15 +398,20 @@ func (s *Server) gooV3ApplyProduct(ctx context.Context, p *gooProduct, b map[str
 	if v, ok := b["catalog_visibility"]; ok {
 		p.CatalogVisibility = gooStr(v)
 	}
+	// content_save_pre / excerpt_save_pre: KSES unless the REST actor has unfiltered_html.
+	kses := func(v string) string { return v }
+	if u := gooV3Actor(c); u == nil || !u.Can("unfiltered_html", nil) {
+		kses = wp.KsesPost
+	}
 	if v, ok := b["description"]; ok {
 		if p.Type == gooTypeVariation {
-			p.Description = gooStr(v)
+			p.Description = kses(gooStr(v))
 		} else {
-			p.Post.Content = gooStr(v)
+			p.Post.Content = kses(gooStr(v))
 		}
 	}
 	if v, ok := b["short_description"]; ok {
-		p.Post.Excerpt = gooStr(v)
+		p.Post.Excerpt = kses(gooStr(v))
 	}
 	if v, ok := b["sku"]; ok {
 		sku := strings.TrimSpace(gooStr(v))
@@ -719,7 +734,7 @@ func (s *Server) gooV3ProductCreate(c *gin.Context, b map[string]any) (map[strin
 		typ = gooTypeSimple
 	}
 	p := gooNewProduct(typ)
-	cats, tags, setCats, setTags, aerr := s.gooV3ApplyProduct(ctx, p, b)
+	cats, tags, setCats, setTags, aerr := s.gooV3ApplyProduct(c, p, b)
 	if aerr != nil {
 		return nil, aerr
 	}
@@ -740,7 +755,7 @@ func (s *Server) gooV3ProductUpdate(c *gin.Context, id int64, b map[string]any) 
 	if err != nil || p.Type == gooTypeVariation {
 		return nil, gooProductErr()
 	}
-	cats, tags, setCats, setTags, aerr := s.gooV3ApplyProduct(ctx, p, b)
+	cats, tags, setCats, setTags, aerr := s.gooV3ApplyProduct(c, p, b)
 	if aerr != nil {
 		return nil, aerr
 	}
@@ -1068,7 +1083,7 @@ func (s *Server) gooV3VariationCreate(c *gin.Context, parentID int64, b map[stri
 	if _, ok := b["status"]; !ok {
 		v.Status = "publish"
 	}
-	if _, _, _, _, aerr := s.gooV3ApplyProduct(ctx, v, b); aerr != nil {
+	if _, _, _, _, aerr := s.gooV3ApplyProduct(c, v, b); aerr != nil {
 		return nil, aerr
 	}
 	if st, ok := b["status"]; ok && gooStr(st) != "publish" {
@@ -1090,7 +1105,7 @@ func (s *Server) gooV3VariationUpdate(c *gin.Context, parentID, id int64, b map[
 	if aerr != nil {
 		return nil, aerr
 	}
-	if _, _, _, _, aerr := s.gooV3ApplyProduct(ctx, v, b); aerr != nil {
+	if _, _, _, _, aerr := s.gooV3ApplyProduct(c, v, b); aerr != nil {
 		return nil, aerr
 	}
 	if st, ok := b["status"]; ok && gooStr(st) != "publish" {

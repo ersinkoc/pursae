@@ -51,19 +51,98 @@ func DoShortcode(content string, tags []string, fn ShortcodeFunc) string {
 		return content
 	}
 	content = unautopShortcodes(content, re)
-	expand := func(m string) string {
-		lead, tag, rawAttrs, content, trail := shortcodeParts(re.FindStringSubmatch(m))
-		if lead == "[" && trail == "]" {
-			return m[1 : len(m)-1] // escaped
+	expand := func(full string, m shortcodeMatch) string {
+		if m.lead == "[" && m.trail == "]" {
+			return full[1 : len(full)-1] // escaped
 		}
-		attrs := ParseShortcodeAttrs(rawAttrs)
-		return lead + fn(tag, attrs, unhideBrackets(content)) + trail
+		attrs := ParseShortcodeAttrs(m.attrs)
+		return m.lead + fn(m.tag, attrs, unhideBrackets(m.content)) + m.trail
 	}
 	if !strings.Contains(content, "<") {
-		return re.ReplaceAllStringFunc(content, expand)
+		return replaceShortcodes(content, re, expand)
 	}
 	content = shortcodesInHTMLTags(content, re, expand)
-	return unhideBrackets(re.ReplaceAllStringFunc(content, expand))
+	return unhideBrackets(replaceShortcodes(content, re, expand))
+}
+
+// shortcodeExpander replaces one matched shortcode (full is its whole text).
+type shortcodeExpander func(full string, m shortcodeMatch) string
+
+// shortcodeMatch is one shortcode found by nextShortcode: content[start:end] is the whole match.
+type shortcodeMatch struct {
+	start, end                       int
+	lead, tag, attrs, content, trail string
+}
+
+// nextShortcode finds the first shortcode at or after from, like one match of WordPress'
+// get_shortcode_regex(). re matches only the opening tag; the content of an enclosing shortcode
+// runs to the first [/tag] after it (the same tag does not nest) and is found with one
+// strings.Index. noCloser records, per tag, an offset after which no [/tag] exists, so a tag
+// without a closer is searched for once per call instead of once per opener: scanning stays
+// linear in the size of content (a regex with an optional lazy content group rescans the rest
+// of the input for every unclosed opener).
+func nextShortcode(content string, re *regexp.Regexp, from int, noCloser map[string]int) (shortcodeMatch, bool) {
+	loc := re.FindStringSubmatchIndex(content[from:])
+	if loc == nil {
+		return shortcodeMatch{}, false
+	}
+	m := shortcodeMatch{start: from + loc[0], end: from + loc[1]}
+	if loc[2] >= 0 {
+		m.lead = content[from+loc[2] : from+loc[3]]
+	}
+	selfClosing := false
+	// Groups: 1 escape "[", then three per tag (tag, attributes, self-closing "/").
+	for g := 2; 2*g+5 < len(loc); g += 3 {
+		if loc[2*g] < 0 {
+			continue
+		}
+		m.tag = content[from+loc[2*g] : from+loc[2*g+1]]
+		if loc[2*g+2] >= 0 {
+			m.attrs = content[from+loc[2*g+2] : from+loc[2*g+3]]
+		}
+		selfClosing = loc[2*g+4] >= 0
+		break
+	}
+	if !selfClosing {
+		if after, ok := noCloser[m.tag]; !ok || m.end < after {
+			closer := "[/" + m.tag + "]"
+			if i := strings.Index(content[m.end:], closer); i >= 0 {
+				m.content = content[m.end : m.end+i]
+				m.end += i + len(closer)
+			} else {
+				noCloser[m.tag] = m.end
+			}
+		}
+	}
+	if m.end < len(content) && content[m.end] == ']' {
+		m.trail = "]"
+		m.end++
+	}
+	return m, true
+}
+
+// replaceShortcodes replaces every shortcode in content with expand, left to right.
+func replaceShortcodes(content string, re *regexp.Regexp, expand shortcodeExpander) string {
+	noCloser := map[string]int{}
+	var b strings.Builder
+	pos := 0
+	for pos < len(content) {
+		m, ok := nextShortcode(content, re, pos, noCloser)
+		if !ok {
+			break
+		}
+		if b.Len() == 0 {
+			b.Grow(len(content))
+		}
+		b.WriteString(content[pos:m.start])
+		b.WriteString(expand(content[m.start:m.end], m))
+		pos = m.end
+	}
+	if pos == 0 {
+		return content
+	}
+	b.WriteString(content[pos:])
+	return b.String()
 }
 
 // Brackets inside markup are swapped for these private-use characters while
@@ -90,7 +169,7 @@ func unhideBrackets(s string) string {
 // shortcodesInHTMLTags is do_shortcodes_in_html_tags(): it expands shortcodes
 // found in attribute values (escaped for the attribute) and hides every other
 // bracket inside tags, comments and CDATA sections from the text pass.
-func shortcodesInHTMLTags(content string, re *regexp.Regexp, expand func(string) string) string {
+func shortcodesInHTMLTags(content string, re *regexp.Regexp, expand shortcodeExpander) string {
 	if strings.ContainsAny(content, hiddenOpen+hiddenClose) {
 		content = sentinelEscaper.Replace(content)
 	}
@@ -192,7 +271,7 @@ var uriAttributes = map[string]bool{
 // attribute, URL attributes keep allowed protocols only and style goes through
 // SafeCSS. An attribute that cannot hold it (event handlers, srcdoc, a bad
 // URL) keeps its original text.
-func shortcodesInAttributes(el string, re *regexp.Regexp, expand func(string) string) string {
+func shortcodesInAttributes(el string, re *regexp.Regexp, expand shortcodeExpander) string {
 	var b strings.Builder
 	j := 1
 	for j < len(el) && !isHTMLSpace(el[j]) && el[j] != '>' && el[j] != '/' {
@@ -273,7 +352,7 @@ func shortcodesInAttributes(el string, re *regexp.Regexp, expand func(string) st
 // attrWithShortcodes expands the shortcodes in one attribute value and
 // returns the value escaped for a double-quoted attribute; ok is false when
 // nothing was expanded or the result is not safe for this attribute.
-func attrWithShortcodes(name, raw string, re *regexp.Regexp, expand func(string) string) (string, bool) {
+func attrWithShortcodes(name, raw string, re *regexp.Regexp, expand shortcodeExpander) (string, bool) {
 	if !strings.Contains(raw, "[") || !strings.Contains(raw, "]") {
 		return "", false
 	}
@@ -281,9 +360,9 @@ func attrWithShortcodes(name, raw string, re *regexp.Regexp, expand func(string)
 		return "", false
 	}
 	n := 0
-	out := re.ReplaceAllStringFunc(raw, func(m string) string {
+	out := replaceShortcodes(raw, re, func(full string, m shortcodeMatch) string {
 		n++
-		return expand(m)
+		return expand(full, m)
 	})
 	if n == 0 || out == raw {
 		return "", false
@@ -339,7 +418,8 @@ func shortcodeRegex(tags []string) *regexp.Regexp {
 	return re
 }
 
-// buildShortcodeRegex builds the WordPress shortcode regex for the given tags.
+// buildShortcodeRegex builds the opening-tag part of the WordPress shortcode regex for the given
+// tags; nextShortcode finds the content and the closing tag.
 func buildShortcodeRegex(tags []string) *regexp.Regexp {
 	names := make([]string, 0, len(tags))
 	for _, t := range tags {
@@ -351,32 +431,16 @@ func buildShortcodeRegex(tags []string) *regexp.Regexp {
 		return nil
 	}
 	sort.Slice(names, func(i, j int) bool { return len(names[i]) > len(names[j]) }) // longest first, like WordPress
-	// Go's RE2 has no backreferences, so each tag gets its own alternative that closes with its own
-	// [/tag] (WordPress' \[\/\2\]): [row][col]x[/col][/row] gives row the content [col]x[/col].
-	// Per tag the groups are: tag, attributes, self-closing "/", content. The attribute group must
-	// start with whitespace, so [boxes] never matches the tag "box" (WordPress uses a lookahead).
-	// The content runs to the first [/tag], so the same tag does not nest, as in WordPress.
+	// Per tag the groups are: tag, attributes, self-closing "/". The attribute group must start with
+	// whitespace, so [boxes] never matches the tag "box" (WordPress uses a lookahead). The optional
+	// content up to [/tag] (WordPress' \[\/\2\]) is deliberately not part of the regex: RE2 would keep
+	// that branch alive to the end of the input for every opener without a closer (quadratic time).
 	alts := make([]string, len(names))
 	for i, n := range names {
-		alts[i] = `(` + n + `)((?:\s(?:[^\]\/]|\/[^\]])*)?)(?:(\/)\]|\](?:((?s:.*?))\[\/` + n + `\])?)`
+		alts[i] = `(` + n + `)((?:\s(?:[^\]\/]|\/[^\]])*)?)(?:(\/)\]|\])`
 	}
-	// Groups: 1 escape "[", then four per tag, then the escape "]".
-	return regexp.MustCompile(`(\[?)\[(?:` + strings.Join(alts, "|") + `)(\]?)`)
-}
-
-// shortcodeParts splits a shortcodeRegex submatch into its leading "[", tag, attributes, content
-// and trailing "]".
-func shortcodeParts(sub []string) (lead, tag, attrs, content, trail string) {
-	if len(sub) < 6 {
-		return
-	}
-	lead, trail = sub[1], sub[len(sub)-1]
-	for i := 2; i+3 < len(sub)-1; i += 4 {
-		if sub[i] != "" {
-			return lead, sub[i], sub[i+1], sub[i+3], trail
-		}
-	}
-	return
+	// Groups: 1 escape "[", then three per tag; the escape "]" is checked by nextShortcode.
+	return regexp.MustCompile(`(\[?)\[(?:` + strings.Join(alts, "|") + `)`)
 }
 
 // lonePShortcodeRe is a whole paragraph (no "</p>" inside), which must be one shortcode.
@@ -389,7 +453,7 @@ func unautopShortcodes(content string, re *regexp.Regexp) string {
 	}
 	return lonePShortcodeRe.ReplaceAllStringFunc(content, func(m string) string {
 		inner := lonePShortcodeRe.FindStringSubmatch(m)[1]
-		if loc := re.FindStringIndex(inner); loc != nil && loc[0] == 0 && loc[1] == len(inner) {
+		if m, ok := nextShortcode(inner, re, 0, map[string]int{}); ok && m.start == 0 && m.end == len(inner) {
 			return inner
 		}
 		return m

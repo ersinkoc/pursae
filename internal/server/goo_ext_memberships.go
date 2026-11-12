@@ -937,6 +937,20 @@ func init() {
 		return ""
 	})
 
+	gooPaidValueHooks = append(gooPaidValueHooks, func(s *Server, ctx context.Context, o *gooOrder) bool {
+		if !s.gooExtOn(gmemKey) || o.CustomerID == 0 {
+			return false
+		}
+		plans := s.gmemPlans(ctx)
+		for _, it := range o.ItemsOf("line_item") {
+			for _, p := range plans {
+				if p.AccessMethod == "purchase" && (gxaHasID(p.ProductIDs, it.ProductID) || (it.VariationID != 0 && gxaHasID(p.ProductIDs, it.VariationID))) {
+					return true
+				}
+			}
+		}
+		return false
+	})
 	gooOn("order_status_changed", 30, func(s *Server, ctx context.Context, arg any) {
 		ch, ok := arg.(*gooStatusChange)
 		if !ok || !s.gooExtOn(gmemKey) {

@@ -23,6 +23,14 @@ type renderCtx struct {
 	search string
 	ids    map[string]int
 	depth  int // recursion guard for core/block
+	// seenRefs holds the synced patterns (core/block refs) being rendered, WordPress' $seen_refs:
+	// a pattern that (indirectly) references itself renders empty instead of multiplying.
+	seenRefs map[int64]bool
+	// seenPosts holds the posts whose content core/post-content is rendering (WordPress' $seen_ids).
+	seenPosts map[int64]bool
+	// nested counts the stored contents expanded into this render (synced patterns, post content,
+	// latest posts' full content); see enterNested.
+	nested int
 
 	// Request state the WordPress render callbacks read from globals.
 	c           *gin.Context // nil outside a request
@@ -40,6 +48,21 @@ type renderCtx struct {
 }
 
 type renderKey struct{}
+
+// maxNestedRenders bounds how many stored contents (synced patterns, post content, latest posts'
+// full content) one render expands into other content. The recursion guards bound only the depth,
+// so k references per level would still multiply to k^depth renders (and database queries); a
+// real page expands far fewer.
+const maxNestedRenders = 2000
+
+// enterNested reports whether one more stored content may be expanded into this render and counts it.
+func (rc *renderCtx) enterNested() bool {
+	if rc.nested >= maxNestedRenders {
+		return false
+	}
+	rc.nested++
+	return true
+}
 
 func withRender(ctx context.Context, rc *renderCtx) context.Context {
 	return context.WithValue(ctx, renderKey{}, rc)
@@ -301,7 +324,7 @@ func renderLatestPosts(ctx context.Context, b *blocks.Block, _ string) string {
 						` … <a class="wp-block-latest-posts__read-more" href="`+html.EscapeString(link)+`" rel="noopener">Read more<span class="screen-reader-text">: `+html.EscapeString(title)+`</span></a>`)
 				}
 				fmt.Fprintf(&items, `<div class="wp-block-latest-posts__post-excerpt">%s</div>`, ex)
-			} else if rc.depth < 3 {
+			} else if rc.depth < 3 && rc.enterNested() {
 				rc.depth++
 				fmt.Fprintf(&items, `<div class="wp-block-latest-posts__post-full-content">%s</div>`, blocks.Render(ctx, p.Content))
 				rc.depth--
@@ -370,7 +393,7 @@ func renderLatestComments(ctx context.Context, b *blocks.Block, _ string) string
 		if name == "" {
 			name = "Anonymous"
 		}
-		authorURL := cm.AuthorURL
+		authorURL := commentAuthorURL(cm.AuthorURL) // stored rows may predate the save-time check
 		if authorURL == "" && cm.UserID != 0 {
 			if u, err := rc.s.store.UserByID(ctx, cm.UserID); err == nil {
 				authorURL = rc.lb.AuthorLink(u.ID, u.Nicename)
@@ -565,19 +588,27 @@ func renderCategories(ctx context.Context, b *blocks.Block, _ string) string {
 	return fmt.Sprintf(`<ul %s>%s</ul>`, wrapperClass(b, "wp-block-categories-list wp-block-categories-taxonomy-"+tax), items.String())
 }
 
-// renderSyncedPattern renders a reusable block (wp_block post) with a recursion guard.
+// renderSyncedPattern renders a reusable block (wp_block post) with recursion guards.
 func renderSyncedPattern(ctx context.Context, b *blocks.Block, _ string) string {
 	rc := renderFrom(ctx)
-	ref := attrInt(b, "ref", 0)
-	if rc == nil || ref == 0 || rc.depth > 5 {
+	ref := int64(attrInt(b, "ref", 0))
+	// Like render_block_core_block(): a pattern already being rendered ($seen_refs) renders empty.
+	if rc == nil || ref == 0 || rc.depth > 5 || rc.seenRefs[ref] || !rc.enterNested() {
 		return ""
 	}
-	p, err := rc.s.store.GetPost(ctx, int64(ref))
+	p, err := rc.s.store.GetPost(ctx, ref)
 	if err != nil || p.Type != "wp_block" || p.Status != "publish" {
 		return ""
 	}
+	if rc.seenRefs == nil {
+		rc.seenRefs = map[int64]bool{}
+	}
+	rc.seenRefs[ref] = true
 	rc.depth++
-	defer func() { rc.depth-- }()
+	defer func() {
+		rc.depth--
+		delete(rc.seenRefs, ref)
+	}()
 	return blocks.Render(ctx, p.Content)
 }
 

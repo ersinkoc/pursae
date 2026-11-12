@@ -404,7 +404,7 @@ func (s *Server) gooEmailResetURL(ctx context.Context, userID int64) string {
 	if _, err := s.store.Pool.Exec(ctx, `UPDATE users SET meta = coalesce(meta, '{}'::jsonb) || $2::jsonb WHERE id = $1`, u.ID, raw); err != nil {
 		return s.gooAccountURL(ctx, "lost-password")
 	}
-	return s.links(ctx).HomeURL(s.loginPath() + "?action=rp&key=" + key + "&login=" + url.QueryEscape(u.Login))
+	return s.configuredLinks(ctx).HomeURL(s.loginPath() + "?action=rp&key=" + key + "&login=" + url.QueryEscape(u.Login))
 }
 
 // gooEmailPreview renders an e-mail with a sample order for the settings screen's preview.

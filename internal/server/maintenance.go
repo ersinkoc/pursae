@@ -549,7 +549,7 @@ func (s *Server) maintBypass(w http.ResponseWriter, r *http.Request, st maintSet
 // maintToken is a bypass cookie's value: an HMAC bound to the site secret and to the link key or
 // password, so changing either locks everyone holding an old cookie out.
 func (s *Server) maintToken(kind, value string) string {
-	m := hmac.New(sha256.New, []byte(s.settings.String("auth_secret")+"|maintenance|"+kind))
+	m := hmac.New(sha256.New, []byte(s.siteSecret()+"|maintenance|"+kind))
 	m.Write([]byte(value))
 	return hex.EncodeToString(m.Sum(nil))
 }

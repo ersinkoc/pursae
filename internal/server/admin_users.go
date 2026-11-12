@@ -561,7 +561,14 @@ func (s *Server) userNew(c *gin.Context) {
 		return
 	}
 	roles, _ := s.store.Roles(c)
-	d := userNewData{Nonce: s.nonce(c, "create-user"), Roles: roles, Def: s.settings.String("default_role"), Values: url.Values{},
+	// The role dropdown lists only the roles this user may give (as on the Users screen).
+	var assignable []store.Role
+	for _, r := range roles {
+		if s.actorMayGiveRole(c, u, r.Slug) {
+			assignable = append(assignable, r)
+		}
+	}
+	d := userNewData{Nonce: s.nonce(c, "create-user"), Roles: assignable, Def: s.settings.String("default_role"), Values: url.Values{},
 		CanPromote: u.Can("promote_users", nil)}
 	if c.Request.Method == http.MethodPost {
 		if !s.checkNonce(c, "create-user") {
@@ -575,11 +582,14 @@ func (s *Server) userNew(c *gin.Context) {
 		pass := c.PostForm("pass1")
 		role := c.PostForm("role")
 		// edit_user(): the posted role counts only for users who can promote, and must exist.
-		if !u.Can("promote_users", nil) || role == "" {
+		// A promoter may only give a role they are allowed to (actorMayGiveRole), as on the
+		// bulk role change, user-edit and REST.
+		promoter := u.Can("promote_users", nil)
+		if !promoter || role == "" {
 			role = d.Def
 		}
 		var errs []string
-		if !roleListed(roles, role) {
+		if !roleListed(roles, role) || (promoter && !s.actorMayGiveRole(c, u, role)) {
 			errs = append(errs, "<strong>Error:</strong> Sorry, you are not allowed to give users that role.")
 		}
 		if login == "" {

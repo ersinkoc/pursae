@@ -71,12 +71,19 @@ const (
 	blockCloser
 )
 
+// MaxDepth is the deepest block nesting Parse builds (a top-level block is at depth 1). Delimiters
+// nested deeper stay in the HTML of the deepest block as plain text, so stored content cannot make
+// the recursive tree walks (rendering, serializing, excerpts) exhaust the goroutine stack, a fatal
+// error that takes the whole process down. Real editor content nests a few levels.
+const MaxDepth = 256
+
 type parser struct {
-	doc    string
-	offset int
-	output []*Block
-	stack  []*frame
-	scan   int // where the tokenizer resumes
+	doc     string
+	offset  int
+	output  []*Block
+	stack   []*frame
+	scan    int // where the tokenizer resumes
+	skipped int // openers past MaxDepth whose closers are still to come
 }
 
 // Parse returns the top-level blocks of a document.
@@ -93,6 +100,20 @@ func Parse(doc string) []*Block {
 func (p *parser) proceed() bool {
 	depth := len(p.stack)
 	typ, name, attrs, start, length := p.nextToken()
+	// Past MaxDepth, delimiters are kept as HTML of the deepest open block: openers and void blocks
+	// are not added, and each closer first closes one skipped opener.
+	if depth >= MaxDepth {
+		switch {
+		case typ == blockOpener:
+			p.skipped++
+			return true
+		case typ == voidBlock:
+			return true
+		case typ == blockCloser && p.skipped > 0:
+			p.skipped--
+			return true
+		}
+	}
 	leading := -1
 	if start > p.offset {
 		leading = p.offset

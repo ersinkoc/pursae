@@ -843,6 +843,21 @@ func (s *Server) gooOrderHasDownloadable(ctx context.Context, o *gooOrder) bool 
 	return false
 }
 
+// gooOrderReleasesValueOnPayment is true when moving the order to processing would hand out value
+// before a payment is taken: a downloadable file (has_downloadable_item) or an item a module releases
+// on payment (gooPaidValueHooks).
+func (s *Server) gooOrderReleasesValueOnPayment(ctx context.Context, o *gooOrder) bool {
+	if s.gooOrderHasDownloadable(ctx, o) {
+		return true
+	}
+	for _, h := range gooPaidValueHooks {
+		if h(s, ctx, o) {
+			return true
+		}
+	}
+	return false
+}
+
 // gooOrderNeedsProcessing is needs_processing(): an item that is not virtual and downloadable.
 func (s *Server) gooOrderNeedsProcessing(ctx context.Context, o *gooOrder) bool {
 	for _, it := range o.ItemsOf("line_item") {

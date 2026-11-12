@@ -695,12 +695,7 @@ func (s *Server) gooUpdateCartAction(c *gin.Context) {
 		return
 	}
 	changed := false
-	for k, v := range f {
-		if strings.HasPrefix(k, "shipping_method[") && len(v) > 0 {
-			idx := gooAtoi(strings.TrimSuffix(strings.TrimPrefix(k, "shipping_method["), "]"))
-			cart.ChooseShipping(idx, v[0])
-		}
-	}
+	cart.ChooseShippings(f)
 	for _, it := range append([]*gooCartItem{}, cart.Items...) {
 		raw, ok := f["cart["+it.Key+"][qty]"]
 		if !ok || len(raw) == 0 {
@@ -956,11 +951,7 @@ func (s *Server) gooAjax(c *gin.Context, action string) {
 		s.gooAjaxHTML(c, gooErrorList([]string{"Sorry there was a problem removing this coupon."}))
 	case "update_shipping_method":
 		cart := s.gooCartFor(c)
-		for k, v := range c.Request.PostForm {
-			if strings.HasPrefix(k, "shipping_method[") && len(v) > 0 {
-				cart.ChooseShipping(gooAtoi(strings.TrimSuffix(strings.TrimPrefix(k, "shipping_method["), "]")), v[0])
-			}
-		}
+		cart.ChooseShippings(c.Request.PostForm)
 		s.gooAjaxHTML(c, s.gooCartTotalsHTML(c, cart))
 	case "update_order_review":
 		s.gooUpdateOrderReview(c)

@@ -956,6 +956,45 @@ func (cart *gooCart) ChooseShipping(pkg int, rateID string) {
 	cart.Calculate()
 }
 
+// gooPostedShippingIndex parses a posted shipping_method[N] key into its package index.
+func gooPostedShippingIndex(k string) (int, bool) {
+	if !strings.HasPrefix(k, "shipping_method[") || !strings.HasSuffix(k, "]") {
+		return 0, false
+	}
+	n, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(k, "shipping_method["), "]"))
+	if err != nil || n < 0 {
+		return 0, false
+	}
+	return n, true
+}
+
+// ChooseShippings applies the posted shipping_method[N] radio buttons (cart form, update_shipping_method)
+// in one pass: only indexes of the cart's packages and rates offered for that package are kept, and the
+// cart is recalculated once, as WC_AJAX::update_shipping_method does. It reports whether a choice changed.
+func (cart *gooCart) ChooseShippings(form map[string][]string) bool {
+	changed := false
+	for k, v := range form {
+		idx, ok := gooPostedShippingIndex(k)
+		if !ok || len(v) == 0 || idx >= len(cart.Packages) {
+			continue
+		}
+		for _, r := range cart.Packages[idx].Rates {
+			if r.ID == v[0] {
+				if key := strconv.Itoa(idx); cart.sess.Data.ChosenShipping[key] != v[0] {
+					cart.sess.Data.ChosenShipping[key] = v[0]
+					changed = true
+				}
+				break
+			}
+		}
+	}
+	if changed {
+		cart.sess.touch()
+		cart.Calculate()
+	}
+	return changed
+}
+
 // Errors returns and clears the messages produced while loading and calculating.
 func (cart *gooCart) Errors() []string {
 	e := cart.errors

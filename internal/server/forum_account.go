@@ -727,6 +727,7 @@ func (s *Server) forumAccountFormPost(c *gin.Context, action string) {
 			fail(http.StatusInternalServerError, "Something went wrong. Please try again.")
 			return
 		}
+		s.adminsecPasswordChanged(c, u)
 		s.endSessionsAfterPasswordChange(ctx, c, u.ID)
 		c.Redirect(http.StatusFound, account+"?forum_msg=password_changed")
 	case "avatar_upload":

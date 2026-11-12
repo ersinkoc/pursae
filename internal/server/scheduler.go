@@ -192,8 +192,24 @@ func (s *Server) queueJob(ctx context.Context, name string, payload any, runAt t
 
 // sendMail queues an e-mail; delivery happens in the job runner so requests never wait on SMTP.
 func (s *Server) sendMail(ctx context.Context, msg mail.Message) {
+	s.mailOnConfiguredHome(ctx, &msg)
 	if err := s.queueJob(context.WithoutCancel(ctx), "wp_mail", msg, time.Time{}); err != nil {
 		slog.Error("queue mail", "err", err)
+	}
+}
+
+// mailOnConfiguredHome points the links of msg that a request built on its own origin back at the
+// configured home. A development site's pages follow the request's Host (localOrigin); a message
+// never does, since the client chooses that Host. Every path that queues a "wp_mail" job while
+// serving a request calls it (sendMail, the contact form, Web Builder forms).
+func (s *Server) mailOnConfiguredHome(ctx context.Context, msg *mail.Message) {
+	home := s.configuredHome()
+	if home == "" {
+		return
+	}
+	if origin := localOrigin(ctx, home); origin != home {
+		msg.Body = strings.ReplaceAll(msg.Body, origin, home)
+		msg.HTML = strings.ReplaceAll(msg.HTML, origin, home)
 	}
 }
 

@@ -193,17 +193,21 @@ func (s *Server) revokeCredentialsAfterPasswordChange(c *gin.Context, userID int
 			}
 		}
 	}
-	if keepApp > 0 {
-		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM app_passwords WHERE user_id = $1 AND id <> $2`, userID, keepApp)
-	} else {
-		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM app_passwords WHERE user_id = $1`, userID)
+	_ = s.revokeUserCredentials(ctx, userID, keepApp, keepGrant)
+}
+
+// revokeUserCredentials deletes the user's application passwords, OAuth grants and pending OAuth codes,
+// except the application password keepApp and the grant keepGrant (0 keeps none). A deleted application
+// password also stops matching through the match cache, which only serves hits that still have their row.
+func (s *Server) revokeUserCredentials(ctx context.Context, userID, keepApp, keepGrant int64) error {
+	if _, err := s.store.Pool.Exec(ctx, `DELETE FROM app_passwords WHERE user_id = $1 AND id <> $2`, userID, keepApp); err != nil {
+		return err
 	}
-	if keepGrant > 0 {
-		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE user_id = $1 AND id <> $2`, userID, keepGrant)
-	} else {
-		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE user_id = $1`, userID)
+	if _, err := s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE user_id = $1 AND id <> $2`, userID, keepGrant); err != nil {
+		return err
 	}
-	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_codes WHERE user_id = $1`, userID)
+	_, err := s.store.Pool.Exec(ctx, `DELETE FROM oauth_codes WHERE user_id = $1`, userID)
+	return err
 }
 
 // asForcePassword reports a pending forced change: true when the policy asked for it, "admin"

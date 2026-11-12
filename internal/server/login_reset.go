@@ -54,7 +54,7 @@ func (s *Server) resetLink(c *gin.Context, u *store.User) string {
 	key := auth.RandomToken(20)
 	sum := sha256.Sum256([]byte(key))
 	_ = s.setUserMeta(c, u, "password_reset", map[string]any{"hash": hex.EncodeToString(sum[:]), "expires": time.Now().Add(24 * time.Hour).Unix()})
-	return s.links(c).HomeURL(s.loginPath() + "?action=rp&key=" + key + "&login=" + url.QueryEscape(u.Login))
+	return s.configuredLinks(c).HomeURL(s.loginPath() + "?action=rp&key=" + key + "&login=" + url.QueryEscape(u.Login))
 }
 
 // sendResetLink is retrieve_password(): the "[Site] Password Reset" message.
@@ -249,7 +249,7 @@ func (s *Server) notifyNewUser(c *gin.Context, u *store.User, sendUser bool) {
 		Body: fmt.Sprintf("New user registration on your site %s:\n\nUsername: %s\n\nEmail: %s\n", site, u.Login, u.Email)})
 	if sendUser {
 		link := s.resetLink(c, u)
-		body := fmt.Sprintf("Username: %s\n\nTo set your password, visit the following address:\n\n%s\n\n%s\n", u.Login, link, s.links(c).HomeURL(s.loginPath()))
+		body := fmt.Sprintf("Username: %s\n\nTo set your password, visit the following address:\n\n%s\n\n%s\n", u.Login, link, s.configuredLinks(c).HomeURL(s.loginPath()))
 		s.sendMail(c, mail.Message{Kind: "new_user_user", To: []string{u.Email}, Subject: "[" + site + "] Login Details", Body: body})
 	}
 }

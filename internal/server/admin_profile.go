@@ -319,7 +319,7 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	} else {
 		target.Email = email
 	}
-	target.URL = strings.TrimSpace(c.PostForm("url"))
+	target.URL = userURL(c.PostForm("url")) // pre_user_url: esc_url_raw
 	if err := s.store.UpdateUserProfile(c, target); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -395,7 +395,7 @@ func (s *Server) sendEmailChangeConfirmation(c *gin.Context, u *store.User, newE
 		"If this is correct, please click on the following link to change it:\n###ADMIN_URL###\n\n" +
 		"You can safely ignore and delete this email if you do not want to\ntake this action.\n\n" +
 		"This email has been sent to ###EMAIL###\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"
-	body = strings.NewReplacer("###USERNAME###", u.Login, "###ADMIN_URL###", s.links(c).HomeURL("/wp-admin/profile?newuseremail="+hash),
+	body = strings.NewReplacer("###USERNAME###", u.Login, "###ADMIN_URL###", s.configuredLinks(c).HomeURL("/wp-admin/profile?newuseremail="+hash),
 		"###EMAIL###", newEmail, "###SITENAME###", site, "###SITEURL###", s.links(c).HomeURL("/")).Replace(body)
 	s.sendMail(c, mail.Message{Kind: "user_email_change", To: []string{newEmail}, Subject: "[" + site + "] Email Change Request", Body: body})
 }

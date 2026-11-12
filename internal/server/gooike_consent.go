@@ -184,7 +184,7 @@ func (s *Server) gooikeHash(kind, v string) string {
 	if v == "" {
 		return ""
 	}
-	m := hmac.New(sha256.New, []byte(s.settings.String("auth_secret")+"|gooike|"+kind))
+	m := hmac.New(sha256.New, []byte(s.siteSecret()+"|gooike|"+kind))
 	m.Write([]byte(v))
 	return hex.EncodeToString(m.Sum(nil))[:16]
 }

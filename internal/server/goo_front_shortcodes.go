@@ -158,13 +158,13 @@ func (s *Server) gooShortcode(c *gin.Context, tag string, a map[string]string) s
 		return gooWidgetWrap("widget_product_search", gooFrontAttr(a, "title", ""), s.gooProductSearchForm(c))
 	case "product_page":
 		p := s.gooShortcodeProduct(ctx, a)
-		if p == nil || p.Status != "publish" {
+		if p == nil || p.Status != "publish" || s.gooHiddenProduct(ctx, p.ID) {
 			return ""
 		}
 		return `<div class="single-product" data-product-page-preselected-id="0"><div class="woocommerce">` + s.gooProductBody(c, p, true) + `</div></div>`
 	case "add_to_cart":
 		p := s.gooShortcodeProduct(ctx, a)
-		if p == nil {
+		if p == nil || !s.gooShortcodeProductPublic(ctx, p) || s.gooHiddenProduct(ctx, p.ID) {
 			return ""
 		}
 		style := gooFrontAttr(a, "style", "border:4px solid #ccc; padding: 12px;")
@@ -239,6 +239,19 @@ func setDef(m map[string]string, k, v string) {
 	}
 }
 
+// gooShortcodeProductPublic reports whether a product (or a variation's parent) is published, so a
+// shortcode never shows the price or add-to-cart button of a draft, private or trashed product.
+func (s *Server) gooShortcodeProductPublic(ctx context.Context, p *gooProduct) bool {
+	if p.Status != "publish" {
+		return false
+	}
+	if p.Type == gooTypeVariation {
+		parent := s.gooParent(ctx, p)
+		return parent != nil && parent.Status == "publish"
+	}
+	return true
+}
+
 // gooShortcodeProduct finds the product of an id / sku attribute.
 func (s *Server) gooShortcodeProduct(ctx context.Context, a map[string]string) *gooProduct {
 	if id := gooAtoi64(a["id"]); id > 0 {
@@ -271,7 +284,7 @@ func (s *Server) gooProductsShortcode(c *gin.Context, tag string, a map[string]s
 	if limit == 0 {
 		limit = -1
 	}
-	q := gooProductQuery{Visibility: "catalog", PerPage: limit, Page: 1}
+	q := gooProductQuery{Visibility: "catalog", PerPage: limit, Page: 1, ForVisitor: true}
 	orderby := strings.ToLower(gooFrontAttr(a, "orderby", "title"))
 	if f := strings.Fields(orderby); len(f) > 0 {
 		orderby = f[0]

@@ -36,6 +36,10 @@ func RegisterContainer(name string, fn RenderFunc) {
 
 // RenderInner renders the inner blocks and inner HTML of b (what RenderBlock passes as content).
 func RenderInner(ctx context.Context, b *Block) string {
+	return renderInner(ctx, b, depthFrom(ctx))
+}
+
+func renderInner(ctx context.Context, b *Block, depth int) string {
 	var sb strings.Builder
 	inner := 0
 	for _, chunk := range b.InnerContent {
@@ -44,11 +48,19 @@ func RenderInner(ctx context.Context, b *Block) string {
 			continue
 		}
 		if inner < len(b.InnerBlocks) {
-			sb.WriteString(RenderBlock(ctx, b.InnerBlocks[inner]))
+			sb.WriteString(renderBlock(ctx, b.InnerBlocks[inner], depth))
 		}
 		inner++
 	}
 	return sb.String()
+}
+
+// depthKey carries the nesting depth into container renderers, so RenderInner continues the count.
+type depthKey struct{}
+
+func depthFrom(ctx context.Context) int {
+	d, _ := ctx.Value(depthKey{}).(int)
+	return d
 }
 
 // DynamicNames lists the block names that have a server-side renderer, sorted.
@@ -82,35 +94,34 @@ func Render(ctx context.Context, content string) string {
 		return content
 	}
 	var sb strings.Builder
+	depth := depthFrom(ctx)
 	for _, b := range Parse(content) {
-		sb.WriteString(RenderBlock(ctx, b))
+		sb.WriteString(renderBlock(ctx, b, depth))
 	}
 	return sb.String()
 }
 
 // RenderBlock is render_block() for a single parsed block.
 func RenderBlock(ctx context.Context, b *Block) string {
+	return renderBlock(ctx, b, depthFrom(ctx))
+}
+
+// renderBlock renders b at nesting depth depth (0 for a top-level block). A tree deeper than
+// MaxDepth (Parse never builds one, but trees can come from elsewhere) renders its blocks past the
+// limit as their own HTML without inner blocks instead of recursing further.
+func renderBlock(ctx context.Context, b *Block, depth int) string {
+	if depth >= MaxDepth {
+		return b.InnerHTML
+	}
 	if b.BlockName != nil {
 		mu.RLock()
 		rf := raw[*b.BlockName]
 		mu.RUnlock()
 		if rf != nil {
-			return rf(ctx, b, "")
+			return rf(context.WithValue(ctx, depthKey{}, depth+1), b, "")
 		}
 	}
-	var sb strings.Builder
-	inner := 0
-	for _, chunk := range b.InnerContent {
-		if chunk != nil {
-			sb.WriteString(*chunk)
-			continue
-		}
-		if inner < len(b.InnerBlocks) {
-			sb.WriteString(RenderBlock(ctx, b.InnerBlocks[inner]))
-		}
-		inner++
-	}
-	content := sb.String()
+	content := renderInner(ctx, b, depth+1)
 	if b.BlockName == nil {
 		return content
 	}

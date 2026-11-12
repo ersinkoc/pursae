@@ -1437,6 +1437,9 @@ func (s *Server) gooV3CustomerUpdate(c *gin.Context, id int64, b map[string]any)
 	}
 	if v, ok := b["email"]; ok {
 		email := strings.TrimSpace(gooStr(v))
+		if !strings.EqualFold(email, u.Email) && !gooCustomerCredentialAllowed(gooV3Actor(c), u, restScopes(c)) {
+			return nil, gooErr(http.StatusForbidden, "woocommerce_rest_cannot_edit", "Sorry, you are not allowed to change this user's email address.")
+		}
 		if _, err := mail.ParseAddress(email); err != nil {
 			return nil, gooErr(400, "woocommerce_rest_invalid_email", "Invalid email address.")
 		}

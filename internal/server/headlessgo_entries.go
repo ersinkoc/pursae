@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/store"
 )
 
 // HeadlessGo entries: one row per document and locale. data is the draft (the latest saved
@@ -179,6 +180,10 @@ type hgCoercer struct {
 	create   bool
 	errs     hgValidationError
 	inv      map[string]any // input of the root object's inverse relation fields (stored on the owners)
+	// auth is the API caller writing (nil: the admin or an internal write). Media it may not
+	// read (hgMediaReadable) cannot be linked.
+	auth *hgAuth
+	user *store.User // auth's WordPress user, when it is a signed-in front-end user
 }
 
 func (h *hgCoercer) fail(path []string, format string, a ...any) {
@@ -758,6 +763,10 @@ func (h *hgCoercer) media(f *hgField, v any, path []string) (any, bool) {
 			h.fail(path, "The media %d does not exist", id)
 			return nil, false
 		}
+		if h.auth != nil && !h.s.hgMediaReadable(h.ctx, h.auth, h.user, a) {
+			h.fail(path, "The media %d does not exist", id) // as if missing: its existence is not public either
+			return nil, false
+		}
 		if len(f.Allowed) > 0 && !containsStr(f.Allowed, hgMediaKind(a.Mime)) {
 			h.fail(path, "The file type of media %d is not allowed here", id)
 			return nil, false
@@ -1006,7 +1015,10 @@ func (s *Server) hgSaveEntryOnce(ctx context.Context, sc *hgSchema, doc string, 
 		// New values cannot have been approved: save the draft, get it approved, then publish it.
 		return nil, nil, errHGNotApproved
 	}
-	h := &hgCoercer{s: s, ctx: ctx, reg: reg, required: publish, create: existing == nil}
+	h := &hgCoercer{s: s, ctx: ctx, reg: reg, required: publish, create: existing == nil, auth: o.Auth}
+	if o.Auth != nil {
+		h.user = s.hgWPUser(ctx, o.Auth)
+	}
 	var old map[string]any
 	if existing != nil {
 		old = existing.Data

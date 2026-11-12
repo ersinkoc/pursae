@@ -610,6 +610,30 @@ func (s *Server) denyNonce(c *gin.Context) {
 	c.Abort()
 }
 
+// configuredLinks is links() on the configured home URL only, never the request's Host (see
+// localOrigin). Links that carry a key or token, and links sent by e-mail, use it: WordPress builds
+// them from the home/siteurl option, and a Host header is chosen by whoever sends the request.
+func (s *Server) configuredLinks(ctx context.Context) *links.Builder {
+	return s.links(withConfiguredOrigin(ctx))
+}
+
+// withConfiguredOrigin hides the request origin from localOrigin for everything built from ctx.
+func withConfiguredOrigin(ctx context.Context) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, originKey{}, "")
+}
+
+// configuredHome is the configured home URL without a trailing slash.
+func (s *Server) configuredHome() string {
+	home := strings.TrimRight(s.settings.String("home"), "/")
+	if home == "" {
+		home = strings.TrimRight(s.cfg.SiteURL, "/")
+	}
+	return home
+}
+
 // links returns a permalink builder for the current settings.
 func (s *Server) links(ctx context.Context) *links.Builder {
 	home := strings.TrimRight(s.settings.String("home"), "/")
@@ -861,16 +885,18 @@ func (s *Server) requestOrigin() gin.HandlerFunc {
 // localOrigin keeps a development site usable from any address: when the configured home URL is a
 // local or private address (localhost, 127.x, 192.168.x, *.local …) and the request also comes in on
 // one, links use the request's origin. Sites with a real domain always use the configured URL, so a
-// forged Host header can't change their links.
+// forged Host header can't change their links. Only rendered pages follow the request: links that
+// carry a key and links sent by e-mail use configuredLinks, and sendMail maps the request origin
+// back to the configured home in every message.
 func localOrigin(ctx context.Context, home string) string {
 	if ctx == nil {
 		return home
 	}
 	var origin string
-	if gc, ok := ctx.(*gin.Context); ok && gc.Request != nil {
+	if v, ok := ctx.Value(originKey{}).(string); ok {
+		origin = v // set on this context itself (withConfiguredOrigin clears it)
+	} else if gc, ok := ctx.(*gin.Context); ok && gc.Request != nil {
 		origin, _ = gc.Request.Context().Value(originKey{}).(string)
-	} else {
-		origin, _ = ctx.Value(originKey{}).(string)
 	}
 	if origin == "" {
 		return home

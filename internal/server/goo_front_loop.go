@@ -653,6 +653,64 @@ func (s *Server) gooCatalogQuery(c *gin.Context, fv *gooFrontView) gooProductQue
 	return q
 }
 
+// Bounds of the layered nav query string (filter_<attr>=a,b,c): attributes per request, slugs per
+// request (over all attributes) and the length of one slug (WordPress slugs are at most 200 bytes).
+const (
+	gooMaxFilterKeys    = 10
+	gooMaxFilterSlugs   = 50
+	gooMaxFilterSlugLen = 200
+)
+
+// gooFilterSel is one attribute of the layered nav selection: its query key and slugs.
+type gooFilterSel struct {
+	Key   string
+	Slugs []string
+}
+
+// gooFilterSelection reads the layered nav selection of a query string with bounds, so a long URL
+// cannot fan out into thousands of term lookups, SQL conditions or widget links: the filter_<attr>
+// keys are taken in sorted order (at most gooMaxFilterKeys), each comma list is trimmed and
+// deduplicated, and at most gooMaxFilterSlugs slugs are kept over all keys. An overlong slug can be no
+// term, so it becomes "". keepEmpty keeps one "" per key, which the product query treats as an unknown
+// term (no match); the widgets drop it.
+func gooFilterSelection(v url.Values, keepEmpty bool) []gooFilterSel {
+	var keys []string
+	for key, vals := range v {
+		if strings.HasPrefix(key, "filter_") && len(vals) > 0 && vals[0] != "" {
+			keys = append(keys, key)
+		}
+	}
+	sort.Strings(keys)
+	if len(keys) > gooMaxFilterKeys {
+		keys = keys[:gooMaxFilterKeys]
+	}
+	var out []gooFilterSel
+	budget := gooMaxFilterSlugs
+	for _, key := range keys {
+		var slugs []string
+		seen := map[string]bool{}
+		for _, slug := range strings.Split(v[key][0], ",") {
+			if budget == 0 {
+				break
+			}
+			slug = strings.TrimSpace(slug)
+			if len(slug) > gooMaxFilterSlugLen {
+				slug = ""
+			}
+			if seen[slug] || (slug == "" && !keepEmpty) {
+				continue
+			}
+			seen[slug] = true
+			slugs = append(slugs, slug)
+			budget--
+		}
+		if len(slugs) > 0 {
+			out = append(out, gooFilterSel{Key: key, Slugs: slugs})
+		}
+	}
+	return out
+}
+
 // gooApplyFilters reads min_price, max_price, filter_<attr> + query_type_<attr> and rating_filter.
 func (s *Server) gooApplyFilters(c *gin.Context, q *gooProductQuery) {
 	ctx := c.Request.Context()
@@ -663,15 +721,17 @@ func (s *Server) gooApplyFilters(c *gin.Context, q *gooProductQuery) {
 	if mp := s.gooParseAmount(v.Get("max_price")); mp != nil {
 		q.MaxPrice = mp
 	}
-	for key, vals := range v {
-		if !strings.HasPrefix(key, "filter_") || len(vals) == 0 || vals[0] == "" {
-			continue
-		}
+	// Layered nav filters: the keys are read in a stable order and capped, and each key's comma list is
+	// deduplicated, capped and resolved in one query, so a long URL cannot fan out into thousands of
+	// term lookups and product query conditions.
+	for _, sel := range gooFilterSelection(v, true) {
+		key, slugs := sel.Key, sel.Slugs
 		tax := "pa_" + gooSanitizeKey(strings.TrimPrefix(key, "filter_"))
+		found, _ := s.store.TermIDsBySlugs(ctx, tax, slugs)
 		var ids []int64
-		for _, slug := range strings.Split(vals[0], ",") {
-			if t, err := s.store.TermBySlug(ctx, tax, strings.TrimSpace(slug)); err == nil {
-				ids = append(ids, t.ID)
+		for _, slug := range slugs {
+			if id, ok := found[slug]; ok {
+				ids = append(ids, id)
 			} else {
 				ids = append(ids, -1)
 			}
@@ -1074,7 +1134,15 @@ func (s *Server) gooFilterBase(c *gin.Context) string {
 	return s.gooShopURL(c.Request.Context())
 }
 
-// gooFilterLink is the archive URL with the current query args changed.
+// gooFilterLinkArgs are the query args a filter link carries over besides the layered nav selection,
+// as WC_Widget::get_current_page_url does (plus the Multi Language lang arg).
+var gooFilterLinkArgs = []string{"min_price", "max_price", "orderby", "rating_filter", "s", "post_type", "product_cat", "product_tag", "lang"}
+
+// gooFilterLinkArgLen bounds one carried arg, so a long junk value is not repeated in every widget link.
+const gooFilterLinkArgLen = 256
+
+// gooFilterLink is the archive URL with the current filter args changed. Like WooCommerce it carries
+// only the known filter args and the (bounded) layered nav selection, not arbitrary query args.
 func (s *Server) gooFilterLink(c *gin.Context, set map[string]string) string {
 	base := s.gooFilterBase(c)
 	u, err := url.Parse(base)
@@ -1082,11 +1150,18 @@ func (s *Server) gooFilterLink(c *gin.Context, set map[string]string) string {
 		return base
 	}
 	q := u.Query()
-	for k, vals := range c.Request.URL.Query() {
-		if k == "paged" || k == "add-to-cart" || k == "product-page" {
-			continue
+	cur := c.Request.URL.Query()
+	for _, k := range gooFilterLinkArgs {
+		if v := cur.Get(k); v != "" && len(v) <= gooFilterLinkArgLen {
+			q.Set(k, v)
 		}
-		q[k] = vals
+	}
+	for _, sel := range gooFilterSelection(cur, false) {
+		q.Set(sel.Key, strings.Join(sel.Slugs, ","))
+		qt := "query_type_" + strings.TrimPrefix(sel.Key, "filter_")
+		if strings.EqualFold(cur.Get(qt), "or") {
+			q.Set(qt, "or")
+		}
 	}
 	for k, v := range set {
 		if v == "" {
@@ -1144,10 +1219,14 @@ func (s *Server) gooWidgetLayeredNav(c *gin.Context, attr, title, queryType stri
 	if queryType != "or" {
 		queryType = "and"
 	}
+	// The current selection is bounded like gooApplyFilters, so each term link carries at most
+	// gooMaxFilterSlugs slugs whatever the URL holds.
 	current := map[string]bool{}
-	for _, sl := range strings.Split(c.Query("filter_"+attr), ",") {
-		if sl != "" {
-			current[sl] = true
+	for _, sel := range gooFilterSelection(c.Request.URL.Query(), false) {
+		if sel.Key == "filter_"+attr {
+			for _, sl := range sel.Slugs {
+				current[sl] = true
+			}
 		}
 	}
 	// Product counts within the current archive and the other filters.
@@ -1219,24 +1298,21 @@ func (s *Server) gooWidgetActiveFilters(c *gin.Context, title string) string {
 	ctx := c.Request.Context()
 	v := c.Request.URL.Query()
 	var items []string
-	for _, k := range gooSortedKeysV(v) {
-		if !strings.HasPrefix(k, "filter_") {
-			continue
-		}
+	// Same bounds as gooApplyFilters: sorted, capped keys and deduplicated, capped slugs whose names
+	// are resolved in one query per attribute.
+	for _, sel := range gooFilterSelection(v, false) {
+		k, slugs := sel.Key, sel.Slugs
 		attr := strings.TrimPrefix(k, "filter_")
-		slugs := strings.Split(v.Get(k), ",")
+		terms, _ := s.store.TermsBySlugs(ctx, "pa_"+gooSanitizeKey(attr), slugs)
 		for _, sl := range slugs {
-			if sl == "" {
-				continue
-			}
 			var rest []string
 			for _, o := range slugs {
-				if o != sl && o != "" {
+				if o != sl {
 					rest = append(rest, o)
 				}
 			}
 			name := sl
-			if t, err := s.store.TermBySlug(ctx, "pa_"+attr, sl); err == nil {
+			if t := terms[sl]; t != nil {
 				name = t.Name
 			}
 			items = append(items, `<li class="chosen"><a rel="nofollow" aria-label="Remove filter" href="`+gooEsc(s.gooFilterLink(c, map[string]string{k: strings.Join(rest, ",")}))+`">`+gooEsc(name)+`</a></li>`)

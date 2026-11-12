@@ -685,7 +685,7 @@ func (s *Server) gooOrderPayHTML(c *gin.Context, id int64) string {
 	b.WriteString(`</tfoot></table><div id="payment">`)
 	if o.Total > 0 {
 		b.WriteString(`<ul class="wc_payment_methods payment_methods methods">`)
-		gws := s.gooAvailableGateways(c, nil)
+		gws := s.gooAvailableGatewaysForOrder(c, o)
 		if len(gws) == 0 {
 			b.WriteString(`<li class="woocommerce-notice woocommerce-notice--info woocommerce-info">Sorry, it seems that there are no available payment methods for your location. Please contact us if you require assistance or wish to make alternate arrangements.</li>`)
 		}
@@ -739,7 +739,7 @@ func (s *Server) gooPayPost(c *gin.Context) {
 	}
 	id := c.PostForm("payment_method")
 	var gw *gooGatewayHandle
-	for _, g := range s.gooAvailableGateways(c, nil) {
+	for _, g := range s.gooAvailableGatewaysForOrder(c, o) {
 		if g.ID() == id {
 			gw = g
 		}

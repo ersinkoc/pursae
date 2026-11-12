@@ -333,7 +333,7 @@ func (s *Server) sendNewAdminEmail(c *gin.Context, email string) {
 		"To confirm this change, please click on the following link:\n###ADMIN_URL###\n\n" +
 		"You can safely ignore and delete this email if you do not want to\ntake this action.\n\n" +
 		"This email has been sent to ###EMAIL###\n\nRegards,\nAll at ###SITENAME###\n###SITEURL###\n"
-	body = strings.NewReplacer("###USERNAME###", currentUser(c).Login, "###ADMIN_URL###", s.links(c).HomeURL("/wp-admin/options?adminhash="+hash),
+	body = strings.NewReplacer("###USERNAME###", currentUser(c).Login, "###ADMIN_URL###", s.configuredLinks(c).HomeURL("/wp-admin/options?adminhash="+hash),
 		"###EMAIL###", email, "###SITENAME###", site, "###SITEURL###", s.links(c).HomeURL("/")).Replace(body)
 	s.sendMail(c, mail.Message{Kind: "admin_email_change", To: []string{email}, Subject: "[" + site + "] New Admin Email Address", Body: body})
 }
