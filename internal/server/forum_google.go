@@ -261,8 +261,11 @@ func (s *Server) forumGoogleExchange(ctx context.Context, st *forumOAuthState, c
 	if err != nil {
 		return nil, err
 	}
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	resp.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("token endpoint: %w", err)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("token endpoint: %d", resp.StatusCode)
 	}
@@ -287,8 +290,11 @@ func (s *Server) forumGoogleExchange(ctx context.Context, st *forumOAuthState, c
 	if err != nil {
 		return nil, err
 	}
-	body, _ = io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	body, err = io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	resp.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("userinfo: %w", err)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("userinfo: %d", resp.StatusCode)
 	}
