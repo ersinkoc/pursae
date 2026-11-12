@@ -4,11 +4,25 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"math"
 	"strings"
 	"testing"
 
 	"wpgo/internal/gocdn"
 )
+
+func TestUploadCapsPartAllocationAtObjectSize(t *testing.T) {
+	f := newFake(t)
+	c := pathClient(f)
+	data := []byte("x")
+	multi, err := c.Upload(context.Background(), "small", bytes.NewReader(data), int64(len(data)), gocdn.UploadOptions{Threshold: 1, PartSize: math.MaxInt64})
+	if err != nil || !multi {
+		t.Fatalf("multipart upload: multipart=%t err=%v", multi, err)
+	}
+	if got := f.Object("media", "small"); got == nil || !bytes.Equal(got.Body, data) {
+		t.Fatalf("uploaded object = %+v", got)
+	}
+}
 
 func pattern(n int) []byte {
 	b := make([]byte, n)
