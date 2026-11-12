@@ -1,0 +1,108 @@
+{
+  "slug": "guild-hall",
+  "name": "Guild Hall",
+  "version": "1.0.0",
+  "description": "A dark community hub for gaming clans and player communities, built for Pursae Forum: a sticky header with the forum's Log in and Join links, a neon hero, channel tiles, a live panel of recently active topics and forum stats, and forum views in lime and magenta on deep violet. Chakra Petch and Inter, self-hosted. Ships Pursae Web Builder parts for Hello Pursae and a demo community with members, forums, topics and replies.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae/tree/main/library/themes/guild-hall",
+  "tags": [
+    "Gaming",
+    "Entertainment",
+    "Dark",
+    "Right Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Translation Ready"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "gaming",
+  "style": "Dark gaming community hub, lime and magenta on deep violet",
+  "demo": "demo/demo.json",
+  "web_builder": "web-builder/parts.json",
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "guild-hall-style",
+      "src": "assets/style.css",
+      "deps": [],
+      "media": "all"
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/chakra-petch-700.woff2",
+    "assets/fonts/inter.woff2"
+  ],
+  "palette": [
+    { "name": "Lime", "slug": "primary", "color": "#B6F23A" },
+    { "name": "Magenta", "slug": "secondary", "color": "#E040A0" },
+    { "name": "Deep violet", "slug": "deep", "color": "#1B1035" },
+    { "name": "Text", "slug": "text", "color": "#F4F1FF" },
+    { "name": "Paper", "slug": "paper", "color": "#120A26" },
+    { "name": "Night", "slug": "night", "color": "#0B0618" },
+    { "name": "Muted", "slug": "muted", "color": "#B9B0D9" }
+  ],
+  "supports": {
+    "pursae-forum": true,
+    "title-tag": true,
+    "custom-logo": true,
+    "post-thumbnails": true,
+    "responsive-embeds": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ]
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "guild_hall_forum",
+        "title": "Forum",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "accent",
+            "label": "Accent colour",
+            "type": "color",
+            "default": "#B6F23A",
+            "transport": "postMessage",
+            "css_var": "--pf-accent",
+            "description": "Buttons, links and highlights in the forum and the header."
+          },
+          {
+            "id": "layout",
+            "label": "Forum layout",
+            "type": "select",
+            "default": "sidebar",
+            "transport": "postMessage",
+            "body_class": "gh-layout-{value}",
+            "choices": [
+              { "value": "sidebar", "label": "With a sidebar (stats and recent topics)" },
+              { "value": "full", "label": "Full width" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

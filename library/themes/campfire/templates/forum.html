@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{$side := eq (print (theme_mod . "layout")) "sidebar"}}<div class="cf-container cf-forum{{if $side}} cf-forum--sidebar{{end}}">
+	<div class="cf-forum__main">{{.Post.Content}}</div>
+	{{if $side}}<aside class="cf-forum__side" aria-label="Community">
+		<section class="cf-side-card">
+			<h2 class="cf-side-card__title">The circle</h2>
+			{{forum_stats .}}
+		</section>
+		{{with forum_recent_topics . 5}}<section class="cf-side-card">
+			<h2 class="cf-side-card__title">Recent topics</h2>
+			{{.}}
+		</section>{{end}}
+	</aside>{{end}}
+</div>
+{{template "footer" .}}

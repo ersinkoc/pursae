@@ -1,0 +1,51 @@
+{{define "forum/register"}}<div class="pf" data-view="register">{{template "forum/part-head" .}}
+<section class="pf-card pf-auth" aria-labelledby="pf-register-title">
+{{- if .Extra.sent}}
+<h2 id="pf-register-title">{{.T "Check your inbox"}}</h2>
+{{template "forum/part-notice" .}}
+<p>{{.Tf "We sent a confirmation link to %s. Open it within 48 hours to finish creating your account." .Form.user_email}}</p>
+<p class="pf-help">{{.T "Nothing arrived? Check your spam folder, or send the link again."}}</p>
+<form class="pf-form" method="post" action="{{.Extra.verify}}">
+<input type="hidden" name="forum_action" value="resend" />
+<input type="hidden" name="_wpnonce" value="{{.AuthNonce}}" />
+<input type="hidden" name="user_email" value="{{.Form.user_email}}" />
+<button type="submit" class="pf-button pf-button--ghost">{{.T "Send the link again"}}</button>
+</form>
+<p class="pf-auth-foot"><a href="{{.URLs.Login}}">{{.T "Back to log in"}}</a></p>
+{{- else}}
+<h2 id="pf-register-title">{{.T "Join the conversation"}}</h2>
+<p class="pf-auth-lead">{{.T "Create a free account to start topics and reply."}}</p>
+{{template "forum/part-notice" .}}
+{{template "forum/part-google" .}}
+<form class="pf-form" method="post" action="{{.Extra.action}}">
+<input type="hidden" name="forum_action" value="register" />
+<input type="hidden" name="_wpnonce" value="{{.AuthNonce}}" />
+{{- if .Form.redirect}}<input type="hidden" name="redirect" value="{{.Form.redirect}}" />{{end}}
+{{.Traps}}
+<div class="pf-field">
+<label for="pf-user-login">{{.T "Username"}}</label>
+<input class="pf-input" type="text" id="pf-user-login" name="user_login" value="{{.Form.user_login}}" autocomplete="username" autocapitalize="off" spellcheck="false" required minlength="3" maxlength="60"
+ aria-describedby="pf-user-login-help{{if .Form.err_user_login}} pf-user-login-err{{end}}"{{if .Form.err_user_login}} aria-invalid="true"{{end}} />
+<p class="pf-help" id="pf-user-login-help">{{.T "Shown on your posts. 3 to 60 characters."}}</p>
+{{- if .Form.err_user_login}}<p class="pf-field-error" id="pf-user-login-err">{{.Form.err_user_login}}</p>{{end}}
+</div>
+<div class="pf-field">
+<label for="pf-user-email">{{.T "Email address"}}</label>
+<input class="pf-input" type="email" id="pf-user-email" name="user_email" value="{{.Form.user_email}}" autocomplete="email" required maxlength="100"
+ {{- if .Form.err_user_email}} aria-describedby="pf-user-email-err" aria-invalid="true"{{end}} />
+{{- if .Form.err_user_email}}<p class="pf-field-error" id="pf-user-email-err">{{.Form.err_user_email}}</p>{{end}}
+</div>
+<div class="pf-field">
+<label for="pf-user-pass">{{.T "Password"}}</label>
+<input class="pf-input" type="password" id="pf-user-pass" name="user_pass" autocomplete="new-password" required minlength="8"
+ aria-describedby="pf-user-pass-help{{if .Form.err_user_pass}} pf-user-pass-err{{end}}"{{if .Form.err_user_pass}} aria-invalid="true"{{end}} />
+<p class="pf-help" id="pf-user-pass-help">{{.T "At least 8 characters."}}</p>
+{{- if .Form.err_user_pass}}<p class="pf-field-error" id="pf-user-pass-err">{{.Form.err_user_pass}}</p>{{end}}
+</div>
+{{.Captcha}}
+<button type="submit" class="pf-button pf-button--primary">{{.T "Create account"}}</button>
+</form>
+<p class="pf-auth-foot"><span>{{.T "Already a member?"}} <a href="{{.URLs.Login}}">{{.T "Log in"}}</a></span></p>
+{{- end}}
+</section>
+</div>{{end}}

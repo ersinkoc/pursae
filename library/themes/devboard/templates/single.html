@@ -1,0 +1,20 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} db-container db-entry">
+	<header class="entry-header">
+		<h1 class="entry-title">{{.Title}}</h1>
+		{{if eq .Type "post"}}<p class="entry-meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; <a href="{{$.Post.AuthorURL}}" rel="author">{{.}}</a>{{end}}</p>{{end}}
+	</header>
+	{{with .Thumbnail}}<figure class="post-thumbnail">{{.}}</figure>{{end}}
+	<div class="entry-content">{{.Content}}</div>
+	{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+<div class="db-container db-entry-after">
+	{{.PostNav}}
+	{{with .Comments}}<section id="comments" class="comments-area" aria-label="Comments">
+		{{if .Count}}<h2 class="comments-title">{{.Title}}</h2>
+		<ol class="comment-list">{{.List}}</ol>
+		{{if not .Open}}<p class="no-comments">Comments are closed.</p>{{end}}{{end}}
+		{{.Form}}
+	</section>{{end}}
+</div>
+{{template "footer" .}}

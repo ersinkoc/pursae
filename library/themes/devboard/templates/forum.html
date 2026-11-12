@@ -1,0 +1,6 @@
+{{template "header" .}}
+{{$side := eq (print (theme_mod . "layout")) "sidebar"}}<div class="db-container db-forum{{if $side}} db-forum--sidebar{{end}}">
+	<div class="db-forum__main">{{.Post.Content}}</div>
+	{{if $side}}{{template "sidebar" .}}{{end}}
+</div>
+{{template "footer" .}}

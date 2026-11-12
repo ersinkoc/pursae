@@ -212,6 +212,9 @@ func (s *Server) pllTranslationURL(c *gin.Context, q *siteQuery, l *pllLanguage)
 	if u, has, ok := s.gooPllTranslationURL(c, q, l); ok { // Goocommerce store views (goo_golylang.go)
 		return u, has
 	}
+	if u, has, ok := s.forumPllTranslationURL(c, q, l); ok { // Pursae Forum views: the same forum path in l (forum_urls.go)
+		return u, has
+	}
 	switch {
 	case q.Kind == "front-page" || (q.Kind == "home" && q.PostsPage == nil):
 		return s.pllHomeURL(ctx, l), true

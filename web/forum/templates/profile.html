@@ -1,0 +1,86 @@
+{{define "forum/profile"}}<div class="pf alignwide" data-view="profile">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+{{- $p := .}}
+{{- with .Profile}}
+<section class="pf-card pf-profile">
+<div class="pf-profile-avatar">{{forum_avatar . 112}}</div>
+<div class="pf-profile-main">
+<h2 class="pf-profile-name">{{.DisplayName}}
+{{- if .Moderator}} <span class="pf-badge pf-badge--mod">{{$p.T "Moderator"}}</span>{{end}}
+{{- if .Blocked}} <span class="pf-badge pf-badge--blocked">{{$p.T "Blocked"}}</span>{{end}}</h2>
+<p class="pf-profile-handle">@{{.Nicename}}</p>
+{{- with index $p.Extra "bio"}}<p class="pf-profile-bio">{{.}}</p>{{end}}
+{{- with .Level}}
+<div class="pf-profile-level">
+<div class="pf-profile-level-head">{{$p.LevelChip .}}<span class="pf-profile-points">{{$p.Count $.Profile.Points "%s point" "%s points"}}</span></div>
+{{- with $.Profile.NextLevel}}
+<div class="pf-level-progress" style="{{$p.ProgressStyle $.Profile.Progress}}" role="progressbar" aria-valuenow="{{$.Profile.Progress}}" aria-valuemin="0" aria-valuemax="100" aria-label="{{$p.Tf "Progress to %s" ($p.LevelName .)}}"><span class="pf-level-progress__bar"></span></div>
+<p class="pf-level-next">{{$p.Tf "%1$s points to %2$s" ($p.PointsToNext $.Profile) ($p.LevelName .)}}</p>
+{{- else}}
+<p class="pf-level-next">{{$p.T "Highest level reached."}}</p>
+{{- end}}
+</div>
+{{- end}}
+<dl class="pf-stats pf-profile-stats">
+<div><dt>{{$p.T "Topics"}}</dt><dd>{{num $p.ProfileStats.Topics}}</dd></div>
+<div><dt>{{$p.T "Replies"}}</dt><dd>{{num $p.ProfileStats.Replies}}</dd></div>
+{{- if .Stats}}<div><dt>{{$p.T "Points"}}</dt><dd>{{num .Points}}</dd></div>{{end}}
+<div class="pf-stat--text"><dt>{{$p.T "Member since"}}</dt><dd><time datetime="{{forum_iso $p.ProfileStats.Registered}}">{{date $p.ProfileStats.Registered ""}}</time></dd></div>
+{{- if not .LastActive.IsZero}}<div class="pf-stat--text"><dt>{{$p.T "Last active"}}</dt><dd><time datetime="{{forum_iso .LastActive}}" title="{{forum_date .LastActive}}">{{$p.Ago .LastActive}}</time></dd></div>{{end}}
+</dl>
+{{- if and (index $p.Extra "can_block") $p.Nonce}}
+<form class="pf-form pf-form--inline pf-profile-mod" method="post" action="{{index $p.Extra "action"}}">
+<input type="hidden" name="_wpnonce" value="{{$p.Nonce}}" />
+{{- if .Blocked}}<input type="hidden" name="forum_action" value="unblock" /><button type="submit" class="pf-button pf-button--ghost">{{$p.T "Unblock member"}}</button>
+{{- else}}<input type="hidden" name="forum_action" value="block" /><button type="submit" class="pf-button pf-button--ghost pf-button--danger">{{$p.T "Block member"}}</button>{{end}}
+</form>
+{{- end}}
+</div>
+</section>
+{{- if or .Badges (index $p.Extra "badge_admin")}}
+<section class="pf-card pf-profile-badges" aria-labelledby="pf-badges-title">
+<h2 class="pf-card-title" id="pf-badges-title">{{$p.T "Badges"}}{{with .Badges}} <span class="pf-card-count">{{len .}}</span>{{end}}</h2>
+{{- with .Badges}}
+<ul class="pf-badge-list">
+{{- range .}}{{$t := $p.BadgeText .}}
+<li class="pf-badge-item pf-badge--{{.ID}}" style="{{$p.ChipStyle .Color}}"><span class="pf-badge-item__icon" aria-hidden="true">{{$p.BadgeIcon . 22}}</span>
+<span class="pf-badge-item__text"><span class="pf-badge-item__name">{{index $t 0}}</span>{{with index $t 1}}<span class="pf-badge-item__desc">{{.}}</span>{{end}}</span></li>
+{{- end}}
+</ul>
+{{- else}}
+<p class="pf-empty">{{$p.T "No badges yet."}}</p>
+{{- end}}
+{{- if and (index $p.Extra "badge_admin") $p.Nonce}}
+<div class="pf-badge-admin">
+{{- with index $p.Extra "award"}}
+<form class="pf-form pf-form--inline" method="post" action="{{index $p.Extra "action"}}">
+<input type="hidden" name="forum_action" value="badge_award" />
+<input type="hidden" name="_wpnonce" value="{{$p.Nonce}}" />
+<label class="pf-sr" for="pf-award-badge">{{$p.T "Badge"}}</label>
+<select class="pf-input pf-select" id="pf-award-badge" name="badge">{{range .}}<option value="{{.Badge.ID}}">{{.Name}}</option>{{end}}</select>
+<button type="submit" class="pf-button pf-button--small">{{$p.T "Award badge"}}</button>
+</form>
+{{- end}}
+{{- with index $p.Extra "revoke"}}
+<form class="pf-form pf-form--inline pf-badge-revoke" method="post" action="{{index $p.Extra "action"}}">
+<input type="hidden" name="forum_action" value="badge_revoke" />
+<input type="hidden" name="_wpnonce" value="{{$p.Nonce}}" />
+<span class="pf-help">{{$p.T "Awarded by hand:"}}</span>
+{{- range .}}<button type="submit" name="badge" value="{{.Badge.ID}}" class="pf-button pf-button--small pf-button--ghost pf-button--danger" aria-label="{{$p.Tf "Revoke %s" .Name}}">{{.Name}} &times;</button>{{end}}
+</form>
+{{- end}}
+</div>
+{{- end}}
+</section>
+{{- end}}
+<section class="pf-activity" aria-labelledby="pf-activity-title">
+<h2 class="pf-section-title" id="pf-activity-title">{{$p.T "Recent activity"}}</h2>
+{{- with index $p.Extra "hits"}}
+<ul class="pf-results">{{range .}}{{template "forum/part-hit" (dict "P" $p "H" .)}}{{end}}</ul>
+{{template "forum/part-pagination" $p}}
+{{- else}}
+<p class="pf-empty">{{$p.T "No posts yet."}}</p>
+{{- end}}
+</section>
+{{- end}}
+</div>{{end}}

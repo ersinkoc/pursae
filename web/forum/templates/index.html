@@ -1,0 +1,28 @@
+{{define "forum/index"}}<div class="pf alignwide" data-view="index">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+<div class="pf-toolbar">{{template "forum/part-search-form" .}}
+{{- with .Extra.members_url}}<a class="pf-button pf-button--ghost pf-toolbar-link" href="{{.}}">{{forum_icon "users" 18}}<span>{{$.T "Members"}}</span></a>{{end}}</div>
+{{- $p := .}}
+{{- with .Groups}}
+<div class="pf-forums">
+{{- range .}}
+<section class="pf-category{{if not .Category}} pf-category--loose{{end}}"{{if .Category}} aria-labelledby="pf-cat-{{.Category.ID}}"{{end}}>
+{{- if .Category}}<header class="pf-category-head">
+<h2 class="pf-category-title" id="pf-cat-{{.Category.ID}}"><a href="{{.Category.URL}}">{{.Category.Title}}</a></h2>
+{{- if .Category.Description}}<div class="pf-category-desc">{{.Category.Description}}</div>{{end}}
+</header>{{end}}
+{{- if .Forums}}<ul class="pf-forum-list">{{range .Forums}}{{template "forum/part-forum-row" (dict "P" $p "F" .)}}{{end}}</ul>
+{{- else}}<p class="pf-empty">{{$p.T "No forums in this category yet."}}</p>{{end}}
+</section>
+{{- end}}
+</div>
+{{- else}}
+<p class="pf-empty">{{.T "There are no forums yet."}}</p>
+{{- end}}
+{{- with .Topics}}
+<section class="pf-latest" aria-labelledby="pf-latest-title">
+<h2 class="pf-section-title" id="pf-latest-title">{{$p.T "Latest topics"}}</h2>
+<ul class="pf-topics">{{range .}}{{template "forum/part-topic-row" (dict "P" $p "T" . "ShowForum" true)}}{{end}}</ul>
+</section>
+{{- end}}
+</div>{{end}}

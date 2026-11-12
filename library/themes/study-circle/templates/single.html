@@ -1,0 +1,20 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} sc-entry">
+	<header class="sc-wrap sc-narrow sc-entry__head">
+		<p class="sc-meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; {{.}}{{end}}</p>
+		<h1 class="sc-entry__title">{{.Title}}</h1>
+	</header>
+	{{if .ThumbnailURL}}<figure class="sc-wrap sc-narrow sc-entry__media">{{.Thumbnail}}</figure>{{end}}
+	<div class="sc-wrap sc-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="sc-wrap sc-narrow sc-entry__foot">{{.}}</footer>{{end}}
+</article>{{end}}
+{{with .PostNav}}<div class="sc-wrap sc-narrow sc-postnav">{{.}}</div>{{end}}
+{{with .Comments}}<section id="comments" class="sc-wrap sc-narrow sc-comments comments-area" aria-label="Comments">
+	{{if .Count}}<h2 class="sc-comments__title comments-title">{{.Title}}</h2>
+	{{.Nav}}<ol class="comment-list">{{.List}}</ol>{{.Nav}}{{end}}
+	{{if .ClosedNotice}}<p class="no-comments">Comments are closed.</p>{{end}}
+	{{.Form}}
+</section>{{end}}
+{{template "footer" .}}

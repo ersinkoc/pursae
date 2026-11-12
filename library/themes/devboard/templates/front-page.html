@@ -1,0 +1,17 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} db-front">
+	{{if not $.TitleIsH1}}<h1 class="screen-reader-text">{{.Title}}</h1>{{end}}
+	<div class="entry-content">{{.Content}}</div>
+	{{with .EditLink}}<footer class="entry-footer db-container"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{if forum_on}}<div class="db-container db-forum db-forum--sidebar db-front-board">
+	<section class="db-forum__main db-panel" aria-labelledby="db-front-latest">
+		<header class="db-panel__head">
+			<h2 id="db-front-latest" class="db-panel__title">Latest questions</h2>
+			<a class="pf-button pf-button--ghost" href="{{forum_url . "index"}}">All forums</a>
+		</header>
+		{{with forum_recent_topics . 10}}{{.}}{{else}}<p class="pf-empty">No questions yet. Ask the first one.</p>{{end}}
+	</section>
+	{{template "sidebar" .}}
+</div>{{end}}
+{{template "footer" .}}

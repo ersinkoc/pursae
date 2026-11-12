@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{with .Post}}<div class="gh-front entry-content">
+	{{.Content}}
+</div>{{end}}
+{{if forum_on}}<section class="gh-wrap gh-live" aria-labelledby="gh-live-title">
+	<div class="gh-live__head">
+		<h2 id="gh-live-title" class="gh-live__title">Live in the hall</h2>
+		<a class="gh-btn gh-btn--ghost" href="{{forum_url . "index"}}">All forums</a>
+	</div>
+	<div class="gh-live__grid">
+		<div class="gh-panel"><h3 class="gh-panel__title">Recently active</h3>{{with forum_recent_topics . 6}}{{.}}{{else}}<p class="gh-muted">No topics yet. Start the first one!</p>{{end}}</div>
+		<div class="gh-panel"><h3 class="gh-panel__title">The hall in numbers</h3>{{forum_stats .}}</div>
+	</div>
+</section>{{end}}
+{{template "footer" .}}

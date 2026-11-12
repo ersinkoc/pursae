@@ -1,0 +1,17 @@
+{{template "header" .}}
+<div class="sc-wrap sc-listing">
+	{{if .IsHomeHeader}}<header class="sc-page-head"><h1 class="sc-page-title">{{.PostsPageTitle}}</h1></header>
+	{{else if .ArchiveTitle}}<header class="sc-page-head"><h1 class="sc-page-title">{{.ArchiveTitle}}</h1>{{with .ArchiveDesc}}<div class="sc-page-desc">{{.}}</div>{{end}}</header>
+	{{else if .SearchQuery}}<header class="sc-page-head"><h1 class="sc-page-title">Results for &ldquo;{{.SearchQuery}}&rdquo;</h1></header>{{end}}
+	{{if .Posts}}<div class="sc-cards">
+	{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} sc-card">
+		{{if .ThumbnailURL}}<a class="sc-card__media" href="{{.Permalink}}" tabindex="-1" aria-hidden="true">{{.Thumbnail}}</a>{{end}}
+		<p class="sc-meta"><time datetime="{{.DateISO}}">{{.DateText}}</time></p>
+		<h2 class="sc-card__title"><a href="{{.Permalink}}">{{.Title}}</a></h2>
+		<div class="sc-card__excerpt">{{.Excerpt}}</div>
+	</article>
+	{{end}}</div>
+	{{.Pagination}}
+	{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

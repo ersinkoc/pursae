@@ -1,0 +1,16 @@
+{{define "forum/shortcode-index"}}<div class="pf pf--embed" data-view="shortcode-index">
+{{- $p := .}}
+{{- with .Groups}}
+<div class="pf-forums">
+{{- range .}}
+<section class="pf-category{{if not .Category}} pf-category--loose{{end}}">
+{{- if .Category}}<header class="pf-category-head"><h2 class="pf-category-title"><a href="{{.Category.URL}}">{{.Category.Title}}</a></h2></header>{{end}}
+{{- if .Forums}}<ul class="pf-forum-list">{{range .Forums}}{{template "forum/part-forum-row" (dict "P" $p "F" .)}}{{end}}</ul>{{end}}
+</section>
+{{- end}}
+</div>
+{{- else}}
+<p class="pf-empty">{{.T "There are no forums yet."}}</p>
+{{- end}}
+<p class="pf-embed-more"><a href="{{.URLs.Index}}">{{.T "Visit the forums"}} &rarr;</a></p>
+</div>{{end}}

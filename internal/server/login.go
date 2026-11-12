@@ -239,7 +239,8 @@ func (s *Server) logout(c *gin.Context) {
 		_ = s.auth.Destroy(c, sess.Token)
 	}
 	http.SetCookie(c.Writer, &http.Cookie{Name: auth.CookieName, Value: "", Path: "/", MaxAge: -1, HttpOnly: true})
-	c.Redirect(http.StatusFound, s.loginPath()+"?loggedout=true")
+	// wp-login.php?action=logout honours a local redirect_to (Pursae Forum's Log out link goes back to the forum).
+	c.Redirect(http.StatusFound, safeRedirect(c.Query("redirect_to"), s.loginPath()+"?loggedout=true"))
 }
 
 // coreBeginAttempt is auth.BeginAttempt keyed by the account (its lowercased login) when the typed

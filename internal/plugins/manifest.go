@@ -134,7 +134,7 @@ var reservedSlugs = map[string]bool{
 	"wp-site-health": true, "wp-block-editor": true, "wp-abilities": true, "oembed": true, "batch": true,
 	"pursae": true, "wpgo": true, "wc": true, "wc-admin": true, "wc-analytics": true, "wc-store": true, "wc-telemetry": true,
 	"pll": true, "contact-form-7": true, "web-builder": true, "elementor": true, "gooike": true, "headlessgo": true,
-	"pixelgo": true, "seogo": true, "rankmath": true, "yoast": true,
+	"pixelgo": true, "seogo": true, "rankmath": true, "yoast": true, "pursae-forum": true, "forum": true,
 }
 
 // ReservedSlug reports whether slug is reserved for the core and the built-in plugins.

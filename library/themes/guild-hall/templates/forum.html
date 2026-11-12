@@ -1,0 +1,13 @@
+{{/* Full-page wrapper of Pursae Forum views (the synthetic page carries _wp_page_template "forum").
+     The forum body prints its own title, crumbs and actions; the sidebar follows the Layout setting
+     (Customizer › Forum; it is left out of the page when the layout is full width). */}}
+{{template "header" .}}
+{{$side := ne (print (theme_mod . "layout")) "full"}}<div class="gh-wrap gh-forum{{if $side}} gh-forum--sidebar{{end}}">
+	<div class="gh-forum__main">{{with .Post}}{{.Content}}{{end}}</div>
+	{{if $side}}<aside class="gh-forum__side" aria-label="Community">
+		{{with forum_stats .}}<section class="gh-panel"><h2 class="gh-panel__title">The hall in numbers</h2>{{.}}</section>{{end}}
+		{{with forum_recent_topics . 5}}<section class="gh-panel"><h2 class="gh-panel__title">Recently active</h2>{{.}}</section>{{end}}
+		<section class="gh-panel gh-panel--rules"><h2 class="gh-panel__title">Guild rules</h2><p>Be kind, tag spoilers, post in the right channel.</p></section>
+	</aside>{{end}}
+</div>
+{{template "footer" .}}

@@ -336,7 +336,7 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 	}
 	builderOn := s.wbOn()
 	for _, r := range append(api.routes[:len(api.routes):len(api.routes)], api.acfgoTypeRoutes()...) {
-		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) || s.pixelRESTHidden(r.Namespace) {
+		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.gooikeRESTHidden(r.Namespace) || s.pixelRESTHidden(r.Namespace) || s.forumRESTHidden(r.Namespace) {
 			continue
 		}
 		m := r.re.FindStringSubmatch(route)
@@ -447,7 +447,7 @@ func (api *restAPI) index(c *gin.Context) {
 	nsSet := map[string]bool{}
 	builderOn := s.wbOn()
 	for _, r := range api.routes {
-		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) {
+		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.forumRESTHidden(r.Namespace) {
 			continue
 		}
 		var methods []string

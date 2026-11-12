@@ -1,0 +1,9 @@
+{{template "header" .}}
+<section class="db-container db-entry error-404 not-found">
+	<pre class="db-terminal" aria-hidden="true"><span class="db-terminal__prompt">$</span> curl -sI {{.HomeURL}}&hellip;
+<span class="db-terminal__err">HTTP/1.1 404 Not Found</span></pre>
+	<h1 class="page-title">Nothing at this address</h1>
+	<p>The link may be old or mistyped. Search the site{{if forum_on}}, or <a href="{{forum_url . "index"}}">browse the forums</a>{{end}}.</p>
+	{{template "searchform" .}}
+</section>
+{{template "footer" .}}

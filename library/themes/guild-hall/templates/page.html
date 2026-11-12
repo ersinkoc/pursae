@@ -1,0 +1,11 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} gh-entry">
+	<header class="gh-wrap gh-narrow gh-entry__head">
+		<h1 class="gh-entry__title">{{.Title}}</h1>
+	</header>
+	<div class="gh-wrap gh-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="gh-wrap gh-narrow gh-entry__foot">{{.}}</footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

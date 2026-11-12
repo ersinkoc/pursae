@@ -454,3 +454,33 @@ func TestStoreGate(t *testing.T) {
 		t.Error("product_attr without a rule")
 	}
 }
+
+// A plugin view (Pursae Forum) is a synthetic page: no main template catches it, not even a store
+// type or one aimed at it with include/general; headers, footers and popups still render.
+func TestStoreGatePluginView(t *testing.T) {
+	forum := QueryFacts{View: ViewSingular, PostType: "page", PluginView: "topic"}
+	for _, typ := range []TemplateType{TemplateSinglePage, TemplateSinglePost, TemplateSingle, TemplateFrontPage, TemplateArchive, TemplateSearch, Template404, TemplateSingleProduct, TemplateProductArchive} {
+		if StoreGateOK(typ, forum) {
+			t.Errorf("%s renders on a plugin view", typ)
+		}
+	}
+	for _, typ := range []TemplateType{TemplateHeader, TemplateFooter, TemplatePopup} {
+		if !StoreGateOK(typ, forum) {
+			t.Errorf("%s blocked on a plugin view", typ)
+		}
+	}
+	cands := []TemplateCandidate{
+		{ID: 1, Type: TemplateHeader, Conditions: ParseConditions([]string{"include/general"})},
+		{ID: 2, Type: TemplateSinglePage, Conditions: ParseConditions([]string{"include/general"})},
+		{ID: 3, Type: TemplateFooter, Conditions: ParseConditions([]string{"include/general"})},
+	}
+	if PickTemplate(LocationMain, cands, forum) != -1 {
+		t.Error("main template picked on a plugin view")
+	}
+	if i := PickTemplate(LocationHeader, cands, forum); i < 0 || cands[i].ID != 1 {
+		t.Error("header not picked on a plugin view")
+	}
+	if i := PickTemplate(LocationFooter, cands, forum); i < 0 || cands[i].ID != 3 {
+		t.Error("footer not picked on a plugin view")
+	}
+}

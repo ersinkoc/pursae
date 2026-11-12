@@ -32,6 +32,29 @@ interface Spec {
   notFound: { title: string; body: string }
   about: { title: string; body: string; points: [string, string, string][] }
   contact: { title: string; body: string }
+  // Optional, for themes that are not shops (the forum themes); a store spec leaves them out.
+  dark?: boolean // every band uses the dark palette (light text on paper / cream)
+  band?: string // call-to-action background (default: ink)
+  links?: Links // buttons and links (default: the shop's)
+  css?: string // header custom CSS (forum tokens): printed on every page that uses the header
+  slugs?: { about: string; contact: string } // page slugs (default: about, contact)
+}
+
+interface Links {
+  button: [string, string] // header button: label, href
+  bannerLink?: [string, string] // announcement link: label, href
+  hero: [string, string] // hero buttons: primary href, secondary href
+  story: string
+  cta: [string, string]
+  notFound: { title: string; body: string; primary: string; primaryHref: string; secondary: string; secondaryHref: string }
+}
+
+const SHOP_LINKS: Links = {
+  button: ['Shop', '/shop/'],
+  hero: ['/shop/', '/about/'],
+  story: '/about/',
+  cta: ['/shop/', '/shop/'],
+  notFound: { title: 'Keep exploring', body: 'The shop is only a click away.', primary: 'Go to the shop', primaryHref: '/shop/', secondary: 'Back to the home page', secondaryHref: '/' },
 }
 
 const SPECS: Spec[] = [
@@ -83,6 +106,69 @@ const SPECS: Spec[] = [
     about: { title: 'Our greenhouse', body: 'We grow most of what we sell ourselves, and the rest comes from growers we have known for years.', points: [['Grown locally', 'Acclimatised to indoor life before they ship.', 'leaf'], ['Shared know-how', 'Care cards in every box.', 'book'], ['Low waste', 'Reused pots and recycled packaging.', 'recycle']] },
     contact: { title: 'Ask a grower', body: 'Yellow leaves? Not sure which pot? Write to us and a grower will answer.' },
   },
+  // Pursae Forum themes: the header, hero and tiles link the forum (demo forum slugs in demo/demo.json),
+  // the two pages are the guidelines and About, and the header CSS sets the forum's --pf-* tokens.
+  {
+    slug: 'guild-hall',
+    site: { brand: '#C93591', fontPair: 'modern', corners: 'soft', headingFont: 'Chakra Petch', headingWeight: 700, bodyFont: 'Inter', bodyWeight: 400 },
+    paper: '#120A26', cream: '#1B1035', deep: '#0B0618', ink: '#F4F1FF', dark: true, band: '#2B1757',
+    banner: 'New recruits welcome · read the guild rules, then say hi in Introductions',
+    hero: { eyebrow: 'Guild Hall community', title: 'Find your squad.', accent: 'Play better together.', body: 'Looking-for-group posts, builds and guides, clip reviews and a tavern for everything else. Run by players, for players.', primary: 'Join the guild', secondary: 'Browse the forums' },
+    perks: { eyebrow: 'Why players stay', title: 'A community that has your back.', body: 'No pay-to-win, no toxicity, no threads lost in a chat scroll.', items: [['Real squads', 'Post your rank, role and schedule, and find people who play like you.', 'users'], ['Guides that last', 'Builds and strategies kept current by the players who run them.', 'book'], ['Fair moderation', 'Clear rules, active moderators and zero tolerance for harassment.', 'shield'], ['Free forever', 'Free to join, and no ads between the posts.', 'heart']] },
+    cats: { eyebrow: 'Pick a channel', title: 'Where do you want to drop in?', items: [['Looking for Group', 'Teammates for ranked, raids and co-op nights.', '/forums/f/looking-for-group/'], ['Guides and Builds', 'Loadouts, tier lists and walkthroughs.', '/forums/f/guides-and-builds/'], ['Clips and Highlights', 'Your best plays and your finest fails.', '/forums/f/clips-and-highlights/'], ['Off-Topic Tavern', 'Music, memes and everything else.', '/forums/f/off-topic-tavern/']] },
+    story: { eyebrow: 'Guild rules', title: 'Good games start with good people.', body: 'Be kind, tag your spoilers, post in the right channel. A few short rules keep the hall friendly for new players and veterans alike.', link: 'Read the guild rules' },
+    quote: { quote: 'Posted in Looking for Group on a Tuesday, had a full raid team by Friday. Six months later we still play every week.', author: 'Nyx', role: 'Raid leader, member since season 3' },
+    cta: { title: 'Your squad is waiting.', body: 'Create a free account in a minute and post your first LFG tonight.', primary: 'Join the guild', secondary: 'Browse the forums' },
+    footerNote: '© Guild Hall · A community for players, run by players',
+    notFound: { title: 'You fell off the map', body: 'This page does not exist, or it moved to a new zone.' },
+    about: { title: 'Guild rules', body: 'A few short rules keep the hall a good place to hang out. Moderators apply them fairly and in the open.', points: [['Be kind', 'Criticise plays, never people. No slurs, no harassment, no dogpiling.', 'heart'], ['Tag spoilers', 'Story beats and leaks go behind a spoiler tag, never in a title.', 'shield'], ['Right channel', 'Post where your topic belongs; moderators may move threads that wander.', 'book'], ['No cheats, no trading', 'No cheat links, account sales or real-money trades.', 'lock']] },
+    contact: { title: 'About Guild Hall', body: 'Guild Hall started as a raid group chat and grew into a home for players of every game. Questions, partnership ideas or something a moderator should see? Write to the team.' },
+    links: {
+      button: ['Join', '/forums/register/'],
+      bannerLink: ['Log in', '/forums/login/'],
+      hero: ['/forums/register/', '/forums/'],
+      story: '/guidelines/',
+      cta: ['/forums/register/', '/forums/'],
+      notFound: { title: 'Respawn at the hall', body: 'Every channel is one click away.', primary: 'Open the forums', primaryHref: '/forums/', secondary: 'Back to the home page', secondaryHref: '/' },
+    },
+    slugs: { about: 'guidelines', contact: 'about' },
+    css: [
+      'body.wp-theme-hello-pursae{background:#120A26;color:#F4F1FF}',
+      "body.wp-theme-hello-pursae .site-main .entry-title{color:#F4F1FF;font-family:'Chakra Petch',Inter,system-ui,sans-serif}",
+      "body .pf{--pf-accent:#B6F23A;--pf-accent-ink:#1B1035;--pf-bg:transparent;--pf-surface:#1B1035;--pf-text:#F4F1FF;--pf-muted:#B9B0D9;--pf-border:rgba(244,241,255,.14);--pf-radius:10px;--pf-font:Inter,system-ui,sans-serif;--pf-font-heading:'Chakra Petch',Inter,system-ui,sans-serif;--pf-danger:#FF7A8F;--pf-success:#8BE36A;--pf-warning:#F5C451;--pf-shadow:none}",
+      'body .pf .pf-input,body .pf .pf-textarea,body .pf input[type=text],body .pf input[type=email],body .pf input[type=password],body .pf input[type=search],body .pf input[type=url],body .pf textarea,body .pf select{background:#120A26;color:#F4F1FF;border-color:rgba(244,241,255,.22)}',
+    ].join('\n'),
+  },
+  {
+    slug: 'study-circle',
+    site: { brand: '#0F766E', fontPair: 'plain', corners: 'round', headingFont: 'Lexend', headingWeight: 600, bodyFont: 'Nunito', bodyWeight: 400 },
+    paper: '#FFFFFF', cream: '#F3FAF8', deep: '#12313A', ink: '#12313A',
+    banner: 'Exam season study rooms are open · new members get a study buddy',
+    hero: { eyebrow: 'Study Circle', title: 'Ask, answer,', accent: 'learn together.', body: 'A friendly forum for students and lifelong learners: subject rooms, study tips and exam prep, with tutors and peers who explain things kindly.', primary: 'Join the circle', secondary: 'Browse subjects' },
+    perks: { eyebrow: 'How it works', title: 'Small questions, big progress.', body: 'Post where you are stuck. Someone has been there before.', items: [['Ask anything', 'No question is too basic. Show what you tried and get a clear answer.', 'help'], ['Explain to learn', 'Answering others is the fastest way to master a topic.', 'book'], ['Friendly tutors', 'Volunteer tutors and moderators keep threads helpful and correct.', 'users'], ['Study together', 'Weekly study threads and exam countdowns keep you on track.', 'calendar']] },
+    cats: { eyebrow: 'Subject rooms', title: 'Find your subject.', items: [['Mathematics', 'Algebra to calculus, proofs and practice problems.', '/forums/f/mathematics/'], ['Sciences', 'Biology, chemistry and physics questions.', '/forums/f/sciences/'], ['Languages', 'Grammar help, conversation partners and resources.', '/forums/f/languages/'], ['Writing and Humanities', 'Essays, history and literature.', '/forums/f/writing-and-humanities/'], ['Exam Prep', 'Schedules, past papers and last-week nerves.', '/forums/f/exam-prep/'], ['Study Tips', 'Notes, focus and memory techniques that work.', '/forums/f/study-tips/']] },
+    story: { eyebrow: 'Community guidelines', title: 'A kind place to not know things yet.', body: 'We explain instead of judging, we show our working, and we never post answers to live exams. Read the guidelines before your first post.', link: 'Read the guidelines' },
+    quote: { quote: 'I was failing statistics in October. By June I was the one answering questions in the Mathematics room.', author: 'Lena M.', role: 'Second-year psychology student' },
+    cta: { title: 'Stuck on something tonight?', body: 'Join for free and post your question; most get a helpful answer within the hour.', primary: 'Join the circle', secondary: 'Browse subjects' },
+    footerNote: '© Study Circle · Ask, answer, learn together',
+    notFound: { title: 'This page skipped class', body: 'We could not find it. The subject rooms are a good place to start.' },
+    about: { title: 'Community guidelines', body: 'Study Circle works because everyone follows a few simple guidelines. Moderators and tutors apply them kindly and consistently.', points: [['Show your working', 'Share what you tried so helpers can see where you got stuck.', 'pencil'], ['Explain, do not just answer', 'Good replies teach the method, not only the result.', 'book'], ['Academic honesty', 'No answers to live exams or graded work, no paid essay offers.', 'shield'], ['Be patient and kind', 'Everyone was a beginner once. Assume good intent.', 'heart']] },
+    contact: { title: 'About Study Circle', body: 'Study Circle is run by volunteer tutors, teachers and students. Want to become a tutor, suggest a subject room or report a problem? Send the team a message.' },
+    links: {
+      button: ['Join', '/forums/register/'],
+      bannerLink: ['Log in', '/forums/login/'],
+      hero: ['/forums/register/', '/forums/'],
+      story: '/guidelines/',
+      cta: ['/forums/register/', '/forums/'],
+      notFound: { title: 'Back to studying', body: 'Every subject room is one click away.', primary: 'Open the forums', primaryHref: '/forums/', secondary: 'Back to the home page', secondaryHref: '/' },
+    },
+    slugs: { about: 'guidelines', contact: 'about' },
+    css: [
+      'body.wp-theme-hello-pursae.pursae-forum{background:#F3FAF8}',
+      'body.wp-theme-hello-pursae .site-main .entry-title{color:#12313A;font-family:Lexend,Nunito,system-ui,sans-serif}',
+      'body .pf{--pf-accent:#0F766E;--pf-accent-ink:#FFFFFF;--pf-surface:#FFFFFF;--pf-text:#12313A;--pf-muted:#4F6B73;--pf-border:#D5E7E3;--pf-radius:14px;--pf-font:Nunito,system-ui,sans-serif;--pf-font-heading:Lexend,Nunito,system-ui,sans-serif;--pf-shadow:0 1px 2px rgba(18,49,58,.06),0 8px 24px rgba(18,49,58,.06)}',
+    ].join('\n'),
+  },
 ]
 
 /** Section look: palette light on the theme's paper or cream, headings in the theme's ink colour. */
@@ -99,17 +185,21 @@ function items(s: Section, list: [string, string, string?][], hrefs = false) {
 }
 
 function build(spec: Spec) {
+  const L = spec.links ?? SHOP_LINKS
+  const base: Section['style']['palette'] = spec.dark ? 'dark' : 'light'
+  const band = spec.band ?? spec.ink
   const doc = (sections: Section[]): DocState => ({ site: { ...spec.site }, sections })
   const star = (id: Parameters<typeof starterSections>[0], type?: Parameters<typeof starterSections>[1]) =>
-    starterSections(id, type).map((s) => tone(s, spec.paper, spec.ink))
+    starterSections(id, type).map((s) => tone(s, spec.paper, spec.ink, base))
 
   // Header: an announcement strip and the navigation bound to the Primary Menu.
-  const banner = createSection('banner', { text: spec.banner, link: '' })
+  const banner = createSection('banner', L.bannerLink ? { text: spec.banner, link: L.bannerLink[0], linkHref: L.bannerLink[1] } : { text: spec.banner, link: '' })
   tone(banner, spec.deep, spec.ink, 'dark')
-  const nav = createSection('nav', { menu: 'primary', logoSource: 'site', primary: 'Shop', primaryHref: '/shop/' })
+  const nav = createSection('nav', { menu: 'primary', logoSource: 'site', primary: L.button[0], primaryHref: L.button[1] })
   nav.name = 'Header'
   nav.items = []
-  tone(nav, spec.paper, spec.ink)
+  tone(nav, spec.paper, spec.ink, base)
+  if (spec.css) nav.style.css = spec.css
   const header = doc([banner, nav])
 
   const footer = createSection('footer', { menu: 'footer', logoSource: 'site', note: spec.footerNote })
@@ -119,45 +209,45 @@ function build(spec: Spec) {
   const footerDoc = doc([footer])
 
   // Front page.
-  const hero = createSection('hero', { ...spec.hero, visual: 'image', image: '{{media:hero}}', primaryHref: '/shop/', secondaryHref: '/about/' })
+  const hero = createSection('hero', { ...spec.hero, visual: 'image', image: '{{media:hero}}', primaryHref: L.hero[0], secondaryHref: L.hero[1] })
   hero.items = []
-  tone(hero, spec.cream, spec.ink)
+  tone(hero, spec.cream, spec.ink, base)
   hero.style.padding = 96
   const cats = createSection('features', { eyebrow: spec.cats.eyebrow, title: spec.cats.title, body: '' })
   items(cats, spec.cats.items, true)
-  tone(cats, spec.paper, spec.ink)
+  tone(cats, spec.paper, spec.ink, base)
   const perks = createSection('features', { eyebrow: spec.perks.eyebrow, title: spec.perks.title, body: spec.perks.body })
   items(perks, spec.perks.items)
-  tone(perks, spec.cream, spec.ink)
-  const story = createSection('media', { eyebrow: spec.story.eyebrow, title: spec.story.title, body: spec.story.body, primary: spec.story.link, primaryHref: '/about/', image: '{{media:about}}', imageSide: 'left' })
-  tone(story, spec.paper, spec.ink)
+  tone(perks, spec.cream, spec.ink, base)
+  const story = createSection('media', { eyebrow: spec.story.eyebrow, title: spec.story.title, body: spec.story.body, primary: spec.story.link, primaryHref: L.story, image: '{{media:about}}', imageSide: 'left' })
+  tone(story, spec.paper, spec.ink, base)
   const quote = createSection('quote', spec.quote)
-  tone(quote, spec.cream, spec.ink)
-  const cta = createSection('cta', { ...spec.cta, primaryHref: '/shop/', secondaryHref: '/shop/' })
-  tone(cta, spec.ink, spec.ink, 'brand')
+  tone(quote, spec.cream, spec.ink, base)
+  const cta = createSection('cta', { ...spec.cta, primaryHref: L.cta[0], secondaryHref: L.cta[1] })
+  tone(cta, band, spec.ink, 'brand')
   const front = doc([hero, cats, perks, story, quote, cta])
 
   const notFoundText = createSection('text', spec.notFound)
-  tone(notFoundText, spec.paper, spec.ink)
+  tone(notFoundText, spec.paper, spec.ink, base)
   notFoundText.style.align = 'center'
-  const nfCta = createSection('cta', { title: 'Keep exploring', body: 'The shop is only a click away.', primary: 'Go to the shop', primaryHref: '/shop/', secondary: 'Back to the home page', secondaryHref: '/' })
-  tone(nfCta, spec.ink, spec.ink, 'brand')
+  const nfCta = createSection('cta', { ...L.notFound })
+  tone(nfCta, band, spec.ink, 'brand')
   const notFound = doc([notFoundText, nfCta])
 
   // Pages.
   const aboutHero = createSection('text', { title: spec.about.title, body: spec.about.body })
-  tone(aboutHero, spec.cream, spec.ink)
+  tone(aboutHero, spec.cream, spec.ink, base)
   const aboutPoints = createSection('features', { eyebrow: '', title: '', body: '' })
   items(aboutPoints, spec.about.points)
-  tone(aboutPoints, spec.paper, spec.ink)
+  tone(aboutPoints, spec.paper, spec.ink, base)
   const aboutImg = createSection('media', { eyebrow: '', title: spec.story.title, body: spec.story.body, primary: '', image: '{{media:about}}', imageSide: 'right' })
-  tone(aboutImg, spec.cream, spec.ink)
-  const aboutCta = createSection('cta', { ...spec.cta, primaryHref: '/shop/', secondaryHref: '/shop/' })
-  tone(aboutCta, spec.ink, spec.ink, 'brand')
+  tone(aboutImg, spec.cream, spec.ink, base)
+  const aboutCta = createSection('cta', { ...spec.cta, primaryHref: L.cta[0], secondaryHref: L.cta[1] })
+  tone(aboutCta, band, spec.ink, 'brand')
   const about = doc([aboutHero, aboutPoints, aboutImg, aboutCta])
 
   const contactForm = createSection('form', { eyebrow: 'Contact', title: spec.contact.title, body: spec.contact.body, primary: 'Send message' })
-  tone(contactForm, spec.cream, spec.ink)
+  tone(contactForm, spec.cream, spec.ink, base)
   const contact = doc([contactForm])
 
   const tpl = (key: string, type: string, title: string, conditions: string[], d: DocState, priority = 0) => ({ key, type, title, conditions, priority, doc: d })
@@ -175,8 +265,8 @@ function build(spec: Spec) {
       tpl('error-404', 'error-404', '404 page', ['include/404'], notFound),
     ],
     pages: [
-      { key: 'about', slug: 'about', title: spec.about.title, doc: about, page: { layout: 'site' } },
-      { key: 'contact', slug: 'contact', title: spec.contact.title, doc: contact, page: { layout: 'site' } },
+      { key: 'about', slug: spec.slugs?.about ?? 'about', title: spec.about.title, doc: about, page: { layout: 'site' } },
+      { key: 'contact', slug: spec.slugs?.contact ?? 'contact', title: spec.contact.title, doc: contact, page: { layout: 'site' } },
     ],
   }
 }

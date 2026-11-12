@@ -1,0 +1,20 @@
+{{define "forum/forum"}}<div class="pf alignwide" data-view="forum">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+{{- $p := .}}
+{{- with .Forum}}
+{{- if .Description}}<div class="pf-intro">{{.Description}}</div>{{end}}
+{{- if eq .Kind "category"}}
+{{- if .Children}}<div class="pf-forums"><section class="pf-category pf-category--loose"><ul class="pf-forum-list">{{range .Children}}{{template "forum/part-forum-row" (dict "P" $p "F" .)}}{{end}}</ul></section></div>
+{{- else}}<p class="pf-empty">{{$p.T "No forums in this category yet."}}</p>{{end}}
+{{- else}}
+{{- if .Closed}}<div class="pf-notice pf-notice--info">{{$p.T "This forum is closed to new topics."}}</div>{{end}}
+{{- if $p.Topics}}
+<ul class="pf-topics">{{range $p.Topics}}{{template "forum/part-topic-row" (dict "P" $p "T" . "ShowForum" false)}}{{end}}</ul>
+{{template "forum/part-pagination" $p}}
+{{- else}}
+<div class="pf-empty pf-card"><p>{{$p.T "No topics yet. Start the first one!"}}</p></div>
+{{- end}}
+{{- if not $p.User}}{{template "forum/part-join" $p}}{{else if and (not $p.CanPost) (not .Closed)}}{{template "forum/part-join" $p}}{{end}}
+{{- end}}
+{{- end}}
+</div>{{end}}

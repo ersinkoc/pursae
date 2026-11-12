@@ -1,0 +1,8 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} db-container db-entry">
+	<header class="entry-header"><h1 class="entry-title">{{.Title}}</h1></header>
+	{{with .Thumbnail}}<figure class="post-thumbnail">{{.}}</figure>{{end}}
+	<div class="entry-content">{{.Content}}</div>
+	{{with .EditLink}}<footer class="entry-footer"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

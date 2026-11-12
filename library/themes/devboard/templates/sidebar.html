@@ -1,0 +1,19 @@
+<aside class="db-side" aria-label="Board">
+	<section class="db-side-card">
+		<h2 class="db-side-card__title">Board stats</h2>
+		{{forum_stats .}}
+	</section>
+	{{if forum_is_view .}}{{with forum_recent_topics . 6}}<section class="db-side-card">
+		<h2 class="db-side-card__title">Recently active</h2>
+		{{.}}
+	</section>{{end}}{{end}}
+	<section class="db-side-card db-side-card--tip">
+		<h2 class="db-side-card__title">Asking well</h2>
+		<ul class="db-tips">
+			<li>Search before you post.</li>
+			<li>Paste a minimal example in a code block.</li>
+			<li>Include the exact error and versions.</li>
+			<li>Reply with what fixed it.</li>
+		</ul>
+	</section>
+</aside>

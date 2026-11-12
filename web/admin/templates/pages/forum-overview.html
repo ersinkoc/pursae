@@ -1,0 +1,108 @@
+{{define "forum-admin-overview"}}{{$d := .}}{{with .Overview}}
+<p class="pf-admin-sub">How your community is doing: totals, the last 30 days, the most active members and the newest posts.</p>
+
+<div class="pf-admin-stats">
+{{range $d.Cards}}{{if .URL}}<a class="pf-admin-stat pf-admin-stat--{{.Key}}" href="{{.URL}}">{{else}}<div class="pf-admin-stat pf-admin-stat--{{.Key}}">{{end}}
+	<span class="pf-admin-stat__icon" aria-hidden="true">{{forum_icon .Icon 20}}</span>
+	<span class="pf-admin-stat__body">
+		<span class="pf-admin-stat__label">{{.Label}}</span>
+		<span class="pf-admin-stat__value">{{.Value}}</span>
+		<span class="pf-admin-stat__sub">{{.Sub}}</span>
+	</span>
+{{if .URL}}</a>{{else}}</div>{{end}}
+{{end}}</div>
+
+<div class="pf-admin-queue{{if or .Pending .Spam}} has-items{{end}}">
+	<span class="pf-admin-queue__title">Moderation queue</span>
+	{{if or .Pending .Spam}}
+	<a class="pf-admin-queue__item is-pending{{if not .Pending}} is-zero{{end}}" href="/wp-admin/forum?tab=moderation&amp;view=pending"><strong>{{.Pending}}</strong> <span>waiting for approval</span></a>
+	<a class="pf-admin-queue__item is-spam{{if not .Spam}} is-zero{{end}}" href="/wp-admin/forum?tab=moderation&amp;view=spam"><strong>{{.Spam}}</strong> <span>marked as spam</span></a>
+	{{else}}
+	<span class="pf-admin-queue__clear">{{forum_icon "check" 16}}<span>Nothing is waiting for a moderator.</span></span>
+	{{end}}
+</div>
+
+<div class="pf-admin-dash">
+<div class="pf-admin-dash__main">
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">Last 30 days</h2></div>
+		<div class="inside">
+			<div class="pf-admin-chart__top">
+				<ul class="pf-admin-chart__totals">
+					<li class="is-members"><strong>{{.NewMembers}}</strong> <span>new members</span></li>
+					<li class="is-topics"><strong>{{.NewTopics}}</strong> <span>topics</span></li>
+					<li class="is-replies"><strong>{{.NewReplies}}</strong> <span>replies</span></li>
+				</ul>
+			</div>
+			<figure class="pf-admin-chart{{if $d.Quiet}} is-quiet{{end}}">
+				<div class="pf-admin-chart__plot" role="img" aria-label="{{$d.ChartSum}}">
+					<div class="pf-admin-chart__grid" aria-hidden="true">
+						<span class="pf-admin-chart__line" style="bottom:100%"><span>{{$d.ChartMax}}</span></span>
+						{{if $d.ChartMid}}<span class="pf-admin-chart__line" style="bottom:50%"><span>{{$d.ChartMid}}</span></span>{{end}}
+						<span class="pf-admin-chart__line is-base" style="bottom:0"><span>0</span></span>
+					</div>
+					<ol class="pf-admin-chart__days">
+					{{range $d.Chart}}<li class="pf-admin-chart__day{{if .Today}} is-today{{end}}" title="{{.Title}}">
+						<span class="pf-admin-chart__bar is-members" style="height:{{.MembersPct}}%"></span>
+						<span class="pf-admin-chart__stack"><span class="pf-admin-chart__bar is-topics" style="height:{{.TopicsPct}}%"></span><span class="pf-admin-chart__bar is-replies" style="height:{{.RepliesPct}}%"></span></span>
+					</li>{{end}}
+					</ol>
+					{{if $d.Quiet}}<p class="pf-admin-chart__empty">No new members or posts in the last 30 days.</p>{{end}}
+				</div>
+				<ol class="pf-admin-chart__axis" aria-hidden="true">{{range $d.Chart}}<li>{{if .Tick}}<span>{{.Label}}</span>{{end}}</li>{{end}}</ol>
+			</figure>
+		</div>
+	</div>
+
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">Recent activity</h2></div>
+		<div class="inside">
+		{{if $d.Activity}}<ul class="pf-admin-activity">
+		{{range $d.Activity}}<li>
+			{{forum_avatar .Author 36}}
+			<div class="pf-admin-activity__body">
+				<p class="pf-admin-activity__head"><span class="pf-admin-pill{{if .IsTopic}} is-topic{{end}}">{{if .IsTopic}}Topic{{else}}Reply{{end}}</span> <a href="{{.URL}}" translate="no">{{.Title}}</a></p>
+				{{if .Excerpt}}<p class="pf-admin-activity__excerpt" translate="no">{{.Excerpt}}</p>{{end}}
+				<p class="pf-admin-activity__meta">{{with .Author}}<span translate="no">{{.DisplayName}}</span>{{else}}<span>Deleted user</span>{{end}} <span aria-hidden="true">&middot;</span> <time datetime="{{.ISO}}">{{.Ago}}</time></p>
+			</div>
+		</li>{{end}}
+		</ul>{{else}}<p class="pf-admin-empty">No topics or replies yet.</p>{{end}}
+		</div>
+	</div>
+</div>
+
+<div class="pf-admin-dash__side">
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">Top contributors</h2></div>
+		<div class="inside">
+		{{if $d.Top}}<ol class="pf-admin-top">
+		{{range $d.Top}}<li>
+			<span class="pf-admin-top__rank{{if le .Rank 3}} is-podium{{end}}">{{.Rank}}</span>
+			{{forum_avatar .Author 32}}
+			<span class="pf-admin-top__who">
+				<a class="pf-admin-top__name" href="/wp-admin/forum?tab=members&amp;action=member&amp;user={{.ID}}" translate="no">{{.DisplayName}}</a>
+				<span class="pf-admin-top__level">{{forum_level .Level}}</span>
+			</span>
+			<span class="pf-admin-top__pts"><strong>{{.Points}}</strong> <span>points</span></span>
+		</li>{{end}}
+		</ol>{{else}}<p class="pf-admin-empty">Nobody has posted yet.</p>{{end}}
+		{{if $d.Top}}<p class="pf-admin-box__more"><a href="/wp-admin/forum?tab=members&amp;orderby=points&amp;order=desc">All members by points</a></p>{{end}}
+		</div>
+	</div>
+
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">At a glance</h2></div>
+		<div class="inside">
+			<ul class="pf-admin-glance">
+				<li><span>Topics waiting for approval</span> <a href="/wp-admin/forum?tab=moderation&amp;view=pending">{{.PendingTopics}}</a></li>
+				<li><span>Replies waiting for approval</span> <a href="/wp-admin/forum?tab=moderation&amp;view=pending">{{.PendingReplies}}</a></li>
+				<li><span>Spam topics</span> <a href="/wp-admin/forum?tab=moderation&amp;view=spam">{{.SpamTopics}}</a></li>
+				<li><span>Spam replies</span> <a href="/wp-admin/forum?tab=moderation&amp;view=spam">{{.SpamReplies}}</a></li>
+				<li><span>Categories</span> <strong>{{.Categories}}</strong></li>
+			</ul>
+			<p class="pf-admin-box__more"><a href="{{$d.IndexURL}}">View the forum</a></p>
+		</div>
+	</div>
+</div>
+</div>
+{{end}}{{end}}

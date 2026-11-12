@@ -52,19 +52,33 @@ func Can(userID int64, g Grants, cap string, post Post) bool {
 // types that are site configuration rather than content, such as Theme Builder templates
 // (edit_theme_options), so screens that only check edit_post cannot be used to change them.
 // Filled once at start-up by RegisterTypeCap; read-only afterwards.
-var typeCaps = map[string]string{}
+var typeCaps = map[string]typeCap{}
+
+// typeCap is a registered type capability; on (when set) says whether it applies right now (a
+// plugin's types follow the core rules while the plugin is off).
+type typeCap struct {
+	cap string
+	on  func() bool
+}
 
 // RegisterTypeCap makes every post meta capability on posts of postType require cap.
 // Call it during package initialisation only.
-func RegisterTypeCap(postType, cap string) { typeCaps[postType] = cap }
+func RegisterTypeCap(postType, cap string) { typeCaps[postType] = typeCap{cap: cap} }
+
+// RegisterTypeCapWhen is RegisterTypeCap that applies only while on() reports true (a native
+// plugin's post types, which must not change who can edit a same-named type while it is off).
+// Call it during package initialisation only.
+func RegisterTypeCapWhen(postType, cap string, on func() bool) {
+	typeCaps[postType] = typeCap{cap: cap, on: on}
+}
 
 // MapMetaCap returns the primitive capabilities required for cap, like WordPress' map_meta_cap().
 func MapMetaCap(userID int64, cap string, post Post) []string {
 	if post != nil {
-		if tc, ok := typeCaps[post.PostType()]; ok {
+		if tc, ok := typeCaps[post.PostType()]; ok && (tc.on == nil || tc.on()) {
 			switch cap {
 			case "edit_post", "edit_page", "delete_post", "delete_page", "publish_post", "read_post", "read_page":
-				return []string{tc}
+				return []string{tc.cap}
 			}
 		}
 	}

@@ -1,0 +1,154 @@
+{{define "forum-admin-badges"}}{{$d := .}}
+<p class="pf-admin-sub">Members earn points for every topic and reply; points decide their level. Badges reward milestones and are earned automatically, or awarded by hand on the <a href="/wp-admin/forum?tab=members">Members</a> tab.</p>
+<nav class="pf-admin-jump" aria-label="On this page"><a href="#pf-levels">Levels and points</a> <a href="#pf-badges">Badges</a></nav>
+
+<h2 id="pf-levels" class="pf-admin-h2">Levels and points</h2>
+<form id="pf-levels-form" method="post" action="/wp-admin/forum?tab=badges">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="do" value="save_levels" />
+<input type="hidden" name="level_count" id="pf-level-count" value="{{len .LevelRows}}" />
+<table class="form-table pf-admin-points" role="presentation"><tbody>
+<tr><th scope="row"><label for="pf-topic-points">Points per topic</label></th>
+	<td><input name="topic_points" id="pf-topic-points" type="number" class="small-text" min="0" max="1000" value="{{.Levels.TopicPoints}}" /></td></tr>
+<tr><th scope="row"><label for="pf-reply-points">Points per reply</label></th>
+	<td><input name="reply_points" id="pf-reply-points" type="number" class="small-text" min="0" max="1000" value="{{.Levels.ReplyPoints}}" />
+	<p class="description">Only published posts count. Changing the weights recalculates every member's level at once.</p></td></tr>
+</tbody></table>
+<table class="widefat fixed striped pf-admin-levels">
+<thead><tr>
+	<th scope="col" class="column-preview">Preview</th>
+	<th scope="col" class="column-lname">Name</th>
+	<th scope="col" class="column-min">Minimum points</th>
+	<th scope="col" class="column-icon">Icon</th>
+	<th scope="col" class="column-image">Image</th>
+	<th scope="col" class="column-color">Color</th>
+	<th scope="col" class="column-remove"><span class="screen-reader-text">Remove</span></th>
+</tr></thead>
+<tbody id="pf-level-rows">
+{{range .LevelRows}}{{template "forum-admin-level-row" dict "R" . "D" $d}}{{end}}
+</tbody>
+</table>
+<script type="text/template" id="pf-level-template">{{template "forum-admin-level-row" dict "R" (index .LevelRows 0) "D" $d "Tmpl" true}}</script>
+<p class="description">The first level always starts at 0 points. Two levels cannot share the same minimum. A Media Library image replaces the icon.</p>
+<p class="submit pf-admin-submitrow">
+	<input type="submit" class="button button-primary" value="Save Levels" />
+	<button type="button" class="button hide-if-no-js" id="pf-level-add"><span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span> Add level</button>
+	<button type="submit" class="button-link pf-admin-restore" form="pf-levels-restore" onclick="return confirm('Restore the six default levels and point weights? Your levels are replaced.')">Restore default levels</button>
+</p>
+</form>
+<form id="pf-levels-restore" method="post" action="/wp-admin/forum?tab=badges"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="do" value="restore_levels" /></form>
+
+<h2 id="pf-badges" class="pf-admin-h2">Badges</h2>
+<div id="col-container" class="wp-clearfix pf-admin-badgecols">
+<div id="col-left"><div class="col-wrap"><div class="form-wrap">
+<h2>Add New Badge</h2>
+{{template "forum-admin-badge-fields" dict "F" .BadgeForm "D" $d "Wide" false}}
+</div></div></div>
+<div id="col-right"><div class="col-wrap">
+<table class="wp-list-table widefat fixed striped table-view-list pf-admin-badgelist">
+<thead><tr>
+	<th scope="col" class="manage-column column-badge column-primary">Badge</th>
+	<th scope="col" class="manage-column column-rule">Earned by</th>
+	<th scope="col" class="manage-column column-awarded num">By hand</th>
+	<th scope="col" class="manage-column column-state">Status</th>
+</tr></thead>
+<tbody id="the-list">
+{{range .BadgeRows}}<tr id="badge-{{.ID}}" class="{{if .Enabled}}active{{else}}inactive{{end}}">
+	<td class="column-badge has-row-actions column-primary" data-colname="Badge">
+		<a class="pf-admin-badgelink" href="{{.EditURL}}" aria-label="Edit &#8220;{{.Name}}&#8221;">{{.Chip}}</a>
+		{{if .Description}}<p class="pf-admin-desc">{{.Description}}</p>{{end}}
+		<div class="row-actions">{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} onclick="return confirm('{{$a.Confirm}}')"{{end}}{{if eq $a.Key "delete"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}</div>
+		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+	</td>
+	<td class="column-rule" data-colname="Earned by">{{.RuleLabel}}{{if .Threshold}} <span class="pf-admin-threshold">&ge; {{.Threshold}}</span>{{end}}</td>
+	<td class="column-awarded num" data-colname="By hand">{{.Awarded}}</td>
+	<td class="column-state" data-colname="Status">{{if .Enabled}}<span class="pf-admin-badge pf-admin-badge--open">Enabled</span>{{else}}<span class="pf-admin-badge">Disabled</span>{{end}}</td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="4">No badges yet. Add one, or restore the default badges.</td></tr>
+{{end}}</tbody>
+</table>
+<p class="description">The order here is the order badges show next to a member's name. Disabled badges are neither earned nor shown.</p>
+<form method="post" action="/wp-admin/forum?tab=badges" class="pf-admin-restorebar">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="do" value="restore_badges" />
+<button type="submit" class="button" onclick="return confirm('Restore the eight default badges as shipped? Edited default badges are reset; your own badges stay.')">Restore default badges</button>
+</form>
+</div></div>
+</div>
+{{end}}
+
+{{define "forum-admin-level-row"}}{{$r := .R}}{{$i := $r.Index}}{{if .Tmpl}}{{$i = "__i__"}}{{end}}
+<tr class="pf-admin-levelrow{{if and $r.New (not .Tmpl)}} is-new{{end}}" data-pf-preview>
+	<td class="column-preview" data-colname="Preview"><span class="pf-badge-chip pf-level" style="--pf-chip:{{if .Tmpl}}#2271b1{{else}}{{$r.Color}}{{end}}">{{if not .Tmpl}}{{if $r.ImageURL}}<img class="pf-badge-chip__img" src="{{$r.ImageURL}}" alt="" width="16" height="16" />{{else}}{{forum_icon $r.Icon 14}}{{end}}{{end}}<span class="pf-badge-chip__name">{{if .Tmpl}}New level{{else if $r.New}}New level{{else}}{{$r.Name}}{{end}}</span></span></td>
+	<td class="column-lname" data-colname="Name"><input type="hidden" name="level_{{$i}}_id" value="{{if not .Tmpl}}{{$r.ID}}{{end}}" />
+		<label class="screen-reader-text" for="pf-level-{{$i}}-name">Level name</label>
+		<input type="text" id="pf-level-{{$i}}-name" name="level_{{$i}}_name" value="{{if not .Tmpl}}{{$r.Name}}{{end}}" maxlength="40" class="pf-admin-in-name" placeholder="{{if or $r.New .Tmpl}}Add a level{{end}}" /></td>
+	<td class="column-min" data-colname="Minimum points"><label class="screen-reader-text" for="pf-level-{{$i}}-min">Minimum points</label>
+		<input type="number" id="pf-level-{{$i}}-min" name="level_{{$i}}_min" value="{{if and (not .Tmpl) (not $r.New)}}{{$r.Min}}{{end}}" min="0" max="10000000" class="small-text"{{if and (eq $r.Index 0) (not .Tmpl)}} readonly title="The first level starts at 0 points"{{end}} /></td>
+	<td class="column-icon" data-colname="Icon">{{template "forum-admin-iconpick" dict "Name" (printf "level_%v_icon" $i) "Value" (or (and (not .Tmpl) $r.Icon) "") "ID" (printf "pf-level-%v-icon" $i) "Compact" true}}</td>
+	<td class="column-image" data-colname="Image">{{template "forum-admin-media" dict "Name" (printf "level_%v_image_id" $i) "Value" (or (and (not .Tmpl) $r.ImageID) 0) "URL" (or (and (not .Tmpl) $r.ImageURL) "") "Can" .D.CanUpload}}</td>
+	<td class="column-color" data-colname="Color"><label class="screen-reader-text" for="pf-level-{{$i}}-color">Color</label>
+		<input type="color" id="pf-level-{{$i}}-color" name="level_{{$i}}_color" value="{{if .Tmpl}}#2271b1{{else}}{{$r.Color}}{{end}}" class="pf-admin-in-color" /></td>
+	<td class="column-remove" data-colname="Remove">{{if and (not $r.New) (not .Tmpl)}}<label class="pf-admin-remove"><input type="checkbox" name="level_{{$i}}_remove" value="1" /> <span>Remove</span></label>{{end}}</td>
+</tr>{{end}}
+
+{{define "forum-admin-badge-edit"}}{{$d := .}}
+<p class="pf-admin-back"><a href="/wp-admin/forum?tab=badges#pf-badges">&larr; Back to Badges &amp; Levels</a></p>
+<div class="pf-admin-badgeedit">
+{{template "forum-admin-badge-fields" dict "F" .BadgeEdit "D" $d "Wide" true}}
+</div>
+{{end}}
+
+{{define "forum-admin-badge-fields"}}{{$f := .F}}{{$d := .D}}
+<form method="post" action="/wp-admin/forum?tab=badges{{if not $f.IsNew}}&amp;action=edit&amp;badge={{$f.ID}}{{end}}" class="pf-admin-badgeform{{if .Wide}} is-wide{{end}}" data-pf-preview>
+<input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+<input type="hidden" name="do" value="save_badge" />
+<input type="hidden" name="badge_id" value="{{if not $f.IsNew}}{{$f.ID}}{{end}}" />
+<div class="pf-admin-badgepreview"><span class="pf-admin-badgepreview__label">Preview</span> <span class="pf-badge-chip pf-badge" style="--pf-chip:{{$f.Color}}">{{if $f.ImageURL}}<img class="pf-badge-chip__img" src="{{$f.ImageURL}}" alt="" width="16" height="16" />{{else}}{{forum_icon $f.Icon 14}}{{end}}<span class="pf-badge-chip__name">{{if $f.Name}}{{$f.Name}}{{else}}New badge{{end}}</span></span></div>
+{{if .Wide}}<table class="form-table" role="presentation"><tbody>{{end}}
+{{template "forum-admin-field" dict "Wide" .Wide "Label" "Name" "For" "pf-badge-name" "Start" true}}
+	<input name="name" id="pf-badge-name" type="text" value="{{$f.Name}}" maxlength="60" required aria-required="true" class="pf-admin-in-name{{if .Wide}} regular-text{{end}}" />
+{{template "forum-admin-field" dict "Wide" .Wide "End" true "Help" "Shown on the badge."}}
+{{template "forum-admin-field" dict "Wide" .Wide "Label" "Description" "For" "pf-badge-desc" "Start" true}}
+	<input name="description" id="pf-badge-desc" type="text" value="{{$f.Description}}" maxlength="200" class="{{if .Wide}}large-text{{end}}" />
+{{template "forum-admin-field" dict "Wide" .Wide "End" true "Help" "Appears when a visitor points at the badge."}}
+{{template "forum-admin-field" dict "Wide" .Wide "Label" "Earned by" "For" "pf-badge-rule" "Start" true}}
+	<select name="rule" id="pf-badge-rule" class="pf-admin-rule">{{range $d.Rules}}<option value="{{.Key}}"{{if eq .Key $f.Rule}} selected{{end}} data-threshold="{{if .Threshold}}1{{else}}0{{end}}">{{.Label}}</option>{{end}}</select>
+	<span class="pf-admin-threshold-wrap"><label for="pf-badge-threshold">at least</label> <input name="threshold" id="pf-badge-threshold" type="number" min="1" max="10000000" value="{{if $f.Threshold}}{{$f.Threshold}}{{end}}" class="small-text" /></span>
+{{template "forum-admin-field" dict "Wide" .Wide "End" true "Help" "Counting rules need a number: topics, replies, posts, points or days since joining."}}
+{{template "forum-admin-field" dict "Wide" .Wide "Label" "Icon" "Start" true "Group" true}}
+	{{template "forum-admin-iconpick" dict "Name" "icon" "Value" $f.Icon "ID" "pf-badge-icon" "Compact" false}}
+{{template "forum-admin-field" dict "Wide" .Wide "End" true "Group" true}}
+{{template "forum-admin-field" dict "Wide" .Wide "Label" "Image" "Start" true "Group" true}}
+	{{template "forum-admin-media" dict "Name" "image_id" "Value" $f.ImageID "URL" $f.ImageURL "Can" $d.CanUpload}}
+{{template "forum-admin-field" dict "Wide" .Wide "End" true "Group" true "Help" "Optional: a small square image from the Media Library replaces the icon."}}
+{{template "forum-admin-field" dict "Wide" .Wide "Label" "Color" "For" "pf-badge-color" "Start" true}}
+	<input name="color" id="pf-badge-color" type="color" value="{{$f.Color}}" class="pf-admin-in-color" />
+{{template "forum-admin-field" dict "Wide" .Wide "End" true}}
+{{template "forum-admin-field" dict "Wide" .Wide "Label" "Status" "Start" true "Group" true}}
+	<label for="pf-badge-enabled"><input name="enabled" id="pf-badge-enabled" type="checkbox" value="1"{{if $f.Enabled}} checked{{end}} /> Enabled: members can earn and show this badge</label>
+{{template "forum-admin-field" dict "Wide" .Wide "End" true "Group" true}}
+{{if .Wide}}</tbody></table>{{end}}
+<p class="submit"><input type="submit" class="button button-primary" value="{{if $f.IsNew}}Add New Badge{{else}}Update Badge{{end}}" /></p>
+</form>
+{{end}}
+
+{{define "forum-admin-field"}}{{if .Start}}{{if .Wide}}<tr><th scope="row">{{if .For}}<label for="{{.For}}">{{.Label}}</label>{{else}}{{.Label}}{{end}}</th><td>{{else}}<div class="form-field">{{if .For}}<label for="{{.For}}">{{.Label}}</label>{{else}}<span class="pf-admin-label">{{.Label}}</span>{{end}}{{end}}{{end}}{{if .End}}{{if .Help}}{{if .Wide}}<p class="description">{{.Help}}</p>{{else}}<p>{{.Help}}</p>{{end}}{{end}}{{if .Wide}}</td></tr>{{else}}</div>{{end}}{{end}}{{end}}
+
+{{define "forum-admin-iconpick"}}{{$v := .Value}}{{$name := .Name}}
+{{if .Compact}}<details class="pf-admin-iconpick">
+<summary><span class="pf-admin-iconpick__current" aria-hidden="true">{{if $v}}{{forum_icon $v 20}}{{else}}<span class="dashicons dashicons-minus"></span>{{end}}</span><span class="screen-reader-text">Choose an icon</span><span class="dashicons dashicons-arrow-down-alt2 pf-admin-iconpick__caret" aria-hidden="true"></span></summary>
+<div class="pf-admin-iconpick__panel">{{end}}
+<fieldset class="pf-admin-icongrid" id="{{.ID}}"><legend class="screen-reader-text">Icon</legend>
+<label class="pf-admin-iconopt is-none" title="No icon"><input type="radio" name="{{$name}}" value=""{{if not $v}} checked{{end}} /><span><span class="dashicons dashicons-minus" aria-hidden="true"></span><span class="screen-reader-text">No icon</span></span></label>
+{{range forum_icon_names}}<label class="pf-admin-iconopt" title="{{.}}"><input type="radio" name="{{$name}}" value="{{.}}"{{if eq . $v}} checked{{end}} /><span>{{forum_icon . 20}}<span class="screen-reader-text" translate="no">{{.}}</span></span></label>{{end}}
+</fieldset>
+{{if .Compact}}</div></details>{{end}}
+{{end}}
+
+{{define "forum-admin-media"}}<div class="pf-admin-media" data-pf-media>
+<input type="hidden" name="{{.Name}}" value="{{.Value}}" class="pf-admin-media__id" />
+<span class="pf-admin-media__preview">{{if .URL}}<img src="{{.URL}}" alt="" width="32" height="32" />{{end}}</span>
+{{if .Can}}<button type="button" class="button button-small pf-admin-media__choose hide-if-no-js">{{if .URL}}Change{{else}}Choose{{end}}</button>
+<button type="button" class="button-link pf-admin-media__remove hide-if-no-js"{{if not .Value}} hidden{{end}}>Remove</button>{{else}}{{if not .URL}}<span class="pf-admin-muted">&#8212;</span>{{end}}{{end}}
+</div>{{end}}

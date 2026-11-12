@@ -1,0 +1,111 @@
+{{define "forum/account"}}<div class="pf" data-view="account">{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+<div class="pf-account">
+{{- with .User}}
+<section class="pf-card pf-avatar-card" aria-labelledby="pf-acc-photo">
+<h2 id="pf-acc-photo">{{$.T "Profile photo"}}</h2>
+<div class="pf-avatar-card__row">
+<div class="pf-avatar-card__preview">{{forum_avatar . 96}}</div>
+<div class="pf-avatar-card__main">
+<p class="pf-avatar-card__name">{{.DisplayName}}</p>
+{{- with .Level}}
+<div class="pf-profile-level pf-profile-level--compact">
+<div class="pf-profile-level-head">{{$.LevelChip .}}<span class="pf-profile-points">{{$.Count $.User.Points "%s point" "%s points"}}</span></div>
+{{- with $.User.NextLevel}}
+<div class="pf-level-progress" style="{{$.ProgressStyle $.User.Progress}}" role="progressbar" aria-valuenow="{{$.User.Progress}}" aria-valuemin="0" aria-valuemax="100" aria-label="{{$.Tf "Progress to %s" ($.LevelName .)}}"><span class="pf-level-progress__bar"></span></div>
+<p class="pf-level-next">{{$.Tf "%1$s points to %2$s" ($.PointsToNext $.User) ($.LevelName .)}}</p>
+{{- end}}
+</div>
+{{- end}}
+</div>
+</div>
+<form class="pf-form pf-avatar-form" method="post" action="{{$.Extra.action}}" enctype="multipart/form-data">
+<input type="hidden" name="forum_action" value="avatar_upload" />
+<input type="hidden" name="_wpnonce" value="{{$.Nonce}}" />
+<div class="pf-field">
+<label for="pf-avatar-file">{{if .HasPhoto}}{{$.T "Choose a new photo"}}{{else}}{{$.T "Choose a photo"}}{{end}}</label>
+<input class="pf-input pf-file" type="file" id="pf-avatar-file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif" required aria-describedby="pf-avatar-help" />
+<p class="pf-help" id="pf-avatar-help">{{$.T "JPEG, PNG, WebP or GIF, up to 2 MB. It is cropped to a square."}}</p>
+</div>
+<div class="pf-form-actions">
+<button type="submit" class="pf-button pf-button--primary">{{$.T "Upload photo"}}</button>
+{{- if .HasPhoto}}<button type="submit" form="pf-avatar-remove" class="pf-button pf-button--ghost pf-button--danger">{{$.T "Remove photo"}}</button>{{end}}
+</div>
+</form>
+{{- if .HasPhoto}}
+<form id="pf-avatar-remove" method="post" action="{{$.Extra.action}}" hidden>
+<input type="hidden" name="forum_action" value="avatar_remove" />
+<input type="hidden" name="_wpnonce" value="{{$.Nonce}}" />
+</form>
+{{- end}}
+</section>
+{{- end}}
+<section class="pf-card" aria-labelledby="pf-acc-profile">
+<h2 id="pf-acc-profile">{{.T "Profile"}}</h2>
+<form class="pf-form" method="post" action="{{.Extra.action}}">
+<input type="hidden" name="forum_action" value="account" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<div class="pf-field">
+<label for="pf-display-name">{{.T "Display name"}}</label>
+<input class="pf-input" type="text" id="pf-display-name" name="display_name" value="{{.Form.display_name}}" required maxlength="60" autocomplete="nickname" />
+</div>
+<div class="pf-field">
+<label for="pf-bio">{{.T "About you"}}</label>
+<textarea class="pf-textarea" id="pf-bio" name="bio" rows="4" maxlength="1000" aria-describedby="pf-bio-help">{{.Form.bio}}</textarea>
+<p class="pf-help" id="pf-bio-help">{{.T "A few words for your public profile. Plain text."}}</p>
+</div>
+<div class="pf-field">
+<span>{{.T "Email address"}}</span>
+<p class="pf-help">{{.Form.email}} &middot; {{.T "Only you can see it."}}</p>
+</div>
+<div class="pf-form-actions"><button type="submit" class="pf-button pf-button--primary">{{.T "Save profile"}}</button>
+{{- if .Extra.profile_url}} <a class="pf-button pf-button--ghost" href="{{.Extra.profile_url}}">{{.T "View public profile"}}</a>{{end}}</div>
+</form>
+</section>
+
+<section class="pf-card" aria-labelledby="pf-acc-password">
+<h2 id="pf-acc-password">{{if .Extra.need_current}}{{.T "Change password"}}{{else}}{{.T "Choose a password"}}{{end}}</h2>
+{{- if not .Extra.need_current}}<p class="pf-help">{{.T "You sign in with Google. Choose a password to log in with your email as well."}}</p>{{end}}
+<form class="pf-form" method="post" action="{{.Extra.action}}">
+<input type="hidden" name="forum_action" value="password" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="text" name="log" value="{{.Form.login}}" autocomplete="username" hidden />
+{{- if .Extra.need_current}}
+<div class="pf-field">
+<label for="pf-current-pass">{{.T "Current password"}}</label>
+<input class="pf-input" type="password" id="pf-current-pass" name="current_pass" autocomplete="current-password" required />
+</div>
+{{- end}}
+<div class="pf-field">
+<label for="pf-new-pass">{{.T "New password"}}</label>
+<input class="pf-input" type="password" id="pf-new-pass" name="new_pass" autocomplete="new-password" required minlength="8" aria-describedby="pf-new-pass-help" />
+<p class="pf-help" id="pf-new-pass-help">{{.T "At least 8 characters. Other devices are logged out."}}</p>
+</div>
+<div class="pf-form-actions"><button type="submit" class="pf-button pf-button--primary">{{if .Extra.need_current}}{{.T "Change password"}}{{else}}{{.T "Set password"}}{{end}}</button></div>
+</form>
+</section>
+
+{{- if or .GoogleOn .Extra.google_linked}}
+<section class="pf-card" aria-labelledby="pf-acc-google">
+<h2 id="pf-acc-google">{{.T "Google sign-in"}}</h2>
+{{- if .Extra.google_linked}}
+<div class="pf-google-state">
+<p>{{template "forum/part-google-g"}} {{if .Form.google_email}}{{.Tf "Connected as %s." .Form.google_email}}{{else}}{{.T "Connected."}}{{end}}</p>
+{{- if .Extra.password_set}}
+<form class="pf-form" method="post" action="{{.Extra.action}}">
+<input type="hidden" name="forum_action" value="google_unlink" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<button type="submit" class="pf-button pf-button--ghost">{{.T "Disconnect"}}</button>
+</form>
+{{- end}}
+</div>
+{{- if not .Extra.password_set}}<p class="pf-help">{{.T "Set a password above before you disconnect Google, so you can still log in."}}</p>{{end}}
+{{- else if .URLs.GoogleLink}}
+<p class="pf-help">{{.T "Connect your Google account to log in with one click."}}</p>
+<a class="pf-button pf-button--google" href="{{.URLs.GoogleLink}}" rel="nofollow">{{template "forum/part-google-g"}}<span>{{.T "Connect Google"}}</span></a>
+{{- end}}
+</section>
+{{- end}}
+
+{{- if .URLs.Logout}}<p class="pf-auth-foot"><a href="{{.URLs.Logout}}">{{.T "Log out"}}</a></p>{{end}}
+</div>
+</div>{{end}}

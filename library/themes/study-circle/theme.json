@@ -1,0 +1,142 @@
+{
+  "slug": "study-circle",
+  "name": "Study Circle",
+  "version": "1.0.0",
+  "description": "A bright, friendly forum theme for study groups, courses and learning communities, built for Pursae Forum: a clean header with the forum's Log in and Join links, a welcoming hero, subject-room tiles, a how-it-works strip, a live panel of fresh questions and forum stats, and calm forum views in teal and sunshine yellow. Lexend and Nunito, self-hosted. Ships Pursae Web Builder parts for Hello Pursae and a demo community with tutors, subject rooms, questions and answers.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae/tree/main/library/themes/study-circle",
+  "tags": [
+    "Education",
+    "Light",
+    "Right Sidebar",
+    "Custom Colors",
+    "Custom Logo",
+    "Custom Menu",
+    "Editor Style",
+    "Accessibility Ready",
+    "Translation Ready"
+  ],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+  "category": "education",
+  "style": "Friendly study-group forum, teal and sunshine yellow on white",
+  "demo": "demo/demo.json",
+  "web_builder": "web-builder/parts.json",
+  "menu_locations": [
+    {
+      "id": "primary",
+      "name": "Primary Menu"
+    },
+    {
+      "id": "footer",
+      "name": "Footer Menu"
+    }
+  ],
+  "styles": [
+    {
+      "handle": "study-circle-style",
+      "src": "assets/style.css",
+      "deps": [],
+      "media": "all"
+    }
+  ],
+  "editor_styles": [
+    "assets/editor-style.css"
+  ],
+  "preload_fonts": [
+    "assets/fonts/lexend.woff2",
+    "assets/fonts/nunito.woff2"
+  ],
+  "palette": [
+    {
+      "name": "Teal",
+      "slug": "primary",
+      "color": "#0F766E"
+    },
+    {
+      "name": "Sun",
+      "slug": "accent",
+      "color": "#F5B700"
+    },
+    {
+      "name": "Ink",
+      "slug": "ink",
+      "color": "#12313A"
+    },
+    {
+      "name": "Text",
+      "slug": "text",
+      "color": "#24434B"
+    },
+    {
+      "name": "Paper",
+      "slug": "paper",
+      "color": "#FFFFFF"
+    },
+    {
+      "name": "Cream",
+      "slug": "cream",
+      "color": "#F3FAF8"
+    },
+    {
+      "name": "Line",
+      "slug": "line",
+      "color": "#D5E7E3"
+    }
+  ],
+  "supports": {
+    "pursae-forum": true,
+    "title-tag": true,
+    "custom-logo": true,
+    "post-thumbnails": true,
+    "responsive-embeds": true,
+    "html5": [
+      "search-form",
+      "comment-form",
+      "comment-list",
+      "gallery",
+      "caption",
+      "script",
+      "style"
+    ]
+  },
+  "customizer": {
+    "sections": [
+      {
+        "id": "study_circle_forum",
+        "title": "Forum",
+        "priority": 40,
+        "settings": [
+          {
+            "id": "accent",
+            "label": "Accent colour",
+            "type": "color",
+            "default": "#0F766E",
+            "transport": "postMessage",
+            "css_var": "--pf-accent",
+            "description": "Buttons, links and highlights in the forum and the header."
+          },
+          {
+            "id": "layout",
+            "label": "Forum layout",
+            "type": "select",
+            "default": "sidebar",
+            "transport": "postMessage",
+            "body_class": "sc-layout-{value}",
+            "choices": [
+              {
+                "value": "sidebar",
+                "label": "With a sidebar (stats and recent topics)"
+              },
+              {
+                "value": "full",
+                "label": "Full width"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

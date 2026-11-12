@@ -1,0 +1,5 @@
+<section class="no-results not-found cf-empty-state">
+	<h2 class="page-title">Nothing here yet</h2>
+	{{if eq .Template "search"}}<p>No pages matched that search. Try other words.</p>{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for.</p>{{end}}
+	{{template "searchform" .}}
+</section>

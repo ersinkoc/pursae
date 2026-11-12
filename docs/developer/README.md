@@ -10,6 +10,7 @@ Start here when writing a theme or a plugin:
 |----------|------|
 | A plugin (Wasm, Go SDK `sdk/go/wpgo`) | `plugins/index.md`, `plugins/your-first-plugin.md`, `plugins/manifest.md`, `plugins/hooks.md`, `plugins/host-api.md`, `plugins/permissions.md`, `plugins/packaging-and-signing.md` |
 | A theme | `themes/index.md`, `themes/your-first-theme.md`, `themes/templates.md`, `themes/theme-json.md`, `themes/styles-and-scripts.md`, and the package format in `../theme-package.md` |
+| A forum theme (Pursae Forum), native or for Pursae Web Builder | `themes/forum.md` (wrapper, view overrides and their data, template functions, `--pf-*` tokens and classes, demo, Web Builder parts, worked example), then `../forum-features.md` (what the forum does); `rest-api/endpoints.md` (`forum/v1`) |
 | Pursae Web Builder (pages, the editor build, `builder/`) | `web-builder.md` (overview: editing, publishing, Theme Builder, data, REST, `make builder`, patches, limits), then `web-builder-contract.md` (field-by-field contract; §11 Theme Builder) |
 | Theme Builder templates, Hello Pursae, dynamic widgets, display conditions | `web-builder-theme-builder.md` (user guide), `themes/hello-pursae.md` (how templates replace a theme's output), contract §11 |
 | Ready-made full themes in the editor ("Browse theme library"), making a library theme importable | `web-builder-theme-library.md` |

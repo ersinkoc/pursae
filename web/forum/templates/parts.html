@@ -1,0 +1,26 @@
+{{/* Shared partials of the Pursae Forum view templates. Theme overrides cannot see these (each
+override is self-contained); the dot is *forumPage everywhere. */}}
+
+{{define "forum/part-head"}}<header class="pf-head">
+{{- if gt (len .Crumbs) 1}}<nav class="pf-crumbs" aria-label="{{.T "Breadcrumb"}}"><ol>
+{{- range $i, $c := .Crumbs}}<li>{{if $c.URL}}<a href="{{$c.URL}}">{{$c.Label}}</a>{{else}}<span aria-current="page">{{$c.Label}}</span>{{end}}</li>{{end -}}
+</ol></nav>{{end}}
+{{- if .OwnTitle}}<h1 class="pf-title">{{.Title}}</h1>{{end}}
+{{- if and .CanPost .URLs.NewTopic}}<div class="pf-actions"><a class="pf-button pf-button--primary" href="{{.URLs.NewTopic}}">{{.T "New topic"}}</a></div>{{end -}}
+</header>{{end}}
+
+{{define "forum/part-notice"}}
+{{- if .Error}}<div class="pf-notice pf-notice--error" role="alert">{{.Error}}</div>{{end}}
+{{- if .Notice}}<div class="pf-notice pf-notice--success" role="status">{{.Notice}}</div>{{end}}
+{{- end}}
+
+{{define "forum/part-pagination"}}{{if .Pagination}}{{.Pagination}}{{end}}{{end}}
+
+{{define "forum/part-userbar"}}{{if and .User .Unverified}}<div class="pf-notice pf-notice--info pf-verify-banner">
+<p>{{.T "Please confirm your email address to start posting."}}</p>
+<form class="pf-form pf-form--inline" method="post" action="{{.URLs.Account}}">
+<input type="hidden" name="forum_action" value="resend" />
+<input type="hidden" name="_wpnonce" value="{{.AuthNonce}}" />
+<button type="submit" class="pf-button pf-button--ghost">{{.T "Send the link again"}}</button>
+</form>
+</div>{{end}}{{end}}

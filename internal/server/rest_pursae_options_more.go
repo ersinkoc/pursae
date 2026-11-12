@@ -39,6 +39,9 @@ func init() {
 		func(s *Server, ctx context.Context, v pixelSettings) error { return s.pixelSave(ctx, v) })
 	optionGroups["analytics"] = groupOf(analyticsSlug, "Pursae Analytics", (*Server).analyticsLoad,
 		func(s *Server, ctx context.Context, v analyticsSettings) error { return s.analyticsSave(ctx, v) })
+	// The Google client secret is masked on output (maskSecrets); an empty one on save keeps the stored secret.
+	optionGroups["forum"] = groupOf(forumSlug, "Pursae Forum", (*Server).forumLoad,
+		func(s *Server, ctx context.Context, v forumSettings) error { return s.forumSave(ctx, v) })
 	optionGroups["cookie"] = groupOf(gooikeSlug, "Pursae Cookie", (*Server).gooikeLoad,
 		func(s *Server, ctx context.Context, v gooikeSettings) error { return s.gooikeSave(ctx, v) })
 	optionGroups["contact"] = groupOf(gontactSlug, "Pursae Contact Form", (*Server).gontactLoadOptions,

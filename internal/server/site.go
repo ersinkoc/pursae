@@ -50,6 +50,11 @@ type siteQuery struct {
 	// StoreURL is the unpaged canonical URL of a store view: the product permalink, the term link or
 	// the shop URL ("" for a store search and for the Cart, Checkout and My account pages).
 	StoreURL string
+
+	// Forum is the Pursae Forum view a synthetic page shows (index, forum, topic, login, …; "" off
+	// the forum) and ForumURL its unpaged canonical URL (forum_render.go).
+	Forum    string
+	ForumURL string
 }
 
 var (
@@ -70,6 +75,10 @@ var errNotFound = errors.New("not found")
 // ctxSiteQuery is the gin context key of the resolved main query ($wp_query for template tags).
 const ctxSiteQuery = "wpgo.siteQuery"
 
+// ctxSiteStatus is the gin context key of a status other than 200 for a synthetic page (a plugin form
+// re-rendered with a validation error answers 422); renderSite uses it unless the view is a 404.
+const ctxSiteStatus = "wpgo.siteStatus"
+
 // siteQueryFrom returns the main query of the request, if the front end resolved one.
 func siteQueryFrom(c *gin.Context) *siteQuery {
 	if v, ok := c.Get(ctxSiteQuery); ok {
@@ -85,7 +94,7 @@ func (s *Server) site(c *gin.Context) {
 		s.rest.serve(c, route)
 		return
 	}
-	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead && !s.gontactFallbackPost(c) && !s.gooAcceptsPost(c) { // Gontact Form without JS, Goocommerce forms
+	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead && !s.gontactFallbackPost(c) && !s.gooAcceptsPost(c) && !s.forumAcceptsPost(c) { // Gontact Form without JS, Goocommerce forms, Pursae Forum forms
 		c.Status(http.StatusNotFound)
 		return
 	}
@@ -98,6 +107,9 @@ func (s *Server) site(c *gin.Context) {
 	}
 	path := s.golylangSitePath(c, raw) // Golylang: without the language code
 	if s.gooSiteIntercept(c, path) {   // Goocommerce: shop, products, store pages and forms (goo_front.go)
+		return
+	}
+	if s.forumSiteIntercept(c, path) { // Pursae Forum: forum views and forms (forum_front.go)
 		return
 	}
 	switch path {
@@ -855,6 +867,9 @@ func (s *Server) renderSite(c *gin.Context, q *siteQuery) {
 		return
 	}
 	status := http.StatusOK
+	if n := c.GetInt(ctxSiteStatus); n >= 200 && n < 600 {
+		status = n // a plugin form re-rendered with an error (Pursae Forum: 422)
+	}
 	if q.Kind == "404" {
 		status = http.StatusNotFound
 		if s.seogo404(c) { // Pursae SEO: 404 monitor and fallback redirect

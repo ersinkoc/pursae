@@ -475,7 +475,7 @@ func (s *Server) wbTranslatedTerms(ctx context.Context, terms map[string][]int64
 
 // wbFactsOf maps a siteQuery to QueryFacts (no database access).
 func wbFactsOf(q *siteQuery) webbuilder.QueryFacts {
-	f := webbuilder.QueryFacts{Store: q.Store != "", StoreKind: q.Store}
+	f := webbuilder.QueryFacts{Store: q.Store != "", StoreKind: q.Store, PluginView: q.Forum}
 	singular := func(p *store.Post) {
 		f.View, f.PostType, f.PostID, f.ParentID, f.AuthorID = webbuilder.ViewSingular, p.Type, p.ID, p.ParentID, p.AuthorID
 	}

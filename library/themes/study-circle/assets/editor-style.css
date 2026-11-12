@@ -1,0 +1,13 @@
+/* Study Circle: editor content area. */
+@font-face { font-family: "Lexend"; src: url("fonts/lexend.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("fonts/nunito.woff2") format("woff2"); font-weight: 400 800; font-display: swap; }
+body, .editor-styles-wrapper { background: #FFFFFF; color: #24434B; font-family: "Nunito", system-ui, sans-serif; font-size: 17px; line-height: 1.65; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper h4, .editor-styles-wrapper .editor-post-title__input {
+	font-family: "Lexend", "Nunito", sans-serif; font-weight: 600; color: #12313A; letter-spacing: -.01em; }
+.editor-styles-wrapper a { color: #0F766E; }
+.editor-styles-wrapper blockquote { border-left: 4px solid #F5B700; padding: 12px 18px; background: #FFF3CC; }
+.editor-styles-wrapper code { background: #F3FAF8; padding: 2px 6px; border-radius: 6px; }
+.editor-styles-wrapper .wp-block-button__link { background: #0F766E; color: #fff; border-radius: 999px; font-family: "Lexend", sans-serif; font-weight: 600; }
+.editor-styles-wrapper .wp-block { max-width: 760px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1180px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

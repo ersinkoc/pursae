@@ -301,6 +301,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	}
 	bodyClasses = append(bodyClasses, customizeBodyClasses(v)...)
 	bodyClasses = append(bodyClasses, s.gooBodyClasses(c, q)...) // Goocommerce: woocommerce, woocommerce-page, single-product, …
+	bodyClasses = append(bodyClasses, s.forumBodyClasses(q)...)  // Pursae Forum: pursae-forum pf-view-<view>
 	bodyClasses = append(bodyClasses, "wp-embed-responsive", "wp-theme-"+v.Theme.Slug)
 	if v.Theme.Prepare != nil {
 		v.Theme.Prepare(s, c, v)
@@ -485,6 +486,7 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 	content = s.seogoContent(ctx, content)      // Pursae SEO breadcrumb shortcodes and Image SEO
 	content = s.gooikeShortcodes(ctx, content)  // Gooike: [gooike_preferences], [gooike_cookie_table], …
 	content = s.gooShortcodes(ctx, content)     // Goocommerce: [goocommerce_cart], [products], … (goo_front.go)
+	content = s.forumShortcodes(ctx, content)   // Pursae Forum: the view body and [pursae_forum] (forum_render.go)
 	content = s.filterContentTags(ctx, content) // wp_filter_content_tags (priority 12)
 	content = s.convertSmilies(lb, content)     // convert_smilies (priority 20)
 	out, _ := s.applyFilters(ctx, "the_content", content, map[string]any{"id": p.ID, "type": p.Type, "is_single": singular}).(string)

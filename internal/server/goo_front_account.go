@@ -597,6 +597,7 @@ func (s *Server) gooSaveAccountPost(c *gin.Context) {
 		s.gooRedirect(c, editURL)
 		return
 	}
+	s.forumPurge(ctx) // Pursae Forum: display names show on cached forum pages (a no-op tag when the forum is off)
 	if changePass {
 		if hash, err := auth.HashPassword(p1); err == nil {
 			if s.store.SetUserPassword(ctx, u.ID, hash) == nil {

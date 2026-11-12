@@ -1,0 +1,12 @@
+{{define "forum/verify"}}<div class="pf" data-view="verify">{{template "forum/part-head" .}}
+<section class="pf-card pf-auth" aria-labelledby="pf-verify-title">
+<h2 id="pf-verify-title">{{if .Extra.failed}}{{.T "This link did not work"}}{{else}}{{.T "Confirm your email"}}{{end}}</h2>
+{{template "forum/part-notice" .}}
+{{- if not .Extra.failed}}
+<p>{{.T "We sent you an email with a confirmation link. Open it to finish setting up your account."}}</p>
+{{- end}}
+<p class="pf-help">{{if .User}}{{.T "Links work for 48 hours. We can send you a new one."}}{{else}}{{.T "Links work for 48 hours. Enter your email address to get a new one."}}{{end}}</p>
+{{template "forum/part-resend" .}}
+<p class="pf-auth-foot"><a href="{{.URLs.Index}}">{{.T "Back to the forums"}}</a>{{if not .User}}<a href="{{.URLs.Login}}">{{.T "Log in"}}</a>{{end}}</p>
+</section>
+</div>{{end}}

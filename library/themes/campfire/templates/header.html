@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<header id="masthead" class="site-header">
+		<div class="cf-container site-header__inner">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{else}}<a class="cf-mark" href="{{.HomeURL}}" tabindex="-1" aria-hidden="true">{{template "mark"}}</a>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div>
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">{{nav_menu . "primary"}}</nav>{{end}}
+			{{with forum_user_menu .}}<div class="site-header__account">{{.}}</div>{{end}}
+		</div>
+	</header><!-- #masthead -->
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

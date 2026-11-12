@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	netmail "net/mail"
@@ -72,7 +73,10 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 				if err != nil {
 					break
 				}
-				err = s.store.DeletePost(ctx, id)
+				// A forum topic goes with its replies (they would stay published, with no topic).
+				if err = s.forumAdminDelete(ctx, id); errors.Is(err, errForumNotFound) {
+					err = s.store.DeletePost(ctx, id)
+				}
 			}
 			if err == nil {
 				_, err = s.store.Pool.Exec(ctx, `DELETE FROM comments WHERE status = 'trash' AND updated_at < now() - make_interval(days => $1)`, days)
