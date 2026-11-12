@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 
 	"wpgo/internal/store"
 )
@@ -86,9 +87,30 @@ func TestSearchStemming(t *testing.T) {
 	if err := srv.store.InsertPost(ctx, p); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := srv.store.SyncSearchStem(ctx, "en_US"); err != nil {
-		t.Fatal(err)
+	// The server's start-up sync runs in the background and holds the advisory lock while it runs;
+	// a call that cannot take the lock does nothing, so retry until the configuration is the one asked.
+	sync := func(locale string) {
+		t.Helper()
+		want := store.SearchStemConfig(locale)
+		for deadline := time.Now().Add(30 * time.Second); ; time.Sleep(50 * time.Millisecond) {
+			if _, err := srv.store.SyncSearchStem(ctx, locale); err != nil {
+				t.Fatal(err)
+			}
+			var cur string
+			if err := srv.store.Pool.QueryRow(ctx, `SELECT wpgo_search_stem_config()::text`).Scan(&cur); err != nil {
+				t.Fatal(err)
+			}
+			var stale bool
+			_ = srv.store.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM posts WHERE search_stem IS NULL)`).Scan(&stale)
+			if cur == want && (want == "simple" || !stale) {
+				return
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("search stem config %q, want %q", cur, want)
+			}
+		}
 	}
+	sync("en_US")
 	found := func() bool {
 		posts, _, err := srv.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, Search: "running", OrderBy: "relevance", PerPage: 10, Page: 1})
 		if err != nil {
@@ -104,9 +126,7 @@ func TestSearchStemming(t *testing.T) {
 	if !found() {
 		t.Fatal("stemmed search did not find runs for running")
 	}
-	if _, err := srv.store.SyncSearchStem(ctx, "ja"); err != nil {
-		t.Fatal(err)
-	}
+	sync("ja")
 	if found() {
 		t.Fatal("simple config still stems")
 	}

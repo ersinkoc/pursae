@@ -18,7 +18,13 @@ import (
 func mcpTestAgent(t *testing.T, base string, c *http.Client, name string, scopes []string) (pass string, call func(tool string, args map[string]any) map[string]any) {
 	t.Helper()
 	_, nonce, _ := get(t, c, base+"/wp-admin/admin-ajax?action=rest-nonce")
-	b, _ := json.Marshal(map[string]any{"name": name, "scopes": scopes})
+	body := map[string]any{"name": name}
+	if scopes == nil {
+		body["full_access"] = true // no scopes means content and media only
+	} else {
+		body["scopes"] = scopes
+	}
+	b, _ := json.Marshal(body)
 	req, _ := http.NewRequest("POST", base+"/wp-json/wp/v2/users/me/application-passwords", bytes.NewReader(b))
 	req.Header.Set("X-WP-Nonce", nonce)
 	req.Header.Set("Content-Type", "application/json")
