@@ -360,7 +360,7 @@ func (e *wbSlotEnv) shopHTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (s
 			out := s.wbShopNotices(c)
 			sh.notices = &out
 		}
-		return *sh.notices, strings.Contains(*sh.notices, "<li")
+		return *sh.notices, wbHasShopNotices(*sh.notices)
 	case webbuilder.SlotShopCartCount:
 		return `<span class="wb-cart-count-n" data-goo-cart-count="">` + strconv.Itoa(s.gooCartFor(c).Count()) + `</span>`, true
 	case webbuilder.SlotShopCartSubtotal:
@@ -516,6 +516,11 @@ func (e *wbSlotEnv) languages(a webbuilder.SlotArgs) string {
 		return `<div class="wb-lang-switcher">` + out + `</div>`
 	}
 	return `<ul class="wb-lang-switcher">` + out + `</ul>`
+}
+
+func wbHasShopNotices(markup string) bool {
+	markup = strings.TrimSpace(markup)
+	return markup != "" && markup != gooNoticesMarkup(nil, nil, nil)
 }
 
 // wbShopNotices is the shop-notices widget: the notices the store body of this request already
