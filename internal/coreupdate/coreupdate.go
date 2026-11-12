@@ -158,7 +158,7 @@ func PrunePrev(exe string, now time.Time) bool {
 		if _, err := os.Stat(statePath(exe)); !os.IsNotExist(err) {
 			return false // unreadable or corrupt state is not proof that the binary is orphaned
 		}
-	case st.Status == "confirmed" && now.Sub(st.At) >= PrevRetention:
+	case st.Status == "confirmed" && !st.At.IsZero() && now.Sub(st.At) >= PrevRetention:
 	default:
 		return false // pending or rolled back: the rollback may still need it; or still retained
 	}

@@ -14,39 +14,49 @@ import (
 
 // JPEGOrientation reads the EXIF Orientation (1–8) of JPEG data; 1 when there is none.
 func JPEGOrientation(r io.Reader) int {
-	head := make([]byte, 128<<10) // APP1 sits right after SOI and is at most 64 KB
-	n, _ := io.ReadFull(r, head)
-	return jpegOrientation(head[:n])
-}
-
-func jpegOrientation(b []byte) int {
-	if len(b) < 4 || b[0] != 0xFF || b[1] != 0xD8 {
+	var head [2]byte
+	if _, err := io.ReadFull(r, head[:]); err != nil || head != [2]byte{0xFF, 0xD8} {
 		return 1
 	}
-	i := 2
-	for i+4 <= len(b) {
-		if b[i] != 0xFF {
+	for {
+		var marker [2]byte
+		if _, err := io.ReadFull(r, marker[:]); err != nil || marker[0] != 0xFF {
 			return 1
 		}
-		marker := b[i+1]
-		if marker == 0xFF { // fill byte
-			i++
+		for marker[1] == 0xFF { // fill byte
+			if _, err := io.ReadFull(r, marker[1:]); err != nil {
+				return 1
+			}
+		}
+		if marker[1] == 0xDA || marker[1] == 0xD9 { // start of scan / end of image
+			return 1
+		}
+		if marker[1] == 0x01 || marker[1] >= 0xD0 && marker[1] <= 0xD8 { // standalone markers
 			continue
 		}
-		if marker == 0xDA || marker == 0xD9 { // start of scan / end of image: no EXIF before the data
+		var size [2]byte
+		if _, err := io.ReadFull(r, size[:]); err != nil {
 			return 1
 		}
-		l := int(binary.BigEndian.Uint16(b[i+2 : i+4]))
-		if l < 2 || i+2+l > len(b) {
+		length := int(binary.BigEndian.Uint16(size[:]))
+		if length < 2 {
 			return 1
 		}
-		seg := b[i+4 : i+2+l]
-		if marker == 0xE1 && len(seg) > 6 && string(seg[:6]) == "Exif\x00\x00" {
-			return tiffOrientation(seg[6:])
+		payload := length - 2
+		if marker[1] == 0xE1 {
+			seg := make([]byte, payload)
+			if _, err := io.ReadFull(r, seg); err != nil {
+				return 1
+			}
+			if len(seg) > 6 && string(seg[:6]) == "Exif\x00\x00" {
+				return tiffOrientation(seg[6:])
+			}
+			continue
 		}
-		i += 2 + l
+		if _, err := io.CopyN(io.Discard, r, int64(payload)); err != nil {
+			return 1
+		}
 	}
-	return 1
 }
 
 // tiffOrientation reads tag 0x0112 of IFD0 of a TIFF header.

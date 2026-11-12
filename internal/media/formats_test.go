@@ -56,6 +56,25 @@ func TestSanitizeSVG(t *testing.T) {
 	}
 }
 
+func TestSanitizeSVGDropsRelativeAndNonHTTPResources(t *testing.T) {
+	in := `<svg xmlns="http://www.w3.org/2000/svg"><image href="/asset.png"/><image href="ftp://example.test/a.png"/><image href="data:image/png;base64,AA=="/><a href="https://example.test/page"><text>link</text></a></svg>`
+	out, err := SanitizeSVG([]byte(in))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(out)
+	for _, bad := range []string{"/asset.png", "ftp://"} {
+		if strings.Contains(s, bad) {
+			t.Errorf("resource %q survived: %s", bad, s)
+		}
+	}
+	for _, good := range []string{"data:image/png", "https://example.test/page"} {
+		if !strings.Contains(s, good) {
+			t.Errorf("control %q was lost: %s", good, s)
+		}
+	}
+}
+
 func sizesForTest() []Size {
 	return []Size{{Name: "thumbnail", Width: 150, Height: 150, Crop: true}, {Name: "medium", Width: 300, Height: 300}}
 }

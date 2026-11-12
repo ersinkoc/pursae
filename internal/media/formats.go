@@ -450,8 +450,8 @@ func SanitizeSVG(data []byte) ([]byte, error) {
 					if name == "use" && !strings.HasPrefix(v, "#") {
 						continue
 					}
-					if (strings.HasPrefix(lv, "http") || strings.HasPrefix(lv, "//")) && name != "a" {
-						continue // no external resources inside the image
+					if name != "a" && !strings.HasPrefix(v, "#") && !svgSafeData.MatchString(v) {
+						continue // no external or relative resources inside the image
 					}
 				case an == "style" && svgCSSUnsafe(a.Value):
 					continue

@@ -46,14 +46,15 @@ func readAV(r io.ReaderAt, size int64, ext string) (info AVInfo) {
 	head := make([]byte, 12)
 	n, _ := r.ReadAt(head, 0)
 	head = head[:n]
+	mp4Ext := ext == ".mp4" || ext == ".m4a" || ext == ".m4v" || ext == ".mov"
 	switch {
-	case len(head) >= 12 && string(head[4:8]) == "ftyp", ext == ".mp4" || ext == ".m4a" || ext == ".m4v" || ext == ".mov":
+	case len(head) >= 12 && string(head[4:8]) == "ftyp" && mp4Ext:
 		return readMP4(r, size)
 	case len(head) >= 4 && binary.BigEndian.Uint32(head) == 0x1A45DFA3:
 		return readMatroska(r, size)
 	case len(head) >= 12 && string(head[:4]) == "RIFF" && string(head[8:12]) == "WAVE":
 		return readWAV(r, size)
-	case len(head) >= 3 && string(head[:3]) == "ID3", ext == ".mp3", len(head) >= 2 && head[0] == 0xFF && head[1]&0xE0 == 0xE0:
+	case len(head) >= 3 && string(head[:3]) == "ID3", len(head) >= 2 && head[0] == 0xFF && head[1]&0xE0 == 0xE0:
 		return readMP3(r, size)
 	}
 	return AVInfo{}
