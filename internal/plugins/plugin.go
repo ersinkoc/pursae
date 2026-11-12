@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"reflect"
+	"slices"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -61,8 +63,21 @@ type Plugin struct {
 // Slug returns the plugin slug.
 func (p *Plugin) Slug() string { return p.manifest.Slug }
 
-// Manifest returns the plugin manifest.
-func (p *Plugin) Manifest() *Manifest { return p.manifest }
+// Manifest returns an independent snapshot of the plugin manifest.
+func (p *Plugin) Manifest() *Manifest { return cloneManifest(p.manifest) }
+
+func cloneManifest(m *Manifest) *Manifest {
+	if m == nil {
+		return nil
+	}
+	out := *m
+	out.RequiresPlugins = slices.Clone(m.RequiresPlugins)
+	out.Permissions = slices.Clone(m.Permissions)
+	out.Hooks = slices.Clone(m.Hooks)
+	out.Shortcodes = slices.Clone(m.Shortcodes)
+	out.Assets = maps.Clone(m.Assets)
+	return &out
+}
 
 // Permissions returns the effective (declared and granted) permissions.
 func (p *Plugin) Permissions() []Permission { return p.perms.List() }

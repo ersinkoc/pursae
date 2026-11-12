@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -170,9 +171,16 @@ func (rt *Runtime) Load(ctx context.Context, pkg *Package, granted []Permission,
 	if host == nil {
 		return nil, errors.New("plugins: Load needs a Host")
 	}
-	m := pkg.Manifest
+	m := cloneManifest(pkg.Manifest)
 	if err := m.CheckCompatible(rt.cfg.CoreVersion); err != nil {
 		return nil, err
+	}
+	var assets map[string][]byte
+	if pkg.Assets != nil {
+		assets = make(map[string][]byte, len(pkg.Assets))
+		for path, data := range pkg.Assets {
+			assets[path] = bytes.Clone(data)
+		}
 	}
 
 	p := &Plugin{
@@ -182,7 +190,7 @@ func (rt *Runtime) Load(ctx context.Context, pkg *Package, granted []Permission,
 		host:      host,
 		regs:      map[RegisteredHook]HookID{},
 		sem:       make(chan struct{}, 1),
-		pkgAssets: pkg.Assets,
+		pkgAssets: assets,
 	}
 	p.logs = newLogRing(rt.cfg.LogEntries, rt.logSink(m.Slug))
 
