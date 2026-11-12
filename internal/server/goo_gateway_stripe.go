@@ -771,18 +771,18 @@ func (s *Server) gooStripeEvent(ctx context.Context, typ string, obj map[string]
 		// The order is brought to Stripe's refunded total: refunds made from the order screen are
 		// already recorded (the record is written before Stripe is called), so only refunds made in
 		// the Stripe Dashboard add a record, and a repeated event adds nothing.
+		// The difference is taken inside the order lock, so two events (or an order-screen refund still
+		// waiting for Stripe) cannot both read the same recorded total and record too much or too little.
 		total := gooStripeFromAmount(gxaFloat(obj, "amount_refunded"), o.Currency)
 		dp := s.gooDecimals()
-		diff := gooRound(total-s.gooTotalRefunded(ctx, o.ID), dp)
-		if diff <= 0 {
-			return nil
-		}
-		if _, err := s.gooCreateRefund(ctx, o, diff, "Refunded in Stripe", nil, false, false, 0); err != nil {
-			if gooRound(total-s.gooTotalRefunded(ctx, o.ID), dp) <= 0 {
-				return nil // recorded meanwhile
+		return gooWithOrderLock(ctx, o.ID, func(ctx context.Context) error {
+			diff := gooRound(total-s.gooTotalRefunded(ctx, o.ID), dp)
+			if diff <= 0 {
+				return nil
 			}
+			_, err := s.gooCreateRefundLocked(ctx, o, diff, "Refunded in Stripe", nil, false, false, 0)
 			return err
-		}
+		})
 	case "charge.dispute.created":
 		o, err := s.gooOrderByTransaction(ctx, gooStripeID, gooStripeRef(obj["payment_intent"]))
 		if err != nil {
