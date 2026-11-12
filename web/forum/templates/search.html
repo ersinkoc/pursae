@@ -1,0 +1,16 @@
+{{define "forum/search"}}<div class="pf alignwide" data-view="search">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+<div class="pf-toolbar">{{template "forum/part-search-form" .}}</div>
+{{- $p := .}}
+{{- if .Query}}
+<p class="pf-result-count" role="status">{{$p.Count (index .Extra "total") "%s result" "%s results"}}</p>
+{{- with index .Extra "hits"}}
+<ul class="pf-results">{{range .}}{{template "forum/part-hit" (dict "P" $p "H" .)}}{{end}}</ul>
+{{template "forum/part-pagination" $p}}
+{{- else}}
+<div class="pf-empty pf-card"><p>{{$p.T "Nothing matched your search. Try different words."}}</p></div>
+{{- end}}
+{{- else}}
+<p class="pf-empty">{{.T "Type a few words to search topics and replies."}}</p>
+{{- end}}
+</div>{{end}}

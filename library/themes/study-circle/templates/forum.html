@@ -1,0 +1,13 @@
+{{/* Full-page wrapper of Pursae Forum views (the synthetic page carries _wp_page_template "forum").
+     The forum body prints its own title, crumbs and actions; the sidebar follows the Layout setting
+     (Customizer › Forum; it is left out of the page when the layout is full width). */}}
+{{template "header" .}}
+{{$side := ne (print (theme_mod . "layout")) "full"}}<div class="sc-wrap sc-forum{{if $side}} sc-forum--sidebar{{end}}">
+	<div class="sc-forum__main">{{with .Post}}{{.Content}}{{end}}</div>
+	{{if $side}}<aside class="sc-forum__side" aria-label="Study Circle">
+		{{with forum_stats .}}<section class="sc-panel"><h2 class="sc-panel__title">The circle in numbers</h2>{{.}}</section>{{end}}
+		{{with forum_recent_topics . 5}}<section class="sc-panel"><h2 class="sc-panel__title">Recently active</h2>{{.}}</section>{{end}}
+		<section class="sc-panel sc-panel--rules"><h2 class="sc-panel__title">Before you post</h2><p>Show your working, use a clear title, and be kind.</p></section>
+	</aside>{{end}}
+</div>
+{{template "footer" .}}

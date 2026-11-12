@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="color-scheme" content="light" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site sc-site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<header class="sc-header">
+		<div class="sc-wrap sc-header__inner">
+			<div class="sc-brand">
+				{{with .CustomLogo}}<div class="sc-logo">{{.}}</div>{{else}}<span class="sc-mark" aria-hidden="true"><span></span></span>{{end}}
+				{{if .TitleIsH1}}<h1 class="sc-site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="sc-site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div>
+			{{if has_nav_menu . "primary"}}<nav class="sc-nav" aria-label="Primary menu">{{nav_menu . "primary"}}</nav>{{end}}
+			{{forum_user_menu .}}
+		</div>
+	</header>
+	<main id="main" class="sc-main" tabindex="-1">

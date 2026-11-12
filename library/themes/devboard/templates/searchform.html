@@ -1,0 +1,5 @@
+<form role="search" method="get" class="search-form" action="{{.SearchAction}}">{{.SearchHidden}}
+	<label class="screen-reader-text" for="db-search-field">Search for:</label>
+	<input type="search" id="db-search-field" class="search-field" placeholder="Search the site&hellip;" value="{{.SearchQuery}}" name="s" />
+	<button type="submit" class="search-submit">Search</button>
+</form>

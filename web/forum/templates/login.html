@@ -1,0 +1,27 @@
+{{define "forum/login"}}<div class="pf" data-view="login">{{template "forum/part-head" .}}
+<section class="pf-card pf-auth" aria-labelledby="pf-login-title">
+<h2 id="pf-login-title">{{.T "Welcome back"}}</h2>
+{{template "forum/part-notice" .}}
+{{template "forum/part-google" .}}
+<form class="pf-form" method="post" action="{{.Extra.action}}">
+<input type="hidden" name="forum_action" value="login" />
+<input type="hidden" name="_wpnonce" value="{{.AuthNonce}}" />
+{{- if .Form.redirect}}<input type="hidden" name="redirect" value="{{.Form.redirect}}" />{{end}}
+<div class="pf-field">
+<label for="pf-log">{{.T "Username or email"}}</label>
+<input class="pf-input" type="text" id="pf-log" name="log" value="{{.Form.log}}" autocomplete="username" autocapitalize="off" spellcheck="false" required maxlength="100" />
+</div>
+<div class="pf-field">
+<label for="pf-pwd">{{.T "Password"}}</label>
+<input class="pf-input" type="password" id="pf-pwd" name="pwd" autocomplete="current-password" required />
+</div>
+<div class="pf-field">
+<label class="pf-check"><input type="checkbox" name="rememberme" value="1"{{if .Form.rememberme}} checked{{end}} /> {{.T "Keep me logged in"}}</label>
+</div>
+{{.Captcha}}
+<button type="submit" class="pf-button pf-button--primary">{{.T "Log in"}}</button>
+</form>
+<p class="pf-auth-foot"><a href="{{.URLs.LostPassword}}">{{.T "Forgot your password?"}}</a>
+{{- if .RegisterOn}}<span>{{.T "New here?"}} <a href="{{.URLs.Register}}">{{.T "Create an account"}}</a></span>{{end}}</p>
+</section>
+</div>{{end}}

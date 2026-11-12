@@ -1,0 +1,24 @@
+{{define "forum/new-topic"}}<div class="pf" data-view="new-topic">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+{{- if index .Extra "no_form"}}
+{{- with .Forum}}<p class="pf-back"><a class="pf-button pf-button--ghost" href="{{.URL}}">{{$.Tf "Back to %s" .Title}}</a></p>{{end}}
+{{- else if .CanPost}}
+<section class="pf-card pf-compose">
+{{- with .Forum}}<p class="pf-compose-where">{{$.Tf "Posting in %s" .Title}}</p>{{end}}
+<form class="pf-form" method="post" action="{{index .Extra "action"}}">
+<input type="hidden" name="forum_action" value="new_topic" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{.Traps}}
+<div class="pf-field">
+<label class="pf-label" for="pf-title">{{.T "Title"}}</label>
+<input class="pf-input" type="text" id="pf-title" name="title" value="{{.FormValue "title"}}" required minlength="3" maxlength="120" autocomplete="off" />
+</div>
+{{template "forum/part-editor" (dict "P" . "Value" (.FormValue "content") "Label" (.T "Message"))}}
+<div class="pf-form-actions">
+<button type="submit" class="pf-button pf-button--primary">{{.T "Post topic"}}</button>
+{{- with .Forum}} <a class="pf-button pf-button--ghost" href="{{.URL}}">{{$.T "Cancel"}}</a>{{end}}
+</div>
+</form>
+</section>
+{{- else}}{{template "forum/part-join" .}}{{end}}
+</div>{{end}}

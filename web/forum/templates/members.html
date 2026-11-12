@@ -1,0 +1,40 @@
+{{define "forum/members"}}<div class="pf alignwide" data-view="members">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+{{- $p := .}}
+<div class="pf-members">
+<div class="pf-members-toolbar">
+<form class="pf-search pf-members-search" role="search" method="get" action="{{index .Extra "action"}}">
+<label class="pf-sr" for="pf-members-q">{{.T "Search members"}}</label>
+<input class="pf-input pf-search-input" type="search" id="pf-members-q" name="q" value="{{.Query}}" placeholder="{{.T "Search members by name"}}" maxlength="60" />
+{{- if ne (index .Extra "sort") "newest"}}<input type="hidden" name="sort" value="{{index .Extra "sort"}}" />{{end}}
+<button type="submit" class="pf-button pf-button--primary">{{.T "Search"}}</button>
+</form>
+<nav class="pf-sort" aria-label="{{.T "Sort members"}}">
+{{- range index .Extra "sorts"}}<a class="pf-sort-link{{if .Current}} is-current{{end}}" href="{{.URL}}"{{if .Current}} aria-current="true"{{end}}>{{.Label}}</a>{{end -}}
+</nav>
+</div>
+<p class="pf-result-count" role="status">{{if .Query}}{{$p.Count .MembersTotal "%s member found" "%s members found"}}{{else}}{{$p.Count .MembersTotal "%s member" "%s members"}}{{end}}</p>
+{{- with .Members}}
+<ul class="pf-member-grid">
+{{- range .}}
+<li class="pf-member-card">
+<a class="pf-member-card__avatar" href="{{.ProfileURL}}" tabindex="-1" aria-hidden="true">{{forum_avatar ($p.MemberAuthor .) 72}}</a>
+<h3 class="pf-member-card__name"><a href="{{.ProfileURL}}">{{.DisplayName}}</a></h3>
+<p class="pf-member-card__meta">{{if .Moderator}}<span class="pf-badge pf-badge--mod">{{$p.T "Moderator"}}</span>{{end}}{{$p.LevelChip .Level}}</p>
+{{- if .Badges}}<p class="pf-member-card__badges pf-badges--icons">{{range $p.FewBadges ($p.MemberAuthor .) 5}}{{$p.BadgeChip .}}{{end}}
+{{- with $p.MoreBadges ($p.MemberAuthor .) 5}}<span class="pf-badge-more">+{{.}}</span>{{end}}</p>{{end}}
+<dl class="pf-member-stats">
+<div><dt>{{$p.T "Topics"}}</dt><dd>{{num .Topics}}</dd></div>
+<div><dt>{{$p.T "Replies"}}</dt><dd>{{num .Replies}}</dd></div>
+<div><dt>{{$p.T "Points"}}</dt><dd>{{num .Points}}</dd></div>
+</dl>
+<p class="pf-member-card__joined">{{$p.Tf "Joined %s" (date .Joined "")}}</p>
+</li>
+{{- end}}
+</ul>
+{{template "forum/part-pagination" $p}}
+{{- else}}
+<div class="pf-empty pf-card"><p>{{if .Query}}{{.T "No members match your search."}}{{else}}{{.T "No members to show yet."}}{{end}}</p></div>
+{{- end}}
+</div>
+</div>{{end}}

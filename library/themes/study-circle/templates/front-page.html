@@ -1,0 +1,15 @@
+{{template "header" .}}
+{{with .Post}}<div class="sc-front entry-content">
+	{{.Content}}
+</div>{{end}}
+{{if forum_on}}<section class="sc-wrap sc-live" aria-labelledby="sc-live-title">
+	<div class="sc-live__head">
+		<h2 id="sc-live-title" class="sc-live__title">Fresh in the circle</h2>
+		<a class="sc-btn sc-btn--ghost" href="{{forum_url . "index"}}">All forums</a>
+	</div>
+	<div class="sc-live__grid">
+		<div class="sc-panel"><h3 class="sc-panel__title">Recently active</h3>{{with forum_recent_topics . 6}}{{.}}{{else}}<p class="sc-muted">No questions yet. Ask the first one!</p>{{end}}</div>
+		<div class="sc-panel"><h3 class="sc-panel__title">The circle in numbers</h3>{{forum_stats .}}</div>
+	</div>
+</section>{{end}}
+{{template "footer" .}}

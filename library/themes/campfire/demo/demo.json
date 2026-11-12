@@ -1,0 +1,409 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Campfire Makers",
+  "blogdescription": "A friendly board for woodworkers, tinkerers and weekend builders"
+ },
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"cf-section cf-hero\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cf-section cf-hero\"><!-- wp:paragraph {\"className\":\"cf-eyebrow\"} --><p class=\"cf-eyebrow\">A community for people who make things</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Make something. Share it by the fire.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Campfire is a friendly forum for woodworkers, welders, potters, tinkerers and everyone with sawdust in their pockets. Ask the beginner question, post the wobbly first project, swap tips with people who have been there.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/forums/\">Browse the forums</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/forums/register/\">Join the circle</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"cf-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull cf-section\"><!-- wp:paragraph {\"className\":\"cf-eyebrow\"} --><p class=\"cf-eyebrow\">How the circle works</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Three things we care about</h2><!-- /wp:heading --><!-- wp:group {\"className\":\"cf-features\"} --><div class=\"wp-block-group cf-features\"><!-- wp:group {\"className\":\"cf-feature\"} --><div class=\"wp-block-group cf-feature\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Show your work</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Finished pieces, works in progress and glorious failures are all welcome. Photos and sketches help everyone learn.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"cf-feature\"} --><div class=\"wp-block-group cf-feature\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Ask anything</h3><!-- /wp:heading --><!-- wp:paragraph --><p>There are no silly questions about glue, grit or grounding. Somebody here asked the same thing last year.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"cf-feature\"} --><div class=\"wp-block-group cf-feature\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">Pass it on</h3><!-- /wp:heading --><!-- wp:paragraph --><p>When a reply solves your problem, say so. When you learn a trick, write it down for the next person.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --></div><!-- /wp:group -->",
+   "front_page": true
+  },
+  {
+   "slug": "guidelines",
+   "title": "Community Guidelines",
+   "content": "<!-- wp:paragraph --><p>Campfire works because people are generous with what they know. These few rules keep it that way.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Be kind, especially to beginners</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Assume good intent. Everyone was new once.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Critique the work, never the person. Say what works before what could be better.</li><!-- /wp:list-item --><!-- wp:list-item --><li>No gatekeeping about tools or budgets. A hand saw and patience is a valid workshop.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Make your posts easy to help with</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Use a clear title: &ldquo;Glaze crawling on the rim&rdquo; beats &ldquo;Help!!&rdquo;.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Say what you tried, what you expected and what happened instead.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Post in the forum that fits best. Moderators may move topics.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Safety first</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Never advise someone to remove a guard or skip protective gear.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Mains electricity, gas and pressure vessels: point people to a qualified professional when in doubt.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">No spam, no selling without asking</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Sharing your own project page is fine. Advertising, affiliate links and unsolicited offers are removed. Ask a moderator before posting anything for sale.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Questions about these rules? Post in <a href=\"/forums/\">the forums</a> or reply to the welcome topic.</p><!-- /wp:paragraph -->",
+   "menu_order": 1
+  },
+  {
+   "slug": "about",
+   "title": "About Campfire",
+   "content": "<!-- wp:paragraph --><p>Campfire started as a group chat between four friends who shared a rented workshop on Fridays. When the chat got too busy to scroll, we moved it here.</p><!-- /wp:paragraph --><!-- wp:paragraph --><p>Today the circle is a few hundred makers across a dozen countries. Some sell their work; most of us just like making things with our hands and talking about it afterwards.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Who keeps the fire going</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The forum is run by volunteers. Ozan moderates the workshop forums and answers more welding questions than anyone should. If something needs attention, use the report link on any post or write to the moderators in the Lounge.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Built with Pursae</h2><!-- /wp:heading --><!-- wp:paragraph --><p>The site runs on Pursae with Pursae Forum: no tracking scripts, no ads, and pages that load fast on a phone in a garage with one bar of signal.</p><!-- /wp:paragraph -->",
+   "menu_order": 2
+  }
+ ],
+ "menus": [
+  {
+   "name": "Campfire main",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Forums",
+     "url": "/forums/"
+    },
+    {
+     "title": "Guidelines",
+     "page": "guidelines"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Campfire footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Forums",
+     "url": "/forums/"
+    },
+    {
+     "title": "Community Guidelines",
+     "page": "guidelines"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  }
+ ],
+ "customizer": {
+  "accent": "#D9572B",
+  "layout": "full"
+ },
+ "forum": {
+  "title": "Campfire Community",
+  "members": [
+   {
+    "ref": "mara",
+    "display_name": "Mara Lind",
+    "role": "forum_participant",
+    "bio": "Woodworker and spoon carver working out of a one-car garage."
+   },
+   {
+    "ref": "ozan",
+    "display_name": "Ozan Kaya",
+    "role": "forum_moderator",
+    "bio": "Moderator. Builds furniture, welds gates and fixes old radios."
+   },
+   {
+    "ref": "priya",
+    "display_name": "Priya Raman",
+    "role": "forum_participant",
+    "bio": "Leathercraft, bookbinding and far too many notebooks."
+   },
+   {
+    "ref": "tomas",
+    "display_name": "Tomás Reyes",
+    "role": "forum_participant",
+    "bio": "Weekend welder, full-time dad, part-time shed philosopher."
+   },
+   {
+    "ref": "june",
+    "display_name": "June Okafor",
+    "role": "forum_participant",
+    "bio": "Second-year ceramics student and glaze chemistry nerd."
+   },
+   {
+    "ref": "eli",
+    "display_name": "Eli Brandt",
+    "role": "forum_participant",
+    "bio": "Electronics tinkerer. Designs small synth kits."
+   }
+  ],
+  "forums": [
+   {
+    "ref": "fire",
+    "title": "Around the Fire",
+    "kind": "category",
+    "description": "Say hello, read the news and talk about anything.",
+    "order": 0
+   },
+   {
+    "ref": "news",
+    "title": "Announcements",
+    "parent": "fire",
+    "description": "News and changes from the moderators.",
+    "order": 0,
+    "closed": true
+   },
+   {
+    "ref": "intro",
+    "title": "Introductions",
+    "parent": "fire",
+    "description": "New here? Tell us what you make.",
+    "order": 1
+   },
+   {
+    "ref": "lounge",
+    "title": "The Lounge",
+    "parent": "fire",
+    "description": "Off-topic chat, tool finds and show-and-tell.",
+    "order": 2
+   },
+   {
+    "ref": "workshop",
+    "title": "The Workshop",
+    "kind": "category",
+    "description": "Wood, metal and wires.",
+    "order": 1
+   },
+   {
+    "ref": "wood",
+    "title": "Woodworking",
+    "parent": "workshop",
+    "description": "Joinery, finishes, hand and power tools.",
+    "order": 0
+   },
+   {
+    "ref": "metal",
+    "title": "Metal & Welding",
+    "parent": "workshop",
+    "description": "Welding, forging, fabrication.",
+    "order": 1
+   },
+   {
+    "ref": "electronics",
+    "title": "Electronics & Repair",
+    "parent": "workshop",
+    "description": "Soldering, kits, restorations.",
+    "order": 2
+   },
+   {
+    "ref": "studio",
+    "title": "The Studio",
+    "kind": "category",
+    "description": "Clay, cloth, leather and paper.",
+    "order": 2
+   },
+   {
+    "ref": "ceramics",
+    "title": "Ceramics & Glass",
+    "parent": "studio",
+    "description": "Throwing, hand building, glazes and kilns.",
+    "order": 0
+   },
+   {
+    "ref": "textiles",
+    "title": "Leather, Textiles & Paper",
+    "parent": "studio",
+    "description": "Stitching, binding, weaving and dyeing.",
+    "order": 1
+   }
+  ],
+  "topics": [
+   {
+    "ref": "welcome",
+    "forum": "news",
+    "author": "admin",
+    "title": "Welcome to Campfire: start here",
+    "content": "<p>Welcome to the circle! A few things to help you settle in:</p><ul><li>Introduce yourself in <strong>Introductions</strong>. Tell us what you make and what you want to learn.</li><li>Read the <a href=\"/guidelines/\">community guidelines</a>. They are short, we promise.</li><li>When a reply helps you, say thanks and post a photo of the result. That is how the fire keeps burning.</li></ul><p>Pull up a seat.</p>",
+    "sticky": true,
+    "closed": true,
+    "hours_ago": 420,
+    "replies": [
+     {
+      "author": "mara",
+      "content": "<p>Thanks for setting this up. Much easier to find things than in the old group chat.</p>",
+      "hours_ago": 410
+     },
+     {
+      "author": "tomas",
+      "content": "<p>Finally a place where nobody laughs at my welds. Well, not out loud.</p>",
+      "hours_ago": 404
+     }
+    ]
+   },
+   {
+    "ref": "hello-mara",
+    "forum": "intro",
+    "author": "mara",
+    "title": "Hello from a one-car garage in Gothenburg",
+    "content": "<p>Hi all! I'm Mara. I carve spoons and bowls in the evenings and I'm slowly working up the courage to build a proper workbench. Most of my tools are hand tools: two chisels, a rasp, a Japanese pull saw and a hatchet I inherited from my grandfather.</p><p>Looking forward to learning from you.</p>",
+    "hours_ago": 160,
+    "replies": [
+     {
+      "author": "ozan",
+      "content": "<p>Welcome, Mara! A grandfather's hatchet is the best possible starting tool. Post your spoons when you can.</p>",
+      "hours_ago": 158
+     },
+     {
+      "author": "priya",
+      "content": "<p>Spoon carving is so satisfying. Do you use green wood? I have been wanting to try birch.</p>",
+      "hours_ago": 150
+     },
+     {
+      "author": "mara",
+      "content": "<p>Yes, mostly green birch and cherry from a friend's garden. Birch is lovely to carve, just keep the blanks in a plastic bag so they don't crack.</p>",
+      "hours_ago": 147
+     }
+    ]
+   },
+   {
+    "ref": "dovetails",
+    "forum": "wood",
+    "author": "mara",
+    "title": "Hand-cut dovetails: my first ten attempts",
+    "content": "<p>I cut ten practice dovetail joints in pine this week. The first three had gaps you could post a letter through. By number eight they were almost tight.</p><p>What helped most:</p><ol><li>Marking with a knife instead of a pencil.</li><li>Sawing on the waste side of the line, every time.</li><li>Paring the baseline in two passes instead of one big chop.</li></ol><p>What I still struggle with is keeping the saw square to the face. Any tips?</p>",
+    "hours_ago": 96,
+    "replies": [
+     {
+      "author": "ozan",
+      "content": "<p>Great progress. For squareness, put a small mirror behind the board: you see the saw and its reflection, and it's obvious when they don't line up.</p>",
+      "hours_ago": 94
+     },
+     {
+      "author": "tomas",
+      "content": "<p>Also check that the board is clamped dead vertical. I spent a month blaming my wrist when it was the vise.</p>",
+      "hours_ago": 90
+     },
+     {
+      "author": "mara",
+      "content": "<p>The mirror trick is brilliant. Joint number eleven had no gaps on the front face. I'm framing it.</p>",
+      "hours_ago": 70
+     }
+    ]
+   },
+   {
+    "ref": "table-finish",
+    "forum": "wood",
+    "author": "tomas",
+    "title": "Which finish for a kitchen table that gets abused daily?",
+    "content": "<p>Oak table, three kids, one dog, lots of spilled juice. Polyurethane looks plastic to me, but oil seems too delicate. What has held up for you?</p>",
+    "hours_ago": 52,
+    "replies": [
+     {
+      "author": "ozan",
+      "content": "<p>Hardwax oil. It looks and feels like oil, resists water well, and when a spot wears out you sand that spot and re-oil it. No stripping the whole top.</p>",
+      "hours_ago": 50
+     },
+     {
+      "author": "mara",
+      "content": "<p>Seconding hardwax oil. Two thin coats, buffed, and a third on the top only.</p>",
+      "hours_ago": 47
+     },
+     {
+      "author": "june",
+      "content": "<p>Whatever you choose, test it on an offcut with a glass of juice left overnight. Learned that one the hard way.</p>",
+      "hours_ago": 41
+     }
+    ]
+   },
+   {
+    "ref": "mig-flux",
+    "forum": "metal",
+    "author": "tomas",
+    "title": "MIG or flux-core for a beginner on a budget?",
+    "content": "<p>I want to weld small projects: a log rack, brackets, maybe a trailer ramp one day. Is a gasless flux-core machine good enough to learn on, or should I save for a MIG with gas?</p>",
+    "hours_ago": 120,
+    "replies": [
+     {
+      "author": "ozan",
+      "content": "<p>Flux-core is a fine way to learn and works outside in the wind, where gas gets blown away. Expect more spatter and a slag layer to chip off. If you can, buy a machine that can do both later.</p>",
+      "hours_ago": 117
+     },
+     {
+      "author": "eli",
+      "content": "<p>Whatever you buy, budget for a good auto-darkening helmet and gloves first. Your eyes are not upgradeable.</p>",
+      "hours_ago": 111
+     }
+    ]
+   },
+   {
+    "ref": "radio-hum",
+    "forum": "electronics",
+    "author": "eli",
+    "title": "Restoring a 1970s radio: loud hum on every station",
+    "content": "<p>Picked up a 1974 table radio at a flea market. It powers up, the dial lights, every station comes through, but there is a loud 100&nbsp;Hz hum underneath. Volume knob makes no difference to the hum.</p><p>Where would you start?</p>",
+    "hours_ago": 36,
+    "replies": [
+     {
+      "author": "ozan",
+      "content": "<p>Hum that doesn't change with volume, at twice mains frequency, is the classic sign of dried-out filter capacitors in the power supply. Discharge them before touching anything.</p>",
+      "hours_ago": 34
+     },
+     {
+      "author": "eli",
+      "content": "<p>That was it. Replaced the two big electrolytics and it is dead quiet now. The old ones had visibly bulged tops.</p>",
+      "hours_ago": 22
+     },
+     {
+      "author": "priya",
+      "content": "<p>Love this. Please post a photo of the cabinet, those 70s designs are gorgeous.</p>",
+      "hours_ago": 20
+     }
+    ]
+   },
+   {
+    "ref": "glaze-crawl",
+    "forum": "ceramics",
+    "author": "june",
+    "title": "Crawling glaze on the rim, what am I doing wrong?",
+    "content": "<p>My last batch of mugs came out with bare patches where the glaze pulled back into beads, mostly near the rim. Same glaze worked fine last month.</p><p>Bisque was the same temperature. The only change: I glazed them a day after bisque instead of the same week.</p>",
+    "hours_ago": 26,
+    "replies": [
+     {
+      "author": "priya",
+      "content": "<p>Dust or oil on the bisque is the usual suspect. Did you handle the rims a lot? Try wiping with a damp sponge before glazing.</p>",
+      "hours_ago": 25
+     },
+     {
+      "author": "ozan",
+      "content": "<p>Also check application thickness. Crawling loves a thick coat that cracks while drying.</p>",
+      "hours_ago": 23
+     },
+     {
+      "author": "june",
+      "content": "<p>Sponged everything and dipped for two seconds instead of four. No crawling in the new batch. Thank you!</p>",
+      "hours_ago": 8
+     }
+    ]
+   },
+   {
+    "ref": "saddle-stitch",
+    "forum": "textiles",
+    "author": "priya",
+    "title": "Saddle stitching tips for a first leather wallet",
+    "content": "<p>I am making my first bifold wallet from 1.2&nbsp;mm veg-tan. Stitching chisels arrived today. Anything you wish someone had told you before your first saddle stitch?</p>",
+    "hours_ago": 14,
+    "replies": [
+     {
+      "author": "mara",
+      "content": "<p>Wax the thread even if it is pre-waxed, and keep the same over-under order for every stitch or the line looks uneven.</p>",
+      "hours_ago": 12
+     },
+     {
+      "author": "june",
+      "content": "<p>Punch through both layers together so the holes line up. Glue first, then punch.</p>",
+      "hours_ago": 10
+     }
+    ]
+   },
+   {
+    "ref": "bench",
+    "forum": "lounge",
+    "author": "ozan",
+    "title": "Show us your bench (mess included)",
+    "content": "<p>No tidying allowed. Describe or post your workbench exactly as it is right now. I'll start: three clamps, a cold coffee, half a radio and a drawing of a chair I will never build.</p>",
+    "hours_ago": 6,
+    "replies": [
+     {
+      "author": "mara",
+      "content": "<p>Spoon blanks in a plastic bag, a hatchet, and the dovetail practice board I refuse to throw away.</p>",
+      "hours_ago": 5
+     },
+     {
+      "author": "tomas",
+      "content": "<p>A welding helmet, one sock (why?) and my kid's lego spaceship which I have been told not to touch.</p>",
+      "hours_ago": 4
+     },
+     {
+      "author": "eli",
+      "content": "<p>Soldering station, magnifier, a pile of resistors I swear I will sort one day.</p>",
+      "hours_ago": 3
+     },
+     {
+      "author": "june",
+      "content": "<p>Clay dust on everything. Literally everything.</p>",
+      "hours_ago": 1
+     }
+    ]
+   }
+  ]
+ }
+}

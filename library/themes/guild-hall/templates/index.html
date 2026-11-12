@@ -1,0 +1,17 @@
+{{template "header" .}}
+<div class="gh-wrap gh-listing">
+	{{if .IsHomeHeader}}<header class="gh-page-head"><h1 class="gh-page-title">{{.PostsPageTitle}}</h1></header>
+	{{else if .ArchiveTitle}}<header class="gh-page-head"><h1 class="gh-page-title">{{.ArchiveTitle}}</h1>{{with .ArchiveDesc}}<div class="gh-page-desc">{{.}}</div>{{end}}</header>
+	{{else if .SearchQuery}}<header class="gh-page-head"><h1 class="gh-page-title">Results for &ldquo;{{.SearchQuery}}&rdquo;</h1></header>{{end}}
+	{{if .Posts}}<div class="gh-cards">
+	{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} gh-card">
+		{{if .ThumbnailURL}}<a class="gh-card__media" href="{{.Permalink}}" tabindex="-1" aria-hidden="true">{{.Thumbnail}}</a>{{end}}
+		<p class="gh-meta"><time datetime="{{.DateISO}}">{{.DateText}}</time></p>
+		<h2 class="gh-card__title"><a href="{{.Permalink}}">{{.Title}}</a></h2>
+		<div class="gh-card__excerpt">{{.Excerpt}}</div>
+	</article>
+	{{end}}</div>
+	{{.Pagination}}
+	{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}

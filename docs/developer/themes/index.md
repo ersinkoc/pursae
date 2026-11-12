@@ -29,7 +29,9 @@ Everything a package can express is also what the bundled Classic theme uses, so
 - widget areas and menu locations;
 - Customizer sections and settings with live preview ([customizer](customizer.md));
 - what the block editor knows about it: colour palette, wide alignment, supports
-  ([block editor support](block-editor-support.md)).
+  ([block editor support](block-editor-support.md));
+- how Pursae Forum looks: the forum page wrapper, the forum's colour tokens and any forum view
+  ([forum themes](forum.md)).
 
 ## What the core does for every theme
 
@@ -51,6 +53,13 @@ templates designed in the builder replace the theme's own output — but only on
 ([Hello Pursae and the Theme Builder](hello-pursae.md)). A theme package needs nothing for the
 builder and cannot receive Theme Builder parts: there are no builder templates, theme parts or kits
 in the package format.
+
+## Pursae Forum
+
+Every Pursae Forum view (forums, topics, profiles, login, sign-up) renders inside the active theme,
+so any theme shows the forum. A theme made for it declares `supports: {"pursae-forum": true}`, wraps
+the views in `templates/forum.html`, sets the `--pf-*` tokens and may replace any view with
+`templates/forum/<view>.html` ([forum themes](forum.md)).
 
 ## Editing on a live site
 

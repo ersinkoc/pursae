@@ -1,0 +1,401 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Devboard",
+  "blogdescription": "Questions and answers for people who ship software"
+ },
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "content": "<!-- wp:group {\"align\":\"full\",\"className\":\"db-section db-hero\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull db-section db-hero\"><!-- wp:paragraph {\"className\":\"db-eyebrow\"} --><p class=\"db-eyebrow\">Q&amp;A for people who ship software</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Ask precise questions. Get answers that compile.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Devboard is a community forum for backend, frontend and infrastructure engineers. Post the stack trace, the query plan or the failing test, and get help from people who have debugged the same thing.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/forums/\">Browse questions</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/forums/register/\">Create an account</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --><!-- wp:group {\"align\":\"full\",\"className\":\"db-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group alignfull db-section\"><!-- wp:group {\"className\":\"db-steps\"} --><div class=\"wp-block-group db-steps\"><!-- wp:group {\"className\":\"db-step\"} --><div class=\"wp-block-group db-step\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">1. Search first</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Most questions have a cousin here already. Search the forums before posting.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"db-step\"} --><div class=\"wp-block-group db-step\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">2. Show your code</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Paste a minimal example in a code block, with the exact error and versions.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"db-step\"} --><div class=\"wp-block-group db-step\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\">3. Close the loop</h3><!-- /wp:heading --><!-- wp:paragraph --><p>Post what fixed it. Future you, and everyone else, will thank you.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --></div><!-- /wp:group -->",
+   "front_page": true
+  },
+  {
+   "slug": "guidelines",
+   "title": "Posting Guidelines",
+   "content": "<!-- wp:paragraph --><p>Devboard is a place for specific, answerable technical questions and thoughtful discussion. Please read this before your first post.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Asking</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Write a title that states the problem: &ldquo;pgx: CopyFrom fails with numeric overflow&rdquo;, not &ldquo;Postgres issue&rdquo;.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Include a minimal reproducible example in a code block, the exact error message and the versions involved.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Say what you already tried. It saves everyone a round trip.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Never paste secrets, tokens, customer data or production credentials. Redact them.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Answering</h2><!-- /wp:heading --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li>Explain why, not only what. Link to documentation where it helps.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Test your snippet or say clearly that you did not.</li><!-- /wp:list-item --><!-- wp:list-item --><li>Disagree with the code, not the coder.</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Moderation</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Moderators may edit titles for clarity, close duplicates and remove spam. Promotional posts belong in Show &amp; Tell, and only for things you built yourself.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Code of conduct</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Harassment, discrimination and personal attacks are not tolerated. Report a post with the moderation tools or write to the moderators in Meta.</p><!-- /wp:paragraph -->",
+   "menu_order": 1
+  },
+  {
+   "slug": "about",
+   "title": "About Devboard",
+   "content": "<!-- wp:paragraph --><p>Devboard is a small, independent Q&amp;A community run by working engineers. It started as an internal help channel and opened to everyone when the questions got too good to keep private.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Why a forum?</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Chat moves too fast and answers disappear. A forum keeps the question, the dead ends and the fix together, searchable for the next person who hits the same wall.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">The stack</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Devboard runs on Pursae with Pursae Forum: one Go binary and PostgreSQL. No JavaScript is needed to read, post or moderate.</p><!-- /wp:paragraph -->",
+   "menu_order": 2
+  }
+ ],
+ "menus": [
+  {
+   "name": "Devboard main",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Forums",
+     "url": "/forums/"
+    },
+    {
+     "title": "Guidelines",
+     "page": "guidelines"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Devboard footer",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Posting Guidelines",
+     "page": "guidelines"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    },
+    {
+     "title": "Search",
+     "url": "/forums/search/"
+    }
+   ]
+  }
+ ],
+ "customizer": {
+  "accent": "#4F46E5",
+  "layout": "sidebar"
+ },
+ "forum": {
+  "title": "Devboard Q&A",
+  "members": [
+   {
+    "ref": "ana",
+    "display_name": "Ana Petrova",
+    "role": "forum_moderator",
+    "bio": "Moderator. Backend engineer and Postgres whisperer."
+   },
+   {
+    "ref": "kenji",
+    "display_name": "Kenji Mori",
+    "role": "forum_participant",
+    "bio": "Go, distributed systems and boring infrastructure."
+   },
+   {
+    "ref": "sam",
+    "display_name": "Sam Whitfield",
+    "role": "forum_participant",
+    "bio": "Frontend, accessibility and CSS that behaves."
+   },
+   {
+    "ref": "lucia",
+    "display_name": "Lucía Ferrer",
+    "role": "forum_participant",
+    "bio": "SRE. Kubernetes by day, Rust by night."
+   },
+   {
+    "ref": "dev",
+    "display_name": "Dev Patel",
+    "role": "forum_participant",
+    "bio": "Learning Go after ten years of Python."
+   },
+   {
+    "ref": "noor",
+    "display_name": "Noor Haddad",
+    "role": "forum_participant",
+    "bio": "Application security and auth flows."
+   }
+  ],
+  "forums": [
+   {
+    "ref": "languages",
+    "title": "Languages",
+    "kind": "category",
+    "description": "Questions about a specific language or its tooling.",
+    "order": 0
+   },
+   {
+    "ref": "go",
+    "title": "Go",
+    "parent": "languages",
+    "description": "Concurrency, modules, the standard library.",
+    "order": 0
+   },
+   {
+    "ref": "python",
+    "title": "Python",
+    "parent": "languages",
+    "description": "Packaging, typing, async, web frameworks.",
+    "order": 1
+   },
+   {
+    "ref": "rust",
+    "title": "Rust",
+    "parent": "languages",
+    "description": "Ownership, lifetimes, crates and FFI.",
+    "order": 2
+   },
+   {
+    "ref": "js",
+    "title": "JavaScript & CSS",
+    "parent": "languages",
+    "description": "Browsers, TypeScript, layout and accessibility.",
+    "order": 3
+   },
+   {
+    "ref": "infra",
+    "title": "Infrastructure",
+    "kind": "category",
+    "description": "Data, delivery and keeping things running.",
+    "order": 1
+   },
+   {
+    "ref": "databases",
+    "title": "Databases",
+    "parent": "infra",
+    "description": "PostgreSQL, indexing, query plans, migrations.",
+    "order": 0
+   },
+   {
+    "ref": "devops",
+    "title": "DevOps & CI",
+    "parent": "infra",
+    "description": "Pipelines, containers, deployments.",
+    "order": 1
+   },
+   {
+    "ref": "security",
+    "title": "Security",
+    "parent": "infra",
+    "description": "Auth, secrets, hardening, threat models.",
+    "order": 2
+   },
+   {
+    "ref": "community",
+    "title": "Community",
+    "kind": "category",
+    "description": "About this board and the things we build.",
+    "order": 2
+   },
+   {
+    "ref": "meta",
+    "title": "Meta & Announcements",
+    "parent": "community",
+    "description": "How Devboard works. Read-only for members.",
+    "order": 0,
+    "closed": true
+   },
+   {
+    "ref": "showcase",
+    "title": "Show & Tell",
+    "parent": "community",
+    "description": "Projects you built yourself. Feedback welcome.",
+    "order": 1
+   }
+  ],
+  "topics": [
+   {
+    "ref": "how-to-ask",
+    "forum": "meta",
+    "author": "admin",
+    "title": "How to ask a good question on Devboard",
+    "content": "<p>Good questions get fast answers. Before you post:</p><ol><li>Search. Your question may already have an answer.</li><li>Reduce the problem to the smallest piece of code that still fails.</li><li>Paste it in a code block with the <strong>exact</strong> error and the versions you use.</li><li>Say what you expected and what happened instead.</li></ol><p>When an answer solves it, reply with what worked. See the <a href=\"/guidelines/\">posting guidelines</a> for the rest.</p>",
+    "sticky": true,
+    "closed": true,
+    "hours_ago": 600,
+    "replies": [
+     {
+      "author": "ana",
+      "content": "<p>Adding one: never paste secrets. If you did, rotate them first and then ask a moderator to edit the post.</p>",
+      "hours_ago": 590
+     }
+    ]
+   },
+   {
+    "ref": "goroutine-leak",
+    "forum": "go",
+    "author": "dev",
+    "title": "Goroutine leak when the request context is cancelled",
+    "content": "<p>My worker pool keeps growing in production. <code>runtime.NumGoroutine()</code> climbs every time a client disconnects mid-request. The worker looks like this:</p><pre><code class=\"language-go\">func worker(ctx context.Context, jobs &lt;-chan Job) {\n\tfor job := range jobs {\n\t\tprocess(job)\n\t}\n}</code></pre><p>The producer stops sending when the context is cancelled, but the workers never exit. What am I missing?</p>",
+    "hours_ago": 58,
+    "replies": [
+     {
+      "author": "kenji",
+      "content": "<p>Your workers block on <code>range jobs</code> forever because nobody closes the channel when the context ends. Select on <code>ctx.Done()</code> too:</p><pre><code class=\"language-go\">func worker(ctx context.Context, jobs &lt;-chan Job) {\n\tfor {\n\t\tselect {\n\t\tcase &lt;-ctx.Done():\n\t\t\treturn\n\t\tcase job, ok := &lt;-jobs:\n\t\t\tif !ok {\n\t\t\t\treturn\n\t\t\t}\n\t\t\tprocess(ctx, job)\n\t\t}\n\t}\n}</code></pre><p>And close <code>jobs</code> in the producer with <code>defer close(jobs)</code> so normal shutdown works as well.</p>",
+      "hours_ago": 55
+     },
+     {
+      "author": "ana",
+      "content": "<p>Add <code>go.uber.org/goleak</code> to your tests. It fails the test when goroutines are still running at the end, which catches this class of bug early.</p>",
+      "hours_ago": 50
+     },
+     {
+      "author": "dev",
+      "content": "<p>That fixed it. Goroutine count is flat now, and goleak found a second leak in a ticker I forgot to stop. Thanks both!</p>",
+      "hours_ago": 31
+     }
+    ]
+   },
+   {
+    "ref": "ilike-index",
+    "forum": "databases",
+    "author": "kenji",
+    "title": "Postgres ignores my index for ILIKE '%term%'",
+    "content": "<p>This query does a sequential scan on 4M rows even though <code>title</code> has a B-tree index:</p><pre><code class=\"language-sql\">SELECT id, title FROM articles\nWHERE title ILIKE '%' || $1 || '%'\nORDER BY created_at DESC\nLIMIT 20;</code></pre><p><code>EXPLAIN ANALYZE</code> shows ~900&nbsp;ms. Is there a way to make substring search use an index?</p>",
+    "hours_ago": 34,
+    "replies": [
+     {
+      "author": "ana",
+      "content": "<p>A B-tree can only help with a left-anchored pattern (<code>'term%'</code>). For substrings use a trigram index:</p><pre><code class=\"language-sql\">CREATE EXTENSION IF NOT EXISTS pg_trgm;\nCREATE INDEX articles_title_trgm ON articles USING gin (title gin_trgm_ops);</code></pre><p>Trigram GIN indexes support <code>LIKE</code> and <code>ILIKE</code> with leading wildcards. Searches shorter than three characters still scan.</p>",
+      "hours_ago": 32
+     },
+     {
+      "author": "lucia",
+      "content": "<p>If you need ranking or stemming, look at full-text search with a <code>tsvector</code> column instead. Different tool, often a better fit for &ldquo;search box&rdquo; features.</p>",
+      "hours_ago": 29
+     },
+     {
+      "author": "kenji",
+      "content": "<p>Trigram index brought it down to 6&nbsp;ms. Index build took 40&nbsp;seconds with <code>CONCURRENTLY</code>. Marking this solved.</p>",
+      "hours_ago": 18
+     }
+    ]
+   },
+   {
+    "ref": "has-perf",
+    "forum": "js",
+    "author": "sam",
+    "title": "Is :has() fast enough for a 5,000-row list?",
+    "content": "<p>I want to show a toolbar only when a row is selected, without JavaScript state:</p><pre><code class=\"language-css\">.list:has(&gt; .item.is-selected) .toolbar { display: flex; }</code></pre><p>Does <code>:has()</code> cause noticeable style recalculation on large lists?</p>",
+    "hours_ago": 76,
+    "replies": [
+     {
+      "author": "lucia",
+      "content": "<p>Anchoring it with the child combinator (<code>&gt;</code>) like you did keeps invalidation cheap. Unanchored <code>:has(.x)</code> on a big subtree is where it hurts.</p>",
+      "hours_ago": 72
+     },
+     {
+      "author": "sam",
+      "content": "<p>Profiled in Chrome and Firefox: under 2&nbsp;ms per selection change with 5,000 rows. Shipping it.</p>",
+      "hours_ago": 66
+     }
+    ]
+   },
+   {
+    "ref": "actions-cache",
+    "forum": "devops",
+    "author": "lucia",
+    "title": "GitHub Actions cache misses on Go modules every run",
+    "content": "<p>Every CI run downloads all modules again, although the cache step reports a save. Using a monorepo with <code>go.mod</code> in <code>services/api</code>.</p>",
+    "hours_ago": 22,
+    "replies": [
+     {
+      "author": "kenji",
+      "content": "<p>setup-go keys the cache on <code>go.sum</code> at the repository root by default. Point it at the real one:</p><pre><code class=\"language-yaml\">- uses: actions/setup-go@v5\n  with:\n    go-version-file: services/api/go.mod\n    cache-dependency-path: services/api/go.sum</code></pre>",
+      "hours_ago": 20
+     },
+     {
+      "author": "dev",
+      "content": "<p>Same issue bit us. Also make sure you don't have a separate <code>actions/cache</code> step fighting over the same path.</p>",
+      "hours_ago": 17
+     }
+    ]
+   },
+   {
+    "ref": "refresh-tokens",
+    "forum": "security",
+    "author": "noor",
+    "title": "Refresh tokens: HttpOnly cookie or localStorage?",
+    "content": "<p>We are redesigning auth for a single-page app with an API on the same site. Where should the refresh token live, and what do you do about CSRF if it's a cookie?</p>",
+    "hours_ago": 100,
+    "replies": [
+     {
+      "author": "sam",
+      "content": "<p>HttpOnly, Secure, SameSite=Strict (or Lax) cookie scoped to the refresh endpoint path. JavaScript never sees it, so XSS cannot steal it.</p>",
+      "hours_ago": 97
+     },
+     {
+      "author": "ana",
+      "content": "<p>With SameSite plus a custom header requirement on the refresh endpoint you get solid CSRF protection. Rotate the refresh token on every use and detect reuse.</p>",
+      "hours_ago": 93
+     },
+     {
+      "author": "noor",
+      "content": "<p>Going with the cookie, path-scoped, with rotation and reuse detection. Thanks for the sanity check.</p>",
+      "hours_ago": 80
+     }
+    ]
+   },
+   {
+    "ref": "rust-lifetimes",
+    "forum": "rust",
+    "author": "lucia",
+    "title": "Lifetimes in a struct that holds a &str",
+    "content": "<p>The compiler rejects this with <code>expected named lifetime parameter</code>:</p><pre><code class=\"language-rust\">struct Parser {\n    input: &amp;str,\n    pos: usize,\n}</code></pre><p>I don't want to clone the input into a <code>String</code>. How do I express that the parser borrows it?</p>",
+    "hours_ago": 130,
+    "replies": [
+     {
+      "author": "kenji",
+      "content": "<p>Give the struct a lifetime parameter and tie the borrowed field to it. Tokens returned from the parser can then borrow from the input, not from the parser:</p><pre><code class=\"language-rust\">struct Parser&lt;'a&gt; {\n    input: &amp;'a str,\n    pos: usize,\n}\n\nimpl&lt;'a&gt; Parser&lt;'a&gt; {\n    fn next_token(&amp;mut self) -&gt; Option&lt;&amp;'a str&gt; { /* ... */ None }\n}</code></pre>",
+      "hours_ago": 126
+     },
+     {
+      "author": "lucia",
+      "content": "<p>Returning <code>&amp;'a str</code> instead of <code>&amp;str</code> was the missing piece. Compiles and no clones. Thanks!</p>",
+      "hours_ago": 119
+     }
+    ]
+   },
+   {
+    "ref": "flask-to-go",
+    "forum": "python",
+    "author": "dev",
+    "title": "Moving a Flask service to Go: what did you miss most?",
+    "content": "<p>We are porting a mid-sized Flask API to Go. For people who did this: what did you miss from Python, and what surprised you in a good way?</p>",
+    "hours_ago": 160,
+    "replies": [
+     {
+      "author": "kenji",
+      "content": "<p>Missed: quick scripting and the REPL. Gained: one static binary, predictable memory, and a compiler that catches half of what our tests used to.</p>",
+      "hours_ago": 154
+     },
+     {
+      "author": "sam",
+      "content": "<p>Missed comprehension one-liners. Did not miss dependency resolution on deploy day.</p>",
+      "hours_ago": 150
+     },
+     {
+      "author": "ana",
+      "content": "<p>Keep the Python service running behind the same API contract and move one endpoint at a time. Contract tests saved us.</p>",
+      "hours_ago": 141
+     }
+    ]
+   },
+   {
+    "ref": "log-viewer",
+    "forum": "showcase",
+    "author": "kenji",
+    "title": "Show: a tiny terminal log viewer with level filters",
+    "content": "<p>I got tired of piping logs through three tools, so I wrote a small viewer that colours levels, follows files and understands JSON lines:</p><pre><code>$ tail -f app.log | lumberjack --level warn --json\n12:04:31 WARN  db    slow query 412ms  SELECT ... FROM orders\n12:04:33 WARN  http  retrying POST /hooks/billing (attempt 2)</code></pre><p>Single binary, no config. Feedback on the flags welcome.</p>",
+    "hours_ago": 9,
+    "replies": [
+     {
+      "author": "dev",
+      "content": "<p>This is great. Could it read from journald directly?</p>",
+      "hours_ago": 7
+     },
+     {
+      "author": "lucia",
+      "content": "<p>Feature request: a <code>--since 10m</code> flag so I don't have to scroll back after an incident.</p>",
+      "hours_ago": 5
+     },
+     {
+      "author": "noor",
+      "content": "<p>Nice. Please make sure it never prints fields named <code>password</code> or <code>token</code> unmasked by default.</p>",
+      "hours_ago": 2
+     }
+    ]
+   }
+  ]
+ }
+}

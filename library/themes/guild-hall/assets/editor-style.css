@@ -1,0 +1,13 @@
+/* Guild Hall: editor content area. */
+@font-face { font-family: "Chakra Petch"; src: url("fonts/chakra-petch-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("fonts/inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+body, .editor-styles-wrapper { background: #120A26; color: #F4F1FF; font-family: "Inter", system-ui, sans-serif; font-size: 17px; line-height: 1.65; }
+.editor-styles-wrapper h1, .editor-styles-wrapper h2, .editor-styles-wrapper h3, .editor-styles-wrapper h4, .editor-styles-wrapper .editor-post-title__input {
+	font-family: "Chakra Petch", "Inter", sans-serif; font-weight: 700; color: #fff; letter-spacing: .01em; }
+.editor-styles-wrapper a { color: #B6F23A; }
+.editor-styles-wrapper blockquote { border-left: 4px solid #E040A0; padding: 12px 18px; background: #1B1035; }
+.editor-styles-wrapper code { background: #241645; padding: 2px 6px; border-radius: 6px; }
+.editor-styles-wrapper .wp-block-button__link { background: #B6F23A; color: #1B1035; border-radius: 10px; font-family: "Chakra Petch", sans-serif; font-weight: 700; text-transform: uppercase; }
+.editor-styles-wrapper .wp-block { max-width: 780px; }
+.editor-styles-wrapper .wp-block[data-align="wide"] { max-width: 1200px; }
+.editor-styles-wrapper .wp-block[data-align="full"] { max-width: none; }

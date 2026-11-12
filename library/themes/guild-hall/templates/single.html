@@ -1,0 +1,20 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} gh-entry">
+	<header class="gh-wrap gh-narrow gh-entry__head">
+		<p class="gh-meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; {{.}}{{end}}</p>
+		<h1 class="gh-entry__title">{{.Title}}</h1>
+	</header>
+	{{if .ThumbnailURL}}<figure class="gh-wrap gh-narrow gh-entry__media">{{.Thumbnail}}</figure>{{end}}
+	<div class="gh-wrap gh-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="gh-wrap gh-narrow gh-entry__foot">{{.}}</footer>{{end}}
+</article>{{end}}
+{{with .PostNav}}<div class="gh-wrap gh-narrow gh-postnav">{{.}}</div>{{end}}
+{{with .Comments}}<section id="comments" class="gh-wrap gh-narrow gh-comments comments-area" aria-label="Comments">
+	{{if .Count}}<h2 class="gh-comments__title comments-title">{{.Title}}</h2>
+	{{.Nav}}<ol class="comment-list">{{.List}}</ol>{{.Nav}}{{end}}
+	{{if .ClosedNotice}}<p class="no-comments">Comments are closed.</p>{{end}}
+	{{.Form}}
+</section>{{end}}
+{{template "footer" .}}

@@ -791,7 +791,11 @@ var acfgoReservedTypes = map[string]bool{"post": true, "page": true, "attachment
 	"customize_changeset": true, "oembed_cache": true, "user_request": true, "wp_block": true, "wp_template": true, "wp_template_part": true,
 	"wp_global_styles": true, "wp_navigation": true, "action": true, "author": true, "order": true, "theme": true, "category": true, "post_tag": true,
 	"post_format": true, "link_category": true, "nav_menu": true, "wp_theme": true, "type": true, "name": true, "term": true, "taxonomy": true,
-	"wb_template": true} // Pursae Web Builder: Theme Builder templates (webbuilder.TemplatePostType)
+	// Pursae Web Builder: Theme Builder templates (webbuilder.TemplatePostType)
+	"wb_template": true,
+	// Pursae Forum (forum.go)
+	"forum": true, "topic": true, "reply": true,
+}
 
 // acfgoTypeFromForm reads the add/edit form of a post type, taxonomy or options page.
 func (s *Server) acfgoTypeFromForm(c *gin.Context, kind string, old map[string]any) (map[string]any, []string) {

@@ -1,0 +1,419 @@
+{{define "forum-admin-style"}}<style>
+/* Pursae Forum admin: chips, avatars, Overview, Members, Badges & Levels (scoped to .pf-admin). */
+.pf-admin [hidden]{display:none!important}
+.pf-admin .pf-badge-chip{--pf-c:var(--pf-chip,#2271b1);display:inline-flex;align-items:center;gap:4px;max-width:100%;box-sizing:border-box;padding:0 8px 0 6px;border-radius:999px;font-size:12px;line-height:20px;font-weight:500;white-space:nowrap;vertical-align:middle;color:color-mix(in srgb,var(--pf-c) 78%,#000);background:color-mix(in srgb,var(--pf-c) 11%,#fff);border:1px solid color-mix(in srgb,var(--pf-c) 30%,#fff)}
+.pf-admin .pf-badge-chip .pf-icon{flex:none;color:var(--pf-c)}
+.pf-admin .pf-badge-chip__img{flex:none;width:14px;height:14px;border-radius:3px;object-fit:cover}
+.pf-admin .pf-badge-chip__name{overflow:hidden;text-overflow:ellipsis}
+.pf-admin .pf-avatar{display:inline-flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;width:var(--pf-av-size,32px);height:var(--pf-av-size,32px);border-radius:50%;object-fit:cover;vertical-align:middle;overflow:hidden}
+.pf-admin img.pf-avatar{width:auto;height:auto;max-width:none}
+.pf-admin .pf-avatar--initials{background:var(--pf-av,#646970);color:#fff;font-weight:600;font-size:calc(var(--pf-av-size,32px)*.38);line-height:1;letter-spacing:.02em;user-select:none}
+.pf-admin .pf-avatar--empty{background:#dcdcde}
+.pf-admin .pf-admin-muted{color:#8c8f94}
+.pf-admin .pf-admin-yes{display:inline-flex;color:#00a32a}
+.pf-admin .pf-admin-empty{color:#646970;margin:4px 0}
+.pf-admin .pf-admin-chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.pf-admin .pf-admin-chips--wrap{margin:0;gap:6px}
+.pf-admin .pf-admin-more{font-size:12px;text-decoration:none;color:#50575e;padding:0 4px}
+.pf-admin .pf-admin-state{display:inline-block;margin:0 4px 4px 0;padding:0 8px;border-radius:999px;font-size:12px;line-height:20px;white-space:nowrap;background:#f0f0f1;color:#50575e}
+.pf-admin .pf-admin-state.is-verified{background:#edfaef;color:#00591e}
+.pf-admin .pf-admin-state.is-unverified{background:#fcf9e8;color:#7a5d00}
+.pf-admin .pf-admin-state.is-blocked{background:#fcf0f1;color:#8a2424}
+.pf-admin .pf-admin-state.is-role{background:#e5f0fa;color:#135e96}
+.pf-admin .pf-admin-state.is-google{background:#f0f0f1;color:#3c434a}
+.pf-admin .pf-admin-back{margin:14px 0}
+.pf-admin .pf-admin-h2{font-size:1.3em;margin:30px 0 6px}
+.pf-admin .pf-admin-jump{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 4px}
+
+/* Overview */
+.pf-admin .pf-admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:16px 0}
+.pf-admin .pf-admin-stat{display:flex;gap:12px;align-items:flex-start;min-width:0;background:#fff;border:1px solid #c3c4c7;box-shadow:0 1px 1px rgba(0,0,0,.04);padding:14px 16px;text-decoration:none;color:#1d2327}
+.pf-admin a.pf-admin-stat:hover{border-color:#2271b1}
+.pf-admin a.pf-admin-stat:hover .pf-admin-stat__label{color:#2271b1}
+.pf-admin a.pf-admin-stat:focus{border-color:#2271b1;box-shadow:0 0 0 1px #2271b1;outline:2px solid transparent}
+.pf-admin .pf-admin-stat__icon{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#f0f6fc;color:#2271b1}
+.pf-admin .pf-admin-stat--forums .pf-admin-stat__icon{background:#fcf9e8;color:#996800}
+.pf-admin .pf-admin-stat--replies .pf-admin-stat__icon{background:#e7f5fd;color:#1f6fa8}
+.pf-admin .pf-admin-stat--members .pf-admin-stat__icon{background:#f4effa;color:#7f54b3}
+.pf-admin .pf-admin-stat__body{min-width:0}
+.pf-admin .pf-admin-stat__label{display:block;color:#50575e;font-size:13px}
+.pf-admin .pf-admin-stat__value{display:block;font-size:28px;line-height:1.25;font-weight:600;font-variant-numeric:tabular-nums}
+.pf-admin .pf-admin-stat__sub{display:block;color:#646970;font-size:12px;margin-top:2px}
+.pf-admin .pf-admin-queue{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:#fff;border:1px solid #c3c4c7;border-left:4px solid #00a32a;box-shadow:0 1px 1px rgba(0,0,0,.04);padding:10px 14px;margin:0 0 20px}
+.pf-admin .pf-admin-queue.has-items{border-left-color:#dba617}
+.pf-admin .pf-admin-queue__title{font-weight:600}
+.pf-admin .pf-admin-queue__item{display:inline-flex;align-items:baseline;gap:6px;text-decoration:none;padding:2px 12px;border-radius:999px;background:#fcf9e8;color:#7a5d00}
+.pf-admin .pf-admin-queue__item.is-spam{background:#fcf0f1;color:#8a2424}
+.pf-admin .pf-admin-queue__item.is-zero{background:#f0f0f1;color:#50575e}
+.pf-admin .pf-admin-queue__item:hover{text-decoration:underline}
+.pf-admin .pf-admin-queue__clear{display:inline-flex;gap:6px;align-items:center;color:#00591e}
+.pf-admin .pf-admin-dash{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:0 20px;align-items:start}
+.pf-admin .pf-admin-dash__main,.pf-admin .pf-admin-dash__side{min-width:0}
+.pf-admin .postbox.pf-admin-box{margin:0 0 20px;min-width:0}
+.pf-admin .pf-admin-box__title{font-size:14px;margin:0;padding:10px 12px;line-height:1.4}
+.pf-admin .pf-admin-box .inside{margin:0;padding:12px}
+.pf-admin .pf-admin-box__more{margin:12px -12px -12px;padding:10px 12px;border-top:1px solid #f0f0f1;background:#f6f7f7}
+.pf-admin .pf-admin-chart{margin:0;--m:#8c5fc7;--t:#2271b1;--r:#72aee6}
+.pf-admin .pf-admin-chart__totals{display:flex;flex-wrap:wrap;gap:4px 22px;margin:0 0 14px;padding:0;list-style:none}
+.pf-admin .pf-admin-chart__totals li{display:flex;align-items:baseline;gap:6px;margin:0;color:#50575e}
+.pf-admin .pf-admin-chart__totals li:before{content:"";flex:none;align-self:center;width:10px;height:10px;border-radius:2px;background:var(--c)}
+.pf-admin .pf-admin-chart__totals strong{font-size:20px;color:#1d2327;font-variant-numeric:tabular-nums}
+.pf-admin .is-members{--c:#8c5fc7}.pf-admin .is-topics{--c:#2271b1}.pf-admin .is-replies{--c:#72aee6}
+.pf-admin .pf-admin-chart__plot{position:relative;height:190px;margin-left:30px;border-bottom:1px solid #c3c4c7}
+.pf-admin .pf-admin-chart__grid{position:absolute;inset:0;pointer-events:none}
+.pf-admin .pf-admin-chart__line{position:absolute;left:0;right:0;border-top:1px dashed #e0e0e0}
+.pf-admin .pf-admin-chart__line.is-base{border-top:0}
+.pf-admin .pf-admin-chart__line>span{position:absolute;right:100%;margin-right:6px;transform:translateY(-50%);font-size:11px;line-height:1;color:#646970;font-variant-numeric:tabular-nums}
+.pf-admin .pf-admin-chart__days{position:absolute;inset:0;display:flex;align-items:stretch;gap:2px;margin:0;padding:0 2px;list-style:none}
+.pf-admin .pf-admin-chart__day{flex:1 1 0;min-width:0;display:flex;align-items:flex-end;justify-content:center;gap:1px;margin:0;border-radius:3px 3px 0 0}
+.pf-admin .pf-admin-chart__day:hover{background:rgba(34,113,177,.07)}
+.pf-admin .pf-admin-chart__day.is-today{background:rgba(34,113,177,.04)}
+.pf-admin .pf-admin-chart__bar{display:block;flex:none;width:100%;max-width:8px;border-radius:2px 2px 0 0;background:var(--c)}
+.pf-admin .pf-admin-chart__stack{display:flex;flex-direction:column-reverse;align-self:stretch;width:100%;max-width:8px}
+.pf-admin .pf-admin-chart__stack .pf-admin-chart__bar.is-topics{border-radius:0}
+.pf-admin .pf-admin-chart__stack .pf-admin-chart__bar:last-child,.pf-admin .pf-admin-chart__stack .pf-admin-chart__bar.is-topics:only-child{border-radius:2px 2px 0 0}
+.pf-admin .pf-admin-chart__axis{display:flex;gap:2px;height:18px;margin:4px 0 0 30px;padding:0 2px;list-style:none}
+.pf-admin .pf-admin-chart__axis li{position:relative;flex:1 1 0;min-width:0;margin:0}
+.pf-admin .pf-admin-chart__axis span{position:absolute;left:50%;top:0;transform:translateX(-50%);font-size:11px;color:#646970;white-space:nowrap}
+.pf-admin .pf-admin-chart__axis li:last-child span{left:auto;right:0;transform:none}
+.pf-admin .pf-admin-chart__empty{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:#646970;font-style:italic}
+.pf-admin .pf-admin-activity,.pf-admin .pf-admin-top,.pf-admin .pf-admin-glance{margin:0;padding:0;list-style:none}
+.pf-admin .pf-admin-activity li{display:flex;gap:10px;margin:0;padding:10px 0;border-top:1px solid #f0f0f1}
+.pf-admin .pf-admin-activity li:first-child{border-top:0;padding-top:2px}
+.pf-admin .pf-admin-activity__body{flex:1;min-width:0}
+.pf-admin .pf-admin-activity p{margin:0}
+.pf-admin .pf-admin-activity__head{font-weight:600;overflow-wrap:anywhere}
+.pf-admin .pf-admin-activity__excerpt{margin-top:2px!important;color:#50575e;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pf-admin .pf-admin-activity__meta{margin-top:3px!important;color:#646970;font-size:12px}
+.pf-admin .pf-admin-pill{display:inline-block;padding:0 6px;border-radius:3px;font-size:11px;line-height:18px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;background:#f0f0f1;color:#50575e;vertical-align:1px}
+.pf-admin .pf-admin-pill.is-topic{background:#e5f0fa;color:#135e96}
+.pf-admin .pf-admin-top li{display:flex;align-items:center;gap:10px;margin:0;padding:8px 0;border-top:1px solid #f0f0f1}
+.pf-admin .pf-admin-top li:first-child{border-top:0;padding-top:2px}
+.pf-admin .pf-admin-top__rank{flex:none;width:20px;text-align:center;font-weight:600;color:#8c8f94;font-variant-numeric:tabular-nums}
+.pf-admin .pf-admin-top__rank.is-podium{color:#996800}
+.pf-admin .pf-admin-top__who{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.pf-admin .pf-admin-top__name{max-width:100%;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
+.pf-admin .pf-admin-top__pts{flex:none;text-align:right;color:#646970;font-size:12px;line-height:1.3}
+.pf-admin .pf-admin-top__pts strong{display:block;font-size:15px;color:#1d2327;font-variant-numeric:tabular-nums}
+.pf-admin .pf-admin-glance li{display:flex;justify-content:space-between;gap:12px;margin:0;padding:7px 0;border-top:1px solid #f0f0f1}
+.pf-admin .pf-admin-glance li:first-child{border-top:0;padding-top:0}
+.pf-admin .pf-admin-glance a,.pf-admin .pf-admin-glance strong{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* Members */
+.pf-admin .pf-admin-searching{margin:6px 0 0;color:#50575e}
+.pf-admin .pf-admin-who{display:flex;gap:10px;align-items:flex-start}
+.pf-admin .pf-admin-who__text{min-width:0}
+.pf-admin .pf-admin-who__meta,.pf-admin .pf-admin-who__email{display:block;color:#646970;font-size:12px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-admin .pf-admin-who__email{text-decoration:none}
+.pf-admin .pf-admin-you{color:#646970;font-weight:400}
+.pf-admin .pf-admin-members tr.is-blocked .pf-admin-who .pf-avatar{opacity:.5}
+.pf-admin .pf-admin-bulk-badge{max-width:12rem}
+@media screen and (min-width:783px){
+.pf-admin .pf-admin-members .column-level{width:8em}
+.pf-admin .pf-admin-members .column-badges{width:15%}
+.pf-admin .pf-admin-members .column-topics,.pf-admin .pf-admin-members .column-replies,.pf-admin .pf-admin-members .column-points{width:6em}
+.pf-admin .pf-admin-members .column-joined,.pf-admin .pf-admin-members .column-last_active{width:7.5em}
+.pf-admin .pf-admin-members .column-status{width:7em}
+.pf-admin .pf-admin-members .column-google{width:4em;text-align:center}
+.pf-admin .pf-admin-members td{vertical-align:middle}
+.pf-admin .pf-admin-members td.column-primary{vertical-align:top}
+.pf-admin .pf-admin-members .pf-admin-who__mobile{display:none}
+}
+@media screen and (min-width:783px) and (max-width:1365px){
+.pf-admin .pf-admin-members .column-joined{display:none}
+}
+@media screen and (min-width:783px) and (max-width:1180px){
+.pf-admin .pf-admin-members .column-google,.pf-admin .pf-admin-members .column-replies{display:none}
+}
+.pf-admin .pf-admin-who__mobile{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:4px;font-size:12px;color:#50575e}
+.pf-admin .pf-admin-profile{padding:20px;margin:0 0 20px}
+.pf-admin .pf-admin-profile__head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.pf-admin .pf-admin-profile__id{flex:1;min-width:220px}
+.pf-admin .pf-admin-profile__id h2{margin:0 0 4px;padding:0;font-size:20px;line-height:1.3}
+.pf-admin .pf-admin-profile__meta{margin:0;color:#646970;overflow-wrap:anywhere}
+.pf-admin .pf-admin-profile__tags{margin:8px 0 -4px}
+.pf-admin .pf-admin-profile__links{display:flex;gap:8px;flex-wrap:wrap}
+.pf-admin .pf-admin-profile__level{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin:18px 0 0;padding-top:16px;border-top:1px solid #f0f0f1}
+.pf-admin .pf-admin-profile__chip .pf-badge-chip{font-size:13px;line-height:24px;padding:0 12px 0 8px}
+.pf-admin .pf-admin-progress{flex:1 1 180px;max-width:360px;height:8px;border-radius:999px;background:#f0f0f1;overflow:hidden}
+.pf-admin .pf-admin-progress span{display:block;height:100%;background:#2271b1;border-radius:inherit}
+.pf-admin .pf-admin-progress__text{margin:0;color:#50575e}
+.pf-admin .pf-admin-profile__stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:16px 0 0}
+.pf-admin .pf-admin-profile__stats div{background:#f6f7f7;border-radius:4px;padding:10px 12px;min-width:0}
+.pf-admin .pf-admin-profile__stats dt{color:#646970;font-size:12px}
+.pf-admin .pf-admin-profile__stats dd{margin:2px 0 0;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pf-admin .pf-admin-actions{display:flex;gap:8px;flex-wrap:wrap}
+.pf-admin .pf-admin-actions form{margin:0}
+.pf-admin .button.pf-admin-danger{color:#b32d2e;border-color:#b32d2e}
+.pf-admin .button.pf-admin-danger:hover{background:#fcf0f1;color:#8a2424;border-color:#8a2424}
+.pf-admin .pf-admin-indent{display:block;margin:2px 0 0 25px}
+.pf-admin .pf-admin-member-badges{margin:10px 0 0}
+.pf-admin .pf-admin-member-badges .column-award{width:7.5em;text-align:center}
+.pf-admin .pf-admin-member-badges .column-has{width:4.5em;text-align:center}
+.pf-admin .pf-admin-member-badges td{vertical-align:middle}
+.pf-admin .pf-admin-member-badges tr.is-disabled td{opacity:.6}
+.pf-admin .pf-admin-rule-sm{display:none}
+
+/* Badges & Levels */
+.pf-admin .pf-admin-points{max-width:760px;margin-top:0}
+.pf-admin .pf-admin-levels{margin-top:8px}
+.pf-admin .pf-admin-levels td{vertical-align:middle}
+.pf-admin .pf-admin-levels .column-preview{width:13em}
+.pf-admin .pf-admin-levels .column-min{width:9em}
+.pf-admin .pf-admin-levels .column-icon{width:6em}
+.pf-admin .pf-admin-levels .column-image{width:10.5em}
+.pf-admin .pf-admin-levels .column-color{width:5em}
+.pf-admin .pf-admin-levels .column-remove{width:7em}
+.pf-admin .pf-admin-levels input[type=text]{width:100%;max-width:22em}
+.pf-admin .pf-admin-levels tr.is-new td{background:#f6f7f7}
+.pf-admin .pf-admin-remove{white-space:nowrap;color:#b32d2e}
+.pf-admin .pf-admin-in-color{width:44px;height:30px;padding:2px;border:1px solid #8c8f94;border-radius:4px;background:#fff;cursor:pointer;vertical-align:middle}
+.pf-admin .pf-admin-submitrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.pf-admin .pf-admin-submitrow .dashicons{font-size:16px;width:16px;height:16px;vertical-align:-3px}
+.pf-admin .pf-admin-restore{margin-left:auto;color:#b32d2e}
+.pf-admin .pf-admin-restorebar{margin:12px 0 0}
+.pf-admin .pf-admin-iconpick{position:relative;display:inline-block}
+.pf-admin .pf-admin-iconpick summary{list-style:none;display:inline-flex;align-items:center;gap:2px;box-sizing:border-box;min-height:30px;padding:3px 4px 3px 7px;border:1px solid #8c8f94;border-radius:4px;background:#fff;color:#1d2327;cursor:pointer}
+.pf-admin .pf-admin-iconpick summary::-webkit-details-marker{display:none}
+.pf-admin .pf-admin-iconpick summary:focus{border-color:#2271b1;box-shadow:0 0 0 1px #2271b1;outline:2px solid transparent}
+.pf-admin .pf-admin-iconpick[open] summary{border-color:#2271b1}
+.pf-admin .pf-admin-iconpick__current{display:inline-grid;place-items:center;min-width:20px;height:20px}
+.pf-admin .pf-admin-iconpick__current .dashicons,.pf-admin .pf-admin-iconopt .dashicons{color:#8c8f94}
+.pf-admin .pf-admin-iconpick__caret{font-size:14px;width:14px;height:14px;color:#646970}
+.pf-admin .pf-admin-iconpick__panel{position:absolute;z-index:30;top:calc(100% + 4px);left:0;width:296px;box-sizing:border-box;background:#fff;border:1px solid #c3c4c7;border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.16);padding:8px}
+.pf-admin .pf-admin-icongrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:4px;min-width:0;margin:0;padding:0;border:0}
+.pf-admin .pf-admin-badgeform .pf-admin-icongrid{max-width:440px}
+.pf-admin label.pf-admin-iconopt{position:relative;display:block;margin:0;padding:0}
+.pf-admin .pf-admin-iconopt input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.pf-admin .pf-admin-iconopt>span{display:grid;place-items:center;height:34px;border:1px solid #dcdcde;border-radius:4px;background:#fff;color:#3c434a;cursor:pointer}
+.pf-admin .pf-admin-iconopt:hover>span{border-color:#2271b1;color:#2271b1}
+.pf-admin .pf-admin-iconopt input:checked+span{border-color:#2271b1;background:#f0f6fc;color:#135e96;box-shadow:inset 0 0 0 1px #2271b1}
+.pf-admin .pf-admin-iconopt input:focus-visible+span{outline:2px solid #2271b1;outline-offset:1px}
+.pf-admin .pf-admin-media{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap}
+.pf-admin .pf-admin-media__preview:empty{display:none}
+.pf-admin .pf-admin-media__preview img{display:block;width:30px;height:30px;object-fit:cover;border-radius:4px;border:1px solid #dcdcde}
+.pf-admin .pf-admin-media__remove{color:#b32d2e}
+.pf-admin .pf-admin-badgepreview{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:12px 14px;background:#f6f7f7;border:1px dashed #c3c4c7;border-radius:4px}
+.pf-admin .pf-admin-badgepreview__label{color:#646970;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.pf-admin .pf-admin-badgepreview .pf-badge-chip{font-size:13px;line-height:24px;padding:0 12px 0 8px}
+.pf-admin .pf-admin-threshold-wrap{display:inline-flex;align-items:center;gap:6px;margin-left:6px}
+.pf-admin .form-wrap .pf-admin-threshold-wrap{display:flex;margin:8px 0 0}
+.pf-admin .form-wrap .pf-admin-threshold-wrap label{display:inline;padding:0}
+.pf-admin .form-wrap .pf-admin-threshold-wrap input{width:7em}
+.pf-admin .form-wrap .pf-admin-in-color{width:44px}
+.pf-admin .pf-admin-label{display:block;padding:2px 0}
+.pf-admin .pf-admin-badgeedit{max-width:960px}
+.pf-admin .pf-admin-badgelist .column-rule{width:34%}
+.pf-admin .pf-admin-badgelist .column-awarded{width:5.5em}
+.pf-admin .pf-admin-badgelist .column-state{width:6.5em}
+.pf-admin .pf-admin-badgelink{display:inline-block;max-width:100%;text-decoration:none}
+.pf-admin .pf-admin-badgelink:focus{box-shadow:none;outline:2px solid #2271b1;outline-offset:2px;border-radius:999px}
+.pf-admin .pf-admin-badgelist tr.inactive .pf-badge-chip{filter:grayscale(1);opacity:.65}
+.pf-admin .pf-admin-threshold{color:#50575e;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+@media screen and (max-width:1100px){
+.pf-admin .pf-admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pf-admin .pf-admin-dash{grid-template-columns:minmax(0,1fr)}
+}
+@media screen and (max-width:782px){
+.pf-admin .wp-list-table tr:not(.inline-edit-row):not(.no-items) td.column-primary::before,
+.pf-admin .wp-list-table.comments tr:not(.inline-edit-row):not(.no-items) td.column-author::before{display:none}
+.pf-admin .wp-list-table.comments td.column-author{flex:1 1 0;padding-left:8px}
+.pf-admin .pf-admin-stats{gap:10px}
+.pf-admin .pf-admin-stat{padding:12px;gap:10px}
+.pf-admin .pf-admin-stat__icon{width:34px;height:34px}
+.pf-admin .pf-admin-stat__value{font-size:22px}
+.pf-admin .pf-admin-chart__plot{height:150px}
+.pf-admin .pf-admin-chart__days,.pf-admin .pf-admin-chart__axis{gap:1px}
+.pf-admin .pf-admin-chart__bar,.pf-admin .pf-admin-chart__stack{max-width:5px}
+.pf-admin .pf-admin-chart__day{gap:0}
+.pf-admin .pf-admin-profile{padding:14px}
+.pf-admin .pf-admin-profile__stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pf-admin .pf-admin-iconpick__panel{position:fixed;left:12px;right:12px;top:auto;bottom:12px;width:auto;max-height:60vh;overflow:auto}
+.pf-admin .pf-admin-icongrid{grid-template-columns:repeat(auto-fill,minmax(40px,1fr))}
+.pf-admin .pf-admin-iconopt>span{height:40px}
+.pf-admin .pf-admin-restore{margin-left:0}
+.pf-admin .pf-admin-levels input[type=text]{max-width:none}
+.pf-admin .pf-admin-member-badges .column-rule{display:none}
+.pf-admin .pf-admin-member-badges .column-award{width:4.5em}
+.pf-admin .pf-admin-member-badges .column-has{width:3.5em}
+.pf-admin .pf-admin-rule-sm{display:block;margin-top:3px;font-size:12px;color:#646970}
+.pf-admin .pf-admin-levels thead{display:none}
+.pf-admin table.pf-admin-levels,.pf-admin .pf-admin-levels tbody{display:block;width:100%}
+.pf-admin .pf-admin-levels tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;padding:14px 12px;border-bottom:1px solid #dcdcde}
+.pf-admin .pf-admin-levels td{display:block;width:auto!important;padding:0}
+.pf-admin .pf-admin-levels td::before{content:attr(data-colname);display:block;margin:0 0 4px;font-size:12px;color:#646970}
+.pf-admin .pf-admin-levels td.column-preview,.pf-admin .pf-admin-levels td.column-lname{grid-column:1/-1}
+.pf-admin .pf-admin-levels td.column-preview::before,.pf-admin .pf-admin-levels td.column-remove::before{display:none}
+.pf-admin .pf-admin-levels td.column-remove{align-self:end;padding-bottom:6px}
+.pf-admin .pf-admin-levels input[type=number]{width:100%;max-width:10em}
+.pf-admin .pf-admin-bulk-badge{max-width:none}
+.pf-admin .pf-admin-threshold-wrap{display:flex;margin:8px 0 0}
+}
+@media (prefers-reduced-motion:no-preference){.pf-admin a.pf-admin-stat{transition:border-color .12s}}
+</style>{{end}}
+
+{{define "forum-admin-script"}}<div id="pf-admin-l10n" hidden><span data-k="title">Choose an image</span><span data-k="button">Use this image</span><span data-k="change">Change</span><span data-k="choose">Choose</span></div>
+<script>
+( function () {
+	'use strict';
+	var d = document;
+	function t( k, def ) {
+		var n = d.querySelector( '#pf-admin-l10n [data-k="' + k + '"]' );
+		return n ? n.textContent : def;
+	}
+	function svgOf( input ) {
+		var s = input && input.parentNode.querySelector( 'svg' );
+		return s ? s.cloneNode( true ) : null;
+	}
+	// The live chip preview of a level row or the badge form.
+	function refresh( box ) {
+		var chip = box && box.querySelector( '.pf-badge-chip' );
+		if ( ! chip ) {
+			return;
+		}
+		var name = box.querySelector( '.pf-admin-in-name' ), color = box.querySelector( '.pf-admin-in-color' ),
+			icon = box.querySelector( '.pf-admin-iconopt input:checked' ), img = box.querySelector( '.pf-admin-media__preview img' ),
+			label = chip.querySelector( '.pf-badge-chip__name' ), lead = null;
+		if ( color ) {
+			chip.style.setProperty( '--pf-chip', color.value );
+		}
+		if ( name && label && name.value.trim() ) {
+			label.textContent = name.value.trim();
+		}
+		Array.prototype.forEach.call( chip.querySelectorAll( 'svg, img' ), function ( n ) { n.parentNode.removeChild( n ); } );
+		if ( img ) {
+			lead = d.createElement( 'img' );
+			lead.className = 'pf-badge-chip__img';
+			lead.src = img.src;
+			lead.alt = '';
+			lead.width = lead.height = 16;
+		} else if ( icon ) {
+			lead = svgOf( icon );
+			if ( lead ) {
+				lead.setAttribute( 'width', '14' );
+				lead.setAttribute( 'height', '14' );
+			}
+		}
+		if ( lead ) {
+			chip.insertBefore( lead, chip.firstChild );
+		}
+	}
+	function threshold( sel ) {
+		var wrap = sel.form && sel.form.querySelector( '.pf-admin-threshold-wrap' ), opt = sel.options[ sel.selectedIndex ];
+		if ( ! wrap ) {
+			return;
+		}
+		var on = !! opt && opt.getAttribute( 'data-threshold' ) === '1', input = wrap.querySelector( 'input' );
+		wrap.hidden = ! on;
+		if ( input ) {
+			input.required = on;
+		}
+	}
+	function bulkBadge() {
+		Array.prototype.forEach.call( d.querySelectorAll( '.pf-admin-bulk' ), function ( s ) {
+			var b = s.parentNode.querySelector( '.pf-admin-bulk-badge' );
+			if ( b ) {
+				b.hidden = s.value !== 'award' && s.value !== 'revoke';
+			}
+		} );
+	}
+	function closePickers( except ) {
+		Array.prototype.forEach.call( d.querySelectorAll( '.pf-admin-iconpick[open]' ), function ( x ) {
+			if ( x !== except && ! x.contains( except ) ) {
+				x.open = false;
+			}
+		} );
+	}
+	d.addEventListener( 'input', function ( e ) {
+		if ( e.target.matches( '.pf-admin-in-name, .pf-admin-in-color' ) ) {
+			refresh( e.target.closest( '[data-pf-preview]' ) );
+		}
+	} );
+	d.addEventListener( 'change', function ( e ) {
+		var el = e.target;
+		if ( el.matches( '.pf-admin-iconopt input' ) ) {
+			var det = el.closest( 'details' );
+			if ( det ) {
+				var cur = det.querySelector( '.pf-admin-iconpick__current' ), svg = svgOf( el );
+				cur.innerHTML = '';
+				if ( svg ) {
+					cur.appendChild( svg );
+				} else {
+					cur.innerHTML = '<span class="dashicons dashicons-minus"></span>';
+				}
+				det.open = false;
+				det.querySelector( 'summary' ).focus();
+			}
+			refresh( el.closest( '[data-pf-preview]' ) );
+		} else if ( el.matches( '.pf-admin-rule' ) ) {
+			threshold( el );
+		} else if ( el.matches( '.pf-admin-bulk' ) ) {
+			bulkBadge();
+		}
+	} );
+	d.addEventListener( 'toggle', function ( e ) {
+		if ( e.target.matches && e.target.matches( '.pf-admin-iconpick' ) && e.target.open ) {
+			closePickers( e.target );
+		}
+	}, true );
+	d.addEventListener( 'keydown', function ( e ) {
+		var open = e.key === 'Escape' && d.querySelector( '.pf-admin-iconpick[open]' );
+		if ( open ) {
+			open.open = false;
+			open.querySelector( 'summary' ).focus();
+		}
+	} );
+	d.addEventListener( 'click', function ( e ) {
+		closePickers( e.target );
+		var add = e.target.closest( '#pf-level-add' );
+		if ( add ) {
+			var tpl = d.getElementById( 'pf-level-template' ), cnt = d.getElementById( 'pf-level-count' ), body = d.getElementById( 'pf-level-rows' ),
+				n = parseInt( cnt.value, 10 ) || 0;
+			body.insertAdjacentHTML( 'beforeend', tpl.innerHTML.split( '__i__' ).join( String( n ) ) );
+			cnt.value = n + 1;
+			var input = body.lastElementChild && body.lastElementChild.querySelector( '.pf-admin-in-name' );
+			if ( input ) {
+				input.focus();
+			}
+			return;
+		}
+		var choose = e.target.closest( '.pf-admin-media__choose' ), remove = e.target.closest( '.pf-admin-media__remove' );
+		if ( ! choose && ! remove ) {
+			return;
+		}
+		e.preventDefault();
+		var box = ( choose || remove ).closest( '[data-pf-media]' ), id = box.querySelector( '.pf-admin-media__id' ),
+			preview = box.querySelector( '.pf-admin-media__preview' ), rm = box.querySelector( '.pf-admin-media__remove' ),
+			ch = box.querySelector( '.pf-admin-media__choose' );
+		if ( remove ) {
+			id.value = '0';
+			preview.innerHTML = '';
+			rm.hidden = true;
+			ch.textContent = t( 'choose', 'Choose' );
+			refresh( box.closest( '[data-pf-preview]' ) );
+			return;
+		}
+		if ( ! window.wp || ! window.wp.media ) {
+			return;
+		}
+		var frame = window.wp.media( { title: t( 'title', 'Choose an image' ), library: { type: 'image' }, button: { text: t( 'button', 'Use this image' ) }, multiple: false } );
+		frame.on( 'select', function () {
+			var a = frame.state().get( 'selection' ).first().toJSON(),
+				size = a.sizes && ( a.sizes.thumbnail || a.sizes.medium || a.sizes.full ), img = d.createElement( 'img' );
+			id.value = a.id;
+			img.src = size ? size.url : a.url;
+			img.alt = '';
+			img.width = img.height = 32;
+			preview.innerHTML = '';
+			preview.appendChild( img );
+			rm.hidden = false;
+			ch.textContent = t( 'change', 'Change' );
+			refresh( box.closest( '[data-pf-preview]' ) );
+		} );
+		frame.open();
+	} );
+	Array.prototype.forEach.call( d.querySelectorAll( '.pf-admin-rule' ), threshold );
+	bulkBadge();
+}() );
+</script>{{end}}

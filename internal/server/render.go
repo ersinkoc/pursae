@@ -158,6 +158,9 @@ func (t *templates) funcs() template.FuncMap {
 	for k, f := range s.gooTemplateFuncs() { // Goocommerce: goo_cart_link, goo_mini_cart, … (goo_theme.go)
 		m[k] = f
 	}
+	for k, f := range s.forumTemplateFuncs() { // Pursae Forum: forum_url, forum_user_menu, … (forum_funcs.go)
+		m[k] = f
+	}
 	return m
 }
 

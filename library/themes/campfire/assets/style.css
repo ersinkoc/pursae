@@ -1,0 +1,326 @@
+/* Campfire: a warm community theme for Pursae Forum.
+   The site uses the tokens on :root; the forum (.pf, from Pursae Forum) reads the --pf-* tokens, which
+   this theme sets on :root and hands to every .pf block below. No JavaScript. */
+
+@font-face { font-family: "Campfire Serif"; src: url("fonts/fraunces.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Campfire Sans"; src: url("fonts/albert-sans.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
+
+/* Tokens ----------------------------------------------------------------- */
+:root {
+	--pf-accent: #D9572B;            /* Customizer › Campfire › Accent color */
+	--pf-accent-ink: #fff;
+	--pf-bg: transparent;
+	--pf-surface: #fff;
+	--pf-text: #2B2622;
+	--pf-muted: #6F6359;
+	--pf-border: #EADFCF;
+	--pf-radius: 14px;
+	--pf-font: "Campfire Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	--pf-font-heading: "Campfire Serif", Georgia, "Times New Roman", serif;
+	--pf-gap: 18px;
+
+	--cf-accent-strong: #B24723;     /* the accent darkened for text and buttons (AA on white and paper) */
+	--cf-accent-soft: #FBE7DD;
+	--cf-moss: #5E7D4F;
+	--cf-moss-soft: #E7EEDF;
+	--cf-ink: #2B2622;
+	--cf-paper: #FBF6EE;
+	--cf-sand: #F3EADB;
+	--cf-line: #EADFCF;
+	--cf-shadow: 0 1px 0 rgba(43, 38, 34, .04), 0 10px 28px -16px rgba(43, 38, 34, .28);
+	--cf-width: 1180px;
+}
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+	:root {
+		--cf-accent-strong: color-mix(in srgb, var(--pf-accent) 82%, #000);
+		--cf-accent-soft: color-mix(in srgb, var(--pf-accent) 14%, #fff);
+	}
+}
+
+/* Every forum block takes the theme's tokens. Pursae Forum declares its defaults on .pf and on the
+   standalone widgets (.pf-usermenu, .pf-recent, .pf-stats), so the theme re-declares them there. */
+body :is(.pf, .pf-usermenu, .pf-recent, .pf-stats) {
+	--pf-accent: var(--cf-accent-strong);
+	--pf-accent-ink: #fff;
+	--pf-bg: transparent;
+	--pf-surface: #fff;
+	--pf-text: var(--cf-ink);
+	--pf-muted: #6F6359;
+	--pf-border: var(--cf-line);
+	--pf-radius: 14px;
+	--pf-font: "Campfire Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	--pf-font-heading: "Campfire Serif", Georgia, "Times New Roman", serif;
+	--pf-gap: 18px;
+	--pf-shadow: var(--cf-shadow);
+}
+
+/* Base ------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+	margin: 0; background: var(--cf-paper); color: var(--cf-ink);
+	font-family: var(--pf-font); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased;
+}
+a { color: var(--cf-accent-strong); text-underline-offset: .18em; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 3px solid var(--cf-moss); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3, h4 { font-family: var(--pf-font-heading); font-weight: 600; line-height: 1.15; letter-spacing: -.01em; margin: 0 0 .5em; color: var(--cf-ink); }
+h1 { font-size: clamp(32px, 5vw, 50px); }
+h2 { font-size: clamp(24px, 3.4vw, 34px); }
+h3 { font-size: 21px; }
+img, svg, video { max-width: 100%; height: auto; }
+code, kbd, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; }
+:not(pre) > code { background: var(--cf-sand); padding: .1em .35em; border-radius: 5px; }
+pre { background: #2B2622; color: #F7EFE3; padding: 16px 18px; border-radius: 12px; overflow-x: auto; line-height: 1.55; }
+blockquote { margin: 1.2em 0; padding: .4em 0 .4em 1.1em; border-left: 3px solid var(--pf-accent); color: #4A413A; }
+hr { border: 0; border-top: 1px solid var(--cf-line); margin: 2em 0; }
+
+.screen-reader-text {
+	border: 0; clip: rect(1px, 1px, 1px, 1px); clip-path: inset(50%); height: 1px; margin: -1px;
+	overflow: hidden; padding: 0; position: absolute !important; width: 1px; word-wrap: normal !important;
+}
+.skip-link:focus {
+	clip: auto !important; clip-path: none; height: auto; width: auto; position: fixed !important; z-index: 100000;
+	left: 12px; top: 12px; padding: 12px 18px; background: #fff; color: var(--cf-ink); border-radius: 10px; box-shadow: var(--cf-shadow);
+}
+
+.cf-container { width: 100%; max-width: var(--cf-width); margin-inline: auto; padding-inline: 16px; }
+@media (min-width: 720px) { .cf-container { padding-inline: 28px; } }
+.cf-eyebrow { margin: 0 0 .4em; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--cf-moss); }
+
+/* Buttons and fields (site and forum share them) ----------------------------- */
+.pf-button, .pf-button--primary, .search-submit, .wp-block-button__link, input[type="submit"], button.pf-button {
+	display: inline-flex; align-items: center; justify-content: center; gap: .4em; min-height: 42px;
+	padding: .55em 1.15em; border: 2px solid var(--cf-accent-strong); border-radius: 999px;
+	background: var(--cf-accent-strong); color: #fff; font: 700 15px/1.2 var(--pf-font); text-decoration: none; cursor: pointer;
+	transition: background-color .15s, border-color .15s, color .15s, transform .15s;
+}
+.pf-button:hover, .search-submit:hover, .wp-block-button__link:hover, input[type="submit"]:hover { background: var(--cf-ink); border-color: var(--cf-ink); color: #fff; }
+.pf-button--ghost, .is-style-outline .wp-block-button__link { background: transparent; color: var(--cf-accent-strong); }
+.pf-button--ghost:hover, .is-style-outline .wp-block-button__link:hover { background: var(--cf-accent-soft); color: var(--cf-accent-strong); border-color: var(--cf-accent-strong); }
+.pf-button--google { background: #fff; color: var(--cf-ink); border-color: var(--cf-line); }
+.pf-button--google:hover { background: var(--cf-sand); color: var(--cf-ink); border-color: #D8C9B3; }
+input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="url"], textarea, select, .pf-input, .pf-textarea {
+	width: 100%; padding: .65em .85em; border: 1.5px solid #DCCDB8; border-radius: 10px; background: #fff;
+	color: var(--cf-ink); font: 16px/1.5 var(--pf-font);
+}
+input:focus, textarea:focus, select:focus, .pf-input:focus, .pf-textarea:focus { outline: none; border-color: var(--cf-accent-strong); box-shadow: 0 0 0 3px var(--cf-accent-soft); }
+.search-form { display: flex; gap: 8px; max-width: 520px; }
+
+/* Header ------------------------------------------------------------------- */
+.site-header { background: rgba(251, 246, 238, .94); border-bottom: 1px solid var(--cf-line); }
+.site-header__inner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; min-height: 72px; padding-block: 12px; }
+.site-branding { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+.cf-mark { display: inline-flex; color: var(--pf-accent); line-height: 0; }
+.cf-mark__svg { width: 32px; height: 32px; }
+.cf-mark--small .cf-mark__svg { width: 20px; height: 20px; }
+.site-title { margin: 0; font-family: var(--pf-font-heading); font-size: 24px; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; }
+.site-title a { color: var(--cf-ink); text-decoration: none; }
+.site-logo img { display: block; max-height: 44px; width: auto; }
+.main-navigation ul, .footer-navigation ul { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; }
+.main-navigation a { display: block; padding: 8px 12px; border-radius: 999px; color: var(--cf-ink); font-weight: 600; font-size: 15px; text-decoration: none; }
+.main-navigation a:hover, .main-navigation .current-menu-item > a, .main-navigation .current_page_item > a { background: var(--cf-sand); color: var(--cf-ink); }
+.main-navigation .sub-menu { display: none; }
+.pf-usermenu { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.pf-usermenu a { font-weight: 600; text-decoration: none; }
+.pf-usermenu-login { color: var(--cf-ink); padding: 8px 10px; }
+.pf-usermenu .pf-button { min-height: 38px; padding: .45em 1em; font-size: 14px; }
+.pf-usermenu-account { display: inline-flex; align-items: center; gap: 8px; color: var(--cf-ink); padding: 4px 10px 4px 4px; border-radius: 999px; background: #fff; border: 1px solid var(--cf-line); }
+.pf-usermenu-account:hover { border-color: #D8C9B3; }
+.pf-usermenu .pf-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.pf-usermenu-logout { color: #6F6359; font-size: 14px; padding: 8px 6px; }
+@media (max-width: 719px) {
+	.site-header__inner { gap: 8px 12px; }
+	.site-title { font-size: 20px; }
+	.cf-mark__svg { width: 26px; height: 26px; }
+	.pf-usermenu { gap: 4px; }
+	.pf-usermenu-login { padding: 6px; }
+	.main-navigation { order: 3; width: 100%; overflow-x: auto; }
+	.main-navigation ul { flex-wrap: nowrap; }
+	.main-navigation a { white-space: nowrap; padding: 6px 10px; }
+	.pf-usermenu-name { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Main and footer ------------------------------------------------------------ */
+.site-main { display: block; padding-block: 36px 64px; outline: none; }
+.cf-flow > * + * { margin-top: 28px; }
+.page-header { margin-bottom: 28px; }
+.page-title { margin: 0 0 .3em; }
+.cf-entry { max-width: 820px; }
+.cf-entry .entry-header { margin-bottom: 24px; }
+.entry-meta { color: #6F6359; font-size: 15px; margin: 0 0 .5em; }
+.entry-content > * { margin-block: 0 1.1em; }
+.entry-content > :last-child { margin-bottom: 0; }
+.cf-entry-after { max-width: 820px; margin-top: 32px; }
+.cf-posts { display: grid; gap: 18px; }
+@media (min-width: 720px) { .cf-posts { grid-template-columns: repeat(2, 1fr); } }
+.cf-post-card { background: #fff; border: 1px solid var(--cf-line); border-radius: 16px; padding: 22px 24px; box-shadow: var(--cf-shadow); }
+.cf-post-card .entry-title { font-size: 22px; margin-bottom: .3em; }
+.cf-post-card .entry-title a { color: var(--cf-ink); text-decoration: none; }
+.cf-empty-state, .error-404 { padding-block: 24px; }
+.navigation.pagination .nav-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 28px; }
+.navigation.pagination .page-numbers {
+	display: inline-flex; min-width: 40px; height: 40px; align-items: center; justify-content: center; padding: 0 10px;
+	border-radius: 999px; border: 1px solid var(--cf-line); background: #fff; color: var(--cf-ink); font-weight: 600; text-decoration: none;
+}
+.navigation.pagination .current { background: var(--cf-ink); border-color: var(--cf-ink); color: #fff; }
+.comment-list { list-style: none; padding: 0; }
+.site-footer { border-top: 1px solid var(--cf-line); background: var(--cf-sand); color: #5C5148; font-size: 15px; }
+.site-footer__inner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding-block: 28px; }
+.site-footer__brand { display: flex; align-items: center; gap: 8px; margin: 0 auto 0 0; font-family: var(--pf-font-heading); font-weight: 600; font-size: 18px; color: var(--cf-ink); }
+.footer-navigation a { color: #4A413A; padding: 4px 8px; text-decoration: none; }
+.footer-navigation a:hover { text-decoration: underline; }
+.site-info { margin: 0; }
+.site-info a { color: #4A413A; }
+
+/* Front page ----------------------------------------------------------------- */
+.cf-front { margin-top: -36px; }
+.cf-front .entry-content > * { margin-block: 0; }
+.cf-front .entry-content > .alignfull, .cf-front .entry-content > .cf-section { padding: 56px 16px; }
+@media (min-width: 720px) { .cf-front .entry-content > .alignfull, .cf-front .entry-content > .cf-section { padding-inline: 28px; } }
+.cf-front .entry-content > .cf-section > * { max-width: calc(var(--cf-width) - 56px); margin-inline: auto; }
+.cf-hero { background:
+	radial-gradient(ellipse 60% 70% at 85% 110%, rgba(217, 87, 43, .22), transparent 70%),
+	radial-gradient(ellipse 40% 50% at 10% 0%, rgba(94, 125, 79, .16), transparent 70%), var(--cf-paper); }
+.cf-hero .wp-block-heading, .cf-hero h1, .cf-hero h2 { font-size: clamp(36px, 6vw, 64px); max-width: 15ch; letter-spacing: -.02em; }
+.cf-hero p { font-size: 19px; max-width: 40ch; color: #4A413A; }
+.cf-hero p.cf-eyebrow { font-size: 13px; max-width: none; color: var(--cf-moss); }
+.cf-hero .wp-block-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.cf-features { display: grid; gap: 18px; }
+@media (min-width: 720px) { .cf-features { grid-template-columns: repeat(3, 1fr); } }
+.cf-features > * { background: #fff; border: 1px solid var(--cf-line); border-radius: 16px; padding: 22px; box-shadow: var(--cf-shadow); }
+.cf-features h3 { margin-bottom: .3em; }
+.cf-features p { margin: 0; color: #5C5148; }
+.wp-block-columns { display: flex; flex-wrap: wrap; gap: 18px; }
+.wp-block-column { flex: 1 1 240px; }
+.cf-front-board { display: grid; gap: 22px; align-items: start; margin-block: 8px 24px; }
+@media (min-width: 900px) { .cf-front-board { grid-template-columns: 1.7fr 1fr; } }
+.cf-panel { background: #fff; border: 1px solid var(--cf-line); border-radius: 20px; padding: 26px; box-shadow: var(--cf-shadow); }
+.cf-panel--moss { background: var(--cf-moss-soft); border-color: #D3DFC6; }
+.cf-panel__title { font-size: 26px; }
+.cf-panel__more { margin: 18px 0 0; }
+.cf-panel__note { color: #4A5A40; margin: 16px 0 0; }
+.cf-panel .pf-empty, .cf-board__empty { color: #6F6359; background: rgba(255, 255, 255, .6); border: 1.5px dashed #DCCDB8; border-radius: 14px; padding: 22px; text-align: center; }
+
+/* Sidebars and template-function widgets --------------------------------------- */
+.pf-recent { list-style: none; margin: 0; padding: 0; }
+.pf-recent li { padding: 12px 0; border-bottom: 1px dashed var(--cf-line); }
+.pf-recent li:last-child { border-bottom: 0; }
+.pf-recent a { display: block; color: var(--cf-ink); font-weight: 600; text-decoration: none; line-height: 1.35; }
+.pf-recent a:hover { color: var(--cf-accent-strong); text-decoration: underline; }
+.pf-recent-meta { display: block; margin-top: 2px; color: #6F6359; font-size: 14px; }
+.pf-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 0; }
+.pf-stats > div { background: rgba(255, 255, 255, .7); border: 1px solid var(--cf-line); border-radius: 12px; padding: 10px 14px; }
+.pf-stats dt { color: #5C5148; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+.pf-stats dd { margin: 0; font-family: var(--pf-font-heading); font-size: 28px; font-weight: 600; line-height: 1.2; color: var(--cf-ink); }
+.cf-forum--sidebar { display: grid; gap: 28px; }
+@media (min-width: 980px) { .cf-forum--sidebar { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; } }
+.cf-forum__main { min-width: 0; }
+/* Forms (log in, join, account, new topic, edit) stand alone, without the sidebar; the title and
+   crumbs of the log-in and join views line up with their centred card. */
+:is(.pf-view-login, .pf-view-register, .pf-view-verify, .pf-view-account, .pf-view-new-topic, .pf-view-edit) .cf-forum--sidebar { grid-template-columns: minmax(0, 1fr); }
+:is(.pf-view-login, .pf-view-register, .pf-view-verify, .pf-view-account, .pf-view-new-topic, .pf-view-edit) .cf-forum__side { display: none; }
+:is(.pf-view-login, .pf-view-register, .pf-view-verify) :is(.pf-head, .pf-auth) { width: 100%; max-width: 30rem; margin-inline: auto; }
+.cf-forum__side { display: grid; gap: 18px; }
+.cf-side-card { background: #fff; border: 1px solid var(--cf-line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--cf-shadow); }
+.cf-side-card__title { font-size: 19px; margin-bottom: .6em; }
+
+/* Pursae Forum ----------------------------------------------------------------
+   Pursae Forum's stylesheet lays every view out from the --pf-* tokens above (rows, posts, forms).
+   Campfire only refines type, buttons and a few accents here and leaves the layout to the plugin. */
+.pf { font-size: 16px; }
+.pf-title { font-size: clamp(30px, 4.6vw, 46px); letter-spacing: -.01em; }
+.pf-crumbs a { font-weight: 600; }
+.pf-crumbs a:hover { color: var(--cf-accent-strong); }
+.pf .pf-button { border-radius: 999px; font-weight: 700; }
+.pf .pf-button--primary:hover { background: var(--cf-ink); border-color: var(--cf-ink); color: #fff; filter: none; }
+.pf .pf-button--google { border-radius: 999px; }
+.pf-notice--success { background: var(--cf-moss-soft); border-color: #C9D8BB; color: #33452A; }
+.pf-notice--error { background: #FDE8E4; border-color: #F2C3B8; color: #8A2A14; }
+.pf-notice--info { background: #FFF6E2; border-color: #F0DDAF; color: #6A4D10; }
+.pf-badge { letter-spacing: .06em; font-weight: 700; }
+.pf-badge--sticky { background: var(--cf-accent-soft); color: var(--cf-accent-strong); }
+.pf-badge--closed { background: #ECE7E1; color: #5C5148; }
+.pf-badge--pending { background: #FFF1CC; color: #6A4D10; }
+.pf-badge--spam { background: #FDE0D9; color: #8A2A14; }
+.pf-count strong, .pf-count-num { color: var(--cf-ink); font-variant-numeric: tabular-nums; }
+.pf-last a { font-weight: 600; }
+
+/* Forum and topic lists: serif names, the accent on hover, an ember edge on pinned topics. */
+.pf-forum-name, .pf-topic-row :is(h2, h3, h4) { font-family: var(--pf-font-heading); font-weight: 600; }
+.pf-forum-name, .pf-forum-name a, .pf-topic-row :is(h2, h3, h4) > a { color: var(--cf-ink); }
+.pf-forum-name:hover, .pf-forum-name a:hover, .pf-topic-row :is(h2, h3, h4) > a:hover { color: var(--cf-accent-strong); text-decoration: underline; }
+.pf-forum-desc p { margin: .2em 0 0; }
+.pf-topic-row.is-sticky { box-shadow: inset 4px 0 0 var(--pf-accent); }
+
+/* Posts in a topic */
+.pf-post--lead { border-top-color: var(--pf-accent); }
+.pf-post:target { box-shadow: 0 0 0 3px var(--cf-accent-soft), var(--cf-shadow); }
+.pf-post-body { font-size: 17px; line-height: 1.7; }
+.pf-post-body pre { background: #2B2622; color: #F7EFE3; border-radius: 12px; }
+.pf-post-body blockquote { border-left-color: var(--pf-accent); }
+
+/* Forms, cards, profile, pagination */
+.pf-card { border-radius: 20px; }
+.pf-field > label, .pf-label { font-weight: 700; }
+.pf-profile .pf-avatar { border: 3px solid var(--cf-paper); box-shadow: 0 0 0 2px var(--pf-accent); }
+.pf-pagination .pf-page { border-radius: 999px; font-weight: 600; }
+.pf-pagination .pf-page.is-current { background: var(--cf-ink); border-color: var(--cf-ink); color: #fff; }
+
+/* Campfire's forum home (templates/forum/index.html): category cards ---------------- */
+.cf-board__head { align-items: flex-end; }
+.cf-board__intro { flex: 1 1 360px; }
+.cf-board__lede { margin: .4em 0 0; color: #5C5148; font-size: 18px; max-width: 46ch; }
+.cf-board__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.cf-board__search { display: flex; gap: 6px; }
+.cf-board__search .pf-input { width: min(260px, 60vw); border-radius: 999px; padding-inline: 16px; }
+.cf-cards { display: grid; gap: 20px; }
+@media (min-width: 760px) { .cf-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1180px) { .cf-layout-full .cf-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.cf-card {
+	display: flex; flex-direction: column; margin: 0; background: #fff; border: 1px solid var(--cf-line);
+	border-radius: 20px; box-shadow: var(--cf-shadow); overflow: hidden;
+}
+.cf-card__head { display: flex; gap: 14px; align-items: flex-start; padding: 20px 22px 14px; background: linear-gradient(180deg, #FFF9F1, #fff); border-bottom: 1px solid #F3EADB; }
+.cf-card__icon {
+	flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; background: var(--cf-accent-soft);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3c1.6 4.2-1.8 6.4-1.8 9.6 0 1.7 1.2 2.9 2.6 2.9 1.9 0 2.7-1.8 2.3-4 3.4 2.4 5.1 5.9 5.1 9.1 0 4.9-3.7 8.4-8.2 8.4S7.8 25.5 7.8 20.8C7.8 12.7 15.6 10.1 16 3z' fill='%23D9572B'/%3E%3C/svg%3E");
+	background-repeat: no-repeat; background-position: center; background-size: 24px;
+}
+.cf-card:nth-child(3n+2) .cf-card__icon { background-color: var(--cf-moss-soft); filter: hue-rotate(60deg) saturate(.7); }
+.cf-card:nth-child(3n+3) .cf-card__icon { background-color: #FFF1CC; filter: hue-rotate(25deg); }
+.cf-card__title { margin: 0; font-size: 23px; }
+.cf-card__title a { color: var(--cf-ink); text-decoration: none; }
+.cf-card__title a:hover { color: var(--cf-accent-strong); text-decoration: underline; }
+.cf-card__head .pf-forum-desc { margin-top: 4px; }
+.cf-card__forums { list-style: none; margin: 0; padding: 6px 10px; flex: 1; }
+.cf-card .pf-forum-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 0; border-radius: 12px; padding: 10px 12px; margin: 0; box-shadow: none; }
+.cf-card .pf-forum-row + .pf-forum-row { margin-top: 2px; }
+.cf-card .pf-forum-row:hover { background: var(--cf-paper); box-shadow: none; }
+.cf-card .pf-forum-row.is-closed .pf-forum-name { color: #5C5148; }
+.cf-card__forum { min-width: 0; }
+.cf-card__forum .pf-forum-desc { font-size: 14px; }
+.cf-card .pf-forum-row > .cf-count { display: block; flex: 0 0 auto; text-align: right; line-height: 1.2; color: #6F6359; }
+.cf-card .pf-forum-row > .cf-count strong { display: block; font-size: 18px; color: var(--cf-ink); font-variant-numeric: tabular-nums; }
+.cf-count-label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.cf-card--single .cf-card__head { border-bottom: 0; flex: 1; }
+.cf-card .pf-empty { margin: 14px 22px; }
+.cf-card__foot { padding: 12px 22px 16px; border-top: 1px dashed var(--cf-line); background: #FFFCF8; font-size: 14px; color: #6F6359; }
+.cf-card__counts { display: flex; gap: 14px; margin: 0; }
+.cf-card__counts strong { color: var(--cf-ink); font-variant-numeric: tabular-nums; }
+.cf-card__last { margin: 4px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-card__last a { font-weight: 600; }
+.cf-by { color: #6F6359; }
+.cf-board__empty { padding: 40px 22px; }
+.cf-latest { margin-top: 8px; }
+.cf-latest__title { font-size: 26px; margin-bottom: 12px; }
+.cf-latest__list { list-style: none; margin: 0; padding: 4px 22px; background: #fff; border: 1px solid var(--cf-line); border-radius: 20px; box-shadow: var(--cf-shadow); }
+.cf-latest__item { padding: 14px 0; border-bottom: 1px dashed var(--cf-line); }
+.cf-latest__item:last-child { border-bottom: 0; }
+.cf-latest__item.is-sticky { box-shadow: inset 3px 0 0 var(--pf-accent); padding-left: 12px; margin-left: -12px; }
+.cf-latest__link { display: block; font-family: var(--pf-font-heading); font-size: 19px; font-weight: 600; line-height: 1.3; color: var(--cf-ink); text-decoration: none; }
+.cf-latest__link:hover { color: var(--cf-accent-strong); text-decoration: underline; }
+.cf-latest__meta { display: block; margin-top: 2px; color: #6F6359; font-size: 14px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media print { .site-header, .site-footer, .cf-forum__side, .pf-post-tools, .pf-modbar { display: none !important; } }

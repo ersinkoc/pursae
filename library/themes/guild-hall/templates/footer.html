@@ -1,0 +1,15 @@
+	</main>
+	<footer class="gh-footer">
+		<div class="gh-wrap gh-footer__inner">
+			<div class="gh-footer__about">
+				<p class="gh-footer__brand"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+				{{with .Description}}<p class="gh-footer__tag">{{.}}</p>{{end}}
+			</div>
+			{{if has_nav_menu . "footer"}}<nav class="gh-footer__nav" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+			<p class="gh-footer__info">{{.PrivacyLink}}<span>&copy; {{.SiteName}} &middot; Powered by Pursae Forum</span></p>
+		</div>
+	</footer>
+</div>
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

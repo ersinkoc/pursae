@@ -1,0 +1,133 @@
+{{/* Front-end partials of the Pursae Forum views (WP1). Theme overrides cannot see these; the
+dot is noted on each one. Forms only render for logged-in members (their pages are no-store). */}}
+
+{{/* A forum in a list. Dot: dict "P" *forumPage "F" *forumForum. */}}
+{{define "forum/part-forum-row"}}{{$p := .P}}{{with .F}}<li class="pf-forum-row{{if .Closed}} is-closed{{end}}">
+<span class="pf-forum-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2 5v2h12V9H6Zm0 4v2h8v-2H6Z"/></svg></span>
+<div class="pf-forum-main">
+<h3 class="pf-forum-name"><a href="{{.URL}}">{{.Title}}</a>{{if .Closed}} <span class="pf-badge pf-badge--closed">{{$p.T "Closed"}}</span>{{end}}</h3>
+{{- if .Description}}<div class="pf-forum-desc">{{.Description}}</div>{{end}}
+{{- if .Children}}<ul class="pf-subforums">{{range .Children}}<li><a href="{{.URL}}">{{.Title}}</a></li>{{end}}</ul>{{end}}
+</div>
+<div class="pf-count"><span class="pf-count-num">{{num .TopicCount}}</span> <span class="pf-count-label">{{if eq .TopicCount 1}}{{$p.T "topic"}}{{else}}{{$p.T "topics"}}{{end}}</span></div>
+<div class="pf-count"><span class="pf-count-num">{{num .ReplyCount}}</span> <span class="pf-count-label">{{if eq .ReplyCount 1}}{{$p.T "reply"}}{{else}}{{$p.T "replies"}}{{end}}</span></div>
+<div class="pf-last">{{if .LastTopicURL}}{{if .LastAuthor}}{{forum_avatar .LastAuthor 32}}{{end}}
+<div class="pf-last-text"><a class="pf-last-title" href="{{.LastTopicURL}}">{{.LastTopicTitle}}</a>
+<span class="pf-last-meta">{{if .LastAuthor}}{{.LastAuthor.DisplayName}} &middot; {{end}}<time datetime="{{forum_iso .LastActive}}">{{$p.Ago .LastActive}}</time></span></div>
+{{- else}}<span class="pf-last-none">{{$p.T "No topics yet"}}</span>{{end}}</div>
+</li>{{end}}{{end}}
+
+{{/* A topic in a list. Dot: dict "P" *forumPage "T" *forumTopic "ShowForum" bool. */}}
+{{define "forum/part-topic-row"}}{{$p := .P}}{{$showForum := .ShowForum}}{{with .T}}<li class="pf-topic-row{{if and .Sticky (not $showForum)}} is-sticky{{end}}{{if .Closed}} is-closed{{end}}{{if eq .Status "pending"}} is-pending{{end}}{{if .Spam}} is-spam{{end}}">
+{{forum_avatar .Author 40}}
+<div class="pf-topic-main">
+<h3 class="pf-topic-title"><a href="{{.URL}}">{{.Title}}</a>
+{{- if and .Sticky (not $showForum)}} <span class="pf-badge pf-badge--sticky">{{$p.T "Pinned"}}</span>{{end}}
+{{- if .Closed}} <span class="pf-badge pf-badge--closed">{{$p.T "Closed"}}</span>{{end}}
+{{- if eq .Status "pending"}} <span class="pf-badge pf-badge--pending">{{$p.T "Pending"}}</span>{{end}}
+{{- if .Spam}} <span class="pf-badge pf-badge--spam">{{$p.T "Spam"}}</span>{{else if eq .Status "trash"}} <span class="pf-badge pf-badge--trash">{{$p.T "Trash"}}</span>{{end}}</h3>
+<p class="pf-topic-meta">{{if .Author}}<a href="{{.Author.ProfileURL}}">{{.Author.DisplayName}}</a> &middot; {{end}}<time datetime="{{forum_iso .CreatedAt}}">{{$p.Ago .CreatedAt}}</time>
+{{- if and $showForum .ForumTitle}} &middot; <a href="{{.ForumURL}}">{{.ForumTitle}}</a>{{end}}</p>
+</div>
+<div class="pf-count"><span class="pf-count-num">{{num .ReplyCount}}</span> <span class="pf-count-label">{{if eq .ReplyCount 1}}{{$p.T "reply"}}{{else}}{{$p.T "replies"}}{{end}}</span></div>
+<div class="pf-last">{{if .LastAuthor}}{{forum_avatar .LastAuthor 32}}{{end}}
+<div class="pf-last-text">{{if .LastAuthor}}<span class="pf-last-author">{{.LastAuthor.DisplayName}}</span>{{end}}
+<span class="pf-last-meta"><time datetime="{{forum_iso .LastActive}}">{{$p.Ago .LastActive}}</time></span></div></div>
+</li>{{end}}{{end}}
+
+{{/* One post: the topic's opening post or a reply. Dot: *forumPostView. */}}
+{{define "forum/part-post"}}{{$p := .Page}}<article class="pf-post{{if .Lead}} pf-post--lead{{end}}{{if eq .Status "pending"}} is-pending{{end}}{{if .Spam}} is-spam{{end}}{{if and (eq .Status "trash") (not .Spam)}} is-trash{{end}}" id="post-{{.ID}}">
+<div class="pf-post-author">
+{{- with .Author}}<a class="pf-post-author-avatar" href="{{.ProfileURL}}" tabindex="-1" aria-hidden="true">{{forum_avatar . 56}}</a>
+<div class="pf-post-author-text"><a class="pf-post-author-name" href="{{.ProfileURL}}">{{.DisplayName}}</a>
+{{- if or .Moderator (and $p.Topic (eq .ID $p.Topic.AuthorID))}}<span class="pf-post-author-roles">
+{{- if .Moderator}}<span class="pf-badge pf-badge--mod">{{$p.T "Moderator"}}</span>{{end}}
+{{- if and $p.Topic (eq .ID $p.Topic.AuthorID)}}<span class="pf-badge pf-badge--op" title="{{$p.T "Started this topic"}}">{{$p.T "Author"}}</span>{{end}}</span>{{end}}
+{{- with .Level}}<span class="pf-post-author-level">{{$p.LevelChip .}}</span>{{end}}
+{{- if .Badges}}<span class="pf-post-author-badges pf-badges--icons">{{range $p.FewBadges . 3}}{{$p.BadgeChip .}}{{end}}
+{{- with $p.MoreBadges . 3}}<a class="pf-badge-more" href="{{$.Author.ProfileURL}}" title="{{$p.T "All badges"}}">+{{.}}</a>{{end}}</span>{{end}}
+{{- if .Stats}}<span class="pf-post-author-stats">{{$p.Count (add .Topics .Replies) "%s post" "%s posts"}}</span>{{end}}</div>
+{{- else}}{{forum_avatar nil 56}}<div class="pf-post-author-text"><span class="pf-post-author-name">{{$p.T "Former member"}}</span></div>{{end}}
+</div>
+<div class="pf-post-main">
+<header class="pf-post-meta">
+<a class="pf-post-link" href="{{.Permalink}}"><time datetime="{{forum_iso .CreatedAt}}" title="{{forum_date .CreatedAt}}">{{$p.Ago .CreatedAt}}</time></a>
+{{- if .EditedAt}} <span class="pf-post-edited">{{$p.T "edited"}}</span>{{end}}
+{{- if eq .Status "pending"}} <span class="pf-badge pf-badge--pending">{{$p.T "Pending"}}</span>{{end}}
+{{- if .Spam}} <span class="pf-badge pf-badge--spam">{{$p.T "Spam"}}</span>{{else if eq .Status "trash"}} <span class="pf-badge pf-badge--trash">{{$p.T "Trash"}}</span>{{end}}
+{{- if .IP}} <span class="pf-post-ip" title="{{$p.T "IP address (moderators only)"}}">{{.IP}}</span>{{end}}
+{{- if gt .Position 0}} <a class="pf-post-num" href="{{.Permalink}}" aria-label="{{$p.Tf "Reply %s" .Position}}">#{{.Position}}</a>{{end}}
+</header>
+<div class="pf-post-body">{{forum_format .Content}}</div>
+{{- if or ($p.CanEdit .ID) $p.CanModerate}}
+<footer class="pf-post-tools">
+{{- if $p.CanEdit .ID}}<a class="pf-button pf-button--ghost pf-button--small" href="{{$p.EditURL .ID}}">{{$p.T "Edit"}}</a>{{end}}
+{{- if $p.CanModerate}}{{template "forum/part-modbar" .}}{{end}}
+</footer>{{end}}
+</div>
+</article>{{end}}
+
+{{/* The moderator's buttons of one post (one form, one button per operation, no JavaScript).
+Dot: *forumPostView. */}}
+{{define "forum/part-modbar"}}{{$p := .Page}}{{if and $p.Nonce .ActionURL}}<form class="pf-modbar" method="post" action="{{.ActionURL}}" aria-label="{{$p.T "Moderation"}}">
+<input type="hidden" name="forum_action" value="moderate" />
+<input type="hidden" name="_wpnonce" value="{{$p.Nonce}}" />
+<input type="hidden" name="post_id" value="{{.ID}}" />
+{{- if eq .Status "pending"}}<button type="submit" name="op" value="approve" class="pf-button pf-button--small pf-button--primary">{{$p.T "Approve"}}</button>{{end}}
+{{- if .Lead}}
+{{- if eq .Status "publish"}}{{if .Sticky}}<button type="submit" name="op" value="unstick" class="pf-button pf-button--small pf-button--ghost">{{$p.T "Unpin"}}</button>{{else}}<button type="submit" name="op" value="stick" class="pf-button pf-button--small pf-button--ghost">{{$p.T "Pin"}}</button>{{end}}{{end}}
+{{- if .Closed}}<button type="submit" name="op" value="open" class="pf-button pf-button--small pf-button--ghost">{{$p.T "Reopen"}}</button>{{else}}<button type="submit" name="op" value="close" class="pf-button pf-button--small pf-button--ghost">{{$p.T "Close"}}</button>{{end}}
+{{- end}}
+{{- if .Spam}}<button type="submit" name="op" value="unspam" class="pf-button pf-button--small pf-button--ghost">{{$p.T "Not spam"}}</button>
+{{- else if eq .Status "trash"}}<button type="submit" name="op" value="restore" class="pf-button pf-button--small pf-button--ghost">{{$p.T "Restore"}}</button>
+{{- else}}<button type="submit" name="op" value="spam" class="pf-button pf-button--small pf-button--ghost pf-button--danger">{{$p.T "Spam"}}</button><button type="submit" name="op" value="trash" class="pf-button pf-button--small pf-button--ghost pf-button--danger">{{$p.T "Trash"}}</button>{{end}}
+</form>{{end}}{{end}}
+
+{{/* The text field of a post form. Dot: dict "P" *forumPage "Value" string "Label" string. */}}
+{{define "forum/part-editor"}}{{$p := .P}}<div class="pf-field">
+<label class="pf-label" for="pf-content">{{.Label}}</label>
+<textarea class="pf-input pf-textarea" id="pf-content" name="content" rows="8" required minlength="2" maxlength="20000" aria-describedby="pf-content-help">{{.Value}}</textarea>
+<p class="pf-help" id="pf-content-help">{{$p.T "Plain text is fine. Basic HTML works too: links, bold, italic, lists, quotes and code."}}</p>
+</div>{{end}}
+
+{{/* The reply box under a topic. Dot: *forumPage. */}}
+{{define "forum/part-reply-form"}}<section class="pf-card pf-reply" id="reply" aria-labelledby="pf-reply-title">
+<h2 class="pf-card-title" id="pf-reply-title">{{.T "Write a reply"}}</h2>
+{{- if .Error}}<div class="pf-notice pf-notice--error" role="alert">{{.Error}}</div>{{end}}
+<form class="pf-form" method="post" action="{{.TopicURL}}#reply">
+<input type="hidden" name="forum_action" value="reply" />
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{.Traps}}
+{{template "forum/part-editor" (dict "P" . "Value" (.FormValue "content") "Label" (.T "Your reply"))}}
+<div class="pf-form-actions"><button type="submit" class="pf-button pf-button--primary">{{.T "Post reply"}}</button></div>
+</form>
+</section>{{end}}
+
+{{/* What a visitor (or a member who cannot post) sees instead of a form. Dot: *forumPage. */}}
+{{define "forum/part-join"}}<div class="pf-card pf-join">
+{{- if not .User}}
+<p class="pf-join-text">{{.T "Log in or create an account to join the conversation."}}</p>
+<p class="pf-join-actions"><a class="pf-button pf-button--primary" href="{{.URLs.Login}}">{{.T "Log in"}}</a>{{if .RegisterOn}} <a class="pf-button pf-button--ghost" href="{{.URLs.Register}}">{{.T "Create an account"}}</a>{{end}}</p>
+{{- else if .Unverified}}
+<p class="pf-join-text">{{.T "You can join the conversation as soon as your email address is confirmed."}}</p>
+{{- else}}
+<p class="pf-join-text">{{.T "Your account cannot post in the forums."}}</p>
+{{- end}}
+</div>{{end}}
+
+{{/* The forum search box. Dot: *forumPage. */}}
+{{define "forum/part-search-form"}}<form class="pf-search" role="search" method="get" action="{{.URLs.Search}}">
+<label class="screen-reader-text pf-sr" for="pf-search-q">{{.T "Search the forums"}}</label>
+<input class="pf-input pf-search-input" type="search" id="pf-search-q" name="q" value="{{.Query}}" placeholder="{{.T "Search topics and replies"}}" maxlength="100" />
+<button type="submit" class="pf-button pf-button--primary">{{.T "Search"}}</button>
+</form>{{end}}
+
+{{/* A search result or profile activity entry. Dot: dict "P" *forumPage "H" *forumHit. */}}
+{{define "forum/part-hit"}}{{$p := .P}}{{with .H}}<li class="pf-result">
+{{forum_avatar .Author 40}}
+<div class="pf-result-main">
+<h3 class="pf-result-title"><a href="{{.URL}}">{{if .Reply}}{{$p.Tf "Reply to “%s”" .Topic.Title}}{{else}}{{.Topic.Title}}{{end}}</a></h3>
+{{- if .Excerpt}}<p class="pf-result-excerpt">{{.Excerpt}}</p>{{end}}
+<p class="pf-result-meta">{{if .Author}}<a href="{{.Author.ProfileURL}}">{{.Author.DisplayName}}</a> &middot; {{end}}<time datetime="{{forum_iso .At}}">{{$p.Ago .At}}</time>{{if .Topic.ForumTitle}} &middot; <a href="{{.Topic.ForumURL}}">{{.Topic.ForumTitle}}</a>{{end}}</p>
+</div>
+</li>{{end}}{{end}}

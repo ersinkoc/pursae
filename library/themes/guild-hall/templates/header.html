@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="color-scheme" content="dark" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site gh-site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<header class="gh-header">
+		<div class="gh-wrap gh-header__inner">
+			<div class="gh-brand">
+				{{with .CustomLogo}}<div class="gh-logo">{{.}}</div>{{else}}<span class="gh-mark" aria-hidden="true"></span>{{end}}
+				{{if .TitleIsH1}}<h1 class="gh-site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="gh-site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div>
+			{{if has_nav_menu . "primary"}}<nav class="gh-nav" aria-label="Primary menu">{{nav_menu . "primary"}}</nav>{{end}}
+			{{forum_user_menu .}}
+		</div>
+	</header>
+	<main id="main" class="gh-main" tabindex="-1">

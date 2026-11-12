@@ -1,0 +1,13 @@
+		</main><!-- #main -->
+	</div><!-- #content -->
+	<footer id="colophon" class="site-footer">
+		<div class="db-container site-footer__inner">
+			<p class="site-footer__brand"><span class="db-mark db-mark--small" aria-hidden="true">{{template "mark"}}</span> {{.SiteName}}</p>
+			{{if has_nav_menu . "footer"}}<nav class="footer-navigation" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+			<p class="site-info">{{.PrivacyLink}} <span>Runs on <a href="https://github.com/pursae/pursae">Pursae Forum</a></span></p>
+		</div>
+	</footer><!-- #colophon -->
+</div><!-- #page -->
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

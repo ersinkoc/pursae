@@ -1,0 +1,15 @@
+	</main>
+	<footer class="sc-footer">
+		<div class="sc-wrap sc-footer__inner">
+			<div class="sc-footer__about">
+				<p class="sc-footer__brand"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
+				{{with .Description}}<p class="sc-footer__tag">{{.}}</p>{{end}}
+			</div>
+			{{if has_nav_menu . "footer"}}<nav class="sc-footer__nav" aria-label="Footer menu">{{nav_menu . "footer"}}</nav>{{end}}
+			<p class="sc-footer__info">{{.PrivacyLink}}<span>&copy; {{.SiteName}} &middot; Powered by Pursae Forum</span></p>
+		</div>
+	</footer>
+</div>
+{{.Footer}}{{.AdminBar}}
+</body>
+</html>

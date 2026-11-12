@@ -1,0 +1,11 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} sc-entry">
+	<header class="sc-wrap sc-narrow sc-entry__head">
+		<h1 class="sc-entry__title">{{.Title}}</h1>
+	</header>
+	<div class="sc-wrap sc-narrow entry-content">
+		{{.Content}}
+	</div>
+	{{with .EditLink}}<footer class="sc-wrap sc-narrow sc-entry__foot">{{.}}</footer>{{end}}
+</article>{{end}}
+{{template "footer" .}}

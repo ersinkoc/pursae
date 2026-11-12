@@ -1,0 +1,27 @@
+{{define "forum/topic"}}<div class="pf alignwide" data-view="topic">
+{{template "forum/part-head" .}}
+{{- if .Notice}}<div class="pf-notice pf-notice--success" role="status">{{.Notice}}</div>{{end}}
+{{- /* A refused reply's error shows in the reply box; without a box the page already says why (closed note, join card). */}}
+{{template "forum/part-userbar" .}}
+{{- $p := .}}
+{{- with .Topic}}
+<div class="pf-topic-state">
+{{- if .Sticky}}<span class="pf-badge pf-badge--sticky">{{$p.T "Pinned"}}</span>{{end}}
+{{- if .Closed}}<span class="pf-badge pf-badge--closed">{{$p.T "Closed"}}</span>{{end}}
+<span class="pf-topic-stats">{{$p.Count .ReplyCount "%s reply" "%s replies"}}</span>
+</div>
+{{- if eq .Status "pending"}}<div class="pf-notice pf-notice--info">{{$p.T "This topic is waiting for a moderator. Only you and the moderators can see it."}}</div>{{end}}
+{{- if .Spam}}<div class="pf-notice pf-notice--error">{{$p.T "This topic is marked as spam."}}</div>{{else if eq .Status "trash"}}<div class="pf-notice pf-notice--error">{{$p.T "This topic is in the trash."}}</div>{{end}}
+<ol class="pf-posts">
+{{- if eq (index $p.Extra "page") 1}}<li>{{template "forum/part-post" $p.LeadPost}}</li>{{end}}
+{{- range $p.Replies}}<li>{{template "forum/part-post" ($p.ReplyPost .)}}</li>{{end}}
+</ol>
+{{template "forum/part-pagination" $p}}
+{{- if index $p.Extra "can_reply"}}
+{{- if not (index $p.Extra "open")}}<div class="pf-notice pf-notice--info">{{$p.T "This topic is closed. As a moderator you can still reply."}}</div>{{end}}
+{{template "forum/part-reply-form" $p}}
+{{- else if not (index $p.Extra "open")}}<div class="pf-notice pf-notice--info pf-closed-note">{{$p.T "This topic is closed to new replies."}}</div>
+{{- else if eq .Status "publish"}}{{template "forum/part-join" $p}}
+{{- end}}
+{{- end}}
+</div>{{end}}

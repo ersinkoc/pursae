@@ -1,0 +1,175 @@
+{{define "forum-admin-members"}}{{$d := .}}
+<p class="pf-admin-sub">Everyone who can post in the forum, with their level, badges and activity. Block a member to stop them posting; they can still read and sign in.</p>
+{{if .Search}}<p class="pf-admin-searching">Search results for: <strong translate="no">{{.Search}}</strong></p>{{end}}
+<h2 class="screen-reader-text">Filter members list</h2>
+<ul class="subsubsub">
+{{range $i, $v := .Views}}<li class="{{$v.Key}}">{{if $i}} | {{end}}<a href="{{$v.URL}}"{{if $v.Current}} class="current" aria-current="page"{{end}}>{{$v.Label}} <span class="count">(<span class="{{$v.Key}}-count">{{$v.Count}}</span>)</span></a></li>
+{{end}}</ul>
+<form id="pf-members-search" method="get" action="/wp-admin/forum">
+<input type="hidden" name="tab" value="members" />
+{{with .MemberQuery}}{{if ne .Filter "all"}}<input type="hidden" name="filter" value="{{.Filter}}" />{{end}}{{end}}
+<p class="search-box">
+	<label class="screen-reader-text" for="pf-member-search-input">Search members:</label>
+	<input type="search" id="pf-member-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button" value="Search Members" />
+</p>
+</form>
+<form id="pf-members" method="post" action="{{.ListURL}}">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{template "forum-admin-members-nav" dict "D" . "Top" true}}
+<h2 class="screen-reader-text">Members list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list pf-admin-members">
+<thead>{{template "forum-admin-members-head" dict "D" . "Top" true}}</thead>
+<tbody id="the-list">
+{{range .MemberRows}}<tr id="member-{{.ID}}" class="is-{{.Status}}">
+	<th scope="row" class="check-column"><input id="cb-select-{{.ID}}" type="checkbox" name="users[]" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Login}}</span></label></th>
+	<td class="name column-name has-row-actions column-primary" data-colname="Name">
+		<div class="pf-admin-who">
+			{{forum_avatar .Author 40}}
+			<div class="pf-admin-who__text">
+				<strong><a class="row-title" href="{{.ManageURL}}" translate="no">{{.DisplayName}}</a></strong>{{if .Self}} <span class="pf-admin-you">(you)</span>{{end}}
+				<span class="pf-admin-who__meta"><span translate="no">{{.Login}}</span>{{if .RoleNames}} <span aria-hidden="true">&middot;</span> <span>{{.RoleNames}}</span>{{end}}</span>
+				{{if .Email}}<a class="pf-admin-who__email" href="mailto:{{.Email}}" translate="no">{{.Email}}</a>{{end}}
+				<span class="pf-admin-who__mobile">{{forum_level .Level}}<span><strong>{{.Points}}</strong> <span>points</span></span>{{if ne .Status "verified"}}<span class="pf-admin-state is-{{.Status}}">{{.StatusLabel}}</span>{{end}}</span>
+			</div>
+		</div>
+		<div class="row-actions">{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} onclick="return confirm('{{$a.Confirm}}')"{{end}}{{if eq $a.Key "block"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}</div>
+		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+	</td>
+	<td class="column-level" data-colname="Level">{{forum_level .Level}}</td>
+	<td class="column-badges" data-colname="Badges">{{if .Shown}}<span class="pf-admin-chips">{{range .Shown}}{{forum_badge .}}{{end}}{{if .More}}<a class="pf-admin-more" href="{{.ManageURL}}">+{{.More}}</a>{{end}}</span>{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">None</span>{{end}}</td>
+	<td class="column-topics num" data-colname="Topics">{{.Topics}}</td>
+	<td class="column-replies num" data-colname="Replies">{{.Replies}}</td>
+	<td class="column-points num" data-colname="Points"><strong>{{.Points}}</strong></td>
+	<td class="column-joined" data-colname="Joined">{{if .JoinedISO}}<time datetime="{{.JoinedISO}}">{{.Joined}}</time>{{else}}&#8212;{{end}}</td>
+	<td class="column-last_active" data-colname="Last active">{{if .ActiveISO}}<time datetime="{{.ActiveISO}}">{{.Active}}</time>{{else}}<span class="pf-admin-muted">Never posted</span>{{end}}</td>
+	<td class="column-status" data-colname="Status"><span class="pf-admin-state is-{{.Status}}">{{.StatusLabel}}</span>{{if .IsAdmin}}<span class="pf-admin-state is-role">Administrator</span>{{else if .Moderator}}<span class="pf-admin-state is-role">Moderator</span>{{end}}</td>
+	<td class="column-google" data-colname="Google">{{if .Google}}<span class="pf-admin-yes" title="Google account linked">{{forum_icon "check" 16}}<span class="screen-reader-text">Linked</span></span>{{else}}<span aria-hidden="true" class="pf-admin-muted">&#8212;</span><span class="screen-reader-text">Not linked</span>{{end}}</td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="11">{{if .Search}}No members match your search.{{else}}No members found.{{end}}</td></tr>
+{{end}}</tbody>
+<tfoot>{{template "forum-admin-members-head" dict "D" . "Top" false}}</tfoot>
+</table>
+{{template "forum-admin-members-nav" dict "D" . "Top" false}}
+</form>
+{{end}}
+
+{{define "forum-admin-members-nav"}}{{$d := .D}}{{$n := "2"}}{{if .Top}}{{$n = ""}}{{end}}
+<div class="tablenav {{if .Top}}top{{else}}bottom{{end}}">
+	<div class="alignleft actions bulkactions">
+		<label for="bulk-action-selector-{{if .Top}}top{{else}}bottom{{end}}" class="screen-reader-text">Select bulk action</label>
+		<select name="action{{$n}}" id="bulk-action-selector-{{if .Top}}top{{else}}bottom{{end}}" class="pf-admin-bulk"><option value="-1">Bulk actions</option>{{range $d.Bulk}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+		{{if $d.BadgeOpts}}<label for="pf-bulk-badge{{$n}}" class="screen-reader-text">Badge</label>
+		<select name="badge{{$n}}" id="pf-bulk-badge{{$n}}" class="pf-admin-bulk-badge"><option value="">Choose a badge&hellip;</option>{{range $d.BadgeOpts}}<option value="{{.ID}}">{{.Name}}{{if not .Enabled}} (disabled){{end}}</option>{{end}}</select>{{end}}
+		<input type="submit" id="doaction{{$n}}" class="button action" value="Apply" />
+	</div>
+	{{template "tablenav-pages" $d.Paging}}<br class="clear" />
+</div>
+{{end}}
+
+{{define "forum-admin-members-head"}}{{$d := .D}}<tr>
+	<td {{if .Top}}id="cb" {{end}}class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+	{{template "sort-th" dict "ID" (or (and .Top "name") "") "Col" "name" "Primary" true "Label" "Name" "Link" (index $d.SortLinks "name")}}
+	<th scope="col" {{if .Top}}id="level" {{end}}class="manage-column column-level">Level</th>
+	<th scope="col" {{if .Top}}id="badges" {{end}}class="manage-column column-badges">Badges</th>
+	{{template "sort-th" dict "ID" (or (and .Top "topics") "") "Col" "topics" "Num" true "Label" "Topics" "Link" (index $d.SortLinks "topics")}}
+	{{template "sort-th" dict "ID" (or (and .Top "replies") "") "Col" "replies" "Num" true "Label" "Replies" "Link" (index $d.SortLinks "replies")}}
+	{{template "sort-th" dict "ID" (or (and .Top "points") "") "Col" "points" "Num" true "Label" "Points" "Link" (index $d.SortLinks "points")}}
+	{{template "sort-th" dict "ID" (or (and .Top "joined") "") "Col" "joined" "Label" "Joined" "Link" (index $d.SortLinks "joined")}}
+	{{template "sort-th" dict "ID" (or (and .Top "last_active") "") "Col" "last_active" "Label" "Last active" "Link" (index $d.SortLinks "last_active")}}
+	<th scope="col" {{if .Top}}id="status" {{end}}class="manage-column column-status">Status</th>
+	<th scope="col" {{if .Top}}id="google" {{end}}class="manage-column column-google">Google</th>
+</tr>{{end}}
+
+{{define "forum-admin-member"}}{{$d := .}}{{with .Member}}
+<p class="pf-admin-back"><a href="{{.ListURL}}">&larr; Back to Members</a></p>
+<div class="pf-admin-profile postbox">
+	<div class="pf-admin-profile__head">
+		{{forum_avatar .Author 72}}
+		<div class="pf-admin-profile__id">
+			<h2 translate="no">{{.DisplayName}}</h2>
+			<p class="pf-admin-profile__meta"><span translate="no">{{.Login}}</span>{{if .Email}} <span aria-hidden="true">&middot;</span> <a href="mailto:{{.Email}}" translate="no">{{.Email}}</a>{{end}}{{if .RoleNames}} <span aria-hidden="true">&middot;</span> <span>{{.RoleNames}}</span>{{end}}</p>
+			<p class="pf-admin-profile__tags"><span class="pf-admin-state is-{{.Status}}">{{.StatusLabel}}</span>{{if .IsAdmin}}<span class="pf-admin-state is-role">Administrator</span>{{else if .Moderator}}<span class="pf-admin-state is-role">Moderator</span>{{end}}{{if .Google}}<span class="pf-admin-state is-google">Google linked</span>{{end}}</p>
+		</div>
+		<div class="pf-admin-profile__links">
+			{{if .ProfileURL}}<a class="button" href="{{.ProfileURL}}">View profile</a>{{end}}
+			{{if .CanEdit}}<a class="button" href="{{.EditURL}}">Edit user</a>{{end}}
+		</div>
+	</div>
+	<div class="pf-admin-profile__level">
+		<div class="pf-admin-profile__chip">{{forum_level .Level}}</div>
+		{{if .NextLevel}}<div class="pf-admin-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.Progress}}" aria-label="Progress to the next level"><span style="width:{{.Progress}}%"></span></div>
+		<p class="pf-admin-progress__text">{{.ToNext}}</p>{{else}}<p class="pf-admin-progress__text">The highest level.</p>{{end}}
+	</div>
+	<dl class="pf-admin-profile__stats">
+		<div><dt>Topics</dt><dd>{{.Topics}}</dd></div>
+		<div><dt>Replies</dt><dd>{{.Replies}}</dd></div>
+		<div><dt>Points</dt><dd>{{.Points}}</dd></div>
+		<div><dt>Joined</dt><dd>{{if .Joined}}{{.Joined}}{{else}}&#8212;{{end}}</dd></div>
+		<div><dt>Last active</dt><dd>{{if .Active}}{{.Active}}{{else}}Never posted{{end}}</dd></div>
+	</dl>
+</div>
+
+<div class="pf-admin-dash">
+<div class="pf-admin-dash__main">
+{{if $d.IsAdmin}}
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">Badges</h2></div>
+		<div class="inside">
+		<p class="description">Badges with a rule are earned automatically. Tick a badge to award it by hand as well: a hand-awarded badge shows whatever its rule says.</p>
+		<form method="post" action="{{.URL}}">
+		<input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+		<input type="hidden" name="member_do" value="badges" />
+		<input type="hidden" name="user" value="{{.ID}}" />
+		<table class="widefat striped pf-admin-member-badges">
+		<thead><tr><th scope="col" class="column-award">Awarded by hand</th><th scope="col">Badge</th><th scope="col" class="column-rule">Earned by</th><th scope="col" class="column-has">Shown</th></tr></thead>
+		<tbody>{{range .Badges}}<tr{{if not .Enabled}} class="is-disabled"{{end}}>
+			<td class="column-award"><input type="checkbox" id="pf-award-{{.ID}}" name="badges[]" value="{{.ID}}"{{if .Manual}} checked{{end}} /><label for="pf-award-{{.ID}}" class="screen-reader-text">Award {{.Name}} by hand</label></td>
+			<td><label for="pf-award-{{.ID}}">{{.Chip}}</label>{{if not .Enabled}} <span class="pf-admin-muted">(disabled)</span>{{end}}<span class="pf-admin-rule-sm"><span>{{.RuleLabel}}</span>{{if .Threshold}} &ge; {{.Threshold}}{{end}}</span></td>
+			<td class="column-rule">{{.RuleLabel}}{{if .Threshold}} &ge; {{.Threshold}}{{end}}</td>
+			<td class="column-has">{{if .Earned}}<span class="pf-admin-yes" title="The member has this badge">{{forum_icon "check" 16}}<span class="screen-reader-text">Yes</span></span>{{else}}<span class="pf-admin-muted" aria-hidden="true">&#8212;</span><span class="screen-reader-text">No</span>{{end}}</td>
+		</tr>{{end}}</tbody>
+		</table>
+		<p class="submit"><input type="submit" class="button button-primary" value="Save Badges" /></p>
+		</form>
+		</div>
+	</div>
+{{end}}
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">Badges shown</h2></div>
+		<div class="inside">{{with .Author.Badges}}<p class="pf-admin-chips pf-admin-chips--wrap">{{range .}}{{forum_badge .}}{{end}}</p>{{else}}<p class="pf-admin-empty">No badges yet.</p>{{end}}</div>
+	</div>
+</div>
+<div class="pf-admin-dash__side">
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">Status</h2></div>
+		<div class="inside">
+		{{if .Blocked}}<p>This member is blocked: they can read and sign in, but cannot post.</p>{{else if eq .Status "unverified"}}<p>This member has not confirmed their email address yet.</p>{{else}}<p>This member can post in the forum.</p>{{end}}
+		<div class="pf-admin-actions">
+		{{if eq .Status "unverified"}}<form method="post" action="{{.URL}}"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" /><input type="hidden" name="member_do" value="verify" /><input type="hidden" name="user" value="{{.ID}}" /><input type="submit" class="button" value="Mark as verified" /></form>{{end}}
+		{{if .CanBlock}}<form method="post" action="{{.URL}}"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" /><input type="hidden" name="user" value="{{.ID}}" />{{if .Blocked}}<input type="hidden" name="member_do" value="unblock" /><input type="submit" class="button" value="Unblock" />{{else}}<input type="hidden" name="member_do" value="block" /><input type="submit" class="button pf-admin-danger" value="Block" onclick="return confirm('Block this member? They can still read and sign in, but cannot post.')" />{{end}}</form>{{end}}
+		</div>
+		{{if and (not .CanBlock) (not .Self)}}<p class="description">{{if .IsAdmin}}Administrators cannot be blocked.{{else if .Moderator}}Only an administrator can block a moderator.{{end}}</p>{{end}}
+		</div>
+	</div>
+{{if $d.IsAdmin}}
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">Forum role</h2></div>
+		<div class="inside">
+		{{if .CanRole}}<form method="post" action="{{.URL}}">
+		<input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+		<input type="hidden" name="member_do" value="role" />
+		<input type="hidden" name="user" value="{{.ID}}" />
+		<fieldset><legend class="screen-reader-text">Forum role</legend>
+		<p><label><input type="radio" name="forum_role" value="forum_participant"{{if ne .Role "forum_moderator"}} checked{{end}} /> <strong>Forum Participant</strong></label><br /><span class="description pf-admin-indent">Starts topics and replies.</span></p>
+		<p><label><input type="radio" name="forum_role" value="forum_moderator"{{if eq .Role "forum_moderator"}} checked{{end}} /> <strong>Forum Moderator</strong></label><br /><span class="description pf-admin-indent">Also approves, edits, moves and removes posts and blocks members.</span></p>
+		</fieldset>
+		<p class="description">The member's other roles stay as they are.</p>
+		<p><input type="submit" class="button button-primary" value="Change Role" /></p>
+		</form>{{else}}<p class="description">You cannot change your own forum role.</p>{{end}}
+		</div>
+	</div>
+{{end}}
+</div>
+</div>
+{{end}}{{end}}

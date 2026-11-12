@@ -303,6 +303,9 @@ type QueryFacts struct {
 	FrontPage bool   // is_front_page: the static front page, or the posts index on the front
 	Store     bool   // a Pursae Commerce store view: only store main templates (StoreTemplateKinds)
 	StoreKind string // the store view kind (siteQuery.Store: product, shop, product_cat, …; "" off the store)
+	// PluginView is a native plugin's own view rendered as a synthetic page (Pursae Forum: index,
+	// forum, topic, …; "" elsewhere). No main template renders on it; header and footer still do.
+	PluginView string
 
 	// Singular: the entry. Post type archive: PostType is the archived type.
 	PostType string
@@ -526,6 +529,9 @@ func TemplateScore(c *TemplateCandidate, q QueryFacts) (int, bool) {
 // Commerce store view, store types (StoreTemplateKinds) only on their store view kinds. Header
 // and footer templates render everywhere.
 func StoreGateOK(t TemplateType, q QueryFacts) bool {
+	if q.PluginView != "" { // a plugin view (Pursae Forum) prints its own body inside the theme's page
+		return TemplateLocation(t) != LocationMain
+	}
 	if TemplateLocation(t) != LocationMain {
 		return true
 	}

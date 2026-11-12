@@ -1,0 +1,1468 @@
+{
+ "format": "web-builder-theme",
+ "version": 1,
+ "templates": [
+  {
+   "key": "header",
+   "type": "header",
+   "title": "Header",
+   "conditions": [
+    "include/general"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_yor1rsd",
+      "kind": "banner",
+      "name": "Announcement bar",
+      "hidden": false,
+      "content": {
+       "text": "Exam season study rooms are open · new members get a study buddy",
+       "link": "Log in",
+       "linkHref": "/forums/login/"
+      },
+      "items": [],
+      "style": {
+       "palette": "dark",
+       "align": "center",
+       "padding": 0,
+       "titleSize": 16,
+       "hideOn": [],
+       "bg": "#12313A"
+      }
+     },
+     {
+      "id": "s_nrtepn7",
+      "kind": "nav",
+      "name": "Header",
+      "hidden": false,
+      "content": {
+       "logo": "P",
+       "brand": "Pursae",
+       "primary": "Join",
+       "menu": "primary",
+       "logoSource": "site",
+       "primaryHref": "/forums/register/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 0,
+       "titleSize": 20,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A",
+       "css": "body.wp-theme-hello-pursae.pursae-forum{background:#F3FAF8}\nbody.wp-theme-hello-pursae .site-main .entry-title{color:#12313A;font-family:Lexend,Nunito,system-ui,sans-serif}\nbody .pf{--pf-accent:#0F766E;--pf-accent-ink:#FFFFFF;--pf-surface:#FFFFFF;--pf-text:#12313A;--pf-muted:#4F6B73;--pf-border:#D5E7E3;--pf-radius:14px;--pf-font:Nunito,system-ui,sans-serif;--pf-font-heading:Lexend,Nunito,system-ui,sans-serif;--pf-shadow:0 1px 2px rgba(18,49,58,.06),0 8px 24px rgba(18,49,58,.06)}"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "footer",
+   "type": "footer",
+   "title": "Footer",
+   "conditions": [
+    "include/general"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_gc64lxi",
+      "kind": "footer",
+      "name": "Footer",
+      "hidden": false,
+      "content": {
+       "logo": "P",
+       "brand": "Pursae",
+       "note": "© Study Circle · Ask, answer, learn together",
+       "menu": "footer",
+       "logoSource": "site"
+      },
+      "items": [],
+      "style": {
+       "palette": "dark",
+       "align": "left",
+       "padding": 0,
+       "titleSize": 18,
+       "hideOn": [],
+       "bg": "#12313A"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "front-page",
+   "type": "front-page",
+   "title": "Front page",
+   "conditions": [
+    "include/singular/front_page"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_m0nfv37",
+      "kind": "hero",
+      "name": "Hero",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Study Circle",
+       "title": "Ask, answer,",
+       "accent": "learn together.",
+       "body": "A friendly forum for students and lifelong learners: subject rooms, study tips and exam prep, with tutors and peers who explain things kindly.",
+       "primary": "Join the circle",
+       "secondary": "Browse subjects",
+       "visual": "image",
+       "image": "{{media:hero}}",
+       "termTitle": "~/site",
+       "terminal": "$ docker compose up -d\n✓ db       postgres:17 · healthy\n✓ pursae   one binary · started\n\n$ pursae serve\n› schema migrations  up to date\n› task runner        running\n› wasm plugins       3 loaded, signatures ok\n› http://localhost:8080  *ready*",
+       "card1Label": "PLUGIN SANDBOX",
+       "card1Value": "Signature verified",
+       "card2Label": "PAGE CACHE",
+       "card2Value": "On",
+       "card2Sub": "hit rate 94%",
+       "html": "<div class=\"card\">\n  <span class=\"tag\">Live</span>\n  <h3>Write your own HTML here</h3>\n  <p>This area runs real HTML and CSS: badges, tables, embed codes…</p>\n  <button onclick=\"this.textContent='Clicked ✓'\">Try it</button>\n</div>\n<style>\n  .card { font-family: Inter, sans-serif; padding: 28px; border-radius: 16px;\n          background: linear-gradient(135deg, #1b1d22, #262a33); color: #eef0f3; }\n  .tag  { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;\n          color: #4ade80; }\n  h3    { margin: 10px 0 6px; font-size: 22px; }\n  p     { margin: 0 0 18px; color: #a3a8b2; line-height: 1.6; }\n  button{ font: 600 14px Inter, sans-serif; padding: 10px 16px; border: 0; border-radius: 8px;\n          background: #5b7cfa; color: #fff; cursor: pointer; }\n</style>",
+       "primaryHref": "/forums/register/",
+       "secondaryHref": "/forums/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 96,
+       "titleSize": 92,
+       "hideOn": [],
+       "bg": "#F3FAF8",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_htzvgxa",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Subject rooms",
+       "title": "Find your subject.",
+       "body": ""
+      },
+      "items": [
+       {
+        "id": "i_jh3701s",
+        "title": "Mathematics",
+        "text": "Algebra to calculus, proofs and practice problems.",
+        "icon": "shield",
+        "href": "/forums/f/mathematics/"
+       },
+       {
+        "id": "i_24m4wrz",
+        "title": "Sciences",
+        "text": "Biology, chemistry and physics questions.",
+        "icon": "box",
+        "href": "/forums/f/sciences/"
+       },
+       {
+        "id": "i_tgkwm6b",
+        "title": "Languages",
+        "text": "Grammar help, conversation partners and resources.",
+        "icon": "puzzle",
+        "href": "/forums/f/languages/"
+       },
+       {
+        "id": "i_pxbgfz1",
+        "title": "Writing and Humanities",
+        "text": "Essays, history and literature.",
+        "icon": "zap",
+        "href": "/forums/f/writing-and-humanities/"
+       },
+       {
+        "id": "i_3sxab0m",
+        "title": "Exam Prep",
+        "text": "Schedules, past papers and last-week nerves.",
+        "icon": "timer",
+        "href": "/forums/f/exam-prep/"
+       },
+       {
+        "id": "i_w31ag3x",
+        "title": "Study Tips",
+        "text": "Notes, focus and memory techniques that work.",
+        "icon": "gauge",
+        "href": "/forums/f/study-tips/"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_arqm2mj",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "How it works",
+       "title": "Small questions, big progress.",
+       "body": "Post where you are stuck. Someone has been there before."
+      },
+      "items": [
+       {
+        "id": "i_5gp9rjk",
+        "title": "Ask anything",
+        "text": "No question is too basic. Show what you tried and get a clear answer.",
+        "icon": "shield"
+       },
+       {
+        "id": "i_l8ta7vz",
+        "title": "Explain to learn",
+        "text": "Answering others is the fastest way to master a topic.",
+        "icon": "box"
+       },
+       {
+        "id": "i_02r8hoz",
+        "title": "Friendly tutors",
+        "text": "Volunteer tutors and moderators keep threads helpful and correct.",
+        "icon": "puzzle"
+       },
+       {
+        "id": "i_8oniujo",
+        "title": "Study together",
+        "text": "Weekly study threads and exam countdowns keep you on track.",
+        "icon": "zap"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#F3FAF8",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_x0sp5u8",
+      "kind": "media",
+      "name": "Image and text",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Community guidelines",
+       "title": "A kind place to not know things yet.",
+       "body": "We explain instead of judging, we show our working, and we never post answers to live exams. Read the guidelines before your first post.",
+       "primary": "Read the guidelines",
+       "image": "{{media:about}}",
+       "imageSide": "left",
+       "primaryHref": "/guidelines/"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 48,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_8n831e8",
+      "kind": "quote",
+      "name": "Testimonial",
+      "hidden": false,
+      "content": {
+       "quote": "I was failing statistics in October. By June I was the one answering questions in the Mathematics room.",
+       "author": "Lena M.",
+       "role": "Second-year psychology student"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "center",
+       "padding": 112,
+       "titleSize": 40,
+       "hideOn": [],
+       "bg": "#F3FAF8",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_jd3408g",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "Stuck on something tonight?",
+       "body": "Join for free and post your question; most get a helpful answer within the hour.",
+       "primary": "Join the circle",
+       "secondary": "Browse subjects",
+       "primaryHref": "/forums/register/",
+       "secondaryHref": "/forums/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#12313A",
+       "titleColor": "#12313A"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "single-post",
+   "type": "single-post",
+   "title": "Single post",
+   "conditions": [
+    "include/singular/post"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_xvvp59i",
+      "kind": "layout",
+      "name": "Post header",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_89phj6y",
+        "title": "post-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "link": false
+        }
+       },
+       {
+        "id": "c_noiiep7",
+        "title": "post-meta",
+        "text": "",
+        "dyn": {
+         "fields": [
+          "date",
+          "author",
+          "comments"
+         ],
+         "sep": "·"
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 32,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_w38ujqi",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_ub5w5ax",
+        "title": "post-image",
+        "text": "",
+        "dyn": {
+         "size": "large",
+         "ratio": 1.78,
+         "link": false
+        }
+       },
+       {
+        "id": "c_irom5vy",
+        "title": "post-content",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_g7bs3uy",
+        "title": "post-terms",
+        "text": "",
+        "dyn": {
+         "tax": "category",
+         "sep": ", ",
+         "prefix": "Filed under"
+        }
+       },
+       {
+        "id": "c_gy7yo8y",
+        "title": "author-box",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_n8sn1jm",
+        "title": "post-nav",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_teiywfl",
+        "title": "post-comments",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 32,
+       "gridCols": 1,
+       "gridRows": 6,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 0,
+        "r": 40,
+        "b": 64,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "single-page",
+   "type": "single-page",
+   "title": "Single page",
+   "conditions": [
+    "include/singular/page"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_7njira6",
+      "kind": "layout",
+      "name": "Post header",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_q7tj2cm",
+        "title": "post-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "link": false
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 32,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_4fqn73q",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_t5dbkpp",
+        "title": "post-image",
+        "text": "",
+        "dyn": {
+         "size": "large",
+         "ratio": 1.78,
+         "link": false
+        }
+       },
+       {
+        "id": "c_x3rwyho",
+        "title": "post-content",
+        "text": "",
+        "dyn": {}
+       },
+       {
+        "id": "c_9uoihe6",
+        "title": "post-comments",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 760,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 32,
+       "gridCols": 1,
+       "gridRows": 3,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 0,
+        "r": 40,
+        "b": 64,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "archive",
+   "type": "archive",
+   "title": "Archive",
+   "conditions": [
+    "include/archive"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_6g14xdz",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_16gr75o",
+        "title": "archive-title",
+        "text": "",
+        "dyn": {
+         "tag": "h1"
+        }
+       },
+       {
+        "id": "c_t1s4o83",
+        "title": "archive-desc",
+        "text": "",
+        "dyn": {}
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 1160,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 12,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 24,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_lhrr99o",
+      "kind": "loop",
+      "name": "Post loop",
+      "hidden": false,
+      "content": {
+       "source": "main",
+       "postType": "post",
+       "perPage": "6",
+       "orderBy": "date",
+       "order": "desc",
+       "terms": "",
+       "author": "",
+       "exclude": "",
+       "offset": "0",
+       "pagination": "numbers",
+       "empty": "No posts yet."
+      },
+      "items": [
+       {
+        "id": "c_1kl7jbt",
+        "title": "layout",
+        "text": "",
+        "sub": {
+         "id": "s_pziw1pm",
+         "kind": "layout",
+         "name": "Post card",
+         "hidden": false,
+         "content": {
+          "type": "grid",
+          "structure": "g3r"
+         },
+         "items": [
+          {
+           "id": "c_t17tr5p",
+           "title": "post-image",
+           "text": "",
+           "dyn": {
+            "size": "medium",
+            "ratio": 1.5,
+            "link": true
+           }
+          },
+          {
+           "id": "c_msuglfq",
+           "title": "post-meta",
+           "text": "",
+           "dyn": {
+            "fields": [
+             "date"
+            ],
+            "sep": "·"
+           }
+          },
+          {
+           "id": "c_0jutqiv",
+           "title": "post-title",
+           "text": "",
+           "dyn": {
+            "tag": "h3",
+            "link": true
+           }
+          },
+          {
+           "id": "c_pupkykl",
+           "title": "post-excerpt",
+           "text": "",
+           "dyn": {
+            "words": 20
+           }
+          }
+         ],
+         "style": {
+          "palette": "light",
+          "align": "left",
+          "padding": 72,
+          "titleSize": 22,
+          "hideOn": []
+         },
+         "box": {
+          "contentWidth": "full",
+          "width": 100,
+          "widthUnit": "%",
+          "minHeight": 0,
+          "minHeightUnit": "px",
+          "direction": "row",
+          "justify": "start",
+          "align": "stretch",
+          "wrap": true,
+          "stackMobile": true,
+          "gapX": 12,
+          "gapY": 12,
+          "gridCols": 1,
+          "gridRows": 4,
+          "margin": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "padding": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "borderStyle": "none",
+          "borderWidth": 1,
+          "borderColor": "#d0d4db",
+          "radius": 0,
+          "shadow": "none",
+          "zIndex": 0
+         }
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 22,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      },
+      "box": {
+       "contentWidth": "full",
+       "width": 100,
+       "widthUnit": "%",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 32,
+       "gapY": 32,
+       "gridCols": 2,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 16,
+        "r": 0,
+        "b": 96,
+        "l": 0
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "search-results",
+   "type": "search-results",
+   "title": "Search results",
+   "conditions": [
+    "include/archive/search"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_wif897l",
+      "kind": "layout",
+      "name": "Content",
+      "hidden": false,
+      "content": {
+       "type": "grid",
+       "structure": "g3r"
+      },
+      "items": [
+       {
+        "id": "c_m65mwte",
+        "title": "search-query",
+        "text": "",
+        "dyn": {
+         "tag": "h1",
+         "prefix": "Search results for:"
+        }
+       },
+       {
+        "id": "c_ojkuonl",
+        "title": "search-form",
+        "text": "",
+        "dyn": {
+         "placeholder": "Search…",
+         "button": "Search"
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 36,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      },
+      "box": {
+       "contentWidth": "boxed",
+       "width": 1160,
+       "widthUnit": "px",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 16,
+       "gapY": 16,
+       "gridCols": 1,
+       "gridRows": 2,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 64,
+        "r": 40,
+        "b": 24,
+        "l": 40
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     },
+     {
+      "id": "s_ameaen0",
+      "kind": "loop",
+      "name": "Post loop",
+      "hidden": false,
+      "content": {
+       "source": "main",
+       "postType": "post",
+       "perPage": "6",
+       "orderBy": "date",
+       "order": "desc",
+       "terms": "",
+       "author": "",
+       "exclude": "",
+       "offset": "0",
+       "pagination": "numbers",
+       "empty": "Nothing matched your search. Try different words."
+      },
+      "items": [
+       {
+        "id": "c_tvlbw00",
+        "title": "layout",
+        "text": "",
+        "sub": {
+         "id": "s_qli4fns",
+         "kind": "layout",
+         "name": "Post card",
+         "hidden": false,
+         "content": {
+          "type": "grid",
+          "structure": "g3r"
+         },
+         "items": [
+          {
+           "id": "c_u1a1fp9",
+           "title": "post-image",
+           "text": "",
+           "dyn": {
+            "size": "medium",
+            "ratio": 1.5,
+            "link": true
+           }
+          },
+          {
+           "id": "c_borozm0",
+           "title": "post-meta",
+           "text": "",
+           "dyn": {
+            "fields": [
+             "date"
+            ],
+            "sep": "·"
+           }
+          },
+          {
+           "id": "c_3qc3kmm",
+           "title": "post-title",
+           "text": "",
+           "dyn": {
+            "tag": "h3",
+            "link": true
+           }
+          },
+          {
+           "id": "c_r0q89cl",
+           "title": "post-excerpt",
+           "text": "",
+           "dyn": {
+            "words": 20
+           }
+          }
+         ],
+         "style": {
+          "palette": "light",
+          "align": "left",
+          "padding": 72,
+          "titleSize": 22,
+          "hideOn": []
+         },
+         "box": {
+          "contentWidth": "full",
+          "width": 100,
+          "widthUnit": "%",
+          "minHeight": 0,
+          "minHeightUnit": "px",
+          "direction": "row",
+          "justify": "start",
+          "align": "stretch",
+          "wrap": true,
+          "stackMobile": true,
+          "gapX": 12,
+          "gapY": 12,
+          "gridCols": 1,
+          "gridRows": 4,
+          "margin": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "padding": {
+           "t": 0,
+           "r": 0,
+           "b": 0,
+           "l": 0
+          },
+          "borderStyle": "none",
+          "borderWidth": 1,
+          "borderColor": "#d0d4db",
+          "radius": 0,
+          "shadow": "none",
+          "zIndex": 0
+         }
+        }
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 72,
+       "titleSize": 22,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      },
+      "box": {
+       "contentWidth": "full",
+       "width": 100,
+       "widthUnit": "%",
+       "minHeight": 0,
+       "minHeightUnit": "px",
+       "direction": "row",
+       "justify": "start",
+       "align": "stretch",
+       "wrap": true,
+       "stackMobile": true,
+       "gapX": 32,
+       "gapY": 32,
+       "gridCols": 2,
+       "gridRows": 1,
+       "margin": {
+        "t": 0,
+        "r": 0,
+        "b": 0,
+        "l": 0
+       },
+       "padding": {
+        "t": 16,
+        "r": 0,
+        "b": 96,
+        "l": 0
+       },
+       "borderStyle": "none",
+       "borderWidth": 1,
+       "borderColor": "#d0d4db",
+       "radius": 0,
+       "shadow": "none",
+       "zIndex": 0
+      }
+     }
+    ]
+   }
+  },
+  {
+   "key": "error-404",
+   "type": "error-404",
+   "title": "404 page",
+   "conditions": [
+    "include/404"
+   ],
+   "priority": 0,
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_eeeztez",
+      "kind": "text",
+      "name": "Text block",
+      "hidden": false,
+      "content": {
+       "title": "This page skipped class",
+       "body": "We could not find it. The subject rooms are a good place to start."
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "center",
+       "padding": 88,
+       "titleSize": 44,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_1kw9wj3",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "Back to studying",
+       "body": "Every subject room is one click away.",
+       "primary": "Open the forums",
+       "secondary": "Back to the home page",
+       "primaryHref": "/forums/",
+       "secondaryHref": "/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#12313A",
+       "titleColor": "#12313A"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "pages": [
+  {
+   "key": "about",
+   "slug": "guidelines",
+   "title": "Community guidelines",
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_a2kstfb",
+      "kind": "text",
+      "name": "Text block",
+      "hidden": false,
+      "content": {
+       "title": "Community guidelines",
+       "body": "Study Circle works because everyone follows a few simple guidelines. Moderators and tutors apply them kindly and consistently."
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 88,
+       "titleSize": 44,
+       "hideOn": [],
+       "bg": "#F3FAF8",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_ej5lje1",
+      "kind": "features",
+      "name": "Features",
+      "hidden": false,
+      "content": {
+       "eyebrow": "",
+       "title": "",
+       "body": ""
+      },
+      "items": [
+       {
+        "id": "i_yrf1gr8",
+        "title": "Show your working",
+        "text": "Share what you tried so helpers can see where you got stuck.",
+        "icon": "shield"
+       },
+       {
+        "id": "i_ztp2214",
+        "title": "Explain, do not just answer",
+        "text": "Good replies teach the method, not only the result.",
+        "icon": "box"
+       },
+       {
+        "id": "i_4vnfj4b",
+        "title": "Academic honesty",
+        "text": "No answers to live exams or graded work, no paid essay offers.",
+        "icon": "puzzle"
+       },
+       {
+        "id": "i_otkdvwr",
+        "title": "Be patient and kind",
+        "text": "Everyone was a beginner once. Assume good intent.",
+        "icon": "zap"
+       }
+      ],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 56,
+       "hideOn": [],
+       "bg": "#FFFFFF",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_xrn2uzy",
+      "kind": "media",
+      "name": "Image and text",
+      "hidden": false,
+      "content": {
+       "eyebrow": "",
+       "title": "A kind place to not know things yet.",
+       "body": "We explain instead of judging, we show our working, and we never post answers to live exams. Read the guidelines before your first post.",
+       "primary": "",
+       "image": "{{media:about}}",
+       "imageSide": "right"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 112,
+       "titleSize": 48,
+       "hideOn": [],
+       "bg": "#F3FAF8",
+       "titleColor": "#12313A"
+      }
+     },
+     {
+      "id": "s_xaa1mhs",
+      "kind": "cta",
+      "name": "Call to action",
+      "hidden": false,
+      "content": {
+       "title": "Stuck on something tonight?",
+       "body": "Join for free and post your question; most get a helpful answer within the hour.",
+       "primary": "Join the circle",
+       "secondary": "Browse subjects",
+       "primaryHref": "/forums/register/",
+       "secondaryHref": "/forums/"
+      },
+      "items": [],
+      "style": {
+       "palette": "brand",
+       "align": "center",
+       "padding": 120,
+       "titleSize": 64,
+       "hideOn": [],
+       "bg": "#12313A",
+       "titleColor": "#12313A"
+      }
+     }
+    ]
+   },
+   "page": {
+    "layout": "site"
+   }
+  },
+  {
+   "key": "contact",
+   "slug": "about",
+   "title": "About Study Circle",
+   "doc": {
+    "site": {
+     "brand": "#0F766E",
+     "fontPair": "plain",
+     "corners": "round",
+     "headingFont": "Lexend",
+     "headingWeight": 600,
+     "bodyFont": "Nunito",
+     "bodyWeight": 400
+    },
+    "sections": [
+     {
+      "id": "s_xje032u",
+      "kind": "form",
+      "name": "Contact form",
+      "hidden": false,
+      "content": {
+       "eyebrow": "Contact",
+       "title": "About Study Circle",
+       "body": "Study Circle is run by volunteer tutors, teachers and students. Want to become a tutor, suggest a subject room or report a problem? Send the team a message.",
+       "primary": "Send message"
+      },
+      "items": [],
+      "style": {
+       "palette": "light",
+       "align": "left",
+       "padding": 104,
+       "titleSize": 52,
+       "hideOn": [],
+       "bg": "#F3FAF8",
+       "titleColor": "#12313A"
+      }
+     }
+    ]
+   },
+   "page": {
+    "layout": "site"
+   }
+  }
+ ]
+}

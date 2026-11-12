@@ -1,0 +1,58 @@
+{
+  "slug": "campfire",
+  "name": "Campfire",
+  "version": "1.0.0",
+  "description": "A warm community board for makers and hobbyists, built for Pursae Forum: category cards on the forum home, friendly topic pages, a join-the-circle front page with the latest topics and member counts, and an optional community sidebar. Ember and moss on warm paper; Fraunces and Albert Sans, self-hosted. Works without JavaScript.",
+  "author": "Pursae",
+  "author_url": "https://github.com/pursae",
+  "theme_url": "https://github.com/pursae/pursae/tree/main/library/themes/campfire",
+  "tags": ["Community", "Forum", "Hobby", "Custom Colors", "Custom Logo", "Custom Menu", "Editor Style", "Translation Ready", "One Column", "Right Sidebar"],
+  "requires_core": "0.1.0",
+  "screenshot": "assets/screenshot.png",
+
+  "category": "personal",
+  "style": "Warm maker community forum, ember and moss on paper",
+  "demo": "demo/demo.json",
+
+  "menu_locations": [
+    {"id": "primary", "name": "Primary Menu", "description": "Beside the site title."},
+    {"id": "footer", "name": "Footer Menu", "description": "Links in the footer."}
+  ],
+
+  "styles": [
+    {"handle": "campfire-style", "src": "assets/style.css", "deps": [], "media": "all"}
+  ],
+  "editor_styles": ["assets/editor-style.css"],
+  "preload_fonts": ["assets/fonts/albert-sans.woff2"],
+
+  "palette": [
+    {"name": "Ember", "slug": "primary", "color": "#D9572B"},
+    {"name": "Moss", "slug": "secondary", "color": "#5E7D4F"},
+    {"name": "Charcoal", "slug": "text", "color": "#2B2622"},
+    {"name": "Paper", "slug": "background", "color": "#FBF6EE"},
+    {"name": "Surface", "slug": "surface", "color": "#FFFFFF"},
+    {"name": "Sand", "slug": "sand", "color": "#F3EADB"},
+    {"name": "Ash", "slug": "muted", "color": "#7A6E64"}
+  ],
+  "supports": {
+    "pursae-forum": true,
+    "post-thumbnails": true,
+    "title-tag": true,
+    "custom-logo": {"width": 160, "height": 44, "flex-width": true, "flex-height": true},
+    "responsive-embeds": true,
+    "html5": ["search-form", "comment-form", "comment-list", "gallery", "caption", "script", "style"]
+  },
+
+  "customizer": {
+    "sections": [
+      {
+        "id": "campfire_options", "title": "Campfire", "description": "Accent color and the forum layout.", "priority": 40,
+        "settings": [
+          {"id": "accent", "label": "Accent color", "description": "Buttons, links and highlights (darkened automatically where text needs contrast).", "type": "color", "default": "#D9572B", "transport": "postMessage", "css_var": "--pf-accent"},
+          {"id": "layout", "label": "Forum layout", "description": "Show the community sidebar (member counts, recent topics) beside the forum pages.", "type": "select", "default": "full", "transport": "refresh", "body_class": "cf-layout-{value}",
+            "choices": [{"value": "full", "label": "Full width"}, {"value": "sidebar", "label": "With sidebar"}]}
+        ]
+      }
+    ]
+  }
+}

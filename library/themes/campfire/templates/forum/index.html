@@ -1,0 +1,63 @@
+<div class="pf cf-board" data-view="index" data-theme-override="campfire">
+	<header class="pf-head cf-board__head">
+		<div class="cf-board__intro">
+			{{if .OwnTitle}}<h1 class="pf-title">{{.Title}}</h1>{{end}}
+			<p class="cf-board__lede">{{.T "Pull up a seat. Pick a corner of the workshop and join the conversation."}}</p>
+		</div>
+		<div class="cf-board__tools">
+			{{if .URLs.Search}}<form class="cf-board__search" role="search" method="get" action="{{.URLs.Search}}">
+				<label class="screen-reader-text" for="cf-forum-q">{{.T "Search the forums"}}</label>
+				<input class="pf-input" type="search" id="cf-forum-q" name="q" value="{{.Query}}" maxlength="100" placeholder="{{.T "Search topics and replies"}}" />
+				<button class="pf-button pf-button--ghost" type="submit">{{.T "Search"}}</button>
+			</form>{{end}}
+			{{if and .CanPost .URLs.NewTopic}}<div class="pf-actions"><a class="pf-button pf-button--primary" href="{{.URLs.NewTopic}}">{{.T "New topic"}}</a></div>{{end}}
+		</div>
+	</header>
+	{{if .Error}}<div class="pf-notice pf-notice--error" role="alert">{{.Error}}</div>{{end}}
+	{{if .Notice}}<div class="pf-notice pf-notice--success" role="status">{{.Notice}}</div>{{end}}
+	{{if and .User .Unverified}}<div class="pf-notice pf-notice--info pf-verify-banner">
+		<p>{{.T "Please confirm your email address to start posting."}}</p>
+		<form class="pf-form pf-form--inline" method="post" action="{{.URLs.Account}}">
+			<input type="hidden" name="forum_action" value="resend" />
+			<input type="hidden" name="_wpnonce" value="{{.AuthNonce}}" />
+			<button type="submit" class="pf-button pf-button--ghost">{{.T "Send the link again"}}</button>
+		</form>
+	</div>{{end}}
+	{{if .Forums}}<div class="pf-forums cf-cards">
+		{{range .Forums}}<section class="pf-category cf-card{{if ne .Kind "category"}} cf-card--single{{end}}" aria-labelledby="cf-card-{{.ID}}">
+			<header class="cf-card__head">
+				<span class="cf-card__icon" aria-hidden="true"></span>
+				<div>
+					<h2 class="cf-card__title" id="cf-card-{{.ID}}"><a href="{{.URL}}">{{.Title}}</a>{{if .Closed}} <span class="pf-badge pf-badge--closed">{{$.T "Closed"}}</span>{{end}}</h2>
+					{{with .Description}}<div class="pf-forum-desc">{{.}}</div>{{end}}
+				</div>
+			</header>
+			{{if eq .Kind "category"}}{{if .Children}}<ul class="cf-card__forums" role="list">
+				{{range .Children}}<li class="pf-forum-row{{if .Closed}} is-closed{{end}}">
+					<div class="cf-card__forum">
+						<a class="pf-forum-name" href="{{.URL}}">{{.Title}}</a>{{if .Closed}} <span class="pf-badge pf-badge--closed">{{$.T "Closed"}}</span>{{end}}
+						{{with .Description}}<div class="pf-forum-desc">{{.}}</div>{{end}}
+					</div>
+					<span class="pf-count cf-count"><strong>{{num .TopicCount}}</strong> <span class="cf-count-label">{{if eq .TopicCount 1}}{{$.T "topic"}}{{else}}{{$.T "topics"}}{{end}}</span></span>
+				</li>{{end}}
+			</ul>{{else}}<p class="pf-empty">{{$.T "No forums here yet."}}</p>{{end}}{{end}}
+			<footer class="cf-card__foot">
+				<p class="cf-card__counts"><span class="cf-count"><strong>{{num .TopicCount}}</strong> {{if eq .TopicCount 1}}{{$.T "topic"}}{{else}}{{$.T "topics"}}{{end}}</span> <span class="cf-count"><strong>{{num .ReplyCount}}</strong> {{if eq .ReplyCount 1}}{{$.T "reply"}}{{else}}{{$.T "replies"}}{{end}}</span></p>
+				{{if .LastTopicURL}}<p class="cf-card__last">{{$.T "Latest:"}} <a href="{{.LastTopicURL}}">{{.LastTopicTitle}}</a>{{if not .LastActive.IsZero}} <span class="cf-by">&middot; <time datetime="{{forum_iso .LastActive}}">{{$.Ago .LastActive}}</time></span>{{end}}</p>{{else}}<p class="cf-card__last cf-by">{{$.T "No topics yet"}}</p>{{end}}
+			</footer>
+		</section>
+		{{end}}
+	</div>{{else}}<div class="pf-empty cf-board__empty">
+		<p>{{.T "The fire is laid but not lit: there are no forums yet."}}</p>
+		{{if .CanModerate}}<p>{{.T "Add categories and forums under Forums in the dashboard."}}</p>{{end}}
+	</div>{{end}}
+	{{with .Topics}}<section class="cf-latest" aria-labelledby="cf-latest-title">
+		<h2 class="cf-latest__title" id="cf-latest-title">{{$.T "Fresh around the fire"}}</h2>
+		<ul class="cf-latest__list" role="list">
+			{{range .}}<li class="cf-latest__item{{if .Sticky}} is-sticky{{end}}">
+				<a class="cf-latest__link" href="{{.URL}}">{{.Title}}</a>
+				<span class="cf-latest__meta">{{with .ForumTitle}}{{.}} &middot; {{end}}{{if eq .ReplyCount 1}}{{$.T "1 reply"}}{{else}}{{$.Tf "%s replies" (num .ReplyCount)}}{{end}}{{if not .LastActive.IsZero}} &middot; <time datetime="{{forum_iso .LastActive}}">{{$.Ago .LastActive}}</time>{{end}}</span>
+			</li>{{end}}
+		</ul>
+	</section>{{end}}
+</div>

@@ -1,0 +1,25 @@
+{{define "forum/edit"}}<div class="pf" data-view="edit">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+{{- with .Edit}}
+<section class="pf-card pf-compose">
+{{- with index $.Extra "window"}}<p class="pf-help">{{$.Tf "Posts can be edited for %s minutes after they are published." .}}</p>{{end}}
+<form class="pf-form" method="post" action="{{index $.Extra "action"}}">
+<input type="hidden" name="forum_action" value="edit" />
+<input type="hidden" name="_wpnonce" value="{{$.Nonce}}" />
+{{- if .IsTopic}}
+<div class="pf-field">
+<label class="pf-label" for="pf-title">{{$.T "Title"}}</label>
+<input class="pf-input" type="text" id="pf-title" name="title" value="{{.Title}}" required minlength="3" maxlength="120" autocomplete="off" />
+</div>
+{{- end}}
+{{template "forum/part-editor" (dict "P" $ "Value" .Content "Label" ($.T "Message"))}}
+<div class="pf-form-actions">
+<button type="submit" class="pf-button pf-button--primary">{{$.T "Save changes"}}</button>
+<a class="pf-button pf-button--ghost" href="{{index $.Extra "back"}}">{{$.T "Cancel"}}</a>
+</div>
+</form>
+</section>
+{{- else}}
+{{- with index .Extra "back"}}<p class="pf-back"><a class="pf-button pf-button--ghost" href="{{.}}">{{$.T "Back to the topic"}}</a></p>{{end}}
+{{- end}}
+</div>{{end}}

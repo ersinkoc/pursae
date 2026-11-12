@@ -1,0 +1,434 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Study Circle",
+  "blogdescription": "Ask, answer, learn together."
+ },
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/study-circle-hero.jpg",
+   "alt": "An illustration of students around a round table with notebooks and a lamp"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/study-circle-about.jpg",
+   "alt": "An open notebook with formulas, a pencil and a cup of tea"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "content": "<!-- wp:group {\"className\":\"sc-hero\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group sc-hero\"><!-- wp:columns --><div class=\"wp-block-columns\"><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:paragraph {\"className\":\"sc-eyebrow\"} --><p class=\"sc-eyebrow\">Study Circle</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Ask, answer, <em>learn together.</em></h1><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"sc-lead\"} --><p class=\"sc-lead\">A friendly forum for students and lifelong learners: subject rooms, study tips and exam prep, with tutors and peers who explain things kindly.</p><!-- /wp:paragraph --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/forums/register/\">Join the circle</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/forums/\">Browse subjects</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:column --><!-- wp:column --><div class=\"wp-block-column\"><!-- wp:image {\"id\":{{media_id:hero}},\"sizeSlug\":\"large\",\"className\":\"sc-hero-image\"} --><figure class=\"wp-block-image size-large sc-hero-image\"><img src=\"{{media:hero}}\" alt=\"An illustration of students around a round table with notebooks and a lamp\" class=\"wp-image-{{media_id:hero}}\"/></figure><!-- /wp:image --></div><!-- /wp:column --></div><!-- /wp:columns --></div><!-- /wp:group --><!-- wp:group {\"className\":\"sc-section sc-section--cream\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group sc-section sc-section--cream\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"sc-eyebrow\"} --><p class=\"sc-eyebrow\">Subject rooms</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Find your subject.</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"sc-lead\"} --><p class=\"sc-lead\">Every room has volunteer tutors who check answers and keep threads helpful.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"sc-tiles\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group sc-tiles\"><!-- wp:group {\"className\":\"sc-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group sc-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/mathematics/\">Mathematics</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Algebra to calculus, proofs and practice problems.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"sc-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group sc-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/sciences/\">Sciences</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Biology, chemistry and physics questions.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"sc-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group sc-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/languages/\">Languages</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Grammar help, conversation partners and resources.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"sc-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group sc-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/writing-and-humanities/\">Writing and Humanities</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Essays, history and literature.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"sc-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group sc-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/exam-prep/\">Exam Prep</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Schedules, past papers and last-week nerves.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"sc-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group sc-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/study-tips/\">Study Tips</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Notes, focus and memory techniques that work.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:group {\"className\":\"sc-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group sc-section\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">How it works</h2><!-- /wp:heading --><!-- wp:list {\"ordered\":true,\"className\":\"sc-steps\"} --><ol class=\"wp-block-list sc-steps\"><!-- wp:list-item --><li><strong>Ask.</strong> Post your question in the right room and show what you tried.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Discuss.</strong> Peers and tutors explain the method, not only the answer.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Pay it forward.</strong> Once it clicks, help the next person who gets stuck.</li><!-- /wp:list-item --></ol><!-- /wp:list --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:group {\"className\":\"sc-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group sc-section\"><!-- wp:group {\"className\":\"sc-callout\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group sc-callout\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">A kind place to not know things yet.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We explain instead of judging, we show our working, and we never post answers to live exams.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:guidelines}}\">Read the guidelines</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group -->"
+  },
+  {
+   "slug": "guidelines",
+   "title": "Community guidelines",
+   "content": "<!-- wp:paragraph {\"className\":\"sc-lead\"} --><p class=\"sc-lead\">Study Circle works because everyone follows a few simple guidelines. Moderators and tutors apply them kindly and consistently.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true,\"className\":\"sc-steps\"} --><ol class=\"wp-block-list sc-steps\"><!-- wp:list-item --><li><strong>Show your working.</strong> Share what you tried so helpers can see where you got stuck.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Explain, do not just answer.</strong> Good replies teach the method, not only the result.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Academic honesty.</strong> No answers to live exams or graded work, and no paid essay offers.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Be patient and kind.</strong> Everyone was a beginner once. Assume good intent.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Use a clear title.</strong> &ldquo;Integration by parts: where does the minus sign go?&rdquo; beats &ldquo;help pls&rdquo;.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Tutors and moderators</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Tutors are volunteers with experience in a subject; moderators keep the rooms tidy and answer reports. Both are marked with a badge next to their name.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\",\"className\":\"sc-rounded\"} --><figure class=\"wp-block-image size-large sc-rounded\"><img src=\"{{media:about}}\" alt=\"An open notebook with formulas, a pencil and a cup of tea\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image -->"
+  },
+  {
+   "slug": "about",
+   "title": "About Study Circle",
+   "content": "<!-- wp:paragraph {\"className\":\"sc-lead\"} --><p class=\"sc-lead\">Study Circle is run by volunteer tutors, teachers and students who believe that explaining something is the best way to learn it.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Who we are</h2><!-- /wp:heading --><!-- wp:paragraph --><p>We started as a revision group in a school library. Today the circle welcomes secondary school students, university students and adults going back to learning.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Amira Haddad</strong>, mathematics teacher and moderator</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Priya S.</strong>, writing tutor and moderator</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Get in touch</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Want to become a tutor, suggest a subject room or report a problem? Write to the team at <a href=\"mailto:team@example.com\">team@example.com</a>.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Study Circle menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Forums",
+     "url": "/forums/"
+    },
+    {
+     "title": "Guidelines",
+     "page": "guidelines"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Forums",
+     "url": "/forums/"
+    },
+    {
+     "title": "Search",
+     "url": "/forums/search/"
+    },
+    {
+     "title": "Guidelines",
+     "page": "guidelines"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  }
+ ],
+ "customizer": {
+  "accent": "#0F766E",
+  "layout": "sidebar"
+ },
+ "forum": {
+  "title": "Study Circle Forums",
+  "members": [
+   {
+    "ref": "amira",
+    "display_name": "Amira Haddad",
+    "role": "forum_moderator",
+    "bio": "Mathematics teacher. Loves a good proof."
+   },
+   {
+    "ref": "priya",
+    "display_name": "Priya S.",
+    "role": "forum_moderator",
+    "bio": "Volunteer writing tutor."
+   },
+   {
+    "ref": "ben",
+    "display_name": "Ben O.",
+    "role": "forum_participant",
+    "bio": "Chemistry undergraduate, second year."
+   },
+   {
+    "ref": "lena",
+    "display_name": "Lena M.",
+    "role": "forum_participant",
+    "bio": "Psychology student and statistics survivor."
+   },
+   {
+    "ref": "tomas",
+    "display_name": "Tomás R.",
+    "role": "forum_participant",
+    "bio": "Learning German at forty."
+   },
+   {
+    "ref": "kofi",
+    "display_name": "Kofi A.",
+    "role": "forum_participant",
+    "bio": "Final-year secondary school student."
+   }
+  ],
+  "forums": [
+   {
+    "ref": "start-here",
+    "title": "Start Here",
+    "slug": "start-here",
+    "kind": "category",
+    "order": 0
+   },
+   {
+    "ref": "introductions",
+    "title": "Introductions",
+    "slug": "introductions",
+    "kind": "forum",
+    "order": 0,
+    "parent": "start-here",
+    "description": "Say hello, tell us what you are studying and what you want to get better at.",
+    "closed": false
+   },
+   {
+    "ref": "study-tips",
+    "title": "Study Tips",
+    "slug": "study-tips",
+    "kind": "forum",
+    "order": 1,
+    "parent": "start-here",
+    "description": "Notes, focus, memory and planning techniques that actually work.",
+    "closed": false
+   },
+   {
+    "ref": "subjects",
+    "title": "Subjects",
+    "slug": "subjects",
+    "kind": "category",
+    "order": 1
+   },
+   {
+    "ref": "mathematics",
+    "title": "Mathematics",
+    "slug": "mathematics",
+    "kind": "forum",
+    "order": 0,
+    "parent": "subjects",
+    "description": "Algebra to calculus, statistics, proofs and practice problems.",
+    "closed": false
+   },
+   {
+    "ref": "sciences",
+    "title": "Sciences",
+    "slug": "sciences",
+    "kind": "forum",
+    "order": 1,
+    "parent": "subjects",
+    "description": "Biology, chemistry and physics: concepts, lab reports and problem sets.",
+    "closed": false
+   },
+   {
+    "ref": "languages",
+    "title": "Languages",
+    "slug": "languages",
+    "kind": "forum",
+    "order": 2,
+    "parent": "subjects",
+    "description": "Grammar help, vocabulary, conversation partners and resources.",
+    "closed": false
+   },
+   {
+    "ref": "writing-and-humanities",
+    "title": "Writing and Humanities",
+    "slug": "writing-and-humanities",
+    "kind": "forum",
+    "order": 3,
+    "parent": "subjects",
+    "description": "Essays, history, philosophy and literature.",
+    "closed": false
+   },
+   {
+    "ref": "exams",
+    "title": "Exams",
+    "slug": "exams",
+    "kind": "category",
+    "order": 2
+   },
+   {
+    "ref": "exam-prep",
+    "title": "Exam Prep",
+    "slug": "exam-prep",
+    "kind": "forum",
+    "order": 0,
+    "parent": "exams",
+    "description": "Revision schedules, past papers and last-week nerves.",
+    "closed": false
+   }
+  ],
+  "topics": [
+   {
+    "ref": "welcome",
+    "forum": "introductions",
+    "author": "amira",
+    "title": "Welcome to Study Circle: how to ask a great question",
+    "content": "<p>Welcome! Before your first post, have a look at the community guidelines. The short version: show what you tried, use a clear title and be kind.</p><p>Tutors and moderators carry a badge. If a reply helped you, say so: it keeps volunteers going.</p>",
+    "sticky": true,
+    "closed": false,
+    "hours_ago": 260,
+    "replies": [
+     {
+      "author": "kofi",
+      "content": "<p>Thank you! I did not know about the tutor badges.</p>",
+      "hours_ago": 250
+     },
+     {
+      "author": "tomas",
+      "content": "<p>Great idea to ask people to show their working.</p>",
+      "hours_ago": 240
+     }
+    ]
+   },
+   {
+    "ref": "hello-tomas",
+    "forum": "introductions",
+    "author": "tomas",
+    "title": "Back to learning at forty: hello!",
+    "content": "<p>Hi everyone, I am learning German for a new job and I have not studied anything formally in twenty years. Nervous but excited.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 120,
+    "replies": [
+     {
+      "author": "priya",
+      "content": "<p>Welcome, Tomás! The Languages room has a weekly conversation thread.</p>",
+      "hours_ago": 118
+     },
+     {
+      "author": "lena",
+      "content": "<p>You are never too old. Good luck with the new job!</p>",
+      "hours_ago": 110
+     }
+    ]
+   },
+   {
+    "ref": "integration-parts",
+    "forum": "mathematics",
+    "author": "kofi",
+    "title": "Integration by parts: where does the minus sign go?",
+    "content": "<p>I am trying to integrate x·e<sup>x</sup> and I keep getting the sign wrong. I used u = x and dv = e<sup>x</sup> dx. Here is my working so far: I get x·e<sup>x</sup> + e<sup>x</sup>, but the answer key says x·e<sup>x</sup> &minus; e<sup>x</sup>.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 5,
+    "replies": [
+     {
+      "author": "amira",
+      "content": "<p>Nice working! The formula is &int;u dv = uv &minus; &int;v du. You found uv = x·e<sup>x</sup> correctly; the minus sign belongs in front of &int;e<sup>x</sup> dx, which gives &minus;e<sup>x</sup>.</p><p>So the result is x·e<sup>x</sup> &minus; e<sup>x</sup> + C. Try differentiating it to check.</p>",
+      "hours_ago": 4
+     },
+     {
+      "author": "kofi",
+      "content": "<p>Differentiated it and got x·e<sup>x</sup> back. It finally makes sense, thank you!</p>",
+      "hours_ago": 3
+     }
+    ]
+   },
+   {
+    "ref": "stats-pvalue",
+    "forum": "mathematics",
+    "author": "lena",
+    "title": "What does a p-value actually tell me?",
+    "content": "<p>Every textbook defines it differently and I still could not explain it to a friend. Can someone give an intuitive explanation?</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 48,
+    "replies": [
+     {
+      "author": "amira",
+      "content": "<p>It is the probability of seeing data at least this extreme if the null hypothesis were true. It is not the probability that the null hypothesis is true.</p>",
+      "hours_ago": 46
+     },
+     {
+      "author": "ben",
+      "content": "<p>The coin example helped me: flip a fair coin ten times and get ten heads. How surprised should you be? That surprise is the p-value.</p>",
+      "hours_ago": 40
+     }
+    ]
+   },
+   {
+    "ref": "titration",
+    "forum": "sciences",
+    "author": "ben",
+    "title": "Titration lab report: how precise should my results be?",
+    "content": "<p>My titres are 23.40, 23.45 and 23.35 cm³. Are these concordant, and how many significant figures should I report?</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 30,
+    "replies": [
+     {
+      "author": "amira",
+      "content": "<p>They are within 0.10 cm³ of each other, so they are concordant. Report the mean to two decimal places, as your burette reads.</p>",
+      "hours_ago": 28
+     },
+     {
+      "author": "ben",
+      "content": "<p>Great, that matches what my lab partner said.</p>",
+      "hours_ago": 26
+     }
+    ]
+   },
+   {
+    "ref": "german-cases",
+    "forum": "languages",
+    "author": "tomas",
+    "title": "German cases: a trick for remembering the dative?",
+    "content": "<p>I keep mixing up accusative and dative after prepositions. Is there a memory trick people use?</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 70,
+    "replies": [
+     {
+      "author": "priya",
+      "content": "<p>Many learners memorise the dative-only prepositions as a rhythm: aus, bei, mit, nach, seit, von, zu.</p>",
+      "hours_ago": 66
+     },
+     {
+      "author": "lena",
+      "content": "<p>Flashcards with a full example sentence helped me more than lists.</p>",
+      "hours_ago": 60
+     }
+    ]
+   },
+   {
+    "ref": "essay-thesis",
+    "forum": "writing-and-humanities",
+    "author": "priya",
+    "title": "Writing a thesis statement in one sentence",
+    "content": "<p>A strong thesis makes a claim that someone could disagree with, and it tells the reader how you will support it. Post yours here and we will give friendly feedback.</p>",
+    "sticky": true,
+    "closed": false,
+    "hours_ago": 100,
+    "replies": [
+     {
+      "author": "kofi",
+      "content": "<p>Mine: social media changed how young people get news, because it replaced editors with algorithms. Too broad?</p>",
+      "hours_ago": 95
+     },
+     {
+      "author": "priya",
+      "content": "<p>Good start! Narrow it: which young people, which platforms, and what changed exactly?</p>",
+      "hours_ago": 90
+     }
+    ]
+   },
+   {
+    "ref": "pomodoro",
+    "forum": "study-tips",
+    "author": "lena",
+    "title": "Pomodoro did not work for me. What did?",
+    "content": "<p>Twenty-five minutes is too short for maths problems; I lose the thread every break. Has anyone found a rhythm that works better?</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 20,
+    "replies": [
+     {
+      "author": "ben",
+      "content": "<p>I do fifty minutes on, ten off, and stop at a point where I know the next step.</p>",
+      "hours_ago": 18
+     },
+     {
+      "author": "tomas",
+      "content": "<p>Writing down the next step before a break was the game changer for me too.</p>",
+      "hours_ago": 15
+     }
+    ]
+   },
+   {
+    "ref": "revision-plan",
+    "forum": "exam-prep",
+    "author": "amira",
+    "title": "Build your revision timetable (template inside)",
+    "content": "<p>Six weeks before exams is a good time to plan. List your subjects, rate your confidence from one to five and give weaker topics more slots, but never zero for the strong ones.</p><p>Leave one free evening per week. Rest is part of the plan.</p>",
+    "sticky": true,
+    "closed": false,
+    "hours_ago": 150,
+    "replies": [
+     {
+      "author": "kofi",
+      "content": "<p>Rating my confidence first made it obvious where to spend time.</p>",
+      "hours_ago": 140
+     },
+     {
+      "author": "lena",
+      "content": "<p>The free evening rule is underrated.</p>",
+      "hours_ago": 130
+     }
+    ]
+   },
+   {
+    "ref": "exam-nerves",
+    "forum": "exam-prep",
+    "author": "kofi",
+    "title": "Exam in a week and I cannot focus",
+    "content": "<p>My first exam is next Monday and my head is all over the place. Any advice for the last week?</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 2,
+    "replies": [
+     {
+      "author": "priya",
+      "content": "<p>Switch from learning new things to practising past papers under timed conditions, and sleep. You have done the work.</p>",
+      "hours_ago": 1
+     }
+    ]
+   }
+  ]
+ }
+}

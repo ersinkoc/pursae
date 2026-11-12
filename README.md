@@ -114,6 +114,7 @@ Native, off on a fresh install, one click under **Plugins**. Click a row to open
 | 🍪 | **Pursae Cookie** | GDPR/KVKK banner, Consent Mode v2 | [→](docs/gooike-features.md) |
 | 📈 | **Pursae Pixel** | Meta, GA4, Ads, TikTok + server-side | [→](docs/pixelgo-features.md) |
 | 📊 | **Pursae Analytics** | Cookieless stats + real-user Core Web Vitals | [→](docs/analytics-features.md) |
+| 💬 | **Pursae Forum** | Forums, email + Google sign-up, levels & badges | [→](docs/forum-features.md) |
 | ✉️ | **Pursae SMTP** | Mailers, email log, reports | [→](docs/wpgo-mail-smtp-features.md) |
 | 🗂️ | **Pursae Custom Fields** | Field groups, CPTs, options pages | [→](docs/acf-go-features.md) |
 | 🌍 | **Pursae Multi Language** | Languages, translations, hreflang | [→](docs/golylang-features.md) |
@@ -222,6 +223,20 @@ storing IP addresses and without a consent banner — in the class of Plausible 
 </details>
 
 <details>
+<summary><h3>💬 Pursae Forum</h3></summary>
+
+A bbPress-class discussion board that renders inside any theme (**Forums** in the admin menu):
+
+- **Categories, forums, topics and replies**, pinned and closed topics, search, profiles and a member list — all plain forms, no JavaScript.
+- **Membership on the front end**: email sign-up with confirmation, "Continue with Google" (OAuth with PKCE), an account page with profile photos.
+- **Levels and badges**: points for topics and replies, six default levels, rule-based and hand-awarded badges with icons or images.
+- **Moderation**: approve, pin, close, spam, trash and block from the post itself or the admin queue; first-post moderation, flood and hourly limits.
+- **Themes**: four forum themes with demo content (Campfire, Devboard, Guild Hall, Study Circle), `--pf-*` design tokens and per-view template overrides; works with Pursae Web Builder and Pursae Multi Language. Read-only REST at `/wp-json/forum/v1`.
+
+<p align="right"><a href="docs/forum-features.md">All features →</a> · <a href="docs/developer/themes/forum.md">Making a forum theme →</a></p>
+</details>
+
+<details>
 <summary><h3>✉️ Pursae SMTP</h3></summary>
 <table><tr>
 <td width="50%"><img src="docs/readme/smtp.webp" alt="SMTP settings"><p align="center">Pick a mailer</p></td>
@@ -265,7 +280,7 @@ storing IP addresses and without a consent banner — in the class of Plausible 
 ## 🧩 The WordPress ecosystem without PHP
 
 - **Plugins** are Go compiled to signed Wasm, sandboxed and permission-gated — [plugin docs](docs/developer/plugins/index.md), [signing](docs/developer/plugins/packaging-and-signing.md).
-- **Built in**: Commerce, Web Builder, SEO, Cache, Security, CDN, Headless, Cookie, Pixel, Analytics, SMTP, Custom Fields, Multi Language, Contact Form, Maintenance, Backup Manager, Classic Editor ([table below](#-built-in-plugins); [what each replaces](docs/developer/benchmarks.md#whats-built-in)).
+- **Built in**: Commerce, Web Builder, SEO, Cache, Security, CDN, Headless, Cookie, Pixel, Analytics, Forum, SMTP, Custom Fields, Multi Language, Contact Form, Maintenance, Backup Manager, Classic Editor ([table below](#-built-in-plugins); [what each replaces](docs/developer/benchmarks.md#whats-built-in)).
 - **Themes** are zip packages of templates and assets with no code in them — [theme packages](docs/theme-package.md); a marketplace of both on the [Hub](docs/developer/hub/index.md).
 
 ## 📊 Performance benchmarks
@@ -335,6 +350,7 @@ page says so; remove `WPGO_HUB` and restart to get updates again.
 |---|---|
 | 🧩 **Plugins** — Go → signed Wasm, hooks, REST, settings | [docs/developer/plugins](docs/developer/plugins/index.md) |
 | 🎨 **Themes** — Go templates + theme.json | [docs/developer/themes](docs/developer/themes/index.md) |
+| 💬 **Forum themes** — Pursae Forum wrapper, view overrides, `--pf-*` tokens | [docs/developer/themes/forum.md](docs/developer/themes/forum.md) |
 | 🔗 **REST API** — `wp/v2` + plugin routes | [docs/developer/rest-api](docs/developer/rest-api/index.md) |
 | 🏪 **Hub** — marketplace, updates, licenses | [docs/developer/hub](docs/developer/hub/index.md) |
 | ⚙️ **Operations** — config, TLS, backups, cron | [docs/developer/operations](docs/developer/operations/configuration.md) |

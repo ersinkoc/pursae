@@ -1,0 +1,20 @@
+{{template "header" .}}
+{{with .Post}}<article id="post-{{.ID}}" class="{{.Class}} cf-front">
+	{{if not $.TitleIsH1}}<h1 class="screen-reader-text">{{.Title}}</h1>{{end}}
+	<div class="entry-content">{{.Content}}</div>
+	{{with .EditLink}}<footer class="entry-footer cf-container"><span class="edit-link">{{.}}</span></footer>{{end}}
+</article>{{end}}
+{{if forum_on}}<section class="cf-container cf-front-board" aria-labelledby="cf-front-latest">
+	<div class="cf-front-board__main cf-panel">
+		<p class="cf-eyebrow">From the forums</p>
+		<h2 id="cf-front-latest" class="cf-panel__title">Fresh around the fire</h2>
+		{{with forum_recent_topics . 6}}{{.}}{{else}}<p class="pf-empty">No topics yet. Be the first to start one.</p>{{end}}
+		<p class="cf-panel__more"><a class="pf-button pf-button--ghost" href="{{forum_url . "index"}}">Browse all forums</a></p>
+	</div>
+	<aside class="cf-front-board__side cf-panel cf-panel--moss" aria-label="Community">
+		<h2 class="cf-panel__title">The circle so far</h2>
+		{{forum_stats .}}
+		<p class="cf-panel__note">Everyone started with a wobbly first project. Pull up a seat.</p>
+	</aside>
+</section>{{end}}
+{{template "footer" .}}

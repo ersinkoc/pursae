@@ -227,31 +227,43 @@ func abs(n int) int {
 	return n
 }
 
-// HumanTimeDiff is human_time_diff(): "5 mins", "2 hours", "3 days".
+// HumanTimeDiff is human_time_diff(): "5 mins", "2 hours", "3 days" (English).
 func HumanTimeDiff(from, to time.Time) string {
+	return HumanTimeDiffN(from, to, nil)
+}
+
+// HumanTimeDiffN is HumanTimeDiff with the units translated: n is _n() over WordPress' own msgids
+// ("%s min" / "%s mins", "%s hour" / "%s hours", ...); nil keeps English.
+func HumanTimeDiffN(from, to time.Time, n func(single, plural string, count int) string) string {
 	if from.After(to) {
 		from, to = to, from
 	}
 	d := to.Sub(from)
-	plural := func(n int, one, many string) string {
-		if n <= 1 {
-			return "1 " + one
+	plural := func(count int, one, many string) string {
+		if count < 1 {
+			count = 1
 		}
-		return strconv.Itoa(n) + " " + many
+		f := many
+		if n != nil {
+			f = n(one, many, count)
+		} else if count == 1 {
+			f = one
+		}
+		return strings.Replace(f, "%s", strconv.Itoa(count), 1)
 	}
 	switch {
 	case d < time.Minute:
-		return plural(int(d.Seconds()), "second", "seconds")
+		return plural(int(d.Seconds()), "%s second", "%s seconds")
 	case d < time.Hour:
-		return plural(int(d.Round(time.Minute).Minutes()), "min", "mins")
+		return plural(int(d.Round(time.Minute).Minutes()), "%s min", "%s mins")
 	case d < 24*time.Hour:
-		return plural(int(d.Round(time.Hour).Hours()), "hour", "hours")
+		return plural(int(d.Round(time.Hour).Hours()), "%s hour", "%s hours")
 	case d < 7*24*time.Hour:
-		return plural(int(d.Round(24*time.Hour).Hours()/24), "day", "days")
+		return plural(int(d.Round(24*time.Hour).Hours()/24), "%s day", "%s days")
 	case d < 30*24*time.Hour:
-		return plural(int(d.Round(7*24*time.Hour).Hours()/(24*7)), "week", "weeks")
+		return plural(int(d.Round(7*24*time.Hour).Hours()/(24*7)), "%s week", "%s weeks")
 	case d < 365*24*time.Hour:
-		return plural(int(d.Round(30*24*time.Hour).Hours()/(24*30)), "month", "months")
+		return plural(int(d.Round(30*24*time.Hour).Hours()/(24*30)), "%s month", "%s months")
 	}
-	return plural(int(d.Round(365*24*time.Hour).Hours()/(24*365)), "year", "years") // round(), like the other units
+	return plural(int(d.Round(365*24*time.Hour).Hours()/(24*365)), "%s year", "%s years") // round(), like the other units
 }

@@ -1,0 +1,5 @@
+<section class="no-results not-found db-empty-state">
+	<h2 class="page-title">No results</h2>
+	{{if eq .Template "search"}}<p>Nothing matched that search. Try fewer or different keywords.</p>{{else}}<p>It seems we can&rsquo;t find what you&rsquo;re looking for.</p>{{end}}
+	{{template "searchform" .}}
+</section>

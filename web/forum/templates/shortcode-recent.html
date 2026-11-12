@@ -1,0 +1,8 @@
+{{define "forum/shortcode-recent"}}<div class="pf pf--embed" data-view="shortcode-recent">
+{{- $p := .}}
+{{- with .Topics}}
+<ul class="pf-topics pf-topics--compact">{{range .}}{{if eq .Status "publish"}}{{template "forum/part-topic-row" (dict "P" $p "T" . "ShowForum" true)}}{{end}}{{end}}</ul>
+{{- else}}
+<p class="pf-empty">{{.T "No topics yet."}}</p>
+{{- end}}
+</div>{{end}}

@@ -1,0 +1,434 @@
+{
+ "version": 1,
+ "options": {
+  "blogname": "Guild Hall",
+  "blogdescription": "Find your squad. Play better together."
+ },
+ "media": [
+  {
+   "id": "hero",
+   "file": "demo/images/guild-hall-hero.jpg",
+   "alt": "A neon-lit arena with a team of players in silhouette"
+  },
+  {
+   "id": "about",
+   "file": "demo/images/guild-hall-about.jpg",
+   "alt": "A banner with the Guild Hall crest above a long feast table"
+  }
+ ],
+ "pages": [
+  {
+   "slug": "home",
+   "title": "Home",
+   "front_page": true,
+   "content": "<!-- wp:cover {\"url\":\"{{media:hero}}\",\"dimRatio\":60,\"minHeight\":560,\"align\":\"full\",\"className\":\"gh-hero\",\"id\":{{media_id:hero}}} --><div class=\"wp-block-cover alignfull gh-hero\" style=\"min-height:560px\"><span aria-hidden=\"true\" class=\"wp-block-cover__background has-background-dim-60 has-background-dim\"></span><img class=\"wp-block-cover__image-background wp-image-{{media_id:hero}}\" alt=\"\" src=\"{{media:hero}}\" data-object-fit=\"cover\"/><div class=\"wp-block-cover__inner-container\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"gh-eyebrow\"} --><p class=\"gh-eyebrow\">Guild Hall community</p><!-- /wp:paragraph --><!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Find your <em>squad.</em></h1><!-- /wp:heading --><!-- wp:paragraph --><p>Looking-for-group posts, builds and guides, clip reviews and a tavern for everything else. Run by players, for players.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"gh-row\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gh-row\"><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"/forums/register/\">Join the guild</a></div><!-- /wp:button --><!-- wp:button {\"className\":\"is-style-outline\"} --><div class=\"wp-block-button is-style-outline\"><a class=\"wp-block-button__link wp-element-button\" href=\"/forums/\">Browse the forums</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group --></div></div><!-- /wp:cover --><!-- wp:group {\"className\":\"gh-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gh-section\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:paragraph {\"className\":\"gh-eyebrow\"} --><p class=\"gh-eyebrow\">Pick a channel</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Where do you want to drop in?</h2><!-- /wp:heading --><!-- wp:paragraph {\"className\":\"gh-lead\"} --><p class=\"gh-lead\">Every channel is moderated, searchable and free to read. Join to post.</p><!-- /wp:paragraph --><!-- wp:group {\"className\":\"gh-tiles\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gh-tiles\"><!-- wp:group {\"className\":\"gh-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gh-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/looking-for-group/\">Looking for Group</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Teammates for ranked, raids and co-op nights.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"gh-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gh-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/guides-and-builds/\">Guides and Builds</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Loadouts, tier lists and walkthroughs.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"gh-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gh-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/clips-and-highlights/\">Clips and Highlights</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Your best plays and your finest fails.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:group {\"className\":\"gh-tile\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gh-tile\"><!-- wp:heading {\"level\":3} --><h3 class=\"wp-block-heading\"><a href=\"/forums/f/off-topic-tavern/\">Off-Topic Tavern</a></h3><!-- /wp:heading --><!-- wp:paragraph --><p>Music, memes and everything else.</p><!-- /wp:paragraph --></div><!-- /wp:group --></div><!-- /wp:group --></div><!-- /wp:group --></div><!-- /wp:group --><!-- wp:group {\"className\":\"gh-section\",\"layout\":{\"type\":\"constrained\"}} --><div class=\"wp-block-group gh-section\"><!-- wp:group {\"className\":\"gh-callout\",\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group gh-callout\"><!-- wp:group {\"layout\":{\"type\":\"default\"}} --><div class=\"wp-block-group\"><!-- wp:heading --><h2 class=\"wp-block-heading\">Good games start with good people.</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Be kind, tag your spoilers, post in the right channel. A few short rules keep the hall friendly for new players and veterans alike.</p><!-- /wp:paragraph --></div><!-- /wp:group --><!-- wp:buttons --><div class=\"wp-block-buttons\"><!-- wp:button --><div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{{page:guidelines}}\">Read the guild rules</a></div><!-- /wp:button --></div><!-- /wp:buttons --></div><!-- /wp:group --></div><!-- /wp:group -->"
+  },
+  {
+   "slug": "guidelines",
+   "title": "Guild rules",
+   "content": "<!-- wp:paragraph {\"className\":\"gh-lead\"} --><p class=\"gh-lead\">A few short rules keep the hall a good place to hang out. Moderators apply them fairly and in the open; when a thread is moved, locked or removed, they say why.</p><!-- /wp:paragraph --><!-- wp:list {\"ordered\":true,\"className\":\"gh-rules\"} --><ol class=\"wp-block-list gh-rules\"><!-- wp:list-item --><li><strong>Be kind.</strong> Criticise plays, never people. No slurs, no harassment, no dogpiling.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Tag spoilers.</strong> Story beats and leaks go behind a spoiler warning, never in a topic title.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Right channel.</strong> Post where your topic belongs. Moderators may move threads that wander.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>No cheats, no trading.</strong> No cheat links, account sales or real-money trades.</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Keep it legal and safe.</strong> No personal information about other people, no pirated content.</li><!-- /wp:list-item --></ol><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">What happens when a rule is broken</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A first slip gets a friendly note. Repeated or serious breaks lose posting rights, temporarily or for good. If you think a moderator got it wrong, write to the team from the About page.</p><!-- /wp:paragraph --><!-- wp:image {\"id\":{{media_id:about}},\"sizeSlug\":\"large\",\"className\":\"gh-rounded\"} --><figure class=\"wp-block-image size-large gh-rounded\"><img src=\"{{media:about}}\" alt=\"A banner with the Guild Hall crest above a long feast table\" class=\"wp-image-{{media_id:about}}\"/></figure><!-- /wp:image -->"
+  },
+  {
+   "slug": "about",
+   "title": "About Guild Hall",
+   "content": "<!-- wp:paragraph {\"className\":\"gh-lead\"} --><p class=\"gh-lead\">Guild Hall started as a raid group chat and grew into a home for players of every game: competitive grinders, story fans and people who just want someone to play co-op with on a Sunday.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Who runs the hall</h2><!-- /wp:heading --><!-- wp:paragraph --><p>A small team of volunteer moderators, all of them active players. They keep the channels tidy, run the community nights and answer reports, usually within a few hours.</p><!-- /wp:paragraph --><!-- wp:list --><ul class=\"wp-block-list\"><!-- wp:list-item --><li><strong>Juno Park</strong>, community lead</li><!-- /wp:list-item --><!-- wp:list-item --><li><strong>Nyx</strong>, raid leader and moderator</li><!-- /wp:list-item --></ul><!-- /wp:list --><!-- wp:heading --><h2 class=\"wp-block-heading\">Get in touch</h2><!-- /wp:heading --><!-- wp:paragraph --><p>Questions, partnership ideas or something a moderator should see? Post in the Announcements channel or write to the team at <a href=\"mailto:team@example.com\">team@example.com</a>.</p><!-- /wp:paragraph -->"
+  }
+ ],
+ "menus": [
+  {
+   "name": "Guild Hall menu",
+   "location": "primary",
+   "items": [
+    {
+     "title": "Forums",
+     "url": "/forums/"
+    },
+    {
+     "title": "Guild rules",
+     "page": "guidelines"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  },
+  {
+   "name": "Footer menu",
+   "location": "footer",
+   "items": [
+    {
+     "title": "Forums",
+     "url": "/forums/"
+    },
+    {
+     "title": "Search",
+     "url": "/forums/search/"
+    },
+    {
+     "title": "Guild rules",
+     "page": "guidelines"
+    },
+    {
+     "title": "About",
+     "page": "about"
+    }
+   ]
+  }
+ ],
+ "customizer": {
+  "accent": "#B6F23A",
+  "layout": "sidebar"
+ },
+ "forum": {
+  "title": "Guild Hall Forums",
+  "members": [
+   {
+    "ref": "juno",
+    "display_name": "Juno Park",
+    "role": "forum_moderator",
+    "bio": "Community lead. Plays everything badly and enthusiastically."
+   },
+   {
+    "ref": "nyx",
+    "display_name": "Nyx",
+    "role": "forum_moderator",
+    "bio": "Raid leader. Healer main since season 1."
+   },
+   {
+    "ref": "kaito",
+    "display_name": "Kaito R.",
+    "role": "forum_participant",
+    "bio": "Tank, coffee, more tank."
+   },
+   {
+    "ref": "rook",
+    "display_name": "Rook",
+    "role": "forum_participant",
+    "bio": "Speedrunner and route nerd."
+   },
+   {
+    "ref": "vela",
+    "display_name": "Vela",
+    "role": "forum_participant",
+    "bio": "Support main and part-time clip editor."
+   },
+   {
+    "ref": "drift",
+    "display_name": "Drift",
+    "role": "forum_participant",
+    "bio": "Casual co-op enjoyer, weekends only."
+   }
+  ],
+  "forums": [
+   {
+    "ref": "the-hall",
+    "title": "The Hall",
+    "slug": "the-hall",
+    "kind": "category",
+    "order": 0
+   },
+   {
+    "ref": "announcements",
+    "title": "Announcements",
+    "slug": "announcements",
+    "kind": "forum",
+    "order": 0,
+    "parent": "the-hall",
+    "description": "News from the moderators: events, rule updates and season kick-offs.",
+    "closed": false
+   },
+   {
+    "ref": "introductions",
+    "title": "Introductions",
+    "slug": "introductions",
+    "kind": "forum",
+    "order": 1,
+    "parent": "the-hall",
+    "description": "New here? Tell us what you play, where and when.",
+    "closed": false
+   },
+   {
+    "ref": "games",
+    "title": "Games",
+    "slug": "games",
+    "kind": "category",
+    "order": 1
+   },
+   {
+    "ref": "looking-for-group",
+    "title": "Looking for Group",
+    "slug": "looking-for-group",
+    "kind": "forum",
+    "order": 0,
+    "parent": "games",
+    "description": "Teammates for ranked, raids and co-op nights. Post your platform, region and schedule.",
+    "closed": false
+   },
+   {
+    "ref": "guides-and-builds",
+    "title": "Guides and Builds",
+    "slug": "guides-and-builds",
+    "kind": "forum",
+    "order": 1,
+    "parent": "games",
+    "description": "Loadouts, tier lists, routes and walkthroughs, kept current by the people who use them.",
+    "closed": false
+   },
+   {
+    "ref": "clips-and-highlights",
+    "title": "Clips and Highlights",
+    "slug": "clips-and-highlights",
+    "kind": "forum",
+    "order": 2,
+    "parent": "games",
+    "description": "Share your best plays and your finest fails. Tag spoilers.",
+    "closed": false
+   },
+   {
+    "ref": "lounge",
+    "title": "Lounge",
+    "slug": "lounge",
+    "kind": "category",
+    "order": 2
+   },
+   {
+    "ref": "off-topic-tavern",
+    "title": "Off-Topic Tavern",
+    "slug": "off-topic-tavern",
+    "kind": "forum",
+    "order": 0,
+    "parent": "lounge",
+    "description": "Music, memes, hardware and everything that is not a game.",
+    "closed": false
+   }
+  ],
+  "topics": [
+   {
+    "ref": "welcome",
+    "forum": "announcements",
+    "author": "juno",
+    "title": "Welcome to Guild Hall: start here",
+    "content": "<p>Welcome, traveller! Guild Hall is a community for players of every game and every skill level.</p><p>Read the guild rules, introduce yourself in Introductions and then go find your squad in Looking for Group. Moderators are marked with a badge; ping them if anything feels off.</p>",
+    "sticky": true,
+    "closed": false,
+    "hours_ago": 240,
+    "replies": [
+     {
+      "author": "drift",
+      "content": "<p>Thanks for having me. The channel list is really clear.</p>",
+      "hours_ago": 230
+     },
+     {
+      "author": "kaito",
+      "content": "<p>Good to see the old raid chat finally has a proper home.</p>",
+      "hours_ago": 200
+     }
+    ]
+   },
+   {
+    "ref": "community-night",
+    "forum": "announcements",
+    "author": "nyx",
+    "title": "Season 4 community night: Friday 20:00 UTC",
+    "content": "<p>We are running a community night to kick off the new season: mixed teams, no rank requirements, small prizes for the best clip of the night.</p><p>Reply here with your main role and platform and we will build balanced teams on Thursday.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 30,
+    "replies": [
+     {
+      "author": "vela",
+      "content": "<p>Support, PC, EU. Count me in!</p>",
+      "hours_ago": 28
+     },
+     {
+      "author": "kaito",
+      "content": "<p>Tank on PC. I can also fill as DPS if we are short.</p>",
+      "hours_ago": 26
+     },
+     {
+      "author": "drift",
+      "content": "<p>First community night for me. Healer, console.</p>",
+      "hours_ago": 20
+     }
+    ]
+   },
+   {
+    "ref": "hi-drift",
+    "forum": "introductions",
+    "author": "drift",
+    "title": "Hi from a casual co-op player",
+    "content": "<p>Hey all, I mostly play co-op survival games on weekends and I am looking for relaxed people to play with. No voice chat pressure, just good vibes.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 220,
+    "replies": [
+     {
+      "author": "juno",
+      "content": "<p>Welcome! The Off-Topic Tavern has a weekend co-op thread most weeks.</p>",
+      "hours_ago": 215
+     },
+     {
+      "author": "rook",
+      "content": "<p>Welcome aboard. If you ever want to try a speedrun, I have beginner routes.</p>",
+      "hours_ago": 210
+     }
+    ]
+   },
+   {
+    "ref": "good-lfg-post",
+    "forum": "looking-for-group",
+    "author": "nyx",
+    "title": "How to write a good LFG post",
+    "content": "<p>A good LFG post gets answers in hours, a vague one gets none. Put these in your title: <strong>[region] role, game mode, schedule</strong>.</p><p>In the post, say your rank or experience, your time zone and what kind of group you want (chill, tryhard, learning). Update the title with [FULL] when you are done.</p>",
+    "sticky": true,
+    "closed": false,
+    "hours_ago": 200,
+    "replies": [
+     {
+      "author": "kaito",
+      "content": "<p>Adding the schedule to the title made a huge difference for me.</p>",
+      "hours_ago": 190
+     },
+     {
+      "author": "vela",
+      "content": "<p>Please also say if you use voice chat. It saves everyone time.</p>",
+      "hours_ago": 180
+     }
+    ]
+   },
+   {
+    "ref": "eu-tank",
+    "forum": "looking-for-group",
+    "author": "kaito",
+    "title": "[EU] Tank LF raid team, weekday evenings",
+    "content": "<p>Experienced tank, cleared the last two raids on normal and most of heroic. Free Monday to Thursday from 19:00 CET.</p><p>Looking for a stable team that wants to progress steadily. I bring snacks and patience.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 6,
+    "replies": [
+     {
+      "author": "nyx",
+      "content": "<p>Our Tuesday group needs a tank for heroic. Sending you a message.</p>",
+      "hours_ago": 5
+     },
+     {
+      "author": "kaito",
+      "content": "<p>Perfect, talk soon!</p>",
+      "hours_ago": 4
+     }
+    ]
+   },
+   {
+    "ref": "na-duo",
+    "forum": "looking-for-group",
+    "author": "vela",
+    "title": "[NA] Duo queue partner for ranked, support main",
+    "content": "<p>Support main, mid ranks, aiming to climb this season. I play most nights after 21:00 EST and like to review our games afterwards.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 14,
+    "replies": [
+     {
+      "author": "rook",
+      "content": "<p>I am NA and play DPS. Want to try a few games on Sunday?</p>",
+      "hours_ago": 12
+     }
+    ]
+   },
+   {
+    "ref": "healer-build",
+    "forum": "guides-and-builds",
+    "author": "nyx",
+    "title": "Healer build for season 4: survive the burst phases",
+    "content": "<p>The new boss phases punish greedy healing. This build trades a little throughput for two defensive cooldowns and it has carried our heroic progress.</p><p>Core idea: pre-shield before the burst, save the big heal for the second wave, and never stand in the purple.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 60,
+    "replies": [
+     {
+      "author": "drift",
+      "content": "<p>Tried it last night and finally survived phase three.</p>",
+      "hours_ago": 55
+     },
+     {
+      "author": "vela",
+      "content": "<p>Works well with a support that can cleanse, too.</p>",
+      "hours_ago": 50
+     },
+     {
+      "author": "nyx",
+      "content": "<p>Good point, I will add a section on pairing with supports.</p>",
+      "hours_ago": 48
+     }
+    ]
+   },
+   {
+    "ref": "any-route",
+    "forum": "guides-and-builds",
+    "author": "rook",
+    "title": "Any% route notes, updated for the latest patch",
+    "content": "<p>The latest patch removed the door clip in level two, so the route changes a little. I have updated my notes with the new skip and the safer backup strategy.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 90,
+    "replies": [
+     {
+      "author": "kaito",
+      "content": "<p>The backup strategy is so much more consistent, thanks.</p>",
+      "hours_ago": 80
+     }
+    ]
+   },
+   {
+    "ref": "clutch",
+    "forum": "clips-and-highlights",
+    "author": "vela",
+    "title": "1v3 clutch on the last round (sound on)",
+    "content": "<p>Down three players, last round, match point. I still cannot believe this worked. The timing on the final ability was pure luck.</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 9,
+    "replies": [
+     {
+      "author": "juno",
+      "content": "<p>This is clip of the week material.</p>",
+      "hours_ago": 8
+     },
+     {
+      "author": "kaito",
+      "content": "<p>The reaction at the end is the best part.</p>",
+      "hours_ago": 7
+     }
+    ]
+   },
+   {
+    "ref": "grind-music",
+    "forum": "off-topic-tavern",
+    "author": "kaito",
+    "title": "What are you listening to while grinding?",
+    "content": "<p>I need new music for long farming sessions. Instrumental works best for me. What is on your playlist?</p>",
+    "sticky": false,
+    "closed": false,
+    "hours_ago": 40,
+    "replies": [
+     {
+      "author": "rook",
+      "content": "<p>Synthwave for routing practice, always.</p>",
+      "hours_ago": 38
+     },
+     {
+      "author": "drift",
+      "content": "<p>Lo-fi and the rain sounds of the game itself.</p>",
+      "hours_ago": 30
+     },
+     {
+      "author": "vela",
+      "content": "<p>Game soundtracks from the nineties, no regrets.</p>",
+      "hours_ago": 25
+     }
+    ]
+   }
+  ]
+ }
+}

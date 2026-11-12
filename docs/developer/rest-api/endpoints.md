@@ -102,8 +102,26 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/pursae/v1/backups` | GET, POST | stored archives, or `?job=<id>` for a running backup; `POST {"categories": [...], "note": "…"}` starts one in the background (202 with `job`; default: every category) (`manage_options`) |
 | `/pursae/v1/mcp/activity` | GET | audit log of MCP tool calls that wrote: `tool`, `client`, `per_page`, `page` filters (`manage_options`) |
 | `/pursae/v1/options` | GET | the option groups below (`manage_options`) |
-| `/pursae/v1/options/{group}` | GET, POST | `contact` (reCAPTCHA / Turnstile keys), `cookie`, `gocdn`, `headless`, `maintenance`, `multilang`, `pixel`, `security`, `seo`, `smtp`: the built-in plugin's settings object. Secrets (passwords, keys, tokens) read as `********`; `POST {"settings": {…}}` deep-merges a partial object, and a `********` sent back keeps the stored secret. `security` changes follow the settings screen's rules (number ranges, login slug, IP lists, idle timeout, alert address; the caller's own IP on the block list or a two-step requirement while no e-mail can be delivered is refused): a 400 `rest_invalid_param` saves nothing |
+| `/pursae/v1/options/{group}` | GET, POST | `contact` (reCAPTCHA / Turnstile keys), `cookie`, `forum` (Pursae Forum; the Google client secret reads as `********`), `gocdn`, `headless`, `maintenance`, `multilang`, `pixel`, `security`, `seo`, `smtp`: the built-in plugin's settings object. Secrets (passwords, keys, tokens) read as `********`; `POST {"settings": {…}}` deep-merges a partial object, and a `********` sent back keeps the stored secret. `security` changes follow the settings screen's rules (number ranges, login slug, IP lists, idle timeout, alert address; the caller's own IP on the block list or a two-step requirement while no e-mail can be delivered is refused): a 400 `rest_invalid_param` saves nothing |
 | `/pursae/v1/mcp` | POST, GET, DELETE | the [MCP server](../operations/ai-mcp.md) (streamable HTTP) |
+
+## Pursae Forum (`forum/v1`)
+
+Public and read-only, only while Pursae Forum is on (otherwise `rest_no_route`, and the namespace is
+left out of the index). Only published, non-spam content of published forums is listed; nothing
+here writes. The topic and reply lists take `page` and `per_page` (default 10, max 100); every list
+sends `X-WP-Total` / `X-WP-TotalPages` (the forum tree comes in one page).
+
+| Route | Methods | Notes |
+|-------|---------|-------|
+| `/forum/v1/forums` | GET | the whole tree, flat: each category followed by its forums. `id`, `parent`, `slug`, `title`, `kind` (`forum` or `category`), `description` (HTML), `closed`, `order`, `topic_count`, `reply_count`, `last_active`, `last_topic` (`id`, `title`, `link`, or null), `link` |
+| `/forum/v1/forums/{id}/topics` | GET | a forum's topics, sticky first, then by last activity (a category has none: empty list). Topic: `id`, `forum`, `forum_title`, `title`, `slug`, `content.rendered`, `author`, `sticky`, `closed`, `reply_count`, `date`, `last_active`, `edited`, `link`; 404 `rest_forum_invalid_id` |
+| `/forum/v1/topics/{id}` | GET | one topic with its opening post (same fields); 404 `rest_topic_invalid_id` |
+| `/forum/v1/topics/{id}/replies` | GET | the replies, oldest first: `id`, `topic`, `forum`, `position`, `content.rendered`, `author`, `date`, `edited`, `link` |
+
+`author` is `{id, name, avatar, link, moderator}` (never the login or the email), or null for a
+deleted account. Dates are RFC 3339 UTC. A page past the last one is a 400
+`rest_post_invalid_page_number`. The forum's settings are under `/pursae/v1/options/forum` (above).
 
 ## Other namespaces
 

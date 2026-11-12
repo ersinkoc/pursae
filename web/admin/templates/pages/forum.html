@@ -1,0 +1,323 @@
+{{define "admin/forum"}}{{template "admin-header" .}}{{with .Data}}{{$d := .}}
+<style>
+.pf-admin .pf-admin-icon{font-size:28px;width:28px;height:28px;margin-right:6px;color:#2271b1;vertical-align:-4px}
+.pf-admin .pf-admin-sub{color:#646970;margin:4px 0 14px;max-width:760px}
+.pf-admin .pf-admin-depth{color:#a7aaad}
+.pf-admin .pf-admin-badge{display:inline-block;padding:0 8px;border-radius:10px;font-size:12px;line-height:20px;background:#f0f0f1;color:#50575e;white-space:nowrap}
+.pf-admin .pf-admin-badge--category{background:#e5f0fa;color:#135e96}
+.pf-admin .pf-admin-badge--closed{background:#fcf0f1;color:#8a2424}
+.pf-admin .pf-admin-badge--open{background:#edfaef;color:#00591e}
+.pf-admin .pf-admin-badge--pending{background:#fcf9e8;color:#7a5d00}
+.pf-admin .pf-admin-desc{color:#646970;margin:4px 0 0}
+.pf-admin .pf-admin-excerpt{margin:4px 0 0;color:#2c3338;overflow-wrap:anywhere}
+.pf-admin .pf-admin-kind{color:#646970;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.pf-admin .pf-admin-ip{display:block;color:#646970;font-size:12px}
+.pf-admin .pf-admin-author{display:flex;align-items:center;gap:8px}
+.pf-admin .pf-admin-author img{border-radius:50%;flex:none}
+.pf-admin tr.unapproved{background:#fcf9e8}
+.pf-admin tr.unapproved th.check-column{border-left:4px solid #d63638}
+.pf-admin tr.unapproved th.check-column input{margin-left:4px}
+.pf-admin .pf-admin-card{background:#fff;border:1px solid #c3c4c7;padding:4px 20px 12px;margin:16px 0;max-width:820px}
+.pf-admin .pf-admin-card h2{font-size:1.15em}
+.pf-admin .pf-admin-steps{margin-left:1.4em}
+.pf-admin .pf-admin-steps li{margin-bottom:.6em}
+.pf-admin .pf-admin-copy{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pf-admin .pf-admin-copy input{flex:1 1 360px;max-width:560px;font-family:Consolas,Monaco,monospace;background:#f6f7f7}
+.pf-admin .pf-admin-status{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.pf-admin .pf-admin-status:before{content:"";width:9px;height:9px;border-radius:50%;background:#c3c4c7}
+.pf-admin .pf-admin-status.is-ready{color:#00591e}
+.pf-admin .pf-admin-status.is-ready:before{background:#00a32a;box-shadow:0 0 0 3px rgba(0,163,42,.2)}
+.pf-admin .pf-admin-status.is-off{color:#646970}
+.pf-admin .pf-admin-status.is-warn{color:#8a6100}
+.pf-admin .pf-admin-status.is-warn:before{background:#dba617}
+.pf-admin .column-kind{width:110px}
+.pf-admin .column-topics,.pf-admin .column-replies,.pf-admin .column-order{width:74px}
+.pf-admin .column-state{width:90px}
+.pf-admin .column-author{width:20%}
+.pf-admin .column-forum{width:18%}
+.pf-admin .column-date{width:14%}
+@media screen and (max-width:782px){.pf-admin .pf-admin-copy input{flex-basis:100%}}
+</style>
+{{template "forum-admin-style"}}
+<div class="wrap pf-admin">
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-format-chat pf-admin-icon" aria-hidden="true"></span>{{.Title}}</h1>
+<a href="{{.IndexURL}}" class="page-title-action">View Forums</a>
+<hr class="wp-header-end">
+{{if gt (len .Tabs) 1}}<nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
+{{range .Tabs}}<a href="{{.URL}}" class="nav-tab{{if .Current}} nav-tab-active{{end}}"{{if .Current}} aria-current="page"{{end}}>{{.Label}}</a>{{end}}
+</nav>{{end}}
+{{template "notices" $}}
+
+{{if eq .Tab "overview"}}{{template "forum-admin-overview" .}}{{end}}
+{{if eq .Tab "members"}}{{if .Member}}{{template "forum-admin-member" .}}{{else}}{{template "forum-admin-members" .}}{{end}}{{end}}
+{{if eq .Tab "badges"}}{{if .BadgeEdit}}{{template "forum-admin-badge-edit" .}}{{else}}{{template "forum-admin-badges" .}}{{end}}{{end}}
+
+{{if eq .Tab "forums"}}
+{{if .Edit}}{{with .Edit}}
+<p><a href="/wp-admin/forum?tab=forums">&larr; Back to Forums</a>{{if .URL}} &middot; <a href="{{.URL}}">View on the site</a>{{end}}</p>
+<form name="edittag" id="edittag" method="post" action="/wp-admin/forum?tab=forums&amp;action=edit&amp;id={{.ID}}" class="validate">
+<input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+<input type="hidden" name="id" value="{{.ID}}" />
+<table class="form-table" role="presentation"><tbody>
+<tr class="form-field form-required"><th scope="row"><label for="pf-title">Name</label></th>
+	<td><input name="title" id="pf-title" type="text" value="{{.Title}}" size="40" maxlength="200" aria-required="true" required />
+	<p class="description">The name is how it appears on your site.</p></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-slug">Slug</label></th>
+	<td><input name="slug" id="pf-slug" type="text" value="{{.Slug}}" size="40" maxlength="180" />
+	<p class="description">The last part of the forum's address: lowercase letters, numbers and hyphens.</p></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-kind">Type</label></th>
+	<td><select name="kind" id="pf-kind">
+		<option value="forum"{{if ne .Kind "category"}} selected{{end}}>Forum (holds topics)</option>
+		<option value="category"{{if eq .Kind "category"}} selected{{end}}>Category (groups forums)</option>
+	</select></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-parent">Category</label></th>
+	<td><select name="parent" id="pf-parent"><option value="0">None (top level)</option>
+		{{$p := .ParentID}}{{range $d.Cats}}<option value="{{.ID}}"{{if eq .ID $p}} selected{{end}} translate="no">{{.Title}}</option>{{end}}
+	</select>
+	<p class="description">Forums can sit inside a category. Categories always stay at the top level.</p></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-description">Description</label></th>
+	<td><textarea name="description" id="pf-description" rows="4" cols="50" class="large-text">{{.Description}}</textarea>
+	<p class="description">Shown under the forum's name. Basic HTML is allowed.</p></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-order">Order</label></th>
+	<td><input name="order" id="pf-order" type="number" value="{{.Order}}" class="small-text" min="-9999" max="9999" />
+	<p class="description">Lower numbers come first.</p></td></tr>
+<tr><th scope="row">Status</th>
+	<td><label for="pf-closed"><input name="closed" id="pf-closed" type="checkbox" value="1"{{if .Closed}} checked{{end}} /> Closed: members cannot start new topics here</label></td></tr>
+</tbody></table>
+<div class="edit-tag-actions"><input type="submit" class="button button-primary" value="Update" /></div>
+</form>
+{{end}}{{else}}
+<p class="pf-admin-sub">Group your forums in categories. Members start topics in forums; a forum with topics, or a category with forums, cannot be deleted.</p>
+<div id="col-container" class="wp-clearfix">
+<div id="col-left"><div class="col-wrap"><div class="form-wrap">
+<h2>Add New Forum</h2>
+<form id="addtag" method="post" action="/wp-admin/forum?tab=forums" class="validate">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{with .New}}
+<div class="form-field form-required term-name-wrap"><label for="pf-new-title">Name</label>
+	<input name="title" id="pf-new-title" type="text" value="{{.Title}}" size="40" maxlength="200" aria-required="true" required />
+	<p>The name is how it appears on your site.</p></div>
+<div class="form-field term-slug-wrap"><label for="pf-new-slug">Slug</label>
+	<input name="slug" id="pf-new-slug" type="text" value="{{.Slug}}" size="40" maxlength="180" />
+	<p>Optional: made from the name when empty.</p></div>
+<div class="form-field"><label for="pf-new-kind">Type</label>
+	<select name="kind" id="pf-new-kind">
+		<option value="forum"{{if ne .Kind "category"}} selected{{end}}>Forum (holds topics)</option>
+		<option value="category"{{if eq .Kind "category"}} selected{{end}}>Category (groups forums)</option>
+	</select></div>
+<div class="form-field term-parent-wrap"><label for="pf-new-parent">Category</label>
+	<select name="parent" id="pf-new-parent" class="postform"><option value="0">None (top level)</option>
+		{{$p := .ParentID}}{{range $d.Cats}}<option value="{{.ID}}"{{if eq .ID $p}} selected{{end}} translate="no">{{.Title}}</option>{{end}}
+	</select>
+	<p>Only forums go in a category.</p></div>
+<div class="form-field term-description-wrap"><label for="pf-new-description">Description</label>
+	<textarea name="description" id="pf-new-description" rows="4" cols="40">{{.Description}}</textarea>
+	<p>Shown under the forum's name. Basic HTML is allowed.</p></div>
+<div class="form-field"><label for="pf-new-order">Order</label>
+	<input name="order" id="pf-new-order" type="number" value="{{.Order}}" class="small-text" min="-9999" max="9999" /></div>
+<div class="form-field"><label for="pf-new-closed"><input name="closed" id="pf-new-closed" type="checkbox" value="1"{{if .Closed}} checked{{end}} /> Closed: members cannot start new topics here</label></div>
+{{end}}
+<p class="submit"><input type="submit" class="button button-primary" value="Add New Forum" /></p>
+</form>
+</div></div></div>
+<div id="col-right"><div class="col-wrap">
+<table class="wp-list-table widefat fixed striped table-view-list">
+<thead><tr>
+	<th scope="col" class="manage-column column-name column-primary">Name</th>
+	<th scope="col" class="manage-column column-kind">Type</th>
+	<th scope="col" class="manage-column column-topics num">Topics</th>
+	<th scope="col" class="manage-column column-replies num">Replies</th>
+	<th scope="col" class="manage-column column-state">Status</th>
+	<th scope="col" class="manage-column column-order num">Order</th>
+</tr></thead>
+<tbody id="the-list">
+{{range .Forums}}<tr id="forum-{{.ID}}" class="level-{{.Depth}}">
+	<td class="name column-name has-row-actions column-primary" data-colname="Name">
+		<strong>{{if .Depth}}<span class="pf-admin-depth" aria-hidden="true">&mdash; </span>{{end}}<a class="row-title" href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)" translate="no">{{.Title}}</a></strong>
+		{{if .Description}}<p class="pf-admin-desc" translate="no">{{.Description}}</p>{{end}}
+		<div class="row-actions"><span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span>{{if .DeleteURL}}<span class="delete"><a href="{{.DeleteURL}}" class="delete-tag" aria-label="Delete &#8220;{{.Title}}&#8221;" onclick="return confirm('Delete this forum permanently?')">Delete</a> | </span>{{end}}<span class="view"><a href="{{.URL}}" aria-label="View &#8220;{{.Title}}&#8221; on the site">View</a></span></div>
+		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+	</td>
+	<td class="column-kind" data-colname="Type">{{if eq .Kind "category"}}<span class="pf-admin-badge pf-admin-badge--category">Category</span>{{else}}<span class="pf-admin-badge">Forum</span>{{end}}</td>
+	<td class="column-topics num" data-colname="Topics">{{.TopicCount}}</td>
+	<td class="column-replies num" data-colname="Replies">{{.ReplyCount}}</td>
+	<td class="column-state" data-colname="Status">{{if eq .Kind "category"}}&mdash;{{else if .Closed}}<span class="pf-admin-badge pf-admin-badge--closed">Closed</span>{{else}}<span class="pf-admin-badge pf-admin-badge--open">Open</span>{{end}}</td>
+	<td class="column-order num" data-colname="Order">{{.Order}}</td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="6">No forums yet. Add a category, then a forum inside it.</td></tr>
+{{end}}</tbody>
+<tfoot><tr>
+	<th scope="col" class="manage-column column-name column-primary">Name</th>
+	<th scope="col" class="manage-column column-kind">Type</th>
+	<th scope="col" class="manage-column column-topics num">Topics</th>
+	<th scope="col" class="manage-column column-replies num">Replies</th>
+	<th scope="col" class="manage-column column-state">Status</th>
+	<th scope="col" class="manage-column column-order num">Order</th>
+</tr></tfoot>
+</table>
+<p class="description">Put the forum list on any page with the shortcode <code>[pursae_forum]</code>, or the latest topics with <code>[pursae_forum view="recent" limit="5"]</code>.</p>
+</div></div>
+</div>
+{{end}}
+{{end}}
+
+{{if eq .Tab "moderation"}}
+<p class="pf-admin-sub">Approve, mark as spam or trash topics and replies. Items in the Trash or the spam can be deleted permanently.</p>
+<h2 class="screen-reader-text">Filter topics and replies list</h2>
+<ul class="subsubsub">
+{{range $i, $v := .Views}}<li class="{{$v.Key}}">{{if $i}} | {{end}}<a href="{{$v.URL}}"{{if $v.Current}} class="current" aria-current="page"{{end}}>{{$v.Label}} <span class="count">(<span class="{{$v.Key}}-count">{{$v.Count}}</span>)</span></a></li>
+{{end}}</ul>
+<form id="pf-search" method="get" action="/wp-admin/forum">
+<input type="hidden" name="tab" value="moderation" />
+{{if ne .ModView "all"}}<input type="hidden" name="view" value="{{.ModView}}" />{{end}}
+<p class="search-box">
+	<label class="screen-reader-text" for="pf-search-input">Search topics and replies:</label>
+	<input type="search" id="pf-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button" value="Search" />
+</p>
+</form>
+<form id="pf-moderation" method="post" action="/wp-admin/forum?tab=moderation">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<input type="hidden" name="view" value="{{.ModView}}" />
+<div class="tablenav top">
+	<div class="alignleft actions bulkactions">
+		<label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+		<select name="action" id="bulk-action-selector-top"><option value="-1">Bulk actions</option>{{range .Bulk}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+		<input type="submit" id="doaction" class="button action" value="Apply" />
+	</div>
+	{{template "tablenav-pages" .Paging}}<br class="clear" />
+</div>
+<h2 class="screen-reader-text">Topics and replies list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list comments">
+<thead><tr>
+	<td id="cb" class="manage-column column-cb check-column"><input id="cb-select-all-1" type="checkbox" /><label for="cb-select-all-1"><span class="screen-reader-text">Select All</span></label></td>
+	<th scope="col" class="manage-column column-author">Author</th>
+	<th scope="col" class="manage-column column-comment column-primary">Post</th>
+	<th scope="col" class="manage-column column-forum">In topic</th>
+	<th scope="col" class="manage-column column-date">Submitted on</th>
+</tr></thead>
+<tbody id="the-comment-list">
+{{range .Items}}<tr id="post-{{.ID}}" class="{{.RowClass}}">
+	<th scope="row" class="check-column"><input id="cb-select-{{.ID}}" type="checkbox" name="item[]" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{if .IsTopic}}topic{{else}}reply{{end}} {{.ID}}</span></label></th>
+	<td class="author column-author" data-colname="Author">
+		{{with .Author}}<span class="pf-admin-author">{{forum_avatar . 32}}<strong translate="no">{{if .ProfileURL}}<a href="{{.ProfileURL}}">{{.DisplayName}}</a>{{else}}{{.DisplayName}}{{end}}</strong></span>{{if .Blocked}}<span class="pf-admin-badge pf-admin-badge--closed">Blocked</span>{{end}}{{else}}<strong>Deleted user</strong>{{end}}
+		{{if .IP}}<span class="pf-admin-ip">{{.IP}}</span>{{end}}
+	</td>
+	<td class="comment column-comment has-row-actions column-primary" data-colname="Post">
+		<span class="pf-admin-kind">{{if .IsTopic}}Topic{{else}}Reply{{end}}</span>{{if ne .StatusLabel "Published"}} <span class="pf-admin-badge{{if eq .Status "pending"}} pf-admin-badge--pending{{else}} pf-admin-badge--closed{{end}}">{{.StatusLabel}}</span>{{end}}
+		{{if .IsTopic}}<p><strong><a href="{{.ViewURL}}" translate="no">{{.Title}}</a></strong></p>{{end}}
+		<p class="pf-admin-excerpt">{{if .Excerpt}}<span translate="no">{{.Excerpt}}</span>{{else}}<em>(no text)</em>{{end}}</p>
+		<div class="row-actions">{{$id := .ID}}{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} onclick="return confirm('{{$a.Confirm}}')"{{end}}{{if eq $a.Key "delete"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}<span class="view"> | <a href="{{.ViewURL}}">View</a></span></div>
+		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+	</td>
+	<td class="response column-forum" data-colname="In topic">{{if .Title}}<a href="{{.ViewURL}}" translate="no">{{.Title}}</a>{{else}}&mdash;{{end}}{{if .ForumTitle}}<br /><span class="pf-admin-desc">in <span translate="no">{{.ForumTitle}}</span></span>{{end}}</td>
+	<td class="date column-date" data-colname="Submitted on"><time datetime="{{.ISO}}">{{.Date}}</time></td>
+</tr>
+{{else}}<tr class="no-items"><td class="colspanchange" colspan="5">{{if .Search}}No topics or replies match your search.{{else if eq .ModView "pending"}}Nothing is waiting for a moderator.{{else if eq .ModView "spam"}}No spam.{{else if eq .ModView "trash"}}The Trash is empty.{{else}}No topics or replies yet.{{end}}</td></tr>
+{{end}}</tbody>
+<tfoot><tr>
+	<td class="manage-column column-cb check-column"><input id="cb-select-all-2" type="checkbox" /><label for="cb-select-all-2"><span class="screen-reader-text">Select All</span></label></td>
+	<th scope="col" class="manage-column column-author">Author</th>
+	<th scope="col" class="manage-column column-comment column-primary">Post</th>
+	<th scope="col" class="manage-column column-forum">In topic</th>
+	<th scope="col" class="manage-column column-date">Submitted on</th>
+</tr></tfoot>
+</table>
+<div class="tablenav bottom">
+	<div class="alignleft actions bulkactions">
+		<label for="bulk-action-selector-bottom" class="screen-reader-text">Select bulk action</label>
+		<select name="action2" id="bulk-action-selector-bottom"><option value="-1">Bulk actions</option>{{range .Bulk}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+		<input type="submit" id="doaction2" class="button action" value="Apply" />
+	</div>
+	{{template "tablenav-pages" .Paging}}<br class="clear" />
+</div>
+</form>
+{{end}}
+
+{{if eq .Tab "settings"}}{{with .Settings}}
+<form method="post" action="/wp-admin/forum?tab=settings">
+<input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+<h2 class="title">Forum</h2>
+<table class="form-table" role="presentation"><tbody>
+<tr><th scope="row"><label for="pf-base">Forum address</label></th>
+	<td><code>{{$d.IndexURL}}</code><br /><input name="base" id="pf-base" type="text" value="{{.Base}}" class="regular-text code" maxlength="40" pattern="[a-z0-9\-]{1,40}" aria-describedby="pf-base-desc" />
+	<p class="description" id="pf-base-desc">The first part of every forum address: lowercase letters, numbers and hyphens. Changing it changes every forum link.</p></td></tr>
+<tr><th scope="row"><label for="pf-title">Forum title</label></th>
+	<td><input name="title" id="pf-title" type="text" value="{{.Title}}" class="regular-text" maxlength="80" />
+	<p class="description">The heading of the forum index and the first crumb of every forum page.</p></td></tr>
+<tr><th scope="row"><label for="pf-tpp">Topics per page</label></th>
+	<td><input name="topics_per_page" id="pf-tpp" type="number" value="{{.TopicsPerPage}}" class="small-text" min="5" max="100" /></td></tr>
+<tr><th scope="row"><label for="pf-rpp">Replies per page</label></th>
+	<td><input name="replies_per_page" id="pf-rpp" type="number" value="{{.RepliesPerPage}}" class="small-text" min="5" max="100" /></td></tr>
+</tbody></table>
+<h2 class="title">Members</h2>
+<table class="form-table" role="presentation"><tbody>
+<tr><th scope="row">Registration</th>
+	<td><fieldset><legend class="screen-reader-text"><span>Registration</span></legend>
+	<label for="pf-registration"><input name="registration" id="pf-registration" type="checkbox" value="1"{{if .Registration}} checked{{end}} /> Anyone can join the forum (with an email address, or with Google when it is set up)</label><br />
+	<label for="pf-verify"><input name="require_verify" id="pf-verify" type="checkbox" value="1"{{if .RequireVerify}} checked{{end}} /> New members confirm their email address before they can post</label>
+	</fieldset></td></tr>
+<tr><th scope="row"><label for="pf-role">Role of new members</label></th>
+	<td><select name="default_role" id="pf-role">
+		<option value="forum_participant"{{if eq .DefaultRole "forum_participant"}} selected{{end}}>Forum Participant</option>
+		<option value="subscriber"{{if eq .DefaultRole "subscriber"}} selected{{end}}>Subscriber</option>
+	</select>
+	<p class="description">Both can post in the forum. Make a member a moderator on the <a href="/wp-admin/forum?tab=members">Members</a> tab.</p></td></tr>
+<tr><th scope="row">Member list</th>
+	<td><label for="pf-show-members"><input name="show_members" id="pf-show-members" type="checkbox" value="1"{{if .ShowMembers}} checked{{end}} /> Show the member list on the site</label>
+	<p class="description">A public page that lists members with their level, badges and post counts. Email addresses are never shown.</p></td></tr>
+</tbody></table>
+<h2 class="title">Posting</h2>
+<table class="form-table" role="presentation"><tbody>
+<tr><th scope="row">Moderation</th>
+	<td><label for="pf-first"><input name="moderate_first_post" id="pf-first" type="checkbox" value="1"{{if .ModerateFirstPost}} checked{{end}} /> Hold a member's first topic or reply until a moderator approves it</label></td></tr>
+<tr><th scope="row"><label for="pf-edit">Editing</label></th>
+	<td>Members can edit their posts for <input name="edit_window" id="pf-edit" type="number" value="{{.EditWindow}}" class="small-text" min="0" max="10080" /> minutes
+	<p class="description">0 turns editing off for members. Moderators can always edit.</p></td></tr>
+<tr><th scope="row"><label for="pf-flood">Flood protection</label></th>
+	<td>Wait <input name="flood_seconds" id="pf-flood" type="number" value="{{.FloodSeconds}}" class="small-text" min="0" max="3600" /> seconds between two posts
+	<p class="description">0 turns it off. Moderators are never held back.</p></td></tr>
+</tbody></table>
+{{if not $d.Ready}}<p class="description">Members can also sign in with Google: set it up on the <a href="/wp-admin/forum?tab=google">Google sign-in</a> tab.</p>{{end}}
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}{{end}}
+
+{{if eq .Tab "google"}}
+<p class="pf-admin-sub">Let members sign in and join with their Google account. You need a free OAuth client from Google Cloud; it takes about five minutes.</p>
+<p>Status: {{if .Ready}}<span class="pf-admin-status is-ready">Ready: the Google button shows on the login and join pages</span>{{else if .Missing}}<span class="pf-admin-status is-warn">Enabled, but {{.Missing}} {{if eq .Missing "the Client ID and the Client secret"}}are{{else}}is{{end}} missing</span>{{else}}<span class="pf-admin-status is-off">Not active</span>{{end}}</p>
+{{if .NotHTTPS}}<div class="notice notice-warning inline"><p>Google only accepts secure (<code>https://</code>) addresses, except <code>localhost</code>. Switch the site to HTTPS before you set this up.</p></div>{{end}}
+<div class="pf-admin-card">
+<h2>Set up Google sign-in</h2>
+<ol class="pf-admin-steps">
+	<li>Open the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">Google Cloud Console credentials page<span class="screen-reader-text"> (opens in a new tab)</span></a> and pick or create a project.</li>
+	<li>Under <strong>OAuth consent screen</strong>, choose <strong>External</strong>, enter your site name and support email, and publish the app. Only the basic scopes are needed: <code>openid</code>, <code>email</code> and <code>profile</code>.</li>
+	<li>Click <strong>Create credentials &rsaquo; OAuth client ID</strong> and choose <strong>Web application</strong>.</li>
+	<li>Under <strong>Authorized JavaScript origins</strong>, add:
+		<div class="pf-admin-copy"><label class="screen-reader-text" for="pf-origin">Authorized JavaScript origin</label><input type="text" id="pf-origin" value="{{.Origin}}" readonly onfocus="this.select()" /></div></li>
+	<li>Under <strong>Authorized redirect URIs</strong>, add exactly:
+		<div class="pf-admin-copy"><label class="screen-reader-text" for="pf-redirect">Authorized redirect URI</label><input type="text" id="pf-redirect" value="{{.Redirect}}" readonly onfocus="this.select()" /></div></li>
+	<li>Click <strong>Create</strong>, then copy the <strong>Client ID</strong> and <strong>Client secret</strong> into the fields below, tick <strong>Enable</strong> and save.</li>
+</ol>
+</div>
+{{with .Settings}}
+<form method="post" action="/wp-admin/forum?tab=google" autocomplete="off">
+<input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+<table class="form-table" role="presentation"><tbody>
+<tr><th scope="row">Google sign-in</th>
+	<td><label for="pf-g-on"><input name="google_enabled" id="pf-g-on" type="checkbox" value="1"{{if .GoogleEnabled}} checked{{end}} /> Enable “Continue with Google” on the forum's login and join pages</label></td></tr>
+<tr><th scope="row"><label for="pf-g-id">Client ID</label></th>
+	<td><input name="google_client_id" id="pf-g-id" type="text" value="{{.GoogleClientID}}" class="large-text code" placeholder="1234567890-abc.apps.googleusercontent.com" spellcheck="false" /></td></tr>
+<tr><th scope="row"><label for="pf-g-secret">Client secret</label></th>
+	<td><input name="google_client_secret" id="pf-g-secret" type="password" value="" class="regular-text code" autocomplete="new-password" spellcheck="false"{{if $d.SecretSet}} placeholder="Saved (leave empty to keep it)"{{end}} />
+	<p class="description">{{if $d.SecretSet}}A secret is saved. It is never shown again; type a new one to replace it.{{else}}Stored on your server and never shown again after saving.{{end}}</p>
+	{{if $d.SecretSet}}<label for="pf-g-clear"><input name="google_clear_secret" id="pf-g-clear" type="checkbox" value="1" /> Remove the saved secret (turns Google sign-in off)</label>{{end}}</td></tr>
+</tbody></table>
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+{{end}}
+<p class="description">A Google account whose email matches an existing member is connected to that member, unless the member can edit content or manage the site: they connect Google from their forum account page after logging in with their password. Administrators always sign in with their password.</p>
+{{end}}
+</div>
+{{if or (eq .Tab "members") (eq .Tab "badges")}}{{template "forum-admin-script"}}{{end}}
+{{end}}{{template "admin-footer" .}}{{end}}

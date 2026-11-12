@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>{{.DocumentTitle}}</title>
+{{.Head}}</head>
+<body class="{{.BodyClass}}">
+{{.BodyOpen}}<div id="page" class="site">
+	<a class="skip-link screen-reader-text" href="#main">Skip to content</a>
+	<header id="masthead" class="site-header">
+		<div class="db-container site-header__inner">
+			<div class="site-branding">
+				{{with .CustomLogo}}<div class="site-logo">{{.}}</div>{{else}}<span class="db-mark" aria-hidden="true">{{template "mark"}}</span>{{end}}
+				{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>{{end}}
+			</div>
+			{{if has_nav_menu . "primary"}}<nav id="site-navigation" class="main-navigation" aria-label="Primary menu">{{nav_menu . "primary"}}</nav>{{end}}
+			{{if forum_on}}<form class="db-header-search" role="search" method="get" action="{{forum_url . "search"}}">
+				<label class="screen-reader-text" for="db-header-q">Search the forums</label>
+				<input type="search" id="db-header-q" name="q" maxlength="100" placeholder="Search questions&hellip;" />
+				<button type="submit" class="screen-reader-text">Search</button>
+			</form>{{end}}
+			{{with forum_user_menu .}}<div class="site-header__account">{{.}}</div>{{end}}
+		</div>
+	</header><!-- #masthead -->
+	<div id="content" class="site-content">
+		<main id="main" class="site-main" tabindex="-1">

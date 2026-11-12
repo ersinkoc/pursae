@@ -20,11 +20,17 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	sb.WriteString(s.gooikeHead(c))   // Gooike: Consent Mode defaults first, banner styles, head scripts (gooike_front.go)
 	sb.WriteString(s.pixelHead(c, q)) // Pursae Pixel: platform tags, inert until consent (pixelgo_front.go)
 	sb.WriteString(s.gooHead(c, q))   // Goocommerce: store styles (goo_front.go)
+	sb.WriteString(s.forumHead(c, q)) // Pursae Forum: forum.css on forum views and [pursae_forum] pages (forum_render.go)
 	sb.WriteString(v.Theme.HeadTop)
-	seo := s.seogoHead(c, q, lb) // Pursae SEO replaces the robots meta and the canonical link (seogo_head.go)
+	seo := ""
+	if q.Forum == "" { // a Pursae Forum view is a synthetic page: its robots meta and canonical come from the forum
+		seo = s.seogoHead(c, q, lb) // Pursae SEO replaces the robots meta and the canonical link (seogo_head.go)
+	}
 	storePrivate := q.Store == "cart" || q.Store == "checkout" || q.Store == "myaccount"
 	if seo != "" {
 		sb.WriteString(seo)
+	} else if forumNoindex(c, q) && s.settings.Bool("blog_public") && !q.Preview {
+		sb.WriteString("<meta name='robots' content='noindex, follow' />\n") // Pursae Forum: login, register, search, …
 	} else if storePrivate && s.settings.Bool("blog_public") && !q.Preview {
 		sb.WriteString("<meta name='robots' content='noindex, follow' />\n") // Pursae Commerce: wc_page_noindex
 	} else if s.settings.Bool("blog_public") && q.Kind == "search" && !q.Preview {
@@ -71,12 +77,26 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		sb.WriteString(v.Theme.Head(s, c, v))
 	}
 	sb.WriteString("<link rel=\"https://api.w.org/\" href=\"" + html.EscapeString(lb.HomeURL("/wp-json/")) + "\" />\n")
-	sb.WriteString(oembedDiscoveryLinks(lb, q)) // wp_oembed_add_discovery_links() (rest_oembed.go)
-	if !s.asHideVersion() {                     // AdminSecGo can hide the version
+	if q.Forum == "" { // a Pursae Forum view's synthetic page has no permalink to embed
+		sb.WriteString(oembedDiscoveryLinks(lb, q)) // wp_oembed_add_discovery_links() (rest_oembed.go)
+	}
+	if !s.asHideVersion() { // AdminSecGo can hide the version
 		sb.WriteString("<meta name=\"generator\" content=\"Pursae " + Version + "\" />\n")
 	}
 	storeArchive := q.Store == "shop" || q.Store == "product_cat" || q.Store == "product_tag" || q.Store == "product_attr"
 	switch {
+	case q.Forum != "":
+		// A forum view is a synthetic page with no id: its canonical is the forum URL, no shortlink.
+		if q.ForumURL != "" {
+			u := q.ForumURL
+			if q.Paged > 1 {
+				u = strings.TrimSuffix(u, "/") + "/page/" + itoa64(int64(q.Paged)) + "/"
+			}
+			fmt.Fprintf(&sb, "<link rel=\"canonical\" href=\"%s\" />\n", html.EscapeString(u))
+		}
+		if x := s.forumPllXDefault(c, q); x != "" { // Pursae Multi Language: the hreflang links come from golylangHTML
+			fmt.Fprintf(&sb, "<link rel=\"alternate\" href=\"%s\" hreflang=\"x-default\" />\n", html.EscapeString(x))
+		}
 	case storeArchive:
 		// A store archive is a synthetic page whose id may be a term id: its canonical is the store URL.
 		if seo == "" && q.StoreURL != "" {
@@ -175,7 +195,7 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 		}
 		sb.WriteString(`</ul></div></li>`)
 	}
-	if q.Post != nil && u.Can("edit_post", q.Post) {
+	if q.Post != nil && q.Forum == "" && u.Can("edit_post", q.Post) { // a forum view's synthetic page has nothing to edit
 		label := "Edit Post"
 		if q.Post.Type == "page" {
 			label = "Edit Page"

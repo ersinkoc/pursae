@@ -1,0 +1,11 @@
+/* Campfire: block editor styles (the same paper, type and accents as the site). */
+@font-face { font-family: "Campfire Serif"; src: url("fonts/fraunces.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Campfire Sans"; src: url("fonts/albert-sans.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+body { background: #FBF6EE; color: #2B2622; font-family: "Campfire Sans", ui-sans-serif, system-ui, sans-serif; font-size: 17px; line-height: 1.65; }
+h1, h2, h3, h4, .editor-post-title__input { font-family: "Campfire Serif", Georgia, serif; font-weight: 600; line-height: 1.15; color: #2B2622; }
+a { color: #B24723; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+:not(pre) > code { background: #F3EADB; padding: .1em .35em; border-radius: 5px; }
+pre { background: #2B2622; color: #F7EFE3; padding: 16px; border-radius: 12px; }
+blockquote { border-left: 3px solid #D9572B; padding-left: 1em; }
+.wp-block-button__link { background: #B24723; color: #fff; border-radius: 999px; font-weight: 700; }

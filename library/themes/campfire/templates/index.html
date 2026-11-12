@@ -1,0 +1,16 @@
+{{template "header" .}}
+<div class="cf-container cf-flow">
+	{{if .IsHomeHeader}}<header class="page-header"><h1 class="page-title">{{.PostsPageTitle}}</h1></header>
+	{{else if eq .Template "search"}}<header class="page-header"><p class="cf-eyebrow">Search</p><h1 class="page-title">Results for &ldquo;{{.SearchQuery}}&rdquo;</h1>{{template "searchform" .}}</header>
+	{{else if .ArchiveTitle}}<header class="page-header"><p class="cf-eyebrow">Archive</p><h1 class="page-title">{{.ArchiveTitle}}</h1>{{with .ArchiveDesc}}<div class="archive-description">{{.}}</div>{{end}}</header>{{end}}
+	{{if .Posts}}<div class="cf-posts">
+		{{range .Posts}}<article id="post-{{.ID}}" class="{{.Class}} cf-post-card">
+			<h2 class="entry-title"><a href="{{.Permalink}}" rel="bookmark">{{.Title}}</a></h2>
+			{{if eq .Type "post"}}<p class="entry-meta"><time datetime="{{.DateISO}}">{{.DateText}}</time>{{with .AuthorName}} &middot; {{.}}{{end}}</p>{{end}}
+			<div class="entry-summary">{{if .ShowExcerpt}}{{.Excerpt}}{{else}}{{.Content}}{{end}}</div>
+		</article>
+		{{end}}
+	</div>
+	{{.Pagination}}{{else}}{{template "content-none" .}}{{end}}
+</div>
+{{template "footer" .}}
