@@ -187,7 +187,14 @@ func (b *Builder) PermalinkTemplate(p *store.Post) string {
 		return b.Permalink(p)
 	}
 	if p.Type == "page" {
-		return b.HomeURL(b.trailing("/%pagename%"))
+		var parts []string
+		if b.Ancestors != nil {
+			for _, a := range b.Ancestors(p) {
+				parts = append(parts, escPath(a.Slug))
+			}
+		}
+		parts = append(parts, "%pagename%")
+		return b.HomeURL(b.trailing("/" + strings.Join(parts, "/")))
 	}
 	if base := b.typeBase(p.Type); base != "" {
 		q := *p
@@ -196,6 +203,9 @@ func (b *Builder) PermalinkTemplate(p *store.Post) string {
 			q.Status = "publish"
 		}
 		return b.typeLink(&q, base)
+	}
+	if p.Type != "post" {
+		return b.Permalink(p)
 	}
 	q := *p
 	q.Slug = "%postname%"
@@ -473,6 +483,9 @@ func (b *Builder) Paged(base string, n int) string {
 		}
 		return s
 	}
+	q := u.Query()
+	q.Del("paged")
+	u.RawQuery = q.Encode()
 	path := u.EscapedPath()
 	previousPath := path
 	path = regexp.MustCompile(`/page/\d+/?$`).ReplaceAllString(path, "/")
@@ -494,6 +507,9 @@ func (b *Builder) Paged(base string, n int) string {
 func (b *Builder) SearchLink(q string) string { return b.filter("home", nil, b.searchLink(q)) }
 
 func (b *Builder) searchLink(q string) string {
+	if b.Pretty() {
+		return b.HomeURL(b.trailing("/search/" + url.QueryEscape(q)))
+	}
 	return b.HomeURL("/?s=" + url.QueryEscape(q))
 }
 
