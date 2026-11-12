@@ -126,3 +126,10 @@ func TestCanonicalQuerySortsEncodedNames(t *testing.T) {
 		}
 	}
 }
+
+func TestCanonicalQuerySortsEncodedValues(t *testing.T) {
+	q := url.Values{"x": {"z", "é", "/"}}
+	if got, want := CanonicalQuery(q), "x=%2F&x=%C3%A9&x=z"; got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
