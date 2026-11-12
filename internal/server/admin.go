@@ -140,6 +140,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 			{slug: "export", title: "Export", cap: "export"},
 			{slug: "site-health", title: "Site Health", cap: "manage_options"},
 			{slug: "scheduled-actions", title: "Scheduled Actions", cap: "manage_options"},
+			{slug: "ai-access", title: "AI Access", cap: "manage_options"},
 			{slug: "export-personal-data", title: "Export Personal Data", cap: "manage_options"},
 			{slug: "erase-personal-data", title: "Erase Personal Data", cap: "manage_options"},
 		}},
@@ -346,7 +347,8 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	}
 	v.CacheBar = s.cacheAdminBar(c, u) + s.maintAdminBar(c, u)
 	v.Menu = s.gontactMenu(v.Menu, u, screen)
-	s.pluginMenuEntries(v.Menu, screen) // plugin settings pages under Settings (plugins_host.go)
+	s.pluginMenuEntries(v.Menu, screen)        // plugin settings pages under Settings (plugins_host.go)
+	v.Menu = s.pluginUIMenu(v.Menu, u, screen) // Wasm plugin admin pages (plugins_ui.go)
 	// the plugin's own top-level Web Builder menu (webbuilder_templates_admin.go)
 	v.Menu = s.wbMenu(v.Menu, screen, u)
 	v.Menu = s.wbHideCustomizer(v.Menu) // the builder's site settings replace the Customizer

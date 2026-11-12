@@ -250,7 +250,10 @@ func (s *Server) gocdnMoveCount(ctx context.Context, st gocdnSettings) (files in
 
 // gocdnMoveItem copies one item into the configured bucket and updates its row.
 func (s *Server) gocdnMoveItem(ctx context.Context, st gocdnSettings, dst *gocdn.Client, it *gocdnItem, deleteOld bool) error {
-	dstKey := gocdnObjectKey(st, it.Path)
+	dstKey := it.Key
+	if !gocdnKeyFits(st, it.Key, it.Path) {
+		dstKey = s.gocdnNewKey(st, it.Path)
+	}
 	if gocdnItemOnCurrent(st, it) && it.Key == dstKey {
 		_, err := s.store.Pool.Exec(ctx, `UPDATE gocdn_items SET endpoint = $2 WHERE id = $1`, it.ID, gocdnEndpoint(st))
 		return err

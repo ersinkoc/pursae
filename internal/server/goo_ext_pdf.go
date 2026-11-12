@@ -255,8 +255,14 @@ func (s *Server) gooPDFRender(ctx context.Context, doc string, orders []*gooOrde
 
 // gooPDFLogo reads the logo image from the uploads directory (an uploads URL or an attachment ID).
 func (s *Server) gooPDFLogo(ctx context.Context) []byte {
-	v := strings.TrimSpace(s.gooExtString(gooPDFKey, "logo_url"))
-	if v == "" || s.cfg.UploadsDir == "" {
+	return s.gooUploadsBytes(ctx, s.gooExtString(gooPDFKey, "logo_url"))
+}
+
+// gooUploadsBytes reads a Media Library file (an attachment ID or a URL under /wp-content/uploads/)
+// from the uploads directory; nil when it is missing, outside the uploads or larger than 8 MB.
+func (s *Server) gooUploadsBytes(ctx context.Context, v string) []byte {
+	v = strings.TrimSpace(v)
+	if v == "" || v == "0" || s.cfg.UploadsDir == "" {
 		return nil
 	}
 	rel := ""

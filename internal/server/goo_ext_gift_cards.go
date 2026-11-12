@@ -8,11 +8,12 @@ import (
 	"fmt"
 	"html"
 	"math/big"
-	"net/mail"
+	netmail "net/mail"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+	"wpgo/internal/mail"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -35,13 +36,13 @@ func init() {
 	gooRegisterExtension(&gooExtension{
 		Key: gcKey, Name: "Gift Cards", Icon: "dashicons-tickets-alt", Category: "Payments & checkout",
 		Description: "Sell prepaid digital gift cards that customers e-mail to friends and redeem in the cart or at checkout, with balances, expiry dates and an activity log.",
-		Fields: []gooField{
+		Fields: append([]gooField{
 			{Type: "title", Title: "Gift Cards"},
 			{ID: "enable_cart", Title: "Cart page", Type: "checkbox", Default: true, Desc: "Show the &quot;Have a gift card?&quot; form on the cart page."},
 			{ID: "enable_checkout", Title: "Checkout page", Type: "checkbox", Default: true, Desc: "Show the &quot;Have a gift card?&quot; form on the checkout page."},
 			{ID: "account_cards", Title: "My Account", Type: "checkbox", Default: true, Desc: "Let customers add gift cards to their account and see their balances under My Account › Gift Cards."},
 			{Type: "sectionend"},
-		},
+		}, gcDesignFields()...),
 		Pages: []gooExtMenuItem{{Page: "gift-cards", Title: "Gift Cards"}},
 	})
 	gooRegisterProductType(&gooProductTypeDef{
@@ -324,7 +325,7 @@ func gcAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form ma
 		return gooCartErr("Please choose a gift card amount.")
 	}
 	to := gxForm(form, "wc_gc_giftcard_to")
-	if a, err := mail.ParseAddress(to); err != nil || a.Address != to || !strings.Contains(to, "@") {
+	if a, err := netmail.ParseAddress(to); err != nil || a.Address != to || !strings.Contains(to, "@") {
 		return gooCartErr("Please enter a valid email address in the &quot;To&quot; field.")
 	}
 	from := gxForm(form, "wc_gc_giftcard_from")
@@ -779,17 +780,23 @@ func (s *Server) gcDeliver(ctx context.Context, g *gcCard) {
 	if g.Message != "" {
 		b.WriteString(`<blockquote style="border-left:3px solid #7f54b3;margin:16px 0;padding:8px 16px;font-style:italic">` + strings.ReplaceAll(html.EscapeString(g.Message), "\n", "<br>") + `</blockquote>`)
 	}
-	d := gcDesignFor(s.gcCardDesign(ctx, g))
-	fmt.Fprintf(&b, `<div style="border:2px dashed %s;background:%s;border-radius:8px;padding:20px;text-align:center;margin:20px 0"><div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px">%s gift card code</div>`+
-		`<div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#333;margin:8px 0">%s</div><div style="font-size:18px;color:%s">%s</div>`, d.Accent, d.Bg, html.EscapeString(d.Label), g.Code, d.Accent, html.EscapeString(amount))
+	key := s.gcCardDesign(ctx, g)
+	d := gcDesignFor(key)
+	img := ""
+	if u := s.gcDesignImageURL(ctx, key); u != "" {
+		img = `<img src="` + html.EscapeString(u) + `" alt="" style="max-width:100%;height:auto;border-radius:6px;margin-bottom:12px">`
+	}
+	fmt.Fprintf(&b, `<div style="border:2px dashed %s;background:%s;border-radius:8px;padding:20px;text-align:center;margin:20px 0">%s<div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px">%s gift card code</div>`+
+		`<div style="font-size:24px;font-weight:bold;letter-spacing:2px;color:#333;margin:8px 0">%s</div><div style="font-size:18px;color:%s">%s</div>`, d.Accent, d.Bg, img, html.EscapeString(d.Label), g.Code, d.Accent, html.EscapeString(amount))
 	if g.Expires != nil {
 		fmt.Fprintf(&b, `<div style="font-size:12px;color:#888;margin-top:6px">Expires on %s</div>`, html.EscapeString(s.gxDate(*g.Expires)))
 	}
 	b.WriteString(`</div>`)
-	fmt.Fprintf(&b, `<p><a href="%s">Print your gift card</a></p>`, html.EscapeString(s.gcPrintURL(ctx, g)))
+	fmt.Fprintf(&b, `<p><a href="%s">Print your gift card</a> (it is also attached to this e-mail as a PDF)</p>`, html.EscapeString(s.gcPrintURL(ctx, g)))
 	fmt.Fprintf(&b, `<p>To use your gift card, enter the code in the &quot;Have a gift card?&quot; field of the cart or checkout at <a href="%s">%s</a>.</p>`,
 		html.EscapeString(s.gooShopURL(ctx)), html.EscapeString(s.settings.String("blogname")))
-	if s.gxSendEmail(ctx, "gift_card_received", []string{g.Recipient}, map[string]string{"giftcard_amount": amount, "sender": g.Sender, "giftcard_code": g.Code}, b.String()) {
+	if s.gxSendEmail(ctx, "gift_card_received", []string{g.Recipient}, map[string]string{"giftcard_amount": amount, "sender": g.Sender, "giftcard_code": g.Code}, b.String(),
+		mail.Attachment{Name: "gift-card-" + g.Code + ".pdf", ContentType: "application/pdf", Data: s.gcPDF(ctx, g)}) {
 		g.Delivered = true
 		_, _ = s.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET delivered = true WHERE id = $1`, g.ID)
 	}

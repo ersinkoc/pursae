@@ -204,6 +204,7 @@
 
 <div id="postbox-container-2" class="postbox-container">
 <div id="normal-sortables" class="meta-box-sortables">
+	{{.NormalPluginBoxes}}
 	{{if eq $p.Type "post"}}
 	{{template "edit-postbox-start" dict "ID" "postexcerpt" "Title" "Excerpt" "Class" (index .BoxClass "postexcerpt")}}
 		<label class="screen-reader-text" for="excerpt">Excerpt</label><textarea rows="1" cols="40" name="excerpt" id="excerpt">{{$p.Excerpt}}</textarea>

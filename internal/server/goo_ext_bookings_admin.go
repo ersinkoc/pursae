@@ -69,7 +69,7 @@ func bkPanelGeneral(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	b.WriteString(bkField("Calendar display mode", "_wc_booking_calendar_display_mode",
 		bkSelect("_wc_booking_calendar_display_mode", k.CalendarDisplay, []gooOpt{{"", "Display calendar on click"}, {"always_visible", "Calendar always visible"}}), ""))
 	b.WriteString(bkField("Requires confirmation?", "_wc_booking_requires_confirmation", bkCheckbox("_wc_booking_requires_confirmation", k.RequiresConfirm), "Check this box if the booking requires admin approval/confirmation. Payment will not be taken during checkout."))
-	b.WriteString(bkField("Can be cancelled?", "_wc_booking_user_can_cancel", bkCheckbox("_wc_booking_user_can_cancel", k.CanCancel), "Check this box if the booking can be cancelled by the customer after it has been purchased. A refund will not be sent automatically."))
+	b.WriteString(bkField("Can be cancelled?", "_wc_booking_user_can_cancel", bkCheckbox("_wc_booking_user_can_cancel", k.CanCancel), "Check this box if the booking can be cancelled by the customer after it has been purchased. The payment is refunded automatically when the payment method supports refunds (Bookings settings); otherwise the order gets a refund-required note."))
 	b.WriteString(bkField("Booking can be cancelled until", "_wc_booking_cancel_limit",
 		bkInput("_wc_booking_cancel_limit", "number", strconv.Itoa(k.CancelLimit), ` min="1" step="1" style="width:60px"`)+bkSelect("_wc_booking_cancel_limit_unit", k.CancelUnit, bkLimitUnits)+" before the start date.", ""))
 	b.WriteString(`</div><div class="options_group">`)

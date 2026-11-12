@@ -34,6 +34,11 @@ type acfScreen struct {
 	OptionsPage string
 	Block       string
 
+	// Appearance › Menus: the ID of the menu being edited (NavMenu for the menu's own fields,
+	// NavMenuItem for the fields of its items) and the theme locations it is assigned to.
+	NavMenu, NavMenuItem string
+	NavMenuLocations     []string
+
 	// Current user (current_user / current_user_role rules).
 	User      *store.User
 	FrontEnd  bool
@@ -242,8 +247,18 @@ func acfgoMatchRule(r acfRule, sc *acfScreen) bool {
 			return false
 		}
 		return acfgoCompare(r.Operator, v == "all" || sc.Block == v)
+	case "nav_menu":
+		if sc.NavMenu == "" {
+			return false
+		}
+		return acfgoCompare(r.Operator, acfgoMenuRuleMatch(v, sc.NavMenu, sc.NavMenuLocations))
+	case "nav_menu_item":
+		if sc.NavMenuItem == "" {
+			return false
+		}
+		return acfgoCompare(r.Operator, acfgoMenuRuleMatch(v, sc.NavMenuItem, sc.NavMenuLocations))
 	}
-	return false // widget, nav_menu, nav_menu_item: nothing in WordPress Go carries them
+	return false // widget: Pursae has no widget form to carry fields
 }
 
 // Location rule choices (the Location Rules editor) ----------------------------------------------
@@ -346,8 +361,8 @@ func (s *Server) acfgoLocationValues(ctx context.Context) map[string][]acfgoChoi
 	out["taxonomy"] = taxes
 	out["attachment"] = []acfgoChoice{{"all", "All", ""}, {"image", "Image", ""}, {"video", "Video", ""}, {"audio", "Audio", ""}, {"application", "Application", ""}, {"text", "Text", ""}}
 	out["widget"] = []acfgoChoice{{"all", "All (no such screen in Pursae)", ""}}
-	out["nav_menu"] = []acfgoChoice{{"all", "All (no such screen in Pursae)", ""}}
-	out["nav_menu_item"] = []acfgoChoice{{"all", "All (no such screen in Pursae)", ""}}
+	out["nav_menu"] = s.acfgoMenuLocationChoices(ctx)
+	out["nav_menu_item"] = out["nav_menu"]
 	blocks := []acfgoChoice{{"all", "All", ""}}
 	for _, b := range s.acfgoBlocks() {
 		blocks = append(blocks, acfgoChoice{b.Name, b.Title, ""})
@@ -371,12 +386,12 @@ func (s *Server) acfgoLocationValues(ctx context.Context) map[string][]acfgoChoi
 
 // acfgoLocationSummary is the Location column of the field group list ("Post Type is equal to Post").
 // acfgoUnsupportedLocation reports whether a group has a location rule whose screen does not exist in
-// Pursae (widgets, menus, menu items), so the group would never be shown there.
+// Pursae (widgets), so the group would never be shown there.
 func acfgoUnsupportedLocation(g *acfGroup) bool {
 	for _, grp := range g.Location {
 		for _, r := range grp {
 			switch r.Param {
-			case "widget", "nav_menu", "nav_menu_item":
+			case "widget":
 				return true
 			}
 		}

@@ -54,10 +54,13 @@ type gocdnAdminData struct {
 	CacheOn     bool
 	Home        string
 
-	Stats    gocdnOffloadStats
-	Job      gocdnJobState
-	JobKinds map[string]string
-	JobLabel string
+	Stats          gocdnOffloadStats
+	Failed         int      // uploads whose offload failed and waits for a retry
+	Orphans        []string // objects without a record, from the last scan
+	OrphansScanned bool
+	Job            gocdnJobState
+	JobKinds       map[string]string
+	JobLabel       string
 
 	Remote *gocdnRemoteView
 
@@ -149,6 +152,12 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 		d.JobLabel = gocdnJobKinds[d.Job.Kind]
 		d.MoveFiles, d.MoveFrom = s.gocdnMoveCount(c, st)
 		d.Removed = d.Stats.Removed
+		d.Failed = s.gocdnFailedCount(c)
+		rt := s.gocdnRT()
+		rt.mu.Lock()
+		d.Orphans = append([]string(nil), rt.orphans...)
+		rt.mu.Unlock()
+		d.OrphansScanned = c.Query("orphans") != ""
 	case "deactivate":
 		title = "Deactivate Pursae CDN"
 		d.Removed, _ = s.gocdnRemovedCount(c)
@@ -274,6 +283,9 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 				}
 			}
 			setStr("storage-class", &st.StorageClass)
+			if !locked["object-versioning"] {
+				st.ObjectVersioning = c.PostForm("object-versioning") != ""
+			}
 			setInt("multipart-threshold-mb", &st.MultipartMB)
 			if v := strings.ToUpper(st.StorageClass); v != "" && !gocdnStorageClassRe.MatchString(v) {
 				fail("The storage class is a name such as STANDARD_IA or INTELLIGENT_TIERING.")
@@ -424,6 +436,36 @@ func (s *Server) gocdnAdminPost(c *gin.Context, page string) {
 			return
 		}
 		done(gocdnJobKinds[kind] + " started.")
+	case "retry-failed":
+		n, left := s.gocdnRetryFailedUploads(c, 200)
+		if left > 0 {
+			fail(strconv.Itoa(n) + " upload(s) offloaded, " + strconv.Itoa(left) + " still failing (see the server log).")
+			return
+		}
+		done(strconv.Itoa(n) + " upload(s) offloaded.")
+	case "orphans-scan":
+		keys, err := s.gocdnScanOrphans(c)
+		if err != nil {
+			fail(err.Error())
+			return
+		}
+		rt := s.gocdnRT()
+		rt.mu.Lock()
+		rt.orphans = keys
+		rt.mu.Unlock()
+		c.Redirect(http.StatusFound, "/wp-admin/gocdn?page=offload&orphans=1#gc-orphans")
+	case "orphans-delete":
+		rt := s.gocdnRT()
+		rt.mu.Lock()
+		keys := rt.orphans
+		rt.orphans = nil
+		rt.mu.Unlock()
+		n, err := s.gocdnDeleteOrphans(c, keys)
+		if err != nil {
+			fail(strconv.Itoa(n) + " object(s) deleted; some could not be deleted: " + err.Error())
+			return
+		}
+		done(strconv.Itoa(n) + " object(s) without a record deleted from the bucket.")
 	case "job-stop":
 		s.gocdnStopJob()
 		done("The job stops after the current attachment.")

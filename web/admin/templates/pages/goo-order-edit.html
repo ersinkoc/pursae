@@ -232,6 +232,10 @@
 </ul>
 </div></div>
 
+{{if .Attribution}}<div id="woocommerce-order-source-data" class="postbox"><div class="postbox-header"><h2 class="hndle">Order attribution</h2></div><div class="inside">
+<div class="order-attribution-metabox">{{range .Attribution}}<h4>{{.Value}}</h4><span class="order-attribution-{{.Value}}">{{.Label}}</span>{{end}}</div>
+</div></div>
+{{end}}
 <div id="woocommerce-order-notes" class="postbox"><div class="postbox-header"><h2 class="hndle">Order notes</h2></div><div class="inside">
 <ul class="order_notes">
 {{range .Notes}}<li rel="{{.ID}}" class="{{.Class}}"><div class="note_content"><p>{{.Content}}</p></div>

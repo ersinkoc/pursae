@@ -20,6 +20,8 @@ import (
 func (s *Server) wbRegisterTemplateREST(reg func(pattern string, methods map[string]restHandler, handshake bool)) {
 	const tpl = `/web-builder/v2/templates/(?P<id>[\d]+)`
 	reg(`/web-builder/v2/templates`, map[string]restHandler{http.MethodGet: s.wbRESTTemplates, http.MethodPost: s.wbRESTTemplateCreate}, true)
+	reg(`/web-builder/v2/templates/import`, map[string]restHandler{http.MethodPost: s.wbRESTTemplateImport}, true)
+	reg(tpl+`/export`, map[string]restHandler{http.MethodGet: s.wbRESTTemplateExport}, true)
 	reg(tpl+`/conditions`, map[string]restHandler{http.MethodPut: s.wbRESTTemplateConditions}, true)
 	reg(tpl+`/preview`, map[string]restHandler{http.MethodPut: s.wbRESTTemplatePreview}, true)
 	reg(tpl+`/popup`, map[string]restHandler{http.MethodGet: s.wbRESTPopupGet, http.MethodPut: s.wbRESTPopupPut}, true)

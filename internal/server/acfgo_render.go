@@ -309,7 +309,9 @@ func (r *acfgoRender) input(f acfField, name string, v any) {
 		if ajax { // large sites: only the chosen values are rendered, the rest is searched while typing
 			r.w(`<input type="search" class="acf-select-ajax-search" placeholder="Search..." autocomplete="off" data-key="%s" />`, esc(acfgoStr(f["key"])))
 		}
-		r.w(`<select id="%s" name="%s"%s class="acf-select-search"%s>`, esc(id), nm, attrIf(multi, `multiple size="6"`), attrIf(ajax, `data-ajax="1"`))
+		// Stylized UI (ACF's default for this field): the searchable dropdown of acfgo-input.js.
+		styled := !ajax && (f["ui"] == nil || acfgoBool(f["ui"]))
+		r.w(`<select id="%s" name="%s"%s class="acf-select-search"%s%s>`, esc(id), nm, attrIf(multi, `multiple size="6"`), attrIf(ajax, `data-ajax="1"`), attrIf(styled, `data-ui="1"`))
 		if acfgoBool(f["allow_null"]) || !multi {
 			r.w(`<option value="">- Select -</option>`)
 		}

@@ -384,6 +384,14 @@ document.querySelectorAll('.pll-configure-link').forEach(function(a){
 	<p><input type="submit" class="button" value="Upload" /></p>
 	</form>
 </div></div>
+{{if .XLIFF}}<div class="postbox" id="pll-xliff-import"><div class="postbox-header"><h2 class="hndle">Import content translations</h2></div><div class="inside">
+	<form method="post" action="/wp-admin/admin?page=mlang_translate" enctype="multipart/form-data">
+	<input type="hidden" name="_wpnonce" value="{{.IENonce}}" /><input type="hidden" name="pll_action" value="xliff_import" />
+	<p><label for="pll-xliff-file">Choose an XLIFF file to import</label> <input type="file" name="xliff" id="pll-xliff-file" accept=".xliff,.xlf,.xml" /></p>
+	<p class="description">Export posts or pages for translation from their list (Bulk actions › Export for translation (XLIFF)…). Each item of the file is written into its translation in the file's target language; a missing translation is created as a draft. Texts whose source changed since the export keep the source text.</p>
+	<p><input type="submit" class="button" value="Upload" /></p>
+	</form>
+</div></div>{{end}}
 </div>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

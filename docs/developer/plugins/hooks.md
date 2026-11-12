@@ -48,6 +48,7 @@ Fired by Pursae Contact Form. The permission is `forms:access` for both.
 
 | Hook | Type | Value | Arguments | Permission |
 |------|------|-------|-----------|------------|
+| `preprocess_comment` | filter | the comment a visitor submitted, before validation: `{"post_id", "parent", "user_id", "author", "email", "url", "content", "ip", "user_agent"}`; return it with a changed `author`, `email`, `url` or `content` (other keys are ignored) | none | `forms:access` |
 | `pre_comment_approved` | filter | the verdict the core reached (`approved`, `pending`, `spam` or `trash`); return one of them (or WordPress' `1` / `0`) to change it, e.g. to send a comment to spam | the comment: `{"post_id", "parent", "user_id", "author", "email", "url", "content", "ip", "user_agent"}` | `forms:access` |
 | `comment_post` | action | — | comment id, final status, the comment object as above | `forms:access` |
 
@@ -118,14 +119,27 @@ versions, so a manifest written today stays valid:
 | `admin:notices` | `admin_notices`, `all_admin_notices`, `network_admin_notices`, `user_admin_notices` |
 | `cron` | everything starting with `cron_` or `wpgo_cron` |
 | `headless:entries` | everything starting with `headless_entry_` |
+| `commerce:orders` | everything starting with `woocommerce_` |
 
 Subscribing to a hook the core does not fire yet is allowed; the callback simply never runs. Of the
 names above the core fires today `the_content`, `save_post`, `save_post_<type>`,
 `wpgo_post_stats`, `admin_notices`, the `cron_*` events, `user_register` and `wp_login`
 (actions), and the `wp_head` / `wp_footer` filters (`content:filter`): the value is the markup
 printed so far, return it with your additions; without `content:html` the additions are
-sanitised like any content filter (scripts and styles are dropped). `the_title`,
-`transition_post_status`, `wp_insert_post_data` and the rest are reserved.
+sanitised like any content filter (scripts and styles are dropped).
+
+Also fired (posts and pages only):
+
+| Hook | Type | Arguments | Permission |
+|------|------|-----------|------------|
+| `transition_post_status` | action | new status, old status (`"new"` for a new post), the post | `posts:read` |
+| `trashed_post`, `untrashed_post` | action | post id, the post | `posts:read` |
+| `before_delete_post`, `deleted_post` | action | post id, the post (as it was) | `posts:read` |
+| `the_title` | filter | value: the title HTML (escaped, texturized); argument `{"id", "type"}`. Additions are sanitised unless `content:html` | `content:filter` |
+| `woocommerce_new_order`, `woocommerce_payment_complete` | action | order id, the order `{id, status, currency, total, customer_id, payment_method, billing, shipping, items, date_created}` | `commerce:orders` |
+| `woocommerce_order_status_changed` | action | order id, old status, new status, the order | `commerce:orders` |
+
+`wp_insert_post_data` and the remaining names are reserved.
 
 ## Behaviour to know
 

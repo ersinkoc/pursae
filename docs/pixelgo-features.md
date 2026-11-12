@@ -35,7 +35,7 @@ Settings are one JSON option, `pixelgo_settings`. The page configuration is a JS
 | TikTok | ✓ | ✓ Events API | ✓ |
 | Pinterest | ✓ | ✓ Conversions API (needs the ad account id) | ✓ |
 | Microsoft Advertising (UET) | ✓ | ✗ | one UET instance per tag ID, every event goes to each |
-| Google Tag Manager (data layer) | ✓ container snippet; every event is pushed to `dataLayer` in the GA4 e-commerce schema (`{event, ecommerce: {items, value, currency, transaction_id}}`, cleared with `{ecommerce: null}` first) | ✗ | first ID only |
+| Google Tag Manager (data layer) | ✓ container snippet; every event is pushed to `dataLayer` in the GA4 e-commerce schema (`{event, ecommerce: {items, value, currency, transaction_id}}`, cleared with `{ecommerce: null}` first) | ✗ | first ID only; when the same container is also added in Pursae Cookie › Scripts it is loaded once (from Pursae Cookie) and Pursae Pixel only pushes to `dataLayer` |
 
 ## Events
 
@@ -74,7 +74,8 @@ page they are on. The server-side route reads the consent cookie again. A comple
 server-side only when the checkout request recorded consent for that platform (stored with the order). ✓
 
 With "Require consent" on and Pursae Cookie inactive no tag is printed at all (safe default); the Dashboard
-says so. Switch "Require consent" off to load the tags directly when another tool handles consent.
+says so, with an **Activate Pursae Cookie** button (one click, nonce-checked, for users who can activate
+plugins). Switch "Require consent" off to load the tags directly when another tool handles consent.
 
 ## Server-side delivery and deduplication
 
@@ -109,8 +110,9 @@ link, image, availability, price and sale price, condition, brand, MPN, product 
 per product (a variable product at its lowest price). With **Use the ID of the chosen variation** (Events screen)
 every published variation is an item of its own with `item_group_id` (the variable product's id), its own price,
 stock, SKU, link, image and color/size/material/pattern, and the variable product is not listed itself;
-cart, checkout and purchase events then use the variation id too (the add-to-cart button of a product page still
-sends the variable product's id, because the page does not know the variation yet). The feed is read in pages of
+cart, checkout and purchase events then use the variation id too (the add-to-cart button of a product page reads the
+chosen `variation_id` from the form and sends that variation's id and price; the page carries a
+variation-id map in the product event data). The feed is read in pages of
 500 products and streamed (no product limit) and cached for 5 minutes; hidden, password-protected and unpublished products are
 left out. The token is the only access control and can be regenerated. ✓
 

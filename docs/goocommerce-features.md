@@ -29,15 +29,15 @@ Fourteen modules sit on **Pursae Commerce › Extensions**, all off by default a
 
 A module that is off changes nothing: every one of its hooks checks that the module is on.
 
-**Gift Cards** disable the cards an order sold when it is cancelled or refunded (or when a refund returns the gift card line; reactivating the order enables them again), remind recipients a week before a card with a balance expires, and expose the Store API (`extensions.gift_cards` fields on `cart/add-item`: `amount`, `custom_amount`, `to`, `to_name`, `from`, `message`, `delivery`; `cart/apply-gift-card`, `cart/remove-gift-card`; applied codes in `extensions.gift_cards`) and `wc/v3/gift-cards` (list, read, `PUT` status / `date_expires`, `POST .../adjust`).
+**Gift Cards** disable the cards an order sold when it is cancelled or refunded (or when a refund returns the gift card line; reactivating the order enables them again), remind recipients a week before a card with a balance expires, and expose the Store API (`extensions.gift_cards` fields on `cart/add-item`: `amount`, `custom_amount`, `to`, `to_name`, `from`, `message`, `delivery`; `cart/apply-gift-card`, `cart/remove-gift-card`; applied codes in `extensions.gift_cards`) and `wc/v3/gift-cards` (list, read, `PUT` status / `date_expires`, `POST .../adjust`). Designs: five colour themes, each optionally with a Media Library image (Gift Cards settings › Designs); the buyer picks one the product enables. The delivery e-mail shows the design, attaches the card as a PDF and links a signed print-at-home page with a PDF download.
 
 **Subscriptions** also expose `wc/v3/subscriptions` (list, create, read, update, delete with `force=true`, batch,
 `/{id}/notes`, `/{id}/orders`; `manage_woocommerce`, 404 while the module is off) and the webhook topics
 `subscription.created`, `subscription.updated` and `subscription.deleted`. Customers change their billing and shipping
-address and switch the payment method (a gateway that renews without a stored card, or any gateway when manual renewals
-are accepted) on the My Account subscription page, and resubscribe to a cancelled or expired one (its products go back
+address and switch the payment method (a gateway that renews without a stored card, Stripe — the new card is entered on Stripe's page —,
+or any gateway when manual renewals are accepted) on the My Account subscription page, and resubscribe to a cancelled or expired one (its products go back
 into the cart). Store managers add a subscription by hand (Subscriptions › Add Subscription), edit addresses and line
-prices / quantities, and use "Process renewal" on the Edit Subscription screen.
+prices / quantities, add or remove line items (one line always stays), change the customer, and use "Process renewal" on the Edit Subscription screen.
 
 **Product Add-Ons details.** File uploads (`/?goo-ajax=addon_upload`) need the nonce printed on the product page
 (`goo-addon-upload`), are limited to 20 stored files per client address per 10 minutes, and the daily job deletes
@@ -134,10 +134,16 @@ Checkout still validates stock but does not reserve it (WooCommerce's `wc_reserv
 
 ## Known limits
 
-- Payment methods: the built-in ones are direct bank transfer (BACS), check, cash on delivery and the
-  Test payments gateway. There are no online payment providers yet. Only the Test gateway refunds
-  (simulated); BACS, check and cash on delivery reject automatic refunds, so refund those by hand and
-  record it on the order. Bookings do not support refunds either.
+- Payment methods: the built-in ones are direct bank transfer (BACS), check, cash on delivery, Stripe
+  and the Test payments gateway. Stripe (Payments › Stripe: test/live secret keys and webhook signing
+  secrets, kept out of the form once saved) takes cards on Stripe-hosted Checkout, so no card data
+  reaches the server. Its webhook is `/wc-api/goo_stripe` (Stripe-Signature HMAC-SHA256, 5-minute
+  timestamp tolerance, each event id handled once); order updates are idempotent, refunds from the
+  order screen go through the Stripe API (Idempotency-Key per refund), saved cards appear under
+  My Account › Payment methods (a provider reference only), and subscription renewals are charged
+  off-session with the saved card (a processing payment puts the renewal on hold until the webhook
+  settles it). iyzico is not built yet. BACS, check and cash on delivery reject automatic refunds, so
+  refund those by hand and record it on the order. Bookings do not support refunds either.
 - Geolocate uses the country from the request headers when available (CDN or proxy header) and falls
   back to the store base country; there is no GeoIP database lookup.
 - Cart and Checkout have no block editor blocks yet; use the `[goocommerce_cart]` and
@@ -155,18 +161,18 @@ registered yet (insert them with the code editor or a Custom HTML block holding 
 
 ### Bookings: calendar and overnight blocks
 
-Booking e-mails and My Account link to a signed `.ics` download (`/?goo-ajax=booking_ics`); Bookings > Calendar shows a private ICS feed URL (`booking_feed`) for Google/Apple/Outlook. Hour/minute products can allow blocks past midnight ("Allow blocks past midnight"). Cancelling a paid booking adds a "refund required" order note and a line in the admin cancellation e-mail.
+Booking e-mails and My Account link to a signed `.ics` download (`/?goo-ajax=booking_ics`); Bookings > Calendar shows a private ICS feed URL (`booking_feed`) for Google/Apple/Outlook. Hour/minute products can allow blocks past midnight ("Allow blocks past midnight"). Booking e-mails (confirmed, reminder, new, cancelled) also attach the `.ics` file. Cancelling a paid booking refunds its order line through the order refund flow when the payment method supports refunds and the Bookings setting "Refund cancelled bookings" is on (default); otherwise the order gets a "refund required" note and the admin cancellation e-mail a refund line.
 
 Bookings REST (`wc-bookings/v1`): `GET /products/slots?product_id=&date=` (public), `GET /bookings` (filters `product_id`, `customer_id`, `order_id`, `status`, `after`, `before`), `GET|PUT /bookings/{id}` (status changes use the admin flow); all but slots need `manage_woocommerce`. The Store API `cart/add-item` takes the booking form fields in `booking` (or `extensions.bookings`), e.g. `{"id": 12, "booking": {"wc_bookings_field_start_date": "2026-12-01"}}`. The daily reminder job catches up missed runs: every unreminded paid/confirmed booking that has not started and falls on or before today + N days is reminded once.
 
 ## Memberships: lifecycle, e-mails and drip
 
-- A cancelled or refunded order cancels the memberships it granted; a subscription status change pauses, resumes, cancels or expires the memberships its orders granted.
+- A cancelled or refunded order cancels the memberships it granted; a subscription status change pauses, resumes, cancels or expires the memberships its orders granted. A partial refund cancels a membership only when the line of the product that granted it is refunded in full.
 - E-mails (Goocommerce > Settings > Emails): Membership welcome, Membership ending soon (days before the end set by Memberships > Ending soon reminder, 0 = off) and Membership ended. Each is sent once per membership and end date.
 - Plan > Restrict Content > Drip schedule (`post ID:days, tTERMID:days`) opens restricted content N days after the membership start; members see "available on <date>" until then.
 - The plan form checks that every product, post and term ID exists and has search boxes that add IDs to the fields.
 
-Bookings and some payment methods do not support refunds.
+Some payment methods do not support refunds; their cancelled paid bookings get a "refund required" order note.
 
 ## Analytics
 
@@ -175,7 +181,7 @@ The `wc-analytics` REST namespace serves `reports/revenue/stats`, `reports/order
 Analytics reports (Overview, Products, Revenue, Orders, Variations, Categories, Coupons, Taxes, Downloads, Stock, Customers) and
 their CSV downloads carry every row (no server-side cap); the screen lists the first 1,000 rows and says so. Products, Variations
 and Categories subtract refunds, matching the Overview. Revenue computes all days with grouped queries. Subscriptions (active,
-MRR, new, cancelled, churn), Bookings (bookings, booked hours, cancellations, revenue) and Gift Cards (sold, redeemed,
+MRR, new, cancelled, churn, retention, renewal and sign-up revenue, paid and failed renewals), Bookings (bookings, booked hours, occupancy against the availability rules and per-block capacity, cancellations, revenue) and Gift Cards (sold, redeemed,
 outstanding balance) tabs appear in the Analytics menu while the module is switched on.
 
 ## CSV import and export

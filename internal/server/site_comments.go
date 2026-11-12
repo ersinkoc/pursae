@@ -509,6 +509,22 @@ func (s *Server) commentPost(c *gin.Context) {
 		s.commentDie(c, http.StatusForbidden, "<strong>Error:</strong> Your comment looks like spam.")
 		return
 	}
+	// preprocess_comment: a plugin may rewrite the author fields and the text before validation.
+	if s.plugins != nil && s.plugins.hooks.HasFilter("preprocess_comment") {
+		if m, ok := s.applyFilters(ctx, "preprocess_comment", commentHookArgs(cm)).(map[string]any); ok {
+			str := func(k string, dst *string) {
+				if v, ok := m[k].(string); ok {
+					*dst = v
+				}
+			}
+			str("author", &cm.AuthorName)
+			str("email", &cm.AuthorEmail)
+			str("url", &cm.AuthorURL)
+			str("content", &cm.Content)
+			cm.AuthorURL = commentAuthorURL(cm.AuthorURL)
+			cm.Content = strings.TrimSpace(cm.Content)
+		}
+	}
 	if cm.Content == "" {
 		s.commentDie(c, http.StatusBadRequest, "<strong>Error:</strong> Please type your comment text.")
 		return
@@ -529,6 +545,11 @@ func (s *Server) commentPost(c *gin.Context) {
 		return
 	}
 	cm.Status = s.commentStatus(c, cm, u)
+	// A visitor form without the signed timestamp (a custom theme form, or a bot posting straight to
+	// wp-comments-post) is not refused, but it never skips moderation.
+	if u == nil && c.PostForm(commentTimeField) == "" && cm.Status == "approved" {
+		cm.Status = "pending"
+	}
 	// pre_comment_approved: a plugin (an antispam service) may turn the verdict into approved, hold, spam or trash.
 	if s.plugins != nil && s.plugins.hooks.HasFilter("pre_comment_approved") {
 		if v, ok := s.applyFilters(ctx, "pre_comment_approved", cm.Status, commentHookArgs(cm)).(string); ok {
@@ -639,7 +660,8 @@ func (s *Server) commentTimeToken(postID int64, at time.Time) string {
 }
 
 // commentTrapsPassed is false when the honeypot is filled, the timestamp is forged, or the form was
-// submitted faster than a person can. A form without the timestamp (a cached or custom theme form) passes.
+// submitted faster than a person can. A form without the timestamp (a custom theme form) passes, but
+// commentPost holds it for moderation.
 func (s *Server) commentTrapsPassed(c *gin.Context, postID int64) bool {
 	if c.PostForm(commentHoneypot) != "" {
 		return false

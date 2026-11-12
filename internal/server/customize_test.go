@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -243,5 +244,56 @@ func TestCustomizeForeignAndExpiredChangeset(t *testing.T) {
 				t.Errorf("%s changeset, action %s: %d, want 400", name, action, code)
 			}
 		}
+	}
+}
+
+// TestCustomizeMenuLocationsAndDraftReopen: a menu location set in the Customizer is previewed from the
+// changeset and published to menu_locations; ?changeset_uuid reopens the owner's draft with its values.
+func TestCustomizeMenuLocationsAndDraftReopen(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	menuID, err := srv.store.CreateMenu(ctx, "Top")
+	if err != nil {
+		t.Fatal(err)
+	}
+	th := &Theme{Slug: "x", MenuLocations: []MenuLocation{{Slug: "primary", Name: "Primary"}}}
+	opts, _, err := srv.czSanitize(ctx, th, map[string]string{"nav_menu_locations[primary]": strconv.FormatInt(menuID, 10)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := czMenuLocationsOf(opts)["primary"]; got != menuID {
+		t.Fatalf("sanitized location = %d", got)
+	}
+	if _, _, err := srv.czSanitize(ctx, th, map[string]string{"nav_menu_locations[nowhere]": "1"}); err == nil {
+		t.Error("unknown location accepted")
+	}
+	if _, _, err := srv.czSanitize(ctx, th, map[string]string{"nav_menu_locations[primary]": "999999"}); err == nil {
+		t.Error("missing menu accepted")
+	}
+	// Preview override, read back from JSON (float64) like a stored changeset.
+	cs := &czChangeset{Options: map[string]any{czMenuLocationsKey: map[string]any{"primary": float64(0)}}}
+	_ = srv.store.SetMenuLocations(ctx, map[string]int64{"primary": menuID})
+	if items, _ := srv.menuAt(ctx, cs, "primary"); items != nil {
+		t.Error("preview did not unassign the location")
+	}
+
+	// Draft reopen.
+	var uid int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM users ORDER BY id LIMIT 1`).Scan(&uid)
+	active := srv.activeTheme()
+	uuid := newChangesetID()
+	if err := srv.czSave(ctx, uuid, &czChangeset{UserID: uid, Theme: active.Slug, Status: "draft",
+		Options: map[string]any{"blogname": "Reopened Draft"}, Mods: srv.themeMods(active.Slug)}); err != nil {
+		t.Fatal(err)
+	}
+	_, body, _ := get(t, c, ts.URL+"/wp-admin/customize?changeset_uuid="+uuid)
+	if !strings.Contains(body, `value="Reopened Draft"`) || !strings.Contains(body, `value="draft" name="_customize-radio-changeset_status" checked="checked"`) || !strings.Contains(body, uuid) {
+		t.Error("draft not reopened with its values")
+	}
+	// Another uuid (not a draft of this user) opens a fresh changeset.
+	_, body, _ = get(t, c, ts.URL+"/wp-admin/customize?changeset_uuid=00000000000000000000000000000000")
+	if strings.Contains(body, "Reopened Draft") {
+		t.Error("unknown changeset reopened")
 	}
 }

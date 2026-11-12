@@ -95,6 +95,16 @@ only accepted for `localhost`, `*.localhost` and `*.test` names) and `WPGO_TRUST
 signing key verifies releases and plugins. The production compose file builds without the tag
 (`GO_TAGS=""`, `make prod-up`) and drops both variables. Never ship a devhub binary.
 
+## Content
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `WPGO_POST_REVISIONS` | `25` | revisions kept per post (WordPress' `WP_POST_REVISIONS`); older ones are deleted on save, Web Builder publishes included. A negative value keeps every revision. Tools › Revisions deletes the excess of existing posts |
+
+Post search stems words in the site language (Settings › General › Site Language → the PostgreSQL text
+search configuration, e.g. `english`, `turkish`; `simple` when PostgreSQL has none). Changing the
+language rebuilds the stemmed vectors in the background.
+
 ## Built-in plugins
 
 | Variable | Default | Purpose |

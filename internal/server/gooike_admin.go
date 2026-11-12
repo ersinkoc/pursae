@@ -75,10 +75,12 @@ type gooikeAdminData struct {
 	Scan       *gooikeScanResult
 	GeoCountry string // country the current request's CDN header reports; empty when there is none
 
-	Services   []*gooikeService
-	Embeds     []string
-	EditScript *gooikeScript
-	ScriptCode string
+	Services    []*gooikeService
+	EmbedOpts   []choice // embed providers beyond YouTube, Vimeo and Google Maps
+	TextPresets []choice // built-in language sets
+	Embeds      []string
+	EditScript  *gooikeScript
+	ScriptCode  string
 
 	Stats    gooikeStats
 	Logs     []gooikeLogEntry
@@ -211,6 +213,9 @@ func (s *Server) gooikeRender(c *gin.Context, page string, scan *gooikeScanResul
 		raw, _ := json.Marshal(st.Texts)
 		var tm map[string]string
 		_ = json.Unmarshal(raw, &tm)
+		for _, k := range gooikeTextPresetKeys() {
+			d.TextPresets = append(d.TextPresets, choice{Value: k, Label: gooikeTextPresets[k].Label})
+		}
 		for _, f := range gooikeTextFields {
 			f.Value = tm[f.Key]
 			d.TextFields = append(d.TextFields, f)
@@ -239,6 +244,13 @@ func (s *Server) gooikeRender(c *gin.Context, page string, scan *gooikeScanResul
 		}
 	case "scripts":
 		d.Services = gooikeServices
+		for _, e := range gooikeEmbeds {
+			switch e.Key {
+			case "youtube", "vimeo", "maps":
+			default:
+				d.EmbedOpts = append(d.EmbedOpts, choice{Value: e.Key, Label: e.Name, Checked: st.embedBlocked(e.Key)})
+			}
+		}
 		if id := c.Query("edit"); id != "" {
 			for i := range st.Scripts {
 				if st.Scripts[i].ID == id {
@@ -372,6 +384,7 @@ func (s *Server) gooikeAdminPost(c *gin.Context) {
 		}
 		raw, _ = json.Marshal(tm)
 		_ = json.Unmarshal(raw, &st.Texts)
+		st.TextsAuto = on("texts_auto")
 		save("Texts saved.")
 	case "texts_preset":
 		pr, ok := gooikeTextPresets[str("preset")]
@@ -486,7 +499,9 @@ func (s *Server) gooikeAdminPost(c *gin.Context) {
 		sc := gooikeScript{ID: str("id"), Name: str("name"), Category: str("category"), Placement: str("placement"), Code: text("code"),
 			Service: str("service"), ServiceID: strings.TrimSpace(str("service_id")), Enabled: on("enabled")}
 		if sv := gooikeServiceByKey(sc.Service); sv != nil {
-			if !sv.IDPattern.MatchString(sc.ServiceID) {
+			if sv.NoID {
+				sc.ServiceID = ""
+			} else if !sv.validID(sc.ServiceID) {
 				fail(sv.Name + ": that is not a valid " + sv.IDLabel + " (for example " + sv.IDExample + ").")
 				return
 			}
@@ -520,12 +535,18 @@ func (s *Server) gooikeAdminPost(c *gin.Context) {
 			return
 		}
 		id := strings.TrimSpace(str("service_id"))
-		if sv.Key == "clarity" {
+		switch {
+		case sv.NoID:
+			id = ""
+		case sv.Key == "clarity" || sv.LowerID:
 			id = strings.ToLower(id)
-		} else {
+			if sv.Key == "matomo" { // a pasted URL is fine: keep host/path/site-id
+				id = strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(id, "https://"), "http://"), "/")
+			}
+		default:
 			id = strings.ToUpper(id)
 		}
-		if !sv.IDPattern.MatchString(id) {
+		if !sv.validID(id) {
 			fail(sv.Name + ": that is not a valid " + sv.IDLabel + " (for example " + sv.IDExample + ").")
 			return
 		}
@@ -562,8 +583,18 @@ func (s *Server) gooikeAdminPost(c *gin.Context) {
 	case "embeds":
 		st.BlockYouTube, st.BlockVimeo, st.BlockMaps = on("block_youtube"), on("block_vimeo"), on("block_maps")
 		st.EmbedCategory = str("embed_category")
+		st.EmbedsOff = nil
 		for _, e := range gooikeEmbeds {
-			if map[string]bool{"youtube": st.BlockYouTube, "vimeo": st.BlockVimeo, "maps": st.BlockMaps}[e.Key] {
+			switch e.Key {
+			case "youtube", "vimeo", "maps":
+			default:
+				if !on("block_" + e.Key) {
+					st.EmbedsOff = append(st.EmbedsOff, e.Key)
+				}
+			}
+		}
+		for _, e := range gooikeEmbeds {
+			if st.embedBlocked(e.Key) {
 				for _, ck := range e.Cookies {
 					if !gooikeDeclared(&st, ck.Name) {
 						ck.ID, ck.Category = gooikeNewID("c-"), st.EmbedCategory

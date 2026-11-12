@@ -109,6 +109,11 @@ func (p *gooPDF) Rect(x, y, w, h, gray float64) {
 	fmt.Fprintf(p.page(-1), "%s g %s %s %s %s re f\n", gooPDFNum(gray), gooPDFNum(x), gooPDFNum(p.H-y-h), gooPDFNum(w), gooPDFNum(h))
 }
 
+// RectRGB fills a rectangle (top-left x, y) in an RGB colour (components 0 … 1).
+func (p *gooPDF) RectRGB(x, y, w, h, r, g, b float64) {
+	fmt.Fprintf(p.page(-1), "%s %s %s rg %s %s %s %s re f\n", gooPDFNum(r), gooPDFNum(g), gooPDFNum(b), gooPDFNum(x), gooPDFNum(p.H-y-h), gooPDFNum(w), gooPDFNum(h))
+}
+
 // AddJPEG registers a JPEG (other image formats are converted) and returns its index.
 func (p *gooPDF) AddJPEG(data []byte) (int, error) {
 	if len(data) < 4 || data[0] != 0xFF || data[1] != 0xD8 {

@@ -115,6 +115,41 @@ type gsubNewLine struct {
 	Tax                    float64
 }
 
+// gsubLineItem builds a subscription line from a product (admin Add Subscription, adding a line to an
+// existing subscription, POST /subscriptions) and returns the product's schedule with it.
+func (s *Server) gsubLineItem(ctx context.Context, l gsubNewLine) (gsubItem, gsubSchedule, error) {
+	p, err := s.gooGetProduct(ctx, l.ProductID)
+	if err != nil {
+		return gsubItem{}, gsubSchedule{}, errors.New("the product does not exist.")
+	}
+	pid, vid := l.ProductID, l.VariationID
+	src := p
+	if vid != 0 {
+		if v, err := s.gooGetProduct(ctx, vid); err == nil {
+			src = v
+		}
+	}
+	if p.Type == gooTypeVariation {
+		// A variation id given as the product: the schedule lives on the parent.
+		vid, pid = p.ID, p.ParentID
+		if parent, err := s.gooGetProduct(ctx, p.ParentID); err == nil {
+			p = parent
+		}
+	}
+	sched := gsubScheduleOf(p)
+	qty := max(l.Qty, 1)
+	price := sched.Price
+	if src != p && src.HasPrice() {
+		price = src.PriceValue()
+	}
+	total := gooRound(price*float64(qty), s.gooDecimals())
+	if l.Total != nil {
+		total = gooRound(*l.Total, s.gooDecimals())
+		price = total / float64(qty)
+	}
+	return gsubItem{ProductID: pid, VariationID: vid, Name: src.Name, Qty: qty, Price: gooRound(price, s.gooDecimals()), Total: total, Tax: gooRound(l.Tax, s.gooDecimals())}, sched, nil
+}
+
 // gsubNew is the input of gsubManualCreate (admin "Add Subscription" and POST /subscriptions).
 type gsubNew struct {
 	CustomerID         int64
@@ -169,39 +204,14 @@ func (s *Server) gsubManualCreate(ctx context.Context, in gsubNew) (*gooSubscrip
 		}
 	}
 	for i, l := range in.Lines {
-		p, err := s.gooGetProduct(ctx, l.ProductID)
+		it, sched, err := s.gsubLineItem(ctx, l)
 		if err != nil {
-			return nil, fmt.Errorf("Line %d: the product does not exist.", i+1)
+			return nil, fmt.Errorf("Line %d: %s", i+1, err.Error())
 		}
-		pid, vid := l.ProductID, l.VariationID
-		src := p
-		if vid != 0 {
-			if v, err := s.gooGetProduct(ctx, vid); err == nil {
-				src = v
-			}
-		}
-		if p.Type == gooTypeVariation {
-			// A variation id given as the product: the schedule lives on the parent.
-			vid, pid = p.ID, p.ParentID
-			if parent, err := s.gooGetProduct(ctx, p.ParentID); err == nil {
-				p = parent
-			}
-		}
-		sched := gsubScheduleOf(p)
 		if i == 0 {
 			sub.Period, sub.Interval = sched.Period, sched.Interval
 		}
-		qty := max(l.Qty, 1)
-		price := sched.Price
-		if src != p && src.HasPrice() {
-			price = src.PriceValue()
-		}
-		total := gooRound(price*float64(qty), s.gooDecimals())
-		if l.Total != nil {
-			total = gooRound(*l.Total, s.gooDecimals())
-			price = total / float64(qty)
-		}
-		sub.Items = append(sub.Items, gsubItem{ProductID: pid, VariationID: vid, Name: src.Name, Qty: qty, Price: gooRound(price, s.gooDecimals()), Total: total, Tax: gooRound(l.Tax, s.gooDecimals())})
+		sub.Items = append(sub.Items, it)
 	}
 	if in.Period != "" {
 		if !containsStr([]string{"day", "week", "month", "year"}, in.Period) {

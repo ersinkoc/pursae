@@ -58,6 +58,13 @@ type Plugin struct {
 	settings   *SettingsPage
 	assets     []Asset
 	pkgAssets  map[string][]byte // files under assets/ in the package (read-only)
+
+	// UI registrations (ui.go), guarded by state.
+	adminPages     []AdminPage
+	dashWidgets    []DashboardWidget
+	metaBoxes      []MetaBox
+	blocks         []BlockType
+	builderWidgets []BuilderWidget
 }
 
 // Slug returns the plugin slug.

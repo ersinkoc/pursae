@@ -2,13 +2,16 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
+	"time"
 
 	"wpgo/internal/media"
 	"wpgo/internal/store"
@@ -82,6 +85,20 @@ func (s *Server) regenerateAttachment(ctx context.Context, a *store.Attachment) 
 	if err := s.store.ReplaceAttachmentFile(ctx, a); err != nil {
 		return err
 	}
+	// The sizes were written again, mostly under the same names: their bucket copies and cached
+	// image-service variants are stale (the source file itself did not change).
+	var changed []string
+	for _, v := range oldVariants {
+		changed = append(changed, v.FilePath)
+	}
+	for _, v := range a.Variants {
+		changed = append(changed, v.FilePath)
+	}
+	if oldMain != src {
+		changed = append(changed, oldMain)
+	}
+	s.gocdnFilesChanged(a, changed)
+	s.gocdnDropVariants(changed)
 	s.purgeAttachment(a)
 	s.gocdnAfterUpload(ctx, a)
 	return nil
@@ -114,17 +131,136 @@ func (s *Server) regenerateAttachments(ctx context.Context, ids []int64) (done, 
 	return
 }
 
-var regenerateRunning atomic.Bool
+// The "Regenerate all" job. Progress is kept in the option media_regenerate_job after every image, so
+// a run interrupted by a restart continues from the last image done (regenerateResume at start-up);
+// the Media Library polls /wp-admin/admin-ajax?action=regenerate-progress.
 
-// regenerateAllAsync starts one background run over the whole library; false when one is running.
-func (s *Server) regenerateAllAsync() bool {
+const regenerateJobOption = "media_regenerate_job"
+
+type regenerateJob struct {
+	Running  bool      `json:"running"`
+	Finished bool      `json:"finished"`
+	Stopped  bool      `json:"stopped"`
+	Total    int       `json:"total"`
+	Done     int       `json:"done"`
+	Skipped  int       `json:"skipped"`
+	Failed   int       `json:"failed"`
+	LastID   int64     `json:"last_id"`
+	Started  time.Time `json:"started"`
+	Updated  time.Time `json:"updated"`
+}
+
+// Percent is the share of the library already processed.
+func (j regenerateJob) Percent() int {
+	if j.Total <= 0 {
+		if j.Finished {
+			return 100
+		}
+		return 0
+	}
+	return min(100, (j.Done+j.Skipped+j.Failed)*100/j.Total)
+}
+
+var (
+	regenerateRunning atomic.Bool
+	regenerateStop    atomic.Bool
+	regenerateMu      sync.Mutex
+	regenerateLive    *regenerateJob
+)
+
+// regenerateJobState is the running job, else the stored state of the last one.
+func (s *Server) regenerateJobState() regenerateJob {
+	regenerateMu.Lock()
+	if regenerateLive != nil {
+		j := *regenerateLive
+		regenerateMu.Unlock()
+		return j
+	}
+	regenerateMu.Unlock()
+	var j regenerateJob
+	if v := s.settings.Get(regenerateJobOption); v != nil {
+		raw, _ := json.Marshal(v)
+		_ = json.Unmarshal(raw, &j)
+	}
+	return j
+}
+
+func (s *Server) regeneratePersist(ctx context.Context, j regenerateJob) {
+	_ = s.settings.Set(ctx, map[string]any{regenerateJobOption: j})
+}
+
+// regenerateAllAsync starts one background run over the whole library (continuing an interrupted
+// one when resume is set); false when one is running.
+func (s *Server) regenerateAllAsync(resume ...bool) bool {
 	if !regenerateRunning.CompareAndSwap(false, true) {
 		return false
 	}
+	regenerateStop.Store(false)
+	ctx := context.Background()
+	j := regenerateJob{Running: true, Started: time.Now(), Updated: time.Now()}
+	if len(resume) > 0 && resume[0] {
+		if prev := s.regenerateJobState(); prev.Running && !prev.Finished {
+			j.LastID, j.Done, j.Skipped, j.Failed, j.Started = prev.LastID, prev.Done, prev.Skipped, prev.Failed, prev.Started
+		}
+	}
+	ids, err := s.store.ImageAttachmentIDs(ctx)
+	if err != nil {
+		regenerateRunning.Store(false)
+		return false
+	}
+	var todo []int64
+	for _, id := range ids {
+		if id > j.LastID {
+			todo = append(todo, id)
+		}
+	}
+	j.Total = j.Done + j.Skipped + j.Failed + len(todo)
+	regenerateMu.Lock()
+	regenerateLive = &j
+	regenerateMu.Unlock()
+	s.regeneratePersist(ctx, j)
 	go func() {
 		defer regenerateRunning.Store(false)
-		d, sk, f := s.regenerateAttachments(context.Background(), nil)
-		slog.Info("regenerate thumbnails finished", "done", d, "skipped", sk, "failed", f)
+		for _, id := range todo {
+			if regenerateStop.Load() {
+				break
+			}
+			var rerr error
+			a, err := s.store.GetAttachment(ctx, id)
+			if err == nil {
+				rerr = s.regenerateAttachment(ctx, a)
+			}
+			regenerateMu.Lock()
+			switch {
+			case err != nil:
+				j.Skipped++ // deleted while the job ran
+			case rerr == nil:
+				j.Done++
+			case errors.Is(rerr, errRegenerateSkipped):
+				j.Skipped++
+			default:
+				j.Failed++
+			}
+			j.LastID, j.Updated = id, time.Now()
+			snap := j
+			regenerateMu.Unlock()
+			s.regeneratePersist(ctx, snap)
+		}
+		regenerateMu.Lock()
+		j.Running, j.Stopped, j.Finished, j.Updated = false, regenerateStop.Load(), !regenerateStop.Load(), time.Now()
+		snap := j
+		regenerateLive = nil
+		regenerateMu.Unlock()
+		s.regeneratePersist(ctx, snap)
+		slog.Info("regenerate thumbnails finished", "done", snap.Done, "skipped", snap.Skipped, "failed", snap.Failed, "stopped", snap.Stopped)
 	}()
 	return true
+}
+
+// regenerateResume continues a "Regenerate all" run that a restart interrupted (stored as running).
+func (s *Server) regenerateResume() {
+	if j := s.regenerateJobState(); j.Running && !j.Finished && !regenerateRunning.Load() {
+		slog.Info("resuming regenerate thumbnails", "done", j.Done, "last_id", j.LastID)
+		s.regenerateAllAsync(true)
+	}
 }

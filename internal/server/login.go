@@ -47,7 +47,7 @@ func (s *Server) login(c *gin.Context) {
 		HomeURL:     s.links(c).HomeURL("/"),
 		RedirectTo:  c.Query("redirect_to"),
 		CanRegister: s.settings.Bool("users_can_register"),
-		Captcha:     s.loginCaptchaWidget(),
+		Captcha:     s.loginCaptchaWidget(c),
 	}
 	switch action {
 	case "lostpassword", "retrievepassword":

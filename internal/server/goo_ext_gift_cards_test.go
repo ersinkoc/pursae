@@ -118,6 +118,15 @@ func TestGooExtGiftCards(t *testing.T) {
 	if gxMailCount(t, srv, "gift card from Ada") == 0 {
 		t.Error("no gift card e-mail")
 	}
+	// The e-mail carries the card as a PDF; the PDF renders in the card's design.
+	var attName string
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT coalesce(payload->'Attachments'->0->>'Name','') FROM jobs WHERE name = 'wp_mail' AND payload->>'Subject' LIKE '%gift card from Ada%' ORDER BY id DESC LIMIT 1`).Scan(&attName)
+	if attName != "gift-card-"+card.Code+".pdf" {
+		t.Errorf("gift card PDF attachment: %q", attName)
+	}
+	if pdf := srv.gcPDF(ctx, card); !strings.HasPrefix(string(pdf), "%PDF") || len(pdf) < 500 {
+		t.Errorf("gift card PDF: %d bytes", len(pdf))
+	}
 	// Changing the status again does not issue twice.
 	_ = srv.gooSetStatus(ctx, o, "completed", "", "")
 	if n := len(srv.gcCardsForEmail(ctx, "grace@example.test")); n != 1 {

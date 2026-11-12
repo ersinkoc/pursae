@@ -88,7 +88,7 @@ translation](#machine-translation) with DeepL, Google or an OpenAI-compatible AP
 | Bulk Delete for registered strings (WordPress and URL slugs strings are greyed) | ✅ |
 | "Clean strings translation database" | ✅ removes recorded strings not seen for 30 days that were never translated, untranslated page text recorded on pages of other languages or naming a language, then translations whose string is no longer listed anywhere |
 | Admin language filter limits the columns to one language | ✅ |
-| Pro: export (Target language, group, Download) and import (Upload) | ✅ in PO format, with the `Language` and `Site-Reference` headers; XLIFF is left out |
+| Pro: export (Target language, group, Download) and import (Upload) | ✅ in PO format, with the `Language` and `Site-Reference` headers. Content translations use XLIFF 1.2 (below) |
 | Machine translation on the screen (Pursae) | ✅ while the module is on: a "Suggest" button per input, "Translate empty strings on this page" (fills the inputs; nothing is saved until **Save Changes**) and "Translate all empty strings" (server side, at most 1000 strings per run in batches of 50, after a confirmation; every batch is saved, so a provider failure keeps the earlier batches and says how many were saved; a translation identical to the source, such as a brand name, is saved too and is not sent again). URL slug strings are never sent |
 | "Translate visually" (Pursae) | ✅ a page-title action that opens the [visual translation](#visual-translation) screen |
 
@@ -97,7 +97,7 @@ translation](#machine-translation) with DeepL, Google or an OpenAI-compatible AP
 | Feature | |
 |---|---|
 | Posts and pages lists: one column per language (flag header, hidden for the filtered language), tick for the item's own language, pencil for an existing translation, plus to add one | ✅ |
-| Quick Edit and Bulk Edit language select, the "Filter untranslated items" dropdown | ✗ not added, to keep the shared list-table code small; the language changes in the editor |
+| Quick Edit and Bulk Edit language select | ✗ not added, to keep the shared list-table code small; the language changes in the editor. Untranslated items are a view instead of a dropdown (below) |
 | Classic editor **Languages** meta box: Language select, Translations table (flag, edit/add icon, choose an existing post to link), changes saved at once over admin-ajax | ✅ |
 | Block editor **Languages** panel (document sidebar) with the same content | ✅ |
 | Pursae Web Builder editor: **Page tools** › **Languages** tab in the builder menu shows the page's language, its translations (open in the builder) and a button per missing language that creates a draft translation with a copy of the builder document (REST `web-builder/v2/documents/{id}/languages` and `/translations`, docs/developer/web-builder-contract.md §3.7 in the repository); needs `edit_post` on the page, the REST route lists a template read-only and never translates it | ✅ |
@@ -107,7 +107,12 @@ translation](#machine-translation) with DeepL, Google or an OpenAI-compatible AP
 | Posts list row action "Translate visually" (Pursae) | ✅ on published posts, for users with `manage_options` |
 | Languages screen **Untranslated** and **Outdated** columns per language (published default-language posts without a translation, and posts whose translation was last edited before the source) | ✅ |
 | Deleting a language that has content asks what happens to it (Trash, drafts, or default language; REST `DELETE /pll/v1/languages/{id}` needs `content=trash\|draft\|default` and answers 409 otherwise) | ✅ |
-| Pro **Synchronized posts**, **Bulk translate**, **XLIFF export/import of content**, "Machine translate again" on an existing translation | ✗ out of scope for this pass (large Pro workflows on top of the parts above) |
+| Pro **Bulk translate** | ✅ Posts list bulk action "Translate to…" ("Machine translate to…" while machine translation works) with a target-language select: creates a draft translation (Duplicate content) for each selected item that has none in that language, machine translated when the module works. Runs in the background (one run at a time, up to the bulk limit); progress and failures show as a notice on the posts list and the Strings screen. A provider failure stops the run and keeps the untranslated drafts |
+| Pro **Machine translate again** | ✅ Button in the Languages box of a translation: translates title, excerpt and content (or the Web Builder page) again from its source (default-language member, else the oldest); the previous text is kept as a revision. Nonce, `edit_post` on the translation and read access to the source; same rate limit as new copies |
+| Web Builder body translation | ✅ Machine translation, bulk translate and XLIFF translate a builder page's published snapshot and its builder document (texts of widget settings, keyed by the snapshot text so both stay in step); links, URLs, CSS classes, ids and media settings are never sent |
+| Pro **XLIFF export/import of content** | ✅ XLIFF 1.2: posts list bulk action "Export for translation (XLIFF)…" (one file, one `<file>` per item, title, excerpt and one trans-unit per text of the content); Languages › Translations › "Import content translations" writes each item into its translation in the file's target language (a missing one is created as a draft). Units whose source changed since the export keep the source text; markup in targets is filtered by KSES |
+| Untranslated / outdated | ✅ Posts list views "Untranslated" and "Outdated translations" per language (`?pll_filter=untranslated|outdated&pll_target=<slug>`); an outdated translation (older than its source) gets an update icon in the language column |
+| Pro **Synchronized posts** | ✗ out of scope |
 | New content gets the admin filter language, or the default one | ✅ |
 | Categories and tags: language columns, Language field on the add and edit forms, Translations rows (link an existing term, add with plus), the same name allowed in different languages, `from_tag`/`new_lang` add links | ✅ |
 | Admin bar language filter ("Filters content by language", "Show all languages", one entry per language) narrows posts, pages, categories, tags and menus lists | ✅ |

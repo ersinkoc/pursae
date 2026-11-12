@@ -58,6 +58,7 @@ func (s *Server) wbPopups(c *gin.Context, v *siteView) []*wbPopup {
 		}
 	}
 	usable := idx.candidates(lang, def)
+	s.wbAudienceGuard(c, idx)
 	hits := webbuilder.PickTemplates(webbuilder.LocationPopup, usable, s.wbQueryFacts(c, q, idx.needTerms))
 	var out []*wbPopup
 	for _, i := range hits {
@@ -221,4 +222,51 @@ func (s *Server) wbRESTPopupPut(c *gin.Context, r *restRequest) {
 	s.wbTemplatesChanged(c)
 	c.Header("Cache-Control", "no-store")
 	c.JSON(http.StatusOK, in)
+}
+
+// wbPopupAssets is what popups need outside Hello Pursae (any other theme, or the canvas of a built
+// page): the head (the site stylesheet unless the page already links it, fonts, design tokens,
+// each popup's CSS, the popup rules) and the footer (the hidden dialogs, their script and, when a
+// popup uses interactive features, the runtime unless the page already loads it).
+func (s *Server) wbPopupAssets(c *gin.Context, popups []*wbPopup, haveSiteCSS, haveRuntime bool) (head, foot string) {
+	if len(popups) == 0 {
+		return "", ""
+	}
+	site, err := s.wbSiteAssets()
+	if err != nil {
+		site = webbuilder.SiteManifest{}
+	}
+	lb := s.links(c)
+	var h, f strings.Builder
+	if !haveSiteCSS && site.CSS != "" {
+		h.WriteString("<link rel='stylesheet' id='web-builder-css' href='" + html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.CSS)) + "' media='all' />\n")
+	}
+	var fonts []webbuilder.FontNeed
+	feats := false
+	for _, p := range popups {
+		var needs []webbuilder.FontNeed
+		if len(p.doc.Fonts) > 0 && json.Unmarshal(p.doc.Fonts, &needs) == nil {
+			fonts = append(fonts, needs...)
+		}
+		feats = feats || len(p.doc.Features) > 0
+	}
+	if len(fonts) > 0 {
+		if raw, err := json.Marshal(fonts); err == nil {
+			h.WriteString(s.wbFontLinks(c, raw))
+		}
+	}
+	h.WriteString(wbTokenCSS(s.wbSiteTokens()))
+	for _, p := range popups {
+		h.WriteString(s.wbPartCSS(c, p.doc, "wb-css-"+itoa64(p.id), func() bool { return !s.wbTemplatePreviewing(c) }))
+		f.WriteString(s.wbPopupHTML(p))
+		wbEmbedCSP(c, p.filled.html)
+	}
+	h.WriteString(wbPopupCSS)
+	f.WriteString(wbPopupJS)
+	if feats && !haveRuntime && site.Runtime != "" {
+		f.WriteString("<script>document.documentElement.classList.add('" + webbuilder.ClassJS + "')</script>\n")
+		f.WriteString("<script defer src=\"" + html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.Runtime)) + "\" id=\"web-builder-runtime-js\"></script>\n")
+	}
+	wbAddCacheTags(c, true, false)
+	return h.String(), f.String()
 }

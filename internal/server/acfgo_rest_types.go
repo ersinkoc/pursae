@@ -90,8 +90,82 @@ func (api *restAPI) acfgoTypeRoutes() []*restRoute {
 				http.MethodPost:   func(c *gin.Context, r *restRequest) { api.savePost(c, r, typ, r.ID()) },
 				http.MethodPut:    func(c *gin.Context, r *restRequest) { api.savePost(c, r, typ, r.ID()) },
 				http.MethodDelete: func(c *gin.Context, r *restRequest) { api.deletePost(c, r, typ) },
+			}},
+			// The block editor's autosaves and revisions, as for posts and pages (rest_posts.go).
+			&restRoute{Namespace: "wp/v2", Pattern: "/wp/v2/" + base + `/(?P<id>[\d]+)/autosaves`, re: regexp.MustCompile("^/wp/v2/" + q + `/(?P<id>[\d]+)/autosaves$`), Methods: map[string]restHandler{
+				http.MethodGet:  func(c *gin.Context, r *restRequest) { api.listAutosaves(c, r, typ) },
+				http.MethodPost: func(c *gin.Context, r *restRequest) { api.createAutosave(c, r, typ) },
+			}},
+			&restRoute{Namespace: "wp/v2", Pattern: "/wp/v2/" + base + `/(?P<parent>[\d]+)/autosaves/(?P<id>[\d]+)`, re: regexp.MustCompile("^/wp/v2/" + q + `/(?P<parent>[\d]+)/autosaves/(?P<id>[\d]+)$`), Methods: map[string]restHandler{
+				http.MethodGet: func(c *gin.Context, r *restRequest) { api.getAutosave(c, r, typ) },
+			}},
+			&restRoute{Namespace: "wp/v2", Pattern: "/wp/v2/" + base + `/(?P<id>[\d]+)/revisions`, re: regexp.MustCompile("^/wp/v2/" + q + `/(?P<id>[\d]+)/revisions$`), Methods: map[string]restHandler{
+				http.MethodGet: func(c *gin.Context, r *restRequest) { api.listRevisions(c, r, typ) },
+			}},
+			&restRoute{Namespace: "wp/v2", Pattern: "/wp/v2/" + base + `/(?P<parent>[\d]+)/revisions/(?P<id>[\d]+)`, re: regexp.MustCompile("^/wp/v2/" + q + `/(?P<parent>[\d]+)/revisions/(?P<id>[\d]+)$`), Methods: map[string]restHandler{
+				http.MethodGet:    func(c *gin.Context, r *restRequest) { api.getRevision(c, r, typ) },
+				http.MethodDelete: func(c *gin.Context, r *restRequest) { api.deleteRevision(c, r, typ) },
 			}})
 	}
 	acfgoRESTRoutes.sig, acfgoRESTRoutes.routes = sig, out
 	return out
+}
+
+// acfgoBlockEditorType reports whether a Custom Fields post type opens in the block editor:
+// use_block_editor_for_post_type() asks for Show in REST and the "editor" support.
+func acfgoBlockEditorType(typ string) bool {
+	acfgoRegistry.RLock()
+	defer acfgoRegistry.RUnlock()
+	pt := acfgoRegistry.types[typ]
+	if pt == nil || !pt.ShowInREST || pt.RestBase == "" {
+		return false
+	}
+	for _, f := range pt.Supports {
+		if f == "editor" {
+			return true
+		}
+	}
+	return false
+}
+
+// acfgoRESTTypeObjects adds the Show in REST post types to /wp/v2/types.
+func (api *restAPI) acfgoRESTTypeObjects(home string, edit bool, all map[string]map[string]any) {
+	acfgoRegistry.RLock()
+	defer acfgoRegistry.RUnlock()
+	for _, pt := range acfgoRegistry.types {
+		if !pt.ShowInREST || pt.RestBase == "" || all[pt.Name] != nil || api.acfgoRESTReserved(pt.RestBase) {
+			continue
+		}
+		sup := map[string]bool{}
+		for _, f := range pt.Supports {
+			sup[f] = true
+		}
+		if sup["editor"] {
+			sup["autosave"] = true
+		}
+		labels := typeLabelsFull(pt.label("singular_name"), pt.label("name"))
+		for k, v := range pt.Labels {
+			if v != "" {
+				labels[k] = v
+			}
+		}
+		// The taxonomies stay empty: Custom Fields taxonomies have no REST routes, and the editor
+		// would ask /wp/v2/<taxonomy> for every one listed here.
+		o := typeObject(home, pt.Name, pt.label("name"), pt.label("singular_name"), pt.RestBase, pt.Hierarchical, sup, []string{}, labels, edit)
+		o["has_archive"] = pt.HasArchive
+		if pt.MenuIcon != "" {
+			o["icon"] = pt.MenuIcon
+		}
+		if edit {
+			o["viewable"] = pt.Public
+			o["visibility"] = map[string]bool{"show_ui": pt.ShowUI, "show_in_nav_menus": pt.Public}
+			caps := map[string]string{"edit_post": "edit_post", "read_post": "read_post", "delete_post": "delete_post"}
+			for k, f := range map[string]string{"edit_posts": "edit_%ss", "edit_others_posts": "edit_others_%ss", "publish_posts": "publish_%ss",
+				"read_private_posts": "read_private_%ss", "create_posts": "edit_%ss", "delete_posts": "delete_%ss"} {
+				caps[k] = strings.Replace(f, "%s", pt.Name, 1)
+			}
+			o["capabilities"] = caps
+		}
+		all[pt.Name] = o
+	}
 }

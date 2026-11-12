@@ -204,7 +204,7 @@
 </div>
 {{end}}
 
-{{define "dw"}}{{$r := .Root}}{{if eq .ID "dashboard_site_health"}}{{template "dw-dashboard_site_health" $r}}{{else}}{{if eq .ID "dashboard_right_now"}}{{template "dw-dashboard_right_now" $r}}{{else}}{{if eq .ID "dashboard_activity"}}{{template "dw-dashboard_activity" $r}}{{else}}{{if eq .ID "dashboard_quick_press"}}{{template "dw-dashboard_quick_press" $r}}{{else}}{{if eq .ID "dashboard_primary"}}{{template "dw-dashboard_primary" $r}}{{else}}{{if eq .ID "wp_mail_smtp_reports_widget_lite"}}{{$r.MailSMTP}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}
+{{define "dw"}}{{$r := .Root}}{{if eq .ID "dashboard_site_health"}}{{template "dw-dashboard_site_health" $r}}{{else}}{{if eq .ID "dashboard_right_now"}}{{template "dw-dashboard_right_now" $r}}{{else}}{{if eq .ID "dashboard_activity"}}{{template "dw-dashboard_activity" $r}}{{else}}{{if eq .ID "dashboard_quick_press"}}{{template "dw-dashboard_quick_press" $r}}{{else}}{{if eq .ID "dashboard_primary"}}{{template "dw-dashboard_primary" $r}}{{else}}{{if eq .ID "wp_mail_smtp_reports_widget_lite"}}{{$r.MailSMTP}}{{else}}{{index $r.Plugin .ID}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}
 {{define "dw-dashboard_site_health"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_site_health" "Title" "Site Health Status" "Closed" (index .Closed "dashboard_site_health")}}
 			<div class="health-check-widget">
 				<div class="health-check-widget-title-section site-health-progress-wrapper {{.Health.Class}} hide-if-no-js">

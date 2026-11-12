@@ -121,7 +121,7 @@ func (s *Server) forumNewPage(c *gin.Context, view, title string) *forumPage {
 		`<input type="text" name="` + commentHoneypot + `" id="pf_hp" value="" tabindex="-1" autocomplete="off" /></p>` +
 		`<input type="hidden" name="` + commentTimeField + `" value="` + s.commentTimeToken(0, time.Now()) + `" />`)
 	if view == forumViewLogin || view == forumViewRegister {
-		p.Captcha = s.loginCaptchaWidget()
+		p.Captcha = s.loginCaptchaWidget(c)
 	}
 	return p
 }

@@ -42,8 +42,9 @@ type dashboardData struct {
 	Closed                            map[string]bool // collapsed widgets
 	ThemeName                         string
 	Health                            healthSummary
-	MailSMTP                          template.HTML  // WPGO Mail SMTP widget
-	News                              *dashboardNews // Pursae News box: the latest release the Hub announced
+	MailSMTP                          template.HTML            // WPGO Mail SMTP widget
+	Plugin                            map[string]template.HTML // Wasm plugin widgets by id (plugins_ui.go)
+	News                              *dashboardNews           // Pursae News box: the latest release the Hub announced
 }
 
 // healthSummary is what the Site Health Status widget shows: the counts of the Site Health tests
@@ -192,8 +193,10 @@ func (s *Server) dashboard(c *gin.Context) {
 	}
 
 	d.News = s.dashboardNewsCached(ctx)
-	d.Normal, d.Side, d.Col3, d.Col4 = dashboardLayout(u, d.MailSMTP != "")
 	d.Closed = userMetaSet(u, "closedpostboxes_dashboard")
+	var pluginIDs []string
+	pluginIDs, d.Plugin = s.pluginDashboardWidgets(c, u, d.Closed) // Wasm plugins (plugins_ui.go)
+	d.Normal, d.Side, d.Col3, d.Col4 = dashboardLayout(u, d.MailSMTP != "", pluginIDs...)
 	// Drag, collapse and move up/down of the boxes (postbox.js on top of jquery-ui-sortable).
 	s.pageAssets(c).Script("postbox").AddInline("postbox", `jQuery(function(){postboxes.add_postbox_toggles(pagenow);});`)
 	s.adminPage(c, "", "Dashboard", "index-php", "admin/dashboard", d)
@@ -267,8 +270,12 @@ var dashboardDefaultSide = []string{"dashboard_quick_press", "dashboard_primary"
 // dashboardLayout applies the user's saved meta-box-order_dashboard (postbox.js drag and move up/down):
 // saved ids keep their saved column and position, unknown or missing widgets fall back to their
 // default column, so a widget added later still shows up.
-func dashboardLayout(u *store.User, mail bool) (normal, side, col3, col4 []string) {
+// extra are more widgets (Wasm plugins'), placed in the normal column by default.
+func dashboardLayout(u *store.User, mail bool, extra ...string) (normal, side, col3, col4 []string) {
 	avail := map[string]bool{}
+	for _, id := range extra {
+		avail[id] = true
+	}
 	for _, id := range append(append([]string{}, dashboardDefaultNormal...), dashboardDefaultSide...) {
 		avail[id] = id != "wp_mail_smtp_reports_widget_lite" || mail
 	}
@@ -292,6 +299,12 @@ func dashboardLayout(u *store.User, mail bool) (normal, side, col3, col4 []strin
 	for _, id := range dashboardDefaultSide {
 		if avail[id] && !placed[id] {
 			side = append(side, id)
+		}
+	}
+	for _, id := range extra {
+		if !placed[id] {
+			placed[id] = true
+			normal = append(normal, id)
 		}
 	}
 	return

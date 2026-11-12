@@ -114,6 +114,9 @@ func (s *Server) gooGatewayFields(ctx context.Context, g gooGatewayDef) []gooFie
 			fields[i].Options = s.gooCODMethodOptions(ctx)
 		}
 	}
+	if p, ok := g.(gooGatewayFieldsPatcher); ok {
+		fields = p.PatchFields(s, ctx, fields)
+	}
 	return fields
 }
 
@@ -130,7 +133,20 @@ func (s *Server) gooGatewayView(c *gin.Context, d *gooSettingsData, id string) {
 	d.Intro = template.HTML(`<h2>` + gooEsc(g.MethodTitle()) + `</h2><p>` + gooEsc(g.MethodDescription()) + `</p>`)
 	prefix := "woocommerce_" + id + "_"
 	values := s.gooGatewaySettings(id)
-	d.Body = s.gooFieldsHTML(ctx, s.gooGatewayFields(ctx, g), func(f string) string { return prefix + f }, gooMapValue(values),
+	fields := s.gooGatewayFields(ctx, g)
+	// Secrets (API keys) are never written back into the page: a saved one shows as a placeholder.
+	shown := map[string]any{}
+	for k, v := range values {
+		shown[k] = v
+	}
+	for i, f := range fields {
+		if f.Type == "password" && gooValStr(values[f.ID]) != "" {
+			shown[f.ID] = ""
+			fields[i].Holder = "Saved – leave empty to keep"
+		}
+	}
+	values = shown
+	d.Body = s.gooFieldsHTML(ctx, fields, func(f string) string { return prefix + f }, gooMapValue(values),
 		func(f gooField, name string) template.HTML {
 			if f.Type == "bacs_accounts" {
 				return s.gooBACSAccountsHTML(values["accounts"])
@@ -184,7 +200,18 @@ func (s *Server) gooGatewayPost(c *gin.Context, id string) error {
 		}
 		plain = append(plain, f)
 	}
+	secrets := map[string]any{}
+	for _, f := range plain {
+		if f.Type == "password" {
+			secrets[f.ID] = st[f.ID]
+		}
+	}
 	s.gooReadMapFields(c, plain, func(f string) string { return prefix + f }, st)
+	for k, old := range secrets { // an empty secret field keeps the saved secret (it is not shown in the form)
+		if gooValStr(st[k]) == "" && gooValStr(old) != "" {
+			st[k] = old
+		}
+	}
 	return s.gooSetOpts(ctx, map[string]any{id + "_settings": st})
 }
 

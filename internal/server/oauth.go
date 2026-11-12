@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -165,13 +166,8 @@ func (s *Server) oauthRegister(c *gin.Context) {
 		name = name[:100]
 	}
 	ctx := c.Request.Context()
-	// Keep the table small: drop grants whose refresh token has expired (they can never be used again),
-	// then clients without a grant after an hour (a pending code, which lives 5 minutes, keeps a client
-	// in the middle of its consent flow), then cap what is left.
-	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE refresh_expires_at < now()`)
-	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_clients WHERE created_at < now() - interval '1 hour'
-		AND NOT EXISTS (SELECT 1 FROM oauth_tokens t WHERE t.client_id = oauth_clients.client_id)
-		AND NOT EXISTS (SELECT 1 FROM oauth_codes k WHERE k.client_id = oauth_clients.client_id AND k.expires_at > now())`)
+	// Keep the table small before counting (the hourly job does the same, oauthGC).
+	_ = s.oauthGC(ctx)
 	var n int
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM oauth_clients`).Scan(&n)
 	if n >= oauthMaxClients {
@@ -548,4 +544,26 @@ func (s *Server) oauthRevoke(c *gin.Context) {
 	}
 	c.Header("Cache-Control", "no-store")
 	c.Status(http.StatusOK)
+}
+
+// oauthGC keeps the OAuth tables and the MCP activity log small. It drops grants whose refresh token
+// has expired (they can never be used again), expired authorization codes, clients without a grant
+// after an hour (a pending code, which lives 5 minutes, keeps a client in the middle of its consent
+// flow) and activity rows past their retention. It runs with the hourly session clean-up and before a
+// client registers, so a site nobody registers on any more is cleaned too.
+func (s *Server) oauthGC(ctx context.Context) error {
+	var first error
+	for _, q := range []string{
+		`DELETE FROM oauth_tokens WHERE refresh_expires_at < now()`,
+		`DELETE FROM oauth_codes WHERE expires_at < now()`,
+		`DELETE FROM oauth_clients WHERE created_at < now() - interval '1 hour'
+			AND NOT EXISTS (SELECT 1 FROM oauth_tokens t WHERE t.client_id = oauth_clients.client_id)
+			AND NOT EXISTS (SELECT 1 FROM oauth_codes k WHERE k.client_id = oauth_clients.client_id AND k.expires_at > now())`,
+		`DELETE FROM mcp_activity WHERE created_at < now() - interval '90 days'`,
+	} {
+		if _, err := s.store.Pool.Exec(ctx, q); err != nil && first == nil {
+			first = err
+		}
+	}
+	return first
 }

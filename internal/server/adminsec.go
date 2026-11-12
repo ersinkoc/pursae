@@ -79,6 +79,7 @@ type asSettings struct {
 	PwBlockCommon bool           `json:"pw_block_common"`
 	PwCheckLogin  bool           `json:"pw_check_login"` // weak current password: change it at login
 	PwAllowWeak   bool           `json:"pw_allow_weak"`  // test sites: no policy, no forced change for a weak password
+	PwBreached    bool           `json:"pw_breached"`    // opt-in: refuse passwords found in data breaches (HIBP k-anonymity)
 
 	// Sessions
 	IdleMinutes int `json:"idle_minutes"`
@@ -95,6 +96,11 @@ type asSettings struct {
 	HideVersion       bool   `json:"hide_version"`
 	RESTVisitors      bool   `json:"rest_restrict"` // opt-in: REST only for logged-in users
 	RESTAllow         string `json:"rest_allow"`    // extra route prefixes visitors keep
+
+	// Firewall (firewall.go; the core runs it with the defaults while the plugin is off)
+	RateLimit      int  `json:"rate_limit"`      // requests per minute and IP, 0: off
+	Firewall       bool `json:"firewall"`        // the WAF rules
+	AlertIntegrity bool `json:"alert_integrity"` // e-mail when the daily integrity scan finds something new
 
 	// Alerts and log
 	AlertNewIP    bool   `json:"alert_new_ip"`
@@ -117,6 +123,7 @@ func asDefaults() asSettings {
 		Headers: true, HSTSMaxAge: 31536000, FrameOptions: "SAMEORIGIN", ReferrerPolicy: "strict-origin-when-cross-origin",
 		PermissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
 		DisableFileEdit:   true, HideVersion: true,
+		RateLimit: fwDefaultRateLimit, Firewall: true, AlertIntegrity: true,
 		AlertNewIP: true, AlertLockout: true, LogRetention: 90,
 	}
 }
@@ -475,6 +482,7 @@ var asAdminPages = [][2]string{
 	{"admin?page=adminsecgo", "Dashboard"},
 	{"admin?page=adminsecgo-settings", "Settings"},
 	{"admin?page=adminsecgo-lockouts", "Lockouts"},
+	{"admin?page=adminsecgo-integrity", "Integrity"},
 	{"admin?page=adminsecgo-log", "Activity Log"},
 }
 
@@ -568,11 +576,12 @@ func (s *Server) asStripVersion(c *gin.Context, b []byte) []byte {
 // --- REST and enumeration --------------------------------------------------------------------
 
 // asRESTVisitorRoutes are the REST routes the front end calls for anonymous visitors: oEmbed, the contact form,
-// Web Builder forms, Pursae Cookie's consent log and geo check, and Pursae Pixel's server events and the public Commerce Store API (cart, checkout; its own permission checks apply). Exact route
+// Web Builder forms, Pursae Cookie's consent log and geo check, and Pursae Pixel's server events and the public Commerce Store API (cart, checkout; its own permission checks apply)
+// and Pursae Headless' delivery API (served before the REST dispatcher with its own tokens, listed so the rule is explicit). Exact route
 // prefixes, not whole namespaces, so admin routes those namespaces gain later stay blocked.
 var asRESTVisitorRoutes = []string{"/oembed/", "/" + gontactNamespace + "/", "/web-builder/v2/forms/",
 	"/" + gooikeNamespace + "/consent", "/" + gooikeNamespace + "/geo", "/" + pixelNamespace + "/event",
-	"/" + gooStoreNS + "/"}
+	"/" + gooStoreNS + "/", "/" + hgNamespace + "/"}
 
 // adminsecRESTBlocked answers REST requests visitors may not make: user listing (enumeration) and,
 // when opted in, everything but the routes the front end needs. method is the effective method after

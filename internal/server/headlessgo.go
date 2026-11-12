@@ -188,7 +188,9 @@ func hgNormOrigin(o string) string {
 }
 
 func (s *Server) hgSaveSettings(ctx context.Context, st hgSettings) error {
-	return s.settings.Set(ctx, map[string]any{hgOptions: hgSanitize(st)})
+	err := s.settings.Set(ctx, map[string]any{hgOptions: hgSanitize(st)})
+	s.hgPurge() // locales, public permissions and the cache lifetime change what reads answer
+	return err
 }
 
 // hgDefaultLocale is the locale of new entries: Golylang's default language while it is active,

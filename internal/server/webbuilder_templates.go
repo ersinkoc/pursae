@@ -59,6 +59,7 @@ type wbTemplateIndex struct {
 	entries   []store.WBTemplateIndexEntry
 	cands     []webbuilder.TemplateCandidate // same order as entries
 	needTerms bool                           // some rule is singular/<ptype>/in/<tax>/<id>
+	needUser  bool                           // some rule is an audience rule (user/…)
 
 	// Pursae Multi Language: the language and translation group of templates that have one.
 	lang  map[int64]string
@@ -117,6 +118,9 @@ func (s *Server) wbBuildTemplateIndex(ctx context.Context) (*wbTemplateIndex, er
 		for _, c := range conds {
 			if c.Scope == webbuilder.ScopeInTerm {
 				idx.needTerms = true
+			}
+			if c.Audience() {
+				idx.needUser = true
 			}
 		}
 		idx.cands[i] = webbuilder.TemplateCandidate{ID: e.ID, Type: e.Type, Conditions: conds, Priority: e.Priority, Modified: e.ModifiedAt}
@@ -274,6 +278,7 @@ func (s *Server) wbPickTemplate(c *gin.Context, location string, q *siteQuery) (
 		}
 	}
 	facts := s.wbQueryFacts(c, q, idx.needTerms)
+	s.wbAudienceGuard(c, idx)
 	usable := idx.candidates(lang, def)
 	i := -1
 	if lang != "" && lang != def {
@@ -353,6 +358,16 @@ func (s *Server) wbTemplatePreviewing(c *gin.Context) bool {
 	return u != nil && u.Can(webbuilder.TemplateCap, nil)
 }
 
+// wbAudienceGuard keeps Pursae Cache honest about audience rules (user/logged_in, user/role/…):
+// while a published template has one, the page of a logged-in visitor is never stored, not even in
+// the per-session bucket of "Cache logged-in users" (a role change would outlive it). Anonymous
+// visitors all get the logged-out variant, so their pages stay cacheable and shared.
+func (s *Server) wbAudienceGuard(c *gin.Context, idx *wbTemplateIndex) {
+	if idx != nil && idx.needUser && currentUser(c) != nil {
+		c.Header(cache.HeaderControl, "no-cache")
+	}
+}
+
 // ctxWBFacts memoizes the request's QueryFacts (three locations ask for them).
 const ctxWBFacts = "wb.facts"
 
@@ -371,6 +386,9 @@ func (s *Server) wbQueryFacts(c *gin.Context, q *siteQuery, needTerms bool) webb
 		}
 	}
 	f := wbFactsOf(q)
+	if u := currentUser(c); u != nil {
+		f.LoggedIn, f.Roles = true, u.Roles
+	}
 	ml := s.golylangOn()
 	if ml {
 		s.wbTranslatedFacts(c.Request.Context(), &f)

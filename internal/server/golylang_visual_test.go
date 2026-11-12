@@ -178,7 +178,11 @@ func TestGolylangVisualTT5(t *testing.T) {
 	}
 
 	// Shell: open-redirect safe url parameter.
-	for _, evil := range []string{"https://evil.example/x", "//evil.example/x", "/\\evil.example", "/wp-admin/options", "javascript:alert(1)"} {
+	// javascript: URLs never reach the handler: the core firewall answers 403 first.
+	if code, _, _ := get(t, c, base+pllVisualURL("javascript:alert(1)", "fr")); code != http.StatusForbidden {
+		t.Errorf("visual shell javascript: url: %d, want 403 from the firewall", code)
+	}
+	for _, evil := range []string{"https://evil.example/x", "//evil.example/x", "/\\evil.example", "/wp-admin/options"} {
 		body, _ := pllVisualOpen(t, c, base, evil, "fr")
 		if strings.Contains(body, "evil.example") || strings.Contains(body, "javascript:") || strings.Contains(body, "/wp-admin/options") {
 			t.Errorf("shell keeps url %q", evil)

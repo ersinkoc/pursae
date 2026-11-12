@@ -174,10 +174,12 @@
 {{end}}
 {{if eq .Tab "texts"}}
 <form method="post" action="/wp-admin/gooike" id="gk-preset" onsubmit="return confirm('Replace every text with this language set?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts_preset">
-<p><label for="gk-preset-lang">Fill all texts from a ready-made language set:</label> <select id="gk-preset-lang" name="preset"><option value="en">English</option><option value="tr">T&uuml;rk&ccedil;e</option><option value="de">Deutsch</option><option value="fr">Fran&ccedil;ais</option><option value="es">Espa&ntilde;ol</option></select> <button type="submit" class="button">Apply language set</button></p></form>
+<p><label for="gk-preset-lang">Fill all texts from a ready-made language set:</label> <select id="gk-preset-lang" name="preset">{{range .TextPresets}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select> <button type="submit" class="button">Apply language set</button></p></form>
 <form method="post" action="/wp-admin/gooike">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts">
-<p class="gk-subtitle">Every word visitors see. On a multilingual site translate them here per language. HTML is not allowed; links come from Settings.</p>
+<p class="gk-subtitle">Every word visitors see. HTML is not allowed; links come from Settings.</p>
+<p><label><input type="checkbox" name="texts_auto" value="1"{{if .S.TextsAuto}} checked{{end}}> <strong>Automatic language</strong>: show the built-in texts in the visitor's language</label></p>
+<p class="description">Texts and category names you have not changed are shown in the language of the page being viewed (Pursae Multi Language), or in the site language: {{range $i, $p := .TextPresets}}{{if $i}}, {{end}}{{$p.Label}}{{end}}. A text you rewrite is shown as written in every language; translate it under Languages &rsaquo; Translations.</p>
 <table class="form-table" role="presentation">
 {{range .TextFields}}<tr><th scope="row"><label for="gk-t-{{.Key}}">{{.Label}}</label></th><td>{{if .Long}}<textarea id="gk-t-{{.Key}}" name="text_{{.Key}}" rows="4" class="large-text">{{.Value}}</textarea>{{else}}<input type="text" id="gk-t-{{.Key}}" name="text_{{.Key}}" class="large-text" value="{{.Value}}">{{end}}{{if .Help}}<p class="description">{{.Help}}</p>{{end}}</td></tr>
 {{end}}
@@ -326,7 +328,7 @@
 	<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="page" value="scripts"><input type="hidden" name="do" value="service_add"><input type="hidden" name="service" value="{{.Key}}">
 	<h3>{{.Name}}</h3>
 	<label for="gk-sv-{{.Key}}" class="screen-reader-text">{{.IDLabel}}</label>
-	<input type="text" id="gk-sv-{{.Key}}" name="service_id" placeholder="{{.IDLabel}}: {{.IDExample}}" required>
+	{{if .NoID}}<input type="hidden" name="service_id" value="">{{else}}<input type="text" id="gk-sv-{{.Key}}" name="service_id" placeholder="{{.IDLabel}}: {{.IDExample}}" required>{{end}}
 	<div class="row"><label for="gk-svc-{{.Key}}">Category</label> <select id="gk-svc-{{.Key}}" name="category">{{$def := .Category}}{{range $.Data.S.Categories}}<option value="{{.Key}}"{{if eq .Key $def}} selected{{end}}>{{.Label}}</option>{{end}}</select> <button type="submit" class="button">Add</button></div>
 	{{if .Note}}<p class="note">{{.Note}}</p>{{end}}
 </form>{{end}}
@@ -340,7 +342,8 @@
 	<label><input type="checkbox" name="block_youtube" value="1"{{if .S.BlockYouTube}} checked{{end}}> YouTube videos</label><br>
 	<label><input type="checkbox" name="block_vimeo" value="1"{{if .S.BlockVimeo}} checked{{end}}> Vimeo videos</label><br>
 	<label><input type="checkbox" name="block_maps" value="1"{{if .S.BlockMaps}} checked{{end}}> Google Maps</label>
-	<p class="description">Their iframes show a placeholder with a "Load content" button until the category is accepted.</p></fieldset></td></tr>
+	{{range .EmbedOpts}}<br><label><input type="checkbox" name="block_{{.Value}}" value="1"{{if .Checked}} checked{{end}}> {{.Label}}</label>{{end}}
+	<p class="description">Their iframes show a placeholder with a "Load content" button until the category is accepted. The loader scripts of Instagram, X, Facebook and TikTok embeds are held back the same way.</p></fieldset></td></tr>
 <tr><th scope="row"><label for="gk-embed-cat">Category</label></th><td><select id="gk-embed-cat" name="embed_category">{{range .S.Categories}}{{if ne .Key "necessary"}}<option value="{{.Key}}"{{if eq .Key $.Data.S.EmbedCategory}} selected{{end}}>{{.Label}}</option>{{end}}{{end}}</select></td></tr>
 </table>
 <p class="submit"><button type="submit" class="button button-primary">Save Embeds</button></p>

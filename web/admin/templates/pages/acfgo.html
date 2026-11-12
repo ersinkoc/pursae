@@ -48,7 +48,7 @@
 		{{else if .InDB}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="duplicate"><a href="{{.DuplicateURL}}">Duplicate</a> | </span><span class="toggle"><a href="{{.ToggleURL}}">{{if .Active}}Deactivate{{else}}Activate{{end}}</a> | </span><span class="trash"><a class="submitdelete" href="{{.TrashURL}}">Trash</a></span>{{if .SyncURL}}<span class="sync"> | <a href="{{.SyncURL}}">Sync changes</a></span>{{end}}
 		{{else}}<span class="sync"><a href="{{.SyncURL}}">Sync</a></span>{{end}}</div></td>
 	<td class="column-acf-key"><code>{{.Key}}</code></td>
-	<td class="column-acf-location">{{range .Locations}}<span class="acf-location">{{.}}</span><br />{{else}}—{{end}}{{if .UnsupportedLocation}}<span class="acf-js-tooltip dashicons dashicons-warning" title="A location rule of this group (widget, menu or menu item) has no screen in Pursae, so the group is not shown there."></span> <span class="description">Not available in Pursae</span>{{end}}</td>
+	<td class="column-acf-location">{{range .Locations}}<span class="acf-location">{{.}}</span><br />{{else}}—{{end}}{{if .UnsupportedLocation}}<span class="acf-js-tooltip dashicons dashicons-warning" title="A location rule of this group (widget) has no screen in Pursae, so the group is not shown there."></span> <span class="description">Not available in Pursae</span>{{end}}</td>
 	<td class="column-acf-json">{{if .SyncAvailable}}<span class="acf-sync-available">{{if .InDB}}Sync available{{else}}Local only — Sync to edit{{end}}</span>{{else if .LocalFile}}Saved{{else if eq .Local "go"}}Registered in code{{else}}—{{end}}</td>
 	<td class="column-acf-count">{{.Fields}}</td>
 </tr>

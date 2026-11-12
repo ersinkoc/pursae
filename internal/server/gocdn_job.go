@@ -366,7 +366,7 @@ func (s *Server) gocdnJobOne(ctx context.Context, j *gocdnJobState, st gocdnSett
 		n := 0
 		var errs []error
 		for _, it := range items {
-			if gocdnItemOnCurrent(st, it) && it.Key == gocdnObjectKey(st, it.Path) {
+			if gocdnItemOnCurrent(st, it) && gocdnKeyFits(st, it.Key, it.Path) {
 				continue
 			}
 			if err := s.gocdnMoveItem(ctx, st, cl, it, j.DeleteOld); err != nil {

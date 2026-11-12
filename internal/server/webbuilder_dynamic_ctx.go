@@ -742,7 +742,7 @@ func (s *Server) wbSiteBoot(c *gin.Context, dyn *webbuilder.DynContext) webbuild
 	out := webbuilder.SiteBoot{Title: site.Title, Tagline: site.Tagline, Home: site.Home, Logo: site.Logo,
 		Locations: []webbuilder.MenuLocation{}, Menus: map[string][]webbuilder.DynMenuItem{},
 		ThemeParts: s.wbOn() && th != nil && th.Slug == webbuilder.HelloPursaeTheme,
-		PostTypes:  []webbuilder.PostTypeInfo{}, Taxonomies: []webbuilder.TaxonomyInfo{}}
+		PostTypes:  []webbuilder.PostTypeInfo{}, Taxonomies: []webbuilder.TaxonomyInfo{}, Roles: s.wbRoleInfos(c.Request.Context())}
 	if dyn != nil && len(dyn.Locations) > 0 {
 		out.Locations, out.Menus = dyn.Locations, dyn.Menus
 	} else if th != nil {
@@ -812,4 +812,21 @@ func (s *Server) wbDynamicFor(c *gin.Context, p *store.Post, t *store.WBTemplate
 		return out
 	}
 	return dyn
+}
+
+var wbRoleSlugRE = regexp.MustCompile(webbuilder.SlugPattern)
+
+// wbRoleInfos lists the roles an audience rule (user/role/<slug>) can name.
+func (s *Server) wbRoleInfos(ctx context.Context) []webbuilder.RoleInfo {
+	out := []webbuilder.RoleInfo{}
+	roles, err := s.store.Roles(ctx)
+	if err != nil {
+		return out
+	}
+	for _, r := range roles {
+		if wbRoleSlugRE.MatchString(r.Slug) {
+			out = append(out, webbuilder.RoleInfo{Slug: r.Slug, Label: r.Name})
+		}
+	}
+	return out
 }

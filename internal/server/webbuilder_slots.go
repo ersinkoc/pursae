@@ -310,7 +310,7 @@ func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 			return string(sp.pv.Title), sp.pv.Title != ""
 		}
 		t := theTitle(p)
-		return e.s.pllUC(e.ctx, t, 0), t != "" // Multi Language user content
+		return e.s.pluginTitle(e.ctx, e.s.pllUC(e.ctx, t, 0), p), t != "" // Multi Language user content, the_title
 	case webbuilder.SlotPostContent:
 		if sp.main && e.own {
 			return "", false // the page's own doc: its content is this snapshot

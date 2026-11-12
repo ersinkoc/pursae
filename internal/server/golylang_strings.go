@@ -42,6 +42,7 @@ type pllStringsData struct {
 	Langs      []*pllLanguage
 	Nonce      string
 	IENonce    string
+	XLIFF      bool // the user may import content translations (XLIFF)
 	Pagination pagination
 	MT         pllMTView // Machine translation (golylang_mt.go)
 	Visual     bool      // "Translate visually" link (golylang_visual.go)
@@ -70,6 +71,9 @@ func (s *Server) pllStringsScreen(c *gin.Context) {
 	}
 	d := pllStringsData{Visual: s.pllVisualSupported(), Tabs: pllTabs("mlang_strings"), Group: c.Query("group"), Search: strings.TrimSpace(c.Query("s")),
 		Nonce: s.nonce(c, "string-translation"), IENonce: s.nonce(c, "pll-import-export"), MT: s.pllMTViewFor(c)}
+	if u := currentUser(c); u.Can("edit_posts", nil) || u.Can("edit_pages", nil) {
+		d.XLIFF = true
+	}
 	langs := pllTranslatableLangs(currentUser(c), s.pllLanguages(ctx))
 	d.Langs = langs
 	if cur := s.pllCurrent(c); cur != nil { // the admin bar filter shows one language
@@ -129,7 +133,10 @@ func (s *Server) pllStringsScreen(c *gin.Context) {
 		notices = append(notices, notice{Type: "error", Message: "Some translations could not be saved. Please try again.", Dismissible: true})
 	case "import_error":
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(c.Query("err"))), Dismissible: true})
+	case "xliff_imported":
+		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(c.Query("n")) + " items translated from the XLIFF file."), Dismissible: true})
 	}
+	notices = append(notices, s.pllJobNotices()...) // golylang_translate.go
 	s.adminPage(c, "admin?page=mlang_strings", "Strings translations", "languages_page_mlang_strings", "admin/golylang-strings", d, notices...)
 }
 

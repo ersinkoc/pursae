@@ -86,7 +86,8 @@ func canonicalSignQuery(q url.Values) string {
 // OAuth is the authorization-code flow of the Gmail, Outlook and Zoho mailers, used with the site
 // owner's own app registration (client id + secret) like WP Mail SMTP's "own app" setup.
 type OAuth struct {
-	Mailer       string // gmail, outlook or zoho
+	Mailer       string // gmail, outlook or zoho; "google" is Google with Scope (Pursae SEO's Search Console)
+	Scope        string // replaces the provider's default scope
 	Domain       string // Zoho data center: com, eu, in, com.au, jp, com.cn
 	ClientID     string
 	ClientSecret string
@@ -116,8 +117,13 @@ func (o *OAuth) url(def string) string {
 }
 
 func (o *OAuth) endpoints() (auth, token, scope string) {
+	defer func() {
+		if o.Scope != "" {
+			scope = o.Scope
+		}
+	}()
 	switch o.Mailer {
-	case "gmail":
+	case "gmail", "google":
 		return "https://accounts.google.com/o/oauth2/v2/auth", "https://oauth2.googleapis.com/token", "https://mail.google.com/"
 	case "outlook":
 		return "https://login.microsoftonline.com/common/oauth2/v2.0/authorize", "https://login.microsoftonline.com/common/oauth2/v2.0/token",
@@ -134,7 +140,7 @@ func (o *OAuth) AuthCodeURL(state string) string {
 	auth, _, scope := o.endpoints()
 	q := url.Values{"client_id": {o.ClientID}, "redirect_uri": {o.RedirectURI}, "response_type": {"code"}, "scope": {scope}, "state": {state}}
 	switch o.Mailer {
-	case "gmail":
+	case "gmail", "google":
 		q.Set("access_type", "offline")
 		q.Set("prompt", "consent")
 	case "zoho":

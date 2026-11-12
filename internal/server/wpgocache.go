@@ -279,6 +279,9 @@ func (s *Server) purgePost(ctx context.Context, p *store.Post) {
 	if p.Status != "draft" && p.Status != "auto-draft" && p.Status != "pending" {
 		tags = append(tags, "widgets")
 	}
+	if s.hgOn() {
+		tags = append(tags, hgCacheTag) // Pursae Headless answers populate WordPress posts
+	}
 	c.PurgeTags(tags...)
 }
 
@@ -372,6 +375,9 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		return
 	}
 	if s.golylangAdmin(c, page) { // Golylang: Languages screens (mlang, mlang_strings, mlang_settings)
+		return
+	}
+	if s.wasmAdminPage(c, page) { // Wasm plugins: register_admin_page (plugins_ui.go)
 		return
 	}
 	// Any other page is not registered: admin.php answers that with a 403 die, never a blank screen.

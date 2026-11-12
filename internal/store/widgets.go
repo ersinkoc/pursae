@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type Widget struct {
@@ -72,6 +74,17 @@ func (s *Store) MenuAt(ctx context.Context, location string) ([]*MenuItem, error
 	rows, err := s.Pool.Query(ctx, `SELECT i.id, coalesce(i.parent_id,0), i.kind, i.object, coalesce(i.target_id,0),
 		i.url, i.label, i.target, i.css_classes FROM menu_items i JOIN menu_locations ml ON ml.menu_id = i.menu_id
 		WHERE ml.location = $1 AND i.status = 'publish' ORDER BY i.sort_order, i.id`, location)
+	return menuTree(rows, err)
+}
+
+// MenuTree returns the published items of one menu, nested (the navigation block's "ref").
+func (s *Store) MenuTree(ctx context.Context, menuID int64) ([]*MenuItem, error) {
+	rows, err := s.Pool.Query(ctx, `SELECT id, coalesce(parent_id,0), kind, object, coalesce(target_id,0),
+		url, label, target, css_classes FROM menu_items WHERE menu_id = $1 AND status = 'publish' ORDER BY sort_order, id`, menuID)
+	return menuTree(rows, err)
+}
+
+func menuTree(rows pgx.Rows, err error) ([]*MenuItem, error) {
 	if err != nil {
 		return nil, err
 	}

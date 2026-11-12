@@ -328,7 +328,7 @@ func (s *Server) msSettingsScreen(c *gin.Context) {
 	case "logs":
 		d.Retention = msChoices(msRetention, strconv.Itoa(o.Logs.Retention))
 		home := strings.TrimRight(s.links(c).Home, "/")
-		for _, m := range [][2]string{{"postmark", "Postmark"}, {"sendgrid", "SendGrid"}, {"mailgun", "Mailgun"}} {
+		for _, m := range [][2]string{{"postmark", "Postmark"}, {"sendgrid", "SendGrid"}, {"mailgun", "Mailgun"}, {"amazonses", "Amazon SES (HTTPS subscription of the SNS topic that receives bounces, complaints and deliveries)"}} {
 			d.WebhookURLs = append(d.WebhookURLs, [2]string{m[1], home + msTrackBase + "/webhook/" + m[0] + "?token=" + s.msWebhookToken()})
 		}
 	case "alerts":

@@ -22,7 +22,7 @@
 
 
 <div class="tablenav top">
-	{{template "posts-bulk" dict "Pos" "top" "Trash" .IsTrash}}
+	{{template "posts-bulk" dict "Pos" "top" "Trash" .IsTrash "Extra" .BulkExtra "Langs" .BulkLangs}}
 	{{if eq .Labels.Type "post"}}<div class="alignleft actions">
 		<label for="filter-by-date" class="screen-reader-text">Filter by date</label>
 		<select name="m" id="filter-by-date">
@@ -58,7 +58,7 @@
 	<tfoot>{{template "posts-head" dict "Top" false "D" .}}</tfoot>
 </table>
 <div class="tablenav bottom">
-	{{template "posts-bulk" dict "Pos" "bottom" "Trash" .IsTrash}}
+	{{template "posts-bulk" dict "Pos" "bottom" "Trash" .IsTrash "Extra" .BulkExtra}}
 	<div class="alignleft actions">{{if and .IsTrash .Rows .CanEmptyTrash}}<input type="submit" name="delete_all" id="delete_all" class="button apply" value="Empty Trash" />{{end}}</div>
 	{{template "tablenav-pages" .Pagination}}
 	<br class="clear" />
@@ -113,8 +113,11 @@
 		<option value="-1">Bulk actions</option>
 		{{if .Trash}}<option value="untrash">Restore</option>
 		<option value="delete">Delete permanently</option>{{else}}<option value="edit" class="hide-if-no-js">Edit</option>
-		<option value="trash">Move to Trash</option>{{end}}
-	</select>
+		<option value="trash">Move to Trash</option>{{range .Extra}}
+		<option value="{{.Value}}">{{.Label}}</option>{{end}}{{end}}
+	</select>{{if and .Langs (not .Trash)}}
+	<label for="pll-bulk-lang" class="screen-reader-text">Target language</label>
+	<select name="pll_to" id="pll-bulk-lang" title="Target language of the translation bulk actions">{{range .Langs}}<option value="{{.Slug}}">{{.Name}}</option>{{end}}</select>{{end}}
 	<input type="submit" name="bulk_action" id="doaction{{if eq .Pos "bottom"}}2{{end}}" class="button action button-compact" value="Apply" />
 </div>{{end}}
 {{define "posts-head"}}<tr>

@@ -67,11 +67,13 @@ type seogoRoleRow struct {
 
 var seogoPageCaps = map[string]string{"": "seogo_general", "wizard": "seogo_general", "general": "seogo_general", "titles": "seogo_titles",
 	"social": "seogo_titles", "schema": "seogo_titles", "sitemap": "seogo_sitemap", "redirections": "seogo_redirections",
-	"404": "seogo_404_monitor", "links": "seogo_link_builder", "bulk": "seogo_titles", "tools": "seogo_general", "roles": "seogo_role_manager"}
+	"404": "seogo_404_monitor", "links": "seogo_link_builder", "bulk": "seogo_titles", "tools": "seogo_general", "roles": "seogo_role_manager",
+	"search-console": "seogo_general"}
 
 var seogoPageTitles = map[string]string{"": "Dashboard", "wizard": "Setup Wizard", "general": "General Settings", "titles": "Search Appearance",
 	"social": "Social", "schema": "Schema", "sitemap": "Sitemaps", "redirections": "Redirections", "404": "404 Monitor",
-	"links": "Link Counter", "bulk": "Bulk Editor", "tools": "Tools", "roles": "Role Manager"}
+	"links": "Link Counter", "bulk": "Bulk Editor", "tools": "Tools", "roles": "Role Manager",
+	"search-console": "Search Console"}
 
 func (s *Server) seogoAdmin(c *gin.Context) {
 	page := c.Query("page")
@@ -101,6 +103,9 @@ func (s *Server) seogoAdmin(c *gin.Context) {
 	}
 	if page == "redirections" && c.Query("action") == "export" {
 		s.seogoExportRedirects(c)
+		return
+	}
+	if page == "search-console" && s.seogoGSCGet(c) { // connect and the OAuth callback (seogo_gsc.go)
 		return
 	}
 	if page == "tools" && c.Query("action") == "export" {
@@ -207,6 +212,8 @@ func (s *Server) seogoAdmin(c *gin.Context) {
 		d.Data["IndexNow"] = s.seogoIndexNowLog()
 	case "roles":
 		d.Roles = s.seogoRoleRows(ctx)
+	case "search-console":
+		s.seogoGSCView(ctx, d)
 	}
 	if page == "wizard" {
 		s.seogoRenderWizard(c, d)
@@ -662,6 +669,8 @@ func (s *Server) seogoAdminPost(c *gin.Context, page string) (string, error) {
 		return msg, nil
 	}
 	switch page {
+	case "search-console":
+		return s.seogoGSCPost(c)
 	case "":
 		if key := c.PostForm("module"); key != "" {
 			found := false

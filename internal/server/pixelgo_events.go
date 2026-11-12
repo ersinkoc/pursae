@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -293,6 +294,20 @@ func (s *Server) pixelPageEvents(c *gin.Context, q *siteQuery, st *pixelSettings
 			"content_category": item.Category, "content_type": "product", "num_items": 1}
 		if st.Woo["view_content"] {
 			add("ViewContent", p)
+		}
+		if st.VariationIDs && (fv.Product.Type == gooTypeVariable || fv.Product.Type == gooSubsTypeVariable) {
+			// The add-to-cart button reads the chosen variation_id from the form and sends that
+			// variation's own item id and price (the feed lists the variations, not the parent).
+			vars := map[string]any{}
+			for _, v := range s.gooVariationsCached(c, fv.Product) {
+				vars[itoa64(v.ID)] = map[string]any{"id": pixelItemID(st, v.ID, v.SKU), "price": pixelMoney(pixelBasePrice(v))}
+			}
+			if len(vars) > 0 { // on a copy: p is also the ViewContent event's parameters
+				pp := make(map[string]any, len(p)+1)
+				maps.Copy(pp, p)
+				pp["variations"] = vars
+				p = pp
+			}
 		}
 		page["product"] = p // the add-to-cart button of the page builds its event from it
 	case "shop", "product_cat", "product_tag", "product_attr":

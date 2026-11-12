@@ -390,11 +390,11 @@ type SettingsPage struct {
 type SettingsField struct {
 	ID          string           `json:"id"` // lowercase letters, digits and _
 	Label       string           `json:"label"`
-	Type        string           `json:"type"` // text, textarea, number, checkbox, select
+	Type        string           `json:"type"` // text, textarea, number, checkbox, select, radio, email, url, password, color, date
 	Description string           `json:"description,omitempty"`
 	Placeholder string           `json:"placeholder,omitempty"`
 	Default     any              `json:"default,omitempty"`
-	Options     []SettingsOption `json:"options,omitempty"` // select
+	Options     []SettingsOption `json:"options,omitempty"` // select, radio
 	Min         *float64         `json:"min,omitempty"`     // number
 	Max         *float64         `json:"max,omitempty"`     // number
 	Rows        int              `json:"rows,omitempty"`    // textarea

@@ -788,15 +788,18 @@ func (s *Server) mcpFetch(c *gin.Context, src string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("source_url answered %s", resp.Status)
 	}
-	data, err := io.ReadAll(io.LimitReader(resp.Body, 64<<20+1))
+	data, err := io.ReadAll(io.LimitReader(resp.Body, mcpFetchMax+1))
 	if err != nil {
 		return nil, err
 	}
-	if len(data) > 64<<20 {
-		return nil, fmt.Errorf("the file is larger than 64 MB")
+	if int64(len(data)) > mcpFetchMax {
+		return nil, fmt.Errorf("the file is larger than %d MB", mcpFetchMax>>20)
 	}
 	return data, nil
 }
+
+// mcpFetchMax is the largest file source_url may bring in (a variable for tests).
+var mcpFetchMax int64 = 64 << 20
 
 var mcpHTTPClient = &http.Client{
 	Timeout: 60 * time.Second,

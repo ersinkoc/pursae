@@ -35,7 +35,7 @@ func TestLoginCaptchaAndResetThrottle(t *testing.T) {
 	ctx := context.Background()
 	asConfigure(t, srv, func(st *asSettings) { st.CaptchaForms = true })
 	// No keys saved: nothing is asked.
-	if w := srv.loginCaptchaWidget(); w != "" {
+	if w := srv.loginCaptchaWidget(nil); w != "" {
 		t.Fatalf("widget without keys: %q", w)
 	}
 	verify := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -44,12 +44,12 @@ func TestLoginCaptchaAndResetThrottle(t *testing.T) {
 	}))
 	defer verify.Close()
 	_ = srv.settings.Set(ctx, map[string]any{"gontact_turnstile_sitekey": "site123", "gontact_turnstile_secret": "sec"})
-	old := gontactCaptchaClient
-	gontactCaptchaClient = &http.Client{Transport: rtFunc(func(r *http.Request) (*http.Response, error) {
+	old := captchaClient
+	captchaClient = &http.Client{Transport: rtFunc(func(r *http.Request) (*http.Response, error) {
 		r.URL.Scheme, r.URL.Host = "http", strings.TrimPrefix(verify.URL, "http://")
 		return http.DefaultTransport.RoundTrip(r)
 	})}
-	defer func() { gontactCaptchaClient = old }()
+	defer func() { captchaClient = old }()
 
 	if code, body, _ := get(t, asNewClient(), base+"/wp-login"); code != 200 || !strings.Contains(body, `data-sitekey="site123"`) {
 		t.Fatalf("login form has no CAPTCHA widget: %d", code)

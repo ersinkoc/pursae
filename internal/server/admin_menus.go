@@ -34,6 +34,7 @@ type menuEditRow struct {
 	CancelURL  string
 	IsCustom   bool
 	TargetOpen bool
+	ACF        template.HTML // Pursae Custom Fields: the item's fields (acfgo_menus.go)
 }
 
 type menuChoice struct {
@@ -77,6 +78,9 @@ type navMenusData struct {
 	MenuCount    int  // number of menus (manage-menus message variant)
 	AddNew       bool // ?menu=0: the "create a new menu" screen
 	Disabled     bool // no menu selected: wp_nav_menu_disabled_check() disables the left column
+
+	// ACFMenu are the menu's own Pursae Custom Fields fields, under Menu Settings (acfgo_menus.go).
+	ACFMenu template.HTML
 
 	// PluginBoxes are "Add menu items" boxes of native plugins (Golylang's Language switcher).
 	PluginBoxes template.HTML
@@ -147,6 +151,7 @@ func (s *Server) navMenus(c *gin.Context) {
 		d.DeleteURL = "/wp-admin/nav-menus?action=delete&menu=" + itoa64(d.Selected.ID) + "&_wpnonce=" + s.nonce(c, "delete-nav_menu-"+itoa64(d.Selected.ID))
 		items, _ := s.store.AllMenuItems(ctx, d.Selected.ID) // pending (draft) items too, like wp_get_nav_menu_to_edit()
 		d.Rows = s.menuEditRows(ctx, items)
+		s.acfgoNavMenus(c, &d) // Pursae Custom Fields: Menu and Menu Item location rules
 	}
 	for _, loc := range theme.MenuLocations {
 		row := locationRow{Slug: loc.Slug, Name: loc.Name}
@@ -307,6 +312,9 @@ func (s *Server) navMenusSave(c *gin.Context) {
 		s.denyNonce(c)
 		return
 	}
+	if !s.acfgoNavMenusValidate(c) { // Pursae Custom Fields: invalid field input saves nothing
+		return
+	}
 	name := strings.TrimSpace(c.PostForm("menu-name"))
 	if name == "" {
 		name = "Menu"
@@ -362,6 +370,7 @@ func (s *Server) navMenusSave(c *gin.Context) {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+		s.acfgoNavMenusSave(c, id) // Pursae Custom Fields
 	}
 	// Display locations: checked boxes assign this menu; unchecked ones that pointed here are cleared.
 	locs := map[string]int64{}
@@ -446,6 +455,7 @@ func (s *Server) menuAjax(c *gin.Context, action string) bool {
 			}
 			row := s.menuEditRow(ctx, it, 0, 0)
 			row.Pending = false
+			row.ACF = s.acfgoNewMenuItemFields(c, menuID, it) // Pursae Custom Fields
 			if it.Label == "" {
 				it.Label = row.Original
 			}
@@ -462,7 +472,7 @@ func (s *Server) menuAjax(c *gin.Context, action string) bool {
 			if strings.HasSuffix(typ, "post") {
 				t = "post"
 			}
-			posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{t}, Statuses: []string{"publish"}, Search: q, PerPage: 10, Page: 1})
+			posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{t}, Statuses: []string{"publish"}, Search: q, OrderBy: "relevance", PerPage: 10, Page: 1})
 			for i, p := range posts {
 				sb.WriteString(string(checklistHTML(checklistItem{ObjectID: p.ID, Object: t, Type: "post_type", Title: defaultStr(p.Title, "(no title)"), URL: lb.Permalink(p)}, -1000-i)))
 			}

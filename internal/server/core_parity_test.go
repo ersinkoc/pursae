@@ -105,4 +105,18 @@ func TestCommentSpamTrapsAndEmail(t *testing.T) {
 			t.Errorf("%s: %d comments stored, want %d", tc.name, got, tc.want)
 		}
 	}
+	// No timestamp (a custom form or a direct post): stored, but held for moderation even when the
+	// site would approve it.
+	_ = srv.settings.Set(ctx, map[string]any{"comment_moderation": false, "comment_previously_approved": false})
+	backdate := func() { _, _ = pool.Exec(ctx, `UPDATE comments SET created_at = created_at - interval '2 hours'`) } // past the flood interval
+	backdate()
+	post(t, anon, base+"/wp-comments-post", form(nil, "trap no token"))
+	backdate()
+	post(t, anon, base+"/wp-comments-post", form(url.Values{commentTimeField: {old}}, "trap with token"))
+	var held, approved string
+	_ = pool.QueryRow(ctx, `SELECT status FROM comments WHERE content LIKE '%trap no token%'`).Scan(&held)
+	_ = pool.QueryRow(ctx, `SELECT status FROM comments WHERE content LIKE '%trap with token%'`).Scan(&approved)
+	if held != "pending" || approved != "approved" {
+		t.Errorf("no-token comment %q, signed comment %q", held, approved)
+	}
 }

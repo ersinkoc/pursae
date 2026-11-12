@@ -41,6 +41,10 @@ type Post struct {
 	Sticky          bool
 	Format          string // a get_post_format_slugs() value; CanonicalPostFormat drops anything else
 	Meta            map[string]any
+
+	// PrevStatus is the status the post had before the last InsertPost / UpdatePost in this process
+	// ("new" after an insert); it is not stored. The server reads it to fire transition_post_status.
+	PrevStatus string `json:"-"`
 }
 
 // CanonicalPostFormat is get_post_format(): only the core post-format slugs are stored or printed.
@@ -317,7 +321,9 @@ func (q *PostQuery) where(args *[]any) string {
 	}
 	if q.Search != "" {
 		q.searchArg, q.searchLikeArg = add(q.Search), add(likeContains(q.Search))
-		conds = append(conds, "(search @@ plainto_tsquery('simple', "+q.searchArg+") OR title ILIKE "+q.searchLikeArg+")")
+		// search_stem is the same text through the site language's stemmer (migration 0101, NULL when none).
+		conds = append(conds, "(search @@ plainto_tsquery('simple', "+q.searchArg+") OR search_stem @@ plainto_tsquery(wpgo_search_stem_config(), "+q.searchArg+
+			") OR title ILIKE "+q.searchLikeArg+")")
 	}
 	if q.ExcludePassworded {
 		conds = append(conds, "coalesce(password, '') = ''")
@@ -486,7 +492,7 @@ func (q *PostQuery) orderBy() string {
 	}
 	if q.Search != "" && q.OrderBy == "relevance" {
 		// WordPress 6.x puts title matches first; ts_rank uses the A/B/C weights of the search vector.
-		return "(title ILIKE " + q.searchLikeArg + ") DESC, ts_rank(search, plainto_tsquery('simple', " + q.searchArg + ")) DESC, " + col + " " + dir + ", id " + dir
+		return "(title ILIKE " + q.searchLikeArg + ") DESC, (ts_rank(search, plainto_tsquery('simple', " + q.searchArg + ")) + coalesce(ts_rank(search_stem, plainto_tsquery(wpgo_search_stem_config(), " + q.searchArg + ")), 0)) DESC, " + col + " " + dir + ", id " + dir
 	}
 	switch q.OrderBy {
 	case "title":
@@ -749,6 +755,7 @@ func insertPostTx(ctx context.Context, tx pgx.Tx, p *Post) error {
 		}
 		p.Slug = slug
 	}
+	p.PrevStatus = "new"
 	return nil
 }
 
@@ -778,6 +785,7 @@ func UpdatePostTx(ctx context.Context, tx pgx.Tx, p *Post, editorID int64) error
 		return err
 	}
 	recordOldSlug(p, old)
+	p.PrevStatus = old.Status
 	meta, _ := json.Marshal(p.Meta)
 	_, err = tx.Exec(ctx, `UPDATE posts SET author_id=$2, parent_id=$3, slug=$4, title=$5, excerpt=$6, content=$7,
 		blocks=$8, status=$9, password=$10, published_at=$11, featured_media_id=$12, menu_order=$13,
@@ -849,6 +857,22 @@ func (s *Store) PruneRevisions(ctx context.Context, keep int) (int64, error) {
 		(SELECT id FROM (SELECT id, row_number() OVER (PARTITION BY post_id ORDER BY id DESC) AS n
 			FROM post_revisions WHERE NOT is_autosave) x WHERE x.n > $1)`, keep)
 	return tag.RowsAffected(), err
+}
+
+// PruneRevisionsTx trims one post to RevisionsLimit() inside the caller's transaction (a writer that
+// inserts revisions itself, such as the Web Builder publish).
+func PruneRevisionsTx(ctx context.Context, tx pgx.Tx, postID int64) error {
+	return pruneRevisions(ctx, tx, postID, RevisionsLimit())
+}
+
+// RevisionStats counts the stored revisions and how many of them PruneRevisions(keep) would delete.
+func (s *Store) RevisionStats(ctx context.Context, keep int) (total, excess int, err error) {
+	if keep < 1 {
+		keep = 1
+	}
+	err = s.Pool.QueryRow(ctx, `SELECT count(*), count(*) FILTER (WHERE n > $1) FROM
+		(SELECT row_number() OVER (PARTITION BY post_id ORDER BY id DESC) AS n FROM post_revisions WHERE NOT is_autosave) x`, keep).Scan(&total, &excess)
+	return
 }
 
 // OldSlugMeta is the post meta key WordPress uses for previous slugs (_wp_old_slug).

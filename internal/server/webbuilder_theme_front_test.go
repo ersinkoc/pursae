@@ -413,9 +413,9 @@ func TestWBThemeFrontRender(t *testing.T) {
 	_, body = wbtfGet(t, base+"/?s=Beta")
 	wbtfWant(t, "search", body, "SEARCH-MARK", `Results for <span data-wb-slot="search.query">Beta</span> (<span data-wb-slot="search.count">1</span>)`, `class="hit"`)
 	wbtfBad(t, "search", body, "ARCHIVE-MARK", "SEARCH-EMPTY")
-	_, body = wbtfGet(t, base+"/?s=%3Cscript%3Ezzz")
-	wbtfWant(t, "empty search", body, "SEARCH-EMPTY", "&lt;script&gt;zzz")
-	wbtfBad(t, "empty search", body, "<script>zzz")
+	_, body = wbtfGet(t, base+"/?s=%3Cb%3Ezzz") // (a <script> query never gets here: the core firewall answers 403)
+	wbtfWant(t, "empty search", body, "SEARCH-EMPTY", "&lt;b&gt;zzz")
+	wbtfBad(t, "empty search", body, "<b>zzz")
 
 	// --- 404 --------------------------------------------------------------------------------------
 	code, body = wbtfGet(t, base+"/no-such-thing-here/")

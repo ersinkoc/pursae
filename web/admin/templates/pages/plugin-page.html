@@ -1,0 +1,10 @@
+{{define "admin/plugin-page"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>{{.Title}}</h1>
+{{template "notices" $}}
+<form method="post" action="{{.Action}}">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+{{.Body}}
+</form>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

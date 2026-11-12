@@ -13,6 +13,7 @@
 		<label for="password">Password&nbsp;<span class="required" aria-hidden="true">*</span><span class="screen-reader-text">Required</span></label>
 		<input class="woocommerce-Input woocommerce-Input--text input-text" type="password" name="password" id="password" autocomplete="current-password" required aria-required="true" />
 	</p>
+	{{if .Captcha}}<div class="form-row goo-captcha">{{html .Captcha}}</div>{{end}}
 	<p class="form-row">
 		<label class="woocommerce-form__label woocommerce-form__label-for-checkbox woocommerce-form-login__rememberme">
 			<input class="woocommerce-form__input woocommerce-form__input-checkbox" name="rememberme" type="checkbox" id="rememberme" value="forever" /> <span>Remember me</span>
@@ -50,6 +51,7 @@
 				<input type="password" class="woocommerce-Input woocommerce-Input--text input-text" name="password" id="reg_password" autocomplete="new-password" required aria-required="true" />
 			</p>{{else}}<p>A link to set a new password will be sent to your email address.</p>{{end}}
 			{{if .Privacy}}<div class="woocommerce-privacy-policy-text">{{html .Privacy}}</div>{{end}}
+			{{if .Captcha}}<div class="form-row goo-captcha">{{html .Captcha}}</div>{{end}}
 			<p class="woocommerce-form-row form-row">
 				<input type="hidden" name="woocommerce-register-nonce" value="{{.RegNonce}}" />
 				<button type="submit" class="woocommerce-Button woocommerce-button button woocommerce-form-register__submit" name="register" value="Register">Register</button>

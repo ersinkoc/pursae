@@ -462,9 +462,9 @@ func (r *captchaRT) RoundTrip(req *http.Request) (*http.Response, error) {
 func TestWebBuilderFormCaptcha(t *testing.T) {
 	w := wbformStart(t)
 	rt := &captchaRT{}
-	old := gontactCaptchaClient
-	gontactCaptchaClient = &http.Client{Transport: rt}
-	t.Cleanup(func() { gontactCaptchaClient = old })
+	old := captchaClient
+	captchaClient = &http.Client{Transport: rt}
+	t.Cleanup(func() { captchaClient = old })
 
 	// Keys without Pursae Contact Form active: not checked.
 	if err := w.srv.settings.Set(context.Background(), map[string]any{"gontact_turnstile_sitekey": "ts-site", "gontact_turnstile_secret": "ts-secret"}); err != nil {

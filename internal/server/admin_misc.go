@@ -122,7 +122,41 @@ func (s *Server) about(c *gin.Context) {
 
 // tools is tools.php.
 func (s *Server) tools(c *gin.Context) {
-	s.adminPage(c, "tools", "Tools", "tools-php", "admin/tools", nil)
+	u := currentUser(c)
+	limit := store.RevisionsLimit()
+	if c.Request.Method == http.MethodPost {
+		if !s.checkNonce(c, "tools-prune-revisions") {
+			s.denyNonce(c)
+			return
+		}
+		if !u.Can("manage_options", nil) {
+			c.String(http.StatusForbidden, "Sorry, you are not allowed to clean up revisions.")
+			return
+		}
+		keep, err := strconv.Atoi(c.PostForm("keep"))
+		if err != nil || keep < 1 {
+			keep = max(limit, 1)
+		}
+		n, err := s.store.PruneRevisions(c, keep)
+		if err != nil {
+			c.Redirect(http.StatusFound, "/wp-admin/tools?revisions-error=1")
+			return
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/tools?revisions-deleted="+strconv.FormatInt(n, 10))
+		return
+	}
+	keep := max(limit, 1)
+	total, excess, _ := s.store.RevisionStats(c, keep)
+	d := map[string]any{"CanPrune": u.Can("manage_options", nil), "Nonce": s.nonce(c, "tools-prune-revisions"), "Keep": keep,
+		"Unlimited": limit < 0, "Total": total, "Excess": excess}
+	var notices []notice
+	if v := c.Query("revisions-deleted"); v != "" {
+		n, _ := strconv.Atoi(v)
+		notices = append(notices, notice{Type: "success", Message: template.HTML(strconv.Itoa(n) + " old revision(s) deleted."), Dismissible: true})
+	} else if c.Query("revisions-error") != "" {
+		notices = append(notices, notice{Type: "error", Message: "Could not delete the old revisions.", Dismissible: true})
+	}
+	s.adminPage(c, "tools", "Tools", "tools-php", "admin/tools", d, notices...)
 }
 
 // optionsPrivacy is options-privacy.php: the privacy policy page setting.

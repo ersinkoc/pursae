@@ -142,6 +142,10 @@ func (s *Server) wbTemplatesScreen(c *gin.Context) {
 		s.wbTemplateActivateHello(c)
 	case (action == wbPopupAdminAction || action == wbPopupAdminAction+"-save") && c.Query("post") != "":
 		s.wbPopupAdmin(c, action != wbPopupAdminAction)
+	case action == "export-parts":
+		s.wbThemePartsExportAdmin(c)
+	case action == "export" && c.Query("post") != "":
+		s.wbTemplateExportAdmin(c)
 	case action != "" && action != "-1" && c.Query("post") != "":
 		s.wbTemplateRowAction(c, action)
 	default:
@@ -173,7 +177,7 @@ type wbTBRow struct {
 	DateLabel, DateValue              string
 	EditURL, PreviewURL, DuplicateURL string
 	ToggleURL, ToggleLabel            string
-	PopupURL                          string
+	PopupURL, ExportURL               string
 	TrashURL, RestoreURL, DeleteURL   string
 	CanDelete                         bool
 	Classes                           string
@@ -207,6 +211,7 @@ type wbTemplatesData struct {
 	ThemeNotice bool   // the active theme is not Hello Pursae
 	ThemeName   string // the active theme's name
 	ActivateURL string // "" when the user may not switch themes
+	PartsURL    string // "Export Theme Parts": the published templates as a library parts.json
 }
 
 // wbTemplatesList renders the list table.
@@ -268,6 +273,7 @@ func (s *Server) wbTemplatesList(c *gin.Context) {
 		d.Rows = append(d.Rows, s.wbTemplateRow(c, u, t, site, names, withHTML[t.ID], loc))
 	}
 	s.wbTemplatesDialogs(c, &d, site)
+	d.PartsURL = base + "&action=export-parts&_wpnonce=" + s.nonce(c, "export-wb-theme-parts")
 
 	th := s.activeTheme()
 	if th == nil || th.Slug != webbuilder.HelloPursaeTheme {
@@ -319,6 +325,7 @@ func (s *Server) wbTemplateRow(c *gin.Context, u *store.User, t *store.WBTemplat
 		if t.Type == webbuilder.TemplatePopup {
 			r.PopupURL = base + wbPopupAdminAction
 		}
+		r.ExportURL = base + "export&_wpnonce=" + s.nonce(c, "export-wb-template_"+id)
 		r.DuplicateURL = base + "duplicate&_wpnonce=" + s.nonce(c, "duplicate-wb-template_"+id)
 		r.TrashURL = base + "trash&_wpnonce=" + s.nonce(c, "trash-wb-template_"+id)
 		if r.Disabled {
@@ -404,6 +411,7 @@ func (s *Server) wbTemplatesDialogs(c *gin.Context, d *wbTemplatesData, site web
 		"namespace":  webbuilder.RESTNamespace,
 		"postTypes":  site.PostTypes,
 		"taxonomies": site.Taxonomies,
+		"roles":      site.Roles,
 		"restBases":  rest,
 		"types":      types,
 		"pattern":    webbuilder.ConditionPattern,
@@ -459,8 +467,14 @@ func (s *Server) wbTemplatesNotices(c *gin.Context) []notice {
 		out = append(out, notice{Type: "error", Dismissible: true, Message: "Sorry, you are not allowed to do that."})
 	case "create":
 		out = append(out, notice{Type: "error", Dismissible: true, Message: "The template could not be created. Choose a template type (and a post type for a Single template)."})
+	case "export":
+		out = append(out, notice{Type: "error", Dismissible: true, Message: "This template has no design yet. Open it in Pursae Web Builder and publish it first."})
 	case "failed":
 		out = append(out, notice{Type: "error", Dismissible: true, Message: "The action could not be completed."})
+	}
+	if id, _ := strconv.ParseInt(c.Query("imported"), 10, 64); id > 0 {
+		out = append(out, notice{Type: "success", Dismissible: true, Message: template.HTML(`Template imported. It stays disabled until you publish it. <a href="` +
+			template.HTMLEscapeString(wbEditURL(id)) + `">Edit with Pursae Web Builder</a>`)})
 	}
 	if c.Query("hello") == "1" {
 		out = append(out, notice{Type: "success", Dismissible: true, Message: "Hello Pursae is now the active theme."})
@@ -603,6 +617,17 @@ func (s *Server) wbConditionLabel(site webbuilder.SiteBoot, rule string, names *
 		label = taxLabel(c.Taxonomy)
 		if c.ID != 0 {
 			label += ": " + item
+		}
+	case webbuilder.ScopeUserIn:
+		label = "Logged-in Users"
+	case webbuilder.ScopeUserOut:
+		label = "Logged-out Visitors"
+	case webbuilder.ScopeUserRole:
+		label = "Role: " + c.Role
+		for _, r := range site.Roles {
+			if r.Slug == c.Role && r.Label != "" {
+				label = "Role: " + r.Label
+			}
 		}
 	default:
 		label = rule

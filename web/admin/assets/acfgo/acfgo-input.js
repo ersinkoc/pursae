@@ -918,6 +918,129 @@
 		} );
 	}
 
+	/* Stylised select ("Stylized UI") ------------------------------------------------------------ */
+
+	// A select2-like control over the native select, which stays in the form (hidden) and keeps
+	// the value: a search box filters the choices, a multiple select shows its values as
+	// removable chips. Keyboard: arrows move, Enter picks, Escape closes.
+	function initStyledSelects( root ) {
+		$( root ).find( 'select[data-ui="1"]' ).each( function () {
+			var $sel = $( this );
+			if ( $sel.data( 'acfgoStyled' ) || $sel.closest( 'template' ).length ) {
+				return;
+			}
+			$sel.data( 'acfgoStyled', true );
+			var multi = $sel.prop( 'multiple' );
+			var $wrap = $( '<div class="acfgo-select' + ( multi ? ' -multiple' : '' ) + '"></div>' );
+			var $value = $( '<div class="acfgo-select-value" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false"></div>' );
+			var $drop = $( '<div class="acfgo-select-drop" hidden><input type="search" class="acfgo-select-search" autocomplete="off" aria-label="' + __( 'Search' ) + '" /><ul class="acfgo-select-list" role="listbox"></ul></div>' );
+			$sel.addClass( 'acfgo-select-native' ).after( $wrap );
+			$wrap.append( $value, $drop );
+
+			function options() {
+				return $sel.find( 'option' ).filter( function () { return this.value !== '' || ! multi; } );
+			}
+			function renderValue() {
+				$value.empty();
+				var $chosen = $sel.find( 'option:selected' ).filter( function () { return this.value !== ''; } );
+				if ( ! $chosen.length ) {
+					$value.append( $( '<span class="acfgo-select-placeholder"></span>' ).text( $sel.find( 'option[value=""]' ).first().text() || __( 'Select' ) ) );
+				} else if ( multi ) {
+					$chosen.each( function () {
+						var opt = this;
+						$value.append( $( '<span class="acfgo-select-chip"></span>' ).text( $( opt ).text() ).append(
+							$( '<button type="button" class="acfgo-select-remove" aria-label="' + __( 'Remove' ) + '">&times;</button>' ).on( 'click', function ( e ) {
+								e.stopPropagation();
+								opt.selected = false;
+								$sel.trigger( 'change' );
+							} ) ) );
+					} );
+				} else {
+					$value.append( $( '<span class="acfgo-select-single"></span>' ).text( $chosen.first().text() ) );
+				}
+			}
+			function renderList() {
+				var q = $.trim( $drop.find( '.acfgo-select-search' ).val() ).toLowerCase(), $list = $drop.find( '.acfgo-select-list' ).empty();
+				options().each( function () {
+					var opt = this, label = $( opt ).text();
+					if ( q && label.toLowerCase().indexOf( q ) === -1 ) {
+						return;
+					}
+					$( '<li role="option"></li>' ).text( label ).attr( 'aria-selected', opt.selected ? 'true' : 'false' ).toggleClass( 'is-selected', opt.selected )
+						.data( 'option', opt ).appendTo( $list );
+				} );
+				if ( ! $list.children().length ) {
+					$list.append( $( '<li class="acfgo-select-empty"></li>' ).text( __( 'No matches found' ) ) );
+				}
+				$list.children().not( '.acfgo-select-empty' ).first().addClass( 'is-focus' );
+			}
+			function open() {
+				if ( $sel.prop( 'disabled' ) ) {
+					return;
+				}
+				$drop.prop( 'hidden', false );
+				$wrap.addClass( 'is-open' );
+				$value.attr( 'aria-expanded', 'true' );
+				renderList();
+				$drop.find( '.acfgo-select-search' ).val( '' ).trigger( 'focus' );
+			}
+			function close( focus ) {
+				$drop.prop( 'hidden', true );
+				$wrap.removeClass( 'is-open' );
+				$value.attr( 'aria-expanded', 'false' );
+				if ( focus ) {
+					$value.trigger( 'focus' );
+				}
+			}
+			function pick( $li ) {
+				var opt = $li.data( 'option' );
+				if ( ! opt ) {
+					return;
+				}
+				if ( multi ) {
+					opt.selected = ! opt.selected;
+					$sel.trigger( 'change' );
+					renderList();
+				} else {
+					$sel.val( opt.value ).trigger( 'change' );
+					close( true );
+				}
+			}
+			$value.on( 'click', function () {
+				if ( $wrap.hasClass( 'is-open' ) ) { close(); } else { open(); }
+			} ).on( 'keydown', function ( e ) {
+				if ( e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' ) {
+					e.preventDefault();
+					open();
+				}
+			} );
+			$drop.on( 'input', '.acfgo-select-search', renderList ).on( 'keydown', '.acfgo-select-search', function ( e ) {
+				var $items = $drop.find( '.acfgo-select-list li' ).not( '.acfgo-select-empty' ), $cur = $items.filter( '.is-focus' ), i = $items.index( $cur );
+				if ( e.key === 'ArrowDown' || e.key === 'ArrowUp' ) {
+					e.preventDefault();
+					i = Math.max( 0, Math.min( $items.length - 1, i + ( e.key === 'ArrowDown' ? 1 : -1 ) ) );
+					$items.removeClass( 'is-focus' ).eq( i ).addClass( 'is-focus' )[ 0 ].scrollIntoView( { block: 'nearest' } );
+				} else if ( e.key === 'Enter' ) {
+					e.preventDefault();
+					pick( $cur );
+				} else if ( e.key === 'Escape' ) {
+					e.preventDefault();
+					close( true );
+				}
+			} ).on( 'mousedown', '.acfgo-select-list li', function ( e ) {
+				e.preventDefault();
+				pick( $( this ) );
+			} );
+			$( document ).on( 'mousedown', function ( e ) {
+				if ( $wrap.hasClass( 'is-open' ) && ! $.contains( $wrap[ 0 ], e.target ) ) {
+					close();
+				}
+			} );
+			$sel.on( 'change', renderValue );
+			renderValue();
+		} );
+	}
+
 	/* Init ---------------------------------------------------------------------------------------------- */
 
 	function init( root ) {
@@ -925,6 +1048,7 @@
 		initAccordions( root );
 		initSortables( root );
 		initEditors( root );
+		initStyledSelects( root );
 		$( root ).find( '.acf-repeater' ).addBack( '.acf-repeater' ).each( function () {
 			repeaterState( $( this ) );
 		} );

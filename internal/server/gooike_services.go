@@ -18,8 +18,11 @@ type gooikeService struct {
 	IDLabel, IDExample             string
 	IDPattern                      *regexp.Regexp
 	Note                           string
+	NoID                           bool // the service has no account ID (the snippet is the same for every site)
+	LowerID                        bool // IDs are lower-case (the default normalises to upper-case)
 	code                           func(id string) string
-	Script, Connect, Frame         []string // CSP sources
+	sources                        func(id string) []string // CSP sources that depend on the ID (self-hosted services)
+	Script, Connect, Frame         []string                 // CSP sources
 	Cookies                        []gooikeCookieRow
 	Detect                         []string // lower-case substrings that reveal the service in a page
 }
@@ -149,6 +152,60 @@ var gooikeServices = []*gooikeService{
 			{Name: "_uetvid", Provider: "Microsoft Advertising", Purpose: "Stores a visitor ID for ad measurement.", Duration: "13 months"},
 		},
 		Detect: []string{"bat.bing.com/bat.js"}},
+	{Key: "matomo", Name: "Matomo", Category: "statistics", Placement: "head", IDLabel: "Matomo address and site ID", IDExample: "analytics.example.com/1",
+		IDPattern: regexp.MustCompile(`^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}(/[a-z0-9_-]+)*/[0-9]{1,8}$`), LowerID: true,
+		Note: "The host (and folder) of your Matomo, a slash, then the site ID. Matomo Cloud: yoursite.matomo.cloud/1.",
+		code: func(id string) string {
+			i := strings.LastIndex(id, "/")
+			return `<script>var _paq=window._paq=window._paq||[];_paq.push(['trackPageView']);_paq.push(['enableLinkTracking']);(function(){var u="https://` + id[:i] + `/";_paq.push(['setTrackerUrl',u+'matomo.php']);_paq.push(['setSiteId','` + id[i+1:] + `']);var d=document,g=d.createElement('script'),s=d.getElementsByTagName('script')[0];g.async=true;g.src=u+'matomo.js';s.parentNode.insertBefore(g,s);})();</script>`
+		},
+		sources: func(id string) []string {
+			host, _, _ := strings.Cut(id, "/")
+			return []string{"https://" + host}
+		},
+		Cookies: []gooikeCookieRow{
+			{Name: "_pk_id.*", Provider: "Matomo", Purpose: "Stores a visitor ID to count returning visitors.", Duration: "13 months"},
+			{Name: "_pk_ses.*", Provider: "Matomo", Purpose: "Holds the data of the current visit.", Duration: "30 minutes"},
+			{Name: "_pk_ref.*", Provider: "Matomo", Purpose: "Remembers the site the visitor came from.", Duration: "6 months"},
+		},
+		Detect: []string{"/matomo.js", "/piwik.js", "matomo.php"}},
+	{Key: "intercom", Name: "Intercom Messenger", Category: "preferences", Placement: "footer", IDLabel: "App ID", IDExample: "ab12cd34",
+		IDPattern: regexp.MustCompile(`^[a-z0-9]{6,12}$`), LowerID: true,
+		code: func(id string) string {
+			return `<script>window.intercomSettings={api_base:"https://api-iam.intercom.io",app_id:"` + id + `"};(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/` + id + `';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(document.readyState==='complete'){l();}else{w.addEventListener('load',l,false);}}})();</script>`
+		},
+		Script:  []string{"https://widget.intercom.io", "https://js.intercomcdn.com"},
+		Connect: []string{"https://*.intercom.io", "wss://*.intercom.io", "https://*.intercomcdn.com"},
+		Cookies: []gooikeCookieRow{
+			{Name: "intercom-id-*", Provider: "Intercom", Purpose: "Identifies an anonymous visitor of the messenger.", Duration: "9 months"},
+			{Name: "intercom-session-*", Provider: "Intercom", Purpose: "Keeps the messenger conversation across pages.", Duration: "7 days"},
+			{Name: "intercom-device-id-*", Provider: "Intercom", Purpose: "Identifies the device the messenger runs on.", Duration: "9 months"},
+		},
+		Detect: []string{"widget.intercom.io", "intercomsettings"}},
+	{Key: "hubspot", Name: "HubSpot Tracking", Category: "marketing", Placement: "footer", IDLabel: "Hub ID", IDExample: "12345678",
+		IDPattern: regexp.MustCompile(`^[0-9]{5,12}$`),
+		code: func(id string) string {
+			return `<script type="text/javascript" id="hs-script-loader" async defer src="https://js.hs-scripts.com/` + id + `.js"></script>`
+		},
+		Script:  []string{"https://js.hs-scripts.com", "https://js.hs-analytics.net", "https://js.hs-banner.com", "https://js.hscollectedforms.net", "https://js.usemessages.com"},
+		Connect: []string{"https://*.hubspot.com", "https://*.hubapi.com", "https://*.hsforms.com", "https://*.hscollectedforms.net"},
+		Cookies: []gooikeCookieRow{
+			{Name: "hubspotutk", Provider: "HubSpot", Purpose: "Keeps a visitor identity that is passed to HubSpot on form submission.", Duration: "6 months"},
+			{Name: "__hstc", Provider: "HubSpot", Purpose: "Main tracking cookie: first, last and current visit and the session count.", Duration: "6 months"},
+			{Name: "__hssc", Provider: "HubSpot", Purpose: "Keeps track of sessions.", Duration: "30 minutes"},
+			{Name: "__hssrc", Provider: "HubSpot", Purpose: "Detects whether the browser was restarted.", Duration: "Session"},
+		},
+		Detect: []string{"js.hs-scripts.com", "js.hs-analytics.net"}},
+	{Key: "stripe", Name: "Stripe.js", Category: "necessary", Placement: "head", NoID: true,
+		Note:    "Stripe asks for Stripe.js on every page for fraud prevention; its cookies are strictly necessary for payments. Adding it declares them and allows Stripe's hosts.",
+		code:    func(string) string { return `<script async src="https://js.stripe.com/v3/"></script>` },
+		Script:  []string{"https://js.stripe.com", "https://*.js.stripe.com"},
+		Connect: []string{"https://api.stripe.com", "https://m.stripe.com", "https://m.stripe.network", "https://q.stripe.com"},
+		Cookies: []gooikeCookieRow{
+			{Name: "__stripe_mid", Provider: "Stripe", Purpose: "Fraud prevention: identifies the device during payments.", Duration: "1 year"},
+			{Name: "__stripe_sid", Provider: "Stripe", Purpose: "Fraud prevention: identifies the payment session.", Duration: "30 minutes"},
+		},
+		Detect: []string{"js.stripe.com/v3"}},
 }
 
 // gooikeRecaptchaCookies are what the reCAPTCHA v3 script of Pursae Contact Form sets once it runs.
@@ -157,22 +214,98 @@ var gooikeRecaptchaCookies = []gooikeCookieRow{
 	{Name: "rc::*", Provider: "Google", Purpose: "Stores reCAPTCHA risk analysis state in the browser.", Duration: "Persistent"},
 }
 
-// gooikeEmbeds are the third-party iframes Gooike can hold back until consent.
+// gooikeEmbeds are the third-party embeds Gooike can hold back until consent: their iframes get a
+// placeholder, and the loader scripts some of them use (Scripts: lower-case signatures) are
+// blocked like a script of the embed category.
 var gooikeEmbeds = []struct {
 	Key, Name string
-	Hosts     []string // host suffixes
+	Hosts     []string // host suffixes, or host/path prefixes
+	Scripts   []string
 	Cookies   []gooikeCookieRow
 }{
-	{"youtube", "YouTube", []string{"youtube.com", "youtube-nocookie.com", "youtu.be"}, []gooikeCookieRow{
+	{"youtube", "YouTube", []string{"youtube.com", "youtube-nocookie.com", "youtu.be"}, nil, []gooikeCookieRow{
 		{Name: "YSC", Provider: "YouTube", Purpose: "Counts views of embedded videos.", Duration: "Session"},
 		{Name: "VISITOR_INFO1_LIVE", Provider: "YouTube", Purpose: "Estimates the bandwidth to pick the video quality and tracks preferences.", Duration: "6 months"},
 	}},
-	{"vimeo", "Vimeo", []string{"player.vimeo.com", "vimeo.com"}, []gooikeCookieRow{
+	{"vimeo", "Vimeo", []string{"player.vimeo.com", "vimeo.com"}, nil, []gooikeCookieRow{
 		{Name: "vuid", Provider: "Vimeo", Purpose: "Collects analytics of the embedded Vimeo player.", Duration: "2 years"},
 	}},
-	{"maps", "Google Maps", []string{"google.com/maps", "maps.google.com", "www.google.com/maps"}, []gooikeCookieRow{
+	{"maps", "Google Maps", []string{"google.com/maps", "maps.google.com", "www.google.com/maps"}, nil, []gooikeCookieRow{
 		{Name: "NID", Provider: "Google", Purpose: "Remembers preferences of embedded Google services such as Maps.", Duration: "6 months"},
 	}},
+	{"spotify", "Spotify", []string{"open.spotify.com", "embed.spotify.com"}, nil, []gooikeCookieRow{
+		{Name: "sp_t", Provider: "Spotify", Purpose: "Identifies the browser for the embedded Spotify player.", Duration: "1 year"},
+		{Name: "sp_landing", Provider: "Spotify", Purpose: "Remembers how the visitor reached the embedded player.", Duration: "1 day"},
+	}},
+	{"soundcloud", "SoundCloud", []string{"w.soundcloud.com", "api.soundcloud.com"}, nil, []gooikeCookieRow{
+		{Name: "sc_anonymous_id", Provider: "SoundCloud", Purpose: "Identifies an anonymous listener of the embedded player.", Duration: "10 years"},
+	}},
+	{"instagram", "Instagram", []string{"instagram.com"}, []string{"instagram.com/embed.js"}, []gooikeCookieRow{
+		{Name: "csrftoken", Provider: "Instagram", Purpose: "Protects the embedded Instagram post against forged requests.", Duration: "1 year"},
+		{Name: "mid", Provider: "Instagram", Purpose: "Identifies the browser for embedded Instagram content.", Duration: "13 months"},
+		{Name: "ig_did", Provider: "Instagram", Purpose: "Identifies the device for embedded Instagram content.", Duration: "1 year"},
+	}},
+	{"x", "X (Twitter)", []string{"platform.twitter.com", "syndication.twitter.com", "platform.x.com"}, []string{"platform.twitter.com/widgets.js", "platform.x.com/widgets.js"}, []gooikeCookieRow{
+		{Name: "guest_id", Provider: "X (Twitter)", Purpose: "Identifies a visitor who is not logged in to X for embedded posts.", Duration: "13 months"},
+		{Name: "personalization_id", Provider: "X (Twitter)", Purpose: "Tracks activity on and off X to personalise content and ads.", Duration: "13 months"},
+	}},
+	{"facebook", "Facebook", []string{"www.facebook.com/plugins", "web.facebook.com/plugins", "www.facebook.com/v"}, []string{"connect.facebook.net/*/sdk.js", "connect.facebook.net/*/all.js"}, []gooikeCookieRow{
+		{Name: "datr", Provider: "Facebook", Purpose: "Identifies the browser for security and site integrity in embedded Facebook content.", Duration: "13 months"},
+	}},
+	{"tiktok", "TikTok", []string{"www.tiktok.com/embed", "www.tiktok.com/player"}, []string{"tiktok.com/embed.js"}, []gooikeCookieRow{
+		{Name: "ttwid", Provider: "TikTok", Purpose: "Identifies the visitor of an embedded TikTok video.", Duration: "1 year"},
+		{Name: "tt_webid_v2", Provider: "TikTok", Purpose: "Identifies the browser for embedded TikTok videos.", Duration: "1 year"},
+	}},
+	{"dailymotion", "Dailymotion", []string{"dailymotion.com", "geo.dailymotion.com"}, nil, []gooikeCookieRow{
+		{Name: "ts", Provider: "Dailymotion", Purpose: "Counts views of the embedded player.", Duration: "13 months"},
+		{Name: "v1st", Provider: "Dailymotion", Purpose: "Identifies the browser of the embedded player.", Duration: "13 months"},
+	}},
+	{"twitch", "Twitch", []string{"player.twitch.tv", "clips.twitch.tv"}, nil, []gooikeCookieRow{
+		{Name: "unique_id", Provider: "Twitch", Purpose: "Identifies the viewer of the embedded Twitch player.", Duration: "1 year"},
+	}},
+}
+
+// embedBlocked reports whether an embed provider is held back until consent. YouTube, Vimeo and
+// Google Maps have their own switches; every other provider is blocked unless listed in EmbedsOff.
+func (st *gooikeSettings) embedBlocked(key string) bool {
+	switch key {
+	case "youtube":
+		return st.BlockYouTube
+	case "vimeo":
+		return st.BlockVimeo
+	case "maps":
+		return st.BlockMaps
+	}
+	return !gooikeContains(st.EmbedsOff, key)
+}
+
+// gooikeSigIn reports whether a lower-case script signature occurs in low; a "*" in the signature
+// stands for any run of characters without a quote or space (the locale in connect.facebook.net/xx_XX/sdk.js).
+func gooikeSigIn(low, sig string) bool {
+	pre, post, wild := strings.Cut(sig, "*")
+	if !wild {
+		return strings.Contains(low, sig)
+	}
+	for rest := low; ; {
+		i := strings.Index(rest, pre)
+		if i < 0 {
+			return false
+		}
+		rest = rest[i+len(pre):]
+		if j := strings.IndexAny(rest, "\"' <>/"); j >= 0 && strings.HasPrefix(rest[j:], post) {
+			return true
+		}
+	}
+}
+
+// anyEmbedBlocked reports whether at least one embed provider is held back.
+func (st *gooikeSettings) anyEmbedBlocked() bool {
+	for _, e := range gooikeEmbeds {
+		if st.embedBlocked(e.Key) {
+			return true
+		}
+	}
+	return false
 }
 
 func gooikeServiceByKey(k string) *gooikeService {
@@ -184,10 +317,18 @@ func gooikeServiceByKey(k string) *gooikeService {
 	return nil
 }
 
+// validID reports whether id is a usable account ID of the service.
+func (sv *gooikeService) validID(id string) bool {
+	if sv.NoID {
+		return true
+	}
+	return sv.IDPattern != nil && sv.IDPattern.MatchString(id)
+}
+
 // code is the snippet of a script entry: the generated code of a service, or the admin's own.
 func (sc gooikeScript) code() string {
 	if sv := gooikeServiceByKey(sc.Service); sv != nil {
-		if sv.IDPattern.MatchString(sc.ServiceID) {
+		if sv.validID(sc.ServiceID) {
 			return sv.code(sc.ServiceID)
 		}
 		return ""
@@ -269,6 +410,10 @@ func gooikeCSPSources(st *gooikeSettings) map[string][]string {
 		if sv := gooikeServiceByKey(sc.Service); sv != nil {
 			add("script-src", sv.Script...)
 			add("connect-src", sv.Connect...)
+			if sv.sources != nil && sv.validID(sc.ServiceID) {
+				add("script-src", sv.sources(sc.ServiceID)...)
+				add("connect-src", sv.sources(sc.ServiceID)...)
+			}
 			continue
 		}
 		for _, u := range gooikeURLInScriptRe.FindAllString(sc.Code, -1) {
@@ -309,9 +454,8 @@ func gooikeEmbedFor(st *gooikeSettings, src string) (key, name string) {
 	}
 	host := strings.ToLower(u.Hostname())
 	hp := host + u.Path
-	on := map[string]bool{"youtube": st.BlockYouTube, "vimeo": st.BlockVimeo, "maps": st.BlockMaps}
 	for _, e := range gooikeEmbeds {
-		if !on[e.Key] {
+		if !st.embedBlocked(e.Key) {
 			continue
 		}
 		for _, h := range e.Hosts {
@@ -366,6 +510,18 @@ func gooikeBlockScripts(st *gooikeSettings, doc string) string {
 			for _, d := range sv.Detect {
 				if d = strings.ToLower(d); strings.Contains(low, d) && len(d) > bestLen && !strings.Contains(necessary, d) {
 					best, bestLen = sv.Category, len(d)
+				}
+			}
+		}
+		if best == "" { // the loader script of a blocked embed provider (Instagram, X, TikTok, Facebook)
+			for _, e := range gooikeEmbeds {
+				if !st.embedBlocked(e.Key) {
+					continue
+				}
+				for _, sig := range e.Scripts {
+					if gooikeSigIn(low, sig) {
+						best = st.EmbedCategory
+					}
 				}
 			}
 		}

@@ -961,9 +961,11 @@ func (s *Server) seogoAddRedirect(ctx context.Context, r *seogoRedirectRow) erro
 		_, err = s.store.Pool.Exec(ctx, `UPDATE redirects SET source=$2, target=$3, code=$4, match_type=$5, status=$6, category=$7, updated_at=now() WHERE id=$1`,
 			r.ID, r.Source, r.Target, r.Code, r.MatchType, r.Status, r.Category)
 	} else {
-		_, err = s.store.Pool.Exec(ctx, `INSERT INTO redirects (source, target, code, match_type, status, category, origin) VALUES ($1,$2,$3,$4,$5,$6,$7)
-			ON CONFLICT (source) DO UPDATE SET target=EXCLUDED.target, code=EXCLUDED.code, match_type=EXCLUDED.match_type, status=EXCLUDED.status, updated_at=now()`,
-			r.Source, r.Target, r.Code, r.MatchType, r.Status, r.Category, r.Origin)
+		// RETURNING id: callers (the REST create route, MCP) answer with the new row's id.
+		err = s.store.Pool.QueryRow(ctx, `INSERT INTO redirects (source, target, code, match_type, status, category, origin) VALUES ($1,$2,$3,$4,$5,$6,$7)
+			ON CONFLICT (source) DO UPDATE SET target=EXCLUDED.target, code=EXCLUDED.code, match_type=EXCLUDED.match_type, status=EXCLUDED.status, updated_at=now()
+			RETURNING id`,
+			r.Source, r.Target, r.Code, r.MatchType, r.Status, r.Category, r.Origin).Scan(&r.ID)
 	}
 	s.seogoRedirectsChanged()
 	return err

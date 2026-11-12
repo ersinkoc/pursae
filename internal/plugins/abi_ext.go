@@ -320,43 +320,8 @@ func hostRegisterSettingsPage(_ context.Context, p *Plugin, req []byte) (any, er
 	if len(page.Description) > maxDescription {
 		return nil, invalid("description is longer than %d characters", maxDescription)
 	}
-	if len(page.Fields) == 0 || len(page.Fields) > maxSettingsField {
-		return nil, invalid("a settings page needs 1-%d fields", maxSettingsField)
-	}
-	seen := map[string]bool{}
-	for i := range page.Fields {
-		f := &page.Fields[i]
-		if !fieldIDRe.MatchString(f.ID) {
-			return nil, invalid("field id %q must be 1-64 lowercase letters, digits or _", f.ID)
-		}
-		if seen[f.ID] {
-			return nil, invalid("field %q is listed twice", f.ID)
-		}
-		seen[f.ID] = true
-		if !fieldTypes[f.Type] {
-			return nil, invalid("field %q: type must be text, textarea, number, checkbox or select", f.ID)
-		}
-		if strings.TrimSpace(f.Label) == "" {
-			f.Label = f.ID
-		}
-		if len(f.Label) > maxLabel || len(f.Placeholder) > maxLabel || len(f.Description) > maxDescription {
-			return nil, invalid("field %q: label and placeholder are limited to %d characters, the description to %d", f.ID, maxLabel, maxDescription)
-		}
-		if f.Type == "select" {
-			if len(f.Options) == 0 || len(f.Options) > 100 {
-				return nil, invalid("field %q: a select needs 1-100 options", f.ID)
-			}
-			for _, o := range f.Options {
-				if len(o.Value) > maxLabel || len(o.Label) > maxLabel {
-					return nil, invalid("field %q: option values and labels are limited to %d characters", f.ID, maxLabel)
-				}
-			}
-		} else if len(f.Options) > 0 {
-			return nil, invalid("field %q: only select fields take options", f.ID)
-		}
-		if raw, _ := json.Marshal(f.Default); len(raw) > 4096 {
-			return nil, invalid("field %q: default is too large", f.ID)
-		}
+	if err := checkFields(page.Fields, 1, maxSettingsField, "a settings page"); err != nil {
+		return nil, err
 	}
 	return map[string]any{"option_prefix": SettingsOptionPrefix(p.Slug())}, p.setSettingsPage(&page)
 }

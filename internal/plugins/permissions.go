@@ -72,6 +72,22 @@ const (
 	// PermMailSend allows sending e-mail through the site's mail settings
 	// (send_mail, the wp_mail equivalent). The host limits recipients and rate.
 	PermMailSend Permission = "mail:send"
+	// PermAdminPages allows adding pages to the admin menu (register_admin_page). The page's
+	// HTML is sanitised (no scripts) unless the plugin also holds admin:scripts.
+	PermAdminPages Permission = "admin:pages"
+	// PermAdminDashboard allows adding widgets to the Dashboard (register_dashboard_widget).
+	PermAdminDashboard Permission = "admin:dashboard"
+	// PermAdminMetaBoxes allows adding meta boxes to the post edit screen (register_meta_box):
+	// the plugin sees which post is edited and what the editor typed into its fields.
+	PermAdminMetaBoxes Permission = "admin:metaboxes"
+	// PermBlocks allows registering dynamic blocks rendered by the plugin (register_block).
+	PermBlocks Permission = "blocks:register"
+	// PermBuilderWidgets allows registering Pursae Web Builder widgets rendered by the plugin
+	// (register_builder_widget).
+	PermBuilderWidgets Permission = "builder:widgets"
+	// PermCommerceOrders allows subscribing to the Pursae Commerce order hooks (names starting
+	// with "woocommerce_"): customers' names, addresses and what they bought.
+	PermCommerceOrders Permission = "commerce:orders"
 )
 
 // permissionDescriptions documents every permission for admin screens.
@@ -93,6 +109,13 @@ var permissionDescriptions = map[Permission]string{
 	PermContentHTML:   "Show unfiltered HTML and scripts to visitors (they also run for logged-in administrators: full control of the site)",
 	PermAdminScripts:  "Run code in the admin (full control of the site)",
 	PermMailSend:      "Send e-mail from the site",
+
+	PermAdminPages:     "Add pages to the admin menu",
+	PermAdminDashboard: "Add widgets to the Dashboard",
+	PermAdminMetaBoxes: "Add boxes to the post edit screen and see what is typed into them",
+	PermBlocks:         "Add blocks to Pursae Editor and render them for visitors",
+	PermBuilderWidgets: "Add widgets to Pursae Web Builder and render them for visitors",
+	PermCommerceOrders: "See store orders: customers' names, addresses and what they bought",
 }
 
 // Dangerous reports whether p gives the plugin the equivalent of an
@@ -192,10 +215,12 @@ func HookPermission(hook string) Permission {
 		return PermContentFilter
 	case strings.HasPrefix(hook, "cron_") || strings.HasPrefix(hook, "wpgo_cron"):
 		return PermCron
-	case hook == "pre_comment_approved" || hook == "comment_post" || hook == "pursae_personal_data_export" || hook == "pursae_personal_data_erase":
+	case hook == "preprocess_comment" || hook == "pre_comment_approved" || hook == "comment_post" || hook == "pursae_personal_data_export" || hook == "pursae_personal_data_erase":
 		return PermForms // visitors' comments carry names, e-mail addresses and IPs
 	case strings.HasPrefix(hook, "wpcf7_"):
 		return PermForms // submissions carry visitors' names, e-mail addresses and messages
+	case strings.HasPrefix(hook, "woocommerce_"):
+		return PermCommerceOrders // orders carry customers' names, addresses and purchases
 	case strings.HasPrefix(hook, "headless_entry_"):
 		return PermHeadless // entries hold whatever the site stores in its content types
 	}

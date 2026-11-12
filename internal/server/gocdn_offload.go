@@ -196,7 +196,7 @@ func (s *Server) gocdnUploadFile(ctx context.Context, st gocdnSettings, cl *gocd
 	if err != nil {
 		return err
 	}
-	key := gocdnObjectKey(st, rel)
+	key := s.gocdnNewKey(st, rel)
 	opts := gocdnUploadOptions(st, rel)
 	if _, err := cl.Upload(ctx, key, f, fi.Size(), opts); err != nil {
 		return fmt.Errorf("%s: %w", rel, err)
@@ -375,7 +375,7 @@ func (s *Server) gocdnEnsureAttachmentLocal(ctx context.Context, a *store.Attach
 // through the site. Files on disk are left to the normal handler.
 func (s *Server) gocdnServeUpload(w http.ResponseWriter, r *http.Request, st gocdnSettings, rel string) bool {
 	local := s.gocdnLocalPath(rel)
-	if local == "" {
+	if local == "" || mediaIsPrivateRel(rel) { // private files are answered by mediaPrivateServe only
 		return false
 	}
 	if _, err := os.Stat(local); err == nil {

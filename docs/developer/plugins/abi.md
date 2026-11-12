@@ -71,6 +71,17 @@ The import returns `0` if no response could be delivered.
 | `enqueue_style` | `{"handle","src":"style.css","deps":[…],"where":"front\|admin\|both","media"}` | – | `content:filter`; `src` must be a package asset |
 | `enqueue_script` | `{"handle","src":"app.js","deps":[…],"where","in_footer":bool}` | – | `content:filter` |
 | `translate` | `{"text":"…","context":"…"}` | `{"text":"…"}` | none; text ≤10000 bytes, context ≤200 |
+| `register_admin_page` | `{"slug","page_title","menu_title","capability","parent","icon","callback"}` | `{"page":"<slug>[.<sub>]"}` | `admin:pages` |
+| `register_dashboard_widget` | `{"id","title","capability","callback"}` | – | `admin:dashboard` |
+| `register_meta_box` | `{"id","title","post_types":[…],"context":"normal\|side","fields":[…],"callback","save_callback"}` | `{"meta_prefix":"plugin_<slug>_"}` | `admin:metaboxes` |
+| `register_block` | `{"name":"<slug>/<name>","title","description","category","icon","keywords":[…],"attributes":[…],"callback"}` | – | `blocks:register` |
+| `register_builder_widget` | `{"id","title","description","icon","controls":[…],"callback"}` | `{"type":"<slug>/<id>"}` | `builder:widgets` |
+
+UI callbacks are called through `wpgo_handle` with `type` `admin_page`, `dashboard_widget` or
+`meta_box` and one argument, the request `{"page","method","query","form","post_id","values","user"}`;
+they return an HTML string (admin pages may return `{"html","notices":[{"type","message"}]}`).
+`meta_box_save` gets `[post_id, {field: value}]`; `block` and `builder_widget` get
+`[attributes, inner_html]` and return an HTML string ([admin UI](admin-ui.md)).
 
 `translate` returns the text in the language of the current request when the
 Host implements the optional `Translator` interface (the core does, through Pursae

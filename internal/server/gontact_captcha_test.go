@@ -89,7 +89,7 @@ func TestGontactCaptcha(t *testing.T) {
 		t.Fatalf("png: %v %+v", err, cfg)
 	}
 	for _, bad := range []string{"/123.png", "/" + prefix + ".gif", "/../x.png", "/abc.png"} {
-		if resp, _ := captchaImage(t, anon, base+gfCaptchaPath+bad); resp.StatusCode != http.StatusNotFound {
+		if resp, _ := captchaImage(t, anon, base+gfCaptchaPath+bad); resp.StatusCode != http.StatusNotFound && !(bad == "/../x.png" && resp.StatusCode == http.StatusForbidden) { // 403: the core firewall
 			t.Fatalf("%s: %d", bad, resp.StatusCode)
 		}
 	}

@@ -6,7 +6,11 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { Check, ImagePlus, LoaderCircle, Settings2, X } from 'lucide-react'
 import { t } from './i18n'
-import type { SiteImage, SiteSettingsController } from './site-settings'
+import { TOKEN_COLORS, TOKEN_FONTS, type SiteImage, type SiteSettingsController, type TokenColor, type TokenFont } from './site-settings'
+
+const COLOR_LABEL = (): Record<TokenColor, string> => ({ primary: t('Primary'), secondary: t('Secondary'), accent: t('Accent'), text: t('Text'), background: t('Background') })
+const FONT_LABEL = (): Record<TokenFont, string> => ({ heading: t('Headings'), body: t('Body text') })
+const HEX6 = /^#[0-9a-fA-F]{6}$/
 
 const BTN = 'inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-4 text-[13px] font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-accent/70 disabled:opacity-50'
 const PRIMARY = BTN + ' bg-accent text-white hover:brightness-110'
@@ -151,6 +155,45 @@ function Form({ c }: { c: SiteSettingsController }) {
             </div>
           </div>
         )}
+      </section>
+
+      <section className={SECTION} aria-labelledby="wb-site-tokens">
+        <h3 id="wb-site-tokens" className="text-[13px] font-semibold uppercase tracking-wide text-ink-400">
+          {t('Global colors and fonts')}
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {TOKEN_COLORS.map((k) => {
+            const v = draft.tokens.colors[k] ?? ''
+            const setColor = (x: string) => c.edit({ tokens: { ...draft.tokens, colors: { ...draft.tokens.colors, [k]: x } } })
+            return (
+              <div key={k}>
+                <label className={LABEL} htmlFor={`wb-token-${k}`}>
+                  {COLOR_LABEL()[k]} <code className="font-mono text-[11px] text-ink-500">--wb-color-{k}</code>
+                </label>
+                <div className="flex gap-2">
+                  <input type="color" aria-label={COLOR_LABEL()[k]} className="h-9 w-10 shrink-0 cursor-pointer rounded-lg border border-white/12 bg-ink-900" value={HEX6.test(v) ? v : '#000000'} onChange={(e) => setColor(e.target.value)} />
+                  <input id={`wb-token-${k}`} className={FIELD} value={v} placeholder="#2271b1" spellCheck={false} onChange={(e) => setColor(e.target.value)} />
+                </div>
+              </div>
+            )
+          })}
+          {TOKEN_FONTS.map((k) => (
+            <div key={k}>
+              <label className={LABEL} htmlFor={`wb-token-font-${k}`}>
+                {FONT_LABEL()[k]} <code className="font-mono text-[11px] text-ink-500">--wb-font-{k}</code>
+              </label>
+              <input
+                id={`wb-token-font-${k}`}
+                className={FIELD}
+                value={draft.tokens.fonts[k] ?? ''}
+                placeholder="Inter, sans-serif"
+                spellCheck={false}
+                onChange={(e) => c.edit({ tokens: { ...draft.tokens, fonts: { ...draft.tokens.fonts, [k]: e.target.value } } })}
+              />
+            </div>
+          ))}
+        </div>
+        <p className={HINT}>{t('Use them in any color, font or CSS field as var(--wb-color-primary) or var(--wb-font-heading); changing a value here updates every page.')}</p>
       </section>
 
       <section className={SECTION} aria-labelledby="wb-site-css">

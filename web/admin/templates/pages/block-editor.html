@@ -2,7 +2,7 @@
 <div class="block-editor">
 	<h1 class="screen-reader-text hide-if-no-js">{{.Data.Title}}</h1>
 	<div id="editor" class="block-editor__container hide-if-no-js"></div>
-	<div id="metaboxes" class="hidden"></div>
+	<div id="metaboxes" class="hidden">{{.Data.MetaBoxes}}</div>
 	<div class="wrap hide-if-js block-editor-no-js">
 		<h1 class="wp-heading-inline">{{.Data.Title}}</h1>
 		<div class="notice notice-error"><p>Pursae Editor, the block editor, requires JavaScript. Please enable JavaScript in your browser settings{{if .Data.ClassicURL}}, or <a href="{{.Data.ClassicURL}}">use the classic editor</a>{{end}}.</p></div>

@@ -95,6 +95,9 @@ func (s *Server) registerWebBuilderREST() {
 	reg(`/web-builder/v2/fonts/css2`, map[string]restHandler{http.MethodGet: s.wbRESTFontsCSS}, false) // a stylesheet: nonce in ?_wpnonce=
 	reg(`/web-builder/v2/site-settings`, map[string]restHandler{http.MethodGet: s.wbRESTSiteSettings, http.MethodPut: s.wbRESTSiteSettingsSave}, true)
 	reg(`/web-builder/v2/outdated`, map[string]restHandler{http.MethodGet: s.wbRESTOutdated}, true)
+	// Widgets of Wasm plugins (plugins_ui.go)
+	reg(`/web-builder/v2/plugin-widgets`, map[string]restHandler{http.MethodGet: s.wbPluginWidgets}, true)
+	reg(`/web-builder/v2/plugin-widgets/render`, map[string]restHandler{http.MethodPost: s.wbPluginWidgetRender}, true)
 	// Theme Builder (webbuilder_templates_rest.go)
 	s.wbRegisterTemplateREST(reg)
 	// Theme library (webbuilder_themes.go)
@@ -459,6 +462,7 @@ func (s *Server) wbRESTLock(c *gin.Context, r *restRequest) {
 type wbPublishBody struct {
 	BaseRev    int                     `json:"baseRev"`
 	Status     string                  `json:"status"`
+	Date       string                  `json:"date"`
 	Reattach   bool                    `json:"reattach"`
 	Doc        json.RawMessage         `json:"doc"`
 	Page       json.RawMessage         `json:"page"`
@@ -598,6 +602,20 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		return
 	}
 	status := body.Status
+	// Scheduled publish: status future with the date the page goes live. The snapshot is stored now;
+	// the core's publish_future_post cron (publishDuePosts) flips the status and purges the cache.
+	var when *time.Time
+	if status == webbuilder.StatusFuture {
+		t, err := time.Parse(time.RFC3339, strings.TrimSpace(body.Date))
+		if err != nil || wbIsTemplate(p) {
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): date")
+			return
+		}
+		when = &t
+		if !t.After(time.Now()) {
+			status = webbuilder.StatusPublish // the store would do the same; say so in the answer
+		}
+	}
 	switch {
 	case wbIsTemplate(p):
 		// A template is active (publish) or disabled (draft); wbEditable already required
@@ -606,9 +624,9 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 			wbBadTemplate(c, "A template can only be published or saved as a draft.")
 			return
 		}
-	case status == webbuilder.StatusPublish || status == webbuilder.StatusPrivate:
+	case status == webbuilder.StatusPublish || status == webbuilder.StatusPrivate || status == webbuilder.StatusFuture:
 		if !u.Can("publish_post", p) {
-			status = webbuilder.StatusPending
+			status, when = webbuilder.StatusPending, nil
 		}
 	case status == webbuilder.StatusDraft || status == webbuilder.StatusPending:
 	default:
@@ -717,6 +735,12 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		fresh.Excerpt = ps.Description
 	}
 	fresh.Content = content
+	switch {
+	case when != nil:
+		fresh.PublishedAt = when
+	case status == webbuilder.StatusPublish && fresh.Status == webbuilder.StatusFuture:
+		fresh.PublishedAt = nil // "publish now" of a scheduled page: the store dates it now
+	}
 	fresh.Status = status
 	if fresh.Meta == nil {
 		fresh.Meta = map[string]any{}
@@ -773,6 +797,11 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not record the revision.")
 		return
 	}
+	// The core cap (WPGO_POST_REVISIONS) also covers the revision a style-only publish inserts above.
+	if err := store.PruneRevisionsTx(c, tx, p.ID); err != nil {
+		restErr(c, http.StatusInternalServerError, "db_error", "Could not prune the old revisions.")
+		return
+	}
 	if _, err := wbtx.PruneRevisions(c, p.ID, s.wbRevisionsKeep()); err != nil {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not prune the old revisions.")
 		return
@@ -800,7 +829,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 			permalink = info.URL
 		}
 	}
-	c.JSON(http.StatusOK, webbuilder.PublishResponse{Rev: d.Rev, Status: fresh.Status, Permalink: permalink,
+	c.JSON(http.StatusOK, webbuilder.PublishResponse{Rev: d.Rev, Status: fresh.Status, Date: wbPostDate(fresh), Permalink: permalink,
 		RevisionID: revisionID, Modified: wbTime(fresh.ModifiedAt), Stripped: snap.stripped})
 }
 

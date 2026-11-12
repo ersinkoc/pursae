@@ -3,11 +3,13 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -50,16 +52,170 @@ func (s *Server) gocdnOffloadAsync(a *store.Attachment) {
 			if err == nil {
 				_, err = s.gocdnOffloadAttachment(ctx, st, cl, cur)
 			}
-			cancel()
 			if err == nil {
+				s.gocdnClearFailure(ctx, id)
+				cancel()
 				return
 			}
 			slog.Warn("gocdn: offloading an upload", "media", id, "attempt", i+1, "err", err)
-			if gocdnOffloadInline {
+			if gocdnOffloadInline || i == len(gocdnOffloadRetryDelays)-1 {
+				s.gocdnRecordFailure(ctx, id, err) // kept for the daily pass and the Retry failed button
+				cancel()
 				return
 			}
+			cancel()
 		}
 	})
+}
+
+// Failed offloads ---------------------------------------------------------------------------------
+
+func (s *Server) gocdnRecordFailure(ctx context.Context, id int64, err error) {
+	msg := err.Error()
+	if len(msg) > 500 {
+		msg = msg[:500]
+	}
+	if _, e := s.store.Pool.Exec(ctx, `INSERT INTO gocdn_offload_failures(media_id, last_error) VALUES ($1,$2)
+		ON CONFLICT (media_id) DO UPDATE SET attempts = gocdn_offload_failures.attempts + 1, last_error = EXCLUDED.last_error, updated_at = now()`, id, msg); e != nil {
+		slog.Warn("gocdn: recording a failed offload", "media", id, "err", e)
+	}
+}
+
+func (s *Server) gocdnClearFailure(ctx context.Context, id int64) {
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_offload_failures WHERE media_id = $1`, id)
+}
+
+// gocdnFailedCount is the number of uploads waiting for another offload attempt.
+func (s *Server) gocdnFailedCount(ctx context.Context) int {
+	var n int
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM gocdn_offload_failures`).Scan(&n)
+	return n
+}
+
+// gocdnRetryFailedUploads offloads the uploads whose earlier attempts failed (oldest first, up to limit);
+// it returns how many succeeded and how many are still failing.
+func (s *Server) gocdnRetryFailedUploads(ctx context.Context, limit int) (done, left int) {
+	st := s.gocdnLoad()
+	if !s.gocdnOn() || !st.CopyToBucket {
+		return 0, s.gocdnFailedCount(ctx)
+	}
+	cl, err := s.gocdnClient(st)
+	if err != nil {
+		return 0, s.gocdnFailedCount(ctx)
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT media_id FROM gocdn_offload_failures ORDER BY updated_at LIMIT $1`, limit)
+	if err != nil {
+		return 0, 0
+	}
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if rows.Scan(&id) == nil {
+			ids = append(ids, id)
+		}
+	}
+	rows.Close()
+	for _, id := range ids {
+		if ctx.Err() != nil {
+			break
+		}
+		a, err := s.store.GetAttachment(ctx, id)
+		if err != nil {
+			s.gocdnClearFailure(ctx, id)
+			continue
+		}
+		if _, err := s.gocdnOffloadAttachment(ctx, st, cl, a); err != nil {
+			s.gocdnRecordFailure(ctx, id, err)
+			continue
+		}
+		s.gocdnClearFailure(ctx, id)
+		done++
+	}
+	return done, s.gocdnFailedCount(ctx)
+}
+
+// Objects without a record -----------------------------------------------------------------------
+
+// gocdnOrphanLimit bounds one scan's result (the screen lists them; the next scan finds the rest).
+const gocdnOrphanLimit = 500
+
+// gocdnScanOrphans lists the objects under the uploads prefix of the configured bucket that no
+// record points at (an upload interrupted before its row was written, a delete whose row went but
+// whose object stayed, files put there by hand). The processed image cache is not part of it.
+func (s *Server) gocdnScanOrphans(ctx context.Context) ([]string, error) {
+	st := s.gocdnLoad()
+	cl, err := s.gocdnClient(st)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	token := ""
+	for {
+		res, err := cl.List(ctx, st.Prefix, "", token, 1000)
+		if err != nil {
+			return out, err
+		}
+		var keys []string
+		for _, o := range res.Objects {
+			if strings.HasPrefix(o.Key, "gocdn-cache/") || strings.HasSuffix(o.Key, "/") {
+				continue
+			}
+			keys = append(keys, o.Key)
+		}
+		if len(keys) > 0 {
+			known := map[string]bool{}
+			rows, err := s.store.Pool.Query(ctx, `SELECT object_key FROM gocdn_items WHERE bucket = $1 AND object_key = ANY($2)`, st.Bucket, keys)
+			if err != nil {
+				return out, err
+			}
+			for rows.Next() {
+				var k string
+				if rows.Scan(&k) == nil {
+					known[k] = true
+				}
+			}
+			rows.Close()
+			for _, it := range s.gocdnPendingDeletes() {
+				known[it.Key] = true
+			}
+			for _, k := range keys {
+				if !known[k] {
+					out = append(out, k)
+					if len(out) >= gocdnOrphanLimit {
+						return out, nil
+					}
+				}
+			}
+		}
+		if res.NextToken == "" {
+			return out, nil
+		}
+		token = res.NextToken
+	}
+}
+
+// gocdnDeleteOrphans deletes the given keys from the bucket, skipping any that has a record by now.
+func (s *Server) gocdnDeleteOrphans(ctx context.Context, keys []string) (int, error) {
+	st := s.gocdnLoad()
+	cl, err := s.gocdnClient(st)
+	if err != nil {
+		return 0, err
+	}
+	n := 0
+	var errs []error
+	for _, k := range keys {
+		var have bool
+		_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM gocdn_items WHERE bucket = $1 AND object_key = $2)`, st.Bucket, k).Scan(&have)
+		if have || !strings.HasPrefix(k, st.Prefix) {
+			continue
+		}
+		if err := cl.Delete(ctx, k); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		n++
+	}
+	return n, errors.Join(errs...)
 }
 
 // Processed image cache limit -------------------------------------------------------------------
@@ -251,6 +407,7 @@ func (s *Server) gocdnHousekeepingOnce(ctx context.Context) {
 	}
 	s.gocdnResumeInterrupted(ctx)
 	s.gocdnRetryPendingDeletes(ctx)
+	s.gocdnRetryFailedUploads(ctx, 500)
 	s.gocdnCleanupLocal(ctx)
 }
 

@@ -963,6 +963,11 @@ func init() {
 			s.gmemRevokeFromOrder(ctx, ch.Order, ch.To)
 		}
 	})
+	gooOn("order_partially_refunded", 30, func(s *Server, ctx context.Context, arg any) {
+		if ev, ok := arg.(*gooRefundEvent); ok && s.gooExtOn(gmemKey) {
+			s.gmemRevokeFromPartialRefund(ctx, ev.Order)
+		}
+	})
 	gooOn("subscription_status_changed", 30, func(s *Server, ctx context.Context, arg any) {
 		ch, ok := arg.(*gsubStatusChange)
 		if !ok || !s.gooExtOn(gmemKey) {
@@ -1099,6 +1104,58 @@ func (s *Server) gmemRevokeFromOrder(ctx context.Context, o *gooOrder, to string
 	for k, v := range o.Meta {
 		if strings.HasPrefix(k, "_membership_granted_") && v == true {
 			_, _ = s.gooClaimOrderFlag(ctx, o, k, false)
+		}
+	}
+}
+
+// gmemRevokeFromPartialRefund handles a partial refund: a membership the order granted is cancelled
+// once the line of the product that granted it is refunded in full (its whole quantity or its whole
+// total), and the plan's grant flag is released. Other lines' refunds, and partial refunds of the
+// granting line, leave the membership alone.
+func (s *Server) gmemRevokeFromPartialRefund(ctx context.Context, o *gooOrder) {
+	if o == nil || o.CustomerID == 0 {
+		return
+	}
+	var refunds []*gooOrder
+	loaded := false
+	for _, m := range s.gmemUMList(ctx, o.CustomerID, 0, "") {
+		if m.OrderID != o.ID || m.ProductID == 0 || m.Status == "cancelled" || m.Status == "expired" {
+			continue
+		}
+		if !loaded {
+			refunds, _ = s.gooRefunds(ctx, o.ID)
+			loaded = true
+		}
+		var qty, total, rQty, rTotal float64
+		found := false
+		for _, it := range o.ItemsOf("line_item") {
+			if it.ProductID != m.ProductID && it.VariationID != m.ProductID {
+				continue
+			}
+			found = true
+			qty += it.Quantity
+			total += it.Total
+			for _, r := range refunds {
+				for _, ri := range r.Items {
+					if gooRefundSource(o, ri) == it.ID {
+						rQty -= ri.Quantity
+						rTotal -= ri.Total
+					}
+				}
+			}
+		}
+		if !found || !((qty > 0 && rQty >= qty) || (total > 0 && rTotal >= total-0.005)) {
+			continue
+		}
+		m.addNote(fmt.Sprintf("Membership cancelled because its product was refunded on Order #%d.", o.ID))
+		m.Status = "cancelled"
+		now := time.Now()
+		if m.End == nil || m.End.After(now) {
+			m.End = &now
+		}
+		if s.gmemSaveUM(ctx, m) == nil {
+			_, _ = s.gooClaimOrderFlag(ctx, o, gmemGrantFlag(m.PlanID), false)
+			_ = s.gooAddOrderNote(ctx, o, "Membership access removed: the membership product was refunded.", false, "")
 		}
 	}
 }

@@ -437,6 +437,9 @@ type msDay struct {
 type msSubjectStat struct {
 	Subject             string
 	Total, Sent, Failed int
+	Tracked, Opened     int // e-mails that carried tracking / were opened at least once
+	Clicked             int
+	OpenRate, ClickRate string
 	LastStr, LastMailer string
 }
 
@@ -445,6 +448,20 @@ type msStats struct {
 	Total, Sent, Failed int
 	Max                 int
 	Subjects            []msSubjectStat
+	// Engagement and delivery over the period. Opened/Clicked count e-mails (not hits) with at
+	// least one open/click; the rates are relative to Tracked, the e-mails that carried tracking.
+	Tracked, Opened, Clicked        int
+	Opens, Clicks                   int // raw hit counters
+	Delivered, Bounced, Complained  int
+	OpenRate, ClickRate, BounceRate string
+}
+
+// msRate formats part/whole as a percentage ("—" when there is nothing to divide by).
+func msRate(part, whole int) string {
+	if whole <= 0 {
+		return "—"
+	}
+	return strconv.FormatFloat(float64(part)*100/float64(whole), 'f', 1, 64) + "%"
 }
 
 // msReport counts the log for the last days (today included).
@@ -486,7 +503,14 @@ func (s *Server) msReport(ctx context.Context, days int) (*msStats, error) {
 	for _, d := range st.Days {
 		st.Max = max(st.Max, d.Sent+d.Failed)
 	}
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FILTER (WHERE track_id <> ''), count(*) FILTER (WHERE open_count > 0),
+		count(*) FILTER (WHERE click_count > 0), COALESCE(sum(open_count), 0), COALESCE(sum(click_count), 0),
+		count(*) FILTER (WHERE delivery_status = 'delivered'), count(*) FILTER (WHERE delivery_status = 'bounced'),
+		count(*) FILTER (WHERE delivery_status = 'complained') FROM wpmailsmtp_emails_log WHERE date_sent >= $1`, start).
+		Scan(&st.Tracked, &st.Opened, &st.Clicked, &st.Opens, &st.Clicks, &st.Delivered, &st.Bounced, &st.Complained)
+	st.OpenRate, st.ClickRate, st.BounceRate = msRate(st.Opened, st.Tracked), msRate(st.Clicked, st.Tracked), msRate(st.Bounced, st.Sent)
 	rows, err = s.store.Pool.Query(ctx, `SELECT subject, count(*), count(*) FILTER (WHERE status = 'sent'), count(*) FILTER (WHERE status = 'failed'),
+		count(*) FILTER (WHERE track_id <> ''), count(*) FILTER (WHERE open_count > 0), count(*) FILTER (WHERE click_count > 0),
 		max(date_sent), (array_agg(mailer ORDER BY date_sent DESC))[1] FROM wpmailsmtp_emails_log WHERE date_sent >= $1
 		GROUP BY subject ORDER BY count(*) DESC, subject LIMIT 50`, start)
 	if err != nil {
@@ -496,7 +520,8 @@ func (s *Server) msReport(ctx context.Context, days int) (*msStats, error) {
 	for rows.Next() {
 		var r msSubjectStat
 		var last time.Time
-		if rows.Scan(&r.Subject, &r.Total, &r.Sent, &r.Failed, &last, &r.LastMailer) == nil {
+		if rows.Scan(&r.Subject, &r.Total, &r.Sent, &r.Failed, &r.Tracked, &r.Opened, &r.Clicked, &last, &r.LastMailer) == nil {
+			r.OpenRate, r.ClickRate = msRate(r.Opened, r.Tracked), msRate(r.Clicked, r.Tracked)
 			r.LastStr = last.In(loc).Format("Jan 2, 3:04 pm")
 			r.LastMailer = msMailerTitle(r.LastMailer)
 			st.Subjects = append(st.Subjects, r)
@@ -550,6 +575,12 @@ func (s *Server) msSendSummary(ctx context.Context) error {
 	home := strings.TrimRight(s.settings.String("home"), "/")
 	var b strings.Builder
 	fmt.Fprintf(&b, "Hi there,\n\nLet's see how your emails performed in the last week on %s.\n\nTotal emails: %d\nSent: %d\nFailed: %d\n\n", home, st.Total, st.Sent, st.Failed)
+	if st.Tracked > 0 {
+		fmt.Fprintf(&b, "Open rate: %s (%d of %d tracked emails)\nClick rate: %s\n\n", st.OpenRate, st.Opened, st.Tracked, st.ClickRate)
+	}
+	if st.Bounced+st.Complained > 0 {
+		fmt.Fprintf(&b, "Bounced: %d\nSpam complaints: %d\n\n", st.Bounced, st.Complained)
+	}
 	if len(st.Subjects) > 0 {
 		b.WriteString("Top subjects:\n")
 		for i, r := range st.Subjects {

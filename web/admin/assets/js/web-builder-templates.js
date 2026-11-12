@@ -234,6 +234,8 @@
 				row.target = tail[ 0 ];
 				row.id = tail[ 1 ];
 			}
+		} else if ( row.group === 'user' ) {
+			row.sub = rest.join( '/' );
 		} else if ( row.group === 'archive' && rest.length ) {
 			if ( rest[ 0 ] === 'type' ) {
 				row.sub = 'type/' + rest[ 1 ];
@@ -262,6 +264,8 @@
 					parts.push.apply( parts, row.target.split( '/' ).concat( [ row.id ] ) );
 				}
 			}
+		} else if ( row.group === 'user' ) {
+			parts.push.apply( parts, ( row.sub || 'logged_in' ).split( '/' ) );
 		} else if ( row.group === 'archive' && row.sub ) {
 			parts.push.apply( parts, row.sub.split( '/' ) );
 			if ( row.target === 'id' && ( row.sub === 'author' || isTaxSub( row.sub ) ) ) {
@@ -281,6 +285,7 @@
 			{ value: 'singular', label: 'Singular' },
 			{ value: 'archive', label: 'Archives' },
 			{ value: '404', label: '404 Page' },
+			{ value: 'user', label: 'Visitor' },
 		];
 	}
 
@@ -295,6 +300,12 @@
 
 	function subOptions( group, keep ) {
 		var out = [];
+		if ( group === 'user' ) {
+			out = [ { value: 'logged_in', label: 'Logged-in Users' }, { value: 'logged_out', label: 'Logged-out Visitors' } ].concat( ( cfg.roles || [] ).map( function( r ) {
+				return { value: 'role/' + r.slug, label: 'Role: ' + ( r.label || r.slug ) };
+			} ) );
+			return keepOption( out, keep, 'Role: ' + String( keep ).replace( /^role\//, '' ) );
+		}
 		if ( group === 'singular' ) {
 			out = [ { value: '', label: 'All Singular' }, { value: 'front_page', label: 'Front Page' } ].concat( ( cfg.postTypes || [] ).map( function( p ) {
 				return { value: p.slug, label: p.label || p.slug };
@@ -506,7 +517,7 @@
 
 	function update( row, change ) {
 		if ( 'group' in change && change.group !== row.group ) {
-			Object.assign( row, change, { sub: '', target: '', id: '', idLabel: '' } );
+			Object.assign( row, change, { sub: change.group === 'user' ? 'logged_in' : '', target: '', id: '', idLabel: '' } );
 		} else if ( 'sub' in change && change.sub !== row.sub ) {
 			Object.assign( row, change, { target: '', id: '', idLabel: '' } );
 		} else if ( 'target' in change && change.target !== row.target ) {
@@ -682,6 +693,50 @@
 			showError( condDialog, errorText( null ) );
 		} );
 	} );
+
+	/* ---------- import a template file ---------- */
+
+	var importBtn = document.getElementById( 'web-builder-import-template-button' );
+	var importFile = document.getElementById( 'web-builder-import-template-file' );
+	if ( importBtn && importFile ) {
+		importBtn.addEventListener( 'click', function() {
+			importFile.value = '';
+			importFile.click();
+		} );
+		importFile.addEventListener( 'change', function() {
+			var file = importFile.files && importFile.files[ 0 ];
+			if ( ! file ) {
+				return;
+			}
+			var failed = function( msg ) {
+				importBtn.disabled = false;
+				window.alert( msg );
+			};
+			importBtn.disabled = true;
+			file.text().then( function( text ) {
+				var data;
+				try {
+					data = JSON.parse( text );
+				} catch ( err ) {
+					failed( 'This is not a Pursae Web Builder template file.' );
+					return;
+				}
+				api( 'POST', cfg.namespace + '/templates/import', data ).then( function( res ) {
+					if ( res.ok && res.data && res.data.id ) {
+						var u = new URL( location.href );
+						u.search = '?page=' + encodeURIComponent( cfg.page || 'web-builder-templates' ) + '&imported=' + encodeURIComponent( res.data.id );
+						location.href = u.toString();
+						return;
+					}
+					failed( errorText( res ) );
+				}, function() {
+					failed( errorText( null ) );
+				} );
+			}, function() {
+				failed( 'The file could not be read.' );
+			} );
+		} );
+	}
 
 	/* ---------- confirm links ---------- */
 

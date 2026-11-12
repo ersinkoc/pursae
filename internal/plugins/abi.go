@@ -95,6 +95,12 @@ func (rt *Runtime) instantiateHostModule(ctx context.Context) error {
 		{"enqueue_style", PermContentFilter, hostEnqueueStyle},
 		{"enqueue_script", PermContentFilter, hostEnqueueScript},
 		{"translate", "", hostTranslate}, // Pursae Multi Language strings (abi_translate.go)
+		// UI registrations (ui.go).
+		{"register_admin_page", PermAdminPages, hostRegisterAdminPage},
+		{"register_dashboard_widget", PermAdminDashboard, hostRegisterDashboardWidget},
+		{"register_meta_box", PermAdminMetaBoxes, hostRegisterMetaBox},
+		{"register_block", PermBlocks, hostRegisterBlock},
+		{"register_builder_widget", PermBuilderWidgets, hostRegisterBuilderWidget},
 	}
 	for _, f := range fns {
 		b.NewFunctionBuilder().

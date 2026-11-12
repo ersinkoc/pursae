@@ -20,7 +20,7 @@ import (
 
 var asTabs = [][2]string{
 	{"twofactor", "Two-Factor"}, {"login", "Login"}, {"lockouts", "Lockouts & IPs"}, {"passwords", "Passwords"},
-	{"sessions", "Sessions"}, {"hardening", "Hardening"}, {"alerts", "Alerts & Log"},
+	{"sessions", "Sessions"}, {"hardening", "Hardening"}, {"firewall", "Firewall"}, {"alerts", "Alerts & Log"},
 }
 
 type asCheck struct {
@@ -60,6 +60,13 @@ type asAdminData struct {
 	Events     [][2]string
 	Pagination pagination
 	ExportURL  string
+	// Integrity
+	Integrity *asIntegrityReport
+	// Firewall tab: the core default and whether WPGO_FIREWALL=off overrides the settings
+	FirewallDefault int
+	FirewallEnvOff  bool
+	// Hardening tab: the REST routes visitors always keep
+	RESTVisitorRoutes []string
 }
 
 type asLockoutRow struct {
@@ -86,7 +93,8 @@ func (s *Server) adminsecAdmin(c *gin.Context, page string) bool {
 	ready, why := s.asMailReady()
 	d := &asAdminData{Page: strings.TrimPrefix(strings.TrimPrefix(page, asSlug), "-"), Nonce: s.nonce(c, "adminsec-admin"), S: s.asLoad(),
 		MailReady: ready, MailWhy: why, MailFixURL: s.asMailFixURL(), HomeURL: strings.TrimRight(s.links(c).HomeURL("/"), "/"),
-		LoginURL: s.loginPath(), Escape: asEscapeHatch(), Strengths: asStrengthLabels, MyIP: clientIP(c)}
+		LoginURL: s.loginPath(), Escape: asEscapeHatch(), Strengths: asStrengthLabels, MyIP: clientIP(c),
+		FirewallDefault: fwDefaultRateLimit, FirewallEnvOff: fwEnvOff(), RESTVisitorRoutes: asRESTVisitorRoutes}
 	if d.Page == "" {
 		d.Page = "dashboard"
 	}
@@ -118,6 +126,12 @@ func (s *Server) adminsecAdmin(c *gin.Context, page string) bool {
 		if d.Tab == "login" && d.S.HideLogin && d.Escape {
 			notices = append(notices, notice{Type: "warning", Message: "<strong>" + asEscapeEnv + "</strong> is set: the custom login URL is not applied and /wp-login works as usual."})
 		}
+	case "integrity":
+		done, ns := s.asIntegrityPage(c, d)
+		if done {
+			return true
+		}
+		notices = append(notices, ns...)
 	case "lockouts":
 		if c.Request.Method == http.MethodPost {
 			if !s.checkNonce(c, "adminsec-admin") {
@@ -162,7 +176,7 @@ func (s *Server) adminsecAdmin(c *gin.Context, page string) bool {
 		d.Page = "dashboard"
 		s.asDashboard(c, d)
 	}
-	title := map[string]string{"dashboard": "Dashboard", "settings": "Settings", "lockouts": "Lockouts", "log": "Activity Log"}[d.Page]
+	title := map[string]string{"dashboard": "Dashboard", "settings": "Settings", "lockouts": "Lockouts", "log": "Activity Log", "integrity": "Integrity"}[d.Page]
 	screen := "admin?page=" + asSlug
 	if d.Page != "dashboard" {
 		screen += "-" + d.Page
@@ -356,6 +370,7 @@ func (s *Server) asParseSettings(c *gin.Context, st asSettings, tab string) (asS
 			st.PwMinStrength[r.Slug] = asFormInt(c, "pw_strength_"+r.Slug, 0, 0, 4)
 		}
 		st.PwBlockCommon, st.PwCheckLogin, st.PwAllowWeak = on("pw_block_common"), on("pw_check_login"), on("pw_allow_weak")
+		st.PwBreached = on("pw_breached")
 	case "sessions":
 		st.IdleMinutes = asFormInt(c, "idle_minutes", st.IdleMinutes, 0, 10080)
 		if st.IdleMinutes > 0 && st.IdleMinutes < 5 {
@@ -372,6 +387,12 @@ func (s *Server) asParseSettings(c *gin.Context, st asSettings, tab string) (asS
 		st.PermissionsPolicy = strings.TrimSpace(strings.ReplaceAll(c.PostForm("permissions_policy"), "\n", " "))
 		st.DisableFileEdit, st.HideVersion = on("disable_file_edit"), on("hide_version")
 		st.RESTVisitors, st.RESTAllow = on("rest_restrict"), strings.TrimSpace(c.PostForm("rest_allow"))
+	case "firewall":
+		st.Firewall, st.AlertIntegrity = on("firewall"), on("alert_integrity")
+		st.RateLimit = asFormInt(c, "rate_limit", st.RateLimit, 0, 100000)
+		if st.RateLimit > 0 && st.RateLimit < 60 {
+			errs = append(errs, "The rate limit must be at least 60 requests a minute (or 0 for none).")
+		}
 	case "alerts":
 		st.AlertNewIP, st.AlertLockout, st.LogFailedSkip = on("alert_new_ip"), on("alert_lockout"), on("log_failed_skip")
 		st.AlertEmail = strings.TrimSpace(c.PostForm("alert_email"))

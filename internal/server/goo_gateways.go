@@ -60,6 +60,11 @@ type gooRenewalGateway interface {
 	RenewalNeedsToken() bool
 }
 
+// errGooPaymentPending is returned (wrapped) by ProcessRenewal when the provider accepted the charge
+// but has not settled it yet (a bank debit, a slow card network): the renewal order goes on hold and
+// the provider's notification completes or fails it later.
+var errGooPaymentPending = errors.New("payment pending")
+
 var gooGatewayRegistry = map[string]gooGatewayDef{}
 
 // gooRegisterGateway adds a gateway (woocommerce_payment_gateways).
@@ -127,7 +132,7 @@ func (s *Server) gooGatewaysOrdered() []*gooGatewayHandle {
 	for id := range gooGatewayRegistry {
 		out = append(out, s.gooGateway(id))
 	}
-	def := map[string]int{"bacs": 1, "cheque": 2, "cod": 3, "goo_test": 4}
+	def := map[string]int{"bacs": 1, "cheque": 2, "cod": 3, "goo_stripe": 4, "goo_test": 5}
 	sort.Slice(out, func(i, j int) bool {
 		pi, pj := pos[out[i].ID()], pos[out[j].ID()]
 		if pi == 0 {

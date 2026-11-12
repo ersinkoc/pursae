@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"maps"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -156,6 +157,28 @@ func (s *Server) czSanitize(ctx context.Context, t *Theme, values map[string]str
 				mods["custom_logo"] = n
 			}
 		default:
+			if loc, ok := czMenuLocationFromSetting(id); ok {
+				// Menus › Menu Locations: a location of this theme and a menu that exists (0 = none).
+				if !t.hasMenuLocation(loc) {
+					return nil, nil, fmt.Errorf("Unknown setting %q.", id)
+				}
+				n, _ := strconv.ParseInt(raw, 10, 64)
+				if n > 0 {
+					var ok bool
+					if s.store.Pool.QueryRow(ctx, `SELECT true FROM menus WHERE id = $1`, n).Scan(&ok) != nil {
+						return nil, nil, errors.New("Invalid value.")
+					}
+				} else {
+					n = 0
+				}
+				locs, _ := opts[czMenuLocationsKey].(map[string]any)
+				if locs == nil {
+					locs = map[string]any{}
+					opts[czMenuLocationsKey] = locs
+				}
+				locs[loc] = n
+				continue
+			}
 			name, ok := strings.CutPrefix(id, "mod:")
 			if !ok || spec == nil {
 				return nil, nil, fmt.Errorf("Unknown setting %q.", id)
@@ -290,6 +313,8 @@ type czPageData struct {
 	Nonce, UUID              string
 	PreviewURL, ReturnURL    string
 	Values                   map[string]string
+	Saved                    map[string]string // the published values (differs from Values when a draft is reopened)
+	Draft                    bool              // a reopened draft changeset
 	SiteIcon, Logo           czImageView
 	HasLogo                  bool
 	Pages                    []*store.Post
@@ -298,6 +323,7 @@ type czPageData struct {
 	Sections                 []*czSectionView
 	PostMessage              []string
 	MenuLocations            []czMenuLocation
+	Menus                    []*store.Menu
 	WidgetAreas              []WidgetArea
 	CanUpload, CanSwitch     bool
 	ThemeScript              template.JS
@@ -307,7 +333,7 @@ type czPageData struct {
 }
 
 type czMenuLocation struct {
-	Name, Menu string
+	Name, Menu, Setting string
 }
 
 func (s *Server) czImage(ctx context.Context, id int64) czImageView {
@@ -371,10 +397,17 @@ func (s *Server) customizeScreen(c *gin.Context) {
 	mods := s.themeMods(t.Slug)
 	lb := s.links(ctx)
 
-	uuid := newChangesetID()
-	if err := s.czSave(ctx, uuid, &czChangeset{UserID: u.ID, Theme: t.Slug, Mods: mods, Options: map[string]any{}}); err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	// ?changeset_uuid=<uuid> reopens the user's own draft for this theme with its values filled in.
+	var draft *czChangeset
+	uuid := c.Query("changeset_uuid")
+	if cs := s.czLoad(ctx, uuid); uuid != "" && cs != nil && cs.UserID == u.ID && cs.Status == "draft" && cs.Theme == t.Slug {
+		draft = cs
+	} else {
+		uuid = newChangesetID()
+		if err := s.czSave(ctx, uuid, &czChangeset{UserID: u.ID, Theme: t.Slug, Mods: mods, Options: map[string]any{}}); err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	preview := "/"
@@ -456,10 +489,18 @@ func (s *Server) customizeScreen(c *gin.Context) {
 		d.ThemeScripts = spec.Scripts
 	}
 	d.Pages, _, _ = s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish"}, OrderBy: "title", Order: "asc", PerPage: -1})
+	d.Menus, _ = s.store.Menus(ctx)
 	for _, loc := range t.MenuLocations {
-		ml := czMenuLocation{Name: loc.Name}
-		_ = s.store.Pool.QueryRow(ctx, `SELECT m.name FROM menus m JOIN menu_locations l ON l.menu_id = m.id WHERE l.location = $1`, loc.Slug).Scan(&ml.Menu)
+		ml := czMenuLocation{Name: loc.Name, Setting: czMenuLocationSetting(loc.Slug)}
+		var id int64
+		_ = s.store.Pool.QueryRow(ctx, `SELECT m.id, m.name FROM menus m JOIN menu_locations l ON l.menu_id = m.id WHERE l.location = $1`, loc.Slug).Scan(&id, &ml.Menu)
+		d.Values[ml.Setting] = strconv.FormatInt(id, 10)
 		d.MenuLocations = append(d.MenuLocations, ml)
+	}
+	d.Saved = maps.Clone(d.Values)
+	if draft != nil {
+		d.Draft = true
+		s.czDraftValues(ctx, t, draft, d.Values)
 	}
 	d.WidgetAreas = t.WidgetAreas
 
@@ -548,6 +589,13 @@ func (s *Server) customizeSave(c *gin.Context) {
 		values := map[string]any{"theme_mods_" + t.Slug: mods}
 		for k, v := range opts {
 			values[k] = v
+		}
+		if locs := czMenuLocationsOf(opts); len(locs) > 0 {
+			delete(values, czMenuLocationsKey) // a table, not an option
+			if err := s.store.SetMenuLocations(c, locs); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"message": err.Error()}})
+				return
+			}
 		}
 		if err := s.settings.Set(c, values); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "data": gin.H{"message": err.Error()}})
@@ -641,6 +689,101 @@ func (s *Server) customizeChangeset(c *gin.Context) *czChangeset {
 	c.Header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	c.Header("X-WPGo-Cache-Control", "no-store")
 	return cs
+}
+
+// Menu locations in the Customizer: the setting nav_menu_locations[<slug>] (WordPress' id), kept in a
+// changeset under the option key nav_menu_locations as {slug: menu id}; published to menu_locations.
+const czMenuLocationsKey = "nav_menu_locations"
+
+func czMenuLocationSetting(slug string) string { return czMenuLocationsKey + "[" + slug + "]" }
+
+func czMenuLocationFromSetting(id string) (string, bool) {
+	rest, ok := strings.CutPrefix(id, czMenuLocationsKey+"[")
+	if !ok || !strings.HasSuffix(rest, "]") || len(rest) < 2 {
+		return "", false
+	}
+	return strings.TrimSuffix(rest, "]"), true
+}
+
+func (t *Theme) hasMenuLocation(slug string) bool {
+	for _, l := range t.MenuLocations {
+		if l.Slug == slug {
+			return true
+		}
+	}
+	return false
+}
+
+// czMenuLocationsOf reads {slug: id} from changeset options (int64 when fresh, float64 when read back).
+func czMenuLocationsOf(opts map[string]any) map[string]int64 {
+	raw, _ := opts[czMenuLocationsKey].(map[string]any)
+	if len(raw) == 0 {
+		return nil
+	}
+	out := make(map[string]int64, len(raw))
+	for k, v := range raw {
+		switch n := v.(type) {
+		case int64:
+			out[k] = n
+		case float64:
+			out[k] = int64(n)
+		case int:
+			out[k] = int64(n)
+		}
+	}
+	return out
+}
+
+// menuAt is the menu shown at a theme location, with a Customizer preview's unpublished assignment.
+func (s *Server) menuAt(ctx context.Context, cs *czChangeset, location string) ([]*store.MenuItem, error) {
+	if cs != nil {
+		if id, ok := czMenuLocationsOf(cs.Options)[location]; ok {
+			if id <= 0 {
+				return nil, nil
+			}
+			return s.store.MenuTree(ctx, id)
+		}
+	}
+	return s.store.MenuAt(ctx, location)
+}
+
+// czDraftValues fills the screen's values from a reopened draft: its options and the theme mods that
+// differ from the published ones.
+func (s *Server) czDraftValues(ctx context.Context, t *Theme, cs *czChangeset, values map[string]string) {
+	for k, v := range cs.Options {
+		switch k {
+		case czMenuLocationsKey:
+			for loc, id := range czMenuLocationsOf(cs.Options) {
+				values[czMenuLocationSetting(loc)] = strconv.FormatInt(id, 10)
+			}
+		case "blogname", "blogdescription", "show_on_front":
+			if str, ok := v.(string); ok {
+				values[k] = str
+			}
+		case "site_icon", "page_on_front", "page_for_posts":
+			values[k] = strconv.Itoa(modInt(cs.Options, k, 0))
+		}
+	}
+	values["custom_css"] = modString(cs.Mods, "custom_css", "")
+	if _, ok := values["mod:custom_logo"]; ok {
+		values["mod:custom_logo"] = strconv.Itoa(modInt(cs.Mods, "custom_logo", 0))
+	}
+	if spec := czSpecFor(t); spec != nil {
+		for _, ctl := range spec.Controls {
+			switch ctl.Type {
+			case "checkbox":
+				values["mod:"+ctl.ID] = czCheckbox(cs.Mods, ctl)
+			case "image":
+				values["mod:"+ctl.ID] = strconv.Itoa(modInt(cs.Mods, ctl.ID, 0))
+			case "color":
+				if v := modString(cs.Mods, ctl.ID, ctl.Default); v != "" {
+					values["mod:"+ctl.ID] = sanitizeHex(v)
+				}
+			default:
+				values["mod:"+ctl.ID] = modString(cs.Mods, ctl.ID, ctl.Default)
+			}
+		}
+	}
 }
 
 func (cs *czChangeset) option(key string, def any) any {

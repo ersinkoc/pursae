@@ -185,3 +185,60 @@ func TestGooExtMembershipPlanRefs(t *testing.T) {
 		t.Errorf("search status %d", body)
 	}
 }
+
+// A partial refund cancels the membership only when the granting product's line is refunded in full.
+func TestGooExtMembershipPartialRefund(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxaRecordMails(t)
+	gxaEnableGateways(t, srv)
+	gxaOn(t, srv, gmemKey, true)
+	pass := gooMakeSimple(t, srv, "Partial Pass", 50, func(p *gooProduct) { p.Virtual = true })
+	other := gooMakeSimple(t, srv, "Mug", 20, func(p *gooProduct) { p.Virtual = true })
+	plan := &gooMembershipPlan{Name: "Partial", AccessMethod: "purchase", ProductIDs: []int64{pass.ID}, AccessLength: "unlimited"}
+	if err := srv.gmemSavePlan(ctx, plan); err != nil {
+		t.Fatal(err)
+	}
+	u := gxaCustomer(t, srv, "partial@example.test")
+	c := gxaCtx(u, http.MethodGet, "/", nil)
+	for _, id := range []int64{pass.ID, other.ID} {
+		if _, err := srv.gooCartFor(c).Add(c, id, 1, 0, nil, nil, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, _, errs := srv.gooProcessCheckout(c, gxaCheckoutForm(u.Email, "goo_test")); len(errs) > 0 {
+		t.Fatalf("checkout: %v", errs)
+	}
+	list := srv.gmemUMList(ctx, u.ID, plan.ID, "")
+	if len(list) != 1 || !list[0].HasAccess(time.Now()) {
+		t.Fatalf("membership after purchase: %+v", list)
+	}
+	o, _ := srv.gooGetOrder(ctx, list[0].OrderID)
+	item := func(pid int64) *gooOrderItem {
+		for _, it := range o.ItemsOf("line_item") {
+			if it.ProductID == pid {
+				return it
+			}
+		}
+		t.Fatalf("no line for product %d", pid)
+		return nil
+	}
+	// Half of the membership line: still a member.
+	if _, err := srv.gooCreateRefund(ctx, o, 25, "", []gooRefundLine{{ItemID: item(pass.ID).ID, Total: 25}}, false, false, 0); err != nil {
+		t.Fatal(err)
+	}
+	if m, _ := srv.gmemUM(ctx, list[0].ID); m.Status != "active" {
+		t.Fatalf("membership after a half refund: %s", m.Status)
+	}
+	// The rest of the membership line while the other line stays paid: the order is only partially
+	// refunded, the membership goes.
+	if _, err := srv.gooCreateRefund(ctx, o, 25, "", []gooRefundLine{{ItemID: item(pass.ID).ID, Total: 25}}, false, false, 0); err != nil {
+		t.Fatal(err)
+	}
+	if o2, _ := srv.gooGetOrder(ctx, o.ID); o2.Status == "refunded" || o2.Meta[gmemGrantFlag(plan.ID)] == true {
+		t.Errorf("order %s, grant flag %v", o2.Status, o2.Meta[gmemGrantFlag(plan.ID)])
+	}
+	if m, _ := srv.gmemUM(ctx, list[0].ID); m.Status != "cancelled" || m.HasAccess(time.Now()) {
+		t.Errorf("membership after its line was refunded in full: %s", m.Status)
+	}
+}

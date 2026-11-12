@@ -267,7 +267,7 @@ func (s *Server) gocdnRewriteMedia(c *gin.Context, st gocdnSettings, body []byte
 			continue // another site's uploads
 		}
 		rel, err := url.PathUnescape(string(body[m[4]:m[5]]))
-		if err != nil {
+		if err != nil || mediaIsPrivateRel(rel) { // private files keep their (signed or dead) site URL
 			continue
 		}
 		hits = append(hits, hit{m[0], m[5], rel})

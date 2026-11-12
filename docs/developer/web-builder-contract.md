@@ -424,6 +424,23 @@ Error codes added: `wb_bad_language` (400), `wb_translation_exists` (409).
   library in this session (with `referrerpolicy="no-referrer"`); typed or stored third-party URLs are
   not requested by the editor.
 
+### 3.x Additions (API 2, backwards compatible)
+
+- **Scheduled publish**: `PublishRequest.status` may be `future` with `date` (RFC 3339). The snapshot is
+  stored at once and the post gets status `future` and that publish date; the core `publish_future_post`
+  cron puts it live and purges Pursae Cache. A past date publishes now; without `publish_posts` the answer is
+  `pending`; templates cannot be scheduled (400). `DocumentResponse.date` and `PublishResponse.date` report the
+  date. Publishing a scheduled page with status `publish` publishes it now.
+- **Template files**: `GET templates/{id}/export` returns a `TemplateFile`
+  `{format: "web-builder-template", version: 1, type, title, conditions, priority, popup?, doc}`;
+  `POST templates/import` takes one and creates a disabled template (doc validated like a publish for the
+  importing user). Theme Builder screen: row action *Export*, *Import Template*, and *Export Theme Parts*
+  (the published templates, single excluded, as a library `web-builder/parts.json`).
+- **Audience rules** (§11): `include|exclude/user/logged_in`, `user/logged_out`, `user/role/<role>`. They never
+  place or score a template: with include audience rules the visitor must match one of them, a matching
+  exclude vetoes. `SiteBoot.roles` lists the roles. Cache: while any published template has an audience rule,
+  pages of logged-in visitors are never stored; anonymous visitors share the logged-out variant.
+
 ## 4. `renderStatic` result
 
 The upstream live renderer (`src/builder/live/`) runs in the editor:

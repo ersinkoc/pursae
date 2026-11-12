@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -51,8 +53,9 @@ func gsubAddressInputs(prefix string, addr map[string]string) string {
 }
 
 // gsubPaymentChoices are the payment methods a customer may switch a subscription to: gateways that
-// renew without a stored token, or any gateway when manual renewals are accepted. A token gateway
-// needs its own card form, which only the checkout shows.
+// renew without a stored token, gateways that collect a new card on the provider's page
+// (gooTokenGateway: the change finishes when the customer returns from it), or any gateway when
+// manual renewals are accepted.
 func (s *Server) gsubPaymentChoices() []*gooGatewayHandle {
 	var out []*gooGatewayHandle
 	manual := s.gooExtBool(gsubKey, "accept_manual_renewals") && !s.gooExtBool(gsubKey, "turn_off_automatic_payments")
@@ -61,8 +64,10 @@ func (s *Server) gsubPaymentChoices() []*gooGatewayHandle {
 			continue
 		}
 		auto := false
-		if rg, ok := g.gooGatewayDef.(gooRenewalGateway); ok && g.Supports("subscriptions") && !rg.RenewalNeedsToken() {
-			auto = true
+		if rg, ok := g.gooGatewayDef.(gooRenewalGateway); ok && g.Supports("subscriptions") {
+			if _, setup := g.gooGatewayDef.(gooTokenGateway); !rg.RenewalNeedsToken() || setup {
+				auto = true
+			}
 		}
 		if auto && !s.gooExtBool(gsubKey, "turn_off_automatic_payments") || manual {
 			out = append(out, g)
@@ -201,6 +206,19 @@ func gsubFrontPost(s *Server, c *gin.Context) bool {
 			c.Redirect(302, view)
 			return true
 		}
+		if rg, ok := pick.gooGatewayDef.(gooRenewalGateway); ok && rg.RenewalNeedsToken() && !s.gooExtBool(gsubKey, "turn_off_automatic_payments") {
+			if tg, ok := pick.gooGatewayDef.(gooTokenGateway); ok {
+				// A card gateway: the customer enters the new card on the provider's page; the
+				// subscription changes when they come back (or the provider's webhook says so).
+				target, err := tg.SetupURL(s, c, sub.ID)
+				if err != nil {
+					return fail(gooEsc(err.Error()))
+				}
+				s.gooSaveSession(c)
+				c.Redirect(302, target)
+				return true
+			}
+		}
 		if pick.ID() != sub.PaymentMethod {
 			sub.PaymentMethod, sub.PaymentMethodTitle = pick.ID(), pick.Title()
 			delete(sub.Meta, "_payment_token") // a token belongs to the old method
@@ -219,7 +237,10 @@ func gsubFrontPost(s *Server, c *gin.Context) bool {
 // Admin -------------------------------------------------------------------------------------------------
 
 // gsubAdminApplyEdits copies the Edit Subscription form's addresses and line items onto the subscription.
-func (s *Server) gsubAdminApplyEdits(c *gin.Context, sub *gooSubscription) {
+// Lines can be removed (item_remove[i]) and one added per save (add_product, add_qty, add_total), and
+// the customer changed (customer_id). The returned error is shown after the valid edits are saved.
+func (s *Server) gsubAdminApplyEdits(c *gin.Context, sub *gooSubscription, by string) error {
+	ctx := c.Request.Context()
 	sub.Billing, sub.Shipping = gsubReadAddress(c, "billing", sub.Billing), gsubReadAddress(c, "shipping", sub.Shipping) // only the posted fields change
 	changed := false
 	for i := range sub.Items {
@@ -242,9 +263,63 @@ func (s *Server) gsubAdminApplyEdits(c *gin.Context, sub *gooSubscription) {
 		}
 		it.Total = gooRound(it.Price*float64(it.Qty), s.gooDecimals())
 	}
+	// Remove ticked lines (a subscription keeps at least one), then add the new line.
+	var kept []gsubItem
+	var removed []string
+	for i, it := range sub.Items {
+		if c.PostForm("item_remove["+strconv.Itoa(i)+"]") != "" {
+			removed = append(removed, it.Name)
+			continue
+		}
+		kept = append(kept, it)
+	}
+	var notes []string
+	var err error
+	if pid := gooInt(c.PostForm("add_product")); pid != 0 {
+		l := gsubNewLine{ProductID: pid, Qty: int(gooInt(c.PostForm("add_qty")))}
+		if v := strings.TrimSpace(c.PostForm("add_total")); v != "" {
+			if f, perr := strconv.ParseFloat(v, 64); perr == nil && f >= 0 {
+				l.Total = &f
+			}
+		}
+		it, _, lerr := s.gsubLineItem(ctx, l)
+		if lerr != nil {
+			err = errors.New("The line could not be added: " + lerr.Error())
+		} else {
+			kept = append(kept, it)
+			notes = append(notes, "Line item added: "+gooEsc(it.Name)+" &times; "+strconv.Itoa(it.Qty)+".")
+			changed = true
+		}
+	}
+	if len(removed) > 0 {
+		if len(kept) == 0 {
+			err = errors.New("A subscription needs at least one line item.")
+		} else {
+			notes = append(notes, "Line item removed: "+gooEsc(strings.Join(removed, ", "))+".")
+			changed = true
+		}
+	}
+	if len(kept) > 0 && (len(removed) > 0 || len(kept) != len(sub.Items)) {
+		sub.Items = kept
+	}
+	// Customer.
+	if v := strings.TrimSpace(c.PostForm("customer_id")); v != "" {
+		if id := gooInt(v); id != sub.CustomerID {
+			if u, uerr := s.store.UserByID(ctx, id); uerr != nil || id == 0 {
+				err = errors.New("The customer does not exist.")
+			} else {
+				notes = append(notes, fmt.Sprintf("Customer changed from user #%d to %s (#%d).", sub.CustomerID, gooEsc(u.DisplayName), u.ID))
+				sub.CustomerID = u.ID
+			}
+		}
+	}
+	for _, n := range notes {
+		s.gsubAddNote(ctx, sub, n, false, by)
+	}
 	if changed {
 		s.gsubRecalc(sub)
 	}
+	return err
 }
 
 // gsubAdminNew is the Add Subscription screen and its POST.

@@ -52,7 +52,7 @@ once, for example:
 ```text
 plugin.json has 2 problems:
   - hook "the_content" requires the "content:filter" permission; add it to "permissions"
-  - unknown permission "posts:all" (known: admin:notices, admin:scripts, admin:settings, content:filter, content:html, cron, forms:access, headless:entries, http:outbound, options:read, options:write, posts:read, posts:write, rest:routes, storage, users:read)
+  - unknown permission "posts:all" (known: admin:dashboard, admin:metaboxes, admin:notices, admin:pages, admin:scripts, admin:settings, blocks:register, builder:widgets, commerce:orders, content:filter, content:html, cron, forms:access, headless:entries, http:outbound, mail:send, options:read, options:write, posts:read, posts:write, rest:routes, storage, users:read)
 ```
 
 ## What the administrator sees

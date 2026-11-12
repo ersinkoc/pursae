@@ -45,7 +45,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Logged-in users who can edit posts still see the front end (setting, on by default) so previews and theme work go on | ✓ |
 | Runs in `Server.Handler` before the page cache (`headlessServe`); answers are `no-store` and `noindex` | ✓ |
 
-| Delivery API reads carry a strong `ETag` and answer `If-None-Match` with 304; token-less reads get `Cache-Control: public, max-age=0, s-maxage=N` when a public cache lifetime is set (Settings), others `no-cache`, previews `no-store` | ✓ |
+| Delivery API reads carry a strong `ETag` and answer `If-None-Match` with 304; token-less reads get `Cache-Control: public, max-age=0, s-maxage=N` when a public cache lifetime is set (Settings), others `no-cache`, previews `no-store`. Publicly cacheable answers carry `Surrogate-Key`/`Cache-Tag: <prefix>headless`; any entry, schema, settings or WordPress post change purges that tag in Pursae Cache and forwards the purge to the configured front proxy/CDN | ✓ |
 | Rate limit (Settings, requests per minute): per token, per client address without one; 429 with `Retry-After` | ✓ |
 | GraphQL: at most 20 root fields per operation (aliases count), plus the node and depth limits; optional "disable introspection for callers without a token" | ✓ |
 | Populated relations are loaded per request with a shared cache and a list-level prefetch (one query per relation field, not per entry); WordPress posts and users are read once per id | ✓ |

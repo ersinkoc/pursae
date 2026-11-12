@@ -145,8 +145,9 @@ func TestPluginShortcodeSettingsAssetsRestAndCron(t *testing.T) {
 		t.Errorf("asset: %d %s", resp.StatusCode, resp.Header.Get("Content-Type"))
 	}
 	for _, bad := range []string{"/wp-content/plugins/shortcode-demo/assets/plugin.json", "/wp-content/plugins/shortcode-demo/assets/../plugin.wasm", "/wp-content/plugins/nope/assets/style.css"} {
-		if code, _, _ := get(t, anon, base+bad); code != http.StatusNotFound {
-			t.Errorf("%s: %d, want 404", bad, code)
+		// Path traversal is refused by the core firewall (403) before the asset handler (404).
+		if code, _, _ := get(t, anon, base+bad); code != http.StatusNotFound && code != http.StatusForbidden {
+			t.Errorf("%s: %d, want 404 or 403", bad, code)
 		}
 	}
 

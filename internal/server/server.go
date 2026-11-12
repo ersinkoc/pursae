@@ -151,6 +151,8 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	s.bmgrRegisterSchedule() // Backup Manager: the scheduled-backup job action (backup_schedule.go)
 	s.adminsecStart()
 	s.gocdnStartHousekeeping(ctx)
+	s.regenerateResume()    // Media: continue an interrupted "Regenerate all" run
+	s.syncSearchStemAsync() // Search: stem in the site language (search_stem.go)
 	return s, nil
 }
 
@@ -163,6 +165,9 @@ func (s *Server) Handler() http.Handler {
 	// Outermost: probes and the request ID (ops_http.go); then gzip for what Pursae Cache does not serve
 	// compressed itself (compress.go).
 	return s.opsHandler(gzipResponses(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if s.firewallServe(w, r) { // core firewall: rate limit and request rules (firewall.go)
+			return
+		}
 		if s.adminsecOn() { // AdminSecGo: blocked IPs, the custom login URL, security headers (adminsec.go)
 			var done bool
 			if w, r, done = s.adminsecFront(w, r); done {
@@ -252,6 +257,10 @@ func (s *Server) routes() *gin.Engine {
 		// Uploaded files are data, never code: HTML or SVG uploads run in a sandbox.
 		c.Header("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'")
 		c.Request.URL.Path = legacyUploadPath(c.Request.URL.Path)
+		if rel := strings.TrimPrefix(path.Clean(c.Request.URL.Path), "/wp-content/uploads/"); mediaIsPrivateRel(rel) {
+			s.mediaPrivateServe(c, rel) // private files: only a signed, unexpired link (media_private.go)
+			return
+		}
 		if s.serveMovedUpload(c) { // a path a replaced file left: redirect to its successor (media_replace.go)
 			return
 		}
@@ -322,6 +331,7 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/update-core", s.updateCore) // Update Plugins, Update to version X (hub_updates.go, core_update.go)
 	admin.GET("/about", s.about)
 	admin.GET("/tools", s.tools)
+	admin.POST("/tools", s.tools) // Revisions: clean up old revisions
 	admin.GET("/options-privacy", s.optionsPrivacy)
 	admin.POST("/options-privacy", s.optionsPrivacy)
 	admin.GET("/options-license", s.optionsLicense) // Settings › License (license.go)
@@ -336,6 +346,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/site-health", s.siteHealth)
 	admin.GET("/scheduled-actions", s.scheduledActionsScreen)
 	admin.POST("/scheduled-actions", s.scheduledActionsScreen)
+	admin.GET("/ai-access", s.aiAccessScreen) // Tools › AI Access: connect, grants, MCP activity (admin_ai_activity.go)
+	admin.POST("/ai-access", s.aiAccessScreen)
 	admin.GET("/export", s.exportScreen)
 	admin.GET("/theme-editor", s.themeEditor)
 	admin.GET("/plugin-editor", s.pluginEditor)

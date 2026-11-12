@@ -443,7 +443,7 @@ func (s *Server) wbFormCaptcha(ctx context.Context, values map[string]string, ip
 		if token == "" {
 			return webbuilder.FormRequired
 		}
-		score, ok := s.gontactVerifyCaptcha(ctx, k.endpoint, secret, token, ip)
+		score, ok := s.verifyCaptcha(ctx, k.endpoint, secret, token, ip)
 		if !ok || score < 0.5 { // Pursae Contact Form's reCAPTCHA threshold; Turnstile scores 1
 			return webbuilder.FormInvalid
 		}

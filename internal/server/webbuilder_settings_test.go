@@ -106,8 +106,13 @@ func TestWebBuilderSettingsScreen(t *testing.T) {
 			t.Errorf("settings screen lacks %s", want)
 		}
 	}
+	// The admin menu has Tools › AI Access; only the settings content must stay free of AI.
+	content := body
+	if i := strings.Index(body, `id="wpbody-content"`); i >= 0 {
+		content = body[i:]
+	}
 	for _, bad := range []string{"web_builder_post_types-attachment", "AI", "API key"} {
-		if strings.Contains(body, bad) {
+		if strings.Contains(content, bad) {
 			t.Errorf("settings screen contains %q", bad)
 		}
 	}

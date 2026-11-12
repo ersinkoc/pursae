@@ -179,6 +179,12 @@ func (s *Server) uploadReserved(ctx context.Context) func(sub string) []string {
 // replaced or re-cropped under the same name carries its version (?v=…, media_replace.go): uploads
 // are cached as immutable, so the changed file needs a URL of its own.
 func (s *Server) uploadURL(c context.Context, rel string) string {
+	if mediaIsPrivateRel(rel) { // a private file has no public URL: a signed link for those who manage media
+		if s.mediaPrivateViewer(c) {
+			return s.mediaPrivateAdminURL(c, rel)
+		}
+		return s.links(c).HomeURL("/wp-content/uploads/" + rel)
+	}
 	u := s.links(c).HomeURL("/wp-content/uploads/" + rel)
 	if v := s.mediaIdx.version(rel); v != "" {
 		u += "?v=" + v
@@ -211,7 +217,18 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	if n := c.PostForm("name"); n != "" {
 		name = n
 	}
-	st, err := media.SaveWith(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, f, s.uploadReserved(c))
+	var st *media.Stored
+	if c.PostForm("type") == "downloadable_product" {
+		// Pursae Commerce's "Choose file" for a downloadable file (WooCommerce's woocommerce_uploads):
+		// the file goes straight into the protected folder and never has a public URL (media_private.go).
+		sub := mediaPrivateDir
+		if s.settings.Bool("uploads_use_yearmonth_folders") {
+			sub += time.Now().Format("/2006/01")
+		}
+		st, err = media.SaveIn(s.cfg.UploadsDir, sub, name, f, s.uploadReserved(c))
+	} else {
+		st, err = media.SaveWith(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, f, s.uploadReserved(c))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -479,6 +496,15 @@ func (s *Server) asyncUpload(c *gin.Context) {
 func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 	u := currentUser(c)
 	switch action {
+	case "regenerate-progress": // the Media Library's "Regenerate all" progress bar
+		if !u.Can("manage_options", nil) {
+			jsonError(c, http.StatusForbidden, nil)
+			return true
+		}
+		j := s.regenerateJobState()
+		c.JSON(http.StatusOK, gin.H{"running": j.Running && regenerateRunning.Load(), "finished": j.Finished, "stopped": j.Stopped,
+			"total": j.Total, "done": j.Done, "skipped": j.Skipped, "failed": j.Failed, "percent": j.Percent()})
+		return true
 	case "query-attachments":
 		if !u.Can("upload_files", nil) {
 			jsonError(c, http.StatusOK, nil)
@@ -665,6 +691,7 @@ func (s *Server) checkNonceValue(c *gin.Context, nonce, action string) bool {
 func (s *Server) deleteAttachmentFiles(a *store.Attachment) {
 	s.mediaIdx.put(a.ID, nil) // its versions, focal point and moved paths (media_replace.go)
 	s.gocdnBeforeDelete(a)    // GoCDN: delete the offloaded copies (gocdn_offload.go)
+	s.gocdnDropVariants(gocdnAttachmentFiles(a))
 	for _, rel := range gocdnAttachmentFiles(a) {
 		if p := s.gocdnLocalPath(rel); p != "" {
 			_ = os.Remove(p)
