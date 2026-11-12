@@ -42,7 +42,7 @@ func TestWBPrevNextTable(t *testing.T) {
 		{"middle", pretty, "http://example.test/blog/", 2, 3, []string{`href="http://example.test/blog/"`, `href="http://example.test/blog/page/3/"`}, nil},
 		{"last", pretty, "http://example.test/blog/", 3, 3, []string{"prev page-numbers"}, []string{"next page-numbers"}},
 		{"plain links", plain, "http://example.test/?cat=3", 1, 2, []string{"paged=2", "cat=3"}, nil},
-		{"escaped", pretty, `http://example.test/?s="x"`, 1, 2, []string{"&#34;x&#34;"}, []string{`"x"`}},
+		{"escaped", pretty, `http://example.test/?s="x"`, 1, 2, []string{"%22x%22"}, []string{`"x"`, "&#34;x&#34;"}},
 	} {
 		got := wbPrevNext(tc.lb, tc.base, tc.current, tc.total)
 		if len(tc.want) == 0 && got != "" && tc.total <= 1 {
