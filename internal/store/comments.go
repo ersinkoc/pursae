@@ -121,27 +121,45 @@ func CommentTree(flat []*Comment, maxDepth int) []*Comment {
 	byID := map[int64]*Comment{}
 	for _, c := range flat {
 		c.Children = nil
+		c.Depth = 0
 		byID[c.ID] = c
+	}
+	// Resolve each parent first, independently of the order in flat. A back edge
+	// is treated as a missing parent so malformed cycles still produce a tree.
+	state := make(map[*Comment]uint8, len(flat))
+	parents := make(map[*Comment]*Comment, len(flat))
+	var resolve func(*Comment)
+	resolve = func(c *Comment) {
+		if state[c] == 2 {
+			return
+		}
+		state[c] = 1
+		parent := byID[c.ParentID]
+		if c.ParentID <= 0 || maxDepth <= 1 || parent == nil || state[parent] == 1 {
+			parent = nil
+		} else {
+			resolve(parent)
+			if parent.Depth >= maxDepth {
+				parent = parents[parent]
+			}
+		}
+		c.Depth = 1
+		if parent != nil {
+			c.Depth = parent.Depth + 1
+		}
+		parents[c] = parent
+		state[c] = 2
 	}
 	var roots []*Comment
 	for _, c := range flat {
-		parent, ok := byID[c.ParentID]
-		if !ok || maxDepth <= 1 {
-			c.Depth = 1
-			roots = append(roots, c)
-			continue
-		}
-		depth := parent.Depth + 1
-		for depth > maxDepth && parent != nil {
-			parent = byID[parent.ParentID]
-			depth--
-		}
+		resolve(c)
+	}
+	for _, c := range flat {
+		parent := parents[c]
 		if parent == nil {
-			c.Depth = 1
 			roots = append(roots, c)
 			continue
 		}
-		c.Depth = depth
 		parent.Children = append(parent.Children, c)
 	}
 	return roots

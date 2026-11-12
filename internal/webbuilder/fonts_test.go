@@ -43,3 +43,17 @@ func TestFontCSS2Query(t *testing.T) {
 		t.Fatal("LookupFont quoted/case")
 	}
 }
+
+func TestLookupFontReturnsIndependentWeights(t *testing.T) {
+	original, ok := LookupFont("Inter")
+	if !ok || len(original.Weights) == 0 || len(original.Italics) == 0 {
+		t.Fatal("missing Inter variants")
+	}
+	f, _ := LookupFont("Inter")
+	f.Weights[0] = -1
+	f.Italics[0] = -1
+	again, _ := LookupFont("Inter")
+	if again.Weights[0] != original.Weights[0] || again.Italics[0] != original.Italics[0] {
+		t.Fatal("lookup exposed shared font catalog slices")
+	}
+}

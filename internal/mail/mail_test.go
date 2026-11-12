@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"mime"
+	"mime/multipart"
 	"mime/quotedprintable"
 	"net/http"
 	"net/mail"
@@ -41,6 +43,30 @@ func TestOAuthReportsResponseReadError(t *testing.T) {
 	})}}
 	if _, err := o.Exchange(context.Background(), "code"); !errors.Is(err, want) {
 		t.Fatalf("error=%v, want %v", err, want)
+	}
+}
+
+func TestOAuthAccountRejectsIncompleteResponse(t *testing.T) {
+	for _, tc := range []struct{ provider, body string }{
+		{"gmail", `{`}, {"gmail", `{}`}, {"outlook", `{}`},
+		{"zoho", `{"data":[{"accountId":"42"}]}`}, {"zoho", `{"data":[{"mailboxAddress":"z@example.test"}]}`},
+	} {
+		o := &OAuth{Mailer: tc.provider, Client: &http.Client{Transport: auditRoundTripper(func(*http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(tc.body))}, nil
+		})}}
+		if _, _, err := o.Account(context.Background(), "token"); err == nil {
+			t.Errorf("%s accepted %s", tc.provider, tc.body)
+		}
+	}
+}
+
+func TestOAuthAccountKeepsLargeNumericID(t *testing.T) {
+	o := &OAuth{Mailer: "zoho", Client: &http.Client{Transport: auditRoundTripper(func(*http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(`{"data":[{"accountId":123456789012345678,"mailboxAddress":"z@example.test"}]}`))}, nil
+	})}}
+	_, id, err := o.Account(context.Background(), "token")
+	if err != nil || id != "123456789012345678" {
+		t.Fatalf("id=%q err=%v", id, err)
 	}
 }
 
@@ -98,6 +124,68 @@ func TestBuildAndFileDelivery(t *testing.T) {
 	b, _ := os.ReadFile(files[0])
 	if !strings.Contains(string(b), "multipart/alternative") {
 		t.Error("html part missing")
+	}
+}
+
+func TestBuildPreservesUnicodeAttachmentFilename(t *testing.T) {
+	m := &Mailer{From: "a@example.test"}
+	raw, err := m.Build(Message{To: []string{"b@example.test"}, Attachments: []Attachment{{Name: "résumé.pdf", Data: []byte("x")}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg, err := mail.ReadMessage(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, params, err := mime.ParseMediaType(msg.Header.Get("Content-Type"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := multipart.NewReader(msg.Body, params["boundary"])
+	if _, err := r.NextPart(); err != nil {
+		t.Fatal(err)
+	}
+	part, err := r.NextPart()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, params, err = mime.ParseMediaType(part.Header.Get("Content-Disposition"))
+	if err != nil || params["filename"] != "résumé.pdf" {
+		t.Fatalf("params=%v err=%v", params, err)
+	}
+}
+
+func TestBuildKeepsASCIIAttachmentParametersQuoted(t *testing.T) {
+	raw, err := (&Mailer{From: "a@example.test"}).Build(Message{To: []string{"b@example.test"}, Attachments: []Attachment{{Name: "my-cv.txt", Data: []byte("x")}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(raw, []byte(`filename="my-cv.txt"`)) || !bytes.Contains(raw, []byte(`name="my-cv.txt"`)) {
+		t.Fatalf("missing quoted filename parameters:\n%s", raw)
+	}
+}
+
+func TestBuildEncodesUnicodeDisplayNames(t *testing.T) {
+	m := &Mailer{From: "Gönderen <sender@example.test>"}
+	raw, err := m.Build(Message{To: []string{"Özlem <to@example.test>"}, Cc: []string{"José <cc@example.test>"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg, err := mail.ReadMessage(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for key, name := range map[string]string{"From": "Gönderen", "To": "Özlem", "Cc": "José"} {
+		value := msg.Header.Get(key)
+		for _, r := range value {
+			if r > 127 {
+				t.Errorf("%s contains unencoded character: %q", key, value)
+			}
+		}
+		a, err := mail.ParseAddress(value)
+		if err != nil || a.Name != name {
+			t.Errorf("%s = %q: %v", key, value, err)
+		}
 	}
 }
 

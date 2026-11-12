@@ -68,6 +68,10 @@ func LookupFont(name string) (FontFamily, bool) {
 		return FontFamily{}, false
 	}
 	f, ok := fontByLower[strings.ToLower(unquoteFont(name))]
+	if ok {
+		f.Weights = append([]int(nil), f.Weights...)
+		f.Italics = append([]int(nil), f.Italics...)
+	}
 	return f, ok
 }
 
