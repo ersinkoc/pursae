@@ -227,14 +227,18 @@ func AcceptsType(accept, typ string) bool {
 		if !strings.EqualFold(strings.TrimSpace(name), typ) {
 			continue
 		}
+		acceptable := true
 		for _, param := range strings.Split(params, ";") {
 			if k, v, ok := strings.Cut(strings.TrimSpace(param), "="); ok && strings.EqualFold(strings.TrimSpace(k), "q") {
 				if f, err := strconv.ParseFloat(strings.TrimSpace(v), 64); err != nil || !(f > 0 && f <= 1) {
-					return false
+					acceptable = false
+					break
 				}
 			}
 		}
-		return true
+		if acceptable {
+			return true
+		}
 	}
 	return false
 }

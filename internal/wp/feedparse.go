@@ -142,7 +142,12 @@ func ParseFeed(data []byte) (*Feed, error) {
 				item.Link = strings.TrimSpace(l.Href)
 				break
 			}
-			if l.Href == "" && strings.TrimSpace(l.Text) != "" {
+		}
+		if item.Link == "" {
+			for _, l := range it.Links {
+				if l.Href != "" || (l.Rel != "" && l.Rel != "alternate") || strings.TrimSpace(l.Text) == "" {
+					continue
+				}
 				item.Link = strings.TrimSpace(l.Text)
 				break
 			}

@@ -137,3 +137,12 @@ func TestParseSSECKey(t *testing.T) {
 		}
 	}
 }
+
+func TestSSECLocalhostNamesAreCaseInsensitive(t *testing.T) {
+	for _, endpoint := range []string{"http://LOCALHOST:9000", "http://Dev.LocalHost:9000", "http://localhost.:9000"} {
+		c := &gocdn.Client{Endpoint: endpoint, Bucket: "bucket", AccessKey: "key", SecretKey: "secret", SSECKey: testKey(1)}
+		if err := c.Validate(); err != nil {
+			t.Errorf("%s: %v", endpoint, err)
+		}
+	}
+}

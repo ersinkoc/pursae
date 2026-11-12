@@ -194,6 +194,7 @@ func (c *Client) Validate() error {
 }
 
 func isLoopback(host string) bool {
+	host = strings.ToLower(strings.TrimSuffix(host, "."))
 	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
 		return true
 	}
@@ -457,6 +458,10 @@ func (c *Client) List(ctx context.Context, prefix, delimiter, token string, max 
 func (c *Client) PresignGet(key string, expires time.Duration) (string, error) {
 	if err := c.Validate(); err != nil {
 		return "", err
+	}
+	seconds := expires / time.Second
+	if seconds < 1 || seconds > 7*24*60*60 {
+		return "", errors.New("presigned URL expiry must be from 1 second through 7 days")
 	}
 	if len(c.SSECKey) != 0 {
 		return "", errors.New("objects encrypted with a customer key (SSE-C) cannot be fetched through a presigned URL")

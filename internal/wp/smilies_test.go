@@ -122,6 +122,20 @@ func TestParseFeedAtomInheritedAuthors(t *testing.T) {
 	}
 }
 
+func TestParseFeedPrefersAlternateHrefOverNonAlternateText(t *testing.T) {
+	data := `<feed xmlns="http://www.w3.org/2005/Atom"><entry>` +
+		`<link rel="self">https://api.example/items/1</link>` +
+		`<link rel="alternate" href="https://example.com/posts/1"/>` +
+		`</entry></feed>`
+	f, err := ParseFeed([]byte(data))
+	if err != nil || len(f.Items) != 1 {
+		t.Fatalf("feed=%+v err=%v", f, err)
+	}
+	if got, want := f.Items[0].Link, "https://example.com/posts/1"; got != want {
+		t.Fatalf("link=%q, want %q", got, want)
+	}
+}
+
 func TestParseFeedDateWithoutSeconds(t *testing.T) {
 	f, err := ParseFeed([]byte(`<rss><channel><item><pubDate>Mon, 02 Jan 2006 15:04 +0000</pubDate></item></channel></rss>`))
 	if err != nil || len(f.Items) != 1 || f.Items[0].Date.Format("2006-01-02 15:04:05 -0700") != "2006-01-02 15:04:00 +0000" {

@@ -100,6 +100,15 @@ func TestAcceptsTypeQualityAfterOtherParameters(t *testing.T) {
 	}
 }
 
+func TestAcceptsTypeConsidersDuplicateMediaRanges(t *testing.T) {
+	if !AcceptsType("image/webp;q=0, image/avif, image/webp;q=0.8", "image/webp") {
+		t.Fatal("a disabled duplicate hid a later acceptable media range")
+	}
+	if AcceptsType("image/webp;q=0, image/avif", "image/webp") {
+		t.Fatal("accepted a type with no positive media range")
+	}
+}
+
 func TestTransformAndEncode(t *testing.T) {
 	src := image.NewRGBA(image.Rect(0, 0, 400, 200))
 	for y := 0; y < 200; y++ {

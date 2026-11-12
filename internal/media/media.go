@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gen2brain/webp"
 	"golang.org/x/image/draw"
@@ -83,11 +84,15 @@ func SanitizeFileName(name string) string {
 		switch {
 		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_', r == '.':
 			sb.WriteRune(r)
-		case r == ' ' || r == '+' || r == '%':
+		case unicode.IsSpace(r) || r == '+' || r == '%':
 			sb.WriteRune('-')
 		}
 	}
-	base = strings.Trim(strings.ReplaceAll(sb.String(), "--", "-"), "-._")
+	base = sb.String()
+	for strings.Contains(base, "--") {
+		base = strings.ReplaceAll(base, "--", "-")
+	}
+	base = strings.Trim(base, "-._")
 	if base == "" {
 		base = "unnamed-file"
 	}
