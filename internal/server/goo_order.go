@@ -828,6 +828,21 @@ func (s *Server) gooPaymentComplete(ctx context.Context, o *gooOrder, transactio
 	})
 }
 
+// gooOrderHasDownloadable is WC_Order::has_downloadable_item().
+func (s *Server) gooOrderHasDownloadable(ctx context.Context, o *gooOrder) bool {
+	for _, it := range o.ItemsOf("line_item") {
+		pid := it.ProductID
+		if it.VariationID != 0 {
+			pid = it.VariationID
+		}
+		p, err := s.gooGetProduct(ctx, pid)
+		if err == nil && p.Downloadable {
+			return true
+		}
+	}
+	return false
+}
+
 // gooOrderNeedsProcessing is needs_processing(): an item that is not virtual and downloadable.
 func (s *Server) gooOrderNeedsProcessing(ctx context.Context, o *gooOrder) bool {
 	for _, it := range o.ItemsOf("line_item") {

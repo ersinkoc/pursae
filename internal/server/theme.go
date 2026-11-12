@@ -348,7 +348,7 @@ type termLink struct {
 func (s *Server) fillPostView(ctx context.Context, pv *postView, p *store.Post, author *store.User, cats, tags []*store.Term, lb *links.Builder) {
 	loc := s.loc()
 	pv.Post = p
-	pv.Format = p.Format
+	pv.Format = store.CanonicalPostFormat(p.Format)
 	pv.Date = p.Date().In(loc)
 	pv.Modified = p.ModifiedAt.In(loc)
 	df := s.settings.String("date_format")

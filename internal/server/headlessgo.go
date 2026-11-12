@@ -341,7 +341,7 @@ func (s *Server) hgEngine() http.Handler {
 		if err := applyTrustedProxies(r, s.cfg.TrustedProxies); err != nil {
 			log.Printf("headlessgo: trusted proxies: %v", err)
 		}
-		r.Use(gin.Recovery(), requestOrigin(), func(c *gin.Context) {
+		r.Use(gin.Recovery(), s.requestOrigin(), func(c *gin.Context) {
 			// GraphQL decides per operation (hgGQLExecute: mutations do not stop).
 			if m := c.Request.Method; m != http.MethodGet && m != http.MethodHead && !strings.HasSuffix(strings.TrimRight(c.Request.URL.Path, "/"), "/graphql") {
 				c.Request = c.Request.WithContext(context.WithoutCancel(c.Request.Context()))

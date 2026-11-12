@@ -5,7 +5,6 @@ import (
 	"html"
 	"math"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"testing"
@@ -235,7 +234,7 @@ func TestGooV3ReportSalesTotals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := gooReq(t, &http.Client{}, "GET", base+"/wp-json/wc/v3/reports/sales?consumer_key="+url.QueryEscape(ck)+"&consumer_secret="+url.QueryEscape(cs), nil, nil)
+	r := gooReq(t, &http.Client{}, "GET", base+"/wp-json/wc/v3/reports/sales", nil, gooBasic(ck, cs))
 	if r.Code != http.StatusOK {
 		t.Fatalf("reports/sales: %d %s", r.Code, r.Raw)
 	}

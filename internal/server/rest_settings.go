@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"wpgo/internal/store"
 )
 
 // restSettingKind is the schema type of a /wp/v2/settings field (register_setting()'s show_in_rest).
@@ -146,6 +148,12 @@ func (s *Server) sanitizeRESTSetting(ctx context.Context, name string, v any) (a
 		if t, err := s.store.GetTerm(ctx, int64(val.(int))); err != nil || t.Taxonomy != "category" {
 			return nil, "Invalid category ID."
 		}
+	case "default_post_format":
+		str := strings.TrimSpace(val.(string))
+		if str != "0" && store.CanonicalPostFormat(str) != str {
+			return nil, "default_post_format is not a valid post format."
+		}
+		return str, ""
 	case "site_logo", "site_icon":
 		if val.(int) < 0 {
 			return nil, name + " must be greater than or equal to 0."

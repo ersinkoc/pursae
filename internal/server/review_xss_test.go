@@ -13,7 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"wpgo/internal/blocks"
 	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // layoutXSS is the exploit from the 2026-11-08 review: a layout type that closes the class attribute
@@ -206,5 +208,144 @@ func TestExcerptAndCommentSanitizedOnSave(t *testing.T) {
 	}
 	if !strings.Contains(stored, "<strong>s</strong>") || !strings.Contains(stored, `href="https://e.test"`) {
 		t.Errorf("stored comment lost allowed markup: %s", stored)
+	}
+}
+
+// titleRSS must not unescape and then escape once into an Atom type=html CDATA title: a reader
+// HTML-decodes that text, so &lt;img onerror&gt; would become a tag. One decode stays text.
+func TestTitleRSSNoDoubleUnescape(t *testing.T) {
+	payload := `&lt;img src=x onerror=alert(1)&gt;`
+	got := titleRSS(payload)
+	if strings.Contains(got, "<") || strings.Contains(html.UnescapeString(got), "<") {
+		t.Errorf("titleRSS = %q, one HTML decode %q", got, html.UnescapeString(got))
+	}
+	if got != "&amp;lt;img src=x onerror=alert(1)&amp;gt;" {
+		t.Errorf("titleRSS(entity tag) = %q", got)
+	}
+	if got := titleRSS(`A &amp; <em>B</em>`); got != "A &amp;amp; B" {
+		t.Errorf("titleRSS = %q", got)
+	}
+	if got := titleRSS(`<script>alert(1)</script>Hi`); got != "Hi" {
+		t.Errorf("raw script title = %q", got)
+	}
+	if got := jsQuoteHTML(`</script><img src=x onerror=alert(1)>`); strings.Contains(got, "<") || strings.Contains(got, ">") {
+		t.Errorf("jsQuoteHTML = %q", got)
+	}
+}
+
+// Stored shop HTML (reviews, notes, quick view, pre-order copy, page titles, CSV excerpts) cannot
+// carry a tag or an event handler into the page.
+func TestCommerceXSSSinks(t *testing.T) {
+	base, cl, srv := gooSite(t)
+	ctx := context.Background()
+	v3 := gooAdminAPI(t, base, cl)
+
+	p := gooMakeSimple(t, srv, "XSS Shirt", 12, nil)
+	p, err := srv.gooGetProduct(ctx, p.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	review := `<script>alert("r")</script><b onclick="x()">ok</b><a href="javascript:alert(1)">j</a>`
+	if err := srv.store.InsertComment(ctx, &store.Comment{PostID: p.ID, Type: "review", Status: "approved",
+		AuthorName: "Ada", AuthorEmail: "ada-xss@example.test", Content: review}); err != nil {
+		t.Fatal(err)
+	}
+	htmlOut := srv.gooReviewsHTML(gooTestCtx(), p)
+	for _, bad := range []string{"<script", "onclick", "javascript:"} {
+		if strings.Contains(htmlOut, bad) {
+			t.Errorf("review HTML contains %q: %s", bad, htmlOut)
+		}
+	}
+	if !strings.Contains(htmlOut, "<b>ok</b>") {
+		t.Errorf("review HTML dropped allowed text: %s", htmlOut)
+	}
+	rev := v3("POST", "/products/reviews", map[string]any{"product_id": p.ID, "review": review, "reviewer": "Bea", "reviewer_email": "bea-xss@example.test", "rating": 5})
+	if rev.Code != http.StatusCreated {
+		t.Fatalf("create review: %d %s", rev.Code, rev.Raw)
+	}
+	stored := gooJS(rev.Body, "review")
+	if strings.Contains(stored, "<script") || strings.Contains(stored, "onclick") || strings.Contains(stored, "javascript:") || !strings.Contains(stored, "ok") {
+		t.Errorf("stored REST review = %q", stored)
+	}
+	upd := v3("PUT", fmt.Sprintf("/products/reviews/%d", gooInt(gooJ(rev.Body, "id"))), map[string]any{"review": `<img src=x onerror=alert(1)><em>fine</em>`})
+	if upd.Code != http.StatusOK || strings.Contains(gooJS(upd.Body, "review"), "onerror") || !strings.Contains(gooJS(upd.Body, "review"), "fine") {
+		t.Errorf("updated review: %d %s", upd.Code, upd.Raw)
+	}
+
+	o := &gooOrder{Status: "processing", Currency: "USD", Billing: map[string]string{"email": "note@example.test"}, Shipping: map[string]string{}, Meta: map[string]any{}}
+	if err := srv.gooSaveOrder(ctx, o, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooAddOrderNote(ctx, o, `<img src=x onerror=alert(1)><b>kept</b>`, false, "admin"); err != nil {
+		t.Fatal(err)
+	}
+	view := srv.gooOrderEditView(gooTestCtx(), o)
+	var noteHTML string
+	for _, n := range view.Notes {
+		if strings.Contains(string(n.Content), "kept") {
+			noteHTML = string(n.Content)
+		}
+	}
+	if noteHTML == "" || strings.Contains(noteHTML, "onerror") || strings.Contains(noteHTML, "<script") || !strings.Contains(noteHTML, "<b>kept</b>") {
+		t.Errorf("admin note HTML = %q", noteHTML)
+	}
+	nr := v3("POST", fmt.Sprintf("/orders/%d/notes", o.ID), map[string]any{"note": `<script>alert(1)</script>Packed`})
+	if nr.Code != http.StatusCreated || strings.Contains(gooJS(nr.Body, "note"), "<script") || !strings.Contains(gooJS(nr.Body, "note"), "Packed") {
+		t.Errorf("REST note: %d %s", nr.Code, nr.Raw)
+	}
+	if only := v3("POST", fmt.Sprintf("/orders/%d/notes", o.ID), map[string]any{"note": `<script>alert(1)</script>`}); only.Code == http.StatusCreated {
+		t.Errorf("script-only note was stored: %s", only.Raw)
+	}
+
+	p.Post.Excerpt = `<p>Safe linen</p><img src=x onerror=alert(1)>`
+	qv := string(srv.gooQVSummary(gooTestCtx(), p))
+	if !strings.Contains(qv, `woocommerce-product-details__short-description">Safe linen</div>`) || strings.Contains(qv, "onerror") {
+		t.Errorf("quick view excerpt: %s", qv)
+	}
+
+	created, err := srv.gooImportRow(ctx, map[string]string{
+		"type": "simple", "name": "CSV XSS", "regular_price": "3",
+		"short_description": `<img src=x onerror=alert(1)><p>Plain</p><script>alert(1)</script>`,
+	}, false, map[int64]int64{}, 1)
+	if err != nil || !created {
+		t.Fatalf("csv import: %v %v", created, err)
+	}
+	var excerpt string
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT excerpt FROM posts WHERE title = $1 AND type = 'product'`, "CSV XSS").Scan(&excerpt); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(excerpt, "onerror") || strings.Contains(excerpt, "<script") || !strings.Contains(excerpt, "Plain") {
+		t.Errorf("csv excerpt = %q", excerpt)
+	}
+	if wp.KsesPost(excerpt) != excerpt {
+		t.Errorf("csv excerpt is not stable under KsesPost: %q", excerpt)
+	}
+
+	gxaOn(t, srv, gpreKey, true)
+	gxaSetExt(t, srv, gpreKey, map[string]any{
+		"single_product_message":    `Available <img src=x onerror=alert(1)> on {availability_date}.`,
+		"shop_loop_product_message": `<script>alert(1)</script>Soon {availability_date}`,
+		"add_to_cart_button_text":   `</script><img src=x onerror=alert(1)>`,
+	})
+	if p.Meta == nil {
+		p.Meta = map[string]any{}
+	}
+	p.Meta["_wc_pre_orders_enabled"] = "yes"
+	p.Meta["_wc_pre_orders_availability_datetime"] = float64(time.Now().Add(48 * time.Hour).Unix())
+	pre := string(srv.gooHTML(gooTestCtx(), "single_after_add_to_cart", p))
+	if strings.Contains(pre, "<img src=x onerror") || strings.Contains(pre, "onerror=\"") || strings.Count(pre, "</script>") != 1 || !strings.Contains(pre, "Available") {
+		t.Errorf("pre-order message: %s", pre)
+	}
+	loop := string(srv.gooHTML(gooTestCtx(), "loop_after_item", p))
+	if strings.Contains(loop, "<script") || !strings.Contains(loop, "Soon") {
+		t.Errorf("pre-order loop: %s", loop)
+	}
+
+	title := `<img src=x onerror=alert(1)>`
+	mustInsertPost(t, srv, &store.Post{Type: "page", AuthorID: 1, Title: title, Content: "x"})
+	name := "core/page-list"
+	list := renderPageListBlock(withRender(ctx, &renderCtx{s: srv, lb: srv.links(ctx)}), &blocks.Block{BlockName: &name, Attrs: map[string]any{}}, "")
+	if strings.Contains(list, "<img") || !strings.Contains(list, "&lt;img src=x onerror=alert(1)&gt;") {
+		t.Errorf("page list title: %s", list)
 	}
 }

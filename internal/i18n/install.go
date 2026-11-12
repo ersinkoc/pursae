@@ -11,13 +11,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -73,7 +76,58 @@ func (in *Installer) client() *http.Client {
 	if in.Client != nil {
 		return in.Client
 	}
-	return &http.Client{Timeout: 90 * time.Second}
+	api, _ := url.Parse(in.api())
+	allowLoop := api != nil && func() bool {
+		ip := net.ParseIP(api.Hostname())
+		return ip != nil && ip.IsLoopback()
+	}()
+	d := &net.Dialer{Timeout: 30 * time.Second, Control: func(_, address string, _ syscall.RawConn) error {
+		host, _, err := net.SplitHostPort(address)
+		if err != nil {
+			return err
+		}
+		ip := net.ParseIP(host)
+		if allowLoop && ip != nil && ip.IsLoopback() {
+			return nil
+		}
+		if !translationPublicIP(ip) {
+			return errors.New("translation download points at a private network")
+		}
+		return nil
+	}}
+	return &http.Client{
+		Timeout:   90 * time.Second,
+		Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext, TLSHandshakeTimeout: 10 * time.Second},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return errors.New("too many redirects")
+			}
+			return in.urlAllowed(req.URL.String())
+		},
+	}
+}
+
+// urlAllowed is the host allowlist for translation API and package URLs: WordPress.org, or the
+// configured API host (tests point that at a local server). Anything else is refused.
+func (in *Installer) urlAllowed(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil {
+		return fmt.Errorf("refusing translation URL %q", raw)
+	}
+	host := strings.ToLower(strings.TrimSuffix(u.Hostname(), "."))
+	if (host == "downloads.wordpress.org" || host == "api.wordpress.org") && u.Scheme == "https" {
+		return nil
+	}
+	api, err := url.Parse(in.api())
+	if err == nil && strings.EqualFold(api.Hostname(), u.Hostname()) && api.Scheme == u.Scheme {
+		return nil
+	}
+	return fmt.Errorf("refusing translation URL host %s", host)
+}
+
+func translationPublicIP(ip net.IP) bool {
+	return ip != nil && !ip.IsLoopback() && !ip.IsPrivate() && !ip.IsLinkLocalUnicast() &&
+		!ip.IsLinkLocalMulticast() && !ip.IsMulticast() && !ip.IsUnspecified() && !ip.IsInterfaceLocalMulticast()
 }
 
 func (in *Installer) api() string {
@@ -91,8 +145,11 @@ type apiTranslations struct {
 	} `json:"translations"`
 }
 
-func (in *Installer) get(ctx context.Context, url string, limit int64) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+func (in *Installer) get(ctx context.Context, rawURL string, limit int64) ([]byte, error) {
+	if err := in.urlAllowed(rawURL); err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -102,14 +159,14 @@ func (in *Installer) get(ctx context.Context, url string, limit int64) ([]byte, 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s: %s", url, resp.Status)
+		return nil, fmt.Errorf("%s: %s", rawURL, resp.Status)
 	}
 	b, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if err != nil {
 		return nil, err
 	}
 	if int64(len(b)) > limit {
-		return nil, fmt.Errorf("%s: response too large", url)
+		return nil, fmt.Errorf("%s: response too large", rawURL)
 	}
 	return b, nil
 }

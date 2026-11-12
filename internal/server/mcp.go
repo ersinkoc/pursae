@@ -161,7 +161,8 @@ func (s *Server) mcpHandle(c *gin.Context, req *mcpRequest) *mcpResponse {
 			args = map[string]any{}
 		}
 		t := mcpToolByName(name)
-		if t == nil {
+		// The same filter as tools/list: a credential that cannot see a tool cannot call it.
+		if t == nil || (c != nil && !s.mcpToolAvailable(c, t)) {
 			return fail(-32602, "Unknown tool: "+name)
 		}
 		resp.Result = s.mcpCall(c, t, args)
@@ -478,6 +479,77 @@ var mcpTools = func() []*mcpTool {
 	return list
 }()
 
+// mcpRestRoute checks a rest_request path and returns the route under /wp-json.
+// The path is percent-decoded (including double encoding) before the ".." check, because the
+// HTTP server decodes it before routing: /wp/v2/%2e%2e/%2e%2e/wp-admin/ would otherwise leave
+// /wp-json. The query string is kept as the client sent it.
+func mcpRestRoute(raw string) (string, bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || !strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "//") ||
+		strings.Contains(raw, "..") || strings.Contains(raw, "\\") || strings.ContainsRune(raw, 0) {
+		return "", false
+	}
+	pathPart, query, _ := strings.Cut(raw, "?")
+	decoded := pathPart
+	for range 4 {
+		next, err := url.PathUnescape(decoded)
+		if err != nil || strings.ContainsRune(next, 0) {
+			return "", false
+		}
+		if next == decoded {
+			break
+		}
+		decoded = next
+	}
+	if decoded == "" || !strings.HasPrefix(decoded, "/") || strings.HasPrefix(decoded, "//") ||
+		strings.Contains(decoded, "..") || strings.Contains(decoded, "\\") || strings.ContainsAny(decoded, "?#") {
+		return "", false
+	}
+	for _, r := range decoded {
+		if r < 0x20 || r == 0x7f {
+			return "", false
+		}
+	}
+	cleaned := path.Clean(decoded)
+	slashless := strings.TrimSuffix(decoded, "/")
+	if slashless == "" {
+		slashless = "/"
+	}
+	// path.Clean drops a trailing slash and collapses "." / ".." / duplicate slashes.
+	// Anything it rewrites, other than that trailing slash, is rejected.
+	if cleaned != slashless {
+		return "", false
+	}
+	if strings.Contains(strings.ToLower(cleaned), "/pursae/v1/mcp") {
+		return "", false
+	}
+	out := decoded
+	if len(decoded) >= len("/wp-json") && strings.EqualFold(decoded[:len("/wp-json")], "/wp-json") {
+		rest := decoded[len("/wp-json"):]
+		if rest != "" && !strings.HasPrefix(rest, "/") {
+			return "", false
+		}
+		if rest == "" {
+			rest = "/"
+		}
+		out = rest
+	}
+	if !strings.HasPrefix(out, "/") || strings.Contains(out, "..") {
+		return "", false
+	}
+	full := path.Clean("/wp-json" + strings.TrimSuffix(out, "/"))
+	if full != "/wp-json" && !strings.HasPrefix(full, "/wp-json/") {
+		return "", false
+	}
+	if strings.Contains(strings.ToLower(full), "/pursae/v1/mcp") {
+		return "", false
+	}
+	if query != "" {
+		out += "?" + query
+	}
+	return out, true
+}
+
 func mcpToolByName(name string) *mcpTool {
 	for _, t := range mcpTools {
 		if t.Name == name {
@@ -535,12 +607,20 @@ func (s *Server) mcpCall(c *gin.Context, t *mcpTool, args map[string]any) map[st
 	switch t.special {
 	case "rest":
 		method = strings.ToUpper(fmt.Sprint(args["method"]))
-		route, _ = args["path"].(string)
-		if !strings.HasPrefix(route, "/") || strings.HasPrefix(route, "//") || strings.Contains(route, "..") || strings.Contains(route, "\\") ||
-			strings.Contains(route, "/pursae/v1/mcp") {
+		switch method {
+		case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+		default:
+			return toolErr("method must be GET, POST, PUT, PATCH or DELETE")
+		}
+		var ok bool
+		route, ok = mcpRestRoute(fmt.Sprint(args["path"]))
+		if !ok {
 			return toolErr("path must be a REST route starting with /, e.g. /wp/v2/comments")
 		}
-		route = strings.TrimPrefix(route, "/wp-json")
+		pathOnly, _, _ := strings.Cut(route, "?")
+		if c != nil && !restScopeAllows(c, pathOnly) {
+			return toolErr("rest_scope_forbidden")
+		}
 		rest = map[string]any{}
 		if b, ok := args["body"].(map[string]any); ok {
 			rest = b

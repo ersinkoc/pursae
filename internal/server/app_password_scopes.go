@@ -10,8 +10,9 @@ import (
 	"wpgo/internal/store"
 )
 
-// Application Password scopes narrow what a password may do. A password without scopes keeps the
-// user's full capabilities (WordPress behaviour); a password with scopes is limited twice:
+// Application Password scopes narrow what a password may do. A password with no scopes is limited to
+// content and media (the same default as an OAuth grant). Full access is stored only as the explicit
+// "full_access" marker. A password with ordinary scopes is limited twice:
 //
 //  1. the user's capabilities are cut down to the ones the scopes need (appScopeCaps), so a handler's
 //     own u.Can checks deny anything else, and
@@ -51,7 +52,7 @@ var appScopes = []appScope{
 	{"commerce", "Commerce", "Pursae Commerce products, orders, coupons, customers, reports and store settings (the wc/v3 REST API).",
 		[]string{"read", "manage_woocommerce", "view_woocommerce_reports", "edit_products", "edit_others_products", "publish_products", "read_private_products",
 			"delete_products", "delete_others_products", "delete_published_products", "delete_private_products", "edit_published_products", "edit_private_products",
-			"manage_product_terms", "edit_shop_orders", "edit_shop_coupons", "moderate_comments", "list_users", "edit_users", "delete_users"}},
+			"manage_product_terms", "edit_shop_orders", "edit_shop_coupons", "moderate_comments", "list_users"}},
 	{"users", "Users", "List, create and edit users.",
 		[]string{"read", "list_users", "create_users", "edit_users", "promote_users", "delete_users"}},
 }
@@ -63,6 +64,55 @@ func appScopeBySlug(slug string) *appScope {
 		}
 	}
 	return nil
+}
+
+// appScopeFullAccess is the only stored scope that keeps every capability of the user. An empty list
+// is not that: it is the content and media default (oauthDefaultScopes).
+const appScopeFullAccess = "full_access"
+
+// resolveAppPasswordScopes is what create and update store. full_access, alone, is explicit full
+// access; anything else is the known scopes, or content and media when nothing known was given.
+func resolveAppPasswordScopes(in []string) []string {
+	for _, v := range in {
+		if strings.EqualFold(strings.TrimSpace(v), appScopeFullAccess) {
+			return []string{appScopeFullAccess}
+		}
+	}
+	if known := normalizeAppScopes(in); len(known) > 0 {
+		return known
+	}
+	return append([]string(nil), oauthDefaultScopes...)
+}
+
+// appPasswordAccess is how a stored scope list is enforced. refuse is a list of scopes this version
+// no longer knows: that must not widen into content and media, or into full access.
+func appPasswordAccess(stored []string) (full bool, scopes []string, refuse bool) {
+	for _, v := range stored {
+		if strings.EqualFold(strings.TrimSpace(v), appScopeFullAccess) {
+			return true, nil, false
+		}
+	}
+	known := normalizeAppScopes(stored)
+	if len(stored) > 0 && len(known) == 0 {
+		return false, nil, true
+	}
+	if len(known) == 0 {
+		known = append([]string(nil), oauthDefaultScopes...)
+	}
+	return false, known, false
+}
+
+// appPasswordScopeLabel is the Access column. An empty list is content and media (migration 0098
+// turned the empty lists of older passwords into full_access); only full_access is "Full access".
+func appPasswordScopeLabel(scopes []string) string {
+	full, known, refuse := appPasswordAccess(scopes)
+	if full {
+		return "Full access"
+	}
+	if refuse {
+		return "Unavailable"
+	}
+	return scopeLabels(known)
 }
 
 // normalizeAppScopes keeps the known scopes, once each, in display order.

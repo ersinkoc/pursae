@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/ed25519"
 	"encoding/base64"
 	"errors"
@@ -8,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"syscall"
+	"time"
 
 	"wpgo/internal/plugins"
 )
@@ -180,14 +183,78 @@ func hubURLAllowed(u *url.URL) error {
 // hubCredentialHeaders are the headers that identify the site to the Manager.
 var hubCredentialHeaders = []string{"X-Pursae-License", "X-Pursae-Site"}
 
-// hubCheckRedirect follows at most 10 redirects, never from https to http on a public host, and
-// drops the license and site headers when a redirect leaves the original host (net/http only
-// strips Authorization and Cookie itself).
+// hubTransport is shared so idle connections to the Manager are reused. It has no proxy:
+// ProxyFromEnvironment would dial the proxy and publicOnly would never see the real address.
+var hubTransport = &http.Transport{
+	Proxy:               nil,
+	DialContext:         hubDialContext,
+	TLSHandshakeTimeout: 10 * time.Second,
+	IdleConnTimeout:     30 * time.Second,
+}
+
+// hubHTTPClient is every client that talks to Pursae Manager, including core downloads
+// (core_update.go). The dial refuses private addresses except loopback for a local development
+// host, and hubCheckRedirect refuses a redirect whose name resolves to one.
+func hubHTTPClient(timeout time.Duration) *http.Client {
+	return &http.Client{Timeout: timeout, Transport: hubTransport, CheckRedirect: hubCheckRedirect}
+}
+
+// hubDialContext applies publicOnly after DNS. Loopback is allowed only when the URL host itself
+// is a local development name (localhost, 127.0.0.1, *.test): a public name that resolves to
+// 127.0.0.1 or 169.254.169.254 is still refused.
+func hubDialContext(ctx context.Context, network, addr string) (net.Conn, error) {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	allowLoop := localDevHost(host)
+	block := publicOnly(nil, "Pursae Manager address points at a private network")
+	d := &net.Dialer{Timeout: 15 * time.Second, Control: func(network, address string, c syscall.RawConn) error {
+		if allowLoop {
+			h, _, splitErr := net.SplitHostPort(address)
+			if splitErr == nil {
+				if ip := net.ParseIP(h); ip != nil && ip.IsLoopback() {
+					return nil
+				}
+			}
+		}
+		return block(network, address, c)
+	}}
+	return d.DialContext(ctx, network, addr)
+}
+
+// hubResolvedPublic rejects a redirect target that is not a local development host and that
+// resolves to any non-public address. The dial control is the second check, after DNS again.
+func hubResolvedPublic(host string) error {
+	if localDevHost(host) {
+		return nil
+	}
+	ips, err := net.LookupIP(host)
+	if err != nil {
+		return err
+	}
+	if len(ips) == 0 {
+		return errors.New("Pursae Manager redirect has no address")
+	}
+	for _, ip := range ips {
+		if !publicIP(ip) {
+			return errors.New("Pursae Manager redirect points at a private network")
+		}
+	}
+	return nil
+}
+
+// hubCheckRedirect follows at most 10 redirects, never from https to http on a public host,
+// never to a private address, and drops the license and site headers when a redirect leaves the
+// original host (net/http only strips Authorization and Cookie itself).
 func hubCheckRedirect(req *http.Request, via []*http.Request) error {
 	if len(via) >= 10 {
 		return errors.New("stopped after 10 redirects")
 	}
 	if err := hubURLAllowed(req.URL); err != nil {
+		return err
+	}
+	if err := hubResolvedPublic(req.URL.Hostname()); err != nil {
 		return err
 	}
 	if !strings.EqualFold(req.URL.Host, via[0].URL.Host) {
@@ -196,4 +263,34 @@ func hubCheckRedirect(req *http.Request, via []*http.Request) error {
 		}
 	}
 	return nil
+}
+
+// lanClient refuses connections (and redirects) to link-local, multicast and other non-public
+// addresses outside loopback and RFC1918: for admin-set endpoints that legitimately live on the
+// local network (purge proxy, self-hosted S3) while the cloud metadata service stays unreachable.
+func lanClient(timeout time.Duration, msg string) *http.Client {
+	d := &net.Dialer{Timeout: 30 * time.Second, Control: func(_, address string, _ syscall.RawConn) error {
+		host, _, err := net.SplitHostPort(address)
+		if err != nil {
+			return err
+		}
+		ip := net.ParseIP(host)
+		if ip != nil && (ip.IsLoopback() || ip.IsPrivate()) {
+			return nil
+		}
+		if !publicIP(ip) {
+			return errors.New(msg)
+		}
+		return nil
+	}}
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext, TLSHandshakeTimeout: 10 * time.Second},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 || (req.URL.Scheme != "http" && req.URL.Scheme != "https") {
+				return errors.New(msg)
+			}
+			return nil
+		},
+	}
 }

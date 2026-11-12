@@ -8,11 +8,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
+	"net"
 	"net/mail"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -40,8 +42,22 @@ const (
 // msTestBase points every provider URL (APIs, OAuth, Twilio) at a test server when set.
 var msTestBase string
 
-// msHTTP is the client of the API mailers and the alert channels.
-var msHTTP = &http.Client{Timeout: 30 * time.Second}
+// msHTTP is the client of the API mailers and the alert channels. It refuses private
+// addresses at connect time (and on redirects). Tests set msTestBase and may dial loopback.
+var msHTTP = publicClient(30*time.Second, func() bool { return msTestBase != "" }, "the address points at a private network")
+
+// msWebhookURL accepts only http(s) webhook targets. A literal private address is refused
+// unless a test has pointed the providers at a local server (msTestBase).
+func msWebhookURL(raw string) error {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil {
+		return errors.New("webhook URLs must be http or https")
+	}
+	if ip := net.ParseIP(u.Hostname()); ip != nil && !publicIP(ip) && msTestBase == "" {
+		return errors.New("webhook URL points at a private network")
+	}
+	return nil
+}
 
 func (s *Server) mailSMTPOn() bool { return s.settings.Bool(msSetting) }
 

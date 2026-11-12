@@ -168,21 +168,25 @@ func TestWebBuilderFormCaptchaWidgets(t *testing.T) {
 		c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
 		return w.srv.wbFormEnhance(c, nil, html), c
 	}
-	if out, _ := run(); out != html {
-		t.Fatal("changed without Pursae Contact Form")
+	out, _ := run()
+	if strings.Count(out, `name="wb_nonce"`) != 2 || strings.Contains(out, `data-wb-search="" action="/"><input type="hidden" name="wb_nonce"`) {
+		t.Fatalf("nonce on builder forms only:\n%s", out)
+	}
+	if !strings.Contains(out, `value="s.`) {
+		t.Fatalf("anonymous token missing:\n%s", out)
 	}
 	if err := w.srv.settings.Set(ctx, map[string]any{gontactSetting: true, "gontact_turnstile_sitekey": "ts-site", "gontact_turnstile_secret": "ts-secret",
 		"gontact_recaptcha_sitekey": "rc-site", "gontact_recaptcha_secret": "rc-secret"}); err != nil {
 		t.Fatal(err)
 	}
-	out, _ := run()
+	out, _ = run() // captcha widgets plus the form token
 	if n := strings.Count(out, `<div class="cf-turnstile" data-sitekey="ts-site"></div>`); n != 2 {
 		t.Fatalf("turnstile widgets: %d\n%s", n, out)
 	}
 	if n := strings.Count(out, `name="g-recaptcha-response"`); n != 2 {
 		t.Fatalf("recaptcha inputs: %d", n)
 	}
-	if !regexp.MustCompile(`(?s)<input name="email"><div class="cf-turnstile".*?</form>`).MatchString(out) {
+	if !regexp.MustCompile(`(?s)<input name="email">.*<div class="cf-turnstile".*name="wb_nonce".*?</form>`).MatchString(out) {
 		t.Fatalf("widget not inside the form:\n%s", out)
 	}
 	for _, want := range []string{"challenges.cloudflare.com/turnstile/v0/api.js", "recaptcha/api.js?render=rc-site", `id="wb-recaptcha-run"`} {

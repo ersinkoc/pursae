@@ -795,6 +795,74 @@ func (s *Server) gooOrderAgain(c *gin.Context, id int64) {
 	s.gooRedirect(c, s.gooPageURL(ctx, "cart"))
 }
 
+// gooRememberGuestOrder keeps a guest order on the session that placed it, so that session can
+// still cancel after OrderAwaitingPayment is cleared. The list is capped and stored as float64
+// so a JSON round-trip matches what gooInt reads back.
+func gooRememberGuestOrder(sess *gooSession, id int64) {
+	if sess == nil || id == 0 {
+		return
+	}
+	if sess.Data.Extra == nil {
+		sess.Data.Extra = map[string]any{}
+	}
+	var ids []any
+	if cur, ok := sess.Data.Extra["guest_orders"].([]any); ok {
+		ids = append([]any{}, cur...)
+	}
+	for _, v := range ids {
+		if gooInt(v) == id {
+			sess.touch()
+			return
+		}
+	}
+	ids = append(ids, float64(id))
+	if len(ids) > 20 {
+		ids = ids[len(ids)-20:]
+	}
+	sess.Data.Extra["guest_orders"] = ids
+	sess.touch()
+}
+
+// gooSessionOwnsOrder reports whether this session placed the guest order.
+func gooSessionOwnsOrder(sess *gooSession, id int64) bool {
+	if sess == nil || id == 0 {
+		return false
+	}
+	if sess.Data.OrderAwaitingPayment == id {
+		return true
+	}
+	raw, _ := sess.Data.Extra["guest_orders"].([]any)
+	for _, v := range raw {
+		if gooInt(v) == id {
+			return true
+		}
+	}
+	return false
+}
+
+// gooGuestMayCancel allows a guest cancel from the placing session or a matching billing e-mail.
+func gooGuestMayCancel(sess *gooSession, o *gooOrder, emails ...string) bool {
+	if o == nil {
+		return false
+	}
+	if gooSessionOwnsOrder(sess, o.ID) {
+		return true
+	}
+	bill := ""
+	if o.Billing != nil {
+		bill = strings.TrimSpace(o.Billing["email"])
+	}
+	if bill == "" {
+		return false
+	}
+	for _, e := range emails {
+		if e = strings.TrimSpace(e); e != "" && strings.EqualFold(e, bill) {
+			return true
+		}
+	}
+	return false
+}
+
 // gooCancelOrder is WC_Form_Handler::cancel_order().
 func (s *Server) gooCancelOrder(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -803,6 +871,13 @@ func (s *Server) gooCancelOrder(c *gin.Context) {
 	o, err := s.gooOrderByKey(ctx, q.Get("order"))
 	u := currentUser(c)
 	if err != nil || o.ID != gooAtoi64(q.Get("order_id")) || !s.checkNonce(c, "woocommerce-cancel_order") || (o.CustomerID != 0 && (u == nil || u.ID != o.CustomerID)) {
+		s.gooAddNotice(c, "error", "Invalid order.")
+		s.gooRedirect(c, target)
+		return
+	}
+	// A guest order key is not enough: the session that placed the order, or the billing e-mail,
+	// has to match. Anonymous nonces are not unique to one visitor.
+	if o.CustomerID == 0 && !gooGuestMayCancel(s.gooSessionFor(c), o, q.Get("email"), q.Get("billing_email")) {
 		s.gooAddNotice(c, "error", "Invalid order.")
 		s.gooRedirect(c, target)
 		return

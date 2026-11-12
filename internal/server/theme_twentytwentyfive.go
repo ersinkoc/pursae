@@ -435,7 +435,7 @@ func (s *Server) tt5MorePosts(ctx context.Context, lb *links.Builder, u *store.U
 				<h3 class="wp-block-post-title has-large-font-size"><a href="%s" target="_self">%s</a></h3>
 				<div class="has-text-align-right wp-block-post-date"><a href="%s"><time datetime="%s">%s</time></a></div>
 			</div>
-		</li>`, p.ID, defaultStr(p.Format, "standard"), link, s.pllUC(ctx, theTitle(p), 0), link, date.Format("2006-01-02T15:04:05-07:00"), html.EscapeString(wp.FormatDate(date, df)))
+		</li>`, p.ID, store.CanonicalPostFormat(p.Format), link, s.pllUC(ctx, theTitle(p), 0), link, date.Format("2006-01-02T15:04:05-07:00"), html.EscapeString(wp.FormatDate(date, df)))
 	}
 	return template.HTML(sb.String())
 }

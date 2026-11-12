@@ -425,6 +425,34 @@ func isZero(b []byte) bool {
 	return true
 }
 
+// publicClient is an HTTP client whose dial refuses non-public addresses (publicOnly) on the
+// first connection and on every redirect. Proxy is nil so an environment proxy cannot hide the
+// destination from that check. allow is the test seam publicOnly already has.
+func publicClient(timeout time.Duration, allow func() bool, refusal string) *http.Client {
+	dialTimeout := 10 * time.Second
+	if timeout > 0 && timeout < dialTimeout {
+		dialTimeout = timeout
+	}
+	d := &net.Dialer{Timeout: dialTimeout, Control: publicOnly(allow, refusal)}
+	return &http.Client{
+		Timeout: timeout,
+		Transport: &http.Transport{
+			Proxy:               nil,
+			DialContext:         d.DialContext,
+			TLSHandshakeTimeout: 10 * time.Second,
+		},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return errors.New("too many redirects")
+			}
+			if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
+				return errors.New("unsupported redirect scheme")
+			}
+			return nil
+		},
+	}
+}
+
 // publicOnly is a net.Dialer Control that refuses non-public addresses (publicIP) when the
 // connection is made — after DNS resolution and for every redirect — unless allow says otherwise
 // (tests reaching httptest servers on the loopback address). Every outbound fetch whose URL comes
@@ -588,7 +616,8 @@ func renderPageListBlock(ctx context.Context, b *blocks.Block, _ string) string 
 			if it.page.ID == frontID {
 				class += " menu-item-home"
 			}
-			title := wp.KsesPost(it.page.Title)
+			// A page title is text inside the link. KsesPost keeps <a> and <img>, which break out of it.
+			title := html.EscapeString(it.page.Title)
 			fmt.Fprintf(&sb, `<li class="wp-block-pages-list__item%s"><a class="wp-block-pages-list__item__link" href="%s"%s>%s</a>`,
 				html.EscapeString(class), html.EscapeString(lb.Permalink(it.page)), aria, title)
 			if len(it.children) > 0 {

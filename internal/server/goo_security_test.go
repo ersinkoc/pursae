@@ -35,12 +35,16 @@ func TestGooAPIKeyMethodOverrideAndScope(t *testing.T) {
 	anon := &http.Client{}
 	api := base + "/wp-json"
 
-	if r := gooReq(t, anon, "GET", fmt.Sprintf("%s/wc/v3/products/%d?_method=DELETE&force=true", api, p.ID), nil, gooBasic(rck, rcs)); r.Code != 401 ||
-		!strings.Contains(gooJS(r.Body, "message"), "write permissions") {
-		t.Errorf("read key, GET ?_method=DELETE: %d %s", r.Code, r.Raw)
+	// ?_method= on a GET is ignored, so a read-only key still only reads.
+	if r := gooReq(t, anon, "GET", fmt.Sprintf("%s/wc/v3/products/%d?_method=DELETE&force=true", api, p.ID), nil, gooBasic(rck, rcs)); r.Code != 200 {
+		t.Errorf("read key, GET ?_method=DELETE must stay a GET: %d %s", r.Code, r.Raw)
 	}
-	if r := gooReq(t, anon, "GET", fmt.Sprintf("%s/wc/v3/products/%d?_method=PUT", api, p.ID), map[string]any{"name": "Renamed"}, gooBasic(rck, rcs)); r.Code != 401 {
-		t.Errorf("read key, GET ?_method=PUT: %d %s", r.Code, r.Raw)
+	if r := gooReq(t, anon, "GET", fmt.Sprintf("%s/wc/v3/products/%d?_method=PUT", api, p.ID), map[string]any{"name": "Renamed"}, gooBasic(rck, rcs)); r.Code != 200 {
+		t.Errorf("read key, GET ?_method=PUT must stay a GET: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, anon, "POST", fmt.Sprintf("%s/wc/v3/products/%d?_method=DELETE&force=true", api, p.ID), nil, gooBasic(rck, rcs)); r.Code != 401 ||
+		!strings.Contains(gooJS(r.Body, "message"), "write permissions") {
+		t.Errorf("read key, POST ?_method=DELETE: %d %s", r.Code, r.Raw)
 	}
 	hdr := gooBasic(rck, rcs)
 	hdr["X-HTTP-Method-Override"] = "DELETE"

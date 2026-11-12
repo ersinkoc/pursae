@@ -282,7 +282,7 @@ func (s *Server) maintUnlock(w http.ResponseWriter, r *http.Request) {
 		hours = 24
 	}
 	http.SetCookie(w, &http.Cookie{Name: maintUnlockCookie, Value: s.maintToken("password", st.SitePassword), Path: "/",
-		MaxAge: hours * 3600, HttpOnly: true, Secure: r.TLS != nil, SameSite: http.SameSiteLaxMode})
+		MaxAge: hours * 3600, HttpOnly: true, Secure: s.httpsRequest(r), SameSite: http.SameSiteLaxMode})
 	http.Redirect(w, r, maintBack(r, nil), http.StatusSeeOther)
 }
 

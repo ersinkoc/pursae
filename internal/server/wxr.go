@@ -36,6 +36,7 @@ type exportData struct {
 	Authors                           []*store.User
 	PostMonths, PageMonths, AttMonths []monthOption
 	Statuses                          []choice
+	Nonce                             string
 }
 
 // exportMonths is export_date_options(): the months that have items of the post type (or media), newest first.
@@ -96,7 +97,8 @@ func (s *Server) exportScreen(c *gin.Context) {
 	}
 	ctx := c.Request.Context()
 	if c.Query("download") == "" {
-		d := exportData{PostMonths: s.exportMonths(ctx, "post"), PageMonths: s.exportMonths(ctx, "page"), AttMonths: s.exportMonths(ctx, "attachment")}
+		d := exportData{PostMonths: s.exportMonths(ctx, "post"), PageMonths: s.exportMonths(ctx, "page"), AttMonths: s.exportMonths(ctx, "attachment"),
+			Nonce: s.nonce(c, "export")}
 		d.Categories, _ = s.store.HierarchicalTerms(ctx, "category", false)
 		users, _, _ := s.store.QueryUsers(ctx, store.UserQuery{PerPage: 10000})
 		var authorIDs []int64
@@ -132,6 +134,12 @@ func (s *Server) exportScreen(c *gin.Context) {
 	});
 });`)
 		s.adminPage(c, "export", "Export", "export-php", "admin/export", d)
+		return
+	}
+	// export.php checks the export nonce before it writes the file. A bare
+	// download link would hand the whole site to anyone who can load the URL.
+	if !s.checkNonce(c, "export") {
+		s.denyNonce(c)
 		return
 	}
 	what := c.DefaultQuery("content", "all")
@@ -372,8 +380,8 @@ func (s *Server) exportScreen(c *gin.Context) {
 					fmt.Fprintf(&b, "\t\t<category domain=\"%s\" nicename=\"%s\">%s</category>\n", xmlEsc(tax), xmlEsc(t.Slug), cdata(t.Name))
 				}
 			}
-			if p.Format != "" && p.Format != "standard" {
-				fmt.Fprintf(&b, "\t\t<category domain=\"post_format\" nicename=\"post-format-%s\">%s</category>\n", xmlEsc(p.Format), cdata(strings.ToUpper(p.Format[:1])+p.Format[1:]))
+			if f := store.CanonicalPostFormat(p.Format); f != "standard" {
+				fmt.Fprintf(&b, "\t\t<category domain=\"post_format\" nicename=\"post-format-%s\">%s</category>\n", xmlEsc(f), cdata(postFormatLabels[f]))
 			}
 			if p.FeaturedMediaID > 0 {
 				b.WriteString(postmeta("_thumbnail_id", itoa64(p.FeaturedMediaID)))
@@ -976,7 +984,7 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 			case "post_tag":
 				tagIDs = append(tagIDs, ensureTerm("post_tag", cat.Nicename, cat.Name, 0))
 			case "post_format":
-				p.Format = strings.TrimPrefix(cat.Nicename, "post-format-")
+				p.Format = store.CanonicalPostFormat(strings.TrimPrefix(cat.Nicename, "post-format-"))
 			default:
 				if wxrIsCustomTaxonomy(cat.Domain) {
 					if id := ensureTerm(cat.Domain, cat.Nicename, cat.Name, 0); id != 0 {

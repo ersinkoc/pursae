@@ -25,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // Products › Export / Import: WooCommerce's product CSV (WC_Product_CSV_Exporter and
@@ -906,7 +907,8 @@ func (s *Server) gooImportRow(ctx context.Context, f map[string]string, update b
 		p.CatalogVisibility = f["catalog_visibility"]
 	}
 	if has("short_description") && p.Type != gooTypeVariation {
-		p.Post.Excerpt = f["short_description"]
+		// A CSV is untrusted even from an editor: excerpt_save_pre (wp_filter_post_kses).
+		p.Post.Excerpt = wp.KsesPost(f["short_description"])
 	}
 	if has("description") {
 		if p.Type == gooTypeVariation {

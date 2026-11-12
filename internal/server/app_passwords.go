@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -29,7 +30,7 @@ type appPassword struct {
 	CreatedAt time.Time
 	LastUsed  *time.Time
 	LastIP    string
-	Scopes    []string // empty: the user's full capabilities (app_password_scopes.go)
+	Scopes    []string // full_access, or the areas this password may use (empty is stored as content+media)
 }
 
 // appPasswordRow is one row of the profile's application-passwords table.
@@ -158,7 +159,7 @@ func (s *Server) createAppPassword(c *gin.Context, userID int64, name, appID str
 	}
 	var id int64
 	if err := s.store.Pool.QueryRow(c, `INSERT INTO app_passwords(user_id, uuid, app_id, name, password_hash, scopes) VALUES ($1, $2::uuid, $3, $4, $5, $6) RETURNING id`,
-		userID, newUUID(), strings.ToLower(appID), name, hash, normalizeAppScopes(scopes)).Scan(&id); err != nil {
+		userID, newUUID(), strings.ToLower(appID), name, hash, resolveAppPasswordScopes(scopes)).Scan(&id); err != nil {
 		return "", nil, err
 	}
 	ap, err := s.appPasswordByID(c, id)
@@ -175,9 +176,9 @@ func (s *Server) renameAppPassword(c *gin.Context, ap *appPassword, name string)
 	return err
 }
 
-// setAppPasswordScopes replaces a password's scopes (empty: full user capabilities).
+// setAppPasswordScopes replaces a password's scopes (empty becomes content and media; full_access is explicit).
 func (s *Server) setAppPasswordScopes(c *gin.Context, ap *appPassword, scopes []string) error {
-	ap.Scopes = normalizeAppScopes(scopes)
+	ap.Scopes = resolveAppPasswordScopes(scopes)
 	_, err := s.store.Pool.Exec(c, `UPDATE app_passwords SET scopes = $2 WHERE id = $1`, ap.ID, ap.Scopes)
 	return err
 }
@@ -198,16 +199,7 @@ func (s *Server) appPasswordRows(c *gin.Context, u *store.User) []appPasswordRow
 	loc := s.loc()
 	var out []appPasswordRow
 	for _, ap := range list {
-		row := appPasswordRow{appPassword: *ap, Created: ap.CreatedAt.In(loc).Format("January 2, 2006"), Used: "—", ScopeList: "Full access"}
-		if len(ap.Scopes) > 0 {
-			var labels []string
-			for _, sc := range ap.Scopes {
-				if d := appScopeBySlug(sc); d != nil {
-					labels = append(labels, d.Label)
-				}
-			}
-			row.ScopeList = strings.Join(labels, ", ")
-		}
+		row := appPasswordRow{appPassword: *ap, Created: ap.CreatedAt.In(loc).Format("January 2, 2006"), Used: "—", ScopeList: appPasswordScopeLabel(ap.Scopes)}
 		if ap.LastUsed != nil {
 			row.Used = ap.LastUsed.In(loc).Format("January 2, 2006")
 		}
@@ -240,7 +232,11 @@ func (s *Server) appPasswordsForm(c *gin.Context, target *store.User, back strin
 		}
 		c.Redirect(http.StatusFound, back)
 	default:
-		plain, ap, err := s.createAppPassword(c, target.ID, c.PostForm("new_application_password_name"), "", c.PostFormArray("new_application_password_scopes[]")...)
+		asked := c.PostFormArray("new_application_password_scopes[]")
+		if c.PostForm("full_access") == "1" {
+			asked = []string{appScopeFullAccess}
+		}
+		plain, ap, err := s.createAppPassword(c, target.ID, c.PostForm("new_application_password_name"), "", asked...)
 		if err != nil {
 			render(s.profileView(c, target), notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(err.Error()))})
 			return
@@ -264,9 +260,19 @@ func (s *Server) authorizeApplication(c *gin.Context) {
 		asked = append(asked, strings.Split(v, ",")...)
 	}
 	chosen := normalizeAppScopes(asked)
+	if len(chosen) == 0 {
+		chosen = append([]string(nil), oauthDefaultScopes...)
+	}
 	isApprove := c.Request.Method == http.MethodPost && c.PostForm("action") == "authorize_application_password"
 	if isApprove {
-		chosen = normalizeAppScopes(c.PostFormArray("scopes[]"))
+		if c.PostForm("full_access") == "1" {
+			chosen = []string{appScopeFullAccess}
+		} else {
+			chosen = normalizeAppScopes(c.PostFormArray("scopes[]"))
+			if len(chosen) == 0 {
+				chosen = append([]string(nil), oauthDefaultScopes...)
+			}
+		}
 	}
 	d["AppScopes"] = scopeChoices(chosen)
 	var errs []string
@@ -319,26 +325,45 @@ func (s *Server) authorizeApplication(c *gin.Context) {
 	s.adminPage(c, "authorize-application", "Authorize Application", "authorize-application-php", "admin/authorize-application", d)
 }
 
-// validAuthorizeRedirect is wp_is_authorize_application_redirect_url_valid(): any scheme but javascript:
-// and data:, and http only for local hosts.
+// validAuthorizeRedirect accepts https, http on localhost or 127.0.0.1, and a native app's own
+// scheme (myapp://callback, like WordPress). https to private and link-local addresses or
+// .local/.test names is refused, and so are javascript:, data:, vbscript:, file: and blob:.
 func validAuthorizeRedirect(raw string) error {
 	if raw == "" {
 		return nil
 	}
-	if !regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9+.-]*:`).MatchString(raw) {
-		return errors.New("The URL must be served over a secure connection.")
-	}
+	bad := errors.New("The URL must be served over a secure connection.")
 	pu, err := url.Parse(raw)
-	if err != nil {
-		return errors.New("The URL must be served over a secure connection.")
+	if err != nil || pu.Scheme == "" || !regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9+.-]*$`).MatchString(pu.Scheme) {
+		return bad
 	}
+	host := strings.ToLower(strings.TrimSuffix(pu.Hostname(), "."))
 	switch strings.ToLower(pu.Scheme) {
-	case "javascript", "data":
-		return errors.New("The URL must be served over a secure connection.")
-	case "http":
-		if !isLocalHost(pu.Hostname()) {
-			return errors.New("The URL must be served over a secure connection.")
+	case "https":
+		if authorizeRedirectHostBlocked(host) {
+			return bad
 		}
+	case "http":
+		if host != "localhost" && host != "127.0.0.1" {
+			return bad
+		}
+	case "javascript", "data", "vbscript", "file", "blob", "about", "ftp", "ws", "wss":
+		return bad
 	}
 	return nil
+}
+
+// authorizeRedirectHostBlocked refuses names and addresses an authorization code must not be sent to.
+func authorizeRedirectHostBlocked(host string) bool {
+	if host == "" || host == "local" || host == "test" || strings.HasSuffix(host, ".local") || strings.HasSuffix(host, ".test") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	if ip.IsLoopback() {
+		return false
+	}
+	return ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() || ip.IsMulticast()
 }

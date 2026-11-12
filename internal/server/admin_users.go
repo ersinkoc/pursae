@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -54,9 +56,17 @@ func (s *Server) usersScreen(c *gin.Context) {
 		return
 	}
 	ctx := c.Request.Context()
-	action := c.Query("action")
+	formValue := func(key string) string {
+		if c.Request.Method == http.MethodPost {
+			if v := c.PostForm(key); v != "" {
+				return v
+			}
+		}
+		return c.Query(key)
+	}
+	action := formValue("action")
 	if action == "" || action == "-1" {
-		action = c.Query("action2")
+		action = formValue("action2")
 	}
 	switch action {
 	case "delete":
@@ -69,28 +79,47 @@ func (s *Server) usersScreen(c *gin.Context) {
 		s.usersSendReset(c)
 		return
 	}
-	r := c.Query("new_role")
-	if c.Query("changeit2") != "" { // bottom "Change role to…" control
-		r = c.Query("new_role2")
-	}
-	if r != "" && (c.Query("changeit") != "" || c.Query("changeit2") != "") {
-		if !s.checkNonce(c, "bulk-users") || !u.Can("promote_users", nil) {
-			s.denyNonce(c)
+	// Bulk role change is POST-only. A GET link must not promote users.
+	if c.Request.Method == http.MethodPost {
+		r := c.PostForm("new_role")
+		if c.PostForm("changeit2") != "" { // bottom "Change role to…" control
+			r = c.PostForm("new_role2")
+		}
+		if r != "" && (c.PostForm("changeit") != "" || c.PostForm("changeit2") != "") {
+			if !s.checkNonce(c, "bulk-users") || !u.Can("promote_users", nil) {
+				s.denyNonce(c)
+				return
+			}
+			known, _ := s.store.Roles(ctx)
+			if !roleListed(known, r) || !s.actorMayGiveRole(ctx, u, r) {
+				c.String(http.StatusForbidden, "Sorry, you are not allowed to give users that role.")
+				return
+			}
+			for _, raw := range selectedUserIDs(c) {
+				if raw == u.ID {
+					continue
+				}
+				x, err := s.store.UserByID(ctx, raw)
+				if err != nil || !s.actorMayEditUserRoles(ctx, u, x) || s.removingLastAdmin(ctx, x, []string{r}) {
+					continue
+				}
+				before := strings.Join(x.Roles, ",")
+				_ = s.store.SetUserRoles(ctx, raw, r, nil)
+				s.adminsecRoleChanged(c, raw, x.Login, before, r)
+			}
+			c.Redirect(http.StatusFound, "/wp-admin/users?update=promote")
 			return
 		}
-		for _, raw := range c.QueryArray("users[]") {
-			id, _ := strconv.ParseInt(raw, 10, 64)
-			if id != u.ID {
-				before := ""
-				login := raw
-				if x, err := s.store.UserByID(ctx, id); err == nil {
-					before, login = strings.Join(x.Roles, ","), x.Login
-				}
-				_ = s.store.SetUserRoles(ctx, id, r, nil)
-				s.adminsecRoleChanged(c, id, login, before, r)
-			}
+		// Search is not a mutation. Send it back to a GET so pagination and role
+		// views keep the filter in the query string.
+		qv := url.Values{}
+		if search := strings.TrimSpace(c.PostForm("s")); search != "" {
+			qv.Set("s", search)
 		}
-		c.Redirect(http.StatusFound, "/wp-admin/users?update=promote")
+		if role := c.PostForm("role"); role != "" {
+			qv.Set("role", role)
+		}
+		c.Redirect(http.StatusFound, "/wp-admin/users?"+qv.Encode())
 		return
 	}
 	page, _ := strconv.Atoi(c.Query("paged"))
@@ -107,7 +136,13 @@ func (s *Server) usersScreen(c *gin.Context) {
 		names[r.Slug] = r.Name
 	}
 	counts, _ := s.store.RoleCounts(ctx)
-	d := usersListData{Role: q.Role, Search: q.Search, BulkNonce: s.nonce(c, "bulk-users"), Roles: roles,
+	var assignable []store.Role
+	for _, role := range roles {
+		if s.actorMayGiveRole(ctx, u, role.Slug) {
+			assignable = append(assignable, role)
+		}
+	}
+	d := usersListData{Role: q.Role, Search: q.Search, BulkNonce: s.nonce(c, "bulk-users"), Roles: assignable,
 		SortLinks: sortLinks(c, map[string]bool{"login": false, "email": false}, "login", "asc")}
 	d.Views = append(d.Views, roleView{Slug: "", Name: "All", Count: counts["all"], Current: q.Role == ""})
 	for _, r := range roles {
@@ -177,7 +212,12 @@ type userDeleteData struct {
 // selectedUserIDs reads the users of a row action (user=, users=) or a bulk action (users[]=), never the current user.
 func selectedUserIDs(c *gin.Context) []int64 {
 	raw := append(c.QueryArray("users[]"), c.QueryArray("users")...)
+	raw = append(raw, c.PostFormArray("users[]")...)
+	raw = append(raw, c.PostFormArray("users")...)
 	if v := c.Query("user"); v != "" {
+		raw = append(raw, v)
+	}
+	if v := c.PostForm("user"); v != "" {
 		raw = append(raw, v)
 	}
 	var ids []int64
@@ -234,6 +274,10 @@ func (s *Server) userDeleteConfirm(c *gin.Context) {
 
 func (s *Server) userDelete(c *gin.Context) {
 	u := currentUser(c)
+	if c.Request.Method != http.MethodPost {
+		c.String(http.StatusMethodNotAllowed, "User deletion must be confirmed with a POST request.")
+		return
+	}
 	if !u.Can("delete_users", nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to delete users.")
 		return
@@ -242,13 +286,25 @@ func (s *Server) userDelete(c *gin.Context) {
 		s.denyNonce(c)
 		return
 	}
+	opt := c.PostForm("delete_option")
+	if opt == "" {
+		opt = c.Query("delete_option")
+	}
+	reassignRaw := c.PostForm("reassign_user")
+	if reassignRaw == "" {
+		reassignRaw = c.Query("reassign_user")
+	}
 	var reassign int64
-	if c.Query("delete_option") == "reassign" {
-		reassign, _ = strconv.ParseInt(c.Query("reassign_user"), 10, 64)
+	if opt == "reassign" {
+		reassign, _ = strconv.ParseInt(reassignRaw, 10, 64)
 	}
 	for _, id := range selectedUserIDs(c) {
 		if id == u.ID || id == reassign {
 			c.String(http.StatusForbidden, "Sorry, you are not allowed to delete this user.")
+			return
+		}
+		if x, err := s.store.UserByID(c, id); err == nil && s.removingLastAdmin(c, x, nil) {
+			c.String(http.StatusForbidden, "Sorry, you are not allowed to delete the last administrator.")
 			return
 		}
 		victim := strconv.FormatInt(id, 10)
@@ -317,6 +373,184 @@ func roleListed(roles []store.Role, slug string) bool {
 		}
 	}
 	return false
+}
+
+// privilegedUserCaps cannot be granted through a freeform capability box, or via a
+// role, unless the actor is an administrator (manage_options).
+var privilegedUserCaps = []string{
+	"manage_options", "edit_users", "promote_users", "delete_users", "create_users", "list_users", "remove_users",
+	"install_plugins", "activate_plugins", "edit_plugins", "update_plugins", "delete_plugins",
+	"edit_files", "update_core", "unfiltered_html",
+	"install_themes", "switch_themes", "edit_themes", "delete_themes", "edit_theme_options",
+	"export", "import",
+}
+
+func privilegedCap(cap string) bool {
+	for _, c := range privilegedUserCaps {
+		if c == cap {
+			return true
+		}
+	}
+	return false
+}
+
+func levelOf(caps map[string]bool) int {
+	n := 0
+	for i := 0; i <= 10; i++ {
+		if caps["level_"+strconv.Itoa(i)] {
+			n = i
+		}
+	}
+	return n
+}
+
+func actorLevel(u *store.User) int {
+	if u == nil {
+		return -1
+	}
+	n := 0
+	for i := 0; i <= 10; i++ {
+		if u.Can("level_"+strconv.Itoa(i), nil) {
+			n = i
+		}
+	}
+	return n
+}
+
+func (s *Server) roleCapabilityMap(ctx context.Context, slug string) (map[string]bool, bool) {
+	var raw []byte
+	err := s.store.Pool.QueryRow(ctx, `SELECT capabilities FROM roles WHERE slug = $1`, slug).Scan(&raw)
+	if err != nil {
+		return nil, false
+	}
+	m := map[string]bool{}
+	if json.Unmarshal(raw, &m) != nil {
+		return nil, false
+	}
+	return m, true
+}
+
+// actorMayGiveRole reports whether actor may put slug on somebody.
+// Administrators may assign any real role. Everyone else must already hold the
+// role's privileged capabilities, and the role's user level must not exceed theirs.
+func (s *Server) actorMayGiveRole(ctx context.Context, actor *store.User, slug string) bool {
+	if actor == nil || slug == "" || !actor.Can("promote_users", nil) {
+		return false
+	}
+	caps, ok := s.roleCapabilityMap(ctx, slug)
+	if !ok {
+		return false
+	}
+	if actor.Can("manage_options", nil) {
+		return true
+	}
+	if levelOf(caps) > actorLevel(actor) {
+		return false
+	}
+	for _, cap := range privilegedUserCaps {
+		if caps[cap] && !actor.Can(cap, nil) {
+			return false
+		}
+	}
+	return true
+}
+
+// actorMayEditUserRoles reports whether actor may change target's roles.
+// A user whose current role is above the actor (an administrator, for a promoter
+// who is not one) cannot be edited.
+func (s *Server) actorMayEditUserRoles(ctx context.Context, actor, target *store.User) bool {
+	if actor == nil || !actor.Can("promote_users", nil) {
+		return false
+	}
+	if target == nil || actor.Can("manage_options", nil) {
+		return true
+	}
+	for _, slug := range target.Roles {
+		if !s.actorMayGiveRole(ctx, actor, slug) {
+			return false
+		}
+	}
+	return true
+}
+
+// removingLastAdmin reports whether newRoles would leave the site with no administrator.
+// A nil newRoles means the user is being deleted.
+func (s *Server) removingLastAdmin(ctx context.Context, target *store.User, newRoles []string) bool {
+	if target == nil {
+		return false
+	}
+	isAdmin := false
+	for _, slug := range target.Roles {
+		if slug == "administrator" {
+			isAdmin = true
+		}
+	}
+	if !isAdmin {
+		return false
+	}
+	for _, slug := range newRoles {
+		if slug == "administrator" {
+			return false
+		}
+	}
+	var n int
+	if err := s.store.Pool.QueryRow(ctx, `SELECT count(DISTINCT ur.user_id) FROM user_roles ur
+		JOIN roles r ON r.id = ur.role_id WHERE r.slug = 'administrator'`).Scan(&n); err != nil {
+		return true // fail closed: do not drop an administrator we cannot count
+	}
+	return n <= 1
+}
+
+// roleAssignmentProblem is the admin-screen check for a posted primary role and extras.
+// An empty primary role is "No role for this site".
+func (s *Server) roleAssignmentProblem(ctx context.Context, actor, target *store.User, primary string, extra []string) string {
+	if !s.actorMayEditUserRoles(ctx, actor, target) {
+		return "Sorry, you are not allowed to edit the roles of this user."
+	}
+	known, _ := s.store.Roles(ctx)
+	var next []string
+	if primary != "" {
+		if !roleListed(known, primary) || !s.actorMayGiveRole(ctx, actor, primary) {
+			return "Sorry, you are not allowed to give users that role."
+		}
+		next = append(next, primary)
+	}
+	for _, ex := range extra {
+		ex = strings.TrimSpace(ex)
+		if ex == "" || ex == primary {
+			continue
+		}
+		if !roleListed(known, ex) || !s.actorMayGiveRole(ctx, actor, ex) {
+			return "Sorry, you are not allowed to give users that role."
+		}
+		next = append(next, ex)
+	}
+	if s.removingLastAdmin(ctx, target, next) {
+		return "Sorry, you are not allowed to remove the last administrator."
+	}
+	return ""
+}
+
+// capAssignmentProblem rejects freeform grants of manage_options, edit_users and
+// the other privileged capabilities unless the actor is an administrator.
+func capAssignmentProblem(actor *store.User, names, effects []string) string {
+	if actor != nil && actor.Can("manage_options", nil) {
+		return ""
+	}
+	for i, cp := range names {
+		cp = strings.TrimSpace(cp)
+		if cp == "" {
+			continue
+		}
+		effect := ""
+		if i < len(effects) {
+			effect = effects[i]
+		}
+		if effect == "allow" && (privilegedCap(cp) || actor == nil || !actor.Can(cp, nil)) {
+			return "Sorry, you are not allowed to give users that capability."
+		}
+	}
+	return ""
 }
 
 // userNew is user-new.php.

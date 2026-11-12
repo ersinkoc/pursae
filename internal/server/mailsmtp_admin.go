@@ -463,8 +463,8 @@ func (s *Server) msSaveSettings(c *gin.Context, tab string) {
 		hook(&o.Alerts.Teams, "alert_teams_webhook")
 		hook(&o.Alerts.Webhook, "alert_custom_webhook")
 		for _, u := range append(append(append(o.Alerts.Slack.URLs, o.Alerts.Discord.URLs...), o.Alerts.Teams.URLs...), o.Alerts.Webhook.URLs...) {
-			if !strings.HasPrefix(u, "https://") && !strings.HasPrefix(u, "http://") {
-				msBack(c, back+"&error="+url.QueryEscape("Webhook URLs must start with https://."))
+			if err := msWebhookURL(u); err != nil {
+				msBack(c, back+"&error="+url.QueryEscape(err.Error()))
 				return
 			}
 		}

@@ -19,6 +19,31 @@ import (
 
 // --- unit ------------------------------------------------------------------------------------------
 
+func TestWebBuilderCopySanitizesSnapshot(t *testing.T) {
+	const src, dst = int64(12), int64(99)
+	in := `<div class="wb-page" data-wb-root="">` +
+		`<p onclick="alert(document.cookie)">ok</p><script>alert(1)</script><a href="javascript:alert(2)">x</a>` +
+		`<form data-wb-form method="post" action="https://ex.test/wp-json/web-builder/v2/forms/12/s1"></form></div>`
+	out, err := wbSanitizeCopiedHTML(in, src, dst, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	low := strings.ToLower(out)
+	if strings.Contains(low, "<script") || strings.Contains(out, "alert") || strings.Contains(out, "onclick") || strings.Contains(out, "javascript:") {
+		t.Fatalf("dangerous markup kept: %s", out)
+	}
+	if !strings.Contains(out, "ok") {
+		t.Fatalf("safe text dropped: %s", out)
+	}
+	if strings.Contains(out, "/forms/12/") || !strings.Contains(out, "/web-builder/v2/forms/99/s1") {
+		t.Fatalf("form action: %s", out)
+	}
+	plain, err := wbSanitizeCopiedHTML(`<div class="wb-page" data-wb-root=""><p>x</p></div>`, src, dst, false)
+	if err != nil || !strings.Contains(plain, "<p>x</p>") {
+		t.Fatalf("plain copy: %v %s", err, plain)
+	}
+}
+
 func TestWebBuilderHooksRetargetForms(t *testing.T) {
 	in := `<form data-wb-form method="post" action="https://ex.test/wp-json/web-builder/v2/forms/12/contact"></form>` +
 		`<a href="https://ex.test/wp-json/web-builder/v2/forms/120/x">other post</a>`
@@ -214,7 +239,7 @@ func TestWebBuilderHooksWXRRoundTrip(t *testing.T) {
 		t.Fatal("setup: b is not detached")
 	}
 
-	code, xml, _ := get(t, admin.c, base+"/wp-admin/export?download=true&content=all")
+	code, xml, _ := get(t, admin.c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, admin.c, base)+"&download=true&content=all")
 	if code != http.StatusOK {
 		t.Fatalf("export: %d", code)
 	}

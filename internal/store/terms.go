@@ -336,11 +336,12 @@ func uniqueTermSlug(ctx context.Context, q DBTX, taxonomy, slug, name string, ex
 	if slug == "" {
 		slug = "term"
 	}
-	if err := lockSlug(ctx, q, "term", taxonomy, slug); err != nil {
-		return "", err
-	}
 	cand := slug
 	for i := 2; ; i++ {
+		// Same race as uniqueSlug: the -N suffix has to be locked too, not only the base slug.
+		if err := lockSlug(ctx, q, "term", taxonomy, cand); err != nil {
+			return "", err
+		}
 		var taken bool
 		args := []any{taxonomy, cand, excludeID}
 		scope := slugScope(ctx, "term", excludeID, &args)

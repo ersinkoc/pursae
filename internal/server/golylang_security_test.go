@@ -3,8 +3,12 @@ package server
 import (
 	"context"
 	"net/http"
+	"net/url"
+	"regexp"
 	"strings"
 	"testing"
+
+	"wpgo/internal/store"
 )
 
 // Regression tests for the Pursae Multi Language security review.
@@ -63,5 +67,52 @@ func TestGolylangRESTTranslationsNeedEditPost(t *testing.T) {
 	code, _, _ = pllREST(t, c, base, http.MethodPost, "/wp-json/wp/v2/posts/"+itoa64(own)+"?lang=de&translations[en]="+itoa64(adminPost), map[string]any{"title": "Mein Entwurf"})
 	if tr := srv.pllTranslations(ctx, pllPost, adminPost); code != http.StatusOK || tr["de"] != own {
 		t.Errorf("administrator linking: %d %v", code, tr)
+	}
+}
+
+// Unlinking a translation changes that post's group. An author who can edit only one side must not
+// be able to drop the other author's post out of the group.
+func TestGolylangUnlinkRequiresEditPost(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	golylangToggle(t, c, base, "activate")
+	pllAddLanguage(t, c, base, "English", "en_US", "en", "us")
+	pllAddLanguage(t, c, base, "Français", "fr_FR", "fr", "fr")
+	ctx := context.Background()
+	aID := asCreateUser(t, srv, "author-a", "author", asStrongPass)
+	bID := asCreateUser(t, srv, "author-b", "author", asStrongPass)
+	en := &store.Post{Type: "post", Title: "A English", Status: "publish", AuthorID: aID, CommentStatus: "open", PingStatus: "open", Meta: map[string]any{}}
+	fr := &store.Post{Type: "post", Title: "B French", Status: "publish", AuthorID: bID, CommentStatus: "open", PingStatus: "open", Meta: map[string]any{}}
+	for _, p := range []*store.Post{en, fr} {
+		if err := srv.store.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := srv.pllSetLang(ctx, pllPost, en.ID, "en"); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.pllSetLang(ctx, pllPost, fr.ID, "fr"); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.pllSaveTranslations(ctx, pllPost, map[string]int64{"en": en.ID, "fr": fr.ID}); err != nil {
+		t.Fatal(err)
+	}
+	ac := asNewClient()
+	if code, _, _ := asLogin(t, ac, base, "/wp-login", "author-a", asStrongPass); code != http.StatusFound {
+		t.Fatalf("login: %d", code)
+	}
+	_, body, _ := get(t, ac, base+"/wp-admin/post?post="+itoa64(en.ID)+"&action=edit")
+	nm := regexp.MustCompile(`var nonce = "([^"]+)"`).FindStringSubmatch(body)
+	if nm == nil {
+		t.Fatal("no Languages box nonce")
+	}
+	code, _, _ := post(t, ac, base+"/wp-admin/admin-ajax", url.Values{"action": {"pll_link_translation"}, "_pll_nonce": {nm[1]},
+		"post_id": {itoa64(en.ID)}, "lang": {"fr"}, "target": {"0"}})
+	if code != http.StatusForbidden {
+		t.Fatalf("unlink of another author's translation: %d", code)
+	}
+	if tr := srv.pllTranslations(ctx, pllPost, en.ID); tr["fr"] != fr.ID {
+		t.Fatalf("translation group after the refused unlink: %v", tr)
 	}
 }

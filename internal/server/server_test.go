@@ -143,6 +143,13 @@ func formNonce(t *testing.T, body string) string {
 	return m[1]
 }
 
+// exportNonce is the export screen's download nonce. The WXR download refuses a GET that lacks it.
+func exportNonce(t *testing.T, c *http.Client, base string) string {
+	t.Helper()
+	_, body, _ := get(t, c, base+"/wp-admin/export")
+	return formNonce(t, body)
+}
+
 func TestInstallLoginPublishAndView(t *testing.T) {
 	ts, c := testServer(t)
 	base := ts.URL

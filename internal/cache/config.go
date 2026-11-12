@@ -51,7 +51,11 @@ var DefaultExcludePaths = []string{
 
 // DefaultBypassCookies make a request bypass the cache when present (matched as cookie
 // name prefixes, because WordPress appends a site hash to most of them).
-var DefaultBypassCookies = []string{"wp-postpass", "comment_author_email", "comment_author_", "wordpress_logged_in_"}
+// comment_author is the cookie this site sets (name, and the comment_author_email /
+// comment_author_url prefixes). comment_author_ also covers WordPress's hashed names
+// (comment_author_<hash>). A prefix match is used, so the bare name must be listed:
+// "comment_author" does not start with "comment_author_".
+var DefaultBypassCookies = []string{"wp-postpass", "comment_author", "comment_author_email", "comment_author_", "wordpress_logged_in_"}
 
 // DefaultDropQueryStrings are tracking parameters removed from the cache key, so
 // /post?utm_source=x is served from the same entry as /post. A trailing "*" matches a

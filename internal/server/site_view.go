@@ -212,7 +212,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 				bodyClasses = append(bodyClasses, "page-child", "parent-pageid-"+itoa64(q.Post.ParentID))
 			}
 		} else if q.Post.Type == "post" {
-			bodyClasses = append(bodyClasses, "post-template-default", "single", "single-post", "postid-"+itoa64(q.Post.ID), "single-format-"+q.Post.Format)
+			bodyClasses = append(bodyClasses, "post-template-default", "single", "single-post", "postid-"+itoa64(q.Post.ID), "single-format-"+store.CanonicalPostFormat(q.Post.Format))
 		} else { // a custom post type: body_class() without post formats
 			bodyClasses = append(bodyClasses, q.Post.Type+"-template-default", "single", "single-"+q.Post.Type, "postid-"+itoa64(q.Post.ID))
 		}
@@ -553,7 +553,7 @@ func (s *Server) postView(ctx context.Context, c *gin.Context, p *store.Post, si
 	cats, tags := s.postTerms(ctx, p.ID, "category"), s.postTerms(ctx, p.ID, "post_tag") // request memo (site_memo.go)
 	classes := []string{"post-" + itoa64(p.ID), p.Type, "type-" + p.Type, "status-" + p.Status}
 	if p.Type == "post" {
-		classes = append(classes, "format-"+p.Format)
+		classes = append(classes, "format-"+store.CanonicalPostFormat(p.Format))
 	}
 	if p.Password != "" {
 		classes = append(classes, "post-password-required")
@@ -633,9 +633,9 @@ func (s *Server) entryMeta(ctx context.Context, p *store.Post, author *store.Use
 		fmt.Fprintf(&sb, `<span class="posted-on"><span class="screen-reader-text">Posted on </span><a href="%s" rel="bookmark">%s</a></span>`,
 			html.EscapeString(lb.Permalink(p)), timeStr)
 	}
-	if p.Type == "post" && p.Format != "" && p.Format != "standard" {
+	if f := store.CanonicalPostFormat(p.Format); p.Type == "post" && f != "standard" {
 		fmt.Fprintf(&sb, `<span class="entry-format"><span class="screen-reader-text">Format </span><a href="%s">%s</a></span>`,
-			html.EscapeString(lb.TermLink(&store.Term{Taxonomy: "post_format", Slug: "post-format-" + p.Format})), strings.ToUpper(p.Format[:1])+p.Format[1:])
+			html.EscapeString(lb.TermLink(&store.Term{Taxonomy: "post_format", Slug: "post-format-" + f})), html.EscapeString(postFormatLabels[f]))
 	}
 	if p.Type == "post" {
 		if len(cats) > 0 && s.categorizedBlog(ctx) {

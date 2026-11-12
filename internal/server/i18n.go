@@ -134,7 +134,7 @@ func (s *Server) isCustomLogin(p string) bool {
 
 // rememberLocale stores a language chosen on the login screen for later visits (a year).
 func (s *Server) rememberLocale(c *gin.Context, locale string) {
-	secure := c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+	secure := s.requestHTTPS(c.Request)
 	http.SetCookie(c.Writer, &http.Cookie{Name: langCookie, Value: locale, Path: "/", MaxAge: 365 * 24 * 3600,
 		Secure: secure, SameSite: http.SameSiteLaxMode})
 }

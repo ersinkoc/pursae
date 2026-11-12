@@ -395,3 +395,25 @@ func TestParseMOHugeCount(t *testing.T) {
 		t.Fatal("a corrupt message count was accepted")
 	}
 }
+
+func TestTranslationURLAllowlist(t *testing.T) {
+	in := &Installer{API: "https://api.wordpress.org/translations"}
+	if err := in.urlAllowed("https://downloads.wordpress.org/translation/core/a.zip"); err != nil {
+		t.Fatal(err)
+	}
+	if err := in.urlAllowed("https://api.wordpress.org/translations/core/1.0/"); err != nil {
+		t.Fatal(err)
+	}
+	for _, raw := range []string{"http://169.254.169.254/latest", "javascript:alert(1)", "https://downloads.wordpress.org.evil.test/a.zip", "http://downloads.wordpress.org/a.zip"} {
+		if err := in.urlAllowed(raw); err == nil {
+			t.Errorf("urlAllowed(%q) accepted", raw)
+		}
+	}
+	local := &Installer{API: "http://127.0.0.1:9"}
+	if err := local.urlAllowed("http://127.0.0.1:9/core.zip"); err != nil {
+		t.Fatal(err)
+	}
+	if err := local.urlAllowed("http://169.254.169.254/"); err == nil {
+		t.Fatal("a local API still allowed the metadata address")
+	}
+}

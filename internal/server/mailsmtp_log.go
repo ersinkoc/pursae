@@ -199,6 +199,10 @@ func (s *Server) msAlert(ctx context.Context, o *msOptions, msg gomail.Message, 
 	text := fmt.Sprintf("Pursae SMTP: your site %s failed to send an email.\n\nWebsite: %s\nTo: %s\nSubject: %s\nMailer: %s\nError: %v\n\nEmail log: %s/wp-admin/admin?page=wp-mail-smtp-logs",
 		site, home, strings.Join(msg.To, ", "), msg.Subject, mailer, res.Err, home)
 	post := func(u string, body []byte, ctype string) {
+		if err := msWebhookURL(u); err != nil {
+			slog.Warn("wp-mail-smtp: alert", "url", u, "err", err)
+			return
+		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(body))
 		if err != nil {
 			return

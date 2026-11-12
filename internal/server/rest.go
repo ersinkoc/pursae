@@ -257,14 +257,14 @@ func (s *Server) checkAppPassword(c *gin.Context, u *store.User, pass string) bo
 	if !ok {
 		return false
 	}
-	scopes := normalizeAppScopes(m.scopes)
-	if len(m.scopes) > 0 && len(scopes) == 0 {
-		// Scopes that are no longer known must not turn into full access: refuse the password.
+	full, scopes, refuse := appPasswordAccess(m.scopes)
+	if refuse {
+		// Scopes that are no longer known must not turn into content and media, or into full access.
 		log.Printf("wpgo: application password %d of user %d has only unknown scopes %v; refused", m.id, u.ID, m.scopes)
 		return false
 	}
 	c.Set(restAppPasswordKey, m.id) // the password in use (/application-passwords/introspect)
-	if len(scopes) > 0 {
+	if !full {
 		c.Set(restAppScopesKey, scopes) // app_password_scopes.go
 	}
 	s.asyncExec(`UPDATE app_passwords SET last_used_at = now(), last_ip = $2 WHERE id = $1`, m.id, clientIP(c)) // bounded queue (background.go)
@@ -291,12 +291,18 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 	c.Header("X-Content-Type-Options", "nosniff")
 	c.Header("Link", `<`+s.links(c).HomeURL("/wp-json/")+`>; rel="https://api.w.org/"`)
 
+	// Method override is POST-only. A GET ?_method=DELETE (or a GET carrying
+	// X-HTTP-Method-Override) must stay a GET: otherwise a link or an <img> can
+	// turn a read into a write. On POST, ?_method= still wins over the header,
+	// matching the previous dispatcher order.
 	method := c.Request.Method
-	if m := c.GetHeader("X-HTTP-Method-Override"); m != "" && method == http.MethodPost {
-		method = strings.ToUpper(m)
-	}
-	if m := c.Query("_method"); m != "" {
-		method = strings.ToUpper(m)
+	if method == http.MethodPost {
+		if m := c.GetHeader("X-HTTP-Method-Override"); m != "" {
+			method = strings.ToUpper(m)
+		}
+		if m := c.Query("_method"); m != "" {
+			method = strings.ToUpper(m)
+		}
 	}
 
 	u, err := s.restAuthUser(c, route, method)

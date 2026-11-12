@@ -72,7 +72,13 @@ func TestRESTAuthHardening(t *testing.T) {
 	}
 	newPass := func(path, name string, scopes []string) [2]string {
 		t.Helper()
-		code, body := do(c, [2]string{}, "POST", path, map[string]any{"name": name, "scopes": scopes})
+		payload := map[string]any{"name": name}
+		if scopes == nil {
+			payload["full_access"] = true
+		} else {
+			payload["scopes"] = scopes
+		}
+		code, body := do(c, [2]string{}, "POST", path, payload)
 		if code != http.StatusCreated {
 			t.Fatalf("create password %s: %d %v", name, code, body)
 		}

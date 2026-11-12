@@ -40,6 +40,11 @@ type Options struct {
 	// PurgeURL (not Apply, PurgeExpired or the store's own methods), so the core can pass it on
 	// to the other processes that serve the same site from their own memory.
 	OnPurge func(Purge)
+	// TrustForwarded reports whether r's immediate peer may set X-Forwarded-Proto.
+	// Nil means the header is ignored: a client that is not a trusted proxy cannot
+	// choose the scheme stored in the cache key. The server passes the same peer
+	// check requestIP uses.
+	TrustForwarded func(*http.Request) bool
 }
 
 // Purge describes one purge: everything, a set of tags, or every cached variant of a URL.
@@ -51,15 +56,16 @@ type Purge struct {
 
 // Cache is the wpgo-cache engine: a middleware plus the purge API.
 type Cache struct {
-	cfg           Config
-	store         *Store
-	log           *slog.Logger
-	now           func() time.Time
-	loginCookie   string
-	bypassCookies []string
-	allowedQuery  map[string]bool
-	detectLS      func(*http.Request) bool
-	lsEnv         bool
+	cfg            Config
+	store          *Store
+	log            *slog.Logger
+	now            func() time.Time
+	loginCookie    string
+	bypassCookies  []string
+	allowedQuery   map[string]bool
+	detectLS       func(*http.Request) bool
+	lsEnv          bool
+	trustForwarded func(*http.Request) bool
 
 	onPurge func(Purge)
 
@@ -72,12 +78,13 @@ type Cache struct {
 func New(cfg Config, opts Options) *Cache {
 	cfg = cfg.normalized()
 	c := &Cache{
-		cfg:         cfg,
-		log:         opts.Logger,
-		now:         opts.Now,
-		loginCookie: opts.LoginCookie,
-		detectLS:    opts.IsLiteSpeed,
-		onPurge:     opts.OnPurge,
+		cfg:            cfg,
+		log:            opts.Logger,
+		now:            opts.Now,
+		loginCookie:    opts.LoginCookie,
+		detectLS:       opts.IsLiteSpeed,
+		onPurge:        opts.OnPurge,
+		trustForwarded: opts.TrustForwarded,
 	}
 	if c.log == nil {
 		c.log = slog.Default()

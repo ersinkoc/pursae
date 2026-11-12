@@ -124,7 +124,7 @@ type templateOption struct {
 	Value, Label string
 }
 
-// postFormatLabels is get_post_format_strings().
+// postFormatLabels is get_post_format_strings(). The slugs are store.CanonicalPostFormat.
 var postFormatLabels = map[string]string{"standard": "Standard", "aside": "Aside", "chat": "Chat", "gallery": "Gallery", "link": "Link",
 	"image": "Image", "quote": "Quote", "status": "Status", "video": "Video", "audio": "Audio"}
 
@@ -508,7 +508,7 @@ func (s *Server) postRows(c *gin.Context, d *postsListData, posts []*store.Post,
 			classes = append(classes, "author-other")
 		}
 		if typ == "post" {
-			classes = append(classes, "format-"+p.Format)
+			classes = append(classes, "format-"+store.CanonicalPostFormat(p.Format))
 		}
 		classes = append(classes, "hentry")
 		for _, ct := range cats[p.ID] {
@@ -539,8 +539,8 @@ func (s *Server) inlineDataFor(p *store.Post, cats, tags []*store.Term) inlineDa
 	if p.Sticky {
 		in.Sticky = "sticky"
 	}
-	if p.Format != "" && p.Format != "standard" {
-		in.Format = p.Format
+	if f := store.CanonicalPostFormat(p.Format); f != "standard" {
+		in.Format = f
 	}
 	return in
 }
@@ -920,10 +920,7 @@ func (s *Server) bulkEditPosts(c *gin.Context, typ string) {
 				p.Sticky = c.Query("sticky") == "sticky"
 			}
 			if has("post_format") {
-				p.Format = c.Query("post_format")
-				if p.Format == "0" || postFormatLabels[p.Format] == "" {
-					p.Format = "standard"
-				}
+				p.Format = store.CanonicalPostFormat(c.Query("post_format"))
 			}
 		}
 		if err := s.store.UpdatePost(ctx, p, u.ID); err != nil {
@@ -1053,10 +1050,7 @@ func (s *Server) inlineSave(c *gin.Context) {
 			p.Sticky = c.PostForm("sticky") == "sticky" && p.Password == "" && p.Status != "private"
 		}
 		if f, ok := c.GetPostForm("post_format"); ok {
-			p.Format = f
-			if f == "0" || f == "" || postFormatLabels[f] == "" {
-				p.Format = "standard"
-			}
+			p.Format = store.CanonicalPostFormat(f)
 		}
 	}
 	if err := s.store.UpdatePost(ctx, p, u.ID); err != nil {
@@ -2084,7 +2078,7 @@ func (s *Server) postSave(c *gin.Context) {
 			setPageTemplate(p, tpl)
 		}
 	} else {
-		p.Format = c.DefaultPostForm("post_format", "standard")
+		p.Format = store.CanonicalPostFormat(c.DefaultPostForm("post_format", "standard"))
 		// Send Trackbacks: the URLs are kept in to_ping, one per line, like edit_post() does.
 		if raw, ok := c.GetPostForm("trackback_url"); ok {
 			var urls []string

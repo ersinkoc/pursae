@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"html"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -15,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -899,14 +902,23 @@ func (s *Server) seogoRedirect(c *gin.Context) bool {
 			c.Data(r.Code, "text/html; charset=UTF-8", []byte(`<!DOCTYPE html><html lang="en-US"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>`+
 				html.EscapeString(http.StatusText(r.Code)+" – "+s.settings.String("blogname"))+`</title></head><body><h1>`+http.StatusText(r.Code)+`</h1><p>`+msg+`</p></body></html>`))
 		default:
-			if !strings.Contains(target, "://") {
-				target = s.links(c).HomeURL("/" + strings.TrimLeft(target, "/"))
+			loc, ok := seogoSafeTarget(target)
+			if !ok {
+				// The site's own host is a valid destination even when Site URL is a loopback
+				// address. Other private hosts stay refused.
+				loc, ok = s.seogoSiteTarget(c, target)
+			}
+			if !ok {
+				continue
+			}
+			if !strings.Contains(loc, "://") {
+				loc = s.links(c).HomeURL(loc)
 			}
 			code := r.Code
 			if code != 302 && code != 307 && code != 308 {
 				code = 301
 			}
-			c.Redirect(code, target)
+			c.Redirect(code, loc)
 		}
 		return true
 	}
@@ -1025,7 +1037,11 @@ func (s *Server) seogo404(c *gin.Context) bool {
 		}
 	}
 	if o.Modules["redirections"] && strings.TrimSpace(o.Redirect404) != "" {
-		c.Redirect(http.StatusMovedPermanently, strings.TrimSpace(o.Redirect404))
+		loc, ok := seogoSafeTarget(o.Redirect404)
+		if !ok {
+			return false
+		}
+		c.Redirect(http.StatusMovedPermanently, loc)
 		return true
 	}
 	return false
@@ -1095,10 +1111,116 @@ func (s *Server) seogoFeedContent(ctx context.Context, p *store.Post, content st
 	return content
 }
 
+// seogoSafeTarget keeps a redirect on this site (safeRedirect) or on an http(s) URL with a host.
+// Protocol-relative targets and javascript:, data: and vbscript: URLs are refused. A browser
+// redirect is not a server request, so private (intranet) hosts are allowed.
+func seogoSafeTarget(target string) (string, bool) {
+	target = strings.TrimSpace(target)
+	if target == "" || hasControlChar(target) || strings.Contains(target, `\`) || strings.HasPrefix(target, "//") {
+		return "", false
+	}
+	low := strings.ToLower(target)
+	for _, p := range []string{"javascript:", "data:", "vbscript:"} {
+		if strings.HasPrefix(low, p) {
+			return "", false
+		}
+	}
+	if strings.Contains(target, "://") {
+		u, err := url.Parse(target)
+		if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil {
+			return "", false
+		}
+		return u.String(), true
+	}
+	path := target
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + strings.TrimLeft(path, "/")
+	}
+	cleaned := safeRedirect(path, "")
+	if cleaned == "" {
+		return "", false
+	}
+	// path.Clean drops a trailing slash. A directory redirect such as /landing/ keeps it
+	// after the same checks safeRedirect already applied.
+	if strings.HasSuffix(strings.SplitN(path, "?", 2)[0], "/") {
+		base, query, ok := strings.Cut(cleaned, "?")
+		if base != "/" && !strings.HasSuffix(base, "/") {
+			base += "/"
+		}
+		if ok {
+			cleaned = base + "?" + query
+		} else {
+			cleaned = base
+		}
+	}
+	return cleaned, true
+}
+
+// seogoSiteTarget is an absolute http(s) URL on this site's host. seogoSafeTarget refuses every
+// literal private address, which would also refuse a redirect to the site itself when Site URL is
+// 127.0.0.1.
+func (s *Server) seogoSiteTarget(c *gin.Context, target string) (string, bool) {
+	target = strings.TrimSpace(target)
+	if target == "" || hasControlChar(target) || strings.Contains(target, `\`) || strings.HasPrefix(target, "//") {
+		return "", false
+	}
+	u, err := url.Parse(target)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
+		return "", false
+	}
+	home, err := url.Parse(s.links(c).HomeURL("/"))
+	if err != nil || !strings.EqualFold(u.Host, home.Host) {
+		return "", false
+	}
+	return u.String(), true
+}
+
 // --- IndexNow ----------------------------------------------------------------------------------
 
 // seogoIndexNowEndpoint is the shared IndexNow API (tests replace it).
 var seogoIndexNowEndpoint = "https://api.indexnow.org/indexnow"
+
+// indexNowClient dials only public addresses. A test endpoint on loopback may dial loopback;
+// a public endpoint that resolves to a private address, or redirects there, is refused.
+func indexNowClient(raw string) *http.Client {
+	endpoint, _ := url.Parse(raw)
+	allowLoop := false
+	if endpoint != nil {
+		if ip := net.ParseIP(endpoint.Hostname()); ip != nil && ip.IsLoopback() {
+			allowLoop = true
+		}
+	}
+	block := publicOnly(nil, "IndexNow address points at a private network")
+	d := &net.Dialer{Timeout: 10 * time.Second, Control: func(network, address string, c syscall.RawConn) error {
+		if allowLoop {
+			host, _, err := net.SplitHostPort(address)
+			if err == nil {
+				if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+					return nil
+				}
+			}
+		}
+		return block(network, address, c)
+	}}
+	return &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext, TLSHandshakeTimeout: 10 * time.Second},
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 3 {
+				return errors.New("too many redirects")
+			}
+			if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
+				return errors.New("unsupported redirect scheme")
+			}
+			if endpoint != nil && !strings.EqualFold(req.URL.Hostname(), endpoint.Hostname()) {
+				if ip := net.ParseIP(req.URL.Hostname()); ip != nil && !publicIP(ip) {
+					return errors.New("IndexNow redirect points at a private network")
+				}
+			}
+			return nil
+		},
+	}
+}
 
 // IndexNow retries a submission that failed with a network error, 429 or 5xx.
 var (
@@ -1136,7 +1258,7 @@ func (s *Server) seogoIndexNow(ctx context.Context, urls []string) {
 	body, _ := json.Marshal(map[string]any{"host": home.Host, "key": o.IndexNowKey, "keyLocation": lb.HomeURL("/" + o.IndexNowKey + ".txt"), "urlList": urls})
 	endpoint := seogoIndexNowEndpoint
 	go func() {
-		cl := &http.Client{Timeout: 10 * time.Second}
+		cl := indexNowClient(endpoint)
 		status := ""
 		for attempt := 0; attempt < seogoIndexNowAttempts; attempt++ {
 			if attempt > 0 {

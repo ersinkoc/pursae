@@ -529,6 +529,7 @@
 <form method="get" id="export-filters" action="/wp-admin/export">
 <fieldset>
 <legend class="screen-reader-text">Content to export</legend>
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <input type="hidden" name="download" value="true" />
 <p><label><input type="radio" name="content" value="all" checked="checked" aria-describedby="all-content-desc" /> All content</label></p>
 <p class="description" id="all-content-desc">This will contain all of your posts, pages, comments, custom fields, terms, navigation menus, and custom posts.</p>

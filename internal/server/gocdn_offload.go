@@ -112,12 +112,29 @@ func gocdnItemURL(st gocdnSettings, it *gocdnItem) string {
 }
 
 // gocdnLocalPath is the file of an uploads path, or "" when the path tries to leave the folder.
+// Join is checked again: on Windows an absolute second element discards UploadsDir.
 func (s *Server) gocdnLocalPath(rel string) string {
 	clean := path.Clean("/" + strings.ReplaceAll(rel, "\\", "/"))
 	if clean == "/" || strings.Contains(clean, "/../") || strings.HasPrefix(clean, "/..") {
 		return ""
 	}
-	return filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(strings.TrimPrefix(clean, "/")))
+	root := filepath.Clean(s.cfg.UploadsDir)
+	local := filepath.Join(root, filepath.FromSlash(strings.TrimPrefix(clean, "/")))
+	relOut, err := filepath.Rel(root, local)
+	if err != nil || relOut == ".." || strings.HasPrefix(relOut, ".."+string(filepath.Separator)) {
+		return ""
+	}
+	return local
+}
+
+// gocdnActiveExt is a type that can run as a page. It is always proxied so the site CSP and
+// sandbox apply; a redirect or a presigned URL would drop them.
+func gocdnActiveExt(rel string) bool {
+	switch strings.ToLower(path.Ext(rel)) {
+	case ".svg", ".html", ".htm", ".xhtml", ".xml", ".xsl":
+		return true
+	}
+	return false
 }
 
 // gocdnAttachmentFiles are the uploads paths of an attachment.
@@ -367,6 +384,10 @@ func (s *Server) gocdnServeUpload(w http.ResponseWriter, r *http.Request, st goc
 	it := s.gocdnItemByPath(r.Context(), path.Clean("/" + rel)[1:])
 	if it == nil {
 		return false
+	}
+	if gocdnActiveExt(rel) {
+		s.gocdnProxy(w, r, st, it)
+		return true
 	}
 	switch st.LocalDelivery {
 	case "signed":

@@ -43,8 +43,11 @@ type profileData struct {
 	CanUpload        bool
 	// Role editing (user-edit.php, for users who can promote_users)
 	CanPromote bool
-	Roles      []roleChoice
-	CapRows    []capRow
+	// CanEditCaps is the freeform capability box. Only an administrator may grant
+	// manage_options, edit_users and the other privileged capabilities.
+	CanEditCaps bool
+	Roles       []roleChoice
+	CapRows     []capRow
 	// PendingEmail is the _new_email user meta: an e-mail change waiting for confirmation (own profile only).
 	PendingEmail string
 	DismissURL   string
@@ -108,10 +111,13 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 		sess := currentSession(c)
 		_ = s.store.Pool.QueryRow(c, `SELECT count(*) FROM sessions WHERE user_id = $1 AND id <> $2 AND expires_at > now()`, target.ID, sess.ID).Scan(&d.OtherSessions)
 	}
-	if !d.Self && u.Can("promote_users", nil) {
+	if !d.Self && u.Can("promote_users", nil) && s.actorMayEditUserRoles(c, u, target) {
 		d.CanPromote = true
 		roles, _ := s.store.Roles(c)
 		for _, r := range roles {
+			if !s.actorMayGiveRole(c, u, r.Slug) {
+				continue
+			}
 			rc := roleChoice{Slug: r.Slug, Name: r.Name}
 			for i, have := range target.Roles {
 				if have == r.Slug {
@@ -120,6 +126,9 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 			}
 			d.Roles = append(d.Roles, rc)
 		}
+	}
+	if !d.Self && u.Can("manage_options", nil) {
+		d.CanEditCaps = true
 		exc, _ := s.store.UserCapExceptions(c, target.ID)
 		for k, v := range exc {
 			d.CapRows = append(d.CapRows, capRow{k, v})
@@ -134,7 +143,7 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 		}
 	}
 	d.AppPasswords = s.appPasswordRows(c, target)
-	d.AppScopes = scopeChoices(nil)
+	d.AppScopes = scopeChoices(oauthDefaultScopes)
 	d.OAuthGrants = s.oauthGrantRows(c, target.ID)
 	d.AdminSec = s.adminsecProfileHTML(c, target, d.Self)
 	return d
@@ -273,6 +282,18 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 			errs = append(errs, "<strong>Error:</strong> "+template.HTMLEscapeString(msg))
 		}
 	}
+	if !self && u.Can("promote_users", nil) {
+		if primary, ok := c.GetPostForm("role"); ok {
+			if msg := s.roleAssignmentProblem(c, u, target, primary, c.PostFormArray("extra_roles[]")); msg != "" {
+				errs = append(errs, "<strong>Error:</strong> "+template.HTMLEscapeString(msg))
+			}
+		}
+	}
+	if !self && !u.Can("manage_options", nil) {
+		if msg := capAssignmentProblem(u, c.PostFormArray("cap_name[]"), c.PostFormArray("cap_effect[]")); msg != "" {
+			errs = append(errs, "<strong>Error:</strong> "+template.HTMLEscapeString(msg))
+		}
+	}
 	if len(errs) > 0 {
 		var ns []notice
 		for _, e := range errs {
@@ -333,6 +354,7 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 		if hash, err := auth.HashPassword(pass1); err == nil {
 			if s.store.SetUserPassword(c, target.ID, hash) == nil {
 				s.endSessionsAfterPasswordChange(c, c, target.ID)
+				s.revokeCredentialsAfterPasswordChange(c, target.ID)
 				s.adminsecPasswordChanged(c, target)
 			}
 		}
@@ -340,15 +362,19 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	if !self && u.Can("promote_users", nil) {
 		if primary, ok := c.GetPostForm("role"); ok {
 			before := strings.Join(target.Roles, ",")
-			_ = s.store.SetUserRoles(c, target.ID, primary, c.PostFormArray("extra_roles[]"))
-			s.adminsecRoleChanged(c, target.ID, target.Login, before, strings.Join(append([]string{primary}, c.PostFormArray("extra_roles[]")...), ","))
+			extras := c.PostFormArray("extra_roles[]")
+			_ = s.store.SetUserRoles(c, target.ID, primary, extras)
+			s.adminsecRoleChanged(c, target.ID, target.Login, before, strings.Join(append([]string{primary}, extras...), ","))
 		}
+	}
+	// Freeform capability grants (manage_options, edit_users, …) are an administrator action.
+	if !self && u.Can("manage_options", nil) {
 		exc := map[string]string{}
 		caps := c.PostFormArray("cap_name[]")
 		effects := c.PostFormArray("cap_effect[]")
 		for i, cp := range caps {
 			cp = strings.TrimSpace(cp)
-			if cp != "" && i < len(effects) {
+			if cp != "" && i < len(effects) && (effects[i] == "allow" || effects[i] == "deny") {
 				exc[cp] = effects[i]
 			}
 		}

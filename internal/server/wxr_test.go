@@ -83,7 +83,7 @@ func TestWXRExport(t *testing.T) {
 	}
 
 	// All content.
-	code, xml, _ := get(t, c, base+"/wp-admin/export?download=true&content=all")
+	code, xml, _ := get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=all")
 	if code != http.StatusOK {
 		t.Fatalf("export: %d", code)
 	}
@@ -136,23 +136,23 @@ func TestWXRExport(t *testing.T) {
 			}
 		}
 	}
-	_, xml, _ = get(t, c, base+"/wp-admin/export?download=true&content=posts&post_status=draft")
+	_, xml, _ = get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=posts&post_status=draft")
 	has(xml, "Fresh draft")
 	hasNot(xml, "Old published", "Hello world!", "Signature pattern", "Sample Page")
 	if strings.Contains(xml, "nav_menu_item") {
 		t.Errorf("a posts export must not carry menu items")
 	}
-	_, xml, _ = get(t, c, base+"/wp-admin/export?download=true&content=posts&post_author="+itoa64(admin.ID)+"&post_status=0")
+	_, xml, _ = get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=posts&post_author="+itoa64(admin.ID)+"&post_status=0")
 	has(xml, "Fresh draft", "Old published", "Hello world!")
-	_, xml, _ = get(t, c, base+"/wp-admin/export?download=true&content=posts&post_author=424242")
+	_, xml, _ = get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=posts&post_author=424242")
 	hasNot(xml, "Fresh draft", "Old published", "Hello world!")
-	_, xml, _ = get(t, c, base+"/wp-admin/export?download=true&content=posts&post_start_date=2019-12&post_end_date=2020-01")
+	_, xml, _ = get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=posts&post_start_date=2019-12&post_end_date=2020-01")
 	has(xml, "Old published")
 	hasNot(xml, "Fresh draft", "Hello world!")
-	_, xml, _ = get(t, c, base+"/wp-admin/export?download=true&content=posts&post_start_date=2020-02&post_end_date=0")
+	_, xml, _ = get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=posts&post_start_date=2020-02&post_end_date=0")
 	has(xml, "Fresh draft", "Hello world!")
 	hasNot(xml, "Old published")
-	_, xml, _ = get(t, c, base+"/wp-admin/export?download=true&content=pages&page_status=publish")
+	_, xml, _ = get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=pages&page_status=publish")
 	has(xml, "Sample Page")
 	hasNot(xml, "Old published")
 }
@@ -451,7 +451,7 @@ func TestWXRExportFailsOnReadError(t *testing.T) {
 		t.Fatalf("login: %d", code)
 	}
 	ctx := context.Background()
-	if code, body, _ := get(t, c, base+"/wp-admin/export?download=true&content=all"); code != http.StatusOK || !strings.Contains(body, "<wp:post_type>") {
+	if code, body, _ := get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=all"); code != http.StatusOK || !strings.Contains(body, "<wp:post_type>") {
 		t.Fatalf("export before the failure: %d", code)
 	}
 	if _, err := srv.store.Pool.Exec(ctx, `ALTER TABLE comments RENAME TO comments_gone`); err != nil {
@@ -460,7 +460,7 @@ func TestWXRExportFailsOnReadError(t *testing.T) {
 	t.Cleanup(func() {
 		_, _ = srv.store.Pool.Exec(context.Background(), `ALTER TABLE comments_gone RENAME TO comments`)
 	})
-	if code, body, _ := get(t, c, base+"/wp-admin/export?download=true&content=all"); code != http.StatusInternalServerError || strings.Contains(body, "<rss") {
+	if code, body, _ := get(t, c, base+"/wp-admin/export?_wpnonce="+exportNonce(t, c, base)+"&download=true&content=all"); code != http.StatusInternalServerError || strings.Contains(body, "<rss") {
 		t.Fatalf("export with a failing read: %d", code)
 	}
 }

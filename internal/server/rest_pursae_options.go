@@ -184,6 +184,27 @@ func groupOf[T any](plugin, label string, load func(s *Server) T, save func(s *S
 		}}
 }
 
+// msSealOptions encrypts SMTP secrets the way the settings screen does before they are stored.
+func (s *Server) msSealOptions(o *msOptions) {
+	if o == nil {
+		return
+	}
+	seal := func(m map[string]string) {
+		for k, v := range m {
+			if msSecretKeys[k] {
+				m[k] = s.msSeal(v)
+			}
+		}
+	}
+	for _, m := range o.Mailers {
+		seal(m)
+	}
+	for i := range o.Connections {
+		seal(o.Connections[i].Opts)
+	}
+	o.Alerts.Twilio.Token = s.msSeal(o.Alerts.Twilio.Token)
+}
+
 // deepMerge copies src into dst, merging nested objects key by key.
 func deepMerge(dst, src map[string]any) {
 	for k, v := range src {
@@ -206,7 +227,10 @@ var optionGroups = map[string]optionGroup{
 	"security": groupOf(asSlug, "Pursae Security", (*Server).asLoad,
 		func(s *Server, ctx context.Context, v asSettings) error { return s.asSave(ctx, v) }, (*Server).asCheckAPISettings),
 	"smtp": groupOf(msSlug, "Pursae SMTP", (*Server).msLoadRaw,
-		func(s *Server, ctx context.Context, v *msOptions) error { return s.msSave(ctx, v) }),
+		func(s *Server, ctx context.Context, v *msOptions) error {
+			s.msSealOptions(v)
+			return s.msSave(ctx, v)
+		}),
 	"maintenance": groupOf(maintSlug, "Pursae Maintenance", (*Server).maintLoad,
 		func(s *Server, ctx context.Context, v maintSettings) error { return s.maintSave(ctx, v) }),
 	"headless": groupOf(hgSlug, "Pursae Headless", (*Server).hgLoad,

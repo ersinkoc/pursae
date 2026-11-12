@@ -39,8 +39,19 @@ type Post struct {
 	PingStatus      string
 	CommentCount    int
 	Sticky          bool
-	Format          string
+	Format          string // a get_post_format_slugs() value; CanonicalPostFormat drops anything else
 	Meta            map[string]any
+}
+
+// CanonicalPostFormat is get_post_format(): only the core post-format slugs are stored or printed.
+// The bulk editor's "0", an empty value and any other string (including markup) are "standard".
+func CanonicalPostFormat(format string) string {
+	switch format {
+	case "standard", "aside", "chat", "gallery", "link", "image", "quote", "status", "video", "audio":
+		return format
+	default:
+		return "standard"
+	}
 }
 
 func (p *Post) PostAuthorID() int64 { return p.AuthorID }
@@ -623,6 +634,12 @@ func uniqueSlug(ctx context.Context, q DBTX, typ string, parentID int64, slug st
 	}
 	cand := slug
 	for i := 2; ; i++ {
+		// Lock every candidate, including the -2, -3, … suffixes. Locking only the requested slug
+		// lets one transaction take "hello-2" directly while another, having found "hello" taken,
+		// also chooses "hello-2".
+		if err := lockSlug(ctx, q, "post", typ, cand); err != nil {
+			return "", err
+		}
 		var taken bool
 		args := []any{typ, parentID, cand, excludeID}
 		scope := slugScope(ctx, "post", excludeID, &args)
@@ -667,9 +684,8 @@ func prepareIn(ctx context.Context, q DBTX, p *Post) ([]byte, error) {
 		}
 	}
 	if p.Slug != "" {
-		if err := lockSlug(ctx, q, "post", p.Type, p.Slug); err != nil {
-			return nil, err
-		}
+		// uniqueSlug advisory-locks each candidate (the requested slug and every -N suffix) for the
+		// rest of this transaction, which is what makes the check and the insert atomic.
 		slug, err := uniqueSlug(ctx, q, p.Type, p.ParentID, p.Slug, p.ID)
 		if err != nil {
 			return nil, err
@@ -692,9 +708,7 @@ func prepareIn(ctx context.Context, q DBTX, p *Post) ([]byte, error) {
 	if p.PingStatus == "" {
 		p.PingStatus = "open"
 	}
-	if p.Format == "" {
-		p.Format = "standard"
-	}
+	p.Format = CanonicalPostFormat(p.Format)
 	if p.Meta == nil {
 		p.Meta = map[string]any{}
 	}
@@ -751,7 +765,10 @@ func GetPostTx(ctx context.Context, tx pgx.Tx, id int64) (*Post, error) {
 // UpdatePostTx is UpdatePost inside the caller's transaction: every read and write runs on tx, so
 // the post commits or rolls back with the caller's other writes and no second connection is needed.
 func UpdatePostTx(ctx context.Context, tx pgx.Tx, p *Post, editorID int64) error {
-	old, err := scanPost(tx.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE id = $1`, p.ID))
+	// Lock the row before the meta column is replaced. A concurrent update (another save, or a
+	// meta || patch) must wait until this write commits, so the two cannot each read the old meta
+	// and then overwrite the other's keys.
+	old, err := GetPostTx(ctx, tx, p.ID)
 	if err != nil {
 		return err
 	}

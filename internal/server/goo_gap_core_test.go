@@ -155,6 +155,67 @@ func TestGooCODAvailability(t *testing.T) {
 	}
 }
 
+// Cash on delivery does not release downloadable files. WooCommerce keeps an order that contains a
+// downloadable item on hold until the payment is recorded; processing would grant the files at once.
+func TestGooCODDownloadableStaysUnpaid(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gw := gooGatewayRegistry["cod"]
+	ebook := gooMakeSimple(t, srv, "COD Manual", 12, func(p *gooProduct) {
+		p.Virtual, p.Downloadable = true, true
+		p.Downloads = []gooDownload{{Name: "manual.pdf", File: "https://files.example.test/manual.pdf"}}
+	})
+	chair := gooMakeSimple(t, srv, "COD Chair Paid Later", 40, nil)
+	perms := func(id int64) int {
+		t.Helper()
+		var n int
+		if err := srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_download_permissions WHERE order_id = $1`, id).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	place := func(p *gooProduct, total float64, extra ...*gooProduct) *gooOrder {
+		t.Helper()
+		items := []*gooOrderItem{{Type: "line_item", Name: p.Name, ProductID: p.ID, Quantity: 1, Subtotal: total, Total: total, Meta: map[string]any{}}}
+		for _, x := range extra {
+			items = append(items, &gooOrderItem{Type: "line_item", Name: x.Name, ProductID: x.ID, Quantity: 1, Subtotal: 1, Total: 1, Meta: map[string]any{}})
+		}
+		o := &gooOrder{Status: "pending", Currency: "USD", Total: total, PaymentMethod: "cod",
+			Billing: map[string]string{"email": "cod@example.test"}, Shipping: map[string]string{}, Meta: map[string]any{}, Items: items}
+		if err := srv.gooSaveOrder(ctx, o, true); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := gw.ProcessPayment(srv, gooTestCtx(), o); err != nil {
+			t.Fatal(err)
+		}
+		return o
+	}
+
+	digital := place(ebook, 12)
+	got, err := srv.gooGetOrder(ctx, digital.ID)
+	if err != nil || got.Status != "on-hold" || got.DatePaid != nil || perms(digital.ID) != 0 {
+		t.Fatalf("downloadable COD: status %s paid %v perms %d err %v", got.Status, got != nil && got.DatePaid != nil, perms(digital.ID), err)
+	}
+	if err := srv.gooSetStatus(ctx, got, "completed", "Payment received.", ""); err != nil {
+		t.Fatal(err)
+	}
+	if perms(digital.ID) == 0 {
+		t.Fatal("completing the order did not grant the download")
+	}
+
+	physical := place(chair, 40)
+	got, err = srv.gooGetOrder(ctx, physical.ID)
+	if err != nil || got.Status != "processing" || perms(physical.ID) != 0 {
+		t.Fatalf("physical COD: status %s perms %d err %v", got.Status, perms(physical.ID), err)
+	}
+
+	mixed := place(chair, 41, ebook)
+	got, err = srv.gooGetOrder(ctx, mixed.ID)
+	if err != nil || got.Status != "on-hold" || perms(mixed.ID) != 0 {
+		t.Fatalf("mixed COD: status %s perms %d err %v", got.Status, perms(mixed.ID), err)
+	}
+}
+
 // The store's dynamic blocks render the same markup as their shortcodes, and nothing while off.
 func TestGooDynamicBlocks(t *testing.T) {
 	base, c, srv := gooSite(t)

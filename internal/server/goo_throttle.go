@@ -58,6 +58,7 @@ func (t *gooThrottle) Fail(key string) {
 var (
 	gooCouponThrottle   = newGooThrottle(10, 10*time.Minute)
 	gooTrackingThrottle = newGooThrottle(5, 10*time.Minute)
+	gooOrderGetThrottle = newGooThrottle(20, 10*time.Minute)
 )
 
 const gooThrottledMsg = "Too many attempts. Please try again in a few minutes."

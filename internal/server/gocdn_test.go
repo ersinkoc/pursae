@@ -44,7 +44,11 @@ type gocdnTestSite struct {
 func gocdnSite(t *testing.T) *gocdnTestSite {
 	t.Helper()
 	gocdnOffloadInline = true // tests read the bucket right after an upload
-	t.Cleanup(func() { gocdnOffloadInline = false })
+	gocdnAllowPrivate.Store(true)
+	t.Cleanup(func() {
+		gocdnOffloadInline = false
+		gocdnAllowPrivate.Store(false)
+	})
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	_, body, _ := get(t, c, ts.URL+"/wp-admin/plugins")

@@ -7,6 +7,33 @@
 	var lastFocus = null;
 	var FOCUSABLE = 'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+	/* Drop scripts and event handlers before any innerHTML. A <template> does not run scripts. */
+	function sanitizeHTML(html) {
+		var tpl = document.createElement('template');
+		tpl.innerHTML = html == null ? '' : String(html);
+		var drop = { SCRIPT: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, LINK: 1, META: 1, BASE: 1 };
+		Array.prototype.forEach.call(tpl.content.querySelectorAll('*'), function (n) {
+			if (drop[n.tagName]) {
+				if (n.parentNode) { n.parentNode.removeChild(n); }
+				return;
+			}
+			Array.prototype.slice.call(n.attributes).forEach(function (a) {
+				var name = a.name.toLowerCase();
+				var val = a.value || '';
+				if (name.indexOf('on') === 0 || name === 'srcdoc' ||
+					((name === 'href' || name === 'src' || name === 'action' || name === 'formaction') && /^\s*javascript:/i.test(val))) {
+					n.removeAttribute(a.name);
+				}
+			});
+		});
+		return tpl.innerHTML;
+	}
+
+	function setHTML(el, html) {
+		if (!el) { return; }
+		el.innerHTML = sanitizeHTML(html);
+	}
+
 	function focusables() {
 		return Array.prototype.filter.call(modal.querySelectorAll(FOCUSABLE), function (el) {
 			return el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement;
@@ -14,7 +41,7 @@
 	}
 
 	function open(html) {
-		content.innerHTML = html;
+		setHTML(content, html);
 		modal.hidden = false;
 		document.documentElement.classList.add('goo-quick-view-open');
 		initGallery();
@@ -28,7 +55,7 @@
 		if (modal.hidden) { return; }
 		closeLightbox();
 		modal.hidden = true;
-		content.innerHTML = '';
+		content.textContent = '';
 		document.documentElement.classList.remove('goo-quick-view-open');
 		if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
 	}
@@ -101,7 +128,7 @@
 				lightbox.className = 'goo-quick-view-lightbox';
 				lightbox.setAttribute('role', 'dialog');
 				lightbox.setAttribute('aria-label', 'Image');
-				lightbox.innerHTML = '<button type="button" class="goo-quick-view-close" aria-label="Close image">&times;</button><img alt="">';
+				setHTML(lightbox, '<button type="button" class="goo-quick-view-close" aria-label="Close image">&times;</button><img alt="">');
 				lightbox.querySelector('img').src = zoom.href;
 				lightbox.addEventListener('click', closeLightbox);
 				modal.appendChild(lightbox);
@@ -139,8 +166,13 @@
 			idField.value = match ? match.variation_id : 0;
 			button.disabled = !usable;
 			button.classList.toggle('disabled', !usable);
-			out.innerHTML = match ? '<span class="price">' + match.price_html + '</span>' + (match.is_in_stock ? '' : '<p class="stock out-of-stock">Out of stock</p>') :
-				(complete ? '<p>Sorry, this product is unavailable. Please choose a different combination.</p>' : '');
+			if (match) {
+				setHTML(out, '<span class="price">' + (match.price_html || '') + '</span>' + (match.is_in_stock ? '' : '<p class="stock out-of-stock">Out of stock</p>'));
+			} else if (complete) {
+				out.textContent = 'Sorry, this product is unavailable. Please choose a different combination.';
+			} else {
+				out.textContent = '';
+			}
 		}
 		Array.prototype.forEach.call(selects, function (s) { s.addEventListener('change', update); });
 		update();

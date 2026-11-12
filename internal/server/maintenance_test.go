@@ -18,6 +18,17 @@ import (
 	"wpgo/internal/store"
 )
 
+func TestMaintSafeCSSStripsCloseTags(t *testing.T) {
+	for _, in := range []string{"</style><script>", "</STYLE>", "< /script>", "</ScRiPt>", "a{color:red}</style >", "</style"} {
+		if got := maintSafeCSS(in); strings.Contains(strings.ToLower(got), "</") {
+			t.Errorf("maintSafeCSS(%q) = %q", in, got)
+		}
+	}
+	if got := maintSafeCSS("a{color:red}"); !strings.Contains(got, "color") {
+		t.Fatalf("ordinary CSS removed: %q", got)
+	}
+}
+
 func TestMaintIPAllowed(t *testing.T) {
 	list := "203.0.113.7\n10.0.0.0/8 # office\n\n2001:db8::/32, 192.0.2.1"
 	for ip, want := range map[string]bool{"203.0.113.7": true, "10.20.30.40": true, "2001:db8::1": true, "192.0.2.1": true,
@@ -275,6 +286,14 @@ func TestMaintenanceGate(t *testing.T) {
 	maintSaveTab(t, c, base, "access", url.Values{"show_logged_in": {"1"}, "roles[]": {"editor", "author"}, "login_button": {"1"}})
 	if code, _, _ := get(t, sub, base+"/"); code != http.StatusServiceUnavailable {
 		t.Errorf("subscriber not in the roles: %d", code)
+	}
+	// block_rest uses the same role bypass as the HTML gate: a logged-in subscriber who
+	// cannot see the site cannot use the REST API either. Administrators still can.
+	if code, _ := restGet(t, sub, base, "/wp-json/wp/v2/posts"); code != http.StatusServiceUnavailable {
+		t.Errorf("subscriber REST while block_rest: %d", code)
+	}
+	if code, _ := restGet(t, c, base, "/wp-json/wp/v2/posts"); code != http.StatusOK {
+		t.Errorf("admin REST after the role change: %d", code)
 	}
 	if code, _, _ := get(t, sub, base+"/wp-admin/profile"); code != http.StatusOK {
 		t.Errorf("subscriber's profile in wp-admin: %d", code)
@@ -573,16 +592,45 @@ func maintImportFile(t *testing.T, c *http.Client, base, nonce, content string) 
 }
 
 func TestMaintAlwaysOpenWholeSegments(t *testing.T) {
-	for _, p := range []string{"/wp-admin", "/wp-admin/", "/wp-admin/edit", "/wp-login", "/wp-login.php", "/xmlrpc.php", "/wp-cron.php",
+	for _, p := range []string{"/wp-admin", "/wp-admin/", "/wp-admin/edit", "/wp-login", "/wp-login.php",
 		"/wp-content/uploads/a.png", "/wp-includes/css/x.css", "/robots.txt"} {
 		if !maintAlwaysOpen(p) {
 			t.Errorf("%s should stay open", p)
+		}
+	}
+	// /xmlrpc and /wp-cron must not skip the gate: the site router serves ?p= on any path.
+	for _, p := range []string{"/xmlrpc", "/xmlrpc.php", "/xmlrpc.php/", "/wp-cron", "/wp-cron.php"} {
+		if maintAlwaysOpen(p) || !maintRPCOrCron(p) {
+			t.Errorf("%s must be answered by the maintenance gate", p)
 		}
 	}
 	// The site router serves ?p= / ?page_id= on any unknown path: these must stay behind the gate.
 	for _, p := range []string{"/wp-login-x", "/wp-loginx", "/xmlrpcs", "/wp-cron-job", "/wp-admin-page", "/"} {
 		if maintAlwaysOpen(p) {
 			t.Errorf("%s must not bypass maintenance", p)
+		}
+	}
+}
+
+// While maintenance is on, /xmlrpc.php?p= and /wp-cron.php?page_id= must not render the post.
+func TestMaintenanceXMLRPCDoesNotServePosts(t *testing.T) {
+	ts, _, srv := maintenanceSite(t)
+	base := ts.URL
+	now := time.Now()
+	p := mustInsertPost(t, srv, &store.Post{Type: "post", Title: "MaintSecretTitle", Slug: "maint-secret-title",
+		Content: "<p>MaintSecretBody</p>", Status: "publish", PublishedAt: &now, CommentStatus: "closed", PingStatus: "closed"})
+	id := strconv.FormatInt(p.ID, 10)
+	if open := anonGet(t, base+"/xmlrpc.php?p="+id); open.StatusCode == http.StatusServiceUnavailable {
+		t.Fatal("maintenance is off, but /xmlrpc.php was closed")
+	}
+	if err := srv.maintSetMode(context.Background(), true); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{"/xmlrpc.php?p=" + id, "/wp-cron.php?page_id=" + id, "/xmlrpc.php/"} {
+		r := anonGet(t, base+path)
+		b := bodyOf(r)
+		if r.StatusCode != http.StatusServiceUnavailable || strings.Contains(b, "MaintSecretTitle") || strings.Contains(b, "MaintSecretBody") {
+			t.Errorf("%s: status %d, body contains the post: %t", path, r.StatusCode, strings.Contains(b, "MaintSecret"))
 		}
 	}
 }

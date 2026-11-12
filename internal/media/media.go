@@ -129,7 +129,11 @@ func SaveIn(uploadsDir, sub, filename string, r io.Reader, reserved func(sub str
 	if sub == "." {
 		sub = ""
 	}
-	dir := filepath.Join(uploadsDir, filepath.FromSlash(sub))
+	root := filepath.Clean(uploadsDir)
+	dir := filepath.Join(root, filepath.FromSlash(sub))
+	if !pathWithin(root, dir) {
+		return nil, ErrType
+	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, err
 	}
@@ -175,7 +179,7 @@ func SaveIn(uploadsDir, sub, filename string, r io.Reader, reserved func(sub str
 			}
 		}
 	}
-	if err == nil && mime == "image/svg+xml" && n <= 8<<20 {
+	if err == nil && mime == "image/svg+xml" && n <= MaxSVGBytes {
 		err = sanitizeSVGFile(dst)
 		if st, serr := os.Stat(dst); err == nil && serr == nil {
 			n = st.Size()
@@ -646,8 +650,25 @@ func PreviewRatio(w, h int) float64 {
 	return 1
 }
 
+// maxEditHistory is the longest editor history ApplyOps will honour. The client sends the whole
+// history on every preview; only the latest steps can change the image.
+const maxEditHistory = 64
+
+// pathWithin reports whether child is root or a path under root after Clean and Join. On Windows
+// an absolute second element makes Join discard root; Rel then starts with "..".
+func pathWithin(root, child string) bool {
+	rel, err := filepath.Rel(root, child)
+	if err != nil {
+		return false
+	}
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
 // ApplyOps combines consecutive rotations and flips like WordPress, then applies the history.
 func ApplyOps(img image.Image, ops []Op) image.Image {
+	if len(ops) > maxEditHistory {
+		ops = ops[len(ops)-maxEditHistory:]
+	}
 	var merged []Op
 	for _, op := range ops {
 		// Unsupported rotations are no-ops individually; do not let merging turn

@@ -931,15 +931,26 @@ func wbLibraryOut(it *store.WebBuilderLibraryItem, refs *wbUserRefs) wbLibraryJS
 	return wbLibraryJSON{ID: itoa64(it.ID), Name: it.Name, Section: it.Data, Author: refs.get(it.AuthorID), Created: wbTime(it.CreatedAt)}
 }
 
-// wbRESTLibrary is GET library: the site's saved components, newest first.
+// wbRESTLibrary is GET library: saved components, newest first. A user without edit_others_posts
+// sees only the components they saved.
 func (s *Server) wbRESTLibrary(c *gin.Context, _ *restRequest) {
-	if wbUser(c, "edit_posts") == nil {
+	u := wbUser(c, "edit_posts")
+	if u == nil {
 		return
 	}
 	items, err := s.store.WebBuilder().LibraryItems(c)
 	if err != nil {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the library.")
 		return
+	}
+	if !u.Can("edit_others_posts", nil) {
+		own := make([]*store.WebBuilderLibraryItem, 0, len(items))
+		for _, it := range items {
+			if it.AuthorID == u.ID {
+				own = append(own, it)
+			}
+		}
+		items = own
 	}
 	refs := s.wbUserRefs(c)
 	out := make([]wbLibraryJSON, 0, len(items))

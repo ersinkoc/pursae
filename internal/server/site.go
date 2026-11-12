@@ -911,7 +911,7 @@ func (s *Server) postPassValue(pw string) string {
 func (s *Server) postPass(c *gin.Context) {
 	pw := c.PostForm("post_password")
 	http.SetCookie(c.Writer, &http.Cookie{Name: postPassCookie, Value: s.postPassValue(pw), Path: "/",
-		MaxAge: 10 * 24 * 3600, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+		MaxAge: 10 * 24 * 3600, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: s.httpsRequest(c.Request)})
 	c.Redirect(http.StatusFound, safeRedirect(refererPath(c), "/"))
 }
 

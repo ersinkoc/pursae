@@ -152,9 +152,13 @@ func (s *Server) adminsecUserPasswordProblem(u *store.User, pw string) string {
 	return s.adminsecPasswordProblem(u.Roles, u.Login, u.Email, pw)
 }
 
-// adminsecPasswordChanged runs after a user's password was set: a pending forced change is done.
+// adminsecPasswordChanged runs after a user's password was set: application passwords and OAuth
+// grants are revoked the way sessions are, then a pending forced change is done.
 func (s *Server) adminsecPasswordChanged(c *gin.Context, u *store.User) {
-	if !s.adminsecOn() {
+	if u != nil {
+		s.revokeCredentialsAfterPasswordChange(c, u.ID)
+	}
+	if !s.adminsecOn() || u == nil {
 		return
 	}
 	if u.Meta["adminsec_force_password"] != nil {
@@ -163,6 +167,43 @@ func (s *Server) adminsecPasswordChanged(c *gin.Context, u *store.User) {
 	// A new password also ends every "Remember this device" trust: a stolen device must be challenged again.
 	_, _ = s.store.Pool.Exec(c, `DELETE FROM adminsec_devices WHERE user_id = $1`, u.ID)
 	s.asAudit(c, asEvent{Event: "password_changed", Severity: "notice", Object: u.Login, Message: "Password changed for " + u.Login + "."})
+}
+
+// revokeCredentialsAfterPasswordChange drops the user's application passwords and OAuth grants after a
+// password change, mirroring endSessionsAfterPasswordChange. The application password or grant that made
+// the change stays when it belongs to this user; every other credential is deleted.
+func (s *Server) revokeCredentialsAfterPasswordChange(c *gin.Context, userID int64) {
+	if userID == 0 {
+		return
+	}
+	ctx := context.Background()
+	var keepApp, keepGrant int64
+	if c != nil {
+		if c.Request != nil {
+			ctx = c.Request.Context()
+		}
+		if v, ok := c.Get(restAppPasswordKey); ok {
+			if id, ok := v.(int64); ok {
+				keepApp = id
+			}
+		}
+		if v, ok := c.Get(restOAuthKey); ok {
+			if id, ok := v.(int64); ok {
+				keepGrant = id
+			}
+		}
+	}
+	if keepApp > 0 {
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM app_passwords WHERE user_id = $1 AND id <> $2`, userID, keepApp)
+	} else {
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM app_passwords WHERE user_id = $1`, userID)
+	}
+	if keepGrant > 0 {
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE user_id = $1 AND id <> $2`, userID, keepGrant)
+	} else {
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_tokens WHERE user_id = $1`, userID)
+	}
+	_, _ = s.store.Pool.Exec(ctx, `DELETE FROM oauth_codes WHERE user_id = $1`, userID)
 }
 
 // asForcePassword reports a pending forced change: true when the policy asked for it, "admin"

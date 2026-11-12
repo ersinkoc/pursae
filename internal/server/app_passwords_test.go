@@ -38,8 +38,13 @@ func TestAppPasswordHelpers(t *testing.T) {
 			t.Errorf("isUUID(%q) = %v", v, !want)
 		}
 	}
-	for raw, ok := range map[string]bool{"": true, "https://app.example/cb": true, "myapp://callback": true, "http://localhost:3000/cb": true,
-		"http://example.com/cb": false, "javascript:alert(1)": false, "data:text/html,x": false, "/relative": false, "JavaScript:alert(1)": false} {
+	for raw, ok := range map[string]bool{"": true, "https://app.example/cb": true, "https://127.0.0.1/cb": true,
+		"http://localhost:3000/cb": true, "http://127.0.0.1/cb": true, "http://127.0.0.1:9/cb": true,
+		"myapp://callback": true, "cursor://cb": true, "vbscript:x": false, "file:///tmp/x": false, "http://example.com/cb": false,
+		"http://app.local/cb": false, "https://app.local/cb": false, "https://printer.test/cb": false,
+		"http://10.0.0.5/cb": false, "https://192.168.1.5/cb": false, "http://169.254.169.254/latest": false,
+		"http://foo.localhost/cb": false, "http://[::1]/cb": false, "javascript:alert(1)": false,
+		"data:text/html,x": false, "/relative": false, "JavaScript:alert(1)": false} {
 		if err := validAuthorizeRedirect(raw); (err == nil) != ok {
 			t.Errorf("validAuthorizeRedirect(%q) = %v", raw, err)
 		}
@@ -98,8 +103,8 @@ func TestAppPasswordLifecycle(t *testing.T) {
 
 	// Create: the plain password is shown once (24 characters, unchunked like WordPress' REST API); names
 	// are unique; empty names are refused.
-	full := cookie("POST", coll, map[string]any{"name": "Deploy bot", "app_id": "8a6f2c1e-0b9d-4b7e-9d43-1f2e3a4b5c6d"})
-	if full.code != http.StatusCreated || !regexp.MustCompile(`^[A-Za-z0-9]{24}$`).MatchString(strAny(full.obj["password"])) {
+	full := cookie("POST", coll, map[string]any{"name": "Deploy bot", "app_id": "8a6f2c1e-0b9d-4b7e-9d43-1f2e3a4b5c6d", "full_access": true})
+	if full.code != http.StatusCreated || !regexp.MustCompile(`^[A-Za-z0-9]{24}$`).MatchString(strAny(full.obj["password"])) || joinAny(full.obj["scopes"]) != "full_access" {
 		t.Fatalf("create: %d %v", full.code, full.obj)
 	}
 	if r := cookie("POST", coll, map[string]any{"name": "Deploy bot"}); r.code != http.StatusBadRequest || r.obj["code"] != "application_password_duplicate_name" {
@@ -193,6 +198,21 @@ func TestAppPasswordLifecycle(t *testing.T) {
 	}
 	if r := limited("DELETE", coll+"/"+fullUUID, nil); r.code != http.StatusForbidden {
 		t.Errorf("scoped password revoking another: %d", r.code)
+	}
+
+	// Omitting scopes is content and media, not the user's full REST access.
+	bare := cookie("POST", coll, map[string]any{"name": "Bare"})
+	if bare.code != http.StatusCreated || joinAny(bare.obj["scopes"]) != "content,media" {
+		t.Fatalf("omitted scopes: %d %v", bare.code, bare.obj)
+	}
+	if r := do(anon, "admin", strAny(bare.obj["password"]), "GET", "/wp/v2/settings", nil); r.code != http.StatusForbidden {
+		t.Errorf("password with no scopes on settings: %d", r.code)
+	}
+	if r := do(anon, "admin", strAny(bare.obj["password"]), "GET", "/wp/v2/posts", nil); r.code != http.StatusOK {
+		t.Errorf("password with no scopes on posts: %d", r.code)
+	}
+	if r := cookie("DELETE", coll+"/"+strAny(bare.obj["uuid"]), nil); r.code != http.StatusOK {
+		t.Fatalf("delete bare: %d %v", r.code, r.obj)
 	}
 
 	// Revoke one: that password stops working, the other keeps working.

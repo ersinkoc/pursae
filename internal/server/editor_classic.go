@@ -45,8 +45,8 @@ func (s *Server) wpEditor(c *gin.Context, p *store.Post) template.HTML {
 	markup = strings.Replace(markup, "POSTCONTENT", html.EscapeString(p.Content), 1)
 
 	bodyClass := "content post-type-" + p.Type + " post-status-" + p.Status
-	if p.Format != "" && p.Format != "standard" {
-		bodyClass += " post-format-" + p.Format
+	if f := store.CanonicalPostFormat(p.Format); f != "standard" {
+		bodyClass += " post-format-" + f
 	}
 	js = strings.Replace(js, "content post-type-post post-status-draft", bodyClass, 1)
 	// Like class-wp-editor.php: 'wpautop' => ! has_blocks(), so block markup survives the visual editor.

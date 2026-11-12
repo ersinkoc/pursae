@@ -376,15 +376,26 @@ func (s *Server) maintenanceServe(w http.ResponseWriter, r *http.Request) bool {
 		return true
 	}
 	u := s.maintUser(r)
-	if s.maintBypass(w, r, st, u) || !s.maintURLGated(st, p) {
+	bypass := s.maintBypass(w, r, st, u)
+	// /xmlrpc and /wp-cron are not pages. Leaving them to the site router serves ?p= and
+	// ?page_id= on those paths, which would show the post while maintenance is on.
+	if closed && maintRPCOrCron(p) && !bypass {
+		s.maintHeaders(w, st, "text/plain; charset=utf-8")
+		s.maintStatus(w, st, http.StatusServiceUnavailable)
+		return true
+	}
+	if bypass || !s.maintURLGated(st, p) {
 		return false
 	}
 	switch {
 	case strings.HasPrefix(p, "/wp-json") || (r.URL.Query().Has("rest_route") && strings.Trim(p, "/") == ""):
-		if !st.BlockREST || u != nil || maintRESTCredentials(r) {
-			// The block editor's REST calls keep working for every logged-in user, and clients that
-			// authenticate per request (Application Passwords, OAuth/MCP tokens, Commerce API keys, Headless
-			// tokens) reach the REST layer, which validates them and enforces capabilities.
+		// Role bypass is maintBypass, already applied above: administrators and the roles in
+		// BypassRoles (when ShowLoggedIn is on), plus the IP list, secret link and site password.
+		// Logged-in users who can edit content keep the block editor's REST calls (wp-admin stays
+		// open to them); a login cookie of a subscriber does not open the API while block_rest is on.
+		// Clients that authenticate per request (Application Passwords, OAuth/MCP tokens, Commerce
+		// API keys) still reach the REST layer, which validates them and enforces capabilities.
+		if !st.BlockREST || maintRESTCredentials(r) || (u != nil && (u.Can("edit_posts", nil) || u.Can("edit_pages", nil))) {
 			return false
 		}
 		// Coming Soon answers pages with 200 so search engines keep what they know; the REST API gets a plain
@@ -446,12 +457,24 @@ func maintAlwaysOpen(p string) bool {
 			return true
 		}
 	}
-	for _, seg := range []string{"/wp-admin", "/wp-login", "/wp-cron", "/xmlrpc"} {
+	for _, seg := range []string{"/wp-admin", "/wp-login"} {
 		if p == seg || p == seg+".php" || strings.HasPrefix(p, seg+"/") {
 			return true
 		}
 	}
 	return p == "/robots.txt" || p == "/favicon.ico"
+}
+
+// maintRPCOrCron reports paths that must not reach the site resolver while maintenance is on.
+// The resolver serves ?p= and ?page_id= before it looks at the path, so /xmlrpc.php?p=1 would
+// otherwise return the post.
+func maintRPCOrCron(p string) bool {
+	for _, seg := range []string{"/wp-cron", "/xmlrpc"} {
+		if p == seg || p == seg+".php" || strings.HasPrefix(p, seg+"/") || strings.HasPrefix(p, seg+".php/") {
+			return true
+		}
+	}
+	return false
 }
 
 func maintIsFeed(r *http.Request) bool {
@@ -511,7 +534,7 @@ func (s *Server) maintBypass(w http.ResponseWriter, r *http.Request, st maintSet
 				hours = 24
 			}
 			http.SetCookie(w, &http.Cookie{Name: maintAccessCookie, Value: want, Path: "/", MaxAge: hours * 3600,
-				HttpOnly: true, Secure: r.TLS != nil, SameSite: http.SameSiteLaxMode})
+				HttpOnly: true, Secure: s.httpsRequest(r), SameSite: http.SameSiteLaxMode})
 			return true
 		}
 	}
