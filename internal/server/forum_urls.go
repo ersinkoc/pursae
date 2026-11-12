@@ -25,9 +25,13 @@ import (
 // forumSlugRe is a slug as a path segment (decoded): lowercase letters of any script, digits, -, _,
 // %, and . (nicenames may contain dots and @).
 var (
-	forumSlugRe     = regexp.MustCompile(`^[\p{Ll}\p{Lo}\p{Lm}\p{Mn}\p{Mc}\p{N}_%-]{1,200}$`)
+	forumSlugRe     = regexp.MustCompile(`^[\p{L}\p{Mn}\p{Mc}\p{N}_%-]{1,200}$`)
 	forumNicenameRe = regexp.MustCompile(`^[\p{Ll}\p{Lo}\p{Lm}\p{Mn}\p{Mc}\p{N}_%.@-]{1,100}$`)
 )
+
+func forumValidSlug(s string) bool {
+	return s == strings.ToLower(s) && forumSlugRe.MatchString(s)
+}
 
 // forumParsePath maps a site path (golylang-stripped, no slashes at either end) to a forum route.
 func forumParsePath(base, path string) (forumRoute, bool) {
@@ -47,8 +51,10 @@ func forumParsePath(base, path string) (forumRoute, bool) {
 		}
 	}
 	rt := forumRoute{Page: 1}
+	paged := false
 	// A trailing page/N.
 	if n := len(segs); n >= 2 && segs[n-2] == "page" {
+		paged = true
 		p, err := strconv.Atoi(segs[n-1])
 		if err != nil || p < 1 || p > 100000 || segs[n-1] != strconv.Itoa(p) {
 			return forumRoute{}, false
@@ -63,13 +69,12 @@ func forumParsePath(base, path string) (forumRoute, bool) {
 		v, err := strconv.ParseInt(s, 10, 64)
 		return v, err == nil && v > 0 && s == strconv.FormatInt(v, 10)
 	}
-	paged := rt.Page > 1
 	switch {
 	case len(segs) == 0:
 		rt.View = forumViewIndex
-	case segs[0] == "f" && len(segs) == 2 && forumSlugRe.MatchString(segs[1]):
+	case segs[0] == "f" && len(segs) == 2 && forumValidSlug(segs[1]):
 		rt.View, rt.Slug = forumViewForum, segs[1]
-	case segs[0] == "f" && len(segs) == 3 && segs[2] == "new" && forumSlugRe.MatchString(segs[1]) && !paged:
+	case segs[0] == "f" && len(segs) == 3 && segs[2] == "new" && forumValidSlug(segs[1]) && !paged:
 		rt.View, rt.Slug = forumViewNewTopic, segs[1]
 	case segs[0] == "t" && (len(segs) == 2 || len(segs) == 3):
 		v, ok := id(segs[1])
@@ -78,7 +83,7 @@ func forumParsePath(base, path string) (forumRoute, bool) {
 		}
 		rt.View, rt.ID = forumViewTopic, v
 		if len(segs) == 3 {
-			if !forumSlugRe.MatchString(segs[2]) {
+			if !forumValidSlug(segs[2]) {
 				return forumRoute{}, false
 			}
 			rt.Slug = segs[2]
