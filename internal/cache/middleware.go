@@ -117,8 +117,8 @@ func New(cfg Config, opts Options) *Cache {
 	return c
 }
 
-// Config returns the effective configuration.
-func (c *Cache) Config() Config { return c.cfg }
+// Config returns an independent snapshot of the effective configuration.
+func (c *Cache) Config() Config { return c.cfg.clone() }
 
 // Store returns the underlying store.
 func (c *Cache) Store() *Store { return c.store }
@@ -196,7 +196,7 @@ func (c *Cache) Middleware(next http.Handler) http.Handler {
 			pw.finish()
 			return
 		}
-		if e, ok := c.store.Get(d.Key); ok && cacheableVary(e.Header) {
+		if e, ok := c.store.getShared(d.Key); ok && cacheableVary(e.Header) {
 			c.serve(w, r, e, "hit", d.Private)
 			return
 		}
@@ -217,7 +217,7 @@ func (c *Cache) Middleware(next http.Handler) http.Handler {
 					return
 				}
 				t.Stop()
-				if e, ok := c.store.Get(d.Key); ok && cacheableVary(e.Header) {
+				if e, ok := c.store.getShared(d.Key); ok && cacheableVary(e.Header) {
 					c.serve(w, r, e, "hit", d.Private)
 					return
 				}

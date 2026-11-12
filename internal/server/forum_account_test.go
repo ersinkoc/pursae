@@ -479,3 +479,16 @@ func TestForumAvatarThrottle(t *testing.T) {
 		t.Error("still limited after the window")
 	}
 }
+
+func TestForumPlainDecodesEntities(t *testing.T) {
+	for _, tc := range []struct{ input, want string }{
+		{"<strong>Error:</strong> Alice &amp; Bob", "Alice & Bob"},
+		{"<b>Error:</b> &quot;name&quot;", `"name"`},
+		{"Error: &lt;script&gt;", "<script>"},
+		{"Plain text", "Plain text"},
+	} {
+		if got := forumPlain(tc.input); got != tc.want {
+			t.Errorf("forumPlain(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}

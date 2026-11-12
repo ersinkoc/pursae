@@ -75,7 +75,7 @@ func (s *Server) forumFinish(c *gin.Context, p *forumPage, canonical string, pag
 
 // forumCanonicalPage301 sends /page/1/ to the unpaged URL; true when it redirected.
 func forumCanonicalPage301(c *gin.Context, rt forumRoute, unpaged string) bool {
-	if rt.Page == 1 && strings.Contains(strings.TrimSuffix(c.Request.URL.Path, "/")+"/", "/page/1/") {
+	if rt.Page == 1 && strings.HasSuffix(strings.TrimSuffix(c.Request.URL.Path, "/"), "/page/1") {
 		target := forumLocalPath(unpaged)
 		if c.Request.URL.RawQuery != "" {
 			target += "?" + c.Request.URL.RawQuery
@@ -112,7 +112,7 @@ func forumPages(total, per int) int {
 	if total <= 0 {
 		return 1
 	}
-	return (total + per - 1) / per
+	return 1 + (total-1)/per
 }
 
 // forumTreeFind is forum id in the tree (Children filled).

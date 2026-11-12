@@ -83,7 +83,7 @@ func Warmup(ctx context.Context, urls []string, opts WarmupOptions) (WarmupProgr
 	}
 	prog := WarmupProgress{Total: len(jobs)}
 	if len(jobs) == 0 {
-		return prog, nil
+		return prog, ctx.Err()
 	}
 
 	var tick <-chan time.Time

@@ -8,6 +8,7 @@
 package cache
 
 import (
+	"slices"
 	"strings"
 	"time"
 )
@@ -249,6 +250,7 @@ func DefaultConfig() Config {
 
 // normalized fills unset limits with defaults.
 func (c Config) normalized() Config {
+	c = c.clone()
 	if c.MaxEntries <= 0 {
 		c.MaxEntries = DefaultMaxEntries
 	}
@@ -262,6 +264,23 @@ func (c Config) normalized() Config {
 		c.ServerHint = HintAuto
 	}
 	c.ServerHint = ServerHint(strings.ToLower(string(c.ServerHint)))
+	return c
+}
+
+func (c Config) clone() Config {
+	c.MobileUserAgents = slices.Clone(c.MobileUserAgents)
+	c.CacheQueryStrings = slices.Clone(c.CacheQueryStrings)
+	c.DropQueryStrings = slices.Clone(c.DropQueryStrings)
+	c.ExcludePaths = slices.Clone(c.ExcludePaths)
+	c.ExcludeCookies = slices.Clone(c.ExcludeCookies)
+	c.ExcludeUserAgents = slices.Clone(c.ExcludeUserAgents)
+	c.BypassCookies = slices.Clone(c.BypassCookies)
+	c.Optimize.DeferAllowlist = slices.Clone(c.Optimize.DeferAllowlist)
+	c.Optimize.DeferExclude = slices.Clone(c.Optimize.DeferExclude)
+	c.Optimize.DelayScripts = slices.Clone(c.Optimize.DelayScripts)
+	c.Optimize.Preconnect = slices.Clone(c.Optimize.Preconnect)
+	c.Optimize.DNSPrefetch = slices.Clone(c.Optimize.DNSPrefetch)
+	c.Optimize.Preload = slices.Clone(c.Optimize.Preload)
 	return c
 }
 

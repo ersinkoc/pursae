@@ -7,6 +7,7 @@ import (
 	"errors"
 	"image"
 	"io"
+	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -140,24 +141,34 @@ func isoDimensions(path string) (int, int, bool) {
 	head := make([]byte, 256<<10) // the meta box sits near the start
 	n, _ := io.ReadFull(f, head)
 	head = head[:n]
-	i := bytes.Index(head, []byte("ispe"))
-	if i < 0 || i+16 > len(head) {
-		return 0, 0, false
+	for start := 0; start < len(head); {
+		found := bytes.Index(head[start:], []byte("ispe"))
+		if found < 0 {
+			break
+		}
+		i := start + found
+		start = i + len("ispe")
+		if i < 4 || i+16 > len(head) {
+			continue
+		}
+		if size := binary.BigEndian.Uint32(head[i-4 : i]); size != 0 && size < 20 {
+			continue
+		}
+		// box: size(4) "ispe" version+flags(4) width(4) height(4)
+		w := binary.BigEndian.Uint32(head[i+8 : i+12])
+		h := binary.BigEndian.Uint32(head[i+12 : i+16])
+		if w > 0 && h > 0 && w <= 1<<16 && h <= 1<<16 {
+			return int(w), int(h), true
+		}
 	}
-	// box: size(4) "ispe" version+flags(4) width(4) height(4)
-	w := binary.BigEndian.Uint32(head[i+8 : i+12])
-	h := binary.BigEndian.Uint32(head[i+12 : i+16])
-	if w == 0 || h == 0 || w > 1<<16 || h > 1<<16 {
-		return 0, 0, false
-	}
-	return int(w), int(h), true
+	return 0, 0, false
 }
 
 // svgLength parses an SVG length ("120", "120px", "12.5"); other units are not measurable.
 func svgLength(v string) (float64, bool) {
 	v = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(v), "px"))
 	f, err := strconv.ParseFloat(v, 64)
-	return f, err == nil && f > 0
+	return f, err == nil && f > 0 && f+0.5 < float64(int(^uint(0)>>1))
 }
 
 // svgDimensions reads width/height (or the viewBox) of a sanitized SVG.
@@ -187,9 +198,12 @@ func svgDimensions(data []byte) (int, int) {
 		}
 		if (!okW || !okH) && vb != "" {
 			if p := strings.Fields(strings.ReplaceAll(vb, ",", " ")); len(p) == 4 {
+				vx, ex := strconv.ParseFloat(p[0], 64)
+				vy, ey := strconv.ParseFloat(p[1], 64)
 				vw, e1 := strconv.ParseFloat(p[2], 64)
 				vh, e2 := strconv.ParseFloat(p[3], 64)
-				if e1 == nil && e2 == nil && vw > 0 && vh > 0 {
+				if ex == nil && ey == nil && !math.IsNaN(vx) && !math.IsNaN(vy) && !math.IsInf(vx, 0) && !math.IsInf(vy, 0) &&
+					e1 == nil && e2 == nil && vw > 0 && vh > 0 && !math.IsInf(vw, 0) && !math.IsInf(vh, 0) {
 					switch {
 					case okW:
 						h, okH = w*vh/vw, true
@@ -201,7 +215,7 @@ func svgDimensions(data []byte) (int, int) {
 				}
 			}
 		}
-		if okW && okH {
+		if okW && okH && w+0.5 < float64(int(^uint(0)>>1)) && h+0.5 < float64(int(^uint(0)>>1)) {
 			return int(w + 0.5), int(h + 0.5)
 		}
 		return 0, 0
