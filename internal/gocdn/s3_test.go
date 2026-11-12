@@ -201,3 +201,43 @@ func TestClientPresignedGet(t *testing.T) {
 		t.Fatalf("tampered presigned URL: %d", resp.StatusCode)
 	}
 }
+
+type listResponseTransport string
+
+func (body listResponseTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(string(body)))}, nil
+}
+
+func TestListRejectsUnexpectedResponseRoot(t *testing.T) {
+	for _, tc := range []struct {
+		body    string
+		wantErr bool
+	}{
+		{`<Error><Code>InternalError</Code></Error>`, true},
+		{`<Other/>`, true},
+		{`<ListBucketResult>`, true},
+		{`<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><IsTruncated>false</IsTruncated></ListBucketResult>`, false},
+	} {
+		c := &gocdn.Client{Endpoint: "https://example.test", Bucket: "bucket", AccessKey: "key", SecretKey: "secret", PathStyle: true, HTTP: &http.Client{Transport: listResponseTransport(tc.body)}}
+		if _, err := c.List(context.Background(), "", "", "", 10); (err != nil) != tc.wantErr {
+			t.Errorf("List response %q: error = %v, want error %t", tc.body, err, tc.wantErr)
+		}
+	}
+}
+
+func TestListRejectsTruncatedPageWithoutToken(t *testing.T) {
+	for _, tc := range []struct {
+		body    string
+		wantErr bool
+	}{
+		{`<ListBucketResult><IsTruncated>true</IsTruncated></ListBucketResult>`, true},
+		{`<ListBucketResult><IsTruncated>true</IsTruncated><NextContinuationToken></NextContinuationToken></ListBucketResult>`, true},
+		{`<ListBucketResult><IsTruncated>true</IsTruncated><NextContinuationToken>next</NextContinuationToken></ListBucketResult>`, false},
+		{`<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>`, false},
+	} {
+		c := &gocdn.Client{Endpoint: "https://example.test", Bucket: "bucket", AccessKey: "key", SecretKey: "secret", PathStyle: true, HTTP: &http.Client{Transport: listResponseTransport(tc.body)}}
+		if _, err := c.List(context.Background(), "", "", "", 10); (err != nil) != tc.wantErr {
+			t.Errorf("List response %q: error = %v, want error %t", tc.body, err, tc.wantErr)
+		}
+	}
+}

@@ -349,11 +349,30 @@ func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([
 	if resp.StatusCode != http.StatusPartialContent {
 		return nil, fmt.Errorf("GetRange: expected partial response, got HTTP %d", resp.StatusCode)
 	}
-	limit := last - first
+	contentRange := resp.Header.Get("Content-Range")
+	if len(contentRange) < len("bytes ") || !strings.EqualFold(contentRange[:len("bytes ")], "bytes ") {
+		return nil, fmt.Errorf("GetRange: unexpected Content-Range %q", contentRange)
+	}
+	rangeAndSize := contentRange[len("bytes "):]
+	rangePart, _, hasSize := strings.Cut(rangeAndSize, "/")
+	startPart, endPart, hasEnd := strings.Cut(rangePart, "-")
+	start, startErr := strconv.ParseInt(startPart, 10, 64)
+	end, endErr := strconv.ParseInt(endPart, 10, 64)
+	if !hasSize || !hasEnd || startErr != nil || endErr != nil || start != first || end < start || end > last {
+		return nil, fmt.Errorf("GetRange: unexpected Content-Range %q", contentRange)
+	}
+	limit := end - start
 	if limit < math.MaxInt64 {
 		limit++
 	}
-	return io.ReadAll(io.LimitReader(resp.Body, limit))
+	data, err := io.ReadAll(io.LimitReader(resp.Body, limit))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data))-1 != end-start {
+		return nil, io.ErrUnexpectedEOF
+	}
+	return data, nil
 }
 
 // Head returns an object's metadata.
@@ -401,8 +420,9 @@ func (c *Client) List(ctx context.Context, prefix, delimiter, token string, max 
 	}
 	defer resp.Body.Close()
 	var x struct {
-		IsTruncated           bool   `xml:"IsTruncated"`
-		NextContinuationToken string `xml:"NextContinuationToken"`
+		XMLName               xml.Name `xml:"ListBucketResult"`
+		IsTruncated           bool     `xml:"IsTruncated"`
+		NextContinuationToken string   `xml:"NextContinuationToken"`
 		Contents              []struct {
 			Key          string `xml:"Key"`
 			Size         int64  `xml:"Size"`
@@ -415,6 +435,9 @@ func (c *Client) List(ctx context.Context, prefix, delimiter, token string, max 
 	}
 	if err := xml.NewDecoder(io.LimitReader(resp.Body, 32<<20)).Decode(&x); err != nil {
 		return nil, fmt.Errorf("ListObjectsV2: %w", err)
+	}
+	if x.IsTruncated && x.NextContinuationToken == "" {
+		return nil, errors.New("ListObjectsV2: truncated response has no continuation token")
 	}
 	out := &ListResult{Truncated: x.IsTruncated, NextToken: x.NextContinuationToken}
 	for _, o := range x.Contents {
