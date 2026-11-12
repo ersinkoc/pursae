@@ -184,7 +184,7 @@ func TestPursaeREST(t *testing.T) {
 	if code, body, _ := api("GET", "/pursae/v1/themes/"+active+"/file?file="+url.QueryEscape(first), nil); code != http.StatusOK || body["content"] == nil {
 		t.Errorf("read %s: %d %v", first, code, body)
 	}
-	if code, _, _ := api("GET", "/pursae/v1/themes/"+active+"/file?file=../../../etc/passwd", nil); code != http.StatusNotFound {
+	if code, _, _ := api("GET", "/pursae/v1/themes/"+active+"/file?file=../../../etc/passwd", nil); code != http.StatusNotFound && code != http.StatusForbidden { // 403: the core firewall
 		t.Errorf("path traversal: %d", code)
 	}
 	if code, body, _ := api("POST", "/pursae/v1/themes/"+active+"/activate", nil); code != http.StatusOK || body["active"] != true {

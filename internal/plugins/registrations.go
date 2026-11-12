@@ -53,8 +53,11 @@ var (
 	restMethods = map[string]bool{"GET": true, "POST": true, "PUT": true, "PATCH": true, "DELETE": true}
 	handleRe    = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 	fieldIDRe   = regexp.MustCompile(`^[a-z0-9_]{1,64}$`)
-	fieldTypes  = map[string]bool{"text": true, "textarea": true, "number": true, "checkbox": true, "select": true}
-	assetWhere  = map[string]bool{"front": true, "admin": true, "both": true}
+	// fieldTypes are the declarative field types of settings pages, meta boxes, block attributes and
+	// Web Builder widget controls.
+	fieldTypes = map[string]bool{"text": true, "textarea": true, "number": true, "checkbox": true, "select": true,
+		"radio": true, "email": true, "url": true, "password": true, "color": true, "date": true}
+	assetWhere = map[string]bool{"front": true, "admin": true, "both": true}
 )
 
 func (p *Plugin) registerShortcode(tag, callback string) error {
@@ -393,6 +396,7 @@ func (p *Plugin) resetRegistrations() {
 	p.rest = nil
 	p.settings = nil
 	p.assets = nil
+	p.adminPages, p.dashWidgets, p.metaBoxes, p.blocks, p.builderWidgets = nil, nil, nil, nil, nil
 	p.state.Unlock()
 }
 
@@ -404,6 +408,12 @@ type registrationSnapshot struct {
 	rest       []RestRoute
 	settings   *SettingsPage
 	assets     []Asset
+
+	adminPages     []AdminPage
+	dashWidgets    []DashboardWidget
+	metaBoxes      []MetaBox
+	blocks         []BlockType
+	builderWidgets []BuilderWidget
 }
 
 // snapshotRegistrations copies the current registrations.
@@ -415,6 +425,12 @@ func (p *Plugin) snapshotRegistrations() registrationSnapshot {
 		rest:       append([]RestRoute(nil), p.rest...),
 		settings:   p.settings,
 		assets:     append([]Asset(nil), p.assets...),
+
+		adminPages:     append([]AdminPage(nil), p.adminPages...),
+		dashWidgets:    append([]DashboardWidget(nil), p.dashWidgets...),
+		metaBoxes:      append([]MetaBox(nil), p.metaBoxes...),
+		blocks:         append([]BlockType(nil), p.blocks...),
+		builderWidgets: append([]BuilderWidget(nil), p.builderWidgets...),
 	}
 	for h := range p.regs {
 		snap.hooks = append(snap.hooks, h)
@@ -437,6 +453,8 @@ func (p *Plugin) restoreRegistrations(snap registrationSnapshot) {
 	p.rest = snap.rest
 	p.settings = snap.settings
 	p.assets = snap.assets
+	p.adminPages, p.dashWidgets, p.metaBoxes = snap.adminPages, snap.dashWidgets, snap.metaBoxes
+	p.blocks, p.builderWidgets = snap.blocks, snap.builderWidgets
 	p.state.Unlock()
 	for _, h := range snap.hooks {
 		_ = p.registerHook(h)

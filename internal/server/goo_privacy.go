@@ -89,6 +89,35 @@ func (s *Server) gooApplyAttribution(c *gin.Context, o *gooOrder) {
 	}
 }
 
+// gooAttributionRows is the order screen's "Order attribution" box (WC's order-attribution metabox):
+// origin first, then the recorded source fields. Empty when the order has no attribution.
+func gooAttributionRows(o *gooOrder) []gooOpt {
+	get := func(k string) string { v, _ := o.Meta["_wc_order_attribution_"+k].(string); return v }
+	typ, src := get("source_type"), get("utm_source")
+	if typ == "" && src == "" {
+		return nil
+	}
+	origin := "Unknown"
+	switch typ {
+	case "utm":
+		origin = "Source: " + src
+	case "referral":
+		origin = "Referral: " + src
+	case "typein":
+		origin = "Direct"
+	case "admin":
+		origin = "Web admin"
+	}
+	rows := []gooOpt{{"Origin", origin}}
+	for _, f := range []struct{ key, label string }{{"source_type", "Source type"}, {"utm_campaign", "UTM campaign"}, {"utm_source", "UTM source"},
+		{"utm_medium", "UTM medium"}, {"utm_content", "UTM content"}, {"utm_term", "UTM term"}, {"referrer", "Referral"}} {
+		if v := get(f.key); v != "" {
+			rows = append(rows, gooOpt{f.label, v})
+		}
+	}
+	return rows
+}
+
 // gooErasePersonalData applies the erasure options to an erasure request for email.
 func (s *Server) gooErasePersonalData(ctx context.Context, email string) {
 	if s.gooOptBool("erasure_request_removes_order_data") {

@@ -68,12 +68,32 @@ func (s *Server) pixelHead(c *gin.Context, q *siteQuery) string {
 		cspAllow(c, "connect-src", def.Connect...)
 		cspAllow(c, "img-src", def.Img...)
 		code := pixelSnippet(def, &st, st.Platforms[def.Key])
+		if def.Key == "gtm" && s.pixelGTMShared(&st) != "" {
+			// The same container runs from Pursae Cookie's script manager: load it once, keep the data layer.
+			code = `<script>window.dataLayer=window.dataLayer||[];window.pixelgoReady=window.pixelgoReady||{};window.pixelgoReady.gtm=1;</script>`
+		}
 		if gate {
 			code = gooikeInert(code, pixelCategory(g, def))
 		}
 		b.WriteString(code + "\n")
 	}
 	return b.String()
+}
+
+// pixelGTMShared returns the Tag Manager container ID that Pursae Pixel and an enabled Pursae Cookie
+// script both load ("" when they do not share one), so the container is printed only once.
+func (s *Server) pixelGTMShared(st *pixelSettings) string {
+	cfg, ok := st.Platforms["gtm"]
+	if !ok || !cfg.Enabled || len(cfg.IDs) == 0 || !s.gooikeOn() {
+		return ""
+	}
+	g := s.gooikeLoad()
+	for _, sc := range g.Scripts {
+		if sc.Enabled && sc.Service == "gtm" && strings.EqualFold(sc.ServiceID, cfg.IDs[0]) {
+			return cfg.IDs[0]
+		}
+	}
+	return ""
 }
 
 // pixelSnippet is the tag of a platform. IDs were validated by pixelSanitize and are escaped again here.

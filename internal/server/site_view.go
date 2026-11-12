@@ -150,7 +150,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	}
 	v.Sidebar1 = v.Areas["sidebar-1"]
 	for _, loc := range v.Theme.MenuLocations {
-		if items, _ := s.store.MenuAt(ctx, loc.Slug); len(items) > 0 {
+		if items, _ := s.menuAt(ctx, cs, loc.Slug); len(items) > 0 {
 			s.resolveMenu(ctx, items, lb, q)
 			v.Menus[loc.Slug] = items
 		}
@@ -543,7 +543,7 @@ func (s *Server) theExcerpt(p *store.Post, lb *links.Builder) string {
 }
 
 func (s *Server) postView(ctx context.Context, c *gin.Context, p *store.Post, singular bool, lb *links.Builder, u *store.User) *postView {
-	pv := &postView{ID: p.ID, Type: p.Type, Title: template.HTML(s.pllUC(ctx, theTitle(p), 0)), Permalink: lb.Permalink(p), Sticky: p.Sticky}
+	pv := &postView{ID: p.ID, Type: p.Type, Title: template.HTML(s.pluginTitle(ctx, s.pllUC(ctx, theTitle(p), 0), p)), Permalink: lb.Permalink(p), Sticky: p.Sticky}
 	pv.Content = template.HTML(s.pllUC(ctx, s.theContent(ctx, c, p, singular, lb), p.ID)) // Multi Language user content (golylang_uc.go)
 	pv.ShowExcerpt = p.Excerpt != "" || (renderFrom(ctx) != nil && renderFrom(ctx).search != "")
 	if pv.ShowExcerpt {

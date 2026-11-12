@@ -468,3 +468,42 @@ func TestPixelAdminExportKeepsTokensOut(t *testing.T) {
 		t.Errorf("import lost the stored tokens: %+v", got.Platforms["meta"])
 	}
 }
+
+// TestPixelGTMSharedWithCookie: a Tag Manager container added both in Pursae Pixel and in Pursae
+// Cookie's scripts is printed once (from Pursae Cookie); Pursae Pixel keeps only the data layer.
+func TestPixelGTMSharedWithCookie(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.pixelActivate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	st := srv.pixelLoad()
+	st.Platforms["gtm"] = pixelPlatformCfg{Enabled: true, IDs: []string{"GTM-ABC1234"}}
+	st.RequireConsent = false
+	if err := srv.pixelSave(ctx, st); err != nil {
+		t.Fatal(err)
+	}
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("GET", "/", nil)
+	if got := srv.pixelGTMShared(&st); got != "" {
+		t.Fatalf("shared without Pursae Cookie: %q", got)
+	}
+	if head := srv.pixelHead(c, nil); !strings.Contains(head, "googletagmanager.com/gtm.js") {
+		t.Errorf("container missing when not shared: %s", head)
+	}
+	if err := srv.settings.Set(ctx, map[string]any{gooikeSetting: true}); err != nil {
+		t.Fatal(err)
+	}
+	g := srv.gooikeLoad()
+	g.Scripts = append(g.Scripts, gooikeScript{ID: "gtm1", Service: "gtm", ServiceID: "gtm-abc1234", Category: "analytics", Enabled: true})
+	if err := srv.gooikeSave(ctx, g); err != nil {
+		t.Fatal(err)
+	}
+	if got := srv.pixelGTMShared(&st); got != "GTM-ABC1234" {
+		t.Fatalf("shared container = %q", got)
+	}
+	head := srv.pixelHead(c, nil)
+	if strings.Contains(head, "gtm.js") || !strings.Contains(head, "window.dataLayer") {
+		t.Errorf("shared container printed twice or data layer missing: %s", head)
+	}
+}

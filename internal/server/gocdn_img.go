@@ -151,6 +151,22 @@ func (s *Server) gocdnCacheDir() string {
 	return filepath.Join(filepath.Dir(filepath.Clean(s.cfg.UploadsDir)), "gocdn-cache")
 }
 
+// gocdnVariantDir is the cache folder of one source image's variants.
+func (s *Server) gocdnVariantDir(rel string) string {
+	sum := sha256.Sum256([]byte(rel))
+	h := hex.EncodeToString(sum[:12])
+	return filepath.Join(s.gocdnCacheDir(), h[:2], h)
+}
+
+// gocdnDropVariants deletes the cached variants of source files that are gone or changed.
+func (s *Server) gocdnDropVariants(rels []string) {
+	for _, rel := range rels {
+		if gocdnImageExt[strings.ToLower(path.Ext(rel))] {
+			_ = os.RemoveAll(s.gocdnVariantDir(rel))
+		}
+	}
+}
+
 // gocdnImage serves one image service request.
 func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSettings, rel string) {
 	clean := path.Clean("/" + rel)
@@ -159,6 +175,10 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 		return
 	}
 	rel = clean[1:]
+	if mediaIsPrivateRel(rel) { // private files (media_private.go) are never processed or cached
+		gocdnImgError(w, http.StatusForbidden, "this file is private")
+		return
+	}
 	if !gocdnImageExt[strings.ToLower(path.Ext(rel))] {
 		gocdnImgError(w, http.StatusBadRequest, "the image service handles JPEG, PNG, GIF and WebP files")
 		return
@@ -261,7 +281,7 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	cacheFile := filepath.Join(s.gocdnCacheDir(), key[:2], key+gocdn.Ext(out))
+	cacheFile := filepath.Join(s.gocdnVariantDir(rel), key+gocdn.Ext(out)) // one folder per source: its variants go with it
 	if data, err := os.ReadFile(cacheFile); err == nil {
 		gocdnTouch(cacheFile)
 		gocdnImgWrite(w, r, out, data, "disk")

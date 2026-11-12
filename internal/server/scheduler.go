@@ -73,9 +73,14 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 				if err != nil {
 					break
 				}
+				p, _ := s.store.GetPost(ctx, id)
+				s.pluginPostAction(ctx, "before_delete_post", p)
 				// A forum topic goes with its replies (they would stay published, with no topic).
 				if err = s.forumAdminDelete(ctx, id); errors.Is(err, errForumNotFound) {
 					err = s.store.DeletePost(ctx, id)
+				}
+				if err == nil {
+					s.pluginPostMoved(ctx, "delete", p)
 				}
 			}
 			if err == nil {
@@ -95,6 +100,9 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 			_, err := s.store.Pool.Exec(ctx, `DELETE FROM sessions WHERE expires_at < now()`)
 			if err == nil {
 				_, err = s.store.Pool.Exec(ctx, `DELETE FROM login_attempts WHERE created_at < now() - interval '1 day'`)
+			}
+			if gcErr := s.oauthGC(ctx); err == nil { // expired OAuth grants and codes, old MCP activity (oauth.go)
+				err = gcErr
 			}
 			return err
 		},
@@ -414,6 +422,7 @@ func (s *Server) publishDuePosts(ctx context.Context) {
 	slog.Info("scheduler: published scheduled posts", "count", len(ids))
 	for _, id := range ids {
 		if p, err := s.store.GetPost(ctx, id); err == nil {
+			p.PrevStatus = "future" // transition_post_status for Wasm plugins (plugins_hooks.go)
 			s.afterPostSave(ctx, p)
 		}
 	}

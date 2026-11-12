@@ -35,6 +35,10 @@ export interface PublishContext {
    * template has no page of its own).
    */
   previewUrl?: () => string
+  /** Scheduled publish (ScheduleController.pending): the RFC 3339 date, "" = publish now. */
+  scheduleAt?: () => string
+  /** Told the status and date the server stored (ScheduleController.published). */
+  onPublished?: (status: string, date?: string) => void
 }
 
 export interface PublishOutcome {
@@ -62,9 +66,13 @@ export function renderOptions(boot: Boot): RenderOptions {
   }
 }
 
-/** Status a publish asks for: private pages stay private; the server turns it into pending without caps.publish. */
-export function publishStatus(boot: Boot): PublishStatus {
-  return boot.document.status === 'private' ? 'private' : 'publish'
+/**
+ * Status a publish asks for: private pages stay private; a schedule date (ScheduleController) asks
+ * for future; the server turns it into pending without caps.publish.
+ */
+export function publishStatus(boot: Boot, scheduleAt = ''): PublishStatus {
+  if (boot.document.status === 'private') return 'private'
+  return scheduleAt && !boot.template ? 'future' : 'publish'
 }
 
 /**
@@ -73,8 +81,9 @@ export function publishStatus(boot: Boot): PublishStatus {
  * already holds every utility class the renderer can emit, so the editor does not ship the
  * Tailwind compiler (K0 report §3). The server sanitizes it like `render.css` either way.
  */
-export function buildPublishRequest(input: { doc: DocState; page: PageSettings }, render: RenderResult, o: { baseRev: number; status: PublishStatus; reattach: boolean }): PublishRequest {
+export function buildPublishRequest(input: { doc: DocState; page: PageSettings }, render: RenderResult, o: { baseRev: number; status: PublishStatus; reattach: boolean; date?: string }): PublishRequest {
   const body: PublishRequest = { baseRev: o.baseRev, status: o.status, doc: input.doc, page: input.page, render, utilityCss: '' }
+  if (o.status === 'future' && o.date) body.date = o.date
   if (o.reattach) body.reattach = true
   return body
 }
@@ -152,17 +161,19 @@ export async function publishDocument(ctx: PublishContext, input: { doc: DocStat
     throw new Error('The editor is out of date. Reload it to publish.')
   }
 
-  const status = publishStatus(boot)
+  const scheduleAt = ctx.scheduleAt?.() ?? ''
+  const status = publishStatus(boot, scheduleAt)
   for (let attempt = 0; attempt < 4; attempt++) {
-    const body = buildPublishRequest(input, render, { baseRev: session.baseRev, status, reattach: session.reattach })
+    const body = buildPublishRequest(input, render, { baseRev: session.baseRev, status, reattach: session.reattach, date: scheduleAt })
     const raw = JSON.stringify(body)
     if (byteLength(raw) > LIMITS.maxDocBytes) throw new Error(`The page is too large to publish (limit ${LIMITS.maxDocBytes >> 20} MB). Remove some sections or large images.`)
     try {
       const r = await rest.request<PublishResponse>('POST', routes.publish(boot.document.postId), { json: body })
       const out = r.data
       session.published(out.rev, input)
+      ctx.onPublished?.(out.status, out.date)
       const isTemplate = !!boot.template
-      const message = successMessage(out.status, isTemplate)
+      const message = successMessage(out.status, isTemplate) + (out.status === 'future' ? when(out.date) : '')
       const permalink = (isTemplate && ctx.previewUrl?.()) || out.permalink
       const stripped = Array.isArray(out.stripped) ? out.stripped : []
       if (stripped.length) {

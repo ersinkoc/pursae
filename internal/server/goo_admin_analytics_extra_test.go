@@ -184,3 +184,55 @@ func TestGooAnalyticsRESTAndWeeklySummary(t *testing.T) {
 		t.Errorf("weekly mails: %d", count())
 	}
 }
+
+// Occupancy of a bookable product and the renewal/retention figures of the subscriptions report.
+func TestGooAnalyticsOccupancyAndRenewals(t *testing.T) {
+	base, c, srv := gooSite(t)
+	ctx := context.Background()
+	if err := srv.gooSetOpts(ctx, map[string]any{"extensions": map[string]any{gsubKey: true, bkKey: true}}); err != nil {
+		t.Fatal(err)
+	}
+	// 1-hour blocks, one place, always available: 24 places a day.
+	p := gxGapProduct(t, srv, false)
+	day := gxNextWeekday(1)
+	for _, h := range []int{9, 10, 11} {
+		b := &bkBooking{ProductID: p.ID, Status: "paid", Start: day.Add(time.Duration(h) * time.Hour), End: day.Add(time.Duration(h+1) * time.Hour)}
+		if err := srv.bkInsert(ctx, b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_ = srv.bkInsert(ctx, &bkBooking{ProductID: p.ID, Status: "cancelled", Start: day.Add(15 * time.Hour), End: day.Add(16 * time.Hour)})
+	loc := srv.gxLoc()
+	from := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, loc)
+	used, capacity := srv.bkOccupancy(ctx, p.ID, from, from.AddDate(0, 0, 1))
+	if capacity != 24 || used < 2 || used > 3 { // the site zone may push one UTC booking over the day edge
+		t.Errorf("occupancy %v / %v, want 3 / 24", used, capacity)
+	}
+	if _, cp := srv.bkOccupancy(ctx, p.ID+99999, from, from.AddDate(0, 0, 1)); cp != 0 {
+		t.Error("an unknown product has capacity")
+	}
+	b := gooStoreGet(t, c, base+"/wp-admin/goocommerce?page=analytics&path=bookings&period=custom&after="+from.Format("2006-01-02")+"&before="+from.Format("2006-01-02"))
+	if !strings.Contains(b, "Occupancy") {
+		t.Error("the bookings report has no occupancy")
+	}
+
+	// One subscription running before the month and still active, one that ended in it; a paid and a failed renewal.
+	srv.store.Pool.Exec(ctx, `INSERT INTO goo_subscriptions (status, billing_period, billing_interval, recurring_total, start_date, end_date) VALUES
+		('active','month',1,10, now() - interval '400 days', NULL), ('cancelled','month',1,10, now() - interval '400 days', now() - interval '1 hour')`)
+	for _, st := range []string{"completed", "failed"} {
+		o := &gooOrder{Status: st, Total: 10, Billing: map[string]string{"email": "r@example.test"}, Shipping: map[string]string{}, Meta: map[string]any{"_subscription_renewal": float64(1)}}
+		if err := srv.gooSaveOrder(ctx, o, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	d := &gooAnalyticsData{}
+	now := time.Now()
+	srv.gooAnalyticsSubscriptions(ctx, d, &gooTable{}, now.AddDate(0, 0, -30), now.Add(time.Hour))
+	got := map[string]string{}
+	for _, cd := range d.Cards {
+		got[cd.Label] = string(cd.Value)
+	}
+	if got["Retention rate"] != "50.0%" || got["Renewals paid"] != "1" || got["Failed renewals"] != "1" || !strings.Contains(got["Renewal revenue"], "10.00") {
+		t.Errorf("subscription cards: %v", got)
+	}
+}

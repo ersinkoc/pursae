@@ -72,7 +72,7 @@ func TestGooikePolicyPagesAndTextPreset(t *testing.T) {
 		t.Errorf("KVKK pages not created: %v", found)
 	}
 	gooikePost(t, c, base, url.Values{"page": {"banner"}, "tab": {"texts"}, "do": {"texts_preset"}, "preset": {"tr"}})
-	if got := srv.gooikeLoad().Texts.Accept; got != "Tumunu kabul et" {
+	if got := srv.gooikeLoad().Texts.Accept; got != "Tümünü kabul et" {
 		t.Errorf("Turkish preset not applied: %q", got)
 	}
 }

@@ -587,6 +587,7 @@ func (s *Server) gooProductOptions(ctx context.Context, downloadable bool) []goo
 
 type gooOrderEditData struct {
 	O           *gooOrder
+	Attribution []gooOpt // Order attribution box (Value = label, Label = value)
 	New         bool
 	Nonce       string
 	Title       string
@@ -828,6 +829,7 @@ func (s *Server) gooOrderEditView(c *gin.Context, o *gooOrder) *gooOrderEditData
 	cur := o.Currency
 	d := &gooOrderEditData{O: o, Nonce: s.nonce(c, gooStoreNonce), Currency: cur, Symbol: gooCurrencySymbol(cur)}
 	d.New, _ = o.Meta["_admin_draft"].(bool)
+	d.Attribution = gooAttributionRows(o)
 	d.Title = "Order #" + o.Number() + " details"
 	for _, st := range gooOrderStatuses {
 		if st.Value != "checkout-draft" {

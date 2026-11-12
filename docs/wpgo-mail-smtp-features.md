@@ -113,7 +113,7 @@ access tokens are stored encrypted; access tokens are refreshed automatically.
 | | | |
 |---|---|---|
 | Chart of sent/failed per day (7/14/30 days, custom range) | Server-rendered SVG chart ✅ |
-| Totals: total, sent, failed (+ open/click rates) | Totals ✅; opens/clicks are counted per log entry and shown on its detail page (no aggregate rate yet) |
+| Totals: total, sent, failed (+ open/click rates) | Totals ✅; open rate, click rate (e-mails with at least one open/click out of the e-mails that carried tracking) and bounce rate (bounced of sent) for the period, with raw hit counts and delivered/bounced/complaint totals; per-subject open/click rates; the weekly summary e-mail lists them too. Per-entry counters stay on the log detail page |
 | Table grouped by subject with counts | ✅ |
 | **Weekly Email Summary**: e-mail to the admin every Monday with last week's stats; can be disabled (Misc / constant) | Daily job sends it when 7 days passed ✅ |
 
@@ -127,7 +127,7 @@ access tokens are stored encrypted; access tokens are refreshed automatically.
 | Custom webhook (JSON POST of the failure) | ✅ |
 | Push notifications (browser), WhatsApp | — need hosted services / Meta business templates | — |
 | Failed-email threshold ("alert only after N failures in 30 minutes") | ✅ |
-| Hard-bounce events (needs mailer webhooks) | Delivered / bounced / spam-complaint status on the log entry from Postmark, SendGrid and Mailgun webhooks: `POST /wp-mail-smtp/v1/webhook/<mailer>?token=…` (URLs with the secret token are shown under Settings › Email Log). Amazon SES (SNS signature verification) is not done | ◐ |
+| Hard-bounce events (needs mailer webhooks) | Delivered / bounced / spam-complaint status on the log entry from Postmark, SendGrid and Mailgun webhooks: `POST /wp-mail-smtp/v1/webhook/<mailer>?token=…` (URLs with the secret token are shown under Settings › Email Log). Amazon SES: subscribe the token URL (`…/webhook/amazonses?token=…`) over HTTPS to the SNS topic that receives the SES bounce/complaint/delivery notifications. The SNS envelope is trusted only after its signature verifies (SignatureVersion 1 = SHA1withRSA, 2 = SHA256withRSA, over SNS's canonical string); `SigningCertURL` must be an https `.pem` on `sns.<region>.amazonaws.com(.cn)` (no port, no credentials, redirects not followed), the certificate must be in its validity period; the `SubscriptionConfirmation` is confirmed by fetching its `SubscribeURL` under the same host rule. Identity notifications (`notificationType`) and configuration-set events (`eventType`) are both read; transient bounces are ignored. Matched by the SES `MessageId` the API mailer logs (the SES SMTP relay's IDs are not logged, so use the Amazon SES mailer) | ✅ |
 
 ## 9. Email Controls (Pro) (`tab=control`)
 

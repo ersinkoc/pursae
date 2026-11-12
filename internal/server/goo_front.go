@@ -84,7 +84,7 @@ func (s *Server) gooAcceptsPost(c *gin.Context) bool {
 	if !s.gooOn() {
 		return false
 	}
-	if gooAjaxAction(c) != "" {
+	if gooAjaxAction(c) != "" || gooWCAPIName(c) != "" { // AJAX, payment provider callbacks (goo_gateway_api.go)
 		return true
 	}
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil && c.Request.PostForm == nil {

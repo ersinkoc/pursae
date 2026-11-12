@@ -56,6 +56,8 @@ export const routes = {
   /** Popup templates: when a popup opens and how often (GET/PUT, webbuilder PopupSettings). */
   templatePopup: (id: number) => `web-builder/v2/templates/${id}/popup`,
   templateConflicts: (id: number) => `web-builder/v2/templates/${id}/conflicts`,
+  templateExport: (id: number) => `web-builder/v2/templates/${id}/export`,
+  templateImport: () => 'web-builder/v2/templates/import',
   navigator: () => 'web-builder/v2/navigator',
   siteSettings: () => 'web-builder/v2/site-settings',
   /** Page tools (page-tools.ts): which plugin tabs the page has, Pursae Multi Language, Pursae SEO. */
@@ -215,7 +217,8 @@ export interface RenderOptions {
 
 /* ---------- Documents ---------- */
 
-export type PublishStatus = 'publish' | 'draft' | 'pending' | 'private'
+/** future = scheduled: PublishRequest.date says when the page goes live. */
+export type PublishStatus = 'publish' | 'draft' | 'pending' | 'private' | 'future'
 
 export interface DraftState {
   doc: DocState
@@ -229,6 +232,8 @@ export interface DocumentResponse {
   postId: number
   postType: string
   status: string
+  /** RFC 3339 publish date ("" = none yet); in the future while status is future. */
+  date?: string
   /** 0 = never published from the builder. */
   rev: number
   /** null = new page: the editor starts from its default doc. */
@@ -261,6 +266,8 @@ export interface AutosaveResponse {
 export interface PublishRequest {
   baseRev: number
   status: PublishStatus
+  /** RFC 3339; required with status future (a past date publishes now). */
+  date?: string
   /** Required on a detached page: drops the outside edits. */
   reattach?: boolean
   doc: DocState
@@ -274,7 +281,10 @@ export type Stripped = 'html-sections' | 'custom-css' | 'markup' | 'css'
 
 export interface PublishResponse {
   rev: number
+  /** pending without publish rights; future for a scheduled page. */
   status: string
+  /** RFC 3339 publish date ("" = none). */
+  date?: string
   permalink: string
   revisionId: number
   modified: string
@@ -577,7 +587,7 @@ export const DEFAULT_STARTERS: Record<TemplateType, StarterId> = {
 /** Display conditions: "<include|exclude>/<scope>", grammar in §11.2. */
 export const CONDITION_LIMITS = { maxConditions: 50, maxConditionBytes: 200, priorityMin: -100, priorityMax: 100 } as const
 export const CONDITION_PATTERN =
-  /^(include|exclude)\/(general|404|singular(\/front_page|\/[a-z0-9_-]{1,32}(\/[1-9][0-9]{0,18}|\/in\/[a-z0-9_-]{1,32}\/[1-9][0-9]{0,18}|\/child_of\/[1-9][0-9]{0,18}|\/by_author\/[1-9][0-9]{0,18})?)?|archive(\/home|\/date|\/search|\/author(\/[1-9][0-9]{0,18})?|\/type\/[a-z0-9_-]{1,32}|\/[a-z0-9_-]{1,32}(\/[1-9][0-9]{0,18})?)?)$/
+  /^(include|exclude)\/(general|404|singular(\/front_page|\/[a-z0-9_-]{1,32}(\/[1-9][0-9]{0,18}|\/in\/[a-z0-9_-]{1,32}\/[1-9][0-9]{0,18}|\/child_of\/[1-9][0-9]{0,18}|\/by_author\/[1-9][0-9]{0,18})?)?|archive(\/home|\/date|\/search|\/author(\/[1-9][0-9]{0,18})?|\/type\/[a-z0-9_-]{1,32}|\/[a-z0-9_-]{1,32}(\/[1-9][0-9]{0,18})?)?|user\/(logged_in|logged_out|role\/[a-z0-9_-]{1,32}))$/
 export const RESERVED_SINGULAR_WORDS = ['front_page', 'in', 'child_of', 'by_author'] as const
 export const RESERVED_ARCHIVE_WORDS = ['home', 'date', 'search', 'author', 'type'] as const
 
@@ -958,6 +968,49 @@ export interface TaxonomyInfo {
   types: string[]
 }
 
+/** GET/PUT templates/{id}/popup (webbuilder PopupSettings). */
+export type PopupTrigger = 'load' | 'scroll' | 'exit' | 'click'
+export type PopupFrequency = 'always' | 'session' | 'once' | 'days'
+export type PopupPosition = 'center' | 'top' | 'bottom'
+export interface PopupSettings {
+  trigger: PopupTrigger
+  /** seconds, 0…POPUP_LIMITS.maxDelay */
+  delay: number
+  /** percent 1…100 (trigger scroll) */
+  scroll: number
+  /** trigger click: "#id" or ".class" (POPUP_SELECTOR_PATTERN) */
+  selector: string
+  frequency: PopupFrequency
+  /** 1…POPUP_LIMITS.maxDays (frequency days) */
+  days: number
+  /** bump to show a once/days popup again to everyone */
+  version: number
+  position: PopupPosition
+  /** px, POPUP_LIMITS.minWidth…maxWidth */
+  width: number
+  overlay: boolean
+  afterConsent: boolean
+}
+export const POPUP_LIMITS = { maxDelay: 300, maxDays: 365, minWidth: 200, maxWidth: 1600 } as const
+export const POPUP_SELECTOR_PATTERN = /^[#.][A-Za-z_][A-Za-z0-9_-]{0,63}$/
+
+/** One template as a file (GET templates/{id}/export, POST templates/import). */
+export interface TemplateFile {
+  format: 'web-builder-template'
+  version: 1
+  type: TemplateType
+  title: string
+  conditions: string[]
+  priority: number
+  popup?: PopupSettings
+  doc: DocState
+}
+
+export interface RoleInfo {
+  slug: string
+  label: string
+}
+
 export interface SiteBoot {
   title: string
   tagline: string
@@ -969,6 +1022,8 @@ export interface SiteBoot {
   themeParts: boolean
   postTypes: PostTypeInfo[]
   taxonomies: TaxonomyInfo[]
+  /** The site's roles, for the audience rules (user/role/<slug>). */
+  roles?: RoleInfo[]
 }
 
 /* ---------- Template REST payloads ---------- */

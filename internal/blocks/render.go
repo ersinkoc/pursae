@@ -25,6 +25,18 @@ func RegisterDynamic(name string, fn RenderFunc) {
 
 var raw = map[string]RenderFunc{}
 
+// FallbackFunc renders a block no renderer is registered for; ok false keeps the saved HTML.
+type FallbackFunc func(ctx context.Context, b *Block, content string) (html string, ok bool)
+
+var fallback FallbackFunc
+
+// SetFallback installs the renderer of blocks registered at run time (Wasm plugin blocks).
+func SetFallback(fn FallbackFunc) {
+	mu.Lock()
+	fallback = fn
+	mu.Unlock()
+}
+
 // RegisterContainer registers a renderer that renders its own inner blocks (RenderInner), for blocks
 // like core/post-template that render their children once per item with different context. The
 // RenderFunc receives empty content.
@@ -119,6 +131,14 @@ func RenderBlock(ctx context.Context, b *Block) string {
 	mu.RUnlock()
 	if fn != nil {
 		return fn(ctx, b, content)
+	}
+	mu.RLock()
+	fb := fallback
+	mu.RUnlock()
+	if fb != nil && !strings.HasPrefix(*b.BlockName, "core/") {
+		if out, ok := fb(ctx, b, content); ok {
+			return out
+		}
 	}
 	return content
 }

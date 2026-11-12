@@ -3,8 +3,9 @@
  *
  * A rule is "<include|exclude>/<scope>". The dialog edits it as a row of cascading selects:
  *
- *   group   general | singular | archive | 404
+ *   group   general | singular | archive | 404 | user
  *   sub     singular: '' (all) | front_page | <ptype>
+ *           user:     logged_in | logged_out | role/<role>   (audience rules: who is looking)
  *           archive:  '' (all) | home | date | search | author | type/<ptype> | <tax>
  *   target  singular/<ptype>: '' (all) | id | in/<tax> | child_of | by_author
  *           archive/<tax>, archive/author: '' (all) | id
@@ -18,7 +19,7 @@ import { CONDITION_LIMITS, CONDITION_PATTERN, RESERVED_ARCHIVE_WORDS, RESERVED_S
 import { t } from './i18n'
 
 export type ConditionMode = 'include' | 'exclude'
-export type ConditionGroup = 'general' | 'singular' | 'archive' | '404'
+export type ConditionGroup = 'general' | 'singular' | 'archive' | '404' | 'user'
 
 export interface ConditionRow {
   mode: ConditionMode
@@ -38,7 +39,7 @@ export interface Option {
   label: string
 }
 
-type Site = Pick<SiteBoot, 'postTypes' | 'taxonomies'>
+type Site = Pick<SiteBoot, 'postTypes' | 'taxonomies' | 'roles'>
 
 const ID_RE = /^[1-9][0-9]{0,18}$/
 
@@ -65,6 +66,8 @@ export function parseRule(rule: string): ConditionRow | null {
       row.target = tail[0]
       row.id = tail[1]
     }
+  } else if (group === 'user') {
+    row.sub = rest.join('/')
   } else if (group === 'archive' && rest.length) {
     if (rest[0] === 'type') row.sub = `type/${rest[1]}`
     else {
@@ -91,6 +94,8 @@ export function rowRule(row: ConditionRow): string | null {
       if (row.target === 'id') parts.push(row.id)
       else parts.push(...row.target.split('/'), row.id)
     }
+  } else if (row.group === 'user') {
+    parts.push(...(row.sub || 'logged_in').split('/'))
   } else if (row.group === 'archive' && row.sub) {
     parts.push(...row.sub.split('/'))
     if (row.target === 'id' && (row.sub === 'author' || isTaxSub(row.sub))) {
@@ -135,7 +140,11 @@ export function rowsToRules(rows: ConditionRow[]): { rules: string[]; errors: Re
   return { rules, errors }
 }
 
-export const hasInclude = (rules: readonly string[]) => rules.some((r) => r.trim().startsWith('include/'))
+/** Audience rules (user/…) narrow who sees a template; they never place it. */
+export const isAudienceRule = (rule: string) => /^(include|exclude)\/user\//.test(rule.trim())
+
+/** True when a rule places the template somewhere (an include rule that is not an audience rule). */
+export const hasInclude = (rules: readonly string[]) => rules.some((r) => r.trim().startsWith('include/') && !isAudienceRule(r))
 
 export function clampPriority(n: number): number {
   if (!Number.isFinite(n)) return 0
@@ -177,6 +186,7 @@ export function groupOptions(): Option[] {
     { value: 'singular', label: t('Singular') },
     { value: 'archive', label: t('Archives') },
     { value: '404', label: t('404 Page') },
+    { value: 'user', label: t('Visitor') },
   ]
 }
 
@@ -195,6 +205,15 @@ export function subOptions(site: Site, group: ConditionGroup, keep = ''): Option
       ...site.postTypes.filter((p) => p.archive || p.slug === 'post').map((p) => ({ value: `type/${p.slug}`, label: t('{type} Archive', { type: builtinLabel(p.slug, p.label) }) })),
       ...site.taxonomies.map((x) => ({ value: x.slug, label: builtinLabel(x.slug, x.label) })),
     ]
+  }
+  if (group === 'user') {
+    out = [
+      { value: 'logged_in', label: t('Logged-in Users') },
+      { value: 'logged_out', label: t('Logged-out Visitors') },
+      ...(site.roles ?? []).map((r) => ({ value: `role/${r.slug}`, label: t('Role: {role}', { role: r.label || r.slug }) })),
+    ]
+    if (keep && !out.some((o) => o.value === keep)) out.push({ value: keep, label: t('Role: {role}', { role: keep.replace(/^role\//, '') }) })
+    return out
   }
   if (keep && !out.some((o) => o.value === keep)) out.push({ value: keep, label: keep.startsWith('type/') ? t('{type} Archive', { type: keep.slice(5) }) : keep })
   return out
@@ -220,7 +239,7 @@ export function targetOptions(site: Site, row: Pick<ConditionRow, 'group' | 'sub
 /** Changes one level of a row; the levels below reset. */
 export function updateRow(row: ConditionRow, change: Partial<Pick<ConditionRow, 'mode' | 'group' | 'sub' | 'target' | 'id' | 'idLabel'>>): ConditionRow {
   const next = { ...row, ...change }
-  if ('group' in change && change.group !== row.group) Object.assign(next, { sub: '', target: '', id: '', idLabel: undefined })
+  if ('group' in change && change.group !== row.group) Object.assign(next, { sub: change.group === 'user' ? 'logged_in' : '', target: '', id: '', idLabel: undefined })
   else if ('sub' in change && change.sub !== row.sub) Object.assign(next, { target: '', id: '', idLabel: undefined })
   else if ('target' in change && change.target !== row.target) Object.assign(next, { id: '', idLabel: undefined })
   return next
@@ -258,6 +277,12 @@ function describe(site: Site, row: ConditionRow, idLabel?: string): string {
   const item = idLabel ? `“${idLabel}”` : `#${row.id}`
   if (row.group === 'general') return t('Entire Site')
   if (row.group === '404') return t('404 Page')
+  if (row.group === 'user') {
+    if (row.sub === 'logged_in') return t('Logged-in Users')
+    if (row.sub === 'logged_out') return t('Logged-out Visitors')
+    const slug = row.sub.replace(/^role\//, '')
+    return t('Role: {role}', { role: site.roles?.find((r) => r.slug === slug)?.label || slug })
+  }
   if (row.group === 'singular') {
     if (!row.sub) return t('All Singular')
     if (row.sub === 'front_page') return t('Front Page')

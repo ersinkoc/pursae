@@ -68,6 +68,7 @@ func (s *Server) gooikeFooter(c *gin.Context) string {
 		return ""
 	}
 	st := s.gooikeLoad()
+	s.gooikeLocalize(c, &st)
 	var b strings.Builder
 	b.WriteString(s.gooikeMarkup(c, &st, false))
 	b.WriteString(gooikeScriptsAt(&st, "footer"))
@@ -360,6 +361,7 @@ func (s *Server) gooikeShortcodes(ctx context.Context, content string) string {
 		return content
 	}
 	st := s.gooikeLoad()
+	s.gooikeLocalize(ctx, &st)
 	esc := html.EscapeString
 	return gooikeShortcodeRe.ReplaceAllStringFunc(content, func(m string) string {
 		sm := gooikeShortcodeRe.FindStringSubmatch(m)
@@ -428,8 +430,9 @@ func (s *Server) gooikeFilterPage(c *gin.Context, page []byte) []byte {
 		return page
 	}
 	st := s.gooikeLoad()
+	s.gooikeLocalize(c, &st)
 	doc := gooikeBlockScripts(&st, string(page))
-	if !st.BlockYouTube && !st.BlockVimeo && !st.BlockMaps {
+	if !st.anyEmbedBlocked() {
 		return []byte(doc)
 	}
 	if !strings.Contains(doc, "<iframe") {

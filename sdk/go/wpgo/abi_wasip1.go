@@ -157,35 +157,55 @@ func hostEnqueueScript(ptr, size uint32) uint64
 //go:wasmimport wpgo translate
 func hostTranslate(ptr, size uint32) uint64
 
+//go:wasmimport wpgo register_admin_page
+func hostRegisterAdminPage(ptr, size uint32) uint64
+
+//go:wasmimport wpgo register_dashboard_widget
+func hostRegisterDashboardWidget(ptr, size uint32) uint64
+
+//go:wasmimport wpgo register_meta_box
+func hostRegisterMetaBox(ptr, size uint32) uint64
+
+//go:wasmimport wpgo register_block
+func hostRegisterBlock(ptr, size uint32) uint64
+
+//go:wasmimport wpgo register_builder_widget
+func hostRegisterBuilderWidget(ptr, size uint32) uint64
+
 var imports = map[string]func(ptr, size uint32) uint64{
-	"add_hook":               hostAddHook,
-	"get_option":             hostGetOption,
-	"update_option":          hostUpdateOption,
-	"log":                    hostLog,
-	"http_get":               hostHTTPGet,
-	"http_request":           hostHTTPRequest,
-	"send_mail":              hostSendMail,
-	"storage_get":            hostStorageGet,
-	"storage_set":            hostStorageSet,
-	"storage_delete":         hostStorageDelete,
-	"storage_list":           hostStorageList,
-	"add_admin_notice":       hostAddAdminNotice,
-	"register_shortcode":     hostRegisterShortcode,
-	"register_rest_route":    hostRegisterRestRoute,
-	"get_post":               hostGetPost,
-	"query_posts":            hostQueryPosts,
-	"insert_post":            hostInsertPost,
-	"update_post":            hostUpdatePost,
-	"get_current_user":       hostGetCurrentUser,
-	"schedule_event":         hostScheduleEvent,
-	"unschedule_event":       hostUnscheduleEvent,
-	"register_settings_page": hostRegisterSettingsPage,
-	"transient_get":          hostTransientGet,
-	"transient_set":          hostTransientSet,
-	"transient_delete":       hostTransientDelete,
-	"enqueue_style":          hostEnqueueStyle,
-	"enqueue_script":         hostEnqueueScript,
-	"translate":              hostTranslate,
+	"add_hook":                  hostAddHook,
+	"get_option":                hostGetOption,
+	"update_option":             hostUpdateOption,
+	"log":                       hostLog,
+	"http_get":                  hostHTTPGet,
+	"http_request":              hostHTTPRequest,
+	"send_mail":                 hostSendMail,
+	"storage_get":               hostStorageGet,
+	"storage_set":               hostStorageSet,
+	"storage_delete":            hostStorageDelete,
+	"storage_list":              hostStorageList,
+	"add_admin_notice":          hostAddAdminNotice,
+	"register_shortcode":        hostRegisterShortcode,
+	"register_rest_route":       hostRegisterRestRoute,
+	"get_post":                  hostGetPost,
+	"query_posts":               hostQueryPosts,
+	"insert_post":               hostInsertPost,
+	"update_post":               hostUpdatePost,
+	"get_current_user":          hostGetCurrentUser,
+	"schedule_event":            hostScheduleEvent,
+	"unschedule_event":          hostUnscheduleEvent,
+	"register_settings_page":    hostRegisterSettingsPage,
+	"transient_get":             hostTransientGet,
+	"transient_set":             hostTransientSet,
+	"transient_delete":          hostTransientDelete,
+	"enqueue_style":             hostEnqueueStyle,
+	"enqueue_script":            hostEnqueueScript,
+	"translate":                 hostTranslate,
+	"register_admin_page":       hostRegisterAdminPage,
+	"register_dashboard_widget": hostRegisterDashboardWidget,
+	"register_meta_box":         hostRegisterMetaBox,
+	"register_block":            hostRegisterBlock,
+	"register_builder_widget":   hostRegisterBuilderWidget,
 }
 
 func invokeHost(name string, body []byte) ([]byte, error) {

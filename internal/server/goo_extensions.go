@@ -226,6 +226,13 @@ func (s *Server) gooAdminExtSettings(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/wp-admin/goocommerce?page=ext&ext="+key+"&goo-msg="+url.QueryEscape("Your settings have been saved."))
 		return
 	}
+	for _, f := range e.Fields {
+		if f.Type == "image" {
+			s.enqueueMedia(c, 0)
+			addLateFooterHTML(c, template.HTML(gooImageFieldJS))
+			break
+		}
+	}
 	s.adminPage(c, "goocommerce?page=extensions", e.Name+" settings", "goocommerce_page_goo-extensions", "admin/goo-ext-settings",
 		map[string]any{"Ext": e, "On": s.gooExtOn(key), "Form": s.gooExtFieldsHTML(c.Request.Context(), e.Fields, s.gooExtSettings(key)),
 			"Nonce": s.nonce(c, "goo-ext-"+key)}, gooFlash(c)...)
@@ -258,6 +265,12 @@ func gooReadFields(c *gin.Context, fields []gooField, current map[string]any) ma
 			out[f.ID] = c.PostForm(f.ID) != ""
 		case "multiselect", "multi_select_countries":
 			out[f.ID] = c.PostFormArray(f.ID + "[]")
+		case "image":
+			n, err := strconv.ParseInt(strings.TrimSpace(c.PostForm(f.ID)), 10, 64)
+			if err != nil || n < 0 {
+				n = 0
+			}
+			out[f.ID] = float64(n)
 		case "number":
 			if v := strings.TrimSpace(c.PostForm(f.ID)); v != "" {
 				n, err := strconv.ParseFloat(v, 64)
@@ -362,6 +375,17 @@ func (s *Server) gooExtFieldsHTML(ctx context.Context, fields []gooField, vals m
 				b.WriteString(`<option value="` + html.EscapeString(o.Value) + `"` + sel + `>` + o.Label + `</option>`)
 			}
 			b.WriteString(`</select>`)
+		case "image":
+			// An attachment ID picked from the Media Library (wp.media, enqueued by gooAdminExtSettings).
+			img := ""
+			if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 {
+				if a, err := s.store.GetAttachment(ctx, n); err == nil {
+					img = `<img src="` + html.EscapeString(s.uploadURL(ctx, a.FilePath)) + `" alt="" style="max-width:150px;max-height:100px;display:block;margin-bottom:6px">`
+				}
+			}
+			b.WriteString(`<span class="goo-image-field" data-title="` + html.EscapeString(gxaStripTags(f.Title)) + `"><span class="goo-image-preview">` + img + `</span>` +
+				`<input type="number" min="0" step="1" name="` + id + `" id="` + id + `" value="` + html.EscapeString(v) + `" style="width:120px"> ` +
+				`<button type="button" class="button goo-image-select">Select image</button> <button type="button" class="button-link goo-image-remove">Remove</button></span>`)
 		case "number", "price":
 			attrs := ""
 			if f.Min != "" {
@@ -399,3 +423,10 @@ func (s *Server) gooExtFieldsHTML(ctx context.Context, fields []gooField, vals m
 	closeTable()
 	return template.HTML(b.String())
 }
+
+// gooImageFieldJS drives the module settings' image fields: the Media Library modal fills the
+// attachment ID and the preview.
+const gooImageFieldJS = `<script>jQuery(function($){$('.goo-image-field').each(function(){var $w=$(this),$i=$w.find('input'),$p=$w.find('.goo-image-preview'),frame;` +
+	`$w.find('.goo-image-select').on('click',function(e){e.preventDefault();if(!window.wp||!wp.media){return}if(!frame){frame=wp.media({title:$w.data('title'),library:{type:'image'},button:{text:'Use this image'},multiple:false});` +
+	`frame.on('select',function(){var a=frame.state().get('selection').first().toJSON(),u=(a.sizes&&a.sizes.medium?a.sizes.medium.url:a.url);$i.val(a.id);$p.empty().append($('<img alt="" style="max-width:150px;max-height:100px;display:block;margin-bottom:6px">').attr('src',u))})}frame.open()});` +
+	`$w.find('.goo-image-remove').on('click',function(e){e.preventDefault();$i.val('');$p.empty()})})});</script>`

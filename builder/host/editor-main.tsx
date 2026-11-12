@@ -20,6 +20,8 @@ import { SiteSettingsController } from './site-settings'
 import { SiteSettingsDialog, SiteSettingsMenuRow } from './SiteSettingsDialog'
 import { PageToolsController } from './page-tools'
 import { PageToolsDialog, PageToolsMenuRow } from './PageToolsDialog'
+import { PopupController, RevisionsController } from './tools'
+import { PopupDialog, PopupMenuRow, RevisionsDialog, RevisionsMenuRow, ScheduleDialog, ScheduleMenuRow } from './HostToolsDialogs'
 
 function mountPoint(): HTMLElement {
   let el = document.getElementById('root')
@@ -93,14 +95,26 @@ async function boot() {
         pickImage: host.media.pick ? () => host.media.pick!('image') : undefined,
       })
   const siteRow = !!host.boot.caps.editThemeOptions
-  if (siteRow || pageTools) {
-    host.menuExtra = (close) => (
-      <>
-        {siteRow && <SiteSettingsMenuRow controller={siteSettings} close={close} />}
-        {pageTools && <PageToolsMenuRow controller={pageTools} close={close} />}
-      </>
-    )
-  }
+  // Host tools (tools.ts): scheduled publish, the published revisions and, in a popup template,
+  // the popup settings.
+  const revisions = new RevisionsController({
+    rest: host.rest,
+    postId: host.boot.document.postId,
+    baseRev: () => host.session.baseRev,
+    stop: () => host.session.stop('reload'),
+    reload: () => location.reload(),
+    ask: async (message) => (await host.ui.ask({ tone: 'warning', title: t('Restore this revision?'), message, actions: [{ id: 'restore', label: t('Restore'), primary: true }, { id: 'cancel', label: t('Cancel') }] })) === 'restore',
+  })
+  const popup = host.boot.template?.type === 'popup' ? new PopupController(host.rest, host.boot.document.postId) : null
+  host.menuExtra = (close) => (
+    <>
+      {siteRow && <SiteSettingsMenuRow controller={siteSettings} close={close} />}
+      {pageTools && <PageToolsMenuRow controller={pageTools} close={close} />}
+      {popup && <PopupMenuRow c={popup} close={close} />}
+      <ScheduleMenuRow c={host.schedule} close={close} />
+      <RevisionsMenuRow c={revisions} close={close} />
+    </>
+  )
   setHost(host)
   window.__WEB_BUILDER_HOST__ = host
   installFontNonce(host)
@@ -142,6 +156,19 @@ async function boot() {
     createRoot(toolsLayer).render(<PageToolsDialog controller={pageTools} />)
     isolateHostKeys(toolsLayer)
     void pageTools.probe()
+  }
+  {
+    const toolLayer = document.createElement('div')
+    toolLayer.id = 'wb-host-tools-layer'
+    document.body.insertBefore(toolLayer, layer)
+    createRoot(toolLayer).render(
+      <>
+        <ScheduleDialog c={host.schedule} />
+        <RevisionsDialog c={revisions} />
+        {popup && <PopupDialog c={popup} />}
+      </>,
+    )
+    isolateHostKeys(toolLayer)
   }
   createRoot(layer).render(<HostLayer host={host} />)
   isolateHostKeys(layer) // after createRoot: the layer's React listener runs first

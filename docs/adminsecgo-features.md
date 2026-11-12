@@ -93,6 +93,8 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 |---|---|---|
 | Minimum length and strength per role | Defaults: administrator 12 / Strong, editor and author 10 / Medium, contributor 8 / Weak, subscriber 8 / any. A zxcvbn-like 0–4 score: character-pool entropy, cut for repeats, sequences, keyboard walks (`qwerty`, `asdf`, `7890`), a common password with a few characters around it, and the user's own name | ✅ |
 | Common passwords | The 10,000 most common passwords (the list WordPress' bundled `zxcvbn.min.js` carries, de-obfuscated) in `adminsec_passwords.txt`, embedded | ✅ |
+| Breached passwords (opt-in) | Settings › Passwords: Have I Been Pwned range API with k-anonymity — only the first 5 hex characters of the SHA-1 leave the server (padded responses); an unreachable service never blocks the password (`adminsec_hibp.go`) | ✅ |
+| Passkeys (WebAuthn) | — not implemented yet: TOTP 2FA, e-mail MFA and backup codes cover second factors | — |
 | Where it applies | Profile and user-edit, Add User, password reset, REST `wp/v2/users` create/update | ✅ |
 | Force password change | Admin action on user-edit (*Require a password change at next login*), and automatically at login when the current password breaks the policy (setting). The user lands on the profile with a notice; every other admin screen redirects there until a compliant password is saved | ✅ |
 | Password expiry | — not included (current NIST guidance advises against periodic changes) | — |
@@ -114,7 +116,9 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Hide the version | No generator meta tag, feeds without the version, front-end `?ver=0.1.0` replaced by a site-specific hash (default on) | ✅ |
 | REST only for logged-in users | Opt-in; visitors keep oEmbed, the contact-form routes, Cookie/Pixel visitor routes and the Commerce Store API plus configurable prefixes | ✅ |
 | Alerts | E-mail to the admin (or a configured address) on an administrator's login from a new IP (not the very first login) and on every lockout | ✅ |
-| Firewall, malware scan, file-change detection | — out of scope by design | — |
+| Firewall (core, on by default) | `firewall.go`, before everything else on every request: a per-IP rate limit (900 requests a minute by default; static files, loopback and trusted proxies do not count; 429 with Retry-After) and basic WAF rules on the URL and User-Agent only (path traversal, null bytes, `.env`/`.git`/`wp-config.php` probes, script and SQL injection, `${jndi:` / shellshock). Runs with the defaults without the plugin; Settings › Firewall changes the limit or turns the rules off; `WPGO_FIREWALL=off` disables it; the allow list is exempt. Blocks are logged once per IP and minute | ✅ |
+| File integrity scan | Pursae Security › Integrity (Scan now) and the daily job: binary SHA-256 change at the same version, with `WPGO_WEB_DIR` every core web file against the embedded copy, edited bundled-theme files, and server-side scripts (`.php`, `.phtml`, double extensions, `.htaccess`, …) in the themes and uploads folders. New findings are logged and e-mailed (Settings › Firewall) | ✅ |
+| Malware signature scan | — out of scope (no signature database) | — |
 
 ## 10. Activity log
 

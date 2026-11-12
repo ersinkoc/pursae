@@ -446,7 +446,7 @@ func (api *restAPI) index(c *gin.Context) {
 	routes := map[string]any{}
 	nsSet := map[string]bool{}
 	builderOn := s.wbOn()
-	for _, r := range api.routes {
+	for _, r := range append(api.routes[:len(api.routes):len(api.routes)], api.acfgoTypeRoutes()...) {
 		if (!builderOn && r.Namespace == webbuilder.RESTNamespace) || s.gontactRESTHidden(r.Namespace) || (r.Namespace == pllRESTNamespace && !s.golylangOn()) || s.forumRESTHidden(r.Namespace) {
 			continue
 		}

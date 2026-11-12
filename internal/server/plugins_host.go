@@ -226,6 +226,10 @@ func (s *Server) pluginSavePost(ctx context.Context, p *store.Post) {
 	if s.plugins == nil || p == nil || !pluginPostTypes[p.Type] {
 		return
 	}
+	if prev := p.PrevStatus; prev != "" { // set by the store on insert / update (plugins_hooks.go)
+		p.PrevStatus = ""
+		s.pluginPostTransition(ctx, p, p.Status, prev)
+	}
 	hooks := s.plugins.hooks
 	if !hooks.HasAction("save_post") && !hooks.HasAction("save_post_"+p.Type) {
 		return
@@ -533,6 +537,7 @@ type settingsFieldView struct {
 	Name    string // option name = input name
 	Value   string
 	Checked bool
+	Row     template.HTML // the form-table row (plugins_fields.go)
 }
 
 type pluginSettingsData struct {
@@ -615,7 +620,9 @@ func (s *Server) pluginSettingsScreen(c *gin.Context, slug string) bool {
 	for _, f := range page.Fields {
 		name := f.OptionName(slug)
 		v := settingsFieldView{SettingsField: f, Name: name}
-		v.Value, v.Checked = settingValue(s.settings.Get(pluginOptionKey(slug, name)), f) // plugins.go: stored in the plugin's namespace
+		stored := s.settings.Get(pluginOptionKey(slug, name)) // plugins.go: stored in the plugin's namespace
+		v.Value, v.Checked = settingValue(stored, f)
+		v.Row = template.HTML(pluginFieldRow(name, f, stored))
 		d.Fields = append(d.Fields, v)
 	}
 	var notices []notice
@@ -647,41 +654,8 @@ func (s *Server) pluginSettingsSave(c *gin.Context, optionPage string) {
 		name := f.OptionName(slug)
 		key := pluginOptionKey(slug, name) // plugins.go: the plugin's option namespace
 		raw, present := c.GetPostForm(name)
-		switch f.Type {
-		case "checkbox":
-			values[key] = present && raw != "" && raw != "0"
-		case "number":
-			if !present {
-				continue
-			}
-			n, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
-			if err != nil {
-				continue
-			}
-			if f.Min != nil && n < *f.Min {
-				n = *f.Min
-			}
-			if f.Max != nil && n > *f.Max {
-				n = *f.Max
-			}
-			values[key] = n
-		case "select":
-			if !present {
-				continue
-			}
-			for _, o := range f.Options {
-				if o.Value == raw {
-					values[key] = raw
-				}
-			}
-		default:
-			if !present {
-				continue
-			}
-			if len(raw) > 64<<10 {
-				raw = raw[:64<<10]
-			}
-			values[key] = strings.ReplaceAll(raw, "\r\n", "\n")
+		if v, ok := pluginFieldValue(f, raw, present); ok { // plugins_fields.go
+			values[key] = v
 		}
 	}
 	if err := s.settings.Set(c.Request.Context(), values); err != nil {

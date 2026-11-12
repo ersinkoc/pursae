@@ -21,6 +21,7 @@ import type { BuilderHost, BuilderHostAi, NavItem, BuilderHostStorage, FormResul
 import type { DocState, PageSettings, SavedComponent } from '@/builder/types'
 import { API_VERSION, ERR, LIMITS, PREF_KEY_PATTERN, routes, type AutosaveResponse, type Boot, type DraftState, type NavigatorResponse, type LibraryItem, type LockResponse, type MediaItem, type Prefs } from './contract'
 import { publishDocument, loadLiveRenderer, type RendererLoader } from './publish'
+import { ScheduleController } from './tools'
 import { createRest, isRestError, uploadMedia, type FetchLike, type RestClient } from './rest'
 import { DynStore } from './dynamic'
 import { TemplateController, readTemplate, templateLive } from './template'
@@ -647,6 +648,8 @@ export interface CmsHost extends BuilderHost {
   readonly dyn: DynStore
   /** Template mode (Boot.template), else null. */
   readonly templates: TemplateController | null
+  /** Scheduled publish of pages and posts (tools.ts). */
+  readonly schedule: ScheduleController
   /** Async start-up (prefs, library) and the notices about the loaded document; call before mounting. */
   start(): Promise<void>
   /** Takes or refreshes the edit lock; returns the other holder's lock, if any. */
@@ -701,6 +704,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
   const dyn = new DynStore(rest, boot)
   const template = readTemplate(boot)
   const templates = template ? new TemplateController(rest, dyn, boot, template) : null
+  const schedule = new ScheduleController(boot)
   // What the editor sees of the template: live tells it whether Publish is needed although a
   // stored doc or a restored draft is loaded (a duplicate, a disabled or never published template).
   const templateBoot = template ? { ...template, live: templateLive(boot) } : null
@@ -773,6 +777,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     initial,
     dyn,
     templates,
+    schedule,
     loadDoc: () => initial.doc,
     loadPage: () => initial.page,
     saveDraft: (doc, page) => autosaver.save(doc, page),
@@ -783,7 +788,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
       await autosaver.flush()
       autosaver.hold(true)
       try {
-        const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload, previewUrl: templates ? () => templates.getState().preview?.url ?? '' : undefined }, input)
+        const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload, previewUrl: templates ? () => templates.getState().preview?.url ?? '' : undefined, scheduleAt: () => (schedule.available ? schedule.pending() : ''), onPublished: (st, date) => schedule.published(st, date) }, input)
         templates?.markPublished()
         return { message: out.message, permalink: out.permalink }
       } finally {

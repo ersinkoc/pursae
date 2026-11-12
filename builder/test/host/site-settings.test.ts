@@ -27,6 +27,7 @@ const draft = (s: SiteSettings, over: Partial<SiteDraft> = {}): SiteDraft => ({
   page_on_front: s.page_on_front,
   page_for_posts: s.page_for_posts,
   custom_css: s.custom_css,
+  tokens: { colors: { ...(s.tokens?.colors ?? {}) }, fonts: { ...(s.tokens?.fonts ?? {}) } },
   ...over,
 })
 

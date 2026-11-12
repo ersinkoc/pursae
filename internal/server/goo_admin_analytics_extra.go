@@ -131,9 +131,31 @@ func (s *Server) gooAnalyticsSubscriptions(ctx context.Context, d *gooAnalyticsD
 	if atStart > 0 {
 		churn = float64(ended) / float64(atStart) * 100
 	}
+	// Renewal and sign-up revenue: paid renewal orders and paid parent orders in the range (net of refunds).
+	// Retention: of the subscriptions running at the start of the range, the share still running at its end.
+	var renewals, failed, retained int
+	var renewalRev, signupRev float64
+	paid := gooPaidStatuses
+	const net = `coalesce(sum(o.total + coalesce((SELECT sum(r.total) FROM goo_orders r WHERE r.parent_id = o.id AND r.type = 'shop_order_refund'),0)),0)::float8`
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*), `+net+` FROM goo_orders o WHERE o.type = 'shop_order' AND o.meta ? '_subscription_renewal'
+		AND o.status = ANY($3) AND coalesce(o.date_paid, o.date_created) >= $1 AND coalesce(o.date_paid, o.date_created) < $2`, from, to, paid).Scan(&renewals, &renewalRev)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_orders o WHERE o.type = 'shop_order' AND o.meta ? '_subscription_renewal'
+		AND o.status = 'failed' AND o.date_created >= $1 AND o.date_created < $2`, from, to).Scan(&failed)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT `+net+` FROM goo_orders o WHERE o.type = 'shop_order' AND o.status = ANY($3)
+		AND coalesce(o.date_paid, o.date_created) >= $1 AND coalesce(o.date_paid, o.date_created) < $2
+		AND o.id IN (SELECT parent_order_id FROM goo_subscriptions WHERE parent_order_id <> 0)`, from, to, paid).Scan(&signupRev)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_subscriptions WHERE status <> 'pending' AND start_date < $1
+		AND (end_date IS NULL OR end_date >= $2 OR status IN ('active','pending-cancel','on-hold'))`, from, to).Scan(&retained)
+	retention := 0.0
+	if atStart > 0 {
+		retention = min(float64(retained)/float64(atStart)*100, 100)
+	}
 	d.Cards = []gooCard{{Label: "Active subscriptions", Value: gooCount(active)}, {Label: "Monthly recurring revenue", Value: s.gooPrice(activeMRR)},
 		{Label: "New subscriptions", Value: gooCount(added)}, {Label: "Cancelled / expired", Value: gooCount(ended)},
-		{Label: "Churn rate", Value: gooH(strconv.FormatFloat(churn, 'f', 1, 64) + "%")}}
+		{Label: "Churn rate", Value: gooH(strconv.FormatFloat(churn, 'f', 1, 64) + "%")},
+		{Label: "Retention rate", Value: gooH(strconv.FormatFloat(retention, 'f', 1, 64) + "%")},
+		{Label: "Renewal revenue", Value: s.gooPrice(renewalRev)}, {Label: "Renewals paid", Value: gooCount(renewals)},
+		{Label: "Failed renewals", Value: gooCount(failed)}, {Label: "Sign-up revenue", Value: s.gooPrice(signupRev)}}
 	tbl.Headers = []string{"Status", "Subscriptions", "Monthly recurring revenue"}
 	rows, err := s.store.Pool.Query(ctx, `SELECT status, count(*), coalesce(sum(`+mrr+`),0)::float8 FROM goo_subscriptions GROUP BY status ORDER BY 2 DESC`)
 	if err != nil {
@@ -153,7 +175,7 @@ func (s *Server) gooAnalyticsSubscriptions(ctx context.Context, d *gooAnalyticsD
 
 // gooAnalyticsBookings: bookings starting in the range, revenue, cancellations and booked hours per product.
 func (s *Server) gooAnalyticsBookings(ctx context.Context, d *gooAnalyticsData, tbl *gooTable, from, to time.Time) {
-	tbl.Headers = []string{"Bookable product", "Bookings", "Booked hours", "Cancelled", "Revenue"}
+	tbl.Headers = []string{"Bookable product", "Bookings", "Booked hours", "Occupancy", "Cancelled", "Revenue"}
 	rows, err := s.store.Pool.Query(ctx, `SELECT b.product_id, coalesce(max(po.title),''), count(*) FILTER (WHERE b.status = ANY($3)),
 		coalesce(sum(extract(epoch FROM (b.end_at - b.start_at)) / 3600) FILTER (WHERE b.status = ANY($3)),0)::float8,
 		count(*) FILTER (WHERE b.status = 'cancelled'), coalesce(sum(b.cost) FILTER (WHERE b.status IN ('paid','confirmed','complete')),0)::float8
@@ -161,6 +183,7 @@ func (s *Server) gooAnalyticsBookings(ctx context.Context, d *gooAnalyticsData, 
 		GROUP BY b.product_id ORDER BY 6 DESC, 3 DESC`, from, to, bkHolding)
 	var bookings, cancelled int
 	var hours, revenue float64
+	var list []bkReportRow
 	if err == nil {
 		for rows.Next() {
 			var id int64
@@ -175,12 +198,107 @@ func (s *Server) gooAnalyticsBookings(ctx context.Context, d *gooAnalyticsData, 
 			hours += h
 			revenue += rev
 			hs := strconv.FormatFloat(h, 'f', 1, 64)
-			tbl.add([]template.HTML{gooH(title), gooCount(n), gooH(hs), gooCount(c), s.gooPrice(rev)}, []string{title, strconv.Itoa(n), hs, strconv.Itoa(c), s.gooFmtDec(rev)})
+			list = append(list, bkReportRow{id, title, n, c, h, rev, hs})
 		}
 		rows.Close()
 	}
+	// Occupancy needs the products' rules, read after the rows are closed.
+	var used, capacity float64
+	for _, r := range list {
+		occ := "–"
+		if u, cp := s.bkOccupancy(ctx, r.id, from, to); cp > 0 {
+			used += u
+			capacity += cp
+			occ = strconv.FormatFloat(min(u/cp*100, 100), 'f', 1, 64) + "%"
+		}
+		tbl.add([]template.HTML{gooH(r.title), gooCount(r.n), gooH(r.hs), gooH(occ), gooCount(r.c), s.gooPrice(r.rev)},
+			[]string{r.title, strconv.Itoa(r.n), r.hs, occ, strconv.Itoa(r.c), s.gooFmtDec(r.rev)})
+	}
+	total := "–"
+	if capacity > 0 {
+		total = strconv.FormatFloat(min(used/capacity*100, 100), 'f', 1, 64) + "%"
+	}
 	d.Cards = []gooCard{{Label: "Bookings", Value: gooCount(bookings)}, {Label: "Booked hours", Value: gooH(strconv.FormatFloat(hours, 'f', 1, 64))},
-		{Label: "Cancelled", Value: gooCount(cancelled)}, {Label: "Booking revenue", Value: s.gooPrice(revenue)}}
+		{Label: "Occupancy", Value: gooH(total)}, {Label: "Cancelled", Value: gooCount(cancelled)}, {Label: "Booking revenue", Value: s.gooPrice(revenue)}}
+}
+
+type bkReportRow struct {
+	id     int64
+	title  string
+	n, c   int
+	h, rev float64
+	hs     string
+}
+
+// bkOccupancy is a bookable product's used and offered places between from and to: every block the
+// availability rules open counts its places (max bookings per block, or the summed quantity of the
+// product's resources), every booking holding a place counts its blocks (times its persons when each
+// person takes a place). Ranges longer than a year are cut to keep the report cheap; month-unit
+// products are not rated (capacity 0).
+func (s *Server) bkOccupancy(ctx context.Context, productID int64, from, to time.Time) (used, capacity float64) {
+	p, err := s.gooGetProduct(ctx, productID)
+	if err != nil || p.Type != bkType {
+		return 0, 0
+	}
+	c := bkConfOf(p)
+	if c.Unit == "month" {
+		return 0, 0
+	}
+	places := c.MaxPerBlock
+	if res := s.gooBkProductResources(ctx, c); len(res) > 0 {
+		places = 0
+		for _, r := range res {
+			places += gxbCapacity(c, r)
+		}
+	}
+	if places <= 0 {
+		return 0, 0
+	}
+	loc := s.gxLoc()
+	from, to = from.In(loc), to.In(loc)
+	if to.Sub(from) > 366*24*time.Hour {
+		to = from.AddDate(0, 0, 366)
+	}
+	step := c.blockMinutes()
+	y, m, d := from.Date()
+	for day := time.Date(y, m, d, 0, 0, 0, 0, loc); day.Before(to); day = day.AddDate(0, 0, 1) {
+		next := day.AddDate(0, 0, 1)
+		if !c.timed() {
+			if !day.Before(from) && c.bookable(day, next) {
+				capacity += float64(places)
+			}
+			continue
+		}
+		if step <= 0 {
+			return 0, 0
+		}
+		for mins := max(bkMinutesOf(c.FirstBlockTime), 0); ; mins += step {
+			t := time.Date(day.Year(), day.Month(), day.Day(), 0, mins, 0, 0, loc)
+			e := t.Add(time.Duration(step) * time.Minute)
+			if (e.After(next) && !c.AllowOvernight) || !t.Before(next) {
+				break
+			}
+			if !t.Before(from) && t.Before(to) && c.bookable(t, e) {
+				capacity += float64(places)
+			}
+		}
+	}
+	if capacity == 0 {
+		return 0, 0
+	}
+	for _, b := range s.bkQuery(ctx, `product_id = $1 AND start_at >= $2 AND start_at < $3 AND status = ANY($4)`, productID, from, to, []string{"unpaid", "pending-confirmation", "confirmed", "paid", "complete"}) {
+		blocks := 1.0
+		if c.timed() {
+			blocks = max(b.End.Sub(b.Start).Minutes()/float64(step), 1)
+		} else if days := b.End.Sub(b.Start).Hours() / 24; days > 1 {
+			blocks = float64(int(days + 0.5))
+		}
+		if c.PersonQtyMult {
+			blocks *= float64(max(bkPersonsTotal(b.Persons), 1))
+		}
+		used += blocks
+	}
+	return used, capacity
 }
 
 // gooAnalyticsGiftCards: cards sold, amount redeemed and the outstanding liability (balance of live cards).

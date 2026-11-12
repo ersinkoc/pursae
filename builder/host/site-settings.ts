@@ -24,6 +24,26 @@ export interface SitePage {
   title: string
 }
 
+/**
+ * Design tokens (option web_builder_tokens): colours and fonts printed as --wb-color-<name> and
+ * --wb-font-<name> on every page with builder parts. The server drops invalid values.
+ */
+export interface DesignTokens {
+  colors: Partial<Record<TokenColor, string>>
+  fonts: Partial<Record<TokenFont, string>>
+}
+export const TOKEN_COLORS = ['primary', 'secondary', 'accent', 'text', 'background'] as const
+export const TOKEN_FONTS = ['heading', 'body'] as const
+export type TokenColor = (typeof TOKEN_COLORS)[number]
+export type TokenFont = (typeof TOKEN_FONTS)[number]
+
+const tokensOf = (x?: DesignTokens | null): DesignTokens => ({ colors: { ...(x?.colors ?? {}) }, fonts: { ...(x?.fonts ?? {}) } })
+const tokensKey = (x?: DesignTokens | null) => {
+  const n = tokensOf(x)
+  const pick = (o: Record<string, string | undefined>, keys: readonly string[]) => keys.map((k) => (o[k] ?? '').trim())
+  return JSON.stringify([pick(n.colors, TOKEN_COLORS), pick(n.fonts, TOKEN_FONTS)])
+}
+
 /** GET site-settings. */
 export interface SiteSettings {
   blogname: string
@@ -37,6 +57,8 @@ export interface SiteSettings {
   custom_css: string
   pages: SitePage[]
   can_upload: boolean
+  /** Absent on an older server. */
+  tokens?: DesignTokens
 }
 
 /** The fields the dialog edits (and PUT sends): images by attachment id, 0 removes. */
@@ -49,6 +71,7 @@ export interface SiteDraft {
   page_on_front: number
   page_for_posts: number
   custom_css: string
+  tokens: DesignTokens
 }
 
 export interface SiteSettingsState {
@@ -80,11 +103,12 @@ const draftOf = (d: SiteSettings): SiteDraft => ({
   page_on_front: d.page_on_front,
   page_for_posts: d.page_for_posts,
   custom_css: d.custom_css,
+  tokens: tokensOf(d.tokens),
 })
 
 /** The PUT body: only what differs from the loaded settings. */
-export function diffDraft(data: SiteSettings, draft: SiteDraft): Record<string, string | number> {
-  const out: Record<string, string | number> = {}
+export function diffDraft(data: SiteSettings, draft: SiteDraft): Record<string, string | number | DesignTokens> {
+  const out: Record<string, string | number | DesignTokens> = {}
   const base = draftOf(data)
   for (const key of Object.keys(draft) as (keyof SiteDraft)[]) {
     const a = base[key]
@@ -93,6 +117,8 @@ export function diffDraft(data: SiteSettings, draft: SiteDraft): Record<string, 
       const x = (a as SiteImage | null)?.id ?? 0
       const y = (b as SiteImage | null)?.id ?? 0
       if (x !== y) out[key] = y
+    } else if (key === 'tokens') {
+      if (tokensKey(a as DesignTokens) !== tokensKey(b as DesignTokens)) out.tokens = tokensOf(b as DesignTokens)
     } else if (a !== b) {
       out[key] = b as string | number
     }

@@ -107,6 +107,9 @@ func (s *Server) wpLinkAjax(c *gin.Context) {
 	}
 	q := store.PostQuery{Types: types, Statuses: []string{"publish"}, Search: strings.TrimSpace(c.PostForm("search")),
 		OrderBy: "date", Order: "DESC", Page: page, PerPage: 20}
+	if q.Search != "" {
+		q.OrderBy = "relevance" // _WP_Editors::wp_link_query: search results by relevance
+	}
 	posts, _, err := s.store.QueryPosts(c, q)
 	if err != nil || len(posts) == 0 {
 		c.String(http.StatusOK, "false\n")

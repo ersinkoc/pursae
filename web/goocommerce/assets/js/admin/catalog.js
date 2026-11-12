@@ -127,9 +127,18 @@
 			}
 			var $input = $(this).closest('tr').find('td.file_url input'), $name = $(this).closest('tr').find('td.file_name input[type=text]');
 			var frame = wp.media({title: $(this).data('choose') || 'Choose file', button: {text: $(this).data('update') || 'Insert file URL'}, multiple: false});
+			// Files uploaded here go to the protected downloads folder (WooCommerce's woocommerce_uploads).
+			frame.on('ready', function () {
+				if (frame.uploader && frame.uploader.options && frame.uploader.options.uploader) {
+					frame.uploader.options.uploader.params = $.extend({}, frame.uploader.options.uploader.params, {type: 'downloadable_product'});
+				}
+			});
 			frame.on('select', function () {
-				var a = frame.state().get('selection').first().toJSON();
-				$input.val(a.url);
+				var a = frame.state().get('selection').first().toJSON(), url = a.url || '';
+				if (url.indexOf('/wp-content/uploads/private/') !== -1) {
+					url = url.split('?')[0]; // a private file's signed admin link expires: store its plain path
+				}
+				$input.val(url);
 				if (!$name.val()) {
 					$name.val(a.title || a.filename || '');
 				}

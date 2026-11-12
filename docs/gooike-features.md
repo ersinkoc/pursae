@@ -62,11 +62,15 @@ and settings. It is read from the in-memory settings cache, so rendering a page 
   - touch targets are at least 44px, and the layout is responsive (bottom-sheet modal on phones);
   - banners and the modal are hidden when printing.
 - ✓ **Multilingual-ready texts**: all 26 visitor-facing strings are editable under Banner › Texts,
-  with "Reset to defaults" and ready-made language sets (English, Turkish, German, French, Spanish) that
-  fill every text at once. The texts are one set per site; with Pursae Multi Language each language
-  gets them through its string translations (Languages › Translations, or "Record strings on pages"),
-  which translate the banner, the preferences modal, the cookie table and the "saved" notice like any
-  other page text. There is no hard-coded English in the JS: it reads the saved notice from the page
+  with "Reset to defaults" and ready-made language sets (English, Turkish, German, French, Spanish, Italian, Dutch, Portuguese) that
+  fill every text at once.
+- ✓ **Automatic language** (Banner › Texts, on by default): texts and built-in category names/descriptions
+  that are still a built-in value (of any language set) are served in the visitor's language: the
+  language of the page under Pursae Multi Language, else the site language (`WPLANG`). The stored
+  settings are not changed. A text the admin rewrote is shown as written; with Pursae Multi Language
+  each language gets it through the string translations (Languages › Translations, or "Record strings
+  on pages"), which translate the banner, the preferences modal, the cookie table and the "saved"
+  notice like any other page text. Languages without a built-in set fall back to the stored texts. There is no hard-coded English in the JS: it reads the saved notice from the page
   (`#gooike-saved`), with the config copy as the fallback.
 - ✓ **Policy links per language**: with Pursae Multi Language the privacy policy, cookie policy and KVKK
   notice links lead to the page's published translation in the visitor's language: the privacy page by
@@ -126,16 +130,28 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
   - Microsoft Clarity
   - LinkedIn Insight Tag
   - TikTok Pixel
+  - Google Ads (`AW-…`), Pinterest Tag, Microsoft Advertising UET
+  - Matomo (self-hosted or Matomo Cloud: `host[/folder]/siteId`, e.g. `analytics.example.com/1`; the
+    host joins the CSP)
+  - Intercom Messenger (App ID), HubSpot Tracking (Hub ID)
+  - Stripe.js (no ID; Necessary, because Stripe asks for it on every page for fraud prevention: adding
+    it declares `__stripe_mid` / `__stripe_sid` and allows Stripe's hosts)
 
   Each service brings its default category and placement and its cookies, which join the declaration.
   It also brings its hosts, which are added to the page's **Content-Security-Policy** (`script-src` and
   `connect-src`, per response through `cspAllow`). The CSP gets the https origins of custom snippets too,
   plus the "Extra script hosts" setting.
-- ✓ **Embeds**: iframes of **YouTube** (including youtube-nocookie), **Vimeo** and **Google Maps** are held
-  back on rendered pages, in theme templates and Pursae Web Builder pages. Each shows a placeholder: "This
+- ✓ **Embeds**: iframes of **YouTube** (including youtube-nocookie), **Vimeo**, **Google Maps**, **Spotify**,
+  **SoundCloud**, **Instagram**, **X (Twitter)**, **Facebook** (plugins), **TikTok**, **Dailymotion** and
+  **Twitch** are held back on rendered pages, in theme templates and Pursae Web Builder pages. The loader
+  scripts of Instagram (`embed.js`), X (`widgets.js`), Facebook (`connect.facebook.net/<locale>/sdk.js`)
+  and TikTok (`embed.js`) are held back in the embed category too, so their blockquote embeds stay plain
+  text until consent. Each shows a placeholder: "This
   content is hosted by YouTube…", with a **Load content** button that grants the embed category
   (Marketing by default) and a link to open the content on the provider's site. These are switches on
-  the Scripts screen.
+  the Scripts screen, one per provider (all on by default; `embeds_off` lists the newer providers that
+  were switched off). Each provider's cookies are declared when its switch is saved, and the scanner
+  detects them.
 - ✓ **Google Consent Mode v2**: an inline script is printed **first in `<head>`**, before the theme's
   own head script and before any tag. It runs:
   - `gtag('consent','default', …)` for `ad_storage`, `ad_user_data`, `ad_personalization`,
@@ -154,14 +170,30 @@ mono), font size, radius, floating button and position, and **custom CSS** (it c
 On every rendered page Pursae Cookie also holds back scripts that did not come from the script
 manager (post content, theme templates, Web Builder custom HTML, other plugins): a `<script>` whose
 `src` or inline code carries the signature of a known service (GA4, Tag Manager, Meta, Hotjar,
-Clarity, LinkedIn, TikTok, Google Ads, Pinterest, Microsoft UET) or the reCAPTCHA script becomes
+Clarity, LinkedIn, TikTok, Google Ads, Pinterest, Microsoft UET, Matomo, Intercom, HubSpot) or the reCAPTCHA script becomes
 `type="text/plain"` in that service's category (reCAPTCHA in the embed category). Services the
 script manager runs as Necessary are left alone. To block any other script by hand, give it
 `data-gooike-category="statistics"` (or another category key). The service list lives in
 `gooike_services.go`; it is Go code, not yet a downloadable data file.
 
-**Not covered:** IAB TCF v2.2. Pursae Cookie has no `__tcfapi` or TC string and is not a registered
-CMP, so it is not suitable for publishers who serve AdSense / Ad Manager ads to EU visitors.
+**Not covered: IAB TCF v2.2** (deliberately not built). Pursae Cookie has no `__tcfapi` and writes no
+TC string, so it is not suitable for publishers who serve AdSense / Ad Manager (or other TCF vendors')
+ads to EU/EEA/UK visitors; Google requires a Google-certified, TCF-integrated CMP there. A correct
+implementation cannot be made inside the product alone:
+
+- every TC string carries a `CmpId` that IAB Europe assigns after a paid CMP registration and a
+  compliance review; a string with an unregistered ID (or 0) is invalid and vendors discard it;
+- the Global Vendor List (`vendor-list.json`, roughly a thousand vendors, republished weekly) has to be
+  kept current by the CMP and cached on its own domain; a copy vendored into a release goes stale
+  within days, and the vendors and purposes the visitor consents to must match the current list;
+- the UI must follow the TCF policy's mandatory wording and layers (purposes, special purposes,
+  features, per-vendor legitimate interest with objection), which the IAB validates per CMP.
+
+What would be built once a CmpId exists: the `__tcfapi` stub + `__tcfapiLocator` iframe, the TC string
+encoder (core segment + publisher TC), `addEventListener`/`getTCData`/`ping`, a Pursae Manager job
+that fetches and serves the GVL, and the vendor layer in the preferences modal. Until then, sites with
+AdSense in the EEA should use a certified CMP (e.g. Google's own "Privacy & messaging") instead of
+Pursae Cookie, so visitors do not get two banners.
 
 ## 4. Cookie declaration and scanner
 

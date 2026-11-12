@@ -14,7 +14,8 @@
     "0012-switcher-extra.patch": "30d93e6fdf69d7345cfe06294f855308196bea4c21acde63194952cff633343f",
     "0013-theme-library.patch": "7f5e16f590c663b6eb23640aa264947ddf5b411ee6b74f9273c2ec2fd411b1a8",
     "0014-menu-extra.patch": "978423248c4da02ae5ad0131016aa1e75e5f5f64c9d432eb0aac302facf6f1be",
-    "0015-commerce.patch": "92d0ad4cd8789ad08917f7ab37a40ba1058104eaf401121867a9fcd89bb8dbca"
+    "0015-commerce.patch": "92d0ad4cd8789ad08917f7ab37a40ba1058104eaf401121867a9fcd89bb8dbca",
+    "0016-popup-type.patch": "d52b3e9e5aa62c9193f47b1a8a880b48194e7d56d5798a9da4816a916924e10a"
   },
   "apiVersion": 2,
   "rendererVersion": 1

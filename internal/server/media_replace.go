@@ -627,7 +627,7 @@ func (s *Server) gocdnFilesChanged(a *store.Attachment, changed []string) {
 		if !want[it.Path] {
 			continue
 		}
-		urls = append(urls, gocdnItemURL(st, it))
+		urls = append(urls, gocdnItemURL(st, it), s.uploadURLPlain(ctx, it.Path)) // the bucket URL and the site's own (a pull zone in front of it)
 		if cl, err := s.gocdnItemClient(st, it); err == nil {
 			if err := cl.Delete(ctx, it.Key); err != nil {
 				slog.Warn("gocdn: deleting a replaced object", "key", it.Key, "err", err)

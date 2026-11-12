@@ -33,6 +33,11 @@ const (
 	ScopeAuthor      = "archive_author"   // archive/author[/<id>] (ID 0 = any author)
 	ScopeTypeArchive = "archive_type"     // archive/type/<ptype>
 	ScopeTaxonomy    = "archive_taxonomy" // archive/<tax>[/<id>] (ID 0 = any term)
+	// Audience rules: who is looking, not what is shown. They never score a template and never
+	// make it match on their own; see ScoreConditions.
+	ScopeUserIn   = "user_logged_in"  // user/logged_in
+	ScopeUserOut  = "user_logged_out" // user/logged_out
+	ScopeUserRole = "user_role"       // user/role/<role>
 )
 
 // Archive kinds of QueryFacts.Archive.
@@ -61,6 +66,12 @@ type Condition struct {
 	PostType string // ScopePostType, ScopeEntry, ScopeInTerm, ScopeChildOf, ScopeByAuthor, ScopeTypeArchive
 	Taxonomy string // ScopeInTerm, ScopeTaxonomy
 	ID       int64  // entry, term, parent, author id; 0 = none
+	Role     string // ScopeUserRole
+}
+
+// Audience reports whether the rule is about the visitor (user/…) instead of the view.
+func (c Condition) Audience() bool {
+	return c.Scope == ScopeUserIn || c.Scope == ScopeUserOut || c.Scope == ScopeUserRole
 }
 
 // ErrBadConditionRule is wrapped by every ParseCondition error.
@@ -120,8 +131,29 @@ func ParseCondition(raw string) (Condition, error) {
 		return parseSingular(c, p[1:])
 	case "archive":
 		return parseArchive(c, p[1:])
+	case "user":
+		return parseUser(c, p[1:])
 	}
 	return c, badRule("unknown scope %q", trunc(p[0], 32))
+}
+
+// parseUser parses the audience rules user/logged_in, user/logged_out and user/role/<role>.
+func parseUser(c Condition, p []string) (Condition, error) {
+	switch {
+	case len(p) == 1 && p[0] == "logged_in":
+		c.Scope = ScopeUserIn
+		return c, nil
+	case len(p) == 1 && p[0] == "logged_out":
+		c.Scope = ScopeUserOut
+		return c, nil
+	case len(p) == 2 && p[0] == "role":
+		if !slugRE.MatchString(p[1]) {
+			return c, badRule("bad role %q", trunc(p[1], 32))
+		}
+		c.Scope, c.Role = ScopeUserRole, p[1]
+		return c, nil
+	}
+	return c, badRule("user takes logged_in, logged_out or role/<role>")
 }
 
 func parseSingular(c Condition, p []string) (Condition, error) {
@@ -267,6 +299,12 @@ func (c Condition) String() string {
 		if c.ID != 0 {
 			scope += "/" + id
 		}
+	case ScopeUserIn:
+		scope = "user/logged_in"
+	case ScopeUserOut:
+		scope = "user/logged_out"
+	case ScopeUserRole:
+		scope = "user/role/" + c.Role
 	default:
 		return ""
 	}
@@ -325,6 +363,10 @@ type QueryFacts struct {
 	Taxonomy string  // ArchiveTerm
 	TermID   int64   // ArchiveTerm
 	TermIDs  []int64 // ArchiveTerm: translations of TermID (Pursae Multi Language)
+
+	// The visitor, for the audience rules (user/…).
+	LoggedIn bool
+	Roles    []string
 }
 
 // hasID reports whether want is the scalar id or one of its aliases.
@@ -388,15 +430,32 @@ func (c Condition) Match(q QueryFacts) bool {
 		return archive && q.Archive == ArchivePostType && q.PostType == c.PostType
 	case ScopeTaxonomy:
 		return archive && q.Archive == ArchiveTerm && q.Taxonomy == c.Taxonomy && (c.ID == 0 || hasID(q.TermID, q.TermIDs, c.ID))
+	case ScopeUserIn:
+		return q.LoggedIn
+	case ScopeUserOut:
+		return !q.LoggedIn
+	case ScopeUserRole:
+		return q.LoggedIn && slices.Contains(q.Roles, c.Role)
 	}
 	return false
 }
 
 // ScoreConditions scores a rule list for the request: any matching exclude vetoes it, else the
 // best matching include scores it; ok is false when no include matches.
+//
+// Audience rules (user/…) narrow who sees the template and never score: with one or more
+// include/user/… rules the visitor must match at least one of them, and a matching
+// exclude/user/… rule vetoes like any exclude. A template still needs a view rule to show.
 func ScoreConditions(conds []Condition, q QueryFacts) (score int, ok bool) {
+	audience, audienceOK := false, false
 	for _, c := range conds {
-		if !c.Match(q) {
+		match := c.Match(q)
+		if c.Audience() && !c.Exclude {
+			audience = true
+			audienceOK = audienceOK || match
+			continue
+		}
+		if !match {
 			continue
 		}
 		if c.Exclude {
@@ -406,7 +465,21 @@ func ScoreConditions(conds []Condition, q QueryFacts) (score int, ok bool) {
 			score, ok = s, true
 		}
 	}
+	if audience && !audienceOK {
+		return 0, false
+	}
 	return score, ok
+}
+
+// HasAudienceRule reports whether any rule depends on the visitor (user/…): pages such templates
+// can fill must not be shared between visitors by a cache.
+func HasAudienceRule(conds []Condition) bool {
+	for _, c := range conds {
+		if c.Audience() {
+			return true
+		}
+	}
+	return false
 }
 
 // NormalizeConditions validates a rule list from a client: rules are trimmed, duplicates dropped

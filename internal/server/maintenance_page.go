@@ -227,6 +227,7 @@ func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSet
 			// Analytics must not run before consent: Consent Mode defaults, the tag held back in the
 			// statistics category and the banner, exactly as on the site's own pages.
 			gs := s.gooikeLoad()
+			s.gooikeLocalize(ctx, &gs)
 			v.ConsentHead = template.HTML(gooikeConsentModeScript(&gs) +
 				`<link rel="stylesheet" id="gooike-css" href="` + gooikeAssets + `/gooike.css?ver=` + gooikeVersion + `" media="all" />` + "\n" +
 				`<style id="gooike-inline-css">` + gooikeCSSVars(gs.Design) + gooikeCustomCSS(gs.Design) + "</style>\n")

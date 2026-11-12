@@ -23,6 +23,7 @@
 			<p class="field-xfn description description-thin"><label for="edit-menu-item-xfn-{{$id}}">Link Relationship (XFN)<br /><input type="text" id="edit-menu-item-xfn-{{$id}}" class="widefat code edit-menu-item-xfn" name="menu-item-xfn[{{$id}}]" value="{{.Item.XFN}}" /></label></p>
 		</div>
 		<p class="field-description description description-wide"><label for="edit-menu-item-description-{{$id}}">Description<br /><textarea id="edit-menu-item-description-{{$id}}" class="widefat edit-menu-item-description" rows="3" cols="20" name="menu-item-description[{{$id}}]">{{.Item.Description}}</textarea><span class="description">The description will be displayed in the menu if the active theme supports it.</span></label></p>
+		{{.ACF}}
 		<div class="field-move-combo description-group">
 			<p class="description description-wide"><label for="edit-menu-item-parent-{{$id}}">Menu Parent</label><select class="edit-menu-item-parent widefat" id="edit-menu-item-parent-{{$id}}" name="menu-item-parent[{{$id}}]"></select></p>
 			<p class="description description-wide"><label for="edit-menu-item-order-{{$id}}">Menu Order</label><select class="edit-menu-item-order widefat" id="edit-menu-item-order-{{$id}}" name="menu-item-order[{{$id}}]"></select></p>
@@ -172,6 +173,7 @@
 					{{if .Locations}}<fieldset class="menu-settings-group menu-theme-locations"><legend class="menu-settings-group-name howto">Menu location</legend>
 						{{range .Locations}}<div class="menu-settings-input checkbox-input"><input type="checkbox"{{if .Assigned}} checked="checked"{{end}} name="menu-locations[{{.Slug}}]" id="locations-{{.Slug}}" value="1" /> <label for="locations-{{.Slug}}">{{.Name}}</label>{{if and .CurrentName (not .Assigned)}} <span class="theme-location-set">(Currently set to: {{.CurrentName}})</span>{{end}}</div>{{end}}
 					</fieldset>{{end}}
+					{{.ACFMenu}}
 				</div>
 			</div></div>
 			<div id="nav-menu-footer"><div class="major-publishing-actions wp-clearfix">

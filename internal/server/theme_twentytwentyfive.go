@@ -234,7 +234,7 @@ func (s *Server) tt5Prepare(c *gin.Context, v *siteView) {
 
 	// comments.php: the comments block's title, 50px avatars and the post-comments-form wrapper.
 	if cv := v.Comments; cv != nil {
-		title := s.pllUC(ctx, theTitle(v.Post.Post), 0) // Multi Language user content
+		title := s.pluginTitle(ctx, s.pllUC(ctx, theTitle(v.Post.Post), 0), v.Post.Post) // Multi Language user content, the_title
 		if cv.Count == 1 {
 			cv.Title = template.HTML("One response to &#8220;" + title + "&#8221;")
 		} else {

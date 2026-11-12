@@ -29,6 +29,7 @@ func (s *Server) gooLoginFormHTML(c *gin.Context, redirect string, toggle bool) 
 	return s.gooTpl("goo/form-login", map[string]any{
 		"Action": s.gooPageURL(c.Request.Context(), "myaccount"), "Toggle": toggle, "Username": c.PostForm("username"),
 		"Nonce": s.nonce(c, "woocommerce-login"), "Redirect": redirect, "LostURL": s.loginPath() + "?action=lostpassword",
+		"Captcha": string(s.loginCaptchaWidget(c)), // Pursae Security: CAPTCHA on the account forms
 	})
 }
 
@@ -49,6 +50,7 @@ func (s *Server) gooAccountPageHTML(c *gin.Context) string {
 			"Register": reg, "LoginForm": s.gooLoginFormHTML(c, "", false), "Action": s.gooPageURL(ctx, "myaccount"),
 			"GenUsername": s.gooOptBool("registration_generate_username"), "GenPassword": s.gooOptBool("registration_generate_password"),
 			"RegUsername": c.PostForm("username"), "RegEmail": c.PostForm("email"), "Privacy": privacy, "RegNonce": s.nonce(c, "woocommerce-register"),
+			"Captcha": string(s.loginCaptchaWidget(c)),
 		}))
 		b.WriteString(`</div>`)
 		s.gooSaveSession(c)
@@ -84,7 +86,7 @@ func (s *Server) gooAccountPageHTML(c *gin.Context) string {
 			"Display": u.DisplayName, "Email": u.Email, "Nonce": s.nonce(c, "save_account_details"),
 		}))
 	case "payment-methods":
-		b.WriteString(`<div class="woocommerce-Message woocommerce-Message--info woocommerce-info">No saved methods found.</div>`)
+		b.WriteString(s.gooPaymentMethodsHTML(c))
 	default:
 		for _, ep := range s.gooModuleEndpoints() {
 			if ep.Slug == endpoint && ep.Render != nil {
@@ -111,6 +113,9 @@ func (s *Server) gooAccountNav(c *gin.Context, current string) string {
 	ctx := c.Request.Context()
 	base := []gooNavItem{{Key: "dashboard", Title: "Dashboard"}, {Key: "orders", Title: "Orders"}, {Key: "downloads", Title: "Downloads"},
 		{Key: "edit-address", Title: "Addresses"}, {Key: "edit-account", Title: "Account details"}, {Key: "customer-logout", Title: "Log out"}}
+	if len(s.gooTokenGateways()) > 0 { // WooCommerce: the tab shows when a gateway saves payment methods
+		base = append(base[:4], append([]gooNavItem{{Key: "payment-methods", Title: "Payment methods"}}, base[4:]...)...)
+	}
 	items := []gooNavItem{}
 	// An endpoint without a title (view-subscription) is a detail page, not a tab: it lights up
 	// the tab it follows, the way view-order lights up Orders.
@@ -327,6 +332,10 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 		fail("<strong>Error:</strong> Your session has expired. Please reload the page and try again.")
 		return
 	}
+	if msg := s.loginCaptchaFailed(c); msg != "" { // Pursae Security: before any account lookup
+		fail(string(msg))
+		return
+	}
 	login, pass := strings.TrimSpace(c.PostForm("username")), c.PostForm("password")
 	remember := c.PostForm("rememberme") != ""
 	if login == "" {
@@ -422,6 +431,10 @@ func (s *Server) gooRegisterPost(c *gin.Context) {
 	}
 	if !s.gooOptBool("enable_myaccount_registration") || !s.checkNonceValue(c, c.PostForm("woocommerce-register-nonce"), "woocommerce-register") {
 		fail("<strong>Error:</strong> Registration is not allowed.")
+		return
+	}
+	if msg := s.loginCaptchaFailed(c); msg != "" { // Pursae Security
+		fail(string(msg))
 		return
 	}
 	email := strings.TrimSpace(c.PostForm("email"))
@@ -818,6 +831,14 @@ func (s *Server) gooDownload(c *gin.Context) {
 		return
 	}
 	gooNoStore(c)
+	// A private file (Media Library › Make private) has no public URL: it is sent by this handler, or
+	// through a link that expires in minutes (a signed site URL, a presigned URL of the bucket).
+	if rel := s.mediaPrivateRelOfURL(ctx, file.File); rel != "" {
+		if !s.mediaPrivateDeliver(c, rel, true, s.gooOptString("file_download_method") == "redirect") {
+			die(http.StatusNotFound, "No file defined")
+		}
+		return
+	}
 	if s.gooOptString("file_download_method") != "redirect" {
 		if local := s.gooLocalFile(ctx, file.File); local != "" {
 			name := filepath.Base(local)

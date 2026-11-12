@@ -1,0 +1,10 @@
+{
+  "slug": "ui-demo",
+  "name": "Gopher Board",
+  "version": "1.0.0",
+  "description": "Example of the admin and editor UI API: an admin page with a form, a Dashboard widget, a meta box with declarative fields, a dynamic block for Pursae Editor and a Pursae Web Builder widget.",
+  "author": "Pursae Contributors",
+  "requires": "0.1.0",
+  "license": "GPL-2.0-or-later",
+  "permissions": ["storage", "admin:pages", "admin:dashboard", "admin:metaboxes", "blocks:register", "builder:widgets"]
+}

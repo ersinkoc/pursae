@@ -146,6 +146,7 @@ func (api *restAPI) types(c *gin.Context, r *restRequest) {
 		"attachment": typeObject(home, "attachment", "Media", "Media", "media", false, map[string]bool{"title": true, "author": true, "comments": true}, []string{}, typeLabelsFull("Media", "Media"), edit),
 		"wp_block":   typeObject(home, "wp_block", "Patterns", "Pattern", "blocks", false, map[string]bool{"title": true, "editor": true, "revisions": true, "custom-fields": true}, []string{"wp_pattern_category"}, typeLabelsFull("Pattern", "Patterns"), edit),
 	}
+	api.acfgoRESTTypeObjects(home, edit, all) // Custom Fields post types with Show in REST
 	if t := r.Params["type"]; t != "" {
 		o, ok := all[t]
 		if !ok {

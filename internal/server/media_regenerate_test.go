@@ -7,6 +7,7 @@ import (
 	"image/color"
 	"strings"
 	"testing"
+	"time"
 
 	"wpgo/internal/media"
 )
@@ -75,5 +76,57 @@ func TestMediaLengthFormatted(t *testing.T) {
 		if got := mediaLengthFormatted(in); got != want {
 			t.Errorf("%d: %s", in, got)
 		}
+	}
+}
+
+// TestRegenerateAllJob runs the "Regenerate all" job: progress is stored, the ajax endpoint reports
+// it, and a job stored as running (a restart) is resumed after its last image.
+func TestRegenerateAllJob(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	var uid int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM users ORDER BY id LIMIT 1`).Scan(&uid)
+	var ids []int64
+	for _, name := range []string{"a.jpg", "b.jpg", "c.jpg"} {
+		img := image.NewRGBA(image.Rect(0, 0, 400, 300))
+		var buf bytes.Buffer
+		if err := media.EncodeTo(&buf, img, "jpeg"); err != nil {
+			t.Fatal(err)
+		}
+		a, err := srv.insertAttachmentFile(ctx, name, &buf, uid, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, a.ID)
+	}
+	wait := func() regenerateJob {
+		t.Helper()
+		for i := 0; i < 200; i++ {
+			if !regenerateRunning.Load() {
+				return srv.regenerateJobState()
+			}
+			time.Sleep(25 * time.Millisecond)
+		}
+		t.Fatal("job did not finish")
+		return regenerateJob{}
+	}
+	if !srv.regenerateAllAsync() {
+		t.Fatal("job did not start")
+	}
+	j := wait()
+	if !j.Finished || j.Running || j.Total != 3 || j.Done != 3 || j.Percent() != 100 {
+		t.Fatalf("job = %+v", j)
+	}
+	_, body, _ := get(t, c, ts.URL+"/wp-admin/admin-ajax?action=regenerate-progress")
+	if !strings.Contains(body, `"percent":100`) || !strings.Contains(body, `"finished":true`) {
+		t.Errorf("progress = %s", body)
+	}
+	// A restart in the middle: stored as running after the first image.
+	srv.regeneratePersist(ctx, regenerateJob{Running: true, Total: 3, Done: 1, LastID: ids[0]})
+	srv.regenerateResume()
+	j = wait()
+	if !j.Finished || j.Done != 3 || j.Total != 3 || j.LastID != ids[2] {
+		t.Fatalf("resumed job = %+v", j)
 	}
 }

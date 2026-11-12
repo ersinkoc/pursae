@@ -145,12 +145,14 @@ gets comes from `GET web-builder/v2/documents/{id}/plugins` (docs/developer/web-
 
 - **Posts list:** SEO and Readability traffic-light columns (from the stored `_seogo_seo_score` / `_seogo_read_score`) and filter views (`?seo_filter=nofocus|seo_bad|seo_good|read_bad|noindex`) on every sitemap post type.
 - **Product schema:** a Pursae Commerce product page gets one `@graph` whose Product node is built from the store (real price, stock, reviews, `@id` `<url>#product`); the store's separate JSON-LD block is not printed while the schema module is on. The hand-filled Schema tab Product prints `aggregateRating` only when a rating and a real review count are both set.
-- **Automatic redirects** also cover a changed term slug or parent (category, tag, custom taxonomies), next to the post slug redirect. Trashed or deleted content and Search Console reporting are not covered.
+- **Automatic redirects** also cover a changed term slug or parent (category, tag, custom taxonomies), next to the post slug redirect. Trashed or deleted content is not covered.
+- **Search Console** (Pursae SEO › Search Console): connects with the site owner's own Google OAuth client (Web application; the screen shows the redirect URI to register), read-only scope `webmasters.readonly`, state checked once per user with a 10-minute expiry. The client secret and the tokens are stored encrypted in their own option `seogo_search_console`, never in the settings export. The connected account's properties are listed (this site's URL-prefix or domain property is preselected); the report shows clicks, impressions, CTR and position of the last 28 days (ending two days ago), top 10 queries and pages, cached for an hour. Disconnect revokes the grant at Google. Needs the General Settings capability.
+- **Redirections export:** `seogo?page=redirections&action=export` downloads a CSV (`source,target,code,match_type,status,hits`) that the CSV import reads back.
 
 ## Left out (and why)
 
 
-- **Rank Math Analytics, Search Console, keyword rank tracking, Content AI, Yoast AI features, SEMrush/Wincher integrations.** These need external accounts and services; out of scope for a self-contained single site.
+- **Rank Math Analytics beyond the Search Console report (Google Analytics, per-post index status, keyword rank tracking), Content AI, Yoast AI features, SEMrush/Wincher integrations.** These need external accounts and services; out of scope for a self-contained single site.
 - **Yoast Insights, word complexity, inclusive language, text alignment, keyphrase distribution, Premium word forms and synonyms.** The analysis uses simple English stemming. Separate synonym fields and non-English language rules are not implemented.
 - **Visual schema generator and schema templates (Rank Math Pro).** Covered by page/article type, Product, the FAQ and How-to blocks and custom JSON-LD.
 - **`yoast_head` / `yoast_head_json` fields on `wp/v2` responses.** Adding them would change core REST output; headless clients use the get_head endpoints instead.

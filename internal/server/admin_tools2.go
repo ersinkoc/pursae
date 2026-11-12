@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -21,7 +22,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -329,8 +329,8 @@ func (s *Server) pluginEditor(c *gin.Context) {
 //
 // Requests follow WordPress' user_request flow: a request is created (request-pending), the person
 // confirms it from the link in "[Site] Confirm Action: …" (wp-login.php?action=confirmaction →
-// request-confirmed), the administrator fulfils it (request-completed). Requests are kept as a
-// list in the wpgo_privacy_requests option.
+// request-confirmed), the administrator fulfils it (request-completed). Requests are rows of the
+// privacy_requests table.
 
 type personalRequest struct {
 	ID          int64
@@ -350,120 +350,93 @@ const (
 	privacyExportExpiration = 3 * 24 * time.Hour
 )
 
-var privacyRequestsMu sync.Mutex
-
-// privacyRequestsLockKey is the advisory-lock id of the request list's read-modify-write.
-const privacyRequestsLockKey = 0x70727631
-
-// lockPrivacyRequests serializes read-modify-write of the request list (wpgo_privacy_requests), so two
-// requests touching it at once cannot overwrite each other's change, across instances sharing the
-// database too. Call the returned func to release.
-func (s *Server) lockPrivacyRequests(ctx context.Context) func() {
-	privacyRequestsMu.Lock()
-	conn, err := s.store.Pool.Acquire(context.WithoutCancel(ctx))
-	if err == nil {
-		if _, err = conn.Exec(context.WithoutCancel(ctx), `SELECT pg_advisory_lock($1)`, int64(privacyRequestsLockKey)); err != nil {
-			conn.Release()
-			conn = nil
-		}
-	}
-	return func() {
-		if conn != nil {
-			_, _ = conn.Exec(context.WithoutCancel(ctx), `SELECT pg_advisory_unlock($1)`, int64(privacyRequestsLockKey))
-			conn.Release()
-		}
-		privacyRequestsMu.Unlock()
-	}
-}
+// Requests live in the privacy_requests table (migration 0102): one row each, the record as JSON in
+// data, so concurrent changes (and several instances) never overwrite each other's request.
 
 func (s *Server) loadPersonalRequests() []personalRequest {
-	raw, _ := s.settings.Get("wpgo_privacy_requests").([]any)
+	return s.queryPersonalRequests(context.Background(), `SELECT id, data FROM privacy_requests ORDER BY id DESC`)
+}
+
+func (s *Server) queryPersonalRequests(ctx context.Context, sql string, args ...any) []personalRequest {
+	rows, err := s.store.Pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
 	var out []personalRequest
-	for _, r := range raw {
-		b, _ := json.Marshal(r)
+	for rows.Next() {
+		var id int64
+		var b []byte
+		if rows.Scan(&id, &b) != nil {
+			continue
+		}
 		var pr personalRequest
-		if json.Unmarshal(b, &pr) == nil && pr.ID > 0 {
+		if json.Unmarshal(b, &pr) == nil {
+			pr.ID = id
 			out = append(out, pr)
 		}
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID > out[j].ID })
 	return out
-}
-
-func (s *Server) savePersonalRequests(c *gin.Context, list []personalRequest) {
-	raw := make([]any, 0, len(list))
-	for _, r := range list {
-		raw = append(raw, r)
-	}
-	_ = s.settings.Set(c, map[string]any{"wpgo_privacy_requests": raw})
 }
 
 func (s *Server) personalRequests(c *gin.Context, typ string) []personalRequest {
-	var out []personalRequest
-	for _, r := range s.loadPersonalRequests() {
-		if r.Type == typ {
-			out = append(out, r)
-		}
-	}
-	return out
+	return s.queryPersonalRequests(c, `SELECT id, data FROM privacy_requests WHERE type = $1 ORDER BY id DESC`, typ)
 }
 
 func (s *Server) personalRequest(id int64) (personalRequest, bool) {
-	for _, r := range s.loadPersonalRequests() {
-		if r.ID == id {
-			return r, true
-		}
+	l := s.queryPersonalRequests(context.Background(), `SELECT id, data FROM privacy_requests WHERE id = $1`, id)
+	if len(l) == 0 {
+		return personalRequest{}, false
 	}
-	return personalRequest{}, false
+	return l[0], true
 }
 
 // updatePersonalRequest stores one request (replacing the record with the same ID).
 func (s *Server) updatePersonalRequest(c *gin.Context, r personalRequest) {
-	defer s.lockPrivacyRequests(c)()
-	list := s.loadPersonalRequests()
-	for i := range list {
-		if list[i].ID == r.ID {
-			list[i] = r
-			s.savePersonalRequests(c, list)
-			return
-		}
+	b, _ := json.Marshal(r)
+	if _, err := s.store.Pool.Exec(c, `INSERT INTO privacy_requests (id, email, type, status, data) VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, type = EXCLUDED.type, status = EXCLUDED.status, data = EXCLUDED.data`,
+		r.ID, r.Email, r.Type, r.Status, b); err != nil {
+		slog.Warn("privacy request update", "id", r.ID, "err", err)
 	}
-	s.savePersonalRequests(c, append(list, r))
 }
 
 func (s *Server) deletePersonalRequest(c *gin.Context, id int64) {
-	defer s.lockPrivacyRequests(c)()
-	list := s.loadPersonalRequests()
-	var keep []personalRequest
-	for _, r := range list {
-		if r.ID != id {
-			keep = append(keep, r)
-		} else if r.ExportFile != "" {
-			_ = os.Remove(filepath.Join(s.privacyExportsDir(), r.ExportFile))
-		}
+	var b []byte
+	if err := s.store.Pool.QueryRow(c, `DELETE FROM privacy_requests WHERE id = $1 RETURNING data`, id).Scan(&b); err != nil {
+		return
 	}
-	s.savePersonalRequests(c, keep)
+	var r personalRequest
+	if json.Unmarshal(b, &r) == nil && r.ExportFile != "" {
+		_ = os.Remove(filepath.Join(s.privacyExportsDir(), filepath.Base(r.ExportFile)))
+	}
 }
 
-// createUserRequest is wp_create_user_request(): one open request per e-mail and action.
+// createUserRequest is wp_create_user_request(): one open request per e-mail and action (a unique
+// index, so two concurrent submissions cannot both create one).
 func (s *Server) createUserRequest(c *gin.Context, typ, email, status string) (personalRequest, error) {
-	defer s.lockPrivacyRequests(c)()
-	list := s.loadPersonalRequests()
-	var next int64 = 1
-	for _, r := range list {
-		if r.ID >= next {
-			next = r.ID + 1
-		}
-		if r.Type == typ && strings.EqualFold(r.Email, email) && r.Status != "request-completed" {
-			return personalRequest{}, errors.New("An incomplete personal data request for this email address already exists.")
-		}
-	}
-	r := personalRequest{ID: next, Email: email, Type: typ, Status: status, CreatedAt: time.Now().UTC()}
+	r := personalRequest{Email: email, Type: typ, Status: status, CreatedAt: time.Now().UTC()}
 	if status == "request-confirmed" {
 		r.ConfirmedAt = r.CreatedAt
 	}
-	s.savePersonalRequests(c, append(list, r))
-	return r, nil
+	errExists := errors.New("An incomplete personal data request for this email address already exists.")
+	tx, err := s.store.Pool.Begin(c)
+	if err != nil {
+		return personalRequest{}, err
+	}
+	defer tx.Rollback(context.WithoutCancel(c))
+	if err := tx.QueryRow(c, `INSERT INTO privacy_requests (email, type, status) VALUES ($1, $2, $3)
+		ON CONFLICT (type, lower(email)) WHERE status <> 'request-completed' DO NOTHING RETURNING id`, email, typ, status).Scan(&r.ID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return personalRequest{}, errExists
+		}
+		return personalRequest{}, err
+	}
+	b, _ := json.Marshal(r)
+	if _, err := tx.Exec(c, `UPDATE privacy_requests SET data = $2 WHERE id = $1`, r.ID, b); err != nil {
+		return personalRequest{}, err
+	}
+	return r, tx.Commit(c)
 }
 
 // privacyActionDescription is wp_user_request_action_description().

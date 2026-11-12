@@ -1211,6 +1211,11 @@ func (s *Server) gsubRunRenewal(ctx context.Context, sub *gooSubscription) (*goo
 	}
 	if !s.gsubManualRenewal(sub) {
 		txn, err := s.gsubChargeRenewal(ctx, sub, o)
+		if errors.Is(err, errGooPaymentPending) {
+			o.TransactionID = txn
+			_ = s.gooSetStatusFrom(ctx, o, gooNeedsPaymentStatuses, "on-hold", "Renewal payment is processing: "+gooEsc(err.Error()), "")
+			return o, nil
+		}
 		if err == nil {
 			err = s.gooPaymentComplete(ctx, o, txn)
 		}
@@ -1622,7 +1627,7 @@ func (s *Server) gsubAdminEdit(c *gin.Context) {
 			gxaAdminRedirect(c, "subscriptions", params, msg, isErr)
 			return
 		}
-		s.gsubAdminApplyEdits(c, sub)
+		editErr := s.gsubAdminApplyEdits(c, sub, by)
 		if np := c.PostForm("next_payment"); np != "" {
 			t := s.gxaParseTime(np)
 			if t == nil || t.Before(time.Now()) {
@@ -1656,6 +1661,10 @@ func (s *Server) gsubAdminEdit(c *gin.Context) {
 			gxaAdminRedirect(c, "subscriptions", params, err.Error(), true)
 			return
 		}
+		if editErr != nil {
+			gxaAdminRedirect(c, "subscriptions", params, editErr.Error(), true)
+			return
+		}
 		gxaAdminRedirect(c, "subscriptions", params, "Subscription updated.", false)
 		return
 	}
@@ -1666,21 +1675,25 @@ func (s *Server) gsubAdminEdit(c *gin.Context) {
 	b.WriteString(`<div id="woocommerce-subscription-data" class="postbox"><div class="inside"><div class="panel woocommerce-order-data"><h2 class="woocommerce-order-data__heading">Subscription #` + itoa64(sub.ID) + ` details</h2>`)
 	b.WriteString(`<p class="woocommerce-order-data__meta order_number">Parent order ` + gxaOrderLink(sub.ParentOrderID) + `</p>`)
 	b.WriteString(`<div class="order_data_column_container"><div class="order_data_column"><h3>General</h3>`)
-	b.WriteString(`<p class="form-field form-field-wide"><label>Customer:</label> ` + s.gxaUserLabel(ctx, sub.CustomerID, true) + `</p>`)
+	b.WriteString(`<p class="form-field form-field-wide"><label for="customer_id">Customer:</label> ` + s.gxaUserLabel(ctx, sub.CustomerID, true) +
+		`<br><input type="number" min="1" class="small-text" name="customer_id" id="customer_id" value="` + itoa64(sub.CustomerID) + `"> <span class="description">User ID. Change it to move the subscription to another customer.</span></p>`)
 	b.WriteString(`<p class="form-field form-field-wide wc-order-status"><label for="order_status">Status:</label>` + gxaSelect("order_status", "order_status", gsubStatuses, sub.Status, ` class="wc-enhanced-select"`) + `</p>`)
 	b.WriteString(`<p class="form-field"><label>Billing schedule:</label> ` + gooEsc(strings.TrimSpace(gsubPlain(s.gsubPriceString(gsubSchedule{Interval: sub.Interval, Period: sub.Period})))) + `</p>`)
 	b.WriteString(`<p class="form-field"><label>Payment method:</label> ` + gooEsc(defaultStr(sub.PaymentMethodTitle, "Manual Renewal")) + `</p></div>`)
 	b.WriteString(`<div class="order_data_column"><h3>Billing</h3>` + gsubAdminAddress("billing", sub.Billing) + `</div>`)
 	b.WriteString(`<div class="order_data_column"><h3>Shipping</h3>` + gsubAdminAddress("shipping", sub.Shipping) + `</div></div></div></div></div>`)
 	// Items.
-	b.WriteString(`<div class="postbox"><h2 class="hndle"><span>Items</span></h2><div class="inside"><table class="woocommerce_order_items widefat"><thead><tr><th class="item">Item</th><th class="item_cost">Cost</th><th class="quantity">Qty</th><th class="line_cost">Total</th><th class="line_tax">Tax</th></tr></thead><tbody>`)
+	b.WriteString(`<div class="postbox"><h2 class="hndle"><span>Items</span></h2><div class="inside"><table class="woocommerce_order_items widefat"><thead><tr><th class="item">Item</th><th class="item_cost">Cost</th><th class="quantity">Qty</th><th class="line_cost">Total</th><th class="line_tax">Tax</th><th class="remove">Remove</th></tr></thead><tbody>`)
 	for i, it := range sub.Items {
 		idx := strconv.Itoa(i)
 		b.WriteString(`<tr class="item"><td class="name">` + gooEsc(it.Name) + `</td><td class="item_cost"><input type="text" size="8" name="item_price[` + idx + `]" value="` + gooMoney(it.Price, s.gooDecimals()) + `"></td>` +
 			`<td class="quantity">&times; <input type="number" min="1" class="small-text" name="item_qty[` + idx + `]" value="` + strconv.Itoa(it.Qty) + `"></td>` +
-			`<td class="line_cost">` + string(s.gooPriceIn(it.Total, sub.Currency)) + `</td><td class="line_tax"><input type="text" size="6" name="item_tax[` + idx + `]" value="` + gooMoney(it.Tax, s.gooDecimals()) + `"></td></tr>`)
+			`<td class="line_cost">` + string(s.gooPriceIn(it.Total, sub.Currency)) + `</td><td class="line_tax"><input type="text" size="6" name="item_tax[` + idx + `]" value="` + gooMoney(it.Tax, s.gooDecimals()) + `"></td>` +
+			`<td class="remove"><input type="checkbox" name="item_remove[` + idx + `]" value="1" aria-label="Remove ` + gooEsc(it.Name) + `"></td></tr>`)
 	}
-	b.WriteString(`</tbody></table><p class="wc-order-totals">Recurring total: <strong>` + s.gsubTotalString(sub) + `</strong></p></div></div>`)
+	b.WriteString(`</tbody><tfoot><tr class="add-item"><td class="name"><label for="add_product">Add product (ID)</label> <input type="number" min="1" class="small-text" name="add_product" id="add_product"></td>` +
+		`<td class="item_cost"></td><td class="quantity">&times; <input type="number" min="1" class="small-text" name="add_qty" value="1" aria-label="Quantity"></td>` +
+		`<td class="line_cost"><input type="text" size="8" name="add_total" placeholder="product price" aria-label="Line total"></td><td class="line_tax"></td><td></td></tr></tfoot></table><p class="wc-order-totals">Recurring total: <strong>` + s.gsubTotalString(sub) + `</strong></p></div></div>`)
 	// Related orders.
 	b.WriteString(`<div class="postbox" id="subscription_renewal_orders"><h2 class="hndle"><span>Related Orders</span></h2><div class="inside">` +
 		s.gsubRelatedOrdersTable(ctx, sub, func(o *gooOrder) string { return "/wp-admin/goocommerce?page=orders&action=edit&id=" + itoa64(o.ID) }) + `</div></div>`)

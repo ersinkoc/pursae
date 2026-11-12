@@ -41,6 +41,7 @@ type Host struct {
 	mails      []Mail
 	notices    []map[string]string
 	logs       []string
+	ui         map[string][]map[string]any // UI registrations by host function (wpgotest_ui.go)
 }
 
 // New installs a fresh fake host for the duration of the test.
@@ -176,6 +177,8 @@ func (h *Host) handle(name string, body []byte) ([]byte, error) {
 		return ok(map[string]any{})
 	case "register_settings_page":
 		return ok(map[string]string{"option_prefix": "plugin_test_"})
+	case "register_admin_page", "register_dashboard_widget", "register_meta_box", "register_block", "register_builder_widget":
+		return h.registerUI(name, body)
 	case "log":
 		h.logs = append(h.logs, str("level")+": "+str("message"))
 		return ok(map[string]any{})

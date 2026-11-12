@@ -156,9 +156,11 @@ func (s *Server) restPreload(c *gin.Context, paths []preloadPath) map[string]any
 	return out
 }
 
-// useBlockEditor applies the built-in Classic Editor settings (Settings › Writing).
+// useBlockEditor applies the built-in Classic Editor settings (Settings › Writing). Like
+// use_block_editor_for_post_type(), a post type gets the block editor when it supports "editor"
+// and is shown in REST: posts, pages, and Custom Fields post types with Show in REST.
 func (s *Server) useBlockEditor(c *gin.Context, p *store.Post) bool {
-	if p.Type != "post" && p.Type != "page" {
+	if p.Type != "post" && p.Type != "page" && !acfgoBlockEditorType(p.Type) {
 		return false
 	}
 	if !s.settings.Bool("native_classic_editor") {
@@ -348,7 +350,8 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 	}
 	s.golylangBlockEditor(c, p) // Golylang: the Languages panel
 	s.enqueueMedia(c, p.ID)
-	s.gontactEditorAssets(c, a) // Gontact Form's contact form block
+	s.gontactEditorAssets(c, a)  // Gontact Form's contact form block
+	s.pluginBlockEditorScript(c) // Wasm plugin blocks (plugins_ui.go)
 
 	lab := labelsFor(p.Type)
 	title := "Edit " + lab.Singular
@@ -361,7 +364,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 		}
 	}
 	s.adminPage(c, screen, title, "post-php post-type-"+p.Type+" block-editor-page wp-embed-responsive is-fullscreen-mode", "admin/block-editor",
-		map[string]any{"Title": title, "ClassicURL": s.classicSwitchURL(p)})
+		map[string]any{"Title": title, "ClassicURL": s.classicSwitchURL(p), "MetaBoxes": s.pluginMetaBoxesBlockEditor(c, p)})
 }
 
 func (s *Server) classicSwitchURL(p *store.Post) string {

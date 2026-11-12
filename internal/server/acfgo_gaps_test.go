@@ -15,13 +15,13 @@ func TestACFGoUnsupportedLocation(t *testing.T) {
 	g := func(param string) *acfGroup {
 		return &acfGroup{Location: [][]acfRule{{{Param: "post_type", Operator: "==", Value: "post"}}, {{Param: param, Operator: "==", Value: "all"}}}}
 	}
-	for _, p := range []string{"widget", "nav_menu", "nav_menu_item"} {
-		if !acfgoUnsupportedLocation(g(p)) {
-			t.Errorf("%s not flagged", p)
-		}
+	if !acfgoUnsupportedLocation(g("widget")) {
+		t.Error("widget not flagged")
 	}
-	if acfgoUnsupportedLocation(g("taxonomy")) {
-		t.Error("taxonomy flagged")
+	for _, p := range []string{"taxonomy", "nav_menu", "nav_menu_item"} { // menus have meta storage (migration 0103)
+		if acfgoUnsupportedLocation(g(p)) {
+			t.Errorf("%s flagged", p)
+		}
 	}
 }
 
@@ -85,8 +85,8 @@ func TestACFGoGapFixes(t *testing.T) {
 		t.Errorf("acfgo_show_admin = %q after checking", srv.settings.String("acfgo_show_admin"))
 	}
 
-	// A group on a menu item is listed with the badge.
-	acfgoSaveGroupForm(t, c, base, 0, map[string]any{"title": "Menu icons", "location": []any{[]any{map[string]any{"param": "nav_menu_item", "operator": "==", "value": "all"}}},
+	// A group on a widget (no such form in Pursae) is listed with the badge.
+	acfgoSaveGroupForm(t, c, base, 0, map[string]any{"title": "Widget icons", "location": []any{[]any{map[string]any{"param": "widget", "operator": "==", "value": "all"}}},
 		"fields": []any{map[string]any{"key": "field_icon", "label": "Icon", "name": "icon", "type": "text"}}})
 	_, body, _ = get(t, c, base+"/wp-admin/acf-field-groups")
 	if !strings.Contains(body, "Not available in Pursae") {

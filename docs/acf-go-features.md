@@ -49,7 +49,7 @@ General settings on every field: Label, Name, Key, Type, Instructions, Required,
 | WYSIWYG Editor | default, tabs (all/visual/text), toolbar (full/basic), media upload, delay | ◐ TinyMCE (with the basic/full toolbar) on screens that load the classic editor; a textarea with formatting buttons elsewhere (Pursae Editor, users, terms, options pages) |
 | oEmbed | width, height | ✓ (preview through Pursae's oEmbed proxy) |
 | Gallery | return format, library, min/max, insert, min/max dimensions/size, types | ✓ |
-| Select | choices, default, return format (value/label/array), allow null, multiple, stylised UI, ajax, placeholder | ✓ (stylised UI / ajax ◐: settings are kept, flagged "not available" in the editor; the control is a native select) |
+| Select | choices, default, return format (value/label/array), allow null, multiple, stylised UI, ajax, placeholder | ✓ (stylised UI: a searchable select2-like control with chips over the hidden native select; ajax ◐ for Select: flagged "not available") |
 | Checkbox | choices, default, return format, layout, toggle all, allow custom, save custom | ✓ |
 | Radio Button | choices, default, return format, layout, allow null, other, save other | ✓ |
 | Button Group | choices, default, return format, allow null, layout | ✓ |
@@ -92,7 +92,8 @@ OR groups of AND rules, operators `==` / `!=`.
 | Taxonomy (term edit/add screens) | ✓ |
 | Attachment | ✓ (attachment edit screen; values in the media item's meta) |
 | Comment | ✓ (comment edit screen; values in comment meta) |
-| Widget, Menu, Menu Item | ✗ widgets and nav menu items in Pursae have no meta storage that ACF could attach to; the rule types are listed (marked unavailable) and never match. Groups with such a rule get a "Not available in Pursae" badge in the field group list |
+| Menu, Menu Item | ✓ values in `menus.meta` / `menu_items.meta` (migration 0103); fields under Menu Settings and inside each item on Appearance › Menus; rule values: all, a menu, or a theme location; `get_field('x', 'nav_menu_<id>')` / `'menu_item_<id>'` |
+| Widget | ✗ no widget meta storage; the rule never matches and the group gets a "Not available in Pursae" badge |
 | Block (ACF Blocks) | ✓ |
 | Options Page | ✓ |
 
@@ -140,8 +141,9 @@ ancestors for hierarchical types), the archive at `/<archive slug>/` or `?post_t
 has one, with pagination, feed, body classes and the "Archives: <plural>" title; `?p=<id>` redirects
 to the pretty permalink. Pursae Web Builder's Theme Builder can design their single and archive
 templates. Types with "Show in REST" get `/wp/v2/<rest_base>` (list, read, create, update, delete,
-the `acf` object included; capabilities `edit_<type>s` and friends). ◐ Pursae Editor editing of custom
-post types is not built (they open in the classic editor; see "Left out"). "Delete with user" is honoured
+the `acf` object included; capabilities `edit_<type>s` and friends), plus `/autosaves` and `/revisions`,
+an entry in `/wp/v2/types` and the `/wp-json` index. Types with Show in REST and the "editor" support open
+in the Pursae Editor (like `use_block_editor_for_post_type()`), unless the Classic Editor setting says otherwise. "Delete with user" is honoured
 by user deletion.
 
 ## 9. ACF Blocks (PRO)
@@ -221,7 +223,7 @@ types/taxonomies, the Wasm `get_post` payload.
 
 ## Left out (and why)
 
-- Widget, nav menu and nav menu item locations: no meta storage in Pursae for them.
+- Widget locations: no meta storage in Pursae for widgets.
 - Field value revisions: core revisions do not store meta.
 - Bidirectional relationships (6.2): updating the other post's field on save.
 - PHP APIs/hooks (`acf/load_value`, `acf/format_value`, `acf/validate_value` filters, `acf_form()`
@@ -229,5 +231,5 @@ types/taxonomies, the Wasm `get_post` payload.
 - select2 "stylised UI" (the ajax lazy load of Post Object / Page Link / User exists, as a search box above a native select), the wpLink modal, jQuery UI date
   pickers and the Google Maps JS picker: replaced by simpler native controls (settings are kept
   and exported unchanged).
-- Custom post types: Pursae Editor editing (REST routes exist), autosaves/revisions routes. ACF taxonomies on posts/pages work
+- Custom post types: their taxonomies are not listed in `/wp/v2/types` (no REST routes for ACF taxonomies). ACF taxonomies on posts/pages work
   everywhere the core's term screens and post terms do; their front-end archives are not routed.

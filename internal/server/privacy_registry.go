@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5"
 	"strconv"
 	"sync"
 	"time"
@@ -14,6 +16,8 @@ import (
 // data registers here so Tools > Export / Erase Personal Data covers it:
 //   - Pursae Commerce: orders and download permissions (the erasure follows Settings > Accounts &
 //     Privacy: "Remove personal data from orders on request", "Remove access to downloads on request"),
+//   - Pursae Commerce account data: wishlists, points log, subscriptions and memberships of the user
+//     with that e-mail (wishlists are erased, subscriptions anonymized like orders, the rest retained),
 //   - Pursae SMTP: the e-mail log rows addressed to the person,
 //   - Wasm plugins: the pursae_personal_data_export filter and the pursae_personal_data_erase action
 //     (docs/developer/plugins/hooks.md).
@@ -52,6 +56,7 @@ func registerPersonalData(exp personalDataExporter, era personalDataEraser) {
 
 func init() {
 	registerPersonalData(gooPersonalDataExporter, gooPersonalDataEraser)
+	registerPersonalData(gooAccountDataExporter, gooAccountDataEraser)
 	registerPersonalData(smtpLogExporter, smtpLogEraser)
 }
 
@@ -273,3 +278,148 @@ func smtpLogEraser(ctx context.Context, s *Server, email string) eraseResult {
 	}
 	return eraseResult{Removed: int(tag.RowsAffected())}
 }
+
+// ---- Pursae Commerce account data (wishlists, points, subscriptions, memberships) -----------------
+
+// gooAccountUserID is the user with the address (0 when none): these records hang off the account.
+func gooAccountUserID(ctx context.Context, s *Server, email string) int64 {
+	var id int64
+	_ = s.store.Pool.QueryRow(ctx, `SELECT id FROM users WHERE lower(email) = lower($1)`, email).Scan(&id)
+	return id
+}
+
+// gooOpenSubscriptionStatuses are subscriptions still billing; they keep their data.
+const gooOpenSubscriptionStatuses = `('pending','active','on-hold','pending-cancel')`
+
+func gooAccountDataExporter(ctx context.Context, s *Server, email string) []exportGroup {
+	if !s.gooOn() {
+		return nil
+	}
+	uid := gooAccountUserID(ctx, s, email)
+	if uid == 0 {
+		return nil
+	}
+	dateFmt := s.settings.String("date_format") + " " + s.settings.String("time_format")
+	date := func(t time.Time) string { return wp.FormatDate(t.In(s.loc()), dateFmt) }
+	var groups []exportGroup
+	collect := func(g exportGroup, sql string, scan func(pgxRows) []exportItem) {
+		rows, err := s.store.Pool.Query(ctx, sql, uid)
+		if err != nil {
+			return
+		}
+		for rows.Next() {
+			if item := scan(rows); item != nil {
+				g.Items = append(g.Items, item)
+			}
+		}
+		rows.Close()
+		if len(g.Items) > 0 {
+			groups = append(groups, g)
+		}
+	}
+	collect(exportGroup{ID: "woocommerce-wishlists", Label: "Wishlists", Description: "Products saved to wishlists on this site."},
+		`SELECT w.title, w.privacy, i.product_id, i.variation_id, i.quantity, i.added FROM goo_wishlists w
+		JOIN goo_wishlist_items i ON i.wishlist_id = w.id WHERE w.user_id = $1 ORDER BY w.id, i.id`,
+		func(r pgxRows) []exportItem {
+			var title, privacy string
+			var product, variation int64
+			var qty int
+			var added time.Time
+			if r.Scan(&title, &privacy, &product, &variation, &qty, &added) != nil {
+				return nil
+			}
+			return []exportItem{{"Wishlist", title}, {"Privacy", privacy}, {"Product ID", strconv.FormatInt(product, 10)},
+				{"Variation ID", strconv.FormatInt(variation, 10)}, {"Quantity", strconv.Itoa(qty)}, {"Added", date(added)}}
+		})
+	collect(exportGroup{ID: "woocommerce-points", Label: "Points and rewards", Description: "Points earned and spent on this site."},
+		`SELECT points, type, order_id, note, date FROM goo_points_log WHERE user_id = $1 ORDER BY id`,
+		func(r pgxRows) []exportItem {
+			var points int
+			var typ, note string
+			var order int64
+			var at time.Time
+			if r.Scan(&points, &typ, &order, &note, &at) != nil {
+				return nil
+			}
+			return []exportItem{{"Points", strconv.Itoa(points)}, {"Event", typ}, {"Order ID", strconv.FormatInt(order, 10)}, {"Note", note}, {"Date", date(at)}}
+		})
+	collect(exportGroup{ID: "woocommerce-subscriptions", Label: "Subscriptions", Description: "Subscriptions held on this site."},
+		`SELECT id, status, billing_interval, billing_period, recurring_total::text, currency, payment_method_title, start_date, billing, shipping
+		FROM goo_subscriptions WHERE customer_id = $1 ORDER BY id`,
+		func(r pgxRows) []exportItem {
+			var id int64
+			var status, period, total, currency, pm string
+			var interval int
+			var start time.Time
+			var billing, shipping map[string]any
+			if r.Scan(&id, &status, &interval, &period, &total, &currency, &pm, &start, &billing, &shipping) != nil {
+				return nil
+			}
+			item := []exportItem{{"Subscription ID", strconv.FormatInt(id, 10)}, {"Status", status},
+				{"Billing", total + " " + currency + " every " + strconv.Itoa(interval) + " " + period}, {"Payment Method", pm}, {"Start Date", date(start)}}
+			for _, side := range []struct {
+				Name string
+				M    map[string]any
+			}{{"Billing", billing}, {"Shipping", shipping}} {
+				for _, f := range [][2]string{{"first_name", "First Name"}, {"last_name", "Last Name"}, {"address_1", "Address 1"}, {"city", "City"},
+					{"postcode", "Postcode"}, {"country", "Country"}, {"email", "Email"}, {"phone", "Phone"}} {
+					if v, _ := side.M[f[0]].(string); v != "" {
+						item = append(item, exportItem{side.Name + " " + f[1], v})
+					}
+				}
+			}
+			return item
+		})
+	collect(exportGroup{ID: "woocommerce-memberships", Label: "Memberships", Description: "Membership plans of the account."},
+		`SELECT coalesce(p.name, ''), m.status, m.start_date, m.end_date FROM goo_user_memberships m
+		LEFT JOIN goo_membership_plans p ON p.id = m.plan_id WHERE m.user_id = $1 ORDER BY m.id`,
+		func(r pgxRows) []exportItem {
+			var plan, status string
+			var start time.Time
+			var end *time.Time
+			if r.Scan(&plan, &status, &start, &end) != nil {
+				return nil
+			}
+			e := "Never"
+			if end != nil {
+				e = date(*end)
+			}
+			return []exportItem{{"Plan", plan}, {"Status", status}, {"Start Date", date(start)}, {"End Date", e}}
+		})
+	return groups
+}
+
+func gooAccountDataEraser(ctx context.Context, s *Server, email string) eraseResult {
+	var res eraseResult
+	if !s.gooOn() {
+		return res
+	}
+	uid := gooAccountUserID(ctx, s, email)
+	if uid == 0 {
+		return res
+	}
+	if tag, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_wishlists WHERE user_id = $1`, uid); err == nil {
+		res.Removed += int(tag.RowsAffected())
+	}
+	// Ended subscriptions are anonymized when orders are (the same setting); running ones keep billing.
+	if s.gooOptBool("erasure_request_removes_order_data") {
+		if tag, err := s.store.Pool.Exec(ctx, `UPDATE goo_subscriptions SET billing = '{}', shipping = '{}', date_modified = now()
+			WHERE customer_id = $1 AND status NOT IN `+gooOpenSubscriptionStatuses+` AND (billing <> '{}' OR shipping <> '{}')`, uid); err == nil {
+			res.Removed += int(tag.RowsAffected())
+		}
+	}
+	var subs, points, members int
+	_ = s.store.Pool.QueryRow(ctx, `SELECT (SELECT count(*) FROM goo_subscriptions WHERE customer_id = $1 AND status IN `+gooOpenSubscriptionStatuses+`),
+		(SELECT count(*) FROM goo_points_log WHERE user_id = $1), (SELECT count(*) FROM goo_user_memberships WHERE user_id = $1)`, uid).Scan(&subs, &points, &members)
+	if subs > 0 {
+		res.Retained += subs
+		res.Messages = append(res.Messages, "Personal data within active subscriptions has been retained.")
+	}
+	if points+members > 0 {
+		res.Retained += points + members
+		res.Messages = append(res.Messages, "Points and memberships belong to the user account and are removed when the account is deleted.")
+	}
+	return res
+}
+
+type pgxRows = pgx.Rows

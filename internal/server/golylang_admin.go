@@ -44,7 +44,8 @@ func (s *Server) golylangSwitch(ctx context.Context, on bool) error {
 	return nil
 }
 
-var pllPages = map[string]string{"mlang": "Languages", "mlang_strings": "Strings translations", "mlang_settings": "Settings", "mlang_visual": "Translate visually"}
+var pllPages = map[string]string{"mlang": "Languages", "mlang_strings": "Strings translations", "mlang_settings": "Settings", "mlang_visual": "Translate visually",
+	"mlang_translate": "Translate content"}
 
 // golylangAdmin serves admin?page=mlang, mlang_strings and mlang_settings; false for other pages.
 func (s *Server) golylangAdmin(c *gin.Context, page string) bool {
@@ -55,6 +56,9 @@ func (s *Server) golylangAdmin(c *gin.Context, page string) bool {
 	allowed := u.Can("manage_options", nil)
 	if page == "mlang_strings" || page == "mlang_visual" {
 		allowed = pllCanTranslateAny(u) // translators: golylang_caps.go
+	}
+	if page == "mlang_translate" {
+		allowed = u.Can("edit_posts", nil) || u.Can("edit_pages", nil) // each action checks the post itself
 	}
 	if !s.golylangOn() || !allowed {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
@@ -69,6 +73,8 @@ func (s *Server) golylangAdmin(c *gin.Context, page string) bool {
 		s.pllSettingsScreen(c)
 	case "mlang_visual":
 		s.pllVisualScreen(c) // golylang_visual.go
+	case "mlang_translate":
+		s.pllTranslateScreen(c) // golylang_translate.go
 	}
 	return true
 }
@@ -832,6 +838,13 @@ func (s *Server) golylangPostColumns(c *gin.Context, d *postsListData, posts []*
 	groups := s.pllGroups(c, pllPost, ids)
 	def := defaultSlug(s.pllDefault(c))
 	nonce := s.nonce(c, "new-post-translation")
+	var trIDs []int64
+	for _, m := range groups {
+		for _, id := range m {
+			trIDs = append(trIDs, id)
+		}
+	}
+	outdated := s.pllOutdatedSet(c.Request.Context(), trIDs) // golylang_listfilter.go
 	for i := range d.Rows {
 		p := posts[i]
 		m := groups[p.ID]
@@ -844,6 +857,9 @@ func (s *Server) golylangPostColumns(c *gin.Context, d *postsListData, posts []*
 			switch {
 			case own == l.Slug:
 				cell = fmt.Sprintf(`<a href="/wp-admin/post?post=%d&amp;action=edit" class="pll_icon_tick" title="Edit this item"><span class="dashicons dashicons-yes" aria-hidden="true"></span><span class="screen-reader-text">Edit this item</span></a>`, p.ID)
+			case m[l.Slug] > 0 && outdated[m[l.Slug]]:
+				cell = fmt.Sprintf(`<a href="/wp-admin/post?post=%d&amp;action=edit" class="pll_icon_edit pll_icon_outdated" title="The translation in %s is older than its source: edit it"><span class="dashicons dashicons-update" aria-hidden="true"></span><span class="screen-reader-text">The translation in %s is outdated: edit it</span></a>`,
+					m[l.Slug], html.EscapeString(l.Name), html.EscapeString(l.Name))
 			case m[l.Slug] > 0:
 				cell = fmt.Sprintf(`<a href="/wp-admin/post?post=%d&amp;action=edit" class="pll_icon_edit" title="Edit the translation in %s"><span class="dashicons dashicons-edit" aria-hidden="true"></span><span class="screen-reader-text">Edit the translation in %s</span></a>`,
 					m[l.Slug], html.EscapeString(l.Name), html.EscapeString(l.Name))
@@ -1081,6 +1097,10 @@ func (s *Server) pllBoxInner(c *gin.Context, p *store.Post) template.HTML {
 			defaultStr(string(l.FlagHTML()), html.EscapeString(l.Slug)), html.EscapeString(l.Name), icon, html.EscapeString(l.Slug), html.EscapeString(l.Slug), html.EscapeString(l.Slug), opts)
 	}
 	b.WriteString(`</tbody></table></div>`)
+	if again := s.pllMTAgainURL(c, p); again != "" {
+		fmt.Fprintf(&b, `<p id="pll-mt-again"><a class="button" href="%s" onclick="return window.confirm('Replace the title, the excerpt and the content of this translation with a new machine translation of its source? Unsaved changes are lost.');">Machine translate again</a><br /><span class="description">Translates this item again from its source. The current text is kept as a revision.</span></p>`,
+			html.EscapeString(again))
+	}
 	return template.HTML(b.String())
 }
 

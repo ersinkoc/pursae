@@ -359,7 +359,7 @@ func checkModuleShape(c wazero.CompiledModule) error {
 // (which typically call HTTPGet) get longer budgets than content hooks.
 func (c *Config) budget(req *handleRequest) time.Duration {
 	switch {
-	case req.Type == "rest":
+	case req.Type == "rest", req.Type == "admin_page":
 		return c.RestTimeout
 	case strings.HasPrefix(req.Hook, "cron_") || strings.HasPrefix(req.Hook, "wpgo_cron"):
 		return c.CronTimeout

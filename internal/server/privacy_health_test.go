@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -138,5 +139,63 @@ func TestPrivacyRequestsConcurrentCreate(t *testing.T) {
 	wg.Wait()
 	if n := len(srv.loadPersonalRequests()); n != 8 {
 		t.Fatalf("%d requests survived, want 8", n)
+	}
+	// The same e-mail at once: the unique index lets exactly one open request through.
+	var ok atomic.Int32
+	for i := 0; i < 6; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			gc, _ := gin.CreateTestContext(httptest.NewRecorder())
+			gc.Request = httptest.NewRequest("GET", "/", nil)
+			if _, err := srv.createUserRequest(gc, "remove_personal_data", "Same@example.test", "request-pending"); err == nil {
+				ok.Add(1)
+			}
+		}()
+	}
+	wg.Wait()
+	if ok.Load() != 1 || len(srv.loadPersonalRequests()) != 9 {
+		t.Fatalf("duplicate open requests: %d created", ok.Load())
+	}
+}
+
+// TestPersonalDataCommerceAccount: wishlists, points, subscriptions and memberships of the user with the
+// address are exported; erasure deletes wishlists, anonymizes ended subscriptions, retains the rest.
+func TestPersonalDataCommerceAccount(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	_ = srv.settings.Set(ctx, map[string]any{gooSetting: true, gooOptPrefix + "erasure_request_removes_order_data": true})
+	var uid int64
+	var email string
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT id, email FROM users ORDER BY id LIMIT 1`).Scan(&uid, &email); err != nil {
+		t.Fatal(err)
+	}
+	for _, q := range []string{
+		`INSERT INTO goo_wishlists(token, user_id, title) VALUES ('tok1', $1, 'Mine')`,
+		`INSERT INTO goo_wishlist_items(wishlist_id, product_id) SELECT id, 7 FROM goo_wishlists WHERE token = 'tok1'`,
+		`INSERT INTO goo_points_log(user_id, points, type) VALUES ($1, 50, 'order-placed')`,
+		`INSERT INTO goo_subscriptions(customer_id, status, billing) VALUES ($1, 'active', '{"first_name":"Ada"}'), ($1, 'cancelled', '{"first_name":"Ada"}')`,
+	} {
+		args := []any{}
+		if strings.Contains(q, "$1") {
+			args = append(args, uid)
+		}
+		if _, err := srv.store.Pool.Exec(ctx, q, args...); err != nil {
+			t.Fatal(q, err)
+		}
+	}
+	ids := map[string]int{}
+	for _, g := range srv.registeredPersonalData(ctx, email) {
+		ids[g.ID] = len(g.Items)
+	}
+	if ids["woocommerce-wishlists"] != 1 || ids["woocommerce-points"] != 1 || ids["woocommerce-subscriptions"] != 2 {
+		t.Fatalf("export groups %v", ids)
+	}
+	res := srv.erasePersonalDataRegistered(ctx, email)
+	var lists, anon int
+	srv.store.Pool.QueryRow(ctx, `SELECT (SELECT count(*) FROM goo_wishlists), (SELECT count(*) FROM goo_subscriptions WHERE billing = '{}')`).Scan(&lists, &anon)
+	if lists != 0 || anon != 1 || res.Retained < 2 {
+		t.Fatalf("wishlists %d, anonymized subs %d, %+v", lists, anon, res)
 	}
 }

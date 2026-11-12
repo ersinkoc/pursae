@@ -120,6 +120,10 @@ func (s *Server) acfgoObject(ctx context.Context, id any, current *store.Post) *
 						return &acfObject{Kind: "attachment", ID: n, meta: orEmptyMap(a.Meta)}
 					}
 					return nil
+				case "menu_item":
+					return s.acfgoMenuObject(ctx, "menu_item", n)
+				case "nav_menu", "menu":
+					return s.acfgoMenuObject(ctx, "menu", n)
 				default: // term_5, category_5, genre_5
 					if tm, err := s.store.GetTerm(ctx, n); err == nil && (kind == "term" || kind == tm.Taxonomy) {
 						return &acfObject{Kind: "term", ID: n, meta: orEmptyMap(tm.Meta)}
@@ -209,7 +213,8 @@ func (s *Server) acfgoCommit(ctx context.Context, o *acfObject, w *acfWrite) err
 		}
 		return nil
 	}
-	table := map[string]string{"post": "posts", "user": "users", "term": "terms", "comment": "comments", "attachment": "media"}[o.Kind]
+	table := map[string]string{"post": "posts", "user": "users", "term": "terms", "comment": "comments", "attachment": "media",
+		"menu": "menus", "menu_item": "menu_items"}[o.Kind]
 	if table == "" {
 		return fmt.Errorf("acf-go: cannot save values of a %s", o.Kind)
 	}
@@ -1332,6 +1337,8 @@ func (s *Server) acfgoObjectScreen(ctx context.Context, o *acfObject) *acfScreen
 		return &acfScreen{Attachment: "all"}
 	case "block":
 		return &acfScreen{Block: o.Prefix}
+	case "menu", "menu_item":
+		return s.acfgoMenuObjectScreen(ctx, o)
 	}
 	return &acfScreen{}
 }

@@ -408,6 +408,7 @@ func (s *Server) seogoMenuDef() menuDef {
 		{slug: "seogo?page=404", title: "404 Monitor", cap: "seogo_404_monitor"},
 		{slug: "seogo?page=links", title: "Link Counter", cap: "seogo_link_builder"},
 		{slug: "seogo?page=bulk", title: "Bulk Editor", cap: "seogo_titles"},
+		{slug: "seogo?page=search-console", title: "Search Console", cap: "seogo_general"},
 		{slug: "seogo?page=tools", title: "Tools", cap: "seogo_general"},
 		{slug: "seogo?page=roles", title: "Role Manager", cap: "seogo_role_manager"},
 	}

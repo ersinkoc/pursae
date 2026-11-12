@@ -621,6 +621,18 @@ func TestMailSMTPPlugin(t *testing.T) {
 		}()), "Bounced") {
 			t.Fatal("log view lacks the delivery status")
 		}
+		// Amazon SES: an SNS envelope that does not verify is refused even with the right token.
+		if code := webhook("amazonses", srv.msWebhookToken(), `{"Type":"Notification","MessageId":"1","Message":"{}","Timestamp":"t","TopicArn":"a","SignatureVersion":"1","Signature":"AAAA","SigningCertURL":"https://evil.test/cert.pem"}`); code != http.StatusForbidden {
+			t.Fatalf("unsigned SNS message: %d", code)
+		}
+		// Aggregate rates on the reports screen.
+		rst, err := srv.msReport(ctx, 7)
+		if err != nil || rst.Tracked < 1 || rst.Opened < 1 || rst.Clicked < 1 || rst.Bounced < 1 || rst.OpenRate == "—" {
+			t.Fatalf("report aggregates: %+v %v", rst, err)
+		}
+		if rep := msPage(t, c, base+"/wp-admin/admin?page=wp-mail-smtp-reports"); !strings.Contains(rep, "Open Rate") || !strings.Contains(rep, "Bounce Rate") || !strings.Contains(rep, rst.OpenRate) {
+			t.Fatal("reports screen lacks the open/click/bounce rates")
+		}
 		raw = srv.msLoadRaw()
 		raw.Logs = prevLogs
 		_ = srv.msSave(ctx, raw)

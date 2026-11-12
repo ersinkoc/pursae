@@ -142,6 +142,7 @@ type wbDocument struct {
 	PostID   int64           `json:"postId"`
 	PostType string          `json:"postType"`
 	Status   string          `json:"status"`
+	Date     string          `json:"date"`
 	Rev      int             `json:"rev"`
 	Doc      json.RawMessage `json:"doc"` // null: a new page
 	Page     json.RawMessage `json:"page"`
@@ -180,7 +181,7 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 		prevDesc = prev.Description
 	}
 	postPage := wbPostPage(p, prevDesc)
-	d := &wbDocument{PostID: p.ID, PostType: p.Type, Status: p.Status, Page: postPage,
+	d := &wbDocument{PostID: p.ID, PostType: p.Type, Status: p.Status, Date: wbPostDate(p), Page: postPage,
 		Modified: p.ModifiedAt.UTC().Format(time.RFC3339)}
 	if row != nil {
 		d.Rev, d.Doc, d.Detached, d.Renderer = row.Rev, row.Doc, row.Detached, row.Renderer
@@ -518,4 +519,12 @@ func (s *Server) wbTakeLock(ctx context.Context, postID, uid int64, take bool) (
 		return false, err
 	}
 	return tag.RowsAffected() > 0, nil
+}
+
+// wbPostDate is the post's publish date for the editor (RFC 3339, "" while it has none).
+func wbPostDate(p *store.Post) string {
+	if p == nil || p.PublishedAt == nil {
+		return ""
+	}
+	return wbTime(*p.PublishedAt)
 }

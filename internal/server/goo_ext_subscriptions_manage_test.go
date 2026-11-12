@@ -302,6 +302,36 @@ func TestGooSubscriptionsAdminManage(t *testing.T) {
 	if sub.Billing["city"] != "Lyon" || sub.Shipping["city"] != "Nice" || sub.Items[0].Qty != 3 || sub.Items[0].Total != 60 || sub.RecurringTotal != 66 || sub.RecurringTax != 6 {
 		t.Errorf("edited subscription: %v %v %+v total=%v", sub.Billing, sub.Shipping, sub.Items, sub.RecurringTotal)
 	}
+	// Add a line, then remove the first one; the last line cannot be removed; the customer can change.
+	body = gxaAdminOK(t, cl, edit, "add_product", "item_remove[0]", `name="customer_id"`)
+	extra := gooMakeSimple(t, srv, "Extra tea", 7, nil)
+	u2 := gxaCustomer(t, srv, "adm2@example.test")
+	ev := func(kv ...string) url.Values {
+		v := url.Values{"_wpnonce": {formNonce(t, body)}, "action": {"editsubscription"}, "id": {itoa64(sub.ID)}}
+		for i := 0; i+1 < len(kv); i += 2 {
+			v.Set(kv[i], kv[i+1])
+		}
+		return v
+	}
+	if code, _, loc = post(t, cl, edit, ev("add_product", itoa64(extra.ID), "add_qty", "2", "add_total", "14")); code != http.StatusFound || strings.Contains(loc, "goo-err") {
+		t.Fatalf("add line: %d %s", code, loc)
+	}
+	sub, _ = srv.gsubGet(ctx, sub.ID)
+	if len(sub.Items) != 2 || sub.Items[1].ProductID != extra.ID || sub.Items[1].Total != 14 || sub.RecurringTotal != 80 {
+		t.Fatalf("after adding a line: %+v total=%v", sub.Items, sub.RecurringTotal)
+	}
+	if code, _, loc = post(t, cl, edit, ev("item_remove[0]", "1", "customer_id", itoa64(u2.ID))); code != http.StatusFound || strings.Contains(loc, "goo-err") {
+		t.Fatalf("remove line: %d %s", code, loc)
+	}
+	sub, _ = srv.gsubGet(ctx, sub.ID)
+	if len(sub.Items) != 1 || sub.Items[0].ProductID != extra.ID || sub.RecurringTotal != 14 || sub.RecurringTax != 0 || sub.CustomerID != u2.ID {
+		t.Fatalf("after removing a line: %+v total=%v customer=%d", sub.Items, sub.RecurringTotal, sub.CustomerID)
+	}
+	_, _, _ = post(t, cl, edit, ev("item_remove[0]", "1", "customer_id", "99999999"))
+	sub, _ = srv.gsubGet(ctx, sub.ID)
+	if len(sub.Items) != 1 || sub.CustomerID != u2.ID {
+		t.Errorf("the last line was removed or a missing customer accepted: %+v %d", sub.Items, sub.CustomerID)
+	}
 	code, _, loc = post(t, cl, edit, url.Values{"_wpnonce": {formNonce(t, body)}, "action": {"editsubscription"}, "id": {itoa64(sub.ID)}, "process_renewal": {"1"}})
 	if code != http.StatusFound || !strings.Contains(loc, "goo-msg") {
 		t.Fatalf("process renewal: %d %s", code, loc)

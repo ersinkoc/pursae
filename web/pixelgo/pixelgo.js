@@ -502,6 +502,9 @@
 			if (qi) { q = Math.max(parseInt(qi.value, 10) || 1, 1); }
 			var items = (base.items || []).map(function (i) { return extend({}, i); });
 			items.forEach(function (i) { i.quantity = q; });
+			// A variable product with "Use the ID of the chosen variation": the form's variation_id picks the item.
+			var vi = form && form.querySelector('input[name="variation_id"]'), vv = vi && base.variations && base.variations[vi.value];
+			if (vv && items.length) { items[0].id = vv.id; if (vv.price) { items[0].price = vv.price; } }
 			addToCart(items, { content_name: base.content_name, content_category: base.content_category, currency: base.currency });
 		} else if (b.matches('.add_to_cart_button') && b.getAttribute('data-product_id')) {
 			var q2 = Math.max(parseInt(b.getAttribute('data-quantity'), 10) || 1, 1);

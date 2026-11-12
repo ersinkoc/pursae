@@ -1,0 +1,25 @@
+diff --git a/src/builder/dynamic/starters.ts b/src/builder/dynamic/starters.ts
+index 7b64aeb..f644ea2 100644
+--- a/src/builder/dynamic/starters.ts
++++ b/src/builder/dynamic/starters.ts
+@@ -24,6 +24,7 @@ export const DEFAULT_STARTER: Record<TemplateType, StarterId> = {
+   'error-404': 'blank',
+   'single-product': 'product',
+   'product-archive': 'product-archive',
++  popup: 'blank',
+ }
+ 
+ /** A boxed one-column grid of dynamic widgets, top to bottom. */
+diff --git a/src/builder/dynamic/types.ts b/src/builder/dynamic/types.ts
+index e31dfac..af34dba 100644
+--- a/src/builder/dynamic/types.ts
++++ b/src/builder/dynamic/types.ts
+@@ -121,7 +121,7 @@ export interface DynShop {
+ 
+ /* ---------- Template mode (contract §11.7, TemplateBoot) ---------- */
+ 
+-export type TemplateType = 'header' | 'footer' | 'single-post' | 'single-page' | 'single' | 'single-product' | 'front-page' | 'archive' | 'product-archive' | 'search-results' | 'error-404'
++export type TemplateType = 'header' | 'footer' | 'single-post' | 'single-page' | 'single' | 'single-product' | 'front-page' | 'archive' | 'product-archive' | 'search-results' | 'error-404' | 'popup'
+ 
+ /** Starter design of a new template (dynamic/starters.ts STARTER_IDS). */
+ export type StarterId = 'blank' | 'header' | 'footer' | 'single' | 'archive' | 'search' | 'product' | 'product-archive'

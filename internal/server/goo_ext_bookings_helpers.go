@@ -158,7 +158,7 @@ func (s *Server) gxAdminPage(c *gin.Context, tmpl, screen, title string, head, b
 
 // gxSendEmail sends a module e-mail registered with gooRegisterEmail: its settings (enabled, subject,
 // heading, additional content, recipient) apply; placeholders {site_title} and those given are replaced.
-func (s *Server) gxSendEmail(ctx context.Context, id string, to []string, vars map[string]string, body string) bool {
+func (s *Server) gxSendEmail(ctx context.Context, id string, to []string, vars map[string]string, body string, att ...mail.Attachment) bool {
 	set := s.gooEmailSettings(id)
 	if set["enabled"] == "no" {
 		return false
@@ -198,7 +198,7 @@ func (s *Server) gxSendEmail(ctx context.Context, id string, to []string, vars m
 		page += `<p>` + html.EscapeString(extra) + `</p>`
 	}
 	page += `</td></tr></table><p style="text-align:center;color:#8a8a8a;font-size:12px">` + html.EscapeString(site) + `</p></body></html>`
-	s.sendMail(ctx, mail.Message{To: rcpt, Subject: subject, HTML: page, Body: gxStripTags(body)})
+	s.sendMail(ctx, mail.Message{To: rcpt, Subject: subject, HTML: page, Body: gxStripTags(body), Attachments: att})
 	return true
 }
 

@@ -397,6 +397,55 @@
 </div>
 {{end}}
 
+{{/* ============================== Search Console ============================== */}}
+{{if eq .Page "search-console"}}
+{{$d := .Data}}
+{{with $d.GSCError}}<div class="notice notice-error inline"><p>{{.}}</p></div>{{end}}
+{{if $d.GSCConnected}}
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Property</h2></div><div class="inside">
+	<form method="post" action="/wp-admin/seogo?page=search-console"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="gsc_property" />
+	<p><label for="seogo-gsc-property">Search Console property</label>
+	<select name="property" id="seogo-gsc-property"><option value="">— Select —</option>{{range $d.GSCSites}}<option value="{{.}}"{{if eq . $d.GSCProperty}} selected{{end}}>{{.}}</option>{{end}}</select>
+	<input type="submit" class="button" value="Save" /></p></form>
+	<form method="post" action="/wp-admin/seogo?page=search-console" class="seogo-inline-form"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="gsc_refresh" /><input type="submit" class="button" value="Reload the report" /></form>
+	<form method="post" action="/wp-admin/seogo?page=search-console" class="seogo-inline-form"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="gsc_disconnect" /><input type="submit" class="button-link button-link-delete" value="Disconnect" /></form>
+</div></div>
+{{with $d.GSCReport}}
+<div class="postbox" id="seogo-gsc-report"><div class="postbox-header"><h2 class="hndle">Search performance, {{.From}} – {{.To}}</h2></div><div class="inside">
+	<ul class="seogo-gsc-totals">
+		<li><strong>{{.Totals.ClicksN}}</strong> Total clicks</li>
+		<li><strong>{{.Totals.ImprN}}</strong> Total impressions</li>
+		<li><strong>{{.Totals.CTRPct}}</strong> Average CTR</li>
+		<li><strong>{{.Totals.Pos}}</strong> Average position</li>
+	</ul>
+	<h3>Top queries</h3>
+	<table class="widefat striped"><thead><tr><th>Query</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead><tbody>
+	{{range .Queries}}<tr><td>{{.Key}}</td><td>{{.ClicksN}}</td><td>{{.ImprN}}</td><td>{{.CTRPct}}</td><td>{{.Pos}}</td></tr>{{else}}<tr><td colspan="5">No data yet.</td></tr>{{end}}
+	</tbody></table>
+	<h3>Top pages</h3>
+	<table class="widefat striped"><thead><tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr></thead><tbody>
+	{{range .Pages}}<tr><td><a href="{{.Key}}" target="_blank" rel="noopener">{{.Key}}</a></td><td>{{.ClicksN}}</td><td>{{.ImprN}}</td><td>{{.CTRPct}}</td><td>{{.Pos}}</td></tr>{{else}}<tr><td colspan="5">No data yet.</td></tr>{{end}}
+	</tbody></table>
+	<p class="description">Data from Google Search Console, refreshed at most once an hour.</p>
+</div></div>
+{{end}}
+{{else}}
+<div class="postbox"><div class="postbox-header"><h2 class="hndle">Connect Google Search Console</h2></div><div class="inside">
+	<p>Create an OAuth client (type Web application) in the Google Cloud Console, enable the Google Search Console API, and add this authorized redirect URI:</p>
+	<p><code>{{$d.GSCRedirect}}</code></p>
+	<form method="post" action="/wp-admin/seogo?page=search-console"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="gsc_client" />
+	<table class="form-table" role="presentation">
+	<tr><th scope="row"><label for="seogo-gsc-id">Client ID</label></th><td><input name="client_id" id="seogo-gsc-id" type="text" class="regular-text code" value="{{$d.GSCClientID}}" autocomplete="off" /></td></tr>
+	<tr><th scope="row"><label for="seogo-gsc-secret">Client secret</label></th><td><input name="client_secret" id="seogo-gsc-secret" type="password" class="regular-text code" value="" autocomplete="new-password" placeholder="{{if $d.GSCHasSecret}}Saved — leave empty to keep it{{end}}" /></td></tr>
+	</table>
+	<p><input type="submit" class="button" value="Save" />
+	{{if and $d.GSCClientID $d.GSCHasSecret}}<a class="button button-primary" href="/wp-admin/seogo?page=search-console&amp;action=connect&amp;_wpnonce={{.Nonce}}">Connect to Google</a>{{end}}</p>
+	</form>
+	<p class="description">Pursae SEO only asks for read access (webmasters.readonly). The secret and the tokens are stored encrypted.</p>
+</div></div>
+{{end}}
+{{end}}
+
 {{/* ============================== Role manager ============================== */}}
 {{if eq .Page "roles"}}
 <p>Choose what each role may do with Pursae SEO. Administrators can always do everything.</p>

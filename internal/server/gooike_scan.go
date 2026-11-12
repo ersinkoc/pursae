@@ -180,7 +180,16 @@ func (s *Server) gooikeScan(ctx context.Context, st *gooikeSettings, extra []str
 	}
 	for _, e := range gooikeEmbeds {
 		for _, h := range e.Hosts {
-			if strings.Contains(html, h+"/embed") || strings.Contains(html, "//"+h+"/video") || (e.Key == "maps" && strings.Contains(html, "google.com/maps/embed")) {
+			hit := strings.Contains(html, h+"/embed") || strings.Contains(html, "//"+h+"/video") || (e.Key == "maps" && strings.Contains(html, "google.com/maps/embed"))
+			switch e.Key {
+			case "youtube", "vimeo", "maps":
+			default: // the newer providers: an iframe on one of their embed hosts, or their loader script
+				hit = hit || strings.Contains(html, `src="https://`+h) || strings.Contains(html, `src="//`+h)
+				for _, sig := range e.Scripts {
+					hit = hit || gooikeSigIn(strings.ToLower(html), sig)
+				}
+			}
+			if hit {
 				res.Services = append(res.Services, e.Name+" embed (Detected in the page)")
 				for _, ck := range e.Cookies {
 					ck.Category = st.EmbedCategory

@@ -135,6 +135,9 @@ func (s *Server) adminsecPasswordProblem(roles []string, login, email, pw string
 	if st.PwBlockCommon && asIsCommon(pw) {
 		return "This password is one of the most commonly used passwords. Please choose another one."
 	}
+	if st.PwBreached && asPasswordBreached(context.Background(), pw) > 0 {
+		return "This password has appeared in a data breach (Have I Been Pwned), so attackers try it first. Please choose another one."
+	}
 	if minStrength > 0 {
 		if sc := asStrength(pw, login, email); sc < minStrength {
 			return fmt.Sprintf("The password is too weak (%s). Use at least “%s”: a longer password with upper and lower case letters, numbers and symbols, not based on your name.",

@@ -121,7 +121,7 @@ translatable sentences. The media-modal tab's strings are injected by the server
 ## 9. Not done / limits
 
 - AVIF *sources* are not accepted by the image service.
-- Object versioning (`object-versioning` of WP Offload Media adds a time stamp to keys), cache tags / surrogate keys.
+- Cache tags / surrogate keys.
 - SSE-C: no public or presigned URLs (see the encryption row); rotating the customer key does not re-encrypt
   existing objects (a "move" to another bucket does re-encrypt: it reads with the old connection's key and writes
   with the current one).
@@ -131,7 +131,17 @@ translatable sentences. The media-modal tab's strings are injected by the server
 
 ## Housekeeping additions
 
-- New uploads are offloaded in the background (retried after 0s, 5s, 30s and 2min); the upload request no longer waits for the bucket. Failures stay for the bulk offload job.
+- New uploads are offloaded in the background (retried after 0s, 5s, 30s and 2min); the upload request no longer waits for the bucket. Uploads still failing after that are recorded in `gocdn_offload_failures` (migration 0098): the daily housekeeping pass and the Media Offload screen's **Retry failed** button try them again.
 - Saving or changing a post queues a CDN purge (when "purge automatically" is on) of its permalink, the home page and the main feed.
 - Media Library list: a "Storage" column (administrators) shows whether a file is in the bucket, with row actions Offload, Download back and Remove local copy.
 - Image service: "Image CDN URL" (`img-cdn-url`) makes content image URLs point at a CDN pull zone whose origin is the site; "Image cache limit" (`img-cache-max-mb`, default 2048) prunes the oldest processed variants.
+- **Find objects without a record** (Media Offload › Housekeeping) lists up to 500 objects under the uploads prefix that no `gocdn_items` row points at (the image cache and pending deletes are excluded); **Delete them from the bucket** removes them after a confirmation, skipping any key that got a record meanwhile.
+- **Object versioning** (`object-versioning`, Storage settings): new objects get a time-stamped folder in their key (`<prefix><dir>/<YYYYMMDDhhmmss>/<file>`, as WP Offload Media), so a file written again under the same name gets a new URL. Existing objects keep their keys; the move job accepts both forms.
+- Image-editor saves, restores and thumbnail regeneration: files written again under the same name have their old bucket object deleted, the bucket URL and the site URL purged on the CDN, and their image-service variants dropped before the new files are offloaded. Image-service variants live in one folder per source file (`gocdn-cache/<h2>/<hash>/`), so deleting an attachment deletes its variants too.
+
+## Private files (protected downloads)
+
+- An attachment is private when its files live under `uploads/private/` — the folder is the flag. Media Library list rows have **Make private / Make public** (nonce-checked; uploader or `edit_others_posts`). Making a file private moves its files, deletes its moved-path redirects, re-offloads it and purges the old URLs: the old public URL stops working at once.
+- `/wp-content/uploads/private/…` is never served statically: only a link signed with an HMAC of the server secret that has not expired (`?e=…&s=…[&dl=1]`). Admin screens get links valid 1–2 h for users with `upload_files`; everybody else sees a dead URL. The image service refuses private files; URL rewriting leaves them alone.
+- In the bucket, private objects get no public ACL, `Cache-Control: private, no-store`, and a key folder derived from an HMAC (unguessable even in a public-by-policy bucket). They are delivered only through 5-minute presigned URLs (SSE-C objects are proxied with `no-store`).
+- Pursae Commerce: files chosen with the downloadable file "Choose file" upload straight into `uploads/private/` (`type=downloadable_product`, like WooCommerce's `woocommerce_uploads`). The download handler checks the order's permissions first, then streams the local file, or (with "Redirect only") redirects to a 5-minute signed link, or to a presigned bucket URL when the file is only in the bucket. A product that kept the public URL of a file made private later still works.

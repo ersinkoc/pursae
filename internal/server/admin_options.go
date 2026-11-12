@@ -311,6 +311,9 @@ func (s *Server) optionsSave(c *gin.Context) {
 		return
 	}
 	s.purgeAll(c)
+	if _, ok := values["WPLANG"]; ok {
+		s.syncSearchStemAsync() // the search stemmer follows the site language
+	}
 	target := "/wp-admin/options-" + page + "?settings-updated=true"
 	if langFailed {
 		target += "&lang-error=1"

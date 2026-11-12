@@ -12,7 +12,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/mail"
-	"net/url"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -555,7 +554,7 @@ func (sub *gfSubmission) spam(nonceOK bool) bool {
 			// Pursae Cookie holds reCAPTCHA back until the visitor consents; the other checks still apply.
 		} else if token == "" {
 			log("recaptcha", "reCAPTCHA response token is empty.")
-		} else if score, ok := sub.s.gontactVerifyCaptcha(sub.ctx, "https://www.google.com/recaptcha/api/siteverify", secret, token, sub.remoteIP); !ok || score < 0.5 {
+		} else if score, ok := sub.s.verifyCaptcha(sub.ctx, captchaRecaptchaVerify, secret, token, sub.remoteIP); !ok || score < 0.5 {
 			log("recaptcha", "reCAPTCHA score ("+strconv.FormatFloat(score, 'f', 2, 64)+") is lower than the threshold (0.50).")
 		}
 	}
@@ -563,7 +562,7 @@ func (sub *gfSubmission) spam(nonceOK bool) bool {
 		token := sub.c.PostForm("_wpcf7_turnstile_response")
 		if token == "" {
 			log("turnstile", "Turnstile token is empty.")
-		} else if _, ok := sub.s.gontactVerifyCaptcha(sub.ctx, "https://challenges.cloudflare.com/turnstile/v0/siteverify", secret, token, sub.remoteIP); !ok {
+		} else if _, ok := sub.s.verifyCaptcha(sub.ctx, captchaTurnstileVerify, secret, token, sub.remoteIP); !ok {
 			log("turnstile", "Turnstile validation failed.")
 		}
 	}
@@ -595,35 +594,6 @@ func (s *Server) gontactDisallowed(sub *gfSubmission) string {
 		}
 	}
 	return ""
-}
-
-// gontactCaptchaVerify is swapped in tests; it posts a token to a siteverify endpoint.
-var gontactCaptchaClient = &http.Client{Timeout: 8 * time.Second}
-
-func (s *Server) gontactVerifyCaptcha(ctx context.Context, endpoint, secret, token, ip string) (float64, bool) {
-	form := url.Values{"secret": {secret}, "response": {token}, "remoteip": {ip}}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
-	if err != nil {
-		return 0, false
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := gontactCaptchaClient.Do(req)
-	if err != nil {
-		slog.Warn("gontact form: captcha verification", "err", err)
-		return 0, false
-	}
-	defer resp.Body.Close()
-	var out struct {
-		Success bool    `json:"success"`
-		Score   float64 `json:"score"`
-	}
-	if json.NewDecoder(io.LimitReader(resp.Body, 1<<16)).Decode(&out) != nil {
-		return 0, false
-	}
-	if !strings.Contains(endpoint, "recaptcha") {
-		out.Score = 1
-	}
-	return out.Score, out.Success
 }
 
 // gontactCountSerial keeps the [_serial_number] counter of a form.

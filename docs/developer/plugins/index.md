@@ -37,7 +37,7 @@ through a small host API gated by **permissions** the administrator approves whe
 
 | Need | SDK | Permission |
 |------|-----|------------|
-| change rendered post content (`the_title` / `the_excerpt` are reserved but not fired yet) | `AddFilter("the_content", …)` | `content:filter` |
+| change rendered post content and titles (`the_excerpt` is reserved but not fired yet) | `AddFilter("the_content", …)`, `AddFilter("the_title", …)` | `content:filter` |
 | run code at start-up or on admin screens | `AddAction("init", …)`, `AddAction("admin_notices", …)` | — / `admin:notices` |
 | shortcodes `[tag attr="v"]…[/tag]` | `AddShortcode` | `content:filter` |
 | REST endpoints under `/wp-json/<slug>/v1/` | `RegisterRestRoute` | `rest:routes` |
@@ -50,6 +50,8 @@ through a small host API gated by **permissions** the administrator approves whe
 | outbound HTTP GET | `HTTPGet` | `http:outbound` |
 | CSS and JS on the site or in the admin | `EnqueueStyle`, `EnqueueScript` + `assets/` in the package | `content:filter` |
 | dashboard notices | `AdminNotice` | `admin:notices` |
+| admin pages, Dashboard widgets, meta boxes | `RegisterAdminPage`, `RegisterDashboardWidget`, `RegisterMetaBox` ([admin UI](admin-ui.md)) | `admin:pages`, `admin:dashboard`, `admin:metaboxes` |
+| dynamic blocks, Web Builder widgets | `RegisterBlock`, `RegisterBuilderWidget` | `blocks:register`, `builder:widgets` |
 
 ## Signing and trust
 
@@ -65,7 +67,7 @@ in `plugin.json`.
 1. [Your first plugin](your-first-plugin.md) — from `go mod init` to an installed package.
 2. [The manifest](manifest.md), [hooks](hooks.md) and the [host API](host-api.md) references.
 3. Feature guides: [shortcodes](shortcodes.md), [REST routes](rest-routes.md),
-   [settings pages](settings-pages.md), [scheduled events](scheduled-events.md),
+   [settings pages](settings-pages.md), [admin pages, meta boxes, blocks and widgets](admin-ui.md), [scheduled events](scheduled-events.md),
    [assets](assets.md).
 4. [Permissions](permissions.md), [packaging and signing](packaging-and-signing.md),
    [publishing](publishing.md), [testing](testing.md), [limits and sandbox](limits-and-sandbox.md).

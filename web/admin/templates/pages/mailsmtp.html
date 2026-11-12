@@ -412,12 +412,18 @@
 <div class="postbox"><span><span class="wpms-status"></span>Sent</span><p class="wpms-num">{{.Stats.Sent}}</p></div>
 <div class="postbox"><span><span class="wpms-status failed"></span>Failed</span><p class="wpms-num">{{.Stats.Failed}}</p></div>
 </div>
+<div class="wpms-stats">
+<div class="postbox"><span>Open Rate</span><p class="wpms-num">{{.Stats.OpenRate}}</p><span class="description">{{.Stats.Opened}} of {{.Stats.Tracked}} tracked &middot; {{.Stats.Opens}} opens</span></div>
+<div class="postbox"><span>Click Rate</span><p class="wpms-num">{{.Stats.ClickRate}}</p><span class="description">{{.Stats.Clicked}} of {{.Stats.Tracked}} tracked &middot; {{.Stats.Clicks}} clicks</span></div>
+<div class="postbox"><span>Bounce Rate</span><p class="wpms-num">{{.Stats.BounceRate}}</p><span class="description">{{.Stats.Delivered}} delivered &middot; {{.Stats.Bounced}} bounced &middot; {{.Stats.Complained}} spam complaints</span></div>
+</div>
+{{if not .Stats.Tracked}}<p class="description">Open and click rates need <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=logs">Open/Click Email Tracking</a>; delivery numbers need a mailer webhook. Visitors who send Do Not Track or Global Privacy Control are never counted.</p>{{end}}
 <div class="postbox" style="max-width:960px;padding:12px 16px"><h2 style="margin-top:0">Emails Stats by Day</h2>{{.Chart}}</div>
 <h2>Email Stats by Subject</h2>
 <table class="wp-list-table widefat fixed striped" style="max-width:960px">
-<thead><tr><th scope="col" class="column-primary">Subject</th><th scope="col">Total</th><th scope="col">Sent</th><th scope="col">Failed</th><th scope="col">Last sent</th></tr></thead>
-<tbody>{{range .Stats.Subjects}}<tr><td class="column-primary"><a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;s={{.Subject}}">{{.Subject}}</a></td><td>{{.Total}}</td><td>{{.Sent}}</td><td>{{.Failed}}</td><td>{{.LastStr}} &middot; {{.LastMailer}}</td></tr>
-{{else}}<tr class="no-items"><td colspan="5">{{if .O.Logs.Enabled}}No emails were sent in this period.{{else}}Reports are built from the email log. <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=logs">Enable the email log</a> to see them.{{end}}</td></tr>{{end}}</tbody></table>
+<thead><tr><th scope="col" class="column-primary">Subject</th><th scope="col">Total</th><th scope="col">Sent</th><th scope="col">Failed</th><th scope="col">Open rate</th><th scope="col">Click rate</th><th scope="col">Last sent</th></tr></thead>
+<tbody>{{range .Stats.Subjects}}<tr><td class="column-primary"><a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;s={{.Subject}}">{{.Subject}}</a></td><td>{{.Total}}</td><td>{{.Sent}}</td><td>{{.Failed}}</td><td>{{.OpenRate}}</td><td>{{.ClickRate}}</td><td>{{.LastStr}} &middot; {{.LastMailer}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="7">{{if .O.Logs.Enabled}}No emails were sent in this period.{{else}}Reports are built from the email log. <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=logs">Enable the email log</a> to see them.{{end}}</td></tr>{{end}}</tbody></table>
 <h2>Weekly Email Summary</h2>
 <p>{{if .O.General.SummaryDisabled}}The weekly email summary is disabled.{{else}}A summary of the week's email activity is sent to the site admin email every week.{{end}} <a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=misc">Change</a></p>
 {{end}}

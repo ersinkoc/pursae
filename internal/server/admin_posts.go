@@ -107,6 +107,8 @@ type postsListData struct {
 	ColCount      int  // visible columns, for the inline editor's colspan
 
 	PluginHeads []template.HTML // headers of plugin columns (Golylang's languages), before Comments
+	BulkExtra   []pllBulkOption // bulk actions of Pursae Multi Language ("Translate to…", XLIFF export)
+	BulkLangs   []pllBulkLang   // their target language select
 	// Quick Edit / Bulk Edit (inline_edit()).
 	InlineNonce string
 	Authors     []*store.User
@@ -226,6 +228,9 @@ func (s *Server) postsList(c *gin.Context) {
 	if typ == "page" && c.Query("orderby") == "" {
 		q.OrderBy, q.Order = "title", c.DefaultQuery("order", "asc")
 	}
+	if search != "" && c.Query("orderby") == "" {
+		q.OrderBy = "relevance" // WP_Query: a search without orderby ranks title matches first, then content
+	}
 	switch status {
 	case "all", "":
 		q.Statuses = []string{"publish", "future", "draft", "pending", "private"}
@@ -269,7 +274,8 @@ func (s *Server) postsList(c *gin.Context) {
 			}
 		}
 	}
-	seoFilter := s.seogoListFilter(c, typ, &q) // Pursae SEO: "No focus keyphrase", "SEO: Needs improvement" …
+	seoFilter := s.seogoListFilter(c, typ, &q)    // Pursae SEO: "No focus keyphrase", "SEO: Needs improvement" …
+	pllFilter := s.golylangListFilter(c, typ, &q) // Pursae Multi Language: "Untranslated", "Outdated translations"
 	posts, total, err := s.store.QueryPosts(ctx, q)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
@@ -348,7 +354,9 @@ func (s *Server) postsList(c *gin.Context) {
 		}
 	}
 	s.inlineEditData(c, &d)
-	s.golylangPostColumns(c, &d, posts)                    // Golylang: one column per language
+	s.golylangPostColumns(c, &d, posts)              // Golylang: one column per language
+	s.golylangListViews(c, &d, typ, base, pllFilter) // Golylang: "Untranslated" and "Outdated translations" views
+	d.BulkExtra, d.BulkLangs = s.golylangBulkOptions(c, typ)
 	s.seogoPostColumns(c, &d, posts, typ, base, seoFilter) // Pursae SEO: score columns and filter views
 	cur := *c.Request.URL
 	d.Pagination = newPagination(total, perPage, page, cur)
@@ -364,7 +372,7 @@ func (s *Server) postsList(c *gin.Context) {
 	s.setScreenOptions(c, screenOptions{Screen: "edit-" + typ, Columns: postListColumns(typ), Hidden: d.Hidden,
 		PerPageOption: "edit_" + typ + "_per_page", PerPage: perPage, ViewMode: mode})
 	s.pageAssets(c).Script("inline-edit-post")
-	s.adminPage(c, screen, lab.Name, "edit-php post-type-"+typ, "admin/posts-list", d, postNotices(c, lab, s.nonce(c, "bulk-posts"))...)
+	s.adminPage(c, screen, lab.Name, "edit-php post-type-"+typ, "admin/posts-list", d, append(postNotices(c, lab, s.nonce(c, "bulk-posts")), s.golylangListNotices(c)...)...)
 }
 
 // inlineEditData fills what the Quick Edit and Bulk Edit rows need: categories, authors, parent
@@ -755,6 +763,9 @@ func (s *Server) postsBulkAction(c *gin.Context, typ, action string) {
 		s.bulkEditPosts(c, typ)
 		return
 	}
+	if s.golylangBulk(c, typ, action) { // Pursae Multi Language: "Translate to…", XLIFF export
+		return
+	}
 	if action == "delete_all" {
 		s.postsEmptyTrash(c, typ)
 		return
@@ -775,11 +786,13 @@ func (s *Server) postsBulkAction(c *gin.Context, typ, action string) {
 		case "untrash":
 			err = s.store.UntrashPost(c, id)
 		case "delete":
+			s.pluginPostAction(c, "before_delete_post", p)
 			err = s.store.DeletePost(c, id)
 		default:
 			continue
 		}
 		if err == nil {
+			s.pluginPostMoved(c, action, p) // Wasm plugins: transition_post_status, trashed_post, … (plugins_hooks.go)
 			s.purgePostAgain(c, p)
 			s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 			n++
@@ -816,7 +829,9 @@ func (s *Server) postsEmptyTrash(c *gin.Context, typ string) {
 			continue
 		}
 		s.afterPostSave(c, p)
+		s.pluginPostAction(c, "before_delete_post", p)
 		if s.store.DeletePost(c, id) == nil {
+			s.pluginPostMoved(c, "delete", p)
 			s.purgePostAgain(c, p)
 			s.wbAfterStatusChange(c, p)
 			n++
@@ -1380,19 +1395,20 @@ type editData struct {
 	TS           touchTime
 	PluginStats  string
 
-	MetaRows       []metaRow     // Custom Fields (post_custom_meta_box())
-	MetaRowsHTML   template.HTML // the rows, _list_meta_row()
-	MetaNonce      string        // add-meta
-	Templates      []templateOption
-	Template       string            // _wp_page_template, "default" when unset
-	RevisionsList  template.HTML     // wp_list_post_revisions()
-	LatestRevision int64             // the "Browse" link of the publish box
-	BoxClass       map[string]string // extra postbox classes: " hide-if-js" (Screen Options) and " closed"
-	ToPing         string            // Send Trackbacks (to_ping)
-	ActiveLock     string            // active_post_lock: "<unix>:<user id>" of the lock this editor holds
-	ClosedNonce    string            // closedpostboxes
-	OrderNonce     string            // meta-box-order
-	PluginBoxes    template.HTML     // side meta boxes of native plugins (Golylang's Languages)
+	MetaRows          []metaRow     // Custom Fields (post_custom_meta_box())
+	MetaRowsHTML      template.HTML // the rows, _list_meta_row()
+	MetaNonce         string        // add-meta
+	Templates         []templateOption
+	Template          string            // _wp_page_template, "default" when unset
+	RevisionsList     template.HTML     // wp_list_post_revisions()
+	LatestRevision    int64             // the "Browse" link of the publish box
+	BoxClass          map[string]string // extra postbox classes: " hide-if-js" (Screen Options) and " closed"
+	ToPing            string            // Send Trackbacks (to_ping)
+	ActiveLock        string            // active_post_lock: "<unix>:<user id>" of the lock this editor holds
+	ClosedNonce       string            // closedpostboxes
+	OrderNonce        string            // meta-box-order
+	PluginBoxes       template.HTML     // side meta boxes of native plugins (Golylang's Languages)
+	NormalPluginBoxes template.HTML     // normal-context meta boxes of Wasm plugins
 }
 
 // metaRow is one Custom Fields entry (_list_meta_row()). WordPress Go keeps post meta as a JSON map,
@@ -1735,12 +1751,14 @@ func (s *Server) postEdit(c *gin.Context) {
 		case "untrash":
 			err, key = s.store.UntrashPost(c, p.ID), "untrashed"
 		case "delete":
+			s.pluginPostAction(c, "before_delete_post", p)
 			err, key = s.store.DeletePost(c, p.ID), "deleted"
 		}
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+		s.pluginPostMoved(c, action, p) // Wasm plugins: transition_post_status, trashed_post, … (plugins_hooks.go)
 		s.purgePostAgain(c, p)
 		s.wbAfterStatusChange(c, p) // Pursae Web Builder: purge again now the status is stored
 		c.Redirect(http.StatusFound, "/wp-admin/edit?post_type="+p.Type+"&"+key+"=1&ids="+itoa64(p.ID))
@@ -1955,7 +1973,8 @@ func (s *Server) renderClassicEdit(c *gin.Context, p *store.Post, isNew bool) {
 		}
 	}
 	s.enqueueMedia(c, p.ID)
-	d.PluginBoxes = s.golylangPostBox(c, p)
+	d.PluginBoxes = s.golylangPostBox(c, p) + s.pluginMetaBoxesClassic(c, p, "side") // Wasm plugin meta boxes (plugins_ui.go)
+	d.NormalPluginBoxes = s.pluginMetaBoxesClassic(c, p, "normal")
 	s.adminPage(c, screen, title, "post-php post-type-"+p.Type, "admin/post-edit", d, s.editNotices(c, lab, d.ViewURL)...)
 }
 
@@ -1976,9 +1995,9 @@ func (s *Server) editNotices(c *gin.Context, lab typeLabels, view string) []noti
 		"10": lab.Singular + " draft updated. <a target=\"_blank\" href=\"" + template.HTMLEscapeString(view) + "\">Preview " + strings.ToLower(lab.Singular) + "</a>",
 	}[c.Query("message")]
 	if msg == "" {
-		return nil
+		return s.golylangEditNotices(c)
 	}
-	return []notice{{Type: "success", Message: template.HTML(msg), Dismissible: true}}
+	return append([]notice{{Type: "success", Message: template.HTML(msg), Dismissible: true}}, s.golylangEditNotices(c)...)
 }
 
 // postPreview is post_preview(): the classic Preview / Preview Changes button. A draft or pending post
@@ -2031,6 +2050,10 @@ func (s *Server) postSave(c *gin.Context) {
 		return
 	}
 	if s.gooAdminScreen(c, "post") { // Goocommerce: the product editor's save
+		return
+	}
+	if c.Query("meta-box-loader") == "1" { // Pursae Editor saving its meta boxes (plugins_ui.go)
+		s.pluginMetaBoxLoader(c)
 		return
 	}
 	ctx := c.Request.Context()
@@ -2161,6 +2184,7 @@ func (s *Server) postSave(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	s.pluginMetaBoxesSave(c, p) // Wasm plugin meta boxes (plugins_ui.go)
 	if p.Type == "post" {
 		var catIDs []int64
 		for _, raw := range c.PostFormArray("post_category[]") {

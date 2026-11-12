@@ -39,7 +39,8 @@ func invokeHost(name string, body []byte) ([]byte, error) {
 		return th(name, body)
 	}
 	switch name {
-	case "add_hook", "log", "register_shortcode", "register_rest_route", "enqueue_style", "enqueue_script":
+	case "add_hook", "log", "register_shortcode", "register_rest_route", "enqueue_style", "enqueue_script",
+		"register_admin_page", "register_dashboard_widget", "register_meta_box", "register_block", "register_builder_widget":
 		// Registration and logging are best-effort outside the host.
 		return []byte(`{"ok":true}`), nil
 	case "translate":

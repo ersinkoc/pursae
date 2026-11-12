@@ -253,6 +253,63 @@ const tr: Record<string, string> = {
   "Saved.": "Kaydedildi.", // i18n-ignore
   "The SEO settings could not be loaded.": "SEO ayarları yüklenemedi.", // i18n-ignore
   "The SEO settings could not be saved.": "SEO ayarları kaydedilemedi.", // i18n-ignore
+  "Schedule publish": "Yayını zamanla", // i18n-ignore
+  "Revisions": "Revizyonlar", // i18n-ignore
+  "Popup settings": "Açılır pencere ayarları", // i18n-ignore
+  "Scheduled for {date}": "{date} için zamanlandı", // i18n-ignore
+  "Publish immediately": "Hemen yayımla", // i18n-ignore
+  "Set date": "Tarihi ayarla", // i18n-ignore
+  "Publish on": "Yayın tarihi", // i18n-ignore
+  "With a date in the future, Publish schedules the page: it goes live on that date. A date in the past publishes it now.": "İleri bir tarih seçilirse Yayımla sayfayı zamanlar: sayfa o tarihte yayına girer. Geçmiş bir tarih sayfayı hemen yayımlar.", // i18n-ignore
+  "Loading revisions…": "Revizyonlar yükleniyor…", // i18n-ignore
+  "This page has no published revisions yet.": "Bu sayfanın henüz yayımlanmış bir revizyonu yok.", // i18n-ignore
+  "Revision {rev} by {name}": "Revizyon {rev}, {name}", // i18n-ignore
+  "Restore": "Geri yükle", // i18n-ignore
+  "Delay (seconds)": "Gecikme (saniye)", // i18n-ignore
+  "Scroll depth (%)": "Kaydırma derinliği (%)", // i18n-ignore
+  "Element (#id or .class)": "Öğe (#id veya .class)", // i18n-ignore
+  "Days": "Gün", // i18n-ignore
+  "Position": "Konum", // i18n-ignore
+  "Width (px)": "Genişlik (px)", // i18n-ignore
+  "Close when the backdrop is clicked": "Arka plana tıklanınca kapat", // i18n-ignore
+  "Wait until the visitor answered the cookie banner": "Ziyaretçi çerez bildirimini yanıtlayana kadar bekle", // i18n-ignore
+  "Show again to everyone": "Herkese yeniden göster", // i18n-ignore
+  "Visitors who already saw this popup see it again after you save.": "Bu açılır pencereyi daha önce görmüş ziyaretçiler, kaydettikten sonra onu yeniden görür.", // i18n-ignore
+  "Global colors and fonts": "Genel renkler ve yazı tipleri", // i18n-ignore
+  "Use them in any color, font or CSS field as var(--wb-color-primary) or var(--wb-font-heading); changing a value here updates every page.": "Bunları herhangi bir renk, yazı tipi veya CSS alanında var(--wb-color-primary) ya da var(--wb-font-heading) olarak kullanın; burada bir değeri değiştirmek tüm sayfaları günceller.", // i18n-ignore
+  "Visitor": "Ziyaretçi", // i18n-ignore
+  "Logged-in Users": "Oturum açmış kullanıcılar", // i18n-ignore
+  "Logged-out Visitors": "Oturum açmamış ziyaretçiler", // i18n-ignore
+  "Role: {role}": "Rol: {role}", // i18n-ignore
+  "Restore this revision?": "Bu revizyon geri yüklensin mi?", // i18n-ignore
+  "The revisions could not be loaded.": "Revizyonlar yüklenemedi.", // i18n-ignore
+  "Load revision {rev} into the editor? Your unpublished changes are replaced; the page stays as it is until you publish.": "Revizyon {rev} düzenleyiciye yüklensin mi? Yayımlanmamış değişiklikleriniz değiştirilir; siz yayımlayana kadar sayfa olduğu gibi kalır.", // i18n-ignore
+  "The revision could not be restored.": "Revizyon geri yüklenemedi.", // i18n-ignore
+  "The delay must be 0 to {max} seconds.": "Gecikme 0 ile {max} saniye arasında olmalıdır.", // i18n-ignore
+  "The scroll depth must be 1 to 100 percent.": "Kaydırma derinliği yüzde 1 ile 100 arasında olmalıdır.", // i18n-ignore
+  "Enter an element as #id or .class.": "Bir öğeyi #id veya .class olarak girin.", // i18n-ignore
+  "The number of days must be 1 to {max}.": "Gün sayısı 1 ile {max} arasında olmalıdır.", // i18n-ignore
+  "The width must be {min} to {max} pixels.": "Genişlik {min} ile {max} piksel arasında olmalıdır.", // i18n-ignore
+  "The popup settings could not be loaded.": "Açılır pencere ayarları yüklenemedi.", // i18n-ignore
+  "The popup settings could not be saved.": "Açılır pencere ayarları kaydedilemedi.", // i18n-ignore
+  "On page load": "Sayfa yüklenince", // i18n-ignore
+  "On scroll": "Kaydırınca", // i18n-ignore
+  "On exit intent": "Çıkış niyetinde", // i18n-ignore
+  "On click": "Tıklanınca", // i18n-ignore
+  "Every page view": "Her sayfa görüntülemesinde", // i18n-ignore
+  "Once per session": "Oturum başına bir kez", // i18n-ignore
+  "Only once": "Yalnızca bir kez", // i18n-ignore
+  "Once every few days": "Birkaç günde bir", // i18n-ignore
+  "Center": "Orta", // i18n-ignore
+  "Top": "Üst", // i18n-ignore
+  "Bottom": "Alt", // i18n-ignore
+  "Primary": "Birincil", // i18n-ignore
+  "Secondary": "İkincil", // i18n-ignore
+  "Accent": "Vurgu", // i18n-ignore
+  "Text": "Metin", // i18n-ignore
+  "Background": "Arka plan", // i18n-ignore
+  "Headings": "Başlıklar", // i18n-ignore
+  "Body text": "Gövde metni", // i18n-ignore
 }
 
 export default tr

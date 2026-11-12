@@ -19,7 +19,7 @@ func TestBlockPatternsRendersInContent(t *testing.T) {
 	for content, want := range map[string]bool{
 		`<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->`:                                               true,
 		`<!-- wp:group --><div class="wp-block-group"><!-- wp:test/pattern-dyn /--></div><!-- /wp:group -->`: true,
-		`<!-- wp:group --><div class="wp-block-group"><!-- wp:navigation /--></div><!-- /wp:group -->`:       false,
+		`<!-- wp:group --><div class="wp-block-group"><!-- wp:test/no-renderer /--></div><!-- /wp:group -->`: false,
 		`<!-- wp:template-part {"slug":"sidebar"} /-->`:                                                      false,
 	} {
 		if got := patternRendersInContent(content); got != want {
@@ -99,12 +99,13 @@ func TestTwentyTwentyFivePatterns(t *testing.T) {
 	if cats, _ := json.Marshal(byName["twentytwentyfive/template-query-loop"]["categories"]); string(cats) != `["posts"]` {
 		t.Errorf("query loop categories %s", cats)
 	}
-	// Page layouts are offered; header, footer and template patterns (site title, navigation,
-	// loop, template parts) need the Site Editor and stay out of the inserter, like "Inserter: no".
+	// Page layouts are offered; template patterns that need the Site Editor stay out of the inserter, like
+	// "Inserter: no". Header and footer render in content now that navigation and site logo are
+	// server-side blocks, so they are offered like in WordPress (their files have no "Inserter: no").
 	if byName["twentytwentyfive/page-business-home"]["inserter"] == false {
 		t.Error("page-business-home is hidden")
 	}
-	for _, name := range []string{"twentytwentyfive/header", "twentytwentyfive/footer", "twentytwentyfive/hidden-404"} {
+	for _, name := range []string{"twentytwentyfive/hidden-404"} {
 		if byName[name] == nil || byName[name]["inserter"] != false {
 			t.Errorf("%s inserter %v", name, byName[name]["inserter"])
 		}

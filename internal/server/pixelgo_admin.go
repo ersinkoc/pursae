@@ -179,7 +179,15 @@ func (s *Server) pixelRender(c *gin.Context, page string) {
 		_ = s.store.Pool.QueryRow(c, `SELECT count(*) FILTER (WHERE status = 'ok'), count(*) FILTER (WHERE status = 'error') FROM pixelgo_log WHERE created_at > now() - interval '7 days'`).Scan(&d.Delivered, &d.Failed)
 		d.Logs, _, _ = s.pixelLogRows(c, "", "", "", 10, 1)
 		if !d.CookieOn && st.RequireConsent {
-			notices = append(notices, notice{Type: "warning", Message: template.HTML(`<strong>Pursae Pixel:</strong> Pursae Cookie is not active, so no tags are printed while &ldquo;Require consent&rdquo; is on. Activate it on the <a href="/wp-admin/plugins">Plugins</a> screen, or switch off &ldquo;Require consent&rdquo; under Settings if you handle consent elsewhere.`)})
+			msg := `<strong>Pursae Pixel:</strong> Pursae Cookie is not active, so no tags are printed while &ldquo;Require consent&rdquo; is on. Activate it, or switch off &ldquo;Require consent&rdquo; under Settings if you handle consent elsewhere.`
+			if u := currentUser(c); u != nil && u.Can("activate_plugins", nil) {
+				act := "/wp-admin/plugins?action=activate&plugin=" + url.QueryEscape(pluginURLSlug(gooikeSlug)) + "&_wpnonce=" + s.nonce(c, "activate-plugin_"+gooikeSlug)
+				msg += ` <a class="button button-primary" href="` + template.HTMLEscapeString(act) + `">Activate Pursae Cookie</a>`
+			}
+			notices = append(notices, notice{Type: "warning", Message: template.HTML(msg)})
+		}
+		if d.CookieOn && s.pixelGTMShared(&st) != "" {
+			notices = append(notices, notice{Type: "info", Message: template.HTML(`<strong>Pursae Pixel:</strong> the Tag Manager container ` + template.HTMLEscapeString(s.pixelGTMShared(&st)) + ` is also added in Pursae Cookie &rsaquo; Scripts. It is loaded once, from Pursae Cookie; Pursae Pixel only pushes its events to the data layer.`)})
 		}
 		if d.WooActive && (!st.Woo["purchase"] || d.ActiveCount == 0) {
 			notices = append(notices, notice{Type: "warning", Message: template.HTML(`<strong>Pursae Pixel:</strong> the store is active but Purchase events are not being sent. Enable a platform and the Purchase event under <a href="/wp-admin/pixelgo?page=events">Events</a>.`)})

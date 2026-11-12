@@ -12,6 +12,8 @@
 // a newer editor adds survive a round trip through an older server.
 package webbuilder
 
+import "encoding/json"
+
 // Versions and handshake.
 const (
 	// APIVersion is the REST/boot schema version. Every web-builder/v2 request from the editor
@@ -61,6 +63,9 @@ const (
 	RouteTemplateConditions = "/web-builder/v2/templates/{id}/conditions" // PUT
 	RouteTemplatePreview    = "/web-builder/v2/templates/{id}/preview"    // PUT
 	RouteTemplateConflicts  = "/web-builder/v2/templates/{id}/conflicts"  // GET
+	RouteTemplatePopup      = "/web-builder/v2/templates/{id}/popup"      // GET, PUT (PopupSettings)
+	RouteTemplateExport     = "/web-builder/v2/templates/{id}/export"     // GET (TemplateFile)
+	RouteTemplateImport     = "/web-builder/v2/templates/import"          // POST (TemplateFile)
 	RoutePreviewContext     = "/web-builder/v2/preview-context"           // GET ?object=
 	RouteNavigator          = "/web-builder/v2/navigator"                 // GET: the editor's page switcher
 	MediaRoute              = "/wp/v2/media"                              // existing core route
@@ -555,6 +560,9 @@ const (
 	StatusDraft   = "draft"
 	StatusPending = "pending"
 	StatusPrivate = "private"
+	// StatusFuture schedules the publish: PublishRequest.Date is when the page goes live. The
+	// snapshot is stored at once; the core's publish_future_post cron flips the status.
+	StatusFuture = "future"
 )
 
 type UserRef struct {
@@ -572,6 +580,7 @@ type DocumentResponse struct {
 	PostID   int64        `json:"postId"`
 	PostType string       `json:"postType"`
 	Status   string       `json:"status"`
+	Date     string       `json:"date"`     // RFC 3339 publish date of the post ("" = none yet); in the future while Status is future
 	Rev      int          `json:"rev"`      // 0 = never published from the builder
 	Doc      *DocState    `json:"doc"`      // null = new page, the editor starts from its default
 	Page     PageSettings `json:"page"`     // from the post when there is no doc yet
@@ -602,7 +611,8 @@ type AutosaveResponse struct {
 // PublishRequest is the body of POST RoutePublish.
 type PublishRequest struct {
 	BaseRev    int          `json:"baseRev"`
-	Status     string       `json:"status"`             // publish | draft | pending | private
+	Status     string       `json:"status"`             // publish | draft | pending | private | future
+	Date       string       `json:"date,omitempty"`     // RFC 3339; required with status future (a past date publishes now)
 	Reattach   bool         `json:"reattach,omitempty"` // required on a detached page
 	Doc        DocState     `json:"doc"`
 	Page       PageSettings `json:"page"`
@@ -620,7 +630,8 @@ const (
 
 type PublishResponse struct {
 	Rev        int      `json:"rev"`
-	Status     string   `json:"status"` // pending for users without publish_posts
+	Status     string   `json:"status"` // pending for users without publish_posts; future for a scheduled page
+	Date       string   `json:"date"`   // RFC 3339 publish date ("" = none)
 	Permalink  string   `json:"permalink"`
 	RevisionID int64    `json:"revisionId"`
 	Modified   string   `json:"modified"`
@@ -1167,7 +1178,7 @@ const (
 	// ConditionPattern is the whole grammar as one regular expression (the parser in
 	// conditions.go is the authority; this is for clients and tests). <ptype> and <tax> match
 	// SlugPattern minus the reserved words of the same position, <id> is a positive decimal.
-	ConditionPattern = `^(include|exclude)/(general|404|singular(/front_page|/[a-z0-9_-]{1,32}(/[1-9][0-9]{0,18}|/in/[a-z0-9_-]{1,32}/[1-9][0-9]{0,18}|/child_of/[1-9][0-9]{0,18}|/by_author/[1-9][0-9]{0,18})?)?|archive(/home|/date|/search|/author(/[1-9][0-9]{0,18})?|/type/[a-z0-9_-]{1,32}|/[a-z0-9_-]{1,32}(/[1-9][0-9]{0,18})?)?)$`
+	ConditionPattern = `^(include|exclude)/(general|404|singular(/front_page|/[a-z0-9_-]{1,32}(/[1-9][0-9]{0,18}|/in/[a-z0-9_-]{1,32}/[1-9][0-9]{0,18}|/child_of/[1-9][0-9]{0,18}|/by_author/[1-9][0-9]{0,18})?)?|archive(/home|/date|/search|/author(/[1-9][0-9]{0,18})?|/type/[a-z0-9_-]{1,32}|/[a-z0-9_-]{1,32}(/[1-9][0-9]{0,18})?)?|user/(logged_in|logged_out|role/[a-z0-9_-]{1,32}))$`
 	SlugPattern      = `^[a-z0-9_-]{1,32}$`
 )
 
@@ -1772,6 +1783,31 @@ type TaxonomyInfo struct {
 	Types []string `json:"types"` // post types it is attached to
 }
 
+// TemplateFile is one template as a file (GET RouteTemplate…/export, POST templates/import): the
+// stored doc with the template's type, title, display conditions, priority and, for a popup, its
+// settings. No snapshot: the importing site renders it in the editor.
+type TemplateFile struct {
+	Format     string          `json:"format"`  // TemplateFileFormat
+	Version    int             `json:"version"` // TemplateFileVersion
+	Type       TemplateType    `json:"type"`
+	Title      string          `json:"title"`
+	Conditions []string        `json:"conditions"`
+	Priority   int             `json:"priority"`
+	Popup      *PopupSettings  `json:"popup,omitempty"`
+	Doc        json.RawMessage `json:"doc"`
+}
+
+const (
+	TemplateFileFormat  = "web-builder-template"
+	TemplateFileVersion = 1
+)
+
+// RoleInfo is one role of the site, for the audience rules (user/role/<slug>).
+type RoleInfo struct {
+	Slug  string `json:"slug"`
+	Label string `json:"label"`
+}
+
 // SiteBoot is Boot.Site.
 type SiteBoot struct {
 	Title      string                   `json:"title"`
@@ -1783,6 +1819,7 @@ type SiteBoot struct {
 	ThemeParts bool                     `json:"themeParts"` // Hello Pursae is active: pages may use layout "site"
 	PostTypes  []PostTypeInfo           `json:"postTypes"`  // viewable types: post, page, public custom types, product (Pursae Commerce)
 	Taxonomies []TaxonomyInfo           `json:"taxonomies"` // category, post_tag; product_cat, product_tag with Pursae Commerce
+	Roles      []RoleInfo               `json:"roles"`      // the site's roles whose slug fits a rule (SlugPattern), most capable first
 }
 
 // ---------------------------------------------------------------------------------------------

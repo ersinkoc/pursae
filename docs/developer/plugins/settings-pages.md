@@ -39,6 +39,14 @@ func init() {
 | `number` | JSON number | `Min`, `Max` (clamped on save), `Placeholder` |
 | `checkbox` | `true` / `false` | the `Description` is the label next to the box |
 | `select` | string; values not in `Options` are ignored | `Options` (1–100) |
+| `radio` | string; values not in `Options` are ignored | `Options` (1–100) |
+| `email` | string, a valid address or "" | `Placeholder` |
+| `url` | string, an http(s) URL (cleaned) or "" | `Placeholder` |
+| `password` | string; never printed back, an empty input keeps the stored value | `Placeholder` |
+| `color` | string, `#rgb`, `#rrggbb` or `#rrggbbaa`, or "" | — |
+| `date` | string `YYYY-MM-DD` or "" | — |
+
+The same field types are used by [meta boxes, block attributes and Web Builder widget controls](admin-ui.md).
 
 Rules: `ID` is `^[a-z0-9_]{1,64}$` and unique; 1–50 fields per page; labels and placeholders
 ≤200 characters, descriptions ≤2000. Everything is escaped when rendered — HTML in labels is
@@ -64,6 +72,5 @@ the page purges the page cache, so shortcodes and filters pick up the new values
 
 ## What you do not get
 
-Custom HTML, buttons that call the plugin, file uploads, or pages outside Settings. For an
-action-style screen use a REST route plus a script enqueued in the admin
-([assets](assets.md)).
+Custom HTML, buttons that call the plugin, file uploads, or pages outside Settings. For a page
+with your own HTML and form handling use an [admin page](admin-ui.md) (`admin:pages`).

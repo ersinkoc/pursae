@@ -1378,18 +1378,10 @@
 		var title = document.getElementById( 'hg-entry-title' );
 		var titleField = title && title.getAttribute( 'data-field' );
 		if ( titleField ) {
-			var showTitle = function () {
+			root.addEventListener( 'input', function () {
 				var t = state[ titleField ];
-				var has = t !== null && t !== undefined && String( t ).trim() !== '';
-				title.textContent = has ? String( t ) : title.getAttribute( 'data-empty' );
-				title.setAttribute( 'translate', has ? 'no' : 'yes' );
-			};
-			root.addEventListener( 'input', showTitle );
-			// A translation created from another locale (or a form sent back with errors) already has a
-			// title the server did not print in the header.
-			if ( state[ titleField ] !== null && state[ titleField ] !== undefined && String( state[ titleField ] ).trim() !== '' ) {
-				showTitle();
-			}
+				title.textContent = t !== null && t !== undefined && String( t ).trim() !== '' ? String( t ) : title.getAttribute( 'data-empty' );
+			} );
 		}
 		var publish = document.getElementById( 'hg-publish' );
 		form.querySelectorAll( '[data-hg-publish]' ).forEach( function ( b ) {

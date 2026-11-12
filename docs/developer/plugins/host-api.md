@@ -90,6 +90,11 @@ addresses or password hashes.
 | `RegisterRestRoute(ns, route, methods, handler)`, `RegisterRestRouteWithHeaders(ns, route, methods, headers, handler)` | `register_rest_route` | `rest:routes` | [REST routes](rest-routes.md) |
 | `RegisterSettingsPage(page)`, `Setting(id)`, `SettingString/Bool/Float`, `SettingName(id)` | `register_settings_page`, `get_option` | `admin:settings`, `options:read` | [settings pages](settings-pages.md) |
 | `EnqueueStyle(Style)`, `EnqueueScript(Script)` | `enqueue_style`, `enqueue_script` | `content:filter` (+ `admin:settings` for admin styles, `content:html` / `admin:scripts` for scripts) | [assets](assets.md) |
+| `RegisterAdminPage(AdminPage)` | `register_admin_page` | `admin:pages` | [admin UI](admin-ui.md) |
+| `RegisterDashboardWidget(id, title, cap, fn)` | `register_dashboard_widget` | `admin:dashboard` | [admin UI](admin-ui.md) |
+| `RegisterMetaBox(MetaBox)` | `register_meta_box` | `admin:metaboxes` | [admin UI](admin-ui.md) |
+| `RegisterBlock(Block)` | `register_block` | `blocks:register` | [admin UI](admin-ui.md) |
+| `RegisterBuilderWidget(BuilderWidget)` | `register_builder_widget` | `builder:widgets` | [admin UI](admin-ui.md) |
 
 ## Scheduled events
 

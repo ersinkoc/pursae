@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"html/template"
 	"io/fs"
 	"log"
 	"net/url"
@@ -59,6 +60,7 @@ type wbFrontPage struct {
 	draftNewer bool // the previewing user has an autosave newer than the published doc
 	body       string
 	bodyDone   bool
+	popups     []*wbPopup // the request's popups, printed by the canvas (wbRenderPage)
 }
 
 // wbFrontFor decides once per request and post whether the canvas renders p as the main query's
@@ -195,13 +197,25 @@ func (s *Server) wbRenderPage(c *gin.Context, v *siteView, status int) bool {
 	if s.wbFrontOn() && v.Theme != nil && v.Theme.Slug == wbHelloSlug {
 		return s.wbRenderTheme(c, v, status)
 	}
-	if v.Q.Post == nil || (v.Template != "page" && v.Template != "single") {
+	// Popups (template type popup) show with every theme: outside Hello Pursae they are added to
+	// the theme's head and footer, or to the canvas below.
+	popups := s.wbPopups(c, v)
+	themeRenders := func() bool {
+		if len(popups) > 0 {
+			head, foot := s.wbPopupAssets(c, popups, false, false)
+			v.Head += template.HTML(head)
+			v.Footer += template.HTML(foot)
+		}
 		return false
+	}
+	if v.Q.Post == nil || (v.Template != "page" && v.Template != "single") {
+		return themeRenders()
 	}
 	fp := s.wbFrontFor(c, v.Q, v.Q.Post)
 	if fp == nil {
-		return false
+		return themeRenders()
 	}
+	fp.popups = popups
 	filled := s.wbFill(c, v, fp.doc, true)
 	wbAddCacheTags(c, false, filled.loops)
 	if filled.catalog {
@@ -253,6 +267,8 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	}
 	sb.WriteString(s.wbFontLinks(c, d.Fonts))
 	sb.WriteString(s.wbPageCSS(c, v.Q.Post, d))
+	popHead, popFoot := s.wbPopupAssets(c, fp.popups, site.CSS != "", runtime)
+	sb.WriteString(popHead)
 	sb.WriteString("</head>\n")
 	sb.WriteString("<body class=\"" + html.EscapeString(strings.TrimSpace(v.BodyClass+" web-builder-page")) + "\">\n")
 	sb.WriteString(string(v.BodyOpen))
@@ -275,6 +291,7 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 		fmt.Fprintf(&sb, "<script defer src=\"%s\" id=\"web-builder-runtime-js\"></script>\n",
 			html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.Runtime)))
 	}
+	sb.WriteString(popFoot)
 	sb.WriteString(string(v.AdminBar))
 	sb.WriteString(string(s.wpFooter(c, v.Q, lb, adminBar))) // wp_footer without the theme's footer scripts
 	sb.WriteString("\n</body>\n</html>\n")

@@ -22,7 +22,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
-	"wpgo/internal/webbuilder"
 	"wpgo/internal/wp"
 )
 
@@ -712,32 +711,15 @@ func pllMTBlocks(content string, tr func([]string) ([]string, error)) (string, e
 // The provider's answer is untrusted (a prompt-injected or compromised service can return any
 // markup), so the translated title, excerpt and every translated HTML part of the content go
 // through wp.KsesPost. A part whose source holds markup KSES would remove (written by a user with
-// unfiltered_html, e.g. a Custom HTML block) is not sent and stays as copied.
+// unfiltered_html, e.g. a Custom HTML block) is not sent and stays as copied. A Pursae Web Builder
+// page gets the texts of its published snapshot and of its builder document translated (pllWBPlan).
 func (s *Server) pllMTTranslatePost(ctx context.Context, p *store.Post, src, dst *pllLanguage) error {
 	if !s.pllMTEnabled() || p == nil || dst == nil {
 		return errPllMTOff
 	}
-	title, excerpt := p.Title, p.Excerpt
-	if res, err := s.pllMachineTranslate(ctx, []string{p.Title, p.Excerpt}, src, dst, false); err != nil {
-		return err
-	} else {
-		title, excerpt = wp.KsesPost(strings.TrimSpace(res[0])), wp.KsesPost(res[1])
-	}
-	content := p.Content
-	// A Web Builder page keeps its doc (the source of truth, copied in the source language) and the
-	// content generated from it: rewriting posts.content would detach the doc. Its texts are
-	// translated in the builder (or the visual editor).
-	if _, builder := p.Meta[webbuilder.PostMarkerMeta]; !builder {
-		var err error
-		if content, err = s.pllMTTranslateHTML(ctx, p.Content, src, dst); err != nil {
-			return err
-		}
-	}
-	if _, err := s.store.Pool.Exec(ctx, `UPDATE posts SET title = $2, excerpt = $3, content = $4 WHERE id = $1`, p.ID, title, excerpt, content); err != nil {
-		return err
-	}
-	p.Title, p.Excerpt, p.Content = title, excerpt, content
-	return nil
+	// p holds the copy of its source, a Web Builder page the copied doc and snapshot: the engine of
+	// golylang_translate.go translates them in place.
+	return s.pllTranslateFrom(ctx, p, p, s.pllMTTr(ctx, src, dst))
 }
 
 // pllMTCopyPerMin is how many new translations one user can machine translate per minute (the

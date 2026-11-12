@@ -229,6 +229,15 @@ func (s *Server) imgeditSave(c *gin.Context, a *store.Attachment, scale bool) ma
 	if err := s.store.ReplaceAttachmentFile(c, a); err != nil {
 		return map[string]any{"error": "Unable to save the image."}
 	}
+	// A name written again (a second save in the same millisecond, a size that kept its name) has a
+	// stale copy in the bucket and in the image-service cache: both go, and the CDN forgets the URL,
+	// before the new files are offloaded.
+	written := []string{info.RelPath}
+	for _, v := range variants {
+		written = append(written, v.FilePath)
+	}
+	s.gocdnFilesChanged(a, written)
+	s.gocdnDropVariants(written)
 	s.gocdnOffloadAsync(a) // GoCDN: offload the edited files (gocdn_offload.go)
 	s.purgeAll(c)
 	out := map[string]any{"msg": "Image saved", "fw": a.Width, "fh": a.Height}
@@ -266,6 +275,7 @@ func (s *Server) imgeditRestore(c *gin.Context, a *store.Attachment) map[string]
 	if err := s.store.ReplaceAttachmentFile(c, a); err != nil {
 		return map[string]any{"error": "Image metadata is inconsistent."}
 	}
+	s.gocdnOffloadAsync(a) // GoCDN: the restored files may never have been offloaded
 	s.purgeAll(c)
 	return map[string]any{"msg": "Image restored successfully."}
 }

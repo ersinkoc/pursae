@@ -17,7 +17,7 @@ with `permission_denied` — logged, not fatal.
 | `posts:read` | Read posts and receive post data from post lifecycle hooks | `GetPost`, `QueryPosts`; hooks `save_post`, `save_post_*` and `wpgo_post_stats` (fired today), and the reserved `wp_insert_post`, `publish_post`, `transition_post_status`, `before_delete_post`, `deleted_post`, `trashed_post`, `untrashed_post`, `post_updated` ([not fired yet](hooks.md#reserved-names)) |
 | `posts:write` | Create and change posts | `InsertPost`, `UpdatePost`; the reserved hooks `wp_insert_post_data`, `wp_insert_attachment_data`, `pre_post_update`, `content_save_pre`, `title_save_pre`, `excerpt_save_pre` ([not fired yet](hooks.md#reserved-names)) |
 | `users:read` | See who the current user is | `CurrentUser` |
-| `forms:access` | See what visitors submit in contact forms and decide what counts as spam | hooks `pre_comment_approved` and `comment_post` (comments), `pursae_personal_data_export` / `pursae_personal_data_erase` (privacy) and `wpcf7_*` (Pursae Contact Form): `wpcf7_mail_sent` carries the submitted fields, `wpcf7_spam` the fields, IP and user agent and lets the plugin change the spam verdict; the filter `wpcf7_validate` returns `{field: message}` errors, the filter `wpcf7_before_send_mail` receives `{posted_data, skip_mail, abort}` and may change posted values, skip the mail or abort the submission with a message |
+| `forms:access` | See what visitors submit in contact forms and decide what counts as spam | hooks `preprocess_comment`, `pre_comment_approved` and `comment_post` (comments), `pursae_personal_data_export` / `pursae_personal_data_erase` (privacy) and `wpcf7_*` (Pursae Contact Form): `wpcf7_mail_sent` carries the submitted fields, `wpcf7_spam` the fields, IP and user agent and lets the plugin change the spam verdict; the filter `wpcf7_validate` returns `{field: message}` errors, the filter `wpcf7_before_send_mail` receives `{posted_data, skip_mail, abort}` and may change posted values, skip the mail or abort the submission with a message |
 | `headless:entries` | See Pursae Headless entries as they are saved, published and deleted, and validate or derive their values | hooks `headless_entry_validate`, `headless_entry_saved`, `headless_entry_published`, `headless_entry_unpublished`, `headless_entry_deleted` ([Pursae Headless entries](hooks.md#pursae-headless-entries)) |
 | `content:filter` | Modify content shown to visitors | hooks `the_*`, `comment_text`, `widget_text`, `widget_title`, `get_the_excerpt`, `wp_title`, `document_title_parts`, `body_class`, `post_class`; `AddShortcode`; `EnqueueStyle`, `EnqueueScript` (scripts also need one of the two below). HTML the plugin adds goes through KSES (`wp_kses_post`) |
 | `content:html` | Show unfiltered HTML and scripts to visitors (they also run for logged-in administrators: full control of the site) | shortcode and content-filter output is not sanitised; `EnqueueScript` on the front end. **Not ticked by default** |
@@ -29,6 +29,12 @@ with `permission_denied` — logged, not fatal.
 | `storage` | Store private plugin data | `Storage`, `Transients` |
 | `http:outbound` | Make outbound HTTP requests | `HTTPGet`, `HTTPRequest` |
 | `mail:send` | Send e-mail from the site | `SendMail` |
+| `admin:pages` | Add pages to the admin menu | `RegisterAdminPage` ([admin UI](admin-ui.md)); output sanitised unless `admin:scripts` |
+| `admin:dashboard` | Add widgets to the Dashboard | `RegisterDashboardWidget` |
+| `admin:metaboxes` | Add boxes to the post edit screen and see what is typed into them | `RegisterMetaBox`; fields stored as post meta `plugin_<slug>_*` |
+| `blocks:register` | Add blocks to Pursae Editor and render them for visitors | `RegisterBlock`; output sanitised unless `content:html` |
+| `builder:widgets` | Add widgets to Pursae Web Builder and render them for visitors | `RegisterBuilderWidget` |
+| `commerce:orders` | See store orders: customers' names, addresses and what they bought | hooks `woocommerce_*`: `woocommerce_new_order`, `woocommerce_order_status_changed`, `woocommerce_payment_complete` ([hooks](hooks.md)) |
 
 No permission is needed for `Log`, for `init`, or for hooks the vocabulary does not classify.
 

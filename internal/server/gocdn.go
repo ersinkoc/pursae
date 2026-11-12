@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -15,7 +16,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -77,6 +80,8 @@ type gocdnSettings struct {
 	MultipartMB  int    `json:"multipart-threshold-mb"`
 	SSE          bool   `json:"server-side-encryption"` // legacy: = SSEType "s3" (x-amz-server-side-encryption: AES256)
 	StorageClass string `json:"storage-class"`          // "" = the bucket's default
+	// A time-stamped folder in the key of every new object (WP Offload Media's object-versioning).
+	ObjectVersioning bool `json:"object-versioning"`
 	// Encryption at rest: "" (the bucket's default), "s3" (SSE-S3), "kms" (SSE-KMS, key SSEKMSKey
 	// or the account's default aws/s3 key) or "customer" (SSE-C, 256-bit SSECKey, sealed at rest).
 	SSEType   string `json:"sse-type"`
@@ -289,6 +294,12 @@ func gocdnPutOptions(st gocdnSettings, rel string) gocdn.PutOptions {
 	o := gocdn.PutOptions{ContentType: gocdnMime(rel), CacheControl: "public, max-age=31536000, immutable", StorageClass: st.StorageClass}
 	if st.PublicRead {
 		o.ACL = "public-read"
+	}
+	if mediaIsPrivateRel(rel) { // private files: no public ACL, no shared caching
+		o.CacheControl = "private, no-store"
+		if st.PublicRead {
+			o.ACL = "private"
+		}
 	}
 	switch st.SSEType {
 	case "s3":
@@ -506,6 +517,40 @@ func gocdnObjectKey(st gocdnSettings, rel string) string {
 	return st.Prefix + strings.TrimLeft(rel, "/")
 }
 
+// gocdnNewKey is the key a file is uploaded under. A private file (media_private.go) gets a
+// folder name nobody can guess, so it stays unreachable in a bucket that is public by policy; with
+// "Object versioning" every upload gets a time-stamped folder, so a file written again under the
+// same name has a new URL and no CDN or browser shows the old one.
+func (s *Server) gocdnNewKey(st gocdnSettings, rel string) string {
+	rel = strings.TrimLeft(rel, "/")
+	dir, file := path.Split(rel)
+	if mediaIsPrivateRel(rel) {
+		m := hmac.New(sha256.New, s.mediaPrivateKey())
+		m.Write([]byte("key|" + rel))
+		dir += hex.EncodeToString(m.Sum(nil)[:16]) + "/"
+	}
+	if st.ObjectVersioning {
+		dir += time.Now().UTC().Format("20060102150405") + "/"
+	}
+	return st.Prefix + dir + file
+}
+
+// gocdnKeyFits reports whether key is a key gocdnNewKey could have made for rel under the current
+// prefix (the plain key, or one with the private / version folders).
+func gocdnKeyFits(st gocdnSettings, key, rel string) bool {
+	rel = strings.TrimLeft(rel, "/")
+	if key == st.Prefix+rel {
+		return !mediaIsPrivateRel(rel)
+	}
+	dir, file := path.Split(rel)
+	rest, ok := strings.CutPrefix(key, st.Prefix+dir)
+	if !ok || !strings.HasSuffix(rest, "/"+file) {
+		return false
+	}
+	extra := strings.Split(strings.TrimSuffix(rest, "/"+file), "/")
+	return len(extra) >= 1 && len(extra) <= 2 && !slices.Contains(extra, "")
+}
+
 // --- runtime state -----------------------------------------------------------------------------
 
 // gocdnRuntime is per-server state that has no place in the Server struct (a shared file): the
@@ -516,6 +561,7 @@ type gocdnRuntime struct {
 	pending  *gocdnConn // a replaced connection being remembered (gocdnTrackConn)
 	job      *gocdnJobState
 	reRemove map[string]bool // fetched-back copies waiting to be deleted again
+	orphans  []string        // the last orphan scan's result (gocdnScanOrphans)
 }
 
 var gocdnRuntimes sync.Map // *Server → *gocdnRuntime

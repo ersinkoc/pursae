@@ -28,8 +28,9 @@ import (
 // Privacy Control are redirected/served but never counted.
 //
 // Delivery status (delivered, bounced, complained) comes from the mailer's webhook:
-// POST /wp-mail-smtp/v1/webhook/<postmark|sendgrid|mailgun>?token=<token>; the token is shown
-// under Settings > Email Log and derived from the site secret.
+// POST /wp-mail-smtp/v1/webhook/<postmark|sendgrid|mailgun|amazonses>?token=<token>; the token is
+// shown under Settings > Email Log and derived from the site secret. Amazon SES arrives through
+// Amazon SNS and is signature-verified on top of the token (mailsmtp_ses.go).
 
 const msTrackBase = "/wp-mail-smtp/v1"
 
@@ -229,8 +230,20 @@ func (s *Server) msWebhook(c *gin.Context) {
 		return
 	}
 	body, _ := io.ReadAll(io.LimitReader(c.Request.Body, 1<<20))
+	var events []msDeliveryEvent
+	if mailer := c.Param("mailer"); mailer == "amazonses" {
+		// Amazon SNS envelope: trusted only after its signature verifies (mailsmtp_ses.go).
+		ev, err := msSESWebhook(c.Request.Context(), body)
+		if err != nil {
+			c.JSON(http.StatusForbidden, gin.H{"error": "SNS message rejected"})
+			return
+		}
+		events = ev
+	} else {
+		events = msParseWebhook(mailer, body)
+	}
 	n := 0
-	for _, e := range msParseWebhook(c.Param("mailer"), body) {
+	for _, e := range events {
 		tag, err := s.store.Pool.Exec(c.Request.Context(), `UPDATE wpmailsmtp_emails_log SET delivery_status = $2, delivery_detail = $3, delivery_at = now()
 			WHERE message_id <> '' AND (message_id = $1 OR message_id = '<' || trim(both '<>' from $1) || '>' OR message_id LIKE $1 || '.%')
 			AND NOT (delivery_status IN ('bounced','complained') AND $2 = 'delivered')`, e.MessageID, e.Status, e.Detail)

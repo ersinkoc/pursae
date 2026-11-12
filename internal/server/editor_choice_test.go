@@ -35,7 +35,7 @@ func TestUseBlockEditorDecisionTree(t *testing.T) {
 		{"switching: per-post remember block", map[string]any{"native_classic_editor": true, "classic-editor-replace": "classic", "classic-editor-allow-users": "allow"}, "", map[string]any{"classic-editor-remember": "block-editor"}, nil, "post", true},
 		{"switching: user default classic", map[string]any{"native_classic_editor": true, "classic-editor-replace": "block", "classic-editor-allow-users": "allow"}, "", nil, map[string]any{"classic-editor-settings": "classic"}, "post", false},
 		{"switching: user default block", map[string]any{"native_classic_editor": true, "classic-editor-replace": "classic", "classic-editor-allow-users": "allow"}, "", nil, map[string]any{"classic-editor-settings": "block"}, "page", true},
-		{"other post types never use the block editor here", map[string]any{"native_classic_editor": false}, "", nil, nil, "product", false},
+		{"post types without Show in REST never use the block editor", map[string]any{"native_classic_editor": false}, "", nil, nil, "product", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

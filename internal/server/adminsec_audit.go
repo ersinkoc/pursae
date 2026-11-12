@@ -59,6 +59,10 @@ var asEventLabels = [][2]string{
 	{"theme_switched", "Theme switched"},
 	{"settings_updated", "Settings changed"},
 	{"adminsec_settings", "Pursae Security settings changed"},
+	{"firewall_blocked", "Request blocked by the firewall"},
+	{"rate_limited", "Rate limit reached"},
+	{"integrity_scan", "Integrity scan"},
+	{"integrity_findings", "Integrity scan findings"},
 }
 
 func asEventLabel(ev string) string {
@@ -278,6 +282,7 @@ func (s *Server) adminsecDaily(ctx context.Context) error {
 	if !s.adminsecOn() {
 		return nil
 	}
+	s.asIntegrityDaily(ctx) // the file integrity scan (adminsec_integrity.go)
 	if days := s.asLoad().LogRetention; days > 0 {
 		_, err := s.store.Pool.Exec(ctx, `DELETE FROM adminsec_log WHERE created_at < now() - make_interval(days => $1)`, days)
 		return err

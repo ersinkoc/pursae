@@ -200,7 +200,7 @@ Not in the builder (yet):
 - **Global classes**, **kits** and a colour picker in the editor that writes design tokens: the
   tokens themselves exist (below), but the editor's own colour and font fields still write fixed
   values; use `var(--wb-color-primary)` in custom CSS or an HTML section to follow a token.
-- A setup wizard, a template library beyond saved sections, and a revisions panel in the editor (the REST routes exist; builder revisions are pruned to the newest 50 per page, Settings › Web Builder › Revisions to keep).
+- A setup wizard and a template library beyond saved sections. (The builder menu has **Revisions** — restore loads a published version as your draft — **Schedule publish**, and in a popup template **Popup settings**; builder revisions are pruned to the newest 50 per page, Settings › Web Builder › Revisions to keep.)
 
 These come back as later features. The previous builder and its data were removed in the release
 that introduced this one ([upgrading](getting-started/upgrading.md)).

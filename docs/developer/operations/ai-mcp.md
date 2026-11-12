@@ -129,8 +129,10 @@ authorization-code flow with PKCE: it registers a client, opens the consent scre
 `127.0.0.1`), and stores the token pair in `<user config dir>/pursae/mcp-<host>.json` with mode `0600`
 (`PURSAE_CONFIG_DIR` overrides the directory). After that `wpgo mcp --url https://example.com` needs no user
 or password: it sends the Bearer token and, when the site answers 401, refreshes the pair once (rotating
-refresh token, file rewritten) and retries. The bridge still answers each message with one POST; it does not
-open the server-to-client SSE stream.
+refresh token, file rewritten) and retries. The bridge keeps the `Mcp-Session-Id` the site returns at `initialize`, sends it on every
+POST, opens the server→client SSE stream for that session (so `notifications/tools/list_changed` reaches the
+client) and ends the session with `DELETE` when stdin closes. The token file is a plain `0600` file, not the
+OS keychain.
 
 The bridge refuses plain `http://` URLs except `localhost`, `127.0.0.1` and `::1` (and redirects to such URLs),
 because the password travels with every request. It prints nothing but protocol messages on stdout; errors
@@ -188,7 +190,8 @@ tool except the purely additive `create_post`, `create_page`, `create_term`, `cr
 
 ## Safety
 
-- Every tool call that writes is logged (time, user, OAuth application or Application Password name, tool, route, status; no bodies or query strings) and kept for 90 days. Read it with `ai_activity` or `GET /pursae/v1/mcp/activity` (`manage_options`).
+- Every tool call that writes is logged (time, user, OAuth application or Application Password name, tool, route, status; no bodies or query strings) and kept for 90 days. Read it with `ai_activity`, `GET /pursae/v1/mcp/activity` or the admin screen **Tools › AI Access** (`/wp-admin/ai-access`, `manage_options`), which also shows the endpoint and ready client configs, lists every OAuth grant on the site with Revoke, filters the log by tool and client, and can clear it.
+- An hourly job drops expired OAuth grants and authorization codes, clients left without a grant, and activity past its retention.
 - Tools that change or remove existing data are marked `destructiveHint`; only purely additive ones (create post/page/term/menu item/user/comment/product, upload, create backup) are not, so clients ask before the rest.
 - Tool answers over 400 KB are cut on a character boundary and then carry no `structuredContent`.
 - Give the agent the narrowest scopes and the least powerful user that does the job.

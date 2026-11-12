@@ -738,10 +738,12 @@ func (api *restAPI) deletePost(c *gin.Context, r *restRequest, typ string) {
 	if force, _ := r.Bool(c, "force"); force || typ == "wp_block" {
 		// Purge while the post and its terms still exist (the admin delete paths do the same).
 		s.afterPostSave(c, p)
+		s.pluginPostAction(c, "before_delete_post", p)
 		if err := s.store.DeletePost(c, p.ID); err != nil {
 			restErr(c, http.StatusInternalServerError, "rest_cannot_delete", "The post cannot be deleted.")
 			return
 		}
+		s.pluginPostMoved(c, "delete", p)
 		s.purgePostAgain(c, p)
 		s.wbAfterStatusChange(c, p)
 		restJSON(c, http.StatusOK, map[string]any{"deleted": true, "previous": prev})
@@ -751,7 +753,9 @@ func (api *restAPI) deletePost(c *gin.Context, r *restRequest, typ string) {
 		restErr(c, http.StatusGone, "rest_already_trashed", "The post has already been deleted.")
 		return
 	}
-	_ = s.store.TrashPost(c, p.ID)
+	if s.store.TrashPost(c, p.ID) == nil {
+		s.pluginPostMoved(c, "trash", p) // Wasm plugins: transition_post_status, trashed_post
+	}
 	p, _ = s.store.GetPost(c, p.ID)
 	s.afterPostSave(c, p)
 	s.wbAfterStatusChange(c, p)

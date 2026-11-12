@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"html"
 	"html/template"
 	"net/http"
 	"path"
@@ -26,6 +27,8 @@ type mediaRow struct {
 	ParentTitle, ParentURL string
 	Date                   string
 	CanEdit                bool
+	Private                bool            // the file is in the protected folder (media_private.go)
+	PrivateURL             string          // the "Make private" / "Make public" row action
 	PluginCols             []template.HTML // Pursae Multi Language: one cell per language
 }
 
@@ -67,17 +70,31 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		s.mediaBulkDelete(c)
 		return
 	}
-	if c.Query("action") == "regenerate" || c.Query("action2") == "regenerate" || c.Query("action") == "regenerate-all" {
+	if a := c.Query("action"); a == "regenerate" || c.Query("action2") == "regenerate" || a == "regenerate-all" || a == "regenerate-stop" {
 		s.mediaRegenerate(c)
 		return
 	}
+	if a := c.Query("action"); a == "make-private" || a == "make-public" {
+		s.mediaPrivateAction(c)
+		return
+	}
 	var notices []notice
-	if c.Query("regenerated") != "" || c.Query("regenerating") != "" {
-		msg := "Thumbnails regenerated for " + c.Query("regenerated") + " image(s)."
-		if c.Query("regenerating") != "" {
-			msg = "Regenerating thumbnails for the whole library in the background."
-		}
-		notices = append(notices, notice{Type: "success", Message: template.HTML(msg), Dismissible: true})
+	if c.Query("regenerated") != "" {
+		notices = append(notices, notice{Type: "success", Message: template.HTML("Thumbnails regenerated for " + html.EscapeString(c.Query("regenerated")) + " image(s)."), Dismissible: true})
+	}
+	// "Regenerate all": a progress bar while the background job runs, its result afterwards.
+	if j := s.regenerateJobState(); u.Can("manage_options", nil) && (j.Running || c.Query("regenerating") != "") {
+		stop := "/wp-admin/upload?mode=list&action=regenerate-stop&_wpnonce=" + s.nonce(c, "bulk-media")
+		msg := fmt.Sprintf(`<span id="regenerate-status">Regenerating thumbnails: <strong>%d%%</strong> (%d of %d images, %d failed).</span> `+
+			`<progress id="regenerate-bar" max="100" value="%d" style="vertical-align:middle;width:200px"></progress> <a id="regenerate-stop" class="button button-small" href="%s">Stop</a>`+
+			`<script>(function(){var s=document.getElementById("regenerate-status"),b=document.getElementById("regenerate-bar"),x=document.getElementById("regenerate-stop");`+
+			`function tick(){fetch("/wp-admin/admin-ajax?action=regenerate-progress",{credentials:"same-origin"}).then(function(r){return r.json()}).then(function(j){`+
+			`var n=j.done+j.skipped+j.failed;b.value=j.percent;`+
+			`if(j.running){s.innerHTML="Regenerating thumbnails: <strong>"+j.percent+"%%</strong> ("+n+" of "+j.total+" images, "+j.failed+" failed).";setTimeout(tick,2000)}`+
+			`else{s.textContent=(j.stopped?"Regeneration stopped: ":"Thumbnails regenerated: ")+j.done+" rebuilt, "+j.skipped+" skipped, "+j.failed+" failed.";x.style.display="none"}`+
+			`}).catch(function(){setTimeout(tick,5000)})}tick()})()</script>`,
+			j.Percent(), j.Done+j.Skipped+j.Failed, j.Total, j.Failed, j.Percent(), html.EscapeString(stop))
+		notices = append(notices, notice{Type: "info", Message: template.HTML(msg)})
 	}
 	if n, _ := strconv.Atoi(c.Query("deleted")); n > 0 {
 		msg := "Media file permanently deleted."
@@ -155,6 +172,12 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		if r.Title == "" {
 			r.Title = "(no title)"
 		}
+		r.Private = mediaIsPrivate(a)
+		act := "make-private"
+		if r.Private {
+			act = "make-public"
+		}
+		r.PrivateURL = "/wp-admin/upload?action=" + act + "&media=" + itoa64(a.ID) + "&_wpnonce=" + s.nonce(c, "media-private_"+itoa64(a.ID))
 		switch {
 		case a.Variant("thumbnail") != nil:
 			r.Thumb = s.uploadURL(c, a.Variant("thumbnail").FilePath)
@@ -210,6 +233,11 @@ func (s *Server) mediaRegenerate(c *gin.Context) {
 	}
 	if !u.Can("manage_options", nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to regenerate thumbnails.")
+		return
+	}
+	if c.Query("action") == "regenerate-stop" {
+		regenerateStop.Store(true)
+		c.Redirect(http.StatusFound, "/wp-admin/upload?mode=list&regenerating=1")
 		return
 	}
 	if c.Query("action") == "regenerate-all" {

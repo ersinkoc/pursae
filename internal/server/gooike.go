@@ -78,9 +78,10 @@ type gooikeCookieRow struct {
 }
 
 // gooikeTexts are every visitor-facing string, editable on the Banner screen. They are one set per
-// site, written in the default language; a multilingual site translates them with Pursae Multi
-// Language's string translations (Languages > Translations), which the page string pass applies
-// to the banner markup like any other page text.
+// site. While "Automatic language" is on, texts left at a built-in value are served in the
+// visitor's language (gooike_texts_i18n.go); texts the admin wrote are translated with Pursae
+// Multi Language's string translations (Languages > Translations), which the page string pass
+// applies to the banner markup like any other page text.
 type gooikeTexts struct {
 	Title          string `json:"title"`
 	Message        string `json:"message"`
@@ -150,6 +151,7 @@ type gooikeSettings struct {
 	BlockYouTube    bool     `json:"block_youtube"`
 	BlockVimeo      bool     `json:"block_vimeo"`
 	BlockMaps       bool     `json:"block_maps"`
+	EmbedsOff       []string `json:"embeds_off"` // embed providers (other than the three above) let through without consent
 	EmbedCategory   string   `json:"embed_category"`
 	ExtraHosts      string   `json:"extra_hosts"` // more sources for the CSP (connect-src / script-src)
 	ScanAuto        bool     `json:"scan_auto"`   // weekly background scan
@@ -158,6 +160,8 @@ type gooikeSettings struct {
 	ScanLast        string   `json:"scan_last"`
 	ScanNew         []string `json:"scan_new"` // undeclared cookies of the last scheduled scan
 
+	// TextsAuto serves the built-in texts in the visitor's language (gooikeLocalize).
+	TextsAuto  bool              `json:"texts_auto"`
 	Texts      gooikeTexts       `json:"texts"`
 	Design     gooikeDesign      `json:"design"`
 	Categories []gooikeCategory  `json:"categories"`
@@ -241,6 +245,7 @@ func gooikeDefaults() gooikeSettings {
 		BlockVimeo:      true,
 		BlockMaps:       true,
 		EmbedCategory:   "marketing",
+		TextsAuto:       true,
 		Texts:           gooikeDefaultTexts(),
 		Categories:      gooikeDefaultCategories(),
 		Cookies:         gooikeDefaultCookies(),

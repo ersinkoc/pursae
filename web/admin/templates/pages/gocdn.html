@@ -84,6 +84,8 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <tr><th scope="row"><label for="gc-class">Storage class</label></th><td><input type="text" id="gc-class" name="storage-class" class="regular-text code" value="{{.S.StorageClass}}" list="gc-classes" placeholder="bucket default" translate="no"{{if .Lock "storage-class"}} disabled{{end}}>
 	<datalist id="gc-classes"><option value="STANDARD"><option value="STANDARD_IA"><option value="INTELLIGENT_TIERING"><option value="ONEZONE_IA"><option value="GLACIER_IR"><option value="REDUCED_REDUNDANCY"></datalist>
 	<p class="description">For new objects (<code>x-amz-storage-class</code>). Empty uses the bucket's default; not every provider supports every class.</p></td></tr>
+<tr><th scope="row">Object versioning</th><td><label><input type="checkbox" name="object-versioning" value="1"{{if .S.ObjectVersioning}} checked{{end}}{{if .Lock "object-versioning"}} disabled{{end}}> Add a time stamp to the key of every new object</label>
+	<p class="description">A file that is written again under the same name (a replaced file, regenerated sizes) then gets a new URL, so no CDN or browser keeps showing the old one. Objects already in the bucket keep their keys.</p></td></tr>
 <tr><th scope="row"><label for="gc-multi">Multipart upload</label></th><td><input type="number" id="gc-multi" name="multipart-threshold-mb" class="small-text" min="5" max="5120" value="{{.S.MultipartMB}}"{{if .Lock "multipart-threshold-mb"}} disabled{{end}}> MB
 	<p class="description">Files this size or larger are uploaded in parts (each part retried on its own; an upload that fails is aborted).</p></td></tr>
 </table>
@@ -138,6 +140,20 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 		<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><button type="submit" name="do" value="job-stop" class="button">Stop</button>
 	</form>
 </div>
+<h2>Housekeeping</h2>
+<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools">
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+	<p>{{if .Failed}}<strong><span translate="no">{{.Failed}}</span> upload(s) could not be copied to the bucket.</strong> They are tried again once a day.{{else}}No upload is waiting for another offload attempt.{{end}}</p>
+	<button type="submit" name="do" value="retry-failed" class="button"{{if or (not .Configured) (not .Failed)}} disabled{{end}}>Retry failed</button>
+	<button type="submit" name="do" value="orphans-scan" class="button"{{if not .Configured}} disabled{{end}}>Find objects without a record</button>
+</form>
+{{if or .Orphans .OrphansScanned}}<div id="gc-orphans">
+	{{if .Orphans}}<p><span translate="no">{{len .Orphans}}</span> object(s) under the uploads prefix have no record in the database (a scan lists at most 500):</p>
+	<ul class="gc-errors">{{range .Orphans}}<li translate="no">{{.}}</li>{{end}}</ul>
+	<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
+		<button type="submit" name="do" value="orphans-delete" class="button" onclick="return confirm('Delete these objects from the bucket? This cannot be undone.')">Delete them from the bucket</button></form>
+	{{else}}<p>Every object under the uploads prefix has a record.</p>{{end}}
+</div>{{end}}
 <script>
 (function(){
 	var box=document.getElementById('gc-job');if(!box)return;

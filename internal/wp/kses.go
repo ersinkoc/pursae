@@ -26,6 +26,9 @@ var (
 	// double-quoted and escaped (a literal " never appears inside one, nor in text).
 	styleAttrRe = regexp.MustCompile(`\sstyle="([^"]*)"`)
 
+	ksesAdminOnce   sync.Once
+	ksesAdminPolicy *bluemonday.Policy
+
 	ksesDataOnce   sync.Once
 	ksesDataPolicy *bluemonday.Policy
 )
@@ -34,29 +37,61 @@ var (
 // and attributes WordPress allows in post content and preserves block delimiters
 // and <!--more--> so the block structure survives sanitizing.
 func KsesPost(html string) string {
-	ksesOnce.Do(func() {
-		p := bluemonday.UGCPolicy()
-		p.AllowElements("figure", "figcaption", "section", "article", "aside", "header", "footer", "nav", "main",
-			"mark", "small", "sub", "sup", "time", "cite", "abbr", "address", "details", "summary", "audio", "video",
-			"source", "track", "picture", "u", "s", "del", "ins", "kbd", "code", "pre", "hr", "br", "span", "div")
-		p.AllowAttrs("class", "id", "style", "title", "lang", "dir", "role").Globally()
-		p.AllowAttrs("aria-label", "aria-hidden", "aria-describedby", "aria-labelledby").Globally()
-		p.AllowAttrs("data-id", "data-type", "data-align").Globally()
-		p.AllowAttrs("datetime").OnElements("time", "del", "ins")
-		p.AllowAttrs("controls", "preload", "loop", "muted", "autoplay", "playsinline").OnElements("audio", "video", "source")
-		p.AllowAttrs("srcset", "sizes", "width", "height", "loading", "decoding").OnElements("img", "source")
-		p.AllowAttrs("src", "poster").Matching(mediaURLRe).OnElements("audio", "video", "source")
-		p.AllowAttrs("target", "rel").OnElements("a")
-		p.AllowAttrs("start").Matching(bluemonday.Integer).OnElements("ol")
-		p.AllowAttrs("reversed").Matching(regexp.MustCompile(`(?i)^(|reversed)$`)).OnElements("ol")
-		// WordPress keeps post links as written: every wp_allowed_protocols() scheme (tel:, sms:, …)
-		// and no rel="nofollow" (that is only added to comments).
-		p.AllowURLSchemes(AllowedProtocols...)
-		p.RequireNoFollowOnLinks(false)
-		p.AllowStyling()
-		p.AllowUnsafe(false)
-		ksesPolicy = p
+	ksesOnce.Do(func() { ksesPolicy = newPostPolicy() })
+	return ksesWith(ksesPolicy, html)
+}
+
+// KsesAdmin sanitises HTML a plugin prints inside the admin (its own pages, dashboard widgets and
+// meta boxes): everything KsesPost keeps plus form controls (input, select, textarea, button,
+// label, fieldset). There is no <form> element, no formaction and no form attribute, so the
+// controls can only ever be submitted by the form the core wraps around them; scripts, event
+// handlers, iframes and file inputs are removed as in KsesPost.
+func KsesAdmin(html string) string {
+	ksesAdminOnce.Do(func() {
+		p := newPostPolicy()
+		p.AllowElements("fieldset", "legend", "label", "select", "option", "optgroup", "textarea", "button", "input")
+		p.AllowAttrs("for").OnElements("label")
+		p.AllowAttrs("name", "disabled", "required").OnElements("input", "select", "textarea", "button", "fieldset")
+		p.AllowAttrs("value").OnElements("input", "option", "button")
+		p.AllowAttrs("type").Matching(regexp.MustCompile(`(?i)^(text|number|email|url|tel|search|checkbox|radio|hidden|date|time|datetime-local|month|week|color|range|submit|button|reset)$`)).OnElements("input")
+		p.AllowAttrs("type").Matching(regexp.MustCompile(`(?i)^(submit|button|reset)$`)).OnElements("button")
+		p.AllowAttrs("checked", "readonly", "placeholder", "min", "max", "step", "maxlength", "minlength", "pattern", "size", "autocomplete").OnElements("input", "textarea")
+		p.AllowAttrs("rows", "cols").Matching(bluemonday.Integer).OnElements("textarea")
+		p.AllowAttrs("multiple").OnElements("select")
+		p.AllowAttrs("selected", "label").OnElements("option", "optgroup")
+		p.AllowAttrs("colspan", "rowspan", "scope").OnElements("td", "th")
+		ksesAdminPolicy = p
 	})
+	return ksesWith(ksesAdminPolicy, html)
+}
+
+// newPostPolicy builds the wp_kses_post() policy.
+func newPostPolicy() *bluemonday.Policy {
+	p := bluemonday.UGCPolicy()
+	p.AllowElements("figure", "figcaption", "section", "article", "aside", "header", "footer", "nav", "main",
+		"mark", "small", "sub", "sup", "time", "cite", "abbr", "address", "details", "summary", "audio", "video",
+		"source", "track", "picture", "u", "s", "del", "ins", "kbd", "code", "pre", "hr", "br", "span", "div")
+	p.AllowAttrs("class", "id", "style", "title", "lang", "dir", "role").Globally()
+	p.AllowAttrs("aria-label", "aria-hidden", "aria-describedby", "aria-labelledby").Globally()
+	p.AllowAttrs("data-id", "data-type", "data-align").Globally()
+	p.AllowAttrs("datetime").OnElements("time", "del", "ins")
+	p.AllowAttrs("controls", "preload", "loop", "muted", "autoplay", "playsinline").OnElements("audio", "video", "source")
+	p.AllowAttrs("srcset", "sizes", "width", "height", "loading", "decoding").OnElements("img", "source")
+	p.AllowAttrs("src", "poster").Matching(mediaURLRe).OnElements("audio", "video", "source")
+	p.AllowAttrs("target", "rel").OnElements("a")
+	p.AllowAttrs("start").Matching(bluemonday.Integer).OnElements("ol")
+	p.AllowAttrs("reversed").Matching(regexp.MustCompile(`(?i)^(|reversed)$`)).OnElements("ol")
+	// WordPress keeps post links as written: every wp_allowed_protocols() scheme (tel:, sms:, …)
+	// and no rel="nofollow" (that is only added to comments).
+	p.AllowURLSchemes(AllowedProtocols...)
+	p.RequireNoFollowOnLinks(false)
+	p.AllowStyling()
+	p.AllowUnsafe(false)
+	return p
+}
+
+// ksesWith sanitises html with policy, keeping block delimiters and the <!--more--> family.
+func ksesWith(policy *bluemonday.Policy, html string) string {
 	// wp_kses_no_null(): a NUL could otherwise forge the placeholder used below.
 	html = strings.ReplaceAll(html, "\x00", "")
 	// bluemonday drops comments, so lift the kept ones out and put them back afterwards. The
@@ -66,7 +101,7 @@ func KsesPost(html string) string {
 		saved = append(saved, m)
 		return "\x00WPBLOCK" + strconv.Itoa(len(saved)-1) + "\x00"
 	})
-	clean := safeStyles(ksesPolicy.Sanitize(marked))
+	clean := safeStyles(policy.Sanitize(marked))
 	return blockMarkRe.ReplaceAllStringFunc(clean, func(m string) string {
 		i, err := strconv.Atoi(m[len("\x00WPBLOCK") : len(m)-1])
 		if err != nil || i >= len(saved) {

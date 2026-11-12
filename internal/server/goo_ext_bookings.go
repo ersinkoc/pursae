@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"wpgo/internal/mail"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -52,6 +53,7 @@ func init() {
 			{ID: "reminder_days", Title: "Reminder", Type: "number", Default: 1, Min: "0", Desc: "Days before the booking the reminder e-mail is sent (0 turns reminders off)."},
 			{ID: "calendar_first_day", Title: "Calendar starts on", Type: "select", Default: "1", Options: []gooOpt{{"1", "Monday"}, {"0", "Sunday"}}},
 			{ID: "show_remaining", Title: "Show remaining places", Type: "checkbox", Default: true, Desc: "Show how many places are left in a time slot."},
+			{ID: "auto_refund", Title: "Refund cancelled bookings", Type: "checkbox", Default: true, Desc: "When a paid booking is cancelled, refund its order line automatically if the payment method supports refunds. Otherwise the order gets a \"refund required\" note."},
 			{Type: "sectionend"},
 		},
 		Pages: []gooExtMenuItem{{Page: "bookings", Title: "Bookings"}},
@@ -782,30 +784,122 @@ func (s *Server) bkSetStatus(ctx context.Context, b *bkBooking, to string) error
 	if err := s.bkUpdate(ctx, b); err != nil {
 		return err
 	}
+	// A paid booking cancelled while its order stays paid owes the customer money: refunded through
+	// the order's refund flow when the gateway can refund (and the setting allows it), otherwise the
+	// merchant is told to refund it by hand.
+	var o *gooOrder
+	if b.OrderID != 0 {
+		o, _ = s.gooGetOrder(ctx, b.OrderID)
+	}
+	if o != nil {
+		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d status changed from %s to %s.", b.ID, bkStatusLabel(from), bkStatusLabel(to)), false, "")
+	}
+	adminLine, customerLine := "", ""
+	if to == "cancelled" && from == "paid" && o != nil && (o.Status == "processing" || o.Status == "completed") {
+		amount, err := s.bkAutoRefund(ctx, o, b)
+		switch {
+		case err == nil && amount > 0:
+			price := s.gooPricePlain(amount, o.Currency)
+			adminLine = "This booking was already paid. " + price + " was refunded automatically to the customer's payment method."
+			customerLine = "A refund of " + price + " has been issued to your original payment method."
+		case err == nil:
+			// Nothing left to refund on the booking's line (already refunded by hand).
+		default:
+			adminLine = "This booking was already paid. A refund is required: please refund it on the order if the customer is entitled to one."
+			_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d was cancelled after payment: a refund is required (%s).", b.ID, err.Error()), false, "")
+		}
+	}
 	switch to {
 	case "confirmed":
 		s.bkMail(ctx, "booking_confirmed", b)
 	case "cancelled":
 		if from != "in-cart" {
-			s.bkMail(ctx, "booking_cancelled", b)
-			refund := ""
-			if b.OrderID != 0 && from == "paid" {
-				if o, err := s.gooGetOrder(ctx, b.OrderID); err == nil && (o.Status == "processing" || o.Status == "completed") {
-					refund = "This booking was already paid. A refund is required: please refund it on the order if the customer is entitled to one."
-				}
-			}
-			s.bkMailWith(ctx, "admin_booking_cancelled", b, refund)
-		}
-	}
-	if b.OrderID != 0 {
-		if o, err := s.gooGetOrder(ctx, b.OrderID); err == nil {
-			_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d status changed from %s to %s.", b.ID, bkStatusLabel(from), bkStatusLabel(to)), false, "")
-			if to == "cancelled" && from == "paid" && (o.Status == "processing" || o.Status == "completed") {
-				_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d was cancelled after payment: a refund is required.", b.ID), false, "")
-			}
+			s.bkMailWith(ctx, "booking_cancelled", b, customerLine)
+			s.bkMailWith(ctx, "admin_booking_cancelled", b, adminLine)
 		}
 	}
 	return nil
+}
+
+// errBkNoAutoRefund reasons (shown in the order note next to "a refund is required").
+var (
+	errBkRefundOff     = errors.New("automatic refunds are turned off")
+	errBkRefundGateway = errors.New("the payment method cannot refund automatically")
+)
+
+// bkRefundDue is what is still refundable on the booking's order line: its total and tax minus what
+// earlier refunds already returned for that line, never more than the order's unrefunded rest.
+func (s *Server) bkRefundDue(ctx context.Context, o *gooOrder, b *bkBooking) (float64, *gooRefundLine) {
+	var it *gooOrderItem
+	for _, i := range o.Items {
+		if i.Type == "line_item" && (i.ID == b.OrderItemID || (b.OrderItemID == 0 && bkOrderBookingID(i) == b.ID)) {
+			it = i
+			break
+		}
+	}
+	if it == nil {
+		return 0, nil
+	}
+	dp := s.gooDecimals()
+	line := &gooRefundLine{ItemID: it.ID, Total: it.Total, TaxTotal: map[string]float64{}}
+	for k, v := range it.Taxes.Total {
+		line.TaxTotal[k] = v
+	}
+	refunds, _ := s.gooRefunds(ctx, o.ID)
+	for _, r := range refunds {
+		for _, ri := range r.Items {
+			if gooRefundSource(o, ri) != it.ID {
+				continue
+			}
+			line.Total += ri.Total // refund lines are negative
+			for k, v := range ri.Taxes.Total {
+				line.TaxTotal[k] += v
+			}
+		}
+	}
+	line.Total = max(gooRound(line.Total, dp), 0)
+	due := line.Total
+	for k, v := range line.TaxTotal {
+		if v = gooRound(v, dp); v <= 0 {
+			delete(line.TaxTotal, k)
+			continue
+		}
+		line.TaxTotal[k] = v
+		due += v
+	}
+	if line.Total == it.Total {
+		line.Qty = int(it.Quantity)
+	}
+	if rest := gooRound(o.Total-s.gooTotalRefunded(ctx, o.ID), dp); due > rest {
+		// Order-level refunds without lines already ate into it: refund the rest as a plain amount.
+		due = max(rest, 0)
+		line = nil
+	}
+	return gooRound(due, dp), line
+}
+
+// bkAutoRefund refunds a cancelled paid booking through the order refund flow (wc_create_refund with
+// the gateway call). It returns the refunded amount; an error means the merchant has to refund by hand.
+func (s *Server) bkAutoRefund(ctx context.Context, o *gooOrder, b *bkBooking) (float64, error) {
+	if !s.gooExtBool(bkKey, "auto_refund") {
+		return 0, errBkRefundOff
+	}
+	gw := s.gooGateway(o.PaymentMethod)
+	if gw == nil || !gw.Supports("refunds") {
+		return 0, errBkRefundGateway
+	}
+	amount, line := s.bkRefundDue(ctx, o, b)
+	if amount <= 0 {
+		return 0, nil
+	}
+	var lines []gooRefundLine
+	if line != nil {
+		lines = append(lines, *line)
+	}
+	if _, err := s.gooCreateRefund(ctx, o, amount, fmt.Sprintf("Booking #%d cancelled", b.ID), lines, false, true, 0); err != nil {
+		return 0, err
+	}
+	return amount, nil
 }
 
 // bkPersonsTotal is the number of persons of a booking.
@@ -1315,10 +1409,16 @@ func (s *Server) bkMailWith(ctx context.Context, id string, b *bkBooking, extra 
 	if extra != "" {
 		body.WriteString(`<p><strong>` + html.EscapeString(extra) + `</strong></p>`)
 	}
+	// The calendar file travels with the e-mail (and as a link for clients that strip attachments);
+	// a cancellation carries it too so the calendar entry is marked cancelled.
+	var att []mail.Attachment
 	if id == "booking_confirmed" || id == "booking_reminder" || id == "new_booking" {
 		body.WriteString(`<p>Add to calendar: <a href="` + html.EscapeString(s.bkICSURL(ctx, b)) + `">Download .ics</a></p>`)
 	}
-	s.gxSendEmail(ctx, id, []string{to}, map[string]string{"booking_id": itoa64(b.ID), "product_title": p.Name}, body.String())
+	if id != "admin_booking_cancelled" {
+		att = append(att, mail.Attachment{Name: "booking-" + itoa64(b.ID) + ".ics", ContentType: "text/calendar; charset=utf-8", Data: []byte(s.bkICS(ctx, []*bkBooking{b}))})
+	}
+	s.gxSendEmail(ctx, id, []string{to}, map[string]string{"booking_id": itoa64(b.ID), "product_title": p.Name}, body.String(), att...)
 }
 
 // bkWhen prints a booking date (with the time for timed bookings).

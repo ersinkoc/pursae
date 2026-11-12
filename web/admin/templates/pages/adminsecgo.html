@@ -220,6 +220,8 @@
 </tbody></table>
 <table class="form-table" role="presentation">
 <tr><th scope="row">Common passwords</th><td><label><input type="checkbox" name="pw_block_common" value="1"{{if .S.PwBlockCommon}} checked{{end}}> Refuse the 10,000 most common passwords</label></td></tr>
+<tr><th scope="row">Breached passwords</th><td><label><input type="checkbox" name="pw_breached" value="1"{{if .S.PwBreached}} checked{{end}}> Refuse passwords found in known data breaches (Have I Been Pwned)</label>
+	<p class="description">Only the first 5 characters of the password's SHA-1 hash are sent to <code>api.pwnedpasswords.com</code> (k-anonymity); the password and its full hash never leave the server. If the service cannot be reached, the password is accepted.</p></td></tr>
 <tr><th scope="row">Existing passwords</th><td><label><input type="checkbox" name="pw_check_login" value="1"{{if .S.PwCheckLogin}} checked{{end}}> At login, ask users whose password breaks the policy to choose a new one</label>
 	<p class="description">Administrators can also require a password change for one user from their profile (Users › Edit). Users who sign in with two-factor authentication or MFA are never asked to change their password.</p></td></tr>
 </table>
@@ -244,8 +246,23 @@
 <tr><th scope="row">File editors</th><td><label><input type="checkbox" name="disable_file_edit" value="1"{{if .S.DisableFileEdit}} checked{{end}}> Disable the Theme File Editor and Plugin File Editor (DISALLOW_FILE_EDIT)</label></td></tr>
 <tr><th scope="row">Version</th><td><label><input type="checkbox" name="hide_version" value="1"{{if .S.HideVersion}} checked{{end}}> Hide the Pursae version from front-end markup and feeds (generator tag, <code>?ver=</code>)</label></td></tr>
 <tr><th scope="row">REST API</th><td><label><input type="checkbox" name="rest_restrict" value="1"{{if .S.RESTVisitors}} checked{{end}}> Only logged-in users and Application Passwords may use the REST API</label>
-	<p class="description">Visitors keep oEmbed, the contact form, Pursae Cookie consent logging and Pursae Pixel server events, plus the route prefixes below (one per line, like <code>wp/v2/posts</code>). The block editor, headless front ends and apps that read the API without logging in stop working.</p>
+	<p class="description">Visitors keep the routes the front end needs: {{range $i, $r := .RESTVisitorRoutes}}{{if $i}}, {{end}}<code>{{$r}}</code>{{end}}; plus the route prefixes below (one per line, like <code>wp/v2/posts</code>). Pursae Headless' delivery API (<code>/wp-json/headlessgo/v1</code>, <code>/api</code>, <code>/graphql</code>) has its own tokens and is not affected. Front ends and apps that read <code>wp/v2</code> without logging in stop working unless their routes are listed here.</p>
 	<textarea name="rest_allow" rows="3" class="large-text code" aria-label="Extra REST routes for visitors">{{.S.RESTAllow}}</textarea></td></tr>
+</table>
+{{else if eq .Tab "firewall"}}
+<h2 class="title">Firewall</h2>
+{{if .FirewallEnvOff}}<div class="notice notice-warning inline"><p><strong>WPGO_FIREWALL=off</strong> is set in the server's environment: the firewall does not run, whatever is chosen here.</p></div>{{end}}
+<p>The firewall runs before everything else, on every request. Pursae runs it with the defaults even without Pursae Security; the settings here change them. Addresses on the allow list (Lockouts &amp; IPs) are never limited or blocked.</p>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="rate_limit">Rate limit</label></th><td><input type="number" min="0" max="100000" class="small-text" name="rate_limit" id="rate_limit" value="{{.S.RateLimit}}"> requests a minute from one IP address <span class="description">(0: off; default {{.FirewallDefault}})</span>
+	<p class="description">Static files (CSS, scripts, images, fonts) do not count. Over the limit an address gets <code>429 Too Many Requests</code> until the minute ends. Loopback and trusted proxies (<code>WPGO_TRUSTED_PROXIES</code>) are never limited: behind a reverse proxy, set it so visitors' own addresses are seen.</p></td></tr>
+<tr><th scope="row">Request rules</th><td><label><input type="checkbox" name="firewall" value="1"{{if .S.Firewall}} checked{{end}}> Block requests that look like attacks</label>
+	<p class="description">Answers <code>403</code> to path traversal (<code>../</code>), probes for <code>.env</code>, <code>.git</code>, <code>wp-config.php</code> and system files, and script, SQL and code injection in the query string or User-Agent. Only the URL and User-Agent are checked, never form or post content. Blocked requests are logged (one entry per address and minute).</p></td></tr>
+</table>
+<h2 class="title">File integrity</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row">Daily scan</th><td><label><input type="checkbox" name="alert_integrity" value="1"{{if .S.AlertIntegrity}} checked{{end}}> E-mail the administrator when the daily integrity scan finds something new</label>
+	<p class="description">The scan runs every day either way; see <a href="/wp-admin/admin?page=adminsecgo-integrity">Integrity</a>.</p></td></tr>
 </table>
 {{else if eq .Tab "alerts"}}
 <h2 class="title">Alerts</h2>
@@ -287,6 +304,21 @@
 {{range .History}}<tr><td>{{if eq .Kind "ip"}}IP <code>{{.Value}}</code>{{else}}Username <strong>{{.Value}}</strong>{{end}}{{if .Manual}} <span class="asg-pill">released</span>{{end}}</td><td>{{.Reason}}</td><td>{{date .Created "Y-m-d H:i"}}</td><td>{{date .Until "Y-m-d H:i"}}</td></tr>
 {{else}}<tr class="no-items"><td colspan="4">No past lockouts.</td></tr>{{end}}
 </tbody></table>
+
+{{else if eq .Page "integrity"}}
+<h1 class="wp-heading-inline">Integrity</h1>
+<hr class="wp-header-end">
+{{template "notices" $}}
+<p>Checks the server binary, edited copies of the bundled theme files and the themes and uploads folders for server-side scripts. It runs every day; findings that are new are e-mailed (Settings &rsaquo; Firewall).</p>
+<form method="post" action="/wp-admin/admin?page=adminsecgo-integrity"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><p><button type="submit" class="button button-primary" id="adminsec-scan">Scan now</button></p></form>
+{{with .Integrity}}
+<p>Last scan: {{date .Scanned "Y-m-d H:i"}} &middot; {{.Files}} files &middot; version {{.Version}}{{if .Binary}} &middot; binary SHA-256 <code>{{.Binary}}</code>{{end}}</p>
+{{range .Notes}}<p class="description">{{.}}</p>{{end}}
+<table class="wp-list-table widefat fixed striped" id="adminsec-integrity"><thead><tr><th style="width:9em">Area</th><th style="width:9em">Finding</th><th>File</th><th>Detail</th></tr></thead><tbody>
+{{range .Findings}}<tr class="{{if or (eq .Kind "suspicious") (eq .Kind "binary")}}asg-sev-warning{{else}}asg-sev-notice{{end}}"><td>{{.Area}}</td><td>{{.Kind}}</td><td><code>{{.Path}}</code></td><td>{{.Detail}}</td></tr>
+{{else}}<tr class="no-items"><td colspan="4">No issues found.</td></tr>{{end}}
+</tbody></table>
+{{else}}<p>No scan has run yet.</p>{{end}}
 
 {{else if eq .Page "log"}}
 <h1 class="wp-heading-inline">Activity Log</h1>

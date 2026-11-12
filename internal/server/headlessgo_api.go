@@ -233,6 +233,13 @@ func (s *Server) hgAPI(c *gin.Context) {
 		c.Set(hgCacheKey, "no-store")
 	case a.Kind == "public" && st.CacheMaxAge > 0:
 		c.Set(hgCacheKey, "public, max-age=0, s-maxage="+strconv.Itoa(st.CacheMaxAge))
+		// Shared caches (Varnish, Fastly, Cloudflare) may keep the answer: tag it so Pursae Cache's purge
+		// forwarding (wpgocache_proxy.go) drops it when content changes (hgPurge).
+		prefix := "wpgo_"
+		if pc := s.currentCache(); pc != nil {
+			prefix = pc.Config().TagPrefix
+		}
+		c.Set(hgTagsKey, prefix+hgCacheTag)
 	}
 	if len(segs) == 0 {
 		s.hgIndex(c, a)
@@ -1586,6 +1593,18 @@ func (s *Server) hgMenuFull(c *gin.Context, menus []*store.Menu, key string) (ma
 
 const hgCacheKey = "hg.cache"
 
+// hgTagsKey holds the purge tag of a publicly cacheable answer; hgCacheTag is that tag (without the
+// cache's prefix). One tag for the whole API: populated relations make any entry part of other
+// types' answers, so a change purges every cached read.
+const (
+	hgTagsKey  = "hg.tags"
+	hgCacheTag = "headless"
+)
+
+// hgPurge drops the cached Delivery API reads: in Pursae Cache and, through its purge forwarding,
+// in a front proxy or CDN that kept them by Surrogate-Key / Cache-Tag.
+func (s *Server) hgPurge() { s.purgeTags(hgCacheTag) }
+
 type hgBucket struct {
 	count  int
 	window time.Time
@@ -1646,6 +1665,10 @@ func (s *Server) hgRateAllow(c *gin.Context, a *hgAuth, st hgSettings) bool {
 func hgWriteJSON(c *gin.Context, code int, obj any) {
 	if cc, ok := c.Get(hgCacheKey); ok {
 		c.Header("Cache-Control", cc.(string))
+	}
+	if tag := c.GetString(hgTagsKey); tag != "" && code == http.StatusOK {
+		c.Header("Surrogate-Key", tag)
+		c.Header("Cache-Tag", tag)
 	}
 	if code != http.StatusOK || (c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead) {
 		c.JSON(code, obj)
