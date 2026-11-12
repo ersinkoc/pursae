@@ -265,7 +265,8 @@ func forumAdminErr(err error) string {
 	if msg == "" {
 		return "Something went wrong."
 	}
-	msg = strings.ToUpper(msg[:1]) + msg[1:]
+	_, size := utf8.DecodeRuneInString(msg)
+	msg = strings.ToUpper(msg[:size]) + msg[size:]
 	if !strings.HasSuffix(msg, ".") {
 		msg += "."
 	}

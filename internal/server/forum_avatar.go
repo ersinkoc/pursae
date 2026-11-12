@@ -6,6 +6,8 @@ import (
 	"errors"
 	"html/template"
 	"image"
+	"image/color"
+	"image/draw"
 	_ "image/gif" // decoders for image.DecodeConfig / image.Decode
 	_ "image/jpeg"
 	_ "image/png"
@@ -136,6 +138,22 @@ func forumAvatarProcess(data []byte) ([]byte, string, error) {
 	if format == "jpeg" {
 		img = media.Orient(img, media.JPEGOrientation(bytes.NewReader(data)))
 	}
+	if format == "gif" && img.Bounds() != image.Rect(0, 0, cfg.Width, cfg.Height) {
+		canvas := image.NewRGBA(image.Rect(0, 0, cfg.Width, cfg.Height))
+		// The first GIF frame can cover only part of its logical screen.
+		// Start with the global background unless that index is transparent.
+		if palette, ok := cfg.ColorModel.(color.Palette); ok && len(data) > 11 && int(data[11]) < len(palette) {
+			background := palette[data[11]]
+			if frame, ok := img.(*image.Paletted); ok && int(data[11]) < len(frame.Palette) {
+				if _, _, _, alpha := frame.Palette[data[11]].RGBA(); alpha == 0 {
+					background = color.Transparent
+				}
+			}
+			draw.Draw(canvas, canvas.Bounds(), image.NewUniform(background), image.Point{}, draw.Src)
+		}
+		draw.Draw(canvas, img.Bounds(), img, img.Bounds().Min, draw.Over)
+		img = canvas
+	}
 	b := img.Bounds()
 	side := min(b.Dx(), b.Dy())
 	crop := image.Rect(0, 0, side, side).Add(image.Pt(b.Min.X+(b.Dx()-side)/2, b.Min.Y+(b.Dy()-side)/2))
@@ -198,17 +216,30 @@ func (s *Server) forumRemoveAvatar(ctx context.Context, u *store.User) error {
 // neither has a letter or digit.
 func forumInitials(name, login string) string {
 	pick := func(s string) string {
-		var words []string
-		for _, w := range strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }) {
-			words = append(words, w)
+		var initials []string
+		for _, w := range strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) && !unicode.IsMark(r) }) {
+			var initial strings.Builder
+			for _, r := range w {
+				if initial.Len() == 0 {
+					if unicode.IsLetter(r) || unicode.IsDigit(r) {
+						initial.WriteRune(unicode.ToUpper(r))
+					}
+				} else if unicode.IsMark(r) {
+					initial.WriteRune(r)
+				} else {
+					break
+				}
+			}
+			if initial.Len() > 0 {
+				initials = append(initials, initial.String())
+			}
 		}
-		if len(words) == 0 {
+		if len(initials) == 0 {
 			return ""
 		}
-		first := []rune(words[0])[0]
-		out := string(unicode.ToUpper(first))
-		if len(words) > 1 {
-			out += string(unicode.ToUpper([]rune(words[len(words)-1])[0]))
+		out := initials[0]
+		if len(initials) > 1 {
+			out += initials[len(initials)-1]
 		}
 		return out
 	}
