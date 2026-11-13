@@ -80,6 +80,9 @@ func TestStripTagsHandlesDelimitersInsideMarkup(t *testing.T) {
 		{`<p title="1 > 0">Visible</p>`, "Visible"},
 		{`<p title='a > b'>Visible</p>`, "Visible"},
 		{`<!-- comparison: 2 > 1 -->Visible`, "Visible"},
+		{`<img src=x onerror=alert(1) a=">Visible`, "Visible"},
+		{`<p title="abc>Visible`, "Visible"},
+		{`<p title='abc>Visible`, "Visible"},
 	} {
 		if got := StripTags(tc.in); got != tc.want {
 			t.Errorf("StripTags(%q) = %q, want %q", tc.in, got, tc.want)
