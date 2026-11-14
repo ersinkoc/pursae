@@ -162,6 +162,19 @@ func TestForumDesignMetaTagsSort(t *testing.T) {
 	if _, body, _ := get(t, fx.anon, fx.forum.URL); !strings.Contains(body, `<meta name="description" content="Talk about anything." />`) {
 		t.Error("forum page: no description")
 	}
+	// Pursae SEO's default social image becomes the forum's og:image.
+	if err := srv.seogoActivate(ctx); err == nil {
+		o := *srv.seogoOpts()
+		o.DefaultImage = "https://example.test/og.jpg"
+		if err := srv.seogoSave(ctx, &o); err != nil {
+			t.Fatal(err)
+		}
+		srv.purgeAll(ctx)
+		if _, body, _ := get(t, fx.anon, fx.forum.URL); !strings.Contains(body, `<meta property="og:image" content="https://example.test/og.jpg" />`) ||
+			!strings.Contains(body, `twitter:card" content="summary_large_image"`) {
+			t.Error("forum page: no og:image from Pursae SEO")
+		}
+	}
 	// The forum title is a Multi Language string once the owner changed it.
 	if len(srv.forumPllStrings()) != 0 {
 		t.Error("the default title is listed for translation")
@@ -403,7 +416,7 @@ func TestForumDesignEngage(t *testing.T) {
 		t.Fatal("a GET unsubscribed")
 	}
 	u, _ := url.Parse(unsub)
-	if code, _, _ := post(t, fx.anon, fx.url("unsubscribe"), url.Values{"forum_action": {"unsubscribe_link"}, "t": {u.Query().Get("t")}, "u": {u.Query().Get("u")}, "k": {"0" + u.Query().Get("k")[1:]}}); code != 403 {
+	if code, _, _ := post(t, fx.anon, fx.url("unsubscribe"), url.Values{"forum_action": {"unsubscribe_link"}, "t": {u.Query().Get("t")}, "u": {u.Query().Get("u")}, "k": {forgedKey(u.Query().Get("k"))}}); code != 403 {
 		t.Errorf("forged key: %d", code)
 	}
 	if code, _, _ := post(t, fx.anon, fx.url("unsubscribe"), url.Values{"forum_action": {"unsubscribe_link"}, "t": {u.Query().Get("t")}, "u": {u.Query().Get("u")}, "k": {u.Query().Get("k")}}); code != 302 {
@@ -653,4 +666,15 @@ func TestForumDesignDemoAndOff(t *testing.T) {
 	if cfg := srv.cacheConfig(); strings.Contains(strings.Join(cfg.CacheQueryStrings, ","), "tag") {
 		t.Errorf("cache keys while off: %v", cfg.CacheQueryStrings)
 	}
+}
+
+// forgedKey changes the first hex digit of a key (never to itself).
+func forgedKey(k string) string {
+	if k == "" {
+		return "0"
+	}
+	if k[0] == '0' {
+		return "1" + k[1:]
+	}
+	return "0" + k[1:]
 }

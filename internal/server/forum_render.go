@@ -457,9 +457,56 @@ func (s *Server) forumSEOHead(c *gin.Context, q *siteQuery) string {
 		b.WriteString(`<meta property="og:description" content="` + e(m.Description) + `" />` + "\n")
 	}
 	b.WriteString(`<meta property="og:url" content="` + e(u) + `" />` + "\n")
+	if img := s.forumSocialImage(c.Request.Context()); img != nil { // Pursae SEO's default social image
+		b.WriteString(`<meta property="og:image" content="` + e(img.URL) + `" />` + "\n")
+		if img.Width > 0 && img.Height > 0 {
+			b.WriteString(`<meta property="og:image:width" content="` + strconv.Itoa(img.Width) + `" />` + "\n" +
+				`<meta property="og:image:height" content="` + strconv.Itoa(img.Height) + `" />` + "\n")
+		}
+		if img.Mime != "" {
+			b.WriteString(`<meta property="og:image:type" content="` + e(img.Mime) + `" />` + "\n")
+		}
+		if img.Alt != "" {
+			b.WriteString(`<meta property="og:image:alt" content="` + e(img.Alt) + `" />` + "\n")
+		}
+	}
 	if site := s.seogoTr(c.Request.Context(), s.settings.String("blogname")); site != "" {
 		b.WriteString(`<meta property="og:site_name" content="` + e(site) + `" />` + "\n")
 	}
-	b.WriteString(`<meta name="twitter:card" content="summary" />` + "\n")
+	if img := s.forumSocialImage(c.Request.Context()); img != nil {
+		b.WriteString(`<meta name="twitter:card" content="summary_large_image" />` + "\n" +
+			`<meta name="twitter:image" content="` + e(img.URL) + `" />` + "\n")
+	} else {
+		b.WriteString(`<meta name="twitter:card" content="summary" />` + "\n")
+	}
 	return b.String()
+}
+
+// forumSocialImage is Pursae SEO's default social image (Titles & Meta › default image) while that
+// plugin is on, with its size, type and alt text when it is a Media Library upload; nil otherwise.
+func (s *Server) forumSocialImage(ctx context.Context) *seogoImage {
+	if !s.seogoOn() {
+		return nil
+	}
+	u := strings.TrimSpace(s.seogoOpts().DefaultImage)
+	if u == "" {
+		return nil
+	}
+	if strings.HasPrefix(u, "/") && !strings.HasPrefix(u, "//") {
+		u = s.links(ctx).HomeURL(u)
+	}
+	img := &seogoImage{URL: u}
+	if i := strings.Index(u, "/wp-content/uploads/"); i >= 0 {
+		rel := u[i+len("/wp-content/uploads/"):]
+		if q := strings.IndexAny(rel, "?#"); q >= 0 {
+			rel = rel[:q]
+		}
+		var id int64
+		if s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE file_path = $1 ORDER BY id LIMIT 1`, rel).Scan(&id) == nil {
+			if a := s.seogoAttachmentImage(ctx, id); a != nil {
+				img.Width, img.Height, img.Mime, img.Alt = a.Width, a.Height, a.Mime, a.Alt
+			}
+		}
+	}
+	return img
 }
