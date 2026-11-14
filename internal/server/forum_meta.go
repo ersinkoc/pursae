@@ -107,9 +107,7 @@ func forumSanitizeDesign(in forumDesignInput) forumDesignInput {
 	if ic := strings.TrimSpace(in.Icon); forumIconValid(ic) {
 		out.Icon = ic
 	}
-	if col := strings.ToLower(strings.TrimSpace(in.Color)); forumColors[col] {
-		out.Color = col
-	}
+	out.Color = forumColorValue(in.Color) // a pastel key or a custom #rrggbb (forum_color.go)
 	out.Label = forumPlainLine(in.Label, 40)
 	out.Number = forumPlainLine(in.Number, 8)
 	seen := map[string]bool{}
@@ -155,9 +153,7 @@ func (s *Server) forumApplyDesign(ctx context.Context, f *forumForum, meta map[s
 	if ic := forumMetaStr(meta, forumMetaIcon); forumIconValid(ic) {
 		f.Icon = ic
 	}
-	if col := forumMetaStr(meta, forumMetaColor); forumColors[col] {
-		f.Color = col
-	}
+	f.Color, f.ColorHex, f.ColorInk, f.ColorStyle = forumColorParts(forumMetaStr(meta, forumMetaColor))
 	f.Label = forumMetaStr(meta, forumMetaLabel)
 	f.Number = forumMetaStr(meta, forumMetaNumber)
 	for _, ch := range forumStrList(meta, forumMetaChips) {

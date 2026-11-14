@@ -60,7 +60,10 @@ type forumForum struct {
 
 	// Design meta (v0.2.5, forum_meta.go; posts.meta of the forum post). All optional.
 	Icon       string         // a forum_icon name ("" = none)
-	Color      string         // a pastel key: sky|mint|peach|lilac|grey ("" = none)
+	Color      string         // a pastel key: sky|mint|peach|lilac|grey, "custom" (ColorHex), or "" = none
+	ColorHex   string         // v0.2.6: the custom colour "#rrggbb" ("" for a pastel key)
+	ColorInk   string         // v0.2.6: a readable text colour on ColorHex (contrast >= 4.5:1), computed
+	ColorStyle template.CSS   // v0.2.6: "--pf-c:<hex>;--pf-ci:<ink>" for a custom colour, else empty
 	Label      string         // a short tab label ("Başlarken")
 	Number     string         // a short number or code ("01"); "" = none
 	Chips      []forumTag     // descriptive chips; each links to the forum's ?tag=<slug> filter
@@ -101,6 +104,8 @@ type forumTopic struct {
 	IsNew                             bool           // created in the last 24 hours
 	Participants                      []*forumAuthor // up to 4 most recent distinct repliers (lists and the topic view)
 	ForumIcon, ForumColor, ForumLabel string         // the forum's design meta, for the forum chip of a row
+	ForumColorHex, ForumColorInk      string         // v0.2.6: a custom forum colour and its ink (ForumColor "custom")
+	ForumColorStyle                   template.CSS   // v0.2.6: "--pf-c:…;--pf-ci:…" for a custom colour
 }
 
 // forumReply is a reply to a topic.

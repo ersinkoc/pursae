@@ -15,7 +15,7 @@
 </div>
 {{- $picks := .PickForums}}{{if $picks}}
 <fieldset class="pf-field pf-forum-pick"><legend class="pf-label">{{.T "Forum"}}</legend>
-{{- range $picks}}<label class="pf-pick{{with .Forum.Color}} pf-c-{{.}}{{end}}{{if .Disabled}} is-disabled{{end}}"><input type="radio" name="forum" value="{{.Forum.ID}}"{{if .Checked}} checked{{end}}{{if .Disabled}} disabled{{end}} required />{{with .Forum.Icon}}{{forum_icon . 16}}{{end}}<span>{{.Forum.Title}}</span>{{if and .Disabled .Forum.StaffOnly}} <small>{{$.T "Team only"}}</small>{{end}}</label>{{end}}
+{{- range $picks}}<label class="pf-pick{{with .Forum.Color}} pf-c-{{.}}{{end}}{{if .Disabled}} is-disabled{{end}}"{{with .Forum.ColorStyle}} style="{{.}}"{{end}}><input type="radio" name="forum" value="{{.Forum.ID}}"{{if .Checked}} checked{{end}}{{if .Disabled}} disabled{{end}} required />{{with .Forum.Icon}}{{forum_icon . 16}}{{end}}<span>{{.Forum.Title}}</span>{{if and .Disabled .Forum.StaffOnly}} <small>{{$.T "Team only"}}</small>{{end}}</label>{{end}}
 </fieldset>{{end}}
 {{- if .Preview}}<div class="pf-preview" aria-live="polite"><p class="pf-preview-label">{{.T "Preview"}}</p><div class="pf-post-body">{{.Preview}}</div></div>{{end}}
 {{template "forum/part-editor" (dict "P" . "Value" (.FormValue "content") "Label" (.T "Message"))}}
