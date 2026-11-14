@@ -119,7 +119,7 @@ sends `X-WP-Total` / `X-WP-TotalPages` (the forum tree comes in one page).
 | `/forum/v1/topics/{id}` | GET | one topic with its opening post (same fields); 404 `rest_topic_invalid_id` |
 | `/forum/v1/topics/{id}/replies` | GET | the replies, oldest first: `id`, `topic`, `forum`, `position`, `content.rendered`, `author`, `date`, `edited`, `link` |
 
-0.2.5 adds to the forum `icon`, `color`, `label`, `number`, `chips` (`name`, `slug`, `link`), `tips`,
+0.2.5 adds to the forum `icon`, `color` (0.2.6: `custom` with `color_hex` and the computed `color_ink`; topics `forum_color_hex`, `forum_color_ink`), `label`, `number`, `chips` (`name`, `slug`, `link`), `tips`,
 `staff_only`; to the topic `tags`, `views`, `likes`, `solved`, `solution`, `forum_color`,
 `forum_icon`, `forum_label`; to the reply `likes`, `solution`. `/forums/{id}/topics` takes
 `sort=latest|popular|unanswered|solved` and `tag=<slug>`.

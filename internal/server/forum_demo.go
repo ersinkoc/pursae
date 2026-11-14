@@ -192,8 +192,8 @@ func forumValidateDemo(raw json.RawMessage, media []demoMedia) []string {
 		if f.Icon != "" && !forumIconValid(f.Icon) {
 			bad("forums[%d].icon %q is not a forum icon", i, f.Icon)
 		}
-		if f.Color != "" && !forumColors[f.Color] {
-			bad("forums[%d].color %q must be sky, mint, peach, lilac or grey", i, f.Color)
+		if f.Color != "" && forumColorValue(f.Color) == "" {
+			bad("forums[%d].color %q must be sky, mint, peach, lilac, grey or a #rrggbb colour", i, f.Color)
 		}
 		if len(f.Chips) > forumMaxChips || len(f.Tips) > forumMaxTips {
 			bad("forums[%d]: at most %d chips and %d tips", i, forumMaxChips, forumMaxTips)

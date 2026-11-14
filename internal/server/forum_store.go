@@ -331,9 +331,7 @@ func (s *Server) forumTopicsFrom(ctx context.Context, posts []*store.Post, withI
 			if ic := forumMetaStr(f.Meta, forumMetaIcon); forumIconValid(ic) {
 				t.ForumIcon = ic
 			}
-			if col := forumMetaStr(f.Meta, forumMetaColor); forumColors[col] {
-				t.ForumColor = col
-			}
+			t.ForumColor, t.ForumColorHex, t.ForumColorInk, t.ForumColorStyle = forumColorParts(forumMetaStr(f.Meta, forumMetaColor))
 			t.ForumLabel = forumMetaStr(f.Meta, forumMetaLabel)
 		}
 		if withIP {

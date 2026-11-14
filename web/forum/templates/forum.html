@@ -2,7 +2,7 @@
 {{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
 {{- $p := .}}
 {{- with .Forum}}
-{{- if .Description}}<div class="pf-intro{{with .Color}} pf-c-{{.}}{{end}}">{{.Description}}</div>{{end}}
+{{- if .Description}}<div class="pf-intro{{with .Color}} pf-c-{{.}}{{end}}"{{with .ColorStyle}} style="{{.}}"{{end}}>{{.Description}}</div>{{end}}
 {{- if eq .Kind "category"}}
 {{- if .Children}}<div class="pf-forums"><section class="pf-category pf-category--loose"><ul class="pf-forum-list">{{range .Children}}{{template "forum/part-forum-row" (dict "P" $p "F" .)}}{{end}}</ul></section></div>
 {{- else}}<p class="pf-empty">{{$p.T "No forums in this category yet."}}</p>{{end}}

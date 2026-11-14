@@ -76,7 +76,7 @@ func forumRESTForum(f *forumForum) map[string]any {
 		"description": string(f.Description), "closed": f.Closed, "order": f.Order, "topic_count": f.TopicCount,
 		"reply_count": f.ReplyCount, "last_active": forumRESTTime(f.LastActive), "link": f.URL,
 		// v0.2.5 design meta.
-		"icon": f.Icon, "color": f.Color, "label": f.Label, "number": f.Number, "chips": forumRESTTags(f.Chips),
+		"icon": f.Icon, "color": f.Color, "color_hex": f.ColorHex, "color_ink": f.ColorInk, "label": f.Label, "number": f.Number, "chips": forumRESTTags(f.Chips),
 		"tips": forumRESTStrs(f.Tips), "staff_only": f.StaffOnly}
 	if f.LastTopicID > 0 && f.LastTopicURL != "" {
 		out["last_topic"] = map[string]any{"id": f.LastTopicID, "title": f.LastTopicTitle, "link": f.LastTopicURL}
@@ -93,7 +93,7 @@ func forumRESTTopicJSON(t *forumTopic) map[string]any {
 		"last_active": forumRESTTime(t.LastActive), "edited": t.EditedAt != nil, "link": t.URL,
 		// v0.2.5.
 		"tags": forumRESTTags(t.Tags), "views": t.Views, "likes": t.Likes, "solved": t.Solved, "solution": forumNullID(t.SolutionID),
-		"forum_color": t.ForumColor, "forum_icon": t.ForumIcon, "forum_label": t.ForumLabel}
+		"forum_color": t.ForumColor, "forum_color_hex": t.ForumColorHex, "forum_color_ink": t.ForumColorInk, "forum_icon": t.ForumIcon, "forum_label": t.ForumLabel}
 }
 
 // forumRESTTags is a tag list as JSON (never null).

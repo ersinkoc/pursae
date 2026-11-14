@@ -436,14 +436,30 @@ may change the address), `t`/`u`/`k`/`action`/`done`/`failed` (unsubscribe).
 
 ### New fields of the data types
 
-**Forum**: `.Icon` (an icon name), `.Color` (`sky mint peach lilac grey`, or empty), `.Label`,
+**Forum**: `.Icon` (an icon name), `.Color` (`sky mint peach lilac grey`, `custom`, or empty), `.Label`,
 `.Number` ("01"), `.Chips` ([]tag, each linking `?tag=`), `.Tips` ([]string), `.StaffOnly`,
 `.Moderators` ([]author, forum view: the forum's list, else the site's moderators; `.Admin` tells the
 administrators), `.Online` (forum view).
 
 **Topic**: `.Tags`, `.Views`, `.Likes` (of the opening post), `.Solved`, `.SolutionID`, `.IsNew`
 (created in the last 24 hours), `.Participants` (up to 4 recent repliers, authors), `.ForumIcon`,
-`.ForumColor`, `.ForumLabel`.
+`.ForumColor`, `.ForumLabel`; 0.2.6: `.ForumColorHex`, `.ForumColorInk`, `.ForumColorStyle`.
+
+**Custom forum colours (0.2.6).** Besides the five pastel keys an administrator may pick any colour
+(Forums › Forums › edit › *Colour* › Custom). Then `.Color` is `custom`, `.ColorHex` the colour
+(`#rrggbb`, lowercase), `.ColorInk` a text colour of the same hue that Pursae computes so the pair
+reads at a contrast of at least 4.5:1 (a dark ink on a light colour, a light ink on a dark one), and
+`.ColorStyle` the inline style `--pf-c:<hex>;--pf-ci:<ink>`. Pastel keys keep `.ColorHex`,
+`.ColorInk` and `.ColorStyle` empty, so a theme that maps the keys keeps working and adds one branch:
+
+```html
+<article class="cat c-{{or .Color "grey"}}"{{with .ColorStyle}} style="{{.}}"{{end}}>
+```
+
+(style the `custom` class from `--pf-c` / `--pf-ci`, or read `.ColorHex` / `.ColorInk` directly).
+Topics carry the same values for their forum: `.ForumColor`, `.ForumColorHex`, `.ForumColorInk`,
+`.ForumColorStyle`. REST adds `color_hex`, `color_ink` to forums and `forum_color_hex`,
+`forum_color_ink` to topics; a demo's forum `color` may be a `#rrggbb` colour.
 
 **Reply**: `.Likes`, `.Solution`.
 
@@ -508,7 +524,7 @@ form outside the member-only branches: visitor pages are cached.
 ### New CSS classes
 
 `.pf-c-<color>` (sets `--pf-c` / `--pf-ci` from `--pf-sky`, `--pf-sky-ink`, … `--pf-grey-ink`, all
-overridable tokens), `.pf-forum-tab`, `.pf-chips`, `.pf-chip`, `.pf-chip--tag`, `.pf-forum-chip`,
+overridable tokens; `.pf-c-custom` gets them from the element's `style`, `.ColorStyle`), `.pf-forum-tab`, `.pf-chips`, `.pf-chip`, `.pf-chip--tag`, `.pf-forum-chip`,
 `.pf-badge--solved`, `.pf-new`, `.pf-avatars`, `.pf-stats-strip`, `.pf-live`, `.pf-sorts`
 (`a.is-current`), `.pf-tag-filter`, `.pf-like` (`[aria-pressed="true"]`), `.pf-like--static`,
 `.pf-post--solution`, `.pf-solution-callout`, `.pf-report`, `.pf-check`, `.pf-preview`,
@@ -765,7 +781,7 @@ topics is kept, and so is a demo member who meanwhile owns other posts or media)
 | Key | Rules |
 |-----|-------|
 | `rules_url`, `require_rules` | a site path or http(s) URL; sets *Forums › Settings › Community rules* |
-| forum `icon`, `color` | a `forum_icon_names` name; `sky`, `mint`, `peach`, `lilac` or `grey` |
+| forum `icon`, `color` | a `forum_icon_names` name; `sky`, `mint`, `peach`, `lilac`, `grey` or (0.2.6) a `#rrggbb` colour |
 | forum `label` (≤ 40), `number` (≤ 8), `chips` (≤ 8), `tips` (≤ 8), `staff_only`, `moderators` (member refs or `admin`) | |
 | topic `tags` | ≤ 5 strings |
 | topic `views`, `likes`; reply `likes` | 0 to 10,000,000. Likes are given by the demo's members (never the author); a larger number is a display-only seed that earns no points |

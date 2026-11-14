@@ -84,7 +84,8 @@ type forumAdminForm struct {
 	Order        int
 	URL          string
 	// v0.2.5 design meta.
-	Icon, Color, Label, Number string
+	Icon, Color, Label, Number string // Color: "", a pastel key or "custom" (ColorHex)
+	ColorHex, ColorInk         string // v0.2.6: the custom colour and the ink Pursae computed for it
 	Chips, Tips                string // one per line (chips may also be comma separated)
 	StaffOnly                  bool
 	Moderators                 string // logins or emails, comma separated
@@ -197,8 +198,9 @@ type forumAdminData struct {
 	BadgeEdit *forumAdminBadgeForm // the edit form (?action=edit&badge=id)
 	Rules     []forumAdminRule
 	Icons     []string
-	Colors    []string // v0.2.5: the forum colour keys
-	CanUpload bool     // the media modal can be offered (upload_files)
+	Colors    []string           // v0.2.5: the forum colour keys
+	Swatches  []forumAdminSwatch // v0.2.6: the colour picker's pastels
+	CanUpload bool               // the media modal can be offered (upload_files)
 }
 
 // forumAdminMessages are the notices of ?msg= after a redirect.
@@ -308,7 +310,7 @@ func (s *Server) forumAdmin(c *gin.Context) {
 		return
 	}
 	d := &forumAdminData{Tab: tab, IsAdmin: admin, SelfID: u.ID, Nonce: s.nonce(c, forumAdminNonce), IndexURL: s.forumURL(c),
-		Icons: forumIconNames(), Colors: forumColorKeys}
+		Icons: forumIconNames(), Colors: forumColorKeys, Swatches: forumAdminSwatches}
 	for _, t := range forumAdminTabs {
 		if !u.Can(t.Cap, nil) {
 			continue
@@ -370,14 +372,21 @@ func forumAdminFormOf(c *gin.Context) forumAdminForm {
 	}
 	return forumAdminForm{ID: id, ParentID: parent, Title: strings.TrimSpace(c.PostForm("title")), Slug: strings.TrimSpace(c.PostForm("slug")),
 		Description: c.PostForm("description"), Kind: kind, Closed: c.PostForm("closed") == "1", Order: max(-9999, min(order, 9999)),
-		Icon: c.PostForm("icon"), Color: c.PostForm("color"), Label: c.PostForm("label"), Number: c.PostForm("number"),
+		Icon: c.PostForm("icon"), Color: c.PostForm("color"), ColorHex: forumAdminCustomColor(c), Label: c.PostForm("label"), Number: c.PostForm("number"),
 		Chips: c.PostForm("chips"), Tips: c.PostForm("tips"), StaffOnly: c.PostForm("staff_only") == "1", Moderators: c.PostForm("moderators")}
 }
 
 // forumAdminDesignOf turns the form's design fields into the stored design (moderators by login or
 // email; unknown names are an error).
 func (s *Server) forumAdminDesignOf(ctx context.Context, f forumAdminForm) (*forumDesignInput, error) {
-	d := &forumDesignInput{Icon: f.Icon, Color: f.Color, Label: f.Label, Number: f.Number, StaffOnly: f.StaffOnly}
+	color := f.Color
+	if color == forumColorCustom {
+		color = f.ColorHex
+		if forumColorValue(color) == "" {
+			return nil, errors.New("forum: please choose a custom colour (#rrggbb)")
+		}
+	}
+	d := &forumDesignInput{Icon: f.Icon, Color: color, Label: f.Label, Number: f.Number, StaffOnly: f.StaffOnly}
 	for _, line := range strings.FieldsFunc(f.Chips, func(r rune) bool { return r == '\n' || r == ',' }) {
 		d.Chips = append(d.Chips, line)
 	}
@@ -401,6 +410,7 @@ func (s *Server) forumAdminDesignOf(ctx context.Context, f forumAdminForm) (*for
 // forumAdminFormDesign fills the design fields of an edit form from a forum.
 func (s *Server) forumAdminFormDesign(ctx context.Context, form *forumAdminForm, f *forumForum) {
 	form.Icon, form.Color, form.Label, form.Number, form.StaffOnly = f.Icon, f.Color, f.Label, f.Number, f.StaffOnly
+	form.ColorHex, form.ColorInk = f.ColorHex, f.ColorInk
 	names := make([]string, 0, len(f.Chips))
 	for _, ch := range f.Chips {
 		names = append(names, ch.Name)
@@ -1915,4 +1925,29 @@ func (s *Server) forumAdminBadges(c *gin.Context, d *forumAdminData) bool {
 		d.BadgeRows = append(d.BadgeRows, row)
 	}
 	return true
+}
+
+// forumAdminSwatch is a pastel of the forum colour picker, drawn with the plugin stylesheet's
+// default token values (themes map the key to their own colours).
+type forumAdminSwatch struct{ Key, Label, Bg, Ink string }
+
+var forumAdminSwatches = []forumAdminSwatch{
+	{"sky", "Sky", "#e3f0fb", "#1d5f8f"}, {"mint", "Mint", "#e1f5ea", "#1e6b45"}, {"peach", "Peach", "#fdeadf", "#9a4a1c"},
+	{"lilac", "Lilac", "#eee8fb", "#5b3f9a"}, {"grey", "Grey", "#eef0f2", "#50575e"},
+}
+
+// forumAdminCustomColor is the custom colour of the forum form: the hex field when it holds a
+// colour, else the native colour input.
+func forumAdminCustomColor(c *gin.Context) string {
+	h := strings.TrimSpace(c.PostForm("color_hex"))
+	if h != "" && !strings.HasPrefix(h, "#") {
+		h = "#" + h
+	}
+	if v := forumColorValue(h); v != "" && !forumColors[v] {
+		return v
+	}
+	if v := forumColorValue(c.PostForm("color_custom")); v != "" && !forumColors[v] {
+		return v
+	}
+	return ""
 }
