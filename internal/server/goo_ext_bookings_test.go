@@ -689,8 +689,9 @@ func TestGooExtBookingsGaps(t *testing.T) {
 		t.Errorf("cancellation inside the allowed window: %s", got.Status)
 	}
 
-	// Parallel bookings of the last place: exactly one wins.
-	day := gxNextWeekday(time.Wednesday)
+	// Parallel bookings of the last place: exactly one wins. The day is two weeks past the next
+	// Wednesday so it never falls inside the bookings above (otherB spans now+10..+11 days).
+	day := gxNextWeekday(time.Wednesday).AddDate(0, 0, 14)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	won := 0
