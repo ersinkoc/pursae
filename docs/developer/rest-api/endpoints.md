@@ -107,9 +107,9 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 
 ## Pursae Forum (`forum/v1`)
 
-Public and read-only, only while Pursae Forum is on (otherwise `rest_no_route`, and the namespace is
-left out of the index). Only published, non-spam content of published forums is listed; nothing
-here writes. The topic and reply lists take `page` and `per_page` (default 10, max 100); every list
+Only while Pursae Forum is on (otherwise `rest_no_route`, and the namespace is left out of the
+index). Only published, non-spam content of published forums is listed. The read routes below are
+public; the 0.2.5 community routes (second table) also write. The topic and reply lists take `page` and `per_page` (default 10, max 100); every list
 sends `X-WP-Total` / `X-WP-TotalPages` (the forum tree comes in one page).
 
 | Route | Methods | Notes |
@@ -119,8 +119,35 @@ sends `X-WP-Total` / `X-WP-TotalPages` (the forum tree comes in one page).
 | `/forum/v1/topics/{id}` | GET | one topic with its opening post (same fields); 404 `rest_topic_invalid_id` |
 | `/forum/v1/topics/{id}/replies` | GET | the replies, oldest first: `id`, `topic`, `forum`, `position`, `content.rendered`, `author`, `date`, `edited`, `link` |
 
-`author` is `{id, name, avatar, link, moderator}` (never the login or the email), or null for a
-deleted account. Dates are RFC 3339 UTC. A page past the last one is a 400
+0.2.5 adds to the forum `icon`, `color`, `label`, `number`, `chips` (`name`, `slug`, `link`), `tips`,
+`staff_only`; to the topic `tags`, `views`, `likes`, `solved`, `solution`, `forum_color`,
+`forum_icon`, `forum_label`; to the reply `likes`, `solution`. `/forums/{id}/topics` takes
+`sort=latest|popular|unanswered|solved` and `tag=<slug>`.
+
+| Route | Methods | Notes |
+|-------|---------|-------|
+| `/forum/v1/topics/{id}/view` | POST | the view beacon (no auth, no body): `{views, counted}`; robots, repeats within 30 minutes and floods are not counted |
+| `/forum/v1/presence` | POST | marks the visitor online (`forum` optional): `{online, members, minutes, forum_online}` |
+| `/forum/v1/online` | GET | the same counts (`?forum=`), nothing recorded |
+| `/forum/v1/stats` | GET | `forums topics replies members solved solved_pct new_topics_week new_members_week online online_members` |
+| `/forum/v1/tags` | GET | tags in use (`?forum=`): `name slug link count` |
+| `/forum/v1/topics/similar` | GET | `?q=<title>&tags=a,b`: up to 5 `{id, title, link, forum_title, reply_count, solved}` |
+| `/forum/v1/levels`, `/badges`, `/weekly` | GET | the levels with `rank` and the point weights; the enabled badges; members of the week `{member, delta}` |
+| `/forum/v1/me` | GET | the member's state (`?topic=`: `liked`, `subscribed`, `can_solve`); `{logged_in:false}` for visitors; `no-store` |
+| `/forum/v1/posts/{id}/like` | POST, DELETE | like / unlike: `{liked, likes}`; 403 `rest_forum_own_post`, 429 after 60 in 10 minutes |
+| `/forum/v1/posts/{id}/report` | POST | `reason` (`spam abuse off_topic other`), `note` |
+| `/forum/v1/topics/{id}/subscription` | POST, DELETE | follow / stop following by email |
+| `/forum/v1/topics/{id}/solution` | POST, DELETE | `reply=<id>` accepts it (the topic's author or a moderator); DELETE withdraws |
+| `/forum/v1/preview` | POST | `content` rendered as it would be posted: `{rendered}` |
+| `/forum/v1/draft` | GET, POST, DELETE | the member's new-topic draft (`forum title content tags notify`) |
+
+The member routes need cookie + `X-WP-Nonce` (`wp_rest`, forum.js reads it from
+`<script id="pf-config">` on member pages) or an Application Password; without them they answer
+401 `rest_not_logged_in`. Every response of the community routes is `no-store`.
+
+`author` is `{id, name, avatar, link, moderator, initials, hue, has_photo}` plus `points`,
+`progress` and `level` (`id`, `name`, `rank`, `min`) when loaded (never the login or the email), or
+null for a deleted account. Dates are RFC 3339 UTC. A page past the last one is a 400
 `rest_post_invalid_page_number`. The forum's settings are under `/pursae/v1/options/forum` (above).
 
 ## Other namespaces

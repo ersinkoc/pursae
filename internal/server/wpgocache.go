@@ -64,6 +64,11 @@ func (s *Server) cacheConfig() cache.Config {
 	cfg.ExcludePaths, cfg.ExcludeCookies = s.gooCacheExcludes(cfg.ExcludePaths, cfg.ExcludeCookies) // Goocommerce: cart, checkout, my account
 	cfg.DropQueryStrings = append(cfg.DropQueryStrings, lines(st.String("wpgo_cache_drop_qs"))...)
 	cfg.CacheQueryStrings = append(cfg.CacheQueryStrings, lines(st.String("wpgo_cache_query_strings"))...)
+	if s.forumOn() {
+		// Pursae Forum's topic list sort and tag filter are page variants (unknown sorts are redirected
+		// to the canonical URL, so arbitrary values do not each get an entry).
+		cfg.CacheQueryStrings = append(cfg.CacheQueryStrings, forumCacheQueryStrings...)
+	}
 	cfg.ExcludeCookies = append(cfg.ExcludeCookies, lines(st.String("wpgo_cache_exclude_cookies"))...)
 	cfg.ExcludeUserAgents = append(cfg.ExcludeUserAgents, lines(st.String("wpgo_cache_exclude_ua"))...)
 	cfg.BrowserCacheTTL, cfg.RedirectTTL = sec("wpgo_cache_browser_ttl"), sec("wpgo_cache_redirect_ttl")
@@ -248,7 +253,8 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 	}
 	tags = append(tags, s.gooCacheTags(c, q)...) // Goocommerce: products and the shop (goo_front.go)
 	if q.Forum != "" {
-		tags = append(tags, forumCacheTag) // Pursae Forum: every forum write purges every forum view
+		tags = append(tags, forumCacheTag)             // Pursae Forum: every forum write purges every forum view
+		tags = append(tags, forumTopicCacheTags(c)...) // and a topic page also its own (a like purges only it)
 	}
 	tags = append(tags, s.wbCacheTags(c, q)...) // Pursae Web Builder pages (webbuilder_hooks.go)
 	c.Header(cache.HeaderTags, strings.Join(tags, ","))

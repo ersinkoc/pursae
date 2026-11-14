@@ -79,6 +79,81 @@ func (s *Server) forumTemplateFuncs() template.FuncMap {
 			}
 			return wp.HumanTimeDiff(t, time.Now())
 		},
+		// v0.2.5 data functions for theme templates (forum_meta.go). Each returns nil / zero values
+		// while the plugin is off; the lists are tagged with the forum cache tag.
+		"forum_levels": func(v *siteView) []forumLevel {
+			ctx, _ := gooViewCtx(v)
+			if !s.forumOn() {
+				return nil
+			}
+			return s.forumLevelsLoad(ctx).Levels
+		},
+		"forum_points": func(v *siteView) forumLevels {
+			ctx, _ := gooViewCtx(v)
+			if !s.forumOn() {
+				return forumLevels{}
+			}
+			return s.forumLevelsLoad(ctx)
+		},
+		"forum_badge_list": func(v *siteView) []forumBadge {
+			ctx, _ := gooViewCtx(v)
+			if !s.forumOn() {
+				return nil
+			}
+			var out []forumBadge
+			for _, b := range s.forumBadges(ctx) {
+				if b.Enabled {
+					out = append(out, b)
+				}
+			}
+			return out
+		},
+		"forum_weekly_members": func(v *siteView, n int) []*forumWeekly {
+			ctx, c := gooViewCtx(v)
+			if !s.forumOn() {
+				return nil
+			}
+			forumCacheDep(c, ctx)
+			list, _ := s.forumWeeklyMembers(ctx, n)
+			return list
+		},
+		"forum_site_stats": func(v *siteView) *forumStats {
+			ctx, c := gooViewCtx(v)
+			if !s.forumOn() {
+				return nil
+			}
+			forumCacheDep(c, ctx)
+			st, _ := s.forumStatsOf(ctx)
+			return st
+		},
+		"forum_tags": func(v *siteView, n int) []forumTag {
+			ctx, c := gooViewCtx(v)
+			if !s.forumOn() {
+				return nil
+			}
+			forumCacheDep(c, ctx)
+			list, _ := s.forumTagList(ctx, 0, n)
+			return list
+		},
+		"forum_topics": func(v *siteView, sort string, n int) []*forumTopic {
+			ctx, c := gooViewCtx(v)
+			if !s.forumOn() {
+				return nil
+			}
+			forumCacheDep(c, ctx)
+			if n <= 0 || n > 50 {
+				n = 5
+			}
+			key, _ := forumSortOf(sort)
+			list, _, _ := s.forumTopics(ctx, forumTopicQuery{Page: 1, PerPage: n, Sort: key, StickyFirst: false})
+			var out []*forumTopic
+			for _, t := range list { // published forums only, like forum_recent_topics
+				if t.ForumURL != "" {
+					out = append(out, t)
+				}
+			}
+			return out
+		},
 	}
 }
 
@@ -100,7 +175,7 @@ func forumAvatarSized(a *forumAuthor, size int) template.HTML {
 // list is on), or new (the new-topic form of the forum being viewed; the index elsewhere).
 func (s *Server) forumViewURL(ctx context.Context, c *gin.Context, view string) string {
 	switch view {
-	case "login", "register", "account", "search":
+	case "login", "register", "account", "search", "topics", "tags":
 		return s.forumURL(ctx, view)
 	case "members":
 		if s.forumLoad().ShowMembers {
@@ -110,6 +185,7 @@ func (s *Server) forumViewURL(ctx context.Context, c *gin.Context, view string) 
 		if rt := forumRouteFrom(c); rt != nil && rt.View == forumViewForum && rt.Slug != "" {
 			return s.forumURL(ctx, "f", rt.Slug, "new")
 		}
+		return s.forumURL(ctx, "new") // v0.2.5: the forum picker
 	}
 	return s.forumURL(ctx)
 }

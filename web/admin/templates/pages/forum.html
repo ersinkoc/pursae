@@ -82,7 +82,29 @@
 	<td><input name="order" id="pf-order" type="number" value="{{.Order}}" class="small-text" min="-9999" max="9999" />
 	<p class="description">Lower numbers come first.</p></td></tr>
 <tr><th scope="row">Status</th>
-	<td><label for="pf-closed"><input name="closed" id="pf-closed" type="checkbox" value="1"{{if .Closed}} checked{{end}} /> Closed: members cannot start new topics here</label></td></tr>
+	<td><label for="pf-closed"><input name="closed" id="pf-closed" type="checkbox" value="1"{{if .Closed}} checked{{end}} /> Closed: members cannot start new topics here</label>
+	<br /><label for="pf-staff-only"><input name="staff_only" id="pf-staff-only" type="checkbox" value="1"{{if .StaffOnly}} checked{{end}} /> Team only: only moderators start topics; members can still reply</label></td></tr>
+</tbody></table>
+<h2 class="title">Look</h2>
+<p class="pf-admin-sub">Themes made for the forum show these on forum cards, banners and topic lists. All optional.</p>
+<table class="form-table" role="presentation"><tbody>
+<tr class="form-field"><th scope="row"><label for="pf-icon">Icon</label></th>
+	<td><select name="icon" id="pf-icon"><option value="">None</option>{{$ic := .Icon}}{{range $d.Icons}}<option value="{{.}}"{{if eq . $ic}} selected{{end}}>{{.}}</option>{{end}}</select></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-color">Colour</label></th>
+	<td><select name="color" id="pf-color"><option value="">None</option>{{$co := .Color}}{{range $d.Colors}}<option value="{{.}}"{{if eq . $co}} selected{{end}}>{{.}}</option>{{end}}</select>
+	<p class="description">A pastel the theme maps to its own colours: sky, mint, peach, lilac or grey.</p></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-label">Short label</label></th>
+	<td><input name="label" id="pf-label" type="text" value="{{.Label}}" size="20" maxlength="40" /> <label for="pf-number">Number</label> <input name="number" id="pf-number" type="text" value="{{.Number}}" class="small-text" maxlength="8" />
+	<p class="description">A tab label such as &#8220;Getting started&#8221; and a short number such as &#8220;01&#8221;.</p></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-chips">Chips</label></th>
+	<td><textarea name="chips" id="pf-chips" rows="3" cols="40">{{.Chips}}</textarea>
+	<p class="description">Up to 8 short labels, one per line. Each links to the forum's topics with that tag.</p></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-tips">Tips</label></th>
+	<td><textarea name="tips" id="pf-tips" rows="3" cols="40" class="large-text">{{.Tips}}</textarea>
+	<p class="description">&#8220;In this forum&#8221; hints, one per line (up to 8).</p></td></tr>
+<tr class="form-field"><th scope="row"><label for="pf-moderators">Moderators shown</label></th>
+	<td><input name="moderators" id="pf-moderators" type="text" value="{{.Moderators}}" size="40" />
+	<p class="description">Usernames or email addresses, comma separated. Empty: the site's forum moderators.</p></td></tr>
 </tbody></table>
 <div class="edit-tag-actions"><input type="submit" class="button button-primary" value="Update" /></div>
 </form>
@@ -116,6 +138,16 @@
 <div class="form-field"><label for="pf-new-order">Order</label>
 	<input name="order" id="pf-new-order" type="number" value="{{.Order}}" class="small-text" min="-9999" max="9999" /></div>
 <div class="form-field"><label for="pf-new-closed"><input name="closed" id="pf-new-closed" type="checkbox" value="1"{{if .Closed}} checked{{end}} /> Closed: members cannot start new topics here</label></div>
+<div class="form-field"><label for="pf-new-staff"><input name="staff_only" id="pf-new-staff" type="checkbox" value="1"{{if .StaffOnly}} checked{{end}} /> Team only: only moderators start topics</label></div>
+<div class="form-field"><label for="pf-new-icon">Icon</label>
+	<select name="icon" id="pf-new-icon"><option value="">None</option>{{$ic := .Icon}}{{range $d.Icons}}<option value="{{.}}"{{if eq . $ic}} selected{{end}}>{{.}}</option>{{end}}</select>
+	<label for="pf-new-color">Colour</label>
+	<select name="color" id="pf-new-color"><option value="">None</option>{{$co := .Color}}{{range $d.Colors}}<option value="{{.}}"{{if eq . $co}} selected{{end}}>{{.}}</option>{{end}}</select></div>
+<div class="form-field"><label for="pf-new-label">Short label</label>
+	<input name="label" id="pf-new-label" type="text" value="{{.Label}}" size="20" maxlength="40" />
+	<label for="pf-new-number">Number</label><input name="number" id="pf-new-number" type="text" value="{{.Number}}" class="small-text" maxlength="8" /></div>
+<div class="form-field"><label for="pf-new-chips">Chips</label>
+	<textarea name="chips" id="pf-new-chips" rows="2" cols="40">{{.Chips}}</textarea><p>Short labels, one per line; each links to the forum's topics with that tag. Tips and moderators: edit the forum.</p></div>
 {{end}}
 <p class="submit"><input type="submit" class="button button-primary" value="Add New Forum" /></p>
 </form>
@@ -207,6 +239,7 @@
 		<span class="pf-admin-kind">{{if .IsTopic}}Topic{{else}}Reply{{end}}</span>{{if ne .StatusLabel "Published"}} <span class="pf-admin-badge{{if eq .Status "pending"}} pf-admin-badge--pending{{else}} pf-admin-badge--closed{{end}}">{{.StatusLabel}}</span>{{end}}
 		{{if .IsTopic}}<p><strong><a href="{{.ViewURL}}" translate="no">{{.Title}}</a></strong></p>{{end}}
 		<p class="pf-admin-excerpt">{{if .Excerpt}}<span translate="no">{{.Excerpt}}</span>{{else}}<em>(no text)</em>{{end}}</p>
+		{{if .Reports}}<p class="pf-admin-reports"><span class="pf-admin-badge pf-admin-badge--closed">Reported {{.Reports}}&times;</span> {{.ReportReasons}}{{range .ReportNotes}}<br /><em translate="no">&#8220;{{.}}&#8221;</em>{{end}}</p>{{end}}
 		<div class="row-actions">{{$id := .ID}}{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} onclick="return confirm('{{$a.Confirm}}')"{{end}}{{if eq $a.Key "delete"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}<span class="view"> | <a href="{{.ViewURL}}">View</a></span></div>
 		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
 	</td>
@@ -266,6 +299,15 @@
 <tr><th scope="row">Member list</th>
 	<td><label for="pf-show-members"><input name="show_members" id="pf-show-members" type="checkbox" value="1"{{if .ShowMembers}} checked{{end}} /> Show the member list on the site</label>
 	<p class="description">A public page that lists members with their level, badges and post counts. Email addresses are never shown.</p></td></tr>
+<tr><th scope="row"><label for="pf-rules-url">Community rules</label></th>
+	<td><input type="hidden" name="v025" value="1" /><input name="rules_url" id="pf-rules-url" type="text" value="{{.RulesURL}}" class="regular-text" placeholder="/community-rules/" />
+	<p><label for="pf-require-rules"><input name="require_rules" id="pf-require-rules" type="checkbox" value="1"{{if .RequireRules}} checked{{end}} /> New members accept the rules to sign up</label></p>
+	<p class="description">A page of this site (/rules/) or a full address. Sign-up remembers when the rules were accepted.</p></td></tr>
+<tr><th scope="row"><label for="pf-online">Online</label></th>
+	<td>Count members and visitors seen in the last <input name="online_minutes" id="pf-online" type="number" value="{{.OnlineMinutes}}" class="small-text" min="1" max="60" /> minutes</td></tr>
+<tr><th scope="row">Notifications</th>
+	<td><label for="pf-notify"><input name="notify" id="pf-notify" type="checkbox" value="1"{{if .Notify}} checked{{end}} /> Email members who follow a topic when a reply is published</label>
+	<p class="description">Members follow a topic from the topic page, or when they post with &#8220;Email me about replies&#8221;. Every email has a one-click way out.</p></td></tr>
 </tbody></table>
 <h2 class="title">Posting</h2>
 <table class="form-table" role="presentation"><tbody>

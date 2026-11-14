@@ -29,9 +29,12 @@ func forumRouteFrom(c *gin.Context) *forumRoute {
 // forumAccountActions are the POST actions membership handles; forumFrontActions the front end's.
 var (
 	forumAccountActions = map[string]bool{"login": true, "register": true, "resend": true, "account": true, "password": true, "google_unlink": true,
-		"avatar_upload": true, "avatar_remove": true}
+		"avatar_upload": true, "avatar_remove": true, "change_email": true}
 	forumFrontActions = map[string]bool{"new_topic": true, "reply": true, "edit": true, "moderate": true, "block": true, "unblock": true,
-		"badge_award": true, "badge_revoke": true}
+		"badge_award": true, "badge_revoke": true,
+		// v0.2.5 (forum_engage_post.go).
+		"like": true, "unlike": true, "solve": true, "unsolve": true, "subscribe": true, "unsubscribe": true, "report": true,
+		"draft_delete": true}
 )
 
 // forumMaxBody bounds the body of a forum form POST. A profile photo may be at most 2 MB, but a
@@ -75,6 +78,8 @@ func (s *Server) forumSiteIntercept(c *gin.Context, path string) bool {
 	case http.MethodPost:
 		action := c.PostForm("forum_action")
 		switch {
+		case action == "unsubscribe_link": // v0.2.5: the reply email's link, signed, no login
+			s.forumUnsubPost(c, rt)
 		case forumAccountActions[action]:
 			s.forumAccountPost(c, rt, action) // WP2 (forum_account.go)
 		case forumFrontActions[action]:

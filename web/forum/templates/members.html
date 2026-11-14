@@ -28,7 +28,7 @@
 <div><dt>{{$p.T "Replies"}}</dt><dd>{{num .Replies}}</dd></div>
 <div><dt>{{$p.T "Points"}}</dt><dd>{{num .Points}}</dd></div>
 </dl>
-<p class="pf-member-card__joined">{{$p.Tf "Joined %s" (date .Joined "")}}</p>
+<p class="pf-member-card__joined">{{$p.Tf "Joined %s" ($p.Date .Joined)}}</p>
 </li>
 {{- end}}
 </ul>

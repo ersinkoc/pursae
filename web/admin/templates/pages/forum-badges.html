@@ -13,6 +13,11 @@
 <tr><th scope="row"><label for="pf-reply-points">Points per reply</label></th>
 	<td><input name="reply_points" id="pf-reply-points" type="number" class="small-text" min="0" max="1000" value="{{.Levels.ReplyPoints}}" />
 	<p class="description">Only published posts count. Changing the weights recalculates every member's level at once.</p></td></tr>
+<tr><th scope="row"><label for="pf-solution-points">Points per accepted answer</label></th>
+	<td><input name="solution_points" id="pf-solution-points" type="number" class="small-text" min="0" max="1000" value="{{.Levels.SolutionPoints}}" />
+	<p class="description">For the author of a reply marked as the solution (not on their own topic).</p></td></tr>
+<tr><th scope="row"><label for="pf-like-points">Points per like received</label></th>
+	<td><input name="like_points" id="pf-like-points" type="number" class="small-text" min="0" max="1000" value="{{.Levels.LikePoints}}" /></td></tr>
 </tbody></table>
 <table class="widefat fixed striped pf-admin-levels">
 <thead><tr>

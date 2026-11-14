@@ -2,18 +2,26 @@
 {{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
 {{- $p := .}}
 {{- with .Forum}}
-{{- if .Description}}<div class="pf-intro">{{.Description}}</div>{{end}}
+{{- if .Description}}<div class="pf-intro{{with .Color}} pf-c-{{.}}{{end}}">{{.Description}}</div>{{end}}
 {{- if eq .Kind "category"}}
 {{- if .Children}}<div class="pf-forums"><section class="pf-category pf-category--loose"><ul class="pf-forum-list">{{range .Children}}{{template "forum/part-forum-row" (dict "P" $p "F" .)}}{{end}}</ul></section></div>
 {{- else}}<p class="pf-empty">{{$p.T "No forums in this category yet."}}</p>{{end}}
 {{- else}}
-{{- if .Closed}}<div class="pf-notice pf-notice--info">{{$p.T "This forum is closed to new topics."}}</div>{{end}}
+<p class="pf-stats-strip"><span><b>{{num .TopicCount}}</b> {{$p.T "topics"}}</span><span><b>{{num .ReplyCount}}</b> {{$p.T "replies"}}</span><span class="pf-live"><i aria-hidden="true"></i><b data-pf-online="forum">{{.Online}}</b> {{$p.T "here now"}}</span></p>
+{{- if .Closed}}<div class="pf-notice pf-notice--info">{{$p.T "This forum is closed to new topics."}}</div>{{else if .StaffOnly}}<div class="pf-notice pf-notice--info">{{$p.T "Only the team starts topics in this forum."}}</div>{{end}}
+{{template "forum/part-sorts" $p}}
+{{- if .Chips}}<p class="pf-chips">{{range .Chips}}<a class="pf-chip" href="{{.URL}}">{{.Name}}</a>{{end}}</p>{{end}}
 {{- if $p.Topics}}
 <ul class="pf-topics">{{range $p.Topics}}{{template "forum/part-topic-row" (dict "P" $p "T" . "ShowForum" false)}}{{end}}</ul>
 {{template "forum/part-pagination" $p}}
+{{- else if $p.Tag}}<div class="pf-empty pf-card"><p>{{$p.T "No topics here yet."}}</p></div>
 {{- else}}
 <div class="pf-empty pf-card"><p>{{$p.T "No topics yet. Start the first one!"}}</p></div>
 {{- end}}
+{{- if or .Tips .Moderators}}<aside class="pf-forum-aside">
+{{- if .Tips}}<section class="pf-card"><h2 class="pf-card-title">{{$p.T "In this forum"}}</h2><ul class="pf-tips">{{range .Tips}}<li>{{.}}</li>{{end}}</ul></section>{{end}}
+{{- if .Moderators}}<section class="pf-card"><h2 class="pf-card-title">{{$p.T "Moderators"}}</h2><ul class="pf-member-mini">{{range .Moderators}}<li>{{forum_avatar . 32}}<span><a href="{{.ProfileURL}}">{{.DisplayName}}</a><small>{{if .Admin}}{{$p.T "Administrator"}}{{else}}{{$p.T "Moderator"}}{{end}}{{with .Level}} &middot; {{$p.LevelName .}}{{end}}</small></span></li>{{end}}</ul></section>{{end}}
+</aside>{{end}}
 {{- if not $p.User}}{{template "forum/part-join" $p}}{{else if and (not $p.CanPost) (not .Closed)}}{{template "forum/part-join" $p}}{{end}}
 {{- end}}
 {{- end}}

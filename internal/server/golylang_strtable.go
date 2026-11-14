@@ -38,6 +38,7 @@ func (s *Server) pllStrings(ctx context.Context) []pllRegistered {
 	out = append(out, s.gooPllStrings()...)  // Goocommerce: store notice, e-mails, payment and shipping titles (goo_golylang.go)
 	// Pursae SEO: Search Appearance templates, breadcrumb labels (seogo_vars.go)
 	out = append(out, s.seogoPllStrings()...)
+	out = append(out, s.forumPllStrings()...) // Pursae Forum: the forum title (forum_meta.go)
 	if s.pllOpts().TranslateSlugs {
 		for _, b := range s.pllSlugBases() {
 			out = append(out, pllRegistered{Name: b[0], String: b[1], Group: pllSlugGroup})

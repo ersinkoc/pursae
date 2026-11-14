@@ -57,6 +57,8 @@
 <span>{{.T "Email address"}}</span>
 <p class="pf-help">{{.Form.email}} &middot; {{.T "Only you can see it."}}</p>
 </div>
+<input type="hidden" name="digest_shown" value="1" />
+<label class="pf-check"><input type="checkbox" name="digest" value="1"{{if .Form.digest}} checked{{end}} /> {{.T "Email me a weekly digest of the best topics"}}</label>
 <div class="pf-form-actions"><button type="submit" class="pf-button pf-button--primary">{{.T "Save profile"}}</button>
 {{- if .Extra.profile_url}} <a class="pf-button pf-button--ghost" href="{{.Extra.profile_url}}">{{.T "View public profile"}}</a>{{end}}</div>
 </form>

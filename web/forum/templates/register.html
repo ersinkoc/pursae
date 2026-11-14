@@ -11,6 +11,18 @@
 <input type="hidden" name="user_email" value="{{.Form.user_email}}" />
 <button type="submit" class="pf-button pf-button--ghost">{{.T "Send the link again"}}</button>
 </form>
+{{- with .Extra.change_token}}
+<details class="pf-change-email"><summary>{{$.T "Change the address"}}</summary>
+<form class="pf-form" method="post" action="{{$.Extra.verify}}">
+<input type="hidden" name="forum_action" value="change_email" />
+<input type="hidden" name="_wpnonce" value="{{$.AuthNonce}}" />
+<input type="hidden" name="change_token" value="{{.}}" />
+<input type="hidden" name="old_email" value="{{$.Form.user_email}}" />
+<div class="pf-field"><label for="pf-new-email">{{$.T "New email address"}}</label>
+<input class="pf-input" type="email" id="pf-new-email" name="user_email" autocomplete="email" required maxlength="100" /></div>
+<button type="submit" class="pf-button pf-button--ghost">{{$.T "Change and send a new link"}}</button>
+</form></details>
+{{- end}}
 <p class="pf-auth-foot"><a href="{{.URLs.Login}}">{{.T "Back to log in"}}</a></p>
 {{- else}}
 <h2 id="pf-register-title">{{.T "Join the conversation"}}</h2>
@@ -42,6 +54,10 @@
 <p class="pf-help" id="pf-user-pass-help">{{.T "At least 8 characters."}}</p>
 {{- if .Form.err_user_pass}}<p class="pf-field-error" id="pf-user-pass-err">{{.Form.err_user_pass}}</p>{{end}}
 </div>
+<label class="pf-check{{if .Form.err_rules}} has-error{{end}}"><input type="checkbox" name="rules" value="1"{{if .Form.rules}} checked{{end}}{{if .Extra.require_rules}} required{{end}} />
+{{- if .URLs.Rules}} <span>{{.T "I have read and accept the"}} <a href="{{.URLs.Rules}}" target="_blank" rel="noopener">{{.T "community rules"}}</a>.</span>{{else}} <span>{{.T "I will keep the conversation friendly and respectful."}}</span>{{end}}</label>
+{{- if .Form.err_rules}}<p class="pf-field-error">{{.Form.err_rules}}</p>{{end}}
+<label class="pf-check"><input type="checkbox" name="digest" value="1"{{if .Form.digest}} checked{{end}} /> {{.T "Email me a weekly digest of the best topics"}}</label>
 {{.Captcha}}
 <button type="submit" class="pf-button pf-button--primary">{{.T "Create account"}}</button>
 </form>

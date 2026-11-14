@@ -1,5 +1,6 @@
 {{define "forum/index"}}<div class="pf alignwide" data-view="index">
 {{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+{{- with .Stats}}<p class="pf-stats-strip"><span><b>{{num .Topics}}</b> {{$.T "topics"}}</span><span><b>{{num .Replies}}</b> {{$.T "replies"}}</span><span><b>{{num .Members}}</b> {{$.T "members"}}</span><span class="pf-live"><i aria-hidden="true"></i><b data-pf-online="site">{{.Online}}</b> {{$.T "online"}}</span></p>{{end}}
 <div class="pf-toolbar">{{template "forum/part-search-form" .}}
 {{- with .Extra.members_url}}<a class="pf-button pf-button--ghost pf-toolbar-link" href="{{.}}">{{forum_icon "users" 18}}<span>{{$.T "Members"}}</span></a>{{end}}</div>
 {{- $p := .}}
@@ -19,10 +20,17 @@
 {{- else}}
 <p class="pf-empty">{{.T "There are no forums yet."}}</p>
 {{- end}}
-{{- with .Topics}}
 <section class="pf-latest" aria-labelledby="pf-latest-title">
-<h2 class="pf-section-title" id="pf-latest-title">{{$p.T "Latest topics"}}</h2>
+<div class="pf-section-head"><h2 class="pf-section-title" id="pf-latest-title">{{$p.T "Latest topics"}}</h2><a href="{{.URLs.Topics}}">{{$p.T "All topics"}}</a></div>
+{{template "forum/part-sorts" .}}
+{{- with .Topics}}
 <ul class="pf-topics">{{range .}}{{template "forum/part-topic-row" (dict "P" $p "T" . "ShowForum" true)}}{{end}}</ul>
+{{- else}}<p class="pf-empty">{{$p.T "No topics here yet."}}</p>{{end}}
+</section>
+{{- if .Weekly}}
+<section class="pf-weekly" aria-labelledby="pf-weekly-title">
+<h2 class="pf-section-title" id="pf-weekly-title">{{.T "Members of the week"}}</h2>
+<ul class="pf-member-mini">{{range .Weekly}}<li>{{forum_avatar .Author 32}}<span><a href="{{.Author.ProfileURL}}">{{.Author.DisplayName}}</a><small>{{$p.LevelName .Author.Level}} &middot; {{$p.Tf "%s points" (num .Author.Points)}}</small></span><em>+{{.Delta}}</em></li>{{end}}</ul>
 </section>
 {{- end}}
 </div>{{end}}

@@ -48,6 +48,12 @@ func (s *Server) forumServe(c *gin.Context, rt forumRoute, p *forumPage) bool {
 			return false
 		}
 		return s.forumServeMembers(c, rt, p) // WP7 front end (forum_members_front.go)
+	case forumViewTopics, forumViewTag:
+		return s.forumViewTopicList(c, rt, p) // v0.2.5 (forum_views_lists.go)
+	case forumViewTags:
+		return s.forumViewTagList(c, rt, p)
+	case forumViewUnsubscribe:
+		return s.forumViewUnsub(c, p)
 	}
 	return false
 }
@@ -68,6 +74,11 @@ func (s *Server) forumPageFor(c *gin.Context, p *forumPage, view, title string) 
 func (s *Server) forumFinish(c *gin.Context, p *forumPage, canonical string, paged int) bool {
 	if p.User != nil {
 		forumNoStore(c)
+	}
+	if p.Forums == nil { // v0.2.5: every front view lists the forums ("other forums", menus)
+		if list, err := s.forumList(c.Request.Context()); err == nil {
+			p.Forums = list
+		}
 	}
 	s.forumRender(c, p, p.View, canonical, paged)
 	return true
@@ -152,16 +163,40 @@ func (s *Server) forumCrumbsTo(c *gin.Context, p *forumPage, f *forumForum, link
 
 func (s *Server) forumViewIndex(c *gin.Context, p *forumPage) bool {
 	ctx := c.Request.Context()
+	index := s.forumURL(ctx)
+	sort, tag, redirect, ok := s.forumListQuery(c, index)
+	if !ok {
+		c.Redirect(http.StatusMovedPermanently, forumLocalPath(redirect))
+		return true
+	}
 	p = s.forumPageFor(c, p, forumViewIndex, "")
 	list, err := s.forumList(ctx)
 	if err != nil {
 		return false
 	}
 	p.Forums = list
-	if recent, err := s.forumRecentTopics(ctx, 5); err == nil {
-		p.Topics = recent
+	s.forumMarkSeen(c, 0)
+	if sort == "latest" && tag == "" {
+		if recent, err := s.forumRecentTopics(ctx, 5); err == nil {
+			p.Topics = recent
+		}
+	} else { // v0.2.5: the latest topics box sorted or filtered (the first page; "all topics" pages on)
+		if topics, _, err := s.forumTopics(ctx, forumTopicQuery{Page: 1, PerPage: 10, Sort: sort, Tag: tag}); err == nil {
+			p.Topics = topics
+		}
 	}
-	return s.forumFinish(c, p, s.forumURL(ctx), 1)
+	s.forumListExtras(c, p, index, sort, tag, true)
+	if st, err := s.forumStatsOf(ctx); err == nil {
+		p.Stats = st
+	}
+	if w, err := s.forumWeeklyMembers(ctx, 5); err == nil {
+		p.Weekly = w
+	}
+	if p.User != nil && p.CanPost {
+		p.URLs.NewTopic = p.URLs.NewAny
+	}
+	forumSetSEO(c, p.Title, s.seogoTr(ctx, s.settings.String("blogdescription")))
+	return s.forumFinish(c, p, index, 1)
 }
 
 // Forum -----------------------------------------------------------------------------------------------
@@ -176,9 +211,27 @@ func (s *Server) forumViewForum(c *gin.Context, rt forumRoute, p *forumPage) boo
 	if forumCanonicalPage301(c, rt, canonical) {
 		return true
 	}
+	sort, tag, redirect, ok := s.forumListQuery(c, canonical)
+	if !ok && f.Kind != "category" {
+		target := forumLocalPath(redirect)
+		if rt.Page > 1 {
+			target = forumLocalPath(forumListURL(strings.TrimSuffix(canonical, "/")+"/page/"+strconv.Itoa(rt.Page)+"/", sort, tag))
+		}
+		c.Redirect(http.StatusMovedPermanently, target)
+		return true
+	}
 	p = s.forumPageFor(c, p, forumViewForum, f.Title)
 	p.Forum = f
 	s.forumCrumbsTo(c, p, f, false)
+	s.forumMarkSeen(c, f.ID)
+	c.Set(forumCtxForum, f.ID)
+	f.Online, _ = s.forumOnlineCount(f.ID)
+	if list, err := s.forumList(ctx); err == nil {
+		p.Forums = list // v0.2.5: "other forums"
+	}
+	if mods, err := s.forumModeratorsOf(ctx, f.ID); err == nil {
+		f.Moderators = mods
+	}
 	if f.Kind == "category" {
 		if rt.Page > 1 {
 			return false
@@ -192,7 +245,7 @@ func (s *Server) forumViewForum(c *gin.Context, rt forumRoute, p *forumPage) boo
 		return s.forumFinish(c, p, canonical, 1)
 	}
 	st := s.forumLoad()
-	q := forumTopicQuery{ForumID: f.ID, Page: rt.Page, PerPage: st.TopicsPerPage, StickyFirst: true}
+	q := forumTopicQuery{ForumID: f.ID, Page: rt.Page, PerPage: st.TopicsPerPage, StickyFirst: true, Sort: sort, Tag: tag}
 	if p.CanModerate {
 		q.Statuses = []string{"publish", "pending"}
 		q.WithIP = true
@@ -206,10 +259,15 @@ func (s *Server) forumViewForum(c *gin.Context, rt forumRoute, p *forumPage) boo
 		return false
 	}
 	p.Topics = topics
-	p.Pagination = s.forumPagination(c, canonical, rt.Page, pages)
-	if p.User != nil && (!f.Closed || p.CanModerate) {
+	p.Pagination = s.forumPagination(c, forumListURL(canonical, sort, tag), rt.Page, pages)
+	if p.User != nil && forumCanStart(f, p.CanModerate) {
 		p.URLs.NewTopic = s.forumURL(ctx, "f", f.Slug, "new")
 	}
+	s.forumListExtras(c, p, canonical, sort, tag, true)
+	if w, err := s.forumWeeklyMembers(ctx, 5); err == nil {
+		p.Weekly = w
+	}
+	forumSetSEO(c, f.Title, forumExcerpt(string(f.Description), 40))
 	return s.forumFinish(c, p, canonical, rt.Page)
 }
 
@@ -266,8 +324,11 @@ func (s *Server) forumViewTopic(c *gin.Context, rt forumRoute, p *forumPage) boo
 	p.Topic, p.Forum = t, f
 	if f != nil {
 		s.forumCrumbsTo(c, p, f, true)
+		s.forumMarkSeen(c, f.ID)
+		c.Set(forumCtxForum, f.ID)
 	}
 	p.Crumbs = append(p.Crumbs, forumCrumb{Label: t.Title})
+	c.Set(forumCtxTopic, t.ID) // the page's own cache tag (a like purges only this topic)
 	q := forumReplyQuery{TopicID: t.ID, Page: rt.Page, PerPage: st.RepliesPerPage}
 	if mod {
 		q.Statuses = []string{"publish", "pending"}
@@ -281,7 +342,11 @@ func (s *Server) forumViewTopic(c *gin.Context, rt forumRoute, p *forumPage) boo
 	if rt.Page > pages {
 		return false
 	}
+	for _, r := range replies {
+		r.Solution = t.SolutionID > 0 && r.ID == t.SolutionID
+	}
 	p.Replies = replies
+	s.forumTopicExtras(c, p, t)
 	p.Pagination = s.forumPagination(c, t.URL, rt.Page, pages)
 	p.Extra["page"] = rt.Page
 	p.Extra["page_url"] = s.forumTopicURL(ctx, t, rt.Page)
@@ -297,6 +362,13 @@ func (s *Server) forumViewTopic(c *gin.Context, rt forumRoute, p *forumPage) boo
 	open := !t.Closed && (f == nil || !f.Closed)
 	p.Extra["open"] = open
 	p.Extra["can_reply"] = p.User != nil && p.CanPost && t.Status == "publish" && !t.Spam && (open || mod)
+	if t.Status == "publish" && !t.Spam {
+		desc := ""
+		if rt.Page <= 1 { // later pages show replies, not the opening post
+			desc = forumExcerpt(t.Content, 40)
+		}
+		forumSetSEO(c, t.Title, desc)
+	}
 	return s.forumFinish(c, p, t.URL, rt.Page)
 }
 
@@ -331,22 +403,40 @@ func (s *Server) forumViewNewTopic(c *gin.Context, rt forumRoute, p *forumPage) 
 		s.forumLoginRedirect(c)
 		return true
 	}
-	f, err := s.forumBySlug(ctx, rt.Slug)
-	if err != nil || f.Kind != "forum" {
-		return false
+	var f *forumForum
+	if rt.Slug != "" {
+		var err error
+		f, err = s.forumBySlug(ctx, rt.Slug)
+		if err != nil || f.Kind != "forum" {
+			return false
+		}
 	}
 	p = s.forumPageFor(c, p, forumViewNewTopic, "")
 	p.Title = p.T("New topic")
 	p.Forum = f
-	s.forumCrumbsTo(c, p, f, true)
+	if list, err := s.forumList(ctx); err == nil {
+		p.Forums = list // the forum picker
+	}
+	if f != nil {
+		s.forumCrumbsTo(c, p, f, true)
+	}
 	p.Crumbs = append(p.Crumbs, forumCrumb{Label: p.T("New topic")})
 	if code, _ := forumPostGate(currentUser(c), s.forumLoad()); code != 0 {
 		p.Error = "" // the join card under the head says why (blocked or unconfirmed), once
-	} else if f.Closed && !p.CanModerate {
-		p.Error = p.T("This forum is closed to new topics.")
+	} else if f != nil && !forumCanStart(f, p.CanModerate) && p.Error == "" {
+		if f.StaffOnly && !f.Closed {
+			p.Error = p.T("Only the team starts topics in this forum.")
+		} else {
+			p.Error = p.T("This forum is closed to new topics.")
+		}
 		p.Extra["no_form"] = true
 	}
-	p.Extra["action"] = s.forumURL(ctx, "f", f.Slug, "new")
+	if f != nil {
+		p.Extra["action"] = s.forumURL(ctx, "f", f.Slug, "new")
+	} else {
+		p.Extra["action"] = s.forumURL(ctx, "new")
+	}
+	s.forumNewTopicExtras(c, p)
 	return s.forumFinish(c, p, "", 1)
 }
 
@@ -493,6 +583,7 @@ func (s *Server) forumViewProfile(c *gin.Context, rt forumRoute, p *forumPage) b
 	p.Extra["hits"] = hits
 	p.Extra["total"] = total
 	p.Extra["bio"] = strings.TrimSpace(found.Profile["description"])
+	forumSetSEO(c, a.DisplayName, p.Extra["bio"].(string))
 	if u := currentUser(c); u != nil && p.CanModerate {
 		if target, err := s.store.UserByID(ctx, found.ID); err == nil && forumCanBlock(u, target) {
 			p.Extra["can_block"] = true

@@ -8,12 +8,22 @@
 <div class="pf-topic-state">
 {{- if .Sticky}}<span class="pf-badge pf-badge--sticky">{{$p.T "Pinned"}}</span>{{end}}
 {{- if .Closed}}<span class="pf-badge pf-badge--closed">{{$p.T "Closed"}}</span>{{end}}
-<span class="pf-topic-stats">{{$p.Count .ReplyCount "%s reply" "%s replies"}}</span>
+{{- if .Solved}}<span class="pf-badge pf-badge--solved">{{forum_icon "check" 12}}{{$p.T "Solved"}}</span>{{end}}
+<span class="pf-topic-stats">{{$p.Count .ReplyCount "%s reply" "%s replies"}} &middot; <span class="pf-views"><span data-pf-views-count>{{.Views}}</span> {{if eq .Views 1}}{{$p.T "view"}}{{else}}{{$p.T "views"}}{{end}}</span></span>
+{{- range .Tags}} <a class="pf-chip pf-chip--tag" href="{{.URL}}">#{{.Name}}</a>{{end}}
+{{- if and $p.User $p.Nonce (eq .Status "publish")}}
+<form class="pf-inline-form pf-follow" method="post" action="{{.URL}}">
+<input type="hidden" name="forum_action" value="{{if $p.Subscribed}}unsubscribe{{else}}subscribe{{end}}" />
+<input type="hidden" name="_wpnonce" value="{{$p.Nonce}}" />
+<button type="submit" class="pf-button pf-button--ghost pf-button--small" aria-pressed="{{if $p.Subscribed}}true{{else}}false{{end}}">{{forum_icon "mail" 14}}{{if $p.Subscribed}}{{$p.T "Following"}}{{else}}{{$p.T "Follow"}}{{end}}</button>
+</form>{{end}}
 </div>
 {{- if eq .Status "pending"}}<div class="pf-notice pf-notice--info">{{$p.T "This topic is waiting for a moderator. Only you and the moderators can see it."}}</div>{{end}}
 {{- if .Spam}}<div class="pf-notice pf-notice--error">{{$p.T "This topic is marked as spam."}}</div>{{else if eq .Status "trash"}}<div class="pf-notice pf-notice--error">{{$p.T "This topic is in the trash."}}</div>{{end}}
 <ol class="pf-posts">
-{{- if eq (index $p.Extra "page") 1}}<li>{{template "forum/part-post" $p.LeadPost}}</li>{{end}}
+{{- if eq (index $p.Extra "page") 1}}<li>{{template "forum/part-post" $p.LeadPost}}</li>
+{{- with $p.Solution}}<li class="pf-solution-callout"><p class="pf-solution-label">{{forum_icon "check" 14}}{{$p.T "Accepted answer"}} &middot; <a href="{{.URL}}">{{$p.T "Jump to it"}}</a></p><div class="pf-post-body">{{forum_format .Content}}</div></li>{{end}}
+{{- end}}
 {{- range $p.Replies}}<li>{{template "forum/part-post" ($p.ReplyPost .)}}</li>{{end}}
 </ol>
 {{template "forum/part-pagination" $p}}
@@ -23,5 +33,7 @@
 {{- else if not (index $p.Extra "open")}}<div class="pf-notice pf-notice--info pf-closed-note">{{$p.T "This topic is closed to new replies."}}</div>
 {{- else if eq .Status "publish"}}{{template "forum/part-join" $p}}
 {{- end}}
+{{- if $p.Similar}}<section class="pf-card pf-similar" aria-labelledby="pf-similar-title"><h2 class="pf-card-title" id="pf-similar-title">{{$p.T "Similar topics"}}</h2>
+<ul class="pf-similar-list">{{range $p.Similar}}<li><a href="{{.URL}}">{{.Title}}</a> <small>{{.ForumTitle}} &middot; {{if .Solved}}{{$p.T "solved"}}{{else}}{{$p.Count .ReplyCount "%s reply" "%s replies"}}{{end}}</small></li>{{end}}</ul></section>{{end}}
 {{- end}}
 </div>{{end}}

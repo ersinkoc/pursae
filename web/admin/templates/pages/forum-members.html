@@ -169,6 +169,20 @@
 		</form>{{else}}<p class="description">You cannot change your own forum role.</p>{{end}}
 		</div>
 	</div>
+	<div class="postbox pf-admin-box">
+		<div class="postbox-header"><h2 class="pf-admin-box__title">Adjust points</h2></div>
+		<div class="inside">
+		<form method="post" action="{{.URL}}">
+		<input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" />
+		<input type="hidden" name="member_do" value="points" />
+		<input type="hidden" name="user" value="{{.ID}}" />
+		<p><label for="pf-adjust-points">Points</label> <input type="number" id="pf-adjust-points" name="points" class="small-text" min="-100000" max="100000" required />
+		<label for="pf-adjust-note" class="screen-reader-text">Note</label> <input type="text" id="pf-adjust-note" name="note" maxlength="200" placeholder="Why (optional)" /></p>
+		<p class="description">Added to the member's points (a negative number takes points away) and to this week's tally.</p>
+		<p><input type="submit" class="button" value="Adjust Points" /></p>
+		</form>
+		</div>
+	</div>
 {{end}}
 </div>
 </div>

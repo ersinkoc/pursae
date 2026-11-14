@@ -18,6 +18,12 @@ import (
 //	/forums/edit/<id>/             edit             /forums/search/?q=…[page/N/]    search
 //	/forums/u/<nicename>/[page/N/] profile          /forums/login/ /forums/register/ /forums/verify/?u=&k= /forums/account/
 //	/forums/members/[page/N/]?q=&sort=  members (WP7; 404 while forumSettings.ShowMembers is off)
+//	/forums/new/                   new-topic with the forum picker (v0.2.5)
+//	/forums/topics/[page/N/]       every topic (?sort=&tag=)          /forums/tag/<slug>/[page/N/]  a tag's topics
+//	/forums/tags/                  the tag list                       /forums/unsubscribe/?t=&u=&k= a reply email's unsubscribe link
+//
+// Topic lists (index, forum, topics, tag) take ?sort=latest|popular|unanswered|solved and ?tag=<slug>
+// (forum and topics views); both are part of the page cache key while the plugin is on.
 //
 // Forum URLs always end in a slash, whatever the permalink structure; they work with plain
 // permalinks too (site() hands every path to the intercept).
@@ -106,6 +112,14 @@ func forumParsePath(base, path string) (forumRoute, bool) {
 		rt.View, rt.Slug = forumViewProfile, segs[1]
 	case len(segs) == 1 && segs[0] == "members":
 		rt.View = forumViewMembers
+	case len(segs) == 1 && segs[0] == "new" && !paged:
+		rt.View = forumViewNewTopic // v0.2.5: the forum picker (Slug "")
+	case len(segs) == 1 && segs[0] == "topics":
+		rt.View = forumViewTopics
+	case len(segs) == 2 && segs[0] == "tag" && forumValidSlug(segs[1]):
+		rt.View, rt.Slug = forumViewTag, segs[1]
+	case len(segs) == 1 && !paged && (segs[0] == "tags" || segs[0] == "unsubscribe"):
+		rt.View = segs[0] // forumViewTags, forumViewUnsubscribe
 	case len(segs) == 1 && !paged && (segs[0] == "login" || segs[0] == "register" || segs[0] == "verify" || segs[0] == "account"):
 		rt.View = segs[0] // forumViewLogin, forumViewRegister, forumViewVerify, forumViewAccount
 	default:
@@ -203,9 +217,11 @@ func forumLocalPath(abs string) string {
 func (s *Server) forumURLsFor(c *gin.Context) forumURLs {
 	ctx := c.Request.Context()
 	index := s.forumURL(ctx)
+	st := s.forumLoad()
 	u := forumURLs{Index: index, Search: s.forumURL(ctx, "search"), Login: s.forumURL(ctx, "login"),
 		Register: s.forumURL(ctx, "register"), Account: s.forumURL(ctx, "account"),
-		LostPassword: s.loginPath() + "?action=lostpassword"}
+		LostPassword: s.loginPath() + "?action=lostpassword",
+		Topics:       s.forumURL(ctx, "topics"), Tags: s.forumURL(ctx, "tags"), NewAny: s.forumURL(ctx, "new"), Rules: st.RulesURL}
 	here := ""
 	if c.Request.Method == "GET" {
 		here = c.Request.URL.Path

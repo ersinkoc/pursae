@@ -101,6 +101,7 @@ nothing and `forum_on` is `false`, so a theme can use them unconditionally.
 | `forum_user_menu .` | `<nav class="pf-usermenu">`: **Log in** (`.pf-usermenu-login`) and **Join** (`.pf-usermenu-join.pf-button.pf-button--primary`, only while registration is open) for visitors; avatar and name linking the account page (`.pf-usermenu-account` › `.pf-avatar` + `.pf-usermenu-name`) and **Log out** (`.pf-usermenu-logout`) for members |
 | `forum_recent_topics . n` | `<ul class="pf-recent">` of the `n` most recently active topics (default 5, max 50): `<li><a>title</a> <span class="pf-recent-meta">forum · <time></span></li>`; empty when there are none, so wrap it in `with` |
 | `forum_stats .` | `<dl class="pf-stats"><div><dt>Forums</dt><dd>12</dd></div>…</dl>`: forums (categories not counted), topics, replies, members |
+| `forum_levels .`, `forum_points .`, `forum_badge_list .`, `forum_weekly_members . n`, `forum_site_stats .`, `forum_tags . n`, `forum_topics . "sort" n` | 0.2.5 data for sidebars and front pages: see [Community data](#community-data-025) |
 
 `forum_recent_topics` and `forum_stats` tag the page with the `forum` cache tag, so Pursae Cache
 refreshes your front page when someone posts.
@@ -388,6 +389,133 @@ Use these to adjust details. The names are a contract: they stay stable.
 Block themes print the page title in a narrower column. On wide views `forum.css` widens
 `.wp-block-post-title` to match `.pf.alignwide` (up to 1080 px).
 
+## Community data (0.2.5)
+
+Pursae Forum 0.2.5 adds the data community designs need: forum colours and icons, topic tags,
+views, likes, accepted answers, who is online, members of the week, levels and badges tables,
+moderators per forum, a forum picker, previews, drafts, following a topic, similar topics and
+post reports. Everything is **additive**: the fields below are new, nothing existing changed
+meaning, and an override written for 0.2.4 renders as before.
+
+### New fields of the dot
+
+| Field / method | Views | Type | Meaning |
+|-------|------|------|---------|
+| `.Stats` | index, login, register, verify | *stats | `.Forums .Topics .Replies .Members .Online .OnlineMembers .Solved .SolvedPct .NewTopicsWeek .NewMembersWeek` |
+| `.Sort`, `.Sorts` | index, forum, topics, tag | string, []link | the current sort (`latest popular unanswered solved`) and the tabs: `.Key .Label` (translated) `.URL .Current`. The URLs keep `?tag=` |
+| `.Tag` | forum, topics, tag (when filtered) | *tag | `.Name .Slug .URL`; `.Extra.untag` is the same list without the filter |
+| `.Tags` | index, forum, topics, tags | []tag | popular tags (the forum's on a forum view; every tag on `tags`): `.Name .Slug .URL .Count` |
+| `.Weekly` | index, forum | []weekly | members of the week: `.Author` (level, points filled) and `.Delta` (points in 7 days) |
+| `.Similar` | topic, new-topic | []topic | up to 5 similar topics (on new-topic once a title was typed: a preview or a failed POST) |
+| `.Solution` | topic | *reply | the accepted answer wherever it is (show it under the opening post); `.Solution` is also `true` on that reply |
+| `.Liked` | topic | map[id]bool | posts the member likes (use the post view's `.Liked`) |
+| `.Subscribed` | topic | bool | the member follows the topic by email |
+| `.Preview` | new-topic, topic | HTML | the typed text rendered (after the *Preview* button) |
+| `.Draft` | new-topic | *draft | `.ForumID .Title .Content .Tags .Notify .Saved`; the form is already filled from it |
+| `.Forums` | **every** view but login/register/verify/account | []forum | the forum tree (was index and new-topic only) |
+| `.OtherForums` | any | []forum | the tree flattened without the forum being viewed ("other forums") |
+| `.AllForums` | any | []forum | the tree flattened (categories left out) |
+| `.PickForums` | new-topic | []pick | the forum picker: `.Forum`, `.Category` (title), `.Disabled` (closed or team-only for this member), `.Checked` |
+| `.Levels` | any | []level | every level, lowest first, names translated: `.Rank` (1, 2, …) `.Name .Min .Icon .Color .ImageURL` |
+| `.Badges` | any | []badge | the enabled badges, translated |
+| `.Points` | any | levels | `.TopicPoints .ReplyPoints .SolutionPoints .LikePoints` ("replies earn +5 points") |
+| `.LeadAuthor` | topic | *author | the topic's author with statistics, level, next level and `.Progress` (always loaded) |
+| `.Compact n` | any | string | 950, 3.1K, 12K, 1.2M (the K/M and the decimal mark translated: Turkish prints 3,1B) |
+| `.ReportReasons` | any | []link | the report form's reasons (`.Key .Label`) |
+| `.URLs.Topics`, `.URLs.Tags`, `.URLs.NewAny`, `.URLs.Rules` | all | string | every topic, the tag list, the new-topic form with the picker, the community rules (may be empty). `.URLs.NewTopic` is now also set on the index and topic lists (the picker) for members who may post |
+
+New view names: `topics` (`/forums/topics/`), `tag` (`/forums/tag/<slug>/`), `tags`
+(`/forums/tags/`) and `unsubscribe` (`/forums/unsubscribe/`): override them as
+`templates/forum/topics.html`, `tag.html`, `tags.html`, `unsubscribe.html`. `new-topic` is also served
+at `/forums/new/` with `.Forum` nil.
+
+New Extra keys: `can_solve` (topic: the viewer may choose the answer), `untag` (lists), `preview`
+(new-topic, topic: the preview ran), `require_rules` (register), `change_token` (register, after
+sign-up: the "change the address" form's hidden field), `change_email` (verify: the logged-in member
+may change the address), `t`/`u`/`k`/`action`/`done`/`failed` (unsubscribe).
+
+### New fields of the data types
+
+**Forum**: `.Icon` (an icon name), `.Color` (`sky mint peach lilac grey`, or empty), `.Label`,
+`.Number` ("01"), `.Chips` ([]tag, each linking `?tag=`), `.Tips` ([]string), `.StaffOnly`,
+`.Moderators` ([]author, forum view: the forum's list, else the site's moderators; `.Admin` tells the
+administrators), `.Online` (forum view).
+
+**Topic**: `.Tags`, `.Views`, `.Likes` (of the opening post), `.Solved`, `.SolutionID`, `.IsNew`
+(created in the last 24 hours), `.Participants` (up to 4 recent repliers, authors), `.ForumIcon`,
+`.ForumColor`, `.ForumLabel`.
+
+**Reply**: `.Likes`, `.Solution`.
+
+**Post view** (`.LeadPost`, `.ReplyPost`): `.Likes`, `.Liked`, `.Solution`, `.Solved` (the topic),
+`.CanLike`, `.CanSolve`, `.CanReport`.
+
+**Author**: `.Admin`, `.Solutions` (accepted answers), `.LikesReceived`, `.Bonus` (manual points),
+`.Streak` (longest run of days with a post). `.Points` now includes accepted answers, likes received
+and manual points.
+
+**Level**: `.Rank`.
+
+### Template functions
+
+| Function | Returns |
+|----------|---------|
+| `forum_levels .` | []level (the levels table of a sidebar) |
+| `forum_points .` | the point weights (`.TopicPoints .ReplyPoints .SolutionPoints .LikePoints`) |
+| `forum_badge_list .` | the enabled badges |
+| `forum_weekly_members . n` | members of the week (`.Author .Delta`), tagged `forum` |
+| `forum_site_stats .` | the totals (`.Members .Online .SolvedPct …`), tagged `forum` |
+| `forum_tags . n` | the most used tags, tagged `forum` |
+| `forum_topics . "popular" n` | topics by a sort key (`latest popular unanswered solved`), tagged `forum` |
+| `forum_url . "topics"`, `"tags"` | the new list URLs; `forum_url . "new"` is now the forum picker outside a forum |
+
+All return nil (or zero values) while the plugin is off.
+
+### Forms (all POST to the topic URL with `_wpnonce` = `.Nonce`)
+
+| `forum_action` | Fields | Who |
+|---|---|---|
+| `like` / `unlike` | `post_id` | `.CanLike` (a member who may post; not their own post) |
+| `solve` / `unsolve` | `post_id` | `.CanSolve` (the topic's author or a moderator) |
+| `subscribe` / `unsubscribe` | — | members |
+| `report` | `post_id`, `reason` (`spam abuse off_topic other`), `note` | `.CanReport` |
+| `reply` | adds `notify=1` (follow), `preview=1` (render, save nothing) | |
+| `new_topic` | adds `forum` (id; required at `/forums/new/`), `tags`, `notify`, `preview=1`, `draft=1` | |
+| `draft_delete` | — (posts to the new-topic URL) | |
+| `register` | adds `rules` (required when `.Extra.require_rules`), `digest` | visitors |
+| `change_email` | `user_email`, and `change_token` + `old_email` when logged out; `_wpnonce` = `.AuthNonce`; posts to `.Extra.verify` | unconfirmed accounts |
+| `account` | adds `digest_shown=1` and `digest` | members |
+
+A theme without JavaScript gets every feature. The plugin's `forum.js` (loaded on forum views) only
+sends the view beacon, refreshes the online counts and sends likes without a reload; it reads
+`<script id="pf-config">` (`api`, `topic`, `forum`, and `nonce` on member pages) and updates these
+hooks if your markup has them:
+
+| Hook | Updated with |
+|---|---|
+| `[data-pf-views-count]` | the topic's views after the beacon |
+| `[data-pf-online="site"]`, `[data-pf-online="forum"]` | online counts (now and every two minutes) |
+| `form.pf-like-form` with `[data-pf-like="<post id>"]`, `input[name=forum_action]` and `.pf-like-count` | the like state (`aria-pressed`) and count |
+
+### Caching
+
+`?sort=` and `?tag=` are page cache key parameters while the plugin is on; any other value is
+redirected (301) to the canonical form, so the cache holds one copy per real list. Topic pages also
+carry the `forum-topic:<id>` tag: a like purges only that topic. View counts and online numbers in a
+cached page are as old as the page; forum.js refreshes them. Never print `.Liked`, `.Subscribed` or a
+form outside the member-only branches: visitor pages are cached.
+
+### New CSS classes
+
+`.pf-c-<color>` (sets `--pf-c` / `--pf-ci` from `--pf-sky`, `--pf-sky-ink`, … `--pf-grey-ink`, all
+overridable tokens), `.pf-forum-tab`, `.pf-chips`, `.pf-chip`, `.pf-chip--tag`, `.pf-forum-chip`,
+`.pf-badge--solved`, `.pf-new`, `.pf-avatars`, `.pf-stats-strip`, `.pf-live`, `.pf-sorts`
+(`a.is-current`), `.pf-tag-filter`, `.pf-like` (`[aria-pressed="true"]`), `.pf-like--static`,
+`.pf-post--solution`, `.pf-solution-callout`, `.pf-report`, `.pf-check`, `.pf-preview`,
+`.pf-forum-pick`, `.pf-pick` (`.is-disabled`), `.pf-draft-note`, `.pf-forum-aside`, `.pf-tips`,
+`.pf-member-mini`, `.pf-similar`, `.pf-tag-list`, `.pf-change-email`, `.pf-follow`,
+`.pf-count--views`; row states `.pf-topic-row.is-solved`, `.is-new`.
+
 ## A complete example
 
 A small package, "Porch", with the wrapper, the account menu, the tokens and an override of the
@@ -619,6 +747,29 @@ topics is kept, and so is a demo member who meanwhile owns other posts or media)
 | `forums` | ≤ 30. `ref` unique, `title` required (≤ 200), `kind` `forum` (default) or `category`. `parent` must be a category of the demo; a category has no parent (two levels). `slug` optional (from the title otherwise), `description` HTML ≤ 20 KB, `order`, `closed` |
 | `topics` | ≤ 50. `ref` unique; `forum` must be a forum of the demo (categories hold no topics); `author` is `admin` (the user importing) or a member ref; `title` 3–120 characters; `content` HTML, required, ≤ 20 KB; `sticky`, `closed`; `hours_ago` 0 to 43,800 (five years) |
 | `replies` | in each topic; ≤ 300 in all; `author`, `content` (≤ 20 KB), `hours_ago` |
+
+**0.2.5 keys** (all optional):
+
+```json
+"forum": {
+  "rules_url": "/community-rules/", "require_rules": true,
+  "forums": [{"ref": "start", "title": "Getting started", "icon": "rocket", "color": "sky", "label": "Getting started",
+              "number": "01", "chips": ["Install", "Migration"], "tips": ["Search before you ask."],
+              "staff_only": false, "moderators": ["mara", "admin"]}],
+  "topics": [{"ref": "caddy", "forum": "start", "author": "mara", "title": "HTTPS behind Caddy", "content": "<p>…</p>",
+              "tags": ["caddy", "https"], "views": 214, "likes": 8, "solution": 0,
+              "replies": [{"author": "ozan", "content": "<p>…</p>", "likes": 21}]}]
+}
+```
+
+| Key | Rules |
+|-----|-------|
+| `rules_url`, `require_rules` | a site path or http(s) URL; sets *Forums › Settings › Community rules* |
+| forum `icon`, `color` | a `forum_icon_names` name; `sky`, `mint`, `peach`, `lilac` or `grey` |
+| forum `label` (≤ 40), `number` (≤ 8), `chips` (≤ 8), `tips` (≤ 8), `staff_only`, `moderators` (member refs or `admin`) | |
+| topic `tags` | ≤ 5 strings |
+| topic `views`, `likes`; reply `likes` | 0 to 10,000,000. Likes are given by the demo's members (never the author); a larger number is a display-only seed that earns no points |
+| topic `solution` | the index of the accepted reply in `replies` |
 
 The package validator rejects a demo that breaks a rule and lists every problem (`forum.topics[2].forum
 "x" is not a forum of the demo …`). Content goes through the post sanitizer like any post. Set

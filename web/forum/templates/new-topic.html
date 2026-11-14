@@ -4,8 +4,8 @@
 {{- with .Forum}}<p class="pf-back"><a class="pf-button pf-button--ghost" href="{{.URL}}">{{$.Tf "Back to %s" .Title}}</a></p>{{end}}
 {{- else if .CanPost}}
 <section class="pf-card pf-compose">
-{{- with .Forum}}<p class="pf-compose-where">{{$.Tf "Posting in %s" .Title}}</p>{{end}}
-<form class="pf-form" method="post" action="{{index .Extra "action"}}">
+{{- with .Draft}}<p class="pf-draft-note" data-pf-draft-status>{{$.Tf "Draft saved %s" ($.Ago .Saved)}}</p>{{end}}
+<form class="pf-form" method="post" action="{{index .Extra "action"}}" data-pf-compose>
 <input type="hidden" name="forum_action" value="new_topic" />
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 {{.Traps}}
@@ -13,12 +13,27 @@
 <label class="pf-label" for="pf-title">{{.T "Title"}}</label>
 <input class="pf-input" type="text" id="pf-title" name="title" value="{{.FormValue "title"}}" required minlength="3" maxlength="120" autocomplete="off" />
 </div>
+{{- $picks := .PickForums}}{{if $picks}}
+<fieldset class="pf-field pf-forum-pick"><legend class="pf-label">{{.T "Forum"}}</legend>
+{{- range $picks}}<label class="pf-pick{{with .Forum.Color}} pf-c-{{.}}{{end}}{{if .Disabled}} is-disabled{{end}}"><input type="radio" name="forum" value="{{.Forum.ID}}"{{if .Checked}} checked{{end}}{{if .Disabled}} disabled{{end}} required />{{with .Forum.Icon}}{{forum_icon . 16}}{{end}}<span>{{.Forum.Title}}</span>{{if and .Disabled .Forum.StaffOnly}} <small>{{$.T "Team only"}}</small>{{end}}</label>{{end}}
+</fieldset>{{end}}
+{{- if .Preview}}<div class="pf-preview" aria-live="polite"><p class="pf-preview-label">{{.T "Preview"}}</p><div class="pf-post-body">{{.Preview}}</div></div>{{end}}
 {{template "forum/part-editor" (dict "P" . "Value" (.FormValue "content") "Label" (.T "Message"))}}
+<div class="pf-field">
+<label class="pf-label" for="pf-tags">{{.T "Tags"}}</label>
+<input class="pf-input" type="text" id="pf-tags" name="tags" value="{{.FormValue "tags"}}" maxlength="200" autocomplete="off" aria-describedby="pf-tags-help" />
+<p class="pf-help" id="pf-tags-help">{{.T "Up to 5, separated by commas."}}</p>
+</div>
+<label class="pf-check"><input type="checkbox" name="notify" value="1"{{if .FormValue "notify"}} checked{{end}} /> {{.T "Email me when someone replies"}}</label>
 <div class="pf-form-actions">
 <button type="submit" class="pf-button pf-button--primary">{{.T "Post topic"}}</button>
+<button type="submit" name="preview" value="1" class="pf-button pf-button--ghost" formnovalidate>{{.T "Preview"}}</button>
+<button type="submit" name="draft" value="1" class="pf-button pf-button--ghost" formnovalidate>{{.T "Save draft"}}</button>
 {{- with .Forum}} <a class="pf-button pf-button--ghost" href="{{.URL}}">{{$.T "Cancel"}}</a>{{end}}
 </div>
 </form>
+{{- if .Draft}}<form class="pf-inline-form" method="post" action="{{index .Extra "action"}}"><input type="hidden" name="forum_action" value="draft_delete" /><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><button type="submit" class="pf-button pf-button--ghost pf-button--small">{{.T "Delete draft"}}</button></form>{{end}}
 </section>
+{{- if .Similar}}<section class="pf-card pf-similar"><h2 class="pf-card-title">{{.T "Similar topics"}}</h2><ul class="pf-similar-list">{{range .Similar}}<li><a href="{{.URL}}">{{.Title}}</a> <small>{{.ForumTitle}}</small></li>{{end}}</ul></section>{{end}}
 {{- else}}{{template "forum/part-join" .}}{{end}}
 </div>{{end}}

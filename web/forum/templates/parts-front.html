@@ -2,11 +2,13 @@
 dot is noted on each one. Forms only render for logged-in members (their pages are no-store). */}}
 
 {{/* A forum in a list. Dot: dict "P" *forumPage "F" *forumForum. */}}
-{{define "forum/part-forum-row"}}{{$p := .P}}{{with .F}}<li class="pf-forum-row{{if .Closed}} is-closed{{end}}">
-<span class="pf-forum-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2 5v2h12V9H6Zm0 4v2h8v-2H6Z"/></svg></span>
+{{define "forum/part-forum-row"}}{{$p := .P}}{{with .F}}<li class="pf-forum-row{{if .Closed}} is-closed{{end}}{{with .Color}} pf-c-{{.}}{{end}}">
+<span class="pf-forum-icon" aria-hidden="true">{{if .Icon}}{{forum_icon .Icon 20}}{{else}}<svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2 5v2h12V9H6Zm0 4v2h8v-2H6Z"/></svg>{{end}}</span>
 <div class="pf-forum-main">
-<h3 class="pf-forum-name"><a href="{{.URL}}">{{.Title}}</a>{{if .Closed}} <span class="pf-badge pf-badge--closed">{{$p.T "Closed"}}</span>{{end}}</h3>
+{{- if or .Number .Label}}<p class="pf-forum-tab">{{with .Number}}<b>{{.}}</b> {{end}}{{.Label}}</p>{{end}}
+<h3 class="pf-forum-name"><a href="{{.URL}}">{{.Title}}</a>{{if .Closed}} <span class="pf-badge pf-badge--closed">{{$p.T "Closed"}}</span>{{else if .StaffOnly}} <span class="pf-badge pf-badge--closed">{{$p.T "Team only"}}</span>{{end}}</h3>
 {{- if .Description}}<div class="pf-forum-desc">{{.Description}}</div>{{end}}
+{{- if .Chips}}<p class="pf-chips">{{range .Chips}}<a class="pf-chip" href="{{.URL}}">{{.Name}}</a>{{end}}</p>{{end}}
 {{- if .Children}}<ul class="pf-subforums">{{range .Children}}<li><a href="{{.URL}}">{{.Title}}</a></li>{{end}}</ul>{{end}}
 </div>
 <div class="pf-count"><span class="pf-count-num">{{num .TopicCount}}</span> <span class="pf-count-label">{{if eq .TopicCount 1}}{{$p.T "topic"}}{{else}}{{$p.T "topics"}}{{end}}</span></div>
@@ -18,25 +20,28 @@ dot is noted on each one. Forms only render for logged-in members (their pages a
 </li>{{end}}{{end}}
 
 {{/* A topic in a list. Dot: dict "P" *forumPage "T" *forumTopic "ShowForum" bool. */}}
-{{define "forum/part-topic-row"}}{{$p := .P}}{{$showForum := .ShowForum}}{{with .T}}<li class="pf-topic-row{{if and .Sticky (not $showForum)}} is-sticky{{end}}{{if .Closed}} is-closed{{end}}{{if eq .Status "pending"}} is-pending{{end}}{{if .Spam}} is-spam{{end}}">
+{{define "forum/part-topic-row"}}{{$p := .P}}{{$showForum := .ShowForum}}{{with .T}}<li class="pf-topic-row{{if and .Sticky (not $showForum)}} is-sticky{{end}}{{if .Closed}} is-closed{{end}}{{if eq .Status "pending"}} is-pending{{end}}{{if .Spam}} is-spam{{end}}{{if .Solved}} is-solved{{end}}{{if .IsNew}} is-new{{end}}">
 {{forum_avatar .Author 40}}
 <div class="pf-topic-main">
-<h3 class="pf-topic-title"><a href="{{.URL}}">{{.Title}}</a>
+<h3 class="pf-topic-title">{{if .IsNew}}<span class="pf-new" title="{{$p.T "New"}}"><span class="pf-sr">{{$p.T "New"}}</span></span> {{end}}<a href="{{.URL}}">{{.Title}}</a>
+{{- if .Solved}} <span class="pf-badge pf-badge--solved">{{forum_icon "check" 12}}{{$p.T "Solved"}}</span>{{end}}
 {{- if and .Sticky (not $showForum)}} <span class="pf-badge pf-badge--sticky">{{$p.T "Pinned"}}</span>{{end}}
 {{- if .Closed}} <span class="pf-badge pf-badge--closed">{{$p.T "Closed"}}</span>{{end}}
 {{- if eq .Status "pending"}} <span class="pf-badge pf-badge--pending">{{$p.T "Pending"}}</span>{{end}}
 {{- if .Spam}} <span class="pf-badge pf-badge--spam">{{$p.T "Spam"}}</span>{{else if eq .Status "trash"}} <span class="pf-badge pf-badge--trash">{{$p.T "Trash"}}</span>{{end}}</h3>
 <p class="pf-topic-meta">{{if .Author}}<a href="{{.Author.ProfileURL}}">{{.Author.DisplayName}}</a> &middot; {{end}}<time datetime="{{forum_iso .CreatedAt}}">{{$p.Ago .CreatedAt}}</time>
-{{- if and $showForum .ForumTitle}} &middot; <a href="{{.ForumURL}}">{{.ForumTitle}}</a>{{end}}</p>
+{{- if and $showForum .ForumTitle}} &middot; <a class="pf-forum-chip{{with .ForumColor}} pf-c-{{.}}{{end}}" href="{{.ForumURL}}">{{.ForumTitle}}</a>{{end}}
+{{- range .Tags}} <a class="pf-chip pf-chip--tag" href="{{.URL}}">#{{.Name}}</a>{{end}}</p>
 </div>
 <div class="pf-count"><span class="pf-count-num">{{num .ReplyCount}}</span> <span class="pf-count-label">{{if eq .ReplyCount 1}}{{$p.T "reply"}}{{else}}{{$p.T "replies"}}{{end}}</span></div>
-<div class="pf-last">{{if .LastAuthor}}{{forum_avatar .LastAuthor 32}}{{end}}
+<div class="pf-count pf-count--views"><span class="pf-count-num">{{$p.Compact .Views}}</span> <span class="pf-count-label">{{if eq .Views 1}}{{$p.T "view"}}{{else}}{{$p.T "views"}}{{end}}</span></div>
+<div class="pf-last">{{if .Participants}}<span class="pf-avatars">{{range .Participants}}{{forum_avatar . 24}}{{end}}</span>{{else if .LastAuthor}}{{forum_avatar .LastAuthor 32}}{{end}}
 <div class="pf-last-text">{{if .LastAuthor}}<span class="pf-last-author">{{.LastAuthor.DisplayName}}</span>{{end}}
 <span class="pf-last-meta"><time datetime="{{forum_iso .LastActive}}">{{$p.Ago .LastActive}}</time></span></div></div>
 </li>{{end}}{{end}}
 
 {{/* One post: the topic's opening post or a reply. Dot: *forumPostView. */}}
-{{define "forum/part-post"}}{{$p := .Page}}<article class="pf-post{{if .Lead}} pf-post--lead{{end}}{{if eq .Status "pending"}} is-pending{{end}}{{if .Spam}} is-spam{{end}}{{if and (eq .Status "trash") (not .Spam)}} is-trash{{end}}" id="post-{{.ID}}">
+{{define "forum/part-post"}}{{$p := .Page}}<article class="pf-post{{if .Lead}} pf-post--lead{{end}}{{if .Solution}} pf-post--solution{{end}}{{if eq .Status "pending"}} is-pending{{end}}{{if .Spam}} is-spam{{end}}{{if and (eq .Status "trash") (not .Spam)}} is-trash{{end}}" id="post-{{.ID}}">
 <div class="pf-post-author">
 {{- with .Author}}<a class="pf-post-author-avatar" href="{{.ProfileURL}}" tabindex="-1" aria-hidden="true">{{forum_avatar . 56}}</a>
 <div class="pf-post-author-text"><a class="pf-post-author-name" href="{{.ProfileURL}}">{{.DisplayName}}</a>
@@ -51,17 +56,26 @@ dot is noted on each one. Forms only render for logged-in members (their pages a
 </div>
 <div class="pf-post-main">
 <header class="pf-post-meta">
-<a class="pf-post-link" href="{{.Permalink}}"><time datetime="{{forum_iso .CreatedAt}}" title="{{forum_date .CreatedAt}}">{{$p.Ago .CreatedAt}}</time></a>
+<a class="pf-post-link" href="{{.Permalink}}"><time datetime="{{forum_iso .CreatedAt}}" title="{{$p.DateTime .CreatedAt}}">{{$p.Ago .CreatedAt}}</time></a>
 {{- if .EditedAt}} <span class="pf-post-edited">{{$p.T "edited"}}</span>{{end}}
 {{- if eq .Status "pending"}} <span class="pf-badge pf-badge--pending">{{$p.T "Pending"}}</span>{{end}}
 {{- if .Spam}} <span class="pf-badge pf-badge--spam">{{$p.T "Spam"}}</span>{{else if eq .Status "trash"}} <span class="pf-badge pf-badge--trash">{{$p.T "Trash"}}</span>{{end}}
 {{- if .IP}} <span class="pf-post-ip" title="{{$p.T "IP address (moderators only)"}}">{{.IP}}</span>{{end}}
+{{- if .Solution}} <span class="pf-badge pf-badge--solved">{{forum_icon "check" 12}}{{$p.T "Solution"}}</span>{{end}}
 {{- if gt .Position 0}} <a class="pf-post-num" href="{{.Permalink}}" aria-label="{{$p.Tf "Reply %s" .Position}}">#{{.Position}}</a>{{end}}
 </header>
 <div class="pf-post-body">{{forum_format .Content}}</div>
-{{- if or ($p.CanEdit .ID) $p.CanModerate}}
+{{- if or .CanLike .Likes .CanSolve ($p.CanEdit .ID) .CanReport $p.CanModerate}}
 <footer class="pf-post-tools">
+{{- template "forum/part-like" .}}
+{{- if .CanSolve}}<form class="pf-inline-form" method="post" action="{{.ActionURL}}#post-{{.ID}}">
+<input type="hidden" name="forum_action" value="{{if .Solution}}unsolve{{else}}solve{{end}}" />
+<input type="hidden" name="_wpnonce" value="{{$p.Nonce}}" />
+<input type="hidden" name="post_id" value="{{.ID}}" />
+<button type="submit" class="pf-button pf-button--ghost pf-button--small pf-solve">{{if .Solution}}{{$p.T "Not the solution"}}{{else}}{{$p.T "Mark as solution"}}{{end}}</button>
+</form>{{end}}
 {{- if $p.CanEdit .ID}}<a class="pf-button pf-button--ghost pf-button--small" href="{{$p.EditURL .ID}}">{{$p.T "Edit"}}</a>{{end}}
+{{- if .CanReport}}{{template "forum/part-report" .}}{{end}}
 {{- if $p.CanModerate}}{{template "forum/part-modbar" .}}{{end}}
 </footer>{{end}}
 </div>
@@ -83,6 +97,32 @@ Dot: *forumPostView. */}}
 {{- else}}<button type="submit" name="op" value="spam" class="pf-button pf-button--small pf-button--ghost pf-button--danger">{{$p.T "Spam"}}</button><button type="submit" name="op" value="trash" class="pf-button pf-button--small pf-button--ghost pf-button--danger">{{$p.T "Trash"}}</button>{{end}}
 </form>{{end}}{{end}}
 
+{{/* The like button of a post (v0.2.5): a form for members who may like it, a count otherwise.
+Dot: *forumPostView. */}}
+{{define "forum/part-like"}}{{$p := .Page}}{{if .CanLike}}<form class="pf-inline-form pf-like-form" method="post" action="{{.ActionURL}}#post-{{.ID}}">
+<input type="hidden" name="forum_action" value="{{if .Liked}}unlike{{else}}like{{end}}" />
+<input type="hidden" name="_wpnonce" value="{{$p.Nonce}}" />
+<input type="hidden" name="post_id" value="{{.ID}}" />
+<button type="submit" class="pf-button pf-button--ghost pf-button--small pf-like" aria-pressed="{{if .Liked}}true{{else}}false{{end}}" data-pf-like="{{.ID}}">{{forum_icon "heart" 14}}<span class="pf-like-count">{{.Likes}}</span><span class="pf-sr">{{$p.T "Like"}}</span></button>
+</form>{{else if .Likes}}<span class="pf-like pf-like--static" title="{{$p.T "Likes"}}">{{forum_icon "heart" 14}}<span class="pf-like-count">{{.Likes}}</span></span>{{end}}{{end}}
+
+{{/* The report form of a post (v0.2.5): a disclosure with the reasons. Dot: *forumPostView. */}}
+{{define "forum/part-report"}}{{$p := .Page}}<details class="pf-report"><summary class="pf-button pf-button--ghost pf-button--small">{{$p.T "Report"}}</summary>
+<form class="pf-form" method="post" action="{{.ActionURL}}#post-{{.ID}}">
+<input type="hidden" name="forum_action" value="report" />
+<input type="hidden" name="_wpnonce" value="{{$p.Nonce}}" />
+<input type="hidden" name="post_id" value="{{.ID}}" />
+<fieldset><legend>{{$p.T "What is wrong with this post?"}}</legend>
+{{- range $i, $r := $p.ReportReasons}}<label class="pf-check"><input type="radio" name="reason" value="{{$r.Key}}"{{if eq $i 0}} checked{{end}} /> {{$r.Label}}</label>{{end}}</fieldset>
+<label class="pf-label" for="pf-report-note-{{.ID}}">{{$p.T "Anything a moderator should know? (optional)"}}</label>
+<textarea class="pf-input" id="pf-report-note-{{.ID}}" name="note" rows="2" maxlength="500"></textarea>
+<button type="submit" class="pf-button pf-button--small">{{$p.T "Send report"}}</button>
+</form></details>{{end}}
+
+{{/* Sort tabs of a topic list (v0.2.5). Dot: *forumPage. */}}
+{{define "forum/part-sorts"}}{{if .Sorts}}<nav class="pf-sorts" aria-label="{{.T "Sort topics"}}">{{range .Sorts}}<a href="{{.URL}}"{{if .Current}} aria-current="true" class="is-current"{{end}}>{{.Label}}</a>{{end}}</nav>{{end}}
+{{- with .Tag}}<p class="pf-tag-filter">{{$.Tf "Tagged “%s”" .Name}} <a class="pf-chip" href="{{$.Extra.untag}}">{{$.T "Show all"}}</a></p>{{end}}{{end}}
+
 {{/* The text field of a post form. Dot: dict "P" *forumPage "Value" string "Label" string. */}}
 {{define "forum/part-editor"}}{{$p := .P}}<div class="pf-field">
 <label class="pf-label" for="pf-content">{{.Label}}</label>
@@ -98,8 +138,12 @@ Dot: *forumPostView. */}}
 <input type="hidden" name="forum_action" value="reply" />
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 {{.Traps}}
+{{- if .Preview}}<div class="pf-preview" aria-live="polite"><p class="pf-preview-label">{{.T "Preview"}}</p><div class="pf-post-body">{{.Preview}}</div></div>{{end}}
 {{template "forum/part-editor" (dict "P" . "Value" (.FormValue "content") "Label" (.T "Your reply"))}}
-<div class="pf-form-actions"><button type="submit" class="pf-button pf-button--primary">{{.T "Post reply"}}</button></div>
+<label class="pf-check"><input type="checkbox" name="notify" value="1"{{if or .Subscribed (.FormValue "notify")}} checked{{end}} /> {{.T "Email me when someone replies"}}</label>
+<div class="pf-form-actions"><button type="submit" class="pf-button pf-button--primary">{{.T "Post reply"}}</button>
+<button type="submit" name="preview" value="1" class="pf-button pf-button--ghost" formnovalidate>{{.T "Preview"}}</button>
+<span class="pf-help">{{.Tf "Replies earn %s points." .Points.ReplyPoints}}</span></div>
 </form>
 </section>{{end}}
 

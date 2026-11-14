@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"html"
 	"html/template"
 	"log"
@@ -52,6 +53,18 @@ var forumMessages = map[string]string{
 	"avatar_removed":       "Your profile photo is removed.",
 	"badge_awarded":        "The badge is awarded.",
 	"badge_revoked":        "The badge is revoked.",
+	// v0.2.5.
+	"liked":         "Thanks for the like.",
+	"unliked":       "Like removed.",
+	"solved":        "The answer is marked as the solution.",
+	"unsolved":      "The solution mark is removed.",
+	"subscribed":    "You will get an email when someone replies.",
+	"unsubscribed":  "You no longer follow this topic.",
+	"reported":      "Thanks. A moderator will look at it.",
+	"draft_saved":   "Your draft is saved.",
+	"draft_deleted": "Your draft is deleted.",
+	"email_changed": "Your email address is changed. Check your inbox for the confirmation link.",
+	"points_saved":  "The points are saved.",
 }
 
 // forumCtxNoindex is the gin key a public view sets when this request of it must not be indexed nor
@@ -91,8 +104,10 @@ func forumThemeSupports(t *Theme) bool {
 func (s *Server) forumNewPage(c *gin.Context, view, title string) *forumPage {
 	ctx := c.Request.Context()
 	st := s.forumLoad()
-	if st.Title == forumDefaults().Title { // the untouched default speaks the site's language; an owner's own title stays as written
+	if st.Title == forumDefaults().Title { // the untouched default speaks the site's language
 		st.Title = s.forumT(ctx, st.Title)
+	} else { // an owner's own title: its Pursae Multi Language translation (Languages › Translations, group Pursae Forum)
+		st.Title = s.seogoTr(ctx, st.Title)
 	}
 	if title == "" {
 		title = st.Title
@@ -100,6 +115,7 @@ func (s *Server) forumNewPage(c *gin.Context, view, title string) *forumPage {
 	p := &forumPage{View: view, Title: title, OwnTitle: forumThemeSupports(s.forumTheme(c)), GoogleOn: s.forumGoogleReady(),
 		RegisterOn: st.Registration, URLs: s.forumURLsFor(c), Form: map[string]string{}, Extra: map[string]any{},
 		cat: s.gooFrontCatalog(ctx)}
+	s.forumPageData(ctx, p)
 	p.Crumbs = []forumCrumb{{Label: st.Title, URL: p.URLs.Index}}
 	if u := currentUser(c); u != nil {
 		p.User = s.forumAuthorOf(ctx, u)
@@ -312,8 +328,32 @@ func (s *Server) forumHead(c *gin.Context, q *siteQuery) string {
 	if q.Forum == "" && (q.Post == nil || !strings.Contains(q.Post.Content, "["+forumShortcodeTag)) {
 		return ""
 	}
-	return `<link rel="stylesheet" id="pursae-forum-css" href="` + forumAssetsPrefix + `/forum.css?ver=` + forumVersion + `" media="all" />` + "\n"
+	out := `<link rel="stylesheet" id="pursae-forum-css" href="` + forumAssetsPrefix + `/forum.css?ver=` + forumVersion + `" media="all" />` + "\n"
+	if q.Forum == "" || c == nil || c.Request == nil {
+		return out
+	}
+	// v0.2.5: forum.js and its configuration (the REST base, the topic and forum of the page; the
+	// member's REST nonce only on member pages, which are never cached).
+	cfg := map[string]any{"api": s.links(c.Request.Context()).HomeURL("/wp-json/" + forumRESTNamespace + "/")}
+	{
+		if v, ok := c.Get(forumCtxTopic); ok {
+			cfg["topic"] = v
+		}
+		if v, ok := c.Get(forumCtxForum); ok {
+			cfg["forum"] = v
+		}
+		if currentUser(c) != nil {
+			cfg["nonce"] = s.nonce(c, "wp_rest")
+		}
+	}
+	raw, _ := json.Marshal(cfg)
+	out += `<script id="pf-config" type="application/json">` + strings.ReplaceAll(string(raw), "</", `<\/`) + `</script>` + "\n" +
+		`<script src="` + forumAssetsPrefix + `/forum.js?ver=` + forumVersion + `" id="pursae-forum-js" defer></script>` + "\n"
+	return out
 }
+
+// forumCtxForum is the gin key of the forum a page belongs to (forum.js marks the visitor there).
+const forumCtxForum = "forum.front.forum"
 
 // forumPagination is the pager of a forum list (addition to the design, for forumPage.Pagination):
 // <nav class="pf-pagination"> with previous / next and the page numbers around the current one.
@@ -366,4 +406,60 @@ func (s *Server) forumPagination(c *gin.Context, base string, current, total int
 	}
 	b.WriteString(`</nav>`)
 	return template.HTML(b.String())
+}
+
+// forumCtxSEO is the gin key of a public forum view's description (forumSetSEO).
+const forumCtxSEO = "forum.front.seo"
+
+// forumSEO is what a public view says about itself in the head.
+type forumSEO struct{ Title, Description string }
+
+// forumSetSEO records a view's title and description for the head (plain text; trimmed to ~160
+// runes). Only public, canonical views print it.
+func forumSetSEO(c *gin.Context, title, desc string) {
+	desc = strings.Join(strings.Fields(desc), " ")
+	if r := []rune(desc); len(r) > 160 {
+		desc = strings.TrimSpace(string(r[:157])) + "…"
+	}
+	c.Set(forumCtxSEO, forumSEO{Title: title, Description: desc})
+}
+
+// forumSEOHead is the meta description and the Open Graph / Twitter tags of a public forum view
+// (index, forum, topic, topic lists, profile): Pursae SEO does not handle synthetic forum pages.
+func (s *Server) forumSEOHead(c *gin.Context, q *siteQuery) string {
+	if c == nil || q == nil || q.ForumURL == "" {
+		return ""
+	}
+	v, ok := c.Get(forumCtxSEO)
+	if !ok {
+		return ""
+	}
+	m, _ := v.(forumSEO)
+	if m.Title == "" && m.Description == "" {
+		return ""
+	}
+	u := q.ForumURL
+	if q.Paged > 1 {
+		u = strings.TrimSuffix(u, "/") + "/page/" + strconv.Itoa(q.Paged) + "/"
+	}
+	e := html.EscapeString
+	var b strings.Builder
+	if m.Description != "" {
+		b.WriteString(`<meta name="description" content="` + e(m.Description) + `" />` + "\n")
+	}
+	ogType := "website"
+	if q.Forum == forumViewTopic {
+		ogType = "article"
+	}
+	b.WriteString(`<meta property="og:type" content="` + ogType + `" />` + "\n")
+	b.WriteString(`<meta property="og:title" content="` + e(m.Title) + `" />` + "\n")
+	if m.Description != "" {
+		b.WriteString(`<meta property="og:description" content="` + e(m.Description) + `" />` + "\n")
+	}
+	b.WriteString(`<meta property="og:url" content="` + e(u) + `" />` + "\n")
+	if site := s.seogoTr(c.Request.Context(), s.settings.String("blogname")); site != "" {
+		b.WriteString(`<meta property="og:site_name" content="` + e(site) + `" />` + "\n")
+	}
+	b.WriteString(`<meta name="twitter:card" content="summary" />` + "\n")
+	return b.String()
 }
