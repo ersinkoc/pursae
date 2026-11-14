@@ -97,6 +97,7 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 		if x := s.forumPllXDefault(c, q); x != "" { // Pursae Multi Language: the hreflang links come from golylangHTML
 			fmt.Fprintf(&sb, "<link rel=\"alternate\" href=\"%s\" hreflang=\"x-default\" />\n", html.EscapeString(x))
 		}
+		sb.WriteString(s.forumSEOHead(c, q)) // v0.2.5: description and Open Graph of public views (forum_render.go)
 	case storeArchive:
 		// A store archive is a synthetic page whose id may be a term id: its canonical is the store URL.
 		if seo == "" && q.StoreURL != "" {

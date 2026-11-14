@@ -351,7 +351,7 @@ func TestForumGamifyIntegration(t *testing.T) {
 		t.Fatalf("new badge: %+v %v", nb, err)
 	}
 	nb.Description = "Found a bug."
-	if nb2, err := srv.forumSaveBadge(ctx, nb); err != nil || nb2.ID != "bug-hunter" || len(srv.forumBadges(ctx)) != 9 {
+	if nb2, err := srv.forumSaveBadge(ctx, nb); err != nil || nb2.ID != "bug-hunter" || len(srv.forumBadges(ctx)) != len(forumDefaultBadges())+1 {
 		t.Errorf("edit badge: %+v %v (%d badges)", nb2, err, len(srv.forumBadges(ctx)))
 	}
 	if _, err := srv.forumSaveBadge(ctx, forumBadge{Name: "", Rule: forumRuleManual}); err == nil {

@@ -1,0 +1,31 @@
+{{/* Every topic (/forums/topics/) and a tag's topics (/forums/tag/<slug>/), v0.2.5. */}}
+{{define "forum/part-topic-list"}}{{$p := .}}<div class="pf alignwide" data-view="{{.View}}">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}{{template "forum/part-userbar" .}}
+{{template "forum/part-sorts" .}}
+{{- if .Topics}}
+<ul class="pf-topics">{{range .Topics}}{{template "forum/part-topic-row" (dict "P" $p "T" . "ShowForum" true)}}{{end}}</ul>
+{{template "forum/part-pagination" .}}
+{{- else}}<div class="pf-empty pf-card"><p>{{.T "No topics here yet."}}</p></div>{{end}}
+{{- if and .Tags (eq .View "topics")}}<section class="pf-card"><h2 class="pf-card-title">{{.T "Popular tags"}}</h2><p class="pf-chips">{{range .Tags}}<a class="pf-chip" href="{{.URL}}">#{{.Name}} <small>{{.Count}}</small></a>{{end}}</p></section>{{end}}
+</div>{{end}}
+{{define "forum/topics"}}{{template "forum/part-topic-list" .}}{{end}}
+{{define "forum/tag"}}{{template "forum/part-topic-list" .}}{{end}}
+{{define "forum/tags"}}<div class="pf" data-view="tags">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}
+{{- if .Tags}}<ul class="pf-tag-list">{{range .Tags}}<li><a class="pf-chip" href="{{.URL}}">#{{.Name}}</a> <span class="pf-count-label">{{$.Count .Count "%s topic" "%s topics"}}</span></li>{{end}}</ul>
+{{- else}}<p class="pf-empty">{{.T "No tags yet."}}</p>{{end}}
+</div>{{end}}
+{{define "forum/unsubscribe"}}<div class="pf" data-view="unsubscribe">
+{{template "forum/part-head" .}}{{template "forum/part-notice" .}}
+{{- if not .Extra.failed}}<section class="pf-card pf-auth">
+{{- if .Extra.done}}<p>{{.T "You no longer follow this topic."}}</p>
+{{- else}}
+<p>{{with .Topic}}{{$.Tf "Stop getting emails about replies to “%s”?" .Title}}{{else}}{{.T "Stop getting emails about replies to this topic?"}}{{end}}</p>
+<form class="pf-form" method="post" action="{{.Extra.action}}">
+<input type="hidden" name="forum_action" value="unsubscribe_link" />
+<input type="hidden" name="t" value="{{.Extra.t}}" /><input type="hidden" name="u" value="{{.Extra.u}}" /><input type="hidden" name="k" value="{{.Extra.k}}" />
+<button type="submit" class="pf-button pf-button--primary">{{.T "Stop following"}}</button>
+</form>{{end}}
+{{- with .Topic}}<p class="pf-auth-foot"><a href="{{.URL}}">{{$.T "Back to the topic"}}</a></p>{{end}}
+</section>{{end}}
+</div>{{end}}

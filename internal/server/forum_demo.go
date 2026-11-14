@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +30,18 @@ import (
 //	              "replies": [{"author": "mara", "content": "<p>…</p>", "hours_ago": 90}]}]
 //	}
 //
+// v0.2.5 adds, all optional:
+//
+//	"rules_url": "/community-rules/", "require_rules": true                 the sign-up checkbox
+//	forums[]: "icon": "rocket", "color": "sky", "label": "Getting started", "number": "01",
+//	          "chips": ["Install", "Migration"], "tips": ["Search first."], "staff_only": true,
+//	          "moderators": ["mara", "admin"]                                (member refs)
+//	topics[]: "tags": ["cron", "wasm"], "views": 214, "likes": 8, "solution": 0   (index into replies)
+//	          replies[]: "likes": 21
+//
+// Likes are given by the demo's members (never the post's own author), as many as there are; a
+// larger number is added as a display-only seed (_forum_likes_seed) that earns no points.
+//
 // Importing switches the forum on, creates the members (login demo-<ref>, an unusable random
 // password, an example.invalid address) and the forums, topics and replies, each marked with
 // _wpgo_demo / _wpgo_demo_ref so a re-import adds nothing and Remove Demo Content deletes exactly
@@ -45,10 +58,12 @@ const (
 )
 
 type forumDemo struct {
-	Title   string            `json:"title"`
-	Members []forumDemoMember `json:"members"`
-	Forums  []forumDemoForum  `json:"forums"`
-	Topics  []forumDemoTopic  `json:"topics"`
+	Title        string            `json:"title"`
+	RulesURL     string            `json:"rules_url"`     // v0.2.5
+	RequireRules bool              `json:"require_rules"` // v0.2.5
+	Members      []forumDemoMember `json:"members"`
+	Forums       []forumDemoForum  `json:"forums"`
+	Topics       []forumDemoTopic  `json:"topics"`
 }
 
 type forumDemoMember struct {
@@ -67,6 +82,15 @@ type forumDemoForum struct {
 	Description string `json:"description"`
 	Order       int    `json:"order"`
 	Closed      bool   `json:"closed"`
+	// v0.2.5 design meta.
+	Icon       string   `json:"icon"`
+	Color      string   `json:"color"`
+	Label      string   `json:"label"`
+	Number     string   `json:"number"`
+	Chips      []string `json:"chips"`
+	Tips       []string `json:"tips"`
+	StaffOnly  bool     `json:"staff_only"`
+	Moderators []string `json:"moderators"`
 }
 
 type forumDemoTopic struct {
@@ -79,13 +103,22 @@ type forumDemoTopic struct {
 	Closed   bool             `json:"closed"`
 	HoursAgo float64          `json:"hours_ago"`
 	Replies  []forumDemoReply `json:"replies"`
+	// v0.2.5.
+	Tags     []string `json:"tags"`
+	Views    int      `json:"views"`
+	Likes    int      `json:"likes"`
+	Solution *int     `json:"solution"` // index into replies of the accepted answer
 }
 
 type forumDemoReply struct {
 	Author   string  `json:"author"`
 	Content  string  `json:"content"`
 	HoursAgo float64 `json:"hours_ago"`
+	Likes    int     `json:"likes"` // v0.2.5
 }
+
+// forumDemoMaxCount bounds the demo's views and likes.
+const forumDemoMaxCount = 10_000_000
 
 // forumDemoRefRe is a demo ref: lowercase letters, digits, - and _.
 var forumDemoRefRe = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,39}$`)
@@ -156,6 +189,23 @@ func forumValidateDemo(raw json.RawMessage, media []demoMedia) []string {
 		if len(f.Description) > forumDemoMaxContent {
 			bad("forums[%d].description is longer than 20 KB", i)
 		}
+		if f.Icon != "" && !forumIconValid(f.Icon) {
+			bad("forums[%d].icon %q is not a forum icon", i, f.Icon)
+		}
+		if f.Color != "" && !forumColors[f.Color] {
+			bad("forums[%d].color %q must be sky, mint, peach, lilac or grey", i, f.Color)
+		}
+		if len(f.Chips) > forumMaxChips || len(f.Tips) > forumMaxTips {
+			bad("forums[%d]: at most %d chips and %d tips", i, forumMaxChips, forumMaxTips)
+		}
+		for _, m := range f.Moderators {
+			if m != "admin" && !members[m] {
+				bad("forums[%d].moderators: %q is neither \"admin\" nor a member of the demo", i, m)
+			}
+		}
+	}
+	if d.RulesURL != "" && !forumRulesURLOK(d.RulesURL) {
+		bad("rules_url must be a site path or an http(s) address")
 	}
 	for i, f := range d.Forums {
 		if f.Parent == "" {
@@ -199,6 +249,15 @@ func forumValidateDemo(raw json.RawMessage, media []demoMedia) []string {
 			bad("%s.content is required (at most 20 KB)", at)
 		}
 		hours(at, t.HoursAgo)
+		if len(t.Tags) > forumMaxTags {
+			bad("%s.tags: at most %d", at, forumMaxTags)
+		}
+		if t.Views < 0 || t.Views > forumDemoMaxCount || t.Likes < 0 || t.Likes > forumDemoMaxCount {
+			bad("%s: views and likes must be between 0 and %d", at, forumDemoMaxCount)
+		}
+		if t.Solution != nil && (*t.Solution < 0 || *t.Solution >= len(t.Replies)) {
+			bad("%s.solution must be the index of one of its replies", at)
+		}
 		for j, r := range t.Replies {
 			rat := fmt.Sprintf("%s.replies[%d]", at, j)
 			author(rat, r.Author)
@@ -206,6 +265,9 @@ func forumValidateDemo(raw json.RawMessage, media []demoMedia) []string {
 				bad("%s.content is required (at most 20 KB)", rat)
 			}
 			hours(rat, r.HoursAgo)
+			if r.Likes < 0 || r.Likes > forumDemoMaxCount {
+				bad("%s.likes must be between 0 and %d", rat, forumDemoMaxCount)
+			}
 		}
 		replies += len(t.Replies)
 	}
@@ -279,8 +341,15 @@ func (s *Server) forumImportDemo(ctx context.Context, uid int64, slug string, ra
 				return created, err
 			}
 			if id == 0 {
+				design := &forumDesignInput{Icon: f.Icon, Color: f.Color, Label: f.Label, Number: f.Number, Chips: f.Chips, Tips: f.Tips,
+					StaffOnly: f.StaffOnly}
+				for _, m := range f.Moderators {
+					if pid := people[m]; pid > 0 {
+						design.Moderators = append(design.Moderators, pid)
+					}
+				}
 				id, err = s.forumSaveForum(ctx, forumForumInput{ParentID: forums[f.Parent], Title: f.Title, Slug: f.Slug,
-					Description: f.Description, Kind: f.Kind, Closed: f.Closed, Order: f.Order}, uid)
+					Description: f.Description, Kind: f.Kind, Closed: f.Closed, Order: f.Order, Design: design}, uid)
 				if err != nil {
 					return created, fmt.Errorf("forum demo: forum %q: %w", f.Ref, err)
 				}
@@ -306,7 +375,7 @@ func (s *Server) forumImportDemo(ctx context.Context, uid int64, slug string, ra
 		}
 		if tid == 0 {
 			topic, err := s.forumCreateTopic(ctx, forumNewTopic{ForumID: forums[t.Forum], AuthorID: people[t.Author], Title: t.Title,
-				Content: strings.TrimSpace(wp.KsesPost(t.Content)), At: at})
+				Content: strings.TrimSpace(wp.KsesPost(t.Content)), At: at, Tags: strings.Join(t.Tags, ",")})
 			if err != nil {
 				return created, fmt.Errorf("forum demo: topic %q: %w", t.Ref, err)
 			}
@@ -319,6 +388,15 @@ func (s *Server) forumImportDemo(ctx context.Context, uid int64, slug string, ra
 				status = "closed"
 			}
 			if _, err := s.store.Pool.Exec(ctx, `UPDATE posts SET sticky = $2, comment_status = $3 WHERE id = $1`, tid, t.Sticky, status); err != nil {
+				return created, err
+			}
+			if t.Views > 0 {
+				if _, err := s.store.Pool.Exec(ctx, `INSERT INTO forum_topic_views (topic_id, views) VALUES ($1, $2)
+					ON CONFLICT (topic_id) DO UPDATE SET views = EXCLUDED.views`, tid, t.Views); err != nil {
+					return created, err
+				}
+			}
+			if err := s.forumDemoLikes(ctx, tid, people[t.Author], t.Likes, people, at); err != nil {
 				return created, err
 			}
 			created++
@@ -348,6 +426,14 @@ func (s *Server) forumImportDemo(ctx context.Context, uid int64, slug string, ra
 			if err := s.forumDemoMark(ctx, reply.ID, slug, ref); err != nil {
 				return created, err
 			}
+			if err := s.forumDemoLikes(ctx, reply.ID, people[r.Author], r.Likes, people, rat); err != nil {
+				return created, err
+			}
+			if t.Solution != nil && *t.Solution == j {
+				if err := s.forumDemoSolve(ctx, tid, reply.ID, people[t.Author], people[r.Author], rat); err != nil {
+					return created, err
+				}
+			}
 			created++
 		}
 	}
@@ -360,14 +446,19 @@ func (s *Server) forumImportDemo(ctx context.Context, uid int64, slug string, ra
 	}
 
 	// The forum title (the previous one comes back on Remove Demo Content).
-	if t := strings.TrimSpace(d.Title); t != "" {
+	if t := strings.TrimSpace(d.Title); t != "" || d.RulesURL != "" {
 		st := s.forumLoad()
 		if s.settings.Get(forumDemoPrevKey(slug)) == nil {
 			if err := s.settings.Set(ctx, map[string]any{forumDemoPrevKey(slug): st.Title}); err != nil {
 				return created, err
 			}
 		}
-		st.Title = t
+		if t != "" {
+			st.Title = t
+		}
+		if d.RulesURL != "" { // v0.2.5
+			st.RulesURL, st.RequireRules = d.RulesURL, d.RequireRules
+		}
 		st.GoogleClientSecret = "" // keeps the stored secret
 		if err := s.forumSave(ctx, st); err != nil {
 			return created, err
@@ -493,4 +584,51 @@ func (s *Server) forumRemoveDemo(ctx context.Context, slug string) {
 		_ = s.settings.Set(ctx, map[string]any{forumDemoPrevKey(slug): nil})
 	}
 	s.forumPurge(ctx)
+}
+
+// forumDemoLikes gives a demo post n likes: one from each demo member (never its author) as far as
+// they go, the rest as a display-only seed.
+func (s *Server) forumDemoLikes(ctx context.Context, postID, authorID int64, n int, people map[string]int64, at time.Time) error {
+	if n <= 0 {
+		return nil
+	}
+	refs := make([]string, 0, len(people))
+	for ref := range people {
+		refs = append(refs, ref)
+	}
+	sort.Strings(refs) // the same members on every import
+	given := 0
+	for _, ref := range refs {
+		uid := people[ref]
+		if given >= n || uid <= 0 || uid == authorID {
+			continue
+		}
+		tag, err := s.store.Pool.Exec(ctx, `INSERT INTO forum_likes (post_id, user_id, created_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, postID, uid, at)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() > 0 {
+			s.forumLedger(ctx, authorID, "like", postID, uid, at)
+		}
+		given++
+	}
+	if rest := n - given; rest > 0 {
+		m, _ := json.Marshal(map[string]any{forumMetaLikesSeed: rest})
+		if _, err := s.store.Pool.Exec(ctx, `UPDATE posts SET meta = coalesce(meta,'{}') || $2::jsonb WHERE id = $1`, postID, m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// forumDemoSolve marks a demo reply as its topic's accepted answer.
+func (s *Server) forumDemoSolve(ctx context.Context, topicID, replyID, topicAuthor, replyAuthor int64, at time.Time) error {
+	m, _ := json.Marshal(map[string]any{forumMetaSolution: replyID, forumMetaSolvedAt: forumStamp(at), forumMetaSolvedBy: topicAuthor})
+	if _, err := s.store.Pool.Exec(ctx, `UPDATE posts SET meta = coalesce(meta,'{}') || $2::jsonb WHERE id = $1 AND type = 'topic'`, topicID, m); err != nil {
+		return err
+	}
+	if replyAuthor != topicAuthor {
+		s.forumLedger(ctx, replyAuthor, "solution", replyID, 0, at)
+	}
+	return nil
 }

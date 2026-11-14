@@ -8,14 +8,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// forum/v1: the read-only public REST API of Pursae Forum. Only published, non-spam items are
-// listed; nothing here writes. While the plugin is off every route answers rest_no_route, as an
-// unknown route does.
+// forum/v1: the REST API of Pursae Forum. Only published, non-spam items are listed. While the
+// plugin is off every route answers rest_no_route, as an unknown route does.
 //
 //	GET /forum/v1/forums                    the forum tree, flat (categories first, then their forums)
-//	GET /forum/v1/forums/<id>/topics        a forum's topics (sticky first, then last activity), paged
+//	GET /forum/v1/forums/<id>/topics        a forum's topics (?sort=&tag=), paged
 //	GET /forum/v1/topics/<id>               one topic with its opening post
 //	GET /forum/v1/topics/<id>/replies       a topic's replies, oldest first, paged
+//
+// v0.2.5 (rest_forum_engage.go): the view beacon, presence and online counts, likes, solutions,
+// subscriptions, reports, previews, drafts, tags, similar topics, statistics, levels, badges and the
+// members of the week. Writes need a logged-in member (cookie + X-WP-Nonce "wp_rest") except the
+// view beacon and presence, which take no input but the visitor.
 
 const forumRESTNamespace = "forum/v1"
 
@@ -26,6 +30,7 @@ func (s *Server) registerForumREST() {
 	s.rest.register(ns, base+`/forums/(?P<id>[\d]+)/topics`, map[string]restHandler{http.MethodGet: s.forumRESTTopics}, nil)
 	s.rest.register(ns, base+`/topics/(?P<id>[\d]+)`, map[string]restHandler{http.MethodGet: s.forumRESTTopic}, nil)
 	s.rest.register(ns, base+`/topics/(?P<id>[\d]+)/replies`, map[string]restHandler{http.MethodGet: s.forumRESTReplies}, nil)
+	s.registerForumRESTEngage() // v0.2.5
 }
 
 // forumRESTHidden reports whether a REST namespace belongs to an inactive Pursae Forum: rest.go skips
@@ -54,13 +59,25 @@ func forumRESTAuthor(a *forumAuthor) any {
 	if a == nil {
 		return nil
 	}
-	return map[string]any{"id": a.ID, "name": a.DisplayName, "avatar": a.AvatarURL, "link": a.ProfileURL, "moderator": a.Moderator}
+	out := map[string]any{"id": a.ID, "name": a.DisplayName, "avatar": a.AvatarURL, "link": a.ProfileURL, "moderator": a.Moderator,
+		"initials": a.Initials, "hue": a.Hue, "has_photo": a.HasPhoto}
+	if a.Stats { // v0.2.5: points, level and progress
+		out["points"] = a.Points
+		out["progress"] = a.Progress
+		if a.Level != nil {
+			out["level"] = map[string]any{"id": a.Level.ID, "name": a.Level.Name, "rank": a.Level.Rank, "min": a.Level.Min}
+		}
+	}
+	return out
 }
 
 func forumRESTForum(f *forumForum) map[string]any {
 	out := map[string]any{"id": f.ID, "parent": f.ParentID, "slug": f.Slug, "title": f.Title, "kind": f.Kind,
 		"description": string(f.Description), "closed": f.Closed, "order": f.Order, "topic_count": f.TopicCount,
-		"reply_count": f.ReplyCount, "last_active": forumRESTTime(f.LastActive), "link": f.URL}
+		"reply_count": f.ReplyCount, "last_active": forumRESTTime(f.LastActive), "link": f.URL,
+		// v0.2.5 design meta.
+		"icon": f.Icon, "color": f.Color, "label": f.Label, "number": f.Number, "chips": forumRESTTags(f.Chips),
+		"tips": forumRESTStrs(f.Tips), "staff_only": f.StaffOnly}
 	if f.LastTopicID > 0 && f.LastTopicURL != "" {
 		out["last_topic"] = map[string]any{"id": f.LastTopicID, "title": f.LastTopicTitle, "link": f.LastTopicURL}
 	} else {
@@ -73,7 +90,31 @@ func forumRESTTopicJSON(t *forumTopic) map[string]any {
 	return map[string]any{"id": t.ID, "forum": t.ForumID, "forum_title": t.ForumTitle, "title": t.Title, "slug": t.Slug,
 		"content": map[string]any{"rendered": string(forumFormat(t.Content))}, "author": forumRESTAuthor(t.Author),
 		"sticky": t.Sticky, "closed": t.Closed, "reply_count": t.ReplyCount, "date": forumRESTTime(t.CreatedAt),
-		"last_active": forumRESTTime(t.LastActive), "edited": t.EditedAt != nil, "link": t.URL}
+		"last_active": forumRESTTime(t.LastActive), "edited": t.EditedAt != nil, "link": t.URL,
+		// v0.2.5.
+		"tags": forumRESTTags(t.Tags), "views": t.Views, "likes": t.Likes, "solved": t.Solved, "solution": forumNullID(t.SolutionID),
+		"forum_color": t.ForumColor, "forum_icon": t.ForumIcon, "forum_label": t.ForumLabel}
+}
+
+// forumRESTTags is a tag list as JSON (never null).
+func forumRESTTags(list []forumTag) []map[string]any {
+	out := []map[string]any{}
+	for _, t := range list {
+		m := map[string]any{"name": t.Name, "slug": t.Slug, "link": t.URL}
+		if t.Count > 0 {
+			m["count"] = t.Count
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
+// forumRESTStrs is a string list as JSON (never null).
+func forumRESTStrs(list []string) []string {
+	if list == nil {
+		return []string{}
+	}
+	return list
 }
 
 // forumRESTForums is GET /forum/v1/forums.
@@ -117,7 +158,8 @@ func (s *Server) forumRESTTopics(c *gin.Context, r *restRequest) {
 	out := []map[string]any{}
 	total := 0
 	if f.Kind != "category" { // categories hold forums, not topics
-		topics, n, err := s.forumTopics(c, forumTopicQuery{ForumID: f.ID, Page: page, PerPage: per, StickyFirst: true})
+		sort, _ := forumSortOf(c.Query("sort"))
+		topics, n, err := s.forumTopics(c, forumTopicQuery{ForumID: f.ID, Page: page, PerPage: per, StickyFirst: true, Sort: sort, Tag: forumTagSlug(c.Query("tag"))})
 		if err != nil {
 			restErr(c, http.StatusInternalServerError, "rest_forum_error", "The topics could not be read.")
 			return
@@ -184,7 +226,8 @@ func (s *Server) forumRESTReplies(c *gin.Context, r *restRequest) {
 	for _, rp := range replies {
 		out = append(out, map[string]any{"id": rp.ID, "topic": rp.TopicID, "forum": rp.ForumID, "position": rp.Position,
 			"content": map[string]any{"rendered": string(forumFormat(rp.Content))}, "author": forumRESTAuthor(rp.Author),
-			"date": forumRESTTime(rp.CreatedAt), "edited": rp.EditedAt != nil, "link": rp.URL})
+			"date": forumRESTTime(rp.CreatedAt), "edited": rp.EditedAt != nil, "link": rp.URL,
+			"likes": rp.Likes, "solution": t.SolutionID > 0 && rp.ID == t.SolutionID}) // v0.2.5
 	}
 	paginate(c, total, per, page)
 	c.JSON(http.StatusOK, out)

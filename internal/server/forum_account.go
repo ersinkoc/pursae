@@ -86,6 +86,8 @@ func (s *Server) forumAccountPost(c *gin.Context, rt forumRoute, action string) 
 		s.forumResendPost(c)
 	case "account", "password", "google_unlink", "avatar_upload", "avatar_remove":
 		s.forumAccountFormPost(c, action)
+	case "change_email":
+		s.forumChangeEmailPost(c) // v0.2.5 (forum_account_more.go)
 	default:
 		c.String(http.StatusBadRequest, "Unknown forum action.")
 	}
@@ -148,6 +150,17 @@ func (s *Server) forumAuthPage(c *gin.Context, view, redirect string) *forumPage
 			back = forumLocalPath(p.URLs.Index)
 		}
 		p.Extra["google"] = forumAuthPrefix + "/google?redirect=" + url.QueryEscape(back)
+	}
+	// v0.2.5: the rules checkbox, the community's totals ("2,140 members, 86 new topics this week")
+	// and, while waiting for the email, a few popular topics to read.
+	p.Extra["require_rules"] = s.forumLoad().RequireRules
+	if st, err := s.forumStatsOf(c.Request.Context()); err == nil {
+		p.Stats = st
+	}
+	if view == forumViewVerify {
+		if list, _, err := s.forumTopics(c.Request.Context(), forumTopicQuery{Page: 1, PerPage: 3, Sort: "popular"}); err == nil {
+			p.Topics = list
+		}
 	}
 	// The form posts to the view's own URL (without the query); resend forms post to the verify view.
 	p.Extra["action"] = s.forumURL(c.Request.Context(), view)
@@ -305,6 +318,16 @@ func (s *Server) forumRegisterPost(c *gin.Context) {
 	}
 	p := page()
 	errs := map[string]string{}
+	rules, digest := c.PostForm("rules") != "", c.PostForm("digest") != ""
+	if rules {
+		p.Form["rules"] = "1"
+	}
+	if digest {
+		p.Form["digest"] = "1"
+	}
+	if st.RequireRules && !rules { // v0.2.5
+		errs["rules"] = p.T("Please accept the community rules.")
+	}
 	if n := utf8.RuneCountInString(username); n < 3 || n > 60 || !validUsername.MatchString(username) {
 		errs["user_login"] = p.T("Use 3 to 60 characters: letters, numbers, spaces and . _ - @")
 	}
@@ -359,6 +382,7 @@ func (s *Server) forumRegisterPost(c *gin.Context) {
 		return
 	}
 	s.pluginUserAction(ctx, "user_register", u)
+	s.forumSaveSignupPrefs(ctx, u.ID, rules, digest) // v0.2.5: rules accepted, weekly digest
 	if st.RequireVerify {
 		if err := s.forumSendVerify(ctx, u); err != nil {
 			s.forumAccountFail(c, p, "register", http.StatusInternalServerError, "Something went wrong. Please try again.")
@@ -368,6 +392,7 @@ func (s *Server) forumRegisterPost(c *gin.Context) {
 		done.Notice = done.T(forumMessages["verify_sent"])
 		done.Extra["sent"] = true
 		done.Form["user_email"] = email
+		done.Extra["change_token"] = s.forumChangeEmailToken(id, email, time.Now().Add(forumVerifyTTL)) // "change the address"
 		s.forumRender(c, done, "register", "", 1)
 		return
 	}
@@ -416,6 +441,9 @@ func (s *Server) forumVerifyGet(c *gin.Context) {
 	cu := currentUser(c)
 	if cu != nil {
 		p.Form["user_email"] = cu.Email
+		if forumMetaBool(cu.Meta, forumUMetaUnverified) {
+			p.Extra["change_email"] = true // v0.2.5: "change the address" (forum_action=change_email)
+		}
 	}
 	if uid <= 0 && key == "" {
 		if cu != nil && !forumMetaBool(cu.Meta, forumUMetaUnverified) {
@@ -529,6 +557,9 @@ func (s *Server) forumAccountPage(c *gin.Context) *forumPage {
 	p.Form["bio"] = u.Profile["description"]
 	p.Form["email"] = u.Email
 	p.Form["login"] = u.Login
+	if forumMetaBool(u.Meta, forumUMetaDigest) {
+		p.Form["digest"] = "1"
+	}
 	if sub := forumMetaStr(u.Meta, forumUMetaGoogleSub); sub != "" {
 		p.Extra["google_linked"] = true
 		p.Form["google_email"] = forumMetaStr(u.Meta, forumUMetaGoogleEmail)
@@ -690,6 +721,9 @@ func (s *Server) forumAccountFormPost(c *gin.Context, action string) {
 		if err := s.store.UpdateUserProfile(ctx, fresh); err != nil {
 			fail("Something went wrong. Please try again.")
 			return
+		}
+		if c.PostForm("digest_shown") != "" { // v0.2.5: only a form that shows the checkbox changes it
+			_ = s.forumSetUserMeta(ctx, u.ID, map[string]any{forumUMetaDigest: c.PostForm("digest") != ""})
 		}
 		s.forumPurge(ctx) // names show on cached forum pages
 		c.Redirect(http.StatusFound, account+"?forum_msg=saved")

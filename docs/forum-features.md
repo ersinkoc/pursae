@@ -1,4 +1,4 @@
-# Pursae Forum: feature inventory (0.1)
+# Pursae Forum: feature inventory (0.2.5)
 
 Pursae Forum is a native (compiled-in) Pursae plugin for discussion boards in the class of bbPress:
 categories and forums, topics and replies, front-end sign-up with email confirmation and Google
@@ -162,18 +162,51 @@ not add its head to them.
 - `GET /wp-json/forum/v1/forums`, `/forums/<id>/topics`, `/topics/<id>`, `/topics/<id>/replies`: public,
   read-only, published content only (`docs/developer/rest-api/endpoints.md`).
 - `/pursae/v1/options/forum`: the settings, like the other built-in plugins.
+- 0.2.5: the community routes listed above (views, presence, likes, solutions, subscriptions,
+  reports, previews, drafts, tags, similar topics, statistics, levels, badges, members of the week,
+  `me`). Member routes take cookie + `X-WP-Nonce` (`wp_rest`) or an Application Password.
 
-## Not in 0.1
+## Community features (0.2.5)
 
-- ✗ Subscriptions and email notifications for new replies.
+Everything here is part of the plugin and follows its on/off switch; nothing is rendered or stored
+while it is off. Visitor pages stay cacheable: what is visitor-specific (likes, follows, the forms)
+only appears on members' pages, which are `no-store`; views and "who is online" are refreshed from
+cached pages by `forum.js` through the REST API.
+
+| Feature | Data | URLs and REST | Notes |
+| --- | --- | --- | --- |
+| **Forum look** | forum `posts.meta`: `_forum_icon`, `_forum_color` (`sky\|mint\|peach\|lilac\|grey`), `_forum_label`, `_forum_number`, `_forum_chips` [names], `_forum_tips` [lines], `_forum_staff_only`, `_forum_moderators` [user ids] | Forums › Forums (edit: *Look*); `forum/v1/forums` adds `icon color label number chips tips staff_only` | Chips link the forum's `?tag=<slug>` filter. *Team only* (`staff_only`): only moderators start topics, members still reply |
+| **Topic tags** | topic `_forum_tags` [slugs] + `_forum_tag_names` [names] (GIN index `posts_forum_tags`) | tag field on the new-topic form (≤ 5, comma separated); `/forums/tag/<slug>/`, `/forums/tags/`, `?tag=` on forum, index and `/forums/topics/`; `GET forum/v1/tags` | Tags are plain text ≤ 30 characters, slugs from `SanitizeTitle` |
+| **Views** | `forum_topic_views (topic_id, views)` | `POST forum/v1/topics/<id>/view` (forum.js beacon) → `{views, counted}` | Counted once per visitor and topic per 30 minutes (member id, else a salted hash of address + user agent, never stored), not for robots or empty user agents, ≤ 120 per network per 10 minutes. Cached pages count too; no-JS visitors are not counted |
+| **Sort tabs** | — | `?sort=latest\|popular\|unanswered\|solved` on index, forum, `/forums/topics/`, tag pages and `forum/v1/forums/<id>/topics` | Popular = views + 10 × replies. `sort` and `tag` are page cache key parameters while the plugin is on; `?sort=latest` and unknown values are 301-redirected to the canonical URL |
+| **Likes** | `forum_likes (post_id, user_id)` | `forum_action=like\|unlike` (+ `post_id`) on the topic URL; `POST/DELETE forum/v1/posts/<id>/like` | Members who may post; not their own post; 60 per 10 minutes. A like purges only that topic's pages (`forum-topic:<id>` cache tag). The author earns `like_points` |
+| **Solved** | topic `_forum_solution` (reply id), `_forum_solved_at`, `_forum_solved_by` | `forum_action=solve\|unsolve`; `POST/DELETE forum/v1/topics/<id>/solution` | The topic's author (who may post) or a moderator. The answer is highlighted (`.pf-post--solution`) and repeated under the opening post; lists show a *Solved* badge. Trashing or spamming the answer withdraws it. Its author earns `solution_points` (not on their own topic); badge rule `solutions` |
+| **Who is online** | process memory (visitor key → forum, time) | `POST forum/v1/presence {forum}`, `GET forum/v1/online?forum=` | Window *Forums › Settings › Online* (5 minutes). Each instance counts its own visitors |
+| **Points ledger** | `forum_points (user_id, kind, points, post_id, actor_id, note, created_at)` | Forums › Members › member › *Adjust points*; `GET forum/v1/weekly` | One row per topic, reply, accepted answer, like received and manual adjustment. Totals stay computed from the posts (+ manual rows); the ledger dates them for **members of the week** (last 7 days, only rows whose post is still live) |
+| **Levels and badges** | levels option adds `solution_points` (10), `like_points` (1); `forumLevel.Rank` | `GET forum/v1/levels`, `/badges` | New rules: `solutions` (accepted answers), `likes` (likes received), `streak_days` (longest run of consecutive days with a post). New default badges *Problem Solver* (5 accepted answers) and *7-Day Streak* |
+| **Statistics** | — | `GET forum/v1/stats` | `.Stats` on index, login, register and verify: forums, topics, replies, members, solved and solved %, new topics and members this week, online |
+| **Moderators per forum** | `_forum_moderators` | Forums › Forums › edit | A display list (the forum's own, else the site's forum moderators, administrators first); rights stay site-wide |
+| **New topic** | users.meta `forum_draft` | `/forums/new/` (forum picker), `?preview=1` and `draft=1` buttons; `POST forum/v1/preview`, `GET/POST/DELETE forum/v1/draft` | The picker lists every forum, closed and team-only forums disabled for members. *Preview* renders the text as it will be posted, nothing is saved. *Save draft* keeps one draft per member; posting deletes it |
+| **Follow by email** | `forum_subscriptions (topic_id, user_id)` | *Email me when someone replies* on the new-topic and reply forms, *Follow* on a topic; `POST/DELETE forum/v1/topics/<id>/subscription`; `/forums/unsubscribe/?t=&u=&k=` | A published reply (or an approved one) mails followers except its author, ≤ 500 per reply, through the mail queue. The link is an HMAC of the site secret; GET asks, POST unsubscribes (mail scanners open links). Off: *Forums › Settings › Notifications* |
+| **Similar topics** | — | `.Similar` on topic and new topic; `GET forum/v1/topics/similar?q=&tags=` | Words of the title (`simple` text search) and shared tags |
+| **Sign-up choices** | users.meta `forum_rules_accepted` (RFC 3339), `forum_digest` | *Forums › Settings › Community rules* (URL, required) | The rules checkbox links the rules page; *weekly digest* is stored (and editable on the account page) for a digest sender; no digest is mailed by 0.2.5 |
+| **Change the address** | — | `forum_action=change_email` on the verify URL | Only for unconfirmed accounts: the logged-in member, or the visitor who just signed up (a signed token on the check-your-inbox step, valid 48 hours). Sends a new confirmation link |
+| **Report a post** | `forum_reports (post_id, user_id, reason, note, status)` | *Report* on each post (`spam\|abuse\|off_topic\|other` + note); `POST forum/v1/posts/<id>/report` | Members only, once per post (a second report updates it), 10 an hour. *Forums › Moderation › Reported* lists them with reasons and notes; *Dismiss Reports*, Spam or Trash closes them |
+
+The demo format carries all of it (see the theme guide): forum meta, tags, views, likes, the
+accepted answer and the rules URL.
+
+## Not in 0.2.5
+
 - ✗ Per-language forums or translated topics: content is shared by every language.
-- ✗ Guest posting, private or hidden forums, per-forum moderators, topic tags, reply threading,
-  topic merge and split, favourites, revision history.
+- ✗ Guest posting, private or hidden forums, per-forum moderation rights (the per-forum list is for
+  display), reply threading, topic merge and split, favourites, revision history.
+- ✗ Sending the weekly digest (the preference is stored).
 - ✗ Forum RSS feeds, sitemap entries for forums and topics, forum results in the site search.
 - ✗ Web Builder widgets for forum content. Web Builder themes link the forum and style it through the
   `--pf-*` tokens; the forum body is not designed in the builder.
-- ✗ Changing the email address from the forum (it is done on the core profile screen), and importers
-  from bbPress or other boards.
+- ✗ Changing a confirmed email address from the forum (it is done on the core profile screen), and
+  importers from bbPress or other boards.
 
 ## Files
 
@@ -191,8 +224,12 @@ not add its head to them.
 | `internal/server/forum_funcs.go` | the template functions for themes |
 | `internal/server/forum_admin.go`, `web/admin/templates/pages/forum*.html` | the admin screen |
 | `internal/server/forum_demo.go` | the theme demo's `forum` section |
-| `internal/server/rest_forum.go` | `forum/v1` |
+| `internal/server/rest_forum.go`, `rest_forum_engage.go` | `forum/v1` |
+| `internal/server/forum_meta.go` | 0.2.5: forum meta, tags, sort tabs, statistics, members of the week, similar topics, the forum picker |
+| `internal/server/forum_engage.go`, `forum_engage_post.go` | 0.2.5: likes, views, solutions, online, the points ledger, reports, subscriptions, drafts and their forms |
+| `internal/server/forum_views_lists.go`, `forum_account_more.go` | 0.2.5: all topics, tags, unsubscribe views; sign-up choices and change the address |
 | `internal/db/migrations/0097_forum.sql` | the `forum`, `topic` and `reply` content types, their indexes, one account per Google subject |
-| `web/forum/templates/*.html`, `web/forum/assets/forum.css` | the default view templates and the stylesheet |
+| `internal/db/migrations/0104_forum_engagement.sql` | 0.2.5: likes, views, the points ledger, subscriptions, reports; tag and solved indexes |
+| `web/forum/templates/*.html`, `web/forum/assets/forum.css`, `forum.js` | the default view templates, the stylesheet and the optional script |
 | `library/themes/{campfire,devboard,guild-hall,study-circle}` | the forum themes |
 | `internal/server/forum_*_test.go`, `theme_library_forum_*_test.go` | unit and integration tests |

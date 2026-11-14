@@ -25,8 +25,8 @@
 <div><dt>{{$p.T "Topics"}}</dt><dd>{{num $p.ProfileStats.Topics}}</dd></div>
 <div><dt>{{$p.T "Replies"}}</dt><dd>{{num $p.ProfileStats.Replies}}</dd></div>
 {{- if .Stats}}<div><dt>{{$p.T "Points"}}</dt><dd>{{num .Points}}</dd></div>{{end}}
-<div class="pf-stat--text"><dt>{{$p.T "Member since"}}</dt><dd><time datetime="{{forum_iso $p.ProfileStats.Registered}}">{{date $p.ProfileStats.Registered ""}}</time></dd></div>
-{{- if not .LastActive.IsZero}}<div class="pf-stat--text"><dt>{{$p.T "Last active"}}</dt><dd><time datetime="{{forum_iso .LastActive}}" title="{{forum_date .LastActive}}">{{$p.Ago .LastActive}}</time></dd></div>{{end}}
+<div class="pf-stat--text"><dt>{{$p.T "Member since"}}</dt><dd><time datetime="{{forum_iso $p.ProfileStats.Registered}}">{{$p.Date $p.ProfileStats.Registered}}</time></dd></div>
+{{- if not .LastActive.IsZero}}<div class="pf-stat--text"><dt>{{$p.T "Last active"}}</dt><dd><time datetime="{{forum_iso .LastActive}}" title="{{$p.DateTime .LastActive}}">{{$p.Ago .LastActive}}</time></dd></div>{{end}}
 </dl>
 {{- if and (index $p.Extra "can_block") $p.Nonce}}
 <form class="pf-form pf-form--inline pf-profile-mod" method="post" action="{{index $p.Extra "action"}}">

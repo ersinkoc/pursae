@@ -51,6 +51,10 @@ const (
 	forumRuleVerified   = "verified_email" // the member confirmed the email address (or was never asked to)
 	forumRuleGoogle     = "google_linked"  // a Google account is linked
 	forumRuleModerator  = "moderator"      // the member can moderate the forum (forum_moderate)
+	// v0.2.5.
+	forumRuleSolutions = "solutions"   // accepted answers >= Threshold
+	forumRuleLikes     = "likes"       // likes received >= Threshold
+	forumRuleStreak    = "streak_days" // posted on Threshold consecutive days (longest run)
 )
 
 // forumBadgeRules are the rules in the admin's order; Threshold rules need N >= 1.
@@ -67,6 +71,9 @@ var forumBadgeRules = []struct {
 	{forumRuleVerified, "Verified email address", false},
 	{forumRuleGoogle, "Google account linked", false},
 	{forumRuleModerator, "Forum moderator", false},
+	{forumRuleSolutions, "Accepted answers", true},
+	{forumRuleLikes, "Likes received", true},
+	{forumRuleStreak, "Days in a row with a post", true},
 }
 
 // forumRuleNeedsThreshold reports whether rule is a known rule that takes a threshold, and whether
@@ -91,13 +98,16 @@ type forumLevel struct {
 	ImageID  int64  `json:"image_id"` // Media Library image instead of the icon (0 = none)
 	Color    string `json:"color"`    // #rgb or #rrggbb
 	ImageURL string `json:"-"`        // filled by forumLevelsLoad when ImageID resolves
+	Rank     int    `json:"-"`        // v0.2.5: 1-based position in the list (forumLevelsLoad)
 }
 
 // forumLevels is the pursae_forum_levels option.
 type forumLevels struct {
-	TopicPoints int          `json:"topic_points"` // 0..1000, default 3
-	ReplyPoints int          `json:"reply_points"` // 0..1000, default 1
-	Levels      []forumLevel `json:"levels"`       // sorted by Min ascending, Levels[0].Min == 0
+	TopicPoints    int          `json:"topic_points"`    // 0..1000, default 3
+	ReplyPoints    int          `json:"reply_points"`    // 0..1000, default 1
+	SolutionPoints int          `json:"solution_points"` // v0.2.5: 0..1000, default 10 (an accepted answer)
+	LikePoints     int          `json:"like_points"`     // v0.2.5: 0..1000, default 1 (a like received)
+	Levels         []forumLevel `json:"levels"`          // sorted by Min ascending, Levels[0].Min == 0
 }
 
 // forumBadge is an achievement shown next to a member's name.
@@ -127,12 +137,14 @@ type forumMemberStat struct {
 	Moderator  bool      // forum_moderate (roles + allow exceptions, minus deny)
 	Blocked    bool      // a deny exception on forum_participate
 	Manual     []string  // users.meta forum_badges
+	// v0.2.5 (forumExtraStats).
+	Solutions, Likes, Bonus, Streak int
 }
 
 // Defaults --------------------------------------------------------------------------------------------
 
 func forumDefaultLevels() forumLevels {
-	return forumLevels{TopicPoints: 3, ReplyPoints: 1, Levels: []forumLevel{
+	return forumLevels{TopicPoints: 3, ReplyPoints: 1, SolutionPoints: 10, LikePoints: 1, Levels: []forumLevel{
 		{ID: "newcomer", Name: "Newcomer", Min: 0, Icon: "seedling", Color: "#8c8f94"},
 		{ID: "member", Name: "Member", Min: 10, Icon: "leaf", Color: "#00a32a"},
 		{ID: "regular", Name: "Regular", Min: 50, Icon: "star", Color: "#2271b1"},
@@ -152,6 +164,8 @@ func forumDefaultBadges() []forumBadge {
 		{ID: "verified", Name: "Verified", Description: "Confirmed the email address.", Icon: "verified", Color: "#00a32a", Rule: forumRuleVerified, Enabled: true},
 		{ID: "moderator", Name: "Moderator", Description: "Keeps the forum friendly.", Icon: "shield", Color: "#2271b1", Rule: forumRuleModerator, Enabled: true},
 		{ID: "founding-member", Name: "Founding Member", Description: "Here from the start.", Icon: "crown", Color: "#7f54b3", Rule: forumRuleManual, Enabled: true},
+		{ID: "problem-solver", Name: "Problem Solver", Description: "Wrote 5 accepted answers.", Icon: "check", Color: "#00a32a", Rule: forumRuleSolutions, Threshold: 5, Enabled: true},
+		{ID: "streak-7", Name: "7-Day Streak", Description: "Posted 7 days in a row.", Icon: "flame", Color: "#d63638", Rule: forumRuleStreak, Threshold: 7, Enabled: true},
 	}
 }
 
@@ -223,7 +237,8 @@ func forumMakeID(want, name, fallback string, used map[string]bool) string {
 // the first level at 0 points; an empty list becomes the defaults.
 func forumSanitizeLevels(in forumLevels) forumLevels {
 	clampPts := func(v int) int { return max(0, min(v, 1000)) }
-	out := forumLevels{TopicPoints: clampPts(in.TopicPoints), ReplyPoints: clampPts(in.ReplyPoints)}
+	out := forumLevels{TopicPoints: clampPts(in.TopicPoints), ReplyPoints: clampPts(in.ReplyPoints),
+		SolutionPoints: clampPts(in.SolutionPoints), LikePoints: clampPts(in.LikePoints)}
 	list := make([]forumLevel, 0, len(in.Levels))
 	for _, l := range in.Levels {
 		l.Name = forumPlainLine(l.Name, 40)
@@ -306,6 +321,7 @@ func (s *Server) forumLevelsLoad(ctx context.Context) forumLevels {
 	l := forumDefaultLevels()
 	var stored forumLevels
 	stored.TopicPoints, stored.ReplyPoints = l.TopicPoints, l.ReplyPoints // keys the option lacks keep the defaults
+	stored.SolutionPoints, stored.LikePoints = l.SolutionPoints, l.LikePoints
 	if s.forumOptionInto(forumLevelsOption, &stored) {
 		if stored.Levels == nil {
 			stored.Levels = l.Levels
@@ -322,6 +338,9 @@ func (s *Server) forumLevelsLoad(ctx context.Context) forumLevels {
 		for i := range l.Levels {
 			l.Levels[i].ImageURL = urls[l.Levels[i].ImageID]
 		}
+	}
+	for i := range l.Levels {
+		l.Levels[i].Rank = i + 1
 	}
 	return l
 }
@@ -534,6 +553,12 @@ func forumBadgeEarned(b forumBadge, st *forumMemberStat, now time.Time) bool {
 		return st.Google
 	case forumRuleModerator:
 		return st.Moderator
+	case forumRuleSolutions:
+		return st.Solutions >= b.Threshold
+	case forumRuleLikes:
+		return st.Likes >= b.Threshold
+	case forumRuleStreak:
+		return st.Streak >= b.Threshold
 	}
 	return false
 }
@@ -620,7 +645,22 @@ func (s *Server) forumMemberStats(ctx context.Context, ids []int64) (map[int64]*
 		st.Points = st.Topics*lv.TopicPoints + st.Replies*lv.ReplyPoints
 		out[st.UserID] = &st
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	extra, err := s.forumExtraStats(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id, v := range extra {
+		if st := out[id]; st != nil {
+			st.Solutions, st.Likes, st.Bonus, st.Streak = v[0], v[1], v[2], v[3]
+			st.Points += st.Solutions*lv.SolutionPoints + st.Likes*lv.LikePoints + st.Bonus
+			st.Points = max(st.Points, 0)
+		}
+	}
+	return out, nil
 }
 
 // forumGamifyFill sets the statistics, level and badges of the authors (one stats query, one load
@@ -654,6 +694,7 @@ func (s *Server) forumGamifyFill(ctx context.Context, authors ...*forumAuthor) e
 // forumApplyStat copies st and what it earns onto a.
 func forumApplyStat(a *forumAuthor, st *forumMemberStat, levels []forumLevel, badges []forumBadge, now time.Time) {
 	a.Topics, a.Replies, a.Points = st.Topics, st.Replies, st.Points
+	a.Solutions, a.LikesReceived, a.Bonus, a.Streak = st.Solutions, st.Likes, st.Bonus, st.Streak
 	a.Joined, a.LastActive = st.Joined, st.LastActive
 	a.Verified, a.Google = st.Verified, st.Google
 	cur, next, progress := forumLevelFor(levels, st.Points)
@@ -844,7 +885,9 @@ func (s *Server) forumMembers(ctx context.Context, q forumMemberQuery) ([]*forum
 	sortBy := forumMemberSorts[q.Sort]
 	expr := sortBy.expr
 	if expr == "__points__" {
-		expr = "(coalesce(st.topics,0) * " + strconv.Itoa(lv.TopicPoints) + " + coalesce(st.replies,0) * " + strconv.Itoa(lv.ReplyPoints) + ")"
+		expr = "greatest(coalesce(st.topics,0) * " + strconv.Itoa(lv.TopicPoints) + " + coalesce(st.replies,0) * " + strconv.Itoa(lv.ReplyPoints) +
+			" + coalesce(ex.solutions,0) * " + strconv.Itoa(lv.SolutionPoints) + " + coalesce(ex.likes,0) * " + strconv.Itoa(lv.LikePoints) +
+			" + coalesce(ex.bonus,0), 0)"
 	}
 	desc := sortBy.desc
 	switch q.Order {
@@ -858,7 +901,11 @@ func (s *Server) forumMembers(ctx context.Context, q forumMemberQuery) ([]*forum
 	if desc {
 		dir, idDir = " DESC NULLS LAST", " DESC"
 	}
-	from := ` FROM users u LEFT JOIN (` + forumSQLPostStats + ` GROUP BY p.author_id) st ON st.author_id = u.id WHERE ` + strings.Join(where, " AND ")
+	from := ` FROM users u LEFT JOIN (` + forumSQLPostStats + ` GROUP BY p.author_id) st ON st.author_id = u.id`
+	if sortBy.expr == "__points__" { // v0.2.5: accepted answers, likes and manual points count too
+		from += ` LEFT JOIN (` + forumSQLExtraStats + ` GROUP BY x.uid) ex ON ex.user_id = u.id`
+	}
+	from += ` WHERE ` + strings.Join(where, " AND ")
 	var total int
 	if err := s.store.Pool.QueryRow(ctx, `SELECT count(*)`+from, args...).Scan(&total); err != nil {
 		return nil, 0, err

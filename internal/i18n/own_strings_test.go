@@ -83,3 +83,25 @@ func TestOwnStringFiles(t *testing.T) {
 		}
 	}
 }
+
+// The forum's counts and relative times read naturally in Turkish even without a core language
+// pack: "%s mins" has its own plural entry, the Count phrases their own entries.
+func TestOwnStringsForumTurkish(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("..", "..", "web", "languages", "wpgo-tr_TR.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := parseJSONCatalog(b)
+	c := &Catalog{layers: []layer{{domain: "wpgo", mo: f}}}
+	if got := c.N("%s min", "%s mins", 20); got != "%s dk" {
+		t.Errorf("minutes: %q", got)
+	}
+	if got := c.N("%s second", "%s seconds", 5); got != "%s sn" {
+		t.Errorf("seconds: %q", got)
+	}
+	for _, k := range []string{"%s members", "%s results", "%s points", "November"} {
+		if c.T(k) == k {
+			t.Errorf("%q is not translated", k)
+		}
+	}
+}

@@ -60,6 +60,14 @@ type forumPostView struct {
 	IP                   string
 	Permalink            string // the post's own link (#post-<id> on the topic page)
 	ActionURL            string // where the mod bar posts (the topic URL)
+	// v0.2.5.
+	Likes     int  // likes of the post
+	Liked     bool // the viewer likes it
+	Solution  bool // the topic's accepted answer
+	Solved    bool // the topic has an accepted answer
+	CanLike   bool // the viewer may like it (a member who may post, not their own post)
+	CanSolve  bool // the viewer may mark it as the solution (the topic's author or a moderator; replies only)
+	CanReport bool // the viewer may report it
 }
 
 // forumHit is one search result or profile activity entry: a topic, or a reply with its topic.
@@ -116,9 +124,11 @@ func (p *forumPage) LeadPost() *forumPostView {
 		return nil
 	}
 	t := p.Topic
-	return &forumPostView{Page: p, ID: t.ID, Lead: true, Title: t.Title, Author: t.Author, Content: t.Content, CreatedAt: t.CreatedAt,
+	v := &forumPostView{Page: p, ID: t.ID, Lead: true, Title: t.Title, Author: t.Author, Content: t.Content, CreatedAt: t.CreatedAt,
 		EditedAt: t.EditedAt, Status: t.Status, Spam: t.Spam, Sticky: t.Sticky, Closed: t.Closed, IP: t.IP,
 		Permalink: t.URL + "#post-" + strconv.FormatInt(t.ID, 10), ActionURL: t.URL}
+	p.forumPostEngage(v, t.Likes, false)
+	return v
 }
 
 // ReplyPost is reply r of the topic being viewed.
@@ -139,6 +149,7 @@ func (p *forumPage) ReplyPost(r *forumReply) *forumPostView {
 		}
 		v.Permalink = base + "#post-" + strconv.FormatInt(r.ID, 10)
 	}
+	p.forumPostEngage(v, r.Likes, r.Solution)
 	return v
 }
 
@@ -663,6 +674,11 @@ func (s *Server) forumFrontPost(c *gin.Context, rt forumRoute, action string) {
 		s.forumPostBlock(c, rt, u, action == "block")
 	case "badge_award", "badge_revoke":
 		s.forumPostBadge(c, rt, u, action == "badge_award")
+	case "like", "unlike", "solve", "unsolve", "subscribe", "unsubscribe", "report":
+		s.forumPostEngageAction(c, rt, u, action) // v0.2.5 (forum_engage_post.go)
+	case "draft_delete":
+		_ = s.forumSaveDraft(c.Request.Context(), u.ID, nil)
+		c.Redirect(http.StatusFound, forumWithMsg(s.forumURL(c.Request.Context(), "new"), "draft_deleted"))
 	default:
 		c.String(http.StatusBadRequest, "Unknown forum action.")
 	}
@@ -693,22 +709,72 @@ func (s *Server) forumPostTopic(c *gin.Context, rt forumRoute, u *store.User) {
 		return
 	}
 	rt.View = forumViewNewTopic
-	f, err := s.forumBySlug(ctx, rt.Slug)
-	if err != nil || f.Kind != "forum" {
-		s.forumNotFound(c)
-		return
-	}
 	st := s.forumLoad()
 	title := forumCleanTitle(c.PostForm("title"))
 	raw := c.PostForm("content")
-	form := map[string]string{"title": title, "content": raw}
+	tags := c.PostForm("tags")
+	notify := c.PostForm("notify") != ""
+	form := map[string]string{"title": title, "content": raw, "tags": tags, "forum": c.PostForm("forum")}
+	if notify {
+		form["notify"] = "1"
+	} else {
+		form["notify"] = ""
+	}
+	// v0.2.5: the picker's forum field names the forum (/forums/new/ has none in its URL).
+	var f *forumForum
+	var err error
+	if v := strings.TrimSpace(c.PostForm("forum")); v != "" {
+		id, _ := strconv.ParseInt(v, 10, 64)
+		f, err = s.forumByID(ctx, id)
+	} else if rt.Slug != "" {
+		f, err = s.forumBySlug(ctx, rt.Slug)
+	} else {
+		err = errForumNotFound
+	}
+	// v0.2.5: save a draft, or show a preview, instead of posting.
+	if c.PostForm("draft") != "" {
+		d := &forumDraft{Title: title, Content: raw, Tags: tags, Notify: notify}
+		if f != nil {
+			d.ForumID = f.ID
+		}
+		if code, msg := forumPostGate(u, st); code != 0 {
+			s.forumFail(c, rt, forumViewNewTopic, code, msg, form)
+			return
+		}
+		if serr := s.forumSaveDraft(ctx, u.ID, d); serr != nil {
+			s.forumFail(c, rt, forumViewNewTopic, http.StatusServiceUnavailable, "Something went wrong. Please try again.", form)
+			return
+		}
+		dest := s.forumURL(ctx, "new")
+		if rt.Slug != "" {
+			dest = s.forumURL(ctx, "f", rt.Slug, "new")
+		}
+		c.Redirect(http.StatusFound, forumWithMsg(dest, "draft_saved"))
+		return
+	}
+	if err != nil && rt.Slug == "" && c.PostForm("preview") == "" {
+		s.forumFail(c, rt, forumViewNewTopic, http.StatusUnprocessableEntity, "Please choose a forum.", form)
+		return
+	}
+	if err != nil && c.PostForm("preview") == "" || (f != nil && f.Kind != "forum") {
+		s.forumNotFound(c)
+		return
+	}
 	if code, msg := forumPostGate(u, st); code != 0 {
 		s.forumFail(c, rt, forumViewNewTopic, code, msg, form)
 		return
 	}
 	mod := u.Can(capForumModerate, nil)
-	if f.Closed && !mod {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusForbidden, "This forum is closed to new topics.", form)
+	if c.PostForm("preview") != "" {
+		s.forumPreview(c, rt, forumViewNewTopic, u, raw, form)
+		return
+	}
+	if !forumCanStart(f, mod) {
+		msg := "This forum is closed to new topics."
+		if f.StaffOnly && !f.Closed {
+			msg = "Only the team starts topics in this forum."
+		}
+		s.forumFail(c, rt, forumViewNewTopic, http.StatusForbidden, msg, form)
 		return
 	}
 	if !s.commentTrapsPassed(c, 0) {
@@ -750,10 +816,16 @@ func (s *Server) forumPostTopic(c *gin.Context, rt forumRoute, u *store.User) {
 			pending = true
 		}
 	}
-	t, err := s.forumCreateTopic(ctx, forumNewTopic{ForumID: f.ID, AuthorID: u.ID, Title: title, Content: clean, IP: clientIP(c), Pending: pending})
+	t, err := s.forumCreateTopic(ctx, forumNewTopic{ForumID: f.ID, AuthorID: u.ID, Title: title, Content: clean, IP: clientIP(c), Pending: pending, Tags: tags})
 	if err != nil {
 		s.forumFail(c, rt, forumViewNewTopic, http.StatusUnprocessableEntity, "The topic could not be saved. Please try again.", form)
 		return
+	}
+	if notify {
+		_ = s.forumSubscribe(ctx, u.ID, t.ID, true)
+	}
+	if forumDraftOf(u) != nil {
+		_ = s.forumSaveDraft(ctx, u.ID, nil) // posted: the draft is done
 	}
 	dest := t.URL
 	if pending {
@@ -782,9 +854,17 @@ func (s *Server) forumPostReply(c *gin.Context, rt forumRoute, u *store.User) {
 	}
 	st := s.forumLoad()
 	raw := c.PostForm("content")
+	notify := c.PostForm("notify") != ""
 	form := map[string]string{"content": raw}
+	if notify {
+		form["notify"] = "1"
+	}
 	if code, msg := forumPostGate(u, st); code != 0 {
 		s.forumFail(c, rt, forumViewTopic, code, msg, form)
+		return
+	}
+	if c.PostForm("preview") != "" { // v0.2.5
+		s.forumPreview(c, rt, forumViewTopic, u, raw, form)
 		return
 	}
 	if !mod && (t.Closed || (f != nil && f.Closed)) {
@@ -830,6 +910,12 @@ func (s *Server) forumPostReply(c *gin.Context, rt forumRoute, u *store.User) {
 	if err != nil {
 		s.forumFail(c, rt, forumViewTopic, http.StatusUnprocessableEntity, "The reply could not be saved. Please try again.", form)
 		return
+	}
+	if notify {
+		_ = s.forumSubscribe(ctx, u.ID, t.ID, true)
+	}
+	if !pending {
+		s.forumNotifyReply(context.WithoutCancel(ctx), r.ID) // v0.2.5: the topic's followers (queued mail jobs)
 	}
 	if pending {
 		c.Redirect(http.StatusFound, forumWithMsg(t.URL, "reply_pending"))

@@ -134,6 +134,7 @@ func (s *Server) forumFromPost(ctx context.Context, p *store.Post) *forumForum {
 		f.Kind = "forum"
 	}
 	f.URL = s.forumForumURL(ctx, f)
+	s.forumApplyDesign(ctx, f, p.Meta)
 	return f
 }
 
@@ -280,7 +281,9 @@ type forumTopicQuery struct {
 	Spam              bool
 	Page, PerPage     int
 	StickyFirst       bool
-	WithIP            bool // addition to the design: IP is filled only when asked (moderators)
+	WithIP            bool   // addition to the design: IP is filled only when asked (moderators)
+	Sort              string // v0.2.5: latest (default) | popular | unanswered | solved
+	Tag               string // v0.2.5: only topics with this tag slug
 }
 
 func forumPaging(page, perPage int) (int, int) {
@@ -299,28 +302,25 @@ func forumPaging(page, perPage int) (int, int) {
 	return page, perPage
 }
 
-// forumTopicsFrom maps topic posts, with authors, last authors and forum titles.
+// forumTopicsFrom maps topic posts, with authors, last authors, recent participants, forum titles and
+// design meta, tags, views, likes and the solved state (forumEnrichTopics).
 func (s *Server) forumTopicsFrom(ctx context.Context, posts []*store.Post, withIP bool) ([]*forumTopic, error) {
 	var authorIDs, forumIDList []int64
 	for _, p := range posts {
 		authorIDs = append(authorIDs, p.AuthorID, forumMetaInt64(p.Meta, forumMetaLastAuthor))
 		forumIDList = append(forumIDList, p.ParentID)
 	}
-	authors, err := s.forumAuthors(ctx, forumIDs(authorIDs...))
-	if err != nil {
-		return nil, err
-	}
 	forums, err := s.store.PostsByIDs(ctx, forumIDs(forumIDList...))
 	if err != nil {
 		return nil, err
 	}
 	out := make([]*forumTopic, 0, len(posts))
+	metas := map[int64]map[string]any{}
 	for _, p := range posts {
 		t := &forumTopic{ID: p.ID, ForumID: p.ParentID, AuthorID: p.AuthorID, Slug: p.Slug, Title: p.Title, Content: p.Content,
 			Status: p.Status, Spam: forumMetaBool(p.Meta, forumMetaSpam), Sticky: p.Sticky, Closed: p.CommentStatus == "closed",
 			ReplyCount: forumMetaInt(p.Meta, forumMetaReplyCount), CreatedAt: p.Date(), LastActive: forumMetaTime(p.Meta, forumMetaLastActive),
-			EditedAt: forumMetaTimePtr(p.Meta, forumMetaEdited), LastReplyID: forumMetaInt64(p.Meta, forumMetaLastReply),
-			Author: authors[p.AuthorID], LastAuthor: authors[forumMetaInt64(p.Meta, forumMetaLastAuthor)]}
+			EditedAt: forumMetaTimePtr(p.Meta, forumMetaEdited), LastReplyID: forumMetaInt64(p.Meta, forumMetaLastReply)}
 		if t.LastActive.IsZero() {
 			t.LastActive = t.CreatedAt
 		}
@@ -328,11 +328,36 @@ func (s *Server) forumTopicsFrom(ctx context.Context, posts []*store.Post, withI
 		if f := forums[p.ParentID]; f != nil && f.Type == "forum" {
 			t.ForumTitle = f.Title
 			t.ForumURL = s.forumURL(ctx, "f", f.Slug)
+			if ic := forumMetaStr(f.Meta, forumMetaIcon); forumIconValid(ic) {
+				t.ForumIcon = ic
+			}
+			if col := forumMetaStr(f.Meta, forumMetaColor); forumColors[col] {
+				t.ForumColor = col
+			}
+			t.ForumLabel = forumMetaStr(f.Meta, forumMetaLabel)
 		}
 		if withIP {
 			t.IP = forumMetaStr(p.Meta, forumMetaIP)
 		}
+		metas[p.ID] = p.Meta
 		out = append(out, t)
+	}
+	parts := s.forumEnrichTopics(ctx, out, metas)
+	for _, ids := range parts {
+		authorIDs = append(authorIDs, ids...)
+	}
+	authors, err := s.forumAuthors(ctx, forumIDs(authorIDs...))
+	if err != nil {
+		return nil, err
+	}
+	for i, p := range posts {
+		t := out[i]
+		t.Author, t.LastAuthor = authors[p.AuthorID], authors[forumMetaInt64(p.Meta, forumMetaLastAuthor)]
+		for _, id := range parts[t.ID] {
+			if a := authors[id]; a != nil {
+				t.Participants = append(t.Participants, a)
+			}
+		}
 	}
 	return out, nil
 }
@@ -357,12 +382,23 @@ func (s *Server) forumTopics(ctx context.Context, q forumTopicQuery) ([]*forumTo
 	where := []string{"p.type = 'topic'", forumStatusesSQL(q.Statuses, q.Spam, arg)}
 	if q.ForumID > 0 {
 		where = append(where, "p.parent_id = "+arg(q.ForumID))
+	} else if q.AuthorID == 0 {
+		where = append(where, forumPublishedForumsSQL("p")) // cross-forum lists: topics of published forums only
 	}
 	if q.AuthorID > 0 {
 		where = append(where, "p.author_id = "+arg(q.AuthorID))
 	}
 	if term := strings.TrimSpace(q.Search); term != "" {
 		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+arg(term)+")")
+	}
+	if q.Tag != "" {
+		where = append(where, "p.meta->'"+forumMetaTags+"' ? "+arg(q.Tag))
+	}
+	switch q.Sort {
+	case "unanswered":
+		where = append(where, "coalesce(p.meta->>'"+forumMetaReplyCount+"','0') = '0'")
+	case "solved":
+		where = append(where, "p.meta ? '"+forumMetaSolution+"'")
 	}
 	cond := strings.Join(where, " AND ")
 	var total int
@@ -373,10 +409,15 @@ func (s *Server) forumTopics(ctx context.Context, q forumTopicQuery) ([]*forumTo
 	// No NULLS LAST: create and recount always write last_active, and the ORDER BY must match
 	// posts_forum_topics / posts_forum_recent (DESC = NULLS FIRST) for an index scan.
 	order := "p.meta->>'" + forumMetaLastActive + "' DESC, p.id DESC"
-	if q.StickyFirst && q.ForumID > 0 { // sticky is per forum: no global super-sticky on cross-forum lists
+	join := ""
+	if q.Sort == "popular" { // views plus ten per reply, then activity
+		join = " LEFT JOIN forum_topic_views v ON v.topic_id = p.id"
+		order = "(coalesce(v.views,0) + 10 * coalesce((p.meta->>'" + forumMetaReplyCount + "')::bigint,0)) DESC, " + order
+	}
+	if q.StickyFirst && q.ForumID > 0 && (q.Sort == "" || q.Sort == "latest") { // sticky is per forum: no global super-sticky on cross-forum lists
 		order = "p.sticky DESC, " + order
 	}
-	rows, err := s.store.Pool.Query(ctx, `SELECT `+forumPrefixed("p")+` FROM posts p WHERE `+cond+` ORDER BY `+order+
+	rows, err := s.store.Pool.Query(ctx, `SELECT `+forumPrefixed("p")+` FROM posts p`+join+` WHERE `+cond+` ORDER BY `+order+
 		fmt.Sprintf(" LIMIT %d OFFSET %d", per, (page-1)*per), args...)
 	if err != nil {
 		return nil, 0, err
@@ -469,6 +510,16 @@ func (s *Server) forumRepliesFrom(ctx context.Context, rows pgx.Rows, withIP boo
 		}
 		out = append(out, r)
 	}
+	if len(out) > 0 { // v0.2.5: likes, one query
+		ids := make([]int64, len(out))
+		for i, r := range out {
+			ids[i] = r.ID
+		}
+		likes := s.forumLikeCounts(ctx, ids)
+		for _, r := range out {
+			r.Likes = likes[r.ID]
+		}
+	}
 	return out, nil
 }
 
@@ -550,6 +601,7 @@ type forumNewTopic struct {
 	IP                string
 	Pending           bool
 	At                time.Time
+	Tags              string // v0.2.5: typed tags (forumParseTags)
 }
 
 func forumNullID(id int64) any {
@@ -597,13 +649,20 @@ func (s *Server) forumCreateTopic(ctx context.Context, in forumNewTopic) (*forum
 	if in.Pending {
 		status = "pending"
 	}
-	meta, _ := json.Marshal(map[string]any{forumMetaReplyCount: 0, forumMetaLastActive: forumStamp(at), forumMetaLastAuthor: in.AuthorID, forumMetaIP: in.IP})
+	m := map[string]any{forumMetaReplyCount: 0, forumMetaLastActive: forumStamp(at), forumMetaLastAuthor: in.AuthorID, forumMetaIP: in.IP}
+	if names, slugs := forumParseTags(in.Tags); len(slugs) > 0 {
+		for k, v := range forumTagsMeta(names, slugs) {
+			m[k] = v
+		}
+	}
+	meta, _ := json.Marshal(m)
 	var id int64
 	if err := s.store.Pool.QueryRow(ctx, `INSERT INTO posts (type, author_id, parent_id, slug, title, content, status, published_at, modified_at,
 		created_at, comment_status, ping_status, meta) VALUES ('topic', $1, $2, $3, $4, $5, $6, $7, $7, $7, 'open', 'closed', $8) RETURNING id`,
 		forumNullID(in.AuthorID), in.ForumID, forumSlugOf(title), title, in.Content, status, at, meta).Scan(&id); err != nil {
 		return nil, err
 	}
+	s.forumLedger(ctx, in.AuthorID, "topic", id, 0, at)
 	bg := s.forumAfterWrite(ctx, id, in.ForumID)
 	return s.forumTopicByID(bg, id)
 }
@@ -642,6 +701,7 @@ func (s *Server) forumCreateReply(ctx context.Context, in forumNewReply) (*forum
 		forumNullID(in.AuthorID), in.TopicID, in.Content, status, at, meta).Scan(&id); err != nil {
 		return nil, err
 	}
+	s.forumLedger(ctx, in.AuthorID, "reply", id, 0, at)
 	bg := s.forumAfterWrite(ctx, in.TopicID, forumID)
 	return s.forumReplyByID(bg, id)
 }
@@ -753,6 +813,17 @@ func (s *Server) forumModerate(ctx context.Context, postID int64, op string, act
 	}); err != nil {
 		return err
 	}
+	switch op {
+	case "spam", "trash": // v0.2.5: the post's reports are dealt with; a removed accepted answer no longer solves its topic
+		s.forumResolveReports(ctx, actorID, postID)
+		if typ == "reply" {
+			s.forumDropSolution(ctx, topicID, postID)
+		}
+	case "approve": // v0.2.5: subscribers hear about a reply once it is public
+		if typ == "reply" {
+			defer s.forumNotifyReply(context.WithoutCancel(ctx), postID)
+		}
+	}
 	s.forumAfterWrite(ctx, topicID, forumID)
 	return nil
 }
@@ -763,6 +834,7 @@ type forumForumInput struct {
 	Title, Slug, Description, Kind string
 	Closed                         bool
 	Order                          int
+	Design                         *forumDesignInput // v0.2.5: icon, colour, label, chips …; nil keeps the stored meta
 }
 
 // forumSaveForum creates or updates a forum or category: unique slug among forums, at most two levels
@@ -854,7 +926,13 @@ func (s *Server) forumSaveForum(ctx context.Context, in forumForumInput, authorI
 	if in.Closed {
 		status = "closed"
 	}
-	meta, _ := json.Marshal(map[string]any{forumMetaKind: kind, forumMetaStatus: status})
+	base0 := map[string]any{forumMetaKind: kind, forumMetaStatus: status}
+	if in.Design != nil {
+		for k, v := range forumDesignMeta(forumSanitizeDesign(*in.Design)) {
+			base0[k] = v
+		}
+	}
+	meta, _ := json.Marshal(base0)
 	desc := wp.KsesPost(strings.TrimSpace(in.Description))
 	var id int64
 	if in.ID > 0 {
@@ -869,7 +947,8 @@ func (s *Server) forumSaveForum(ctx context.Context, in forumForumInput, authorI
 		}
 		id = in.ID
 	} else {
-		full, _ := json.Marshal(map[string]any{forumMetaKind: kind, forumMetaStatus: status, forumMetaTopicCount: 0, forumMetaReplyCount: 0})
+		base0[forumMetaTopicCount], base0[forumMetaReplyCount] = 0, 0
+		full, _ := json.Marshal(base0)
 		if err := s.store.Pool.QueryRow(ctx, `INSERT INTO posts (type, author_id, parent_id, slug, title, content, status, published_at,
 			menu_order, comment_status, ping_status, meta) VALUES ('forum', $1, $2, $3, $4, $5, 'publish', now(), $6, 'closed', 'closed', $7) RETURNING id`,
 			forumNullID(authorID), forumNullID(in.ParentID), slug, title, desc, in.Order, full).Scan(&id); err != nil {
@@ -1056,7 +1135,7 @@ func (s *Server) forumAuthorBase(ctx context.Context, u *store.User, blocked boo
 		name = u.Login
 	}
 	return &forumAuthor{ID: u.ID, Login: u.Login, Nicename: u.Nicename, DisplayName: name, AvatarURL: avatarURL,
-		ProfileURL: s.forumProfileURL(ctx, u.Nicename), Moderator: u.Can(capForumModerate, nil), Blocked: blocked,
+		ProfileURL: s.forumProfileURL(ctx, u.Nicename), Moderator: u.Can(capForumModerate, nil), Admin: u.Can("manage_options", nil), Blocked: blocked,
 		AvatarID: avatarIDOf(u), HasPhoto: avatarURL != "" && avatarURL != defaultAvatar, Initials: forumInitials(name, u.Login),
 		Hue: forumHue(u.ID)}
 }

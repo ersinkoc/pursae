@@ -7,6 +7,16 @@
 {{- end}}
 <p class="pf-help">{{if .User}}{{.T "Links work for 48 hours. We can send you a new one."}}{{else}}{{.T "Links work for 48 hours. Enter your email address to get a new one."}}{{end}}</p>
 {{template "forum/part-resend" .}}
+{{- if .Extra.change_email}}
+<details class="pf-change-email"><summary>{{.T "Change the address"}}</summary>
+<form class="pf-form" method="post" action="{{.Extra.verify}}">
+<input type="hidden" name="forum_action" value="change_email" />
+<input type="hidden" name="_wpnonce" value="{{.AuthNonce}}" />
+<div class="pf-field"><label for="pf-new-email">{{.T "New email address"}}</label>
+<input class="pf-input" type="email" id="pf-new-email" name="user_email" autocomplete="email" required maxlength="100" /></div>
+<button type="submit" class="pf-button pf-button--ghost">{{.T "Change and send a new link"}}</button>
+</form></details>
+{{- end}}
 <p class="pf-auth-foot"><a href="{{.URLs.Index}}">{{.T "Back to the forums"}}</a>{{if not .User}}<a href="{{.URLs.Login}}">{{.T "Log in"}}</a>{{end}}</p>
 </section>
 </div>{{end}}

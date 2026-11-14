@@ -42,7 +42,7 @@ const (
 	forumSlug            = "pursae-forum"
 	forumSetting         = "native_pursae_forum"   // bool, off on fresh install
 	forumOptions         = "pursae_forum_settings" // JSON
-	forumVersion         = "0.1.0"
+	forumVersion         = "0.2.5"
 	forumNonce           = "pursae-forum"      // logged-in front actions
 	forumAuthNonce       = "pursae-forum-auth" // login/register/resend (logged-out nonce, pages are no-store)
 	forumAdminNonce      = "pursae-forum-admin"
@@ -86,6 +86,25 @@ const (
 	// forumUMetaEmailVerified holds the address the member proved they own (the confirmation link, or
 	// Google vouching for it). It counts only while it still equals users.email.
 	forumUMetaEmailVerified = "forum_email_verified"
+
+	// v0.2.5: forum design meta (forum posts), topic state, member preferences.
+	forumMetaIcon       = "_forum_icon"          // forum: a forum_icon name
+	forumMetaColor      = "_forum_color"         // forum: sky|mint|peach|lilac|grey
+	forumMetaLabel      = "_forum_label"         // forum: short tab label
+	forumMetaNumber     = "_forum_number"        // forum: short number ("01")
+	forumMetaChips      = "_forum_chips"         // forum: [names]
+	forumMetaTips       = "_forum_tips"          // forum: [lines]
+	forumMetaStaffOnly  = "_forum_staff_only"    // forum: only moderators start topics
+	forumMetaModerators = "_forum_moderators"    // forum: [user ids] shown as the forum's moderators
+	forumMetaTags       = "_forum_tags"          // topic: [tag slugs]
+	forumMetaTagNames   = "_forum_tag_names"     // topic: [tag names as typed], same order
+	forumMetaSolution   = "_forum_solution"      // topic: the accepted reply id
+	forumMetaSolvedAt   = "_forum_solved_at"     // topic: when it was accepted
+	forumMetaSolvedBy   = "_forum_solved_by"     // topic: who accepted it
+	forumMetaLikesSeed  = "_forum_likes_seed"    // topic/reply: demo likes added to the counted ones
+	forumUMetaRules     = "forum_rules_accepted" // users.meta: when the member accepted the community rules (RFC 3339)
+	forumUMetaDigest    = "forum_digest"         // users.meta: wants the weekly digest
+	forumUMetaDraft     = "forum_draft"          // users.meta: the new-topic draft (forumDraft)
 )
 
 // forumTimeLayout is the fixed-width UTC layout of _forum_last_active (lexical order = time order).
@@ -126,11 +145,17 @@ type forumSettings struct {
 	GoogleClientID     string `json:"google_client_id"`     //
 	GoogleClientSecret string `json:"google_client_secret"` // never rendered back; empty on save = keep stored
 	ShowMembers        bool   `json:"show_members"`         // WP7: true: the public member list /<base>/members/
+	// v0.2.5.
+	RulesURL      string `json:"rules_url"`      // the community rules page ("" = none); the sign-up checkbox links it
+	RequireRules  bool   `json:"require_rules"`  // sign-up needs the rules accepted
+	OnlineMinutes int    `json:"online_minutes"` // the "online" window, 5 (1..60)
+	Notify        bool   `json:"notify"`         // topic subscriptions email new replies (default true)
 }
 
 func forumDefaults() forumSettings {
 	return forumSettings{Base: "forums", Title: "Forums", TopicsPerPage: 20, RepliesPerPage: 20, Registration: true,
-		RequireVerify: true, DefaultRole: forumRoleParticipant, EditWindow: 30, FloodSeconds: 15, ShowMembers: true}
+		RequireVerify: true, DefaultRole: forumRoleParticipant, EditWindow: 30, FloodSeconds: 15, ShowMembers: true,
+		OnlineMinutes: 5, Notify: true}
 }
 
 var forumBaseRe = regexp.MustCompile(`^[a-z0-9-]{1,40}$`)
@@ -188,9 +213,25 @@ func forumSanitize(st forumSettings) forumSettings {
 	if st.FloodSeconds > 3600 {
 		st.FloodSeconds = 3600
 	}
+	st.OnlineMinutes = forumClamp(st.OnlineMinutes, 1, 60, d.OnlineMinutes)
+	st.RulesURL = strings.TrimSpace(st.RulesURL)
+	if st.RulesURL != "" && !forumRulesURLOK(st.RulesURL) {
+		st.RulesURL = ""
+	}
+	if st.RulesURL == "" {
+		st.RequireRules = false // nothing to accept
+	}
 	st.GoogleClientID = strings.TrimSpace(st.GoogleClientID)
 	st.GoogleClientSecret = strings.TrimSpace(st.GoogleClientSecret)
 	return st
+}
+
+// forumRulesURLOK accepts a site path ("/rules/") or an http(s) URL as the rules link.
+func forumRulesURLOK(u string) bool {
+	if len(u) > 500 || strings.ContainsAny(u, "\"<> \t\n") {
+		return false
+	}
+	return (strings.HasPrefix(u, "/") && !strings.HasPrefix(u, "//")) || strings.HasPrefix(u, "https://") || strings.HasPrefix(u, "http://")
 }
 
 func (s *Server) forumOn() bool { return s.settings.Bool(forumSetting) }
@@ -255,7 +296,19 @@ func (s *Server) forumActivate(ctx context.Context) error {
 		return err
 	}
 	s.purgeAll(ctx)
+	s.forumCacheReconfigure()
 	return nil
+}
+
+// forumCacheQueryStrings are the page cache key parameters the forum adds while it is on.
+var forumCacheQueryStrings = []string{"sort", "tag"}
+
+// forumCacheReconfigure rebuilds a running page cache so the forum's key parameters follow the
+// plugin's state.
+func (s *Server) forumCacheReconfigure() {
+	if s.currentCache() != nil {
+		s.configureCache()
+	}
 }
 
 // forumDeactivate switches it off; forums, topics, replies, roles and members stay.
@@ -264,6 +317,7 @@ func (s *Server) forumDeactivate(ctx context.Context) error {
 		return err
 	}
 	s.purgeAll(ctx)
+	s.forumCacheReconfigure()
 	return nil
 }
 

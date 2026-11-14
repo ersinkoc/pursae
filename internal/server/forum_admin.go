@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -82,6 +83,11 @@ type forumAdminForm struct {
 	Closed       bool
 	Order        int
 	URL          string
+	// v0.2.5 design meta.
+	Icon, Color, Label, Number string
+	Chips, Tips                string // one per line (chips may also be comma separated)
+	StaffOnly                  bool
+	Moderators                 string // logins or emails, comma separated
 }
 
 // forumAdminRow is a forum or category in the Forums list.
@@ -127,6 +133,10 @@ type forumAdminItem struct {
 	ViewURL             string
 	Actions             []forumAdminAction
 	RowClass            string
+	// v0.2.5: open member reports of the item.
+	Reports       int
+	ReportReasons string
+	ReportNotes   []string
 }
 
 // forumAdminOpt is a bulk action.
@@ -187,7 +197,8 @@ type forumAdminData struct {
 	BadgeEdit *forumAdminBadgeForm // the edit form (?action=edit&badge=id)
 	Rules     []forumAdminRule
 	Icons     []string
-	CanUpload bool // the media modal can be offered (upload_files)
+	Colors    []string // v0.2.5: the forum colour keys
+	CanUpload bool     // the media modal can be offered (upload_files)
 }
 
 // forumAdminMessages are the notices of ?msg= after a redirect.
@@ -207,6 +218,7 @@ var forumAdminMessages = map[string]string{
 	"badges_restored":  "The default badges are restored.",
 	"member_badges":    "Badges updated.",
 	"member_role":      "Forum role updated.",
+	"member_points":    "Points adjusted.",
 	"member_blocked":   "Member blocked.",
 	"member_unblocked": "Member unblocked.",
 	"member_verified":  "Email address marked as verified.",
@@ -243,6 +255,7 @@ var forumAdminDone = map[string][2]string{
 	"trash":   {"%d item moved to the Trash.", "%d items moved to the Trash."},
 	"restore": {"%d item restored from the Trash.", "%d items restored from the Trash."},
 	"delete":  {"%d item permanently deleted.", "%d items permanently deleted."},
+	"dismiss": {"Reports dismissed on %d item.", "Reports dismissed on %d items."},
 }
 
 // forumAdminURL is the screen URL of a tab with extra query values.
@@ -294,7 +307,8 @@ func (s *Server) forumAdmin(c *gin.Context) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to access this page.")
 		return
 	}
-	d := &forumAdminData{Tab: tab, IsAdmin: admin, SelfID: u.ID, Nonce: s.nonce(c, forumAdminNonce), IndexURL: s.forumURL(c)}
+	d := &forumAdminData{Tab: tab, IsAdmin: admin, SelfID: u.ID, Nonce: s.nonce(c, forumAdminNonce), IndexURL: s.forumURL(c),
+		Icons: forumIconNames(), Colors: forumColorKeys}
 	for _, t := range forumAdminTabs {
 		if !u.Can(t.Cap, nil) {
 			continue
@@ -355,7 +369,57 @@ func forumAdminFormOf(c *gin.Context) forumAdminForm {
 		kind = "forum"
 	}
 	return forumAdminForm{ID: id, ParentID: parent, Title: strings.TrimSpace(c.PostForm("title")), Slug: strings.TrimSpace(c.PostForm("slug")),
-		Description: c.PostForm("description"), Kind: kind, Closed: c.PostForm("closed") == "1", Order: max(-9999, min(order, 9999))}
+		Description: c.PostForm("description"), Kind: kind, Closed: c.PostForm("closed") == "1", Order: max(-9999, min(order, 9999)),
+		Icon: c.PostForm("icon"), Color: c.PostForm("color"), Label: c.PostForm("label"), Number: c.PostForm("number"),
+		Chips: c.PostForm("chips"), Tips: c.PostForm("tips"), StaffOnly: c.PostForm("staff_only") == "1", Moderators: c.PostForm("moderators")}
+}
+
+// forumAdminDesignOf turns the form's design fields into the stored design (moderators by login or
+// email; unknown names are an error).
+func (s *Server) forumAdminDesignOf(ctx context.Context, f forumAdminForm) (*forumDesignInput, error) {
+	d := &forumDesignInput{Icon: f.Icon, Color: f.Color, Label: f.Label, Number: f.Number, StaffOnly: f.StaffOnly}
+	for _, line := range strings.FieldsFunc(f.Chips, func(r rune) bool { return r == '\n' || r == ',' }) {
+		d.Chips = append(d.Chips, line)
+	}
+	for _, line := range strings.Split(f.Tips, "\n") {
+		d.Tips = append(d.Tips, line)
+	}
+	for _, name := range strings.FieldsFunc(f.Moderators, func(r rune) bool { return r == ',' || r == '\n' }) {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		u, err := s.store.UserByLoginOrEmail(ctx, name)
+		if err != nil {
+			return nil, errors.New("forum: no member is called " + name)
+		}
+		d.Moderators = append(d.Moderators, u.ID)
+	}
+	return d, nil
+}
+
+// forumAdminFormDesign fills the design fields of an edit form from a forum.
+func (s *Server) forumAdminFormDesign(ctx context.Context, form *forumAdminForm, f *forumForum) {
+	form.Icon, form.Color, form.Label, form.Number, form.StaffOnly = f.Icon, f.Color, f.Label, f.Number, f.StaffOnly
+	names := make([]string, 0, len(f.Chips))
+	for _, ch := range f.Chips {
+		names = append(names, ch.Name)
+	}
+	form.Chips = strings.Join(names, "\n")
+	form.Tips = strings.Join(f.Tips, "\n")
+	var raw []byte
+	_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(meta->'`+forumMetaModerators+`','[]') FROM posts WHERE id = $1`, f.ID).Scan(&raw)
+	var ids []int64
+	_ = json.Unmarshal(raw, &ids)
+	if users, err := s.store.UserNames(ctx, ids); err == nil {
+		var logins []string
+		for _, id := range ids {
+			if u := users[id]; u != nil {
+				logins = append(logins, u.Login)
+			}
+		}
+		form.Moderators = strings.Join(logins, ", ")
+	}
 }
 
 // forumAdminForums handles the Forums tab; false when it already answered (a redirect).
@@ -368,8 +432,12 @@ func (s *Server) forumAdminForums(c *gin.Context, d *forumAdminData) bool {
 			return false
 		}
 		f := forumAdminFormOf(c)
-		id, err := s.forumSaveForum(ctx, forumForumInput{ID: f.ID, ParentID: f.ParentID, Title: f.Title, Slug: f.Slug,
-			Description: f.Description, Kind: f.Kind, Closed: f.Closed, Order: f.Order}, currentUser(c).ID)
+		design, err := s.forumAdminDesignOf(ctx, f)
+		var id int64
+		if err == nil {
+			id, err = s.forumSaveForum(ctx, forumForumInput{ID: f.ID, ParentID: f.ParentID, Title: f.Title, Slug: f.Slug,
+				Description: f.Description, Kind: f.Kind, Closed: f.Closed, Order: f.Order, Design: design}, currentUser(c).ID)
+		}
 		if err != nil {
 			d.Error = forumAdminErr(err)
 			if f.ID > 0 {
@@ -420,6 +488,7 @@ func (s *Server) forumAdminForums(c *gin.Context, d *forumAdminData) bool {
 		}
 		d.Edit = &forumAdminForm{ID: f.ID, ParentID: f.ParentID, Title: f.Title, Slug: f.Slug, Description: string(f.Description),
 			Kind: f.Kind, Closed: f.Closed, Order: f.Order, URL: f.URL}
+		s.forumAdminFormDesign(ctx, d.Edit, f)
 	}
 	// Topics of any status decide whether Delete is offered (forumDeleteForum checks again).
 	held := map[int64]bool{}
@@ -455,7 +524,7 @@ func (s *Server) forumAdminForums(c *gin.Context, d *forumAdminData) bool {
 
 // forumAdminViews are the Moderation status filters.
 var forumAdminViews = []struct{ Key, Label string }{
-	{"all", "All"}, {"pending", "Pending"}, {"spam", "Spam"}, {"trash", "Trash"},
+	{"all", "All"}, {"pending", "Pending"}, {"reported", "Reported"}, {"spam", "Spam"}, {"trash", "Trash"},
 }
 
 // forumAdminViewSQL is the status condition of a Moderation filter (alias p).
@@ -467,6 +536,9 @@ func forumAdminViewSQL(view string) string {
 		return "p.status = 'trash' AND coalesce(p.meta->>'" + forumMetaSpam + "','') = 'true'"
 	case "trash":
 		return "p.status = 'trash' AND " + forumNotSpam("p")
+	case "reported": // v0.2.5: members reported it and no moderator has dealt with it yet
+		return "p.status IN ('publish','pending') AND " + forumNotSpam("p") +
+			" AND EXISTS (SELECT 1 FROM forum_reports fr WHERE fr.post_id = p.id AND fr.status = 'open')"
 	}
 	return "p.status IN ('publish','pending') AND " + forumNotSpam("p")
 }
@@ -478,6 +550,8 @@ func forumAdminBulk(view string) []forumAdminOpt {
 		return []forumAdminOpt{{"unspam", "Not Spam"}, {"delete", "Delete Permanently"}}
 	case "trash":
 		return []forumAdminOpt{{"restore", "Restore"}, {"delete", "Delete Permanently"}}
+	case "reported":
+		return []forumAdminOpt{{"dismiss", "Dismiss Reports"}, {"spam", "Mark as Spam"}, {"trash", "Move to Trash"}}
 	}
 	return []forumAdminOpt{{"approve", "Approve"}, {"spam", "Mark as Spam"}, {"trash", "Move to Trash"}}
 }
@@ -490,6 +564,9 @@ func (s *Server) forumAdminApply(ctx context.Context, id int64, op string, actor
 		return s.forumModerate(ctx, id, op, actor)
 	case "delete":
 		return s.forumAdminDelete(ctx, id)
+	case "dismiss": // v0.2.5: the reports were looked at, the post stays
+		s.forumResolveReports(ctx, actor, id)
+		return nil
 	}
 	return fmt.Errorf("forum: unknown action %q", op)
 }
@@ -619,16 +696,17 @@ func (s *Server) forumAdminModeration(c *gin.Context, d *forumAdminData, notices
 
 	// Counts of each filter.
 	counts := map[string]int{}
-	var all, pending, spam, trash int
+	var all, pending, spam, trash, reported int
 	if err := s.store.Pool.QueryRow(ctx, `SELECT
 		count(*) FILTER (WHERE `+forumAdminViewSQL("all")+`),
 		count(*) FILTER (WHERE `+forumAdminViewSQL("pending")+`),
 		count(*) FILTER (WHERE `+forumAdminViewSQL("spam")+`),
-		count(*) FILTER (WHERE `+forumAdminViewSQL("trash")+`)
-		FROM posts p WHERE p.type IN ('topic','reply')`).Scan(&all, &pending, &spam, &trash); err != nil {
+		count(*) FILTER (WHERE `+forumAdminViewSQL("trash")+`),
+		count(*) FILTER (WHERE `+forumAdminViewSQL("reported")+`)
+		FROM posts p WHERE p.type IN ('topic','reply')`).Scan(&all, &pending, &spam, &trash, &reported); err != nil {
 		d.Error = "The topics and replies could not be read: " + err.Error()
 	}
-	counts["all"], counts["pending"], counts["spam"], counts["trash"] = all, pending, spam, trash
+	counts["all"], counts["pending"], counts["spam"], counts["trash"], counts["reported"] = all, pending, spam, trash, reported
 	for _, v := range forumAdminViews {
 		if v.Key != "all" && counts[v.Key] == 0 && v.Key != view {
 			continue // WordPress hides empty status links
@@ -697,6 +775,11 @@ func (s *Server) forumAdminModeration(c *gin.Context, d *forumAdminData, notices
 	}
 	rows.Close()
 	authors, _ := s.forumAuthors(ctx, authorIDs)
+	itemIDs := make([]int64, 0, len(recs))
+	for _, r := range recs {
+		itemIDs = append(itemIDs, r.id)
+	}
+	reports := s.forumOpenReports(ctx, itemIDs) // v0.2.5
 	loc := s.loc()
 	dateFmt, timeFmt := defaultStr(s.settings.String("date_format"), "F j, Y"), defaultStr(s.settings.String("time_format"), "g:i a")
 	act := func(id int64, op, label, confirm string) forumAdminAction {
@@ -734,6 +817,14 @@ func (s *Server) forumAdminModeration(c *gin.Context, d *forumAdminData, notices
 		default:
 			it.StatusLabel, it.RowClass = "Published", "approved"
 			it.Actions = []forumAdminAction{act(r.id, "spam", "Spam", ""), act(r.id, "trash", "Trash", "")}
+		}
+		if rep := reports[r.id]; rep != nil {
+			labels := make([]string, 0, len(rep.Reasons))
+			for _, k := range rep.Reasons {
+				labels = append(labels, forumReportReasons[k])
+			}
+			it.Reports, it.ReportReasons, it.ReportNotes = rep.Count, strings.Join(labels, ", "), rep.Notes
+			it.Actions = append(it.Actions, act(r.id, "dismiss", "Dismiss Reports", ""))
 		}
 		d.Items = append(d.Items, it)
 	}
@@ -795,6 +886,12 @@ func (s *Server) forumAdminSettings(c *gin.Context, d *forumAdminData) bool {
 		st.EditWindow = atoi("edit_window")
 		st.FloodSeconds = atoi("flood_seconds")
 		st.ShowMembers = c.PostForm("show_members") == "1"
+		if c.PostForm("v025") != "" { // v0.2.5 fields (a form without them keeps the stored values)
+			st.RulesURL = c.PostForm("rules_url")
+			st.RequireRules = c.PostForm("require_rules") == "1"
+			st.OnlineMinutes, _ = strconv.Atoi(strings.TrimSpace(c.PostForm("online_minutes")))
+			st.Notify = c.PostForm("notify") == "1"
+		}
 		st.GoogleClientSecret = "" // keep the stored secret
 		if err := s.forumSave(ctx, st); err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
@@ -1479,7 +1576,7 @@ func (s *Server) forumAdminMemberPost(c *gin.Context, d *forumAdminData) {
 		c.Redirect(http.StatusFound, forumAdminURL(forumTabMembers, append([]string{"action", "member", "user", itoa64(target.ID)}, kv...)...))
 	}
 	do := c.PostForm("member_do")
-	if (do == "role" || do == "badges") && !d.IsAdmin {
+	if (do == "role" || do == "badges" || do == "points") && !d.IsAdmin {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to do that.")
 		return
 	}
@@ -1519,6 +1616,10 @@ func (s *Server) forumAdminMemberPost(c *gin.Context, d *forumAdminData) {
 			}
 		}
 		msg = "member_badges"
+	case "points": // v0.2.5: a manual adjustment in the points ledger
+		n, _ := strconv.Atoi(strings.TrimSpace(c.PostForm("points")))
+		err = s.forumAdjustPoints(ctx, target.ID, u.ID, n, c.PostForm("note"))
+		msg = "member_points"
 	default:
 		back()
 		return
@@ -1569,7 +1670,13 @@ func forumAdminLevelsOf(c *gin.Context) (forumLevels, string) {
 		n, _ := strconv.Atoi(strings.TrimSpace(c.PostForm(k)))
 		return n
 	}
-	l := forumLevels{TopicPoints: atoi("topic_points"), ReplyPoints: atoi("reply_points")}
+	l := forumLevels{TopicPoints: atoi("topic_points"), ReplyPoints: atoi("reply_points"), SolutionPoints: 10, LikePoints: 1}
+	if _, ok := c.GetPostForm("solution_points"); ok { // v0.2.5
+		l.SolutionPoints = atoi("solution_points")
+	}
+	if _, ok := c.GetPostForm("like_points"); ok {
+		l.LikePoints = atoi("like_points")
+	}
 	n := max(0, min(atoi("level_count"), forumMaxLevels+20))
 	code := ""
 	seen := map[int]bool{}
