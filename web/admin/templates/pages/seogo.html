@@ -460,7 +460,7 @@
 </form>
 {{end}}
 </div>
-<script src="/wp-admin/js/seogo-admin.js?ver=1.0.0" defer></script>
+<script {{cspNonce}} src="/wp-admin/js/seogo-admin.js?ver=1.0.0" defer></script>
 {{end}}{{template "admin-footer" .}}{{end}}
 
 {{define "seogo-score"}}{{if eq . ""}}<span class="seogo-bullet na" title="Not analyzed"></span>{{else}}{{$n := printf "%s" .}}<span class="seogo-score-num" data-score="{{$n}}"><span class="seogo-bullet"></span> {{$n}}</span>{{end}}{{end}}

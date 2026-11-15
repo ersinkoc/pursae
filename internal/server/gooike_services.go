@@ -18,11 +18,11 @@ type gooikeService struct {
 	IDLabel, IDExample             string
 	IDPattern                      *regexp.Regexp
 	Note                           string
-	NoID                           bool // the service has no account ID (the snippet is the same for every site)
-	LowerID                        bool // IDs are lower-case (the default normalises to upper-case)
-	code                           func(id string) string
-	sources                        func(id string) []string // CSP sources that depend on the ID (self-hosted services)
-	Script, Connect, Frame         []string                 // CSP sources
+	NoID                           bool                          // the service has no account ID (the snippet is the same for every site)
+	LowerID                        bool                          // IDs are lower-case (the default normalises to upper-case)
+	code                           func(id, nonce string) string // nonce: the nonce attribute of the script elements ("" for display)
+	sources                        func(id string) []string      // CSP sources that depend on the ID (self-hosted services)
+	Script, Connect, Frame         []string                      // CSP sources
 	Cookies                        []gooikeCookieRow
 	Detect                         []string // lower-case substrings that reveal the service in a page
 }
@@ -30,9 +30,9 @@ type gooikeService struct {
 var gooikeServices = []*gooikeService{
 	{Key: "ga4", Name: "Google Analytics 4", Category: "statistics", Placement: "head", IDLabel: "Measurement ID", IDExample: "G-XXXXXXXXXX",
 		IDPattern: regexp.MustCompile(`^G-[A-Z0-9]{4,16}$`),
-		code: func(id string) string {
-			return `<script async src="https://www.googletagmanager.com/gtag/js?id=` + id + `"></script>` + "\n" +
-				`<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','` + id + `');</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + ` async src="https://www.googletagmanager.com/gtag/js?id=` + id + `"></script>` + "\n" +
+				`<script` + nonce + `>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','` + id + `');</script>`
 		},
 		Script:  []string{"https://www.googletagmanager.com"},
 		Connect: []string{"https://*.google-analytics.com", "https://*.analytics.google.com", "https://www.googletagmanager.com"},
@@ -44,8 +44,8 @@ var gooikeServices = []*gooikeService{
 	{Key: "gtm", Name: "Google Tag Manager", Category: "statistics", Placement: "head", IDLabel: "Container ID", IDExample: "GTM-XXXXXXX",
 		IDPattern: regexp.MustCompile(`^GTM-[A-Z0-9]{4,12}$`),
 		Note:      "Put Tag Manager in Necessary to use Consent Mode's advanced mode: it then always loads and its tags follow the consent signals Pursae Cookie sends.",
-		code: func(id string) string {
-			return `<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','` + id + `');</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;var n=d.currentScript&&d.currentScript.nonce;if(n){j.nonce=n;}f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','` + id + `');</script>`
 		},
 		Script:  []string{"https://www.googletagmanager.com", "https://tagmanager.google.com"},
 		Connect: []string{"https://www.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com"},
@@ -55,8 +55,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"googletagmanager.com/gtm.js"}},
 	{Key: "meta", Name: "Meta Pixel", Category: "marketing", Placement: "head", IDLabel: "Pixel ID", IDExample: "123456789012345",
 		IDPattern: regexp.MustCompile(`^[0-9]{6,20}$`),
-		code: func(id string) string {
-			return `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','` + id + `');fbq('track','PageView');</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','` + id + `');fbq('track','PageView');</script>`
 		},
 		Script:  []string{"https://connect.facebook.net"},
 		Connect: []string{"https://www.facebook.com", "https://connect.facebook.net"},
@@ -67,8 +67,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"connect.facebook.net", "fbq('init'"}},
 	{Key: "hotjar", Name: "Hotjar", Category: "statistics", Placement: "head", IDLabel: "Site ID", IDExample: "1234567",
 		IDPattern: regexp.MustCompile(`^[0-9]{3,12}$`),
-		code: func(id string) string {
-			return `<script>(function(h,o,t,j,a,r){h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};h._hjSettings={hjid:` + id + `,hjsv:6};a=o.getElementsByTagName('head')[0];r=o.createElement('script');r.async=1;r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;a.appendChild(r);})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>(function(h,o,t,j,a,r){h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};h._hjSettings={hjid:` + id + `,hjsv:6};a=o.getElementsByTagName('head')[0];r=o.createElement('script');r.async=1;r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;a.appendChild(r);})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');</script>`
 		},
 		Script:  []string{"https://*.hotjar.com"},
 		Connect: []string{"https://*.hotjar.com", "https://*.hotjar.io", "wss://*.hotjar.com"},
@@ -79,8 +79,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"static.hotjar.com"}},
 	{Key: "clarity", Name: "Microsoft Clarity", Category: "statistics", Placement: "head", IDLabel: "Project ID", IDExample: "abcd1234ef",
 		IDPattern: regexp.MustCompile(`^[a-z0-9]{6,16}$`),
-		code: func(id string) string {
-			return `<script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","` + id + `");</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","` + id + `");</script>`
 		},
 		Script:  []string{"https://*.clarity.ms"},
 		Connect: []string{"https://*.clarity.ms"},
@@ -92,8 +92,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"clarity.ms/tag"}},
 	{Key: "linkedin", Name: "LinkedIn Insight Tag", Category: "marketing", Placement: "footer", IDLabel: "Partner ID", IDExample: "1234567",
 		IDPattern: regexp.MustCompile(`^[0-9]{3,12}$`),
-		code: func(id string) string {
-			return `<script>_linkedin_partner_id="` + id + `";window._linkedin_data_partner_ids=window._linkedin_data_partner_ids||[];window._linkedin_data_partner_ids.push(_linkedin_partner_id);(function(l){if(!l){window.lintrk=function(a,b){window.lintrk.q.push([a,b])};window.lintrk.q=[]}var s=document.getElementsByTagName("script")[0];var b=document.createElement("script");b.type="text/javascript";b.async=true;b.src="https://snap.licdn.com/li.lms-analytics/insight.min.js";s.parentNode.insertBefore(b,s);})(window.lintrk);</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>_linkedin_partner_id="` + id + `";window._linkedin_data_partner_ids=window._linkedin_data_partner_ids||[];window._linkedin_data_partner_ids.push(_linkedin_partner_id);(function(l){if(!l){window.lintrk=function(a,b){window.lintrk.q.push([a,b])};window.lintrk.q=[]}var s=document.getElementsByTagName("script")[0];var b=document.createElement("script");b.type="text/javascript";b.async=true;b.src="https://snap.licdn.com/li.lms-analytics/insight.min.js";s.parentNode.insertBefore(b,s);})(window.lintrk);</script>`
 		},
 		Script:  []string{"https://snap.licdn.com"},
 		Connect: []string{"https://px.ads.linkedin.com"},
@@ -105,8 +105,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"snap.licdn.com"}},
 	{Key: "tiktok", Name: "TikTok Pixel", Category: "marketing", Placement: "head", IDLabel: "Pixel ID", IDExample: "C1A2B3C4D5E6F7G8H9I0",
 		IDPattern: regexp.MustCompile(`^[A-Z0-9]{10,30}$`),
-		code: func(id string) string {
-			return `<script>!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load('` + id + `');ttq.page();}(window,document,'ttq');</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load('` + id + `');ttq.page();}(window,document,'ttq');</script>`
 		},
 		Script:  []string{"https://analytics.tiktok.com"},
 		Connect: []string{"https://analytics.tiktok.com"},
@@ -117,9 +117,9 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"analytics.tiktok.com"}},
 	{Key: "gads", Name: "Google Ads", Category: "marketing", Placement: "head", IDLabel: "Conversion ID", IDExample: "AW-123456789",
 		IDPattern: regexp.MustCompile(`^AW-[0-9]{6,12}$`),
-		code: func(id string) string {
-			return `<script async src="https://www.googletagmanager.com/gtag/js?id=` + id + `"></script>` + "\n" +
-				`<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','` + id + `');</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + ` async src="https://www.googletagmanager.com/gtag/js?id=` + id + `"></script>` + "\n" +
+				`<script` + nonce + `>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','` + id + `');</script>`
 		},
 		Script:  []string{"https://www.googletagmanager.com", "https://googleads.g.doubleclick.net"},
 		Connect: []string{"https://www.googletagmanager.com", "https://*.google.com", "https://googleads.g.doubleclick.net"},
@@ -130,8 +130,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"googletagmanager.com/gtag/js?id=aw-"}},
 	{Key: "pinterest", Name: "Pinterest Tag", Category: "marketing", Placement: "head", IDLabel: "Tag ID", IDExample: "2612345678901",
 		IDPattern: regexp.MustCompile(`^[0-9]{10,16}$`),
-		code: func(id string) string {
-			return `<script>!function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");pintrk('load','` + id + `');pintrk('page');</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>!function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");pintrk('load','` + id + `');pintrk('page');</script>`
 		},
 		Script:  []string{"https://s.pinimg.com"},
 		Connect: []string{"https://ct.pinterest.com", "https://*.pinterest.com"},
@@ -142,8 +142,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"s.pinimg.com/ct/core.js"}},
 	{Key: "uet", Name: "Microsoft Advertising (UET)", Category: "marketing", Placement: "head", IDLabel: "UET tag ID", IDExample: "12345678",
 		IDPattern: regexp.MustCompile(`^[0-9]{6,12}$`),
-		code: func(id string) string {
-			return `<script>(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"` + id + `",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","//bat.bing.com/bat.js","uetq");</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"` + id + `",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","//bat.bing.com/bat.js","uetq");</script>`
 		},
 		Script:  []string{"https://bat.bing.com"},
 		Connect: []string{"https://bat.bing.com", "https://bat.bing.net"},
@@ -155,9 +155,9 @@ var gooikeServices = []*gooikeService{
 	{Key: "matomo", Name: "Matomo", Category: "statistics", Placement: "head", IDLabel: "Matomo address and site ID", IDExample: "analytics.example.com/1",
 		IDPattern: regexp.MustCompile(`^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}(/[a-z0-9_-]+)*/[0-9]{1,8}$`), LowerID: true,
 		Note: "The host (and folder) of your Matomo, a slash, then the site ID. Matomo Cloud: yoursite.matomo.cloud/1.",
-		code: func(id string) string {
+		code: func(id, nonce string) string {
 			i := strings.LastIndex(id, "/")
-			return `<script>var _paq=window._paq=window._paq||[];_paq.push(['trackPageView']);_paq.push(['enableLinkTracking']);(function(){var u="https://` + id[:i] + `/";_paq.push(['setTrackerUrl',u+'matomo.php']);_paq.push(['setSiteId','` + id[i+1:] + `']);var d=document,g=d.createElement('script'),s=d.getElementsByTagName('script')[0];g.async=true;g.src=u+'matomo.js';s.parentNode.insertBefore(g,s);})();</script>`
+			return `<script` + nonce + `>var _paq=window._paq=window._paq||[];_paq.push(['trackPageView']);_paq.push(['enableLinkTracking']);(function(){var u="https://` + id[:i] + `/";_paq.push(['setTrackerUrl',u+'matomo.php']);_paq.push(['setSiteId','` + id[i+1:] + `']);var d=document,g=d.createElement('script'),s=d.getElementsByTagName('script')[0];g.async=true;g.src=u+'matomo.js';s.parentNode.insertBefore(g,s);})();</script>`
 		},
 		sources: func(id string) []string {
 			host, _, _ := strings.Cut(id, "/")
@@ -171,8 +171,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"/matomo.js", "/piwik.js", "matomo.php"}},
 	{Key: "intercom", Name: "Intercom Messenger", Category: "preferences", Placement: "footer", IDLabel: "App ID", IDExample: "ab12cd34",
 		IDPattern: regexp.MustCompile(`^[a-z0-9]{6,12}$`), LowerID: true,
-		code: func(id string) string {
-			return `<script>window.intercomSettings={api_base:"https://api-iam.intercom.io",app_id:"` + id + `"};(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/` + id + `';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(document.readyState==='complete'){l();}else{w.addEventListener('load',l,false);}}})();</script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + `>window.intercomSettings={api_base:"https://api-iam.intercom.io",app_id:"` + id + `"};(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/` + id + `';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(document.readyState==='complete'){l();}else{w.addEventListener('load',l,false);}}})();</script>`
 		},
 		Script:  []string{"https://widget.intercom.io", "https://js.intercomcdn.com"},
 		Connect: []string{"https://*.intercom.io", "wss://*.intercom.io", "https://*.intercomcdn.com"},
@@ -184,8 +184,8 @@ var gooikeServices = []*gooikeService{
 		Detect: []string{"widget.intercom.io", "intercomsettings"}},
 	{Key: "hubspot", Name: "HubSpot Tracking", Category: "marketing", Placement: "footer", IDLabel: "Hub ID", IDExample: "12345678",
 		IDPattern: regexp.MustCompile(`^[0-9]{5,12}$`),
-		code: func(id string) string {
-			return `<script type="text/javascript" id="hs-script-loader" async defer src="https://js.hs-scripts.com/` + id + `.js"></script>`
+		code: func(id, nonce string) string {
+			return `<script` + nonce + ` type="text/javascript" id="hs-script-loader" async defer src="https://js.hs-scripts.com/` + id + `.js"></script>`
 		},
 		Script:  []string{"https://js.hs-scripts.com", "https://js.hs-analytics.net", "https://js.hs-banner.com", "https://js.hscollectedforms.net", "https://js.usemessages.com"},
 		Connect: []string{"https://*.hubspot.com", "https://*.hubapi.com", "https://*.hsforms.com", "https://*.hscollectedforms.net"},
@@ -197,8 +197,10 @@ var gooikeServices = []*gooikeService{
 		},
 		Detect: []string{"js.hs-scripts.com", "js.hs-analytics.net"}},
 	{Key: "stripe", Name: "Stripe.js", Category: "necessary", Placement: "head", NoID: true,
-		Note:    "Stripe asks for Stripe.js on every page for fraud prevention; its cookies are strictly necessary for payments. Adding it declares them and allows Stripe's hosts.",
-		code:    func(string) string { return `<script async src="https://js.stripe.com/v3/"></script>` },
+		Note: "Stripe asks for Stripe.js on every page for fraud prevention; its cookies are strictly necessary for payments. Adding it declares them and allows Stripe's hosts.",
+		code: func(_, nonce string) string {
+			return `<script` + nonce + ` async src="https://js.stripe.com/v3/"></script>`
+		},
 		Script:  []string{"https://js.stripe.com", "https://*.js.stripe.com"},
 		Connect: []string{"https://api.stripe.com", "https://m.stripe.com", "https://m.stripe.network", "https://q.stripe.com"},
 		Cookies: []gooikeCookieRow{
@@ -325,11 +327,15 @@ func (sv *gooikeService) validID(id string) bool {
 	return sv.IDPattern != nil && sv.IDPattern.MatchString(id)
 }
 
-// code is the snippet of a script entry: the generated code of a service, or the admin's own.
-func (sc gooikeScript) code() string {
+// code is the snippet of a script entry: the generated code of a service (its scripts carry the
+// CSP nonce: the code is ours and the ID is validated), or the admin's own, as typed (no nonce).
+func (sc gooikeScript) code() string { return sc.codeWith(cspNonceAttr()) }
+
+// codeWith is code with nonce as the nonce attribute of a service's scripts ("" to show the code).
+func (sc gooikeScript) codeWith(nonce string) string {
 	if sv := gooikeServiceByKey(sc.Service); sv != nil {
 		if sv.validID(sc.ServiceID) {
-			return sv.code(sc.ServiceID)
+			return sv.code(sc.ServiceID, nonce)
 		}
 		return ""
 	}

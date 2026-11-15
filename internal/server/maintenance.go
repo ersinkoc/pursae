@@ -671,13 +671,15 @@ func (s *Server) maintHeaders(w http.ResponseWriter, st maintSettings, contentTy
 	if st.NoIndex {
 		h.Set("X-Robots-Tag", "noindex, nofollow")
 	}
-	script, connect := "'self' 'unsafe-inline'", "'self'"
+	mode := s.cspMode()
+	script, connect := cspScriptSrc(mode, false), "'self'"
 	if st.Analytics != "" {
 		script += " https://www.googletagmanager.com"
 		connect += " https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com"
 	}
 	h.Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; "+
 		"script-src "+script+"; connect-src "+connect+"; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
+	cspReportOnly(h, mode, false)
 }
 
 // maintPluginAction is the Plugins screen's activate/deactivate. Deactivating opens the site again;

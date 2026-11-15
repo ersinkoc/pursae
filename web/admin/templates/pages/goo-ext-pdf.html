@@ -15,7 +15,7 @@
 <button type="submit" class="button action">Apply</button></div>
 <div class="tablenav-pages one-page"><span class="displaying-num">{{.Total}} orders</span></div><br class="clear"></div>
 <table class="wp-list-table widefat fixed striped table-view-list orders">
-<thead><tr><td class="manage-column column-cb check-column"><label class="screen-reader-text" for="cb-select-all-1">Select All</label><input id="cb-select-all-1" type="checkbox" onclick="for(const b of document.querySelectorAll('.goo-pdf-admin tbody input[type=checkbox]'))b.checked=this.checked"></td>
+<thead><tr><td class="manage-column column-cb check-column"><label class="screen-reader-text" for="cb-select-all-1">Select All</label><input id="cb-select-all-1" type="checkbox" data-check-all=".goo-pdf-admin tbody input[type=checkbox]"></td>
 <th scope="col" class="column-primary">Order</th><th scope="col">Date</th><th scope="col">Status</th><th scope="col">Total</th><th scope="col">Invoice</th><th scope="col">Documents</th></tr></thead>
 <tbody>
 {{range .Rows}}<tr>

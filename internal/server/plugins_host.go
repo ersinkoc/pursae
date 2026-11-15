@@ -829,7 +829,7 @@ func pluginScriptTag(a plugins.PluginAsset, id, where string, footer bool) strin
 	if len(a.Asset.Data) > 0 {
 		raw, err := json.Marshal(a.Asset.Data) // escapes <, > and & so the data cannot close the tag
 		if err == nil {
-			fmt.Fprintf(&sb, "<script id=\"%s-js-extra\">window.%s = %s;</script>\n", html.EscapeString(id), pluginDataVar(a.Asset.Handle), raw)
+			fmt.Fprintf(&sb, "<script%s id=\"%s-js-extra\">window.%s = %s;</script>\n", cspNonceAttr(), html.EscapeString(id), pluginDataVar(a.Asset.Handle), raw)
 		}
 	}
 	attrs := ""
@@ -844,7 +844,7 @@ func pluginScriptTag(a plugins.PluginAsset, id, where string, footer bool) strin
 	case a.Asset.Strategy == "defer", a.Asset.Strategy == "" && where == "front" && !footer:
 		attrs = " defer"
 	}
-	fmt.Fprintf(&sb, "<script src=\"%s\" id=\"%s-js\"%s></script>\n", html.EscapeString(pluginAssetURL(a.Plugin, a.Asset.Src, a.Version)), html.EscapeString(id), attrs)
+	fmt.Fprintf(&sb, "<script%s src=\"%s\" id=\"%s-js\"%s></script>\n", cspNonceAttr(), html.EscapeString(pluginAssetURL(a.Plugin, a.Asset.Src, a.Version)), html.EscapeString(id), attrs)
 	return sb.String()
 }
 

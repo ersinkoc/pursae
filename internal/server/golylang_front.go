@@ -307,7 +307,7 @@ func (s *Server) pllSwitcherHTML(c *gin.Context, q *siteQuery, a pllSwitcherArgs
 			fmt.Fprintf(&b, `<option value="%s" lang="%s"%s>%s</option>`, html.EscapeString(it.URL), html.EscapeString(it.Lang.W3C()),
 				map[bool]string{true: ` selected="selected"`}[it.Current], html.EscapeString(label))
 		}
-		fmt.Fprintf(&b, `</select><script>document.getElementById(%s).addEventListener('change',function(){location.href=this.value;});</script>`, strconvQuote(id))
+		fmt.Fprintf(&b, `</select><script%s>document.getElementById(%s).addEventListener('change',function(){location.href=this.value;});</script>`, cspNonceAttr(), strconvQuote(id))
 		return b.String()
 	}
 	for _, it := range items {

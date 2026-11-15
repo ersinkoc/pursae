@@ -188,7 +188,7 @@
 </div>
 </form>
 </div>
-<script>document.getElementById('acf-advanced-toggle').addEventListener('change', function () { document.querySelector('.acf-advanced-settings').style.display = this.checked ? '' : 'none'; });</script>
+<script {{cspNonce}}>document.getElementById('acf-advanced-toggle').addEventListener('change', function () { document.querySelector('.acf-advanced-settings').style.display = this.checked ? '' : 'none'; });</script>
 {{end}}{{template "admin-footer" .}}{{end}}
 
 {{define "admin/acfgo-tools"}}{{template "admin-header" .}}{{template "acfgo-header" .}}{{with .Data}}
@@ -200,7 +200,7 @@
 <form method="post" action="/wp-admin/acf-tools">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="tool" value="export" />
 <p>Select the items you would like to export and then select your export method. Export As JSON to export to a .json file which you can then import to another ACF or Pursae Custom Fields installation.</p>
-<p><label><input type="checkbox" class="acf-toggle-all" onclick="var c=this.checked;document.querySelectorAll('.acf-export-item').forEach(function(i){i.checked=c})" /> <strong>Toggle All</strong></label></p>
+<p><label><input type="checkbox" class="acf-toggle-all" data-check-all=".acf-export-item" /> <strong>Toggle All</strong></label></p>
 <h4>Field Groups</h4>
 <ul class="acf-checkbox-list">{{range .Groups}}<li><label><input type="checkbox" class="acf-export-item" name="keys[]" value="{{.Key}}" /> {{.Title}}</label></li>{{else}}<li>No field groups.</li>{{end}}</ul>
 {{if .Items}}<h4>Post Types, Taxonomies and Options Pages</h4>

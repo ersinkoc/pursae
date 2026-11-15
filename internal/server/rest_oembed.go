@@ -98,6 +98,7 @@ func (s *Server) embedHTML(c *gin.Context, p *store.Post, width, height int) str
 	out += fmt.Sprintf(`<iframe sandbox="allow-scripts" security="restricted" style="position: absolute; visibility: hidden;" src="%s#?secret=%s" data-secret="%s" width="%d" height="%d" title="%s" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" class="wp-embedded-content"></iframe>`,
 		html.EscapeString(s.embedURL(c, p)), secret, secret, width, height, "&#8220;"+title+"&#8221; &#8212; "+html.EscapeString(s.settings.String("blogname")))
 	if js := s.webFile("wp-includes/js/wp-embed.min.js"); js != "" {
+		// No nonce: this markup is the oEmbed payload that other sites paste into their pages.
 		out += `<script type="text/javascript">` + strings.ReplaceAll(js, "</script>", "") + `</script>`
 	}
 	return out
@@ -256,7 +257,7 @@ func (s *Server) embedPage(c *gin.Context, p *store.Post) string {
 			html.EscapeString(lb.Permalink(p)), html.EscapeString(s.embedHTML(c, p, oembedDefaultWidth, 338)))
 	}
 	if js := s.webFile("wp-includes/js/wp-embed-template.min.js"); js != "" {
-		sb.WriteString("<script type=\"text/javascript\">\n" + strings.ReplaceAll(js, "</script>", "") + "\n</script>\n")
+		sb.WriteString("<script" + cspNonceAttr() + " type=\"text/javascript\">\n" + strings.ReplaceAll(js, "</script>", "") + "\n</script>\n")
 	}
 	sb.WriteString("</body>\n</html>\n")
 	return sb.String()

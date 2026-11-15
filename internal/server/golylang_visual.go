@@ -521,7 +521,7 @@ func (s *Server) pllVisualRender(c *gin.Context, page []byte, l *pllLanguage) []
 	js = bytes.ReplaceAll(js, []byte(" "), []byte(` `))
 	inject := `<script type="application/json" id="pll-visual-data">` + string(js) + "</script>\n" +
 		`<link rel="stylesheet" id="pll-visual-css" href="/wp-includes/css/pll-visual.css?ver=` + Version + `" media="all" />` + "\n" +
-		`<script src="/wp-includes/js/pll-visual.js?ver=` + Version + `" id="pll-visual-js"></script>` + "\n"
+		`<script` + cspNonceAttr() + ` src="/wp-includes/js/pll-visual.js?ver=` + Version + `" id="pll-visual-js"></script>` + "\n"
 	if i := bytes.LastIndex(out, []byte("</body>")); i >= 0 {
 		var b bytes.Buffer
 		b.Grow(len(out) + len(inject))

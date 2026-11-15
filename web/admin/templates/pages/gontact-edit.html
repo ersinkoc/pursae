@@ -23,11 +23,11 @@
 		<div class="inside">
 		{{if .Shortcode}}<p class="description">
 			<label for="wpcf7-shortcode">Copy this shortcode and paste it into your post, page, or text widget content:</label>
-			<span class="shortcode wp-ui-highlight"><input type="text" id="wpcf7-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code selectable" value="{{.Shortcode}}" /></span>
+			<span class="shortcode wp-ui-highlight"><input type="text" id="wpcf7-shortcode" data-select-on-focus readonly="readonly" class="large-text code selectable" value="{{.Shortcode}}" /></span>
 		</p>
 		<p class="description">
 			<label for="wpcf7-shortcode-old">You can also use this old-style shortcode:</label>
-			<span class="shortcode old"><input type="text" id="wpcf7-shortcode-old" onfocus="this.select();" readonly="readonly" class="large-text code selectable" value="{{.OldShortcode}}" /></span>
+			<span class="shortcode old"><input type="text" id="wpcf7-shortcode-old" data-select-on-focus readonly="readonly" class="large-text code selectable" value="{{.OldShortcode}}" /></span>
 		</p>{{end}}
 		</div>
 	</div>
@@ -46,7 +46,7 @@
 				<div class="misc-pub-section"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span> {{if .WarningCount}}{{.WarningCount}} configuration error(s){{else}}No configuration errors detected.{{end}}</div>
 			</div>
 			<div id="major-publishing-actions">
-				{{if not .New}}<div id="delete-action"><a class="submitdelete deletion" href="{{.DeleteURL}}" onclick="return confirm('You are about to delete this contact form.\n  \'Cancel\' to stop, \'OK\' to delete.');">Delete</a></div>{{end}}
+				{{if not .New}}<div id="delete-action"><a class="submitdelete deletion" href="{{.DeleteURL}}" data-confirm="You are about to delete this contact form.&#10;  'Cancel' to stop, 'OK' to delete.">Delete</a></div>{{end}}
 				<div id="publishing-action"><span class="spinner"></span><input type="submit" name="wpcf7-save" class="button-primary" value="Save" /></div>
 				<div class="clear"></div>
 			</div>
@@ -118,7 +118,7 @@
 <p class="submit"><input type="submit" class="button-primary" name="wpcf7-save" value="Save" /></p>
 </form>
 </div>
-<script src="/wp-content/gontact-form/admin.js?ver=6.2.3" defer></script>
+<script {{cspNonce}} src="/wp-content/gontact-form/admin.js?ver=6.2.3" defer></script>
 {{end}}{{template "admin-footer" .}}{{end}}
 
 {{define "gontact-mail-box"}}{{$id := .ID}}{{with .M}}<div class="contact-form-editor-box-mail" id="{{$id}}">

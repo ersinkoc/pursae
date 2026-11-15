@@ -29,7 +29,7 @@
 	</div>
 	{{end}}
 </fieldset>
-<script>
+<script {{cspNonce}}>
 ( function() {
 	// Preview the scheme while choosing; it is saved with the profile (user-profile.js also saves it over ajax).
 	var picker = document.getElementById( 'color-picker' ), link = document.getElementById( 'colors-css' );
@@ -69,7 +69,7 @@
 <td><select name="role" id="role">{{range .Roles}}<option value="{{.Slug}}"{{if .Primary}} selected="selected"{{end}}>{{.Name}}</option>{{end}}<option value="">&mdash; No role for this site &mdash;</option></select></td></tr>
 <tr class="user-extra-roles-wrap"><th>Additional Roles</th>
 <td><fieldset id="wpgo-extra-roles"><legend class="screen-reader-text">Additional roles</legend>{{range .Roles}}<label for="extra-role-{{.Slug}}" style="display:inline-flex;align-items:center;gap:6px;margin:0 20px 6px 0;white-space:nowrap"><input type="checkbox" id="extra-role-{{.Slug}}" name="extra_roles[]" value="{{.Slug}}" style="margin:0"{{if or .Extra .Primary}} checked{{end}}{{if .Primary}} disabled{{end}} /> <span>{{.Name}}</span><span class="description wpgo-primary-tag"{{if not .Primary}} hidden{{end}}>(primary)</span></label>{{end}}</fieldset>
-<script>
+<script {{cspNonce}}>
 ( function() {
 	var role = document.getElementById( 'role' ), boxes = document.querySelectorAll( '#wpgo-extra-roles input' );
 	if ( ! role ) { return; }
@@ -271,7 +271,7 @@
 	{{end}}</tbody>
 	</table>
 	{{if .Narrow}}<p class="description scopes-summary">Scopes only narrow what the user can already do.</p>{{else}}<p class="description scopes-summary"><span class="scopes-state">Nothing ticked: full access (all of this user&#8217;s permissions).</span> Scopes only narrow what the user can already do.</p>{{end}}
-	<script>
+	<script {{cspNonce}}>
 	(function(fs){
 		if(!fs)return;
 		var all=fs.querySelector('.scopes-toggle-all'),boxes=fs.querySelectorAll('tbody input[type=checkbox]'),state=fs.querySelector('.scopes-state');

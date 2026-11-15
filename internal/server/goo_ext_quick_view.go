@@ -216,7 +216,7 @@ func gooQVFooter(s *Server, c *gin.Context) template.HTML {
 		`<div class="goo-quick-view-overlay" data-goo-qv-close></div>` +
 		`<div class="goo-quick-view-dialog" role="document"><button type="button" class="goo-quick-view-close" data-goo-qv-close aria-label="Close quick view">&times;</button>` +
 		`<div class="goo-quick-view-content" aria-live="polite"></div></div></div>` +
-		`<script src="` + gooAssets + `/js/ext-quick-view.js?ver=` + gooAssetVer() + `" id="goo-ext-quick-view-js" defer></script>`)
+		`<script` + cspNonceAttr() + ` src="` + gooAssets + `/js/ext-quick-view.js?ver=` + gooAssetVer() + `" id="goo-ext-quick-view-js" defer></script>`)
 }
 
 // gooQVRoute serves /?goo-ajax=quick_view&product_id=: the product summary HTML.

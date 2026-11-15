@@ -108,12 +108,13 @@ func bkBookingForm(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 		}
 	}
 	b.WriteString(`<div class="wc-bookings-booking-cost" style="display:none"></div></div>`)
-	b.WriteString(bkFormJS)
+	b.WriteString("<script" + cspNonceAttr() + ">" + bkFormJS + "</script>")
 	return template.HTML(b.String())
 }
 
-// bkFormJS draws the month calendar, loads the time slots and the cost (/?goo-ajax=booking_slots).
-const bkFormJS = `<script>(function(){var f=document.currentScript.previousElementSibling;if(!f||f.dataset.bkInit)return;f.dataset.bkInit=1;
+// bkFormJS draws the month calendar, loads the time slots and the cost (/?goo-ajax=booking_slots); it is
+// printed in a nonced <script> right after the form fields.
+const bkFormJS = `(function(){var f=document.currentScript.previousElementSibling;if(!f||f.dataset.bkInit)return;f.dataset.bkInit=1;
 var form=f.closest('form')||f,input=f.querySelector('input[name=wc_bookings_field_start_date]'),cal=f.querySelector('.wc-bookings-calendar'),
 slots=f.querySelector('.block-picker'),time=f.querySelector('input[name=wc_bookings_field_start_date_time]'),cost=f.querySelector('.wc-bookings-booking-cost'),
 btn=form.querySelector('.single_add_to_cart_button'),fd=+f.dataset.firstDay,view=new Date(),names=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -136,7 +137,7 @@ function load(){if(!input.value)return;fetch(f.dataset.ajax+'?'+q().toString(),{
 if(slots){if(!r.slots||!r.slots.length){slots.innerHTML='<li>No blocks available on this date.</li>'}else{slots.innerHTML=r.slots.map(function(s){return '<li class="block"><a href="#" data-value="'+s.time+'"'+(time.value===s.time?' class="selected"':'')+'>'+s.label+(r.remaining?' <small class="booking-spaces-left">('+s.available+' left)</small>':'')+'</a></li>'}).join('')}}
 cost.style.display='block';cost.innerHTML=r.error?'<span class="booking-error">'+r.error+'</span>':(r.cost_html?'Booking cost: <strong>'+r.cost_html+'</strong>':'');if(btn)btn.disabled=!!r.error||(time&&!time.value)})}
 if(slots)slots.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;e.preventDefault();time.value=a.dataset.value;load()});
-input.addEventListener('change',function(){if(time)time.value='';draw();load()});f.addEventListener('change',function(e){if(e.target.name==='wc_bookings_field_resource'){busy={};draw()}if(e.target!==input)load()});draw()})();</script>`
+input.addEventListener('change',function(){if(time)time.value='';draw();load()});f.addEventListener('change',function(e){if(e.target.name==='wc_bookings_field_resource'){busy={};draw()}if(e.target!==input)load()});draw()})();`
 
 // bkFrontRoute serves /?goo-ajax=booking_slots and the customer's booking cancellation.
 func bkFrontRoute(s *Server, c *gin.Context, path string) bool {

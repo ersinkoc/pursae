@@ -87,7 +87,7 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		stop := "/wp-admin/upload?mode=list&action=regenerate-stop&_wpnonce=" + s.nonce(c, "bulk-media")
 		msg := fmt.Sprintf(`<span id="regenerate-status">Regenerating thumbnails: <strong>%d%%</strong> (%d of %d images, %d failed).</span> `+
 			`<progress id="regenerate-bar" max="100" value="%d" style="vertical-align:middle;width:200px"></progress> <a id="regenerate-stop" class="button button-small" href="%s">Stop</a>`+
-			`<script>(function(){var s=document.getElementById("regenerate-status"),b=document.getElementById("regenerate-bar"),x=document.getElementById("regenerate-stop");`+
+			`<script`+cspNonceAttr()+`>(function(){var s=document.getElementById("regenerate-status"),b=document.getElementById("regenerate-bar"),x=document.getElementById("regenerate-stop");`+
 			`function tick(){fetch("/wp-admin/admin-ajax?action=regenerate-progress",{credentials:"same-origin"}).then(function(r){return r.json()}).then(function(j){`+
 			`var n=j.done+j.skipped+j.failed;b.value=j.percent;`+
 			`if(j.running){s.innerHTML="Regenerating thumbnails: <strong>"+j.percent+"%%</strong> ("+n+" of "+j.total+" images, "+j.failed+" failed).";setTimeout(tick,2000)}`+

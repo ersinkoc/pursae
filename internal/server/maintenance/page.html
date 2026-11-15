@@ -166,7 +166,7 @@ h1{font-size:clamp(2rem,5.2vw,3.4rem);line-height:1.12;font-weight:300;letter-sp
 		<button class="mtnc-btn" type="submit">{{.S.PasswordButtonT}}</button>
 	</form>
 </div>
-{{end}}<script>
+{{end}}<script {{cspNonce}}>
 (function(){
 	document.querySelectorAll('.mtnc-side button').forEach(function(b){
 		b.addEventListener('click',function(){

@@ -905,7 +905,7 @@ func (s *Server) pllCookieScript(c *gin.Context) string {
 	if r == nil || !r.cookieScript || r.Lang == nil {
 		return ""
 	}
-	return `<script id="pll-cookie-js">(function(){var d=new Date();d.setTime(d.getTime()+31536000000);document.cookie="` +
+	return `<script` + cspNonceAttr() + ` id="pll-cookie-js">(function(){var d=new Date();d.setTime(d.getTime()+31536000000);document.cookie="` +
 		pllCookie + `=` + url.QueryEscape(r.Lang.Slug) + `; expires="+d.toUTCString()+"; path=/; SameSite=Lax"+("https:"===location.protocol?"; secure":"");}());</script>` + "\n"
 }
 

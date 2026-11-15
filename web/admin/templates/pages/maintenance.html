@@ -96,8 +96,8 @@
 	<label>Position <select name="background_position">{{range $v := list "center center" "top center" "bottom center" "center left" "center right"}}<option value="{{$v}}"{{if eq $v $.Data.S.BgPosition}} selected{{end}}>{{$v}}</option>{{end}}</select></label></p>
 	<p class="description">Used when the type is Image (and by the Split theme's panel).</p></td></tr>
 <tr><th scope="row"><label for="background_color">Background Color</label></th><td><input type="color" id="background_color" name="background_color" value="{{.S.BgColor}}"> <label>Second color (gradient, Split panel) <input type="color" name="background_color_2" value="{{.S.BgColor2}}"></label></td></tr>
-<tr><th scope="row"><label for="background_blur">Blur</label></th><td><input type="range" id="background_blur" name="background_blur" min="0" max="40" value="{{.S.BgBlur}}" oninput="this.nextElementSibling.value=this.value+' px'"> <output>{{.S.BgBlur}} px</output></td></tr>
-<tr><th scope="row"><label for="overlay_opacity">Dark Overlay</label></th><td><input type="range" id="overlay_opacity" name="overlay_opacity" min="0" max="90" value="{{.S.Overlay}}" oninput="this.nextElementSibling.value=this.value+' %'"> <output>{{.S.Overlay}} %</output><p class="description">Darkens a photo so the text stays readable.</p></td></tr>
+<tr><th scope="row"><label for="background_blur">Blur</label></th><td><input type="range" id="background_blur" name="background_blur" min="0" max="40" value="{{.S.BgBlur}}" data-live-output=" px"> <output>{{.S.BgBlur}} px</output></td></tr>
+<tr><th scope="row"><label for="overlay_opacity">Dark Overlay</label></th><td><input type="range" id="overlay_opacity" name="overlay_opacity" min="0" max="90" value="{{.S.Overlay}}" data-live-output=" %"> <output>{{.S.Overlay}} %</output><p class="description">Darkens a photo so the text stays readable.</p></td></tr>
 </table>
 <h2 class="title">Layout &amp; Typography</h2>
 <table class="form-table" role="presentation">
@@ -210,7 +210,7 @@
 </table>
 <p class="submit"><input type="submit" class="button button-primary" value="Save Changes"></p>
 </form>
-<script>document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){navigator.clipboard&&navigator.clipboard.writeText(b.getAttribute('data-copy')).then(function(){b.lastChild.textContent=' Copied';});});});</script>
+<script {{cspNonce}}>document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){navigator.clipboard&&navigator.clipboard.writeText(b.getAttribute('data-copy')).then(function(){b.lastChild.textContent=' Copied';});});});</script>
 {{end}}
 
 {{if eq .Tab "advanced"}}
@@ -233,7 +233,7 @@
 </form>
 <h2 class="title">Reset</h2>
 <p>Restore every setting to its default. Maintenance mode stays as it is.</p>
-<p><a class="button button-link-delete" href="/wp-admin/admin?page=maintenance&amp;action=reset&amp;_wpnonce={{.Nonce}}" onclick="return confirm('Reset all Maintenance settings to their defaults?')">Reset Settings</a></p>
+<p><a class="button button-link-delete" href="/wp-admin/admin?page=maintenance&amp;action=reset&amp;_wpnonce={{.Nonce}}" data-confirm="Reset all Maintenance settings to their defaults?">Reset Settings</a></p>
 {{end}}
 
 {{if eq .Tab "subscribers"}}
@@ -260,7 +260,7 @@
 <tr><th scope="row"><label for="notify_subject_now">Subject</label></th><td><input type="text" id="notify_subject_now" name="notify_subject" class="large-text" value="{{.S.NotifySubject}}"></td></tr>
 <tr><th scope="row"><label for="notify_body_now">Message</label></th><td><textarea id="notify_body_now" name="notify_body" class="large-text" rows="5">{{.S.NotifyBody}}</textarea><p class="description">Sent once to every confirmed subscriber that has not been notified yet, through the mail queue.</p></td></tr>
 </table>
-<p class="submit"><input type="submit" class="button button-primary" value="Send to subscribers" onclick="return confirm('Queue this e-mail for all confirmed subscribers?')"></p>
+<p class="submit"><input type="submit" class="button button-primary" value="Send to subscribers" data-confirm="Queue this e-mail for all confirmed subscribers?"></p>
 </form>
 {{end}}
 </div>

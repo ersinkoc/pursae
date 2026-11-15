@@ -102,9 +102,12 @@
 		var s = doc.createElement('script');
 		for (var i = 0; i < old.attributes.length; i++) {
 			var a = old.attributes[i];
-			if (a.name === 'type' || a.name.indexOf('data-gooike-') === 0) { continue; }
+			if (a.name === 'type' || a.name === 'nonce' || a.name.indexOf('data-gooike-') === 0) { continue; }
 			s.setAttribute(a.name, a.value);
 		}
+		// The element's own nonce (browsers hide the attribute's value once a CSP is in force): a
+		// script the server did not mark as trusted stays untrusted.
+		if (old.nonce) { s.nonce = old.nonce; }
 		var type = old.getAttribute('data-gooike-type');
 		if (type) { s.type = type; }
 		var src = old.getAttribute('data-gooike-src');

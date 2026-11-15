@@ -142,7 +142,7 @@
 <tr><th scope="row"><label for="gk-primary-text">Button text</label></th><td><input type="color" id="gk-primary-text" name="primary_text" value="{{.S.Design.PrimaryText}}"> <code>{{.S.Design.PrimaryText}}</code></td></tr>
 <tr><th scope="row"><label for="gk-font">Font</label></th><td><select id="gk-font" name="font">{{range .Fonts}}<option value="{{.Key}}"{{if eq .Key $.Data.S.Design.Font}} selected{{end}}>{{.Label}}</option>{{end}}</select></td></tr>
 <tr><th scope="row"><label for="gk-size">Font size</label></th><td><input type="number" id="gk-size" name="font_size" class="small-text" min="11" max="22" value="{{.S.Design.FontSize}}"> px</td></tr>
-<tr><th scope="row"><label for="gk-radius">Corner radius</label></th><td><input type="range" id="gk-radius" name="radius" min="0" max="40" value="{{if gt .S.Design.Radius 40}}40{{else}}{{.S.Design.Radius}}{{end}}" oninput="this.nextElementSibling.textContent=this.value+'px'"> <span>{{.S.Design.Radius}}px</span></td></tr>
+<tr><th scope="row"><label for="gk-radius">Corner radius</label></th><td><input type="range" id="gk-radius" name="radius" min="0" max="40" value="{{if gt .S.Design.Radius 40}}40{{else}}{{.S.Design.Radius}}{{end}}" data-live-output="px"> <span>{{.S.Design.Radius}}px</span></td></tr>
 <tr><th scope="row">Floating button</th><td><label><input type="checkbox" name="floating" value="1"{{if .S.Design.Floating}} checked{{end}}> Show a cookie button to reopen the preferences</label><br>
 	<label><input type="radio" name="float_position" value="left"{{if ne .S.Design.FloatPosition "right"}} checked{{end}}> Left</label> <label><input type="radio" name="float_position" value="right"{{if eq .S.Design.FloatPosition "right"}} checked{{end}}> Right</label>
 	<p class="description">Withdrawing consent must be as easy as giving it: keep this on, or put <code>[gooike_preferences]</code> in the footer.</p></td></tr>
@@ -159,7 +159,7 @@
 	<div class="gk-preview-stage"><iframe id="gk-preview-frame" src="{{.PreviewBase}}" title="Banner preview"></iframe></div>
 </div>
 </div>
-<script>
+<script {{cspNonce}}>
 (function(){
 	var form=document.getElementById('gk-design-form'),frame=document.getElementById('gk-preview-frame'),box=document.getElementById('gk-preview'),open='banner',t;
 	function url(){var p=new URLSearchParams(new FormData(form));['_wpnonce','page','tab','do'].forEach(function(k){p.delete(k);});p.set('form','1');p.set('open',open);return {{.PreviewBase}}+'&'+p.toString();}
@@ -173,7 +173,7 @@
 </script>
 {{end}}
 {{if eq .Tab "texts"}}
-<form method="post" action="/wp-admin/gooike" id="gk-preset" onsubmit="return confirm('Replace every text with this language set?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts_preset">
+<form method="post" action="/wp-admin/gooike" id="gk-preset" data-confirm="Replace every text with this language set?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts_preset">
 <p><label for="gk-preset-lang">Fill all texts from a ready-made language set:</label> <select id="gk-preset-lang" name="preset">{{range .TextPresets}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select> <button type="submit" class="button">Apply language set</button></p></form>
 <form method="post" action="/wp-admin/gooike">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts">
@@ -186,7 +186,7 @@
 </table>
 <p class="submit"><button type="submit" class="button button-primary">Save Texts</button></p>
 </form>
-<form method="post" action="/wp-admin/gooike" onsubmit="return confirm('Reset every text to the default?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts_reset"><button type="submit" class="button">Reset to defaults</button></form>
+<form method="post" action="/wp-admin/gooike" data-confirm="Reset every text to the default?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="banner"><input type="hidden" name="tab" value="texts"><input type="hidden" name="do" value="texts_reset"><button type="submit" class="button">Reset to defaults</button></form>
 {{end}}
 {{end}}
 
@@ -203,7 +203,7 @@
 <thead><tr><th scope="col" style="width:16%">Category</th><th scope="col" style="width:12%">Key</th><th scope="col">Description</th><th scope="col" style="width:22%">Consent Mode</th><th scope="col" style="width:8%">Cookies</th><th scope="col" style="width:9%">Shown</th></tr></thead>
 <tbody>{{range .S.Categories}}<tr>
 	<td><strong><a href="/wp-admin/gooike?page=categories&amp;edit={{.Key}}#gk-cat-form">{{.Label}}</a></strong>{{if not .Builtin}} <span class="gk-badge gray">custom</span>{{end}}
-	<div class="row-actions"><span class="edit"><a href="/wp-admin/gooike?page=categories&amp;edit={{.Key}}#gk-cat-form">Edit</a></span>{{if not .Builtin}} | <span class="delete"><form method="post" action="/wp-admin/gooike" class="gk-inline-form" onsubmit="return confirm('Delete this category?')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="page" value="categories"><input type="hidden" name="do" value="category_delete"><input type="hidden" name="key" value="{{.Key}}"><button type="submit" class="button-link button-link-delete">Delete</button></form></span>{{end}}</div></td>
+	<div class="row-actions"><span class="edit"><a href="/wp-admin/gooike?page=categories&amp;edit={{.Key}}#gk-cat-form">Edit</a></span>{{if not .Builtin}} | <span class="delete"><form method="post" action="/wp-admin/gooike" class="gk-inline-form" data-confirm="Delete this category?"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="page" value="categories"><input type="hidden" name="do" value="category_delete"><input type="hidden" name="key" value="{{.Key}}"><button type="submit" class="button-link button-link-delete">Delete</button></form></span>{{end}}</div></td>
 	<td><code>{{.Key}}</code></td><td>{{.Description}}</td>
 	<td class="gk-cats">{{range .Signals}}<code>{{.}}</code>{{else}}&mdash;{{end}}</td>
 	<td>{{$.Data.CookieCount .Key}}</td>
@@ -228,11 +228,11 @@
 <p class="gk-subtitle">The cookie declaration shown in the preferences and by <code>[gooike_cookie_table]</code>. Names ending in <code>*</code> match a prefix. When consent is withdrawn, Pursae Cookie deletes the declared cookies of that category.</p>
 <form method="post" action="/wp-admin/gooike" id="gk-cookies-bulk"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="categories"><input type="hidden" name="tab" value="cookies"><input type="hidden" name="do" value="cookie_delete">
 <table class="wp-list-table widefat fixed striped">
-<thead><tr><td class="manage-column column-cb check-column"><input type="checkbox" aria-label="Select all" onclick="document.querySelectorAll('#gk-cookies-bulk tbody input[type=checkbox]').forEach(function(x){x.checked=this.checked}.bind(this))"></td><th scope="col" style="width:18%">Name</th><th scope="col" style="width:14%">Provider</th><th scope="col" style="width:12%">Category</th><th scope="col">Purpose</th><th scope="col" style="width:12%">Duration</th></tr></thead>
+<thead><tr><td class="manage-column column-cb check-column"><input type="checkbox" aria-label="Select all" data-check-all="#gk-cookies-bulk tbody input[type=checkbox]"></td><th scope="col" style="width:18%">Name</th><th scope="col" style="width:14%">Provider</th><th scope="col" style="width:12%">Category</th><th scope="col">Purpose</th><th scope="col" style="width:12%">Duration</th></tr></thead>
 <tbody>{{range .S.Cookies}}<tr><th scope="row" class="check-column"><input type="checkbox" name="ids[]" value="{{.ID}}" aria-label="Select {{.Name}}"></th>
 	<td><strong><code>{{.Name}}</code></strong><div class="row-actions"><span class="edit"><a href="/wp-admin/gooike?page=categories&amp;tab=cookies&amp;cookie={{.ID}}#gk-cookie-form">Edit</a></span></div></td>
 	<td>{{.Provider}}</td><td>{{$.Data.CatLabel .Category}}</td><td>{{.Purpose}}</td><td>{{.Duration}}</td></tr>{{else}}<tr><td colspan="6">No cookies declared yet. Run the scanner or add them below.</td></tr>{{end}}</tbody></table>
-<p><button type="submit" class="button" onclick="return confirm('Delete the selected cookies from the declaration?')">Delete Selected</button></p>
+<p><button type="submit" class="button" data-confirm="Delete the selected cookies from the declaration?">Delete Selected</button></p>
 </form>
 {{with .EditCookie}}
 <h2 id="gk-cookie-form">{{if .ID}}Edit Cookie{{else}}Add Cookie{{end}}</h2>
@@ -294,7 +294,7 @@
 	<td><strong><a href="/wp-admin/gooike?page=scripts&amp;edit={{.ID}}#gk-script-form">{{.Name}}</a></strong>
 	<div class="row-actions"><span class="edit"><a href="/wp-admin/gooike?page=scripts&amp;edit={{.ID}}#gk-script-form">Edit</a></span> |
 	<span><form method="post" action="/wp-admin/gooike" class="gk-inline-form"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="page" value="scripts"><input type="hidden" name="do" value="script_toggle"><input type="hidden" name="id" value="{{.ID}}"><button type="submit" class="button-link">{{if .Enabled}}Disable{{else}}Enable{{end}}</button></form></span> |
-	<span class="delete"><form method="post" action="/wp-admin/gooike" class="gk-inline-form" onsubmit="return confirm('Delete this script?')"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="page" value="scripts"><input type="hidden" name="do" value="script_delete"><input type="hidden" name="id" value="{{.ID}}"><button type="submit" class="button-link button-link-delete">Delete</button></form></span></div></td>
+	<span class="delete"><form method="post" action="/wp-admin/gooike" class="gk-inline-form" data-confirm="Delete this script?"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="page" value="scripts"><input type="hidden" name="do" value="script_delete"><input type="hidden" name="id" value="{{.ID}}"><button type="submit" class="button-link button-link-delete">Delete</button></form></span></div></td>
 	<td>{{$.Data.ServiceName .Service}}{{if .ServiceID}} <code>{{.ServiceID}}</code>{{end}}</td>
 	<td>{{$.Data.CatLabel .Category}}</td>
 	<td>{{if eq .Placement "head"}}&lt;head&gt;{{else if eq .Placement "body"}}After &lt;body&gt;{{else}}Footer{{end}}</td>
@@ -453,7 +453,7 @@
 <p class="submit"><button type="submit" class="button button-primary">Save Changes</button></p>
 </form>
 <form method="post" action="/wp-admin/gooike" id="gk-policy"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="policy_pages"></form>
-<form method="post" action="/wp-admin/gooike" id="gk-bump" onsubmit="return confirm('Ask every visitor for consent again?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="bump_version"></form>
+<form method="post" action="/wp-admin/gooike" id="gk-bump" data-confirm="Ask every visitor for consent again?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="settings"><input type="hidden" name="do" value="bump_version"></form>
 {{end}}
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

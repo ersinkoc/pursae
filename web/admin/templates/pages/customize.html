@@ -29,12 +29,13 @@
 #customize-controls .wpgo-error { color: #d63638; }
 #customize-preview iframe.wpgo-loading { visibility: hidden; }
 </style>
-<script>var ajaxurl = '/wp-admin/admin-ajax', pagenow = 'customize', typenow = '', adminpage = 'customize-php', isRtl = 0;</script>
+<script {{cspNonce}} src="/wp-admin/assets/js/csp-actions.js?ver={{version}}"></script>
+<script {{cspNonce}}>var ajaxurl = '/wp-admin/admin-ajax', pagenow = 'customize', typenow = '', adminpage = 'customize-php', isRtl = 0;</script>
 {{.HeadScripts}}</head>
 <body class="wp-core-ui wp-customizer js admin-color-modern">
 <div class="wp-full-overlay expanded preview-desktop" aria-labelledby="customizer-title">
 <h1 class="screen-reader-text" id="customizer-title">Customize</h1>
-<form id="customize-controls" class="wrap wp-full-overlay-sidebar" onsubmit="return false;">
+<form id="customize-controls" class="wrap wp-full-overlay-sidebar" data-no-submit>
 	<div id="customize-header-actions" class="wp-full-overlay-header">
 		<div id="customize-save-button-wrapper" class="customize-save-button-wrapper">
 			<input type="submit" name="save" id="save" class="button button-primary save has-next-sibling" value="Published" disabled>
@@ -202,8 +203,8 @@
 </form>
 <div id="customize-preview" class="wp-full-overlay-main iframe-ready"></div>
 </div>
-{{.BodyHTML}}{{.FooterScripts}}{{range .ThemeScripts}}<script src="{{.}}"></script>
-{{end}}<script>
+{{.BodyHTML}}{{.FooterScripts}}{{range .ThemeScripts}}<script {{cspNonce}} src="{{.}}"></script>
+{{end}}<script {{cspNonce}}>
 var wpgoCustomize = ( function( $ ) {
 	var settings = {{json .Values}},
 		saved = $.extend( {}, {{json .Saved}} || settings ),

@@ -2,6 +2,7 @@ package server
 
 import (
 	"hash/fnv"
+	"html"
 	"io/fs"
 	"net/http"
 	"regexp"
@@ -22,14 +23,15 @@ import (
 // prompt().
 
 // adminJSSources are the scripts whose string literals are UI text; templates contribute the
-// literals of their inline scripts and event handler attributes.
+// literals of their inline scripts and event handler attributes, and the messages of their
+// data-confirm attributes (csp-actions.js passes them to confirm(), which wpgo-l10n.js translates).
 var adminJSSources = []string{"admin/assets/js/*.js", "admin/assets/acfgo/*.js", "admin/assets/gontact/*.js",
 	"goocommerce/assets/js/admin/*.js", "wp-admin/js/seogo-*.js", "admin/templates/*.html", "admin/templates/*/*.html", "admin/assets/headlessgo/*.js"}
 
 var (
 	adminJSStringsOnce sync.Once
 	adminJSStringsList []string
-	inlineScriptRe     = regexp.MustCompile(`(?s)<script\b[^>]*>(.*?)</script>|\bon[a-z]+="([^"]*)"`)
+	inlineScriptRe     = regexp.MustCompile(`(?s)<script\b[^>]*>(.*?)</script>|\bon[a-z]+="([^"]*)"|\bdata-confirm="([^"]*)"`)
 	adminL10nCache     sync.Map // *i18n.Catalog -> *adminL10n
 	jsPlaceholder      = regexp.MustCompile(`\{[a-z_]+\}`)
 )
@@ -64,6 +66,11 @@ func (s *Server) adminJSStrings() []string {
 					var inline strings.Builder
 					for _, m := range inlineScriptRe.FindAllStringSubmatch(src, -1) {
 						inline.WriteString(m[1] + "\n" + strings.ReplaceAll(m[2], "&#39;", "'") + "\n")
+						if m[3] != "" { // plain text: made a string literal
+							// A data-confirm message can hold a newline (&#10;): keep it escaped so the literal is
+							// still one JS string, as it was in the onclick="return confirm('…\n…')" it replaced.
+							inline.WriteString(`"` + strings.ReplaceAll(strings.ReplaceAll(html.UnescapeString(m[3]), `"`, `\"`), "\n", `\n`) + "\"\n")
+						}
 					}
 					src = inline.String()
 				}
@@ -113,7 +120,7 @@ func (s *Server) adminL10nTag(cat *i18n.Catalog) string {
 	if l.js == "" {
 		return ""
 	}
-	return `<script src="/wp-admin/wpgo-l10n.js?ver=` + l.ver + `"></script>`
+	return `<script` + cspNonceAttr() + ` src="/wp-admin/wpgo-l10n.js?ver=` + html.EscapeString(l.ver) + `"></script>`
 }
 
 // adminL10nScript serves wpgo-l10n.js for the current user's language.

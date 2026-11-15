@@ -49,7 +49,7 @@
 {{template "wb-templates-add-dialog" .}}
 {{template "wb-templates-conditions-dialog" .}}
 <script type="application/json" id="web-builder-templates-config">{{.Config}}</script>
-<script src="/wp-admin/assets/js/web-builder-templates.js?ver={{.Ver}}" id="web-builder-templates-js"></script>
+<script {{cspNonce}} src="/wp-admin/assets/js/web-builder-templates.js?ver={{.Ver}}" id="web-builder-templates-js"></script>
 <div class="clear"></div>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

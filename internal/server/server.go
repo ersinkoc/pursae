@@ -169,6 +169,11 @@ func (s *Server) Handler() http.Handler {
 	// Outermost: probes and the request ID (ops_http.go); then gzip for what Pursae Cache does not serve
 	// compressed itself (compress.go).
 	return s.opsHandler(gzipResponses(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Upgrade") == "" { // the response's CSP nonce (csp_nonce.go); not for hijacked connections
+			nw := newNonceWriter(w)
+			defer nw.close()
+			w = nw
+		}
 		if s.firewallServe(w, r) { // core firewall: rate limit and request rules (firewall.go)
 			return
 		}
@@ -281,6 +286,7 @@ func (s *Server) routes() *gin.Engine {
 
 	r.GET("/wp-admin/install", s.installForm)
 	r.POST("/wp-admin/install", s.installSubmit)
+	r.POST(cspReportPath, s.cspReport) // CSP violation reports (csp_report.go)
 	r.GET("/wp-login", s.login)
 	r.POST("/wp-login", s.login)
 	r.POST("/wp-comments-post", s.commentPost)
@@ -460,16 +466,19 @@ func (s *Server) securityHeaders() gin.HandlerFunc {
 		h.Set("X-Frame-Options", "SAMEORIGIN")
 		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		p := c.Request.URL.Path
+		mode := s.cspMode()
 		if strings.HasPrefix(p, "/wp-admin") || strings.HasPrefix(p, "/wp-login") {
 			// wp-admin's Backbone/underscore templates (media library, customizer, …) compile with new Function(),
 			// and the block editor previews uploads through blob: URLs.
 			h.Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; "+
-				"style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; "+
+				"style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src "+cspScriptSrc(mode, true)+"; "+
 				"worker-src 'self' blob:; connect-src 'self'; frame-src 'self' https: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
+			cspReportOnly(h, mode, true)
 		} else {
 			h.Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; "+
-				"style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline'; "+
+				"style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src "+cspScriptSrc(mode, false)+"; "+
 				"frame-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
+			cspReportOnly(h, mode, false)
 		}
 		if s.requestHTTPS(c.Request) {
 			h.Set("Strict-Transport-Security", "max-age=31536000")
@@ -624,8 +633,15 @@ func (s *Server) checkNonce(c *gin.Context, action string) bool {
 func (s *Server) denyNonce(c *gin.Context) {
 	s.adminHTML(c, http.StatusForbidden, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Something went wrong.</title>`+
 		`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page">`+
-		`<div class="wp-die-message">The link you followed has expired.</div><p><a href="javascript:history.back()">Please try again.</a></p></body></html>`)
+		`<div class="wp-die-message">The link you followed has expired.</div><p>`+historyBackLink("Please try again.")+`</p></body></html>`)
 	c.Abort()
+}
+
+// historyBackLink is wp_die()'s back link (href="javascript:history.back()") without a javascript: URL,
+// which a nonce CSP blocks: a link plus a nonced script that goes back in history. label is HTML.
+func historyBackLink(label string) string {
+	return `<a href="#" id="wpgo-history-back">` + label + `</a><script` + cspNonceAttr() +
+		`>document.getElementById("wpgo-history-back").addEventListener("click",function(e){e.preventDefault();history.back();});</script>`
 }
 
 // configuredLinks is links() on the configured home URL only, never the request's Host (see

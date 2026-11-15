@@ -2133,7 +2133,7 @@ func (s *Server) gmemSearchJSON(c *gin.Context) {
 
 // gmemSearchScript adds a search box under each ID field of the plan form; picking a result appends
 // its ID to the field.
-const gmemSearchScript = `<script>(function(){document.querySelectorAll('input[data-gmem-search]').forEach(function(f){
+var gmemSearchScript = `<script` + cspNonceAttr() + `>(function(){document.querySelectorAll('input[data-gmem-search]').forEach(function(f){
 var kind=f.getAttribute('data-gmem-search'),box=document.createElement('input');box.type='search';box.className='regular-text';box.placeholder='Search to add\u2026';
 var list=document.createElement('ul');list.className='gmem-search-results';var t;f.parentNode.insertBefore(list,f.nextSibling);f.parentNode.insertBefore(box,f.nextSibling);
 box.addEventListener('input',function(){clearTimeout(t);var q=box.value.trim();list.innerHTML='';if(q.length<2)return;

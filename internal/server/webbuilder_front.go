@@ -257,7 +257,7 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	}
 	sb.WriteString(">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n")
 	if runtime { // the runtime's hiding rules apply only when it will run (content stays readable without JS)
-		sb.WriteString("<script>document.documentElement.classList.add('" + webbuilder.ClassJS + "')</script>\n")
+		sb.WriteString("<script" + cspNonceAttr() + ">document.documentElement.classList.add('" + webbuilder.ClassJS + "')</script>\n")
 	}
 	sb.WriteString("<title>" + string(v.DocumentTitle) + "</title>\n")
 	sb.WriteString(head)
@@ -288,7 +288,7 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	}
 	sb.WriteString("\n")
 	if runtime {
-		fmt.Fprintf(&sb, "<script defer src=\"%s\" id=\"web-builder-runtime-js\"></script>\n",
+		fmt.Fprintf(&sb, "<script%s defer src=\"%s\" id=\"web-builder-runtime-js\"></script>\n", cspNonceAttr(),
 			html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.Runtime)))
 	}
 	sb.WriteString(popFoot)

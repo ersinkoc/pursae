@@ -51,7 +51,7 @@
 		{{end}}
 	</ul>
 	<p class="search-box">
-		{{if .Type.Localized}}<label class="screen-reader-text" for="hg-locale">Locale</label><select id="hg-locale" name="locale" onchange="this.form.submit()">{{range .Locales}}<option value="{{.Code}}"{{if eq .Code $.Data.Locale}} selected{{end}}>{{.Name}} ({{.Code}})</option>{{end}}</select>{{end}}
+		{{if .Type.Localized}}<label class="screen-reader-text" for="hg-locale">Locale</label><select id="hg-locale" name="locale" data-autosubmit>{{range .Locales}}<option value="{{.Code}}"{{if eq .Code $.Data.Locale}} selected{{end}}>{{.Name}} ({{.Code}})</option>{{end}}</select>{{end}}
 		{{if .Status}}<input type="hidden" name="status" value="{{.Status}}">{{end}}
 		<label class="screen-reader-text" for="hg-search">Search entries</label>
 		<input type="search" id="hg-search" name="s" value="{{.Search}}">
@@ -87,7 +87,7 @@
 </tbody>
 </table>
 </form>
-<script>
+<script {{cspNonce}}>
 (function () {
 	var all = document.getElementById('hg-check-all'), form = document.getElementById('hg-bulk-form');
 	if (all) { all.addEventListener('change', function () { form.querySelectorAll('input[name="docs[]"]').forEach(function (b) { b.checked = all.checked; }); }); }
@@ -163,8 +163,8 @@
 	{{if and .CanReview (eq .ReviewState "pending")}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="text" name="note" placeholder="Note (optional)" class="regular-text"> <button class="button button-primary" name="do" value="approve_review">Approve</button> <button class="button" name="do" value="reject_review">Reject</button></form>{{end}}
 	{{end}}
 	{{if and .Type.DraftAndPublish (ne .EntryStatus "draft")}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="unpublish_entry"><button class="button">Unpublish</button></form>{{end}}
-	{{if eq .EntryStatus "modified"}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Discard the changes made since the last publication?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="discard_entry"><button class="button">Discard changes</button></form>{{end}}
-	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Delete this entry? This cannot be undone.')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="delete_entry">{{if .Type.Localized}}<label><input type="checkbox" name="all_locales" value="1"> all locales</label> {{end}}<button class="button button-link-delete">Delete</button></form>
+	{{if eq .EntryStatus "modified"}}<form method="post" action="/wp-admin/headlessgo" class="hg-inline" data-confirm="Discard the changes made since the last publication?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="discard_entry"><button class="button">Discard changes</button></form>{{end}}
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" data-confirm="Delete this entry? This cannot be undone."><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="do" value="delete_entry">{{if .Type.Localized}}<label><input type="checkbox" name="all_locales" value="1"> all locales</label> {{end}}<button class="button button-link-delete">Delete</button></form>
 </div>{{end}}
 <script type="application/json" id="hg-editor-model">{{.EditorJSON}}</script>
 {{end}}
@@ -180,7 +180,7 @@
 <table class="widefat hg-diff"><thead><tr><th>Field</th><th>This version</th><th>Current draft</th></tr></thead><tbody>
 {{range .Diff}}<tr{{if .Changed}} class="hg-changed"{{end}}><th scope="row" translate="no">{{.Name}}{{if .Changed}} <span class="hg-status hg-status-modified">changed</span>{{end}}</th><td><pre translate="no">{{.Old}}</pre></td><td><pre translate="no">{{.New}}</pre></td></tr>{{end}}
 </tbody></table>
-<form method="post" action="/wp-admin/headlessgo" class="hg-restore" onsubmit="return confirm('Replace the current draft with this version?')">
+<form method="post" action="/wp-admin/headlessgo" class="hg-restore" data-confirm="Replace the current draft with this version?">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="entry"><input type="hidden" name="do" value="restore_version">
 	<input type="hidden" name="type" value="{{.Type.UID}}"><input type="hidden" name="doc" value="{{.Doc}}"><input type="hidden" name="locale" value="{{.Locale}}"><input type="hidden" name="version" value="{{.Version.ID}}">
 	{{if .RestoreDropped}}<div class="notice notice-info inline"><p>This version has values of fields the content type no longer has; they are left out when it is restored: {{range $i, $f := .RestoreDropped}}{{if $i}}, {{end}}<code translate="no">{{$f}}</code>{{end}}</p></div>{{end}}
@@ -219,7 +219,7 @@
 	<input type="hidden" name="is_new" value="{{if .Type}}0{{else}}1{{end}}"><input type="hidden" name="schema" id="hg-schema" value="">
 	<div id="hg-builder"><p class="description">Loading the builder…</p><noscript><p>The Content-Type Builder needs JavaScript.</p></noscript></div>
 </form>
-{{if .Type}}<form method="post" action="/wp-admin/headlessgo" class="hg-danger" onsubmit="return confirm('Delete this {{if .Type.IsComponent}}component{{else}}content type and all its entries{{end}}? This cannot be undone.')">
+{{if .Type}}<form method="post" action="/wp-admin/headlessgo" class="hg-danger" data-confirm="Delete this {{if .Type.IsComponent}}component{{else}}content type and all its entries{{end}}? This cannot be undone.">
 	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="builder"><input type="hidden" name="do" value="delete_schema"><input type="hidden" name="uid" value="{{.Type.UID}}">
 	<button type="submit" class="button button-link-delete">Delete this {{if .Type.IsComponent}}component{{else}}content type{{end}}</button>
 	{{if not .Type.IsComponent}}<span class="description">API: <code translate="no">{{.Route .Type}}</code></span>{{end}}
@@ -237,7 +237,7 @@
 {{/* ============================== API tokens ============================== */}}
 {{if eq .Page "tokens"}}
 {{if .NewToken}}<div class="hg-newtoken"><label for="hg-token-value"><strong>Your new API token</strong></label>
-	<input type="text" readonly id="hg-token-value" class="large-text code" value="{{.NewToken}}" onclick="this.select()">
+	<input type="text" readonly id="hg-token-value" class="large-text code" value="{{.NewToken}}" data-select-on-focus>
 	<p class="description">Send it as <code>Authorization: Bearer &lt;token&gt;</code>. Only a hash is stored: copy it now, it will not be shown again.</p></div>{{end}}
 {{if .Token}}
 <form method="post" action="/wp-admin/headlessgo" class="hg-panel">
@@ -263,8 +263,8 @@
 	<p class="submit"><button type="submit" class="button button-primary">{{if .Token.ID}}Save{{else}}Create token{{end}}</button> <a class="button" href="/wp-admin/headlessgo?page=tokens">Cancel</a></p>
 </form>
 {{if .Token.ID}}<div class="hg-entry-more">
-	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Regenerate the token? Clients using the current one will lose access.')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="tokens"><input type="hidden" name="do" value="regenerate_token"><input type="hidden" name="id" value="{{.Token.ID}}"><button class="button">Regenerate</button></form>
-	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Delete this token?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="tokens"><input type="hidden" name="do" value="delete_token"><input type="hidden" name="id" value="{{.Token.ID}}"><button class="button button-link-delete">Delete</button></form>
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" data-confirm="Regenerate the token? Clients using the current one will lose access."><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="tokens"><input type="hidden" name="do" value="regenerate_token"><input type="hidden" name="id" value="{{.Token.ID}}"><button class="button">Regenerate</button></form>
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" data-confirm="Delete this token?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="tokens"><input type="hidden" name="do" value="delete_token"><input type="hidden" name="id" value="{{.Token.ID}}"><button class="button button-link-delete">Delete</button></form>
 </div>{{end}}
 {{end}}
 <table class="wp-list-table widefat fixed striped hg-table">
@@ -298,7 +298,7 @@
 </form>
 {{if .Webhook.ID}}<div class="hg-entry-more">
 	<form method="post" action="/wp-admin/headlessgo" class="hg-inline"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="webhooks"><input type="hidden" name="do" value="test_webhook"><input type="hidden" name="id" value="{{.Webhook.ID}}"><button class="button">Send test</button></form>
-	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" onsubmit="return confirm('Delete this webhook?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="webhooks"><input type="hidden" name="do" value="delete_webhook"><input type="hidden" name="id" value="{{.Webhook.ID}}"><button class="button button-link-delete">Delete</button></form>
+	<form method="post" action="/wp-admin/headlessgo" class="hg-inline" data-confirm="Delete this webhook?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="webhooks"><input type="hidden" name="do" value="delete_webhook"><input type="hidden" name="id" value="{{.Webhook.ID}}"><button class="button button-link-delete">Delete</button></form>
 </div>{{end}}
 {{else}}
 <table class="wp-list-table widefat fixed striped hg-table">
@@ -427,7 +427,7 @@
 </div>
 {{end}}
 </div>
-<script>
+<script {{cspNonce}}>
 document.querySelectorAll('[data-hg-toggle]').forEach(function (sel) {
 	sel.addEventListener('change', function () { var el = document.getElementById(sel.dataset.hgToggle); if (el) { el.hidden = sel.value !== 'custom'; } });
 });

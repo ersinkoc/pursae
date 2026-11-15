@@ -73,7 +73,7 @@ func (s *Server) gooikeFooter(c *gin.Context) string {
 	b.WriteString(s.gooikeMarkup(c, &st, false))
 	b.WriteString(gooikeScriptsAt(&st, "footer"))
 	b.WriteString(gooikeConfigScript(&st, false))
-	b.WriteString(`<script src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" id="gooike-js" defer></script>` + "\n")
+	b.WriteString(`<script` + cspNonceAttr() + ` src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" id="gooike-js" defer></script>` + "\n")
 	return b.String()
 }
 
@@ -113,7 +113,7 @@ func gooikeConsentModeScript(st *gooikeSettings) string {
 		"wait": st.WaitForUpdate, "redact": st.AdsRedaction, "pass": st.URLPassthrough,
 	}
 	raw, _ := json.Marshal(cfg)
-	return `<script id="gooike-consent-mode">window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};` +
+	return `<script id="gooike-consent-mode"` + cspNonceAttr() + `>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};` +
 		`(function(c){function set(o,list,v){(list||[]).forEach(function(x){o[x]=v;});}` +
 		`var d={},gpc=c.gpc&&navigator.globalPrivacyControl===true;set(d,c.all,c.optout?'granted':'denied');if(c.optout&&gpc){set(d,c.map.marketing,'denied');}set(d,c.base,'granted');` +
 		`if(c.wait){d.wait_for_update=c.wait;}gtag('consent','default',d);if(c.redact){gtag('set','ads_data_redaction',true);}if(c.pass){gtag('set','url_passthrough',true);}` +

@@ -320,7 +320,7 @@ func (s *Server) scriptTranslations(c *gin.Context, handle, src string) string {
 	if len(data) == 0 {
 		return ""
 	}
-	return "<script id=\"" + handle + "-js-translations\">\nwp.i18n.setLocaleData( " + string(data) + ", \"default\" );\n</script>\n"
+	return "<script" + cspNonceAttr() + " id=\"" + html.EscapeString(handle) + "-js-translations\">\nwp.i18n.setLocaleData( " + string(data) + ", \"default\" );\n</script>\n"
 }
 
 // installLanguage downloads the core pack of locale now and the plugin packs in the background

@@ -79,7 +79,7 @@
 	<tbody id="the-list">
 	{{range .Rows}}<tr id="lang-{{.ID}}"{{if not .Active}}{{if not .IsDefault}} class="inactive"{{end}}{{end}}>
 		<td class="name column-name has-row-actions column-primary" data-colname="Full name"><strong><a translate="no" class="row-title" href="{{.EditURL}}" title="Edit this language">{{.Name}}</a></strong>{{if not .Active}}{{if not .IsDefault}} &mdash; <span class="post-state">Deactivated</span>{{end}}{{end}}
-			<div class="row-actions"><span class="edit"><a href="{{.EditURL}}" title="Edit this language">Edit</a> | </span>{{if .ToggleURL}}<span class="{{if .Active}}deactivate{{else}}activate{{end}}"><a href="{{.ToggleURL}}">{{.ToggleLbl}}</a> | </span>{{end}}<span class="delete"><a href="{{.DeleteURL}}" class="delete" title="Delete this language and all its associated data" onclick="return confirm('You are about to permanently delete this language. Are you sure?');">Delete</a></span></div>
+			<div class="row-actions"><span class="edit"><a href="{{.EditURL}}" title="Edit this language">Edit</a> | </span>{{if .ToggleURL}}<span class="{{if .Active}}deactivate{{else}}activate{{end}}"><a href="{{.ToggleURL}}">{{.ToggleLbl}}</a> | </span>{{end}}<span class="delete"><a href="{{.DeleteURL}}" class="delete" title="Delete this language and all its associated data" data-confirm="You are about to permanently delete this language. Are you sure?">Delete</a></span></div>
 			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
 		<td class="locale column-locale" data-colname="Locale">{{.Locale}}</td>
 		<td class="slug column-slug" data-colname="Code">{{.Slug}}</td>
@@ -99,7 +99,7 @@
 </div></div>
 </div>
 </div>
-<script>
+<script {{cspNonce}}>
 (function(){
 	var list = document.getElementById('lang_list'), flag = document.getElementById('flag_list'), prev = document.getElementById('flag_preview');
 	function emoji(code){ code = (code || '').toUpperCase(); if (!/^[A-Z]{2}$/.test(code)) { return ''; } return String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65, 0x1F1E6 + code.charCodeAt(1) - 65); }
@@ -209,7 +209,7 @@
 	<p class="submit"><a class="button pll-cancel" href="/wp-admin/admin?page=mlang_settings">Cancel</a> <input type="submit" class="button button-primary" value="Save Changes" />
 		<button type="button" class="button" id="pll-mt-test">Test connection</button> <span class="spinner" id="pll-mt-spinner" style="float:none"></span> <span id="pll-mt-test-result" role="status"></span></p>
 	</form>
-	<script>
+	<script {{cspNonce}}>
 	(function(){
 		var sel = document.getElementById('pll-mt-provider');
 		function sync(){
@@ -237,7 +237,7 @@
 </tbody>
 </table>
 </div>
-<script>
+<script {{cspNonce}}>
 document.querySelectorAll('.pll-configure-link').forEach(function(a){
 	a.addEventListener('click', function(e){
 		var row = document.getElementById('pll-configure-' + a.getAttribute('data-module'));
@@ -315,7 +315,7 @@ document.querySelectorAll('.pll-configure-link').forEach(function(a){
 <p><label><input name="clean" type="checkbox" value="1" /> Clean strings translation database</label><br /><span class="description">Use this to remove unused strings from database, for example after a plugin has been uninstalled. It also removes untranslated page text recorded on pages of other languages.</span></p>
 <p class="submit"><input type="submit" name="submit" class="button button-primary" value="Save changes" /></p>
 </form>
-{{if .MT.Enabled}}<script>
+{{if .MT.Enabled}}<script {{cspNonce}}>
 (function(){
 	var nonce = {{.MT.RESTNonce}}, status = document.getElementById('pll-mt-status'), spin = document.getElementById('pll-mt-spinner');
 	function say(msg, err){ status.textContent = msg; status.style.color = err ? '#d63638' : ''; }
@@ -524,7 +524,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: #f0f0f1; }
 	<iframe id="pll-v-frame" title="Page preview" src="{{.Frame}}"></iframe>
 </main>
 </div>
-<script>
+<script {{cspNonce}}>
 ( function() {
 	'use strict';
 	var cfg = { lang: {{.Lang.Slug}}, langName: {{.Lang.Name}}, rtl: {{.Lang.RTL}}, param: {{.Param}}, token: {{.Token}}, nonce: {{.RESTNonce}}, mt: {{.MT}}, media: {{.Media}} };

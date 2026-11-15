@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -92,7 +93,7 @@ func scanAppPassword(row interface{ Scan(dest ...any) error }) (*appPassword, er
 }
 
 // appPasswords is WP_Application_Passwords::get_user_application_passwords().
-func (s *Server) appPasswords(c *gin.Context, userID int64) ([]*appPassword, error) {
+func (s *Server) appPasswords(c context.Context, userID int64) ([]*appPassword, error) {
 	rows, err := s.store.Pool.Query(c, `SELECT `+appPasswordCols+` FROM app_passwords WHERE user_id = $1 ORDER BY id`, userID)
 	if err != nil {
 		return nil, err
@@ -109,7 +110,7 @@ func (s *Server) appPasswords(c *gin.Context, userID int64) ([]*appPassword, err
 	return out, rows.Err()
 }
 
-func (s *Server) appPasswordByUUID(c *gin.Context, userID int64, uuid string) (*appPassword, error) {
+func (s *Server) appPasswordByUUID(c context.Context, userID int64, uuid string) (*appPassword, error) {
 	if !isUUID(uuid) {
 		return nil, store.ErrNotFound
 	}
@@ -120,7 +121,7 @@ func (s *Server) appPasswordByUUID(c *gin.Context, userID int64, uuid string) (*
 	return ap, nil
 }
 
-func (s *Server) appPasswordByID(c *gin.Context, id int64) (*appPassword, error) {
+func (s *Server) appPasswordByID(c context.Context, id int64) (*appPassword, error) {
 	ap, err := scanAppPassword(s.store.Pool.QueryRow(c, `SELECT `+appPasswordCols+` FROM app_passwords WHERE id = $1`, id))
 	if err != nil {
 		return nil, store.ErrNotFound
@@ -135,7 +136,7 @@ var (
 
 // createAppPassword is WP_Application_Passwords::create_new_application_password(): returns the plaintext
 // password (shown once) and the stored record.
-func (s *Server) createAppPassword(c *gin.Context, userID int64, name, appID string, scopes ...string) (string, *appPassword, error) {
+func (s *Server) createAppPassword(c context.Context, userID int64, name, appID string, scopes ...string) (string, *appPassword, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return "", nil, errAppPasswordEmptyName
@@ -166,7 +167,7 @@ func (s *Server) createAppPassword(c *gin.Context, userID int64, name, appID str
 	return plain, ap, err
 }
 
-func (s *Server) renameAppPassword(c *gin.Context, ap *appPassword, name string) error {
+func (s *Server) renameAppPassword(c context.Context, ap *appPassword, name string) error {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return errAppPasswordEmptyName
@@ -177,18 +178,18 @@ func (s *Server) renameAppPassword(c *gin.Context, ap *appPassword, name string)
 }
 
 // setAppPasswordScopes replaces a password's scopes (empty becomes content and media; full_access is explicit).
-func (s *Server) setAppPasswordScopes(c *gin.Context, ap *appPassword, scopes []string) error {
+func (s *Server) setAppPasswordScopes(c context.Context, ap *appPassword, scopes []string) error {
 	ap.Scopes = resolveAppPasswordScopes(scopes)
 	_, err := s.store.Pool.Exec(c, `UPDATE app_passwords SET scopes = $2 WHERE id = $1`, ap.ID, ap.Scopes)
 	return err
 }
 
-func (s *Server) deleteAppPassword(c *gin.Context, id int64) error {
+func (s *Server) deleteAppPassword(c context.Context, id int64) error {
 	_, err := s.store.Pool.Exec(c, `DELETE FROM app_passwords WHERE id = $1`, id)
 	return err
 }
 
-func (s *Server) deleteAllAppPasswords(c *gin.Context, userID int64) (int64, error) {
+func (s *Server) deleteAllAppPasswords(c context.Context, userID int64) (int64, error) {
 	tag, err := s.store.Pool.Exec(c, `DELETE FROM app_passwords WHERE user_id = $1`, userID)
 	return tag.RowsAffected(), err
 }

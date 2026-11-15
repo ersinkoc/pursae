@@ -166,8 +166,10 @@ func (t *templates) coreFuncs(s *Server) template.FuncMap {
 		"customizeURL":      s.customizeURL,
 		"wbThemeBuilderURL": wbThemeBuilderURL,
 		"safe":              func(v string) template.HTML { return template.HTML(v) },
-		"kses":              func(v string) template.HTML { return template.HTML(wp.KsesPost(v)) }, // wp_kses_post()
-		"safeURL":           func(v string) template.URL { return template.URL(v) },
+		// cspNonce is the nonce attribute of a trusted <script> (csp_nonce.go): <script {{cspNonce}}>.
+		"cspNonce": func() template.HTMLAttr { return template.HTMLAttr(strings.TrimSpace(cspNonceAttr())) },
+		"kses":     func(v string) template.HTML { return template.HTML(wp.KsesPost(v)) }, // wp_kses_post()
+		"safeURL":  func(v string) template.URL { return template.URL(v) },
 		"safeAttr": func(v string) template.HTMLAttr {
 			return template.HTMLAttr(v)
 		},

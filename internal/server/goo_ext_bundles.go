@@ -657,7 +657,7 @@ func bnRow(s *Server, ctx context.Context, it bnItem) string {
 		`<td>` + vis("bundle_single_product_visibility", it.VisibleProduct) + vis("bundle_cart_visibility", it.VisibleCart) + vis("bundle_order_visibility", it.VisibleOrder) + `</td>` +
 		`<td>` + yn("bundle_hide_thumbnail", it.HideThumbnail) + `</td>` +
 		`<td>` + yn("bundle_override_title", it.OverrideTitle) + `<input type="text" name="bundle_title[]" value="` + html.EscapeString(it.Title) + `" placeholder="Title"></td>` +
-		`<td class="remove"><a href="#" class="button" onclick="this.closest('tr').remove();return false">&times;</a></td></tr>`
+		`<td class="remove"><a href="#" class="button" data-action="remove" data-target="tr">&times;</a></td></tr>`
 }
 
 func bnPanel(s *Server, c *gin.Context, p *gooProduct) template.HTML {
@@ -672,12 +672,12 @@ func bnPanel(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 		[]gooOpt{{"unassembled", "Unassembled – bundled products are shipped individually"}, {"assembled", "Assembled – bundled products are shipped in the bundle's package"}}), ""))
 	b.WriteString(bkField("Min bundle size", "_wc_pb_min_bundle_size", bkInput("_wc_pb_min_bundle_size", "number", map[bool]string{true: strconv.Itoa(bnMetaInt(p, "_wc_pb_min_bundle_size")), false: ""}[bnMetaInt(p, "_wc_pb_min_bundle_size") > 0], ` min="0"`), "Minimum number of items in the bundle."))
 	b.WriteString(bkField("Max bundle size", "_wc_pb_max_bundle_size", bkInput("_wc_pb_max_bundle_size", "number", map[bool]string{true: strconv.Itoa(bnMetaInt(p, "_wc_pb_max_bundle_size")), false: ""}[bnMetaInt(p, "_wc_pb_max_bundle_size") > 0], ` min="0"`), "Maximum number of items in the bundle."))
-	b.WriteString(`</div><div class="options_group wc-bundled-items"><table class="widefat"><thead><tr><th>Product</th><th>Default Qty</th><th>Min Qty</th><th>Max Qty</th><th>Optional</th><th>Priced Individually</th><th>Discount %</th><th>Visibility (product / cart / order)</th><th>Hide Thumbnail</th><th>Override Title</th><th></th></tr></thead><tbody>`)
+	b.WriteString(`</div><div class="options_group wc-bundled-items"><table class="widefat" id="wc-bundled-items-table"><thead><tr><th>Product</th><th>Default Qty</th><th>Min Qty</th><th>Max Qty</th><th>Optional</th><th>Priced Individually</th><th>Discount %</th><th>Visibility (product / cart / order)</th><th>Hide Thumbnail</th><th>Override Title</th><th></th></tr></thead><tbody>`)
 	for _, it := range bnItemsOf(p) {
 		b.WriteString(bnRow(s, ctx, it))
 	}
-	b.WriteString(`</tbody></table><p><template>` + bnRow(s, ctx, bnItem{Default: 1, Min: 1, Max: 1, VisibleProduct: true, VisibleCart: true, VisibleOrder: true}) +
-		`</template><a href="#" class="button add_bundled_product" ` + bkAddRowJS + `>Add Product</a></p></div>`)
+	b.WriteString(`</tbody></table><p><template id="wc-bundled-item-template">` + bnRow(s, ctx, bnItem{Default: 1, Min: 1, Max: 1, VisibleProduct: true, VisibleCart: true, VisibleOrder: true}) +
+		`</template><a href="#" class="button add_bundled_product" data-action="add-row" data-template="wc-bundled-item-template" data-into="#wc-bundled-items-table tbody">Add Product</a></p></div>`)
 	return template.HTML(b.String())
 }
 

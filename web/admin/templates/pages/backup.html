@@ -92,7 +92,7 @@
 	<td>
 		<a class="button button-small" href="{{.DownloadURL}}">Download</a>
 		{{if .RestoreURL}}<a class="button button-small button-primary" href="{{.RestoreURL}}">Restore</a>{{end}}
-		<a class="button button-small" style="color:#b32d2e;border-color:#b32d2e" href="{{.DeleteURL}}" onclick="return confirm('Delete this backup permanently?')">Delete</a>
+		<a class="button button-small" style="color:#b32d2e;border-color:#b32d2e" href="{{.DeleteURL}}" data-confirm="Delete this backup permanently?">Delete</a>
 	</td>
 </tr>
 {{end}}
@@ -169,7 +169,7 @@
 </form>
 {{end}}{{end}}
 </div>
-<script>
+<script {{cspNonce}}>
 (function(){
 var $=function(s){return document.querySelector(s)};
 var users=$('#cat-users'),sub=$('#bmgr-users');

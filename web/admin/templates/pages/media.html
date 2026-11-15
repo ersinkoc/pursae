@@ -70,7 +70,7 @@
 		<td class="title column-title has-row-actions column-primary" data-colname="File">
 			<strong class="has-media-icon"><a href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)"><span class="media-icon {{if .IsIcon}}document-icon{{else}}image-icon{{end}}"><img width="{{if .IsIcon}}48{{else}}60{{end}}" height="{{if .IsIcon}}64{{else}}60{{end}}" src="{{.Thumb}}" class="attachment-60x60 size-60x60" alt="" decoding="async" loading="lazy" /></span>{{.Title}}</a>{{if .Private}} &mdash; <span class="post-state">Private</span>{{end}}</strong>
 			<p class="filename"><span class="screen-reader-text">File name: </span>{{.FileName}}</p>
-			<div class="row-actions">{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span><span class="replace"><a href="{{.EditURL}}#wpgo-replace-media" aria-label="Replace the file of &#8220;{{.Title}}&#8221;">Replace</a> | </span><span class="private"><a href="{{.PrivateURL}}">{{if .Private}}Make public{{else}}Make private{{end}}</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete aria-button-if-js" onclick="return showNotice.warn();" aria-label="Delete &#8220;{{.Title}}&#8221; permanently" role="button">Delete Permanently</a> | </span>{{end}}<span class="view"><a href="{{.ViewURL}}" aria-label="View &#8220;{{.Title}}&#8221;" rel="bookmark">View</a> | </span><span class="copy"><span class="copy-to-clipboard-container"><button type="button" class="button-link copy-attachment-url media-library" data-clipboard-text="{{.FileURL}}" aria-label="Copy &#8220;{{.Title}}&#8221; URL to clipboard">Copy URL</button><span class="success hidden" aria-hidden="true">Copied!</span></span> | </span><span class="download"><a href="{{.FileURL}}" aria-label="Download &#8220;{{.Title}}&#8221;" download>Download file</a></span></div>
+			<div class="row-actions">{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span><span class="replace"><a href="{{.EditURL}}#wpgo-replace-media" aria-label="Replace the file of &#8220;{{.Title}}&#8221;">Replace</a> | </span><span class="private"><a href="{{.PrivateURL}}">{{if .Private}}Make public{{else}}Make private{{end}}</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete aria-button-if-js" data-confirm="You are about to permanently delete these items from your site.&#10;This action cannot be undone.&#10;'Cancel' to stop, 'OK' to delete." aria-label="Delete &#8220;{{.Title}}&#8221; permanently" role="button">Delete Permanently</a> | </span>{{end}}<span class="view"><a href="{{.ViewURL}}" aria-label="View &#8220;{{.Title}}&#8221;" rel="bookmark">View</a> | </span><span class="copy"><span class="copy-to-clipboard-container"><button type="button" class="button-link copy-attachment-url media-library" data-clipboard-text="{{.FileURL}}" aria-label="Copy &#8220;{{.Title}}&#8221; URL to clipboard">Copy URL</button><span class="success hidden" aria-hidden="true">Copied!</span></span> | </span><span class="download"><a href="{{.FileURL}}" aria-label="Download &#8220;{{.Title}}&#8221;" download>Download file</a></span></div>
 			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
 		</td>
 		<td class="author column-author" data-colname="Author"><a href="{{.AuthorURL}}">{{.Author}}</a></td>
@@ -95,6 +95,7 @@
 </div>
 </form>
 </div>
+<script {{cspNonce}}>document.addEventListener('DOMContentLoaded',function(){if(!window.wp||!wp.i18n){return;}document.querySelectorAll('a.submitdelete[data-confirm]').forEach(function(a){a.setAttribute('data-confirm',wp.i18n.__(a.getAttribute('data-confirm')));});});</script>
 {{end}}{{template "admin-footer" .}}{{end}}
 
 {{define "media-head"}}<tr>
@@ -113,7 +114,7 @@
 	<form enctype="multipart/form-data" method="post" action="/wp-admin/media-new" class="wp-upload-form media-upload-form type-form validate" id="file-form">
 	<div id="media-upload-notice"></div>
 	<div id="media-upload-error">{{.Error}}</div>
-	<script>
+	<script {{cspNonce}}>
 	var resize_height = {{.LargeH}}, resize_width = {{.LargeW}},
 	wpUploaderInit = {{.UploaderInit}};
 	</script>
@@ -136,7 +137,7 @@
 	</div>
 	<p class="upload-flash-bypass">You are using the multi-file uploader. Problems? Try the <a href="/wp-admin/media-new?browser-uploader" target="_blank">browser uploader</a> instead.</p>
 	<p class="max-upload-size">Maximum upload file size: {{.MaxSize}}.</p>
-	<script>
+	<script {{cspNonce}}>
 	var post_id = 0, shortform = 3;
 	</script>
 	<input type="hidden" name="post_id" id="post_id" value="0" />
@@ -197,7 +198,7 @@
 		</div>
 	</div>
 	<div id="major-publishing-actions">
-		<div id="delete-action"><a class="submitdelete deletion" onclick="return showNotice.warn();" href="{{.DeleteURL}}">Delete permanently</a></div>
+		<div id="delete-action"><a class="submitdelete deletion" data-confirm="You are about to permanently delete these items from your site.&#10;This action cannot be undone.&#10;'Cancel' to stop, 'OK' to delete." href="{{.DeleteURL}}">Delete permanently</a></div>
 		<div id="publishing-action"><span class="spinner"></span><input name="save" type="submit" class="button button-primary button-large" id="publish" value="Update" /></div>
 		<div class="clear"></div>
 	</div>
@@ -239,6 +240,7 @@
 <input type="hidden" name="post_ID" value="{{.A.ID}}" />
 </form>{{end}}
 </div>
+<script {{cspNonce}}>document.addEventListener('DOMContentLoaded',function(){if(!window.wp||!wp.i18n){return;}document.querySelectorAll('a.submitdelete[data-confirm]').forEach(function(a){a.setAttribute('data-confirm',wp.i18n.__(a.getAttribute('data-confirm')));});});</script>
 {{end}}{{template "admin-footer" .}}{{end}}
 
 {{define "admin/media-optimization"}}{{template "admin-header" .}}{{with .Data}}
@@ -287,7 +289,7 @@
 {{if .Running}}
 {{with .Job}}<p class="media-optimization-progress"><span class="spinner is-active" style="float:none;margin:0 6px 0 0"></span> Optimizing existing images: {{.Percent}}% ({{.Done}} optimized, {{.Skipped}} skipped, {{.Failed}} failed of {{.Total}}).</p>{{end}}
 <form method="post" action="/wp-admin/media-optimization"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="optimize-stop" /><p><input type="submit" class="button" value="Stop" /></p></form>
-<script>setTimeout(function(){location.replace("/wp-admin/media-optimization")},3000)</script>
+<script {{cspNonce}}>setTimeout(function(){location.replace("/wp-admin/media-optimization")},3000)</script>
 {{else}}
 {{with .Job}}{{if .Finished}}<p class="description">Last run: {{.Done}} optimized, {{.Skipped}} skipped, {{.Failed}} failed.</p>{{else if .Stopped}}<p class="description">The last run was stopped after {{.Done}} images.</p>{{end}}{{end}}
 {{if .On}}{{if .Stats.Pending}}

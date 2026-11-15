@@ -553,11 +553,15 @@ func delayLoader(timeout int) string {
 	if timeout > 0 {
 		t = "setTimeout(wpgoDelayLoad," + strconv.Itoa(timeout*1000) + ");"
 	}
-	return `<script data-no-defer data-no-delay>(function(){var ev=["mousemove","keydown","touchstart","scroll","click","wheel"],done=false;` +
+	nonce := ""
+	if NoncePlaceholder != "" {
+		nonce = ` nonce="` + NoncePlaceholder + `"`
+	}
+	return `<script data-no-defer data-no-delay` + nonce + `>(function(){var ev=["mousemove","keydown","touchstart","scroll","click","wheel"],done=false;` +
 		`function wpgoDelayLoad(){if(done)return;done=true;ev.forEach(function(e){removeEventListener(e,wpgoDelayLoad)});` +
 		`var l=[].slice.call(document.querySelectorAll('script[type="wpgo/delayed"]'));` +
 		`(function next(){var o=l.shift();if(!o)return;var n=document.createElement("script");` +
-		`[].slice.call(o.attributes).forEach(function(a){if(a.name==="data-wpgo-src")n.src=a.value;else if(a.name!=="type")n.setAttribute(a.name,a.value)});` +
+		`[].slice.call(o.attributes).forEach(function(a){if(a.name==="data-wpgo-src")n.src=a.value;else if(a.name!=="type"&&a.name!=="nonce")n.setAttribute(a.name,a.value)});if(o.nonce)n.nonce=o.nonce;` +
 		`if(o.src||o.hasAttribute("data-wpgo-src")){n.onload=n.onerror=next;o.parentNode.replaceChild(n,o);}` +
 		`else{n.text=o.text;o.parentNode.replaceChild(n,o);next();}})();}` +
 		`ev.forEach(function(e){addEventListener(e,wpgoDelayLoad,{passive:true})});` + t + `})();</script>`

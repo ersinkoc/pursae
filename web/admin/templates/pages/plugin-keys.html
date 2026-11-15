@@ -9,7 +9,7 @@
 <thead><tr><th scope="col">Fingerprint</th><th scope="col">Comment</th><th scope="col">Public key</th><th scope="col"></th></tr></thead>
 <tbody>
 {{range .Keys}}<tr><td><code>{{.Fingerprint}}</code></td><td>{{.Comment}}</td><td><code style="word-break:break-all">{{.Key}}</code></td>
-<td><form method="post" action="/wp-admin/plugin-keys"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="remove" /><input type="hidden" name="fingerprint" value="{{.Fingerprint}}" /><input type="submit" class="button-link-delete button-link" value="Remove" onclick="return confirm('Remove this key?');" /></form></td></tr>
+<td><form method="post" action="/wp-admin/plugin-keys"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="action" value="remove" /><input type="hidden" name="fingerprint" value="{{.Fingerprint}}" /><input type="submit" class="button-link-delete button-link" value="Remove" data-confirm="Remove this key?" /></form></td></tr>
 {{else}}<tr class="no-items"><td colspan="4">No keys added.</td></tr>{{end}}
 </tbody>
 </table>

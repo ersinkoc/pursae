@@ -37,7 +37,7 @@
 			<td class="title column-title has-row-actions column-primary" data-colname="Title"><strong>{{if .CanEdit}}<a translate="no" class="row-title" href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">{{.Title}}</a>{{else}}{{.Title}}{{end}}</strong>
 				<div class="row-actions">{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}">Edit</a> | </span><span class="copy"><a href="{{.CopyURL}}">Duplicate</a></span>{{end}}</div>
 				<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button></td>
-			<td class="shortcode column-shortcode" data-colname="Shortcode"><span class="shortcode"><input type="text" onfocus="this.select();" readonly="readonly" value="{{.Shortcode}}" class="large-text code selectable" /></span></td>
+			<td class="shortcode column-shortcode" data-colname="Shortcode"><span class="shortcode"><input type="text" data-select-on-focus readonly="readonly" value="{{.Shortcode}}" class="large-text code selectable" /></span></td>
 			<td class="author column-author" data-colname="Author">{{.Author}}</td>
 			<td class="date column-date" data-colname="Date"><time datetime="{{.ISODate}}">{{.Date}}</time></td>
 		</tr>

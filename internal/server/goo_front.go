@@ -239,7 +239,7 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 	}
 	b.WriteString(string(s.gooPageHTML(c, "footer")))
 	// woocommerce-no-js → woocommerce-js
-	b.WriteString(`<script>(function(){var c=document.body.className;c=c.replace(/woocommerce-no-js/,'woocommerce-js');document.body.className=c;})();</script>` + "\n")
+	b.WriteString(`<script` + cspNonceAttr() + `>(function(){var c=document.body.className;c=c.replace(/woocommerce-no-js/,'woocommerce-js');document.body.className=c;})();</script>` + "\n")
 	// The AJAX endpoints sit on the language home (Multi Language: /de/, de.example.com/ or /?lang=de),
 	// so cart, checkout and order requests carry the visitor's language and stay same-origin.
 	ajaxBase := s.links(ctx).Front()
@@ -286,7 +286,7 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 		params["is_cart"] = true
 	}
 	raw, _ := jsonMarshalNoEscape(params)
-	b.WriteString(`<script id="goocommerce-params">var goocommerce_params = ` + string(raw) + `; var wc_add_to_cart_params = goocommerce_params;</script>` + "\n")
+	b.WriteString(`<script` + cspNonceAttr() + ` id="goocommerce-params">var goocommerce_params = ` + gooScriptSafe(raw) + `; var wc_add_to_cart_params = goocommerce_params;</script>` + "\n")
 	b.WriteString(gooScriptTag("cart-fragments")) // header counts on cached pages
 	if s.gooIsStorePage(c, q) {
 		b.WriteString(s.gooStoreScripts(c, q))
@@ -295,7 +295,7 @@ func (s *Server) gooFooter(c *gin.Context, q *siteQuery) string {
 }
 
 func gooScriptTag(name string) string {
-	return `<script src="` + gooAssets + `/js/frontend/` + name + `.js?ver=` + gooAssetVer() + `" id="goo-` + name + `-js" defer></script>` + "\n"
+	return `<script` + cspNonceAttr() + ` src="` + gooAssets + `/js/frontend/` + name + `.js?ver=` + gooAssetVer() + `" id="goo-` + name + `-js" defer></script>` + "\n"
 }
 
 // gooStoreScripts are the scripts of a page that shows store markup (gooIsStorePage); the
@@ -311,7 +311,7 @@ func (s *Server) gooStoreScripts(c *gin.Context, q *siteQuery) string {
 		js("single-product")        // gallery, tabs, rating stars (also [product_page])
 		js("add-to-cart-variation") // variation forms (also [product_page])
 		if s.gooNeedsCountrySelect(c, q) {
-			b.WriteString(`<script id="goo-country-select-params">var goo_country_select_params = ` + s.gooStatesJSON(ctx) + `;</script>` + "\n")
+			b.WriteString(`<script` + cspNonceAttr() + ` id="goo-country-select-params">var goo_country_select_params = ` + gooScriptSafe([]byte(s.gooStatesJSON(ctx))) + `;</script>` + "\n")
 			js("country-select")
 		}
 		if fv != nil && fv.Kind == "cart" || q != nil && q.Post != nil && strings.Contains(q.Post.Content, "_cart]") {

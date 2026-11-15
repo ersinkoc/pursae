@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="/wp-includes/images/brand/logo-192.png">
 </head>
 <body class="login no-js login-action-{{.Action}} wp-core-ui admin-color-modern locale-en-us">
-<script>document.body.className = document.body.className.replace('no-js','js');</script>
+<script {{cspNonce}}>document.body.className = document.body.className.replace('no-js','js');</script>
 <h1 class="screen-reader-text">{{.Title}}</h1>
 <div id="login">
 	<h1 role="presentation" class="wp-login-logo"><a href="{{.HomeURL}}">Powered by Pursae</a></h1>
@@ -52,7 +52,7 @@
 	</p>
 	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
 </div>
-<script>
+<script {{cspNonce}}>
 (function () {
 	var input = document.getElementById('user_login');
 	if (input && !input.value) { setTimeout(function () { try { input.focus(); input.select(); } catch (e) {} }, 200); }
@@ -94,7 +94,7 @@
 <link rel="apple-touch-icon" href="/wp-includes/images/brand/logo-192.png">
 </head>
 <body class="login no-js login-action-{{.Action}} wp-core-ui admin-color-modern locale-en-us">
-<script>document.body.className = document.body.className.replace('no-js','js');</script>
+<script {{cspNonce}}>document.body.className = document.body.className.replace('no-js','js');</script>
 <h1 class="screen-reader-text">{{.Title}}</h1>
 <div id="login">
 	<h1 role="presentation" class="wp-login-logo"><a href="{{.HomeURL}}">Powered by Pursae</a></h1>

@@ -129,7 +129,7 @@ func bkRuleRow(r bkRule) string {
 		`<td><input type="text" name="wc_booking_availability_to[]" value="` + html.EscapeString(r.To) + `" placeholder="To" size="10"></td>` +
 		`<td>` + bkSelectName("wc_booking_availability_bookable[]", map[bool]string{true: "yes", false: "no"}[r.Bookable], []gooOpt{{"yes", "Yes"}, {"no", "No"}}) + `</td>` +
 		`<td><input type="number" name="wc_booking_availability_priority[]" value="` + strconv.Itoa(max(r.Priority, 1)) + `" min="1" style="width:60px"></td>` +
-		`<td class="remove"><a href="#" class="button" onclick="this.closest('tr').remove();return false">&times;</a></td></tr>`
+		`<td class="remove"><a href="#" class="button" data-action="remove" data-target="tr">&times;</a></td></tr>`
 }
 
 func bkSelectName(name, val string, opts []gooOpt) string {
@@ -140,8 +140,11 @@ func bkSelectName(name, val string, opts []gooOpt) string {
 	return out + `</select>`
 }
 
-// bkAddRowJS appends a copy of the template row (the <template> before the button) to the table.
-const bkAddRowJS = `onclick="var t=this.parentNode.querySelector('template');this.closest('div').querySelector('tbody').insertAdjacentHTML('beforeend',t.innerHTML);return false"`
+// bkAddRow is the add-row button's attributes (csp-actions.js): it appends a copy of the template row
+// (the <template id=tpl> before the button) to the body of the table with id table.
+func bkAddRow(tpl, table string) string {
+	return `data-action="add-row" data-template="` + tpl + `" data-into="#` + table + ` tbody"`
+}
 
 func bkPanelAvailability(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	k := bkConfOf(p)
@@ -151,11 +154,11 @@ func bkPanelAvailability(s *Server, c *gin.Context, p *gooProduct) template.HTML
 		bkSelect("_wc_booking_default_date_availability", map[bool]string{true: "available", false: "non-available"}[k.DefaultAvailable],
 			[]gooOpt{{"available", "available by default"}, {"non-available", "not-available by default"}}), "This option affects how you use the rules below."))
 	b.WriteString(`</div><div class="options_group wc_booking_availability"><p>Set availability rules. Rules with a lower priority number override rules with a higher one; within a priority, rules lower in the table win. Dates are YYYY-MM-DD, months 1–12, weeks 1–53, days 1 (Monday)–7 (Sunday), times HH:MM.</p>`)
-	b.WriteString(`<table class="widefat"><thead><tr><th>Range type</th><th>From</th><th>To</th><th>Bookable</th><th>Priority</th><th></th></tr></thead><tbody>`)
+	b.WriteString(`<table class="widefat" id="bk-availability-rules"><thead><tr><th>Range type</th><th>From</th><th>To</th><th>Bookable</th><th>Priority</th><th></th></tr></thead><tbody>`)
 	for _, r := range k.Rules {
 		b.WriteString(bkRuleRow(r))
 	}
-	b.WriteString(`</tbody></table><p><template>` + bkRuleRow(bkRule{Type: "custom", Bookable: true, Priority: 10}) + `</template><a href="#" class="button add_row" ` + bkAddRowJS + `>Add Range</a></p></div>`)
+	b.WriteString(`</tbody></table><p><template id="bk-availability-rule-template">` + bkRuleRow(bkRule{Type: "custom", Bookable: true, Priority: 10}) + `</template><a href="#" class="button add_row" ` + bkAddRow("bk-availability-rule-template", "bk-availability-rules") + `>Add Range</a></p></div>`)
 	return template.HTML(b.String())
 }
 
@@ -192,7 +195,7 @@ func bkCostRow(r bkCostRule) string {
 		`<td><input type="text" name="wc_booking_pricing_to[]" value="` + html.EscapeString(r.To) + `" placeholder="To" size="10"></td>` +
 		`<td>` + bkSelectName("wc_booking_pricing_base_cost_modifier[]", r.BaseMod, bkMods) + `<input type="text" name="wc_booking_pricing_base_cost[]" value="` + gxFmt(r.BaseCost) + `" size="6" class="wc_input_price"></td>` +
 		`<td>` + bkSelectName("wc_booking_pricing_cost_modifier[]", r.Mod, bkMods) + `<input type="text" name="wc_booking_pricing_cost[]" value="` + gxFmt(r.Cost) + `" size="6" class="wc_input_price"></td>` +
-		`<td class="remove"><a href="#" class="button" onclick="this.closest('tr').remove();return false">&times;</a></td></tr>`
+		`<td class="remove"><a href="#" class="button" data-action="remove" data-target="tr">&times;</a></td></tr>`
 }
 
 func bkPanelCosts(s *Server, c *gin.Context, p *gooProduct) template.HTML {
@@ -202,11 +205,11 @@ func bkPanelCosts(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	b.WriteString(bkField("Base cost", "_wc_booking_cost", bkInput("_wc_booking_cost", "text", gxFmt(k.BaseCost), ` class="wc_input_price"`), "One-off cost for the booking as a whole."))
 	b.WriteString(bkField("Block cost", "_wc_booking_block_cost", bkInput("_wc_booking_block_cost", "text", gxFmt(k.BlockCost), ` class="wc_input_price"`), "This is the cost per block booked. All other costs (for resources and persons) are added to this."))
 	b.WriteString(bkField("Display cost", "_wc_display_cost", bkInput("_wc_display_cost", "text", map[bool]string{true: gxFmt(k.DisplayCost), false: ""}[k.DisplayCost > 0], ` class="wc_input_price"`), "The cost is displayed to the user on the frontend. Leave blank to have it calculated for you. If a booking has varying costs, this will be prefixed with the word &quot;from:&quot;."))
-	b.WriteString(`</div><div class="options_group wc_booking_pricing"><table class="widefat"><thead><tr><th>Range type</th><th>From</th><th>To</th><th>Base cost</th><th>Block cost</th><th></th></tr></thead><tbody>`)
+	b.WriteString(`</div><div class="options_group wc_booking_pricing"><table class="widefat" id="bk-pricing-rules"><thead><tr><th>Range type</th><th>From</th><th>To</th><th>Base cost</th><th>Block cost</th><th></th></tr></thead><tbody>`)
 	for _, r := range k.CostRules {
 		b.WriteString(bkCostRow(r))
 	}
-	b.WriteString(`</tbody></table><p><template>` + bkCostRow(bkCostRule{Type: "custom"}) + `</template><a href="#" class="button add_row" ` + bkAddRowJS + `>Add Range</a></p></div>`)
+	b.WriteString(`</tbody></table><p><template id="bk-pricing-rule-template">` + bkCostRow(bkCostRule{Type: "custom"}) + `</template><a href="#" class="button add_row" ` + bkAddRow("bk-pricing-rule-template", "bk-pricing-rules") + `>Add Range</a></p></div>`)
 	return template.HTML(b.String())
 }
 
@@ -245,7 +248,7 @@ func bkPersonRow(pt bkPersonType) string {
 		`<td><input type="text" name="person_description[]" value="` + html.EscapeString(pt.Description) + `"></td>` +
 		`<td><input type="number" name="person_min[]" value="` + strconv.Itoa(pt.Min) + `" min="0" style="width:60px"></td>` +
 		`<td><input type="number" name="person_max[]" value="` + map[bool]string{true: strconv.Itoa(pt.Max), false: ""}[pt.Max > 0] + `" min="0" style="width:60px"></td>` +
-		`<td class="remove"><a href="#" class="button" onclick="this.closest('tr').remove();return false">&times;</a></td></tr>`
+		`<td class="remove"><a href="#" class="button" data-action="remove" data-target="tr">&times;</a></td></tr>`
 }
 
 func bkPanelPersons(s *Server, c *gin.Context, p *gooProduct) template.HTML {
@@ -258,13 +261,13 @@ func bkPanelPersons(s *Server, c *gin.Context, p *gooProduct) template.HTML {
 	b.WriteString(bkField("Multiply all costs by person count", "_wc_booking_person_cost_multiplier", bkCheckbox("_wc_booking_person_cost_multiplier", k.PersonCostMult), "Enable this to multiply the entire cost of the booking (block and base costs) by the person count."))
 	b.WriteString(bkField("Count persons as bookings", "_wc_booking_person_qty_multiplier", bkCheckbox("_wc_booking_person_qty_multiplier", k.PersonQtyMult), "Enable this to count each person as a booking until the max bookings per block is reached."))
 	b.WriteString(bkField("Enable person types", "_wc_booking_has_person_types", bkCheckbox("_wc_booking_has_person_types", k.HasPersonTypes), "Person types allow you to offer different booking costs for different types of individuals, for example, adults and children."))
-	b.WriteString(`</div><div class="options_group persons-types"><table class="widefat"><thead><tr><th>Person Type Name</th><th>Base Cost</th><th>Block Cost</th><th>Description</th><th>Min</th><th>Max</th><th></th></tr></thead><tbody>`)
+	b.WriteString(`</div><div class="options_group persons-types"><table class="widefat" id="bk-person-types"><thead><tr><th>Person Type Name</th><th>Base Cost</th><th>Block Cost</th><th>Description</th><th>Min</th><th>Max</th><th></th></tr></thead><tbody>`)
 	if k.HasPersonTypes {
 		for _, pt := range k.PersonTypes {
 			b.WriteString(bkPersonRow(pt))
 		}
 	}
-	b.WriteString(`</tbody></table><p><template>` + bkPersonRow(bkPersonType{Name: "Person"}) + `</template><a href="#" class="button add_row" ` + bkAddRowJS + `>Add Person Type</a></p></div>`)
+	b.WriteString(`</tbody></table><p><template id="bk-person-type-template">` + bkPersonRow(bkPersonType{Name: "Person"}) + `</template><a href="#" class="button add_row" ` + bkAddRow("bk-person-type-template", "bk-person-types") + `>Add Person Type</a></p></div>`)
 	return template.HTML(b.String())
 }
 
@@ -748,7 +751,7 @@ func (s *Server) bkAdminCalendar(c *gin.Context) {
 		`<strong class="calendar-month">%s</strong> <a class="button next" href="/wp-admin/goocommerce?page=bookings&amp;action=calendar&amp;calendar_month=%s">&rarr;</a></div></div>`,
 		month.AddDate(0, -1, 0).Format("2006-01"), month.Format("January 2006"), next.Format("2006-01"))
 	out.WriteString(`<style>.wc_bookings_calendar{width:100%;border-collapse:collapse;table-layout:fixed}.wc_bookings_calendar td,.wc_bookings_calendar th{border:1px solid #dcdcde;vertical-align:top;padding:4px;background:#fff}.wc_bookings_calendar td{height:90px}.wc_bookings_calendar .day-number{color:#646970;font-weight:600}.wc_bookings_calendar ul{margin:2px 0}.wc_bookings_calendar li{background:#f0e9f8;border-left:3px solid #7f54b3;padding:1px 4px;margin:2px 0;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}</style>`)
-	out.WriteString(`<p class="description">Subscribe in Google Calendar, Apple Calendar or Outlook: <input type="text" readonly class="large-text code" style="max-width:640px" value="` + html.EscapeString(s.bkFeedURL(ctx)) + `" onfocus="this.select()"> Keep this URL private.</p>`)
+	out.WriteString(`<p class="description">Subscribe in Google Calendar, Apple Calendar or Outlook: <input type="text" readonly class="large-text code" style="max-width:640px" value="` + html.EscapeString(s.bkFeedURL(ctx)) + `" data-select-on-focus> Keep this URL private.</p>`)
 	first := gxAtoi(defaultStr(s.gooExtString(bkKey, "calendar_first_day"), "1"))
 	out.WriteString(`<table class="wc_bookings_calendar widefat"><thead><tr>`)
 	days := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}

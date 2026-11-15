@@ -62,7 +62,7 @@ func (s *Server) pixelHead(c *gin.Context, q *siteQuery) string {
 		g = &gs
 	}
 	var b strings.Builder
-	b.WriteString("<!-- Pursae Pixel -->\n<script id=\"pixelgo-ready\">window.pixelgoReady=window.pixelgoReady||{};</script>\n")
+	b.WriteString("<!-- Pursae Pixel -->\n<script" + cspNonceAttr() + " id=\"pixelgo-ready\">window.pixelgoReady=window.pixelgoReady||{};</script>\n")
 	for _, def := range st.active() {
 		cspAllow(c, "script-src", def.Script...)
 		cspAllow(c, "connect-src", def.Connect...)
@@ -70,7 +70,7 @@ func (s *Server) pixelHead(c *gin.Context, q *siteQuery) string {
 		code := pixelSnippet(def, &st, st.Platforms[def.Key])
 		if def.Key == "gtm" && s.pixelGTMShared(&st) != "" {
 			// The same container runs from Pursae Cookie's script manager: load it once, keep the data layer.
-			code = `<script>window.dataLayer=window.dataLayer||[];window.pixelgoReady=window.pixelgoReady||{};window.pixelgoReady.gtm=1;</script>`
+			code = `<script` + cspNonceAttr() + `>window.dataLayer=window.dataLayer||[];window.pixelgoReady=window.pixelgoReady||{};window.pixelgoReady.gtm=1;</script>`
 		}
 		if gate {
 			code = gooikeInert(code, pixelCategory(g, def))
@@ -109,7 +109,7 @@ func pixelSnippet(def *pixelPlatformDef, st *pixelSettings, cfg pixelPlatformCfg
 		for _, id := range cfg.IDs {
 			inits.WriteString("fbq('init'," + js(id) + ");")
 		}
-		return `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');` +
+		return `<script` + cspNonceAttr() + `>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');` +
 			inits.String() + ready + `</script>`
 	case "ga4", "gads":
 		var cf strings.Builder
@@ -121,24 +121,24 @@ func pixelSnippet(def *pixelPlatformDef, st *pixelSettings, cfg pixelPlatformCfg
 				cf.WriteString("gtag('config'," + js(id) + ",{allow_enhanced_conversions:true});")
 			}
 		}
-		return `<script async src="https://www.googletagmanager.com/gtag/js?id=` + html.EscapeString(cfg.IDs[0]) + `"></script>` + "\n" +
-			`<script>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};gtag('js',new Date());` + cf.String() + ready + `</script>`
+		return `<script` + cspNonceAttr() + ` async src="https://www.googletagmanager.com/gtag/js?id=` + html.EscapeString(cfg.IDs[0]) + `"></script>` + "\n" +
+			`<script` + cspNonceAttr() + `>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};gtag('js',new Date());` + cf.String() + ready + `</script>`
 	case "gtm":
 		// The container, plus the data layer the events are pushed to (GA4 e-commerce schema, see pixelgo.js).
-		return `<script>window.dataLayer=window.dataLayer||[];(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',` + js(cfg.IDs[0]) + `);` + ready + `</script>`
+		return `<script` + cspNonceAttr() + `>window.dataLayer=window.dataLayer||[];(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'',n=d.currentScript&&d.currentScript.nonce;j.async=true;if(n)j.nonce=n;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',` + js(cfg.IDs[0]) + `);` + ready + `</script>`
 	case "tiktok":
 		var loads strings.Builder
 		for _, id := range cfg.IDs {
 			loads.WriteString("ttq.load(" + js(id) + ");")
 		}
-		return `<script>!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};` +
+		return `<script` + cspNonceAttr() + `>!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};` +
 			loads.String() + `}(window,document,'ttq');` + ready + `</script>`
 	case "pinterest":
 		var loads strings.Builder
 		for _, id := range cfg.IDs {
 			loads.WriteString("pintrk('load'," + js(id) + ");")
 		}
-		return `<script>!function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");` +
+		return `<script` + cspNonceAttr() + `>!function(e){if(!window.pintrk){window.pintrk=function(){window.pintrk.queue.push(Array.prototype.slice.call(arguments))};var n=window.pintrk;n.queue=[],n.version="3.0";var t=document.createElement("script");t.async=!0,t.src=e;var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");` +
 			loads.String() + ready + `</script>`
 	case "bing":
 		page := ""
@@ -153,7 +153,7 @@ func pixelSnippet(def *pixelPlatformDef, st *pixelSettings, cfg pixelPlatformCfg
 			ids.WriteString(js(id))
 		}
 		// One UET instance per tag ID; pixelgo.js sends every event to each (window.pixelgoUET).
-		return `<script>(function(w,d,t,r,u){var f,n,i,ids=[` + ids.String() + `];w.pixelgoUET=[];f=function(){ids.forEach(function(id,k){var o={ti:id,enableAutoSpaTracking:true};if(k===0){o.q=w[u]}var x=new UET(o);w.pixelgoUET.push(x);` + strings.ReplaceAll(page, "u.push", "x.push") + `});w[u]=w.pixelgoUET[0]},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","https://bat.bing.com/bat.js","uetq");` + ready + `</script>`
+		return `<script` + cspNonceAttr() + `>(function(w,d,t,r,u){var f,n,i,ids=[` + ids.String() + `];w.pixelgoUET=[];f=function(){ids.forEach(function(id,k){var o={ti:id,enableAutoSpaTracking:true};if(k===0){o.q=w[u]}var x=new UET(o);w.pixelgoUET.push(x);` + strings.ReplaceAll(page, "u.push", "x.push") + `});w[u]=w.pixelgoUET[0]},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","https://bat.bing.com/bat.js","uetq");` + ready + `</script>`
 	}
 	return ""
 }
@@ -170,7 +170,7 @@ func (s *Server) pixelFooter(c *gin.Context, q *siteQuery) string {
 		return ""
 	}
 	return `<script type="application/json" id="pixelgo-config">` + string(raw) + `</script>` + "\n" +
-		`<script src="` + pixelAssets + `/pixelgo.js?ver=` + pixelVersion + `" id="pixelgo-js" defer></script>` + "\n"
+		`<script` + cspNonceAttr() + ` src="` + pixelAssets + `/pixelgo.js?ver=` + pixelVersion + `" id="pixelgo-js" defer></script>` + "\n"
 }
 
 // pixelConfig is the configuration of pixelgo.js for the page.

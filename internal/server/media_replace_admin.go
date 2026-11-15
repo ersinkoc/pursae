@@ -161,7 +161,7 @@ func (s *Server) focalCompatSave(c *gin.Context, a *store.Attachment) error {
 // focalAssets are the focal point picker's styles and script, for the edit screen and the media
 // modal: a click (or the arrow keys) moves the point, the hidden input gets "x,y" ("" for the
 // centre), the previews follow, and in the modal the field is saved after a short pause.
-const focalAssets = `<style id="wpgo-focal-css">
+var focalAssets = `<style id="wpgo-focal-css">
 .wpgo-focal-picker{position:relative;display:inline-block;max-width:100%;cursor:crosshair;line-height:0;outline-offset:2px}
 .wpgo-focal-picker img{display:block;max-width:100%;height:auto;user-select:none}
 .wpgo-focal-dot{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;box-sizing:border-box;border:3px solid #fff;border-radius:50%;background:rgba(34,113,177,.55);box-shadow:0 0 0 1px rgba(0,0,0,.5),0 1px 4px rgba(0,0,0,.4);pointer-events:none}
@@ -171,7 +171,7 @@ const focalAssets = `<style id="wpgo-focal-css">
 .attachment-info .wpgo-replace-attachment{display:block;margin-top:4px}
 .compat-field-focal_point .field{width:100%}
 </style>
-<script id="wpgo-focal-js">
+<script id="wpgo-focal-js"` + cspNonceAttr() + `>
 (function () {
 	if (window.wpgoFocal) { return; }
 	window.wpgoFocal = true;

@@ -135,7 +135,12 @@ const wbPopupCSS = `<style id="wb-popups">
 
 // wbPopupJS opens the popups on their trigger and remembers the visitor's choice. Values come from
 // data attributes the server validated (PopupSettings); the click selector is #id or .class only.
-const wbPopupJS = `<script id="wb-popup-js">(function(){
+func wbPopupJS() string {
+	return `<script` + cspNonceAttr() + ` id="wb-popup-js">` + wbPopupJSCode + "</script>\n"
+}
+
+// wbPopupJSCode is the body of wbPopupJS's script.
+const wbPopupJSCode = `(function(){
 var D=document,H=D.documentElement,K='wb-popup:',list=D.querySelectorAll('[data-wb-popup]');
 function st(s){try{return window[s]}catch(e){return null}}
 function seen(el){var f=el.getAttribute('data-frequency'),k=K+el.getAttribute('data-wb-popup'),v=el.getAttribute('data-version');
@@ -167,8 +172,7 @@ if(e.key==='Tab'){var f=el.querySelectorAll('a[href],button:not([disabled]),inpu
 if(!f.length){e.preventDefault();return}var a=f[0],z=f[f.length-1];
 if(e.shiftKey&&(D.activeElement===a||!el.contains(D.activeElement))){e.preventDefault();z.focus()}
 else if(!e.shiftKey&&(D.activeElement===z||!el.contains(D.activeElement))){e.preventDefault();a.focus()}}});
-})();</script>
-`
+})();`
 
 // --- REST: GET/PUT templates/{id}/popup ----------------------------------------------------------
 
@@ -262,10 +266,10 @@ func (s *Server) wbPopupAssets(c *gin.Context, popups []*wbPopup, haveSiteCSS, h
 		wbEmbedCSP(c, p.filled.html)
 	}
 	h.WriteString(wbPopupCSS)
-	f.WriteString(wbPopupJS)
+	f.WriteString(wbPopupJS())
 	if feats && !haveRuntime && site.Runtime != "" {
-		f.WriteString("<script>document.documentElement.classList.add('" + webbuilder.ClassJS + "')</script>\n")
-		f.WriteString("<script defer src=\"" + html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.Runtime)) + "\" id=\"web-builder-runtime-js\"></script>\n")
+		f.WriteString("<script" + cspNonceAttr() + ">document.documentElement.classList.add('" + webbuilder.ClassJS + "')</script>\n")
+		f.WriteString("<script" + cspNonceAttr() + " defer src=\"" + html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.Runtime)) + "\" id=\"web-builder-runtime-js\"></script>\n")
 	}
 	wbAddCacheTags(c, true, false)
 	return h.String(), f.String()

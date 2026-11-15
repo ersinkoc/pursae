@@ -495,6 +495,6 @@ func (s *Server) gontactEditorAssets(c *gin.Context, a *assets) {
 		list = append(list, item{f.ID, f.ShortHash(), f.Title})
 	}
 	raw, _ := json.Marshal(map[string]any{"contactForms": list, "adminURL": "/wp-admin/admin?page=wpcf7"})
-	addBodyHTML(c, template.HTML(`<script>window.wpcf7 = Object.assign(window.wpcf7 || {}, `+string(raw)+`);</script>`+
-		`<script src="`+gontactAssets+`/block.js?ver=`+gontactVersion+`" defer></script>`))
+	addBodyHTML(c, template.HTML(`<script`+cspNonceAttr()+`>window.wpcf7 = Object.assign(window.wpcf7 || {}, `+string(raw)+`);</script>`+
+		`<script`+cspNonceAttr()+` src="`+gontactAssets+`/block.js?ver=`+gontactVersion+`" defer></script>`))
 }

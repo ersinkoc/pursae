@@ -305,7 +305,7 @@ func gxbResRow(id int64, name string, base, block float64) string {
 	return `<tr><td><input type="hidden" name="resource_id[]" value="` + itoa64(id) + `"><strong>` + html.EscapeString(name) + `</strong> <small>#` + itoa64(id) + `</small></td>` +
 		`<td><input type="text" name="resource_base_cost[]" value="` + gxFmt(base) + `" size="6" class="wc_input_price"></td>` +
 		`<td><input type="text" name="resource_block_cost[]" value="` + gxFmt(block) + `" size="6" class="wc_input_price"></td>` +
-		`<td class="remove"><a href="#" class="button" onclick="this.closest('tr').remove();return false">&times;</a></td></tr>`
+		`<td class="remove"><a href="#" class="button" data-action="remove" data-target="tr">&times;</a></td></tr>`
 }
 
 func gooBkPanelResources(s *Server, c *gin.Context, p *gooProduct) template.HTML {
@@ -342,9 +342,11 @@ func gooBkPanelResources(s *Server, c *gin.Context, p *gooProduct) template.HTML
 		for _, r := range all {
 			fmt.Fprintf(&b, `<template data-resource="%d">%s</template>`, r.ID, gxbResRow(r.ID, r.Name, 0, 0))
 		}
-		b.WriteString(` <a href="#" class="button add_resource" onclick="var p=this.parentNode,v=p.querySelector('select').value,t=p.querySelector('template[data-resource=&quot;'+v+'&quot;]'),tb=this.closest('div').querySelector('tbody');` +
-			`if(t&&!tb.querySelector('input[name=&quot;resource_id[]&quot;][value=&quot;'+v+'&quot;]'))tb.insertAdjacentHTML('beforeend',t.innerHTML);return false">Link resource</a>` +
-			` <a href="/wp-admin/goocommerce?page=booking-resources">Manage resources</a>`)
+		b.WriteString(` <a href="#" class="button add_resource" id="bk-link-resource">Link resource</a>` +
+			` <a href="/wp-admin/goocommerce?page=booking-resources">Manage resources</a>` +
+			`<script` + cspNonceAttr() + `>document.getElementById('bk-link-resource').addEventListener('click',function(e){e.preventDefault();` +
+			`var p=this.parentNode,v=p.querySelector('select').value,t=p.querySelector('template[data-resource="'+v+'"]'),tb=this.closest('div').querySelector('tbody');` +
+			`if(t&&!tb.querySelector('input[name="resource_id[]"][value="'+v+'"]'))tb.insertAdjacentHTML('beforeend',t.innerHTML);});</script>`)
 	}
 	b.WriteString(`</p></div>`)
 	return template.HTML(b.String())
@@ -437,7 +439,7 @@ func (s *Server) gxbResourceList(c *gin.Context) {
 	for _, r := range list {
 		edit := "/wp-admin/goocommerce?page=booking-resources&amp;action=edit&amp;id=" + itoa64(r.ID)
 		fmt.Fprintf(&b, `<tr id="resource-%d"><td class="column-primary"><a href="%s"><strong>%s</strong></a></td><td>%d</td><td>%d</td><td>%d</td>`+
-			`<td><a class="button" href="%s">Edit</a> <a class="button" href="/wp-admin/goocommerce?page=booking-resources&amp;action=delete&amp;id=%d&amp;_wpnonce=%s" onclick="return confirm('Delete this resource?')">Delete</a></td></tr>`,
+			`<td><a class="button" href="%s">Edit</a> <a class="button" href="/wp-admin/goocommerce?page=booking-resources&amp;action=delete&amp;id=%d&amp;_wpnonce=%s" data-confirm="Delete this resource?">Delete</a></td></tr>`,
 			r.ID, edit, html.EscapeString(defaultStr(r.Name, "(no name)")), r.Qty, len(r.Rules), uses[r.ID], edit, r.ID, nonce)
 	}
 	b.WriteString(`</tbody></table>`)
@@ -486,11 +488,11 @@ func (s *Server) gxbResourceEdit(c *gin.Context) {
 	b.WriteString(bkField("Available Quantity", "_wc_booking_qty", bkInput("_wc_booking_qty", "number", strconv.Itoa(r.Qty), ` min="1" step="1"`), "The quantity of this resource available at any given time."))
 	b.WriteString(bkField("Order", "menu_order", bkInput("menu_order", "number", strconv.Itoa(r.Order), ` step="1"`), "Resources with a lower number are listed and assigned first."))
 	b.WriteString(`</div><div class="options_group wc_booking_availability"><p>Set availability rules for this resource. They override the availability rules of the products it is linked to: dates are YYYY-MM-DD, months 1–12, weeks 1–53, days 1 (Monday)–7 (Sunday), times HH:MM.</p>`)
-	b.WriteString(`<table class="widefat"><thead><tr><th>Range type</th><th>From</th><th>To</th><th>Bookable</th><th>Priority</th><th></th></tr></thead><tbody>`)
+	b.WriteString(`<table class="widefat" id="bk-resource-availability-rules"><thead><tr><th>Range type</th><th>From</th><th>To</th><th>Bookable</th><th>Priority</th><th></th></tr></thead><tbody>`)
 	for _, rule := range r.Rules {
 		b.WriteString(bkRuleRow(rule))
 	}
-	b.WriteString(`</tbody></table><p><template>` + bkRuleRow(bkRule{Type: "custom", Bookable: true, Priority: 10}) + `</template><a href="#" class="button add_row" ` + bkAddRowJS + `>Add Range</a></p></div>`)
+	b.WriteString(`</tbody></table><p><template id="bk-resource-availability-rule-template">` + bkRuleRow(bkRule{Type: "custom", Bookable: true, Priority: 10}) + `</template><a href="#" class="button add_row" ` + bkAddRow("bk-resource-availability-rule-template", "bk-resource-availability-rules") + `>Add Range</a></p></div>`)
 	b.WriteString(`</div></div></div></div><p class="submit"><button type="submit" class="button button-primary">Save Resource</button> <a class="button" href="/wp-admin/goocommerce?page=booking-resources">Back to resources</a></p></form>`)
 	s.gxAdminPage(c, "goo-ext-bookings", "booking-resources", title, bkAdminHead("resources"), template.HTML(b.String()))
 }

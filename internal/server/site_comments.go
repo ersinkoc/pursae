@@ -651,7 +651,7 @@ func (s *Server) commentDie(c *gin.Context, status int, msg string) {
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	c.String(status, `<!DOCTYPE html><html lang="en-US"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Comment Submission Failure</title>`+
 		`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page"><div class="wp-die-message"><p>`+msg+
-		`</p></div><p><a href="javascript:history.back()">&laquo; Back</a></p></body></html>`)
+		`</p></div><p>`+historyBackLink("&laquo; Back")+`</p></body></html>`)
 }
 
 // Comment spam traps. The honeypot input is hidden with CSS; the time field is "<unix>.<hmac>" signed

@@ -37,7 +37,7 @@ func (s *Server) gooCatalogAssets(c *gin.Context) {
 	}
 	c.Set("goo.catalogAssets", true)
 	addBodyHTML(c, template.HTML(`<link rel="stylesheet" id="goo-admin-catalog-css" href="`+gooAssets+`/css/admin-catalog.css?ver=`+gooCatalogVersion+`" media="all" />`))
-	addLateFooterHTML(c, template.HTML(`<script src="`+gooAssets+`/js/admin/catalog.js?ver=`+gooCatalogVersion+`"></script>`+"\n"))
+	addLateFooterHTML(c, template.HTML(`<script`+cspNonceAttr()+` src="`+gooAssets+`/js/admin/catalog.js?ver=`+gooCatalogVersion+`"></script>`+"\n"))
 }
 
 type gooProductRow struct {

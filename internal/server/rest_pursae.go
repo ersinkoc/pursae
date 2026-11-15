@@ -71,6 +71,8 @@ func (s *Server) registerPursaeREST() {
 	api.register(pursaeNS, "/pursae/v1/analytics", map[string]restHandler{http.MethodGet: guard("manage_options", s.pursaeAnalytics)}, nil)
 
 	api.register(pursaeNS, "/pursae/v1/cache", map[string]restHandler{http.MethodGet: guard("manage_options", s.pursaeCacheStatus)}, nil)
+	api.register(pursaeNS, "/pursae/v1/csp-reports", map[string]restHandler{ // CSP violation reports (csp_report.go)
+		http.MethodGet: guard("manage_options", s.pursaeCSPReports), http.MethodDelete: guard("manage_options", s.pursaeCSPReportsClear)}, nil)
 	api.register(pursaeNS, "/pursae/v1/cache/purge", map[string]restHandler{http.MethodPost: guard("manage_options", s.pursaeCachePurge)}, nil)
 	api.register(pursaeNS, "/pursae/v1/cache/settings", map[string]restHandler{
 		http.MethodGet:  guard("manage_options", s.pursaeCacheSettings),

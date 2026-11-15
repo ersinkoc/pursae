@@ -29,7 +29,8 @@
 {{end}}{{with .Color.CSS}}<link rel="stylesheet" id="colors-css" href="{{.}}">
 {{end}}
 <link rel="stylesheet" href="/wp-admin/assets/css/admin-overrides.css">
-<script>
+<script {{cspNonce}} src="/wp-admin/assets/js/csp-actions.js?ver={{version}}"></script>
+<script {{cspNonce}}>
 var ajaxurl = '/wp-admin/admin-ajax',
 	pagenow = '{{.PageNow}}',
 	typenow = '{{.TypeNow}}',
@@ -45,7 +46,7 @@ var _wpColorScheme = {{.Color.Icons}};
 <link rel="apple-touch-icon" href="/wp-includes/images/brand/logo-192.png">
 </head>
 <body class="wp-admin wp-core-ui no-js {{.BodyClass}} auto-fold admin-bar branch-0-1 version-{{version}} admin-color-{{.Color.Slug}} locale-en-us svg">
-<script>document.body.className = document.body.className.replace('no-js','js');</script>
+<script {{cspNonce}}>document.body.className = document.body.className.replace('no-js','js');</script>
 <div id="wpwrap">
 {{template "admin-menu" .}}
 <div id="wpcontent">

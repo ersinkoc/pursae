@@ -45,8 +45,9 @@
 	<h2><span class="dashicons dashicons-tickets-alt"></span> Your backup codes</h2>
 	<p><strong>Save these codes now: they are shown only once.</strong> Each code logs you in one time when you can't use your app or e-mail. Print them or keep them in a password manager.</p>
 	<ul class="asg-codes" id="adminsec-backup-codes">{{range .NewCodes}}<li>{{.}}</li>{{end}}</ul>
-	<p><button type="button" class="button" onclick="navigator.clipboard&&navigator.clipboard.writeText(Array.from(document.querySelectorAll('#adminsec-backup-codes li')).map(function(l){return l.textContent}).join('\n'))">Copy</button>
-	<button type="button" class="button" onclick="window.print()">Print</button>
+	<p><textarea id="adminsec-backup-codes-text" hidden readonly>{{range $i, $c := .NewCodes}}{{if $i}}
+{{end}}{{$c}}{{end}}</textarea><button type="button" class="button" data-copy-from="#adminsec-backup-codes-text">Copy</button>
+	<button type="button" class="button" data-action="print">Print</button>
 	<a class="button button-primary" href="/wp-admin/admin?page=adminsecgo-account">I saved them</a></p>
 </div>
 {{else if eq .Step "mfa_verify"}}
@@ -289,12 +290,12 @@
 <form method="post" action="/wp-admin/admin?page=adminsecgo-lockouts"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <table class="wp-list-table widefat fixed striped"><thead><tr><th>Locked out</th><th>Reason</th><th>Since</th><th>Until</th><th></th></tr></thead><tbody>
 {{range .Lockouts}}<tr><td>{{if eq .Kind "ip"}}IP <code>{{.Value}}</code>{{else}}Username <strong>{{.Value}}</strong>{{end}}{{if .Long}} <span class="asg-pill off">long</span>{{end}}</td><td>{{.Reason}}</td><td>{{date .Created "Y-m-d H:i"}}</td><td>{{date .Until "Y-m-d H:i"}}</td>
-	<td><button type="submit" name="lockout" value="{{.ID}}" class="button" onclick="this.form.adminsec_do.value='release'">Release</button></td></tr>
+	<td><button type="submit" name="lockout" value="{{.ID}}" class="button">Release</button></td></tr>
 {{else}}<tr class="no-items"><td colspan="5">No active lockouts.</td></tr>{{end}}
 </tbody></table>
 <input type="hidden" name="adminsec_do" value="release">
-{{if .Lockouts}}<p><button type="submit" class="button" onclick="this.form.adminsec_do.value='release_all'">Release all</button></p>{{end}}
 </form>
+{{if .Lockouts}}<form method="post" action="/wp-admin/admin?page=adminsecgo-lockouts"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="adminsec_do" value="release_all"><p><button type="submit" class="button">Release all</button></p></form>{{end}}
 <h2>Lock out an IP address</h2>
 <form method="post" action="/wp-admin/admin?page=adminsecgo-lockouts" class="asg-filters"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="adminsec_do" value="lock_ip">
 	<label>IP address <input type="text" name="ip" required></label> <label>for <input type="number" name="hours" value="24" min="1" class="small-text"> hours</label> <button type="submit" class="button">Lock out</button>
@@ -351,7 +352,7 @@
 	{{if or .F.TOTPEnabled .F.EmailEnabled}} &middot; {{.BackupLeft}} backup codes left{{end}}{{if .Devices}} &middot; {{.Devices}} remembered device{{if ne .Devices 1}}s{{end}}{{end}}
 	{{if and .Enroll.Required (not .Enroll.Satisfied)}}<p class="description" style="color:#b32d2e">The role requires {{if eq .Enroll.Required "2fa"}}2FA{{else}}MFA{{end}}{{if not .Enroll.Deadline.IsZero}}, deadline {{date .Enroll.Deadline ""}}{{end}}.</p>{{end}}
 	{{if .Self}}<p><a class="button" href="{{.AccountURL}}">Manage two-step login</a></p>{{end}}
-	{{if .CanManage}}<p>{{if or .F.TOTPEnabled .F.EmailEnabled .Devices}}<button type="submit" class="button" name="adminsec_action" value="reset-factors" onclick="return confirm('Remove this user\'s second factors, backup codes and remembered devices?')">Reset two-step login</button> {{end}}
+	{{if .CanManage}}<p>{{if or .F.TOTPEnabled .F.EmailEnabled .Devices}}<button type="submit" class="button" name="adminsec_action" value="reset-factors" data-confirm="Remove this user's second factors, backup codes and remembered devices?">Reset two-step login</button> {{end}}
 		{{if .ForcePassword}}<button type="submit" class="button" name="adminsec_action" value="unforce-password">Cancel the required password change</button>{{else}}<button type="submit" class="button" name="adminsec_action" value="force-password">Require a password change at next login</button>{{end}}</p>{{end}}
 </td></tr>
 <tr><th>Active sessions</th><td>

@@ -38,7 +38,7 @@
 <p class="submit pf-admin-submitrow">
 	<input type="submit" class="button button-primary" value="Save Levels" />
 	<button type="button" class="button hide-if-no-js" id="pf-level-add"><span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span> Add level</button>
-	<button type="submit" class="button-link pf-admin-restore" form="pf-levels-restore" onclick="return confirm('Restore the six default levels and point weights? Your levels are replaced.')">Restore default levels</button>
+	<button type="submit" class="button-link pf-admin-restore" form="pf-levels-restore" data-confirm="Restore the six default levels and point weights? Your levels are replaced.">Restore default levels</button>
 </p>
 </form>
 <form id="pf-levels-restore" method="post" action="/wp-admin/forum?tab=badges"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="do" value="restore_levels" /></form>
@@ -62,7 +62,7 @@
 	<td class="column-badge has-row-actions column-primary" data-colname="Badge">
 		<a class="pf-admin-badgelink" href="{{.EditURL}}" aria-label="Edit &#8220;{{.Name}}&#8221;">{{.Chip}}</a>
 		{{if .Description}}<p class="pf-admin-desc">{{.Description}}</p>{{end}}
-		<div class="row-actions">{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} onclick="return confirm('{{$a.Confirm}}')"{{end}}{{if eq $a.Key "delete"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}</div>
+		<div class="row-actions">{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} data-confirm="{{$a.Confirm}}"{{end}}{{if eq $a.Key "delete"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}</div>
 		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
 	</td>
 	<td class="column-rule" data-colname="Earned by">{{.RuleLabel}}{{if .Threshold}} <span class="pf-admin-threshold">&ge; {{.Threshold}}</span>{{end}}</td>
@@ -76,7 +76,7 @@
 <form method="post" action="/wp-admin/forum?tab=badges" class="pf-admin-restorebar">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <input type="hidden" name="do" value="restore_badges" />
-<button type="submit" class="button" onclick="return confirm('Restore the eight default badges as shipped? Edited default badges are reset; your own badges stay.')">Restore default badges</button>
+<button type="submit" class="button" data-confirm="Restore the eight default badges as shipped? Edited default badges are reset; your own badges stay.">Restore default badges</button>
 </form>
 </div></div>
 </div>

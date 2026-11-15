@@ -127,7 +127,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 		<input type="hidden" name="do" value="job">
 		<button type="submit" name="kind" value="offload" class="button button-primary"{{if not .Configured}} disabled{{end}}>Offload existing media</button>
 		<button type="submit" name="kind" value="download" class="button"{{if not .Configured}} disabled{{end}}>Download back to the server</button>
-		<button type="submit" name="kind" value="remove" class="button" onclick="return confirm('Delete the library’s files from the bucket? Files removed from the server are downloaded first.')"{{if not .Configured}} disabled{{end}}>Remove from the bucket</button>
+		<button type="submit" name="kind" value="remove" class="button" data-confirm="Delete the library’s files from the bucket? Files removed from the server are downloaded first."{{if not .Configured}} disabled{{end}}>Remove from the bucket</button>
 		{{if and .Job.Running .Job.Kind}}<label><input type="checkbox" name="resume" value="1" checked> Resume from attachment #{{.Job.LastID}}</label>{{end}}
 	</form>
 	{{if .MoveFiles}}<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools" id="gc-move">
@@ -151,10 +151,10 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 	{{if .Orphans}}<p><span translate="no">{{len .Orphans}}</span> object(s) under the uploads prefix have no record in the database (a scan lists at most 500):</p>
 	<ul class="gc-errors">{{range .Orphans}}<li translate="no">{{.}}</li>{{end}}</ul>
 	<form method="post" action="/wp-admin/gocdn?page=offload" class="gc-tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
-		<button type="submit" name="do" value="orphans-delete" class="button" onclick="return confirm('Delete these objects from the bucket? This cannot be undone.')">Delete them from the bucket</button></form>
+		<button type="submit" name="do" value="orphans-delete" class="button" data-confirm="Delete these objects from the bucket? This cannot be undone.">Delete them from the bucket</button></form>
 	{{else}}<p>Every object under the uploads prefix has a record.</p>{{end}}
 </div>{{end}}
-<script>
+<script {{cspNonce}}>
 (function(){
 	var box=document.getElementById('gc-job');if(!box)return;
 	var url=box.getAttribute('data-progress'),timer;
@@ -183,7 +183,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <form method="post" action="/wp-admin/gocdn?page=remote">
 <input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="prefix" value="{{.Prefix}}">
 <table class="wp-list-table widefat fixed striped gc-browser">
-<thead><tr><td class="manage-column check-column"><input type="checkbox" onclick="document.querySelectorAll('.gc-browser input[name=\'keys[]\']').forEach(function(b){b.checked=this.checked}.bind(this))" aria-label="Select all"></td><th class="thumb">Preview</th><th>Name</th><th>Size</th><th>Modified</th><th>Library</th></tr></thead>
+<thead><tr><td class="manage-column check-column"><input type="checkbox" data-check-all=".gc-browser input[name='keys[]']" aria-label="Select all"></td><th class="thumb">Preview</th><th>Name</th><th>Size</th><th>Modified</th><th>Library</th></tr></thead>
 <tbody>
 {{range .Folders}}<tr><th class="check-column"></th><td class="thumb"><span class="dashicons dashicons-portfolio" aria-hidden="true"></span></td><td colspan="4"><a href="/wp-admin/gocdn?page=remote&amp;prefix={{.Prefix}}"><strong translate="no">{{.Name}}/</strong></a></td></tr>{{end}}
 {{range .Objects}}<tr>
@@ -242,7 +242,7 @@ Status: {{if .Configured}}<span class="gc-badge ok">Configured</span>{{else}}<sp
 <h2>Signing key</h2>
 <form method="post" action="/wp-admin/gocdn?page=images" class="gc-tools">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}">
-<button type="submit" name="do" value="rotate-key" class="button" onclick="return confirm('Signed URLs made with the current key stop working. Continue?')">Make a new signing key</button>
+<button type="submit" name="do" value="rotate-key" class="button" data-confirm="Signed URLs made with the current key stop working. Continue?">Make a new signing key</button>
 <button type="submit" name="do" value="purge-images" class="button">Empty the processed image cache</button>
 </form>
 {{end}}

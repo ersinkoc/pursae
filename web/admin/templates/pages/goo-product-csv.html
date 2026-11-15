@@ -131,7 +131,7 @@
 			<div id="goo-importer-error" class="error inline" hidden><p></p></div>
 		</section>
 	</div>
-	<script>
+	<script {{cspNonce}}>
 	(function () {
 		var form = document.getElementById('goo-importer-mapping');
 		if (!form || !window.fetch || !window.FormData) { return; }

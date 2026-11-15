@@ -1092,7 +1092,7 @@ func (s *Server) pllBoxInner(c *gin.Context, p *store.Post) template.HTML {
 	}
 	b.WriteString(`</tbody></table></div>`)
 	if again := s.pllMTAgainURL(c, p); again != "" {
-		fmt.Fprintf(&b, `<p id="pll-mt-again"><a class="button" href="%s" onclick="return window.confirm('Replace the title, the excerpt and the content of this translation with a new machine translation of its source? Unsaved changes are lost.');">Machine translate again</a><br /><span class="description">Translates this item again from its source. The current text is kept as a revision.</span></p>`,
+		fmt.Fprintf(&b, `<p id="pll-mt-again"><a class="button" href="%s" data-confirm="Replace the title, the excerpt and the content of this translation with a new machine translation of its source? Unsaved changes are lost.">Machine translate again</a><br /><span class="description">Translates this item again from its source. The current text is kept as a revision.</span></p>`,
 			html.EscapeString(again))
 	}
 	return template.HTML(b.String())
@@ -1101,7 +1101,7 @@ func (s *Server) pllBoxInner(c *gin.Context, p *store.Post) template.HTML {
 // pllBoxScript wires the Languages box: language and translation changes are saved at once (admin-ajax),
 // and the box is redrawn with the answer, as Polylang does.
 func pllBoxScript(nonce string) string {
-	return `<script>
+	return `<script` + cspNonceAttr() + `>
 (function(){
 var nonce = ` + strconvQuote(nonce) + `;
 function post(data, done){

@@ -276,7 +276,42 @@ func (s *Server) applyFilters(ctx context.Context, name string, value any, args 
 	if s.plugins == nil || !s.plugins.hooks.HasFilter(name) {
 		return value
 	}
+	if str, ok := value.(string); ok && strings.Contains(str, cspPH) {
+		return maskNoncePlaceholder(str, func(masked string) string {
+			out, _ := s.plugins.hooks.ApplyFilters(ctx, name, masked, args...).(string)
+			return out
+		})
+	}
 	return s.plugins.hooks.ApplyFilters(ctx, name, value, args...)
+}
+
+// maskNoncePlaceholder runs filter (a Wasm plugin's) over markup holding trusted nonced scripts
+// without showing it the process's nonce placeholder: a plugin that learnt it could put it on its own
+// scripts, or store it where content would carry it, and every response would then turn it into a
+// valid nonce (csp_nonce.go). Each placeholder is replaced by its own one-off random token of the
+// same length and put back afterwards only where exactly one copy of that token is left; a token the
+// plugin copied loses its nonce everywhere.
+func maskNoncePlaceholder(markup string, filter func(string) string) string {
+	parts := strings.Split(markup, cspPH)
+	toks := make([]string, len(parts)-1)
+	var b strings.Builder
+	for i, p := range parts {
+		b.WriteString(p)
+		if i < len(toks) {
+			toks[i] = newCSPNonce()
+			b.WriteString(toks[i])
+		}
+	}
+	out := filter(b.String())
+	out = strings.ReplaceAll(out, cspPH, "") // cannot be there: the plugin never saw it
+	for _, t := range toks {
+		if strings.Count(out, t) == 1 {
+			out = strings.Replace(out, t, cspPH, 1)
+		} else {
+			out = strings.ReplaceAll(out, t, "")
+		}
+	}
+	return out
 }
 
 type noticeKey struct{}
