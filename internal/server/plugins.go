@@ -154,7 +154,7 @@ func (s *Server) startPlugins(ctx context.Context) {
 		}
 	}
 	ps.hooks.DoAction(ctx, "init")
-	go s.pluginSyncLoop(ctx)
+	s.goBackground(s.pluginSyncLoop) // stops on Server.Close (background.go)
 }
 
 // pluginSyncInterval is how often a process compares the plugins table with what it has loaded, so
