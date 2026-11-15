@@ -129,7 +129,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Reset settings | ✓ | ✓ Keeps the on/off state |
 | Force SSL on the page | PRO | ✗ TLS is the job of the server or proxy in front of Pursae |
 | Customize the built-in WP update page | PRO | ✗ Pursae has no `.maintenance` update page |
-| White-label, license dashboard | PRO | ✗ No licenses in Pursae |
+| White-label, license dashboard | PRO | ✗ No white-label. Maintenance mode is built in and needs no license key. Site license keys (pro/beta packages from the Hub) are managed under Settings › License. |
 
 ## 3. How it is built
 
