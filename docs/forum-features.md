@@ -159,8 +159,8 @@ not add its head to them.
 
 ## API
 
-- `GET /wp-json/forum/v1/forums`, `/forums/<id>/topics`, `/topics/<id>`, `/topics/<id>/replies`: public,
-  read-only, published content only (`docs/developer/rest-api/endpoints.md`).
+- `GET /wp-json/forum/v1/forums`, `/forums/<id>/topics`, `/topics/<id>`, `/topics/<id>/replies`: public
+  read routes, published content only (`docs/developer/rest-api/endpoints.md`).
 - `/pursae/v1/options/forum`: the settings, like the other built-in plugins.
 - 0.2.5: the community routes listed above (views, presence, likes, solutions, subscriptions,
   reports, previews, drafts, tags, similar topics, statistics, levels, badges, members of the week,
