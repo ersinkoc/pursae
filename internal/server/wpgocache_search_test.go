@@ -43,4 +43,10 @@ func TestPageCacheServesSearch(t *testing.T) {
 	if st := resp.Header.Get("X-WPGo-Cache"); st == "hit" {
 		t.Fatalf("logged-in search: X-WPGo-Cache = %q, want no cached copy", st)
 	}
+
+	// Path-style searches are not bounded by the search limits, so they are never stored.
+	pageCacheGet(t, ts.URL+"/search/zebracorn/")
+	if st, _ := pageCacheGet(t, ts.URL+"/search/zebracorn/"); st == "hit" {
+		t.Fatalf("/search/<term>: X-WPGo-Cache = %q, want no cached copy", st)
+	}
 }
