@@ -117,6 +117,7 @@ type Runtime struct {
 	plugins  map[string]*Plugin
 	byModule map[string]*Plugin // live module instance name -> plugin
 	gen      uint64
+	closed   bool // Close ran: the wazero runtime and cache are released
 }
 
 // NewRuntime creates a runtime whose plugins register hooks in hooks.
@@ -268,8 +269,16 @@ func (rt *Runtime) Plugins() []*Plugin {
 	return out
 }
 
-// Close unloads every plugin and releases the wazero runtime.
+// Close unloads every plugin and releases the wazero runtime. Only the first call does the work;
+// later calls return nil, so a Server shut down twice (tests, a failed start-up) is harmless.
 func (rt *Runtime) Close(ctx context.Context) error {
+	rt.mu.Lock()
+	if rt.closed {
+		rt.mu.Unlock()
+		return nil
+	}
+	rt.closed = true
+	rt.mu.Unlock()
 	for _, p := range rt.Plugins() {
 		_ = rt.Unload(ctx, p.Slug())
 	}

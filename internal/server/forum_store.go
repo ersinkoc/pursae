@@ -387,7 +387,7 @@ func (s *Server) forumTopics(ctx context.Context, q forumTopicQuery) ([]*forumTo
 		where = append(where, "p.author_id = "+arg(q.AuthorID))
 	}
 	if term := strings.TrimSpace(q.Search); term != "" {
-		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+arg(term)+")")
+		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+store.FoldedArgSQL(arg(term))+")") // folded like posts.search (0105)
 	}
 	if q.Tag != "" {
 		where = append(where, "p.meta->'"+forumMetaTags+"' ? "+arg(q.Tag))
@@ -449,10 +449,15 @@ func (s *Server) forumTopicByID(ctx context.Context, id int64) (*forumTopic, err
 	return list[0], nil
 }
 
-// forumIPOf is the address a topic or reply was posted from (moderators only).
+// forumIPOf is the address a topic or reply was posted from (moderators only). A missing post or a
+// cancelled request is not worth reporting (a missing IP meta key is already "" via coalesce), but a
+// real database fault is logged rather than shown as a blank IP indistinguishable from "no IP stored";
+// the moderator page still renders either way.
 func (s *Server) forumIPOf(ctx context.Context, postID int64) string {
 	var ip string
-	_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(meta->>'`+forumMetaIP+`','') FROM posts WHERE id = $1 AND type IN ('topic','reply')`, postID).Scan(&ip)
+	if err := s.store.Pool.QueryRow(ctx, `SELECT coalesce(meta->>'`+forumMetaIP+`','') FROM posts WHERE id = $1 AND type IN ('topic','reply')`, postID).Scan(&ip); err != nil && !errors.Is(err, pgx.ErrNoRows) && !errors.Is(err, context.Canceled) {
+		log.Printf("forum: ip of post %d: %v", postID, err)
+	}
 	return ip
 }
 
@@ -533,7 +538,7 @@ func (s *Server) forumReplies(ctx context.Context, q forumReplyQuery) ([]*forumR
 		where = append(where, "p.author_id = "+arg(q.AuthorID))
 	}
 	if term := strings.TrimSpace(q.Search); term != "" {
-		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+arg(term)+")")
+		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+store.FoldedArgSQL(arg(term))+")") // folded like posts.search (0105)
 	}
 	cond := strings.Join(where, " AND ")
 	var total int

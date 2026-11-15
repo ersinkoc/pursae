@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"wpgo/internal/store"
 	"wpgo/web"
@@ -290,5 +291,67 @@ func TestInstallAndLoginLanguage(t *testing.T) {
 	_, body, _ = get(t, anon, base+"/wp-login?wp_lang=xx_XX")
 	if !strings.Contains(body, `lang="de-DE"`) {
 		t.Error("an unknown wp_lang changed the language")
+	}
+}
+
+// TestInstallLanguageTimeout: a translation server that does not answer does not hold the install
+// screen for the download client's 90 seconds; the language step comes back with an announced
+// error (role="alert") and the choice of English (PRS-I18N-004). Not parallel: it shortens a
+// package variable.
+func TestInstallLanguageTimeout(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select { // hang, but let api.Close() end the request
+		case <-r.Context().Done():
+		case <-time.After(5 * time.Second):
+		}
+	}))
+	defer api.Close()
+	srv.cfg.TranslationsAPI = api.URL
+	old := installLangTimeout
+	installLangTimeout = 200 * time.Millisecond
+	t.Cleanup(func() { installLangTimeout = old })
+
+	start := time.Now()
+	code, body, _ := get(t, c, ts.URL+"/wp-admin/install?language=tr_TR")
+	if took := time.Since(start); took > 2*time.Second {
+		t.Errorf("language step took %s", took)
+	}
+	if code != http.StatusOK || !strings.Contains(body, "could not be downloaded") || !strings.Contains(body, `<p class="message" id="install-error" role="alert">`) {
+		t.Errorf("no announced download error: %d", code)
+	}
+	if !strings.Contains(body, "Select a default language") || !strings.Contains(body, `value="en_US"`) {
+		t.Error("the language step is not shown again")
+	}
+	if srv.lang.IsInstalled("tr_TR") {
+		t.Error("tr_TR installed after a failed download")
+	}
+}
+
+// The language dropdowns' options carry a BCP 47 language code in lang, like wp_dropdown_languages(),
+// not the WordPress locale ("tr_TR" is not a valid tag) (PRS-I18N-006).
+func TestLanguageOptionLangAttr(t *testing.T) {
+	for locale, want := range map[string]string{"tr_TR": "tr", "de_DE_formal": "de", "pt_PT_ao90": "pt", "en_GB": "en", "haz": "haz", "": ""} {
+		if got := localeLangAttr(locale); got != want {
+			t.Errorf("localeLangAttr(%q) = %q, want %q", locale, got, want)
+		}
+	}
+	installed, available := (&Server{}).languageChoices("tr_TR", false)
+	found := false
+	for _, ch := range append(installed, available...) {
+		if strings.Contains(ch.Lang, "_") || ch.Lang == "" {
+			t.Errorf("%s: lang %q", ch.Locale, ch.Lang)
+		}
+		if ch.Locale == "tr_TR" {
+			found = ch.Lang == "tr" && ch.Selected
+		}
+	}
+	if !found {
+		t.Error("tr_TR is not offered with lang=\"tr\"")
+	}
+	ts, c, _ := testServerBuilderOff(t)
+	_, body, _ := get(t, c, ts.URL+"/wp-admin/install")
+	if !strings.Contains(body, `<option value="tr_TR" lang="tr" translate="no">`) || strings.Contains(body, `lang="tr_TR"`) {
+		t.Error("install language step: the Turkish option's lang is not \"tr\"")
 	}
 }

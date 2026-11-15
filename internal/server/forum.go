@@ -42,7 +42,7 @@ const (
 	forumSlug            = "pursae-forum"
 	forumSetting         = "native_pursae_forum"   // bool, off on fresh install
 	forumOptions         = "pursae_forum_settings" // JSON
-	forumVersion         = "0.2.5"
+	forumVersion         = "0.2.6"
 	forumNonce           = "pursae-forum"      // logged-in front actions
 	forumAuthNonce       = "pursae-forum-auth" // login/register/resend (logged-out nonce, pages are no-store)
 	forumAdminNonce      = "pursae-forum-admin"

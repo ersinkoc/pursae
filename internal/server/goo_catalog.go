@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"wpgo/internal/store"
 )
 
 // Catalog queries (WC_Product_Query / the shop's main query): visibility, categories, tags,
@@ -86,10 +88,11 @@ func (s *Server) gooQueryProducts(ctx context.Context, q gooProductQuery) ([]*go
 		}
 	}
 	if q.Search != "" {
-		ph := add(q.Search)
-		like := add("%" + q.Search + "%")
-		conds = append(conds, "(po.search @@ plainto_tsquery('simple', "+ph+") OR po.title ILIKE "+like+" OR p.sku ILIKE "+like+
-			" OR po.id IN (SELECT parent_id FROM posts v JOIN goo_products vp ON vp.post_id = v.id WHERE v.type = 'product_variation' AND vp.sku ILIKE "+like+"))")
+		// Folded like posts.search (migration 0105): "ışık" finds "IŞIK" in titles and SKUs.
+		ph := store.FoldedArgSQL(add(q.Search))
+		like := store.FoldedArgSQL(add("%" + q.Search + "%"))
+		conds = append(conds, "(po.search @@ plainto_tsquery('simple', "+ph+") OR "+store.FoldedTitleSQL("po.title")+" LIKE "+like+" OR "+store.FoldedTitleSQL("p.sku")+" LIKE "+like+
+			" OR po.id IN (SELECT parent_id FROM posts v JOIN goo_products vp ON vp.post_id = v.id WHERE v.type = 'product_variation' AND "+store.FoldedTitleSQL("vp.sku")+" LIKE "+like+"))")
 	}
 	if q.SKU != "" {
 		conds = append(conds, "p.sku = "+add(q.SKU))
@@ -164,7 +167,8 @@ func (s *Server) gooQueryProducts(ctx context.Context, q gooProductQuery) ([]*go
 	}
 	sql := `SELECT po.id FROM ` + from + ` WHERE ` + where + ` ORDER BY ` + order
 	if q.PerPage > 0 {
-		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (max(q.Page, 1)-1)*q.PerPage)
+		// Bounded here for every caller (admin ?paged= is not capped upstream), so the OFFSET cannot overflow.
+		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (min(max(q.Page, 1), store.MaxPage)-1)*q.PerPage)
 	}
 	rows, err := s.store.Pool.Query(ctx, sql, args...)
 	if err != nil {

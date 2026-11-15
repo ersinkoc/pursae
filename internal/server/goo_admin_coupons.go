@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -85,7 +86,9 @@ func (s *Server) gooAdminCoupons(c *gin.Context) {
 	page := gooPaged(c)
 	coupons, total, err := s.gooQueryCoupons(ctx, status, d.Search, page, 20)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		// The raw database error stays in the log; the page only says the list failed.
+		slog.Error("goocommerce: coupon list", "err", err)
+		c.String(http.StatusInternalServerError, "Could not load coupons.")
 		return
 	}
 	types := map[string]string{}

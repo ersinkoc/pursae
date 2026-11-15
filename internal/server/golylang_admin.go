@@ -478,12 +478,6 @@ func (s *Server) pllDefaultCategory(ctx context.Context, l *pllLanguage) {
 	_ = s.pllSaveTranslations(ctx, pllTerm, tr)
 }
 
-// pllDeleteLanguage removes a language: its content stays (in the default language), translation links to
-// it, its string translations and its menu locations go. Deleting the default language picks another.
-func (s *Server) pllDeleteLanguage(ctx context.Context, l *pllLanguage) error {
-	return s.pllDeleteLanguageWith(ctx, l, "")
-}
-
 // pllLangContentCount counts the posts (any status but auto-draft) and terms that belong to a language.
 func (s *Server) pllLangContentCount(ctx context.Context, l *pllLanguage) (posts, terms int) {
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM pll_post_langs pl JOIN posts p ON p.id = pl.post_id

@@ -179,7 +179,8 @@ func (s *Server) gsubList(ctx context.Context, q gsubQuery) ([]*gooSubscription,
 	}
 	sql := `SELECT ` + gsubCols + ` FROM goo_subscriptions WHERE ` + where + ` ORDER BY id DESC`
 	if q.PerPage > 0 {
-		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (max(q.Page, 1)-1)*q.PerPage)
+		// Bounded here for every caller (admin ?paged= is not capped upstream), so the OFFSET cannot overflow.
+		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (min(max(q.Page, 1), store.MaxPage)-1)*q.PerPage)
 	}
 	rows, err := s.store.Pool.Query(ctx, sql, args...)
 	if err != nil {

@@ -397,6 +397,9 @@ moderators per forum, a forum picker, previews, drafts, following a topic, simil
 post reports. Everything is **additive**: the fields below are new, nothing existing changed
 meaning, and an override written for 0.2.4 renders as before.
 
+Pursae Forum 0.2.6 adds custom forum colours: besides the swatches a forum may hold any
+`#rrggbb` colour, exposed as `ColorHex`, `ColorInk` and `ColorStyle` (see below).
+
 ### New fields of the dot
 
 | Field / method | Views | Type | Meaning |

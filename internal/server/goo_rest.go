@@ -67,7 +67,6 @@ func gooNoRoute(c *gin.Context) {
 func (s *Server) gooRoute(ns, pattern string, methods map[string]restHandler) {
 	wrapped := make(map[string]restHandler, len(methods))
 	for m, h := range methods {
-		h := h
 		wrapped[m] = func(c *gin.Context, req *restRequest) {
 			if !s.gooOn() {
 				gooNoRoute(c)
@@ -91,7 +90,6 @@ func gooCapsAll(cap string) gooCaps { return gooCaps{cap, cap, cap} }
 func (s *Server) gooV3(pattern string, caps gooCaps, methods map[string]restHandler) {
 	wrapped := make(map[string]restHandler, len(methods))
 	for m, h := range methods {
-		h, m := h, m
 		wrapped[m] = func(c *gin.Context, req *restRequest) {
 			u, aerr := s.gooV3User(c, req.Method)
 			if aerr != nil {
@@ -419,8 +417,6 @@ func gooDateGMT(t *time.Time) any {
 	}
 	return t.UTC().Format(gooDateFmt)
 }
-
-func gooTimePtr(t time.Time) *time.Time { return &t }
 
 // gooParseDate reads an ISO 8601 date; without a zone it is in the site's zone (gmt=false) or UTC.
 func (s *Server) gooParseDate(v string, gmt bool) (*time.Time, bool) {

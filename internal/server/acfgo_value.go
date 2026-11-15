@@ -350,7 +350,6 @@ func (s *Server) acfgoUpdate(ctx context.Context, o *acfObject, w *acfWrite, f a
 			}
 		}
 		if names == nil {
-			names = []any{}
 			w.put(name, key, "")
 		} else {
 			w.put(name, key, names)

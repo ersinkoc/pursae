@@ -215,6 +215,9 @@ func TestSEOGoHeadSchemaSitemapsRedirects(t *testing.T) {
 
 	// Noindex a page: out of the sitemap, robots meta says so, no canonical.
 	code, body = restSend(t, c, base, http.MethodPost, "/wp-json/wp/v2/pages", `{"title":"Thank you","status":"publish","content":"<p>Thanks!</p>"}`)
+	if code != http.StatusCreated {
+		t.Fatalf("create page: %d %s", code, body)
+	}
 	var thanks struct {
 		ID   int64  `json:"id"`
 		Link string `json:"link"`

@@ -58,12 +58,13 @@ func (d *diskStore) save(e *Entry) error {
 		return err
 	}
 	defer os.Remove(tmp.Name()) // no-op after a successful rename
+	// bufio.Writer errors are sticky: a failed write here is reported by the Flush below.
 	w := bufio.NewWriter(tmp)
-	w.WriteString(diskMagic)
+	_, _ = w.WriteString(diskMagic)
 	var n [4]byte
 	binary.BigEndian.PutUint32(n[:], uint32(meta.Len()))
-	w.Write(n[:])
-	w.Write(meta.Bytes())
+	_, _ = w.Write(n[:])
+	_, _ = w.Write(meta.Bytes())
 	if err := gob.NewEncoder(w).Encode(e); err != nil {
 		tmp.Close()
 		return err

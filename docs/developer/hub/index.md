@@ -136,11 +136,15 @@ nothing — it then has no marketplace, no license and no update notices either.
  "contacts": [{"email": "owner@shop.example.com", "name": "Owner", "role": "administrator"}]}
 ```
 
-`contacts` are the users who get Pursae product update e-mails: users who can `edit_posts`, after
-they were told (the install screen for the owner, a one-time admin notice for everyone else). It is
-on by default; each user turns it off under Users › Profile › "Pursae updates" (user meta
-`pursae_update_emails`), and the next ping no longer lists them. The list is always sent (empty when
-no one gets updates) and does not depend on the statistics switch. The Hub shows it on the site's page.
+`contacts` are the users who asked for Pursae product update e-mails: users who can `edit_posts` and
+opted in. It is off by default and opt-in only: the unticked "Email me Pursae product updates" box on
+the install screen (the owner) or the "Pursae updates" switch in the user's own Users › Profile
+(user meta `pursae_update_emails`, with the time of consent in `pursae_update_emails_consent_at`,
+RFC 3339). An administrator editing another user can turn it off but not on, and the one-time admin
+notice only invites the user to opt in. A `true` without a consent time (sites from before opt-in)
+is not reported, and that user is invited again. Turning it off removes the consent time, and the
+next ping no longer lists the user. The list is always sent (empty when no one gets updates) and does
+not depend on the statistics switch. The Hub shows it on the site's page.
 
 `plugins` lists every plugin, built-in (`native`), installed from the Hub (`hub`) or uploaded
 (`upload`); `themes` lists the installed themes (bundled themes are `native`, library themes

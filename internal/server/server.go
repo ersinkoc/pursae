@@ -126,6 +126,9 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	if sb != nil {
 		return s.startSandbox(ctx)
 	}
+	// After the sandbox return: a theme-preview sandbox starts no loops and is never Closed, so it
+	// must not register a child context with a long-lived parent.
+	s.rt.startBackground(ctx)
 	s.auth.Idle = s.adminsecIdle // AdminSecGo: idle session timeout
 	s.previews = newPreviewManager(s)
 	s.loadThemePackages() // theme packages installed under <data>/themes (theme_install.go)
@@ -150,7 +153,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	s.startPlugins(ctx)
 	s.bmgrRegisterSchedule() // Backup Manager: the scheduled-backup job action (backup_schedule.go)
 	s.adminsecStart()
-	s.gocdnStartHousekeeping(ctx)
+	s.gocdnStartHousekeeping()
 	s.regenerateResume()    // Media: continue an interrupted "Regenerate all" run
 	s.syncSearchStemAsync() // Search: stem in the site language (search_stem.go)
 	return s, nil

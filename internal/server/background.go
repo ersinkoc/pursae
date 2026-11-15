@@ -17,6 +17,50 @@ import (
 type runtimeState struct {
 	writes asyncWriter
 	cdn    cdnPurgeQueue
+
+	// The long-lived loops New starts (plugin sync, Pursae CDN housekeeping) run under bgCtx, a
+	// child of New's ctx that Close cancels, and are tracked by bg: a Server owns their lifetime,
+	// so closing it stops them even when the caller's ctx never ends (tests build one Server per
+	// test in a single process; main's Shutdown path without a signal).
+	bgCtx    context.Context
+	bgCancel context.CancelFunc
+	bg       sync.WaitGroup
+}
+
+// startBackground derives the context the Server's long-lived loops run under (see runtimeState).
+func (r *runtimeState) startBackground(ctx context.Context) {
+	r.bgCtx, r.bgCancel = context.WithCancel(ctx)
+}
+
+// goBackground runs fn on a goroutine Close waits for; fn must return once ctx ends.
+func (s *Server) goBackground(fn func(ctx context.Context)) {
+	ctx := s.rt.bgCtx
+	if ctx == nil { // not started through New (a sandbox, a bare test Server): nothing owns it
+		return
+	}
+	s.rt.bg.Add(1)
+	go func() {
+		defer s.rt.bg.Done()
+		fn(ctx)
+	}()
+}
+
+// stopBackground cancels the long-lived loops and waits for them to return, or until ctx ends.
+func (s *Server) stopBackground(ctx context.Context) {
+	if s.rt.bgCancel == nil {
+		return
+	}
+	s.rt.bgCancel()
+	done := make(chan struct{})
+	go func() {
+		s.rt.bg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-ctx.Done():
+		slog.Warn("background loops still running at shutdown")
+	}
 }
 
 // WatchSettings keeps the settings cache in step with the other instances sharing the database
@@ -25,12 +69,18 @@ func (s *Server) WatchSettings(ctx context.Context) {
 	s.settings.Watch(ctx)
 }
 
-// Close drains the background queues (or gives up when ctx ends). main calls it after the HTTP
-// server and the scheduler stopped, before closing the database pool.
+// Close stops the long-lived loops, drains the background queues (or gives up when ctx ends) and
+// releases the plugin runtime. main calls it after the HTTP server and the scheduler stopped,
+// before closing the database pool. The loops stop first so the plugin sync loop cannot touch
+// the runtime after it is released.
 func (s *Server) Close(ctx context.Context) {
+	s.stopBackground(ctx)
 	s.rt.cdn.flush(ctx, s)
 	s.pllCaptureFlush(ctx) // Multi Language strings still queued (golylang_capture.go)
 	s.rt.writes.close(ctx)
+	if s.plugins != nil && s.plugins.rt != nil {
+		_ = s.plugins.rt.Close(ctx) // wazero runtime and its in-memory compilation cache
+	}
 }
 
 // asyncExec runs a fire-and-forget statement on the bounded writer: when the queue is full the

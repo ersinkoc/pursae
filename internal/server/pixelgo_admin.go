@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // Pursae Pixel's admin screens: /wp-admin/pixelgo?page=… (Dashboard, Pixels & APIs, Events, Custom
@@ -285,7 +287,7 @@ func (s *Server) pixelLogRows(c *gin.Context, platform, status, search string, p
 	}
 	q := `SELECT id, platform, event, event_id, source, status, http_code, message, created_at FROM pixelgo_log` + where + ` ORDER BY created_at DESC, id DESC`
 	if perPage > 0 {
-		q += fmt.Sprintf(" LIMIT %d OFFSET %d", perPage, max(page-1, 0)*perPage)
+		q += fmt.Sprintf(" LIMIT %d OFFSET %d", perPage, (min(max(page, 1), store.MaxPage)-1)*perPage) // bounded so the OFFSET cannot overflow
 	}
 	rows, err := s.store.Pool.Query(c, q, args...)
 	if err != nil {

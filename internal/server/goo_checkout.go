@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/auth"
 	"wpgo/internal/store"
@@ -469,25 +470,76 @@ func (s *Server) gooCreateOrderFromCart(c *gin.Context, cart *gooCart, d *gooChe
 	// The Store API's checkout-draft order becomes this order (it keeps its id and creation date). Its
 	// items are replaced by the cart's: the cart may have changed since the draft was saved, and the
 	// totals above come from the cart.
+	// A draft that is no longer one was placed by another checkout of this session. Just placed (a
+	// double submit read the session before the first one cleared the key): that is the order being
+	// placed, not a reason to place a second one from the same cart. Placed a while ago and still unpaid
+	// with the same cart (a declined card, a cancelled payment page; a concurrent request can have
+	// written the old key back into the session): a retry, which reuses it like the awaiting order
+	// below. A draft that is gone (the daily cleanup) is simply replaced by a new order.
 	fromDraft := false
 	if sess := cart.sess; sess != nil && sess.Data.Extra[gooDraftKey] != nil {
-		if d, err := s.gooGetOrder(ctx, gooInt(sess.Data.Extra[gooDraftKey])); err == nil && d.Status == "checkout-draft" {
+		d, err := s.gooGetOrder(ctx, gooInt(sess.Data.Extra[gooDraftKey]))
+		delete(sess.Data.Extra, gooDraftKey)
+		sess.touch()
+		if err == nil && d.Status != "checkout-draft" {
+			retry := (d.Status == "failed" || (d.Status == "pending" && time.Since(d.DateModified) > gooDraftRetryAfter)) && gooReusableOrder(d, o)
+			if !retry {
+				undo()
+				return nil, errGooOrderInProgress
+			}
+			sess.Data.OrderAwaitingPayment = d.ID
+			err = errGooDraftPlaced // not adopted as a draft: the awaiting-order reuse below takes it
+		}
+		if err == nil {
 			o.ID, o.OrderKey, o.DateCreated = d.ID, d.OrderKey, d.DateCreated
 			fromDraft = true
 		}
-		delete(sess.Data.Extra, gooDraftKey)
-		sess.touch()
 	}
 	// WC_Checkout::create_order(): an unpaid order from the previous attempt with the same cart is
 	// reused, so a declined card does not leave one order per retry.
 	reused := false
+	var prevModified time.Time
 	if o.ID == 0 && cart.sess != nil && cart.sess.Data.OrderAwaitingPayment != 0 {
 		if prev, err := s.gooGetOrder(ctx, cart.sess.Data.OrderAwaitingPayment); err == nil && gooReusableOrder(prev, o) {
 			o.ID, o.OrderKey, o.DateCreated = prev.ID, prev.OrderKey, prev.DateCreated
+			prevModified = prev.DateModified
 			reused = true
 		}
 	}
-	if err := s.gooSaveOrder(ctx, o, o.ID == 0 || reused || fromDraft); err != nil {
+	// The reads above are not a claim: sessions are not locked, so a double submit (or a retried
+	// request) runs this twice for the same draft or awaiting order, each with its own reserved gift
+	// card and points. The claim is made in the save's transaction, so only one request adopts the
+	// order; the other undoes its reservations instead of saving over the winner's order.
+	err := pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
+		switch {
+		case fromDraft:
+			ok, err := s.gooClaimDraftTx(ctx, tx, o.ID)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				var exists bool
+				if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM goo_orders WHERE id = $1)`, o.ID).Scan(&exists); err != nil {
+					return err
+				}
+				if exists {
+					return errGooOrderInProgress
+				}
+				// Deleted by the daily cleanup between the read and the claim: a new order replaces it.
+				o.ID, o.OrderKey, o.DateCreated = 0, "", time.Time{}
+			}
+		case reused:
+			ok, err := s.gooClaimAwaitingOrderTx(ctx, tx, o.ID, prevModified)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return errGooOrderInProgress
+			}
+		}
+		return s.gooSaveOrderTx(ctx, tx, o, o.ID == 0 || reused || fromDraft)
+	})
+	if err != nil {
 		undo()
 		return nil, err
 	}

@@ -30,6 +30,7 @@ import (
 	"wpgo/internal/plugins"
 	"wpgo/internal/settings"
 	"wpgo/internal/store"
+	"wpgo/internal/textfold"
 	"wpgo/internal/webbuilder"
 )
 
@@ -153,7 +154,7 @@ func (s *Server) startPlugins(ctx context.Context) {
 		}
 	}
 	ps.hooks.DoAction(ctx, "init")
-	go s.pluginSyncLoop(ctx)
+	s.goBackground(s.pluginSyncLoop) // stops on Server.Close (background.go)
 }
 
 // pluginSyncInterval is how often a process compares the plugins table with what it has loaded, so
@@ -764,14 +765,14 @@ func (s *Server) pluginsScreen(c *gin.Context) {
 	}
 	all := s.pluginsWithUpdates(c, s.installedPlugins(c))
 	d.Search = strings.TrimSpace(c.Query("s"))
-	q := strings.ToLower(d.Search)
+	q := d.Search
 	for _, r := range all {
 		if r.Active {
 			d.Active++
 		} else {
 			d.Inactive++
 		}
-		if q != "" && !strings.Contains(strings.ToLower(r.Name+" "+r.Description+" "+r.Author), q) {
+		if q != "" && !textfold.Contains(r.Name+" "+r.Description+" "+r.Author, q) { // "ışık" finds "IŞIK"
 			continue
 		}
 		if d.Status == "all" || (d.Status == "active") == r.Active {
@@ -1543,9 +1544,9 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	case "native":
 		d.Items = native
 	case "search":
-		q := strings.ToLower(d.Search)
+		q := d.Search
 		for _, it := range append(append([]marketItem{}, featured...), native...) {
-			if q == "" || strings.Contains(strings.ToLower(it.Name+" "+it.Description+" "+it.Author), q) {
+			if q == "" || textfold.Contains(it.Name+" "+it.Description+" "+it.Author, q) { // "IŞIK" finds "ışık"
 				d.Items = append(d.Items, it)
 			}
 		}

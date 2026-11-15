@@ -526,11 +526,6 @@ func gocdnObjectURL(st gocdnSettings, key string) string {
 	return base + gocdn.EscapePath("/"+key)
 }
 
-// gocdnObjectKey is the bucket key of a path in the uploads directory.
-func gocdnObjectKey(st gocdnSettings, rel string) string {
-	return st.Prefix + strings.TrimLeft(rel, "/")
-}
-
 // gocdnNewKey is the key a file is uploaded under. A private file (media_private.go) gets a
 // folder name nobody can guess, so it stays unreachable in a bucket that is public by policy; with
 // "Object versioning" every upload gets a time-stamped folder, so a file written again under the

@@ -491,7 +491,6 @@ func (s *Server) gooTabsHTML(c *gin.Context, p *gooProduct) string {
 		tabs = append(tabs, gooProdTab{"reviews", fmt.Sprintf("Reviews (%d)", p.RatingCount), 30, func() string { return s.gooReviewsHTML(c, p) }})
 	}
 	for _, mt := range gooProductTabs {
-		mt := mt
 		title := ""
 		if mt.Title != nil {
 			title = mt.Title(s, c, p)

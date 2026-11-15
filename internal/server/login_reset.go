@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -199,7 +200,11 @@ func (s *Server) resetPassword(c *gin.Context, v loginView) {
 			delete(u.Meta, "password_reset")
 			s.revokeCredentialsAfterPasswordChange(c, u.ID)
 			s.adminsecPasswordChanged(c, u)
-			_, _ = s.store.Pool.Exec(c, `DELETE FROM sessions WHERE user_id = $1`, u.ID)
+			// The password is already changed, so the reset still succeeds; sessions left alive after
+			// a reset must at least be visible in the log.
+			if _, err := s.store.Pool.Exec(c, `DELETE FROM sessions WHERE user_id = $1`, u.ID); err != nil {
+				slog.Error("login: session revocation after password reset failed", "user_id", u.ID, "err", err)
+			}
 			site := s.settings.String("blogname")
 			s.sendMail(c, mail.Message{Kind: "password_changed", To: []string{s.settings.String("admin_email")}, Subject: "[" + site + "] Password Changed",
 				Body: fmt.Sprintf("Password changed for user: %s\n", u.Login)})

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -38,23 +39,22 @@ func gooStatusLabel(st string) string {
 var gooPaidStatuses = []string{"processing", "completed"}
 
 type gooOrderItem struct {
-	ID          int64              `json:"id"`
-	OrderID     int64              `json:"order_id"`
-	Type        string             `json:"type"`
-	Name        string             `json:"name"`
-	ProductID   int64              `json:"product_id"`
-	VariationID int64              `json:"variation_id"`
-	Quantity    float64            `json:"quantity"`
-	TaxClass    string             `json:"tax_class"`
-	Subtotal    float64            `json:"subtotal"`
-	SubtotalTax float64            `json:"subtotal_tax"`
-	Total       float64            `json:"total"`
-	TotalTax    float64            `json:"total_tax"`
-	Taxes       gooItemTaxes       `json:"taxes"`
-	Meta        map[string]any     `json:"meta_data"`
-	Position    int                `json:"-"`
-	refunded    map[string]float64 // computed: refunded qty / total / tax
-	origReduced any                // _reduced_stock as stored (gooOrderItem.keepsReduced)
+	ID          int64          `json:"id"`
+	OrderID     int64          `json:"order_id"`
+	Type        string         `json:"type"`
+	Name        string         `json:"name"`
+	ProductID   int64          `json:"product_id"`
+	VariationID int64          `json:"variation_id"`
+	Quantity    float64        `json:"quantity"`
+	TaxClass    string         `json:"tax_class"`
+	Subtotal    float64        `json:"subtotal"`
+	SubtotalTax float64        `json:"subtotal_tax"`
+	Total       float64        `json:"total"`
+	TotalTax    float64        `json:"total_tax"`
+	Taxes       gooItemTaxes   `json:"taxes"`
+	Meta        map[string]any `json:"meta_data"`
+	Position    int            `json:"-"`
+	origReduced any            // _reduced_stock as stored (gooOrderItem.keepsReduced)
 	hasOrig     bool
 }
 
@@ -272,6 +272,39 @@ func (o *gooOrder) ItemCount() int {
 // goo_order_state.go); o is refreshed with what the database then holds.
 func (s *Server) gooSaveOrder(ctx context.Context, o *gooOrder, withItems bool) error {
 	return pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error { return s.gooSaveOrderTx(ctx, tx, o, withItems) })
+}
+
+// errGooOrderInProgress is returned by a checkout that lost the race for the order it meant to adopt
+// (the session's checkout-draft or its order awaiting payment) to a concurrent checkout.
+// gooDraftRetryAfter is how long after it was placed an unpaid order a stale draft key still points at
+// counts as a retry (reused) rather than a double submit of the same placement (refused).
+const gooDraftRetryAfter = 2 * time.Minute
+
+var errGooOrderInProgress = errors.New("Your order is already being processed. Please wait or check your order history.")
+
+// gooClaimDraftTx takes the checkout-draft order id for the checkout running in tx: it moves it to
+// pending only while it is still a draft. A concurrent claim waits on the row lock and, once the first
+// commits, matches nothing (false); a rolled-back save gives the draft back.
+func (s *Server) gooClaimDraftTx(ctx context.Context, tx pgx.Tx, id int64) (bool, error) {
+	var got int64
+	err := tx.QueryRow(ctx, `UPDATE goo_orders SET status = 'pending' WHERE id = $1 AND status = 'checkout-draft' RETURNING id`, id).Scan(&got)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// gooClaimAwaitingOrderTx locks an unpaid order a checkout reuses and checks it is the version the
+// checkout read (date_modified): every save moves date_modified, so of two checkouts that read the same
+// order only the first to save keeps it; the other sees a newer version (false).
+func (s *Server) gooClaimAwaitingOrderTx(ctx context.Context, tx pgx.Tx, id int64, modified time.Time) (bool, error) {
+	var one int
+	err := tx.QueryRow(ctx, `SELECT 1 FROM goo_orders WHERE id = $1 AND date_modified = $2 AND status IN ('pending','failed') FOR UPDATE`,
+		id, modified).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // gooSaveOrderTx is gooSaveOrder inside the caller's transaction.
@@ -624,6 +657,7 @@ func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) e
 		qty      int
 	}
 	var done []reduced
+	var failed []string
 	for _, it := range o.ItemsOf("line_item") {
 		if red, _ := it.Meta["_reduced_stock"].(float64); red > 0 {
 			continue // reduced already (an item added in the admin)
@@ -648,6 +682,15 @@ func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) e
 			return &gooStockShortage{Name: s.gooProductTitle(ctx, p), Available: avail}
 		}
 		if err != nil {
+			// wc_reduce_stock_levels(): the order stays marked reduced and the line keeps no
+			// _reduced_stock (so it is not restored later), but the failure is told to the shop in an
+			// order note instead of leaving the inventory silently wrong.
+			log.Printf("goo: reduce stock order %d product %d: %v", o.ID, owner.ID, err)
+			label := s.gooProductTitle(ctx, p)
+			if p.SKU != "" {
+				label += " (" + p.SKU + ")"
+			}
+			failed = append(failed, html.EscapeString(label))
 			continue
 		}
 		done = append(done, reduced{it, p, owner, n})
@@ -667,6 +710,9 @@ func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) e
 	}
 	if len(changes) > 0 {
 		_ = s.gooAddOrderNote(ctx, o, "Stock levels reduced: "+strings.Join(changes, ", "), false, "")
+	}
+	for _, label := range failed {
+		_ = s.gooAddOrderNote(ctx, o, "Unable to reduce stock for item "+label+".", false, "")
 	}
 	return nil
 }
@@ -1151,7 +1197,7 @@ func (s *Server) gooQueryOrders(ctx context.Context, q gooOrderQuery) ([]*gooOrd
 	}
 	sql := `SELECT ` + gooOrderCols + ` FROM goo_orders WHERE ` + where + ` ORDER BY ` + col + ` ` + dir + `, id ` + dir
 	if q.PerPage > 0 {
-		page := max(q.Page, 1)
+		page := min(max(q.Page, 1), store.MaxPage) // admin callers pass ?paged= unbounded
 		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (page-1)*q.PerPage)
 	}
 	rows, err := s.store.Pool.Query(ctx, sql, args...)

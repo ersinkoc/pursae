@@ -881,8 +881,8 @@ func TestHeadlessGoAdminScreens(t *testing.T) {
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM hg_api_tokens WHERE name = 'Site build'`).Scan(&tid)
 	code, body, _ = hgAdminSubmit(t, c, base, url.Values{"page": {"tokens"}, "do": {"regenerate_token"}, "id": {fmt.Sprint(tid)}})
 	m2 := regexp.MustCompile(`value="(hg_[A-Za-z0-9_-]+)"`).FindStringSubmatch(body)
-	if m2 == nil || m2[1] == tok {
-		t.Fatal("regenerate")
+	if code != http.StatusOK || m2 == nil || m2[1] == tok {
+		t.Fatalf("regenerate: %d", code)
 	}
 	if r := hgCall(t, base, "GET", "/recipes", tok, nil); r.Code != 401 {
 		t.Errorf("old token after regeneration: %d", r.Code)

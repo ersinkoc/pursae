@@ -253,7 +253,7 @@ func gocdnPruneDir(dir string, limit int64) int {
 	var total int64
 	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
-			return nil
+			return nil //nolint:nilerr // an unreadable entry is skipped, the walk goes on
 		}
 		if fi, err := d.Info(); err == nil {
 			files = append(files, ent{p, fi.Size(), fi.ModTime()})
@@ -411,9 +411,9 @@ func (s *Server) gocdnHousekeepingOnce(ctx context.Context) {
 	s.gocdnCleanupLocal(ctx)
 }
 
-// gocdnStartHousekeeping runs the pass shortly after start-up and then daily.
-func (s *Server) gocdnStartHousekeeping(ctx context.Context) {
-	go func() {
+// gocdnStartHousekeeping runs the pass shortly after start-up and then daily, until Server.Close.
+func (s *Server) gocdnStartHousekeeping() {
+	s.goBackground(func(ctx context.Context) {
 		t := time.NewTimer(45 * time.Second)
 		defer t.Stop()
 		for {
@@ -425,5 +425,5 @@ func (s *Server) gocdnStartHousekeeping(ctx context.Context) {
 				t.Reset(24 * time.Hour)
 			}
 		}
-	}()
+	})
 }

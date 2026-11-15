@@ -393,7 +393,15 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 	return template.HTML(sb.String())
 }
 
-var linkRe = regexp.MustCompile(`(?i)<a\s|https?://`)
+// linkRe finds the links of a comment or forum post for the comment_max_links rule. Every anchor with
+// an href counts once, whatever its URL (relative, mailto:, www.…, as WordPress counts "<a "), and its
+// quoted href value is consumed whole so the URL inside it is not counted again; a bare http(s):// URL
+// counts too. The old pattern matched both "<a " and the URL of every anchor, holding a comment with
+// one link when the limit was 2.
+var linkRe = regexp.MustCompile(`(?i)<a\s[^>]*?href\s*=\s*(?:"[^"]*"?|'[^']*'?|[^\s>]*)|https?://`)
+
+// commentLinkCount is the number of links in s (see linkRe).
+func commentLinkCount(s string) int { return len(linkRe.FindAllString(s, -1)) }
 
 // commentPost is wp-comments-post.php: validation, moderation rules and the redirect back to the post.
 // userURL is the pre_user_url filter (esc_url_raw) for a user's profile URL. The profile URL is copied
@@ -625,7 +633,7 @@ func (s *Server) commentStatus(c *gin.Context, cm *store.Comment, u *store.User)
 	if s.settings.Bool("comment_moderation") {
 		return "pending"
 	}
-	if max := s.settings.Int("comment_max_links"); max > 0 && len(linkRe.FindAllString(cm.Content, -1)) >= max {
+	if max := s.settings.Int("comment_max_links"); max > 0 && commentLinkCount(cm.Content) >= max {
 		return "pending"
 	}
 	if matches(s.settings.String("moderation_keys")) {

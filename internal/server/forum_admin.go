@@ -730,7 +730,7 @@ func (s *Server) forumAdminModeration(c *gin.Context, d *forumAdminData, notices
 	cond := "p.type IN ('topic','reply') AND " + forumAdminViewSQL(view)
 	if search != "" {
 		args = append(args, search)
-		cond += " AND p.search @@ websearch_to_tsquery('simple', $1)"
+		cond += " AND p.search @@ websearch_to_tsquery('simple', " + store.FoldedArgSQL("$1") + ")" // folded like posts.search (migration 0105)
 	}
 	var total int
 	if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM posts p WHERE `+cond, args...).Scan(&total); err != nil {

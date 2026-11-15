@@ -747,10 +747,6 @@ func privacyStatusLabel(status string) string {
 	return status
 }
 
-func htmlf(format string, a ...any) template.HTML {
-	return template.HTML(template.HTMLEscapeString(fmt.Sprintf(format, a...)))
-}
-
 // Export ------------------------------------------------------------------------------
 
 type exportItem struct {

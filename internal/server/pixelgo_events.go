@@ -21,13 +21,6 @@ import (
 // content_name, content_category, search_string, order_id, num_items, tax, shipping, payment_type,
 // content_type, and "extra": a flat map of custom parameters.
 
-// pixelCanonicalEvents are the events the plugin knows by name, in the order the admin lists them.
-var pixelCanonicalEvents = []string{
-	"PageView", "ViewContent", "ViewCategory", "Search", "AddToCart", "RemoveFromCart", "ViewCart", "AddToWishlist",
-	"InitiateCheckout", "AddPaymentInfo", "Purchase", "Lead", "CompleteRegistration", "Contact", "Download",
-	"OutboundClick", "Comment", "Scroll", "TimeOnPage", "VideoPlay", "VideoComplete",
-}
-
 // pixelEventMap: canonical event → platform → the platform's event name. "@page" is the platform's
 // page call (ttq.page(), pintrk('page')); an empty or missing entry means the platform does not get the event.
 var pixelEventMap = map[string]map[string]string{

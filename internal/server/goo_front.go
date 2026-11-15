@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -164,10 +163,8 @@ func (s *Server) gooBodyClasses(c *gin.Context, q *siteQuery) []string {
 	case "product":
 		out = append(out, "product-template-default", "single", "single-product", "postid-"+itoa64(fv.Product.ID), "woocommerce", "woocommerce-page")
 	case "product_cat", "product_tag", "product_attr":
-		tax := "product_cat"
 		if fv.Term != nil {
-			tax = fv.Term.Taxonomy
-			out = append(out, "archive", "tax-"+tax, "term-"+fv.Term.Slug, "term-"+itoa64(fv.Term.ID))
+			out = append(out, "archive", "tax-"+fv.Term.Taxonomy, "term-"+fv.Term.Slug, "term-"+itoa64(fv.Term.ID))
 		}
 		out = append(out, "woocommerce", "woocommerce-page")
 	case "cart":
@@ -396,12 +393,7 @@ func (s *Server) gooCacheTags(c *gin.Context, q *siteQuery) []string {
 
 // Routing ---------------------------------------------------------------------------------------------
 
-// gooPagePath is the path of a store page ("shop", "my-account"), "" when it has none.
-func (s *Server) gooPagePath(ctx context.Context, key string) string {
-	return s.gooPagePaths(ctx, key)[key]
-}
-
-// gooPagePaths is gooPagePath for several store pages, loaded with one query (the router checks them
+// gooPagePaths are the paths of store pages ("shop", "my-account"; "" when one has none), loaded with one query (the router checks them
 // all on every front-end request).
 func (s *Server) gooPagePaths(ctx context.Context, keys ...string) map[string]string {
 	out := map[string]string{}
@@ -1218,12 +1210,3 @@ var (
 	gooSlugRe  = regexp.MustCompile(`[^a-z0-9_-]+`)
 	gooClassRe = regexp.MustCompile(`[^A-Za-z0-9_-]+`)
 )
-
-func gooFrontSortedKeys(m map[string]string) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
-}

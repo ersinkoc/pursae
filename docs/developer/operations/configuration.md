@@ -45,6 +45,28 @@ default below (pgx alone would allow only `max(4, CPUs)` connections):
 DATABASE_URL=postgres://wpgo:secret@db:5432/wpgo?sslmode=disable&pool_max_conns=20
 ```
 
+### Connection poolers (PgBouncer)
+
+Pursae relies on session-level PostgreSQL features, so connect it directly to PostgreSQL, or put
+PgBouncer in front only with `pool_mode = session`. Transaction and statement pooling are **not
+supported**:
+
+- **Session advisory locks** (`pg_advisory_lock` / `pg_try_advisory_lock`, released later on the
+  same connection): Pursae Commerce Bookings, Subscriptions and Points and Rewards checks,
+  install, database migrations and the search-stem rebuild. Behind a transaction pooler the unlock
+  can reach a different server session, so locks leak or stop guarding anything. (Transaction-scoped
+  `pg_advisory_xact_lock` uses, such as the forum, mail rate limits, plugin events, Web Builder
+  publishing and post slugs, would be fine on their own.)
+- **`LISTEN`/`NOTIFY`**: settings sync and Pursae Cache purges between instances
+  ([several instances](reverse-proxy-and-tls.md#several-instances)); a transaction pooler does not
+  deliver notifications.
+- **Prepared statements**: pgx caches them per connection. Switching pgx to the simple protocol
+  would fix only this point, not the two above, so it does not make transaction pooling safe.
+
+Instead of a pooler, size `pool_max_conns` per instance against `max_connections`. Each instance
+also keeps up to two long-lived listening connections (settings and cache purges) on top of
+`pool_max_conns`; count them too.
+
 ## Mail
 
 Without `WPGO_SMTP_HOST`, messages are written as `.eml` files to `WPGO_MAIL_DIR` so you can

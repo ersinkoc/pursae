@@ -16,6 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // The Maintenance screen (wp-admin/admin?page=maintenance): the original's top-level menu with its
@@ -234,6 +235,7 @@ func (s *Server) maintAdminPost(c *gin.Context) {
 	tab := c.PostForm("tab")
 	back := "/wp-admin/admin?page=maintenance&tab=" + url.QueryEscape(tab)
 	st := s.maintLoad()
+	u := currentUser(c)
 	str := func(k string) string { return strings.TrimSpace(c.PostForm(k)) }
 	text := func(k string) string { return strings.TrimSpace(strings.ReplaceAll(c.PostForm(k), "\r\n", "\n")) }
 	on := func(k string) bool { v := c.PostForm(k); return v != "" && v != "0" }
@@ -269,6 +271,9 @@ func (s *Server) maintAdminPost(c *gin.Context) {
 		st.Heading = str("header_text")
 		st.Content = text("content")
 		st.FooterText = text("footer_text")
+		if !u.Can("unfiltered_html", nil) { // printed unescaped on the public page: kses, as post_content
+			st.Content, st.FooterText = wp.KsesPost(st.Content), wp.KsesPost(st.FooterText)
+		}
 		st.LogoURL = maintMediaURL(str("logo"))
 		st.LogoWidth = num("logo_width", 220, 16, 1200)
 	case "themes":
@@ -323,7 +328,9 @@ func (s *Server) maintAdminPost(c *gin.Context) {
 			}
 		}
 		st.SocialNewTab = on("social_target")
-		st.CustomHTML = text("custom_html")
+		if u.Can("unfiltered_html", nil) { // raw head/body markup is an unfiltered_html privilege; others keep the stored value
+			st.CustomHTML = text("custom_html")
+		}
 		if st.SubscribeButton == "" {
 			st.SubscribeButton = maintDefaults().SubscribeButton
 		}
@@ -527,6 +534,10 @@ func (s *Server) maintImport(c *gin.Context) {
 	}
 	st.Enabled, st.SitePassword = cur.Enabled, cur.SitePassword
 	st = maintSanitize(st)
+	if !currentUser(c).Can("unfiltered_html", nil) { // the same unfiltered_html rule as saving the tabs
+		st.Content, st.FooterText = wp.KsesPost(st.Content), wp.KsesPost(st.FooterText)
+		st.CustomHTML = cur.CustomHTML
+	}
 	if err := s.maintSave(c, st); err != nil {
 		fail(err.Error())
 		return

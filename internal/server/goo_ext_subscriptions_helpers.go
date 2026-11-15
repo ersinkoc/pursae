@@ -386,6 +386,3 @@ func gxaOrderLink(id int64) string {
 	}
 	return `<a href="/wp-admin/goocommerce?page=orders&amp;action=edit&amp;id=` + itoa64(id) + `">#` + itoa64(id) + `</a>`
 }
-
-// gxaYesNo are the options of a yes / no select.
-var gxaYesNo = []gooOpt{{"yes", "Yes"}, {"no", "No"}}
