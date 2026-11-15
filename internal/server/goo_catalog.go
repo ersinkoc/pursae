@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"wpgo/internal/store"
 )
 
 // Catalog queries (WC_Product_Query / the shop's main query): visibility, categories, tags,
@@ -164,7 +166,8 @@ func (s *Server) gooQueryProducts(ctx context.Context, q gooProductQuery) ([]*go
 	}
 	sql := `SELECT po.id FROM ` + from + ` WHERE ` + where + ` ORDER BY ` + order
 	if q.PerPage > 0 {
-		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (max(q.Page, 1)-1)*q.PerPage)
+		// Bounded here for every caller (admin ?paged= is not capped upstream), so the OFFSET cannot overflow.
+		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (min(max(q.Page, 1), store.MaxPage)-1)*q.PerPage)
 	}
 	rows, err := s.store.Pool.Query(ctx, sql, args...)
 	if err != nil {
