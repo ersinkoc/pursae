@@ -59,7 +59,7 @@ func (s *Server) installForm(c *gin.Context) {
 	} else if !validLanguage(lang) {
 		s.renderAdminTemplate(c, http.StatusOK, "admin/install", s.installLanguageStep(""))
 		return
-	} else if err := s.installLanguage(c.Request.Context(), lang); err != nil {
+	} else if err := s.installLanguageBounded(c.Request.Context(), lang); err != nil {
 		slog.Warn("install language", "locale", lang, "err", err)
 		v := s.installLanguageStep("The language pack could not be downloaded. Check that the server can reach translate.wordpress.org, or continue in English.")
 		s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)
@@ -69,6 +69,20 @@ func (s *Server) installForm(c *gin.Context) {
 	}
 	c.Set("wpgo.pickedLocale", lang) // render the form in the chosen language
 	s.renderAdminTemplate(c, http.StatusOK, "admin/install", installView{Password: auth.RandomToken(14), Language: lang})
+}
+
+// installLangTimeout bounds the core pack download of the install screen's language step (the API
+// lookup and the zip, with its fallback request): the person installing waits on it with no other
+// feedback, and the download client alone allows 90 seconds. Like WordPress, a failed download
+// leaves the choice of continuing in English. A variable so tests can shorten it.
+var installLangTimeout = 30 * time.Second
+
+// installLanguageBounded is installLanguage under installLangTimeout. The deadline is only the
+// install screen's: Settings › General and the REST API share installLanguage without it.
+func (s *Server) installLanguageBounded(ctx context.Context, locale string) error {
+	ctx, cancel := context.WithTimeout(ctx, installLangTimeout)
+	defer cancel()
+	return s.installLanguage(ctx, locale)
 }
 
 // installLanguageStep is the first install screen: every WordPress.org language.
