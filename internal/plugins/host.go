@@ -546,7 +546,7 @@ func (h *MemoryHost) TransientGet(_ context.Context, plugin, key string) (json.R
 		delete(h.transients, plugin+"\x00"+key)
 		return nil, false, nil
 	}
-	return t.value, true, nil
+	return append(json.RawMessage(nil), t.value...), true, nil
 }
 
 // TransientSet implements Host.
