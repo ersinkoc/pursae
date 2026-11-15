@@ -40,6 +40,8 @@ func (s *Server) updateCore(c *gin.Context) {
 			s.upgradeCore(c)
 		case "do-core-reinstall": // core_update.go
 			s.reinstallCore(c)
+		case "core-auto-update": // core_update_auto.go
+			s.coreAutoUpdateToggle(c)
 		default:
 			c.Redirect(http.StatusFound, "/wp-admin/update-core")
 		}
@@ -87,7 +89,14 @@ func (s *Server) updateCore(c *gin.Context) {
 			}
 		}
 	}
+	d["AutoUpdate"] = s.coreAutoUpdateView(c)
 	var notices []notice
+	switch c.Query("auto-update") {
+	case "enabled":
+		notices = append(notices, notice{Type: "success", Message: "Automatic updates are on. New Pursae versions are installed during the daily update check.", Dismissible: true})
+	case "disabled":
+		notices = append(notices, notice{Type: "success", Message: "Automatic updates are off.", Dismissible: true})
+	}
 	if v := c.Query("plugins-updated"); v != "" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML("Plugins updated: <strong>" + template.HTMLEscapeString(v) + "</strong>."), Dismissible: true})
 	}
@@ -107,6 +116,8 @@ func (s *Server) updateCore(c *gin.Context) {
 	}
 	if exe, err := coreExecutable(); err == nil { // a core update that did not start was rolled back (core_update.go)
 		if st := coreupdate.Read(exe); st != nil && st.Status == "rolled_back" {
+			s.noteCoreRollback(c, st) // the automatic update does not try this release again
+			d["AutoUpdate"] = s.coreAutoUpdateView(c)
 			notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(st.Message) +
 				" Nothing was lost; the update can be tried again once a fixed release is out.")})
 			coreupdate.Clear(exe)

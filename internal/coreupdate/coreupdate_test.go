@@ -339,3 +339,50 @@ func TestPrunePrevKeepsConfirmedStateWithoutTimestamp(t *testing.T) {
 		t.Fatalf("rollback binary lost: %q, %v", b, err)
 	}
 }
+
+func TestRollbackAfterFailedHealthCheck(t *testing.T) {
+	dir := t.TempDir()
+	exe := filepath.Join(dir, "wpgo")
+	fakeBinary(t, exe, "0.3.0")
+	if err := Prepare(exe, "0.3.0", "0.3.1"); err != nil {
+		t.Fatal(err)
+	}
+	fakeBinary(t, exe+".new", "0.3.1")
+	if err := os.Rename(exe+".new", exe); err != nil {
+		t.Fatal(err)
+	}
+	if Rollback(exe, "0.3.0") {
+		t.Fatal("rolled back an update to another version")
+	}
+	if !Rollback(exe, "0.3.1") {
+		t.Fatal("no rollback")
+	}
+	st := Read(exe)
+	if st == nil || st.Status != "rolled_back" || st.From != "0.3.0" || st.To != "0.3.1" || st.Message == "" {
+		t.Fatalf("state after the rollback: %+v", st)
+	}
+	if v := binaryVersion(exe); v != "0.3.0" {
+		t.Fatalf("the executable is %q after the rollback", v)
+	}
+	if _, err := os.Stat(PrevPath(exe)); !os.IsNotExist(err) {
+		t.Fatalf("the previous binary is still kept: %v", err)
+	}
+	if Rollback(exe, "0.3.1") {
+		t.Fatal("rolled back twice")
+	}
+}
+
+func TestRollbackWithoutPreviousBinary(t *testing.T) {
+	dir := t.TempDir()
+	exe := filepath.Join(dir, "wpgo")
+	fakeBinary(t, exe, "0.3.1")
+	if err := write(exe, &State{From: "0.3.0", To: "0.3.1", Status: "pending"}); err != nil {
+		t.Fatal(err)
+	}
+	if Rollback(exe, "0.3.1") {
+		t.Fatal("rolled back without a previous binary")
+	}
+	if st := Read(exe); st == nil || st.Status != "pending" {
+		t.Fatalf("state changed: %+v", st)
+	}
+}

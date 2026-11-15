@@ -34,6 +34,22 @@
 </form>
 {{end}}
 {{if not .Hub}}<p class="description">Update checks are off: no Pursae Manager is configured.</p>{{end}}
+{{with .AutoUpdate}}
+<h2 id="core-auto-updates">Automatic updates</h2>
+<form method="post" action="/wp-admin/update-core?action=core-auto-update" name="core-auto-update" class="upgrade">
+<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" />
+{{if .On}}
+<p class="auto-update-status"><span class="dashicons dashicons-update" aria-hidden="true"></span> <strong>On.</strong> New Pursae versions are installed by themselves during the daily update check. If a new version cannot start or does not answer requests, the site goes back to the previous version automatically and that version is not tried again by itself.</p>
+<p><input name="enable" value="0" type="hidden" /><input type="submit" id="core-auto-update-toggle" class="button" value="Disable automatic updates" /></p>
+{{else}}
+<p class="auto-update-status"><strong>Off.</strong> New Pursae versions are installed only when you click &#8220;Update&#8221;. With automatic updates on, the daily update check installs them; a version that cannot start or does not answer requests is rolled back to the previous one automatically.</p>
+<p><input name="enable" value="1" type="hidden" /><input type="submit" id="core-auto-update-toggle" class="button" value="Enable automatic updates" /></p>
+{{end}}
+</form>
+{{if .Blocked}}<div class="notice notice-warning inline"><p>Automatic updates cannot run on this site: {{.Blocked}}.</p></div>{{end}}
+{{if .Skipped}}<p class="description">Pursae {{.Skipped}} was rolled back before, so it is not installed automatically; a newer release is, or you can update by hand.</p>{{end}}
+{{with .Last}}<p class="description">Last automatic update: Pursae {{.Version}}, {{$.Data.AutoUpdate.LastAt}} &mdash; {{if $.Data.AutoUpdate.LastOK}}installed.{{else if eq .Status "failed"}}failed, nothing was changed ({{.Error}}).{{else if eq .Status "rolled_back"}}rolled back to the previous version.{{else}}installing&hellip;{{end}}</p>{{end}}
+{{end}}
 <h2>Plugins</h2>
 {{if .PluginUpdates}}
 <p>The following plugins have new versions available. Check the ones you want to update and then click &#8220;Update Plugins&#8221;.</p>

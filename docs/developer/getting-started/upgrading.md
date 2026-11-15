@@ -36,10 +36,20 @@ error page, also behind a proxy such as Traefik in Dokploy.
 until then `.update.json` stays *pending*. If it dies first and is started again — by Docker's
 `restart: unless-stopped` (set in `docker/compose.yaml`), systemd's `Restart=always` or any other
 supervisor — the second start puts `<executable>.prev` back and runs it, and Dashboard › Updates
-says *Pursae X did not start, so the site went back to Y*. If re-executing fails outright, the
-previous binary is put back at once. Without a supervisor nothing restarts a crashed process, so
+says *Pursae X did not start, so the site went back to Y*. If it keeps running but never answers
+within the two minutes, it puts `<executable>.prev` back itself and hands the socket over to it
+(*Pursae X started but did not answer requests, so the site went back to Y*). If re-executing fails
+outright, the previous binary is put back at once. Without a supervisor nothing restarts a crashed process, so
 run Pursae under one. Migrations are forward-only: a rolled-back site keeps any migration the new
 version applied, which is why releases only add schema.
+
+**Automatic updates.** Dashboard › Updates › *Automatic updates* (off by default, option
+`pursae_core_auto_update`) lets the daily Manager check (`wpgo_hub_check`) install a newer release
+by itself, through the same steps as the button, rollback included. A release the site went back
+from is remembered (`pursae_core_auto_update_skip`) and not installed automatically again — a newer
+release is, and the button still offers it. The screen shows the last attempt: installed, failed
+(nothing changed, with the reason) or rolled back. Sites that cannot replace their binary (see
+below) get no automatic updates either.
 
 **Keeping the previous binary.** Once the update is confirmed, `.update.json` records it as
 *confirmed* (with the version the site came from) and `<executable>.prev` is kept for **24 hours**;
