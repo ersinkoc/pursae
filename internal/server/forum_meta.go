@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 
+	"wpgo/internal/textfold"
 	"wpgo/internal/wp"
 )
 
@@ -572,7 +573,7 @@ func (s *Server) forumSimilarTopics(ctx context.Context, title string, tags []st
 	if tags == nil {
 		tags = []string{}
 	}
-	query := strings.Join(terms, " | ")
+	query := textfold.Fold(strings.Join(terms, " | ")) // i-folded like posts.search (migration 0105)
 	match := `((` + "$1::text <> '' AND p.search @@ to_tsquery('simple', $1::text)) OR p.meta->'" + forumMetaTags + `' ?| $2::text[])`
 	rank := `(CASE WHEN $1::text <> '' THEN ts_rank(p.search, to_tsquery('simple', $1::text)) ELSE 0 END)`
 	rows, err := s.store.Pool.Query(ctx, `SELECT `+forumPrefixed("p")+` FROM posts p WHERE p.type = 'topic' AND p.status = 'publish'
