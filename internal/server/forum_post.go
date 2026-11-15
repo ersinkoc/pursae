@@ -383,7 +383,14 @@ func forumCheckContent(raw, clean string) string {
 // forumDisallowed reports whether the post hits the Discussion screen's disallowed keys (checked
 // against the text, the member's names and email, the address and the user agent).
 func (s *Server) forumDisallowed(c *gin.Context, u *store.User, parts ...string) bool {
-	keys := s.settings.String("disallowed_keys")
+	return s.forumKeysMatch(c, u, "disallowed_keys", parts...)
+}
+
+// forumKeysMatch reports whether one of the keys of the Discussion option (disallowed_keys or
+// moderation_keys, one per line) occurs in the text, the member's names and email, the address or
+// the user agent (case-insensitive), as wp_check_comment_disallowed_list and check_comment do.
+func (s *Server) forumKeysMatch(c *gin.Context, u *store.User, option string, parts ...string) bool {
+	keys := s.settings.String(option)
 	if strings.TrimSpace(keys) == "" {
 		return false
 	}
@@ -398,6 +405,28 @@ func (s *Server) forumDisallowed(c *gin.Context, u *store.User, parts ...string)
 		}
 	}
 	return false
+}
+
+// forumHeldForLinks reports whether the parts carry the Discussion screen's comment_max_links or
+// more links (0 turns the check off). Each link counts once: an anchor's href and its URL are one
+// match, so <a href="https://…"> is one link, not two.
+func (s *Server) forumHeldForLinks(parts ...string) bool {
+	max := s.settings.Int("comment_max_links")
+	if max <= 0 {
+		return false
+	}
+	n := 0
+	for _, p := range parts {
+		n += commentLinkCount(p)
+	}
+	return n >= max
+}
+
+// forumModerationHeld is bbp_check_for_moderation for a new topic or reply of a non-moderator:
+// too many links, or a moderation key, holds the post for a moderator (pending) instead of
+// publishing it. Links are counted on the cleaned content (what is stored and shown).
+func (s *Server) forumModerationHeld(c *gin.Context, u *store.User, title, raw, clean string) bool {
+	return s.forumHeldForLinks(clean) || s.forumKeysMatch(c, u, "moderation_keys", title, raw)
 }
 
 // forumThrottle is the flood and hourly limit of a member who is not a moderator: the message (a
@@ -817,6 +846,9 @@ func (s *Server) forumPostTopic(c *gin.Context, rt forumRoute, u *store.User) {
 			pending = true
 		}
 	}
+	if !mod && !pending && s.forumModerationHeld(c, u, title, raw, clean) {
+		pending = true
+	}
 	t, err := s.forumCreateTopic(ctx, forumNewTopic{ForumID: f.ID, AuthorID: u.ID, Title: title, Content: clean, IP: clientIP(c), Pending: pending, Tags: tags})
 	if err != nil {
 		s.forumFail(c, rt, forumViewNewTopic, http.StatusUnprocessableEntity, "The topic could not be saved. Please try again.", form)
@@ -907,6 +939,9 @@ func (s *Server) forumPostReply(c *gin.Context, rt forumRoute, u *store.User) {
 			pending = true
 		}
 	}
+	if !mod && !pending && s.forumModerationHeld(c, u, "", raw, clean) {
+		pending = true
+	}
 	r, err := s.forumCreateReply(ctx, forumNewReply{TopicID: t.ID, AuthorID: u.ID, Content: clean, IP: clientIP(c), Pending: pending})
 	if err != nil {
 		s.forumFail(c, rt, forumViewTopic, http.StatusUnprocessableEntity, "The reply could not be saved. Please try again.", form)
@@ -992,6 +1027,8 @@ func (s *Server) forumPostEdit(c *gin.Context, rt forumRoute, u *store.User) {
 		s.forumFail(c, rt, forumViewEdit, http.StatusUnprocessableEntity, "Your post contains words that are not allowed here.", form)
 		return
 	}
+	// The link limit and moderation keys hold new posts only (see the file comment): re-holding an
+	// edited post would need a status change and a different redirect, so edits are left alone.
 	if err := s.forumUpdateContent(ctx, rt.ID, titlePtr, clean); err != nil {
 		s.forumFail(c, rt, forumViewEdit, http.StatusUnprocessableEntity, "The post could not be saved. Please try again.", form)
 		return
