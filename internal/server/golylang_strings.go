@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html"
 	"html/template"
 	"io"
 	"net/http"
@@ -14,6 +15,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // Languages > Translations: the strings translations table, with the Pro import/export of PO files.
@@ -162,7 +166,7 @@ func (s *Server) pllStringsSave(c *gin.Context) {
 			if !ok {
 				continue
 			}
-			if err := pllLog("saving a string translation", s.pllSetString(ctx, l.Slug, orig, v)); err != nil && saveErr == nil {
+			if err := pllLog("saving a string translation", s.pllSetString(ctx, l.Slug, orig, pllCleanTranslation(currentUser(c), v))); err != nil && saveErr == nil {
 				saveErr = err
 			}
 		}
@@ -185,6 +189,23 @@ func (s *Server) pllStringsSave(c *gin.Context) {
 }
 
 func urlQueryEscape(v string) string { return template.URLQueryEscaper(v) }
+
+// pllCleanTranslation is Polylang's sanitize_string_translation(): a user without unfiltered_html
+// has the translation run through wp_kses_post, because string translations are printed as HTML
+// (the maintenance page content and footer among them) and translators (manage_translations,
+// translate_{lang}) need not hold unfiltered_html. Plain text is kept byte for byte: when kses only
+// rewrote entities (& to &amp;) the original stays, so a translation shown as text is not
+// double-escaped. A nil user (machine translation, an untrusted provider) is always cleaned.
+func pllCleanTranslation(u *store.User, v string) string {
+	if u != nil && u.Can("unfiltered_html", nil) {
+		return v
+	}
+	k := wp.KsesPost(v)
+	if html.UnescapeString(k) == html.UnescapeString(v) {
+		return v
+	}
+	return k
+}
 
 // pllSetString stores one translation; an empty one is deleted.
 func (s *Server) pllSetString(ctx context.Context, lang, orig, tr string) error {
@@ -282,7 +303,7 @@ func (s *Server) pllImportPO(c *gin.Context) {
 		if k := e.ctx + "\x04" + e.id; e.ctx != "" && withCtx[k] {
 			key = k
 		}
-		if s.pllSetString(ctx, l.Slug, key, e.str) == nil {
+		if s.pllSetString(ctx, l.Slug, key, pllCleanTranslation(currentUser(c), e.str)) == nil {
 			n++
 		}
 	}

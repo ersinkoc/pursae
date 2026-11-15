@@ -826,7 +826,8 @@ func (s *Server) pllMTFillStrings(ctx context.Context, l *pllLanguage) (int, err
 			break
 		}
 		for k, tr := range res {
-			if tr = strings.TrimSpace(tr); tr != "" && s.pllSetString(ctx, l.Slug, keys[i+k], tr) == nil {
+			// The provider's output is untrusted whoever pressed the button: always kses it.
+			if tr = strings.TrimSpace(pllCleanTranslation(nil, tr)); tr != "" && s.pllSetString(ctx, l.Slug, keys[i+k], tr) == nil {
 				n++
 			}
 		}
