@@ -1,4 +1,10 @@
 {
+ "Pursae keeps this address to send you Pursae product updates. You can turn this off any time in your user profile.": "Pursae, size Pursae ürün güncellemelerini göndermek için bu adresi saklar. Bunu istediğiniz zaman kullanıcı profilinizden kapatabilirsiniz.",
+ "Pursae updates": "Pursae güncellemeleri",
+ "Email me Pursae product updates": "Pursae ürün güncellemelerini bana e-postayla gönder",
+ "Pursae keeps this account’s email address to send product updates. Untick to stop them; the address is removed from Pursae within a day.": "Pursae, ürün güncellemelerini göndermek için bu hesabın e-posta adresini saklar. Durdurmak için işareti kaldırın; adres bir gün içinde Pursae'den silinir.",
+ "Pursae keeps your email address (<code>%s</code>) to send you Pursae product updates. You can turn this off any time in your user profile.": "Pursae, size Pursae ürün güncellemelerini göndermek için e-posta adresinizi (<code>%s</code>) saklar. Bunu istediğiniz zaman kullanıcı profilinizden kapatabilirsiniz.",
+ "Change this in your profile": "Bunu profilinizden değiştirin",
  " (global)": " (genel)",
  "\" is used twice (": "\" iki kez kullanılıyor (",
  "\"Always active\" label": "\"Her zaman etkin\" etiketi",

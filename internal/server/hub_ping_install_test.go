@@ -104,4 +104,12 @@ func TestUpdateEmailsNoticeOnce(t *testing.T) {
 	if got := srv.hubContacts(ctx); len(got) != 1 {
 		t.Fatalf("contacts after the notice: %+v", got)
 	}
+	// In the user's language: one sentence with the address inside it, and the link (PRS-I18N-002).
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE users SET meta = (meta - 'pursae_update_emails') || '{"locale":"tr_TR"}'`); err != nil {
+		t.Fatal(err)
+	}
+	_, body, _ = get(t, c, ts.URL+"/wp-admin/")
+	if !strings.Contains(body, "e-posta adresinizi (<code>") || !strings.Contains(body, ">Bunu profilinizden değiştirin</a>") {
+		t.Errorf("update e-mails notice not in Turkish")
+	}
 }

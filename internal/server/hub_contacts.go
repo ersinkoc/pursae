@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"html"
 	"html/template"
 	"log/slog"
@@ -85,12 +86,16 @@ func (s *Server) updateEmailsNotices(c *gin.Context) []notice {
 		return nil // try again on the next screen
 	}
 	u.Meta[updateEmailsMeta] = true
-	return []notice{{Type: "info", Dismissible: true, Message: template.HTML(updateEmailsNoticeText(u.Email) +
-		` <a href="/wp-admin/profile#pursae-update-emails">Change this in your profile</a>`)}}
+	return []notice{{Type: "info", Dismissible: true, Message: template.HTML(s.updateEmailsNoticeText(c, u.Email) +
+		` <a href="/wp-admin/profile#pursae-update-emails">` + html.EscapeString(s.__(c, "Change this in your profile")) + `</a>`)}}
 }
 
-// updateEmailsNoticeText is the notice the user is shown (admin notice, install screen).
-func updateEmailsNoticeText(email string) string {
-	return "Pursae keeps your email address (<code>" + html.EscapeString(email) + "</code>) to send you Pursae product updates. " +
-		"You can turn this off any time in your user profile."
+// updateEmailsNoticeMsgid is the notice as one translatable sentence: the address sits inside it,
+// so the page translation (which sees "(", the <code> and the rest as separate text) cannot.
+const updateEmailsNoticeMsgid = "Pursae keeps your email address (<code>%s</code>) to send you Pursae product updates. " +
+	"You can turn this off any time in your user profile."
+
+// updateEmailsNoticeText is the notice the user is shown, in the user's language.
+func (s *Server) updateEmailsNoticeText(c *gin.Context, email string) string {
+	return fmt.Sprintf(s.__(c, updateEmailsNoticeMsgid), html.EscapeString(email))
 }
