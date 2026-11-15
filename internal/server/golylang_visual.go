@@ -625,7 +625,7 @@ func (s *Server) registerPllVisualREST() {
 					restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): items")
 					return
 				}
-				pairs = append(pairs, pair{k, v})
+				pairs = append(pairs, pair{k, pllCleanTranslation(u, v)}) // unfiltered_html or kses, as the Strings screen
 			}
 			var fresh []pllCaptureItem
 			for _, p := range pairs {
