@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // Goocommerce › Gift Cards: the issued cards with their balance, status and expiry, a manual card
@@ -71,7 +73,7 @@ func (s *Server) gcAdminList(c *gin.Context) {
 	if q := strings.TrimSpace(c.Query("s")); q != "" {
 		where = append(where, "(code ILIKE "+arg("%"+q+"%")+" OR recipient ILIKE "+arg("%"+q+"%")+" OR sender ILIKE "+arg("%"+q+"%")+")")
 	}
-	page := max(gxAtoi(c.Query("paged")), 1)
+	page := min(max(gxAtoi(c.Query("paged")), 1), store.MaxPage) // bounded so the OFFSET cannot overflow
 	per := 20
 	var total int
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_gift_cards WHERE `+strings.Join(where, " AND "), args...).Scan(&total)

@@ -140,9 +140,8 @@ func (s *Server) gooQueryCoupons(ctx context.Context, status, search string, pag
 	if perPage <= 0 {
 		perPage = 20
 	}
-	if page < 1 {
-		page = 1
-	}
+	// Capped here, not only by the callers, so (page-1)*perPage cannot overflow into a negative OFFSET.
+	page = min(max(page, 1), store.MaxPage)
 	rows, err := s.store.Pool.Query(ctx, `SELECT `+gooCouponCols+` FROM goo_coupons WHERE `+where+fmt.Sprintf(` ORDER BY date_created DESC, id DESC LIMIT %d OFFSET %d`, perPage, (page-1)*perPage), args...)
 	if err != nil {
 		return nil, 0, err

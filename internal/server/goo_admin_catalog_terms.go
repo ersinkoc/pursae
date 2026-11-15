@@ -233,7 +233,7 @@ func (s *Server) gooReviewsScreen(c *gin.Context) {
 	}
 	status := c.DefaultQuery("comment_status", "all")
 	page, _ := strconv.Atoi(c.Query("paged"))
-	page = max(page, 1)
+	page = min(max(page, 1), store.MaxPage) // bounded so the OFFSET cannot overflow
 	perPage := s.userOptionInt(u, "edit_comments_per_page", 20)
 	d := gooReviewsData{Status: status, Search: strings.TrimSpace(c.Query("s")), ReviewType: c.DefaultQuery("review_type", "all"),
 		Rating: c.Query("review_rating"), ProductType: c.Query("product_type"), BulkNonce: s.nonce(c, "bulk-product-reviews"), Types: s.gooProductTypeOptions()}

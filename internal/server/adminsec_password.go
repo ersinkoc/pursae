@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"log/slog"
 	"math"
 	"strings"
 	"sync"
@@ -196,7 +197,11 @@ func (s *Server) revokeCredentialsAfterPasswordChange(c *gin.Context, userID int
 			}
 		}
 	}
-	_ = s.revokeUserCredentials(ctx, userID, keepApp, keepGrant)
+	// Application passwords and OAuth grants that outlive a password change are worse than stale
+	// sessions, so a failure is logged at Error rather than dropped.
+	if err := s.revokeUserCredentials(ctx, userID, keepApp, keepGrant); err != nil {
+		slog.Error("adminsec: credential revocation after password change failed", "user_id", userID, "err", err)
+	}
 }
 
 // revokeUserCredentials deletes the user's application passwords, OAuth grants and pending OAuth codes,

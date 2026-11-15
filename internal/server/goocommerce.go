@@ -7,6 +7,7 @@ import (
 	"html"
 	"html/template"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -521,7 +522,10 @@ func (s *Server) gooDaily(ctx context.Context) error {
 	if !s.gooOn() {
 		return nil
 	}
-	_ = s.gooCleanupSessions(ctx)
+	// A failed cleanup is logged and the other daily steps still run.
+	if err := s.gooCleanupSessions(ctx); err != nil {
+		slog.Warn("goocommerce: session cleanup", "err", err)
+	}
 	s.gooCleanupDrafts(ctx)
 	if s.gooExtOn(paoKey) {
 		s.paoCleanupUploads(ctx, 24*time.Hour)

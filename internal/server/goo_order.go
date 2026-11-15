@@ -1194,7 +1194,7 @@ func (s *Server) gooQueryOrders(ctx context.Context, q gooOrderQuery) ([]*gooOrd
 	}
 	sql := `SELECT ` + gooOrderCols + ` FROM goo_orders WHERE ` + where + ` ORDER BY ` + col + ` ` + dir + `, id ` + dir
 	if q.PerPage > 0 {
-		page := max(q.Page, 1)
+		page := min(max(q.Page, 1), store.MaxPage) // admin callers pass ?paged= unbounded
 		sql += fmt.Sprintf(" LIMIT %d OFFSET %d", q.PerPage, (page-1)*q.PerPage)
 	}
 	rows, err := s.store.Pool.Query(ctx, sql, args...)
