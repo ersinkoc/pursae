@@ -39,11 +39,20 @@ func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		if err == nil {
 			return pool, nil
 		}
+		// A cancelled ctx (Ctrl-C, docker stop while PostgreSQL is still starting) ends the wait at
+		// once instead of retrying until the deadline and being reported as unreachable.
+		if ctx.Err() != nil {
+			pool.Close()
+			return nil, ctx.Err()
+		}
 		if time.Now().After(deadline) {
 			pool.Close()
 			return nil, fmt.Errorf("database not reachable: %w", err)
 		}
-		time.Sleep(time.Second)
+		if err := sleepCtx(ctx, time.Second); err != nil {
+			pool.Close()
+			return nil, err
+		}
 	}
 }
 

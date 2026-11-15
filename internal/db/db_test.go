@@ -292,6 +292,42 @@ func TestMigrateIsIdempotent(t *testing.T) {
 	}
 }
 
+// TestConnectHonorsCancel needs no database: with nothing listening, Connect must stop retrying as
+// soon as ctx is cancelled rather than waiting out its 30-second deadline.
+func TestConnectHonorsCancel(t *testing.T) {
+	const unreachable = "postgres://u:p@127.0.0.1:1/x?connect_timeout=1"
+	cases := map[string]func() (context.Context, context.CancelFunc){
+		"already cancelled": func() (context.Context, context.CancelFunc) {
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+			return ctx, cancel
+		},
+		"cancelled while retrying": func() (context.Context, context.CancelFunc) {
+			ctx, cancel := context.WithCancel(context.Background())
+			time.AfterFunc(100*time.Millisecond, cancel)
+			return ctx, cancel
+		},
+	}
+	for name, mk := range cases {
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := mk()
+			defer cancel()
+			start := time.Now()
+			pool, err := Connect(ctx, unreachable)
+			if elapsed := time.Since(start); elapsed > 2*time.Second {
+				t.Errorf("Connect returned after %v, want it to stop on cancel", elapsed)
+			}
+			if pool != nil {
+				pool.Close()
+				t.Error("want a nil pool")
+			}
+			if !errors.Is(err, context.Canceled) {
+				t.Errorf("err = %v, want context.Canceled", err)
+			}
+		})
+	}
+}
+
 func TestLoadMigrationSettingsFromEnv(t *testing.T) {
 	t.Setenv("WPGO_MIGRATE_LOCK_TIMEOUT", "")
 	t.Setenv("WPGO_MIGRATE_STATEMENT_TIMEOUT", "")
