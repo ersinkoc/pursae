@@ -17,14 +17,6 @@ func gfUnitSub(tags []*gfTag, raw map[string][]string) *gfSubmission {
 	return &gfSubmission{form: &gfForm{}, tags: tags, raw: raw, posted: posted, files: map[string][]gfUpload{}}
 }
 
-func gfInvalidNames(sub *gfSubmission) map[string]string {
-	out := map[string]string{}
-	for _, i := range sub.invalid {
-		out[i.name] = i.reason
-	}
-	return out
-}
-
 // validate needs no database: the field rules are table tested here.
 func TestGfValidateRules(t *testing.T) {
 	cases := []struct {

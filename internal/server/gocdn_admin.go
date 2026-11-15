@@ -143,7 +143,7 @@ func (s *Server) gocdnRender(c *gin.Context, page, msg, errMsg string, details [
 		d.PurgerNames = strings.Join(names, ", ")
 		d.PurgeCount = len(names)
 	}
-	title := "Pursae CDN"
+	var title string // every case sets it
 	switch page {
 	case "offload":
 		title = "Media Offload"

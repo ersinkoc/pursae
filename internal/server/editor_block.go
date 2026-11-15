@@ -3,7 +3,6 @@ package server
 import (
 	_ "embed"
 	"encoding/json"
-	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -372,12 +371,6 @@ func (s *Server) classicSwitchURL(p *store.Post) string {
 		return ""
 	}
 	return "/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit&classic-editor"
-}
-
-// webFileExists is a small helper for optional assets.
-func (s *Server) webFileExists(name string) bool {
-	_, err := fs.Stat(s.web, strings.TrimPrefix(name, "/"))
-	return err == nil
 }
 
 func strconvQuote(v string) string { b, _ := json.Marshal(v); return string(b) }

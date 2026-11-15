@@ -653,12 +653,6 @@ func pllMTParseChat(content string) ([]string, error) {
 // pllBlockDelim matches the block comment delimiters of serialized block content.
 var pllBlockDelim = regexp.MustCompile(`(?s)<!--\s*/?wp:.*?-->`)
 
-// pllMTTranslateHTML translates post content: the HTML between block comment delimiters is sent,
-// the delimiters (and their attributes) are kept byte for byte.
-func (s *Server) pllMTTranslateHTML(ctx context.Context, content string, src, dst *pllLanguage) (string, error) {
-	return pllMTBlocks(content, func(texts []string) ([]string, error) { return s.pllMachineTranslate(ctx, texts, src, dst, true) })
-}
-
 // pllMTKsesSafe reports whether KSES keeps the markup of an HTML part (same tags and attributes):
 // only such parts are machine translated, and their translation is run through KSES.
 func pllMTKsesSafe(part string) bool {

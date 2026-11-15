@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -56,7 +55,7 @@ func (s *Server) gooAdminSettings(c *gin.Context) {
 		}
 	}
 	if cur == nil {
-		cur, tab = &tabs[0], tabs[0].ID
+		cur = &tabs[0]
 	}
 	section := c.Query("section")
 	if c.Request.Method == http.MethodPost {
@@ -652,14 +651,4 @@ func gooMapValue(m map[string]any) func(gooField) any {
 		}
 		return f.Default
 	}
-}
-
-// gooSortedKeys returns a map's keys sorted.
-func gooSortedKeys[V any](m map[string]V) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
 }

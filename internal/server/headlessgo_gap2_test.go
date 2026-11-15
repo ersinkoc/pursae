@@ -236,7 +236,6 @@ func TestHeadlessGoEntryHooks(t *testing.T) {
 		return m
 	})
 	for _, h := range []string{"headless_entry_saved", "headless_entry_published", "headless_entry_unpublished", "headless_entry_deleted"} {
-		h := h
 		hooks.AddAction(h, 10, func(_ context.Context, args ...any) {
 			p := args[0].(map[string]any)
 			if _, leaked := p["entry"].(map[string]any)["secret"]; leaked {

@@ -228,9 +228,6 @@ func plural(n int, one, many string) string {
 	return fmt.Sprintf(many, n)
 }
 
-// gooFmtNum is a number with the store's decimals and separators (no currency).
-func (s *Server) gooFmtNum(v float64) string { return s.gooNumberFormat(v, s.gooDecimals()) }
-
 // gooFmtDec is a plain decimal for form inputs ("12.50").
 func (s *Server) gooFmtDec(v float64) string { return gooFormatDecimal(v, s.gooDecimals()) }
 

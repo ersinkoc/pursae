@@ -334,12 +334,6 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	return v, nil
 }
 
-func (s *Server) multiAuthor(ctx context.Context) (bool, error) {
-	var n int
-	err := s.store.Pool.QueryRow(ctx, `SELECT count(DISTINCT author_id) FROM posts WHERE type='post' AND status='publish'`).Scan(&n)
-	return n > 1, err
-}
-
 func (s *Server) archiveBase(q *siteQuery, lb *links.Builder) string {
 	switch q.Kind {
 	case "category", "tag", "taxonomy":

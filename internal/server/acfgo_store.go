@@ -333,21 +333,6 @@ var (
 	acfgoLocalGroups []*acfGroup
 )
 
-// acfgoRegisterLocalGroup is acf_add_local_field_group() for Go code: the group exists for every
-// site of the process without being stored (it is listed with "Local" and can be synced to the DB).
-func acfgoRegisterLocalGroup(m map[string]any) {
-	g := acfgoGroupFromMap(m)
-	acfgoLocalMu.Lock()
-	defer acfgoLocalMu.Unlock()
-	for i, lg := range acfgoLocalGroups {
-		if lg.Key == g.Key {
-			acfgoLocalGroups[i] = g
-			return
-		}
-	}
-	acfgoLocalGroups = append(acfgoLocalGroups, g)
-}
-
 func (s *Server) acfgoGroupByKey(ctx context.Context, key string) *acfGroup {
 	for _, g := range s.acfgoAllGroups(ctx, true) {
 		if g.Key == key {

@@ -172,7 +172,7 @@ func TestListScreensBatched(t *testing.T) {
 	}
 	stmts, _ = measure(c, "/wp-admin/goocommerce")
 	atMostOnce("store home", stmts, "FROM goo_order_items WHERE order_id", "WHERE parent_id = $1")
-	stmts, body = measure(c, "/wp-admin/goocommerce?page=analytics&path=/analytics/orders")
+	stmts, _ = measure(c, "/wp-admin/goocommerce?page=analytics&path=/analytics/orders")
 	atMostOnce("orders report", stmts, "FROM goo_order_items WHERE order_id", "WHERE parent_id = $1", "SELECT EXISTS(SELECT 1 FROM goo_orders")
 
 	stmts, body = measure(c, "/wp-admin/edit?post_type=product")

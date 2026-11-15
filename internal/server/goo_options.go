@@ -378,20 +378,6 @@ func (s *Server) gooSetOpts(ctx context.Context, values map[string]any) error {
 	return nil
 }
 
-// gooField finds a declared field by id.
-func gooFieldByID(id string) *gooField {
-	for _, t := range gooSettingsTabs() {
-		for _, sec := range t.Sections {
-			for i := range sec.Fields {
-				if sec.Fields[i].ID == id {
-					return &sec.Fields[i]
-				}
-			}
-		}
-	}
-	return nil
-}
-
 // gooTaxClasses are the tax classes: "" (Standard) plus the additional classes, as slug → name.
 func (s *Server) gooTaxClasses() []gooOpt {
 	out := []gooOpt{{"", "Standard"}}

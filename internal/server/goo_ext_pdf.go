@@ -331,7 +331,7 @@ func (s *Server) gooPDFDocument(ctx context.Context, p *gooPDF, doc string, o *g
 
 	// Header: logo (or the shop name) left, the shop's name and address right.
 	y := margin
-	headerBottom := y
+	var headerBottom float64
 	if logo >= 0 {
 		iw, ih := p.ImageSize(logo)
 		maxW, maxH := 200.0, 70.0

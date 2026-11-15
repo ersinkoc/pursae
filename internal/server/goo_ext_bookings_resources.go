@@ -160,14 +160,6 @@ func (s *Server) gooBkResourceName(ctx context.Context, id int64) string {
 	return "#" + itoa64(id)
 }
 
-// gooBkResourceLabelFor is the product's resource label for a booking.
-func (s *Server) gooBkResourceLabelFor(ctx context.Context, productID int64) string {
-	if p, err := s.gooGetProduct(ctx, productID); err == nil {
-		return bkConfOf(p).resourceLabel()
-	}
-	return "Resource"
-}
-
 // Availability ------------------------------------------------------------------------------------------
 
 // gxbRulesDecide is the verdict of the most important rule matching the block [s, e), if any

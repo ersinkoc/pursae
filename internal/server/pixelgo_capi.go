@@ -391,7 +391,7 @@ func (s *Server) pixelDispatch(ev pixelServerEvent) {
 		if len(ev.Platforms) > 0 && !pixelHas(ev.Platforms, def.Key) {
 			continue
 		}
-		def, cfg := def, st.Platforms[def.Key]
+		cfg := st.Platforms[def.Key]
 		claim := ""
 		if ev.OrderID > 0 && ev.Source == "order" {
 			claim = strconv.FormatInt(ev.OrderID, 10) + ":" + def.Key

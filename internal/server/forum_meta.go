@@ -83,23 +83,6 @@ func forumStrList(m map[string]any, k string) []string {
 	return out
 }
 
-// forumIDList reads a JSON number array meta value.
-func forumIDList(m map[string]any, k string) []int64 {
-	arr, _ := m[k].([]any)
-	var out []int64
-	for _, v := range arr {
-		switch n := v.(type) {
-		case float64:
-			out = append(out, int64(n))
-		case json.Number:
-			if i, err := n.Int64(); err == nil {
-				out = append(out, i)
-			}
-		}
-	}
-	return forumIDs(out...)
-}
-
 // forumSanitizeDesign clamps a forum's design meta: a known icon and colour, short label and number,
 // at most forumMaxChips chips and forumMaxTips tips, plain text everywhere.
 func forumSanitizeDesign(in forumDesignInput) forumDesignInput {
@@ -253,21 +236,6 @@ func forumTagsMeta(names, slugs []string) map[string]any {
 	return map[string]any{forumMetaTags: slugs, forumMetaTagNames: names}
 }
 
-// forumSetTopicTags replaces a topic's tags and purges the forum pages.
-func (s *Server) forumSetTopicTags(ctx context.Context, topicID int64, raw string) error {
-	names, slugs := forumParseTags(raw)
-	b, _ := json.Marshal(forumTagsMeta(names, slugs))
-	tag, err := s.store.Pool.Exec(ctx, `UPDATE posts SET meta = coalesce(meta,'{}') || $2::jsonb WHERE id = $1 AND type = 'topic'`, topicID, b)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return errForumNotFound
-	}
-	s.forumPurge(ctx)
-	return nil
-}
-
 // forumTagsOf reads a topic's tags (names and slugs, same order; a name falls back to its slug).
 func (s *Server) forumTagsOf(ctx context.Context, meta map[string]any) []forumTag {
 	slugs := forumStrList(meta, forumMetaTags)
@@ -281,15 +249,6 @@ func (s *Server) forumTagsOf(ctx context.Context, meta map[string]any) []forumTa
 		out = append(out, forumTag{Name: name, Slug: slug, URL: s.forumURL(ctx, "tag", slug)})
 	}
 	return out
-}
-
-// forumTagNamesString is a topic's tags as the form shows them ("cron, wasm").
-func forumTagNamesString(tags []forumTag) string {
-	names := make([]string, 0, len(tags))
-	for _, t := range tags {
-		names = append(names, t.Name)
-	}
-	return strings.Join(names, ", ")
 }
 
 // forumTagList is the tags of published topics in published forums with their topic counts, most used

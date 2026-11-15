@@ -603,9 +603,8 @@ func TestPrivacyRequests(t *testing.T) {
 		t.Errorf("export file not downloadable: %d", code)
 	}
 	// "Download personal data" streams the zip to the administrator.
-	dl := regexp.MustCompile(`href="(/wp-admin/export-personal-data\?action=download&amp;request_id=\d+&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
 	_, body, _ = get(t, c, base+"/wp-admin/export-personal-data")
-	dl = regexp.MustCompile(`href="(/wp-admin/export-personal-data\?action=download&amp;request_id=\d+&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
+	dl := regexp.MustCompile(`href="(/wp-admin/export-personal-data\?action=download&amp;request_id=\d+&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
 	if dl == nil {
 		t.Fatal("no Download personal data link")
 	}
@@ -613,9 +612,8 @@ func TestPrivacyRequests(t *testing.T) {
 		t.Errorf("download: %d", code)
 	}
 	// Remove request.
-	rm := regexp.MustCompile(`href="(/wp-admin/export-personal-data\?action=delete&amp;request_id=\d+&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
 	_, body, _ = get(t, c, base+"/wp-admin/export-personal-data")
-	rm = regexp.MustCompile(`href="(/wp-admin/export-personal-data\?action=delete&amp;request_id=\d+&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
+	rm := regexp.MustCompile(`href="(/wp-admin/export-personal-data\?action=delete&amp;request_id=\d+&amp;_wpnonce=[^"]+)"`).FindStringSubmatch(body)
 	if rm == nil {
 		t.Fatal("no Remove request link")
 	}
