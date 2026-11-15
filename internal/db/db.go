@@ -165,7 +165,9 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 			return nil, err
 		}
 	}
-	defer conn.Exec(context.Background(), `SELECT pg_advisory_unlock($1)`, lockID)
+	// Best effort: an unlock that fails means the connection is broken, and pgx closes a broken
+	// connection on Release, which ends the session and its lock.
+	defer conn.Exec(context.Background(), `SELECT pg_advisory_unlock($1)`, lockID) //nolint:errcheck // see above
 
 	if _, err := conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version text PRIMARY KEY,

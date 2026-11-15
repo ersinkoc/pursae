@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"sort"
 	"strconv"
@@ -605,5 +604,3 @@ func restLinks(self, collection string, extra map[string]any) map[string]any {
 	}
 	return l
 }
-
-func escapeQuery(v string) string { return url.QueryEscape(v) }

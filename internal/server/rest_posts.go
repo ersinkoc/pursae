@@ -255,7 +255,6 @@ func termIDs(ts []*store.Term) []int64 {
 
 func (api *restAPI) registerPosts() {
 	for _, base := range []string{"posts", "pages", "blocks"} {
-		base := base
 		typ := restTypeFor(base)
 		api.register("wp/v2", "/wp/v2/"+base, map[string]restHandler{
 			http.MethodGet:  func(c *gin.Context, r *restRequest) { api.listPosts(c, r, typ) },

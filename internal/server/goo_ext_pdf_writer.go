@@ -236,7 +236,6 @@ func (p *gooPDF) Bytes() []byte {
 		out.WriteString("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>")
 	})
 	for _, im := range p.images {
-		im := im
 		obj(func() {
 			cs, decode := "/DeviceRGB", ""
 			switch im.comps {

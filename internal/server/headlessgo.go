@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
 	"sync"
 
@@ -481,11 +480,4 @@ func hgOriginAllowed(list []string, origin string) bool {
 		}
 	}
 	return false
-}
-
-// hgTypeOptions are the content types for <select>s and matrices, sorted by display name.
-func hgSortedTypes(list []*hgSchema) []*hgSchema {
-	out := append([]*hgSchema(nil), list...)
-	sort.SliceStable(out, func(i, j int) bool { return strings.ToLower(out[i].DisplayName) < strings.ToLower(out[j].DisplayName) })
-	return out
 }

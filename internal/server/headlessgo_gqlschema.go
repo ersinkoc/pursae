@@ -422,7 +422,6 @@ func (g *hgGQLSchema) schemaObj() *hgIntro {
 			cond := &hgGQLInput{name: "if", typ: gqlNonNull(gqlNamed("Boolean"))}
 			out := []*hgIntro{}
 			for _, d := range [][2]string{{"include", "Include this field or fragment only when the argument is true"}, {"skip", "Skip this field or fragment when the argument is true"}} {
-				d := d
 				out = append(out, &hgIntro{typename: "__Directive", get: func(field string, _ map[string]any) any {
 					switch field {
 					case "name":
@@ -500,7 +499,6 @@ func (g *hgGQLSchema) typeObj(name string) *hgIntro {
 			}
 			out := []*hgIntro{}
 			for _, v := range t.enum {
-				v := v
 				out = append(out, &hgIntro{typename: "__EnumValue", get: func(field string, _ map[string]any) any {
 					switch field {
 					case "name":

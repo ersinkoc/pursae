@@ -277,7 +277,7 @@ func TestGooFrontCart(t *testing.T) {
 	}
 
 	// Variable product form.
-	_, body, _ = get(t, v, base+"/product/hoodie/")
+	get(t, v, base+"/product/hoodie/")
 	code, _, _ = post(t, v, base+"/product/hoodie/", url.Values{"add-to-cart": {itoa64(f.hoodie.ID)}, "product_id": {itoa64(f.hoodie.ID)}, "variation_id": {itoa64(f.blue.ID)},
 		"attribute_pa_color": {"blue"}, "quantity": {"2"}})
 	if code != http.StatusFound {
@@ -495,7 +495,7 @@ func TestGooFrontAccount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	code, _, _ = post(t, v, base+"/my-account/", url.Values{"username": {"linus"}, "password": {"wrong"}, "woocommerce-login-nonce": {gooHidden(t, body, "woocommerce-login-nonce")}, "login": {"Log in"}})
+	post(t, v, base+"/my-account/", url.Values{"username": {"linus"}, "password": {"wrong"}, "woocommerce-login-nonce": {gooHidden(t, body, "woocommerce-login-nonce")}, "login": {"Log in"}})
 	_, body, _ = get(t, v, base+"/my-account/")
 	if !strings.Contains(body, "is incorrect") {
 		t.Error("no error for a wrong password")

@@ -110,10 +110,6 @@ func (s *Server) renderAdminTemplate(c *gin.Context, status int, name string, da
 	s.renderTemplate(c, status, s.tmpl.get(false), name, data)
 }
 
-func (s *Server) renderThemeTemplate(c *gin.Context, theme string, status int, name string, data any) {
-	s.renderTemplateFiltered(c, status, s.tmpl.getTheme(true, theme), name, data, true)
-}
-
 func (s *Server) renderTemplate(c *gin.Context, status int, set *template.Template, name string, data any) {
 	s.renderTemplateFiltered(c, status, set, name, data, false)
 }

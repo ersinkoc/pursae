@@ -97,7 +97,7 @@ func buildPackage(t *testing.T, pkgDir string) *Package {
 	assetsDir := filepath.Join(moduleRoot, pkgDir, AssetsDir)
 	_ = filepath.WalkDir(assetsDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
-			return nil
+			return nil //nolint:nilerr // an unreadable entry is skipped, the walk goes on
 		}
 		rel, _ := filepath.Rel(assetsDir, p)
 		data, _ := os.ReadFile(p)

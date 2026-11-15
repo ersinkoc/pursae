@@ -90,10 +90,6 @@ func sortResults(results []seogoResult) {
 	}
 }
 
-func res(id, rating, text string, a ...any) seogoResult {
-	return seogoResult{ID: id, Rating: rating, Score: map[string]int{"good": 9, "ok": 6, "bad": 3}[rating], Text: fmt.Sprintf(text, a...)}
-}
-
 // scored is res with Yoast's own score for the outcome (they differ per assessment).
 func scored(score int, id, text string, a ...any) seogoResult {
 	r := seogoResult{ID: id, Score: score, Text: fmt.Sprintf(text, a...)}

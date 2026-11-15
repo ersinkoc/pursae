@@ -253,7 +253,7 @@ func gocdnPruneDir(dir string, limit int64) int {
 	var total int64
 	_ = filepath.WalkDir(dir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
-			return nil
+			return nil //nolint:nilerr // an unreadable entry is skipped, the walk goes on
 		}
 		if fi, err := d.Info(); err == nil {
 			files = append(files, ent{p, fi.Size(), fi.ModTime()})

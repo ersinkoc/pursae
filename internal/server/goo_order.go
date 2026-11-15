@@ -39,23 +39,22 @@ func gooStatusLabel(st string) string {
 var gooPaidStatuses = []string{"processing", "completed"}
 
 type gooOrderItem struct {
-	ID          int64              `json:"id"`
-	OrderID     int64              `json:"order_id"`
-	Type        string             `json:"type"`
-	Name        string             `json:"name"`
-	ProductID   int64              `json:"product_id"`
-	VariationID int64              `json:"variation_id"`
-	Quantity    float64            `json:"quantity"`
-	TaxClass    string             `json:"tax_class"`
-	Subtotal    float64            `json:"subtotal"`
-	SubtotalTax float64            `json:"subtotal_tax"`
-	Total       float64            `json:"total"`
-	TotalTax    float64            `json:"total_tax"`
-	Taxes       gooItemTaxes       `json:"taxes"`
-	Meta        map[string]any     `json:"meta_data"`
-	Position    int                `json:"-"`
-	refunded    map[string]float64 // computed: refunded qty / total / tax
-	origReduced any                // _reduced_stock as stored (gooOrderItem.keepsReduced)
+	ID          int64          `json:"id"`
+	OrderID     int64          `json:"order_id"`
+	Type        string         `json:"type"`
+	Name        string         `json:"name"`
+	ProductID   int64          `json:"product_id"`
+	VariationID int64          `json:"variation_id"`
+	Quantity    float64        `json:"quantity"`
+	TaxClass    string         `json:"tax_class"`
+	Subtotal    float64        `json:"subtotal"`
+	SubtotalTax float64        `json:"subtotal_tax"`
+	Total       float64        `json:"total"`
+	TotalTax    float64        `json:"total_tax"`
+	Taxes       gooItemTaxes   `json:"taxes"`
+	Meta        map[string]any `json:"meta_data"`
+	Position    int            `json:"-"`
+	origReduced any            // _reduced_stock as stored (gooOrderItem.keepsReduced)
 	hasOrig     bool
 }
 

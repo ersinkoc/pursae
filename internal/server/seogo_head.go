@@ -530,5 +530,3 @@ func (s *Server) seogoQueryForPost(p *store.Post) *siteQuery {
 	}
 	return q
 }
-
-func itoaS(n int64) string { return strconv.FormatInt(n, 10) }

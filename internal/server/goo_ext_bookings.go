@@ -383,14 +383,10 @@ func bkCostRuleMatch(r bkCostRule, s, e time.Time, persons, blocks int, timed bo
 	return false
 }
 
-// bkCost is WC_Bookings_Cost_Calculation::calculate_booking_cost(): the base cost once, the block cost
-// for every block, person type costs added (or every cost multiplied by the persons), the cost
-// rules applied to each block they match.
-func bkCost(c *bkConf, start time.Time, blocks int, persons map[string]int) float64 {
-	return gooBkCostWith(c, start, blocks, persons, 0)
-}
-
-// gooBkCostWith is bkCost with a resource: its base and block costs are added to the product's.
+// gooBkCostWith is WC_Bookings_Cost_Calculation::calculate_booking_cost(): the base cost once, the
+// block cost for every block, person type costs added (or every cost multiplied by the persons), the
+// cost rules applied to each block they match. A resource's base and block costs are added to the
+// product's.
 func gooBkCostWith(c *bkConf, start time.Time, blocks int, persons map[string]int, resource int64) float64 {
 	rb, rk := c.resourceCosts(resource)
 	base, block := c.BaseCost+rb, c.BlockCost+rk
@@ -488,20 +484,9 @@ type bkHeld struct {
 	Persons    int
 }
 
-// bkExisting lists the bookings that hold places between from and to (buffers included).
-func (s *Server) bkExisting(ctx context.Context, productID int64, from, to time.Time, exclude int64) []bkHeld {
-	return s.gooBkExisting(ctx, productID, 0, from, to, exclude)
-}
-
-// gooBkExisting is bkExisting for a resource: the bookings of every product holding that resource
-// (resource 0: the product's bookings).
-func (s *Server) gooBkExisting(ctx context.Context, productID, resource int64, from, to time.Time, exclude int64) []bkHeld {
-	out, _ := s.gooBkExistingErr(ctx, productID, resource, from, to, exclude)
-	return out
-}
-
-// gooBkExistingErr is gooBkExisting returning the query error, so a check that cannot read the
-// bookings refuses instead of treating every place as free.
+// gooBkExistingErr lists the bookings that hold places between from and to (buffers included): those
+// of every product holding the resource (resource 0: the product's bookings). The query error is
+// returned, so a check that cannot read the bookings refuses instead of treating every place as free.
 func (s *Server) gooBkExistingErr(ctx context.Context, productID, resource int64, from, to time.Time, exclude int64) ([]bkHeld, error) {
 	mins := max(s.gooExtInt(bkKey, "in_cart_minutes"), 1)
 	col, key := "product_id", productID
@@ -571,13 +556,9 @@ func (s *Server) bkWindow(c *bkConf) (time.Time, time.Time) {
 	return from, to
 }
 
-// bkCheck is WC_Product_Booking::is_bookable(): the booking of blocks starting at start, for n
-// persons, fits the window, the rules and the remaining places.
-func (s *Server) bkCheck(ctx context.Context, p *gooProduct, c *bkConf, start time.Time, blocks, persons int, exclude int64) error {
-	return s.gxbCheck(ctx, p, c, nil, start, blocks, persons, exclude)
-}
-
-// gxbCheck is bkCheck against a resource (nil: the product alone): its rules, quantity and bookings.
+// gxbCheck is WC_Product_Booking::is_bookable(): the booking of blocks starting at start, for n
+// persons, fits the window, the rules and the remaining places, checked against a resource (nil: the
+// product alone): its rules, quantity and bookings.
 func (s *Server) gxbCheck(ctx context.Context, p *gooProduct, c *bkConf, res *gooBkResource, start time.Time, blocks, persons int, exclude int64) error {
 	var resID int64
 	if res != nil {

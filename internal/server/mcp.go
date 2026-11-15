@@ -817,7 +817,7 @@ func mcpDocs() []mcpDoc {
 	var out []mcpDoc
 	_ = fs.WalkDir(docs.Developer, "developer", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || path.Ext(p) != ".md" {
-			return nil
+			return nil //nolint:nilerr // an unreadable entry is skipped, the walk goes on
 		}
 		title := strings.TrimSuffix(p, ".md")
 		if b, err := fs.ReadFile(docs.Developer, p); err == nil {

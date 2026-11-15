@@ -334,7 +334,7 @@ func TestInstallLoginPublishAndView(t *testing.T) {
 	}
 
 	code, body, _ = get(t, c, base+"/")
-	if !strings.Contains(body, "Go publishes") || !strings.Contains(body, "<p>Second paragraph.</p>") {
+	if code != http.StatusOK || !strings.Contains(body, "Go publishes") || !strings.Contains(body, "<p>Second paragraph.</p>") {
 		t.Errorf("published post not on the home page")
 	}
 	_, body, _ = get(t, c, base+"/tag/golang/")

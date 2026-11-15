@@ -124,7 +124,7 @@ func imageMatchesRatio(sw, sh, tw, th int) bool {
 		ew, eh = constrainDimensions(sw, sh, tw, 0)
 	} else {
 		ew, eh = constrainDimensions(tw, th, sw, 0)
-		tw, th, sw, sh = sw, sh, tw, th
+		tw, th = sw, sh // sw and sh are not read again
 	}
 	return abs(ew-tw) <= 1 && abs(eh-th) <= 1
 }

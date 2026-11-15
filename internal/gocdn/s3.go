@@ -327,7 +327,7 @@ func (c *Client) GetRanged(ctx context.Context, key, rng string) (*Partial, erro
 	if rng != "" {
 		h.Set("Range", rng)
 	}
-	resp, err := c.do(ctx, http.MethodGet, key, nil, nil, h)
+	resp, err := c.do(ctx, http.MethodGet, key, nil, nil, h) //nolint:bodyclose // returned in Partial.Body; the caller closes it
 	if err != nil {
 		return nil, err
 	}

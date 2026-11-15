@@ -19,6 +19,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
+
+	"wpgo/internal/store"
 )
 
 // Stripe (gateway id "goo_stripe"). The customer pays on Stripe's hosted Checkout page, so card data
@@ -716,19 +719,49 @@ func (s *Server) gooStripeWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"received": true})
 }
 
+// gooNotFound reports whether a lookup failed only because the row does not exist (as opposed to
+// the database being unreachable), which is the one failure an event may be acknowledged after.
+func gooNotFound(err error) bool {
+	return errors.Is(err, pgx.ErrNoRows) || errors.Is(err, store.ErrNotFound)
+}
+
 // gooStripeEventOrder is the order an event's object names in its metadata; nil when the object is
-// not about an order of this site (another site on the same Stripe account).
-func (s *Server) gooStripeEventOrder(ctx context.Context, obj map[string]any) *gooOrder {
+// not about an order of this site (another site on the same Stripe account). A database error is
+// returned, so the event is not acknowledged and Stripe sends it again.
+func (s *Server) gooStripeEventOrder(ctx context.Context, obj map[string]any) (*gooOrder, error) {
 	md := gooJSONMap(obj["metadata"])
 	id := gooAtoi64(gxaStr(md, "order_id"))
 	if id == 0 {
-		return nil
+		return nil, nil
 	}
 	o, err := s.gooGetOrder(ctx, id)
-	if err != nil || o.Type != "shop_order" || o.PaymentMethod != gooStripeID || !gooStripeIntentIsFor(obj, o) {
-		return nil
+	if err != nil {
+		if gooNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
 	}
-	return o
+	if o.Type != "shop_order" || o.PaymentMethod != gooStripeID || !gooStripeIntentIsFor(obj, o) {
+		return nil, nil
+	}
+	return o, nil
+}
+
+// gooStripeEventOrderByIntent finds the order a charge event's payment intent paid; nil when no
+// order of this site did. Like gooStripeEventOrder, only a database error is returned.
+func (s *Server) gooStripeEventOrderByIntent(ctx context.Context, obj map[string]any) (*gooOrder, error) {
+	ref := gooStripeRef(obj["payment_intent"])
+	if ref == "" {
+		return nil, nil
+	}
+	o, err := s.gooOrderByTransaction(ctx, gooStripeID, ref)
+	if err != nil {
+		if gooNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return o, nil
 }
 
 func (s *Server) gooStripeEvent(ctx context.Context, typ string, obj map[string]any) error {
@@ -741,7 +774,10 @@ func (s *Server) gooStripeEvent(ctx context.Context, typ string, obj map[string]
 			_, err := s.gooStripeApplySetup(ctx, obj, 0)
 			return err
 		}
-		o := s.gooStripeEventOrder(ctx, obj)
+		o, err := s.gooStripeEventOrder(ctx, obj)
+		if err != nil {
+			return err
+		}
 		pid := gooStripeRef(obj["payment_intent"])
 		if o == nil || !gooStripeIDOK(pid) {
 			return nil
@@ -755,17 +791,19 @@ func (s *Server) gooStripeEvent(ctx context.Context, typ string, obj map[string]
 		}
 		return s.gooStripeApplyIntent(ctx, o, pi)
 	case "payment_intent.succeeded", "payment_intent.payment_failed", "payment_intent.processing", "payment_intent.canceled":
-		o := s.gooStripeEventOrder(ctx, obj)
-		if o == nil {
-			return nil
+		o, err := s.gooStripeEventOrder(ctx, obj)
+		if err != nil || o == nil {
+			return err
 		}
 		return s.gooStripeApplyIntent(ctx, o, obj)
 	case "charge.refunded":
-		o := s.gooStripeEventOrder(ctx, obj)
+		o, err := s.gooStripeEventOrder(ctx, obj)
+		if err != nil {
+			return err
+		}
 		if o == nil {
-			var err error
-			if o, err = s.gooOrderByTransaction(ctx, gooStripeID, gooStripeRef(obj["payment_intent"])); err != nil {
-				return nil
+			if o, err = s.gooStripeEventOrderByIntent(ctx, obj); err != nil || o == nil {
+				return err
 			}
 		}
 		// The order is brought to Stripe's refunded total: refunds made from the order screen are
@@ -784,9 +822,9 @@ func (s *Server) gooStripeEvent(ctx context.Context, typ string, obj map[string]
 			return err
 		})
 	case "charge.dispute.created":
-		o, err := s.gooOrderByTransaction(ctx, gooStripeID, gooStripeRef(obj["payment_intent"]))
-		if err != nil {
-			return nil
+		o, err := s.gooStripeEventOrderByIntent(ctx, obj)
+		if err != nil || o == nil {
+			return err
 		}
 		note := "A dispute was opened for this payment in Stripe (" + gooEsc(gxaStr(obj, "reason")) + "). Respond to it in the Stripe Dashboard."
 		if err := s.gooSetStatusFrom(ctx, o, []string{"processing", "completed"}, "on-hold", note, ""); err != nil && !errors.Is(err, errGooStatusChanged) {

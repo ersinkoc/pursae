@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -208,12 +207,4 @@ func forumShortMAC(key, msg string) string {
 	m := hmac.New(sha256.New, []byte(key))
 	m.Write([]byte(msg))
 	return hex.EncodeToString(m.Sum(nil))[:32]
-}
-
-// forumRulesLink is the HTML link to the rules (for the register template's checkbox label).
-func forumRulesLink(url, label string) template.HTML {
-	if url == "" {
-		return template.HTML(template.HTMLEscapeString(label))
-	}
-	return template.HTML(`<a href="` + template.HTMLEscapeString(url) + `" target="_blank" rel="noopener">` + template.HTMLEscapeString(label) + `</a>`)
 }

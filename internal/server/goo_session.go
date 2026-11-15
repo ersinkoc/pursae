@@ -312,29 +312,8 @@ func (s *Server) gooTakeNotices(c *gin.Context) []gooNotice {
 	return n
 }
 
-// gooHasNoticeErrors is wc_notice_count('error') > 0.
-func (s *Server) gooHasNoticeErrors(c *gin.Context) bool {
-	for _, n := range s.gooSessionFor(c).Data.Notices {
-		if n.Type == "error" {
-			return true
-		}
-	}
-	return false
-}
-
 // gooCleanupSessions deletes expired sessions (the daily woocommerce_cleanup_sessions job).
 func (s *Server) gooCleanupSessions(ctx context.Context) error {
 	_, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_sessions WHERE expires_at < now()`)
 	return err
-}
-
-// gooCustomerEmail is the e-mail address the session knows: billing e-mail or the account's.
-func (s *Server) gooCustomerEmail(c *gin.Context) string {
-	if e := strings.TrimSpace(s.gooSessionFor(c).Data.Customer.Billing["email"]); e != "" {
-		return e
-	}
-	if u := currentUser(c); u != nil {
-		return u.Email
-	}
-	return ""
 }

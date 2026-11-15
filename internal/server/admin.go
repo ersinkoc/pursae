@@ -85,7 +85,7 @@ type subDef struct {
 }
 
 func adminMenu(pending int, cache bool) []menuDef {
-	comments := "Comments"
+	var comments string
 	if pending > 0 {
 		comments = fmt.Sprintf(`Comments <span class="awaiting-mod count-%d"><span class="pending-count" aria-hidden="true">%d</span><span class="comments-in-moderation-text screen-reader-text">%d Comments in moderation</span></span>`, pending, pending, pending)
 	} else {
