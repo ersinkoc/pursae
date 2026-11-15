@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
@@ -248,7 +249,10 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 		return
 	}
 	if self && c.PostForm("action") == "destroy-sessions" {
-		_ = s.auth.DestroyOthers(c, u.ID, currentSession(c).ID)
+		if err := s.auth.DestroyOthers(c, u.ID, currentSession(c).ID); err != nil {
+			// The other sessions are still live: say so in the log rather than drop the error.
+			slog.Error("profile: log out everywhere else failed", "user_id", u.ID, "err", err)
+		}
 		c.Redirect(http.StatusFound, back)
 		return
 	}

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -65,7 +66,10 @@ func (m *Manager) Create(ctx context.Context, userID int64, remember bool, ip, u
 	if err != nil {
 		return nil, err
 	}
-	_, _ = m.pool.Exec(ctx, `UPDATE users SET last_login_at = now() WHERE id = $1`, userID)
+	// Bookkeeping only: the login itself succeeded, but a failure should still be visible.
+	if _, err := m.pool.Exec(ctx, `UPDATE users SET last_login_at = now() WHERE id = $1`, userID); err != nil {
+		slog.Debug("auth: last_login_at update", "user_id", userID, "err", err)
+	}
 	return s, nil
 }
 
@@ -96,12 +100,17 @@ func (m *Manager) lookup(ctx context.Context, token string, touch bool) (*Sessio
 	}
 	if m.Idle != nil {
 		if idle := m.Idle(); idle > 0 && time.Since(lastSeen) > idle {
-			_, _ = m.pool.Exec(ctx, `DELETE FROM sessions WHERE id = $1`, s.ID)
+			// The session is refused either way; a failed delete leaves the row for the expiry cleanup.
+			if _, err := m.pool.Exec(ctx, `DELETE FROM sessions WHERE id = $1`, s.ID); err != nil {
+				slog.Debug("auth: session idle delete", "session", s.ID, "err", err)
+			}
 			return nil, ErrNoSession
 		}
 	}
 	if touch && time.Since(lastSeen) > time.Minute {
-		_, _ = m.pool.Exec(ctx, `UPDATE sessions SET last_seen_at = now() WHERE id = $1`, s.ID)
+		if _, err := m.pool.Exec(ctx, `UPDATE sessions SET last_seen_at = now() WHERE id = $1`, s.ID); err != nil {
+			slog.Debug("auth: session touch", "session", s.ID, "err", err)
+		}
 	}
 	return s, nil
 }
