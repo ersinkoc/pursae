@@ -298,6 +298,8 @@ func TestForumFrontViews(t *testing.T) {
 	}
 	forumNoTemplateError(t, "shortcode page", body)
 	wbtfWant(t, "shortcode page", body, `data-view="shortcode-index"`, `data-view="shortcode-recent"`, "General Chat", "Topic number 7", "forum.css")
+	// The stylesheet carries the reported plugin version as its cache-buster (the plugins list shows the same constant).
+	wbtfWant(t, "shortcode page", body, "/forum.css?ver="+forumVersion)
 	// The recent shortcode and the theme function skip topics of the unpublished forum (the newest topic).
 	if strings.Contains(body, "Secret plans") {
 		t.Error(`[pursae_forum view="recent"] lists a topic of an unpublished forum`)
