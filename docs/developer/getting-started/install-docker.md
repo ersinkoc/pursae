@@ -101,7 +101,8 @@ docker compose -f docker/compose.yaml logs -f wpgo
 docker compose -f docker/compose.yaml restart wpgo
 ```
 
-The compose file sets `WPGO_TRUST_DEV_KEY=1` so the bundled example plugins install. That is for
-development only: `make prod-up` adds `docker/compose.prod.yaml`, which turns it off — see
+The compose file builds a development (`devhub`) binary, publishes the site on 127.0.0.1 only
+(`WPGO_BIND=0.0.0.0` opens it to the network) and sets `WPGO_TRUST_DEV_KEY=1` so the bundled example
+plugins install; production binaries ignore that variable. That is for development only: `make prod-up` adds `docker/compose.prod.yaml`, which turns it off — see
 [Docker](../operations/docker.md#production-changes), the [security](../operations/security.md) page and the
 full [configuration reference](../operations/configuration.md).

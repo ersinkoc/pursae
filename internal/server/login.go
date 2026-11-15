@@ -211,7 +211,9 @@ func (s *Server) login(c *gin.Context) {
 }
 
 func (s *Server) setLoginCookie(c *gin.Context, token string, persistent bool, maxAge int) {
-	secure := s.requestHTTPS(c.Request)
+	// An https site always marks the session Secure, also when the TLS proxy in front of it is not among
+	// the trusted proxies (then the request itself looks like plain http and the cookie would travel in clear).
+	secure := s.requestHTTPS(c.Request) || strings.HasPrefix(strings.ToLower(strings.TrimSpace(s.settings.String("home"))), "https://")
 	cookie := &http.Cookie{
 		Name:     auth.CookieName,
 		Value:    token,

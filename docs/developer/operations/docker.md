@@ -137,5 +137,6 @@ If containers still do not come back after the Docker daemon restarts, `docker c
 
 Instances that share one database see each other's plugin changes: every process compares the
 `plugins` table with what it has loaded every 10 seconds and loads, unloads or reloads the
-difference. Plugin packages live in the plugins directory (`WPGO_PLUGINS_DIR`), so every instance
+difference. Plugin packages live in the `plugins` directory next to the uploads directory (with
+`WPGO_UPLOADS_DIR=/data/uploads` that is `/data/plugins`), so every instance
 needs the same volume; an instance cannot load a package it does not have on disk.

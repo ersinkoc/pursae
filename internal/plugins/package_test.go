@@ -53,7 +53,7 @@ func TestUnsignedPackage(t *testing.T) {
 		t.Fatalf("want ErrUnsigned, got %v", err)
 	}
 	pkg, err := load(data, []ed25519.PublicKey{pub}, false)
-	if err != nil || pkg.Signed || pkg.Verified() {
+	if err != nil || pkg.Verified() {
 		t.Fatalf("unsigned package should load when signatures are optional: %v", err)
 	}
 }

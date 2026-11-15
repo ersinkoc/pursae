@@ -89,7 +89,7 @@ inspect them. See [Mail](mail.md).
 | `WPGO_DISALLOW_FILE_EDIT` | off | set to `1`/`true` to make the Theme File Editor read-only (like `DISALLOW_FILE_EDIT`) |
 | `WPGO_PLUGIN_KEYS` | — | comma-separated base64 Ed25519 public keys trusted to sign plugin packages, in addition to the `plugin_trusted_keys` option |
 | `WPGO_MARKET_DIR` | `examples/plugins/dist`, then `/usr/share/wpgo/plugins` | a directory of `.zip` packages offered on Plugins › Add Plugin |
-| `WPGO_TRUST_DEV_KEY` | unset (`1` in compose) | trust the `dev-key.pub` found in the market directory. **Development only** |
+| `WPGO_TRUST_DEV_KEY` | unset (`1` in compose) | **Development builds only** (`-tags devhub`): trust the `dev-key.pub` found in the market directory. Production binaries ignore it |
 | `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (public REST users, `/?author=N`, users sitemap). Off by default because those routes disclose account names |
 | `WPGO_TRUSTED_PROXIES` | loopback and private ranges | proxies (comma separated IPs or CIDRs) whose `X-Forwarded-For` / `X-Real-IP` is believed when deriving the visitor address; `none` trusts no proxy ([reverse proxy](reverse-proxy-and-tls.md)) |
 | `WPGO_HUB` | unset (on) | `off` switches Pursae Manager (hub.pursae.com) off in any build: the site sends nothing, and gets no update notices or one-click updates, no marketplace and no licenses. Every admin page then shows a warning (to users who may update) until `WPGO_HUB` is removed and Pursae restarted. **Not recommended** |
@@ -146,7 +146,7 @@ which is not shipped (its upstream modules are stubbed); setting them has no eff
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `WPGO_PORT` | `8088` | host port for the site |
-| `WPGO_BIND` | `127.0.0.1` | host address the site is published on, with `compose.prod.yaml` only (the development file publishes the site on every interface) |
+| `WPGO_BIND` | `127.0.0.1` | host address the compose files publish the site on. `0.0.0.0` opens it to the network: then set `WPGO_TRUSTED_PROXIES`, since the default trusts the private ranges and a client there could choose its own address |
 | `WPGO_DB_PORT` | `5432` | host port for PostgreSQL, published on `127.0.0.1` by the development file only; `compose.prod.yaml` does not publish PostgreSQL |
 | `WPGO_DB_PASSWORD` | — (required) | database password, with `compose.prod.yaml` only (the development file uses `wpgo`); applied when the `pgdata` volume is created |
 

@@ -65,8 +65,6 @@ type Package struct {
 	Assets map[string][]byte
 	// Digest is the canonical SHA-256 digest that the signature covers.
 	Digest [sha256.Size]byte
-	// Signed reports whether the package carries a signature file.
-	Signed bool
 	// SignedBy is the trusted key that verified the signature, or nil when
 	// the signature was not verified (unsigned, or no trusted keys given).
 	SignedBy ed25519.PublicKey
@@ -241,7 +239,6 @@ func LoadPackage(r io.ReaderAt, size int64, trustedKeys []ed25519.PublicKey, req
 	pkg.Digest = PackageDigest(pkg.ManifestJSON, pkg.Wasm)
 
 	sig, signed := files[SignatureFile]
-	pkg.Signed = signed
 	switch {
 	case signed && len(trustedKeys) > 0:
 		key, err := Verify(sig, pkg.ManifestJSON, pkg.Wasm, trustedKeys)
