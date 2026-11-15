@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
+	"wpgo/internal/textfold"
 )
 
 // The Pursae SEO box of both editors: a meta box in the classic editor and a sidebar (plus a
@@ -474,7 +475,7 @@ func (s *Server) seogoSuggestions(ctx context.Context, postID int64, text string
 	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE status = 'publish' AND type IN ('post','page') AND id <> $1 AND password = ''
 		AND search @@ to_tsquery('simple', $2)
 		ORDER BY (coalesce(meta->>'_seogo_cornerstone', meta->>'_yoast_wpseo_is_cornerstone', '') = '1') DESC,
-			ts_rank(search, to_tsquery('simple', $2)) DESC LIMIT $3`, postID, strings.Join(terms, " | "), limit)
+			ts_rank(search, to_tsquery('simple', $2)) DESC LIMIT $3`, postID, textfold.Fold(strings.Join(terms, " | ")), limit) // i-folded like posts.search (0105)
 	if err != nil {
 		return out
 	}

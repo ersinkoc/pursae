@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/store"
+	"wpgo/internal/textfold"
 	"wpgo/internal/wp"
 )
 
@@ -729,7 +730,7 @@ func (s *Server) forumAdminModeration(c *gin.Context, d *forumAdminData, notices
 	args := []any{}
 	cond := "p.type IN ('topic','reply') AND " + forumAdminViewSQL(view)
 	if search != "" {
-		args = append(args, search)
+		args = append(args, textfold.Fold(search)) // i-folded like posts.search (migration 0105)
 		cond += " AND p.search @@ websearch_to_tsquery('simple', $1)"
 	}
 	var total int

@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"wpgo/internal/blocks"
+	"wpgo/internal/textfold"
 	"wpgo/internal/wp"
 )
 
@@ -320,10 +321,13 @@ func (q *PostQuery) where(args *[]any) string {
 		conds = append(conds, "coalesce(parent_id,0) = "+add(*q.ParentID))
 	}
 	if q.Search != "" {
-		q.searchArg, q.searchLikeArg = add(q.Search), add(likeContains(q.Search))
+		// The term and the searched text are i-folded alike (ı, İ → i; migration 0105), so "IŞIK" finds
+		// "ışık" whatever the database collation lower-cases I to.
+		term := textfold.Fold(q.Search)
+		q.searchArg, q.searchLikeArg = add(term), add(likeContains(term))
 		// search_stem is the same text through the site language's stemmer (migration 0101, NULL when none).
 		conds = append(conds, "(search @@ plainto_tsquery('simple', "+q.searchArg+") OR search_stem @@ plainto_tsquery(wpgo_search_stem_config(), "+q.searchArg+
-			") OR title ILIKE "+q.searchLikeArg+")")
+			") OR "+FoldedTitleSQL("title")+" ILIKE "+q.searchLikeArg+")")
 	}
 	if q.ExcludePassworded {
 		conds = append(conds, "coalesce(password, '') = ''")
@@ -481,6 +485,11 @@ func localDayBoundary(day time.Time, loc *time.Location) (time.Time, bool) {
 	return v, vy == y && vm == m && vd == d
 }
 
+// FoldedTitleSQL is col i-folded the way textfold.Fold folds a search term (ı and İ become i; the
+// case is left to ILIKE). It matches the expression of the posts_title_trgm index (migration 0105)
+// when col is a posts title.
+func FoldedTitleSQL(col string) string { return "translate(" + col + ", 'ıİ', 'ii')" }
+
 func (q *PostQuery) orderBy() string {
 	dir := "DESC"
 	if strings.EqualFold(q.Order, "asc") {
@@ -492,7 +501,7 @@ func (q *PostQuery) orderBy() string {
 	}
 	if q.Search != "" && q.OrderBy == "relevance" {
 		// WordPress 6.x puts title matches first; ts_rank uses the A/B/C weights of the search vector.
-		return "(title ILIKE " + q.searchLikeArg + ") DESC, (ts_rank(search, plainto_tsquery('simple', " + q.searchArg + ")) + coalesce(ts_rank(search_stem, plainto_tsquery(wpgo_search_stem_config(), " + q.searchArg + ")), 0)) DESC, " + col + " " + dir + ", id " + dir
+		return "(" + FoldedTitleSQL("title") + " ILIKE " + q.searchLikeArg + ") DESC, (ts_rank(search, plainto_tsquery('simple', " + q.searchArg + ")) + coalesce(ts_rank(search_stem, plainto_tsquery(wpgo_search_stem_config(), " + q.searchArg + ")), 0)) DESC, " + col + " " + dir + ", id " + dir
 	}
 	switch q.OrderBy {
 	case "title":

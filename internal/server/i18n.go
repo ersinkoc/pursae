@@ -345,11 +345,20 @@ func (s *Server) installLanguage(ctx context.Context, locale string) error {
 	return nil
 }
 
-// langChoice is one entry of a language dropdown.
+// langChoice is one entry of a language dropdown. Lang is the option's lang attribute.
 type langChoice struct {
-	Locale, Name string
-	Installed    bool
-	Selected     bool
+	Locale, Name, Lang string
+	Installed          bool
+	Selected           bool
+}
+
+// localeLangAttr is the lang attribute of a locale's option in a language dropdown: the language
+// code before the first "_" ("tr_TR" → "tr", "de_DE_formal" → "de"), like the ISO code
+// wp_dropdown_languages() writes. A WordPress locale ("tr_TR") is not a valid BCP 47 tag; a locale
+// without a region ("haz") is its own code, and "" (unknown) is valid HTML.
+func localeLangAttr(locale string) string {
+	lang, _, _ := strings.Cut(locale, "_")
+	return lang
 }
 
 // languageChoices lists the languages for Settings › General (installed ones first, like
@@ -362,7 +371,7 @@ func (s *Server) languageChoices(selected string, onlyInstalled bool) (installed
 		}
 	}
 	for _, l := range i18n.Languages() {
-		ch := langChoice{Locale: l.Locale, Name: l.Native, Installed: have[l.Locale], Selected: l.Locale == selected}
+		ch := langChoice{Locale: l.Locale, Name: l.Native, Lang: localeLangAttr(l.Locale), Installed: have[l.Locale], Selected: l.Locale == selected}
 		if ch.Installed {
 			installed = append(installed, ch)
 		} else if !onlyInstalled {

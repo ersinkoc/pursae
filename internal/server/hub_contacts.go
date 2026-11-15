@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"html"
 	"html/template"
 	"log/slog"
@@ -124,12 +125,15 @@ func (s *Server) updateEmailsNotices(c *gin.Context) []notice {
 	if err := s.setUpdateEmails(c, u, false); err != nil {
 		return nil // try again on the next screen
 	}
-	return []notice{{Type: "info", Dismissible: true, Message: template.HTML(updateEmailsNoticeText(u.Email) +
-		` <a href="/wp-admin/profile#pursae-update-emails">Turn them on in your profile</a>`)}}
+	return []notice{{Type: "info", Dismissible: true, Message: template.HTML(s.updateEmailsNoticeText(c, u.Email) +
+		` <a href="/wp-admin/profile#pursae-update-emails">` + html.EscapeString(s.__(c, "Turn them on in your profile")) + `</a>`)}}
 }
 
-// updateEmailsNoticeText is the opt-in invitation the user is shown.
-func updateEmailsNoticeText(email string) string {
-	return "Want Pursae product update e-mails at <code>" + html.EscapeString(email) + "</code>? " +
-		"They stay off until you turn them on."
+// updateEmailsNoticeMsgid is the opt-in invitation as one translatable sentence: the address sits
+// inside it, so the page translation (which sees the <code> and the rest as separate text) cannot.
+const updateEmailsNoticeMsgid = "Want Pursae product update e-mails at <code>%s</code>? They stay off until you turn them on."
+
+// updateEmailsNoticeText is the opt-in invitation the user is shown, in the user's language.
+func (s *Server) updateEmailsNoticeText(c *gin.Context, email string) string {
+	return fmt.Sprintf(s.__(c, updateEmailsNoticeMsgid), html.EscapeString(email))
 }

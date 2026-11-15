@@ -18,6 +18,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 
 	"wpgo/internal/store"
+	"wpgo/internal/textfold"
 	"wpgo/internal/wp"
 )
 
@@ -387,7 +388,7 @@ func (s *Server) forumTopics(ctx context.Context, q forumTopicQuery) ([]*forumTo
 		where = append(where, "p.author_id = "+arg(q.AuthorID))
 	}
 	if term := strings.TrimSpace(q.Search); term != "" {
-		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+arg(term)+")")
+		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+arg(textfold.Fold(term))+")") // i-folded like posts.search (0105)
 	}
 	if q.Tag != "" {
 		where = append(where, "p.meta->'"+forumMetaTags+"' ? "+arg(q.Tag))
@@ -538,7 +539,7 @@ func (s *Server) forumReplies(ctx context.Context, q forumReplyQuery) ([]*forumR
 		where = append(where, "p.author_id = "+arg(q.AuthorID))
 	}
 	if term := strings.TrimSpace(q.Search); term != "" {
-		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+arg(term)+")")
+		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+arg(textfold.Fold(term))+")") // i-folded like posts.search (0105)
 	}
 	cond := strings.Join(where, " AND ")
 	var total int

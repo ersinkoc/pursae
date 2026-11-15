@@ -105,3 +105,36 @@ func TestOwnStringsForumTurkish(t *testing.T) {
 		}
 	}
 }
+
+// The Pursae-only strings of the install screen, the profile's "Pursae updates" row and the
+// one-time update e-mails notice have no WordPress msgid to fall back on, so the Turkish file carries
+// them; the profile's &#8217; matches whichever form the page has.
+func TestOwnStringsInstallTurkish(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("..", "..", "web", "languages", "wpgo-tr_TR.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := &Catalog{layers: []layer{{domain: "wpgo", mo: parseJSONCatalog(b)}}}
+	for _, k := range []string{
+		"Pursae keeps this address to send you Pursae product updates. You can turn this off any time in your user profile.",
+		"Pursae updates",
+		"Email me Pursae product updates",
+		"Pursae keeps this account’s email address to send product updates. Untick to stop them; the address is removed from Pursae within a day.",
+		"Want Pursae product update e-mails at <code>%s</code>? They stay off until you turn them on.",
+		"Turn them on in your profile",
+	} {
+		if tr, ok := c.Lookup(k); !ok || tr == k {
+			t.Errorf("%.60q is not translated", k)
+		}
+	}
+	// The install screen's and the profile's lines (the latter with &#8217;) as the page translation
+	// sees them.
+	for _, page := range []string{
+		`<p class="description">Pursae keeps this address to send you Pursae product updates. You can turn this off any time in your user profile.</p>`,
+		`<p class="description">Pursae keeps this account&#8217;s email address to send product updates. Untick to stop them; the address is removed from Pursae within a day.</p>`,
+	} {
+		if out := string(c.TranslateHTML([]byte(page))); strings.Contains(out, "Pursae keeps") {
+			t.Errorf("left in English: %s", out)
+		}
+	}
+}

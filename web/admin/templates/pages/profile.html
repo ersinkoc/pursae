@@ -59,7 +59,7 @@
 {{if .Languages}}<tr class="user-language-wrap"><th scope="row"><label for="locale">Language<span class="dashicons dashicons-translation" aria-hidden="true"></span></label></th>
 <td><select name="locale" id="locale"><option value="site-default"{{if eq .Locale ""}} selected="selected"{{end}}>Site Default</option>
 <option value="en_US" lang="en" translate="no"{{if eq .Locale "en_US"}} selected="selected"{{end}}>English (United States)</option>
-{{range .Languages}}<option value="{{.Locale}}" lang="{{.Locale}}" translate="no"{{if .Selected}} selected="selected"{{end}}>{{.Name}}</option>{{end}}</select></td></tr>{{end}}
+{{range .Languages}}<option value="{{.Locale}}" lang="{{.Lang}}" translate="no"{{if .Selected}} selected="selected"{{end}}>{{.Name}}</option>{{end}}</select></td></tr>{{end}}
 </table>
 <h2>Name</h2>
 <table class="form-table" role="presentation">
