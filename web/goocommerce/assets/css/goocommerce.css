@@ -1457,6 +1457,15 @@ a.cart-contents .count {
 .woocommerce form .form-row select {
 	appearance: auto;
 }
+/* WooCommerce parity keeps outline: 0 on these fields; restore a visible keyboard
+   focus ring so cart and checkout inputs stay accessible (WCAG 2.4.7). */
+.woocommerce form .form-row input.input-text:focus-visible,
+.woocommerce form .form-row textarea:focus-visible,
+.woocommerce form .form-row select:focus-visible,
+.woocommerce table.cart td.actions .coupon .input-text:focus-visible {
+	outline: 2px solid var(--wc-primary);
+	outline-offset: 2px;
+}
 .woocommerce form .form-row textarea {
 	height: 4em;
 	line-height: 1.5;
