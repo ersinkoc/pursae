@@ -34,7 +34,7 @@
 <p class="step"><a href="/wp-login" class="button button-large">Log In</a></p>
 {{else if .ChooseLanguage}}
 <h1 class="screen-reader-text">Select a default language</h1>
-{{if .Error}}<p class="message">{{.Error}}</p>{{end}}
+{{if or .Error .ErrorHTML}}<p class="message" id="install-error" role="alert">{{if .ErrorHTML}}{{.ErrorHTML}}{{else}}{{.Error}}{{end}}</p>{{end}}
 <form id="setup" method="get" action="/wp-admin/install">
 	<p><label for="language">Select a default language</label></p>
 	<p><select name="language" id="language" size="1">
@@ -48,7 +48,7 @@
 <p>Welcome to the famous five-minute Pursae installation process! Just fill in the information below and you&#8217;ll be on your way to using the most extendable and powerful personal publishing platform in the world.</p>
 <h2>Information needed</h2>
 <p>Please provide the following information. Do not worry, you can always change these settings later.</p>
-{{if .Error}}<p class="message">{{.Error}}</p>{{end}}
+{{if or .Error .ErrorHTML}}<p class="message" id="install-error" role="alert">{{if .ErrorHTML}}{{.ErrorHTML}}{{else}}{{.Error}}{{end}}</p>{{end}}
 <form id="setup" method="post" action="/wp-admin/install?step=2" novalidate="novalidate">
 	<input type="hidden" name="language" value="{{.Language}}" />
 	<table class="form-table" role="presentation">
@@ -59,7 +59,7 @@
 		<tr>
 			<th scope="row"><label for="user_login">Username</label></th>
 			<td>
-				<input name="user_name" type="text" id="user_login" size="25" aria-describedby="user-name-desc" value="{{.UserName}}" />
+				<input name="user_name" type="text" id="user_login" size="25" {{if eq .ErrorField "user_login"}}aria-invalid="true" autofocus {{end}}aria-describedby="{{if eq .ErrorField "user_login"}}install-error {{end}}user-name-desc" value="{{.UserName}}" />
 				<p id="user-name-desc">Usernames can have only alphanumeric characters, spaces, underscores, hyphens, periods, and the @ symbol.</p>
 			</td>
 		</tr>
@@ -72,7 +72,7 @@
 			<td>
 				<div class="wp-pwd">
 					<div class="password-input-wrapper">
-						<input type="password" name="admin_password" id="pass1" class="regular-text" autocomplete="new-password" spellcheck="false" data-reveal="1" data-pw="{{.Password}}" aria-describedby="pass-strength-result admin-password-desc" />
+						<input type="password" name="admin_password" id="pass1" class="regular-text" autocomplete="new-password" spellcheck="false" data-reveal="1" data-pw="{{.Password}}" {{if eq .ErrorField "pass1"}}aria-invalid="true" autofocus {{end}}aria-describedby="{{if eq .ErrorField "pass1"}}install-error {{end}}pass-strength-result admin-password-desc" />
 						<div id="pass-strength-result" aria-live="polite"></div>
 					</div>
 					<button type="button" class="button wp-hide-pw user-new-password-toggle hide-if-no-js" data-start-masked="{{if .Submitted}}1{{else}}0{{end}}" data-toggle="0" aria-label="Hide password">
@@ -104,7 +104,7 @@
 		</tr>
 		<tr>
 			<th scope="row"><label for="admin_email">Your Email</label></th>
-			<td><input name="admin_email" type="email" id="admin_email" size="25" aria-describedby="admin-email-desc" value="{{.Email}}" />
+			<td><input name="admin_email" type="email" id="admin_email" size="25" {{if eq .ErrorField "admin_email"}}aria-invalid="true" autofocus {{end}}aria-describedby="{{if eq .ErrorField "admin_email"}}install-error {{end}}admin-email-desc" value="{{.Email}}" />
 			<p id="admin-email-desc">Double-check your email address before continuing.</p>
 			<p class="description">Pursae keeps this address to send you Pursae product updates. You can turn this off any time in your user profile.</p></td>
 		</tr>
