@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"net/mail"
@@ -35,6 +36,13 @@ type installView struct {
 	ChooseLanguage bool
 	Languages      []langChoice
 	Language       string
+	// ErrorHTML is an error that carries WordPress's own markup (the invalid-email message's
+	// <code>). Only constant strings go here: anything holding user input or an error's text
+	// stays in Error, which the template escapes.
+	ErrorHTML template.HTML
+	// ErrorField is the id of the input the error is about, so the template marks it
+	// aria-invalid and focuses it (WCAG 3.3.1); empty when no single field is at fault.
+	ErrorField string
 }
 
 var validUsername = regexp.MustCompile(`^[A-Za-z0-9 _.\-@]+$`)
@@ -109,22 +117,25 @@ func (s *Server) installSubmit(c *gin.Context) {
 	}
 	switch {
 	case v.UserName == "":
-		v.Error = "Please provide a valid username."
+		v.Error, v.ErrorField = "Please provide a valid username.", "user_login"
 	case !validUsername.MatchString(v.UserName):
-		v.Error = "The username you provided has invalid characters."
+		v.Error, v.ErrorField = "The username you provided has invalid characters.", "user_login"
 	case v.Password == "":
-		v.Error = "You must provide a password."
+		v.Error, v.ErrorField = "You must provide a password.", "pass1"
 	case c.PostForm("admin_password2") != "" && c.PostForm("admin_password2") != v.Password:
-		v.Error = "Your passwords do not match. Please try again."
+		v.Error, v.ErrorField = "Your passwords do not match. Please try again.", "pass1"
 	case v.Email == "":
-		v.Error = "You must provide an email address."
+		v.Error, v.ErrorField = "You must provide an email address.", "admin_email"
 	}
 	if v.Error == "" {
 		if _, err := mail.ParseAddress(v.Email); err != nil || !strings.Contains(v.Email, ".") {
-			v.Error = "Sorry, that is not a valid email address. Email addresses look like <code>username@example.com</code>."
+			// WordPress's exact msgid, markup included, so its translation still matches. It is
+			// a constant, so it is safe as HTML; escaped, the <code> tags showed up literally.
+			v.ErrorHTML = "Sorry, that is not a valid email address. Email addresses look like <code>username@example.com</code>."
+			v.ErrorField = "admin_email"
 		}
 	}
-	if v.Error != "" {
+	if v.Error != "" || v.ErrorHTML != "" {
 		s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)
 		return
 	}
