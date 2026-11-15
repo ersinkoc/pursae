@@ -9,11 +9,14 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var migrationName = regexp.MustCompile(`^migrations/\d{4}_[a-z0-9_]+\.sql$`)
@@ -41,6 +44,225 @@ func TestMigrationFilesAreWellFormed(t *testing.T) {
 		if err != nil || len(b) == 0 {
 			t.Errorf("%s: empty or unreadable (%v)", n, err)
 		}
+		if isNoTransaction(string(b)) {
+			if err := checkNoTxMigration(string(b)); err != nil {
+				t.Errorf("%s: %v", n, err)
+			}
+		}
+	}
+}
+
+// checkNoTxMigration enforces the no-transaction rules Migrate documents: one statement, idempotent.
+func checkNoTxMigration(sql string) error {
+	stmt := strings.TrimSpace(stripLineComments(sql))
+	if strings.Contains(strings.TrimSuffix(stmt, ";"), ";") {
+		return fmt.Errorf("a no-transaction migration must hold exactly one statement")
+	}
+	if !regexp.MustCompile(`(?i)\bIF\s+(NOT\s+)?EXISTS\b`).MatchString(stmt) {
+		return fmt.Errorf("a no-transaction migration must be idempotent (IF [NOT] EXISTS)")
+	}
+	return nil
+}
+
+func TestCheckNoTxMigration(t *testing.T) {
+	ok := noTransactionMarker + "\n-- why\nCREATE INDEX CONCURRENTLY IF NOT EXISTS posts_x ON posts (post_date);\n"
+	if !isNoTransaction(ok) || checkNoTxMigration(ok) != nil {
+		t.Errorf("valid no-transaction migration rejected")
+	}
+	if m := concurrentIndexName.FindStringSubmatch(stripLineComments(ok)); m == nil || m[1] != "posts_x" {
+		t.Errorf("index name = %v, want posts_x", m)
+	}
+	if checkNoTxMigration(noTransactionMarker+"\nCREATE INDEX CONCURRENTLY a ON t (x);") == nil {
+		t.Error("non-idempotent statement accepted")
+	}
+	if checkNoTxMigration(noTransactionMarker+"\nCREATE INDEX CONCURRENTLY IF NOT EXISTS a ON t (x);\nSELECT 1;") == nil {
+		t.Error("two statements accepted")
+	}
+	if isNoTransaction("CREATE TABLE t (x int);\n" + noTransactionMarker) {
+		t.Error("marker counts only on the first line")
+	}
+}
+
+// useMigrations swaps the migration source for a fixture for the rest of the test. Tests that call
+// it must not run in parallel.
+func useMigrations(t *testing.T, files map[string]string) {
+	t.Helper()
+	m := fstest.MapFS{}
+	for name, sql := range files {
+		m["migrations/"+name] = &fstest.MapFile{Data: []byte(sql)}
+	}
+	prev := migrationSource
+	migrationSource = m
+	t.Cleanup(func() { migrationSource = prev })
+}
+
+func indexValid(t *testing.T, pool *pgxpool.Pool, name string) (exists, valid bool) {
+	t.Helper()
+	err := pool.QueryRow(context.Background(), `SELECT count(*) > 0, coalesce(bool_and(indisvalid), false) FROM pg_index WHERE indexrelid = to_regclass($1)`, name).Scan(&exists, &valid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return exists, valid
+}
+
+// TestMigrateNoTransactionConcurrentIndex applies a "-- wpgo:no-transaction" migration with
+// CREATE INDEX CONCURRENTLY, which a transactional migration cannot run; a second run applies
+// nothing. Skipped without WPGO_TEST_ADMIN_DB.
+func TestMigrateNoTransactionConcurrentIndex(t *testing.T) {
+	ctx := context.Background()
+	pool, err := Connect(ctx, tempDatabase(t, "wpgo_notx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	useMigrations(t, map[string]string{
+		"0001_t.sql":   `CREATE TABLE big_t (id int, v text); INSERT INTO big_t SELECT g, g::text FROM generate_series(1, 1000) g;`,
+		"0002_idx.sql": noTransactionMarker + "\nCREATE INDEX CONCURRENTLY IF NOT EXISTS big_t_v ON big_t (v);\n",
+	})
+	first, err := Migrate(ctx, pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(first, ",") != "0001_t,0002_idx" {
+		t.Errorf("first run applied %v", first)
+	}
+	if exists, valid := indexValid(t, pool, "big_t_v"); !exists || !valid {
+		t.Errorf("big_t_v exists=%v valid=%v, want a valid index", exists, valid)
+	}
+	if n, err := Pending(ctx, pool); err != nil || n != 0 {
+		t.Errorf("Pending = %d, %v; want 0", n, err)
+	}
+	second, err := Migrate(ctx, pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(second) != 0 {
+		t.Errorf("second run applied %v, want none", second)
+	}
+	var lt string
+	if err := pool.QueryRow(ctx, `SHOW lock_timeout`).Scan(&lt); err != nil || lt != "0" {
+		t.Errorf("pooled connection kept lock_timeout=%q (%v), want it reset", lt, err)
+	}
+}
+
+// TestMigrateRebuildsInvalidIndex leaves an INVALID index behind (a failed concurrent unique build)
+// under the name a no-transaction migration builds: IF NOT EXISTS alone would keep the broken index.
+// Skipped without WPGO_TEST_ADMIN_DB.
+func TestMigrateRebuildsInvalidIndex(t *testing.T) {
+	ctx := context.Background()
+	pool, err := Connect(ctx, tempDatabase(t, "wpgo_invalidx"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if _, err := pool.Exec(ctx, `CREATE TABLE dup_t (v int); INSERT INTO dup_t VALUES (1), (1)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `CREATE UNIQUE INDEX CONCURRENTLY dup_t_v ON dup_t (v)`); err == nil {
+		t.Fatal("unique build on duplicates succeeded")
+	}
+	if exists, valid := indexValid(t, pool, "dup_t_v"); !exists || valid {
+		t.Fatalf("setup: dup_t_v exists=%v valid=%v, want an invalid index", exists, valid)
+	}
+	useMigrations(t, map[string]string{
+		"0001_idx.sql": noTransactionMarker + "\nCREATE INDEX CONCURRENTLY IF NOT EXISTS dup_t_v ON dup_t (v);\n",
+	})
+	if _, err := Migrate(ctx, pool); err != nil {
+		t.Fatal(err)
+	}
+	if exists, valid := indexValid(t, pool, "dup_t_v"); !exists || !valid {
+		t.Errorf("dup_t_v exists=%v valid=%v, want it rebuilt valid", exists, valid)
+	}
+}
+
+// TestMigrateLockTimeoutDoesNotHang runs a transactional ALTER while another connection holds a
+// conflicting lock: Migrate must fail with lock_not_available after its retries, not wait forever.
+// Skipped without WPGO_TEST_ADMIN_DB.
+func TestMigrateLockTimeoutDoesNotHang(t *testing.T) {
+	ctx := context.Background()
+	pool, err := Connect(ctx, tempDatabase(t, "wpgo_migratelock"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if _, err := pool.Exec(ctx, `CREATE TABLE locked_t (id int)`); err != nil {
+		t.Fatal(err)
+	}
+	holder, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer holder.Rollback(ctx)
+	if _, err := holder.Exec(ctx, `LOCK TABLE locked_t IN ACCESS SHARE MODE`); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WPGO_MIGRATE_LOCK_TIMEOUT", "100ms")
+	prev := migrationRetryBackoff
+	migrationRetryBackoff = 10 * time.Millisecond
+	t.Cleanup(func() { migrationRetryBackoff = prev })
+	useMigrations(t, map[string]string{"0001_alter.sql": `ALTER TABLE locked_t ADD COLUMN extra text;`})
+
+	start := time.Now()
+	_, err = Migrate(ctx, pool)
+	if elapsed := time.Since(start); elapsed > 5*time.Second {
+		t.Errorf("Migrate waited %v", elapsed)
+	}
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "55P03" {
+		t.Fatalf("err = %v, want SQLSTATE 55P03", err)
+	}
+	if !strings.Contains(err.Error(), "0001_alter") || !strings.Contains(err.Error(), "after 5 attempts") {
+		t.Errorf("error %q should name the migration and the attempts", err)
+	}
+}
+
+// TestConcurrentMigrateWithConcurrentIndex starts two instances' Migrate at once while one of them
+// builds an index concurrently: the waiting instance must not hold a snapshot the build waits for,
+// which PostgreSQL would report as a deadlock. Skipped without WPGO_TEST_ADMIN_DB.
+func TestConcurrentMigrateWithConcurrentIndex(t *testing.T) {
+	ctx := context.Background()
+	dbURL := tempDatabase(t, "wpgo_migraterace")
+	pools := make([]*pgxpool.Pool, 2)
+	for i := range pools {
+		p, err := Connect(ctx, dbURL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer p.Close()
+		pools[i] = p
+	}
+	prev := migrateLockPoll
+	migrateLockPoll = 20 * time.Millisecond
+	t.Cleanup(func() { migrateLockPoll = prev })
+	useMigrations(t, map[string]string{
+		"0001_t.sql":   `CREATE TABLE big_t (id int, v text); INSERT INTO big_t SELECT g, md5(g::text) FROM generate_series(1, 200000) g;`,
+		"0002_idx.sql": noTransactionMarker + "\nCREATE INDEX CONCURRENTLY IF NOT EXISTS big_t_v ON big_t (v);\n",
+	})
+	type result struct {
+		applied []string
+		err     error
+	}
+	results := make(chan result, 2)
+	for _, p := range pools {
+		go func() {
+			applied, err := Migrate(ctx, p)
+			results <- result{applied, err}
+		}()
+	}
+	var all []string
+	for range pools {
+		r := <-results
+		if r.err != nil {
+			t.Errorf("Migrate: %v", r.err)
+		}
+		all = append(all, r.applied...)
+	}
+	sort.Strings(all)
+	if strings.Join(all, ",") != "0001_t,0002_idx" {
+		t.Errorf("applied across both instances = %v, want each migration once", all)
+	}
+	if exists, valid := indexValid(t, pools[0], "big_t_v"); !exists || !valid {
+		t.Errorf("big_t_v exists=%v valid=%v", exists, valid)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -105,9 +106,32 @@ func defaultMaxConns(cpus int) int32 {
 	return int32(min(max(10, 4*cpus), 40))
 }
 
+// migrationSource is where Migrate and Pending read migrations from: the embedded files, swapped
+// for a fixture only by tests (which must restore it and not run in parallel).
+var migrationSource fs.FS = migrationFS
+
+// noTransactionMarker, as the first line of a migration, makes Migrate run it outside a
+// transaction (see Migrate).
+const noTransactionMarker = "-- wpgo:no-transaction"
+
+// migrateLockPoll is how often Migrate retries the advisory lock another instance holds.
+var migrateLockPoll = 500 * time.Millisecond
+
 // Migrate applies every embedded migration that has not run yet, each in its own transaction with
 // a bounded lock_timeout (see applyMigration). A session-level advisory lock keeps concurrent
 // instances from migrating twice.
+//
+// Index builds on large existing tables (posts, postmeta, users, usermeta, comments, commentmeta,
+// terms, term_taxonomy, term_relationships, termmeta) must not run in a transactional migration: a
+// plain CREATE INDEX blocks every write to the table for the whole build. Put each such index in its
+// own migration file whose first line is "-- wpgo:no-transaction" and whose only statement is
+// CREATE [UNIQUE] INDEX CONCURRENTLY IF NOT EXISTS ... . Such a file:
+//   - holds exactly one statement: pgx sends a multi-statement string as one implicit transaction,
+//     where CONCURRENTLY fails; use more files for more statements;
+//   - must be idempotent (IF NOT EXISTS), because a crash between the build and the
+//     schema_migrations insert runs it again;
+//   - may leave an INVALID index behind when a build fails; Migrate drops that index
+//     (DROP INDEX CONCURRENTLY) before building it again.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 	conn, err := pool.Acquire(ctx)
 	if err != nil {
@@ -115,9 +139,22 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 	}
 	defer conn.Release()
 
+	// Poll with pg_try_advisory_lock rather than blocking in pg_advisory_lock: a blocked statement
+	// holds a snapshot, CREATE INDEX CONCURRENTLY in the instance that does migrate waits for every
+	// older snapshot, and that instance holds the advisory lock the waiter needs, so PostgreSQL
+	// would abort one side as a deadlock and fail the other instance's startup.
 	const lockID = 7_356_001
-	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock($1)`, lockID); err != nil {
-		return nil, err
+	for {
+		var locked bool
+		if err := conn.QueryRow(ctx, `SELECT pg_try_advisory_lock($1)`, lockID).Scan(&locked); err != nil {
+			return nil, err
+		}
+		if locked {
+			break
+		}
+		if err := sleepCtx(ctx, migrateLockPoll); err != nil {
+			return nil, err
+		}
 	}
 	defer conn.Exec(context.Background(), `SELECT pg_advisory_unlock($1)`, lockID)
 
@@ -127,7 +164,7 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 		return nil, err
 	}
 
-	names, err := fs.Glob(migrationFS, "migrations/*.sql")
+	names, err := fs.Glob(migrationSource, "migrations/*.sql")
 	if err != nil {
 		return nil, err
 	}
@@ -144,11 +181,16 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 		if exists {
 			continue
 		}
-		sql, err := migrationFS.ReadFile(name)
+		sql, err := fs.ReadFile(migrationSource, name)
 		if err != nil {
 			return applied, err
 		}
-		if err := applyMigration(ctx, conn, version, string(sql), settings); err != nil {
+		if isNoTransaction(string(sql)) {
+			err = applyMigrationNoTx(ctx, conn, version, string(sql), settings)
+		} else {
+			err = applyMigration(ctx, conn, version, string(sql), settings)
+		}
+		if err != nil {
 			return applied, err
 		}
 		applied = append(applied, version)
@@ -245,6 +287,98 @@ func applyMigration(ctx context.Context, conn *pgxpool.Conn, version, sql string
 	}
 }
 
+// isNoTransaction reports whether a migration's first line is the no-transaction marker.
+func isNoTransaction(sql string) bool {
+	first, _, _ := strings.Cut(sql, "\n")
+	return strings.TrimSpace(first) == noTransactionMarker
+}
+
+// concurrentIndexName is the index a CREATE [UNIQUE] INDEX CONCURRENTLY IF NOT EXISTS migration
+// builds, or "" for any other statement.
+var concurrentIndexName = regexp.MustCompile(`(?is)^\s*CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+IF\s+NOT\s+EXISTS\s+([A-Za-z_][A-Za-z0-9_$.]*|"[^"]+")`)
+
+var usesConcurrently = regexp.MustCompile(`(?i)\bCONCURRENTLY\b`)
+
+// stripLineComments drops "--" comment lines (the marker among them) so a statement's first word
+// can be matched.
+func stripLineComments(sql string) string {
+	var b strings.Builder
+	for line := range strings.Lines(sql) {
+		if !strings.HasPrefix(strings.TrimSpace(line), "--") {
+			b.WriteString(line)
+		}
+	}
+	return b.String()
+}
+
+// applyMigrationNoTx runs a "-- wpgo:no-transaction" migration (one statement, see Migrate) on
+// conn outside a transaction, then records it.
+//
+// The timeouts are session-level here (SET LOCAL needs a transaction) and RESET afterwards, since
+// conn goes back to the pool. lock_timeout is not applied to a CONCURRENTLY statement: its waits for
+// older transactions are lock waits too, so a short timeout would fail the build on any busy site,
+// and its SHARE UPDATE EXCLUSIVE lock does not block reads or writes while it waits.
+func applyMigrationNoTx(ctx context.Context, conn *pgxpool.Conn, version, sql string, s migrationSettings) error {
+	stmt := stripLineComments(sql)
+	lockTimeout := s.lockTimeout
+	if usesConcurrently.MatchString(stmt) {
+		lockTimeout = 0
+	}
+	defer conn.Exec(context.Background(), `RESET lock_timeout`)
+	defer conn.Exec(context.Background(), `RESET statement_timeout`)
+	if _, err := conn.Exec(ctx, fmt.Sprintf("SET lock_timeout = '%dms'", lockTimeout.Milliseconds())); err != nil {
+		return fmt.Errorf("migration %s: %w", version, err)
+	}
+	if _, err := conn.Exec(ctx, fmt.Sprintf("SET statement_timeout = '%dms'", s.statementTimeout.Milliseconds())); err != nil {
+		return fmt.Errorf("migration %s: %w", version, err)
+	}
+
+	attempts := max(s.attempts, 1)
+	backoff := migrationRetryBackoff
+	for attempt := 1; ; attempt++ {
+		err := execNoTx(ctx, conn, stmt, sql)
+		if err == nil {
+			break
+		}
+		if !isLockNotAvailable(err) {
+			return fmt.Errorf("migration %s: %w", version, err)
+		}
+		if attempt >= attempts {
+			return fmt.Errorf("migration %s: lock_timeout exceeded after %d attempts (another session holds a conflicting lock): %w", version, attempt, err)
+		}
+		if err := sleepCtx(ctx, backoff); err != nil {
+			return fmt.Errorf("migration %s: %w", version, err)
+		}
+		backoff = min(backoff*2, maxMigrationRetryBackoff)
+	}
+	// ON CONFLICT: the statement is idempotent and may have run before a crash; only the record
+	// counts here.
+	if _, err := conn.Exec(ctx, `INSERT INTO schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING`, version); err != nil {
+		return fmt.Errorf("migration %s: %w", version, err)
+	}
+	return nil
+}
+
+// execNoTx runs one no-transaction statement. When it builds an index concurrently and an earlier,
+// failed build left that index INVALID, the invalid index is dropped first; IF NOT EXISTS would
+// otherwise keep it and never build a usable one.
+func execNoTx(ctx context.Context, conn *pgxpool.Conn, stmt, sql string) error {
+	if m := concurrentIndexName.FindStringSubmatch(stmt); m != nil {
+		var invalid bool
+		if err := conn.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pg_index WHERE indexrelid = to_regclass($1) AND NOT indisvalid)`, m[1]).Scan(&invalid); err != nil {
+			return err
+		}
+		if invalid {
+			// m[1] is an identifier from an embedded migration file, not input.
+			if _, err := conn.Exec(ctx, `DROP INDEX CONCURRENTLY IF EXISTS `+m[1]); err != nil {
+				return err
+			}
+		}
+	}
+	_, err := conn.Exec(ctx, sql)
+	return err
+}
+
 // isLockNotAvailable reports whether err is PostgreSQL's lock_not_available (55P03), which
 // lock_timeout raises.
 func isLockNotAvailable(err error) bool {
@@ -288,7 +422,7 @@ func ConnectSchema(ctx context.Context, base *pgxpool.Config, schema string, max
 
 // Pending counts the embedded migrations the database has not applied yet (readiness checks).
 func Pending(ctx context.Context, pool *pgxpool.Pool) (int, error) {
-	names, err := fs.Glob(migrationFS, "migrations/*.sql")
+	names, err := fs.Glob(migrationSource, "migrations/*.sql")
 	if err != nil {
 		return 0, err
 	}
