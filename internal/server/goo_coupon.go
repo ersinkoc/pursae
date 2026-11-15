@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/store"
-	"wpgo/internal/textfold"
 )
 
 // Coupons (WC_Coupon and WC_Discounts): percentage, fixed cart and fixed product discounts with
@@ -131,9 +130,10 @@ func (s *Server) gooQueryCoupons(ctx context.Context, status, search string, pag
 		where = `status = $1`
 	}
 	if search != "" {
-		// i-folded on both sides (textfold.Fold), so "ışık" finds the code IŞIK10.
-		args = append(args, "%"+textfold.Fold(search)+"%")
-		where += fmt.Sprintf(` AND (%s ILIKE $%d OR %s ILIKE $%d)`, store.FoldedTitleSQL("code"), len(args), store.FoldedTitleSQL("description"), len(args))
+		// Folded alike on both sides by the database (store.FoldedTitleSQL), so "ışık" finds the code IŞIK10.
+		args = append(args, "%"+search+"%")
+		ph := store.FoldedArgSQL(fmt.Sprintf("$%d", len(args)))
+		where += fmt.Sprintf(` AND (%s LIKE %s OR %s LIKE %s)`, store.FoldedTitleSQL("code"), ph, store.FoldedTitleSQL("description"), ph)
 	}
 	var total int
 	if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_coupons WHERE `+where, args...).Scan(&total); err != nil {

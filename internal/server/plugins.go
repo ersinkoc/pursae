@@ -1546,7 +1546,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	case "search":
 		q := d.Search
 		for _, it := range append(append([]marketItem{}, featured...), native...) {
-			if q == "" || strings.Contains(strings.ToLower(it.Name+" "+it.Description+" "+it.Author), q) {
+			if q == "" || textfold.Contains(it.Name+" "+it.Description+" "+it.Author, q) { // "IŞIK" finds "ışık"
 				d.Items = append(d.Items, it)
 			}
 		}

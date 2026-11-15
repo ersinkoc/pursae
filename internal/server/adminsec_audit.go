@@ -49,6 +49,7 @@ var asEventLabels = [][2]string{
 	{"device_remembered", "Device remembered"},
 	{"devices_forgotten", "Remembered devices forgotten"},
 	{"sessions_logged_out", "Sessions logged out"},
+	{"sessions_logout_failed", "Session logout failed"},
 	{"password_changed", "Password changed"},
 	{"password_change_forced", "Password change required"},
 	{"role_changed", "Role changed"},

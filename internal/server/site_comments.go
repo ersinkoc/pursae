@@ -393,11 +393,12 @@ func (s *Server) commentForm(c *gin.Context, p *store.Post, lb *links.Builder, u
 	return template.HTML(sb.String())
 }
 
-// linkRe finds the links of a comment or forum post for the comment_max_links rule. An anchor's
-// href and its URL are one match (href="https://… is consumed whole), so <a href="https://…">
-// counts once; a bare http(s):// URL counts too. The old pattern matched both "<a " and the URL of
-// every anchor, holding a comment with one link when the limit was 2.
-var linkRe = regexp.MustCompile(`(?i)href\s*=\s*['"]?(?:https?:)?//|https?://`)
+// linkRe finds the links of a comment or forum post for the comment_max_links rule. Every anchor with
+// an href counts once, whatever its URL (relative, mailto:, www.…, as WordPress counts "<a "), and its
+// quoted href value is consumed whole so the URL inside it is not counted again; a bare http(s):// URL
+// counts too. The old pattern matched both "<a " and the URL of every anchor, holding a comment with
+// one link when the limit was 2.
+var linkRe = regexp.MustCompile(`(?i)<a\s[^>]*?href\s*=\s*(?:"[^"]*"?|'[^']*'?|[^\s>]*)|https?://`)
 
 // commentLinkCount is the number of links in s (see linkRe).
 func commentLinkCount(s string) int { return len(linkRe.FindAllString(s, -1)) }

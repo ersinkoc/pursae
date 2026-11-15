@@ -11,9 +11,9 @@ var iFolder = strings.NewReplacer("ı", "i", "İ", "i", "i̇", "i")
 
 // Fold lower-cases s and folds every i-like letter to a plain i, so "IŞIK", "Işık" and "ışık" all
 // give "işik". It is the same on every site language: a Turkish lower-casing would turn the English
-// "INFO" into "ınfo", and would still miss text typed with the other spelling. Search terms and the
-// text they are matched against are folded the same way (on the SQL side translate(x, 'ıİ', 'ii')
-// before the database lower-cases, migration 0105).
+// "INFO" into "ınfo", and would still miss text typed with the other spelling. It is for matching done
+// in Go; text matched in SQL is folded there on both sides (store.FoldedTitleSQL, store.FoldedArgSQL,
+// migration 0105), so the term and the text share the database collation's lower-casing.
 func Fold(s string) string {
 	return iFolder.Replace(strings.ToLower(s))
 }

@@ -457,6 +457,7 @@ func (s *Server) adminsecProfileAction(c *gin.Context, target *store.User, back 
 		if self || manage {
 			if _, err := s.store.Pool.Exec(c, `DELETE FROM sessions WHERE id = $1 AND user_id = $2`, id, target.ID); err != nil {
 				s.asSessionLogoutFailed(c, target, err)
+				back = strings.Replace(back, "adminsec=done", "adminsec=failed", 1)
 				break
 			}
 			s.asAudit(c, asEvent{Event: "sessions_logged_out", Object: target.Login, Message: "One session of " + target.Login + " ended."})
@@ -464,12 +465,14 @@ func (s *Server) adminsecProfileAction(c *gin.Context, target *store.User, back 
 	case act == "logout-others" && self:
 		if err := s.auth.DestroyOthers(c, u.ID, currentSession(c).ID); err != nil {
 			s.asSessionLogoutFailed(c, target, err)
+			back = strings.Replace(back, "adminsec=done", "adminsec=failed", 1)
 			break
 		}
 		s.asAudit(c, asEvent{Event: "sessions_logged_out", Object: target.Login, Message: "Logged out of every other session."})
 	case act == "logout-all" && manage:
 		if _, err := s.store.Pool.Exec(c, `DELETE FROM sessions WHERE user_id = $1`, target.ID); err != nil {
 			s.asSessionLogoutFailed(c, target, err)
+			back = strings.Replace(back, "adminsec=done", "adminsec=failed", 1)
 			break
 		}
 		s.asAudit(c, asEvent{Event: "sessions_logged_out", Severity: "notice", Object: target.Login, Message: "Every session of " + target.Login + " ended by an administrator."})
@@ -503,6 +506,9 @@ func (s *Server) adminsecProfileNotices(c *gin.Context, u *store.User) []notice 
 	}
 	if c.Query("adminsec") == "done" {
 		out = append(out, notice{Type: "success", Message: "<strong>Done.</strong>", Dismissible: true})
+	}
+	if c.Query("adminsec") == "failed" {
+		out = append(out, notice{Type: "error", Message: "<strong>The sessions could not be ended.</strong> Please try again.", Dismissible: true})
 	}
 	return out
 }
@@ -560,5 +566,5 @@ func (s *Server) adminsecUsersColumn(c *gin.Context, rows []userRow, users []*st
 // written (the sessions are still live); the failure is logged and kept in the security log instead.
 func (s *Server) asSessionLogoutFailed(c *gin.Context, target *store.User, err error) {
 	slog.Error("adminsec: session logout failed", "user_id", target.ID, "err", err)
-	s.asAudit(c, asEvent{Event: "sessions_logged_out", Severity: "warning", Object: target.Login, Message: "Session logout failed for " + target.Login + "."})
+	s.asAudit(c, asEvent{Event: "sessions_logout_failed", Severity: "warning", Object: target.Login, Message: "Session logout failed for " + target.Login + "."})
 }

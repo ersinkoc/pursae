@@ -485,11 +485,12 @@ func (s *Server) gooOrderRowAction(c *gin.Context) {
 // AJAX helpers ------------------------------------------------------------------------------------------------
 
 func (s *Server) gooAjaxSearchCustomers(c *gin.Context) {
-	// i-folded on both sides (textfold.Fold: ı and İ become i), so "IŞIK" finds "Işık" on a Turkish
-	// site, which the database's own lower-casing does not.
-	term := "%" + textfold.Fold(strings.TrimSpace(c.Query("term"))) + "%"
-	rows, err := s.store.Pool.Query(c, `SELECT id, display_name, email FROM users WHERE `+store.FoldedTitleSQL("display_name")+` ILIKE $1
-		OR `+store.FoldedTitleSQL("email")+` ILIKE $1 OR `+store.FoldedTitleSQL("login")+` ILIKE $1 OR id::text = $2
+	// Folded alike on both sides by the database (lower(), then ı and İ become i), so "IŞIK" finds
+	// "Işık" on a Turkish site, which a plain ILIKE does not.
+	term := "%" + strings.TrimSpace(c.Query("term")) + "%"
+	ph := store.FoldedArgSQL("$1")
+	rows, err := s.store.Pool.Query(c, `SELECT id, display_name, email FROM users WHERE `+store.FoldedTitleSQL("display_name")+` LIKE `+ph+`
+		OR `+store.FoldedTitleSQL("email")+` LIKE `+ph+` OR `+store.FoldedTitleSQL("login")+` LIKE `+ph+` OR id::text = $2
 		ORDER BY display_name LIMIT 30`, term, strings.TrimSpace(c.Query("term")))
 	out := map[string]string{}
 	if err == nil {

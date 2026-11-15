@@ -17,7 +17,6 @@ import (
 	"wpgo/internal/cache"
 	"wpgo/internal/i18n"
 	"wpgo/internal/store"
-	"wpgo/internal/textfold"
 	"wpgo/internal/wp"
 )
 
@@ -541,7 +540,7 @@ func (s *Server) forumActivity(ctx context.Context, term string, authorID int64,
 	where := []string{"p.type IN ('topic','reply')", "p.status = 'publish'", forumNotSpam("p"), "t.status = 'publish'", forumNotSpam("t"),
 		forumPublishedForumsSQL("t")}
 	if term = strings.TrimSpace(term); term != "" {
-		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+arg(textfold.Fold(term))+")") // i-folded like posts.search (0105)
+		where = append(where, "p.search @@ websearch_to_tsquery('simple', "+store.FoldedArgSQL(arg(term))+")") // folded like posts.search (0105)
 	}
 	if authorID > 0 {
 		where = append(where, "p.author_id = "+arg(authorID))

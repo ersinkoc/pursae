@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"wpgo/internal/store"
-	"wpgo/internal/textfold"
 )
 
 // Catalog queries (WC_Product_Query / the shop's main query): visibility, categories, tags,
@@ -89,11 +88,11 @@ func (s *Server) gooQueryProducts(ctx context.Context, q gooProductQuery) ([]*go
 		}
 	}
 	if q.Search != "" {
-		// i-folded like posts.search (migration 0105): "ışık" finds "IŞIK" in titles and SKUs.
-		ph := add(textfold.Fold(q.Search))
-		like := add("%" + textfold.Fold(q.Search) + "%")
-		conds = append(conds, "(po.search @@ plainto_tsquery('simple', "+ph+") OR "+store.FoldedTitleSQL("po.title")+" ILIKE "+like+" OR p.sku ILIKE "+like+
-			" OR po.id IN (SELECT parent_id FROM posts v JOIN goo_products vp ON vp.post_id = v.id WHERE v.type = 'product_variation' AND vp.sku ILIKE "+like+"))")
+		// Folded like posts.search (migration 0105): "ışık" finds "IŞIK" in titles and SKUs.
+		ph := store.FoldedArgSQL(add(q.Search))
+		like := store.FoldedArgSQL(add("%" + q.Search + "%"))
+		conds = append(conds, "(po.search @@ plainto_tsquery('simple', "+ph+") OR "+store.FoldedTitleSQL("po.title")+" LIKE "+like+" OR "+store.FoldedTitleSQL("p.sku")+" LIKE "+like+
+			" OR po.id IN (SELECT parent_id FROM posts v JOIN goo_products vp ON vp.post_id = v.id WHERE v.type = 'product_variation' AND "+store.FoldedTitleSQL("vp.sku")+" LIKE "+like+"))")
 	}
 	if q.SKU != "" {
 		conds = append(conds, "p.sku = "+add(q.SKU))

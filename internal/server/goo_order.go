@@ -276,6 +276,10 @@ func (s *Server) gooSaveOrder(ctx context.Context, o *gooOrder, withItems bool) 
 
 // errGooOrderInProgress is returned by a checkout that lost the race for the order it meant to adopt
 // (the session's checkout-draft or its order awaiting payment) to a concurrent checkout.
+// gooDraftRetryAfter is how long after it was placed an unpaid order a stale draft key still points at
+// counts as a retry (reused) rather than a double submit of the same placement (refused).
+const gooDraftRetryAfter = 2 * time.Minute
+
 var errGooOrderInProgress = errors.New("Your order is already being processed. Please wait or check your order history.")
 
 // gooClaimDraftTx takes the checkout-draft order id for the checkout running in tx: it moves it to

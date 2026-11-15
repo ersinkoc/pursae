@@ -656,6 +656,10 @@ func TestCommentLinkCount(t *testing.T) {
 		`<a href="https://a.example">a</a> <a href="https://b.example">b</a>`: 2,
 		`<A HREF = "//a.example">a</A>`:                                       1,
 		"// a code comment":                                                   0,
+		`<a href="/x">a</a>`:                                                  1,
+		`<a href="mailto:a@b.example">m</a>`:                                  1,
+		`<a href="www.x.example">x</a>`:                                       1,
+		`see https://a.example and <a href='//b.example'>b</a>`:               2,
 	} {
 		if got := commentLinkCount(in); got != want {
 			t.Errorf("commentLinkCount(%q) = %d, want %d", in, got, want)

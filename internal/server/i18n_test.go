@@ -317,7 +317,7 @@ func TestInstallLanguageTimeout(t *testing.T) {
 	if took := time.Since(start); took > 2*time.Second {
 		t.Errorf("language step took %s", took)
 	}
-	if code != http.StatusOK || !strings.Contains(body, "could not be downloaded") || !strings.Contains(body, `<p class="message" role="alert">`) {
+	if code != http.StatusOK || !strings.Contains(body, "could not be downloaded") || !strings.Contains(body, `<p class="message" id="install-error" role="alert">`) {
 		t.Errorf("no announced download error: %d", code)
 	}
 	if !strings.Contains(body, "Select a default language") || !strings.Contains(body, `value="en_US"`) {

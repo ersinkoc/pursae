@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 
-	"wpgo/internal/textfold"
+	"wpgo/internal/store"
 	"wpgo/internal/wp"
 )
 
@@ -532,9 +532,10 @@ func (s *Server) forumSimilarTopics(ctx context.Context, title string, tags []st
 	if tags == nil {
 		tags = []string{}
 	}
-	query := textfold.Fold(strings.Join(terms, " | ")) // i-folded like posts.search (migration 0105)
-	match := `((` + "$1::text <> '' AND p.search @@ to_tsquery('simple', $1::text)) OR p.meta->'" + forumMetaTags + `' ?| $2::text[])`
-	rank := `(CASE WHEN $1::text <> '' THEN ts_rank(p.search, to_tsquery('simple', $1::text)) ELSE 0 END)`
+	query := strings.Join(terms, " | ")
+	folded := store.FoldedArgSQL("$1") // folded like posts.search (migration 0105)
+	match := `((` + "$1::text <> '' AND p.search @@ to_tsquery('simple', " + folded + ")) OR p.meta->'" + forumMetaTags + `' ?| $2::text[])`
+	rank := `(CASE WHEN $1::text <> '' THEN ts_rank(p.search, to_tsquery('simple', ` + folded + `)) ELSE 0 END)`
 	rows, err := s.store.Pool.Query(ctx, `SELECT `+forumPrefixed("p")+` FROM posts p WHERE p.type = 'topic' AND p.status = 'publish'
 		AND `+forumNotSpam("p")+` AND `+forumPublishedForumsSQL("p")+` AND p.id <> $3 AND `+match+`
 		ORDER BY `+rank+` + 0.2 * (SELECT count(*) FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(p.meta->'`+forumMetaTags+`') = 'array'
