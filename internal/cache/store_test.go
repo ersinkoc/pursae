@@ -37,6 +37,18 @@ func TestNewEntryFilters(t *testing.T) {
 	}
 }
 
+func TestNewEntryOwnsBody(t *testing.T) {
+	body := []byte(strings.Repeat("x", 512))
+	e, err := NewEntry("key", 200, nil, body, nil, time.Now(), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body[0] = 'z'
+	if e.Body[0] != 'x' {
+		t.Fatal("entry changed when the input buffer was reused")
+	}
+}
+
 func TestLRUEvictionByBytes(t *testing.T) {
 	probe := mkEntry(t, "http://h/0#d", 1000)
 	s, _ := NewStore(StoreOptions{MaxBytes: probe.size()*3 + 10})
