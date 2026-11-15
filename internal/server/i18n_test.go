@@ -327,3 +327,31 @@ func TestInstallLanguageTimeout(t *testing.T) {
 		t.Error("tr_TR installed after a failed download")
 	}
 }
+
+// The language dropdowns' options carry a BCP 47 language code in lang, like wp_dropdown_languages(),
+// not the WordPress locale ("tr_TR" is not a valid tag) (PRS-I18N-006).
+func TestLanguageOptionLangAttr(t *testing.T) {
+	for locale, want := range map[string]string{"tr_TR": "tr", "de_DE_formal": "de", "pt_PT_ao90": "pt", "en_GB": "en", "haz": "haz", "": ""} {
+		if got := localeLangAttr(locale); got != want {
+			t.Errorf("localeLangAttr(%q) = %q, want %q", locale, got, want)
+		}
+	}
+	installed, available := (&Server{}).languageChoices("tr_TR", false)
+	found := false
+	for _, ch := range append(installed, available...) {
+		if strings.Contains(ch.Lang, "_") || ch.Lang == "" {
+			t.Errorf("%s: lang %q", ch.Locale, ch.Lang)
+		}
+		if ch.Locale == "tr_TR" {
+			found = ch.Lang == "tr" && ch.Selected
+		}
+	}
+	if !found {
+		t.Error("tr_TR is not offered with lang=\"tr\"")
+	}
+	ts, c, _ := testServerBuilderOff(t)
+	_, body, _ := get(t, c, ts.URL+"/wp-admin/install")
+	if !strings.Contains(body, `<option value="tr_TR" lang="tr" translate="no">`) || strings.Contains(body, `lang="tr_TR"`) {
+		t.Error("install language step: the Turkish option's lang is not \"tr\"")
+	}
+}

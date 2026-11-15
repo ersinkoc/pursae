@@ -39,7 +39,7 @@
 	<p><label for="language">Select a default language</label></p>
 	<p><select name="language" id="language" size="1">
 		<option value="en_US" lang="en" translate="no" selected="selected">English (United States)</option>
-		{{range .Languages}}<option value="{{.Locale}}" lang="{{.Locale}}" translate="no">{{.Name}}</option>{{end}}
+		{{range .Languages}}<option value="{{.Locale}}" lang="{{.Lang}}" translate="no">{{.Name}}</option>{{end}}
 	</select></p>
 	<p class="step"><input type="submit" id="submit" class="button button-large" value="Continue" /></p>
 </form>
