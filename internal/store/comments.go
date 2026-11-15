@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -87,26 +88,61 @@ func CommentTree(flat []*Comment, maxDepth int) []*Comment {
 		c.Children = nil
 		byID[c.ID] = c
 	}
-	var roots []*Comment
+	type placement struct {
+		comment *Comment
+		parent  *Comment
+		depth   int
+		rank    int
+	}
+	states := map[*Comment]uint8{} // 1 = resolving, 2 = resolved
+	resolved := map[*Comment]placement{}
+	valid := map[*Comment]bool{}
+	var resolve func(*Comment) (placement, bool)
+	resolve = func(c *Comment) (placement, bool) {
+		p := placement{comment: c, depth: 1, rank: 1}
+		if states[c] == 2 {
+			return resolved[c], valid[c]
+		}
+		if states[c] == 1 {
+			return p, false
+		}
+		states[c] = 1
+		ok := true
+		if parent, exists := byID[c.ParentID]; exists && maxDepth > 1 {
+			parentPlace, parentOK := resolve(parent)
+			if !parentOK {
+				ok = false
+			} else {
+				p.rank = parentPlace.rank + 1
+				if parentPlace.depth < maxDepth {
+					p.depth = parentPlace.depth + 1
+					p.parent = parent
+				} else {
+					p.depth = maxDepth
+					p.parent = parentPlace.parent
+				}
+			}
+		}
+		states[c] = 2
+		resolved[c], valid[c] = p, ok
+		return p, ok
+	}
+	placed := make([]placement, 0, len(flat))
 	for _, c := range flat {
-		parent, ok := byID[c.ParentID]
-		if !ok || maxDepth <= 1 {
-			c.Depth = 1
-			roots = append(roots, c)
-			continue
+		p, _ := resolve(c)
+		placed = append(placed, p)
+	}
+	// Ancestors must be attached before descendants even when a descending query
+	// returned the descendants first. Equal-depth comments keep query order.
+	sort.SliceStable(placed, func(i, j int) bool { return placed[i].rank < placed[j].rank })
+	var roots []*Comment
+	for _, p := range placed {
+		p.comment.Depth = p.depth
+		if p.parent == nil {
+			roots = append(roots, p.comment)
+		} else {
+			p.parent.Children = append(p.parent.Children, p.comment)
 		}
-		depth := parent.Depth + 1
-		for depth > maxDepth && parent != nil {
-			parent = byID[parent.ParentID]
-			depth--
-		}
-		if parent == nil {
-			c.Depth = 1
-			roots = append(roots, c)
-			continue
-		}
-		c.Depth = depth
-		parent.Children = append(parent.Children, c)
 	}
 	return roots
 }
