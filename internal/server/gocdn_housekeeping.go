@@ -411,9 +411,9 @@ func (s *Server) gocdnHousekeepingOnce(ctx context.Context) {
 	s.gocdnCleanupLocal(ctx)
 }
 
-// gocdnStartHousekeeping runs the pass shortly after start-up and then daily.
-func (s *Server) gocdnStartHousekeeping(ctx context.Context) {
-	go func() {
+// gocdnStartHousekeeping runs the pass shortly after start-up and then daily, until Server.Close.
+func (s *Server) gocdnStartHousekeeping() {
+	s.goBackground(func(ctx context.Context) {
 		t := time.NewTimer(45 * time.Second)
 		defer t.Stop()
 		for {
@@ -425,5 +425,5 @@ func (s *Server) gocdnStartHousekeeping(ctx context.Context) {
 				t.Reset(24 * time.Hour)
 			}
 		}
-	}()
+	})
 }

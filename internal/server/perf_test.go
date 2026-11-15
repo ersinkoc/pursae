@@ -134,6 +134,7 @@ func newCountingTestServer(t *testing.T) (*httptest.Server, *http.Client, *Serve
 	if err != nil {
 		t.Fatal(err)
 	}
+	closeTestServer(t, srv)
 	ts.Config.Handler = srv.Handler()
 	ts.Start()
 	t.Cleanup(ts.Close)
