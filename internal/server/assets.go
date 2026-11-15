@@ -366,7 +366,7 @@ func (s *Server) buildImportMap() string {
 	imports := map[string]string{}
 	_ = fs.WalkDir(s.web, "wp-includes/js/dist/script-modules", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || path.Base(p) != "index.min.js" {
-			return nil
+			return nil //nolint:nilerr // an unreadable entry is skipped, the walk goes on
 		}
 		dir := strings.TrimPrefix(path.Dir(p), "wp-includes/js/dist/script-modules/")
 		imports["@wordpress/"+dir] = "/" + p + "?ver=" + Version

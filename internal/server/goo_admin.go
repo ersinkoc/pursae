@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // Goocommerce's store admin screens: Home, Orders, Customers, Coupons, Marketing, Settings, Reports,
@@ -163,7 +165,9 @@ func (p gooPager) HTML() template.HTML {
 
 func gooPaged(c *gin.Context) int {
 	n, _ := strconv.Atoi(c.Query("paged"))
-	return max(n, 1)
+	// Capped like store.MaxPage: an unbounded ?paged= would overflow (page-1)*perPage into a
+	// negative OFFSET, which Postgres rejects; a page past the end is simply empty.
+	return min(max(n, 1), store.MaxPage)
 }
 
 // gooView is a subsubsub view link (All (3) | Processing (1) …).
@@ -227,9 +231,6 @@ func plural(n int, one, many string) string {
 	}
 	return fmt.Sprintf(many, n)
 }
-
-// gooFmtNum is a number with the store's decimals and separators (no currency).
-func (s *Server) gooFmtNum(v float64) string { return s.gooNumberFormat(v, s.gooDecimals()) }
 
 // gooFmtDec is a plain decimal for form inputs ("12.50").
 func (s *Server) gooFmtDec(v float64) string { return gooFormatDecimal(v, s.gooDecimals()) }

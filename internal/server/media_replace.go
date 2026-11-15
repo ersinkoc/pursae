@@ -270,7 +270,6 @@ func newMediaVersion() string { return strconv.FormatInt(time.Now().UnixMilli(),
 var (
 	errMediaReplaceType  = errors.New("The new file must be of the same kind as the current one (an image for an image, a video for a video, a document for a document).")
 	errMediaReplaceNames = errors.New("No free file name was found next to the current file.")
-	errMediaReplaceLocal = errors.New("The current file is not on this server and could not be fetched from remote storage.")
 )
 
 // mediaKind is the top-level kind of a MIME type for replacement: image, audio, video, or file.

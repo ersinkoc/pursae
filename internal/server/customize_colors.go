@@ -127,30 +127,6 @@ func sanitizeHex(v string) string {
 	return "#" + strings.ToLower(strings.TrimPrefix(v, "#"))
 }
 
-// hexRGB parses a hex color.
-func hexRGB(hex string) (r, g, b int, ok bool) {
-	hex = strings.TrimPrefix(hex, "#")
-	if len(hex) == 3 {
-		hex = string([]byte{hex[0], hex[0], hex[1], hex[1], hex[2], hex[2]})
-	}
-	if len(hex) != 6 {
-		return 0, 0, 0, false
-	}
-	n, err := strconv.ParseUint(hex, 16, 32)
-	if err != nil {
-		return 0, 0, 0, false
-	}
-	return int(n >> 16 & 0xff), int(n >> 8 & 0xff), int(n & 0xff), true
-}
-
-func fillCSS(tmpl string, vals map[string]string) string {
-	pairs := make([]string, 0, len(vals)*2)
-	for k, v := range vals {
-		pairs = append(pairs, "{{"+k+"}}", v)
-	}
-	return strings.NewReplacer(pairs...).Replace(tmpl)
-}
-
 // inlineStyle prints wp_add_inline_style() output for a handle.
 func inlineStyle(handle string, parts ...string) string {
 	var keep []string

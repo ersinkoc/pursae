@@ -39,17 +39,6 @@ const (
 // golylangOn reports whether the Golylang plugin is active: one cached option read.
 func (s *Server) golylangOn() bool { return s.settings.Bool(golylangSetting) }
 
-// golylangOnly is the middleware of Golylang's own routes: 404 while the plugin is off.
-func (s *Server) golylangOnly() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if !s.golylangOn() {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
-		c.Next()
-	}
-}
-
 // Options ----------------------------------------------------------------------------
 
 // pllOptions is Polylang's "polylang" option array.

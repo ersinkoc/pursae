@@ -169,11 +169,6 @@ func (s *Server) gooProductExporter(c *gin.Context) {
 	s.adminPage(c, "edit?post_type=product", "Export Products", "product_page_product_exporter woocommerce", "admin/goo-product-csv", map[string]any{"Export": d})
 }
 
-// gooExportCSV builds the product CSV: products in id order, each variable product followed by its variations.
-func (s *Server) gooExportCSV(ctx context.Context, types, cats, columns []string) ([]byte, error) {
-	return s.gooExportCSVMeta(ctx, types, cats, columns, false)
-}
-
 // gooMetaCell is how a product meta value is written to a "Meta: key" cell: strings as they are,
 // numbers, booleans, lists and objects as JSON. A string that would read back as JSON (a numeric
 // SKU-like "007", "true", "[1]" or a quoted text) is written as a JSON string so the round trip
@@ -217,7 +212,8 @@ func gooMetaFromCell(cell string) any {
 	return cell
 }
 
-// gooExportCSVMeta is gooExportCSV with WooCommerce's "Export custom meta" option: every product meta
+// gooExportCSVMeta builds the product CSV: products in id order, each variable product followed by
+// its variations. With WooCommerce's "Export custom meta" option (withMeta) every product meta
 // key (subscription, booking, gift card, add-on settings, …) becomes a "Meta: key" column.
 func (s *Server) gooExportCSVMeta(ctx context.Context, types, cats, columns []string, withMeta bool) ([]byte, error) {
 	q := gooProductQuery{Status: []string{"publish", "private", "draft", "pending", "future"}, OrderBy: "id", Order: "asc", PerPage: -1}

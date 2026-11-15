@@ -108,7 +108,7 @@ func TestPageTemplateKeptWhenNotListed(t *testing.T) {
 	if got := stored(); got != "page-projects" {
 		t.Fatalf("REST save changed the template to %q", got)
 	}
-	if code, body = restSend(t, c, base, http.MethodPost, "/wp-json/wp/v2/pages/"+id, `{"title":"Projects again"}`); code != http.StatusOK || stored() != "page-projects" {
+	if code, _ = restSend(t, c, base, http.MethodPost, "/wp-json/wp/v2/pages/"+id, `{"title":"Projects again"}`); code != http.StatusOK || stored() != "page-projects" {
 		t.Fatalf("REST save without template: %d, template %q", code, stored())
 	}
 	// REST writes: a listed template, "" for the default; an unknown one is refused.

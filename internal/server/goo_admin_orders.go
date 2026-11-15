@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
+	"wpgo/internal/textfold"
 	"wpgo/internal/wp"
 )
 
@@ -484,9 +485,13 @@ func (s *Server) gooOrderRowAction(c *gin.Context) {
 // AJAX helpers ------------------------------------------------------------------------------------------------
 
 func (s *Server) gooAjaxSearchCustomers(c *gin.Context) {
-	term := "%" + strings.ToLower(strings.TrimSpace(c.Query("term"))) + "%"
-	rows, err := s.store.Pool.Query(c, `SELECT id, display_name, email FROM users WHERE lower(display_name) LIKE $1 OR lower(email) LIKE $1
-		OR lower(login) LIKE $1 OR id::text = $2 ORDER BY display_name LIMIT 30`, term, strings.TrimSpace(c.Query("term")))
+	// Folded alike on both sides by the database (lower(), then ı and İ become i), so "IŞIK" finds
+	// "Işık" on a Turkish site, which a plain ILIKE does not.
+	term := "%" + strings.TrimSpace(c.Query("term")) + "%"
+	ph := store.FoldedArgSQL("$1")
+	rows, err := s.store.Pool.Query(c, `SELECT id, display_name, email FROM users WHERE `+store.FoldedTitleSQL("display_name")+` LIKE `+ph+`
+		OR `+store.FoldedTitleSQL("email")+` LIKE `+ph+` OR `+store.FoldedTitleSQL("login")+` LIKE `+ph+` OR id::text = $2
+		ORDER BY display_name LIMIT 30`, term, strings.TrimSpace(c.Query("term")))
 	out := map[string]string{}
 	if err == nil {
 		for rows.Next() {
@@ -533,9 +538,9 @@ func (s *Server) gooAjaxCustomerDetails(c *gin.Context) {
 
 func (s *Server) gooAjaxSearchProducts(c *gin.Context) {
 	out := map[string]string{}
-	term := strings.ToLower(strings.TrimSpace(c.Query("term")))
+	term := strings.TrimSpace(c.Query("term"))
 	for _, o := range s.gooProductOptions(c, false) {
-		if term == "" || strings.Contains(strings.ToLower(o.Label), term) {
+		if term == "" || textfold.Contains(o.Label, term) { // "ışık" finds "IŞIK Eklentisi"
 			out[o.Value] = o.Label
 		}
 	}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
@@ -10,8 +11,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"runtime/pprof"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -84,6 +87,7 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 	if err != nil {
 		t.Fatal(err)
 	}
+	closeTestServer(t, srv)
 	h := srv.Handler()
 	ts.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !builder || r.URL.Path != "/wp-admin/install" || r.URL.Query().Get("step") != "2" {
@@ -108,6 +112,59 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return ts, client, srv
+}
+
+// closeTestServer closes srv when the test ends. Registered after the pool's cleanup and before
+// the HTTP server's, it runs (last in, first out) once requests stopped and before the pool
+// closes, as main orders it. Without it every test's Server stays reachable from its plugin sync
+// and CDN housekeeping loops, and a full package run keeps ~1100 apps (templates, caches, wazero
+// runtimes) alive.
+func closeTestServer(t *testing.T, srv *Server) {
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		srv.Close(ctx)
+	})
+}
+
+// Every test Server's long-lived loops end with the test: none of them is left running after the
+// subtests' cleanups.
+func TestTestServerReleasesBackground(t *testing.T) {
+	if os.Getenv("WPGO_TEST_ADMIN_DB") == "" || os.Getenv("WPGO_TEST_DB") == "" {
+		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
+	}
+	var servers []*Server
+	for i := range 3 {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			_, _, srv := testServerBuilderOff(t)
+			if srv.plugins == nil || srv.plugins.rt == nil {
+				t.Fatal("plugin runtime did not start; the test would not exercise the sync loop")
+			}
+			servers = append(servers, srv)
+		})
+	}
+	for i, srv := range servers {
+		if err := srv.rt.bgCtx.Err(); err == nil {
+			t.Errorf("server %d: background context still live after the test ended", i)
+		}
+	}
+	leaked := func() string {
+		var b strings.Builder
+		_ = pprof.Lookup("goroutine").WriteTo(&b, 2)
+		for _, g := range strings.Split(b.String(), "\n\n") {
+			if strings.Contains(g, ".pluginSyncLoop(") || strings.Contains(g, ".gocdnStartHousekeeping.") {
+				return g
+			}
+		}
+		return ""
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for g := leaked(); g != ""; g = leaked() {
+		if time.Now().After(deadline) {
+			t.Fatalf("background loop still running after its test ended:\n%s", g)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
 }
 
 func get(t *testing.T, c *http.Client, u string) (int, string, string) {
@@ -277,7 +334,7 @@ func TestInstallLoginPublishAndView(t *testing.T) {
 	}
 
 	code, body, _ = get(t, c, base+"/")
-	if !strings.Contains(body, "Go publishes") || !strings.Contains(body, "<p>Second paragraph.</p>") {
+	if code != http.StatusOK || !strings.Contains(body, "Go publishes") || !strings.Contains(body, "<p>Second paragraph.</p>") {
 		t.Errorf("published post not on the home page")
 	}
 	_, body, _ = get(t, c, base+"/tag/golang/")

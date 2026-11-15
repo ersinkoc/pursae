@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"html"
 	"net/http"
 	"net/url"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 // The Store API's cart, checkout and order routes (wc/store/v1/cart…, /checkout, /order/{id}). They
@@ -770,8 +772,34 @@ func (s *Server) gooStoreDraftOrder(c *gin.Context) *gooOrder {
 	o.ShippingTotal, o.ShippingTax = cart.ShippingTotal, cart.ShippingTax
 	o.CartTax = gooRound(gooSumTaxes(cart.Taxes), s.gooDecimals())
 	o.TotalTax, o.Total = cart.TotalTax, cart.Total
-	if err := s.gooSaveOrder(ctx, o, true); err != nil {
-		return nil
+	if o.ID == 0 {
+		if err := s.gooSaveOrder(ctx, o, true); err != nil {
+			return nil
+		}
+	} else {
+		// The draft was read without a lock, and a checkout of this session (POST) may have placed it
+		// since: the status is checked again under the row lock the checkout's claim also takes, so
+		// this refresh never writes the session's (stale) cart and addresses over a placed order. Nor
+		// does it start a new draft or touch the session then: the checkout's session changes win.
+		err := pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
+			var status string
+			if err := tx.QueryRow(ctx, `SELECT status FROM goo_orders WHERE id = $1 FOR UPDATE`, o.ID).Scan(&status); err != nil {
+				return err
+			}
+			if status != "checkout-draft" {
+				return errGooDraftPlaced
+			}
+			return s.gooSaveOrderTx(ctx, tx, o, true)
+		})
+		if errors.Is(err, pgx.ErrNoRows) {
+			// Deleted meanwhile (the daily cleanup): a new draft replaces it.
+			delete(sess.Data.Extra, gooDraftKey)
+			sess.touch()
+			return s.gooStoreDraftOrder(c)
+		}
+		if err != nil {
+			return nil
+		}
 	}
 	if gooInt(sess.Data.Extra[gooDraftKey]) != o.ID {
 		if sess.Data.Extra == nil {
@@ -782,6 +810,9 @@ func (s *Server) gooStoreDraftOrder(c *gin.Context) *gooOrder {
 	}
 	return o
 }
+
+// errGooDraftPlaced stops a draft refresh that found its draft placed by a checkout meanwhile.
+var errGooDraftPlaced = errors.New("goo: the checkout draft was placed")
 
 // gooCleanupDrafts deletes checkout-draft orders untouched for a day.
 func (s *Server) gooCleanupDrafts(ctx context.Context) {

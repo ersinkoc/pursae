@@ -104,7 +104,6 @@ func TestSEOGoSearchConsoleOAuth(t *testing.T) {
 	if q.Get("scope") != seogoGSCScope || q.Get("access_type") != "offline" || q.Get("client_id") != "cid" || q.Get("state") == "" {
 		t.Fatalf("authorization URL: %s", loc)
 	}
-	state := q.Get("state")
 
 	// A forged state is refused and burns the pending one.
 	if _, _, loc := get(t, c, base+"/wp-admin/seogo?page=search-console&code=good-code&state=forged"); !strings.Contains(loc, "seogo-error") {
@@ -115,7 +114,7 @@ func TestSEOGoSearchConsoleOAuth(t *testing.T) {
 	}
 	// Start again; the real callback connects and preselects this site's property.
 	get(t, c, base+strings.ReplaceAll(m[1], "&amp;", "&"))
-	state = srv.seogoGSCLoad().State
+	state := srv.seogoGSCLoad().State
 	if _, _, loc := get(t, c, base+"/wp-admin/seogo?page=search-console&code=good-code&state="+state); !strings.Contains(loc, "seogo-updated") {
 		t.Fatalf("callback: %s", loc)
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/mail"
+	"wpgo/internal/store"
 )
 
 // Pursae Contact Form entries (the part of Flamingo that CF7 users expect): every accepted
@@ -217,9 +218,8 @@ func (s *Server) gontactEntriesScreen(c *gin.Context) {
 		return
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("paged", "1"))
-	if page < 1 {
-		page = 1
-	}
+	// Capped so (page-1)*perPage cannot overflow into a negative OFFSET.
+	page = min(max(page, 1), store.MaxPage)
 	const perPage = 20
 	_ = s.store.Pool.QueryRow(c, `SELECT count(*) FROM gontact_entries `+where, args...).Scan(&d.Total)
 	base := url.URL{Path: "/wp-admin/admin", RawQuery: url.Values{"page": {gontactEntriesPage}, "form": {c.Query("form")}, "mail_status": {mailFilter}, "s": {search}}.Encode()}

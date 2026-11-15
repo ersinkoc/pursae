@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
@@ -124,7 +125,9 @@ func (s *Server) gooSessionFor(c *gin.Context) *gooSession {
 				}
 				sess.dirty = true
 			}
-			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_sessions WHERE session_key = $1`, guestKey)
+			if _, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_sessions WHERE session_key = $1`, guestKey); err != nil {
+				slog.Warn("goocommerce: session delete", "err", err)
+			}
 			http.SetCookie(c.Writer, &http.Cookie{Name: gooSessionCookie, Value: "", Path: "/", MaxAge: -1, Secure: s.httpsRequest(c.Request)})
 		}
 		if !found {
@@ -168,10 +171,17 @@ func gooHexOnly(v string) bool {
 func (s *Server) gooLoadSession(ctx context.Context, sess *gooSession) bool {
 	var raw []byte
 	err := s.store.Pool.QueryRow(ctx, `SELECT data FROM goo_sessions WHERE session_key = $1 AND expires_at > now()`, sess.Key).Scan(&raw)
-	if errors.Is(err, pgx.ErrNoRows) || err != nil {
+	if err != nil {
+		// No row is simply no session. Any other failure is treated the same (a fresh session is
+		// started, whose save can overwrite the stored cart), so it is logged to make that visible.
+		if !errors.Is(err, pgx.ErrNoRows) {
+			slog.Warn("goocommerce: session load", "err", err)
+		}
 		return false
 	}
-	_ = json.Unmarshal(raw, &sess.Data)
+	if err := json.Unmarshal(raw, &sess.Data); err != nil {
+		slog.Warn("goocommerce: session decode", "err", err)
+	}
 	return true
 }
 
@@ -210,7 +220,9 @@ func (s *Server) gooSaveSession(c *gin.Context) {
 	secure := s.httpsRequest(c.Request)
 	if empty && sess.user == 0 {
 		if !sess.isNew {
-			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM goo_sessions WHERE session_key = $1`, sess.Key)
+			if _, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_sessions WHERE session_key = $1`, sess.Key); err != nil {
+				slog.Warn("goocommerce: session delete", "err", err)
+			}
 		}
 		s.clearGooCookie(c, gooSessionCookie)
 	} else {
@@ -219,8 +231,11 @@ func (s *Server) gooSaveSession(c *gin.Context) {
 		if sess.user != 0 {
 			ttl = 30 * 24 * time.Hour
 		}
-		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO goo_sessions (session_key, data, expires_at) VALUES ($1, $2, $3)
-			ON CONFLICT (session_key) DO UPDATE SET data = EXCLUDED.data, expires_at = EXCLUDED.expires_at`, sess.Key, raw, time.Now().Add(ttl))
+		// A failed save loses this request's cart change; log it so it does not vanish silently.
+		if _, err := s.store.Pool.Exec(ctx, `INSERT INTO goo_sessions (session_key, data, expires_at) VALUES ($1, $2, $3)
+			ON CONFLICT (session_key) DO UPDATE SET data = EXCLUDED.data, expires_at = EXCLUDED.expires_at`, sess.Key, raw, time.Now().Add(ttl)); err != nil {
+			slog.Warn("goocommerce: session save", "err", err)
+		}
 		if sess.user == 0 {
 			http.SetCookie(c.Writer, &http.Cookie{Name: gooSessionCookie, Value: sess.Key, Path: "/", Expires: time.Now().Add(gooSessionTTL),
 				HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: secure})
@@ -297,29 +312,8 @@ func (s *Server) gooTakeNotices(c *gin.Context) []gooNotice {
 	return n
 }
 
-// gooHasNoticeErrors is wc_notice_count('error') > 0.
-func (s *Server) gooHasNoticeErrors(c *gin.Context) bool {
-	for _, n := range s.gooSessionFor(c).Data.Notices {
-		if n.Type == "error" {
-			return true
-		}
-	}
-	return false
-}
-
 // gooCleanupSessions deletes expired sessions (the daily woocommerce_cleanup_sessions job).
 func (s *Server) gooCleanupSessions(ctx context.Context) error {
 	_, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_sessions WHERE expires_at < now()`)
 	return err
-}
-
-// gooCustomerEmail is the e-mail address the session knows: billing e-mail or the account's.
-func (s *Server) gooCustomerEmail(c *gin.Context) string {
-	if e := strings.TrimSpace(s.gooSessionFor(c).Data.Customer.Billing["email"]); e != "" {
-		return e
-	}
-	if u := currentUser(c); u != nil {
-		return u.Email
-	}
-	return ""
 }

@@ -472,9 +472,9 @@ func (s *Server) seogoSuggestions(ctx context.Context, postID int64, text string
 		terms = append(terms, strings.ReplaceAll(t.w, "'", ""))
 	}
 	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE status = 'publish' AND type IN ('post','page') AND id <> $1 AND password = ''
-		AND search @@ to_tsquery('simple', $2)
+		AND search @@ to_tsquery('simple', `+store.FoldedArgSQL("$2")+`)
 		ORDER BY (coalesce(meta->>'_seogo_cornerstone', meta->>'_yoast_wpseo_is_cornerstone', '') = '1') DESC,
-			ts_rank(search, to_tsquery('simple', $2)) DESC LIMIT $3`, postID, strings.Join(terms, " | "), limit)
+			ts_rank(search, to_tsquery('simple', `+store.FoldedArgSQL("$2")+`)) DESC LIMIT $3`, postID, strings.Join(terms, " | "), limit) // folded like posts.search (0105)
 	if err != nil {
 		return out
 	}

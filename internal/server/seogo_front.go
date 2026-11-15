@@ -257,16 +257,6 @@ func (s *Server) seogoPostImages(ctx context.Context, p *store.Post, media map[i
 	return out
 }
 
-// seogoHreflang is the hreflang code of a language slug ("" for an inactive language).
-func (s *Server) seogoHreflang(ctx context.Context, slug string) string {
-	for _, l := range s.pllActiveLanguages(ctx) {
-		if l.Slug == slug {
-			return s.pllHreflang(ctx, l)
-		}
-	}
-	return ""
-}
-
 // seogoTranslationGroups maps each object to its translations (language => id, itself included),
 // for the objects that have at least one; nil while Pursae Multi Language is off.
 func (s *Server) seogoTranslationGroups(ctx context.Context, k pllKind, ids []int64) map[int64]map[string]int64 {

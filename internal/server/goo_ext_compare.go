@@ -447,7 +447,6 @@ func (s *Server) gooCmpTable(c *gin.Context) template.HTML {
 				}
 			}
 			for _, ar := range attrs {
-				ar := ar
 				row("attribute-"+ar.key, ar.label, func(p *gooProduct) string {
 					for _, a := range p.Attributes {
 						if a.Key() == ar.key {

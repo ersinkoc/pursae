@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -80,8 +81,14 @@ func (s *Server) hgGuardWrite(ctx context.Context, sc *hgSchema, doc, locale str
 		return nil
 	}
 	e, err := s.hgGetEntry(ctx, sc.UID, doc, locale)
-	if err != nil {
+	if gooNotFound(err) {
 		return nil // a new locale version or a missing entry: nothing to protect
+	}
+	if err != nil {
+		// Without the entry the lock and the save stamp cannot be checked, so the change is refused
+		// rather than let through. The raw error is logged, not shown: callers print the message.
+		log.Printf("headlessgo: guard %s/%s (%s): %v", sc.UID, doc, locale, err)
+		return errors.New("Could not check the entry. Nothing was saved; try again.")
 	}
 	if l := s.hgLockHolder(ctx, e.ID, userID); l != nil {
 		return errors.New(l.Name + " is editing this entry. Take over editing to change it.")

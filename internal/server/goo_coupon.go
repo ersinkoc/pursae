@@ -130,8 +130,10 @@ func (s *Server) gooQueryCoupons(ctx context.Context, status, search string, pag
 		where = `status = $1`
 	}
 	if search != "" {
-		args = append(args, "%"+strings.ToLower(search)+"%")
-		where += fmt.Sprintf(` AND (lower(code) LIKE $%d OR lower(description) LIKE $%d)`, len(args), len(args))
+		// Folded alike on both sides by the database (store.FoldedTitleSQL), so "ışık" finds the code IŞIK10.
+		args = append(args, "%"+search+"%")
+		ph := store.FoldedArgSQL(fmt.Sprintf("$%d", len(args)))
+		where += fmt.Sprintf(` AND (%s LIKE %s OR %s LIKE %s)`, store.FoldedTitleSQL("code"), ph, store.FoldedTitleSQL("description"), ph)
 	}
 	var total int
 	if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_coupons WHERE `+where, args...).Scan(&total); err != nil {
@@ -140,9 +142,8 @@ func (s *Server) gooQueryCoupons(ctx context.Context, status, search string, pag
 	if perPage <= 0 {
 		perPage = 20
 	}
-	if page < 1 {
-		page = 1
-	}
+	// Capped here, not only by the callers, so (page-1)*perPage cannot overflow into a negative OFFSET.
+	page = min(max(page, 1), store.MaxPage)
 	rows, err := s.store.Pool.Query(ctx, `SELECT `+gooCouponCols+` FROM goo_coupons WHERE `+where+fmt.Sprintf(` ORDER BY date_created DESC, id DESC LIMIT %d OFFSET %d`, perPage, (page-1)*perPage), args...)
 	if err != nil {
 		return nil, 0, err

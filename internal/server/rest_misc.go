@@ -21,22 +21,6 @@ import (
 	"wpgo/internal/wp"
 )
 
-// twentySixteenPalette is the theme's add_theme_support( 'editor-color-palette' ).
-var twentySixteenPalette = []map[string]string{
-	{"name": "Dark Gray", "slug": "dark-gray", "color": "#1a1a1a"},
-	{"name": "Medium Gray", "slug": "medium-gray", "color": "#686868"},
-	{"name": "Light Gray", "slug": "light-gray", "color": "#e5e5e5"},
-	{"name": "White", "slug": "white", "color": "#fff"},
-	{"name": "Blue Gray", "slug": "blue-gray", "color": "#4d545c"},
-	{"name": "Bright Blue", "slug": "bright-blue", "color": "#007acc"},
-	{"name": "Light Blue", "slug": "light-blue", "color": "#9adffd"},
-	{"name": "Dark Brown", "slug": "dark-brown", "color": "#402b30"},
-	{"name": "Medium Brown", "slug": "medium-brown", "color": "#774e24"},
-	{"name": "Dark Red", "slug": "dark-red", "color": "#640c1f"},
-	{"name": "Bright Red", "slug": "bright-red", "color": "#ff675f"},
-	{"name": "Yellow", "slug": "yellow", "color": "#ffef8e"},
-}
-
 var postFormats = []string{"aside", "image", "video", "quote", "link", "gallery", "status", "audio", "chat"}
 
 func (api *restAPI) registerMisc() {

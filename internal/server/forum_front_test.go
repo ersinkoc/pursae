@@ -298,6 +298,8 @@ func TestForumFrontViews(t *testing.T) {
 	}
 	forumNoTemplateError(t, "shortcode page", body)
 	wbtfWant(t, "shortcode page", body, `data-view="shortcode-index"`, `data-view="shortcode-recent"`, "General Chat", "Topic number 7", "forum.css")
+	// The stylesheet carries the reported plugin version as its cache-buster (the plugins list shows the same constant).
+	wbtfWant(t, "shortcode page", body, "/forum.css?ver="+forumVersion)
 	// The recent shortcode and the theme function skip topics of the unpublished forum (the newest topic).
 	if strings.Contains(body, "Secret plans") {
 		t.Error(`[pursae_forum view="recent"] lists a topic of an unpublished forum`)
@@ -641,4 +643,107 @@ func TestForumPostRules(t *testing.T) {
 	if g := forumGroupsOf([]*forumForum{{ID: 1, Kind: "category", Children: []*forumForum{{ID: 2}}}, {ID: 3, Kind: "forum"}}); len(g) != 2 || g[0].Category != nil || g[1].Category.ID != 1 {
 		t.Errorf("groups: %+v", g)
 	}
+}
+
+// commentLinkCount counts an anchor and its URL once (the comment_max_links rule held a comment
+// with one <a href="https://…"> when the limit was 2).
+func TestCommentLinkCount(t *testing.T) {
+	for in, want := range map[string]int{
+		"no links here":                                                       0,
+		`<a href="https://a.example">a</a>`:                                   1,
+		`<a href='http://a.example' rel="ugc">a</a>`:                          1,
+		"see https://a.example and http://b.example":                          2,
+		`<a href="https://a.example">a</a> <a href="https://b.example">b</a>`: 2,
+		`<A HREF = "//a.example">a</A>`:                                       1,
+		"// a code comment":                                                   0,
+		`<a href="/x">a</a>`:                                                  1,
+		`<a href="mailto:a@b.example">m</a>`:                                  1,
+		`<a href="www.x.example">x</a>`:                                       1,
+		`see https://a.example and <a href='//b.example'>b</a>`:               2,
+	} {
+		if got := commentLinkCount(in); got != want {
+			t.Errorf("commentLinkCount(%q) = %d, want %d", in, got, want)
+		}
+	}
+}
+
+// The Discussion screen's comment_max_links and moderation_keys hold a member's new topic or reply
+// for moderation (bbp_check_for_moderation); moderators bypass; 0 turns the link limit off.
+func TestForumFrontLinkModeration(t *testing.T) {
+	fx := forumFrontStart(t, false)
+	srv, ctx := fx.srv, fx.ctx
+	if err := srv.settings.Set(ctx, map[string]any{"comment_max_links": 2, "moderation_keys": ""}); err != nil {
+		t.Fatal(err)
+	}
+	newURL := fx.url("f", fx.forum.Slug, "new")
+	mara, _ := fx.member(t, "mara", forumRoleParticipant)
+	_, body, _ := get(t, mara, newURL)
+	nonce := forumFormNonce(t, body, "new_topic")
+
+	one := `See <a href="https://a.example">a</a>`
+	two := `See <a href="https://a.example">a</a> and <a href="https://b.example">b</a>`
+
+	// One link publishes (an anchor is one link, not two).
+	code, _, loc := post(t, mara, newURL, url.Values{"forum_action": {"new_topic"}, "_wpnonce": {nonce}, "title": {"One link topic"}, "content": {one}})
+	if code != http.StatusFound || strings.Contains(loc, "pending") {
+		t.Fatalf("one-link topic: %d %s", code, loc)
+	}
+	topics, _, _ := srv.forumTopics(ctx, forumTopicQuery{ForumID: fx.forum.ID})
+	if len(topics) != 1 || topics[0].Status != "publish" {
+		t.Fatalf("published topics: %+v", topics)
+	}
+	topic := topics[0]
+
+	// Two links: the topic is held.
+	code, _, loc = post(t, mara, newURL, url.Values{"forum_action": {"new_topic"}, "_wpnonce": {nonce}, "title": {"Two link topic"}, "content": {two}})
+	if code != http.StatusFound || !strings.Contains(loc, "forum_msg=topic_pending") {
+		t.Errorf("two-link topic: %d %s", code, loc)
+	}
+	if pend, _, _ := srv.forumTopics(ctx, forumTopicQuery{ForumID: fx.forum.ID, Statuses: []string{"pending"}}); len(pend) != 1 || pend[0].Title != "Two link topic" {
+		t.Errorf("pending topics: %+v", pend)
+	}
+
+	// replyStatus posts a reply and returns the stored status of the newest reply and the redirect.
+	replyStatus := func(t *testing.T, c *http.Client, content string) (string, string) {
+		t.Helper()
+		_, body, _ := get(t, c, topic.URL)
+		rn := forumFormNonce(t, body, "reply")
+		code, _, loc := post(t, c, topic.URL, url.Values{"forum_action": {"reply"}, "_wpnonce": {rn}, "content": {content}})
+		if code != http.StatusFound {
+			t.Fatalf("reply: %d", code)
+		}
+		var st string
+		if err := srv.store.Pool.QueryRow(ctx, `SELECT status FROM posts WHERE type = 'reply' ORDER BY id DESC LIMIT 1`).Scan(&st); err != nil {
+			t.Fatal(err)
+		}
+		return st, loc
+	}
+
+	if st, loc := replyStatus(t, mara, one); st != "publish" || strings.Contains(loc, "pending") {
+		t.Errorf("one-link reply: %s %s", st, loc)
+	}
+	if st, loc := replyStatus(t, mara, two); st != "pending" || !strings.Contains(loc, "forum_msg=reply_pending") {
+		t.Errorf("two-link reply: %s %s", st, loc)
+	}
+	ozan, _ := fx.member(t, "ozan", forumRoleModerator)
+	if st, loc := replyStatus(t, ozan, two); st != "publish" || strings.Contains(loc, "pending") {
+		t.Errorf("moderator two-link reply: %s %s", st, loc)
+	}
+
+	// comment_max_links 0 turns the check off.
+	if err := srv.settings.Set(ctx, map[string]any{"comment_max_links": 0}); err != nil {
+		t.Fatal(err)
+	}
+	if st, loc := replyStatus(t, mara, two); st != "publish" || strings.Contains(loc, "pending") {
+		t.Errorf("two-link reply with no limit: %s %s", st, loc)
+	}
+
+	// A moderation key holds the post too.
+	if err := srv.settings.Set(ctx, map[string]any{"moderation_keys": "pharmacy\n"}); err != nil {
+		t.Fatal(err)
+	}
+	if st, loc := replyStatus(t, mara, "Cheap PHARMACY deals"); st != "pending" || !strings.Contains(loc, "forum_msg=reply_pending") {
+		t.Errorf("moderation key reply: %s %s", st, loc)
+	}
+	_ = srv.settings.Set(ctx, map[string]any{"moderation_keys": "", "comment_max_links": 2})
 }

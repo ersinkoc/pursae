@@ -106,7 +106,7 @@ except Pursae Cache and Classic Editor. Click a heading below the table to open 
 
 | | Plugin | In one line | Docs |
 |---|---|---|---|
-| 🛒 | **Pursae Commerce** | Store, cart, checkout, orders, premium modules | [→](docs/goocommerce-features.md) |
+| 🛒 | **Pursae Commerce** | Store, cart, checkout, orders, bookings & premium modules | [→](docs/goocommerce-features.md) |
 | 🎨 | **Pursae Web Builder** | Visual pages, Theme Builder, popups, theme library | [→](docs/developer/web-builder.md) |
 | 🔎 | **Pursae SEO** | Analysis, schema, sitemaps, redirects | [→](docs/seo-go-features.md) |
 | ⚡ | **Pursae Cache** | Full-page cache + page optimization | [→](docs/developer/operations/caching.md) |
@@ -241,7 +241,7 @@ A bbPress-class discussion board that renders inside any theme (**Forums** in th
 - **Membership on the front end**: email sign-up with confirmation, "Continue with Google" (OAuth with PKCE), an account page with profile photos.
 - **Levels and badges**: points for topics and replies, six default levels, rule-based and hand-awarded badges with icons or images.
 - **Moderation**: approve, pin, close, spam, trash and block from the post itself or the admin queue; first-post moderation, flood and hourly limits.
-- **Themes**: four forum themes with demo content (Campfire, Devboard, Guild Hall, Study Circle), `--pf-*` design tokens and per-view template overrides; works with Pursae Web Builder and Pursae Multi Language. Read-only REST at `/wp-json/forum/v1`.
+- **Themes**: four forum themes with demo content (Campfire, Devboard, Guild Hall, Study Circle), `--pf-*` design tokens and per-view template overrides; works with Pursae Web Builder and Pursae Multi Language. REST API at `/wp-json/forum/v1`: public read routes (forums, topics, replies, tags, stats, online counts and more), plus community write routes — a view beacon and presence (no login), and likes, reports, follows, solutions, previews and drafts for logged-in members (cookie + `X-WP-Nonce` or an Application Password). See [the endpoint list](docs/developer/rest-api/endpoints.md#pursae-forum-forumv1).
 
 <p align="right"><a href="docs/forum-features.md">All features →</a> · <a href="docs/developer/themes/forum.md">Making a forum theme →</a></p>
 </details>

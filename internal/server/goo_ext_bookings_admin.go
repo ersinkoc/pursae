@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // Bookings in the admin: the product data panels (Booking, Availability, Costs, Persons) and
@@ -385,7 +387,7 @@ func (s *Server) bkAdminList(c *gin.Context) {
 		n, _ := strconv.ParseInt(strings.TrimPrefix(q, "#"), 10, 64)
 		where = append(where, "(id = "+arg(n)+" OR order_id = "+arg(n)+")")
 	}
-	page := max(gxAtoi(c.Query("paged")), 1)
+	page := min(max(gxAtoi(c.Query("paged")), 1), store.MaxPage) // bounded so the OFFSET cannot overflow
 	per := 20
 	var total int
 	_ = s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_bookings WHERE `+strings.Join(where, " AND "), args...).Scan(&total)

@@ -858,7 +858,7 @@ func (api *restAPI) blockRenderer(c *gin.Context, r *restRequest) {
 		restErr(c, status, "block_cannot_read", "Sorry, you are not allowed to read blocks as this user.")
 		return
 	}
-	attrs := map[string]any{}
+	var attrs map[string]any
 	if a, ok := r.Body["attributes"].(map[string]any); ok {
 		attrs = a
 	} else {

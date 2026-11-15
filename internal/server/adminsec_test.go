@@ -563,7 +563,7 @@ func TestAdminSecTOTP(t *testing.T) {
 	}
 	// A forged or other-user cookie does nothing; forgetting devices brings the challenge back.
 	_ = nonce
-	_, body, _ = asAccount(t, anon, base, url.Values{"adminsec_do": {"devices_forget"}})
+	asAccount(t, anon, base, url.Values{"adminsec_do": {"devices_forget"}})
 	if _, body, _ = asLogin(t, anon, base, "/wp-login", "admin", "correct horse"); !strings.Contains(body, "Authentication Code") {
 		t.Error("forgotten device skipped the challenge")
 	}

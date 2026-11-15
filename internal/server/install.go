@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"net/mail"
@@ -28,12 +29,20 @@ type installView struct {
 	SiteTitle, UserName, Password string
 	Email                         string
 	Discourage                    bool
+	UpdateEmails                  bool // the owner ticked "Email me Pursae product updates" (off by default, hub_contacts.go)
 	Submitted                     bool // re-rendered after a POST: keep the password masked, like WordPress
 	// The language step (wp-admin/install.php?step=0): the languages to choose from, the choice,
 	// and a failed pack download.
 	ChooseLanguage bool
 	Languages      []langChoice
 	Language       string
+	// ErrorHTML is an error that carries WordPress's own markup (the invalid-email message's
+	// <code>). Only constant strings go here: anything holding user input or an error's text
+	// stays in Error, which the template escapes.
+	ErrorHTML template.HTML
+	// ErrorField is the id of the input the error is about, so the template marks it
+	// aria-invalid and focuses it (WCAG 3.3.1); empty when no single field is at fault.
+	ErrorField string
 }
 
 var validUsername = regexp.MustCompile(`^[A-Za-z0-9 _.\-@]+$`)
@@ -59,7 +68,7 @@ func (s *Server) installForm(c *gin.Context) {
 	} else if !validLanguage(lang) {
 		s.renderAdminTemplate(c, http.StatusOK, "admin/install", s.installLanguageStep(""))
 		return
-	} else if err := s.installLanguage(c.Request.Context(), lang); err != nil {
+	} else if err := s.installLanguageBounded(c.Request.Context(), lang); err != nil {
 		slog.Warn("install language", "locale", lang, "err", err)
 		v := s.installLanguageStep("The language pack could not be downloaded. Check that the server can reach translate.wordpress.org, or continue in English.")
 		s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)
@@ -69,6 +78,20 @@ func (s *Server) installForm(c *gin.Context) {
 	}
 	c.Set("wpgo.pickedLocale", lang) // render the form in the chosen language
 	s.renderAdminTemplate(c, http.StatusOK, "admin/install", installView{Password: auth.RandomToken(14), Language: lang})
+}
+
+// installLangTimeout bounds the core pack download of the install screen's language step (the API
+// lookup and the zip, with its fallback request): the person installing waits on it with no other
+// feedback, and the download client alone allows 90 seconds. Like WordPress, a failed download
+// leaves the choice of continuing in English. A variable so tests can shorten it.
+var installLangTimeout = 30 * time.Second
+
+// installLanguageBounded is installLanguage under installLangTimeout. The deadline is only the
+// install screen's: Settings › General and the REST API share installLanguage without it.
+func (s *Server) installLanguageBounded(ctx context.Context, locale string) error {
+	ctx, cancel := context.WithTimeout(ctx, installLangTimeout)
+	defer cancel()
+	return s.installLanguage(ctx, locale)
 }
 
 // installLanguageStep is the first install screen: every WordPress.org language.
@@ -83,32 +106,36 @@ func (s *Server) installSubmit(c *gin.Context) {
 		return
 	}
 	v := installView{
-		SiteTitle:  strings.TrimSpace(c.PostForm("weblog_title")),
-		UserName:   strings.TrimSpace(c.PostForm("user_name")),
-		Password:   c.PostForm("admin_password"),
-		Email:      strings.TrimSpace(c.PostForm("admin_email")),
-		Discourage: c.PostForm("blog_public") == "0",
-		Submitted:  true,
-		Language:   c.PostForm("language"),
+		SiteTitle:    strings.TrimSpace(c.PostForm("weblog_title")),
+		UserName:     strings.TrimSpace(c.PostForm("user_name")),
+		Password:     c.PostForm("admin_password"),
+		Email:        strings.TrimSpace(c.PostForm("admin_email")),
+		Discourage:   c.PostForm("blog_public") == "0",
+		UpdateEmails: c.PostForm("pursae_update_emails") == "1",
+		Submitted:    true,
+		Language:     c.PostForm("language"),
 	}
 	switch {
 	case v.UserName == "":
-		v.Error = "Please provide a valid username."
+		v.Error, v.ErrorField = "Please provide a valid username.", "user_login"
 	case !validUsername.MatchString(v.UserName):
-		v.Error = "The username you provided has invalid characters."
+		v.Error, v.ErrorField = "The username you provided has invalid characters.", "user_login"
 	case v.Password == "":
-		v.Error = "You must provide a password."
+		v.Error, v.ErrorField = "You must provide a password.", "pass1"
 	case c.PostForm("admin_password2") != "" && c.PostForm("admin_password2") != v.Password:
-		v.Error = "Your passwords do not match. Please try again."
+		v.Error, v.ErrorField = "Your passwords do not match. Please try again.", "pass1"
 	case v.Email == "":
-		v.Error = "You must provide an email address."
+		v.Error, v.ErrorField = "You must provide an email address.", "admin_email"
 	}
 	if v.Error == "" {
 		if _, err := mail.ParseAddress(v.Email); err != nil || !strings.Contains(v.Email, ".") {
-			v.Error = "Sorry, that is not a valid email address. Email addresses look like <code>username@example.com</code>."
+			// WordPress's exact msgid, markup included, so its translation still matches. It is
+			// a constant, so it is safe as HTML; escaped, the <code> tags showed up literally.
+			v.ErrorHTML = "Sorry, that is not a valid email address. Email addresses look like <code>username@example.com</code>."
+			v.ErrorField = "admin_email"
 		}
 	}
-	if v.Error != "" {
+	if v.Error != "" || v.ErrorHTML != "" {
 		s.renderAdminTemplate(c, http.StatusOK, "admin/install", v)
 		return
 	}
@@ -168,8 +195,9 @@ func (s *Server) install(ctx context.Context, v installView) error {
 	if err != nil {
 		return err
 	}
-	// The install screen told the owner their address is kept for Pursae update e-mails (hub_contacts.go).
-	if _, err := s.store.Pool.Exec(ctx, `UPDATE users SET meta = meta || jsonb_build_object($2::text, true) WHERE id = $1`, userID, updateEmailsMeta); err != nil {
+	// The owner's own choice on the install screen (an unticked box by default): on records the time of
+	// consent, off counts as asked so no opt-in notice follows (hub_contacts.go).
+	if err := s.setUpdateEmails(ctx, &store.User{ID: userID}, v.UpdateEmails); err != nil {
 		return err
 	}
 

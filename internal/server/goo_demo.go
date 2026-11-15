@@ -464,7 +464,7 @@ func (s *Server) gooImportDemo(ctx context.Context, uid int64, slug string, raw 
 			v.ImageID = mediaIDs[dv.Image]
 			var label []string
 			for k, val := range dv.Attributes {
-				key := k
+				var key string
 				if tax, ok := attrTax[strings.ToLower(k)]; ok {
 					key, val = tax, gooSanitizeKey(val)
 				} else if tax, ok := attrTax[strings.ToLower(strings.TrimPrefix(k, "pa_"))]; ok {

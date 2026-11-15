@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // The consent log: POST /wp-json/gooike/v1/consent records each banner decision. Pages are cached
@@ -295,7 +297,7 @@ func (s *Server) gooikeLogs(ctx context.Context, f gooikeLogFilter) ([]gooikeLog
 	}
 	q := `SELECT id, consent_id, action, categories, policy_version, regulation, ip_anon, ua_hash, url, gpc, created_at FROM gooike_consent_log` + where + ` ORDER BY created_at DESC, id DESC`
 	if f.PerPage > 0 {
-		q += fmt.Sprintf(" LIMIT %d OFFSET %d", f.PerPage, max(f.Page-1, 0)*f.PerPage)
+		q += fmt.Sprintf(" LIMIT %d OFFSET %d", f.PerPage, (min(max(f.Page, 1), store.MaxPage)-1)*f.PerPage) // bounded so the OFFSET cannot overflow
 	}
 	rows, err := s.store.Pool.Query(ctx, q, args...)
 	if err != nil {

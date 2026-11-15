@@ -233,7 +233,7 @@ func TestGolylangMediaTranslations(t *testing.T) {
 	if rows["caption"] == nil || *rows["caption"] != "Nouvelle légende" || rows["alt"] == nil || *rows["alt"] != "Alt FR 2" {
 		t.Errorf("compat save: %v", rows)
 	}
-	_, ajax, _ = post(t, c, base+"/wp-admin/admin-ajax", url.Values{"action": {"save-attachment-compat"}, "id": {id}, "nonce": {"bad"},
+	post(t, c, base+"/wp-admin/admin-ajax", url.Values{"action": {"save-attachment-compat"}, "id": {id}, "nonce": {"bad"},
 		"attachments[" + id + "][pll_i18n][fr][caption]": {"Hack"}})
 	if rows := srv.pllMediaRows(ctx, "fr", []int64{img.ID})[img.ID]["fr"]; *rows["caption"] == "Hack" {
 		t.Error("save-attachment-compat saved without a valid nonce")

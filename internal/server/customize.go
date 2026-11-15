@@ -92,9 +92,6 @@ func newChangesetID() string {
 
 func jsonUnmarshalString(s string, v any) error { return json.Unmarshal([]byte(s), v) }
 
-// czCoreOptions are the options the Customizer may write.
-var czCoreOptions = []string{"blogname", "blogdescription", "site_icon", "show_on_front", "page_on_front", "page_for_posts"}
-
 var czTagRe = regexp.MustCompile(`<[a-zA-Z/!?][^>]*>?`)
 
 // czSanitize validates the submitted values (setting id → raw value) for a theme. It returns the

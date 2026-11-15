@@ -105,7 +105,6 @@ type gooUserMembership struct {
 	ProductID   int64
 	Notes       []map[string]any
 	DateCreated time.Time
-	plan        *gooMembershipPlan
 }
 
 // HasAccess reports whether the membership gives access now.
@@ -548,11 +547,6 @@ func (s *Server) gmemCanAccess(ctx context.Context, u *store.User, plans []*gooM
 		}
 	}
 	return false
-}
-
-// gmemCanPurchase is wc_memberships_is_product_purchasable() for the current user.
-func (s *Server) gmemCanPurchase(ctx context.Context, u *store.User, p *gooProduct) bool {
-	return s.gmemCanAccess(ctx, u, s.gmemProductPlans(ctx, p, ""))
 }
 
 // gmemCanView reports whether a member-only product shows to the user (hidden per setting).

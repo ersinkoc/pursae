@@ -136,7 +136,7 @@ func (s *Server) asIntegrityScan(ctx context.Context, prev *asIntegrityReport) *
 		seen := map[string]bool{}
 		_ = fs.WalkDir(embedded, ".", func(p string, d fs.DirEntry, err error) error {
 			if err != nil || d.IsDir() || !budget() {
-				return nil
+				return nil //nolint:nilerr // an unreadable entry is skipped, the walk goes on
 			}
 			seen[p] = true
 			want, err1 := asHashFS(embedded, p)
@@ -151,7 +151,7 @@ func (s *Server) asIntegrityScan(ctx context.Context, prev *asIntegrityReport) *
 		})
 		_ = fs.WalkDir(disk, ".", func(p string, d fs.DirEntry, err error) error {
 			if err != nil || d.IsDir() || seen[p] || !budget() {
-				return nil
+				return nil //nolint:nilerr // an unreadable entry is skipped, the walk goes on
 			}
 			if bad, why := asSuspiciousName(d.Name()); bad {
 				add(asIntegrityFinding{Kind: "suspicious", Area: "core", Path: p, Detail: why + "; not part of Pursae."})
@@ -168,7 +168,7 @@ func (s *Server) asIntegrityScan(ctx context.Context, prev *asIntegrityReport) *
 	if ov, ok := s.web.(overlayFS); ok && ov.dir != "" {
 		_ = filepath.WalkDir(ov.dir, func(p string, d fs.DirEntry, err error) error {
 			if err != nil || d.IsDir() || !budget() {
-				return nil
+				return nil //nolint:nilerr // an unreadable entry is skipped, the walk goes on
 			}
 			rel, _ := filepath.Rel(ov.dir, p)
 			rel = filepath.ToSlash(rel)
@@ -178,7 +178,7 @@ func (s *Server) asIntegrityScan(ctx context.Context, prev *asIntegrityReport) *
 			}
 			want, err := asHashFS(embedded, "themes/"+rel)
 			if err != nil {
-				return nil // a theme package's own file, or a new file of a package
+				return nil //nolint:nilerr // not in the binary: a theme package's own file, or a new file of a package
 			}
 			if got, err := asHashFile(p); err == nil && got != want {
 				add(asIntegrityFinding{Kind: "modified", Area: "theme", Path: "themes/" + rel, Detail: "An edited copy of a bundled theme file (Theme File Editor or a change on disk)."})
