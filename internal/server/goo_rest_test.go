@@ -885,3 +885,50 @@ func TestGooAPIWebhooksFromAdmin(t *testing.T) {
 		t.Errorf("order.deleted deliveries: %s", got)
 	}
 }
+
+// A cart changed after GET /checkout made the draft must reach the order: the draft's items are
+// replaced by the cart's, so the stored lines match the total that was charged.
+func TestGooAPIStoreCheckoutDraftTakesCurrentCart(t *testing.T) {
+	base, _, srv := gooSite(t)
+	ctx := context.Background()
+	gooShopSetup(t, srv)
+	p := gooMakeSimple(t, srv, "Mug", 10, nil)
+	guest := gooGuest()
+	api := base + "/wp-json/wc/store/v1"
+
+	r := gooReq(t, guest, "GET", api+"/cart", nil, nil)
+	nonce := map[string]string{"Nonce": r.Header.Get("Nonce")}
+	r = gooReq(t, guest, "POST", api+"/cart/add-item", map[string]any{"id": p.ID, "quantity": 10}, nonce)
+	if r.Code != 201 {
+		t.Fatalf("add-item: %d %s", r.Code, r.Raw)
+	}
+	key := gooJS(r.Body, "items", 0, "key")
+	if r := gooReq(t, guest, "GET", api+"/checkout", nil, nil); r.Code != 200 || gooJS(r.Body, "status") != "checkout-draft" {
+		t.Fatalf("checkout draft: %d %s", r.Code, r.Raw)
+	}
+	if r := gooReq(t, guest, "POST", api+"/cart/update-item", map[string]any{"key": key, "quantity": 1}, nonce); r.Code != 200 {
+		t.Fatalf("update-item: %d %s", r.Code, r.Raw)
+	}
+	r = gooReq(t, guest, "POST", api+"/checkout", map[string]any{"billing_address": gooTestAddress, "shipping_address": gooTestAddress,
+		"payment_method": "goo_test"}, nonce)
+	if r.Code != 200 {
+		t.Fatalf("checkout: %d %s", r.Code, r.Raw)
+	}
+	o, err := srv.gooGetOrder(ctx, int64(gooJ(r.Body, "order_id").(float64)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var qty float64
+	var lines float64
+	for _, it := range o.Items {
+		if it.Type == "line_item" {
+			qty += float64(it.Quantity)
+			lines += it.Total
+		}
+	}
+	if qty != 1 {
+		t.Errorf("order has %v units, want the cart's 1 (draft items kept)", qty)
+	}
+	gooAlmost(t, "line totals", lines, 10)
+	gooAlmost(t, "order total", o.Total, 15) // one mug and flat-rate shipping
+}
