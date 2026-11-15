@@ -106,7 +106,7 @@ except Pursae Cache and Classic Editor. Click a heading below the table to open 
 
 | | Plugin | In one line | Docs |
 |---|---|---|---|
-| 🛒 | **Pursae Commerce** | Store, cart, checkout, orders, premium modules | [→](docs/goocommerce-features.md) |
+| 🛒 | **Pursae Commerce** | Store, cart, checkout, orders, bookings & premium modules | [→](docs/goocommerce-features.md) |
 | 🎨 | **Pursae Web Builder** | Visual pages, Theme Builder, popups, theme library | [→](docs/developer/web-builder.md) |
 | 🔎 | **Pursae SEO** | Analysis, schema, sitemaps, redirects | [→](docs/seo-go-features.md) |
 | ⚡ | **Pursae Cache** | Full-page cache + page optimization | [→](docs/developer/operations/caching.md) |

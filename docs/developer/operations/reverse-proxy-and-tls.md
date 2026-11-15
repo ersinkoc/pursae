@@ -129,7 +129,9 @@ mail settings ([configuration](configuration.md)).
 
 Run as many `wpgo` processes as you like against one database with a shared uploads directory
 (NFS or an object-storage mount): the scheduler claims jobs with `FOR UPDATE SKIP LOCKED`, so
-events run once, and migrations are serialised with an advisory lock. Give every instance the
+events run once, and migrations are serialised with an advisory lock (these session locks and
+`LISTEN`/`NOTIFY` below are why a PgBouncer in front must use session pooling; see
+[connection poolers](configuration.md#connection-poolers-pgbouncer)). Give every instance the
 same `WPGO_SECRET`. Settings are cached in memory per process; a change saved on one instance
 reaches the others through PostgreSQL `LISTEN`/`NOTIFY` within moments (each instance holds one
 extra database connection for it, and reloads every minute in case a notification was lost). Side
