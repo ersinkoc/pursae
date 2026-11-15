@@ -274,6 +274,35 @@ func (s *Server) gooSaveOrder(ctx context.Context, o *gooOrder, withItems bool) 
 	return pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error { return s.gooSaveOrderTx(ctx, tx, o, withItems) })
 }
 
+// errGooOrderInProgress is returned by a checkout that lost the race for the order it meant to adopt
+// (the session's checkout-draft or its order awaiting payment) to a concurrent checkout.
+var errGooOrderInProgress = errors.New("Your order is already being processed. Please wait or check your order history.")
+
+// gooClaimDraftTx takes the checkout-draft order id for the checkout running in tx: it moves it to
+// pending only while it is still a draft. A concurrent claim waits on the row lock and, once the first
+// commits, matches nothing (false); a rolled-back save gives the draft back.
+func (s *Server) gooClaimDraftTx(ctx context.Context, tx pgx.Tx, id int64) (bool, error) {
+	var got int64
+	err := tx.QueryRow(ctx, `UPDATE goo_orders SET status = 'pending' WHERE id = $1 AND status = 'checkout-draft' RETURNING id`, id).Scan(&got)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// gooClaimAwaitingOrderTx locks an unpaid order a checkout reuses and checks it is the version the
+// checkout read (date_modified): every save moves date_modified, so of two checkouts that read the same
+// order only the first to save keeps it; the other sees a newer version (false).
+func (s *Server) gooClaimAwaitingOrderTx(ctx context.Context, tx pgx.Tx, id int64, modified time.Time) (bool, error) {
+	var one int
+	err := tx.QueryRow(ctx, `SELECT 1 FROM goo_orders WHERE id = $1 AND date_modified = $2 AND status IN ('pending','failed') FOR UPDATE`,
+		id, modified).Scan(&one)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
 // gooSaveOrderTx is gooSaveOrder inside the caller's transaction.
 func (s *Server) gooSaveOrderTx(ctx context.Context, tx pgx.Tx, o *gooOrder, withItems bool) error {
 	if o.Type == "" {
