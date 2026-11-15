@@ -131,6 +131,29 @@ func Restore(exe string, cause error) {
 	_ = write(exe, st)
 }
 
+// Rollback puts the previous binary back when the new one (version) started but never answered
+// requests (its health check timed out). It reports whether the previous binary is now at exe; the
+// caller then restarts into it. Like Guard, it leaves the notice for the Updates screen.
+func Rollback(exe, version string) bool {
+	st := Read(exe)
+	if st == nil || st.Status != "pending" || st.To != version {
+		return false
+	}
+	if _, err := os.Stat(PrevPath(exe)); err != nil {
+		return false
+	}
+	if err := os.Rename(PrevPath(exe), exe); err != nil {
+		fmt.Fprintf(os.Stderr, "pursae: rolling back to %s failed: %v\n", st.From, err)
+		return false
+	}
+	st.Status = "rolled_back"
+	st.Message = fmt.Sprintf("Pursae %s started but did not answer requests, so the site went back to %s.", st.To, st.From)
+	st.At = time.Now().UTC()
+	_ = write(exe, st)
+	fmt.Fprintln(os.Stderr, "pursae: "+st.Message)
+	return true
+}
+
 // PrevRetention is how long the previous binary is kept after an update was confirmed.
 const PrevRetention = 24 * time.Hour
 

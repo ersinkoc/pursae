@@ -436,6 +436,7 @@ func (s *Server) hubPing(ctx context.Context) error {
 	_, err = s.hubFetchIndex(ctx)
 	if err == nil {
 		s.hubAutoUpdatePlugins(ctx) // plugins with auto-updates on (hub_updates.go)
+		s.coreAutoUpdate(ctx)       // core with automatic updates on (core_update_auto.go); restarts last
 	}
 	return err
 }

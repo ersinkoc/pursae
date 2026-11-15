@@ -3,6 +3,7 @@
 package media
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"image"
@@ -317,6 +318,13 @@ type Options struct {
 	// Focal is the image's focal point: cropped sizes keep it in view instead of cutting the
 	// centre. Nil crops around the centre, like WordPress.
 	Focal *Focal
+	// Quality is the JPEG/WebP quality (1–100) of the files written; 0 keeps WordPress' defaults
+	// (JPEG 82, WebP 86). Media › Optimization sets it.
+	Quality int
+	// OnlyIfSmaller keeps an image that is not scaled down in its own format when the converted
+	// main file would not be smaller than the upload: the conversion is dropped and the sizes are
+	// written in the upload's format (Media › Optimization).
+	OnlyIfSmaller bool
 }
 
 // Focal is a focal point in fractions of the (upright) image: X 0 = left edge, 1 = right edge;
@@ -475,7 +483,7 @@ func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*
 		w, h := fitWithin(info.Width, info.Height, BigImageThreshold, BigImageThreshold)
 		scaled := resize(img, w, h, false, nil)
 		name := base + "-scaled" + outExt
-		if err := encode(filepath.Join(dir, name), scaled, out); err == nil {
+		if err := encodeQ(filepath.Join(dir, name), scaled, out, opts.Quality); err == nil {
 			info.OriginalFile = filepath.Base(full)
 			info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), name))
 			info.Width, info.Height = w, h
@@ -487,7 +495,7 @@ func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*
 	} else if native && rotated {
 		// Turned upright at its own size: photo.jpg → photo-rotated.jpg, the upload kept as the original.
 		name := base + "-rotated" + outExt
-		if err := encode(filepath.Join(dir, name), img, out); err == nil {
+		if err := encodeQ(filepath.Join(dir, name), img, out, opts.Quality); err == nil {
 			info.OriginalFile = filepath.Base(full)
 			info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), name))
 			if st, err := os.Stat(filepath.Join(dir, name)); err == nil {
@@ -497,11 +505,31 @@ func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*
 	} else if convert {
 		// The image converted at its own size: photo.jpg → photo.webp, the upload kept as the original.
 		name := uniqueName(dir, base+outExt, opts.Reserved...)
-		if err := encode(filepath.Join(dir, name), img, out); err == nil {
-			info.OriginalFile = filepath.Base(full)
-			info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), name))
-			if st, err := os.Stat(filepath.Join(dir, name)); err == nil {
-				info.FileSize = st.Size()
+		if err := encodeQ(filepath.Join(dir, name), img, out, opts.Quality); err == nil {
+			st, serr := os.Stat(filepath.Join(dir, name))
+			if opts.OnlyIfSmaller && (serr != nil || st.Size() >= info.FileSize) {
+				// Not smaller than the upload: keep it as uploaded, sizes in its own format.
+				_ = os.Remove(filepath.Join(dir, name))
+				out = outputFormat(format, img)
+				outExt = ext
+				if out != format {
+					outExt = formatExt(out)
+				} else if rotated { // upright at its own size, as without the conversion
+					rname := base + "-rotated" + outExt
+					if err := encodeQ(filepath.Join(dir, rname), img, out, opts.Quality); err == nil {
+						info.OriginalFile = filepath.Base(full)
+						info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), rname))
+						if rst, err := os.Stat(filepath.Join(dir, rname)); err == nil {
+							info.FileSize = rst.Size()
+						}
+					}
+				}
+			} else {
+				info.OriginalFile = filepath.Base(full)
+				info.RelPath = filepath.ToSlash(filepath.Join(filepath.Dir(relPath), name))
+				if serr == nil {
+					info.FileSize = st.Size()
+				}
 			}
 		}
 	}
@@ -514,7 +542,7 @@ func ProcessImageWith(uploadsDir, relPath string, sizes []Size, opts Options) (*
 		resized := resize(src, w, h, sz.Crop, opts.Focal)
 		name := fmt.Sprintf("%s-%dx%d%s", base, w, h, outExt)
 		path := filepath.Join(dir, name)
-		if err := encode(path, resized, out); err != nil {
+		if err := encodeQ(path, resized, out, opts.Quality); err != nil {
 			continue
 		}
 		v := Variant{Name: sz.Name, File: name, Width: w, Height: h, Mime: "image/" + out}
@@ -597,12 +625,15 @@ func resize(src image.Image, w, h int, crop bool, focal *Focal) image.Image {
 	return dst
 }
 
-func encode(path string, img image.Image, format string) error {
+func encode(path string, img image.Image, format string) error { return encodeQ(path, img, format, 0) }
+
+// encodeQ is encode at a quality (0: the default).
+func encodeQ(path string, img image.Image, format string, quality int) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	err = EncodeTo(f, img, format)
+	err = EncodeToQuality(f, img, format, quality)
 	if cerr := f.Close(); err == nil {
 		err = cerr
 	}
@@ -802,14 +833,26 @@ func Resize(img image.Image, w, h int) image.Image { return resize(img, w, h, fa
 // EncodeTo writes img to w in the given format (jpeg, webp, png or gif), at WordPress' default
 // qualities (WP_Image_Editor::get_default_quality(): 82, WebP 86).
 func EncodeTo(w io.Writer, img image.Image, format string) error {
+	return EncodeToQuality(w, img, format, 0)
+}
+
+// EncodeToQuality is EncodeTo at a JPEG/WebP quality from 1 to 100 (0 or out of range: the default).
+// PNG is written with the best compression when a quality is given.
+func EncodeToQuality(w io.Writer, img image.Image, format string, quality int) error {
+	if quality < 1 || quality > 100 {
+		quality = 0
+	}
 	switch format {
 	case "jpeg":
-		return jpeg.Encode(w, img, &jpeg.Options{Quality: 82})
+		return jpeg.Encode(w, img, &jpeg.Options{Quality: cmp.Or(quality, 82)})
 	case "webp":
 		// libwebp transpiled to Go (no cgo; the nodynamic build tag keeps it from loading a system library).
-		return webp.Encode(w, img, webp.Options{Quality: 86, Method: 4})
+		return webp.Encode(w, img, webp.Options{Quality: cmp.Or(quality, 86), Method: 4})
 	case "gif":
 		return gif.Encode(w, img, nil)
+	}
+	if quality > 0 {
+		return (&png.Encoder{CompressionLevel: png.BestCompression}).Encode(w, img)
 	}
 	return png.Encode(w, img)
 }

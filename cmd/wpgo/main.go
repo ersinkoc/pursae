@@ -272,10 +272,24 @@ func confirmUpdate(ctx context.Context, addr string) {
 	if host == "" || host == "0.0.0.0" || host == "::" {
 		host = "127.0.0.1"
 	}
+	parent := ctx
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	if coreupdate.WaitHealthy(ctx, "http://"+net.JoinHostPort(host, port)+"/wp-login") {
 		coreupdate.Confirm(exe, server.Version)
 		log.Printf("core update to %s confirmed", server.Version)
+		return
+	}
+	if parent.Err() != nil {
+		return // shutting down: not a failed update
+	}
+	// Running but never healthy: go back to the previous binary and hand the socket over to it.
+	if coreupdate.Rollback(exe, server.Version) {
+		if err := coreupdate.Restart(exe, 10*time.Second); err != nil {
+			log.Printf("core update: restart into the previous binary failed: %v", err)
+			if coreupdate.Stopped() {
+				os.Exit(1) // the supervisor starts the restored binary
+			}
+		}
 	}
 }

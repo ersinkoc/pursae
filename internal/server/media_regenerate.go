@@ -47,6 +47,9 @@ func (s *Server) regenerateAttachment(ctx context.Context, a *store.Attachment) 
 		mime = a.Mime
 	}
 	opts := s.imageEditorOptions(ctx, path.Base(src), mime)
+	if mark, _ := a.Meta[mediaOptimizedMeta].(map[string]any); mark["after"] != nil && s.mediaOptimizeOn() {
+		s.optimizeOptions(&opts) // an optimized image stays optimized (media_optimize.go)
+	}
 	opts.Reserved = s.uploadReserved(ctx)(strings.TrimPrefix(dir, "."))
 	// The old sub-sizes go first so their names are free again (and removed sizes do not stay behind).
 	for _, v := range oldVariants {

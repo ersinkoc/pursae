@@ -35,6 +35,17 @@
 	height: auto;
 }
 
+/*
+ * Toolbar buttons (Bulk select, and Delete permanently / Cancel in bulk mode): the size of the
+ * "Add Media File" title button and the filter selects next to them (32px), not media-views' 40px.
+ */
+.upload-php .media-frame.mode-grid .media-toolbar-secondary > .media-button {
+	min-height: 32px;
+	line-height: 2.30769231; /* 30px for 32px height */
+	padding: 0 12px;
+	vertical-align: middle;
+}
+
 .upload-php .media-frame.mode-grid .attachments-browser .attachments::after {
 	content: "";
 	display: table;

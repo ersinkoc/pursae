@@ -155,6 +155,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	s.adminsecStart()
 	s.gocdnStartHousekeeping()
 	s.regenerateResume()    // Media: continue an interrupted "Regenerate all" run
+	s.optimizeResume()      // Media › Optimization: continue an interrupted "Optimize existing images" run
 	s.syncSearchStemAsync() // Search: stem in the site language (search_stem.go)
 	return s, nil
 }
@@ -316,6 +317,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/upload", s.mediaLibrary)
 	admin.GET("/media-new", s.mediaNew)
 	admin.POST("/media-new", s.mediaNew)
+	admin.GET("/media-optimization", s.mediaOptimizationPage) // media_optimize.go
+	admin.POST("/media-optimization", s.mediaOptimizationPage)
 	admin.POST("/media-replace", s.mediaReplaceSubmit) // Replace media box of the attachment edit screen (media_replace_admin.go)
 	admin.GET("/async-upload", s.asyncUpload)
 	admin.POST("/async-upload", s.asyncUpload)

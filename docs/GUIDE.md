@@ -231,7 +231,9 @@ docker compose -f docker/compose.yaml restart wpgo
 
 Update to a newer version: a production site shows *Pursae X is available! Please update now.* on
 every admin page and updates from **Dashboard › Updates** in one click (the new binary goes into
-the `bin` volume and survives restarts; migrations run on start). The from-source alternative:
+the `bin` volume and survives restarts; migrations run on start). Turn on **Automatic updates** on
+the same screen to let the daily check install new versions; a version that does not start or
+answer is rolled back to the previous one automatically. The from-source alternative:
 
 ```sh
 git pull && make prod-up    # rebuilds the image; migrations run on start
@@ -367,7 +369,9 @@ first build; make sure Docker has network access. Later builds are cached.
   capabilities with multi-role union and per-user allow/deny (deny wins).
 - **Admin** (WordPress 7.1 markup and CSS, English) — Dashboard, Posts, Pages, Media Library
   (grid with the real `wp.media` modal, list, uploads with image sizes, replacing a file in place with
-  its ID and URL kept, focal points for cropped sizes and cover images), Comments, Appearance
+  its ID and URL kept, focal points for cropped sizes and cover images; Media › Optimization
+  writes uploads as smaller WebP files, keeping or dropping the original, and optimizes the existing
+  library in the background), Comments, Appearance
   (Themes with Live Preview, Customize, Widgets, Menus, Theme File Editor), Plugins, Users,
   Tools (Import/Export WXR, Site Health, personal data export/erase), Settings (General,
   Writing, Reading, Discussion, Media, Permalinks, Privacy), Updates, About.

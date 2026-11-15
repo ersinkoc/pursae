@@ -240,3 +240,64 @@
 </form>{{end}}
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "admin/media-optimization"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>Media Optimization</h1>
+{{template "notices" $}}
+<form method="post" action="/wp-admin/media-optimization" novalidate="novalidate">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr>
+<th scope="row">Automatic optimization</th>
+<td><fieldset><legend class="screen-reader-text"><span>Automatic optimization</span></legend>
+<label for="pursae_media_optimize"><input name="enabled" type="checkbox" id="pursae_media_optimize" value="1"{{if .On}} checked="checked"{{end}} /> Optimize images when they are uploaded</label>
+<p class="description">JPEG, PNG and WebP images are saved as WebP, their sizes included, when that makes them smaller. GIF, SVG and protected files are left as they are.</p>
+</fieldset></td>
+</tr>
+<tr>
+<th scope="row">Original file</th>
+<td><fieldset><legend class="screen-reader-text"><span>Original file</span></legend>
+<label><input type="radio" name="original" value="keep"{{if not .Discard}} checked="checked"{{end}} /> Keep the original and store the optimized copy next to it</label><br />
+<label><input type="radio" name="original" value="discard"{{if .Discard}} checked="checked"{{end}} /> Keep only the optimized file (the original is deleted)</label>
+<p class="description">The original is what &#8220;Regenerate thumbnails&#8221; starts from. Without it, later changes to image sizes are made from the optimized file.</p>
+</fieldset></td>
+</tr>
+<tr>
+<th scope="row"><label for="pursae_media_optimize_quality">Quality</label></th>
+<td><input name="quality" type="number" step="1" min="40" max="95" id="pursae_media_optimize_quality" value="{{.Quality}}" class="small-text" />
+<p class="description">40&ndash;95. Lower is smaller; 80 is hard to tell from the original.</p>
+{{if .WebPAll}}<p class="description">Settings &rsaquo; Media writes every image as WebP, so images are converted even when that is not smaller.</p>{{end}}</td>
+</tr>
+</table>
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+
+<h2>Library</h2>
+{{with .Stats}}
+<table class="widefat striped media-optimization-stats" style="max-width:640px">
+<tbody>
+<tr><td>Images that can be optimized</td><td>{{.Images}}</td></tr>
+<tr><td>Optimized</td><td>{{.Optimized}}{{if .Optimized}} &mdash; {{.Saved}} saved ({{.SavedPercent}}%){{end}}</td></tr>
+<tr><td>Not optimized yet</td><td>{{.Pending}}</td></tr>
+{{if .Skipped}}<tr><td>Skipped (edited, or not on this server)</td><td>{{.Skipped}}</td></tr>{{end}}
+</tbody>
+</table>
+{{end}}
+{{if .Running}}
+{{with .Job}}<p class="media-optimization-progress"><span class="spinner is-active" style="float:none;margin:0 6px 0 0"></span> Optimizing existing images: {{.Percent}}% ({{.Done}} optimized, {{.Skipped}} skipped, {{.Failed}} failed of {{.Total}}).</p>{{end}}
+<form method="post" action="/wp-admin/media-optimization"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="optimize-stop" /><p><input type="submit" class="button" value="Stop" /></p></form>
+<script>setTimeout(function(){location.replace("/wp-admin/media-optimization")},3000)</script>
+{{else}}
+{{with .Job}}{{if .Finished}}<p class="description">Last run: {{.Done}} optimized, {{.Skipped}} skipped, {{.Failed}} failed.</p>{{else if .Stopped}}<p class="description">The last run was stopped after {{.Done}} images.</p>{{end}}{{end}}
+{{if .On}}{{if .Stats.Pending}}
+<form method="post" action="/wp-admin/media-optimization"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="optimize-all" />
+<p><input type="submit" class="button button-primary" id="optimize-all" value="Optimize {{.Stats.Pending}} existing images" /></p>
+<p class="description">Runs in the background. Links to the old files keep working: they redirect to the optimized ones.</p>
+</form>
+{{end}}{{else}}
+<p class="description">Turn on automatic optimization to optimize the images already in the library too.</p>
+{{end}}
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

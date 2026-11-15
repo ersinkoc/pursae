@@ -82,6 +82,11 @@ func (s *Server) imageEditorOptions(ctx context.Context, file, mime string) medi
 func (s *Server) createImageSubsizes(ctx context.Context, a *store.Attachment) string {
 	opts := s.imageEditorOptions(ctx, path.Base(a.FilePath), a.Mime)
 	opts.Reserved = s.uploadReserved(ctx)(strings.TrimPrefix(path.Dir(a.FilePath), "."))
+	optimize := s.mediaOptimizeOn() && mediaOptimizable(a.FilePath, a.Mime) // Media › Optimization (media_optimize.go)
+	if optimize {
+		s.optimizeOptions(&opts)
+	}
+	before := a.FileSize
 	info, err := media.ProcessImageWith(s.cfg.UploadsDir, a.FilePath, s.imageSizes(), opts)
 	if err != nil {
 		slog.Warn("image sizes could not be generated", "file", a.FilePath, "mime", a.Mime, "err", err)
@@ -104,6 +109,10 @@ func (s *Server) createImageSubsizes(ctx context.Context, a *store.Attachment) s
 	for _, v := range info.Variants {
 		a.Variants = append(a.Variants, store.AttachmentVariant{Name: v.Name, FilePath: path.Join(dir, v.File),
 			Width: v.Width, Height: v.Height, Mime: v.Mime, FileSize: v.Size})
+	}
+	if optimize {
+		s.discardOriginal(a) // keep only the optimized file, when the screen says so
+		a.Meta[mediaOptimizedMeta] = optimizedMark(before, info.FileSize, opts.Quality)
 	}
 	if len(info.Variants) == 0 && noSubsizeFormat(a.Mime) {
 		return "No smaller image sizes can be generated for this file format, so the full-size file is used everywhere."
