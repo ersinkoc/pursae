@@ -4,15 +4,18 @@ package db
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/url"
+	"os"
 	"runtime"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -102,8 +105,9 @@ func defaultMaxConns(cpus int) int32 {
 	return int32(min(max(10, 4*cpus), 40))
 }
 
-// Migrate applies every embedded migration that has not run yet, each in its own transaction.
-// A session-level advisory lock keeps concurrent instances from migrating twice.
+// Migrate applies every embedded migration that has not run yet, each in its own transaction with
+// a bounded lock_timeout (see applyMigration). A session-level advisory lock keeps concurrent
+// instances from migrating twice.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 	conn, err := pool.Acquire(ctx)
 	if err != nil {
@@ -129,6 +133,7 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 	}
 	sort.Strings(names)
 
+	settings := loadMigrationSettings()
 	var applied []string
 	for _, name := range names {
 		version := strings.TrimSuffix(strings.TrimPrefix(name, "migrations/"), ".sql")
@@ -143,19 +148,120 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 		if err != nil {
 			return applied, err
 		}
-		err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
-			if _, err := tx.Exec(ctx, string(sql)); err != nil {
+		if err := applyMigration(ctx, conn, version, string(sql), settings); err != nil {
+			return applied, err
+		}
+		applied = append(applied, version)
+	}
+	return applied, nil
+}
+
+// Migration timeouts. A DDL statement such as ALTER TABLE needs an ACCESS EXCLUSIVE lock; during a
+// rolling deploy the old instance may still run a long query on that table, and while the ALTER
+// waits every later reader and writer queues behind it, so live traffic stalls. lock_timeout bounds
+// that wait; the migration is then retried in a fresh transaction a few times before startup fails.
+//
+// statement_timeout is off (0) by default and set explicitly, so a role- or database-level default
+// cannot cut off a data backfill that legitimately runs long on a large site.
+const (
+	defaultMigrationLockTimeout = 5 * time.Second
+	defaultMigrationAttempts    = 5
+)
+
+// migrationRetryBackoff is the wait before the second attempt; it doubles per attempt up to
+// maxMigrationRetryBackoff. Tests shorten it.
+var (
+	migrationRetryBackoff    = time.Second
+	maxMigrationRetryBackoff = 8 * time.Second
+)
+
+// migrationSettings are the per-migration limits applyMigration uses.
+type migrationSettings struct {
+	lockTimeout      time.Duration // 0 disables (PostgreSQL's own meaning of lock_timeout = 0)
+	statementTimeout time.Duration // 0 disables
+	attempts         int           // total tries on lock_not_available, at least 1
+}
+
+// loadMigrationSettings reads WPGO_MIGRATE_LOCK_TIMEOUT and WPGO_MIGRATE_STATEMENT_TIMEOUT (Go
+// durations such as "5s" or "30m"). It lives in this package rather than in main so every caller
+// of Migrate (serve, wpgo migrate, theme previews, tests) gets the same limits. An invalid or
+// negative value falls back to the default.
+func loadMigrationSettings() migrationSettings {
+	return migrationSettings{
+		lockTimeout:      envDuration("WPGO_MIGRATE_LOCK_TIMEOUT", defaultMigrationLockTimeout),
+		statementTimeout: envDuration("WPGO_MIGRATE_STATEMENT_TIMEOUT", 0),
+		attempts:         defaultMigrationAttempts,
+	}
+}
+
+func envDuration(key string, def time.Duration) time.Duration {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return def
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil || d < 0 {
+		return def
+	}
+	return d
+}
+
+// applyMigration runs one migration and records it in schema_migrations, both in one transaction.
+// When the migration cannot get a lock within s.lockTimeout (SQLSTATE 55P03) the transaction has
+// already rolled back, so the whole file is retried in a new one, with backoff, up to s.attempts.
+func applyMigration(ctx context.Context, conn *pgxpool.Conn, version, sql string, s migrationSettings) error {
+	attempts := max(s.attempts, 1)
+	backoff := migrationRetryBackoff
+	for attempt := 1; ; attempt++ {
+		err := pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
+			// SET does not take $1 parameters; the values are formatted durations, not input. SET LOCAL
+			// ends with the transaction, so the pooled connection keeps its own settings. Both run
+			// before the file, so a migration may still override them.
+			if _, err := tx.Exec(ctx, fmt.Sprintf("SET LOCAL lock_timeout = '%dms'", s.lockTimeout.Milliseconds())); err != nil {
+				return err
+			}
+			if _, err := tx.Exec(ctx, fmt.Sprintf("SET LOCAL statement_timeout = '%dms'", s.statementTimeout.Milliseconds())); err != nil {
+				return err
+			}
+			if _, err := tx.Exec(ctx, sql); err != nil {
 				return err
 			}
 			_, err := tx.Exec(ctx, `INSERT INTO schema_migrations(version) VALUES ($1)`, version)
 			return err
 		})
-		if err != nil {
-			return applied, fmt.Errorf("migration %s: %w", version, err)
+		if err == nil {
+			return nil
 		}
-		applied = append(applied, version)
+		if !isLockNotAvailable(err) {
+			return fmt.Errorf("migration %s: %w", version, err)
+		}
+		if attempt >= attempts {
+			return fmt.Errorf("migration %s: lock_timeout exceeded after %d attempts (another session holds a conflicting lock): %w", version, attempt, err)
+		}
+		if err := sleepCtx(ctx, backoff); err != nil {
+			return fmt.Errorf("migration %s: %w", version, err)
+		}
+		backoff = min(backoff*2, maxMigrationRetryBackoff)
 	}
-	return applied, nil
+}
+
+// isLockNotAvailable reports whether err is PostgreSQL's lock_not_available (55P03), which
+// lock_timeout raises.
+func isLockNotAvailable(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "55P03"
+}
+
+// sleepCtx waits d, or returns ctx.Err() as soon as ctx is done.
+func sleepCtx(ctx context.Context, d time.Duration) error {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+		return nil
+	}
 }
 
 // ConnectSchema opens a pool on the database of base whose connections see only the given schema
