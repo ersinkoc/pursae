@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -653,6 +654,7 @@ func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) e
 		qty      int
 	}
 	var done []reduced
+	var failed []string
 	for _, it := range o.ItemsOf("line_item") {
 		if red, _ := it.Meta["_reduced_stock"].(float64); red > 0 {
 			continue // reduced already (an item added in the admin)
@@ -677,6 +679,15 @@ func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) e
 			return &gooStockShortage{Name: s.gooProductTitle(ctx, p), Available: avail}
 		}
 		if err != nil {
+			// wc_reduce_stock_levels(): the order stays marked reduced and the line keeps no
+			// _reduced_stock (so it is not restored later), but the failure is told to the shop in an
+			// order note instead of leaving the inventory silently wrong.
+			log.Printf("goo: reduce stock order %d product %d: %v", o.ID, owner.ID, err)
+			label := s.gooProductTitle(ctx, p)
+			if p.SKU != "" {
+				label += " (" + p.SKU + ")"
+			}
+			failed = append(failed, html.EscapeString(label))
 			continue
 		}
 		done = append(done, reduced{it, p, owner, n})
@@ -696,6 +707,9 @@ func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) e
 	}
 	if len(changes) > 0 {
 		_ = s.gooAddOrderNote(ctx, o, "Stock levels reduced: "+strings.Join(changes, ", "), false, "")
+	}
+	for _, label := range failed {
+		_ = s.gooAddOrderNote(ctx, o, "Unable to reduce stock for item "+label+".", false, "")
 	}
 	return nil
 }
