@@ -157,10 +157,28 @@ tag (a new photo purges everything). A logged-in member's pages carry their form
 never cached. Forum views get a canonical URL (with `/page/N/`) and no shortlink. Pursae SEO does
 not add its head to them.
 
+Instead, public forum views (index, forum, topic, topic lists, profile) print their own tags,
+and only when the view sets a title or description; `noindex` and private views (login, search,
+account and so on) print none:
+
+- `<meta name="description">` from the forum or topic text, whitespace collapsed; over 160
+  characters it is cut to 157 plus "…".
+- Open Graph: `og:type` (`article` on a topic, `website` elsewhere), `og:title`, `og:description`,
+  `og:url` (with `/page/N/`) and `og:site_name` (the site title, translated by Pursae SEO / Pursae
+  Multi Language where that applies).
+- A Twitter card. While Pursae SEO is on and its Titles & Meta › default image is set, that image
+  becomes `og:image` and `twitter:image` with a `summary_large_image` card (a relative path is made
+  absolute against the home URL). For a Media Library upload `og:image:width`/`height` are added
+  when both are known, `og:image:type` when the MIME type is known and `og:image:alt` when the
+  attachment has alt text. Without an image the card is `summary`.
+
+These tags ignore Pursae SEO's Open Graph and X cards on/off switches and its card type: the forum
+always prints them. See `forumSEOHead` and `forumSocialImage` in `internal/server/forum_render.go`.
+
 ## API
 
-- `GET /wp-json/forum/v1/forums`, `/forums/<id>/topics`, `/topics/<id>`, `/topics/<id>/replies`: public,
-  read-only, published content only (`docs/developer/rest-api/endpoints.md`).
+- `GET /wp-json/forum/v1/forums`, `/forums/<id>/topics`, `/topics/<id>`, `/topics/<id>/replies`: public
+  read routes, published content only (`docs/developer/rest-api/endpoints.md`).
 - `/pursae/v1/options/forum`: the settings, like the other built-in plugins.
 - 0.2.5: the community routes listed above (views, presence, likes, solutions, subscriptions,
   reports, previews, drafts, tags, similar topics, statistics, levels, badges, members of the week,
