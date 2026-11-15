@@ -106,6 +106,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 		{slug: "upload", title: "Media", cap: "upload_files", id: "menu-media", icon: "dashicons-admin-media", sub: []subDef{
 			{slug: "upload", title: "Library", cap: "upload_files"},
 			{slug: "media-new", title: "Add Media File", cap: "upload_files"},
+			{slug: "media-optimization", title: "Optimization", cap: "manage_options"},
 		}},
 		{slug: "edit?post_type=page", title: "Pages", cap: "edit_pages", id: "menu-pages", icon: "dashicons-admin-page", sub: []subDef{
 			{slug: "edit?post_type=page", title: "All Pages", cap: "edit_pages", match: []string{"post?post_type=page"}},
@@ -256,6 +257,7 @@ var screenStyles = map[string][]string{
 	"admin/media-grid":           {"pages/media.css"},
 	"admin/media-list":           {"pages/media.css"},
 	"admin/media-new":            {"pages/media.css"},
+	"admin/media-optimization":   {"pages/media.css"},
 	"admin/attachment-edit":      {"pages/media.css"},
 	"admin/plugins":              {},
 	"admin/themes":               {},
