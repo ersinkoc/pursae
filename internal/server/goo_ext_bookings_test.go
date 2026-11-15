@@ -748,3 +748,109 @@ func TestGooExtBookingsGaps(t *testing.T) {
 		t.Errorf("add with booking fields: %d %s", r.Code, r.Raw)
 	}
 }
+
+// TestGooExtBookingsOrderAttach: attaching held bookings to a new order runs under the booking lock.
+// An expired hold whose place was booked by someone else is not revived into a double booking, and an
+// order cannot take over a booking a paid order owns; a checkout retry still moves it.
+func TestGooExtBookingsOrderAttach(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gooShopSetup(t, srv)
+	if err := srv.gooSetExtension(ctx, bkKey, true); err != nil {
+		t.Fatal(err)
+	}
+	p := gooNewProduct(bkType)
+	p.Name = "Single room"
+	p = gxSavePanels(t, srv, p, bkKey, url.Values{"_wc_booking_duration_type": {"fixed"}, "_wc_booking_duration": {"1"}, "_wc_booking_duration_unit": {"day"},
+		"_wc_booking_cost": {"50"}, "_wc_booking_max_date": {"12"}, "_wc_booking_max_date_unit": {"month"}, "_wc_booking_qty": {"1"}})
+	p.Status = "publish"
+	if err := srv.gooSaveProduct(ctx, p, 1); err != nil {
+		t.Fatal(err)
+	}
+	day := gxNextWeekday(time.Wednesday)
+	hold := func() int64 {
+		t.Helper()
+		cart := srv.gooCartFor(gooTestCtx())
+		key, err := cart.Add(ctx, p.ID, 1, 0, nil, map[string][]string{"wc_bookings_field_start_date": {day.Format("2006-01-02")}}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return int64(gxNum(bkItemBooking(cart.Item(key))["_booking_id"]))
+	}
+	order := func(status string, customer int64, bookingID int64) *gooOrder {
+		t.Helper()
+		o := &gooOrder{Status: status, CustomerID: customer, Billing: map[string]string{}, Shipping: map[string]string{}, Meta: map[string]any{},
+			Items: []*gooOrderItem{{Type: "line_item", Name: p.Name, ProductID: p.ID, Quantity: 1, Subtotal: 50, Total: 50,
+				Meta: map[string]any{"_goo_booking": map[string]any{"_booking_id": float64(bookingID)}}}}}
+		srv.gooRecalculate(o)
+		if err := srv.gooSaveOrder(ctx, o, true); err != nil {
+			t.Fatal(err)
+		}
+		return o
+	}
+	setStatus := func(o *gooOrder, status string) {
+		t.Helper()
+		o.Status = status
+		if err := srv.gooSaveOrder(ctx, o, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+	hasNote := func(o *gooOrder, want string) bool {
+		notes, _ := srv.gooOrderNotes(ctx, o.ID, false)
+		for _, n := range notes {
+			if strings.Contains(n.Content, want) {
+				return true
+			}
+		}
+		return false
+	}
+	holding := func() int {
+		var n int
+		_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_bookings WHERE product_id = $1 AND status = ANY($2)`, p.ID, bkHolding).Scan(&n)
+		return n
+	}
+
+	// The first customer's hold expires, a second customer books the place, then the first order lands.
+	first := hold()
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE goo_bookings SET date_created = now() - interval '2 hours' WHERE id = $1`, first)
+	second := hold()
+	o1 := order("pending", 0, first)
+	srv.bkOrderCreated(ctx, o1)
+	if n := holding(); n != 1 {
+		t.Errorf("%d bookings hold the single place, want 1", n)
+	}
+	if b, _ := srv.bkGet(ctx, first); b.Status != "cancelled" || b.OrderID == o1.ID {
+		t.Errorf("expired hold after its place was taken: %s order %d", b.Status, b.OrderID)
+	}
+	if !hasNote(o1, "no longer available") {
+		t.Error("no order note about the lost booking")
+	}
+
+	// The second booking is attached; once its order is processing, another order naming it must not
+	// take it over.
+	o2 := order("pending", 1, second)
+	srv.bkOrderCreated(ctx, o2)
+	if b, _ := srv.bkGet(ctx, second); b.Status != "unpaid" || b.OrderID != o2.ID {
+		t.Fatalf("second booking: %s order %d", b.Status, b.OrderID)
+	}
+	setStatus(o2, "processing")
+	other := order("pending", 1, second)
+	srv.bkOrderCreated(ctx, other)
+	if b, _ := srv.bkGet(ctx, second); b.OrderID != o2.ID || b.Status != "unpaid" {
+		t.Errorf("a booking of a processing order moved to order %d (%s)", b.OrderID, b.Status)
+	}
+	if !hasNote(other, "could not be attached") {
+		t.Error("no order note on the refused order")
+	}
+
+	// A checkout retry: the unpaid booking of the same customer's failed order moves to the new order.
+	setStatus(o2, "failed")
+	retry := order("pending", 1, second)
+	srv.bkOrderCreated(ctx, retry)
+	if b, _ := srv.bkGet(ctx, second); b.OrderID != retry.ID || b.Status != "unpaid" {
+		t.Errorf("a retried checkout did not get its booking: order %d (%s)", b.OrderID, b.Status)
+	}
+	if !hasNote(o2, "moved to order") {
+		t.Error("no note on the abandoned order")
+	}
+}

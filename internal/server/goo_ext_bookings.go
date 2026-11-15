@@ -1188,27 +1188,85 @@ func bkOrderBookingID(it *gooOrderItem) int64 {
 	return 0
 }
 
-// bkOrderCreated attaches the held bookings to the order: unpaid, or pending confirmation.
+// bkOrderCreated attaches the held bookings to the order: unpaid, or pending confirmation. Like every
+// other availability change it runs under the booking lock: a hold that expired before the order was
+// saved may have been booked by someone else meanwhile (an expired hold no longer counts toward
+// capacity), and an order must not take over a booking another order already owns.
 func (s *Server) bkOrderCreated(ctx context.Context, o *gooOrder) {
 	if !s.gooExtOn(bkKey) {
 		return
 	}
 	for _, it := range o.ItemsOf("line_item") {
-		id := bkOrderBookingID(it)
-		if id == 0 {
-			continue
+		if id := bkOrderBookingID(it); id != 0 {
+			s.bkAttachToOrder(ctx, o, it, id) // takes and releases the lock per booking
 		}
-		b, err := s.bkGet(ctx, id)
-		if err != nil {
-			continue
+	}
+}
+
+// bkAttachToOrder attaches one booking to a new order (see bkOrderCreated).
+func (s *Server) bkAttachToOrder(ctx context.Context, o *gooOrder, it *gooOrderItem, id int64) {
+	gone := func() {
+		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d could not be attached: the booked time is no longer available. Please rebook or refund it.", id), false, "")
+	}
+	b, err := s.bkGet(ctx, id)
+	if err != nil {
+		gone() // the hourly job removed the expired hold
+		return
+	}
+	p, err := s.gooGetProduct(ctx, b.ProductID)
+	if err != nil {
+		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d could not be attached: its product is missing.", id), false, "")
+		return
+	}
+	c := bkConfOf(p)
+	ctx, unlock, err := s.bkLock(ctx, p, c)
+	if err != nil {
+		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d could not be attached: the bookings could not be locked. Please check it.", id), false, "")
+		return
+	}
+	defer unlock()
+	if b, err = s.bkGet(ctx, id); err != nil {
+		gone()
+		return
+	}
+	already := b.OrderID == o.ID
+	var prev *gooOrder
+	switch {
+	case already && (b.Status == "in-cart" || b.Status == "unpaid" || b.Status == "pending-confirmation"):
+		// The same order again: idempotent.
+	case b.Status == "in-cart" && b.OrderID == 0:
+	case (b.Status == "unpaid" || b.Status == "pending-confirmation") && b.OrderID != 0:
+		// A checkout retry that made a new order (the cart or the customer changed): the booking moves
+		// from the abandoned unpaid order, never from a paid one or from another customer's.
+		prev, err = s.gooGetOrder(ctx, b.OrderID)
+		if err != nil || !slices.Contains([]string{"pending", "failed", "cancelled", "checkout-draft"}, prev.Status) ||
+			(prev.CustomerID != 0 && prev.CustomerID != o.CustomerID) {
+			_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d could not be attached: it belongs to order #%d.", id, b.OrderID), false, "")
+			return
 		}
-		p, _ := s.gooGetProduct(ctx, b.ProductID)
-		b.OrderID, b.OrderItemID, b.CustomerID = o.ID, it.ID, o.CustomerID
-		b.Status = "unpaid"
-		if p != nil && bkConfOf(p).RequiresConfirm {
-			b.Status = "pending-confirmation"
-		}
-		_ = s.bkUpdate(ctx, b)
+	default:
+		_ = s.gooAddOrderNote(ctx, o, fmt.Sprintf("Booking #%d could not be attached: its status is %s.", id, bkStatusLabel(b.Status)), false, "")
+		return
+	}
+	// An expired hold no longer counts toward capacity, so its place may have been taken meanwhile:
+	// re-checked as bkRevive does. Unpaid and pending bookings always count, so they need no re-check.
+	mins := max(s.gooExtInt(bkKey, "in_cart_minutes"), 1)
+	if b.Status == "in-cart" && time.Since(b.Created) > time.Duration(mins)*time.Minute && !s.bkStillFree(ctx, p, c, b) {
+		_ = s.bkSetStatus(ctx, b, "cancelled")
+		gone()
+		s.bkMail(ctx, "admin_booking_cancelled", b)
+		return
+	}
+	if prev != nil {
+		_ = s.gooAddOrderNote(ctx, prev, fmt.Sprintf("Booking #%d moved to order #%d.", id, o.ID), false, "")
+	}
+	b.OrderID, b.OrderItemID, b.CustomerID = o.ID, it.ID, o.CustomerID
+	b.Status = "unpaid"
+	if c.RequiresConfirm {
+		b.Status = "pending-confirmation"
+	}
+	_ = s.bkUpdate(ctx, b)
+	if !already {
 		s.bkMail(ctx, "new_booking", b)
 	}
 }
