@@ -111,9 +111,10 @@ func (s *Server) startPlugins(ctx context.Context) {
 		}
 		if m, _ := filepath.Glob(filepath.Join(dir, "*.zip")); len(m) > 0 {
 			ps.market = m
-			if pub, err := os.ReadFile(filepath.Join(dir, "dev-key.pub")); err == nil && os.Getenv("WPGO_TRUST_DEV_KEY") == "1" {
+			if pub, err := os.ReadFile(filepath.Join(dir, "dev-key.pub")); err == nil && devTrustDevKey() { //nolint:gosec // G703: the market directory is operator configuration
 				if k, err := plugins.ParsePublicKey(lastLine(string(pub))); err == nil {
 					ps.envKeys = append(ps.envKeys, k)
+					slog.Warn("WPGO_TRUST_DEV_KEY=1: plugins signed with the public demo key are trusted; development only, set it to 0 in production", "key", filepath.Join(dir, "dev-key.pub"))
 				}
 			}
 			break
@@ -1021,6 +1022,13 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 			fail(errors.New("Sorry, you are not allowed to delete plugins on this site."))
 			return
 		}
+		// Like WordPress, an active plugin is deactivated before it can be deleted (the screen hides the
+		// link, but the request can still be sent).
+		var status string
+		if err := s.store.Pool.QueryRow(ctx, `SELECT status FROM plugins WHERE slug = $1`, slug).Scan(&status); err != nil || status == "active" {
+			fail(errors.New("Deactivate the plugin before deleting it."))
+			return
+		}
 		s.uninstallPluginHook(ctx, slug)
 		if s.plugins.rt != nil {
 			_ = s.plugins.rt.Unload(ctx, slug)
@@ -1131,8 +1139,11 @@ func (s *Server) pluginReplaceReason(installed, installedSigner string, pkg *plu
 		return fmt.Sprintf("the package is %s %s, older than the installed version %s", m.Name, m.Version, installed)
 	}
 	signer := pluginSigner(pkg)
-	if installedSigner == "" || signer == installedSigner {
+	if signer == installedSigner {
 		return ""
+	}
+	if installedSigner == "" { // a local unsigned build: a publisher's package of the same slug is another plugin
+		return fmt.Sprintf("the installed %s is unsigned (a local build), the package is signed by a publisher", m.Name)
 	}
 	if old, err := hex.DecodeString(installedSigner); err == nil && pkg.SignedBy != nil &&
 		s.plugins.isHubKey(ed25519.PublicKey(old)) && s.plugins.isHubKey(pkg.SignedBy) {
@@ -1166,6 +1177,9 @@ func (s *Server) installPackageChecked(ctx context.Context, data []byte, source,
 		return nil, err
 	}
 	slug := pkg.Manifest.Slug
+	if !pkg.Verified() {
+		slog.Warn("installing a plugin package whose signature was not verified (plugin_allow_unsigned is on; development only)", "plugin", slug)
+	}
 	if wantSlug != "" && slug != wantSlug {
 		return nil, fmt.Errorf("the package is the plugin %q, not %q", slug, wantSlug)
 	}
@@ -1179,13 +1193,26 @@ func (s *Server) installPackageChecked(ctx context.Context, data []byte, source,
 			return nil, &pluginReplaceError{Slug: slug, Reason: reason}
 		}
 	}
-	if err := writeFileAtomic(filepath.Join(s.plugins.dir, slug+".zip"), data, 0o644); err != nil {
+	zipPath := filepath.Join(s.plugins.dir, slug+".zip")
+	prev, prevErr := os.ReadFile(zipPath) //nolint:gosec // G703: slug passed manifest validation
+	if err := writeFileAtomic(zipPath, data, 0o644); err != nil {
 		return nil, err
 	}
+	// A Hub plugin stays a Hub plugin when the same Hub-signed package is uploaded over it: otherwise the
+	// upload would silently stop its updates. A package from another publisher (confirmed) is an upload.
+	hubSigned := pkg.SignedBy != nil && s.plugins.isHubKey(pkg.SignedBy)
 	_, err = s.store.Pool.Exec(ctx, `INSERT INTO plugins (slug, version, signature, source, signer) VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT (slug) DO UPDATE SET version = EXCLUDED.version, signature = EXCLUDED.signature, source = EXCLUDED.source, signer = EXCLUDED.signer, updated_at = now()`,
-		slug, pkg.Manifest.Version, fmt.Sprintf("%x", pkg.Digest), source, pluginSigner(pkg))
+		ON CONFLICT (slug) DO UPDATE SET version = EXCLUDED.version, signature = EXCLUDED.signature,
+			source = CASE WHEN plugins.source = 'hub' AND $6 THEN plugins.source ELSE EXCLUDED.source END,
+			signer = EXCLUDED.signer, updated_at = now()`,
+		slug, pkg.Manifest.Version, fmt.Sprintf("%x", pkg.Digest), source, pluginSigner(pkg), hubSigned)
 	if err != nil {
+		// Keep the disk in step with the database: the row still names the previous package.
+		if prevErr == nil {
+			_ = writeFileAtomic(zipPath, prev, 0o644)
+		} else if before == "" {
+			_ = os.Remove(zipPath) //nolint:gosec // G703: slug passed manifest validation
+		}
 		return nil, err
 	}
 	if before == "" {

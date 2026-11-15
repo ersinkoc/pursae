@@ -69,7 +69,8 @@ Trusted keys come from `WPGO_PLUGIN_KEYS` (comma-separated), the `plugin_trusted
 (both read at start-up), the Manager's key list (replaced on every index refresh, so a key the
 Manager stops listing stops being trusted; with a pinned release root key only keys the root
 endorsed, see [Pursae Manager](../hub/index.md#root-of-trust)), and — in development only — the
-`dev-key.pub` next to the example packages when `WPGO_TRUST_DEV_KEY=1`.
+`dev-key.pub` next to the example packages when `WPGO_TRUST_DEV_KEY=1` (read by `-tags devhub`
+builds only).
 
 ## Updates and the signer
 
