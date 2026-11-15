@@ -28,6 +28,7 @@ type installView struct {
 	SiteTitle, UserName, Password string
 	Email                         string
 	Discourage                    bool
+	UpdateEmails                  bool // the owner ticked "Email me Pursae product updates" (off by default, hub_contacts.go)
 	Submitted                     bool // re-rendered after a POST: keep the password masked, like WordPress
 	// The language step (wp-admin/install.php?step=0): the languages to choose from, the choice,
 	// and a failed pack download.
@@ -83,13 +84,14 @@ func (s *Server) installSubmit(c *gin.Context) {
 		return
 	}
 	v := installView{
-		SiteTitle:  strings.TrimSpace(c.PostForm("weblog_title")),
-		UserName:   strings.TrimSpace(c.PostForm("user_name")),
-		Password:   c.PostForm("admin_password"),
-		Email:      strings.TrimSpace(c.PostForm("admin_email")),
-		Discourage: c.PostForm("blog_public") == "0",
-		Submitted:  true,
-		Language:   c.PostForm("language"),
+		SiteTitle:    strings.TrimSpace(c.PostForm("weblog_title")),
+		UserName:     strings.TrimSpace(c.PostForm("user_name")),
+		Password:     c.PostForm("admin_password"),
+		Email:        strings.TrimSpace(c.PostForm("admin_email")),
+		Discourage:   c.PostForm("blog_public") == "0",
+		UpdateEmails: c.PostForm("pursae_update_emails") == "1",
+		Submitted:    true,
+		Language:     c.PostForm("language"),
 	}
 	switch {
 	case v.UserName == "":
@@ -168,8 +170,9 @@ func (s *Server) install(ctx context.Context, v installView) error {
 	if err != nil {
 		return err
 	}
-	// The install screen told the owner their address is kept for Pursae update e-mails (hub_contacts.go).
-	if _, err := s.store.Pool.Exec(ctx, `UPDATE users SET meta = meta || jsonb_build_object($2::text, true) WHERE id = $1`, userID, updateEmailsMeta); err != nil {
+	// The owner's own choice on the install screen (an unticked box by default): on records the time of
+	// consent, off counts as asked so no opt-in notice follows (hub_contacts.go).
+	if err := s.setUpdateEmails(ctx, &store.User{ID: userID}, v.UpdateEmails); err != nil {
 		return err
 	}
 

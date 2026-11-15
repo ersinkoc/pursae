@@ -81,11 +81,7 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 		d.ShowToolbar = v
 	}
 	d.UpdateEmailsRow = updateEmailsEligible(target)
-	if v, ok := target.Meta[updateEmailsMeta].(bool); ok {
-		d.UpdateEmails = v
-	} else {
-		d.UpdateEmails = true // the default once the user has been told
-	}
+	d.UpdateEmails = updateEmailsOn(target) // off unless the user opted in (hub_contacts.go)
 	d.Locale, _ = target.Meta["locale"].(string)
 	d.Languages, _ = s.languageChoices(d.Locale, true)
 	d.ShowEditorChoice, d.DefaultEditor = s.classicSwitchAllowed(), s.userDefaultEditor(target)
@@ -330,7 +326,15 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	}
 	_ = s.setUserMeta(c, target, "show_admin_bar_front", c.PostForm("admin_bar_front") == "1")
 	if _, shown := c.GetPostForm("pursae_update_emails_shown"); shown && updateEmailsEligible(target) {
-		_ = s.setUserMeta(c, target, updateEmailsMeta, c.PostForm("pursae_update_emails") == "1") // hub_contacts.go
+		// Consent is the user's own: only they can turn update e-mails on (recording the time); anyone
+		// who may edit the profile can turn them off (hub_contacts.go).
+		want, on := c.PostForm("pursae_update_emails") == "1", updateEmailsOn(target)
+		switch {
+		case want && !on && self:
+			_ = s.setUpdateEmails(c, target, true)
+		case !want && (self || on): // another user who never opted in keeps being asked by the notice
+			_ = s.setUpdateEmails(c, target, false)
+		}
 	}
 	if loc, ok := c.GetPostForm("locale"); ok {
 		if loc == "site-default" {

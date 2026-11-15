@@ -105,8 +105,18 @@
 		<tr>
 			<th scope="row"><label for="admin_email">Your Email</label></th>
 			<td><input name="admin_email" type="email" id="admin_email" size="25" aria-describedby="admin-email-desc" value="{{.Email}}" />
-			<p id="admin-email-desc">Double-check your email address before continuing.</p>
-			<p class="description">Pursae keeps this address to send you Pursae product updates. You can turn this off any time in your user profile.</p></td>
+			<p id="admin-email-desc">Double-check your email address before continuing.</p></td>
+		</tr>
+		<tr>
+			<th scope="row">Pursae updates</th>
+			<td>
+				<fieldset>
+					<legend class="screen-reader-text"><span>Pursae updates</span></legend>
+					<label for="pursae_update_emails"><input name="pursae_update_emails" type="checkbox" id="pursae_update_emails" aria-describedby="pursae-update-emails-desc" value="1" {{if .UpdateEmails}}checked="checked"{{end}} />
+					Email me Pursae product updates</label>
+					<p id="pursae-update-emails-desc" class="description">Optional. Pursae keeps this address only if you tick the box. You can change this later in your user profile.</p>
+				</fieldset>
+			</td>
 		</tr>
 		<tr>
 			<th scope="row">Search engine visibility</th>
