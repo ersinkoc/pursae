@@ -228,8 +228,9 @@ func TestUpdateEmailsProfileConsent(t *testing.T) {
 	if _, err := srv.store.Pool.Exec(ctx, `UPDATE users SET meta = (meta - 'pursae_update_emails') || '{"locale":"tr_TR"}'`); err != nil {
 		t.Fatal(err)
 	}
+	srv.cfg.HubURL = "http://127.0.0.1:1" // the opt-in notice shows only when a Manager is configured (never reached here)
 	_, body, _ = get(t, c, ts.URL+"/wp-admin/")
-	if !strings.Contains(body, "e-posta adresinizi (<code>") || !strings.Contains(body, ">Bunu profilinizden değiştirin</a>") {
+	if !strings.Contains(body, "Pursae ürün güncelleme e-postalarını <code>") || !strings.Contains(body, ">Profilinizden açın</a>") {
 		t.Errorf("update e-mails notice not in Turkish")
 	}
 }
