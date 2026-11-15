@@ -32,6 +32,20 @@
 	</tr>
 </table>
 <p class="step"><a href="/wp-login" class="button button-large">Log In</a></p>
+{{else if .NeedToken}}
+<h1>Setup token</h1>
+<p>To keep strangers from installing this site before you do, the installer asks for the setup token.</p>
+<p>Open the install link printed in the server log when Pursae started, or enter the token below: it is the <code>WPGO_SETUP_TOKEN</code> setting if you set one, otherwise run <code>wpgo setup-token</code> on the server to print a new link.</p>
+{{if .Error}}<p class="message" role="alert">{{.Error}}</p>{{end}}
+<form id="setup" method="get" action="/wp-admin/install">
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row"><label for="setup_token">Setup token</label></th>
+			<td><input name="token" type="password" id="setup_token" size="40" autocomplete="off" spellcheck="false" required /></td>
+		</tr>
+	</table>
+	<p class="step"><input type="submit" id="submit" class="button button-large" value="Continue" /></p>
+</form>
 {{else if .ChooseLanguage}}
 <h1 class="screen-reader-text">Select a default language</h1>
 {{if .Error}}<p class="message">{{.Error}}</p>{{end}}

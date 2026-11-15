@@ -24,6 +24,7 @@ var privacyPolicyContent string
 
 type installView struct {
 	Done                          bool
+	NeedToken                     bool // the setup token form (setup_token.go)
 	Error                         string
 	SiteTitle, UserName, Password string
 	Email                         string
@@ -47,6 +48,9 @@ var errAlreadyInstalled = errors.New("the site is already installed")
 func (s *Server) installForm(c *gin.Context) {
 	if s.settings.Installed() {
 		c.Redirect(http.StatusFound, "/wp-login")
+		return
+	}
+	if !s.setupGate(c) {
 		return
 	}
 	lang := c.Query("language")
@@ -80,6 +84,9 @@ func (s *Server) installLanguageStep(errMsg string) installView {
 func (s *Server) installSubmit(c *gin.Context) {
 	if s.settings.Installed() {
 		c.Redirect(http.StatusFound, "/wp-login")
+		return
+	}
+	if !s.setupGate(c) {
 		return
 	}
 	v := installView{
@@ -239,7 +246,12 @@ func (s *Server) install(ctx context.Context, v installView) error {
 	values["blog_public"] = !v.Discourage
 	values["wp_page_for_privacy_policy"] = privacyID
 	values["fresh_site"] = true
-	return s.settings.Set(ctx, values)
+	if err := s.settings.Set(ctx, values); err != nil {
+		return err
+	}
+	// The site is installed: the setup token, and every cookie that remembers it, stops working.
+	_, err = conn.Exec(ctx, `DELETE FROM setup_token`)
+	return err
 }
 
 func (s *Server) seedWidgets(ctx context.Context) error {

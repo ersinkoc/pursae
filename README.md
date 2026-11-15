@@ -41,8 +41,10 @@ cp docker/.env.example docker/.env    # set WPGO_DB_PASSWORD, WPGO_SITE_URL (htt
 make prod-up                          # → 127.0.0.1:8088; point Caddy or nginx at it
 ```
 
-Open your `https://` address right away and finish the installer: until then anyone who reaches the
-site can run it. Updates arrive in **Dashboard › Updates** (one click); data lives in Docker volumes.
+The installer is locked with a setup token: open the install link the server prints on its first start
+(`make prod-logs`, a line like `https://example.com/wp-admin/install?token=…`), or set your own
+`WPGO_SETUP_TOKEN` in `docker/.env`. Lost the link? `docker compose -f docker/compose.yaml -f
+docker/compose.prod.yaml exec wpgo wpgo setup-token` prints a new one. Updates arrive in **Dashboard › Updates** (one click); data lives in Docker volumes.
 
 **On your machine** (development build to try it out; it does not talk to hub.pursae.com):
 

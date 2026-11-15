@@ -130,7 +130,7 @@ func newCountingTestServer(t *testing.T) (*httptest.Server, *http.Client, *Serve
 	}
 	ts := httptest.NewUnstartedServer(nil)
 	srv, err := New(ctx, config.Config{SiteURL: "http://" + ts.Listener.Addr().String(), UploadsDir: t.TempDir(), WebDir: "../../web",
-		ThemeLibraryDir: "../../library/themes"}, pool)
+		ThemeLibraryDir: "../../library/themes", SetupToken: testSetupToken}, pool)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,9 @@ func newCountingTestServer(t *testing.T) (*httptest.Server, *http.Client, *Serve
 	ts.Start()
 	t.Cleanup(ts.Close)
 	jar, _ := cookiejar.New(nil)
-	return ts, &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, srv, qc
+	c := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	openSetupLink(t, c, ts.URL)
+	return ts, c, srv, qc
 }
 
 // seedPerfPosts adds n posts with two categories, two tags and a featured image each, by an

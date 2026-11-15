@@ -15,7 +15,10 @@ type Config struct {
 	SiteURL     string // public base URL without trailing slash, used on first install
 	UploadsDir  string
 	Secret      string // optional; generated and stored in settings when empty
-	WebDir      string // when set, web assets and templates are read from this directory and reloaded per request
+	// SetupToken (WPGO_SETUP_TOKEN) guards /wp-admin/install until the site is installed. Empty: the
+	// server generates one on an uninstalled site and prints the install URL (`wpgo setup-token` issues a new one).
+	SetupToken string
+	WebDir     string // when set, web assets and templates are read from this directory and reloaded per request
 	// HubURL is Pursae Manager (marketplace, licenses, release checks, statistics): always DefaultHubURL.
 	// Only a development build (-tags devhub) can point it elsewhere, with WPGO_DEV_HUB_URL
 	// (config_devhub.go); "off" there disables it.
@@ -49,6 +52,7 @@ func Load() Config {
 		SiteURL:         strings.TrimRight(env("WPGO_SITE_URL", "http://localhost:8080"), "/"),
 		UploadsDir:      env("WPGO_UPLOADS_DIR", "./data/uploads"),
 		Secret:          os.Getenv("WPGO_SECRET"),
+		SetupToken:      strings.TrimSpace(os.Getenv("WPGO_SETUP_TOKEN")),
 		WebDir:          os.Getenv("WPGO_WEB_DIR"),
 		HubURL:          hubURL(),
 		HubOff:          hubOff(os.Getenv("WPGO_HUB")),

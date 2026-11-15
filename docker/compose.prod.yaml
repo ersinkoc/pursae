@@ -36,6 +36,7 @@ services:
       WPGO_TRUST_DEV_KEY: "0"
       WPGO_PLUGIN_KEYS: ${WPGO_PLUGIN_KEYS:-}
       WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-}
+      WPGO_SETUP_TOKEN: ${WPGO_SETUP_TOKEN:-}
     ports: !override
       - "${WPGO_BIND:-127.0.0.1}:${WPGO_PORT:-8088}:8080"
     restart: unless-stopped
