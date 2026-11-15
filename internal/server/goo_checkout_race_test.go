@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -150,4 +151,83 @@ func TestGooCheckoutDoubleSubmitDraft(t *testing.T) {
 	if used != 1 {
 		t.Errorf("used activity rows: %d", used)
 	}
+}
+
+// A draft refresh (GET or PUT /checkout) that read the draft before a checkout of the same session
+// placed it must not write its stale cart and addresses over the placed order.
+func TestGooStoreDraftRefreshAfterPlaced(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	lamp := gooMakeSimple(t, srv, "Lamp", 100, func(p *gooProduct) { p.Virtual = true })
+	c := gooTestCtx()
+	cart := srv.gooCartFor(c)
+	cart.sess.Data.Customer.Billing = map[string]string{"country": "US", "email": "stale@example.test"}
+	if _, err := cart.Add(ctx, lamp.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	draft := srv.gooStoreDraftOrder(c)
+	if draft == nil {
+		t.Fatal("no draft")
+	}
+	stale := gooSessionCopy(t, c, srv) // the GET's session: still holds the draft key, nothing awaiting payment
+
+	// The checkout places the draft while the refresh is between its read and its save: the
+	// checkout's transaction holds the row when the refresh reaches it.
+	tx, err := srv.store.Pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	placed, _ := srv.gooGetOrder(ctx, draft.ID)
+	placed.Status, placed.CreatedVia = "pending", "checkout"
+	placed.Billing = map[string]string{"country": "US", "email": "placed@example.test", "first_name": "Placed"}
+	placed.Items[0].Meta["_reduced_stock"] = 1
+	if err := srv.gooSaveOrderTx(ctx, tx, placed, true); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan *gooOrder)
+	go func() { done <- srv.gooStoreDraftOrder(stale) }()
+	gooWaitLockWaiter(t, srv)
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if got := <-done; got != nil {
+		t.Errorf("the refresh returned order %d", got.ID)
+	}
+	o, err := srv.gooGetOrder(ctx, draft.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.Status != "pending" || o.CreatedVia != "checkout" || o.Billing["email"] != "placed@example.test" {
+		t.Errorf("placed order overwritten: %s %s %v", o.Status, o.CreatedVia, o.Billing)
+	}
+	if len(o.Items) != 1 || o.Items[0].ID != placed.Items[0].ID || gooInt(o.Items[0].Meta["_reduced_stock"]) != 1 {
+		t.Errorf("placed order items replaced: %+v", o.Items)
+	}
+	if gooInt(srv.gooSessionFor(stale).Data.Extra[gooDraftKey]) != draft.ID {
+		t.Error("the refresh changed the session it lost to the checkout")
+	}
+
+	// A checkout from that stale session does not save over the placed order either.
+	if _, errs := gxCheckout(t, srv, gooSessionCopy(t, stale, srv), "goo_test"); len(errs) == 0 {
+		t.Error("a second checkout of the placed draft succeeded")
+	}
+	if o2, _ := srv.gooGetOrder(ctx, draft.ID); o2.Billing["email"] != "placed@example.test" || len(o2.Items) != 1 || o2.Items[0].ID != placed.Items[0].ID {
+		t.Errorf("placed order overwritten by the second checkout: %v %+v", o2.Billing, o2.Items)
+	}
+}
+
+// gooWaitLockWaiter waits until a connection is blocked on a row lock.
+func gooWaitLockWaiter(t *testing.T, srv *Server) {
+	t.Helper()
+	for range 500 {
+		var n int
+		_ = srv.store.Pool.QueryRow(context.Background(), `SELECT count(*) FROM pg_locks WHERE NOT granted`).Scan(&n)
+		if n > 0 {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("nothing waited on the row lock")
 }
