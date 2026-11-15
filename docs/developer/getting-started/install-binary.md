@@ -30,15 +30,18 @@ export WPGO_UPLOADS_DIR=/var/lib/wpgo/uploads
 
 On start the server runs the database migrations (under an advisory lock, so several instances
 can start at once), creates the uploads directory and listens on `WPGO_ADDR` (default `:8080`).
-Open the site and the [installer](first-site.md) appears.
+On a site that is not installed yet it also prints the install link with the setup token
+(`http://localhost:8080/wp-admin/install?token=…`): open it and the [installer](first-site.md)
+appears. `wpgo setup-token` prints a new link; `WPGO_SETUP_TOKEN` sets the token yourself.
 
-The binary has three commands:
+The main commands:
 
 | Command | Does |
 |---------|------|
 | `wpgo serve` | migrate, then serve (the default) |
 | `wpgo migrate` | apply pending migrations and exit |
 | `wpgo version` | print the version |
+| `wpgo setup-token` | print the install link with the setup token (a new token unless `WPGO_SETUP_TOKEN` is set; the old link stops working) |
 
 ## Development mode
 

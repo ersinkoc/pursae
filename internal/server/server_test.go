@@ -44,6 +44,18 @@ func testServerBuilderOff(t *testing.T) (*httptest.Server, *http.Client, *Server
 // response), so the builder tests, which install the site themselves, find the plugin active.
 func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, *Server) {
 	t.Helper()
+	return newTestServerSetup(t, builder, testSetupToken)
+}
+
+// testSetupToken is the WPGO_SETUP_TOKEN of the test servers. newTestServer's client has entered it
+// (the installer's cookie is in its jar), so tests install the site as an owner holding the token would.
+const testSetupToken = "test-setup-token-0123456789"
+
+// newTestServerSetup is newTestServer with setupToken as WPGO_SETUP_TOKEN. With a token the returned
+// client has already opened the install link (?token=); with "" the server generates nothing until the
+// test calls EnsureSetupToken, and the client holds no setup cookie.
+func newTestServerSetup(t *testing.T, builder bool, setupToken string) (*httptest.Server, *http.Client, *Server) {
+	t.Helper()
 	adminURL, testURL := os.Getenv("WPGO_TEST_ADMIN_DB"), os.Getenv("WPGO_TEST_DB")
 	if adminURL == "" || testURL == "" {
 		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
@@ -80,7 +92,7 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 		t.Fatal(err)
 	}
 	// The theme library is read from the repository (library/themes), not from Pursae Manager.
-	cfg := config.Config{SiteURL: "http://example.test", UploadsDir: t.TempDir(), WebDir: "../../web", ThemeLibraryDir: "../../library/themes"}
+	cfg := config.Config{SiteURL: "http://example.test", UploadsDir: t.TempDir(), WebDir: "../../web", ThemeLibraryDir: "../../library/themes", SetupToken: setupToken}
 	ts := httptest.NewUnstartedServer(nil)
 	cfg.SiteURL = "http://" + ts.Listener.Addr().String()
 	srv, err := New(ctx, cfg, pool)
@@ -111,7 +123,18 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 	t.Cleanup(ts.Close)
 	jar, _ := cookiejar.New(nil)
 	client := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	if setupToken != "" {
+		openSetupLink(t, client, ts.URL)
+	}
 	return ts, client, srv
+}
+
+// openSetupLink opens the install link with testSetupToken, so the client's jar holds the setup cookie.
+func openSetupLink(t *testing.T, c *http.Client, base string) {
+	t.Helper()
+	if code, _, loc := get(t, c, base+"/wp-admin/install?token="+url.QueryEscape(testSetupToken)); code != http.StatusSeeOther || loc != "/wp-admin/install" {
+		t.Fatalf("open the install link: %d -> %q", code, loc)
+	}
 }
 
 // closeTestServer closes srv when the test ends. Registered after the pool's cleanup and before

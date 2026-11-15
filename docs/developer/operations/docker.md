@@ -84,7 +84,9 @@ Also:
 
 - Put a TLS-terminating proxy in front and set `WPGO_SITE_URL` to the `https://` address
   ([reverse proxy and TLS](reverse-proxy-and-tls.md)).
-- Finish the installer right after the site goes live: until then anyone who reaches it can run it.
+- The installer asks for the setup token: open the link the server prints on its first start
+  (`docker compose logs wpgo`), set `WPGO_SETUP_TOKEN`, or print a new link with
+  `docker compose exec wpgo wpgo setup-token`.
 - Set `WPGO_SECRET` explicitly if you run more than one `wpgo` replica.
 
 ## Health checks

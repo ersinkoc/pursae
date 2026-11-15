@@ -28,7 +28,7 @@ func TestInstallErrorAccessible(t *testing.T) {
 	ts, _, srv := testServerBuilderOff(t)
 	post := func(email string) string {
 		resp, err := http.PostForm(ts.URL+"/wp-admin/install?step=2", url.Values{
-			"weblog_title": {"A11y"}, "user_name": {"admin"}, "admin_password": {"correct horse"}, "admin_email": {email},
+			"setup_token": {testSetupToken}, "weblog_title": {"A11y"}, "user_name": {"admin"}, "admin_password": {"correct horse"}, "admin_email": {email},
 		})
 		if err != nil {
 			t.Fatal(err)

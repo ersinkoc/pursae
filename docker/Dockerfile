@@ -30,6 +30,8 @@ RUN ln -s /usr/local/lib/pursae/wpgo /usr/local/bin/wpgo
 COPY examples/plugins/dis[t]/*.zip examples/plugins/dis[t]/dev-key.pub /usr/share/wpgo/plugins/
 USER wpgo
 ENV WPGO_BIN_DIR=/data/bin
+# The installer asks for a setup token: WPGO_SETUP_TOKEN, or the one the server prints in its log on a
+# fresh site (`docker exec <container> wpgo setup-token` prints a new install link).
 EXPOSE 8080
 # Liveness: GET /healthz on WPGO_ADDR through the binary itself (no curl in the image). The start
 # period covers the migrations a new version runs before it listens.

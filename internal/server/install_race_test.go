@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// Installer submissions that race create one administrator: the others find the site installed.
+// Installer submissions that race (each client without the setup cookie, so each sends the token) create one administrator: the others find the site installed.
 func TestInstallRaceCreatesOneAdmin(t *testing.T) {
 	ts, _, srv := testServerBuilderOff(t)
 	noRedirect := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
@@ -19,7 +19,7 @@ func TestInstallRaceCreatesOneAdmin(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			resp, err := noRedirect.PostForm(ts.URL+"/wp-admin/install?step=2", url.Values{
-				"weblog_title": {"Race"}, "user_name": {"admin" + strconv.Itoa(i)}, "admin_password": {"correct horse"},
+				"setup_token": {testSetupToken}, "weblog_title": {"Race"}, "user_name": {"admin" + strconv.Itoa(i)}, "admin_password": {"correct horse"},
 				"admin_email": {"admin" + strconv.Itoa(i) + "@example.test"},
 			})
 			if err == nil {

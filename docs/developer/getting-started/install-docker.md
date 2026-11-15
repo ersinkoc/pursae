@@ -23,8 +23,9 @@ make prod-up                         # site on 127.0.0.1:8088; point Caddy or ng
 Without `make`:
 `docker compose --env-file docker/.env -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build`.
 `make prod-logs` follows the log, `make prod-down` stops the stack (data is kept). Put a TLS proxy in
-front ([reverse proxy and TLS](../operations/reverse-proxy-and-tls.md)), then open the `https://`
-address and finish the installer **right away**: until then anyone who reaches the site can run it.
+front ([reverse proxy and TLS](../operations/reverse-proxy-and-tls.md)), then open the install link
+the server printed (`make prod-logs`: `https://…/wp-admin/install?token=…`) and finish the installer.
+The setup token keeps strangers out of it; set your own with `WPGO_SETUP_TOKEN` in `docker/.env`.
 What the production file changes: [Docker](../operations/docker.md#production-changes).
 
 ## On your machine
@@ -46,7 +47,8 @@ for a local Pursae Manager instead), uses the test database password `wpgo` and 
 plugin signing key. Use it to try Pursae, not to run a site.
 
 The first build downloads Go modules and compiles the binary, so it takes a minute or two. When
-it finishes, open **http://localhost:8088** — you land on the installer
+it finishes, open the install link from `docker compose -f docker/compose.yaml logs wpgo`
+(`http://localhost:8088/wp-admin/install?token=…`) — you land on the installer
 ([Your first site](first-site.md)).
 
 | Service | What it is | Host port |

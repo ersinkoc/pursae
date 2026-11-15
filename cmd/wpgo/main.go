@@ -92,6 +92,11 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println(out)
+	case "setup-token": // print the install URL with the setup token (a new token unless WPGO_SETUP_TOKEN is set)
+		if err := setupToken(ctx, cfg, os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, "wpgo setup-token:", err)
+			os.Exit(1)
+		}
 	case "headless": // Pursae Headless: export / import entries as NDJSON
 		pool, err := db.Connect(ctx, cfg.DatabaseURL)
 		if err != nil {
@@ -104,7 +109,7 @@ func main() {
 		}
 	default:
 		flag.Usage = func() {
-			fmt.Fprintln(os.Stderr, "usage: wpgo [serve|launch|migrate|version|healthcheck|adminsec|mcp|headless]")
+			fmt.Fprintln(os.Stderr, "usage: wpgo [serve|launch|migrate|version|healthcheck|setup-token|adminsec|mcp|headless]")
 		}
 		flag.Usage()
 		os.Exit(2)
@@ -133,6 +138,7 @@ func serve(ctx context.Context, cfg config.Config) error {
 		pool.Close()
 		return err
 	}
+	announceSetupToken(ctx, cfg, srv)
 	httpSrv := newHTTPServer(cfg.Addr, srv.Handler())
 	// Shutdown order: stop accepting and drain requests, then stop the scheduler (its jobs finish or
 	// go back to the queue), then the background writers, then the database pool.

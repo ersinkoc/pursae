@@ -42,7 +42,8 @@ docker compose -f docker/compose.yaml up -d --build
 ```
 
 The first build downloads Go modules and compiles the binary, so give it a minute or two.
-When it finishes, open **http://localhost:8088** — you will land on the installer.
+When it finishes, run `docker compose -f docker/compose.yaml logs wpgo` and open the install link it
+printed (`http://localhost:8088/wp-admin/install?token=…`) — you will land on the installer.
 
 | Service | What it is | Host port |
 |---------|------------|-----------|
@@ -75,8 +76,11 @@ WordPress' five-minute install:
 4. Whether to ask search engines not to index the site
 
 The installer creates "Hello world!", its first comment, the Sample Page, a draft Privacy
-Policy page and the default sidebar widgets. On a server, run the installer **right after the site
-goes live**: until it is done, anyone who reaches the site can run it and become its administrator.
+Policy page and the default sidebar widgets. The installer asks for the **setup token** first, so a stranger who reaches a fresh site cannot
+install it and become its administrator: open the link the server prints in its log on the first
+start (`…/wp-admin/install?token=…`), or set `WPGO_SETUP_TOKEN` yourself and enter it on the token
+screen. `wpgo setup-token` (`docker compose exec wpgo wpgo setup-token`) prints a new link; the
+token stops working once the site is installed.
 Then sign in at `/wp-login` and you are in the
 admin (`/wp-admin/`).
 
@@ -306,8 +310,8 @@ Back up the database first; see [Upgrading](./developer/getting-started/upgradin
   ```
 
   For real plugins list your own signing keys in `WPGO_PLUGIN_KEYS`.
-- Open the `https://` address and finish the installer **right away**: until then anyone who
-  reaches the site can run it.
+- Open the install link from the log (`make prod-logs`) and finish the installer; it asks for the
+  setup token (`WPGO_SETUP_TOKEN`, or the generated one), so nobody else can run it.
 - Configure SMTP (`WPGO_SMTP_*` and `WPGO_MAIL_FROM` in `docker/.env`) so password resets and
   notifications are delivered.
 - Back up the `pgdata`, `uploads`, `plugins` and `themes` volumes, and copy the `backups` volume
