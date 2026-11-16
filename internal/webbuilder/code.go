@@ -53,6 +53,12 @@ type CodeContent struct {
 	Head string
 	// Wrap is the section's wrapper chain: opening tags, outermost first, one per line.
 	Wrap string
+	// Lang, HTMLAttrs and BodyAttrs: the design's <html> lang and attributes and its <body>
+	// attributes (content.lang, content.htmlAttrs, content.bodyAttrs), printed by the front end.
+	Lang, HTMLAttrs, BodyAttrs string
+	// Active is the rule that marks the current page's link (content.active, ActiveRule JSON).
+	Active string
+	Hidden bool
 }
 
 // CodeSections lists the top-level code sections of a document (DocState JSON) and reports
@@ -62,6 +68,7 @@ func CodeSections(doc json.RawMessage) (list []CodeContent, only bool) {
 		Sections []struct {
 			ID      string            `json:"id"`
 			Kind    string            `json:"kind"`
+			Hidden  bool              `json:"hidden"`
 			Content map[string]string `json:"content"`
 		} `json:"sections"`
 	}
@@ -74,7 +81,8 @@ func CodeSections(doc json.RawMessage) (list []CodeContent, only bool) {
 			only = false
 			continue
 		}
-		list = append(list, CodeContent{ID: s.ID, HTML: s.Content["html"], Head: s.Content["head"], Wrap: s.Content["wrap"]})
+		list = append(list, CodeContent{ID: s.ID, HTML: s.Content["html"], Head: s.Content["head"], Wrap: s.Content["wrap"],
+			Lang: s.Content["lang"], HTMLAttrs: s.Content["htmlAttrs"], BodyAttrs: s.Content["bodyAttrs"], Active: s.Content["active"], Hidden: s.Hidden})
 	}
 	return list, only && len(list) > 0
 }
