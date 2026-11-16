@@ -238,13 +238,24 @@ func ClusterParts(samples []ActiveSample) []ActiveCluster {
 		plain string // the markup without editor ids
 	}
 	ps := make([]*parsed, len(samples))
+	// norm: the samples as the parser reads them (rendered again), what the rule is checked against.
+	norm := make([]ActiveSample, len(samples))
 	groups := map[string][]int{}
 	var order []string
 	for i, s := range samples {
 		nodes, err := parseParts(s.Parts)
 		p := &parsed{plain: StripCodeIDs(strings.Join(s.Parts, "\x00"))}
+		norm[i] = ActiveSample{Path: s.Path, Parts: s.Parts}
 		if err == nil {
 			p.nodes = nodes
+			norm[i].Parts = make([]string, len(nodes))
+			for j, ns := range nodes {
+				var b strings.Builder
+				for _, x := range ns {
+					_ = html.Render(&b, x)
+				}
+				norm[i].Parts[j] = b.String()
+			}
 			var all []*html.Node
 			var sk strings.Builder
 			for j, ns := range nodes {
@@ -277,7 +288,7 @@ func ClusterParts(samples []ActiveSample) []ActiveCluster {
 			}
 			continue
 		}
-		cl, missed := learnGroup(samples, members, func(i int) ([][]*html.Node, []*activeEl) { return ps[i].nodes, ps[i].els })
+		cl, missed := learnGroup(norm, members, func(i int) ([][]*html.Node, []*activeEl) { return ps[i].nodes, ps[i].els })
 		if len(cl.Members) > 0 {
 			out = append(out, cl)
 		}
