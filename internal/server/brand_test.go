@@ -37,6 +37,8 @@ func TestHubBrandLogo(t *testing.T) {
 	base := ts.URL
 	installAndLogin(t, ts, c)
 	svg := `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><rect width="1" height="1"/></svg>`
+	darkSVG := `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><rect width="1" height="1" fill="#fff"/></svg>`
+	const mark = "/wp-includes/images/brand/pursae-mark-white.svg"
 	brand := map[string]any{"logo_url": "/media/logo.svg", "logo_version": "1"}
 	hub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -48,6 +50,8 @@ func TestHubBrandLogo(t *testing.T) {
 			json.NewEncoder(w).Encode(idx)
 		case "/media/logo.svg":
 			w.Write([]byte(svg))
+		case "/media/logo-dark.svg":
+			w.Write([]byte(darkSVG))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -80,6 +84,27 @@ func TestHubBrandLogo(t *testing.T) {
 		if !strings.HasPrefix(resp.Header.Get("Content-Security-Policy"), "sandbox") || resp.Header.Get("X-Content-Type-Options") != "nosniff" {
 			t.Errorf("%s: the Hub's SVG is served without the sandbox CSP and nosniff", p)
 		}
+	}
+
+	// Without a dark-mode logo the admin bar's mark shows the Hub's logo too.
+	if _, body, _ := get(t, c, base+mark); body != svg {
+		t.Errorf("admin bar mark without a dark logo: %q", body)
+	}
+	// With one, the mark shows it and every other file keeps the light-mode logo.
+	brand = map[string]any{"logo_url": "/media/logo.svg", "logo_version": "1",
+		"logo_dark_url": "/media/logo-dark.svg", "logo_dark_version": "d1"}
+	srv.hubRefresh(ctx)
+	if _, body, _ := get(t, c, base+mark); body != darkSVG {
+		t.Errorf("admin bar mark with a dark logo: %q", body)
+	}
+	if _, body, _ := get(t, c, base+"/wp-includes/images/brand/logo-256.png"); body != svg {
+		t.Errorf("login logo with a dark logo: %q", body)
+	}
+	// Dropping the dark logo brings the light one back on the mark.
+	brand = map[string]any{"logo_url": "/media/logo.svg", "logo_version": "1"}
+	srv.hubRefresh(ctx)
+	if _, body, _ := get(t, c, base+mark); body != svg {
+		t.Errorf("admin bar mark after the dark logo is dropped: %q", body)
 	}
 
 	brand = nil

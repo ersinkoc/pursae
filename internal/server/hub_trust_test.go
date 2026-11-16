@@ -256,10 +256,10 @@ func TestPluginKeySnapshot(t *testing.T) {
 func TestFaviconAndLogoRules(t *testing.T) {
 	s := &Server{settings: settings.New(nil)}
 	s.cfg.HubURL = "https://hub.example.com"
-	if err := s.hubFetchLogo(t.Context(), "http://cdn.example.net/logo.svg"); err == nil || !strings.Contains(err.Error(), "not https") {
+	if err := s.hubFetchLogo(t.Context(), "http://cdn.example.net/logo.svg", brandLight); err == nil || !strings.Contains(err.Error(), "not https") {
 		t.Errorf("a third-party http logo: %v", err)
 	}
-	if err := s.hubFetchLogo(t.Context(), "https://127.0.0.1:1/logo.svg"); err == nil || !strings.Contains(err.Error(), "private network") {
+	if err := s.hubFetchLogo(t.Context(), "https://127.0.0.1:1/logo.svg", brandLight); err == nil || !strings.Contains(err.Error(), "private network") {
 		t.Errorf("a logo on a private address: %v", err)
 	}
 }

@@ -38,7 +38,9 @@ host.
 ## Product logo
 
 The logo on the admin bar, login screen, favicons and dashboard is
-served from `/wp-includes/images/brand/` (`logo-32.png` … `logo-512.png`, `logo.svg`). A release
+served from `/wp-includes/images/brand/` (`logo-32.png` … `logo-512.png`, `logo.svg`: the dark mark
+for light backgrounds; `pursae-mark-white.svg`, `logo-dark.svg`: the light mark for dark backgrounds
+such as the admin bar). A release
 changes it by replacing those files in `web/wp-includes/images/brand`. A Hub changes it on every
 connected site without a release by adding a `brand` block to `GET /api/v1/index`:
 
@@ -51,7 +53,12 @@ logo hosted elsewhere than the Hub must be https on a public address (private an
 addresses are refused at connect time). The logo is served, `/favicon.ico` included, with a
 sandbox Content-Security-Policy and `nosniff`, so an SVG can never run as a page of the site.
 When `logo_version` changes the site downloads the image into `uploads/brand/` and serves it for
-every size; when the block goes away the shipped logo comes back. Sites read the index when they
+every size; when the block goes away the shipped logo comes back.
+
+The block may also carry `logo_dark_url` and `logo_dark_version`: a logo for dark backgrounds (a
+light mark). It is fetched the same way into `uploads/brand/logo-dark.*` and served in place of the
+dark-background files (`pursae-mark-white.svg`, `logo-dark.svg`); every other file keeps `logo_url`.
+Without it, those files show `logo_url` too. Sites read the index when they
 check for updates (at most every 12 hours, or at once from Dashboard › Updates › Check again).
 
 ## Root of trust
