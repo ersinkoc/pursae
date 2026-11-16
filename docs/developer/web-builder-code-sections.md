@@ -54,12 +54,40 @@ picked up at once. Uploading files to a kit purges the page cache.
 
 ### Content Security Policy
 
-Same-origin kit files need nothing. When a kit is published Pursae reads its scripts and stylesheets
-for `https://host` references (CDN modules, APIs: at most 24 origins); pages whose code sections load
-from that kit allow those origins in `script-src`, `connect-src`, `style-src` and `font-src`. External
-`<script src>` and `<link href>` in the sections' own markup are allowed the same way. The editor page
-allows the kits' origins for users who may publish code sections (the design's frame inherits the
-editor's policy).
+Code sections work under the site's nonce policy (`csp_mode` `report` and `enforce`, see
+`internal/server/csp_nonce.go`):
+
+- **Scripts get the nonce where the stored markup is read**, never by rewriting the finished page
+  (`cspTrustContent`, `internal/server/csp_trusted.go`): the published snapshot of a page, a header
+  or footer template and a popup is passed through it before it is filled (`wbFill`), so the
+  sections' own `<script>` elements and the head scripts travelling in
+  `<template data-wb-code-head>` carry the nonce placeholder before the front end lifts the head
+  into `<head>` (`CodeHead` / `MergeHeads`). The outermost handler swaps the placeholder for the
+  response's nonce.
+- **External scripts** (`<script src="https://cdn…">`) load because the tag carries the nonce:
+  under the enforced policy (`'strict-dynamic'`) browsers ignore host lists, and the modules such a
+  script imports are allowed by `'strict-dynamic'` too. The hosts are still added (below) for
+  browsers without `'strict-dynamic'` and for the report-only policy.
+- **Origins** (`wbCodeCSP`): same-origin kit files need nothing. When a kit is published Pursae
+  reads its scripts and stylesheets for `https://host` references (CDN modules, APIs: at most 24
+  origins); pages whose code sections load from that kit allow those origins in `script-src`,
+  `connect-src`, `style-src` and `font-src`. From the sections' own markup and head: `<script src>`
+  origins go to `script-src` and `connect-src`; `<link href>` origins and the `url()` / `@import`
+  origins of inline CSS go to `style-src` and `font-src` (`fonts.googleapis.com` brings
+  `fonts.gstatic.com`); `<iframe src>` origins (a Google Maps embed) go to `frame-src`. Only https
+  origins, at most 24 per directive. `img-src` and `media-src` already allow `https:`. In report
+  mode the additions to `script-src` are also merged into the report-only policy (only into the
+  directives it has). The editor page allows the kits' origins for users who may publish code
+  sections (the design's frame inherits the editor's policy).
+- **Inline event handlers** (`onclick="…"`, `onload="…"`) cannot run under a nonce policy, and
+  Pursae adds neither `'unsafe-inline'` nor `'unsafe-hashes'` for them. The importer counts them
+  and warns (`ConvertCode` → `warnings`, per attribute and element); move them into the design's
+  scripts (`addEventListener`). Under the report-only policy they run and are reported.
+- **`csp_admin_scripts` off** (Settings › Security):
+  stored administrator scripts, the code sections' included, get no nonce. Under the enforced policy
+  the design's scripts are then blocked (the page shows its markup and CSS without its JavaScript);
+  under the report-only policy they run and are reported. `web_builder_import_html` warns when it
+  imports a design with scripts on such a site.
 
 ## Kits: REST
 

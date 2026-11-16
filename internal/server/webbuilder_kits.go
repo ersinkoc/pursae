@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"html"
 	"io/fs"
 	"net/http"
 	"os"
@@ -413,7 +414,7 @@ func (s *Server) wbRESTKitDelete(c *gin.Context, r *restRequest) {
 	c.JSON(http.StatusOK, map[string]any{"deleted": true, "slug": slug})
 }
 
-var wbKitOriginRE = regexp.MustCompile(`['"\x60(]https://([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+)(?::\d{1,5})?[/'"\x60)]`)
+var wbKitOriginRE = regexp.MustCompile(`['"\x60(]https://([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?::\d{1,5})?)[/'"\x60)]`)
 
 // wbKitOrigins lists the https origins named in the kit's scripts and stylesheets (at most 24).
 func wbKitOrigins(dir string, files map[string]int64) []string {
@@ -519,10 +520,35 @@ func (s *Server) wbKitCacheControl(c *gin.Context, rel string) (string, bool) {
 var (
 	wbCodeScriptRE = regexp.MustCompile(`(?is)<script\b[^>]*\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))`)
 	wbCodeLinkRE   = regexp.MustCompile(`(?is)<link\b[^>]*\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))`)
+	wbCodeFrameRE  = regexp.MustCompile(`(?is)<iframe\b[^>]*\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))`)
+	// url(https://…) and @import "https://…" in the markup's <style> elements and style attributes.
+	wbCodeCSSURLRE = regexp.MustCompile(`(?i)(?:url\(\s*|@import\s+)(?:&#39;|&quot;|['"])?(https://[^'"\s)&;]+)`)
 )
 
-// wbCodeCSP adds the https origins the code sections' scripts and stylesheets load from to this
-// response's policy (only unfiltered_html authors can publish code sections).
+// wbCodeOriginMax bounds the origins one directive takes from the code sections' markup (the kit
+// origins have the same cap, wbKitOrigins).
+const wbCodeOriginMax = 24
+
+// wbGoogleFonts: a stylesheet from fonts.googleapis.com loads its font files from fonts.gstatic.com.
+const (
+	wbGoogleFontsCSS   = "https://fonts.googleapis.com"
+	wbGoogleFontsFiles = "https://fonts.gstatic.com"
+)
+
+// wbCodeCSP adds what the code sections load from other origins to this response's policy (only
+// unfiltered_html authors can publish code sections; their scripts carry the response's nonce,
+// csp_trusted.go):
+//
+//   - the kits the markup loads from: the https origins their scripts and stylesheets name, in
+//     script-src, connect-src, style-src and font-src;
+//   - <script src> origins in script-src and connect-src. Under the enforced nonce policy
+//     ('strict-dynamic') browsers ignore host lists: the nonce on the tag is what lets the script
+//     load; the hosts are for browsers without 'strict-dynamic' and for the report-only policy;
+//   - <link href> origins and url() / @import origins of the markup's CSS in style-src and font-src
+//     (fonts.googleapis.com brings fonts.gstatic.com);
+//   - <iframe src> origins (a map, a video) in frame-src.
+//
+// Each list takes at most wbCodeOriginMax origins from the markup. Kit files are same-origin.
 func (s *Server) wbCodeCSP(c *gin.Context, head, body string) {
 	if c == nil {
 		return
@@ -538,31 +564,43 @@ func (s *Server) wbCodeCSP(c *gin.Context, head, body string) {
 				for _, dir := range []string{"script-src", "connect-src", "style-src", "font-src"} {
 					cspAllow(c, dir, k.Origins...)
 				}
+				if cspHas(k.Origins, wbGoogleFontsCSS) {
+					cspAllow(c, "font-src", wbGoogleFontsFiles)
+				}
 			}
 		}
 	}
 	if !strings.Contains(src, "https://") {
 		return
 	}
-	var scripts, styles, fonts []string
+	var scripts, styles, fonts, frames []string
 	add := func(list *[]string, o string) {
-		if o != "" && !cspHas(*list, o) {
+		if o != "" && len(*list) < wbCodeOriginMax && !cspHas(*list, o) {
 			*list = append(*list, o)
 		}
 	}
-	for _, m := range wbCodeScriptRE.FindAllStringSubmatch(src, -1) {
-		add(&scripts, wbHTTPSOrigin(m[1]+m[2]+m[3]))
-	}
-	for _, m := range wbCodeLinkRE.FindAllStringSubmatch(src, -1) {
-		o := wbHTTPSOrigin(m[1] + m[2] + m[3])
+	style := func(o string) {
 		add(&styles, o)
 		add(&fonts, o)
-		if o == "https://fonts.googleapis.com" {
-			add(&fonts, "https://fonts.gstatic.com")
+		if o == wbGoogleFontsCSS {
+			add(&fonts, wbGoogleFontsFiles)
 		}
+	}
+	for _, m := range wbCodeScriptRE.FindAllStringSubmatch(src, -1) {
+		add(&scripts, wbHTTPSOrigin(html.UnescapeString(m[1]+m[2]+m[3])))
+	}
+	for _, m := range wbCodeLinkRE.FindAllStringSubmatch(src, -1) {
+		style(wbHTTPSOrigin(html.UnescapeString(m[1] + m[2] + m[3])))
+	}
+	for _, m := range wbCodeCSSURLRE.FindAllStringSubmatch(src, -1) {
+		style(wbHTTPSOrigin(m[1]))
+	}
+	for _, m := range wbCodeFrameRE.FindAllStringSubmatch(src, -1) {
+		add(&frames, wbHTTPSOrigin(html.UnescapeString(m[1]+m[2]+m[3])))
 	}
 	cspAllow(c, "script-src", scripts...)
 	cspAllow(c, "connect-src", scripts...)
 	cspAllow(c, "style-src", styles...)
 	cspAllow(c, "font-src", fonts...)
+	cspAllow(c, "frame-src", frames...)
 }

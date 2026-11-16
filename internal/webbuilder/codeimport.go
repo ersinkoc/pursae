@@ -78,6 +78,7 @@ type codeConv struct {
 	next     int
 	unmapped map[string]bool
 	missing  map[string]bool
+	handlers map[string]int // inline event handler attributes: "onclick on <button>" → count
 }
 
 // ConvertCode converts a full HTML document (see the comment above).
@@ -90,7 +91,7 @@ func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
 		o.KitURL += "/"
 	}
 	o.Base = strings.Trim(path.Clean("/"+o.Base), "/")
-	cv := &codeConv{o: o, out: &CodeImport{}, unmapped: map[string]bool{}, missing: map[string]bool{}}
+	cv := &codeConv{o: o, out: &CodeImport{}, unmapped: map[string]bool{}, missing: map[string]bool{}, handlers: map[string]int{}}
 	var root, head, body *html.Node
 	for n := doc.FirstChild; n != nil; n = n.NextSibling {
 		if n.Type == html.ElementNode && n.DataAtom == atom.Html {
@@ -126,6 +127,9 @@ func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
 	}
 	sort.Strings(cv.out.Unmapped)
 	sort.Strings(cv.out.Missing)
+	if w := handlerWarning(cv.handlers); w != "" {
+		cv.out.Warnings = append(cv.out.Warnings, w)
+	}
 	cv.out.Editable = cv.next
 	if len(cv.out.Sections) == 0 && cv.out.Header == nil && cv.out.Footer == nil {
 		return nil, fmt.Errorf("the body has no content")
@@ -530,6 +534,9 @@ func (cv *codeConv) rewrite(n *html.Node) {
 		if a.Namespace != "" {
 			key = a.Namespace + ":" + a.Key
 		}
+		if isEventHandler(key) {
+			cv.handlers[strings.ToLower(key)+" on <"+n.Data+">"]++
+		}
 		switch {
 		case codeURLAttrs[key]:
 			page := (n.DataAtom == atom.A || n.DataAtom == atom.Area || n.DataAtom == atom.Form) && key != "src"
@@ -540,6 +547,47 @@ func (cv *codeConv) rewrite(n *html.Node) {
 			n.Attr[i].Val = cv.css(a.Val)
 		}
 	}
+}
+
+// isEventHandler reports whether an attribute is an inline event handler (onclick, onload, …).
+func isEventHandler(key string) bool {
+	key = strings.ToLower(key)
+	if len(key) < 3 || !strings.HasPrefix(key, "on") {
+		return false
+	}
+	for _, r := range key[2:] {
+		if r < 'a' || r > 'z' {
+			return false
+		}
+	}
+	return true
+}
+
+// handlerWarning tells the importer about the design's inline event handlers: the site's nonce
+// Content Security Policy (csp_mode enforce) blocks them (only nonced <script> elements run; no
+// 'unsafe-inline' or 'unsafe-hashes' is added), and report mode reports them.
+func handlerWarning(handlers map[string]int) string {
+	if len(handlers) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(handlers))
+	total := 0
+	for k, n := range handlers {
+		keys = append(keys, k)
+		total += n
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for i, k := range keys {
+		if i == 12 {
+			parts = append(parts, "…")
+			break
+		}
+		parts = append(parts, fmt.Sprintf("%d× %s", handlers[k], k))
+	}
+	return fmt.Sprintf("%d inline event handler attribute(s) (%s) do not run under the site's nonce Content Security Policy "+
+		"(csp_mode enforce; report mode reports them): move them into the design's scripts (addEventListener)",
+		total, strings.Join(parts, ", "))
 }
 
 func (cv *codeConv) styleText(n *html.Node) {

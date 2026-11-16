@@ -110,3 +110,22 @@ func TestConvertCodeNoSplit(t *testing.T) {
 		t.Fatal("missing files not reported without a kit")
 	}
 }
+
+// Inline event handlers cannot run under the nonce policy: the import counts them per attribute and
+// element (in the head, the body and SVG drawings) and warns; data-on… and on-… attributes are not counted.
+func TestConvertCodeEventHandlers(t *testing.T) {
+	res, err := ConvertCode(`<html><head><link rel="stylesheet" href="a.css" onload="this.media='all'"></head><body>
+<section><button onclick="a()">A</button><button ONCLICK="b()">B</button><svg><circle onmouseover="c()"/></svg><a href="#" data-onclick="x" on-x="y">x</a></section></body></html>`, CodeImportOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := strings.Join(res.Warnings, "\n")
+	for _, want := range []string{"4 inline event handler attribute(s)", "2× onclick on <button>", "1× onload on <link>", "1× onmouseover on <circle>", "addEventListener"} {
+		if !strings.Contains(w, want) {
+			t.Errorf("warning lacks %q: %s", want, w)
+		}
+	}
+	if res, _ := ConvertCode(`<html><body><section><p data-onload="1" on-tap="x">x</p></section></body></html>`, CodeImportOptions{}); len(res.Warnings) != 0 {
+		t.Errorf("warned without handlers: %v", res.Warnings)
+	}
+}

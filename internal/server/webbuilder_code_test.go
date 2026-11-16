@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -144,4 +145,136 @@ func TestWBCodeBlocksTaggedOnLoad(t *testing.T) {
 			t.Errorf("editor %s: %s", name, h)
 		}
 	}
+}
+
+// A design whose scripts sit in the head, in sections, in the header and in the footer, loads from
+// CDNs and embeds a map.
+const codeCSPPage = `<!doctype html><html><head><title>CSP design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter&amp;display=swap">
+<style>@import url("https://styles.example.org/base.css");</style>
+<script>window.headRan=1</script>
+<script src="https://cdn.example.com/lib.js" defer></script>
+</head><body>
+<header class="hd"><a href="/">Brand</a><script>window.hdrRan=1</script></header>
+<main>
+<section id="hero"><h1>Hi</h1><button onclick="go()">Go</button><button onclick="go()">Again</button><img src="x.png" onload="seen()"><script>window.secRan=1</script></section>
+<section id="map"><iframe src="https://www.google.com/maps/embed?pb=1" loading="lazy"></iframe></section>
+</main>
+<footer class="ft"><p>F</p><script>window.ftRan=1</script></footer>
+</body></html>`
+
+var codeScriptTagRE = regexp.MustCompile(`(?is)<script\b[^>]*>`)
+
+// Code pages under the nonce policy: every design script (head scripts lifted from the code head
+// template, section scripts, header and footer template scripts, CDN scripts) carries the response's
+// nonce in report and enforce mode; the policy allows the design's CDN, style, font and frame origins;
+// inline event handlers and untrusted admin scripts are reported by the import.
+func TestWBCodeCSP(t *testing.T) {
+	ts, c, srv := newTestServer(t, true)
+	ctx := context.Background()
+	installAndLogin(t, ts, c)
+	if err := srv.switchTheme(ctx, wbHelloSlug); err != nil {
+		t.Fatal(err)
+	}
+	_, call := mcpTestAgent(t, ts.URL, c, "CSP agent", nil)
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "csp", "name": "CSP", "files": []any{
+		map[string]any{"path": "x.png", "data": base64.StdEncoding.EncodeToString([]byte("\x89PNG\r\n\x1a\nfake"))},
+		map[string]any{"path": "app.js", "text": `fetch("https://api.example.net/v1/x")`},
+	}}))
+	out := mcpStructured(t, "web_builder_import_html", call("web_builder_import_html", map[string]any{"html": codeCSPPage, "kit": "csp", "path": "index.html",
+		"templates": true, "title": "CSP design"}))
+	warns := strings.Join(strSlice(out["warnings"]), "\n")
+	if !strings.Contains(warns, "3 inline event handler attribute(s)") || !strings.Contains(warns, "2× onclick on <button>") || !strings.Contains(warns, "1× onload on <img>") {
+		t.Errorf("import warnings lack the inline handlers: %s", warns)
+	}
+	if strings.Contains(warns, "csp_admin_scripts") {
+		t.Errorf("warned about untrusted scripts on a trusting site: %s", warns)
+	}
+	pageURL := strAny(out["page"].(map[string]any)["url"])
+
+	for _, mode := range []string{cspModeReport, cspModeEnforce} {
+		if err := srv.settings.Set(ctx, map[string]any{"csp_mode": mode}); err != nil {
+			t.Fatal(err)
+		}
+		resp := anonGet(t, pageURL)
+		nonce, body := pageNonce(t, resp)
+		for _, want := range []string{"window.headRan=1", "window.secRan=1", "window.hdrRan=1", "window.ftRan=1", `src="https://cdn.example.com/lib.js"`} {
+			if !strings.Contains(body, want) {
+				t.Errorf("%s: page lacks %s", mode, want)
+			}
+		}
+		head, _, _ := strings.Cut(body, "</head>")
+		if !strings.Contains(head, "window.headRan=1") || !strings.Contains(head, `src="https://cdn.example.com/lib.js"`) || strings.Contains(body, "data-wb-code-head") {
+			t.Errorf("%s: the code head was not lifted into <head>", mode)
+		}
+		for _, tag := range codeScriptTagRE.FindAllString(body, -1) {
+			if !strings.Contains(tag, `nonce="`+nonce+`"`) && !strings.Contains(tag, `type="application/ld+json"`) {
+				t.Errorf("%s: script without the page's nonce: %s", mode, tag)
+			}
+		}
+		policy := resp.Header.Get("Content-Security-Policy")
+		dir := func(p, name string) string {
+			for _, part := range strings.Split(p, ";") {
+				if f := strings.Fields(part); len(f) > 0 && f[0] == name {
+					return " " + strings.Join(f[1:], " ") + " "
+				}
+			}
+			return ""
+		}
+		for d, wants := range map[string][]string{
+			"script-src":  {"https://cdn.example.com", "https://api.example.net"},
+			"connect-src": {"'self'", "https://api.example.net", "https://cdn.example.com"},
+			"style-src":   {"'self'", "https://fonts.googleapis.com", "https://styles.example.org"},
+			"font-src":    {"'self'", "https://fonts.gstatic.com"},
+			"img-src":     {"'self'", "https:"},
+		} {
+			for _, w := range wants {
+				if !strings.Contains(dir(policy, d), " "+w+" ") {
+					t.Errorf("%s: %s lacks %s: %s", mode, d, w, policy)
+				}
+			}
+		}
+		if fs := dir(policy, "frame-src"); !strings.Contains(fs, " https: ") && !strings.Contains(fs, " https://www.google.com ") {
+			t.Errorf("%s: frame-src does not allow the map: %s", mode, policy)
+		}
+		if strings.Contains(policy+resp.Header.Get("Content-Security-Policy-Report-Only"), "unsafe-hashes") {
+			t.Errorf("%s: policy allows unsafe-hashes", mode)
+		}
+		switch mode {
+		case cspModeEnforce:
+			if s := dir(policy, "script-src"); !strings.Contains(s, "'strict-dynamic'") || strings.Contains(s, "'unsafe-inline'") {
+				t.Errorf("enforced script-src: %s", s)
+			}
+		case cspModeReport:
+			ro := resp.Header.Get("Content-Security-Policy-Report-Only")
+			if !strings.Contains(dir(ro, "script-src"), " https://cdn.example.com ") || dir(ro, "connect-src") != "" || dir(ro, "style-src") != "" {
+				t.Errorf("report-only policy: %s", ro)
+			}
+		}
+	}
+
+	// Stored administrator scripts untrusted (csp_admin_scripts off): the design's scripts get no
+	// nonce, and the import says so under the enforced policy.
+	if err := srv.settings.Set(ctx, map[string]any{"csp_admin_scripts": false}); err != nil {
+		t.Fatal(err)
+	}
+	out = mcpStructured(t, "web_builder_import_html", call("web_builder_import_html", map[string]any{"html": codeCSPPage, "kit": "csp", "path": "index.html", "title": "CSP design 2"}))
+	if warns := strings.Join(strSlice(out["warnings"]), "\n"); !strings.Contains(warns, "csp_admin_scripts is off") || !strings.Contains(warns, "do not run") {
+		t.Errorf("no warning about untrusted scripts: %s", warns)
+	}
+	nonce, body := pageNonce(t, anonGet(t, strAny(out["page"].(map[string]any)["url"])))
+	if !strings.Contains(body, "<script>window.secRan=1</script>") || strings.Contains(body, `nonce="`+nonce+`">window.secRan`) {
+		t.Error("an untrusted design script got the nonce")
+	}
+}
+
+// strSlice is a JSON array of strings.
+func strSlice(v any) []string {
+	list, _ := v.([]any)
+	out := make([]string, 0, len(list))
+	for _, x := range list {
+		out = append(out, strAny(x))
+	}
+	return out
 }

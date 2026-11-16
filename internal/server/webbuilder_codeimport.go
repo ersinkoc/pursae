@@ -97,6 +97,9 @@ func mcpWBImportCode(s *Server, c *gin.Context, args map[string]any) (any, error
 		warnings = append(warnings, fmt.Sprintf("%d link(s) point at the design's other HTML files; map them to site URLs with link_map: %s",
 			len(res.Unmapped), strings.Join(wbFirst(res.Unmapped, 12), ", ")))
 	}
+	if w := s.wbCodeScriptsWarning(res); w != "" {
+		warnings = append(warnings, w)
+	}
 	if opts.Split && s.activeTheme().Slug != wbHelloSlug {
 		warnings = append(warnings, "the header and footer templates show only with the Hello Pursae theme (activate Pursae Web Builder's theme)")
 	}
@@ -297,4 +300,33 @@ func mcpWBKitUpload(s *Server, c *gin.Context, args map[string]any) (any, error)
 		out["note"] = "Staged; send more files, then call again with commit: true (no files) to publish them together."
 	}
 	return out, nil
+}
+
+// wbCodeScriptsWarning: a design's scripts get the response's CSP nonce only while the site trusts
+// stored administrator scripts (csp_admin_scripts, csp_trusted.go). With that off they are blocked
+// under the enforced nonce policy and reported under the report-only one.
+func (s *Server) wbCodeScriptsWarning(res *webbuilder.CodeImport) string {
+	if s.cspTrustOn() || s.cspMode() == cspModeOff || !wbCodeHasScript(res) {
+		return ""
+	}
+	if s.cspMode() == cspModeEnforce {
+		return "the site enforces its Content Security Policy and does not trust stored administrator scripts (csp_admin_scripts is off): " +
+			"the design's scripts get no nonce and do not run; turn csp_admin_scripts on (Settings › Security) or the design works without its JavaScript"
+	}
+	return "the site does not trust stored administrator scripts (csp_admin_scripts is off): the design's scripts get no nonce, " +
+		"so the report-only Content Security Policy reports them and enforcing it would block them"
+}
+
+// wbCodeHasScript reports whether the import has a <script> element.
+func wbCodeHasScript(res *webbuilder.CodeImport) bool {
+	has := func(src string) bool { return containsFold(src, "<script") }
+	if has(res.Head) || (res.Header != nil && has(res.Header.HTML)) || (res.Footer != nil && has(res.Footer.HTML)) {
+		return true
+	}
+	for _, p := range res.Sections {
+		if has(p.HTML) {
+			return true
+		}
+	}
+	return false
 }
