@@ -431,20 +431,42 @@ func ConnectSchema(ctx context.Context, base *pgxpool.Config, schema string, max
 	return pool, nil
 }
 
-// Pending counts the embedded migrations the database has not applied yet (readiness checks).
-func Pending(ctx context.Context, pool *pgxpool.Pool) (int, error) {
+// Versions lists the embedded migrations by version (file name without .sql), in the order
+// Migrate applies them. Compare with schema_migrations to see which are applied.
+func Versions() ([]string, error) {
 	names, err := fs.Glob(migrationSource, "migrations/*.sql")
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(names)
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		out = append(out, strings.TrimSuffix(strings.TrimPrefix(name, "migrations/"), ".sql"))
+	}
+	return out, nil
+}
+
+// Pending counts the embedded migrations the database has not applied yet (readiness checks).
+// A database that was never migrated (no schema_migrations table) has all of them pending.
+func Pending(ctx context.Context, pool *pgxpool.Pool) (int, error) {
+	want, err := Versions()
 	if err != nil {
 		return 0, err
 	}
-	want := make([]string, 0, len(names))
-	for _, name := range names {
-		want = append(want, strings.TrimSuffix(strings.TrimPrefix(name, "migrations/"), ".sql"))
-	}
 	var applied int
 	err = pool.QueryRow(ctx, `SELECT count(*) FROM schema_migrations WHERE version = ANY($1)`, want).Scan(&applied)
+	if IsUndefinedTable(err) {
+		return len(want), nil
+	}
 	if err != nil {
 		return 0, err
 	}
 	return len(want) - applied, nil
+}
+
+// IsUndefinedTable reports a Postgres "relation does not exist" error (SQLSTATE 42P01), e.g. a
+// query on a database that was never migrated.
+func IsUndefinedTable(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "42P01"
 }

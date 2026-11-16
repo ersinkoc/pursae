@@ -18,6 +18,7 @@ Start here when writing a theme or a plugin:
 | REST clients / plugin routes | `rest-api/*.md` |
 | Running a site | `getting-started/*.md`, `operations/*.md` |
 | Shipping a core version | `operations/releases.md` (`make release`, then Manager › Core › Import) |
+| Command line (`pursae` / `wpgo`, WP-CLI style) | `operations/cli.md` |
 | AI agents / MCP | `operations/ai-mcp.md`, `rest-api/authentication.md` (scopes), `rest-api/endpoints.md` (`pursae/v1`) |
 
 Working examples: `examples/plugins/` and `examples/themes/`. Page format (front matter, sections):

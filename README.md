@@ -384,6 +384,7 @@ page says so; remove `WPGO_HUB` and restart to get updates again.
 | 🎨 **Themes** — Go templates + theme.json | [docs/developer/themes](docs/developer/themes/index.md) |
 | 💬 **Forum themes** — Pursae Forum wrapper, view overrides, `--pf-*` tokens | [docs/developer/themes/forum.md](docs/developer/themes/forum.md) |
 | 🔗 **REST API** — `wp/v2` + plugin routes, Application Password scopes, OAuth 2.1 | [docs/developer/rest-api](docs/developer/rest-api/index.md) |
+| ⌨️ **Command line** — `pursae` (alias `wpgo`), WP-CLI style `pursae post list`, `pursae help` | [docs/developer/operations/cli.md](docs/developer/operations/cli.md) |
 | 🤖 **AI agents** — MCP server, `wpgo mcp` bridge, tool list | [docs/developer/operations/ai-mcp.md](docs/developer/operations/ai-mcp.md) |
 | 🏪 **Hub** — marketplace, updates, licenses | [docs/developer/hub](docs/developer/hub/index.md) |
 | ⚙️ **Operations** — config, TLS, backups, cron | [docs/developer/operations](docs/developer/operations/configuration.md) |

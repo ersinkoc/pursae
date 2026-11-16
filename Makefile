@@ -17,8 +17,10 @@ db:
 bench:
 	python3 bench/run.py $(BENCH_ARGS)
 
+## build: bin/pursae, plus bin/wpgo (the same binary under its older name; it answers to both)
 build:
-	CGO_ENABLED=0 go build -buildmode=exe -tags nodynamic -o bin/wpgo ./cmd/wpgo
+	CGO_ENABLED=0 go build -buildmode=exe -tags nodynamic -o bin/pursae ./cmd/wpgo
+	cp bin/pursae bin/wpgo
 
 ## test: unit tests plus the Postgres integration tests against the compose database. -p 1: the packages
 ## with integration tests (server, store, settings) each drop and recreate WPGO_TEST_DB, so they must not

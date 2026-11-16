@@ -282,6 +282,32 @@ func Launch(image, dir string, args []string) error {
 	return execFn(target, append([]string{target}, args...), os.Environ())
 }
 
+// Installed returns the binary Launch installed in dir (named like exe) when it is another file
+// with a version newer than version, else "". In a container the server runs that binary (a
+// Dashboard core update replaces it) while `docker exec … pursae <command>` starts the image's
+// binary: the command line re-execs the installed one (Exec) so it runs the server's code
+// against the schema that code migrated.
+func Installed(exe, dir, version string) string {
+	if dir == "" || exe == "" {
+		return ""
+	}
+	installed := filepath.Join(dir, filepath.Base(exe))
+	real, err := filepath.EvalSymlinks(installed)
+	if err != nil {
+		return ""
+	}
+	if self, err := filepath.EvalSymlinks(exe); err != nil || self == real {
+		return ""
+	}
+	if iv := binaryVersion(installed); iv != "" && Less(version, iv) {
+		return installed
+	}
+	return ""
+}
+
+// Exec replaces the process with bin, run with args (args[0] is the program name it sees).
+func Exec(bin string, args []string) error { return execFn(bin, args, os.Environ()) }
+
 // sameContent reports whether two files have the same bytes (size first, then a streamed compare).
 // Any error counts as different, so the caller reinstalls the image's binary.
 func sameContent(a, b string) bool {

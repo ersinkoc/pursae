@@ -1,17 +1,21 @@
-// Command wpgo runs WordPress Go: a WordPress-compatible CMS in a single binary.
+// Command wpgo runs WordPress Go (Pursae): a WordPress-compatible CMS in a single binary. The
+// same binary answers to the names wpgo and pursae (release builds are pursae-<os>-<arch>);
+// besides serve and the operational commands below it carries a WP-CLI style command line
+// (`pursae help`, internal/server/cli.go).
 package main
 
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // site time zones work on minimal images
@@ -24,15 +28,36 @@ import (
 )
 
 func main() {
+	prog := progName(os.Args[0])
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
-	log.SetPrefix("wpgo: ")
-	cmd := "serve"
+	log.SetPrefix(prog + ": ")
+	cmd := "serve" // no arguments: the container's default
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]
 	}
 	cfg := config.Load()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	// In a container the server runs the binary Launch installed in WPGO_BIN_DIR, which a core
+	// update replaces; `docker exec … pursae <command>` starts the image's (possibly older) binary.
+	// Commands that touch the site run the installed one when it is newer, so the CLI never
+	// works with older code than the server against the schema the server migrated.
+	if usesInstalledBinary(cmd) && os.Getenv(reexecEnv) == "" {
+		if exe, err := executable(); err == nil {
+			if bin := coreupdate.Installed(exe, os.Getenv("WPGO_BIN_DIR"), server.Version); bin != "" {
+				os.Setenv(reexecEnv, "1") // never loop
+				err := coreupdate.Exec(bin, os.Args)
+				log.Printf("running the installed %s failed (%v); continuing with %s", bin, err, server.Version)
+			}
+		}
+	}
+
+	// `<cmd> --help` / `-h` on the commands handled below shows their help instead of running
+	// them (`setup-token --help` must not replace the setup token, `migrate -h` must not migrate).
+	if topic := helpTopic(os.Args[1:]); topic != nil {
+		os.Exit(runCLI(ctx, cfg, prog, append([]string{"help"}, topic...)))
+	}
 
 	switch cmd {
 	case "serve":
@@ -68,17 +93,21 @@ func main() {
 		fmt.Println("Pursae", server.Version)
 	case "healthcheck": // container HEALTHCHECK: GET /healthz on WPGO_ADDR (healthcheck.go)
 		if err := healthcheck(cfg.Addr, os.Args[2:]); err != nil {
-			fmt.Fprintln(os.Stderr, "wpgo healthcheck:", err)
+			fmt.Fprintln(os.Stderr, prog+" healthcheck:", err)
 			os.Exit(1)
 		}
-	case "plugin": // plugin tooling: new, build, keygen, pack, verify (internal/plugins/pkgtool)
-		if err := pkgtool.Run(os.Args[2:]); err != nil {
-			fmt.Fprintln(os.Stderr, "wpgo plugin:", err)
-			os.Exit(1)
+	case "plugin": // plugin tooling: new, build, keygen, pack, verify (internal/plugins/pkgtool); other verbs: the CLI
+		if len(os.Args) > 2 && server.IsPkgtoolVerb(os.Args[2]) {
+			if err := pkgtool.Run(os.Args[2:]); err != nil {
+				fmt.Fprintln(os.Stderr, prog+" plugin:", err)
+				os.Exit(1)
+			}
+			return
 		}
+		os.Exit(runCLI(ctx, cfg, prog, os.Args[1:]))
 	case "mcp": // stdio MCP bridge to a site's /wp-json/pursae/v1/mcp (mcp.go)
 		if err := runMCP(ctx, os.Args[2:], os.Stdin, os.Stdout, os.Stderr); err != nil {
-			fmt.Fprintln(os.Stderr, "wpgo mcp:", err)
+			fmt.Fprintln(os.Stderr, prog+" mcp:", err)
 			os.Exit(1)
 		}
 	case "adminsec": // AdminSecGo recovery: disable-hide-login, reset-user <login>, unlock-all, deactivate
@@ -91,10 +120,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(out)
+		fmt.Println(renameUsage(out, prog))
 	case "setup-token": // print the install URL with the setup token (a new token unless WPGO_SETUP_TOKEN is set)
 		if err := setupToken(ctx, cfg, os.Stdout); err != nil {
-			fmt.Fprintln(os.Stderr, "wpgo setup-token:", err)
+			fmt.Fprintln(os.Stderr, prog+" setup-token:", err)
 			os.Exit(1)
 		}
 	case "headless": // Pursae Headless: export / import entries as NDJSON
@@ -104,16 +133,74 @@ func main() {
 		}
 		defer pool.Close()
 		if err := server.HeadlessCLI(ctx, pool, os.Args[2:], os.Stdin, os.Stdout); err != nil {
-			fmt.Fprintln(os.Stderr, "wpgo headless:", err)
+			fmt.Fprintln(os.Stderr, prog+" headless:", renameUsage(err.Error(), prog))
 			os.Exit(1)
 		}
-	default:
-		flag.Usage = func() {
-			fmt.Fprintln(os.Stderr, "usage: wpgo [serve|launch|migrate|version|healthcheck|setup-token|adminsec|mcp|headless]")
-		}
-		flag.Usage()
-		os.Exit(2)
+	default: // help, --help, -h and every other noun: the WP-CLI style command line (internal/server/cli.go)
+		os.Exit(runCLI(ctx, cfg, prog, os.Args[1:]))
 	}
+}
+
+// reexecEnv marks a process that already switched to the installed binary.
+const reexecEnv = "WPGO_CLI_REEXEC"
+
+// usesInstalledBinary reports whether cmd should run the newer binary in WPGO_BIN_DIR: every
+// command except the ones that pick their binary themselves (serve, launch), the container
+// HEALTHCHECK and the MCP bridge, which do not touch the database.
+func usesInstalledBinary(cmd string) bool {
+	switch cmd {
+	case "serve", "launch", "healthcheck", "mcp":
+		return false
+	}
+	return true
+}
+
+// mainCommands are the commands main runs itself (help entries in internal/server/cli.go).
+var mainCommands = map[string]bool{
+	"serve": true, "migrate": true, "launch": true, "version": true, "healthcheck": true,
+	"mcp": true, "adminsec": true, "setup-token": true, "headless": true,
+}
+
+// helpTopic returns the help topic when args ask for the help of a command main handles itself
+// (`serve --help`, `adminsec -h`, `plugin pack --help`), nil otherwise. Every other command
+// line goes to the CLI, which handles --help on its own.
+func helpTopic(args []string) []string {
+	isHelp := func(s string) bool { return s == "--help" || s == "-h" }
+	switch {
+	case len(args) >= 2 && mainCommands[args[0]] && isHelp(args[1]):
+		return args[:1]
+	case len(args) >= 3 && args[0] == "plugin" && server.IsPkgtoolVerb(args[1]) && isHelp(args[2]):
+		return args[:2]
+	}
+	return nil
+}
+
+// runCLI runs the WP-CLI style command line and returns its exit code. os.Exit skips deferred
+// calls, so the CLI closes its own pool before returning.
+func runCLI(ctx context.Context, cfg config.Config, prog string, args []string) int {
+	// Commands report through their own output; the server's informational log lines (plugin
+	// runtime loads, media index …) would only clutter stderr. Warnings and errors still show.
+	slog.SetLogLoggerLevel(slog.LevelWarn)
+	return server.CLI(ctx, cfg, prog, args, os.Stdin, os.Stdout, os.Stderr)
+}
+
+// progName is the program name shown in usage and log lines, from how the binary was invoked:
+// "pursae" for pursae, pursae.exe and the release names pursae-<os>-<arch>; "wpgo" for anything
+// containing wpgo (the Docker image, make build, go run). Other names fall back to "pursae".
+func progName(arg0 string) string {
+	base := strings.TrimSuffix(strings.ToLower(filepath.Base(arg0)), ".exe")
+	if strings.Contains(base, "wpgo") {
+		return "wpgo"
+	}
+	return "pursae" // pursae, pursae-linux-amd64 and any other name
+}
+
+// renameUsage rewrites the "wpgo " command prefix in the older commands' usage texts to prog.
+func renameUsage(s, prog string) string {
+	if prog == "wpgo" {
+		return s
+	}
+	return strings.ReplaceAll(s, "usage: wpgo ", "usage: "+prog+" ")
 }
 
 func serve(ctx context.Context, cfg config.Config) error {
