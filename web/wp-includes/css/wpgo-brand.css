@@ -1,9 +1,9 @@
-/* Pursae brand: the Gopher replaces the WordPress logo (toolbar, login, installer, about). */
+/* Pursae brand: the Pursae mark replaces the WordPress logo in the toolbar; the Gopher stays on login, installer, about. */
 #wpadminbar #wp-admin-bar-wp-logo > .ab-item .ab-icon:before {
 	content: "" !important;
 }
 html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-logo > .ab-item span.ab-icon {
-	background-image: url(../images/brand/logo-64.png) !important;
+	background-image: url(../images/brand/pursae-mark-white.svg) !important;
 	background-position: center !important;
 	background-size: 24px 24px !important;
 	background-repeat: no-repeat !important;
