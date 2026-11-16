@@ -2,7 +2,7 @@ COMPOSE = docker compose -f docker/compose.yaml
 # Production: the development file plus compose.prod.yaml, settings from docker/.env (see docker/.env.example).
 PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f docker/compose.yaml -f docker/compose.prod.yaml
 
-.PHONY: bench dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-bump release
+.PHONY: bench dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -100,6 +100,15 @@ builder-parity: builder/node_modules/.package-lock.json
 	@test -d builder/.work/upstream/src/builder/live || $(MAKE) builder
 	@cd builder && { node test/parity/check-browsers.mjs; rc=$$?; if [ $$rc -eq 3 ]; then if [ -n "$$PARITY_STRICT" ]; then echo '[parity] PARITY_STRICT set: skip counts as failure'; exit 1; fi; exit 0; elif [ $$rc -ne 0 ]; then exit $$rc; fi; \
 		npx playwright test -c test/parity/playwright.config.ts; }
+
+## builder-fidelity SRC=<folder> SITE=<url> [MAP=map.json] [OUT=dir] [SCENARIOS=file.json] [ARGS=…]: compare every
+## page of a static HTML site (SRC) with the page the site import made of it on a running Pursae (SITE), full page at
+## 1440/1024/768/390 px (builder/test/fidelity/fidelity.mjs); report.json and report.html in OUT. Needs Playwright's
+## Chromium (cd builder && npx playwright install chromium).
+OUT ?= builder/.work/fidelity
+builder-fidelity: builder/node_modules/.package-lock.json
+	@test -n "$(SRC)" -a -n "$(SITE)" || { echo "usage: make builder-fidelity SRC=<folder> SITE=<url> [MAP=map.json] [OUT=dir] [SCENARIOS=file.json]"; exit 2; }
+	node builder/test/fidelity/fidelity.mjs --src "$(SRC)" --site "$(SITE)" --out "$(OUT)" $(if $(MAP),--map "$(MAP)") $(if $(SCENARIOS),--scenarios "$(SCENARIOS)") $(ARGS)
 
 ## builder-bump SHA=<commit>: move builder/upstream and builder/UPSTREAM_SHA to an upstream commit, then
 ## rebuild (patches must still apply). Stages the pin; commit it with web/web-builder.

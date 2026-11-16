@@ -121,7 +121,8 @@ async function open(url, width) {
   page.on('crash', () => dbg('CRASH', url))
   page.on('close', () => dbg('CLOSE', url))
   if (CLOCK > 0) {
-    await page.clock.install({ time: new Date('2026-01-01T10:00:00Z') })
+    // Installed a minute early and paused at once: the same clock on both sides, timers frozen.
+    await page.clock.install({ time: new Date('2026-01-01T09:59:00Z') })
     await page.clock.pauseAt(new Date('2026-01-01T10:00:00Z'))
   }
   dbg("goto", url)
