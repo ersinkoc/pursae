@@ -83,7 +83,7 @@ func TestThemePackagePerformance(t *testing.T) {
 	base, _, srv, pkgDir := perfPackageSite(t)
 
 	first := anonGet(t, base+"/")
-	page := bodyOf(first)
+	page := stripNonces(bodyOf(first))
 	if first.Header.Get("X-WPGo-Cache") != "miss" {
 		t.Fatalf("first anonymous visit: X-WPGo-Cache %q", first.Header.Get("X-WPGo-Cache"))
 	}

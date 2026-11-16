@@ -215,7 +215,7 @@ func wbtfStart(t *testing.T) (*Server, string, *http.Client) {
 func wbtfGet(t *testing.T, u string) (int, string) {
 	t.Helper()
 	r := anonGet(t, u)
-	b := bodyOf(r)
+	b := stripNonces(bodyOf(r))
 	if os.Getenv("WBTF_DUMP") != "" {
 		t.Logf("%s:\n%s", u, b)
 	}

@@ -43,6 +43,7 @@ func wbOpen(t *testing.T, c *http.Client, base string, id int64) (int, string, h
 // wbBootOf decodes the boot config of an editor page.
 func wbBootOf(t *testing.T, page string) (map[string]any, string) {
 	t.Helper()
+	page = stripNonces(page)
 	m := wbBootRe.FindStringSubmatch(page)
 	if m == nil {
 		t.Fatalf("no boot config in the editor page:\n%.2000s", page)
@@ -102,7 +103,7 @@ func TestWebBuilderEditorScreen(t *testing.T) {
 		t.Fatal(err)
 	}
 	prefix, entry, _ := wbEditorBundle(m)
-	js := regexp.MustCompile(`<script type="module" src="([^"]+)"`).FindStringSubmatch(body)
+	js := regexp.MustCompile(`<script type="module" src="([^"]+)"`).FindStringSubmatch(stripNonces(body))
 	if js == nil || js[1] != base+prefix+entry.JS {
 		t.Fatalf("module script %v, want %s", js, base+prefix+entry.JS)
 	}

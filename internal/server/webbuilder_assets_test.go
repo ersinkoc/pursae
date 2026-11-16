@@ -64,6 +64,7 @@ func TestWebBuilderEditorHTMLEscapes(t *testing.T) {
 	enc := wbScriptJSON(boot)
 	page := wbEditorHTML(`T </title><x>`, "en-US", "ltr", "/wp-content/plugins/web-builder/dist/editor/",
 		webbuilder.ManifestEntry{JS: "assets/index-abcdefgh.js", CSS: []string{"assets/index-12345678.css"}}, enc)
+	page = stripNonces(page)
 	if n := strings.Count(strings.ToLower(page), "</script"); n != 2 {
 		t.Fatalf("%d </script in the page, want 2 (the page's own):\n%s", n, page)
 	}

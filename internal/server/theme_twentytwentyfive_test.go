@@ -83,6 +83,7 @@ func TestTwentyTwentyFive(t *testing.T) {
 	check := func(name, path string, status int, wants ...string) string {
 		t.Helper()
 		code, body, _ := get(t, anon, base+path)
+		body = stripNonces(body)
 		if code != status {
 			t.Fatalf("%s: %d, want %d", name, code, status)
 		}

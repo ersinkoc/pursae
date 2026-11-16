@@ -189,3 +189,9 @@ func TestCSPReportEndpoint(t *testing.T) {
 		t.Fatalf("anonymous list: %d", resp.StatusCode)
 	}
 }
+
+var nonceAttrRe = regexp.MustCompile(` nonce="[A-Za-z0-9_-]{22}"`)
+
+// stripNonces drops the CSP nonce attributes, for tests that compare markup: every response has its
+// own nonce (a page-cache hit included).
+func stripNonces(s string) string { return nonceAttrRe.ReplaceAllString(s, "") }
