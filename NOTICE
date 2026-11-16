@@ -42,6 +42,12 @@ API script. assets/style.css and assets/readme.txt are the theme's own files, un
   to WebP by tools/twentytwentyfive/demos.py). Sources are listed in assets/readme.txt. The demo
   texts are original.
 
+Mona Sans
+---------
+Copyright (c) 2023 GitHub, Inc. Licensed under the SIL Open Font License 1.1
+(https://opensource.org/licenses/OFL-1.1). web/admin/assets/fonts/mona-1.woff2 and mona-2.woff2 are
+Latin and Latin Extended subsets, used by the admin welcome panel, tour and About screen.
+
 WordPress block styles
 ----------------------
 web/wp-includes/blocks/*/style.min.css are the per-block stylesheets of WordPress 7.1.3
