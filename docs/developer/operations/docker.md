@@ -12,7 +12,9 @@ final stage is `alpine:3.22` with `ca-certificates` and `tzdata`, an unprivilege
 (uid 10001) and the data directories `/data/uploads`, `/data/plugins`, `/data/plugin-cache`,
 `/data/mail`, `/data/themes`, `/data/wpgo-cache`, `/data/languages`, `/data/bin` and `/data/backups`.
 The entrypoint is `wpgo launch` (it installs the binary into `/data/bin` and runs it from there, see
-[upgrading](../getting-started/upgrading.md#docker)), the default command `serve`, the exposed port 8080. Example plugin packages from `examples/plugins/dist` are copied to
+[upgrading](../getting-started/upgrading.md#docker)), the default command `serve`, the exposed port 8080.
+The binary is on the `PATH` as both `wpgo` and `pursae`, so `docker compose exec wpgo pursae help` lists the
+[command line](cli.md). Example plugin packages from `examples/plugins/dist` are copied to
 `/usr/share/wpgo/plugins` if they exist.
 
 ```bash

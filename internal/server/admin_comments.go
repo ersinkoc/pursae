@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -589,9 +590,13 @@ func (s *Server) commentsBulk(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/wp-admin/edit-comments?comment_status="+url.QueryEscape(c.DefaultQuery("comment_status", "all"))+"&"+key+"="+strconv.Itoa(n))
 }
 
-// applyCommentAction changes one comment and purges the cached pages that show it.
-func (s *Server) applyCommentAction(c *gin.Context, id int64, action string) error {
-	ctx := c.Request.Context()
+// applyCommentAction changes one comment and purges the cached pages that show it. The admin
+// screens pass their *gin.Context (its request context is used); the command line passes a plain
+// context.
+func (s *Server) applyCommentAction(ctx context.Context, id int64, action string) error {
+	if gc, ok := ctx.(*gin.Context); ok && gc.Request != nil {
+		ctx = gc.Request.Context()
+	}
 	cm, err := s.store.GetComment(ctx, id)
 	if err != nil {
 		return err

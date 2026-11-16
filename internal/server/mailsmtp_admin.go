@@ -996,45 +996,67 @@ func (s *Server) msTestFromDomain(o *msOptions, connID string) string {
 
 // msRunTest sends the Email Test message through one connection, synchronously, with the transcript.
 func (s *Server) msRunTest(c *gin.Context, o *msOptions, d *msScreen) {
-	ctx := c.Request.Context()
-	if _, err := parseOneAddr(d.TestTo); err != nil {
-		d.TestResult = "Please enter a valid email address."
-		return
+	r := s.msTest(c.Request.Context(), o, d.TestTo, d.TestConn, d.TestHTML)
+	d.TestConn, d.TestResult, d.TestDebug, d.TestHints, d.TestOK = r.Conn, r.Message, r.Debug, r.Hints, r.OK
+}
+
+// msTestResult is the outcome of an Email Test (msTest).
+type msTestResult struct {
+	OK      bool
+	Sent    bool     // a delivery was attempted (false: invalid address or Do Not Send)
+	Conn    string   // the connection used ("primary" when the asked one does not exist)
+	Mailer  string   // its mailer's title
+	Message string   // the screen's result line
+	Debug   string   // the transport transcript
+	Hints   []string // how to fix a failure
+}
+
+// msTest sends the Email Test message to one address through one connection (connID, "" or
+// "primary" for the primary), synchronously: the Email Log row, the debug event and the last
+// error are recorded as for every message. Shared by Tools › Email Test and `pursae mail test`.
+func (s *Server) msTest(ctx context.Context, o *msOptions, to, connID string, html bool) msTestResult {
+	r := msTestResult{Conn: connID}
+	if _, err := parseOneAddr(to); err != nil {
+		r.Message = "Please enter a valid email address."
+		return r
 	}
 	if o.General.DoNotSend {
-		d.TestResult = "The \"Do Not Send\" option is enabled under Settings › Misc, so the test email was not sent."
-		return
+		r.Message = "The \"Do Not Send\" option is enabled under Settings › Misc, so the test email was not sent."
+		return r
 	}
-	cn := o.conn(d.TestConn)
+	cn := o.conn(connID)
 	if cn == nil {
-		cn, d.TestConn = o.primary(), "primary"
+		cn, r.Conn = o.primary(), "primary"
 	}
+	r.Mailer = msMailerTitle(cn.Mailer)
 	site := s.settings.String("blogname")
-	msg := gomail.Message{To: []string{d.TestTo}, Subject: "Pursae SMTP: Test Email to " + d.TestTo,
+	msg := gomail.Message{To: []string{to}, Subject: "Pursae SMTP: Test Email to " + to,
 		Body: "Congrats, test email was sent successfully!\n\nThank you for trying out Pursae SMTP. This test was sent from " + site + " (" + s.settings.String("home") + ") through " + msMailerTitle(cn.Mailer) + ".\n\n- Pursae SMTP"}
-	if d.TestHTML {
+	if html {
 		msg.HTML = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #dcdcde;border-radius:4px">` +
 			`<h1 style="font-size:22px;color:#1d2327">Congrats, test email was sent successfully!</h1><p style="color:#3c434a;font-size:15px">Thank you for trying out Pursae SMTP. This test was sent from <strong>` +
 			template.HTMLEscapeString(site) + `</strong> through <strong>` + template.HTMLEscapeString(msMailerTitle(cn.Mailer)) + `</strong>.</p><p style="color:#646970">- Pursae SMTP</p></div>`
 	}
 	var debug bytes.Buffer
 	base := s.mailer()
+	r.Sent = true
 	res := s.msSendVia(ctx, o, cn, base, msg, base.From, &debug)
 	s.msLogResult(ctx, o, msg, res, "Pursae SMTP: Email Test")
-	d.TestDebug = debug.String()
+	r.Debug = debug.String()
 	if res.Err != nil {
 		s.msSetLastError(ctx, cn.Mailer, res.Err)
 		s.msDebugEvent(ctx, o, "error", fmt.Sprintf("Email Test (%s): %v", msMailerTitle(cn.Mailer), res.Err), "Pursae SMTP: Email Test")
-		d.TestResult = res.Err.Error()
-		d.TestHints = msHints(cn.Mailer, res.Err.Error())
-		return
+		r.Message = res.Err.Error()
+		r.Hints = msHints(cn.Mailer, res.Err.Error())
+		return r
 	}
 	s.msClearLastError(ctx)
-	d.TestOK = true
-	d.TestResult = "Test HTML email was sent successfully! Please check your inbox to make sure it was delivered."
-	if !d.TestHTML {
-		d.TestResult = "Test plain text email was sent successfully! Please check your inbox to make sure it was delivered."
+	r.OK = true
+	r.Message = "Test HTML email was sent successfully! Please check your inbox to make sure it was delivered."
+	if !html {
+		r.Message = "Test plain text email was sent successfully! Please check your inbox to make sure it was delivered."
 	}
+	return r
 }
 
 // msHints are the "how to fix" steps shown under a failed test, like upstream's error explanations.

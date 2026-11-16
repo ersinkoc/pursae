@@ -386,3 +386,26 @@ func TestRollbackWithoutPreviousBinary(t *testing.T) {
 		t.Fatalf("state changed: %+v", st)
 	}
 }
+
+func TestInstalled(t *testing.T) {
+	image := filepath.Join(t.TempDir(), "wpgo")
+	fakeBinary(t, image, "0.2.7")
+	dir := t.TempDir()
+	if got := Installed(image, dir, "0.2.7"); got != "" {
+		t.Fatalf("nothing installed: %q", got)
+	}
+	installed := filepath.Join(dir, "wpgo")
+	fakeBinary(t, installed, "0.2.8")
+	if got := Installed(image, dir, "0.2.7"); got != installed {
+		t.Fatalf("newer installed: %q", got)
+	}
+	if got := Installed(image, dir, "0.2.8"); got != "" {
+		t.Fatalf("same version: %q", got)
+	}
+	if got := Installed(installed, dir, "0.2.7"); got != "" {
+		t.Fatalf("the installed binary itself: %q", got)
+	}
+	if got := Installed(image, "", "0.2.7"); got != "" {
+		t.Fatalf("no dir: %q", got)
+	}
+}

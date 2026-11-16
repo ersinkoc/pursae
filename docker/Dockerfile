@@ -25,7 +25,8 @@ RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 wpgo \
 # The image's binary; `wpgo launch` installs it into /data/bin (a volume) and runs it from there, so
 # Dashboard › Updates can replace it and the update survives restarts, while a newer image still wins.
 COPY --from=build /out/wpgo /usr/local/lib/pursae/wpgo
-RUN ln -s /usr/local/lib/pursae/wpgo /usr/local/bin/wpgo
+RUN ln -s /usr/local/lib/pursae/wpgo /usr/local/bin/wpgo \
+	&& ln -s /usr/local/lib/pursae/wpgo /usr/local/bin/pursae
 # Demo marketplace: example plugin packages built by tools/build-plugins.sh (if present).
 COPY examples/plugins/dis[t]/*.zip examples/plugins/dis[t]/dev-key.pub /usr/share/wpgo/plugins/
 USER wpgo

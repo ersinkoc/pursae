@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+// Labels of the checks that describe the running server process itself: a command-line process
+// (`pursae site health`) has no plugin runtime and no live page cache, so it reports them differently.
+const (
+	healthLabelCacheOn     = "Page cache is enabled"
+	healthLabelSandboxUp   = "The plugin sandbox is running"
+	healthLabelSandboxDown = "The plugin sandbox could not start"
+)
+
 // healthTests runs every check of the Site Health screen. The dashboard widget counts the same
 // list (siteHealthSummary), so a new check shows up in both places.
 func (s *Server) healthTests(ctx context.Context) []healthTest {
@@ -48,16 +56,16 @@ func (s *Server) healthTests(ctx context.Context) []healthTest {
 	}
 	if s.settings.Bool("wpgo_cache_enabled") {
 		st := s.currentCache().Stats()
-		add(healthTest{Label: "Page cache is enabled", Status: "good", Badge: "Performance",
+		add(healthTest{Label: healthLabelCacheOn, Status: "good", Badge: "Performance",
 			Description: fmt.Sprintf("Pursae Cache serves pages from memory (%d cached, %.0f%% hit ratio since start).", st.Entries, st.HitRatio*100)})
 	} else {
 		add(healthTest{Label: "Page cache is not enabled", Status: "recommended", Badge: "Performance",
 			Description: "Page cache can improve your site performance by caching pages in memory.", Action: `<a href="/wp-admin/admin?page=wpgo-cache-settings">Turn on Pursae Cache</a>`})
 	}
 	if s.plugins != nil && s.plugins.initErr == nil {
-		add(healthTest{Label: "The plugin sandbox is running", Status: "good", Badge: "Security", Description: "Plugins run as WebAssembly with only the permissions you granted."})
+		add(healthTest{Label: healthLabelSandboxUp, Status: "good", Badge: "Security", Description: "Plugins run as WebAssembly with only the permissions you granted."})
 	} else {
-		add(healthTest{Label: "The plugin sandbox could not start", Status: "critical", Badge: "Security", Description: "Wasm plugins are disabled."})
+		add(healthTest{Label: healthLabelSandboxDown, Status: "critical", Badge: "Security", Description: "Wasm plugins are disabled."})
 	}
 	if s.settings.String("timezone_string") != "" {
 		add(healthTest{Label: "Your site uses a named time zone", Status: "good", Badge: "Performance", Description: "Dates follow daylight saving changes automatically."})
