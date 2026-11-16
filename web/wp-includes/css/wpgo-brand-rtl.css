@@ -40,32 +40,3 @@ html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-lo
 	height: 96px;
 	background: url(../images/brand/logo-256.png) center / contain no-repeat;
 }
-
-/* Dashboard welcome panel: the Gopher on a light WordPress-blue gradient instead of the dark artwork. */
-.welcome-panel-header-wrap {
-	background: linear-gradient(-120deg, #135e96 0%, #2271b1 45%, #4f94d4 100%) !important;
-}
-.welcome-panel-header-image {
-	display: none !important;
-}
-.wpgo-welcome-title {
-	display: flex;
-	align-items: center;
-	gap: 28px;
-}
-.wpgo-welcome-mascot {
-	flex: none;
-	width: 112px;
-	height: 112px;
-	filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
-}
-.welcome-panel .welcome-panel-close:focus::before,
-.welcome-panel .welcome-panel-close:hover::before,
-.welcome-panel .welcome-panel-close:focus,
-.welcome-panel .welcome-panel-close:hover {
-	color: #f0f6fc;
-}
-@media screen and (max-width: 600px) {
-	.wpgo-welcome-title { gap: 16px; }
-	.wpgo-welcome-mascot { width: 72px; height: 72px; }
-}

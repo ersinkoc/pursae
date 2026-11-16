@@ -246,7 +246,7 @@ func buildMenu(u *store.User, screen string, pending int, cache bool) []*menuTop
 // (the wp-admin style handle: common, forms, list-tables, edit, media, themes, nav-menus, … — see
 // partials/layout.html). Paths are relative to /wp-admin/assets/css/ unless they start with "/".
 var screenStyles = map[string][]string{
-	"admin/dashboard":            {"/wp-admin/css/site-health.min.css"},
+	"admin/dashboard":            {"/wp-admin/css/site-health.min.css", "wpgo/pursae-brand.css"},
 	"admin/posts-list":           {},
 	"admin/post-edit":            {},
 	"admin/terms":                {},
@@ -268,7 +268,7 @@ var screenStyles = map[string][]string{
 	"admin/user-delete":          {"pages/users.css"},
 	"admin/update-core":          {},
 	"admin/update-core-restart":  {},
-	"admin/about":                {},
+	"admin/about":                {"wpgo/pursae-brand.css"},
 	"admin/tools":                {},
 	"admin/options-privacy":      {},
 	"admin/options-license":      {},

@@ -49,132 +49,55 @@
 	{{template "notices" .}}
 	{{with .Data}}
 	{{if $.User.Can "edit_theme_options" nil}}
-	<div id="welcome-panel" class="welcome-panel{{if not .ShowWelcome}} hidden{{end}}">
+	<div id="welcome-panel" class="welcome-panel px{{if not .ShowWelcome}} hidden{{end}}">
 		<a class="welcome-panel-close" href="/wp-admin/?welcome=0" aria-label="Dismiss the welcome panel">Dismiss</a>
-		<div class="welcome-panel-content">
-		<div class="welcome-panel-header-wrap">
-			<div class="welcome-panel-header">
-				<div class="welcome-panel-header-image">
-          <svg preserveAspectRatio="xMidYMin slice" fill="none" viewBox="0 0 1232 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-  <g clip-path="url(#a)">
-    <path fill="#151515" d="M0 0h1232v240H0z"/>
-    <ellipse cx="616" cy="232" fill="url(#b)" opacity=".05" rx="1497" ry="249"/>
-    <mask id="d" width="1000" height="400" x="232" y="20" maskUnits="userSpaceOnUse" style="mask-type:alpha">
-      <path fill="url(#c)" d="M0 0h1000v400H0z" transform="translate(232 20)"/>
-    </mask>
-    <g stroke-width="2" mask="url(#d)">
-      <path stroke="url(#e)" d="M387 20v1635"/>
-      <path stroke="url(#f)" d="M559.5 20v1635"/>
-      <path stroke="url(#g)" d="M732 20v1635"/>
-      <path stroke="url(#h)" d="M904.5 20v1635"/>
-      <path stroke="url(#i)" d="M1077 20v1635"/>
-    </g>
-  </g>
-  <defs>
-    <linearGradient id="e" x1="387.5" x2="387.5" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#3858E9" stop-opacity="0"/>
-      <stop offset=".297" stop-color="#3858E9"/>
-      <stop offset=".734" stop-color="#3858E9"/>
-      <stop offset="1" stop-color="#3858E9" stop-opacity="0"/>
-      <stop offset="1" stop-color="#3858E9" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="f" x1="560" x2="560" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFFCB5" stop-opacity="0"/>
-      <stop offset="0" stop-color="#FFFCB5" stop-opacity="0"/>
-      <stop offset=".297" stop-color="#FFFCB5"/>
-      <stop offset=".734" stop-color="#FFFCB5"/>
-      <stop offset="1" stop-color="#FFFCB5" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="g" x1="732.5" x2="732.5" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#C7FFDB" stop-opacity="0"/>
-      <stop offset=".297" stop-color="#C7FFDB"/>
-      <stop offset=".693" stop-color="#C7FFDB"/>
-      <stop offset="1" stop-color="#C7FFDB" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="h" x1="905" x2="905" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFB7A7" stop-opacity="0"/>
-      <stop offset=".297" stop-color="#FFB7A7"/>
-      <stop offset=".734" stop-color="#FFB7A7"/>
-      <stop offset="1" stop-color="#3858E9" stop-opacity="0"/>
-      <stop offset="1" stop-color="#FFB7A7" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="i" x1="1077.5" x2="1077.5" y1="20" y2="1655" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7B90FF" stop-opacity="0"/>
-      <stop offset=".297" stop-color="#7B90FF"/>
-      <stop offset=".734" stop-color="#7B90FF"/>
-      <stop offset="1" stop-color="#3858E9" stop-opacity="0"/>
-      <stop offset="1" stop-color="#7B90FF" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="b" cx="0" cy="0" r="1" gradientTransform="matrix(0 249 -1497 0 616 232)" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#3858E9"/>
-      <stop offset="1" stop-color="#151515" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="c" cx="0" cy="0" r="1" gradientTransform="matrix(0 765 -1912.5 0 500 -110)" gradientUnits="userSpaceOnUse">
-      <stop offset=".161" stop-color="#151515" stop-opacity="0"/>
-      <stop offset=".682"/>
-    </radialGradient>
-    <clipPath id="a">
-      <path fill="#fff" d="M0 0h1232v240H0z"/>
-    </clipPath>
-  </defs>
-</svg>
-        </div>
-				<div class="wpgo-welcome-title">
-					<img class="wpgo-welcome-mascot" src="/wp-includes/images/brand/logo-256.png" width="112" height="112" alt="" />
-					<div>
-						<h2>Welcome to Pursae!</h2>
-						<p><a href="/wp-admin/about">Learn more about the {{version}} version.</a></p>
-					</div>
+		<div class="px-hero">
+			<div class="px-hero__logo">{{template "pursae-mark" 72}}</div>
+			<div>
+				<div class="px-hero__eyebrow"><span class="px-tag px-tag--sky"><i></i>Pursae {{version}}</span><span class="px-tag">Go &middot; PostgreSQL</span></div>
+				<h2>Welcome to Pursae</h2>
+				<p class="px-hero__lede">The WordPress you know, rebuilt in Go. Your site is ready: take a one-minute tour of the admin, or jump straight in below.</p>
+				<div class="px-hero__actions">
+					<button type="button" class="px-btn" data-ptour-start><svg viewBox="0 0 256 256" aria-hidden="true"><path d="M232.4 114.49 88.32 26.35a16 16 0 0 0-16.2-.3A15.86 15.86 0 0 0 64 39.87v176.26A15.94 15.94 0 0 0 80 232a16.07 16.07 0 0 0 8.36-2.35l144.04-88.14a15.81 15.81 0 0 0 0-27Z"/></svg>Take the tour</button>
+					<a class="px-btn px-btn--ghost" href="/wp-admin/about">What&#8217;s in Pursae</a>
 				</div>
 			</div>
 		</div>
-		<div class="welcome-panel-column-container">
-			<div class="welcome-panel-column">
-				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-				<rect width="48" height="48" rx="4" fill="#2271b1"/>
-				<path fill-rule="evenodd" clip-rule="evenodd" d="M32.0668 17.0854L28.8221 13.9454L18.2008 24.671L16.8983 29.0827L21.4257 27.8309L32.0668 17.0854ZM16 32.75H24V31.25H16V32.75Z" fill="white"/>
-			</svg>
-				<div class="welcome-panel-column-content">
-					<h3>Author rich content with blocks and patterns</h3>
-					<p>Block patterns are pre-configured block layouts. Use them to get inspired or create new pages in a flash.</p>
-					<a href="/wp-admin/post-new?post_type=page">Add a new page</a>
+		<div class="px-cols">
+			<div class="px-col">
+				<span class="px-ico"><span class="dashicons dashicons-edit" aria-hidden="true"></span></span>
+				<div>
+					<h3>Write and publish</h3>
+					<p>Posts and pages in the block editor, with patterns to start from. The Classic Editor is built in too.</p>
+					<div class="px-col__links"><a href="/wp-admin/post-new?post_type=page">Add a new page</a><button type="button" data-ptour-start="1">Show me</button></div>
 				</div>
 			</div>
-			{{if customizerOn}}<div class="welcome-panel-column">
-				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-				<rect width="48" height="48" rx="4" fill="#2271b1"/>
-				<path fill-rule="evenodd" clip-rule="evenodd" d="M18 16h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2V18a2 2 0 0 1 2-2zm12 1.5H18a.5.5 0 0 0-.5.5v3h13v-3a.5.5 0 0 0-.5-.5zm.5 5H22v8h8a.5.5 0 0 0 .5-.5v-7.5zm-10 0h-3V30a.5.5 0 0 0 .5.5h2.5v-8z" fill="#fff"/>
-			</svg>
-				<div class="welcome-panel-column-content">
-					<h3>Start Customizing</h3>
-					<p>Configure your site&#8217;s logo, header, menus, and more in the Customizer.</p>
-					<a class="load-customize hide-if-no-customize" href="/wp-admin/customize">Open the Customizer</a>
+			{{if customizerOn}}<div class="px-col">
+				<span class="px-ico px-ico--peach"><span class="dashicons dashicons-admin-appearance" aria-hidden="true"></span></span>
+				<div>
+					<h3>Make it yours</h3>
+					<p>Set your site&#8217;s logo, colours, header and menus in the Customizer, or pick another theme.</p>
+					<div class="px-col__links"><a class="load-customize hide-if-no-customize" href="/wp-admin/customize">Open the Customizer</a><button type="button" data-ptour-start="4">Show me</button></div>
 				</div>
-			</div>{{else}}<div class="welcome-panel-column">
-				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-				<rect width="48" height="48" rx="4" fill="#2271b1"/>
-				<path fill-rule="evenodd" clip-rule="evenodd" d="M16 16h7v7h-7v-7zm1.5 1.5v4h4v-4h-4zM25 16h7v7h-7v-7zm1.5 1.5v4h4v-4h-4zM16 25h7v7h-7v-7zm1.5 1.5v4h4v-4h-4zM27.75 25h1.5v2.75H32v1.5h-2.75V32h-1.5v-2.75H25v-1.5h2.75V25z" fill="#fff"/>
-			</svg>
-				<div class="welcome-panel-column-content">
-					<h3>Discover the Web Builder</h3>
-					<p>Design your header, footer and page templates visually with Pursae Web Builder &#8212; drag, drop and publish.</p>
-					<a href="{{wbThemeBuilderURL}}">Open the Theme Builder</a>
+			</div>{{else}}<div class="px-col">
+				<span class="px-ico px-ico--peach"><span class="dashicons dashicons-layout" aria-hidden="true"></span></span>
+				<div>
+					<h3>Design with Web Builder</h3>
+					<p>Build your header, footer and page templates visually: drag, drop and publish fast static pages.</p>
+					<div class="px-col__links"><a href="{{wbThemeBuilderURL}}">Open the Theme Builder</a><button type="button" data-ptour-start="4">Show me</button></div>
 				</div>
 			</div>{{end}}
-			<div class="welcome-panel-column">
-				<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-				<rect width="48" height="48" rx="4" fill="#2271b1"/>
-				<path fill-rule="evenodd" clip-rule="evenodd" d="M31 24a7 7 0 0 1-7 7V17a7 7 0 0 1 7 7zm-7-8a8 8 0 1 1 0 16 8 8 0 0 1 0-16z" fill="#fff"/>
-			</svg>
-				<div class="welcome-panel-column-content">
-					<h3>Discover a new way to build your site.</h3>
-					<p>There is a new kind of WordPress theme, called a block theme, that lets you build the site you&#8217;ve always wanted &#8212; with blocks and styles.</p>
-					<a href="https://wordpress.org/documentation/article/block-themes/">Learn about block themes</a>
+			<div class="px-col">
+				<span class="px-ico px-ico--mint"><span class="dashicons dashicons-admin-plugins" aria-hidden="true"></span></span>
+				<div>
+					<h3>Switch on what you need</h3>
+					<p>A store, SEO, cache, forms, translations and more ship inside Pursae. Turn them on from Plugins.</p>
+					<div class="px-col__links"><a href="/wp-admin/plugins">Go to Plugins</a><button type="button" data-ptour-start="5">Show me</button></div>
 				</div>
 			</div>
 		</div>
-		</div>
 	</div>
+	{{template "pursae-tour" .}}
 	{{end}}
 
 	<input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="{{.OrderNonce}}" />

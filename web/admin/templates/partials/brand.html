@@ -1,0 +1,51 @@
+{{/* pursae-mark: the Pursae logo in graphite ink, its eyes blink (pursae-brand.css). The argument is the size in px. */}}
+{{define "pursae-mark"}}<svg class="px-mark" width="{{.}}" height="{{.}}" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M14 59C13.2 50 12.6 38 13 28C13.5 15.5 22.6 7 34 7C45.6 7 55 16 55 27C55 38.5 45.6 47 34 47L27.5 47C22.5 47 18.6 50.6 14 59Z" fill="#fff" stroke="#16171A" stroke-width="4.2" stroke-linejoin="round"/><ellipse class="px-eye" cx="30" cy="24.5" rx="3.1" ry="4.1" fill="#16171A"/><ellipse class="px-eye" cx="41.5" cy="24.5" rx="3.1" ry="4.1" fill="#16171A"/></svg>{{end}}
+
+{{/* pursae-tour: the Dashboard's guided tour. Each step points at an admin menu item (data-target,
+   the first selector that exists wins; none or a hidden menu shows the card centred). The texts sit
+   in the page so the admin translation pass covers them; pursae-tour.js only moves them around. */}}
+{{define "pursae-tour"}}<div class="ptour-steps" id="ptour-steps" hidden>
+	<section data-target="">
+		{{template "pursae-mark" 44}}
+		<h2>Hi! Let&#8217;s look around</h2>
+		<p>Six quick stops through the admin. Use the arrow keys or the buttons, and press Esc to leave at any time.</p>
+	</section>
+	<section data-target="#menu-posts">
+		<h2>Posts</h2>
+		<p>Your blog: write posts in the block editor, sort them with categories and tags, and schedule them for later.</p>
+		<a class="ptour__link" href="/wp-admin/post-new">Write a post</a>
+	</section>
+	<section data-target="#menu-pages">
+		<h2>Pages</h2>
+		<p>Home, About, Contact: the pages that stay put. Start from a pattern to get a layout in a click.</p>
+		<a class="ptour__link" href="/wp-admin/post-new?post_type=page">Add a page</a>
+	</section>
+	<section data-target="#menu-media">
+		<h2>Media</h2>
+		<p>Every image, video and file you upload. Images are resized and optimised automatically.</p>
+		<a class="ptour__link" href="/wp-admin/upload">Open the Media Library</a>
+	</section>
+	<section data-target="#menu-gowebeditor,#menu-appearance">
+		<h2>Design</h2>
+		<p>Themes, menus and the look of your site. With Web Builder you design headers, footers and templates visually.</p>
+		<a class="ptour__link" href="/wp-admin/themes">See themes</a>
+	</section>
+	<section data-target="#menu-plugins">
+		<h2>Plugins</h2>
+		<p>These ship inside Pursae, ready to switch on. Each one runs sandboxed, so a misbehaving plugin can&#8217;t take your site down.</p>
+		<div class="ptour__chips"><span class="px-tag px-tag--sky">Commerce</span><span class="px-tag px-tag--peach">SEO</span><span class="px-tag px-tag--mint">Cache</span><span class="px-tag px-tag--lilac">Multi Language</span><span class="px-tag px-tag--sky">Contact Form</span><span class="px-tag px-tag--peach">Security</span><span class="px-tag px-tag--mint">SMTP</span><span class="px-tag px-tag--lilac">Custom Fields</span></div>
+		<a class="ptour__link" href="/wp-admin/plugins">Go to Plugins</a>
+	</section>
+	<section data-target="#menu-settings">
+		<h2>Settings</h2>
+		<p>Your site&#8217;s title, language, time zone, permalinks and reading options all live here.</p>
+		<a class="ptour__link" href="/wp-admin/options-general">Open Settings</a>
+	</section>
+	<section data-target="">
+		<h2>You&#8217;re all set</h2>
+		<p>That&#8217;s the tour. You can take it again any time from the welcome panel on the Dashboard.</p>
+		<a class="ptour__link" href="/wp-admin/about">What&#8217;s in Pursae</a>
+	</section>
+	<span data-label="back">Back</span><span data-label="next">Next</span><span data-label="done">Done</span><span data-label="close">Close the tour</span>
+</div>
+<script {{cspNonce}} src="/wp-admin/assets/js/pursae-tour.js?ver={{version}}" defer></script>{{end}}
