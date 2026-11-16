@@ -187,6 +187,10 @@ func TestHGHelpers(t *testing.T) {
 	if st.FrontMode != "json" || !reflect.DeepEqual(st.Public["a"], []string{"find"}) || !reflect.DeepEqual(st.CORSOrigins, []string{"https://x.test"}) {
 		t.Errorf("sanitize: %+v", st)
 	}
+	// Headless mode is opt-in: unset or unknown modes keep the site's front end.
+	if hgDefaults().FrontMode != "off" || hgSanitize(hgSettings{}).FrontMode != "off" || hgSanitize(hgSettings{FrontMode: "bogus"}).FrontMode != "off" {
+		t.Error("default front mode is not off")
+	}
 }
 
 func TestHGSchemaValidation(t *testing.T) {

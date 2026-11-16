@@ -717,6 +717,16 @@ func TestGooExtBookingsGaps(t *testing.T) {
 	if r := gooReq(t, guest, "GET", base+"/wp-json/wc-bookings/v1/products/slots?product_id="+itoa64(p.ID)+"&date="+day.AddDate(0, 0, 1).Format("2006-01-02"), nil, nil); r.Code != 200 || r.obj()["product_id"] == nil {
 		t.Errorf("slots: %d %s", r.Code, r.Raw)
 	}
+	// The WooCommerce Bookings parameters: product_ids (comma list or array) and a date range.
+	rangeQ := "&min_date=" + day.AddDate(0, 0, 1).Format("2006-01-02") + "&max_date=" + day.AddDate(0, 0, 2).Format("2006-01-02")
+	for _, q := range []string{"product_ids=" + itoa64(p.ID) + ",999999", "product_ids[]=" + itoa64(p.ID)} {
+		if r := gooReq(t, guest, "GET", base+"/wp-json/wc-bookings/v1/products/slots?"+q+rangeQ, nil, nil); r.Code != 200 || r.obj()["count"] == nil || r.obj()["records"] == nil {
+			t.Errorf("slots %s: %d %s", q, r.Code, r.Raw)
+		}
+	}
+	if r := gooReq(t, guest, "GET", base+"/wp-json/wc-bookings/v1/products/slots?product_ids=999999"+rangeQ, nil, nil); r.Code != 404 {
+		t.Errorf("slots of no bookable product: %d", r.Code)
+	}
 	if r := gooReq(t, guest, "GET", base+"/wp-json/wc-bookings/v1/bookings", nil, nil); r.Code != 401 && r.Code != 403 {
 		t.Errorf("anonymous list: %d", r.Code)
 	}

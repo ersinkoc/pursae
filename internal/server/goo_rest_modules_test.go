@@ -131,10 +131,23 @@ func TestGooV3ModuleEndpoints(t *testing.T) {
 			t.Errorf("%s with the module off: %d", p, r.Code)
 		}
 	}
+	// The REST index does not advertise the routes of modules that are off.
+	indexHas := func(route string) bool {
+		_, body, _ := get(t, c, base+"/wp-json/")
+		return strings.Contains(body, `"`+route+`"`)
+	}
+	for _, route := range []string{"/wc-bookings/v1/products/slots", "/wc/v3/bookings", "/wc/v3/memberships", "/wc/v3/subscriptions", "/wc/v3/gift-cards"} {
+		if indexHas(route) {
+			t.Errorf("index lists %s with its module off", route)
+		}
+	}
 	for _, k := range []string{gsubKey, bkKey, gmemKey, gcKey} {
 		if err := srv.gooSetExtension(ctx, k, true); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if !indexHas("/wc-bookings/v1/products/slots") || !indexHas("/wc/v3/bookings") {
+		t.Error("index misses the bookings routes with the module on")
 	}
 	u := gxaCustomer(t, srv, "api@example.test")
 	p := gooMakeSimple(t, srv, "Module product", 9, nil)

@@ -60,7 +60,7 @@ func (s *Server) recordPluginDisabled(ctx context.Context, slug, reason string) 
 // missingPluginDependencies lists the plugins slug's manifest requires (requires_plugins) that are not
 // active. Built-in plugins count by their Plugins screen slug.
 func (s *Server) missingPluginDependencies(ctx context.Context, slug string) []string {
-	pkg, err := plugins.LoadPackageFile(pluginPackagePath(s.plugins.dir, slug), s.plugins.trusted(), !s.settings.Bool("plugin_allow_unsigned"))
+	pkg, err := plugins.LoadPackageFile(pluginPackagePath(s.plugins.dir, slug), s.plugins.trusted(), !s.allowUnsignedPlugins())
 	if err != nil || len(pkg.Manifest.RequiresPlugins) == 0 {
 		return nil
 	}

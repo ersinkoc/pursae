@@ -169,8 +169,9 @@ adds release roots for a key rotation; it never removes the pinned one.
 | `WPGO_PLUGIN_KEYS` | — | Comma-separated Ed25519 public keys trusted to sign plugin packages |
 | `WPGO_MARKET_DIR` | — | Local plugin packages offered on Plugins › Add Plugin (besides the Hub catalog) |
 | `WPGO_DEV_HUB_URL` | `http://pursae-manager.test:8090` in compose | **Development builds only** (`-tags devhub`): the Pursae Manager to use instead of `https://hub.pursae.com` (`off` disables it). Production binaries ignore it |
-| `WPGO_TRUST_HUB_KEYS` | `1` in compose | **Development builds only** (`-tags devhub`): `1` trusts every signing key the Manager lists, endorsed by the release root or not (a local Manager's key). Production binaries ignore it |
-| `WPGO_TRUST_DEV_KEY` | `1` in compose | **Development builds only** (`-tags devhub`): trust the demo signing key of the bundled example plugins. Production binaries ignore it |
+| `WPGO_TRUST_HUB_KEYS` | unset | **Development builds only** (`-tags devhub`): `1` trusts every signing key the Manager lists, endorsed by the release root or not (a local Manager's key). Production binaries ignore it |
+| `WPGO_TRUST_DEV_KEY` | unset | **Development builds only** (`-tags devhub`): trust the demo signing key of the bundled example plugins. Production binaries ignore it |
+| `WPGO_ALLOW_UNSIGNED_PLUGINS` | unset | `1` lets the `plugin_allow_unsigned` option accept unsigned plugins (development only) |
 | `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (REST users, `/?author=N`, users sitemap) |
 | `WPGO_TRUSTED_PROXIES` | loopback and private ranges | Proxies whose `X-Forwarded-For` is believed; `none` trusts none |
 | `WPGO_THEME_LIBRARY_DIR` | — (from the Hub) | Serve the theme library from a local directory (development, offline) |

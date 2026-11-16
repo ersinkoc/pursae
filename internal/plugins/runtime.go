@@ -118,6 +118,8 @@ type Runtime struct {
 	byModule map[string]*Plugin // live module instance name -> plugin
 	gen      uint64
 	closed   bool // Close ran: the wazero runtime and cache are released
+
+	quiet sync.Map // slug -> struct{}: log entries go to the Logger at debug level (SetLogsQuiet)
 }
 
 // NewRuntime creates a runtime whose plugins register hooks in hooks.
@@ -311,6 +313,18 @@ func (rt *Runtime) pluginForModule(name string) *Plugin {
 	return rt.byModule[name]
 }
 
+// SetLogsQuiet sends slug's log entries to the Logger at debug level while quiet is set (they still
+// reach the plugin's own log). The host uses it around a load it knows to be partial, such as loading
+// a never-activated plugin without permissions just to run its uninstall callback, so the refusals
+// its start-up code meets do not show up as server errors.
+func (rt *Runtime) SetLogsQuiet(slug string, quiet bool) {
+	if quiet {
+		rt.quiet.Store(slug, struct{}{})
+	} else {
+		rt.quiet.Delete(slug)
+	}
+}
+
 func (rt *Runtime) logSink(slug string) func(LogEntry) {
 	if rt.cfg.Logger == nil {
 		return nil
@@ -324,6 +338,9 @@ func (rt *Runtime) logSink(slug string) func(LogEntry) {
 			level = slog.LevelWarn
 		case "error":
 			level = slog.LevelError
+		}
+		if _, quiet := rt.quiet.Load(slug); quiet {
+			level = slog.LevelDebug
 		}
 		rt.cfg.Logger.Log(context.Background(), level, e.Message, "plugin", slug, "source", e.Source)
 	}

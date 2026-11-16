@@ -77,8 +77,9 @@ Hub operator asks for an endorsement whenever they generate a new key.
 
 Plugin packages are verified only against endorsed Hub keys too (with `wpgo_hub_trust_keys` on).
 A production binary cannot relax any of this. A development build (`-tags devhub`) with
-`WPGO_TRUST_HUB_KEYS=1` (the development compose file sets it) trusts every listed key, endorsed
-or not, so a local Manager with a throwaway key can publish test releases and plugins.
+`WPGO_TRUST_HUB_KEYS=1` (opt-in, also in the development compose file) trusts every listed key, endorsed
+or not, so a local Manager with a throwaway key can publish test releases and plugins. Automatic core
+updates never install under that trust; update by hand.
 
 ### Rotating the release root
 

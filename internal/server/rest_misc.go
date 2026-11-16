@@ -41,8 +41,11 @@ func (api *restAPI) registerMisc() {
 	api.register("wp/v2", "/wp/v2/block-directory/search", g(func(c *gin.Context, r *restRequest) { restJSON(c, http.StatusOK, []any{}) }), nil)
 	api.register("wp/v2", "/wp/v2/wp_pattern_category", g(func(c *gin.Context, r *restRequest) { paginate(c, 0, 100, 1); restJSON(c, http.StatusOK, []any{}) }), nil)
 	api.register("wp/v2", "/wp/v2/templates", g(func(c *gin.Context, r *restRequest) { restJSON(c, http.StatusOK, []any{}) }), nil)
+	// The editor looks up the front-page template on every post-new. With no block template to fall
+	// back on (classic themes: block-templates is false), WordPress answers an empty object, not a
+	// 404 (WP_REST_Templates_Controller::get_template_fallback), so neither do we.
 	api.register("wp/v2", "/wp/v2/templates/lookup", g(func(c *gin.Context, r *restRequest) {
-		restErr(c, http.StatusNotFound, "rest_template_not_found", "No templates exist with that id.")
+		restJSON(c, http.StatusOK, map[string]any{})
 	}), nil)
 	api.register("wp/v2", "/wp/v2/template-parts", g(func(c *gin.Context, r *restRequest) { restJSON(c, http.StatusOK, []any{}) }), nil)
 	api.register("wp/v2", `/wp/v2/global-styles/themes/(?P<stylesheet>[\w-]+)`, g(func(c *gin.Context, r *restRequest) {
@@ -1413,11 +1416,16 @@ func (api *restAPI) uploadMedia(c *gin.Context, r *restRequest) {
 		a, err = s.saveUpload(c, "file", postID)
 	}
 	if err != nil {
-		code := "rest_upload_unknown_error"
-		if strings.Contains(err.Error(), "file type") {
-			code = "rest_upload_sideload_error"
+		// A rejected file (disallowed type, unsafe SVG) is the client's fault: 400, not the 500
+		// WordPress historically sends with rest_upload_sideload_error.
+		code, status := "rest_upload_unknown_error", http.StatusInternalServerError
+		switch {
+		case errors.Is(err, media.ErrType):
+			code, status = "rest_upload_sideload_error", http.StatusBadRequest
+		case errors.Is(err, media.ErrSVG):
+			status = http.StatusBadRequest
 		}
-		restErr(c, http.StatusInternalServerError, code, err.Error())
+		restErr(c, status, code, err.Error())
 		return
 	}
 	changed := false

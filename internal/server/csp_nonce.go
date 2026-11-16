@@ -204,14 +204,21 @@ func (s *Server) cspCacheState() string {
 
 // cspNonceScriptSrc is the nonce policy's script-src: only scripts carrying the response's nonce, and
 // what they load ('strict-dynamic' makes browsers ignore 'self' and host lists; 'self' stays for
-// browsers without it). wp-admin's underscore templates still need 'unsafe-eval'.
+// browsers without it). wp-admin's underscore templates still need 'unsafe-eval', and the block
+// editor's canvas iframe (a blob: document, which inherits this policy) starts with one fixed inline
+// script, allowed by its hash (cspEditorIframeHash).
 func cspNonceScriptSrc(admin bool) string {
 	src := cspNonceSource() + " 'strict-dynamic' 'self'"
 	if admin {
-		src += " 'unsafe-eval'"
+		src += " 'unsafe-eval' " + cspEditorIframeHash
 	}
 	return src
 }
+
+// cspEditorIframeHash is the hash of the inline script that the block editor (block-editor.min.js,
+// the React 18 branch of its iframe document) writes into its canvas iframe:
+// <script>document.currentScript.parentElement.remove()</script>. It cannot carry a nonce.
+const cspEditorIframeHash = "'sha256-ehBD9wGNfnN0flaZIjbVClW1//FJFsATigcdVB4VdMQ='"
 
 // cspScriptSrc is the enforced policy's script-src for mode.
 func cspScriptSrc(mode string, admin bool) string {

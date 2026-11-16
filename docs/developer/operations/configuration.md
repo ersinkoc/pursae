@@ -89,12 +89,13 @@ inspect them. See [Mail](mail.md).
 | `WPGO_DISALLOW_FILE_EDIT` | off | set to `1`/`true` to make the Theme File Editor read-only (like `DISALLOW_FILE_EDIT`) |
 | `WPGO_PLUGIN_KEYS` | — | comma-separated base64 Ed25519 public keys trusted to sign plugin packages, in addition to the `plugin_trusted_keys` option |
 | `WPGO_MARKET_DIR` | `examples/plugins/dist`, then `/usr/share/wpgo/plugins` | a directory of `.zip` packages offered on Plugins › Add Plugin |
-| `WPGO_TRUST_DEV_KEY` | unset (`1` in compose) | **Development builds only** (`-tags devhub`): trust the `dev-key.pub` found in the market directory. Production binaries ignore it |
+| `WPGO_TRUST_DEV_KEY` | unset | **Development builds only** (`-tags devhub`): trust the `dev-key.pub` found in the market directory. Production binaries ignore it |
+| `WPGO_ALLOW_UNSIGNED_PLUGINS` | unset | `1` lets the `plugin_allow_unsigned` option take effect (development only); without it the option is ignored, so a database or CLI write alone cannot turn plugin signature checks off |
 | `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (public REST users, `/?author=N`, users sitemap). Off by default because those routes disclose account names |
 | `WPGO_TRUSTED_PROXIES` | loopback and private ranges | proxies (comma separated IPs or CIDRs) whose `X-Forwarded-For` / `X-Real-IP` is believed when deriving the visitor address; `none` trusts no proxy ([reverse proxy](reverse-proxy-and-tls.md)) |
 | `WPGO_HUB` | unset (on) | `off` switches Pursae Manager (hub.pursae.com) off in any build: the site sends nothing, and gets no update notices or one-click updates, no marketplace and no licenses. Every admin page then shows a warning (to users who may update) until `WPGO_HUB` is removed and Pursae restarted. **Not recommended** |
 | `WPGO_DEV_HUB_URL` | unset (`http://pursae-manager.test:8090` in the development compose file) | **devhub builds only**: the Manager to use instead of `https://hub.pursae.com` (https, or http on localhost / `*.localhost` / `*.test`); `off` disables it. Production binaries ignore it ([development builds](#development-builds-devhub)) |
-| `WPGO_TRUST_HUB_KEYS` | unset (`1` in the development compose file) | **devhub builds only**: `1` trusts every key the Manager lists, endorsed by the release root or not ([root of trust](../hub/index.md#root-of-trust)). Production binaries ignore it |
+| `WPGO_TRUST_HUB_KEYS` | unset | **devhub builds only**: `1` trusts every key the Manager lists, endorsed by the release root or not ([root of trust](../hub/index.md#root-of-trust)). Production binaries ignore it |
 
 ### Pursae Manager
 
@@ -114,8 +115,8 @@ docker compose -f docker/compose.yaml up    # builds with GO_TAGS=devhub
 
 It reads `WPGO_DEV_HUB_URL` (the development compose file defaults to the Manager on the host,
 `http://pursae-manager.test:8090`, an `extra_hosts` alias for the host gateway: plain http is
-only accepted for `localhost`, `*.localhost` and `*.test` names) and `WPGO_TRUST_HUB_KEYS=1`, so the local Manager's throwaway
-signing key verifies releases and plugins. The production compose file builds without the tag
+only accepted for `localhost`, `*.localhost` and `*.test` names) and `WPGO_TRUST_HUB_KEYS` (off by default; set it to `1`
+so a local Manager's throwaway signing key verifies releases and plugins; automatic core updates never run under it). The production compose file builds without the tag
 (`GO_TAGS=""`, `make prod-up`) and drops both variables. Never ship a devhub binary.
 
 ## Content
@@ -166,7 +167,7 @@ environment variables:
 | Option | Where | Meaning |
 |--------|-------|---------|
 | `plugin_trusted_keys` | — | newline- or comma-separated public keys, merged with `WPGO_PLUGIN_KEYS` |
-| `plugin_allow_unsigned` | — | `true` accepts unsigned plugin packages (development only) |
+| `plugin_allow_unsigned` | — | `true` accepts unsigned plugin packages (development only; needs `WPGO_ALLOW_UNSIGNED_PLUGINS=1` too) |
 | `wpgo_cache_*`, `wpgo_opt_*` | Pursae Cache screens | page cache and page optimisation ([caching](caching.md)) |
 | `image_output_format` | Settings › Media | the format of the sizes generated for each uploaded image: `""` (default) JPEG sizes for WebP uploads (PNG with transparency); `webp` WebP sizes for WebP uploads, as WordPress does; `webp-all` WebP for JPEG, PNG and WebP uploads: the image itself is saved as WebP (`photo.jpg` → `photo.webp`, or `photo-scaled.webp` above 2560 px) and the upload is kept as the original image. WebP is written at quality 86 by libwebp transpiled to Go (no cgo). Plugins can change the mapping with the `image_editor_output_format` filter ([hooks](../plugins/hooks.md#media)). Existing images are not regenerated |
 | `pursae_license_key` | Settings › License | the license key sent to the Hub ([licenses](../hub/index.md#licenses)) |

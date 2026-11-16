@@ -43,10 +43,10 @@ Environment of the `wpgo` service:
 DATABASE_URL: postgres://wpgo:wpgo@db:5432/wpgo?sslmode=disable
 WPGO_SITE_URL: ${WPGO_SITE_URL:-http://localhost:8088}
 WPGO_UPLOADS_DIR: /data/uploads
-WPGO_TRUST_DEV_KEY: ${WPGO_TRUST_DEV_KEY:-1}   # demo only
+WPGO_TRUST_DEV_KEY: ${WPGO_TRUST_DEV_KEY:-0}   # demo only: 1 trusts the public demo key
 WPGO_DEV_HUB_URL: ${WPGO_DEV_HUB_URL:-http://pursae-manager.test:8090}   # devhub builds only
-WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-1}                           # devhub builds only
-WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-}
+WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-0}                           # devhub builds only
+WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-none}   # no proxy in development
 WPGO_SMTP_HOST: ${WPGO_SMTP_HOST:-}      # outgoing mail; without a host: .eml files in /data/mail
 WPGO_SMTP_PORT: ${WPGO_SMTP_PORT:-587}
 WPGO_SMTP_USER: ${WPGO_SMTP_USER:-}

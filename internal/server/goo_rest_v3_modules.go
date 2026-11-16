@@ -40,6 +40,27 @@ func (s *Server) registerGooV3Modules() {
 	reg("memberships", gmemKey, s.gooV3MembershipsList, s.gooV3MembershipGet, s.gooV3MembershipUpdate)
 }
 
+// gooModuleRoutes maps the REST route prefixes of the optional modules to their module key.
+var gooModuleRoutes = []struct{ prefix, module string }{
+	{"/" + gooBookingsNS, bkKey},
+	{"/wc/v3/bookings", bkKey},
+	{"/wc/v3/memberships", gmemKey},
+	{"/wc/v3/subscriptions", gsubKey},
+	{"/wc/v3/gift-cards", gcKey},
+}
+
+// gooModuleRESTHidden reports whether a route belongs to a module that is off. Its handlers already
+// answer rest_no_route then; the /wp-json/ index skips it too so it does not advertise dead routes
+// (the same pattern as forumRESTHidden).
+func (s *Server) gooModuleRESTHidden(pattern string) bool {
+	for _, m := range gooModuleRoutes {
+		if pattern == m.prefix || strings.HasPrefix(pattern, m.prefix+"/") {
+			return !s.gooExtOn(m.module)
+		}
+	}
+	return false
+}
+
 func gooTimeVal(v any, s *Server) (*time.Time, bool) {
 	str := strings.TrimSpace(gooStr(v))
 	if str == "" {

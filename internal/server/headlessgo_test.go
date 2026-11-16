@@ -196,8 +196,9 @@ func TestHeadlessGoOffByDefault(t *testing.T) {
 	if !strings.Contains(dash, "toplevel_page_headlessgo") {
 		t.Fatal("no menu while on")
 	}
-	if code, _, _ := get(t, http.DefaultClient, base+"/"); code != http.StatusNotFound {
-		t.Fatalf("front end in headless mode: %d", code)
+	// The default front mode is "off": activating the plugin leaves the public site up.
+	if code, _, _ := get(t, http.DefaultClient, base+"/"); code != http.StatusOK {
+		t.Fatalf("front end right after activation: %d", code)
 	}
 	hgToggle(t, c, base, "deactivate")
 	if code, _, _ := get(t, http.DefaultClient, base+"/"); code != http.StatusOK {
@@ -211,6 +212,15 @@ func TestHeadlessGoOffByDefault(t *testing.T) {
 func TestHeadlessGoHeadlessMode(t *testing.T) {
 	base, c, srv := hgSite(t)
 	anon := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	// Headless-only is opt-in: by default the theme front end stays up.
+	if code, _, _ := get(t, anon, base+"/"); code != http.StatusOK {
+		t.Fatalf("default front mode: %d", code)
+	}
+	jst := srv.hgLoad()
+	jst.FrontMode = "json"
+	if err := srv.hgSaveSettings(context.Background(), jst); err != nil {
+		t.Fatal(err)
+	}
 	code, body, _ := get(t, anon, base+"/")
 	if code != http.StatusNotFound || !strings.Contains(body, `"NotFoundError"`) {
 		t.Fatalf("JSON 404: %d %s", code, body)

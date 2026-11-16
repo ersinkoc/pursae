@@ -2,8 +2,12 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -242,8 +246,58 @@ func TestCSPReportEndpoint(t *testing.T) {
 	}
 }
 
+// A report about another site's page is ignored; one sender cannot fill the table on its own.
+func TestCSPReportForgedAndFlood(t *testing.T) {
+	ts, c, _ := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	cspReportLog.clear()
+	t.Cleanup(cspReportLog.clear)
+	send := func(doc, blocked string) {
+		t.Helper()
+		body := `{"csp-report":{"document-uri":"` + doc + `","blocked-uri":"` + blocked + `","effective-directive":"script-src-elem"}}`
+		req, _ := http.NewRequest(http.MethodPost, ts.URL+cspReportPath, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/csp-report")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusNoContent {
+			t.Fatalf("report: %d", resp.StatusCode)
+		}
+	}
+	send("https://other-site.example/x", "inline")
+	send("/relative", "inline")
+	if list, _ := cspReportLog.list(); len(list) != 0 {
+		t.Fatalf("foreign or relative pages collected: %+v", list)
+	}
+	for i := 0; i < cspReportPerClient+30; i++ {
+		send(ts.URL+"/p", "inline-"+itoa(i))
+	}
+	list, dropped := cspReportLog.list()
+	if len(list) > 2*cspReportPerClient || dropped == 0 { // 2x: the requests may straddle a second
+		t.Fatalf("one client stored %d rows, dropped %d", len(list), dropped)
+	}
+}
+
 var nonceAttrRe = regexp.MustCompile(` nonce=(?:"|&#34;|&quot;)[A-Za-z0-9_-]{22}(?:"|&#34;|&quot;)`) // in srcdoc too
 
 // stripNonces drops the CSP nonce attributes, for tests that compare markup: every response has its
 // own nonce (a page-cache hit included).
 func stripNonces(s string) string { return nonceAttrRe.ReplaceAllString(s, "") }
+
+// The block editor's canvas iframe script is allowed by its hash in the admin nonce policy (FN28-001).
+func TestCSPEditorIframeHash(t *testing.T) {
+	sum := sha256.Sum256([]byte("document.currentScript.parentElement.remove()"))
+	want := "'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"
+	if cspEditorIframeHash != want {
+		t.Fatalf("hash %s, want %s", cspEditorIframeHash, want)
+	}
+	if !strings.Contains(cspNonceScriptSrc(true), want) || strings.Contains(cspNonceScriptSrc(false), want) {
+		t.Fatal("the editor iframe hash belongs to the admin policy only")
+	}
+	if b, err := os.ReadFile(filepath.Join("..", "..", "web", "wp-includes", "js", "dist", "block-editor.min.js")); err == nil &&
+		!strings.Contains(string(b), `<script>document.currentScript.parentElement.remove()<\/script>`) {
+		t.Error("block-editor.min.js no longer writes the hashed script: update cspEditorIframeHash")
+	}
+}

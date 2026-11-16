@@ -100,7 +100,7 @@ func TestCSPSecurityScreen(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	cspReportLog.clear()
-	cspReportLog.add(cspViolationOf("script-src-elem", "inline", "", 0, "/probe-page", ""), time.Now())
+	cspReportLog.add("test", cspViolationOf("script-src-elem", "inline", "", 0, "/probe-page", ""), time.Now())
 	code, body, _ := get(t, c, ts.URL+"/wp-admin/options-security")
 	if code != http.StatusOK || !strings.Contains(body, "Security Settings") || !strings.Contains(body, "/probe-page") ||
 		!strings.Contains(body, `value="report" checked="checked"`) || !strings.Contains(body, `id="csp_admin_scripts" value="1" checked="checked"`) {

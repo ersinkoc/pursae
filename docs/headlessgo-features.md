@@ -39,7 +39,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 
 | Feature | Status |
 |---|---|
-| While active the front end does not render: JSON 404 `{"data":null,"error":{"status":404,"name":"NotFoundError",…}}` | ✓ |
+| Opt-in headless mode (the default keeps the site's front end): the front end does not render, JSON 404 `{"data":null,"error":{"status":404,"name":"NotFoundError",…}}` | ✓ |
 | Setting: plain-text 404, or a 302 to the front-end app's URL (optionally keeping path and query), or keep the site's front end | ✓ |
 | wp-admin, wp-login, `/wp-json` (core REST and `?rest_route=`), `/wp-content/` (uploads, assets), `/wp-includes/`, wp-cron, robots.txt and the favicon keep working | ✓ |
 | Logged-in users who can edit posts still see the front end (setting, on by default) so previews and theme work go on | ✓ |

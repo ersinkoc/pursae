@@ -67,6 +67,7 @@ func demoPackage(t *testing.T) []byte {
 func installDemo(t *testing.T, srv *Server) {
 	t.Helper()
 	ctx := context.Background()
+	srv.cfg.AllowUnsignedPlugins = true
 	if err := srv.settings.Set(ctx, map[string]any{"plugin_allow_unsigned": true}); err != nil {
 		t.Fatal(err)
 	}
@@ -631,5 +632,23 @@ func TestPluginSyncFollowsDatabaseAndLifecycleIsOwned(t *testing.T) {
 	srv.syncPluginsOnce(ctx, pending)
 	if _, ok := srv.plugins.rt.Plugin("shortcode-demo"); ok {
 		t.Fatal("still loaded after delete elsewhere")
+	}
+}
+
+// plugin_allow_unsigned alone (a database or CLI write) does not accept unsigned packages: the server
+// must also run with WPGO_ALLOW_UNSIGNED_PLUGINS=1 (PLG27-001).
+func TestUnsignedPluginsNeedEnvironmentOptIn(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	if err := srv.settings.Set(ctx, map[string]any{"plugin_allow_unsigned": true}); err != nil {
+		t.Fatal(err)
+	}
+	srv.cfg.AllowUnsignedPlugins = false
+	if _, err := srv.installPackage(ctx, demoPackage(t)); err == nil {
+		t.Fatal("an unsigned package installed with only the plugin_allow_unsigned option on")
+	}
+	srv.cfg.AllowUnsignedPlugins = true
+	if _, err := srv.installPackage(ctx, demoPackage(t)); err != nil {
+		t.Fatalf("with both switches on: %v", err)
 	}
 }

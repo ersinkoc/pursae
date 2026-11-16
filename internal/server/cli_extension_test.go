@@ -290,6 +290,7 @@ func TestExtensionCLIPackages(t *testing.T) {
 	installAndLogin(t, ts, client)
 	ctx := context.Background()
 	zip := demoPackage(t)
+	srv.cfg.AllowUnsignedPlugins = true
 	if err := srv.settings.Set(ctx, map[string]any{"plugin_allow_unsigned": true}); err != nil {
 		t.Fatal(err)
 	}

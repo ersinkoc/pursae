@@ -35,6 +35,10 @@ type Config struct {
 	// ExposeUsers (WPGO_EXPOSE_USERS=1) lets visitors list accounts (REST users, /?author=N, the users sitemap). Off by
 	// default: those routes disclose account names.
 	ExposeUsers bool
+	// AllowUnsignedPlugins (WPGO_ALLOW_UNSIGNED_PLUGINS=1) is the server-side half of the plugin_allow_unsigned
+	// setting: unsigned plugin packages are accepted only when both are on. A database or CLI write alone (an
+	// administrator account, a SQL injection) cannot turn plugin signature checks off.
+	AllowUnsignedPlugins bool
 	// LangDir holds the downloaded language packs (WP_LANG_DIR); default: "languages" next to the uploads.
 	LangDir         string
 	TranslationsAPI string // the WordPress.org translation API; default https://api.wordpress.org/translations
@@ -47,26 +51,27 @@ type Config struct {
 
 func Load() Config {
 	c := Config{
-		Addr:            env("WPGO_ADDR", ":8080"),
-		DatabaseURL:     env("DATABASE_URL", "postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable"),
-		SiteURL:         strings.TrimRight(env("WPGO_SITE_URL", "http://localhost:8080"), "/"),
-		UploadsDir:      env("WPGO_UPLOADS_DIR", "./data/uploads"),
-		Secret:          os.Getenv("WPGO_SECRET"),
-		SetupToken:      strings.TrimSpace(os.Getenv("WPGO_SETUP_TOKEN")),
-		WebDir:          os.Getenv("WPGO_WEB_DIR"),
-		HubURL:          hubURL(),
-		HubOff:          hubOff(os.Getenv("WPGO_HUB")),
-		ThemeLibraryDir: os.Getenv("WPGO_THEME_LIBRARY_DIR"),
-		TrustedProxies:  os.Getenv("WPGO_TRUSTED_PROXIES"),
-		ExposeUsers:     os.Getenv("WPGO_EXPOSE_USERS") == "1",
-		LangDir:         os.Getenv("WPGO_LANG_DIR"),
-		TranslationsAPI: os.Getenv("WPGO_TRANSLATIONS_API"),
-		SMTPHost:        os.Getenv("WPGO_SMTP_HOST"),
-		SMTPPort:        env("WPGO_SMTP_PORT", "587"),
-		SMTPUser:        os.Getenv("WPGO_SMTP_USER"),
-		SMTPPass:        os.Getenv("WPGO_SMTP_PASS"),
-		MailFrom:        os.Getenv("WPGO_MAIL_FROM"),
-		MailDir:         os.Getenv("WPGO_MAIL_DIR"),
+		Addr:                 env("WPGO_ADDR", ":8080"),
+		DatabaseURL:          env("DATABASE_URL", "postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable"),
+		SiteURL:              strings.TrimRight(env("WPGO_SITE_URL", "http://localhost:8080"), "/"),
+		UploadsDir:           env("WPGO_UPLOADS_DIR", "./data/uploads"),
+		Secret:               os.Getenv("WPGO_SECRET"),
+		SetupToken:           strings.TrimSpace(os.Getenv("WPGO_SETUP_TOKEN")),
+		WebDir:               os.Getenv("WPGO_WEB_DIR"),
+		HubURL:               hubURL(),
+		HubOff:               hubOff(os.Getenv("WPGO_HUB")),
+		ThemeLibraryDir:      os.Getenv("WPGO_THEME_LIBRARY_DIR"),
+		TrustedProxies:       os.Getenv("WPGO_TRUSTED_PROXIES"),
+		ExposeUsers:          os.Getenv("WPGO_EXPOSE_USERS") == "1",
+		AllowUnsignedPlugins: os.Getenv("WPGO_ALLOW_UNSIGNED_PLUGINS") == "1",
+		LangDir:              os.Getenv("WPGO_LANG_DIR"),
+		TranslationsAPI:      os.Getenv("WPGO_TRANSLATIONS_API"),
+		SMTPHost:             os.Getenv("WPGO_SMTP_HOST"),
+		SMTPPort:             env("WPGO_SMTP_PORT", "587"),
+		SMTPUser:             os.Getenv("WPGO_SMTP_USER"),
+		SMTPPass:             os.Getenv("WPGO_SMTP_PASS"),
+		MailFrom:             os.Getenv("WPGO_MAIL_FROM"),
+		MailDir:              os.Getenv("WPGO_MAIL_DIR"),
 	}
 	if c.HubOff {
 		c.HubURL = "off" // hubBase() treats it as no Manager

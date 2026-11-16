@@ -15,7 +15,8 @@ import (
 )
 
 // CSP violation reports (report-uri cspReportPath). Browsers post them without credentials, so the
-// endpoint is public: bodies are bounded, reports are rate-limited and folded into a small
+// endpoint is public: bodies are bounded, reports are rate-limited (per client address and overall),
+// reports about pages of other sites are ignored, and the rest are folded into a small
 // in-memory table of distinct violations (directive, blocked resource, source location, page)
 // with counts. Administrators read it at GET /wp-json/pursae/v1/csp-reports; each new violation
 // is logged once.
@@ -24,6 +25,12 @@ const (
 	cspReportMaxBody    = 16 << 10
 	cspReportMaxEntries = 500
 	cspReportPerSecond  = 50
+	// cspReportPerClient bounds one client address per second, so a single sender cannot use up the
+	// global budget (and evict real violations from the table) on its own. A page load in a broken
+	// configuration sends a dozen or so reports at once; the excess of a burst is only dropped.
+	cspReportPerClient = 20
+	// cspReportMaxClients bounds the per-client counters kept for the current second.
+	cspReportMaxClients = 4096
 )
 
 type cspViolation struct {
@@ -43,23 +50,33 @@ type cspReports struct {
 	dropped  int
 	second   int64
 	inSecond int
+	byClient map[string]int // reports per client address in the current second
 }
 
 var cspReportLog = &cspReports{m: map[string]*cspViolation{}}
 
-// allow is the global rate limit: reports beyond cspReportPerSecond in one second are dropped.
-func (r *cspReports) allow(now time.Time) bool {
-	if sec := now.Unix(); sec != r.second {
-		r.second, r.inSecond = sec, 0
+// allow is the rate limit: reports beyond cspReportPerClient from one client address, or beyond
+// cspReportPerSecond overall, in one second are dropped.
+func (r *cspReports) allow(client string, now time.Time) bool {
+	if sec := now.Unix(); sec != r.second || r.byClient == nil {
+		r.second, r.inSecond, r.byClient = sec, 0, map[string]int{}
+	}
+	if n, ok := r.byClient[client]; ok || len(r.byClient) < cspReportMaxClients {
+		if n >= cspReportPerClient {
+			return false
+		}
+		r.byClient[client] = n + 1
+	} else {
+		return false // too many distinct senders this second: a flood
 	}
 	r.inSecond++
 	return r.inSecond <= cspReportPerSecond
 }
 
-func (r *cspReports) add(v cspViolation, now time.Time) {
+func (r *cspReports) add(client string, v cspViolation, now time.Time) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if !r.allow(now) {
+	if !r.allow(client, now) {
 		r.dropped++
 		return
 	}
@@ -104,7 +121,7 @@ func (r *cspReports) list() ([]cspViolation, int) {
 
 func (r *cspReports) clear() {
 	r.mu.Lock()
-	r.m, r.dropped = map[string]*cspViolation{}, 0
+	r.m, r.dropped, r.byClient = map[string]*cspViolation{}, 0, nil
 	r.mu.Unlock()
 }
 
@@ -142,6 +159,11 @@ func (s *Server) cspReport(c *gin.Context) {
 		return
 	}
 	now := time.Now()
+	client := clientIP(c)
+	hosts := s.gocdnHosts(c) // this site's host names: a report about another site's page is noise
+	if c.Request.Host != "" {
+		hosts[strings.ToLower(c.Request.Host)] = true
+	}
 	var one struct {
 		Report cspReportBody `json:"csp-report"`
 	}
@@ -151,7 +173,9 @@ func (s *Server) cspReport(c *gin.Context) {
 		if dir == "" {
 			dir = r.ViolatedDirective
 		}
-		cspReportLog.add(cspViolationOf(dir, r.BlockedURI, r.SourceFile, r.LineNumber, r.DocumentURI, r.ScriptSample), now)
+		if cspReportFromSite(r.DocumentURI, hosts) {
+			cspReportLog.add(client, cspViolationOf(dir, r.BlockedURI, r.SourceFile, r.LineNumber, r.DocumentURI, r.ScriptSample), now)
+		}
 		c.Status(http.StatusNoContent)
 		return
 	}
@@ -168,10 +192,23 @@ func (s *Server) cspReport(c *gin.Context) {
 				continue
 			}
 			b := r.Body
-			cspReportLog.add(cspViolationOf(b.EffectiveDirective, b.BlockedURL, b.SourceFile, b.LineNumber, b.DocumentURL, b.Sample), now)
+			if !cspReportFromSite(b.DocumentURL, hosts) {
+				continue
+			}
+			cspReportLog.add(client, cspViolationOf(b.EffectiveDirective, b.BlockedURL, b.SourceFile, b.LineNumber, b.DocumentURL, b.Sample), now)
 		}
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// cspReportFromSite reports whether a report's document URL is a page of this site (an absolute
+// http(s) URL on one of hosts). Browsers always send the full page URL; anything else was forged.
+func cspReportFromSite(doc string, hosts map[string]bool) bool {
+	u, err := url.Parse(doc)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return false
+	}
+	return hosts[strings.ToLower(u.Host)]
 }
 
 // cspViolationOf normalises a report: page and source without query strings (they may hold
