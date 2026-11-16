@@ -206,7 +206,8 @@ DraftState: `{doc, page, baseRev, savedAt}`.
 **Autosave** (`PUT`): body `{doc, page, baseRev}`. Writes the caller's row in
 `web_builder_drafts`; the live page is untouched. The client debounces to at least 2 s
 (`AutosaveMinMillis`). The doc is validated like a publish (422 on structure errors) and,
-without `unfiltered_html`, html sections and `style.css` are stripped. Answers
+without `unfiltered_html`, html sections, code sections, `content.html` and `style.css` keep their
+stored values (§8.1, "Privileged parts on save") and are stripped where nothing is stored. Answers
 `{savedAt, rev}`; `rev > baseRev` means someone else published since the editor loaded. Also
 refreshes the caller's edit lock.
 
@@ -229,9 +230,14 @@ Server steps, in one transaction:
    `data.lock`).
 2. `baseRev != rev` → **409** `wb_rev_conflict` with `data: {rev, modified, modifiedBy}`.
 3. Validate the doc (§8.1) → **422** `wb_invalid_doc`, `data.errors: ValidationError[]`.
-4. Without `unfiltered_html`: drop html sections and every `style.css` from the doc **and** the
-   snapshot, and drop `render.css` and `utilityCss` (both are page-wide custom CSS; the editor
-   sends `utilityCss` empty).
+4. Without `unfiltered_html`: the doc's privileged parts are the stored ones (§8.1, "Privileged
+   parts on save"); any other html or code section and `style.css` is dropped from the doc **and**
+   the snapshot, and `render.css` and `utilityCss` are dropped (both are page-wide custom CSS; the
+   editor sends `utilityCss` empty). When stored privileged parts were kept, the server draws the
+   snapshot itself from the resulting doc (§4.1, `serverRender`) and sanitizes it as an
+   `unfiltered_html` author's, so html sections, code sections and custom CSS stay published;
+   without the render bundle the request's render is sanitized as usual and only the code
+   sections are filled in. The stored row then has `snapshot_unfiltered = true`.
 5. Sanitize `render.html` (§8.2) and `utilityCss` + `render.css` (§8.3).
 6. Map PageSettings: `title` → post title, `slug` → `post_name`, `description` → excerpt and
    Pursae SEO description, `indexable=false` → Pursae SEO noindex. `description` and `indexable`
@@ -710,6 +716,20 @@ built from them.
 
 Enum fields with unknown values are a 422 `bad_value`. Fields the Go types do not know are kept
 as sent (the stored doc is the client JSON with privileged fields removed at the JSON level).
+
+**Privileged parts on save.** A user without `unfiltered_html` may edit a page or template that an
+administrator gave html or code sections or custom CSS, without losing them
+(`webbuilder.DocOptions.Stored`). Autosave, publish and revision restore compare the doc with the
+stored docs (the published doc, then the saver's own draft; a restore also the revision), by
+section id:
+
+- an html or code section the doc lists by the id of a stored one is the stored section, at the
+  position the doc gives it (only its `hidden` flag is the doc's; a code section only at the top
+  level). Reordering, hiding and removing work; edits of its content are ignored;
+- `content.html` and `style.css` of other sections are the stored values of the section with the
+  same id;
+- privileged parts with no stored counterpart are dropped. An edit that was ignored or dropped is
+  reported in `stripped`.
 
 ### 8.2 Snapshot HTML
 

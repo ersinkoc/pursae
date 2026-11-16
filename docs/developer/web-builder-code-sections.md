@@ -16,8 +16,9 @@ Use code sections for a finished design (an agency hand-off, an exported landing
 product page). Use the builder's own sections (`custom` free-form sections, the design library) for
 pages that people will restyle by dragging; those are what `method: "exact"` produces.
 
-Code sections are privileged, like `html` sections: only users with `unfiltered_html` can save them
-(administrators and editors on a single site); for everyone else they are stripped on save.
+Code sections are privileged, like `html` sections: only users with `unfiltered_html` can write them
+(administrators and editors on a single site). Everyone else who edits the page keeps them as
+stored (see [Limits](#limits)).
 
 ## The pieces
 
@@ -191,6 +192,17 @@ not.
 
 - A code section is published as written: its markup is trusted (the author has `unfiltered_html`).
   Kits are site-wide code: only administrators should hold them.
+- **Permissions.** Users without `unfiltered_html` (authors, contributors, editors on a network)
+  can open and save a page or template with code sections, but cannot change them: on autosave,
+  publish and revision restore the server takes each code or html section the editor sends by id
+  from the stored doc (the published doc, then the user's own draft), with its stored content, at
+  the position the editor gives it, and keeps the stored `style.css` of every section
+  (`webbuilder.DocOptions.Stored`). They can reorder, hide and remove code sections; their edits of
+  a code section's markup or head, an html section or custom CSS are ignored and reported as
+  `stripped`, and new code sections from them are dropped. Their publish fills the snapshot with
+  the stored, validated code markup (`FillCode` on the parsed doc, never on the request's), drawn
+  on the server from that doc so html sections and custom CSS stay too. See the contract, §8.1
+  "Privileged parts on save".
 - Mixed pages (code sections and builder sections) keep the builder's root element and stylesheet, so
   the design's `position: fixed` elements are placed relative to the page root and its CSS meets the
   builder's reset; import whole designs as code pages.

@@ -38,6 +38,10 @@ type DocOptions struct {
 	UnfilteredHTML bool
 	// PathPrefix is prepended to every ValidationError.Path (e.g. "/doc").
 	PathPrefix string
+	// Stored are documents stored before for the same post (the published doc, the saving user's
+	// draft, a revision being restored), first match wins. Without UnfilteredHTML the privileged parts
+	// of the doc are taken from them by section id instead of being dropped (see keepStored).
+	Stored []json.RawMessage
 }
 
 // DocResult is a parsed doc.
@@ -46,6 +50,9 @@ type DocResult struct {
 	JSON     json.RawMessage // normalized doc to store
 	Stripped []string        // StrippedHTMLSections, StrippedCustomCSS
 	Errors   []ValidationError
+	// Kept: privileged parts (html or code sections, content.html, style.css) were taken from
+	// DocOptions.Stored, so the doc holds markup an unfiltered_html author stored.
+	Kept bool
 }
 
 // Valid reports whether the doc passed validation.
@@ -77,12 +84,15 @@ func ParseDoc(raw []byte, opts DocOptions) (*DocResult, error) {
 		v.doc(&typed, root)
 	}
 	n := &normalizer{opts: opts}
+	if !opts.UnfilteredHTML && len(opts.Stored) > 0 {
+		n.stored = newStoredParts(opts.Stored)
+	}
 	n.doc(root)
 	out, err := json.Marshal(root)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrDocSyntax, err)
 	}
-	res := &DocResult{JSON: out, Stripped: n.strippedList(), Errors: v.errs}
+	res := &DocResult{JSON: out, Stripped: n.strippedList(), Errors: v.errs, Kept: n.kept}
 	if err := json.Unmarshal(out, &res.Doc); err != nil && len(res.Errors) == 0 {
 		v.typeError(err)
 		res.Errors = v.errs
@@ -205,6 +215,124 @@ func canonSection(s map[string]any) {
 type normalizer struct {
 	opts     DocOptions
 	stripped map[string]bool
+	stored   *storedParts // the privileged parts a user without unfiltered_html keeps
+	kept     bool         // something was taken from stored
+	depth    int          // of the section being normalized (0 = top level)
+}
+
+// Privileged parts kept on save.
+//
+// A user without unfiltered_html may not write html or code sections, content.html or style.css,
+// but may edit a page that has them (an administrator imported a design, an editor fixes a typo).
+// Their saves keep what is stored: keepStored, by section id, against the docs stored before
+// (DocOptions.Stored, which only ever hold privileged parts written by an unfiltered_html author or
+// kept this way):
+//
+//   - a privileged (html or code) section the doc lists by a stored privileged section's id is the
+//     stored section, at the doc's position (only its hidden flag is the doc's); a code section only
+//     at the top level. One the doc no longer lists is removed: removing and reordering are allowed,
+//     editing is not;
+//   - the content.html and style.css of any other section are the stored values of the section with
+//     its id (none when nothing is stored);
+//   - privileged parts with no stored counterpart are dropped as before.
+//
+// An incoming privileged part that differs from the stored one is reported as stripped.
+
+// storedParts are the privileged parts of the stored docs by section id.
+type storedParts struct {
+	priv map[string]map[string]any // html and code sections
+	html map[string]string         // content.html of other sections
+	css  map[string]string         // style.css
+}
+
+func newStoredParts(docs []json.RawMessage) *storedParts {
+	sp := &storedParts{priv: map[string]map[string]any{}, html: map[string]string{}, css: map[string]string{}}
+	seen := map[string]bool{}
+	var walk func(s map[string]any)
+	walk = func(s map[string]any) {
+		id, _ := s["id"].(string)
+		if id != "" && !seen[id] {
+			seen[id] = true
+			if k := s["kind"]; k == KindHTML || k == KindCode {
+				sp.priv[id] = s
+				return
+			}
+			if c, ok := s["content"].(map[string]any); ok {
+				if h, ok := c["html"].(string); ok {
+					sp.html[id] = h
+				}
+			}
+			if st, ok := s["style"].(map[string]any); ok {
+				if css, ok := st["css"].(string); ok && strings.TrimSpace(css) != "" {
+					sp.css[id] = css
+				}
+			}
+		}
+		items, _ := s["items"].([]any)
+		for _, it := range items {
+			if im, ok := it.(map[string]any); ok {
+				if sub, ok := im["sub"].(map[string]any); ok {
+					walk(sub)
+				}
+			}
+		}
+	}
+	for _, raw := range docs {
+		var root map[string]any
+		if len(raw) == 0 || json.Unmarshal(raw, &root) != nil {
+			continue
+		}
+		list, _ := root["sections"].([]any)
+		for _, s := range list {
+			if sm, ok := s.(map[string]any); ok {
+				walk(sm)
+			}
+		}
+	}
+	return sp
+}
+
+// keepStored replaces s by the stored privileged section with its id; false when there is none.
+func (n *normalizer) keepStored(s map[string]any) bool {
+	if n.stored == nil {
+		return false
+	}
+	id, _ := s["id"].(string)
+	st := n.stored.priv[id]
+	if st == nil || (st["kind"] == KindCode && n.depth > 0) {
+		return false
+	}
+	if !jsonEqualExcept(s, st, "hidden") {
+		n.strip(StrippedHTMLSections) // the edit is not kept
+	}
+	hidden, hasHidden := s["hidden"].(bool)
+	clear(s)
+	var cp map[string]any
+	b, _ := json.Marshal(st)
+	_ = json.Unmarshal(b, &cp)
+	for k, v := range cp {
+		s[k] = v
+	}
+	if hasHidden {
+		s["hidden"] = hidden
+	}
+	n.kept = true
+	return true
+}
+
+// jsonEqualExcept reports whether a and b are the same JSON object apart from the key skip.
+func jsonEqualExcept(a, b map[string]any, skip string) bool {
+	strip := func(m map[string]any) []byte {
+		c := make(map[string]any, len(m))
+		for k, v := range m {
+			if k != skip {
+				c[k] = v
+			}
+		}
+		out, _ := json.Marshal(c)
+		return out
+	}
+	return bytes.Equal(strip(a), strip(b))
 }
 
 func (n *normalizer) strip(what string) {
@@ -244,10 +372,14 @@ func (n *normalizer) doc(root map[string]any) {
 
 // section normalizes s in place; false = drop the whole section.
 func (n *normalizer) section(s map[string]any) bool {
+	if !n.opts.UnfilteredHTML && n.keepStored(s) {
+		return true // as stored (normalized when it was stored)
+	}
 	if !n.opts.UnfilteredHTML && (s["kind"] == KindHTML || s["kind"] == KindCode) {
 		n.strip(StrippedHTMLSections)
 		return false
 	}
+	id, _ := s["id"].(string)
 	if s["kind"] == KindCode { // the design's own markup: kept as written (privileged)
 		return true
 	}
@@ -259,8 +391,10 @@ func (n *normalizer) section(s map[string]any) bool {
 			}
 			if k == "html" {
 				if !n.opts.UnfilteredHTML {
+					if kept, ok := n.storedHTML(id); !ok || kept != str {
+						n.strip(StrippedHTMLSections)
+					}
 					delete(content, k)
-					n.strip(StrippedHTMLSections)
 				}
 				continue
 			}
@@ -269,12 +403,28 @@ func (n *normalizer) section(s map[string]any) bool {
 			}
 		}
 	}
+	if !n.opts.UnfilteredHTML {
+		if h, ok := n.storedHTML(id); ok { // the stored content.html stays
+			content, _ := s["content"].(map[string]any)
+			if content == nil {
+				content = map[string]any{}
+				s["content"] = content
+			}
+			content["html"] = h
+			n.kept = true
+		}
+	}
 	if st, ok := s["style"].(map[string]any); ok && !n.opts.UnfilteredHTML {
+		kept, has := n.storedCSS(id)
 		if css, ok := st["css"]; ok {
-			if str, _ := css.(string); strings.TrimSpace(str) != "" {
+			if str, _ := css.(string); strings.TrimSpace(str) != "" && str != kept {
 				n.strip(StrippedCustomCSS)
 			}
 			delete(st, "css")
+		}
+		if has { // the stored custom CSS stays
+			st["css"] = kept
+			n.kept = true
 		}
 	}
 	if bg, ok := s["bg"].(map[string]any); ok {
@@ -294,13 +444,34 @@ func (n *normalizer) section(s map[string]any) bool {
 				}
 			}
 			if sub, ok := im["sub"].(map[string]any); ok {
-				if !n.section(sub) {
+				n.depth++
+				keep := n.section(sub)
+				n.depth--
+				if !keep {
 					delete(im, "sub")
 				}
 			}
 		}
 	}
 	return true
+}
+
+// storedHTML is the stored content.html of the section id.
+func (n *normalizer) storedHTML(id string) (string, bool) {
+	if n.stored == nil || id == "" {
+		return "", false
+	}
+	h, ok := n.stored.html[id]
+	return h, ok
+}
+
+// storedCSS is the stored style.css of the section id.
+func (n *normalizer) storedCSS(id string) (string, bool) {
+	if n.stored == nil || id == "" {
+		return "", false
+	}
+	css, ok := n.stored.css[id]
+	return css, ok
 }
 
 // ---------------------------------------------------------------------------------------------
