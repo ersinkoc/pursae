@@ -280,6 +280,8 @@ func gooReadFields(c *gin.Context, fields []gooField, current map[string]any) ma
 			} else {
 				out[f.ID] = ""
 			}
+		case "textarea":
+			out[f.ID] = gooKsesTextarea(currentUser(c), strings.TrimSpace(c.PostForm(f.ID)))
 		default:
 			out[f.ID] = strings.TrimSpace(c.PostForm(f.ID))
 		}

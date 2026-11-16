@@ -786,7 +786,7 @@ func (s *Server) gooV3SettingGet(c *gin.Context, req *restRequest) {
 }
 
 // gooSaveSetting validates and stores one setting value.
-func (s *Server) gooSaveSetting(ctx context.Context, g *gooSettingGroup, f gooField, v any) *gooAPIErr {
+func (s *Server) gooSaveSetting(ctx context.Context, u *store.User, g *gooSettingGroup, f gooField, v any) *gooAPIErr {
 	var val any
 	switch f.Type {
 	case "checkbox":
@@ -828,6 +828,9 @@ func (s *Server) gooSaveSetting(ctx context.Context, g *gooSettingGroup, f gooFi
 	default:
 		val = gooStr(v)
 	}
+	if str, ok := val.(string); ok && f.Type == "textarea" {
+		val = gooKsesTextarea(u, str)
+	}
 	if g.Email != "" {
 		m := s.gooOptMap("email_" + g.Email + "_settings")
 		cp := map[string]any{}
@@ -858,7 +861,7 @@ func (s *Server) gooV3SettingPut(c *gin.Context, req *restRequest) {
 		return
 	}
 	b := gooFormBody(c, req)
-	if aerr := s.gooSaveSetting(c.Request.Context(), g, f, b["value"]); aerr != nil {
+	if aerr := s.gooSaveSetting(c.Request.Context(), currentUser(c), g, f, b["value"]); aerr != nil {
 		gooFail(c, aerr)
 		return
 	}
@@ -879,7 +882,7 @@ func (s *Server) gooV3SettingsBatch(c *gin.Context, req *restRequest) {
 			res = append(res, map[string]any{"id": m["id"], "error": gooErrJSON(gooErr(404, "rest_setting_setting_invalid", "Invalid setting."))})
 			continue
 		}
-		if aerr := s.gooSaveSetting(c.Request.Context(), g, f, m["value"]); aerr != nil {
+		if aerr := s.gooSaveSetting(c.Request.Context(), currentUser(c), g, f, m["value"]); aerr != nil {
 			res = append(res, map[string]any{"id": m["id"], "error": gooErrJSON(aerr)})
 			continue
 		}
@@ -903,7 +906,7 @@ func (s *Server) gooV3SettingsBatchAll(c *gin.Context, req *restRequest) {
 			res = append(res, map[string]any{"id": m["id"], "error": gooErrJSON(gooErr(404, "rest_setting_setting_invalid", "Invalid setting."))})
 			continue
 		}
-		if aerr := s.gooSaveSetting(c.Request.Context(), g, f, m["value"]); aerr != nil {
+		if aerr := s.gooSaveSetting(c.Request.Context(), currentUser(c), g, f, m["value"]); aerr != nil {
 			res = append(res, map[string]any{"id": m["id"], "error": gooErrJSON(aerr)})
 			continue
 		}
@@ -1288,14 +1291,18 @@ func (s *Server) gooV3GatewayUpdate(c *gin.Context, req *restRequest) {
 	if v, ok := b["enabled"]; ok {
 		saved["enabled"] = map[bool]string{true: "yes", false: "no"}[gooBool(v)]
 	}
-	for _, k := range []string{"title", "description"} {
-		if v, ok := b[k]; ok {
-			saved[k] = gooStr(v)
-		}
-	}
 	fields := map[string]gooField{}
 	for _, f := range g.FormFields() {
 		fields[f.ID] = f
+	}
+	u := currentUser(c)
+	for _, k := range []string{"title", "description"} {
+		if v, ok := b[k]; ok {
+			saved[k] = gooStr(v)
+			if fields[k].Type == "textarea" {
+				saved[k] = gooKsesTextarea(u, gooStr(v))
+			}
+		}
 	}
 	for k, v := range gooObj(b["settings"]) {
 		if _, ok := fields[k]; !ok {
@@ -1307,6 +1314,9 @@ func (s *Server) gooV3GatewayUpdate(c *gin.Context, req *restRequest) {
 			continue
 		}
 		saved[k] = gooStr(v)
+		if fields[k].Type == "textarea" {
+			saved[k] = gooKsesTextarea(u, gooStr(v))
+		}
 	}
 	vals := map[string]any{g.ID() + "_settings": saved}
 	if v, ok := b["order"]; ok {
