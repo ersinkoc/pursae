@@ -81,7 +81,7 @@ func TestMCPImportHTMLCode(t *testing.T) {
 	html := b.String()
 	for _, want := range []string{`<header class="ln">`, `<main id="main">`, `<div class="aft"><section id="faq">`, `href="/forums/"`,
 		`/wp-content/uploads/web-builder/kits/demo/assets/style.css?v=1`, `src="/wp-content/uploads/web-builder/kits/demo/assets/img/a.png?v=1"`,
-		`<script src="/wp-content/uploads/web-builder/kits/demo/assets/app.js?v=1"></script>`, `<symbol id="mark">`} {
+		`<script src="/wp-content/uploads/web-builder/kits/demo/assets/app.js?v=1" nonce="`, `<symbol id="mark">`} {
 		if !strings.Contains(html, want) {
 			t.Errorf("published page lacks %q", want)
 		}
