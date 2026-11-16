@@ -91,6 +91,15 @@ func TestNegotiate(t *testing.T) {
 	}
 }
 
+func TestAcceptsTypeQualityAfterOtherParameters(t *testing.T) {
+	if AcceptsType("image/webp;level=1;q=0", "image/webp") {
+		t.Fatal("accepted explicitly disabled type")
+	}
+	if !AcceptsType("image/webp;level=1;q=0.5", "image/webp") {
+		t.Fatal("rejected acceptable type")
+	}
+}
+
 func TestTransformAndEncode(t *testing.T) {
 	src := image.NewRGBA(image.Rect(0, 0, 400, 200))
 	for y := 0; y < 200; y++ {

@@ -212,9 +212,11 @@ func AcceptsType(accept, typ string) bool {
 		if !strings.EqualFold(strings.TrimSpace(name), typ) {
 			continue
 		}
-		if k, v, ok := strings.Cut(strings.TrimSpace(params), "="); ok && strings.TrimSpace(k) == "q" {
-			if f, err := strconv.ParseFloat(strings.TrimSpace(v), 64); err == nil && f == 0 {
-				return false
+		for _, param := range strings.Split(params, ";") {
+			if k, v, ok := strings.Cut(strings.TrimSpace(param), "="); ok && strings.EqualFold(strings.TrimSpace(k), "q") {
+				if f, err := strconv.ParseFloat(strings.TrimSpace(v), 64); err == nil && f == 0 {
+					return false
+				}
 			}
 		}
 		return true
