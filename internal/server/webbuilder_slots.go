@@ -976,10 +976,11 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	if ctx == nil {
 		ctx = c.Request.Context()
 	}
-	prog, err := wbPrograms.Compile(d.PostID, d.Rev, d.HTML)
+	src := s.cspTrustContent(ctx, d.HTML) // html sections of an unfiltered_html author (csp_trusted.go)
+	prog, err := wbPrograms.Compile(d.PostID, d.Rev, src)
 	if err != nil {
 		log.Printf("web builder: compile %d: %v", d.PostID, err)
-		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, d.HTML)))}
+		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, src)))}
 	}
 	if static, ok := prog.Static(); ok {
 		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, static)))}

@@ -198,7 +198,7 @@ func registerQueryBlocks(s *Server) {
 			rc.depth--
 			delete(rc.seenPosts, p.ID)
 		}()
-		return `<div ` + wrapperClass(b, "entry-content") + `>` + blocks.Render(ctx, p.Content) + `</div>`
+		return `<div ` + wrapperClass(b, "entry-content") + `>` + blocks.Render(ctx, rc.s.cspTrustPostContent(ctx, p)) + `</div>`
 	})
 	blocks.RegisterDynamic("core/read-more", func(ctx context.Context, b *blocks.Block, _ string) string {
 		rc, p := loopPost(ctx)

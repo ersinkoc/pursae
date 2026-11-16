@@ -45,9 +45,11 @@ type Options struct {
 	// choose the scheme stored in the cache key. The server passes the same peer
 	// check requestIP uses.
 	TrustForwarded func(*http.Request) bool
-	// CSPMode, when set, is the server's current CSP mode (csp_mode): entries remember it, and an
-	// entry stored under another mode (another policy header, another delayed-script loader) is
-	// not served.
+	// CSPMode, when set, is the server's current CSP state: the CSP mode (csp_mode), optionally
+	// followed by ":" and more of what decides which scripts carry the nonce. Entries remember it,
+	// and an entry stored under another state (another policy header, another delayed-script
+	// loader, other nonced scripts) is not served. The delayed-script loader is strict when the
+	// mode is "enforce".
 	CSPMode func() string
 }
 

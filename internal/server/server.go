@@ -346,6 +346,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/options-privacy", s.optionsPrivacy)
 	admin.GET("/options-license", s.optionsLicense) // Settings › License (license.go)
 	admin.POST("/options-license", s.optionsLicense)
+	admin.GET("/options-security", s.optionsSecurity) // Settings › Security: the script CSP (csp_admin.go)
+	admin.POST("/options-security", s.optionsSecurity)
 	admin.GET("/theme-install", s.themeInstall)
 	admin.POST("/theme-install", s.themeInstall)
 	if s.sandbox == nil { // theme previews with demo content (theme_preview.go)

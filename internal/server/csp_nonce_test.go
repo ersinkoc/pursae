@@ -150,29 +150,61 @@ func TestCSPNonceFrontAndCache(t *testing.T) {
 	}
 }
 
-// Stored content cannot obtain a nonce: a script in a post keeps no nonce attribute, and a
-// <script nonce="…"> written by an author keeps its own value, which is never the response's.
-func TestCSPNonceNotGivenToContent(t *testing.T) {
+// A script an unfiltered_html author stored in a post gets the page's nonce (its own nonce="…" is
+// replaced); the same post outside a page (REST) keeps no nonce, nor does any post when
+// csp_admin_scripts is off.
+func TestCSPNonceStoredScripts(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	ctx := context.Background()
 	p := &store.Post{Type: "post", AuthorID: 1, Status: "publish", Title: "CSP probe",
-		Content: `<p>x</p><script>window.bad=1</script><script nonce="guess">window.bad=2</script>`}
+		Content: `<p>x</p><script>window.ok=1</script><script nonce="guess">window.ok=2</script>`}
 	if err := srv.store.InsertPost(ctx, p); err != nil {
 		t.Fatal(err)
 	}
-	resp := anonGet(t, ts.URL+"/?p="+itoa64(p.ID))
-	body := bodyOf(resp)
-	m := reportOnlyNonce.FindStringSubmatch(resp.Header.Get("Content-Security-Policy-Report-Only"))
-	if m == nil {
-		t.Fatal("no nonce policy")
+	scripts := regexp.MustCompile(`<script[^>]*>window\.ok=[12]</script>`)
+	page := func() (string, string) {
+		resp := anonGet(t, ts.URL+"/?p="+itoa64(p.ID))
+		if loc := resp.Header.Get("Location"); loc != "" { // to the permalink
+			resp = anonGet(t, loc)
+		}
+		body := bodyOf(resp)
+		m := reportOnlyNonce.FindStringSubmatch(resp.Header.Get("Content-Security-Policy-Report-Only"))
+		if m == nil {
+			t.Fatal("no nonce policy")
+		}
+		if strings.Contains(body, cspnonce.Placeholder) {
+			t.Fatal("placeholder left in the page")
+		}
+		return body, m[1]
 	}
-	for _, tag := range regexp.MustCompile(`<script[^>]*>window\.bad=[12]</script>`).FindAllString(body, -1) {
-		if strings.Contains(tag, m[1]) {
-			t.Fatalf("content script got the nonce: %s", tag)
+	body, nonce := page()
+	if strings.Contains(body, "guess") {
+		t.Fatal("the stored nonce was kept")
+	}
+	tags := scripts.FindAllString(body, -1)
+	if len(tags) != 2 {
+		t.Fatalf("stored scripts: %q", tags)
+	}
+	for _, tag := range tags {
+		if !strings.Contains(tag, `nonce="`+nonce+`"`) {
+			t.Fatalf("stored script without the page's nonce: %s", tag)
 		}
 	}
-	_ = ctx
+	if code, rest := restSend(t, c, ts.URL, http.MethodGet, "/wp-json/wp/v2/posts/"+itoa64(p.ID), ""); code != http.StatusOK ||
+		!strings.Contains(rest, `\u003cscript\u003ewindow.ok=1`) || !strings.Contains(rest, `nonce=\"guess\"`) {
+		t.Fatalf("REST rendered content: %d %s", code, rest)
+	}
+
+	if err := srv.settings.Set(ctx, map[string]any{"csp_admin_scripts": false}); err != nil {
+		t.Fatal(err)
+	}
+	body, nonce = page()
+	for _, tag := range scripts.FindAllString(body, -1) {
+		if strings.Contains(tag, nonce) {
+			t.Fatalf("csp_admin_scripts off, script got the nonce: %s", tag)
+		}
+	}
 }
 
 // Reports are collected (bounded, without query strings) and listed to administrators only.
@@ -210,7 +242,7 @@ func TestCSPReportEndpoint(t *testing.T) {
 	}
 }
 
-var nonceAttrRe = regexp.MustCompile(` nonce="[A-Za-z0-9_-]{22}"`)
+var nonceAttrRe = regexp.MustCompile(` nonce=(?:"|&#34;|&quot;)[A-Za-z0-9_-]{22}(?:"|&#34;|&quot;)`) // in srcdoc too
 
 // stripNonces drops the CSP nonce attributes, for tests that compare markup: every response has its
 // own nonce (a page-cache hit included).

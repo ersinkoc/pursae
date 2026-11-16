@@ -20,6 +20,16 @@ section: operations
   `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, a
   `Content-Security-Policy` (front end: `script-src 'self' 'unsafe-inline'`, no remote scripts;
   admin: what the block editor needs), and `Strict-Transport-Security` behind TLS.
+- **Script nonces** (Settings › Security): every script Pursae, its themes and plugins write carries
+  a nonce that changes with each response, and a second policy, `script-src 'nonce-…'
+  'strict-dynamic'`, allows only those. By default it is sent as `Report-Only`: browsers report what
+  it would block to `/wpgo-csp-report`, and the screen lists the reports. **Enforce** makes it the
+  real policy, so a script injected into a page is blocked. Scripts that administrators stored
+  (posts and pages, Custom HTML blocks and widgets, Web Builder HTML sections, the maintenance
+  page, product descriptions, Gooike custom snippets) get the nonce too, because only
+  `unfiltered_html` users can save a script there; untick **Administrator scripts** to block them as
+  well. A proxy or CDN that caches pages serves one nonce to every visitor until the page expires
+  there.
 - **Uploads are data, never code**: `/wp-content/uploads/` is served with a sandboxing CSP, so an
   uploaded HTML or SVG file cannot run scripts against the site.
 - **Content filtering**: users without `unfiltered_html` and all plugins have their post content

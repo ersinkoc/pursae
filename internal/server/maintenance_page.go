@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"html"
 	"html/template"
 	"log"
 	"net/http"
@@ -155,6 +156,12 @@ func maintCSSURL(v string) string {
 }
 
 // maintVars replaces %sitetitle%, %sitetagline% and %year% in the page's texts.
+// maintVarsHTML is maintVars for markup: the site title and tagline are text, escaped.
+func (s *Server) maintVarsHTML(v string) string {
+	return strings.NewReplacer("%sitetitle%", html.EscapeString(s.settings.String("blogname")), "%sitetagline%", html.EscapeString(s.settings.String("blogdescription")),
+		"%year%", strconv.Itoa(time.Now().In(s.loc()).Year())).Replace(v)
+}
+
 func (s *Server) maintVars(v string) string {
 	return strings.NewReplacer("%sitetitle%", s.settings.String("blogname"), "%sitetagline%", s.settings.String("blogdescription"),
 		"%year%", strconv.Itoa(time.Now().In(s.loc()).Year())).Replace(v)
@@ -175,12 +182,13 @@ func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSet
 		}
 	}
 	v := maintPageView{
-		S:            st,
-		Title:        s.maintVars(st.Title),
-		Heading:      s.maintVars(st.Heading),
-		Content:      template.HTML(s.maintVars(st.Content)),
-		Footer:       template.HTML(s.maintVars(st.FooterText)),
-		CustomHTML:   template.HTML(st.CustomHTML),
+		S:       st,
+		Title:   s.maintVars(st.Title),
+		Heading: s.maintVars(st.Heading),
+		// Raw only from an unfiltered_html administrator (kses otherwise): its scripts get the nonce.
+		Content:      template.HTML(s.maintVarsHTML(s.cspTrustStored(st.Content))),
+		Footer:       template.HTML(s.maintVarsHTML(s.cspTrustStored(st.FooterText))),
+		CustomHTML:   template.HTML(s.cspTrustStored(st.CustomHTML)),
 		FontStack:    template.CSS(maintFontStack(st.FontFamily)),
 		SiteName:     s.settings.String("blogname"),
 		HomeURL:      home,

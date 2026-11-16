@@ -894,7 +894,9 @@ func (s *Server) gooRenderContent(ctx context.Context, c *gin.Context, content s
 	}
 	c.Set("goo.depth", d+1)
 	defer c.Set("goo.depth", d)
-	out := s.renderPostContent(ctx, content)
+	// A description or page of an unfiltered_html author (kses otherwise): its scripts get the nonce.
+	// Only store pages call this.
+	out := s.renderPostContent(ctx, s.cspTrustStored(content))
 	out = s.doShortcodes(ctx, out)
 	out = s.gooShortcodes(ctx, out)
 	return s.gooKeep(c, out) // the user's text: the store's translation leaves it alone

@@ -159,6 +159,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 			{slug: "options-media", title: "Media", cap: "manage_options"},
 			{slug: "options-permalink", title: "Permalinks", cap: "manage_options"},
 			{slug: "options-privacy", title: "Privacy", cap: "manage_privacy_options"},
+			{slug: "options-security", title: "Security", cap: "manage_options"},
 			{slug: "options-license", title: "License", cap: "manage_options"},
 		}},
 	}
@@ -272,6 +273,7 @@ var screenStyles = map[string][]string{
 	"admin/tools":                {},
 	"admin/options-privacy":      {},
 	"admin/options-license":      {},
+	"admin/options-security":     {},
 	"admin/privacy-policy-guide": {},
 	"admin/theme-install":        {"wpgo/theme-install.css"},
 	"admin/theme-preview":        {},
