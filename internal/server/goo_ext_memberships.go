@@ -1780,7 +1780,7 @@ func (s *Server) gmemReadPlanForm(c *gin.Context, p *gooMembershipPlan) error {
 	if p.AccessLength == "fixed" && p.AccessEnd == nil {
 		p.AccessLength = "unlimited"
 	}
-	p.Message = strings.TrimSpace(c.PostForm("_restriction_message"))
+	p.Message = gooKsesTextarea(currentUser(c), strings.TrimSpace(c.PostForm("_restriction_message"))) // printed unescaped
 	p.Rules.ContentPostIDs = gxaParseIDs(c.PostForm("_content_post_ids"))
 	p.Rules.ContentTermIDs = gxaParseIDs(c.PostForm("_content_term_ids"))
 	p.Rules.ProductIDs = gxaParseIDs(c.PostForm("_restricted_product_ids"))

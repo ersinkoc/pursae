@@ -9,6 +9,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
+	"wpgo/internal/wp"
 )
 
 // Goocommerce › Settings (page=settings&tab=…&section=…, WooCommerce's admin.php?page=wc-settings): the tab
@@ -603,7 +606,7 @@ func (s *Server) gooReadFields(c *gin.Context, fields []gooField, nameOf func(st
 			}
 			out[f.ID] = n
 		case "textarea":
-			out[f.ID] = strings.ReplaceAll(c.PostForm(name), "\r\n", "\n")
+			out[f.ID] = gooKsesTextarea(currentUser(c), strings.ReplaceAll(c.PostForm(name), "\r\n", "\n"))
 		default:
 			if _, ok := c.GetPostForm(name); !ok {
 				continue
@@ -651,4 +654,14 @@ func gooMapValue(m map[string]any) func(gooField) any {
 		}
 		return f.Default
 	}
+}
+
+// gooKsesTextarea is WC_Admin_Settings' wp_kses_post() for a textarea setting: the store prints
+// these messages unescaped on public pages, so markup from a user without unfiltered_html (a shop
+// manager) is filtered like post content. Plain text is kept byte for byte.
+func gooKsesTextarea(u *store.User, v string) string {
+	if !strings.Contains(v, "<") || u.Can("unfiltered_html", nil) {
+		return v
+	}
+	return wp.KsesPost(v)
 }
