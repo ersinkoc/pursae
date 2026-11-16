@@ -232,7 +232,7 @@ var optionGroups = map[string]optionGroup{
 			return s.msSave(ctx, v)
 		}),
 	"maintenance": groupOf(maintSlug, "Pursae Maintenance", (*Server).maintLoad,
-		func(s *Server, ctx context.Context, v maintSettings) error { return s.maintSave(ctx, v) }),
+		func(s *Server, ctx context.Context, v maintSettings) error { return s.maintSave(ctx, v) }, (*Server).maintCheckRaw),
 	"headless": groupOf(hgSlug, "Pursae Headless", (*Server).hgLoad,
 		func(s *Server, ctx context.Context, v hgSettings) error { return s.hgSaveSettings(ctx, v) }),
 }

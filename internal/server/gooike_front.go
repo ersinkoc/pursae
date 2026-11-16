@@ -42,7 +42,7 @@ func (s *Server) gooikeHead(c *gin.Context) string {
 	}
 	b.WriteString(`<link rel="stylesheet" id="gooike-css" href="` + gooikeAssets + `/gooike.css?ver=` + gooikeVersion + `" media="all" />` + "\n")
 	b.WriteString(`<style id="gooike-inline-css">` + gooikeCSSVars(st.Design) + gooikeCustomCSS(st.Design) + "</style>\n")
-	b.WriteString(gooikeScriptsAt(&st, "head"))
+	b.WriteString(gooikeScriptsAt(&st, "head", s.cspTrustOn()))
 	return b.String()
 }
 
@@ -59,7 +59,7 @@ func (s *Server) gooikeBodyOpen(c *gin.Context) string {
 		return ""
 	}
 	st := s.gooikeLoad()
-	return gooikeScriptsAt(&st, "body")
+	return gooikeScriptsAt(&st, "body", s.cspTrustOn())
 }
 
 // gooikeFooter is Gooike's part of wp_footer.
@@ -71,21 +71,27 @@ func (s *Server) gooikeFooter(c *gin.Context) string {
 	s.gooikeLocalize(c, &st)
 	var b strings.Builder
 	b.WriteString(s.gooikeMarkup(c, &st, false))
-	b.WriteString(gooikeScriptsAt(&st, "footer"))
+	b.WriteString(gooikeScriptsAt(&st, "footer", s.cspTrustOn()))
 	b.WriteString(gooikeConfigScript(&st, false, s.cspMode() == cspModeEnforce))
 	b.WriteString(`<script` + cspNonceAttr() + ` src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" id="gooike-js" defer></script>` + "\n")
 	return b.String()
 }
 
 // gooikeScriptsAt prints the enabled scripts of a placement: necessary ones as they are, the
-// others inert until their category is accepted.
-func gooikeScriptsAt(st *gooikeSettings, placement string) string {
+// others inert until their category is accepted. With trust (csp_admin_scripts) the scripts of the
+// administrator's own snippets get the CSP nonce, which the inert form keeps for gooike.js; the
+// snippets of known services carry it anyway.
+func gooikeScriptsAt(st *gooikeSettings, placement string, trust bool) string {
 	var b strings.Builder
 	for _, sc := range st.Scripts {
 		if !sc.Enabled || sc.Placement != placement {
 			continue
 		}
-		code := gooikeInert(sc.code(), sc.Category)
+		code := sc.code()
+		if trust && gooikeServiceByKey(sc.Service) == nil { // manage_options only (gooike_admin.go)
+			code = cspTrustScripts(gooikeWrap(code))
+		}
+		code = gooikeInert(code, sc.Category)
 		if code == "" {
 			continue
 		}
@@ -147,7 +153,7 @@ func gooikeConfigScript(st *gooikeSettings, preview, strict bool) string {
 		"log": st.LogConsent, "endpoint": "/wp-json/" + gooikeNamespace + "/consent", "geo": st.Geo,
 		"geoEndpoint": "/wp-json/" + gooikeNamespace + "/geo", "reload": st.ReloadOnChange, "float": st.Design.Floating,
 		"modal": t != nil && (t.Layout == "modal" || t.Layout == "wall"), "cookies": cookies, "preview": preview,
-		"saved": st.Texts.WithdrawNotice, // fallback for cached pages without #gooike-saved
+		"saved":  st.Texts.WithdrawNotice, // fallback for cached pages without #gooike-saved
 		"strict": strict,
 	}
 	raw, _ := json.Marshal(cfg)

@@ -114,7 +114,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	ctx := c.Request.Context()
 	u := currentUser(c)
 	lb := s.links(ctx)
-	rc := &renderCtx{s: s, lb: lb, search: q.Search, c: c, user: u, q: q, reqURI: c.Request.URL.RequestURI()}
+	rc := &renderCtx{s: s, lb: lb, search: q.Search, c: c, user: u, q: q, reqURI: c.Request.URL.RequestURI(), page: true}
 	if u != nil {
 		rc.logoutNonce = s.nonce(c, "log-out")
 	}
@@ -451,6 +451,9 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 		}
 	}
 	content := pages[page-1]
+	if p.Type != gontactPostType { // form templates keep raw markup a lesser capability saves
+		content = s.cspTrustContent(ctx, content) // the stored scripts of an unfiltered_html author
+	}
 	teaser, rest, moreText, hasMore := wp.SplitMore(content)
 	if hasMore {
 		if singular {
@@ -707,7 +710,7 @@ func (s *Server) renderWidgetArea(ctx context.Context, ws []*store.Widget) templ
 		if parsed := blocks.Parse(content); len(parsed) > 0 {
 			classes = widgetBlockClass(parsed[0].Name())
 		}
-		out := s.gooWidgetShortcodes(ctx, blocks.Render(ctx, content)) // Goocommerce: store shortcodes in block widgets (goo_front_shortcodes.go)
+		out := s.gooWidgetShortcodes(ctx, blocks.Render(ctx, s.cspTrustContent(ctx, content))) // Goocommerce: store shortcodes in block widgets (goo_front_shortcodes.go)
 		fmt.Fprintf(&sb, "<section id=\"block-%d\" class=\"widget %s\">%s</section>", w.ID, classes, out)
 	}
 	return template.HTML(sb.String())

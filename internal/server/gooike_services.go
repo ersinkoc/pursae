@@ -328,7 +328,8 @@ func (sv *gooikeService) validID(id string) bool {
 }
 
 // code is the snippet of a script entry: the generated code of a service (its scripts carry the
-// CSP nonce: the code is ours and the ID is validated), or the admin's own, as typed (no nonce).
+// CSP nonce: the code is ours and the ID is validated), or the admin's own, as typed (no nonce;
+// gooikeScriptsAt adds it when stored administrator scripts are trusted).
 func (sc gooikeScript) code() string { return sc.codeWith(cspNonceAttr()) }
 
 // codeWith is code with nonce as the nonce attribute of a service's scripts ("" to show the code).

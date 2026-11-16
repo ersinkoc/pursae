@@ -969,6 +969,9 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 		if p.AuthorID == 0 {
 			p.AuthorID = u.ID
 		}
+		if !u.Can("unfiltered_html", nil) { // wp_insert_post's content_save_pre, as every other save path
+			p.Content, p.Excerpt = wp.KsesPost(p.Content), wp.KsesPost(p.Excerpt)
+		}
 		if t, err := time.ParseInLocation("2006-01-02 15:04:05", it.PostDate, loc); err == nil {
 			p.PublishedAt = &t
 		}

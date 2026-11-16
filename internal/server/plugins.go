@@ -302,16 +302,45 @@ func maskNoncePlaceholder(markup string, filter func(string) string) string {
 			b.WriteString(toks[i])
 		}
 	}
-	out := filter(b.String())
+	masked := b.String()
+	out := filter(masked)
 	out = strings.ReplaceAll(out, cspPH, "") // cannot be there: the plugin never saw it
 	for _, t := range toks {
-		if strings.Count(out, t) == 1 {
+		// Restored only on its own script, unchanged: a filter that moved the token to another
+		// script, or changed the trusted script's code, gets no nonce.
+		el := maskedScript(masked, t)
+		if strings.Count(out, t) == 1 && el != "" && strings.Count(out, el) == 1 {
 			out = strings.Replace(out, t, cspPH, 1)
 		} else {
 			out = strings.ReplaceAll(out, t, "")
 		}
 	}
 	return out
+}
+
+// maskedScript is the <script …>…</script> element of markup holding tok in its start tag, or "".
+// The element may also be escaped (&lt;script …&gt;…&lt;/script&gt;, inside a srcdoc attribute).
+func maskedScript(markup, tok string) string {
+	i := strings.Index(markup, tok)
+	if i < 0 {
+		return ""
+	}
+	lower := strings.ToLower(markup)
+	for _, f := range [][3]string{{"<script", "</script", ">"}, {"&lt;script", "&lt;/script", "&gt;"}} {
+		start := strings.LastIndex(lower[:i], f[0])
+		if start < 0 || strings.Contains(lower[start:i], f[2]) {
+			continue
+		}
+		end := strings.Index(lower[i:], f[1])
+		if end < 0 {
+			continue
+		}
+		end += i
+		if gt := strings.Index(lower[end:], f[2]); gt >= 0 {
+			return markup[start : end+gt+len(f[2])]
+		}
+	}
+	return ""
 }
 
 type noticeKey struct{}

@@ -150,6 +150,44 @@
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}
 
+{{define "admin/options-security"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1>Security Settings</h1>
+{{template "notices" $}}
+<form method="post" action="/wp-admin/options-security" novalidate="novalidate">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<h2 class="title">Script Content Security Policy</h2>
+<p>The policy tells browsers which scripts a page may run. Every script Pursae, its themes and its plugins write carries a nonce, a random value that changes with each response; a script injected into a page does not have it.</p>
+<table class="form-table" role="presentation">
+<tr>
+<th scope="row">Mode</th>
+<td><fieldset><legend class="screen-reader-text"><span>Mode</span></legend>
+<label><input type="radio" name="csp_mode" value="report"{{if eq .Mode "report"}} checked="checked"{{end}} /> <strong>Report only</strong> (default): scripts without the nonce still run; browsers report them below</label><br />
+<label><input type="radio" name="csp_mode" value="enforce"{{if eq .Mode "enforce"}} checked="checked"{{end}} /> <strong>Enforce</strong>: browsers block every script without the nonce</label><br />
+<label><input type="radio" name="csp_mode" value="off"{{if eq .Mode "off"}} checked="checked"{{end}} /> <strong>Off</strong>: no nonce policy (the basic policy that allows inline scripts stays)</label>
+<p class="description">Switch to Enforce once the reports below list nothing your site needs. If a proxy or CDN in front of the site caches pages, it serves one nonce to every visitor until the page expires there; the policy still matches the page it came with.</p></fieldset></td>
+</tr>
+<tr>
+<th scope="row">Administrator scripts</th>
+<td><fieldset><legend class="screen-reader-text"><span>Administrator scripts</span></legend>
+<input type="hidden" name="csp_admin_scripts" value="0" /><label for="csp_admin_scripts"><input name="csp_admin_scripts" type="checkbox" id="csp_admin_scripts" value="1"{{if .AdminScripts}} checked="checked"{{end}} /> Run scripts that administrators added to content</label>
+<p class="description">Scripts in posts and pages, Custom HTML blocks and widgets, Web Builder HTML sections, the maintenance page and other stored settings get the nonce. Only users who may post unfiltered HTML can save a script; everyone else's markup is filtered. Untick to block those scripts too when the policy is enforced.</p></fieldset></td>
+</tr>
+</table>
+<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /></p>
+</form>
+<h2 class="title">Reported violations</h2>
+<p>What browsers reported to <code>{{.ReportPath}}</code> since the server started, most frequent first (at most 500 kinds; query strings are dropped). Browser extensions add reports of their own too.</p>
+{{if .Reports}}<table class="widefat striped" role="presentation">
+<thead><tr><th scope="col">Directive</th><th scope="col">Blocked</th><th scope="col">Source</th><th scope="col">Page</th><th scope="col">Count</th><th scope="col">Last seen</th></tr></thead>
+<tbody>{{range .Reports}}<tr><td><code>{{.Directive}}</code></td><td><code>{{.Blocked}}</code>{{if .Sample}}<br /><code>{{.Sample}}</code>{{end}}</td><td>{{if .Source}}<code>{{.Source}}</code>{{else}}&mdash;{{end}}</td><td>{{.Page}}</td><td>{{.Count}}</td><td>{{.Last.Format "2006-01-02 15:04:05 MST"}}</td></tr>
+{{end}}</tbody></table>
+{{if .Dropped}}<p class="description">{{.Dropped}} more reports were not kept.</p>{{end}}
+<form method="post" action="/wp-admin/options-security"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><p><input type="submit" name="clear_reports" class="button" value="Clear reports" data-confirm="Clear every report?" /></p></form>
+{{else}}<p>No violations were reported.</p>{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
 {{define "admin/about"}}{{template "admin-header" .}}{{with .Data}}
 <div class="wrap px px-about">
 	<h1 class="screen-reader-text">About Pursae</h1>

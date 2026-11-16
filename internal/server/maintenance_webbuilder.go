@@ -79,6 +79,7 @@ func (s *Server) maintRenderWB(w http.ResponseWriter, r *http.Request, st maintS
 	if !ok {
 		return false
 	}
+	body = s.cspTrustStored(body) // html sections (srcdoc) of an unfiltered_html author
 	var head strings.Builder
 	head.WriteString("<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
 	head.WriteString("<title>" + html.EscapeString(s.maintVars(st.Title)) + "</title>\n")

@@ -512,6 +512,10 @@ func (s *Server) gooikeAdminPost(c *gin.Context) {
 				fail("Paste the script's code.")
 				return
 			}
+			if !currentUser(c).Can("unfiltered_html", nil) { // the code runs on every page, with the CSP nonce (csp_trusted.go)
+				fail("Only users who may post unfiltered HTML can add custom code. Pick a known service instead.")
+				return
+			}
 		}
 		if sc.Name == "" {
 			sc.Name = "Script"

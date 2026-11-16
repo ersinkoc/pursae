@@ -107,13 +107,14 @@ type captureWriter struct {
 	html   bool
 	start  time.Time
 	gen    uint64 // the store's purge generation before the render (Store.SetSince)
+	csp    string // Options.CSPMode() before the render: what the page was rendered under
 	// release, when set, ends this render's claim on its key (flightGroup) once the page is
 	// stored, before it is written to a possibly slow client.
 	release func()
 }
 
 func newCaptureWriter(w http.ResponseWriter, c *Cache, r *http.Request, d Decision) *captureWriter {
-	return &captureWriter{w: w, c: c, r: r, d: d, start: c.now(), gen: c.store.Generation()}
+	return &captureWriter{w: w, c: c, r: r, d: d, start: c.now(), gen: c.store.Generation(), csp: c.cspMode()}
 }
 
 func (cw *captureWriter) Header() http.Header { return cw.w.Header() }
@@ -252,8 +253,8 @@ func (cw *captureWriter) finish() {
 	cw.restoreHeaders()
 	body := cw.buf.Bytes()
 	opt := cw.c.cfg.Optimize
-	mode := cw.c.cspMode()
-	opt.strictNonce = mode == "enforce"
+	mode := cw.csp
+	opt.strictNonce = mode == "enforce" || strings.HasPrefix(mode, "enforce:")
 	if cw.html && opt.enabled() && (cw.status == http.StatusOK || cw.status == http.StatusNotFound) {
 		body = Optimize(body, opt)
 	}

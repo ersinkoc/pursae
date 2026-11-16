@@ -38,6 +38,7 @@ type renderCtx struct {
 	q           *siteQuery   // the main query (get_query_var, get_queried_object_id)
 	postID      int64        // the post whose content is rendering (block context postId)
 	feed        bool         // is_feed(): no lazy loading, feed URLs
+	page        bool         // a theme page: stored administrator scripts get the nonce (csp_trusted.go)
 	reqURI      string       // REQUEST_URI for the loginout block's redirect
 	logoutNonce string       // wp_logout_url() nonce of the current user
 
@@ -327,7 +328,7 @@ func renderLatestPosts(ctx context.Context, b *blocks.Block, _ string) string {
 				fmt.Fprintf(&items, `<div class="wp-block-latest-posts__post-excerpt">%s</div>`, ex)
 			} else if rc.depth < 3 && rc.enterNested() {
 				rc.depth++
-				fmt.Fprintf(&items, `<div class="wp-block-latest-posts__post-full-content">%s</div>`, blocks.Render(ctx, p.Content))
+				fmt.Fprintf(&items, `<div class="wp-block-latest-posts__post-full-content">%s</div>`, blocks.Render(ctx, rc.s.cspTrustContent(ctx, p.Content)))
 				rc.depth--
 			}
 		}
@@ -610,7 +611,7 @@ func renderSyncedPattern(ctx context.Context, b *blocks.Block, _ string) string 
 		rc.depth--
 		delete(rc.seenRefs, ref)
 	}()
-	return blocks.Render(ctx, p.Content)
+	return blocks.Render(ctx, rc.s.cspTrustContent(ctx, p.Content)) // the stored scripts of an unfiltered_html author
 }
 
 func boolInt(b bool) int {

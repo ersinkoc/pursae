@@ -25,7 +25,8 @@ import (
 //     content was rendered, and nothing that renders content knows it.
 //
 // The nonce is added only where a trusted script is written, never by rewriting the finished page:
-// that would also bless a script injected through stored content.
+// that would also bless a script injected through a request, a plugin or a bug. Scripts stored by an
+// unfiltered_html administrator get it where the stored value is read (csp_trusted.go).
 
 // cspPH is this process's placeholder (internal/cspnonce).
 var cspPH = cspnonce.Placeholder
@@ -190,6 +191,15 @@ func (s *Server) cspMode() string {
 		return m
 	}
 	return cspModeReport
+}
+
+// cspCacheState is what the page cache stores with each entry (cache.Options.CSPMode): the mode,
+// and whether stored administrator scripts carry the nonce (csp_trusted.go).
+func (s *Server) cspCacheState() string {
+	if s.cspTrustOn() {
+		return s.cspMode() + ":admin-scripts"
+	}
+	return s.cspMode()
 }
 
 // cspNonceScriptSrc is the nonce policy's script-src: only scripts carrying the response's nonce, and

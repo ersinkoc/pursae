@@ -65,8 +65,9 @@ var Defaults = map[string]any{
 	"plugin_trusted_keys":        "",
 	"plugin_allow_unsigned":      false,
 	"csp_mode":                   "report", // script CSP: "report" (nonce policy report-only), "enforce" or "off" (csp_nonce.go)
-	"pursae_license_key":         "",   // Settings › License: the key sent to Pursae Manager
-	"wpgo_hub_trust_keys":        true, // packages signed by the Hub install without extra setup
+	"csp_admin_scripts":          true,     // scripts in stored unfiltered_html markup get the nonce (csp_trusted.go)
+	"pursae_license_key":         "",       // Settings › License: the key sent to Pursae Manager
+	"wpgo_hub_trust_keys":        true,     // packages signed by the Hub install without extra setup
 	"wpgo_cache_enabled":         true,
 	"wpgo_cache_ttl_public":      604800,
 	"wpgo_cache_ttl_front":       604800,

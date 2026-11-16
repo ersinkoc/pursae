@@ -4,7 +4,9 @@
 // leaves the server and changes on every start.
 //
 // Add the attribute only where trusted first-party code writes a script, never to markup that
-// comes from stored content, plugins' HTML or a request, and never by rewriting finished HTML.
+// comes from plugins' HTML or a request, and never by rewriting finished HTML. Stored markup that
+// only an unfiltered_html administrator can have written gets it through the server's
+// cspTrustScripts, where the stored value is read (internal/server/csp_trusted.go).
 package cspnonce
 
 import (

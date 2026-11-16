@@ -43,7 +43,7 @@ func init() {
 	optionGroups["forum"] = groupOf(forumSlug, "Pursae Forum", (*Server).forumLoad,
 		func(s *Server, ctx context.Context, v forumSettings) error { return s.forumSave(ctx, v) })
 	optionGroups["cookie"] = groupOf(gooikeSlug, "Pursae Cookie", (*Server).gooikeLoad,
-		func(s *Server, ctx context.Context, v gooikeSettings) error { return s.gooikeSave(ctx, v) })
+		func(s *Server, ctx context.Context, v gooikeSettings) error { return s.gooikeSave(ctx, v) }, (*Server).gooikeCheckRaw)
 	optionGroups["contact"] = groupOf(gontactSlug, "Pursae Contact Form", (*Server).gontactLoadOptions,
 		func(s *Server, ctx context.Context, v gontactOptions) error { return s.gontactSaveOptions(ctx, v) })
 }
