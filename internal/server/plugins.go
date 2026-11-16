@@ -260,7 +260,7 @@ func (s *Server) loadPlugin(ctx context.Context, slug string, rawPerms []byte) e
 	if ps.rt == nil {
 		return ps.initErr
 	}
-	pkg, err := plugins.LoadPackageFile(filepath.Join(ps.dir, slug+".zip"), ps.trusted(), !s.settings.Bool("plugin_allow_unsigned"))
+	pkg, err := plugins.LoadPackageFile(filepath.Join(ps.dir, slug+".zip"), ps.trusted(), !s.allowUnsignedPlugins())
 	if err != nil {
 		return err
 	}
@@ -1187,6 +1187,24 @@ func (s *Server) builtinPluginSlug(slug string) bool {
 }
 
 // pluginSigner is the stored form of the key that verified a package ("" when unsigned).
+// allowUnsignedPlugins reports whether unsigned plugin packages are accepted: the plugin_allow_unsigned
+// setting and the WPGO_ALLOW_UNSIGNED_PLUGINS environment opt-in must both be on. The setting alone is a
+// database row any administrator (or the CLI) can write, too weak a switch for turning signature checks off.
+func (s *Server) allowUnsignedPlugins() bool {
+	if !s.settings.Bool("plugin_allow_unsigned") {
+		return false
+	}
+	if !s.cfg.AllowUnsignedPlugins {
+		unsignedIgnoredOnce.Do(func() {
+			slog.Warn("plugin_allow_unsigned is on but ignored: set WPGO_ALLOW_UNSIGNED_PLUGINS=1 in the server environment to accept unsigned plugin packages (development only)")
+		})
+		return false
+	}
+	return true
+}
+
+var unsignedIgnoredOnce sync.Once
+
 func pluginSigner(pkg *plugins.Package) string {
 	if pkg.SignedBy == nil {
 		return ""
@@ -1230,7 +1248,7 @@ func (s *Server) installPackageFrom(ctx context.Context, data []byte, source, wa
 // installPackageChecked is installPackageFrom; confirmed skips the downgrade and signer checks (the
 // administrator confirmed the replacement of an uploaded package).
 func (s *Server) installPackageChecked(ctx context.Context, data []byte, source, wantSlug string, confirmed bool) (*plugins.Manifest, error) {
-	pkg, err := plugins.LoadPackage(bytes.NewReader(data), int64(len(data)), s.plugins.trusted(), !s.settings.Bool("plugin_allow_unsigned"))
+	pkg, err := plugins.LoadPackage(bytes.NewReader(data), int64(len(data)), s.plugins.trusted(), !s.allowUnsignedPlugins())
 	if err != nil {
 		if errors.Is(err, plugins.ErrUnsigned) || errors.Is(err, plugins.ErrBadSignature) {
 			return nil, fmt.Errorf("the package signature could not be verified (%v); only plugins signed with a trusted key can be installed; a site owner can trust a publisher's key under Plugins > Trusted Keys", err)
@@ -1242,7 +1260,7 @@ func (s *Server) installPackageChecked(ctx context.Context, data []byte, source,
 	}
 	slug := pkg.Manifest.Slug
 	if !pkg.Verified() {
-		slog.Warn("installing a plugin package whose signature was not verified (plugin_allow_unsigned is on; development only)", "plugin", slug)
+		slog.Warn("installing a plugin package whose signature was not verified (plugin_allow_unsigned and WPGO_ALLOW_UNSIGNED_PLUGINS are on; development only)", "plugin", slug)
 	}
 	if wantSlug != "" && slug != wantSlug {
 		return nil, fmt.Errorf("the package is the plugin %q, not %q", slug, wantSlug)

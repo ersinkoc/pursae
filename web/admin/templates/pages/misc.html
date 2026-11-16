@@ -171,7 +171,7 @@
 <th scope="row">Administrator scripts</th>
 <td><fieldset><legend class="screen-reader-text"><span>Administrator scripts</span></legend>
 <input type="hidden" name="csp_admin_scripts" value="0" /><label for="csp_admin_scripts"><input name="csp_admin_scripts" type="checkbox" id="csp_admin_scripts" value="1"{{if .AdminScripts}} checked="checked"{{end}} /> Run scripts that administrators added to content</label>
-<p class="description">Scripts in posts and pages, Custom HTML blocks and widgets, Web Builder HTML sections, the maintenance page and other stored settings get the nonce. Only users who may post unfiltered HTML can save a script; everyone else's markup is filtered. Untick to block those scripts too when the policy is enforced.</p></fieldset></td>
+<p class="description">Scripts in posts and pages, Custom HTML blocks and widgets, Web Builder HTML sections, the maintenance page and other stored settings get the nonce. Only users who may post unfiltered HTML can save a script; everyone else's markup is filtered. <strong>As in WordPress, that includes Editors and Shop Managers</strong>, so with this on a script saved from one of those accounts runs under the enforced policy too. Untick to block every stored script when the policy is enforced (the strictest setting).</p></fieldset></td>
 </tr>
 </table>
 <p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" /></p>

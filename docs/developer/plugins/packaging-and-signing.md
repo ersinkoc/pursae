@@ -63,7 +63,8 @@ and `icon.svg` are not signed (they are display-only).
 | no trusted keys, `plugin_allow_unsigned` off | — | rejected | rejected |
 
 `plugin_allow_unsigned` is an option without a screen (set it with `wpgo` SQL access or the REST
-settings of a development site); never turn it on in production.
+settings of a development site) and takes effect only when the server also runs with
+`WPGO_ALLOW_UNSIGNED_PLUGINS=1`; never turn either on in production.
 
 Trusted keys come from `WPGO_PLUGIN_KEYS` (comma-separated), the `plugin_trusted_keys` option
 (both read at start-up), the Manager's key list (replaced on every index refresh, so a key the

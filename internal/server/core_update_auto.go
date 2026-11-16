@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -81,10 +82,21 @@ func (s *Server) noteCoreRollback(ctx context.Context, st *coreupdate.State) {
 	}
 }
 
+var coreAutoDevTrustOnce sync.Once
+
 // coreAutoUpdate runs from the daily Manager check: it installs a newer release when automatic
 // updates are on and restarts into it. It returns the version it is restarting into, or "".
 func (s *Server) coreAutoUpdate(ctx context.Context) string {
 	if !s.settings.Bool(coreAutoUpdateOption) || s.sandbox != nil {
+		return ""
+	}
+	if devTrustHubKeys() {
+		// WPGO_TRUST_HUB_KEYS=1 (devhub builds) trusts every key the Manager lists, endorsed by the
+		// release root or not: whoever answers as the Manager could sign a binary. An update made by
+		// hand still works; an unattended one is never installed under that trust.
+		coreAutoDevTrustOnce.Do(func() {
+			slog.Warn("core auto-update skipped: WPGO_TRUST_HUB_KEYS=1 trusts unendorsed Manager keys; update by hand under Dashboard › Updates")
+		})
 		return ""
 	}
 	latest := s.coreUpdateAvailable()

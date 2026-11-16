@@ -90,6 +90,7 @@ func TestPluginUIAdminPageDashboardMetaBoxAndBlock(t *testing.T) {
 	base := ts.URL
 	installAndLogin(t, ts, c)
 	ctx := context.Background()
+	srv.cfg.AllowUnsignedPlugins = true
 	if err := srv.settings.Set(ctx, map[string]any{"plugin_allow_unsigned": true}); err != nil {
 		t.Fatal(err)
 	}
