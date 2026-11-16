@@ -43,6 +43,10 @@ type wbThemePartsView struct {
 	// Canvas is a builder page with layout canvas: the theme prints neither a header nor a footer
 	// (no part, no wrapper, no default markup), only Main between its head and footer hooks.
 	Canvas bool
+	// HeaderCode, MainCode and FooterCode: the part is made of code sections only (a design's own
+	// markup, internal/webbuilder/code.go); the theme prints it without its wrapper element, and a
+	// code main gets no default header or footer (the design brings its own, or a template does).
+	HeaderCode, MainCode, FooterCode bool
 }
 
 // wbHelloMenuLocations are Hello Pursae's menu locations.

@@ -7,6 +7,7 @@ import (
 	"html"
 	"html/template"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -39,6 +40,8 @@ type wbPart struct {
 	template bool   // a Theme Builder template (else the page's own doc)
 	doc      *store.WebBuilderDoc
 	filled   wbFilled
+	codeHead string // head markup of its code sections (lifted out of filled.html)
+	codePage bool   // made of code sections only
 	// draftNewer: a preview of the page by a user whose autosave is newer than the published doc.
 	draftNewer bool
 }
@@ -48,6 +51,9 @@ type wbThemeParts struct {
 	view   *wbThemePartsView
 	parts  []*wbPart // in document order: header, main, footer
 	canvas bool      // the page's own doc with layout canvas: no header and footer part
+	// forumMain: a Pursae Forum view whose site template prints the page's whole main
+	// (forum_site_templates.go); it stands in for a main part made of code sections.
+	forumMain string
 }
 
 // wbThemeParts picks and fills the parts of the request. nil when no location has one.
@@ -107,13 +113,21 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 			continue
 		}
 		p.filled = s.wbFill(c, v, p.doc, !p.template)
+		p.codeHead, p.filled.html = webbuilder.CodeHead(p.filled.html)
+		p.codePage = webbuilder.IsCodePage(p.filled.html)
+		if p.codePage {
+			p.filled.html = webbuilder.UnwrapCodePage(p.filled.html)
+		}
+		if p.codeHead != "" || strings.Contains(p.filled.html, webbuilder.AttrCode) {
+			p.codeHead, p.filled.html = s.wbKitVersioned(p.codeHead), s.wbKitVersioned(p.filled.html)
+		}
 		out.parts = append(out.parts, p)
 		h := template.HTML(p.filled.html)
 		switch p.loc {
 		case webbuilder.LocationHeader:
-			out.view.Header = h
+			out.view.Header, out.view.HeaderCode = h, p.codePage
 		case webbuilder.LocationFooter:
-			out.view.Footer = h
+			out.view.Footer, out.view.FooterCode = h, p.codePage
 		default:
 			if !p.template { // the page's own doc: Multi Language user content (golylang_uc.go)
 				h = template.HTML(s.pllUC(c, p.filled.html, p.id))
@@ -126,16 +140,27 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 			if p.draftNewer {
 				h = template.HTML(wbDraftNotice(s, c)) + h
 			}
-			out.view.Main = h
+			out.view.Main, out.view.MainCode = h, p.codePage
 			out.view.HasMain = wbHasMainLandmark(p.filled.html)
 		}
 	}
-	if len(out.parts) == 0 {
+	if body, ok := forumSiteMain(c, q); ok && main == nil && !out.canvas {
+		body = s.wbKitVersioned(body)
+		out.forumMain = body
+		out.view.Main, out.view.MainCode, out.view.HasMain = template.HTML(body), true, wbHasMainLandmark(body)
+	}
+	if len(out.parts) == 0 && out.forumMain == "" {
 		return nil
 	}
 	out.view.Canvas = out.canvas // Hello Pursae then prints no header or footer at all
 	return out
 }
+
+// wbHelloCSSRE is Hello Pursae's stylesheet link (theme_hellopursae.go).
+var wbHelloCSSRE = regexp.MustCompile(`<link rel='stylesheet' id='hello-pursae-css'[^>]*>\n?`)
+
+// wbBlockCSSRE is the block library's stylesheet, which a page of code sections has no use for.
+var wbBlockCSSRE = regexp.MustCompile(`<link rel='stylesheet' id='wp-block-library-css'[^>]*>\n?`)
 
 // wbRenderTheme renders the request with Hello Pursae and its Theme Builder parts. false (nothing
 // written) when no location has a part: the theme renders the view as usual.
@@ -157,9 +182,16 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	var css strings.Builder
 	loops, shop, catalog := false, false, false
 	var bodies []string
+	var heads []string
+	allCode := len(tp.parts) > 0 || tp.forumMain != ""
+	if tp.forumMain != "" {
+		bodies = append(bodies, tp.forumMain)
+	}
 	for _, p := range tp.parts {
+		heads = append(heads, p.codeHead)
+		allCode = allCode && p.codePage
 		var needs []webbuilder.FontNeed
-		if len(p.doc.Fonts) > 0 && json.Unmarshal(p.doc.Fonts, &needs) == nil {
+		if !p.codePage && len(p.doc.Fonts) > 0 && json.Unmarshal(p.doc.Fonts, &needs) == nil { // a design brings its own fonts
 			fonts = append(fonts, needs...)
 		}
 		for _, f := range p.doc.Features {
@@ -203,6 +235,14 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	}
 	runtime := len(feats) > 0 && site.Runtime != ""
 	lb := s.links(c)
+	if allCode && len(popups) == 0 { // code sections only: the design's own CSS, no builder reset
+		site.CSS = ""
+	}
+	// Every part of the page is a design's own markup (no theme header, main or footer is left):
+	// the theme's base stylesheet would only change the design.
+	if allCode && tp.view.Main != "" { // a code main gets no default header or footer either (header.html)
+		v.Head = template.HTML(wbBlockCSSRE.ReplaceAllString(wbHelloCSSRE.ReplaceAllString(string(v.Head), ""), ""))
+	}
 
 	var head strings.Builder
 	if runtime { // the runtime's hiding rules apply only when it will run (content stays readable without JS)
@@ -226,6 +266,8 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	}
 	head.WriteString(wbTokenCSS(s.wbSiteTokens()))
 	head.WriteString(css.String())
+	codeHead := webbuilder.MergeHeads(heads...)
+	head.WriteString(codeHead)
 	v.Head = template.HTML(head.String())
 	if storeAssets {
 		v.Footer += template.HTML(s.gooStoreScripts(c, v.Q))
@@ -238,6 +280,7 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 		v.AdminBar = template.HTML(wbInsertAdminBarNodes(string(v.AdminBar), s.wbThemeAdminBarNodes(c, tp)))
 	}
 	wbEmbedCSP(c, strings.Join(bodies, "\n"))
+	s.wbCodeCSP(c, codeHead, strings.Join(bodies, "\n"))
 	wbAddCacheTags(c, true, loops)
 	if catalog {
 		wbAddTags(c, "goo:shop")

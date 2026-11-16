@@ -62,6 +62,8 @@ conversation:
    (`wbTemplatesChanged`).
 
 Until step 3 the old templates stay live, so a stopped import changes nothing visible; running it again resumes.
+Pursae MCP's `web_builder_import_theme_kit {slug, mode}` runs the same three steps without a browser: step 2
+publishes each doc with `serverRender` (the editor's renderer inside the server, [contract §4.1](web-builder-contract.md)).
 `GET /web-builder/v2/themes` lists the cards (`slug, name, description, screenshot, templates, pages, menus,
 images, store, imported`) and `existing`, the number of published templates per type. All three routes need
 the `X-WB-Api` handshake and the nonce like the other routes.

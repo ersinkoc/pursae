@@ -24,7 +24,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildSiteCss, exportFixtures } from './live.mjs'
+import { buildServerRender, buildSiteCss, exportFixtures } from './live.mjs'
 
 const BUILDER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const REPO = path.resolve(BUILDER, '..')
@@ -194,6 +194,7 @@ if (!watch) {
   const editor = readEditorManifest()
   writeManifest(editor)
   log(`editor: editor/${editor.js} + ${editor.css.length} stylesheet(s)`)
+  await buildServerRender({ builder: BUILDER, work: WORK, outFile: path.join(OUT, 'render', 'render.js') })
   await exportFixtures({ builder: BUILDER, work: WORK, outDir: path.join(REPO, 'internal', 'webbuilder', 'testdata', 'render'), siteCssFile: path.join(OUT, 'site', siteCssFile) })
   audit()
   log(`done → ${path.relative(REPO, OUT)}/`)

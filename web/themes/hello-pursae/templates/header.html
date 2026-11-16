@@ -11,11 +11,11 @@
 {{.Head}}</head>
 
 <body class="{{.BodyClass}}">
-{{.BodyOpen}}<a class="skip-link screen-reader-text" href="#content">{{__ . "Skip to content"}}</a>
+{{.BodyOpen}}{{if not (and .Data.wb (or .Data.wb.HeaderCode .Data.wb.MainCode))}}<a class="skip-link screen-reader-text" href="#content">{{__ . "Skip to content"}}</a>{{end}}
 {{template "site-header" .}}
 {{end}}
 
-{{define "site-header"}}{{$wb := .Data.wb}}{{if and $wb $wb.Canvas}}{{else if and $wb $wb.Header}}<div class="wb-part wb-part-header">{{$wb.Header}}</div>{{else}}<header id="site-header" class="site-header">
+{{define "site-header"}}{{$wb := .Data.wb}}{{if and $wb $wb.Canvas}}{{else if and $wb $wb.Header $wb.HeaderCode}}{{$wb.Header}}{{else if and $wb $wb.Header}}<div class="wb-part wb-part-header">{{$wb.Header}}</div>{{else if and $wb $wb.MainCode}}{{else}}<header id="site-header" class="site-header">
 	<div class="site-branding">
 		{{.CustomLogo}}
 		{{if .TitleIsH1}}<h1 class="site-title"><a href="{{.HomeURL}}" rel="home"{{if .IsFront}} aria-current="page"{{end}}>{{.SiteName}}</a></h1>{{else}}<p class="site-title"><a href="{{.HomeURL}}" rel="home"{{if .IsFront}} aria-current="page"{{end}}>{{.SiteName}}</a></p>{{end}}
@@ -30,7 +30,7 @@
 </html>
 {{end}}
 
-{{define "site-footer"}}{{$wb := .Data.wb}}{{if and $wb $wb.Canvas}}{{else if and $wb $wb.Footer}}<div class="wb-part wb-part-footer">{{$wb.Footer}}</div>{{else}}<footer id="site-footer" class="site-footer">
+{{define "site-footer"}}{{$wb := .Data.wb}}{{if and $wb $wb.Canvas}}{{else if and $wb $wb.Footer $wb.FooterCode}}{{$wb.Footer}}{{else if and $wb $wb.Footer}}<div class="wb-part wb-part-footer">{{$wb.Footer}}</div>{{else if and $wb $wb.MainCode}}{{else}}<footer id="site-footer" class="site-footer">
 	{{with .Data.FooterMenu}}<nav class="site-navigation" aria-label="Footer menu">{{.}}</nav>{{end}}
 	<div class="site-info">
 		<p class="copyright">&copy; {{.Data.Year}} <a href="{{.HomeURL}}" rel="home">{{.SiteName}}</a></p>
@@ -39,8 +39,8 @@
 </footer>{{end}}{{end}}
 
 {{/* main-open / main-close: main#content, or div#content when the builder part brings its own <main>. */}}
-{{define "main-open"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{if $wb.HasMain}}<div id="content" class="site-main wb-main-part">{{else}}<main id="content" class="site-main wb-main-part">{{end}}{{else}}<main id="content" class="site-main">{{end}}{{end}}
-{{define "main-close"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main $wb.HasMain}}</div>{{else}}</main>{{end}}{{end}}
+{{define "main-open"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main}}{{if and $wb.MainCode $wb.HasMain}}{{else if $wb.HasMain}}<div id="content" class="site-main wb-main-part">{{else}}<main id="content" class="site-main wb-main-part">{{end}}{{else}}<main id="content" class="site-main">{{end}}{{end}}
+{{define "main-close"}}{{$wb := .Data.wb}}{{if and $wb $wb.Main $wb.MainCode $wb.HasMain}}{{else if and $wb $wb.Main $wb.HasMain}}</div>{{else}}</main>{{end}}{{end}}
 
 {{define "searchform"}}<form role="search" method="get" class="search-form" action="{{.SearchAction}}">{{.SearchHidden}}
 	<label><span class="screen-reader-text">{{_x . "Search for:" "label"}}</span>

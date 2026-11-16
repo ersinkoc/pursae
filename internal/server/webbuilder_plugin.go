@@ -53,4 +53,5 @@ func wbEditURL(id int64) string {
 // registerWebBuilder adds the builder's routes that live outside wp-admin and the REST API.
 func (s *Server) registerWebBuilder(r *gin.Engine) {
 	s.wbRegisterAssets(r) // webbuilder_assets.go
+	s.wbRegisterImport(r) // webbuilder_import.go: exact HTML import page
 }

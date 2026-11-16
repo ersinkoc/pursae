@@ -81,3 +81,90 @@ export async function exportFixtures({ builder, work, outDir, siteCssFile }) {
   const r = spawnSync(process.execPath, [path.join(ssrDir, 'fixtures.mjs'), outDir, siteCssFile], { stdio: 'inherit', cwd: builder })
   if (r.status !== 0) throw new Error('renderStatic fixtures failed (see above)')
 }
+
+/**
+ * Globals React's server build touches at load time that a bare JS engine lacks. renderStatic is
+ * synchronous, so none of them has to do real work: timers and message channels never fire.
+ */
+const SSR_PRELUDE = `(function (g) {
+  if (!g.self) g.self = g;
+  if (!g.setTimeout) { g.setTimeout = function () { return 0 }; g.clearTimeout = function () {} }
+  if (!g.setImmediate) g.setImmediate = function () { return 0 };
+  if (!g.queueMicrotask) g.queueMicrotask = function () {};
+  if (!g.MessageChannel) g.MessageChannel = function () { this.port1 = { onmessage: null, postMessage: function () {} }; this.port2 = { onmessage: null, postMessage: function () {} } };
+  if (!g.TextEncoder) g.TextEncoder = function () {};
+  if (!g.TextEncoder.prototype.encode) g.TextEncoder.prototype.encode = function (s) {
+    s = unescape(encodeURIComponent(String(s === undefined ? '' : s)));
+    var a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a };
+  if (!g.TextEncoder.prototype.encodeInto) g.TextEncoder.prototype.encodeInto = function (s, d) {
+    var a = this.encode(s); d.set(a); return { read: s.length, written: a.length } };
+  if (!g.TextDecoder) g.TextDecoder = function () {};
+  if (!g.TextDecoder.prototype.decode) g.TextDecoder.prototype.decode = function (a) {
+    if (!a) return ''; var s = ''; var b = new Uint8Array(a.buffer || a, a.byteOffset || 0, a.byteLength === undefined ? a.length : a.byteLength);
+    for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return decodeURIComponent(escape(s)) };
+  if (!g.console) { var n = function () {}; g.console = { log: n, warn: n, error: n, info: n, debug: n } }
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+`
+
+/**
+ * Builds the server render bundle (host/ssr.ts → `outFile`, one IIFE with React and renderStatic, no
+ * imports) that internal/webbuilder/ssr runs in Go to publish a page without the editor (Pursae MCP).
+ * Targets ES2017 so the embedded engine needs no newer syntax.
+ */
+export async function buildServerRender({ builder, work, outFile }) {
+  const { build } = await import('vite')
+  const react = (await import('@vitejs/plugin-react')).default
+  const dir = path.join(builder, '.work', 'render')
+  await build({
+    configFile: false,
+    root: work,
+    logLevel: 'warn',
+    clearScreen: false,
+    publicDir: false,
+    mode: 'production',
+    define: { 'process.env.NODE_ENV': '"production"' },
+    // Stylesheets imported by the designs are the editor's business (the site CSS is built apart): drop them.
+    plugins: [
+      {
+        name: 'wb-ssr-no-css',
+        enforce: 'pre',
+        resolveId: (id) => (/\.css(\?|$)/.test(id) ? '\0wb-no-css' : null),
+        load: (id) => (id === '\0wb-no-css' ? 'export default ""' : null),
+      },
+      {
+        // rich.ts sanitizes and decodes with the DOM, which the embedded engine lacks: there it calls the
+        // host's equivalents (webbuilder.SanitizeRichLists, the same rules; html.UnescapeString).
+        name: 'wb-ssr-rich-host',
+        enforce: 'pre',
+        transform(code, id) {
+          if (!/[\\/]builder[\\/]rich\.ts$/.test(id)) return null
+          const a = 'export function sanitizeRich(html: string, o: RichOpts = { lists: true }): string {'
+          const b = 'function decode(html: string) {'
+          if (!code.includes(a) || !code.includes(b)) throw new Error('rich.ts changed: update wb-ssr-rich-host in scripts/live.mjs')
+          return code
+            .replace(a, `${a}\n  if (typeof document === 'undefined') return (globalThis as any).__wbHostRich(html, !!o.lists)`)
+            .replace(b, `${b}\n  if (typeof document === 'undefined') return (globalThis as any).__wbHostDecode(html)`)
+        },
+      },
+      react(),
+    ],
+    resolve: { alias: [{ find: /^@\//, replacement: path.join(work, 'src') + '/' }], conditions: ['browser', 'import', 'default'] },
+    build: {
+      outDir: dir,
+      emptyOutDir: true,
+      minify: true,
+      sourcemap: false,
+      target: 'es2017',
+      reportCompressedSize: false,
+      copyPublicDir: false,
+      rolldownOptions: {
+        input: path.join(builder, 'host', 'ssr.ts'),
+        output: { format: 'iife', entryFileNames: 'render.js', banner: SSR_PRELUDE },
+      },
+    },
+  })
+  const code = fs.readFileSync(path.join(dir, 'render.js'), 'utf8')
+  fs.mkdirSync(path.dirname(outFile), { recursive: true })
+  fs.writeFileSync(outFile, code)
+  log(`server render: ${path.relative(path.resolve(builder, '..'), outFile)} (${(code.length / 1024).toFixed(1)} KB)`)
+}

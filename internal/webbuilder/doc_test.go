@@ -225,3 +225,81 @@ func TestParseSection(t *testing.T) {
 		t.Fatalf("hero section: %+v", r.Section)
 	}
 }
+
+// Without unfiltered_html the privileged parts of the stored docs stay: code and html sections by
+// id at the doc's positions (reorder, hide and remove work, edits are ignored), content.html and
+// style.css of other sections; privileged parts with nothing stored are still dropped.
+func TestParseDocKeepStored(t *testing.T) {
+	const st = `"style":{"palette":"light","align":"left","padding":0,"titleSize":40,"hideOn":[]%s}`
+	sec := func(id, kind, content, css string) string {
+		extra := ""
+		if css != "" {
+			extra = `,"css":` + strconv.Quote(css)
+		}
+		return `{"id":"` + id + `","kind":"` + kind + `","name":"` + id + `","hidden":false,"content":` + content + `,"items":[],` + strings.Replace(st, "%s", extra, 1) + `}`
+	}
+	doc := func(secs ...string) string {
+		return `{"site":{"brand":"#0a7","fontPair":"modern","corners":"soft"},"sections":[` + strings.Join(secs, ",") + `]}`
+	}
+	codeA := sec("ca", "code", `{"html":"<section><h1 data-wbc=\"1\">A</h1><script>a()</script></section>","head":"<script src=\"/k.js\"></script>"}`, "")
+	codeB := sec("cb", "code", `{"html":"<section><p data-wbc=\"2\">B</p></section>"}`, "")
+	htmlC := sec("hc", "html", `{"html":"<p>raw</p><script>c()</script>"}`, "")
+	text := sec("tx", "text", `{"title":"Title","text":"Body"}`, "#tx{color:red}")
+	stored := doc(codeA, text, codeB, htmlC)
+	priv := mustParse(t, stored, DocOptions{UnfilteredHTML: true})
+	if !priv.Valid() {
+		t.Fatalf("stored doc invalid: %v", priv.Errors)
+	}
+	keep := DocOptions{Stored: []json.RawMessage{priv.JSON}}
+	ids := func(r *DocResult) string {
+		var out []string
+		for _, s := range r.Doc.Sections {
+			out = append(out, s.ID)
+		}
+		return strings.Join(out, ",")
+	}
+
+	// Unchanged: everything stays, nothing reported.
+	r := mustParse(t, string(priv.JSON), keep)
+	if !r.Valid() || !r.Kept || len(r.Stripped) != 0 || string(r.JSON) != string(priv.JSON) {
+		t.Fatalf("unchanged save: kept=%v stripped=%v\n%s\n%s", r.Kept, r.Stripped, r.JSON, priv.JSON)
+	}
+	// Reordered, a code section hidden, the text edited, html section removed.
+	hiddenB := strings.Replace(codeB, `"hidden":false`, `"hidden":true`, 1)
+	r = mustParse(t, doc(strings.Replace(text, "Body", "Body 2", 1), hiddenB, codeA), keep)
+	if ids(r) != "tx,cb,ca" || !r.Doc.Sections[1].Hidden || r.Doc.Sections[0].Content["text"] != "Body 2" || r.Doc.Sections[0].Style.CSS != "#tx{color:red}" || len(r.Stripped) != 0 {
+		t.Fatalf("reorder/hide/remove: %s %v %v", ids(r), r.Doc.Sections[1].Hidden, r.Stripped)
+	}
+	// Edited code, html and custom CSS, a new code section, a code section moved into a layout:
+	// the stored values stay, the rest is dropped, and the edits are reported.
+	evil := strings.Replace(codeA, "a()", "evil()", 1)
+	evilHTML := strings.Replace(htmlC, "c()", "evil()", 1)
+	evilText := strings.Replace(text, "#tx{color:red}", "#tx{background:url(https://evil.test/x)}", 1)
+	newCode := sec("cn", "code", `{"html":"<script>evil()</script>"}`, "")
+	r = mustParse(t, doc(evil, evilText, newCode, evilHTML), keep)
+	js := string(r.JSON)
+	if !r.Valid() || ids(r) != "ca,tx,hc" || strings.Contains(js, "evil") || !strings.Contains(js, "a()") || !strings.Contains(js, "c()") ||
+		r.Doc.Sections[1].Style.CSS != "#tx{color:red}" {
+		t.Fatalf("edits kept: %v %s %s", r.Errors, ids(r), js)
+	}
+	if strings.Join(r.Stripped, ",") != StrippedCustomCSS+","+StrippedHTMLSections {
+		t.Errorf("stripped %v", r.Stripped)
+	}
+	// A forged section that takes a stored code section's id below the top level is dropped.
+	layout := `{"id":"l1","kind":"layout","name":"L","hidden":false,"content":{"type":"flex","structure":"col"},"items":[{"id":"i1","title":"","text":"","sub":` +
+		sec("cb", "text", `{"title":"t"}`, "") + `}],` + strings.Replace(st, "%s", "", 1) + `}`
+	r = mustParse(t, doc(layout), keep)
+	if strings.Contains(string(r.JSON), "data-wbc") || r.Kept || len(r.Doc.Sections) != 1 || r.Doc.Sections[0].Items[0].Sub == nil || r.Doc.Sections[0].Items[0].Sub.Kind != "text" {
+		t.Errorf("a code section was kept below the top level: %s", r.JSON)
+	}
+	// Nothing stored: dropped as before.
+	r = mustParse(t, string(priv.JSON), DocOptions{})
+	if r.Kept || ids(r) != "tx" || r.Doc.Sections[0].Style.CSS != "" {
+		t.Errorf("without stored docs: %s %v", ids(r), r.Kept)
+	}
+	// unfiltered_html: the incoming doc as sent.
+	r = mustParse(t, doc(evil), DocOptions{UnfilteredHTML: true, Stored: keep.Stored})
+	if r.Kept || !strings.Contains(string(r.JSON), "evil()") {
+		t.Errorf("privileged save changed: %s", r.JSON)
+	}
+}

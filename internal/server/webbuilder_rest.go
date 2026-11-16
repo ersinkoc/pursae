@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -102,6 +103,8 @@ func (s *Server) registerWebBuilderREST() {
 	s.wbRegisterTemplateREST(reg)
 	// Theme library (webbuilder_themes.go)
 	s.wbRegisterThemeREST(reg)
+	// Design kits for code sections (webbuilder_kits.go)
+	s.wbRegisterKitREST(reg)
 }
 
 // --- shared helpers --------------------------------------------------------------------------------
@@ -219,14 +222,16 @@ func wbInvalid1(c *gin.Context, path, code, msg string) {
 	wbInvalid(c, []webbuilder.ValidationError{{Path: path, Code: code, Message: msg}})
 }
 
-// wbParseDoc validates and normalizes a doc for u (privileged parts stripped without
-// unfiltered_html). It answers 413 / 422 itself.
-func wbParseDoc(c *gin.Context, raw json.RawMessage, u *store.User) (*webbuilder.DocResult, bool) {
+// wbParseDoc validates and normalizes a doc for u. Without unfiltered_html the privileged parts
+// (html and code sections, content.html, style.css) are those of the stored docs, by section id
+// (webbuilder.DocOptions.Stored; see wbStoredDocs), and dropped where nothing is stored. It answers
+// 413 / 422 itself.
+func wbParseDoc(c *gin.Context, raw json.RawMessage, u *store.User, stored ...json.RawMessage) (*webbuilder.DocResult, bool) {
 	if len(raw) == 0 || string(raw) == "null" {
 		wbInvalid1(c, "/doc", webbuilder.VErrRequired, "The doc is required.")
 		return nil, false
 	}
-	res, err := webbuilder.ParseDoc(raw, webbuilder.DocOptions{UnfilteredHTML: u.Can("unfiltered_html", nil), PathPrefix: "/doc"})
+	res, err := webbuilder.ParseDoc(raw, webbuilder.DocOptions{UnfilteredHTML: u.Can("unfiltered_html", nil), PathPrefix: "/doc", Stored: stored})
 	switch {
 	case errors.Is(err, webbuilder.ErrDocTooLarge):
 		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The page is too large.", map[string]any{"limit": webbuilder.MaxDocBytes})
@@ -239,6 +244,29 @@ func wbParseDoc(c *gin.Context, raw json.RawMessage, u *store.User) (*webbuilder
 		return nil, false
 	}
 	return res, true
+}
+
+// wbStoredDocs are the docs whose privileged parts a user without unfiltered_html keeps when saving
+// post id (wbParseDoc): first the published doc (row, read when nil), then the user's own draft.
+// Neither holds privileged parts that an unfiltered_html author did not write: publishes and
+// autosaves of other users keep them only from these, and a restored revision was such a publish.
+// nil for users with unfiltered_html.
+func (s *Server) wbStoredDocs(ctx context.Context, id int64, u *store.User, row *store.WebBuilderDoc) []json.RawMessage {
+	if u == nil || u.Can("unfiltered_html", nil) {
+		return nil
+	}
+	wb := s.store.WebBuilder()
+	var out []json.RawMessage
+	if row == nil {
+		row, _ = wb.Doc(ctx, id)
+	}
+	if row != nil && len(row.Doc) > 0 {
+		out = append(out, row.Doc)
+	}
+	if dr, err := wb.Draft(ctx, id, u.ID); err == nil && len(dr.Doc) > 0 {
+		out = append(out, dr.Doc)
+	}
+	return out
 }
 
 // wbPage is a normalized PageSettings plus its JSON: the client's object with the four known
@@ -386,7 +414,7 @@ func (s *Server) wbRESTAutosave(c *gin.Context, r *restRequest) {
 	if !wbDecode(c, raw, &body) {
 		return
 	}
-	res, ok := wbParseDoc(c, body.Doc, u)
+	res, ok := wbParseDoc(c, body.Doc, u, s.wbStoredDocs(c, p.ID, u, nil)...)
 	if !ok {
 		return
 	}
@@ -468,6 +496,9 @@ type wbPublishBody struct {
 	Page       json.RawMessage         `json:"page"`
 	Render     webbuilder.RenderResult `json:"render"`
 	UtilityCSS string                  `json:"utilityCss"`
+	// ServerRender asks the server to draw the snapshot itself (webbuilder_ssr.go) instead of taking
+	// render from the body: how Pursae MCP and other clients without the editor publish.
+	ServerRender bool `json:"serverRender"`
 }
 
 // wbSnapshot is the sanitized part of a publish.
@@ -652,13 +683,41 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		return
 	}
 	unfiltered := u.Can("unfiltered_html", nil)
-	res, ok := wbParseDoc(c, body.Doc, u)
+	res, ok := wbParseDoc(c, body.Doc, u, s.wbStoredDocs(c, p.ID, u, row)...)
 	if !ok {
 		return
 	}
-	snap, ok := s.wbSanitizeRender(c, p, &body, unfiltered, res.Stripped)
+	// trusted: the snapshot is sanitized as an unfiltered_html author's. Without unfiltered_html a
+	// doc that kept stored privileged parts (res.Kept: an administrator's html or code sections or
+	// custom CSS) is drawn on the server from the parsed doc, never from the request's render: its
+	// privileged parts are the stored ones and everything else is normalized, so the snapshot is
+	// the one its authors would publish. Without the server renderer the request's render is
+	// sanitized as usual (the html sections' frames and the custom CSS are then missing until an
+	// unfiltered_html user publishes; code sections are filled below either way).
+	trusted := unfiltered
+	switch {
+	case body.ServerRender:
+		if !s.wbServerRenderInto(c, p, res, &body) {
+			return
+		}
+		trusted = unfiltered || res.Kept
+	case !unfiltered && res.Kept:
+		if rr, err := s.wbServerRender(c, p, res); err == nil {
+			body.Render, body.UtilityCSS, trusted = *rr, "", true
+		} else {
+			log.Printf("web builder: publish %d: server render: %v", p.ID, err)
+		}
+	}
+	snap, ok := s.wbSanitizeRender(c, p, &body, trusted, res.Stripped)
 	if !ok {
 		return
+	}
+	// Code sections (privileged): their own markup replaces the placeholders the renderer drew
+	// (internal/webbuilder/code.go). The markup is res's: the publisher's own with unfiltered_html,
+	// else the stored sections' (wbParseDoc drops every other code section), never the request's.
+	if (unfiltered || res.Kept) && webbuilder.HasCode(res.JSON) {
+		list, only := webbuilder.CodeSections(res.JSON)
+		snap.html = webbuilder.FillCode(snap.html, list, only)
 	}
 	ps, _ := wbPage(body.Page)
 	needs := webbuilder.DocFonts(&res.Doc)
@@ -781,7 +840,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	pageJSON := wbPageMerge(wbPageObject(body.Page), webbuilder.PageSettings{Title: fresh.Title, Slug: fresh.Slug, Description: ps.Description, Indexable: ps.Indexable})
 	d := &store.WebBuilderDoc{PostID: p.ID, Doc: res.JSON, Page: pageJSON, HTML: snap.html, CSS: snap.css, Fonts: fonts,
 		Features: snap.features, Renderer: webbuilder.RendererVersion, ContentHash: store.WebBuilderContentHash(fresh.Content),
-		SnapshotUser: u.ID, SnapshotUnfiltered: unfiltered}
+		SnapshotUser: u.ID, SnapshotUnfiltered: unfiltered || res.Kept}
 	if err := wbtx.PublishDoc(c, d, body.BaseRev); err != nil {
 		var rc *store.RevConflictError
 		if errors.As(err, &rc) {
@@ -915,7 +974,7 @@ func (s *Server) wbRESTRevision(c *gin.Context, r *restRequest) {
 	if rev == nil {
 		return
 	}
-	c.JSON(http.StatusOK, wbRevisionJSON{ID: rev.RevisionID, Rev: rev.Rev, Doc: rev.Doc, Page: wbPageJSON(rev.Page, json.RawMessage("{}"))})
+	c.JSON(http.StatusOK, wbRevisionJSON{ID: rev.RevisionID, Rev: rev.Rev, Doc: webbuilder.TagCodeDoc(rev.Doc), Page: wbPageJSON(rev.Page, json.RawMessage("{}"))})
 }
 
 // wbRESTRestore is POST documents/{id}/revisions/{rid}/restore: the revision becomes the caller's
@@ -933,7 +992,9 @@ func (s *Server) wbRESTRestore(c *gin.Context, r *restRequest) {
 	if !wbDecode(c, raw, &body) {
 		return
 	}
-	res, ok := wbParseDoc(c, rev.Doc, u)
+	// The revision was a publish: its privileged parts are an unfiltered_html author's (or kept from
+	// one), so they stay in the restored draft.
+	res, ok := wbParseDoc(c, rev.Doc, u, append([]json.RawMessage{rev.Doc}, s.wbStoredDocs(c, p.ID, u, nil)...)...)
 	if !ok {
 		return
 	}
@@ -943,7 +1004,7 @@ func (s *Server) wbRESTRestore(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not save the draft.")
 		return
 	}
-	c.JSON(http.StatusOK, wbDraft{Doc: d.Doc, Page: d.Page, BaseRev: d.BaseRev, SavedAt: wbTime(d.UpdatedAt)})
+	c.JSON(http.StatusOK, wbDraft{Doc: webbuilder.TagCodeDoc(d.Doc), Page: d.Page, BaseRev: d.BaseRev, SavedAt: wbTime(d.UpdatedAt)})
 }
 
 // --- library ---------------------------------------------------------------------------------------

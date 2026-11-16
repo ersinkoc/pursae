@@ -11,8 +11,8 @@ func TestMCPToolRoutesAreRegistered(t *testing.T) {
 		t.Fatal("no REST routes registered")
 	}
 	for _, tool := range mcpTools {
-		if tool.special == "rest" || tool.special == "info" {
-			continue // chosen at call time / served by the index
+		if tool.special == "rest" || tool.special == "info" || tool.run != nil {
+			continue // chosen at call time / served by the index / Go tools whose Path only picks scope and capability
 		}
 		route, method := tool.Path, tool.Method
 		found := false

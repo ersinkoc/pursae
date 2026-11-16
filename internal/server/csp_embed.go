@@ -166,7 +166,28 @@ func (w *cspWriter) apply() {
 	m, _ := w.c.Get(ctxCSPAllow)
 	if allow, _ := m.(map[string][]string); len(allow) > 0 {
 		h.Set("Content-Security-Policy", cspMerge(policy, allow))
+		// The report-only nonce policy (csp_mode report) gets the additions for the directives it
+		// has (script-src): browsers without 'strict-dynamic' check the host list. A directive it
+		// lacks is not added: it would restrict what the report-only policy leaves open.
+		if ro := h.Get("Content-Security-Policy-Report-Only"); ro != "" {
+			if sub := cspPresent(ro, allow); len(sub) > 0 {
+				h.Set("Content-Security-Policy-Report-Only", cspMerge(ro, sub))
+			}
+		}
 	}
+}
+
+// cspPresent is the part of allow whose directives the policy has.
+func cspPresent(policy string, allow map[string][]string) map[string][]string {
+	out := map[string][]string{}
+	for _, part := range strings.Split(policy, ";") {
+		if f := strings.Fields(part); len(f) > 0 {
+			if srcs := allow[strings.ToLower(f[0])]; len(srcs) > 0 {
+				out[strings.ToLower(f[0])] = srcs
+			}
+		}
+	}
+	return out
 }
 
 func (w *cspWriter) WriteHeaderNow() {

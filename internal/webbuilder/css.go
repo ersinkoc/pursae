@@ -97,6 +97,29 @@ func CSSValueOK(v string) bool {
 	return c.declOK(items[0].text, false)
 }
 
+// BorderSidesOK accepts the per-side form of ElStyle.Border the editor reads (extraCss):
+// "border-top:1px solid #ccc;border-bottom:2px dashed red", each side a safe CSS value.
+func BorderSidesOK(v string) bool {
+	if hasStyleClose(v) || !strings.Contains(v, ":") {
+		return false
+	}
+	for _, part := range strings.Split(v, ";") {
+		k, val, ok := strings.Cut(part, ":")
+		if !ok {
+			return false
+		}
+		switch strings.TrimSpace(k) {
+		case "border-top", "border-right", "border-bottom", "border-left":
+		default:
+			return false
+		}
+		if val = strings.TrimSpace(val); val == "" || !CSSValueOK(val) {
+			return false
+		}
+	}
+	return true
+}
+
 func hasStyleClose(s string) bool {
 	return strings.Contains(strings.ToLower(s), "</style")
 }

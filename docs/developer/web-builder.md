@@ -205,6 +205,15 @@ Not in the builder (yet):
 These come back as later features. The previous builder and its data were removed in the release
 that introduced this one ([upgrading](getting-started/upgrading.md)).
 
+### Building pages with an AI agent
+
+An AI agent connected through [Pursae MCP](operations/ai-mcp.md#building-sites) (Tools › AI Access) builds
+the same pages you edit here: it picks sections and designs from the library, writes the copy, publishes
+— the server draws the page with the editor's own renderer — and gives you the **Edit with Pursae Web
+Builder** link. It can also turn an HTML mock-up into free-form sections. Everything it makes stays
+editable by drag and drop, with history and revisions like your own changes; a page it saved as a draft
+waits in the editor until you (or it) publish.
+
 ## For developers
 
 ### Code map
@@ -212,6 +221,7 @@ that introduced this one ([upgrading](getting-started/upgrading.md)).
 | Path | What |
 |------|------|
 | `internal/webbuilder/` | server-independent pieces: contract types (`contract.go`), doc validation, HTML and CSS sanitizers, fallback HTML, forms, fonts; Theme Builder engine: `dynamic.go` (placeholder fill), `conditions.go` (display conditions) |
+| `internal/webbuilder/code.go`, `codeimport.go`, `internal/server/webbuilder_kits.go`, `webbuilder_codeimport.go` | code sections (a design kept as its own markup) and design kits — see [Code sections and design kits](web-builder-code-sections.md) |
 | `internal/store/webbuilder.go`, `webbuilder_templates.go` | storage (docs, drafts, revisions, library; templates and their index) |
 | `internal/server/webbuilder_*.go` | plugin switch and settings, admin entry points, editor screen, assets, REST, front-end render, forms, hooks (drift, copies, export, cache), redirects of old URLs, one-time upgrade and cleanup |
 | `internal/server/webbuilder_templates*.go`, `webbuilder_dynamic_ctx.go`, `webbuilder_theme_front.go`, `webbuilder_slots.go`, `webbuilder_shop.go` | Theme Builder: template index and pick, template REST, editor sample data, front assembly, slot resolver and loops, Commerce and language-switcher slots |

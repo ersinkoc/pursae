@@ -50,6 +50,27 @@ func (s *Server) forumTemplateFuncs() template.FuncMap {
 			forumCacheDep(c, ctx)
 			return s.forumStatsHTML(ctx, c)
 		},
+		// forum_cycle i a b c … is the (i mod n)-th of the values: a colour or icon per position in a list.
+		"forum_cycle": func(i any, vals ...string) string {
+			if len(vals) == 0 {
+				return ""
+			}
+			var n int64
+			switch x := i.(type) {
+			case int:
+				n = int64(x)
+			case int64:
+				n = x
+			case int32:
+				n = int64(x)
+			case uint:
+				n = int64(x)
+			}
+			if n < 0 {
+				n = -n
+			}
+			return vals[n%int64(len(vals))]
+		},
 		"forum_is_view": func(v *siteView) bool {
 			return s.forumOn() && v != nil && v.Q != nil && v.Q.Forum != ""
 		},
@@ -252,15 +273,11 @@ func (s *Server) forumRecentTopicsHTML(ctx context.Context, c *gin.Context, n in
 
 // forumStatsHTML is forum_stats(): the number of forums, topics, replies and members.
 func (s *Server) forumStatsHTML(ctx context.Context, c *gin.Context) template.HTML {
-	var forums, topics, replies, members int
-	err := s.store.Pool.QueryRow(ctx, `SELECT
-		(SELECT count(*) FROM posts WHERE type = 'forum' AND status = 'publish' AND coalesce(meta->>'`+forumMetaKind+`','forum') <> 'category'),
-		(SELECT count(*) FROM posts p WHERE p.type = 'topic' AND p.status = 'publish' AND `+forumNotSpam("p")+`),
-		(SELECT count(*) FROM posts p WHERE p.type = 'reply' AND p.status = 'publish' AND `+forumNotSpam("p")+`),
-		(SELECT count(*) FROM users)`).Scan(&forums, &topics, &replies, &members)
+	n, err := s.forumStatsOf(ctx)
 	if err != nil {
 		return ""
 	}
+	forums, topics, replies, members := n.Forums, n.Topics, n.Replies, n.Members
 	var b strings.Builder
 	b.WriteString(`<dl class="pf-stats">`)
 	for _, it := range []struct {

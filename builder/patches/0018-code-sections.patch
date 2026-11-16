@@ -1,0 +1,466 @@
+diff --git a/src/builder/CodeSection.tsx b/src/builder/CodeSection.tsx
+new file mode 100644
+index 0000000..425e97f
+--- /dev/null
++++ b/src/builder/CodeSection.tsx
+@@ -0,0 +1,345 @@
++import { useEffect, useMemo, useRef, useState } from 'react'
++import { Image as ImageIcon, Link2 } from 'lucide-react'
++import type { Section } from './types'
++import { useB } from './store'
++import { useLive } from './live/ctx'
++import { getHost } from './host'
++import { t } from './i18n'
++
++/*
++ * Pursae code sections: parts of an imported design kept as their own markup (content.html), with
++ * the head markup they need (content.head: stylesheets, scripts) and the wrappers they share
++ * (content.wrap: opening tags, outermost first, one per line). The server publishes them inline in
++ * place of the placeholder the static renderer draws.
++ *
++ * In the editor a run of consecutive code sections is drawn as one page in one frame, so the
++ * design's scripts see all of its markup and its scroll effects run as on the site; the frame
++ * scrolls inside the canvas when the run is taller than the screen. Texts, links and images with a
++ * data-wbc id (given at import) are edited in place; each edit is written back to the section whose
++ * markup holds that id. Sections are reordered, hidden and removed from the section list.
++ */
++
++const EDIT_CSS =
++  '[data-wbc]{cursor:text}[data-wbc]:hover{outline:1px dashed rgba(34,113,177,.75);outline-offset:2px}' +
++  '[data-wbc][contenteditable]{outline:2px solid #2271b1!important;outline-offset:2px;cursor:text}img[data-wbc]{cursor:pointer}'
++
++/** Text-like elements the canvas edits in place (the importer gives them data-wbc ids). */
++const TEXT_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'A', 'BUTTON', 'SPAN', 'LABEL', 'FIGCAPTION', 'BLOCKQUOTE', 'TD', 'TH', 'SMALL', 'STRONG', 'EM', 'B', 'I', 'DT', 'DD', 'SUMMARY', 'CITE', 'Q', 'TIME', 'MARK', 'DIV'])
++
++const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
++
++const TAG_RE = /^<[a-zA-Z][a-zA-Z0-9-]{0,30}(?:\s[^<>]*)?>$/
++
++/** A section's wrapper chain (content.wrap). */
++function wrapChain(wrap: string | undefined): string[] {
++  return (wrap ?? '')
++    .split('\n')
++    .map((l) => l.trim())
++    .filter((l) => TAG_RE.test(l))
++}
++
++const closeOf = (open: string) => `</${/^<([a-zA-Z][a-zA-Z0-9-]*)/.exec(open)![1]}>`
++
++/** The head markup of a run: each distinct top-level tag once, in order. */
++function mergeHeads(heads: string[]): string {
++  const seen = new Set<string>()
++  const out: string[] = []
++  for (const h of heads) {
++    if (!h.trim()) continue
++    const doc = new DOMParser().parseFromString(`<!doctype html><html><head>${h}</head><body></body></html>`, 'text/html')
++    for (const el of Array.from(doc.head.children)) {
++      const tag = el.outerHTML
++      if (!seen.has(tag)) {
++        seen.add(tag)
++        out.push(tag)
++      }
++    }
++  }
++  return out.join('\n')
++}
++
++/** The run's body: sections in order, consecutive ones sharing their wrappers (like the server). */
++function runBody(run: Section[]): string {
++  const stack: string[] = []
++  let out = ''
++  for (const s of run) {
++    const chain = wrapChain(s.content.wrap)
++    let k = 0
++    while (k < stack.length && k < chain.length && stack[k] === chain[k]) k++
++    while (stack.length > k) out += closeOf(stack.pop()!)
++    for (const w of chain.slice(k)) {
++      out += w
++      stack.push(w)
++    }
++    out += s.content.html ?? ''
++  }
++  while (stack.length) out += closeOf(stack.pop()!)
++  return out
++}
++
++function frameDoc(run: Section[], edit: boolean): string {
++  const base = typeof location !== 'undefined' ? location.origin + '/' : '/'
++  const first = run[0]
++  const body = first.content.body ? ` class="${esc(first.content.body)}"` : ''
++  return (
++    `<!doctype html><html lang="${esc(first.content.lang || 'en')}"><head><meta charset="utf-8">` +
++    `<meta name="viewport" content="width=device-width,initial-scale=1"><base href="${esc(base)}">` +
++    `${mergeHeads(run.map((s) => s.content.head ?? ''))}${edit ? `<style data-wb-edit>${EDIT_CSS}</style>` : ''}</head><body${body}>${runBody(run)}</body></html>`
++  )
++}
++
++/** Applies fn to the element with data-wbc=id in a section's markup and returns the new markup. */
++export function patchCode(src: string, id: string, fn: (el: Element) => void): string | null {
++  const doc = new DOMParser().parseFromString(`<!doctype html><html><head></head><body>${src}</body></html>`, 'text/html')
++  const el = doc.body.querySelector(`[data-wbc="${CSS.escape(id)}"]`)
++  if (!el) return null
++  fn(el)
++  return doc.body.innerHTML
++}
++
++function sourceInner(src: string, id: string): string | null {
++  const doc = new DOMParser().parseFromString(`<!doctype html><html><head></head><body>${src}</body></html>`, 'text/html')
++  return doc.body.querySelector(`[data-wbc="${CSS.escape(id)}"]`)?.innerHTML ?? null
++}
++
++const norm = (v: string) => v.replace(/\s+/g, ' ').trim()
++
++/** The run a code section belongs to: the consecutive visible code sections around it. */
++function runOf(sections: Section[], id: string): { run: Section[]; first: boolean } {
++  const i = sections.findIndex((x) => x.id === id)
++  if (i < 0) return { run: [], first: false }
++  const code = (x: Section | undefined) => !!x && x.kind === 'code' && !x.hidden
++  let a = i
++  while (code(sections[a - 1])) a--
++  let z = i
++  while (code(sections[z + 1])) z++
++  return { run: sections.slice(a, z + 1), first: a === i }
++}
++
++const holder = (run: Section[], id: string) => run.find((x) => (x.content.html ?? '').includes(`data-wbc="${id}"`))
++
++interface Pick {
++  id: string
++  tag: string
++  x: number
++  y: number
++  href?: string
++  alt?: string
++}
++
++export function CodeSection({ s }: { s: Section }) {
++  const live = useLive()
++  if (live) return <div data-wb-code={s.id} />
++  return <CodeRun s={s} />
++}
++
++function CodeRun({ s }: { s: Section }) {
++  const b = useB()
++  const { run, first } = runOf(b.doc.sections, s.id)
++  if (!first || !run.length) return null // drawn by the first section of its run
++  return <CodeFrame run={run} />
++}
++
++function CodeFrame({ run }: { run: Section[] }) {
++  const b = useB()
++  const edit = !b.preview
++  const frame = useRef<HTMLIFrameElement>(null)
++  const viewport = typeof window !== 'undefined' ? Math.max(480, window.innerHeight - 64) : 900
++  const [h, setH] = useState(viewport)
++  const [pick, setPick] = useState<Pick | null>(null)
++  const key = run.map((x) => `${x.id}\u0000${x.content.html ?? ''}\u0000${x.content.head ?? ''}\u0000${x.content.wrap ?? ''}`).join('\u0001')
++  // eslint-disable-next-line react-hooks/exhaustive-deps
++  const built = useMemo(() => frameDoc(run, edit), [key, edit])
++  // What the frame shows; markup the frame wrote itself does not reload it.
++  const shown = useRef<string>(built)
++  const [doc, setDoc] = useState(built)
++  useEffect(() => {
++    if (built === shown.current) return
++    shown.current = built
++    setDoc(built)
++    setPick(null)
++  }, [built])
++  // The frame's listeners outlive renders: they read the current run and store through a ref.
++  const cur = useRef({ run, b, edit })
++  cur.current = { run, b, edit }
++
++  /** Writes the section holding element id: fn gets the element of its markup. */
++  const write = (id: string, label: string, fn: (el: Element) => void) => {
++    const { run, b, edit } = cur.current
++    const sec = holder(run, id)
++    if (!sec) return
++    const next = patchCode(sec.content.html ?? '', id, fn)
++    if (next === null || next === sec.content.html) return
++    const nextRun = run.map((x) => (x.id === sec.id ? { ...x, content: { ...x.content, html: next } } : x))
++    shown.current = frameDoc(nextRun, edit)
++    cur.current.run = nextRun
++    b.dispatch({ type: 'content', id: sec.id, key: 'html', value: next, label })
++  }
++
++  const onLoad = () => {
++    const f = frame.current
++    const d = f?.contentDocument
++    const w = f?.contentWindow
++    if (!f || !d || !w) return
++    // Height: the run's own when it is shorter than the screen, else the screen (the frame scrolls).
++    const measure = () => {
++      const end = d.body ? Array.from(d.body.children).reduce((m, el) => Math.max(m, el.getBoundingClientRect().bottom + w.scrollY), 0) : 0
++      setH(Math.max(40, Math.min(viewport, Math.ceil(end))))
++    }
++    measure()
++    w.addEventListener('load', measure)
++    setTimeout(measure, 800)
++    w.addEventListener('scroll', () => setPick(null), { passive: true })
++
++    d.addEventListener(
++      'click',
++      (e) => {
++        const target = e.target as Element
++        const a = target.closest('a[href]')
++        const { edit, b } = cur.current
++        if (!edit) {
++          if (a && !(a.getAttribute('href') ?? '').startsWith('#')) e.preventDefault()
++          return
++        }
++        if (a) e.preventDefault()
++        const el = target.closest<HTMLElement>('[data-wbc]')
++        if (!el) {
++          setPick(null)
++          return
++        }
++        e.preventDefault()
++        e.stopPropagation()
++        const id = el.dataset.wbc!
++        const sec = holder(cur.current.run, id)
++        if (sec) b.select({ sectionId: sec.id, el: 'html' })
++        const r = el.getBoundingClientRect()
++        const p: Pick = { id, tag: el.tagName, x: r.left, y: r.top }
++        const link = el.closest('a[href]')
++        if (link) p.href = link.getAttribute('href') ?? ''
++        if (el.tagName === 'IMG') p.alt = el.getAttribute('alt') ?? ''
++        setPick(p)
++        if (TEXT_TAGS.has(el.tagName) && !el.isContentEditable) startText(el)
++      },
++      true,
++    )
++    d.addEventListener('submit', (e) => e.preventDefault(), true)
++  }
++
++  const startText = (el: HTMLElement) => {
++    const id = el.dataset.wbc!
++    const before = el.innerHTML
++    const sec = holder(cur.current.run, id)
++    const src = sec ? sourceInner(sec.content.html ?? '', id) : null
++    // Script-drawn content (split letters, counters) is not the source: plain text edits only then.
++    const drawn = src !== null && norm(src) !== norm(before)
++    el.contentEditable = drawn ? 'plaintext-only' : 'true'
++    el.focus()
++    const done = () => {
++      el.removeEventListener('blur', done)
++      el.removeEventListener('keydown', key)
++      el.removeAttribute('contenteditable')
++      if (el.innerHTML === before) return
++      if (drawn) {
++        const plain = el.textContent ?? ''
++        write(id, t('Text changed'), (n) => {
++          if (n.children.length === 0) n.textContent = plain
++          else cur.current.b.notify(t('This text is drawn by the design’s script: edit it in the section’s HTML code.'))
++        })
++        return
++      }
++      const next = el.innerHTML
++      write(id, t('Text changed'), (n) => {
++        n.innerHTML = next
++      })
++    }
++    const key = (e: KeyboardEvent) => {
++      if (e.key === 'Escape') {
++        el.innerHTML = before
++        el.blur()
++      }
++      if (e.key === 'Enter' && !e.shiftKey && !/^(P|LI|DIV|BLOCKQUOTE|TD|DD)$/.test(el.tagName)) {
++        e.preventDefault()
++        el.blur()
++      }
++    }
++    el.addEventListener('blur', done)
++    el.addEventListener('keydown', key)
++  }
++
++  const setAttr = (id: string, name: string, value: string, label: string) => {
++    const apply = (n: Element) => {
++      const target = name === 'href' ? (n.closest('a') ?? n) : n
++      target.setAttribute(name, value)
++      if (name === 'src') {
++        target.removeAttribute('srcset')
++        target.removeAttribute('sizes')
++      }
++    }
++    write(id, label, apply)
++    const live = frame.current?.contentDocument?.querySelector(`[data-wbc="${CSS.escape(id)}"]`)
++    if (live) apply(live)
++  }
++
++  const replaceImage = () => {
++    if (!pick) return
++    const media = getHost().media
++    if (!media.pick) return
++    media
++      .pick('image')
++      .then((a) => {
++        if (!a?.url) return
++        setAttr(pick.id, 'src', a.url, t('Image changed'))
++        if (a.alt && !pick.alt) setAttr(pick.id, 'alt', a.alt, t('Image changed'))
++      })
++      .catch((e: unknown) => b.notify(e instanceof Error && e.message ? e.message : t('The photo could not be uploaded')))
++  }
++
++  return (
++    <div className="relative" data-el={`${run[0].id}:html`} onClick={(e) => e.stopPropagation()}>
++      <iframe
++        ref={frame}
++        title={run.length === 1 ? run[0].name || t('Code section') : t('Code sections')}
++        srcDoc={doc}
++        onLoad={onLoad}
++        className="block w-full border-0"
++        style={{ height: h }}
++        sandbox="allow-scripts allow-same-origin allow-forms"
++      />
++      {edit && pick && (pick.href !== undefined || pick.tag === 'IMG') && (
++        <div
++          className="absolute z-20 flex items-center gap-1.5 rounded-lg bg-[#1d2327] p-1.5 text-[12px] text-white shadow-lg"
++          style={{ left: Math.max(4, pick.x), top: Math.max(4, pick.y - 44) }}
++          onClick={(e) => e.stopPropagation()}
++        >
++          {pick.tag === 'IMG' && (
++            <>
++              <button type="button" className="flex items-center gap-1 rounded-md px-2 py-1 hover:bg-white/10" onClick={replaceImage}>
++                <ImageIcon size={13} /> {t('Replace')}
++              </button>
++              <input
++                className="w-40 rounded-md bg-white/10 px-2 py-1 text-white placeholder:text-white/50"
++                placeholder={t('Alt text')}
++                defaultValue={pick.alt}
++                key={`alt-${pick.id}`}
++                onBlur={(e) => e.target.value !== pick.alt && setAttr(pick.id, 'alt', e.target.value, t('Alt text changed'))}
++              />
++            </>
++          )}
++          {pick.href !== undefined && (
++            <label className="flex items-center gap-1">
++              <Link2 size={13} />
++              <input
++                className="w-56 rounded-md bg-white/10 px-2 py-1 text-white placeholder:text-white/50"
++                placeholder="https://"
++                defaultValue={pick.href}
++                key={`href-${pick.id}`}
++                onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
++                onBlur={(e) => e.target.value !== pick.href && setAttr(pick.id, 'href', e.target.value.trim(), t('Link changed'))}
++              />
++            </label>
++          )}
++        </div>
++      )}
++    </div>
++  )
++}
+diff --git a/src/builder/data.ts b/src/builder/data.ts
+index 9e9da59..d576e3b 100644
+--- a/src/builder/data.ts
++++ b/src/builder/data.ts
+@@ -421,6 +421,17 @@ export const KINDS: Record<SectionKind, KindDef> = {
+     align: false,
+     spacing: true,
+   },
++  code: {
++    name: t('Code section'),
++    icon: CodeXml,
++    blurb: t('A part of an imported design, kept as its own code'),
++    fields: [
++      { key: 'html', label: t('HTML code'), el: 'code', multiline: true, group: 'Code', hint: t('The section as the design wrote it. Click texts, links and images on the canvas to edit them.') },
++      { key: 'head', label: t('Head code'), el: 'code', multiline: true, group: 'Code', hint: t('Stylesheets and scripts this section needs in the page head, one tag per line.') },
++    ],
++    align: false,
++    spacing: false,
++  },
+   form: {
+     name: t('Contact form'),
+     icon: Mail,
+@@ -578,6 +589,11 @@ const DEFAULTS: Record<SectionKind, Omit<Section, 'id' | 'name' | 'hidden' | 'ki
+     items: [],
+     style: { palette: 'light', align: 'left', padding: 72, titleSize: 40, hideOn: [] },
+   },
++  code: {
++    content: { html: '', head: '', kit: '' },
++    items: [],
++    style: { palette: 'light', align: 'left', padding: 0, titleSize: 40, hideOn: [] },
++  },
+   form: {
+     content: {
+       eyebrow: 'Contact',
+diff --git a/src/builder/i18n/tr.ts b/src/builder/i18n/tr.ts
+index 3c6b45a..d7c2267 100644
+--- a/src/builder/i18n/tr.ts
++++ b/src/builder/i18n/tr.ts
+@@ -1573,6 +1573,18 @@ const tr: Record<string, string> = {
+   'Turn on Pursae Multi Language and add languages to show the switcher.': 'Dil değiştiriciyi göstermek için Pursae Multi Language\'ı açın ve dil ekleyin.',
+   'Upsells': 'Yukarı satışlar',
+   'You may also like…': 'Bunları da beğenebilirsiniz…',
++  'Code section': 'Kod bölümü',
++  'Code sections': 'Kod bölümleri',
++  'A part of an imported design, kept as its own code': 'İçe aktarılan bir tasarımın, kendi koduyla korunan bir parçası',
++  'The section as the design wrote it. Click texts, links and images on the canvas to edit them.': 'Bölüm, tasarımın yazdığı haliyle. Düzenlemek için tuvaldeki metinlere, bağlantılara ve görsellere tıklayın.',
++  'Head code': 'Head kodu',
++  'Stylesheets and scripts this section needs in the page head, one tag per line.': 'Bu bölümün sayfa başında (head) ihtiyaç duyduğu stil dosyaları ve betikler, her satırda bir etiket.',
++  'Text changed': 'Metin değişti',
++  'Image changed': 'Görsel değişti',
++  'Alt text changed': 'Alternatif metin değişti',
++  'Alt text': 'Alternatif metin',
++  'Replace': 'Değiştir',
++  'This text is drawn by the design’s script: edit it in the section’s HTML code.': 'Bu metni tasarımın betiği çiziyor: bölümün HTML kodundan düzenleyin.',
+ }
+ 
+ export default tr
+diff --git a/src/builder/live/fixtures.tsx b/src/builder/live/fixtures.tsx
+index f6075d5..aa331ca 100644
+--- a/src/builder/live/fixtures.tsx
++++ b/src/builder/live/fixtures.tsx
+@@ -28,7 +28,7 @@ const cases: [string, DocState][] = []
+ 
+ cases.push(['initial', initialDoc])
+ // The Theme Builder loop has its own fixtures (dynamic-*).
+-cases.push(['kinds', { site, sections: (Object.keys(KINDS) as SectionKind[]).filter((k) => k !== 'loop').map((k) => createSection(k)) }])
++cases.push(['kinds', { site, sections: (Object.keys(KINDS) as SectionKind[]).filter((k) => k !== 'loop' && k !== 'code').map((k) => createSection(k)) }])
+ for (const kv of LIBRARY) {
+   const sections = kv.variants.filter((v) => v.C).map((v) => createVariantSection(kv.kind, v.id))
+   if (sections.length) cases.push([`variants-${kv.kind}`, { site, sections }])
+diff --git a/src/builder/live/renderStatic.tsx b/src/builder/live/renderStatic.tsx
+index 69c0713..918f9b1 100644
+--- a/src/builder/live/renderStatic.tsx
++++ b/src/builder/live/renderStatic.tsx
+@@ -344,6 +344,11 @@ function renderDoc(doc: DocState, opts: RenderOptions): RenderResult {
+   const css: string[] = []
+   doc.sections.forEach((s, i) => {
+     if (s.hidden || (['mobile', 'tablet', 'desktop'] as const).every((d) => s.style.hideOn.includes(d))) return
++    if (s.kind === 'code') {
++      // A code section: the server puts the section's own markup in place of this placeholder.
++      parts.push(`<div data-wb-code="${htmlAttr(s.id)}"></div>`)
++      return
++    }
+     const { html, ids } = renderSection(s, i, doc, opts, api, acc)
+     parts.push(html)
+     if (s.style.css) {
+diff --git a/src/builder/sections.tsx b/src/builder/sections.tsx
+index 59b7515..b815097 100644
+--- a/src/builder/sections.tsx
++++ b/src/builder/sections.tsx
+@@ -1,4 +1,5 @@
+ import { createContext, createElement, useContext, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
++import { CodeSection } from './CodeSection'
+ import { AnimatePresence, motion } from 'motion/react'
+ import { ArrowRight, Check, ChevronDown, Columns3, Copy, CornerLeftUp, Heading, Image as ImageIcon, LayoutGrid, Menu, Pilcrow, Play, Plus, RectangleHorizontal, Square, X } from 'lucide-react'
+ import { CARD_NOUN, EL_NAMES, FONT_PAIRS, KINDS, MAX_DEPTH, SHADOWS, createLayout, getGrid, paletteVars, repeatCols, box4, cardCss, cellWidth, elCss, fieldLabel, getBox, getStructure, getValue, sized } from './data'
+@@ -1411,4 +1412,5 @@ export const RENDERERS: Record<Section['kind'], (p: { s: Section }) => ReactNode
+   html: HtmlBlock,
+   custom: CustomSection,
+   loop: LoopSection,
++  code: CodeSection,
+ }
+diff --git a/src/builder/types.ts b/src/builder/types.ts
+index 3017a0e..8ddc6e6 100644
+--- a/src/builder/types.ts
++++ b/src/builder/types.ts
+@@ -21,6 +21,8 @@ export type SectionKind =
+   | 'custom'
+   /** Theme Builder: a grid of post cards (dynamic/loop.tsx, contract §11.4). */
+   | 'loop'
++  /** The design's own markup, published inline (Pursae code sections, CodeSection.tsx). */
++  | 'code'
+ export type PaletteId = 'brand' | 'dark' | 'light' | 'soft' | 'sand'
+ export type FontPairId = 'elegant' | 'modern' | 'plain'
+ export type CornerId = 'sharp' | 'soft' | 'round'
