@@ -179,7 +179,7 @@ func (s *Server) wbContent(ctx context.Context, c *gin.Context, p *store.Post, s
 // wbBody is the stored snapshot with wp_filter_content_tags applied (once per request).
 func (s *Server) wbBody(ctx context.Context, fp *wbFrontPage) string {
 	if !fp.bodyDone {
-		fp.body, fp.bodyDone = s.wbSearchForms(ctx, s.filterContentTags(ctx, s.cspTrustContent(ctx, fp.doc.HTML))), true
+		fp.body, fp.bodyDone = s.wbSearchForms(ctx, s.wbContentTags(ctx, s.cspTrustContent(ctx, fp.doc.HTML))), true
 	}
 	return fp.body
 }
@@ -264,11 +264,24 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	}
 
 	loc := s.siteLocale()
+	lang := strings.ReplaceAll(loc, "_", "-")
+	// A page of code sections is the design's document: its lang and <html> / <body> attributes.
+	var htmlAttrs, bodyAttrs, bodyClass string
+	if codePage {
+		var l string
+		l, htmlAttrs, bodyAttrs, bodyClass = s.wbCodeDocAttrs(d)
+		if l != "" {
+			lang = l
+		}
+	}
 	var sb strings.Builder
 	sb.Grow(len(body) + len(head) + len(d.CSS) + 4096)
-	sb.WriteString("<!DOCTYPE html>\n<html lang=\"" + html.EscapeString(strings.ReplaceAll(loc, "_", "-")) + "\"")
-	if i18n.IsRTL(loc) {
+	sb.WriteString("<!DOCTYPE html>\n<html lang=\"" + html.EscapeString(lang) + "\"")
+	if i18n.IsRTL(loc) && !strings.Contains(htmlAttrs, "dir=") {
 		sb.WriteString(` dir="rtl"`)
+	}
+	if htmlAttrs != "" {
+		sb.WriteString(" " + htmlAttrs)
 	}
 	sb.WriteString(">\n<head>\n<meta charset=\"UTF-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n")
 	if runtime { // the runtime's hiding rules apply only when it will run (content stays readable without JS)
@@ -288,7 +301,11 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	popHead, popFoot := s.wbPopupAssets(c, fp.popups, site.CSS != "", runtime)
 	sb.WriteString(popHead)
 	sb.WriteString("</head>\n")
-	sb.WriteString("<body class=\"" + html.EscapeString(strings.TrimSpace(v.BodyClass+" web-builder-page")) + "\">\n")
+	sb.WriteString("<body class=\"" + html.EscapeString(strings.TrimSpace(v.BodyClass+" web-builder-page "+bodyClass)) + "\"")
+	if bodyAttrs != "" {
+		sb.WriteString(" " + bodyAttrs)
+	}
+	sb.WriteString(">\n")
 	sb.WriteString(string(v.BodyOpen))
 	if fp.preview && fp.draftNewer {
 		sb.WriteString(wbDraftNotice(s, c))

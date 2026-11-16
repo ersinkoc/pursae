@@ -24,6 +24,10 @@ PURSAE_APP_PASSWORD (an Application Password). Standard library only.
                                           only prints it), waits for the measurements and publishes.
                                           key=value: title=, post_id=, status=, front_page=true, layout=,
                                           header_template=, footer_template=, site_name=
+  pursae_mcp.py import-site <folder> kit=<kit> [status=... site_name=... front_page=false]
+                                          import every HTML page of a folder whose files were uploaded as
+                                          the kit (kit-upload <folder> <kit> first): pages, parents, links,
+                                          header/footer templates with the active menu link, 404 template
 
 Exit status: 0 ok, 1 tool or JSON-RPC error, 2 usage / connection problem.
 """
@@ -67,6 +71,7 @@ class Client:
         self.auth = auth_header()
         self.session = None
         self.seq = 0
+        self.timeout = 180
 
     def rpc(self, method, params=None):
         self.seq += 1
@@ -81,7 +86,7 @@ class Client:
         if self.session:
             req.add_header("Mcp-Session-Id", self.session)
         try:
-            with urllib.request.urlopen(req, timeout=180) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 sid = resp.headers.get("Mcp-Session-Id")
                 if sid:
                     self.session = sid
@@ -194,6 +199,8 @@ def main(argv):
         return import_html(c, argv[2:])
     if cmd == "kit-upload":
         return kit_upload(c, argv[2:])
+    if cmd == "import-site":
+        return import_site(c, argv[2:])
     die(f"unknown command {cmd}; see --help")
 
 
@@ -242,6 +249,35 @@ def kit_upload(c, rest):
         size += len(raw)
     print(pretty(flush(True)))
     return 0
+
+
+def import_site(c, rest):
+    if not rest:
+        die("usage: import-site <folder> kit=<kit> [status=… site_name=… front_page=false]")
+    root, args = rest[0], {}
+    for kv in rest[1:]:
+        if "=" in kv:
+            k, v = kv.split("=", 1)
+            args[k] = (v == "true") if k == "front_page" else v
+    if not args.get("kit"):
+        die("import-site needs kit=<the kit the folder was uploaded as>")
+    pages = []
+    for d, dirs, names in os.walk(root):
+        dirs[:] = sorted(x for x in dirs if not x.startswith(".") and x != "node_modules")
+        for n in sorted(names):
+            if n.startswith(".") or os.path.splitext(n)[1].lower() not in (".html", ".htm"):
+                continue
+            full = os.path.join(d, n)
+            with open(full, encoding="utf-8") as f:
+                pages.append({"path": os.path.relpath(full, root).replace(os.sep, "/"), "html": f.read()})
+    if not pages:
+        die("no .html files under " + root)
+    args["pages"] = pages
+    c.timeout = 1800
+    print(f"importing {len(pages)} page(s)", file=sys.stderr)
+    bad, text = c.call("web_builder_import_site", args)
+    print(pretty(text))
+    return 1 if bad else 0
 
 
 def open_measuring_browser(url):

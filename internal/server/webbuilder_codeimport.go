@@ -105,7 +105,9 @@ func mcpWBImportCode(s *Server, c *gin.Context, args map[string]any) (any, error
 	}
 	secs := make([]map[string]any, 0, len(res.Sections))
 	for _, p := range res.Sections {
-		secs = append(secs, wbCodeSection(p, res.Head, kit, res.Lang))
+		sec := wbCodeSection(p, res.Head, kit, res.Lang)
+		wbCodeSectionAttrs(sec, res.HTMLAttrs, res.BodyAttrs, nil)
+		secs = append(secs, sec)
 	}
 	out := map[string]any{"method": "code (the design's own markup)", "editable_elements": res.Editable}
 	var pageID int64
@@ -171,12 +173,30 @@ func mcpWBImportCode(s *Server, c *gin.Context, args map[string]any) (any, error
 		}
 	}
 	// The header and footer templates (site-wide).
+	sec := func(p webbuilder.CodePart) map[string]any {
+		sec := wbCodeSection(p, res.Head, kit, res.Lang)
+		wbCodeSectionAttrs(sec, res.HTMLAttrs, res.BodyAttrs, nil)
+		return sec
+	}
+	var headerSecs, footerSecs []map[string]any
+	if res.Header != nil {
+		for _, p := range res.HeaderBefore {
+			headerSecs = append(headerSecs, sec(p))
+		}
+		headerSecs = append(headerSecs, sec(*res.Header))
+	}
+	if res.Footer != nil {
+		footerSecs = append(footerSecs, sec(*res.Footer))
+		for _, p := range res.FooterAfter {
+			footerSecs = append(footerSecs, sec(p))
+		}
+	}
 	for _, x := range []struct {
 		typ  string
-		part *webbuilder.CodePart
+		secs []map[string]any
 		arg  string
-	}{{"header", res.Header, "header_template"}, {"footer", res.Footer, "footer_template"}} {
-		if x.part == nil {
+	}{{"header", headerSecs, "header_template"}, {"footer", footerSecs, "footer_template"}} {
+		if len(x.secs) == 0 {
 			continue
 		}
 		var conds []string
@@ -184,7 +204,7 @@ func mcpWBImportCode(s *Server, c *gin.Context, args map[string]any) (any, error
 			// The page keeps the footer where the design put it (inside main); the template serves the rest.
 			conds = []string{"include/general", "exclude/singular/page/" + itoa64(pageID)}
 		}
-		tid, err := s.wbCodeTemplate(c, r, x.typ, argInt(args, x.arg), wbCodeSection(*x.part, res.Head, kit, res.Lang), argStr(args, "site_name"), conds)
+		tid, err := s.wbCodeTemplate(c, r, x.typ, argInt(args, x.arg), x.secs, argStr(args, "site_name"), conds)
 		if err != nil {
 			warnings = append(warnings, fmt.Sprintf("the %s template was not saved: %v", x.typ, err))
 			continue
@@ -197,9 +217,9 @@ func mcpWBImportCode(s *Server, c *gin.Context, args map[string]any) (any, error
 	return out, nil
 }
 
-// wbCodeTemplate saves a header or footer template made of one code section: the template id given,
+// wbCodeTemplate saves a header or footer template made of code sections: the template id given,
 // or a new one shown on the whole site.
-func (s *Server) wbCodeTemplate(c *gin.Context, r *webbuilder.ServerRenderer, typ string, id int64, sec map[string]any, siteName string, conds []string) (int64, error) {
+func (s *Server) wbCodeTemplate(c *gin.Context, r *webbuilder.ServerRenderer, typ string, id int64, secs []map[string]any, siteName string, conds []string) (int64, error) {
 	if id == 0 && conds == nil {
 		conds = []string{"include/general"}
 	}
@@ -220,7 +240,7 @@ func (s *Server) wbCodeTemplate(c *gin.Context, r *webbuilder.ServerRenderer, ty
 	if err != nil {
 		return id, err
 	}
-	doc.Sections = []map[string]any{sec}
+	doc.Sections = secs
 	if doc.Site, err = mcpSite(r, doc.Site, nil); err != nil {
 		return id, err
 	}

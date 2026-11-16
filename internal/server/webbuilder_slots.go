@@ -980,10 +980,10 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	prog, err := wbPrograms.Compile(d.PostID, d.Rev, src)
 	if err != nil {
 		log.Printf("web builder: compile %d: %v", d.PostID, err)
-		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, src)))}
+		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.wbContentTags(ctx, src)))}
 	}
 	if static, ok := prog.Static(); ok {
-		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, static)))}
+		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.wbContentTags(ctx, static)))}
 	}
 	env := newWBSlotEnv(s, c, v, d, prog, own)
 	shop := s.gooOn() && wbProgramShop(prog)
@@ -998,5 +998,5 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	// the body is written (store views and shortcodes save their own; a builder page or template
 	// takes neither path). No-op without a loaded, changed session.
 	s.gooSaveSession(c)
-	return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.filterContentTags(ctx, out))), loops: env.loops, shop: shop, catalog: env.shop != nil && env.shop.catalog}
+	return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.wbContentTags(ctx, out))), loops: env.loops, shop: shop, catalog: env.shop != nil && env.shop.catalog}
 }
