@@ -82,7 +82,7 @@ func Optimize(doc []byte, o OptimizeConfig) []byte {
 	}
 	res := out.String()
 	if delayed {
-		res = injectBeforeBodyEnd(res, delayLoader(o.DelayTimeout))
+		res = injectBeforeBodyEnd(res, delayLoader(o.DelayTimeout, o.strictNonce))
 	}
 	return []byte(res)
 }
@@ -548,7 +548,7 @@ func matchPattern(s string, patterns []string) string {
 
 // delayLoader is the inline script that starts the delayed scripts, in document order, on the first
 // interaction or after the timeout.
-func delayLoader(timeout int) string {
+func delayLoader(timeout int, strictNonce bool) string {
 	t := ""
 	if timeout > 0 {
 		t = "setTimeout(wpgoDelayLoad," + strconv.Itoa(timeout*1000) + ");"
@@ -557,10 +557,18 @@ func delayLoader(timeout int) string {
 	if NoncePlaceholder != "" {
 		nonce = ` nonce="` + NoncePlaceholder + `"`
 	}
+	// Under an enforced nonce policy only delayed scripts that carry the loader's own nonce are
+	// started: with 'strict-dynamic' anything the loader creates runs, so an injected
+	// <script type="wpgo/delayed"> must not be promoted.
+	strict := "0"
+	if strictNonce {
+		strict = "1"
+	}
 	return `<script data-no-defer data-no-delay` + nonce + `>(function(){var ev=["mousemove","keydown","touchstart","scroll","click","wheel"],done=false;` +
+		`var me=document.currentScript&&document.currentScript.nonce||"",strict=` + strict + `;` +
 		`function wpgoDelayLoad(){if(done)return;done=true;ev.forEach(function(e){removeEventListener(e,wpgoDelayLoad)});` +
 		`var l=[].slice.call(document.querySelectorAll('script[type="wpgo/delayed"]'));` +
-		`(function next(){var o=l.shift();if(!o)return;var n=document.createElement("script");` +
+		`(function next(){var o=l.shift();if(!o)return;if(strict&&(!me||o.nonce!==me)){next();return;}var n=document.createElement("script");` +
 		`[].slice.call(o.attributes).forEach(function(a){if(a.name==="data-wpgo-src")n.src=a.value;else if(a.name!=="type"&&a.name!=="nonce")n.setAttribute(a.name,a.value)});if(o.nonce)n.nonce=o.nonce;` +
 		`if(o.src||o.hasAttribute("data-wpgo-src")){n.onload=n.onerror=next;o.parentNode.replaceChild(n,o);}` +
 		`else{n.text=o.text;o.parentNode.replaceChild(n,o);next();}})();}` +

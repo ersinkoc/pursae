@@ -169,11 +169,9 @@ func (s *Server) Handler() http.Handler {
 	// Outermost: probes and the request ID (ops_http.go); then gzip for what Pursae Cache does not serve
 	// compressed itself (compress.go).
 	return s.opsHandler(gzipResponses(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Upgrade") == "" { // the response's CSP nonce (csp_nonce.go); not for hijacked connections
-			nw := newNonceWriter(w)
-			defer nw.close()
-			w = nw
-		}
+		nw := newNonceWriter(w) // the response's CSP nonce (csp_nonce.go); every request, a websocket handshake too
+		defer nw.close()
+		w = nw
 		if s.firewallServe(w, r) { // core firewall: rate limit and request rules (firewall.go)
 			return
 		}

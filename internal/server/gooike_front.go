@@ -72,7 +72,7 @@ func (s *Server) gooikeFooter(c *gin.Context) string {
 	var b strings.Builder
 	b.WriteString(s.gooikeMarkup(c, &st, false))
 	b.WriteString(gooikeScriptsAt(&st, "footer"))
-	b.WriteString(gooikeConfigScript(&st, false))
+	b.WriteString(gooikeConfigScript(&st, false, s.cspMode() == cspModeEnforce))
 	b.WriteString(`<script` + cspNonceAttr() + ` src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" id="gooike-js" defer></script>` + "\n")
 	return b.String()
 }
@@ -122,8 +122,10 @@ func gooikeConsentModeScript(st *gooikeSettings) string {
 		`})(` + string(raw) + `);</script>` + "\n"
 }
 
-// gooikeConfigScript is gooike.js's configuration.
-func gooikeConfigScript(st *gooikeSettings, preview bool) string {
+// gooikeConfigScript is gooike.js's configuration. strict (an enforced CSP nonce policy) makes it
+// start only blocked scripts that carry its own nonce: with 'strict-dynamic' whatever it creates
+// runs, so an injected inert script must not be promoted.
+func gooikeConfigScript(st *gooikeSettings, preview, strict bool) string {
 	type cat struct {
 		Key     string   `json:"key"`
 		Signals []string `json:"signals"`
@@ -146,6 +148,7 @@ func gooikeConfigScript(st *gooikeSettings, preview bool) string {
 		"geoEndpoint": "/wp-json/" + gooikeNamespace + "/geo", "reload": st.ReloadOnChange, "float": st.Design.Floating,
 		"modal": t != nil && (t.Layout == "modal" || t.Layout == "wall"), "cookies": cookies, "preview": preview,
 		"saved": st.Texts.WithdrawNotice, // fallback for cached pages without #gooike-saved
+		"strict": strict,
 	}
 	raw, _ := json.Marshal(cfg)
 	return `<script type="application/json" id="gooike-config">` + strings.ReplaceAll(string(raw), "</", `<\/`) + "</script>\n"

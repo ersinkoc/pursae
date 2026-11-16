@@ -172,6 +172,9 @@ type Config struct {
 // OptimizeConfig toggles the conservative HTML optimizations of [Optimize]. Every
 // optimization is off unless its flag is set.
 type OptimizeConfig struct {
+	// strictNonce makes the delayed-script loader start only scripts carrying its own CSP nonce
+	// (set per capture from Options.CSPMode; not configuration).
+	strictNonce bool
 	// LazyImages adds loading="lazy" and decoding="async" to <img> tags (loading="lazy"
 	// to <iframe> tags) that have no loading attribute, except the first LazySkipFirst
 	// images; the first image gets fetchpriority="high".

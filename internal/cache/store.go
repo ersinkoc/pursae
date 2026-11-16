@@ -43,6 +43,9 @@ type Entry struct {
 	// server swaps it for a fresh nonce in every response; an entry stored by another process holds
 	// a placeholder this one does not swap and is not served.
 	Placeholder string
+	// Mode is Options.CSPMode() when the entry was stored: the stored policy header and the delayed-script
+	// loader depend on it, so an entry of another mode is not served.
+	Mode string
 }
 
 // NoncePlaceholder is the per-process CSP nonce placeholder (internal/cspnonce). Bodies holding it
@@ -50,7 +53,9 @@ type Entry struct {
 var NoncePlaceholder = cspnonce.Placeholder
 
 // usable reports whether this process may serve the entry.
-func (e *Entry) usable() bool { return e.Placeholder == "" || e.Placeholder == NoncePlaceholder }
+func (e *Entry) usable(mode string) bool {
+	return (e.Placeholder == "" || e.Placeholder == NoncePlaceholder) && e.Mode == mode
+}
 
 func (e *Entry) clone() *Entry {
 	copyOfEntry := *e

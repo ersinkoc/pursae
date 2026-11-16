@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
+	"net"
 	"net/http"
 	"strings"
 
@@ -44,6 +46,7 @@ type nonceWriter struct {
 	w           http.ResponseWriter
 	ph, nonce   []byte
 	wroteHeader bool
+	hijacked    bool
 	swap        bool
 	tail        []byte // bytes held back because they may be the start of a placeholder
 }
@@ -56,6 +59,15 @@ func (nw *nonceWriter) Header() http.Header { return nw.w.Header() }
 
 // Unwrap lets http.ResponseController reach the underlying writer.
 func (nw *nonceWriter) Unwrap() http.ResponseWriter { return nw.w }
+
+// Hijack hands the connection over (websocket upgrades); nothing is written through nw afterwards.
+func (nw *nonceWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	conn, rw, err := http.NewResponseController(nw.w).Hijack()
+	if err == nil {
+		nw.hijacked = true
+	}
+	return conn, rw, err
+}
 
 func (nw *nonceWriter) WriteHeader(code int) {
 	if nw.wroteHeader {
@@ -89,7 +101,9 @@ func nonceSwapType(ct string) bool {
 	if ct == "" {
 		return true // sniffed later: assume text
 	}
-	return compressibleType(ct) && !strings.HasPrefix(strings.ToLower(ct), "text/event-stream")
+	// Event streams too (MCP over SSE carries rendered content): an event ends in "\n", never part of
+	// a placeholder, so nothing of it is held back.
+	return compressibleType(ct) || strings.HasPrefix(strings.ToLower(strings.TrimSpace(ct)), "text/event-stream")
 }
 
 func (nw *nonceWriter) Write(b []byte) (int, error) {
@@ -147,6 +161,9 @@ func (nw *nonceWriter) Flush() {
 
 // close writes the held-back bytes at the end of the response.
 func (nw *nonceWriter) close() {
+	if nw.hijacked {
+		return
+	}
 	if !nw.wroteHeader { // a handler that wrote nothing: its headers still need the swap
 		nw.WriteHeader(http.StatusOK)
 	}
@@ -166,6 +183,7 @@ const (
 // cspReportPath receives the browsers' violation reports (csp_report.go).
 const cspReportPath = "/wpgo-csp-report"
 
+// cspMode is the csp_mode option (the page cache stores it with each entry: cache.Options.CSPMode).
 func (s *Server) cspMode() string {
 	switch m := s.settings.String("csp_mode"); m {
 	case cspModeOff, cspModeEnforce:

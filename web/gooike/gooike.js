@@ -11,6 +11,9 @@
 (function () {
 	'use strict';
 	var doc = document, root = doc.documentElement;
+	// This script's own CSP nonce: under an enforced policy (C.strict) only blocked scripts that
+	// carry it are started, an injected inert script stays inert.
+	var myNonce = (doc.currentScript && doc.currentScript.nonce) || '';
 	var cfgEl = doc.getElementById('gooike-config');
 	if (!cfgEl || window.Gooike) { return; }
 	var C;
@@ -80,7 +83,10 @@
 			var el = els[i];
 			if (!granted(el.getAttribute('data-gooike-category'))) { continue; }
 			el.setAttribute('data-gooike-done', '1');
-			if (el.tagName === 'SCRIPT') { queue.push(el); } else { enableSrc(el); }
+			if (el.tagName === 'SCRIPT') {
+				if (C.strict && (!myNonce || el.nonce !== myNonce)) { continue; }
+				queue.push(el);
+			} else { enableSrc(el); }
 		}
 		pump();
 	}

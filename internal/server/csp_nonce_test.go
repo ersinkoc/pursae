@@ -55,6 +55,16 @@ func TestNonceWriterSwap(t *testing.T) {
 		t.Fatal("a 304 carries a policy")
 	}
 
+	// Event streams are swapped too (MCP over SSE carries rendered content).
+	rec = httptest.NewRecorder()
+	nw = newNonceWriter(rec)
+	nw.Header().Set("Content-Type", "text/event-stream")
+	_, _ = nw.Write([]byte("data: {\"x\":\"" + ph + "\"}\n\n"))
+	nw.close()
+	if strings.Contains(rec.Body.String(), ph) {
+		t.Fatal("placeholder left in an event stream")
+	}
+
 	// A handler that writes nothing still gets its headers swapped.
 	rec = httptest.NewRecorder()
 	nw = newNonceWriter(rec)
@@ -118,11 +128,21 @@ func TestCSPNonceFrontAndCache(t *testing.T) {
 		t.Fatal("the admin does not load csp-actions.js with the response's nonce")
 	}
 
-	// Enforced mode moves the nonce policy into Content-Security-Policy.
+	// A stray Upgrade header does not get a response past the swap.
+	req, _ := http.NewRequest(http.MethodGet, ts.URL+"/", nil)
+	req.Header.Set("Upgrade", "x")
+	if r, err := http.DefaultClient.Do(req); err != nil {
+		t.Fatal(err)
+	} else if b := bodyOf(r); strings.Contains(b, cspnonce.Placeholder) || strings.Contains(r.Header.Get("Content-Security-Policy-Report-Only"), cspnonce.Placeholder) {
+		t.Fatal("the placeholder left the server on a request with an Upgrade header")
+	}
+
+	// Enforced mode moves the nonce policy into Content-Security-Policy, also for a page the cache
+	// stored under the report mode.
 	if err := srv.settings.Set(ctx, map[string]any{"csp_mode": cspModeEnforce}); err != nil {
 		t.Fatal(err)
 	}
-	resp = anonGet(t, ts.URL+"/?enforce=1")
+	resp = anonGet(t, ts.URL+"/")
 	_ = bodyOf(resp)
 	if p := resp.Header.Get("Content-Security-Policy"); !strings.Contains(p, "'strict-dynamic'") || strings.Contains(p, "'unsafe-inline' 'nonce") ||
 		strings.Contains(p, "script-src 'self' 'unsafe-inline'") || resp.Header.Get("Content-Security-Policy-Report-Only") != "" {

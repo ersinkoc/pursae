@@ -466,6 +466,12 @@ func (s *Server) doShortcodes(ctx context.Context, content string) string {
 		return content
 	}
 	return wp.DoShortcode(content, tags, func(tag string, attrs map[string]string, inner string) string {
+		if strings.Contains(inner, cspPH) { // hide the nonce placeholder from the plugin (maskNoncePlaceholder)
+			return maskNoncePlaceholder(inner, func(m string) string {
+				out, _ := s.plugins.rt.DoShortcode(ctx, tag, attrs, m)
+				return out
+			})
+		}
 		out, _ := s.plugins.rt.DoShortcode(ctx, tag, attrs, inner)
 		return out
 	})

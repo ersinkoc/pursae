@@ -235,7 +235,7 @@ func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSet
 				`<link rel="stylesheet" id="gooike-css" href="` + gooikeAssets + `/gooike.css?ver=` + gooikeVersion + `" media="all" />` + "\n" +
 				`<style id="gooike-inline-css">` + gooikeCSSVars(gs.Design) + gooikeCustomCSS(gs.Design) + "</style>\n")
 			tag = gooikeInert(tag, "statistics")
-			v.ConsentFoot = template.HTML(s.gooikeMarkup(ctx, &gs, false) + gooikeConfigScript(&gs, false) +
+			v.ConsentFoot = template.HTML(s.gooikeMarkup(ctx, &gs, false) + gooikeConfigScript(&gs, false, s.cspMode() == cspModeEnforce) +
 				`<script` + cspNonceAttr() + ` src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" id="gooike-js" defer></script>` + "\n")
 		}
 		v.AnalyticsTag = template.HTML(tag)

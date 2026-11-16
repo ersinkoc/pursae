@@ -419,6 +419,15 @@ func init() {
 		}
 		cctx, cancel := pluginUICtx(ctx)
 		defer cancel()
+		if strings.Contains(content, cspPH) { // hide the nonce placeholder from the plugin (maskNoncePlaceholder)
+			var ok bool
+			out := maskNoncePlaceholder(content, func(m string) string {
+				var o string
+				o, ok = rt.RenderBlock(cctx, b.Name(), b.Attrs, m)
+				return o
+			})
+			return out, ok
+		}
 		return rt.RenderBlock(cctx, b.Name(), b.Attrs, content)
 	})
 }

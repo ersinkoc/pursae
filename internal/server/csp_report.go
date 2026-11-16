@@ -63,15 +63,23 @@ func (r *cspReports) add(v cspViolation, now time.Time) {
 		r.dropped++
 		return
 	}
-	key := v.Directive + "\x00" + v.Blocked + "\x00" + v.Source + "\x00" + v.Page
+	// One row per violation (directive, blocked resource, source): the same script on many pages is
+	// one row, with the first page as an example.
+	key := v.Directive + "\x00" + v.Blocked + "\x00" + v.Source
 	if e := r.m[key]; e != nil {
 		e.Count++
 		e.Last = now
 		return
 	}
-	if len(r.m) >= cspReportMaxEntries {
+	if len(r.m) >= cspReportMaxEntries { // full: the row seen least recently makes room
+		var oldest string
+		for k, e := range r.m {
+			if oldest == "" || e.Last.Before(r.m[oldest].Last) {
+				oldest = k
+			}
+		}
+		delete(r.m, oldest)
 		r.dropped++
-		return
 	}
 	v.Count, v.First, v.Last = 1, now, now
 	r.m[key] = &v
@@ -122,6 +130,12 @@ type cspReportingBody struct {
 }
 
 func (s *Server) cspReport(c *gin.Context) {
+	switch ct := strings.ToLower(c.ContentType()); ct {
+	case "application/csp-report", "application/reports+json", "application/json":
+	default:
+		c.Status(http.StatusUnsupportedMediaType)
+		return
+	}
 	raw, err := io.ReadAll(io.LimitReader(c.Request.Body, cspReportMaxBody+1))
 	if err != nil || len(raw) > cspReportMaxBody {
 		c.Status(http.StatusRequestEntityTooLarge)

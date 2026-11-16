@@ -452,6 +452,9 @@ func maintRESTCredentials(r *http.Request) bool {
 // Each entry is a whole path segment (or its .php form): "/wp-login-x?p=5" or "/xmlrpcs?page_id=2"
 // would otherwise pass the gate and reach the site router, which serves ?p= on any unknown path.
 func maintAlwaysOpen(p string) bool {
+	if p == cspReportPath { // browsers' CSP reports, the maintenance page's own included
+		return true
+	}
 	for _, pre := range []string{"/wp-content/", "/wp-includes/"} {
 		if strings.HasPrefix(p, pre) {
 			return true
