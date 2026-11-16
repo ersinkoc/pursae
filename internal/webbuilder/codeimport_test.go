@@ -42,7 +42,7 @@ func TestConvertCodeSplit(t *testing.T) {
 	if res.SEO.Title != "Pursae · Home" || res.SEO.Description != "Go WordPress." || res.SEO.OGImage != "/k/merge/assets/og.png" || res.Lang != "tr" {
 		t.Fatalf("seo: %+v", res.SEO)
 	}
-	if !strings.Contains(res.Head, `href="/k/merge/assets/style.css"`) || !strings.Contains(res.Head, `url(&#34;/k/merge/assets/bg.webp&#34;)`) && !strings.Contains(res.Head, `url("/k/merge/assets/bg.webp")`) || strings.Contains(res.Head, "icon") {
+	if !strings.Contains(res.Head, `href="/k/merge/assets/style.css?v=2"`) || !strings.Contains(res.Head, `url(&#34;/k/merge/assets/bg.webp&#34;)`) && !strings.Contains(res.Head, `url("/k/merge/assets/bg.webp")`) || strings.Contains(res.Head, "icon") {
 		t.Fatalf("head: %s", res.Head)
 	}
 	if res.Header == nil || !strings.Contains(res.Header.HTML, `<symbol id="mark">`) || !strings.Contains(res.Header.HTML, `class="skip"`) ||
@@ -62,7 +62,7 @@ func TestConvertCodeSplit(t *testing.T) {
 	if res.Sections[0].Wrap != `<main id="main">` || res.Sections[2].Wrap != "<main id=\"main\">\n<div class=\"aft\">" {
 		t.Fatalf("wraps: %q / %q", res.Sections[0].Wrap, res.Sections[2].Wrap)
 	}
-	if !strings.Contains(res.Sections[0].HTML, "window.x=1") || !strings.Contains(res.Sections[4].HTML, `src="/k/merge/assets/js/app.js"`) || strings.Contains(res.Footer.HTML, "app.js") {
+	if !strings.Contains(res.Sections[0].HTML, "window.x=1") || !strings.Contains(res.Sections[4].HTML, `src="/k/merge/assets/js/app.js?v=1"`) || strings.Contains(res.Footer.HTML, "app.js") {
 		t.Fatalf("scripts not kept with their parts: %q", res.Sections[4].HTML)
 	}
 	if !strings.Contains(res.Sections[0].HTML, `srcset="/k/merge/assets/hero.webp 1x, /k/merge/assets/hero@2x.webp 2x"`) {
