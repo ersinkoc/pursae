@@ -506,9 +506,13 @@ Two ways turn an HTML page into free-form (`custom`) sections:
   Open Graph tags go to the page settings and Pursae SEO. Pursae MCP: `web_builder_import_html` +
   `web_builder_import_finish`.
 - **Code** — the design kept as its own markup in `code` sections (privileged, top-level only):
-  `content.html`, `content.head`, `content.wrap`, `content.kit`. The renderer draws
+  `content.html`, `content.head`, `content.wrap`, `content.kit`, and the front end's `content.lang`,
+  `content.htmlAttrs`, `content.bodyAttrs` (the design's document attributes) and `content.active` (a
+  site import's active-link rule on a header or footer template). The renderer draws
   `<div data-wb-code="{id}"></div>`; the publish route puts the markup in its place after sanitizing
-  (`webbuilder.FillCode`). Files come from a design kit (`web-builder/v2/kits`). See
+  (`webbuilder.FillCode`); the front end prints a shell the header, page and footer share once.
+  Files come from a design kit (`web-builder/v2/kits`); a whole site comes in with
+  `web_builder_import_site` (`webbuilder.ConvertSite`). See
   [Code sections and design kits](web-builder-code-sections.md); builder patch `0018-code-sections`.
 - **Quick** — `webbuilder.ImportHTML` reads style attributes and simple `<style>` rules in Go, without
   a browser (approximate; CDN utility classes are not resolved).

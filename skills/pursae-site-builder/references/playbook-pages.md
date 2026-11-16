@@ -20,10 +20,13 @@ image. Then, for a design kept as its own code (the default, `method: "code"`, n
    CSS and JavaScript as written (animations, canvas, scripts keep working); every element is a block
    the owner selects, moves, duplicates, deletes and restyles (Style, Layers), with texts, links and
    images edited in place; the parts are reordered like sections.
-3. A whole site: import each page of the design the same way with `link_map` pointing the design's own
-   links at site URLs (`{"about.html": "/about/", "forum/index.html": "/forums/"}`); `templates: true`
-   (`templates_only: true` for a page whose content the site renders, like a forum or shop page) makes
-   the header and footer site-wide Theme Builder templates.
+3. A whole site, in one call: `web_builder_import_site {kit: "mydesign", pages: [{path, html}, …]}`
+   (harness: `pursae_mcp.py import-site ./design kit=mydesign`). index.html becomes the front page,
+   a/b.html the page /a/b/, 404.html the 404 template; links between the pages are mapped; the pages'
+   headers and footers become as few templates as reproduce them, the header marking the current page's
+   menu link as the design does. Running it again updates the same pages and templates. For a single
+   extra page, `web_builder_import_html` with `link_map` and `templates: true` (`templates_only: true`
+   for a page whose content the site renders, like a forum or shop page) still works.
 4. Read `warnings` (unmapped links, files missing from the kit) and compare with the design.
 5. Pages the site renders itself keep the design too: give each forum view the design's markup with
    `forum_set_template` (see playbook-forum.md, "From an HTML design").

@@ -25,7 +25,7 @@ stored (see [Limits](#limits)).
 | Piece | Where | What |
 |-------|-------|------|
 | Design kit | `uploads/web-builder/kits/<slug>/` | The design's files (CSS, JS, fonts, images) with their folder structure, so the design's relative references keep working. Option `wb_design_kits` lists kits: name, version, file count, size, and the https origins their scripts and stylesheets name. |
-| Code section | doc section `kind: "code"` | `content.html` — the part's markup; `content.head` — head markup it needs (stylesheets, preloads, head scripts, inline styles); `content.wrap` — the wrappers it sits in (opening tags, outermost first, one per line, e.g. `<main id="main">` then `<div class="aft">`); `content.kit`, `content.lang`, `content.body` (body class) for the editor. Top-level only. |
+| Code section | doc section `kind: "code"` | `content.html` — the part's markup; `content.head` — head markup it needs (stylesheets, preloads, head scripts, inline styles); `content.wrap` — the wrappers it sits in (opening tags, outermost first, one per line, e.g. `<main id="main">` then `<div class="aft">`); `content.kit`, `content.lang`, `content.body` (body class) for the editor; `content.htmlAttrs` / `content.bodyAttrs` — the design's other `<html>` attributes and its `<body>` attributes as written in an opening tag (`class="no-js" data-theme="dark"`), printed by the front end; `content.active` — on a header or footer template made by a site import, the rule that marks the current page's link ([Active links](#active-links)). Top-level only. |
 | Importer | `webbuilder.ConvertCode`, MCP `web_builder_import_html` with `method: "code"` | Splits an HTML document into code sections, gives every element a `data-wbc` id, points file references at the kit. No browser needed. |
 
 ## Publishing
@@ -45,6 +45,32 @@ placeholder with the section's markup, as written (`webbuilder.FillCode`):
   end drops that root element, and prints neither the builder's site stylesheet (`wb.css`, a global
   reset and a size container) nor the builder's font links, the block library stylesheet or Hello
   Pursae's stylesheet, skip link and default header/footer. The design gets the document to itself.
+
+- the design's document: the front end prints its `<html lang>` and other `<html>` attributes and its
+  `<body>` attributes (`content.lang`, `content.htmlAttrs`, `content.bodyAttrs`; the page's first,
+  then the header's and the footer's, merged by name, classes joined, inline event handlers dropped):
+  on a canvas page (`wbCanvas`) and under Hello Pursae, whose `<html lang>` is otherwise `en-US`. The
+  lang matters to the pixel: `text-transform: uppercase` writes Turkish `i` as `İ` only under `lang="tr"`;
+- a code page's markup is printed as written: `wp_filter_content_tags` (image dimensions, `loading`,
+  `decoding`, `srcset`) does not run over it (`wbContentTags`). Pursae Cache's page optimizer, when its
+  options are on, still adds `loading="lazy"` / `decoding="async"` and collapses whitespace in the whole
+  response (it does not change what is drawn).
+
+### Shared shell
+
+Many designs put one wrapper around their header, main and footer (`<div class="flex min-h-screen
+flex-col">`): the import keeps it as the first line of every part's `wrap` (the *shell*, see
+[Importing](#importing)). When the header template, the page and the footer template of a Hello Pursae
+request are all code parts, `FillCode` has printed the shell in each of them; the front end
+(`wbCodeParts`, `webbuilder.ShareShell`) prints it once around all three: the header keeps the shell's
+opening tags and loses their closing tags, the page loses both, the footer loses the opening tags. The
+wrappers shared are the common start of the header's last section's chain, the footer's first section's
+chain and every section of the page (`webbuilder.ShellLen`). A main that is not a code part (a theme
+view such as a blog post, builder sections, a forum view) is printed inside the header's and footer's
+shell; a code page in other wrappers (another design) is not, and then nothing is shared. The markup is
+checked before anything is cut (the shell must be the header's last element, the footer's first and the
+page's only one); otherwise each part keeps its own copy, as before. A canvas page (no header and footer
+part) prints its own shell once by construction.
 
 `posts.content` (feeds, search, excerpts) gets the sections' markup without scripts, styles and
 templates.
@@ -110,18 +136,33 @@ writing needs `edit_theme_options` **and** `unfiltered_html`.
 - **Head**: `<title>`, meta description, robots and Open Graph tags become the page's SEO (page
   settings and Pursae SEO); stylesheets, preloads, inline styles, scripts and `theme-color` become the
   sections' `head`; site icon, canonical, alternates, manifest and `<base>` are dropped (the site's own).
-- **Body**: each element child of `<main>` (or of the body without one) is a section. A plain `div`
+- **Shell**: the importer finds the page's `main` (the first `<main>`), its site header (the first
+  `<header>` before main that no `article`, `section`, `aside`, `nav`, `form` or `dialog` holds) and its
+  site footer (the first such `<footer>` after main; the last one of a page without main) at any depth,
+  and the nearest element that holds them all. The wrappers from the body down to it are the shell
+  (`CodeImport.Shell`): every part's `wrap` starts with them. A header or footer inside a wrapper of
+  the shell takes that wrapper along; a main inside wrappers that hold nothing else gets them in its
+  sections' `wrap`.
+- **Body**: each element child of `<main>` (or of the shell without one) is a section. A plain `div`
   holding two or more sections (`section`, `article`, `header`, `footer`, `aside`, `nav`, or elements
   with an id) is opened, and the sections inside it carry it in `wrap`. Scripts and styles go with the
   section before them; icon sprites and skip links with the section after them; scripts after `main`
-  with the last section.
-- **Split** (`templates: true`): the first header (with the sprites and skip links before it) and the
-  footer become the site's header and footer templates. A footer the design placed inside `main` stays
-  on the page as well (the design's CSS expects it there) and the footer template excludes that page.
+  (and after the shell) with the last section.
+- **Split** (`templates: true`): the site header with everything the shell holds before it (skip link,
+  sprites, an announcement bar) becomes the header template, the site footer with everything the shell
+  holds after it (a to-top button, modal and lightbox containers) the footer template; both keep the
+  shell as their `wrap`. Elements beside the shell's wrappers (a sprite before it in the body, a
+  lightbox after it) become further sections of those templates (`HeaderBefore`, `FooterAfter`), each
+  in the wrappers it sat in. A footer the design placed inside `main` stays on the page as well (the
+  design's CSS expects it there) and the footer template excludes that page.
+- **Document**: `<html lang>` (`Lang`), the other `<html>` attributes (`HTMLAttrs`) and the `<body>`
+  attributes (`BodyAttrs`, class included) are kept on every section.
 - **References**: relative and root-relative URLs in `src`, `href`, `srcset`, `poster`, `data-src`,
   `action`, `style` and `<style>` `url()` / `@import` resolve against the file's folder in the kit
   (`Base`). A kit file becomes its kit URL; a link in `LinkMap` (by the path resolved in the kit, then
-  as written) becomes its site URL; other page links and missing files are reported.
+  as written) becomes its site URL; other page links and missing files are reported. A query string
+  stays on the mapped URL (`hakkimizda.html?tab=2#x` → `/hakkimizda/?tab=2#x`, `app.js?x=1` → the kit
+  URL with `?x=1`); a kit file's `?v=` is replaced by the kit version when the page is printed.
 - **Element ids**: every element outside an SVG drawing (the `<svg>` itself included) gets a
   `data-wbc` id, numbered across the import; `script`, `style`, `template`, `noscript`, `link`, `meta`,
   `br` and the like do not. Sections imported before every element was tagged get the missing ids
@@ -136,6 +177,93 @@ users with `unfiltered_html`. `templates_only` imports only the header and foote
 design's forum or shop page whose content the site renders itself). The skill harness does it from a
 folder: `pursae_mcp.py kit-upload <folder> <kit>` then
 `pursae_mcp.py import-html <folder>/index.html kit=<kit> path=index.html link_map=@links.json`.
+
+### Importing a site
+
+`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, site_name?}` imports a whole
+static site in one call (`internal/server/webbuilder_siteimport.go`, `webbuilder.ConvertSite`). Upload
+the folder's CSS, JS, fonts and images as the kit first (`web_builder_kit_upload`); the HTML files travel
+in `pages` (a kit holds no HTML, so nothing of the design is served as a page from uploads). Harness:
+`pursae_mcp.py kit-upload <folder> <kit>` then `pursae_mcp.py import-site <folder> kit=<kit>`.
+
+1. **Page tree** (`webbuilder.PlanSite`): `index.html` at the top is the front page (slug `home`, set as
+   the static front page unless `front_page: false`); `a/b.html` is page `b` under the page of folder
+   `a`, which is `a.html` or `a/index.html` when the site has one, else a **draft placeholder** (so
+   `/a/b/` resolves and `/a/` stays a 404, as in the design); `a/index.html` is folder `a`'s own page;
+   `404.html` becomes the Theme Builder **404 template** (`error-404`, `include/404`). Slugs are the
+   lowercased file names (`hizmet/3.html` → `/hizmet/3/`).
+2. **Links**: the pages are created (drafts) or found first, and their permalinks (as published) make
+   the link map of every link between the design's pages, folder links (`hizmet/`, `./`) included.
+   Pretty permalinks are needed for the menu's active link (plain `?page_id=` links are warned about).
+3. **Templates**: every page's header (with what goes with it) and footer are clustered
+   (`webbuilder.ClusterParts`): copies that differ only in the current page's menu link are one
+   template with an [active-link rule](#active-links); copies that differ otherwise, or that the rule
+   does not reproduce byte for byte, are clusters of their own. The largest header and footer cluster
+   apply to the whole site (`include/general`), the others to their pages
+   (`include/singular/page/<id>`, `include/404`); all with priority 10, so they win a tie with other
+   whole-site templates (which are listed in the warnings).
+4. **Pages**: each page is published with `layout: site` (the templates bring its header and footer),
+   its title, description, robots and Open Graph tags (page settings and Pursae SEO).
+5. **Idempotent**: everything the import makes carries the post meta `_wb_site_kit` (the kit) and
+   `_wb_site_key` (the page's file, `dir:<folder>` for a placeholder, `header-<n>`, `footer-<n>`, `404`).
+   A second import of the kit updates the same pages (slug and parent too) and templates; templates of an
+   earlier import it no longer needs are turned into drafts.
+
+The answer lists the pages (`post_id`, `url`, sections), `pages_created` / `pages_updated`, the templates
+(type, id, pages, conditions, `active_links`), `templates_disabled`, `unmapped_links`, `missing_files`
+and `warnings`. The import needs `unfiltered_html` and `edit_theme_options`; the templates show with the
+Hello Pursae theme.
+
+### Active links
+
+A static design marks the current page in its menu by hand: its header differs from page to page only
+in a few classes and attributes (enerjiosgb: `text-brand-600` and `aria-current="page"` instead of
+`text-ink-700 hover:text-ink-900 hover:bg-ink-100/80` on "Anasayfa" of `index.html`; the same classes on
+the "Kurumsal" menu button of `hakkimizda.html` and of every `kadro/*.html`; `bg-brand-50 text-brand-700`
+on the dropdown item of the page itself; the "Bizden Haberler" link on every `haber/*.html`). The site
+import learns that from the pages' copies (`webbuilder.ClusterParts`, `internal/webbuilder/activelinks.go`):
+
+- copies with the same skeleton (tags, text and every attribute but `class` and the state attributes
+  `aria-current`, `aria-selected`, `data-active`, `data-current`, `data-state`, `data-selected`) are
+  aligned element by element; an element whose class or state attributes vary is *marked* on some pages;
+- its plain state is the one the varying elements show most across the site (so a menu button marked
+  on most pages, because most pages are services, still gets the plain look of the other buttons);
+- a **role** is a kind of element (tag + plain state) and how it looks marked: `exact` on the page it
+  links to, `near` on a page of its section (classes only, no `aria-current`, as the design does);
+- an **item** is one element (named by `href:/path/`, `controls:<aria-controls>`, `id:<id>` or its
+  place `#n` among its role's elements) with `exact` (marked on the page it links to), `paths` (other
+  pages that mark it) and `prefixes`: a folder all of whose imported pages mark it (`/haber/`,
+  `/kadro/`, `/hizmet/`) — so a page added there later is marked too. A single-page folder stays a path.
+
+The rule (`ActiveRule` JSON) is stored as `content.active` of the header template's first section; the
+template itself holds the header with every element in its plain state. On each request the front end
+(`webbuilder.ApplyActive`) rewrites only the opening tags of the elements the requested path marks
+(`c.Request.URL.Path`, matched as a site path with a trailing slash), copying the rest of the markup as
+it is; a new attribute goes where the import would have written it (attributes in name order — the HTML
+parser sorts those of `<a>` — stay so, else at the end). The import checks every page: the rule applied
+to the template must give that page's header byte for byte, or the page gets a header template of its
+own. Editing the template in the editor keeps the rule; an element whose plain classes are changed is no
+longer recognised (its role no longer matches) and is simply not marked.
+
+### Fidelity check
+
+`builder/test/fidelity/fidelity.mjs` (Node + Playwright, `make builder-fidelity SRC=<folder>
+SITE=<url> [MAP=map.json] [OUT=dir] [SCENARIOS=file.json] [ARGS=…]`) serves the source folder and
+compares each page with its imported URL, full page at 1440, 1024, 768 and 390 px, as the share of
+differing pixels (YIQ distance, threshold 0.1, as `builder/test/parity`). Without `MAP` the URLs follow
+the site import's plan (`404.html` against a missing URL). Both sides load with reduced motion, a style
+that turns transitions, animations and the caret off, a paused clock (timers run for `--clock` ms, 1000
+by default, so a slider does not move on), are scrolled through (scroll reveals finish) and wait for
+fonts and loaded images; each side is captured alone, in Chromium without LCD text and GPU (otherwise
+text antialiasing varies with load). `--self` compares the source with itself (the noise floor),
+`--mask <selector>` hides live third-party content on both sides (a Google Maps iframe draws its tiles
+at its own pace), `--only <substring>` narrows the pages, `--images all` keeps every image. A scenario
+file adds states: `[{"name", "pages", "widths", "steps": [{"hover"|"click"|"focus": selector},
+{"press": key}, {"scroll": y}, {"wait": ms}], "fullPage": false}]`
+(`builder/test/fidelity/scenarios/enerjiosgb.json` opens the "Kurumsal" menu). Output: `report.json`
+(per page, scenario and width: `diffPct`, sizes, differing bands) and `report.html` with the source,
+target and diff images of everything that differs; the exit status is 1 when a shot is over `--target`
+(0.1 %).
 
 ### Forum views
 
@@ -210,3 +338,6 @@ not.
   follow the frame, which is at most as tall as the screen.
 - Hello Pursae wraps non-code parts in its own elements; a header or footer template made of code
   sections is printed without a wrapper.
+- A site import needs every page in one call (at most 500); the active-link rule matches request paths,
+  so it needs pretty permalinks. Forms keep the design's own handling (enerjiosgb's opens `mailto:`);
+  nothing on the site receives them yet.
