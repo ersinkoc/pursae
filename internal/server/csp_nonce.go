@@ -113,7 +113,7 @@ func (nw *nonceWriter) Write(b []byte) (int, error) {
 		data = data[:len(data)-keep]
 	}
 	if len(data) > 0 {
-		if _, err := nw.w.Write(data); err != nil {
+		if _, err := nw.w.Write(data); err != nil { //nolint:gosec // G705: passes the handler's own response through
 			return 0, err
 		}
 	}
