@@ -96,7 +96,7 @@
 		<td><input name="last_name" type="text" id="last_name" value="{{.Values.Get "last_name"}}" /></td></tr>
 	<tr class="form-field form-required user-pass1-wrap"><th scope="row"><label for="pass1">Password <span class="description">(required)</span></label></th>
 		<td><input type="text" name="pass1" id="pass1" class="regular-text" autocomplete="new-password" spellcheck="false" value="{{.Values.Get "pass1"}}" />
-		<button type="button" class="button wp-generate-pw" onclick="var a=new Uint8Array(18);crypto.getRandomValues(a);document.getElementById('pass1').value=btoa(String.fromCharCode.apply(null,a)).replace(/[+/=]/g,'');">Generate password</button></td></tr>
+		<button type="button" class="button wp-generate-pw" data-action="generate-password" data-target="#pass1">Generate password</button></td></tr>
 	<tr><th scope="row">Send User Notification</th>
 		<td><input type="checkbox" name="send_user_notification" id="send_user_notification" value="1" checked="checked" /> <label for="send_user_notification">Send the new user an email about their account</label></td></tr>
 {{if .CanPromote}}

@@ -28,7 +28,7 @@
 		<div class="inside">
 			<div id="edit-slug-box" class="hide-if-no-js">{{.SampleLink}}</div>
 			<input type="hidden" id="samplepermalinknonce" name="samplepermalinknonce" value="{{.SampleNonce}}" />
-			{{if eq $p.Status "auto-draft"}}<script>
+			{{if eq $p.Status "auto-draft"}}<script {{cspNonce}}>
 			// WordPress fills the permalink of a new post after the autosave its title blur triggers
 			// (post.js "after-autosave.update-post-slug"); Pursae asks for it on blur directly.
 			jQuery(function($){ $('#title').on('blur', function(){

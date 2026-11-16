@@ -724,7 +724,9 @@ func (s *Server) mcpDispatch(c *gin.Context, method, route string, body []byte, 
 	req.RemoteAddr = c.Request.RemoteAddr
 	rec := httptest.NewRecorder()
 	s.engine.ServeHTTP(rec, req)
-	return rec.Code, rec.Body.Bytes()
+	// The in-process response never passed the outer nonce swap (csp_nonce.go): the placeholder must not
+	// reach the MCP client.
+	return rec.Code, bytes.ReplaceAll(rec.Body.Bytes(), []byte(cspPH), []byte(newCSPNonce()))
 }
 
 // mcpUploadBody builds the multipart body of POST /wp/v2/media from base64 data or a fetched URL.

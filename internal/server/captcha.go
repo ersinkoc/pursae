@@ -85,15 +85,15 @@ func captchaWidget(c *gin.Context, p captchaProvider, action string) template.HT
 	}
 	if p.kind == "turnstile" {
 		if first {
-			script = `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>`
+			script = `<script` + cspNonceAttr() + ` src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>`
 		}
 		return template.HTML(`<div class="cf-turnstile" data-sitekey="` + site + `"></div>` + script)
 	}
 	if first {
-		script = `<script src="https://www.google.com/recaptcha/api.js?render=` + site + `"></script>`
+		script = `<script` + cspNonceAttr() + ` src="https://www.google.com/recaptcha/api.js?render=` + html.EscapeString(url.QueryEscape(p.site)) + `"></script>`
 	}
 	return template.HTML(`<input type="hidden" name="g-recaptcha-response" value="" />` + script +
-		`<script>(function(){var f=document.currentScript.closest('form');if(!f)return;var done=false,btn=null;f.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button[type=submit],input[type=submit]');if(b)btn=b;});f.addEventListener('submit',function(e){if(done||!window.grecaptcha)return;e.preventDefault();grecaptcha.ready(function(){grecaptcha.execute('` + site + `',{action:'` + html.EscapeString(action) + `'}).then(function(t){f.elements['g-recaptcha-response'].value=t;done=true;if(btn&&btn.name){var h=document.createElement('input');h.type='hidden';h.name=btn.name;h.value=btn.value;f.appendChild(h);}f.submit();});});});})();</script>`)
+		`<script` + cspNonceAttr() + `>(function(){var f=document.currentScript.closest('form');if(!f)return;var done=false,btn=null;f.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button[type=submit],input[type=submit]');if(b)btn=b;});f.addEventListener('submit',function(e){if(done||!window.grecaptcha)return;e.preventDefault();grecaptcha.ready(function(){grecaptcha.execute('` + template.JSEscapeString(p.site) + `',{action:'` + template.JSEscapeString(action) + `'}).then(function(t){f.elements['g-recaptcha-response'].value=t;done=true;if(btn&&btn.name){var h=document.createElement('input');h.type='hidden';h.name=btn.name;h.value=btn.value;f.appendChild(h);}f.submit();});});});})();</script>`)
 }
 
 // captchaCheck verifies the token a form posted for provider p: "" when valid, otherwise the

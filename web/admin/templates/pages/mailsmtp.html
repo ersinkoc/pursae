@@ -37,7 +37,7 @@
 <div class="wrap wpms-wrap">
 {{if eq .Page "wp-mail-smtp-setup-wizard"}}{{template "mailsmtp-wizard" .}}{{else}}
 <h1 class="wp-heading-inline wpms-logo"><span class="dashicons dashicons-email-alt"></span>{{if eq .Page "wp-mail-smtp"}}Pursae SMTP Settings{{else if eq .Page "wp-mail-smtp-logs"}}Email Log{{else if eq .Page "wp-mail-smtp-reports"}}Email Reports{{else}}Tools{{end}}</h1>
-{{if and (eq .Page "wp-mail-smtp-logs") (not .Entry)}}{{if .Logs}}<a href="#" class="page-title-action wpms-noprint" onclick="document.getElementById('wpms-delete-all').submit();return false">Delete All Logs</a>{{end}}{{end}}
+{{if and (eq .Page "wp-mail-smtp-logs") (not .Entry)}}{{if .Logs}}<a href="#" class="page-title-action wpms-noprint">Delete All Logs</a>{{end}}{{end}}
 <hr class="wp-header-end">
 {{template "notices" $}}
 {{if .Tabs}}<nav class="nav-tab-wrapper wp-clearfix wpms-noprint" aria-label="Secondary menu">{{range .Tabs}}<a href="{{.Value}}" class="nav-tab{{if .Checked}} nav-tab-active{{end}}">{{.Label}}</a>{{end}}</nav>{{end}}
@@ -47,7 +47,7 @@
 {{if eq .Page "wp-mail-smtp-tools"}}{{template "mailsmtp-tools" .}}{{end}}
 {{end}}
 </div>
-<script>
+<script {{cspNonce}}>
 (function(){
 	document.querySelectorAll('.wpms-mailers').forEach(function(grid){
 		var form = grid.closest('form');
@@ -97,7 +97,7 @@
 <label><input type="checkbox" name="track_clicks" id="track_clicks" value="1"{{if .O.Logs.TrackClicks}} checked{{end}} /> Count clicks on links in HTML emails (links go through this site first).</label>
 <p class="description">Off by default and only works while the log is enabled. Visitors who send Do Not Track or Global Privacy Control are never counted. Opens are approximate: mail clients may preload or block images.</p></td></tr>
 <tr><th scope="row">Delivery Status</th><td><p class="description">To see delivered, bounced and spam-complaint status in the log, add one of these webhook URLs to your mailer account. Keep the URL private: it contains a secret token.</p>
-{{range .WebhookURLs}}<p><strong>{{index . 0}}</strong><br /><input type="text" class="large-text code" readonly value="{{index . 1}}" onfocus="this.select()" /></p>{{end}}</td></tr>
+{{range .WebhookURLs}}<p><strong>{{index . 0}}</strong><br /><input type="text" class="large-text code" readonly value="{{index . 1}}" data-select-on-focus /></p>{{end}}</td></tr>
 <tr><th scope="row"><label for="log_retention_period">Log Retention Period</label></th><td><select name="log_retention_period" id="log_retention_period"{{if index .Locked "logs.log_retention_period"}} disabled{{end}}>{{range .Retention}}<option value="{{.Value}}"{{if .Checked}} selected{{end}}>{{.Label}}</option>{{end}}</select>
 <p class="description">Email logs older than the selected period will be permanently deleted from the database.</p></td></tr>
 </table>
@@ -152,7 +152,7 @@
 <thead><tr><th scope="col">Connection</th><th scope="col">Mailer</th><th scope="col">From Email</th><th scope="col">Used as</th></tr></thead>
 <tbody>
 {{range .Connections}}<tr><td><strong><a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;edit={{.ID}}">{{.Name}}</a></strong>
-<div class="row-actions"><span class="edit"><a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;edit={{.ID}}">Edit</a> | </span><span class="trash"><a class="submitdelete" href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;action=delete_connection&amp;conn={{.ID}}&amp;_wpnonce={{$.ActionNonce}}" onclick="return confirm('Delete this connection?')">Delete</a></span></div></td>
+<div class="row-actions"><span class="edit"><a href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;edit={{.ID}}">Edit</a> | </span><span class="trash"><a class="submitdelete" href="/wp-admin/admin?page=wp-mail-smtp&amp;tab=connections&amp;action=delete_connection&amp;conn={{.ID}}&amp;_wpnonce={{$.ActionNonce}}" data-confirm="Delete this connection?">Delete</a></span></div></td>
 <td>{{.Title}}</td><td>{{.FromEmail}}</td><td>{{if eq $.O.Backup .ID}}Backup connection{{end}}</td></tr>
 {{else}}<tr class="no-items"><td colspan="4">No additional connections yet.</td></tr>{{end}}
 </tbody></table>
@@ -190,7 +190,7 @@
 <template id="wpms-route-tpl"><div class="wpms-route"><p><strong>Send with</strong> <select data-k="connection">{{range .RouteConn}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select> <strong>if</strong>
 <label style="margin-left:12px"><input type="checkbox" data-k="enabled" value="1" checked /> Enabled</label>
 <button type="button" class="button-link button-link-delete wpms-del-route" style="float:right">Delete route</button></p><p><button type="button" class="button wpms-add-group">Add New Group</button></p></div></template>
-<script>
+<script {{cspNonce}}>
 (function(){
 	var form = document.getElementById('wpms-routing'), n = Date.now() % 100000;
 	function rule(route, group){
@@ -314,10 +314,10 @@
 {{if .Locked}}<p class="description">The value of this field was set using a constant ({{.Locked}}).</p>{{end}}
 {{if .Desc}}<p class="description">{{.Desc}}</p>{{end}}
 </td></tr>{{end}}
-{{if .OAuth}}<tr><th scope="row">Authorized redirect URI</th><td><input type="text" class="large-text code" readonly value="{{.RedirectURI}}" onfocus="this.select()" />
+{{if .OAuth}}<tr><th scope="row">Authorized redirect URI</th><td><input type="text" class="large-text code" readonly value="{{.RedirectURI}}" data-select-on-focus />
 <p class="description">Please copy this URL into the "Redirect URI" field of your application.</p></td></tr>
 <tr><th scope="row">Authorization</th><td>
-{{if .Connected}}<p>Connected as <strong>{{if .OAuthUser}}{{.OAuthUser}}{{else}}your account{{end}}</strong>.</p><p><a class="button" href="{{.RemoveURL}}" onclick="return confirm('Remove the OAuth connection?')">Remove OAuth Connection</a></p>
+{{if .Connected}}<p>Connected as <strong>{{if .OAuthUser}}{{.OAuthUser}}{{else}}your account{{end}}</strong>.</p><p><a class="button" href="{{.RemoveURL}}" data-confirm="Remove the OAuth connection?">Remove OAuth Connection</a></p>
 <p class="description">Removing the OAuth connection gives you the ability to redo the OAuth connection or link to another account.</p>
 {{else if .CanConnect}}<p><a class="button button-secondary" href="{{.ConnectURL}}">Allow plugin to send emails using your {{.Title}} account</a></p><p class="description">Click the button above to confirm authorization.</p>
 {{else}}<p class="description">You need to save settings with Client ID and Client Secret before you can proceed.</p>{{end}}
@@ -359,9 +359,9 @@
 <input type="hidden" name="_wpnonce" value="{{$.Nonce}}" /><input type="hidden" name="email_id" value="{{.ID}}" /><input type="hidden" name="action" value="resend" />
 <p><label for="recipients">Recipients</label><br /><input type="text" class="widefat" name="recipients" id="recipients" placeholder="{{.ToStr}}" />
 <span class="description">Leave empty to resend to the original recipients, or enter other addresses separated by commas.</span></p>
-<p><input type="submit" class="button button-primary" value="Resend"{{if not .HasContent}} disabled{{end}} /> <button type="button" class="button" onclick="window.print()">Print</button></p>
+<p><input type="submit" class="button button-primary" value="Resend"{{if not .HasContent}} disabled{{end}} /> <button type="button" class="button" data-action="print">Print</button></p>
 </form>
-<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-logs" onsubmit="return confirm('Are you sure that you want to delete this email log entry?')">
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-logs" data-confirm="Are you sure that you want to delete this email log entry?">
 <input type="hidden" name="_wpnonce" value="{{$.Nonce}}" /><input type="hidden" name="email_id" value="{{.ID}}" /><input type="hidden" name="action" value="delete" />
 <p><input type="submit" class="button-link button-link-delete" value="Delete Log" /></p></form>
 </div></div>
@@ -393,14 +393,14 @@
 <tbody>
 {{range .Logs}}<tr><th scope="row" class="check-column"><input type="checkbox" name="email_id[]" value="{{.ID}}" /></th>
 <td class="column-primary"><span class="wpms-status{{if eq .Status "failed"}} failed{{end}}" title="{{if eq .Status "failed"}}Failed{{else}}Sent{{end}}"></span><strong><a href="{{.ViewURL}}">{{if .Subject}}{{.Subject}}{{else}}(no subject){{end}}</a></strong>
-<div class="row-actions"><span class="view"><a href="{{.ViewURL}}">View Log</a> | </span>{{if .HasContent}}<span><a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;action=resend&amp;email_id={{.ID}}&amp;_wpnonce={{$.Nonce}}">Resend</a> | </span>{{end}}<span class="trash"><a class="submitdelete" href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;action=delete&amp;email_id={{.ID}}&amp;_wpnonce={{$.Nonce}}" onclick="return confirm('Are you sure that you want to delete this email log entry?')">Delete</a></span></div>
+<div class="row-actions"><span class="view"><a href="{{.ViewURL}}">View Log</a> | </span>{{if .HasContent}}<span><a href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;action=resend&amp;email_id={{.ID}}&amp;_wpnonce={{$.Nonce}}">Resend</a> | </span>{{end}}<span class="trash"><a class="submitdelete" href="/wp-admin/admin?page=wp-mail-smtp-logs&amp;action=delete&amp;email_id={{.ID}}&amp;_wpnonce={{$.Nonce}}" data-confirm="Are you sure that you want to delete this email log entry?">Delete</a></span></div>
 {{if .Error}}<p class="description" style="color:#d63638">{{.Error}}</p>{{end}}</td>
 <td>{{.From}}</td><td>{{.ToStr}}</td><td>{{.MailerTitle}}</td><td>{{.Source}}</td><td>{{.DateStr}}</td></tr>
 {{else}}<tr class="no-items"><td class="colspanchange" colspan="7">No emails found.</td></tr>{{end}}
 </tbody></table>
 </form>
-<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-logs" id="wpms-delete-all" onsubmit="return confirm('Are you sure you want to permanently delete all email logs?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="delete_all" /></form>
-<script>document.querySelector('#wpms-delete-all') && document.querySelectorAll('.page-title-action').forEach(function(a){ a.onclick = function(){ if (confirm('Are you sure you want to permanently delete all email logs?')) document.getElementById('wpms-delete-all').submit(); return false; }; });</script>
+<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-logs" id="wpms-delete-all" data-confirm="Are you sure you want to permanently delete all email logs?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="delete_all" /></form>
+<script {{cspNonce}}>document.querySelector('#wpms-delete-all') && document.querySelectorAll('.page-title-action').forEach(function(a){ a.onclick = function(){ if (confirm('Are you sure you want to permanently delete all email logs?')) document.getElementById('wpms-delete-all').submit(); return false; }; });</script>
 {{end}}
 {{end}}
 
@@ -483,7 +483,7 @@
 <thead><tr><th scope="col" style="width:80px">Type</th><th scope="col">Content</th><th scope="col" style="width:200px">Source</th><th scope="col" style="width:170px">Date</th></tr></thead>
 <tbody>{{range .Events}}<tr><td>{{if eq .Type "error"}}<span style="color:#d63638">Error</span>{{else}}Debug{{end}}</td><td><pre style="white-space:pre-wrap;margin:0">{{.Content}}</pre></td><td>{{.Initiator}}</td><td>{{.Date}}</td></tr>
 {{else}}<tr class="no-items"><td colspan="4">No events found.</td></tr>{{end}}</tbody></table>
-{{if .Events}}<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-tools&amp;tab=debug-events" onsubmit="return confirm('Delete all debug events?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="delete_all" /><p><input type="submit" class="button" value="Delete All Events" /></p></form>{{end}}
+{{if .Events}}<form method="post" action="/wp-admin/admin?page=wp-mail-smtp-tools&amp;tab=debug-events" data-confirm="Delete all debug events?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="delete_all" /><p><input type="submit" class="button" value="Delete All Events" /></p></form>{{end}}
 {{end}}
 {{end}}
 

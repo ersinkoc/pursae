@@ -41,7 +41,7 @@
 	<p id="nav"><a href="{{loginURL}}">&larr; Log in with a different account</a></p>
 	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
 </div>
-<script>
+<script {{cspNonce}}>
 (function () {
 	var b = document.getElementById('adminsec-resend'), w = document.getElementById('adminsec-resend-wait');
 	if (!b || !b.dataset.wait) return;

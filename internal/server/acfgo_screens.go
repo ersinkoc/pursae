@@ -320,7 +320,8 @@ func (s *Server) acfgoValidationDie(c *gin.Context, errs []acfgoError) {
 	s.adminHTML(c, http.StatusUnprocessableEntity, `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Validation failed</title>`+
 		`<link rel="stylesheet" href="/wp-admin/assets/css/wp/install.min.css"></head><body id="error-page">`+
 		`<div class="wp-die-message"><p><strong>Validation failed.</strong> Nothing was saved.</p><ul>`+li.String()+`</ul></div>`+
-		`<p><a href="javascript:history.back()">Go back and correct the fields.</a></p></body></html>`)
+		`<p><a href="#" id="acfgo-back">Go back and correct the fields.</a></p>`+
+		`<script`+cspNonceAttr()+`>document.getElementById("acfgo-back").addEventListener("click",function(e){e.preventDefault();history.back();});</script></body></html>`)
 	c.Abort()
 }
 

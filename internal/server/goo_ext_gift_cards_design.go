@@ -240,7 +240,8 @@ func (s *Server) gcPrintPage(c *gin.Context) {
 	fmt.Fprintf(&b, `<!doctype html><html><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Gift card</title><style>`+
 		`body{font-family:Arial,sans-serif;margin:0;padding:24px;color:#333}.card{max-width:560px;margin:0 auto;border:3px solid %s;background:%s;border-radius:14px;padding:32px;text-align:center}`+
 		`.code{font-size:28px;font-weight:bold;letter-spacing:3px;margin:12px 0}.amt{font-size:22px;color:%s}.msg{font-style:italic;margin:16px 0}.note{font-size:12px;color:#777;margin-top:18px}`+
-		`.card img{max-width:100%%;max-height:260px;border-radius:8px;margin-bottom:16px}@media print{.noprint{display:none}body{padding:0}}</style></head><body><p class="noprint" style="text-align:center"><button onclick="window.print()">Print</button> <a href="%s">Download PDF</a></p>`+
+		`.card img{max-width:100%%;max-height:260px;border-radius:8px;margin-bottom:16px}@media print{.noprint{display:none}body{padding:0}}</style></head><body><p class="noprint" style="text-align:center"><button type="button" id="gc-print">Print</button> <a href="%s">Download PDF</a></p>`+
+		`<script`+cspNonceAttr()+`>document.getElementById('gc-print').addEventListener('click',function(){window.print();});</script>`+
 		`<div class="card">%s<div style="text-transform:uppercase;letter-spacing:2px;color:%s">%s gift card</div><div class="amt">%s</div>`, d.Accent, d.Bg, d.Accent, html.EscapeString(s.gcPrintURL(ctx, g)+"&format=pdf&download=1"), gcImgTag(imgURL), d.Accent, html.EscapeString(d.Label), html.EscapeString(amount))
 	if g.Sender != "" {
 		fmt.Fprintf(&b, `<p>From %s</p>`, html.EscapeString(g.Sender))

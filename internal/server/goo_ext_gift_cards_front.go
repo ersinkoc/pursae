@@ -145,7 +145,7 @@ func (s *Server) gcRedeemForm(c *gin.Context, where string) template.HTML {
 	} else {
 		// Inside the checkout form: no nested form, the code is sent by fetch.
 		fmt.Fprintf(&b, `<h4 class="wc_gc_add_gift_card_form__title">Have a gift card?</h4><p class="form-row" data-action="%s" data-nonce="%s">%s <button type="button" class="button wc_gc_button">Apply</button></p>`+
-			`<script>(function(){var p=document.currentScript.previousElementSibling;p.querySelector('button').addEventListener('click',function(){var d=new FormData();d.append('goo_module','gift_cards');`+
+			`<script`+cspNonceAttr()+`>(function(){var p=document.currentScript.previousElementSibling;p.querySelector('button').addEventListener('click',function(){var d=new FormData();d.append('goo_module','gift_cards');`+
 			`d.append('wc_gc_cart_code',p.querySelector('input').value);d.append('_wpnonce',p.dataset.nonce);fetch(p.dataset.action,{method:'POST',body:d,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}})`+
 			`.then(function(r){return r.json()}).then(function(r){if(r.result==='success'){location.reload()}else{alert(r.message)}})})})();</script>`,
 			html.EscapeString(home+"?goo-ajax=apply_gift_card"), s.nonce(c, "wc_gc_apply_giftcard"), input)

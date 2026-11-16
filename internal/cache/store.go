@@ -17,6 +17,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"wpgo/internal/cspnonce"
 )
 
 // ErrNotCacheable is returned by [Store.Set] for entries that must never be stored,
@@ -38,6 +39,22 @@ type Entry struct {
 	Created time.Time
 	Expires time.Time
 	Tags    []string
+	// Placeholder is the CSP nonce placeholder (NoncePlaceholder) the entry holds, or "". The
+	// server swaps it for a fresh nonce in every response; an entry stored by another process holds
+	// a placeholder this one does not swap and is not served.
+	Placeholder string
+	// Mode is Options.CSPMode() when the entry was stored: the stored policy header and the delayed-script
+	// loader depend on it, so an entry of another mode is not served.
+	Mode string
+}
+
+// NoncePlaceholder is the per-process CSP nonce placeholder (internal/cspnonce). Bodies holding it
+// are stored uncompressed: the server's swap cannot reach into gzip.
+var NoncePlaceholder = cspnonce.Placeholder
+
+// usable reports whether this process may serve the entry.
+func (e *Entry) usable(mode string) bool {
+	return (e.Placeholder == "" || e.Placeholder == NoncePlaceholder) && e.Mode == mode
 }
 
 func (e *Entry) clone() *Entry {
@@ -227,7 +244,11 @@ func NewEntry(key string, status int, header http.Header, body []byte, tags []st
 	}
 	sum := sha256.Sum256(body)
 	e.ETag = `"` + hex.EncodeToString(sum[:16]) + `"`
-	if len(body) >= 256 {
+	inBody := NoncePlaceholder != "" && bytes.Contains(body, []byte(NoncePlaceholder))
+	if NoncePlaceholder != "" && (inBody || headerHolds(e.Header, NoncePlaceholder)) {
+		e.Placeholder = NoncePlaceholder
+	}
+	if len(body) >= 256 && !inBody {
 		var buf bytes.Buffer
 		zw, _ := gzip.NewWriterLevel(&buf, gzip.DefaultCompression)
 		zw.Write(body)
@@ -717,4 +738,15 @@ func keyBase(key string) string {
 		k = k[:i]
 	}
 	return k
+}
+
+func headerHolds(h http.Header, s string) bool {
+	for _, vs := range h {
+		for _, v := range vs {
+			if strings.Contains(v, s) {
+				return true
+			}
+		}
+	}
+	return false
 }

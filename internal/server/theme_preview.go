@@ -794,7 +794,7 @@ body{display:flex;align-items:center;justify-content:center;font:14px/1.5 -apple
 	}
 	page += `<h1 style="font-size:1.3em;margin:0 0 6px">` + msg + `</h1><p>` + detail + `</p></div>`
 	if !failed {
-		page += `<script>(function(){var u=` + jsString(status) + `;function poll(){fetch(u,{credentials:"same-origin",cache:"no-store"}).then(function(r){return r.json()}).then(function(d){if(d.state==="ready"||d.state==="failed"||d.state==="missing"){location.reload();}else{setTimeout(poll,1000);}}).catch(function(){setTimeout(poll,2000);});}setTimeout(poll,800);})();</script>`
+		page += `<script` + cspNonceAttr() + `>(function(){var u=` + jsString(status) + `;function poll(){fetch(u,{credentials:"same-origin",cache:"no-store"}).then(function(r){return r.json()}).then(function(d){if(d.state==="ready"||d.state==="failed"||d.state==="missing"){location.reload();}else{setTimeout(poll,1000);}}).catch(function(){setTimeout(poll,2000);});}setTimeout(poll,800);})();</script>`
 	}
 	page += `</body></html>`
 	c.Header("Cache-Control", "no-store")

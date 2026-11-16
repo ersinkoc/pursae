@@ -201,7 +201,7 @@ func TestWebBuilderFrontCanvas(t *testing.T) {
 	}
 
 	resp := anonGet(t, wbfURL(base, p))
-	body := bodyOf(resp)
+	body := stripNonces(bodyOf(resp))
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status %d", resp.StatusCode)
 	}
@@ -416,9 +416,9 @@ func TestWebBuilderFrontPageCache(t *testing.T) {
 	p := wbfPage(t, srv, "page", "Cached WB", []string{"embed"}, ".a{color:red}", extra)
 
 	first := anonGet(t, wbfURL(base, p))
-	b1 := bodyOf(first)
+	b1 := stripNonces(bodyOf(first))
 	second := anonGet(t, wbfURL(base, p))
-	b2 := bodyOf(second)
+	b2 := stripNonces(bodyOf(second))
 	if first.StatusCode != http.StatusOK || !strings.Contains(b1, wbfSnapshotMark) {
 		t.Fatalf("first view: %d", first.StatusCode)
 	}

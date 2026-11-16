@@ -255,7 +255,7 @@ func gooCmpFooter(s *Server, c *gin.Context) template.HTML {
 	}
 	return template.HTML(`<link rel="stylesheet" id="goo-ext-compare-css" href="`+gooAssets+`/css/ext-compare.css?ver=`+gooAssetVer()+`" media="all">`) +
 		s.gooCmpBar(c) +
-		template.HTML(`<script src="`+gooAssets+`/js/ext-compare.js?ver=`+gooAssetVer()+`" id="goo-ext-compare-js" data-endpoint="`+
+		template.HTML(`<script`+cspNonceAttr()+` src="`+gooAssets+`/js/ext-compare.js?ver=`+gooAssetVer()+`" id="goo-ext-compare-js" data-endpoint="`+
 			gooEsc(s.links(c).HomeURL("/?goo-ajax=compare_toggle"))+`" defer></script>`)
 }
 

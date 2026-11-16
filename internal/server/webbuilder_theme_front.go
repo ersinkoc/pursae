@@ -195,7 +195,7 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	}
 	if len(popups) > 0 {
 		css.WriteString(wbPopupCSS)
-		v.Footer += template.HTML(popupHTML.String() + wbPopupJS)
+		v.Footer += template.HTML(popupHTML.String() + wbPopupJS())
 	}
 	site, err := s.wbSiteAssets()
 	if err != nil {
@@ -206,7 +206,7 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 
 	var head strings.Builder
 	if runtime { // the runtime's hiding rules apply only when it will run (content stays readable without JS)
-		head.WriteString("<script>document.documentElement.classList.add('" + webbuilder.ClassJS + "')</script>\n")
+		head.WriteString("<script" + cspNonceAttr() + ">document.documentElement.classList.add('" + webbuilder.ClassJS + "')</script>\n")
 	}
 	head.WriteString(string(v.Head))
 	// Commerce widgets on a page that is not a store view: the store's styles and scripts
@@ -231,7 +231,7 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 		v.Footer += template.HTML(s.gooStoreScripts(c, v.Q))
 	}
 	if runtime {
-		v.Footer += template.HTML(fmt.Sprintf("<script defer src=\"%s\" id=\"web-builder-runtime-js\"></script>\n",
+		v.Footer += template.HTML(fmt.Sprintf("<script%s defer src=\"%s\" id=\"web-builder-runtime-js\"></script>\n", cspNonceAttr(),
 			html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.Runtime))))
 	}
 	if v.AdminBar != "" {

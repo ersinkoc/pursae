@@ -495,7 +495,7 @@ func (s *Server) asyncUpload(c *gin.Context) {
 	}
 	a, err := s.saveUpload(c, "async-upload", postID)
 	if err != nil {
-		c.String(http.StatusOK, `<div class="error-div error"><button type="button" class="dismiss button-link" onclick="jQuery(this).parents('div.media-item').slideUp(200, function(){jQuery(this).remove();});">Dismiss</button><strong>`+html.EscapeString(err.Error())+`</strong></div>`)
+		c.String(http.StatusOK, `<div class="error-div error"><button type="button" class="dismiss button-link" data-action="remove" data-target="div.media-item">Dismiss</button><strong>`+html.EscapeString(err.Error())+`</strong></div>`)
 		return
 	}
 	c.String(http.StatusOK, itoa64(a.ID))

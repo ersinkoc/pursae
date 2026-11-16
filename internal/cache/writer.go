@@ -252,10 +252,15 @@ func (cw *captureWriter) finish() {
 	cw.restoreHeaders()
 	body := cw.buf.Bytes()
 	opt := cw.c.cfg.Optimize
+	mode := cw.c.cspMode()
+	opt.strictNonce = mode == "enforce"
 	if cw.html && opt.enabled() && (cw.status == http.StatusOK || cw.status == http.StatusNotFound) {
 		body = Optimize(body, opt)
 	}
 	e, err := NewEntry(cw.d.Key, cw.status, cw.w.Header(), body, cw.tags, cw.start, cw.ttl)
+	if err == nil {
+		e.Mode = mode
+	}
 	if err != nil {
 		// Unreachable in practice: storableTTL already rejected Set-Cookie.
 		cw.releaseFlight()

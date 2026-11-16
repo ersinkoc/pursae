@@ -469,8 +469,8 @@ func renderArchives(ctx context.Context, b *blocks.Block, _ string) string {
 			fmt.Fprintf(&opts, "\t<option value='%s'> %s </option>\n", html.EscapeString(rc.lb.MonthLink(m.Year, m.Month)), text)
 		}
 		return fmt.Sprintf(`<div %s><label for="%s" class="%s">Archives</label>
-		<select id="%s" name="archive-dropdown" onchange="document.location.href=this.options[this.selectedIndex].value;">
-		<option value="">Select Month</option>%s</select></div>`, wrapperClass(b, "wp-block-archives-dropdown"), id, labelClass, id, opts.String())
+		<select id="%s" name="archive-dropdown">
+		<option value="">Select Month</option>%s</select><script%s>(function(){var d=document.getElementById(%s);if(d){d.addEventListener("change",function(){var v=this.options[this.selectedIndex].value;if(v){document.location.href=v;}});}})();</script></div>`, wrapperClass(b, "wp-block-archives-dropdown"), id, labelClass, id, opts.String(), cspNonceAttr(), strconvQuote(id))
 	}
 	if len(months) == 0 {
 		return fmt.Sprintf(`<div %s>No archives to show.</div>`, wrapperClass(b, "wp-block-archives-list"))

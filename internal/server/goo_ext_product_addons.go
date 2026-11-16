@@ -481,7 +481,7 @@ func paoAdjusted(a paoAddon) float64 {
 }
 
 // paoJS computes "Options total" and "Grand total" and uploads files (/?goo-ajax=addon_upload).
-const paoJS = `<script>(function(){var box=document.currentScript.previousElementSibling;if(!box||box.dataset.paoInit)return;box.dataset.paoInit=1;
+var paoJS = `<script` + cspNonceAttr() + `>(function(){var box=document.currentScript.previousElementSibling;if(!box||box.dataset.paoInit)return;box.dataset.paoInit=1;
 var form=box.closest('form')||document,tot=box.querySelector('#product-addons-total');
 function money(v){var t=tot?tot.dataset.currency:'';var n=v.toFixed(tot?+tot.dataset.decimals:2);return t.replace(/[0-9.,]+/,n)}
 function labels(n){var out=[];form.querySelectorAll('[name="'+n+'"],[name="'+n+'[]"]').forEach(function(f){if(f.disabled)return;

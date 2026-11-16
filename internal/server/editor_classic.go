@@ -38,17 +38,24 @@ func classicEditor() (markup, js, link string) {
 
 const tinymceVersion = "49110-20250317"
 
+// classicEditorJSStr escapes a value put inside a double-quoted string of the editor's nonced inline
+// scripts (post type and status, theme editor-style URLs), so it cannot end the string or the script.
+var classicEditorJSStr = strings.NewReplacer(`\`, `\\`, `"`, `\"`, `'`, `\'`, "<", `\u003C`, ">", `\u003E`, "&", `\u0026`, "\n", `\n`, "\r", `\r`, "\u2028", `\u2028`, "\u2029", `\u2029`)
+
 // wpEditor returns the editor markup for the post content and queues TinyMCE's settings, scripts and the
 // link dialog after the footer scripts (admin_print_footer_scripts priority 50 in WordPress).
 func (s *Server) wpEditor(c *gin.Context, p *store.Post) template.HTML {
 	markup, js, link := classicEditor()
+	// The three inline scripts of the embedded asset (tinyMCEPreInit, addI18n, init) are ours: give
+	// them the CSP nonce before any per-request value goes in.
+	js = strings.ReplaceAll(js, "<script>", "<script"+cspNonceAttr()+">")
 	markup = strings.Replace(markup, "POSTCONTENT", html.EscapeString(p.Content), 1)
 
 	bodyClass := "content post-type-" + p.Type + " post-status-" + p.Status
 	if f := store.CanonicalPostFormat(p.Format); f != "standard" {
 		bodyClass += " post-format-" + f
 	}
-	js = strings.Replace(js, "content post-type-post post-status-draft", bodyClass, 1)
+	js = strings.Replace(js, "content post-type-post post-status-draft", classicEditorJSStr.Replace(bodyClass), 1)
 	// Like class-wp-editor.php: 'wpautop' => ! has_blocks(), so block markup survives the visual editor.
 	if blocks.HasBlocks(p.Content) {
 		js = strings.Replace(js, "wpautop:true", "wpautop:false", 1)
@@ -59,9 +66,9 @@ func (s *Server) wpEditor(c *gin.Context, p *store.Post) template.HTML {
 		themeCSS += "," + theme.URI() + "/" + f + "?ver=" + theme.Version
 	}
 	themeCSS += ",/wp-includes/css/wpgo-editor-neutral.css?ver=1"
-	js = strings.Replace(js, `wp-content.css?ver=7.1.3"`, `wp-content.css?ver=7.1.3`+themeCSS+`"`, 1)
-	js = strings.Replace(js, "<script>\ntinymce.addI18n",
-		`<script src="/wp-includes/js/tinymce/wp-tinymce.js?ver=`+tinymceVersion+`"></script>`+"\n<script>\ntinymce.addI18n", 1)
+	js = strings.Replace(js, `wp-content.css?ver=7.1.3"`, `wp-content.css?ver=7.1.3`+classicEditorJSStr.Replace(themeCSS)+`"`, 1)
+	js = strings.Replace(js, "<script"+cspNonceAttr()+">\ntinymce.addI18n",
+		`<script`+cspNonceAttr()+` src="/wp-includes/js/tinymce/wp-tinymce.js?ver=`+tinymceVersion+`"></script>`+"\n<script"+cspNonceAttr()+">\ntinymce.addI18n", 1)
 	link = strings.Replace(link, "NONCE:internal-linking", s.nonce(c, "internal-linking"), 1)
 	addLateFooterHTML(c, template.HTML(js+"\n"+link))
 

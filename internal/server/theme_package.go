@@ -733,7 +733,7 @@ func (pkg *themePackage) head(s *Server, c *gin.Context, v *siteView) string {
 	sb.WriteString(inlineStyle(v.Theme.Slug+"-vars", pkg.cssVars(v)))
 	for _, sc := range pkg.scripts {
 		if !sc.InFooter {
-			fmt.Fprintf(&sb, "<script src=\"%s\" id=\"%s-js\"></script>\n", html.EscapeString(pkg.assetURL(v.Theme, sc.Src)), sc.Handle)
+			fmt.Fprintf(&sb, "<script%s src=\"%s\" id=\"%s-js\"></script>\n", cspNonceAttr(), html.EscapeString(pkg.assetURL(v.Theme, sc.Src)), sc.Handle)
 		}
 	}
 	return sb.String()
@@ -743,7 +743,7 @@ func (pkg *themePackage) footer(s *Server, c *gin.Context, v *siteView) string {
 	var sb strings.Builder
 	for _, sc := range pkg.scripts {
 		if sc.InFooter {
-			fmt.Fprintf(&sb, "<script src=\"%s\" id=\"%s-js\"></script>\n", html.EscapeString(pkg.assetURL(v.Theme, sc.Src)), sc.Handle)
+			fmt.Fprintf(&sb, "<script%s src=\"%s\" id=\"%s-js\"></script>\n", cspNonceAttr(), html.EscapeString(pkg.assetURL(v.Theme, sc.Src)), sc.Handle)
 		}
 	}
 	if v.Customize != nil {
@@ -757,8 +757,8 @@ func (pkg *themePackage) footer(s *Server, c *gin.Context, v *siteView) string {
 			cfg["mod:"+st.ID] = map[string]any{"type": st.Type, "css_var": st.CSSVar, "body_class": st.BodyClass, "default": def}
 		}
 		b, _ := json.Marshal(map[string]any{"settings": cfg})
-		sb.WriteString("<script id=\"wpgo-theme-preview-js-extra\">var wpgoThemePreview = " + strings.ReplaceAll(string(b), "<", "\\u003c") + ";</script>\n")
-		sb.WriteString("<script src=\"/wp-includes/js/wpgo-theme-preview.js?ver=" + Version + "\" id=\"wpgo-theme-preview-js\" defer></script>\n")
+		sb.WriteString("<script" + cspNonceAttr() + " id=\"wpgo-theme-preview-js-extra\">var wpgoThemePreview = " + strings.ReplaceAll(string(b), "<", "\\u003c") + ";</script>\n")
+		sb.WriteString("<script" + cspNonceAttr() + " src=\"/wp-includes/js/wpgo-theme-preview.js?ver=" + Version + "\" id=\"wpgo-theme-preview-js\" defer></script>\n")
 	}
 	return sb.String()
 }

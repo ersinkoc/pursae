@@ -117,7 +117,7 @@ func init() {
 		if charge != "" {
 			out += `<p class="wc-pre-orders-charge-message">` + gooEsc(charge) + `</p>`
 		}
-		out += `</div><script>(function(){var b=document.querySelectorAll('form.cart .single_add_to_cart_button');for(var i=0;i<b.length;i++){b[i].textContent=` +
+		out += `</div><script` + cspNonceAttr() + `>(function(){var b=document.querySelectorAll('form.cart .single_add_to_cart_button');for(var i=0;i<b.length;i++){b[i].textContent=` +
 			btn + `;b[i].classList.add('wc-pre-orders-button');}})();</script>`
 		return template.HTML(out)
 	})

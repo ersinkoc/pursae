@@ -84,7 +84,7 @@ func init() {
 			return ""
 		}
 		return template.HTML(`<link rel="stylesheet" id="goo-ext-wishlist-css" href="` + gooAssets + `/css/ext-wishlist.css?ver=` + gooAssetVer() + `" media="all">` +
-			`<script src="` + gooAssets + `/js/ext-wishlist.js?ver=` + gooAssetVer() + `" id="goo-ext-wishlist-js" data-endpoint="` +
+			`<script` + cspNonceAttr() + ` src="` + gooAssets + `/js/ext-wishlist.js?ver=` + gooAssetVer() + `" id="goo-ext-wishlist-js" data-endpoint="` +
 			gooEsc(s.links(c).HomeURL("/?goo-ajax=wishlist_toggle")) + `" defer></script>`)
 	})
 	gooFrontRoutes = append(gooFrontRoutes, gooWLRoute)
@@ -742,8 +742,10 @@ func (s *Server) gooWLTable(c *gin.Context, w *gooWishlist, owner bool) template
 		if w.Privacy != "private" {
 			share := s.gooWLShareURL(ctx, w)
 			b.WriteString(`<p class="goo-wishlist-share"><label for="goo-wishlist-share-` + itoa64(w.ID) + `">Share this wishlist</label> <input type="text" readonly id="goo-wishlist-share-` +
-				itoa64(w.ID) + `" class="input-text" value="` + gooEsc(share) + `" onfocus="this.select()"> <a class="button" href="mailto:?subject=` +
-				url.PathEscape(w.Title) + `&amp;body=` + url.PathEscape(share) + `">Email</a></p>`)
+				itoa64(w.ID) + `" class="input-text" value="` + gooEsc(share) + `"> <a class="button" href="mailto:?subject=` +
+				url.PathEscape(w.Title) + `&amp;body=` + url.PathEscape(share) + `">Email</a></p>` +
+				`<script` + cspNonceAttr() + `>(function(){var i=document.getElementById('goo-wishlist-share-` + itoa64(w.ID) +
+				`');if(i){i.addEventListener('focus',function(){i.select();});}})();</script>`)
 		} else {
 			b.WriteString(`<p class="goo-wishlist-private">This wishlist is private. Make it shared or public to get a link you can send.</p>`)
 		}

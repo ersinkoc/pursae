@@ -60,14 +60,14 @@ func (s *Server) wbFormCaptchas(c *gin.Context, h string) string {
 	c.Set("wb.formcaptcha", true)
 	var b strings.Builder
 	if tsOn {
-		b.WriteString(`<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" id="wb-turnstile-js" async defer></script>`)
+		b.WriteString(`<script` + cspNonceAttr() + ` src="https://challenges.cloudflare.com/turnstile/v0/api.js" id="wb-turnstile-js" async defer></script>`)
 		cspAllow(c, "script-src", "https://challenges.cloudflare.com")
 		cspAllow(c, "frame-src", "https://challenges.cloudflare.com")
 	}
 	if rcSite != "" {
-		b.WriteString(`<script src="https://www.google.com/recaptcha/api.js?render=` + html.EscapeString(rcSite) + `" id="wb-recaptcha-js" async defer></script>`)
+		b.WriteString(`<script` + cspNonceAttr() + ` src="https://www.google.com/recaptcha/api.js?render=` + html.EscapeString(rcSite) + `" id="wb-recaptcha-js" async defer></script>`)
 		key, _ := json.Marshal(rcSite)
-		b.WriteString(`<script id="wb-recaptcha-run">(function(k){document.addEventListener("submit",function(e){` +
+		b.WriteString(`<script` + cspNonceAttr() + ` id="wb-recaptcha-run">(function(k){document.addEventListener("submit",function(e){` +
 			`var f=e.target;if(!f||!f.matches||!f.matches("form[data-wb-form]")||f.dataset.wbRc)return;` +
 			`var i=f.querySelector("input[name=g-recaptcha-response]");if(!i||!window.grecaptcha)return;` +
 			`e.preventDefault();e.stopImmediatePropagation();` +
@@ -79,7 +79,7 @@ func (s *Server) wbFormCaptchas(c *gin.Context, h string) string {
 	}
 	if tsOn {
 		// A Turnstile token is single use: renew it after every attempt (the runtime has read the form by then).
-		b.WriteString(`<script id="wb-turnstile-reset">document.addEventListener("submit",function(e){var f=e.target;` +
+		b.WriteString(`<script` + cspNonceAttr() + ` id="wb-turnstile-reset">document.addEventListener("submit",function(e){var f=e.target;` +
 			`if(!f||!f.matches||!f.matches("form[data-wb-form]"))return;setTimeout(function(){var w=f.querySelector(".cf-turnstile");` +
 			`if(w&&window.turnstile)try{turnstile.reset(w)}catch(x){}},1500)})</script>`)
 	}
@@ -134,7 +134,7 @@ func (s *Server) wbFormRedirects(c *gin.Context, d *store.WebBuilderDoc, h strin
 		return strings.TrimSuffix(tag, ">") + ` data-wb-redirect="` + html.EscapeString(to) + `">`
 	})
 	if used {
-		h += `<script id="wb-form-redirect">new MutationObserver(function(l){l.forEach(function(r){var f=r.target;` +
+		h += `<script` + cspNonceAttr() + ` id="wb-form-redirect">new MutationObserver(function(l){l.forEach(function(r){var f=r.target;` +
 			`if(f.dataset&&f.dataset.wbState==="sent"&&f.dataset.wbRedirect)setTimeout(function(){location.href=f.dataset.wbRedirect},800)})})` +
 			`.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:["data-wb-state"]})</script>`
 	}

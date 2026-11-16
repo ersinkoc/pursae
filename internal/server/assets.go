@@ -178,11 +178,11 @@ func (s *Server) scriptTags(c *gin.Context, a *assets, footer bool) template.HTM
 		}
 		printed[h] = true
 		if d, ok := r.Data.(string); ok && d != "" {
-			fmt.Fprintf(&sb, "<script id=\"%s-js-extra\">\n%s\n</script>\n", h, s.fillPlaceholders(c, h, d))
+			fmt.Fprintf(&sb, "<script%s id=\"%s-js-extra\">\n%s\n</script>\n", cspNonceAttr(), h, s.fillPlaceholders(c, h, d))
 		}
 		before := append(inlineList(r.Before), a.before[h]...)
 		if len(before) > 0 {
-			fmt.Fprintf(&sb, "<script id=\"%s-js-before\">\n%s\n</script>\n", h, s.fillPlaceholders(c, h, strings.Join(before, "\n")))
+			fmt.Fprintf(&sb, "<script%s id=\"%s-js-before\">\n%s\n</script>\n", cspNonceAttr(), h, s.fillPlaceholders(c, h, strings.Join(before, "\n")))
 		}
 		if src := s.assetSrc(srcString(r.Src)); src != "" {
 			sb.WriteString(s.scriptTranslations(c, h, src))
@@ -190,11 +190,11 @@ func (s *Server) scriptTags(c *gin.Context, a *assets, footer bool) template.HTM
 			if st, ok := r.Strategy.(string); ok && st != "" {
 				extra = fmt.Sprintf(" %s data-wp-strategy=\"%s\"", st, st)
 			}
-			fmt.Fprintf(&sb, "<script src=\"%s?ver=%s\" id=\"%s-js\"%s></script>\n", html.EscapeString(src), html.EscapeString(verString(r.Ver)), h, extra)
+			fmt.Fprintf(&sb, "<script%s src=\"%s?ver=%s\" id=\"%s-js\"%s></script>\n", cspNonceAttr(), html.EscapeString(src), html.EscapeString(verString(r.Ver)), h, extra)
 		}
 		after := append(s.afterFor(c, h, inlineList(r.After)), a.inline[h]...)
 		if len(after) > 0 {
-			fmt.Fprintf(&sb, "<script id=\"%s-js-after\">\n%s\n</script>\n", h, s.fillPlaceholders(c, h, strings.Join(after, "\n")))
+			fmt.Fprintf(&sb, "<script%s id=\"%s-js-after\">\n%s\n</script>\n", cspNonceAttr(), h, s.fillPlaceholders(c, h, strings.Join(after, "\n")))
 		}
 	}
 	return template.HTML(sb.String())
@@ -376,5 +376,5 @@ func (s *Server) buildImportMap() string {
 		return ""
 	}
 	raw, _ := json.Marshal(map[string]any{"imports": imports})
-	return `<script type="importmap" id="wp-importmap">` + string(raw) + "</script>\n"
+	return `<script type="importmap"` + cspNonceAttr() + ` id="wp-importmap">` + string(raw) + "</script>\n"
 }

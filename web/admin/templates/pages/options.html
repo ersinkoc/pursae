@@ -96,7 +96,7 @@ Anyone can register</label></fieldset></td></tr>
 	<li><label for="page_for_posts">Posts page: <select name="page_for_posts" id="page_for_posts"><option value="0">&mdash; Select &mdash;</option>{{range .Pages}}<option class="level-0" value="{{.ID}}"{{if eq .ID (settingID "page_for_posts")}} selected="selected"{{end}}>{{.Title}}</option>{{end}}</select></label></li>
 </ul>
 </fieldset>
-<script>
+<script {{cspNonce}}>
 	jQuery( function( $ ) {
 		var section = $( '#front-static-pages' ), staticPage = section.find( 'input:radio[value="page"]' ), selects = section.find( 'select' ),
 			check_disabled = function() { selects.prop( 'disabled', ! staticPage.prop( 'checked' ) ); };

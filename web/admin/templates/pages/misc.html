@@ -27,7 +27,7 @@
 {{end}}
 {{if .Previous}}
 <h2>Previous version</h2>
-<form method="post" action="/wp-admin/update-core?action=do-core-reinstall" name="reinstall" class="upgrade" onsubmit="return confirm('Reinstall Pursae {{.Previous}}? Database changes made by {{.Version}} are not undone, so features of {{.Version}} may stop working until you update again.')">
+<form method="post" action="/wp-admin/update-core?action=do-core-reinstall" name="reinstall" class="upgrade" data-confirm="Reinstall Pursae {{.Previous}}? Database changes made by {{.Version}} are not undone, so features of {{.Version}} may stop working until you update again.">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
 <p>This site was updated from Pursae {{.Previous}}.{{if .PreviousKept}} Its binary is kept on this server until {{.PreviousKept}}, so going back needs no download.{{else}} Going back downloads its signed build from Pursae Manager again.{{end}} Database migrations of {{.Version}} are not undone.</p>
 <p><input name="version" value="{{.Previous}}" type="hidden" /><input type="submit" name="reinstall" id="reinstall" class="button" value="Reinstall version {{.Previous}}" /></p>
@@ -106,7 +106,7 @@
 <h1>Pursae Updates</h1>
 <div class="notice notice-success inline"><p>{{if .Reinstall}}Reinstalled Pursae {{.Version}}{{else}}Updated to Pursae {{.Version}}{{end}}, restarting&hellip;</p></div>
 <p>The new version is starting. This page goes back to Dashboard &rsaquo; Updates in a few seconds; if it does not, <a href="/wp-admin/update-core">reload it</a>.</p>
-<script>setTimeout(function(){location.href="/wp-admin/update-core"},6000)</script>
+<script {{cspNonce}}>setTimeout(function(){location.href="/wp-admin/update-core"},6000)</script>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}
 
@@ -486,7 +486,7 @@
 	</div>
 </div>
 {{end}}
-<script>
+<script {{cspNonce}}>
 ( function() {
 	// The parts of wp-admin/js/site-health.js that apply to server-rendered results.
 	document.querySelectorAll( '.health-check-accordion' ).forEach( function( acc ) {
@@ -777,7 +777,7 @@
 	</div>
 	<div>
 		<div class="editor-notices"></div>
-		{{if .Editable}}<p class="description">Saved changes apply immediately; nothing has to be rebuilt. The edited copy is stored in <code>{{.OverrideDir}}</code> and layered over the file bundled with Pursae. Template changes that do not parse or that break the site are rolled back.{{if .Edited}} This file has been edited. <a href="{{.RestoreURL}}" onclick="return confirm('Restore the original file? Your changes to it will be lost.');">Restore original</a>{{end}}</p>
+		{{if .Editable}}<p class="description">Saved changes apply immediately; nothing has to be rebuilt. The edited copy is stored in <code>{{.OverrideDir}}</code> and layered over the file bundled with Pursae. Template changes that do not parse or that break the site are rolled back.{{if .Edited}} This file has been edited. <a href="{{.RestoreURL}}" data-confirm="Restore the original file? Your changes to it will be lost.">Restore original</a>{{end}}</p>
 		<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Update File" /><span class="spinner"></span></p>
 		{{else if eq .Kind "theme"}}<p>Theme file editing is disabled on this site.</p>{{else}}<p>This file is part of a signed plugin package and cannot be changed here.</p>{{end}}
 	</div>
@@ -900,7 +900,7 @@
 	{{end}}
 	</div>
 </div>
-<script>
+<script {{cspNonce}}>
 ( function() {
 	document.querySelectorAll( '.privacy-settings-accordion-trigger' ).forEach( function( btn ) {
 		btn.addEventListener( 'click', function() {
@@ -928,7 +928,7 @@
 <li><a href="/wp-admin/scheduled-actions"{{if eq .Status ""}} class="current" aria-current="page"{{end}}>All <span class="count">({{.Total}})</span></a>{{range $st := .Statuses}} | </li>
 <li><a href="/wp-admin/scheduled-actions?status={{$st}}"{{if eq $.Data.Status $st}} class="current" aria-current="page"{{end}}>{{$st}} <span class="count">({{index $.Data.Counts $st}})</span></a>{{end}}</li>
 </ul>
-{{if index .Counts "failed"}}<form method="post" action="/wp-admin/scheduled-actions" class="alignright" onsubmit="return confirm('Delete all failed actions?');"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="do" value="delete-failed" /><input type="submit" class="button" value="Delete all failed" /></form>{{end}}
+{{if index .Counts "failed"}}<form method="post" action="/wp-admin/scheduled-actions" class="alignright" data-confirm="Delete all failed actions?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="do" value="delete-failed" /><input type="submit" class="button" value="Delete all failed" /></form>{{end}}
 <table class="wp-list-table widefat fixed striped table-view-list">
 <thead><tr><th scope="col" class="manage-column column-primary">Hook</th><th scope="col">Status</th><th scope="col">Next / last run</th><th scope="col">Recurrence</th><th scope="col">Attempts</th><th scope="col">Last error</th><th scope="col">Actions</th></tr></thead>
 <tbody>
@@ -951,11 +951,11 @@
 
 <h2>Connect an AI tool</h2>
 <table class="form-table" role="presentation"><tbody>
-<tr><th scope="row">MCP endpoint</th><td><input type="text" class="large-text code" readonly value="{{.Endpoint}}" onclick="this.select()" /><p class="description">Streamable HTTP. Clients that support remote servers sign in with OAuth on their own: add the endpoint and approve the consent screen.</p></td></tr>
-<tr><th scope="row">Remote server config</th><td><textarea class="large-text code" rows="8" readonly onclick="this.select()">{{.RemoteConfig}}</textarea></td></tr>
+<tr><th scope="row">MCP endpoint</th><td><input type="text" class="large-text code" readonly value="{{.Endpoint}}" data-select-on-focus /><p class="description">Streamable HTTP. Clients that support remote servers sign in with OAuth on their own: add the endpoint and approve the consent screen.</p></td></tr>
+<tr><th scope="row">Remote server config</th><td><textarea class="large-text code" rows="8" readonly data-select-on-focus>{{.RemoteConfig}}</textarea></td></tr>
 <tr><th scope="row">Local bridge</th><td><p>For clients that only start local (stdio) servers, sign in once on this computer, then use the bridge:</p>
-<p><input type="text" class="large-text code" readonly value="wpgo mcp login --url {{.SiteURL}}" onclick="this.select()" /></p>
-<textarea class="large-text code" rows="8" readonly onclick="this.select()">{{.BridgeConfig}}</textarea>
+<p><input type="text" class="large-text code" readonly value="wpgo mcp login --url {{.SiteURL}}" data-select-on-focus /></p>
+<textarea class="large-text code" rows="8" readonly data-select-on-focus>{{.BridgeConfig}}</textarea>
 <p class="description">Or create an <a href="/wp-admin/profile#application-passwords-section">Application Password</a> with only the scopes the tool needs and pass <code>--user</code> and <code>--password</code>.</p></td></tr>
 </tbody></table>
 
@@ -978,7 +978,7 @@
 <input type="search" name="client" id="ai-client" value="{{.Client}}" placeholder="Client" />
 <input type="submit" class="button" value="Filter" />
 </form>
-{{if .Total}}<form method="post" action="/wp-admin/ai-access" class="alignleft actions" onsubmit="return confirm('Clear the whole activity log?');"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="do" value="clear-log" /><input type="submit" class="button" value="Clear log" /></form>{{end}}
+{{if .Total}}<form method="post" action="/wp-admin/ai-access" class="alignleft actions" data-confirm="Clear the whole activity log?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="do" value="clear-log" /><input type="submit" class="button" value="Clear log" /></form>{{end}}
 <div class="tablenav-pages"><span class="displaying-num">{{.Total}} items</span>{{if gt .Pages 1}} <span class="pagination-links">{{if gt .Page 1}}<a class="prev-page button" href="{{.PrevURL}}"><span aria-hidden="true">&lsaquo;</span><span class="screen-reader-text">Previous page</span></a>{{end}} <span class="paging-input">{{.Page}} of {{.Pages}}</span> {{if lt .Page .Pages}}<a class="next-page button" href="{{.NextURL}}"><span aria-hidden="true">&rsaquo;</span><span class="screen-reader-text">Next page</span></a>{{end}}</span>{{end}}</div>
 <br class="clear" />
 </div>

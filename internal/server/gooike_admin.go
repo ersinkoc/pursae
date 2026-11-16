@@ -256,7 +256,7 @@ func (s *Server) gooikeRender(c *gin.Context, page string, scan *gooikeScanResul
 				if st.Scripts[i].ID == id {
 					sc := st.Scripts[i]
 					d.EditScript = &sc
-					d.ScriptCode = sc.code()
+					d.ScriptCode = sc.codeWith("") // shown as text: without the nonce attribute
 				}
 			}
 		}
@@ -725,9 +725,9 @@ func (s *Server) gooikePreview(c *gin.Context) {
 	b.WriteString(`<header class="pv-head"><strong>` + template.HTMLEscapeString(s.settings.String("blogname")) + `</strong><nav><span></span><span></span><span></span></nav></header>`)
 	b.WriteString(`<main class="pv-main"><div class="pv-hero"></div><h1>Welcome to our site</h1><p class="pv-line"></p><p class="pv-line short"></p><div class="pv-cards"><div></div><div></div><div></div></div><p class="pv-line"></p><p class="pv-line"></p><p class="pv-line short"></p></main>`)
 	b.WriteString(s.gooikeMarkup(c, &st, true))
-	cfg := strings.Replace(gooikeConfigScript(&st, true), `"preview":true`, `"preview":true,"open":"`+open+`"`, 1)
+	cfg := strings.Replace(gooikeConfigScript(&st, true, false), `"preview":true`, `"preview":true,"open":"`+open+`"`, 1)
 	b.WriteString(cfg)
-	b.WriteString(`<script src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" defer></script></body></html>`)
+	b.WriteString(`<script` + cspNonceAttr() + ` src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" defer></script></body></html>`)
 	c.Header("Cache-Control", "no-store")
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(b.String()))
 }

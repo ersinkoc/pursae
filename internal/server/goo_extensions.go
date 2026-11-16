@@ -426,7 +426,7 @@ func (s *Server) gooExtFieldsHTML(ctx context.Context, fields []gooField, vals m
 
 // gooImageFieldJS drives the module settings' image fields: the Media Library modal fills the
 // attachment ID and the preview.
-const gooImageFieldJS = `<script>jQuery(function($){$('.goo-image-field').each(function(){var $w=$(this),$i=$w.find('input'),$p=$w.find('.goo-image-preview'),frame;` +
+var gooImageFieldJS = `<script` + cspNonceAttr() + `>jQuery(function($){$('.goo-image-field').each(function(){var $w=$(this),$i=$w.find('input'),$p=$w.find('.goo-image-preview'),frame;` +
 	`$w.find('.goo-image-select').on('click',function(e){e.preventDefault();if(!window.wp||!wp.media){return}if(!frame){frame=wp.media({title:$w.data('title'),library:{type:'image'},button:{text:'Use this image'},multiple:false});` +
 	`frame.on('select',function(){var a=frame.state().get('selection').first().toJSON(),u=(a.sizes&&a.sizes.medium?a.sizes.medium.url:a.url);$i.val(a.id);$p.empty().append($('<img alt="" style="max-width:150px;max-height:100px;display:block;margin-bottom:6px">').attr('src',u))})}frame.open()});` +
 	`$w.find('.goo-image-remove').on('click',function(e){e.preventDefault();$i.val('');$p.empty()})})});</script>`

@@ -99,8 +99,8 @@ func wbEditorHTML(title, lang, dir, base string, entry webbuilder.ManifestEntry,
 	}
 	b.WriteString("</head>\n<body>\n<div id=\"root\"></div>\n")
 	b.WriteString("<noscript>Pursae Web Builder needs JavaScript.</noscript>\n")
-	b.WriteString("<script>window." + webbuilder.BootGlobal + " = " + boot + ";</script>\n")
-	b.WriteString("<script type=\"module\" src=\"" + html.EscapeString(base+entry.JS) + "\"></script>\n")
+	b.WriteString("<script" + cspNonceAttr() + ">window." + webbuilder.BootGlobal + " = " + boot + ";</script>\n")
+	b.WriteString("<script" + cspNonceAttr() + " type=\"module\" src=\"" + html.EscapeString(base+entry.JS) + "\"></script>\n")
 	b.WriteString("</body>\n</html>\n")
 	return b.String()
 }

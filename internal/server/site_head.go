@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"html/template"
@@ -125,26 +126,33 @@ func (s *Server) wpHead(c *gin.Context, q *siteQuery, lb *links.Builder, adminBa
 	sb.WriteString(string(s.pluginStyleTags("front", "")) + string(s.pluginScriptTags("front", false))) // plugin assets
 	// Wasm plugins (content:filter): the filter receives the head markup so far and returns it with
 	// their additions; without content:html the additions are sanitised like any content filter.
-	return template.HTML(s.applyFilters(c.Request.Context(), "wp_head", sb.String()).(string))
+	return template.HTML(s.filterNoncedMarkup(c.Request.Context(), "wp_head", sb.String()))
+}
+
+// filterNoncedMarkup runs a Wasm content filter over markup that holds trusted nonced scripts;
+// applyFilters hides the nonce placeholder from the plugin (maskNoncePlaceholder).
+func (s *Server) filterNoncedMarkup(ctx context.Context, name, markup string) string {
+	out, _ := s.applyFilters(ctx, name, markup).(string)
+	return out
 }
 
 // wpFooter is wp_footer(): comment-reply on singular views with threaded comments, and the admin bar script.
 func (s *Server) wpFooter(c *gin.Context, q *siteQuery, lb *links.Builder, adminBar bool) template.HTML {
 	var sb strings.Builder
 	if (q.Kind == "single" || q.Kind == "page" || q.Kind == "front-page") && q.Post != nil && s.commentsOpen(q.Post) && s.settings.Bool("thread_comments") {
-		sb.WriteString("<script src=\"/wp-includes/js/comment-reply.min.js?ver=" + Version + "\" id=\"comment-reply-js\" async data-wp-strategy=\"async\"></script>\n")
+		sb.WriteString("<script" + cspNonceAttr() + " src=\"/wp-includes/js/comment-reply.min.js?ver=" + Version + "\" id=\"comment-reply-js\" async data-wp-strategy=\"async\"></script>\n")
 	}
 	if adminBar {
-		sb.WriteString("<script src=\"/wp-includes/js/hoverintent-js.min.js?ver=2.2.1\" id=\"hoverintent-js-js\"></script>\n") // admin-bar.js dependency
-		sb.WriteString("<script src=\"/wp-includes/js/admin-bar.min.js?ver=" + Version + "\" id=\"admin-bar-js\"></script>\n")
+		sb.WriteString("<script" + cspNonceAttr() + " src=\"/wp-includes/js/hoverintent-js.min.js?ver=2.2.1\" id=\"hoverintent-js-js\"></script>\n") // admin-bar.js dependency
+		sb.WriteString("<script" + cspNonceAttr() + " src=\"/wp-includes/js/admin-bar.min.js?ver=" + Version + "\" id=\"admin-bar-js\"></script>\n")
 	}
-	sb.WriteString(string(s.pluginScriptTags("front", true)))                                    // plugin footer scripts
-	sb.WriteString(s.gooikeFooter(c))                                                            // Gooike: banner, preferences, footer scripts (gooike_front.go)
-	sb.WriteString(s.pixelFooter(c, q))                                                          // Pursae Pixel: page config and pixelgo.js (pixelgo_front.go)
-	sb.WriteString(s.analyticsFooter(c, q))                                                      // Pursae Analytics: the cookieless counter (analytics.go)
-	sb.WriteString(s.gooFooter(c, q))                                                            // Goocommerce: store scripts, store notice (goo_front.go)
-	sb.WriteString(s.pllCookieScript(c))                                                         // Multi Language: the language cookie behind a page cache (golylang.go)
-	return template.HTML(s.applyFilters(c.Request.Context(), "wp_footer", sb.String()).(string)) // Wasm plugins, see wpHead
+	sb.WriteString(string(s.pluginScriptTags("front", true)))                                 // plugin footer scripts
+	sb.WriteString(s.gooikeFooter(c))                                                         // Gooike: banner, preferences, footer scripts (gooike_front.go)
+	sb.WriteString(s.pixelFooter(c, q))                                                       // Pursae Pixel: page config and pixelgo.js (pixelgo_front.go)
+	sb.WriteString(s.analyticsFooter(c, q))                                                   // Pursae Analytics: the cookieless counter (analytics.go)
+	sb.WriteString(s.gooFooter(c, q))                                                         // Goocommerce: store scripts, store notice (goo_front.go)
+	sb.WriteString(s.pllCookieScript(c))                                                      // Multi Language: the language cookie behind a page cache (golylang.go)
+	return template.HTML(s.filterNoncedMarkup(c.Request.Context(), "wp_footer", sb.String())) // Wasm plugins, see wpHead
 }
 
 // webFile returns an embedded asset as text (inline styles).
@@ -217,6 +225,6 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 	sb.WriteString(`</ul></div></div>`)
 	// wp_customize_support_script(): swaps no-customize-support for customize-support on the body, which
 	// shows the toolbar's Customize link (the admin-bar CSS hides .hide-if-no-customize without it).
-	sb.WriteString(`<script>(function(){var b=document.body,c=b.className.replace(/(^|\s)no-customize-support(\s|$)/,'$1$2');b.className=c+' customize-support';})();</script>`)
+	sb.WriteString(`<script` + cspNonceAttr() + `>(function(){var b=document.body,c=b.className.replace(/(^|\s)no-customize-support(\s|$)/,'$1$2');b.className=c+' customize-support';})();</script>`)
 	return template.HTML(sb.String())
 }

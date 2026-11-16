@@ -319,7 +319,7 @@ func (s *Server) pluginMetaBoxesBlockEditor(c *gin.Context, p *store.Post) templ
 		if forms[where].Len() == 0 {
 			continue
 		}
-		b.WriteString(`<form id="metabox-container-` + where + `" class="metabox-location-` + where + `" onsubmit="return false;"><div id="poststuff" class="sidebar-open"><div id="postbox-container-2" class="postbox-container"><div id="` + where + `-sortables" class="meta-box-sortables">` +
+		b.WriteString(`<form id="metabox-container-` + where + `" class="metabox-location-` + where + `" data-no-submit><div id="poststuff" class="sidebar-open"><div id="postbox-container-2" class="postbox-container"><div id="` + where + `-sortables" class="meta-box-sortables">` +
 			forms[where].String() + `</div></div></div></form>`)
 	}
 	data, _ := json.Marshal(locs)
@@ -419,6 +419,15 @@ func init() {
 		}
 		cctx, cancel := pluginUICtx(ctx)
 		defer cancel()
+		if strings.Contains(content, cspPH) { // hide the nonce placeholder from the plugin (maskNoncePlaceholder)
+			var ok bool
+			out := maskNoncePlaceholder(content, func(m string) string {
+				var o string
+				o, ok = rt.RenderBlock(cctx, b.Name(), b.Attrs, m)
+				return o
+			})
+			return out, ok
+		}
 		return rt.RenderBlock(cctx, b.Name(), b.Attrs, content)
 	})
 }

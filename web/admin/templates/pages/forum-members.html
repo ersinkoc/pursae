@@ -33,7 +33,7 @@
 				<span class="pf-admin-who__mobile">{{forum_level .Level}}<span><strong>{{.Points}}</strong> <span>points</span></span>{{if ne .Status "verified"}}<span class="pf-admin-state is-{{.Status}}">{{.StatusLabel}}</span>{{end}}</span>
 			</div>
 		</div>
-		<div class="row-actions">{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} onclick="return confirm('{{$a.Confirm}}')"{{end}}{{if eq $a.Key "block"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}</div>
+		<div class="row-actions">{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} data-confirm="{{$a.Confirm}}"{{end}}{{if eq $a.Key "block"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}</div>
 		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
 	</td>
 	<td class="column-level" data-colname="Level">{{forum_level .Level}}</td>
@@ -147,7 +147,7 @@
 		{{if .Blocked}}<p>This member is blocked: they can read and sign in, but cannot post.</p>{{else if eq .Status "unverified"}}<p>This member has not confirmed their email address yet.</p>{{else}}<p>This member can post in the forum.</p>{{end}}
 		<div class="pf-admin-actions">
 		{{if eq .Status "unverified"}}<form method="post" action="{{.URL}}"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" /><input type="hidden" name="member_do" value="verify" /><input type="hidden" name="user" value="{{.ID}}" /><input type="submit" class="button" value="Mark as verified" /></form>{{end}}
-		{{if .CanBlock}}<form method="post" action="{{.URL}}"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" /><input type="hidden" name="user" value="{{.ID}}" />{{if .Blocked}}<input type="hidden" name="member_do" value="unblock" /><input type="submit" class="button" value="Unblock" />{{else}}<input type="hidden" name="member_do" value="block" /><input type="submit" class="button pf-admin-danger" value="Block" onclick="return confirm('Block this member? They can still read and sign in, but cannot post.')" />{{end}}</form>{{end}}
+		{{if .CanBlock}}<form method="post" action="{{.URL}}"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}" /><input type="hidden" name="user" value="{{.ID}}" />{{if .Blocked}}<input type="hidden" name="member_do" value="unblock" /><input type="submit" class="button" value="Unblock" />{{else}}<input type="hidden" name="member_do" value="block" /><input type="submit" class="button pf-admin-danger" value="Block" data-confirm="Block this member? They can still read and sign in, but cannot post." />{{end}}</form>{{end}}
 		</div>
 		{{if and (not .CanBlock) (not .Self)}}<p class="description">{{if .IsAdmin}}Administrators cannot be blocked.{{else if .Moderator}}Only an administrator can block a moderator.{{end}}</p>{{end}}
 		</div>

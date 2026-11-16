@@ -45,6 +45,10 @@ type Options struct {
 	// choose the scheme stored in the cache key. The server passes the same peer
 	// check requestIP uses.
 	TrustForwarded func(*http.Request) bool
+	// CSPMode, when set, is the server's current CSP mode (csp_mode): entries remember it, and an
+	// entry stored under another mode (another policy header, another delayed-script loader) is
+	// not served.
+	CSPMode func() string
 }
 
 // Purge describes one purge: everything, a set of tags, or every cached variant of a URL.
@@ -66,6 +70,7 @@ type Cache struct {
 	detectLS       func(*http.Request) bool
 	lsEnv          bool
 	trustForwarded func(*http.Request) bool
+	cspModeFn      func() string
 
 	onPurge func(Purge)
 
@@ -85,6 +90,7 @@ func New(cfg Config, opts Options) *Cache {
 		detectLS:       opts.IsLiteSpeed,
 		onPurge:        opts.OnPurge,
 		trustForwarded: opts.TrustForwarded,
+		cspModeFn:      opts.CSPMode,
 	}
 	if c.log == nil {
 		c.log = slog.Default()
@@ -196,7 +202,7 @@ func (c *Cache) Middleware(next http.Handler) http.Handler {
 			pw.finish()
 			return
 		}
-		if e, ok := c.store.getShared(d.Key); ok && cacheableVary(e.Header) {
+		if e, ok := c.store.getShared(d.Key); ok && cacheableVary(e.Header) && e.usable(c.cspMode()) {
 			c.serve(w, r, e, "hit", d.Private)
 			return
 		}
@@ -217,7 +223,7 @@ func (c *Cache) Middleware(next http.Handler) http.Handler {
 					return
 				}
 				t.Stop()
-				if e, ok := c.store.getShared(d.Key); ok && cacheableVary(e.Header) {
+				if e, ok := c.store.getShared(d.Key); ok && cacheableVary(e.Header) && e.usable(c.cspMode()) {
 					c.serve(w, r, e, "hit", d.Private)
 					return
 				}
@@ -372,4 +378,11 @@ func stripInternal(h http.Header) {
 	h.Del(HeaderTags)
 	h.Del(HeaderTTL)
 	h.Del(HeaderControl)
+}
+
+func (c *Cache) cspMode() string {
+	if c.cspModeFn == nil {
+		return ""
+	}
+	return c.cspModeFn()
 }

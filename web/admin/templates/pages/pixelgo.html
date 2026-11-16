@@ -138,7 +138,7 @@
 {{range .S.Custom}}<tr><td><strong><a href="/wp-admin/pixelgo?page=custom&amp;edit={{.ID}}#px-custom-form">{{.Name}}</a></strong>
 <div class="row-actions visible"><a href="/wp-admin/pixelgo?page=custom&amp;edit={{.ID}}#px-custom-form">Edit</a> |
 <form method="post" action="/wp-admin/pixelgo" class="px-inline"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}"><input type="hidden" name="page" value="custom"><input type="hidden" name="do" value="custom_toggle"><input type="hidden" name="id" value="{{.ID}}"><button type="submit" class="button-link">{{if .Enabled}}Disable{{else}}Enable{{end}}</button></form> |
-<form method="post" action="/wp-admin/pixelgo" class="px-inline" onsubmit="return confirm('Delete this event?')"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}"><input type="hidden" name="page" value="custom"><input type="hidden" name="do" value="custom_delete"><input type="hidden" name="id" value="{{.ID}}"><button type="submit" class="button-link button-link-delete">Delete</button></form></div></td>
+<form method="post" action="/wp-admin/pixelgo" class="px-inline" data-confirm="Delete this event?"><input type="hidden" name="_wpnonce" value="{{$d.Nonce}}"><input type="hidden" name="page" value="custom"><input type="hidden" name="do" value="custom_delete"><input type="hidden" name="id" value="{{.ID}}"><button type="submit" class="button-link button-link-delete">Delete</button></form></div></td>
 <td>{{index $d.TrigLabel .Trigger}}{{if .Selector}} <code>{{.Selector}}</code>{{end}}{{if .Number}} ({{.Number}}){{end}}</td><td>{{if .URL}}<code>{{.URL}}</code>{{else}}Everywhere{{end}}</td>
 <td>{{if .Platforms}}{{range .Platforms}}<span class="px-badge">{{.}}</span> {{end}}{{else}}All enabled{{end}}</td><td>{{if .Enabled}}<span class="px-ok">Enabled</span>{{else}}<span class="px-no">Disabled</span>{{end}}</td></tr>
 {{else}}<tr><td colspan="5">No custom events yet. <a href="/wp-admin/pixelgo?page=custom&amp;new=1#px-custom-form">Add the first one</a>.</td></tr>{{end}}
@@ -154,11 +154,11 @@
 <tr><th scope="row"><label for="feed_brand">Brand</label></th><td><input type="text" id="feed_brand" name="feed_brand" value="{{.S.FeedBrand}}" class="regular-text" placeholder="Site title"></td></tr>
 <tr><th scope="row"><label for="feed_condition">Condition</label></th><td><select id="feed_condition" name="feed_condition"><option value="new" {{if eq .S.FeedCondition "new"}}selected{{end}}>New</option><option value="refurbished" {{if eq .S.FeedCondition "refurbished"}}selected{{end}}>Refurbished</option><option value="used" {{if eq .S.FeedCondition "used"}}selected{{end}}>Used</option></select></td></tr>
 <tr><th scope="row"><label for="feed_cat">Google product category</label></th><td><input type="text" id="feed_cat" name="feed_google_category" value="{{.S.FeedGoogleCat}}" class="large-text" placeholder="Apparel &amp; Accessories &gt; Clothing"></td></tr>
-<tr><th scope="row">Feed URL</th><td>{{if .FeedURL}}<input type="text" readonly class="large-text code" value="{{.FeedURL}}" onfocus="this.select()">{{else}}<em>Enable the feed and save to get its URL.</em>{{end}}</td></tr>
+<tr><th scope="row">Feed URL</th><td>{{if .FeedURL}}<input type="text" readonly class="large-text code" value="{{.FeedURL}}" data-select-on-focus>{{else}}<em>Enable the feed and save to get its URL.</em>{{end}}</td></tr>
 </table></div></div>
 <p class="submit"><button type="submit" class="button button-primary">Save Changes</button></p>
 </form>
-{{if .FeedURL}}<form method="post" action="/wp-admin/pixelgo" onsubmit="return confirm('The old feed URL stops working. Continue?')"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="feed"><input type="hidden" name="do" value="regen_token"><button type="submit" class="button">Regenerate feed URL</button></form>{{end}}
+{{if .FeedURL}}<form method="post" action="/wp-admin/pixelgo" data-confirm="The old feed URL stops working. Continue?"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="feed"><input type="hidden" name="do" value="regen_token"><button type="submit" class="button">Regenerate feed URL</button></form>{{end}}
 <div class="postbox" style="margin-top:16px"><h2 class="hndle">How to use it</h2><div class="inside">
 <p><strong>Meta Commerce Manager:</strong> Catalog &rsaquo; Data sources &rsaquo; Add items &rsaquo; Data feed &rsaquo; Scheduled feed, paste the URL and pick a daily or hourly schedule.</p>
 <p><strong>Google Merchant Center:</strong> Products &rsaquo; Feeds &rsaquo; Add feed &rsaquo; Scheduled fetch, paste the URL.</p>
@@ -177,7 +177,7 @@
 {{if gt .PageNum 1}}<a class="button" href="/wp-admin/pixelgo?page=logs&amp;paged={{.Prev}}{{if .QS}}&amp;{{.QS}}{{end}}">&lsaquo; Newer</a>{{end}}
 <span class="paging-input">Page {{.PageNum}} of {{.NumPages}}</span>
 {{if lt .PageNum .NumPages}}<a class="button" href="/wp-admin/pixelgo?page=logs&amp;paged={{.Next}}{{if .QS}}&amp;{{.QS}}{{end}}">Older &rsaquo;</a>{{end}}</div></div>
-<form method="post" action="/wp-admin/pixelgo" onsubmit="return confirm('Delete the whole delivery log?')" style="margin-top:12px"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="logs"><input type="hidden" name="do" value="clear_log"><button type="submit" class="button">Clear log</button></form>
+<form method="post" action="/wp-admin/pixelgo" data-confirm="Delete the whole delivery log?" style="margin-top:12px"><input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="page" value="logs"><input type="hidden" name="do" value="clear_log"><button type="submit" class="button">Clear log</button></form>
 
 {{/* ============================== Settings ============================== */}}
 {{else if eq .Page "settings"}}

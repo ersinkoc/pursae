@@ -135,7 +135,7 @@ func TestOEmbedProvider(t *testing.T) {
 		buf := make([]byte, 64<<10)
 		n, _ := resp.Body.Read(buf)
 		resp.Body.Close()
-		page := string(buf[:n])
+		page := stripNonces(string(buf[:n]))
 		if resp.StatusCode != http.StatusOK || resp.Header.Get("X-WP-embed") != "true" {
 			t.Fatalf("embed %s: %d X-WP-embed=%q", u, resp.StatusCode, resp.Header.Get("X-WP-embed"))
 		}

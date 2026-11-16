@@ -120,13 +120,13 @@ func (s *Server) seogoEditor(c *gin.Context, p *store.Post, block bool) {
 	blocks := ""
 	if block {
 		a.Script("wp-plugins")
-		blocks = `<script src="/wp-admin/js/seogo-blocks.js?ver=1.0.0" defer></script>`
+		blocks = `<script` + cspNonceAttr() + ` src="/wp-admin/js/seogo-blocks.js?ver=1.0.0" defer></script>`
 	}
 	s.enqueueMedia(c, p.ID)
 	addBodyHTML(c, template.HTML(`<link rel="stylesheet" id="seogo-editor-css" href="/wp-admin/css/seogo.css?ver=1.0.0" media="all" />`+
-		`<div id="seogo-box-source" hidden>`)+box+template.HTML(`</div><script>window.seogoEditor = `+string(cfg)+`;</script>`+
-		`<script src="/wp-admin/js/seogo-admin.js?ver=1.0.0" defer></script>`+blocks+
-		`<script src="/wp-admin/js/seogo-editor.js?ver=1.0.0" defer></script>`))
+		`<div id="seogo-box-source" hidden>`)+box+template.HTML(`</div><script`+cspNonceAttr()+`>window.seogoEditor = `+string(cfg)+`;</script>`+
+		`<script`+cspNonceAttr()+` src="/wp-admin/js/seogo-admin.js?ver=1.0.0" defer></script>`+blocks+
+		`<script`+cspNonceAttr()+` src="/wp-admin/js/seogo-editor.js?ver=1.0.0" defer></script>`))
 }
 
 // seogoReadForm applies the box's seogo[...] fields to a post's meta (classic editor save).
@@ -601,7 +601,7 @@ func (s *Server) seogoTermBox(c *gin.Context, t *store.Term) {
 	d.Term = true
 	d.Mode = "term"
 	addBodyHTML(c, template.HTML(`<link rel="stylesheet" href="/wp-admin/css/seogo.css?ver=1.0.0" media="all" /><div id="seogo-box-source" hidden>`)+
-		s.seogoRenderPartial("seogo/termbox", d)+template.HTML(`</div><script>(function(){var src=document.getElementById('seogo-box-source'),f=document.getElementById('edittag');if(src&&f){var t=f.querySelector('.form-table')||f;t.parentNode.insertBefore(src.firstElementChild,t.nextSibling);}})();</script>`))
+		s.seogoRenderPartial("seogo/termbox", d)+template.HTML(`</div><script`+cspNonceAttr()+`>(function(){var src=document.getElementById('seogo-box-source'),f=document.getElementById('edittag');if(src&&f){var t=f.querySelector('.form-table')||f;t.parentNode.insertBefore(src.firstElementChild,t.nextSibling);}})();</script>`))
 }
 
 // seogoTermSave stores the term SEO fields before the term is written.

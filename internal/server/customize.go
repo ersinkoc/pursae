@@ -931,7 +931,7 @@ func (s *Server) customizeFinish(c *gin.Context, v *siteView, cs *czChangeset) {
 	}
 	v.DocumentTitle = template.HTML(title)
 	uuid := c.Query(czParam)
-	v.Footer += template.HTML(`<script id="wpgo-customize-preview">
+	v.Footer += template.HTML(`<script` + cspNonceAttr() + ` id="wpgo-customize-preview">
 ( function() {
 	var uuid = ` + strconvQuote(uuid) + `, param = ` + strconvQuote(czParam) + `;
 	function clean( u ) { u.searchParams.delete( param ); return u.pathname + u.search + u.hash; }

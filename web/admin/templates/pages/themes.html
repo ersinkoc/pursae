@@ -1,5 +1,16 @@
 {{define "admin/themes"}}{{template "admin-header" .}}{{with .Data}}
-<script>var _wpThemeSettings = {{.Settings}};</script>
+<script {{cspNonce}}>var _wpThemeSettings = {{.Settings}};
+// Confirm before removing demo content or deleting a theme (cards and the wp.template overlay).
+document.addEventListener('click', function (e) {
+	var a = e.target && e.target.nodeType === 1 && e.target.closest ? e.target.closest('.wpgo-remove-demo, .wpgo-delete-theme') : null;
+	if (!a) { return; }
+	var s = _wpThemeSettings.settings;
+	if (!window.confirm(a.classList.contains('wpgo-delete-theme') ? s.confirmDelete : s.confirmRemoveDemo)) {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+	}
+}, true);
+</script>
 <div class="wrap">
 	<h1 class="wp-heading-inline">Themes <span class="title-count theme-count">{{.Count}}</span></h1>
 	{{if $.User.Can "install_themes" nil}}<a href="/wp-admin/theme-install" class="hide-if-no-js page-title-action">Add Theme</a>{{end}}
@@ -21,7 +32,7 @@
 		<div class="theme-actions">
 			{{if .Active}}<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{customizeURL}}" aria-label="Customize {{.Name}}">Customize</a>
 			{{if .DemoImportURL}}<a class="button button-compact wpgo-import-demo" href="{{.DemoImportURL}}" aria-label="Import demo content of {{.Name}}">Import Demo Content</a>{{end}}
-			{{if .DemoRemoveURL}}<a class="button button-compact wpgo-remove-demo" href="{{.DemoRemoveURL}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );" aria-label="Remove demo content of {{.Name}}">Remove Demo Content</a>{{end}}
+			{{if .DemoRemoveURL}}<a class="button button-compact wpgo-remove-demo" href="{{.DemoRemoveURL}}" aria-label="Remove demo content of {{.Name}}">Remove Demo Content</a>{{end}}
 			{{else}}<a class="button button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
 			<a class="button button-compact button-primary load-customize hide-if-no-customize" href="{{.PreviewURL}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
 		</div>
@@ -78,7 +89,7 @@
 			<# if ( data.wpgoDemoImport ) { #>
 				<a class="button button-compact wpgo-import-demo" href="{{{ data.wpgoDemoImport }}}" aria-label="Import demo content of {{ data.name }}">Import Demo Content</a>
 			<# } else if ( data.wpgoDemoRemove ) { #>
-				<a class="button button-compact wpgo-remove-demo" href="{{{ data.wpgoDemoRemove }}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );" aria-label="Remove demo content of {{ data.name }}">Remove Demo Content</a>
+				<a class="button button-compact wpgo-remove-demo" href="{{{ data.wpgoDemoRemove }}}" aria-label="Remove demo content of {{ data.name }}">Remove Demo Content</a>
 			<# } #>
 		<# } else { #>
 			<a class="button button-compact activate" href="{{{ data.actions.activate }}}" aria-label="Activate {{ data.name }}">Activate</a>
@@ -131,7 +142,7 @@
 				<# if ( data.wpgoDemoImport ) { #>
 					<a class="button button-compact wpgo-import-demo" href="{{{ data.wpgoDemoImport }}}">Import Demo Content</a>
 				<# } else if ( data.wpgoDemoRemove ) { #>
-					<a class="button button-compact wpgo-remove-demo" href="{{{ data.wpgoDemoRemove }}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmRemoveDemo );">Remove Demo Content</a>
+					<a class="button button-compact wpgo-remove-demo" href="{{{ data.wpgoDemoRemove }}}">Remove Demo Content</a>
 				<# } #>
 				<# if ( data.wpgoDemoPreview ) { #>
 					<a class="button button-compact wpgo-demo-preview" href="{{{ data.wpgoDemoPreview }}}">Preview with demo content</a>
@@ -146,7 +157,7 @@
 					<a class="button button-compact activate" href="{{{ data.actions.activate }}}" aria-label="Activate {{ data.name }}">Activate</a>
 				<# } #>
 				<# if ( data.actions['delete'] ) { #>
-					<a class="button button-compact wpgo-delete-theme" href="{{{ data.actions['delete'] }}}" onclick="return window.confirm( _wpThemeSettings.settings.confirmDelete );" aria-label="Delete {{ data.name }}">Delete</a>
+					<a class="button button-compact wpgo-delete-theme" href="{{{ data.actions['delete'] }}}" aria-label="Delete {{ data.name }}">Delete</a>
 				<# } #>
 			</div>
 		</div>

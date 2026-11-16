@@ -205,7 +205,7 @@ func (s *Server) firewallServe(w http.ResponseWriter, r *http.Request) bool {
 			return true
 		}
 	}
-	if cfg.RateLimit > 0 && !fwStatic(r.URL.Path) && !s.fwExempt(ip) {
+	if cfg.RateLimit > 0 && !fwStatic(r.URL.Path) && r.URL.Path != cspReportPath && !s.fwExempt(ip) { // CSP reports have their own limit
 		if n := s.fwLimiter().hit(ip, time.Now()); n > cfg.RateLimit {
 			s.fwLog(r, ip, "rate_limited", "More than "+strconv.Itoa(cfg.RateLimit)+" requests a minute from this IP address; answering 429 until the minute ends.")
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")

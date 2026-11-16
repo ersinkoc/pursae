@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"html"
 	"math/rand/v2"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -887,7 +888,7 @@ func (s *Server) gontactAssetTags(c *gin.Context) string {
 	out := `<link rel="stylesheet" id="contact-form-7-css" href="` + gontactAssets + `/styles.css?ver=` + gontactVersion + `" media="all" />` + "\n"
 	if site := s.settings.String("gontact_recaptcha_sitekey"); s.gontactRecaptchaKeys() != "" {
 		cfg["recaptcha"] = map[string]any{"sitekey": site, "actions": map[string]string{"homepage": "homepage", "contactform": "contactform"}}
-		tag := `<script src="https://www.google.com/recaptcha/api.js?render=` + html.EscapeString(site) + `&amp;ver=3.0" id="google-recaptcha-js" defer></script>`
+		tag := `<script src="https://www.google.com/recaptcha/api.js?render=` + html.EscapeString(url.QueryEscape(site)) + `&amp;ver=3.0" id="google-recaptcha-js" defer` + cspNonceAttr() + `></script>`
 		if s.gooikeOn() { // reCAPTCHA sets Google cookies: with Pursae Cookie active it waits for consent
 			tag = gooikeInert(tag, s.gooikeLoad().EmbedCategory)
 		}
@@ -897,13 +898,13 @@ func (s *Server) gontactAssetTags(c *gin.Context) string {
 		cspAllow(c, "connect-src", "https://www.google.com")
 	}
 	if s.settings.String("gontact_turnstile_sitekey") != "" && s.settings.String("gontact_turnstile_secret") != "" {
-		out += `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" id="cloudflare-turnstile-js" defer></script>` + "\n"
+		out += `<script` + cspNonceAttr() + ` src="https://challenges.cloudflare.com/turnstile/v0/api.js" id="cloudflare-turnstile-js" defer></script>` + "\n"
 		cspAllow(c, "script-src", "https://challenges.cloudflare.com")
 		cspAllow(c, "frame-src", "https://challenges.cloudflare.com")
 	}
 	js, _ := json.Marshal(cfg)
-	out += `<script id="contact-form-7-js-before">var wpcf7 = ` + string(js) + `;</script>` + "\n" +
-		`<script src="` + gontactAssets + `/index.js?ver=` + gontactVersion + `" id="contact-form-7-js" defer></script>`
+	out += `<script` + cspNonceAttr() + ` id="contact-form-7-js-before">var wpcf7 = ` + string(js) + `;</script>` + "\n" +
+		`<script` + cspNonceAttr() + ` src="` + gontactAssets + `/index.js?ver=` + gontactVersion + `" id="contact-form-7-js" defer></script>`
 	return out
 }
 

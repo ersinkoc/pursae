@@ -1,5 +1,5 @@
 {{define "goo-store-assets"}}<link rel="stylesheet" href="/wp-content/plugins/goocommerce/assets/css/admin-store.css?ver={{version}}">
-<script src="/wp-content/plugins/goocommerce/assets/js/admin/store.js?ver={{version}}" defer></script>{{end}}
+<script {{cspNonce}} src="/wp-content/plugins/goocommerce/assets/js/admin/store.js?ver={{version}}" defer></script>{{end}}
 
 {{define "goo-store-views"}}{{if .}}<ul class="subsubsub">{{range $i, $v := .}}<li class="view-{{$i}}">{{if $i}} | {{end}}<a href="{{$v.URL}}"{{if $v.Current}} class="current" aria-current="page"{{end}}>{{$v.Label}} <span class="count">({{$v.Count}})</span></a></li>{{end}}</ul>{{end}}{{end}}
 

@@ -80,7 +80,10 @@
 			var $box = $( this ), loc = $box.data( 'position' ) === 'side' ? 'side' : 'normal';
 			var $form = $meta.children( '.metabox-location-' + loc );
 			if ( ! $form.length ) {
-				$form = $( '<form class="metabox-location-' + loc + '" onsubmit="return false;"><div id="poststuff" class="sidebar-open"><div id="postbox-container-2" class="postbox-container"><div id="' + loc + '-sortables" class="meta-box-sortables ui-sortable"></div></div></div></form>' ).appendTo( $meta );
+				// The boxes are saved by the editor, never by submitting this form (no inline onsubmit: CSP).
+				$form = $( '<form class="metabox-location-' + loc + '"><div id="poststuff" class="sidebar-open"><div id="postbox-container-2" class="postbox-container"><div id="' + loc + '-sortables" class="meta-box-sortables ui-sortable"></div></div></div></form>' ).on( 'submit', function ( e ) {
+					e.preventDefault();
+				} ).appendTo( $meta );
 			}
 			$form.find( '.meta-box-sortables' ).append( $box );
 			locations[ loc ].push( { id: $box.attr( 'id' ), title: $box.find( '.hndle' ).first().text() } );

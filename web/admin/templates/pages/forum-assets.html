@@ -254,7 +254,7 @@
 </style>{{end}}
 
 {{define "forum-admin-script"}}<div id="pf-admin-l10n" hidden><span data-k="title">Choose an image</span><span data-k="button">Use this image</span><span data-k="change">Change</span><span data-k="choose">Choose</span></div>
-<script>
+<script {{cspNonce}}>
 ( function () {
 	'use strict';
 	var d = document;

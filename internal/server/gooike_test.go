@@ -198,7 +198,7 @@ func TestGooikeFrontAndScripts(t *testing.T) {
 		t.Fatalf("scripts %d, _ga declared %v", len(st.Scripts), gooikeDeclared(&st, "_ga"))
 	}
 	r = anonGet(t, base+"/")
-	page = bodyOf(r)
+	page = stripNonces(bodyOf(r))
 	head, rest, _ := strings.Cut(page, "</head>")
 	if !strings.Contains(head, `<script type="text/plain" data-gooike-category="statistics" async data-gooike-src="https://www.googletagmanager.com/gtag/js?id=G-TEST1234"></script>`) {
 		t.Error("GA4 is not in <head>, inert")
@@ -376,7 +376,7 @@ func TestGooikePageCache(t *testing.T) {
 	if second.Header.Get("X-WPGo-Cache") != "hit" || consented.Header.Get("X-WPGo-Cache") != "hit" {
 		t.Fatalf("not served from the cache: %q %q", second.Header.Get("X-WPGo-Cache"), consented.Header.Get("X-WPGo-Cache"))
 	}
-	if b1, b2, b3 := bodyOf(first), bodyOf(second), bodyOf(consented); b1 != b2 || b2 != b3 || !strings.Contains(b3, `data-gooike-category="marketing"`) {
+	if b1, b2, b3 := stripNonces(bodyOf(first)), stripNonces(bodyOf(second)), stripNonces(bodyOf(consented)); b1 != b2 || b2 != b3 || !strings.Contains(b3, `data-gooike-category="marketing"`) {
 		t.Error("visitors with and without consent do not get the same cached HTML")
 	}
 	if !strings.Contains(consented.Header.Get("Content-Security-Policy"), "https://connect.facebook.net") {

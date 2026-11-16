@@ -348,7 +348,7 @@ func (s *Server) forumHead(c *gin.Context, q *siteQuery) string {
 	}
 	raw, _ := json.Marshal(cfg)
 	out += `<script id="pf-config" type="application/json">` + strings.ReplaceAll(string(raw), "</", `<\/`) + `</script>` + "\n" +
-		`<script src="` + forumAssetsPrefix + `/forum.js?ver=` + forumVersion + `" id="pursae-forum-js" defer></script>` + "\n"
+		`<script` + cspNonceAttr() + ` src="` + forumAssetsPrefix + `/forum.js?ver=` + forumVersion + `" id="pursae-forum-js" defer></script>` + "\n"
 	return out
 }
 

@@ -52,7 +52,7 @@
 .wpgo-theme-preview .wp-full-overlay-header a.previous-theme,.wpgo-theme-preview .wp-full-overlay-header a.next-theme,.wpgo-theme-preview .wp-full-overlay-header span.previous-theme,.wpgo-theme-preview .wp-full-overlay-header span.next-theme,.wpgo-theme-preview .wp-full-overlay-header a.close-full-overlay{display:block;text-decoration:none;box-sizing:border-box}
 .wpgo-theme-preview .wp-full-overlay-main iframe{border:0;background:#fff;display:block}
 </style>
-<script>
+<script {{cspNonce}}>
 (function () {
 	var overlay = document.querySelector('.wpgo-theme-preview'), frame = overlay.querySelector('iframe');
 	frame.addEventListener('load', function () { overlay.classList.add('iframe-ready'); });

@@ -19,7 +19,10 @@ import (
 //go:embed maintenance/page.html
 var maintPageHTML string
 
-var maintPageTmpl = template.Must(template.New("maintenance").Parse(maintPageHTML))
+// cspNonce is the nonce attribute of the page's own scripts: <script {{cspNonce}}> (csp_nonce.go).
+var maintPageTmpl = template.Must(template.New("maintenance").Funcs(template.FuncMap{
+	"cspNonce": func() template.HTMLAttr { return template.HTMLAttr(strings.TrimSpace(cspNonceAttr())) },
+}).Parse(maintPageHTML))
 
 // maintTheme is a premade design: a class on <body> plus the Design values it starts from.
 // Activating a theme on the Themes tab copies its values into the Design tab, as in the original.
@@ -221,8 +224,8 @@ func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSet
 		}
 	}
 	if st.Analytics != "" {
-		tag := `<script async src="https://www.googletagmanager.com/gtag/js?id=` + template.HTMLEscapeString(st.Analytics) + `"></script>` + "\n" +
-			`<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',` + maintJSString(st.Analytics) + `);</script>`
+		tag := `<script async src="https://www.googletagmanager.com/gtag/js?id=` + template.HTMLEscapeString(st.Analytics) + `"` + cspNonceAttr() + `></script>` + "\n" +
+			`<script` + cspNonceAttr() + `>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',` + maintJSString(st.Analytics) + `);</script>`
 		if s.gooikeOn() {
 			// Analytics must not run before consent: Consent Mode defaults, the tag held back in the
 			// statistics category and the banner, exactly as on the site's own pages.
@@ -232,8 +235,8 @@ func (s *Server) maintRender(w http.ResponseWriter, r *http.Request, st maintSet
 				`<link rel="stylesheet" id="gooike-css" href="` + gooikeAssets + `/gooike.css?ver=` + gooikeVersion + `" media="all" />` + "\n" +
 				`<style id="gooike-inline-css">` + gooikeCSSVars(gs.Design) + gooikeCustomCSS(gs.Design) + "</style>\n")
 			tag = gooikeInert(tag, "statistics")
-			v.ConsentFoot = template.HTML(s.gooikeMarkup(ctx, &gs, false) + gooikeConfigScript(&gs, false) +
-				`<script src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" id="gooike-js" defer></script>` + "\n")
+			v.ConsentFoot = template.HTML(s.gooikeMarkup(ctx, &gs, false) + gooikeConfigScript(&gs, false, s.cspMode() == cspModeEnforce) +
+				`<script` + cspNonceAttr() + ` src="` + gooikeAssets + `/gooike.js?ver=` + gooikeVersion + `" id="gooike-js" defer></script>` + "\n")
 		}
 		v.AnalyticsTag = template.HTML(tag)
 	}

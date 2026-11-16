@@ -182,7 +182,7 @@
 	<td class="name column-name has-row-actions column-primary" data-colname="Name">
 		<strong>{{if .Depth}}<span class="pf-admin-depth" aria-hidden="true">&mdash; </span>{{end}}<a class="row-title" href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)" translate="no">{{.Title}}</a></strong>
 		{{if .Description}}<p class="pf-admin-desc" translate="no">{{.Description}}</p>{{end}}
-		<div class="row-actions"><span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span>{{if .DeleteURL}}<span class="delete"><a href="{{.DeleteURL}}" class="delete-tag" aria-label="Delete &#8220;{{.Title}}&#8221;" onclick="return confirm('Delete this forum permanently?')">Delete</a> | </span>{{end}}<span class="view"><a href="{{.URL}}" aria-label="View &#8220;{{.Title}}&#8221; on the site">View</a></span></div>
+		<div class="row-actions"><span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span>{{if .DeleteURL}}<span class="delete"><a href="{{.DeleteURL}}" class="delete-tag" aria-label="Delete &#8220;{{.Title}}&#8221;" data-confirm="Delete this forum permanently?">Delete</a> | </span>{{end}}<span class="view"><a href="{{.URL}}" aria-label="View &#8220;{{.Title}}&#8221; on the site">View</a></span></div>
 		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
 	</td>
 	<td class="column-kind" data-colname="Type">{{if eq .Kind "category"}}<span class="pf-admin-badge pf-admin-badge--category">Category</span>{{else}}<span class="pf-admin-badge">Forum</span>{{end}}</td>
@@ -255,7 +255,7 @@
 		{{if .IsTopic}}<p><strong><a href="{{.ViewURL}}" translate="no">{{.Title}}</a></strong></p>{{end}}
 		<p class="pf-admin-excerpt">{{if .Excerpt}}<span translate="no">{{.Excerpt}}</span>{{else}}<em>(no text)</em>{{end}}</p>
 		{{if .Reports}}<p class="pf-admin-reports"><span class="pf-admin-badge pf-admin-badge--closed">Reported {{.Reports}}&times;</span> {{.ReportReasons}}{{range .ReportNotes}}<br /><em translate="no">&#8220;{{.}}&#8221;</em>{{end}}</p>{{end}}
-		<div class="row-actions">{{$id := .ID}}{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} onclick="return confirm('{{$a.Confirm}}')"{{end}}{{if eq $a.Key "delete"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}<span class="view"> | <a href="{{.ViewURL}}">View</a></span></div>
+		<div class="row-actions">{{$id := .ID}}{{range $i, $a := .Actions}}<span class="{{$a.Key}}">{{if $i}} | {{end}}<a href="{{$a.URL}}"{{if $a.Confirm}} data-confirm="{{$a.Confirm}}"{{end}}{{if eq $a.Key "delete"}} class="delete"{{end}}>{{$a.Label}}</a></span>{{end}}<span class="view"> | <a href="{{.ViewURL}}">View</a></span></div>
 		<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
 	</td>
 	<td class="response column-forum" data-colname="In topic">{{if .Title}}<a href="{{.ViewURL}}" translate="no">{{.Title}}</a>{{else}}&mdash;{{end}}{{if .ForumTitle}}<br /><span class="pf-admin-desc">in <span translate="no">{{.ForumTitle}}</span></span>{{end}}</td>
@@ -351,9 +351,9 @@
 	<li>Under <strong>OAuth consent screen</strong>, choose <strong>External</strong>, enter your site name and support email, and publish the app. Only the basic scopes are needed: <code>openid</code>, <code>email</code> and <code>profile</code>.</li>
 	<li>Click <strong>Create credentials &rsaquo; OAuth client ID</strong> and choose <strong>Web application</strong>.</li>
 	<li>Under <strong>Authorized JavaScript origins</strong>, add:
-		<div class="pf-admin-copy"><label class="screen-reader-text" for="pf-origin">Authorized JavaScript origin</label><input type="text" id="pf-origin" value="{{.Origin}}" readonly onfocus="this.select()" /></div></li>
+		<div class="pf-admin-copy"><label class="screen-reader-text" for="pf-origin">Authorized JavaScript origin</label><input type="text" id="pf-origin" value="{{.Origin}}" readonly data-select-on-focus /></div></li>
 	<li>Under <strong>Authorized redirect URIs</strong>, add exactly:
-		<div class="pf-admin-copy"><label class="screen-reader-text" for="pf-redirect">Authorized redirect URI</label><input type="text" id="pf-redirect" value="{{.Redirect}}" readonly onfocus="this.select()" /></div></li>
+		<div class="pf-admin-copy"><label class="screen-reader-text" for="pf-redirect">Authorized redirect URI</label><input type="text" id="pf-redirect" value="{{.Redirect}}" readonly data-select-on-focus /></div></li>
 	<li>Click <strong>Create</strong>, then copy the <strong>Client ID</strong> and <strong>Client secret</strong> into the fields below, tick <strong>Enable</strong> and save.</li>
 </ol>
 </div>
@@ -390,7 +390,7 @@ colour input plus a hex field). Radios, so it works without JavaScript. Dot: dic
 <label for="{{$id}}-color-hex" class="screen-reader-text">Custom colour (hex)</label><input type="text" id="{{$id}}-color-hex" name="color_hex" value="{{$f.ColorHex}}" class="code" size="8" maxlength="7" placeholder="#rrggbb" pattern="#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?" />
 {{- if $f.ColorInk}} <span class="pf-admin-ink-preview" style="background:{{$f.ColorHex}};color:{{$f.ColorInk}}">Text {{$f.ColorInk}}</span>{{end}}</p>
 <p class="description">The pastels are mapped to the theme's own colours. A custom colour is used as it is; Pursae picks a readable text colour for it (contrast at least 4.5:1).</p>
-<script>(function(){var r=document.getElementById({{printf "%s-color-custom" $id}}),p=document.getElementById({{printf "%s-color-picker" $id}}),h=document.getElementById({{printf "%s-color-hex" $id}});if(!r||!p||!h)return;
+<script {{cspNonce}}>(function(){var r=document.getElementById({{printf "%s-color-custom" $id}}),p=document.getElementById({{printf "%s-color-picker" $id}}),h=document.getElementById({{printf "%s-color-hex" $id}});if(!r||!p||!h)return;
 function pick(){r.checked=true;r.nextElementSibling.style.background=p.value}
 p.addEventListener("input",function(){h.value=p.value;pick()});
 h.addEventListener("input",function(){var v=h.value.trim();if(v.charAt(0)!=="#")v="#"+v;if(/^#[0-9a-f]{6}$/i.test(v)){p.value=v.toLowerCase();pick()}});})();</script>{{end}}
@@ -402,6 +402,6 @@ Dot: dict D (data), F (form), ID (id prefix). */}}
 <label class="pf-admin-icon-cell pf-admin-icon-cell--none" title="None"><input type="radio" name="icon" value=""{{if not $ic}} checked{{end}} aria-label="None" /><span aria-hidden="true">&#8212;</span></label>
 {{- range .D.Icons}}<label class="pf-admin-icon-cell" title="{{.}}"><input type="radio" name="icon" value="{{.}}"{{if eq . $ic}} checked{{end}} aria-label="{{.}}" />{{forum_icon . 22}}</label>{{end}}
 </div>
-<script>(function(){var g=document.getElementById({{printf "%s-icon-grid" $id}});if(!g)return;
+<script {{cspNonce}}>(function(){var g=document.getElementById({{printf "%s-icon-grid" $id}});if(!g)return;
 g.addEventListener("keydown",function(e){if(e.key!=="ArrowUp"&&e.key!=="ArrowDown")return;var l=[].slice.call(g.querySelectorAll('input[name="icon"]')),i=l.indexOf(document.activeElement);if(i<0)return;
 var j=i+(e.key==="ArrowDown"?6:-6);if(j<0||j>=l.length)return;e.preventDefault();l[j].checked=true;l[j].focus();l[j].dispatchEvent(new Event("change",{bubbles:true}));l[j].closest("label").scrollIntoView({block:"nearest"});});})();</script>{{end}}

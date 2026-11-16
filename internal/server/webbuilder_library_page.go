@@ -91,8 +91,8 @@ func wbLibraryHTML(lang, base string, entry webbuilder.ManifestEntry, boot, flag
 		b.WriteString("<link rel=\"stylesheet\" href=\"" + html.EscapeString(base+css) + "\">\n")
 	}
 	b.WriteString("</head>\n<body>\n<div id=\"root\"></div>\n<noscript>Pursae Web Builder needs JavaScript.</noscript>\n")
-	b.WriteString("<script>window." + flag + " = true; window." + webbuilder.BootGlobal + " = " + boot + ";</script>\n")
-	b.WriteString("<script type=\"module\" src=\"" + html.EscapeString(base+entry.JS) + "\"></script>\n")
+	b.WriteString("<script" + cspNonceAttr() + ">window." + flag + " = true; window." + webbuilder.BootGlobal + " = " + boot + ";</script>\n")
+	b.WriteString("<script" + cspNonceAttr() + " type=\"module\" src=\"" + html.EscapeString(base+entry.JS) + "\"></script>\n")
 	b.WriteString("</body>\n</html>\n")
 	return b.String()
 }

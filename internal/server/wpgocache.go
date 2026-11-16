@@ -155,7 +155,7 @@ func (s *Server) configureCache() {
 		old.PurgeAll()
 	}
 	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default(),
-		OnPurge: s.onCachePurge, TrustForwarded: s.peerTrusted}) // the other instances purge too (wpgocache_sync.go)
+		OnPurge: s.onCachePurge, TrustForwarded: s.peerTrusted, CSPMode: s.cspMode}) // the other instances purge too (wpgocache_sync.go)
 	s.dropCacheOfOtherCore(c)
 	s.cache.Store(&pageCache{c: c, h: c.Middleware(s.appHandler())})
 }

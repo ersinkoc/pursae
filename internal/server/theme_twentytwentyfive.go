@@ -87,7 +87,7 @@ func init() {
 				out += "<style id='twentytwentyfive-color-scheme-inline-css'>\n" + css + "\n</style>\n"
 			}
 			if v.Data["HasNavScript"] == true {
-				out += "<script src=\"" + u + "/js/navigation.js?ver=" + tt5Version + "\" id=\"twentytwentyfive-navigation-js\" defer data-wp-strategy=\"defer\"></script>\n"
+				out += "<script" + cspNonceAttr() + " src=\"" + u + "/js/navigation.js?ver=" + tt5Version + "\" id=\"twentytwentyfive-navigation-js\" defer data-wp-strategy=\"defer\"></script>\n"
 			}
 			return out
 		},

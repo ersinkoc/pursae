@@ -217,7 +217,7 @@ func (s *Server) analyticsFooter(c *gin.Context, q *siteQuery) string {
 	if err != nil {
 		return ""
 	}
-	return `<script id="pursae-analytics-js">` + strings.Replace(analyticsScript, "__CONFIG__", string(raw), 1) + "</script>\n"
+	return `<script` + cspNonceAttr() + ` id="pursae-analytics-js">` + strings.Replace(analyticsScript, "__CONFIG__", string(raw), 1) + "</script>\n"
 }
 
 // analyticsScript is the browser side, kept small and dependency-free. It stores nothing in the

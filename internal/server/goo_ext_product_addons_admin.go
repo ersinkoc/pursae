@@ -45,7 +45,7 @@ func paoEditorRow(a paoAddon) string {
 	return `<div class="wc-pao-addon wc-pao-addon-editor postbox" style="padding:10px 12px;margin:10px 0"><table class="form-table" style="margin:0"><tbody>` +
 		`<tr><th>Type</th><td>` + bkSelectName("product_addon_type[]", a.Type, paoTypes) + ` Display as ` +
 		bkSelectName("product_addon_display[]", a.Display, []gooOpt{{"select", "Dropdowns"}, {"radiobutton", "Radio Buttons"}, {"images", "Images"}}) +
-		` <a href="#" class="button" style="float:right" onclick="this.closest('.wc-pao-addon').remove();return false">Remove</a></td></tr>` +
+		` <a href="#" class="button" style="float:right" data-action="remove" data-target=".wc-pao-addon">Remove</a></td></tr>` +
 		`<tr><th>Title</th><td><input type="text" name="product_addon_name[]" value="` + esc(a.Name) + `" class="regular-text"> Format ` +
 		bkSelectName("product_addon_title_format[]", a.TitleFormat, []gooOpt{{"label", "Label"}, {"heading", "Heading"}, {"hide", "Hide"}}) + `</td></tr>` +
 		`<tr><th>Description</th><td>` + yn("product_addon_description_enable", a.DescEnable) + ` <input type="text" name="product_addon_description[]" value="` + esc(a.Description) + `" class="regular-text"></td></tr>` +
@@ -71,8 +71,8 @@ func paoEditor(addons []paoAddon) string {
 	for _, a := range addons {
 		b.WriteString(paoEditorRow(a))
 	}
-	b.WriteString(`</div><template>` + paoEditorRow(paoAddon{Type: "multiple_choice", Display: "select", TitleFormat: "label", PriceType: "flat_fee"}) + `</template>` +
-		`<p><a href="#" class="button wc-pao-add-field" onclick="var w=this.closest('.wc-pao-addons');w.querySelector('.wc-pao-addons-list').insertAdjacentHTML('beforeend',w.querySelector('template').innerHTML);return false">Add Field</a></p></div>`)
+	b.WriteString(`</div><template id="wc-pao-addon-template">` + paoEditorRow(paoAddon{Type: "multiple_choice", Display: "select", TitleFormat: "label", PriceType: "flat_fee"}) + `</template>` +
+		`<p><a href="#" class="button wc-pao-add-field" data-action="add-row" data-template="wc-pao-addon-template" data-into=".wc-pao-addons .wc-pao-addons-list">Add Field</a></p></div>`)
 	return b.String()
 }
 

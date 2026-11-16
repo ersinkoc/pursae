@@ -11,6 +11,9 @@
 (function () {
 	'use strict';
 	var doc = document, root = doc.documentElement;
+	// This script's own CSP nonce: under an enforced policy (C.strict) only blocked scripts that
+	// carry it are started, an injected inert script stays inert.
+	var myNonce = (doc.currentScript && doc.currentScript.nonce) || '';
 	var cfgEl = doc.getElementById('gooike-config');
 	if (!cfgEl || window.Gooike) { return; }
 	var C;
@@ -80,7 +83,10 @@
 			var el = els[i];
 			if (!granted(el.getAttribute('data-gooike-category'))) { continue; }
 			el.setAttribute('data-gooike-done', '1');
-			if (el.tagName === 'SCRIPT') { queue.push(el); } else { enableSrc(el); }
+			if (el.tagName === 'SCRIPT') {
+				if (C.strict && (!myNonce || el.nonce !== myNonce)) { continue; }
+				queue.push(el);
+			} else { enableSrc(el); }
 		}
 		pump();
 	}
@@ -102,9 +108,12 @@
 		var s = doc.createElement('script');
 		for (var i = 0; i < old.attributes.length; i++) {
 			var a = old.attributes[i];
-			if (a.name === 'type' || a.name.indexOf('data-gooike-') === 0) { continue; }
+			if (a.name === 'type' || a.name === 'nonce' || a.name.indexOf('data-gooike-') === 0) { continue; }
 			s.setAttribute(a.name, a.value);
 		}
+		// The element's own nonce (browsers hide the attribute's value once a CSP is in force): a
+		// script the server did not mark as trusted stays untrusted.
+		if (old.nonce) { s.nonce = old.nonce; }
 		var type = old.getAttribute('data-gooike-type');
 		if (type) { s.type = type; }
 		var src = old.getAttribute('data-gooike-src');
