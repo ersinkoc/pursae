@@ -68,7 +68,7 @@ func (s *Server) mcpToolAvailable(c *gin.Context, t *mcpTool) bool {
 	if strings.HasPrefix(route, "/wc/v3") && !s.gooOn() {
 		return false
 	}
-	if strings.HasPrefix(route, "/web-builder/v2") && !s.wbOn() {
+	if strings.HasPrefix(route, "/web-builder/v2") && !s.wbOn() && !t.listAlways {
 		return false
 	}
 	if u := restCurrent(c); u != nil {

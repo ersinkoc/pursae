@@ -240,6 +240,18 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 		log.Printf("web builder: %v", err)
 	}
 	runtime := len(d.Features) > 0 && site.Runtime != ""
+	// Code sections: their head markup goes to <head>; a page of code sections only gets no site
+	// stylesheet (internal/webbuilder/code.go).
+	codeHead, body := webbuilder.CodeHead(body)
+	if codeHead != "" || strings.Contains(body, webbuilder.AttrCode) {
+		codeHead, body = s.wbKitVersioned(codeHead), s.wbKitVersioned(body)
+	}
+	codePage := webbuilder.IsCodePage(body)
+	if codePage {
+		site.CSS = ""
+		body = webbuilder.UnwrapCodePage(body)
+	}
+	s.wbCodeCSP(c, codeHead, body)
 
 	// wp_head without the theme: a copy of the view whose theme brings no head, no block styles
 	// and no Additional CSS (the Customizer's CSS belongs to the theme).
@@ -247,6 +259,9 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	bare.Theme = &Theme{Slug: v.Theme.Slug, Name: v.Theme.Name, BlockStyles: []string{}}
 	bare.CustomCSS = ""
 	head := strings.Replace(string(s.wpHead(c, v.Q, lb, adminBar, &bare)), blockStylesMarker, "", 1)
+	if codePage {
+		head = wbBlockCSSRE.ReplaceAllString(head, "")
+	}
 
 	loc := s.siteLocale()
 	var sb strings.Builder
@@ -265,8 +280,11 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 		fmt.Fprintf(&sb, "<link rel='stylesheet' id='web-builder-css' href='%s' media='all' />\n",
 			html.EscapeString(lb.HomeURL(webbuilder.SiteAssetsPath+site.CSS)))
 	}
-	sb.WriteString(s.wbFontLinks(c, d.Fonts))
+	if !codePage { // a design brings its own fonts
+		sb.WriteString(s.wbFontLinks(c, d.Fonts))
+	}
 	sb.WriteString(s.wbPageCSS(c, v.Q.Post, d))
+	sb.WriteString(codeHead)
 	popHead, popFoot := s.wbPopupAssets(c, fp.popups, site.CSS != "", runtime)
 	sb.WriteString(popHead)
 	sb.WriteString("</head>\n")

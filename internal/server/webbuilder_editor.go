@@ -77,6 +77,15 @@ func (s *Server) wbEditor(c *gin.Context, p *store.Post) {
 	// The editor UI is left-to-right in every language (its catalogs translate text only).
 	lang := strings.ReplaceAll(s.userLocale(c), "_", "-")
 	page := wbEditorHTML(title, lang, "ltr", s.links(c).HomeURL(prefix), entry, wbScriptJSON(boot))
+	// Code sections draw the design in a frame of the editor's page (it inherits this policy): the
+	// origins the design kits name, for authors who may publish them.
+	if u.Can("unfiltered_html", nil) {
+		for _, k := range s.wbKitList() {
+			for _, dir := range []string{"script-src", "connect-src", "style-src", "font-src"} {
+				cspAllow(c, dir, k.Origins...)
+			}
+		}
+	}
 	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(page))
 }
 
@@ -223,9 +232,10 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 			loaded = *draftLoaded
 		}
 		d.Draft.Page = wbPageStamp(d.Draft.Page, loaded)
-		d.Draft.Doc = wbDocSiteDefaults(d.Draft.Doc)
+		d.Draft.Doc = webbuilder.TagCodeDoc(wbDocSiteDefaults(d.Draft.Doc))
 	}
-	d.Doc = wbDocSiteDefaults(d.Doc)
+	// Every element of a code section gets the id the editor addresses it by as a block.
+	d.Doc = webbuilder.TagCodeDoc(wbDocSiteDefaults(d.Doc))
 	return d, nil
 }
 

@@ -102,6 +102,8 @@ func (s *Server) registerWebBuilderREST() {
 	s.wbRegisterTemplateREST(reg)
 	// Theme library (webbuilder_themes.go)
 	s.wbRegisterThemeREST(reg)
+	// Design kits for code sections (webbuilder_kits.go)
+	s.wbRegisterKitREST(reg)
 }
 
 // --- shared helpers --------------------------------------------------------------------------------
@@ -468,6 +470,9 @@ type wbPublishBody struct {
 	Page       json.RawMessage         `json:"page"`
 	Render     webbuilder.RenderResult `json:"render"`
 	UtilityCSS string                  `json:"utilityCss"`
+	// ServerRender asks the server to draw the snapshot itself (webbuilder_ssr.go) instead of taking
+	// render from the body: how Pursae MCP and other clients without the editor publish.
+	ServerRender bool `json:"serverRender"`
 }
 
 // wbSnapshot is the sanitized part of a publish.
@@ -656,9 +661,18 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	if !ok {
 		return
 	}
+	if body.ServerRender && !s.wbServerRenderInto(c, p, res, &body) {
+		return
+	}
 	snap, ok := s.wbSanitizeRender(c, p, &body, unfiltered, res.Stripped)
 	if !ok {
 		return
+	}
+	// Code sections (privileged, kept only for unfiltered_html): their own markup replaces the
+	// placeholders the renderer drew (internal/webbuilder/code.go).
+	if unfiltered && webbuilder.HasCode(res.JSON) {
+		list, only := webbuilder.CodeSections(res.JSON)
+		snap.html = webbuilder.FillCode(snap.html, list, only)
 	}
 	ps, _ := wbPage(body.Page)
 	needs := webbuilder.DocFonts(&res.Doc)
@@ -915,7 +929,7 @@ func (s *Server) wbRESTRevision(c *gin.Context, r *restRequest) {
 	if rev == nil {
 		return
 	}
-	c.JSON(http.StatusOK, wbRevisionJSON{ID: rev.RevisionID, Rev: rev.Rev, Doc: rev.Doc, Page: wbPageJSON(rev.Page, json.RawMessage("{}"))})
+	c.JSON(http.StatusOK, wbRevisionJSON{ID: rev.RevisionID, Rev: rev.Rev, Doc: webbuilder.TagCodeDoc(rev.Doc), Page: wbPageJSON(rev.Page, json.RawMessage("{}"))})
 }
 
 // wbRESTRestore is POST documents/{id}/revisions/{rid}/restore: the revision becomes the caller's
@@ -943,7 +957,7 @@ func (s *Server) wbRESTRestore(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not save the draft.")
 		return
 	}
-	c.JSON(http.StatusOK, wbDraft{Doc: d.Doc, Page: d.Page, BaseRev: d.BaseRev, SavedAt: wbTime(d.UpdatedAt)})
+	c.JSON(http.StatusOK, wbDraft{Doc: webbuilder.TagCodeDoc(d.Doc), Page: d.Page, BaseRev: d.BaseRev, SavedAt: wbTime(d.UpdatedAt)})
 }
 
 // --- library ---------------------------------------------------------------------------------------

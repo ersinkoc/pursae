@@ -17,6 +17,7 @@ without changes. A theme made for the forum can go further, one step at a time:
 | 4. Theme widgets | `forum_user_menu`, `forum_recent_topics`, `forum_stats`, `forum_url` in the header, front page and sidebar | Log in / Join in the header, the latest topics on the home page |
 | 5. View overrides | `templates/forum/<view>.html` | Your own markup for a view (for example, category cards on the forum home) |
 | 6. Demo | a `"forum"` section in `demo/demo.json` | One click fills the site with members, forums, topics and replies |
+| — Site templates | `forum_set_template` (REST or MCP), no theme package | One site's own markup for any view, e.g. from an imported HTML design ([Site templates](#site-templates)) |
 
 Themes for Pursae Web Builder (Hello Pursae with Theme Builder parts) do steps 2 and 4 through the
 parts file. See [Web Builder themes](#web-builder-themes).
@@ -130,6 +131,7 @@ These take plain values and are safe while the plugin is off.
 | `forum_badge badge` | a badge chip with its description as `title`. Not translated: use `.BadgeChip` in overrides |
 | `forum_icon "name" size` | one of the 43 line icons as inline SVG (`class="pf-icon pf-icon--<name>"`, `currentColor`); empty for an unknown name |
 | `forum_icon_names` | the icon names, sorted: `anchor bolt book calendar camera chat check code coffee compass crown feather flag flame gamepad gem gift globe heart key leaf lightbulb lock mail medal moon mountain music paw pencil pin puzzle rocket seedling shield sparkles star sun target trophy user users verified` |
+| `forum_cycle i "a" "b" …` | the value at position `i` modulo their number (any integer, e.g. a forum ID): a colour or icon per item |
 
 The core functions (`num`, `date`, `dict`, `add`, …) work in overrides as well.
 
@@ -161,7 +163,7 @@ Rules:
 | File | URL | Shown for | Data on the dot (besides the [common fields](#the-dot-forumpage)) |
 |------|-----|-----------|----------------------------------------------------------------------|
 | `forum/index.html` | `/forums/` | the forum home | `.Forums` (the tree), `.Groups`, `.Topics` (5 latest) |
-| `forum/forum.html` | `/forums/f/<slug>/[page/N/]` | a forum or a category | `.Forum` (with `.Children` for a category), `.Topics` (sticky first), `.Pagination`, `.URLs.NewTopic` |
+| `forum/forum.html` | `/forums/f/<slug>/[page/N/]` | a forum or a category | `.Forum` (with `.Children` for a category), `.Topics` (sticky first), `.Pagination`, `.URLs.NewTopic`, `.Forums` (the tree, on a forum) |
 | `forum/topic.html` | `/forums/t/<id>/<slug>/[page/N/]` | a topic with its replies | `.Topic`, `.Forum`, `.Replies`, `.Pagination`, `.LeadPost`, `.ReplyPost`, `.CanEdit`, `.EditURL`, `.TopicURL`; Extra `page`, `page_url`, `open`, `can_reply` |
 | `forum/new-topic.html` | `/forums/f/<slug>/new/` | the new-topic form | `.Forum`, `.Error`, `.FormValue`; Extra `action`, `no_form` |
 | `forum/edit.html` | `/forums/edit/<id>/` | editing a topic or reply | `.Edit`, `.Topic`, `.Forum`; Extra `action`, `back`, `window` |
@@ -196,6 +198,7 @@ Common fields, set on every view:
 | `.Nonce`, `.AuthNonce` | string | form nonces. Empty for visitors on cacheable views, so forms only render where they work |
 | `.Notice`, `.Error` | string | plain text, already translated (print in `role="status"` / `role="alert"`) |
 | `.URLs` | urls | `.Index`, `.Search`, `.Login`, `.Register`, `.Account`, `.Logout` (members only), `.LostPassword`, `.GoogleStart`, `.GoogleLink` (empty unless Google is ready), `.NewTopic` (forum view, logged-in members, on an open forum or for moderators; show it only when `.CanPost`) |
+| `.Totals` | totals | the site's numbers: `.Forums`, `.Topics`, `.Replies`, `.Members` (counted on first use) |
 | `.Pagination` | HTML | `<nav class="pf-pagination">` or empty |
 | `.Traps` | HTML | the honeypot and the signed time field (spam traps) |
 | `.Captcha` | HTML | the login captcha (reCAPTCHA or Turnstile, when one is set up for the login form) on the login and register views, or empty |
@@ -794,6 +797,57 @@ The package validator rejects a demo that breaks a rule and lists every problem 
 "x" is not a forum of the demo …`). Content goes through the post sanitizer like any post. Set
 `slug` explicitly when your menus or Web Builder parts link `/forums/f/<slug>/`. A primary menu item
 for the forum is a custom link: `{"title": "Forums", "url": "/forums/"}`.
+
+## Site templates
+
+A **site template** is a view override kept in the database (option `pursae_forum_templates`)
+instead of a theme package: one site's own markup for a view, whatever theme is active. It is how an
+HTML design imported into Pursae Web Builder as [code sections](../web-builder-code-sections.md)
+gives the forum its look. Order of use: the site template, then the theme's
+`templates/forum/<view>.html`, then the plugin's template.
+
+- **Same contract as a view override**: the dot is the `forumPage`, the same functions, the same form
+  fields. A site template is parsed over a copy of the plugin's set, so the plugin's partials
+  (`forum/part-post`, `forum/part-modbar`, …) can be called too.
+- **Shared parts**: the pseudo-view `parts` holds `{{define}}`s for every site template (an avatar,
+  a topic row). It is never shown by itself.
+- **`main: true`**: the template prints the page's whole `<main>`. Under Hello Pursae with Pursae Web
+  Builder the view is then printed like a code page: no theme title, wrapper, skip link or stylesheet,
+  and `forum.css` is not loaded on that view (the design brings its CSS; other views keep it). Other
+  themes print the template inside their page content.
+- **Checked on save**: a template that does not parse is refused; after saving, the view is rendered
+  where it has a public URL (index, forum, topic, search, members, login, register, verify) and a
+  failure rolls the save back. Everywhere else a failing site template is logged
+  (`forum: site template forum/<view>: …`) and the theme's or the plugin's template is used.
+- **Who**: reading needs `edit_theme_options`; writing also `unfiltered_html` (administrators). The
+  markup is trusted, like a code section.
+
+| Route (`pursae/v1`) | MCP tool | |
+|---------------------|----------|-|
+| `GET forum/templates` | `forum_list_templates` | the views and which have a site template |
+| `GET forum/templates/{view}` | `forum_get_template` | `{view, source, main, updated, default}` — `default` is the plugin's template of the view |
+| `POST forum/templates/{view}` | `forum_set_template` | `{source, main}`; 256 KB at most |
+| `DELETE forum/templates/{view}` | `forum_delete_template` | back to the theme's or the plugin's template |
+
+Views: `index`, `forum`, `topic`, `new-topic`, `edit`, `search`, `profile`, `members`, `login`,
+`register`, `verify`, `account`, `shortcode-index`, `shortcode-recent`, and `parts`.
+
+Two additions to the dot help designs: `.Totals` (`.Forums`, `.Topics`, `.Replies`, `.Members`,
+counted once per page) on every view, and `.Forums` (the tree) on the forum view as well, for a
+sidebar of the other forums. `forum_cycle i "a" "b" "c"` picks one value per position or id (a colour
+class per forum).
+
+```html
+{{/* view "parts" */}}
+{{define "site/row"}}<li class="row c-{{forum_cycle .ID "sky" "mint" "peach"}}"><a href="{{.URL}}">{{.Title}}</a></li>{{end}}
+
+{{/* view "index", main: true */}}
+<main id="main" class="board">
+  <h1>Our community</h1>
+  <p>{{num .Totals.Topics}} topics · {{num .Totals.Members}} members</p>
+  <ul>{{range .Groups}}{{range .Forums}}{{template "site/row" .}}{{end}}{{end}}</ul>
+</main>
+```
 
 ## Web Builder themes
 

@@ -410,7 +410,8 @@ func (s *Server) routes() *gin.Engine {
 	// Pursae Web Builder: web-builder/v2 (webbuilder_rest.go)
 	s.registerWebBuilderREST()
 	s.registerPursaeHeadlessREST()
-	s.registerPursaeREST() // pursae/v1: plugins, themes, cache, SEO settings, option groups, MCP (rest_pursae*.go, mcp.go)
+	s.registerPursaeREST()      // pursae/v1: plugins, themes, cache, SEO settings, option groups, MCP (rest_pursae*.go, mcp.go)
+	s.registerForumManageREST() // pursae/v1/forum: manage forums, topics, settings (rest_pursae_forum.go)
 	s.registerOAuth(r)
 	restHandler := func(c *gin.Context) { s.rest.serve(c, c.Param("route")) }
 	for _, m := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead} {

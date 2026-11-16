@@ -953,7 +953,31 @@
 <div class="wrap">
 <h1 class="wp-heading-inline">AI Access</h1>
 <hr class="wp-header-end" />
+{{template "notices" $}}
 <p>AI tools such as Claude, ChatGPT or Cursor reach this site through its MCP server. Every tool call runs as the signed-in user, with that user&#8217;s capabilities and the scopes granted to the connection.</p>
+
+<h2>Connect Claude in one step</h2>
+<p>An AI agent connected here can build and run the whole site for you: pages in Pursae Web Builder (published at once and still editable by drag and drop), menus, an online store, a forum, contact forms, SEO and settings. It asks before turning plugins on.</p>
+{{with .Connect}}<div class="notice notice-success inline ai-connect-result" role="alert" style="padding-bottom:8px">
+<p><strong>Application Password &#8220;{{.Name}}&#8221; created.</strong> It is shown only now: copy what you need before leaving this page. Revoke it any time under <a href="/wp-admin/profile#application-passwords-section">Profile &rsaquo; Application Passwords</a>.</p>
+<p><label for="ai-cc"><strong>Claude Code</strong> &#8212; run once in a terminal; the pursae tools load in new sessions:</label></p>
+<textarea id="ai-cc" class="large-text code" rows="3" readonly onclick="this.select()">{{.ClaudeCode}}</textarea>
+<p><label for="ai-chat"><strong>Or paste into the chat</strong> &#8212; with the <em>pursae-site-builder</em> skill installed, Claude connects from these lines (it also works in a session that is already running):</label></p>
+<textarea id="ai-chat" class="large-text code" rows="3" readonly onclick="this.select()">{{.Chat}}</textarea>
+<p><label for="ai-env"><strong>Scripts and the skill&#8217;s harness</strong> (<code>scripts/pursae_mcp.py</code>):</label></p>
+<input id="ai-env" type="text" class="large-text code" readonly value="{{.Env}}" onclick="this.select()" />
+</div>{{end}}
+<form method="post" action="/wp-admin/ai-access"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="do" value="connect" />
+<table class="form-table" role="presentation"><tbody>
+<tr><th scope="row"><label for="ai-app-name">Connection name</label></th><td><input type="text" id="ai-app-name" name="app_name" class="regular-text" value="Claude" />
+<p class="description">Creates an Application Password for <strong>{{.Login}}</strong> with all of your permissions and shows the ready-made <code>claude mcp add</code> command. For narrower access, create a password with scopes on your <a href="/wp-admin/profile#application-passwords-section">profile</a>.</p>
+<p><input type="submit" class="button button-primary" value="Create password and command" /></p></td></tr>
+<tr><th scope="row">Site builder skill</th><td><p><a class="button" href="{{.SkillURL}}">Download {{.SkillName}}.zip</a></p>
+<p class="description">Playbooks for company sites, stores and forums, the section cheat sheet and a small harness that calls this MCP server without a client. Unzip into <code>~/.claude/skills/</code> (Claude Code) or upload it as a skill in Claude. MCP clients also find it as <code>pursae-skill://</code> resources and as the <code>build_site</code> prompt.</p></td></tr>
+<tr><th scope="row">With OAuth instead</th><td><input type="text" class="large-text code" readonly value="{{.ConnectOAuth}}" onclick="this.select()" />
+<p class="description">No password to copy: run it, then <code>/mcp</code> in Claude Code and choose Authenticate; approve the consent screen with the scopes you want.</p></td></tr>
+</tbody></table>
+</form>
 
 <h2>Connect an AI tool</h2>
 <table class="form-table" role="presentation"><tbody>

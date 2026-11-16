@@ -221,6 +221,7 @@ refreshes the caller's edit lock.
 | `page` | PageSettings | |
 | `render` | RenderResult | §4 |
 | `utilityCss` | string | Tailwind `compile()` of `render.classes` |
+| `serverRender` | bool | `true` = the server draws `render` itself with the server render bundle (§4.1) and ignores `render` / `utilityCss` from the body: how clients without the editor publish (Pursae MCP). **503** `wb_server_render_unavailable` when the build has no bundle; **422** `wb_server_render_failed` when the renderer throws |
 
 Server steps, in one transaction:
 
@@ -257,7 +258,7 @@ also refreshes.
 **Revisions**: RevisionSummary `{id (post_revisions.id), rev, author, date, title, renderer}`.
 RevisionResponse `{id, rev, doc, page}`. **Restore** writes the revision as the caller's draft
 (`baseRev` from the body) and returns that DraftState; the editor loads it and the user
-publishes (a fresh snapshot needs the browser).
+publishes (or a client publishes it with `serverRender`, §4.1).
 
 ### 3.2 Library and prefs
 
@@ -461,6 +462,55 @@ no globals.
 `hideOn` becomes container-query classes; the root is the `canvas` container
 (`.wb-page{container-type:inline-size;container-name:canvas}` in the base CSS).
 
+### 4.1 Server render bundle
+
+`make builder` also writes `web/web-builder/render/render.js` (`builder/host/ssr.ts`,
+`scripts/live.mjs` `buildServerRender`): one ES2017 IIFE with React and the same `renderStatic`, plus a
+prelude of the globals React's server build touches. It is embedded in the binary and **not served**.
+`internal/webbuilder/ssr.go` runs it in an embedded JS engine (goja, pooled runtimes, 20 s limit) for
+`serverRender` publishes. Globals (JSON strings in and out):
+
+| Global | Does |
+|--------|------|
+| `__wbRender(doc, opts)` | `renderStatic`; `opts = {postId, siteUrl, formActionPrefix, sample?}`, a form action is `formActionPrefix + encodeURIComponent(sectionId)` |
+| `__wbCatalog()` | section kinds (fields, item lists, options, designs with `extras`/`hide`, defaults), palettes, font pairs, corners, icons, decors, layout structures |
+| `__wbCreate(spec)` | a complete section from `{kind, design?, name?, content?, items?, style?, bg?, grid?, box?, els?, hidden?}` (createSection + applyVariant, ids filled) |
+| `__wbDesign(section, id)` | the section in another design of its kind (applyVariant) |
+
+Without a DOM, `rich.ts` calls the host: `__wbHostRich(html, lists)` is `webbuilder.SanitizeRichLists`
+(the same rules) and `__wbHostDecode` is `html.UnescapeString`. Recolored remote SVG icons keep their
+own colors (svgTint needs a DOM). `TestServerRenderMatchesFixtures` checks the bundle against every
+`testdata/render` fixture byte for byte; the audit checks the globals.
+
+### 4.2 HTML import
+
+Two ways turn an HTML page into free-form (`custom`) sections:
+
+- **Exact (1:1)** — `internal/webbuilder/extract.js` runs in a real browser and reads the computed
+  styles and boxes of the rendered page (Tailwind, CSS variables, grids, web fonts, gradients all
+  resolved), at 1440 px and at 390 px. Pursae serves the browser page itself:
+  `GET /web-builder-import/{token}` (a one-time token of an import job, two hours, kept in memory) draws
+  the HTML in two `sandbox="allow-scripts"` frames (opaque origin: no access to the site, its cookies or
+  the page) and `POST`s both extractions back to the same URL; its own CSP lets the design load CDN
+  scripts and fonts (srcdoc frames inherit it) and forbids framing. `webbuilder.ConvertExtract`
+  whitelists node kinds, layout and style keys, clamps numbers, checks colors, CSS strings and URLs,
+  sanitizes rich text and inline SVG icons, and maps the phone-width pass to `stack` (rows), `colsM`
+  (grids), `menu` (link rows hidden on phones), `hideOn` (parts hidden on phones), `els.*.m` (phone font
+  size, line height, padding) and `ratioM` (pictures). The page's title, meta description, robots and
+  Open Graph tags go to the page settings and Pursae SEO. Pursae MCP: `web_builder_import_html` +
+  `web_builder_import_finish`.
+- **Code** — the design kept as its own markup in `code` sections (privileged, top-level only):
+  `content.html`, `content.head`, `content.wrap`, `content.kit`. The renderer draws
+  `<div data-wb-code="{id}"></div>`; the publish route puts the markup in its place after sanitizing
+  (`webbuilder.FillCode`). Files come from a design kit (`web-builder/v2/kits`). See
+  [Code sections and design kits](web-builder-code-sections.md); builder patch `0018-code-sections`.
+- **Quick** — `webbuilder.ImportHTML` reads style attributes and simple `<style>` rules in Go, without
+  a browser (approximate; CDN utility classes are not resolved).
+
+Patch 0017 (`import-fidelity`) adds what 1:1 needs to the free-form model: `NodeLayout.colsT` /
+`colsM` (grid columns on tablets / phones), `NodeLayout.ratioM`, `ElStyle.m = {fontSize, lineHeight,
+padding}` (phone sizes; unset = the automatic scaling), and colored `span`s in rich text.
+
 ## 5. `data-wb-*` runtime
 
 The public runtime (`site/runtime.<hash>.js`, IIFE, no dependencies, ≤ 8 KB gzip) is loaded with
@@ -612,7 +662,8 @@ draft and the Wasm host's `UpdatePost`, whether or not the plugin is active. It 
 
 None of these overlap the old builder's `/wp-content/plugins/web-builder/assets/`.
 
-Today `make builder` writes only `editor/` (AI modules stubbed, see §9) and `site/`; the
+Today `make builder` writes only `editor/` (AI modules stubbed, see §9), `site/` and `render/` (the
+server render bundle, §4.1, embedded and never served); the
 manifest has no `editor-noai` entry and the server serves whichever editor bundle the manifest
 names. The `editor-noai` prefix stays reserved for the AI split.
 
@@ -650,7 +701,7 @@ built from them.
 | `Item.dyn` | DynSettings (§11.4): enums, lengths and ranges of that table; only on a layout cell whose `title` is a dynamic widget |
 | `PageSettings.layout` | `site`, `canvas` or absent |
 | Strings | ≤ 64 KiB; `content.html` of a `html` section ≤ 256 KiB |
-| Rich text in content strings | upstream rich.ts subset: `b i u s code a(href) br ul ol li` |
+| Rich text in content strings | upstream rich.ts subset: `b i u s code a(href) br ul ol li`, and `span` whose only style is a color (`style="color: rgb(…)"`, patch 0017) |
 | `href` | `http`, `https`, `mailto`, `tel`, `#…`, relative |
 | Image URLs (`image`, `bgImage`, item image) | `http`, `https`, relative, `data:image/*` ≤ 32 KiB |
 | `bg.decorSvg` | sanitized to the SVG subset below |

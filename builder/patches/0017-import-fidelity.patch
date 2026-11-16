@@ -1,0 +1,127 @@
+diff --git a/src/builder/CustomSection.tsx b/src/builder/CustomSection.tsx
+index b22f00f..0650659 100644
+--- a/src/builder/CustomSection.tsx
++++ b/src/builder/CustomSection.tsx
+@@ -92,7 +92,11 @@ function NodeView({ c, it, parent, parentLay }: { c: Ctx; it: Item; parent: Node
+         position: 'relative',
+         display: grid ? 'grid' : 'flex',
+         ...(grid
+-          ? ({ '--gd': repeatCols(cols), '--gt': repeatCols(cols >= 4 ? Math.ceil(cols / 2) : Math.min(cols, 2)), '--gm': repeatCols(cols >= 4 && kids.every((k) => k.node === 'image' || k.node === 'icon') ? 2 : 1) } as CSSProperties)
++          ? ({
++              '--gd': repeatCols(cols),
++              '--gt': repeatCols(lay?.colsT ? Math.max(1, lay.colsT) : cols >= 4 ? Math.ceil(cols / 2) : Math.min(cols, 2)),
++              '--gm': repeatCols(lay?.colsM ? Math.max(1, lay.colsM) : cols >= 4 && kids.every((k) => k.node === 'image' || k.node === 'icon') ? 2 : 1),
++            } as CSSProperties)
+           : { flexDirection: dir === 'row' ? 'row' : 'column', flexWrap: lay?.wrap && !leafRow ? 'wrap' : 'nowrap', justifyContent: lay?.justify ? JUSTIFY[lay.justify] : undefined }),
+         alignItems: dir === 'row' ? SELF[lay?.align ?? 'start'] : grid ? 'start' : undefined,
+         columnGap: lay?.gap,
+@@ -239,6 +243,8 @@ function mobileCss(s: Section, attr = 'data-el', keys?: Set<string>) {
+       const r = e?.padding?.r ?? 0
+       rules.push(`${sel}{padding-left:${Math.min(20, Math.max(16, l))}px!important;padding-right:${Math.min(20, Math.max(16, r))}px!important}`)
+     }
++    if (it.lay?.ratioM && (it.node === 'image' || it.node === 'icon')) rules.push(`${sel}{aspect-ratio:${it.lay.ratioM}!important}`)
++    if (it.lay?.basisM) rules.push(`${sel}{flex:0 1 ${it.lay.basisM}%!important}`)
+     if (!e) {
+       // A top-level box without element styles still gets the side-padding rule above: keep its key.
+       if (rules.length > before) keys?.add(`${s.id}:${elKey(it)}`)
+@@ -246,9 +252,17 @@ function mobileCss(s: Section, attr = 'data-el', keys?: Set<string>) {
+     }
+     const decl: string[] = []
+     const pin = pinned.has(it.id)
+-    if (e.fontSize && e.fontSize > 30) decl.push(`font-size:${Math.max(26, Math.round(e.fontSize * 0.62))}px!important`)
+-    if (it.parent && e.padding && (e.padding.l > 28 || e.padding.r > 28)) decl.push(`padding-left:${Math.min(e.padding.l, 20)}px!important;padding-right:${Math.min(e.padding.r, 20)}px!important`)
+-    if (!pin && e.padding && (e.padding.t > 64 || e.padding.b > 64)) decl.push(`padding-top:${Math.round(e.padding.t * 0.55)}px!important;padding-bottom:${Math.round(e.padding.b * 0.55)}px!important`)
++    // Phone sizes the design set itself (e.m) win over the automatic scaling below.
++    const m = e.m
++    if (m?.fontSize) decl.push(`font-size:${m.fontSize}px!important`)
++    else if (e.fontSize && e.fontSize > 30) decl.push(`font-size:${Math.max(26, Math.round(e.fontSize * 0.62))}px!important`)
++    if (m?.lineHeight) decl.push(`line-height:${m.lineHeight}!important`)
++    if (m?.hide) decl.push('display:none!important')
++    if (m?.padding) decl.push(`padding:${m.padding.t}px ${m.padding.r}px ${m.padding.b}px ${m.padding.l}px!important`)
++    else {
++      if (it.parent && e.padding && (e.padding.l > 28 || e.padding.r > 28)) decl.push(`padding-left:${Math.min(e.padding.l, 20)}px!important;padding-right:${Math.min(e.padding.r, 20)}px!important`)
++      if (!pin && e.padding && (e.padding.t > 64 || e.padding.b > 64)) decl.push(`padding-top:${Math.round(e.padding.t * 0.55)}px!important;padding-bottom:${Math.round(e.padding.b * 0.55)}px!important`)
++    }
+     if (e.mt && e.mt > 48) decl.push(`margin-top:${Math.round(Math.max(24, e.mt * 0.5))}px!important`)
+     if (e.margin && (e.margin.l > 20 || e.margin.r > 20)) decl.push('margin-left:0!important;margin-right:0!important')
+     if (!pin && e.height && e.height > 240 && it.node === 'box') decl.push('min-height:0!important')
+diff --git a/src/builder/rich.ts b/src/builder/rich.ts
+index 3e6fa9c..f4a3161 100644
+--- a/src/builder/rich.ts
++++ b/src/builder/rich.ts
+@@ -1,7 +1,7 @@
+ /* Minimal rich text: a whitelisted HTML subset stored in plain string fields.
+    Values without these tags stay plain text (backward compatible). */
+ 
+-const RICH_RE = /<\/?(b|strong|i|em|u|s|strike|del|code|a|br|ul|ol|li)\b[^>]*>/i
++const RICH_RE = /<\/?(b|strong|i|em|u|s|strike|del|code|a|br|ul|ol|li|span)\b[^>]*>/i
+ const DROP = new Set(['script', 'style', 'template', 'iframe', 'frame', 'object', 'embed', 'noscript', 'head', 'title', 'meta', 'link', 'base', 'svg', 'math', 'img', 'picture', 'video', 'audio', 'source', 'canvas', 'input', 'button', 'select', 'textarea', 'form', 'option'])
+ const MAP: Record<string, string> = { b: 'b', strong: 'b', i: 'i', em: 'i', u: 'u', ins: 'u', s: 's', strike: 's', del: 's', code: 'code', kbd: 'code', tt: 'code', samp: 'code' }
+ const BLOCK = new Set(['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'section', 'article', 'header', 'footer', 'aside', 'nav', 'main', 'figure', 'figcaption', 'tr', 'dt', 'dd', 'table'])
+@@ -110,6 +110,17 @@ function clean(src: Node, out: Node, o: RichOpts, inLink: boolean, inList: boole
+       if (out.lastChild && out.lastChild.nodeName !== 'BR' && !/^(UL|OL)$/.test(out.lastChild.nodeName)) out.appendChild(document.createElement('br'))
+       continue
+     }
++    // A colored word (an accent in a heading): <span style="color: rgb(…)">, the only span kept.
++    if (tag === 'span' && !o.paste) {
++      const c = el.style.color
++      if (/^rgba?\(\d{1,3}, \d{1,3}, \d{1,3}(, (0|1|0?\.\d+))?\)$/.test(c)) {
++        const sp = document.createElement('span')
++        sp.style.color = c
++        clean(el, sp, o, inLink, inList)
++        if (sp.textContent) out.appendChild(sp)
++        continue
++      }
++    }
+     let tags = MAP[tag] ? [MAP[tag]] : []
+     if (o.paste) {
+       // Google Docs wraps everything in <b style="font-weight:normal">.
+@@ -130,7 +141,7 @@ function clean(src: Node, out: Node, o: RichOpts, inLink: boolean, inList: boole
+ 
+ const cache = new Map<string, string>()
+ 
+-/** Whitelisted HTML subset: b, i, u, s, code, a[href], br (+ ul/ol/li with `lists`). */
++/** Whitelisted HTML subset: b, i, u, s, code, a[href], br, span[style=color] (+ ul/ol/li with `lists`). */
+ export function sanitizeRich(html: string, o: RichOpts = { lists: true }): string {
+   const key = `${o.lists ? 1 : 0}${o.paste ? 1 : 0}${html}`
+   const hit = cache.get(key)
+diff --git a/src/builder/types.ts b/src/builder/types.ts
+index 25c3ee8..3017a0e 100644
+--- a/src/builder/types.ts
++++ b/src/builder/types.ts
+@@ -390,6 +390,9 @@ export interface NodeLayout {
+   /** Boxes: how children flow. */
+   dir?: 'row' | 'column' | 'grid'
+   cols?: number
++  /** Grids: columns on tablets and phones (default: derived from cols). */
++  colsT?: number
++  colsM?: number
+   gap?: number
+   gapY?: number
+   align?: 'start' | 'center' | 'end' | 'stretch'
+@@ -407,10 +410,25 @@ export interface NodeLayout {
+   basis?: number
+   /** Images: width / height. */
+   ratio?: number
++  /** Images: width / height on phones (patch 0017). */
++  ratioM?: number
++  /** Row cells: share of the row on phones (%; patch 0017). */
++  basisM?: number
++}
++
++/** Phone-width values of a free-form node (an imported design's own mobile sizes); unset = automatic scaling. */
++export interface ElStyleMobile {
++  fontSize?: number
++  lineHeight?: number
++  padding?: Box4
++  /** Not shown on phones. */
++  hide?: boolean
+ }
+ 
+ /** Extra element styles used by free-form sections (merged into ElStyle). */
+ export interface ElStyle {
++  /** Free-form nodes: sizes on phones (patch 0017). */
++  m?: ElStyleMobile
+   /** Font family name, or '@heading' / '@body' for the site fonts (fonts.ts). */
+   font?: string
+   border?: string

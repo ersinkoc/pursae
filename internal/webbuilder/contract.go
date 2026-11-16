@@ -118,6 +118,7 @@ const (
 	MaxDepth            = 4         // Item.Sub nesting
 	MaxStringBytes      = 64 << 10  // any content / item string
 	MaxHTMLSectionLen   = 256 << 10 // content["html"] of a 'html' section
+	MaxCodeSectionLen   = 512 << 10 // content["html"] / content["head"] of a 'code' section
 	MaxDataURIBytes     = 32 << 10  // data:image/* URI in src / url()
 	MaxLibraryItems     = 500       // saved components per site
 	MaxPrefsBytes       = 16 << 10  // all prefs of one user, JSON-encoded
@@ -311,7 +312,16 @@ type MotionSettings struct {
 }
 
 // ElStyle merges every upstream `interface ElStyle` declaration.
+// ElStyleMobile holds a free-form node's own phone sizes (patch 0017; unset = automatic scaling).
+type ElStyleMobile struct {
+	FontSize   *float64 `json:"fontSize,omitempty"`
+	LineHeight *float64 `json:"lineHeight,omitempty"`
+	Padding    *Box4    `json:"padding,omitempty"`
+	Hide       *bool    `json:"hide,omitempty"` // not shown on phones
+}
+
 type ElStyle struct {
+	M             *ElStyleMobile    `json:"m,omitempty"` // free-form nodes: sizes on phones
 	Margin        *Box4             `json:"margin,omitempty"`
 	Mt            *float64          `json:"mt,omitempty"`
 	Mb            *float64          `json:"mb,omitempty"`
@@ -358,6 +368,8 @@ type ElStyle struct {
 type NodeLayout struct {
 	Dir     string   `json:"dir,omitempty"` // row | column | grid
 	Cols    *float64 `json:"cols,omitempty"`
+	ColsT   *float64 `json:"colsT,omitempty"` // grids: columns on tablets (patch 0017)
+	ColsM   *float64 `json:"colsM,omitempty"` // grids: columns on phones
 	Gap     *float64 `json:"gap,omitempty"`
 	GapY    *float64 `json:"gapY,omitempty"`
 	Align   string   `json:"align,omitempty"`   // start | center | end | stretch
@@ -369,6 +381,8 @@ type NodeLayout struct {
 	Self    string   `json:"self,omitempty"` // start | center | end | stretch
 	Basis   *float64 `json:"basis,omitempty"`
 	Ratio   *float64 `json:"ratio,omitempty"`
+	RatioM  *float64 `json:"ratioM,omitempty"` // images: width / height on phones (patch 0017)
+	BasisM  *float64 `json:"basisM,omitempty"` // row cells: share of the row on phones (patch 0017)
 }
 
 type Item struct {
@@ -514,10 +528,16 @@ type SavedComponent struct {
 }
 
 // SectionKinds is the upstream SectionKind union. KindHTML sections are privileged.
-var SectionKinds = []string{"nav", "hero", "banner", "features", "media", "steps", "quote", "faq", "cta", "footer", "text", "image", "form", "layout", "html", "custom", "loop"}
+var SectionKinds = []string{"nav", "hero", "banner", "features", "media", "steps", "quote", "faq", "cta", "footer", "text", "image", "form", "layout", "html", "custom", "loop", "code"}
 
 const (
-	KindHTML   = "html"
+	KindHTML = "html"
+	// KindCode is a code section (docs/developer/web-builder-code-sections.md): the design's own
+	// markup, privileged like KindHTML, top-level only. content.html is the body markup, published
+	// inline (not in an iframe) in place of the snapshot's placeholder; content.head is markup for
+	// the document head (stylesheets, preloads, head scripts), printed once per page; content.kit is
+	// the design kit its files come from.
+	KindCode   = "code"
 	KindForm   = "form"
 	KindCustom = "custom"
 	KindLayout = "layout"

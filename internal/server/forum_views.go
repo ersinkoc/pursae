@@ -260,6 +260,9 @@ func (s *Server) forumViewForum(c *gin.Context, rt forumRoute, p *forumPage) boo
 	}
 	p.Topics = topics
 	p.Pagination = s.forumPagination(c, forumListURL(canonical, sort, tag), rt.Page, pages)
+	if list, err := s.forumList(ctx); err == nil { // .Forums: the tree, for a sidebar of the other forums
+		p.Forums = list
+	}
 	if p.User != nil && forumCanStart(f, p.CanModerate) {
 		p.URLs.NewTopic = s.forumURL(ctx, "f", f.Slug, "new")
 	}

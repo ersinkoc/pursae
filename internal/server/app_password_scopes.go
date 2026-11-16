@@ -182,7 +182,8 @@ var appScopeRoutes = map[string]string{
 	"/pursae/v1/cache":   "cache",
 	"/seogo/v1":          "seo", "/pursae/v1/seo": "seo",
 	"/wp/v2/settings": "settings", "/pursae/v1/options": "settings", "/pursae/v1/mcp/activity": "settings", "/pursae/v1/headless": "settings",
-	"/wp/v2/users":      "users",
+	"/wp/v2/users":     "users",
+	"/pursae/v1/forum": "content", "/contact-form-7/v1": "content",
 	"/wc/v3":            "commerce",
 	"/pursae/v1/health": "settings", "/pursae/v1/csp-reports": "settings", "/pursae/v1/analytics": "settings", "/pursae/v1/backups": "settings", "/pursae/v1/updates": "plugins",
 }

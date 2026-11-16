@@ -126,6 +126,19 @@ if (manifest && problems.length === 0) {
   for (const [k, v] of Object.entries(sizes)) if (v > BUDGETS[k]) fail(`size budget ${k}: ${fmt(v)} > ${fmt(BUDGETS[k])}`)
 }
 
+// The server bundle (render/render.js, scripts/live.mjs buildServerRender) that internal/webbuilder/ssr.go runs:
+// one script, no imports, defining the globals the Go side calls.
+{
+  const file = path.join(OUT, 'render', 'render.js')
+  if (!fs.existsSync(file)) fail('render/render.js is missing (server render bundle)')
+  else {
+    const code = fs.readFileSync(file, 'utf8')
+    for (const g of ['__wbRender', '__wbCatalog', '__wbCreate', '__wbDesign', '__wbHostRich']) if (!code.includes(g)) fail(`render/render.js does not mention ${g}`)
+    if (/^\s*import[\s{]/m.test(code) || /\bimport\(/.test(code)) fail('render/render.js must not import other modules')
+    if (fs.statSync(file).size > 2048 * KB) fail(`render/render.js is ${fmt(fs.statSync(file).size)} (> 2 MB)`)
+  }
+}
+
 if (problems.length) {
   console.error('[audit] FAILED:')
   for (const p of problems) console.error(`  - ${p}`)

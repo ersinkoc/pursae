@@ -23,6 +23,7 @@ import (
 
 	"wpgo/docs"
 	"wpgo/internal/webbuilder"
+	"wpgo/skills"
 )
 
 // MCP (Model Context Protocol) server: AI tools such as Claude and Cursor manage the site through it.
@@ -137,11 +138,9 @@ func (s *Server) mcpHandle(c *gin.Context, req *mcpRequest) *mcpResponse {
 		}
 		resp.Result = map[string]any{
 			"protocolVersion": v,
-			"capabilities":    map[string]any{"tools": map[string]any{"listChanged": true}, "resources": map[string]any{}},
+			"capabilities":    map[string]any{"tools": map[string]any{"listChanged": true}, "resources": map[string]any{}, "prompts": map[string]any{}},
 			"serverInfo":      map[string]any{"name": mcpServerName, "title": "Pursae", "version": Version},
-			"instructions": "Tools manage this Pursae site (a WordPress-compatible CMS written in Go): content, media, menus, " +
-				"themes and theme files, plugins, updates, backups and health, comments, users, Pursae Commerce products and orders, Web Builder drafts, Pursae Cache, Pursae SEO and the settings of the built-in plugins. " +
-				"Read the pursae-docs:// resources before writing theme templates or plugins. rest_request reaches any other REST route.",
+			"instructions":    mcpInstructions,
 		}
 	case "ping":
 		resp.Result = map[string]any{}
@@ -182,7 +181,15 @@ func (s *Server) mcpHandle(c *gin.Context, req *mcpRequest) *mcpResponse {
 		}
 		resp.Result = map[string]any{"contents": []map[string]any{{"uri": uri, "mimeType": "text/markdown", "text": string(b)}}}
 	case "prompts/list":
-		resp.Result = map[string]any{"prompts": []any{}}
+		resp.Result = map[string]any{"prompts": mcpPromptsList()}
+	case "prompts/get":
+		name, _ := p["name"].(string)
+		args, _ := p["arguments"].(map[string]any)
+		out, msg := mcpPromptGet(name, args)
+		if msg != "" {
+			return fail(-32602, msg)
+		}
+		resp.Result = out
 	default:
 		return fail(-32601, "Method not found: "+req.Method)
 	}
@@ -200,6 +207,9 @@ type mcpTool struct {
 	Required     []string
 	Open         bool // accepts more fields than Props lists (REST fields of create/update)
 	special      string
+	run          mcpRun // a tool implemented in Go (mcp_builder.go, mcp_site.go) instead of one REST call
+	readOnly     bool   // a run tool that changes nothing
+	listAlways   bool   // listed while its built-in plugin is off: it answers how to turn the plugin on
 }
 
 func (t *mcpTool) schema() map[string]any {
@@ -225,7 +235,7 @@ var mcpAdditiveTools = map[string]bool{"create_user": true, "create_comment": tr
 // destructiveHint means "may change or delete existing data", so it is true for every write that is not
 // purely additive.
 func (t *mcpTool) annotations() map[string]any {
-	readOnly := t.Method == http.MethodGet || t.Name == "seo_analyze" // seo_analyze POSTs unsaved input but stores nothing
+	readOnly := t.Method == http.MethodGet || t.Name == "seo_analyze" || t.readOnly // seo_analyze POSTs unsaved input but stores nothing
 	return map[string]any{"readOnlyHint": readOnly, "destructiveHint": !readOnly && !mcpAdditiveTools[t.Name]}
 }
 
@@ -476,6 +486,8 @@ var mcpTools = func() []*mcpTool {
 		Method: "", Path: "", special: "rest",
 		Props: map[string]any{"method": str("GET, POST, PUT, PATCH or DELETE."), "path": str("Route under /wp-json, e.g. /wp/v2/comments?per_page=5."),
 			"body": obj("JSON body for POST/PUT/PATCH.")}, Required: []string{"method", "path"}})
+	list = append(list, mcpBuilderTools()...)
+	list = append(list, mcpSiteTools()...)
 	return list
 }()
 
@@ -564,6 +576,9 @@ var mcpSafeSegment = regexp.MustCompile(`^[A-Za-z0-9_\-.]+$`)
 
 // mcpCall runs a tool as a REST request and wraps the answer as an MCP tool result.
 func (s *Server) mcpCall(c *gin.Context, t *mcpTool, args map[string]any) map[string]any {
+	if t.run != nil {
+		return s.mcpRunTool(c, t, args)
+	}
 	toolErr := func(msg string) map[string]any {
 		return map[string]any{"content": []map[string]any{{"type": "text", "text": msg}}, "isError": true}
 	}
@@ -838,10 +853,28 @@ func mcpDocs() []mcpDoc {
 		return nil
 	})
 	sort.Slice(out, func(i, j int) bool { return out[i].uri < out[j].uri })
+	// The site-builder skill (skills/pursae-site-builder): playbooks for whole sites.
+	_ = fs.WalkDir(skills.SiteBuilder, skills.SiteBuilderName, func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || path.Ext(p) != ".md" {
+			return nil
+		}
+		out = append(out, mcpDoc{uri: mcpSkillScheme + p, name: p, title: "Site builder skill: " + strings.TrimSuffix(path.Base(p), ".md"), file: p})
+		return nil
+	})
 	return out
 }
 
+// mcpSkillScheme names the files of the site-builder skill as resources.
+const mcpSkillScheme = "pursae-skill://"
+
 func mcpReadDoc(uri string) ([]byte, bool) {
+	if p, ok := strings.CutPrefix(uri, mcpSkillScheme); ok {
+		if path.Clean(p) != p || !strings.HasPrefix(p, skills.SiteBuilderName+"/") || path.Ext(p) != ".md" {
+			return nil, false
+		}
+		b, err := fs.ReadFile(skills.SiteBuilder, p)
+		return b, err == nil
+	}
 	p := strings.TrimPrefix(uri, mcpDocScheme)
 	if p == uri || path.Clean(p) != p || !strings.HasPrefix(p, "developer/") || path.Ext(p) != ".md" {
 		return nil, false

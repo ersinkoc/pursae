@@ -117,6 +117,14 @@ func (s *Server) forumNewPage(c *gin.Context, view, title string) *forumPage {
 		cat: s.gooFrontCatalog(ctx)}
 	s.forumPageData(ctx, p)
 	p.Crumbs = []forumCrumb{{Label: st.Title, URL: p.URLs.Index}}
+	p.totals = sync.OnceValue(func() *forumStats {
+		n, err := s.forumStatsOf(ctx)
+		if err != nil {
+			log.Printf("forum totals: %v", err)
+			return &forumStats{}
+		}
+		return n
+	})
 	if u := currentUser(c); u != nil {
 		p.User = s.forumAuthorOf(ctx, u)
 		p.Unverified = forumMetaBool(u.Meta, forumUMetaUnverified)
@@ -213,6 +221,9 @@ func (s *Server) forumPluginFuncs() template.FuncMap {
 // A theme override that fails is logged and the plugin's template is used instead.
 func (s *Server) forumExec(c *gin.Context, tmpl string, data any) string {
 	name := "forum/" + strings.TrimPrefix(tmpl, "forum/")
+	if out, ok := s.forumSiteExec(c, name, data); ok { // the site's own template (forum_site_templates.go)
+		return out
+	}
 	if th := s.forumTheme(c); th != nil && s.tmpl != nil {
 		if set := s.tmpl.getTheme(true, th.Slug); set != nil && set.Lookup(name) != nil {
 			var buf bytes.Buffer
@@ -328,7 +339,10 @@ func (s *Server) forumHead(c *gin.Context, q *siteQuery) string {
 	if q.Forum == "" && (q.Post == nil || !strings.Contains(q.Post.Content, "["+forumShortcodeTag)) {
 		return ""
 	}
-	out := `<link rel="stylesheet" id="pursae-forum-css" href="` + forumAssetsPrefix + `/forum.css?ver=` + forumVersion + `" media="all" />` + "\n"
+	out := ""
+	if _, ok := forumSiteMain(c, q); !ok { // a site template that prints the whole main brings its own CSS
+		out = `<link rel="stylesheet" id="pursae-forum-css" href="` + forumAssetsPrefix + `/forum.css?ver=` + forumVersion + `" media="all" />` + "\n"
+	}
 	if q.Forum == "" || c == nil || c.Request == nil {
 		return out
 	}

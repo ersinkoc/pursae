@@ -26,6 +26,21 @@ Application Password.
 - **Resources:** the developer docs (`pursae-docs://developer/…`), so the agent can read how themes,
   templates, `theme.json` and plugins work before it changes them.
 
+## Quick start: one click in the admin
+
+**Tools › AI Access › Connect Claude in one step** creates an Application Password with your full
+permissions and shows, once:
+
+- the `claude mcp add --transport http pursae <endpoint> --header "Authorization: Basic …"` command
+  for Claude Code (the tools load in new sessions);
+- three lines to paste into a chat (endpoint, user, Application Password) — with the
+  [site-builder skill](#site-builder-skill-and-harness) installed, Claude connects from them in a session
+  that is already running;
+- the environment variables for scripts and the skill's harness.
+
+The same screen downloads the skill (`pursae-site-builder.zip`) and shows the OAuth command for clients
+that sign in in the browser. Users › Profile › Application Passwords links to it.
+
 ## 1. Sign in
 
 **OAuth (no password to copy).** Point the client at the endpoint. It finds the authorization server
@@ -165,8 +180,12 @@ go to stderr.
 | Styles and settings | `get_global_styles` (read only), `get_settings`, `update_settings` |
 | Comments | `list_comments`, `create_comment`, `moderate_comment`, `delete_comment` |
 | Users | `list_users`, `get_me`, `create_user`, `update_user`, `delete_user` |
-| Pursae Commerce (`commerce` scope, plugin active) | `commerce_list_products`, `commerce_get_product`, `commerce_create_product`, `commerce_update_product`, `commerce_update_stock`, `commerce_delete_product`, `commerce_list_orders`, `commerce_get_order`, `commerce_update_order`, `commerce_sales_report` |
-| Pursae Web Builder (`content` scope, plugin active) | `web_builder_get_document`, `web_builder_save_draft` (a draft; publishing renders the page in the editor) |
+| Start | `site_overview` (site, your role, active/inactive plugins with slugs, theme, front page, menus, pages, Web Builder state) |
+| Pursae Commerce (`commerce` scope, plugin active) | `commerce_list_products`, `commerce_get_product`, `commerce_create_product`, `commerce_update_product`, `commerce_update_stock`, `commerce_delete_product`, `commerce_list_orders`, `commerce_get_order`, `commerce_update_order`, `commerce_sales_report`, `commerce_list_categories`, `commerce_create_category`, `commerce_update_category`, `commerce_list_coupons`, `commerce_create_coupon`, `commerce_get_settings`, `commerce_update_settings`, `commerce_list_payment_gateways`, `commerce_update_payment_gateway`, `commerce_list_shipping_zones`, `commerce_create_shipping_zone` |
+| Pursae Web Builder (`content` scope) | `web_builder_catalog`, `web_builder_get_page`, `web_builder_build_page`, `web_builder_edit_page`, `web_builder_import_html`, `web_builder_import_finish`, `web_builder_kit_upload`, `web_builder_list_kits`, `web_builder_publish`, `web_builder_import_theme_kit` (listed while the plugin is off; they answer how to turn it on), `web_builder_list_templates`, `web_builder_create_template`, `web_builder_set_template_conditions`, `web_builder_list_theme_kits`, `web_builder_get_document`, `web_builder_save_draft` — see [Building sites](#building-sites) |
+| Menus in one call | `menu_build` (nested items, locations; refills a menu of the same name) |
+| Pursae Forum (`content` scope) | `forum_list`, `forum_create`, `forum_update`, `forum_delete`, `forum_create_topic`; the design of the views: `forum_list_templates`, `forum_get_template`, `forum_set_template`, `forum_delete_template` (administrators; [forum themes](../themes/forum.md#site-templates)); settings with `get_options` / `update_options` group `forum` |
+| Contact forms (`content` scope) | `contact_list_forms`, `contact_create_form`, `contact_update_form` (Pursae Contact Form, CF7-compatible) |
 | Pursae SEO | `seo_get_meta`, `seo_update_meta`, `seo_analyze`, `seo_get_settings`, `seo_update_settings`, `seo_list_redirects`, `seo_create_redirect`, `seo_delete_redirect` |
 | Plugins | `list_plugins`, `activate_plugin`, `deactivate_plugin`, `install_plugin`, `delete_plugin` |
 | Site operations | `site_health`, `list_updates`, `run_update` (plugin, theme or core), `list_backups`, `create_backup`, `delete_theme`, `ai_activity` |
@@ -176,7 +195,7 @@ go to stderr.
 | Built-in plugin settings | `list_option_groups`, `get_options`, `update_options` (`contact`, `cookie`, `gocdn`, `headless`, `maintenance`, `multilang`, `pixel`, `security`, `seo`, `smtp`; secrets masked) |
 | Anything else | `site_info`, `rest_request` (any REST route, same permissions) |
 
-`tools/list` shows only the tools the credential can use: its scopes must cover the tool's route, the user needs the capability, and tools of Pursae SEO or Pursae Headless appear only while that plugin is active. The server sends `notifications/tools/list_changed` on the GET stream when a plugin is activated or deactivated.
+`tools/list` shows only the tools the credential can use: its scopes must cover the tool's route, the user needs the capability, and tools of Pursae SEO, Pursae Headless or Pursae Commerce appear only while that plugin is active (the Web Builder and Forum tools stay listed and explain how to turn their plugin on). The server sends `notifications/tools/list_changed` on the GET stream when a plugin is activated or deactivated.
 
 Each tool maps to a REST route listed in [Endpoints](../rest-api/endpoints.md); a refused call comes
 back as a tool error with the REST error code (`rest_forbidden`, `rest_scope_forbidden`, …).
@@ -187,6 +206,71 @@ Tool annotations follow the MCP spec, so clients can ask before risky calls: `re
 the reading tools (and `seo_analyze`, which stores nothing); `destructiveHint` is true for every other
 tool except the purely additive `create_post`, `create_page`, `create_term`, `create_menu_item` and
 `upload_media` — updates overwrite, installs replace versions and `rest_request` can do anything.
+
+## Building sites
+
+The server publishes Pursae Web Builder pages itself: `web_builder_build_page`,
+`web_builder_edit_page`, `web_builder_import_html` and `web_builder_publish` publish with
+`serverRender` ([contract §4.1](../web-builder-contract.md)), so the editor's own renderer draws the
+snapshot inside the server. The result is an ordinary builder page: it opens in the editor
+(`edit_url` in every answer) and the owner keeps changing it by drag and drop.
+
+- **`web_builder_catalog`** lists what can be drawn: section kinds with their fields, ~120 designs with
+  style tags (Minimal, Corporate, E-commerce, SaaS, …), palettes, font pairs, corners and icons, plus an
+  authoring guide; `kind=hero` gives one kind's fields, design extras and defaults.
+- **`web_builder_build_page`** `{title | post_id, sections: [{kind, design, content, items, style}], site,
+  layout, status, front_page}` creates (or rebuilds) a page. Every section starts from the editor's own
+  defaults for its kind and design; the answer lists fields still holding sample text (`warnings`).
+  `status: "draft"` writes your editor draft only.
+- **`web_builder_edit_page`** applies `add` / `update` (content, items, item_updates, style, design) /
+  `remove` / `move` / `duplicate` to the sections and publishes again.
+- **`web_builder_import_html`** turns an HTML design into an editable page. **`method: "code"`** (the
+  default for users with `unfiltered_html`) keeps the design's own markup, CSS and JavaScript, so the page
+  is the design **1:1** including animations and scripts: upload the design's folder first with
+  **`web_builder_kit_upload {kit, files}`** (CSS, JS, fonts, images; several calls with `commit: false` for
+  a large folder), then `web_builder_import_html {html, kit, path, link_map}`; each top-level part becomes a
+  code section whose texts, links and images the owner edits in place and whose parts they reorder;
+  `templates: true` makes the design's header and footer site-wide templates (`templates_only: true` takes
+  just those from a file, e.g. a design's forum page). No browser is needed. Details:
+  [Code sections and design kits](../web-builder-code-sections.md). **`method: "exact"`** rebuilds the
+  design as builder sections the owner can restyle: it answers an
+  `import_url`; open it in a browser (the agent's own browser tool, or send the link to the user) — the
+  page draws the design at desktop and phone width in a sandbox and measures it — then
+  **`web_builder_import_finish {job}`** publishes. Headers, sections and footers become free-form
+  sections of boxes, headings, text, buttons, links, images and inputs that the owner drags and
+  restyles; Tailwind, CSS variables, grids, fonts, gradients, accent colors and phone layouts come over
+  as rendered; title, meta description, robots and Open Graph tags go to the page and Pursae SEO, and the
+  answer lists SEO notes (h1 count, heading order, missing alt text). `method: "quick"` imports without a
+  browser, approximately. Details: [contract §4.2](../web-builder-contract.md).
+- **Theme Builder**: `web_builder_create_template {type: header}` → `web_builder_build_page {post_id}`
+  (new header/footer templates apply to the whole site; other rules with
+  `web_builder_set_template_conditions {conditions: ["include/singular/post"]}`), or a whole kit with
+  `web_builder_import_theme_kit {slug}` (templates, demo pages and menus, published).
+- While Web Builder (`golementor`), Pursae Forum or Pursae Commerce is off, their tools say so and name
+  the slug for `activate_plugin`; the server's instructions tell agents to ask the user first.
+
+### Prompts
+
+`prompts/list` offers the playbooks: **`build_site`** `{kind: business | store | forum | blog |
+portfolio | landing, brief}` (plan with the user → plugins → look and header/footer → content and pages →
+front page, menus, SEO, cache → report), **`add_page`** `{page, brief}` and **`import_html_page`** `{title}`.
+
+### Site-builder skill and harness
+
+`skills/pursae-site-builder` (in the repository; downloadable from Tools › AI Access; also served as
+`pursae-skill://pursae-site-builder/…` resources) is an agent skill with the same playbooks per site type,
+a section cheat sheet and `scripts/pursae_mcp.py`, a standard-library Python harness that speaks to the
+endpoint without an MCP client — useful in a session that is already running, in CI and for smoke tests:
+
+```bash
+export PURSAE_URL=https://example.com PURSAE_USER=admin PURSAE_APP_PASSWORD="abcd efgh ijkl mnop qrst uvwx"
+python3 scripts/pursae_mcp.py check
+python3 scripts/pursae_mcp.py call web_builder_build_page @home.json
+python3 scripts/pursae_mcp.py prompt build_site kind=store brief="Handmade ceramics"
+python3 scripts/pursae_mcp.py kit-upload ./design mydesign                          # the design's CSS, JS, fonts, images
+python3 scripts/pursae_mcp.py import-html ./design/index.html kit=mydesign path=index.html front_page=true   # 1:1 as code sections
+python3 scripts/pursae_mcp.py import-html design.html method=exact title="Home"   # rebuilt as builder sections, opens the browser
+```
 
 ## Safety
 

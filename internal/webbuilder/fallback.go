@@ -223,6 +223,10 @@ func (f *fallback) section(s *Section, depth int, wrap bool) {
 	if depth > MaxDepth+1 || !visible(s) || s.Kind == KindHTML || s.Kind == KindForm {
 		return
 	}
+	if s.Kind == KindCode {
+		f.b.WriteString(CodeFallback(s.Content["html"]))
+		return
+	}
 	tag := "section"
 	switch s.Kind {
 	case "nav":

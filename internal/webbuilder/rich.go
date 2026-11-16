@@ -1,6 +1,7 @@
 package webbuilder
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -13,7 +14,8 @@ import (
 // re-sanitized on the server with the same rules as sanitizeRich(html, {lists: true}).
 
 var (
-	richRE      = regexp.MustCompile(`(?i)</?(b|strong|i|em|u|s|strike|del|code|a|br|ul|ol|li)\b[^>]*>`)
+	richRE      = regexp.MustCompile(`(?i)</?(b|strong|i|em|u|s|strike|del|code|a|br|ul|ol|li|span)\b[^>]*>`)
+	richColorRE = regexp.MustCompile(`(?i)(?:^|;)\s*color\s*:\s*(#[0-9a-f]{3}|#[0-9a-f]{6}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+)\s*)?\))\s*(?:;|$)`)
 	richBr3RE   = regexp.MustCompile(`(<br>){3,}`)
 	richLeadRE  = regexp.MustCompile(`^(<br>)+`)
 	richTrailRE = regexp.MustCompile(`(<br>)+(</li>|</?(?:ul|ol)>|$)`)
@@ -33,15 +35,20 @@ var richBlock = toSet([]string{"p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "
 // IsRich reports whether v holds rich-text markup (upstream isRich).
 func IsRich(v string) bool { return v != "" && richRE.MatchString(v) }
 
-// SanitizeRich keeps b, i, u, s, code, a[href] (+target/rel for http links), br, ul, ol, li.
-func SanitizeRich(src string) string {
+// SanitizeRich keeps b, i, u, s, code, a[href] (+target/rel for http links), br, ul, ol, li and
+// span[style=color] (a colored word; patch 0017).
+func SanitizeRich(src string) string { return SanitizeRichLists(src, true) }
+
+// SanitizeRichLists is upstream sanitizeRich(html, {lists}): without lists, ul/ol are flattened and
+// every li becomes a "• " line. The server render bundle calls it in place of the DOM version.
+func SanitizeRichLists(src string, lists bool) string {
 	nodes, err := parseFragment(src)
 	if err != nil {
 		return ""
 	}
 	box := &html.Node{Type: html.ElementNode, Data: "div", DataAtom: atom.Div}
 	for _, n := range nodes {
-		richClean(n, box, false, false, 0)
+		richClean(n, box, false, false, 0, lists)
 	}
 	var b strings.Builder
 	for c := box.FirstChild; c != nil; c = c.NextSibling {
@@ -61,7 +68,7 @@ func SanitizeRich(src string) string {
 }
 
 // richClean walks one source node (and its subtree) into out.
-func richClean(n *html.Node, out *html.Node, inLink, inList bool, depth int) {
+func richClean(n *html.Node, out *html.Node, inLink, inList bool, depth int, lists bool) {
 	if depth > 64 {
 		return
 	}
@@ -81,7 +88,7 @@ func richClean(n *html.Node, out *html.Node, inLink, inList bool, depth int) {
 	}
 	kids := func(dst *html.Node, link, list bool) {
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			richClean(c, dst, link, list, depth+1)
+			richClean(c, dst, link, list, depth+1, lists)
 		}
 	}
 	lastName := func() string {
@@ -117,6 +124,8 @@ func richClean(n *html.Node, out *html.Node, inLink, inList bool, depth int) {
 		if textContent(a) != "" {
 			out.AppendChild(a)
 		}
+	case (tag == "ul" || tag == "ol") && !lists:
+		kids(out, inLink, true)
 	case tag == "ul" || tag == "ol":
 		list := el(tag)
 		kids(list, inLink, true)
@@ -144,6 +153,14 @@ func richClean(n *html.Node, out *html.Node, inLink, inList bool, depth int) {
 		if ln := lastName(); out.LastChild != nil && ln != "br" && ln != "ul" && ln != "ol" {
 			brk()
 		}
+	case tag == "span" && richSpanColor(n) != "":
+		// A colored word: <span style="color: rgb(…);">, serialized as the browser does (patch 0017).
+		sp := el("span")
+		sp.Attr = append(sp.Attr, html.Attribute{Key: "style", Val: "color: " + richSpanColor(n) + ";"})
+		kids(sp, inLink, inList)
+		if textContent(sp) != "" {
+			out.AppendChild(sp)
+		}
 	case richMap[tag] != "":
 		t := el(richMap[tag])
 		kids(t, inLink, inList)
@@ -153,6 +170,47 @@ func richClean(n *html.Node, out *html.Node, inLink, inList bool, depth int) {
 	default:
 		kids(out, inLink, inList)
 	}
+}
+
+// richSpanColor is a span's style color as the browser serializes it ("rgb(1, 2, 3)" or
+// "rgba(1, 2, 3, 0.5)"), "" when the span has none.
+func richSpanColor(n *html.Node) string {
+	st, _ := getAttr(n, "style")
+	m := richColorRE.FindStringSubmatch(st)
+	if m == nil {
+		return ""
+	}
+	c := strings.ToLower(strings.ReplaceAll(m[1], " ", ""))
+	if strings.HasPrefix(c, "#") {
+		h := c[1:]
+		if len(h) == 3 {
+			h = string([]byte{h[0], h[0], h[1], h[1], h[2], h[2]})
+		}
+		var r, g, b int
+		if _, err := fmt.Sscanf(h, "%02x%02x%02x", &r, &g, &b); err != nil {
+			return ""
+		}
+		return fmt.Sprintf("rgb(%d, %d, %d)", r, g, b)
+	}
+	inner := strings.TrimSuffix(c[strings.Index(c, "(")+1:], ")")
+	parts := strings.Split(inner, ",")
+	for i := 0; i < 3; i++ {
+		var v int
+		if _, err := fmt.Sscanf(parts[i], "%d", &v); err != nil || v > 255 {
+			return ""
+		}
+	}
+	if len(parts) == 4 {
+		a := parts[3]
+		if strings.HasPrefix(a, ".") {
+			a = "0" + a
+		}
+		if a == "1" {
+			return "rgb(" + parts[0] + ", " + parts[1] + ", " + parts[2] + ")"
+		}
+		return "rgba(" + parts[0] + ", " + parts[1] + ", " + parts[2] + ", " + a + ")"
+	}
+	return "rgb(" + parts[0] + ", " + parts[1] + ", " + parts[2] + ")"
 }
 
 func el(tag string) *html.Node {

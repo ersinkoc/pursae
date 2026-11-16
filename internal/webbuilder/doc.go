@@ -244,9 +244,12 @@ func (n *normalizer) doc(root map[string]any) {
 
 // section normalizes s in place; false = drop the whole section.
 func (n *normalizer) section(s map[string]any) bool {
-	if !n.opts.UnfilteredHTML && s["kind"] == KindHTML {
+	if !n.opts.UnfilteredHTML && (s["kind"] == KindHTML || s["kind"] == KindCode) {
 		n.strip(StrippedHTMLSections)
 		return false
+	}
+	if s["kind"] == KindCode { // the design's own markup: kept as written (privileged)
+		return true
 	}
 	if content, ok := s["content"].(map[string]any); ok {
 		for k, v := range content {
@@ -367,7 +370,8 @@ type validator struct {
 	prefix    string
 	errs      []ValidationError
 	ids       map[string]bool
-	loopDepth int // loop sections enclosing the one being validated
+	loopDepth int             // loop sections enclosing the one being validated
+	codePaths map[string]bool // JSON pointers of code sections (longer content limits)
 }
 
 func newValidator(opts DocOptions) *validator {
@@ -449,11 +453,22 @@ func (v *validator) strings(x any, path string, depth int) {
 		limit := MaxStringBytes
 		if strings.HasSuffix(path, "/content/html") {
 			limit = MaxHTMLSectionLen
+			if v.codePaths[strings.TrimSuffix(path, "/content/html")] {
+				limit = MaxCodeSectionLen
+			}
+		} else if strings.HasSuffix(path, "/content/head") && v.codePaths[strings.TrimSuffix(path, "/content/head")] {
+			limit = MaxCodeSectionLen
 		}
 		if len(t) > limit {
 			v.add(path, VErrTooLong, fmt.Sprintf("longer than %d bytes", limit))
 		}
 	case map[string]any:
+		if t["kind"] == KindCode {
+			if v.codePaths == nil {
+				v.codePaths = map[string]bool{}
+			}
+			v.codePaths[path] = true
+		}
 		for k, val := range t {
 			if len(k) > 256 {
 				v.add(path, VErrTooLong, "key too long")
@@ -489,6 +504,10 @@ func (v *validator) section(s *Section, path string, depth int) {
 		v.add(ptr(path, "kind"), VErrKind, fmt.Sprintf("unknown kind %q", trunc(s.Kind, 40)))
 	}
 	switch s.Kind {
+	case KindCode:
+		if depth > 0 {
+			v.add(ptr(path, "kind"), VErrKind, "a code section can only be a top-level section")
+		}
 	case KindLoop:
 		v.loopDepth++
 		defer func() { v.loopDepth-- }()
@@ -657,7 +676,10 @@ func (v *validator) elStyle(e *ElStyle, path string) {
 	v.enum(ptr(path, "heightUnit"), "heightUnit", e.HeightUnit)
 	v.enum(ptr(path, "fit"), "fit", e.Fit)
 	v.enum(ptr(path, "transform"), "transform", e.Transform)
-	for k, val := range map[string]string{"color": e.Color, "bg": e.Bg, "iconColor": e.IconColor, "border": e.Border, "shadow": e.Shadow, "bgSize": e.BgSize, "bgPos": e.BgPos, "list": e.List} {
+	if e.Border != "" && !CSSValueOK(e.Border) && !BorderSidesOK(e.Border) {
+		v.css(ptr(path, "border"), e.Border)
+	}
+	for k, val := range map[string]string{"color": e.Color, "bg": e.Bg, "iconColor": e.IconColor, "shadow": e.Shadow, "bgSize": e.BgSize, "bgPos": e.BgPos, "list": e.List} {
 		v.css(ptr(path, k), val)
 	}
 	for from, to := range e.IconColors {

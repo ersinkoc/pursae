@@ -1,0 +1,637 @@
+diff --git a/src/builder/CodeSection.tsx b/src/builder/CodeSection.tsx
+index 425e97f..0abce97 100644
+--- a/src/builder/CodeSection.tsx
++++ b/src/builder/CodeSection.tsx
+@@ -1,5 +1,5 @@
+-import { useEffect, useMemo, useRef, useState } from 'react'
+-import { Image as ImageIcon, Link2 } from 'lucide-react'
++import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
++import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Copy, CornerLeftUp, Image as ImageIcon, Layers, Link2, Paintbrush, Trash2, X } from 'lucide-react'
+ import type { Section } from './types'
+ import { useB } from './store'
+ import { useLive } from './live/ctx'
+@@ -17,10 +17,17 @@ import { t } from './i18n'
+  * scrolls inside the canvas when the run is taller than the screen. Texts, links and images with a
+  * data-wbc id (given at import) are edited in place; each edit is written back to the section whose
+  * markup holds that id. Sections are reordered, hidden and removed from the section list.
++ *
++ * Every element of the design carries a data-wbc id (the server tags older sections when the editor
++ * opens them), so each one is a block: a click selects it, the toolbar selects its parent, moves it
++ * among its siblings, duplicates or deletes it, and the panel sets its look as inline style (which
++ * wins over the design's classes), its classes and shows the section's layers. The markup stays the
++ * design's own, so the page keeps looking exactly like it.
+  */
+ 
+ const EDIT_CSS =
+-  '[data-wbc]{cursor:text}[data-wbc]:hover{outline:1px dashed rgba(34,113,177,.75);outline-offset:2px}' +
++  '[data-wbc]{cursor:default}[data-wbc]:hover{outline:1px dashed rgba(34,113,177,.75);outline-offset:2px}' +
++  '[data-wbc-sel]{outline:2px solid #2271b1!important;outline-offset:2px}' +
+   '[data-wbc][contenteditable]{outline:2px solid #2271b1!important;outline-offset:2px;cursor:text}img[data-wbc]{cursor:pointer}'
+ 
+ /** Text-like elements the canvas edits in place (the importer gives them data-wbc ids). */
+@@ -88,18 +95,99 @@ function frameDoc(run: Section[], edit: boolean): string {
+   )
+ }
+ 
+-/** Applies fn to the element with data-wbc=id in a section's markup and returns the new markup. */
+-export function patchCode(src: string, id: string, fn: (el: Element) => void): string | null {
+-  const doc = new DOMParser().parseFromString(`<!doctype html><html><head></head><body>${src}</body></html>`, 'text/html')
+-  const el = doc.body.querySelector(`[data-wbc="${CSS.escape(id)}"]`)
+-  if (!el) return null
+-  fn(el)
++const parse = (src: string) => new DOMParser().parseFromString(`<!doctype html><html><head></head><body>${src}</body></html>`, 'text/html')
++const byId = (root: ParentNode, id: string) => root.querySelector<HTMLElement>(`[data-wbc="${CSS.escape(id)}"]`)
++
++/**
++ * Applies fn to the element with data-wbc=id in a section's markup and returns the new markup;
++ * fn returning false cancels the change.
++ */
++export function patchCode(src: string, id: string, fn: (el: HTMLElement) => void | boolean): string | null {
++  const doc = parse(src)
++  const el = byId(doc.body, id)
++  if (!el || fn(el) === false) return null
+   return doc.body.innerHTML
+ }
+ 
++let seq = 0
++/** A new element id, unique on the page (imported ids are numbers). */
++export const freshId = () => `n${Date.now().toString(36)}${(seq++).toString(36)}`
++
++const REF_ATTRS = ['aria-controls', 'aria-labelledby', 'aria-describedby', 'aria-owns', 'for', 'list', 'form', 'headers']
++
++/**
++ * Makes a copy unique: new editor ids for el and everything inside it, and new HTML ids (name-2,
++ * name-3, … free in doc and on the page) with the references inside the copy (aria-controls, for, href="#…")
++ * pointing at the renamed ones, so the design's scripts and labels work on both.
++ */
++export function reId(el: Element, doc: Document = el.ownerDocument, page?: Document | null) {
++  const all = [el, ...Array.from(el.querySelectorAll('*'))]
++  const renamed = new Map<string, string>()
++  for (const k of all) {
++    if (k.hasAttribute('data-wbc')) k.setAttribute('data-wbc', freshId())
++    const id = k.getAttribute('id')
++    if (!id) continue
++    const base = id.replace(/-\d+$/, '')
++    let n = 2
++    while (doc.getElementById(`${base}-${n}`) || page?.getElementById(`${base}-${n}`) || [...renamed.values()].includes(`${base}-${n}`)) n++
++    renamed.set(id, `${base}-${n}`)
++    k.setAttribute('id', `${base}-${n}`)
++  }
++  if (!renamed.size) return
++  for (const k of all) {
++    for (const a of REF_ATTRS) {
++      const v = k.getAttribute(a)
++      if (v) k.setAttribute(a, v.split(/\s+/).map((x) => renamed.get(x) ?? x).join(' '))
++    }
++    const href = k.getAttribute('href')
++    if (href?.startsWith('#') && renamed.has(href.slice(1))) k.setAttribute('href', `#${renamed.get(href.slice(1))}`)
++  }
++}
++
++/** The nearest element sibling of el in direction dir (-1 previous, 1 next). */
++const sibling = (el: Element, dir: -1 | 1) => (dir < 0 ? el.previousElementSibling : el.nextElementSibling)
++
++/** Moves el past its element sibling in direction dir; false when there is none. */
++export function moveEl(el: Element, dir: -1 | 1): boolean {
++  const to = sibling(el, dir)
++  if (!to) return false
++  if (dir < 0) to.before(el)
++  else to.after(el)
++  return true
++}
++
++/** Text of its own (not only inside children): the element is edited as text. */
++function ownText(el: Element): boolean {
++  for (const n of Array.from(el.childNodes)) if (n.nodeType === 3 && (n.textContent ?? '').trim()) return true
++  return false
++}
++
++/** The element's text with a space between its parts (markup has no layout to give one). */
++function textOf(el: Element): string {
++  const out: string[] = []
++  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
++  for (let n = walk.nextNode(); n && out.length < 12; n = walk.nextNode()) {
++    const p = n.parentElement?.tagName
++    if (p === 'SCRIPT' || p === 'STYLE') continue
++    const v = (n.textContent ?? '').trim()
++    if (v) out.push(v)
++  }
++  return out.join(' ')
++}
++
++/** A short name for an element: tag, first class or id, and a bit of its text. */
++export function elName(el: Element): string {
++  const tag = el.tagName.toLowerCase()
++  const cls = (el.getAttribute('class') ?? '').trim().split(/\s+/)[0]
++  const idn = el.getAttribute('id')
++  let name = tag + (idn ? `#${idn}` : cls ? `.${cls}` : '')
++  const txt = (el.tagName === 'IMG' ? el.getAttribute('alt') : textOf(el))?.replace(/\s+/g, ' ').trim() ?? ''
++  if (txt && el.tagName !== 'svg' && el.tagName !== 'SVG') name += ` · ${txt.length > 26 ? txt.slice(0, 25) + '…' : txt}`
++  return name
++}
++
+ function sourceInner(src: string, id: string): string | null {
+-  const doc = new DOMParser().parseFromString(`<!doctype html><html><head></head><body>${src}</body></html>`, 'text/html')
+-  return doc.body.querySelector(`[data-wbc="${CSS.escape(id)}"]`)?.innerHTML ?? null
++  return byId(parse(src).body, id)?.innerHTML ?? null
+ }
+ 
+ const norm = (v: string) => v.replace(/\s+/g, ' ').trim()
+@@ -118,15 +206,46 @@ function runOf(sections: Section[], id: string): { run: Section[]; first: boolea
+ 
+ const holder = (run: Section[], id: string) => run.find((x) => (x.content.html ?? '').includes(`data-wbc="${id}"`))
+ 
++
++/** What is selected on the canvas: an element of the run, where it sits on the canvas. */
+ interface Pick {
+   id: string
+   tag: string
+   x: number
+   y: number
++  w: number
++  h: number
+   href?: string
+   alt?: string
+ }
+ 
++/** The look the panel sets, as inline style on the element. */
++const styleFields = (): { prop: string; label: string; kind: 'color' | 'len' | 'text' | 'select'; options?: string[] }[] => [
++  { prop: 'color', label: t('Text color'), kind: 'color' },
++  { prop: 'background-color', label: t('Background'), kind: 'color' },
++  { prop: 'font-size', label: t('Font size'), kind: 'len' },
++  { prop: 'font-weight', label: t('Font weight'), kind: 'select', options: ['', '300', '400', '500', '600', '700', '800', '900'] },
++  { prop: 'text-align', label: t('Alignment'), kind: 'select', options: ['', 'left', 'center', 'right', 'justify'] },
++  { prop: 'padding', label: t('Padding'), kind: 'len' },
++  { prop: 'margin', label: t('Margin'), kind: 'len' },
++  { prop: 'gap', label: t('Gap'), kind: 'len' },
++  { prop: 'border-radius', label: t('Corner radius'), kind: 'len' },
++  { prop: 'width', label: t('Width'), kind: 'len' },
++  { prop: 'max-width', label: t('Max width'), kind: 'len' },
++  { prop: 'opacity', label: t('Opacity'), kind: 'text' },
++]
++
++/** A bare number is pixels for a length ("24" → "24px", "8 16" → "8px 16px"). */
++const withUnits = (v: string) => v.replace(/(^|\s)(-?\d*\.?\d+)(?=\s|$)/g, (_, sp: string, n: string) => `${sp}${n === '0' ? '0' : `${n}px`}`)
++
++/** rgb()/rgba() → #rrggbb for the color input ('' when it is not one). */
++function toHex(v: string): string {
++  if (/^#[0-9a-f]{6}$/i.test(v)) return v
++  const m = /rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s/]+([\d.]+))?/.exec(v)
++  if (m?.[4] !== undefined && Number(m[4]) === 0) return '' // transparent
++  return m ? '#' + [m[1], m[2], m[3]].map((x) => Number(x).toString(16).padStart(2, '0')).join('') : ''
++}
++
+ export function CodeSection({ s }: { s: Section }) {
+   const live = useLive()
+   if (live) return <div data-wb-code={s.id} />
+@@ -147,31 +266,70 @@ function CodeFrame({ run }: { run: Section[] }) {
+   const viewport = typeof window !== 'undefined' ? Math.max(480, window.innerHeight - 64) : 900
+   const [h, setH] = useState(viewport)
+   const [pick, setPick] = useState<Pick | null>(null)
++  const [panel, setPanel] = useState<'style' | 'layers' | null>(null)
+   const key = run.map((x) => `${x.id}\u0000${x.content.html ?? ''}\u0000${x.content.head ?? ''}\u0000${x.content.wrap ?? ''}`).join('\u0001')
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+   const built = useMemo(() => frameDoc(run, edit), [key, edit])
+   // What the frame shows; markup the frame wrote itself does not reload it.
+   const shown = useRef<string>(built)
+   const [doc, setDoc] = useState(built)
++  // Kept over a reload (a structural change redraws the frame): the selection and the scroll.
++  const keep = useRef<{ id: string | null; y: number }>({ id: null, y: 0 })
+   useEffect(() => {
+     if (built === shown.current) return
+     shown.current = built
++    keep.current.y = frame.current?.contentWindow?.scrollY ?? 0
+     setDoc(built)
+-    setPick(null)
+   }, [built])
+   // The frame's listeners outlive renders: they read the current run and store through a ref.
+   const cur = useRef({ run, b, edit })
+   cur.current = { run, b, edit }
+ 
+-  /** Writes the section holding element id: fn gets the element of its markup. */
+-  const write = (id: string, label: string, fn: (el: Element) => void) => {
++  const liveEl = (id: string) => {
++    const d = frame.current?.contentDocument
++    return d ? byId(d, id) : null
++  }
++
++  /** Marks element id as selected in the frame and places the toolbar on it. */
++  const choose = (id: string | null, scroll = false) => {
++    const d = frame.current?.contentDocument
++    if (!d) return
++    d.querySelectorAll('[data-wbc-sel]').forEach((x) => x.removeAttribute('data-wbc-sel'))
++    keep.current.id = id
++    const el = id ? byId(d, id) : null
++    if (!el || !id) {
++      setPick(null)
++      return
++    }
++    el.setAttribute('data-wbc-sel', '')
++    if (scroll) el.scrollIntoView({ block: 'center' })
++    const sec = holder(cur.current.run, id)
++    if (sec) cur.current.b.select({ sectionId: sec.id, el: 'html' })
++    place(el)
++  }
++
++  const place = (el: HTMLElement) => {
++    const r = el.getBoundingClientRect()
++    const p: Pick = { id: el.dataset.wbc!, tag: el.tagName, x: r.left, y: r.top, w: r.width, h: r.height }
++    const link = el.closest('a[href]')
++    if (link) p.href = link.getAttribute('href') ?? ''
++    if (el.tagName === 'IMG') p.alt = el.getAttribute('alt') ?? ''
++    setPick(p)
++  }
++
++  /**
++   * Writes the section holding element id: fn gets the element of its markup (false = no change).
++   * redraw: the frame reloads with the new markup (structure changed); otherwise the caller already
++   * changed the frame itself.
++   */
++  const write = (id: string, label: string, fn: (el: HTMLElement) => void | boolean, redraw = false) => {
+     const { run, b, edit } = cur.current
+     const sec = holder(run, id)
+     if (!sec) return
+     const next = patchCode(sec.content.html ?? '', id, fn)
+     if (next === null || next === sec.content.html) return
+     const nextRun = run.map((x) => (x.id === sec.id ? { ...x, content: { ...x.content, html: next } } : x))
+-    shown.current = frameDoc(nextRun, edit)
++    if (!redraw) shown.current = frameDoc(nextRun, edit)
+     cur.current.run = nextRun
+     b.dispatch({ type: 'content', id: sec.id, key: 'html', value: next, label })
+   }
+@@ -189,14 +347,29 @@ function CodeFrame({ run }: { run: Section[] }) {
+     measure()
+     w.addEventListener('load', measure)
+     setTimeout(measure, 800)
+-    w.addEventListener('scroll', () => setPick(null), { passive: true })
++    if (keep.current.y) w.scrollTo(0, keep.current.y)
++    if (keep.current.id) choose(keep.current.id)
++    else setPick(null)
++    let raf = 0
++    w.addEventListener(
++      'scroll',
++      () => {
++        cancelAnimationFrame(raf)
++        raf = requestAnimationFrame(() => {
++          const id = keep.current.id
++          const el = id ? byId(d, id) : null
++          if (el) place(el)
++        })
++      },
++      { passive: true },
++    )
+ 
+     d.addEventListener(
+       'click',
+       (e) => {
+         const target = e.target as Element
+         const a = target.closest('a[href]')
+-        const { edit, b } = cur.current
++        const { edit } = cur.current
+         if (!edit) {
+           if (a && !(a.getAttribute('href') ?? '').startsWith('#')) e.preventDefault()
+           return
+@@ -204,21 +377,23 @@ function CodeFrame({ run }: { run: Section[] }) {
+         if (a) e.preventDefault()
+         const el = target.closest<HTMLElement>('[data-wbc]')
+         if (!el) {
+-          setPick(null)
++          choose(null)
+           return
+         }
+         e.preventDefault()
+         e.stopPropagation()
+-        const id = el.dataset.wbc!
+-        const sec = holder(cur.current.run, id)
+-        if (sec) b.select({ sectionId: sec.id, el: 'html' })
+-        const r = el.getBoundingClientRect()
+-        const p: Pick = { id, tag: el.tagName, x: r.left, y: r.top }
+-        const link = el.closest('a[href]')
+-        if (link) p.href = link.getAttribute('href') ?? ''
+-        if (el.tagName === 'IMG') p.alt = el.getAttribute('alt') ?? ''
+-        setPick(p)
+-        if (TEXT_TAGS.has(el.tagName) && !el.isContentEditable) startText(el)
++        if (el.isContentEditable) return
++        choose(el.dataset.wbc!)
++        if (TEXT_TAGS.has(el.tagName) && ownText(el)) startText(el)
++      },
++      true,
++    )
++    d.addEventListener(
++      'keydown',
++      (e) => {
++        if (e.key !== 'Escape' || (e.target as HTMLElement)?.isContentEditable) return
++        const id = keep.current.id
++        if (id) selectParent(id)
+       },
+       true,
+     )
+@@ -247,7 +422,7 @@ function CodeFrame({ run }: { run: Section[] }) {
+         })
+         return
+       }
+-      const next = el.innerHTML
++      const next = el.innerHTML.replace(/\sdata-wbc-sel=""/g, '')
+       write(id, t('Text changed'), (n) => {
+         n.innerHTML = next
+       })
+@@ -269,15 +444,80 @@ function CodeFrame({ run }: { run: Section[] }) {
+   const setAttr = (id: string, name: string, value: string, label: string) => {
+     const apply = (n: Element) => {
+       const target = name === 'href' ? (n.closest('a') ?? n) : n
+-      target.setAttribute(name, value)
++      if (value === '' && name === 'class') target.removeAttribute('class')
++      else target.setAttribute(name, value)
+       if (name === 'src') {
+         target.removeAttribute('srcset')
+         target.removeAttribute('sizes')
+       }
+     }
+     write(id, label, apply)
+-    const live = frame.current?.contentDocument?.querySelector(`[data-wbc="${CSS.escape(id)}"]`)
+-    if (live) apply(live)
++    const el = liveEl(id)
++    if (el) {
++      apply(el)
++      place(el)
++    }
++  }
++
++  /** Sets (or with '' removes) one inline style property of element id. */
++  const setStyle = (id: string, prop: string, value: string) => {
++    const apply = (n: HTMLElement) => {
++      if (value) n.style.setProperty(prop, value)
++      else n.style.removeProperty(prop)
++      if (!n.getAttribute('style')?.trim()) n.removeAttribute('style')
++    }
++    write(id, t('Style changed'), apply)
++    const el = liveEl(id)
++    if (el) {
++      apply(el)
++      place(el)
++    }
++  }
++
++  /** The element's source in its section's markup (what the panel reads). */
++  const source = (id: string) => {
++    const sec = holder(cur.current.run, id)
++    return sec ? byId(parse(sec.content.html ?? '').body, id) : null
++  }
++
++  const selectParent = (id: string) => {
++    const p = source(id)?.parentElement?.closest<HTMLElement>('[data-wbc]')
++    if (p) choose(p.dataset.wbc!, false)
++    else cur.current.b.notify(t('This is the section’s outermost element.'))
++  }
++
++  const move = (id: string, dir: -1 | 1) => {
++    let moved = false
++    write(id, t('Element moved'), (n) => (moved = moveEl(n, dir)), true)
++    if (!moved) cur.current.b.notify(dir < 0 ? t('It is already the first one.') : t('It is already the last one.'))
++  }
++
++  const duplicate = (id: string) => {
++    let copy = ''
++    write(
++      id,
++      t('Element duplicated'),
++      (n) => {
++        const c = n.cloneNode(true) as HTMLElement
++        reId(c, n.ownerDocument, frame.current?.contentDocument)
++        n.after(c)
++        copy = c.dataset.wbc ?? ''
++      },
++      true,
++    )
++    if (copy) keep.current.id = copy
++  }
++
++  const remove = (id: string) => {
++    const sec = holder(cur.current.run, id)
++    const top = sec && parse(sec.content.html ?? '').body.children
++    if (top && top.length === 1 && top[0].getAttribute('data-wbc') === id) {
++      cur.current.b.notify(t('This is the whole section: remove it from the section list.'))
++      return
++    }
++    const p = source(id)?.parentElement?.closest<HTMLElement>('[data-wbc]')
++    write(id, t('Element deleted'), (n) => n.remove(), true)
++    keep.current.id = p?.dataset.wbc ?? null
+   }
+ 
+   const replaceImage = () => {
+@@ -294,6 +534,13 @@ function CodeFrame({ run }: { run: Section[] }) {
+       .catch((e: unknown) => b.notify(e instanceof Error && e.message ? e.message : t('The photo could not be uploaded')))
+   }
+ 
++  const src = pick ? source(pick.id) : null
++  const tool = (label: string, icon: ReactNode, on: () => void, active = false) => (
++    <button type="button" title={label} aria-label={label} aria-pressed={active || undefined} className={`flex items-center rounded-md px-1.5 py-1 hover:bg-white/10 ${active ? 'bg-white/15' : ''}`} onClick={on}>
++      {icon}
++    </button>
++  )
++
+   return (
+     <div className="relative" data-el={`${run[0].id}:html`} onClick={(e) => e.stopPropagation()}>
+       <iframe
+@@ -305,19 +552,27 @@ function CodeFrame({ run }: { run: Section[] }) {
+         style={{ height: h }}
+         sandbox="allow-scripts allow-same-origin allow-forms"
+       />
+-      {edit && pick && (pick.href !== undefined || pick.tag === 'IMG') && (
++      {edit && pick && (
+         <div
+-          className="absolute z-20 flex items-center gap-1.5 rounded-lg bg-[#1d2327] p-1.5 text-[12px] text-white shadow-lg"
+-          style={{ left: Math.max(4, pick.x), top: Math.max(4, pick.y - 44) }}
++          className="absolute z-20 flex max-w-[calc(100%-8px)] flex-wrap items-center gap-1 rounded-lg bg-[#1d2327] p-1 text-[12px] text-white shadow-lg"
++          style={{ left: Math.max(4, Math.min(pick.x, 9999)), top: Math.max(4, Math.min(pick.y - 40, h - 44)) }}
+           onClick={(e) => e.stopPropagation()}
+         >
++          <span className="max-w-40 truncate px-1.5 font-medium text-white/80">{src ? elName(src).split(' · ')[0] : pick.tag.toLowerCase()}</span>
++          {tool(t('Select parent'), <CornerLeftUp size={14} />, () => selectParent(pick.id))}
++          {tool(t('Move up'), <ArrowUp size={14} />, () => move(pick.id, -1))}
++          {tool(t('Move down'), <ArrowDown size={14} />, () => move(pick.id, 1))}
++          {tool(t('Duplicate'), <Copy size={14} />, () => duplicate(pick.id))}
++          {tool(t('Delete'), <Trash2 size={14} />, () => remove(pick.id))}
++          {tool(t('Style'), <Paintbrush size={14} />, () => setPanel(panel === 'style' ? null : 'style'), panel === 'style')}
++          {tool(t('Layers'), <Layers size={14} />, () => setPanel(panel === 'layers' ? null : 'layers'), panel === 'layers')}
+           {pick.tag === 'IMG' && (
+             <>
+               <button type="button" className="flex items-center gap-1 rounded-md px-2 py-1 hover:bg-white/10" onClick={replaceImage}>
+                 <ImageIcon size={13} /> {t('Replace')}
+               </button>
+               <input
+-                className="w-40 rounded-md bg-white/10 px-2 py-1 text-white placeholder:text-white/50"
++                className="w-36 rounded-md bg-white/10 px-2 py-1 text-white placeholder:text-white/50"
+                 placeholder={t('Alt text')}
+                 defaultValue={pick.alt}
+                 key={`alt-${pick.id}`}
+@@ -329,7 +584,7 @@ function CodeFrame({ run }: { run: Section[] }) {
+             <label className="flex items-center gap-1">
+               <Link2 size={13} />
+               <input
+-                className="w-56 rounded-md bg-white/10 px-2 py-1 text-white placeholder:text-white/50"
++                className="w-48 rounded-md bg-white/10 px-2 py-1 text-white placeholder:text-white/50"
+                 placeholder="https://"
+                 defaultValue={pick.href}
+                 key={`href-${pick.id}`}
+@@ -340,6 +595,135 @@ function CodeFrame({ run }: { run: Section[] }) {
+           )}
+         </div>
+       )}
++      {edit && panel && (
++        // Sticky inside a layer over the frame: the panel stays in view while the canvas scrolls.
++        <div className="pointer-events-none absolute inset-0 z-30">
++        <div
++          className="pointer-events-auto sticky top-2 mt-2 mr-2 ml-auto flex w-72 flex-col overflow-hidden rounded-xl border border-black/10 bg-white text-[12px] text-[#1d2327] shadow-2xl"
++          style={{ maxHeight: Math.min(Math.max(240, h - 16), typeof window !== 'undefined' ? window.innerHeight - 96 : 800) }}
++          onClick={(e) => e.stopPropagation()}
++        >
++          <div className="flex items-center gap-1 border-b border-black/10 p-1.5">
++            {(['style', 'layers'] as const).map((k) => (
++              <button key={k} type="button" className={`rounded-md px-2.5 py-1 font-medium ${panel === k ? 'bg-[#2271b1] text-white' : 'hover:bg-black/5'}`} onClick={() => setPanel(k)}>
++                {k === 'style' ? t('Style') : t('Layers')}
++              </button>
++            ))}
++            <button type="button" aria-label={t('Close')} className="ml-auto rounded-md p-1 hover:bg-black/5" onClick={() => setPanel(null)}>
++              <X size={14} />
++            </button>
++          </div>
++          <div className="min-h-0 flex-1 overflow-auto p-2.5">
++            {panel === 'style' && (pick && src ? <StylePanel key={pick.id} el={src} live={liveEl(pick.id)} onStyle={(p, v) => setStyle(pick.id, p, v)} onAttr={(n, v, l) => setAttr(pick.id, n, v, l)} /> : <p className="text-black/60">{t('Select an element on the page.')}</p>)}
++            {panel === 'layers' && <LayerTree run={cur.current.run} selected={pick?.id ?? null} onPick={(id) => choose(id, true)} />}
++          </div>
++        </div>
++        </div>
++      )}
+     </div>
+   )
+ }
++
++function StylePanel({ el, live, onStyle, onAttr }: { el: HTMLElement; live: HTMLElement | null; onStyle: (prop: string, value: string) => void; onAttr: (name: string, value: string, label: string) => void }) {
++  const computed = live ? live.ownerDocument.defaultView?.getComputedStyle(live) : null
++  const field = 'w-full rounded-md border border-black/15 px-2 py-1 text-[12px] focus:border-[#2271b1] focus:outline-none'
++  return (
++    <div className="flex flex-col gap-2">
++      <p className="text-[11px] text-black/55">{t('Values set here override the design’s own style for this element.')}</p>
++      {styleFields().map((f) => {
++        const own = el.style.getPropertyValue(f.prop)
++        const now = computed?.getPropertyValue(f.prop) ?? ''
++        const commit = (v: string) => {
++          const next = f.kind === 'len' ? withUnits(v.trim()) : v.trim()
++          if (next !== own) onStyle(f.prop, next)
++        }
++        return (
++          <label key={f.prop} className="grid grid-cols-[96px_1fr] items-center gap-2">
++            <span className="text-black/70">{f.label}</span>
++            {f.kind === 'select' ? (
++              <select className={field} defaultValue={own} onChange={(e) => commit(e.target.value)}>
++                {f.options!.map((o) => (
++                  <option key={o} value={o}>
++                    {o || `${t('Design')} (${now})`}
++                  </option>
++                ))}
++              </select>
++            ) : (
++              <span className="flex items-center gap-1">
++                {f.kind === 'color' && <input type="color" className="h-7 w-8 shrink-0 cursor-pointer rounded border border-black/15 p-0" defaultValue={toHex(own || now) || '#ffffff'} onChange={(e) => commit(e.target.value)} />}
++                <input className={field} defaultValue={own} placeholder={now} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} onBlur={(e) => commit(e.target.value)} />
++              </span>
++            )}
++          </label>
++        )
++      })}
++      <label className="mt-1 flex flex-col gap-1">
++        <span className="text-black/70">{t('Classes')}</span>
++        <input className={field} defaultValue={el.getAttribute('class') ?? ''} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} onBlur={(e) => e.target.value.trim() !== (el.getAttribute('class') ?? '') && onAttr('class', e.target.value.trim(), t('Classes changed'))} />
++      </label>
++      <label className="flex flex-col gap-1">
++        <span className="text-black/70">{t('Inline CSS')}</span>
++        <textarea className={`${field} font-mono`} rows={3} defaultValue={el.getAttribute('style') ?? ''} onBlur={(e) => e.target.value.trim() !== (el.getAttribute('style') ?? '') && onAttr('style', e.target.value.trim(), t('Style changed'))} />
++      </label>
++    </div>
++  )
++}
++
++/** The run's elements as a tree; the path to the selection is open. */
++function LayerTree({ run, selected, onPick }: { run: Section[]; selected: string | null; onPick: (id: string) => void }) {
++  const roots = useMemo(() => run.map((s) => ({ s, body: parse(s.content.html ?? '').body })), [run])
++  const path = useMemo(() => {
++    const open = new Set<string>()
++    if (!selected) return open
++    for (const r of roots) {
++      let el: Element | null = byId(r.body, selected)
++      if (!el) continue
++      open.add(r.s.id)
++      while ((el = el.parentElement)) if (el.getAttribute('data-wbc')) open.add(el.getAttribute('data-wbc')!)
++    }
++    return open
++  }, [roots, selected])
++  const [opened, setOpened] = useState<Set<string>>(new Set())
++  const isOpen = (k: string) => opened.has(k) !== path.has(k)
++  const toggle = (k: string) => setOpened((o) => {
++    const n = new Set(o)
++    if (n.has(k)) n.delete(k)
++    else n.add(k)
++    return n
++  })
++  const kids = (el: Element) => Array.from(el.children).filter((k) => k.hasAttribute('data-wbc'))
++  const row = (el: Element, depth: number): ReactNode => {
++    const id = el.getAttribute('data-wbc')!
++    const list = el.tagName.toLowerCase() === 'svg' ? [] : kids(el)
++    const open = list.length > 0 && isOpen(id)
++    return (
++      <li key={id}>
++        <div className={`flex items-center rounded ${selected === id ? 'bg-[#2271b1] text-white' : 'hover:bg-black/5'}`} style={{ paddingLeft: depth * 12 }}>
++          <button type="button" className="w-4 shrink-0" aria-label={open ? t('Collapse') : t('Expand')} onClick={() => list.length && toggle(id)}>
++            {list.length > 0 && (open ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
++          </button>
++          <button type="button" className="min-w-0 flex-1 truncate py-0.5 text-left" onClick={() => onPick(id)}>
++            {elName(el)}
++          </button>
++        </div>
++        {open && <ul>{list.map((k) => row(k, depth + 1))}</ul>}
++      </li>
++    )
++  }
++  return (
++    <ul className="flex flex-col">
++      {roots.map(({ s, body }) => {
++        const open = isOpen(s.id)
++        return (
++          <li key={s.id}>
++            <button type="button" className="flex w-full items-center gap-1 rounded py-0.5 text-left font-semibold hover:bg-black/5" onClick={() => toggle(s.id)}>
++              {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
++              <span className="truncate">{s.name || t('Code section')}</span>
++            </button>
++            {open && <ul>{kids(body).map((k) => row(k, 1))}</ul>}
++          </li>
++        )
++      })}
++    </ul>
++  )
++}
+diff --git a/src/builder/i18n/tr.ts b/src/builder/i18n/tr.ts
+index d7c2267..4265f0d 100644
+--- a/src/builder/i18n/tr.ts
++++ b/src/builder/i18n/tr.ts
+@@ -1585,6 +1585,20 @@ const tr: Record<string, string> = {
+   'Alt text': 'Alternatif metin',
+   'Replace': 'Değiştir',
+   'This text is drawn by the design’s script: edit it in the section’s HTML code.': 'Bu metni tasarımın betiği çiziyor: bölümün HTML kodundan düzenleyin.',
++  'Select parent': 'Üst öğeyi seç',
++  'Layers': 'Katmanlar',
++  'Select an element on the page.': 'Sayfada bir öğe seçin.',
++  'Values set here override the design’s own style for this element.': 'Buradaki değerler bu öğede tasarımın kendi stilinin yerine geçer.',
++  'Max width': 'Azami genişlik',
++  'Classes': 'Sınıflar',
++  'Inline CSS': 'Satır içi CSS',
++  'Classes changed': 'Sınıflar değişti',
++  'Element moved': 'Öğe taşındı',
++  'Element duplicated': 'Öğe çoğaltıldı',
++  'It is already the first one.': 'Zaten ilk sırada.',
++  'It is already the last one.': 'Zaten son sırada.',
++  'This is the section’s outermost element.': 'Bu, bölümün en dıştaki öğesi.',
++  'This is the whole section: remove it from the section list.': 'Bu öğe bölümün tamamı: bölüm listesinden kaldırın.',
+ }
+ 
+ export default tr

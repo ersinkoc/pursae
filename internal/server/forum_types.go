@@ -229,6 +229,7 @@ type forumPage struct {
 	badges     func() []forumBadge
 	points     func() forumLevels
 	dates      func(t time.Time, withTime bool) string // forumPageData: the site's formats, the viewer's month names
+	totals     func() *forumStats                      // the site's numbers, counted on first use (Totals)
 }
 
 // forumStats are the site totals (forumStatsOf).
@@ -262,6 +263,14 @@ type forumDraft struct {
 	Tags    string    `json:"tags"`
 	Notify  bool      `json:"notify"`
 	Saved   time.Time `json:"saved"`
+}
+
+// Totals are the site's forum numbers: .Forums, .Topics, .Replies, .Members … (forumStats, counted once per page).
+func (p *forumPage) Totals() *forumStats {
+	if p == nil || p.totals == nil {
+		return &forumStats{}
+	}
+	return p.totals()
 }
 
 // T translates msg into the front end's language (msg itself when there is no translation).
