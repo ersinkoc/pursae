@@ -1,10 +1,30 @@
 package plugins
 
 import (
+	"bytes"
+	"log/slog"
 	"strings"
 	"testing"
 	"unicode/utf8"
 )
+
+// SetLogsQuiet sends a plugin's entries to the server log at debug level until it is cleared.
+func TestSetLogsQuiet(t *testing.T) {
+	var buf bytes.Buffer
+	rt := &Runtime{cfg: Config{Logger: slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))}}
+	sink := rt.logSink("demo")
+	rt.SetLogsQuiet("demo", true)
+	sink(LogEntry{Level: "error", Source: "plugin", Message: "add_hook the_content: permission_denied"})
+	if !strings.Contains(buf.String(), "level=DEBUG") {
+		t.Fatalf("quiet entry: %s", buf.String())
+	}
+	buf.Reset()
+	rt.SetLogsQuiet("demo", false)
+	sink(LogEntry{Level: "error", Source: "plugin", Message: "boom"})
+	if !strings.Contains(buf.String(), "level=ERROR") {
+		t.Fatalf("entry after quiet: %s", buf.String())
+	}
+}
 
 func TestLogRingTruncatesAtUTF8Boundary(t *testing.T) {
 	r := newLogRing(1, nil)

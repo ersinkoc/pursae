@@ -64,6 +64,12 @@ func TestRESTMediaRawBodyUpload(t *testing.T) {
 	if code, m = send(`attachment; filename="empty.png"`, "", nil); code != http.StatusBadRequest || m["code"] != "rest_upload_no_data" {
 		t.Errorf("empty raw upload: %d %v", code, m)
 	}
+	// A disallowed type is a client error, not a 5xx.
+	for _, name := range []string{"x.php", "x.html"} {
+		if code, m = send(`attachment; filename="`+name+`"`, "", []byte("<?php echo 1;")); code != http.StatusBadRequest || m["code"] != "rest_upload_sideload_error" {
+			t.Errorf("%s upload: %d %v", name, code, m)
+		}
+	}
 	if code, m = send(`attachment; filename="../../evil.png"`, "", pngData.Bytes()); code != http.StatusCreated {
 		t.Fatalf("raw upload with a path: %d %v", code, m)
 	} else if src, _ := m["source_url"].(string); bytes.Contains([]byte(src), []byte("..")) {

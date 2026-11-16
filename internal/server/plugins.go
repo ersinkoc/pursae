@@ -1141,7 +1141,13 @@ func (s *Server) uninstallPluginHook(ctx context.Context, slug string) {
 		if err := s.store.Pool.QueryRow(ctx, `SELECT permissions FROM plugins WHERE slug = $1`, slug).Scan(&perms); err != nil {
 			return
 		}
-		if err := s.loadPlugin(ctx, slug, perms); err != nil {
+		// A plugin that was never activated has no granted permissions, so its start-up code (hooks
+		// it registers on load) meets permission_denied refusals that are expected here: keep them
+		// out of the server log at error level. Its uninstall callback below logs normally.
+		s.plugins.rt.SetLogsQuiet(slug, true)
+		err := s.loadPlugin(ctx, slug, perms)
+		s.plugins.rt.SetLogsQuiet(slug, false)
+		if err != nil {
 			return
 		}
 	}
@@ -1245,6 +1251,9 @@ func (s *Server) installPackageFrom(ctx context.Context, data []byte, source, wa
 	return s.installPackageChecked(ctx, data, source, wantSlug, false)
 }
 
+// unverifiedWarned holds the digests of unsigned packages already warned about (installPackageChecked).
+var unverifiedWarned sync.Map
+
 // installPackageChecked is installPackageFrom; confirmed skips the downgrade and signer checks (the
 // administrator confirmed the replacement of an uploaded package).
 func (s *Server) installPackageChecked(ctx context.Context, data []byte, source, wantSlug string, confirmed bool) (*plugins.Manifest, error) {
@@ -1259,8 +1268,12 @@ func (s *Server) installPackageChecked(ctx context.Context, data []byte, source,
 		return nil, err
 	}
 	slug := pkg.Manifest.Slug
+	// Once per package: one install can check the same bytes more than once (a refused replacement
+	// confirmed with "Replace current with uploaded", a retry from the CLI or the Manager).
 	if !pkg.Verified() {
-		slog.Warn("installing a plugin package whose signature was not verified (plugin_allow_unsigned and WPGO_ALLOW_UNSIGNED_PLUGINS are on; development only)", "plugin", slug)
+		if _, seen := unverifiedWarned.LoadOrStore(fmt.Sprintf("%x", pkg.Digest), true); !seen {
+			slog.Warn("installing a plugin package whose signature was not verified (plugin_allow_unsigned and WPGO_ALLOW_UNSIGNED_PLUGINS are on; development only)", "plugin", slug)
+		}
 	}
 	if wantSlug != "" && slug != wantSlug {
 		return nil, fmt.Errorf("the package is the plugin %q, not %q", slug, wantSlug)

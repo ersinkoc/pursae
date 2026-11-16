@@ -24,8 +24,9 @@ import (
 // publishing, bulk actions, media upload, bidirectional relations, edit locks, a review flow and
 // GraphQL subscriptions (server-sent events).
 //
-// While it is active the site's front end does not render (headless mode): visitors get a JSON
-// 404, a plain 404 or a redirect to the front-end app, as configured. wp-admin, wp-login, the REST
+// Headless mode is opt-in (the front mode defaults to "off"): once an administrator picks it, the
+// site's front end does not render and visitors get a JSON 404, a plain 404 or a redirect to the
+// front-end app, as configured. wp-admin, wp-login, the REST
 // API, uploads and static assets keep working. The gate and the delivery API run in
 // Server.Handler before the page cache (headlessServe), so neither is ever cached.
 //
@@ -76,7 +77,10 @@ type hgSettings struct {
 }
 
 func hgDefaults() hgSettings {
-	return hgSettings{FrontMode: "json", AllowEditors: true, Public: map[string][]string{}, PreviewTTL: 60, DefaultLocale: "en",
+	// FrontMode starts "off": switching the plugin on must not take the public site down. An
+	// administrator who wants a headless-only front end picks json/plain/redirect explicitly,
+	// and sites that saved a mode keep it, since the stored front_mode overrides this default.
+	return hgSettings{FrontMode: "off", AllowEditors: true, Public: map[string][]string{}, PreviewTTL: 60, DefaultLocale: "en",
 		DefaultPageSize: 25, MaxPageSize: 100, GraphQL: true, WebhookAttempts: 5}
 }
 
@@ -108,7 +112,8 @@ func hgSanitize(st hgSettings) hgSettings {
 	switch st.FrontMode {
 	case "json", "plain", "redirect", "off":
 	default:
-		st.FrontMode = "json"
+		// An unset or unknown mode keeps the site's own front end, like hgDefaults.
+		st.FrontMode = "off"
 	}
 	if st.FrontMode == "redirect" && !hgHTTPURL(st.RedirectURL) {
 		st.FrontMode = "json"
