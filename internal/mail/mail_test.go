@@ -1,12 +1,32 @@
 package mail
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"mime/quotedprintable"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestBuildNormalizesMixedLineEndings(t *testing.T) {
+	m := &Mailer{From: "sender@example.test"}
+	raw, err := m.Build(Message{To: []string{"a@example.test"}, Body: "one\r\ntwo\nthree"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg, err := mail.ReadMessage(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := io.ReadAll(quotedprintable.NewReader(msg.Body))
+	if err != nil || string(body) != "one\r\ntwo\r\nthree" {
+		t.Fatalf("decoded body=%q err=%v", body, err)
+	}
+}
 
 func TestBuildAndFileDelivery(t *testing.T) {
 	dir := t.TempDir()
