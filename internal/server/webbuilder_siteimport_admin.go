@@ -51,7 +51,7 @@ const (
 	wbWizRoot          = mediaPrivateDir + "/web-builder-imports"
 	wbWizImportsOption = "wb_site_imports"
 	wbWizDesignRoute   = "/wb-design-preview/"
-	wbWizMaxAge        = 7 * 24 * time.Hour
+	wbWizMaxAge        = 24 * time.Hour
 	wbWizMaxPageBytes  = 15 << 20
 	wbWizNonceUpload   = "wb-site-import-upload"
 )
@@ -133,6 +133,8 @@ func (s *Server) wbWizDir(id string) string {
 	return filepath.Join(s.wbWizBase(), id)
 }
 
+// wbWizLoad reads a session; nil when there is none or it is older than wbWizMaxAge (its folder is
+// removed then: the upload, its design preview and its compare step expire together).
 func (s *Server) wbWizLoad(id string) *wbWizMeta {
 	dir := s.wbWizDir(id)
 	if dir == "" {
@@ -144,6 +146,10 @@ func (s *Server) wbWizLoad(id string) *wbWizMeta {
 	}
 	var m wbWizMeta
 	if json.Unmarshal(b, &m) != nil || m.ID != id {
+		return nil
+	}
+	if at, err := time.Parse(time.RFC3339, m.Created); err != nil || time.Since(at) > wbWizMaxAge {
+		_ = os.RemoveAll(dir)
 		return nil
 	}
 	return &m
@@ -162,7 +168,9 @@ func (s *Server) wbWizSave(m *wbWizMeta) error {
 	return os.Rename(tmp, filepath.Join(dir, "meta.json"))
 }
 
-// wbWizSweep removes sessions older than wbWizMaxAge.
+// wbWizSweep removes sessions older than wbWizMaxAge (from their upload time; a folder without a
+// session, an upload that failed half way, from its own time). It runs with every visit of the
+// screen and hourly (the wb_import_cleanup event).
 func (s *Server) wbWizSweep() {
 	ents, err := os.ReadDir(s.wbWizBase())
 	if err != nil {
@@ -170,6 +178,10 @@ func (s *Server) wbWizSweep() {
 	}
 	for _, e := range ents {
 		if !e.IsDir() || !wbWizIDRE.MatchString(e.Name()) {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(s.wbWizBase(), e.Name(), "meta.json")); err == nil {
+			s.wbWizLoad(e.Name()) // removes it when expired
 			continue
 		}
 		if info, err := e.Info(); err == nil && time.Since(info.ModTime()) > wbWizMaxAge {
@@ -318,6 +330,7 @@ func (s *Server) wbWizScreen(c *gin.Context) {
 		s.wbWizDeny(c)
 		return
 	}
+	s.wbWizSweep()
 	action := c.Query("action")
 	if c.Request.Method == http.MethodPost {
 		switch action {
@@ -335,9 +348,13 @@ func (s *Server) wbWizScreen(c *gin.Context) {
 		s.wbWizStart(c)
 		return
 	}
+	if action == "undo" { // an import's record outlives its upload
+		s.wbWizUndoPage(c, id)
+		return
+	}
 	m := s.wbWizLoad(id)
 	if m == nil {
-		s.wbWizStartWith(c, notice{Type: "error", Message: "That upload is gone (uploads are kept for a week). Upload the zip again.", Dismissible: true})
+		s.wbWizStartWith(c, notice{Type: "error", Message: "That upload is gone (uploads are kept for a day). Upload the zip again.", Dismissible: true})
 		return
 	}
 	switch action {
@@ -345,8 +362,6 @@ func (s *Server) wbWizScreen(c *gin.Context) {
 		s.wbWizResultPage(c, m)
 	case "compare":
 		s.wbWizComparePage(c, m)
-	case "undo":
-		s.wbWizUndoPage(c, m.ID)
 	default:
 		s.wbWizAnalysisPage(c, m, nil)
 	}
@@ -1151,9 +1166,8 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 	_ = s.wbWizSetRecords(c, recs)
 	s.wbTemplatesChanged(c)
 	s.wbPurgePages()
-	if m := s.wbWizLoad(id); m != nil {
-		m.Result = nil
-		_ = s.wbWizSave(m)
+	if dir := s.wbWizDir(id); dir != "" { // the upload goes with what it made
+		_ = os.RemoveAll(dir)
 	}
 	msg := fmt.Sprintf("Removed %d pages and templates%s.", deleted, kitMsg)
 	if kept > 0 {
@@ -1189,7 +1203,8 @@ func wbWizHas(list []int64, id int64) bool {
 //     credential, like the exact-import page of webbuilder_import.go. A sandboxed frame without
 //     allow-same-origin never sends the admin's SameSite=Lax cookie for its own links and fonts, so
 //     a login check could not work; the id is only ever shown to an administrator on the screen
-//     and the staging folder is removed after a week or with "Discard";
+//     and the staging folder (with the preview) is removed a day after the upload, with "Discard"
+//     or with "Remove this import" (wbWizLoad, wbWizSweep);
 //   - files are read only from the session's site folder (cleaned path, no symlinks are ever
 //     created there), served with the type of their extension plus nosniff and
 //     Access-Control-Allow-Origin: * (fonts requested from an opaque origin need CORS);
