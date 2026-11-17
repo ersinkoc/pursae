@@ -94,6 +94,8 @@ type wbWizResult struct {
 	Unmapped  []string    `json:"unmapped,omitempty"`
 	Failed    string      `json:"failed,omitempty"`
 	Published bool        `json:"published,omitempty"`
+	// Bindings: what was bound to content (the menu, single templates, loops) and what was not.
+	Bindings []string `json:"bindings,omitempty"`
 }
 
 type wbWizMeta struct {
@@ -117,7 +119,9 @@ type wbWizRecord struct {
 	PrevShow   string  `json:"prevShow,omitempty"`
 	PrevFront  int64   `json:"prevFront,omitempty"`
 	FrontSet   bool    `json:"frontSet,omitempty"`
-	At         string  `json:"at"`
+	// Menu: the navigation menu this import created (removed with it).
+	Menu int64  `json:"menu,omitempty"`
+	At   string `json:"at"`
 	By         int64   `json:"by"`
 }
 
@@ -278,6 +282,8 @@ type wbWizView struct {
 	Split, Front    bool
 	Draft           bool
 	Replace         bool
+	Menus           bool            // make a menu of the header's navigation
+	Collections     map[string]bool // folders ticked as collections
 	Nonce           string // the step's form nonce
 	DiscardNonce    string
 
@@ -517,6 +523,21 @@ type wbWizAnalysis struct {
 	AssetFiles   int
 	Creates      int
 	Updates      int
+	// Binding to content (webbuilder.BindSite): the header menu's items, the folders that can be
+	// collections, and what was not bound.
+	Menu      string
+	Folders   []wbWizFolder
+	BindNotes []string
+}
+
+// wbWizFolder is a folder of pages the import can turn into content under single templates.
+type wbWizFolder struct {
+	Name      string
+	Pages     int
+	Templates int // single templates its pages would share
+	Grouped   int // pages that become content
+	Lists     []string
+	Check     bool // offered ticked: its pages reproduce under the templates
 }
 
 func (s *Server) wbWizSiteDir(id string) string { return filepath.Join(s.wbWizDir(id), "site") }
@@ -658,6 +679,39 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 		return out
 	}
 	a.Headers, a.Footers = cluster("Header", res.Headers), cluster("Footer", res.Footers)
+	// Binding to content: what the import would bind (BindSite is pure; the folder ids are stand-ins).
+	if split {
+		fp := map[string]string{}
+		for f := range webbuilder.SiteFolders(res) {
+			fp[f] = "1"
+		}
+		b := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: true, Groups: map[string]bool{"*": true}, FolderParents: fp})
+		if b.Menu != nil {
+			var labels []string
+			for _, it := range b.Menu.Items {
+				labels = append(labels, it.Label)
+			}
+			a.Menu = strings.Join(labels, " · ")
+		}
+		folders := webbuilder.SiteFolders(res)
+		for _, f := range b.Candidates {
+			row := wbWizFolder{Name: f, Pages: len(folders[f])}
+			for _, g := range b.Groups {
+				if g.Folder == f {
+					row.Templates++
+					row.Grouped += len(g.Posts)
+				}
+			}
+			for _, l := range b.Listings {
+				if l.Folder == f {
+					row.Lists = append(row.Lists, res.Pages[l.Page].Path)
+				}
+			}
+			row.Check = row.Templates > 0
+			a.Folders = append(a.Folders, row)
+		}
+		a.BindNotes = b.Notes
+	}
 	a.Missing, a.Unmapped = wbFirst(res.Missing, 60), wbFirst(res.Unmapped, 60)
 	for _, w := range res.Warnings {
 		if strings.Contains(w, "inline event handler") {
@@ -733,18 +787,30 @@ func (s *Server) wbWizAnalysisPage(c *gin.Context, m *wbWizMeta, extra []notice)
 	if q := strings.TrimSpace(c.Query("kit")); wbKitSlugRE.MatchString(q) {
 		kit = q
 	}
-	v := &wbWizView{Step: "analysis", ID: m.ID, Slug: kit, Kit: kit, Name: kit, Split: true, Front: true}
+	v := &wbWizView{Step: "analysis", ID: m.ID, Slug: kit, Kit: kit, Name: kit, Split: true, Front: true, Menus: true, Collections: map[string]bool{}}
 	if k := s.wbKitList()[kit]; k != nil && k.Name != "" {
 		v.Name = k.Name
 	}
-	if c.Request.Method == http.MethodPost {
+	posted := c.Request.Method == http.MethodPost
+	if posted {
 		v.Name = strings.TrimSpace(c.PostForm("name"))
 		v.Split, v.Front, v.Draft, v.Replace = c.PostForm("templates") == "1", c.PostForm("front") == "1", c.PostForm("status") == "draft", c.PostForm("replace") == "1"
+		v.Menus = c.PostForm("menus") == "1"
+		for _, f := range c.PostFormArray("collection") {
+			v.Collections[f] = true
+		}
 	}
 	a, err := s.wbWizAnalyze(c, m, kit, true)
 	if err != nil {
 		s.wbWizStartWith(c, notice{Type: "error", Message: template.HTML("The site could not be read: " + html.EscapeString(err.Error())), Dismissible: true})
 		return
+	}
+	if !posted {
+		for _, f := range a.Folders {
+			if f.Check {
+				v.Collections[f.Name] = true
+			}
+		}
 	}
 	if !a.HasFront {
 		v.Front = false
@@ -828,6 +894,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 		return
 	}
 	pagesBefore, tplBefore := s.wbWizOwned(c, kit)
+	menuBefore := s.wbWizMenuID(c, kit)
 	prevShow, prevFront := s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
 	// 2. The import: the code of the MCP tool web_builder_import_site.
 	paths := make([]string, 0, len(pages))
@@ -843,13 +910,21 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	if draft {
 		status = "unpublished"
 	}
-	args := map[string]any{"kit": kit, "pages": items, "status": status, "site_name": name, "templates": split, "front_page": wantFront && !draft}
+	var collections []any
+	for _, f := range c.PostFormArray("collection") {
+		collections = append(collections, f)
+	}
+	args := map[string]any{"kit": kit, "pages": items, "status": status, "site_name": name, "templates": split, "front_page": wantFront && !draft,
+		"menus": c.PostForm("menus") == "1", "collections": collections}
 	s.wbWizRESTSession(c)
 	out, importErr := mcpWBImportSite(s, c, args)
 	// 3. What it made, recorded even when it stopped half way.
 	pagesAfter, tplAfter := s.wbWizOwned(c, kit)
 	rec := &wbWizRecord{ID: m.ID, Kit: kit, KitCreated: !existing, Pages: wbWizNew(pagesAfter, pagesBefore), Templates: wbWizNew(tplAfter, tplBefore),
 		At: wbTime(time.Now()), By: currentUser(c).ID}
+	if menuBefore == 0 {
+		rec.Menu = s.wbWizMenuID(c, kit)
+	}
 	res := &wbWizResult{At: rec.At, Kit: kit, Draft: draft, Split: split}
 	if importErr != nil {
 		res.Failed = importErr.Error()
@@ -863,7 +938,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 			rec.FrontSet, rec.PrevShow, rec.PrevFront = true, prevShow, prevFront
 		}
 	}
-	if len(rec.Pages)+len(rec.Templates) > 0 || rec.KitCreated {
+	if len(rec.Pages)+len(rec.Templates) > 0 || rec.KitCreated || rec.Menu > 0 {
 		recs := s.wbWizRecords()
 		recs[m.ID] = rec
 		_ = s.wbWizSetRecords(c, recs)
@@ -937,10 +1012,38 @@ func wbWizFillResult(res *wbWizResult, out map[string]any) {
 		Warnings []string `json:"warnings"`
 		Missing  []string `json:"missing_files"`
 		Unmapped []string `json:"unmapped_links"`
+		Bindings struct {
+			Menu *struct {
+				Name     string `json:"name"`
+				Location string `json:"location"`
+				Items    []any  `json:"items"`
+			} `json:"menu"`
+			Groups []struct {
+				Folder   string   `json:"folder"`
+				Template int64    `json:"template"`
+				Pages    []string `json:"pages"`
+			} `json:"groups"`
+			Listings []struct {
+				Page   string `json:"page"`
+				Folder string `json:"folder"`
+				Items  int    `json:"items"`
+			} `json:"listings"`
+			Notes []string `json:"notes"`
+		} `json:"bindings"`
 	}
 	if json.Unmarshal(b, &r) != nil {
 		return
 	}
+	if m := r.Bindings.Menu; m != nil {
+		res.Bindings = append(res.Bindings, fmt.Sprintf("Menu “%s” (%s location, %d items) fills the header's navigation; edit it in Appearance › Menus.", m.Name, m.Location, len(m.Items)))
+	}
+	for _, g := range r.Bindings.Groups {
+		res.Bindings = append(res.Bindings, fmt.Sprintf("%s/: %d pages are content under single template #%d.", g.Folder, len(g.Pages), g.Template))
+	}
+	for _, l := range r.Bindings.Listings {
+		res.Bindings = append(res.Bindings, fmt.Sprintf("%s: the list of %s/ pages is a loop (%d items).", l.Page, l.Folder, l.Items))
+	}
+	res.Bindings = append(res.Bindings, r.Bindings.Notes...)
 	created := map[string]bool{}
 	for _, p := range r.Created {
 		created[p] = true
@@ -1130,6 +1233,12 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 	// the survivors up, and every page the import made goes anyway.
 	del(rec.Pages, "page")
 	del(rec.Templates, webbuilder.TemplatePostType)
+	// The navigation menu it made, when it is still the import's (same id, same name).
+	if rec.Menu > 0 && s.wbWizMenuID(c, rec.Kit) == rec.Menu {
+		if err := s.store.DeleteMenu(c, rec.Menu); err == nil {
+			deleted++
+		}
+	}
 	if rec.FrontSet && s.settings.String("show_on_front") == "page" && wbWizHas(rec.Pages, int64(s.settings.Int("page_on_front"))) {
 		prev := rec.PrevShow
 		if prev == "" {
@@ -1159,6 +1268,20 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		msg += fmt.Sprintf(" %d were already gone or no longer carry the import's mark and were left alone.", kept)
 	}
 	s.wbWizStartWith(c, notice{Type: "success", Message: template.HTML(html.EscapeString(msg)), Dismissible: true})
+}
+
+// wbWizMenuID is the id of the navigation menu an import of kit makes (0: none).
+func (s *Server) wbWizMenuID(c *gin.Context, kit string) int64 {
+	menus, err := s.store.Menus(c)
+	if err != nil {
+		return 0
+	}
+	for _, m := range menus {
+		if m.Name == wbSiteMenuName(kit) {
+			return m.ID
+		}
+	}
+	return 0
 }
 
 func wbWizHas(list []int64, id int64) bool {
