@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html"
 	"io/fs"
 	"net/http"
@@ -420,25 +422,38 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 	return k, http.StatusOK, "", ""
 }
 
-// wbKitRootAsset serves a file of a site-imported kit (wbKit.Root) at the site's root path, after
-// every route and before the site's 404: what a static host does for the design's folder. The site
-// import maps index.html to / and a/b.html to /a/b/, so the URLs the design builds at run time —
-// root-relative paths in its stylesheets (url(/assets/fonts/x.woff2)) and scripts, an import map's
-// "/assets/vendor/three.module.js", an inline module's import "./js/engine.js" on /post/, a
-// data-video="../assets/film.mp4" a script reads on /identity/ — reach the kit's files. Only GET and
-// HEAD of a path that is a valid kit file (web asset extensions, no HTML, no dot segments) outside
-// /wp-*; when several kits have the file, the most recently imported wins.
-func (s *Server) wbKitRootAsset(c *gin.Context) {
-	if c.IsAborted() || (c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead) {
-		return
+// wbKitRootAsset serves a file of a site-imported kit (wbKit.Root) at the site's root path: what
+// a static host does for the design's folder. The site import maps index.html to / and a/b.html to
+// /a/b/, so the URLs the design builds at run time — root-relative paths in its stylesheets
+// (url(/assets/fonts/x.woff2)) and scripts, an import map's "/assets/vendor/three.module.js", an
+// inline module's import "./js/engine.js" on /post/, a data-video="../assets/film.mp4" a script
+// reads on /identity/ — reach the kit's files. It reports whether it answered.
+//
+// site() calls it after everything the site itself answers at a path of its own (Pursae SEO's
+// redirections, robots.txt, sitemaps and IndexNow key, the shop's and the forum's paths, the
+// built-in robots.txt, favicon.ico and sitemaps), so a design's file never stands in for one of
+// them; wbKitRootReserved keeps the conventional root files out even when nothing answers them.
+// Only GET and HEAD of a path that is a valid kit file (web asset extensions, no HTML, no dot
+// segments) outside /wp-*, of a kit with a published page or template of its import (a draft
+// import serves nothing at the root); when several kits have the file, the most recently imported
+// wins.
+//
+// The files are served as data on the site's own origin (the uploads route's policy, see
+// wbKitRootHeaders): a type from the extension, never sniffed; a sandbox policy for a file opened as
+// a document (an SVG, a JSON or .map file holding markup); no service worker. A response's policy
+// applies to it only as a document: the design's pages load the same scripts, modules, stylesheets,
+// fonts and images as subresources, as they do from /wp-content/uploads/.
+func (s *Server) wbKitRootAsset(c *gin.Context) bool {
+	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
+		return false
 	}
 	p := path.Clean(c.Request.URL.Path)
-	if strings.HasPrefix(p, "/wp-") || !wbKitExts[strings.ToLower(path.Ext(p))] {
-		return
+	if strings.HasPrefix(p, "/wp-") || wbKitRootReserved(p) || !wbKitExts[strings.ToLower(path.Ext(p))] {
+		return false
 	}
 	rel, ok := wbKitRel(strings.TrimPrefix(p, "/"))
 	if !ok {
-		return
+		return false
 	}
 	var best *wbKit
 	full := ""
@@ -447,16 +462,110 @@ func (s *Server) wbKitRootAsset(c *gin.Context) {
 			continue
 		}
 		f := filepath.Join(s.wbKitRoot(), k.Slug, filepath.FromSlash(rel))
-		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() {
+		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() && s.wbKitRootLive(c, k.Slug) {
 			best, full = k, f
 		}
 	}
 	if best == nil {
-		return
+		return false
+	}
+	wbKitRootHeaders(c.Writer.Header(), rel)
+	if c.GetHeader("Service-Worker") != "" {
+		// A design may not register a service worker over the site's root (it would control every
+		// page, the admin included).
+		c.Header("Content-Type", "text/plain; charset=utf-8")
+		c.Header("Cache-Control", "no-store")
+		c.String(http.StatusForbidden, "A design's script cannot be a service worker.")
+		return true
 	}
 	c.Header("Cache-Control", wbKitCacheShort)
 	http.ServeFile(c.Writer, c.Request, full)
-	c.Abort()
+	return true
+}
+
+// wbKitRootTypes are the Content-Types of the kit files served at the site's root; any other file
+// is application/octet-stream (never sniffed as HTML).
+var wbKitRootTypes = map[string]string{
+	".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
+	".map": "application/json", ".json": "application/json", ".txt": "text/plain; charset=utf-8",
+	".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".otf": "font/otf", ".eot": "application/vnd.ms-fontobject",
+	".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".avif": "image/avif",
+	".svg": "image/svg+xml", ".ico": "image/x-icon",
+	".mp4": "video/mp4", ".webm": "video/webm", ".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".wav": "audio/wav",
+	".glb": "model/gltf-binary", ".gltf": "model/gltf+json", ".bin": "application/octet-stream", ".wasm": "application/wasm",
+	".pdf": "application/pdf",
+}
+
+// wbKitRootHeaders are the headers of a kit file served at the site's root: the uploads route's
+// sandbox policy, the type of the extension, nosniff.
+func wbKitRootHeaders(h http.Header, rel string) {
+	ct := wbKitRootTypes[strings.ToLower(path.Ext(rel))]
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	h.Set("Content-Type", ct)
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'")
+	h.Del("Content-Security-Policy-Report-Only")
+	h.Del("Service-Worker-Allowed")
+}
+
+// wbKitRootReserved: root files a site answers by convention (robots.txt, favicon.ico, ads.txt,
+// security.txt …, sitemaps) are never a design's, even when nothing on the site answers them.
+func wbKitRootReserved(p string) bool {
+	name := strings.ToLower(strings.TrimPrefix(p, "/"))
+	if strings.Contains(name, "/") {
+		return false
+	}
+	switch name {
+	case "robots.txt", "favicon.ico", "ads.txt", "app-ads.txt", "sellers.json", "security.txt", "humans.txt", "llms.txt", "llms-full.txt",
+		"apple-touch-icon.png", "apple-touch-icon-precomposed.png":
+		return true
+	}
+	return strings.HasPrefix(name, "sitemap") || strings.Contains(name, "-sitemap")
+}
+
+// wbKitRootLiveCache: slug → whether a page or template of the kit's import is published (true
+// for wbKitRootLiveTTL, false for wbKitRootDeadTTL, so a publish shows at once).
+var wbKitRootLiveCache sync.Map
+
+type wbKitRootLiveEntry struct {
+	at   time.Time
+	live bool
+}
+
+const (
+	wbKitRootLiveTTL = 30 * time.Second
+	wbKitRootDeadTTL = 3 * time.Second
+)
+
+// wbKitRootLive reports whether the kit's site import has a published page or template.
+func (s *Server) wbKitRootLive(ctx context.Context, slug string) bool {
+	key := fmt.Sprintf("%p/%s", s, slug)
+	if v, ok := wbKitRootLiveCache.Load(key); ok {
+		e := v.(wbKitRootLiveEntry)
+		ttl := wbKitRootDeadTTL
+		if e.live {
+			ttl = wbKitRootLiveTTL
+		}
+		if time.Since(e.at) < ttl {
+			return e.live
+		}
+	}
+	var live bool
+	if err := s.store.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM posts WHERE status = 'publish' AND meta->>$1 = $2)`, wbSiteMetaKit, slug).Scan(&live); err != nil {
+		return false
+	}
+	wbKitRootLiveCache.Store(key, wbKitRootLiveEntry{at: time.Now(), live: live})
+	return live
+}
+
+// wbKitRootLiveReset forgets the published state of the kits (an import, its removal, a publish).
+func wbKitRootLiveReset() {
+	wbKitRootLiveCache.Range(func(k, _ any) bool {
+		wbKitRootLiveCache.Delete(k)
+		return true
+	})
 }
 
 // wbKitSetRoot marks a kit as served at the site's root (on, the time of the site import) or not.
@@ -478,6 +587,7 @@ func (s *Server) wbKitSetRoot(c *gin.Context, slug string, on bool) error {
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
 		return err
 	}
+	wbKitRootLiveReset()
 	s.purgeAll(c)
 	return nil
 }

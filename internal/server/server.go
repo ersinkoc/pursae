@@ -422,7 +422,7 @@ func (s *Server) routes() *gin.Engine {
 	}
 
 	// theme package assets, /<post>/embed/, site-imported design kits' files at the root, then the site
-	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.wbKitRootAsset, s.site)
+	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.site)
 	return r
 }
 

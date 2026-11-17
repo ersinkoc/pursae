@@ -142,6 +142,9 @@ func (s *Server) site(c *gin.Context) {
 		s.sitemapPart(c, strings.TrimSuffix(strings.TrimPrefix(path, "wp-sitemap-"), ".xml"))
 		return
 	}
+	if s.wbKitRootAsset(c) { // Pursae Web Builder: a site-imported design's files at the root (webbuilder_kits.go)
+		return
+	}
 	if strings.HasPrefix(path, "wp-json") || strings.HasPrefix(path, "wp-content/") || strings.HasPrefix(path, "wp-includes/") || strings.HasPrefix(path, "wp-admin") {
 		c.Status(http.StatusNotFound)
 		return

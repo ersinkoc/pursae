@@ -979,6 +979,7 @@ func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(html.EscapeString(strings.Join(wbFirst(failed, 5), "; "))), Dismissible: true})
 	} else {
 		m.Result.Published, m.Result.Draft = true, false
+		wbKitRootLiveReset() // the kit's files answer at the root now (wbKitRootAsset)
 		if front := wbWizFrontID(m.Result); front > 0 && c.PostForm("front") == "1" {
 			recs := s.wbWizRecords()
 			rec := recs[m.ID]

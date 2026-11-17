@@ -2,9 +2,13 @@ package server
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 )
 
 // wbsKit uploads and commits a design kit as the admin.
@@ -118,5 +122,116 @@ func TestWBKitPagesVisibility(t *testing.T) {
 	// The override stays readable to the editor's users (the frame shows it).
 	if code, _, _ := author.do(http.MethodGet, "/web-builder/v2/kits/vis/override", nil, nil); code != http.StatusOK {
 		t.Errorf("author GET override: %d", code)
+	}
+}
+
+// wbsGin is a gin context for calling the server's helpers directly.
+func wbsGin() *gin.Context {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+	return c
+}
+
+// wbsFetch GETs a URL with the headers.
+func wbsFetch(t *testing.T, u string, hdr map[string]string) (int, string, http.Header) {
+	t.Helper()
+	req, _ := http.NewRequest(http.MethodGet, u, nil)
+	for k, v := range hdr {
+		req.Header.Set(k, v)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	return resp.StatusCode, string(b), resp.Header
+}
+
+// A site-imported kit's files at the root: only while a page of the import is published, with a
+// type from the extension, nosniff and the uploads route's sandbox policy; never as a service
+// worker; never in place of the site's own robots.txt or favicon.ico.
+func TestWBKitRootAssetHeaders(t *testing.T) {
+	srv, base, admin := wbrStart(t)
+	ctx := context.Background()
+	wbsKit(t, admin, "rootk", map[string]string{
+		"robots.txt":    "User-agent: *\nDisallow: /design-robots",
+		"favicon.ico":   "design-favicon",
+		"app.js":        "console.log('design')",
+		"sw.js":         "self.addEventListener('fetch', e => {})",
+		"assets/a.svg":  `<svg xmlns="http://www.w3.org/2000/svg"><script>alert(document.domain)</script></svg>`,
+		"assets/x.map":  `<html><script>alert(document.domain)</script>`,
+		"assets/m.glb":  `<html><script>alert(document.domain)</script>`,
+		"assets/m.gltf": `<html><script>alert(document.domain)</script>`,
+		"assets/s.css":  `body{color:red}`,
+	})
+	if err := srv.wbKitSetRoot(wbsGin(), "rootk", true); err != nil {
+		t.Fatal(err)
+	}
+	fetch := func(p string, hdr map[string]string) (int, string, http.Header) {
+		t.Helper()
+		return wbsFetch(t, base+p, hdr)
+	}
+	// A draft import: nothing at the root.
+	if code, body, _ := fetch("/app.js", nil); code == http.StatusOK && strings.Contains(body, "design") {
+		t.Errorf("served before any page of the import is published: %d", code)
+	}
+	p := wbrPost(t, srv, "page", "Imported home", "publish", 1)
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE posts SET meta = meta || jsonb_build_object($2::text, $3::text) WHERE id = $1`, p.ID, wbSiteMetaKit, "rootk"); err != nil {
+		t.Fatal(err)
+	}
+	wbKitRootLiveReset()
+	srv.purgeAll(ctx) // the 404 the page cache kept (a publish purges)
+	const sandbox = "sandbox; default-src 'none'"
+	for path, ct := range map[string]string{
+		"/app.js": "text/javascript; charset=utf-8", "/assets/a.svg": "image/svg+xml", "/assets/x.map": "application/json",
+		"/assets/m.glb": "model/gltf-binary", "/assets/m.gltf": "model/gltf+json", "/assets/s.css": "text/css; charset=utf-8",
+	} {
+		code, _, h := fetch(path, nil)
+		if code != http.StatusOK || h.Get("Content-Type") != ct || h.Get("X-Content-Type-Options") != "nosniff" ||
+			!strings.HasPrefix(h.Get("Content-Security-Policy"), sandbox) {
+			t.Errorf("%s: %d %q %q %q", path, code, h.Get("Content-Type"), h.Get("X-Content-Type-Options"), h.Get("Content-Security-Policy"))
+		}
+	}
+	if code, _, h := fetch("/sw.js", map[string]string{"Service-Worker": "script"}); code != http.StatusForbidden || h.Get("Service-Worker-Allowed") != "" {
+		t.Errorf("service worker: %d %v", code, h)
+	}
+	if code, body, _ := fetch("/robots.txt", nil); code != http.StatusOK || strings.Contains(body, "design-robots") {
+		t.Errorf("robots.txt is the design's: %d %q", code, body)
+	}
+	if _, body, _ := fetch("/favicon.ico", nil); strings.Contains(body, "design-favicon") {
+		t.Error("favicon.ico is the design's")
+	}
+	// Pursae SEO answers first: a redirection of a design file's path, its IndexNow key file.
+	if err := srv.seogoActivate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	o := *srv.seogoOpts()
+	o.Modules["indexnow"], o.Modules["redirections"], o.IndexNowKey = true, true, "0123456789abcdef0123456789abcdef"
+	if err := srv.seogoSave(ctx, &o); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.seogoAddRedirect(ctx, &seogoRedirectRow{Source: "/assets/s.css", Target: "/assets/new.css", Code: 301, Status: "active"}); err != nil {
+		t.Fatal(err)
+	}
+	wbsKit(t, admin, "rootk", map[string]string{"0123456789abcdef0123456789abcdef.txt": "design-key"})
+	srv.purgeAll(ctx)
+	nr := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	if resp, err := nr.Get(base + "/assets/s.css"); err != nil || resp.StatusCode != http.StatusMovedPermanently {
+		t.Errorf("the redirection of a design file's path: %v %v", resp, err)
+	} else {
+		resp.Body.Close()
+	}
+	if code, body, _ := fetch("/0123456789abcdef0123456789abcdef.txt", nil); code != http.StatusOK || body != "0123456789abcdef0123456789abcdef" {
+		t.Errorf("IndexNow key: %d %q", code, body)
+	}
+	// Unpublished again: gone from the root.
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE posts SET status = 'draft' WHERE id = $1`, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	wbKitRootLiveReset()
+	srv.purgeAll(ctx) // the 404 the page cache kept (a publish purges)
+	if code, body, _ := fetch("/app.js", nil); code == http.StatusOK && strings.Contains(body, "design") {
+		t.Errorf("served with no published page: %d", code)
 	}
 }
