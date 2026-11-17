@@ -54,6 +54,7 @@ type SlotArgs struct {
 	Field  string // data-wb-field, FieldPattern: a custom field name; "" = none
 	Item   string // data-wb-item, IDPattern: the cell whose stored DynSettings apply; "" = none
 	Raw    bool   // data-wb-raw: the value as stored (code bindings, AttrRaw)
+	Tree   bool   // data-wb-menu-tree: a code menu (top level only; ItemKeyer and SubMenuer items)
 }
 
 // Resolver supplies slot values for one scope (the request, a loop item or a menu item). Item
@@ -488,6 +489,9 @@ func slotArgs(n *html.Node) SlotArgs {
 	}
 	if hasAttr(n, AttrRaw) {
 		a.Raw = true
+	}
+	if hasAttr(n, AttrMenuTree) {
+		a.Tree = true
 	}
 	if v, ok := getAttr(n, AttrWords); ok {
 		if w, err := strconv.Atoi(strings.TrimSpace(v)); err == nil && w >= MinDynWords && w <= MaxDynWords {

@@ -562,6 +562,7 @@ func (c *bindCompiler) set(n *srcNode, k, v string) {
 // menu: the list's children are templates; see the file comment.
 func (c *bindCompiler) menu(n *srcNode, b *CodeBind, id string) {
 	c.add(n, AttrMenuLoc, b.MenuLoc())
+	c.add(n, AttrMenuTree, "")
 	c.templates(n, b)
 }
 

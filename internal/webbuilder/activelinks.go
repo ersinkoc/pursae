@@ -621,9 +621,16 @@ func ApplyActive(src string, rule *ActiveRule, current string) string {
 	}
 	current = ActivePath(current)
 	byKey := make(map[string][]int, len(rule.Items))
+	// exactRole: roles some of whose links are marked on the page they link to. A link of such a
+	// role that the rule does not know (a menu item added after the import, bound to a Pursae menu)
+	// is marked the same way on its own page.
+	exactRole := map[int]bool{}
 	for i, it := range rule.Items {
 		k := strconv.Itoa(it.Role) + "\x00" + it.Key
 		byKey[k] = append(byKey[k], i)
+		if it.Exact && strings.HasPrefix(it.Key, "href:") {
+			exactRole[it.Role] = true
+		}
 	}
 	var out bytes.Buffer
 	z := html.NewTokenizer(strings.NewReader(src))
@@ -695,6 +702,9 @@ func ApplyActive(src string, rule *ActiveRule, current string) string {
 				if target != nil {
 					break
 				}
+			}
+			if target == nil && hp != "" && hp == current && exactRole[ri] && len(byKey[strconv.Itoa(ri)+"\x00"+key]) == 0 {
+				target = r.exactState()
 			}
 			if target != nil {
 				break

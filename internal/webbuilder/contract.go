@@ -1516,6 +1516,9 @@ const (
 	// AttrMenuSub, on an element inside a menu item template, repeats its data-wb-loop-item
 	// children per sub-item of that item (a design's dropdown list).
 	AttrMenuSub = "data-wb-menu-sub"
+	// AttrMenuTree, on a data-wb-menu-loc list of a code section: the list shows the top-level
+	// items only (each picks its template; sub-items go to its data-wb-menu-sub list).
+	AttrMenuTree = "data-wb-menu-tree"
 	// AttrRaw on a post.title / post.content / post.image slot element: the stored value as the
 	// design shows it (title without texturizing, imported HTML content as stored, image src and
 	// alt only). Set by the code bindings.

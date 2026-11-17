@@ -77,6 +77,11 @@ func (s *Server) wbCodeParts(c *gin.Context, tp *wbThemeParts, header, main, foo
 	if fi != nil && fi.Active != nil {
 		tp.view.Footer = template.HTML(webbuilder.ApplyActive(string(tp.view.Footer), fi.Active, current))
 	}
+	// A single template made from a group of the design's pages marks the current page in its
+	// side menu the same way (webbuilder.ConvertGroups).
+	if mi != nil && mi.Active != nil && tp.view.Main != "" {
+		tp.view.Main = template.HTML(webbuilder.ApplyActive(string(tp.view.Main), mi.Active, current))
+	}
 	// One shell around header, main and footer: a code main must sit in the same wrappers; any
 	// other main (a theme view, builder sections, a forum view) is printed inside them. A page
 	// without a footer (or header) shares it with the header (or footer) alone (ShellPlan).

@@ -134,7 +134,7 @@ func TestCompileBindsMenu(t *testing.T) {
 	}
 	out := CompileBinds(menuSrc, "s1", binds, CodeFillOptions{})
 	for _, want := range []string{
-		`<ul data-wbc="1" class="flex" data-wb-menu-loc="primary">`,
+		`<ul data-wbc="1" class="flex" data-wb-menu-loc="primary" data-wb-menu-tree="">`,
 		`<li data-wbc="2" data-wb-loop-item="default k:100">`,
 		`<a data-wbc="3" href="/a/" class="x" data-wb-slot="menu.link" data-wb-text="menu.label">Home</a>`,
 		`<li data-wbc="4" class="relative" data-wb-loop-item="parent k:101">`,
@@ -185,7 +185,7 @@ func removeAttrs(s string) string {
 		}
 		raw := string(z.Raw())
 		if tt == html.StartTagToken || tt == html.SelfClosingTagToken {
-			for _, a := range []string{AttrMenuLoc, AttrLoopItem, AttrSlot, AttrText, AttrMenuSub, AttrLoop, AttrRaw, AttrField, AttrFormat} {
+			for _, a := range []string{AttrMenuLoc, AttrMenuTree, AttrLoopItem, AttrSlot, AttrText, AttrMenuSub, AttrLoop, AttrRaw, AttrField, AttrFormat} {
 				for {
 					i := strings.Index(raw, " "+a+`="`)
 					if i < 0 {

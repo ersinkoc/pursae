@@ -91,6 +91,12 @@ func wbLoopDefs(d *store.WebBuilderDoc) map[string]wbLoopDef {
 	for i := range doc.Sections {
 		walk(&doc.Sections[i], 0)
 	}
+	// Loops bound to elements of code sections (codebind.go): a custom query unless set otherwise.
+	for key, spec := range webbuilder.CodeLoops(&doc) {
+		if _, seen := out[key]; !seen {
+			out[key] = wbLoopDef{spec: spec, typeSet: true}
+		}
+	}
 	wbLoopSpecs.Lock()
 	if wbLoopSpecs.m == nil || len(wbLoopSpecs.m) >= wbLoopSpecsMax {
 		wbLoopSpecs.m = map[string]map[string]wbLoopDef{}
@@ -128,6 +134,8 @@ type wbSlotEnv struct {
 
 	logo     map[string]string
 	logoDone bool
+	// menusByID: menus a code section names by id ("menu-<id>"), loaded once per fill.
+	menusByID map[int64][]*store.MenuItem
 
 	shop *wbShopEnv // Commerce and language-switcher state (webbuilder_shop.go), lazy
 }
@@ -193,7 +201,35 @@ type wbSlotResolver struct {
 	menu *store.MenuItem
 	// menuDepth is the item's level in its menu (0 = top).
 	menuDepth int
-	parent    *wbSlotResolver
+	// tree: an item of a code section's menu (data-wb-menu-tree): it picks its own template and
+	// its sub-items fill the template's data-wb-menu-sub list (codebind.go).
+	tree   bool
+	parent *wbSlotResolver
+}
+
+// ItemKey names the menu item for its template (webbuilder.ItemKeyer).
+func (r *wbSlotResolver) ItemKey() string {
+	if r.menu == nil || !r.tree {
+		return ""
+	}
+	return "k:" + itoa64(r.menu.ID)
+}
+
+// HasChildren reports whether the menu item has sub-items (webbuilder.ItemKeyer).
+func (r *wbSlotResolver) HasChildren() bool { return r.menu != nil && r.tree && len(r.menu.Children) > 0 }
+
+// SubMenu is the item's sub-items (webbuilder.SubMenuer).
+func (r *wbSlotResolver) SubMenu() (webbuilder.LoopIter, bool) {
+	if r.menu == nil || !r.tree || len(r.menu.Children) == 0 {
+		return nil, false
+	}
+	items := make([]webbuilder.Resolver, 0, len(r.menu.Children))
+	for _, it := range r.menu.Children {
+		if it != nil {
+			items = append(items, &wbSlotResolver{env: r.env, menu: it, menuDepth: r.menuDepth + 1, tree: true, parent: r})
+		}
+	}
+	return &webbuilder.SliceIter{Items: items}, true
 }
 
 var _ webbuilder.Resolver = (*wbSlotResolver)(nil)
@@ -254,6 +290,28 @@ func (r *wbSlotResolver) Text(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 	switch slot {
 	case webbuilder.SlotPostField:
 		return e.fieldText(p, a.Field)
+	case webbuilder.SlotPostTitleText:
+		// The title as stored (a design's own text: no texturizing, no title filters).
+		t := strings.TrimSpace(html.UnescapeString(p.Title))
+		return t, t != ""
+	case webbuilder.SlotPostTermNames:
+		tax := a.Tax
+		if tax == "" {
+			tax = "category"
+		}
+		if !e.publicTaxonomy(tax) {
+			return "", false
+		}
+		sep := a.Sep
+		if sep == "" {
+			sep = ", "
+		}
+		var names []string
+		for _, t := range sp.termsOf(e, tax) {
+			names = append(names, html.UnescapeString(t.Name))
+		}
+		out := strings.Join(names, sep)
+		return out, out != ""
 	case webbuilder.SlotPostDate, webbuilder.SlotPostModified:
 		t := p.Date()
 		if slot == webbuilder.SlotPostModified {
@@ -315,8 +373,19 @@ func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 		if sp.main && e.own {
 			return "", false // the page's own doc: its content is this snapshot
 		}
+		if a.Raw && wbRawContent(p) {
+			// A design's own markup imported as the post's content (a code binding): printed as
+			// stored, as the design wrote it (the_content would texturize quotes and add <p>).
+			return p.Content, strings.TrimSpace(p.Content) != ""
+		}
 		out := sp.contentOf(e)
 		return out, strings.TrimSpace(out) != ""
+	case webbuilder.SlotPostFieldHTML:
+		v, ok := e.fieldValue(p, a.Field).(string)
+		if !ok || strings.TrimSpace(v) == "" {
+			return "", false
+		}
+		return wp.KsesPost(v), true
 	case webbuilder.SlotPostExcerpt:
 		out := wbExcerpt(p, a.Words)
 		return e.s.pllUC(e.ctx, out, 0), out != "" // Multi Language user content
@@ -363,6 +432,18 @@ func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) 
 	case webbuilder.SlotSiteLogo:
 		m := e.siteLogo()
 		return m, len(m) > 0
+	case webbuilder.SlotMenuLink:
+		// A code section's menu item: the URL and target only; the design's own active-link rule
+		// marks the current item (webbuilder.ApplyActive).
+		m := r.nearestMenu()
+		if m == nil {
+			return nil, false
+		}
+		out := map[string]string{"href": m.URL}
+		if m.Target != "" {
+			out["target"] = m.Target
+		}
+		return out, true
 	case webbuilder.SlotMenuURL:
 		m := r.nearestMenu()
 		if m == nil {
@@ -426,10 +507,50 @@ func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) 
 			return map[string]string{"src": src, "alt": alt}, true
 		}
 	case webbuilder.SlotPostImage:
+		if a.Raw {
+			// A code binding: the image as the design shows it, its source and text only (the
+			// design's markup sizes it); without a featured image the URL field data-wb-field names.
+			if full := sp.imageOf(e, "full"); full["src"] != "" {
+				return map[string]string{"src": full["src"], "alt": full["alt"]}, true
+			}
+			if u := e.fieldURL(p, a.Field); u != "" {
+				out := map[string]string{"src": u}
+				if alt, ok := e.fieldText(p, a.Field+"_alt"); ok {
+					out["alt"] = alt
+				}
+				return out, true
+			}
+			return nil, false
+		}
 		m := sp.imageOf(e, a.Size)
+		if len(m) == 0 && a.Field != "" {
+			if u := e.fieldURL(p, a.Field); u != "" {
+				return map[string]string{"src": u}, true
+			}
+		}
 		return m, len(m) > 0
+	case webbuilder.SlotPostFieldAttrs:
+		// The per-post attributes of one element: the fields <name>_href, <name>_src, … (a site
+		// import keeps there what differs between the pages of a group, webbuilder.ConvertGroups).
+		if a.Field == "" {
+			return nil, false
+		}
+		out := map[string]string{}
+		for _, k := range webbuilder.SlotAttrs {
+			if v, ok := e.fieldValue(p, a.Field+"_"+strings.ReplaceAll(k, "-", "_")).(string); ok && v != "" {
+				out[k] = v
+			}
+		}
+		return out, len(out) > 0
 	}
 	return nil, false
+}
+
+// wbRawContent reports whether a post's content is printed as stored by a code binding: imported
+// markup (it starts with an element and holds no blocks) of a post without a password.
+func wbRawContent(p *store.Post) bool {
+	c := strings.TrimSpace(p.Content)
+	return p.Password == "" && strings.HasPrefix(c, "<") && !strings.Contains(c, "<!-- wp:")
 }
 
 func (r *wbSlotResolver) Loop(id string, _ webbuilder.SlotArgs) (webbuilder.LoopIter, bool) {
@@ -451,12 +572,24 @@ const wbMenuMaxDepth = 3
 // items, up to wbMenuMaxDepth levels. A sub-item's link gets the classes wb-menu-d<level> (1 and
 // up) and a parent's link has-children, so a card template (or the site CSS) can indent or
 // fold the levels; the top level carries none and renders as before.
-func (r *wbSlotResolver) Menu(location string, _ webbuilder.SlotArgs) (webbuilder.LoopIter, bool) {
+func (r *wbSlotResolver) Menu(location string, a webbuilder.SlotArgs) (webbuilder.LoopIter, bool) {
 	menu := r.env.v.Menus[location]
+	if len(menu) == 0 {
+		menu = r.env.menuByID(webbuilder.MenuIDOfLoc(location))
+	}
 	if len(menu) == 0 {
 		return nil, false
 	}
 	var items []webbuilder.Resolver
+	if a.Tree {
+		// A code section's menu: the top level; each item brings its sub-items (SubMenu).
+		for _, it := range menu {
+			if it != nil {
+				items = append(items, &wbSlotResolver{env: r.env, menu: it, tree: true, parent: r})
+			}
+		}
+		return &webbuilder.SliceIter{Items: items}, true
+	}
 	var walk func(list []*store.MenuItem, depth int)
 	walk = func(list []*store.MenuItem, depth int) {
 		for _, it := range list {
@@ -473,13 +606,45 @@ func (r *wbSlotResolver) Menu(location string, _ webbuilder.SlotArgs) (webbuilde
 	return &webbuilder.SliceIter{Items: items}, true
 }
 
+// menuByID loads a menu by id (a code section's menu binding), its URLs resolved and its
+// current item marked as for a theme location.
+func (e *wbSlotEnv) menuByID(id int64) []*store.MenuItem {
+	if id <= 0 {
+		return nil
+	}
+	if m, ok := e.menusByID[id]; ok {
+		return m
+	}
+	if e.menusByID == nil {
+		e.menusByID = map[int64][]*store.MenuItem{}
+	}
+	items, err := e.s.store.MenuTree(e.ctx, id)
+	if err != nil {
+		items = nil
+	}
+	if len(items) > 0 {
+		e.s.resolveMenu(e.ctx, items, e.lb, e.v.Q)
+	}
+	e.menusByID[id] = items
+	return items
+}
+
 // fieldValue is the formatted Pursae Custom Fields value of a post's field; nil when the plugin is
 // off, the field is unset, or the post is password protected (its content is not shown either).
+// Without a field of that name (or with the plugin off) the post's own meta value of that name is
+// used when it is a string: what a site import stores for the parts of a design's page that are
+// not its title or content (webbuilder.ConvertGroups).
 func (e *wbSlotEnv) fieldValue(p *store.Post, name string) any {
 	if e.s == nil || p == nil || name == "" || p.Password != "" || strings.HasPrefix(name, "_") {
 		return nil
 	}
-	return e.s.acfGetField(e.ctx, name, p, true)
+	if v := e.s.acfGetField(e.ctx, name, p, true); v != nil {
+		return v
+	}
+	if s, ok := p.Meta[name].(string); ok && s != "" {
+		return s
+	}
+	return nil
 }
 
 // fieldText is the field as plain text (the engine escapes it); lists join with ", ".
@@ -913,6 +1078,10 @@ func (e *wbSlotEnv) queryLoop(id string) ([]*wbSlotPost, bool) {
 	}
 	pq := store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"}, AuthorID: sp.Author, TermIDs: termIDs,
 		OrderBy: sp.OrderBy, Order: sp.Order, Page: 1, PerPage: sp.PerPage + sp.Offset, Loc: e.s.loc()}
+	if sp.Parent > 0 && sp.Source == webbuilder.LoopSourceQuery {
+		parent := sp.Parent
+		pq.ParentID = &parent
+	}
 	if e.u.Can("read_private_posts", nil) {
 		pq.Statuses = append(pq.Statuses, "private")
 	}

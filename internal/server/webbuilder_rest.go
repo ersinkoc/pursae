@@ -718,7 +718,8 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	if (unfiltered || res.Kept) && webbuilder.HasCode(res.JSON) {
 		list, only := webbuilder.CodeSections(res.JSON)
 		s.wbLocalBreakpoints(list)
-		snap.html = webbuilder.FillCode(snap.html, list, only)
+		snap.html = webbuilder.FillCodeWith(snap.html, list, only, webbuilder.CodeFillOptions{
+			FormActionPrefix: s.links(c).HomeURL("/wp-json/" + webbuilder.RESTNamespace + "/forms/" + itoa64(p.ID) + "/")})
 	}
 	ps, _ := wbPage(body.Page)
 	needs := webbuilder.DocFonts(&res.Doc)
