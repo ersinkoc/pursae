@@ -22,6 +22,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/media"
 	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
 )
@@ -53,7 +54,10 @@ const (
 	wbWizDesignRoute   = "/wb-design-preview/"
 	wbWizMaxAge        = 24 * time.Hour
 	wbWizMaxPageBytes  = 15 << 20
-	wbWizNonceUpload   = "wb-site-import-upload"
+	// wbWizMaxUpload bounds the zip itself: only the files its pages use are unpacked
+	// (wbZipExtract), so a saved copy of a live site may be much larger than its kit.
+	wbWizMaxUpload   = 512 << 20
+	wbWizNonceUpload = "wb-site-import-upload"
 )
 
 var wbWizIDRE = regexp.MustCompile(`^[0-9a-f]{32}$`)
@@ -107,6 +111,14 @@ type wbWizMeta struct {
 	Bytes   int64        `json:"bytes"`
 	HTML    []string     `json:"html"`
 	Result  *wbWizResult `json:"result,omitempty"`
+	// What the upload left out or puts elsewhere (wbZipExtract): files too large for a kit that go
+	// to the Media Library (path → size), unused files, used files over every limit, used files a
+	// kit cannot hold.
+	Media        map[string]int64 `json:"media,omitempty"`
+	Skipped      []string         `json:"skipped,omitempty"`
+	SkippedBytes int64            `json:"skippedBytes,omitempty"`
+	TooLarge     []string         `json:"tooLarge,omitempty"`
+	Unkeepable   []string         `json:"unkeepable,omitempty"`
 }
 
 // wbWizRecord is what one import created, kept for "Remove this import".
@@ -120,9 +132,11 @@ type wbWizRecord struct {
 	PrevFront  int64   `json:"prevFront,omitempty"`
 	FrontSet   bool    `json:"frontSet,omitempty"`
 	// Menu: the navigation menu this import created (removed with it).
-	Menu int64  `json:"menu,omitempty"`
-	At   string `json:"at"`
-	By   int64  `json:"by"`
+	Menu int64 `json:"menu,omitempty"`
+	// Media: the Media Library items it made (files too large for the kit).
+	Media []int64 `json:"media,omitempty"`
+	At    string  `json:"at"`
+	By    int64   `json:"by"`
 }
 
 func (s *Server) wbWizBase() string {
@@ -383,7 +397,7 @@ func (s *Server) wbWizRender(c *gin.Context, v *wbWizView, notices ...notice) {
 func (s *Server) wbWizStart(c *gin.Context) { s.wbWizStartWith(c) }
 
 func (s *Server) wbWizStartWith(c *gin.Context, notices ...notice) {
-	v := &wbWizView{Step: "start", Limits: fmt.Sprintf("%d MB, %d files", wbKitMaxTotal>>20, wbKitMaxFiles)}
+	v := &wbWizView{Step: "start", Limits: fmt.Sprintf("%d MB", wbWizMaxUpload>>20)}
 	v.UploadURL = wbWizURL + "?action=upload&_wpnonce=" + s.nonce(c, wbWizNonceUpload)
 	recs := s.wbWizRecords()
 	ids := make([]string, 0, len(recs))
@@ -411,7 +425,7 @@ func (s *Server) wbWizUpload(c *gin.Context) {
 	fail := func(msg string) {
 		s.wbWizStartWith(c, notice{Type: "error", Message: template.HTML(msg), Dismissible: true})
 	}
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, wbKitMaxTotal+(8<<20))
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, wbWizMaxUpload+(8<<20))
 	mr, err := c.Request.MultipartReader()
 	if err != nil {
 		fail("No file was received.")
@@ -455,7 +469,7 @@ func (s *Server) wbWizUpload(c *gin.Context) {
 			_, err = io.Copy(f, part)
 			f.Close()
 			if err != nil {
-				fail("The upload failed (is the zip larger than " + itoa(wbKitMaxTotal>>20) + " MB?).")
+				fail("The upload failed (is the zip larger than " + itoa(wbWizMaxUpload>>20) + " MB?).")
 				return
 			}
 			got = true
@@ -491,7 +505,8 @@ func (s *Server) wbWizUpload(c *gin.Context) {
 	if !wbKitSlugRE.MatchString(slug) {
 		slug = wbWizSlugOf(zipName)
 	}
-	m := &wbWizMeta{ID: id, Owner: u.ID, Slug: slug, Created: wbTime(time.Now()), Files: len(ex.Assets) + len(ex.HTML), Bytes: ex.Bytes}
+	m := &wbWizMeta{ID: id, Owner: u.ID, Slug: slug, Created: wbTime(time.Now()), Files: len(ex.Assets) + len(ex.HTML), Bytes: ex.Bytes,
+		Media: ex.Media, Skipped: ex.Skipped, SkippedBytes: ex.SkippedBytes, TooLarge: ex.TooLarge, Unkeepable: ex.Unkeepable}
 	for p := range ex.HTML {
 		m.HTML = append(m.HTML, p)
 	}
@@ -547,6 +562,12 @@ type wbWizAnalysis struct {
 	// Claims: pages at addresses that are archives here (author, category, date); the import keeps
 	// them as the design's pages (webbuilder_siteclaims.go).
 	Claims []string
+	// The upload's files (wbZipExtract): the kit's size, files for the Media Library, files left out.
+	KitBytes                    string
+	Media, TooLarge, Unkeepable []string
+	Skipped                     []string
+	SkippedCount                int
+	SkippedBytes                string
 	// The design's original site (webbuilder/oldsite.go): its domains, the URLs of it the pages
 	// hold, the pages whose forms posted there, the script URLs pointed here; tracking it loads.
 	OldHosts    []string
@@ -619,7 +640,16 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	if len(pages) > wbSiteMaxPages {
 		return nil, fmt.Errorf("the site holds %d pages; at most %d can be imported at once", len(pages), wbSiteMaxPages)
 	}
-	a := &wbWizAnalysis{Kit: kit, AssetFiles: len(assets)}
+	for rel := range m.Media {
+		delete(assets, rel) // for the Media Library, not the kit
+	}
+	a := &wbWizAnalysis{Kit: kit, AssetFiles: len(assets), KitBytes: media.HumanSize(m.Bytes), TooLarge: m.TooLarge, Unkeepable: m.Unkeepable,
+		Skipped: wbFirst(m.Skipped, 60), SkippedCount: len(m.Skipped), SkippedBytes: media.HumanSize(m.SkippedBytes)}
+	remap := s.wbWizMediaGuess(m)
+	for rel, n := range m.Media {
+		a.Media = append(a.Media, wbSizeLabel(rel, n)+" → "+remap[rel])
+	}
+	sort.Strings(a.Media)
 	if k := s.wbKitList()[kit]; k != nil {
 		a.KitExists, a.KitFiles, a.KitVersion = true, k.Files, k.Version
 	}
@@ -630,7 +660,7 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	plan := webbuilder.PlanSite(append([]string(nil), paths...))
 	urls := plan.URLs()
 	opts := webbuilder.SiteImportOptions{KitURL: wbKitURLPrefix + kit + "/", KitFiles: map[string]bool{}, URLs: urls, NoSplit: !split,
-		SiteURL: strings.TrimSuffix(s.links(c).HomeURL("/"), "/")}
+		SiteURL: strings.TrimSuffix(s.links(c).HomeURL("/"), "/"), Remap: remap}
 	for p := range assets {
 		opts.KitFiles[p] = true
 	}
@@ -831,6 +861,56 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	return a, nil
 }
 
+// wbWizMediaGuess is where the upload's Media Library files will be (for the analysis).
+func (s *Server) wbWizMediaGuess(m *wbWizMeta) map[string]string {
+	out := map[string]string{}
+	sub := ""
+	if s.settings.Bool("uploads_use_yearmonth_folders") {
+		sub = time.Now().Format("2006/01") + "/"
+	}
+	for rel := range m.Media {
+		out[rel] = "/wp-content/uploads/" + sub + path.Base(rel)
+	}
+	return out
+}
+
+// wbWizMediaUpload puts the upload's files that are too large for a kit into the Media Library
+// (the site's own upload limit, maxUploadBytes, holds) and gives each one's URL (a site path) by
+// its path in the design, and the items made.
+func (s *Server) wbWizMediaUpload(c *gin.Context, m *wbWizMeta) (map[string]string, []int64, error) {
+	out := map[string]string{}
+	var ids []int64
+	rels := make([]string, 0, len(m.Media))
+	for rel := range m.Media {
+		rels = append(rels, rel)
+	}
+	sort.Strings(rels)
+	var firstErr error
+	for _, rel := range rels {
+		f, err := os.Open(filepath.Join(s.wbWizSiteDir(m.ID), filepath.FromSlash(rel)))
+		if err != nil {
+			firstErr = cmpOr(firstErr, err)
+			continue
+		}
+		a, err := s.insertAttachmentFile(c, path.Base(rel), f, currentUser(c).ID, 0)
+		f.Close()
+		if err != nil {
+			firstErr = cmpOr(firstErr, fmt.Errorf("%s: %v", rel, err))
+			continue
+		}
+		ids = append(ids, a.ID)
+		out[rel] = "/wp-content/uploads/" + a.FilePath
+	}
+	return out, ids, firstErr
+}
+
+func cmpOr(a, b error) error {
+	if a != nil {
+		return a
+	}
+	return b
+}
+
 func wbWizTitle(src, p string) string {
 	if m := wbSiteTitleRE.FindStringSubmatch(src); m != nil {
 		if t := strings.TrimSpace(html.UnescapeString(m[1])); t != "" {
@@ -947,11 +1027,16 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 		again("The staged site could not be read: " + err.Error())
 		return
 	}
+	for rel := range m.Media {
+		delete(assets, rel) // for the Media Library, not the kit
+	}
 	// 1. The design kit: the staged assets, committed like the kit REST routes do.
 	if err := s.wbWizInstallKit(c, m.ID, kit, name, assets); err != nil {
 		again("The design kit could not be written: " + err.Error())
 		return
 	}
+	// Files too large for a kit (a video) go to the Media Library; the pages point at them there.
+	remap, mediaIDs, mediaErr := s.wbWizMediaUpload(c, m)
 	pagesBefore, tplBefore := s.wbWizOwned(c, kit)
 	menuBefore := s.wbWizMenuID(c, kit)
 	prevShow, prevFront := s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
@@ -978,12 +1063,19 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	if c.PostForm("old_links") != "rewrite" {
 		args["old_links"] = "keep"
 	}
+	if len(remap) > 0 {
+		mm := map[string]any{}
+		for k, v := range remap {
+			mm[k] = v
+		}
+		args["media"] = mm
+	}
 	s.wbWizRESTSession(c)
 	out, importErr := mcpWBImportSite(s, c, args)
 	// 3. What it made, recorded even when it stopped half way.
 	pagesAfter, tplAfter := s.wbWizOwned(c, kit)
 	rec := &wbWizRecord{ID: m.ID, Kit: kit, KitCreated: !existing, Pages: wbWizNew(pagesAfter, pagesBefore), Templates: wbWizNew(tplAfter, tplBefore),
-		At: wbTime(time.Now()), By: currentUser(c).ID}
+		At: wbTime(time.Now()), By: currentUser(c).ID, Media: mediaIDs}
 	if menuBefore == 0 {
 		rec.Menu = s.wbWizMenuID(c, kit)
 	}
@@ -991,8 +1083,16 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	if importErr != nil {
 		res.Failed = importErr.Error()
 	}
+	if mediaErr != nil {
+		res.Warnings = append(res.Warnings, "a file could not be put into the Media Library: "+mediaErr.Error())
+	}
 	if om, ok := out.(map[string]any); ok {
+		w := res.Warnings
 		wbWizFillResult(res, om)
+		res.Warnings = append(w, res.Warnings...)
+	}
+	for rel, u := range remap {
+		res.Bindings = append(res.Bindings, rel+" is in the Media Library: "+u)
 	}
 	if fp, _ := out.(map[string]any); fp != nil {
 		if id := argInt(fp, "front_page"); id > 0 {
@@ -1000,7 +1100,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 			rec.FrontSet, rec.PrevShow, rec.PrevFront = true, prevShow, prevFront
 		}
 	}
-	if len(rec.Pages)+len(rec.Templates) > 0 || rec.KitCreated || rec.Menu > 0 {
+	if len(rec.Pages)+len(rec.Templates)+len(rec.Media) > 0 || rec.KitCreated || rec.Menu > 0 {
 		recs := s.wbWizRecords()
 		recs[m.ID] = rec
 		_ = s.wbWizSetRecords(c, recs)
@@ -1301,6 +1401,15 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 	del(rec.Pages, "page")
 	del(rec.Templates, webbuilder.TemplatePostType)
 	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
+	for _, mid := range rec.Media {  // the files it put into the Media Library
+		if a, err := s.store.GetAttachment(c, mid); err == nil {
+			s.deleteAttachmentFiles(a)
+			if s.store.DeleteAttachment(c, mid) == nil {
+				s.purgeAttachment(a)
+				deleted++
+			}
+		}
+	}
 	// The navigation menu it made, when it is still the import's (same id, same name).
 	if rec.Menu > 0 && s.wbWizMenuID(c, rec.Kit) == rec.Menu {
 		if err := s.store.DeleteMenu(c, rec.Menu); err == nil {

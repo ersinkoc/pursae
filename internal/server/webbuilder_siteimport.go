@@ -134,6 +134,20 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	for p := range kfiles {
 		opts.KitFiles[p] = true
 	}
+	// media: files of the design outside the kit (too large for it, put into the Media Library):
+	// {"<path in the folder>": "<URL>"}; the pages point at those URLs.
+	if mm, ok := args["media"].(map[string]any); ok {
+		opts.Remap = map[string]string{}
+		for k, v := range mm {
+			u, _ := v.(string)
+			rel := strings.TrimPrefix(path.Clean("/"+strings.ReplaceAll(k, "\\", "/")), "/")
+			lu := strings.ToLower(u)
+			if rel == "" || !(strings.HasPrefix(u, "/") && !strings.HasPrefix(u, "//") || strings.HasPrefix(lu, "https://") || strings.HasPrefix(lu, "http://")) || strings.ContainsAny(u, "\"'<> ") {
+				return nil, mcpErrf("media: %q → %q is not a file path and a URL", k, u)
+			}
+			opts.Remap[rel] = u
+		}
+	}
 	// The pages.
 	src := map[string]string{}
 	var paths []string

@@ -4589,5 +4589,16 @@
  "Point links to the original site at this site": "Özgün siteye giden bağlantıları bu siteye yönlendir",
  "Links and files of the original site become this site's pages and the design's files; unticked they keep pointing there. Forms and script endpoints never point there.": "Özgün sitenin bağlantıları ve dosyaları bu sitenin sayfalarına ve tasarımın dosyalarına dönüşür; işaret kaldırılırsa oraya gitmeye devam eder. Formlar ve betik uç noktaları hiçbir zaman oraya gitmez.",
  "(posts)": "(yazılar)",
- "A set such as */index.html holds pages a WordPress copy saved with pretty permalinks, one folder each. With the /%postname%/ permalink structure they become posts at the same addresses; their single template is then every post's, and lists of them become loops of posts.": "*/index.html gibi bir küme, bir WordPress kopyasının kalıcı bağlantılarla her biri ayrı klasöre kaydettiği sayfaları tutar. /%postname%/ kalıcı bağlantı yapısında bunlar aynı adreslerde yazılara dönüşür; tekil şablonları her yazının şablonu olur ve bu yazıların listeleri yazı döngüsüne dönüşür."
+ "A set such as */index.html holds pages a WordPress copy saved with pretty permalinks, one folder each. With the /%postname%/ permalink structure they become posts at the same addresses; their single template is then every post's, and lists of them become loops of posts.": "*/index.html gibi bir küme, bir WordPress kopyasının kalıcı bağlantılarla her biri ayrı klasöre kaydettiği sayfaları tutar. /%postname%/ kalıcı bağlantı yapısında bunlar aynı adreslerde yazılara dönüşür; tekil şablonları her yazının şablonu olur ve bu yazıların listeleri yazı döngüsüne dönüşür.",
+ "Only the files the pages use are kept (a saved copy of a live site brings much more); a file too large for a design kit, such as a video, goes to the Media Library.": "Yalnızca sayfaların kullandığı dosyalar tutulur (canlı bir sitenin kayıtlı kopyası çok daha fazlasını getirir); tasarım kiti için fazla büyük bir dosya, örneğin bir video, Ortam Kütüphanesine gider.",
+ "The design kit:": "Tasarım kiti:",
+ "files the pages use,": "sayfaların kullandığı dosya,",
+ "Files for the Media Library": "Ortam Kütüphanesine gidecek dosyalar",
+ "These are too large for a design kit; the import puts them into the Media Library and points the pages at them there:": "Bunlar bir tasarım kiti için fazla büyük; içe aktarma bunları Ortam Kütüphanesine koyar ve sayfaları oradaki dosyalara yönlendirir:",
+ "Files left out: too large": "Dışarıda bırakılan dosyalar: fazla büyük",
+ "The pages use these, but they are larger than the Media Library's upload limit; the pages show them missing:": "Sayfalar bunları kullanıyor, ama Ortam Kütüphanesinin yükleme sınırından büyükler; sayfalarda eksik görünürler:",
+ "Files left out: not web assets": "Dışarıda bırakılan dosyalar: web varlığı değil",
+ "The pages use these, but a design kit cannot hold them (their type or name); the pages show them missing:": "Sayfalar bunları kullanıyor, ama bir tasarım kiti bunları tutamaz (türleri veya adları nedeniyle); sayfalarda eksik görünürler:",
+ "Files no page uses: %d (%s), left out": "Hiçbir sayfanın kullanmadığı dosyalar: %d (%s), dışarıda bırakıldı",
+ "Paths that leave the folder and links are refused; files that are not web assets are left out.": "Klasörün dışına çıkan yollar ve bağlantılar reddedilir; web varlığı olmayan dosyalar dışarıda bırakılır."
 }

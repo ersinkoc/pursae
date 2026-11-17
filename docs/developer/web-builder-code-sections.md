@@ -152,7 +152,7 @@ access ([scopes](rest-api/authentication.md#application-password-scopes)).
 |-------|-|
 | `GET kits` | `[{slug, name, version, files, bytes, updated, url}]` |
 | `GET kits/{slug}` | the kit and `fileList: [{path, bytes}]` |
-| `POST kits/{slug}/files` | `{files: [{path, text} \| {path, data: base64}], delete?: [path], fresh?: bool}` — writes into the kit's staging folder (a copy of the live files, or empty with `fresh`). Paths are relative, plain segment names, web asset extensions only (css, js, mjs, map, json, txt, fonts, images, svg, video/audio, glb/gltf, wasm, pdf; no HTML, no server code); 15 MB per file, 2000 files and 100 MB per kit, 24 MB per request. |
+| `POST kits/{slug}/files` | `{files: [{path, text} \| {path, data: base64}], delete?: [path], fresh?: bool}` — writes into the kit's staging folder (a copy of the live files, or empty with `fresh`). Paths are relative, plain segment names, web asset extensions only (css, js, mjs, map, json, txt, fonts, images, svg, video/audio, glb/gltf, wasm, pdf; no HTML, no server code); 15 MB per file, 2000 files and 256 MB per kit, 24 MB per request. |
 | `POST kits/{slug}/commit` | `{name?, breakpoints?: {tablet, mobile}}` — the staged files replace the live ones in one swap; the version goes up. Without `breakpoints` the local-style breakpoints are suggested from the kit's stylesheets (see [Styling](#styling)). |
 | `DELETE kits/{slug}` | removes the kit, its files and its override. |
 | `GET kits/{slug}/override` | the kit's class and variable edits (see [Classes and variables](#classes-and-variables)): `{live: {rules}, version, draft: {rules}, draftVersion, pending, updated}` |
@@ -357,15 +357,34 @@ import without a command line or an agent (`internal/server/webbuilder_siteimpor
 `webbuilder_siteimport_zip.go`). The menu entry and every route need `edit_theme_options` **and**
 `unfiltered_html` with Web Builder on, like the MCP tool; the server checks the same on each request.
 
-1. **Upload** a zip of the design's folder (a form field for the kit slug, default: the zip's name). The
-   body is streamed to a file under `uploads/private/web-builder-imports/<id>/` (the private folder
-   only serves signed links), then unpacked entry by entry with the kit's limits (100 MB, 2000 files, 15 MB
-   a file). A path that leaves the folder (`..`, absolute, drive letter, backslashes counted as slashes),
-   a symbolic link, an entry that is not a plain file, case-twin names, and files a kit cannot keep
-   (extension outside the kit's list, names outside `wbKitRel`) reject the whole archive with the names
-   listed; `.git`, `.DS_Store`, `__MACOSX`, `Thumbs.db` and other dot files are skipped silently. `.html` / `.htm`
-   files are kept aside for the importer and never go into a kit. One top folder around everything is
-   stripped. An upload, its design preview and its compare step expire a day after the upload (checked
+1. **Upload** a zip of the design's folder (a form field for the kit slug, default: the zip's name), up to
+   512 MB. The body is streamed to a file under `uploads/private/web-builder-imports/<id>/` (the private
+   folder only serves signed links) and read entry by entry (`wbZipExtract`). A path that leaves the
+   folder (`..`, absolute, drive letter, backslashes counted as slashes), a symbolic link, an entry that
+   is not a plain file, case-twin names and page names that cannot be imported reject the whole archive;
+   `.git`, `.DS_Store`, `__MACOSX`, `Thumbs.db` and other dot files are skipped silently. `.html` / `.htm`
+   files are kept aside for the importer, never go into a kit and do not count towards its limits. One
+   top folder around everything is stripped. **Only the files the pages use are unpacked**
+   (`webbuilder.SiteReferences`, followed transitively: the pages' URL attributes, `srcset` candidates,
+   `poster`, the sources of `<video>` / `<audio>`, `data-*` values that are paths, srcset-like lists or
+   JSON lists, `style` and `<style>` `url()` / `@import`, the head's links and meta images, the string
+   literals of inline scripts, JSON and `<noscript>` markup; in CSS `url()` (fonts, `@font-face`) and
+   `@import` relative to the stylesheet; in JS and JSON string literals naming a file — relative to the
+   script, to the root, or any file whose path ends with the literal, a path a script builds from its
+   theme's URL; the original domain's absolute URLs as root-relative paths). A saved copy of a live
+   WordPress site brings far more than it shows; Decoland's 163 MB zip keeps 263 of 273 files. Files
+   no page uses are left out and listed ("Files no page uses"), and so are used files a kit cannot hold
+   (extension outside the kit's list, a name outside `wbKitRel`: the pages report them missing). A used
+   file over a kit file's 15 MB that is a video, audio, image or PDF within the site's upload limit
+   (`maxUploadBytes`, 64 MB) is unpacked for the **Media Library** (Decoland's 19 MB hero video): the
+   analysis lists it with its future URL, the import puts it there (`insertAttachmentFile`) and passes
+   it as `media` (`{"<path>": "/wp-content/uploads/2026/11/film.mp4"}`, `CodeImportOptions.Remap`) so
+   every reference — a `data-nectar-video-src` too — points there, and "Remove this import" deletes it.
+   That keeps a kit a set of design files of a sane size and makes large content media what WordPress
+   makes of it, an item an editor can replace; a used file over that limit is left out and listed. The
+   kit's own limits apply to the files kept (2000 files, 256 MB); over them the upload is refused with
+   the largest used files named. Zip bombs: at most 20 000 entries, and every byte read from the archive
+   is counted against 1 GB (declared sizes are only a first check). An upload, its design preview and its compare step expire a day after the upload (checked
    on every access, swept with every visit of the screen and hourly by the `wb_import_cleanup` event);
    "Discard this upload" and "Remove this import" delete it at once. The import's record outlives the
    upload: "Remove this import" works after it expired.
@@ -1029,8 +1048,11 @@ fixtures `internal/webbuilder/testdata/override`).
   from the kit's `a/img/x.png`, as the design's host did; but `a/b.html` becomes `/a/b/`, one folder
   deeper, so a relative URL built by a script on that page misses the kit (attributes and CSS are
   rewritten and are not affected). Root-relative URLs assume the site at the domain's root.
-- A design over the kit limits (100 MB, 2000 files) or with more than 500 pages (landing/new-landing:
-  1110 pages, 198 MB with documentation exports) is imported in parts (several kits) or trimmed first.
+- A design whose used files are over the kit limits (256 MB, 2000 files; files no page uses do not
+  count, the admin's import leaves them out) or with more than 500 pages (landing/new-landing: 1110
+  pages, 198 MB with documentation exports) is imported in parts (several kits) or trimmed first. The
+  MCP harness uploads the folder as it is (`pursae_mcp.py kit-upload`); the admin's zip import keeps
+  only the used files.
 - An app shell whose page is drawn by a JavaScript bundle from an API or a build step (a Vite `dist/`
   served under a base path, a dashboard reading a backend) is not a static site; it can be imported, but
   only the empty shell is a code section to edit.
