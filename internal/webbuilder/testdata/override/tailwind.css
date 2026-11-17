@@ -1,0 +1,4 @@
+@layer utilities{.rounded-2xl{border-radius:2rem}}
+@layer theme{:root, :host{--color-brand-600:#c2410c;--font-sans:Inter, sans-serif}}
+@layer utilities{@media (max-width:1023px){.rounded-2xl{border-radius:1rem}}}
+@layer utilities{.bg-brand-600:hover{background-color:var(--color-brand-700) !important}}
