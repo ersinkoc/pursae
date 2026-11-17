@@ -793,64 +793,13 @@ func (s *Server) forumPostTopic(c *gin.Context, rt forumRoute, u *store.User) {
 		s.forumFail(c, rt, forumViewNewTopic, code, msg, form)
 		return
 	}
-	mod := u.Can(capForumModerate, nil)
 	if c.PostForm("preview") != "" {
 		s.forumPreview(c, rt, forumViewNewTopic, u, raw, form)
 		return
 	}
-	if !forumCanStart(f, mod) {
-		msg := "This forum is closed to new topics."
-		if f.StaffOnly && !f.Closed {
-			msg = "Only the team starts topics in this forum."
-		}
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusForbidden, msg, form)
-		return
-	}
-	if !s.commentTrapsPassed(c, 0) {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusUnprocessableEntity, "Your post could not be accepted. Please try again.", form)
-		return
-	}
-	clean := forumClean(u, raw)
-	if msg := forumCheckTitle(title); msg != "" {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusUnprocessableEntity, msg, form)
-		return
-	}
-	if msg := forumCheckContent(raw, clean); msg != "" {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusUnprocessableEntity, msg, form)
-		return
-	}
-	if !mod && s.forumDisallowed(c, u, title, raw) {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusUnprocessableEntity, "Your post contains words that are not allowed here.", form)
-		return
-	}
-	release, err := s.forumPostLock(ctx, u.ID)
-	if err != nil {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusServiceUnavailable, "Something went wrong. Please try again.", form)
-		return
-	}
-	defer release()
-	msg, secs, err := s.forumThrottle(ctx, u, st)
-	if err != nil {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusServiceUnavailable, "Something went wrong. Please try again.", form)
-		return
-	}
-	if msg != "" {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusTooManyRequests, msg, form, secs)
-		return
-	}
-	pending := false
-	if st.ModerateFirstPost && !mod {
-		// Fails closed: when the check errs, the post waits for a moderator.
-		if ok, err := s.forumHasPublished(ctx, u.ID); err != nil || !ok {
-			pending = true
-		}
-	}
-	if !mod && !pending && s.forumModerationHeld(c, u, title, raw, clean) {
-		pending = true
-	}
-	t, err := s.forumCreateTopic(ctx, forumNewTopic{ForumID: f.ID, AuthorID: u.ID, Title: title, Content: clean, IP: clientIP(c), Pending: pending, Tags: tags})
-	if err != nil {
-		s.forumFail(c, rt, forumViewNewTopic, http.StatusUnprocessableEntity, "The topic could not be saved. Please try again.", form)
+	t, pending, no := s.forumStartTopic(c, u, forumTopicIn{Forum: f, Title: title, Raw: raw, Tags: tags, Form: true})
+	if no != nil {
+		s.forumFail(c, rt, forumViewNewTopic, no.Status, no.Msg, form, no.Secs)
 		return
 	}
 	if notify {
@@ -864,6 +813,85 @@ func (s *Server) forumPostTopic(c *gin.Context, rt forumRoute, u *store.User) {
 		dest = forumWithMsg(dest, "topic_pending")
 	}
 	c.Redirect(http.StatusFound, dest)
+}
+
+// forumTopicIn is a new topic as a member sends it, from the site's form or the REST API.
+type forumTopicIn struct {
+	Forum            *forumForum
+	Title, Raw, Tags string
+	// Form: the site's form, whose comment traps (honeypot, time token) apply.
+	Form bool
+}
+
+// forumRefusal is why a post was refused: the status and the message for the member (a format
+// taking Secs when Secs is not 0).
+type forumRefusal struct {
+	Status int
+	Msg    string
+	Secs   int
+}
+
+// forumStartTopic runs every check a new topic passes, whatever sends it (the new-topic form and
+// POST pursae/v1/forum/topics), and creates it: who may post (forum_participate, a confirmed email
+// address when the forums ask for one), whether the forum takes new topics (closed and staff-only
+// forums take them from moderators only), the form's traps, the member's HTML filter (forumClean),
+// the title and text limits, the disallowed words, the flood and hourly limits, and the moderation
+// hold (a first post, links, moderation words). pending reports a topic waiting for a moderator.
+func (s *Server) forumStartTopic(c *gin.Context, u *store.User, in forumTopicIn) (t *forumTopic, pending bool, no *forumRefusal) {
+	ctx := c.Request.Context()
+	st := s.forumLoad()
+	if code, msg := forumPostGate(u, st); code != 0 {
+		return nil, false, &forumRefusal{Status: code, Msg: msg}
+	}
+	f := in.Forum
+	mod := u.Can(capForumModerate, nil)
+	if !forumCanStart(f, mod) {
+		msg := "This forum is closed to new topics."
+		if f != nil && f.StaffOnly && !f.Closed {
+			msg = "Only the team starts topics in this forum."
+		}
+		return nil, false, &forumRefusal{Status: http.StatusForbidden, Msg: msg}
+	}
+	if in.Form && !s.commentTrapsPassed(c, 0) {
+		return nil, false, &forumRefusal{Status: http.StatusUnprocessableEntity, Msg: "Your post could not be accepted. Please try again."}
+	}
+	title, raw := forumCleanTitle(in.Title), in.Raw
+	clean := forumClean(u, raw)
+	if msg := forumCheckTitle(title); msg != "" {
+		return nil, false, &forumRefusal{Status: http.StatusUnprocessableEntity, Msg: msg}
+	}
+	if msg := forumCheckContent(raw, clean); msg != "" {
+		return nil, false, &forumRefusal{Status: http.StatusUnprocessableEntity, Msg: msg}
+	}
+	if !mod && s.forumDisallowed(c, u, title, raw) {
+		return nil, false, &forumRefusal{Status: http.StatusUnprocessableEntity, Msg: "Your post contains words that are not allowed here."}
+	}
+	release, err := s.forumPostLock(ctx, u.ID)
+	if err != nil {
+		return nil, false, &forumRefusal{Status: http.StatusServiceUnavailable, Msg: "Something went wrong. Please try again."}
+	}
+	defer release()
+	msg, secs, err := s.forumThrottle(ctx, u, st)
+	if err != nil {
+		return nil, false, &forumRefusal{Status: http.StatusServiceUnavailable, Msg: "Something went wrong. Please try again."}
+	}
+	if msg != "" {
+		return nil, false, &forumRefusal{Status: http.StatusTooManyRequests, Msg: msg, Secs: secs}
+	}
+	if st.ModerateFirstPost && !mod {
+		// Fails closed: when the check errs, the post waits for a moderator.
+		if ok, err := s.forumHasPublished(ctx, u.ID); err != nil || !ok {
+			pending = true
+		}
+	}
+	if !mod && !pending && s.forumModerationHeld(c, u, title, raw, clean) {
+		pending = true
+	}
+	t, err = s.forumCreateTopic(ctx, forumNewTopic{ForumID: f.ID, AuthorID: u.ID, Title: title, Content: clean, IP: clientIP(c), Pending: pending, Tags: in.Tags})
+	if err != nil {
+		return nil, false, &forumRefusal{Status: http.StatusUnprocessableEntity, Msg: "The topic could not be saved. Please try again."}
+	}
+	return t, pending, nil
 }
 
 // forumPostReply adds a reply to the topic of the URL.
