@@ -77,8 +77,8 @@
 <tr><th scope="row">Menu</th>
 <td><label for="wb-import-menus"><input type="checkbox" name="menus" id="wb-import-menus" value="1"{{if .Menus}} checked{{end}} /> Create a Pursae menu from the header's navigation</label>
 <p class="description">The menu is assigned to the primary location and fills the design's list with the design's own markup; add, rename and reorder items in Appearance › Menus. Only made when the menu reproduces the list exactly.</p></td></tr>
-{{if .A.Folders}}<tr><th scope="row">Collections</th>
-<td><fieldset>{{range .A.Folders}}<label><input type="checkbox" name="collection" value="{{.Name}}"{{if index $.Collections .Name}} checked{{end}} /> <code>{{.Name}}/</code> ({{.Pages}} pages{{if .Templates}}; {{.Templates}} single template{{if gt .Templates 1}}s{{end}}{{end}})</label><br />{{end}}</fieldset>
+{{if .A.Folders}}{{$col := .Collections}}<tr><th scope="row">Collections</th>
+<td><fieldset>{{range .A.Folders}}<label><input type="checkbox" name="collection" value="{{.Name}}"{{if index $col .Name}} checked{{end}} /> <code>{{.Name}}/</code> ({{.Pages}} pages{{if .Templates}}; {{.Templates}} single template{{if gt .Templates 1}}s{{end}}{{end}})</label><br />{{end}}</fieldset>
 <p class="description">The pages of a ticked folder that share one layout become page content (title, content, custom fields) under one Theme Builder single template, at the same addresses; lists of those pages on other pages become loops. Pages that do not fit stay pages.</p></td></tr>{{end}}
 <tr><th scope="row">Front page</th>
 <td><label for="wb-import-front"><input type="checkbox" name="front" id="wb-import-front" value="1"{{if .Front}} checked{{end}}{{if not .A.HasFront}} disabled{{end}} /> Use index.html as the front page</label>

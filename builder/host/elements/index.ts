@@ -10,10 +10,11 @@ import type { DocState } from '@/builder/types'
 import { ElementsCanvas } from './ElementsCanvas'
 import { ElementsNav } from './ElementsNav'
 import { StyleTab, styleTitle } from './StylePanel'
+import { withBindPanel } from './BindPanel'
 
 /** The element editor draws this doc: it has sections and every one is a code section. */
 export const handlesDoc = (doc: DocState) => doc.sections.length > 0 && doc.sections.every((s) => s.kind === 'code')
 
 export function installElements() {
-  setElementsSeam({ handles: handlesDoc, Canvas: ElementsCanvas, Nav: ElementsNav, Tab: StyleTab, title: styleTitle })
+  setElementsSeam({ handles: handlesDoc, Canvas: ElementsCanvas, Nav: ElementsNav, Tab: withBindPanel(StyleTab), title: styleTitle })
 }
