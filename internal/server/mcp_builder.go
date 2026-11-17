@@ -1225,6 +1225,7 @@ func mcpBuilderTools() []*mcpTool {
 				"pages":      map[string]any{"type": "array", "description": "Every HTML file of the folder: {path (relative, e.g. index.html, hizmet/3.html), html (the whole document)}.", "items": map[string]any{"type": "object"}},
 				"status":     statusProp,
 				"front_page": flag("Make index.html the front page (default true)."),
+				"templates":  flag("Split each page's header and footer into Theme Builder templates (default true); false keeps them in the pages."),
 				"site_name":  str("Name used in new template titles.")},
 			Required: []string{"kit", "pages"}, run: run(mcpWBImportSite), listAlways: true},
 		{Name: "web_builder_list_kits", Desc: "List the design kits (uploaded design files for code sections) with their base URL, version and size.",

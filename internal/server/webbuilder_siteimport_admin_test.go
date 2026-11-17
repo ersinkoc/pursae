@@ -1,0 +1,586 @@
+package server
+
+import (
+	"archive/zip"
+	"bytes"
+	"context"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+)
+
+// --- helpers ----------------------------------------------------------------------------------
+
+type wizEntry struct {
+	name string
+	body string
+	mode os.FileMode // 0: a plain file
+}
+
+func wizZipBytes(t *testing.T, entries []wizEntry) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for _, e := range entries {
+		h := &zip.FileHeader{Name: e.name, Method: zip.Deflate}
+		if e.mode != 0 {
+			h.SetMode(e.mode)
+		}
+		w, err := zw.CreateHeader(h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = w.Write([]byte(e.body))
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+// wizSite is the fixture: the static site of TestMCPImportSite, in a top folder, with junk files.
+func wizSite(t *testing.T) []byte {
+	t.Helper()
+	body := func(s string) string { return s }
+	e := []wizEntry{
+		{"site/css/site.css", "@media (min-width: 768px){.nav.on{color:red}} @media (max-width: 1023px){.x{}}", 0},
+		{"site/js/main.js", "document.documentElement.classList.remove('no-js')", 0},
+		{"site/index.html", siteTestPage("index.html", "Home", body(`<section id="hero"><h1>Welcome</h1></section><section id="more"><h2>More</h2></section>`)), 0},
+		{"site/iletisim.html", siteTestPage("iletisim.html", "Contact", `<section><h1>Contact</h1></section>`), 0},
+		{"site/hizmet/1.html", siteTestPage("../hizmet/1.html", "One", `<section><h1>One</h1><a href="2.html">next</a></section>`), 0},
+		{"site/hizmet/2.html", siteTestPage("../hizmet/2.html", "Two", `<section><h1>Two</h1><a href="../index.html">home</a></section>`), 0},
+		{"site/404.html", siteTestPage("404.html", "Not found", `<section><h1>Lost</h1></section>`), 0},
+		{"site/.DS_Store", "junk", 0},
+		{"__MACOSX/site/._index.html", "junk", 0},
+	}
+	return wizZipBytes(t, e)
+}
+
+type wizClient struct {
+	t    *testing.T
+	base string
+	c    *http.Client
+}
+
+func newWizClient(t *testing.T, base string, w *wbrClient) *wizClient {
+	return &wizClient{t: t, base: base, c: &http.Client{Jar: w.c.Jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}
+}
+
+func (w *wizClient) do(req *http.Request) (int, string, string) {
+	w.t.Helper()
+	resp, err := w.c.Do(req)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(b), resp.Header.Get("Location")
+}
+
+func (w *wizClient) get(path string) (int, string, string) {
+	w.t.Helper()
+	req, _ := http.NewRequest(http.MethodGet, w.base+path, nil)
+	return w.do(req)
+}
+
+func (w *wizClient) postForm(path string, form url.Values) (int, string, string) {
+	w.t.Helper()
+	req, _ := http.NewRequest(http.MethodPost, w.base+path, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return w.do(req)
+}
+
+var (
+	wizNonceRE  = regexp.MustCompile(`action=upload&amp;_wpnonce=([0-9a-zA-Z]+)`)
+	wizHiddenRE = regexp.MustCompile(`name="_wpnonce" value="([0-9a-zA-Z]+)"`)
+	wizIDRE     = regexp.MustCompile(`import=([0-9a-f]{32})`)
+)
+
+// upload sends a zip to the screen with the nonce of the start page.
+func (w *wizClient) upload(zipBytes []byte, name, kit string) (int, string, string) {
+	w.t.Helper()
+	_, page, _ := w.get("/wp-admin/web-builder-import")
+	m := wizNonceRE.FindStringSubmatch(page)
+	if m == nil {
+		w.t.Fatalf("no upload nonce on the start page: %.300s", page)
+	}
+	return w.uploadWith(m[1], zipBytes, name, kit)
+}
+
+func (w *wizClient) uploadWith(nonce string, zipBytes []byte, name, kit string) (int, string, string) {
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	_ = mw.WriteField("kit", kit)
+	fw, _ := mw.CreateFormFile("archive", name)
+	_, _ = fw.Write(zipBytes)
+	_ = mw.Close()
+	req, _ := http.NewRequest(http.MethodPost, w.base+"/wp-admin/web-builder-import?action=upload&_wpnonce="+nonce, &buf)
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+	return w.do(req)
+}
+
+// --- the zip --------------------------------------------------------------------------------
+
+func TestWBImportZipValidation(t *testing.T) {
+	small := wbZipLimits{Files: 3, Total: 200, File: 100}
+	cases := []struct {
+		name    string
+		entries []wizEntry
+		lim     wbZipLimits
+		want    string // "" = accepted
+	}{
+		{"slip", []wizEntry{{"index.html", "x", 0}, {"../evil.css", "x", 0}}, wbZipDefaultLimits, "leaves its folder"},
+		{"slip deep", []wizEntry{{"a/../../evil.css", "x", 0}}, wbZipDefaultLimits, "leaves its folder"},
+		{"slip backslash", []wizEntry{{`a\..\..\evil.css`, "x", 0}}, wbZipDefaultLimits, "leaves its folder"},
+		{"absolute", []wizEntry{{"/etc/x.css", "x", 0}}, wbZipDefaultLimits, "absolute"},
+		{"drive", []wizEntry{{"C:/x.css", "x", 0}}, wbZipDefaultLimits, "absolute"},
+		{"symlink", []wizEntry{{"index.html", "x", 0}, {"link.css", "/etc/passwd", os.ModeSymlink | 0o777}}, wbZipDefaultLimits, "symbolic link"},
+		{"symlink in junk", []wizEntry{{".git/HEAD", "/etc/passwd", os.ModeSymlink | 0o777}}, wbZipDefaultLimits, "symbolic link"},
+		{"bad extension", []wizEntry{{"index.html", "x", 0}, {"shell.php", "x", 0}}, wbZipDefaultLimits, "shell.php"},
+		{"bad name", []wizEntry{{"index.html", "x", 0}, {"my pic.png", "x", 0}}, wbZipDefaultLimits, "my pic.png"},
+		{"case twins", []wizEntry{{"index.html", "x", 0}, {"a.css", "x", 0}, {"A.css", "x", 0}}, wbZipDefaultLimits, "letter case"},
+		{"too many files", []wizEntry{{"a.html", "x", 0}, {"b.css", "x", 0}, {"c.css", "x", 0}, {"d.css", "x", 0}}, small, "at most 3"},
+		{"file too large", []wizEntry{{"a.html", strings.Repeat("x", 101), 0}}, small, "larger than"},
+		{"total too large", []wizEntry{{"a.html", strings.Repeat("x", 90), 0}, {"b.css", strings.Repeat("x", 90), 0}, {"c.css", strings.Repeat("x", 90), 0}}, small, "unpacks to more"},
+		{"empty", []wizEntry{{".DS_Store", "x", 0}}, wbZipDefaultLimits, "no files"},
+		{"ok", []wizEntry{{"index.html", "x", 0}, {"css/a.css", "x", 0}, {".DS_Store", "x", 0}, {"__MACOSX/a", "x", 0}}, wbZipDefaultLimits, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			zp := filepath.Join(dir, "in.zip")
+			if err := os.WriteFile(zp, wizZipBytes(t, tc.entries), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			dst := filepath.Join(dir, "out")
+			_ = os.MkdirAll(dst, 0o755)
+			ex, err := wbZipExtract(zp, dst, tc.lim)
+			if tc.want == "" {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(ex.HTML) != 1 || len(ex.Assets) != 1 {
+					t.Errorf("unpacked %v %v", ex.HTML, ex.Assets)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error %v, want %q", err, tc.want)
+			}
+			// nothing escaped the folder
+			if _, err := os.Stat(filepath.Join(dir, "evil.css")); err == nil {
+				t.Errorf("a file was written outside the folder")
+			}
+		})
+	}
+	t.Run("top folders are stripped", func(t *testing.T) {
+		dir := t.TempDir()
+		zp := filepath.Join(dir, "in.zip")
+		_ = os.WriteFile(zp, wizZipBytes(t, []wizEntry{{"site/html/index.html", "x", 0}, {"site/html/css/a.css", "x", 0}}), 0o600)
+		ex, err := wbZipExtract(zp, dir, wbZipDefaultLimits)
+		if err != nil || ex.HTML["index.html"] == 0 || ex.Assets["css/a.css"] == 0 {
+			t.Fatalf("%v %v %v", err, ex.HTML, ex.Assets)
+		}
+	})
+	t.Run("not a zip", func(t *testing.T) {
+		dir := t.TempDir()
+		zp := filepath.Join(dir, "in.zip")
+		_ = os.WriteFile(zp, []byte("hello"), 0o600)
+		if _, err := wbZipExtract(zp, dir, wbZipDefaultLimits); err == nil || !strings.Contains(err.Error(), "not a readable zip") {
+			t.Fatalf("%v", err)
+		}
+	})
+}
+
+// --- the screen ---------------------------------------------------------------------------------
+
+func wizStart(t *testing.T) (*Server, string, *wbrClient, *wizClient) {
+	t.Helper()
+	srv, base, admin := wbrStart(t)
+	return srv, base, admin, newWizClient(t, base, admin)
+}
+
+func TestWBImportWizardPermissions(t *testing.T) {
+	srv, base, admin, w := wizStart(t)
+	code, page, _ := w.get("/wp-admin/web-builder-import")
+	if code != http.StatusOK || !strings.Contains(page, "Import HTML site") || !strings.Contains(page, `name="archive"`) {
+		t.Fatalf("admin: %d %.300s", code, page)
+	}
+	if _, dash, _ := w.get("/wp-admin/"); !strings.Contains(dash, ">Import HTML site<") {
+		t.Errorf("the menu has no Import HTML site entry")
+	}
+	_ = admin
+	for _, role := range []string{"editor", "author", "subscriber"} {
+		sub := newWizClient(t, base, wbrUser(t, srv, base, "wiz"+role, role))
+		if code, _, _ := sub.get("/wp-admin/web-builder-import"); code != http.StatusForbidden {
+			t.Errorf("%s GET: %d", role, code)
+		}
+		if code, _, _ := sub.uploadWith(wizNonceRE.FindStringSubmatch(page)[1], wizSite(t), "site.zip", ""); code != http.StatusForbidden {
+			t.Errorf("%s upload: %d", role, code)
+		}
+		if _, dash, _ := sub.get("/wp-admin/"); strings.Contains(dash, ">Import HTML site<") {
+			t.Errorf("%s sees the menu entry", role)
+		}
+	}
+	// no nonce, wrong nonce
+	if code, _, _ := w.uploadWith("bogus", wizSite(t), "site.zip", ""); code != http.StatusForbidden {
+		t.Errorf("bad nonce: %d", code)
+	}
+	if code, _, _ := w.postForm("/wp-admin/web-builder-import?action=import&import="+strings.Repeat("a", 32), url.Values{"_wpnonce": {"x"}}); code != http.StatusForbidden {
+		t.Errorf("import with a bad nonce: %d", code)
+	}
+	// anonymous
+	anon := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	resp, err := anon.Get(base + "/wp-admin/web-builder-import")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusFound || !strings.Contains(resp.Header.Get("Location"), "wp-login") {
+		t.Errorf("anonymous: %d %s", resp.StatusCode, resp.Header.Get("Location"))
+	}
+}
+
+func TestWBImportWizardUploadRejects(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	for _, tc := range []struct {
+		name    string
+		entries []wizEntry
+		file    string
+		want    string
+	}{
+		{"zip slip", []wizEntry{{"index.html", "<p>x</p>", 0}, {"../../evil.css", "x", 0}}, "a.zip", "leaves its folder"},
+		{"symlink", []wizEntry{{"index.html", "<p>x</p>", 0}, {"l.css", "/etc/passwd", os.ModeSymlink | 0o777}}, "a.zip", "symbolic link"},
+		{"extension", []wizEntry{{"index.html", "<p>x</p>", 0}, {"x.php", "<?php", 0}}, "a.zip", "x.php"},
+		{"no html", []wizEntry{{"a.css", "x", 0}}, "a.zip", "no HTML pages"},
+		{"not zip name", []wizEntry{{"index.html", "x", 0}}, "a.txt", "must be a .zip"},
+	} {
+		code, body, loc := w.upload(wizZipBytes(t, tc.entries), tc.file, "")
+		if code != http.StatusOK || !strings.Contains(body, tc.want) || loc != "" {
+			t.Errorf("%s: %d %q", tc.name, code, strings.TrimSpace(wbSnippet(body, "notice")))
+		}
+	}
+	// a failed upload leaves no staging folder behind
+	if ents, _ := os.ReadDir(srv.wbWizBase()); len(ents) != 0 {
+		t.Errorf("staging folders left behind: %d", len(ents))
+	}
+	if code, body, _ := w.upload([]byte("not a zip at all"), "a.zip", ""); code != http.StatusOK || !strings.Contains(body, "not a readable zip") {
+		t.Errorf("garbage: %d", code)
+	}
+}
+
+func wizCount(t *testing.T, srv *Server, q string, args ...any) int {
+	t.Helper()
+	var n int
+	if err := srv.store.Pool.QueryRow(context.Background(), q, args...).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+// The whole flow: upload, dry-run analysis (nothing written), import, compare, serving the design
+// sandboxed, undo.
+func TestWBImportWizardFlow(t *testing.T) {
+	srv, base, _, w := wizStart(t)
+	ctx := context.Background()
+
+	// A page of the site's own that the import must never touch, and the front page before it.
+	own := wbrPost(t, srv, "page", "Mine", "publish", 1)
+
+	code, _, loc := w.upload(wizSite(t), "Demo Site.zip", "")
+	if code != http.StatusFound || !wizIDRE.MatchString(loc) {
+		t.Fatalf("upload: %d %q", code, loc)
+	}
+	id := wizIDRE.FindStringSubmatch(loc)[1]
+
+	// Analysis: the pages, the proposed addresses, the clusters, the breakpoints; no writes.
+	code, page, _ := w.get("/wp-admin/web-builder-import?import=" + id)
+	if code != http.StatusOK {
+		t.Fatalf("analysis: %d", code)
+	}
+	for _, want := range []string{"<code>index.html</code>", "<code>/hizmet/1/</code>", "<code>/iletisim/</code>", "404 template", "Header #1", "Footer #1",
+		"<code>768px</code>", "<code>1023px</code>", `value="demo-site"`, "Draft parent pages", "<code>/hizmet/</code>", "Import the site"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("analysis lacks %q", want)
+		}
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE meta ? $1`, wbSiteMetaKit); n != 0 {
+		t.Errorf("the analysis wrote %d posts", n)
+	}
+	if len(srv.wbKitList()) != 0 {
+		t.Errorf("the analysis wrote a kit")
+	}
+	nonce := wizHiddenRE.FindStringSubmatch(page)[1]
+
+	// Import with the options: templates on, front page on, published.
+	code, _, loc = w.postForm("/wp-admin/web-builder-import?action=import&import="+id, url.Values{
+		"_wpnonce": {nonce}, "kit": {"demo-site"}, "name": {"Demo"}, "templates": {"1"}, "front": {"1"}, "status": {"publish"}})
+	if code != http.StatusSeeOther || !strings.Contains(loc, "action=result") {
+		t.Fatalf("import: %d %q", code, loc)
+	}
+	code, result, _ := w.get(loc)
+	if code != http.StatusOK || !strings.Contains(result, "Import report") || strings.Contains(result, "The import stopped") {
+		t.Fatalf("result: %d %s", code, wbSnippet(result, "notice"))
+	}
+	for _, want := range []string{"<code>index.html</code>", "<code>hizmet/2.html</code>", "Compare with the design", "Remove this import"} {
+		if !strings.Contains(result, want) {
+			t.Errorf("result lacks %q", want)
+		}
+	}
+	if k := srv.wbKitList()["demo-site"]; k == nil || k.Files != 2 || k.Name != "Demo" {
+		t.Fatalf("kit: %+v", k)
+	}
+	if _, err := os.Stat(filepath.Join(srv.wbKitRoot(), "demo-site", "css", "site.css")); err != nil {
+		t.Errorf("kit file: %v", err)
+	}
+	// 4 pages + 1 draft parent ("hizmet"), 3 templates (header, footer, 404).
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND meta->>$1 = 'demo-site' AND status = 'publish'`, wbSiteMetaKit); n != 4 {
+		t.Errorf("published pages: %d", n)
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND meta->>$1 = 'demo-site' AND status = 'draft'`, wbSiteMetaKit); n != 1 {
+		t.Errorf("placeholder parents: %d", n)
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type = 'wb_template' AND meta->>$1 = 'demo-site'`, wbSiteMetaKit); n != 3 {
+		t.Errorf("templates: %d", n)
+	}
+	if srv.settings.String("show_on_front") != "page" {
+		t.Errorf("front page not set")
+	}
+	resp, err := http.Get(base + "/iletisim/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != 200 || !strings.Contains(string(b), "<h1>Contact</h1>") {
+		t.Errorf("/iletisim/: %d", resp.StatusCode)
+	}
+	recs := srv.wbWizRecords()
+	if r := recs[id]; r == nil || len(r.Pages) != 5 || len(r.Templates) != 3 || !r.KitCreated || !r.FrontSet {
+		t.Fatalf("record: %+v", r)
+	}
+
+	// Compare: the design in a sandboxed frame beside the Pursae page.
+	code, cmp, _ := w.get("/wp-admin/web-builder-import?action=compare&import=" + id + "&file=iletisim.html")
+	if code != http.StatusOK || !strings.Contains(cmp, `sandbox="allow-scripts allow-forms allow-popups"`) || !strings.Contains(cmp, `src="/wb-design-preview/`+id+`/iletisim.html"`) ||
+		!strings.Contains(cmp, `id="wb-import-pursae"`) || !strings.Contains(cmp, `src="/iletisim/"`) || strings.Contains(cmp, "allow-same-origin") {
+		t.Errorf("compare: %d %s", code, wbSnippet(cmp, "wb-import-design"))
+	}
+
+	// Serving the design: no login needed, sandboxed, never as the admin origin.
+	anon := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	fetch := func(path string) (*http.Response, string) {
+		t.Helper()
+		resp, err := anon.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		b, _ := io.ReadAll(resp.Body)
+		return resp, string(b)
+	}
+	resp, body := fetch(wbWizDesignRoute + id + "/iletisim.html")
+	csp := resp.Header.Get("Content-Security-Policy")
+	if resp.StatusCode != 200 || !strings.Contains(body, "<h1>Contact</h1>") || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") ||
+		!strings.HasPrefix(csp, "sandbox allow-scripts allow-forms allow-popups;") || strings.Contains(csp, "allow-same-origin") || strings.Contains(csp, "allow-top-navigation") ||
+		!strings.Contains(csp, "form-action 'none'") || resp.Header.Get("X-Content-Type-Options") != "nosniff" || resp.Header.Get("Referrer-Policy") != "no-referrer" ||
+		resp.Header.Get("Cache-Control") != "private, no-store" || resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Errorf("design html: %d %v %q", resp.StatusCode, resp.Header, csp)
+	}
+	if resp, body := fetch(wbWizDesignRoute + id + "/css/site.css"); resp.StatusCode != 200 || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/css") ||
+		!strings.Contains(body, "@media") || !strings.HasPrefix(resp.Header.Get("Content-Security-Policy"), "sandbox") {
+		t.Errorf("design css: %d %q", resp.StatusCode, resp.Header.Get("Content-Type"))
+	}
+	if resp, _ := fetch(wbWizDesignRoute + id + "/"); resp.StatusCode != 200 {
+		t.Errorf("design index: %d", resp.StatusCode)
+	}
+	for _, p := range []string{id + "/..%2fmeta.json", id + "/../meta.json", id + "/%2e%2e/%2e%2e/meta.json", id + "/nope.html", strings.Repeat("0", 32) + "/index.html", "short/index.html"} {
+		if resp, body := fetch(wbWizDesignRoute + p); resp.StatusCode == 200 || strings.Contains(body, `"owner"`) {
+			t.Errorf("%s: %d", p, resp.StatusCode)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(srv.wbWizDir(id), "meta.json")); err != nil {
+		t.Fatal(err)
+	}
+
+	// Remove: a confirmation first, then only what the import made.
+	code, undo, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id)
+	if code != http.StatusOK || !strings.Contains(undo, "Delete permanently") || !strings.Contains(undo, "Demo") && !strings.Contains(undo, "Iletisim") && !strings.Contains(undo, "Contact") {
+		t.Fatalf("undo page: %d", code)
+	}
+	if strings.Contains(undo, ">Mine<") {
+		t.Errorf("the undo page lists a page the import did not make")
+	}
+	un := wizHiddenRE.FindStringSubmatch(undo)[1]
+	// without the confirmation field nothing is deleted
+	if code, _, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id, url.Values{"_wpnonce": {un}}); code != http.StatusOK {
+		t.Errorf("unconfirmed undo: %d", code)
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE meta->>$1 = 'demo-site'`, wbSiteMetaKit); n != 8 {
+		t.Fatalf("an unconfirmed undo deleted posts: %d left", n)
+	}
+	code, done, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id, url.Values{"_wpnonce": {un}, "confirm": {"1"}})
+	if code != http.StatusOK || !strings.Contains(done, "Removed 8 pages and templates and its design kit") {
+		t.Fatalf("undo: %d %s", code, wbSnippet(done, "notice"))
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE meta->>$1 = 'demo-site'`, wbSiteMetaKit); n != 0 {
+		t.Errorf("%d posts left", n)
+	}
+	if _, err := srv.store.GetPost(ctx, own.ID); err != nil {
+		t.Errorf("the site's own page was deleted: %v", err)
+	}
+	if srv.wbKitList()["demo-site"] != nil {
+		t.Errorf("kit left")
+	}
+	if _, err := os.Stat(filepath.Join(srv.wbKitRoot(), "demo-site")); err == nil {
+		t.Errorf("kit files left")
+	}
+	if srv.settings.String("show_on_front") == "page" {
+		t.Errorf("the front page setting was not restored: %q", srv.settings.String("show_on_front"))
+	}
+	if len(srv.wbWizRecords()) != 0 {
+		t.Errorf("record left")
+	}
+	if code, _, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id); code != http.StatusOK {
+		t.Errorf("undo of a removed import: %d", code)
+	}
+}
+
+// Drafts, no templates, an existing kit that must be confirmed, publishing afterwards; and an undo
+// that leaves a kit alone when the import did not create it.
+func TestWBImportWizardOptions(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	_, _, loc := w.upload(wizSite(t), "site.zip", "mykit")
+	id := wizIDRE.FindStringSubmatch(loc)[1]
+	_, page, _ := w.get("/wp-admin/web-builder-import?import=" + id)
+	if !strings.Contains(page, `value="mykit"`) {
+		t.Errorf("the kit field does not hold the given slug")
+	}
+	nonce := wizHiddenRE.FindStringSubmatch(page)[1]
+	form := func(extra url.Values) url.Values {
+		v := url.Values{"_wpnonce": {nonce}, "kit": {"mykit"}, "name": {"My kit"}, "status": {"draft"}, "front": {"1"}}
+		for k, x := range extra {
+			v[k] = x
+		}
+		return v
+	}
+	// bad slug
+	if code, body, _ := w.postForm("/wp-admin/web-builder-import?action=import&import="+id, form(url.Values{"kit": {"Bad Slug!"}})); code != http.StatusOK || !strings.Contains(body, "lowercase letters") {
+		t.Errorf("bad slug: %d", code)
+	}
+	// drafts without templates
+	code, _, loc := w.postForm("/wp-admin/web-builder-import?action=import&import="+id, form(nil))
+	if code != http.StatusSeeOther {
+		t.Fatalf("import: %d", code)
+	}
+	_, result, _ := w.get(loc)
+	if !strings.Contains(result, "imported as drafts") || !strings.Contains(result, "Publish the pages") {
+		t.Errorf("result: %s", wbSnippet(result, "Design kit"))
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND meta->>$1 = 'mykit' AND status = 'publish'`, wbSiteMetaKit); n != 0 {
+		t.Errorf("drafts were published: %d", n)
+	}
+	if srv.settings.String("show_on_front") == "page" {
+		t.Errorf("a draft became the front page")
+	}
+	// no header/footer templates: only the 404 template; pages keep layout canvas
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type = 'wb_template' AND meta->>$1 = 'mykit'`, wbSiteMetaKit); n != 1 {
+		t.Errorf("templates without the split: %d", n)
+	}
+	// publish them
+	pn := wizHiddenRE.FindStringSubmatch(result)[1]
+	code, pub, _ := w.postForm("/wp-admin/web-builder-import?action=publish&import="+id, url.Values{"_wpnonce": {pn}, "front": {"1"}})
+	if code != http.StatusOK || strings.Contains(pub, "notice-error") {
+		t.Fatalf("publish: %d %s", code, wbSnippet(pub, "notice"))
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND meta->>$1 = 'mykit' AND status = 'publish'`, wbSiteMetaKit); n != 4 {
+		t.Errorf("published after publish: %d", n)
+	}
+	if srv.settings.String("show_on_front") != "page" {
+		t.Errorf("front page not set after publishing")
+	}
+	// importing again onto the existing kit needs the confirmation
+	_, _, loc2 := w.upload(wizSite(t), "site.zip", "mykit")
+	id2 := wizIDRE.FindStringSubmatch(loc2)[1]
+	_, page2, _ := w.get("/wp-admin/web-builder-import?import=" + id2)
+	if !strings.Contains(page2, "A design kit with this slug exists") || !strings.Contains(page2, "Updates the page of an earlier import") {
+		t.Errorf("second analysis: %s", wbSnippet(page2, "kit with this slug"))
+	}
+	n2 := wizHiddenRE.FindStringSubmatch(page2)[1]
+	v := form(nil)
+	v.Set("_wpnonce", n2)
+	if code, body, _ := w.postForm("/wp-admin/web-builder-import?action=import&import="+id2, v); code != http.StatusOK || !strings.Contains(body, "tick the box") {
+		t.Errorf("existing kit without the confirmation: %d", code)
+	}
+	v.Set("replace", "1")
+	v.Set("status", "publish")
+	v.Set("templates", "1")
+	if code, _, loc := w.postForm("/wp-admin/web-builder-import?action=import&import="+id2, v); code != http.StatusSeeOther {
+		t.Fatalf("re-import: %d %s", code, loc)
+	}
+	// the second import created only the templates (the pages were updated): undoing it keeps the
+	// kit (the first import made it) and the pages of the first import.
+	rec := srv.wbWizRecords()[id2]
+	if rec == nil || rec.KitCreated || len(rec.Pages) != 0 || len(rec.Templates) != 2 {
+		t.Fatalf("second record: %+v", rec)
+	}
+	_, undo, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id2)
+	un := wizHiddenRE.FindStringSubmatch(undo)[1]
+	if code, done, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id2, url.Values{"_wpnonce": {un}, "confirm": {"1"}}); code != http.StatusOK || !strings.Contains(done, "Removed 2 pages and templates.") {
+		t.Fatalf("undo 2: %d %s", code, wbSnippet(done, "notice"))
+	}
+	if srv.wbKitList()["mykit"] == nil {
+		t.Errorf("the kit of the first import was deleted")
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND meta->>$1 = 'mykit'`, wbSiteMetaKit); n != 5 {
+		t.Errorf("pages of the first import: %d", n)
+	}
+	// discard removes the staging folder only
+	dn := wizHiddenRE.FindStringSubmatch(page2)
+	_, page3, _ := w.get("/wp-admin/web-builder-import?import=" + id2)
+	dn = regexp.MustCompile(`action=discard[^"]*"[^>]*>\s*<input type="hidden" name="_wpnonce" value="([0-9a-zA-Z]+)"`).FindStringSubmatch(page3)
+	if dn == nil {
+		t.Fatalf("no discard form")
+	}
+	if code, _, _ := w.postForm("/wp-admin/web-builder-import?action=discard&import="+id2, url.Values{"_wpnonce": {dn[1]}}); code != http.StatusFound {
+		t.Errorf("discard: %d", code)
+	}
+	if _, err := os.Stat(srv.wbWizDir(id2)); err == nil {
+		t.Errorf("staging folder left after discard")
+	}
+}
+
+// Undo never deletes a post that no longer carries the import's mark.
+func TestWBImportWizardUndoKeepsOthers(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	_, _, loc := w.upload(wizSite(t), "site.zip", "k")
+	id := wizIDRE.FindStringSubmatch(loc)[1]
+	_, page, _ := w.get("/wp-admin/web-builder-import?import=" + id)
+	nonce := wizHiddenRE.FindStringSubmatch(page)[1]
+	if code, _, _ := w.postForm("/wp-admin/web-builder-import?action=import&import="+id, url.Values{"_wpnonce": {nonce}, "kit": {"k"}, "name": {"K"}, "templates": {"1"}, "status": {"publish"}}); code != http.StatusSeeOther {
+		t.Fatalf("import: %d", code)
+	}
+	rec := srv.wbWizRecords()[id]
+	if rec == nil || len(rec.Pages) == 0 {
+		t.Fatalf("record: %+v", rec)
+	}
+	// the owner took one page over: its mark is gone
+	if _, err := srv.store.Pool.Exec(context.Background(), `UPDATE posts SET meta = meta - $2 WHERE id = $1`, rec.Pages[0], wbSiteMetaKit); err != nil {
+		t.Fatal(err)
+	}
+	_, undo, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id)
+	un := wizHiddenRE.FindStringSubmatch(undo)[1]
+	_, done, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id, url.Values{"_wpnonce": {un}, "confirm": {"1"}})
+	if !strings.Contains(done, "left alone") {
+		t.Errorf("done: %s", wbSnippet(done, "notice"))
+	}
+	if _, err := srv.store.GetPost(context.Background(), rec.Pages[0]); err != nil {
+		t.Errorf("a page without the mark was deleted: %v", err)
+	}
+}

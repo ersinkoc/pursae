@@ -329,6 +329,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.GET("/admin-ajax", s.adminAjax)
 	admin.POST("/admin-ajax", s.adminAjax)
 	admin.GET("/themes", s.themesScreen)
+	admin.GET("/"+wbWizPageSlug, s.wbWizScreen)  // Web Builder › Import HTML site (webbuilder_siteimport_admin.go)
+	admin.POST("/"+wbWizPageSlug, s.wbWizScreen) // upload, import, publish, remove
 	admin.GET("/widgets", s.widgetsScreen)
 	admin.GET("/nav-menus", s.navMenus)
 	admin.POST("/nav-menus", s.navMenus)
