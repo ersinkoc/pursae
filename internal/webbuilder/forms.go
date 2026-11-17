@@ -199,7 +199,7 @@ func (fs FormSchema) Validate(values map[string]string) (clean map[string]string
 			errs[f.Name] = FormTooLong
 			continue
 		}
-		if f.Type == "select" && len(f.Options) > 0 && fs.Variant == "code" && !slices.Contains(f.Options, v) {
+		if (f.Type == "select" || f.Type == "radio" || f.Type == "checkbox") && len(f.Options) > 0 && fs.Variant == "code" && !slices.Contains(f.Options, v) {
 			errs[f.Name] = FormInvalid
 			continue
 		}
@@ -213,6 +213,26 @@ func (fs FormSchema) Validate(values map[string]string) (clean map[string]string
 		clean[f.Name] = v
 	}
 	return clean, errs
+}
+
+// InputErrors keys Validate's errs by the design's input names (a code form's fields name the
+// Pursae field, Input the design's own input), so the form script marks the inputs the visitor
+// sees; other keys (captcha) and builder forms come back as they are.
+func (fs FormSchema) InputErrors(errs map[string]string) map[string]string {
+	if len(errs) == 0 || fs.Variant != "code" {
+		return errs
+	}
+	out := make(map[string]string, len(errs))
+	for k, v := range errs {
+		out[k] = v
+	}
+	for _, f := range fs.Fields {
+		if v, ok := errs[f.Name]; ok && f.Input != "" && f.Input != f.Name {
+			delete(out, f.Name)
+			out[f.Input] = v
+		}
+	}
+	return out
 }
 
 // stripControl removes control characters; single-line fields also lose CR/LF (header safety).

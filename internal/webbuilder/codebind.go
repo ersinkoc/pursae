@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1031,12 +1032,22 @@ func CodeFormSchema(form *html.Node, key string, b *CodeBind, byID map[string]*h
 		fs.Title = heading
 	}
 	required := toSet(b.Required)
-	seen := map[string]bool{}
+	seen := map[string]int{} // input name → index in fs.Fields + 1
 	for _, in := range inputs {
 		name, _ := getAttr(in, "name")
 		typ, _ := getAttr(in, "type")
 		typ = strings.ToLower(typ)
-		if name == "" || seen[name] || name == FormHoneypot || name == FormTiming || name == FormNonce || strings.HasPrefix(name, "wb_") ||
+		if i := seen[name]; i > 0 && in.Data == "input" && (typ == "radio" || typ == "checkbox") && fs.Fields[i-1].Type == typ {
+			// Another choice of a radio group (or checkboxes sharing a name): one more value.
+			if v := choiceValue(in); !slices.Contains(fs.Fields[i-1].Options, v) {
+				fs.Fields[i-1].Options = append(fs.Fields[i-1].Options, v)
+			}
+			if hasAttr(in, "required") {
+				fs.Fields[i-1].Required = true
+			}
+			continue
+		}
+		if name == "" || seen[name] > 0 || name == FormHoneypot || name == FormTiming || name == FormNonce || strings.HasPrefix(name, "wb_") ||
 			name == "cf-turnstile-response" || name == "g-recaptcha-response" || !formInputRE.MatchString(name) {
 			continue
 		}
@@ -1056,7 +1067,6 @@ func CodeFormSchema(form *html.Node, key string, b *CodeBind, byID map[string]*h
 		if !FormFieldOK(target) {
 			continue
 		}
-		seen[name] = true
 		f := FormField{Name: target, Input: name, Type: "text", Max: FormNameMax}
 		switch {
 		case in.Data == "textarea" || target == "message":
@@ -1075,7 +1085,9 @@ func CodeFormSchema(form *html.Node, key string, b *CodeBind, byID map[string]*h
 		case typ == "tel" || target == "phone":
 			f.Type, f.Max = "tel", FormPhoneMax
 		case typ == "checkbox" || typ == "radio":
-			f.Type = typ
+			// The values the markup declares, like a select's options (the other inputs of the
+			// group add theirs above).
+			f.Type, f.Max, f.Options = typ, FormOtherMax, []string{choiceValue(in)}
 		}
 		if id, ok := getAttr(in, "id"); ok && labels["#"+id] != "" {
 			f.Label = labels["#"+id]
@@ -1094,11 +1106,20 @@ func CodeFormSchema(form *html.Node, key string, b *CodeBind, byID map[string]*h
 			f.Required = true
 		}
 		fs.Fields = append(fs.Fields, f)
+		seen[name] = len(fs.Fields)
 		if len(fs.Fields) >= MaxCodeFormFields {
 			break
 		}
 	}
 	return fs
+}
+
+// choiceValue is the value a checked radio or checkbox submits ("on" without a value attribute).
+func choiceValue(in *html.Node) string {
+	if v, ok := getAttr(in, "value"); ok {
+		return strings.TrimSpace(v)
+	}
+	return "on"
 }
 
 // defaultFormField maps an input name to a Pursae field: itself when it is one, else field_<name>.

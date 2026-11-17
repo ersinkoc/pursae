@@ -74,6 +74,8 @@ func TestMCPImportSiteBindings(t *testing.T) {
 		map[string]any{"path": "iletisim.html", "html": bindTestPage("iletisim.html", "Contact", `<section><div id="cf-wrap"><form id="contact-form" novalidate data-mail="x@example.test">
 <h2>Write to us</h2><label for="cf-name">Name *</label><input id="cf-name" name="name"><label for="cf-mail">E-mail</label><input id="cf-mail" name="email" type="email" required>
 <label for="cf-company">Company</label><input id="cf-company" name="company"><select name="subject"><option value="">Pick</option><option value="Health">Health</option></select>
+<label>City <input name="city"></label><input type="text" name="full-name">
+<label><input type="radio" name="pref" value="mail"> Mail</label><label><input type="radio" name="pref" value="phone"> Phone</label>
 <textarea name="message"></textarea><button type="submit">Send</button></form><div id="cf-done" class="hidden">Thanks!</div></div></section>`)},
 	}
 	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "demo", "pages": pages, "collections": []any{"haber"}}))
@@ -166,7 +168,7 @@ func TestMCPImportSiteBindings(t *testing.T) {
 		}
 	}
 	bound := mcpStructured(t, "web_builder_bind", call("web_builder_bind", map[string]any{"post_id": contactID, "html_id": "contact-form",
-		"bind": map[string]any{"kind": "form", "done": "", "required": []any{"name"}}}))
+		"bind": map[string]any{"kind": "form", "done": "", "required": []any{"name", "full-name"}}}))
 	key, _ := bound["form"].(string)
 	if key == "" {
 		t.Fatalf("bind: %v", bound)
@@ -179,7 +181,8 @@ func TestMCPImportSiteBindings(t *testing.T) {
 	}
 	nonce := regexpGroup(`name="wb_nonce" value="([^"]+)"`, contact)
 	action := regexpGroup(`action="([^"]*/forms/[^"]+)"`, contact)
-	form := url.Values{"name": {"Ada"}, "email": {"ada@example.test"}, "company": {"ACME"}, "subject": {"Health"}, "message": {"Hello"}, "wb_nonce": {nonce}, "wb_t": {"5000"}}
+	form := url.Values{"name": {"Ada"}, "email": {"ada@example.test"}, "company": {"ACME"}, "subject": {"Health"}, "message": {"Hello"},
+		"city": {"<b>Izmir</b>"}, "full-name": {"Ada Lovelace"}, "pref": {"phone"}, "wb_nonce": {nonce}, "wb_t": {"5000"}}
 	req, _ := http.NewRequest(http.MethodPost, strings.ReplaceAll(action, "&amp;", "&"), strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
@@ -202,20 +205,49 @@ func TestMCPImportSiteBindings(t *testing.T) {
 	if !strings.Contains(fields, `"company": "ACME"`) && !strings.Contains(fields, `"company":"ACME"`) {
 		t.Errorf("stored fields: %s", fields)
 	}
-	// A required field the design left empty is refused with the field named.
-	form.Set("name", "")
-	req, _ = http.NewRequest(http.MethodPost, strings.ReplaceAll(action, "&amp;", "&"), strings.NewReader(form.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Origin", base)
-	resp, err = c.Do(req)
-	if err != nil {
-		t.Fatal(err)
+	// Settings › Web Builder lists the code form's own fields too, escaped.
+	screen := get(wbSettingsURL)
+	for _, want := range []string{"ACME", "Health", "&lt;b&gt;Izmir&lt;/b&gt;", "<strong>city:</strong>", "Ada Lovelace", "<strong>pref:</strong> phone"} {
+		if !strings.Contains(screen, want) {
+			t.Errorf("submissions screen lacks %s", want)
+		}
 	}
-	body, _ = io.ReadAll(resp.Body)
-	resp.Body.Close()
-	if resp.StatusCode != 422 || !strings.Contains(string(body), `"name":"required"`) {
-		t.Errorf("empty name: %d %s", resp.StatusCode, body)
+	if strings.Contains(screen, "<b>Izmir</b>") {
+		t.Error("a submitted value is printed unescaped")
+	}
+	refused := func(name, value string) string {
+		t.Helper()
+		f := url.Values{}
+		for k, v := range form {
+			f[k] = v
+		}
+		f.Set(name, value)
+		req, _ := http.NewRequest(http.MethodPost, strings.ReplaceAll(action, "&amp;", "&"), strings.NewReader(f.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Accept", "application/json")
+		req.Header.Set("Origin", base)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode != 422 {
+			t.Errorf("%s=%q: %d %s", name, value, resp.StatusCode, body)
+		}
+		return string(body)
+	}
+	// A required field the design left empty is refused with the field named, by the design's
+	// own input name (the form script marks [name="full-name"], not field_full_name).
+	if body := refused("name", ""); !strings.Contains(body, `"name":"required"`) {
+		t.Errorf("empty name: %s", body)
+	}
+	if body := refused("full-name", ""); !strings.Contains(body, `"full-name":"required"`) || strings.Contains(body, "field_full_name") {
+		t.Errorf("empty full-name: %s", body)
+	}
+	// A radio value the markup does not declare is refused like a select's.
+	if body := refused("pref", "fax"); !strings.Contains(body, `"pref":"invalid"`) {
+		t.Errorf("undeclared radio value: %s", body)
 	}
 }
 

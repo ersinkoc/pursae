@@ -548,8 +548,13 @@ and `textarea` (not buttons, files, hidden or password inputs) is a field, mappe
 name → `name email phone message date choice company subject` or `field_<name>`, `-` leaves it out;
 unmapped inputs map to themselves when they are one of those names, else to `field_<name>`), labelled
 by its `<label>`, required when it has `required` / `aria-required="true"` or is listed in `required`; a
-`select`'s value must be one of its options. Submissions are validated, stored and mailed like builder
-forms (Settings › Web Builder; `to`, `cc`, `success`, `failure`, `redirect` override per form).
+`select`'s value must be one of its options, a radio group's or checkbox's one of the `value`s its
+inputs declare (`on` without one). A refused submit answers 422 with `data.fields` keyed by the
+design's input names (`full-name`, not `field_full_name`), so the script marks those inputs
+`aria-invalid="true"`. Submissions are validated, stored and mailed like builder forms (Settings › Web
+Builder lists every field: the named ones, then each `field_<name>` by name, the message last; `to`,
+`cc`, `success`, `failure`, `redirect` override per form). The editor boot leaves the bindings of the
+header and footer parts out for users without `edit_theme_options`, since a form's recipients are there.
 
 Code pages load no builder runtime, so a small script (`wbCodeFormJS`) sends bound forms. The design's
 own submit handlers run first, so its validation shows its own errors. A handler that builds a

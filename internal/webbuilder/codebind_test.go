@@ -1,6 +1,7 @@
 package webbuilder
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -329,5 +330,45 @@ func TestCompileBindsCustomFieldMeta(t *testing.T) {
 	snap, _ := sanitizeOK(t, `<p data-wb-slot="post.field" data-wb-field="secret" data-wb-meta="">x</p>`, SnapshotOptions{})
 	if strings.Contains(snap, AttrMeta) || !strings.Contains(snap, `data-wb-field="secret"`) {
 		t.Errorf("the sanitizer must drop data-wb-meta only: %q", snap)
+	}
+}
+
+// A code form's radio group and checkboxes declare their values like a select's options; errors
+// come back under the design's input names.
+func TestCodeFormChoicesAndInputErrors(t *testing.T) {
+	src := `<form data-wbc="1"><input name="full-name" required>` +
+		`<input type="radio" name="pref" value="mail"><input type="radio" name="pref" value="phone">` +
+		`<input type="checkbox" name="news"><input type="checkbox" name="terms" value="yes" required></form>`
+	list := codeFormSchemas("s", src, ParseCodeBinds(`{"1":{"kind":"form"}}`))
+	if len(list) != 1 {
+		t.Fatalf("schemas: %+v", list)
+	}
+	fs := list[0]
+	by := map[string]FormField{}
+	for _, f := range fs.Fields {
+		by[f.Input] = f
+	}
+	if f := by["pref"]; f.Type != "radio" || f.Name != "field_pref" || !reflect.DeepEqual(f.Options, []string{"mail", "phone"}) {
+		t.Errorf("radio: %+v", f)
+	}
+	if f := by["news"]; f.Type != "checkbox" || !reflect.DeepEqual(f.Options, []string{"on"}) {
+		t.Errorf("checkbox without a value: %+v", f)
+	}
+	if len(fs.Fields) != 4 {
+		t.Errorf("fields: %+v", fs.Fields)
+	}
+	_, errs := fs.Validate(map[string]string{"full-name": "", "pref": "fax", "news": "on", "terms": "no"})
+	got := fs.InputErrors(errs)
+	want := map[string]string{"full-name": FormRequired, "pref": FormInvalid, "terms": FormInvalid}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("errors = %v, want %v", got, want)
+	}
+	clean, errs := fs.Validate(map[string]string{"full-name": "Ada", "pref": "phone", "terms": "yes"})
+	if len(errs) != 0 || clean["field_pref"] != "phone" || clean["field_terms"] != "yes" {
+		t.Errorf("valid: %v %v", clean, errs)
+	}
+	// Builder forms keep the Pursae names.
+	if got := (FormSchema{Variant: "contact"}).InputErrors(map[string]string{"email": FormInvalid}); got["email"] != FormInvalid {
+		t.Errorf("builder form errors: %v", got)
 	}
 }

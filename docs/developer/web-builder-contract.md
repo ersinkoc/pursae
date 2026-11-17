@@ -321,7 +321,7 @@ are stored and mailed under the field names with the inputs' labels.
 
 Body is `application/x-www-form-urlencoded` or `multipart/form-data` (no files), at most 64 KiB.
 Per-IP rate limit → **429** `wb_rate_limited` with `Retry-After`. Invalid → **422**
-`wb_form_invalid`, `data.fields: {field: "required"|"invalid"|"too_long"}`. Mail goes through the
+`wb_form_invalid`, `data.fields: {field: "required"|"invalid"|"too_long"}` (a code form's fields by the design's input names). Mail goes through the
 core mailer to the form's recipients: its own `formTo` / `formCc` section content keys, else Settings ›
 Web Builder (Form recipients, Form copies), else the admin email. Every valid submission is also stored
 (`web_builder_form_submissions`, listed on Settings › Web Builder unless switched off), so a message
