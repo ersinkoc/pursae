@@ -9,7 +9,7 @@ A **code section** is a part of an imported HTML design kept as the design's own
 JavaScript stay the design's, so the page is the design 1:1 by construction: scroll effects, canvas
 and WebGL scenes, custom fonts and every layout trick keep working, because nothing is converted.
 Pursae Web Builder still edits it: every element of the design is a block on the canvas — selected,
-moved among its siblings, duplicated, deleted and restyled — texts, links and images are changed in
+dragged into another container, duplicated, wrapped, deleted and restyled — texts, links and images are changed in
 place, and the sections are reordered, hidden and removed like any other.
 
 Use code sections for a finished design (an agency hand-off, an exported landing page, an animated
@@ -276,47 +276,90 @@ main between the code header and footer, no theme title, wrapper or stylesheet, 
 
 ## Editing
 
-Builder patch `0018-code-sections` adds the `code` kind to the editor (`src/builder/CodeSection.tsx`).
-A run of consecutive code sections is drawn as one page in one frame (`sandbox="allow-scripts
-allow-same-origin"`, the design's head plus its wrappers), so the design's scripts see all of its
-markup; the frame is as tall as the run, up to the screen, and scrolls inside the canvas beyond that.
-In the frame:
+A page made only of code sections (every imported page, and a header or footer template of code
+sections) is edited by the **element editor** (`builder/host/elements/`, installed through the thin
+seam patch `0020-elements-seam`, which hands the canvas and the navigator rows of code sections to
+the host). A page that mixes code sections with the builder's own sections keeps the per-run frames
+of patches `0018-code-sections` / `0019-code-blocks` (see below).
 
-- clicking an element selects it (the innermost element with a `data-wbc` id); an element with text
-  of its own is edited in place at once (Enter or clicking away saves, Escape cancels); text a script
-  drew differently from the source (split letters, counters) is edited as plain text only;
-- the toolbar over the selection (patch `0019-code-blocks`) selects the **parent** (also Escape),
-  moves the element **up** / **down** among its element siblings, **duplicates** it and **deletes**
-  it (not a section's only top-level element: remove the section instead). A duplicate gets new
-  `data-wbc` ids, and its HTML ids become `name-2`, `name-3`, … (free on the page) with the
-  `aria-controls`, `aria-labelledby`, `for` and `href="#…"` references inside the copy following them,
-  so the design's accordions, tabs and labels work on both;
-- **Style** sets the element's look as inline style, which wins over the design's classes: text color,
-  background, font size and weight, alignment, padding, margin, gap, corner radius, width, max width,
-  opacity (a bare number is pixels), plus its classes and the raw `style` attribute. Each field shows
-  the computed value as its placeholder;
-- **Layers** shows the run's sections and their elements as a tree, open along the path to the
-  selection; a click selects and scrolls to an element;
-- clicking an image shows **Replace** (Media Library) and its alt text; clicking a link shows its URL;
-- links and forms never navigate the frame, and the design's own click handlers (accordions, tabs) do
-  not run while editing — use Preview.
+**The canvas is one frame with the whole page**: the header template, the page's code sections and
+the footer template that Hello Pursae draws around the page on the site (`Boot.codeParts`, read on
+the server by `wbEditorCodeParts`; contract §2), in their shared wrappers, so fixed headers, sticky
+footers and the shared shell look as they do on the site. The header and footer are locked: hovering
+them shows **Edit header** / **Edit footer**, which opens that template in the editor. The device
+buttons set the frame's width — desktop is a fixed 1440 px page scaled to fit the panel, tablet
+768 px, mobile 390 px — so the design's own `@media` queries apply.
 
-Every edit is written back to the section whose markup holds that id (`patchCode`, through DOMParser),
-so undo, autosave and publishing work as for any section. The section list reorders, hides, duplicates
-and removes code sections; the inspector shows the section's HTML and head code for anything the
-canvas does not reach. Every operation works on the section's source markup, never on what the
-design's scripts changed in the frame (an accordion's `open` class, split letters), so the page stays
-the design's markup. Structural changes (move, duplicate, delete), an undo and a section move reload
-the frame, keeping its scroll and selection, and re-run the design's scripts; text and style edits do
-not.
+**Static edit mode.** The frame gets a copy of the markup in which the design's scripts do not run
+(a `<script>`'s type becomes `text/x-wb-inert`, inline `on…` handlers are dropped, head scripts
+included); the stored markup is never changed. What is on screen is therefore the stored markup, and
+every operation is applied to the frame at once without reloading it (the changed sections' new
+markup is reconciled with the elements already there). **Live edit** (bottom bar, per editing
+session) runs the scripts again, for designs whose content only appears through them (sliders,
+counters); a structural change then reloads the frame. **Preview** always runs them. An element the
+design hides (a closed menu, the second slide) can be selected in the navigator and **shown
+temporarily** (toolbar or context menu); that is editor-only, like **Hide in the editor**.
+
+**Selecting and editing.** Every control is drawn over the frame, outside the design's DOM (the
+frame only gets the `data-wbc` ids and one `<style data-wb-edit>`):
+
+- a click selects the innermost element (a header or footer element: nothing); the outline shows its
+  type — Section, Flexbox, Grid, Div, Heading, Text, Link, Button, Image, Icon, Video / embed, List,
+  Form element, Code — derived from the tag and the computed `display`, never stored; the breadcrumb
+  in the bottom bar shows its path;
+- the toolbar selects the **parent**, moves the element **up** / **down**, **edits its text**,
+  **duplicates**, **wraps it in a Div** and **deletes** it; its handle (or pressing on the selected
+  element) **drags** it: the drop indicator follows the target container's direction (flex row /
+  column, grid, flow), the frame scrolls at its edges, and void elements, the inside of an `svg`,
+  elements with text of their own, the element itself and the header / footer refuse the drop.
+  Elements move into any container, also into an empty one and into another section;
+- the context menu copies and pastes elements (after or inside), duplicates, wraps, unwraps, selects
+  the parent, hides or temporarily shows;
+- a double-click on a text (or Enter, or a second click on the selected text) edits it in place, in
+  the frame, with bold / italic / link / clear formatting; Enter or a click elsewhere saves, Escape
+  cancels;
+- keys work inside the frame too: undo / redo, copy / paste, duplicate (Ctrl/⌘ D), Delete, Escape
+  (parent), the arrows (previous / next sibling, parent, first child), Alt + arrows (move); keys are
+  left alone while a text is being edited.
+
+The **navigator** (Studio › Structure, or **Layers** in the bottom bar) lists each code section's
+elements with their type icons. Rows are dragged to reorder or reparent elements (also across
+sections), renamed with a double-click — the names are stored in the section's `content.names` (a
+JSON map keyed by `data-wbc`), so the design's markup stays clean — hidden in the editor and
+collapsed.
+
+Every operation splices the source markup of the section(s) it changes at the element's ranges (a
+small source-preserving parser, `elements/html.ts`), so nothing outside the edited element changes
+byte for byte (whitespace, quoting, entities), and writes them back as **one** history entry with its
+own label. A page opened, edited and edited back publishes exactly what it published before. A
+duplicate or a pasted element gets new `data-wbc` ids, and its HTML ids become `name-2`, `name-3`, …
+(free on the page) with the `aria-controls`, `aria-labelledby`, `for` and `href="#…"` references
+inside the copy following them, so the design's accordions, tabs and labels work on both; the inside
+of an `svg` is copied as is.
+
+**Mixed pages** (patches `0018` / `0019`): a run of consecutive code sections is drawn as one frame
+with the design's scripts running; a click selects an element and edits its text in place, the
+toolbar selects the parent, moves the element among its siblings, duplicates and deletes it, and
+**Style** sets inline styles (text color, background, font size and weight, alignment, padding,
+margin, gap, corner radius, width, max width, opacity), classes and the raw `style` attribute;
+**Layers** shows the run's elements. Structural changes reload the frame.
+
+In both, the section list reorders, hides, duplicates and removes code sections, and the inspector
+shows the section's HTML and head code for anything the canvas does not reach.
 
 ## Limits
 
-- Style edits are inline styles: they apply at every screen width. A phone-only change, a hover state
-  or a change to every card at once belongs in the kit's CSS (or a `<style>` in the section's HTML).
-- Elements move only among their siblings; to move one into another parent, cut and paste it in the
-  section's HTML code. New elements come from duplicating an existing one, which keeps the design's
-  classes.
+- The element editor draws only header and footer templates made of code sections; a header made
+  of builder sections is not shown around a code page in the editor (it is on the site).
+- Style edits (mixed pages) are inline styles: they apply at every screen width. A phone-only change,
+  a hover state or a change to every card at once belongs in the kit's CSS (or a `<style>` in the
+  section's HTML). The element editor's style panel comes with Faz 3.
+- New elements come from duplicating or pasting an existing one, which keeps the design's classes;
+  the palette of new elements comes later. Copied styles (copy / paste style) come with Faz 3.
+- Editing a text replaces the element's inner markup with what the browser serialises (only when the
+  text changed); inline `on…` handlers inside that element are not kept in static edit mode, and an
+  element holding scripts or styles is not edited in place.
+- Live edit is a setting of the editing session, not stored per page yet.
 
 - A code section is published as written: its markup is trusted (the author has `unfiltered_html`).
   Kits are site-wide code: only administrators should hold them.
