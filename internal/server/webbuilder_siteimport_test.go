@@ -195,9 +195,11 @@ func TestMCPImportSiteCorpusShapes(t *testing.T) {
 			`<script type="module">import { x } from "./js/engine.js"; document.title = "x" + x</script>`)},
 		map[string]any{"path": "about.html", "html": doc(header + `<main><section><h1>About</h1></section></main>` + footer)},
 		map[string]any{"path": "404.html", "html": doc(`<main><h1>Lost</h1><a href="/">Home</a></main>`)},
+		// An app screen: header bar and main in one grid, a dialog after it, no footer.
+		map[string]any{"path": "app/index.html", "html": doc(`<div class="app"><header class="bar">Bar</header><main><section>Canvas</section></main></div><dialog id="dlg"></dialog>`)},
 	}
 	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "corp", "pages": pages}))
-	if len(asList(out["pages"])) != 3 {
+	if len(asList(out["pages"])) != 4 {
 		t.Fatalf("import: %v", out)
 	}
 	fetch := func(path string) (int, string, http.Header) {
@@ -223,6 +225,10 @@ func TestMCPImportSiteCorpusShapes(t *testing.T) {
 	code, nf, _ := fetch("/no-such-page/")
 	if code != 404 || !strings.Contains(nf, "<h1>Lost</h1>") || strings.Contains(nf, `class="site-h"`) || strings.Contains(nf, `class="site-f"`) {
 		t.Errorf("bare 404 got the site's header or footer: %d %s", code, wbSnippet(nf, "Lost"))
+	}
+	if _, app, _ := fetch("/app/"); strings.Count(app, `<div class="app"`) != 1 || strings.Contains(app, `class="site-f"`) ||
+		!strings.Contains(app, `<div class="app"><header class="bar">Bar</header>`) {
+		t.Errorf("app page: the grid wrapper must be printed once around header and main: %s", wbSnippet(app, `class="bar"`))
 	}
 	// The kit at the root: the stylesheet's font, the module next to its page.
 	for _, p := range []string{"/assets/fonts/x.woff2", "/post/js/engine.js", "/assets/style.css"} {

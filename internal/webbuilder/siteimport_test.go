@@ -332,3 +332,37 @@ func TestConvertCodeDataAttrsAndImportMap(t *testing.T) {
 		t.Errorf("missing: %v", res.Missing)
 	}
 }
+
+// The umbral Motif shape: an app screen whose header bar, asides and main sit in one grid wrapper and
+// that has no footer; and a page without a header whose footer shares the wrapper. The shell is
+// printed once, by the header and the page (or the page and the footer).
+func TestShareShellTwoParts(t *testing.T) {
+	app := `<div class="app" id="app">`
+	h := app + `<header class="bar">B</header></div>`
+	m := app + `<aside>L</aside><main>S</main><aside>R</aside></div>` + "\n" + `<dialog id="d"></dialog>`
+	// The page's sections: the grid's and, after the shell, a dialog in no wrapper.
+	k, withH, withF := ShellPlan([]string{app}, nil, &CodeDocInfo{First: []string{app}, Last: nil, Common: nil})
+	if k != 1 || !withH || withF {
+		t.Fatalf("plan without footer: %d %v %v", k, withH, withF)
+	}
+	hh, mm, ff, ok := ShareShell(h, m, "", []string{app}, true)
+	if !ok || hh+mm+ff != app+`<header class="bar">B</header><aside>L</aside><main>S</main><aside>R</aside></div>`+"\n"+`<dialog id="d"></dialog>` {
+		t.Fatalf("header + page: %v %s", ok, hh+mm+ff)
+	}
+	f := app + `<footer>F</footer></div>`
+	m2 := app + `<main>S</main></div>`
+	if k, withH, withF := ShellPlan(nil, []string{app}, &CodeDocInfo{First: []string{app, "<main>"}, Last: []string{app, "<main>"}, Common: []string{app, "<main>"}}); k != 1 || withH || !withF {
+		t.Fatalf("plan without header: %d %v %v", k, withH, withF)
+	}
+	hh, mm, ff, ok = ShareShell("", m2, f, []string{app}, true)
+	if !ok || hh+mm+ff != app+`<main>S</main><footer>F</footer></div>` {
+		t.Fatalf("page + footer: %v %s", ok, hh+mm+ff)
+	}
+	// Not without a code page, and not with nothing to share it with.
+	if _, _, _, ok := ShareShell(h, "<main>theme</main>", "", []string{app}, false); ok {
+		t.Error("shared a header's shell with a theme main alone")
+	}
+	if k, _, _ := ShellPlan(nil, nil, &CodeDocInfo{First: []string{app}, Common: []string{app}}); k != 0 {
+		t.Errorf("a page alone has no shared shell: %d", k)
+	}
+}
