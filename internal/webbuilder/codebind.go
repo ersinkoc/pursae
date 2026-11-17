@@ -481,16 +481,16 @@ type spliceEdit struct {
 }
 
 type bindCompiler struct {
-	src    string
-	sec    string
-	opts   CodeFillOptions
-	byID   map[string]*srcNode
-	adds   map[*srcNode][]html.Attribute // attributes inserted before the start tag's end
-	sets   map[*srcNode]map[string]string
-	drops  []*srcNode
+	src     string
+	sec     string
+	opts    CodeFillOptions
+	byID    map[string]*srcNode
+	adds    map[*srcNode][]html.Attribute // attributes inserted before the start tag's end
+	sets    map[*srcNode]map[string]string
+	drops   []*srcNode
 	inserts []spliceEdit
-	subs   map[*srcNode]bool // elements bound as submenus
-	binds  CodeBinds
+	subs    map[*srcNode]bool // elements bound as submenus
+	binds   CodeBinds
 }
 
 // CompileBinds turns a code section's bindings into placeholder attributes (see the file

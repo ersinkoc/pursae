@@ -1469,7 +1469,6 @@ const (
 	// LoopParent: query loops of code bindings only: the children of that entry ("<id>" | "").
 	LoopParent = "parent"
 
-
 	LoopSourceMain    = "main"    // the request's own posts (v.Posts, v.Pagination)
 	LoopSourceQuery   = "query"   // a custom query from the keys above
 	LoopSourceRelated = "related" // same post type, sharing terms of LoopTerms' taxonomies (default category) with the current post
@@ -1520,14 +1519,14 @@ const (
 	// AttrRaw on a post.title / post.content / post.image slot element: the stored value as the
 	// design shows it (title without texturizing, imported HTML content as stored, image src and
 	// alt only). Set by the code bindings.
-	AttrRaw = "data-wb-raw"
-	AttrFormat   = "data-wb-format"    // DynSettings.Format
-	AttrSize     = "data-wb-size"      // DynSettings.Size
-	AttrTax      = "data-wb-tax"       // DynSettings.Tax
-	AttrSep      = "data-wb-sep"       // DynSettings.Sep
-	AttrWords    = "data-wb-words"     // DynSettings.Words
-	AttrField    = "data-wb-field"     // post.field / post.field-url: the Pursae Custom Fields field name (FieldPattern)
-	AttrSearch   = "data-wb-search"    // on the search <form method="get" action="<home>/"> with <input type="search" name="s">
+	AttrRaw    = "data-wb-raw"
+	AttrFormat = "data-wb-format" // DynSettings.Format
+	AttrSize   = "data-wb-size"   // DynSettings.Size
+	AttrTax    = "data-wb-tax"    // DynSettings.Tax
+	AttrSep    = "data-wb-sep"    // DynSettings.Sep
+	AttrWords  = "data-wb-words"  // DynSettings.Words
+	AttrField  = "data-wb-field"  // post.field / post.field-url: the Pursae Custom Fields field name (FieldPattern)
+	AttrSearch = "data-wb-search" // on the search <form method="get" action="<home>/"> with <input type="search" name="s">
 	// AttrItem is the Item.id of the cell a slot element belongs to (IDPattern). Commerce and
 	// language-switcher slots read that cell's DynSettings from the STORED doc by this id; an id
 	// the doc does not have gets the widget defaults.
