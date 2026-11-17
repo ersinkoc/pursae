@@ -206,13 +206,17 @@ func (rt *Runtime) Load(ctx context.Context, pkg *Package, granted []Permission,
 	rt.mu.Unlock()
 
 	fail := func(err error) (*Plugin, error) {
-		rt.hooks.RemoveAll(m.Slug)
+		rt.mu.Lock()
+		// An unload may have allowed another Load of this slug while compilation ran.
+		// Only remove the reservation and hooks if they still belong to this instance.
+		if rt.plugins[m.Slug] == p {
+			rt.hooks.RemoveAll(m.Slug)
+			delete(rt.plugins, m.Slug)
+		}
+		rt.mu.Unlock()
 		if p.compiled != nil {
 			_ = p.compiled.Close(ctx)
 		}
-		rt.mu.Lock()
-		delete(rt.plugins, m.Slug)
-		rt.mu.Unlock()
 		return nil, fmt.Errorf("plugin %s: %w", m.Slug, err)
 	}
 
