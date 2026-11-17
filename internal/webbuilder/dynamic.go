@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 // Dynamic snapshot engine (contract §11.5). A published snapshot is sanitized HTML whose
@@ -238,17 +239,27 @@ func Compile(src string) (*Program, error) {
 	if !hasPlaceholders(src) {
 		return staticProgram(src), nil
 	}
-	nodes, err := parseFragment(src)
-	if err != nil {
-		return nil, err
-	}
 	c := &compiler{p: &Program{Uses: SlotSet{}}, dyn: map[*html.Node]bool{}, loops: map[string]bool{}, menus: map[string]bool{}}
-	for _, n := range nodes {
-		c.mark(n)
-	}
 	var segs []seg
-	for _, n := range nodes {
-		segs = c.node(n, segs)
+	if strings.Contains(src, AttrCodePage) || strings.Contains(src, codeHeadOpen) {
+		// A snapshot with code sections: only the elements that carry placeholders (with what is
+		// inside them) are parsed; every other byte stays the design's (the head template, the
+		// shell's wrappers and the markup the front end matches as text).
+		var err error
+		if segs, err = c.spliced(src); err != nil {
+			return nil, err
+		}
+	} else {
+		nodes, err := parseFragment(src)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range nodes {
+			c.mark(n)
+		}
+		for _, n := range nodes {
+			segs = c.node(n, segs)
+		}
 	}
 	c.p.segs = segs
 	c.p.HasDynamic = false
@@ -263,6 +274,57 @@ func Compile(src string) (*Program, error) {
 		return staticProgram(src), nil
 	}
 	return c.p, nil
+}
+
+// spliced compiles the outermost elements carrying placeholders one by one (parsed in the context
+// of their parent element) and keeps the source between them as it is.
+func (c *compiler) spliced(src string) ([]seg, error) {
+	root := parseSource(src)
+	var segs []seg
+	last := 0
+	var walk func(n *srcNode) error
+	walk = func(n *srcNode) error {
+		for _, k := range n.kids {
+			if k.tag == "" {
+				continue
+			}
+			marked := false
+			for _, a := range k.attrs {
+				for _, m := range dynMarkers {
+					if a.Key == m {
+						marked = true
+					}
+				}
+			}
+			if !marked {
+				if err := walk(k); err != nil {
+					return err
+				}
+				continue
+			}
+			ctx := &html.Node{Type: html.ElementNode, Data: "body", DataAtom: atom.Body}
+			if p := k.parent; p != nil && p.tag != "#root" && p.tag != "" {
+				ctx = &html.Node{Type: html.ElementNode, Data: p.tag, DataAtom: atom.Lookup([]byte(p.tag))}
+			}
+			nodes, err := html.ParseFragment(strings.NewReader(src[k.start:k.end]), ctx)
+			if err != nil {
+				return err
+			}
+			segs = appendStatic(segs, src[last:k.start])
+			for _, x := range nodes {
+				c.mark(x)
+			}
+			for _, x := range nodes {
+				segs = c.node(x, segs)
+			}
+			last = k.end
+		}
+		return nil
+	}
+	if err := walk(root); err != nil {
+		return nil, err
+	}
+	return appendStatic(segs, src[last:]), nil
 }
 
 func staticProgram(src string) *Program {
