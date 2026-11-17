@@ -187,8 +187,8 @@ type dynElem struct {
 	menu    string // data-wb-menu-loc location
 	isLoop  bool
 	isMenu  bool
-	badLoop bool // invalid id / location: zero items
-	part    int  // data-wb-loop-part: 0 none, 1 first half, 2 second half
+	badLoop bool   // invalid id / location: zero items
+	part    int    // data-wb-loop-part: 0 none, 1 first half, 2 second half
 	isSub   bool   // data-wb-menu-sub: the current menu item's sub-items
 	sep     string // loops: the white space written between two items (itemSeparators)
 
