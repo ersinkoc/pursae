@@ -41,7 +41,7 @@ const (
 	wbKitsDir       = "web-builder/kits"
 	wbKitStageDir   = ".next"
 	wbKitMaxFile    = 15 << 20
-	wbKitMaxTotal   = 100 << 20
+	wbKitMaxTotal   = 256 << 20 // a WordPress copy's used images alone are 140 MB (Decoland)
 	wbKitMaxFiles   = 2000
 	wbKitBodyMax    = 24 << 20 // one files request (base64 included)
 	wbKitURLPrefix  = "/wp-content/uploads/" + wbKitsDir + "/"
@@ -335,7 +335,7 @@ func (s *Server) wbRESTKitFiles(c *gin.Context, r *restRequest) {
 		total += n
 	}
 	if len(staged) > wbKitMaxFiles || total > wbKitMaxTotal {
-		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "A design kit holds at most 2000 files and 100 MB.")
+		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, fmt.Sprintf("A design kit holds at most %d files and %d MB.", wbKitMaxFiles, wbKitMaxTotal>>20))
 		return
 	}
 	c.JSON(http.StatusOK, map[string]any{"slug": slug, "staged": len(staged), "bytes": total, "written": len(files)})

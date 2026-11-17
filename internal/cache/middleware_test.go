@@ -490,6 +490,26 @@ func TestOptimizeAppliedOnStore(t *testing.T) {
 	}
 }
 
+// A page that asks for its markup as written (an imported design: HeaderOptimize) keeps its
+// images unchanged, on the miss and on the hit, and the header never reaches the client.
+func TestOptimizeAsWritten(t *testing.T) {
+	cfg := DefaultConfig()
+	cfg.Optimize = OptimizeConfig{LazyImages: true, LazySkipFirst: 1}
+	c := New(cfg, Options{})
+	page := `<html><body><img src="hero.jpg" fetchpriority="high"><img src="b.jpg"></body></html>`
+	h := c.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set(HeaderOptimize, "as-written")
+		io.WriteString(w, page)
+	}))
+	for i := 0; i < 2; i++ {
+		w := do(h, "GET", "http://example.com/design/")
+		if w.Body.String() != page || w.Header().Get(HeaderOptimize) != "" {
+			t.Fatalf("request %d: %s %v", i, w.Body.String(), w.Header())
+		}
+	}
+}
+
 func BenchmarkCacheHit(b *testing.B) {
 	_, _, h := newTestCache(b, nil)
 	do(h, "GET", "http://example.com/bench/")

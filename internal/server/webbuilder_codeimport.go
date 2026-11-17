@@ -39,6 +39,9 @@ func wbCodeSection(p webbuilder.CodePart, head, kit, lang string) map[string]any
 	if p.Binds != "" {
 		content[webbuilder.ContentBinds] = p.Binds
 	}
+	if p.Tail {
+		content["tail"] = "1"
+	}
 	return map[string]any{
 		"id": wbCodeID(), "kind": webbuilder.KindCode, "name": p.Name, "hidden": false, "content": content, "items": []any{},
 		"style": map[string]any{"palette": "light", "align": "left", "padding": 0, "titleSize": 40, "hideOn": []any{}},

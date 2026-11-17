@@ -16,7 +16,8 @@
 <tr><th scope="row"><label for="wb-import-zip">Zip file</label></th>
 <td><input type="file" name="archive" id="wb-import-zip" accept=".zip,application/zip" required />
 <p class="description">Up to <strong>{{.Limits}}</strong></p>
-<p class="description">Paths that leave the folder, links and files that are not web assets are refused.</p></td></tr>
+<p class="description">Paths that leave the folder and links are refused; files that are not web assets are left out.</p>
+<p class="description">Only the files the pages use are kept (a saved copy of a live site brings much more); a file too large for a design kit, such as a video, goes to the Media Library.</p></td></tr>
 </table>
 <p class="submit"><button type="submit" class="button button-primary">Upload and analyse</button></p>
 </form>
@@ -48,12 +49,23 @@
 <h3>Content</h3>
 {{if .Menu}}<p>Header navigation as a Pursae menu: {{.Menu}}</p>{{else}}<p>The header's navigation stays markup (no list that a menu reproduces exactly).</p>{{end}}
 {{if .Folders}}<table class="wp-list-table widefat fixed striped" style="max-width:900px" id="wb-import-folders"><thead><tr><th>Folder</th><th>Pages</th><th>Single templates</th><th>Lists bound as loops</th></tr></thead><tbody>
-{{range .Folders}}<tr><td><code>{{.Name}}/</code></td><td>{{.Pages}}</td><td>{{if .Templates}}{{.Templates}} ({{.Grouped}} pages){{else}}&mdash;{{end}}</td><td>{{range .Lists}}<code>{{.}}</code> {{else}}&mdash;{{end}}</td></tr>
+{{range .Folders}}<tr><td><code>{{.Label}}</code>{{if .Posts}} <em>(posts)</em>{{end}}</td><td>{{.Pages}}</td><td>{{if .Templates}}{{.Templates}} ({{.Grouped}} pages){{else}}&mdash;{{end}}</td><td>{{range .Lists}}<code>{{.}}</code> {{else}}&mdash;{{end}}</td></tr>
 {{end}}</tbody></table>{{end}}
 {{if .BindNotes}}<details><summary>Binding notes</summary><ul style="list-style:disc;margin-left:20px">{{range .BindNotes}}<li>{{.}}</li>{{end}}</ul></details>{{end}}
 
 {{if .Warnings}}<div class="notice notice-warning inline"><p><strong>Warnings</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Warnings}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+{{if .OldHosts}}<div class="notice notice-info inline" id="wb-import-oldsite"><p><strong>Original site</strong></p><p>The design was saved from this domain: <code>{{range $i, $h := .OldHosts}}{{if $i}}, {{end}}{{$h}}{{end}}</code></p>
+<p>The pages hold {{.OldURLCount}} URLs of that site. Its forms and the {{.OldScripts}} URLs in its scripts (AJAX endpoints, REST roots) point at this site, so nothing is sent to the original site; links and files follow the option below.</p>
+{{if .OldForms}}<p>These pages have forms that posted to the original site; this site does not handle them at that address. Bind them to Pursae forms after the import (select the form in the editor, Advanced › Content binding › Form):</p><ul style="list-style:disc;margin-left:20px">{{range .OldForms}}<li><code>{{.}}</code></li>{{end}}</ul>{{end}}
+{{if .OldURLs}}<details><summary>URLs of the original site</summary><ul style="list-style:disc;margin-left:20px">{{range .OldURLs}}<li><code>{{.}}</code></li>{{end}}</ul></details>{{end}}</div>{{end}}
+{{if .Trackers}}<div class="notice notice-warning inline" id="wb-import-trackers"><p><strong>Third-party tracking</strong></p><p>The design loads tracking: <code>{{range $i, $t := .Trackers}}{{if $i}}, {{end}}{{$t}}{{end}}</code></p><p>It is kept and runs on this site: check that the ids are yours and that the site's consent covers it.</p></div>{{end}}
+{{if .Claims}}<div class="notice notice-info inline" id="wb-import-claims"><p><strong>Pages at archive addresses</strong></p><p>On this site these addresses belong to WordPress archives (author, category, date). The import keeps them as the design's pages, which answer there instead of the archive; later archive pages and feeds stay the archive's. To show the site's own archive instead, give the page another address after the import.</p><ul style="list-style:disc;margin-left:20px">{{range .Claims}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
 {{if .Handlers}}<div class="notice notice-warning inline"><p><strong>Inline event handlers</strong></p><p>The site's Content Security Policy blocks these; the design needs addEventListener instead.</p><ul style="list-style:disc;margin-left:20px">{{range .Handlers}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+<p id="wb-import-kitsize">The design kit: <strong>{{.AssetFiles}}</strong> files the pages use, <strong>{{.KitBytes}}</strong>.</p>
+{{if .Media}}<div class="notice notice-info inline" id="wb-import-media"><p><strong>Files for the Media Library</strong></p><p>These are too large for a design kit; the import puts them into the Media Library and points the pages at them there:</p><ul style="list-style:disc;margin-left:20px">{{range .Media}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
+{{if .TooLarge}}<div class="notice notice-warning inline" id="wb-import-toolarge"><p><strong>Files left out: too large</strong></p><p>The pages use these, but they are larger than the Media Library's upload limit; the pages show them missing:</p><ul style="list-style:disc;margin-left:20px">{{range .TooLarge}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
+{{if .Unkeepable}}<div class="notice notice-warning inline" id="wb-import-unkeepable"><p><strong>Files left out: not web assets</strong></p><p>The pages use these, but a design kit cannot hold them (their type or name); the pages show them missing:</p><ul style="list-style:disc;margin-left:20px">{{range .Unkeepable}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
+{{if .Skipped}}<details id="wb-import-skipped"><summary>Files no page uses: {{.SkippedCount}} ({{.SkippedBytes}}), left out</summary><ul style="list-style:disc;margin-left:20px">{{range .Skipped}}<li><code>{{.}}</code></li>{{end}}</ul></details>{{end}}
 {{if .Missing}}<div class="notice notice-error inline"><p><strong>Missing files</strong></p><p>The pages refer to files that are not in the zip:</p><ul style="list-style:disc;margin-left:20px">{{range .Missing}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
 {{if .Unmapped}}<div class="notice notice-info inline"><p><strong>Links to pages that are not in the zip</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Unmapped}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
 {{if .Origins}}<p><strong>External origins</strong></p><p>The design loads from these (allowed in the pages' Content Security Policy):</p><p>{{range .Origins}}<code>{{.}}</code> {{end}}</p>{{end}}
@@ -77,9 +89,13 @@
 <tr><th scope="row">Menu</th>
 <td><label for="wb-import-menus"><input type="checkbox" name="menus" id="wb-import-menus" value="1"{{if .Menus}} checked{{end}} /> Create a Pursae menu from the header's navigation</label>
 <p class="description">The menu is assigned to the primary location and fills the design's list with the design's own markup; add, rename and reorder items in Appearance › Menus. Only made when the menu reproduces the list exactly.</p></td></tr>
+{{if .A.OldHosts}}<tr><th scope="row">Original site</th>
+<td><label for="wb-import-oldlinks"><input type="checkbox" name="old_links" id="wb-import-oldlinks" value="rewrite"{{if .OldLinks}} checked{{end}} /> Point links to the original site at this site</label>
+<p class="description">Links and files of the original site become this site's pages and the design's files; unticked they keep pointing there. Forms and script endpoints never point there.</p></td></tr>{{end}}
 {{if .A.Folders}}{{$col := .Collections}}<tr><th scope="row">Collections</th>
-<td><fieldset>{{range .A.Folders}}<label><input type="checkbox" name="collection" value="{{.Name}}"{{if index $col .Name}} checked{{end}} /> <code>{{.Name}}/</code> ({{.Pages}} pages{{if .Templates}}; {{.Templates}} single template{{if gt .Templates 1}}s{{end}}{{end}})</label><br />{{end}}</fieldset>
-<p class="description">The pages of a ticked folder that share one layout become page content (title, content, custom fields) under one Theme Builder single template, at the same addresses; lists of those pages on other pages become loops. Pages that do not fit stay pages.</p></td></tr>{{end}}
+<td><fieldset>{{range .A.Folders}}<label><input type="checkbox" name="collection" value="{{.Name}}"{{if index $col .Name}} checked{{end}} /> <code>{{.Label}}</code> ({{.Pages}} pages{{if .Templates}}; {{.Templates}} single template{{if gt .Templates 1}}s{{end}}{{end}}{{if .Posts}}; they become posts{{end}})</label><br />{{end}}</fieldset>
+<p class="description">The pages of a ticked folder that share one layout become page content (title, content, custom fields) under one Theme Builder single template, at the same addresses; lists of those pages on other pages become loops. Pages that do not fit stay pages.</p>
+<p class="description">A set such as */index.html holds pages a WordPress copy saved with pretty permalinks, one folder each. With the /%postname%/ permalink structure they become posts at the same addresses; their single template is then every post's, and lists of them become loops of posts.</p></td></tr>{{end}}
 <tr><th scope="row">Front page</th>
 <td><label for="wb-import-front"><input type="checkbox" name="front" id="wb-import-front" value="1"{{if .Front}} checked{{end}}{{if not .A.HasFront}} disabled{{end}} /> Use index.html as the front page</label>
 {{if not .A.HasFront}}<p class="description">The site has no index.html at its top.</p>{{end}}</td></tr>

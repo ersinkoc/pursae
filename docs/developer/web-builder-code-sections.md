@@ -52,9 +52,12 @@ placeholder with the section's markup, as written (`webbuilder.FillCode`):
   on a canvas page (`wbCanvas`) and under Hello Pursae, whose `<html lang>` is otherwise `en-US`. The
   lang matters to the pixel: `text-transform: uppercase` writes Turkish `i` as `İ` only under `lang="tr"`;
 - a code page's markup is printed as written: `wp_filter_content_tags` (image dimensions, `loading`,
-  `decoding`, `srcset`) does not run over it (`wbContentTags`). Pursae Cache's page optimizer, when its
-  options are on, still adds `loading="lazy"` / `decoding="async"` and collapses whitespace in the whole
-  response (it does not change what is drawn).
+  `decoding`, `srcset`) does not run over it (`wbContentTags`), and Pursae Cache's page optimizer adds
+  no `loading="lazy"` / `decoding="async"` / `fetchpriority` to it either: the front end sets the
+  internal header `X-WPGo-Cache-Optimize: as-written` on a code page (canvas, or a Hello Pursae page
+  whose main is a code page), which the cache strips and obeys (`cache.HeaderOptimize`). The design
+  decides what loads when (Salient's hero `<img fetchpriority="high">` was made lazy before). The
+  optimizer's other options (whitespace, scripts) still apply when they are on.
 
 ### Shared shell
 
@@ -71,6 +74,12 @@ shell; a code page in other wrappers (another design) is not, and then nothing i
 checked before anything is cut (the shell must be the header's last element, the footer's first and the
 page's only one); otherwise each part keeps its own copy, as before. A canvas page (no header and footer
 part) prints its own shell once by construction.
+
+A page that shares more wrappers with its footer than with its header (Salient: the header sits in the
+shell, the page's rows and the footer in `#ajax-content-wrap` inside it) gets those printed once too
+(`webbuilder.ShellDepths`, `ShareShellDeep`): the header opens the shell, the page opens the deeper
+wrapper and keeps its content in it, the footer closes the deeper wrapper and the shell. A header that
+shares more with the page works the same way the other way round.
 
 A page without a footer (an app screen whose header bar, side panels and main sit in one grid wrapper:
 umbral's Motif page) or without a header shares the shell with the one part it has
@@ -143,7 +152,7 @@ access ([scopes](rest-api/authentication.md#application-password-scopes)).
 |-------|-|
 | `GET kits` | `[{slug, name, version, files, bytes, updated, url}]` |
 | `GET kits/{slug}` | the kit and `fileList: [{path, bytes}]` |
-| `POST kits/{slug}/files` | `{files: [{path, text} \| {path, data: base64}], delete?: [path], fresh?: bool}` — writes into the kit's staging folder (a copy of the live files, or empty with `fresh`). Paths are relative, plain segment names, web asset extensions only (css, js, mjs, map, json, txt, fonts, images, svg, video/audio, glb/gltf, wasm, pdf; no HTML, no server code); 15 MB per file, 2000 files and 100 MB per kit, 24 MB per request. |
+| `POST kits/{slug}/files` | `{files: [{path, text} \| {path, data: base64}], delete?: [path], fresh?: bool}` — writes into the kit's staging folder (a copy of the live files, or empty with `fresh`). Paths are relative, plain segment names, web asset extensions only (css, js, mjs, map, json, txt, fonts, images, svg, video/audio, glb/gltf, wasm, pdf; no HTML, no server code); 15 MB per file, 2000 files and 256 MB per kit, 24 MB per request. |
 | `POST kits/{slug}/commit` | `{name?, breakpoints?: {tablet, mobile}}` — the staged files replace the live ones in one swap; the version goes up. Without `breakpoints` the local-style breakpoints are suggested from the kit's stylesheets (see [Styling](#styling)). |
 | `DELETE kits/{slug}` | removes the kit, its files and its override. |
 | `GET kits/{slug}/override` | the kit's class and variable edits (see [Classes and variables](#classes-and-variables)): `{live: {rules}, version, draft: {rules}, draftVersion, pending, updated}` |
@@ -160,8 +169,9 @@ access ([scopes](rest-api/authentication.md#application-password-scopes)).
   sections' `head`; site icon, canonical, alternates, manifest and `<base>` are dropped (the site's own).
 - **Shell**: the importer finds the page's `main` (the first `<main>`), its site header (the first
   `<header>` before main that no `article`, `section`, `aside`, `nav`, `form` or `dialog` holds) and its
-  site footer (the first such `<footer>` after main; the last one of a page without main) at any depth,
-  and the nearest element that holds them all. The wrappers from the body down to it are the shell
+  site footer (the first such `<footer>` after main; the last one of a page without main; for a site
+  import, a page without either, the block every page ends with — `CodeImportOptions.FooterAt`, see
+  [Importing a site](#importing-a-site)) at any depth, and the nearest element that holds them all. The wrappers from the body down to it are the shell
   (`CodeImport.Shell`): every part's `wrap` starts with them. A header or footer inside a wrapper of
   the shell takes that wrapper along; a main inside wrappers that hold nothing else gets them in its
   sections' `wrap`.
@@ -176,7 +186,18 @@ access ([scopes](rest-api/authentication.md#application-password-scopes)).
   shell as their `wrap`. Elements beside the shell's wrappers (a sprite before it in the body, a
   lightbox after it) become further sections of those templates (`HeaderBefore`, `FooterAfter`), each
   in the wrappers it sat in. A footer the design placed inside `main` stays on the page as well (the
-  design's CSS expects it there) and the footer template excludes that page.
+  design's CSS expects it there) and the footer template excludes that page. A page without main whose
+  footer sits in the content's wrapper (Salient: `#ajax-content-wrap` holds `.container-wrap` and
+  `#footer-outer`) has the wrappers down to the footer opened: what precedes the footer in them is the
+  page's content (in those wrappers), the footer and what follows it there the footer part (same
+  wrappers), what follows the wrappers further footer parts. The page's **scripts after the shell**
+  (WordPress's body-end scripts with the page's post id and nonces) stay on the page as **tail**
+  sections (`CodePart.Tail`, `content.tail`, no wrap): `FillCode` marks the run of tail sections a page
+  ends with (`CodeTailMark`) and a Hello Pursae request prints them after the footer template
+  (`SplitCodeTail`, `wbThemePartsView.Tail`), where the design had them — before, they were printed
+  inside the page's last wrapper, ahead of the footer. A canvas page prints them in place. A JSON-LD
+  script (`application/ld+json`, the page's own structured data) in the header or footer moves to the
+  page's head.
 - **Document**: `<html lang>` (`Lang`), the other `<html>` attributes (`HTMLAttrs`) and the `<body>`
   attributes (`BodyAttrs`, class included) are kept on every section.
 - **References**: relative and root-relative URLs in `src`, `href`, `srcset`, `poster`, `data-src`,
@@ -186,8 +207,15 @@ access ([scopes](rest-api/authentication.md#application-password-scopes)).
   stays on the mapped URL (`hakkimizda.html?tab=2#x` → `/hakkimizda/?tab=2#x`, `app.js?x=1` → the kit
   URL with `?x=1`); a kit file's `?v=` is replaced by the kit version when the page is printed.
   Any other `data-*` attribute whose value is the path of a kit file (`data-wide="../assets/film.mp4"`,
-  read by the design's script) becomes its kit URL too; other `data-*` values are left alone and never
-  reported (they need not be URLs). The values of an `<script type="importmap">` (never its specifier
+  read by the design's script) becomes its kit URL too; so does every candidate of a srcset-like list
+  (`data-nectar-img-srcset="a.png 1489w, a-300x169.png 300w"`, a lazy loader's real `srcset`) of which
+  one candidate names a kit file, and the string values of a JSON list or object
+  (`data-slides='["a.jpg","b.jpg"]'`) that name kit files. A `data-*` value that reads as the path of a
+  design file (an asset extension: images, video, audio, fonts, CSS, JS, JSON, PDF) and names no file is
+  kept and reported missing; other `data-*` values are left alone (they need not be URLs). The `<source>`
+  and `<track>` elements of a `<video>` or `<audio>` are rewritten too (the media element itself is not
+  edited inside). `CodeImportOptions.Remap` gives files that are not in the kit a URL of their own (a
+  file too large for a kit, put into the Media Library by the admin's import). The values of an `<script type="importmap">` (never its specifier
   keys) that name kit files, or folders holding kit files (`"three/addons/": "/assets/vendor/addons/"`),
   point at the kit.
 - **Element ids**: every element outside an SVG drawing (the `<svg>` itself included) gets a
@@ -207,7 +235,7 @@ folder: `pursae_mcp.py kit-upload <folder> <kit>` then
 
 ### Importing a site
 
-`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, menus?, collections?, site_name?}` imports a whole
+`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, menus?, collections?, site_name?, old_domains?, old_links?}` imports a whole
 static site in one call (`internal/server/webbuilder_siteimport.go`, `webbuilder.ConvertSite`). Upload
 the folder's CSS, JS, fonts and images as the kit first (`web_builder_kit_upload`); the HTML files travel
 in `pages` (a kit holds no HTML, so nothing of the design is served as a page from uploads). Harness:
@@ -222,10 +250,40 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
 2. **Links**: the pages are created (drafts) or found first, and their permalinks (as published) make
    the link map of every link between the design's pages, folder links (`hizmet/`, `./`) included.
    Pretty permalinks are needed for the menu's active link (plain `?page_id=` links are warned about).
+   **Archive addresses**: a static copy of a WordPress site keeps its archives as files
+   (`author/admin/index.html`, `category/news/index.html`, `2026/09/index.html`); the router would give
+   those paths to this site's author, category, tag, date, post-format, search, custom post type or
+   post-permalink rules before looking for a page (`wbRouteShadowed`), so the imported page was never
+   reached. The import **claims** each such path for its page (option `wb_site_claims`,
+   `{path: {id, kit}}`, `internal/server/webbuilder_siteclaims.go`); `resolvePretty` serves a claimed
+   path's page before the archive rules, for page 1 without a feed (`/author/admin/page/2/` and
+   `/author/admin/feed/` stay the archive's), while the page is published or private and still has that
+   path. The analysis lists these pages ("Pages at archive addresses"), the answer `claimed_paths` and a
+   warning; a later import of the kit replaces its claims, "Remove this import" drops them, and a page
+   given another address gives the path back. To show the site's real archive there instead, give the
+   page another address (or bind its list to a loop, [Binding to content](#binding-to-content)).
 3. **Templates**: every page's header (with what goes with it) and footer are clustered
    (`webbuilder.ClusterParts`): copies that differ only in the current page's menu link are one
    template with an [active-link rule](#active-links); copies that differ otherwise, or that the rule
-   does not reproduce byte for byte, are clusters of their own. The largest header and footer cluster
+   does not reproduce byte for byte, are clusters of their own. **Volatile bits** do not count
+   (`internal/webbuilder/sitefooter.go`, `normVolatile`): a generated id (letters, then 8+ hex digits,
+   WPBakery's `id="fws_6af66492d500e"`) that nothing else on its page names (`volatileIDs`: the value
+   occurs only as an id), a cache-buster (`?ver=` / `?v=` / `?version=`) and a nonce-like token (8+ hex
+   digits mixing digits and letters) in an inline script or a hidden input; the template keeps the first
+   page's copy of them (nothing on the pages refers to them, and the original site's nonces mean
+   nothing here). Page-specific scripts are not in the templates at all: they are the pages' tail. A
+   **footer without a `<footer>` element** is found across the pages (`siteFooterHints`): from `<body>`,
+   down the wrappers that hold the site header (while nothing varies after the child holding it) and
+   then into the largest element after that child (the content's wrapper, not a drawer beside it), the
+   first level where every page's element children end with a run of the same elements (compared as
+   converted, volatile bits and classes aside) after content that differs: the run's first element is
+   the footer (Decoland: `.nectar-global-section` before `#footer-outer`, inside `#ajax-content-wrap`).
+   A template's **head** is what every page it serves has in its head (`CommonHead`; a page's JSON-LD
+   or a stylesheet with a cache-buster of its own stay in that page's head), and a request merges the
+   page's head first, so the design's order of stylesheets holds. Likewise a template's `<html>` and
+   `<body>` attributes are those all its pages share (`CommonAttrs`: equal values, the classes every
+   page has), so one page's classes (WordPress's `home page-id-10` on the template made from the front
+   page) do not reach every page through the template; each page brings its own. The largest header and footer cluster
    apply to the whole site (`include/general`), the others to their pages
    (`include/singular/page/<id>`, `include/404`); all with priority 10, so they win a tie with other
    whole-site templates (which are listed in the warnings). Pages that have no header (or footer) in
@@ -240,7 +298,28 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    A second import of the kit updates the same pages (slug and parent too) and templates; templates of an
    earlier import it no longer needs are turned into drafts.
 
-6. **Kit at the site's root**: the import marks its kit (`wbKit.Root`, the time of the import) and the site
+6. **The original site** (`internal/webbuilder/oldsite.go`): a saved copy of a live site still names
+   the domain it was saved from — absolute links to its pages and files, and the endpoints its forms
+   and scripts talk to (a plugin's inline `"ajax_url":"https:\/\/example.com\/wp-admin\/admin-ajax.php"`,
+   a comment form's `action`). `webbuilder.DetectOldHosts` finds the domain: a host that on at least half of
+   the pages is the absolute host of the `rel=canonical` link or `og:url`, of a WordPress endpoint or
+   folder (`/wp-admin/admin-ajax.php` in a plugin's inline config, `/wp-json/`, `/wp-content/…`, also
+   JSON-escaped), or of a link to one of the site's own pages other than its home (an agency's credit
+   link on every page points at the agency's root and does not count); the `www.` and bare forms both;
+   social, CDN and schema hosts never. Decoland, a wget copy whose canonical links are relative, is
+   found by its `decolandavm.com/wp-admin/admin-ajax.php` and `wp-json` URLs, not by the
+   `decoland.chainhouse.co` credit link. MCP `old_domains` overrides it (`[]` turns it off). Every URL of those hosts is then a path of this site: links, sources, srcsets,
+   `data-*` values and CSS `url()` map like root-relative ones (an imported page → its URL, a kit file
+   → the kit, anything else → the same path here) unless `old_links: "keep"` (admin: untick "Point links
+   to the original site at this site"); a form's `action` and every occurrence of the old origin in an
+   inline script or JSON (JSON-escaped too) **always** point at this site (its home URL), so by default
+   nothing an imported page sends reaches the original site. A form that posted there is listed (bind it
+   to a Pursae form, [Forms](#forms)). The answer's `original_site` gives the domains, the number of
+   URLs, of script URLs and the forms; a kit script or stylesheet naming the original site is warned
+   about (kit files are copied as they are). Third-party tracking (Google Tag Manager / Analytics, Meta
+   Pixel, Hotjar, Clarity, TikTok, LinkedIn, Bing, Yandex, PixelYourSite) is kept and listed
+   (`tracking`, the analysis's "Third-party tracking") so the site owner checks the ids and consent.
+7. **Kit at the site's root**: the import marks its kit (`wbKit.Root`, the time of the import) and the site
    then serves the kit's files at its root as well, while a page or template of the import is published
    (a draft import serves nothing there until it is published), after everything the site answers at a
    path of its own and before the 404 (`wbKitRootAsset`, called by the front end after Pursae SEO's
@@ -267,8 +346,8 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    Chromium); a `text/javascript` file with `nosniff` never runs as a page.
 
 The answer lists the pages (`post_id`, `url`, sections), `pages_created` / `pages_updated`, the templates
-(type, id, pages, conditions, `active_links`), `templates_disabled`, `unmapped_links`, `missing_files`
-and `warnings`. The import needs `unfiltered_html` and `edit_theme_options`; the templates show with the
+(type, id, pages, conditions, `active_links`), `templates_disabled`, `claimed_paths`, `original_site`,
+`tracking`, `unmapped_links`, `missing_files` and `warnings`. The import needs `unfiltered_html` and `edit_theme_options`; the templates show with the
 Hello Pursae theme.
 
 ### Importing from the admin
@@ -278,15 +357,34 @@ import without a command line or an agent (`internal/server/webbuilder_siteimpor
 `webbuilder_siteimport_zip.go`). The menu entry and every route need `edit_theme_options` **and**
 `unfiltered_html` with Web Builder on, like the MCP tool; the server checks the same on each request.
 
-1. **Upload** a zip of the design's folder (a form field for the kit slug, default: the zip's name). The
-   body is streamed to a file under `uploads/private/web-builder-imports/<id>/` (the private folder
-   only serves signed links), then unpacked entry by entry with the kit's limits (100 MB, 2000 files, 15 MB
-   a file). A path that leaves the folder (`..`, absolute, drive letter, backslashes counted as slashes),
-   a symbolic link, an entry that is not a plain file, case-twin names, and files a kit cannot keep
-   (extension outside the kit's list, names outside `wbKitRel`) reject the whole archive with the names
-   listed; `.git`, `.DS_Store`, `__MACOSX`, `Thumbs.db` and other dot files are skipped silently. `.html` / `.htm`
-   files are kept aside for the importer and never go into a kit. One top folder around everything is
-   stripped. An upload, its design preview and its compare step expire a day after the upload (checked
+1. **Upload** a zip of the design's folder (a form field for the kit slug, default: the zip's name), up to
+   512 MB. The body is streamed to a file under `uploads/private/web-builder-imports/<id>/` (the private
+   folder only serves signed links) and read entry by entry (`wbZipExtract`). A path that leaves the
+   folder (`..`, absolute, drive letter, backslashes counted as slashes), a symbolic link, an entry that
+   is not a plain file, case-twin names and page names that cannot be imported reject the whole archive;
+   `.git`, `.DS_Store`, `__MACOSX`, `Thumbs.db` and other dot files are skipped silently. `.html` / `.htm`
+   files are kept aside for the importer, never go into a kit and do not count towards its limits. One
+   top folder around everything is stripped. **Only the files the pages use are unpacked**
+   (`webbuilder.SiteReferences`, followed transitively: the pages' URL attributes, `srcset` candidates,
+   `poster`, the sources of `<video>` / `<audio>`, `data-*` values that are paths, srcset-like lists or
+   JSON lists, `style` and `<style>` `url()` / `@import`, the head's links and meta images, the string
+   literals of inline scripts, JSON and `<noscript>` markup; in CSS `url()` (fonts, `@font-face`) and
+   `@import` relative to the stylesheet; in JS and JSON string literals naming a file — relative to the
+   script, to the root, or any file whose path ends with the literal, a path a script builds from its
+   theme's URL; the original domain's absolute URLs as root-relative paths). A saved copy of a live
+   WordPress site brings far more than it shows; Decoland's 163 MB zip keeps 263 of 273 files. Files
+   no page uses are left out and listed ("Files no page uses"), and so are used files a kit cannot hold
+   (extension outside the kit's list, a name outside `wbKitRel`: the pages report them missing). A used
+   file over a kit file's 15 MB that is a video, audio, image or PDF within the site's upload limit
+   (`maxUploadBytes`, 64 MB) is unpacked for the **Media Library** (Decoland's 19 MB hero video): the
+   analysis lists it with its future URL, the import puts it there (`insertAttachmentFile`) and passes
+   it as `media` (`{"<path>": "/wp-content/uploads/2026/11/film.mp4"}`, `CodeImportOptions.Remap`) so
+   every reference — a `data-nectar-video-src` too — points there, and "Remove this import" deletes it.
+   That keeps a kit a set of design files of a sane size and makes large content media what WordPress
+   makes of it, an item an editor can replace; a used file over that limit is left out and listed. The
+   kit's own limits apply to the files kept (2000 files, 256 MB); over them the upload is refused with
+   the largest used files named. Zip bombs: at most 20 000 entries, and every byte read from the archive
+   is counted against 1 GB (declared sizes are only a first check). An upload, its design preview and its compare step expire a day after the upload (checked
    on every access, swept with every visit of the screen and hourly by the `wb_import_cleanup` event);
    "Discard this upload" and "Remove this import" delete it at once. The import's record outlives the
    upload: "Remove this import" works after it expired.
@@ -704,8 +802,13 @@ markup and is listed in the report's `bindings.notes`.
   varying `<h1>` is the **title** (other texts equal to it, a breadcrumb's last item, show the title
   too), the largest region that differs on every page is the **content**, every other difference a
   custom field `design_<n>` (`design_<n>_href`, `_src`, … for attributes) stored as post meta. A folder
-  qualifies when its pages share their sections, wrappers and head, have one varying `<h1>`, and besides
-  the title and the content at most two regions differ (≤ 20 % of a page). Pages whose side menus come
+  qualifies when its pages share their sections, wrappers and head (their JSON-LD aside, cache-busters
+  and nonces normalized), have one varying `<h1>`, and besides the title and the content at most eight
+  regions differ (≤ 20 % of a page). What a saved WordPress site printed per page and nothing on this
+  site uses is not a difference: the original record numbers in `id`, `class` and `data-*` values and a
+  hidden input (`id="post-1699"`, `class="post-1699"`, `comment_post_ID`), an inline script's code (its
+  post id, a nonce) and the page's tail scripts when they load the same files — the template keeps the
+  first page's (the check compares the pages that way). Pages whose side menus come
   in a few versions (enerjiosgb's four service categories) are split by that region into variants of two
   pages or more, one template each.
 
@@ -717,6 +820,22 @@ markup and is listed in the report's `bindings.notes`.
   template draws it (`include/singular/page/child_of/<folder parent>` for the largest variant, so a
   page added under the folder later gets it, `include/singular/page/<id>` for the other variants'
   pages; priority 10). A folder that does not qualify stays builder pages; the report says why.
+
+  **Pretty-permalink posts** (`webbuilder.SiteLeafSets`): a WordPress copy saves every post as
+  `<slug>/index.html`, alone in its folder, at the site's top beside the pages (`blog/index.html`,
+  `hakkimizda/index.html`), so no folder holds them. The leaf pages of each parent folder (`*` at the
+  top, `<parent>/*` below) are a candidate set too, split by kind when their `<body>` classes (those
+  without digits) differ, each kind named by a class only its pages have (`*:single-post`, Decoland's six
+  posts; `*:page-template-default` its pages, which do not share a skeleton and stay pages). With the
+  `/%postname%/` permalink structure the top-level sets become **posts** (`SiteBindOptions.PostSets`,
+  `wbSitePostSets`): the pages are made posts (same address), the largest variant is the
+  **single-post** template of every post (`include/singular/post`, so a post written later is drawn by
+  it), and a list of them is a loop of posts, newest first (`postType: post`, `orderBy: date desc`; the
+  import dates them a second apart in the list's order, so the site's earlier posts come after them
+  and a later post first). Otherwise a set is grouped as pages (each page's own condition) and its
+  lists stay markup (a loop of pages selects by parent page, which the set's pages do not share). A
+  second import finds the posts again (`_wb_site_key`), makes them pages and decides anew; "Remove this
+  import" removes them as it removes pages. The admin lists such a set as `*/index.html (single-post)`.
 - **Listings**: a list on another page whose element children each link to a different page of a
   collection folder (`haberler.html`'s news cards) becomes a loop over the folder's pages: query
   `postType: page`, `parent` = the folder's parent page, `orderBy: menu_order asc`, `perPage` = the
@@ -725,7 +844,8 @@ markup and is listed in the report's `bindings.notes`.
   `<h1>`), the longest other text (40+ characters) the `excerpt` (set on the page), a varying image the
   `image` field (no featured image yet: its URL in the field `list<n>_<k>`), the rest custom fields
   `list<n>_<k>`. The longest list sets the pages' `menu_order`; another list is bound when it shows a
-  window of that order (`offset`). A new page under the folder shows in the lists by its `menu_order`
+  window of that order (`offset`); the longest list that can be a loop sets the order (an author archive
+  whose cards differ in structure does not). A new page under the folder shows in the lists by its `menu_order`
   (0 sorts first) with its title and link; its other fields are empty until they are filled.
 
 <h3 id="binding-limits">Limits</h3>
@@ -743,7 +863,12 @@ markup and is listed in the report's `bindings.notes`.
   `_wb_html_<name>` (printed as stored: only trusted code writes protected meta); a public field
   `<name>` an editor sets instead is sanitized like post content.
   Images of a group are URL fields, not featured images.
-- Collections are detected among the pages of one folder; pages in the site's root are not grouped.
+- Collections are detected among the pages of one folder, and among the pretty-permalink pages
+  (`<slug>/index.html`) of one parent folder; other pages in the site's root are not grouped. Posts are
+  made only under the `/%postname%/` structure, from the site's top.
+- A group's template shows the first page's values of what the original site printed per page (its
+  record numbers in ids and classes, nonces, its post id in inline scripts) and loses the pages' JSON-LD
+  (Pursae SEO prints the posts' own structured data).
 - The bound form script stops a design's `mailto:` handler only when it reads the address from a
   `data-*` attribute of the form; a design whose script hard-codes the address opens the mail program too
   (the submission is still stored).
@@ -923,8 +1048,11 @@ fixtures `internal/webbuilder/testdata/override`).
   from the kit's `a/img/x.png`, as the design's host did; but `a/b.html` becomes `/a/b/`, one folder
   deeper, so a relative URL built by a script on that page misses the kit (attributes and CSS are
   rewritten and are not affected). Root-relative URLs assume the site at the domain's root.
-- A design over the kit limits (100 MB, 2000 files) or with more than 500 pages (landing/new-landing:
-  1110 pages, 198 MB with documentation exports) is imported in parts (several kits) or trimmed first.
+- A design whose used files are over the kit limits (256 MB, 2000 files; files no page uses do not
+  count, the admin's import leaves them out) or with more than 500 pages (landing/new-landing: 1110
+  pages, 198 MB with documentation exports) is imported in parts (several kits) or trimmed first. The
+  MCP harness uploads the folder as it is (`pursae_mcp.py kit-upload`); the admin's zip import keeps
+  only the used files.
 - An app shell whose page is drawn by a JavaScript bundle from an API or a build step (a Vite `dist/`
   served under a base path, a dashboard reading a backend) is not a static site; it can be imported, but
   only the empty shell is a code section to edit.

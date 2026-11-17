@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -140,9 +141,15 @@ func (s *Server) wbSitePageFields(c *gin.Context, id int64, fields map[string]st
 	return err
 }
 
-// wbSitePagePlan sets what a group or a listing needs on a page: title, excerpt, menu_order (the
-// REST route, so the post's own hooks run) and custom fields.
+// wbSitePagePlan sets what a group or a listing needs on a page (or a post a collection made of
+// it): title, excerpt, menu_order (the REST route, so the post's own hooks run; a post's order is
+// set directly, the posts route has no menu_order) and custom fields.
 func (s *Server) wbSitePagePlan(c *gin.Context, id int64, pl *webbuilder.SitePagePlan, content *string, status string) error {
+	route := "/wp/v2/pages/"
+	isPost := false
+	if p, err := s.store.GetPost(c, id); err == nil && p.Type == "post" {
+		route, isPost = "/wp/v2/posts/", true
+	}
 	body := map[string]any{}
 	if pl.Title != "" {
 		body["title"] = pl.Title
@@ -150,7 +157,7 @@ func (s *Server) wbSitePagePlan(c *gin.Context, id int64, pl *webbuilder.SitePag
 	if pl.Excerpt != "" {
 		body["excerpt"] = pl.Excerpt
 	}
-	if pl.HasOrder {
+	if pl.HasOrder && !isPost {
 		body["menu_order"] = pl.MenuOrder
 	}
 	if content != nil {
@@ -158,11 +165,35 @@ func (s *Server) wbSitePagePlan(c *gin.Context, id int64, pl *webbuilder.SitePag
 		body["status"] = status
 	}
 	if len(body) > 0 {
-		if err := s.mcpREST(c, http.MethodPost, "/wp/v2/pages/"+itoa64(id), body, nil); err != nil {
+		if err := s.mcpREST(c, http.MethodPost, route+itoa64(id), body, nil); err != nil {
+			return err
+		}
+	}
+	if pl.HasOrder && isPost {
+		// A list of posts loops newest first: the import dates them a second apart in the list's
+		// order (the first is now), so a post written later comes first.
+		at := time.Now().UTC().Truncate(time.Second).Add(-time.Duration(pl.MenuOrder) * time.Second)
+		if _, err := s.store.Pool.Exec(c, `UPDATE posts SET menu_order = $2, published_at = $3 WHERE id = $1`, id, pl.MenuOrder, at); err != nil {
 			return err
 		}
 	}
 	return s.wbSitePageFields(c, id, pl.Fields)
+}
+
+// wbSitePostSets are the sets of pretty-permalink pages (webbuilder.SiteLeafSets) at the site's
+// top that become posts in a collection: only when the site's post permalinks are /%postname%/,
+// so a post keeps the page's address (/bursadan-dunyaya/ stays /bursadan-dunyaya/).
+func (s *Server) wbSitePostSets(res *webbuilder.SiteImport) map[string]bool {
+	out := map[string]bool{}
+	if strings.Trim(s.settings.String("permalink_structure"), "/") != "%postname%" {
+		return out
+	}
+	for k := range webbuilder.SiteLeafSets(res) {
+		if parent, ok := webbuilder.SiteLeafParent(k); ok && parent == "" {
+			out[k] = true
+		}
+	}
+	return out
 }
 
 // mcpWBBind is the MCP tool web_builder_bind: binds an element of a code section (by its data-wbc
@@ -262,13 +293,23 @@ func (s *Server) wbSiteGroups(c *gin.Context, r *webbuilder.ServerRenderer, kit,
 		nth[g.Folder]++
 		key := "group-" + g.Folder + "-" + itoa(nth[g.Folder])
 		var conds []string
-		if !firstOf[g.Folder] && parents[g.Folder] > 0 {
+		ptype, tplType := "page", webbuilder.TemplateSinglePage
+		if g.AsPosts {
+			ptype, tplType = "post", webbuilder.TemplateSinglePost
+		}
+		switch {
+		case !firstOf[g.Folder] && g.AsPosts:
+			// Pretty-permalink posts: the largest variant is every post's template (a post written
+			// later gets it too).
+			firstOf[g.Folder] = true
+			conds = []string{"include/singular/post"}
+		case !firstOf[g.Folder] && parents[g.Folder] > 0:
 			firstOf[g.Folder] = true
 			conds = []string{"include/singular/page/child_of/" + itoa64(parents[g.Folder])}
-		} else {
+		default:
 			for _, p := range g.Posts {
 				if id := pageFor[p.Page]; id > 0 {
-					conds = append(conds, "include/singular/page/"+itoa64(id))
+					conds = append(conds, "include/singular/"+ptype+"/"+itoa64(id))
 				}
 			}
 		}
@@ -287,10 +328,23 @@ func (s *Server) wbSiteGroups(c *gin.Context, r *webbuilder.ServerRenderer, kit,
 			secs = append(secs, sec)
 		}
 		title := strings.ToUpper(g.Folder[:1]) + g.Folder[1:] + " page"
+		if g.AsPosts {
+			title = "Post"
+		}
 		if nth[g.Folder] > 1 {
 			title += " " + itoa(nth[g.Folder])
 		}
-		id, err := s.wbSiteTemplate(c, r, kit, key, string(webbuilder.TemplateSinglePage), title, conds, secs)
+		// The pages of pretty-permalink posts become posts first (same address under /%postname%/).
+		if g.AsPosts {
+			for _, p := range g.Posts {
+				if id := pageFor[p.Page]; id > 0 {
+					if err := s.wbSiteSetType(c, id, "post"); err != nil {
+						warnings = append(warnings, res.Pages[p.Page].Path+": could not make it a post: "+err.Error())
+					}
+				}
+			}
+		}
+		id, err := s.wbSiteTemplate(c, r, kit, key, string(tplType), title, conds, secs)
 		if err != nil {
 			warnings = append(warnings, fmt.Sprintf("the %s/ template was not saved: %v", g.Folder, err))
 			continue
@@ -318,7 +372,7 @@ func (s *Server) wbSiteGroups(c *gin.Context, r *webbuilder.ServerRenderer, kit,
 			pages = append(pages, res.Pages[p.Page].Path)
 		}
 		report = append(report, map[string]any{"folder": g.Folder, "template": id, "conditions": conds, "pages": pages, "fields": g.Fields,
-			"edit_url": s.mcpAdminURL(c, wbEditURL(id))})
+			"type": ptype, "edit_url": s.mcpAdminURL(c, wbEditURL(id))})
 	}
 	return report, warnings
 }

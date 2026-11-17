@@ -22,6 +22,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/media"
 	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
 )
@@ -53,7 +54,10 @@ const (
 	wbWizDesignRoute   = "/wb-design-preview/"
 	wbWizMaxAge        = 24 * time.Hour
 	wbWizMaxPageBytes  = 15 << 20
-	wbWizNonceUpload   = "wb-site-import-upload"
+	// wbWizMaxUpload bounds the zip itself: only the files its pages use are unpacked
+	// (wbZipExtract), so a saved copy of a live site may be much larger than its kit.
+	wbWizMaxUpload   = 512 << 20
+	wbWizNonceUpload = "wb-site-import-upload"
 )
 
 var wbWizIDRE = regexp.MustCompile(`^[0-9a-f]{32}$`)
@@ -107,6 +111,14 @@ type wbWizMeta struct {
 	Bytes   int64        `json:"bytes"`
 	HTML    []string     `json:"html"`
 	Result  *wbWizResult `json:"result,omitempty"`
+	// What the upload left out or puts elsewhere (wbZipExtract): files too large for a kit that go
+	// to the Media Library (path → size), unused files, used files over every limit, used files a
+	// kit cannot hold.
+	Media        map[string]int64 `json:"media,omitempty"`
+	Skipped      []string         `json:"skipped,omitempty"`
+	SkippedBytes int64            `json:"skippedBytes,omitempty"`
+	TooLarge     []string         `json:"tooLarge,omitempty"`
+	Unkeepable   []string         `json:"unkeepable,omitempty"`
 }
 
 // wbWizRecord is what one import created, kept for "Remove this import".
@@ -120,9 +132,11 @@ type wbWizRecord struct {
 	PrevFront  int64   `json:"prevFront,omitempty"`
 	FrontSet   bool    `json:"frontSet,omitempty"`
 	// Menu: the navigation menu this import created (removed with it).
-	Menu int64  `json:"menu,omitempty"`
-	At   string `json:"at"`
-	By   int64  `json:"by"`
+	Menu int64 `json:"menu,omitempty"`
+	// Media: the Media Library items it made (files too large for the kit).
+	Media []int64 `json:"media,omitempty"`
+	At    string  `json:"at"`
+	By    int64   `json:"by"`
 }
 
 func (s *Server) wbWizBase() string {
@@ -248,7 +262,7 @@ func (s *Server) wbWizSetRecords(c *gin.Context, recs map[string]*wbWizRecord) e
 // wbWizOwned lists the ids of the pages and templates carrying the kit's import mark, any status.
 func (s *Server) wbWizOwned(c *gin.Context, kit string) (pages, templates map[int64]bool) {
 	pages, templates = map[int64]bool{}, map[int64]bool{}
-	rows, err := s.store.Pool.Query(c, `SELECT id, type FROM posts WHERE type IN ('page', $1) AND meta->>$2 = $3`,
+	rows, err := s.store.Pool.Query(c, `SELECT id, type FROM posts WHERE type IN ('page', 'post', $1) AND meta->>$2 = $3`,
 		webbuilder.TemplatePostType, wbSiteMetaKit, kit)
 	if err != nil {
 		return
@@ -258,7 +272,7 @@ func (s *Server) wbWizOwned(c *gin.Context, kit string) (pages, templates map[in
 		var id int64
 		var typ string
 		if rows.Scan(&id, &typ) == nil {
-			if typ == "page" {
+			if typ == "page" || typ == "post" { // a post: a page a collection made a post
 				pages[id] = true
 			} else {
 				templates[id] = true
@@ -295,6 +309,7 @@ type wbWizView struct {
 	Draft           bool
 	Replace         bool
 	Menus           bool            // make a menu of the header's navigation
+	OldLinks        bool            // links to the design's original site become this site's
 	Collections     map[string]bool // folders ticked as collections
 	Nonce           string          // the step's form nonce
 	DiscardNonce    string
@@ -382,7 +397,7 @@ func (s *Server) wbWizRender(c *gin.Context, v *wbWizView, notices ...notice) {
 func (s *Server) wbWizStart(c *gin.Context) { s.wbWizStartWith(c) }
 
 func (s *Server) wbWizStartWith(c *gin.Context, notices ...notice) {
-	v := &wbWizView{Step: "start", Limits: fmt.Sprintf("%d MB, %d files", wbKitMaxTotal>>20, wbKitMaxFiles)}
+	v := &wbWizView{Step: "start", Limits: fmt.Sprintf("%d MB", wbWizMaxUpload>>20)}
 	v.UploadURL = wbWizURL + "?action=upload&_wpnonce=" + s.nonce(c, wbWizNonceUpload)
 	recs := s.wbWizRecords()
 	ids := make([]string, 0, len(recs))
@@ -410,7 +425,7 @@ func (s *Server) wbWizUpload(c *gin.Context) {
 	fail := func(msg string) {
 		s.wbWizStartWith(c, notice{Type: "error", Message: template.HTML(msg), Dismissible: true})
 	}
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, wbKitMaxTotal+(8<<20))
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, wbWizMaxUpload+(8<<20))
 	mr, err := c.Request.MultipartReader()
 	if err != nil {
 		fail("No file was received.")
@@ -454,7 +469,7 @@ func (s *Server) wbWizUpload(c *gin.Context) {
 			_, err = io.Copy(f, part)
 			f.Close()
 			if err != nil {
-				fail("The upload failed (is the zip larger than " + itoa(wbKitMaxTotal>>20) + " MB?).")
+				fail("The upload failed (is the zip larger than " + itoa(wbWizMaxUpload>>20) + " MB?).")
 				return
 			}
 			got = true
@@ -490,7 +505,8 @@ func (s *Server) wbWizUpload(c *gin.Context) {
 	if !wbKitSlugRE.MatchString(slug) {
 		slug = wbWizSlugOf(zipName)
 	}
-	m := &wbWizMeta{ID: id, Owner: u.ID, Slug: slug, Created: wbTime(time.Now()), Files: len(ex.Assets) + len(ex.HTML), Bytes: ex.Bytes}
+	m := &wbWizMeta{ID: id, Owner: u.ID, Slug: slug, Created: wbTime(time.Now()), Files: len(ex.Assets) + len(ex.HTML), Bytes: ex.Bytes,
+		Media: ex.Media, Skipped: ex.Skipped, SkippedBytes: ex.SkippedBytes, TooLarge: ex.TooLarge, Unkeepable: ex.Unkeepable}
 	for p := range ex.HTML {
 		m.HTML = append(m.HTML, p)
 	}
@@ -543,11 +559,30 @@ type wbWizAnalysis struct {
 	Menu      string
 	Folders   []wbWizFolder
 	BindNotes []string
+	// Claims: pages at addresses that are archives here (author, category, date); the import keeps
+	// them as the design's pages (webbuilder_siteclaims.go).
+	Claims []string
+	// The upload's files (wbZipExtract): the kit's size, files for the Media Library, files left out.
+	KitBytes                    string
+	Media, TooLarge, Unkeepable []string
+	Skipped                     []string
+	SkippedCount                int
+	SkippedBytes                string
+	// The design's original site (webbuilder/oldsite.go): its domains, the URLs of it the pages
+	// hold, the pages whose forms posted there, the script URLs pointed here; tracking it loads.
+	OldHosts    []string
+	OldURLs     []string
+	OldURLCount int
+	OldForms    []string
+	OldScripts  int
+	Trackers    []string
 }
 
 // wbWizFolder is a folder of pages the import can turn into content under single templates.
 type wbWizFolder struct {
 	Name      string
+	Label     string // the folder ("hizmet/") or a set of pretty-permalink pages ("*/index.html (single-post)")
+	Posts     bool   // its pages become posts
 	Pages     int
 	Templates int // single templates its pages would share
 	Grouped   int // pages that become content
@@ -605,7 +640,16 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	if len(pages) > wbSiteMaxPages {
 		return nil, fmt.Errorf("the site holds %d pages; at most %d can be imported at once", len(pages), wbSiteMaxPages)
 	}
-	a := &wbWizAnalysis{Kit: kit, AssetFiles: len(assets)}
+	for rel := range m.Media {
+		delete(assets, rel) // for the Media Library, not the kit
+	}
+	a := &wbWizAnalysis{Kit: kit, AssetFiles: len(assets), KitBytes: media.HumanSize(m.Bytes), TooLarge: m.TooLarge, Unkeepable: m.Unkeepable,
+		Skipped: wbFirst(m.Skipped, 60), SkippedCount: len(m.Skipped), SkippedBytes: media.HumanSize(m.SkippedBytes)}
+	remap := s.wbWizMediaGuess(m)
+	for rel, n := range m.Media {
+		a.Media = append(a.Media, wbSizeLabel(rel, n)+" → "+remap[rel])
+	}
+	sort.Strings(a.Media)
 	if k := s.wbKitList()[kit]; k != nil {
 		a.KitExists, a.KitFiles, a.KitVersion = true, k.Files, k.Version
 	}
@@ -615,7 +659,8 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	}
 	plan := webbuilder.PlanSite(append([]string(nil), paths...))
 	urls := plan.URLs()
-	opts := webbuilder.SiteImportOptions{KitURL: wbKitURLPrefix + kit + "/", KitFiles: map[string]bool{}, URLs: urls, NoSplit: !split}
+	opts := webbuilder.SiteImportOptions{KitURL: wbKitURLPrefix + kit + "/", KitFiles: map[string]bool{}, URLs: urls, NoSplit: !split,
+		SiteURL: strings.TrimSuffix(s.links(c).HomeURL("/"), "/"), Remap: remap}
 	for p := range assets {
 		opts.KitFiles[p] = true
 	}
@@ -623,6 +668,7 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	for _, p := range plan.Pages {
 		list = append(list, webbuilder.SitePage{Path: p.Path, HTML: pages[p.Path]})
 	}
+	opts.OldHosts = webbuilder.DetectOldHosts(list)
 	res, err := webbuilder.ConvertSite(list, opts)
 	if err != nil {
 		return nil, err
@@ -700,7 +746,7 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 		for f := range webbuilder.SiteFolders(res) {
 			fp[f] = "1"
 		}
-		b := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: true, Groups: map[string]bool{"*": true}, FolderParents: fp})
+		b := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: true, Groups: map[string]bool{"*": true}, FolderParents: fp, PostSets: s.wbSitePostSets(res)})
 		if b.Menu != nil {
 			var labels []string
 			for _, it := range b.Menu.Items {
@@ -709,8 +755,23 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 			a.Menu = strings.Join(labels, " · ")
 		}
 		folders := webbuilder.SiteFolders(res)
+		for k, v := range webbuilder.SiteLeafSets(res) {
+			folders[k] = v
+		}
 		for _, f := range b.Candidates {
-			row := wbWizFolder{Name: f, Pages: len(folders[f])}
+			row := wbWizFolder{Name: f, Label: f + "/", Pages: len(folders[f])}
+			if parent, ok := webbuilder.SiteLeafParent(f); ok {
+				_, kind, _ := strings.Cut(f, ":")
+				row.Label = strings.TrimPrefix(parent+"/", "/") + "*/index.html"
+				if kind != "" {
+					row.Label += " (" + kind + ")"
+				}
+			}
+			for _, g := range b.Groups {
+				if g.Folder == f && g.AsPosts {
+					row.Posts = true
+				}
+			}
 			for _, g := range b.Groups {
 				if g.Folder == f {
 					row.Templates++
@@ -728,6 +789,10 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 		a.BindNotes = b.Notes
 	}
 	a.Missing, a.Unmapped = wbFirst(res.Missing, 60), wbFirst(res.Unmapped, 60)
+	if len(res.OldURLs) > 0 || len(res.OldForms) > 0 {
+		a.OldHosts, a.OldURLs, a.OldURLCount, a.OldForms, a.OldScripts = opts.OldHosts, wbFirst(res.OldURLs, 40), len(res.OldURLs), res.OldForms, res.OldInScripts
+	}
+	a.Trackers = res.Trackers
 	for _, w := range res.Warnings {
 		if strings.Contains(w, "inline event handler") {
 			a.Handlers = append(a.Handlers, w)
@@ -782,10 +847,68 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	if s.activeTheme().Slug != wbHelloSlug {
 		a.Warnings = append(a.Warnings, "the header, footer and 404 templates show only with the Hello Pursae theme (activate Pursae Web Builder's theme)")
 	}
+	for _, p := range plan.Pages {
+		if p.NotFound || p.Front {
+			continue
+		}
+		if why := s.wbRouteShadowed(c, urls[p.Path]); why != "" {
+			a.Claims = append(a.Claims, urls[p.Path]+" ("+why+")")
+		}
+	}
 	if s.settings.String("permalink_structure") == "" {
 		a.Warnings = append(a.Warnings, "the site has plain permalinks (?page_id=…): links between pages work, but the menu cannot mark the current page; choose a pretty permalink structure (Settings › Permalinks) first")
 	}
 	return a, nil
+}
+
+// wbWizMediaGuess is where the upload's Media Library files will be (for the analysis).
+func (s *Server) wbWizMediaGuess(m *wbWizMeta) map[string]string {
+	out := map[string]string{}
+	sub := ""
+	if s.settings.Bool("uploads_use_yearmonth_folders") {
+		sub = time.Now().Format("2006/01") + "/"
+	}
+	for rel := range m.Media {
+		out[rel] = "/wp-content/uploads/" + sub + path.Base(rel)
+	}
+	return out
+}
+
+// wbWizMediaUpload puts the upload's files that are too large for a kit into the Media Library
+// (the site's own upload limit, maxUploadBytes, holds) and gives each one's URL (a site path) by
+// its path in the design, and the items made.
+func (s *Server) wbWizMediaUpload(c *gin.Context, m *wbWizMeta) (map[string]string, []int64, error) {
+	out := map[string]string{}
+	var ids []int64
+	rels := make([]string, 0, len(m.Media))
+	for rel := range m.Media {
+		rels = append(rels, rel)
+	}
+	sort.Strings(rels)
+	var firstErr error
+	for _, rel := range rels {
+		f, err := os.Open(filepath.Join(s.wbWizSiteDir(m.ID), filepath.FromSlash(rel)))
+		if err != nil {
+			firstErr = cmpOr(firstErr, err)
+			continue
+		}
+		a, err := s.insertAttachmentFile(c, path.Base(rel), f, currentUser(c).ID, 0)
+		f.Close()
+		if err != nil {
+			firstErr = cmpOr(firstErr, fmt.Errorf("%s: %v", rel, err))
+			continue
+		}
+		ids = append(ids, a.ID)
+		out[rel] = "/wp-content/uploads/" + a.FilePath
+	}
+	return out, ids, firstErr
+}
+
+func cmpOr(a, b error) error {
+	if a != nil {
+		return a
+	}
+	return b
 }
 
 func wbWizTitle(src, p string) string {
@@ -802,7 +925,7 @@ func (s *Server) wbWizAnalysisPage(c *gin.Context, m *wbWizMeta, extra []notice)
 	if q := strings.TrimSpace(c.Query("kit")); wbKitSlugRE.MatchString(q) {
 		kit = q
 	}
-	v := &wbWizView{Step: "analysis", ID: m.ID, Slug: kit, Kit: kit, Name: kit, Split: true, Front: true, Menus: true, Collections: map[string]bool{}}
+	v := &wbWizView{Step: "analysis", ID: m.ID, Slug: kit, Kit: kit, Name: kit, Split: true, Front: true, Menus: true, OldLinks: true, Collections: map[string]bool{}}
 	if k := s.wbKitList()[kit]; k != nil && k.Name != "" {
 		v.Name = k.Name
 	}
@@ -811,6 +934,7 @@ func (s *Server) wbWizAnalysisPage(c *gin.Context, m *wbWizMeta, extra []notice)
 		v.Name = strings.TrimSpace(c.PostForm("name"))
 		v.Split, v.Front, v.Draft, v.Replace = c.PostForm("templates") == "1", c.PostForm("front") == "1", c.PostForm("status") == "draft", c.PostForm("replace") == "1"
 		v.Menus = c.PostForm("menus") == "1"
+		v.OldLinks = c.PostForm("old_links") == "rewrite"
 		for _, f := range c.PostFormArray("collection") {
 			v.Collections[f] = true
 		}
@@ -903,11 +1027,16 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 		again("The staged site could not be read: " + err.Error())
 		return
 	}
+	for rel := range m.Media {
+		delete(assets, rel) // for the Media Library, not the kit
+	}
 	// 1. The design kit: the staged assets, committed like the kit REST routes do.
 	if err := s.wbWizInstallKit(c, m.ID, kit, name, assets); err != nil {
 		again("The design kit could not be written: " + err.Error())
 		return
 	}
+	// Files too large for a kit (a video) go to the Media Library; the pages point at them there.
+	remap, mediaIDs, mediaErr := s.wbWizMediaUpload(c, m)
 	pagesBefore, tplBefore := s.wbWizOwned(c, kit)
 	menuBefore := s.wbWizMenuID(c, kit)
 	prevShow, prevFront := s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
@@ -931,12 +1060,22 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	}
 	args := map[string]any{"kit": kit, "pages": items, "status": status, "site_name": name, "templates": split, "front_page": wantFront && !draft,
 		"menus": c.PostForm("menus") == "1", "collections": collections}
+	if c.PostForm("old_links") != "rewrite" {
+		args["old_links"] = "keep"
+	}
+	if len(remap) > 0 {
+		mm := map[string]any{}
+		for k, v := range remap {
+			mm[k] = v
+		}
+		args["media"] = mm
+	}
 	s.wbWizRESTSession(c)
 	out, importErr := mcpWBImportSite(s, c, args)
 	// 3. What it made, recorded even when it stopped half way.
 	pagesAfter, tplAfter := s.wbWizOwned(c, kit)
 	rec := &wbWizRecord{ID: m.ID, Kit: kit, KitCreated: !existing, Pages: wbWizNew(pagesAfter, pagesBefore), Templates: wbWizNew(tplAfter, tplBefore),
-		At: wbTime(time.Now()), By: currentUser(c).ID}
+		At: wbTime(time.Now()), By: currentUser(c).ID, Media: mediaIDs}
 	if menuBefore == 0 {
 		rec.Menu = s.wbWizMenuID(c, kit)
 	}
@@ -944,8 +1083,16 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	if importErr != nil {
 		res.Failed = importErr.Error()
 	}
+	if mediaErr != nil {
+		res.Warnings = append(res.Warnings, "a file could not be put into the Media Library: "+mediaErr.Error())
+	}
 	if om, ok := out.(map[string]any); ok {
+		w := res.Warnings
 		wbWizFillResult(res, om)
+		res.Warnings = append(w, res.Warnings...)
+	}
+	for rel, u := range remap {
+		res.Bindings = append(res.Bindings, rel+" is in the Media Library: "+u)
 	}
 	if fp, _ := out.(map[string]any); fp != nil {
 		if id := argInt(fp, "front_page"); id > 0 {
@@ -953,7 +1100,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 			rec.FrontSet, rec.PrevShow, rec.PrevFront = true, prevShow, prevFront
 		}
 	}
-	if len(rec.Pages)+len(rec.Templates) > 0 || rec.KitCreated || rec.Menu > 0 {
+	if len(rec.Pages)+len(rec.Templates)+len(rec.Media) > 0 || rec.KitCreated || rec.Menu > 0 {
 		recs := s.wbWizRecords()
 		recs[m.ID] = rec
 		_ = s.wbWizSetRecords(c, recs)
@@ -1212,7 +1359,11 @@ func (s *Server) wbWizUndoPage(c *gin.Context, id string) {
 // import's mark of the kit ("" otherwise: the post is not the import's to delete).
 func (s *Server) wbWizOwnedTitle(c *gin.Context, id int64, typ, kit string) string {
 	var title string
-	err := s.store.Pool.QueryRow(c, `SELECT title FROM posts WHERE id = $1 AND type = $2 AND meta->>$3 = $4`, id, typ, wbSiteMetaKit, kit).Scan(&title)
+	types := []string{typ}
+	if typ == "page" {
+		types = append(types, "post") // a page a collection made a post
+	}
+	err := s.store.Pool.QueryRow(c, `SELECT title FROM posts WHERE id = $1 AND type = ANY($2) AND meta->>$3 = $4`, id, types, wbSiteMetaKit, kit).Scan(&title)
 	if err != nil {
 		return ""
 	}
@@ -1249,6 +1400,16 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 	// the survivors up, and every page the import made goes anyway.
 	del(rec.Pages, "page")
 	del(rec.Templates, webbuilder.TemplatePostType)
+	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
+	for _, mid := range rec.Media {  // the files it put into the Media Library
+		if a, err := s.store.GetAttachment(c, mid); err == nil {
+			s.deleteAttachmentFiles(a)
+			if s.store.DeleteAttachment(c, mid) == nil {
+				s.purgeAttachment(a)
+				deleted++
+			}
+		}
+	}
 	// The navigation menu it made, when it is still the import's (same id, same name).
 	if rec.Menu > 0 && s.wbWizMenuID(c, rec.Kit) == rec.Menu {
 		if err := s.store.DeleteMenu(c, rec.Menu); err == nil {

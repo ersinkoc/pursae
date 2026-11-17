@@ -52,7 +52,10 @@ func TestConvertCodeShell(t *testing.T) {
 	if len(res.FooterAfter) != 1 || !strings.Contains(res.FooterAfter[0].HTML, `id="lightbox"`) || res.FooterAfter[0].Wrap != "" {
 		t.Errorf("modal after the shell: %+v", res.FooterAfter)
 	}
-	if len(res.Sections) != 2 || res.Sections[0].Wrap != shell+"\n"+`<main id="icerik" class="flex-1">` || !strings.Contains(res.Sections[1].HTML, `src="/k/js/main.js"`) {
+	// The script after the shell comes after the footer (and the lightbox), as in the design: a
+	// tail section, printed after the footer template.
+	if len(res.Sections) != 3 || res.Sections[0].Wrap != shell+"\n"+`<main id="icerik" class="flex-1">` || strings.Contains(res.Sections[1].HTML, `main.js`) ||
+		!res.Sections[2].Tail || res.Sections[2].Wrap != "" || !strings.Contains(res.Sections[2].HTML, `src="/k/js/main.js"`) {
 		t.Fatalf("sections: %+v", res.Sections)
 	}
 
@@ -327,8 +330,45 @@ func TestConvertCodeDataAttrsAndImportMap(t *testing.T) {
 			t.Errorf("import map: missing %s in %s", want, res.Head)
 		}
 	}
-	// Data attributes are never reported as missing files (they need not be URLs).
-	if len(res.Missing) != 0 {
+	// A data attribute is reported only when it reads as the path of a design file (an asset
+	// extension); other values need not be URLs.
+	if strings.Join(res.Missing, ",") != "assets/none.mp4" {
+		t.Errorf("missing: %v", res.Missing)
+	}
+}
+
+// The Salient (WordPress) shape: a lazy loader keeps the image's real src and srcset in data-*
+// attributes (a srcset-like list), a video's source in data-nectar-video-src; a slider reads a
+// JSON list. Every candidate naming a kit file is mapped; a file put elsewhere (Remap: the Media
+// Library) gets its URL; candidates and files that are nowhere are reported.
+func TestConvertCodeDataLists(t *testing.T) {
+	src := `<!doctype html><html><head></head><body><main><section>
+<img src="data:image/svg+xml;charset=utf-8,%3Csvg%3E" data-nectar-img-src="../wp-content/uploads/a.png" data-nectar-img-srcset="../wp-content/uploads/a.png 1489w, ../wp-content/uploads/a-300x169.png 300w, ../wp-content/uploads/a-gone.png 768w" alt="">
+<video><source data-nectar-video-src="../wp-content/uploads/film.mp4" type="video/mp4"></video>
+<video><source data-nectar-video-src="../wp-content/uploads/lost.webm"></video>
+<div data-slides='["../wp-content/uploads/a.png","label"]' data-json="{&#34;src&#34;:&#34;..\/wp-content\/uploads\/a.png&#34;}" data-cols="1, 2" data-title="Hi, there" data-x="a.png 1x"></div>
+</section></main></body></html>`
+	res, err := ConvertCode(src, CodeImportOptions{KitURL: "/k/", Base: "blog",
+		KitFiles: map[string]bool{"wp-content/uploads/a.png": true, "wp-content/uploads/a-300x169.png": true},
+		Remap:    map[string]string{"wp-content/uploads/film.mp4": "/wp-content/uploads/2026/11/film.mp4"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := codeHTML(res)
+	for _, want := range []string{
+		`data-nectar-img-src="/k/wp-content/uploads/a.png"`,
+		`data-nectar-img-srcset="/k/wp-content/uploads/a.png 1489w, /k/wp-content/uploads/a-300x169.png 300w, ../wp-content/uploads/a-gone.png 768w"`,
+		`data-nectar-video-src="/wp-content/uploads/2026/11/film.mp4"`,
+		`data-nectar-video-src="../wp-content/uploads/lost.webm"`,
+		`data-slides="[&#34;/k/wp-content/uploads/a.png&#34;,&#34;label&#34;]"`,
+		`data-json="{&#34;src&#34;:&#34;\/k\/wp-content\/uploads\/a.png&#34;}"`,
+		`data-cols="1, 2"`, `data-title="Hi, there"`, `data-x="a.png 1x"`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %s in %s", want, body)
+		}
+	}
+	if got := strings.Join(res.Missing, ","); got != "a.png,wp-content/uploads/a-gone.png,wp-content/uploads/lost.webm" && got != "blog/a.png,wp-content/uploads/a-gone.png,wp-content/uploads/lost.webm" {
 		t.Errorf("missing: %v", res.Missing)
 	}
 }

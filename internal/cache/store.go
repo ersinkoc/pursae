@@ -265,7 +265,7 @@ var unstoredHeaders = []string{
 	"Set-Cookie", "Content-Length", "Content-Encoding", "Transfer-Encoding", "Connection",
 	"Keep-Alive", "Date", "Age", "Etag", "Trailer", "Upgrade", "Proxy-Connection", "Te",
 	"Proxy-Authenticate", "Proxy-Authorization",
-	HeaderTags, HeaderTTL, HeaderControl, HeaderStatus,
+	HeaderTags, HeaderTTL, HeaderControl, HeaderStatus, HeaderOptimize,
 }
 
 // requestIDHeader is server.HeaderRequestID (the cache package cannot import server). It is set per request

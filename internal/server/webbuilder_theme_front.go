@@ -120,6 +120,14 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 		if p.codePage {
 			p.filled.html = webbuilder.UnwrapCodePage(p.filled.html)
 		}
+		if p.loc == webbuilder.LocationMain && p.codePage {
+			// The design's scripts after its shell: printed after the footer, as in the design.
+			var tail string
+			p.filled.html, tail = webbuilder.SplitCodeTail(p.filled.html)
+			out.view.Tail = template.HTML(tail)
+		} else {
+			p.filled.html = webbuilder.StripCodeTail(p.filled.html)
+		}
 		if p.codeHead != "" || strings.Contains(p.filled.html, webbuilder.AttrCode) {
 			p.codeHead, p.filled.html = s.wbKitVersioned(p.codeHead), s.wbKitVersioned(p.filled.html)
 		}
@@ -144,6 +152,9 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 			}
 			out.view.Main, out.view.MainCode = h, p.codePage
 			out.view.HasMain = wbHasMainLandmark(p.filled.html)
+			if p.codePage { // an imported design's page: its images as written (no lazy optimizer)
+				c.Header(cache.HeaderOptimize, "as-written")
+			}
 		}
 	}
 	if body, ok := forumSiteMain(c, q); ok && main == nil && !out.canvas {
@@ -190,8 +201,20 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	if tp.forumMain != "" {
 		bodies = append(bodies, tp.forumMain)
 	}
+	// The page's own head first: an imported page's head is the design's whole head in its order
+	// (the header and footer templates bring only what every page of theirs has, which it holds
+	// too), so the cascade keeps the design's order; a theme view has none and the templates' come.
 	for _, p := range tp.parts {
-		heads = append(heads, p.codeHead)
+		if p.loc == webbuilder.LocationMain {
+			heads = append(heads, p.codeHead)
+		}
+	}
+	for _, p := range tp.parts {
+		if p.loc != webbuilder.LocationMain {
+			heads = append(heads, p.codeHead)
+		}
+	}
+	for _, p := range tp.parts {
 		allCode = allCode && p.codePage
 		var needs []webbuilder.FontNeed
 		if !p.codePage && len(p.doc.Fonts) > 0 && json.Unmarshal(p.doc.Fonts, &needs) == nil { // a design brings its own fonts

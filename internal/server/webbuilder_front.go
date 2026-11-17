@@ -21,6 +21,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/cache"
 	"wpgo/internal/i18n"
 	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
@@ -246,10 +247,12 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	if codeHead != "" || strings.Contains(body, webbuilder.AttrCode) {
 		codeHead, body = s.wbKitVersioned(codeHead), s.wbKitVersioned(body)
 	}
+	body = webbuilder.StripCodeTail(body) // a canvas page prints its tail in place, after everything
 	codePage := webbuilder.IsCodePage(body)
 	if codePage {
 		site.CSS = ""
 		body = webbuilder.UnwrapCodePage(body)
+		c.Header(cache.HeaderOptimize, "as-written") // its images as written (no lazy optimizer)
 	}
 	code := wbCodeSource(d)
 	for _, p := range fp.popups {

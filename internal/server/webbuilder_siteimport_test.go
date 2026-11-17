@@ -243,3 +243,341 @@ func TestMCPImportSiteCorpusShapes(t *testing.T) {
 		}
 	}
 }
+
+// A static copy of a WordPress site keeps its archive pages as files (author/admin/index.html,
+// category/news/index.html, 2026/09/index.html). The import makes them pages at those paths and
+// claims the paths, so they answer there instead of this site's author, category and date
+// archives (page 1 only); a claim ends with its page.
+func TestMCPImportSiteClaimsArchivePaths(t *testing.T) {
+	ts, c, srv := newTestServer(t, true)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	if r := call("activate_theme", map[string]any{"slug": wbHelloSlug}); r["isError"] == true {
+		t.Fatalf("theme: %v", mcpText(r))
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "wp", "files": []any{
+		map[string]any{"path": "css/site.css", "text": "body{margin:0}"},
+	}}))
+	doc := func(h1 string) string {
+		return `<!doctype html><html lang="en"><head><title>` + h1 + `</title></head><body><main><section><h1>` + h1 + `</h1></section></main></body></html>`
+	}
+	pages := []any{
+		map[string]any{"path": "index.html", "html": doc("Home")},
+		map[string]any{"path": "author/admin/index.html", "html": doc("Design author")},
+		map[string]any{"path": "category/news/index.html", "html": doc("Design category")},
+		map[string]any{"path": "2026/09/index.html", "html": doc("Design month")},
+		map[string]any{"path": "about/index.html", "html": doc("About")},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "wp", "pages": pages, "templates": false}))
+	var cl []string
+	for _, x := range asList(out["claimed_paths"]) {
+		cl = append(cl, x.(string))
+	}
+	claimed := strings.Join(cl, " ")
+	for _, want := range []string{"/author/admin/ (author archive)", "/category/news/ (category archive)", "/2026/09/ (date archive)"} {
+		if !strings.Contains(claimed, want) {
+			t.Errorf("claimed %q, want %s", claimed, want)
+		}
+	}
+	if strings.Contains(claimed, "/about/") {
+		t.Errorf("a page no archive takes was claimed: %s", claimed)
+	}
+	get := func(path string) (int, string) {
+		t.Helper()
+		resp, err := http.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return resp.StatusCode, string(b)
+	}
+	for path, h1 := range map[string]string{"/author/admin/": "Design author", "/category/news/": "Design category", "/2026/09/": "Design month", "/about/": "About"} {
+		if code, body := get(path); code != 200 || !strings.Contains(body, "<h1>"+h1+"</h1>") {
+			t.Errorf("%s: %d, want the imported page %q: %.200s", path, code, h1, wbSnippet(body, "<h1"))
+		}
+	}
+	// Later archive pages are the archive's, not the imported page's.
+	if _, body := get("/author/admin/page/2/"); strings.Contains(body, "Design author") {
+		t.Error("/author/admin/page/2/ served the imported page")
+	}
+	// The claim ends with its page: the author archive answers again.
+	var id int64
+	for _, p := range asList(out["pages"]) {
+		if m := p.(map[string]any); m["path"] == "author/admin/index.html" {
+			id = int64(m["post_id"].(float64))
+		}
+	}
+	if err := srv.store.DeletePost(t.Context(), id); err != nil {
+		t.Fatal(err)
+	}
+	srv.wbPurgePages()
+	if _, body := get("/author/admin/"); strings.Contains(body, "Design author") {
+		t.Error("a deleted page still claims its path")
+	}
+	srv.wbSiteDropClaims(t.Context(), []int64{id})
+	if _, ok := srv.wbSiteClaims()["author/admin"]; ok {
+		t.Error("the claim of a removed page was kept")
+	}
+	if _, ok := srv.wbSiteClaims()["category/news"]; !ok {
+		t.Error("another page's claim was dropped")
+	}
+}
+
+// A copy of a live site: its canonical domain is detected, links to its pages point at the
+// imported pages, and neither its comment form nor its plugin's AJAX endpoint reaches the original
+// site on the imported page (the safe default); tracking is kept and reported.
+func TestMCPImportSiteOriginalDomain(t *testing.T) {
+	ts, c := testServer(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "copy", "files": []any{
+		map[string]any{"path": "wp-content/uploads/a.png", "data": "iVBORw0KGgo="},
+	}}))
+	doc := func(canon, body string) string {
+		return `<!doctype html><html lang="en"><head><title>T</title><link rel="canonical" href="https://old.example/` + canon + `">
+<script>var ajax = {"url":"https:\/\/old.example\/wp-admin\/admin-ajax.php"};</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1"></script></head><body><main><section>` + body + `</section></main></body></html>`
+	}
+	pages := []any{
+		map[string]any{"path": "index.html", "html": doc("", `<h1>Home</h1><a href="https://old.example/about/">About</a><img src="https://old.example/wp-content/uploads/a.png" alt="">`)},
+		map[string]any{"path": "about/index.html", "html": doc("about/", `<h1>About</h1><form action="https://old.example/wp-comments-post.php" method="post"><textarea name="comment"></textarea></form>`)},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "copy", "pages": pages, "templates": false}))
+	os, _ := out["original_site"].(map[string]any)
+	if os == nil || !strings.Contains(strings.Join(func() []string {
+		var l []string
+		for _, x := range asList(os["domains"]) {
+			l = append(l, x.(string))
+		}
+		return l
+	}(), ","), "old.example") || os["links"] != "rewrite" {
+		t.Fatalf("original_site: %v", out)
+	}
+	if !strings.Contains(strings.Join(func() []string {
+		var l []string
+		for _, x := range asList(out["warnings"]) {
+			l = append(l, x.(string))
+		}
+		return l
+	}(), "\n"), "Google Tag Manager") {
+		t.Errorf("tracking not reported: %v", out["warnings"])
+	}
+	for _, path := range []string{"/", "/about/"} {
+		resp, err := http.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		page := string(b)
+		if strings.Contains(page, "old.example") {
+			t.Errorf("%s still names the original site: %s", path, wbSnippet(page, "old.example"))
+		}
+		if !strings.Contains(page, `\/wp-admin\/admin-ajax.php"`) || !strings.Contains(page, "googletagmanager.com/gtag/js?id=G-1") {
+			t.Errorf("%s: endpoint or tracking: %.400s", path, wbSnippet(page, "admin-ajax"))
+		}
+	}
+	resp, _ := http.Get(base + "/")
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !regexpFind(`href="[^"]*/about/"`, string(b)) || !strings.Contains(string(b), `src="/wp-content/uploads/web-builder/kits/copy/wp-content/uploads/a.png`) {
+		t.Errorf("home: links and files of the original site: %s", wbSnippet(string(b), "About"))
+	}
+	resp, _ = http.Get(base + "/about/")
+	b, _ = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(b), `action="/wp-comments-post.php"`) {
+		t.Errorf("about: the comment form: %s", wbSnippet(string(b), "<form"))
+	}
+}
+
+// A WordPress Salient copy (Decoland): no <main>, no <footer>; the footer sits in the content's
+// wrapper and the page's scripts follow the shell. The site gets one header and one footer
+// template, and each page is printed as the design: the shell once, #ajax-content-wrap once around
+// the page's rows and the footer, the drawer after the shell, the page's own scripts after it.
+func TestMCPImportSiteSalientShape(t *testing.T) {
+	ts, c := testServer(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	if r := call("activate_theme", map[string]any{"slug": wbHelloSlug}); r["isError"] == true {
+		t.Fatalf("theme: %v", mcpText(r))
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "salient", "files": []any{
+		map[string]any{"path": "wp-content/themes/salient/style.css", "text": "#footer-outer{color:#333}"},
+	}}))
+	page := func(cur, title, seed string) string {
+		up := ""
+		if cur != "index.html" {
+			up = "../"
+		}
+		item := func(href, label string) string {
+			if href == cur {
+				return `<li class="menu-item current-menu-item"><a aria-current="page" href="` + up + href + `">` + label + `</a></li>`
+			}
+			return `<li class="menu-item"><a href="` + up + href + `">` + label + `</a></li>`
+		}
+		nav := item("index.html", "Home") + item("blog/index.html", "Blog")
+		return `<!doctype html><html lang="tr"><head><title>` + title + `</title>
+<script type="application/ld+json">{"name":"` + title + `"}</script>
+<link rel="stylesheet" href="` + up + `wp-content/themes/salient/style.css?ver=1"></head><body class="page">
+<nav class="skip-wrap"><a class="skip" href="#ajax-content-wrap">Skip</a></nav>
+<div class="ocm-effect-wrap"><div class="ocm-effect-wrap-inner">
+<div id="header-outer"><div id="fws_` + seed + `a1b2c3" class="wpb_row">Open</div><header id="top"><nav><ul>` + nav + `</ul></nav></header></div>
+<div id="ajax-content-wrap">
+<div class="container-wrap"><h1>` + title + `</h1></div>
+<div id="footer-outer"><p>Footer</p></div>
+<div id="slide-out-widget-area"><ul>` + nav + `</ul></div>
+</div></div></div>
+<script>var page = {"postID":"` + seed + `"};</script>
+<aside id="dc-drawer">Drawer</aside>
+</body></html>`
+	}
+	pages := []any{
+		map[string]any{"path": "index.html", "html": page("index.html", "Home", "100")},
+		map[string]any{"path": "blog/index.html", "html": page("blog/index.html", "Blog", "201")},
+		map[string]any{"path": "hakkimizda/index.html", "html": page("hakkimizda/index.html", "About", "302")},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "salient", "pages": pages}))
+	var types []string
+	for _, x := range asList(out["templates"]) {
+		types = append(types, x.(map[string]any)["type"].(string))
+	}
+	if strings.Join(types, ",") != "header,footer" {
+		t.Fatalf("templates: %v", out["templates"])
+	}
+	for _, x := range []struct{ path, seed, title string }{{"/", "100", "Home"}, {"/blog/", "201", "Blog"}, {"/hakkimizda/", "302", "About"}} {
+		resp, err := http.Get(base + x.path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		html := string(b)
+		for _, once := range []string{`<div class="ocm-effect-wrap">`, `<div id="ajax-content-wrap">`, `id="footer-outer"`, `id="dc-drawer"`} {
+			if strings.Count(html, once) != 1 {
+				t.Errorf("%s: %s printed %d times", x.path, once, strings.Count(html, once))
+			}
+		}
+		order := []string{`<div class="ocm-effect-wrap">`, `<header id="top"`, `<div id="ajax-content-wrap">`, "<h1>" + x.title + "</h1>", `id="footer-outer"`,
+			`id="slide-out-widget-area"`, `id="dc-drawer"`, `"postID":"` + x.seed + `"`}
+		last := -1
+		for _, o := range order {
+			i := strings.Index(html, o)
+			if i < 0 || i < last {
+				t.Errorf("%s: %s out of order (%d after %d): %s", x.path, o, i, last, wbSnippet(html, `id="ajax-content-wrap"`))
+				break
+			}
+			last = i
+		}
+		// The footer closes the content's wrapper and the shell before the drawer.
+		if i, j := strings.Index(html, `id="slide-out-widget-area"`), strings.Index(html, `id="dc-drawer"`); i < 0 || j < 0 || strings.Count(html[i:j], "</div>") < 4 {
+			t.Errorf("%s: wrappers not closed before the drawer: %s", x.path, wbSnippet(html, `id="dc-drawer"`))
+		}
+		if !strings.Contains(html, `{"name":"`+x.title+`"}`) || strings.Count(html, "application/ld+json") != 1 {
+			t.Errorf("%s: the page's own JSON-LD", x.path)
+		}
+	}
+}
+
+// Pretty-permalink posts of a WordPress copy (<slug>/index.html at the top, a blog page listing
+// them) become posts under one single-post template when the site's permalinks are /%postname%/:
+// same addresses, the blog list a loop of posts, a post written later listed and drawn too.
+func TestMCPImportSitePostCollection(t *testing.T) {
+	ts, c, srv := newTestServer(t, true)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	if r := call("activate_theme", map[string]any{"slug": wbHelloSlug}); r["isError"] == true {
+		t.Fatalf("theme: %v", mcpText(r))
+	}
+	if err := srv.settings.Set(t.Context(), map[string]any{"permalink_structure": "/%postname%/"}); err != nil {
+		t.Fatal(err)
+	}
+	// The site's own posts are older than the import (Hello world! written at install).
+	if _, err := srv.store.Pool.Exec(t.Context(), `UPDATE posts SET published_at = published_at - interval '1 day' WHERE type = 'post'`); err != nil {
+		t.Fatal(err)
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "wp", "files": []any{
+		map[string]any{"path": "css/site.css", "text": "body{margin:0}"},
+	}}))
+	nav := `<header class="top"><nav><a class="n" href="../blog/index.html">Blog</a></nav></header>`
+	doc := func(title, cls, main string) string {
+		return `<!doctype html><html lang="en"><head><title>` + title + `</title><link rel="stylesheet" href="../css/site.css"></head><body class="` + cls + `">` +
+			nav + `<main>` + main + `</main><footer class="foot">Footer</footer></body></html>`
+	}
+	post := func(title, id, body string) string {
+		return doc(title, "single single-post postid-"+id, `<section class="hero"><h1>`+title+`</h1></section><article id="post-`+id+`" class="post-`+id+`"><div class="content">`+body+`</div></article>`)
+	}
+	card := func(slug, title string) string {
+		return `<article class="card"><a href="../` + slug + `/index.html"><h3>` + title + `</h3></a></article>`
+	}
+	pages := []any{
+		map[string]any{"path": "alpha/index.html", "html": post("Alpha post", "11", `<p>Alpha body text.</p><h2>More</h2>`)},
+		map[string]any{"path": "beta/index.html", "html": post("Beta post", "12", `<p>Beta body.</p><ul><li>x</li></ul>`)},
+		map[string]any{"path": "gamma/index.html", "html": post("Gamma post", "13", `<blockquote>Gamma.</blockquote>`)},
+		map[string]any{"path": "blog/index.html", "html": doc("Blog", "page", `<section><h1>Blog</h1><div class="grid">`+card("alpha", "Alpha post")+card("beta", "Beta post")+card("gamma", "Gamma post")+`</div></section>`)},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "wp", "pages": pages, "collections": true}))
+	b, _ := out["bindings"].(map[string]any)
+	if b == nil || len(asList(b["groups"])) != 1 || len(asList(b["listings"])) != 1 {
+		t.Fatalf("bindings: %v", out["bindings"])
+	}
+	if g := asList(b["groups"])[0].(map[string]any); g["type"] != "post" {
+		t.Fatalf("group: %v", g)
+	}
+	var n int
+	if err := srv.store.Pool.QueryRow(t.Context(), `SELECT count(*) FROM posts WHERE type = 'post' AND meta->>$1 = 'wp'`, wbSiteMetaKit).Scan(&n); err != nil || n != 3 {
+		t.Fatalf("posts made: %d %v", n, err)
+	}
+	get := func(path string) (int, string) {
+		t.Helper()
+		resp, err := http.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return resp.StatusCode, string(b)
+	}
+	for path, want := range map[string]string{"/alpha/": "<p>Alpha body text.</p>", "/beta/": "<li>x</li>", "/gamma/": "<blockquote>Gamma.</blockquote>"} {
+		code, body := get(path)
+		if code != 200 || !strings.Contains(body, want) || !strings.Contains(body, `<section class="hero"><h1`) {
+			t.Errorf("%s: %d %s", path, code, wbSnippet(body, "hero"))
+		}
+	}
+	_, blog := get("/blog/")
+	for _, title := range []string{"Alpha post", "Beta post", "Gamma post"} {
+		if !regexpFind(`<h3[^>]*>`+title+`</h3>`, blog) {
+			t.Errorf("blog list: %s missing: %s", title, wbSnippet(blog, "grid"))
+		}
+	}
+	// A post written later is drawn by the template and listed.
+	var created struct {
+		ID int64 `json:"id"`
+	}
+	if r := call("create_post", map[string]any{"title": "Delta post", "content": "<p>Delta words.</p>", "status": "publish"}); r["isError"] == true {
+		t.Logf("create_post: %v", mcpText(r))
+	} else {
+		_ = created
+		srv.wbPurgePages()
+		if code, body := get("/delta-post/"); code != 200 || !regexpFind(`<section class="hero"><h1[^>]*>Delta post</h1>`, body) {
+			t.Errorf("a new post is not drawn by the template: %d %s", code, wbSnippet(body, "<body"))
+		}
+	}
+}

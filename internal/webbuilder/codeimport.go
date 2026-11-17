@@ -35,6 +35,20 @@ type CodeImportOptions struct {
 	LinkMap map[string]string
 	// Split moves the page's header and footer out into their own parts (Theme Builder templates).
 	Split bool
+	// Remap gives files of the design that are not in the kit a URL of their own (a file too large
+	// for a kit put into the Media Library): kit path → URL.
+	Remap map[string]string
+	// OldHosts are the domain(s) the design was saved from (DetectOldHosts): their URLs are paths
+	// of this site (oldsite.go). KeepOldLinks leaves links, sources and other attributes pointing
+	// there; form actions and the URLs in inline scripts point at this site (SiteURL, the site's
+	// home URL; "" makes them root-relative) either way.
+	OldHosts     []string
+	KeepOldLinks bool
+	SiteURL      string
+	// FooterAt (Split) points at the page's site footer when it has no <footer> element: the
+	// element-child indexes from <body> down to it (ConvertSite finds the block every page ends
+	// with, Salient's #footer-outer).
+	FooterAt []int
 }
 
 // CodePart is one code section of an import.
@@ -42,6 +56,9 @@ type CodePart struct {
 	Name string `json:"name"`
 	HTML string `json:"html"`
 	Wrap string `json:"wrap,omitempty"`
+	// Tail: the page's scripts after its shell (body-end scripts, with Split and a footer): the
+	// front end prints them after the footer template, where the design had them (content.tail).
+	Tail bool `json:"tail,omitempty"`
 	// Binds are the part's content bindings (content.binds, codebind.go) a site import made.
 	Binds string `json:"binds,omitempty"`
 }
@@ -75,6 +92,13 @@ type CodeImport struct {
 	Warnings     []string   `json:"warnings,omitempty"`
 	Unmapped     []string   `json:"unmappedLinks,omitempty"`
 	Missing      []string   `json:"missingFiles,omitempty"`
+	// OldURLs are the URLs of the design's original site (OldHosts) the page held, as written (in
+	// scripts: their origin); OldForms the forms whose action pointed there; OldInScripts how many
+	// script URLs now point at this site; Trackers the third-party tracking the page loads.
+	OldURLs      []string `json:"oldUrls,omitempty"`
+	OldForms     int      `json:"oldForms,omitempty"`
+	OldInScripts int      `json:"oldInScripts,omitempty"`
+	Trackers     []string `json:"trackers,omitempty"`
 }
 
 var (
@@ -94,6 +118,36 @@ type codeConv struct {
 	unmapped map[string]bool
 	missing  map[string]bool
 	handlers map[string]int // inline event handler attributes: "onclick on <button>" → count
+	// The design's original site (oldsite.go).
+	oldHost      map[string]bool
+	oldRE        *regexp.Regexp
+	oldURLs      map[string]bool
+	oldForms     int
+	oldInScripts int
+	tracking     map[string]bool
+}
+
+// newCodeConv is a converter with o's defaults applied.
+func newCodeConv(o CodeImportOptions) *codeConv {
+	if o.KitURL != "" && !strings.HasSuffix(o.KitURL, "/") {
+		o.KitURL += "/"
+	}
+	o.Base = strings.Trim(path.Clean("/"+o.Base), "/")
+	cv := &codeConv{o: o, out: &CodeImport{}, unmapped: map[string]bool{}, missing: map[string]bool{}, handlers: map[string]int{},
+		oldHost: map[string]bool{}, oldURLs: map[string]bool{}, tracking: map[string]bool{}}
+	for _, h := range o.OldHosts {
+		if h = strings.ToLower(strings.TrimSpace(h)); h != "" {
+			cv.oldHost[h] = true
+		}
+	}
+	if len(cv.oldHost) > 0 {
+		hosts := make([]string, 0, len(cv.oldHost))
+		for h := range cv.oldHost {
+			hosts = append(hosts, h)
+		}
+		cv.oldRE = oldScriptRE(hosts)
+	}
+	return cv
 }
 
 // ConvertCode converts a full HTML document (see the comment above).
@@ -102,11 +156,7 @@ func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
 	if err != nil {
 		return nil, err
 	}
-	if o.KitURL != "" && !strings.HasSuffix(o.KitURL, "/") {
-		o.KitURL += "/"
-	}
-	o.Base = strings.Trim(path.Clean("/"+o.Base), "/")
-	cv := &codeConv{o: o, out: &CodeImport{}, unmapped: map[string]bool{}, missing: map[string]bool{}, handlers: map[string]int{}}
+	cv := newCodeConv(o)
 	var root, head, body *html.Node
 	for n := doc.FirstChild; n != nil; n = n.NextSibling {
 		if n.Type == html.ElementNode && n.DataAtom == atom.Html {
@@ -144,6 +194,15 @@ func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
 	}
 	sort.Strings(cv.out.Unmapped)
 	sort.Strings(cv.out.Missing)
+	for u := range cv.oldURLs {
+		cv.out.OldURLs = append(cv.out.OldURLs, u)
+	}
+	sort.Strings(cv.out.OldURLs)
+	cv.out.OldForms, cv.out.OldInScripts = cv.oldForms, cv.oldInScripts
+	for t := range cv.tracking {
+		cv.out.Trackers = append(cv.out.Trackers, t)
+	}
+	sort.Strings(cv.out.Trackers)
 	if w := handlerWarning(cv.handlers); w != "" {
 		cv.out.Warnings = append(cv.out.Warnings, w)
 	}
@@ -214,7 +273,7 @@ type codePiece struct {
 }
 
 func (cv *codeConv) body(b *html.Node) {
-	sh := findShell(b)
+	sh := findShell(b, codeNodeAt(b, cv.o.FooterAt))
 	var chain []string
 	for _, n := range sh.chain {
 		chain = append(chain, openTag(n))
@@ -286,7 +345,61 @@ func (cv *codeConv) body(b *html.Node) {
 	} else {
 		rest = lead
 	}
-	pieces = cv.split(holder(rest), chain, true)
+	// A page without main whose site footer is a block the content's wrapper also holds (Salient:
+	// #ajax-content-wrap > [.container-wrap, …, #footer-outer, the off-canvas menu]): the wrappers
+	// down to the footer are opened, what precedes the footer in them is content (in those
+	// wrappers), the footer and what follows it in its wrapper the footer part, and what follows
+	// the wrappers the footer template's further parts.
+	var footerMore []*codePiece
+	footerWrap := chain
+	fi := -1
+	if cv.o.Split && main == nil && f0 != nil && sh.footer != nil {
+		for i, n := range rest {
+			if n == f0 {
+				fi = i
+			}
+		}
+	}
+	if fi >= 0 {
+		pieces = cv.split(holder(rest[:fi]), chain, true)
+		wrap := append([]string{}, chain...)
+		cur := f0
+		var levels [][]*html.Node // what follows the path at each level, outermost first
+		levels = append(levels, rest[fi+1:])
+		for cur != sh.footer {
+			next := childOf(cur, sh.footer)
+			wrap = append(wrap, openTag(cur))
+			var before, after []*html.Node
+			seen := false
+			for k := cur.FirstChild; k != nil; k = k.NextSibling {
+				switch {
+				case k.Type != html.ElementNode:
+				case k == next:
+					seen = true
+				case seen:
+					after = append(after, k)
+				default:
+					before = append(before, k)
+				}
+			}
+			if len(before) > 0 {
+				pieces = append(pieces, cv.split(holder(before), append([]string{}, wrap...), false)...)
+			}
+			levels = append(levels, after)
+			cur = next
+		}
+		footer = []*html.Node{sh.footer}
+		footer = append(footer, levels[len(levels)-1]...)
+		footerWrap = wrap
+		for li := len(levels) - 2; li >= 0; li-- {
+			w := append([]string{}, wrap[:len(chain)+li]...)
+			for _, n := range levels[li] {
+				footerMore = appendPiece(footerMore, n, w)
+			}
+		}
+	} else {
+		pieces = cv.split(holder(rest), chain, true)
+	}
 	if main != nil {
 		pieces = append(pieces, cv.split(main, append(append([]string{}, mainWrap...), openTag(main)), false)...)
 	}
@@ -312,7 +425,6 @@ func (cv *codeConv) body(b *html.Node) {
 			pieces = append(pieces, &codePiece{nodes: []*html.Node{n}, wrap: chain, tag: n.DataAtom, name: partName(n, len(pieces))})
 		}
 	}
-	footerWrap := chain
 	// A footer that is the last part (inside main, or of a page without main), kept with its
 	// wrappers minus main itself.
 	if cv.o.Split && footer == nil {
@@ -364,7 +476,8 @@ func (cv *codeConv) body(b *html.Node) {
 	// Elements beside the shell's wrappers (in the body, or in an outer wrapper): with Split, those
 	// before go with the header template and those after with the footer template, each part
 	// keeping the wrappers it sat in; scripts after the shell go with the last part.
-	var before, beyond []*codePiece
+	var before, beyond, tailParts []*codePiece
+	beyond = footerMore
 	for i, c := range sh.chain {
 		w := append([]string{}, chain[:i]...)
 		for n := c.Parent.FirstChild; n != nil && n != c; n = n.NextSibling {
@@ -380,12 +493,77 @@ func (cv *codeConv) body(b *html.Node) {
 				continue
 			}
 			if isScripty(n) {
+				if cv.o.Split && len(footer) > 0 {
+					// After the footer, as in the design: printed after the footer template.
+					tailParts = appendPiece(tailParts, n, nil)
+					continue
+				}
 				last := lastPiece()
 				last.nodes = append(last.nodes, n)
 				continue
 			}
 			beyond = appendPiece(beyond, n, w)
 		}
+	}
+	// A page's structured data in its header or footer (JSON-LD: the page's own SEO data) goes to
+	// the page's head, so the templates shared by the site's pages do not carry one page's data.
+	if cv.o.Split && (len(header) > 0 || len(footer) > 0) {
+		var lifted []string
+		lift := func(nodes []*html.Node) {
+			for _, n := range nodes {
+				for _, sc := range codeFindAll(n, func(x *html.Node) bool {
+					return x.DataAtom == atom.Script && strings.EqualFold(strings.TrimSpace(attr(x, "type")), "application/ld+json")
+				}) {
+					if sc == n || sc.Parent == nil {
+						continue // a top-level script is handled below
+					}
+					sc.Parent.RemoveChild(sc)
+					cv.rewrite(sc)
+					lifted = append(lifted, render(sc))
+				}
+			}
+		}
+		keepTop := func(nodes []*html.Node) []*html.Node {
+			out := nodes[:0]
+			for _, n := range nodes {
+				if n.DataAtom == atom.Script && strings.EqualFold(strings.TrimSpace(attr(n, "type")), "application/ld+json") {
+					cv.rewrite(n)
+					lifted = append(lifted, render(n))
+					continue
+				}
+				out = append(out, n)
+			}
+			return out
+		}
+		if len(header) > 0 {
+			lift(pre)
+			lift(header)
+			pre = keepTop(pre)
+			for _, p := range before {
+				lift(p.nodes)
+				p.nodes = keepTop(p.nodes)
+			}
+		}
+		if len(footer) > 0 {
+			lift(footer)
+			footer = keepTop(footer)
+			if len(footer) == 0 {
+				footer = nil
+			}
+		}
+		if len(lifted) > 0 {
+			if cv.out.Head != "" {
+				cv.out.Head += "\n"
+			}
+			cv.out.Head += strings.Join(lifted, "\n")
+		}
+		var keep []*codePiece
+		for _, p := range before {
+			if len(p.nodes) > 0 {
+				keep = append(keep, p)
+			}
+		}
+		before = keep
 	}
 	if len(header) > 0 {
 		for _, p := range before {
@@ -412,6 +590,15 @@ func (cv *codeConv) body(b *html.Node) {
 			name = "Part " + strconv.Itoa(i+1)
 		}
 		cv.out.Sections = append(cv.out.Sections, CodePart{Name: name, HTML: cv.markup(p.nodes), Wrap: strings.Join(p.wrap, "\n")})
+	}
+	if len(cv.out.Sections) > 0 || cv.out.Footer == nil {
+		for _, p := range tailParts {
+			cv.out.Sections = append(cv.out.Sections, CodePart{Name: "Scripts", HTML: cv.markup(p.nodes), Tail: true})
+		}
+	} else if len(tailParts) > 0 { // a page of a header and footer only: its scripts go with the footer
+		for _, p := range tailParts {
+			cv.out.FooterAfter = append(cv.out.FooterAfter, CodePart{Name: "Scripts", HTML: cv.markup(p.nodes)})
+		}
 	}
 }
 
@@ -441,7 +628,7 @@ var codeSectioning = map[atom.Atom]bool{atom.Article: true, atom.Section: true, 
 // one of a page without main) at any depth, and the nearest element that holds all of them: the
 // wrappers from the body down to it are the shell chain (a design's
 // <div class="flex min-h-screen flex-col"> around its header, main and footer).
-func findShell(b *html.Node) codeShell {
+func findShell(b, footerHint *html.Node) codeShell {
 	var sh codeShell
 	var footers []*html.Node
 	afterMain := map[*html.Node]bool{}
@@ -483,6 +670,11 @@ func findShell(b *html.Node) codeShell {
 	if sh.main == nil && len(footers) > 0 {
 		sh.footer = footers[len(footers)-1]
 	}
+	// A design without a <footer> element: the block every page of the site ends with.
+	if sh.footer == nil && footerHint != nil && (sh.header == nil || !codeContains(sh.header, footerHint) && !codeContains(footerHint, sh.header)) &&
+		(sh.main == nil || !codeContains(sh.main, footerHint) && !codeContains(footerHint, sh.main)) {
+		sh.footer = footerHint
+	}
 	var paths [][]*html.Node
 	for _, n := range []*html.Node{sh.main, sh.header, sh.footer} {
 		if n == nil {
@@ -507,6 +699,80 @@ func findShell(b *html.Node) codeShell {
 	}
 	sh.chain = common
 	return sh
+}
+
+// codeFindAll lists the elements under n (n included) that match.
+func codeFindAll(n *html.Node, match func(*html.Node) bool) []*html.Node {
+	var out []*html.Node
+	var walk func(x *html.Node)
+	walk = func(x *html.Node) {
+		if x.Type == html.ElementNode && match(x) {
+			out = append(out, x)
+		}
+		for k := x.FirstChild; k != nil; k = k.NextSibling {
+			walk(k)
+		}
+	}
+	walk(n)
+	return out
+}
+
+// codeContains reports whether n is a or inside a.
+func codeContains(a, n *html.Node) bool {
+	for ; n != nil; n = n.Parent {
+		if n == a {
+			return true
+		}
+	}
+	return false
+}
+
+// codeNodeAt is the element at path (element-child indexes from b), nil when there is none.
+func codeNodeAt(b *html.Node, path []int) *html.Node {
+	if b == nil || len(path) == 0 {
+		return nil
+	}
+	n := b
+	for _, i := range path {
+		k := 0
+		var next *html.Node
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			if c.Type != html.ElementNode {
+				continue
+			}
+			if k == i {
+				next = c
+				break
+			}
+			k++
+		}
+		if next == nil {
+			return nil
+		}
+		n = next
+	}
+	return n
+}
+
+// codePathOf is the path of n from b (codeNodeAt's), nil when n is not inside b.
+func codePathOf(b, n *html.Node) []int {
+	var out []int
+	for ; n != nil && n != b; n = n.Parent {
+		if n.Parent == nil {
+			return nil
+		}
+		k := 0
+		for c := n.Parent.FirstChild; c != nil && c != n; c = c.NextSibling {
+			if c.Type == html.ElementNode {
+				k++
+			}
+		}
+		out = append([]int{k}, out...)
+	}
+	if n != b {
+		return nil
+	}
+	return out
 }
 
 // childOf is the child of parent that is or holds n.
@@ -742,11 +1008,26 @@ func (cv *codeConv) walk(n *html.Node, inSVG bool) {
 		n.Attr = append(n.Attr, html.Attribute{Key: AttrCodeID, Val: strconv.Itoa(cv.next)})
 	}
 	svg := inSVG || n.DataAtom == atom.Svg
+	if n.DataAtom == atom.Video || n.DataAtom == atom.Audio {
+		// Not edited inside, but its <source> and <track> elements name the design's files.
+		cv.rewriteAll(n)
+		return
+	}
 	if codeOpaque[n.DataAtom] && n.DataAtom != atom.Svg {
 		return
 	}
 	for k := n.FirstChild; k != nil; k = k.NextSibling {
 		cv.walk(k, svg)
+	}
+}
+
+// rewriteAll rewrites the URL attributes of n's descendants (no editor ids).
+func (cv *codeConv) rewriteAll(n *html.Node) {
+	for k := n.FirstChild; k != nil; k = k.NextSibling {
+		if k.Type == html.ElementNode {
+			cv.rewrite(k)
+			cv.rewriteAll(k)
+		}
 	}
 }
 
@@ -765,6 +1046,14 @@ func (cv *codeConv) rewrite(n *html.Node) {
 			cv.handlers[strings.ToLower(key)+" on <"+n.Data+">"]++
 		}
 		switch {
+		case n.DataAtom == atom.Form && key == "action":
+			// A form posting to the original site posts to this site's same path (never there).
+			val := a.Val
+			if l, ok := cv.oldLocal(val); ok {
+				val = l
+				cv.oldForms++
+			}
+			n.Attr[i].Val = cv.urlWith(val, true, false)
 		case codeURLAttrs[key]:
 			page := (n.DataAtom == atom.A || n.DataAtom == atom.Area || n.DataAtom == atom.Form) && key != "src"
 			n.Attr[i].Val = cv.url(a.Val, page)
@@ -774,10 +1063,14 @@ func (cv *codeConv) rewrite(n *html.Node) {
 			n.Attr[i].Val = cv.css(a.Val)
 		case strings.HasPrefix(key, "data-"):
 			// The design's own data attributes naming its files (data-wide="../assets/film.mp4",
-			// data-poster): its scripts read them and resolve them against the page's URL, which is
-			// not the kit's folder. Only a value that is the path of a kit file is touched.
-			n.Attr[i].Val = cv.kitFile(a.Val)
+			// data-poster, a lazy loader's data-nectar-img-srcset list): its scripts read them and
+			// resolve them against the page's URL, which is not the kit's folder.
+			n.Attr[i].Val = cv.dataValue(a.Val)
 		}
+	}
+	cv.trackers(n)
+	if n.DataAtom == atom.Script {
+		cv.oldScript(n)
 	}
 	if n.DataAtom == atom.Script && strings.EqualFold(strings.TrimSpace(attr(n, "type")), "importmap") {
 		for k := n.FirstChild; k != nil; k = k.NextSibling {
@@ -814,12 +1107,124 @@ func (cv *codeConv) importMap(src string) string {
 	})
 }
 
+// codeAssetExts are the extensions of files a design references (a data-* value with one of them
+// that names no kit file is reported as a missing file).
+var codeAssetExts = map[string]bool{".css": true, ".js": true, ".mjs": true, ".json": true, ".woff2": true, ".woff": true, ".ttf": true,
+	".otf": true, ".eot": true, ".png": true, ".jpg": true, ".jpeg": true, ".gif": true, ".webp": true, ".avif": true, ".svg": true,
+	".ico": true, ".mp4": true, ".webm": true, ".mp3": true, ".ogg": true, ".wav": true, ".glb": true, ".gltf": true, ".wasm": true, ".pdf": true}
+
+// codeSrcsetDescRE is a srcset candidate's descriptor (300w, 2x, 1.5x).
+var codeSrcsetDescRE = regexp.MustCompile(`^[0-9]+(?:\.[0-9]+)?[wx]$`)
+
+// codeJSONStringRE: the string values of a JSON list or object in a data-* attribute.
+var codeJSONStringRE = regexp.MustCompile(`"((?:[^"\\]|\\.)*)"`)
+
+// dataValue maps the value of a data-* attribute: the path of a kit file (or of a remapped file)
+// → its URL; a srcset-like list ("a.png 1489w, b.png 300w", a lazy loader's data-*-srcset) of
+// which a candidate names a kit file → every candidate mapped (the others reported missing); a
+// JSON list or object → its string values that name kit files; a lone path with an asset
+// extension that names no file → kept and reported missing. Anything else is left alone (data-*
+// values need not be URLs).
+func (cv *codeConv) dataValue(raw string) string {
+	if v := cv.kitFile(raw); v != raw {
+		return v
+	}
+	u := strings.TrimSpace(raw)
+	if u == "" || cv.o.KitURL == "" && len(cv.o.Remap) == 0 {
+		return raw
+	}
+	if (u[0] == '[' || u[0] == '{') && len(u) <= 1<<16 {
+		return codeJSONStringRE.ReplaceAllStringFunc(raw, func(m string) string {
+			inner := m[1 : len(m)-1]
+			if strings.Contains(inner, "\\") {
+				unesc := strings.ReplaceAll(inner, `\/`, "/")
+				if v := cv.kitFile(unesc); v != unesc {
+					return `"` + strings.ReplaceAll(v, "/", `\/`) + `"`
+				}
+				return m
+			}
+			return `"` + cv.kitFile(inner) + `"`
+		})
+	}
+	if cands, ok := codeSrcsetList(u); ok {
+		hit := false
+		for _, c := range cands {
+			if cv.kitFile(c) != c {
+				hit = true
+				break
+			}
+		}
+		if hit || codeAssetPath(cands[0]) {
+			return cv.srcset(raw)
+		}
+		return raw
+	}
+	if codeAssetPath(u) {
+		cv.url(u, false) // reports it missing
+	}
+	return raw
+}
+
+// codeSrcsetList reads a srcset-like list: two or more candidates, or one with a descriptor, each
+// a URL without spaces and at most one w/x descriptor. ok is false for anything else.
+func codeSrcsetList(v string) ([]string, bool) {
+	if len(v) > 1<<16 || strings.HasPrefix(v, "data:") {
+		return nil, false
+	}
+	parts := strings.Split(v, ",")
+	var urls []string
+	desc := false
+	for _, p := range parts {
+		f := strings.Fields(p)
+		switch len(f) {
+		case 1:
+		case 2:
+			if !codeSrcsetDescRE.MatchString(f[1]) {
+				return nil, false
+			}
+			desc = true
+		default:
+			return nil, false
+		}
+		urls = append(urls, f[0])
+	}
+	if len(urls) < 2 && !desc {
+		return nil, false
+	}
+	for _, u := range urls {
+		lu := strings.ToLower(u)
+		web := strings.HasPrefix(lu, "http://") || strings.HasPrefix(lu, "https://") || strings.HasPrefix(u, "//")
+		if strings.HasPrefix(u, "#") || !web && codeSchemeRE.MatchString(u) || path.Ext(strings.SplitN(u, "?", 2)[0]) == "" {
+			return nil, false
+		}
+	}
+	return urls, true
+}
+
+// codeAssetPath reports whether a value reads as a relative or root-relative path of a design
+// file: no scheme, no spaces, an asset extension.
+func codeAssetPath(u string) bool {
+	if u == "" || len(u) > 1024 || strings.ContainsAny(u, " \t\n<>\"'(){},;") || strings.HasPrefix(u, "#") || strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) {
+		return false
+	}
+	if i := strings.IndexAny(u, "?#"); i >= 0 {
+		u = u[:i]
+	}
+	return codeAssetExts[strings.ToLower(path.Ext(u))]
+}
+
 // kitFile maps a value that is the path of a kit file (relative to the page's folder, or
 // root-relative) to its kit URL, query and fragment kept; any other value is returned as it is,
 // unreported (it may not be a URL at all).
 func (cv *codeConv) kitFile(raw string) string {
 	u := strings.TrimSpace(raw)
-	if cv.o.KitURL == "" || u == "" || len(u) > 1024 || strings.ContainsAny(u, " \t\n<>\"'(){}") || strings.HasPrefix(u, "#") ||
+	if l, ok := cv.oldLocal(u); ok && !cv.o.KeepOldLinks {
+		if v := cv.kitFile(l); v != l {
+			return v
+		}
+		return raw
+	}
+	if cv.o.KitURL == "" && len(cv.o.Remap) == 0 || u == "" || len(u) > 1024 || strings.ContainsAny(u, " \t\n<>\"'(){}") || strings.HasPrefix(u, "#") ||
 		strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) {
 		return raw
 	}
@@ -835,6 +1240,9 @@ func (cv *codeConv) kitFile(raw string) string {
 		rel = strings.TrimPrefix(path.Clean(u), "/")
 	} else {
 		rel = strings.TrimPrefix(path.Clean("/"+path.Join(cv.o.Base, u)), "/")
+	}
+	if v, ok := cv.o.Remap[rel]; ok {
+		return v + rest
 	}
 	if !cv.o.KitFiles[rel] {
 		return raw
@@ -918,7 +1326,18 @@ func (cv *codeConv) srcset(v string) string {
 // url maps one reference: a file of the kit → its kit URL; a link of the link map → its site URL;
 // anything else is kept (and reported when it is a relative page link or a missing file).
 func (cv *codeConv) url(raw string, page bool) string {
+	return cv.urlWith(raw, page, cv.o.KeepOldLinks)
+}
+
+// urlWith is url; keepOld leaves a URL of the design's original site as it is.
+func (cv *codeConv) urlWith(raw string, page, keepOld bool) string {
 	u := strings.TrimSpace(raw)
+	if l, ok := cv.oldLocal(u); ok {
+		if keepOld {
+			return raw
+		}
+		u, raw = l, l
+	}
 	if u == "" || strings.HasPrefix(u, "#") || strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) {
 		return raw
 	}
@@ -954,6 +1373,9 @@ func (cv *codeConv) url(raw string, page bool) string {
 		return v
 	}
 	if v, ok := cv.o.LinkMap[u]; ok && u != "" {
+		return withQuery(v)
+	}
+	if v, ok := cv.o.Remap[rel]; ok {
 		return withQuery(v)
 	}
 	if cv.o.KitURL != "" && cv.o.KitFiles[rel] {

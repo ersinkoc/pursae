@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -129,7 +130,15 @@ func (w *wizClient) uploadWith(nonce string, zipBytes []byte, name, kit string) 
 // --- the zip --------------------------------------------------------------------------------
 
 func TestWBImportZipValidation(t *testing.T) {
-	small := wbZipLimits{Files: 3, Total: 200, File: 100}
+	small := wbZipLimits{Entries: 100, Files: 3, Total: 200, File: 100, Media: 150, Page: 100, Read: 1 << 20}
+	page := func(refs ...string) string {
+		var b strings.Builder
+		b.WriteString("<html><body>")
+		for _, r := range refs {
+			b.WriteString(`<img src="` + r + `">`)
+		}
+		return b.String() + "</body></html>"
+	}
 	cases := []struct {
 		name    string
 		entries []wizEntry
@@ -143,14 +152,14 @@ func TestWBImportZipValidation(t *testing.T) {
 		{"drive", []wizEntry{{"C:/x.css", "x", 0}}, wbZipDefaultLimits, "absolute"},
 		{"symlink", []wizEntry{{"index.html", "x", 0}, {"link.css", "/etc/passwd", os.ModeSymlink | 0o777}}, wbZipDefaultLimits, "symbolic link"},
 		{"symlink in junk", []wizEntry{{".git/HEAD", "/etc/passwd", os.ModeSymlink | 0o777}}, wbZipDefaultLimits, "symbolic link"},
-		{"bad extension", []wizEntry{{"index.html", "x", 0}, {"shell.php", "x", 0}}, wbZipDefaultLimits, "shell.php"},
-		{"bad name", []wizEntry{{"index.html", "x", 0}, {"my pic.png", "x", 0}}, wbZipDefaultLimits, "my pic.png"},
 		{"case twins", []wizEntry{{"index.html", "x", 0}, {"a.css", "x", 0}, {"A.css", "x", 0}}, wbZipDefaultLimits, "letter case"},
-		{"too many files", []wizEntry{{"a.html", "x", 0}, {"b.css", "x", 0}, {"c.css", "x", 0}, {"d.css", "x", 0}}, small, "at most 3"},
-		{"file too large", []wizEntry{{"a.html", strings.Repeat("x", 101), 0}}, small, "larger than"},
-		{"total too large", []wizEntry{{"a.html", strings.Repeat("x", 90), 0}, {"b.css", strings.Repeat("x", 90), 0}, {"c.css", strings.Repeat("x", 90), 0}}, small, "unpacks to more"},
+		{"too many entries", []wizEntry{{"a.html", "x", 0}, {"b.css", "x", 0}, {"c.css", "x", 0}}, wbZipLimits{Entries: 2, Files: 3, Total: 200, File: 100, Media: 150, Page: 100, Read: 1 << 20}, "too many entries"},
+		{"too many files", []wizEntry{{"a.html", page("b.css", "c.css", "d.css", "e.css"), 0}, {"b.css", "x", 0}, {"c.css", "x", 0}, {"d.css", "x", 0}, {"e.css", "x", 0}}, small, "at most 3 files"},
+		{"page too large", []wizEntry{{"a.html", strings.Repeat("x", 101), 0}}, small, "larger than"},
+		{"total too large", []wizEntry{{"a.html", page("b.png", "c.png", "d.png"), 0}, {"b.png", strings.Repeat("x", 90), 0}, {"c.png", strings.Repeat("x", 90), 0}, {"d.png", strings.Repeat("x", 90), 0}}, small, "at most 3 files and 0 MB"},
+		{"zip bomb", []wizEntry{{"a.html", page("b.css"), 0}, {"b.css", strings.Repeat("x", 90), 0}}, wbZipLimits{Entries: 10, Files: 3, Total: 200, File: 100, Media: 150, Page: 100, Read: 60}, "unpacks to more"},
 		{"empty", []wizEntry{{".DS_Store", "x", 0}}, wbZipDefaultLimits, "no files"},
-		{"ok", []wizEntry{{"index.html", "x", 0}, {"css/a.css", "x", 0}, {".DS_Store", "x", 0}, {"__MACOSX/a", "x", 0}}, wbZipDefaultLimits, ""},
+		{"ok", []wizEntry{{"index.html", page("css/a.css"), 0}, {"css/a.css", "x", 0}, {".DS_Store", "x", 0}, {"__MACOSX/a", "x", 0}}, wbZipDefaultLimits, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -180,10 +189,55 @@ func TestWBImportZipValidation(t *testing.T) {
 			}
 		})
 	}
+	// Only what the pages use is unpacked: a CSS file's font and image, a script's string literal,
+	// a srcset candidate; unused files, files a kit cannot hold (shell.php, "my pic.png") are left
+	// out and listed; a used file too large for a kit but not for the Media Library is unpacked for
+	// it, one larger than that is left out.
+	t.Run("referenced files only", func(t *testing.T) {
+		dir := t.TempDir()
+		zp := filepath.Join(dir, "in.zip")
+		idx := `<html><head><link rel="stylesheet" href="css/site.css"><script src="js/app.js"></script></head><body>` +
+			`<img src="img/a.png" srcset="img/a-2x.png 2x"><video><source data-src="media/film.mp4"></video><img src="media/huge.mp4">` +
+			`<a href="shell.php">x</a><img src="my%20pic.png"></body></html>`
+		_ = os.WriteFile(zp, wizZipBytes(t, []wizEntry{{"index.html", idx, 0}, {"css/site.css", `@font-face{src:url(../fonts/x.woff2)} .a{background:url("../img/bg.webp")}`, 0},
+			{"fonts/x.woff2", "f", 0}, {"img/bg.webp", "b", 0}, {"js/app.js", `fetch("data/menu.json")`, 0}, {"data/menu.json", `{"icon":"img/icon.svg"}`, 0},
+			{"img/icon.svg", "<svg/>", 0}, {"img/a.png", "a", 0}, {"img/a-2x.png", "a", 0}, {"img/unused-1536x864.png", strings.Repeat("u", 50), 0},
+			{"media/film.mp4", strings.Repeat("v", 120), 0}, {"media/huge.mp4", strings.Repeat("v", 160), 0}, {"shell.php", "<?php", 0}, {"my pic.png", "p", 0},
+			{"wp-includes/blocks/x.css", "z", 0}}), 0o600)
+		ex, err := wbZipExtract(zp, dir, wbZipLimits{Entries: 100, Files: 20, Total: 1000, File: 100, Media: 150, Page: 1000, Read: 1 << 20})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var kit []string
+		for p := range ex.Assets {
+			kit = append(kit, p)
+		}
+		sort.Strings(kit)
+		if strings.Join(kit, " ") != "css/site.css data/menu.json fonts/x.woff2 img/a-2x.png img/a.png img/bg.webp img/icon.svg js/app.js" {
+			t.Errorf("kit: %v", kit)
+		}
+		if len(ex.Media) != 1 || ex.Media["media/film.mp4"] != 120 {
+			t.Errorf("media: %v", ex.Media)
+		}
+		if strings.Join(ex.TooLarge, ",") != "media/huge.mp4 (160 B)" || strings.Join(ex.Unkeepable, ",") != "my pic.png,shell.php" {
+			t.Errorf("too large %v, unkeepable %v", ex.TooLarge, ex.Unkeepable)
+		}
+		if len(ex.Skipped) != 2 || !strings.HasPrefix(ex.Skipped[0], "img/unused-1536x864.png") || ex.SkippedBytes != 51 {
+			t.Errorf("skipped: %v %d", ex.Skipped, ex.SkippedBytes)
+		}
+		for _, p := range []string{"img/unused-1536x864.png", "shell.php", "media/huge.mp4"} {
+			if _, err := os.Stat(filepath.Join(dir, p)); err == nil {
+				t.Errorf("%s was unpacked", p)
+			}
+		}
+		if _, err := os.Stat(filepath.Join(dir, "index.html")); err != nil {
+			t.Errorf("the page was not unpacked: %v", err)
+		}
+	})
 	t.Run("top folders are stripped", func(t *testing.T) {
 		dir := t.TempDir()
 		zp := filepath.Join(dir, "in.zip")
-		_ = os.WriteFile(zp, wizZipBytes(t, []wizEntry{{"site/html/index.html", "x", 0}, {"site/html/css/a.css", "x", 0}}), 0o600)
+		_ = os.WriteFile(zp, wizZipBytes(t, []wizEntry{{"site/html/index.html", `<link rel="stylesheet" href="css/a.css">`, 0}, {"site/html/css/a.css", "x", 0}}), 0o600)
 		ex, err := wbZipExtract(zp, dir, wbZipDefaultLimits)
 		if err != nil || ex.HTML["index.html"] == 0 || ex.Assets["css/a.css"] == 0 {
 			t.Fatalf("%v %v %v", err, ex.HTML, ex.Assets)
@@ -258,7 +312,7 @@ func TestWBImportWizardUploadRejects(t *testing.T) {
 	}{
 		{"zip slip", []wizEntry{{"index.html", "<p>x</p>", 0}, {"../../evil.css", "x", 0}}, "a.zip", "leaves its folder"},
 		{"symlink", []wizEntry{{"index.html", "<p>x</p>", 0}, {"l.css", "/etc/passwd", os.ModeSymlink | 0o777}}, "a.zip", "symbolic link"},
-		{"extension", []wizEntry{{"index.html", "<p>x</p>", 0}, {"x.php", "<?php", 0}}, "a.zip", "x.php"},
+		{"page name", []wizEntry{{"index.html", "<p>x</p>", 0}, {"a|b.html", "<p>x</p>", 0}}, "a.zip", "cannot be imported"},
 		{"no html", []wizEntry{{"a.css", "x", 0}}, "a.zip", "no HTML pages"},
 		{"not zip name", []wizEntry{{"index.html", "x", 0}}, "a.txt", "must be a .zip"},
 	} {
@@ -273,6 +327,14 @@ func TestWBImportWizardUploadRejects(t *testing.T) {
 	}
 	if code, body, _ := w.upload([]byte("not a zip at all"), "a.zip", ""); code != http.StatusOK || !strings.Contains(body, "not a readable zip") {
 		t.Errorf("garbage: %d", code)
+	}
+	// Files no page uses (a server script left in the folder) are left out and listed, not refused.
+	code, _, loc := w.upload(wizZipBytes(t, []wizEntry{{"index.html", "<p>x</p>", 0}, {"x.php", "<?php", 0}}), "a.zip", "")
+	if code != http.StatusFound || loc == "" {
+		t.Fatalf("an unused x.php: %d", code)
+	}
+	if _, body, _ := w.get(loc); !strings.Contains(body, `id="wb-import-skipped"`) || !strings.Contains(body, "x.php") {
+		t.Errorf("the analysis does not list the unused file: %s", wbSnippet(body, "wb-import-skipped"))
 	}
 }
 
@@ -660,5 +722,67 @@ func TestWBImportWizardUndoKeepsOthers(t *testing.T) {
 	}
 	if _, err := srv.store.GetPost(context.Background(), rec.Pages[0]); err != nil {
 		t.Errorf("a page without the mark was deleted: %v", err)
+	}
+}
+
+// A file the pages use that is too large for a design kit (a hero video) goes to the Media Library:
+// the analysis says so, the import puts it there and points the page at it, and "Remove this
+// import" removes it again.
+func TestWBImportWizardMediaLibrary(t *testing.T) {
+	srv, base, _, w := wizStart(t)
+	ctx := context.Background()
+	saved := wbZipDefaultLimits
+	wbZipDefaultLimits.File = 64 // a kit file: 64 bytes in this test
+	t.Cleanup(func() { wbZipDefaultLimits = saved })
+	page := `<!doctype html><html><head><title>Home</title><link rel="stylesheet" href="css/a.css"></head><body><main><section><h1>Home</h1>` +
+		`<video class="bg" autoplay muted><source data-nectar-video-src="media/film.mp4" type="video/mp4"></video></section></main></body></html>`
+	code, _, loc := w.upload(wizZipBytes(t, []wizEntry{{"index.html", page, 0}, {"css/a.css", "h1{color:red}", 0},
+		{"media/film.mp4", strings.Repeat("v", 200), 0}, {"media/unused.mp4", strings.Repeat("u", 10), 0}}), "film.zip", "")
+	if code != http.StatusFound || !wizIDRE.MatchString(loc) {
+		t.Fatalf("upload: %d %q", code, loc)
+	}
+	id := wizIDRE.FindStringSubmatch(loc)[1]
+	_, an, _ := w.get("/wp-admin/web-builder-import?import=" + id)
+	if !strings.Contains(an, `id="wb-import-media"`) || !strings.Contains(an, "media/film.mp4") || !strings.Contains(an, "media/unused.mp4") {
+		t.Fatalf("analysis: %s", wbSnippet(an, "wb-import-media"))
+	}
+	if strings.Contains(an, "<code>media/film.mp4</code>") { // never reported missing
+		t.Errorf("the video is reported missing")
+	}
+	nonce := wizHiddenRE.FindStringSubmatch(an)[1]
+	code, _, loc = w.postForm("/wp-admin/web-builder-import?action=import&import="+id, url.Values{
+		"_wpnonce": {nonce}, "kit": {"film"}, "name": {"Film"}, "templates": {"1"}, "front": {"1"}, "status": {"publish"}})
+	if code != http.StatusSeeOther {
+		t.Fatalf("import: %d", code)
+	}
+	var mediaPath string
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT file_path FROM media ORDER BY id DESC LIMIT 1`).Scan(&mediaPath); err != nil {
+		t.Fatalf("no media item: %v", err)
+	}
+	if !strings.HasSuffix(mediaPath, "film.mp4") {
+		t.Fatalf("media item: %q", mediaPath)
+	}
+	if _, err := os.Stat(filepath.Join(srv.wbKitRoot(), "film", "media", "film.mp4")); err == nil {
+		t.Errorf("the video went into the kit too")
+	}
+	resp, err := http.Get(base + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(b), `data-nectar-video-src="/wp-content/uploads/`+mediaPath+`"`) {
+		t.Errorf("the page does not point at the Media Library: %s", wbSnippet(string(b), "nectar-video-src"))
+	}
+	if rec := srv.wbWizRecords()[id]; rec == nil || len(rec.Media) != 1 {
+		t.Fatalf("record: %+v", rec)
+	}
+	_, undo, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id)
+	un := wizHiddenRE.FindStringSubmatch(undo)[1]
+	if code, done, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id, url.Values{"_wpnonce": {un}, "confirm": {"1"}}); code != http.StatusOK || !strings.Contains(done, "Removed") {
+		t.Fatalf("undo: %d", code)
+	}
+	if _, err := os.Stat(filepath.Join(srv.cfg.UploadsDir, filepath.FromSlash(mediaPath))); err == nil {
+		t.Errorf("the media file is left after the undo")
 	}
 }
