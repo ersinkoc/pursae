@@ -1105,3 +1105,73 @@ body.pursae-modern .drag-drop-inside:before { content: "\f317"; font-family: das
 body.pursae-modern .drag-drop-inside p.drag-drop-info { font-size: 18px; color: var(--pm-text); font-weight: 500; }
 body.pursae-modern .drag-drop-inside p { color: var(--pm-faint); }
 body.pursae-modern .media-item { background: var(--pm-bg); border: 1px solid var(--pm-border); }
+
+/* links: no underline at rest anywhere in the content; underline on hover inside running text */
+body.pursae-modern #wpbody-content a { text-decoration: none; }
+body.pursae-modern #wpbody-content p a:hover,
+body.pursae-modern #wpbody-content .description a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ===================================================================== Pursae Commerce › Home */
+body.pursae-modern .goo-home-grid { gap: 16px; }
+body.pursae-modern .woocommerce-task-list__list { margin: 0; }
+body.pursae-modern .woocommerce-task-list__item { display: flex; align-items: flex-start; gap: 14px; margin: 0; padding: 14px 20px; border-top: 1px solid var(--pm-row); }
+body.pursae-modern .woocommerce-task-list__item:first-child { border-top: 0; }
+body.pursae-modern .woocommerce-task-list__item:hover { background: var(--pm-bg-2); }
+body.pursae-modern .woocommerce-task-list__item > .dashicons { flex: none; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--pm-border-2); font-size: 0; color: transparent; }
+body.pursae-modern .woocommerce-task-list__item.complete > .dashicons { background: var(--pm-primary); border-color: var(--pm-primary); }
+body.pursae-modern .woocommerce-task-list__item.complete > .dashicons:before { content: "\f147"; font-size: 16px; color: #fff; line-height: 18px; }
+body.pursae-modern .woocommerce-task-list__item a { color: var(--pm-text); text-decoration: none !important; }
+body.pursae-modern .woocommerce-task-list__item a strong { font-weight: 500; }
+body.pursae-modern .woocommerce-task-list__item.complete a,
+body.pursae-modern .woocommerce-task-list__item.complete a strong { color: var(--pm-faint); text-decoration: none !important; }
+body.pursae-modern .woocommerce-task-list__item p { margin: 3px 0 0; font-size: 13px; color: var(--pm-faint); }
+body.pursae-modern .woocommerce-task-list .postbox-header .hndle span,
+body.pursae-modern .woocommerce-task-list .postbox-header { font-family: var(--pm-font); }
+body.pursae-modern table.goo-stats { border: 0; }
+body.pursae-modern table.goo-stats tbody td { font-size: 22px; font-weight: 500; color: var(--pm-text); font-variant-numeric: tabular-nums; padding: 16px 10px; }
+body.pursae-modern table.goo-stats tbody td .woocommerce-Price-currencySymbol { font-size: .7em; color: var(--pm-muted); margin-right: 2px; }
+body.pursae-modern table.goo-stats tbody th { color: var(--pm-muted); font-weight: 400; vertical-align: middle; padding-left: 0; }
+body.pursae-modern ul.goo-activity { margin: 0; }
+body.pursae-modern ul.goo-activity li { margin: 0; padding: 10px 0; border-top: 1px solid var(--pm-row); }
+body.pursae-modern ul.goo-activity li:first-child { border-top: 0; padding-top: 0; }
+body.pursae-modern ul.goo-activity li a { display: inline-flex; align-items: center; gap: 10px; color: var(--pm-body); }
+body.pursae-modern ul.goo-activity li a strong { min-width: 28px; height: 22px; padding: 0 6px; display: inline-grid; place-items: center; background: var(--pm-primary-50); color: var(--pm-primary-hover); font-weight: 600; font-size: 12.5px; }
+body.pursae-modern ul.goo-activity li a:hover { color: var(--pm-primary); }
+
+/* a second "Add/Export" next to the page title is a secondary action */
+body.pursae-modern .wrap .page-title-action ~ .page-title-action { background: var(--pm-bg); border-color: var(--pm-border-2); color: var(--pm-text); font-weight: 400; margin-left: 6px; }
+body.pursae-modern .wrap .page-title-action ~ .page-title-action:hover { background: var(--pm-hover); color: var(--pm-text); }
+
+/* ===================================================================== Pursae Commerce › Orders */
+body.pursae-modern mark.order-status {
+	display: inline-flex; align-items: center; gap: 7px; max-width: 100%; margin: 0; padding: 0;
+	background: transparent !important; border-radius: 0; color: var(--pm-body) !important; font-size: 13px; line-height: 1.4;
+}
+body.pursae-modern mark.order-status > span { margin: 0; overflow: visible; white-space: nowrap; }
+body.pursae-modern mark.order-status:before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--pm-faint); }
+body.pursae-modern mark.order-status.status-completed:before { background: var(--pm-ok); }
+body.pursae-modern mark.order-status.status-processing:before { background: var(--pm-info); }
+body.pursae-modern mark.order-status.status-on-hold:before,
+body.pursae-modern mark.order-status.status-pending:before { background: var(--pm-warn); }
+body.pursae-modern mark.order-status.status-refunded:before,
+body.pursae-modern mark.order-status.status-failed:before,
+body.pursae-modern mark.order-status.status-cancelled:before { background: var(--pm-bad); }
+body.pursae-modern .wp-list-table .column-order_status { width: 140px; }
+body.pursae-modern .wp-list-table .column-order_number a strong,
+body.pursae-modern .wp-list-table .column-order_number a { font-weight: 500; }
+body.pursae-modern .wp-list-table .column-order_total { font-variant-numeric: tabular-nums; color: var(--pm-text); font-weight: 500; }
+body.pursae-modern .wp-list-table .column-order_total .description { font-weight: 400; display: block; }
+
+/* ===================================================================== Pursae Commerce › Edit order */
+body.pursae-modern #actions select[name=wc_order_action] { width: 100%; max-width: none; margin-bottom: 8px; }
+body.pursae-modern #actions { display: block; }
+body.pursae-modern ul.order_notes li .note_content { background: var(--pm-bg-2); border: 1px solid var(--pm-border); border-left: 3px solid var(--pm-primary); border-radius: 0; padding: 10px 12px; }
+body.pursae-modern ul.order_notes li .note_content:after { display: none; }
+body.pursae-modern ul.order_notes li.system-note .note_content { border-left-color: var(--pm-faint); }
+body.pursae-modern ul.order_notes li.customer-note .note_content { border-left-color: var(--pm-ok); }
+body.pursae-modern ul.order_notes li .note_content p { color: var(--pm-body); }
+body.pursae-modern ul.order_notes li p.meta { color: var(--pm-faint); font-size: 12px; }
+body.pursae-modern #order_data h2 { font-size: 20px; font-weight: 600; }
+body.pursae-modern #order_data .order_data_column h3 { font-size: 14px; font-weight: 600; }
+body.pursae-modern .woocommerce_order_items_wrapper table.woocommerce_order_items thead th { background: var(--pm-bg-2); color: var(--pm-faint); font-size: 11.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--pm-border); }
+body.pursae-modern .wc-order-totals-items, body.pursae-modern .wc-order-data-row { background: var(--pm-bg-2); border-color: var(--pm-border); }

@@ -187,7 +187,7 @@ func (s *Server) gontactList(c *gin.Context) {
 	names := map[int64]string{}
 	for _, f := range forms {
 		row := gfListRow{ID: f.ID, Title: f.Title, Shortcode: f.Shortcode(), CanEdit: u.Can("publish_pages", nil),
-			Date: f.Date.In(s.loc()).Format("2006/01/02 \\a\\t 3:04 pm"), ISODate: f.Date.Format("2006-01-02T15:04:05Z07:00")}
+			Date: f.Date.In(s.loc()).Format("2006/01/02 at 3:04 pm"), ISODate: f.Date.Format("2006-01-02T15:04:05Z07:00")}
 		row.Date = f.Date.In(s.loc()).Format("2006/01/02") + " at " + f.Date.In(s.loc()).Format("3:04 pm")
 		if n, ok := names[f.AuthorID]; ok {
 			row.Author = n
