@@ -1175,3 +1175,72 @@ body.pursae-modern #order_data h2 { font-size: 20px; font-weight: 600; }
 body.pursae-modern #order_data .order_data_column h3 { font-size: 14px; font-weight: 600; }
 body.pursae-modern .woocommerce_order_items_wrapper table.woocommerce_order_items thead th { background: var(--pm-bg-2); color: var(--pm-faint); font-size: 11.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--pm-border); }
 body.pursae-modern .wc-order-totals-items, body.pursae-modern .wc-order-data-row { background: var(--pm-bg-2); border-color: var(--pm-border); }
+
+/* ===================================================================== Pursae Commerce › Reports (legacy) */
+body.pursae-modern .woocommerce-reports-wide .postbox,
+body.pursae-modern .woocommerce-reports-wrap .postbox { border: 1px solid var(--pm-border); }
+body.pursae-modern .woocommerce-reports-wide .postbox .stats_range,
+body.pursae-modern .woocommerce-reports-wrap .postbox .stats_range { background: var(--pm-bg-2); border-bottom: 1px solid var(--pm-border); }
+body.pursae-modern .stats_range ul li a { padding: 10px 14px; color: var(--pm-muted); border-right: 1px solid var(--pm-border); }
+body.pursae-modern .stats_range ul li.active { background: var(--pm-bg); box-shadow: inset 0 -2px 0 var(--pm-primary); }
+body.pursae-modern .stats_range ul li.active a { color: var(--pm-text); font-weight: 600; }
+body.pursae-modern .stats_range ul li.custom { padding: 6px 12px; }
+body.pursae-modern .stats_range ul li.custom input[type=date],
+body.pursae-modern .stats_range ul li.custom input[type=text] { min-height: 30px; height: 30px; }
+body.pursae-modern .chart-legend { border-top: 0 !important; }
+body.pursae-modern .chart-legend li {
+	padding: 14px 16px !important; margin: 0 !important; background: var(--pm-bg) !important; color: var(--pm-faint) !important;
+	border-right: 0 !important; border-left: 3px solid; border-bottom: 1px solid var(--pm-row) !important; box-shadow: none !important; font-size: 12.5px;
+}
+body.pursae-modern .chart-legend li strong { display: block; font-size: 22px !important; font-weight: 500 !important; color: var(--pm-text); line-height: 1.2; margin-bottom: 2px; }
+body.pursae-modern .chart-legend li strong .woocommerce-Price-currencySymbol { font-size: .7em; color: var(--pm-muted); }
+body.pursae-modern .chart-legend li:hover { background: var(--pm-bg-2) !important; }
+body.pursae-modern .chart-sidebar, body.pursae-modern .woocommerce-reports-wide .postbox .chart-with-sidebar .chart-sidebar { border-right: 1px solid var(--pm-border); }
+
+/* Commerce › Store themes */
+body.pursae-modern .goo-theme-card { border-radius: 0; border-color: var(--pm-border); }
+body.pursae-modern .goo-theme-card.is-active { border-color: var(--pm-primary); box-shadow: 0 0 0 1px var(--pm-primary); }
+
+/* ===================================================================== plugin screens: shared fixes from the A–Z audit */
+/* page title icons in Pursae blue */
+body.pursae-modern .wrap h1 > .dashicons,
+body.pursae-modern .wrap h1 .dashicons-before:before,
+body.pursae-modern .wrap .wp-heading-inline > .dashicons { color: var(--pm-primary); }
+/* plugin cards and tiles: square, hairline */
+body.pursae-modern #wpbody-content :is(.asg-card, .gc-card, .gk-card, .gk-theme, .gk-service, .px-card, .seogo-module, .wpms-mailer-tile, .wpms-section, .pf-admin-card, .hg-cm, .hg-empty, .bmgr-cats, .bmgr-cat, .acf-tab, .health-check-accordion, .health-check-accordion-heading, .manage-menus, .accordion-container, .menu-edit, .contact-form-editor-panel) {
+	border-radius: 0 !important; border-color: var(--pm-border) !important; box-shadow: none;
+}
+body.pursae-modern #wpbody-content :is(.asg-card, .gc-card, .gk-card, .px-card, .seogo-module, .pf-admin-card, .hg-cm) { background: var(--pm-bg); }
+/* selected / active variants */
+body.pursae-modern #wpbody-content :is(.gk-theme.active, .seogo-module.is-active, .wpms-mailer-tile.is-selected, .acf-tab.is-active) {
+	border-color: var(--pm-primary) !important; box-shadow: 0 0 0 1px var(--pm-primary) !important;
+}
+body.pursae-modern .seogo-module.is-active { box-shadow: inset 0 3px 0 var(--pm-primary) !important; }
+/* pills and badges */
+body.pursae-modern #wpbody-content :is(.pf-admin-pill, .pf-admin-badge, .asg-pill, .gc-badge, .gk-badge, .mtnc-state) {
+	border-radius: 0 !important; background: var(--pm-bg-2) !important; border: 1px solid var(--pm-border) !important;
+	color: var(--pm-muted) !important; font-size: 12px; font-weight: 500;
+}
+body.pursae-modern .pf-admin-badge--category { color: var(--pm-primary-hover) !important; background: var(--pm-primary-50) !important; border-color: transparent !important; }
+body.pursae-modern .gc-badge.warn { background: #FFF4E2 !important; color: #8A5300 !important; border-color: #F4D9A8 !important; }
+body.pursae-modern .gk-badge { background: var(--pm-primary) !important; color: #fff !important; border-color: var(--pm-primary) !important; }
+/* status colours mapped to the theme palette */
+body.pursae-modern #wpbody-content .dashicons-yes-alt, body.pursae-modern .gk-ok, body.pursae-modern .seogo-module-status { color: var(--pm-ok); }
+body.pursae-modern #wpbody-content .dashicons-warning { color: var(--pm-bad); }
+body.pursae-modern .woocommerce-summary__item-delta { border: 0 !important; background: transparent !important; font-family: var(--pm-mono); font-size: 12px; padding: 0 !important; }
+body.pursae-modern .woocommerce-summary__item-delta.is-good-trend { color: var(--pm-ok) !important; }
+body.pursae-modern .woocommerce-summary__item-delta.is-bad-trend { color: var(--pm-bad) !important; }
+/* consent log bars (Cookie) in theme colours */
+body.pursae-modern .gooike span.a, body.pursae-modern #wpbody-content span.a[style] { background: var(--pm-ok); }
+/* Appearance › Themes */
+body.pursae-modern .theme-browser .theme { border: 1px solid var(--pm-border); border-radius: 0; box-shadow: none; }
+body.pursae-modern .theme-browser .theme:hover, body.pursae-modern .theme-browser .theme:focus-within { border-color: var(--pm-border-2); }
+body.pursae-modern .theme-browser .theme .theme-name { background: var(--pm-bg); box-shadow: none; border-top: 1px solid var(--pm-border); font-weight: 500; }
+body.pursae-modern .theme-browser .theme.active .theme-name { background: var(--pm-chrome); color: #fff; border-top-color: var(--pm-chrome); }
+body.pursae-modern .theme-browser .theme.add-new-theme a:after, body.pursae-modern .theme-browser .theme.add-new-theme span:after { border-radius: 0; }
+body.pursae-modern .theme-browser .theme.add-new-theme { border-style: dashed; border-color: var(--pm-border-2); background: transparent; }
+/* misc */
+body.pursae-modern #wpbody-content iframe { border-radius: 0 !important; }
+body.pursae-modern pre.hg-gql-result { background: var(--pm-chrome); color: #E6E7EA; border: 0; }
+body.pursae-modern .goo-chart .goo-bar { fill: var(--pm-primary); }
+body.pursae-modern .goo-chart .goo-bar:hover { fill: var(--pm-primary-hover); }
