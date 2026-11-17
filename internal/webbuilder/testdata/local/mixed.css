@@ -1,0 +1,13 @@
+.e-12:not(#_):not(#_){content:"→";font-family:'Inter Tight', system-ui, sans-serif;margin:0;margin-top:4px}
+.e-12:not(#_):not(#_):hover{background-color:rgb(15 23 42 / .9);color:#fff !important}
+.e-12:not(#_):not(#_):active{transform:translateY(1px) scale(.98)}
+.e-n1abc:not(#_):not(#_){--card-gap:12px;background:url("/wp-content/uploads/a b.png") center / cover no-repeat;width:calc(100% - 24px)}
+.e-n1abc:not(#_):not(#_):focus-visible{outline:2px solid var(--brand, #2271b1)}
+@media (max-width:991px){
+.e-12:not(#_):not(#_):hover{color:red}
+.e-3:not(#_):not(#_){gap:1.5rem 2rem;grid-template-columns:repeat(auto-fill, minmax(min(100%, 16rem), 1fr))}
+}
+@media (max-width:575px){
+.e-3:not(#_):not(#_){display:none}
+.e-n1abc:not(#_):not(#_){font-size:clamp(1rem, 2vw + .5rem, 2rem);margin:0 auto}
+}

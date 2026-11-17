@@ -392,6 +392,17 @@ export interface Boot {
    * canvas page, or when the theme draws no parts.
    */
   codeParts: CodeParts | null
+  /**
+   * Local-style breakpoints (max-width px) of the design kits the page's code sections and its
+   * code parts use, by kit slug; a section without a kit uses DEFAULT_BREAKPOINTS.
+   */
+  kitBreakpoints?: Record<string, Breakpoints>
+}
+
+/** Boot.kitBreakpoints values: tablet and mobile max-width thresholds in px. */
+export interface Breakpoints {
+  tablet: number
+  mobile: number
 }
 
 /** Boot.codeParts. */
