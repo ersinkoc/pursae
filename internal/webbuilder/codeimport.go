@@ -42,6 +42,8 @@ type CodePart struct {
 	Name string `json:"name"`
 	HTML string `json:"html"`
 	Wrap string `json:"wrap,omitempty"`
+	// Binds are the part's content bindings (content.binds, codebind.go) a site import made.
+	Binds string `json:"binds,omitempty"`
 }
 
 // CodeImport is the result of ConvertCode.

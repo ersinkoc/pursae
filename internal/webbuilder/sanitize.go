@@ -513,7 +513,9 @@ func (s *treeSanitizer) attr(el string, isSVG bool, a html.Attribute) (string, b
 	case strings.HasPrefix(lkey, "aria-"):
 		return val, ariaSet[lkey]
 	case strings.HasPrefix(lkey, "data-"):
-		return val, dataWBRE.MatchString(lkey) && len(val) <= 256
+		// AttrMeta is the code bindings' own (they are compiled after sanitizing): an author's
+		// markup never reads a post's raw meta.
+		return val, dataWBRE.MatchString(lkey) && lkey != AttrMeta && len(val) <= 256
 	}
 	if isSVG {
 		allowed := svgAttrSet[key] || (el == "svg" && elementAttrs["svg"][key])

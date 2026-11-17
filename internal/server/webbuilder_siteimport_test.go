@@ -93,15 +93,16 @@ func TestMCPImportSite(t *testing.T) {
 		return resp.StatusCode, string(b)
 	}
 	for _, x := range []struct{ path, on, off string }{
-		{"/", `aria-current="page" class="nav on" href="/">Home`, `class="nav off" href="/iletisim/">Contact`},
-		{"/iletisim/", `aria-current="page" class="nav on" href="/iletisim/">Contact`, `class="nav off" href="/">Home`},
-		{"/hizmet/1/", `class="nav on" aria-controls="menu-services">Services`, `class="nav off" href="/">Home`},
+		{"/", `aria-current="page" class="nav on"[^>]*href="[^"]*/">Home`, `class="nav off"[^>]*href="[^"]*/iletisim/">Contact`},
+		{"/iletisim/", `aria-current="page" class="nav on"[^>]*href="[^"]*/iletisim/">Contact`, `class="nav off"[^>]*href="[^"]*/">Home`},
+		{"/hizmet/1/", `class="nav on" aria-controls="menu-services"[^>]*>Services`, `class="nav off"[^>]*href="[^"]*/">Home`},
 	} {
 		code, html := fetch(x.path)
 		if code != 200 {
 			t.Fatalf("%s: %d", x.path, code)
 		}
-		if !strings.Contains(html, x.on) || !strings.Contains(html, x.off) {
+		// The menu is bound to a Pursae menu (menus defaults on): binding attributes and the items' URLs.
+		if !regexpFind(x.on, html) || !regexpFind(x.off, html) {
 			t.Errorf("%s: active link not marked: %s", x.path, wbSnippet(html, "<nav>"))
 		}
 		// One shell around header, main and footer; skip link before the header, to-top after the footer.

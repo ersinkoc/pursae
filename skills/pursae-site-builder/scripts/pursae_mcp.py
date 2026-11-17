@@ -254,12 +254,17 @@ def kit_upload(c, rest):
 
 def import_site(c, rest):
     if not rest:
-        die("usage: import-site <folder> kit=<kit> [status=… site_name=… front_page=false]")
+        die("usage: import-site <folder> kit=<kit> [status=… site_name=… front_page=false menus=false collections=true|hizmet,haber]")
     root, args = rest[0], {}
     for kv in rest[1:]:
         if "=" in kv:
             k, v = kv.split("=", 1)
-            args[k] = (v == "true") if k == "front_page" else v
+            if k in ("front_page", "menus", "templates"):
+                args[k] = v == "true"
+            elif k == "collections":
+                args[k] = (v == "true") if v in ("true", "false") else [x for x in v.split(",") if x]
+            else:
+                args[k] = v
     if not args.get("kit"):
         die("import-site needs kit=<the kit the folder was uploaded as>")
     pages = []

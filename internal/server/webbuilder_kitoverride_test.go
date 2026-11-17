@@ -28,7 +28,8 @@ func TestWBKitOverride(t *testing.T) {
 	style := map[string]any{"palette": "light", "align": "left", "padding": 0, "titleSize": 40, "hideOn": []any{}}
 	head := `<link rel="stylesheet" href="/wp-content/uploads/web-builder/kits/ovkit/css/site.css">`
 	sec := map[string]any{"id": "c1", "kind": "code", "name": "Hero", "hidden": false, "items": []any{}, "style": style,
-		"content": map[string]any{"html": `<section class="rounded-2xl" data-wbc="1"><h1 data-wbc="2">Hi</h1></section>`, "head": head, "kit": "ovkit"}}
+		"content": map[string]any{"html": `<section class="rounded-2xl" data-wbc="1"><h1 data-wbc="2">Hi</h1></section>`, "head": head, "kit": "ovkit",
+			"binds": `{"2":{"kind":"field","field":"title"}}`}} // a bound page: filled element by element
 	doc := map[string]any{"site": map[string]any{"brand": "#2271b1", "fontPair": "modern", "corners": "soft"}, "sections": []any{sec}}
 	body := wbrPublishBody(doc, map[string]any{}, 0, "publish", nil)
 	body["serverRender"] = true
@@ -45,6 +46,9 @@ func TestWBKitOverride(t *testing.T) {
 		return string(b)
 	}
 	before := front()
+	if strings.Contains(before, ">Hi</h1>") || !strings.Contains(before, "<h1") {
+		t.Fatalf("the bound title is not filled: %.1500s", before)
+	}
 	if strings.Contains(before, "data-wb-kit-override") {
 		t.Fatalf("an override without edits: %.1500s", before)
 	}

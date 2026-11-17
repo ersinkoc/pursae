@@ -11,6 +11,7 @@ import type { DocState } from '@/builder/types'
 import { ElementsCanvas } from './ElementsCanvas'
 import { ElementsNav } from './ElementsNav'
 import { StyleTab, styleTitle } from './StylePanel'
+import { withBindPanel } from './BindPanel'
 import { ContentTab } from './ContentPanel'
 import { frameGuard } from './guard'
 
@@ -18,5 +19,5 @@ import { frameGuard } from './guard'
 export const handlesDoc = (doc: DocState) => doc.sections.length > 0 && doc.sections.every((s) => s.kind === 'code')
 
 export function installElements() {
-  setElementsSeam({ handles: handlesDoc, Canvas: ElementsCanvas, Nav: ElementsNav, Tab: StyleTab, Content: ContentTab, title: styleTitle, guard: frameGuard })
+  setElementsSeam({ handles: handlesDoc, Canvas: ElementsCanvas, Nav: ElementsNav, Tab: withBindPanel(StyleTab), Content: ContentTab, title: styleTitle, guard: frameGuard })
 }

@@ -45,6 +45,13 @@
 {{end}}{{range $f := .Footers}}<tr><td>{{$f.Label}}</td><td>{{$f.Pages}}</td><td>{{$f.Active}}</td><td><code>{{$f.Examples}}</code></td></tr>
 {{end}}{{if and (not .Headers) (not .Footers)}}<tr><td colspan="4">No separate header or footer was found.</td></tr>{{end}}</tbody></table>
 
+<h3>Content</h3>
+{{if .Menu}}<p>Header navigation as a Pursae menu: {{.Menu}}</p>{{else}}<p>The header's navigation stays markup (no list that a menu reproduces exactly).</p>{{end}}
+{{if .Folders}}<table class="wp-list-table widefat fixed striped" style="max-width:900px" id="wb-import-folders"><thead><tr><th>Folder</th><th>Pages</th><th>Single templates</th><th>Lists bound as loops</th></tr></thead><tbody>
+{{range .Folders}}<tr><td><code>{{.Name}}/</code></td><td>{{.Pages}}</td><td>{{if .Templates}}{{.Templates}} ({{.Grouped}} pages){{else}}&mdash;{{end}}</td><td>{{range .Lists}}<code>{{.}}</code> {{else}}&mdash;{{end}}</td></tr>
+{{end}}</tbody></table>{{end}}
+{{if .BindNotes}}<details><summary>Binding notes</summary><ul style="list-style:disc;margin-left:20px">{{range .BindNotes}}<li>{{.}}</li>{{end}}</ul></details>{{end}}
+
 {{if .Warnings}}<div class="notice notice-warning inline"><p><strong>Warnings</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Warnings}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
 {{if .Handlers}}<div class="notice notice-warning inline"><p><strong>Inline event handlers</strong></p><p>The site's Content Security Policy blocks these; the design needs addEventListener instead.</p><ul style="list-style:disc;margin-left:20px">{{range .Handlers}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
 {{if .Missing}}<div class="notice notice-error inline"><p><strong>Missing files</strong></p><p>The pages refer to files that are not in the zip:</p><ul style="list-style:disc;margin-left:20px">{{range .Missing}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
@@ -67,6 +74,12 @@
 <tr><th scope="row">Header and footer</th>
 <td><label for="wb-import-split"><input type="checkbox" name="templates" id="wb-import-split" value="1"{{if .Split}} checked{{end}} /> Split the header and footer into Theme Builder templates</label>
 <p class="description">The shared header and footer become templates that every page uses. Without this each page keeps its own copy.</p></td></tr>
+<tr><th scope="row">Menu</th>
+<td><label for="wb-import-menus"><input type="checkbox" name="menus" id="wb-import-menus" value="1"{{if .Menus}} checked{{end}} /> Create a Pursae menu from the header's navigation</label>
+<p class="description">The menu is assigned to the primary location and fills the design's list with the design's own markup; add, rename and reorder items in Appearance › Menus. Only made when the menu reproduces the list exactly.</p></td></tr>
+{{if .A.Folders}}{{$col := .Collections}}<tr><th scope="row">Collections</th>
+<td><fieldset>{{range .A.Folders}}<label><input type="checkbox" name="collection" value="{{.Name}}"{{if index $col .Name}} checked{{end}} /> <code>{{.Name}}/</code> ({{.Pages}} pages{{if .Templates}}; {{.Templates}} single template{{if gt .Templates 1}}s{{end}}{{end}})</label><br />{{end}}</fieldset>
+<p class="description">The pages of a ticked folder that share one layout become page content (title, content, custom fields) under one Theme Builder single template, at the same addresses; lists of those pages on other pages become loops. Pages that do not fit stay pages.</p></td></tr>{{end}}
 <tr><th scope="row">Front page</th>
 <td><label for="wb-import-front"><input type="checkbox" name="front" id="wb-import-front" value="1"{{if .Front}} checked{{end}}{{if not .A.HasFront}} disabled{{end}} /> Use index.html as the front page</label>
 {{if not .A.HasFront}}<p class="description">The site has no index.html at its top.</p>{{end}}</td></tr>
@@ -93,6 +106,7 @@
 <table class="wp-list-table widefat fixed striped" style="max-width:700px"><thead><tr><th>Type</th><th>Pages</th><th></th></tr></thead><tbody>
 {{range .Templates}}<tr><td>{{.Type}}</td><td>{{if .Pages}}{{.Pages}}{{else}}&mdash;{{end}}</td><td><a href="/wp-admin/post?post={{.ID}}&amp;action=web-builder">Edit</a></td></tr>
 {{end}}</tbody></table>{{end}}
+{{if .Bindings}}<h3>Content</h3><ul style="list-style:disc;margin-left:20px" id="wb-import-bindings">{{range .Bindings}}<li>{{.}}</li>{{end}}</ul>{{end}}
 {{if .Warnings}}<div class="notice notice-warning inline"><p><strong>Warnings</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Warnings}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
 {{if .Missing}}<div class="notice notice-error inline"><p><strong>Missing files</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Missing}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
 {{if .Unmapped}}<div class="notice notice-info inline"><p><strong>Links to pages that are not in the zip</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Unmapped}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}

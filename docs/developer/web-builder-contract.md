@@ -90,7 +90,7 @@ ever part of it.**
 | `site` | SiteBoot | site identity, menus, post types and taxonomies (§11.7); always present |
 | `dynamic` | DynContext | sample data for dynamic widgets (§11.6): the template's preview object, else the post itself |
 | `kitBreakpoints` | `{[kit]: {tablet, mobile}}` | local-style breakpoints (max-width px) of every design kit the page's code sections and its `codeParts` name (`content.kit`); a section without a kit uses `{tablet: 1023, mobile: 639}`. The element editor's Style panel prints the frame's local styles with them |
-| `codeParts` | CodeParts \| null | the header and footer templates Hello Pursae draws around this page, when they are made of code sections: `{header, footer}`, each `null` or `{id, title, editUrl, sections}` (`sections`: the template's published visible sections, every one `kind: "code"`, as stored). The element editor draws them locked in the page's frame. `null` for a template, a canvas page, a page without code sections, or another theme |
+| `codeParts` | CodeParts \| null | the header and footer templates Hello Pursae draws around this page, when they are made of code sections: `{header, footer}`, each `null` or `{id, title, editUrl, sections}` (`sections`: the template's published visible sections, every one `kind: "code"`, as stored; without `edit_theme_options` their `content.binds` is left out, since a bound form's recipients and redirects are there). The element editor draws them locked in the page's frame. `null` for a template, a canvas page, a page without code sections, or another theme |
 
 `ai` (BootAi):
 
@@ -305,13 +305,23 @@ with that id must be a `form` section of a published builder page), never from t
 | `phone` | ≤ 50 |
 | `message` | ≤ 5000 |
 | `date`, `choice` | ≤ 200 |
+| `company`, `subject` | ≤ 200 (a design's form bound to the endpoint, below) |
+| `field_<name>` | `^field_[a-z0-9_]{1,40}$`, ≤ 200 (≤ 5000 for a textarea); a bound design form only |
 | `wb_hp` | honeypot; must be empty (non-empty → silently "sent", nothing mailed) |
 | `wb_t` | ms between page load and submit, set by the runtime; `< 2000` → treated as spam |
 | `cf-turnstile-response`, `g-recaptcha-response` | checked when Pursae Contact Form has a captcha configured |
 
+A code section's `<form>` bound to the endpoint (`content.binds` kind `form`, §8.1) posts to
+`forms/{id}/{section id}-w{data-wbc}`. Its schema is read from the stored markup on each submit
+(`webbuilder.CodeFormSchema`): every named input, select and textarea (not buttons, files, hidden or
+password inputs) under its own input name, mapped to a field name above by the binding's `fields`
+(default: the name itself when it is one of them, else `field_<name>`), required by `required` /
+`aria-required="true"` or the binding's `required` list, a select's value one of its options; values
+are stored and mailed under the field names with the inputs' labels.
+
 Body is `application/x-www-form-urlencoded` or `multipart/form-data` (no files), at most 64 KiB.
 Per-IP rate limit → **429** `wb_rate_limited` with `Retry-After`. Invalid → **422**
-`wb_form_invalid`, `data.fields: {field: "required"|"invalid"|"too_long"}`. Mail goes through the
+`wb_form_invalid`, `data.fields: {field: "required"|"invalid"|"too_long"}` (a code form's fields by the design's input names). Mail goes through the
 core mailer to the form's recipients: its own `formTo` / `formCc` section content keys, else Settings ›
 Web Builder (Form recipients, Form copies), else the admin email. Every valid submission is also stored
 (`web_builder_form_submissions`, listed on Settings › Web Builder unless switched off), so a message
@@ -510,8 +520,9 @@ Two ways turn an HTML page into free-form (`custom`) sections:
   `web_builder_import_finish`.
 - **Code** — the design kept as its own markup in `code` sections (privileged, top-level only):
   `content.html`, `content.head`, `content.wrap`, `content.kit`, and the front end's `content.lang`,
-  `content.htmlAttrs`, `content.bodyAttrs` (the design's document attributes) and `content.active` (a
-  site import's active-link rule on a header or footer template). The renderer draws
+  `content.htmlAttrs`, `content.bodyAttrs` (the design's document attributes), `content.active` (a
+  site import's active-link rule on a header or footer template) and `content.binds` (content
+  bindings, §8.1). The renderer draws
   `<div data-wb-code="{id}"></div>`; the publish route puts the markup in its place after sanitizing
   (`webbuilder.FillCode`); the front end prints a shell the header, page and footer share once.
   A code section may carry **`local`** (the element editor's Style panel): local styles per element,
@@ -770,6 +781,31 @@ section id:
   (`wb_design_kits[slug].breakpoints`, suggested from the kit's stylesheets on commit; default
   1023 / 639). A doc without local styles publishes exactly what it published before. The editor's
   TypeScript generator prints the same bytes (shared fixtures `internal/webbuilder/testdata/local`).
+
+**Content bindings** (`content.binds`, code sections only; `internal/webbuilder/codebind.go`,
+`builder/host/elements/bind.ts`; [Binding to content](web-builder-code-sections.md#binding-to-content)).
+JSON `{"<data-wbc>": CodeBind}` (ids `^[0-9]{1,9}$`, at most 200):
+
+| Field | Kinds | Rule |
+|-------|-------|------|
+| `kind` | all | `menu submenu loop field form` |
+| `location` / `menu` | menu | a menu location (`^[A-Za-z0-9_-]{1,64}$`) or a menu id; one is required |
+| `items` | menu | `{"<menu item id>": "<data-wbc of its template>"}`, ≤ 200 |
+| `query` | loop | LoopSpec keys of §11.4 (`source` defaults to `query`) plus `parent` (children of that entry); ≤ 16 keys, values ≤ 400 characters |
+| `field` | field | `title excerpt content image url link date modified author terms custom pagination` |
+| `name` | field | custom: the field (`^[A-Za-z0-9_-]{1,64}$`, required); image: a URL field used without a featured image |
+| `attr`, `text` | field (custom) | `attr` `"" html url attrs`; `text` with `attrs`: the element's text from `name` too |
+| `format`, `tax`, `sep`, `links`, `words`, `size`, `srcset` | field | as DynSettings (§11.4): format `^[A-Za-z ,.:/-]{1,32}$`, tax a slug, sep ≤ 8 runes, words 5…100, size `thumbnail medium large full`; `links` terms as links; `srcset` image attachment attributes |
+| `fields` | form | `{"<input name>": "<FormFields name \| field_<name> \| ->"}`, input names `^[A-Za-z0-9_.\[\]-]{1,64}$`, ≤ 40 |
+| `required` | form | input names |
+| `done`, `error` | form | `data-wbc` of the design's success and error elements |
+| `title`, `to`, `cc`, `success`, `failure`, `redirect` | form | mail subject (≤ 200), recipients (≤ 1000), messages (≤ 500), redirect (≤ 2000) |
+
+A bad entry answers 422 `invalid_enum` at `/sections/i/content/binds`; entries the server cannot read
+are ignored on publish. Privileged like `content.html`. Publish: `FillCodeWith` →
+`CompileBinds` adds §11.5 placeholders to the bound elements (splicing the markup), loops and forms
+are keyed `{section id}-w{data-wbc}` (`BindKey`): `data-wb-loop` values, form `{section}` route
+parameters; the loop query and the form schema are read from the stored doc.
 
 **Kit overrides** (classes and variables of a design; `internal/webbuilder/kitoverride.go`,
 `internal/server/webbuilder_kitoverride.go`, `builder/host/elements/overrides.ts`, `kitstyle.ts`). Not
@@ -1172,6 +1208,17 @@ existing elements with `data-wb-*` attributes, so the sanitizer allowlist of §8
 | `data-wb-format`, `data-wb-size`, `data-wb-tax`, `data-wb-sep`, `data-wb-words`, `data-wb-field` | a slot element | `Item.dyn` values; the server re-validates them (§11.4 rules) |
 | `data-wb-search` | `<form method="get" action="<home>/">` | search form; one `<input type="search" name="s">` |
 | `data-wb-item="<item id>"` | a slot element of a Commerce or language-switcher widget | the cell whose `Item.dyn` the server reads from the **stored** doc (§11.12); an id the doc does not have gets the widget defaults |
+| `data-wb-text="<text slot>"` | any element (code bindings) | only the element's first direct text that is not blank takes the slot's value (escaped), its white space and other children stay |
+| `data-wb-menu-tree` | a `data-wb-menu-loc` list (code bindings) | top-level items only; the list may hold several `data-wb-loop-item` templates: an item takes the one whose value lists `k:<menu item id>`, else `parent` when it has sub-items, else `default`, else the first; `menu-<id>` as the location names a menu by id |
+| `data-wb-menu-sub` | an element inside such a template | repeats its own `data-wb-loop-item` templates per sub-item of the item (one level below a menu) |
+| `data-wb-raw` | a `post.title` / `post.content` / `post.image` slot element | content printed as stored when it is imported markup (starts with an element, no blocks, no password), image `src` and `alt` only (else `data-wb-field`'s URL) |
+| `data-wb-meta` | a `post.field*` / `post.image` slot element (code bindings only) | the field may be plain post meta of that name (not `_`-prefixed), not just a registered Pursae Custom Fields field; the snapshot sanitizer removes it from an author's markup, the bindings are compiled after sanitizing |
+
+In every loop or menu the blank text right after the first item template is written between two items
+(the design's own white space between cards); blank text between templates is dropped. A snapshot with
+code sections (`data-wb-code-page` or `<template data-wb-code-head>`) is compiled element by element:
+only elements carrying placeholders are parsed (in their parent's context), every other byte is printed
+as stored.
 
 The menu binding is **not** `data-wb-menu`: that name is the runtime's disclosure menu
 (`<details data-wb-menu>`, §5) and its feature detection.
@@ -1194,9 +1241,14 @@ Slots:
 | `site.logo` | attr | `img` attributes of `custom_logo` (`attachmentImage`) |
 | `site.year` | text | current year in the site time zone |
 | `menu.label` | text | menu item label |
-| `post.field` | text | Pursae Custom Fields value of the post named by `data-wb-field` (`[A-Za-z0-9_-]{1,64}`) |
+| `post.field` | text | Pursae Custom Fields value of the post named by `data-wb-field` (`[A-Za-z0-9_-]{1,64}`), a field some field group defines; with `data-wb-meta` (code bindings) also the post meta string of that name (not `_`-prefixed) |
 | `post.field-url` | attr | `href` (`src` on `<img>`) from a URL, link or image field named by `data-wb-field` |
 | `menu.url` | attr | `href`; the current item also gets `aria-current="page"` and class `is-current` |
+| `menu.link` | attr | `href` and `target` only (a code section's menu: the design's active-link rule marks the current item) |
+| `post.title-text` | text | the title as stored (no texturizing, no title filters) |
+| `post.term-names` | text | names of the post's terms of `data-wb-tax`, joined by `data-wb-sep` |
+| `post.field-html` | html | a custom field (with `data-wb-meta`, else the post meta value of that name) as HTML, sanitized like post content (`KsesPost`) |
+| `post.field-attrs` | attr | the attributes in SlotAttrs from the fields `<data-wb-field>_<attr>` (`_href`, `_src`, `_alt`, `_aria_current`, …) |
 | `post.title` | html | `theTitle` |
 | `post.url` | attr | `href` = permalink |
 | `post.content` | html | `theContent` (rendered only when the snapshot uses the slot) |
@@ -1221,7 +1273,7 @@ Slots:
 - `post.*` resolves to the nearest loop item, else the main post on a singular view, else empty.
 - **text** slots replace the element's content with `html.EscapeString(value)`; **html** slots
   only take HTML from the trusted core generators named above; **attr** slots write only
-  `href src srcset sizes width height alt datetime aria-current class`, URLs through the same
+  `href src srcset sizes width height alt datetime aria-current class target` (target `_blank _self _parent _top`), URLs through the same
   scheme check as §8.1, and keep the element's content.
 - An unknown slot renders empty. Values come from what `buildSiteView` already computed
   (`v.Posts`, `v.Pagination`, `v.Post`, `v.PostNav`, `v.Comments`, `v.Menus`, archive title,

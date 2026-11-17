@@ -99,7 +99,7 @@ func (s *Server) wbFormEnhance(c *gin.Context, d *store.WebBuilderDoc, h string)
 	}
 	h = s.wbFormRedirects(c, d, h)
 	h = s.wbFormCaptchas(c, h)
-	return s.wbFormNonces(c, h)
+	return s.wbCodeForms(s.wbFormNonces(c, h))
 }
 
 func (s *Server) wbFormRedirects(c *gin.Context, d *store.WebBuilderDoc, h string) string {

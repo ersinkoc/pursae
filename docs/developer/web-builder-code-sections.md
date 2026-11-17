@@ -25,7 +25,7 @@ stored (see [Limits](#limits)).
 | Piece | Where | What |
 |-------|-------|------|
 | Design kit | `uploads/web-builder/kits/<slug>/` | The design's files (CSS, JS, fonts, images) with their folder structure, so the design's relative references keep working. Option `wb_design_kits` lists kits: name, version, file count, size, and the https origins their scripts and stylesheets name. |
-| Code section | doc section `kind: "code"` | `content.html` — the part's markup; `content.head` — head markup it needs (stylesheets, preloads, head scripts, inline styles); `content.wrap` — the wrappers it sits in (opening tags, outermost first, one per line, e.g. `<main id="main">` then `<div class="aft">`); `content.kit`, `content.lang`, `content.body` (body class) for the editor; `content.htmlAttrs` / `content.bodyAttrs` — the design's other `<html>` attributes and its `<body>` attributes as written in an opening tag (`class="no-js" data-theme="dark"`), printed by the front end; `content.active` — on a header or footer template made by a site import, the rule that marks the current page's link ([Active links](#active-links)). Top-level only. |
+| Code section | doc section `kind: "code"` | `content.html` — the part's markup; `content.head` — head markup it needs (stylesheets, preloads, head scripts, inline styles); `content.wrap` — the wrappers it sits in (opening tags, outermost first, one per line, e.g. `<main id="main">` then `<div class="aft">`); `content.kit`, `content.lang`, `content.body` (body class) for the editor; `content.htmlAttrs` / `content.bodyAttrs` — the design's other `<html>` attributes and its `<body>` attributes as written in an opening tag (`class="no-js" data-theme="dark"`), printed by the front end; `content.active` — on a header or footer template made by a site import, the rule that marks the current page's link ([Active links](#active-links)); `content.binds` — the content bindings of its elements ([Binding to content](#binding-to-content)). Top-level only. |
 | Importer | `webbuilder.ConvertCode`, MCP `web_builder_import_html` with `method: "code"` | Splits an HTML document into code sections, gives every element a `data-wbc` id, points file references at the kit. No browser needed. |
 
 ## Publishing
@@ -207,7 +207,7 @@ folder: `pursae_mcp.py kit-upload <folder> <kit>` then
 
 ### Importing a site
 
-`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, site_name?}` imports a whole
+`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, menus?, collections?, site_name?}` imports a whole
 static site in one call (`internal/server/webbuilder_siteimport.go`, `webbuilder.ConvertSite`). Upload
 the folder's CSS, JS, fonts and images as the kit first (`web_builder_kit_upload`); the HTML files travel
 in `pages` (a kit holds no HTML, so nothing of the design is served as a page from uploads). Harness:
@@ -300,7 +300,11 @@ import without a command line or an agent (`internal/server/webbuilder_siteimpor
    of the CSS `@media` conditions (`webbuilder.SuggestBreakpoints`, listed only).
 3. **Options**: kit name and slug (an existing kit is replaced only after ticking a box), split the header
    and footer into templates (default on; off keeps them in every page, `layout: canvas`, MCP
-   `templates: false`), use `index.html` as the front page (default on), publish or import as drafts. Then
+   `templates: false`), use `index.html` as the front page (default on), make a Pursae menu of the header's
+   navigation (default on, MCP `menus`), the folders to import as collections (a checkbox per folder of two
+   pages or more, ticked when the analysis found that its pages reproduce under single templates; MCP
+   `collections`; the analysis's **Content** table lists the templates and the lists bound as loops, see
+   [Binding to content](#binding-to-content)), publish or import as drafts. Then
    **Import**: the staged assets are installed as the kit (the same stage + commit as the kit REST routes,
    `wbKitCommitStage`) and `mcpWBImportSite` runs, the very function behind `web_builder_import_site`. The
    request is synchronous (a 55-page site takes about two seconds; the server has no write timeout). The
@@ -419,7 +423,9 @@ of patches `0018-code-sections` / `0019-code-blocks`, made static by `0021-mixed
 **The canvas is one frame with the whole page**: the header template, the page's code sections and
 the footer template that Hello Pursae draws around the page on the site (`Boot.codeParts`, read on
 the server by `wbEditorCodeParts`; contract §2), in their shared wrappers, so fixed headers, sticky
-footers and the shared shell look as they do on the site. The header and footer are locked: hovering
+footers and the shared shell look as they do on the site (an editor without `edit_theme_options` gets
+their markup without their content bindings: a bound form's `to` / `cc` and redirects stay on the
+server). The header and footer are locked: hovering
 them shows **Edit header** / **Edit footer**, which opens that template in the editor. The device
 buttons set the frame's width — desktop is a fixed 1440 px page scaled to fit the panel, tablet
 768 px, mobile 390 px — so the design's own `@media` queries apply.
@@ -607,6 +613,143 @@ payload, write-back, neutralised toolbar attributes) and the mixed-page scenario
 `editor-xss.mjs` (two runs around a builder hero section: edit mode and Preview before the
 confirmation read nothing, under the report and the enforced policy, before and after an edit).
 
+## Binding to content
+
+An imported design need not stay a set of static pages: its navigation, its lists of posts, its
+repeated pages and its forms can be bound to what content editors manage in Pursae, while the markup
+and CSS stay the design's (`internal/webbuilder/codebind.go`, `sitebind.go`; server
+`webbuilder_slots.go`, `webbuilder_sitebind.go`, `webbuilder_codeforms.go`).
+
+### The model
+
+A binding names an element of a code section by its `data-wbc` id and is stored in the section's
+`content.binds` (JSON `{"<data-wbc>": CodeBind}`, contract §8.1); the markup is not touched. On publish
+`FillCodeWith` → `CompileBinds` turns the bindings into the dynamic engine's placeholder attributes
+(contract §11.5) on the bound elements only, splicing the source (every other byte stays), and the
+snapshot is filled per request like a Theme Builder template's (cached programs, `wb-loop` cache tag for
+loops, menu changes purge every page).
+
+| `kind` | On | What the site shows |
+|--------|----|---------------------|
+| `menu` | a list (`ul`, `ol`, a nav container) | one item per item of a Pursae menu: `location` (a theme location, Hello Pursae `primary` / `footer`) or `menu` (a menu id). Every element child of the list is an item **template**: an item uses the template it was imported from (`items`: menu item id → template `data-wbc`), else the first child holding a submenu when the item has sub-items (`parent`), else the first plain child. In the template the first `<a>` gets the item's URL and target (`menu.link`), the first element with text of its own (the link, else a button) its title, replacing only that text (`data-wb-text`: a chevron icon beside it stays). |
+| `submenu` | a list inside a menu item template | the item's sub-items, with the same template rules (one level). |
+| `loop` | a container | its first element child (the card template) once per post of `query` (`source` query by default; `postType`, `perPage` 1–24, `orderBy` date / modified / title / menu_order / comment_count / rand, `order`, `terms` `category:12,…`, `author`, `offset`, `parent` (children of an entry, for pages), `exclude: current`; `source: main` takes the request's own posts on an archive). The other children are the design's sample cards and are left out; the white space after the template separates the cards as in the design. |
+| `field` | any element (inside a loop's first card: that card's post; elsewhere the post a single template shows) | `title` (as stored, no texturizing), `excerpt` (`words`), `content` (imported markup is printed as stored; block content goes through the_content), `image` (the featured image's `src` and `alt` — `srcset: true` adds `srcset`, `sizes`, `width`, `height` of `size` —, else the URL field `name`), `url` (`href`), `link` (`href` and the title as its text), `date` / `modified` (`format`), `author`, `terms` (`tax`, `sep`; names as text, `links: true` term links), `custom` (`name`: a Pursae Custom Fields field, else the post meta value of that name — the compiled element carries `data-wb-meta`, which only bindings set (the snapshot sanitizer drops it from an author's markup, whose `post.field` slots read registered fields only, never other meta of the posts a loop shows); `attr` "" text, `html` sanitized like post content, `url` href / src, `attrs` the attributes from `<name>_href`, `<name>_src`, `<name>_alt`, … plus the text from `<name>` with `text: true`), `pagination` (the main loop's page links). An element with icons beside its text keeps them: only its own text is replaced. |
+| `form` | a `<form>` | posts to the form endpoint (below). |
+
+Editor: select an element and open **Advanced** in the inspector: **Content binding** binds it (the
+kinds the element can take: a list or container → Menu or Loop, a list inside a menu item → Submenu, an
+element of a loop's first card or of a template → Field, a `<form>` → Form) and shows what the site
+will list (the menu location's items, the loop query's posts). The frame keeps showing the design's
+own markup. MCP: `web_builder_bind {post_id, element | html_id, bind | null}` (publishes the page).
+
+### Active links with a bound menu
+
+The site import's active-link rule ([Active links](#active-links)) keeps working on a bound header: the
+generated items are the imported ones with the menu's URLs, so the rule finds them by `href`. A link the
+rule does not know (an item added in Appearance › Menus) that points at the requested page gets the
+look of its role's current item when that role marks links on the page they link to
+(`ApplyActive`). Pages of a group (below) are marked the same way in their template's own side menu
+(the template's first section carries a rule, applied to the main part).
+
+### Forms
+
+A bound `<form>` gets `action` = `/wp-json/web-builder/v2/forms/{post}/{section}-w{data-wbc}`,
+`method="post"`, `data-wb-form` (so it gets the nonce, the captcha widget and the redirect of builder
+forms, contract §3.5) and `data-wb-code-form`, plus the hidden `wb_t` and honeypot `wb_hp` inputs. Its
+schema is read from the stored markup on every submit (`CodeFormSchema`): every named `input`, `select`
+and `textarea` (not buttons, files, hidden or password inputs) is a field, mapped by `fields` (input
+name → `name email phone message date choice company subject` or `field_<name>`, `-` leaves it out;
+unmapped inputs map to themselves when they are one of those names, else to `field_<name>`), labelled
+by its `<label>`, required when it has `required` / `aria-required="true"` or is listed in `required`; a
+`select`'s value must be one of its options, a radio group's or checkbox's one of the `value`s its
+inputs declare (`on` without one). A refused submit answers 422 with `data.fields` keyed by the
+design's input names (`full-name`, not `field_full_name`), so the script marks those inputs
+`aria-invalid="true"`. Submissions are validated, stored and mailed like builder forms (Settings › Web
+Builder lists every field: the named ones, then each `field_<name>` by name, the message last; `to`,
+`cc`, `success`, `failure`, `redirect` override per form). The editor boot leaves the bindings of the
+header and footer parts out for users without `edit_theme_options`, since a form's recipients are there.
+
+Code pages load no builder runtime, so a small script (`wbCodeFormJS`) sends bound forms. The design's
+own submit handlers run first, so its validation shows its own errors. A handler that builds a
+`mailto:` link reads the address from a `data-*` attribute of the form (enerjiosgb: `data-mail`); while
+the submit is dispatched, reading such an address stops that handler there and counts as "the design
+accepted the form", so no mail program opens. After the handlers the form is sent with `fetch` when the
+design accepted it (it read the address, showed its success element or hid the form, or did not handle
+the submit at all and the browser's constraint validation passes); a field the design marked
+`aria-invalid="true"` keeps it from being sent. The answer shows the design's success element (`done`:
+its `data-wbc`; `hidden` attribute or `hidden` class removed, the form hidden the same way) or error
+element (`error`), else a status line after the form. Without JavaScript the form posts as a plain
+form and comes back with `?wb_form=sent`, where the script shows the success element.
+
+### Site import
+
+`web_builder_import_site` (and the admin's options) binds what a design shows to be content, and only
+where the bound markup reproduces the design: every plan is rendered with the planned content and
+compared with the design's markup (parsed, editor ids and binding attributes aside, white space and
+staggered `animation-delay` / `transition-delay` values normalized); what does not reproduce stays
+markup and is listed in the report's `bindings.notes`.
+
+- **Menu** (`menus`, default on): the first list inside a `nav` of the header template whose items all
+  have a label is made into the menu "Design navigation (<kit>)" (a page item for a link to an imported
+  page, else a custom link; `#` for a button that opens a panel), assigned to the `primary` location and
+  bound; a list inside an item whose items are links becomes its sub-items. A second list in the header
+  with the same items (a mobile menu) is bound to the same menu when it reproduces too. A second import
+  refills the menu; "Remove this import" deletes it.
+- **Collections** (`collections`: `true` or a list of folders; default none, the admin ticks the folders
+  that qualify): the pages of a folder (`hizmet/*.html`) are aligned element by element. Where they
+  differ: an attribute that a slot may write (href, src, srcset, alt, …), an element's own text, or —
+  where the structure differs — an element's whole content. Classes and state attributes are left to
+  an active-link rule (`ClusterParts` over the pages with every difference set to the first page's). The
+  varying `<h1>` is the **title** (other texts equal to it, a breadcrumb's last item, show the title
+  too), the largest region that differs on every page is the **content**, every other difference a
+  custom field `design_<n>` (`design_<n>_href`, `_src`, … for attributes) stored as post meta. A folder
+  qualifies when its pages share their sections, wrappers and head, have one varying `<h1>`, and besides
+  the title and the content at most two regions differ (≤ 20 % of a page). Pages whose side menus come
+  in a few versions (enerjiosgb's four service categories) are split by that region into variants of two
+  pages or more, one template each.
+
+  **URLs**: the pages stay **pages** under the folder's parent page, so `/hizmet/3/` is still
+  `/hizmet/3/` with no rewrite rule — the hierarchical page type is the simplest scheme that keeps every
+  imported URL (a custom post type would need its own rewrite slug per folder, a category would change
+  the permalinks). Each page keeps its id, SEO and menu items; it loses its builder doc and holds its
+  title, its content (the varying region's markup) and its fields; the Theme Builder **single-page**
+  template draws it (`include/singular/page/child_of/<folder parent>` for the largest variant, so a
+  page added under the folder later gets it, `include/singular/page/<id>` for the other variants'
+  pages; priority 10). A folder that does not qualify stays builder pages; the report says why.
+- **Listings**: a list on another page whose element children each link to a different page of a
+  collection folder (`haberler.html`'s news cards) becomes a loop over the folder's pages: query
+  `postType: page`, `parent` = the folder's parent page, `orderBy: menu_order asc`, `perPage` = the
+  number of cards, `offset`. The cards are aligned like pages: the link to the page is `url` (`link` when
+  it holds the title), a text equal to the page's `<h1>` is `title` (the pages' titles become their
+  `<h1>`), the longest other text (40+ characters) the `excerpt` (set on the page), a varying image the
+  `image` field (no featured image yet: its URL in the field `list<n>_<k>`), the rest custom fields
+  `list<n>_<k>`. The longest list sets the pages' `menu_order`; another list is bound when it shows a
+  window of that order (`offset`). A new page under the folder shows in the lists by its `menu_order`
+  (0 sorts first) with its title and link; its other fields are empty until they are filled.
+
+<h3 id="binding-limits">Limits</h3>
+
+- A menu item template is one element of the list. A design whose dropdown panel lives outside the
+  list (enerjiosgb's "Kurumsal" and "Hizmetlerimiz" mega panels sit after the nav) keeps that panel as
+  markup: the item's button is a menu item (`#`), its panel is not filled from sub-items. One submenu
+  level; items added in Appearance › Menus use the first plain item's markup (or the first item with a
+  submenu when they have sub-items).
+- Loops repeat their first child; per-card differences that are not content (a staggered
+  `animation-delay` in a `style` attribute) take the first card's value.
+- A group's custom fields are per page values the import found (prev / next links, a category label);
+  they are edited as post meta (Pursae Custom Fields shows them when it has a field of that name). A
+  region that differs in structure is kept as the design wrote it in the protected meta
+  `_wb_html_<name>` (printed as stored: only trusted code writes protected meta); a public field
+  `<name>` an editor sets instead is sanitized like post content.
+  Images of a group are URL fields, not featured images.
+- Collections are detected among the pages of one folder; pages in the site's root are not grouped.
+- The bound form script stops a design's `mailto:` handler only when it reads the address from a
+  `data-*` attribute of the form; a design whose script hard-codes the address opens the mail program too
+  (the submission is still stored).
+- The editor shows the design's own markup in the frame (the bound loop's sample cards, the menu's
+  imported items); the binding panel lists what the site will show.
+
 ## Styling
 
 The element editor styles any element of a code page without touching the design's markup or CSS
@@ -786,5 +929,6 @@ fixtures `internal/webbuilder/testdata/override`).
   served under a base path, a dashboard reading a backend) is not a static site; it can be imported, but
   only the empty shell is a code section to edit.
 - A site import needs every page in one call (at most 500); the active-link rule matches request paths,
-  so it needs pretty permalinks. Forms keep the design's own handling (enerjiosgb's opens `mailto:`);
-  nothing on the site receives them yet.
+  so it needs pretty permalinks. A design's form keeps its own handling (enerjiosgb's opens `mailto:`)
+  until it is bound to the form endpoint ([Binding to content](#binding-to-content)).
+- Bindings: see [Binding to content › Limits](#binding-limits).

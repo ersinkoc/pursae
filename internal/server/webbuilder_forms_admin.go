@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -46,11 +47,27 @@ func (s *Server) wbLoadSubmissions(c *gin.Context, d *wbSettingsData) {
 
 func wbSubmissionRowOf(x store.WebBuilderSubmission) wbSubmissionRow {
 	row := wbSubmissionRow{ID: x.ID, Date: x.CreatedAt.Format(time.DateTime), Form: x.FormTitle, PageURL: x.PageURL, Mailed: x.Mailed, IP: x.IP}
-	for _, name := range []string{"name", "email", "phone", "date", "choice", "message"} {
-		if v := x.Fields[name]; v != "" {
-			row.Fields = append(row.Fields, wbSubmissionField{Name: name, Value: v})
+	add := func(label, key string) {
+		if v := x.Fields[key]; v != "" {
+			row.Fields = append(row.Fields, wbSubmissionField{Name: label, Value: v})
 		}
 	}
+	// The named fields, then a code form's own (field_<name>, by name), the message last. The
+	// template (html/template) escapes every name and value.
+	for _, name := range []string{"name", "email", "phone", "company", "subject", "date", "choice"} {
+		add(name, name)
+	}
+	var extra []string
+	for k := range x.Fields {
+		if strings.HasPrefix(k, "field_") {
+			extra = append(extra, k)
+		}
+	}
+	sort.Strings(extra)
+	for _, k := range extra {
+		add(strings.TrimPrefix(k, "field_"), k)
+	}
+	add("message", "message")
 	return row
 }
 
