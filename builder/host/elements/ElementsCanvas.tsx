@@ -248,7 +248,7 @@ export function ElementsCanvas() {
   }, [b.scrollReq]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------- text editing ----------
-  const beginText = useCallback((id: string) => {
+  const beginText = useCallback((id: string, point?: { x: number; y: number }) => {
     const d = fdoc()
     const { page, mode } = cur.current
     if (!d || mode === 'preview' || !textEditable(page, id)) return false
@@ -260,7 +260,7 @@ export function ElementsCanvas() {
     const drawn = mode === 'live' && norm(at.tree.src.slice(at.el.openEnd, at.el.closeStart)) !== norm(el.innerHTML)
     setMenu(null)
     selectEl(cur.current.b, id, page)
-    const session = startTextEdit(el, drawn, (html, text) => {
+    const session = startTextEdit(el, drawn, point ?? null, (html, text) => {
       setEditing(null)
       setElState({ editing: null })
       const { b, page } = cur.current
@@ -408,7 +408,9 @@ export function ElementsCanvas() {
         const el = tg.closest<HTMLElement>('[data-wbc]')
         if (!el) return
         e.preventDefault() // no text selection or native drag while picking / dragging elements
-        const id = el.getAttribute('data-wbc')!
+        // Pressing inside the selected element drags the selection; elsewhere the element under the pointer.
+        const selEl = st.sel ? frameEl(d, st.sel) : null
+        const id = selEl && selEl.contains(el) ? st.sel! : el.getAttribute('data-wbc')!
         const at = locate(cur.current.page, id)
         if (at && movable(at.el)) drag.current = { id, x0: e.clientX, y0: e.clientY, on: false, drop: null, lastX: e.clientX, lastY: e.clientY }
       },
@@ -457,7 +459,7 @@ export function ElementsCanvas() {
         const el = (e.target as Element).closest<HTMLElement>('[data-wbc]')
         if (!el || isLocked(el) || cur.current.st.editing) return
         e.preventDefault()
-        beginText(el.getAttribute('data-wbc')!)
+        beginText(el.getAttribute('data-wbc')!, { x: e.clientX, y: e.clientY })
       },
       true,
     )
@@ -468,7 +470,10 @@ export function ElementsCanvas() {
         const el = (e.target as Element).closest<HTMLElement>('[data-wbc]')
         if (!el || isLocked(el) || cur.current.st.editing) return
         e.preventDefault()
-        const id = el.getAttribute('data-wbc')!
+        // On the selected element (or inside it) the menu is the selection's.
+        const sel = cur.current.st.sel
+        const selEl = sel ? frameEl(d, sel) : null
+        const id = selEl && selEl.contains(el) ? sel! : el.getAttribute('data-wbc')!
         selectEl(cur.current.b, id, cur.current.page)
         const bx = box({ left: e.clientX, top: e.clientY, width: 0, height: 0 })
         if (bx) setMenu({ x: bx.x, y: bx.y, id })
@@ -816,7 +821,7 @@ function ContextMenu({
   shown: ReadonlySet<string>
   toggleHidden: (id: string) => void
   toggleShown: (id: string) => void
-  beginText: (id: string) => boolean
+  beginText: (id: string, at?: { x: number; y: number }) => boolean
 }) {
   const id = menu.id
   const at = locate(page, id)

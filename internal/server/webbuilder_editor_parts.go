@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -89,6 +90,45 @@ func wbCodeSectionsOf(raw json.RawMessage) []json.RawMessage {
 	}
 	if len(out) == 0 {
 		return nil
+	}
+	return out
+}
+
+// wbCodeHeadOrigins lists the https origins named in the head markup (content.head) of the code
+// sections of docs or single sections (at most 24).
+func wbCodeHeadOrigins(raws ...json.RawMessage) []string {
+	seen := map[string]bool{}
+	var out []string
+	add := func(head string) {
+		for _, m := range wbKitOriginRE.FindAllStringSubmatch(head, -1) {
+			o := "https://" + strings.ToLower(m[1])
+			if !seen[o] && len(out) < 24 {
+				seen[o] = true
+				out = append(out, o)
+			}
+		}
+	}
+	type sec struct {
+		Kind    string            `json:"kind"`
+		Content map[string]string `json:"content"`
+	}
+	for _, raw := range raws {
+		if len(raw) == 0 {
+			continue
+		}
+		var d struct {
+			Sections []sec `json:"sections"`
+		}
+		var one sec
+		if json.Unmarshal(raw, &d) == nil && d.Sections != nil {
+			for _, x := range d.Sections {
+				if x.Kind == webbuilder.KindCode {
+					add(x.Content["head"])
+				}
+			}
+		} else if json.Unmarshal(raw, &one) == nil && one.Kind == webbuilder.KindCode {
+			add(one.Content["head"])
+		}
 	}
 	return out
 }

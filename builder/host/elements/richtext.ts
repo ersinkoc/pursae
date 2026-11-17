@@ -33,7 +33,7 @@ export function cleanEdited(root: HTMLElement): string {
  * Starts editing el. plain: plain text only (text a script drew differently from the source).
  * onDone gets the new inner markup (null: nothing changed or cancelled) and the plain text.
  */
-export function startTextEdit(el: HTMLElement, plain: boolean, onDone: (html: string | null, text: string) => void): TextEdit {
+export function startTextEdit(el: HTMLElement, plain: boolean, at: { x: number; y: number } | null, onDone: (html: string | null, text: string) => void): TextEdit {
   const doc = el.ownerDocument
   const before = el.innerHTML
   el.setAttribute('contenteditable', plain ? 'plaintext-only' : 'true')
@@ -43,6 +43,18 @@ export function startTextEdit(el: HTMLElement, plain: boolean, onDone: (html: st
     /* not supported */
   }
   el.focus({ preventScroll: true })
+  // The caret goes where the user double-clicked, else at the end of the text.
+  const sel = doc.getSelection()
+  const r = at && 'caretRangeFromPoint' in doc ? doc.caretRangeFromPoint(at.x, at.y) : null
+  if (sel) {
+    const range = r && el.contains(r.startContainer) ? r : doc.createRange()
+    if (range !== r) {
+      range.selectNodeContents(el)
+      range.collapse(false)
+    }
+    sel.removeAllRanges()
+    sel.addRange(range)
+  }
   let finished = false
   const end = (commit: boolean) => {
     if (finished) return
