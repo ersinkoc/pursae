@@ -295,6 +295,7 @@ type wbWizView struct {
 	Draft           bool
 	Replace         bool
 	Menus           bool            // make a menu of the header's navigation
+	OldLinks        bool            // links to the design's original site become this site's
 	Collections     map[string]bool // folders ticked as collections
 	Nonce           string          // the step's form nonce
 	DiscardNonce    string
@@ -546,6 +547,14 @@ type wbWizAnalysis struct {
 	// Claims: pages at addresses that are archives here (author, category, date); the import keeps
 	// them as the design's pages (webbuilder_siteclaims.go).
 	Claims []string
+	// The design's original site (webbuilder/oldsite.go): its domains, the URLs of it the pages
+	// hold, the pages whose forms posted there, the script URLs pointed here; tracking it loads.
+	OldHosts    []string
+	OldURLs     []string
+	OldURLCount int
+	OldForms    []string
+	OldScripts  int
+	Trackers    []string
 }
 
 // wbWizFolder is a folder of pages the import can turn into content under single templates.
@@ -618,7 +627,8 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	}
 	plan := webbuilder.PlanSite(append([]string(nil), paths...))
 	urls := plan.URLs()
-	opts := webbuilder.SiteImportOptions{KitURL: wbKitURLPrefix + kit + "/", KitFiles: map[string]bool{}, URLs: urls, NoSplit: !split}
+	opts := webbuilder.SiteImportOptions{KitURL: wbKitURLPrefix + kit + "/", KitFiles: map[string]bool{}, URLs: urls, NoSplit: !split,
+		SiteURL: strings.TrimSuffix(s.links(c).HomeURL("/"), "/")}
 	for p := range assets {
 		opts.KitFiles[p] = true
 	}
@@ -626,6 +636,7 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	for _, p := range plan.Pages {
 		list = append(list, webbuilder.SitePage{Path: p.Path, HTML: pages[p.Path]})
 	}
+	opts.OldHosts = webbuilder.DetectOldHosts(list)
 	res, err := webbuilder.ConvertSite(list, opts)
 	if err != nil {
 		return nil, err
@@ -731,6 +742,10 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 		a.BindNotes = b.Notes
 	}
 	a.Missing, a.Unmapped = wbFirst(res.Missing, 60), wbFirst(res.Unmapped, 60)
+	if len(res.OldURLs) > 0 || len(res.OldForms) > 0 {
+		a.OldHosts, a.OldURLs, a.OldURLCount, a.OldForms, a.OldScripts = opts.OldHosts, wbFirst(res.OldURLs, 40), len(res.OldURLs), res.OldForms, res.OldInScripts
+	}
+	a.Trackers = res.Trackers
 	for _, w := range res.Warnings {
 		if strings.Contains(w, "inline event handler") {
 			a.Handlers = append(a.Handlers, w)
@@ -813,7 +828,7 @@ func (s *Server) wbWizAnalysisPage(c *gin.Context, m *wbWizMeta, extra []notice)
 	if q := strings.TrimSpace(c.Query("kit")); wbKitSlugRE.MatchString(q) {
 		kit = q
 	}
-	v := &wbWizView{Step: "analysis", ID: m.ID, Slug: kit, Kit: kit, Name: kit, Split: true, Front: true, Menus: true, Collections: map[string]bool{}}
+	v := &wbWizView{Step: "analysis", ID: m.ID, Slug: kit, Kit: kit, Name: kit, Split: true, Front: true, Menus: true, OldLinks: true, Collections: map[string]bool{}}
 	if k := s.wbKitList()[kit]; k != nil && k.Name != "" {
 		v.Name = k.Name
 	}
@@ -822,6 +837,7 @@ func (s *Server) wbWizAnalysisPage(c *gin.Context, m *wbWizMeta, extra []notice)
 		v.Name = strings.TrimSpace(c.PostForm("name"))
 		v.Split, v.Front, v.Draft, v.Replace = c.PostForm("templates") == "1", c.PostForm("front") == "1", c.PostForm("status") == "draft", c.PostForm("replace") == "1"
 		v.Menus = c.PostForm("menus") == "1"
+		v.OldLinks = c.PostForm("old_links") == "rewrite"
 		for _, f := range c.PostFormArray("collection") {
 			v.Collections[f] = true
 		}
@@ -942,6 +958,9 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	}
 	args := map[string]any{"kit": kit, "pages": items, "status": status, "site_name": name, "templates": split, "front_page": wantFront && !draft,
 		"menus": c.PostForm("menus") == "1", "collections": collections}
+	if c.PostForm("old_links") != "rewrite" {
+		args["old_links"] = "keep"
+	}
 	s.wbWizRESTSession(c)
 	out, importErr := mcpWBImportSite(s, c, args)
 	// 3. What it made, recorded even when it stopped half way.

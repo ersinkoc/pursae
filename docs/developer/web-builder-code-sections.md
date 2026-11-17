@@ -217,7 +217,7 @@ folder: `pursae_mcp.py kit-upload <folder> <kit>` then
 
 ### Importing a site
 
-`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, menus?, collections?, site_name?}` imports a whole
+`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, menus?, collections?, site_name?, old_domains?, old_links?}` imports a whole
 static site in one call (`internal/server/webbuilder_siteimport.go`, `webbuilder.ConvertSite`). Upload
 the folder's CSS, JS, fonts and images as the kit first (`web_builder_kit_upload`); the HTML files travel
 in `pages` (a kit holds no HTML, so nothing of the design is served as a page from uploads). Harness:
@@ -262,7 +262,28 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    A second import of the kit updates the same pages (slug and parent too) and templates; templates of an
    earlier import it no longer needs are turned into drafts.
 
-6. **Kit at the site's root**: the import marks its kit (`wbKit.Root`, the time of the import) and the site
+6. **The original site** (`internal/webbuilder/oldsite.go`): a saved copy of a live site still names
+   the domain it was saved from — absolute links to its pages and files, and the endpoints its forms
+   and scripts talk to (a plugin's inline `"ajax_url":"https:\/\/example.com\/wp-admin\/admin-ajax.php"`,
+   a comment form's `action`). `webbuilder.DetectOldHosts` finds the domain: a host that on at least half of
+   the pages is the absolute host of the `rel=canonical` link or `og:url`, of a WordPress endpoint or
+   folder (`/wp-admin/admin-ajax.php` in a plugin's inline config, `/wp-json/`, `/wp-content/…`, also
+   JSON-escaped), or of a link to one of the site's own pages other than its home (an agency's credit
+   link on every page points at the agency's root and does not count); the `www.` and bare forms both;
+   social, CDN and schema hosts never. Decoland, a wget copy whose canonical links are relative, is
+   found by its `decolandavm.com/wp-admin/admin-ajax.php` and `wp-json` URLs, not by the
+   `decoland.chainhouse.co` credit link. MCP `old_domains` overrides it (`[]` turns it off). Every URL of those hosts is then a path of this site: links, sources, srcsets,
+   `data-*` values and CSS `url()` map like root-relative ones (an imported page → its URL, a kit file
+   → the kit, anything else → the same path here) unless `old_links: "keep"` (admin: untick "Point links
+   to the original site at this site"); a form's `action` and every occurrence of the old origin in an
+   inline script or JSON (JSON-escaped too) **always** point at this site (its home URL), so by default
+   nothing an imported page sends reaches the original site. A form that posted there is listed (bind it
+   to a Pursae form, [Forms](#forms)). The answer's `original_site` gives the domains, the number of
+   URLs, of script URLs and the forms; a kit script or stylesheet naming the original site is warned
+   about (kit files are copied as they are). Third-party tracking (Google Tag Manager / Analytics, Meta
+   Pixel, Hotjar, Clarity, TikTok, LinkedIn, Bing, Yandex, PixelYourSite) is kept and listed
+   (`tracking`, the analysis's "Third-party tracking") so the site owner checks the ids and consent.
+7. **Kit at the site's root**: the import marks its kit (`wbKit.Root`, the time of the import) and the site
    then serves the kit's files at its root as well, while a page or template of the import is published
    (a draft import serves nothing there until it is published), after everything the site answers at a
    path of its own and before the 404 (`wbKitRootAsset`, called by the front end after Pursae SEO's
@@ -289,8 +310,8 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    Chromium); a `text/javascript` file with `nosniff` never runs as a page.
 
 The answer lists the pages (`post_id`, `url`, sections), `pages_created` / `pages_updated`, the templates
-(type, id, pages, conditions, `active_links`), `templates_disabled`, `unmapped_links`, `missing_files`
-and `warnings`. The import needs `unfiltered_html` and `edit_theme_options`; the templates show with the
+(type, id, pages, conditions, `active_links`), `templates_disabled`, `claimed_paths`, `original_site`,
+`tracking`, `unmapped_links`, `missing_files` and `warnings`. The import needs `unfiltered_html` and `edit_theme_options`; the templates show with the
 Hello Pursae theme.
 
 ### Importing from the admin

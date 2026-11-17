@@ -274,11 +274,15 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	for _, p := range plan.Pages {
 		list = append(list, webbuilder.SitePage{Path: p.Path, HTML: src[p.Path]})
 	}
+	// The design's original site: its URLs are this site's paths, its endpoints never called.
+	opts.OldHosts, opts.KeepOldLinks = wbSiteOldOptions(args, list)
+	opts.SiteURL = home
 	res, err := webbuilder.ConvertSite(list, opts)
 	if err != nil {
 		return nil, mcpErrf("the site could not be read: %v", err)
 	}
 	warnings = append(warnings, res.Warnings...)
+	warnings = append(warnings, wbSiteOldWarnings(res, opts.OldHosts, opts.KeepOldLinks, k.Origins)...)
 	// Binding to content (webbuilder_sitebind.go): the header's navigation as a menu, folders of
 	// pages as content under single templates, lists of those pages as loops.
 	menusOn, groups := wbSiteBindOptions(args)
@@ -381,6 +385,13 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	out["pages_created"], out["pages_updated"] = created, updated
 	if len(claimed) > 0 {
 		out["claimed_paths"] = claimed
+	}
+	if len(opts.OldHosts) > 0 {
+		out["original_site"] = map[string]any{"domains": opts.OldHosts, "urls": len(res.OldURLs), "script_urls": res.OldInScripts,
+			"forms": res.OldForms, "links": map[bool]string{true: "keep", false: "rewrite"}[opts.KeepOldLinks]}
+	}
+	if len(res.Trackers) > 0 {
+		out["tracking"] = res.Trackers
 	}
 
 	// The header and footer templates.

@@ -38,6 +38,13 @@ type CodeImportOptions struct {
 	// Remap gives files of the design that are not in the kit a URL of their own (a file too large
 	// for a kit put into the Media Library): kit path → URL.
 	Remap map[string]string
+	// OldHosts are the domain(s) the design was saved from (DetectOldHosts): their URLs are paths
+	// of this site (oldsite.go). KeepOldLinks leaves links, sources and other attributes pointing
+	// there; form actions and the URLs in inline scripts point at this site (SiteURL, the site's
+	// home URL; "" makes them root-relative) either way.
+	OldHosts     []string
+	KeepOldLinks bool
+	SiteURL      string
 }
 
 // CodePart is one code section of an import.
@@ -78,6 +85,13 @@ type CodeImport struct {
 	Warnings     []string   `json:"warnings,omitempty"`
 	Unmapped     []string   `json:"unmappedLinks,omitempty"`
 	Missing      []string   `json:"missingFiles,omitempty"`
+	// OldURLs are the URLs of the design's original site (OldHosts) the page held, as written (in
+	// scripts: their origin); OldForms the forms whose action pointed there; OldInScripts how many
+	// script URLs now point at this site; Trackers the third-party tracking the page loads.
+	OldURLs      []string `json:"oldUrls,omitempty"`
+	OldForms     int      `json:"oldForms,omitempty"`
+	OldInScripts int      `json:"oldInScripts,omitempty"`
+	Trackers     []string `json:"trackers,omitempty"`
 }
 
 var (
@@ -97,6 +111,13 @@ type codeConv struct {
 	unmapped map[string]bool
 	missing  map[string]bool
 	handlers map[string]int // inline event handler attributes: "onclick on <button>" → count
+	// The design's original site (oldsite.go).
+	oldHost      map[string]bool
+	oldRE        *regexp.Regexp
+	oldURLs      map[string]bool
+	oldForms     int
+	oldInScripts int
+	tracking     map[string]bool
 }
 
 // ConvertCode converts a full HTML document (see the comment above).
@@ -109,7 +130,20 @@ func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
 		o.KitURL += "/"
 	}
 	o.Base = strings.Trim(path.Clean("/"+o.Base), "/")
-	cv := &codeConv{o: o, out: &CodeImport{}, unmapped: map[string]bool{}, missing: map[string]bool{}, handlers: map[string]int{}}
+	cv := &codeConv{o: o, out: &CodeImport{}, unmapped: map[string]bool{}, missing: map[string]bool{}, handlers: map[string]int{},
+		oldHost: map[string]bool{}, oldURLs: map[string]bool{}, tracking: map[string]bool{}}
+	for _, h := range o.OldHosts {
+		if h = strings.ToLower(strings.TrimSpace(h)); h != "" {
+			cv.oldHost[h] = true
+		}
+	}
+	if len(cv.oldHost) > 0 {
+		hosts := make([]string, 0, len(cv.oldHost))
+		for h := range cv.oldHost {
+			hosts = append(hosts, h)
+		}
+		cv.oldRE = oldScriptRE(hosts)
+	}
 	var root, head, body *html.Node
 	for n := doc.FirstChild; n != nil; n = n.NextSibling {
 		if n.Type == html.ElementNode && n.DataAtom == atom.Html {
@@ -147,6 +181,15 @@ func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
 	}
 	sort.Strings(cv.out.Unmapped)
 	sort.Strings(cv.out.Missing)
+	for u := range cv.oldURLs {
+		cv.out.OldURLs = append(cv.out.OldURLs, u)
+	}
+	sort.Strings(cv.out.OldURLs)
+	cv.out.OldForms, cv.out.OldInScripts = cv.oldForms, cv.oldInScripts
+	for t := range cv.tracking {
+		cv.out.Trackers = append(cv.out.Trackers, t)
+	}
+	sort.Strings(cv.out.Trackers)
 	if w := handlerWarning(cv.handlers); w != "" {
 		cv.out.Warnings = append(cv.out.Warnings, w)
 	}
@@ -783,6 +826,14 @@ func (cv *codeConv) rewrite(n *html.Node) {
 			cv.handlers[strings.ToLower(key)+" on <"+n.Data+">"]++
 		}
 		switch {
+		case n.DataAtom == atom.Form && key == "action":
+			// A form posting to the original site posts to this site's same path (never there).
+			val := a.Val
+			if l, ok := cv.oldLocal(val); ok {
+				val = l
+				cv.oldForms++
+			}
+			n.Attr[i].Val = cv.urlWith(val, true, false)
 		case codeURLAttrs[key]:
 			page := (n.DataAtom == atom.A || n.DataAtom == atom.Area || n.DataAtom == atom.Form) && key != "src"
 			n.Attr[i].Val = cv.url(a.Val, page)
@@ -796,6 +847,10 @@ func (cv *codeConv) rewrite(n *html.Node) {
 			// resolve them against the page's URL, which is not the kit's folder.
 			n.Attr[i].Val = cv.dataValue(a.Val)
 		}
+	}
+	cv.trackers(n)
+	if n.DataAtom == atom.Script {
+		cv.oldScript(n)
 	}
 	if n.DataAtom == atom.Script && strings.EqualFold(strings.TrimSpace(attr(n, "type")), "importmap") {
 		for k := n.FirstChild; k != nil; k = k.NextSibling {
@@ -917,7 +972,9 @@ func codeSrcsetList(v string) ([]string, bool) {
 		return nil, false
 	}
 	for _, u := range urls {
-		if strings.HasPrefix(u, "#") || strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) || path.Ext(strings.SplitN(u, "?", 2)[0]) == "" {
+		lu := strings.ToLower(u)
+		web := strings.HasPrefix(lu, "http://") || strings.HasPrefix(lu, "https://") || strings.HasPrefix(u, "//")
+		if strings.HasPrefix(u, "#") || !web && codeSchemeRE.MatchString(u) || path.Ext(strings.SplitN(u, "?", 2)[0]) == "" {
 			return nil, false
 		}
 	}
@@ -941,6 +998,12 @@ func codeAssetPath(u string) bool {
 // unreported (it may not be a URL at all).
 func (cv *codeConv) kitFile(raw string) string {
 	u := strings.TrimSpace(raw)
+	if l, ok := cv.oldLocal(u); ok && !cv.o.KeepOldLinks {
+		if v := cv.kitFile(l); v != l {
+			return v
+		}
+		return raw
+	}
 	if cv.o.KitURL == "" && len(cv.o.Remap) == 0 || u == "" || len(u) > 1024 || strings.ContainsAny(u, " \t\n<>\"'(){}") || strings.HasPrefix(u, "#") ||
 		strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) {
 		return raw
@@ -1043,7 +1106,18 @@ func (cv *codeConv) srcset(v string) string {
 // url maps one reference: a file of the kit → its kit URL; a link of the link map → its site URL;
 // anything else is kept (and reported when it is a relative page link or a missing file).
 func (cv *codeConv) url(raw string, page bool) string {
+	return cv.urlWith(raw, page, cv.o.KeepOldLinks)
+}
+
+// urlWith is url; keepOld leaves a URL of the design's original site as it is.
+func (cv *codeConv) urlWith(raw string, page, keepOld bool) string {
 	u := strings.TrimSpace(raw)
+	if l, ok := cv.oldLocal(u); ok {
+		if keepOld {
+			return raw
+		}
+		u, raw = l, l
+	}
 	if u == "" || strings.HasPrefix(u, "#") || strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) {
 		return raw
 	}

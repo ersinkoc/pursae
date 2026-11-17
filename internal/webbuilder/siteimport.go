@@ -205,6 +205,12 @@ type SiteImportOptions struct {
 	URLs map[string]string
 	// NoSplit keeps every page's header and footer in the page (no header or footer templates).
 	NoSplit bool
+	// OldHosts, KeepOldLinks, SiteURL: the design's original site (CodeImportOptions, oldsite.go).
+	OldHosts     []string
+	KeepOldLinks bool
+	SiteURL      string
+	// Remap: files outside the kit with a URL of their own (CodeImportOptions.Remap).
+	Remap map[string]string
 }
 
 // SitePageImport is one converted page.
@@ -236,6 +242,13 @@ type SiteImport struct {
 	Warnings []string         `json:"warnings,omitempty"`
 	Unmapped []string         `json:"unmappedLinks,omitempty"`
 	Missing  []string         `json:"missingFiles,omitempty"`
+	// The design's original site (oldsite.go): the URLs of OldHosts the pages held (as written),
+	// the pages whose forms posted there ("blog/index.html: 2"), how many script URLs now point at
+	// this site, and the third-party tracking the pages load.
+	OldURLs      []string `json:"oldUrls,omitempty"`
+	OldForms     []string `json:"oldForms,omitempty"`
+	OldInScripts int      `json:"oldInScripts,omitempty"`
+	Trackers     []string `json:"trackers,omitempty"`
 }
 
 // ConvertSite converts the site's pages (see the file comment).
@@ -260,6 +273,7 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 	}
 	out := &SiteImport{}
 	unmapped, missing := map[string]bool{}, map[string]bool{}
+	oldURLs, trackers := map[string]bool{}, map[string]bool{}
 	var hs, fs []ActiveSample
 	var hIdx, fIdx []int
 	for i, p := range pages {
@@ -267,10 +281,21 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 		if base == "." {
 			base = ""
 		}
-		res, err := ConvertCode(p.HTML, CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: !o.NoSplit})
+		res, err := ConvertCode(p.HTML, CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: !o.NoSplit,
+			Remap: o.Remap, OldHosts: o.OldHosts, KeepOldLinks: o.KeepOldLinks, SiteURL: o.SiteURL})
 		if err != nil {
 			return nil, fmt.Errorf("%s: %v", p.Path, err)
 		}
+		for _, u := range res.OldURLs {
+			oldURLs[u] = true
+		}
+		for _, t := range res.Trackers {
+			trackers[t] = true
+		}
+		if res.OldForms > 0 {
+			out.OldForms = append(out.OldForms, fmt.Sprintf("%s: %d", p.Path, res.OldForms))
+		}
+		out.OldInScripts += res.OldInScripts
 		for _, u := range res.Unmapped {
 			unmapped[p.Path+": "+u] = true
 		}
@@ -309,6 +334,14 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 	}
 	sort.Strings(out.Unmapped)
 	sort.Strings(out.Missing)
+	for u := range oldURLs {
+		out.OldURLs = append(out.OldURLs, u)
+	}
+	for t := range trackers {
+		out.Trackers = append(out.Trackers, t)
+	}
+	sort.Strings(out.OldURLs)
+	sort.Strings(out.Trackers)
 	out.Headers = siteTemplates(out, hs, hIdx, true)
 	out.Footers = siteTemplates(out, fs, fIdx, false)
 	return out, nil

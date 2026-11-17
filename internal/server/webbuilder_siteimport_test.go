@@ -327,3 +327,75 @@ func TestMCPImportSiteClaimsArchivePaths(t *testing.T) {
 		t.Error("another page's claim was dropped")
 	}
 }
+
+// A copy of a live site: its canonical domain is detected, links to its pages point at the
+// imported pages, and neither its comment form nor its plugin's AJAX endpoint reaches the original
+// site on the imported page (the safe default); tracking is kept and reported.
+func TestMCPImportSiteOriginalDomain(t *testing.T) {
+	ts, c := testServer(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "copy", "files": []any{
+		map[string]any{"path": "wp-content/uploads/a.png", "data": "iVBORw0KGgo="},
+	}}))
+	doc := func(canon, body string) string {
+		return `<!doctype html><html lang="en"><head><title>T</title><link rel="canonical" href="https://old.example/` + canon + `">
+<script>var ajax = {"url":"https:\/\/old.example\/wp-admin\/admin-ajax.php"};</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1"></script></head><body><main><section>` + body + `</section></main></body></html>`
+	}
+	pages := []any{
+		map[string]any{"path": "index.html", "html": doc("", `<h1>Home</h1><a href="https://old.example/about/">About</a><img src="https://old.example/wp-content/uploads/a.png" alt="">`)},
+		map[string]any{"path": "about/index.html", "html": doc("about/", `<h1>About</h1><form action="https://old.example/wp-comments-post.php" method="post"><textarea name="comment"></textarea></form>`)},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "copy", "pages": pages, "templates": false}))
+	os, _ := out["original_site"].(map[string]any)
+	if os == nil || !strings.Contains(strings.Join(func() []string {
+		var l []string
+		for _, x := range asList(os["domains"]) {
+			l = append(l, x.(string))
+		}
+		return l
+	}(), ","), "old.example") || os["links"] != "rewrite" {
+		t.Fatalf("original_site: %v", out)
+	}
+	if !strings.Contains(strings.Join(func() []string {
+		var l []string
+		for _, x := range asList(out["warnings"]) {
+			l = append(l, x.(string))
+		}
+		return l
+	}(), "\n"), "Google Tag Manager") {
+		t.Errorf("tracking not reported: %v", out["warnings"])
+	}
+	for _, path := range []string{"/", "/about/"} {
+		resp, err := http.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		page := string(b)
+		if strings.Contains(page, "old.example") {
+			t.Errorf("%s still names the original site: %s", path, wbSnippet(page, "old.example"))
+		}
+		if !strings.Contains(page, `\/wp-admin\/admin-ajax.php"`) || !strings.Contains(page, "googletagmanager.com/gtag/js?id=G-1") {
+			t.Errorf("%s: endpoint or tracking: %.400s", path, wbSnippet(page, "admin-ajax"))
+		}
+	}
+	resp, _ := http.Get(base + "/")
+	b, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !regexpFind(`href="[^"]*/about/"`, string(b)) || !strings.Contains(string(b), `src="/wp-content/uploads/web-builder/kits/copy/wp-content/uploads/a.png`) {
+		t.Errorf("home: links and files of the original site: %s", wbSnippet(string(b), "About"))
+	}
+	resp, _ = http.Get(base + "/about/")
+	b, _ = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(b), `action="/wp-comments-post.php"`) {
+		t.Errorf("about: the comment form: %s", wbSnippet(string(b), "<form"))
+	}
+}
