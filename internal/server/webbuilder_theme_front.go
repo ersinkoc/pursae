@@ -144,6 +144,9 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 			}
 			out.view.Main, out.view.MainCode = h, p.codePage
 			out.view.HasMain = wbHasMainLandmark(p.filled.html)
+			if p.codePage { // an imported design's page: its images as written (no lazy optimizer)
+				c.Header(cache.HeaderOptimize, "as-written")
+			}
 		}
 	}
 	if body, ok := forumSiteMain(c, q); ok && main == nil && !out.canvas {

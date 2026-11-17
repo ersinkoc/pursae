@@ -52,9 +52,12 @@ placeholder with the section's markup, as written (`webbuilder.FillCode`):
   on a canvas page (`wbCanvas`) and under Hello Pursae, whose `<html lang>` is otherwise `en-US`. The
   lang matters to the pixel: `text-transform: uppercase` writes Turkish `i` as `İ` only under `lang="tr"`;
 - a code page's markup is printed as written: `wp_filter_content_tags` (image dimensions, `loading`,
-  `decoding`, `srcset`) does not run over it (`wbContentTags`). Pursae Cache's page optimizer, when its
-  options are on, still adds `loading="lazy"` / `decoding="async"` and collapses whitespace in the whole
-  response (it does not change what is drawn).
+  `decoding`, `srcset`) does not run over it (`wbContentTags`), and Pursae Cache's page optimizer adds
+  no `loading="lazy"` / `decoding="async"` / `fetchpriority` to it either: the front end sets the
+  internal header `X-WPGo-Cache-Optimize: as-written` on a code page (canvas, or a Hello Pursae page
+  whose main is a code page), which the cache strips and obeys (`cache.HeaderOptimize`). The design
+  decides what loads when (Salient's hero `<img fetchpriority="high">` was made lazy before). The
+  optimizer's other options (whitespace, scripts) still apply when they are on.
 
 ### Shared shell
 

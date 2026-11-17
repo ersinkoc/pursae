@@ -108,6 +108,8 @@ type captureWriter struct {
 	start  time.Time
 	gen    uint64 // the store's purge generation before the render (Store.SetSince)
 	csp    string // Options.CSPMode() before the render: what the page was rendered under
+	// asWritten: the page asked to keep its images as written (HeaderOptimize).
+	asWritten bool
 	// release, when set, ends this render's claim on its key (flightGroup) once the page is
 	// stored, before it is written to a possibly slow client.
 	release func()
@@ -134,6 +136,7 @@ func (cw *captureWriter) WriteHeader(code int) {
 	h := cw.w.Header()
 	ttl, ok := cw.c.storableTTL(cw.r, code, h)
 	cw.tags = parseTags(h.Get(HeaderTags))
+	cw.asWritten = hasToken(h.Get(HeaderOptimize), "as-written")
 	stripInternal(h)
 	if !ok {
 		cw.mode = modePass
@@ -255,6 +258,9 @@ func (cw *captureWriter) finish() {
 	opt := cw.c.cfg.Optimize
 	mode := cw.csp
 	opt.strictNonce = mode == "enforce" || strings.HasPrefix(mode, "enforce:")
+	if cw.asWritten {
+		opt.LazyImages = false
+	}
 	if cw.html && opt.enabled() && (cw.status == http.StatusOK || cw.status == http.StatusNotFound) {
 		body = Optimize(body, opt)
 	}

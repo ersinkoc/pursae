@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// Response headers the application uses to talk to the cache. The first three are
+// Response headers the application uses to talk to the cache. All but HeaderStatus are
 // always stripped before the response reaches the client.
 const (
 	// HeaderTags lists the tags of a page: "home,post:12,term:3,author:1,feed".
@@ -22,6 +22,10 @@ const (
 	HeaderControl = "X-WPGo-Cache-Control"
 	// HeaderStatus is set by the cache on page responses: hit, miss or bypass.
 	HeaderStatus = "X-WPGo-Cache"
+	// HeaderOptimize set to "as-written" keeps a page's markup out of the image optimizer
+	// (OptimizeConfig.LazyImages): an imported design prints its images as written and decides
+	// itself what loads when (a hero with fetchpriority="high", a lazy loader of its own).
+	HeaderOptimize = "X-WPGo-Cache-Optimize"
 )
 
 // Options carries dependencies supplied by the core.
@@ -380,6 +384,7 @@ func stripInternal(h http.Header) {
 	h.Del(HeaderTags)
 	h.Del(HeaderTTL)
 	h.Del(HeaderControl)
+	h.Del(HeaderOptimize)
 }
 
 func (c *Cache) cspMode() string {
