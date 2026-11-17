@@ -4650,5 +4650,10 @@
  "Drag to reorder": "Sürükleyerek sırala",
  "Order saved": "Sıralama kaydedildi",
  "The order could not be saved.": "Sıralama kaydedilemedi.",
- "Drag the rows, or use the arrows, to set the order your site shows them in.": "Sitede hangi sırayla görüneceklerini belirlemek için satırları sürükle ya da okları kullan."
+ "Drag the rows, or use the arrows, to set the order your site shows them in.": "Sitede hangi sırayla görüneceklerini belirlemek için satırları sürükle ya da okları kullan.",
+ "Dark mode": "Koyu mod",
+ "Pursae Modern colours": "Pursae Modern renkleri",
+ "Light": "Açık",
+ "Dark": "Koyu",
+ "Match the system": "Sistemle aynı"
 }

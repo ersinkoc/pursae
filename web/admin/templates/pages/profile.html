@@ -27,6 +27,9 @@
 	</label>
 	{{end}}
 	<p class="description">Applies to your own account. WordPress Classic is the default.</p>
+</fieldset>
+<fieldset id="admin-theme-mode" class="admin-theme-mode"><legend>Pursae Modern colours</legend>
+	{{$curMode := .ThemeMode}}{{range .ThemeModes}}<label><input type="radio" name="admin_theme_mode" value="{{.Slug}}"{{if eq .Slug $curMode}} checked="checked"{{end}} /> {{.Name}}</label>{{end}}
 </fieldset></td></tr>
 <tr class="user-admin-color-wrap"><th scope="row">Administration Color Scheme</th>
 <td><fieldset id="color-picker" class="scheme-list">

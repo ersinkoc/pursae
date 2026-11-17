@@ -413,3 +413,36 @@
 		table.parentNode.insertBefore( hint, table );
 	}
 } )();
+
+/* Toolbar light / dark toggle: switches the colour mode at once and saves it (admin_theme_mode). */
+( function () {
+	'use strict';
+	var item = document.querySelector( '#wp-admin-bar-pm-mode > .ab-item' );
+	if ( ! item ) {
+		return;
+	}
+	var body = document.body;
+	var sysDark = window.matchMedia ? window.matchMedia( '(prefers-color-scheme: dark)' ) : null;
+	var isDark = function () {
+		return body.classList.contains( 'pm-dark' ) || ( body.classList.contains( 'pm-auto' ) && sysDark && sysDark.matches );
+	};
+	var sync = function () { item.setAttribute( 'aria-pressed', isDark() ? 'true' : 'false' ); };
+	sync();
+	if ( sysDark && sysDark.addEventListener ) {
+		sysDark.addEventListener( 'change', sync );
+	}
+	item.addEventListener( 'click', function ( e ) {
+		e.preventDefault();
+		var mode = isDark() ? 'light' : 'dark';
+		body.classList.remove( 'pm-dark', 'pm-auto' );
+		if ( mode === 'dark' ) {
+			body.classList.add( 'pm-dark' );
+		}
+		sync();
+		var data = new URLSearchParams();
+		data.append( 'action', 'pursae-theme-mode' );
+		data.append( 'mode', mode );
+		data.append( '_wpnonce', item.getAttribute( 'data-pm-mode-nonce' ) || '' );
+		fetch( window.ajaxurl || '/wp-admin/admin-ajax', { method: 'POST', credentials: 'same-origin', body: data } );
+	} );
+} )();

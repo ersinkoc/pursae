@@ -34,3 +34,26 @@ func TestAdminThemeAssets(t *testing.T) {
 		t.Fatalf("Pursae Modern assets: css=%q class=%q", modern.CSS(), modern.BodyClass())
 	}
 }
+
+func TestAdminThemeMode(t *testing.T) {
+	cases := []struct {
+		meta  map[string]any
+		mode  string
+		class string
+	}{
+		{map[string]any{"admin_theme": "modern"}, "light", "pursae-modern"},
+		{map[string]any{"admin_theme": "modern", "admin_theme_mode": "dark"}, "dark", "pursae-modern pm-dark"},
+		{map[string]any{"admin_theme": "modern", "admin_theme_mode": "auto"}, "auto", "pursae-modern pm-auto"},
+		{map[string]any{"admin_theme": "modern", "admin_theme_mode": "neon"}, "light", "pursae-modern"},
+		{map[string]any{"admin_theme": "classic", "admin_theme_mode": "dark"}, "light", ""}, // Classic has no dark mode
+	}
+	for _, c := range cases {
+		th := adminThemeFor(&store.User{Meta: c.meta})
+		if th.Modern() && th.Mode != c.mode {
+			t.Errorf("%v: mode %q, want %q", c.meta, th.Mode, c.mode)
+		}
+		if got := th.BodyClass(); got != c.class {
+			t.Errorf("%v: body class %q, want %q", c.meta, got, c.class)
+		}
+	}
+}

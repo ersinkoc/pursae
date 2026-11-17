@@ -44,6 +44,7 @@ body.pursae-modern {
 	--pm-primary: #4C60EF;
 	--pm-primary-hover: #3346D6;
 	--pm-primary-50: #EEF1FE;
+	--pm-on-primary: #FFFFFF;
 	--pm-ok: #1C9A62;
 	--pm-warn: #D98A2B;
 	--pm-bad: #D3475B;
@@ -271,12 +272,12 @@ body.pursae-modern #adminmenu .wp-not-current-submenu li > a { padding-left: 16p
 /* counts */
 body.pursae-modern #adminmenu .awaiting-mod,
 body.pursae-modern #adminmenu .update-plugins {
-	background: var(--pm-primary); color: #fff;
+	background: var(--pm-primary); color: var(--pm-on-primary);
 	min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
 	font-size: 11px; font-weight: 500; line-height: 18px; box-sizing: border-box;
 }
 body.pursae-modern #adminmenu li.current a .awaiting-mod,
-body.pursae-modern #adminmenu li a.wp-has-current-submenu .update-plugins { background: var(--pm-primary); color: #fff; }
+body.pursae-modern #adminmenu li a.wp-has-current-submenu .update-plugins { background: var(--pm-primary); color: var(--pm-on-primary); }
 
 /* separators become hairlines between groups */
 body.pursae-modern #adminmenu li.wp-menu-separator { height: 1px; margin: 8px 0; background: var(--pm-chrome-border); }
@@ -310,11 +311,11 @@ body.pursae-modern hr { border-color: var(--pm-border); }
 body.pursae-modern .wrap .page-title-action,
 body.pursae-modern .wrap .add-new-h2 {
 	display: inline-flex; align-items: center; height: 34px; top: -4px; margin-left: 12px; padding: 0 14px;
-	background: var(--pm-primary); border: 1px solid var(--pm-primary); border-radius: 0; color: #fff;
+	background: var(--pm-primary); border: 1px solid var(--pm-primary); border-radius: 0; color: var(--pm-on-primary);
 	font-size: 13.5px; font-weight: 500;
 }
 body.pursae-modern .wrap .page-title-action:hover,
-body.pursae-modern .wrap .page-title-action:focus { background: var(--pm-primary-hover); border-color: var(--pm-primary-hover); color: #fff; }
+body.pursae-modern .wrap .page-title-action:focus { background: var(--pm-primary-hover); border-color: var(--pm-primary-hover); color: var(--pm-on-primary); }
 
 /* screen options / help tabs */
 body.pursae-modern #screen-meta { background: var(--pm-bg); border: 1px solid var(--pm-border); border-top: 0; box-shadow: none; }
@@ -346,11 +347,11 @@ body.pursae-modern.wp-core-ui .button-secondary:focus { border-color: var(--pm-p
 body.pursae-modern.wp-core-ui .button-primary,
 body.pursae-modern.wp-core-ui .button-primary.focus,
 body.pursae-modern.wp-core-ui .button-primary.hover {
-	background: var(--pm-primary); border-color: var(--pm-primary); color: #fff; font-weight: 500;
+	background: var(--pm-primary); border-color: var(--pm-primary); color: var(--pm-on-primary); font-weight: 500;
 	text-shadow: none; box-shadow: none;
 }
 body.pursae-modern.wp-core-ui .button-primary:hover,
-body.pursae-modern.wp-core-ui .button-primary:focus { background: var(--pm-primary-hover); border-color: var(--pm-primary-hover); color: #fff; }
+body.pursae-modern.wp-core-ui .button-primary:focus { background: var(--pm-primary-hover); border-color: var(--pm-primary-hover); color: var(--pm-on-primary); }
 body.pursae-modern.wp-core-ui .button-primary:focus { box-shadow: 0 0 0 3px var(--pm-primary-50); }
 body.pursae-modern.wp-core-ui .button-primary[disabled],
 body.pursae-modern.wp-core-ui .button-primary:disabled,
@@ -734,7 +735,7 @@ body.pursae-modern .pm-step a { display: flex; align-items: center; gap: 14px; h
 body.pursae-modern .pm-step a:hover { background: var(--pm-bg-2); box-shadow: none; outline: 0; }
 body.pursae-modern .pm-check { width: 18px; height: 18px; border: 1px solid var(--pm-border-2); flex: none; display: grid; place-items: center; }
 body.pursae-modern .pm-step.is-done .pm-check { background: var(--pm-primary); border-color: var(--pm-primary); }
-body.pursae-modern .pm-step.is-done .pm-check:before { content: "\f147"; font-family: dashicons; color: #fff; font-size: 16px; line-height: 1; }
+body.pursae-modern .pm-step.is-done .pm-check:before { content: "\f147"; font-family: dashicons; color: var(--pm-on-primary); font-size: 16px; line-height: 1; }
 body.pursae-modern .pm-step.is-done .pm-step-label { color: var(--pm-faint); }
 body.pursae-modern .pm-step em { margin-left: auto; font-style: normal; font-family: var(--pm-mono); font-size: 12px; color: var(--pm-faint); }
 body.pursae-modern .pm-progress { height: 2px; background: var(--pm-border); margin: 0; list-style: none; }
@@ -914,7 +915,7 @@ body.pursae-modern .pa-ranges { gap: 0; }
 body.pursae-modern .pa-ranges a { height: 32px; display: inline-flex; align-items: center; padding: 0 12px; margin-left: -1px; border: 1px solid var(--pm-border-2); border-radius: 0; background: var(--pm-bg); color: var(--pm-muted); font-size: 13px; }
 body.pursae-modern .pa-ranges a:first-child { margin-left: 0; }
 body.pursae-modern .pa-ranges a:hover { color: var(--pm-text); background: var(--pm-hover); }
-body.pursae-modern .pa-ranges a.current { position: relative; z-index: 1; background: var(--pm-primary); border-color: var(--pm-primary); color: #fff; font-weight: 500; }
+body.pursae-modern .pa-ranges a.current { position: relative; z-index: 1; background: var(--pm-primary); border-color: var(--pm-primary); color: var(--pm-on-primary); font-weight: 500; }
 body.pursae-modern .pa-live { font-family: var(--pm-mono); font-size: 12px; color: var(--pm-muted); }
 body.pursae-modern .pa-live:before { background: var(--pm-ok); box-shadow: 0 0 0 3px rgba(28, 154, 98, .18); animation: pm-pulse 2s infinite; }
 @keyframes pm-pulse { 50% { box-shadow: 0 0 0 6px rgba(28, 154, 98, 0); } }
@@ -1119,7 +1120,7 @@ body.pursae-modern .woocommerce-task-list__item:first-child { border-top: 0; }
 body.pursae-modern .woocommerce-task-list__item:hover { background: var(--pm-bg-2); }
 body.pursae-modern .woocommerce-task-list__item > .dashicons { flex: none; width: 18px; height: 18px; margin-top: 2px; border: 1px solid var(--pm-border-2); font-size: 0; color: transparent; }
 body.pursae-modern .woocommerce-task-list__item.complete > .dashicons { background: var(--pm-primary); border-color: var(--pm-primary); }
-body.pursae-modern .woocommerce-task-list__item.complete > .dashicons:before { content: "\f147"; font-size: 16px; color: #fff; line-height: 18px; }
+body.pursae-modern .woocommerce-task-list__item.complete > .dashicons:before { content: "\f147"; font-size: 16px; color: var(--pm-on-primary); line-height: 18px; }
 body.pursae-modern .woocommerce-task-list__item a { color: var(--pm-text); text-decoration: none !important; }
 body.pursae-modern .woocommerce-task-list__item a strong { font-weight: 500; }
 body.pursae-modern .woocommerce-task-list__item.complete a,
@@ -1223,7 +1224,7 @@ body.pursae-modern #wpbody-content :is(.pf-admin-pill, .pf-admin-badge, .asg-pil
 }
 body.pursae-modern .pf-admin-badge--category { color: var(--pm-primary-hover) !important; background: var(--pm-primary-50) !important; border-color: transparent !important; }
 body.pursae-modern .gc-badge.warn { background: #FFF4E2 !important; color: #8A5300 !important; border-color: #F4D9A8 !important; }
-body.pursae-modern .gk-badge { background: var(--pm-primary) !important; color: #fff !important; border-color: var(--pm-primary) !important; }
+body.pursae-modern .gk-badge { background: var(--pm-primary) !important; color: var(--pm-on-primary) !important; border-color: var(--pm-primary) !important; }
 /* status colours mapped to the theme palette */
 body.pursae-modern #wpbody-content .dashicons-yes-alt, body.pursae-modern .gk-ok, body.pursae-modern .seogo-module-status { color: var(--pm-ok); }
 body.pursae-modern #wpbody-content .dashicons-warning { color: var(--pm-bad); }
@@ -1322,4 +1323,310 @@ body.pm-sorting, body.pm-sorting * { cursor: grabbing !important; user-select: n
 }
 @media screen and (min-width: 783px) and (max-width: 960px) {
 	body.pursae-modern.auto-fold:not(.is-fullscreen-mode) .interface-interface-skeleton { left: var(--pm-side-folded); }
+}
+
+/* ===================================================================== dark content mode (pm-dark, or pm-auto on a dark system) */
+/* The block editor keeps its light interface: its components hard-code light colours. */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) {
+	--pm-canvas: #0F1013;
+	--pm-bg: #17191E;
+	--pm-bg-2: #1B1D23;
+	--pm-field: #121317;
+	--pm-hover: #22252C;
+	--pm-border: #2A2D35;
+	--pm-border-2: #3A3E47;
+	--pm-row: #22252C;
+	--pm-text: #ECEDEF;
+	--pm-body: #D3D5DA;
+	--pm-muted: #A7ABB3;
+	--pm-faint: #7F848D;
+	--pm-primary: #8796EC;
+	--pm-primary-hover: #A3AFF2;
+	--pm-primary-50: rgba(135, 150, 236, .14);
+	--pm-on-primary: #0F1013;
+	--pm-ok: #5BD39A;
+	--pm-warn: #F0B062;
+	--pm-bad: #F28B9A;
+	--pm-info: #6CB8EC;
+	--wp-admin-theme-color: #8796EC;
+	--wp-admin-theme-color--rgb: 135, 150, 236;
+	--wp-admin-theme-color-darker-10: #A3AFF2;
+	--wp-admin-theme-color-darker-20: #BCC5F6;
+	color-scheme: dark;
+}
+html:has(body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php)) { background: #0F1013; }
+
+/* WordPress core colours that are not tokens */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php), body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpwrap, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpcontent, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content { background: var(--pm-canvas); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat td, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat th, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat td p, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat ol, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat ul, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .form-table td,
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .form-wrap label, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wrap, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .inside, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content { color: var(--pm-body); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat td strong, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wrap strong, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .form-table th { color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) code, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) kbd { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input::placeholder, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) textarea::placeholder { color: var(--pm-faint); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) select, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui select { background-color: var(--pm-field); color: var(--pm-text);
+	background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23A7ABB3%22%2F%3E%3C%2Fsvg%3E"); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input[type=checkbox], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input[type=radio] { background: var(--pm-field); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) select:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) textarea:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input[readonly], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) textarea[readonly] { background: var(--pm-bg-2); color: var(--pm-muted); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary.disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary[disabled] { background: #3A4170 !important; border-color: #3A4170 !important; color: #8D93B5 !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button.disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button[disabled] { background: var(--pm-bg-2) !important; color: var(--pm-faint) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .hndle, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .stuffbox .hndle, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .postbox-header { color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .handle-order-higher, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .handle-order-lower, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .handlediv { color: var(--pm-faint); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tablenav .tablenav-pages a, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tablenav-pages-navspan { background: var(--pm-bg); color: var(--pm-text); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tablenav-pages-navspan { background: var(--pm-bg-2); color: var(--pm-faint); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-list-table tbody tr:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .striped > tbody > :nth-child(odd) { background: transparent; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-list-table tbody tr:hover { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugins .active td, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugins .active th, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugins .inactive td, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugins .inactive th { background: var(--pm-bg); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugin-update-tr .update-message, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .notice-alt { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .notice-warning.notice-alt { background: rgba(240, 176, 98, .08); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .notice-error.notice-alt { background: rgba(242, 139, 154, .08); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .notice-success.notice-alt { background: rgba(91, 211, 154, .08); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #screen-meta, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #contextual-help-wrap, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .contextual-help-tabs ul li.active { background: var(--pm-bg); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .contextual-help-tabs ul li.active { border-color: var(--pm-border); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .contextual-help-sidebar { border-color: var(--pm-border); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .welcome-panel, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .card, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .stuffbox { color: var(--pm-body); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #dashboard-widgets h3, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #dashboard-widgets h4, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #dashboard_quick_press .drafts h2 { color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #dashboard_activity .subsubsub, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .activity-block { border-color: var(--pm-row); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #activity-widget #the-comment-list .comment-item, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #activity-widget #the-comment-list .comment-meta { background: transparent; border-color: var(--pm-row); color: var(--pm-body); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-header, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-body, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .site-health-issues-wrapper, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-accordion-panel { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger:active { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-tabs-wrapper .health-check-tab { color: var(--pm-muted); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-tabs-wrapper .health-check-tab.active { color: var(--pm-text); box-shadow: inset 0 -3px var(--pm-primary); }
+/* media library and modal */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-modal-content, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-content, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-router, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-title, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-menu, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-menu,
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-toolbar .media-toolbar, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .attachments-browser .media-toolbar, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .uploader-inline, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-modal .media-frame-content { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-sidebar, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .attachment-details, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .edit-attachment-frame .attachment-media-view, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .edit-attachment-frame .edit-media-header { background: var(--pm-bg-2); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .attachment-preview, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .attachment .thumbnail { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-title h1, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-modal-close, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-router .media-menu-item, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-menu .media-menu-item { color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-router .active, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-router .media-menu-item.active:last-child { color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-modal-backdrop { background: #000; opacity: .7; }
+/* classic editor */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-editor-container, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-container-body, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .quicktags-toolbar, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) div.mce-toolbar-grp { background: var(--pm-bg-2) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-btn button, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-btn .mce-txt, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-ico { color: var(--pm-body) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-panel { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wp-content-editor-container .wp-editor-area { background: var(--pm-field); color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-switch-editor { color: var(--pm-muted); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .html-active .switch-html, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tmce-active .switch-tmce { background: var(--pm-bg-2); color: var(--pm-text); border-bottom-color: var(--pm-bg-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .categorydiv div.tabs-panel, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-tab-panel, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .category-tabs li.tabs, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) ul.add-menu-item-tabs li.tabs { background: var(--pm-bg); border-color: var(--pm-border); color: var(--pm-body); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #post-status-info { background: var(--pm-bg-2); }
+/* nav menus */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .menu-item-bar .menu-item-handle, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .menu-item-settings, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .nav-menus-php .metabox-holder .accordion-section-title, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .accordion-section-content, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .menu-settings, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .manage-menus, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #menu-management .menu-edit, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #nav-menu-footer, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #nav-menu-header { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .menu-item-bar .menu-item-handle:hover { border-color: var(--pm-border-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .accordion-section-title:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .open .accordion-section-title { background: var(--pm-bg-2); color: var(--pm-text); }
+/* themes */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-browser .theme .theme-name { background: var(--pm-bg); color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-browser .theme.active .theme-name { background: var(--pm-chrome); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-wrap, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-header, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-actions { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+/* pursae pieces with fixed light colours */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-0 { background: rgba(135, 150, 236, .16); color: #B4BDF5; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-1 { background: rgba(108, 184, 236, .14); color: #A9D8F7; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-2 { background: rgba(91, 211, 154, .13); color: #95E2C3; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-3 { background: rgba(240, 176, 98, .13); color: #FFC99A; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-4 { background: rgba(170, 140, 250, .15); color: #CDBEFF; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .gc-badge.warn { background: rgba(240, 176, 98, .12) !important; color: #FFC99A !important; border-color: rgba(240, 176, 98, .3) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .row-actions > .trash > a:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .row-actions > .delete > a:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .row-actions > .spam > a:hover { background: rgba(242, 139, 154, .12) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-chart .pm-prev { stroke: #5D6270; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-line { stroke: #E6E7EA; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-legend .p:before { background: #E6E7EA; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path { fill: #262931; stroke: var(--pm-bg); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l1, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l1 { fill: #2E3561; background: #2E3561; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l2, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l2 { fill: #3D4A93; background: #3D4A93; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l3, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l3 { fill: #5566C4; background: #5566C4; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l4, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l4 { fill: #7584E4; background: #7584E4; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l5, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l5 { fill: #A3AFF2; background: #A3AFF2; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path:hover { fill: #ECEDEF; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-switch span { background: #ECEDEF; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-switch.is-on span { background: var(--pm-on-primary); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tgl input:checked + span::after { background: var(--pm-on-primary); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-chip.is-muted:before { background: var(--pm-border-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .admin-theme-option { background: var(--pm-bg); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .admin-theme-preview { border-color: var(--pm-border); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar { width: 12px; height: 12px; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar-thumb { background: #2A2D35; border: 3px solid var(--pm-canvas); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar-track { background: var(--pm-canvas); }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) {
+	--pm-canvas: #0F1013;
+	--pm-bg: #17191E;
+	--pm-bg-2: #1B1D23;
+	--pm-field: #121317;
+	--pm-hover: #22252C;
+	--pm-border: #2A2D35;
+	--pm-border-2: #3A3E47;
+	--pm-row: #22252C;
+	--pm-text: #ECEDEF;
+	--pm-body: #D3D5DA;
+	--pm-muted: #A7ABB3;
+	--pm-faint: #7F848D;
+	--pm-primary: #8796EC;
+	--pm-primary-hover: #A3AFF2;
+	--pm-primary-50: rgba(135, 150, 236, .14);
+	--pm-on-primary: #0F1013;
+	--pm-ok: #5BD39A;
+	--pm-warn: #F0B062;
+	--pm-bad: #F28B9A;
+	--pm-info: #6CB8EC;
+	--wp-admin-theme-color: #8796EC;
+	--wp-admin-theme-color--rgb: 135, 150, 236;
+	--wp-admin-theme-color-darker-10: #A3AFF2;
+	--wp-admin-theme-color-darker-20: #BCC5F6;
+	color-scheme: dark;
+}
+html:has(body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php)) { background: #0F1013; }
+
+/* WordPress core colours that are not tokens */
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php), body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpwrap, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpcontent, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content { background: var(--pm-canvas); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat td, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat th, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat td p, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat ol, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat ul, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .form-table td,
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .form-wrap label, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wrap, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .inside, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content { color: var(--pm-body); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat td strong, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wrap strong, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .form-table th { color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) code, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) kbd { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input::placeholder, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) textarea::placeholder { color: var(--pm-faint); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) select, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui select { background-color: var(--pm-field); color: var(--pm-text);
+	background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23A7ABB3%22%2F%3E%3C%2Fsvg%3E"); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input[type=checkbox], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input[type=radio] { background: var(--pm-field); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) select:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) textarea:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input[readonly], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) textarea[readonly] { background: var(--pm-bg-2); color: var(--pm-muted); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary.disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary[disabled] { background: #3A4170 !important; border-color: #3A4170 !important; color: #8D93B5 !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button.disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button[disabled] { background: var(--pm-bg-2) !important; color: var(--pm-faint) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .hndle, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .stuffbox .hndle, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .postbox-header { color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .handle-order-higher, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .handle-order-lower, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .handlediv { color: var(--pm-faint); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tablenav .tablenav-pages a, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tablenav-pages-navspan { background: var(--pm-bg); color: var(--pm-text); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tablenav-pages-navspan { background: var(--pm-bg-2); color: var(--pm-faint); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-list-table tbody tr:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .striped > tbody > :nth-child(odd) { background: transparent; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-list-table tbody tr:hover { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugins .active td, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugins .active th, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugins .inactive td, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugins .inactive th { background: var(--pm-bg); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugin-update-tr .update-message, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .notice-alt { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .notice-warning.notice-alt { background: rgba(240, 176, 98, .08); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .notice-error.notice-alt { background: rgba(242, 139, 154, .08); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .notice-success.notice-alt { background: rgba(91, 211, 154, .08); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #screen-meta, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #contextual-help-wrap, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .contextual-help-tabs ul li.active { background: var(--pm-bg); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .contextual-help-tabs ul li.active { border-color: var(--pm-border); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .contextual-help-sidebar { border-color: var(--pm-border); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .welcome-panel, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .card, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .stuffbox { color: var(--pm-body); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #dashboard-widgets h3, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #dashboard-widgets h4, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #dashboard_quick_press .drafts h2 { color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #dashboard_activity .subsubsub, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .activity-block { border-color: var(--pm-row); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #activity-widget #the-comment-list .comment-item, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #activity-widget #the-comment-list .comment-meta { background: transparent; border-color: var(--pm-row); color: var(--pm-body); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-header, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-body, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .site-health-issues-wrapper, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-accordion-panel { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger:active { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-tabs-wrapper .health-check-tab { color: var(--pm-muted); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-tabs-wrapper .health-check-tab.active { color: var(--pm-text); box-shadow: inset 0 -3px var(--pm-primary); }
+/* media library and modal */
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-modal-content, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-content, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-router, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-title, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-menu, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-menu,
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-toolbar .media-toolbar, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .attachments-browser .media-toolbar, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .uploader-inline, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-modal .media-frame-content { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-sidebar, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .attachment-details, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .edit-attachment-frame .attachment-media-view, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .edit-attachment-frame .edit-media-header { background: var(--pm-bg-2); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .attachment-preview, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .attachment .thumbnail { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-title h1, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-modal-close, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-router .media-menu-item, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-menu .media-menu-item { color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-router .active, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-router .media-menu-item.active:last-child { color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-modal-backdrop { background: #000; opacity: .7; }
+/* classic editor */
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-editor-container, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-container-body, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .quicktags-toolbar, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) div.mce-toolbar-grp { background: var(--pm-bg-2) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-btn button, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-btn .mce-txt, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-ico { color: var(--pm-body) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-panel { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wp-content-editor-container .wp-editor-area { background: var(--pm-field); color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-switch-editor { color: var(--pm-muted); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .html-active .switch-html, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tmce-active .switch-tmce { background: var(--pm-bg-2); color: var(--pm-text); border-bottom-color: var(--pm-bg-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .categorydiv div.tabs-panel, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-tab-panel, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .category-tabs li.tabs, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) ul.add-menu-item-tabs li.tabs { background: var(--pm-bg); border-color: var(--pm-border); color: var(--pm-body); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #post-status-info { background: var(--pm-bg-2); }
+/* nav menus */
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .menu-item-bar .menu-item-handle, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .menu-item-settings, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .nav-menus-php .metabox-holder .accordion-section-title, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .accordion-section-content, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .menu-settings, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .manage-menus, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #menu-management .menu-edit, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #nav-menu-footer, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #nav-menu-header { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .menu-item-bar .menu-item-handle:hover { border-color: var(--pm-border-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .accordion-section-title:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .open .accordion-section-title { background: var(--pm-bg-2); color: var(--pm-text); }
+/* themes */
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-browser .theme .theme-name { background: var(--pm-bg); color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-browser .theme.active .theme-name { background: var(--pm-chrome); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-wrap, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-header, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-actions { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+/* pursae pieces with fixed light colours */
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-0 { background: rgba(135, 150, 236, .16); color: #B4BDF5; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-1 { background: rgba(108, 184, 236, .14); color: #A9D8F7; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-2 { background: rgba(91, 211, 154, .13); color: #95E2C3; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-3 { background: rgba(240, 176, 98, .13); color: #FFC99A; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-4 { background: rgba(170, 140, 250, .15); color: #CDBEFF; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .gc-badge.warn { background: rgba(240, 176, 98, .12) !important; color: #FFC99A !important; border-color: rgba(240, 176, 98, .3) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .row-actions > .trash > a:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .row-actions > .delete > a:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .row-actions > .spam > a:hover { background: rgba(242, 139, 154, .12) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-chart .pm-prev { stroke: #5D6270; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-line { stroke: #E6E7EA; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-legend .p:before { background: #E6E7EA; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path { fill: #262931; stroke: var(--pm-bg); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l1, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l1 { fill: #2E3561; background: #2E3561; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l2, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l2 { fill: #3D4A93; background: #3D4A93; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l3, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l3 { fill: #5566C4; background: #5566C4; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l4, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l4 { fill: #7584E4; background: #7584E4; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l5, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l5 { fill: #A3AFF2; background: #A3AFF2; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path:hover { fill: #ECEDEF; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-switch span { background: #ECEDEF; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-switch.is-on span { background: var(--pm-on-primary); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tgl input:checked + span::after { background: var(--pm-on-primary); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-chip.is-muted:before { background: var(--pm-border-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .admin-theme-option { background: var(--pm-bg); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .admin-theme-preview { border-color: var(--pm-border); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar { width: 12px; height: 12px; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar-thumb { background: #2A2D35; border: 3px solid var(--pm-canvas); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar-track { background: var(--pm-canvas); }
+}
+
+/* toolbar: light / dark toggle next to the account */
+body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode > .ab-item { display: flex; align-items: center; justify-content: center; width: 32px; padding: 0; cursor: pointer; background: none; border: 0; }
+body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode svg { width: 16px; height: 16px; fill: none; stroke: var(--pm-chrome-muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode > .ab-item:hover svg,
+body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode > .ab-item:focus svg { stroke: var(--pm-chrome-text); }
+body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode .pm-sun { display: none; }
+body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode [aria-pressed="true"] .pm-sun { display: block; }
+body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode [aria-pressed="true"] .pm-moon { display: none; }
+/* profile: colour mode radios */
+.admin-theme-mode { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.admin-theme-mode legend { float: left; margin-right: 6px; font-weight: 500; }
+
+/* plugin and core boxes found by the dark-mode audit */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) :is(.woocommerce-summary, .woocommerce-summary__item, .goo-ext-card, .goo-theme-card, .goo-theme-shot, .woocommerce_order_items, .wc-order-item-thumbnail,
+	.pf-admin-stat, .pf-admin-box__more, .pf-admin-icon-cell, .pf-admin-icon-grid, .pf-admin-iconpick__panel, .contact-form-editor-panel, .theme-actions,
+	.accordion-section-title, .accordion-trigger, .bulk-select-button, .nav-menus-php #post-body, .bmgr-cats, .bmgr-sub, .gc-job, .gc-progress,
+	.privacy-settings-header, .hg-panel, .gk-theme, .gk-service, .wpms-mailer-tile, .wpms-section, tr.pll-module, .wp-editor-tools, .mce-btn,
+	.seogo-tab, td.colspanchange, tr.is-checked, .infobox) {
+	background-color: var(--pm-bg) !important; color: var(--pm-body); border-color: var(--pm-border) !important;
+}
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) :is(.pf-admin-stat__icon, .goo-ext-badge, .px-badge, .adminsec-badge, .pf-admin-state, .pf-admin-threshold, #adminsec-score, .badge.blue) {
+	background-color: var(--pm-bg-2) !important; color: var(--pm-body) !important; border-color: var(--pm-border) !important;
+}
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .nav-tab-active, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .nav-tab-active:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .nav-tab-active:focus { background: transparent !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) :is(.woocommerce-summary__item-value, .woocommerce-summary__item-value bdi, .pf-admin-stat__label, .pf-admin-activity__excerpt, .lbl, .importer-title,
+	.submitted-on, .accordion-title, .nav-tab-link, .seogo-tab, .infobox, mark.error, .wp-list-table bdi) { color: var(--pm-body) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .submitdelete, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #remove-post-thumbnail { color: var(--pm-bad) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .woocommerce-summary__item:hover { background-color: var(--pm-bg-2) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) details > summary { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) em { color: inherit; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wpms-mailer-tile.is-selected, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .gk-theme.active, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .goo-theme-card.is-active { border-color: var(--pm-primary) !important; }
+/* inline white backgrounds left in plugin markup */
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background:#fff"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background: #fff"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background:#ffffff"],
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background: #ffffff"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background-color:#fff"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background-color: #fff"] { background: var(--pm-bg) !important; }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#1d2327"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #1d2327"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#2c3338"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #2c3338"],
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#000"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #000"] { color: var(--pm-body) !important; }
+@media (prefers-color-scheme: dark) {
+
+/* plugin and core boxes found by the dark-mode audit */
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) :is(.woocommerce-summary, .woocommerce-summary__item, .goo-ext-card, .goo-theme-card, .goo-theme-shot, .woocommerce_order_items, .wc-order-item-thumbnail,
+	.pf-admin-stat, .pf-admin-box__more, .pf-admin-icon-cell, .pf-admin-icon-grid, .pf-admin-iconpick__panel, .contact-form-editor-panel, .theme-actions,
+	.accordion-section-title, .accordion-trigger, .bulk-select-button, .nav-menus-php #post-body, .bmgr-cats, .bmgr-sub, .gc-job, .gc-progress,
+	.privacy-settings-header, .hg-panel, .gk-theme, .gk-service, .wpms-mailer-tile, .wpms-section, tr.pll-module, .wp-editor-tools, .mce-btn,
+	.seogo-tab, td.colspanchange, tr.is-checked, .infobox) {
+	background-color: var(--pm-bg) !important; color: var(--pm-body); border-color: var(--pm-border) !important;
+}
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) :is(.pf-admin-stat__icon, .goo-ext-badge, .px-badge, .adminsec-badge, .pf-admin-state, .pf-admin-threshold, #adminsec-score, .badge.blue) {
+	background-color: var(--pm-bg-2) !important; color: var(--pm-body) !important; border-color: var(--pm-border) !important;
+}
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .nav-tab-active, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .nav-tab-active:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .nav-tab-active:focus { background: transparent !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) :is(.woocommerce-summary__item-value, .woocommerce-summary__item-value bdi, .pf-admin-stat__label, .pf-admin-activity__excerpt, .lbl, .importer-title,
+	.submitted-on, .accordion-title, .nav-tab-link, .seogo-tab, .infobox, mark.error, .wp-list-table bdi) { color: var(--pm-body) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .submitdelete, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #remove-post-thumbnail { color: var(--pm-bad) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .woocommerce-summary__item:hover { background-color: var(--pm-bg-2) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) details > summary { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) em { color: inherit; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wpms-mailer-tile.is-selected, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .gk-theme.active, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .goo-theme-card.is-active { border-color: var(--pm-primary) !important; }
+/* inline white backgrounds left in plugin markup */
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background:#fff"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background: #fff"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background:#ffffff"],
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background: #ffffff"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background-color:#fff"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background-color: #fff"] { background: var(--pm-bg) !important; }
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#1d2327"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #1d2327"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#2c3338"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #2c3338"],
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#000"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #000"] { color: var(--pm-body) !important; }
+}
+body.pursae-modern .goo-chart .goo-grid { stroke: var(--pm-row); }
+body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #titlediv #title { background: var(--pm-field); color: var(--pm-text); }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #titlediv #title { background: var(--pm-field); color: var(--pm-text); }
 }
