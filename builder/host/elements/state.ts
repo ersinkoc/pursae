@@ -17,8 +17,13 @@ export interface ElState {
   shown: ReadonlySet<string>
   /** Navigator rows the user opened (element ids, section ids). */
   open: ReadonlySet<string>
-  /** Live edit: the design's scripts run in the editing frame. */
+  /** Live edit: the design's scripts run in the editing frame (needs `scripts`). */
   live: boolean
+  /**
+   * The author confirmed, for this editor session, that the design's scripts may run with their
+   * admin access (Live edit, Preview). Never stored: a new session asks again.
+   */
+  scripts: boolean
   /** Element whose text is being edited in place. */
   editing: string | null
   /** Style panel: the state being styled (the device is the canvas device). */
@@ -32,7 +37,7 @@ export interface ElState {
 /** The canvas device as local styles name it. */
 export const deviceOf = (d: 'desktop' | 'tablet' | 'mobile'): Device => (d === 'desktop' ? '' : d)
 
-let state: ElState = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null, styleState: '', classEdit: null, palette: null }
+let state: ElState = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, scripts: false, editing: null, styleState: '', classEdit: null, palette: null }
 const subs = new Set<() => void>()
 
 export const getElState = () => state
@@ -70,7 +75,7 @@ export const clipboard: { html: string | null; local: LocalStyles | null; style:
 
 /** Resets everything (tests, a new document). */
 export function resetElState() {
-  state = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null, styleState: '', classEdit: null, palette: null }
+  state = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, scripts: false, editing: null, styleState: '', classEdit: null, palette: null }
   clipboard.html = null
   clipboard.local = null
   clipboard.style = null
