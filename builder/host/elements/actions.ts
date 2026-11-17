@@ -7,8 +7,9 @@ import type { BuilderApi } from '@/builder/store'
 import type { DocState, Section } from '@/builder/types'
 import { t } from '../i18n'
 import { clipboard, getElState, setElState } from './state'
-import { outer } from './html'
-import { duplicate, insert, locate, move, parentId, placeBy, remove, reIdHtml, setInner, step, unwrap, whereIs, wrap, type Page, type Place, type Result } from './ops'
+import { attr, outer } from './html'
+import { copyEntries, entryOf, idsIn, parseStyleAttr, rehome, setDecls, variantOf, withoutDecls, type Device, type LocalEntry, type LocalSection, type LocalStyles, type State } from './local'
+import { duplicate, insert, locate, move, parentId, placeBy, remove, reIdHtml, setAttr, setInner, step, unwrap, whereIs, wrap, type Page, type Place, type Result } from './ops'
 
 type B = Pick<BuilderApi, 'doc' | 'dispatch' | 'select' | 'notify'>
 
@@ -37,6 +38,27 @@ export function withContent(doc: DocState, html: Record<string, string>, extra?:
   }
 }
 
+/** The document with the given sections' local styles replaced (undefined: the field goes). */
+export function withLocal(doc: DocState, local: Record<string, LocalStyles | undefined>): DocState {
+  if (!Object.keys(local).length) return doc
+  return {
+    ...doc,
+    sections: doc.sections.map((s: Section) => {
+      if (!(s.id in local)) return s
+      const { local: _drop, ...rest } = s as LocalSection
+      const l = local[s.id]
+      return (l && Object.keys(l).length ? { ...rest, local: l } : rest) as Section
+    }),
+  }
+}
+
+/** Every code section's local styles merged (ids are unique on the page). */
+export function pageLocal(doc: DocState): LocalStyles {
+  const out: LocalStyles = {}
+  for (const s of doc.sections as LocalSection[]) if (s.kind === 'code' && s.local) Object.assign(out, s.local)
+  return out
+}
+
 /**
  * The latest document: the canvas keeps it current between renders, so two quick operations
  * (a key held down) each build on the one before.
@@ -53,10 +75,23 @@ export function selectEl(b: Pick<B, 'select' | 'doc'>, id: string | null, page?:
   if (at) b.select({ sectionId: at.sec, el: 'html' })
 }
 
-/** Writes an operation's result as one history entry; false when there was nothing to do. */
-export function commit(b: B, label: string, res: Result | null, extra?: Record<string, Record<string, string>>): boolean {
-  if (!res || (!Object.keys(res.html).length && !extra)) return false
-  const doc = withContent(docOf(b), res.html, extra)
+/**
+ * Writes an operation's result as one history entry; false when there was nothing to do. A copy's
+ * new elements get the local styles of the elements they copy (from `src`, else the page's), and
+ * local styles follow their elements to other sections and go with deleted ones (rehome).
+ */
+export function commit(b: B, label: string, res: Result | null, extra?: Record<string, Record<string, string>>, local?: Record<string, LocalStyles | undefined>, src?: LocalStyles | null): boolean {
+  if (!res || (!Object.keys(res.html).length && !extra && !local)) return false
+  let doc = withContent(docOf(b), res.html, extra)
+  if (local) doc = withLocal(doc, local)
+  if (res.copies?.to.length) {
+    const copied = copyEntries(src ?? pageLocal(doc), res.copies.from, res.copies.to)
+    if (Object.keys(copied).length) {
+      const into = (doc.sections as LocalSection[]).find((s) => s.kind === 'code' && idsIn(s.content.html ?? '').has(res.copies!.to[0]))
+      if (into) doc = withLocal(doc, { [into.id]: { ...(into.local ?? {}), ...copied } })
+    }
+  }
+  doc = withLocal(doc, rehome(doc.sections as LocalSection[]))
   latest.doc = doc
   b.dispatch({ type: 'replace', doc, label })
   if (res.select !== undefined) selectEl(b, res.select, pageOf(doc))
@@ -98,6 +133,10 @@ export const act = {
     const at = locate(page(b), id)
     if (!at) return
     clipboard.html = outer(at.tree, at.el)
+    const all = pageLocal(docOf(b))
+    const mine: LocalStyles = {}
+    for (const x of idsIn(clipboard.html)) if (all[x]) mine[x] = JSON.parse(JSON.stringify(all[x]))
+    clipboard.local = mine
     b.notify(t('Element copied'))
   },
   /** Pastes the copied element after id (inside: as its last child). */
@@ -112,7 +151,7 @@ export const act = {
       const w = whereIs(p, id)
       if (w) place = placeBy(p, w.sec, w.parent, id, true)
     }
-    if (!place || !commit(b, t('Element pasted'), insert(p, place, clipboard.html))) {
+    if (!place || !commit(b, t('Element pasted'), insert(p, place, clipboard.html), undefined, undefined, clipboard.local)) {
       b.notify(t('The element cannot be pasted here.'))
       return false
     }
@@ -131,6 +170,70 @@ export const act = {
     const s = docOf(b).sections.find((x) => x.id === sec)
     if (!s || (s.content.names ?? '') === json) return
     commit(b, t('Element renamed'), { html: {} }, { [sec]: { names: json } })
+  },
+}
+
+/** The section holding element id, with its local styles. */
+function sectionOf(b: B, id: string): { sec: LocalSection; page: Page } | null {
+  const doc = docOf(b)
+  const p = pageOf(doc)
+  const at = locate(p, id)
+  const sec = at && (doc.sections.find((s) => s.id === at.sec) as LocalSection | undefined)
+  return sec ? { sec, page: p } : null
+}
+
+export const style = {
+  /**
+   * Sets (value) or resets (null) declarations of element id's local style at device bp and
+   * state st, as one history entry. A declaration the element's inline style attribute sets for
+   * a property being set (or one of `inline`, the inline declarations that cover it, e.g. padding
+   * for padding-top) moves into the element's local style (all devices, normal state) first: an
+   * inline style would beat the local one. The attribute's other declarations stay.
+   */
+  set(b: B, id: string, bp: Device, st: State, decls: Record<string, string | null>, inline?: string[], label = t('Style changed')): boolean {
+    const w = sectionOf(b, id)
+    if (!w) return false
+    let local = w.sec.local
+    let html: Record<string, string> = {}
+    const at = locate(w.page, id)!
+    const styleAttr = attr(at.el, 'style')
+    const setting = Object.keys(decls).filter((k) => decls[k] !== null && decls[k] !== '')
+    if (styleAttr && setting.length) {
+      const names = new Set([...setting, ...(inline ?? [])])
+      const found = parseStyleAttr(styleAttr).filter((d) => names.has(d.name))
+      if (found.length) {
+        const base = variantOf(local, id, '', '')
+        const moved: Record<string, string> = {}
+        for (const d of found) if (!(d.name in base) && d.value) moved[d.name] = d.important ? `${d.value} !important` : d.value
+        local = setDecls(local, id, '', '', moved)
+        const r = setAttr(w.page, id, 'style', withoutDecls(styleAttr, new Set(found.map((d) => d.name))))
+        if (r) html = r.html
+      }
+    }
+    local = setDecls(local, id, bp, st, decls)
+    if (JSON.stringify(local) === JSON.stringify(w.sec.local ?? {}) && !Object.keys(html).length) return false
+    return commit(b, label, { html, select: id }, undefined, { [w.sec.id]: local })
+  },
+  /** Copies element id's whole local style (every device and state). */
+  copy(b: B, id: string) {
+    const w = sectionOf(b, id)
+    clipboard.style = w ? entryOf(w.sec.local, id) : null
+    b.notify(clipboard.style ? t('Style copied') : t('This element has no style of its own to copy.'))
+  },
+  /** Replaces element id's local style by the copied one. */
+  paste(b: B, id: string) {
+    const w = sectionOf(b, id)
+    if (!w || !clipboard.style) return false
+    const entry: LocalEntry = JSON.parse(JSON.stringify(clipboard.style))
+    return commit(b, t('Style pasted'), { html: {}, select: id }, undefined, { [w.sec.id]: { ...(w.sec.local ?? {}), [id]: entry } })
+  },
+  /** Removes element id's local style (every device and state). */
+  clear(b: B, id: string) {
+    const w = sectionOf(b, id)
+    if (!w?.sec.local?.[id]) return false
+    const next = { ...w.sec.local }
+    delete next[id]
+    return commit(b, t('Style cleared'), { html: {}, select: id }, undefined, { [w.sec.id]: next })
   },
 }
 

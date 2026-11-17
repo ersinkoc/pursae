@@ -10,7 +10,7 @@
  * structural change reloads the frame); Preview runs them without editing controls.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, Bold, ChevronRight, Clipboard, ClipboardPaste, Copy, CornerLeftUp, Eye, EyeOff, GripVertical, Italic, Layers, Link2, Pencil, RemoveFormatting, SquareDashed, Trash2, Ungroup, Zap } from 'lucide-react'
+import { ArrowDown, ArrowUp, Bold, ChevronRight, Clipboard, ClipboardPaste, Copy, CornerLeftUp, Eraser, Eye, EyeOff, GripVertical, Italic, Layers, Link2, Paintbrush, Pencil, RemoveFormatting, SquareDashed, Trash2, Ungroup, Zap } from 'lucide-react'
 import { useB, type BuilderApi } from '@/builder/store'
 import type { Section } from '@/builder/types'
 import type { CmsHost } from '../cms-host'
@@ -23,7 +23,9 @@ import { attr, ownText } from './html'
 import { KIND_ICON, kindLabel, kindOf, namesOf, tagName } from './kinds'
 import { childIds, locate, movable, parentId, tree, type Page } from './ops'
 import { format, startTextEdit, type TextEdit } from './richtext'
-import { clipboard, getElState, setElState, toggleIn, useElState } from './state'
+import { bumpFrame, clipboard, getElState, setElState, toggleIn, useElState } from './state'
+import { sectionsCSS, type LocalSection } from './local'
+import { style as styleAct } from './actions'
 
 const WIDTH = { desktop: 1440, tablet: 768, mobile: 390 } as const
 const BAR = 34
@@ -61,12 +63,19 @@ interface Menu {
   id: string
 }
 
+/** The frame's local stylesheet: header, page and footer local styles, the edited state forced. */
+function localCssOf(secs: Section[], parts: { header: Section[]; footer: Section[] }, kits: Record<string, { tablet: number; mobile: number }> | undefined, force: { id: string; st: '' | 'hover' | 'focus' | 'focus-visible' | 'active' } | null): string {
+  const f = force && force.st ? { force } : {}
+  return sectionsCSS(parts.header as LocalSection[], kits, 'h:') + sectionsCSS(secs as LocalSection[], kits, '', f) + sectionsCSS(parts.footer as LocalSection[], kits, 'f:')
+}
+
 export function ElementsCanvas() {
   const b = useB()
   latest.doc = b.doc
   const st = useElState()
   const host = cmsHost()
   const parts = useMemo(() => partsOf(host?.boot.codeParts), [host])
+  const kits = host?.boot.kitBreakpoints
   const mode: FrameMode = b.preview ? 'preview' : st.live ? 'live' : 'static'
   const secs = useMemo(() => b.doc.sections.filter((s) => s.kind === 'code' && !s.hidden), [b.doc.sections])
   const page = useMemo(() => pageOf(b.doc), [b.doc])
@@ -82,7 +91,11 @@ export function ElementsCanvas() {
 
   // ---------- frame document ----------
   const base = typeof location !== 'undefined' ? location.origin + '/' : '/'
-  const [srcdoc, setSrcdoc] = useState(() => frameDoc(secs, parts, mode, editCss(mode, st.hidden, st.shown, null), base))
+  const force = mode !== 'preview' && st.sel && st.styleState ? { id: st.sel, st: st.styleState } : null
+  const localCss = useMemo(() => localCssOf(secs, parts, kits, force), [secs, parts, kits, force?.id, force?.st]) // eslint-disable-line react-hooks/exhaustive-deps
+  const localRef = useRef(localCss)
+  localRef.current = localCss
+  const [srcdoc, setSrcdoc] = useState(() => frameDoc(secs, parts, mode, editCss(mode, st.hidden, st.shown, null), base, localCss))
   const shown = useRef<Record<string, string>>(htmlNow)
   const shownKey = useRef(structKey)
   const sync = useRef<FrameSync | null>(null)
@@ -100,7 +113,7 @@ export function ElementsCanvas() {
     shown.current = htmlNow
     shownKey.current = structKey
     const s = getElState()
-    setSrcdoc(frameDoc(secs, parts, mode, editCss(mode, s.hidden, s.shown, null), base))
+    setSrcdoc(frameDoc(secs, parts, mode, editCss(mode, s.hidden, s.shown, null), base, localRef.current))
   }, [htmlNow, structKey, secs, parts, mode, base])
 
   useLayoutEffect(() => {
@@ -111,6 +124,7 @@ export function ElementsCanvas() {
       if (sync.current.update(shown.current, htmlNow)) {
         shown.current = htmlNow
         refresh()
+        bumpFrame()
         return
       }
       return rebuild()
@@ -121,6 +135,21 @@ export function ElementsCanvas() {
     }
     rebuild()
   }, [htmlNow, structKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The frame's width changed: the Style panel reads the cascade again.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => bumpFrame())
+    return () => cancelAnimationFrame(id)
+  }, [b.device, zoom])
+
+  // Local styles: the editor-owned stylesheet is rewritten on every change (no reload).
+  useEffect(() => {
+    const el = fdoc()?.querySelector('style[data-wb-local]')
+    if (el && el.textContent !== localCss) {
+      el.textContent = localCss
+      bumpFrame()
+    }
+  }, [localCss, loaded])
 
   // Editor stylesheet: hidden, temporarily shown, dragged element.
   const [dragId, setDragId] = useState<string | null>(null)
@@ -364,6 +393,7 @@ export function ElementsCanvas() {
     sync.current = cur.current.mode === 'static' ? s : null
     if (keepY.current) w.scrollTo(0, keepY.current)
     setLoaded((n) => n + 1)
+    bumpFrame(d)
     const hover = hoverRef.current
     let raf = 0
     let lastTarget: Element | null = null
@@ -853,6 +883,11 @@ function ContextMenu({
       {item(t('Paste after'), <ClipboardPaste size={13} />, () => act.paste(b, id), { disabled: !clipboard.html, kbd: `${mod}V` })}
       {item(t('Paste inside'), <ClipboardPaste size={13} />, () => act.paste(b, id, true), { disabled: !clipboard.html, kbd: `⇧${mod}V` })}
       {item(t('Duplicate'), <Copy size={13} />, () => act.duplicate(b, id), { disabled: !can, kbd: `${mod}D` })}
+      <div className="my-1 h-px bg-white/10" />
+      {item(t('Copy style'), <Paintbrush size={13} />, () => styleAct.copy(b, id))}
+      {item(t('Paste style'), <Paintbrush size={13} />, () => styleAct.paste(b, id), { disabled: !clipboard.style })}
+      {item(t('Clear style'), <Eraser size={13} />, () => styleAct.clear(b, id), { disabled: !(b.doc.sections.find((s) => s.id === at.sec) as LocalSection | undefined)?.local?.[id] })}
+      <div className="my-1 h-px bg-white/10" />
       {item(t('Wrap in a Div'), <SquareDashed size={13} />, () => act.wrap(b, id), { disabled: !can })}
       {item(t('Unwrap'), <Ungroup size={13} />, () => act.unwrap(b, id), { disabled: !can })}
       {item(t('Select parent'), <CornerLeftUp size={13} />, () => act.parent(b, id), { kbd: 'Esc' })}

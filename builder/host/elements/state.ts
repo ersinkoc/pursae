@@ -4,6 +4,7 @@
  * the navigator's open rows and the element clipboard. Nothing here is stored in the document.
  */
 import { useSyncExternalStore } from 'react'
+import type { Device, LocalEntry, LocalStyles, State } from './local'
 
 export interface ElState {
   /** Selected element (data-wbc id). */
@@ -20,9 +21,14 @@ export interface ElState {
   live: boolean
   /** Element whose text is being edited in place. */
   editing: string | null
+  /** Style panel: the state being styled (the device is the canvas device). */
+  styleState: State
 }
 
-let state: ElState = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null }
+/** The canvas device as local styles name it. */
+export const deviceOf = (d: 'desktop' | 'tablet' | 'mobile'): Device => (d === 'desktop' ? '' : d)
+
+let state: ElState = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null, styleState: '' }
 const subs = new Set<() => void>()
 
 export const getElState = () => state
@@ -52,12 +58,40 @@ export function toggleIn(set: ReadonlySet<string>, id: string, on?: boolean): Se
   return next
 }
 
-/** The element clipboard (an element's markup); session only. */
-export const clipboard: { html: string | null } = { html: null }
+/**
+ * The element clipboard (an element's markup and the local styles of the elements in it) and the
+ * style clipboard (one element's local style); session only.
+ */
+export const clipboard: { html: string | null; local: LocalStyles | null; style: LocalEntry | null } = { html: null, local: null, style: null }
 
 /** Resets everything (tests, a new document). */
 export function resetElState() {
-  state = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null }
+  state = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null, styleState: '' }
   clipboard.html = null
+  clipboard.local = null
+  clipboard.style = null
   subs.forEach((f) => f())
 }
+
+/**
+ * The canvas frame as the Style panel reads it: its document and a version that changes whenever
+ * the frame's markup or stylesheets change (the panel's cascade cache key).
+ */
+export const frameInfo: { doc: Document | null; version: number } = { doc: null, version: 0 }
+const frameSubs = new Set<() => void>()
+export function bumpFrame(doc?: Document | null) {
+  if (doc !== undefined) frameInfo.doc = doc
+  frameInfo.version++
+  frameSubs.forEach((f) => f())
+}
+export const useFrameVersion = () =>
+  useSyncExternalStore(
+    (f) => {
+      frameSubs.add(f)
+      return () => {
+        frameSubs.delete(f)
+      }
+    },
+    () => frameInfo.version,
+    () => frameInfo.version,
+  )
