@@ -339,11 +339,21 @@ func (s *Server) wbRESTKitCommit(c *gin.Context, r *restRequest) {
 	}
 	wbKitsMu.Lock()
 	defer wbKitsMu.Unlock()
+	k, status, code, msg := s.wbKitCommitStage(c, slug, in.Name)
+	if k == nil {
+		restErr(c, status, code, msg)
+		return
+	}
+	c.JSON(http.StatusOK, s.wbKitView(c, k))
+}
+
+// wbKitCommitStage swaps the kit's staged files in for its live ones (the caller holds wbKitsMu),
+// bumps the version and saves the kit's entry. On failure it returns a nil kit and the REST error.
+func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string) (k *wbKit, status int, code, msg string) {
 	live := filepath.Join(s.wbKitRoot(), slug)
 	stage := filepath.Join(live, wbKitStageDir)
 	if _, err := os.Stat(stage); err != nil {
-		restErr(c, http.StatusConflict, "wb_kit_nothing_staged", "Nothing is staged for this kit: send files first.")
-		return
+		return nil, http.StatusConflict, "wb_kit_nothing_staged", "Nothing is staged for this kit: send files first."
 	}
 	// Swap: the staged folder becomes the kit (the old files go, the staging folder with them).
 	tmp := live + ".old-" + strconv.FormatInt(time.Now().UnixNano(), 36)
@@ -351,18 +361,15 @@ func (s *Server) wbRESTKitCommit(c *gin.Context, r *restRequest) {
 	next := filepath.Join(parent, "."+slug+".next")
 	_ = os.RemoveAll(next)
 	if err := os.Rename(stage, next); err != nil {
-		restErr(c, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit.")
-		return
+		return nil, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit."
 	}
 	if err := os.Rename(live, tmp); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		_ = os.Rename(next, stage)
-		restErr(c, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit.")
-		return
+		return nil, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit."
 	}
 	if err := os.Rename(next, live); err != nil {
 		_ = os.Rename(tmp, live)
-		restErr(c, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit.")
-		return
+		return nil, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit."
 	}
 	_ = os.RemoveAll(tmp)
 	files, _ := wbKitFiles(live)
@@ -371,24 +378,23 @@ func (s *Server) wbRESTKitCommit(c *gin.Context, r *restRequest) {
 		total += n
 	}
 	kits := s.wbKitList()
-	k := kits[slug]
+	k = kits[slug]
 	if k == nil {
 		k = &wbKit{Slug: slug, Name: slug}
 		kits[slug] = k
 	}
-	if name := strings.TrimSpace(in.Name); name != "" {
+	if name = strings.TrimSpace(name); name != "" {
 		k.Name = truncRunes(name, 120)
 	}
 	k.Version++
 	k.Files, k.Bytes, k.Updated = len(files), total, wbTime(time.Now())
 	k.Origins = wbKitOrigins(live, files)
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
-		restErr(c, http.StatusInternalServerError, "db_error", "Could not save the kit.")
-		return
+		return nil, http.StatusInternalServerError, "db_error", "Could not save the kit."
 	}
 	wbKitVersions.Delete("v")
 	s.purgeAll(c)
-	c.JSON(http.StatusOK, s.wbKitView(c, k))
+	return k, http.StatusOK, "", ""
 }
 
 func (s *Server) wbRESTKitDelete(c *gin.Context, r *restRequest) {
@@ -398,20 +404,27 @@ func (s *Server) wbRESTKitDelete(c *gin.Context, r *restRequest) {
 	slug := r.Params["slug"]
 	wbKitsMu.Lock()
 	defer wbKitsMu.Unlock()
+	if status, code, msg := s.wbKitRemove(c, slug); code != "" {
+		restErr(c, status, code, msg)
+		return
+	}
+	c.JSON(http.StatusOK, map[string]any{"deleted": true, "slug": slug})
+}
+
+// wbKitRemove deletes a kit and its files (the caller holds wbKitsMu); code is "" on success.
+func (s *Server) wbKitRemove(c *gin.Context, slug string) (status int, code, msg string) {
 	kits := s.wbKitList()
 	if kits[slug] == nil {
-		restErr(c, http.StatusNotFound, "wb_kit_not_found", "No design kit has that slug.")
-		return
+		return http.StatusNotFound, "wb_kit_not_found", "No design kit has that slug."
 	}
 	delete(kits, slug)
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
-		restErr(c, http.StatusInternalServerError, "db_error", "Could not delete the kit.")
-		return
+		return http.StatusInternalServerError, "db_error", "Could not delete the kit."
 	}
 	_ = os.RemoveAll(filepath.Join(s.wbKitRoot(), slug))
 	wbKitVersions.Delete("v")
 	s.purgeAll(c)
-	c.JSON(http.StatusOK, map[string]any{"deleted": true, "slug": slug})
+	return http.StatusOK, "", ""
 }
 
 var wbKitOriginRE = regexp.MustCompile(`['"\x60(]https://([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?::\d{1,5})?)[/'"\x60)]`)

@@ -1,0 +1,142 @@
+{{define "admin/web-builder-import"}}{{template "admin-header" .}}{{with .Data}}{{$d := .}}
+<div class="wrap web-builder-import">
+<h1 class="wp-heading-inline">Import HTML site</h1>
+{{if ne .Step "start"}}<a href="{{.URL}}" class="page-title-action">Start over</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+
+{{if eq .Step "start"}}
+<p class="description">Upload the zip of a finished static website (its HTML pages with their CSS, JavaScript, fonts and images). Pursae Web Builder imports every page one to one as code sections, splits the shared header and footer into Theme Builder templates and keeps the design's files as a design kit. Nothing is written to your site until you start the import.</p>
+<form method="post" enctype="multipart/form-data" action="{{.UploadURL}}" class="card" style="max-width:720px">
+<h2 class="title">1. Upload</h2>
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="wb-import-kit">Kit slug</label></th>
+<td><input type="text" name="kit" id="wb-import-kit" class="regular-text code" maxlength="64" pattern="[a-z0-9]([a-z0-9\-]*[a-z0-9])?" />
+<p class="description">Optional. The name of the design kit; by default taken from the name of the zip file.</p></td></tr>
+<tr><th scope="row"><label for="wb-import-zip">Zip file</label></th>
+<td><input type="file" name="archive" id="wb-import-zip" accept=".zip,application/zip" required />
+<p class="description">Up to {{.Limits}}. Paths that leave the folder, links and files that are not web assets are refused.</p></td></tr>
+</table>
+<p class="submit"><button type="submit" class="button button-primary">Upload and analyse</button></p>
+</form>
+{{if .Recs}}
+<h2 class="title">Earlier imports</h2>
+<table class="wp-list-table widefat fixed striped" style="max-width:720px"><thead><tr><th>Kit</th><th>Imported</th><th>Pages</th><th></th></tr></thead><tbody>
+{{range .Recs}}<tr><td><code>{{.Kit}}</code></td><td>{{.At}}</td><td>{{.Pages}}</td><td><a href="{{.UndoURL}}">Remove this import</a></td></tr>
+{{end}}</tbody></table>
+{{end}}
+{{end}}
+
+{{if eq .Step "analysis"}}{{with .A}}
+<p class="description">This is what the import would do. Nothing has been changed on your site yet.</p>
+<h2 class="title">2. Analysis</h2>
+<ul class="subsubsub" style="float:none">
+<li>{{len .Pages}} pages</li>
+<li>| {{.Creates}} new</li>
+<li>| {{.Updates}} updated</li>
+<li>| {{.AssetFiles}} design files</li>
+</ul>
+<table class="wp-list-table widefat fixed striped"><thead><tr><th>File</th><th>Title</th><th>Address</th><th>Result</th><th>Header</th><th>Footer</th></tr></thead><tbody>
+{{range .Pages}}<tr><td><code>{{.Path}}</code></td><td>{{.Title}}</td><td>{{if .URL}}<code>{{.URL}}</code>{{else}}&mdash;{{end}}</td>
+<td>{{if eq .Action "create"}}New page{{else if eq .Action "update"}}Updates the page of an earlier import{{else}}404 template{{end}}{{if eq .Kind "front"}} (front page){{end}}</td>
+<td>{{.Header}}</td><td>{{.Footer}}</td></tr>
+{{end}}</tbody></table>
+{{if .Placeholders}}<p>Draft parent pages are made for these folders, so their addresses stay 404 as in the design:</p><p>{{range .Placeholders}}<code>{{.}}</code> {{end}}</p>{{end}}
+
+<h3>Headers and footers</h3>
+<table class="wp-list-table widefat fixed striped" style="max-width:900px"><thead><tr><th>Template</th><th>Pages</th><th>Marked menu links</th><th>Examples</th></tr></thead><tbody>
+{{range $h := .Headers}}<tr><td>{{$h.Label}}</td><td>{{$h.Pages}}</td><td>{{$h.Active}}</td><td><code>{{$h.Examples}}</code></td></tr>
+{{end}}{{range $f := .Footers}}<tr><td>{{$f.Label}}</td><td>{{$f.Pages}}</td><td>{{$f.Active}}</td><td><code>{{$f.Examples}}</code></td></tr>
+{{end}}{{if and (not .Headers) (not .Footers)}}<tr><td colspan="4">No separate header or footer was found.</td></tr>{{end}}</tbody></table>
+
+{{if .Warnings}}<div class="notice notice-warning inline"><p><strong>Warnings</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Warnings}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+{{if .Handlers}}<div class="notice notice-warning inline"><p><strong>Inline event handlers</strong></p><p>The site's Content Security Policy blocks these; the design needs addEventListener instead.</p><ul style="list-style:disc;margin-left:20px">{{range .Handlers}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+{{if .Missing}}<div class="notice notice-error inline"><p><strong>Missing files</strong></p><p>The pages refer to files that are not in the zip:</p><ul style="list-style:disc;margin-left:20px">{{range .Missing}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
+{{if .Unmapped}}<div class="notice notice-info inline"><p><strong>Links to pages that are not in the zip</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Unmapped}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
+{{if .Origins}}<p><strong>External origins</strong> the design loads from (allowed in the pages' Content Security Policy):</p><p>{{range .Origins}}<code>{{.}}</code> {{end}}</p>{{end}}
+{{if .Breakpoints}}<p><strong>Breakpoints</strong> in the design's CSS (viewport widths of its media queries):</p><p>{{range .Breakpoints}}<code>{{.Px}}px</code> &times;{{.Count}} {{end}}</p>{{end}}
+{{end}}
+
+<h2 class="title">3. Options</h2>
+<form method="post" action="{{.URL}}?action=import&amp;import={{.ID}}" id="wb-import-form">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />
+<table class="form-table" role="presentation">
+<tr><th scope="row"><label for="wb-import-name">Kit name</label></th>
+<td><input type="text" name="name" id="wb-import-name" class="regular-text" maxlength="120" value="{{.Name}}" />
+<p class="description">Shown in the kit list and in the titles of the new templates.</p></td></tr>
+<tr><th scope="row"><label for="wb-import-slug">Kit slug</label></th>
+<td><input type="text" name="kit" id="wb-import-slug" class="regular-text code" maxlength="64" value="{{.Kit}}" pattern="[a-z0-9]([a-z0-9\-]*[a-z0-9])?" />
+{{if .A.KitExists}}<p class="description"><strong>A design kit with this slug exists</strong> ({{.A.KitFiles}} files). Importing replaces its files.</p>
+<label for="wb-import-replace"><input type="checkbox" name="replace" id="wb-import-replace" value="1"{{if .Replace}} checked{{end}} /> Replace the existing kit</label>{{end}}</td></tr>
+<tr><th scope="row">Header and footer</th>
+<td><label for="wb-import-split"><input type="checkbox" name="templates" id="wb-import-split" value="1"{{if .Split}} checked{{end}} /> Split the header and footer into Theme Builder templates</label>
+<p class="description">The shared header and footer become templates that every page uses. Without this each page keeps its own copy.</p></td></tr>
+<tr><th scope="row">Front page</th>
+<td><label for="wb-import-front"><input type="checkbox" name="front" id="wb-import-front" value="1"{{if .Front}} checked{{end}}{{if not .A.HasFront}} disabled{{end}} /> Use index.html as the front page</label>
+{{if not .A.HasFront}}<p class="description">The site has no index.html at its top.</p>{{end}}</td></tr>
+<tr><th scope="row">Status</th>
+<td><fieldset><label><input type="radio" name="status" value="publish"{{if not .Draft}} checked{{end}} /> Publish the pages</label><br />
+<label><input type="radio" name="status" value="draft"{{if .Draft}} checked{{end}} /> Import as drafts (publish them after comparing)</label></fieldset></td></tr>
+</table>
+<p class="submit"><button type="submit" class="button button-primary" id="wb-import-run">Import the site</button>
+<span class="description" style="margin-left:12px">A large site takes a while; keep this page open.</span></p>
+</form>
+<form method="post" action="{{.URL}}?action=discard&amp;import={{.ID}}" style="display:inline">
+<input type="hidden" name="_wpnonce" value="{{.DiscardNonce}}" />
+<button type="submit" class="button-link button-link-delete">Discard this upload</button></form>
+{{end}}
+
+{{if eq .Step "result"}}{{with .R}}
+<h2 class="title">Import report</h2>
+<p>Design kit: <code>{{.Kit}}</code>.{{if .Draft}} The pages were imported as drafts.{{end}}</p>
+<table class="wp-list-table widefat fixed striped"><thead><tr><th>File</th><th>Page</th><th></th></tr></thead><tbody>
+{{range .Pages}}<tr><td><code>{{.Path}}</code></td><td>{{if .URL}}<code>{{.URL}}</code>{{else}}&mdash;{{end}}</td>
+<td><a href="/wp-admin/post?post={{.PostID}}&amp;action=web-builder">Edit</a>{{if .URL}} | <a href="{{.URL}}" target="_blank" rel="noopener">View</a>{{end}}</td></tr>
+{{end}}</tbody></table>
+{{if .Templates}}<h3>Templates</h3>
+<table class="wp-list-table widefat fixed striped" style="max-width:700px"><thead><tr><th>Type</th><th>Pages</th><th></th></tr></thead><tbody>
+{{range .Templates}}<tr><td>{{.Type}}</td><td>{{if .Pages}}{{.Pages}}{{else}}&mdash;{{end}}</td><td><a href="/wp-admin/post?post={{.ID}}&amp;action=web-builder">Edit</a></td></tr>
+{{end}}</tbody></table>{{end}}
+{{if .Warnings}}<div class="notice notice-warning inline"><p><strong>Warnings</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Warnings}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
+{{if .Missing}}<div class="notice notice-error inline"><p><strong>Missing files</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Missing}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
+{{if .Unmapped}}<div class="notice notice-info inline"><p><strong>Links to pages that are not in the zip</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Unmapped}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
+{{end}}
+<p class="submit">
+<a href="{{.URL}}?action=compare&amp;import={{.ID}}" class="button button-primary" id="wb-import-compare">Compare with the design</a>
+{{if .R.Draft}}<form method="post" action="{{.URL}}?action=publish&amp;import={{.ID}}" style="display:inline;margin-left:8px">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" />{{if .Front}}<input type="hidden" name="front" value="1" />{{end}}
+<button type="submit" class="button">Publish the pages</button></form>{{end}}
+<a href="{{.URL}}?action=undo&amp;import={{.ID}}" class="button-link button-link-delete" style="margin-left:12px">Remove this import</a></p>
+{{end}}
+
+{{if eq .Step "compare"}}
+<p class="description">The design on the left is the original, drawn from your upload in an isolated frame; the page on the right is the imported Pursae page.</p>
+<p>{{range .Compare}}{{if .Current}}<strong>{{.Path}}</strong>{{else}}<a href="{{.Select}}">{{.Path}}</a>{{end}} {{end}}</p>
+{{with .Cur}}
+<p><a href="{{.DesignURL}}" target="_blank" rel="noopener">Open the design</a>{{if .ViewURL}} | <a href="{{.ViewURL}}" target="_blank" rel="noopener">Open the Pursae page</a>{{end}} | <a href="{{.EditURL}}">Edit the page</a></p>
+<div style="display:flex;gap:12px">
+<div style="flex:1;min-width:0"><h3>Design</h3>
+<iframe id="wb-import-design" title="Design" sandbox="allow-scripts allow-forms allow-popups" referrerpolicy="no-referrer" src="{{.DesignURL}}" style="width:100%;height:calc(100vh - 320px);min-height:480px;border:1px solid #c3c4c7;background:#fff"></iframe></div>
+<div style="flex:1;min-width:0"><h3>Pursae page</h3>
+{{if .PursaeURL}}<iframe id="wb-import-pursae" title="Pursae page" src="{{.PursaeURL}}" style="width:100%;height:calc(100vh - 320px);min-height:480px;border:1px solid #c3c4c7;background:#fff"></iframe>
+{{else}}<p class="description">This page is a draft: publish the pages to see it here.</p>{{end}}</div>
+</div>
+{{end}}
+<p class="submit"><a href="{{.URL}}?action=result&amp;import={{.ID}}" class="button">Back to the report</a></p>
+{{end}}
+
+{{if eq .Step "undo"}}{{with .Undo}}
+<h2 class="title">Remove this import</h2>
+<div class="notice notice-warning inline"><p>This permanently deletes the following. Pages and templates that this import did not create are never touched.</p></div>
+<h3>Pages</h3>
+{{if .Pages}}<ul style="list-style:disc;margin-left:20px">{{range .Pages}}<li>{{.}}</li>{{end}}</ul>{{else}}<p>None left.</p>{{end}}
+<h3>Templates</h3>
+{{if .Templates}}<ul style="list-style:disc;margin-left:20px">{{range .Templates}}<li>{{.}}</li>{{end}}</ul>{{else}}<p>None left.</p>{{end}}
+{{if .KitGone}}<h3>Design kit</h3><p><code>{{.Kit}}</code></p>{{end}}
+{{if .Front}}<p>The front page setting is restored.</p>{{end}}
+<form method="post" action="{{$d.URL}}?action=undo&amp;import={{$d.ID}}">
+<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="confirm" value="1" />
+<p class="submit"><button type="submit" class="button button-primary" id="wb-import-undo">Delete permanently</button> <a href="{{.BackURL}}" class="button">Cancel</a></p></form>
+{{end}}{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

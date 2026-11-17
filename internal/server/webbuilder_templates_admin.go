@@ -89,6 +89,9 @@ func (s *Server) wbMenu(menu []*menuTop, screen string, u *store.User) []*menuTo
 		add(strings.TrimPrefix(wbThemeBuilderURL(), "/wp-admin/"), "Theme Builder")
 		add(strings.TrimPrefix(wbLibraryURL(), "/wp-admin/"), "Theme Library")
 	}
+	if wbWizMenuAllowed(u) {
+		add(wbWizPageSlug, "Import HTML site")
+	}
 	if u.Can("manage_options", nil) {
 		add("options-general?page="+wbSettingsPage, "Settings")
 	}
