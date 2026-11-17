@@ -259,6 +259,37 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		return nil, mcpErrf("the site could not be read: %v", err)
 	}
 	warnings = append(warnings, res.Warnings...)
+	// Binding to content (webbuilder_sitebind.go): the header's navigation as a menu, folders of
+	// pages as content under single templates, lists of those pages as loops.
+	menusOn, groups := wbSiteBindOptions(args)
+	if noSplit {
+		menusOn, groups = false, map[string]bool{}
+	}
+	parents := map[string]int64{}
+	folderParents := map[string]string{}
+	for f := range webbuilder.SiteFolders(res) {
+		if id := ids["dir:"+f]; id > 0 {
+			parents[f] = id
+			folderParents[f] = itoa64(id)
+		}
+	}
+	binding := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: menusOn, Groups: groups, FolderParents: folderParents})
+	bindReport := map[string]any{}
+	if m := binding.Menu; m != nil && len(res.Headers) > 0 && m.Section < len(res.Headers[0].Sections) {
+		pageByURL := map[string]int64{}
+		for p, u := range opts.URLs {
+			pageByURL[webbuilder.ActivePath(u)] = ids[p]
+		}
+		menuID, itemIDs, err := s.wbSiteMenu(c, kit, m, pageByURL)
+		if err != nil {
+			warnings = append(warnings, "the navigation menu was not made: "+err.Error())
+		} else {
+			sec := &res.Headers[0].Sections[m.Section]
+			sec.Binds = m.Binds(sec.Binds, webbuilder.MenuLocationPrimary, itemIDs)
+			bindReport["menu"] = map[string]any{"id": menuID, "name": wbSiteMenuName(kit), "location": webbuilder.MenuLocationPrimary, "items": m.Items,
+				"edit_url": s.mcpAdminURL(c, "nav-menus.php?menu="+itoa64(menuID))}
+		}
+	}
 	section := func(p webbuilder.CodePart, head, lang string, attrs [2]string, active *webbuilder.ActiveRule) map[string]any {
 		sec := wbCodeSection(p, head, kit, lang)
 		wbCodeSectionAttrs(sec, attrs[0], attrs[1], active)
@@ -275,6 +306,13 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		id := ids[pg.Path]
 		pageFor[i] = id
 		cr := pg.Code
+		if binding.GroupMember(i) {
+			// Content under a single template (wbSiteGroups); its SEO is the page's still.
+			if _, warn := s.wbImportSEO(c, id, cr.SEO); warn != "" {
+				warnings = append(warnings, pg.Path+": "+warn)
+			}
+			continue
+		}
 		secs := make([]map[string]any, 0, len(cr.Sections))
 		for _, p := range cr.Sections {
 			secs = append(secs, section(p, cr.Head, cr.Lang, [2]string{cr.HTMLAttrs, cr.BodyAttrs}, nil))
@@ -290,6 +328,10 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		title := strings.TrimSpace(cr.SEO.Title)
 		if title == "" {
 			title = titleOf(pg.Path)
+		}
+		pl := binding.Plans[i]
+		if pl != nil && pl.Title != "" {
+			title = pl.Title // a page a list shows: its title is its <h1>, as the list shows it
 		}
 		patch := map[string]any{"layout": "site", "title": truncRunes(title, 200)}
 		if noSplit {
@@ -307,6 +349,11 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		}
 		if _, warn := s.wbImportSEO(c, id, cr.SEO); warn != "" {
 			warnings = append(warnings, pg.Path+": "+warn)
+		}
+		if pl != nil {
+			if err := s.wbSitePagePlan(c, id, pl, nil, status); err != nil {
+				warnings = append(warnings, pg.Path+": "+err.Error())
+			}
 		}
 		report = append(report, map[string]any{"path": pg.Path, "post_id": id, "url": saved["url"], "sections": len(secs)})
 	}
@@ -386,6 +433,28 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 				tplReport = append(tplReport, map[string]any{"type": string(webbuilder.Template404), "id": id, "conditions": []string{"include/404"}, "edit_url": s.mcpAdminURL(c, wbEditURL(id))})
 			}
 		}
+	}
+	// Single templates made from groups of pages.
+	if len(binding.Groups) > 0 {
+		gr, warn := s.wbSiteGroups(c, r, kit, status, res, binding, pageFor, parents, keep)
+		warnings = append(warnings, warn...)
+		bindReport["groups"] = gr
+	}
+	if len(binding.Listings) > 0 {
+		var ls []map[string]any
+		for _, l := range binding.Listings {
+			ls = append(ls, map[string]any{"page": res.Pages[l.Page].Path, "post_id": pageFor[l.Page], "folder": l.Folder, "items": len(l.Members), "offset": l.Offset})
+		}
+		bindReport["listings"] = ls
+	}
+	if len(binding.Notes) > 0 {
+		bindReport["notes"] = binding.Notes
+	}
+	if len(binding.Candidates) > 0 {
+		bindReport["collection_candidates"] = binding.Candidates
+	}
+	if len(bindReport) > 0 {
+		out["bindings"] = bindReport
 	}
 	out["templates"] = tplReport
 	// Templates of an earlier import of this kit that this one no longer needs.
