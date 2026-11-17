@@ -122,7 +122,7 @@ type wbWizRecord struct {
 	// Menu: the navigation menu this import created (removed with it).
 	Menu int64  `json:"menu,omitempty"`
 	At   string `json:"at"`
-	By         int64   `json:"by"`
+	By   int64  `json:"by"`
 }
 
 func (s *Server) wbWizBase() string {
@@ -284,7 +284,7 @@ type wbWizView struct {
 	Replace         bool
 	Menus           bool            // make a menu of the header's navigation
 	Collections     map[string]bool // folders ticked as collections
-	Nonce           string // the step's form nonce
+	Nonce           string          // the step's form nonce
 	DiscardNonce    string
 
 	R          *wbWizResult
