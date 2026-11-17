@@ -176,8 +176,8 @@ func mcpWBBind(s *Server, c *gin.Context, args map[string]any) (any, error) {
 		return nil, err
 	}
 	u := restCurrent(c)
-	if u == nil || !u.Can("unfiltered_html", nil) {
-		return nil, mcpErrf("bindings are part of a code section: the account needs unfiltered_html (an administrator)")
+	if !wbUnfiltered(c, u) {
+		return nil, mcpErrf("bindings are part of a code section: the account needs unfiltered_html (an administrator) and, for a scoped application password, the themes scope")
 	}
 	id := argInt(args, "post_id")
 	if id <= 0 {
