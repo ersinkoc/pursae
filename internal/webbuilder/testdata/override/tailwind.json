@@ -1,0 +1,11 @@
+{
+  "override": {
+    "rules": [
+      { "ctx": ["@layer utilities"], "sel": ".rounded-2xl", "p": { "border-radius": "2rem" } },
+      { "ctx": ["@layer theme"], "sel": ":root, :host", "p": { "--color-brand-600": "#c2410c", "--font-sans": " Inter, sans-serif " } },
+      { "ctx": ["@layer utilities", "@media (max-width:1023px)"], "sel": ".rounded-2xl", "p": { "border-radius": "1rem" } },
+      { "ctx": ["@layer utilities"], "sel": ".bg-brand-600:hover", "p": { "background-color": "var(--color-brand-700) !important" } },
+      { "sel": ".empty", "p": {} }
+    ]
+  }
+}

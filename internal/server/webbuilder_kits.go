@@ -164,6 +164,7 @@ func (s *Server) wbRegisterKitREST(reg func(pattern string, methods map[string]r
 	reg(kit, map[string]restHandler{http.MethodGet: s.wbRESTKit, http.MethodDelete: s.wbRESTKitDelete}, true)
 	reg(kit+`/files`, map[string]restHandler{http.MethodPost: s.wbRESTKitFiles}, true)
 	reg(kit+`/commit`, map[string]restHandler{http.MethodPost: s.wbRESTKitCommit}, true)
+	s.wbRegisterKitOverrideREST(reg)
 }
 
 // wbKitUser: reading kits needs edit_posts (the editor shows them); writing needs unfiltered_html
@@ -500,6 +501,7 @@ func (s *Server) wbKitRemove(c *gin.Context, slug string) (status int, code, msg
 		return http.StatusInternalServerError, "db_error", "Could not delete the kit."
 	}
 	_ = os.RemoveAll(filepath.Join(s.wbKitRoot(), slug))
+	s.wbKitOverrideDrop(c, slug)
 	wbKitVersions.Delete("v")
 	s.purgeAll(c)
 	return http.StatusOK, "", ""

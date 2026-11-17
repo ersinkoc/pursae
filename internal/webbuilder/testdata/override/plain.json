@@ -1,0 +1,8 @@
+{
+  "override": {
+    "rules": [
+      { "sel": ".btn", "p": { "padding-top": "12px", "color": "#fff", "bad;": "x", "background": "url(javascript:alert(1))" } },
+      { "ctx": ["@media (min-width: 768px)"], "sel": "html", "p": { "--gap": "2rem" } }
+    ]
+  }
+}

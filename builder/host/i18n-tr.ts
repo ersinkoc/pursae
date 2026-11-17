@@ -481,6 +481,149 @@ const tr: Record<string, string> = {
   "property": "özellik", // i18n-ignore
   "value": "değer", // i18n-ignore
   "Font library…": "Yazı tipi kütüphanesi…", // i18n-ignore
+  "Used on {n} elements on this page and {m} elements on {p} pages of the site.": "Bu sayfada {n} öğede, sitede {p} sayfadaki {m} öğede kullanılıyor.", // i18n-ignore
+  "Used on {n} elements on this page.": "Bu sayfada {n} öğede kullanılıyor.", // i18n-ignore
+  "A class name cannot hold quotes or angle brackets.": "Sınıf adı tırnak ya da açılı ayraç içeremez.", // i18n-ignore
+  "Class added": "Sınıf eklendi", // i18n-ignore
+  "Class removed": "Sınıf kaldırıldı", // i18n-ignore
+  "Click a class to edit it everywhere": "Her yerde düzenlemek için bir sınıfa tıklayın", // i18n-ignore
+  "Edit this class for every element that has it": "Bu sınıfı taşıyan her öğe için düzenle", // i18n-ignore
+  "Remove class {c}": "{c} sınıfını kaldır", // i18n-ignore
+  "No classes": "Sınıf yok", // i18n-ignore
+  "Add a class": "Sınıf ekle", // i18n-ignore
+  "Edit .{c} for every element that has it?": ".{c} sınıfı onu taşıyan her öğe için düzenlensin mi?", // i18n-ignore
+  "This class does not come from a design kit: it cannot be edited here.": "Bu sınıf bir tasarım kitinden gelmiyor: burada düzenlenemez.", // i18n-ignore
+  "The change goes to the design’s rule {r}; it applies to every page when you publish.": "Değişiklik tasarımın {r} kuralına yazılır; yayınladığınızda her sayfada geçerli olur.", // i18n-ignore
+  "The design has no rule for this class alone: the edit adds one. It applies to every page when you publish.": "Tasarımda yalnızca bu sınıfa ait bir kural yok: düzenleme yeni bir kural ekler. Yayınladığınızda her sayfada geçerli olur.", // i18n-ignore
+  "Edit class": "Sınıfı düzenle", // i18n-ignore
+  "Class reset": "Sınıf sıfırlandı", // i18n-ignore
+  "Editing class .{c}": ".{c} sınıfı düzenleniyor", // i18n-ignore
+  "Done": "Bitti", // i18n-ignore
+  "Reset every change of this class": "Bu sınıftaki tüm değişiklikleri sıfırla", // i18n-ignore
+  "Matched rules": "Eşleşen kurallar", // i18n-ignore
+  "No rule of the design applies to this element.": "Tasarımın hiçbir kuralı bu öğeye uygulanmıyor.", // i18n-ignore
+  "Class or variable edit": "Sınıf ya da değişken düzenlemesi", // i18n-ignore
+  "Not an attribute name.": "Geçerli bir öznitelik adı değil.", // i18n-ignore
+  "Event handlers (on…) cannot be added here.": "Olay işleyicileri (on…) buradan eklenemez.", // i18n-ignore
+  "This attribute is set elsewhere (classes and style in the Style tab).": "Bu öznitelik başka yerden ayarlanır (sınıflar ve stil, Stil sekmesinde).", // i18n-ignore
+  "This address is not allowed (javascript:, data: …).": "Bu adrese izin verilmiyor (javascript:, data: …).", // i18n-ignore
+  "An id starts with a letter and holds letters, digits, -, _, : or . only.": "Kimlik bir harfle başlar ve yalnızca harf, rakam, -, _, : ya da . içerir.", // i18n-ignore
+  "The value is too long.": "Değer çok uzun.", // i18n-ignore
+  "This value is not allowed.": "Bu değere izin verilmiyor.", // i18n-ignore
+  "Tag": "Etiket", // i18n-ignore
+  "Section code": "Bölüm kodu", // i18n-ignore
+  "Address": "Adres", // i18n-ignore
+  "Link changed": "Bağlantı değiştirildi", // i18n-ignore
+  "Link to a page of the site": "Sitenin bir sayfasına bağla", // i18n-ignore
+  "Search pages and posts": "Sayfa ve yazılarda ara", // i18n-ignore
+  "Open in a new tab": "Yeni sekmede aç", // i18n-ignore
+  "Image replaced": "Görsel değiştirildi", // i18n-ignore
+  "Replace from the media library": "Ortam kütüphanesinden değiştir", // i18n-ignore
+  "Alternative text": "Alternatif metin", // i18n-ignore
+  "Describe the image (empty: decorative)": "Görseli tanımlayın (boş: süsleme)", // i18n-ignore
+  "Alternative text changed": "Alternatif metin değiştirildi", // i18n-ignore
+  "This image has responsive sources (srcset); replacing it removes them.": "Bu görselin duyarlı kaynakları (srcset) var; görseli değiştirmek onları kaldırır.", // i18n-ignore
+  "Icon changed": "İkon değiştirildi", // i18n-ignore
+  "The icon is the same.": "İkon aynı.", // i18n-ignore
+  "Pick an icon": "Bir ikon seçin", // i18n-ignore
+  "Search icons": "İkonlarda ara", // i18n-ignore
+  "Paste SVG code": "SVG kodu yapıştır", // i18n-ignore
+  "Use this SVG": "Bu SVG'yi kullan", // i18n-ignore
+  "Upload an SVG file": "SVG dosyası yükle", // i18n-ignore
+  "The icon keeps its classes and size; set its color with the text color in the Style tab.": "İkon sınıflarını ve boyutunu korur; rengini Stil sekmesindeki metin rengiyle ayarlayın.", // i18n-ignore
+  "Video changed": "Video değiştirildi", // i18n-ignore
+  "Embed": "Gömme", // i18n-ignore
+  "Video": "Video", // i18n-ignore
+  "Source changed": "Kaynak değiştirildi", // i18n-ignore
+  "Poster image": "Kapak görseli", // i18n-ignore
+  "Controls": "Denetimler", // i18n-ignore
+  "Autoplay": "Otomatik oynat", // i18n-ignore
+  "Muted": "Sessiz", // i18n-ignore
+  "Loop": "Döngü", // i18n-ignore
+  "Plays inline": "Sayfa içinde oynat", // i18n-ignore
+  "Title": "Başlık", // i18n-ignore
+  "Embed changed": "Gömme değiştirildi", // i18n-ignore
+  "Form field changed": "Form alanı değiştirildi", // i18n-ignore
+  "Form": "Form", // i18n-ignore
+  "Label": "Etiket metni", // i18n-ignore
+  "Form field": "Form alanı", // i18n-ignore
+  "Name": "Ad", // i18n-ignore
+  "Type": "Tür", // i18n-ignore
+  "Placeholder": "Yer tutucu", // i18n-ignore
+  "Value": "Değer", // i18n-ignore
+  "Required": "Zorunlu", // i18n-ignore
+  "Options (value|label, one per line)": "Seçenekler (değer|etiket, her satırda bir tane)", // i18n-ignore
+  "For (field id)": "İlgili alan (alan kimliği)", // i18n-ignore
+  "The form keeps the design’s own handling (its action and method in the attributes below).": "Form tasarımın kendi işleyişini korur (action ve method aşağıdaki özniteliklerde).", // i18n-ignore
+  "HTML inside": "İçerideki HTML", // i18n-ignore
+  "Scripts run on the published page only.": "Betikler yalnızca yayınlanan sayfada çalışır.", // i18n-ignore
+  "HTML changed": "HTML değiştirildi", // i18n-ignore
+  "Attribute added": "Öznitelik eklendi", // i18n-ignore
+  "Attributes": "Öznitelikler", // i18n-ignore
+  "Attribute changed": "Öznitelik değiştirildi", // i18n-ignore
+  "Attribute removed": "Öznitelik kaldırıldı", // i18n-ignore
+  "No attributes": "Öznitelik yok", // i18n-ignore
+  "name": "ad", // i18n-ignore
+  "id, aria-*, data-*, title, rel and the like. Event handlers (on…) are never added.": "id, aria-*, data-*, title, rel ve benzerleri. Olay işleyicileri (on…) asla eklenmez.", // i18n-ignore
+  "Add elements": "Öğe ekle", // i18n-ignore
+  "The design’s variables (colors, fonts, sizes)": "Tasarımın değişkenleri (renkler, yazı tipleri, boyutlar)", // i18n-ignore
+  "Variables": "Değişkenler", // i18n-ignore
+  "Copy classes": "Sınıfları kopyala", // i18n-ignore
+  "Paste classes": "Sınıfları yapıştır", // i18n-ignore
+  "Divider": "Ayırıcı", // i18n-ignore
+  "Input": "Giriş alanı", // i18n-ignore
+  "Textarea": "Metin alanı", // i18n-ignore
+  "Checkbox": "Onay kutusu", // i18n-ignore
+  "Submit button": "Gönder düğmesi", // i18n-ignore
+  "HTML / Embed": "HTML / Gömme", // i18n-ignore
+  "Basic": "Temel", // i18n-ignore
+  "Media": "Medya", // i18n-ignore
+  "Form fields": "Form alanları", // i18n-ignore
+  "Buttons": "Düğmeler", // i18n-ignore
+  "Links": "Bağlantılar", // i18n-ignore
+  "Texts": "Metinler", // i18n-ignore
+  "Badges": "Rozetler", // i18n-ignore
+  "Cards": "Kartlar", // i18n-ignore
+  "List items": "Liste öğeleri", // i18n-ignore
+  "Images": "Görseller", // i18n-ignore
+  "Sections": "Bölümler", // i18n-ignore
+  "Containers": "Kapsayıcılar", // i18n-ignore
+  "Colors": "Renkler", // i18n-ignore
+  "Fonts": "Yazı tipleri", // i18n-ignore
+  "Spacing and sizes": "Aralık ve boyutlar", // i18n-ignore
+  "Other": "Diğer", // i18n-ignore
+  "Elements": "Öğeler", // i18n-ignore
+  "From this design": "Bu tasarımdan", // i18n-ignore
+  "Drag an element onto the page, or click it to add it after the selected element.": "Bir öğeyi sayfaya sürükleyin ya da seçili öğenin arkasına eklemek için tıklayın.", // i18n-ignore
+  "{el} added": "{el} eklendi", // i18n-ignore
+  "This page uses no design kit: there is no design to take elements from.": "Bu sayfa bir tasarım kiti kullanmıyor: öğe alınacak bir tasarım yok.", // i18n-ignore
+  "Search classes or text": "Sınıf ya da metin ara", // i18n-ignore
+  "Elements the design repeats (same tag and classes at least three times). Drag one onto the page or click it: a copy with the design’s classes is added.": "Tasarımın tekrarladığı öğeler (aynı etiket ve sınıflar en az üç kez). Birini sayfaya sürükleyin ya da tıklayın: tasarımın sınıflarıyla bir kopyası eklenir.", // i18n-ignore
+  "Reading the design…": "Tasarım okunuyor…", // i18n-ignore
+  "No repeated elements found.": "Tekrar eden öğe bulunamadı.", // i18n-ignore
+  "Design element added": "Tasarım öğesi eklendi", // i18n-ignore
+  "This page uses no design kit: its variables cannot be changed here.": "Bu sayfa bir tasarım kiti kullanmıyor: değişkenleri burada değiştirilemez.", // i18n-ignore
+  "Variable reset": "Değişken sıfırlandı", // i18n-ignore
+  "Variable changed": "Değişken değiştirildi", // i18n-ignore
+  "The design defines no variables on :root.": "Tasarım :root üzerinde değişken tanımlamıyor.", // i18n-ignore
+  "Search variables": "Değişkenlerde ara", // i18n-ignore
+  "A change applies to every page of the site that uses this design when you publish.": "Bir değişiklik, yayınladığınızda sitenin bu tasarımı kullanan her sayfasına uygulanır.", // i18n-ignore
+  "Reset to the design’s value: {v}": "Tasarımın değerine sıfırla: {v}", // i18n-ignore
+  "Class edit": "Sınıf düzenlemesi", // i18n-ignore
+  "Not set by the class": "Sınıf bunu ayarlamıyor", // i18n-ignore
+  "Class value reset": "Sınıf değeri sıfırlandı", // i18n-ignore
+  "Class changed": "Sınıf değiştirildi", // i18n-ignore
+  "Element added": "Öğe eklendi", // i18n-ignore
+  "The element cannot be added here.": "Öğe buraya eklenemez.", // i18n-ignore
+  "Attributes changed": "Öznitelikler değiştirildi", // i18n-ignore
+  "Tag changed": "Etiket değiştirildi", // i18n-ignore
+  "This element’s tag cannot be changed to {tag}.": "Bu öğenin etiketi {tag} olarak değiştirilemez.", // i18n-ignore
+  "Classes copied": "Sınıflar kopyalandı", // i18n-ignore
+  "This element has no classes to copy.": "Bu öğenin kopyalanacak sınıfı yok.", // i18n-ignore
+  "Classes pasted": "Sınıflar yapıştırıldı", // i18n-ignore
+  "The design’s classes or variables were changed in another editor. Reload to see their changes.": "Tasarımın sınıfları ya da değişkenleri başka bir düzenleyicide değiştirildi. Değişiklikleri görmek için yeniden yükleyin.", // i18n-ignore
+  "The design’s classes and variables could not be saved.": "Tasarımın sınıfları ve değişkenleri kaydedilemedi.", // i18n-ignore
+  "The design’s class and variable changes could not be published: {m}": "Tasarımın sınıf ve değişken değişiklikleri yayınlanamadı: {m}", // i18n-ignore
 }
 
 export default tr

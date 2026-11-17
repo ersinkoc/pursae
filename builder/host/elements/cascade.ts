@@ -150,6 +150,8 @@ export interface Decl {
   /** The rule's selector part that matched ('style' for the inline style attribute). */
   selector: string
   origin: 'design' | 'local' | 'inline'
+  /** A kit override's rule (a class or variable edit). */
+  override?: boolean
 }
 
 /** true when a beats b in the cascade. */
@@ -170,13 +172,20 @@ export function winner(list: Decl[]): Decl | null {
 
 /* ---------- The frame's rules (DOM) ---------- */
 
-interface Matched {
+export interface Matched {
   style: CSSStyleDeclaration
   spec: Spec
   layer: number
   order: number
   selector: string
   local: boolean
+  /** A rule of a kit override (the editor's class and variable edits). */
+  override: boolean
+  /** The rule's whole selector text and its at-rule context (Matched rules view). */
+  ruleText: string
+  ctx: string[]
+  /** The stylesheet's file name ("<style>" inline). */
+  source: string
 }
 
 /** Properties a child inherits. */
@@ -220,7 +229,9 @@ export function matchedRules(el: Element, st: State, version: number): Matched[]
     }
     return best
   }
-  const walk = (rules: CSSRuleList, layer: string | null, parent: string | null, local: boolean) => {
+  let source = ''
+  let override = false
+  const walk = (rules: CSSRuleList, layer: string | null, parent: string | null, local: boolean, ctx: string[] = []) => {
     for (const r of Array.from(rules)) {
       order++
       const name = r.constructor?.name
@@ -229,13 +240,13 @@ export function matchedRules(el: Element, st: State, version: number): Matched[]
         let sel = sr.selectorText
         if (parent) sel = splitList(sel).map((p) => (p.includes('&') ? p.replace(/&/g, `:is(${parent})`) : `:is(${parent}) ${p}`)).join(', ')
         const m = test(sel)
-        if (m) out.push({ style: sr.style, spec: m.spec, layer: layer === null ? Infinity : rank(layer), order, selector: m.part, local })
-        if (sr.cssRules?.length) walk(sr.cssRules, layer, sel, local)
+        if (m) out.push({ style: sr.style, spec: m.spec, layer: layer === null ? Infinity : rank(layer), order, selector: m.part, local, override, ruleText: sr.selectorText, ctx, source })
+        if (sr.cssRules?.length) walk(sr.cssRules, layer, sel, local, ctx)
       } else if (name === 'CSSNestedDeclarations' && parent) {
         const m = test(parent)
-        if (m) out.push({ style: (r as unknown as { style: CSSStyleDeclaration }).style, spec: m.spec, layer: layer === null ? Infinity : rank(layer), order, selector: m.part, local })
+        if (m) out.push({ style: (r as unknown as { style: CSSStyleDeclaration }).style, spec: m.spec, layer: layer === null ? Infinity : rank(layer), order, selector: m.part, local, override, ruleText: parent, ctx, source })
       } else if (r instanceof win.CSSMediaRule) {
-        if (win.matchMedia(r.media.mediaText).matches) walk(r.cssRules, layer, parent, local)
+        if (win.matchMedia(r.media.mediaText).matches) walk(r.cssRules, layer, parent, local, [...ctx, `@media ${r.media.mediaText}`])
       } else if (r instanceof win.CSSSupportsRule) {
         let ok = true
         try {
@@ -243,22 +254,22 @@ export function matchedRules(el: Element, st: State, version: number): Matched[]
         } catch {
           ok = true
         }
-        if (ok) walk(r.cssRules, layer, parent, local)
+        if (ok) walk(r.cssRules, layer, parent, local, [...ctx, `@supports ${r.conditionText}`])
       } else if (name === 'CSSLayerBlockRule') {
         const lr = r as CSSLayerBlockRule
         const n = (layer ? layer + '.' : '') + (lr.name || `#anon${anon++}`)
         rank(n)
-        walk(lr.cssRules, n, parent, local)
+        walk(lr.cssRules, n, parent, local, lr.name ? [...ctx, `@layer ${lr.name}`] : ctx)
       } else if (name === 'CSSLayerStatementRule') {
         for (const n of (r as CSSLayerStatementRule).nameList) rank((layer ? layer + '.' : '') + n)
       } else if (r instanceof win.CSSImportRule) {
         try {
-          if (r.styleSheet) walk(r.styleSheet.cssRules, r.layerName !== null && r.layerName !== undefined ? (layer ? layer + '.' : '') + (r.layerName || `#anon${anon++}`) : layer, parent, local)
+          if (r.styleSheet) walk(r.styleSheet.cssRules, r.layerName !== null && r.layerName !== undefined ? (layer ? layer + '.' : '') + (r.layerName || `#anon${anon++}`) : layer, parent, local, r.layerName ? [...ctx, `@layer ${r.layerName}`] : ctx)
         } catch {
           /* another origin */
         }
       } else if ('cssRules' in r && (r as CSSGroupingRule).cssRules && name !== 'CSSKeyframesRule' && name !== 'CSSFontFaceRule') {
-        walk((r as CSSGroupingRule).cssRules, layer, parent, local) // @container, @scope (approximate)
+        walk((r as CSSGroupingRule).cssRules, layer, parent, local, ctx) // @container, @scope (approximate)
       }
     }
   }
@@ -272,6 +283,9 @@ export function matchedRules(el: Element, st: State, version: number): Matched[]
     } catch {
       continue // another origin
     }
+    override = !!owner?.hasAttribute?.('data-wb-kit')
+    const href = (sheet.href ?? '').split(/[?#]/)[0]
+    source = owner?.hasAttribute?.('data-wb-local') ? 'local' : override ? 'override' : href ? href.replace(/^.*\/web-builder\/kits\/[^/]+\//, '').replace(/^https?:\/\/[^/]+\//, '') : '<style>'
     walk(rules, null, null, !!owner?.hasAttribute?.('data-wb-local'))
   }
   cache.set(el, { key, rules: out })
@@ -305,7 +319,7 @@ export function declsOf(el: Element, prop: string, st: State, version: number): 
     for (const n of names) {
       const value = m.style.getPropertyValue(n)
       if (!value) continue
-      out.push({ value: value.trim(), important: m.style.getPropertyPriority(n) === 'important', spec: m.spec, layer: m.layer, order: m.order, selector: m.selector, origin: m.local ? 'local' : 'design' })
+      out.push({ value: value.trim(), important: m.style.getPropertyPriority(n) === 'important', spec: m.spec, layer: m.layer, order: m.order, selector: m.selector, origin: m.local ? 'local' : 'design', override: m.override })
     }
   }
   const inline = (el as HTMLElement).style

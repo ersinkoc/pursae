@@ -301,6 +301,7 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	}
 	sb.WriteString(s.wbPageCSS(c, v.Q.Post, d))
 	sb.WriteString(codeHead)
+	sb.WriteString(s.wbKitOverrideStyles(codeHead))
 	popHead, popFoot := s.wbPopupAssets(c, fp.popups, site.CSS != "", runtime)
 	sb.WriteString(popHead)
 	sb.WriteString("</head>\n")

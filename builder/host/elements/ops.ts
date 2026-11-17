@@ -15,6 +15,7 @@
  *    (free on the page), with aria-controls / aria-labelledby / for / href="#…" inside it following.
  */
 import { attr, attrEdit, contains, elementKids, escText, isWs, outer, ownText, parse, splice, RAW, VOID, wbc, type Edit, type El, type Tree } from './html'
+import { tagChangeOK } from './attrs'
 
 export interface Page {
   /** Section ids in page order. */
@@ -176,6 +177,16 @@ export function dropError(page: Page, id: string, place: Place): DropError | nul
   if (place.sec === from.sec && contains(from.el, parent)) return 'self'
   if (!container(t, parent)) return 'leaf'
   return null
+}
+
+/** Why new markup cannot go to `place` (null: it can). */
+export function insertError(page: Page, place: Place): DropError | null {
+  const src = page.html[place.sec]
+  if (src === undefined) return 'locked'
+  const t = tree(src)
+  const parent = place.parent === null ? t.root : t.byId.get(place.parent)
+  if (!parent) return 'missing'
+  return container(t, parent) ? null : 'leaf'
 }
 
 /* ---------- Helpers ---------- */
@@ -413,4 +424,68 @@ export function whereIs(page: Page, id: string): { sec: string; parent: string |
   if (p.tag === '#root') return { sec: at.sec, parent: null }
   const w = wbc(p)
   return w === null ? null : { sec: at.sec, parent: w }
+}
+
+/**
+ * Changes element id's tag (h2 → h3, div → section), keeping its attributes and children. Refused
+ * for void, raw text and foreign elements, and for an element without an end tag in the source.
+ */
+export function setTag(page: Page, id: string, tag: string): Result | null {
+  const at = locate(page, id)
+  const to = tag.trim().toLowerCase()
+  if (!at || at.el.foreign || !tagChangeOK(at.el.tag, to) || !at.el.closed) return null
+  const { tree: t, el } = at
+  const open = t.src.slice(el.start + 1, el.start + 1 + el.tag.length)
+  if (open.toLowerCase() !== el.tag) return null
+  const close = t.src.slice(el.closeStart, el.end)
+  if (!new RegExp(`^</${el.tag}\\s*>$`, 'i').test(close)) return null
+  return {
+    html: one(at.sec, t.src, [
+      { start: el.start + 1, end: el.start + 1 + el.tag.length, text: to },
+      { start: el.closeStart, end: el.end, text: `</${to}>` },
+    ]),
+    select: id,
+  }
+}
+
+/**
+ * Markup written by hand (the HTML / Embed panel) with a new data-wbc id on every element that has
+ * none, so its elements can be selected like the design's (the inside of svg / math and code
+ * elements are left as they are).
+ */
+export function withIds(html: string): string {
+  const t = parse(html)
+  const edits: Edit[] = []
+  for (const el of t.all) {
+    if (el.tag === '#root' || el.foreign || CODE_TAGS.has(el.tag) || el.tag === 'option' || wbc(el) !== null) continue
+    edits.push(...attrEdit(t, el, 'data-wbc', freshId()))
+  }
+  return edits.length ? splice(html, edits) : html
+}
+
+const escAttrValue = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+
+/**
+ * Replaces element id by other markup (an icon's new svg): the new markup's one top-level element
+ * keeps the id (its data-wbc is set to it) and the old element's `keep` attributes (its classes).
+ */
+export function replaceOuter(page: Page, id: string, html: string, keep: string[] = ['class']): Result | null {
+  const at = locate(page, id)
+  if (!at || !movable(at.el)) return null
+  const t2 = parse(html.trim())
+  const tops = elementKids(t2.root)
+  if (tops.length !== 1) return null
+  const first = tops[0]
+  const drop: Edit[] = []
+  for (const a of first.attrs) if (a.name === 'data-wbc' || (keep.includes(a.name) && attr(at.el, a.name) !== null)) drop.push(...attrEdit(t2, first, a.name, null))
+  const t3 = parse(splice(t2.src, drop))
+  const el3 = elementKids(t3.root)[0]
+  const add = [`data-wbc="${escAttrValue(id)}"`]
+  for (const k of keep) {
+    const v = attr(at.el, k)
+    if (v !== null) add.push(`${k}="${escAttrValue(v)}"`)
+  }
+  const next = t3.src.slice(el3.start, el3.attrEnd) + ' ' + add.join(' ') + t3.src.slice(el3.attrEnd, el3.end)
+  if (next === outer(at.tree, at.el)) return null
+  return { html: one(at.sec, at.tree.src, [{ start: at.el.start, end: at.el.end, text: next }]), select: id }
 }

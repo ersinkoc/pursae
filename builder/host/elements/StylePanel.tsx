@@ -14,7 +14,7 @@
  * design's winning declaration is !important the local one is written !important too.
  */
 import { useMemo, useState, type ReactNode } from 'react'
-import { ClipboardPaste, Copy, Eraser, Monitor, Plus, RotateCcw, Smartphone, Tablet, X } from 'lucide-react'
+import { ClipboardPaste, Copy, Eraser, Monitor, Pencil, Plus, RotateCcw, Smartphone, Tablet, X } from 'lucide-react'
 import { Ctl, Panel, inputCls } from '@/builder/StudioPanel'
 import { useB } from '@/builder/store'
 import type { Section } from '@/builder/types'
@@ -23,7 +23,10 @@ import { FontPicker } from '@/builder/FontPicker'
 import { fontStack } from '@/builder/fonts'
 import { t } from '../i18n'
 import { latest, pageOf, style as styleAct } from './actions'
-import { sourceOf, elLabel, type Source } from './cascade'
+import { sourceOf, elLabel, logicalAliases, type Source } from './cascade'
+import { ClassChips, ClassHeader, MatchedRules, classTarget, type ClassTarget } from './ClassPanel'
+import { overrideOf, setOverride } from './kitstyle'
+import { editTarget, ruleOf, setRuleDecls } from './overrides'
 import { frameEl } from './geometry'
 import { attr } from './html'
 import { kindLabel, kindOf } from './kinds'
@@ -159,7 +162,7 @@ const KNOWN = new Set<string>([
 
 /* ---------- Context ---------- */
 
-interface Ctx {
+export interface Ctx {
   b: B
   id: string
   sec: LocalSection
@@ -167,6 +170,8 @@ interface Ctx {
   st: State
   el: HTMLElement | null
   version: number
+  /** Editing a design class (every element with it) instead of the element's own style. */
+  cls: ClassTarget | null
 }
 
 /** The selected element's styling context. */
@@ -182,7 +187,48 @@ function useCtx(): Ctx | null {
   if (!sec) return null
   const fd = frameInfo.doc
   const el = fd ? frameEl(fd, es.sel) : null
-  return { b, id: es.sel, sec, bp: deviceOf(b.device), st: es.styleState, el, version }
+  const cls = es.classEdit && el ? classTarget(el, es.classEdit, sec) : null
+  return { b, id: es.sel, sec, bp: deviceOf(b.device), st: es.styleState, el, version, cls }
+}
+
+/** Where a class edit at the context's device and state goes. */
+const classAt = (c: Ctx, bp = c.bp, st = c.st) => editTarget(c.cls!.ctx, c.cls!.sel, bp, st, c.cls!.bps)
+
+/** The class edit's value of prop: its own, inherited from desktop / normal, the design rule's. */
+function classValue(c: Ctx, prop: string) {
+  const cl = c.cls!
+  const o = overrideOf(latest.doc ?? c.b.doc, cl.kit)
+  const at = classAt(c)
+  const own = ruleOf(o, at.ctx, at.sel)?.p[prop]
+  let inherited: { value: string; bp: Device; st: State } | null = null
+  if (own === undefined) {
+    const chain: [Device, State][] = c.st ? [[c.bp, ''], ['', ''], ...(c.bp === 'mobile' ? [['tablet', ''] as [Device, State]] : [])] : c.bp === 'mobile' ? [['tablet', ''], ['', '']] : c.bp ? [['', '']] : []
+    for (const [bp, st] of chain) {
+      const x = classAt(c, bp, st)
+      const v = ruleOf(o, x.ctx, x.sel)?.p[prop]
+      if (v !== undefined) {
+        inherited = { value: v, bp, st }
+        break
+      }
+    }
+  }
+  let design = ''
+  let important = false
+  for (const r of cl.rules) {
+    for (const n of [prop, ...logicalAliases(prop)]) {
+      const v = r.style.getPropertyValue(n)
+      if (v && !design) {
+        design = v.trim()
+        important = r.style.getPropertyPriority(n) === 'important'
+      }
+    }
+  }
+  const src: Source = {
+    kind: 'rule',
+    decl: { value: own ?? inherited?.value ?? design, important, spec: [0, 1, 0], layer: 0, order: 0, selector: own !== undefined || inherited ? t('Class edit') : design ? cl.label : t('Not set by the class'), origin: 'design' },
+    designImportant: important,
+  }
+  return { own, inherited, src, shown: (own ?? inherited?.value ?? design).replace(/\s*!important$/i, '') }
 }
 
 function sourceText(s: Source): string {
@@ -203,6 +249,7 @@ function sourceText(s: Source): string {
 /** The value in force, where it comes from and what the local variant sets. */
 function useValue(c: Ctx, prop: string) {
   return useMemo(() => {
+    if (c.cls) return classValue(c, prop)
     const own = variantOf(c.sec.local, c.id, c.bp, c.st)[prop]
     const lv = localValue(c.sec.local, c.id, c.bp, c.st, prop)
     let src: Source | null = null
@@ -218,7 +265,7 @@ function useValue(c: Ctx, prop: string) {
       if (!shown && win) shown = win.getComputedStyle(c.el).getPropertyValue(prop).trim()
     }
     return { own, inherited: own === undefined && lv ? lv : null, src, shown }
-  }, [c.sec.local, c.id, c.bp, c.st, c.el, c.version, prop]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [c.sec.local, c.id, c.bp, c.st, c.el, c.version, prop, c.cls, c.cls && overrideOf(latest.doc ?? c.b.doc, c.cls.kit)]) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /** Writes one declaration (null: reset) at the context's device and state. */
@@ -231,6 +278,12 @@ function write(c: Ctx, prop: string, value: string | null, important: boolean) {
   }
   if (v !== null && !declOK(prop, v)) {
     c.b.notify(t('This is not a value CSS accepts here: {v}', { v }))
+    return
+  }
+  if (c.cls) {
+    const doc = latest.doc ?? c.b.doc
+    const at = classAt(c)
+    setOverride(c.b, doc, c.cls.kit, setRuleDecls(overrideOf(doc, c.cls.kit), at.ctx, at.sel, { [prop]: v }), v === null ? t('Class value reset') : t('Class changed'))
     return
   }
   // Inline declarations that cover the property (padding for padding-top) move with it.
@@ -576,7 +629,7 @@ function BorderGroup({ c }: { c: Ctx }) {
 /* ---------- Header: device and state ---------- */
 
 function Switches({ c }: { c: Ctx }) {
-  const has = overrides(c.sec.local, c.id)
+  const has = c.cls ? new Set<string>() : overrides(c.sec.local, c.id)
   const devHas = (bp: Device) => [...has].some((k) => k.startsWith(bp + '|'))
   const stHas = (st: State) => [...has].some((k) => k === `${c.bp}|${st}`)
   const dev: { d: 'desktop' | 'tablet' | 'mobile'; bp: Device; icon: typeof Monitor; label: string }[] = [
@@ -723,8 +776,9 @@ export function StyleTab({ s, tab }: { s: Section; tab: 'style' | 'advanced' }) 
   const grid = /grid/.test(display)
   const child = /flex|grid/.test(parentDisplay)
   return (
-    <div data-wb-style-panel={tab} data-wb-style-el={c.id}>
+    <div data-wb-style-panel={tab} data-wb-style-el={c.id} data-wb-class-edit={c.cls?.cls ?? undefined}>
       <Switches c={c} />
+      {c.cls ? <ClassHeader c={c} target={c.cls} /> : tab === 'style' && <ClassChips c={c} />}
       {tab === 'style' ? (
         <>
           <Panel title={t('Layout')}>
@@ -746,8 +800,9 @@ export function StyleTab({ s, tab }: { s: Section; tab: 'style' | 'advanced' }) 
         </>
       ) : (
         <>
-          <CustomProps c={c} />
-          <StyleTools c={c} />
+          {!c.cls && <CustomProps c={c} />}
+          {!c.cls && <StyleTools c={c} />}
+          <MatchedRules c={c} />
         </>
       )}
     </div>
