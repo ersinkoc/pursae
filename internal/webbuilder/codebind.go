@@ -57,7 +57,8 @@ const (
 var (
 	BindKinds = []string{BindMenu, BindSubmenu, BindLoop, BindField, BindForm}
 	// BindFields are what a field binding shows.
-	BindFields = []string{"title", "excerpt", "content", "image", "url", "date", "modified", "author", "terms", "custom", "pagination"}
+	// BindFields are what a field binding shows ("link": a link to the post with its title as text).
+	BindFields = []string{"title", "excerpt", "content", "image", "url", "link", "date", "modified", "author", "terms", "custom", "pagination"}
 	// BindCustomAttrs: how a custom field fills its element: "" its text, "html" its content (the
 	// value sanitized like post content), "url" its href (src on an image), "attrs" the attributes
 	// href, src, srcset, alt, … from the fields <name>_href, <name>_src, … (and its text from <name>
@@ -677,12 +678,23 @@ func (c *bindCompiler) loop(n *srcNode, id string) {
 		return
 	}
 	c.add(n, AttrLoop, key)
-	for i, k := range n.elems() {
-		if i == 0 {
+	seen := false
+	for i, k := range n.kids {
+		if k.tag == "" {
+			continue
+		}
+		if !seen {
+			seen = true
 			c.add(k, AttrLoopItem, "")
 			continue
 		}
-		c.drops = append(c.drops, k)
+		// A sample card goes with the blank text before it (the engine repeats the template with
+		// the blank text that follows it).
+		d := &srcNode{tag: k.tag, start: k.start, end: k.end}
+		if i > 0 && n.kids[i-1].tag == "" && strings.TrimSpace(n.kids[i-1].raw) == "" {
+			d.start = n.kids[i-1].start
+		}
+		c.drops = append(c.drops, d)
 	}
 }
 
@@ -741,6 +753,9 @@ func (c *bindCompiler) field(n *srcNode, b *CodeBind) {
 		}
 	case "url":
 		c.add(n, AttrSlot, string(SlotPostURL))
+	case "link":
+		c.add(n, AttrSlot, string(SlotPostURL))
+		c.add(n, AttrText, string(SlotPostTitleText))
 	case "date", "modified":
 		slot := SlotPostDate
 		if b.Field == "modified" {

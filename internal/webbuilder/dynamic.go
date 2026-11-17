@@ -189,7 +189,8 @@ type dynElem struct {
 	isMenu  bool
 	badLoop bool // invalid id / location: zero items
 	part    int  // data-wb-loop-part: 0 none, 1 first half, 2 second half
-	isSub   bool // data-wb-menu-sub: the current menu item's sub-items
+	isSub   bool   // data-wb-menu-sub: the current menu item's sub-items
+	sep     string // loops: the white space written between two items (itemSeparators)
 
 	// ownText: this is the replaced text node of a data-wb-text element (lead and trail are the
 	// node's surrounding white space); slot is the text slot.
@@ -456,7 +457,43 @@ func (c *compiler) element(n *html.Node) *dynElem {
 		}
 		e.kids = c.node(k, e.kids)
 	}
+	if e.isLoop || e.isMenu || e.isSub {
+		e.kids, e.sep = itemSeparators(e.kids)
+	}
 	return e
+}
+
+// itemSeparators keeps the source's white space between repeated items: the blank text right
+// after the first item template separates every two items; blank text between templates (a code
+// menu keeps each item's markup as a template) is dropped.
+func itemSeparators(kids []seg) ([]seg, string) {
+	first, last := -1, -1
+	for i := range kids {
+		if kids[i].role == roleItem {
+			if first < 0 {
+				first = i
+			}
+			last = i
+		}
+	}
+	if first < 0 {
+		return kids, ""
+	}
+	blank := func(s *seg) bool {
+		return s.el == nil && s.role == roleNormal && strings.TrimSpace(s.static) == ""
+	}
+	sep := ""
+	if first+1 < len(kids) && blank(&kids[first+1]) {
+		sep = kids[first+1].static
+	}
+	out := kids[:0:0]
+	for i := range kids {
+		if i > first && i < last && blank(&kids[i]) {
+			continue
+		}
+		out = append(out, kids[i])
+	}
+	return out, sep
 }
 
 func (c *compiler) roleSeg(n *html.Node, role segRole) seg {
@@ -703,10 +740,13 @@ func (x *execer) loop(e *dynElem, r Resolver) {
 			if k != item {
 				continue // the other templates render where the first one is
 			}
-			for _, ir := range items {
+			for n, ir := range items {
 				if x.w.Len() >= x.limit {
 					x.truncated = true
 					break
+				}
+				if n > 0 && e.sep != "" {
+					x.w.WriteString(e.sep)
 				}
 				x.seg(pickTemplate(templates, ir), ir)
 			}
