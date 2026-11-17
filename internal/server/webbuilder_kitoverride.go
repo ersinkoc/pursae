@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"html"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -56,9 +57,33 @@ func (s *Server) wbKitOverrides() map[string]*wbKitOverrideEntry {
 	for slug, e := range out {
 		if e == nil || !wbKitSlugRE.MatchString(slug) {
 			delete(out, slug)
+			continue
+		}
+		// The stored option is validated again as it is read, as the PUT validated it: the front end
+		// prints the live override inside <style> (wbKitOverrideStyles), and an option written by
+		// anything else (an import, the database) must not end that element.
+		e.Live = *wbKitOverrideValid(slug, &e.Live)
+		if e.Draft != nil {
+			e.Draft = wbKitOverrideValid(slug, e.Draft)
 		}
 	}
 	return out
+}
+
+// wbKitOverrideValid is o when webbuilder.ParseKitOverride takes it, else an empty override.
+func wbKitOverrideValid(slug string, o *webbuilder.KitOverride) *webbuilder.KitOverride {
+	if len(o.Rules) == 0 {
+		return o
+	}
+	b, err := json.Marshal(o)
+	if err == nil {
+		var v *webbuilder.KitOverride
+		if v, err = webbuilder.ParseKitOverride(b); err == nil {
+			return v
+		}
+	}
+	log.Printf("web builder: the stored override of kit %s is not valid and is left out: %v", slug, err)
+	return &webbuilder.KitOverride{}
 }
 
 func (s *Server) wbSaveKitOverrides(c *gin.Context, all map[string]*wbKitOverrideEntry) error {

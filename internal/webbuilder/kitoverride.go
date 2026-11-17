@@ -149,6 +149,19 @@ func overrideKey(r OverrideRule) string {
 	return strings.Join(r.Ctx, "\x01") + "\x02" + r.Sel
 }
 
+// overrideRuleShape: the rule's at-rule preludes and selector are ones ParseKitOverride takes.
+func overrideRuleShape(r OverrideRule) bool {
+	if len(r.Ctx) > MaxOverrideCtx || !overrideSelOK(r.Sel) {
+		return false
+	}
+	for _, c := range r.Ctx {
+		if !overrideCtxOK(c) {
+			return false
+		}
+	}
+	return true
+}
+
 // KitOverrideCSS prints an override (see the file comment). Rules without declarations print
 // nothing; nil prints "".
 func KitOverrideCSS(o *KitOverride) string {
@@ -157,6 +170,9 @@ func KitOverrideCSS(o *KitOverride) string {
 	}
 	var b strings.Builder
 	for _, r := range o.Rules {
+		if !overrideRuleShape(r) { // never printed, whoever wrote the override (ParseKitOverride refuses it)
+			continue
+		}
 		keys := make([]string, 0, len(r.P))
 		for k, v := range r.P {
 			if LocalDeclOK(k, v) {

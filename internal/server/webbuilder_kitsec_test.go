@@ -312,3 +312,32 @@ func TestWBCodeCSPOriginsFromCodeOnly(t *testing.T) {
 		}
 	}
 }
+
+// A kit override is validated again when the stored option is read: a tampered option whose
+// selector closes the <style> element prints nothing, on the page and in the REST view.
+func TestWBKitOverrideTamperedOption(t *testing.T) {
+	srv, base, admin := wbrStart(t)
+	ctx := context.Background()
+	wbsKit(t, admin, "tamp", map[string]string{"site.css": ".a{color:red}"})
+	id := wbsCodePage(t, srv, admin, "Tampered page", "tamp", `<section class="a"><p>Hi</p></section>`, "")
+	bad := map[string]any{"rules": []any{
+		map[string]any{"sel": ".a</style><script>alert(1)</script><style>", "p": map[string]any{"color": "red"}},
+		map[string]any{"ctx": []any{"@media all{}</style><img src=x onerror=alert(2)>"}, "sel": ".b", "p": map[string]any{"color": "red"}},
+	}}
+	if err := srv.settings.Set(ctx, map[string]any{wbKitOverridesOption: map[string]any{"tamp": map[string]any{"live": bad, "version": 1, "draft": bad, "draftVersion": 1}}}); err != nil {
+		t.Fatal(err)
+	}
+	wbKitOverrideCache.Delete("css")
+	srv.purgeAll(ctx)
+	_, body, _ := wbsFetch(t, base+"/?page_id="+itoa64(id), nil)
+	if strings.Contains(body, "alert(1)") || strings.Contains(body, "alert(2)") {
+		t.Errorf("the tampered override is printed: %s", wbSnippet(body, "data-wb-kit-override"))
+	}
+	if !strings.Contains(body, `<p>Hi</p>`) {
+		t.Error("the page is not rendered")
+	}
+	code, v, _ := admin.do(http.MethodGet, "/web-builder/v2/kits/tamp/override", nil, nil)
+	if code != http.StatusOK || strings.Contains(mcpJ(v), "alert(") {
+		t.Errorf("override view: %d %v", code, v)
+	}
+}
