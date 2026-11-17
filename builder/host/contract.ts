@@ -386,6 +386,28 @@ export interface Boot {
   site: SiteBoot
   /** Sample data for dynamic widgets: the template's preview object, else the post itself. */
   dynamic: DynContext
+  /**
+   * The header and footer templates the site draws around this page when they are made of code
+   * sections (the element editor shows them, locked, in the page's frame); null for a template, a
+   * canvas page, or when the theme draws no parts.
+   */
+  codeParts: CodeParts | null
+}
+
+/** Boot.codeParts. */
+export interface CodeParts {
+  /** null: no header template, or one not made of code sections. */
+  header: CodeTemplate | null
+  footer: CodeTemplate | null
+}
+
+/** One template of CodeParts: its published code sections, as stored. */
+export interface CodeTemplate {
+  id: number
+  title: string
+  /** Absolute; opens the template in the editor. */
+  editUrl: string
+  sections: Section[]
 }
 
 declare global {

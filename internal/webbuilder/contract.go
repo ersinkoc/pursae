@@ -805,6 +805,24 @@ type Boot struct {
 	Template *TemplateBoot `json:"template"`
 	Site     SiteBoot      `json:"site"`
 	Dynamic  DynContext    `json:"dynamic"` // sample data for dynamic widgets (the template's preview object, else the post itself)
+	// CodeParts: the header and footer templates the site draws around this page when they are
+	// made of code sections (the element editor shows them, locked, in the page's frame); null for
+	// a template, a canvas page, or when the active theme draws no parts.
+	CodeParts *CodeParts `json:"codeParts"`
+}
+
+// CodeParts are the header and footer templates around a page, as the editor draws them.
+type CodeParts struct {
+	Header *CodeTemplate `json:"header"` // null: no header template, or one not made of code sections
+	Footer *CodeTemplate `json:"footer"`
+}
+
+// CodeTemplate is one template of CodeParts: its published code sections (Section JSON as stored).
+type CodeTemplate struct {
+	ID       int64             `json:"id"`
+	Title    string            `json:"title"`
+	EditURL  string            `json:"editUrl"` // absolute; opens the template in the editor
+	Sections []json.RawMessage `json:"sections"`
 }
 
 // ---------------------------------------------------------------------------------------------

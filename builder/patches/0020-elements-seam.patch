@@ -1,0 +1,81 @@
+diff --git a/src/builder/Canvas.tsx b/src/builder/Canvas.tsx
+index cc18768..051dc24 100644
+--- a/src/builder/Canvas.tsx
++++ b/src/builder/Canvas.tsx
+@@ -14,10 +14,18 @@ import { motionAttrs, useSectionMotion } from './motion'
+ import type { Section } from './types'
+ import { Tip, cn, ease, spring } from './ui'
+ import { t } from './i18n'
++import { elementsSeam } from './elementsSeam'
+ 
+ const WIDTH = { desktop: '100%', tablet: '820px', mobile: '400px' } as const
+ 
++/** A page of code sections is drawn by the host's element editor when it has one (elementsSeam). */
+ export function Canvas() {
++  const b = useB()
++  const seam = elementsSeam()
++  return seam && seam.handles(b.doc) ? <seam.Canvas /> : <BuilderCanvas />
++}
++
++function BuilderCanvas() {
+   const b = useB()
+   const scroller = useRef<HTMLDivElement>(null)
+   const page = useRef<HTMLDivElement>(null)
+diff --git a/src/builder/Navigator.tsx b/src/builder/Navigator.tsx
+index 327a4f2..f74093c 100644
+--- a/src/builder/Navigator.tsx
++++ b/src/builder/Navigator.tsx
+@@ -8,6 +8,7 @@ import { useB } from './store'
+ import type { Section } from './types'
+ import { Tip, cn, ease, spring } from './ui'
+ import { t } from './i18n'
++import { elementsSeam } from './elementsSeam'
+ 
+ interface NavCtx {
+   open: string[]
+@@ -132,9 +133,12 @@ export function StructurePanel({ constraints }: { constraints: React.RefObject<H
+         </button>
+       </div>
+       <div ref={list} className="scroll-thin min-h-0 flex-1 overflow-y-auto py-1" onMouseLeave={ctx.leave}>
+-        {b.doc.sections.map((s) => (
+-          <NavNode key={s.id} s={s} level={0} ctx={ctx} />
+-        ))}
++        {b.doc.sections.map((s) => {
++          // A page drawn by the host's element editor: its code sections list their elements.
++          const seam = elementsSeam()
++          const Code = s.kind === 'code' && seam?.handles(b.doc) ? seam.Nav : undefined
++          return Code ? <Code key={s.id} s={s} /> : <NavNode key={s.id} s={s} level={0} ctx={ctx} />
++        })}
+       </div>
+     </motion.div>
+   )
+diff --git a/src/builder/elementsSeam.ts b/src/builder/elementsSeam.ts
+new file mode 100644
+index 0000000..7d78d45
+--- /dev/null
++++ b/src/builder/elementsSeam.ts
+@@ -0,0 +1,24 @@
++import type { ComponentType } from 'react'
++import type { DocState, Section } from './types'
++
++/**
++ * Host seam of the element editor (Pursae Web Builder, builder/host/elements): a page made of code
++ * sections is drawn and edited by the host's canvas (one frame with the whole page) and its
++ * sections get the host's branch in the navigator. Absent in the standalone builder; then code
++ * sections keep CodeSection.tsx.
++ */
++export interface ElementsSeam {
++  /** The host draws this doc's canvas. */
++  handles(doc: DocState): boolean
++  Canvas: ComponentType
++  /** Navigator rows of one code section (the section row included). */
++  Nav: ComponentType<{ s: Section }>
++}
++
++let seam: ElementsSeam | null = null
++
++export function setElementsSeam(next: ElementsSeam | null) {
++  seam = next
++}
++
++export const elementsSeam = () => seam
