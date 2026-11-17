@@ -181,7 +181,7 @@ func wbKitUser(c *gin.Context, write bool) bool {
 	if u == nil {
 		return false
 	}
-	if !u.Can("unfiltered_html", nil) {
+	if !wbUnfiltered(c, u) {
 		wbForbidden(c, u)
 		return false
 	}

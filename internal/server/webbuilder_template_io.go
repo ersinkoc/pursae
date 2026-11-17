@@ -171,7 +171,7 @@ func (s *Server) wbRESTTemplateImport(c *gin.Context, r *restRequest) {
 	}
 	// The post is new and empty: the content hash is that of "" (see the theme import).
 	d := &store.WebBuilderDoc{PostID: t.ID, Doc: res.JSON, Page: json.RawMessage(`{}`), Renderer: 0,
-		ContentHash: store.WebBuilderContentHash(""), SnapshotUser: u.ID, SnapshotUnfiltered: u.Can("unfiltered_html", nil)}
+		ContentHash: store.WebBuilderContentHash(""), SnapshotUser: u.ID, SnapshotUnfiltered: wbUnfiltered(c, u)}
 	if err := wb.PublishDoc(c, d, 0); err != nil {
 		fail()
 		return
