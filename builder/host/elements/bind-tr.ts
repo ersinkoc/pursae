@@ -3,7 +3,7 @@
  * lines to the shared host catalog (../i18n-tr.ts). tb() falls back to the host's t().
  */
 import { lang, type Vars } from '@/builder/i18n'
-import { t } from '../i18n'
+import { t as hostT } from '../i18n'
 
 const tr: Record<string, string> = {
   "Content binding": "İçerik bağlama", // i18n-ignore
@@ -68,5 +68,5 @@ export function tb(source: string, vars?: Vars): string {
     const msg = tr[source]
     return vars ? msg.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k] ?? '') : m)) : msg
   }
-  return t(source, vars)
+  return hostT(source, vars)
 }

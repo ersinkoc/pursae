@@ -574,7 +574,10 @@ markup and is listed in the report's `bindings.notes`.
 - Loops repeat their first child; per-card differences that are not content (a staggered
   `animation-delay` in a `style` attribute) take the first card's value.
 - A group's custom fields are per page values the import found (prev / next links, a category label);
-  they are edited as post meta (Pursae Custom Fields shows them when it has a field of that name).
+  they are edited as post meta (Pursae Custom Fields shows them when it has a field of that name). A
+  region that differs in structure is kept as the design wrote it in the protected meta
+  `_wb_html_<name>` (printed as stored: only trusted code writes protected meta); a public field
+  `<name>` an editor sets instead is sanitized like post content.
   Images of a group are URL fields, not featured images.
 - Collections are detected among the pages of one folder; pages in the site's root are not grouped.
 - The bound form script stops a design's `mailto:` handler only when it reads the address from a
