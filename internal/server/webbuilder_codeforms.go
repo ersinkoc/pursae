@@ -62,5 +62,13 @@ func (s *Server) wbCodeForms(h string) string {
 	if !strings.Contains(h, webbuilder.AttrCodeForm+`="`) || strings.Contains(h, `id="wb-code-form"`) {
 		return h
 	}
-	return h + `<script` + cspNonceAttr() + ` id="wb-code-form">` + wbCodeFormJS + `</script>`
+	js := `<script` + cspNonceAttr() + ` id="wb-code-form">` + wbCodeFormJS + `</script>`
+	// Inside the page's root element: a code page's root is dropped with what follows it
+	// (webbuilder.UnwrapCodePage).
+	if strings.HasPrefix(strings.TrimSpace(h), `<div`) {
+		if i := strings.LastIndex(h, "</div>"); i >= 0 {
+			return h[:i] + js + h[i:]
+		}
+	}
+	return h + js
 }

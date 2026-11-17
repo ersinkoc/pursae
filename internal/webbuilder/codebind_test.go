@@ -270,6 +270,33 @@ func TestCompileBindsForm(t *testing.T) {
 	}
 }
 
+func TestCompileSplicedCodeSnapshot(t *testing.T) {
+	src := `<div class="wb-page" data-wb-root="" data-wb-code-page="" style="display:contents"><template data-wb-code-head><link rel=stylesheet href="x.css"></template>` +
+		`<div hidden><p>static &amp; <b>text</b></p></div>` + "\n" +
+		`<ul data-wb-menu-loc="primary" data-wb-menu-tree="">` + "\n" + `<li data-wb-loop-item="default"><a href="/" data-wb-slot="menu.link" data-wb-text="menu.label">x</a></li>` + "\n" + `</ul></div>`
+	r := &fakeRes{menu: map[string][]*fakeMenu{"primary": {{id: "1", label: "A", url: "/a/"}, {id: "2", label: "B", url: "/b/"}}}}
+	got := fill(t, src, r)
+	for _, want := range []string{`<template data-wb-code-head><link rel=stylesheet href="x.css"></template><div hidden><p>static &amp; <b>text</b></p></div>`,
+		`href="/a/">A</a></li>` + "\n<li", `href="/b/">B</a></li>` + "\n</ul></div>"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("lacks %q\n%s", want, got)
+		}
+	}
+}
+
+func TestApplyActiveNewLink(t *testing.T) {
+	rule := &ActiveRule{Roles: []ActiveRole{{Tag: "a", Base: ActiveState{Class: "nav off"}, Exact: &ActiveState{Class: "nav on", Attrs: map[string]string{"aria-current": "page"}}}},
+		Items: []ActiveItem{{Role: 0, Key: "href:/a/", Exact: true}}}
+	src := `<a class="nav off" href="/a/">A</a><a class="nav off" href="/new/">New</a>`
+	got := ApplyActive(src, rule, "/new/")
+	if !strings.Contains(got, `nav on`) || !strings.Contains(got, `aria-current="page"`) || strings.Count(got, "nav on") != 1 || !strings.Contains(got, `<a class="nav off" href="/a/">`) {
+		t.Errorf("a new link to the current page is not marked: %s", got)
+	}
+	if strings.Contains(ApplyActive(src, rule, "/other/"), "nav on") {
+		t.Errorf("marked on another page")
+	}
+}
+
 func TestCheckCodeBinds(t *testing.T) {
 	for _, bad := range []string{`[]`, `{"x":{"kind":"menu","location":"primary"}}`, `{"1":{"kind":"menu"}}`, `{"1":{"kind":"field","field":"nope"}}`,
 		`{"1":{"kind":"field","field":"custom"}}`, `{"1":{"kind":"loop","query":{"evil":"1"}}}`, `{"1":{"kind":"form","fields":{"a":"password"}}}`} {

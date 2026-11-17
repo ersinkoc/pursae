@@ -38,6 +38,12 @@ import (
 // ContentBinds is the code section content key holding the bindings.
 const ContentBinds = "binds"
 
+// TrustedHTMLField prefixes the protected post meta key ("_wb_html_<name>") under which a site
+// import keeps a page's varying design markup for a custom html field: protected meta is written
+// only by trusted code (never by the custom fields box or the REST API), so post.field-html prints
+// it as stored (the design's SVG icons, data attributes); the public field <name> is sanitized.
+const TrustedHTMLField = "_wb_html_"
+
 // Binding kinds.
 const (
 	BindMenu    = "menu"

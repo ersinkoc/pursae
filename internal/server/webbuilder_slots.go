@@ -383,6 +383,11 @@ func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 		out := sp.contentOf(e)
 		return out, strings.TrimSpace(out) != ""
 	case webbuilder.SlotPostFieldHTML:
+		if a.Field != "" && p.Password == "" {
+			if v, ok := p.Meta[webbuilder.TrustedHTMLField+a.Field].(string); ok && strings.TrimSpace(v) != "" {
+				return v, true // a site import's markup, protected meta (TrustedHTMLField)
+			}
+		}
 		v, ok := e.fieldValue(p, a.Field).(string)
 		if !ok || strings.TrimSpace(v) == "" {
 			return "", false

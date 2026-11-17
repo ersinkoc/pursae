@@ -108,7 +108,7 @@ func (s *Server) wbSiteMenu(c *gin.Context, kit string, m *webbuilder.SiteMenu, 
 	return menuID, ids, nil
 }
 
-var wbSiteFieldKeyRE = regexp.MustCompile(`^(design|list\d+)_`)
+var wbSiteFieldKeyRE = regexp.MustCompile(`^(_wb_html_)?(design|list\d+)_`)
 
 // wbSitePageFields stores a page's custom fields (post meta) from the import, replacing the ones
 // an earlier import of the design wrote (design_*, list<n>_*).

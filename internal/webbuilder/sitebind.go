@@ -286,7 +286,10 @@ func (r *planRes) HTML(slot SlotName, a SlotArgs) (string, bool) {
 		v := html.EscapeString(p.Excerpt)
 		return v, v != ""
 	case SlotPostFieldHTML:
-		v := p.Fields[a.Field]
+		v := p.Fields[TrustedHTMLField+a.Field]
+		if v == "" {
+			v = p.Fields[a.Field]
+		}
 		return v, v != ""
 	}
 	return "", false
@@ -1253,7 +1256,7 @@ func planGroup(res *SiteImport, folder string, members []int) (*SiteGroup, strin
 			}
 			b.Attr = "html"
 			for i := range posts {
-				posts[i].Fields[name] = htmlH.vals[i]
+				posts[i].Fields[TrustedHTMLField+name] = htmlH.vals[i]
 			}
 		case len(attrs) > 0:
 			b.Attr = "attrs"
@@ -1663,7 +1666,7 @@ func listingBinds(res *SiteImport, list *xhtml.Node, cards []*xhtml.Node, ms []i
 			}
 			b.Attr = "html"
 			for i, m := range ms {
-				plans[m].Fields[name] = hh.vals[i]
+				plans[m].Fields[TrustedHTMLField+name] = hh.vals[i]
 			}
 		case len(attrs) > 0:
 			b.Attr = "attrs"
