@@ -232,6 +232,18 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
 2. **Links**: the pages are created (drafts) or found first, and their permalinks (as published) make
    the link map of every link between the design's pages, folder links (`hizmet/`, `./`) included.
    Pretty permalinks are needed for the menu's active link (plain `?page_id=` links are warned about).
+   **Archive addresses**: a static copy of a WordPress site keeps its archives as files
+   (`author/admin/index.html`, `category/news/index.html`, `2026/09/index.html`); the router would give
+   those paths to this site's author, category, tag, date, post-format, search, custom post type or
+   post-permalink rules before looking for a page (`wbRouteShadowed`), so the imported page was never
+   reached. The import **claims** each such path for its page (option `wb_site_claims`,
+   `{path: {id, kit}}`, `internal/server/webbuilder_siteclaims.go`); `resolvePretty` serves a claimed
+   path's page before the archive rules, for page 1 without a feed (`/author/admin/page/2/` and
+   `/author/admin/feed/` stay the archive's), while the page is published or private and still has that
+   path. The analysis lists these pages ("Pages at archive addresses"), the answer `claimed_paths` and a
+   warning; a later import of the kit replaces its claims, "Remove this import" drops them, and a page
+   given another address gives the path back. To show the site's real archive there instead, give the
+   page another address (or bind its list to a loop, [Binding to content](#binding-to-content)).
 3. **Templates**: every page's header (with what goes with it) and footer are clustered
    (`webbuilder.ClusterParts`): copies that differ only in the current page's menu link are one
    template with an [active-link rule](#active-links); copies that differ otherwise, or that the rule

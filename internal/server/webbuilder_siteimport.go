@@ -250,6 +250,26 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			opts.URLs[p.Path] = "/" + opts.URLs[p.Path]
 		}
 	}
+	// Pages at addresses the router gives to an archive (a WordPress copy's /author/admin/,
+	// /category/news/, /2026/09/) claim them, so they answer there as in the design.
+	claims := map[string]int64{}
+	var claimed []string
+	for _, p := range plan.Pages {
+		if p.NotFound || p.Front {
+			continue
+		}
+		if why := s.wbRouteShadowed(c, opts.URLs[p.Path]); why != "" {
+			claims[opts.URLs[p.Path]] = ids[p.Path]
+			claimed = append(claimed, opts.URLs[p.Path]+" ("+why+")")
+		}
+	}
+	if err := s.wbSiteSetClaims(c, kit, claims); err != nil {
+		warnings = append(warnings, "could not keep the pages' addresses from the archives: "+err.Error())
+	} else if len(claimed) > 0 {
+		sort.Strings(claimed)
+		warnings = append(warnings, "these pages sit at addresses that are WordPress archives on this site; the imported pages answer there instead of the archive (page 1; /page/2/ and feeds stay the archive's): "+
+			strings.Join(wbFirst(claimed, 20), ", "))
+	}
 	var list []webbuilder.SitePage
 	for _, p := range plan.Pages {
 		list = append(list, webbuilder.SitePage{Path: p.Path, HTML: src[p.Path]})
@@ -359,6 +379,9 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	}
 	out["pages"] = report
 	out["pages_created"], out["pages_updated"] = created, updated
+	if len(claimed) > 0 {
+		out["claimed_paths"] = claimed
+	}
 
 	// The header and footer templates.
 	keep := map[string]bool{}

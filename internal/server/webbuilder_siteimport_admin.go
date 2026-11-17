@@ -543,6 +543,9 @@ type wbWizAnalysis struct {
 	Menu      string
 	Folders   []wbWizFolder
 	BindNotes []string
+	// Claims: pages at addresses that are archives here (author, category, date); the import keeps
+	// them as the design's pages (webbuilder_siteclaims.go).
+	Claims []string
 }
 
 // wbWizFolder is a folder of pages the import can turn into content under single templates.
@@ -781,6 +784,14 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 	}
 	if s.activeTheme().Slug != wbHelloSlug {
 		a.Warnings = append(a.Warnings, "the header, footer and 404 templates show only with the Hello Pursae theme (activate Pursae Web Builder's theme)")
+	}
+	for _, p := range plan.Pages {
+		if p.NotFound || p.Front {
+			continue
+		}
+		if why := s.wbRouteShadowed(c, urls[p.Path]); why != "" {
+			a.Claims = append(a.Claims, urls[p.Path]+" ("+why+")")
+		}
 	}
 	if s.settings.String("permalink_structure") == "" {
 		a.Warnings = append(a.Warnings, "the site has plain permalinks (?page_id=…): links between pages work, but the menu cannot mark the current page; choose a pretty permalink structure (Settings › Permalinks) first")
@@ -1249,6 +1260,7 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 	// the survivors up, and every page the import made goes anyway.
 	del(rec.Pages, "page")
 	del(rec.Templates, webbuilder.TemplatePostType)
+	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
 	// The navigation menu it made, when it is still the import's (same id, same name).
 	if rec.Menu > 0 && s.wbWizMenuID(c, rec.Kit) == rec.Menu {
 		if err := s.store.DeleteMenu(c, rec.Menu); err == nil {

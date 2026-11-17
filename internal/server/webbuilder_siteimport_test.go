@@ -243,3 +243,87 @@ func TestMCPImportSiteCorpusShapes(t *testing.T) {
 		}
 	}
 }
+
+// A static copy of a WordPress site keeps its archive pages as files (author/admin/index.html,
+// category/news/index.html, 2026/09/index.html). The import makes them pages at those paths and
+// claims the paths, so they answer there instead of this site's author, category and date
+// archives (page 1 only); a claim ends with its page.
+func TestMCPImportSiteClaimsArchivePaths(t *testing.T) {
+	ts, c, srv := newTestServer(t, true)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	if r := call("activate_theme", map[string]any{"slug": wbHelloSlug}); r["isError"] == true {
+		t.Fatalf("theme: %v", mcpText(r))
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "wp", "files": []any{
+		map[string]any{"path": "css/site.css", "text": "body{margin:0}"},
+	}}))
+	doc := func(h1 string) string {
+		return `<!doctype html><html lang="en"><head><title>` + h1 + `</title></head><body><main><section><h1>` + h1 + `</h1></section></main></body></html>`
+	}
+	pages := []any{
+		map[string]any{"path": "index.html", "html": doc("Home")},
+		map[string]any{"path": "author/admin/index.html", "html": doc("Design author")},
+		map[string]any{"path": "category/news/index.html", "html": doc("Design category")},
+		map[string]any{"path": "2026/09/index.html", "html": doc("Design month")},
+		map[string]any{"path": "about/index.html", "html": doc("About")},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "wp", "pages": pages, "templates": false}))
+	var cl []string
+	for _, x := range asList(out["claimed_paths"]) {
+		cl = append(cl, x.(string))
+	}
+	claimed := strings.Join(cl, " ")
+	for _, want := range []string{"/author/admin/ (author archive)", "/category/news/ (category archive)", "/2026/09/ (date archive)"} {
+		if !strings.Contains(claimed, want) {
+			t.Errorf("claimed %q, want %s", claimed, want)
+		}
+	}
+	if strings.Contains(claimed, "/about/") {
+		t.Errorf("a page no archive takes was claimed: %s", claimed)
+	}
+	get := func(path string) (int, string) {
+		t.Helper()
+		resp, err := http.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return resp.StatusCode, string(b)
+	}
+	for path, h1 := range map[string]string{"/author/admin/": "Design author", "/category/news/": "Design category", "/2026/09/": "Design month", "/about/": "About"} {
+		if code, body := get(path); code != 200 || !strings.Contains(body, "<h1>"+h1+"</h1>") {
+			t.Errorf("%s: %d, want the imported page %q: %.200s", path, code, h1, wbSnippet(body, "<h1"))
+		}
+	}
+	// Later archive pages are the archive's, not the imported page's.
+	if _, body := get("/author/admin/page/2/"); strings.Contains(body, "Design author") {
+		t.Error("/author/admin/page/2/ served the imported page")
+	}
+	// The claim ends with its page: the author archive answers again.
+	var id int64
+	for _, p := range asList(out["pages"]) {
+		if m := p.(map[string]any); m["path"] == "author/admin/index.html" {
+			id = int64(m["post_id"].(float64))
+		}
+	}
+	if err := srv.store.DeletePost(t.Context(), id); err != nil {
+		t.Fatal(err)
+	}
+	srv.wbPurgePages()
+	if _, body := get("/author/admin/"); strings.Contains(body, "Design author") {
+		t.Error("a deleted page still claims its path")
+	}
+	srv.wbSiteDropClaims(t.Context(), []int64{id})
+	if _, ok := srv.wbSiteClaims()["author/admin"]; ok {
+		t.Error("the claim of a removed page was kept")
+	}
+	if _, ok := srv.wbSiteClaims()["category/news"]; !ok {
+		t.Error("another page's claim was dropped")
+	}
+}
