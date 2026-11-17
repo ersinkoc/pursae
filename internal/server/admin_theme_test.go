@@ -1,7 +1,12 @@
 package server
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/store"
 )
@@ -55,5 +60,33 @@ func TestAdminThemeMode(t *testing.T) {
 		if got := th.BodyClass(); got != c.class {
 			t.Errorf("%v: body class %q, want %q", c.meta, got, c.class)
 		}
+	}
+}
+
+func TestRememberAdminLook(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	run := func(have string, th adminTheme) string {
+		t.Helper()
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/wp-admin/", nil)
+		if have != "" {
+			c.Request.AddCookie(&http.Cookie{Name: adminLookCookie, Value: have})
+		}
+		rememberAdminLook(c, th)
+		return w.Header().Get("Set-Cookie")
+	}
+	modernDark := adminTheme{Slug: "modern", Mode: "dark"}
+	if got := run("", modernDark); !strings.Contains(got, adminLookCookie+"=modern-dark") || strings.Contains(got, "HttpOnly") {
+		t.Fatalf("modern user: %q", got)
+	}
+	if got := run("modern-dark", modernDark); got != "" {
+		t.Fatalf("unchanged look is not written again: %q", got)
+	}
+	if got := run("modern-dark", adminThemes[0]); !strings.Contains(got, "Max-Age=0") {
+		t.Fatalf("a Classic user drops the cookie: %q", got)
+	}
+	if got := run("", adminThemes[0]); got != "" {
+		t.Fatalf("Classic without a cookie sets none: %q", got)
 	}
 }

@@ -123,6 +123,30 @@ func (s *Server) themeModeAjax(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	rememberAdminLook(c, adminThemeFor(u))
 	c.String(http.StatusOK, "1")
+}
+
+// adminLookCookie remembers, in this browser, that its last admin user chose Pursae Modern and which
+// colour mode, so the log-in, lost-password and register screens (which have no user yet) can wear
+// the same look. It holds only "modern-light", "modern-dark" or "modern-auto"; it is read by an inline
+// script on those screens, so it is not HttpOnly. WordPress Classic users get no cookie.
+const adminLookCookie = "wpgo_admin_look"
+
+func rememberAdminLook(c *gin.Context, t adminTheme) {
+	want := ""
+	if t.Modern() {
+		want = "modern-" + t.Mode
+	}
+	have, _ := c.Cookie(adminLookCookie)
+	if have == want {
+		return
+	}
+	secure := c.Request.TLS != nil
+	if want == "" {
+		c.SetCookie(adminLookCookie, "", -1, "/", "", secure, false)
+		return
+	}
+	c.SetCookie(adminLookCookie, want, 365*24*3600, "/", "", secure, false)
 }
 

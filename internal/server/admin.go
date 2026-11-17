@@ -349,6 +349,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		v.Color = adminColors[0]
 		v.ThemeModeNonce = s.nonce(c, "pursae-theme-mode")
 	}
+	rememberAdminLook(c, v.Theme)
 	if tmpl != "admin/block-editor" && tmpl != "admin/dashboard" {
 		v.Help = helpFor(v.AdminPage, v.TypeNow)
 	}
