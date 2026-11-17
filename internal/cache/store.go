@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 	"slices"
 	"sort"
 	"strings"
@@ -95,6 +96,7 @@ type item struct {
 	diskElem *list.Element // position in the disk-only list while only on disk
 	bytes    int64
 	file     int64 // approximate size of its disk copy, counted in stubBytes while only on disk
+	staging  bool  // this item's disk copy has not been published yet
 }
 
 // Stats is a snapshot of store counters.
@@ -344,6 +346,11 @@ func (s *Store) get(key string) (*Entry, bool) {
 		s.mu.Unlock()
 		return e, true
 	}
+	if it.staging {
+		// The current item's file is not ready. The path might still hold its predecessor.
+		s.mu.Unlock()
+		return nil, false
+	}
 	s.mu.Unlock()
 
 	// Disk-only: load outside the lock, then re-check that the record is unchanged.
@@ -418,7 +425,7 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	if replacing {
 		s.removeLocked(old, false)
 	}
-	it := &item{key: e.Key, base: keyBase(e.Key), tags: e.Tags, expires: e.Expires, entry: e, bytes: size, file: size}
+	it := &item{key: e.Key, base: keyBase(e.Key), tags: e.Tags, expires: e.Expires, entry: e, bytes: size, file: size, staging: s.disk != nil}
 	it.elem = s.lru.PushFront(it)
 	s.items[e.Key] = it
 	s.bytes += size
@@ -427,17 +434,38 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	s.mu.Unlock()
 
 	if s.disk != nil {
-		if err := s.disk.save(e); err != nil {
+		staged, err := s.disk.stage(e)
+		if err := s.finishDiskWrite(it, staged, err); err != nil {
 			s.log.Warn("wpgo-cache: persisting entry", "key", e.Key, "err", err)
 		}
-		// A purge that ran while the file was being written must not leave it behind.
-		s.mu.Lock()
-		if _, ok := s.items[e.Key]; !ok {
-			s.disk.remove(e.Key)
-		}
-		s.mu.Unlock()
 	}
 	return nil
+}
+
+// finishDiskWrite publishes the file and its readiness under the same lock as
+// replacement, eviction and purge. The potentially slow write and sync run outside it.
+func (s *Store) finishDiskWrite(it *item, staged string, err error) error {
+	if staged != "" {
+		defer os.Remove(staged)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.items[it.key] != it {
+		return nil
+	}
+	if err == nil {
+		err = s.disk.publish(it.key, staged)
+	}
+	it.staging = false
+	if err != nil {
+		if it.entry == nil {
+			s.removeLocked(it, true)
+		} else {
+			s.disk.remove(it.key)
+			it.file = 0
+		}
+	}
+	return err
 }
 
 // evictLocked drops least recently used resident entries until limits hold, never
@@ -456,7 +484,7 @@ func (s *Store) evictLocked(keep *item) {
 			s.lru.MoveToFront(el)
 			continue
 		}
-		if s.disk != nil {
+		if s.disk != nil && it.file > 0 {
 			s.unloadLocked(it)
 			s.pushStubLocked(it)
 		} else {
