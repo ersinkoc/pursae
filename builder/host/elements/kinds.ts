@@ -40,7 +40,9 @@ export function kindOf(tr: Tree, el: El, display?: string): Kind {
   const d = display ?? classDisplay(el)
   if (kids.length && (d === 'flex' || d === 'inline-flex')) return 'flex'
   if (kids.length && (d === 'grid' || d === 'inline-grid')) return 'grid'
-  if (kids.every((k) => INLINE.has(k.tag)) && (TEXTY.has(tag) || ownText(tr, el))) return 'text'
+  // Text: phrasing content only (a link laid out as a flex card is not phrasing).
+  const phrasing = (e: El): boolean => elementKids(e).every((k) => INLINE.has(k.tag) && !classDisplay(k) && !/(^|\s)(block|inline-block)(\s|$)/.test(attr(k, 'class') ?? '') && phrasing(k))
+  if (phrasing(el) && (TEXTY.has(tag) || ownText(tr, el))) return 'text'
   return 'div'
 }
 
