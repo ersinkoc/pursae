@@ -50,7 +50,7 @@ index 327a4f2..f74093c 100644
      </motion.div>
    )
 diff --git a/src/builder/StudioPanel.tsx b/src/builder/StudioPanel.tsx
-index bf031d2..ff6b3a6 100644
+index bf031d2..ccb3056 100644
 --- a/src/builder/StudioPanel.tsx
 +++ b/src/builder/StudioPanel.tsx
 @@ -43,6 +43,7 @@ import { Toggle, cn, ease, spring } from './ui'
@@ -61,7 +61,30 @@ index bf031d2..ff6b3a6 100644
  
  export function StudioPanel() {
    const b = useB()
-@@ -362,7 +363,13 @@ function Inspector({ s, el }: { s: Section; el?: string }) {
+@@ -350,10 +351,22 @@ export function IconSeg<T extends string>({ value, options, onChange }: { value:
+ /* ---------- Inspector ---------- */
+ type Tab = 'content' | 'style' | 'advanced'
+ let lastTab: Tab = 'content' // keep the open tab while hopping between elements
++const tabSetters = new Set<(t: Tab) => void>()
++/** Opens an inspector tab (the host's element editor: "Style" from the canvas toolbar). */
++export function openInspectorTab(t: Tab) {
++  lastTab = t
++  tabSetters.forEach((f) => f(t))
++}
+ 
+ function Inspector({ s, el }: { s: Section; el?: string }) {
+   const b = useB()
+   const [tab, setTabState] = useState<Tab>(lastTab)
++  useEffect(() => {
++    tabSetters.add(setTabState)
++    return () => {
++      tabSetters.delete(setTabState)
++    }
++  }, [])
+   const setTab = (t: Tab) => {
+     lastTab = t
+     setTabState(t)
+@@ -362,7 +375,13 @@ function Inspector({ s, el }: { s: Section; el?: string }) {
    const isLayout = s.kind === 'layout'
    const isCell = isLayout && !!el
    const isCard = !!el && isCardEl(el) && !!CARD_NOUN[s.kind]
@@ -76,7 +99,7 @@ index bf031d2..ff6b3a6 100644
    // Breadcrumb through nested containers: Bölüm › Hücre 2 › İç grid › Hücre 1 …
    const path = sectionPath(b.doc.sections, s.id)
    const crumbs: { label: string; sel?: Selection }[] = []
-@@ -442,8 +449,8 @@ function Inspector({ s, el }: { s: Section; el?: string }) {
+@@ -442,8 +461,8 @@ function Inspector({ s, el }: { s: Section; el?: string }) {
          <AnimatePresence mode="wait" initial={false}>
            <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }}>
              {tab === 'content' && (isCell ? <CellLayoutTab s={s} el={el!} /> : isLayout ? <ContainerLayoutTab s={s} /> : <ContentTab s={s} el={el} />)}

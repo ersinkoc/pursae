@@ -278,17 +278,41 @@ export function matchedRules(el: Element, st: State, version: number): Matched[]
   return out
 }
 
+/**
+ * The flow-relative properties that set the same value as a physical one in a horizontal,
+ * left-to-right page (Tailwind v4 writes py-4 as padding-block): they cascade together.
+ */
+export function logicalAliases(prop: string): string[] {
+  const side: Record<string, string> = { top: 'block-start', bottom: 'block-end', left: 'inline-start', right: 'inline-end' }
+  let m = /^(margin|padding|scroll-margin|scroll-padding)-(top|right|bottom|left)$/.exec(prop)
+  if (m) return [`${m[1]}-${side[m[2]]}`]
+  m = /^border-(top|right|bottom|left)-(width|style|color)$/.exec(prop)
+  if (m) return [`border-${side[m[1]]}-${m[2]}`]
+  m = /^(top|right|bottom|left)$/.exec(prop)
+  if (m) return [`inset-${side[m[1]]}`]
+  const corner: Record<string, string> = { 'top-left': 'start-start', 'top-right': 'start-end', 'bottom-left': 'end-start', 'bottom-right': 'end-end' }
+  m = /^border-(top-left|top-right|bottom-left|bottom-right)-radius$/.exec(prop)
+  if (m) return [`border-${corner[m[1]]}-radius`]
+  const size: Record<string, string> = { width: 'inline-size', height: 'block-size', 'min-width': 'min-inline-size', 'min-height': 'min-block-size', 'max-width': 'max-inline-size', 'max-height': 'max-block-size' }
+  return size[prop] ? [size[prop]] : []
+}
+
 /** The declarations of prop on el in state st (rules, then the inline style). */
 export function declsOf(el: Element, prop: string, st: State, version: number): Decl[] {
   const out: Decl[] = []
+  const names = [prop, ...logicalAliases(prop)]
   for (const m of matchedRules(el, st, version)) {
-    const value = m.style.getPropertyValue(prop)
-    if (!value) continue
-    out.push({ value: value.trim(), important: m.style.getPropertyPriority(prop) === 'important', spec: m.spec, layer: m.layer, order: m.order, selector: m.selector, origin: m.local ? 'local' : 'design' })
+    for (const n of names) {
+      const value = m.style.getPropertyValue(n)
+      if (!value) continue
+      out.push({ value: value.trim(), important: m.style.getPropertyPriority(n) === 'important', spec: m.spec, layer: m.layer, order: m.order, selector: m.selector, origin: m.local ? 'local' : 'design' })
+    }
   }
   const inline = (el as HTMLElement).style
-  const v = inline?.getPropertyValue(prop)
-  if (v) out.push({ value: v.trim(), important: inline.getPropertyPriority(prop) === 'important', spec: [1, 0, 0], layer: Infinity, order: Number.MAX_SAFE_INTEGER, selector: 'style', origin: 'inline' })
+  for (const n of names) {
+    const v = inline?.getPropertyValue(n)
+    if (v) out.push({ value: v.trim(), important: inline.getPropertyPriority(n) === 'important', spec: [1, 0, 0], layer: Infinity, order: Number.MAX_SAFE_INTEGER, selector: 'style', origin: 'inline' })
+  }
   return out
 }
 

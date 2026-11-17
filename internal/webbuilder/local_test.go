@@ -93,6 +93,22 @@ func TestSuggestLocalBreakpoints(t *testing.T) {
 	}
 }
 
+func TestLocalFontFamily(t *testing.T) {
+	for in, want := range map[string]string{`'Inter Tight', system-ui, sans-serif`: "Inter Tight", `"Lora" !important`: "Lora", "var(--f)": "", "": ""} {
+		if got := LocalFontFamily(in); got != want {
+			t.Errorf("%q: %q", in, got)
+		}
+	}
+	d := DocState{Sections: []Section{{ID: "a", Kind: KindCode, Local: LocalStyles{"1": {V: []LocalVariant{{P: map[string]string{"font-family": "'Lora', serif"}}}}}}}}
+	found := false
+	for _, n := range DocFonts(&d) {
+		found = found || n.Family == "Lora"
+	}
+	if !found {
+		t.Errorf("DocFonts lacks the local font: %+v", DocFonts(&d))
+	}
+}
+
 func TestAddLocalClasses(t *testing.T) {
 	src := `<section data-wbc="1" class="hero  "><h1 data-wbc="2">A</h1><p data-wbc=3 class=lead>B</p>` +
 		`<img data-wbc="4" src="a.png"/><script>var s='<div data-wbc="2">'</script><a data-wbc="5" class>x</a><i data-wbc="22"></i></section>`

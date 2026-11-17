@@ -3,7 +3,7 @@
  * (builder/host/elements/cascade.ts). The DOM walk runs in the browser (end-to-end check).
  */
 import { describe, expect, it } from 'vitest'
-import { beats, specificity, splitList, stripState, winner, type Decl } from '../../host/elements/cascade'
+import { beats, logicalAliases, specificity, splitList, stripState, winner, type Decl } from '../../host/elements/cascade'
 
 describe('specificity', () => {
   it.each([
@@ -40,6 +40,18 @@ describe('states', () => {
     expect(stripState('.a:active', 'active')).toBe('.a')
     expect(stripState('.a :hover', 'hover')).toBe('.a *')
     expect(stripState('.a:hover', '')).toBe('.a:hover')
+  })
+})
+
+describe('logical properties', () => {
+  it('cascade with their physical twins', () => {
+    expect(logicalAliases('padding-top')).toEqual(['padding-block-start'])
+    expect(logicalAliases('margin-left')).toEqual(['margin-inline-start'])
+    expect(logicalAliases('border-right-color')).toEqual(['border-inline-end-color'])
+    expect(logicalAliases('top')).toEqual(['inset-block-start'])
+    expect(logicalAliases('border-bottom-left-radius')).toEqual(['border-end-start-radius'])
+    expect(logicalAliases('max-width')).toEqual(['max-inline-size'])
+    expect(logicalAliases('color')).toEqual([])
   })
 })
 

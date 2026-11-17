@@ -201,6 +201,16 @@ func DocFonts(d *DocState) []FontNeed {
 		}
 	}
 	walk(d.Sections, 0)
+	// Local styles of code sections: a library family named first in a font-family value.
+	for i := range d.Sections {
+		for _, id := range sortedKeys(d.Sections[i].Local) {
+			for _, v := range d.Sections[i].Local[id].V {
+				if fam := LocalFontFamily(v.P["font-family"]); fam != "" {
+					add(fam, []int{400, 500, 600, 700}, nil)
+				}
+			}
+		}
+	}
 
 	out := make([]FontNeed, 0, len(needs))
 	for fam, n := range needs {

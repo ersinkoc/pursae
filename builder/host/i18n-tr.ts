@@ -480,6 +480,7 @@ const tr: Record<string, string> = {
   "Z-index": "Z-index", // i18n-ignore
   "property": "özellik", // i18n-ignore
   "value": "değer", // i18n-ignore
+  "Font library…": "Yazı tipi kütüphanesi…", // i18n-ignore
 }
 
 export default tr

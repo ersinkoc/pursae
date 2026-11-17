@@ -19,7 +19,7 @@
     "0017-import-fidelity.patch": "4f8d8593825f82c9f4b41535f7f59d577bf94231809225cbd2aeadb4e7332e9a",
     "0018-code-sections.patch": "46a13fb6ea2ae417d429fda82ab3ddd787c5130f75ce3e26d6261ad4495331bf",
     "0019-code-blocks.patch": "45660d851de20c00159dbbcb0f817fabb66e66cac76d1c56ba06c2e3e05e93f9",
-    "0020-elements-seam.patch": "8d5dd5d23d2402a102fe6fec124c361b249d114669e93f4cf76ba7c79346db01"
+    "0020-elements-seam.patch": "c3ef333561a05b3efc777e6d47652e4b0f97f7d35dbf79a05f509a8741419858"
   },
   "apiVersion": 2,
   "rendererVersion": 1

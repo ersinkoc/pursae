@@ -306,6 +306,20 @@ export function copyEntries(src: LocalStyles | undefined, from: string[], to: st
   return out
 }
 
+/** The first family of a font-family value, unquoted ('' for var() or nothing; Go: LocalFontFamily). */
+export function fontFamilyOf(v: string | undefined): string {
+  const s = trimCss((v ?? '').replace(/!\s*important\s*$/i, ''))
+  if (!s || s.includes('var(')) return ''
+  return trimCss(s.split(',')[0]).replace(/^['"]|['"]$/g, '')
+}
+
+/** Families named first in the local styles' font-family values of sections. */
+export function localFonts(sections: LocalSection[]): string[] {
+  const out = new Set<string>()
+  for (const s of sections) for (const e of Object.values(s.local ?? {})) for (const v of e.v) if (fontFamilyOf(v.p['font-family'])) out.add(fontFamilyOf(v.p['font-family']))
+  return [...out]
+}
+
 /* ---------- The page's stylesheet ---------- */
 
 /** The breakpoints of a section (its kit's, Boot.kitBreakpoints). */

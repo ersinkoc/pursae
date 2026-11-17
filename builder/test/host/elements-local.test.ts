@@ -8,7 +8,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { Section } from '@/builder/types'
-import { attrSel, classSel, copyEntries, declOK, localCSS, localValue, overrides, parseStyleAttr, rehome, sectionsCSS, setDecls, withoutDecls, type LocalSection, type LocalStyles } from '../../host/elements/local'
+import { attrSel, classSel, copyEntries, declOK, fontFamilyOf, localCSS, localValue, overrides, parseStyleAttr, rehome, sectionsCSS, setDecls, withoutDecls, type LocalSection, type LocalStyles } from '../../host/elements/local'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const FIX = path.join(here, '..', '..', '..', 'internal', 'webbuilder', 'testdata', 'local')
@@ -36,6 +36,15 @@ describe('declarations', () => {
     const local: LocalStyles = { '3': { v: [{ bp: '', st: 'hover', p: { color: 'red' } }] } }
     expect(localCSS(local, null, attrSel(), { force: { id: '3', st: 'hover' } })).toBe('[data-wbc="3"]:not(#_):not(#_):not(._wbf){color:red}\n')
     expect(localCSS(local, null, attrSel(), { force: { id: '4', st: 'hover' } })).toContain(':hover{')
+  })
+})
+
+describe('fonts', () => {
+  it('reads the first family like Go LocalFontFamily', () => {
+    expect(fontFamilyOf(`'Inter Tight', system-ui, sans-serif`)).toBe('Inter Tight')
+    expect(fontFamilyOf('"Lora" !important')).toBe('Lora')
+    expect(fontFamilyOf('var(--f)')).toBe('')
+    expect(fontFamilyOf(undefined)).toBe('')
   })
 })
 

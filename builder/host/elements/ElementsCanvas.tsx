@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowUp, Bold, ChevronRight, Clipboard, ClipboardPaste, Copy, CornerLeftUp, Eraser, Eye, EyeOff, GripVertical, Italic, Layers, Link2, Paintbrush, Pencil, RemoveFormatting, SquareDashed, Trash2, Ungroup, Zap } from 'lucide-react'
 import { useB, type BuilderApi } from '@/builder/store'
+import { openInspectorTab } from '@/builder/StudioPanel'
 import type { Section } from '@/builder/types'
 import type { CmsHost } from '../cms-host'
 import type { CodeParts } from '../contract'
@@ -24,7 +25,8 @@ import { KIND_ICON, kindLabel, kindOf, namesOf, tagName } from './kinds'
 import { childIds, locate, movable, parentId, tree, type Page } from './ops'
 import { format, startTextEdit, type TextEdit } from './richtext'
 import { bumpFrame, clipboard, getElState, setElState, toggleIn, useElState } from './state'
-import { sectionsCSS, type LocalSection } from './local'
+import { localFonts, sectionsCSS, type LocalSection } from './local'
+import { fontUrlFor } from '@/builder/fonts'
 import { style as styleAct } from './actions'
 
 const WIDTH = { desktop: 1440, tablet: 768, mobile: 390 } as const
@@ -148,6 +150,19 @@ export function ElementsCanvas() {
     if (el && el.textContent !== localCss) {
       el.textContent = localCss
       bumpFrame()
+    }
+    // Library fonts the local styles name (the published page links the same ones).
+    const d = fdoc()
+    if (d?.head) {
+      for (const fam of localFonts([...parts.header, ...secs, ...parts.footer] as LocalSection[])) {
+        const href = fontUrlFor(fam, [400, 500, 600, 700])
+        if (!href || d.head.querySelector(`link[data-wb-font="${CSS.escape(fam)}"]`)) continue
+        const l = d.createElement('link')
+        l.rel = 'stylesheet'
+        l.href = href
+        l.setAttribute('data-wb-font', fam)
+        d.head.appendChild(l)
+      }
     }
   }, [localCss, loaded])
 
@@ -762,6 +777,10 @@ export function ElementsCanvas() {
             {bx(t('Move up'), <ArrowUp size={14} />, () => act.step(b, st.sel!, -1))}
             {bx(t('Move down'), <ArrowDown size={14} />, () => act.step(b, st.sel!, 1))}
             {canEditText && bx(t('Edit text'), <Pencil size={14} />, () => beginText(st.sel!))}
+            {bx(t('Style'), <Paintbrush size={14} />, () => {
+              b.setMode('studio')
+              openInspectorTab('style')
+            })}
             {bx(t('Duplicate'), <Copy size={14} />, () => act.duplicate(b, st.sel!))}
             {bx(t('Wrap in a Div'), <SquareDashed size={14} />, () => act.wrap(b, st.sel!))}
             {(hiddenNow || st.shown.has(st.sel!)) && bx(t('Show temporarily'), st.shown.has(st.sel!) ? <EyeOff size={14} /> : <Eye size={14} />, () => toggleShown(st.sel!), { active: st.shown.has(st.sel!) })}

@@ -19,6 +19,8 @@ import { Ctl, Panel, inputCls } from '@/builder/StudioPanel'
 import { useB } from '@/builder/store'
 import type { Section } from '@/builder/types'
 import { cn } from '@/builder/ui'
+import { FontPicker } from '@/builder/FontPicker'
+import { fontStack } from '@/builder/fonts'
 import { t } from '../i18n'
 import { latest, pageOf, style as styleAct } from './actions'
 import { sourceOf, elLabel, type Source } from './cascade'
@@ -454,6 +456,9 @@ function FontCtl({ c, prop, label }: { c: Ctx; prop: string; label: string }) {
         ))}
       </datalist>
       <TextCtl c={c} prop={prop} label={label} wide list="wb-style-fonts" />
+      <div data-wb-font-library="">
+        <FontPicker value={undefined} defaultLabel={t('Font library…')} onChange={(v) => v && write(c, prop, fontStack(v) ?? v, false)} />
+      </div>
     </>
   )
 }

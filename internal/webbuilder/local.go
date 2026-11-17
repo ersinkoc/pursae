@@ -236,6 +236,26 @@ func checkLocal(l LocalStyles, size int) []localProblem {
 	return out
 }
 
+// LocalFontFamily is the first family of a font-family value, unquoted ("" for a generic or
+// var() value).
+func LocalFontFamily(v string) string {
+	v = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(v), "!important"))
+	if v == "" || strings.Contains(v, "var(") {
+		return ""
+	}
+	first, _, _ := strings.Cut(v, ",")
+	return strings.Trim(strings.TrimSpace(first), `"'`)
+}
+
+func sortedKeys(l LocalStyles) []string {
+	out := make([]string, 0, len(l))
+	for k := range l {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
 // LocalClass is the class an element with local styles gets in the published markup: e{post}-{id}
 // (e-{id} without a post). The post keeps the classes of the header template, the page and the
 // footer template apart: their data-wbc ids are numbered per document.

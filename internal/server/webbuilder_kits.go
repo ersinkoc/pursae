@@ -513,6 +513,25 @@ func (s *Server) wbLocalBreakpoints(list []webbuilder.CodeContent) {
 	}
 }
 
+// wbLocalFontNeeds are the font needs (FontNeed JSON) whose family the local stylesheet names.
+func wbLocalFontNeeds(raw json.RawMessage, local string) json.RawMessage {
+	var needs []webbuilder.FontNeed
+	if len(raw) == 0 || json.Unmarshal(raw, &needs) != nil {
+		return nil
+	}
+	var out []webbuilder.FontNeed
+	for _, n := range needs {
+		if n.Family != "" && strings.Contains(local, n.Family) {
+			out = append(out, n)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	b, _ := json.Marshal(out)
+	return b
+}
+
 // wbKitCopy copies the live kit files into the staging folder.
 func wbKitCopy(src, dst string) error {
 	files, err := wbKitFiles(src)
