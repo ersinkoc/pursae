@@ -188,10 +188,21 @@ func TestWBKitRootAssetHeaders(t *testing.T) {
 		"/assets/m.glb": "model/gltf-binary", "/assets/m.gltf": "model/gltf+json", "/assets/s.css": "text/css; charset=utf-8",
 	} {
 		code, _, h := fetch(path, nil)
-		if code != http.StatusOK || h.Get("Content-Type") != ct || h.Get("X-Content-Type-Options") != "nosniff" ||
-			!strings.HasPrefix(h.Get("Content-Security-Policy"), sandbox) {
+		// A script gets no policy: it would be its Web Worker's (wbKitFilePolicy).
+		policyOK := strings.HasPrefix(h.Get("Content-Security-Policy"), sandbox)
+		if strings.HasSuffix(path, ".js") {
+			policyOK = h.Get("Content-Security-Policy") == ""
+		}
+		if code != http.StatusOK || h.Get("Content-Type") != ct || h.Get("X-Content-Type-Options") != "nosniff" || !policyOK {
 			t.Errorf("%s: %d %q %q %q", path, code, h.Get("Content-Type"), h.Get("X-Content-Type-Options"), h.Get("Content-Security-Policy"))
 		}
+	}
+	// The same files under /wp-content/uploads/: a script without a policy, the rest sandboxed.
+	if _, _, h := fetch("/wp-content/uploads/web-builder/kits/rootk/app.js", nil); h.Get("Content-Security-Policy") != "" {
+		t.Errorf("kit script under uploads: %q", h.Get("Content-Security-Policy"))
+	}
+	if _, _, h := fetch("/wp-content/uploads/web-builder/kits/rootk/assets/a.svg", nil); !strings.HasPrefix(h.Get("Content-Security-Policy"), sandbox) {
+		t.Errorf("kit SVG under uploads: %q", h.Get("Content-Security-Policy"))
 	}
 	if code, _, h := fetch("/sw.js", map[string]string{"Service-Worker": "script"}); code != http.StatusForbidden || h.Get("Service-Worker-Allowed") != "" {
 		t.Errorf("service worker: %d %v", code, h)

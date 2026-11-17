@@ -271,6 +271,9 @@ func (s *Server) routes() *gin.Engine {
 		if s.serveMovedUpload(c) { // a path a replaced file left: redirect to its successor (media_replace.go)
 			return
 		}
+		if rel := strings.TrimPrefix(path.Clean(c.Request.URL.Path), "/wp-content/uploads/"); strings.HasPrefix(rel, wbKitsDir+"/") {
+			wbKitFilePolicy(c.Writer.Header(), rel) // a design kit's scripts may start Web Workers (webbuilder_kits.go)
+		}
 		c.Header("Cache-Control", s.uploadCacheControl(c))
 		uploads.ServeHTTP(c.Writer, c.Request)
 	}

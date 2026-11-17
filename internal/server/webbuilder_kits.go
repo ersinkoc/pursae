@@ -496,8 +496,8 @@ var wbKitRootTypes = map[string]string{
 	".pdf": "application/pdf",
 }
 
-// wbKitRootHeaders are the headers of a kit file served at the site's root: the uploads route's
-// sandbox policy, the type of the extension, nosniff.
+// wbKitRootHeaders are the headers of a kit file served at the site's root: the type of the
+// extension, nosniff, and the uploads route's sandbox policy (wbKitFilePolicy).
 func wbKitRootHeaders(h http.Header, rel string) {
 	ct := wbKitRootTypes[strings.ToLower(path.Ext(rel))]
 	if ct == "" {
@@ -505,10 +505,30 @@ func wbKitRootHeaders(h http.Header, rel string) {
 	}
 	h.Set("Content-Type", ct)
 	h.Set("X-Content-Type-Options", "nosniff")
-	h.Set("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'")
-	h.Del("Content-Security-Policy-Report-Only")
+	wbKitFilePolicy(h, rel)
 	h.Del("Service-Worker-Allowed")
 }
+
+// wbKitFilePolicy sets the policy of a kit file response (at the root and under /wp-content/uploads/):
+// the uploads route's sandbox for every file a browser could open as a document (an SVG, a JSON
+// file holding markup), none for a script. A response's policy only matters where the response is
+// the document: a page loads the design's scripts, modules, stylesheets, fonts and images the same
+// with or without it. A script's own response is the document of a Web Worker, though: under the
+// sandbox the worker runs with an opaque origin and default-src 'none', so its importScripts and
+// fetches fail (checked in Chromium). A script with nosniff and its text/javascript type is never
+// run as a page, so it gets no policy, as on a static host.
+func wbKitFilePolicy(h http.Header, rel string) {
+	h.Del("Content-Security-Policy-Report-Only")
+	switch strings.ToLower(path.Ext(rel)) {
+	case ".js", ".mjs":
+		h.Del("Content-Security-Policy")
+	default:
+		h.Set("Content-Security-Policy", wbKitSandboxPolicy)
+	}
+}
+
+// wbKitSandboxPolicy is the uploads route's policy (server.go).
+const wbKitSandboxPolicy = "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'"
 
 // wbKitRootReserved: root files a site answers by convention (robots.txt, favicon.ico, ads.txt,
 // security.txt …, sitemaps) are never a design's, even when nothing on the site answers them.
