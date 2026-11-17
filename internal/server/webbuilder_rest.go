@@ -222,6 +222,13 @@ func wbInvalid1(c *gin.Context, path, code, msg string) {
 	wbInvalid(c, []webbuilder.ValidationError{{Path: path, Code: code, Message: msg}})
 }
 
+// wbUnfiltered: u may keep the privileged parts of a doc (html and code sections, content.html,
+// custom CSS) in this request: unfiltered_html, and with an Application Password the themes scope
+// as well (restScopeSiteCode).
+func wbUnfiltered(c *gin.Context, u *store.User) bool {
+	return u != nil && u.Can("unfiltered_html", nil) && (c == nil || restScopeSiteCode(c))
+}
+
 // wbParseDoc validates and normalizes a doc for u. Without unfiltered_html the privileged parts
 // (html and code sections, content.html, style.css) are those of the stored docs, by section id
 // (webbuilder.DocOptions.Stored; see wbStoredDocs), and dropped where nothing is stored. It answers
@@ -231,7 +238,7 @@ func wbParseDoc(c *gin.Context, raw json.RawMessage, u *store.User, stored ...js
 		wbInvalid1(c, "/doc", webbuilder.VErrRequired, "The doc is required.")
 		return nil, false
 	}
-	res, err := webbuilder.ParseDoc(raw, webbuilder.DocOptions{UnfilteredHTML: u.Can("unfiltered_html", nil), PathPrefix: "/doc", Stored: stored})
+	res, err := webbuilder.ParseDoc(raw, webbuilder.DocOptions{UnfilteredHTML: wbUnfiltered(c, u), PathPrefix: "/doc", Stored: stored})
 	switch {
 	case errors.Is(err, webbuilder.ErrDocTooLarge):
 		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The page is too large.", map[string]any{"limit": webbuilder.MaxDocBytes})
@@ -251,10 +258,11 @@ func wbParseDoc(c *gin.Context, raw json.RawMessage, u *store.User, stored ...js
 // Neither holds privileged parts that an unfiltered_html author did not write: publishes and
 // autosaves of other users keep them only from these, and a restored revision was such a publish.
 // nil for users with unfiltered_html.
-func (s *Server) wbStoredDocs(ctx context.Context, id int64, u *store.User, row *store.WebBuilderDoc) []json.RawMessage {
-	if u == nil || u.Can("unfiltered_html", nil) {
+func (s *Server) wbStoredDocs(c *gin.Context, id int64, u *store.User, row *store.WebBuilderDoc) []json.RawMessage {
+	if u == nil || wbUnfiltered(c, u) {
 		return nil
 	}
+	ctx := c.Request.Context()
 	wb := s.store.WebBuilder()
 	var out []json.RawMessage
 	if row == nil {
@@ -682,7 +690,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusConflict, webbuilder.ErrDetached, "This page was edited outside the builder.")
 		return
 	}
-	unfiltered := u.Can("unfiltered_html", nil)
+	unfiltered := wbUnfiltered(c, u)
 	res, ok := wbParseDoc(c, body.Doc, u, s.wbStoredDocs(c, p.ID, u, row)...)
 	if !ok {
 		return
@@ -1084,7 +1092,7 @@ func (s *Server) wbRESTLibraryCreate(c *gin.Context, r *restRequest) {
 		wbInvalid1(c, "/section", webbuilder.VErrRequired, "The component needs a section.")
 		return
 	}
-	res, err := webbuilder.ParseSection(body.Section, webbuilder.DocOptions{UnfilteredHTML: u.Can("unfiltered_html", nil), PathPrefix: "/section"})
+	res, err := webbuilder.ParseSection(body.Section, webbuilder.DocOptions{UnfilteredHTML: wbUnfiltered(c, u), PathPrefix: "/section"})
 	switch {
 	case errors.Is(err, webbuilder.ErrDocTooLarge):
 		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The component is too large.", map[string]any{"limit": webbuilder.MaxDocBytes})

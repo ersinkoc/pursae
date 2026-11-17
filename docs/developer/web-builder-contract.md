@@ -507,7 +507,8 @@ Two ways turn an HTML page into free-form (`custom`) sections:
 - **Exact (1:1)** — `internal/webbuilder/extract.js` runs in a real browser and reads the computed
   styles and boxes of the rendered page (Tailwind, CSS variables, grids, web fonts, gradients all
   resolved), at 1440 px and at 390 px. Pursae serves the browser page itself:
-  `GET /web-builder-import/{token}` (a one-time token of an import job, two hours, kept in memory) draws
+  `GET /web-builder-import/{token}` (a one-time token of an import job, two hours, kept in memory; at
+  most 5 open jobs per user and 64 MB of HTML and extractions in all) draws
   the HTML in two `sandbox="allow-scripts"` frames (opaque origin: no access to the site, its cookies or
   the page) and `POST`s both extractions back to the same URL; its own CSP lets the design load CDN
   scripts and fonts (srcdoc frames inherit it) and forbids framing. `webbuilder.ConvertExtract`
@@ -731,7 +732,7 @@ built from them.
 | Image URLs (`image`, `bgImage`, item image) | `http`, `https`, relative, `data:image/*` ≤ 32 KiB |
 | `bg.decorSvg` | sanitized to the SVG subset below |
 | CSS strings (`style.css`, `els.*.bgImage`, `border`, `shadow`) | no `</style`, CSS rules of §8.3 |
-| Privileged (`unfiltered_html` only) | `html` sections, `style.css` |
+| Privileged (`unfiltered_html` only; with an Application Password also the `themes` scope or full access) | `html` sections, `style.css` |
 
 Enum fields with unknown values are a 422 `bad_value`. Fields the Go types do not know are kept
 as sent (the stored doc is the client JSON with privileged fields removed at the JSON level).
@@ -812,7 +813,7 @@ part of the doc: one override per design kit, in the `wb_kit_overrides` option
 (`{slug: {live, version, draft, draftVersion, updated}}`), edited through
 `GET|PUT kits/{slug}/override` and `POST kits/{slug}/override/publish` (routes in
 [Kits: REST](web-builder-code-sections.md#kits-rest); writing needs `edit_theme_options` and
-`unfiltered_html`):
+`unfiltered_html`; the stored option is validated again with `ParseKitOverride` when it is read):
 
 ```json
 {"rules": [
@@ -827,7 +828,7 @@ part of the doc: one override per design kit, in the `wb_kit_overrides` option
   unchanged, else 422 `bad_css`.
 - `KitOverrideCSS` prints each rule on one line, wrapped in its contexts, declarations sorted by
   property name: `@layer utilities{.rounded-2xl{border-radius:2rem}}`; a rule without a valid
-  declaration prints nothing. The editor's `overrideCSS` prints the same bytes (shared fixtures
+  declaration, or whose selector or context the parser refuses, prints nothing. The editor's `overrideCSS` prints the same bytes (shared fixtures
   `internal/webbuilder/testdata/override`).
 - Front end: a page whose code head links a kit's files (`/wp-content/uploads/web-builder/kits/{slug}/…`)
   gets `<style data-wb-kit-override="{slug}">` with the live override right after the code head. The

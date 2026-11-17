@@ -25,6 +25,7 @@ caught up one by one: the event runs once, then waits for the next slot of its s
 | `wp_session_gc` | hourly | expires login sessions and old login attempts |
 | `wpgo_cache_janitor` | hourly | drops expired page-cache entries |
 | `seogo_404_trim` | hourly | keeps Pursae SEO's 404 log at the monitor's limit |
+| `wb_import_cleanup` | hourly | deletes Web Builder › Import HTML site uploads older than a day |
 | `wp_mail` | one-off | delivers a queued e-mail ([mail](mail.md)) |
 | `publish_future_post` | every tick | publishes posts whose date has come |
 | `wpgo_backup_scheduled` | daily or weekly | Backup Manager's scheduled local backup, only while a schedule is set (Backup Manager › Schedule); not recreated by `ensureEvents` |

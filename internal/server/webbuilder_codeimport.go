@@ -50,6 +50,9 @@ func mcpWBImportCode(s *Server, c *gin.Context, args map[string]any) (any, error
 	if u == nil || !u.Can("unfiltered_html", nil) {
 		return nil, mcpErrf("method code keeps the design's own HTML, CSS and JavaScript: the account needs unfiltered_html (an administrator)")
 	}
+	if !restScopeSiteCode(c) {
+		return nil, mcpErrf("method code keeps the design's own HTML, CSS and JavaScript: an Application Password needs the Appearance (themes) scope or full access for it; method exact works with Content")
+	}
 	status, err := mcpPublishStatus(args)
 	if err != nil {
 		return nil, err
