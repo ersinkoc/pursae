@@ -1326,8 +1326,8 @@ body.pm-sorting, body.pm-sorting * { cursor: grabbing !important; user-select: n
 }
 
 /* ===================================================================== dark content mode (pm-dark, or pm-auto on a dark system) */
-/* The block editor keeps its light interface: its components hard-code light colours. */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) {
+/* The block editor's interface follows too (its canvas keeps the site's own styles). */
+body.pursae-modern.pm-dark {
 	--pm-canvas: #0F1013;
 	--pm-bg: #17191E;
 	--pm-bg-2: #1B1D23;
@@ -1354,97 +1354,97 @@ body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) {
 	--wp-admin-theme-color-darker-20: #BCC5F6;
 	color-scheme: dark;
 }
-html:has(body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php)) { background: #0F1013; }
+html:has(body.pursae-modern.pm-dark) { background: #0F1013; }
 
 /* WordPress core colours that are not tokens */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php), body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpwrap, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpcontent, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content { background: var(--pm-canvas); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat td, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat th, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat td p, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat ol, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat ul, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .form-table td,
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .form-wrap label, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wrap, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .inside, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content { color: var(--pm-body); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .widefat td strong, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wrap strong, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .form-table th { color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) code, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) kbd { background: var(--pm-bg-2); color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input::placeholder, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) textarea::placeholder { color: var(--pm-faint); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) select, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui select { background-color: var(--pm-field); color: var(--pm-text);
+body.pursae-modern.pm-dark, body.pursae-modern.pm-dark #wpwrap, body.pursae-modern.pm-dark #wpcontent, body.pursae-modern.pm-dark #wpbody-content { background: var(--pm-canvas); }
+body.pursae-modern.pm-dark .widefat td, body.pursae-modern.pm-dark .widefat th, body.pursae-modern.pm-dark .widefat td p, body.pursae-modern.pm-dark .widefat ol, body.pursae-modern.pm-dark .widefat ul, body.pursae-modern.pm-dark .form-table td,
+body.pursae-modern.pm-dark .form-wrap label, body.pursae-modern.pm-dark .wrap, body.pursae-modern.pm-dark .inside, body.pursae-modern.pm-dark #wpbody-content { color: var(--pm-body); }
+body.pursae-modern.pm-dark .widefat td strong, body.pursae-modern.pm-dark .wrap strong, body.pursae-modern.pm-dark .form-table th { color: var(--pm-text); }
+body.pursae-modern.pm-dark code, body.pursae-modern.pm-dark kbd { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-dark input::placeholder, body.pursae-modern.pm-dark textarea::placeholder { color: var(--pm-faint); }
+body.pursae-modern.pm-dark select, body.pursae-modern.pm-dark .wp-core-ui select { background-color: var(--pm-field); color: var(--pm-text);
 	background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23A7ABB3%22%2F%3E%3C%2Fsvg%3E"); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input[type=checkbox], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input[type=radio] { background: var(--pm-field); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) select:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) textarea:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) input[readonly], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) textarea[readonly] { background: var(--pm-bg-2); color: var(--pm-muted); border-color: var(--pm-border); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary.disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary[disabled] { background: #3A4170 !important; border-color: #3A4170 !important; color: #8D93B5 !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button:disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button.disabled, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button[disabled] { background: var(--pm-bg-2) !important; color: var(--pm-faint) !important; border-color: var(--pm-border) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .hndle, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .stuffbox .hndle, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .postbox-header { color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .handle-order-higher, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .handle-order-lower, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox .handlediv { color: var(--pm-faint); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tablenav .tablenav-pages a, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tablenav-pages-navspan { background: var(--pm-bg); color: var(--pm-text); border-color: var(--pm-border-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tablenav-pages-navspan { background: var(--pm-bg-2); color: var(--pm-faint); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-list-table tbody tr:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .striped > tbody > :nth-child(odd) { background: transparent; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-list-table tbody tr:hover { background: var(--pm-bg-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugins .active td, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugins .active th, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugins .inactive td, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugins .inactive th { background: var(--pm-bg); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .plugin-update-tr .update-message, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .notice-alt { background: var(--pm-bg-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .notice-warning.notice-alt { background: rgba(240, 176, 98, .08); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .notice-error.notice-alt { background: rgba(242, 139, 154, .08); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .notice-success.notice-alt { background: rgba(91, 211, 154, .08); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #screen-meta, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #contextual-help-wrap, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .contextual-help-tabs ul li.active { background: var(--pm-bg); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .contextual-help-tabs ul li.active { border-color: var(--pm-border); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .contextual-help-sidebar { border-color: var(--pm-border); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .welcome-panel, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .card, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .postbox, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .stuffbox { color: var(--pm-body); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #dashboard-widgets h3, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #dashboard-widgets h4, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #dashboard_quick_press .drafts h2 { color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #dashboard_activity .subsubsub, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .activity-block { border-color: var(--pm-row); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #activity-widget #the-comment-list .comment-item, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #activity-widget #the-comment-list .comment-meta { background: transparent; border-color: var(--pm-row); color: var(--pm-body); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-header, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-body, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .site-health-issues-wrapper, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-accordion-panel { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger:active { background: var(--pm-bg-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-tabs-wrapper .health-check-tab { color: var(--pm-muted); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .health-check-tabs-wrapper .health-check-tab.active { color: var(--pm-text); box-shadow: inset 0 -3px var(--pm-primary); }
+body.pursae-modern.pm-dark input[type=checkbox], body.pursae-modern.pm-dark input[type=radio] { background: var(--pm-field); }
+body.pursae-modern.pm-dark input:disabled, body.pursae-modern.pm-dark select:disabled, body.pursae-modern.pm-dark textarea:disabled, body.pursae-modern.pm-dark input[readonly], body.pursae-modern.pm-dark textarea[readonly] { background: var(--pm-bg-2); color: var(--pm-muted); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark .wp-core-ui .button-primary.disabled, body.pursae-modern.pm-dark .wp-core-ui .button-primary:disabled, body.pursae-modern.pm-dark .wp-core-ui .button-primary[disabled] { background: #3A4170 !important; border-color: #3A4170 !important; color: #8D93B5 !important; }
+body.pursae-modern.pm-dark .wp-core-ui .button:disabled, body.pursae-modern.pm-dark .wp-core-ui .button.disabled, body.pursae-modern.pm-dark .wp-core-ui .button[disabled] { background: var(--pm-bg-2) !important; color: var(--pm-faint) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark .postbox .hndle, body.pursae-modern.pm-dark .stuffbox .hndle, body.pursae-modern.pm-dark .postbox .postbox-header { color: var(--pm-text); }
+body.pursae-modern.pm-dark .postbox .handle-order-higher, body.pursae-modern.pm-dark .postbox .handle-order-lower, body.pursae-modern.pm-dark .postbox .handlediv { color: var(--pm-faint); }
+body.pursae-modern.pm-dark .tablenav .tablenav-pages a, body.pursae-modern.pm-dark .tablenav-pages-navspan { background: var(--pm-bg); color: var(--pm-text); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-dark .tablenav-pages-navspan { background: var(--pm-bg-2); color: var(--pm-faint); }
+body.pursae-modern.pm-dark .wp-list-table tbody tr:hover, body.pursae-modern.pm-dark .striped > tbody > :nth-child(odd) { background: transparent; }
+body.pursae-modern.pm-dark .wp-list-table tbody tr:hover { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark .plugins .active td, body.pursae-modern.pm-dark .plugins .active th, body.pursae-modern.pm-dark .plugins .inactive td, body.pursae-modern.pm-dark .plugins .inactive th { background: var(--pm-bg); }
+body.pursae-modern.pm-dark .plugin-update-tr .update-message, body.pursae-modern.pm-dark .notice-alt { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark .notice-warning.notice-alt { background: rgba(240, 176, 98, .08); }
+body.pursae-modern.pm-dark .notice-error.notice-alt { background: rgba(242, 139, 154, .08); }
+body.pursae-modern.pm-dark .notice-success.notice-alt { background: rgba(91, 211, 154, .08); }
+body.pursae-modern.pm-dark #screen-meta, body.pursae-modern.pm-dark #contextual-help-wrap, body.pursae-modern.pm-dark .contextual-help-tabs ul li.active { background: var(--pm-bg); }
+body.pursae-modern.pm-dark .contextual-help-tabs ul li.active { border-color: var(--pm-border); }
+body.pursae-modern.pm-dark .contextual-help-sidebar { border-color: var(--pm-border); }
+body.pursae-modern.pm-dark .welcome-panel, body.pursae-modern.pm-dark .card, body.pursae-modern.pm-dark .postbox, body.pursae-modern.pm-dark .stuffbox { color: var(--pm-body); }
+body.pursae-modern.pm-dark #dashboard-widgets h3, body.pursae-modern.pm-dark #dashboard-widgets h4, body.pursae-modern.pm-dark #dashboard_quick_press .drafts h2 { color: var(--pm-text); }
+body.pursae-modern.pm-dark #dashboard_activity .subsubsub, body.pursae-modern.pm-dark .activity-block { border-color: var(--pm-row); }
+body.pursae-modern.pm-dark #activity-widget #the-comment-list .comment-item, body.pursae-modern.pm-dark #activity-widget #the-comment-list .comment-meta { background: transparent; border-color: var(--pm-row); color: var(--pm-body); }
+body.pursae-modern.pm-dark .health-check-header, body.pursae-modern.pm-dark .health-check-body, body.pursae-modern.pm-dark .site-health-issues-wrapper, body.pursae-modern.pm-dark .health-check-accordion-trigger, body.pursae-modern.pm-dark .health-check-accordion-panel { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark .health-check-accordion-trigger:hover, body.pursae-modern.pm-dark .health-check-accordion-trigger:active { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark .health-check-tabs-wrapper .health-check-tab { color: var(--pm-muted); }
+body.pursae-modern.pm-dark .health-check-tabs-wrapper .health-check-tab.active { color: var(--pm-text); box-shadow: inset 0 -3px var(--pm-primary); }
 /* media library and modal */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-modal-content, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-content, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-router, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-title, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-menu, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-menu,
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-toolbar .media-toolbar, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .attachments-browser .media-toolbar, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .uploader-inline, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-modal .media-frame-content { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-sidebar, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .attachment-details, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .edit-attachment-frame .attachment-media-view, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .edit-attachment-frame .edit-media-header { background: var(--pm-bg-2); color: var(--pm-body); border-color: var(--pm-border); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .attachment-preview, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .attachment .thumbnail { background: var(--pm-bg-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-frame-title h1, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-modal-close, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-router .media-menu-item, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-menu .media-menu-item { color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-router .active, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-router .media-menu-item.active:last-child { color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .media-modal-backdrop { background: #000; opacity: .7; }
+body.pursae-modern.pm-dark .media-frame, body.pursae-modern.pm-dark .media-modal-content, body.pursae-modern.pm-dark .media-frame-content, body.pursae-modern.pm-dark .media-frame-router, body.pursae-modern.pm-dark .media-frame-title, body.pursae-modern.pm-dark .media-frame-menu, body.pursae-modern.pm-dark .media-menu,
+body.pursae-modern.pm-dark .media-frame-toolbar .media-toolbar, body.pursae-modern.pm-dark .attachments-browser .media-toolbar, body.pursae-modern.pm-dark .uploader-inline, body.pursae-modern.pm-dark .media-modal .media-frame-content { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark .media-sidebar, body.pursae-modern.pm-dark .attachment-details, body.pursae-modern.pm-dark .edit-attachment-frame .attachment-media-view, body.pursae-modern.pm-dark .edit-attachment-frame .edit-media-header { background: var(--pm-bg-2); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark .attachment-preview, body.pursae-modern.pm-dark .attachment .thumbnail { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark .media-frame-title h1, body.pursae-modern.pm-dark .media-modal-close, body.pursae-modern.pm-dark .media-router .media-menu-item, body.pursae-modern.pm-dark .media-menu .media-menu-item { color: var(--pm-text); }
+body.pursae-modern.pm-dark .media-router .active, body.pursae-modern.pm-dark .media-router .media-menu-item.active:last-child { color: var(--pm-text); }
+body.pursae-modern.pm-dark .media-modal-backdrop { background: #000; opacity: .7; }
 /* classic editor */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-editor-container, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-container-body, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .quicktags-toolbar, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) div.mce-toolbar-grp { background: var(--pm-bg-2) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-btn button, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-btn .mce-txt, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-ico { color: var(--pm-body) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .mce-panel { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wp-content-editor-container .wp-editor-area { background: var(--pm-field); color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-switch-editor { color: var(--pm-muted); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .html-active .switch-html, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tmce-active .switch-tmce { background: var(--pm-bg-2); color: var(--pm-text); border-bottom-color: var(--pm-bg-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .categorydiv div.tabs-panel, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wp-tab-panel, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .category-tabs li.tabs, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) ul.add-menu-item-tabs li.tabs { background: var(--pm-bg); border-color: var(--pm-border); color: var(--pm-body); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #post-status-info { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark .wp-editor-container, body.pursae-modern.pm-dark .mce-container-body, body.pursae-modern.pm-dark .quicktags-toolbar, body.pursae-modern.pm-dark div.mce-toolbar-grp { background: var(--pm-bg-2) !important; }
+body.pursae-modern.pm-dark .mce-btn button, body.pursae-modern.pm-dark .mce-btn .mce-txt, body.pursae-modern.pm-dark .mce-ico { color: var(--pm-body) !important; }
+body.pursae-modern.pm-dark .mce-panel { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark #wp-content-editor-container .wp-editor-area { background: var(--pm-field); color: var(--pm-text); }
+body.pursae-modern.pm-dark .wp-switch-editor { color: var(--pm-muted); }
+body.pursae-modern.pm-dark .html-active .switch-html, body.pursae-modern.pm-dark .tmce-active .switch-tmce { background: var(--pm-bg-2); color: var(--pm-text); border-bottom-color: var(--pm-bg-2); }
+body.pursae-modern.pm-dark .categorydiv div.tabs-panel, body.pursae-modern.pm-dark .wp-tab-panel, body.pursae-modern.pm-dark .category-tabs li.tabs, body.pursae-modern.pm-dark ul.add-menu-item-tabs li.tabs { background: var(--pm-bg); border-color: var(--pm-border); color: var(--pm-body); }
+body.pursae-modern.pm-dark #post-status-info { background: var(--pm-bg-2); }
 /* nav menus */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .menu-item-bar .menu-item-handle, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .menu-item-settings, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .nav-menus-php .metabox-holder .accordion-section-title, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .accordion-section-content, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .menu-settings, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .manage-menus, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #menu-management .menu-edit, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #nav-menu-footer, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #nav-menu-header { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .menu-item-bar .menu-item-handle:hover { border-color: var(--pm-border-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .accordion-section-title:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .open .accordion-section-title { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-dark .menu-item-bar .menu-item-handle, body.pursae-modern.pm-dark .menu-item-settings, body.pursae-modern.pm-dark .nav-menus-php .metabox-holder .accordion-section-title, body.pursae-modern.pm-dark .accordion-section-content, body.pursae-modern.pm-dark .menu-settings, body.pursae-modern.pm-dark .manage-menus, body.pursae-modern.pm-dark #menu-management .menu-edit, body.pursae-modern.pm-dark #nav-menu-footer, body.pursae-modern.pm-dark #nav-menu-header { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark .menu-item-bar .menu-item-handle:hover { border-color: var(--pm-border-2); }
+body.pursae-modern.pm-dark .accordion-section-title:hover, body.pursae-modern.pm-dark .open .accordion-section-title { background: var(--pm-bg-2); color: var(--pm-text); }
 /* themes */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-browser .theme .theme-name { background: var(--pm-bg); color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-browser .theme.active .theme-name { background: var(--pm-chrome); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-wrap, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-header, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-actions { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-dark .theme-browser .theme .theme-name { background: var(--pm-bg); color: var(--pm-text); }
+body.pursae-modern.pm-dark .theme-browser .theme.active .theme-name { background: var(--pm-chrome); }
+body.pursae-modern.pm-dark .theme-overlay .theme-wrap, body.pursae-modern.pm-dark .theme-overlay .theme-header, body.pursae-modern.pm-dark .theme-overlay .theme-actions { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
 /* pursae pieces with fixed light colours */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-0 { background: rgba(135, 150, 236, .16); color: #B4BDF5; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-1 { background: rgba(108, 184, 236, .14); color: #A9D8F7; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-2 { background: rgba(91, 211, 154, .13); color: #95E2C3; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-3 { background: rgba(240, 176, 98, .13); color: #FFC99A; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-tint-4 { background: rgba(170, 140, 250, .15); color: #CDBEFF; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .gc-badge.warn { background: rgba(240, 176, 98, .12) !important; color: #FFC99A !important; border-color: rgba(240, 176, 98, .3) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .row-actions > .trash > a:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .row-actions > .delete > a:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .row-actions > .spam > a:hover { background: rgba(242, 139, 154, .12) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-chart .pm-prev { stroke: #5D6270; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-line { stroke: #E6E7EA; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-legend .p:before { background: #E6E7EA; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path { fill: #262931; stroke: var(--pm-bg); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l1, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l1 { fill: #2E3561; background: #2E3561; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l2, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l2 { fill: #3D4A93; background: #3D4A93; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l3, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l3 { fill: #5566C4; background: #5566C4; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l4, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l4 { fill: #7584E4; background: #7584E4; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l5, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l5 { fill: #A3AFF2; background: #A3AFF2; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pa-map path:hover { fill: #ECEDEF; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-switch span { background: #ECEDEF; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-switch.is-on span { background: var(--pm-on-primary); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .tgl input:checked + span::after { background: var(--pm-on-primary); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .pm-chip.is-muted:before { background: var(--pm-border-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .admin-theme-option { background: var(--pm-bg); border-color: var(--pm-border-2); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .admin-theme-preview { border-color: var(--pm-border); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar { width: 12px; height: 12px; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar-thumb { background: #2A2D35; border: 3px solid var(--pm-canvas); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar-track { background: var(--pm-canvas); }
+body.pursae-modern.pm-dark .pm-tint-0 { background: rgba(135, 150, 236, .16); color: #B4BDF5; }
+body.pursae-modern.pm-dark .pm-tint-1 { background: rgba(108, 184, 236, .14); color: #A9D8F7; }
+body.pursae-modern.pm-dark .pm-tint-2 { background: rgba(91, 211, 154, .13); color: #95E2C3; }
+body.pursae-modern.pm-dark .pm-tint-3 { background: rgba(240, 176, 98, .13); color: #FFC99A; }
+body.pursae-modern.pm-dark .pm-tint-4 { background: rgba(170, 140, 250, .15); color: #CDBEFF; }
+body.pursae-modern.pm-dark .gc-badge.warn { background: rgba(240, 176, 98, .12) !important; color: #FFC99A !important; border-color: rgba(240, 176, 98, .3) !important; }
+body.pursae-modern.pm-dark .row-actions > .trash > a:hover, body.pursae-modern.pm-dark .row-actions > .delete > a:hover, body.pursae-modern.pm-dark .row-actions > .spam > a:hover { background: rgba(242, 139, 154, .12) !important; }
+body.pursae-modern.pm-dark .pm-chart .pm-prev { stroke: #5D6270; }
+body.pursae-modern.pm-dark .pa-line { stroke: #E6E7EA; }
+body.pursae-modern.pm-dark .pa-legend .p:before { background: #E6E7EA; }
+body.pursae-modern.pm-dark .pa-map path { fill: #262931; stroke: var(--pm-bg); }
+body.pursae-modern.pm-dark .pa-map path.pa-l1, body.pursae-modern.pm-dark .pa-map-legend i.pa-l1 { fill: #2E3561; background: #2E3561; }
+body.pursae-modern.pm-dark .pa-map path.pa-l2, body.pursae-modern.pm-dark .pa-map-legend i.pa-l2 { fill: #3D4A93; background: #3D4A93; }
+body.pursae-modern.pm-dark .pa-map path.pa-l3, body.pursae-modern.pm-dark .pa-map-legend i.pa-l3 { fill: #5566C4; background: #5566C4; }
+body.pursae-modern.pm-dark .pa-map path.pa-l4, body.pursae-modern.pm-dark .pa-map-legend i.pa-l4 { fill: #7584E4; background: #7584E4; }
+body.pursae-modern.pm-dark .pa-map path.pa-l5, body.pursae-modern.pm-dark .pa-map-legend i.pa-l5 { fill: #A3AFF2; background: #A3AFF2; }
+body.pursae-modern.pm-dark .pa-map path:hover { fill: #ECEDEF; }
+body.pursae-modern.pm-dark .pm-switch span { background: #ECEDEF; }
+body.pursae-modern.pm-dark .pm-switch.is-on span { background: var(--pm-on-primary); }
+body.pursae-modern.pm-dark .tgl input:checked + span::after { background: var(--pm-on-primary); }
+body.pursae-modern.pm-dark .pm-chip.is-muted:before { background: var(--pm-border-2); }
+body.pursae-modern.pm-dark .admin-theme-option { background: var(--pm-bg); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-dark .admin-theme-preview { border-color: var(--pm-border); }
+body.pursae-modern.pm-dark ::-webkit-scrollbar { width: 12px; height: 12px; }
+body.pursae-modern.pm-dark ::-webkit-scrollbar-thumb { background: #2A2D35; border: 3px solid var(--pm-canvas); }
+body.pursae-modern.pm-dark ::-webkit-scrollbar-track { background: var(--pm-canvas); }
 @media (prefers-color-scheme: dark) {
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) {
+body.pursae-modern.pm-auto {
 	--pm-canvas: #0F1013;
 	--pm-bg: #17191E;
 	--pm-bg-2: #1B1D23;
@@ -1471,95 +1471,95 @@ body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) {
 	--wp-admin-theme-color-darker-20: #BCC5F6;
 	color-scheme: dark;
 }
-html:has(body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php)) { background: #0F1013; }
+html:has(body.pursae-modern.pm-auto) { background: #0F1013; }
 
 /* WordPress core colours that are not tokens */
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php), body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpwrap, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpcontent, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content { background: var(--pm-canvas); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat td, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat th, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat td p, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat ol, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat ul, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .form-table td,
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .form-wrap label, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wrap, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .inside, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content { color: var(--pm-body); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .widefat td strong, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wrap strong, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .form-table th { color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) code, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) kbd { background: var(--pm-bg-2); color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input::placeholder, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) textarea::placeholder { color: var(--pm-faint); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) select, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui select { background-color: var(--pm-field); color: var(--pm-text);
+body.pursae-modern.pm-auto, body.pursae-modern.pm-auto #wpwrap, body.pursae-modern.pm-auto #wpcontent, body.pursae-modern.pm-auto #wpbody-content { background: var(--pm-canvas); }
+body.pursae-modern.pm-auto .widefat td, body.pursae-modern.pm-auto .widefat th, body.pursae-modern.pm-auto .widefat td p, body.pursae-modern.pm-auto .widefat ol, body.pursae-modern.pm-auto .widefat ul, body.pursae-modern.pm-auto .form-table td,
+body.pursae-modern.pm-auto .form-wrap label, body.pursae-modern.pm-auto .wrap, body.pursae-modern.pm-auto .inside, body.pursae-modern.pm-auto #wpbody-content { color: var(--pm-body); }
+body.pursae-modern.pm-auto .widefat td strong, body.pursae-modern.pm-auto .wrap strong, body.pursae-modern.pm-auto .form-table th { color: var(--pm-text); }
+body.pursae-modern.pm-auto code, body.pursae-modern.pm-auto kbd { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-auto input::placeholder, body.pursae-modern.pm-auto textarea::placeholder { color: var(--pm-faint); }
+body.pursae-modern.pm-auto select, body.pursae-modern.pm-auto .wp-core-ui select { background-color: var(--pm-field); color: var(--pm-text);
 	background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23A7ABB3%22%2F%3E%3C%2Fsvg%3E"); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input[type=checkbox], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input[type=radio] { background: var(--pm-field); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) select:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) textarea:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) input[readonly], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) textarea[readonly] { background: var(--pm-bg-2); color: var(--pm-muted); border-color: var(--pm-border); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary.disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button-primary[disabled] { background: #3A4170 !important; border-color: #3A4170 !important; color: #8D93B5 !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button:disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button.disabled, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-core-ui .button[disabled] { background: var(--pm-bg-2) !important; color: var(--pm-faint) !important; border-color: var(--pm-border) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .hndle, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .stuffbox .hndle, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .postbox-header { color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .handle-order-higher, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .handle-order-lower, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox .handlediv { color: var(--pm-faint); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tablenav .tablenav-pages a, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tablenav-pages-navspan { background: var(--pm-bg); color: var(--pm-text); border-color: var(--pm-border-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tablenav-pages-navspan { background: var(--pm-bg-2); color: var(--pm-faint); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-list-table tbody tr:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .striped > tbody > :nth-child(odd) { background: transparent; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-list-table tbody tr:hover { background: var(--pm-bg-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugins .active td, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugins .active th, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugins .inactive td, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugins .inactive th { background: var(--pm-bg); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .plugin-update-tr .update-message, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .notice-alt { background: var(--pm-bg-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .notice-warning.notice-alt { background: rgba(240, 176, 98, .08); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .notice-error.notice-alt { background: rgba(242, 139, 154, .08); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .notice-success.notice-alt { background: rgba(91, 211, 154, .08); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #screen-meta, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #contextual-help-wrap, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .contextual-help-tabs ul li.active { background: var(--pm-bg); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .contextual-help-tabs ul li.active { border-color: var(--pm-border); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .contextual-help-sidebar { border-color: var(--pm-border); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .welcome-panel, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .card, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .postbox, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .stuffbox { color: var(--pm-body); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #dashboard-widgets h3, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #dashboard-widgets h4, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #dashboard_quick_press .drafts h2 { color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #dashboard_activity .subsubsub, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .activity-block { border-color: var(--pm-row); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #activity-widget #the-comment-list .comment-item, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #activity-widget #the-comment-list .comment-meta { background: transparent; border-color: var(--pm-row); color: var(--pm-body); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-header, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-body, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .site-health-issues-wrapper, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-accordion-panel { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-accordion-trigger:active { background: var(--pm-bg-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-tabs-wrapper .health-check-tab { color: var(--pm-muted); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .health-check-tabs-wrapper .health-check-tab.active { color: var(--pm-text); box-shadow: inset 0 -3px var(--pm-primary); }
+body.pursae-modern.pm-auto input[type=checkbox], body.pursae-modern.pm-auto input[type=radio] { background: var(--pm-field); }
+body.pursae-modern.pm-auto input:disabled, body.pursae-modern.pm-auto select:disabled, body.pursae-modern.pm-auto textarea:disabled, body.pursae-modern.pm-auto input[readonly], body.pursae-modern.pm-auto textarea[readonly] { background: var(--pm-bg-2); color: var(--pm-muted); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto .wp-core-ui .button-primary.disabled, body.pursae-modern.pm-auto .wp-core-ui .button-primary:disabled, body.pursae-modern.pm-auto .wp-core-ui .button-primary[disabled] { background: #3A4170 !important; border-color: #3A4170 !important; color: #8D93B5 !important; }
+body.pursae-modern.pm-auto .wp-core-ui .button:disabled, body.pursae-modern.pm-auto .wp-core-ui .button.disabled, body.pursae-modern.pm-auto .wp-core-ui .button[disabled] { background: var(--pm-bg-2) !important; color: var(--pm-faint) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto .postbox .hndle, body.pursae-modern.pm-auto .stuffbox .hndle, body.pursae-modern.pm-auto .postbox .postbox-header { color: var(--pm-text); }
+body.pursae-modern.pm-auto .postbox .handle-order-higher, body.pursae-modern.pm-auto .postbox .handle-order-lower, body.pursae-modern.pm-auto .postbox .handlediv { color: var(--pm-faint); }
+body.pursae-modern.pm-auto .tablenav .tablenav-pages a, body.pursae-modern.pm-auto .tablenav-pages-navspan { background: var(--pm-bg); color: var(--pm-text); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-auto .tablenav-pages-navspan { background: var(--pm-bg-2); color: var(--pm-faint); }
+body.pursae-modern.pm-auto .wp-list-table tbody tr:hover, body.pursae-modern.pm-auto .striped > tbody > :nth-child(odd) { background: transparent; }
+body.pursae-modern.pm-auto .wp-list-table tbody tr:hover { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto .plugins .active td, body.pursae-modern.pm-auto .plugins .active th, body.pursae-modern.pm-auto .plugins .inactive td, body.pursae-modern.pm-auto .plugins .inactive th { background: var(--pm-bg); }
+body.pursae-modern.pm-auto .plugin-update-tr .update-message, body.pursae-modern.pm-auto .notice-alt { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto .notice-warning.notice-alt { background: rgba(240, 176, 98, .08); }
+body.pursae-modern.pm-auto .notice-error.notice-alt { background: rgba(242, 139, 154, .08); }
+body.pursae-modern.pm-auto .notice-success.notice-alt { background: rgba(91, 211, 154, .08); }
+body.pursae-modern.pm-auto #screen-meta, body.pursae-modern.pm-auto #contextual-help-wrap, body.pursae-modern.pm-auto .contextual-help-tabs ul li.active { background: var(--pm-bg); }
+body.pursae-modern.pm-auto .contextual-help-tabs ul li.active { border-color: var(--pm-border); }
+body.pursae-modern.pm-auto .contextual-help-sidebar { border-color: var(--pm-border); }
+body.pursae-modern.pm-auto .welcome-panel, body.pursae-modern.pm-auto .card, body.pursae-modern.pm-auto .postbox, body.pursae-modern.pm-auto .stuffbox { color: var(--pm-body); }
+body.pursae-modern.pm-auto #dashboard-widgets h3, body.pursae-modern.pm-auto #dashboard-widgets h4, body.pursae-modern.pm-auto #dashboard_quick_press .drafts h2 { color: var(--pm-text); }
+body.pursae-modern.pm-auto #dashboard_activity .subsubsub, body.pursae-modern.pm-auto .activity-block { border-color: var(--pm-row); }
+body.pursae-modern.pm-auto #activity-widget #the-comment-list .comment-item, body.pursae-modern.pm-auto #activity-widget #the-comment-list .comment-meta { background: transparent; border-color: var(--pm-row); color: var(--pm-body); }
+body.pursae-modern.pm-auto .health-check-header, body.pursae-modern.pm-auto .health-check-body, body.pursae-modern.pm-auto .site-health-issues-wrapper, body.pursae-modern.pm-auto .health-check-accordion-trigger, body.pursae-modern.pm-auto .health-check-accordion-panel { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto .health-check-accordion-trigger:hover, body.pursae-modern.pm-auto .health-check-accordion-trigger:active { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto .health-check-tabs-wrapper .health-check-tab { color: var(--pm-muted); }
+body.pursae-modern.pm-auto .health-check-tabs-wrapper .health-check-tab.active { color: var(--pm-text); box-shadow: inset 0 -3px var(--pm-primary); }
 /* media library and modal */
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-modal-content, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-content, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-router, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-title, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-menu, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-menu,
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-toolbar .media-toolbar, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .attachments-browser .media-toolbar, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .uploader-inline, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-modal .media-frame-content { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-sidebar, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .attachment-details, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .edit-attachment-frame .attachment-media-view, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .edit-attachment-frame .edit-media-header { background: var(--pm-bg-2); color: var(--pm-body); border-color: var(--pm-border); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .attachment-preview, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .attachment .thumbnail { background: var(--pm-bg-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-frame-title h1, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-modal-close, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-router .media-menu-item, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-menu .media-menu-item { color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-router .active, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-router .media-menu-item.active:last-child { color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .media-modal-backdrop { background: #000; opacity: .7; }
+body.pursae-modern.pm-auto .media-frame, body.pursae-modern.pm-auto .media-modal-content, body.pursae-modern.pm-auto .media-frame-content, body.pursae-modern.pm-auto .media-frame-router, body.pursae-modern.pm-auto .media-frame-title, body.pursae-modern.pm-auto .media-frame-menu, body.pursae-modern.pm-auto .media-menu,
+body.pursae-modern.pm-auto .media-frame-toolbar .media-toolbar, body.pursae-modern.pm-auto .attachments-browser .media-toolbar, body.pursae-modern.pm-auto .uploader-inline, body.pursae-modern.pm-auto .media-modal .media-frame-content { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto .media-sidebar, body.pursae-modern.pm-auto .attachment-details, body.pursae-modern.pm-auto .edit-attachment-frame .attachment-media-view, body.pursae-modern.pm-auto .edit-attachment-frame .edit-media-header { background: var(--pm-bg-2); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto .attachment-preview, body.pursae-modern.pm-auto .attachment .thumbnail { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto .media-frame-title h1, body.pursae-modern.pm-auto .media-modal-close, body.pursae-modern.pm-auto .media-router .media-menu-item, body.pursae-modern.pm-auto .media-menu .media-menu-item { color: var(--pm-text); }
+body.pursae-modern.pm-auto .media-router .active, body.pursae-modern.pm-auto .media-router .media-menu-item.active:last-child { color: var(--pm-text); }
+body.pursae-modern.pm-auto .media-modal-backdrop { background: #000; opacity: .7; }
 /* classic editor */
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-editor-container, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-container-body, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .quicktags-toolbar, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) div.mce-toolbar-grp { background: var(--pm-bg-2) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-btn button, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-btn .mce-txt, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-ico { color: var(--pm-body) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .mce-panel { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wp-content-editor-container .wp-editor-area { background: var(--pm-field); color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-switch-editor { color: var(--pm-muted); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .html-active .switch-html, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tmce-active .switch-tmce { background: var(--pm-bg-2); color: var(--pm-text); border-bottom-color: var(--pm-bg-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .categorydiv div.tabs-panel, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wp-tab-panel, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .category-tabs li.tabs, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) ul.add-menu-item-tabs li.tabs { background: var(--pm-bg); border-color: var(--pm-border); color: var(--pm-body); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #post-status-info { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto .wp-editor-container, body.pursae-modern.pm-auto .mce-container-body, body.pursae-modern.pm-auto .quicktags-toolbar, body.pursae-modern.pm-auto div.mce-toolbar-grp { background: var(--pm-bg-2) !important; }
+body.pursae-modern.pm-auto .mce-btn button, body.pursae-modern.pm-auto .mce-btn .mce-txt, body.pursae-modern.pm-auto .mce-ico { color: var(--pm-body) !important; }
+body.pursae-modern.pm-auto .mce-panel { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto #wp-content-editor-container .wp-editor-area { background: var(--pm-field); color: var(--pm-text); }
+body.pursae-modern.pm-auto .wp-switch-editor { color: var(--pm-muted); }
+body.pursae-modern.pm-auto .html-active .switch-html, body.pursae-modern.pm-auto .tmce-active .switch-tmce { background: var(--pm-bg-2); color: var(--pm-text); border-bottom-color: var(--pm-bg-2); }
+body.pursae-modern.pm-auto .categorydiv div.tabs-panel, body.pursae-modern.pm-auto .wp-tab-panel, body.pursae-modern.pm-auto .category-tabs li.tabs, body.pursae-modern.pm-auto ul.add-menu-item-tabs li.tabs { background: var(--pm-bg); border-color: var(--pm-border); color: var(--pm-body); }
+body.pursae-modern.pm-auto #post-status-info { background: var(--pm-bg-2); }
 /* nav menus */
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .menu-item-bar .menu-item-handle, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .menu-item-settings, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .nav-menus-php .metabox-holder .accordion-section-title, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .accordion-section-content, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .menu-settings, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .manage-menus, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #menu-management .menu-edit, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #nav-menu-footer, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #nav-menu-header { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .menu-item-bar .menu-item-handle:hover { border-color: var(--pm-border-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .accordion-section-title:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .open .accordion-section-title { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-auto .menu-item-bar .menu-item-handle, body.pursae-modern.pm-auto .menu-item-settings, body.pursae-modern.pm-auto .nav-menus-php .metabox-holder .accordion-section-title, body.pursae-modern.pm-auto .accordion-section-content, body.pursae-modern.pm-auto .menu-settings, body.pursae-modern.pm-auto .manage-menus, body.pursae-modern.pm-auto #menu-management .menu-edit, body.pursae-modern.pm-auto #nav-menu-footer, body.pursae-modern.pm-auto #nav-menu-header { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto .menu-item-bar .menu-item-handle:hover { border-color: var(--pm-border-2); }
+body.pursae-modern.pm-auto .accordion-section-title:hover, body.pursae-modern.pm-auto .open .accordion-section-title { background: var(--pm-bg-2); color: var(--pm-text); }
 /* themes */
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-browser .theme .theme-name { background: var(--pm-bg); color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-browser .theme.active .theme-name { background: var(--pm-chrome); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-wrap, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-header, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .theme-overlay .theme-actions { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
+body.pursae-modern.pm-auto .theme-browser .theme .theme-name { background: var(--pm-bg); color: var(--pm-text); }
+body.pursae-modern.pm-auto .theme-browser .theme.active .theme-name { background: var(--pm-chrome); }
+body.pursae-modern.pm-auto .theme-overlay .theme-wrap, body.pursae-modern.pm-auto .theme-overlay .theme-header, body.pursae-modern.pm-auto .theme-overlay .theme-actions { background: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border); }
 /* pursae pieces with fixed light colours */
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-0 { background: rgba(135, 150, 236, .16); color: #B4BDF5; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-1 { background: rgba(108, 184, 236, .14); color: #A9D8F7; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-2 { background: rgba(91, 211, 154, .13); color: #95E2C3; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-3 { background: rgba(240, 176, 98, .13); color: #FFC99A; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-tint-4 { background: rgba(170, 140, 250, .15); color: #CDBEFF; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .gc-badge.warn { background: rgba(240, 176, 98, .12) !important; color: #FFC99A !important; border-color: rgba(240, 176, 98, .3) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .row-actions > .trash > a:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .row-actions > .delete > a:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .row-actions > .spam > a:hover { background: rgba(242, 139, 154, .12) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-chart .pm-prev { stroke: #5D6270; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-line { stroke: #E6E7EA; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-legend .p:before { background: #E6E7EA; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path { fill: #262931; stroke: var(--pm-bg); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l1, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l1 { fill: #2E3561; background: #2E3561; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l2, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l2 { fill: #3D4A93; background: #3D4A93; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l3, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l3 { fill: #5566C4; background: #5566C4; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l4, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l4 { fill: #7584E4; background: #7584E4; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path.pa-l5, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map-legend i.pa-l5 { fill: #A3AFF2; background: #A3AFF2; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pa-map path:hover { fill: #ECEDEF; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-switch span { background: #ECEDEF; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-switch.is-on span { background: var(--pm-on-primary); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .tgl input:checked + span::after { background: var(--pm-on-primary); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .pm-chip.is-muted:before { background: var(--pm-border-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .admin-theme-option { background: var(--pm-bg); border-color: var(--pm-border-2); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .admin-theme-preview { border-color: var(--pm-border); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar { width: 12px; height: 12px; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar-thumb { background: #2A2D35; border: 3px solid var(--pm-canvas); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) ::-webkit-scrollbar-track { background: var(--pm-canvas); }
+body.pursae-modern.pm-auto .pm-tint-0 { background: rgba(135, 150, 236, .16); color: #B4BDF5; }
+body.pursae-modern.pm-auto .pm-tint-1 { background: rgba(108, 184, 236, .14); color: #A9D8F7; }
+body.pursae-modern.pm-auto .pm-tint-2 { background: rgba(91, 211, 154, .13); color: #95E2C3; }
+body.pursae-modern.pm-auto .pm-tint-3 { background: rgba(240, 176, 98, .13); color: #FFC99A; }
+body.pursae-modern.pm-auto .pm-tint-4 { background: rgba(170, 140, 250, .15); color: #CDBEFF; }
+body.pursae-modern.pm-auto .gc-badge.warn { background: rgba(240, 176, 98, .12) !important; color: #FFC99A !important; border-color: rgba(240, 176, 98, .3) !important; }
+body.pursae-modern.pm-auto .row-actions > .trash > a:hover, body.pursae-modern.pm-auto .row-actions > .delete > a:hover, body.pursae-modern.pm-auto .row-actions > .spam > a:hover { background: rgba(242, 139, 154, .12) !important; }
+body.pursae-modern.pm-auto .pm-chart .pm-prev { stroke: #5D6270; }
+body.pursae-modern.pm-auto .pa-line { stroke: #E6E7EA; }
+body.pursae-modern.pm-auto .pa-legend .p:before { background: #E6E7EA; }
+body.pursae-modern.pm-auto .pa-map path { fill: #262931; stroke: var(--pm-bg); }
+body.pursae-modern.pm-auto .pa-map path.pa-l1, body.pursae-modern.pm-auto .pa-map-legend i.pa-l1 { fill: #2E3561; background: #2E3561; }
+body.pursae-modern.pm-auto .pa-map path.pa-l2, body.pursae-modern.pm-auto .pa-map-legend i.pa-l2 { fill: #3D4A93; background: #3D4A93; }
+body.pursae-modern.pm-auto .pa-map path.pa-l3, body.pursae-modern.pm-auto .pa-map-legend i.pa-l3 { fill: #5566C4; background: #5566C4; }
+body.pursae-modern.pm-auto .pa-map path.pa-l4, body.pursae-modern.pm-auto .pa-map-legend i.pa-l4 { fill: #7584E4; background: #7584E4; }
+body.pursae-modern.pm-auto .pa-map path.pa-l5, body.pursae-modern.pm-auto .pa-map-legend i.pa-l5 { fill: #A3AFF2; background: #A3AFF2; }
+body.pursae-modern.pm-auto .pa-map path:hover { fill: #ECEDEF; }
+body.pursae-modern.pm-auto .pm-switch span { background: #ECEDEF; }
+body.pursae-modern.pm-auto .pm-switch.is-on span { background: var(--pm-on-primary); }
+body.pursae-modern.pm-auto .tgl input:checked + span::after { background: var(--pm-on-primary); }
+body.pursae-modern.pm-auto .pm-chip.is-muted:before { background: var(--pm-border-2); }
+body.pursae-modern.pm-auto .admin-theme-option { background: var(--pm-bg); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-auto .admin-theme-preview { border-color: var(--pm-border); }
+body.pursae-modern.pm-auto ::-webkit-scrollbar { width: 12px; height: 12px; }
+body.pursae-modern.pm-auto ::-webkit-scrollbar-thumb { background: #2A2D35; border: 3px solid var(--pm-canvas); }
+body.pursae-modern.pm-auto ::-webkit-scrollbar-track { background: var(--pm-canvas); }
 }
 
 /* toolbar: light / dark toggle next to the account */
@@ -1575,58 +1575,240 @@ body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode [aria-pressed="true"] .pm-m
 .admin-theme-mode legend { float: left; margin-right: 6px; font-weight: 500; }
 
 /* plugin and core boxes found by the dark-mode audit */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) :is(.woocommerce-summary, .woocommerce-summary__item, .goo-ext-card, .goo-theme-card, .goo-theme-shot, .woocommerce_order_items, .wc-order-item-thumbnail,
+body.pursae-modern.pm-dark :is(.woocommerce-summary, .woocommerce-summary__item, .goo-ext-card, .goo-theme-card, .goo-theme-shot, .woocommerce_order_items, .wc-order-item-thumbnail,
 	.pf-admin-stat, .pf-admin-box__more, .pf-admin-icon-cell, .pf-admin-icon-grid, .pf-admin-iconpick__panel, .contact-form-editor-panel, .theme-actions,
 	.accordion-section-title, .accordion-trigger, .bulk-select-button, .nav-menus-php #post-body, .bmgr-cats, .bmgr-sub, .gc-job, .gc-progress,
 	.privacy-settings-header, .hg-panel, .gk-theme, .gk-service, .wpms-mailer-tile, .wpms-section, tr.pll-module, .wp-editor-tools, .mce-btn,
 	.seogo-tab, td.colspanchange, tr.is-checked, .infobox) {
 	background-color: var(--pm-bg) !important; color: var(--pm-body); border-color: var(--pm-border) !important;
 }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) :is(.pf-admin-stat__icon, .goo-ext-badge, .px-badge, .adminsec-badge, .pf-admin-state, .pf-admin-threshold, #adminsec-score, .badge.blue) {
+body.pursae-modern.pm-dark :is(.pf-admin-stat__icon, .goo-ext-badge, .px-badge, .adminsec-badge, .pf-admin-state, .pf-admin-threshold, #adminsec-score, .badge.blue) {
 	background-color: var(--pm-bg-2) !important; color: var(--pm-body) !important; border-color: var(--pm-border) !important;
 }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .nav-tab-active, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .nav-tab-active:hover, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .nav-tab-active:focus { background: transparent !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) :is(.woocommerce-summary__item-value, .woocommerce-summary__item-value bdi, .pf-admin-stat__label, .pf-admin-activity__excerpt, .lbl, .importer-title,
+body.pursae-modern.pm-dark .nav-tab-active, body.pursae-modern.pm-dark .nav-tab-active:hover, body.pursae-modern.pm-dark .nav-tab-active:focus { background: transparent !important; }
+body.pursae-modern.pm-dark :is(.woocommerce-summary__item-value, .woocommerce-summary__item-value bdi, .pf-admin-stat__label, .pf-admin-activity__excerpt, .lbl, .importer-title,
 	.submitted-on, .accordion-title, .nav-tab-link, .seogo-tab, .infobox, mark.error, .wp-list-table bdi) { color: var(--pm-body) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .submitdelete, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #remove-post-thumbnail { color: var(--pm-bad) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .woocommerce-summary__item:hover { background-color: var(--pm-bg-2) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) details > summary { background: var(--pm-bg-2); color: var(--pm-text); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) em { color: inherit; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .wpms-mailer-tile.is-selected, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .gk-theme.active, body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) .goo-theme-card.is-active { border-color: var(--pm-primary) !important; }
+body.pursae-modern.pm-dark .submitdelete, body.pursae-modern.pm-dark #remove-post-thumbnail { color: var(--pm-bad) !important; }
+body.pursae-modern.pm-dark .woocommerce-summary__item:hover { background-color: var(--pm-bg-2) !important; }
+body.pursae-modern.pm-dark details > summary { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-dark em { color: inherit; }
+body.pursae-modern.pm-dark .wpms-mailer-tile.is-selected, body.pursae-modern.pm-dark .gk-theme.active, body.pursae-modern.pm-dark .goo-theme-card.is-active { border-color: var(--pm-primary) !important; }
 /* inline white backgrounds left in plugin markup */
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background:#fff"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background: #fff"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background:#ffffff"],
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background: #ffffff"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background-color:#fff"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background-color: #fff"] { background: var(--pm-bg) !important; }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#1d2327"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #1d2327"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#2c3338"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #2c3338"],
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#000"], body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #000"] { color: var(--pm-body) !important; }
+body.pursae-modern.pm-dark #wpbody-content [style*="background:#fff"], body.pursae-modern.pm-dark #wpbody-content [style*="background: #fff"], body.pursae-modern.pm-dark #wpbody-content [style*="background:#ffffff"],
+body.pursae-modern.pm-dark #wpbody-content [style*="background: #ffffff"], body.pursae-modern.pm-dark #wpbody-content [style*="background-color:#fff"], body.pursae-modern.pm-dark #wpbody-content [style*="background-color: #fff"] { background: var(--pm-bg) !important; }
+body.pursae-modern.pm-dark #wpbody-content [style*="color:#1d2327"], body.pursae-modern.pm-dark #wpbody-content [style*="color: #1d2327"], body.pursae-modern.pm-dark #wpbody-content [style*="color:#2c3338"], body.pursae-modern.pm-dark #wpbody-content [style*="color: #2c3338"],
+body.pursae-modern.pm-dark #wpbody-content [style*="color:#000"], body.pursae-modern.pm-dark #wpbody-content [style*="color: #000"] { color: var(--pm-body) !important; }
 @media (prefers-color-scheme: dark) {
 
 /* plugin and core boxes found by the dark-mode audit */
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) :is(.woocommerce-summary, .woocommerce-summary__item, .goo-ext-card, .goo-theme-card, .goo-theme-shot, .woocommerce_order_items, .wc-order-item-thumbnail,
+body.pursae-modern.pm-auto :is(.woocommerce-summary, .woocommerce-summary__item, .goo-ext-card, .goo-theme-card, .goo-theme-shot, .woocommerce_order_items, .wc-order-item-thumbnail,
 	.pf-admin-stat, .pf-admin-box__more, .pf-admin-icon-cell, .pf-admin-icon-grid, .pf-admin-iconpick__panel, .contact-form-editor-panel, .theme-actions,
 	.accordion-section-title, .accordion-trigger, .bulk-select-button, .nav-menus-php #post-body, .bmgr-cats, .bmgr-sub, .gc-job, .gc-progress,
 	.privacy-settings-header, .hg-panel, .gk-theme, .gk-service, .wpms-mailer-tile, .wpms-section, tr.pll-module, .wp-editor-tools, .mce-btn,
 	.seogo-tab, td.colspanchange, tr.is-checked, .infobox) {
 	background-color: var(--pm-bg) !important; color: var(--pm-body); border-color: var(--pm-border) !important;
 }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) :is(.pf-admin-stat__icon, .goo-ext-badge, .px-badge, .adminsec-badge, .pf-admin-state, .pf-admin-threshold, #adminsec-score, .badge.blue) {
+body.pursae-modern.pm-auto :is(.pf-admin-stat__icon, .goo-ext-badge, .px-badge, .adminsec-badge, .pf-admin-state, .pf-admin-threshold, #adminsec-score, .badge.blue) {
 	background-color: var(--pm-bg-2) !important; color: var(--pm-body) !important; border-color: var(--pm-border) !important;
 }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .nav-tab-active, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .nav-tab-active:hover, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .nav-tab-active:focus { background: transparent !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) :is(.woocommerce-summary__item-value, .woocommerce-summary__item-value bdi, .pf-admin-stat__label, .pf-admin-activity__excerpt, .lbl, .importer-title,
+body.pursae-modern.pm-auto .nav-tab-active, body.pursae-modern.pm-auto .nav-tab-active:hover, body.pursae-modern.pm-auto .nav-tab-active:focus { background: transparent !important; }
+body.pursae-modern.pm-auto :is(.woocommerce-summary__item-value, .woocommerce-summary__item-value bdi, .pf-admin-stat__label, .pf-admin-activity__excerpt, .lbl, .importer-title,
 	.submitted-on, .accordion-title, .nav-tab-link, .seogo-tab, .infobox, mark.error, .wp-list-table bdi) { color: var(--pm-body) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .submitdelete, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #remove-post-thumbnail { color: var(--pm-bad) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .woocommerce-summary__item:hover { background-color: var(--pm-bg-2) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) details > summary { background: var(--pm-bg-2); color: var(--pm-text); }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) em { color: inherit; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .wpms-mailer-tile.is-selected, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .gk-theme.active, body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) .goo-theme-card.is-active { border-color: var(--pm-primary) !important; }
+body.pursae-modern.pm-auto .submitdelete, body.pursae-modern.pm-auto #remove-post-thumbnail { color: var(--pm-bad) !important; }
+body.pursae-modern.pm-auto .woocommerce-summary__item:hover { background-color: var(--pm-bg-2) !important; }
+body.pursae-modern.pm-auto details > summary { background: var(--pm-bg-2); color: var(--pm-text); }
+body.pursae-modern.pm-auto em { color: inherit; }
+body.pursae-modern.pm-auto .wpms-mailer-tile.is-selected, body.pursae-modern.pm-auto .gk-theme.active, body.pursae-modern.pm-auto .goo-theme-card.is-active { border-color: var(--pm-primary) !important; }
 /* inline white backgrounds left in plugin markup */
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background:#fff"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background: #fff"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background:#ffffff"],
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background: #ffffff"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background-color:#fff"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="background-color: #fff"] { background: var(--pm-bg) !important; }
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#1d2327"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #1d2327"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#2c3338"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #2c3338"],
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color:#000"], body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #wpbody-content [style*="color: #000"] { color: var(--pm-body) !important; }
+body.pursae-modern.pm-auto #wpbody-content [style*="background:#fff"], body.pursae-modern.pm-auto #wpbody-content [style*="background: #fff"], body.pursae-modern.pm-auto #wpbody-content [style*="background:#ffffff"],
+body.pursae-modern.pm-auto #wpbody-content [style*="background: #ffffff"], body.pursae-modern.pm-auto #wpbody-content [style*="background-color:#fff"], body.pursae-modern.pm-auto #wpbody-content [style*="background-color: #fff"] { background: var(--pm-bg) !important; }
+body.pursae-modern.pm-auto #wpbody-content [style*="color:#1d2327"], body.pursae-modern.pm-auto #wpbody-content [style*="color: #1d2327"], body.pursae-modern.pm-auto #wpbody-content [style*="color:#2c3338"], body.pursae-modern.pm-auto #wpbody-content [style*="color: #2c3338"],
+body.pursae-modern.pm-auto #wpbody-content [style*="color:#000"], body.pursae-modern.pm-auto #wpbody-content [style*="color: #000"] { color: var(--pm-body) !important; }
 }
 body.pursae-modern .goo-chart .goo-grid { stroke: var(--pm-row); }
-body.pursae-modern.pm-dark:not(.block-editor-page):not(.widgets-php) #titlediv #title { background: var(--pm-field); color: var(--pm-text); }
+body.pursae-modern.pm-dark #titlediv #title { background: var(--pm-field); color: var(--pm-text); }
 @media (prefers-color-scheme: dark) {
-body.pursae-modern.pm-auto:not(.block-editor-page):not(.widgets-php) #titlediv #title { background: var(--pm-field); color: var(--pm-text); }
+body.pursae-modern.pm-auto #titlediv #title { background: var(--pm-field); color: var(--pm-text); }
+}
+
+/* block editor and block widgets: Gutenberg's own interface */
+body.pursae-modern.pm-dark :is(.interface-interface-skeleton__header, .editor-header, .edit-post-header, .edit-widgets-header,
+	.interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .interface-interface-skeleton__footer,
+	.interface-complementary-area, .interface-complementary-area-header, .editor-sidebar, .edit-widgets-sidebar,
+	.components-panel, .components-panel__header, .components-panel__body, .block-editor-block-inspector,
+	.editor-post-publish-panel, .editor-post-publish-panel__header, .editor-post-publish-panel__footer, .editor-post-publish-panel__prepublish,
+	.block-editor-inserter__menu, .block-editor-inserter__main-area, .block-editor-inserter__panel-header, .block-editor-inserter__panel-content,
+	.block-editor-inserter__search, .block-editor-inserter__tabs, .block-editor-tabbed-sidebar, .block-editor-inserter__preview-container,
+	.editor-list-view-sidebar, .editor-document-outline, .block-editor-list-view-tree,
+	.components-popover__content, .components-dropdown__content .components-popover__content, .components-dropdown-menu__menu,
+	.components-modal__frame, .components-modal__header, .components-modal__content,
+	.block-editor-block-toolbar, .block-editor-block-contextual-toolbar, .components-accessible-toolbar, .components-toolbar-group, .components-toolbar,
+	.edit-post-meta-boxes-area, .edit-post-layout__metaboxes, .editor-meta-boxes-area, .edit-post-meta-boxes-main, .edit-post-meta-boxes-main__presenter,
+	.block-editor-block-card, .editor-post-summary, .editor-post-card-panel, .edit-widgets-block-areas, .wp-block-widget-area,
+	.components-guide, .components-guide__container, .block-editor-block-variation-picker, .components-placeholder,
+	.editor-post-panel__row, .editor-document-bar, .components-menu-group, .components-menu-items-choice, .components-datetime) {
+	background-color: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border);
+}
+body.pursae-modern.pm-dark :is(.interface-interface-skeleton__header, .editor-header, .edit-widgets-header) { border-bottom: 1px solid var(--pm-border) !important; }
+body.pursae-modern.pm-dark .interface-interface-skeleton__sidebar, body.pursae-modern.pm-dark .interface-interface-skeleton__secondary-sidebar { border-left-color: var(--pm-border) !important; border-right-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark :is(.interface-interface-skeleton__content, .editor-visual-editor, .edit-widgets-layout__content, .block-editor-block-list__layout) { background-color: var(--pm-canvas); }
+body.pursae-modern.pm-dark .editor-visual-editor.is-iframed, body.pursae-modern.pm-dark .editor-visual-editor .block-editor-iframe__container { background-color: var(--pm-canvas); }
+/* text and icons follow the theme text colours */
+body.pursae-modern.pm-dark :is(.interface-interface-skeleton__header, .interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .interface-interface-skeleton__footer,
+	.components-popover__content, .components-modal__frame, .editor-post-publish-panel, .block-editor-inserter__menu, .block-editor-block-toolbar, .edit-widgets-block-areas)
+	:is(h1, h2, h3, h4, label, legend, .components-base-control__label, .components-panel__body-title, .components-panel__body-toggle, .components-menu-item__item,
+	.components-menu-group__label, .block-editor-block-card__title, .block-editor-block-card__name, .editor-post-panel__row-label, .components-truncate, .components-heading, .components-text) {
+	color: var(--pm-text);
+}
+body.pursae-modern.pm-dark :is(.components-button:not(.is-primary):not(.is-destructive), .components-menu-item__button, .components-dropdown-menu__toggle, .components-panel__body-toggle, .block-editor-block-types-list__item, .block-editor-list-view-block-select-button) { color: var(--pm-body); }
+body.pursae-modern.pm-dark .components-button:not(.is-primary):not(.is-destructive):hover:not(:disabled) { color: var(--pm-primary); }
+body.pursae-modern.pm-dark .components-button:not(.is-primary):is(.is-pressed, [aria-pressed="true"]) { background: var(--pm-primary-50); color: var(--pm-primary); }
+body.pursae-modern.pm-dark .components-button.is-tertiary, body.pursae-modern.pm-dark .components-button.is-link { color: var(--pm-primary); }
+body.pursae-modern.pm-dark .components-button.is-primary { color: var(--pm-on-primary); }
+body.pursae-modern.pm-dark .components-button.is-primary:disabled, body.pursae-modern.pm-dark .components-button.is-primary[aria-disabled="true"] { background: #3A4170 !important; color: #8D93B5 !important; }
+body.pursae-modern.pm-dark .components-button.is-destructive { color: var(--pm-bad); }
+body.pursae-modern.pm-dark :is(.components-panel__body, .components-panel__header, .block-editor-block-card, .editor-post-publish-panel__header, .editor-sidebar__panel-tabs, .components-menu-group + .components-menu-group) { border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark .components-panel__body.is-opened > .components-panel__body-title:hover, body.pursae-modern.pm-dark .components-panel__body-toggle:hover { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark :is(.components-help, .components-base-control__help, .block-editor-block-card__description, .editor-post-panel__row-control .components-text, .components-form-token-field__help) { color: var(--pm-faint); }
+body.pursae-modern.pm-dark :is(.interface-interface-skeleton__header, .interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .components-popover__content, .block-editor-inserter__menu, .block-editor-block-toolbar, .components-modal__frame) .components-button svg:not([fill]) { fill: currentColor; }
+/* fields */
+body.pursae-modern.pm-dark :is(.components-text-control__input, .components-textarea-control__input, .components-select-control__input, .components-input-control__input,
+	.components-combobox-control__input, .components-form-token-field__input, .block-editor-inserter__search input, .components-search-control__input) {
+	background: var(--pm-field) !important; color: var(--pm-text) !important;
+}
+body.pursae-modern.pm-dark :is(.components-input-control__backdrop, .components-form-token-field__input-container, .components-search-control) { background: var(--pm-field) !important; border-color: var(--pm-border-2) !important; }
+body.pursae-modern.pm-dark .components-input-control__container { background: var(--pm-field) !important; }
+body.pursae-modern.pm-dark .components-form-token-field__token-text, body.pursae-modern.pm-dark .components-form-token-field__remove-token { background: var(--pm-bg-2) !important; color: var(--pm-text) !important; }
+body.pursae-modern.pm-dark .components-form-toggle .components-form-toggle__track { background: var(--pm-field); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-dark .components-form-toggle .components-form-toggle__thumb { background: var(--pm-muted); border-color: var(--pm-muted); }
+body.pursae-modern.pm-dark .components-form-toggle.is-checked .components-form-toggle__track { background: var(--pm-primary); border-color: var(--pm-primary); }
+body.pursae-modern.pm-dark .components-form-toggle.is-checked .components-form-toggle__thumb { background: var(--pm-on-primary); border-color: var(--pm-on-primary); }
+body.pursae-modern.pm-dark .components-checkbox-control__input[type=checkbox], body.pursae-modern.pm-dark .components-radio-control__input[type=radio] { background: var(--pm-field); border-color: var(--pm-border-2); }
+/* tabs, inserter tiles, list view, menus */
+body.pursae-modern.pm-dark .components-tab-panel__tabs-item, body.pursae-modern.pm-dark [role=tab].components-tab-panel__tabs-item, body.pursae-modern.pm-dark .components-tabs__tab { color: var(--pm-muted); }
+body.pursae-modern.pm-dark .components-tab-panel__tabs-item.is-active, body.pursae-modern.pm-dark [role=tab][aria-selected="true"] { color: var(--pm-text); }
+body.pursae-modern.pm-dark .block-editor-block-types-list__item:hover, body.pursae-modern.pm-dark .block-editor-block-types-list__item:focus { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark .block-editor-block-types-list__item-icon, body.pursae-modern.pm-dark .block-editor-block-icon { color: var(--pm-text); }
+body.pursae-modern.pm-dark .block-editor-list-view-leaf:hover, body.pursae-modern.pm-dark .block-editor-list-view-leaf.is-selected .block-editor-list-view-block-contents { background: var(--pm-bg-2); }
+body.pursae-modern.pm-dark .block-editor-list-view-leaf.is-selected td { background: var(--pm-primary-50) !important; color: var(--pm-text); }
+body.pursae-modern.pm-dark .components-menu-item__button:hover:not(:disabled), body.pursae-modern.pm-dark .components-menu-item__button:focus { background: var(--pm-bg-2) !important; color: var(--pm-text) !important; }
+body.pursae-modern.pm-dark .components-popover__content, body.pursae-modern.pm-dark .components-dropdown-menu__menu { box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .7) !important; outline: 1px solid var(--pm-border) !important; }
+body.pursae-modern.pm-dark .components-modal__screen-overlay { background: rgba(0, 0, 0, .6); }
+body.pursae-modern.pm-dark .block-editor-block-toolbar .components-toolbar-group, body.pursae-modern.pm-dark .block-editor-block-toolbar .components-toolbar { border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark .block-editor-block-contextual-toolbar, body.pursae-modern.pm-dark .block-editor-block-toolbar { outline: 1px solid var(--pm-border-2); }
+body.pursae-modern.pm-dark .editor-document-bar { background: var(--pm-bg-2) !important; color: var(--pm-text); }
+body.pursae-modern.pm-dark .editor-document-bar__title, body.pursae-modern.pm-dark .editor-document-bar__post-title, body.pursae-modern.pm-dark .editor-document-bar__post-type-label { color: var(--pm-text) !important; }
+body.pursae-modern.pm-dark .components-snackbar { background: var(--pm-text); color: var(--pm-bg); }
+body.pursae-modern.pm-dark .editor-post-publish-panel__prepublish .components-panel__body, body.pursae-modern.pm-dark .editor-post-publish-panel__prepublish p { color: var(--pm-body); }
+body.pursae-modern.pm-dark .block-editor-warning { background: var(--pm-bg-2); border-color: var(--pm-border); color: var(--pm-body); }
+body.pursae-modern.pm-dark .components-notice { background: var(--pm-bg-2); color: var(--pm-body); }
+body.pursae-modern.pm-dark .components-dropdown-menu__menu .components-menu-item__shortcut, body.pursae-modern.pm-dark .components-menu-item__info { color: var(--pm-faint); }
+body.pursae-modern.pm-dark .editor-header__toolbar, body.pursae-modern.pm-dark .editor-header__settings, body.pursae-modern.pm-dark .edit-post-header__toolbar { background: transparent; }
+body.pursae-modern.pm-dark .edit-post-fullscreen-mode-close.components-button, body.pursae-modern.pm-dark .editor-fullscreen-mode-close.components-button { background: var(--pm-chrome); color: #fff; }
+body.pursae-modern.pm-dark .interface-pinned-items .components-button { color: var(--pm-body); }
+@media (prefers-color-scheme: dark) {
+
+/* block editor and block widgets: Gutenberg's own interface */
+body.pursae-modern.pm-auto :is(.interface-interface-skeleton__header, .editor-header, .edit-post-header, .edit-widgets-header,
+	.interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .interface-interface-skeleton__footer,
+	.interface-complementary-area, .interface-complementary-area-header, .editor-sidebar, .edit-widgets-sidebar,
+	.components-panel, .components-panel__header, .components-panel__body, .block-editor-block-inspector,
+	.editor-post-publish-panel, .editor-post-publish-panel__header, .editor-post-publish-panel__footer, .editor-post-publish-panel__prepublish,
+	.block-editor-inserter__menu, .block-editor-inserter__main-area, .block-editor-inserter__panel-header, .block-editor-inserter__panel-content,
+	.block-editor-inserter__search, .block-editor-inserter__tabs, .block-editor-tabbed-sidebar, .block-editor-inserter__preview-container,
+	.editor-list-view-sidebar, .editor-document-outline, .block-editor-list-view-tree,
+	.components-popover__content, .components-dropdown__content .components-popover__content, .components-dropdown-menu__menu,
+	.components-modal__frame, .components-modal__header, .components-modal__content,
+	.block-editor-block-toolbar, .block-editor-block-contextual-toolbar, .components-accessible-toolbar, .components-toolbar-group, .components-toolbar,
+	.edit-post-meta-boxes-area, .edit-post-layout__metaboxes, .editor-meta-boxes-area, .edit-post-meta-boxes-main, .edit-post-meta-boxes-main__presenter,
+	.block-editor-block-card, .editor-post-summary, .editor-post-card-panel, .edit-widgets-block-areas, .wp-block-widget-area,
+	.components-guide, .components-guide__container, .block-editor-block-variation-picker, .components-placeholder,
+	.editor-post-panel__row, .editor-document-bar, .components-menu-group, .components-menu-items-choice, .components-datetime) {
+	background-color: var(--pm-bg); color: var(--pm-body); border-color: var(--pm-border);
+}
+body.pursae-modern.pm-auto :is(.interface-interface-skeleton__header, .editor-header, .edit-widgets-header) { border-bottom: 1px solid var(--pm-border) !important; }
+body.pursae-modern.pm-auto .interface-interface-skeleton__sidebar, body.pursae-modern.pm-auto .interface-interface-skeleton__secondary-sidebar { border-left-color: var(--pm-border) !important; border-right-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto :is(.interface-interface-skeleton__content, .editor-visual-editor, .edit-widgets-layout__content, .block-editor-block-list__layout) { background-color: var(--pm-canvas); }
+body.pursae-modern.pm-auto .editor-visual-editor.is-iframed, body.pursae-modern.pm-auto .editor-visual-editor .block-editor-iframe__container { background-color: var(--pm-canvas); }
+/* text and icons follow the theme text colours */
+body.pursae-modern.pm-auto :is(.interface-interface-skeleton__header, .interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .interface-interface-skeleton__footer,
+	.components-popover__content, .components-modal__frame, .editor-post-publish-panel, .block-editor-inserter__menu, .block-editor-block-toolbar, .edit-widgets-block-areas)
+	:is(h1, h2, h3, h4, label, legend, .components-base-control__label, .components-panel__body-title, .components-panel__body-toggle, .components-menu-item__item,
+	.components-menu-group__label, .block-editor-block-card__title, .block-editor-block-card__name, .editor-post-panel__row-label, .components-truncate, .components-heading, .components-text) {
+	color: var(--pm-text);
+}
+body.pursae-modern.pm-auto :is(.components-button:not(.is-primary):not(.is-destructive), .components-menu-item__button, .components-dropdown-menu__toggle, .components-panel__body-toggle, .block-editor-block-types-list__item, .block-editor-list-view-block-select-button) { color: var(--pm-body); }
+body.pursae-modern.pm-auto .components-button:not(.is-primary):not(.is-destructive):hover:not(:disabled) { color: var(--pm-primary); }
+body.pursae-modern.pm-auto .components-button:not(.is-primary):is(.is-pressed, [aria-pressed="true"]) { background: var(--pm-primary-50); color: var(--pm-primary); }
+body.pursae-modern.pm-auto .components-button.is-tertiary, body.pursae-modern.pm-auto .components-button.is-link { color: var(--pm-primary); }
+body.pursae-modern.pm-auto .components-button.is-primary { color: var(--pm-on-primary); }
+body.pursae-modern.pm-auto .components-button.is-primary:disabled, body.pursae-modern.pm-auto .components-button.is-primary[aria-disabled="true"] { background: #3A4170 !important; color: #8D93B5 !important; }
+body.pursae-modern.pm-auto .components-button.is-destructive { color: var(--pm-bad); }
+body.pursae-modern.pm-auto :is(.components-panel__body, .components-panel__header, .block-editor-block-card, .editor-post-publish-panel__header, .editor-sidebar__panel-tabs, .components-menu-group + .components-menu-group) { border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto .components-panel__body.is-opened > .components-panel__body-title:hover, body.pursae-modern.pm-auto .components-panel__body-toggle:hover { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto :is(.components-help, .components-base-control__help, .block-editor-block-card__description, .editor-post-panel__row-control .components-text, .components-form-token-field__help) { color: var(--pm-faint); }
+body.pursae-modern.pm-auto :is(.interface-interface-skeleton__header, .interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .components-popover__content, .block-editor-inserter__menu, .block-editor-block-toolbar, .components-modal__frame) .components-button svg:not([fill]) { fill: currentColor; }
+/* fields */
+body.pursae-modern.pm-auto :is(.components-text-control__input, .components-textarea-control__input, .components-select-control__input, .components-input-control__input,
+	.components-combobox-control__input, .components-form-token-field__input, .block-editor-inserter__search input, .components-search-control__input) {
+	background: var(--pm-field) !important; color: var(--pm-text) !important;
+}
+body.pursae-modern.pm-auto :is(.components-input-control__backdrop, .components-form-token-field__input-container, .components-search-control) { background: var(--pm-field) !important; border-color: var(--pm-border-2) !important; }
+body.pursae-modern.pm-auto .components-input-control__container { background: var(--pm-field) !important; }
+body.pursae-modern.pm-auto .components-form-token-field__token-text, body.pursae-modern.pm-auto .components-form-token-field__remove-token { background: var(--pm-bg-2) !important; color: var(--pm-text) !important; }
+body.pursae-modern.pm-auto .components-form-toggle .components-form-toggle__track { background: var(--pm-field); border-color: var(--pm-border-2); }
+body.pursae-modern.pm-auto .components-form-toggle .components-form-toggle__thumb { background: var(--pm-muted); border-color: var(--pm-muted); }
+body.pursae-modern.pm-auto .components-form-toggle.is-checked .components-form-toggle__track { background: var(--pm-primary); border-color: var(--pm-primary); }
+body.pursae-modern.pm-auto .components-form-toggle.is-checked .components-form-toggle__thumb { background: var(--pm-on-primary); border-color: var(--pm-on-primary); }
+body.pursae-modern.pm-auto .components-checkbox-control__input[type=checkbox], body.pursae-modern.pm-auto .components-radio-control__input[type=radio] { background: var(--pm-field); border-color: var(--pm-border-2); }
+/* tabs, inserter tiles, list view, menus */
+body.pursae-modern.pm-auto .components-tab-panel__tabs-item, body.pursae-modern.pm-auto [role=tab].components-tab-panel__tabs-item, body.pursae-modern.pm-auto .components-tabs__tab { color: var(--pm-muted); }
+body.pursae-modern.pm-auto .components-tab-panel__tabs-item.is-active, body.pursae-modern.pm-auto [role=tab][aria-selected="true"] { color: var(--pm-text); }
+body.pursae-modern.pm-auto .block-editor-block-types-list__item:hover, body.pursae-modern.pm-auto .block-editor-block-types-list__item:focus { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto .block-editor-block-types-list__item-icon, body.pursae-modern.pm-auto .block-editor-block-icon { color: var(--pm-text); }
+body.pursae-modern.pm-auto .block-editor-list-view-leaf:hover, body.pursae-modern.pm-auto .block-editor-list-view-leaf.is-selected .block-editor-list-view-block-contents { background: var(--pm-bg-2); }
+body.pursae-modern.pm-auto .block-editor-list-view-leaf.is-selected td { background: var(--pm-primary-50) !important; color: var(--pm-text); }
+body.pursae-modern.pm-auto .components-menu-item__button:hover:not(:disabled), body.pursae-modern.pm-auto .components-menu-item__button:focus { background: var(--pm-bg-2) !important; color: var(--pm-text) !important; }
+body.pursae-modern.pm-auto .components-popover__content, body.pursae-modern.pm-auto .components-dropdown-menu__menu { box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .7) !important; outline: 1px solid var(--pm-border) !important; }
+body.pursae-modern.pm-auto .components-modal__screen-overlay { background: rgba(0, 0, 0, .6); }
+body.pursae-modern.pm-auto .block-editor-block-toolbar .components-toolbar-group, body.pursae-modern.pm-auto .block-editor-block-toolbar .components-toolbar { border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto .block-editor-block-contextual-toolbar, body.pursae-modern.pm-auto .block-editor-block-toolbar { outline: 1px solid var(--pm-border-2); }
+body.pursae-modern.pm-auto .editor-document-bar { background: var(--pm-bg-2) !important; color: var(--pm-text); }
+body.pursae-modern.pm-auto .editor-document-bar__title, body.pursae-modern.pm-auto .editor-document-bar__post-title, body.pursae-modern.pm-auto .editor-document-bar__post-type-label { color: var(--pm-text) !important; }
+body.pursae-modern.pm-auto .components-snackbar { background: var(--pm-text); color: var(--pm-bg); }
+body.pursae-modern.pm-auto .editor-post-publish-panel__prepublish .components-panel__body, body.pursae-modern.pm-auto .editor-post-publish-panel__prepublish p { color: var(--pm-body); }
+body.pursae-modern.pm-auto .block-editor-warning { background: var(--pm-bg-2); border-color: var(--pm-border); color: var(--pm-body); }
+body.pursae-modern.pm-auto .components-notice { background: var(--pm-bg-2); color: var(--pm-body); }
+body.pursae-modern.pm-auto .components-dropdown-menu__menu .components-menu-item__shortcut, body.pursae-modern.pm-auto .components-menu-item__info { color: var(--pm-faint); }
+body.pursae-modern.pm-auto .editor-header__toolbar, body.pursae-modern.pm-auto .editor-header__settings, body.pursae-modern.pm-auto .edit-post-header__toolbar { background: transparent; }
+body.pursae-modern.pm-auto .edit-post-fullscreen-mode-close.components-button, body.pursae-modern.pm-auto .editor-fullscreen-mode-close.components-button { background: var(--pm-chrome); color: #fff; }
+body.pursae-modern.pm-auto .interface-pinned-items .components-button { color: var(--pm-body); }
+}
+
+body.pursae-modern.pm-dark [role=tablist] [role=tab] > *, body.pursae-modern.pm-dark .components-tab-panel__tabs-item > * { color: inherit !important; }
+body.pursae-modern.pm-dark [role=tablist] [role=tab] { color: var(--pm-muted); }
+body.pursae-modern.pm-dark [role=tablist] [role=tab][aria-selected="true"] { color: var(--pm-text); }
+body.pursae-modern.pm-dark .block-editor-block-breadcrumb, body.pursae-modern.pm-dark .interface-interface-skeleton__footer { background: var(--pm-bg) !important; }
+body.pursae-modern.pm-dark .block-editor-block-breadcrumb__current, body.pursae-modern.pm-dark .block-editor-block-breadcrumb__current > *, body.pursae-modern.pm-dark .block-editor-block-breadcrumb__button { color: var(--pm-text) !important; }
+body.pursae-modern.pm-dark .editor-post-featured-image__action { background: var(--pm-bg) !important; color: var(--pm-text) !important; }
+body.pursae-modern.pm-dark .editor-post-featured-image__toggle, body.pursae-modern.pm-dark .editor-post-featured-image__preview { background: var(--pm-bg-2); color: var(--pm-muted); }
+body.pursae-modern.pm-dark .block-editor-tabbed-sidebar__close-button { background: transparent !important; }
+@media (prefers-color-scheme: dark) {
+
+body.pursae-modern.pm-auto [role=tablist] [role=tab] > *, body.pursae-modern.pm-auto .components-tab-panel__tabs-item > * { color: inherit !important; }
+body.pursae-modern.pm-auto [role=tablist] [role=tab] { color: var(--pm-muted); }
+body.pursae-modern.pm-auto [role=tablist] [role=tab][aria-selected="true"] { color: var(--pm-text); }
+body.pursae-modern.pm-auto .block-editor-block-breadcrumb, body.pursae-modern.pm-auto .interface-interface-skeleton__footer { background: var(--pm-bg) !important; }
+body.pursae-modern.pm-auto .block-editor-block-breadcrumb__current, body.pursae-modern.pm-auto .block-editor-block-breadcrumb__current > *, body.pursae-modern.pm-auto .block-editor-block-breadcrumb__button { color: var(--pm-text) !important; }
+body.pursae-modern.pm-auto .editor-post-featured-image__action { background: var(--pm-bg) !important; color: var(--pm-text) !important; }
+body.pursae-modern.pm-auto .editor-post-featured-image__toggle, body.pursae-modern.pm-auto .editor-post-featured-image__preview { background: var(--pm-bg-2); color: var(--pm-muted); }
+body.pursae-modern.pm-auto .block-editor-tabbed-sidebar__close-button { background: transparent !important; }
+}
+body.pursae-modern.pm-dark .editor-layout__toggle-entities-saved-states-panel, body.pursae-modern.pm-dark .editor-layout__toggle-publish-panel, body.pursae-modern.pm-dark .editor-post-publish-panel, body.pursae-modern.pm-dark .editor-post-publish-panel__header, body.pursae-modern.pm-dark .editor-post-publish-panel__footer, body.pursae-modern.pm-dark .entities-saved-states__panel { background: var(--pm-bg) !important; color: var(--pm-body); border-color: var(--pm-border) !important; }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto .editor-layout__toggle-entities-saved-states-panel, body.pursae-modern.pm-auto .editor-layout__toggle-publish-panel, body.pursae-modern.pm-auto .editor-post-publish-panel, body.pursae-modern.pm-auto .editor-post-publish-panel__header, body.pursae-modern.pm-auto .editor-post-publish-panel__footer, body.pursae-modern.pm-auto .entities-saved-states__panel { background: var(--pm-bg) !important; color: var(--pm-body); border-color: var(--pm-border) !important; }
+}
+body.pursae-modern.pm-dark .wp-block-widget-area .components-panel__body-toggle, body.pursae-modern.pm-dark .wp-block-widget-area .components-panel__body-title, body.pursae-modern.pm-dark .wp-block-widget-area .components-panel__arrow { color: #16171A !important; fill: currentColor; background: #fff !important; }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__body-toggle, body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__body-title, body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__arrow { color: #16171A !important; fill: currentColor; background: #fff !important; }
 }
