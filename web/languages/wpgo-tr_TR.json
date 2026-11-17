@@ -4637,5 +4637,14 @@
  "Visitors by country": "Ülkelere göre ziyaretçiler",
  "Fewer": "Az",
  "More": "Çok",
- "Top countries": "En çok ziyaret eden ülkeler"
+ "Top countries": "En çok ziyaret eden ülkeler",
+ "Active": "Etkin",
+ "Inactive": "Etkin değil",
+ "built-in": "yerleşik",
+ "sandbox": "sandbox",
+ "Settings →": "Ayarlar →",
+ "is available.": "sürümü çıktı.",
+ "Update now": "Şimdi güncelle",
+ "Version": "Sürüm",
+ "Replaces": "Yerine geçtiği:"
 }
