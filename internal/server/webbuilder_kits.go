@@ -343,7 +343,7 @@ func (s *Server) wbRESTKitCommit(c *gin.Context, r *restRequest) {
 	}
 	wbKitsMu.Lock()
 	defer wbKitsMu.Unlock()
-	k, status, code, msg := s.wbKitCommitStage(c, slug, in.Name)
+	k, status, code, msg := s.wbKitCommitStage(c, slug, in.Name, in.Breakpoints)
 	if k == nil {
 		restErr(c, status, code, msg)
 		return
@@ -352,8 +352,9 @@ func (s *Server) wbRESTKitCommit(c *gin.Context, r *restRequest) {
 }
 
 // wbKitCommitStage swaps the kit's staged files in for its live ones (the caller holds wbKitsMu),
-// bumps the version and saves the kit's entry. On failure it returns a nil kit and the REST error.
-func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string) (k *wbKit, status int, code, msg string) {
+// bumps the version and saves the kit's entry with the given local-style breakpoints (nil:
+// suggested from the kit's stylesheets). On failure it returns a nil kit and the REST error.
+func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints *webbuilder.Breakpoints) (k *wbKit, status int, code, msg string) {
 	live := filepath.Join(s.wbKitRoot(), slug)
 	stage := filepath.Join(live, wbKitStageDir)
 	if _, err := os.Stat(stage); err != nil {
@@ -393,8 +394,8 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string) (k *wbKit, 
 	k.Version++
 	k.Files, k.Bytes, k.Updated = len(files), total, wbTime(time.Now())
 	k.Origins = wbKitOrigins(live, files)
-	if in.Breakpoints != nil {
-		bp := in.Breakpoints.Normalize()
+	if breakpoints != nil {
+		bp := breakpoints.Normalize()
 		k.Breakpoints = &bp
 	} else {
 		bp := webbuilder.SuggestLocalBreakpoints(wbKitCSS(live, files))

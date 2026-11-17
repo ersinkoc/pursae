@@ -913,7 +913,7 @@ func (s *Server) wbWizInstallKit(c *gin.Context, id, slug, name string, assets m
 			return err
 		}
 	}
-	if k, _, _, msg := s.wbKitCommitStage(c, slug, name); k == nil {
+	if k, _, _, msg := s.wbKitCommitStage(c, slug, name, nil); k == nil {
 		return fmt.Errorf("%s", msg)
 	}
 	return nil
