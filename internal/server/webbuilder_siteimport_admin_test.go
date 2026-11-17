@@ -634,6 +634,58 @@ func TestWBImportWizardOptions(t *testing.T) {
 	}
 }
 
+// Removing the import that originally created a kit must keep the kit while a later import still
+// uses it, and transfer cleanup ownership so removing the last import eventually removes the kit.
+func TestWBImportWizardUndoTransfersSharedKitOwnership(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	importOne := func(split, replace bool) string {
+		t.Helper()
+		_, _, loc := w.upload(wizSite(t), "site.zip", "shared-kit")
+		id := wizIDRE.FindStringSubmatch(loc)[1]
+		_, page, _ := w.get("/wp-admin/web-builder-import?import=" + id)
+		form := url.Values{
+			"_wpnonce": {wizHiddenRE.FindStringSubmatch(page)[1]},
+			"kit":      {"shared-kit"},
+			"name":     {"Shared kit"},
+			"status":   {"publish"},
+		}
+		if split {
+			form.Set("templates", "1")
+		}
+		if replace {
+			form.Set("replace", "1")
+		}
+		if code, body, _ := w.postForm("/wp-admin/web-builder-import?action=import&import="+id, form); code != http.StatusSeeOther {
+			t.Fatalf("import %s: %d %s", id, code, wbSnippet(body, "notice"))
+		}
+		return id
+	}
+	undo := func(id string) {
+		t.Helper()
+		_, page, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id)
+		if code, body, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id, url.Values{
+			"_wpnonce": {wizHiddenRE.FindStringSubmatch(page)[1]}, "confirm": {"1"},
+		}); code != http.StatusOK {
+			t.Fatalf("undo %s: %d %s", id, code, wbSnippet(body, "notice"))
+		}
+	}
+
+	first := importOne(false, false)
+	second := importOne(true, true)
+	undo(first)
+	kit := srv.wbKitList()["shared-kit"]
+	if kit == nil || kit.Root == 0 {
+		t.Fatalf("shared kit was disabled or deleted: %+v", kit)
+	}
+	if rec := srv.wbWizRecords()[second]; rec == nil || !rec.KitCreated {
+		t.Fatalf("kit cleanup ownership was not transferred: %+v", rec)
+	}
+	undo(second)
+	if kit := srv.wbKitList()["shared-kit"]; kit != nil {
+		t.Fatalf("last import left its transferred kit behind: %+v", kit)
+	}
+}
+
 // Undo never deletes a post that no longer carries the import's mark.
 func TestWBImportWizardUndoKeepsOthers(t *testing.T) {
 	srv, _, _, w := wizStart(t)
