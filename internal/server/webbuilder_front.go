@@ -251,7 +251,11 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 		site.CSS = ""
 		body = webbuilder.UnwrapCodePage(body)
 	}
-	s.wbCodeCSP(c, codeHead, body)
+	code := wbCodeSource(d)
+	for _, p := range fp.popups {
+		code += wbCodeSource(p.doc)
+	}
+	s.wbCodeCSP(c, code)
 
 	// wp_head without the theme: a copy of the view whose theme brings no head, no block styles
 	// and no Additional CSS (the Customizer's CSS belongs to the theme).

@@ -279,3 +279,36 @@ func TestWBKitStagingAndVersions(t *testing.T) {
 		t.Errorf("version after delete and upload: %d, want 3", v)
 	}
 }
+
+// The policy's origins of a code page come from its stored code sections and their kits, never
+// from the page's other markup (a visitor's comment, a post's text, a field value): a
+// url(https://evil.example/x in it adds nothing.
+func TestWBCodeCSPOriginsFromCodeOnly(t *testing.T) {
+	srv, base, admin := wbrStart(t)
+	ctx := context.Background()
+	wbsKit(t, admin, "cspk", map[string]string{"site.css": ".a{color:red}", "app.js": `fetch("https://api.kit.example/x")`})
+	head := `<link rel="stylesheet" href="/wp-content/uploads/web-builder/kits/cspk/site.css"><script src="https://cdn.code.example/lib.js"></script>`
+	id := wbsCodePage(t, srv, admin, "CSP page", "cspk", `<section><p>Hi</p><script src="/wp-content/uploads/web-builder/kits/cspk/app.js"></script></section>`, head)
+	// What fills the page around the code (a comment, a post, a field) — here written into the
+	// stored snapshot itself, outside the code section.
+	evil := `<p>url(https://evil.example/x</p><p>@import "https://evil2.example/a.css"</p><a title="<script src=https://evil3.example/x.js>">x</a>`
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE web_builder_docs SET html = regexp_replace(html, '</div>\s*$', $2 || '</div>') WHERE post_id = $1`, id, evil); err != nil {
+		t.Fatal(err)
+	}
+	srv.purgeAll(ctx)
+	code, body, h := wbsFetch(t, base+"/?page_id="+itoa64(id), nil)
+	if code != http.StatusOK || !strings.Contains(body, "evil.example/x") {
+		t.Fatalf("page: %d (the injected markup is not on the page: %v)", code, strings.Contains(body, "evil.example"))
+	}
+	policy := h.Get("Content-Security-Policy") + " " + h.Get("Content-Security-Policy-Report-Only")
+	for _, bad := range []string{"evil.example", "evil2.example", "evil3.example"} {
+		if strings.Contains(policy, bad) {
+			t.Errorf("the policy allows %s: %s", bad, policy)
+		}
+	}
+	for _, want := range []string{"https://cdn.code.example", "https://api.kit.example", "blob:"} {
+		if !strings.Contains(policy, want) {
+			t.Errorf("the policy lacks %s (the code section's and its kit's): %s", want, policy)
+		}
+	}
+}

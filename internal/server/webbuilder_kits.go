@@ -17,10 +17,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
 )
 
@@ -883,6 +885,42 @@ var (
 	wbCodeCSSURLRE = regexp.MustCompile(`(?i)(?:url\(\s*|@import\s+)(?:&#39;|&quot;|['"])?(https://[^'"\s)&;]+)`)
 )
 
+// wbCodeSourceCache: post id, rev and update time → the doc's code markup (wbCodeSource).
+var wbCodeSourceCache sync.Map
+
+// wbCodeSource is the stored markup of a doc's shown code sections (head and html, as their
+// unfiltered_html author published them), for wbCodeCSP; "" without code sections.
+func wbCodeSource(d *store.WebBuilderDoc) string {
+	if d == nil || !webbuilder.HasCode(d.Doc) {
+		return ""
+	}
+	key := strconv.FormatInt(d.PostID, 10) + ":" + strconv.Itoa(d.Rev) + ":" + strconv.FormatInt(d.UpdatedAt.UnixNano(), 10)
+	if v, ok := wbCodeSourceCache.Load(key); ok {
+		return v.(string)
+	}
+	list, _ := webbuilder.CodeSections(d.Doc)
+	var b strings.Builder
+	for _, sec := range list {
+		if sec.Hidden {
+			continue
+		}
+		b.WriteString(sec.Head)
+		b.WriteByte('\n')
+		b.WriteString(sec.HTML)
+		b.WriteByte('\n')
+	}
+	out := b.String()
+	wbCodeSourceLen.Add(1)
+	if wbCodeSourceLen.Load() > 512 { // a bound, not an LRU: the next requests fill it again
+		wbCodeSourceCache.Range(func(k, _ any) bool { wbCodeSourceCache.Delete(k); return true })
+		wbCodeSourceLen.Store(0)
+	}
+	wbCodeSourceCache.Store(key, out)
+	return out
+}
+
+var wbCodeSourceLen atomic.Int64
+
 // wbCodeOriginMax bounds the origins one directive takes from the code sections' markup (the kit
 // origins have the same cap, wbKitOrigins).
 const wbCodeOriginMax = 24
@@ -895,7 +933,9 @@ const (
 
 // wbCodeCSP adds what the code sections load from other origins to this response's policy (only
 // unfiltered_html authors can publish code sections; their scripts carry the response's nonce,
-// csp_trusted.go):
+// csp_trusted.go). code is the stored markup of the page's code sections (wbCodeSource) and of
+// other trusted markup (a forum site template): never the filled page, whose comments, posts and
+// field values anyone may have written, so a visitor's url(https://…) adds nothing.
 //
 //   - the kits the markup loads from: the https origins their scripts and stylesheets name, in
 //     script-src, connect-src, style-src and font-src;
@@ -907,17 +947,15 @@ const (
 //   - <iframe src> origins (a map, a video) in frame-src.
 //
 // Each list takes at most wbCodeOriginMax origins from the markup. Kit files are same-origin.
-func (s *Server) wbCodeCSP(c *gin.Context, head, body string) {
-	if c == nil {
+func (s *Server) wbCodeCSP(c *gin.Context, code string) {
+	if c == nil || strings.TrimSpace(code) == "" {
 		return
 	}
-	src := head + body
+	src := code
 	// Code sections: images and media the design's scripts make in the page (a canvas exported with toBlob, a
 	// video from a fetched file): blob: URLs are the page's own content.
-	if head != "" || strings.Contains(src, wbKitURLPrefix) {
-		cspAllow(c, "img-src", "blob:")
-		cspAllow(c, "media-src", "blob:")
-	}
+	cspAllow(c, "img-src", "blob:")
+	cspAllow(c, "media-src", "blob:")
 	// The kits the markup loads from: the origins their files name.
 	if strings.Contains(src, wbKitURLPrefix) {
 		kits := s.wbKitList()

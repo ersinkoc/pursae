@@ -284,7 +284,21 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 		v.AdminBar = template.HTML(wbInsertAdminBarNodes(string(v.AdminBar), s.wbThemeAdminBarNodes(c, tp)))
 	}
 	wbEmbedCSP(c, strings.Join(bodies, "\n"))
-	s.wbCodeCSP(c, codeHead, strings.Join(bodies, "\n"))
+	// The code's origins come from the stored code sections (and the forum's site templates), never
+	// from the filled parts (wbCodeCSP).
+	var code strings.Builder
+	for _, p := range tp.parts {
+		code.WriteString(wbCodeSource(p.doc))
+	}
+	for _, p := range popups {
+		code.WriteString(wbCodeSource(p.doc))
+	}
+	if tp.forumMain != "" {
+		for _, t := range s.forumSiteTpls() {
+			code.WriteString(t.Source + "\n")
+		}
+	}
+	s.wbCodeCSP(c, code.String())
 	wbAddCacheTags(c, true, loops)
 	if catalog {
 		wbAddTags(c, "goo:shop")
