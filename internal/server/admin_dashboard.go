@@ -30,6 +30,7 @@ type dashboardComment struct {
 }
 
 type dashboardData struct {
+	Modern                            *pmDash // Pursae Modern's greeting, tiles and charts (admin_dashboard_modern.go); nil for WordPress Classic
 	ShowWelcome                       bool
 	Posts, Pages, Comments            int
 	Pending, Spam, Trash, AllComments int
@@ -192,6 +193,9 @@ func (s *Server) dashboard(c *gin.Context) {
 		})
 	}
 
+	if adminThemeFor(u).Modern() {
+		d.Modern = s.modernDashboard(ctx, u, d.Health, d.Posts, d.Pages, d.Comments, d.Pending)
+	}
 	d.News = s.dashboardNewsCached(ctx)
 	d.Closed = userMetaSet(u, "closedpostboxes_dashboard")
 	var pluginIDs []string

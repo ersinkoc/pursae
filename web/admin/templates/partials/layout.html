@@ -99,7 +99,14 @@ var _wpColorScheme = {{.Color.Icons}};
 	<div class="clear"></div>
 </div>
 </div><!-- wpwrap -->
-{{.ExtraBodyHTML}}{{.FooterScripts}}{{.LateFooterHTML}}
+{{.ExtraBodyHTML}}{{.FooterScripts}}{{.LateFooterHTML}}{{if .Theme.Modern}}<div class="pm-cmd" id="pm-cmd" role="dialog" aria-modal="true" aria-label="Command palette" hidden>
+	<div class="pm-cmd-box">
+		<div class="pm-cmd-in"><span class="dashicons dashicons-search" aria-hidden="true"></span><input id="pm-cmd-input" type="text" autocomplete="off" spellcheck="false" placeholder="Search screens, plugins and actions…" aria-label="Search screens, plugins and actions"><kbd>esc</kbd></div>
+		<div class="pm-cmd-list" id="pm-cmd-list" role="listbox"></div>
+		<div class="pm-cmd-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> <span>to move</span></span><span><kbd>↵</kbd> <span>to open</span></span><span class="pm-cmd-labels" hidden><span data-k="actions">Quick actions</span><span data-k="screens">Screens</span><span data-k="none">No results</span><span data-k="new-post">New post</span><span data-k="new-page">New page</span><span data-k="new-product">New product</span><span data-k="visit">Visit site</span><span data-k="profile">Your profile</span></span></span></div>
+	</div>
+</div>
+<script {{cspNonce}} src="/wp-admin/assets/js/pursae-modern.js?ver={{version}}" defer></script>{{end}}
 <div class="clear"></div>
 </body>
 </html>
