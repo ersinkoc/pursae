@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +33,11 @@ func TestMCPToolsWellFormed(t *testing.T) {
 				t.Errorf("%s: required %s is not a property", tool.Name, r)
 			}
 		}
-		if tool.special == "" && appScopeForRoute(mcpPathArg.ReplaceAllString(tool.Path, "1")) == "" && tool.Path != "/wp/v2/{taxonomy}" && tool.Path != "/wp/v2/{taxonomy}/{id}" {
+		fullOnly := false
+		for _, p := range appScopeFullAccessOnly {
+			fullOnly = fullOnly || tool.Path == p || strings.HasPrefix(tool.Path, p+"/")
+		}
+		if tool.special == "" && !fullOnly && appScopeForRoute(mcpPathArg.ReplaceAllString(tool.Path, "1")) == "" && tool.Path != "/wp/v2/{taxonomy}" && tool.Path != "/wp/v2/{taxonomy}/{id}" {
 			t.Errorf("%s: route %s belongs to no Application Password scope", tool.Name, tool.Path)
 		}
 	}

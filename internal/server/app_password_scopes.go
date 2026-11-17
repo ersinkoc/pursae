@@ -188,6 +188,11 @@ var appScopeRoutes = map[string]string{
 	"/pursae/v1/health": "settings", "/pursae/v1/csp-reports": "settings", "/pursae/v1/analytics": "settings", "/pursae/v1/backups": "settings", "/pursae/v1/updates": "plugins",
 }
 
+// appScopeFullAccessOnly are route prefixes that deliberately belong to no scope, so only a
+// password with full access reaches them: the contact forms set the mail a form sends (recipients,
+// headers), which no scope's job covers.
+var appScopeFullAccessOnly = []string{"/contact-form-7/v1"}
+
 // appScopeForRoute is the scope a route belongs to: "" for routes no scope covers, "*" for routes any
 // scoped password may use (the index, the MCP endpoint, the signed-in user's own record).
 func appScopeForRoute(route string) string {
