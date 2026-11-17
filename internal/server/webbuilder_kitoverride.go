@@ -259,38 +259,58 @@ func (s *Server) wbKitOverrideStyles(head string) string {
 // wbRESTKitPages is GET kits/{slug}/pages: the code-section markup of every builder page and
 // template whose code sections use the kit (published docs; trashed posts left out), for the
 // element editor's "From this design" palette and its class counts. At most 500 pages and 8 MB.
+//
+// Whoever may write the kit (edit_theme_options and unfiltered_html) gets every page. Any other
+// editor user gets the pages a visitor sees (published, no password) and the ones they may edit
+// themselves: never another author's draft, private or password-protected page.
 func (s *Server) wbRESTKitPages(c *gin.Context, r *restRequest) {
-	if !wbKitUser(c, false) {
+	u := wbUser(c, "edit_posts")
+	if u == nil {
 		return
 	}
+	full := u.Can(webbuilder.TemplateCap, nil) && u.Can("unfiltered_html", nil)
 	slug := r.Params["slug"]
 	if !s.wbKitExists(c, slug) {
 		return
 	}
-	rows, err := s.store.Pool.Query(c, `SELECT d.post_id, p.title, p.type, d.doc FROM web_builder_docs d JOIN posts p ON p.id = d.post_id
+	rows, err := s.store.Pool.Query(c, `SELECT d.post_id, p.title, p.type, p.status, p.password, d.doc FROM web_builder_docs d JOIN posts p ON p.id = d.post_id
 		WHERE p.status <> 'trash' AND d.doc::text LIKE '%' || $1 || '%' ORDER BY d.post_id LIMIT 2000`, `"kit": "`+slug+`"`)
 	if err != nil {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not read the pages.")
 		return
 	}
-	defer rows.Close()
 	type page struct {
 		ID    int64  `json:"id"`
 		Title string `json:"title"`
 		Type  string `json:"type"`
 		HTML  string `json:"html"`
 	}
-	out := []page{}
-	total := 0
+	type row struct {
+		page
+		status, password string
+		doc              []byte
+	}
+	var list []row
 	for rows.Next() {
-		var p page
-		var doc []byte
-		if err := rows.Scan(&p.ID, &p.Title, &p.Type, &doc); err != nil {
+		var x row
+		if err := rows.Scan(&x.ID, &x.Title, &x.Type, &x.status, &x.password, &x.doc); err != nil {
 			continue
 		}
-		list, _ := webbuilder.CodeSections(doc)
+		list = append(list, x)
+	}
+	rows.Close()
+	out := []page{}
+	total := 0
+	for _, x := range list {
+		if !full && (x.status != "publish" || x.password != "") {
+			p, err := s.store.GetPost(c, x.ID)
+			if err != nil || !s.wbEditable(u, p) {
+				continue
+			}
+		}
+		secs, _ := webbuilder.CodeSections(x.doc)
 		var b strings.Builder
-		for _, sec := range list {
+		for _, sec := range secs {
 			if sec.Kit == slug {
 				b.WriteString(sec.HTML)
 				b.WriteByte('\n')
@@ -303,6 +323,7 @@ func (s *Server) wbRESTKitPages(c *gin.Context, r *restRequest) {
 			break
 		}
 		total += b.Len()
+		p := x.page
 		p.HTML = b.String()
 		out = append(out, p)
 	}

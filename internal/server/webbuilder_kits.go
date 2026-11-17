@@ -167,8 +167,8 @@ func (s *Server) wbRegisterKitREST(reg func(pattern string, methods map[string]r
 	s.wbRegisterKitOverrideREST(reg)
 }
 
-// wbKitUser: reading kits needs edit_posts (the editor shows them); writing needs unfiltered_html
-// and edit_theme_options.
+// wbKitUser: reading a kit's override needs edit_posts (the editor's frame shows it on every page
+// using the kit); writing needs unfiltered_html and edit_theme_options.
 func wbKitUser(c *gin.Context, write bool) bool {
 	if !write {
 		return wbUser(c, "edit_posts") != nil
@@ -184,8 +184,14 @@ func wbKitUser(c *gin.Context, write bool) bool {
 	return true
 }
 
+// wbKitReader: the kits themselves (their list, files and sizes) are for who may use them in a code
+// section, an unfiltered_html author.
+func wbKitReader(c *gin.Context) bool {
+	return wbUser(c, "unfiltered_html") != nil
+}
+
 func (s *Server) wbRESTKits(c *gin.Context, r *restRequest) {
-	if !wbKitUser(c, false) {
+	if !wbKitReader(c) {
 		return
 	}
 	kits := s.wbKitList()
@@ -203,7 +209,7 @@ func (s *Server) wbRESTKits(c *gin.Context, r *restRequest) {
 }
 
 func (s *Server) wbRESTKit(c *gin.Context, r *restRequest) {
-	if !wbKitUser(c, false) {
+	if !wbKitReader(c) {
 		return
 	}
 	slug := r.Params["slug"]
