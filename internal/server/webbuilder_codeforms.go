@@ -31,7 +31,7 @@ function q(s,r){return(r||document).querySelector(s)}
 function key(f){return f.getAttribute("data-wb-code-form")}
 function el(f,k){return q("[data-wb-form-"+k+'="'+key(f)+'"]')}
 function shown(e){return!!e&&getComputedStyle(e).display!=="none"&&!e.hidden}
-var cls={};document.querySelectorAll("form[data-wb-code-form]").forEach(function(f){var d=el(f,"done"),e=el(f,"error");cls[key(f)]=!!((d&&d.classList.contains("hidden"))||(e&&e.classList.contains("hidden")))});
+var cls={};function learn(f){if(!(key(f) in cls)){var d=el(f,"done"),e=el(f,"error");cls[key(f)]=!!((d&&d.classList.contains("hidden"))||(e&&e.classList.contains("hidden")))}}
 function show(e){if(!e)return;e.hidden=false;e.classList.remove("hidden");var c=e.className;if(!/(^|\s)(flex|grid|block|inline-flex)(\s|$)/.test(c)&&/(^|\s)(flex-col|flex-row|items-|justify-)/.test(c))e.classList.add("flex");if(getComputedStyle(e).display==="none")e.style.display="block"}
 function hide(e,f){if(!e)return;if(cls[key(f)]){e.classList.add("hidden");e.classList.remove("flex")}else e.hidden=true}
 function status(f,msg,bad){var s=q("[data-wb-code-status]",f.parentNode);if(!s){s=document.createElement("p");s.setAttribute("data-wb-code-status","");f.parentNode.insertBefore(s,f.nextSibling)}s.setAttribute("role",bad?"alert":"status");s.textContent=msg}
@@ -48,13 +48,14 @@ try{Object.defineProperty(f,"dataset",{configurable:true,get:function(){return n
 f.getAttribute=function(n){if(names.indexOf(String(n).toLowerCase())>=0)stop();return ga.call(this,n)};
 return function(){delete f.dataset;delete f.getAttribute}}
 var undo=null,was=0;
-document.addEventListener("submit",function(e){var f=e.target;if(!f||!f.matches||!f.matches("form[data-wb-code-form]"))return;busy=1;read=0;was=shown(el(f,"done"));undo=guard(f)},true);
+document.addEventListener("submit",function(e){var f=e.target;if(!f||!f.matches||!f.matches("form[data-wb-code-form]"))return;learn(f);busy=1;read=0;was=shown(el(f,"done"));undo=guard(f)},true);
 window.addEventListener("error",function(e){if(busy&&e.message&&e.message.indexOf("wb-form: sent to Pursae")>=0)e.preventDefault()});
 window.addEventListener("submit",function(e){var f=e.target;if(!f||!f.matches||!f.matches("form[data-wb-code-form]"))return;busy=0;if(undo){undo();undo=null}
 var ok;if(!e.defaultPrevented){e.preventDefault();ok=f.noValidate||f.checkValidity();if(!ok&&f.reportValidity)f.reportValidity()}
 else if(read)ok=true;else if(f.querySelector('[aria-invalid="true"]'))ok=false;else ok=(!was&&shown(el(f,"done")))||!shown(f);
 if(ok)send(f)});
-if(/[?&]wb_form=sent/.test(location.search))document.querySelectorAll("form[data-wb-code-form]").forEach(function(f){if(!location.hash||location.hash.slice(1)===key(f))done(f,"")})
+function back(){if(/[?&]wb_form=sent/.test(location.search))document.querySelectorAll("form[data-wb-code-form]").forEach(function(f){learn(f);if(!location.hash||location.hash.slice(1)===key(f))done(f,"")})}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",back);else back()
 })()`
 
 // wbCodeForms appends the code-form script to a filled snapshot that has a bound design form.
@@ -63,7 +64,15 @@ func (s *Server) wbCodeForms(h string) string {
 		return h
 	}
 	js := `<script` + cspNonceAttr() + ` id="wb-code-form">` + wbCodeFormJS + `</script>`
-	// Inside the page's root element: a code page's root is dropped with what follows it
+	// In the code head (lifted into <head>, so the design's markup and the shell it shares with
+	// the header and footer stay as they are); the script only listens on document and window.
+	const headOpen = `<template data-wb-code-head>`
+	if i := strings.Index(h, headOpen); i >= 0 {
+		if j := strings.Index(h[i:], `</template>`); j >= 0 {
+			return h[:i+j] + js + h[i+j:]
+		}
+	}
+	// Else inside the page's root element: a code page's root is dropped with what follows it
 	// (webbuilder.UnwrapCodePage).
 	if strings.HasPrefix(strings.TrimSpace(h), `<div`) {
 		if i := strings.LastIndex(h, "</div>"); i >= 0 {
