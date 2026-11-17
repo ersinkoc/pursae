@@ -1200,6 +1200,9 @@ func (s *Server) wbWizDesign(c *gin.Context) {
 		"font-src 'self' data: https:; media-src 'self' data: blob: https:; connect-src 'self' https:; frame-src https:; "+
 		"object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'")
 	h.Del("Content-Security-Policy-Report-Only")
+	// X-Frame-Options: SAMEORIGIN would block the sandboxed frame (its origin is opaque, so no
+	// ancestor "matches"); frame-ancestors 'self' above does the same job for the admin page only.
+	h.Del("X-Frame-Options")
 	h.Set("Cache-Control", "private, no-store")
 	h.Set("Referrer-Policy", "no-referrer")
 	h.Set("X-Robots-Tag", "noindex, nofollow")

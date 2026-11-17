@@ -15,7 +15,8 @@
 <p class="description">Optional. The name of the design kit; by default taken from the name of the zip file.</p></td></tr>
 <tr><th scope="row"><label for="wb-import-zip">Zip file</label></th>
 <td><input type="file" name="archive" id="wb-import-zip" accept=".zip,application/zip" required />
-<p class="description">Up to {{.Limits}}. Paths that leave the folder, links and files that are not web assets are refused.</p></td></tr>
+<p class="description">Up to <strong>{{.Limits}}</strong></p>
+<p class="description">Paths that leave the folder, links and files that are not web assets are refused.</p></td></tr>
 </table>
 <p class="submit"><button type="submit" class="button button-primary">Upload and analyse</button></p>
 </form>
@@ -30,15 +31,10 @@
 {{if eq .Step "analysis"}}{{with .A}}
 <p class="description">This is what the import would do. Nothing has been changed on your site yet.</p>
 <h2 class="title">2. Analysis</h2>
-<ul class="subsubsub" style="float:none">
-<li>{{len .Pages}} pages</li>
-<li>| {{.Creates}} new</li>
-<li>| {{.Updates}} updated</li>
-<li>| {{.AssetFiles}} design files</li>
-</ul>
+<p><span>{{len .Pages}} pages</span> &middot; <span>{{.Creates}} new pages</span> &middot; <span>{{.Updates}} updated pages</span> &middot; <span>{{.AssetFiles}} design files</span></p>
 <table class="wp-list-table widefat fixed striped"><thead><tr><th>File</th><th>Title</th><th>Address</th><th>Result</th><th>Header</th><th>Footer</th></tr></thead><tbody>
 {{range .Pages}}<tr><td><code>{{.Path}}</code></td><td>{{.Title}}</td><td>{{if .URL}}<code>{{.URL}}</code>{{else}}&mdash;{{end}}</td>
-<td>{{if eq .Action "create"}}New page{{else if eq .Action "update"}}Updates the page of an earlier import{{else}}404 template{{end}}{{if eq .Kind "front"}} (front page){{end}}</td>
+<td>{{if eq .Action "create"}}<span>New page</span>{{else if eq .Action "update"}}<span>Updates the page of an earlier import</span>{{else}}<span>404 template</span>{{end}}{{if eq .Kind "front"}} <em>(front page)</em>{{end}}</td>
 <td>{{.Header}}</td><td>{{.Footer}}</td></tr>
 {{end}}</tbody></table>
 {{if .Placeholders}}<p>Draft parent pages are made for these folders, so their addresses stay 404 as in the design:</p><p>{{range .Placeholders}}<code>{{.}}</code> {{end}}</p>{{end}}
@@ -53,8 +49,8 @@
 {{if .Handlers}}<div class="notice notice-warning inline"><p><strong>Inline event handlers</strong></p><p>The site's Content Security Policy blocks these; the design needs addEventListener instead.</p><ul style="list-style:disc;margin-left:20px">{{range .Handlers}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
 {{if .Missing}}<div class="notice notice-error inline"><p><strong>Missing files</strong></p><p>The pages refer to files that are not in the zip:</p><ul style="list-style:disc;margin-left:20px">{{range .Missing}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
 {{if .Unmapped}}<div class="notice notice-info inline"><p><strong>Links to pages that are not in the zip</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Unmapped}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
-{{if .Origins}}<p><strong>External origins</strong> the design loads from (allowed in the pages' Content Security Policy):</p><p>{{range .Origins}}<code>{{.}}</code> {{end}}</p>{{end}}
-{{if .Breakpoints}}<p><strong>Breakpoints</strong> in the design's CSS (viewport widths of its media queries):</p><p>{{range .Breakpoints}}<code>{{.Px}}px</code> &times;{{.Count}} {{end}}</p>{{end}}
+{{if .Origins}}<p><strong>External origins</strong></p><p>The design loads from these (allowed in the pages' Content Security Policy):</p><p>{{range .Origins}}<code>{{.}}</code> {{end}}</p>{{end}}
+{{if .Breakpoints}}<p><strong>Breakpoints</strong></p><p>Viewport widths of the media queries in the design's CSS:</p><p>{{range .Breakpoints}}<code>{{.Px}}px</code> &times;{{.Count}} {{end}}</p>{{end}}
 {{end}}
 
 <h2 class="title">3. Options</h2>
@@ -88,7 +84,7 @@
 
 {{if eq .Step "result"}}{{with .R}}
 <h2 class="title">Import report</h2>
-<p>Design kit: <code>{{.Kit}}</code>.{{if .Draft}} The pages were imported as drafts.{{end}}</p>
+<p>Design kit: <code>{{.Kit}}</code></p>{{if .Draft}}<p>The pages were imported as drafts.</p>{{end}}
 <table class="wp-list-table widefat fixed striped"><thead><tr><th>File</th><th>Page</th><th></th></tr></thead><tbody>
 {{range .Pages}}<tr><td><code>{{.Path}}</code></td><td>{{if .URL}}<code>{{.URL}}</code>{{else}}&mdash;{{end}}</td>
 <td><a href="/wp-admin/post?post={{.PostID}}&amp;action=web-builder">Edit</a>{{if .URL}} | <a href="{{.URL}}" target="_blank" rel="noopener">View</a>{{end}}</td></tr>
@@ -111,7 +107,11 @@
 
 {{if eq .Step "compare"}}
 <p class="description">The design on the left is the original, drawn from your upload in an isolated frame; the page on the right is the imported Pursae page.</p>
-<p>{{range .Compare}}{{if .Current}}<strong>{{.Path}}</strong>{{else}}<a href="{{.Select}}">{{.Path}}</a>{{end}} {{end}}</p>
+<form method="get" action="{{.URL}}" class="wb-import-pick">
+<input type="hidden" name="action" value="compare" /><input type="hidden" name="import" value="{{.ID}}" />
+<label for="wb-import-file">Page</label>
+<select name="file" id="wb-import-file">{{range .Compare}}<option value="{{.Path}}"{{if .Current}} selected{{end}}>{{.Path}}</option>{{end}}</select>
+<button type="submit" class="button">Show</button></form>
 {{with .Cur}}
 <p><a href="{{.DesignURL}}" target="_blank" rel="noopener">Open the design</a>{{if .ViewURL}} | <a href="{{.ViewURL}}" target="_blank" rel="noopener">Open the Pursae page</a>{{end}} | <a href="{{.EditURL}}">Edit the page</a></p>
 <div style="display:flex;gap:12px">
