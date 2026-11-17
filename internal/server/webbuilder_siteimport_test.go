@@ -399,3 +399,95 @@ func TestMCPImportSiteOriginalDomain(t *testing.T) {
 		t.Errorf("about: the comment form: %s", wbSnippet(string(b), "<form"))
 	}
 }
+
+// A WordPress Salient copy (Decoland): no <main>, no <footer>; the footer sits in the content's
+// wrapper and the page's scripts follow the shell. The site gets one header and one footer
+// template, and each page is printed as the design: the shell once, #ajax-content-wrap once around
+// the page's rows and the footer, the drawer after the shell, the page's own scripts after it.
+func TestMCPImportSiteSalientShape(t *testing.T) {
+	ts, c := testServer(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	if r := call("activate_theme", map[string]any{"slug": wbHelloSlug}); r["isError"] == true {
+		t.Fatalf("theme: %v", mcpText(r))
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "salient", "files": []any{
+		map[string]any{"path": "wp-content/themes/salient/style.css", "text": "#footer-outer{color:#333}"},
+	}}))
+	page := func(cur, title, seed string) string {
+		up := ""
+		if cur != "index.html" {
+			up = "../"
+		}
+		item := func(href, label string) string {
+			if href == cur {
+				return `<li class="menu-item current-menu-item"><a aria-current="page" href="` + up + href + `">` + label + `</a></li>`
+			}
+			return `<li class="menu-item"><a href="` + up + href + `">` + label + `</a></li>`
+		}
+		nav := item("index.html", "Home") + item("blog/index.html", "Blog")
+		return `<!doctype html><html lang="tr"><head><title>` + title + `</title>
+<script type="application/ld+json">{"name":"` + title + `"}</script>
+<link rel="stylesheet" href="` + up + `wp-content/themes/salient/style.css?ver=1"></head><body class="page">
+<nav class="skip-wrap"><a class="skip" href="#ajax-content-wrap">Skip</a></nav>
+<div class="ocm-effect-wrap"><div class="ocm-effect-wrap-inner">
+<div id="header-outer"><div id="fws_` + seed + `a1b2c3" class="wpb_row">Open</div><header id="top"><nav><ul>` + nav + `</ul></nav></header></div>
+<div id="ajax-content-wrap">
+<div class="container-wrap"><h1>` + title + `</h1></div>
+<div id="footer-outer"><p>Footer</p></div>
+<div id="slide-out-widget-area"><ul>` + nav + `</ul></div>
+</div></div></div>
+<script>var page = {"postID":"` + seed + `"};</script>
+<aside id="dc-drawer">Drawer</aside>
+</body></html>`
+	}
+	pages := []any{
+		map[string]any{"path": "index.html", "html": page("index.html", "Home", "100")},
+		map[string]any{"path": "blog/index.html", "html": page("blog/index.html", "Blog", "201")},
+		map[string]any{"path": "hakkimizda/index.html", "html": page("hakkimizda/index.html", "About", "302")},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "salient", "pages": pages}))
+	var types []string
+	for _, x := range asList(out["templates"]) {
+		types = append(types, x.(map[string]any)["type"].(string))
+	}
+	if strings.Join(types, ",") != "header,footer" {
+		t.Fatalf("templates: %v", out["templates"])
+	}
+	for _, x := range []struct{ path, seed, title string }{{"/", "100", "Home"}, {"/blog/", "201", "Blog"}, {"/hakkimizda/", "302", "About"}} {
+		resp, err := http.Get(base + x.path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		html := string(b)
+		for _, once := range []string{`<div class="ocm-effect-wrap">`, `<div id="ajax-content-wrap">`, `id="footer-outer"`, `id="dc-drawer"`} {
+			if strings.Count(html, once) != 1 {
+				t.Errorf("%s: %s printed %d times", x.path, once, strings.Count(html, once))
+			}
+		}
+		order := []string{`<div class="ocm-effect-wrap">`, `<header id="top"`, `<div id="ajax-content-wrap">`, "<h1>" + x.title + "</h1>", `id="footer-outer"`,
+			`id="slide-out-widget-area"`, `id="dc-drawer"`, `"postID":"` + x.seed + `"`}
+		last := -1
+		for _, o := range order {
+			i := strings.Index(html, o)
+			if i < 0 || i < last {
+				t.Errorf("%s: %s out of order (%d after %d): %s", x.path, o, i, last, wbSnippet(html, `id="ajax-content-wrap"`))
+				break
+			}
+			last = i
+		}
+		// The footer closes the content's wrapper and the shell before the drawer.
+		if i, j := strings.Index(html, `id="slide-out-widget-area"`), strings.Index(html, `id="dc-drawer"`); i < 0 || j < 0 || strings.Count(html[i:j], "</div>") < 4 {
+			t.Errorf("%s: wrappers not closed before the drawer: %s", x.path, wbSnippet(html, `id="dc-drawer"`))
+		}
+		if !strings.Contains(html, `{"name":"`+x.title+`"}`) || strings.Count(html, "application/ld+json") != 1 {
+			t.Errorf("%s: the page's own JSON-LD", x.path)
+		}
+	}
+}

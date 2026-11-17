@@ -247,6 +247,7 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	if codeHead != "" || strings.Contains(body, webbuilder.AttrCode) {
 		codeHead, body = s.wbKitVersioned(codeHead), s.wbKitVersioned(body)
 	}
+	body = webbuilder.StripCodeTail(body) // a canvas page prints its tail in place, after everything
 	codePage := webbuilder.IsCodePage(body)
 	if codePage {
 		site.CSS = ""

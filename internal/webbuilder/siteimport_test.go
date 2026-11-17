@@ -52,7 +52,10 @@ func TestConvertCodeShell(t *testing.T) {
 	if len(res.FooterAfter) != 1 || !strings.Contains(res.FooterAfter[0].HTML, `id="lightbox"`) || res.FooterAfter[0].Wrap != "" {
 		t.Errorf("modal after the shell: %+v", res.FooterAfter)
 	}
-	if len(res.Sections) != 2 || res.Sections[0].Wrap != shell+"\n"+`<main id="icerik" class="flex-1">` || !strings.Contains(res.Sections[1].HTML, `src="/k/js/main.js"`) {
+	// The script after the shell comes after the footer (and the lightbox), as in the design: a
+	// tail section, printed after the footer template.
+	if len(res.Sections) != 3 || res.Sections[0].Wrap != shell+"\n"+`<main id="icerik" class="flex-1">` || strings.Contains(res.Sections[1].HTML, `main.js`) ||
+		!res.Sections[2].Tail || res.Sections[2].Wrap != "" || !strings.Contains(res.Sections[2].HTML, `src="/k/js/main.js"`) {
 		t.Fatalf("sections: %+v", res.Sections)
 	}
 

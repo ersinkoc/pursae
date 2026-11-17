@@ -276,13 +276,26 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 	oldURLs, trackers := map[string]bool{}, map[string]bool{}
 	var hs, fs []ActiveSample
 	var hIdx, fIdx []int
+	ids := make([]map[string]bool, len(pages))
 	for i, p := range pages {
-		base := path.Dir(p.Path)
+		ids[i] = volatileIDs(p.HTML)
+	}
+	pageOpts := func(i int) CodeImportOptions {
+		base := path.Dir(pages[i].Path)
 		if base == "." {
 			base = ""
 		}
-		res, err := ConvertCode(p.HTML, CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: !o.NoSplit,
-			Remap: o.Remap, OldHosts: o.OldHosts, KeepOldLinks: o.KeepOldLinks, SiteURL: o.SiteURL})
+		return CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: !o.NoSplit,
+			Remap: o.Remap, OldHosts: o.OldHosts, KeepOldLinks: o.KeepOldLinks, SiteURL: o.SiteURL}
+	}
+	var footers map[int][]int
+	if !o.NoSplit {
+		footers = siteFooterHints(pages, ids, pageOpts)
+	}
+	for i, p := range pages {
+		po := pageOpts(i)
+		po.FooterAt = footers[i]
+		res, err := ConvertCode(p.HTML, po)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %v", p.Path, err)
 		}
@@ -312,7 +325,7 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 				parts = append(parts, b.Wrap+"\x05"+b.HTML)
 			}
 			parts = append(parts, res.Header.Wrap+"\x05"+res.Header.HTML)
-			hs = append(hs, ActiveSample{Path: o.URLs[p.Path], Parts: parts})
+			hs = append(hs, ActiveSample{Path: o.URLs[p.Path], Parts: parts, Volatile: ids[i]})
 			hIdx = append(hIdx, i)
 		}
 		// A footer the design put inside main stays on its page (FooterInPage): no template serves
@@ -322,7 +335,7 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 			for _, a := range res.FooterAfter {
 				parts = append(parts, a.Wrap+"\x05"+a.HTML)
 			}
-			fs = append(fs, ActiveSample{Path: o.URLs[p.Path], Parts: parts})
+			fs = append(fs, ActiveSample{Path: o.URLs[p.Path], Parts: parts, Volatile: ids[i]})
 			fIdx = append(fIdx, i)
 		}
 	}
@@ -361,7 +374,7 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 	wraps := make([][]string, len(samples))
 	plain := make([]ActiveSample, len(samples))
 	for i, s := range samples {
-		plain[i].Path = s.Path
+		plain[i].Path, plain[i].Volatile = s.Path, s.Volatile
 		for _, p := range s.Parts {
 			w, h := split(p)
 			wraps[i] = append(wraps[i], w)
@@ -388,7 +401,13 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 		for _, cl := range ClusterParts(sub) {
 			first := members[cl.Members[0]]
 			res := out.Pages[idx[first]].Code
-			t := SiteTemplate{Head: res.Head, Lang: res.Lang, Attrs: [2]string{res.HTMLAttrs, res.BodyAttrs}, Rule: cl.Rule}
+			// The template's head: what every page it serves has in its head (a page's own
+			// structured data, a stylesheet with its own cache-buster stay in that page's head).
+			heads := make([]string, 0, len(cl.Members))
+			for _, m := range cl.Members {
+				heads = append(heads, out.Pages[idx[members[m]]].Code.Head)
+			}
+			t := SiteTemplate{Head: CommonHead(heads), Lang: res.Lang, Attrs: [2]string{res.HTMLAttrs, res.BodyAttrs}, Rule: cl.Rule}
 			names := sitePartNames(res, header)
 			for j, h := range cl.Parts {
 				name := "Part"
@@ -414,6 +433,53 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 		}
 	}
 	return list
+}
+
+// CommonHead is the head markup every one of heads has: the first head's top-level elements (and
+// the text between them) that each other head holds as written, in order.
+func CommonHead(heads []string) string {
+	if len(heads) == 0 {
+		return ""
+	}
+	if len(heads) == 1 {
+		return heads[0]
+	}
+	lines := strings.Split(heads[0], "\n")
+	// The head markup is one top-level element per line (ConvertCode's head); an element over
+	// several lines (an inline style) is kept whole.
+	var elems []string
+	var cur strings.Builder
+	depth := 0
+	for _, l := range lines {
+		if cur.Len() > 0 {
+			cur.WriteByte('\n')
+		}
+		cur.WriteString(l)
+		depth += strings.Count(l, "<style") + strings.Count(l, "<script") + strings.Count(l, "<noscript") -
+			strings.Count(l, "</style>") - strings.Count(l, "</script>") - strings.Count(l, "</noscript>")
+		if depth <= 0 {
+			elems = append(elems, cur.String())
+			cur.Reset()
+			depth = 0
+		}
+	}
+	if cur.Len() > 0 {
+		elems = append(elems, cur.String())
+	}
+	var keep []string
+	for _, e := range elems {
+		all := true
+		for _, h := range heads[1:] {
+			if !strings.Contains(h, e) {
+				all = false
+				break
+			}
+		}
+		if all {
+			keep = append(keep, e)
+		}
+	}
+	return strings.Join(keep, "\n")
 }
 
 // Uncovered lists the pages (indexes into Pages) that no header (header true) or footer template

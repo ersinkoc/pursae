@@ -75,6 +75,12 @@ checked before anything is cut (the shell must be the header's last element, the
 page's only one); otherwise each part keeps its own copy, as before. A canvas page (no header and footer
 part) prints its own shell once by construction.
 
+A page that shares more wrappers with its footer than with its header (Salient: the header sits in the
+shell, the page's rows and the footer in `#ajax-content-wrap` inside it) gets those printed once too
+(`webbuilder.ShellDepths`, `ShareShellDeep`): the header opens the shell, the page opens the deeper
+wrapper and keeps its content in it, the footer closes the deeper wrapper and the shell. A header that
+shares more with the page works the same way the other way round.
+
 A page without a footer (an app screen whose header bar, side panels and main sit in one grid wrapper:
 umbral's Motif page) or without a header shares the shell with the one part it has
 (`webbuilder.ShellPlan`): the header opens it and the page closes it, or the page opens it and the footer
@@ -163,8 +169,9 @@ access ([scopes](rest-api/authentication.md#application-password-scopes)).
   sections' `head`; site icon, canonical, alternates, manifest and `<base>` are dropped (the site's own).
 - **Shell**: the importer finds the page's `main` (the first `<main>`), its site header (the first
   `<header>` before main that no `article`, `section`, `aside`, `nav`, `form` or `dialog` holds) and its
-  site footer (the first such `<footer>` after main; the last one of a page without main) at any depth,
-  and the nearest element that holds them all. The wrappers from the body down to it are the shell
+  site footer (the first such `<footer>` after main; the last one of a page without main; for a site
+  import, a page without either, the block every page ends with — `CodeImportOptions.FooterAt`, see
+  [Importing a site](#importing-a-site)) at any depth, and the nearest element that holds them all. The wrappers from the body down to it are the shell
   (`CodeImport.Shell`): every part's `wrap` starts with them. A header or footer inside a wrapper of
   the shell takes that wrapper along; a main inside wrappers that hold nothing else gets them in its
   sections' `wrap`.
@@ -179,7 +186,18 @@ access ([scopes](rest-api/authentication.md#application-password-scopes)).
   shell as their `wrap`. Elements beside the shell's wrappers (a sprite before it in the body, a
   lightbox after it) become further sections of those templates (`HeaderBefore`, `FooterAfter`), each
   in the wrappers it sat in. A footer the design placed inside `main` stays on the page as well (the
-  design's CSS expects it there) and the footer template excludes that page.
+  design's CSS expects it there) and the footer template excludes that page. A page without main whose
+  footer sits in the content's wrapper (Salient: `#ajax-content-wrap` holds `.container-wrap` and
+  `#footer-outer`) has the wrappers down to the footer opened: what precedes the footer in them is the
+  page's content (in those wrappers), the footer and what follows it there the footer part (same
+  wrappers), what follows the wrappers further footer parts. The page's **scripts after the shell**
+  (WordPress's body-end scripts with the page's post id and nonces) stay on the page as **tail**
+  sections (`CodePart.Tail`, `content.tail`, no wrap): `FillCode` marks the run of tail sections a page
+  ends with (`CodeTailMark`) and a Hello Pursae request prints them after the footer template
+  (`SplitCodeTail`, `wbThemePartsView.Tail`), where the design had them — before, they were printed
+  inside the page's last wrapper, ahead of the footer. A canvas page prints them in place. A JSON-LD
+  script (`application/ld+json`, the page's own structured data) in the header or footer moves to the
+  page's head.
 - **Document**: `<html lang>` (`Lang`), the other `<html>` attributes (`HTMLAttrs`) and the `<body>`
   attributes (`BodyAttrs`, class included) are kept on every section.
 - **References**: relative and root-relative URLs in `src`, `href`, `srcset`, `poster`, `data-src`,
@@ -247,7 +265,22 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
 3. **Templates**: every page's header (with what goes with it) and footer are clustered
    (`webbuilder.ClusterParts`): copies that differ only in the current page's menu link are one
    template with an [active-link rule](#active-links); copies that differ otherwise, or that the rule
-   does not reproduce byte for byte, are clusters of their own. The largest header and footer cluster
+   does not reproduce byte for byte, are clusters of their own. **Volatile bits** do not count
+   (`internal/webbuilder/sitefooter.go`, `normVolatile`): a generated id (letters, then 8+ hex digits,
+   WPBakery's `id="fws_6af66492d500e"`) that nothing else on its page names (`volatileIDs`: the value
+   occurs only as an id), a cache-buster (`?ver=` / `?v=` / `?version=`) and a nonce-like token (8+ hex
+   digits mixing digits and letters) in an inline script or a hidden input; the template keeps the first
+   page's copy of them (nothing on the pages refers to them, and the original site's nonces mean
+   nothing here). Page-specific scripts are not in the templates at all: they are the pages' tail. A
+   **footer without a `<footer>` element** is found across the pages (`siteFooterHints`): from `<body>`,
+   down the wrappers that hold the site header (while nothing varies after the child holding it) and
+   then into the largest element after that child (the content's wrapper, not a drawer beside it), the
+   first level where every page's element children end with a run of the same elements (compared as
+   converted, volatile bits and classes aside) after content that differs: the run's first element is
+   the footer (Decoland: `.nectar-global-section` before `#footer-outer`, inside `#ajax-content-wrap`).
+   A template's **head** is what every page it serves has in its head (`CommonHead`; a page's JSON-LD
+   or a stylesheet with a cache-buster of its own stay in that page's head), and a request merges the
+   page's head first, so the design's order of stylesheets holds. The largest header and footer cluster
    apply to the whole site (`include/general`), the others to their pages
    (`include/singular/page/<id>`, `include/404`); all with priority 10, so they win a tie with other
    whole-site templates (which are listed in the warnings). Pages that have no header (or footer) in

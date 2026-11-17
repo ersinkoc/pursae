@@ -24,7 +24,7 @@
 	{{if .PrimaryMenu}}<nav class="site-navigation" aria-label="Menu">{{.PrimaryMenu}}</nav>{{end}}
 </header>{{end}}{{end}}
 
-{{define "footer"}}{{template "site-footer" .}}
+{{define "footer"}}{{template "site-footer" .}}{{with .Data.wb}}{{.Tail}}{{end}}
 {{.Footer}}{{.AdminBar}}
 </body>
 </html>

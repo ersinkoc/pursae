@@ -45,6 +45,10 @@ type CodeImportOptions struct {
 	OldHosts     []string
 	KeepOldLinks bool
 	SiteURL      string
+	// FooterAt (Split) points at the page's site footer when it has no <footer> element: the
+	// element-child indexes from <body> down to it (ConvertSite finds the block every page ends
+	// with, Salient's #footer-outer).
+	FooterAt []int
 }
 
 // CodePart is one code section of an import.
@@ -52,6 +56,9 @@ type CodePart struct {
 	Name string `json:"name"`
 	HTML string `json:"html"`
 	Wrap string `json:"wrap,omitempty"`
+	// Tail: the page's scripts after its shell (body-end scripts, with Split and a footer): the
+	// front end prints them after the footer template, where the design had them (content.tail).
+	Tail bool `json:"tail,omitempty"`
 	// Binds are the part's content bindings (content.binds, codebind.go) a site import made.
 	Binds string `json:"binds,omitempty"`
 }
@@ -120,12 +127,8 @@ type codeConv struct {
 	tracking     map[string]bool
 }
 
-// ConvertCode converts a full HTML document (see the comment above).
-func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
-	doc, err := html.Parse(strings.NewReader(src))
-	if err != nil {
-		return nil, err
-	}
+// newCodeConv is a converter with o's defaults applied.
+func newCodeConv(o CodeImportOptions) *codeConv {
 	if o.KitURL != "" && !strings.HasSuffix(o.KitURL, "/") {
 		o.KitURL += "/"
 	}
@@ -144,6 +147,16 @@ func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
 		}
 		cv.oldRE = oldScriptRE(hosts)
 	}
+	return cv
+}
+
+// ConvertCode converts a full HTML document (see the comment above).
+func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
+	doc, err := html.Parse(strings.NewReader(src))
+	if err != nil {
+		return nil, err
+	}
+	cv := newCodeConv(o)
 	var root, head, body *html.Node
 	for n := doc.FirstChild; n != nil; n = n.NextSibling {
 		if n.Type == html.ElementNode && n.DataAtom == atom.Html {
@@ -260,7 +273,7 @@ type codePiece struct {
 }
 
 func (cv *codeConv) body(b *html.Node) {
-	sh := findShell(b)
+	sh := findShell(b, codeNodeAt(b, cv.o.FooterAt))
 	var chain []string
 	for _, n := range sh.chain {
 		chain = append(chain, openTag(n))
@@ -332,7 +345,61 @@ func (cv *codeConv) body(b *html.Node) {
 	} else {
 		rest = lead
 	}
-	pieces = cv.split(holder(rest), chain, true)
+	// A page without main whose site footer is a block the content's wrapper also holds (Salient:
+	// #ajax-content-wrap > [.container-wrap, …, #footer-outer, the off-canvas menu]): the wrappers
+	// down to the footer are opened, what precedes the footer in them is content (in those
+	// wrappers), the footer and what follows it in its wrapper the footer part, and what follows
+	// the wrappers the footer template's further parts.
+	var footerMore []*codePiece
+	footerWrap := chain
+	fi := -1
+	if cv.o.Split && main == nil && f0 != nil && sh.footer != nil {
+		for i, n := range rest {
+			if n == f0 {
+				fi = i
+			}
+		}
+	}
+	if fi >= 0 {
+		pieces = cv.split(holder(rest[:fi]), chain, true)
+		wrap := append([]string{}, chain...)
+		cur := f0
+		var levels [][]*html.Node // what follows the path at each level, outermost first
+		levels = append(levels, rest[fi+1:])
+		for cur != sh.footer {
+			next := childOf(cur, sh.footer)
+			wrap = append(wrap, openTag(cur))
+			var before, after []*html.Node
+			seen := false
+			for k := cur.FirstChild; k != nil; k = k.NextSibling {
+				switch {
+				case k.Type != html.ElementNode:
+				case k == next:
+					seen = true
+				case seen:
+					after = append(after, k)
+				default:
+					before = append(before, k)
+				}
+			}
+			if len(before) > 0 {
+				pieces = append(pieces, cv.split(holder(before), append([]string{}, wrap...), false)...)
+			}
+			levels = append(levels, after)
+			cur = next
+		}
+		footer = []*html.Node{sh.footer}
+		footer = append(footer, levels[len(levels)-1]...)
+		footerWrap = wrap
+		for li := len(levels) - 2; li >= 0; li-- {
+			w := append([]string{}, wrap[:len(chain)+li]...)
+			for _, n := range levels[li] {
+				footerMore = appendPiece(footerMore, n, w)
+			}
+		}
+	} else {
+		pieces = cv.split(holder(rest), chain, true)
+	}
 	if main != nil {
 		pieces = append(pieces, cv.split(main, append(append([]string{}, mainWrap...), openTag(main)), false)...)
 	}
@@ -358,7 +425,6 @@ func (cv *codeConv) body(b *html.Node) {
 			pieces = append(pieces, &codePiece{nodes: []*html.Node{n}, wrap: chain, tag: n.DataAtom, name: partName(n, len(pieces))})
 		}
 	}
-	footerWrap := chain
 	// A footer that is the last part (inside main, or of a page without main), kept with its
 	// wrappers minus main itself.
 	if cv.o.Split && footer == nil {
@@ -410,7 +476,8 @@ func (cv *codeConv) body(b *html.Node) {
 	// Elements beside the shell's wrappers (in the body, or in an outer wrapper): with Split, those
 	// before go with the header template and those after with the footer template, each part
 	// keeping the wrappers it sat in; scripts after the shell go with the last part.
-	var before, beyond []*codePiece
+	var before, beyond, tailParts []*codePiece
+	beyond = footerMore
 	for i, c := range sh.chain {
 		w := append([]string{}, chain[:i]...)
 		for n := c.Parent.FirstChild; n != nil && n != c; n = n.NextSibling {
@@ -426,12 +493,77 @@ func (cv *codeConv) body(b *html.Node) {
 				continue
 			}
 			if isScripty(n) {
+				if cv.o.Split && len(footer) > 0 {
+					// After the footer, as in the design: printed after the footer template.
+					tailParts = appendPiece(tailParts, n, nil)
+					continue
+				}
 				last := lastPiece()
 				last.nodes = append(last.nodes, n)
 				continue
 			}
 			beyond = appendPiece(beyond, n, w)
 		}
+	}
+	// A page's structured data in its header or footer (JSON-LD: the page's own SEO data) goes to
+	// the page's head, so the templates shared by the site's pages do not carry one page's data.
+	if cv.o.Split && (len(header) > 0 || len(footer) > 0) {
+		var lifted []string
+		lift := func(nodes []*html.Node) {
+			for _, n := range nodes {
+				for _, sc := range codeFindAll(n, func(x *html.Node) bool {
+					return x.DataAtom == atom.Script && strings.EqualFold(strings.TrimSpace(attr(x, "type")), "application/ld+json")
+				}) {
+					if sc == n || sc.Parent == nil {
+						continue // a top-level script is handled below
+					}
+					sc.Parent.RemoveChild(sc)
+					cv.rewrite(sc)
+					lifted = append(lifted, render(sc))
+				}
+			}
+		}
+		keepTop := func(nodes []*html.Node) []*html.Node {
+			out := nodes[:0]
+			for _, n := range nodes {
+				if n.DataAtom == atom.Script && strings.EqualFold(strings.TrimSpace(attr(n, "type")), "application/ld+json") {
+					cv.rewrite(n)
+					lifted = append(lifted, render(n))
+					continue
+				}
+				out = append(out, n)
+			}
+			return out
+		}
+		if len(header) > 0 {
+			lift(pre)
+			lift(header)
+			pre = keepTop(pre)
+			for _, p := range before {
+				lift(p.nodes)
+				p.nodes = keepTop(p.nodes)
+			}
+		}
+		if len(footer) > 0 {
+			lift(footer)
+			footer = keepTop(footer)
+			if len(footer) == 0 {
+				footer = nil
+			}
+		}
+		if len(lifted) > 0 {
+			if cv.out.Head != "" {
+				cv.out.Head += "\n"
+			}
+			cv.out.Head += strings.Join(lifted, "\n")
+		}
+		var keep []*codePiece
+		for _, p := range before {
+			if len(p.nodes) > 0 {
+				keep = append(keep, p)
+			}
+		}
+		before = keep
 	}
 	if len(header) > 0 {
 		for _, p := range before {
@@ -458,6 +590,15 @@ func (cv *codeConv) body(b *html.Node) {
 			name = "Part " + strconv.Itoa(i+1)
 		}
 		cv.out.Sections = append(cv.out.Sections, CodePart{Name: name, HTML: cv.markup(p.nodes), Wrap: strings.Join(p.wrap, "\n")})
+	}
+	if len(cv.out.Sections) > 0 || cv.out.Footer == nil {
+		for _, p := range tailParts {
+			cv.out.Sections = append(cv.out.Sections, CodePart{Name: "Scripts", HTML: cv.markup(p.nodes), Tail: true})
+		}
+	} else if len(tailParts) > 0 { // a page of a header and footer only: its scripts go with the footer
+		for _, p := range tailParts {
+			cv.out.FooterAfter = append(cv.out.FooterAfter, CodePart{Name: "Scripts", HTML: cv.markup(p.nodes)})
+		}
 	}
 }
 
@@ -487,7 +628,7 @@ var codeSectioning = map[atom.Atom]bool{atom.Article: true, atom.Section: true, 
 // one of a page without main) at any depth, and the nearest element that holds all of them: the
 // wrappers from the body down to it are the shell chain (a design's
 // <div class="flex min-h-screen flex-col"> around its header, main and footer).
-func findShell(b *html.Node) codeShell {
+func findShell(b, footerHint *html.Node) codeShell {
 	var sh codeShell
 	var footers []*html.Node
 	afterMain := map[*html.Node]bool{}
@@ -529,6 +670,11 @@ func findShell(b *html.Node) codeShell {
 	if sh.main == nil && len(footers) > 0 {
 		sh.footer = footers[len(footers)-1]
 	}
+	// A design without a <footer> element: the block every page of the site ends with.
+	if sh.footer == nil && footerHint != nil && (sh.header == nil || !codeContains(sh.header, footerHint) && !codeContains(footerHint, sh.header)) &&
+		(sh.main == nil || !codeContains(sh.main, footerHint) && !codeContains(footerHint, sh.main)) {
+		sh.footer = footerHint
+	}
 	var paths [][]*html.Node
 	for _, n := range []*html.Node{sh.main, sh.header, sh.footer} {
 		if n == nil {
@@ -553,6 +699,80 @@ func findShell(b *html.Node) codeShell {
 	}
 	sh.chain = common
 	return sh
+}
+
+// codeFindAll lists the elements under n (n included) that match.
+func codeFindAll(n *html.Node, match func(*html.Node) bool) []*html.Node {
+	var out []*html.Node
+	var walk func(x *html.Node)
+	walk = func(x *html.Node) {
+		if x.Type == html.ElementNode && match(x) {
+			out = append(out, x)
+		}
+		for k := x.FirstChild; k != nil; k = k.NextSibling {
+			walk(k)
+		}
+	}
+	walk(n)
+	return out
+}
+
+// codeContains reports whether n is a or inside a.
+func codeContains(a, n *html.Node) bool {
+	for ; n != nil; n = n.Parent {
+		if n == a {
+			return true
+		}
+	}
+	return false
+}
+
+// codeNodeAt is the element at path (element-child indexes from b), nil when there is none.
+func codeNodeAt(b *html.Node, path []int) *html.Node {
+	if b == nil || len(path) == 0 {
+		return nil
+	}
+	n := b
+	for _, i := range path {
+		k := 0
+		var next *html.Node
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			if c.Type != html.ElementNode {
+				continue
+			}
+			if k == i {
+				next = c
+				break
+			}
+			k++
+		}
+		if next == nil {
+			return nil
+		}
+		n = next
+	}
+	return n
+}
+
+// codePathOf is the path of n from b (codeNodeAt's), nil when n is not inside b.
+func codePathOf(b, n *html.Node) []int {
+	var out []int
+	for ; n != nil && n != b; n = n.Parent {
+		if n.Parent == nil {
+			return nil
+		}
+		k := 0
+		for c := n.Parent.FirstChild; c != nil && c != n; c = c.NextSibling {
+			if c.Type == html.ElementNode {
+				k++
+			}
+		}
+		out = append([]int{k}, out...)
+	}
+	if n != b {
+		return nil
+	}
+	return out
 }
 
 // childOf is the child of parent that is or holds n.

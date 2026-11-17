@@ -30,7 +30,7 @@ func CodeInfo(doc json.RawMessage) *CodeDocInfo {
 	list, _ := CodeSections(doc)
 	var info *CodeDocInfo
 	for _, s := range list {
-		if s.Hidden {
+		if s.Hidden || s.Tail { // a tail section is printed after the footer, outside the shell
 			continue
 		}
 		chain := wrapChain(s.Wrap)
@@ -244,6 +244,69 @@ func ShareShell(header, main, footer string, chain []string, mainCode bool) (h, 
 		default:
 			m = main[e.openEnd:e.closeStart]
 		}
+	}
+	return h, m, f, true
+}
+
+// ShellDepths are the wrappers a header and a code page share (kh: the header's last chain and every
+// section of the page) and the page and a footer share (kf: every section of the page and the
+// footer's first chain). A design whose footer sits in the content's wrapper (Salient:
+// #ajax-content-wrap holds the page's rows and #footer-outer, the header is beside it) shares more
+// with the footer than with the header: ShareShellDeep prints those wrappers once around the page
+// and the footer.
+func ShellDepths(header, footer []string, main *CodeDocInfo) (kh, kf int) {
+	if main == nil {
+		return 0, 0
+	}
+	prefix := func(a, b []string) int {
+		n := 0
+		for n < len(a) && n < len(b) && a[n] == b[n] {
+			n++
+		}
+		return n
+	}
+	return prefix(header, main.Common), prefix(footer, main.Common)
+}
+
+// ShareShellDeep is ShareShell for a header, a code page and a footer that share k wrappers, the
+// header and the page kh ≥ k and the page and the footer kf ≥ k (one of them is k; chain is the
+// deeper side's chain, at least max(kh, kf) long). The header loses the closing tags of its kh
+// wrappers, the footer the opening tags of its kf wrappers, and the page — a single tree of its max(kh,
+// kf) wrappers — loses the shared k and keeps the opening (kf > k) or the closing (kh > k) tags of
+// the deeper ones. ok is false (nothing changed) when the markup does not have them where expected.
+func ShareShellDeep(header, main, footer string, chain []string, k, kh, kf int) (h, m, f string, ok bool) {
+	d := max(kh, kf)
+	if k <= 0 || kh < k || kf < k || d > len(chain) || kh > k && kf > k || blank(header) || blank(footer) {
+		return header, main, footer, false
+	}
+	var good bool
+	if h, good = shellCutHeader(header, chain[:kh]); !good {
+		return header, main, footer, false
+	}
+	if f, good = shellCutFooter(footer, chain[:kf]); !good {
+		return header, main, footer, false
+	}
+	mt := shellTree(main)
+	els, lo, hi := mt, 0, len(main)
+	var ek, ed *shellEl
+	for i := 0; i < d; i++ {
+		e := onlyEl(main, els, lo, hi)
+		if e == nil || e.open != chain[i] || e.selfOpen || !e.closed {
+			return header, main, footer, false
+		}
+		if i == k-1 {
+			ek = e
+		}
+		ed = e
+		els, lo, hi = e.kids, e.openEnd, e.closeStart
+	}
+	switch {
+	case kf > k: // the page opens the deeper wrappers, the footer closes them
+		m = main[ek.openEnd:ed.closeStart]
+	case kh > k: // the header opened them, the page closes them
+		m = main[ed.openEnd:ek.closeStart]
+	default:
+		m = main[ek.openEnd:ek.closeStart]
 	}
 	return h, m, f, true
 }

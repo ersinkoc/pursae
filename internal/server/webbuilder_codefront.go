@@ -97,7 +97,24 @@ func (s *Server) wbCodeParts(c *gin.Context, tp *wbThemeParts, header, main, foo
 	if !mainCode {
 		mInfo = nil
 	}
-	if k, withH, withF := webbuilder.ShellPlan(hc, fc, mInfo); k > 0 {
+	k, withH, withF := webbuilder.ShellPlan(hc, fc, mInfo)
+	kh, kf := webbuilder.ShellDepths(hc, fc, mInfo)
+	if k > 0 && withH && withF && mainCode && (kh > k || kf > k) {
+		// The page shares more wrappers with the footer (or the header) than with both.
+		from := fc
+		if kh > k {
+			from = hc
+		}
+		chain := make([]string, max(kh, kf))
+		for i, w := range from[:len(chain)] {
+			chain[i] = s.wbKitVersioned(w)
+		}
+		if h, m, f, ok := webbuilder.ShareShellDeep(string(tp.view.Header), string(tp.view.Main), string(tp.view.Footer), chain, k, kh, kf); ok {
+			tp.view.Header, tp.view.Main, tp.view.Footer = template.HTML(h), template.HTML(m), template.HTML(f)
+			k = 0 // shared
+		}
+	}
+	if k > 0 {
 		from := hc
 		if !withH {
 			from = fc
