@@ -54,4 +54,5 @@ func wbEditURL(id int64) string {
 func (s *Server) registerWebBuilder(r *gin.Engine) {
 	s.wbRegisterAssets(r) // webbuilder_assets.go
 	s.wbRegisterImport(r) // webbuilder_import.go: exact HTML import page
+	s.wbWizRegister(r)    // webbuilder_siteimport_admin.go: the staged design of the site import
 }

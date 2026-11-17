@@ -180,7 +180,7 @@ folder: `pursae_mcp.py kit-upload <folder> <kit>` then
 
 ### Importing a site
 
-`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, site_name?}` imports a whole
+`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, site_name?}` imports a whole
 static site in one call (`internal/server/webbuilder_siteimport.go`, `webbuilder.ConvertSite`). Upload
 the folder's CSS, JS, fonts and images as the kit first (`web_builder_kit_upload`); the HTML files travel
 in `pages` (a kit holds no HTML, so nothing of the design is served as a page from uploads). Harness:
@@ -213,6 +213,67 @@ The answer lists the pages (`post_id`, `url`, sections), `pages_created` / `page
 (type, id, pages, conditions, `active_links`), `templates_disabled`, `unmapped_links`, `missing_files`
 and `warnings`. The import needs `unfiltered_html` and `edit_theme_options`; the templates show with the
 Hello Pursae theme.
+
+### Importing from the admin
+
+**Web Builder › Import HTML site** (`/wp-admin/web-builder-import`, Turkish "HTML'den site") does the site
+import without a command line or an agent (`internal/server/webbuilder_siteimport_admin.go`,
+`webbuilder_siteimport_zip.go`). The menu entry and every route need `edit_theme_options` **and**
+`unfiltered_html` with Web Builder on, like the MCP tool; the server checks the same on each request.
+
+1. **Upload** a zip of the design's folder (a form field for the kit slug, default: the zip's name). The
+   body is streamed to a file under `uploads/private/web-builder-imports/<id>/` (the private folder
+   only serves signed links), then unpacked entry by entry with the kit's limits (100 MB, 2000 files, 15 MB
+   a file). A path that leaves the folder (`..`, absolute, drive letter, backslashes counted as slashes),
+   a symbolic link, an entry that is not a plain file, case-twin names, and files a kit cannot keep
+   (extension outside the kit's list, names outside `wbKitRel`) reject the whole archive with the names
+   listed; `.git`, `.DS_Store`, `__MACOSX`, `Thumbs.db` and other dot files are skipped silently. `.html` / `.htm`
+   files are kept aside for the importer and never go into a kit. One top folder around everything is
+   stripped. Unpacked sites are removed after a week or with "Discard this upload".
+2. **Analysis** (nothing is written to the site): `webbuilder.PlanSite` and `ConvertSite` run on the staged
+   files — they are pure, so the analysis is the real conversion. It lists the pages with their proposed
+   addresses (`SitePlan.URLs`) and whether each creates or updates a page of an earlier import of the kit, the
+   draft parent pages, the header and footer clusters (pages served, marked menu links), missing files,
+   links to pages that are not in the zip, the external origins the design loads from (kit files and pages),
+   the inline `on*` handlers the nonce policy blocks, the `csp_admin_scripts` / enforced-CSP warning
+   (`wbCodeScriptsWarning`), plain permalinks and a theme other than Hello Pursae, and the viewport widths
+   of the CSS `@media` conditions (`webbuilder.SuggestBreakpoints`, listed only).
+3. **Options**: kit name and slug (an existing kit is replaced only after ticking a box), split the header
+   and footer into templates (default on; off keeps them in every page, `layout: canvas`, MCP
+   `templates: false`), use `index.html` as the front page (default on), publish or import as drafts. Then
+   **Import**: the staged assets are installed as the kit (the same stage + commit as the kit REST routes,
+   `wbKitCommitStage`) and `mcpWBImportSite` runs, the very function behind `web_builder_import_site`. The
+   request is synchronous (a 55-page site takes about two seconds; the server has no write timeout). The
+   report lists pages (edit and view links), templates and the importer's warnings. Drafts are published
+   afterwards with "Publish the pages" (and take the front page then).
+4. **Compare**: the page picker shows the original beside the imported page, both framed on the screen.
+5. **Remove this import** (confirmation page first, then "Delete permanently"): the import is recorded in the
+   option `wb_site_imports` as the posts it created — the owned ids (`_wb_site_kit`) before and after the
+   run are compared, so a second import of a kit that only updates pages records nothing to delete for them —
+   plus whether it created the kit and the front page setting it replaced. Removal deletes only posts that
+   still exist, have the recorded type and still carry the kit's `_wb_site_kit` mark, and the kit only when
+   this import created it; the front page setting returns to its earlier value when it still points at a
+   deleted page. Anything else is left alone and counted.
+
+#### Serving the uploaded design
+
+The compare step has to show uploaded HTML, JavaScript included, on the admin's own origin, so it is
+treated as hostile (`wbWizDesign`, route `/wb-design-preview/<id>/<path>`):
+
+- `Content-Security-Policy: sandbox allow-scripts allow-forms allow-popups; …` without `allow-same-origin`:
+  the document gets an opaque origin, so its scripts cannot read the site's cookies, call the REST API or
+  the admin as the logged-in user, or reach the admin page that frames it, and cannot navigate the top
+  window; popups keep the sandbox. The header travels with the response, so opening a file in a tab is
+  sandboxed too, and the frame carries the same `sandbox` attribute. The rest of the policy lets the design load
+  its own files and https resources (fonts, CDN scripts, images) and forbids form posts and `<base>`;
+  `frame-ancestors 'self'`. `X-Frame-Options` is dropped from these responses (it makes Chromium refuse
+  a sandboxed frame of the same site).
+- The staging id (128 random bits) is the credential, like the exact-import page: a sandboxed frame never
+  sends the admin's `SameSite=Lax` cookie for its own links and font requests, so a login check could not
+  work. The id is shown only to an administrator and expires with the staging folder.
+- Files are read only inside the session's folder (cleaned path, no symlinks exist there), with the type of
+  their extension, `nosniff`, `no-store`, `no-referrer`, `noindex`, and `Access-Control-Allow-Origin: *`
+  (fonts requested by an opaque origin need CORS).
 
 ### Active links
 

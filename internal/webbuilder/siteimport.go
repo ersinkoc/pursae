@@ -51,6 +51,54 @@ type SitePlan struct {
 	Folders []SitePlanFolder `json:"folders"`
 }
 
+// URLs is the site path each planned page gets once published ("/" for the front page,
+// "/hizmet/3/", "/kurumsal/"): the page's slug under the URL of its parent folder (a folder with a
+// page of its own takes that page's URL, a placeholder folder its slug). The 404 page has none.
+func (p SitePlan) URLs() map[string]string {
+	pages := map[string]SitePlanPage{}
+	for _, pg := range p.Pages {
+		pages[pg.Path] = pg
+	}
+	folders := map[string]SitePlanFolder{}
+	for _, f := range p.Folders {
+		folders[f.Key] = f
+	}
+	var folderURL, pageURL func(key string, depth int) string
+	under := func(parent string, depth int) string {
+		if parent == "" {
+			return "/"
+		}
+		return folderURL(parent, depth+1)
+	}
+	folderURL = func(key string, depth int) string {
+		f, ok := folders[key]
+		if !ok || depth > 32 {
+			return "/"
+		}
+		if f.Page != "" {
+			return pageURL(f.Page, depth+1)
+		}
+		return under(f.Parent, depth) + f.Slug + "/"
+	}
+	pageURL = func(path string, depth int) string {
+		pg, ok := pages[path]
+		if !ok || depth > 32 {
+			return "/"
+		}
+		if pg.Front {
+			return "/"
+		}
+		return under(pg.Parent, depth) + pg.Slug + "/"
+	}
+	out := map[string]string{}
+	for _, pg := range p.Pages {
+		if !pg.NotFound {
+			out[pg.Path] = pageURL(pg.Path, 0)
+		}
+	}
+	return out
+}
+
 // IsSitePage reports whether a file is one of the site's pages.
 func IsSitePage(p string) bool {
 	ext := strings.ToLower(path.Ext(p))
@@ -155,6 +203,8 @@ type SiteImportOptions struct {
 	// URLs: each page file → its site path ("/", "/hakkimizda/", "/hizmet/3/"); the 404 page has
 	// none. Every page link of the design is mapped through it.
 	URLs map[string]string
+	// NoSplit keeps every page's header and footer in the page (no header or footer templates).
+	NoSplit bool
 }
 
 // SitePageImport is one converted page.
@@ -217,7 +267,7 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 		if base == "." {
 			base = ""
 		}
-		res, err := ConvertCode(p.HTML, CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: true})
+		res, err := ConvertCode(p.HTML, CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: !o.NoSplit})
 		if err != nil {
 			return nil, fmt.Errorf("%s: %v", p.Path, err)
 		}

@@ -106,7 +106,10 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	if err != nil {
 		return nil, err
 	}
-	opts := webbuilder.SiteImportOptions{KitURL: wbKitURLPrefix + kit + "/", KitFiles: map[string]bool{}, URLs: map[string]string{}}
+	// templates: false keeps each page's header and footer in the page (layout canvas) instead of
+	// making header and footer templates.
+	noSplit := args["templates"] == false
+	opts := webbuilder.SiteImportOptions{KitURL: wbKitURLPrefix + kit + "/", KitFiles: map[string]bool{}, URLs: map[string]string{}, NoSplit: noSplit}
 	for p := range kfiles {
 		opts.KitFiles[p] = true
 	}
@@ -289,6 +292,9 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			title = titleOf(pg.Path)
 		}
 		patch := map[string]any{"layout": "site", "title": truncRunes(title, 200)}
+		if noSplit {
+			patch["layout"] = "canvas"
+		}
 		if dsc := strings.TrimSpace(cr.SEO.Description); dsc != "" {
 			patch["description"] = truncRunes(dsc, 300)
 		}
