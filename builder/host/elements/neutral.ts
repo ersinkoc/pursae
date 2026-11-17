@@ -21,7 +21,9 @@
  *    entities decoded, tabs, newlines and controls ignored);
  *  - SVG animations that would set an href or a handler are removed;
  *  - <meta http-equiv=refresh> and <base> are removed, <object> / <embed> lose what they load,
- *    nested frames get sandbox="" (they could otherwise load a same-origin page that runs),
+ *    nested frames lose their src and get sandbox="" (they could otherwise load a same-origin page
+ *    that runs); embedded content keeps its element (its box) and is marked data-wb-embed-ph, which
+ *    the editor draws as a placeholder (embeds.ts: a video plays on the published page only),
  *    <noscript> is emptied (as a frame with scripts would show it) and <plaintext> becomes <pre>.
  *
  * Serialising and parsing again is not always the identity (mutation XSS): neutralMarkup repeats
@@ -33,6 +35,8 @@ export const INERT = 'text/x-wb-inert'
 export const BLOCKED_URL = 'about:blank#wb-blocked'
 /** The editor's own nodes in the frame document (its <base>): never touched by sweep. */
 export const EDITOR_ATTR = 'data-wb-editor'
+/** Marks embedded content (iframe, object, embed …) of the static copy: drawn as a placeholder. */
+export const EMBED_ATTR = 'data-wb-embed-ph'
 
 const HTML_NS = 'http://www.w3.org/1999/xhtml'
 const XLINK_NS = 'http://www.w3.org/1999/xlink'
@@ -173,9 +177,14 @@ function neutraliseEl(el: Element, opts: NeutralOpts): Element | null {
     for (const n of ['data', 'src', 'codebase', 'classid', 'archive', 'code', 'type']) el.removeAttribute(n)
   }
   if (FRAMES.has(tag)) {
-    if (tag === 'frame') el.removeAttribute('src')
-    else el.setAttribute('sandbox', '')
+    // Nothing is loaded into a nested frame: a video player or a map would only show a broken
+    // player without scripts. The element keeps its box (attributes, classes, styles).
+    el.removeAttribute('src')
+    if (tag !== 'frame') el.setAttribute('sandbox', '')
   }
+  // Embedded content (iframe, object, embed …) is drawn as the editor's placeholder (embeds.ts).
+  if (FRAMES.has(tag) || LOADERS.has(tag)) el.setAttribute(EMBED_ATTR, '')
+  else if (el.hasAttribute(EMBED_ATTR)) el.removeAttribute(EMBED_ATTR)
   if (tag === 'noscript') el.replaceChildren()
   if (opts.prefix) {
     const id = el.getAttribute('data-wbc')

@@ -391,7 +391,7 @@ A page made only of code sections (every imported page, and a header or footer t
 sections) is edited by the **element editor** (`builder/host/elements/`, installed through the thin
 seam patch `0020-elements-seam`, which hands the canvas and the navigator rows of code sections to
 the host). A page that mixes code sections with the builder's own sections keeps the per-run frames
-of patches `0018-code-sections` / `0019-code-blocks` (see below).
+of patches `0018-code-sections` / `0019-code-blocks`, made static by `0021-mixed-frames` (see below).
 
 **The canvas is one frame with the whole page**: the header template, the page's code sections and
 the footer template that Hello Pursae draws around the page on the site (`Boot.codeParts`, read on
@@ -405,7 +405,14 @@ buttons set the frame's width — desktop is a fixed 1440 px page scaled to fit 
 
 **Static edit mode.** The design's scripts do not run: the frame is sandboxed without
 `allow-scripts`, and it gets a neutralised copy of the markup (see [Security model](#security-model));
-the stored markup is never changed. What is on screen is therefore the stored markup, and every
+the stored markup is never changed. **Embedded content** — a YouTube or Vimeo player, a map, any
+`iframe`, `object` or `embed` — does not play in the editor: the element stays (its tag, classes,
+attributes and styles, so its box and the layout around it are the published page's), loads nothing,
+and is drawn as a neutral placeholder with **Embedded content plays on the published page. Publish and
+open the page to watch it.** A click on the placeholder selects the element, so its source is still
+changed in the Content tab; the stored markup and the published page are unchanged and play
+(`elements/embeds.ts`). A `<video>` or `<audio>` file stays a native player. What is on screen is
+therefore the stored markup, and every
 operation is applied to the frame at once without reloading it (the changed sections' new markup is
 reconciled with the elements already there, as neutralised nodes). **Live edit** (bottom bar) runs
 the scripts again, for designs whose content only appears through them (sliders, counters); a
@@ -500,12 +507,26 @@ duplicate or a pasted element gets new `data-wbc` ids, and its HTML ids become `
 inside the copy following them, so the design's accordions, tabs and labels work on both; the inside
 of an `svg` is copied as is.
 
-**Mixed pages** (patches `0018` / `0019`): a run of consecutive code sections is drawn as one frame
-with the design's scripts running; a click selects an element and edits its text in place, the
-toolbar selects the parent, moves the element among its siblings, duplicates and deletes it, and
-**Style** sets inline styles (text color, background, font size and weight, alignment, padding,
-margin, gap, corner radius, width, max width, opacity), classes and the raw `style` attribute;
-**Layers** shows the run's elements. Structural changes reload the frame.
+**Mixed pages** (patches `0018` / `0019`, `0021`): a run of consecutive code sections is drawn as one
+frame (`CodeSection.tsx`, its document from `codeFrameDoc.ts`); the builder's own sections between
+the runs stay React components of the editor's page. The frame follows the element editor's static
+edit mode through the host's **frame guard** (`elements/guard.ts`, installed with the element editor's
+seam): it is sandboxed without `allow-scripts`, its head and body are the neutralised copy, embeds are
+placeholders, and its DOM is swept once loaded. A click selects an element (also an embed placeholder)
+and edits its text in place — written back from the source, so the handlers, scripts and ids inside
+the text stay as stored — the toolbar selects the parent, moves the element among its siblings,
+duplicates and deletes it, **Replace** changes an image, and **Style** sets inline styles (text color,
+background, font size and weight, alignment, padding, margin, gap, corner radius, width, max width,
+opacity), classes and the raw `style` attribute; **Layers** shows the run's elements. Attributes the
+toolbar writes are neutralised in the frame too. Structural changes reload the frame. **Preview**
+runs the design's scripts only after the same confirmation as the element editor (one answer per
+editor session for both); until then each run shows the page without its scripts and the banner.
+There is no Live edit on a mixed page.
+
+Mixed pages are not routed to the element editor's canvas: its frame holds code sections only, while
+the builder's sections are React components with the builder's own selection, inline editing and
+stylesheet in the editor's page; drawing them in the design's frame would mean a static copy of them
+(the published markup) without the builder's editing.
 
 In both, the section list reorders, hides, duplicates and removes code sections, and the inspector
 shows the section's HTML and head code for anything the canvas does not reach.
@@ -557,8 +578,13 @@ draws all payloads with the editor's own modules under the report and the enforc
 them through the reconciler; it fails when one reads the nonce, and checks that the unprotected
 control does.
 
-The per-run frames of mixed pages (patches `0018` / `0019`) are not covered: they always run the
-design's scripts (same origin), as before.
+The per-run frames of mixed pages follow the same three rules (patch `0021-mixed-frames`, the frame
+guard `elements/guard.ts`; see Editing). `html` sections are drawn in a frame with `allow-scripts`
+but without `allow-same-origin` (an opaque origin that cannot reach the editor's page or its nonce).
+Tests: `test/host/elements-embeds.test.ts` (placeholders, the mixed frame's document with every
+payload, write-back, neutralised toolbar attributes) and the mixed-page scenarios of
+`editor-xss.mjs` (two runs around a builder hero section: edit mode and Preview before the
+confirmation read nothing, under the report and the enforced policy, before and after an edit).
 
 ## Binding to content
 
@@ -807,6 +833,8 @@ fixtures `internal/webbuilder/testdata/override`).
   of builder sections is not shown around a code page in the editor (it is on the site).
 - `::before` / `::after` are not styled yet (neither locally nor in a class edit). Style edits on mixed
   pages stay inline styles (patch `0019`), and their frames do not show local styles or class edits.
+  Mixed pages have no Live edit: content only a design's script draws shows in Preview (after the
+  confirmation) and on the published page.
 - Where a value comes from is computed for a horizontal, left-to-right page; shadow DOM, `@scope` and
   user-agent styles are not modelled, and stylesheets from other origins cannot be read (their
   classes are not offered and cannot be edited; a class edit then makes a new unlayered rule). The
@@ -829,12 +857,16 @@ fixtures `internal/webbuilder/testdata/override`).
   with the editor's escaping (`&amp;`, `&lt;`, `&gt;`; other entities as characters), and formatting
   the browser adds that is not on the allowlist (a `style` on a span, a `<font>`) is dropped. An
   element holding scripts or styles is not edited in place.
-- Static edit mode shows what the neutralised copy shows: a design's `<embed>` / `<object>` content,
-  declarative shadow roots (`<template shadowrootmode>`), nested frames' scripts (a YouTube player)
-  and `<noscript>` content are not drawn; `data:` URLs other than images, fonts, audio and video
-  (and SVG images outside `img`, `image`, `source`, `video`, `input`, `link`) are blocked.
-- Live edit and Preview ask once per editor session before running the design's scripts; the answer
-  is not stored, and the mixed-page frames (patches `0018` / `0019`) do not ask.
+- Static edit mode shows what the neutralised copy shows: embedded content (`iframe`, `object`,
+  `embed`: a YouTube or Vimeo player, a map) is a placeholder of the same box that does not play — it
+  plays on the published page; declarative shadow roots (`<template shadowrootmode>`) and
+  `<noscript>` content are not drawn; `data:` URLs other than images, fonts, audio and video (and SVG
+  images outside `img`, `image`, `source`, `video`, `input`, `link`) are blocked. An `object` or
+  `embed` without a `width` / `height` has no size of its own in the editor.
+- Live edit and Preview ask once per editor session before running the design's scripts (the element
+  editor and the mixed-page frames share the answer); the answer is not stored. Under the enforced
+  nonce policy the editor's frames inherit the editor's policy, so even then a design's scripts
+  without the nonce do not run in the editor (they do on the published page).
 
 - A code section is published as written: its markup is trusted (the author has `unfiltered_html`).
   Kits are site-wide code: only administrators should hold them.

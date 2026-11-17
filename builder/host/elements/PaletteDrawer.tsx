@@ -45,6 +45,7 @@ import { inputCls } from '@/builder/StudioPanel'
 import { t } from '../i18n'
 import { act, latest } from './actions'
 import { frameCopy, mergeHeads } from './frame'
+import { embedCss } from './embeds'
 import { hexOf, rootVariables, type VarDef, type VarGroup } from './cssom'
 import { kitsOf, loadCatalog, overrideOf, setOverride, useKitStore } from './kitstyle'
 import type { LocalStyles } from './local'
@@ -280,7 +281,7 @@ function Thumb({ sample, shell, kitCss }: { sample: Sample; shell: { head: strin
   const base = typeof location !== 'undefined' ? location.origin + '/' : '/'
   const doc = useMemo(
     () =>
-      `<!doctype html><html><head><meta charset="utf-8"><base href="${base}">${shell.head}<style data-wb-kit>${kitCss.replace(/<\//g, '<\\/')}</style>` +
+      `<!doctype html><html><head><meta charset="utf-8"><base href="${base}">${shell.head}<style data-wb-kit>${kitCss.replace(/<\//g, '<\\/')}</style><style>${embedCss()}</style>` +
       `<style>html,body{margin:0!important;background:transparent!important;overflow:hidden!important}body>div[data-wb-thumb]{display:flow-root;padding:12px;width:max-content;max-width:${W - 24}px}</style></head>` +
       `<body class="${shell.body}"><div data-wb-thumb>${frameCopy(sample.html, 'static')}</div></body></html>`,
     [shell, sample.html, kitCss, base],
