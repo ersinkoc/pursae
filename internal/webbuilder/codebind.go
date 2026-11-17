@@ -1149,6 +1149,29 @@ func truncRunes(s string, n int) string {
 	return string([]rune(s)[:n])
 }
 
+// FindCodeElement finds an element of a code section's markup by its data-wbc id (wbc) or, when
+// that is empty, by its id attribute; it answers the element's data-wbc id.
+func FindCodeElement(src, wbc, htmlID string) (string, bool) {
+	root := parseSource(src)
+	var found string
+	var walk func(n *srcNode)
+	walk = func(n *srcNode) {
+		for _, k := range n.kids {
+			if found != "" || k.tag == "" {
+				continue
+			}
+			id := k.wbc()
+			if id != "" && ((wbc != "" && id == wbc) || (wbc == "" && htmlID != "" && func() bool { v, _ := k.attr("id"); return v == htmlID }())) {
+				found = id
+				return
+			}
+			walk(k)
+		}
+	}
+	walk(root)
+	return found, found != ""
+}
+
 // CodeLoops lists the loop bindings of a doc's code sections by BindKey.
 func CodeLoops(d *DocState) map[string]LoopSpec {
 	out := map[string]LoopSpec{}

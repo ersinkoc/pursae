@@ -287,7 +287,7 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			sec := &res.Headers[0].Sections[m.Section]
 			sec.Binds = m.Binds(sec.Binds, webbuilder.MenuLocationPrimary, itemIDs)
 			bindReport["menu"] = map[string]any{"id": menuID, "name": wbSiteMenuName(kit), "location": webbuilder.MenuLocationPrimary, "items": m.Items,
-				"edit_url": s.mcpAdminURL(c, "nav-menus.php?menu="+itoa64(menuID))}
+				"edit_url": s.mcpAdminURL(c, "/wp-admin/nav-menus?menu="+itoa64(menuID))}
 		}
 	}
 	section := func(p webbuilder.CodePart, head, lang string, attrs [2]string, active *webbuilder.ActiveRule) map[string]any {

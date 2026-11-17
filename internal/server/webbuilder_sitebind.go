@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -164,6 +165,83 @@ func (s *Server) wbSitePagePlan(c *gin.Context, id int64, pl *webbuilder.SitePag
 	return s.wbSitePageFields(c, id, pl.Fields)
 }
 
+// mcpWBBind is the MCP tool web_builder_bind: binds an element of a code section (by its data-wbc
+// id or its HTML id) to a menu, a loop, a post field or the form endpoint (null removes the
+// binding), then publishes the page or template, like the element editor's binding panel does.
+func mcpWBBind(s *Server, c *gin.Context, args map[string]any) (any, error) {
+	if err := s.mcpNeedBuilder(); err != nil {
+		return nil, err
+	}
+	if _, err := s.mcpRenderer(); err != nil {
+		return nil, err
+	}
+	u := restCurrent(c)
+	if u == nil || !u.Can("unfiltered_html", nil) {
+		return nil, mcpErrf("bindings are part of a code section: the account needs unfiltered_html (an administrator)")
+	}
+	id := argInt(args, "post_id")
+	if id <= 0 {
+		return nil, mcpErrf("post_id is required")
+	}
+	el, htmlID := strings.TrimSpace(argStr(args, "element")), strings.TrimSpace(argStr(args, "html_id"))
+	if el == "" && htmlID == "" {
+		return nil, mcpErrf("name the element: element (its data-wbc id) or html_id (its id attribute)")
+	}
+	var bind *webbuilder.CodeBind
+	if raw, ok := args["bind"]; ok && raw != nil {
+		b, _ := json.Marshal(raw)
+		if err := json.Unmarshal(b, &bind); err != nil || bind == nil {
+			return nil, mcpErrf("bind must be an object {kind: menu|submenu|loop|field|form, …}")
+		}
+	}
+	d, doc, page, err := s.mcpLoadDoc(c, id, true)
+	if err != nil {
+		return nil, err
+	}
+	for _, sec := range doc.Sections {
+		if sec["kind"] != webbuilder.KindCode {
+			continue
+		}
+		content, _ := sec["content"].(map[string]any)
+		src, _ := content["html"].(string)
+		wbc, ok := webbuilder.FindCodeElement(src, el, htmlID)
+		if !ok {
+			continue
+		}
+		existing, _ := content[webbuilder.ContentBinds].(string)
+		binds := webbuilder.ParseCodeBinds(existing)
+		if binds == nil {
+			binds = webbuilder.CodeBinds{}
+		}
+		if bind == nil {
+			delete(binds, wbc)
+		} else {
+			binds[wbc] = bind
+		}
+		js := binds.String()
+		if msgs := webbuilder.CheckCodeBinds(js); len(msgs) > 0 {
+			return nil, mcpErrf("%s", strings.Join(msgs, "; "))
+		}
+		if js == "" {
+			delete(content, webbuilder.ContentBinds)
+		} else {
+			content[webbuilder.ContentBinds] = js
+		}
+		out, err := s.mcpSaveDoc(c, id, d, doc, page, nil, "publish", nil)
+		if err != nil {
+			return nil, err
+		}
+		out["section"], out["element"] = sec["id"], wbc
+		if bind != nil && bind.Kind == webbuilder.BindForm {
+			if sid, ok := sec["id"].(string); ok {
+				out["form"] = webbuilder.BindKey(sid, wbc)
+			}
+		}
+		return out, nil
+	}
+	return nil, mcpErrf("no element %q of a code section on page %d", el+htmlID, id)
+}
+
 // wbSiteGroups saves the groups: each page becomes content (no builder doc of its own, so the
 // single template draws it), each group a single-page template (the largest of a folder for every
 // child of the folder's parent page, the others for their own pages).
@@ -234,7 +312,7 @@ func (s *Server) wbSiteGroups(c *gin.Context, r *webbuilder.ServerRenderer, kit,
 				warnings = append(warnings, res.Pages[p.Page].Path+": "+err.Error())
 				continue
 			}
-			if err := s.store.WebBuilder().DeleteDoc(c, pid); err != nil {
+			if err := s.store.WebBuilder().DeleteDoc(c, pid); err != nil && !errors.Is(err, store.ErrNotFound) {
 				warnings = append(warnings, res.Pages[p.Page].Path+": could not remove its builder page: "+err.Error())
 			}
 			pages = append(pages, res.Pages[p.Page].Path)
