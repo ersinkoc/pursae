@@ -344,7 +344,9 @@ differing pixels (YIQ distance, threshold 0.1, as `builder/test/parity`). Withou
 the site import's plan (`404.html` against a missing URL). Both sides load with reduced motion, a style
 that turns transitions, animations and the caret off, a paused clock (timers run for `--clock` ms, 1000
 by default, so a slider does not move on), are scrolled through (scroll reveals finish) and wait for
-fonts and loaded images; each side is captured alone, in Chromium without LCD text and GPU (otherwise
+every declared font face (`document.fonts`, also the ones the first layout did not ask for: a face that
+starts loading late otherwise lands on one side only, and under load that showed as 0.5–1.4 % of
+re-rasterized text on enerjiosgb) and loaded images; each side is captured alone, in Chromium without LCD text and GPU (otherwise
 text antialiasing varies with load). `--self` compares the source with itself (the noise floor),
 `--mask <selector>` hides live third-party content on both sides (a Google Maps iframe draws its tiles
 at its own pace), `--only <substring>` narrows the pages, `--images all` keeps every image. A scenario

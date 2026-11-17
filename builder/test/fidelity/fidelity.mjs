@@ -153,6 +153,10 @@ async function tick(page, ms) {
 }
 
 async function settle(page) {
+  // Every declared font face loaded, not only those the first layout asked for: a face that starts
+  // loading late (a weight used further down) otherwise lands on one side and not the other, and
+  // a locally installed copy of the family may draw the text meanwhile.
+  await page.evaluate(() => Promise.all(Array.from(document.fonts, (f) => f.load().catch(() => undefined))))
   await page.evaluate(() => document.fonts.ready)
   dbg("fonts ok")
   const { h, vh } = await page.evaluate(() => ({ h: document.documentElement.scrollHeight, vh: innerHeight }))
