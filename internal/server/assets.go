@@ -151,16 +151,35 @@ func inlineList(v any) []string {
 
 var noncePlaceholder = regexp.MustCompile(`NONCE:([A-Za-z0-9_\-]+)`)
 
+// headScripts is the header group of a resolved script list: every script not marked footer
+// and all of its transitive dependencies. In WP_Dependencies a dependency takes the lowest
+// group of the scripts that need it, so a footer script needed by a header script moves up.
+func headScripts(order []string, deps func(string) ([]string, bool)) map[string]bool {
+	var roots []string
+	for _, h := range order {
+		if r := registry.Scripts[h]; r != nil && !r.Footer {
+			roots = append(roots, h)
+		}
+	}
+	head := map[string]bool{}
+	for _, h := range resolve(roots, deps) {
+		head[h] = true
+	}
+	return head
+}
+
 // scriptTags prints the enqueued scripts of one group (header or footer) the way
 // WP_Scripts::do_item() does: extra data, before, the tag, after.
 func (s *Server) scriptTags(c *gin.Context, a *assets, footer bool) template.HTML {
-	order := resolve(a.scripts, func(h string) ([]string, bool) {
+	scriptDeps := func(h string) ([]string, bool) {
 		r, ok := registry.Scripts[h]
 		if !ok {
 			return nil, false
 		}
 		return r.Deps, true
-	})
+	}
+	order := resolve(a.scripts, scriptDeps)
+	inHead := headScripts(order, scriptDeps)
 	printed := c.GetStringMap("wpgo.printedScripts")
 	if printed == nil {
 		printed = map[string]any{}
@@ -172,8 +191,9 @@ func (s *Server) scriptTags(c *gin.Context, a *assets, footer bool) template.HTM
 		if _, done := printed[h]; done {
 			continue
 		}
-		// Header pass prints everything not marked footer; the footer pass prints the rest.
-		if !footer && r.Footer {
+		// Header pass prints every script not marked footer plus what those need; the footer
+		// pass prints the rest.
+		if !footer && !inHead[h] {
 			continue
 		}
 		printed[h] = true
