@@ -397,15 +397,19 @@ them shows **Edit header** / **Edit footer**, which opens that template in the e
 buttons set the frame's width — desktop is a fixed 1440 px page scaled to fit the panel, tablet
 768 px, mobile 390 px — so the design's own `@media` queries apply.
 
-**Static edit mode.** The frame gets a copy of the markup in which the design's scripts do not run
-(a `<script>`'s type becomes `text/x-wb-inert`, inline `on…` handlers are dropped, head scripts
-included); the stored markup is never changed. What is on screen is therefore the stored markup, and
-every operation is applied to the frame at once without reloading it (the changed sections' new
-markup is reconciled with the elements already there). **Live edit** (bottom bar, per editing
-session) runs the scripts again, for designs whose content only appears through them (sliders,
-counters); a structural change then reloads the frame. **Preview** always runs them. An element the
-design hides (a closed menu, the second slide) can be selected in the navigator and **shown
-temporarily** (toolbar or context menu); that is editor-only, like **Hide in the editor**.
+**Static edit mode.** The design's scripts do not run: the frame is sandboxed without
+`allow-scripts`, and it gets a neutralised copy of the markup (see [Security model](#security-model));
+the stored markup is never changed. What is on screen is therefore the stored markup, and every
+operation is applied to the frame at once without reloading it (the changed sections' new markup is
+reconciled with the elements already there, as neutralised nodes). **Live edit** (bottom bar) runs
+the scripts again, for designs whose content only appears through them (sliders, counters); a
+structural change then reloads the frame. **Preview** runs them too. Both run the design with the
+author's admin access, so the first time in an editor session the editor asks **Run this design's
+scripts with your admin access**; until the author confirms, Live edit stays off and Preview shows
+the page without its scripts (a banner offers to run them). The answer is never stored: every editor
+session asks again. An element the design hides (a closed menu, the second slide) can be selected in
+the navigator and **shown temporarily** (toolbar or context menu); that is editor-only, like **Hide
+in the editor**.
 
 **Selecting and editing.** Every control is drawn over the frame, outside the design's DOM (the
 frame only gets the `data-wbc` ids and one `<style data-wb-edit>`):
@@ -424,7 +428,10 @@ frame only gets the `data-wbc` ids and one `<style data-wb-edit>`):
   classes, duplicates, wraps, unwraps, selects the parent, hides or temporarily shows;
 - a double-click on a text (or Enter, or a second click on the selected text) edits it in place, in
   the frame, with bold / italic / link / clear formatting; Enter or a click elsewhere saves, Escape
-  cancels;
+  cancels. The new markup is written from the source, not from the frame: the elements inside keep
+  their stored tags byte for byte (classes, ids, `on…` handlers the static copy does not have), an
+  `svg` or other code inside is copied as stored, and only what the edit added (bold, italic, a link
+  with a safe address, a line break) is written new, without attributes;
 - keys work inside the frame too: undo / redo, copy / paste, duplicate (Ctrl/⌘ D), Delete, Escape
   (parent), the arrows (previous / next sibling, parent, first child), Alt + arrows (move); keys are
   left alone while a text is being edited.
@@ -466,7 +473,11 @@ SVG elements and elements without an end tag are not changed), the **HTML inside
 elements get `data-wbc` ids) and the **attributes** (id, `aria-*`, `data-*`, title, rel, …: names and
 values are checked — never `on…` handlers, `data-wbc`, `style`, `class` or `srcdoc`; `javascript:`,
 `vbscript:` and `data:` URLs are refused, an image source may be a `data:image`). Without a selected
-element the tab shows the section's HTML and head code as before (also under **Section code**).
+element the tab shows the section's HTML and head code as before (also under **Section code**). The
+rich-text box is built node by node from the source tree, never by parsing the design's markup in the
+editor's page: `b`, `strong`, `i`, `em`, `u`, `s`, `a`, `br`, `span`, `code`, `sub` and `sup` without
+attributes (a link keeps its address when it is safe), text as text, anything else (an image, an
+icon) as a placeholder chip that is written back as stored.
 
 The **navigator** (Studio › Structure, or **Layers** in the bottom bar) lists each code section's
 elements with their type icons. Rows are dragged to reorder or reparent elements (also across
@@ -492,6 +503,56 @@ margin, gap, corner radius, width, max width, opacity), classes and the raw `sty
 
 In both, the section list reorders, hides, duplicates and removes code sections, and the inspector
 shows the section's HTML and head code for anything the canvas does not reach.
+
+### Security model
+
+The editor runs on the site's own origin and holds the author's REST nonce
+(`window.__WEB_BUILDER__`), so anything of the design that runs in a same-origin frame can act as the
+author. A code section is trusted when it is **published** (its author has `unfiltered_html`), but
+opening a page in the editor must not run a design the author has not chosen to run — an imported
+design may come from anywhere. The element editor therefore has three rules
+(`builder/host/elements/ElementsCanvas.tsx`, `frame.ts`, `neutral.ts`, `richtext.ts`):
+
+1. **Static edit mode runs nothing.** The frame is `sandbox="allow-same-origin"` without
+   `allow-scripts`: no script, handler, `javascript:` URL or nested document in it can run, whatever
+   the markup holds or however a parser reads it (nested frames inherit the sandbox). The editor does
+   all its work from outside — its listeners on the frame's document (selection, hover, drag and drop,
+   keys forwarded), measuring (`getBoundingClientRect`, `getComputedStyle`, the CSSOM read by the
+   Style panel), in-place text editing (`contenteditable`, the frame's own `execCommand`), the editor
+   stylesheets — which a sandbox without scripts allows. The sandbox and the document always change
+   together (a new frame element when they do).
+2. **The copy is neutralised by the browser's parser** (`neutral.ts`), independently of rule 1. The
+   frame's copy is parsed like the frame parses it (a `<template>` or the parent element as context,
+   in a document without a browsing context, so nothing loads or runs while it is read), every node is
+   walked in every namespace (HTML, SVG, MathML, template contents), and: scripts of every namespace
+   become empty `<script type="text/x-wb-inert">`; `on…` attributes, `srcdoc`, `xml:base` and a
+   template's `shadowrootmode` / `shadowroot` go; `javascript:`, `vbscript:` and non-media `data:`
+   URLs in any URL attribute (`href`, `src`, `action`, `formaction`, `data`, `poster`, `xlink:href`,
+   `srcset` candidates, SVG animation `values` / `to` / `from` / `by`, …) become
+   `about:blank#wb-blocked`; SVG animations of `href` or a handler, `<meta http-equiv=refresh>` and
+   `<base>` are removed; `<object>` / `<embed>` lose what they load; nested frames get `sandbox=""`;
+   `<noscript>` is emptied (as a frame with scripts would show it) and `<plaintext>` becomes `<pre>`.
+   Serialising and parsing again is repeated until the result is stable (else the markup is shown as
+   text), the frame's DOM is swept again after it loads, and the reconciler inserts only neutralised
+   nodes imported into the frame (no `createContextualFragment` or `innerHTML` of design markup in a
+   live document anywhere in the editor). The stored markup is never changed: only the frame's copy.
+3. **Running the design's scripts is the author's explicit choice**, once per editor session (Live
+   edit, Preview): they then run with the author's access, as on the published page. An opaque-origin
+   frame was considered for Live edit and Preview: it breaks the editing itself (the editor could not
+   reach the frame's DOM), the design's same-site fonts and module scripts (CORS from an origin of
+   `null`), and its `localStorage` / cookies, so the confirmation is the boundary instead.
+
+The **Content panel** never puts design markup into the editor's page (the text box is built from
+the source tree, see above), and text edits are written back from the source (`richtext.writeBack`).
+Tests: `test/host/elements-neutral.test.ts` (every payload of the review and a mutation-XSS list,
+jsdom) and the browser regression `node builder/test/security/editor-xss.mjs` (Playwright Chromium,
+not part of `make builder-test`: run `npx playwright install chromium` once in `builder/`), which
+draws all payloads with the editor's own modules under the report and the enforced CSP and edits
+them through the reconciler; it fails when one reads the nonce, and checks that the unprotected
+control does.
+
+The per-run frames of mixed pages (patches `0018` / `0019`) are not covered: they always run the
+design's scripts (same origin), as before.
 
 ## Styling
 
@@ -620,10 +681,17 @@ fixtures `internal/webbuilder/testdata/override`).
   the design's scripts.
 - The palette's Image starts with an inline placeholder and the Video without a source: set them in
   the Content tab. Form fields keep the design's own form handling (none for a field outside a form).
-- Editing a text replaces the element's inner markup with what the browser serialises (only when the
-  text changed); inline `on…` handlers inside that element are not kept in static edit mode, and an
+- Editing a text rewrites the element's inner markup (only when the text changed): elements inside
+  keep their stored tags, text the edit did not touch keeps its spelling, but changed text is written
+  with the editor's escaping (`&amp;`, `&lt;`, `&gt;`; other entities as characters), and formatting
+  the browser adds that is not on the allowlist (a `style` on a span, a `<font>`) is dropped. An
   element holding scripts or styles is not edited in place.
-- Live edit is a setting of the editing session, not stored per page yet.
+- Static edit mode shows what the neutralised copy shows: a design's `<embed>` / `<object>` content,
+  declarative shadow roots (`<template shadowrootmode>`), nested frames' scripts (a YouTube player)
+  and `<noscript>` content are not drawn; `data:` URLs other than images, fonts, audio and video
+  (and SVG images outside `img`, `image`, `source`, `video`, `input`, `link`) are blocked.
+- Live edit and Preview ask once per editor session before running the design's scripts; the answer
+  is not stored, and the mixed-page frames (patches `0018` / `0019`) do not ask.
 
 - A code section is published as written: its markup is trusted (the author has `unfiltered_html`).
   Kits are site-wide code: only administrators should hold them.

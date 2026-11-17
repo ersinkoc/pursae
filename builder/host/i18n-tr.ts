@@ -352,6 +352,12 @@ const tr: Record<string, string> = {
   "Link": "Bağlantı", // i18n-ignore
   "List": "Liste", // i18n-ignore
   "Live edit": "Canlı düzenle", // i18n-ignore
+  "The design’s scripts are not running in this preview.": "Bu önizlemede tasarımın betikleri çalışmıyor.", // i18n-ignore
+  "Run them…": "Çalıştır…", // i18n-ignore
+  "Run this design’s scripts?": "Bu tasarımın betikleri çalıştırılsın mı?", // i18n-ignore
+  "The design’s scripts will run inside the editor with your admin access: they can do anything you can do on this site, such as change content, settings and users.": "Tasarımın betikleri editörün içinde sizin yönetici yetkinizle çalışır: bu sitede sizin yapabildiğiniz her şeyi yapabilirler; örneğin içeriği, ayarları ve kullanıcıları değiştirebilirler.", // i18n-ignore
+  "Only continue if you trust where this design came from. Editing works without them; this is asked again in every editor session.": "Yalnızca bu tasarımın kaynağına güveniyorsanız devam edin. Düzenleme betikler olmadan da çalışır; bu soru her editör oturumunda yeniden sorulur.", // i18n-ignore
+  "Run this design’s scripts with your admin access": "Bu tasarımın betiklerini yönetici yetkimle çalıştır", // i18n-ignore
   "Move down": "Aşağı taşı", // i18n-ignore
   "Move up": "Yukarı taşı", // i18n-ignore
   "Only a container with elements inside can be unwrapped.": "Yalnızca içinde öğe olan bir kapsayıcının sarmalayıcısı kaldırılabilir.", // i18n-ignore
