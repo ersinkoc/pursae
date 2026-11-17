@@ -1,0 +1,6 @@
+Lexend (https://github.com/googlefonts/lexend)
+Copyright 2018 The Lexend Project Authors.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+The full license text is available at https://openfontlicense.org/open-font-license-official-text/
+Files: lexend-latin.woff2, lexend-latin-ext.woff2 (variable, weights 300-700, Google Fonts subsets).

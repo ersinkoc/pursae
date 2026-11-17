@@ -8,3 +8,24 @@
 
 /* Edit Post: the permalink line starts flush with the title box above it (core pads it 10px). */
 #titlediv #edit-slug-box { padding-left: 0; padding-right: 0; }
+
+/* Profile › Administration Theme: two cards with a tiny preview of each look (admin_theme.go). */
+.admin-theme-list { display: flex; flex-wrap: wrap; gap: 12px; }
+.admin-theme-list > .description { flex-basis: 100%; margin: 0; }
+.admin-theme-option { display: flex; flex-direction: column; width: 220px; border: 1px solid #c3c4c7; background: #fff; cursor: pointer; }
+.admin-theme-option.selected, .admin-theme-option:has(input:checked) { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
+.admin-theme-preview { position: relative; display: block; height: 72px; border-bottom: 1px solid #dcdcde; overflow: hidden; }
+.admin-theme-preview i, .admin-theme-preview b, .admin-theme-preview em { position: absolute; display: block; }
+.admin-theme-preview i { left: 0; right: 0; top: 0; height: 10px; }
+.admin-theme-preview b { left: 0; top: 10px; bottom: 0; width: 46px; }
+.admin-theme-preview em { left: 58px; right: 12px; top: 22px; bottom: 12px; }
+.admin-theme-classic .admin-theme-preview { background: #f0f0f1; }
+.admin-theme-classic .admin-theme-preview i { background: #1d2327; }
+.admin-theme-classic .admin-theme-preview b { background: #1d2327; }
+.admin-theme-classic .admin-theme-preview em { background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; }
+.admin-theme-modern .admin-theme-preview { background: #f4f4f5; }
+.admin-theme-modern .admin-theme-preview i { background: #16171a; }
+.admin-theme-modern .admin-theme-preview b { background: #16171a; }
+.admin-theme-modern .admin-theme-preview em { background: #fff; border: 1px solid #e6e6e8; box-shadow: inset 0 3px 0 #4c60ef; }
+.admin-theme-text { display: block; padding: 10px 12px 12px; }
+.admin-theme-text .description { display: block; margin-top: 4px; }

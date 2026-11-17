@@ -39,6 +39,8 @@ type profileData struct {
 	SyntaxOff        bool   // "Disable syntax highlighting when editing code"
 	Colors           []adminColor
 	Color            string // admin_color
+	Themes           []adminTheme
+	Theme            string // admin_theme
 	OtherSessions    int
 	AvatarID         int64
 	CanUpload        bool
@@ -88,6 +90,7 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 	d.Languages, _ = s.languageChoices(d.Locale, true)
 	d.ShowEditorChoice, d.DefaultEditor = s.classicSwitchAllowed(), s.userDefaultEditor(target)
 	d.SyntaxOff, d.Colors, d.Color = !syntaxHighlighting(target), adminColors, adminColorFor(target).Slug
+	d.Themes, d.Theme = adminThemes, adminThemeFor(target).Slug
 	seen := map[string]bool{}
 	add := func(v string) {
 		v = strings.TrimSpace(v)
@@ -358,6 +361,11 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 	for _, sc := range adminColors {
 		if sc.Slug == c.PostForm("admin_color") {
 			_ = s.setUserMeta(c, target, "admin_color", sc.Slug)
+		}
+	}
+	for _, t := range adminThemes {
+		if t.Slug == c.PostForm("admin_theme") {
+			_ = s.setUserMeta(c, target, "admin_theme", t.Slug)
 		}
 	}
 	s.saveAvatar(c, target)

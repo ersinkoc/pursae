@@ -40,6 +40,7 @@ type adminView struct {
 	Help           *helpTab      // contextual Help panel (screen-meta), nil when the screen has none
 	ScreenOptions  template.HTML // the Screen Options tab (screen-options-wrap), empty when the screen has none
 	Color          adminColor    // the user's admin color scheme
+	Theme          adminTheme    // the user's admin theme: WordPress Classic (default) or Pursae Modern
 
 	CoreUpdate    string // a newer Pursae release for the "is available" notice (core_update_nag.go)
 	FooterUpdate  string // the same release for the footer's "Get Version X"
@@ -342,6 +343,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		v.ScreenOptions = so.(template.HTML)
 	}
 	v.Color = adminColorFor(u)
+	v.Theme = adminThemeFor(u)
 	if tmpl != "admin/block-editor" && tmpl != "admin/dashboard" {
 		v.Help = helpFor(v.AdminPage, v.TypeNow)
 	}

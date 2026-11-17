@@ -4565,5 +4565,11 @@
  "The zip holds no files.": "Zip içinde dosya yok.",
  "That import has nothing left to remove (it was removed, or it created nothing).": "Bu içe aktarmadan kaldırılacak bir şey kalmadı (kaldırıldı veya hiçbir şey oluşturmadı).",
  "That import has nothing left to remove.": "Bu içe aktarmadan kaldırılacak bir şey kalmadı.",
- "The zip holds too many entries.": "Zip çok fazla öğe içeriyor."
+ "The zip holds too many entries.": "Zip çok fazla öğe içeriyor.",
+ "Administration Theme": "Yönetim paneli teması",
+ "WordPress Classic": "WordPress Classic",
+ "Pursae Modern": "Pursae Modern",
+ "The familiar WordPress admin.": "Alışık olduğun WordPress yönetim paneli.",
+ "Dark top bar and menu, calm panels, softer type.": "Koyu üst bar ve menü, sade paneller, yumuşak yazı.",
+ "Applies to your own account. WordPress Classic is the default.": "Yalnızca kendi hesabın için geçerlidir. Varsayılan WordPress Classic'tir."
 }

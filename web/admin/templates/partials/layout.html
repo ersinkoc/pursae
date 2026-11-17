@@ -41,11 +41,12 @@ var ajaxurl = '/wp-admin/admin-ajax',
 var _wpColorScheme = {{.Color.Icons}};
 </script>
 {{.ExtraStyles}}{{.HeadScripts}}<link rel="stylesheet" href="/wp-includes/css/wpgo-brand.css?ver={{version}}">
-<link rel="icon" href="/wp-includes/images/brand/logo-32.png" sizes="32x32">
+{{with .Theme.CSS}}<link rel="stylesheet" id="admin-theme-css" href="{{.}}?ver={{version}}">
+{{end}}<link rel="icon" href="/wp-includes/images/brand/logo-32.png" sizes="32x32">
 <link rel="icon" href="/wp-includes/images/brand/logo-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="/wp-includes/images/brand/logo-192.png">
 </head>
-<body class="wp-admin wp-core-ui no-js {{.BodyClass}} auto-fold admin-bar branch-0-1 version-{{version}} admin-color-{{.Color.Slug}} locale-en-us svg">
+<body class="wp-admin wp-core-ui no-js {{.BodyClass}} auto-fold admin-bar branch-0-1 version-{{version}} admin-color-{{.Color.Slug}} {{.Theme.BodyClass}} locale-en-us svg">
 <script {{cspNonce}}>document.body.className = document.body.className.replace('no-js','js');</script>
 <div id="wpwrap">
 {{template "admin-menu" .}}
