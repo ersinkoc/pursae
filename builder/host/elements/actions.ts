@@ -9,7 +9,7 @@ import { t } from '../i18n'
 import { clipboard, getElState, setElState } from './state'
 import { attr, outer } from './html'
 import { copyEntries, entryOf, idsIn, parseStyleAttr, rehome, setDecls, variantOf, withoutDecls, type Device, type LocalEntry, type LocalSection, type LocalStyles, type State } from './local'
-import { duplicate, insert, locate, move, parentId, placeBy, remove, reIdHtml, setAttr, setInner, step, unwrap, whereIs, wrap, type Page, type Place, type Result } from './ops'
+import { childIds, container, duplicate, insert, locate, move, parentId, placeBy, remove, reIdHtml, replaceOuter, setAttr, setInner, setTag, step, tree, unwrap, whereIs, wrap, type Page, type Place, type Result } from './ops'
 
 type B = Pick<BuilderApi, 'doc' | 'dispatch' | 'select' | 'notify'>
 
@@ -69,7 +69,7 @@ const docOf = (b: B) => latest.doc ?? b.doc
 
 /** Selects element id (null: nothing) and its section in the builder. */
 export function selectEl(b: Pick<B, 'select' | 'doc'>, id: string | null, page?: Page) {
-  setElState({ sel: id, editing: null })
+  setElState((s) => ({ sel: id, editing: null, classEdit: s.sel === id ? s.classEdit : null }))
   if (!id) return
   const at = locate(page ?? pageOf(latest.doc ?? b.doc), id)
   if (at) b.select({ sectionId: at.sec, el: 'html' })
@@ -126,8 +126,8 @@ export const act = {
   unwrap(b: B, id: string) {
     if (!commit(b, t('Element unwrapped'), unwrap(page(b), id))) b.notify(t('Only a container with elements inside can be unwrapped.'))
   },
-  setInner(b: B, id: string, html: string) {
-    return commit(b, t('Text changed'), setInner(page(b), id, html))
+  setInner(b: B, id: string, html: string, label = t('Text changed')) {
+    return commit(b, label, setInner(page(b), id, html))
   },
   copy(b: B, id: string) {
     const at = locate(page(b), id)
@@ -161,6 +161,85 @@ export const act = {
     const p = parentId(page(b), id)
     if (p) selectEl(b, p)
     else b.notify(t('This is the section’s outermost element.'))
+  },
+  /** Inserts new markup (a palette element, a design sample) at place, with its local styles. */
+  insertAt(b: B, place: Place, html: string, local: LocalStyles | null, label = t('Element added')) {
+    const r = insert(page(b), place, html)
+    if (!r || !commit(b, label, r, undefined, undefined, local ?? {})) {
+      b.notify(t('The element cannot be added here.'))
+      return false
+    }
+    return true
+  },
+  /** Inserts new markup after the selected element (none: at the end of the selected or last section's content). */
+  insertNear(b: B, sel: string | null, sectionId: string | null, html: string, local: LocalStyles | null, label?: string) {
+    const p = page(b)
+    let place: Place | null = null
+    if (sel) {
+      const at = locate(p, sel)
+      // An empty container takes it inside; anything else gets it after.
+      if (at && container(at.tree, at.el) && !childIds(at.tree, at.el).length && at.el.tag !== 'a' && at.el.tag !== 'button') place = placeBy(p, at.sec, sel, null, true)
+      else {
+        const w = whereIs(p, sel)
+        if (w) place = placeBy(p, w.sec, w.parent, sel, true)
+      }
+    }
+    if (!place) {
+      const sec = sectionId && p.html[sectionId] !== undefined ? sectionId : p.order[p.order.length - 1]
+      if (!sec) return false
+      const t0 = tree(p.html[sec])
+      const tops = childIds(t0, t0.root)
+      const last = tops[tops.length - 1]
+      const lastEl = last ? t0.byId.get(last) : null
+      place = lastEl && container(t0, lastEl) ? placeBy(p, sec, last, null, true) : placeBy(p, sec, null, null, true)
+    }
+    return place ? act.insertAt(b, place, html, local, label) : false
+  },
+  /** Sets (value) or removes (null) attributes of element id, as one history entry. */
+  setAttrs(b: B, id: string, attrs: Record<string, string | null>, label = t('Attributes changed')) {
+    let p = page(b)
+    const html: Record<string, string> = {}
+    for (const [n, v] of Object.entries(attrs)) {
+      const r = setAttr(p, id, n, v)
+      if (!r) continue
+      Object.assign(html, r.html)
+      p = { ...p, html: { ...p.html, ...r.html } }
+    }
+    return Object.keys(html).length ? commit(b, label, { html, select: id }) : false
+  },
+  /** Attribute changes of several elements (an image and its picture's sources), as one history entry. */
+  setAttrsMany(b: B, edits: { id: string; attrs: Record<string, string | null> }[], label: string, select?: string) {
+    let p = page(b)
+    const html: Record<string, string> = {}
+    for (const e of edits) {
+      for (const [n, v] of Object.entries(e.attrs)) {
+        const r = setAttr(p, e.id, n, v)
+        if (!r) continue
+        Object.assign(html, r.html)
+        p = { ...p, html: { ...p.html, ...r.html } }
+      }
+    }
+    return Object.keys(html).length ? commit(b, label, { html, select: select ?? edits[0]?.id }) : false
+  },
+  setTag(b: B, id: string, tag: string) {
+    if (!commit(b, t('Tag changed'), setTag(page(b), id, tag))) {
+      b.notify(t('This element’s tag cannot be changed to {tag}.', { tag }))
+      return false
+    }
+    return true
+  },
+  /** Replaces element id's markup (an icon's svg), keeping its id and classes. */
+  replace(b: B, id: string, html: string, label = t('Icon changed'), keep?: string[]) {
+    return commit(b, label, replaceOuter(page(b), id, html, keep))
+  },
+  copyClasses(b: B, id: string) {
+    const at = locate(page(b), id)
+    clipboard.classes = at ? (attr(at.el, 'class') ?? '').split(/\s+/).filter(Boolean) : null
+    b.notify(clipboard.classes?.length ? t('Classes copied') : t('This element has no classes to copy.'))
+  },
+  pasteClasses(b: B, id: string) {
+    if (!clipboard.classes) return false
+    return act.setAttrs(b, id, { class: clipboard.classes.join(' ') || null }, t('Classes pasted'))
   },
   rename(b: B, sec: string, id: string, name: string, names: Record<string, string>) {
     const next = { ...names }

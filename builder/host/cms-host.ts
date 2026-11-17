@@ -21,6 +21,7 @@ import type { BuilderHost, BuilderHostAi, NavItem, BuilderHostStorage, FormResul
 import type { DocState, PageSettings, SavedComponent } from '@/builder/types'
 import { API_VERSION, ERR, LIMITS, PREF_KEY_PATTERN, routes, type AutosaveResponse, type Boot, type DraftState, type NavigatorResponse, type LibraryItem, type LockResponse, type MediaItem, type Prefs } from './contract'
 import { publishDocument, loadLiveRenderer, type RendererLoader } from './publish'
+import { publishKitOverrides } from './elements/kitstyle'
 import { ScheduleController } from './tools'
 import { createRest, isRestError, uploadMedia, type FetchLike, type RestClient } from './rest'
 import { DynStore } from './dynamic'
@@ -790,6 +791,8 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
       try {
         const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload, previewUrl: templates ? () => templates.getState().preview?.url ?? '' : undefined, scheduleAt: () => (schedule.available ? schedule.pending() : ''), onPublished: (st, date) => schedule.published(st, date) }, input)
         templates?.markPublished()
+        // The design's class and variable edits of this page's kits go live with it (element editor).
+        await publishKitOverrides()
         return { message: out.message, permalink: out.permalink }
       } finally {
         // Edits made while publishing were held back; one that differs from the published input

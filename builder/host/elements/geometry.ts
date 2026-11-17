@@ -4,7 +4,7 @@
  * element is dragged.
  */
 import { contains, elementKids, wbc } from './html'
-import { childIds, container, dropError, locate, placeBy, tree, whereIs, type Page, type Place } from './ops'
+import { childIds, container, dropError, insertError, locate, placeBy, tree, whereIs, type Page, type Place } from './ops'
 
 export interface Box {
   x: number
@@ -69,10 +69,12 @@ const lineAt = (r: DOMRect, axis: Axis, after: boolean) =>
  * Where element `moving` would go when dropped at frame point (x, y); null when nowhere (over a
  * locked header / footer, or no valid container around the point).
  */
-export function dropAt(doc: Document, page: Page, x: number, y: number, moving: string, zoom: number): Drop | null {
+export function dropAt(doc: Document, page: Page, x: number, y: number, moving: string | null, zoom: number): Drop | null {
   const edge = 8 / Math.max(zoom, 0.1)
-  const mv = locate(page, moving)
-  if (!mv) return null
+  // moving null: a new element from the palette (any container takes it).
+  const mv = moving === null ? null : locate(page, moving)
+  if (moving !== null && !mv) return null
+  const refused = (place: Place) => (moving === null ? insertError(page, place) : dropError(page, moving, place))
   let target = doc.elementFromPoint(x, y)?.closest<HTMLElement>('[data-wbc]') ?? null
   if (target && isLocked(target)) return null
   let forceEdge = false
@@ -98,7 +100,7 @@ export function dropAt(doc: Document, page: Page, x: number, y: number, moving: 
     const id = target.getAttribute('data-wbc')!
     const next: HTMLElement | null = target.parentElement?.closest<HTMLElement>('[data-wbc]') ?? null
     const at = locate(page, id)
-    if (!at || (at.sec === mv.sec && contains(mv.el, at.el))) {
+    if (!at || (mv && at.sec === mv.sec && contains(mv.el, at.el))) {
       target = next
       continue
     }
@@ -136,12 +138,12 @@ export function dropAt(doc: Document, page: Page, x: number, y: number, moving: 
         const place = placeBy(page, at.sec, id, near.id, after, moving)
         if (place) drop = { place, line: lineAt(near.r, axis, after), inside: false }
       }
-      if (drop && !dropError(page, moving, drop.place)) return drop
+      if (drop && !refused(drop.place)) return drop
     }
     if (w) {
       const after = pAxis === 'x' ? x > r.left + r.width / 2 : y > r.top + r.height / 2
       const place = id === moving ? null : placeBy(page, w.sec, w.parent, id, after, moving)
-      if (place && !dropError(page, moving, place)) return { place, line: lineAt(r, pAxis, after), inside: false }
+      if (place && !refused(place)) return { place, line: lineAt(r, pAxis, after), inside: false }
     }
     forceEdge = false
     target = next
