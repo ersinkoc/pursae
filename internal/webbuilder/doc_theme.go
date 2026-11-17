@@ -135,6 +135,7 @@ type LoopSpec struct {
 	Offset         int
 	Pagination     string // main only; "none" for query and related
 	Empty          string
+	Parent         int64 // query: only children of this entry (code bindings, LoopParent)
 }
 
 // ParseLoopSpec reads a loop section's content leniently: a missing or invalid value takes the
@@ -164,6 +165,10 @@ func ParseLoopSpec(content map[string]string) LoopSpec {
 		sp.Author = id
 	}
 	sp.ExcludeCurrent = get(LoopExclude) == "current"
+	if id, ok := parseID(get(LoopParent)); ok {
+		sp.Parent = id
+	}
+
 	if n, ok := intIn(get(LoopOffset), 0, MaxLoopOffset); ok {
 		sp.Offset = n
 	}

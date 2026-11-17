@@ -515,8 +515,10 @@ export const CLASS_IN = 'wb-in'
 export const FORM_HONEYPOT = 'wb_hp'
 export const FORM_TIMING = 'wb_t'
 export const FORM_SENT_QUERY = 'wb_form'
-export const FORM_FIELDS = ['name', 'email', 'phone', 'message', 'date', 'choice'] as const
+export const FORM_FIELDS = ['name', 'email', 'phone', 'message', 'date', 'choice', 'company', 'subject'] as const
 export type FormField = (typeof FORM_FIELDS)[number]
+/** A design's form bound to the endpoint may also use field_<name> (code bindings). */
+export const FORM_FIELD_PATTERN = /^field_[a-z0-9_]{1,40}$/
 
 /** postMessage from a data-wb-embed iframe reporting its height. */
 export interface EmbedHeightMessage {
@@ -791,8 +793,13 @@ export const SLOTS = {
   'site.year': 'text',
   'menu.label': 'text',
   'menu.url': 'attr',
+  'menu.link': 'attr',
   'post.field': 'text',
   'post.field-url': 'attr',
+  'post.field-html': 'html',
+  'post.field-attrs': 'attr',
+  'post.title-text': 'text',
+  'post.term-names': 'text',
   'post.title': 'html',
   'post.url': 'attr',
   'post.content': 'html',
@@ -849,7 +856,7 @@ export const SLOTS = {
 } as const satisfies Record<string, SlotMode>
 export type SlotName = keyof typeof SLOTS
 // HTML attribute names, not UI text. i18n-ignore
-export const SLOT_ATTRS = ['href', 'src', 'srcset', 'sizes', 'width', 'height', 'alt', 'datetime', 'aria-current', 'class'] as const
+export const SLOT_ATTRS = ['href', 'src', 'srcset', 'sizes', 'width', 'height', 'alt', 'datetime', 'aria-current', 'class', 'target'] as const
 
 /* ---------- Sample data: preview-context and Boot.dynamic ---------- */
 

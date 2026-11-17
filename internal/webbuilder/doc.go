@@ -680,6 +680,9 @@ func (v *validator) section(s *Section, path string, depth int) {
 		if depth > 0 {
 			v.add(ptr(path, "kind"), VErrKind, "a code section can only be a top-level section")
 		}
+		for _, m := range CheckCodeBinds(s.Content[ContentBinds]) {
+			v.add(ptr(path, "content", ContentBinds), VErrEnum, m)
+		}
 		if s.Local != nil && v.opts.UnfilteredHTML {
 			raw, _ := json.Marshal(s.Local)
 			for _, p := range checkLocal(s.Local, len(raw)) {

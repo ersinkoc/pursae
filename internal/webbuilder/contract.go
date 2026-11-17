@@ -269,10 +269,17 @@ const (
 	FormTiming      = "wb_t"
 	FormNonce       = "wb_nonce" // signed token or session nonce, required on POST
 	FormSentQuery   = "wb_form"  // ?wb_form=sent|error after a no-JS submit (303 back to the page)
+	// A design's form bound to the form endpoint (codebind.go): the form carries data-wb-form and
+	// data-wb-code-form="<key>"; the design's success and error elements data-wb-form-done and
+	// data-wb-form-error with the same key.
+	AttrCodeForm  = "data-wb-code-form"
+	AttrFormDone  = "data-wb-form-done"
+	AttrFormError = "data-wb-form-error"
 )
 
-// Form field names a data-wb-form may carry (input name attributes).
-var FormFields = []string{"name", "email", "phone", "message", "date", "choice"}
+// Form field names a data-wb-form may carry (input name attributes). A design's form bound to the
+// endpoint (codebind.go) maps its inputs to these or to field_<name> (FormFieldPattern).
+var FormFields = []string{"name", "email", "phone", "message", "date", "choice", "company", "subject"}
 
 // ---------------------------------------------------------------------------------------------
 // Document model (upstream src/builder/types.ts). Optional scalars are pointers so that an
@@ -1459,6 +1466,9 @@ const (
 	LoopOffset     = "offset"     // "0"…"50"
 	LoopPagination = "pagination" // LoopPaginations; only for source main
 	LoopEmpty      = "empty"      // text when the loop has no posts, ≤ MaxDynEmptyRunes
+	// LoopParent: query loops of code bindings only: the children of that entry ("<id>" | "").
+	LoopParent = "parent"
+
 
 	LoopSourceMain    = "main"    // the request's own posts (v.Posts, v.Pagination)
 	LoopSourceQuery   = "query"   // a custom query from the keys above
@@ -1500,6 +1510,17 @@ const (
 	// disclosure menu (<details data-wb-menu>) and its feature detection.
 	AttrMenuLoc  = "data-wb-menu-loc"
 	AttrLoopPart = "data-wb-loop-part" // "1/2" | "2/2": split one menu across two lists (split-logo navs)
+	// AttrText fills only the element's own text: its first direct text node that is not blank
+	// gets the (escaped) value of a text slot, its other children stay (a menu button's label
+	// beside its chevron icon). Content bindings of code sections (codebind.go).
+	AttrText = "data-wb-text"
+	// AttrMenuSub, on an element inside a menu item template, repeats its data-wb-loop-item
+	// children per sub-item of that item (a design's dropdown list).
+	AttrMenuSub = "data-wb-menu-sub"
+	// AttrRaw on a post.title / post.content / post.image slot element: the stored value as the
+	// design shows it (title without texturizing, imported HTML content as stored, image src and
+	// alt only). Set by the code bindings.
+	AttrRaw = "data-wb-raw"
 	AttrFormat   = "data-wb-format"    // DynSettings.Format
 	AttrSize     = "data-wb-size"      // DynSettings.Size
 	AttrTax      = "data-wb-tax"       // DynSettings.Tax
@@ -1534,6 +1555,19 @@ const (
 
 	SlotMenuLabel SlotName = "menu.label"
 	SlotMenuURL   SlotName = "menu.url"
+	// SlotMenuLink sets only href (and target when the item has one): a code section's menu item
+	// keeps the design's look, the current item is marked by its active-link rule.
+	SlotMenuLink SlotName = "menu.link"
+
+	// Code bindings (codebind.go): the post title as stored (plain text), the names of the post's
+	// terms as plain text (data-wb-tax, data-wb-sep), a custom field as HTML (sanitized like post
+	// content).
+	SlotPostTitleText SlotName = "post.title-text"
+	SlotPostTermNames SlotName = "post.term-names"
+	SlotPostFieldHTML SlotName = "post.field-html"
+	// SlotPostFieldAttrs writes the attributes the fields <data-wb-field>_<attr> name (href, src,
+	// srcset, alt, …: SlotAttrs), so one element takes several per-post values.
+	SlotPostFieldAttrs SlotName = "post.field-attrs"
 
 	SlotPostTitle         SlotName = "post.title"
 	SlotPostURL           SlotName = "post.url"
@@ -1612,8 +1646,9 @@ const (
 // Slots lists every slot with its mode. Unknown slots render empty.
 var Slots = map[SlotName]SlotMode{
 	SlotSiteTitle: SlotText, SlotSiteTagline: SlotText, SlotSiteURL: SlotAttr, SlotSiteLogo: SlotAttr, SlotSiteYear: SlotText,
-	SlotMenuLabel: SlotText, SlotMenuURL: SlotAttr,
-	SlotPostField: SlotText, SlotPostFieldURL: SlotAttr,
+	SlotMenuLabel: SlotText, SlotMenuURL: SlotAttr, SlotMenuLink: SlotAttr,
+	SlotPostField: SlotText, SlotPostFieldURL: SlotAttr, SlotPostFieldHTML: SlotHTML,
+	SlotPostTitleText: SlotText, SlotPostTermNames: SlotText, SlotPostFieldAttrs: SlotAttr,
 	SlotPostTitle: SlotHTML, SlotPostURL: SlotAttr, SlotPostContent: SlotHTML, SlotPostExcerpt: SlotHTML,
 	SlotPostDate: SlotText, SlotPostModified: SlotText, SlotPostAuthor: SlotText, SlotPostAuthorURL: SlotAttr,
 	SlotPostAvatar: SlotAttr, SlotPostAuthorBio: SlotText, SlotPostImage: SlotAttr, SlotPostTerms: SlotHTML,
@@ -1633,7 +1668,7 @@ var Slots = map[SlotName]SlotMode{
 }
 
 // SlotAttrs are the only attributes an attr slot (or a text slot on <time>) may write.
-var SlotAttrs = []string{"href", "src", "srcset", "sizes", "width", "height", "alt", "datetime", "aria-current", "class"}
+var SlotAttrs = []string{"href", "src", "srcset", "sizes", "width", "height", "alt", "datetime", "aria-current", "class", "target"}
 
 // ClassCurrent is added to the element of the current menu item (with aria-current="page").
 const ClassCurrent = "is-current"
