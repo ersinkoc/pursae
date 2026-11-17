@@ -216,7 +216,9 @@ func (r *wbSlotResolver) ItemKey() string {
 }
 
 // HasChildren reports whether the menu item has sub-items (webbuilder.ItemKeyer).
-func (r *wbSlotResolver) HasChildren() bool { return r.menu != nil && r.tree && len(r.menu.Children) > 0 }
+func (r *wbSlotResolver) HasChildren() bool {
+	return r.menu != nil && r.tree && len(r.menu.Children) > 0
+}
 
 // SubMenu is the item's sub-items (webbuilder.SubMenuer).
 func (r *wbSlotResolver) SubMenu() (webbuilder.LoopIter, bool) {
