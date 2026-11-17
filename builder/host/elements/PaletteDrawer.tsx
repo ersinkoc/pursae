@@ -358,6 +358,7 @@ function DesignTab({ startDrag, secs, parts }: { startDrag: StartDrag; secs: Sec
                 key={s.sig}
                 type="button"
                 data-wb-design-item={s.sig}
+                data-wb-design-kind={s.kind}
                 title={`<${s.tag} class="${s.classes.join(' ')}">`}
                 onPointerDown={(e) => {
                   if (e.button === 0) startDrag(e, add)

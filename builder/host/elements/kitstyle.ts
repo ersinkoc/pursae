@@ -105,6 +105,13 @@ export async function loadKits(slugs: string[]) {
   }
 }
 
+/** The document without the editor's working copies (what the page stores and publishes). */
+export function withoutKits<T extends DocState>(doc: T): T {
+  if (!('wbKits' in doc)) return doc
+  const { wbKits: _drop, ...rest } = doc as T & { wbKits?: unknown }
+  return rest as T
+}
+
 /** The kit's override as the editor shows it: the document's working copy, else the loaded draft. */
 export function overrideOf(doc: DocState, slug: string): KitOverride {
   return (doc as KitDoc).wbKits?.[slug] ?? store.kits[slug]?.saved ?? { rules: [] }
@@ -162,7 +169,8 @@ async function save(slug: string, notify?: (m: string) => void): Promise<void> {
 export function syncKits(doc: DocState, notify?: (m: string) => void) {
   lastDoc = doc
   for (const slug of Object.keys(store.kits)) {
-    if (sameOverride(overrideOf(doc, slug), store.kits[slug].saved)) continue
+    // A refused save (a conflict, no permission) is not retried: the message asked for a reload.
+    if (store.kits[slug].error || sameOverride(overrideOf(doc, slug), store.kits[slug].saved)) continue
     clearTimeout(timers[slug])
     timers[slug] = setTimeout(() => {
       inflight[slug] = save(slug, notify).finally(() => (inflight[slug] = undefined))
@@ -194,6 +202,8 @@ export async function publishKitOverrides(): Promise<void> {
       const r = await h.rest.request<OverrideView>('POST', kitRoute(slug, '/override/publish'), { json: { base: e.version } })
       patchKit(slug, { version: r.data.draftVersion, live: asOverride(r.data.live), pending: false })
     } catch (err) {
+      // A user who may not write the design (no unfiltered_html) publishes the page only.
+      if (isRestError(err) && err.status === 403) continue
       h.ui.notify({ tone: 'warning', message: t('The design’s class and variable changes could not be published: {m}', { m: isRestError(err) ? err.message : String(err) }) })
     }
   }

@@ -61,22 +61,29 @@ export function sampleKind(t: Tree, el: El): SampleKind {
   const k = kindOf(t, el)
   const cls = clsOf(el)
   const text = textOf(t, el, 80).trim()
-  if (el.tag === 'li') return 'list-item'
   if (k === 'heading') return 'heading'
   if (k === 'image') return 'image'
-  if (el.tag === 'button' || (el.tag === 'a' && (hasClass(cls, /(^|-)(btn|button)(-|$)/) || (hasClass(cls, /^(bg|border)-/) && hasClass(cls, /^(px|py|p)-/))))) return 'button'
-  if (el.tag === 'a') return 'link'
   const kids = elementKids(el)
+  const all = (e: El): El[] => elementKids(e).flatMap((x) => [x, ...all(x)])
+  const inside = all(el)
+  // A card: a box (bordered, rounded, shadowed, padded or an article) with a heading or an image
+  // and some text; a layout wrapper (a centred, width-limited container) is not one.
+  const heading = inside.some((x) => /^h[1-6]$/.test(x.tag) || x.tag === 'strong')
+  const media = inside.some((x) => x.tag === 'img' || x.tag === 'svg' || x.tag === 'picture')
+  const para = inside.some((x) => x.tag === 'p' || ((x.tag === 'span' || x.tag === 'div') && ownText(t, x)))
+  const wrapper = hasClass(cls, /^(max-w-|container$|mx-auto$|wrapper|row$|grid$)/)
+  const boxed = el.tag === 'article' || hasClass(cls, /(^|:)(rounded|shadow|border|bg-|p-\d|px-\d|py-\d|card)/)
+  const card = ['article', 'div', 'a', 'li'].includes(el.tag) && !wrapper && boxed && inside.length >= 2 && inside.length <= 40 && (heading || media || inside.length >= 3) && para && text.length > 12
+  // A button: a short label (an icon at most) on a filled or bordered box, or named so.
+  const shortLabel = text.length > 0 && text.length <= 40 && inside.filter((x) => x.tag !== 'path' && !x.foreign).length <= 3
+  if (el.tag === 'button' && !card) return 'button'
+  if (el.tag === 'a' && shortLabel && (hasClass(cls, /(^|-)(btn|button)(-|$)/) || (hasClass(cls, /^(bg|border)-/) && hasClass(cls, /^(px|py|p)-/)))) return 'button'
+  if (card) return 'card'
+  if (el.tag === 'li') return 'list-item'
+  if (el.tag === 'a') return 'link'
   if ((el.tag === 'span' || el.tag === 'small' || el.tag === 'div') && text.length > 0 && text.length <= 32 && kids.length <= 2 && hasClass(cls, /^(rounded|bg-|badge|tag|chip|pill|px-|uppercase|text-xs)/)) return 'badge'
   if (k === 'text') return 'text'
   if (el.tag === 'section' || (el.tag === 'article' && kids.length > 3)) return 'section'
-  // A card: a box with a heading or an image and some text.
-  const all = (e: El): El[] => elementKids(e).flatMap((x) => [x, ...all(x)])
-  const inside = all(el)
-  const heading = inside.some((x) => /^h[1-6]$/.test(x.tag) || x.tag === 'strong')
-  const media = inside.some((x) => x.tag === 'img' || x.tag === 'svg' || x.tag === 'picture')
-  const para = inside.some((x) => x.tag === 'p' || (x.tag === 'span' && ownText(t, x)))
-  if ((el.tag === 'article' || el.tag === 'div' || el.tag === 'a' || el.tag === 'li') && inside.length >= 2 && inside.length <= 60 && (heading || media) && para) return 'card'
   return 'container'
 }
 

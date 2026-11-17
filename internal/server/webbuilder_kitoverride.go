@@ -74,11 +74,15 @@ func wbKitOverrideView(slug string, e *wbKitOverrideEntry) map[string]any {
 	if e == nil {
 		e = &wbKitOverrideEntry{}
 	}
+	live := e.Live
+	if live.Rules == nil {
+		live.Rules = []webbuilder.OverrideRule{}
+	}
 	draft := e.Draft
 	if draft == nil {
-		draft = &e.Live
+		draft = &live
 	}
-	return map[string]any{"slug": slug, "live": e.Live, "version": e.Version, "draft": draft, "draftVersion": e.DraftVersion,
+	return map[string]any{"slug": slug, "live": live, "version": e.Version, "draft": draft, "draftVersion": e.DraftVersion,
 		"pending": webbuilder.KitOverrideCSS(draft) != webbuilder.KitOverrideCSS(&e.Live), "updated": e.Updated}
 }
 

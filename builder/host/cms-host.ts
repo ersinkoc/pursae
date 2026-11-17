@@ -21,7 +21,7 @@ import type { BuilderHost, BuilderHostAi, NavItem, BuilderHostStorage, FormResul
 import type { DocState, PageSettings, SavedComponent } from '@/builder/types'
 import { API_VERSION, ERR, LIMITS, PREF_KEY_PATTERN, routes, type AutosaveResponse, type Boot, type DraftState, type NavigatorResponse, type LibraryItem, type LockResponse, type MediaItem, type Prefs } from './contract'
 import { publishDocument, loadLiveRenderer, type RendererLoader } from './publish'
-import { publishKitOverrides } from './elements/kitstyle'
+import { publishKitOverrides, withoutKits } from './elements/kitstyle'
 import { ScheduleController } from './tools'
 import { createRest, isRestError, uploadMedia, type FetchLike, type RestClient } from './rest'
 import { DynStore } from './dynamic'
@@ -779,9 +779,10 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
     dyn,
     templates,
     schedule,
-    loadDoc: () => initial.doc,
+    loadDoc: () => (initial.doc ? withoutKits(initial.doc) : initial.doc),
     loadPage: () => initial.page,
-    saveDraft: (doc, page) => autosaver.save(doc, page),
+    // The element editor's class and variable edits (doc.wbKits) are kit drafts, not page content.
+    saveDraft: (doc, page) => autosaver.save(withoutKits(doc), page),
     // The builder hands every change over at once; the Autosaver debounces (AUTOSAVE_MIN_MS), so an
     // edit counts as pending (unload warning, flush) from the moment it is made.
     autosaveDelay: 0,
@@ -789,7 +790,7 @@ export function createCmsHost(boot: Boot, deps: CmsHostDeps = {}): CmsHost {
       await autosaver.flush()
       autosaver.hold(true)
       try {
-        const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload, previewUrl: templates ? () => templates.getState().preview?.url ?? '' : undefined, scheduleAt: () => (schedule.available ? schedule.pending() : ''), onPublished: (st, date) => schedule.published(st, date) }, input)
+        const out = await publishDocument({ boot, rest, ui, session, loadRenderer, navigate, reload, previewUrl: templates ? () => templates.getState().preview?.url ?? '' : undefined, scheduleAt: () => (schedule.available ? schedule.pending() : ''), onPublished: (st, date) => schedule.published(st, date) }, { ...input, doc: withoutKits(input.doc) })
         templates?.markPublished()
         // The design's class and variable edits of this page's kits go live with it (element editor).
         await publishKitOverrides()
