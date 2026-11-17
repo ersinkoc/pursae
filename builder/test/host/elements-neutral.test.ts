@@ -33,6 +33,7 @@ function dangers(root: Node): string[] {
       if (tag === 'meta' && /refresh/i.test(el.getAttribute('http-equiv') ?? '')) out.push('meta refresh')
       if ((tag === 'object' || tag === 'embed') && (el.hasAttribute('data') || el.hasAttribute('src'))) out.push(`${tag} loads`)
       if (tag === 'iframe' && el.getAttribute('sandbox') !== '') out.push('iframe without sandbox=""')
+      if (['iframe', 'frame', 'fencedframe', 'portal'].includes(tag) && el.hasAttribute('src')) out.push(`${tag} loads`)
       if (tag === 'noscript' && el.firstChild) out.push('noscript content')
       if (['animate', 'set'].includes(tag) && /href|^on/i.test(el.getAttribute('attributeName') ?? '')) out.push('animation of href / handler')
       for (const a of Array.from(el.attributes)) {
@@ -138,7 +139,7 @@ describe('neutraliser: the frame document', () => {
     const src = '<section class="hero" data-wbc="1"><h1 data-wbc="2">Hi &amp; <em>there</em></h1><img src="/a.png" srcset="/a.png 1x, /a@2x.png 2x" alt=""><a href="/x" target="_blank">x</a><svg viewBox="0 0 10 10"><use href="#i"></use><linearGradient id="g"></linearGradient></svg><iframe src="https://www.youtube.com/embed/x"></iframe></section>'
     const out = neutralMarkup(src)
     expect(out).toBe(
-      '<section class="hero" data-wbc="1"><h1 data-wbc="2">Hi &amp; <em>there</em></h1><img src="/a.png" srcset="/a.png 1x, /a@2x.png 2x" alt=""><a href="/x" target="_blank">x</a><svg viewBox="0 0 10 10"><use href="#i"></use><linearGradient id="g"></linearGradient></svg><iframe src="https://www.youtube.com/embed/x" sandbox=""></iframe></section>',
+      '<section class="hero" data-wbc="1"><h1 data-wbc="2">Hi &amp; <em>there</em></h1><img src="/a.png" srcset="/a.png 1x, /a@2x.png 2x" alt=""><a href="/x" target="_blank">x</a><svg viewBox="0 0 10 10"><use href="#i"></use><linearGradient id="g"></linearGradient></svg><iframe sandbox="" data-wb-embed-ph=""></iframe></section>',
     )
     expect(neutralMarkup('<header data-wbc="2"><a data-wbc="3">x</a></header>', 'h:')).toBe('<header data-wbc="h:2"><a data-wbc="h:3">x</a></header>')
   })

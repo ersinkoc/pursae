@@ -11,6 +11,11 @@
  *   static-no-sandbox the neutraliser alone (old sandbox with allow-scripts): proves layer B
  *   control           the old behaviour (markup as stored, allow-scripts, createContextualFragment
  *                     edit): must be hit, else the harness proves nothing
+ * and for a MIXED page (code sections around a builder hero section; patch 0021, CodeSection.tsx):
+ *   mixed-edit        each run's frame in edit mode: guard's static copy, no allow-scripts; toolbar
+ *                     attribute writes (javascript: link, clicked) and a structural reload
+ *   mixed-preview-no-consent   Preview before the author confirmed running the scripts: static too
+ *   mixed-control     the old per-run frame (markup as stored, allow-scripts): must be hit
  *
  * Not part of `make builder-test` (it needs a browser). Run:
  *   cd builder && npm ci && npx playwright install chromium   # once
@@ -42,6 +47,13 @@ const SCENARIOS = [
   ['static-no-sandbox', { static: true, sandbox: 'allow-scripts allow-same-origin allow-forms' }],
   ['control', { static: false, sandbox: 'allow-scripts allow-same-origin allow-forms' }],
 ]
+// Mixed pages (patch 0021): two runs of code sections around a builder hero section, each run a
+// CodeSection.tsx frame (codeFrameDoc + the host's frame guard).
+const MIXED = [
+  ['mixed-edit', { guard: true, edit: true, sandbox: 'allow-same-origin' }],
+  ['mixed-preview-no-consent', { guard: true, edit: false, sandbox: 'allow-same-origin' }],
+  ['mixed-control', { guard: false, edit: true, sandbox: 'allow-scripts allow-same-origin allow-forms' }],
+]
 
 const browser = await chromium.launch()
 let failed = false
@@ -72,10 +84,23 @@ for (const [mode, headers] of Object.entries(MODES)) {
     if (!isControl && leaked.length) console.log(`[${mode}/${name}] LEAKED:`, leaked.join(' | '))
     if (isControl) console.log(`[${mode}/${name}] control hits (expected): ${leaked.length} — ${[...new Set(leaked.map((h) => h.split('@')[0]))].join(', ')}`)
   }
+  for (const [name, opts] of MIXED) {
+    const res = await page.evaluate(([n, o]) => window.WB.runMixed(n, o), [`${name}-${mode}`, opts])
+    const leaked = [...res.loadHits, ...res.editHits].filter((h) => h.includes('SECRET'))
+    const isControl = name === 'mixed-control'
+    // The old per-run frame has no reconciler: under the enforced nonce policy its srcdoc (which
+    // inherits the policy) blocks the stored markup's scripts, so the control must hit in report
+    // mode only (there it proves the harness reaches the nonce).
+    const ok = isControl ? leaked.length > 0 || mode === 'enforce' : leaked.length === 0
+    if (!ok) failed = true
+    rows.push({ mode, scenario: name, load: res.loadHits.length, edit: res.editHits.length, reconciled: '-', ok })
+    if (!isControl && leaked.length) console.log(`[${mode}/${name}] LEAKED:`, leaked.join(' | '))
+    if (isControl) console.log(`[${mode}/${name}] control hits (expected): ${leaked.length}`)
+  }
   await page.close()
 }
 await browser.close()
-console.log('\nmode     scenario            load-hits  edit-hits  reconciled  result')
-for (const r of rows) console.log(`${r.mode.padEnd(8)} ${r.scenario.padEnd(19)} ${String(r.load).padStart(9)}  ${String(r.edit).padStart(9)}  ${String(r.reconciled).padStart(10)}  ${r.ok ? 'PASS' : 'FAIL'}`)
-console.log(failed ? '\nFAIL' : '\nPASS: no payload read the nonce in static mode (report and enforce, before and after an edit)')
+console.log('\nmode     scenario                  load-hits  edit-hits  reconciled  result')
+for (const r of rows) console.log(`${r.mode.padEnd(8)} ${r.scenario.padEnd(25)} ${String(r.load).padStart(9)}  ${String(r.edit).padStart(9)}  ${String(r.reconciled).padStart(10)}  ${r.ok ? 'PASS' : 'FAIL'}`)
+console.log(failed ? '\nFAIL' : '\nPASS: no payload read the nonce in static mode (element editor and mixed-page frames; report and enforce, before and after an edit)')
 process.exit(failed ? 1 : 0)

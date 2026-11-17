@@ -30,12 +30,14 @@ import { KIND_ICON, kindLabel, kindOf, namesOf, tagName } from './kinds'
 import { childIds, locate, movable, parentId, tree, type Page } from './ops'
 import { format, mapSource, startTextEdit, writeBack, type TextEdit } from './richtext'
 import { sweep } from './neutral'
+import { embedCss, embedTarget } from './embeds'
 import { bumpFrame, clipboard, getElState, setElState, toggleIn, useElState } from './state'
 import { localFonts, sectionsCSS, type LocalSection } from './local'
 import { fontUrlFor } from '@/builder/fonts'
 import { style as styleAct } from './actions'
 import { kitsCSS, kitsOf, loadKits, syncKits, useKitStore } from './kitstyle'
 import { Palette, type NewElement } from './PaletteDrawer'
+import { ScriptsConsent } from './ScriptsGate'
 
 const WIDTH = { desktop: 1440, tablet: 768, mobile: 390 } as const
 const BAR = 34
@@ -46,9 +48,10 @@ function partsOf(p: CodeParts | null | undefined) {
   return { header: p?.header?.sections ?? [], footer: p?.footer?.sections ?? [] }
 }
 
-/** The editor-only stylesheet of the frame. */
-function editCss(mode: FrameMode, hidden: ReadonlySet<string>, shown: ReadonlySet<string>, dragging: string | null): string {
-  if (mode === 'preview') return ''
+/** The editor-only stylesheet of the frame (a static frame: embeds drawn as placeholders, also in Preview). */
+function editCss(mode: FrameMode, fmode: FrameMode, hidden: ReadonlySet<string>, shown: ReadonlySet<string>, dragging: string | null): string {
+  const embeds = fmode === 'static' ? embedCss() : ''
+  if (mode === 'preview') return embeds
   const q = (id: string) => `[data-wbc="${CSS.escape(id)}"]`
   let css = '[data-wbc],a[href]{cursor:default}[data-wbc][contenteditable]{cursor:text;outline:none}'
   // An empty container (a new Section, Flexbox, Grid or Div) has a size to see and drop into.
@@ -56,7 +59,7 @@ function editCss(mode: FrameMode, hidden: ReadonlySet<string>, shown: ReadonlySe
   for (const id of shown) css += `${q(id)}{display:revert!important;visibility:visible!important;opacity:1!important}`
   for (const id of hidden) css += `${q(id)}{display:none!important}`
   if (dragging) css += `${q(dragging)}{opacity:.35!important;pointer-events:none!important}`
-  return css
+  return embeds + css
 }
 
 /** Elements edited as text in place: text of their own and no code inside. */
@@ -121,7 +124,7 @@ export function ElementsCanvas() {
   useEffect(() => syncKits(b.doc, (m) => b.notify(m)), [b.doc, kitStore.kits]) // eslint-disable-line react-hooks/exhaustive-deps
   // The document and whether the design's scripts may run in it change together: the sandbox the
   // frame gets is always the one its document was made for (a new frame element when it changes).
-  const [frameSrc, setFrameSrc] = useState(() => ({ html: frameDoc(secs, parts, fmode, editCss(mode, st.hidden, st.shown, null), base, localCss, kitCss), scripts: fmode !== 'static' }))
+  const [frameSrc, setFrameSrc] = useState(() => ({ html: frameDoc(secs, parts, fmode, editCss(mode, fmode, st.hidden, st.shown, null), base, localCss, kitCss), scripts: fmode !== 'static' }))
   const shown = useRef<Record<string, string>>(htmlNow)
   const shownKey = useRef(structKey)
   const sync = useRef<FrameSync | null>(null)
@@ -139,7 +142,7 @@ export function ElementsCanvas() {
     shown.current = htmlNow
     shownKey.current = structKey
     const s = getElState()
-    setFrameSrc({ html: frameDoc(secs, parts, fmode, editCss(mode, s.hidden, s.shown, null), base, localRef.current, kitRef.current), scripts: fmode !== 'static' })
+    setFrameSrc({ html: frameDoc(secs, parts, fmode, editCss(mode, fmode, s.hidden, s.shown, null), base, localRef.current, kitRef.current), scripts: fmode !== 'static' })
   }, [htmlNow, structKey, secs, parts, mode, fmode, base])
 
   useLayoutEffect(() => {
@@ -203,8 +206,8 @@ export function ElementsCanvas() {
   const [dragId, setDragId] = useState<string | null>(null)
   useEffect(() => {
     const el = fdoc()?.querySelector('style[data-wb-edit]')
-    if (el) el.textContent = editCss(mode, st.hidden, st.shown, dragId)
-  }, [st.hidden, st.shown, dragId, mode, loaded])
+    if (el) el.textContent = editCss(mode, fmode, st.hidden, st.shown, dragId)
+  }, [st.hidden, st.shown, dragId, mode, fmode, loaded])
 
   // ---------- size ----------
   useLayoutEffect(() => {
@@ -476,7 +479,7 @@ export function ElementsCanvas() {
         dragTo(e.clientX, e.clientY)
         return
       }
-      lastTarget = e.target as Element
+      lastTarget = embedTarget(d, e.target as Element, e.clientX, e.clientY)
       if (!raf) raf = requestAnimationFrame(hoverAt)
     })
     d.addEventListener('pointerleave', () => {
@@ -492,7 +495,7 @@ export function ElementsCanvas() {
       (e) => {
         const { mode, st } = cur.current
         if (mode === 'preview' || e.button !== 0) return
-        const tg = e.target as Element
+        const tg = embedTarget(d, e.target as Element, e.clientX, e.clientY)!
         if (st.editing && tg.closest('[contenteditable]')) return
         if (partOf(tg)) return
         const el = tg.closest<HTMLElement>('[data-wbc]')
@@ -514,7 +517,8 @@ export function ElementsCanvas() {
     d.addEventListener(
       'click',
       (e) => {
-        const tg = e.target as Element
+        // An embed placeholder takes no pointer events: the one under the pointer is meant.
+        const tg = embedTarget(d, e.target as Element, e.clientX, e.clientY)!
         const a = tg.closest('a[href]')
         const { mode, st, b } = cur.current
         if (mode === 'preview') {
@@ -546,7 +550,7 @@ export function ElementsCanvas() {
       'dblclick',
       (e) => {
         if (cur.current.mode === 'preview') return
-        const el = (e.target as Element).closest<HTMLElement>('[data-wbc]')
+        const el = embedTarget(d, e.target as Element, e.clientX, e.clientY)!.closest<HTMLElement>('[data-wbc]')
         if (!el || isLocked(el) || cur.current.st.editing) return
         e.preventDefault()
         beginText(el.getAttribute('data-wbc')!, { x: e.clientX, y: e.clientY })
@@ -557,7 +561,7 @@ export function ElementsCanvas() {
       'contextmenu',
       (e) => {
         if (cur.current.mode === 'preview') return
-        const el = (e.target as Element).closest<HTMLElement>('[data-wbc]')
+        const el = embedTarget(d, e.target as Element, e.clientX, e.clientY)!.closest<HTMLElement>('[data-wbc]')
         if (!el || isLocked(el) || cur.current.st.editing) return
         e.preventDefault()
         // On the selected element (or inside it) the menu is the selection's.
@@ -1024,44 +1028,6 @@ function ContextMenu({
       {item(shown.has(id) ? t('Stop showing') : t('Show temporarily'), <Eye size={13} />, () => toggleShown(id))}
       <div className="my-1 h-px bg-white/10" />
       {item(t('Delete'), <Trash2 size={13} />, () => act.remove(b, id), { danger: true, disabled: !can, kbd: '⌫' })}
-    </div>
-  )
-}
-
-/**
- * The confirmation before the design's scripts run in the editor (Live edit, Preview): they run in
- * the editor's origin, so they can do whatever the author can on this site. Asked once per editor
- * session; never remembered.
- */
-function ScriptsConsent({ onRun, onCancel }: { onRun: () => void; onCancel: () => void }) {
-  const run = useRef<HTMLButtonElement>(null)
-  useEffect(() => {
-    run.current?.focus()
-    const key = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      e.stopPropagation()
-      onCancel()
-    }
-    window.addEventListener('keydown', key, true)
-    return () => window.removeEventListener('keydown', key, true)
-  }, [onCancel])
-  return (
-    <div className="absolute inset-0 z-50 grid place-items-center bg-black/50 p-4" onClick={(e) => (e.stopPropagation(), onCancel())}>
-      <div role="alertdialog" aria-modal="true" aria-labelledby="wb-scripts-title" data-wb-scripts-consent="" className="w-full max-w-[440px] rounded-xl border border-white/10 bg-[#1d2327] p-5 text-[12.5px] leading-relaxed text-ink-200 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <h2 id="wb-scripts-title" className="mb-2 text-[14px] font-semibold text-white">
-          {t('Run this design’s scripts?')}
-        </h2>
-        <p>{t('The design’s scripts will run inside the editor with your admin access: they can do anything you can do on this site, such as change content, settings and users.')}</p>
-        <p className="mt-2 text-ink-400">{t('Only continue if you trust where this design came from. Editing works without them; this is asked again in every editor session.')}</p>
-        <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <button type="button" onClick={onCancel} className="rounded-md px-3 py-1.5 hover:bg-white/10">
-            {t('Cancel')}
-          </button>
-          <button ref={run} type="button" data-wb-scripts-run="" onClick={onRun} className="rounded-md bg-amber-400 px-3 py-1.5 font-semibold text-black hover:bg-amber-300">
-            {t('Run this design’s scripts with your admin access')}
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
