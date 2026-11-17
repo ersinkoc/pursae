@@ -69,6 +69,9 @@ type wbKit struct {
 	// Origins are the https origins the kit's scripts and stylesheets name (CDN modules, APIs):
 	// pages using the kit allow them in their Content Security Policy.
 	Origins []string `json:"origins,omitempty"`
+	// Breakpoints are the tablet and mobile thresholds of local styles (element editor, Style
+	// panel): set on commit (the request's, else suggested from the kit's stylesheets).
+	Breakpoints *webbuilder.Breakpoints `json:"breakpoints,omitempty"`
 }
 
 func (s *Server) wbKitList() map[string]*wbKit {
@@ -120,7 +123,7 @@ func wbKitRel(p string) (string, bool) {
 // wbKitView is a kit as the REST API shows it.
 func (s *Server) wbKitView(c *gin.Context, k *wbKit) map[string]any {
 	return map[string]any{"slug": k.Slug, "name": k.Name, "version": k.Version, "files": k.Files, "bytes": k.Bytes,
-		"updated": k.Updated, "url": s.links(c).HomeURL(wbKitURLPrefix + k.Slug + "/")}
+		"updated": k.Updated, "url": s.links(c).HomeURL(wbKitURLPrefix + k.Slug + "/"), "breakpoints": s.wbKitBreakpoints(k.Slug)}
 }
 
 // wbKitFiles lists the files under dir (slash paths relative to it) with their sizes.
@@ -330,7 +333,8 @@ func (s *Server) wbRESTKitCommit(c *gin.Context, r *restRequest) {
 	}
 	slug := r.Params["slug"]
 	var in struct {
-		Name string `json:"name"`
+		Name        string                  `json:"name"`
+		Breakpoints *webbuilder.Breakpoints `json:"breakpoints"`
 	}
 	if raw, ok := wbBody(c, r, 4<<10); !ok {
 		return
@@ -382,6 +386,13 @@ func (s *Server) wbRESTKitCommit(c *gin.Context, r *restRequest) {
 	k.Version++
 	k.Files, k.Bytes, k.Updated = len(files), total, wbTime(time.Now())
 	k.Origins = wbKitOrigins(live, files)
+	if in.Breakpoints != nil {
+		bp := in.Breakpoints.Normalize()
+		k.Breakpoints = &bp
+	} else {
+		bp := webbuilder.SuggestLocalBreakpoints(wbKitCSS(live, files))
+		k.Breakpoints = &bp
+	}
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not save the kit.")
 		return
@@ -439,6 +450,67 @@ func wbKitOrigins(dir string, files map[string]int64) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// wbKitCSS is the text of the kit's stylesheets (each at most 4 MB, 16 MB in all).
+func wbKitCSS(dir string, files map[string]int64) []string {
+	var out []string
+	var total int64
+	rels := make([]string, 0, len(files))
+	for rel := range files {
+		rels = append(rels, rel)
+	}
+	sort.Strings(rels)
+	for _, rel := range rels {
+		n := files[rel]
+		if strings.ToLower(path.Ext(rel)) != ".css" || n > 4<<20 || total+n > 16<<20 {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(rel)))
+		if err != nil {
+			continue
+		}
+		total += n
+		out = append(out, string(b))
+	}
+	return out
+}
+
+// wbKitBPCache: breakpoints suggested for kits committed before kits had them, by slug@version.
+var wbKitBPCache sync.Map
+
+// wbKitBreakpoints are the local-style breakpoints of a kit: its own, else suggested from its
+// stylesheets (kits committed before breakpoints existed; cached per version), else the defaults.
+func (s *Server) wbKitBreakpoints(slug string) webbuilder.Breakpoints {
+	if slug == "" || !wbKitSlugRE.MatchString(slug) {
+		return webbuilder.DefaultBreakpoints
+	}
+	k := s.wbKitList()[slug]
+	if k == nil {
+		return webbuilder.DefaultBreakpoints
+	}
+	if k.Breakpoints != nil {
+		return k.Breakpoints.Normalize()
+	}
+	key := slug + "@" + strconv.Itoa(k.Version)
+	if v, ok := wbKitBPCache.Load(key); ok {
+		return v.(webbuilder.Breakpoints)
+	}
+	dir := filepath.Join(s.wbKitRoot(), slug)
+	files, _ := wbKitFiles(dir)
+	bp := webbuilder.SuggestLocalBreakpoints(wbKitCSS(dir, files))
+	wbKitBPCache.Store(key, bp)
+	return bp
+}
+
+// wbLocalBreakpoints fills in the breakpoints of code sections' kits (FillCode prints their local
+// styles with them).
+func (s *Server) wbLocalBreakpoints(list []webbuilder.CodeContent) {
+	for i := range list {
+		if len(list[i].Local) > 0 {
+			list[i].Breakpoints = s.wbKitBreakpoints(list[i].Kit)
+		}
+	}
 }
 
 // wbKitCopy copies the live kit files into the staging folder.

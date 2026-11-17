@@ -811,6 +811,9 @@ type Boot struct {
 	// made of code sections (the element editor shows them, locked, in the page's frame); null for
 	// a template, a canvas page, or when the active theme draws no parts.
 	CodeParts *CodeParts `json:"codeParts"`
+	// KitBreakpoints: the local-style breakpoints of every design kit the page's code sections and
+	// its CodeParts use, by kit slug (a section without a kit uses DefaultBreakpoints).
+	KitBreakpoints map[string]Breakpoints `json:"kitBreakpoints"`
 }
 
 // CodeParts are the header and footer templates around a page, as the editor draws them.

@@ -164,6 +164,8 @@ type wbBoot struct {
 	// CodeParts: the header and footer templates of code sections around the page
 	// (webbuilder_editor_parts.go).
 	CodeParts *webbuilder.CodeParts `json:"codeParts"`
+	// KitBreakpoints: local-style breakpoints of the kits the page and its parts use.
+	KitBreakpoints map[string]webbuilder.Breakpoints `json:"kitBreakpoints"`
 }
 
 // wbDocument is webbuilder.DocumentResponse with raw doc / page JSON (GET documents/{id} answers it
@@ -392,6 +394,7 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 	preview := permalink + previewSep(permalink) + "preview=true"
 	editPost := lb.HomeURL("/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit")
 	publish := u.Can("publish_post", p)
+	parts := s.wbEditorCodeParts(c, p, doc)
 	// Theme Builder (contract §11.7): a template's boot names its type, rules and preview object;
 	// it exits to Appearance › Theme Builder and previews on the front with ?wb_template_preview.
 	var tplBoot *webbuilder.TemplateBoot
@@ -436,16 +439,59 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 			EditOthers:       u.Can("edit_others_posts", nil),
 			EditThemeOptions: u.Can("edit_theme_options", nil),
 		},
-		Locale:     s.userLocale(c),
-		Fonts:      webbuilder.BootFonts{CSSURL: lb.HomeURL("/wp-json" + webbuilder.RouteFontsCSS + "?_wpnonce=" + nonce), Local: s.wbLocalFonts()},
-		Media:      webbuilder.BootMedia{MaxUploadBytes: maxUploadBytes, Types: wbMediaTypes()},
-		SiteAssets: lb.HomeURL(webbuilder.SiteAssetsPath),
-		AI:         webbuilder.BootAI{Enabled: false, Providers: []webbuilder.AIProviderInfo{}},
-		Template:   tplBoot,
-		Site:       s.wbSiteBoot(c, &dyn),
-		Dynamic:    dyn,
-		CodeParts:  s.wbEditorCodeParts(c, p, doc),
+		Locale:         s.userLocale(c),
+		Fonts:          webbuilder.BootFonts{CSSURL: lb.HomeURL("/wp-json" + webbuilder.RouteFontsCSS + "?_wpnonce=" + nonce), Local: s.wbLocalFonts()},
+		Media:          webbuilder.BootMedia{MaxUploadBytes: maxUploadBytes, Types: wbMediaTypes()},
+		SiteAssets:     lb.HomeURL(webbuilder.SiteAssetsPath),
+		AI:             webbuilder.BootAI{Enabled: false, Providers: []webbuilder.AIProviderInfo{}},
+		Template:       tplBoot,
+		Site:           s.wbSiteBoot(c, &dyn),
+		Dynamic:        dyn,
+		CodeParts:      parts,
+		KitBreakpoints: s.wbEditorKitBreakpoints(doc, parts),
 	}
+}
+
+// wbEditorKitBreakpoints is Boot.kitBreakpoints: the breakpoints of the kits the doc (its draft
+// when there is one) and the code parts name.
+func (s *Server) wbEditorKitBreakpoints(doc *wbDocument, parts *webbuilder.CodeParts) map[string]webbuilder.Breakpoints {
+	out := map[string]webbuilder.Breakpoints{}
+	add := func(sections []json.RawMessage) {
+		for _, raw := range sections {
+			var sec struct {
+				Kind    string            `json:"kind"`
+				Content map[string]string `json:"content"`
+			}
+			if json.Unmarshal(raw, &sec) != nil || sec.Kind != webbuilder.KindCode {
+				continue
+			}
+			if k := sec.Content["kit"]; k != "" {
+				if _, ok := out[k]; !ok && len(out) < 16 {
+					out[k] = s.wbKitBreakpoints(k)
+				}
+			}
+		}
+	}
+	if doc != nil {
+		raw := doc.Doc
+		if doc.Draft != nil {
+			raw = doc.Draft.Doc
+		}
+		var d struct {
+			Sections []json.RawMessage `json:"sections"`
+		}
+		if len(raw) > 0 && json.Unmarshal(raw, &d) == nil {
+			add(d.Sections)
+		}
+	}
+	if parts != nil {
+		for _, p := range []*webbuilder.CodeTemplate{parts.Header, parts.Footer} {
+			if p != nil {
+				add(p.Sections)
+			}
+		}
+	}
+	return out
 }
 
 // wbMediaTypes are the MIME types a regular user may upload (wp_get_mime_types), sorted.
