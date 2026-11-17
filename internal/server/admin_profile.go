@@ -91,6 +91,9 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 	d.ShowEditorChoice, d.DefaultEditor = s.classicSwitchAllowed(), s.userDefaultEditor(target)
 	d.SyntaxOff, d.Colors, d.Color = !syntaxHighlighting(target), adminColors, adminColorFor(target).Slug
 	d.Themes, d.Theme = adminThemes, adminThemeFor(target).Slug
+	if d.Theme == "modern" {
+		d.Color = adminColors[0].Slug
+	}
 	seen := map[string]bool{}
 	add := func(v string) {
 		v = strings.TrimSpace(v)

@@ -981,3 +981,127 @@ body.pursae-modern .pa-map-list b { text-align: right; font-weight: 500; color: 
 	body.pursae-modern .pa-map-panel { grid-template-columns: 1fr; }
 	body.pursae-modern .pa-map-main { border-right: 0; border-bottom: 1px solid var(--pm-border); }
 }
+
+/* Profile: Pursae Modern has its own colours, so only the Default scheme is shown (selected) */
+body.pursae-modern #color-picker .color-option:not(:has(#admin_color_modern)) { display: none; }
+body.pursae-modern #color-picker .color-option { background: transparent; border: 1px solid var(--pm-border); padding: 10px 12px; }
+
+/* ===================================================================== section pages (heading + text + form): each section a panel */
+body.pursae-modern.update-core-php .wrap > h2 {
+	margin: 16px 0 0; padding: 18px 24px 4px; background: var(--pm-bg);
+	border: 1px solid var(--pm-border); border-bottom: 0; font-size: 16px;
+}
+body.pursae-modern.update-core-php .wrap > h2 ~ p,
+body.pursae-modern.update-core-php .wrap > h2 ~ form,
+body.pursae-modern.update-core-php .wrap > h2 ~ table,
+body.pursae-modern.update-core-php .wrap > h2 ~ ul {
+	margin: 0; padding: 6px 24px 18px; background: var(--pm-bg);
+	border: 1px solid var(--pm-border); border-top: 0;
+}
+body.pursae-modern.update-core-php .wrap > p.update-last-checked { display: flex; align-items: center; gap: 12px; color: var(--pm-faint); font-size: 13px; }
+body.pursae-modern.update-core-php .wrap > p.update-last-checked .button { margin: 0; }
+
+/* ===================================================================== block editor (Gutenberg) chrome */
+/* Gutenberg reads the admin colour from these custom properties: point them at Pursae blue. */
+body.pursae-modern {
+	--wp-admin-theme-color: #4C60EF;
+	--wp-admin-theme-color--rgb: 76, 96, 239;
+	--wp-admin-theme-color-darker-10: #3346D6;
+	--wp-admin-theme-color-darker-10--rgb: 51, 70, 214;
+	--wp-admin-theme-color-darker-20: #2A3BB8;
+	--wp-admin-theme-color-darker-20--rgb: 42, 59, 184;
+	--wp-components-color-accent: #4C60EF;
+	--wp-components-color-accent-darker-10: #3346D6;
+	--wp-components-color-accent-darker-20: #2A3BB8;
+}
+/* Lexend in the editor's own interface (header, sidebars, popovers, dialogs); the canvas keeps the theme's fonts */
+body.pursae-modern :where(.interface-interface-skeleton__header, .interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .interface-interface-skeleton__footer, .components-popover, .components-modal__frame, .components-snackbar, .editor-post-publish-panel, .block-editor-inserter__menu),
+body.pursae-modern :where(.interface-interface-skeleton__header, .interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .interface-interface-skeleton__footer, .components-popover, .components-modal__frame, .components-snackbar, .editor-post-publish-panel, .block-editor-inserter__menu) *:not(.dashicons):not([class*="dashicons-"]) {
+	font-family: var(--pm-font);
+}
+/* square controls, hairlines */
+body.pursae-modern.block-editor-page .components-button,
+body.pursae-modern.block-editor-page .components-input-control__backdrop,
+body.pursae-modern.block-editor-page .components-input-control__container,
+body.pursae-modern.block-editor-page .components-text-control__input,
+body.pursae-modern.block-editor-page .components-textarea-control__input,
+body.pursae-modern.block-editor-page .components-select-control__input,
+body.pursae-modern.block-editor-page .components-form-token-field__input-container,
+body.pursae-modern.block-editor-page .components-dropdown-menu__menu,
+body.pursae-modern.block-editor-page .components-popover__content,
+body.pursae-modern.block-editor-page .components-modal__frame,
+body.pursae-modern.block-editor-page .block-editor-block-toolbar,
+body.pursae-modern.block-editor-page .block-editor-block-contextual-toolbar,
+body.pursae-modern.block-editor-page .components-toolbar-group,
+body.pursae-modern.block-editor-page .components-toolbar,
+body.pursae-modern.block-editor-page .components-snackbar,
+body.pursae-modern.block-editor-page .editor-document-bar,
+body.pursae-modern.block-editor-page .components-notice { border-radius: 0 !important; }
+body.pursae-modern.block-editor-page .components-button.is-primary { font-weight: 500; }
+body.pursae-modern.block-editor-page .components-button.is-secondary { box-shadow: inset 0 0 0 1px var(--pm-border-2); color: var(--pm-text); }
+body.pursae-modern.block-editor-page .components-button.is-secondary:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--pm-primary); color: var(--pm-primary); }
+body.pursae-modern.block-editor-page .editor-document-bar { background: var(--pm-bg-2); border: 1px solid var(--pm-border); }
+body.pursae-modern.block-editor-page .editor-document-bar:hover { background: var(--pm-hover); }
+body.pursae-modern.block-editor-page .interface-interface-skeleton__header { border-bottom-color: var(--pm-border); }
+body.pursae-modern.block-editor-page .interface-interface-skeleton__sidebar,
+body.pursae-modern.block-editor-page .interface-interface-skeleton__secondary-sidebar { border-color: var(--pm-border); }
+body.pursae-modern.block-editor-page .components-panel__body { border-color: var(--pm-border); }
+body.pursae-modern.block-editor-page .components-panel__body-title,
+body.pursae-modern.block-editor-page .components-panel__body-toggle.components-button { font-weight: 600; color: var(--pm-text); }
+body.pursae-modern.block-editor-page .editor-sidebar__panel-tabs,
+body.pursae-modern.block-editor-page .components-tab-panel__tabs { border-bottom: 1px solid var(--pm-border); }
+body.pursae-modern.block-editor-page .editor-post-panel__row-label { color: var(--pm-muted); }
+body.pursae-modern.block-editor-page .interface-interface-skeleton__footer { border-top-color: var(--pm-border); }
+body.pursae-modern.block-editor-page .editor-visual-editor { background: var(--pm-bg); }
+
+/* ===================================================================== classic editor (post.php / post-new.php) */
+body.pursae-modern #titlediv #title { height: 52px; padding: 0 14px; font-size: 22px; font-weight: 500; letter-spacing: -.01em; }
+body.pursae-modern #titlediv #title::placeholder { color: var(--pm-faint); }
+body.pursae-modern #edit-slug-box { color: var(--pm-faint); font-size: 13px; }
+body.pursae-modern .wp-editor-container,
+body.pursae-modern #wp-content-editor-container { border: 1px solid var(--pm-border); }
+body.pursae-modern .wp-editor-tabs .wp-switch-editor {
+	height: 30px; margin: 0 0 -1px 0; padding: 0 14px; line-height: 30px;
+	background: transparent; border: 1px solid transparent; border-radius: 0; color: var(--pm-muted);
+}
+body.pursae-modern .html-active .switch-html,
+body.pursae-modern .tmce-active .switch-tmce { background: var(--pm-bg); border-color: var(--pm-border); border-bottom-color: var(--pm-bg); color: var(--pm-text); font-weight: 500; }
+body.pursae-modern div.mce-toolbar-grp,
+body.pursae-modern .quicktags-toolbar { background: var(--pm-bg-2) !important; border-bottom: 1px solid var(--pm-border) !important; }
+body.pursae-modern div.mce-toolbar-grp > div { padding: 4px 6px; }
+body.pursae-modern .mce-toolbar .mce-btn-group .mce-btn:hover,
+body.pursae-modern .mce-toolbar .mce-btn-group .mce-btn.mce-active { background: var(--pm-bg); border-color: var(--pm-border); box-shadow: none; border-radius: 0; }
+body.pursae-modern #post-status-info { background: var(--pm-bg-2); border: 1px solid var(--pm-border); border-top: 0; color: var(--pm-faint); }
+body.pursae-modern #post-status-info td { font-size: 12px; }
+body.pursae-modern #major-publishing-actions { background: var(--pm-bg-2); border-top: 1px solid var(--pm-border); padding: 12px 20px; }
+body.pursae-modern #minor-publishing-actions { padding: 12px 20px 4px; }
+body.pursae-modern .misc-pub-section { padding: 7px 20px; color: var(--pm-body); }
+body.pursae-modern #post-body .misc-pub-post-status:before,
+body.pursae-modern #post-body #visibility:before,
+body.pursae-modern .curtime #timestamp:before,
+body.pursae-modern #post-body .misc-pub-revisions:before,
+body.pursae-modern #post-body .misc-pub-section:before { color: var(--pm-faint); }
+body.pursae-modern #submitdiv .postbox-header { background: transparent; }
+body.pursae-modern .categorydiv div.tabs-panel,
+body.pursae-modern .customlinkdiv div.tabs-panel,
+body.pursae-modern .posttypediv div.tabs-panel,
+body.pursae-modern .taxonomydiv div.tabs-panel { border-color: var(--pm-border); background: var(--pm-bg); }
+body.pursae-modern .category-tabs li.tabs,
+body.pursae-modern ul.add-menu-item-tabs li.tabs { border-color: var(--pm-border); background: var(--pm-bg); border-radius: 0; }
+body.pursae-modern #postimagediv .inside img { border: 1px solid var(--pm-border); }
+
+/* media: grid search inline, upload drop zone */
+body.pursae-modern .media-toolbar-primary.search-form { display: flex; align-items: center; gap: 10px; }
+body.pursae-modern .media-toolbar-primary .media-search-input-label { position: static; margin: 0; color: var(--pm-muted); font-size: 13px; }
+body.pursae-modern .media-toolbar-primary input[type=search] { margin: 0 !important; width: 240px; }
+body.pursae-modern .media-toolbar-secondary { display: flex; align-items: center; gap: 8px; }
+body.pursae-modern .media-toolbar-secondary select,
+body.pursae-modern .media-toolbar-secondary .button { margin: 0 !important; }
+body.pursae-modern #drag-drop-area,
+body.pursae-modern .drag-drop #drag-drop-area { border: 1px dashed var(--pm-border-2); background: var(--pm-bg); border-radius: 0; }
+body.pursae-modern .drag-drop.drag-over #drag-drop-area { border-color: var(--pm-primary); background: var(--pm-primary-50); }
+body.pursae-modern .drag-drop-inside { padding-top: 20px; }
+body.pursae-modern .drag-drop-inside:before { content: "\f317"; font-family: dashicons; display: block; font-size: 40px; line-height: 1; color: var(--pm-primary); margin-bottom: 12px; }
+body.pursae-modern .drag-drop-inside p.drag-drop-info { font-size: 18px; color: var(--pm-text); font-weight: 500; }
+body.pursae-modern .drag-drop-inside p { color: var(--pm-faint); }
+body.pursae-modern .media-item { background: var(--pm-bg); border: 1px solid var(--pm-border); }

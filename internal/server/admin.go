@@ -344,6 +344,9 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	}
 	v.Color = adminColorFor(u)
 	v.Theme = adminThemeFor(u)
+	if v.Theme.Modern() { // Pursae Modern has its own colours: the colour schemes do not apply
+		v.Color = adminColors[0]
+	}
 	if tmpl != "admin/block-editor" && tmpl != "admin/dashboard" {
 		v.Help = helpFor(v.AdminPage, v.TypeNow)
 	}
