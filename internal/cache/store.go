@@ -609,6 +609,7 @@ func (s *Store) PurgeAll() int {
 	s.tags = make(map[string]map[string]struct{})
 	s.bases = make(map[string]map[string]struct{})
 	s.bytes = 0
+	s.searches = 0
 	s.mu.Unlock()
 	if s.disk != nil {
 		s.disk.clear()
