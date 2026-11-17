@@ -1,0 +1,403 @@
+diff --git a/src/builder/CodeSection.tsx b/src/builder/CodeSection.tsx
+index 0abce97..9c772c4 100644
+--- a/src/builder/CodeSection.tsx
++++ b/src/builder/CodeSection.tsx
+@@ -5,6 +5,8 @@ import { useB } from './store'
+ import { useLive } from './live/ctx'
+ import { getHost } from './host'
+ import { t } from './i18n'
++import { elementsSeam, type FrameGuard } from './elementsSeam'
++import { codeFrameDoc } from './codeFrameDoc'
+ 
+ /*
+  * Pursae code sections: parts of an imported design kept as their own markup (content.html), with
+@@ -23,78 +25,16 @@ import { t } from './i18n'
+  * among its siblings, duplicates or deletes it, and the panel sets its look as inline style (which
+  * wins over the design's classes), its classes and shows the section's layers. The markup stays the
+  * design's own, so the page keeps looking exactly like it.
++ *
++ * With the host's guard (elementsSeam, the Pursae editor) the frame runs nothing while editing: it
++ * is sandboxed without allow-scripts and shows the guard's neutralised copy (embedded players and
++ * maps as placeholders); in-place text is written back from the source; Preview runs the design's
++ * scripts only once the author confirmed it for the editor session (the guard's Banner asks).
+  */
+ 
+-const EDIT_CSS =
+-  '[data-wbc]{cursor:default}[data-wbc]:hover{outline:1px dashed rgba(34,113,177,.75);outline-offset:2px}' +
+-  '[data-wbc-sel]{outline:2px solid #2271b1!important;outline-offset:2px}' +
+-  '[data-wbc][contenteditable]{outline:2px solid #2271b1!important;outline-offset:2px;cursor:text}img[data-wbc]{cursor:pointer}'
+-
+ /** Text-like elements the canvas edits in place (the importer gives them data-wbc ids). */
+ const TEXT_TAGS = new Set(['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'LI', 'A', 'BUTTON', 'SPAN', 'LABEL', 'FIGCAPTION', 'BLOCKQUOTE', 'TD', 'TH', 'SMALL', 'STRONG', 'EM', 'B', 'I', 'DT', 'DD', 'SUMMARY', 'CITE', 'Q', 'TIME', 'MARK', 'DIV'])
+ 
+-const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+-
+-const TAG_RE = /^<[a-zA-Z][a-zA-Z0-9-]{0,30}(?:\s[^<>]*)?>$/
+-
+-/** A section's wrapper chain (content.wrap). */
+-function wrapChain(wrap: string | undefined): string[] {
+-  return (wrap ?? '')
+-    .split('\n')
+-    .map((l) => l.trim())
+-    .filter((l) => TAG_RE.test(l))
+-}
+-
+-const closeOf = (open: string) => `</${/^<([a-zA-Z][a-zA-Z0-9-]*)/.exec(open)![1]}>`
+-
+-/** The head markup of a run: each distinct top-level tag once, in order. */
+-function mergeHeads(heads: string[]): string {
+-  const seen = new Set<string>()
+-  const out: string[] = []
+-  for (const h of heads) {
+-    if (!h.trim()) continue
+-    const doc = new DOMParser().parseFromString(`<!doctype html><html><head>${h}</head><body></body></html>`, 'text/html')
+-    for (const el of Array.from(doc.head.children)) {
+-      const tag = el.outerHTML
+-      if (!seen.has(tag)) {
+-        seen.add(tag)
+-        out.push(tag)
+-      }
+-    }
+-  }
+-  return out.join('\n')
+-}
+-
+-/** The run's body: sections in order, consecutive ones sharing their wrappers (like the server). */
+-function runBody(run: Section[]): string {
+-  const stack: string[] = []
+-  let out = ''
+-  for (const s of run) {
+-    const chain = wrapChain(s.content.wrap)
+-    let k = 0
+-    while (k < stack.length && k < chain.length && stack[k] === chain[k]) k++
+-    while (stack.length > k) out += closeOf(stack.pop()!)
+-    for (const w of chain.slice(k)) {
+-      out += w
+-      stack.push(w)
+-    }
+-    out += s.content.html ?? ''
+-  }
+-  while (stack.length) out += closeOf(stack.pop()!)
+-  return out
+-}
+-
+-function frameDoc(run: Section[], edit: boolean): string {
+-  const base = typeof location !== 'undefined' ? location.origin + '/' : '/'
+-  const first = run[0]
+-  const body = first.content.body ? ` class="${esc(first.content.body)}"` : ''
+-  return (
+-    `<!doctype html><html lang="${esc(first.content.lang || 'en')}"><head><meta charset="utf-8">` +
+-    `<meta name="viewport" content="width=device-width,initial-scale=1"><base href="${esc(base)}">` +
+-    `${mergeHeads(run.map((s) => s.content.head ?? ''))}${edit ? `<style data-wb-edit>${EDIT_CSS}</style>` : ''}</head><body${body}>${runBody(run)}</body></html>`
+-  )
+-}
+-
+ const parse = (src: string) => new DOMParser().parseFromString(`<!doctype html><html><head></head><body>${src}</body></html>`, 'text/html')
+ const byId = (root: ParentNode, id: string) => root.querySelector<HTMLElement>(`[data-wbc="${CSS.escape(id)}"]`)
+ 
+@@ -259,9 +199,19 @@ function CodeRun({ s }: { s: Section }) {
+   return <CodeFrame run={run} />
+ }
+ 
++/** Without a host guard (the standalone builder) the frame runs the design's scripts, as before. */
++const scriptsAlways = () => true
++
+ function CodeFrame({ run }: { run: Section[] }) {
+   const b = useB()
+   const edit = !b.preview
++  const guard: FrameGuard | null = elementsSeam()?.guard ?? null
++  const useScripts = guard?.useScripts ?? scriptsAlways
++  const scripts = useScripts()
++  // The design's scripts run only in Preview, and only once the author confirmed it (guard);
++  // every other frame is static: the guard's neutralised copy, sandboxed without allow-scripts.
++  const live = guard ? !edit && scripts : true
++  const g = live ? null : guard
+   const frame = useRef<HTMLIFrameElement>(null)
+   const viewport = typeof window !== 'undefined' ? Math.max(480, window.innerHeight - 64) : 900
+   const [h, setH] = useState(viewport)
+@@ -269,21 +219,22 @@ function CodeFrame({ run }: { run: Section[] }) {
+   const [panel, setPanel] = useState<'style' | 'layers' | null>(null)
+   const key = run.map((x) => `${x.id}\u0000${x.content.html ?? ''}\u0000${x.content.head ?? ''}\u0000${x.content.wrap ?? ''}`).join('\u0001')
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+-  const built = useMemo(() => frameDoc(run, edit), [key, edit])
+-  // What the frame shows; markup the frame wrote itself does not reload it.
++  const built = useMemo(() => codeFrameDoc(run, edit, g), [key, edit, g])
++  // What the frame shows; markup the frame wrote itself does not reload it. The document and
++  // whether its scripts may run change together (a new frame element when they do).
+   const shown = useRef<string>(built)
+-  const [doc, setDoc] = useState(built)
++  const [doc, setDoc] = useState({ html: built, live })
+   // Kept over a reload (a structural change redraws the frame): the selection and the scroll.
+   const keep = useRef<{ id: string | null; y: number }>({ id: null, y: 0 })
+   useEffect(() => {
+     if (built === shown.current) return
+     shown.current = built
+     keep.current.y = frame.current?.contentWindow?.scrollY ?? 0
+-    setDoc(built)
+-  }, [built])
++    setDoc({ html: built, live })
++  }, [built]) // eslint-disable-line react-hooks/exhaustive-deps
+   // The frame's listeners outlive renders: they read the current run and store through a ref.
+-  const cur = useRef({ run, b, edit })
+-  cur.current = { run, b, edit }
++  const cur = useRef({ run, b, edit, g })
++  cur.current = { run, b, edit, g }
+ 
+   const liveEl = (id: string) => {
+     const d = frame.current?.contentDocument
+@@ -323,13 +274,13 @@ function CodeFrame({ run }: { run: Section[] }) {
+    * changed the frame itself.
+    */
+   const write = (id: string, label: string, fn: (el: HTMLElement) => void | boolean, redraw = false) => {
+-    const { run, b, edit } = cur.current
++    const { run, b, edit, g } = cur.current
+     const sec = holder(run, id)
+     if (!sec) return
+     const next = patchCode(sec.content.html ?? '', id, fn)
+     if (next === null || next === sec.content.html) return
+     const nextRun = run.map((x) => (x.id === sec.id ? { ...x, content: { ...x.content, html: next } } : x))
+-    if (!redraw) shown.current = frameDoc(nextRun, edit)
++    if (!redraw) shown.current = codeFrameDoc(nextRun, edit, g)
+     cur.current.run = nextRun
+     b.dispatch({ type: 'content', id: sec.id, key: 'html', value: next, label })
+   }
+@@ -339,6 +290,10 @@ function CodeFrame({ run }: { run: Section[] }) {
+     const d = f?.contentDocument
+     const w = f?.contentWindow
+     if (!f || !d || !w) return
++    // A static frame's DOM is swept once more (whatever a second parse made of the copy is inert
++    // too); nothing in it could run in between: no allow-scripts.
++    const inert = !f.sandbox.contains('allow-scripts')
++    if (inert && guard) guard.sweep(d)
+     // Height: the run's own when it is shorter than the screen, else the screen (the frame scrolls).
+     const measure = () => {
+       const end = d.body ? Array.from(d.body.children).reduce((m, el) => Math.max(m, el.getBoundingClientRect().bottom + w.scrollY), 0) : 0
+@@ -367,7 +322,8 @@ function CodeFrame({ run }: { run: Section[] }) {
+     d.addEventListener(
+       'click',
+       (e) => {
+-        const target = e.target as Element
++        // An embed placeholder takes no pointer events: the one under the pointer is meant.
++        const target = inert && guard ? guard.target(d, e.target as Element, e.clientX, e.clientY) : (e.target as Element)
+         const a = target.closest('a[href]')
+         const { edit } = cur.current
+         if (!edit) {
+@@ -403,10 +359,18 @@ function CodeFrame({ run }: { run: Section[] }) {
+   const startText = (el: HTMLElement) => {
+     const id = el.dataset.wbc!
+     const before = el.innerHTML
++    // Escape puts the nodes themselves back (never markup parsed again).
++    const saved = Array.from(el.childNodes).map((n) => n.cloneNode(true))
+     const sec = holder(cur.current.run, id)
+     const src = sec ? sourceInner(sec.content.html ?? '', id) : null
++    // A static frame shows the neutralised copy: the edit is written back from the source (its
++    // handlers, scripts and ids kept as stored), never from the frame's markup.
++    const g = cur.current.g
++    const outerSrc = g ? source(id)?.outerHTML : undefined
++    const fromSource = g && outerSrc ? g.beginText(outerSrc, el) : null
++    if (g && !fromSource) return
+     // Script-drawn content (split letters, counters) is not the source: plain text edits only then.
+-    const drawn = src !== null && norm(src) !== norm(before)
++    const drawn = !fromSource && src !== null && norm(src) !== norm(before)
+     el.contentEditable = drawn ? 'plaintext-only' : 'true'
+     el.focus()
+     const done = () => {
+@@ -414,6 +378,18 @@ function CodeFrame({ run }: { run: Section[] }) {
+       el.removeEventListener('keydown', key)
+       el.removeAttribute('contenteditable')
+       if (el.innerHTML === before) return
++      if (fromSource) {
++        const next = fromSource()
++        if (next === null) {
++          el.replaceChildren(...saved)
++          cur.current.b.notify(t('This text is drawn by the design’s script: edit it in the section’s HTML code.'))
++          return
++        }
++        write(id, t('Text changed'), (n) => {
++          n.innerHTML = next
++        })
++        return
++      }
+       if (drawn) {
+         const plain = el.textContent ?? ''
+         write(id, t('Text changed'), (n) => {
+@@ -429,7 +405,7 @@ function CodeFrame({ run }: { run: Section[] }) {
+     }
+     const key = (e: KeyboardEvent) => {
+       if (e.key === 'Escape') {
+-        el.innerHTML = before
++        el.replaceChildren(...saved.map((n) => n.cloneNode(true)))
+         el.blur()
+       }
+       if (e.key === 'Enter' && !e.shiftKey && !/^(P|LI|DIV|BLOCKQUOTE|TD|DD)$/.test(el.tagName)) {
+@@ -455,6 +431,13 @@ function CodeFrame({ run }: { run: Section[] }) {
+     const el = liveEl(id)
+     if (el) {
+       apply(el)
++      // A static frame: what the new value would load or run is made inert there too.
++      const g = cur.current.g
++      if (g) {
++        g.neutralEl(el)
++        const a = el.closest('a')
++        if (a && a !== el) g.neutralEl(a)
++      }
+       place(el)
+     }
+   }
+@@ -543,15 +526,20 @@ function CodeFrame({ run }: { run: Section[] }) {
+ 
+   return (
+     <div className="relative" data-el={`${run[0].id}:html`} onClick={(e) => e.stopPropagation()}>
++      {/* Static (edit mode, or Preview before the author's confirmation): no allow-scripts, the
++          editor drives the DOM from outside. With the confirmation only: the design's scripts. */}
+       <iframe
++        key={doc.live ? 'scripts' : 'inert'}
+         ref={frame}
+         title={run.length === 1 ? run[0].name || t('Code section') : t('Code sections')}
+-        srcDoc={doc}
++        srcDoc={doc.html}
+         onLoad={onLoad}
++        data-wb-code-frame={doc.live ? 'scripts' : 'static'}
+         className="block w-full border-0"
+         style={{ height: h }}
+-        sandbox="allow-scripts allow-same-origin allow-forms"
++        sandbox={doc.live ? 'allow-scripts allow-same-origin allow-forms' : 'allow-same-origin'}
+       />
++      {!edit && guard && !scripts && <guard.Banner />}
+       {edit && pick && (
+         <div
+           className="absolute z-20 flex max-w-[calc(100%-8px)] flex-wrap items-center gap-1 rounded-lg bg-[#1d2327] p-1 text-[12px] text-white shadow-lg"
+diff --git a/src/builder/codeFrameDoc.ts b/src/builder/codeFrameDoc.ts
+new file mode 100644
+index 0000000..956de0f
+--- /dev/null
++++ b/src/builder/codeFrameDoc.ts
+@@ -0,0 +1,84 @@
++import type { FrameGuard } from './elementsSeam'
++import type { Section } from './types'
++
++/*
++ * The document of a code frame (CodeSection.tsx): a run of consecutive code sections drawn as one
++ * page, with the head markup they need and the wrappers they share (like the server publishes
++ * them). With the host's guard (elementsSeam) the frame is static: the head and the body are the
++ * guard's neutralised copy (nothing in it runs or loads a document, embeds are placeholders) and
++ * the frame is sandboxed without allow-scripts; without it (the design's scripts run: Preview
++ * after the author's confirmation, or the standalone builder) the markup as stored.
++ */
++
++export const EDIT_CSS =
++  '[data-wbc]{cursor:default}[data-wbc]:hover{outline:1px dashed rgba(34,113,177,.75);outline-offset:2px}' +
++  '[data-wbc-sel]{outline:2px solid #2271b1!important;outline-offset:2px}' +
++  '[data-wbc][contenteditable]{outline:2px solid #2271b1!important;outline-offset:2px;cursor:text}img[data-wbc]{cursor:pointer}'
++
++const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
++
++const TAG_RE = /^<[a-zA-Z][a-zA-Z0-9-]{0,30}(?:\s[^<>]*)?>$/
++
++/** A section's wrapper chain (content.wrap). */
++export function wrapChain(wrap: string | undefined): string[] {
++  return (wrap ?? '')
++    .split('\n')
++    .map((l) => l.trim())
++    .filter((l) => TAG_RE.test(l))
++}
++
++const closeOf = (open: string) => `</${/^<([a-zA-Z][a-zA-Z0-9-]*)/.exec(open)![1]}>`
++
++/** The head markup of a run: each distinct top-level tag once, in order (parsed inert: DOMParser). */
++export function mergeHeads(heads: string[]): string {
++  const seen = new Set<string>()
++  const out: string[] = []
++  for (const h of heads) {
++    if (!h.trim()) continue
++    const doc = new DOMParser().parseFromString(`<!doctype html><html><head>${h}</head><body></body></html>`, 'text/html')
++    for (const el of Array.from(doc.head.children)) {
++      const tag = el.outerHTML
++      if (!seen.has(tag)) {
++        seen.add(tag)
++        out.push(tag)
++      }
++    }
++  }
++  return out.join('\n')
++}
++
++/** The run's body: sections in order, consecutive ones sharing their wrappers (like the server). */
++export function runBody(run: Section[]): string {
++  const stack: string[] = []
++  let out = ''
++  for (const s of run) {
++    const chain = wrapChain(s.content.wrap)
++    let k = 0
++    while (k < stack.length && k < chain.length && stack[k] === chain[k]) k++
++    while (stack.length > k) out += closeOf(stack.pop()!)
++    for (const w of chain.slice(k)) {
++      out += w
++      stack.push(w)
++    }
++    out += s.content.html ?? ''
++  }
++  while (stack.length) out += closeOf(stack.pop()!)
++  return out
++}
++
++/**
++ * The frame document of a run. edit: the editor's outlines; guard: a static frame (the guard's
++ * neutralised copy and its stylesheet), null: the markup as stored (its scripts run).
++ */
++export function codeFrameDoc(run: Section[], edit: boolean, guard: Pick<FrameGuard, 'copy' | 'css'> | null, base = typeof location !== 'undefined' ? location.origin + '/' : '/'): string {
++  const first = run[0]
++  const body = first.content.body ? ` class="${esc(first.content.body)}"` : ''
++  const head = mergeHeads(run.map((s) => s.content.head ?? ''))
++  const css = (edit ? EDIT_CSS : '') + (guard ? guard.css() : '')
++  return (
++    `<!doctype html><html lang="${esc(first.content.lang || 'en')}"><head><meta charset="utf-8">` +
++    // data-wb-editor: the editor's own <base> (the guard's sweep keeps it).
++    `<meta name="viewport" content="width=device-width,initial-scale=1"><base href="${esc(base)}" data-wb-editor="">` +
++    `${guard ? guard.copy(head) : head}${css ? `<style data-wb-edit>${css}</style>` : ''}</head><body${body}>${guard ? guard.copy(runBody(run)) : runBody(run)}</body></html>`
++  )
++}
+diff --git a/src/builder/elementsSeam.ts b/src/builder/elementsSeam.ts
+index 35998c2..ddd07ff 100644
+--- a/src/builder/elementsSeam.ts
++++ b/src/builder/elementsSeam.ts
+@@ -19,6 +19,39 @@ export interface ElementsSeam {
+   Content?: ComponentType<{ s: Section; fallback: ReactNode }>
+   /** The inspector's title for that section ("Edit Heading"); null keeps the builder's. */
+   title?: (s: Section) => string | null
++  /**
++   * What the per-run code frames of the pages the host does not draw (code sections next to
++   * builder sections, CodeSection.tsx) use to draw the design without running it. Absent in the
++   * standalone builder: its frames run the design's scripts.
++   */
++  guard?: FrameGuard
++}
++
++/**
++ * Static, script-free drawing of a design in a code frame (the host's element editor rules: a
++ * neutralised copy in a frame sandboxed without allow-scripts, embeds as placeholders, scripts run
++ * only after the author's confirmation for the editor session).
++ */
++export interface FrameGuard {
++  /** The frame's copy of design markup (body or head): nothing in it can run or load a document. */
++  copy(markup: string): string
++  /** Makes the loaded static frame's document inert once more (whatever a second parse made). */
++  sweep(doc: Document): void
++  /** Makes one element of the static frame (and what is inside it) inert after an attribute change. */
++  neutralEl(el: Element): void
++  /** Stylesheet of a static frame (embedded content drawn as placeholders). */
++  css(): string
++  /** The element a pointer event at (x, y) on `el` is about (an embed placeholder under the pointer). */
++  target(doc: Document, el: Element, x: number, y: number): Element
++  /**
++   * Starts an in-place text edit of el, whose stored markup is srcOuter: returns what gives el's new
++   * inner markup, written from the source (null: it cannot be written back).
++   */
++  beginText(srcOuter: string, el: HTMLElement): () => string | null
++  /** Whether the author let the design's scripts run in this editor session (a React hook). */
++  useScripts(): boolean
++  /** The preview notice when the scripts are not running, with the button that asks. */
++  Banner: ComponentType
+ }
+ 
+ let seam: ElementsSeam | null = null

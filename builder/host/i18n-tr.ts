@@ -630,6 +630,7 @@ const tr: Record<string, string> = {
   "The design’s classes or variables were changed in another editor. Reload to see their changes.": "Tasarımın sınıfları ya da değişkenleri başka bir düzenleyicide değiştirildi. Değişiklikleri görmek için yeniden yükleyin.", // i18n-ignore
   "The design’s classes and variables could not be saved.": "Tasarımın sınıfları ve değişkenleri kaydedilemedi.", // i18n-ignore
   "The design’s class and variable changes could not be published: {m}": "Tasarımın sınıf ve değişken değişiklikleri yayınlanamadı: {m}", // i18n-ignore
+  "Embedded content plays on the published page. Publish and open the page to watch it.": "Gömülü içerik yayınlanan sayfada oynar. İzlemek için yayınlayıp sayfayı açın.", // i18n-ignore
 }
 
 export default tr
