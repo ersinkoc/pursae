@@ -4631,5 +4631,11 @@
  "Guest": "Misafir",
  "new": "yeni",
  "~2 min": "~2 dk",
- "Order number": "Sipariş no"
+ "Order number": "Sipariş no",
+ "Where visitors come from": "Ziyaretçiler nereden geliyor",
+ "countries": "ülke",
+ "Visitors by country": "Ülkelere göre ziyaretçiler",
+ "Fewer": "Az",
+ "More": "Çok",
+ "Top countries": "En çok ziyaret eden ülkeler"
 }

@@ -46,7 +46,7 @@
 .pa-notice{background:#fff;border:1px solid #c3c4c7;border-left:4px solid #72aee6;padding:10px 12px;margin:0 0 16px}
 @media (max-width:782px){.pa-boxes{grid-template-columns:1fr}.pa-chart-svg{height:180px}}
 </style>
-<div class="wrap pa-wrap">
+<div class="wrap pa-wrap{{if .Modern}} pa-modern{{end}}">
 <h1 class="wp-heading-inline"><span class="dashicons dashicons-chart-bar pa-h1-icon" aria-hidden="true"></span>Analytics</h1>
 <p class="pa-sub">Privacy-friendly statistics without cookies, and how fast your pages are for real visitors.</p>
 <nav class="nav-tab-wrapper wp-clearfix" aria-label="Secondary menu">
@@ -100,6 +100,17 @@
 {{if not .HasData}}<div class="pa-notice"><p><strong>No visits recorded for {{.Range.Label}} yet.</strong> Visits are counted from the moment Pursae Analytics was activated. Signed-in users are not counted{{if not .Settings.ExcludeLoggedIn}} unless you change it in Settings{{end}}: open your site in a private window to see your own visit.</p></div>{{end}}
 <div class="pa-cards">{{range .Cards}}<div class="pa-card"><div class="pa-label">{{.Label}}</div><div class="pa-value">{{.Value}}</div>{{if .Change}}<div class="pa-change {{if .Flat}}flat{{else if .Good}}good{{else}}bad{{end}}">{{if not .Flat}}{{if .Up}}▲{{else}}▼{{end}} {{end}}{{.Change}} <span class="screen-reader-text">compared with the previous period</span></div>{{end}}</div>{{end}}</div>
 {{if .Chart}}<div class="pa-chart"><div class="pa-legend"><span class="v">Unique visitors</span><span class="p">Page views</span></div>{{.Chart}}</div>{{end}}
+{{with .Map}}<section class="pa-map-panel" aria-labelledby="pa-map-title">
+	<div class="pa-map-main">
+		<div class="pa-map-head"><h2 id="pa-map-title">Where visitors come from</h2><p><span>{{.Countries}}</span> <span>countries</span></p></div>
+		<svg class="pa-map" viewBox="0 0 {{.W}} {{.H}}" role="img" aria-label="Visitors by country">{{range .Paths}}<path class="pa-l{{.Level}}" d="{{.D}}"><title>{{.Title}}</title></path>{{end}}</svg>
+		<div class="pa-map-legend" aria-hidden="true"><span>Fewer</span><i class="pa-l1"></i><i class="pa-l2"></i><i class="pa-l3"></i><i class="pa-l4"></i><i class="pa-l5"></i><span>More</span></div>
+	</div>
+	<div class="pa-map-side">
+		<h3>Top countries</h3>
+		{{range $d.Tables}}{{if eq .ID "countries"}}{{if .Rows}}<ul class="pa-map-list">{{range .Rows}}<li><span class="pa-map-c">{{if .Flag}}<span class="pa-flag" aria-hidden="true">{{.Flag}}</span>{{end}}{{.Label}}</span><span class="pa-map-bar"><i style="width:{{printf "%.1f" .Pct}}%"></i></span><b>{{.Visitors}}</b></li>{{end}}</ul>{{else}}<p class="pa-empty">Nothing recorded in this period.</p>{{end}}{{end}}{{end}}
+	</div>
+</section>{{end}}
 <div class="pa-boxes">
 <div class="pa-box pa-wide" id="pa-vitals"><h2>Core Web Vitals <span style="font-weight:400;color:#646970">— 75th percentile of real visits</span></h2>
 	<div class="pa-vitals">{{range .Vitals}}<div class="pa-vital {{.Rating}}"><span class="pa-label">{{.Name}}</span><b>{{.Value}}</b><span class="pa-r {{.Rating}}">{{if eq .Rating "good"}}Good{{else if eq .Rating "needs-improvement"}}Needs improvement{{else if eq .Rating "poor"}}Poor{{else}}No data yet{{end}}</span>{{if .Samples}} <small>({{.Samples}} views)</small>{{end}}<p>{{.Help}}</p></div>{{end}}</div>
