@@ -82,7 +82,11 @@ templates.
 
 Kit file URLs in the published markup get `?v=<kit version>`; requests that name the current version
 are served `immutable`, others revalidate (`Cache-Control: public, no-cache`), so a changed kit is
-picked up at once. Uploading files to a kit purges the page cache.
+picked up at once. Uploading files to a kit purges the page cache. Versions never repeat: a staged file
+is written through a temporary file renamed over its name (the staging folder starts as hard links to
+the live files, which must not change before the commit), and a kit deleted and uploaded again under the
+same slug goes on from its last version (option `wb_design_kits_gone`), so browsers never get an old
+file for a new `?v=`.
 
 ### Content Security Policy
 
@@ -107,7 +111,10 @@ Code sections work under the site's nonce policy (`csp_mode` `report` and `enfor
   origins go to `script-src` and `connect-src`; `<link href>` origins and the `url()` / `@import`
   origins of inline CSS go to `style-src` and `font-src` (`fonts.googleapis.com` brings
   `fonts.gstatic.com`); `<iframe src>` origins (a Google Maps embed) go to `frame-src`. Only https
-  origins, at most 24 per directive. `img-src` and `media-src` already allow `https:`. In report
+  origins, at most 24 per directive. The origins are read from the stored code sections (their
+  `content.head` and `content.html`, `wbCodeSource`), their kits and, for a forum view printed by a
+  site template, the stored site templates — never from the filled page, whose comments, posts and
+  field values anyone may have written: a visitor's `url(https://…)` adds no origin. `img-src` and `media-src` already allow `https:`. In report
   mode the additions to `script-src` are also merged into the report-only policy (only into the
   directives it has). The editor page allows the kits' origins for users who may publish code
   sections (the design's frame inherits the editor's policy).
@@ -126,8 +133,11 @@ Code sections work under the site's nonce policy (`csp_mode` `report` and `enfor
 
 ## Kits: REST
 
-All under `web-builder/v2` (Web Builder on, the usual `X-WB-Api` handshake). Reading needs `edit_posts`;
-writing needs `edit_theme_options` **and** `unfiltered_html`.
+All under `web-builder/v2` (Web Builder on, the usual `X-WB-Api` handshake). The kit list and a kit's
+files need `unfiltered_html` (who may use a kit in a code section); the override and the pages need
+`edit_posts` (the editor reads them for every page of the kit); writing needs `edit_theme_options`
+**and** `unfiltered_html`, and with an Application Password the Appearance (`themes`) scope or full
+access ([scopes](rest-api/authentication.md#application-password-scopes)).
 
 | Route | |
 |-------|-|
@@ -139,7 +149,7 @@ writing needs `edit_theme_options` **and** `unfiltered_html`.
 | `GET kits/{slug}/override` | the kit's class and variable edits (see [Classes and variables](#classes-and-variables)): `{live: {rules}, version, draft: {rules}, draftVersion, pending, updated}` |
 | `PUT kits/{slug}/override` | `{draft: {rules}, base: draftVersion}` — replaces the draft (the editor sends it on every change); a stale `base` is 409 `wb_kit_override_conflict` (with the current state in `data.override`), an override that does not validate is 422 `bad_css`, more than 256 KB 413. |
 | `POST kits/{slug}/override/publish` | `{base?}` — the draft goes live on every page that loads the kit's files (the editor calls it after publishing a page of the kit). |
-| `GET kits/{slug}/pages` | `{pages: [{id, title, type, html}]}`: the code-section markup of every builder page and template using the kit (at most 500 pages, 8 MB), for the "From this design" palette and the class counts. Reading only. |
+| `GET kits/{slug}/pages` | `{pages: [{id, title, type, html}]}`: the code-section markup of the builder pages and templates using the kit (at most 500 pages, 8 MB), for the "From this design" palette and the class counts. Who may write the kit gets every page that is not trashed; anyone else the published pages without a password and the pages they may edit themselves (never another author's draft, private or password-protected page). Reading only. |
 
 ## Importing
 
@@ -231,8 +241,13 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    earlier import it no longer needs are turned into drafts.
 
 6. **Kit at the site's root**: the import marks its kit (`wbKit.Root`, the time of the import) and the site
-   then serves the kit's files at its root as well, after every route and before the 404
-   (`wbKitRootAsset`): `/assets/fonts/x.woff2` answers with the kit's `assets/fonts/x.woff2`. A static
+   then serves the kit's files at its root as well, while a page or template of the import is published
+   (a draft import serves nothing there until it is published), after everything the site answers at a
+   path of its own and before the 404 (`wbKitRootAsset`, called by the front end after Pursae SEO's
+   redirections, `robots.txt`, sitemaps and IndexNow key, the shop's and the forum's paths and the
+   built-in `robots.txt`, `favicon.ico` and sitemaps; `robots.txt`, `favicon.ico`, `ads.txt`,
+   `security.txt`, `sitemap*` and the other conventional root files are never a design's):
+   `/assets/fonts/x.woff2` answers with the kit's `assets/fonts/x.woff2`. A static
    design addresses its files as its host serves its folder, and the site import maps that folder onto the
    site's paths (`a/index.html` → `/a/`), so URLs the design builds where the importer cannot see them keep
    working: root-relative `url(/assets/…)` in the kit's stylesheets, an inline module's
@@ -240,7 +255,16 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    `/identity/`. Only `GET` / `HEAD` of a path outside `/wp-*` that is a valid kit file (the kit's
    extensions, no HTML, no dot segments) and exists; a route of the site always wins; with several such
    kits the most recent import wins. `Cache-Control: public, no-cache`. "Remove this import" takes the
-   mark away.
+   mark away. The files are data on the site's own origin: the type comes from the extension and is
+   never sniffed (`nosniff`; an unknown one is `application/octet-stream`, `.map` `application/json`,
+   `.glb` `model/gltf-binary`, `.gltf` `model/gltf+json`, `.svg` `image/svg+xml`), every file but a
+   script gets the uploads route's `Content-Security-Policy: sandbox; default-src 'none'; …` (an SVG or
+   a JSON file opened in a tab runs nothing), and a request with `Service-Worker: script` is refused, so a
+   design cannot install a service worker over the site. A response's policy applies to it only as a
+   document: the design's pages load its scripts, modules, stylesheets, fonts and images the same.
+   Scripts get no policy (also under `/wp-content/uploads/web-builder/kits/`): a script's own policy is
+   its Web Worker's, and the sandbox would give the worker an opaque origin and no `fetch` (checked in
+   Chromium); a `text/javascript` file with `nosniff` never runs as a page.
 
 The answer lists the pages (`post_id`, `url`, sections), `pages_created` / `pages_updated`, the templates
 (type, id, pages, conditions, `active_links`), `templates_disabled`, `unmapped_links`, `missing_files`
@@ -262,7 +286,10 @@ import without a command line or an agent (`internal/server/webbuilder_siteimpor
    (extension outside the kit's list, names outside `wbKitRel`) reject the whole archive with the names
    listed; `.git`, `.DS_Store`, `__MACOSX`, `Thumbs.db` and other dot files are skipped silently. `.html` / `.htm`
    files are kept aside for the importer and never go into a kit. One top folder around everything is
-   stripped. Unpacked sites are removed after a week or with "Discard this upload".
+   stripped. An upload, its design preview and its compare step expire a day after the upload (checked
+   on every access, swept with every visit of the screen and hourly by the `wb_import_cleanup` event);
+   "Discard this upload" and "Remove this import" delete it at once. The import's record outlives the
+   upload: "Remove this import" works after it expired.
 2. **Analysis** (nothing is written to the site): `webbuilder.PlanSite` and `ConvertSite` run on the staged
    files — they are pure, so the analysis is the real conversion. It lists the pages with their proposed
    addresses (`SitePlan.URLs`) and whether each creates or updates a page of an earlier import of the kit, the
@@ -593,6 +620,9 @@ were. Writing the override needs `edit_theme_options` and `unfiltered_html`, lik
 server validates every rule (`webbuilder.ParseKitOverride`: `@media` / `@layer` / `@supports` /
 `@container` contexts only, selectors without blocks, markup, URLs or forbidden tokens, declarations
 as local styles take them, and the printed stylesheet must pass the CSS sanitizer unchanged). The
+stored option is validated again when it is read (an override that no longer passes is left out and
+logged), and `KitOverrideCSS` never prints a selector or context the parser refuses, so an option
+written by anything else cannot close the `<style>` element. The
 override is kept in `wb_kit_overrides` beside the kit, so a new upload of the kit keeps it; deleting
 the kit drops it. Go's `KitOverrideCSS` and the editor's `overrideCSS` print the same bytes (shared
 fixtures `internal/webbuilder/testdata/override`).
