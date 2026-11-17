@@ -42,6 +42,10 @@ type SiteBindOptions struct {
 	Groups map[string]bool
 	// FolderParents: the id of each folder's parent page ("hizmet" → "41"), for listing queries.
 	FolderParents map[string]string
+	// PostSets: the sets of leaf pages (SiteLeafSets: "*", "*:single-post") whose pages become
+	// posts — the caller's choice, when the site's post permalinks (/%postname%/) give them their
+	// design URLs; their template is the posts' single template and their lists loop over posts.
+	PostSets map[string]bool
 }
 
 // SiteMenuItem is one planned menu item (Tpls: the data-wbc of its template in each bound list).
@@ -110,6 +114,8 @@ type SiteGroup struct {
 	Posts    []SiteGroupPost `json:"posts"`
 	// Fields lists the custom fields the template reads (beyond title and content).
 	Fields []string `json:"fields,omitempty"`
+	// AsPosts: the pages become posts (a set of SiteBindOptions.PostSets).
+	AsPosts bool `json:"asPosts,omitempty"`
 }
 
 // SiteListing is a list bound as a loop over a folder's pages.
@@ -175,6 +181,118 @@ func SiteFolders(res *SiteImport) map[string][]int {
 	return out
 }
 
+// SiteLeafSets lists the pages saved with pretty permalinks (a WordPress copy: every post is
+// <slug>/index.html, alone in its folder, beside its siblings): the leaf pages of each parent
+// folder, keyed "*" (the site's top) or "<parent>/*", split by kind when their <body> classes
+// (without the ones holding digits: postid-1699) differ — "*:single-post" names a kind by a class
+// its pages share and the others lack. Sets of two pages or more are candidates for groups and
+// listings like folders (BindSite).
+func SiteLeafSets(res *SiteImport) map[string][]int {
+	dirs := map[string]int{} // folder → pages in it or below
+	for _, p := range res.Pages {
+		for d := path.Dir(p.Path); d != "." && d != "/"; d = path.Dir(d) {
+			dirs[d]++
+		}
+	}
+	type leaf struct {
+		i   int
+		sig string
+		cls map[string]bool
+	}
+	byParent := map[string][]leaf{}
+	for i, p := range res.Pages {
+		dir, base := path.Dir(p.Path), path.Base(p.Path)
+		if dir == "." || p.URL == "" || p.Code == nil || !strings.EqualFold(strings.TrimSuffix(base, path.Ext(base)), "index") || dirs[dir] != 1 {
+			continue
+		}
+		parent := path.Dir(dir)
+		if parent == "." {
+			parent = ""
+		}
+		cls := map[string]bool{}
+		var sig []string
+		for _, c := range strings.Fields(attrValue(p.Code.BodyAttrs, "class")) {
+			if strings.IndexAny(c, "0123456789") < 0 {
+				cls[c] = true
+				sig = append(sig, c)
+			}
+		}
+		sort.Strings(sig)
+		byParent[parent] = append(byParent[parent], leaf{i, strings.Join(sig, " "), cls})
+	}
+	out := map[string][]int{}
+	for parent, leaves := range byParent {
+		key := "*"
+		if parent != "" {
+			key = parent + "/*"
+		}
+		kinds := map[string][]leaf{}
+		var order []string
+		for _, l := range leaves {
+			if _, ok := kinds[l.sig]; !ok {
+				order = append(order, l.sig)
+			}
+			kinds[l.sig] = append(kinds[l.sig], l)
+		}
+		for n, sig := range order {
+			ls := kinds[sig]
+			if len(ls) < 2 {
+				continue
+			}
+			name := key
+			if len(order) > 1 {
+				name = key + ":" + strconv.Itoa(n+1)
+				// A class all of this kind's pages have and no other leaf has.
+				var cands []string
+				for c := range ls[0].cls {
+					cands = append(cands, c)
+				}
+				sort.Sort(sort.Reverse(sort.StringSlice(cands))) // single-post before post-template-default
+				for _, c := range cands {
+					mine, others := true, false
+					for _, l := range leaves {
+						if l.sig == sig {
+							mine = mine && l.cls[c]
+						} else if l.cls[c] {
+							others = true
+						}
+					}
+					if mine && !others && siteSlug(c) == c {
+						name = key + ":" + c
+						break
+					}
+				}
+			}
+			for _, l := range ls {
+				out[name] = append(out[name], l.i)
+			}
+		}
+	}
+	return out
+}
+
+// SiteLeafParent is the parent folder of a leaf set ("" for the site's top); ok is false for a
+// folder's name.
+func SiteLeafParent(key string) (string, bool) {
+	k, _, _ := strings.Cut(key, ":")
+	if k == "*" {
+		return "", true
+	}
+	if strings.HasSuffix(k, "/*") {
+		return strings.TrimSuffix(k, "/*"), true
+	}
+	return "", false
+}
+
+// attrValue reads one attribute from an attribute string (`class="a b" data-x="1"`).
+func attrValue(attrs, name string) string {
+	nodes, err := parseFragment("<div " + attrs + "></div>")
+	if err != nil || len(nodes) == 0 {
+		return ""
+	}
+	return attr(nodes[0], name)
+}
+
 // BindSite plans the bindings (see the file comment). It changes res: listing pages' sections and
 // header template 0 get content.binds (the menu's ids are the caller's: SiteMenu.Binds).
 func BindSite(res *SiteImport, o SiteBindOptions) *SiteBinding {
@@ -186,6 +304,9 @@ func BindSite(res *SiteImport, o SiteBindOptions) *SiteBinding {
 		b.Menu = planMenu(&res.Headers[0], &b.Notes)
 	}
 	folders := SiteFolders(res)
+	for k, v := range SiteLeafSets(res) {
+		folders[k] = v
+	}
 	var names []string
 	for f := range folders {
 		names = append(names, f)
@@ -200,6 +321,7 @@ func BindSite(res *SiteImport, o SiteBindOptions) *SiteBinding {
 		gs, notes := planGroups(res, f, members)
 		b.Notes = append(b.Notes, notes...)
 		for _, g := range gs {
+			g.AsPosts = o.PostSets[f]
 			b.Groups = append(b.Groups, g)
 			for _, p := range g.Posts {
 				pl := b.plan(p.Page)
@@ -209,7 +331,7 @@ func BindSite(res *SiteImport, o SiteBindOptions) *SiteBinding {
 				}
 			}
 		}
-		b.planListings(res, f, members, o.FolderParents[f])
+		b.planListings(res, f, members, o.FolderParents[f], o.PostSets[f])
 	}
 	return b
 }
@@ -704,8 +826,67 @@ type genHole struct {
 	vals  []string
 }
 
+// originalIDAttr: an attribute where a saved site keeps its own record numbers (id, class,
+// data-*), not the editor's.
+func originalIDAttr(k string) bool {
+	return k == "id" || k == "class" || strings.HasPrefix(k, "data-") && k != AttrCodeID && !strings.HasPrefix(k, "data-wb-")
+}
+
+var digitRunRE = regexp.MustCompile(`[0-9]{2,}`)
+
+func digitsNormed(vals []string) []string {
+	out := make([]string, len(vals))
+	for i, v := range vals {
+		out[i] = digitRunRE.ReplaceAllString(v, "#")
+	}
+	return out
+}
+
+func setAttr(n *xhtml.Node, k, v string) {
+	for i := range n.Attr {
+		if n.Attr[i].Namespace == "" && n.Attr[i].Key == k {
+			n.Attr[i].Val = v
+		}
+	}
+}
+
+// looseIDMarkup is markup with the numbers in its id, class and data-* values replaced and its
+// inline scripts' code left out (the group check's view of a page whose template shows the first
+// page's record numbers and per-page script values).
+func looseIDMarkup(src string) string {
+	nodes, err := parseFragment(src)
+	if err != nil {
+		return src
+	}
+	var walk func(n *xhtml.Node)
+	walk = func(n *xhtml.Node) {
+		if n.Type == xhtml.ElementNode {
+			for i, a := range n.Attr {
+				if a.Namespace == "" && (originalIDAttr(a.Key) || a.Key == "value" && strings.EqualFold(attr(n, "type"), "hidden")) {
+					n.Attr[i].Val = digitRunRE.ReplaceAllString(a.Val, "#")
+				}
+			}
+			if n.DataAtom == atom.Script || n.DataAtom == atom.Noscript {
+				for n.FirstChild != nil {
+					n.RemoveChild(n.FirstChild)
+				}
+			}
+		}
+		for k := n.FirstChild; k != nil; k = k.NextSibling {
+			walk(k)
+		}
+	}
+	for _, n := range nodes {
+		walk(n)
+	}
+	out, _ := renderNodes(nodes)
+	return out
+}
+
 type generalizer struct {
-	holes []*genHole
+	// looseIDs: the original site's record numbers in id, class and data-* may differ (a group).
+	looseIDs bool
+	holes    []*genHole
 }
 
 var bindableAttrs = toSet([]string{"href", "src", "srcset", "sizes", "width", "height", "alt", "datetime", "target"})
@@ -802,6 +983,14 @@ func (g *generalizer) gen(ns []*xhtml.Node) bool {
 		if allSame(vals) {
 			continue
 		}
+		if g.looseIDs && (originalIDAttr(k) || k == "value" && strings.EqualFold(attr(e0, "type"), "hidden")) && allSame(digitsNormed(vals)) {
+			// The original site's numbers (WordPress's id="post-1699", class "postid-1699"): each
+			// page shows the first page's; nothing on this site refers to them.
+			for i := range ns {
+				setAttr(ns[i], k, vals[0])
+			}
+			continue
+		}
 		switch {
 		case k == "class" || activeStateAttrs[k]:
 			// the active-link rule's (ClusterParts)
@@ -817,6 +1006,17 @@ func (g *generalizer) gen(ns []*xhtml.Node) bool {
 		r0 := renderInner(e0)
 		for _, e := range ns[1:] {
 			if renderInner(e) != r0 {
+				if g.looseIDs && (e0.DataAtom == atom.Script || e0.DataAtom == atom.Noscript) {
+					// An inline script the original site printed per page (its post id, a
+					// nonce): every page shows the first page's.
+					for e.FirstChild != nil {
+						e.RemoveChild(e.FirstChild)
+					}
+					for k := e0.FirstChild; k != nil; k = k.NextSibling {
+						e.AppendChild(cloneNode(k))
+					}
+					continue
+				}
 				return false
 			}
 		}
@@ -952,6 +1152,49 @@ func (g *generalizer) genSections(nodes [][][]*xhtml.Node) bool {
 	return true
 }
 
+// groupSectionHTML is a member's section as a group compares it: a tail section (the page's
+// scripts after the design's shell) that loads the same scripts as the first member's, differing
+// only in values the original site printed per page (its post id, nonces), is the first member's.
+func groupSectionHTML(res *SiteImport, pages []int, i, j int) string {
+	s := res.Pages[pages[i]].Code.Sections[j]
+	if i == 0 || !s.Tail {
+		return s.HTML
+	}
+	first := res.Pages[pages[0]].Code
+	if j < len(first.Sections) && first.Sections[j].Tail && scriptShape(first.Sections[j].HTML) == scriptShape(s.HTML) {
+		return first.Sections[j].HTML
+	}
+	return s.HTML
+}
+
+// scriptShape is a tail's elements without what the original site printed per page: their
+// tags and attributes (sources without their query), not their inline code (a post id, nonces,
+// a tracking pixel's page title).
+func scriptShape(src string) string {
+	nodes, err := parseFragment(src)
+	if err != nil {
+		return src
+	}
+	var b strings.Builder
+	for _, n := range nodes {
+		if n.Type != xhtml.ElementNode {
+			continue
+		}
+		b.WriteString("<" + n.Data)
+		for _, a := range n.Attr {
+			v := a.Val
+			if a.Key == "src" || a.Key == "href" {
+				v, _, _ = strings.Cut(v, "?")
+			}
+			if a.Key != AttrCodeID {
+				b.WriteString(" " + a.Key + "=" + v)
+			}
+		}
+		b.WriteString(">")
+	}
+	return b.String()
+}
+
 // parseSections parses each page's main sections.
 func parseSections(res *SiteImport, pages []int) ([][][]*xhtml.Node, bool) {
 	out := make([][][]*xhtml.Node, len(pages))
@@ -960,8 +1203,8 @@ func parseSections(res *SiteImport, pages []int) ([][][]*xhtml.Node, bool) {
 		if cr == nil {
 			return nil, false
 		}
-		for _, s := range cr.Sections {
-			ns, err := parseFragment(s.HTML)
+		for j := range cr.Sections {
+			ns, err := parseFragment(groupSectionHTML(res, pages, i, j))
 			if err != nil {
 				return nil, false
 			}
@@ -987,7 +1230,7 @@ func planGroups(res *SiteImport, folder string, members []int) ([]SiteGroup, []s
 	first := res.Pages[members[0]].Code
 	for _, m := range members[1:] {
 		cr := res.Pages[m].Code
-		if cr == nil || first == nil || len(cr.Sections) != len(first.Sections) || cr.Head != first.Head {
+		if cr == nil || first == nil || len(cr.Sections) != len(first.Sections) || groupHead(cr.Head) != groupHead(first.Head) {
 			note("the pages do not share their sections and head markup; kept as pages")
 			return nil, notes
 		}
@@ -1026,6 +1269,14 @@ func planGroups(res *SiteImport, folder string, members []int) ([]SiteGroup, []s
 	}
 	return out, notes
 }
+
+// groupHead is a page's head as a group compares it: without its structured data (JSON-LD, the
+// page's own; the site's SEO prints the posts') and with cache-busters and nonces normalized.
+func groupHead(head string) string {
+	return normVolatile(groupHeadRE.ReplaceAllString(head, ""), nil)
+}
+
+var groupHeadRE = regexp.MustCompile(`(?is)<script\b[^>]*type="application/ld\+json"[^>]*>.*?</script>\n?`)
 
 // splitVariants partitions the pages by the html region (other than the largest) whose
 // normalized versions take two to four values shared by two pages or more.
@@ -1121,7 +1372,7 @@ func planGroup(res *SiteImport, folder string, members []int) (*SiteGroup, strin
 	if !ok {
 		return nil, "a page could not be read"
 	}
-	g := &generalizer{}
+	g := &generalizer{looseIDs: true}
 	if !g.genSections(nodes) {
 		return nil, "their sections differ in structure"
 	}
@@ -1175,7 +1426,7 @@ func planGroup(res *SiteImport, folder string, members []int) (*SiteGroup, strin
 			otherBytes += avgLen(h.vals)
 		}
 	}
-	if other > 2 || otherBytes*5 > mainBytes {
+	if other > 8 || otherBytes*5 > mainBytes {
 		return nil, fmt.Sprintf("besides the title and the content, %d regions differ (%d bytes a page)", other, otherBytes)
 	}
 	if len(g.holes) > 40 {
@@ -1299,7 +1550,15 @@ func planGroup(res *SiteImport, folder string, members []int) (*SiteGroup, strin
 	}
 	cl := clusters[0]
 	cr := res.Pages[members[0]].Code
-	grp := &SiteGroup{Folder: folder, Head: cr.Head, Lang: cr.Lang, Attrs: [2]string{cr.HTMLAttrs, cr.BodyAttrs}, Rule: cl.Rule, Fields: fields}
+	heads := make([]string, len(members))
+	for i, pi := range members {
+		heads[i] = res.Pages[pi].Code.Head
+	}
+	hattrs, battrs := make([]string, len(members)), make([]string, len(members))
+	for i, pi := range members {
+		hattrs[i], battrs[i] = res.Pages[pi].Code.HTMLAttrs, res.Pages[pi].Code.BodyAttrs
+	}
+	grp := &SiteGroup{Folder: folder, Head: groupCommonHead(heads), Lang: cr.Lang, Attrs: [2]string{CommonAttrs(hattrs), CommonAttrs(battrs)}, Rule: cl.Rule, Fields: fields}
 	// Each section gets the bindings of its elements.
 	for j, part := range cl.Parts {
 		root := parseSource(part)
@@ -1311,7 +1570,7 @@ func planGroup(res *SiteImport, folder string, members []int) (*SiteGroup, strin
 				sb[id] = b
 			}
 		}
-		grp.Sections = append(grp.Sections, CodePart{Name: cr.Sections[j].Name, HTML: part, Wrap: cr.Sections[j].Wrap, Binds: sb.String()})
+		grp.Sections = append(grp.Sections, CodePart{Name: cr.Sections[j].Name, HTML: part, Wrap: cr.Sections[j].Wrap, Binds: sb.String(), Tail: cr.Sections[j].Tail})
 	}
 	// The check: every page, rendered from the template with its own content, is the design.
 	for i, pi := range members {
@@ -1324,13 +1583,37 @@ func planGroup(res *SiteImport, folder string, members []int) (*SiteGroup, strin
 			if grp.Rule != nil {
 				out = ApplyActive(out, grp.Rule, res.Pages[pi].URL)
 			}
-			if !sameMarkup("group "+res.Pages[pi].Path, out, res.Pages[pi].Code.Sections[j].HTML) {
+			if !sameMarkup("group "+res.Pages[pi].Path, looseIDMarkup(out), looseIDMarkup(groupSectionHTML(res, members, i, j))) {
 				return nil, fmt.Sprintf("the template does not reproduce %s", res.Pages[pi].Path)
 			}
 		}
 	}
 	grp.Posts = posts
 	return grp, ""
+}
+
+// groupCommonHead is the head of a group's template: the first page's head elements that every
+// page has, compared without cache-busters and nonces (a stylesheet saved with another ?ver= is
+// the same file), without the pages' JSON-LD.
+func groupCommonHead(heads []string) string {
+	var keep []string
+	for _, e := range headElements(heads[0]) {
+		if groupHeadRE.MatchString(e) {
+			continue
+		}
+		ne := normVolatile(e, nil)
+		all := true
+		for _, h := range heads[1:] {
+			if !strings.Contains(normVolatile(h, nil), ne) {
+				all = false
+				break
+			}
+		}
+		if all {
+			keep = append(keep, e)
+		}
+	}
+	return strings.Join(keep, "\n")
 }
 
 // fillLike sets page i's side of a hole to page 0's value (in its parsed tree).
@@ -1369,8 +1652,11 @@ func fillLike(h *genHole, i int) {
 // Listings.
 
 // planListings binds the lists on the site's other pages whose items link to the folder's pages.
-func (b *SiteBinding) planListings(res *SiteImport, folder string, members []int, parent string) {
-	if parent == "" {
+func (b *SiteBinding) planListings(res *SiteImport, folder string, members []int, parent string, posts bool) {
+	if parent == "" && !posts {
+		if _, leaf := SiteLeafParent(folder); leaf {
+			b.Notes = append(b.Notes, folder+": lists of these pages stay markup: a loop of pages selects them by their parent page, which they do not have to themselves")
+		}
 		return
 	}
 	byURL := map[string]int{}
@@ -1450,8 +1736,16 @@ func (b *SiteBinding) planListings(res *SiteImport, folder string, members []int
 	if len(lists) == 0 {
 		return
 	}
-	// The longest list sets the pages' order; the others must show a window of it.
+	// The longest list that can be a loop sets the pages' order (an author archive whose cards
+	// differ in structure must not decide it); the others must show a window of it.
 	sort.SliceStable(lists, func(i, j int) bool { return len(lists[i].members) > len(lists[j].members) })
+	for i, l := range lists {
+		if binds, _, _ := listingBinds(res, l.list, l.cards, l.members, titles, 0); binds != nil {
+			lists[0], lists[i] = lists[i], lists[0]
+			sort.SliceStable(lists[1:], func(a, b int) bool { return len(lists[1+a].members) > len(lists[1+b].members) })
+			break
+		}
+	}
 	orderOf := map[int]int{}
 	for i, m := range lists[0].members {
 		orderOf[m] = i
@@ -1487,8 +1781,15 @@ func (b *SiteBinding) planListings(res *SiteImport, folder string, members []int
 			continue
 		}
 		listID := attr(l.list, AttrCodeID)
-		binds[listID] = &CodeBind{Kind: BindLoop, Query: map[string]string{LoopPostType: "page", LoopParent: parent, LoopOrderBy: "menu_order",
-			LoopOrder: "asc", LoopPerPage: strconv.Itoa(len(l.members)), LoopOffset: strconv.Itoa(off)}}
+		q := map[string]string{LoopPostType: "page", LoopParent: parent, LoopOrderBy: "menu_order",
+			LoopOrder: "asc", LoopPerPage: strconv.Itoa(len(l.members)), LoopOffset: strconv.Itoa(off)}
+		if posts {
+			// Posts: newest first, as a blog lists them; the import dates them in the list's order,
+			// so a post written later comes first.
+			q[LoopPostType], q[LoopOrderBy], q[LoopOrder] = "post", "date", "desc"
+			delete(q, LoopParent)
+		}
+		binds[listID] = &CodeBind{Kind: BindLoop, Query: q}
 		sec := &res.Pages[l.page].Code.Sections[l.section]
 		all := ParseCodeBinds(sec.Binds)
 		if all == nil {
@@ -1505,7 +1806,7 @@ func (b *SiteBinding) planListings(res *SiteImport, folder string, members []int
 			posts = append(posts, &planPost{Title: titles[m], URL: res.Pages[m].URL, Excerpt: pl.Excerpt, Fields: pl.Fields})
 		}
 		out, ok := renderPlan(sec.HTML, all.String(), &planRes{posts: posts})
-		if !ok || !sameMarkup("listing "+res.Pages[l.page].Path, out, sec.HTML) {
+		if !ok || !sameMarkup("listing "+res.Pages[l.page].Path, looseIDMarkup(out), looseIDMarkup(sec.HTML)) {
 			b.Notes = append(b.Notes, fmt.Sprintf("%s: a list of %s/ pages kept as markup: the loop would not reproduce it", res.Pages[l.page].Path, folder))
 			continue
 		}
@@ -1523,7 +1824,9 @@ func (b *SiteBinding) planListings(res *SiteImport, folder string, members []int
 		sec.Binds = all.String()
 		for m, pl := range plans {
 			ex := b.plan(m)
-			ex.Title = titles[m]
+			if titles[m] != "" { // a page with two <h1> keeps the title its group found
+				ex.Title = titles[m]
+			}
 			if pl.Excerpt != "" {
 				ex.Excerpt = pl.Excerpt
 			}
@@ -1547,7 +1850,7 @@ func (b *SiteBinding) planListings(res *SiteImport, folder string, members []int
 // page's <h1> its title, the longest other text its excerpt, a varying image the image field, the
 // rest custom fields list<n>_<k>.
 func listingBinds(res *SiteImport, list *xhtml.Node, cards []*xhtml.Node, ms []int, titles map[int]string, listN int) (CodeBinds, map[int]*SitePagePlan, string) {
-	g := &generalizer{}
+	g := &generalizer{looseIDs: true}
 	if !g.gen(cards) {
 		return nil, nil, "its items differ in structure"
 	}

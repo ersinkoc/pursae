@@ -132,6 +132,15 @@ func TestConvertSiteSalientShell(t *testing.T) {
 	if len(ft.Sections) < 2 || ft.Sections[0].Wrap != ajax {
 		t.Fatalf("footer template: %+v", ft.Sections)
 	}
+	// The pages one template draws keep their scripts after the footer (a tail section).
+	b := BindSite(res, SiteBindOptions{Groups: map[string]bool{"*": true}, PostSets: map[string]bool{"*": true}})
+	if len(b.Groups) != 1 {
+		t.Fatalf("groups: %+v %v", b.Groups, b.Notes)
+	}
+	secs := b.Groups[0].Sections
+	if last := secs[len(secs)-1]; !last.Tail || last.Wrap != "" || !strings.Contains(last.HTML, "init.js") || secs[0].Wrap != ajax {
+		t.Errorf("group sections: %+v", secs)
+	}
 }
 
 // The wrappers the page shares with the footer (deeper than with the header) are printed once.

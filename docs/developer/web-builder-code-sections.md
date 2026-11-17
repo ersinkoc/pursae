@@ -280,7 +280,10 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    the footer (Decoland: `.nectar-global-section` before `#footer-outer`, inside `#ajax-content-wrap`).
    A template's **head** is what every page it serves has in its head (`CommonHead`; a page's JSON-LD
    or a stylesheet with a cache-buster of its own stay in that page's head), and a request merges the
-   page's head first, so the design's order of stylesheets holds. The largest header and footer cluster
+   page's head first, so the design's order of stylesheets holds. Likewise a template's `<html>` and
+   `<body>` attributes are those all its pages share (`CommonAttrs`: equal values, the classes every
+   page has), so one page's classes (WordPress's `home page-id-10` on the template made from the front
+   page) do not reach every page through the template; each page brings its own. The largest header and footer cluster
    apply to the whole site (`include/general`), the others to their pages
    (`include/singular/page/<id>`, `include/404`); all with priority 10, so they win a tie with other
    whole-site templates (which are listed in the warnings). Pages that have no header (or footer) in
@@ -780,8 +783,13 @@ markup and is listed in the report's `bindings.notes`.
   varying `<h1>` is the **title** (other texts equal to it, a breadcrumb's last item, show the title
   too), the largest region that differs on every page is the **content**, every other difference a
   custom field `design_<n>` (`design_<n>_href`, `_src`, … for attributes) stored as post meta. A folder
-  qualifies when its pages share their sections, wrappers and head, have one varying `<h1>`, and besides
-  the title and the content at most two regions differ (≤ 20 % of a page). Pages whose side menus come
+  qualifies when its pages share their sections, wrappers and head (their JSON-LD aside, cache-busters
+  and nonces normalized), have one varying `<h1>`, and besides the title and the content at most eight
+  regions differ (≤ 20 % of a page). What a saved WordPress site printed per page and nothing on this
+  site uses is not a difference: the original record numbers in `id`, `class` and `data-*` values and a
+  hidden input (`id="post-1699"`, `class="post-1699"`, `comment_post_ID`), an inline script's code (its
+  post id, a nonce) and the page's tail scripts when they load the same files — the template keeps the
+  first page's (the check compares the pages that way). Pages whose side menus come
   in a few versions (enerjiosgb's four service categories) are split by that region into variants of two
   pages or more, one template each.
 
@@ -793,6 +801,22 @@ markup and is listed in the report's `bindings.notes`.
   template draws it (`include/singular/page/child_of/<folder parent>` for the largest variant, so a
   page added under the folder later gets it, `include/singular/page/<id>` for the other variants'
   pages; priority 10). A folder that does not qualify stays builder pages; the report says why.
+
+  **Pretty-permalink posts** (`webbuilder.SiteLeafSets`): a WordPress copy saves every post as
+  `<slug>/index.html`, alone in its folder, at the site's top beside the pages (`blog/index.html`,
+  `hakkimizda/index.html`), so no folder holds them. The leaf pages of each parent folder (`*` at the
+  top, `<parent>/*` below) are a candidate set too, split by kind when their `<body>` classes (those
+  without digits) differ, each kind named by a class only its pages have (`*:single-post`, Decoland's six
+  posts; `*:page-template-default` its pages, which do not share a skeleton and stay pages). With the
+  `/%postname%/` permalink structure the top-level sets become **posts** (`SiteBindOptions.PostSets`,
+  `wbSitePostSets`): the pages are made posts (same address), the largest variant is the
+  **single-post** template of every post (`include/singular/post`, so a post written later is drawn by
+  it), and a list of them is a loop of posts, newest first (`postType: post`, `orderBy: date desc`; the
+  import dates them a second apart in the list's order, so the site's earlier posts come after them
+  and a later post first). Otherwise a set is grouped as pages (each page's own condition) and its
+  lists stay markup (a loop of pages selects by parent page, which the set's pages do not share). A
+  second import finds the posts again (`_wb_site_key`), makes them pages and decides anew; "Remove this
+  import" removes them as it removes pages. The admin lists such a set as `*/index.html (single-post)`.
 - **Listings**: a list on another page whose element children each link to a different page of a
   collection folder (`haberler.html`'s news cards) becomes a loop over the folder's pages: query
   `postType: page`, `parent` = the folder's parent page, `orderBy: menu_order asc`, `perPage` = the
@@ -801,7 +825,8 @@ markup and is listed in the report's `bindings.notes`.
   `<h1>`), the longest other text (40+ characters) the `excerpt` (set on the page), a varying image the
   `image` field (no featured image yet: its URL in the field `list<n>_<k>`), the rest custom fields
   `list<n>_<k>`. The longest list sets the pages' `menu_order`; another list is bound when it shows a
-  window of that order (`offset`). A new page under the folder shows in the lists by its `menu_order`
+  window of that order (`offset`); the longest list that can be a loop sets the order (an author archive
+  whose cards differ in structure does not). A new page under the folder shows in the lists by its `menu_order`
   (0 sorts first) with its title and link; its other fields are empty until they are filled.
 
 <h3 id="binding-limits">Limits</h3>
@@ -819,7 +844,12 @@ markup and is listed in the report's `bindings.notes`.
   `_wb_html_<name>` (printed as stored: only trusted code writes protected meta); a public field
   `<name>` an editor sets instead is sanitized like post content.
   Images of a group are URL fields, not featured images.
-- Collections are detected among the pages of one folder; pages in the site's root are not grouped.
+- Collections are detected among the pages of one folder, and among the pretty-permalink pages
+  (`<slug>/index.html`) of one parent folder; other pages in the site's root are not grouped. Posts are
+  made only under the `/%postname%/` structure, from the site's top.
+- A group's template shows the first page's values of what the original site printed per page (its
+  record numbers in ids and classes, nonces, its post id in inline scripts) and loses the pages' JSON-LD
+  (Pursae SEO prints the posts' own structured data).
 - The bound form script stops a design's `mailto:` handler only when it reads the address from a
   `data-*` attribute of the form; a design whose script hard-codes the address opens the mail program too
   (the submission is still stored).

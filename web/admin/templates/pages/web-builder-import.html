@@ -48,7 +48,7 @@
 <h3>Content</h3>
 {{if .Menu}}<p>Header navigation as a Pursae menu: {{.Menu}}</p>{{else}}<p>The header's navigation stays markup (no list that a menu reproduces exactly).</p>{{end}}
 {{if .Folders}}<table class="wp-list-table widefat fixed striped" style="max-width:900px" id="wb-import-folders"><thead><tr><th>Folder</th><th>Pages</th><th>Single templates</th><th>Lists bound as loops</th></tr></thead><tbody>
-{{range .Folders}}<tr><td><code>{{.Name}}/</code></td><td>{{.Pages}}</td><td>{{if .Templates}}{{.Templates}} ({{.Grouped}} pages){{else}}&mdash;{{end}}</td><td>{{range .Lists}}<code>{{.}}</code> {{else}}&mdash;{{end}}</td></tr>
+{{range .Folders}}<tr><td><code>{{.Label}}</code>{{if .Posts}} <em>(posts)</em>{{end}}</td><td>{{.Pages}}</td><td>{{if .Templates}}{{.Templates}} ({{.Grouped}} pages){{else}}&mdash;{{end}}</td><td>{{range .Lists}}<code>{{.}}</code> {{else}}&mdash;{{end}}</td></tr>
 {{end}}</tbody></table>{{end}}
 {{if .BindNotes}}<details><summary>Binding notes</summary><ul style="list-style:disc;margin-left:20px">{{range .BindNotes}}<li>{{.}}</li>{{end}}</ul></details>{{end}}
 
@@ -87,8 +87,9 @@
 <td><label for="wb-import-oldlinks"><input type="checkbox" name="old_links" id="wb-import-oldlinks" value="rewrite"{{if .OldLinks}} checked{{end}} /> Point links to the original site at this site</label>
 <p class="description">Links and files of the original site become this site's pages and the design's files; unticked they keep pointing there. Forms and script endpoints never point there.</p></td></tr>{{end}}
 {{if .A.Folders}}{{$col := .Collections}}<tr><th scope="row">Collections</th>
-<td><fieldset>{{range .A.Folders}}<label><input type="checkbox" name="collection" value="{{.Name}}"{{if index $col .Name}} checked{{end}} /> <code>{{.Name}}/</code> ({{.Pages}} pages{{if .Templates}}; {{.Templates}} single template{{if gt .Templates 1}}s{{end}}{{end}})</label><br />{{end}}</fieldset>
-<p class="description">The pages of a ticked folder that share one layout become page content (title, content, custom fields) under one Theme Builder single template, at the same addresses; lists of those pages on other pages become loops. Pages that do not fit stay pages.</p></td></tr>{{end}}
+<td><fieldset>{{range .A.Folders}}<label><input type="checkbox" name="collection" value="{{.Name}}"{{if index $col .Name}} checked{{end}} /> <code>{{.Label}}</code> ({{.Pages}} pages{{if .Templates}}; {{.Templates}} single template{{if gt .Templates 1}}s{{end}}{{end}}{{if .Posts}}; they become posts{{end}})</label><br />{{end}}</fieldset>
+<p class="description">The pages of a ticked folder that share one layout become page content (title, content, custom fields) under one Theme Builder single template, at the same addresses; lists of those pages on other pages become loops. Pages that do not fit stay pages.</p>
+<p class="description">A set such as */index.html holds pages a WordPress copy saved with pretty permalinks, one folder each. With the /%postname%/ permalink structure they become posts at the same addresses; their single template is then every post's, and lists of them become loops of posts.</p></td></tr>{{end}}
 <tr><th scope="row">Front page</th>
 <td><label for="wb-import-front"><input type="checkbox" name="front" id="wb-import-front" value="1"{{if .Front}} checked{{end}}{{if not .A.HasFront}} disabled{{end}} /> Use index.html as the front page</label>
 {{if not .A.HasFront}}<p class="description">The site has no index.html at its top.</p>{{end}}</td></tr>

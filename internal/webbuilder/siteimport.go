@@ -3,8 +3,11 @@ package webbuilder
 import (
 	"fmt"
 	"path"
+	"slices"
 	"sort"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 // ConvertSite imports a whole static site (a folder of HTML pages whose files are a design kit) as
@@ -407,7 +410,14 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 			for _, m := range cl.Members {
 				heads = append(heads, out.Pages[idx[members[m]]].Code.Head)
 			}
-			t := SiteTemplate{Head: CommonHead(heads), Lang: res.Lang, Attrs: [2]string{res.HTMLAttrs, res.BodyAttrs}, Rule: cl.Rule}
+			// Its <html> and <body> attributes: those every page it serves has (a page's own
+			// body classes — WordPress's page-id-10, home — stay that page's).
+			var hattrs, battrs []string
+			for _, m := range cl.Members {
+				pc := out.Pages[idx[members[m]]].Code
+				hattrs, battrs = append(hattrs, pc.HTMLAttrs), append(battrs, pc.BodyAttrs)
+			}
+			t := SiteTemplate{Head: CommonHead(heads), Lang: res.Lang, Attrs: [2]string{CommonAttrs(hattrs), CommonAttrs(battrs)}, Rule: cl.Rule}
 			names := sitePartNames(res, header)
 			for j, h := range cl.Parts {
 				name := "Part"
@@ -435,6 +445,80 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 	return list
 }
 
+// CommonAttrs is the attributes (an opening tag's, `class="a b" data-x="1"`) that every one of list
+// has: an attribute with the same value in all, and the classes all of them have.
+func CommonAttrs(list []string) string {
+	if len(list) == 0 {
+		return ""
+	}
+	if len(list) == 1 {
+		return list[0]
+	}
+	parse := func(s string) []html.Attribute {
+		nodes, err := parseFragment("<div " + s + "></div>")
+		if err != nil || len(nodes) == 0 {
+			return nil
+		}
+		return nodes[0].Attr
+	}
+	first := parse(list[0])
+	rest := make([][]html.Attribute, len(list)-1)
+	for i, s := range list[1:] {
+		rest[i] = parse(s)
+	}
+	get := func(attrs []html.Attribute, k string) (string, bool) {
+		for _, a := range attrs {
+			if a.Key == k && a.Namespace == "" {
+				return a.Val, true
+			}
+		}
+		return "", false
+	}
+	var b strings.Builder
+	for _, a := range first {
+		if a.Namespace != "" {
+			continue
+		}
+		val := a.Val
+		if a.Key == "class" {
+			var keep []string
+			for _, c := range strings.Fields(a.Val) {
+				all := true
+				for _, r := range rest {
+					v, _ := get(r, "class")
+					if !slices.Contains(strings.Fields(v), c) {
+						all = false
+						break
+					}
+				}
+				if all {
+					keep = append(keep, c)
+				}
+			}
+			if len(keep) == 0 {
+				continue
+			}
+			val = strings.Join(keep, " ")
+		} else {
+			all := true
+			for _, r := range rest {
+				if v, ok := get(r, a.Key); !ok || v != a.Val {
+					all = false
+					break
+				}
+			}
+			if !all {
+				continue
+			}
+		}
+		if b.Len() > 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(a.Key + `="` + html.EscapeString(val) + `"`)
+	}
+	return b.String()
+}
+
 // CommonHead is the head markup every one of heads has: the first head's top-level elements (and
 // the text between them) that each other head holds as written, in order.
 func CommonHead(heads []string) string {
@@ -444,7 +528,26 @@ func CommonHead(heads []string) string {
 	if len(heads) == 1 {
 		return heads[0]
 	}
-	lines := strings.Split(heads[0], "\n")
+	var keep []string
+	for _, e := range headElements(heads[0]) {
+		all := true
+		for _, h := range heads[1:] {
+			if !strings.Contains(h, e) {
+				all = false
+				break
+			}
+		}
+		if all {
+			keep = append(keep, e)
+		}
+	}
+	return strings.Join(keep, "\n")
+}
+
+// headElements splits head markup (one top-level element per line, as ConvertCode writes it; an
+// element over several lines, an inline style or script, is kept whole) into its elements.
+func headElements(head string) []string {
+	lines := strings.Split(head, "\n")
 	// The head markup is one top-level element per line (ConvertCode's head); an element over
 	// several lines (an inline style) is kept whole.
 	var elems []string
@@ -466,20 +569,7 @@ func CommonHead(heads []string) string {
 	if cur.Len() > 0 {
 		elems = append(elems, cur.String())
 	}
-	var keep []string
-	for _, e := range elems {
-		all := true
-		for _, h := range heads[1:] {
-			if !strings.Contains(h, e) {
-				all = false
-				break
-			}
-		}
-		if all {
-			keep = append(keep, e)
-		}
-	}
-	return strings.Join(keep, "\n")
+	return elems
 }
 
 // Uncovered lists the pages (indexes into Pages) that no header (header true) or footer template

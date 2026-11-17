@@ -4587,5 +4587,7 @@
  "The design loads tracking:": "Tasarım şu izleme kodlarını yüklüyor:",
  "It is kept and runs on this site: check that the ids are yours and that the site's consent covers it.": "Korunur ve bu sitede çalışır: kimliklerin size ait olduğunu ve sitenin onay (çerez) düzeninin bunu kapsadığını denetleyin.",
  "Point links to the original site at this site": "Özgün siteye giden bağlantıları bu siteye yönlendir",
- "Links and files of the original site become this site's pages and the design's files; unticked they keep pointing there. Forms and script endpoints never point there.": "Özgün sitenin bağlantıları ve dosyaları bu sitenin sayfalarına ve tasarımın dosyalarına dönüşür; işaret kaldırılırsa oraya gitmeye devam eder. Formlar ve betik uç noktaları hiçbir zaman oraya gitmez."
+ "Links and files of the original site become this site's pages and the design's files; unticked they keep pointing there. Forms and script endpoints never point there.": "Özgün sitenin bağlantıları ve dosyaları bu sitenin sayfalarına ve tasarımın dosyalarına dönüşür; işaret kaldırılırsa oraya gitmeye devam eder. Formlar ve betik uç noktaları hiçbir zaman oraya gitmez.",
+ "(posts)": "(yazılar)",
+ "A set such as */index.html holds pages a WordPress copy saved with pretty permalinks, one folder each. With the /%postname%/ permalink structure they become posts at the same addresses; their single template is then every post's, and lists of them become loops of posts.": "*/index.html gibi bir küme, bir WordPress kopyasının kalıcı bağlantılarla her biri ayrı klasöre kaydettiği sayfaları tutar. /%postname%/ kalıcı bağlantı yapısında bunlar aynı adreslerde yazılara dönüşür; tekil şablonları her yazının şablonu olur ve bu yazıların listeleri yazı döngüsüne dönüşür."
 }

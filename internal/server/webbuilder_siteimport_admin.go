@@ -248,7 +248,7 @@ func (s *Server) wbWizSetRecords(c *gin.Context, recs map[string]*wbWizRecord) e
 // wbWizOwned lists the ids of the pages and templates carrying the kit's import mark, any status.
 func (s *Server) wbWizOwned(c *gin.Context, kit string) (pages, templates map[int64]bool) {
 	pages, templates = map[int64]bool{}, map[int64]bool{}
-	rows, err := s.store.Pool.Query(c, `SELECT id, type FROM posts WHERE type IN ('page', $1) AND meta->>$2 = $3`,
+	rows, err := s.store.Pool.Query(c, `SELECT id, type FROM posts WHERE type IN ('page', 'post', $1) AND meta->>$2 = $3`,
 		webbuilder.TemplatePostType, wbSiteMetaKit, kit)
 	if err != nil {
 		return
@@ -258,7 +258,7 @@ func (s *Server) wbWizOwned(c *gin.Context, kit string) (pages, templates map[in
 		var id int64
 		var typ string
 		if rows.Scan(&id, &typ) == nil {
-			if typ == "page" {
+			if typ == "page" || typ == "post" { // a post: a page a collection made a post
 				pages[id] = true
 			} else {
 				templates[id] = true
@@ -560,6 +560,8 @@ type wbWizAnalysis struct {
 // wbWizFolder is a folder of pages the import can turn into content under single templates.
 type wbWizFolder struct {
 	Name      string
+	Label     string // the folder ("hizmet/") or a set of pretty-permalink pages ("*/index.html (single-post)")
+	Posts     bool   // its pages become posts
 	Pages     int
 	Templates int // single templates its pages would share
 	Grouped   int // pages that become content
@@ -714,7 +716,7 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 		for f := range webbuilder.SiteFolders(res) {
 			fp[f] = "1"
 		}
-		b := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: true, Groups: map[string]bool{"*": true}, FolderParents: fp})
+		b := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: true, Groups: map[string]bool{"*": true}, FolderParents: fp, PostSets: s.wbSitePostSets(res)})
 		if b.Menu != nil {
 			var labels []string
 			for _, it := range b.Menu.Items {
@@ -723,8 +725,23 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 			a.Menu = strings.Join(labels, " · ")
 		}
 		folders := webbuilder.SiteFolders(res)
+		for k, v := range webbuilder.SiteLeafSets(res) {
+			folders[k] = v
+		}
 		for _, f := range b.Candidates {
-			row := wbWizFolder{Name: f, Pages: len(folders[f])}
+			row := wbWizFolder{Name: f, Label: f + "/", Pages: len(folders[f])}
+			if parent, ok := webbuilder.SiteLeafParent(f); ok {
+				_, kind, _ := strings.Cut(f, ":")
+				row.Label = strings.TrimPrefix(parent+"/", "/") + "*/index.html"
+				if kind != "" {
+					row.Label += " (" + kind + ")"
+				}
+			}
+			for _, g := range b.Groups {
+				if g.Folder == f && g.AsPosts {
+					row.Posts = true
+				}
+			}
 			for _, g := range b.Groups {
 				if g.Folder == f {
 					row.Templates++
@@ -1242,7 +1259,11 @@ func (s *Server) wbWizUndoPage(c *gin.Context, id string) {
 // import's mark of the kit ("" otherwise: the post is not the import's to delete).
 func (s *Server) wbWizOwnedTitle(c *gin.Context, id int64, typ, kit string) string {
 	var title string
-	err := s.store.Pool.QueryRow(c, `SELECT title FROM posts WHERE id = $1 AND type = $2 AND meta->>$3 = $4`, id, typ, wbSiteMetaKit, kit).Scan(&title)
+	types := []string{typ}
+	if typ == "page" {
+		types = append(types, "post") // a page a collection made a post
+	}
+	err := s.store.Pool.QueryRow(c, `SELECT title FROM posts WHERE id = $1 AND type = ANY($2) AND meta->>$3 = $4`, id, types, wbSiteMetaKit, kit).Scan(&title)
 	if err != nil {
 		return ""
 	}

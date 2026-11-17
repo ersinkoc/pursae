@@ -491,3 +491,93 @@ func TestMCPImportSiteSalientShape(t *testing.T) {
 		}
 	}
 }
+
+// Pretty-permalink posts of a WordPress copy (<slug>/index.html at the top, a blog page listing
+// them) become posts under one single-post template when the site's permalinks are /%postname%/:
+// same addresses, the blog list a loop of posts, a post written later listed and drawn too.
+func TestMCPImportSitePostCollection(t *testing.T) {
+	ts, c, srv := newTestServer(t, true)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	if r := call("activate_theme", map[string]any{"slug": wbHelloSlug}); r["isError"] == true {
+		t.Fatalf("theme: %v", mcpText(r))
+	}
+	if err := srv.settings.Set(t.Context(), map[string]any{"permalink_structure": "/%postname%/"}); err != nil {
+		t.Fatal(err)
+	}
+	// The site's own posts are older than the import (Hello world! written at install).
+	if _, err := srv.store.Pool.Exec(t.Context(), `UPDATE posts SET published_at = published_at - interval '1 day' WHERE type = 'post'`); err != nil {
+		t.Fatal(err)
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "wp", "files": []any{
+		map[string]any{"path": "css/site.css", "text": "body{margin:0}"},
+	}}))
+	nav := `<header class="top"><nav><a class="n" href="../blog/index.html">Blog</a></nav></header>`
+	doc := func(title, cls, main string) string {
+		return `<!doctype html><html lang="en"><head><title>` + title + `</title><link rel="stylesheet" href="../css/site.css"></head><body class="` + cls + `">` +
+			nav + `<main>` + main + `</main><footer class="foot">Footer</footer></body></html>`
+	}
+	post := func(title, id, body string) string {
+		return doc(title, "single single-post postid-"+id, `<section class="hero"><h1>`+title+`</h1></section><article id="post-`+id+`" class="post-`+id+`"><div class="content">`+body+`</div></article>`)
+	}
+	card := func(slug, title string) string {
+		return `<article class="card"><a href="../` + slug + `/index.html"><h3>` + title + `</h3></a></article>`
+	}
+	pages := []any{
+		map[string]any{"path": "alpha/index.html", "html": post("Alpha post", "11", `<p>Alpha body text.</p><h2>More</h2>`)},
+		map[string]any{"path": "beta/index.html", "html": post("Beta post", "12", `<p>Beta body.</p><ul><li>x</li></ul>`)},
+		map[string]any{"path": "gamma/index.html", "html": post("Gamma post", "13", `<blockquote>Gamma.</blockquote>`)},
+		map[string]any{"path": "blog/index.html", "html": doc("Blog", "page", `<section><h1>Blog</h1><div class="grid">`+card("alpha", "Alpha post")+card("beta", "Beta post")+card("gamma", "Gamma post")+`</div></section>`)},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "wp", "pages": pages, "collections": true}))
+	b, _ := out["bindings"].(map[string]any)
+	if b == nil || len(asList(b["groups"])) != 1 || len(asList(b["listings"])) != 1 {
+		t.Fatalf("bindings: %v", out["bindings"])
+	}
+	if g := asList(b["groups"])[0].(map[string]any); g["type"] != "post" {
+		t.Fatalf("group: %v", g)
+	}
+	var n int
+	if err := srv.store.Pool.QueryRow(t.Context(), `SELECT count(*) FROM posts WHERE type = 'post' AND meta->>$1 = 'wp'`, wbSiteMetaKit).Scan(&n); err != nil || n != 3 {
+		t.Fatalf("posts made: %d %v", n, err)
+	}
+	get := func(path string) (int, string) {
+		t.Helper()
+		resp, err := http.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return resp.StatusCode, string(b)
+	}
+	for path, want := range map[string]string{"/alpha/": "<p>Alpha body text.</p>", "/beta/": "<li>x</li>", "/gamma/": "<blockquote>Gamma.</blockquote>"} {
+		code, body := get(path)
+		if code != 200 || !strings.Contains(body, want) || !strings.Contains(body, `<section class="hero"><h1`) {
+			t.Errorf("%s: %d %s", path, code, wbSnippet(body, "hero"))
+		}
+	}
+	_, blog := get("/blog/")
+	for _, title := range []string{"Alpha post", "Beta post", "Gamma post"} {
+		if !regexpFind(`<h3[^>]*>`+title+`</h3>`, blog) {
+			t.Errorf("blog list: %s missing: %s", title, wbSnippet(blog, "grid"))
+		}
+	}
+	// A post written later is drawn by the template and listed.
+	var created struct {
+		ID int64 `json:"id"`
+	}
+	if r := call("create_post", map[string]any{"title": "Delta post", "content": "<p>Delta words.</p>", "status": "publish"}); r["isError"] == true {
+		t.Logf("create_post: %v", mcpText(r))
+	} else {
+		_ = created
+		srv.wbPurgePages()
+		if code, body := get("/delta-post/"); code != 200 || !regexpFind(`<section class="hero"><h1[^>]*>Delta post</h1>`, body) {
+			t.Errorf("a new post is not drawn by the template: %d %s", code, wbSnippet(body, "<body"))
+		}
+	}
+}

@@ -47,11 +47,28 @@ const (
 var wbSiteTitleRE = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
 
 // wbSiteOwned finds the non-trashed post of a type the import of kit made for key (0: none).
+// A page of the import that a collection made a post (wbSiteGroups) is still the import's page:
+// "page" finds both.
 func (s *Server) wbSiteOwned(c *gin.Context, typ, kit, key string) int64 {
 	var id int64
-	_ = s.store.Pool.QueryRow(c, `SELECT id FROM posts WHERE type = $1 AND meta->>$2 = $3 AND meta->>$4 = $5
-		AND status NOT IN ('trash','auto-draft') ORDER BY id DESC LIMIT 1`, typ, wbSiteMetaKit, kit, wbSiteMetaKey, key).Scan(&id)
+	types := []string{typ}
+	if typ == "page" {
+		types = append(types, "post")
+	}
+	_ = s.store.Pool.QueryRow(c, `SELECT id FROM posts WHERE type = ANY($1) AND meta->>$2 = $3 AND meta->>$4 = $5
+		AND status NOT IN ('trash','auto-draft') ORDER BY id DESC LIMIT 1`, types, wbSiteMetaKit, kit, wbSiteMetaKey, key).Scan(&id)
 	return id
+}
+
+// wbSiteSetType makes an imported page a post or a post a page again (a collection of
+// pretty-permalink posts, wbSiteGroups); a post has no parent.
+func (s *Server) wbSiteSetType(c *gin.Context, id int64, typ string) error {
+	q := `UPDATE posts SET type = $2, updated_at = now() WHERE id = $1 AND type IN ('page','post') AND type <> $2`
+	if typ == "post" {
+		q = `UPDATE posts SET type = $2, parent_id = NULL, updated_at = now() WHERE id = $1 AND type IN ('page','post') AND type <> $2`
+	}
+	_, err := s.store.Pool.Exec(c, q, id, typ)
+	return err
 }
 
 func (s *Server) wbSiteMark(c *gin.Context, id int64, kit, key string) error {
@@ -64,6 +81,10 @@ func (s *Server) wbSiteMark(c *gin.Context, id int64, kit, key string) error {
 // with slug and title; an existing page gets the slug and parent of the plan.
 func (s *Server) wbSitePage(c *gin.Context, kit, key, slug, title string, parent int64) (int64, bool, error) {
 	if id := s.wbSiteOwned(c, "page", kit, key); id > 0 {
+		// A post an earlier import made of it is a page again until this import groups it.
+		if err := s.wbSiteSetType(c, id, "page"); err != nil {
+			return id, false, err
+		}
 		p, err := s.store.GetPost(c, id)
 		if err == nil && (p.Slug != slug || p.ParentID != parent) {
 			if err := s.mcpREST(c, http.MethodPost, "/wp/v2/pages/"+itoa64(id), map[string]any{"slug": slug, "parent": parent}, nil); err != nil {
@@ -297,7 +318,8 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			folderParents[f] = itoa64(id)
 		}
 	}
-	binding := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: menusOn, Groups: groups, FolderParents: folderParents})
+	postSets := s.wbSitePostSets(res)
+	binding := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: menusOn, Groups: groups, FolderParents: folderParents, PostSets: postSets})
 	bindReport := map[string]any{}
 	if m := binding.Menu; m != nil && len(res.Headers) > 0 && m.Section < len(res.Headers[0].Sections) {
 		pageByURL := map[string]int64{}
