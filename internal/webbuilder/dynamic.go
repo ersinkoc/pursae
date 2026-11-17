@@ -55,6 +55,7 @@ type SlotArgs struct {
 	Field  string // data-wb-field, FieldPattern: a custom field name; "" = none
 	Item   string // data-wb-item, IDPattern: the cell whose stored DynSettings apply; "" = none
 	Raw    bool   // data-wb-raw: the value as stored (code bindings, AttrRaw)
+	Meta   bool   // data-wb-meta: a custom field may fall back to the post's own meta (code bindings, AttrMeta)
 	Tree   bool   // data-wb-menu-tree: a code menu (top level only; ItemKeyer and SubMenuer items)
 }
 
@@ -588,6 +589,9 @@ func slotArgs(n *html.Node) SlotArgs {
 	}
 	if hasAttr(n, AttrRaw) {
 		a.Raw = true
+	}
+	if hasAttr(n, AttrMeta) {
+		a.Meta = true
 	}
 	if hasAttr(n, AttrMenuTree) {
 		a.Tree = true

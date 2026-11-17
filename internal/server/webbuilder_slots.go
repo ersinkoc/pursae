@@ -291,7 +291,7 @@ func (r *wbSlotResolver) Text(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 	p := sp.p
 	switch slot {
 	case webbuilder.SlotPostField:
-		return e.fieldText(p, a.Field)
+		return e.fieldText(p, a.Field, a.Meta)
 	case webbuilder.SlotPostTitleText:
 		// The title as stored (a design's own text: no texturizing, no title filters).
 		t := strings.TrimSpace(html.UnescapeString(p.Title))
@@ -388,7 +388,7 @@ func (r *wbSlotResolver) HTML(slot webbuilder.SlotName, a webbuilder.SlotArgs) (
 				return v, true // a site import's markup, protected meta (TrustedHTMLField)
 			}
 		}
-		v, ok := e.fieldValue(p, a.Field).(string)
+		v, ok := e.fieldValue(p, a.Field, a.Meta).(string)
 		if !ok || strings.TrimSpace(v) == "" {
 			return "", false
 		}
@@ -485,7 +485,7 @@ func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) 
 	p := sp.p
 	switch slot {
 	case webbuilder.SlotPostFieldURL:
-		u := e.fieldURL(p, a.Field)
+		u := e.fieldURL(p, a.Field, a.Meta)
 		if u == "" {
 			return nil, false
 		}
@@ -520,9 +520,9 @@ func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) 
 			if full := sp.imageOf(e, "full"); full["src"] != "" {
 				return map[string]string{"src": full["src"], "alt": full["alt"]}, true
 			}
-			if u := e.fieldURL(p, a.Field); u != "" {
+			if u := e.fieldURL(p, a.Field, a.Meta); u != "" {
 				out := map[string]string{"src": u}
-				if alt, ok := e.fieldText(p, a.Field+"_alt"); ok {
+				if alt, ok := e.fieldText(p, a.Field+"_alt", a.Meta); ok {
 					out["alt"] = alt
 				}
 				return out, true
@@ -531,7 +531,7 @@ func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) 
 		}
 		m := sp.imageOf(e, a.Size)
 		if len(m) == 0 && a.Field != "" {
-			if u := e.fieldURL(p, a.Field); u != "" {
+			if u := e.fieldURL(p, a.Field, a.Meta); u != "" {
 				return map[string]string{"src": u}, true
 			}
 		}
@@ -544,7 +544,7 @@ func (r *wbSlotResolver) Attrs(slot webbuilder.SlotName, a webbuilder.SlotArgs) 
 		}
 		out := map[string]string{}
 		for _, k := range webbuilder.SlotAttrs {
-			if v, ok := e.fieldValue(p, a.Field+"_"+strings.ReplaceAll(k, "-", "_")).(string); ok && v != "" {
+			if v, ok := e.fieldValue(p, a.Field+"_"+strings.ReplaceAll(k, "-", "_"), a.Meta).(string); ok && v != "" {
 				out[k] = v
 			}
 		}
@@ -638,12 +638,20 @@ func (e *wbSlotEnv) menuByID(id int64) []*store.MenuItem {
 
 // fieldValue is the formatted Pursae Custom Fields value of a post's field; nil when the plugin is
 // off, the field is unset, or the post is password protected (its content is not shown either).
-// Without a field of that name (or with the plugin off) the post's own meta value of that name is
-// used when it is a string: what a site import stores for the parts of a design's page that are
-// not its title or content (webbuilder.ConvertGroups).
-func (e *wbSlotEnv) fieldValue(p *store.Post, name string) any {
+//
+// Without meta the name must be a registered field (a field group defines it): an author's
+// markup can print the fields the site shows, never other meta of a post it can loop over.
+// meta (a code binding's element, webbuilder.AttrMeta, which the snapshot sanitizer drops from an
+// author's markup): the name the binding declares may also be plain post meta, get_field()'s raw
+// value or, with the plugin off, the post's own meta value when it is a string: what a site
+// import stores for the parts of a design's page that are not its title or content
+// (webbuilder.ConvertGroups).
+func (e *wbSlotEnv) fieldValue(p *store.Post, name string, meta bool) any {
 	if e.s == nil || p == nil || name == "" || p.Password != "" || strings.HasPrefix(name, "_") {
 		return nil
+	}
+	if !meta {
+		return e.s.acfRegisteredField(e.ctx, name, p)
 	}
 	if v := e.s.acfGetField(e.ctx, name, p, true); v != nil {
 		return v
@@ -654,10 +662,27 @@ func (e *wbSlotEnv) fieldValue(p *store.Post, name string) any {
 	return nil
 }
 
+// acfRegisteredField is get_field(name, post) formatted, for a name some field group defines
+// only: nil for plain meta (get_field would return its raw value).
+func (s *Server) acfRegisteredField(ctx context.Context, name string, p *store.Post) any {
+	if !s.acfgoOn() {
+		return nil
+	}
+	o := s.acfgoObject(ctx, p, nil)
+	if o == nil || o.Kind == "block" {
+		return nil
+	}
+	f := s.acfgoFind(ctx, o, name)
+	if f == nil {
+		return nil
+	}
+	return s.acfgoLoad(ctx, o, f, "", true)
+}
+
 // fieldText is the field as plain text (the engine escapes it); lists join with ", ".
-func (e *wbSlotEnv) fieldText(p *store.Post, name string) (string, bool) {
+func (e *wbSlotEnv) fieldText(p *store.Post, name string, meta bool) (string, bool) {
 	var out string
-	switch t := e.fieldValue(p, name).(type) {
+	switch t := e.fieldValue(p, name, meta).(type) {
 	case nil:
 		return "", false
 	case []any:
@@ -676,8 +701,8 @@ func (e *wbSlotEnv) fieldText(p *store.Post, name string) (string, bool) {
 }
 
 // fieldURL is a URL of the field: a plain URL string, or the url of a link or image field.
-func (e *wbSlotEnv) fieldURL(p *store.Post, name string) string {
-	switch t := e.fieldValue(p, name).(type) {
+func (e *wbSlotEnv) fieldURL(p *store.Post, name string, meta bool) string {
+	switch t := e.fieldValue(p, name, meta).(type) {
 	case string:
 		return strings.TrimSpace(t)
 	case map[string]any:

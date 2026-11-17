@@ -1522,7 +1522,12 @@ const (
 	// AttrRaw on a post.title / post.content / post.image slot element: the stored value as the
 	// design shows it (title without texturizing, imported HTML content as stored, image src and
 	// alt only). Set by the code bindings.
-	AttrRaw    = "data-wb-raw"
+	AttrRaw = "data-wb-raw"
+	// AttrMeta on a post.field* / post.image slot element: the field may fall back to the post's
+	// own (public) meta value of that name when no Pursae Custom Fields field has it (what a site
+	// import stores, webbuilder.ConvertGroups). Set by the code bindings only: the snapshot
+	// sanitizer drops it, so an author's own markup reads registered fields only.
+	AttrMeta   = "data-wb-meta"
 	AttrFormat = "data-wb-format" // DynSettings.Format
 	AttrSize   = "data-wb-size"   // DynSettings.Size
 	AttrTax    = "data-wb-tax"    // DynSettings.Tax

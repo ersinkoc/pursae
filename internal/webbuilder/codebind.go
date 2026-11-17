@@ -756,6 +756,7 @@ func (c *bindCompiler) field(n *srcNode, b *CodeBind) {
 		}
 		if b.Name != "" {
 			c.add(img, AttrField, b.Name)
+			c.add(img, AttrMeta, "")
 		}
 	case "url":
 		c.add(n, AttrSlot, string(SlotPostURL))
@@ -789,6 +790,7 @@ func (c *bindCompiler) field(n *srcNode, b *CodeBind) {
 		c.add(n, AttrSlot, string(SlotLoopPagination))
 	case "custom":
 		c.add(n, AttrField, b.Name)
+		c.add(n, AttrMeta, "")
 		switch b.Attr {
 		case "html":
 			c.add(n, AttrSlot, string(SlotPostFieldHTML))

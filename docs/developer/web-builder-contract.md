@@ -1211,6 +1211,7 @@ existing elements with `data-wb-*` attributes, so the sanitizer allowlist of §8
 | `data-wb-menu-tree` | a `data-wb-menu-loc` list (code bindings) | top-level items only; the list may hold several `data-wb-loop-item` templates: an item takes the one whose value lists `k:<menu item id>`, else `parent` when it has sub-items, else `default`, else the first; `menu-<id>` as the location names a menu by id |
 | `data-wb-menu-sub` | an element inside such a template | repeats its own `data-wb-loop-item` templates per sub-item of the item (one level below a menu) |
 | `data-wb-raw` | a `post.title` / `post.content` / `post.image` slot element | content printed as stored when it is imported markup (starts with an element, no blocks, no password), image `src` and `alt` only (else `data-wb-field`'s URL) |
+| `data-wb-meta` | a `post.field*` / `post.image` slot element (code bindings only) | the field may be plain post meta of that name (not `_`-prefixed), not just a registered Pursae Custom Fields field; the snapshot sanitizer removes it from an author's markup, the bindings are compiled after sanitizing |
 
 In every loop or menu the blank text right after the first item template is written between two items
 (the design's own white space between cards); blank text between templates is dropped. A snapshot with
@@ -1239,13 +1240,13 @@ Slots:
 | `site.logo` | attr | `img` attributes of `custom_logo` (`attachmentImage`) |
 | `site.year` | text | current year in the site time zone |
 | `menu.label` | text | menu item label |
-| `post.field` | text | Pursae Custom Fields value of the post named by `data-wb-field` (`[A-Za-z0-9_-]{1,64}`); without such a field, the post meta string of that name (not `_`-prefixed) |
+| `post.field` | text | Pursae Custom Fields value of the post named by `data-wb-field` (`[A-Za-z0-9_-]{1,64}`), a field some field group defines; with `data-wb-meta` (code bindings) also the post meta string of that name (not `_`-prefixed) |
 | `post.field-url` | attr | `href` (`src` on `<img>`) from a URL, link or image field named by `data-wb-field` |
 | `menu.url` | attr | `href`; the current item also gets `aria-current="page"` and class `is-current` |
 | `menu.link` | attr | `href` and `target` only (a code section's menu: the design's active-link rule marks the current item) |
 | `post.title-text` | text | the title as stored (no texturizing, no title filters) |
 | `post.term-names` | text | names of the post's terms of `data-wb-tax`, joined by `data-wb-sep` |
-| `post.field-html` | html | a custom field (else the post meta value of that name) as HTML, sanitized like post content (`KsesPost`) |
+| `post.field-html` | html | a custom field (with `data-wb-meta`, else the post meta value of that name) as HTML, sanitized like post content (`KsesPost`) |
 | `post.field-attrs` | attr | the attributes in SlotAttrs from the fields `<data-wb-field>_<attr>` (`_href`, `_src`, `_alt`, `_aria_current`, …) |
 | `post.title` | html | `theTitle` |
 | `post.url` | attr | `href` = permalink |

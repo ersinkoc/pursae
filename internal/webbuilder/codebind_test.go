@@ -185,7 +185,7 @@ func removeAttrs(s string) string {
 		}
 		raw := string(z.Raw())
 		if tt == html.StartTagToken || tt == html.SelfClosingTagToken {
-			for _, a := range []string{AttrMenuLoc, AttrMenuTree, AttrLoopItem, AttrSlot, AttrText, AttrMenuSub, AttrLoop, AttrRaw, AttrField, AttrFormat} {
+			for _, a := range []string{AttrMenuLoc, AttrMenuTree, AttrLoopItem, AttrSlot, AttrText, AttrMenuSub, AttrLoop, AttrRaw, AttrField, AttrMeta, AttrFormat} {
 				for {
 					i := strings.Index(raw, " "+a+`="`)
 					if i < 0 {
@@ -312,5 +312,22 @@ func TestCheckCodeBinds(t *testing.T) {
 	}
 	if s, w, ok := SplitBindKey("abc-w-w12"); !ok || s != "abc-w" || w != "12" {
 		t.Errorf("split: %q %q %v", s, w, ok)
+	}
+}
+
+// A custom field binding (and an image binding's fallback URL field) marks its element with
+// data-wb-meta, the only way a post's own meta is read; the snapshot sanitizer drops the marker
+// from an author's markup, which reads registered fields only.
+func TestCompileBindsCustomFieldMeta(t *testing.T) {
+	src := `<div data-wbc="1"><p data-wbc="2">x</p><img data-wbc="3" src="/a.jpg" alt=""></div>`
+	out := CompileBinds(src, "s", ParseCodeBinds(`{"2":{"kind":"field","field":"custom","name":"design_lead"},"3":{"kind":"field","field":"image","name":"design_pic"}}`), CodeFillOptions{})
+	for _, want := range []string{`data-wb-field="design_lead" data-wb-meta=""`, `data-wb-field="design_pic" data-wb-meta=""`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("lacks %s\n%s", want, out)
+		}
+	}
+	snap, _ := sanitizeOK(t, `<p data-wb-slot="post.field" data-wb-field="secret" data-wb-meta="">x</p>`, SnapshotOptions{})
+	if strings.Contains(snap, AttrMeta) || !strings.Contains(snap, `data-wb-field="secret"`) {
+		t.Errorf("the sanitizer must drop data-wb-meta only: %q", snap)
 	}
 }
