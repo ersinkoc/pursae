@@ -2,7 +2,7 @@
      parts of the request arrive in .Data.wb (wbThemePartsView: Header, Main, Footer, HasMain, Canvas)
      and replace the minimal markup below; a canvas page (Canvas) has no header or footer at all. */}}
 {{define "header"}}<!DOCTYPE html>
-<html lang="en-US">
+<html lang="{{with .Data.wb}}{{with .Lang}}{{.}}{{else}}en-US{{end}}{{else}}en-US{{end}}"{{with .Data.wb}}{{.HTMLAttrs}}{{end}}>
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,7 +10,7 @@
 	<title>{{.DocumentTitle}}</title>
 {{.Head}}</head>
 
-<body class="{{.BodyClass}}">
+<body class="{{.BodyClass}}"{{with .Data.wb}}{{.BodyAttrs}}{{end}}>
 {{.BodyOpen}}{{if not (and .Data.wb (or .Data.wb.HeaderCode .Data.wb.MainCode))}}<a class="skip-link screen-reader-text" href="#content">{{__ . "Skip to content"}}</a>{{end}}
 {{template "site-header" .}}
 {{end}}

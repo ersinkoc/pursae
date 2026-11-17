@@ -54,6 +54,8 @@ type wbThemeParts struct {
 	// forumMain: a Pursae Forum view whose site template prints the page's whole main
 	// (forum_site_templates.go); it stands in for a main part made of code sections.
 	forumMain string
+	// bodyClass: the design's <body> classes (code parts), added to the theme's.
+	bodyClass string
 }
 
 // wbThemeParts picks and fills the parts of the request. nil when no location has one.
@@ -152,6 +154,7 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 	if len(out.parts) == 0 && out.forumMain == "" {
 		return nil
 	}
+	s.wbCodeParts(c, out, header, main, footer)
 	out.view.Canvas = out.canvas // Hello Pursae then prints no header or footer at all
 	return out
 }
@@ -175,7 +178,7 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 		tp = &wbThemeParts{view: &wbThemePartsView{}} // popups only: the theme prints its own defaults
 	}
 	v.Data[wbThemePartsKey] = tp.view
-	v.BodyClass = strings.TrimSpace(v.BodyClass + " wb-site")
+	v.BodyClass = strings.TrimSpace(v.BodyClass + " wb-site " + tp.bodyClass)
 
 	var fonts []webbuilder.FontNeed
 	feats := map[string]bool{}

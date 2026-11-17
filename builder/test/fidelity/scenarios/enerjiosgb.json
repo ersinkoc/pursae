@@ -1,0 +1,9 @@
+[
+  {
+    "name": "kurumsal-open",
+    "pages": ["index.html", "hakkimizda.html", "hizmet/3.html", "kadro/yonetim.html"],
+    "widths": [1440, 1024],
+    "steps": [{ "hover": "[data-menu-trigger=corporate]" }, { "wait": 300 }],
+    "fullPage": false
+  }
+]

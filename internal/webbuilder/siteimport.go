@@ -1,0 +1,347 @@
+package webbuilder
+
+import (
+	"fmt"
+	"path"
+	"sort"
+	"strings"
+)
+
+// ConvertSite imports a whole static site (a folder of HTML pages whose files are a design kit) as
+// code sections: every page through ConvertCode with Split, the pages' copies of the header and of
+// the footer clustered into as few templates as reproduce them (ClusterParts: copies that differ
+// only in the current page's menu link are one template with an ActiveRule), links between the
+// pages mapped to their site URLs. Creating the pages and templates is the caller's
+// (internal/server/webbuilder_siteimport.go): it plans the site's URLs first (PlanSite), creates
+// the pages, then converts with their real URLs.
+
+// SitePage is one HTML file of the site.
+type SitePage struct {
+	// Path is the file's path in the folder (= in the kit): "index.html", "hizmet/3.html".
+	Path string
+	HTML string
+}
+
+// SitePlanPage is where a file goes.
+type SitePlanPage struct {
+	Path string `json:"path"`
+	// Slug and Parent: the page's slug and the folder key of its parent ("" at the top; folders are
+	// "dir:hizmet"; a folder's own page is the page of "hizmet.html" or "hizmet/index.html").
+	Slug   string `json:"slug"`
+	Parent string `json:"parent,omitempty"`
+	// Front: index.html at the top (the front page); NotFound: 404.html (the 404 template).
+	Front    bool `json:"front,omitempty"`
+	NotFound bool `json:"notFound,omitempty"`
+}
+
+// SitePlanFolder is a folder that needs a page of its own as the parent of its pages.
+type SitePlanFolder struct {
+	Key    string `json:"key"` // "dir:hizmet", "dir:a/b"
+	Slug   string `json:"slug"`
+	Parent string `json:"parent,omitempty"`
+	// Page: the file that is the folder's page ("hizmet.html", "hizmet/index.html"); "" = none, the
+	// caller creates a placeholder parent (a draft, so the folder's own URL stays a 404 as in the
+	// design).
+	Page string `json:"page,omitempty"`
+}
+
+// SitePlan is the page tree of a site.
+type SitePlan struct {
+	Pages   []SitePlanPage   `json:"pages"`
+	Folders []SitePlanFolder `json:"folders"`
+}
+
+// IsSitePage reports whether a file is one of the site's pages.
+func IsSitePage(p string) bool {
+	ext := strings.ToLower(path.Ext(p))
+	return ext == ".html" || ext == ".htm"
+}
+
+// PlanSite plans the pages of a folder: index.html at the top is the front page, 404.html the 404
+// template; a/b.html is page b under the page of folder a; a/index.html is folder a's page.
+func PlanSite(files []string) SitePlan {
+	var plan SitePlan
+	sort.Strings(files)
+	have := map[string]bool{}
+	for _, f := range files {
+		have[f] = true
+	}
+	folderPage := func(dir string) string {
+		for _, c := range []string{dir + ".html", dir + ".htm", dir + "/index.html", dir + "/index.htm"} {
+			if have[c] {
+				return c
+			}
+		}
+		return ""
+	}
+	folders := map[string]bool{}
+	var addFolder func(dir string)
+	addFolder = func(dir string) {
+		if dir == "" || dir == "." || folders[dir] {
+			return
+		}
+		folders[dir] = true
+		parent := path.Dir(dir)
+		if parent == "." {
+			parent = ""
+		}
+		addFolder(parent)
+		f := SitePlanFolder{Key: "dir:" + dir, Slug: siteSlug(path.Base(dir)), Page: folderPage(dir)}
+		if parent != "" {
+			f.Parent = "dir:" + parent
+		}
+		plan.Folders = append(plan.Folders, f)
+	}
+	for _, f := range files {
+		if !IsSitePage(f) {
+			continue
+		}
+		dir, base := path.Dir(f), path.Base(f)
+		if dir == "." {
+			dir = ""
+		}
+		name := strings.TrimSuffix(base, path.Ext(base))
+		p := SitePlanPage{Path: f}
+		switch {
+		case dir == "" && strings.EqualFold(name, "index"):
+			p.Front, p.Slug = true, "home"
+		case dir == "" && name == "404":
+			p.NotFound = true
+		case strings.EqualFold(name, "index"):
+			// a folder's own page: the folder's slug, under the folder's parent
+			p.Slug = siteSlug(path.Base(dir))
+			if pd := path.Dir(dir); pd != "." {
+				addFolder(pd)
+				p.Parent = "dir:" + pd
+			}
+		default:
+			p.Slug = siteSlug(name)
+			if dir != "" {
+				addFolder(dir)
+				p.Parent = "dir:" + dir
+			}
+		}
+		plan.Pages = append(plan.Pages, p)
+	}
+	return plan
+}
+
+// siteSlug is a file or folder name as a slug: lowercase letters, digits and dashes.
+func siteSlug(name string) string {
+	var b strings.Builder
+	dash := false
+	for _, r := range strings.ToLower(name) {
+		switch {
+		case r >= 'a' && r <= 'z' || r >= '0' && r <= '9':
+			b.WriteRune(r)
+			dash = false
+		case r > 127:
+			b.WriteRune(r) // the site sanitizes (and keeps) other letters
+			dash = false
+		default:
+			if !dash && b.Len() > 0 {
+				b.WriteByte('-')
+				dash = true
+			}
+		}
+	}
+	return strings.Trim(b.String(), "-")
+}
+
+// SiteImportOptions configures ConvertSite.
+type SiteImportOptions struct {
+	KitURL   string
+	KitFiles map[string]bool
+	// URLs: each page file → its site path ("/", "/hakkimizda/", "/hizmet/3/"); the 404 page has
+	// none. Every page link of the design is mapped through it.
+	URLs map[string]string
+}
+
+// SitePageImport is one converted page.
+type SitePageImport struct {
+	Path string      `json:"path"`
+	URL  string      `json:"url,omitempty"`
+	Code *CodeImport `json:"-"`
+	// Header and Footer: the index of the page's template in SiteImport.Headers / Footers (-1: none).
+	Header int `json:"header"`
+	Footer int `json:"footer"`
+}
+
+// SiteTemplate is a header or footer template: its sections (in order), the head markup they need,
+// the rule that marks the current page's link, and the pages it serves (indexes into Pages).
+type SiteTemplate struct {
+	Sections []CodePart  `json:"-"`
+	Head     string      `json:"-"`
+	Lang     string      `json:"-"`
+	Attrs    [2]string   `json:"-"` // html and body attributes
+	Rule     *ActiveRule `json:"-"`
+	Pages    []int       `json:"pages"`
+}
+
+// SiteImport is the result of ConvertSite.
+type SiteImport struct {
+	Pages    []SitePageImport `json:"pages"`
+	Headers  []SiteTemplate   `json:"headers"`
+	Footers  []SiteTemplate   `json:"footers"`
+	Warnings []string         `json:"warnings,omitempty"`
+	Unmapped []string         `json:"unmappedLinks,omitempty"`
+	Missing  []string         `json:"missingFiles,omitempty"`
+}
+
+// ConvertSite converts the site's pages (see the file comment).
+func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
+	if len(pages) == 0 {
+		return nil, fmt.Errorf("no pages")
+	}
+	links := map[string]string{}
+	for p, u := range o.URLs {
+		if u == "" {
+			continue
+		}
+		links[p] = u
+		dir, base := path.Dir(p), path.Base(p)
+		if strings.EqualFold(strings.TrimSuffix(base, path.Ext(base)), "index") {
+			// links to the folder itself ("hizmet/", "./", "/")
+			if dir == "." {
+				dir = ""
+			}
+			links[dir] = u
+		}
+	}
+	out := &SiteImport{}
+	unmapped, missing := map[string]bool{}, map[string]bool{}
+	var hs, fs []ActiveSample
+	var hIdx, fIdx []int
+	for i, p := range pages {
+		base := path.Dir(p.Path)
+		if base == "." {
+			base = ""
+		}
+		res, err := ConvertCode(p.HTML, CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: true})
+		if err != nil {
+			return nil, fmt.Errorf("%s: %v", p.Path, err)
+		}
+		for _, u := range res.Unmapped {
+			unmapped[p.Path+": "+u] = true
+		}
+		for _, m := range res.Missing {
+			missing[m] = true
+		}
+		for _, w := range res.Warnings {
+			out.Warnings = append(out.Warnings, p.Path+": "+w)
+		}
+		out.Pages = append(out.Pages, SitePageImport{Path: p.Path, URL: o.URLs[p.Path], Code: res, Header: -1, Footer: -1})
+		if res.Header != nil {
+			var parts []string
+			for _, b := range res.HeaderBefore {
+				parts = append(parts, b.Wrap+"\x05"+b.HTML)
+			}
+			parts = append(parts, res.Header.Wrap+"\x05"+res.Header.HTML)
+			hs = append(hs, ActiveSample{Path: o.URLs[p.Path], Parts: parts})
+			hIdx = append(hIdx, i)
+		}
+		if res.Footer != nil {
+			parts := []string{res.Footer.Wrap + "\x05" + res.Footer.HTML}
+			for _, a := range res.FooterAfter {
+				parts = append(parts, a.Wrap+"\x05"+a.HTML)
+			}
+			fs = append(fs, ActiveSample{Path: o.URLs[p.Path], Parts: parts})
+			fIdx = append(fIdx, i)
+		}
+	}
+	for u := range unmapped {
+		out.Unmapped = append(out.Unmapped, u)
+	}
+	for m := range missing {
+		out.Missing = append(out.Missing, m)
+	}
+	sort.Strings(out.Unmapped)
+	sort.Strings(out.Missing)
+	out.Headers = siteTemplates(out, hs, hIdx, true)
+	out.Footers = siteTemplates(out, fs, fIdx, false)
+	return out, nil
+}
+
+// siteTemplates clusters the pages' copies of a part into templates.
+func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bool) []SiteTemplate {
+	if len(samples) == 0 {
+		return nil
+	}
+	// The wrap of each part travels with its markup ("wrap\x05html") so copies in other wrappers
+	// are other parts; ClusterParts sees only the markup.
+	split := func(s string) (string, string) {
+		w, h, _ := strings.Cut(s, "\x05")
+		return w, h
+	}
+	wraps := make([][]string, len(samples))
+	plain := make([]ActiveSample, len(samples))
+	for i, s := range samples {
+		plain[i].Path = s.Path
+		for _, p := range s.Parts {
+			w, h := split(p)
+			wraps[i] = append(wraps[i], w)
+			plain[i].Parts = append(plain[i].Parts, h)
+		}
+	}
+	// Copies in different wrappers never share a template.
+	byWrap := map[string][]int{}
+	var order []string
+	for i := range plain {
+		k := strings.Join(wraps[i], "\x06")
+		if _, ok := byWrap[k]; !ok {
+			order = append(order, k)
+		}
+		byWrap[k] = append(byWrap[k], i)
+	}
+	var list []SiteTemplate
+	for _, k := range order {
+		members := byWrap[k]
+		sub := make([]ActiveSample, len(members))
+		for j, m := range members {
+			sub[j] = plain[m]
+		}
+		for _, cl := range ClusterParts(sub) {
+			first := members[cl.Members[0]]
+			res := out.Pages[idx[first]].Code
+			t := SiteTemplate{Head: res.Head, Lang: res.Lang, Attrs: [2]string{res.HTMLAttrs, res.BodyAttrs}, Rule: cl.Rule}
+			names := sitePartNames(res, header)
+			for j, h := range cl.Parts {
+				name := "Part"
+				if j < len(names) {
+					name = names[j]
+				}
+				t.Sections = append(t.Sections, CodePart{Name: name, HTML: h, Wrap: wraps[first][j]})
+			}
+			for _, m := range cl.Members {
+				t.Pages = append(t.Pages, idx[members[m]])
+			}
+			list = append(list, t)
+		}
+	}
+	sort.SliceStable(list, func(i, j int) bool { return len(list[i].Pages) > len(list[j].Pages) })
+	for ti, t := range list {
+		for _, pi := range t.Pages {
+			if header {
+				out.Pages[pi].Header = ti
+			} else {
+				out.Pages[pi].Footer = ti
+			}
+		}
+	}
+	return list
+}
+
+func sitePartNames(res *CodeImport, header bool) []string {
+	var out []string
+	if header {
+		for _, b := range res.HeaderBefore {
+			out = append(out, b.Name)
+		}
+		return append(out, "Header")
+	}
+	out = append(out, "Footer")
+	for _, a := range res.FooterAfter {
+		out = append(out, a.Name)
+	}
+	return out
+}

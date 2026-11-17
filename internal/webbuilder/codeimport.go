@@ -46,11 +46,24 @@ type CodePart struct {
 
 // CodeImport is the result of ConvertCode.
 type CodeImport struct {
-	Head      string    `json:"head"`
-	Lang      string    `json:"lang"`
-	BodyClass string    `json:"bodyClass"`
-	Header    *CodePart `json:"header,omitempty"`
-	Footer    *CodePart `json:"footer,omitempty"`
+	Head      string `json:"head"`
+	Lang      string `json:"lang"`
+	BodyClass string `json:"bodyClass"`
+	// HTMLAttrs and BodyAttrs are the other attributes of <html> (lang aside) and <body> (class
+	// included), as written in an opening tag (`class="js" data-theme="dark"`); the front end
+	// prints them (CodeDocAttrs).
+	HTMLAttrs string `json:"htmlAttrs,omitempty"`
+	BodyAttrs string `json:"bodyAttrs,omitempty"`
+	// Shell is the wrappers between the body and the element holding the site header, main and
+	// footer (opening tags, outermost first, one per line): every part's wrap starts with it.
+	Shell  string    `json:"shell,omitempty"`
+	Header *CodePart `json:"header,omitempty"`
+	Footer *CodePart `json:"footer,omitempty"`
+	// HeaderBefore and FooterAfter (Split): elements beside the shell's wrappers (an icon sprite
+	// before it, a modal after it), parts of the header and footer templates before and after
+	// Header and Footer.
+	HeaderBefore []CodePart `json:"headerBefore,omitempty"`
+	FooterAfter  []CodePart `json:"footerAfter,omitempty"`
 	// FooterInPage: the footer sat inside main, where the design's CSS expects it, so it also stays
 	// on this page (the footer template is for the site's other pages).
 	FooterInPage bool       `json:"footerInPage,omitempty"`
@@ -118,6 +131,8 @@ func ConvertCode(src string, o CodeImportOptions) (*CodeImport, error) {
 		return nil, fmt.Errorf("no body element")
 	}
 	cv.out.BodyClass = attr(body, "class")
+	cv.out.HTMLAttrs = attrString(root, "lang")
+	cv.out.BodyAttrs = attrString(body)
 	cv.body(body)
 	for u := range cv.unmapped {
 		cv.out.Unmapped = append(cv.out.Unmapped, u)
@@ -197,72 +212,107 @@ type codePiece struct {
 }
 
 func (cv *codeConv) body(b *html.Node) {
+	sh := findShell(b)
+	var chain []string
+	for _, n := range sh.chain {
+		chain = append(chain, openTag(n))
+	}
+	cv.out.Shell = strings.Join(chain, "\n")
+	shell := b
+	if len(sh.chain) > 0 {
+		shell = sh.chain[len(sh.chain)-1]
+	}
 	var kids []*html.Node
-	for n := b.FirstChild; n != nil; n = n.NextSibling {
+	for n := shell.FirstChild; n != nil; n = n.NextSibling {
 		if n.Type == html.ElementNode {
 			kids = append(kids, n)
 		}
 	}
+	// main: a child of the shell, or inside one through wrappers that hold nothing else.
+	var main *html.Node
 	mainIdx := -1
-	for i, n := range kids {
-		if n.DataAtom == atom.Main {
-			mainIdx = i
-			break
+	mainWrap := append([]string{}, chain...)
+	if sh.main != nil {
+		m0 := childOf(shell, sh.main)
+		if extra, ok := plainPath(m0, sh.main); ok {
+			main = sh.main
+			mainWrap = append(mainWrap, extra...)
+			for i, k := range kids {
+				if k == m0 {
+					mainIdx = i
+				}
+			}
 		}
+	}
+	if mainIdx < 0 {
+		main = nil
+	}
+	var h0, f0 *html.Node
+	if sh.header != nil {
+		h0 = childOf(shell, sh.header)
+	}
+	if sh.footer != nil {
+		f0 = childOf(shell, sh.footer)
 	}
 	var pre, header, footer []*html.Node
 	var pieces []*codePiece
 	var after []*html.Node
 	lead := kids
-	var main *html.Node
-	if mainIdx >= 0 {
-		lead, main, after = kids[:mainIdx], kids[mainIdx], kids[mainIdx+1:]
+	if main != nil {
+		lead, after = kids[:mainIdx], kids[mainIdx+1:]
 	}
-	// What comes before the content: with Split, the preamble (sprites, skip links) and the first
-	// header form the header part; the rest is content.
+	// What comes before the content: with Split, everything before the site's header (skip links,
+	// icon sprites, an announcement bar) and the header form the header part; the rest is content.
 	var rest []*html.Node
-	for i, n := range lead {
-		if cv.o.Split && header == nil && len(rest) == 0 {
-			if n.DataAtom == atom.Header {
-				header = append(header, n)
-				continue
+	hi := -1
+	if cv.o.Split && h0 != nil {
+		for i, n := range lead {
+			if n == h0 {
+				hi = i
 			}
-			if isPreamble(n) {
+		}
+	}
+	if hi >= 0 {
+		pre, header = append(pre, lead[:hi]...), []*html.Node{h0}
+		for _, n := range lead[hi+1:] {
+			if main != nil && len(rest) == 0 && isPreamble(n) {
 				pre = append(pre, n)
 				continue
 			}
+			rest = append(rest, n)
 		}
-		if cv.o.Split && header != nil && main != nil && len(rest) == 0 && isPreamble(n) {
-			pre = append(pre, lead[i])
-			continue
-		}
-		rest = append(rest, n)
+	} else {
+		rest = lead
 	}
-	if cv.o.Split && header == nil {
-		rest, pre = append(pre, rest...), nil // no header: nothing to move out
-	}
-	pieces = cv.split(holder(rest), nil)
+	pieces = cv.split(holder(rest), chain, true)
 	if main != nil {
-		pieces = append(pieces, cv.split(main, []string{openTag(main)})...)
+		pieces = append(pieces, cv.split(main, append(append([]string{}, mainWrap...), openTag(main)), false)...)
 	}
-	// Body-level parts after main: scripts go with the last part, a footer is the footer, the rest
-	// are parts of their own.
+	lastPiece := func() *codePiece {
+		if len(pieces) == 0 {
+			pieces = append(pieces, &codePiece{wrap: chain})
+		}
+		return pieces[len(pieces)-1]
+	}
+	// Parts after main: scripts go with the last part, the site's footer is the footer, what follows
+	// the footer (a to-top button, modal and lightbox containers) goes with it; the rest are parts.
+	var tail []*html.Node
 	for _, n := range after {
 		switch {
 		case isScripty(n):
-			if len(pieces) == 0 {
-				pieces = append(pieces, &codePiece{})
-			}
-			last := pieces[len(pieces)-1]
+			last := lastPiece()
 			last.nodes = append(last.nodes, n)
-		case cv.o.Split && n.DataAtom == atom.Footer && footer == nil:
+		case cv.o.Split && footer == nil && (n == f0 || n.DataAtom == atom.Footer):
 			footer = append(footer, n)
+		case cv.o.Split && footer != nil:
+			tail = append(tail, n)
 		default:
-			pieces = append(pieces, &codePiece{nodes: []*html.Node{n}, tag: n.DataAtom, name: partName(n, len(pieces))})
+			pieces = append(pieces, &codePiece{nodes: []*html.Node{n}, wrap: chain, tag: n.DataAtom, name: partName(n, len(pieces))})
 		}
 	}
-	// A footer that is the last part inside main (kept with its wrappers, minus main itself).
-	var footerWrap []string
+	footerWrap := chain
+	// A footer that is the last part (inside main, or of a page without main), kept with its
+	// wrappers minus main itself.
 	if cv.o.Split && footer == nil {
 		for i := len(pieces) - 1; i >= 0; i-- {
 			p := pieces[i]
@@ -278,12 +328,13 @@ func (cv *codeConv) body(b *html.Node) {
 						footer = append(footer, n)
 					}
 				}
-				for _, w := range p.wrap {
-					if !strings.HasPrefix(w, "<main") {
+				inMain := main != nil && len(p.wrap) > len(mainWrap) && strings.HasPrefix(p.wrap[len(mainWrap)], "<main")
+				footerWrap = nil
+				for j, w := range p.wrap {
+					if !inMain || j != len(mainWrap) {
 						footerWrap = append(footerWrap, w)
 					}
 				}
-				inMain := len(p.wrap) > 0 && strings.HasPrefix(p.wrap[0], "<main")
 				if inMain {
 					// It stays where the design put it (a copy goes to the template for other pages).
 					cv.out.FooterInPage = true
@@ -308,11 +359,47 @@ func (cv *codeConv) body(b *html.Node) {
 			}
 		}
 	}
+	// Elements beside the shell's wrappers (in the body, or in an outer wrapper): with Split, those
+	// before go with the header template and those after with the footer template, each part
+	// keeping the wrappers it sat in; scripts after the shell go with the last part.
+	var before, beyond []*codePiece
+	for i, c := range sh.chain {
+		w := append([]string{}, chain[:i]...)
+		for n := c.Parent.FirstChild; n != nil && n != c; n = n.NextSibling {
+			if n.Type == html.ElementNode {
+				before = appendPiece(before, n, w)
+			}
+		}
+	}
+	for i := len(sh.chain) - 1; i >= 0; i-- {
+		w := append([]string{}, chain[:i]...)
+		for n := sh.chain[i].NextSibling; n != nil; n = n.NextSibling {
+			if n.Type != html.ElementNode {
+				continue
+			}
+			if isScripty(n) {
+				last := lastPiece()
+				last.nodes = append(last.nodes, n)
+				continue
+			}
+			beyond = appendPiece(beyond, n, w)
+		}
+	}
 	if len(header) > 0 {
-		cv.out.Header = &CodePart{Name: "Header", HTML: cv.markup(append(pre, header...))}
+		for _, p := range before {
+			cv.out.HeaderBefore = append(cv.out.HeaderBefore, CodePart{Name: partName(p.nodes[0], 0), HTML: cv.markup(p.nodes), Wrap: strings.Join(p.wrap, "\n")})
+		}
+		cv.out.Header = &CodePart{Name: "Header", HTML: cv.markup(append(pre, header...)), Wrap: strings.Join(chain, "\n")}
+	} else {
+		pieces = append(before, pieces...)
 	}
 	if len(footer) > 0 {
-		cv.out.Footer = &CodePart{Name: "Footer", HTML: cv.markup(footer), Wrap: strings.Join(footerWrap, "\n")}
+		cv.out.Footer = &CodePart{Name: "Footer", HTML: cv.markup(append(footer, tail...)), Wrap: strings.Join(footerWrap, "\n")}
+		for _, p := range beyond {
+			cv.out.FooterAfter = append(cv.out.FooterAfter, CodePart{Name: partName(p.nodes[0], 0), HTML: cv.markup(p.nodes), Wrap: strings.Join(p.wrap, "\n")})
+		}
+	} else {
+		pieces = append(pieces, beyond...)
 	}
 	for i, p := range pieces {
 		if len(p.nodes) == 0 {
@@ -326,16 +413,154 @@ func (cv *codeConv) body(b *html.Node) {
 	}
 }
 
+// appendPiece adds n to the last piece when it has the same wrappers, else starts a piece.
+func appendPiece(list []*codePiece, n *html.Node, wrap []string) []*codePiece {
+	if k := len(list); k > 0 && strings.Join(list[k-1].wrap, "\n") == strings.Join(wrap, "\n") {
+		list[k-1].nodes = append(list[k-1].nodes, n)
+		return list
+	}
+	return append(list, &codePiece{nodes: []*html.Node{n}, wrap: wrap, tag: n.DataAtom, name: partName(n, len(list))})
+}
+
+// codeShell is where a page's site header, main and footer sit (findShell).
+type codeShell struct {
+	// chain: the wrappers from the body's child down to the element holding header, main and
+	// footer (empty when that is the body).
+	chain                []*html.Node
+	main, header, footer *html.Node
+}
+
+// codeSectioning are the elements whose header and footer belong to them, not to the site.
+var codeSectioning = map[atom.Atom]bool{atom.Article: true, atom.Section: true, atom.Aside: true, atom.Nav: true,
+	atom.Main: true, atom.Header: true, atom.Footer: true, atom.Dialog: true, atom.Form: true}
+
+// findShell finds the page's main (the first <main>), its site header (the first <header> before
+// main that no sectioning element holds) and footer (the first such <footer> after main; the last
+// one of a page without main) at any depth, and the nearest element that holds all of them: the
+// wrappers from the body down to it are the shell chain (a design's
+// <div class="flex min-h-screen flex-col"> around its header, main and footer).
+func findShell(b *html.Node) codeShell {
+	var sh codeShell
+	var footers []*html.Node
+	afterMain := map[*html.Node]bool{}
+	var walk func(n *html.Node)
+	walk = func(n *html.Node) {
+		for k := n.FirstChild; k != nil; k = k.NextSibling {
+			if k.Type != html.ElementNode || codeOpaque[k.DataAtom] {
+				continue
+			}
+			switch k.DataAtom {
+			case atom.Main:
+				if sh.main == nil {
+					sh.main = k
+				}
+				continue
+			case atom.Header:
+				if sh.header == nil && sh.main == nil {
+					sh.header = k
+				}
+				continue
+			case atom.Footer:
+				footers = append(footers, k)
+				afterMain[k] = sh.main != nil
+				continue
+			}
+			if codeSectioning[k.DataAtom] {
+				continue
+			}
+			walk(k)
+		}
+	}
+	walk(b)
+	for _, f := range footers {
+		if sh.main != nil && afterMain[f] {
+			sh.footer = f
+			break
+		}
+	}
+	if sh.main == nil && len(footers) > 0 {
+		sh.footer = footers[len(footers)-1]
+	}
+	var paths [][]*html.Node
+	for _, n := range []*html.Node{sh.main, sh.header, sh.footer} {
+		if n == nil {
+			continue
+		}
+		var up []*html.Node
+		for p := n.Parent; p != nil && p != b; p = p.Parent {
+			up = append([]*html.Node{p}, up...)
+		}
+		paths = append(paths, up)
+	}
+	if len(paths) == 0 {
+		return sh
+	}
+	common := paths[0]
+	for _, p := range paths[1:] {
+		k := 0
+		for k < len(common) && k < len(p) && common[k] == p[k] {
+			k++
+		}
+		common = common[:k]
+	}
+	sh.chain = common
+	return sh
+}
+
+// childOf is the child of parent that is or holds n.
+func childOf(parent, n *html.Node) *html.Node {
+	for n != nil && n.Parent != parent {
+		n = n.Parent
+	}
+	return n
+}
+
+// plainPath reports whether main sits in top through wrappers that hold nothing else, and gives
+// their opening tags (outermost first; none when top is main).
+func plainPath(top, main *html.Node) ([]string, bool) {
+	var out []string
+	for n := main; n != top; n = n.Parent {
+		p := n.Parent
+		for k := p.FirstChild; k != nil; k = k.NextSibling {
+			if k.Type == html.ElementNode && k != n {
+				return nil, false
+			}
+		}
+		out = append([]string{openTag(p)}, out...)
+	}
+	return out, true
+}
+
+// attrString is an element's attributes as written in an opening tag (` a="b" c="d"`), without
+// the ones named in skip.
+func attrString(n *html.Node, skip ...string) string {
+	var b strings.Builder
+	for _, a := range n.Attr {
+		key := a.Key
+		if a.Namespace != "" {
+			key = a.Namespace + ":" + a.Key
+		}
+		drop := false
+		for _, s := range skip {
+			drop = drop || strings.EqualFold(key, s)
+		}
+		if !drop {
+			b.WriteString(" " + key + `="` + html.EscapeString(a.Val) + `"`)
+		}
+	}
+	return strings.TrimSpace(b.String())
+}
+
 // split cuts a container into parts: each element child is a part; scripts and styles go with the
 // part before them; a plain wrapper around a run of sections is opened (kept as a wrap).
-func (cv *codeConv) split(container *html.Node, wrap []string) []*codePiece {
+func (cv *codeConv) split(container *html.Node, wrap []string, top bool) []*codePiece {
 	var out []*codePiece
 	var pending []*html.Node
 	for n := container.FirstChild; n != nil; n = n.NextSibling {
 		if n.Type != html.ElementNode {
 			continue
 		}
-		if len(wrap) == 0 && isPreamble(n) && !isScripty(n) && n.NextSibling != nil {
+		if top && isPreamble(n) && !isScripty(n) && n.NextSibling != nil {
 			pending = append(pending, n) // sprites and skip links go with the part they lead into
 			continue
 		}
@@ -348,7 +573,7 @@ func (cv *codeConv) split(container *html.Node, wrap []string) []*codePiece {
 			continue
 		}
 		if isRunWrapper(n) {
-			inner := cv.split(n, append(append([]string{}, wrap...), openTag(n)))
+			inner := cv.split(n, append(append([]string{}, wrap...), openTag(n)), false)
 			if len(pending) > 0 && len(inner) > 0 {
 				inner[0].nodes = append(pending, inner[0].nodes...)
 				pending = nil
@@ -630,12 +855,22 @@ func (cv *codeConv) url(raw string, page bool) string {
 		return raw
 	}
 	whole := u
-	frag := ""
+	frag, query := "", ""
 	if i := strings.IndexByte(u, '#'); i >= 0 {
 		u, frag = u[:i], u[i:]
 	}
 	if i := strings.IndexByte(u, '?'); i >= 0 {
-		u = u[:i]
+		u, query = u[:i], u[i:]
+	}
+	// The query string stays on the mapped URL (a page's ?tab=2, a file's ?v=3).
+	withQuery := func(v string) string {
+		if query == "" {
+			return v + frag
+		}
+		if strings.Contains(v, "?") {
+			return v + "&" + query[1:] + frag
+		}
+		return v + query + frag
 	}
 	var rel string
 	if strings.HasPrefix(u, "/") {
@@ -645,16 +880,16 @@ func (cv *codeConv) url(raw string, page bool) string {
 	}
 	// The link map: by the path resolved inside the kit first (unambiguous), then as written.
 	if v, ok := cv.o.LinkMap[rel]; ok && u != "" {
-		return v + frag
+		return withQuery(v)
 	}
 	if v, ok := cv.o.LinkMap[whole]; ok {
 		return v
 	}
 	if v, ok := cv.o.LinkMap[u]; ok && u != "" {
-		return v + frag
+		return withQuery(v)
 	}
 	if cv.o.KitURL != "" && cv.o.KitFiles[rel] {
-		return cv.o.KitURL + rel + frag
+		return withQuery(cv.o.KitURL + rel)
 	}
 	ext := strings.ToLower(path.Ext(rel))
 	switch {

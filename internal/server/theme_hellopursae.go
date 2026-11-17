@@ -47,6 +47,11 @@ type wbThemePartsView struct {
 	// markup, internal/webbuilder/code.go); the theme prints it without its wrapper element, and a
 	// code main gets no default header or footer (the design brings its own, or a template does).
 	HeaderCode, MainCode, FooterCode bool
+	// Lang, HTMLAttrs and BodyAttrs: the design's <html> lang and attributes and its <body>
+	// attributes (body classes go to the theme's body class), from the code parts
+	// (wbCodeParts, webbuilder_codefront.go). The attribute strings start with a space.
+	Lang                 string
+	HTMLAttrs, BodyAttrs template.HTMLAttr
 }
 
 // wbHelloMenuLocations are Hello Pursae's menu locations.

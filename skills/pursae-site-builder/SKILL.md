@@ -67,6 +67,9 @@ shows the ready command).
   (default for admins) keeps the design's own code, every element a block editable on the canvas; `method: "exact"` rebuilds it as
   builder sections (open the returned `import_url` in a browser, then `web_builder_import_finish {job}`).
   Harness: `kit-upload ./design mydesign`, `import-html ./design/index.html kit=mydesign path=index.html`.
+  A whole folder of pages: `web_builder_import_site {kit, pages: [{path, html}]}` (harness:
+  `import-site ./design kit=mydesign`) — pages, parents, links, header/footer templates with the active
+  menu link, 404 template; idempotent.
   See [references/playbook-pages.md](references/playbook-pages.md).
 - Theme Builder: `web_builder_create_template {type: header|footer|single|archive|…}` →
   `web_builder_build_page {post_id: <template>}`; headers and footers apply site-wide by default, other templates take rules like `include/singular/post` via `web_builder_set_template_conditions`. Or a whole
