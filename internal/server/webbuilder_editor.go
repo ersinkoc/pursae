@@ -85,6 +85,24 @@ func (s *Server) wbEditor(c *gin.Context, p *store.Post) {
 				cspAllow(c, dir, k.Origins...)
 			}
 		}
+		// And the origins the code sections' head markup names (a web font stylesheet), the
+		// header's and footer's included: the frame draws them with the page.
+		heads := []json.RawMessage{doc.Doc}
+		if doc.Draft != nil {
+			heads = append(heads, doc.Draft.Doc)
+		}
+		if boot.CodeParts != nil {
+			for _, p := range []*webbuilder.CodeTemplate{boot.CodeParts.Header, boot.CodeParts.Footer} {
+				if p != nil {
+					heads = append(heads, p.Sections...)
+				}
+			}
+		}
+		if o := wbCodeHeadOrigins(heads...); len(o) > 0 {
+			for _, dir := range []string{"script-src", "style-src", "font-src"} {
+				cspAllow(c, dir, o...)
+			}
+		}
 	}
 	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(page))
 }
@@ -143,6 +161,9 @@ type wbBoot struct {
 	Template *webbuilder.TemplateBoot `json:"template"`
 	Site     webbuilder.SiteBoot      `json:"site"`
 	Dynamic  webbuilder.DynContext    `json:"dynamic"`
+	// CodeParts: the header and footer templates of code sections around the page
+	// (webbuilder_editor_parts.go).
+	CodeParts *webbuilder.CodeParts `json:"codeParts"`
 }
 
 // wbDocument is webbuilder.DocumentResponse with raw doc / page JSON (GET documents/{id} answers it
@@ -423,6 +444,7 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 		Template:   tplBoot,
 		Site:       s.wbSiteBoot(c, &dyn),
 		Dynamic:    dyn,
+		CodeParts:  s.wbEditorCodeParts(c, p, doc),
 	}
 }
 

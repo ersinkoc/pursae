@@ -25,6 +25,7 @@ export function makeBoot(doc: Partial<DocumentResponse> = {}, over: Partial<Boot
     siteAssets: 'https://example.test/wp-content/web-builder/site/',
     ai: { enabled: false, providers: [], llmBase: '', imagesUrl: '', allowCode: false },
     template: null,
+    codeParts: null,
     site: { title: 'Example', tagline: '', home: 'https://example.test', logo: null, locations: [], menus: {}, themeParts: false, postTypes: [], taxonomies: [] },
     dynamic: {
       object: 'post:42',

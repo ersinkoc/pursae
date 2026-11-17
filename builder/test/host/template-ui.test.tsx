@@ -170,7 +170,8 @@ describe('PreviewPicker', () => {
 })
 
 describe('host strings', () => {
-  const sources = fs.readdirSync(HOST).filter((f) => /\.(ts|tsx)$/.test(f) && f !== 'i18n-tr.ts')
+  // builder/host and its subfolders (elements/), without the catalog.
+  const sources = (fs.readdirSync(HOST, { recursive: true }) as string[]).filter((f) => /\.(ts|tsx)$/.test(f) && f !== 'i18n-tr.ts' && !f.startsWith('ai-stub'))
   const used = new Map<string, string>()
   for (const f of sources) {
     const text = fs.readFileSync(path.join(HOST, f), 'utf8')

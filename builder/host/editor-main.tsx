@@ -22,6 +22,7 @@ import { PageToolsController } from './page-tools'
 import { PageToolsDialog, PageToolsMenuRow } from './PageToolsDialog'
 import { PopupController, RevisionsController } from './tools'
 import { PopupDialog, PopupMenuRow, RevisionsDialog, RevisionsMenuRow, ScheduleDialog, ScheduleMenuRow } from './HostToolsDialogs'
+import { installElements } from './elements'
 
 function mountPoint(): HTMLElement {
   let el = document.getElementById('root')
@@ -117,6 +118,8 @@ async function boot() {
   )
   setHost(host)
   window.__WEB_BUILDER_HOST__ = host
+  // Pages of code sections: the element editor's canvas and navigator branch (patch 0020).
+  installElements()
   installFontNonce(host)
   // Prefs and the library seed the builder's initial state; never block the editor on them for long.
   await Promise.race([host.start().catch(() => undefined), new Promise((r) => setTimeout(r, 4000))])

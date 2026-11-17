@@ -89,6 +89,7 @@ ever part of it.**
 | `template` | TemplateBoot \| null | Theme Builder: `null` unless the post is a `wb_template` (§11.7) |
 | `site` | SiteBoot | site identity, menus, post types and taxonomies (§11.7); always present |
 | `dynamic` | DynContext | sample data for dynamic widgets (§11.6): the template's preview object, else the post itself |
+| `codeParts` | CodeParts \| null | the header and footer templates Hello Pursae draws around this page, when they are made of code sections: `{header, footer}`, each `null` or `{id, title, editUrl, sections}` (`sections`: the template's published visible sections, every one `kind: "code"`, as stored). The element editor draws them locked in the page's frame. `null` for a template, a canvas page, a page without code sections, or another theme |
 
 `ai` (BootAi):
 

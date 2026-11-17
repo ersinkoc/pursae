@@ -310,6 +310,70 @@ const tr: Record<string, string> = {
   "Background": "Arka plan", // i18n-ignore
   "Headings": "Başlıklar", // i18n-ignore
   "Body text": "Gövde metni", // i18n-ignore
+  // Element editor (builder/host/elements)
+  "Bold": "Kalın", // i18n-ignore
+  "Breadcrumb": "İçerik yolu", // i18n-ignore
+  "Button": "Düğme", // i18n-ignore
+  "Clear formatting": "Biçimlendirmeyi temizle", // i18n-ignore
+  "Click an element to select it · double-click a text to edit it": "Seçmek için bir öğeye tıklayın · düzenlemek için bir metne çift tıklayın", // i18n-ignore
+  "Code": "Kod", // i18n-ignore
+  "Collapse": "Daralt", // i18n-ignore
+  "Copy": "Kopyala", // i18n-ignore
+  "Delete": "Sil", // i18n-ignore
+  "Div": "Div", // i18n-ignore
+  "Drag to move": "Taşımak için sürükleyin", // i18n-ignore
+  "Duplicate": "Çoğalt", // i18n-ignore
+  "Edit footer": "Footer'ı düzenle", // i18n-ignore
+  "Edit header": "Header'ı düzenle", // i18n-ignore
+  "Edit text": "Metni düzenle", // i18n-ignore
+  "Element copied": "Öğe kopyalandı", // i18n-ignore
+  "Element deleted": "Öğe silindi", // i18n-ignore
+  "Element duplicated": "Öğe çoğaltıldı", // i18n-ignore
+  "Element moved": "Öğe taşındı", // i18n-ignore
+  "Element name": "Öğe adı", // i18n-ignore
+  "Element pasted": "Öğe yapıştırıldı", // i18n-ignore
+  "Element renamed": "Öğe yeniden adlandırıldı", // i18n-ignore
+  "Element unwrapped": "Sarmalayıcı kaldırıldı", // i18n-ignore
+  "Element wrapped in a Div": "Öğe bir Div ile sarıldı", // i18n-ignore
+  "Expand": "Genişlet", // i18n-ignore
+  "Flexbox": "Flexbox", // i18n-ignore
+  "Form element": "Form öğesi", // i18n-ignore
+  "Grid": "Grid", // i18n-ignore
+  "Heading": "Başlık", // i18n-ignore
+  "Hide in the editor": "Editörde gizle", // i18n-ignore
+  "Hide": "Gizle", // i18n-ignore
+  "Icon": "İkon", // i18n-ignore
+  "Image": "Görsel", // i18n-ignore
+  "It is already the first one.": "Zaten ilk sırada.", // i18n-ignore
+  "It is already the last one.": "Zaten son sırada.", // i18n-ignore
+  "Italic": "İtalik", // i18n-ignore
+  "Layers": "Katmanlar", // i18n-ignore
+  "Link address": "Bağlantı adresi", // i18n-ignore
+  "Link": "Bağlantı", // i18n-ignore
+  "List": "Liste", // i18n-ignore
+  "Live edit": "Canlı düzenle", // i18n-ignore
+  "Move down": "Aşağı taşı", // i18n-ignore
+  "Move up": "Yukarı taşı", // i18n-ignore
+  "Only a container with elements inside can be unwrapped.": "Yalnızca içinde öğe olan bir kapsayıcının sarmalayıcısı kaldırılabilir.", // i18n-ignore
+  "Page canvas": "Sayfa tuvali", // i18n-ignore
+  "Paste after": "Sonrasına yapıştır", // i18n-ignore
+  "Paste inside": "İçine yapıştır", // i18n-ignore
+  "Preview": "Önizleme", // i18n-ignore
+  "Run the design’s scripts while editing (menus, sliders, animations). Structural changes reload the page.": "Düzenlerken tasarımın betiklerini çalıştırır (menüler, kaydırıcılar, animasyonlar). Yapısal değişiklikler sayfayı yeniden yükler.", // i18n-ignore
+  "Section": "Bölüm", // i18n-ignore
+  "Select parent": "Üst öğeyi seç", // i18n-ignore
+  "Show in the editor": "Editörde göster", // i18n-ignore
+  "Show temporarily": "Geçici göster", // i18n-ignore
+  "Stop showing": "Göstermeyi bırak", // i18n-ignore
+  "Text changed": "Metin değişti", // i18n-ignore
+  "The element cannot be pasted here.": "Öğe buraya yapıştırılamaz.", // i18n-ignore
+  "This element cannot be deleted here.": "Bu öğe burada silinemez.", // i18n-ignore
+  "This is the section’s outermost element.": "Bu, bölümün en dıştaki öğesi.", // i18n-ignore
+  "This is the whole section: remove it from the section list.": "Bu, bölümün tamamı: bölüm listesinden kaldırın.", // i18n-ignore
+  "This text is drawn by the design’s script: edit it in the section’s HTML code.": "Bu metni tasarımın betiği çiziyor: bölümün HTML kodundan düzenleyin.", // i18n-ignore
+  "Unwrap": "Sarmalayıcıyı kaldır", // i18n-ignore
+  "Video / embed": "Video / gömme", // i18n-ignore
+  "Wrap in a Div": "Div ile sar", // i18n-ignore
 }
 
 export default tr

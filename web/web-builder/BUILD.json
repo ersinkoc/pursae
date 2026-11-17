@@ -18,7 +18,8 @@
     "0016-popup-type.patch": "d52b3e9e5aa62c9193f47b1a8a880b48194e7d56d5798a9da4816a916924e10a",
     "0017-import-fidelity.patch": "4f8d8593825f82c9f4b41535f7f59d577bf94231809225cbd2aeadb4e7332e9a",
     "0018-code-sections.patch": "46a13fb6ea2ae417d429fda82ab3ddd787c5130f75ce3e26d6261ad4495331bf",
-    "0019-code-blocks.patch": "45660d851de20c00159dbbcb0f817fabb66e66cac76d1c56ba06c2e3e05e93f9"
+    "0019-code-blocks.patch": "45660d851de20c00159dbbcb0f817fabb66e66cac76d1c56ba06c2e3e05e93f9",
+    "0020-elements-seam.patch": "d3853bc97c44b02aaa3528a1f4e904e8b72ec7e2da435a1676223adab9002c31"
   },
   "apiVersion": 2,
   "rendererVersion": 1
