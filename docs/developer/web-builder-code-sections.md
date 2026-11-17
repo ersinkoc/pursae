@@ -396,7 +396,9 @@ of patches `0018-code-sections` / `0019-code-blocks` (see below).
 **The canvas is one frame with the whole page**: the header template, the page's code sections and
 the footer template that Hello Pursae draws around the page on the site (`Boot.codeParts`, read on
 the server by `wbEditorCodeParts`; contract §2), in their shared wrappers, so fixed headers, sticky
-footers and the shared shell look as they do on the site. The header and footer are locked: hovering
+footers and the shared shell look as they do on the site (an editor without `edit_theme_options` gets
+their markup without their content bindings: a bound form's `to` / `cc` and redirects stay on the
+server). The header and footer are locked: hovering
 them shows **Edit header** / **Edit footer**, which opens that template in the editor. The device
 buttons set the frame's width — desktop is a fixed 1440 px page scaled to fit the panel, tablet
 768 px, mobile 390 px — so the design's own `@media` queries apply.
