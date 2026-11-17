@@ -1,0 +1,26 @@
+{
+  "post": "77",
+  "bps": { "tablet": 5000, "mobile": 100 },
+  "local": {
+    "9": {
+      "v": [
+        { "bp": "", "st": "", "p": {
+          "color": "red; background: blue",
+          "Color": "red",
+          "width": "",
+          "height": "   ",
+          "top": "1px /* x */",
+          "left": "a{b}",
+          "right": "</style><script>",
+          "bottom": "\"unclosed",
+          "z-index": "calc(1 + (2)",
+          "opacity": "0.5",
+          "-webkit-line-clamp": "3"
+        } },
+        { "bp": "watch", "st": "", "p": { "color": "red" } },
+        { "bp": "", "st": "visited", "p": { "color": "red" } }
+      ]
+    },
+    "bad id!": { "v": [ { "bp": "", "st": "", "p": { "color": "red" } } ] }
+  }
+}

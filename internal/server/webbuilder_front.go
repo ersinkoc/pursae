@@ -295,6 +295,9 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 	}
 	if !codePage { // a design brings its own fonts
 		sb.WriteString(s.wbFontLinks(c, d.Fonts))
+	} else if i := strings.Index(codeHead, "<style data-wb-local"); i >= 0 {
+		// Library fonts its local styles name (Style panel): only those.
+		sb.WriteString(s.wbFontLinks(c, wbLocalFontNeeds(d.Fonts, codeHead[i:])))
 	}
 	sb.WriteString(s.wbPageCSS(c, v.Q.Post, d))
 	sb.WriteString(codeHead)

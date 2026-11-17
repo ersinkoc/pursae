@@ -1,0 +1,14 @@
+{
+  "post": "5",
+  "bps": { "tablet": 1023, "mobile": 639 },
+  "local": {
+    "214": {
+      "label": "Hero heading",
+      "v": [
+        { "bp": "", "st": "", "p": { "padding-top": "96px" } },
+        { "bp": "tablet", "st": "", "p": { "padding-top": "64px" } },
+        { "bp": "", "st": "hover", "p": { "background-color": "#0f172a" } }
+      ]
+    }
+  }
+}

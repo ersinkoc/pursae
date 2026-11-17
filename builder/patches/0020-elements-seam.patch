@@ -49,12 +49,73 @@ index 327a4f2..f74093c 100644
        </div>
      </motion.div>
    )
+diff --git a/src/builder/StudioPanel.tsx b/src/builder/StudioPanel.tsx
+index bf031d2..ccb3056 100644
+--- a/src/builder/StudioPanel.tsx
++++ b/src/builder/StudioPanel.tsx
+@@ -43,6 +43,7 @@ import { Toggle, cn, ease, spring } from './ui'
+ import { intlLocale, t } from './i18n'
+ import { DynSectionPanel } from './dynamic/inspector'
+ import { cellTypeOptions, isDynWidget } from './dynamic/model'
++import { elementsSeam } from './elementsSeam'
+ 
+ export function StudioPanel() {
+   const b = useB()
+@@ -350,10 +351,22 @@ export function IconSeg<T extends string>({ value, options, onChange }: { value:
+ /* ---------- Inspector ---------- */
+ type Tab = 'content' | 'style' | 'advanced'
+ let lastTab: Tab = 'content' // keep the open tab while hopping between elements
++const tabSetters = new Set<(t: Tab) => void>()
++/** Opens an inspector tab (the host's element editor: "Style" from the canvas toolbar). */
++export function openInspectorTab(t: Tab) {
++  lastTab = t
++  tabSetters.forEach((f) => f(t))
++}
+ 
+ function Inspector({ s, el }: { s: Section; el?: string }) {
+   const b = useB()
+   const [tab, setTabState] = useState<Tab>(lastTab)
++  useEffect(() => {
++    tabSetters.add(setTabState)
++    return () => {
++      tabSetters.delete(setTabState)
++    }
++  }, [])
+   const setTab = (t: Tab) => {
+     lastTab = t
+     setTabState(t)
+@@ -362,7 +375,13 @@ function Inspector({ s, el }: { s: Section; el?: string }) {
+   const isLayout = s.kind === 'layout'
+   const isCell = isLayout && !!el
+   const isCard = !!el && isCardEl(el) && !!CARD_NOUN[s.kind]
+-  const title = isCell ? t('Edit cell') : isLayout ? t('Edit {v}', { v: s.content.type === 'grid' ? 'Grid' : 'Flexbox' }) : isCard ? t('Edit {v}', { v: CARD_NOUN[s.kind] }) : kind ? t('Edit {v}', { v: EL_NAMES[kind] }) : t('Edit container')
++  // A code section of a page the host's element editor draws: the host's Style and Advanced tabs.
++  const seam = elementsSeam()
++  const host = s.kind === 'code' && seam?.handles(b.doc) ? seam : null
++  const HostTab = host?.Tab
++  const title =
++    host?.title?.(s) ??
++    (isCell ? t('Edit cell') : isLayout ? t('Edit {v}', { v: s.content.type === 'grid' ? 'Grid' : 'Flexbox' }) : isCard ? t('Edit {v}', { v: CARD_NOUN[s.kind] }) : kind ? t('Edit {v}', { v: EL_NAMES[kind] }) : t('Edit container'))
+   // Breadcrumb through nested containers: Bölüm › Hücre 2 › İç grid › Hücre 1 …
+   const path = sectionPath(b.doc.sections, s.id)
+   const crumbs: { label: string; sel?: Selection }[] = []
+@@ -442,8 +461,8 @@ function Inspector({ s, el }: { s: Section; el?: string }) {
+         <AnimatePresence mode="wait" initial={false}>
+           <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }}>
+             {tab === 'content' && (isCell ? <CellLayoutTab s={s} el={el!} /> : isLayout ? <ContainerLayoutTab s={s} /> : <ContentTab s={s} el={el} />)}
+-            {tab === 'style' && (isCell ? <CellStyleTab s={s} el={el!} /> : el ? <ElStyleTab s={s} el={el} /> : <ContainerStyleTab s={s} />)}
+-            {tab === 'advanced' && (isCell ? <CellAdvancedTab s={s} el={el!} /> : el ? <ElAdvancedTab s={s} el={el} /> : <ContainerAdvancedTab s={s} />)}
++            {tab === 'style' && (HostTab ? <HostTab s={s} tab="style" /> : isCell ? <CellStyleTab s={s} el={el!} /> : el ? <ElStyleTab s={s} el={el} /> : <ContainerStyleTab s={s} />)}
++            {tab === 'advanced' && (HostTab ? <HostTab s={s} tab="advanced" /> : isCell ? <CellAdvancedTab s={s} el={el!} /> : el ? <ElAdvancedTab s={s} el={el} /> : <ContainerAdvancedTab s={s} />)}
+           </motion.div>
+         </AnimatePresence>
+       </div>
 diff --git a/src/builder/elementsSeam.ts b/src/builder/elementsSeam.ts
 new file mode 100644
-index 0000000..7d78d45
+index 0000000..4dd19a3
 --- /dev/null
 +++ b/src/builder/elementsSeam.ts
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,28 @@
 +import type { ComponentType } from 'react'
 +import type { DocState, Section } from './types'
 +
@@ -70,6 +131,10 @@ index 0000000..7d78d45
 +  Canvas: ComponentType
 +  /** Navigator rows of one code section (the section row included). */
 +  Nav: ComponentType<{ s: Section }>
++  /** The inspector's Style and Advanced tabs for a code section of a page the host draws. */
++  Tab?: ComponentType<{ s: Section; tab: 'style' | 'advanced' }>
++  /** The inspector's title for that section ("Edit Heading"); null keeps the builder's. */
++  title?: (s: Section) => string | null
 +}
 +
 +let seam: ElementsSeam | null = null

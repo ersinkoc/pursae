@@ -35,6 +35,8 @@ export interface Result {
   html: Record<string, string>
   /** The element to select afterwards. */
   select?: string | null
+  /** A copy's new data-wbc ids (to) of the original's (from), in order: its local styles follow. */
+  copies?: { from: string[]; to: string[] }
 }
 
 export interface Located {
@@ -95,11 +97,12 @@ const REF_ATTRS = ['aria-controls', 'aria-labelledby', 'aria-describedby', 'aria
  * unique: new data-wbc ids, new HTML ids (base-2, base-3, … not in `taken`, which is updated) and
  * references inside following them. The inside of svg / math is copied as is.
  */
-export function reIdRange(t: Tree, start: number, end: number, taken: Set<string>): { html: string; ids: string[] } {
+export function reIdRange(t: Tree, start: number, end: number, taken: Set<string>): { html: string; ids: string[]; from: string[] } {
   const els = t.all.filter((e) => e.start >= start && e.end <= end && !e.foreign)
   const renamed = new Map<string, string>()
   const edits: Edit[] = []
   const ids: string[] = []
+  const from: string[] = []
   for (const e of els) {
     const id = attr(e, 'id')
     if (!id) continue
@@ -115,6 +118,7 @@ export function reIdRange(t: Tree, start: number, end: number, taken: Set<string
     if (w !== null) {
       const nid = freshId()
       ids.push(nid)
+      from.push(w)
       edits.push(...attrEdit(t, e, 'data-wbc', nid))
     }
     const id = attr(e, 'id')
@@ -129,11 +133,11 @@ export function reIdRange(t: Tree, start: number, end: number, taken: Set<string
     if (href?.startsWith('#') && renamed.has(href.slice(1))) edits.push(...attrEdit(t, e, 'href', `#${renamed.get(href.slice(1))}`))
   }
   const local = edits.map((x) => ({ start: x.start - start, end: x.end - start, text: x.text }))
-  return { html: splice(t.src.slice(start, end), local), ids }
+  return { html: splice(t.src.slice(start, end), local), ids, from }
 }
 
 /** A pasted snippet (an element's markup) made unique on the page. */
-export function reIdHtml(html: string, page: Page): { html: string; ids: string[] } {
+export function reIdHtml(html: string, page: Page): { html: string; ids: string[]; from: string[] } {
   const t = parse(html)
   return reIdRange(t, 0, html.length, pageIds(page))
 }
@@ -304,7 +308,7 @@ export function insert(page: Page, place: Place, html: string): Result | null {
   if (!parent || !container(t, parent)) return null
   const copy = reIdHtml(html, page)
   if (!copy.html.trim()) return null
-  return { html: one(place.sec, src, [insertEdit(t, parent, place.index, copy.html)]), select: copy.ids[0] ?? null }
+  return { html: one(place.sec, src, [insertEdit(t, parent, place.index, copy.html)]), select: copy.ids[0] ?? null, copies: { from: copy.from, to: copy.ids } }
 }
 
 /** Deletes element id; refuses the only top-level element of a section (delete the section instead). */
@@ -322,7 +326,7 @@ export function duplicate(page: Page, id: string, taken?: Set<string>): Result |
   if (!at || !movable(at.el)) return null
   const { tree: t, el } = at
   const copy = reIdRange(t, el.start, el.end, taken ?? pageIds(page))
-  return { html: one(at.sec, t.src, [{ start: el.end, end: el.end, text: wsBefore(t, el) + copy.html }]), select: copy.ids[0] }
+  return { html: one(at.sec, t.src, [{ start: el.end, end: el.end, text: wsBefore(t, el) + copy.html }]), select: copy.ids[0], copies: { from: copy.from, to: copy.ids } }
 }
 
 /** Wraps element id in a new element (a div). */

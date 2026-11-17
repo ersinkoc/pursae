@@ -374,6 +374,113 @@ const tr: Record<string, string> = {
   "Unwrap": "Sarmalayıcıyı kaldır", // i18n-ignore
   "Video / embed": "Video / gömme", // i18n-ignore
   "Wrap in a Div": "Div ile sar", // i18n-ignore
+  "Active": "Etkin", // i18n-ignore
+  "Add": "Ekle", // i18n-ignore
+  "Align content": "İçeriği hizala", // i18n-ignore
+  "Align items": "Öğeleri hizala", // i18n-ignore
+  "Align self": "Kendini hizala", // i18n-ignore
+  "Align": "Hizalama", // i18n-ignore
+  "Any CSS property for this device and state, e.g. --brand: #0f172a or scroll-margin-top: 80px.": "Bu cihaz ve durum için herhangi bir CSS özelliği, ör. --brand: #0f172a ya da scroll-margin-top: 80px.", // i18n-ignore
+  "Applies to every device unless a device has its own value.": "Kendi değeri olmayan her cihazda geçerlidir.", // i18n-ignore
+  "Applies to: {where} (and smaller devices without their own value).": "Geçerli olduğu yer: {where} (ve kendi değeri olmayan daha küçük cihazlar).", // i18n-ignore
+  "Aspect ratio": "En-boy oranı", // i18n-ignore
+  "Attachment": "Sabitleme", // i18n-ignore
+  "Auto flow": "Otomatik akış", // i18n-ignore
+  "Backdrop filter": "Arka plan filtresi", // i18n-ignore
+  "Basis": "Temel boyut", // i18n-ignore
+  "Blend mode": "Karışım modu", // i18n-ignore
+  "Border": "Kenarlık", // i18n-ignore
+  "Bottom left": "Sol alt", // i18n-ignore
+  "Bottom right": "Sağ alt", // i18n-ignore
+  "Box shadow": "Kutu gölgesi", // i18n-ignore
+  "Box sizing": "Kutu boyutlandırma", // i18n-ignore
+  "Classes": "Sınıflar", // i18n-ignore
+  "Clear style": "Stili temizle", // i18n-ignore
+  "Color": "Renk", // i18n-ignore
+  "Column gap": "Sütun aralığı", // i18n-ignore
+  "Columns": "Sütunlar", // i18n-ignore
+  "Copy style": "Stili kopyala", // i18n-ignore
+  "Corner radius": "Köşe yuvarlaklığı", // i18n-ignore
+  "Cursor": "İmleç", // i18n-ignore
+  "Custom properties": "Özel özellikler", // i18n-ignore
+  "Decoration": "Süsleme", // i18n-ignore
+  "Default": "Varsayılan", // i18n-ignore
+  "Desktop": "Masaüstü", // i18n-ignore
+  "Direction": "Yön", // i18n-ignore
+  "Display": "Görüntüleme", // i18n-ignore
+  "Edit {v}": "{v} düzenle", // i18n-ignore
+  "Editing a property set here moves that declaration into the element’s local style.": "Burada tanımlı bir özelliği düzenlemek o bildirimi öğenin yerel stiline taşır.", // i18n-ignore
+  "Effects": "Efektler", // i18n-ignore
+  "Filter": "Filtre", // i18n-ignore
+  "Flex item": "Flex öğesi", // i18n-ignore
+  "Focus visible": "Görünür odak", // i18n-ignore
+  "Focus": "Odak", // i18n-ignore
+  "Font family": "Yazı tipi ailesi", // i18n-ignore
+  "From {where}": "{where} değerinden", // i18n-ignore
+  "Gap": "Boşluk", // i18n-ignore
+  "Grid column": "Grid sütunu", // i18n-ignore
+  "Grid item": "Grid öğesi", // i18n-ignore
+  "Grid row": "Grid satırı", // i18n-ignore
+  "Grow": "Büyüme", // i18n-ignore
+  "Height": "Yükseklik", // i18n-ignore
+  "Hover": "Üzerine gelince", // i18n-ignore
+  "Image or gradient": "Görsel ya da gradyan", // i18n-ignore
+  "Inherited from {el}": "{el} öğesinden miras", // i18n-ignore
+  "Inline style": "Satır içi stil", // i18n-ignore
+  "Justify content": "İçeriği yasla", // i18n-ignore
+  "Layout": "Yerleşim", // i18n-ignore
+  "Left": "Sol", // i18n-ignore
+  "Letter spacing": "Harf aralığı", // i18n-ignore
+  "Line height": "Satır yüksekliği", // i18n-ignore
+  "Local style": "Yerel stil", // i18n-ignore
+  "Margin": "Dış boşluk", // i18n-ignore
+  "Max height": "En fazla yükseklik", // i18n-ignore
+  "Max width": "En fazla genişlik", // i18n-ignore
+  "Min height": "En az yükseklik", // i18n-ignore
+  "Min width": "En az genişlik", // i18n-ignore
+  "Mobile": "Mobil", // i18n-ignore
+  "Normal": "Normal", // i18n-ignore
+  "Object fit": "Nesne sığdırma", // i18n-ignore
+  "Object position": "Nesne konumu", // i18n-ignore
+  "Opacity": "Opaklık", // i18n-ignore
+  "Order": "Sıra", // i18n-ignore
+  "Overflow": "Taşma", // i18n-ignore
+  "Padding": "İç boşluk", // i18n-ignore
+  "Paste style": "Stili yapıştır", // i18n-ignore
+  "Pick a color": "Renk seç", // i18n-ignore
+  "Place items": "Öğeleri yerleştir", // i18n-ignore
+  "Repeat": "Tekrar", // i18n-ignore
+  "Reset": "Sıfırla", // i18n-ignore
+  "Right": "Sağ", // i18n-ignore
+  "Row gap": "Satır aralığı", // i18n-ignore
+  "Rows": "Satırlar", // i18n-ignore
+  "Select an element on the canvas to style it.": "Stil vermek için tuvalde bir öğe seçin.", // i18n-ignore
+  "Shrink": "Küçülme", // i18n-ignore
+  "Size": "Boyut", // i18n-ignore
+  "Spacing": "Boşluklar", // i18n-ignore
+  "Style changed": "Stil değişti", // i18n-ignore
+  "Style cleared": "Stil temizlendi", // i18n-ignore
+  "Style copied": "Stil kopyalandı", // i18n-ignore
+  "Style of this element": "Bu öğenin stili", // i18n-ignore
+  "Style pasted": "Stil yapıştırıldı", // i18n-ignore
+  "Style": "Stil", // i18n-ignore
+  "Tablet": "Tablet", // i18n-ignore
+  "This element has no style of its own to copy.": "Bu öğenin kopyalanacak kendi stili yok.", // i18n-ignore
+  "This is not a value CSS accepts here: {v}": "CSS burada bu değeri kabul etmiyor: {v}", // i18n-ignore
+  "Top left": "Sol üst", // i18n-ignore
+  "Top right": "Sağ üst", // i18n-ignore
+  "Transform": "Dönüşüm", // i18n-ignore
+  "Transition": "Geçiş", // i18n-ignore
+  "Typography": "Tipografi", // i18n-ignore
+  "Unit": "Birim", // i18n-ignore
+  "Weight": "Kalınlık", // i18n-ignore
+  "White space": "Boşluk işleme", // i18n-ignore
+  "Width": "Genişlik", // i18n-ignore
+  "Wrap": "Sarma", // i18n-ignore
+  "Z-index": "Z-index", // i18n-ignore
+  "property": "özellik", // i18n-ignore
+  "value": "değer", // i18n-ignore
+  "Font library…": "Yazı tipi kütüphanesi…", // i18n-ignore
 }
 
 export default tr

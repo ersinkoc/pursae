@@ -126,7 +126,7 @@ writing needs `edit_theme_options` **and** `unfiltered_html`.
 | `GET kits` | `[{slug, name, version, files, bytes, updated, url}]` |
 | `GET kits/{slug}` | the kit and `fileList: [{path, bytes}]` |
 | `POST kits/{slug}/files` | `{files: [{path, text} \| {path, data: base64}], delete?: [path], fresh?: bool}` — writes into the kit's staging folder (a copy of the live files, or empty with `fresh`). Paths are relative, plain segment names, web asset extensions only (css, js, mjs, map, json, txt, fonts, images, svg, video/audio, glb/gltf, wasm, pdf; no HTML, no server code); 15 MB per file, 2000 files and 100 MB per kit, 24 MB per request. |
-| `POST kits/{slug}/commit` | `{name?}` — the staged files replace the live ones in one swap; the version goes up. |
+| `POST kits/{slug}/commit` | `{name?, breakpoints?: {tablet, mobile}}` — the staged files replace the live ones in one swap; the version goes up. Without `breakpoints` the local-style breakpoints are suggested from the kit's stylesheets (see [Styling](#styling)). |
 | `DELETE kits/{slug}` | removes the kit and its files. |
 
 ## Importing
@@ -408,15 +408,72 @@ margin, gap, corner radius, width, max width, opacity), classes and the raw `sty
 In both, the section list reorders, hides, duplicates and removes code sections, and the inspector
 shows the section's HTML and head code for anything the canvas does not reach.
 
+## Styling
+
+The element editor styles any element of a code page without touching the design's markup or CSS
+(plan §4.3a). Select an element and press **Style** on its toolbar (or open Studio › Style /
+Advanced):
+
+- **Device and state.** The device switcher is the canvas device (desktop, tablet, mobile), so the
+  design's own `@media` queries show what that device shows; the state switcher edits Normal,
+  Hover, Focus, Focus visible or Active — while a state is edited the canvas shows the element in it.
+  A dot marks devices and states with values. Devices are desktop first: a desktop value applies
+  everywhere, a tablet value at the tablet breakpoint and below (mobile inherits it), a mobile value
+  only on mobile. A state's value is added to the normal one.
+- **Style tab:** Layout (display; flex direction, wrap, justify, align, gap; grid columns, rows, gaps,
+  place items; as a flex or grid child grow, shrink, basis, order, align self, grid column / row),
+  Spacing (margin and padding as a box model), Size, Position, Typography (font family from the
+  design's own families or the font library, size, weight, line height, letter spacing, color,
+  align, transform, decoration), Background, Border (per side, radius per corner) and Effects
+  (shadow, opacity, transform, transition, filter, backdrop filter). **Advanced tab:** custom
+  properties (any CSS property, custom properties included), copy / paste / clear style, the
+  element's classes and inline style.
+- Every control shows the value in force as its placeholder and **where it comes from**: Local
+  style, the design rule's selector (`.sm\:py-24`, `#hero .title`), Inline style, Inherited from
+  an ancestor, Default — read from the frame's stylesheets through the CSSOM (cascade layers,
+  `!important`, media, nesting and specificity; flow-relative properties such as Tailwind's
+  `padding-block` count for their physical twin). A reset button clears the value of this device
+  and state; lengths have a unit selector, and every field takes raw CSS (`calc()`, `var()`,
+  `clamp()`); a number alone gets the unit.
+- When the design's winning declaration is `!important`, the local one is written `!important`.
+- **Inline styles.** Editing a property that the element's `style` attribute sets moves only that
+  declaration (or the shorthand that covers it) into the local style; the attribute's other
+  declarations stay. Inline styles written by the mixed-page Style panel (patch `0019`) are read
+  as they are, so they need no migration.
+- **Copy / paste style** (context menu, Advanced tab) copies an element's whole local style.
+  Duplicating or pasting an element copies its local styles to the copy; moving an element to
+  another section takes them along; deleting it drops them (undo brings them back).
+
+The values are stored in the section's `local` field (contract §8.1 "Local styles"), one history
+entry per change. On publish the element gets the class `e{post}-{id}` and the page one stylesheet
+with rules `.e{post}-{id}:not(#_):not(#_)` (the two `:not(#_)` raise the specificity by one id
+without changing what matches, so the rule beats the design's own rules without editing them);
+the editor's frame prints the same stylesheet with `[data-wbc="…"]` selectors (the same weight) in
+one `<style data-wb-local>` it rewrites on every change, so nothing reloads. Both come from the same
+generator (Go `LocalCSS`, TypeScript `localCSS`, tested byte for byte on shared fixtures).
+
+**Breakpoints** are a design kit setting (`breakpoints: {tablet, mobile}` in `wb_design_kits`, max-width
+in px): on commit they are suggested from the kit's stylesheets — the most used `@media` width
+switch between 800 and 1280 px for tablet and between 480 and 768 px for mobile (enerjiosgb's
+Tailwind: ≤ 1023 and ≤ 639 px) — or taken from the commit request. Kits committed earlier get the
+suggestion on first use. Tablet must be 768–1439 and mobile 390–767, so the editor's 768 px tablet
+and 390 px mobile frames are inside their ranges. A changed breakpoint applies when the page is
+published again.
+
+Library fonts chosen in the panel are linked on the published code page (only those its local
+styles name) and in the editor's frame.
+
 ## Limits
 
 - The element editor draws only header and footer templates made of code sections; a header made
   of builder sections is not shown around a code page in the editor (it is on the site).
-- Style edits (mixed pages) are inline styles: they apply at every screen width. A phone-only change,
-  a hover state or a change to every card at once belongs in the kit's CSS (or a `<style>` in the
-  section's HTML). The element editor's style panel comes with Faz 3.
+- Local styles (code pages) style one element; a change to every card at once (a class) and the
+  design's variables come with Faz 5. `::before` / `::after` are not styled yet. Style edits on mixed
+  pages stay inline styles (patch `0019`), and their frames do not show local styles.
+- Where a value comes from is computed for a horizontal, left-to-right page; shadow DOM, `@scope` and
+  user-agent styles are not modelled, and stylesheets from other origins cannot be read.
 - New elements come from duplicating or pasting an existing one, which keeps the design's classes;
-  the palette of new elements comes later. Copied styles (copy / paste style) come with Faz 3.
+  the palette of new elements comes later.
 - Editing a text replaces the element's inner markup with what the browser serialises (only when the
   text changed); inline `on…` handlers inside that element are not kept in static edit mode, and an
   element holding scripts or styles is not edited in place.

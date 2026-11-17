@@ -9,9 +9,11 @@
  * unchanged elements are kept (no reload, no image flash), changed ones updated or rebuilt.
  *
  * Header and footer parts are locked: their data-wbc ids get an "h:" / "f:" prefix in the copy, so
- * they never clash with the page's ids and the canvas knows them apart. The only editor node in the
- * design's DOM is one <style data-wb-edit>; section boundaries are marked by comments while the
- * frame loads and the comments are removed at once (FrameSync.collect).
+ * they never clash with the page's ids and the canvas knows them apart. The only editor nodes in
+ * the design's DOM are two stylesheets at the end of the head: <style data-wb-local> (the local
+ * styles, like the published page's, see local.ts) and <style data-wb-edit> (editor-only rules);
+ * section boundaries are marked by comments while the frame loads and the comments are removed at
+ * once (FrameSync.collect).
  */
 import type { Section } from '@/builder/types'
 import { RAW, attrEdit, elementKids, outer, parse, splice, wbc, type Edit, type El, type Node as SrcNode, type Tree } from './html'
@@ -104,7 +106,7 @@ export const markEnd = (id: string) => `<!--/wb:${id}-->`
  * The frame document. Sections are in page order between the header's and the footer's; wrappers
  * shared by consecutive sections are opened once (like the site's shared shell).
  */
-export function frameDoc(page: Section[], parts: FrameParts, mode: FrameMode, editCss: string, base: string): string {
+export function frameDoc(page: Section[], parts: FrameParts, mode: FrameMode, editCss: string, base: string, localCss = ''): string {
   const all: { s: Section; prefix?: string }[] = [...parts.header.map((s) => ({ s, prefix: 'h:' })), ...page.map((s) => ({ s })), ...parts.footer.map((s) => ({ s, prefix: 'f:' }))]
   const first = page[0] ?? all[0]?.s
   const stack: string[] = []
@@ -128,7 +130,7 @@ export function frameDoc(page: Section[], parts: FrameParts, mode: FrameMode, ed
   return (
     `<!doctype html><html lang="${esc(c.lang || 'en')}"${attrsCopy(c.htmlAttrs, mode)}><head><meta charset="utf-8">` +
     `<meta name="viewport" content="width=device-width,initial-scale=1"><base href="${esc(base)}">` +
-    `${mergeHeads(all.map(({ s }) => s.content.head ?? ''), mode)}<style data-wb-edit>${editCss}</style></head><body${bodyClass}${bodyAttrs}>${body}</body></html>`
+    `${mergeHeads(all.map(({ s }) => s.content.head ?? ''), mode)}<style data-wb-local>${localCss.replace(/<\//g, '<\\/')}</style><style data-wb-edit>${editCss}</style></head><body${bodyClass}${bodyAttrs}>${body}</body></html>`
   )
 }
 

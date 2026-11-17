@@ -717,6 +717,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 	// else the stored sections' (wbParseDoc drops every other code section), never the request's.
 	if (unfiltered || res.Kept) && webbuilder.HasCode(res.JSON) {
 		list, only := webbuilder.CodeSections(res.JSON)
+		s.wbLocalBreakpoints(list)
 		snap.html = webbuilder.FillCode(snap.html, list, only)
 	}
 	ps, _ := wbPage(body.Page)
