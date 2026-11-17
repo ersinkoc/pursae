@@ -71,3 +71,17 @@ func TestParseKitOverride(t *testing.T) {
 		t.Errorf("too large: %v", err)
 	}
 }
+
+// KitOverrideCSS never prints a rule whose selector or at-rule prelude ParseKitOverride refuses,
+// whoever wrote the override (a tampered option).
+func TestKitOverrideCSSSkipsBadShapes(t *testing.T) {
+	o := &KitOverride{Rules: []OverrideRule{
+		{Sel: ".a</style><script>alert(1)</script>", P: map[string]string{"color": "red"}},
+		{Ctx: []string{"@media x{}</style><script>"}, Sel: ".b", P: map[string]string{"color": "red"}},
+		{Sel: ".c{}body", P: map[string]string{"color": "red"}},
+		{Sel: ".ok", P: map[string]string{"color": "blue"}},
+	}}
+	if css := KitOverrideCSS(o); css != ".ok{color:blue}\n" {
+		t.Errorf("printed: %q", css)
+	}
+}

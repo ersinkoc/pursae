@@ -1031,7 +1031,7 @@ func mcpWBImportHTML(s *Server, c *gin.Context, args map[string]any) (any, error
 	method := argStr(args, "method")
 	if method == "" {
 		method = "exact"
-		if u := restCurrent(c); u != nil && u.Can("unfiltered_html", nil) {
+		if u := restCurrent(c); wbUnfiltered(c, u) {
 			method = "code" // 1:1 by construction for anyone who may publish the design's own code
 		}
 	}

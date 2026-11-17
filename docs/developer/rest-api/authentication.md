@@ -68,7 +68,7 @@ scope still cannot activate plugins.
 
 | Scope | Routes | Capabilities kept |
 |-------|--------|-------------------|
-| `content` | `/wp/v2/posts`, `pages`, `blocks`, `categories`, `tags`, `comments`, `types`, `taxonomies`, `search`, `block-renderer`, `/web-builder/v2`, `/pll/v1`, `/batch/v1` | post and page caps, `manage_categories`, `moderate_comments`, `unfiltered_html` |
+| `content` | `/wp/v2/posts`, `pages`, `blocks`, `categories`, `tags`, `comments`, `types`, `taxonomies`, `search`, `block-renderer`, `/web-builder/v2`, `/pll/v1`, `/batch/v1`, `/pursae/v1/forum` | post and page caps, `manage_categories`, `moderate_comments`, `unfiltered_html` (raw HTML in posts and pages; see below for site-wide code) |
 | `media` | `/wp/v2/media` | `upload_files` and the post caps attachments use |
 | `themes` | `/wp/v2/templates`, `template-parts`, `global-styles`, `themes`, `menus`, `menu-items`, `menu-locations`, `navigation`, `sidebars`, `widgets`, `/pursae/v1/themes` | `switch_themes`, `edit_theme_options`, `edit_themes`, `install_themes`, `delete_themes` |
 | `plugins` | `/pursae/v1/plugins`, `/pursae/v1/updates` | `activate_plugins`, `install_plugins`, `delete_plugins` |
@@ -77,6 +77,15 @@ scope still cannot activate plugins.
 | `settings` | `/wp/v2/settings`, `/pursae/v1/options`, `/pursae/v1/headless`, `/pursae/v1/health`, `/pursae/v1/backups`, `/pursae/v1/mcp/activity` | `manage_options` |
 | `commerce` | `/wc/v3` | `manage_woocommerce`, `view_woocommerce_reports`, the product and shop order caps, `manage_product_terms`, `moderate_comments` |
 | `users` | `/wp/v2/users` | `list_users`, `create_users`, `edit_users`, `promote_users`, `delete_users` |
+
+**Site-wide code needs `themes`.** `unfiltered_html` in the `content` scope covers what WordPress
+gives it, raw HTML in posts and pages. A design's own HTML, CSS and JavaScript that pages load site
+wide needs the `themes` scope as well (or full access): Pursae Web Builder html and code sections and
+custom CSS (a `content`-only password publishes the page without them, or keeps the stored ones),
+code imports (`web_builder_import_html` method `code`; method `exact` works with `content`), site
+imports, design kits and their class and variable overrides. The contact form routes
+(`/contact-form-7/v1`, which set a form's mail recipients and headers) belong to no scope: they need
+full access.
 
 Every scoped password may also read the REST index, `/wp/v2/users/me` and use the MCP endpoint
 `/pursae/v1/mcp` (whose tools are checked route by route). Batch requests (`/batch/v1`) re-check

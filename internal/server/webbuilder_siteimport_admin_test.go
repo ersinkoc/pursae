@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // --- helpers ----------------------------------------------------------------------------------
@@ -447,8 +448,85 @@ func TestWBImportWizardFlow(t *testing.T) {
 	if len(srv.wbWizRecords()) != 0 {
 		t.Errorf("record left")
 	}
+	if _, err := os.Stat(srv.wbWizDir(id)); err == nil {
+		t.Errorf("the upload was kept after its import was removed")
+	}
 	if code, _, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id); code != http.StatusOK {
 		t.Errorf("undo of a removed import: %d", code)
+	}
+}
+
+// An upload and its design preview expire a day after the upload: on access, with the screen's
+// sweep and with the hourly wb_import_cleanup event. An import's record outlives its upload: its
+// "Remove this import" page still opens.
+func TestWBImportWizardExpiry(t *testing.T) {
+	srv, base, _, w := wizStart(t)
+	upload := func() string {
+		t.Helper()
+		code, _, loc := w.upload(wizSite(t), "Demo Site.zip", "")
+		if code != http.StatusFound || !wizIDRE.MatchString(loc) {
+			t.Fatalf("upload: %d %q", code, loc)
+		}
+		return wizIDRE.FindStringSubmatch(loc)[1]
+	}
+	age := func(id string, d time.Duration) {
+		t.Helper()
+		m := srv.wbWizLoad(id)
+		if m == nil {
+			t.Fatalf("no session %s", id)
+		}
+		m.Created = wbTime(time.Now().Add(-d))
+		if err := srv.wbWizSave(m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	preview := func(id string) int {
+		code, _, _ := wbsFetch(t, base+wbWizDesignRoute+id+"/index.html", nil)
+		return code
+	}
+	// On access.
+	id := upload()
+	if code := preview(id); code != http.StatusOK {
+		t.Fatalf("fresh preview: %d", code)
+	}
+	age(id, 23*time.Hour)
+	if code := preview(id); code != http.StatusOK {
+		t.Errorf("preview within a day: %d", code)
+	}
+	age(id, 25*time.Hour)
+	if code := preview(id); code != http.StatusNotFound {
+		t.Errorf("preview after a day: %d", code)
+	}
+	if _, err := os.Stat(srv.wbWizDir(id)); err == nil {
+		t.Error("an expired upload's folder is left")
+	}
+	// The screen's sweep and the hourly event.
+	id1, id2 := upload(), upload()
+	age(id1, 25*time.Hour)
+	if code, _, _ := w.get("/wp-admin/web-builder-import"); code != http.StatusOK {
+		t.Fatal("screen")
+	}
+	if _, err := os.Stat(srv.wbWizDir(id1)); err == nil {
+		t.Error("the screen's sweep kept an expired upload")
+	}
+	if _, err := os.Stat(srv.wbWizDir(id2)); err != nil {
+		t.Error("the screen's sweep removed a fresh upload")
+	}
+	age(id2, 25*time.Hour)
+	if err := srv.jobHandlers()["wb_import_cleanup"](context.Background(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(srv.wbWizDir(id2)); err == nil {
+		t.Error("wb_import_cleanup kept an expired upload")
+	}
+	// A record whose upload expired: its undo page still opens.
+	recs := srv.wbWizRecords()
+	recs[id2] = &wbWizRecord{ID: id2, Kit: "gone-kit", Pages: []int64{999999}, At: wbTime(time.Now())}
+	if err := srv.wbWizSetRecords(wbsGin(), recs); err != nil {
+		t.Fatal(err)
+	}
+	if code, page, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id2); code != http.StatusOK || strings.Contains(page, "That upload is gone") {
+		t.Errorf("undo page of an expired upload: %d %s", code, wbSnippet(page, "notice"))
 	}
 }
 
@@ -530,18 +608,7 @@ func TestWBImportWizardOptions(t *testing.T) {
 	if rec == nil || rec.KitCreated || len(rec.Pages) != 0 || len(rec.Templates) != 2 {
 		t.Fatalf("second record: %+v", rec)
 	}
-	_, undo, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id2)
-	un := wizHiddenRE.FindStringSubmatch(undo)[1]
-	if code, done, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id2, url.Values{"_wpnonce": {un}, "confirm": {"1"}}); code != http.StatusOK || !strings.Contains(done, "Removed 2 pages and templates.") {
-		t.Fatalf("undo 2: %d %s", code, wbSnippet(done, "notice"))
-	}
-	if srv.wbKitList()["mykit"] == nil {
-		t.Errorf("the kit of the first import was deleted")
-	}
-	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND meta->>$1 = 'mykit'`, wbSiteMetaKit); n != 5 {
-		t.Errorf("pages of the first import: %d", n)
-	}
-	// discard removes the staging folder only
+	// discard removes the staging folder only (the import stays, its undo works without it)
 	dn := wizHiddenRE.FindStringSubmatch(page2)
 	_, page3, _ := w.get("/wp-admin/web-builder-import?import=" + id2)
 	dn = regexp.MustCompile(`action=discard[^"]*"[^>]*>\s*<input type="hidden" name="_wpnonce" value="([0-9a-zA-Z]+)"`).FindStringSubmatch(page3)
@@ -553,6 +620,17 @@ func TestWBImportWizardOptions(t *testing.T) {
 	}
 	if _, err := os.Stat(srv.wbWizDir(id2)); err == nil {
 		t.Errorf("staging folder left after discard")
+	}
+	_, undo, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id2)
+	un := wizHiddenRE.FindStringSubmatch(undo)[1]
+	if code, done, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id2, url.Values{"_wpnonce": {un}, "confirm": {"1"}}); code != http.StatusOK || !strings.Contains(done, "Removed 2 pages and templates.") {
+		t.Fatalf("undo 2: %d %s", code, wbSnippet(done, "notice"))
+	}
+	if srv.wbKitList()["mykit"] == nil {
+		t.Errorf("the kit of the first import was deleted")
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND meta->>$1 = 'mykit'`, wbSiteMetaKit); n != 5 {
+		t.Errorf("pages of the first import: %d", n)
 	}
 }
 

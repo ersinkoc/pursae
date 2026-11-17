@@ -90,8 +90,8 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		return nil, err
 	}
 	u := restCurrent(c)
-	if u == nil || !u.Can("unfiltered_html", nil) || !u.Can(webbuilder.TemplateCap, nil) {
-		return nil, mcpErrf("a site import keeps the design's own HTML, CSS and JavaScript and makes Theme Builder templates: the account needs unfiltered_html and edit_theme_options (an administrator)")
+	if u == nil || !wbUnfiltered(c, u) || !u.Can(webbuilder.TemplateCap, nil) {
+		return nil, mcpErrf("a site import keeps the design's own HTML, CSS and JavaScript and makes Theme Builder templates: the account needs unfiltered_html and edit_theme_options (an administrator), and an Application Password the Appearance (themes) scope or full access")
 	}
 	status, err := mcpPublishStatus(args)
 	if err != nil {

@@ -34,7 +34,7 @@ var postCaps = []string{"read", "edit_posts", "edit_others_posts", "edit_publish
 
 // appScopes are the scopes in display order.
 var appScopes = []appScope{
-	{"content", "Content", "Posts, pages, reusable blocks, categories, tags, comments and Web Builder documents.",
+	{"content", "Content", "Posts, pages, reusable blocks, categories, tags, comments and Web Builder documents (their HTML and code sections, custom CSS and design kits also need Appearance).",
 		append(slices.Clone(postCaps), "manage_categories", "moderate_comments", "edit_comment", "unfiltered_html", "list_users")},
 	{"media", "Media", "Upload and edit files in the Media Library.",
 		[]string{"read", "upload_files", "edit_posts", "edit_others_posts", "edit_published_posts", "delete_posts", "delete_others_posts", "delete_published_posts"}},
@@ -182,11 +182,16 @@ var appScopeRoutes = map[string]string{
 	"/pursae/v1/cache":   "cache",
 	"/seogo/v1":          "seo", "/pursae/v1/seo": "seo",
 	"/wp/v2/settings": "settings", "/pursae/v1/options": "settings", "/pursae/v1/mcp/activity": "settings", "/pursae/v1/headless": "settings",
-	"/wp/v2/users":     "users",
-	"/pursae/v1/forum": "content", "/contact-form-7/v1": "content",
+	"/wp/v2/users":      "users",
+	"/pursae/v1/forum":  "content",
 	"/wc/v3":            "commerce",
 	"/pursae/v1/health": "settings", "/pursae/v1/csp-reports": "settings", "/pursae/v1/analytics": "settings", "/pursae/v1/backups": "settings", "/pursae/v1/updates": "plugins",
 }
+
+// appScopeFullAccessOnly are route prefixes that deliberately belong to no scope, so only a
+// password with full access reaches them: the contact forms set the mail a form sends (recipients,
+// headers), which no scope's job covers.
+var appScopeFullAccessOnly = []string{"/contact-form-7/v1"}
 
 // appScopeForRoute is the scope a route belongs to: "" for routes no scope covers, "*" for routes any
 // scoped password may use (the index, the MCP endpoint, the signed-in user's own record).
@@ -206,6 +211,16 @@ func appScopeForRoute(route string) string {
 		}
 	}
 	return scope
+}
+
+// restScopeSiteCode reports whether the request may write site-wide code: a design's own HTML, CSS
+// and JavaScript (Pursae Web Builder html and code sections, custom CSS, design kits and their
+// overrides, imported sites). The user needs unfiltered_html for that too; a scoped password also
+// needs the themes scope (Appearance). The content scope keeps unfiltered_html for what WordPress
+// gives it (raw HTML in posts and pages), not for code that every page of the site loads.
+func restScopeSiteCode(c *gin.Context) bool {
+	scopes := restScopes(c)
+	return len(scopes) == 0 || slices.Contains(scopes, "themes")
 }
 
 // restScopeAllows reports whether the scopes of the request's password cover the route.
