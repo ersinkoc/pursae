@@ -542,8 +542,7 @@ func wbKitRootReserved(p string) bool {
 		return false
 	}
 	switch name {
-	case "robots.txt", "favicon.ico", "ads.txt", "app-ads.txt", "sellers.json", "security.txt", "humans.txt", "llms.txt", "llms-full.txt",
-		"apple-touch-icon.png", "apple-touch-icon-precomposed.png":
+	case "robots.txt", "favicon.ico", "ads.txt", "app-ads.txt", "sellers.json", "security.txt", "humans.txt", "llms.txt", "llms-full.txt":
 		return true
 	}
 	return strings.HasPrefix(name, "sitemap") || strings.Contains(name, "-sitemap")
