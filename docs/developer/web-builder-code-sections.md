@@ -186,8 +186,15 @@ access ([scopes](rest-api/authentication.md#application-password-scopes)).
   stays on the mapped URL (`hakkimizda.html?tab=2#x` → `/hakkimizda/?tab=2#x`, `app.js?x=1` → the kit
   URL with `?x=1`); a kit file's `?v=` is replaced by the kit version when the page is printed.
   Any other `data-*` attribute whose value is the path of a kit file (`data-wide="../assets/film.mp4"`,
-  read by the design's script) becomes its kit URL too; other `data-*` values are left alone and never
-  reported (they need not be URLs). The values of an `<script type="importmap">` (never its specifier
+  read by the design's script) becomes its kit URL too; so does every candidate of a srcset-like list
+  (`data-nectar-img-srcset="a.png 1489w, a-300x169.png 300w"`, a lazy loader's real `srcset`) of which
+  one candidate names a kit file, and the string values of a JSON list or object
+  (`data-slides='["a.jpg","b.jpg"]'`) that name kit files. A `data-*` value that reads as the path of a
+  design file (an asset extension: images, video, audio, fonts, CSS, JS, JSON, PDF) and names no file is
+  kept and reported missing; other `data-*` values are left alone (they need not be URLs). The `<source>`
+  and `<track>` elements of a `<video>` or `<audio>` are rewritten too (the media element itself is not
+  edited inside). `CodeImportOptions.Remap` gives files that are not in the kit a URL of their own (a
+  file too large for a kit, put into the Media Library by the admin's import). The values of an `<script type="importmap">` (never its specifier
   keys) that name kit files, or folders holding kit files (`"three/addons/": "/assets/vendor/addons/"`),
   point at the kit.
 - **Element ids**: every element outside an SVG drawing (the `<svg>` itself included) gets a

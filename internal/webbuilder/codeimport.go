@@ -35,6 +35,9 @@ type CodeImportOptions struct {
 	LinkMap map[string]string
 	// Split moves the page's header and footer out into their own parts (Theme Builder templates).
 	Split bool
+	// Remap gives files of the design that are not in the kit a URL of their own (a file too large
+	// for a kit put into the Media Library): kit path → URL.
+	Remap map[string]string
 }
 
 // CodePart is one code section of an import.
@@ -742,11 +745,26 @@ func (cv *codeConv) walk(n *html.Node, inSVG bool) {
 		n.Attr = append(n.Attr, html.Attribute{Key: AttrCodeID, Val: strconv.Itoa(cv.next)})
 	}
 	svg := inSVG || n.DataAtom == atom.Svg
+	if n.DataAtom == atom.Video || n.DataAtom == atom.Audio {
+		// Not edited inside, but its <source> and <track> elements name the design's files.
+		cv.rewriteAll(n)
+		return
+	}
 	if codeOpaque[n.DataAtom] && n.DataAtom != atom.Svg {
 		return
 	}
 	for k := n.FirstChild; k != nil; k = k.NextSibling {
 		cv.walk(k, svg)
+	}
+}
+
+// rewriteAll rewrites the URL attributes of n's descendants (no editor ids).
+func (cv *codeConv) rewriteAll(n *html.Node) {
+	for k := n.FirstChild; k != nil; k = k.NextSibling {
+		if k.Type == html.ElementNode {
+			cv.rewrite(k)
+			cv.rewriteAll(k)
+		}
 	}
 }
 
@@ -774,9 +792,9 @@ func (cv *codeConv) rewrite(n *html.Node) {
 			n.Attr[i].Val = cv.css(a.Val)
 		case strings.HasPrefix(key, "data-"):
 			// The design's own data attributes naming its files (data-wide="../assets/film.mp4",
-			// data-poster): its scripts read them and resolve them against the page's URL, which is
-			// not the kit's folder. Only a value that is the path of a kit file is touched.
-			n.Attr[i].Val = cv.kitFile(a.Val)
+			// data-poster, a lazy loader's data-nectar-img-srcset list): its scripts read them and
+			// resolve them against the page's URL, which is not the kit's folder.
+			n.Attr[i].Val = cv.dataValue(a.Val)
 		}
 	}
 	if n.DataAtom == atom.Script && strings.EqualFold(strings.TrimSpace(attr(n, "type")), "importmap") {
@@ -814,12 +832,116 @@ func (cv *codeConv) importMap(src string) string {
 	})
 }
 
+// codeAssetExts are the extensions of files a design references (a data-* value with one of them
+// that names no kit file is reported as a missing file).
+var codeAssetExts = map[string]bool{".css": true, ".js": true, ".mjs": true, ".json": true, ".woff2": true, ".woff": true, ".ttf": true,
+	".otf": true, ".eot": true, ".png": true, ".jpg": true, ".jpeg": true, ".gif": true, ".webp": true, ".avif": true, ".svg": true,
+	".ico": true, ".mp4": true, ".webm": true, ".mp3": true, ".ogg": true, ".wav": true, ".glb": true, ".gltf": true, ".wasm": true, ".pdf": true}
+
+// codeSrcsetDescRE is a srcset candidate's descriptor (300w, 2x, 1.5x).
+var codeSrcsetDescRE = regexp.MustCompile(`^[0-9]+(?:\.[0-9]+)?[wx]$`)
+
+// codeJSONStringRE: the string values of a JSON list or object in a data-* attribute.
+var codeJSONStringRE = regexp.MustCompile(`"((?:[^"\\]|\\.)*)"`)
+
+// dataValue maps the value of a data-* attribute: the path of a kit file (or of a remapped file)
+// → its URL; a srcset-like list ("a.png 1489w, b.png 300w", a lazy loader's data-*-srcset) of
+// which a candidate names a kit file → every candidate mapped (the others reported missing); a
+// JSON list or object → its string values that name kit files; a lone path with an asset
+// extension that names no file → kept and reported missing. Anything else is left alone (data-*
+// values need not be URLs).
+func (cv *codeConv) dataValue(raw string) string {
+	if v := cv.kitFile(raw); v != raw {
+		return v
+	}
+	u := strings.TrimSpace(raw)
+	if u == "" || cv.o.KitURL == "" && len(cv.o.Remap) == 0 {
+		return raw
+	}
+	if (u[0] == '[' || u[0] == '{') && len(u) <= 1<<16 {
+		return codeJSONStringRE.ReplaceAllStringFunc(raw, func(m string) string {
+			inner := m[1 : len(m)-1]
+			if strings.Contains(inner, "\\") {
+				unesc := strings.ReplaceAll(inner, `\/`, "/")
+				if v := cv.kitFile(unesc); v != unesc {
+					return `"` + strings.ReplaceAll(v, "/", `\/`) + `"`
+				}
+				return m
+			}
+			return `"` + cv.kitFile(inner) + `"`
+		})
+	}
+	if cands, ok := codeSrcsetList(u); ok {
+		hit := false
+		for _, c := range cands {
+			if cv.kitFile(c) != c {
+				hit = true
+				break
+			}
+		}
+		if hit || codeAssetPath(cands[0]) {
+			return cv.srcset(raw)
+		}
+		return raw
+	}
+	if codeAssetPath(u) {
+		cv.url(u, false) // reports it missing
+	}
+	return raw
+}
+
+// codeSrcsetList reads a srcset-like list: two or more candidates, or one with a descriptor, each
+// a URL without spaces and at most one w/x descriptor. ok is false for anything else.
+func codeSrcsetList(v string) ([]string, bool) {
+	if len(v) > 1<<16 || strings.HasPrefix(v, "data:") {
+		return nil, false
+	}
+	parts := strings.Split(v, ",")
+	var urls []string
+	desc := false
+	for _, p := range parts {
+		f := strings.Fields(p)
+		switch len(f) {
+		case 1:
+		case 2:
+			if !codeSrcsetDescRE.MatchString(f[1]) {
+				return nil, false
+			}
+			desc = true
+		default:
+			return nil, false
+		}
+		urls = append(urls, f[0])
+	}
+	if len(urls) < 2 && !desc {
+		return nil, false
+	}
+	for _, u := range urls {
+		if strings.HasPrefix(u, "#") || strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) || path.Ext(strings.SplitN(u, "?", 2)[0]) == "" {
+			return nil, false
+		}
+	}
+	return urls, true
+}
+
+// codeAssetPath reports whether a value reads as a relative or root-relative path of a design
+// file: no scheme, no spaces, an asset extension.
+func codeAssetPath(u string) bool {
+	if u == "" || len(u) > 1024 || strings.ContainsAny(u, " \t\n<>\"'(){},;") || strings.HasPrefix(u, "#") || strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) {
+		return false
+	}
+	if i := strings.IndexAny(u, "?#"); i >= 0 {
+		u = u[:i]
+	}
+	return codeAssetExts[strings.ToLower(path.Ext(u))]
+}
+
 // kitFile maps a value that is the path of a kit file (relative to the page's folder, or
 // root-relative) to its kit URL, query and fragment kept; any other value is returned as it is,
 // unreported (it may not be a URL at all).
 func (cv *codeConv) kitFile(raw string) string {
 	u := strings.TrimSpace(raw)
-	if cv.o.KitURL == "" || u == "" || len(u) > 1024 || strings.ContainsAny(u, " \t\n<>\"'(){}") || strings.HasPrefix(u, "#") ||
+	if cv.o.KitURL == "" && len(cv.o.Remap) == 0 || u == "" || len(u) > 1024 || strings.ContainsAny(u, " \t\n<>\"'(){}") || strings.HasPrefix(u, "#") ||
 		strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) {
 		return raw
 	}
@@ -835,6 +957,9 @@ func (cv *codeConv) kitFile(raw string) string {
 		rel = strings.TrimPrefix(path.Clean(u), "/")
 	} else {
 		rel = strings.TrimPrefix(path.Clean("/"+path.Join(cv.o.Base, u)), "/")
+	}
+	if v, ok := cv.o.Remap[rel]; ok {
+		return v + rest
 	}
 	if !cv.o.KitFiles[rel] {
 		return raw
@@ -954,6 +1079,9 @@ func (cv *codeConv) url(raw string, page bool) string {
 		return v
 	}
 	if v, ok := cv.o.LinkMap[u]; ok && u != "" {
+		return withQuery(v)
+	}
+	if v, ok := cv.o.Remap[rel]; ok {
 		return withQuery(v)
 	}
 	if cv.o.KitURL != "" && cv.o.KitFiles[rel] {
