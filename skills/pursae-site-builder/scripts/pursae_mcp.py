@@ -223,7 +223,8 @@ def kit_upload(c, rest):
             full = os.path.join(d, n)
             files.append((os.path.relpath(full, root).replace(os.sep, "/"), full))
     if not files:
-        die("no web asset files under " + root)
+        # A design whose CSS and JS are all inline or on a CDN: an empty kit still names it for import-site.
+        print("no web asset files under " + root + "; publishing an empty kit", file=sys.stderr)
     batch, size, first, sent = [], 0, True, 0
 
     def flush(commit):

@@ -10,7 +10,7 @@
 //
 //   node builder/test/fidelity/fidelity.mjs --src <folder> --site <url> [--map <map.json>] --out <dir>
 //     [--widths 1440,1024,768,390] [--only <substring>] [--scenarios <file.json>] [--target 0.1]
-//     [--jobs 4] [--clock 1000] [--images fail|all] [--mask <selector>] [--self]
+//     [--jobs 4] [--clock 1000] [--images fail|all] [--mask <selector>] [--block <url,…>] [--self]
 //
 // --map: {"index.html": "/", "hizmet/3.html": "/hizmet/3/"}; without it the site import's own plan
 // is used (index.html → /, a/b.html → /a/b/, a/index.html → /a/, 404.html → a missing URL).
@@ -40,6 +40,9 @@ const IMAGES = args.images || 'fail'
 const HEIGHT = 900
 // --mask: elements hidden on both sides (live third-party content such as a map iframe), e.g. "iframe[src*=google]".
 const MASK = args.mask && args.mask !== 'true' ? args.mask : ''
+// --block: requests aborted on both sides, comma-separated URL substrings (a live third-party API such
+// as a GitHub star count: its answer and its timing differ between loads, and it rate-limits).
+const BLOCK = args.block && args.block !== 'true' ? args.block.split(',').filter(Boolean) : []
 const dbg = (...a) => process.env.FIDELITY_DEBUG && console.error(new Date().toISOString().slice(11, 23), ...a)
 fs.mkdirSync(path.join(OUT, 'img'), { recursive: true })
 
@@ -116,8 +119,16 @@ const browser = await chromium.launch({ args: ['--disable-lcd-text', '--force-co
 async function open(url, width) {
   const ctx = await browser.newContext({ viewport: { width, height: HEIGHT }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block', bypassCSP: !!process.env.FIDELITY_BYPASS_CSP })
   const page = await ctx.newPage()
+  if (BLOCK.length) await page.route((u) => BLOCK.some((b) => u.href.includes(b)), (r) => r.abort('blockedbyclient'))
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e.message || e)))
+  // Console errors (a CSP violation, a failed module import) and failed requests: a page can draw
+  // the same and still lose a script on one side.
+  const console_ = []
+  // (Not the page's own status: the 404 page is answered 404 on purpose.)
+  page.on('console', (m) => m.type() === 'error' && m.location().url !== url && console_.push(m.text().slice(0, 300)))
+  page.on('requestfailed', (r) => !BLOCK.some((b) => r.url().includes(b)) && console_.push(`request failed: ${r.url().slice(0, 200)} (${r.failure()?.errorText})`))
+  page.on('response', (r) => r.status() >= 400 && r.url() !== url && console_.push(`HTTP ${r.status()}: ${r.url().slice(0, 200)}`))
   page.on('crash', () => dbg('CRASH', url))
   page.on('close', () => dbg('CLOSE', url))
   if (CLOCK > 0) {
@@ -133,7 +144,7 @@ async function open(url, width) {
   dbg("settle", url)
   await settle(page)
   dbg("settled", url)
-  return { ctx, page, status: resp ? resp.status() : 0, errors }
+  return { ctx, page, status: resp ? resp.status() : 0, errors, console: console_ }
 }
 
 async function tick(page, ms) {
@@ -273,7 +284,7 @@ async function capture(url, j) {
   const side = await open(url, j.width)
   try {
     if (j.steps) await runSteps(side.page, j.steps)
-    return { png: await shot(side.page, j.fullPage), status: side.status, errors: side.errors }
+    return { png: await shot(side.page, j.fullPage), status: side.status, errors: side.errors, console: side.console }
   } finally {
     await side.ctx.close()
   }
@@ -289,7 +300,7 @@ async function one(j) {
     const pct = d.ratio * 100
     const row = { file: j.file, url: j.url, scenario: j.name, width: j.width, diffPct: Number(pct.toFixed(4)), diffPx: d.diff,
       sizeSource: d.sizeA, sizeTarget: d.sizeB, bands: d.bands.slice(0, 20), status: dst.status, ok: pct <= TARGET,
-      errorsSource: src.errors, errorsTarget: dst.errors }
+      errorsSource: src.errors, errorsTarget: dst.errors, consoleSource: src.console, consoleTarget: dst.console }
     if (IMAGES === 'all' || d.diff > 0) {
       const base = slugOf(j)
       fs.writeFileSync(path.join(OUT, 'img', `${base}.source.png`), a)
@@ -299,6 +310,10 @@ async function one(j) {
     }
     results.push(row)
     console.log(`${row.ok ? 'ok  ' : 'FAIL'} ${pct.toFixed(4).padStart(8)} %  ${String(j.width).padStart(4)}  ${j.name === 'page' ? '' : `[${j.name}] `}${j.file} → ${j.url}`)
+    // What the target reports and the source does not (origins and kit paths differ, so by message shape).
+    const shape = (m) => m.replace(/https?:\/\/[^\s'")]+/g, 'URL')
+    const seen = new Set([...src.console, ...src.errors].map(shape))
+    for (const m of [...dst.errors, ...dst.console]) if (!seen.has(shape(m))) console.log(`       target only: ${m}`)
   }
 }
 

@@ -290,7 +290,9 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 			hs = append(hs, ActiveSample{Path: o.URLs[p.Path], Parts: parts})
 			hIdx = append(hIdx, i)
 		}
-		if res.Footer != nil {
+		// A footer the design put inside main stays on its page (FooterInPage): no template serves
+		// that page, or it would show the footer twice.
+		if res.Footer != nil && !res.FooterInPage {
 			parts := []string{res.Footer.Wrap + "\x05" + res.Footer.HTML}
 			for _, a := range res.FooterAfter {
 				parts = append(parts, a.Wrap+"\x05"+a.HTML)
@@ -379,6 +381,20 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 		}
 	}
 	return list
+}
+
+// Uncovered lists the pages (indexes into Pages) that no header (header true) or footer template
+// serves: the design has none there (a bare 404 page, a landing page without a footer) or keeps it
+// in the page (FooterInPage). The whole-site template must exclude them, or the theme draws the
+// design's header or footer where the design has none.
+func (s *SiteImport) Uncovered(header bool) []int {
+	var out []int
+	for i, p := range s.Pages {
+		if (header && p.Header < 0) || (!header && p.Footer < 0) {
+			out = append(out, i)
+		}
+	}
+	return out
 }
 
 func sitePartNames(res *CodeImport, header bool) []string {

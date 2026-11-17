@@ -268,3 +268,37 @@ func TestMergeDocAttrsAndCodeInfo(t *testing.T) {
 		t.Fatalf("info: %+v", info)
 	}
 }
+
+// The merge shape: a bare 404 page (no header, no footer) and a home page whose footer sits inside
+// main. Neither may be served by a footer template (the home page keeps its own), and the bare 404
+// by no header template either; Uncovered names them so the whole-site templates exclude them.
+func TestConvertSiteUncovered(t *testing.T) {
+	plain := `<!doctype html><html><body><header class="h"><a href="index.html">Home</a></header><main><section><h1>P</h1></section></main><footer class="f">F</footer></body></html>`
+	home := `<!doctype html><html><body><header class="h"><a href="index.html">Home</a></header><main><section><h1>H</h1></section><footer class="f">F</footer></main></body></html>`
+	bare := `<!doctype html><html><body><main><h1>Not here</h1><a href="index.html">Home</a></main></body></html>`
+	res, err := ConvertSite([]SitePage{{Path: "index.html", HTML: home}, {Path: "a.html", HTML: plain}, {Path: "b.html", HTML: plain}, {Path: "404.html", HTML: bare}},
+		SiteImportOptions{KitURL: "/k/", URLs: map[string]string{"index.html": "/", "a.html": "/a/", "b.html": "/b/"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Pages[0].Code.FooterInPage || !strings.Contains(codeHTML(res.Pages[0].Code), `class="f"`) {
+		t.Fatalf("home keeps its footer in the page")
+	}
+	if len(res.Footers) != 1 || len(res.Footers[0].Pages) != 2 {
+		t.Fatalf("footers: %+v", res.Footers)
+	}
+	if got := res.Uncovered(false); len(got) != 2 || got[0] != 0 || got[1] != 3 {
+		t.Errorf("footer uncovered: %v, want [0 3]", got)
+	}
+	if got := res.Uncovered(true); len(got) != 1 || got[0] != 3 {
+		t.Errorf("header uncovered: %v, want [3]", got)
+	}
+}
+
+func codeHTML(r *CodeImport) string {
+	var b strings.Builder
+	for _, s := range r.Sections {
+		b.WriteString(s.HTML)
+	}
+	return b.String()
+}
