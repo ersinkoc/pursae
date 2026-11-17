@@ -770,8 +770,74 @@ func (cv *codeConv) rewrite(n *html.Node) {
 			n.Attr[i].Val = cv.srcset(a.Val)
 		case key == "style" && strings.Contains(a.Val, "url("):
 			n.Attr[i].Val = cv.css(a.Val)
+		case strings.HasPrefix(key, "data-"):
+			// The design's own data attributes naming its files (data-wide="../assets/film.mp4",
+			// data-poster): its scripts read them and resolve them against the page's URL, which is
+			// not the kit's folder. Only a value that is the path of a kit file is touched.
+			n.Attr[i].Val = cv.kitFile(a.Val)
 		}
 	}
+	if n.DataAtom == atom.Script && strings.EqualFold(strings.TrimSpace(attr(n, "type")), "importmap") {
+		for k := n.FirstChild; k != nil; k = k.NextSibling {
+			if k.Type == html.TextNode {
+				k.Data = cv.importMap(k.Data)
+			}
+		}
+	}
+}
+
+// codeImportMapRE: the string values of an import map ("three": "/assets/vendor/three.module.js").
+var codeImportMapRE = regexp.MustCompile(`(:\s*")([^"\\]+)(")`)
+
+// importMap points the URLs an import map maps to (its values, never its specifier keys) at the kit
+// when they name kit files: a root-relative "/assets/vendor/three.module.js" resolves against the
+// site's root, a relative one against the page's URL, neither of which is the kit's folder.
+func (cv *codeConv) importMap(src string) string {
+	return codeImportMapRE.ReplaceAllStringFunc(src, func(m string) string {
+		g := codeImportMapRE.FindStringSubmatch(m)
+		if v := g[2]; strings.HasSuffix(v, "/") && !strings.HasPrefix(v, "//") && !codeSchemeRE.MatchString(v) && cv.o.KitURL != "" {
+			// A folder mapping ("three/addons/": "/assets/vendor/addons/"): when the kit has files in it.
+			dir := strings.TrimPrefix(path.Clean("/"+v), "/")
+			if !strings.HasPrefix(v, "/") {
+				dir = strings.TrimPrefix(path.Clean("/"+path.Join(cv.o.Base, v)), "/")
+			}
+			for f := range cv.o.KitFiles {
+				if dir != "" && strings.HasPrefix(f, dir+"/") {
+					return g[1] + cv.o.KitURL + dir + "/" + g[3]
+				}
+			}
+			return m
+		}
+		return g[1] + cv.kitFile(g[2]) + g[3]
+	})
+}
+
+// kitFile maps a value that is the path of a kit file (relative to the page's folder, or
+// root-relative) to its kit URL, query and fragment kept; any other value is returned as it is,
+// unreported (it may not be a URL at all).
+func (cv *codeConv) kitFile(raw string) string {
+	u := strings.TrimSpace(raw)
+	if cv.o.KitURL == "" || u == "" || len(u) > 1024 || strings.ContainsAny(u, " \t\n<>\"'(){}") || strings.HasPrefix(u, "#") ||
+		strings.HasPrefix(u, "//") || codeSchemeRE.MatchString(u) {
+		return raw
+	}
+	rest := ""
+	if i := strings.IndexAny(u, "?#"); i >= 0 {
+		u, rest = u[:i], u[i:]
+	}
+	if path.Ext(u) == "" {
+		return raw
+	}
+	var rel string
+	if strings.HasPrefix(u, "/") {
+		rel = strings.TrimPrefix(path.Clean(u), "/")
+	} else {
+		rel = strings.TrimPrefix(path.Clean("/"+path.Join(cv.o.Base, u)), "/")
+	}
+	if !cv.o.KitFiles[rel] {
+		return raw
+	}
+	return cv.o.KitURL + rel + rest
 }
 
 // isEventHandler reports whether an attribute is an inline event handler (onclick, onload, …).

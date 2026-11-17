@@ -268,3 +268,101 @@ func TestMergeDocAttrsAndCodeInfo(t *testing.T) {
 		t.Fatalf("info: %+v", info)
 	}
 }
+
+// The merge shape: a bare 404 page (no header, no footer) and a home page whose footer sits inside
+// main. Neither may be served by a footer template (the home page keeps its own), and the bare 404
+// by no header template either; Uncovered names them so the whole-site templates exclude them.
+func TestConvertSiteUncovered(t *testing.T) {
+	plain := `<!doctype html><html><body><header class="h"><a href="index.html">Home</a></header><main><section><h1>P</h1></section></main><footer class="f">F</footer></body></html>`
+	home := `<!doctype html><html><body><header class="h"><a href="index.html">Home</a></header><main><section><h1>H</h1></section><footer class="f">F</footer></main></body></html>`
+	bare := `<!doctype html><html><body><main><h1>Not here</h1><a href="index.html">Home</a></main></body></html>`
+	res, err := ConvertSite([]SitePage{{Path: "index.html", HTML: home}, {Path: "a.html", HTML: plain}, {Path: "b.html", HTML: plain}, {Path: "404.html", HTML: bare}},
+		SiteImportOptions{KitURL: "/k/", URLs: map[string]string{"index.html": "/", "a.html": "/a/", "b.html": "/b/"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Pages[0].Code.FooterInPage || !strings.Contains(codeHTML(res.Pages[0].Code), `class="f"`) {
+		t.Fatalf("home keeps its footer in the page")
+	}
+	if len(res.Footers) != 1 || len(res.Footers[0].Pages) != 2 {
+		t.Fatalf("footers: %+v", res.Footers)
+	}
+	if got := res.Uncovered(false); len(got) != 2 || got[0] != 0 || got[1] != 3 {
+		t.Errorf("footer uncovered: %v, want [0 3]", got)
+	}
+	if got := res.Uncovered(true); len(got) != 1 || got[0] != 3 {
+		t.Errorf("header uncovered: %v, want [3]", got)
+	}
+}
+
+func codeHTML(r *CodeImport) string {
+	var b strings.Builder
+	for _, s := range r.Sections {
+		b.WriteString(s.HTML)
+	}
+	return b.String()
+}
+
+// The umbral shape: a page in a folder whose scripts read file paths from data attributes and load
+// modules through an import map with root-relative URLs.
+func TestConvertCodeDataAttrsAndImportMap(t *testing.T) {
+	src := `<!doctype html><html><head>
+<script type="importmap">{"imports": {"three": "/assets/vendor/three.module.js", "three/addons/": "/assets/vendor/addons/", "other/": "/elsewhere/", "x": "../assets/vendor/x.js?v=2", "cdn": "https://cdn.example/a.js"}}</script>
+</head><body><main><section class="fable" data-wide="../assets/film.mp4" data-wide-poster="../assets/film.jpg#t" data-label="Fable" data-at="1.5" data-missing="../assets/none.mp4" data-src="../assets/film.jpg">
+<video poster="../assets/film.jpg"></video></section></main></body></html>`
+	res, err := ConvertCode(src, CodeImportOptions{KitURL: "/k/", Base: "identity",
+		KitFiles: map[string]bool{"assets/film.mp4": true, "assets/film.jpg": true, "assets/vendor/three.module.js": true, "assets/vendor/x.js": true, "assets/vendor/addons/a.js": true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := codeHTML(res)
+	for _, want := range []string{`data-wide="/k/assets/film.mp4"`, `data-wide-poster="/k/assets/film.jpg#t"`, `data-label="Fable"`, `data-at="1.5"`,
+		`data-missing="../assets/none.mp4"`, `data-src="/k/assets/film.jpg"`, `poster="/k/assets/film.jpg"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %s in %s", want, body)
+		}
+	}
+	for _, want := range []string{`"three": "/k/assets/vendor/three.module.js"`, `"three/addons/": "/k/assets/vendor/addons/"`, `"other/": "/elsewhere/"`, `"x": "/k/assets/vendor/x.js?v=2"`, `"cdn": "https://cdn.example/a.js"`} {
+		if !strings.Contains(res.Head, want) {
+			t.Errorf("import map: missing %s in %s", want, res.Head)
+		}
+	}
+	// Data attributes are never reported as missing files (they need not be URLs).
+	if len(res.Missing) != 0 {
+		t.Errorf("missing: %v", res.Missing)
+	}
+}
+
+// The umbral Motif shape: an app screen whose header bar, asides and main sit in one grid wrapper and
+// that has no footer; and a page without a header whose footer shares the wrapper. The shell is
+// printed once, by the header and the page (or the page and the footer).
+func TestShareShellTwoParts(t *testing.T) {
+	app := `<div class="app" id="app">`
+	h := app + `<header class="bar">B</header></div>`
+	m := app + `<aside>L</aside><main>S</main><aside>R</aside></div>` + "\n" + `<dialog id="d"></dialog>`
+	// The page's sections: the grid's and, after the shell, a dialog in no wrapper.
+	k, withH, withF := ShellPlan([]string{app}, nil, &CodeDocInfo{First: []string{app}, Last: nil, Common: nil})
+	if k != 1 || !withH || withF {
+		t.Fatalf("plan without footer: %d %v %v", k, withH, withF)
+	}
+	hh, mm, ff, ok := ShareShell(h, m, "", []string{app}, true)
+	if !ok || hh+mm+ff != app+`<header class="bar">B</header><aside>L</aside><main>S</main><aside>R</aside></div>`+"\n"+`<dialog id="d"></dialog>` {
+		t.Fatalf("header + page: %v %s", ok, hh+mm+ff)
+	}
+	f := app + `<footer>F</footer></div>`
+	m2 := app + `<main>S</main></div>`
+	if k, withH, withF := ShellPlan(nil, []string{app}, &CodeDocInfo{First: []string{app, "<main>"}, Last: []string{app, "<main>"}, Common: []string{app, "<main>"}}); k != 1 || withH || !withF {
+		t.Fatalf("plan without header: %d %v %v", k, withH, withF)
+	}
+	hh, mm, ff, ok = ShareShell("", m2, f, []string{app}, true)
+	if !ok || hh+mm+ff != app+`<main>S</main><footer>F</footer></div>` {
+		t.Fatalf("page + footer: %v %s", ok, hh+mm+ff)
+	}
+	// Not without a code page, and not with nothing to share it with.
+	if _, _, _, ok := ShareShell(h, "<main>theme</main>", "", []string{app}, false); ok {
+		t.Error("shared a header's shell with a theme main alone")
+	}
+	if k, _, _ := ShellPlan(nil, nil, &CodeDocInfo{First: []string{app}, Common: []string{app}}); k != 0 {
+		t.Errorf("a page alone has no shared shell: %d", k)
+	}
+}

@@ -72,6 +72,11 @@ checked before anything is cut (the shell must be the header's last element, the
 page's only one); otherwise each part keeps its own copy, as before. A canvas page (no header and footer
 part) prints its own shell once by construction.
 
+A page without a footer (an app screen whose header bar, side panels and main sit in one grid wrapper:
+umbral's Motif page) or without a header shares the shell with the one part it has
+(`webbuilder.ShellPlan`): the header opens it and the page closes it, or the page opens it and the footer
+closes it (what the design has after or before the shell — dialogs, a toast — stays where it is). Printing it twice would split the design's grid into two boxes.
+
 `posts.content` (feeds, search, excerpts) gets the sections' markup without scripts, styles and
 templates.
 
@@ -106,6 +111,9 @@ Code sections work under the site's nonce policy (`csp_mode` `report` and `enfor
   mode the additions to `script-src` are also merged into the report-only policy (only into the
   directives it has). The editor page allows the kits' origins for users who may publish code
   sections (the design's frame inherits the editor's policy).
+- **`blob:` images and media**: a page with code sections allows `blob:` in `img-src` and `media-src`
+  (a design that exports a canvas with `toBlob` and shows it, or plays a fetched file); a blob URL is
+  content the page made itself.
 - **Inline event handlers** (`onclick="…"`, `onload="…"`) cannot run under a nonce policy, and
   Pursae adds neither `'unsafe-inline'` nor `'unsafe-hashes'` for them. The importer counts them
   and warns (`ConvertCode` → `warnings`, per attribute and element); move them into the design's
@@ -163,6 +171,11 @@ writing needs `edit_theme_options` **and** `unfiltered_html`.
   as written) becomes its site URL; other page links and missing files are reported. A query string
   stays on the mapped URL (`hakkimizda.html?tab=2#x` → `/hakkimizda/?tab=2#x`, `app.js?x=1` → the kit
   URL with `?x=1`); a kit file's `?v=` is replaced by the kit version when the page is printed.
+  Any other `data-*` attribute whose value is the path of a kit file (`data-wide="../assets/film.mp4"`,
+  read by the design's script) becomes its kit URL too; other `data-*` values are left alone and never
+  reported (they need not be URLs). The values of an `<script type="importmap">` (never its specifier
+  keys) that name kit files, or folders holding kit files (`"three/addons/": "/assets/vendor/addons/"`),
+  point at the kit.
 - **Element ids**: every element outside an SVG drawing (the `<svg>` itself included) gets a
   `data-wbc` id, numbered across the import; `script`, `style`, `template`, `noscript`, `link`, `meta`,
   `br` and the like do not. Sections imported before every element was tagged get the missing ids
@@ -201,13 +214,29 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    does not reproduce byte for byte, are clusters of their own. The largest header and footer cluster
    apply to the whole site (`include/general`), the others to their pages
    (`include/singular/page/<id>`, `include/404`); all with priority 10, so they win a tie with other
-   whole-site templates (which are listed in the warnings).
+   whole-site templates (which are listed in the warnings). Pages that have no header (or footer) in
+   the design — a bare `404.html`, a landing page without a footer — and a page whose footer sits inside
+   its `main` (it keeps it there, `FooterInPage`) are excluded from the whole-site template
+   (`exclude/singular/page/<id>`, `exclude/404`; `SiteImport.Uncovered`), so the theme does not draw
+   another page's header or footer on them.
 4. **Pages**: each page is published with `layout: site` (the templates bring its header and footer),
    its title, description, robots and Open Graph tags (page settings and Pursae SEO).
 5. **Idempotent**: everything the import makes carries the post meta `_wb_site_kit` (the kit) and
    `_wb_site_key` (the page's file, `dir:<folder>` for a placeholder, `header-<n>`, `footer-<n>`, `404`).
    A second import of the kit updates the same pages (slug and parent too) and templates; templates of an
    earlier import it no longer needs are turned into drafts.
+
+6. **Kit at the site's root**: the import marks its kit (`wbKit.Root`, the time of the import) and the site
+   then serves the kit's files at its root as well, after every route and before the 404
+   (`wbKitRootAsset`): `/assets/fonts/x.woff2` answers with the kit's `assets/fonts/x.woff2`. A static
+   design addresses its files as its host serves its folder, and the site import maps that folder onto the
+   site's paths (`a/index.html` → `/a/`), so URLs the design builds where the importer cannot see them keep
+   working: root-relative `url(/assets/…)` in the kit's stylesheets, an inline module's
+   `import "./js/engine.js"` on `/post/`, `fetch("data.json")`, a script reading `../assets/film.mp4` on
+   `/identity/`. Only `GET` / `HEAD` of a path outside `/wp-*` that is a valid kit file (the kit's
+   extensions, no HTML, no dot segments) and exists; a route of the site always wins; with several such
+   kits the most recent import wins. `Cache-Control: public, no-cache`. "Remove this import" takes the
+   mark away.
 
 The answer lists the pages (`post_id`, `url`, sections), `pages_created` / `pages_updated`, the templates
 (type, id, pages, conditions, `active_links`), `templates_disabled`, `unmapped_links`, `missing_files`
@@ -315,16 +344,29 @@ differing pixels (YIQ distance, threshold 0.1, as `builder/test/parity`). Withou
 the site import's plan (`404.html` against a missing URL). Both sides load with reduced motion, a style
 that turns transitions, animations and the caret off, a paused clock (timers run for `--clock` ms, 1000
 by default, so a slider does not move on), are scrolled through (scroll reveals finish) and wait for
-fonts and loaded images; each side is captured alone, in Chromium without LCD text and GPU (otherwise
+every declared font face (`document.fonts`, also the ones the first layout did not ask for: a face that
+starts loading late otherwise lands on one side only, and under load that showed as 0.5–1.4 % of
+re-rasterized text on enerjiosgb) and loaded images; each side is captured alone, in Chromium without LCD text and GPU (otherwise
 text antialiasing varies with load). `--self` compares the source with itself (the noise floor),
 `--mask <selector>` hides live third-party content on both sides (a Google Maps iframe draws its tiles
 at its own pace), `--only <substring>` narrows the pages, `--images all` keeps every image. A scenario
 file adds states: `[{"name", "pages", "widths", "steps": [{"hover"|"click"|"focus": selector},
 {"press": key}, {"scroll": y}, {"wait": ms}], "fullPage": false}]`
 (`builder/test/fidelity/scenarios/enerjiosgb.json` opens the "Kurumsal" menu). Output: `report.json`
-(per page, scenario and width: `diffPct`, sizes, differing bands) and `report.html` with the source,
-target and diff images of everything that differs; the exit status is 1 when a shot is over `--target`
-(0.1 %).
+(per page, scenario and width: `diffPct`, sizes, differing bands, page errors, console errors and
+failed requests of both sides) and `report.html` with the source, target and diff images of everything
+that differs; the exit status is 1 when a shot is over `--target` (0.1 %). The run prints, per shot,
+the errors only the target had (a CSP violation, a 404 of a file the import did not map). `--block
+<url-substring,…>` aborts requests on both sides: a live third-party API (a GitHub star count) answers
+differently and rate-limits. Mask or block only what differs when the source is compared with itself
+(`--self`): canvas / WebGL frames, video, time- or scroll-driven demos, live data.
+
+Corpus results (November 2026, 1440 / 1024 / 768 / 390 px, fresh site per design, see the table in the
+branch's report): enerjiosgb (55 pages), landing/merge (29, tr + en + forum folders), landing/eyvah (15),
+umbral-site (8, ES modules, import map, root-relative paths, tr/), umbral/tema (7, the same design with
+relative paths and bundles), testlanding (1, everything inline, three.js from a CDN), kurumsal-kimlik (2),
+splitkb-blog-tema (2), veteriner-site (1) are at 0 % or under their own noise floor once the
+non-deterministic parts are masked.
 
 ### Forum views
 
@@ -499,6 +541,16 @@ styles name) and in the editor's frame.
   follow the frame, which is at most as tall as the screen.
 - Hello Pursae wraps non-code parts in its own elements; a header or footer template made of code
   sections is printed without a wrapper.
+- URLs a design's scripts build relative to the page (`img/x.png`, `../data.json`) resolve against the
+  page's site URL. The site import maps `a/index.html` to `/a/` and the root kit serves `/a/img/x.png`
+  from the kit's `a/img/x.png`, as the design's host did; but `a/b.html` becomes `/a/b/`, one folder
+  deeper, so a relative URL built by a script on that page misses the kit (attributes and CSS are
+  rewritten and are not affected). Root-relative URLs assume the site at the domain's root.
+- A design over the kit limits (100 MB, 2000 files) or with more than 500 pages (landing/new-landing:
+  1110 pages, 198 MB with documentation exports) is imported in parts (several kits) or trimmed first.
+- An app shell whose page is drawn by a JavaScript bundle from an API or a build step (a Vite `dist/`
+  served under a base path, a dashboard reading a backend) is not a static site; it can be imported, but
+  only the empty shell is a code section to edit.
 - A site import needs every page in one call (at most 500); the active-link rule matches request paths,
   so it needs pretty permalinks. Forms keep the design's own handling (enerjiosgb's opens `mailto:`);
   nothing on the site receives them yet.

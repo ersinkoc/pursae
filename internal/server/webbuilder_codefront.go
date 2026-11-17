@@ -78,21 +78,44 @@ func (s *Server) wbCodeParts(c *gin.Context, tp *wbThemeParts, header, main, foo
 		tp.view.Footer = template.HTML(webbuilder.ApplyActive(string(tp.view.Footer), fi.Active, current))
 	}
 	// One shell around header, main and footer: a code main must sit in the same wrappers; any
-	// other main (a theme view, builder sections, a forum view) is printed inside them.
-	if hi != nil && fi != nil && tp.view.Header != "" && tp.view.Footer != "" {
-		mainCode := mi != nil && tp.view.Main != ""
-		var mc []string
-		if mainCode {
-			mc = mi.Common
+	// other main (a theme view, builder sections, a forum view) is printed inside them. A page
+	// without a footer (or header) shares it with the header (or footer) alone (ShellPlan).
+	mainCode := mi != nil && tp.view.Main != ""
+	var hc, fc []string
+	if hi != nil && tp.view.Header != "" {
+		hc = hi.Last
+	}
+	if fi != nil && tp.view.Footer != "" {
+		fc = fi.First
+	}
+	mInfo := mi
+	if !mainCode {
+		mInfo = nil
+	}
+	if k, withH, withF := webbuilder.ShellPlan(hc, fc, mInfo); k > 0 {
+		from := hc
+		if !withH {
+			from = fc
 		}
-		if k := webbuilder.ShellLen(hi.Last, mc, fi.First, mainCode); k > 0 {
-			chain := make([]string, k)
-			for i, w := range hi.Last[:k] {
-				chain[i] = s.wbKitVersioned(w)
+		chain := make([]string, k)
+		for i, w := range from[:k] {
+			chain[i] = s.wbKitVersioned(w)
+		}
+		hv, fv := string(tp.view.Header), string(tp.view.Footer)
+		if !withH {
+			hv = ""
+		}
+		if !withF {
+			fv = ""
+		}
+		if h, m, f, ok := webbuilder.ShareShell(hv, string(tp.view.Main), fv, chain, mainCode); ok {
+			if withH {
+				tp.view.Header = template.HTML(h)
 			}
-			if h, m, f, ok := webbuilder.ShareShell(string(tp.view.Header), string(tp.view.Main), string(tp.view.Footer), chain, mainCode); ok {
-				tp.view.Header, tp.view.Main, tp.view.Footer = template.HTML(h), template.HTML(m), template.HTML(f)
+			if withF {
+				tp.view.Footer = template.HTML(f)
 			}
+			tp.view.Main = template.HTML(m)
 		}
 	}
 	var langs, htmlAttrs, bodyAttrs []string

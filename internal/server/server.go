@@ -421,7 +421,8 @@ func (s *Server) routes() *gin.Engine {
 		r.Handle(m, "/wp-json", restHandler)
 	}
 
-	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.site) // theme package assets, /<post>/embed/, then the site
+	// theme package assets, /<post>/embed/, site-imported design kits' files at the root, then the site
+	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.wbKitRootAsset, s.site)
 	return r
 }
 

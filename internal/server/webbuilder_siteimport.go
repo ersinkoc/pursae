@@ -324,7 +324,16 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			key := kind.typ + "-" + itoa(ti)
 			keep[key] = true
 			conds := []string{"include/general"}
-			if ti > 0 {
+			if ti == 0 {
+				// Pages without this part in the design (a bare 404, a footer kept inside main).
+				for _, pi := range res.Uncovered(kind.typ == "header") {
+					if id, ok := pageFor[pi]; ok {
+						conds = append(conds, "exclude/singular/page/"+itoa64(id))
+					} else if res.Pages[pi].Path == notFound {
+						conds = append(conds, "exclude/404")
+					}
+				}
+			} else {
 				conds = nil
 				for _, pi := range t.Pages {
 					if id, ok := pageFor[pi]; ok {
@@ -386,6 +395,10 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	if others := s.wbSiteOtherTemplates(c, kit); len(others) > 0 {
 		warnings = append(warnings, "other published templates of the same types may compete with the imported ones (the imported ones have priority "+
 			itoa(wbSiteTemplatePriority)+"): "+strings.Join(others, ", "))
+	}
+	// The design's folders are the site's paths now: its files are served at the root too.
+	if err := s.wbKitSetRoot(c, kit, true); err != nil {
+		warnings = append(warnings, "could not serve the kit's files at the site's root: "+err.Error())
 	}
 	if frontID > 0 && !(args["front_page"] == false) {
 		if err := s.mcpREST(c, http.MethodPost, "/wp/v2/settings", map[string]any{"show_on_front": "page", "page_on_front": frontID}, nil); err != nil {

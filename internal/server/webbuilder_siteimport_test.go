@@ -163,3 +163,82 @@ func wbSnippet(s, at string) string {
 	lo, hi := max(0, i-300), min(len(s), i+300)
 	return s[lo:hi]
 }
+
+// The corpus shapes (landing/merge, umbral-site): a home page whose footer sits inside main, a bare
+// 404 page, a stylesheet with root-relative font URLs and an inline module importing a file next to
+// its page. The whole-site templates leave the pages without that part alone, the kit's files answer
+// at the site's root, and the code pages allow blob: images.
+func TestMCPImportSiteCorpusShapes(t *testing.T) {
+	ts, c := testServer(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
+	if r := call("activate_plugin", map[string]any{"slug": "golementor"}); r["isError"] == true {
+		t.Fatalf("activate: %v", mcpText(r))
+	}
+	if r := call("activate_theme", map[string]any{"slug": wbHelloSlug}); r["isError"] == true {
+		t.Fatalf("theme: %v", mcpText(r))
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{"kit": "corp", "files": []any{
+		map[string]any{"path": "assets/style.css", "text": "@font-face{font-family:X;src:url(/assets/fonts/x.woff2)}"},
+		map[string]any{"path": "assets/fonts/x.woff2", "data": "d09GMgABAAAAAA=="},
+		map[string]any{"path": "post/js/engine.js", "text": "export const x = 1"},
+	}}))
+	doc := func(body string) string {
+		return `<!doctype html><html lang="en"><head><title>T</title><link rel="stylesheet" href="/assets/style.css"></head><body>` + body + `</body></html>`
+	}
+	header := `<header class="site-h"><a href="/">Home</a><a href="/post/">Post</a></header>`
+	footer := `<footer class="site-f">© 2026</footer>`
+	pages := []any{
+		map[string]any{"path": "index.html", "html": doc(header + `<main><section><h1>Home</h1></section>` + footer + `</main>`)},
+		map[string]any{"path": "post/index.html", "html": doc(header + `<main><section><h1>Post</h1></section></main>` + footer +
+			`<script type="module">import { x } from "./js/engine.js"; document.title = "x" + x</script>`)},
+		map[string]any{"path": "about.html", "html": doc(header + `<main><section><h1>About</h1></section></main>` + footer)},
+		map[string]any{"path": "404.html", "html": doc(`<main><h1>Lost</h1><a href="/">Home</a></main>`)},
+		// An app screen: header bar and main in one grid, a dialog after it, no footer.
+		map[string]any{"path": "app/index.html", "html": doc(`<div class="app"><header class="bar">Bar</header><main><section>Canvas</section></main></div><dialog id="dlg"></dialog>`)},
+	}
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{"kit": "corp", "pages": pages}))
+	if len(asList(out["pages"])) != 4 {
+		t.Fatalf("import: %v", out)
+	}
+	fetch := func(path string) (int, string, http.Header) {
+		t.Helper()
+		resp, err := http.Get(base + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return resp.StatusCode, string(b), resp.Header
+	}
+	code, home, h := fetch("/")
+	if code != 200 || strings.Count(home, `class="site-f"`) != 1 || strings.Count(home, `class="site-h"`) != 1 {
+		t.Errorf("home: %d, %d footers, %d headers", code, strings.Count(home, `class="site-f"`), strings.Count(home, `class="site-h"`))
+	}
+	if csp := h.Get("Content-Security-Policy"); !strings.Contains(csp, "img-src 'self' data: https: blob:") && !strings.Contains(csp, "blob:") {
+		t.Errorf("code page CSP without blob: images: %s", csp)
+	}
+	if _, about, _ := fetch("/about/"); strings.Count(about, `class="site-f"`) != 1 || strings.Count(about, `class="site-h"`) != 1 {
+		t.Errorf("about: header and footer from the templates expected once")
+	}
+	code, nf, _ := fetch("/no-such-page/")
+	if code != 404 || !strings.Contains(nf, "<h1>Lost</h1>") || strings.Contains(nf, `class="site-h"`) || strings.Contains(nf, `class="site-f"`) {
+		t.Errorf("bare 404 got the site's header or footer: %d %s", code, wbSnippet(nf, "Lost"))
+	}
+	if _, app, _ := fetch("/app/"); strings.Count(app, `<div class="app"`) != 1 || strings.Contains(app, `class="site-f"`) ||
+		!strings.Contains(app, `<div class="app"><header class="bar">Bar</header>`) {
+		t.Errorf("app page: the grid wrapper must be printed once around header and main: %s", wbSnippet(app, `class="bar"`))
+	}
+	// The kit at the root: the stylesheet's font, the module next to its page.
+	for _, p := range []string{"/assets/fonts/x.woff2", "/post/js/engine.js", "/assets/style.css"} {
+		if code, body, hd := fetch(p); code != 200 || body == "" || hd.Get("Cache-Control") != wbKitCacheShort {
+			t.Errorf("%s: %d %q %q", p, code, body, hd.Get("Cache-Control"))
+		}
+	}
+	for _, p := range []string{"/post/js/none.js", "/assets/../post/js/engine.js.html", "/wp-content/x/assets/style.css"} {
+		if code, _, _ := fetch(p); code == 200 {
+			t.Errorf("%s: served", p)
+		}
+	}
+}
