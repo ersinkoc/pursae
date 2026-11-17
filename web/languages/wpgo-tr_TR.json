@@ -4646,5 +4646,9 @@
  "is available.": "sürümü çıktı.",
  "Update now": "Şimdi güncelle",
  "Version": "Sürüm",
- "Replaces": "Yerine geçtiği:"
+ "Replaces": "Yerine geçtiği:",
+ "Drag to reorder": "Sürükleyerek sırala",
+ "Order saved": "Sıralama kaydedildi",
+ "The order could not be saved.": "Sıralama kaydedilemedi.",
+ "Drag the rows, or use the arrows, to set the order your site shows them in.": "Sitede hangi sırayla görüneceklerini belirlemek için satırları sürükle ya da okları kullan."
 }

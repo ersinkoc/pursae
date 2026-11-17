@@ -1278,3 +1278,48 @@ body.pursae-modern .pm-chip.is-muted:before { background: var(--pm-border-2); }
 body.pursae-modern .pm-plugin:not(.is-active) .pm-plugin-name { color: var(--pm-muted); }
 body.pursae-modern .pm-plugin:not(.is-active) .pm-plugin-ic { filter: grayscale(.85); opacity: .7; }
 body.pursae-modern .pm-plugins-empty { grid-column: 1 / -1; background: var(--pm-bg); padding: 40px; text-align: center; margin: 0; }
+
+/* ===================================================================== manual term order (categories, tags) */
+body.pursae-modern .pm-sort { display: inline-flex; align-items: center; gap: 0; margin-right: 10px; vertical-align: middle; border: 1px solid var(--pm-border); background: var(--pm-bg); }
+body.pursae-modern .pm-sort button { position: relative; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: transparent; color: var(--pm-faint); cursor: pointer; }
+body.pursae-modern .pm-sort button + button { border-left: 1px solid var(--pm-border); }
+body.pursae-modern .pm-sort button .dashicons { font-size: 16px; width: 16px; height: 16px; }
+body.pursae-modern .pm-sort button:hover:not(:disabled), body.pursae-modern .pm-sort button:focus-visible { color: var(--pm-primary); background: var(--pm-primary-50); outline: 0; box-shadow: none; }
+body.pursae-modern .pm-sort button:disabled { opacity: .3; cursor: default; }
+body.pursae-modern .pm-sort .pm-sort-grip { cursor: grab; }
+body.pursae-modern .pm-sort .pm-sort-grip:active { cursor: grabbing; }
+body.pursae-modern .pm-sort [data-pm-tip]:hover:after { content: attr(data-pm-tip); position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); z-index: 20; padding: 4px 8px; white-space: nowrap; background: var(--pm-chrome); color: #fff; font-size: 12px; line-height: 1.4; pointer-events: none; }
+body.pursae-modern .wp-list-table tr.pm-dragging { opacity: .45; }
+body.pursae-modern .wp-list-table tr.pm-drop-before td, body.pursae-modern .wp-list-table tr.pm-drop-before th { box-shadow: inset 0 2px 0 var(--pm-primary); }
+body.pursae-modern .wp-list-table tr.pm-drop-after td, body.pursae-modern .wp-list-table tr.pm-drop-after th { box-shadow: inset 0 -2px 0 var(--pm-primary); }
+body.pursae-modern .wp-list-table tr.pm-moved td, body.pursae-modern .wp-list-table tr.pm-moved th { animation: pm-moved 1.2s ease-out; }
+@keyframes pm-moved { from { background: var(--pm-primary-50); } to { background: transparent; } }
+body.pursae-modern .pm-sort-hint { margin: 0 0 8px; font-size: 12.5px; color: var(--pm-faint); }
+body.pursae-modern .pm-sort-hint:before { content: "\f333"; font-family: dashicons; margin-right: 6px; vertical-align: -2px; color: var(--pm-primary); }
+body.pursae-modern .pm-toast { position: fixed; left: 50%; bottom: 24px; z-index: 100200; transform: translate(-50%, 16px); opacity: 0; padding: 10px 16px; background: var(--pm-chrome); color: #fff; font-size: 13.5px; pointer-events: none; transition: opacity .25s, transform .3s cubic-bezier(.23,1,.32,1); }
+body.pursae-modern .pm-toast:before { content: "\f147"; font-family: dashicons; margin-right: 8px; vertical-align: -3px; color: #6FD9A8; }
+body.pursae-modern .pm-toast.is-bad:before { content: "\f534"; color: #F7AAB5; }
+body.pursae-modern .pm-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+body.pursae-modern .wp-list-table.tags thead .column-name { width: 30%; }
+body.pursae-modern .wp-list-table.tags thead .column-description { width: 28%; }
+body.pursae-modern .wp-list-table.tags thead .column-slug { width: 18%; }
+body.pursae-modern .wp-list-table.tags thead .column-posts { width: 72px; }
+body.pursae-modern .wp-list-table.tags td.column-name strong { display: inline; }
+body.pursae-modern .pm-sort .pm-sort-grip { touch-action: none; }
+body.pm-sorting, body.pm-sorting * { cursor: grabbing !important; user-select: none; }
+@media screen and (max-width: 782px) {
+	body.pursae-modern tbody[data-pm-sort] td.column-primary:before { display: none !important; }
+	body.pursae-modern tbody[data-pm-sort] .pm-sort { margin: 0 8px 6px 0; }
+	body.pursae-modern tbody[data-pm-sort] .pm-sort button { width: 32px; height: 32px; }
+}
+
+/* block-based screens that keep the admin menu (Appearance › Widgets): start after the wider menu */
+@media screen and (min-width: 961px) {
+	body.pursae-modern:not(.is-fullscreen-mode):not(.folded) .interface-interface-skeleton { left: var(--pm-side); }
+}
+@media screen and (min-width: 783px) {
+	body.pursae-modern.folded:not(.is-fullscreen-mode) .interface-interface-skeleton { left: var(--pm-side-folded); }
+}
+@media screen and (min-width: 783px) and (max-width: 960px) {
+	body.pursae-modern.auto-fold:not(.is-fullscreen-mode) .interface-interface-skeleton { left: var(--pm-side-folded); }
+}

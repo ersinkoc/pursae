@@ -177,3 +177,239 @@
 		} );
 	}
 } )();
+
+/*
+ * Manual order of categories and tags (Pursae Modern): a grip to drag each row and arrows to move it
+ * one place. A row moves with its child terms and only among its siblings; every move is saved at
+ * once (admin-ajax action pursae-term-order), and the site lists the terms in that order.
+ */
+( function () {
+	'use strict';
+	var tbody = document.querySelector( 'tbody[data-pm-sort]' );
+	if ( ! tbody ) {
+		return;
+	}
+	var tax = tbody.getAttribute( 'data-pm-sort' );
+	var nonce = tbody.getAttribute( 'data-pm-nonce' );
+	var labels = {};
+	var tpl = document.getElementById( 'pm-sort-labels' );
+	if ( tpl ) {
+		tpl.querySelectorAll( '[data-k]' ).forEach( function ( el ) {
+			labels[ el.getAttribute( 'data-k' ) ] = el.textContent;
+		} );
+	}
+	// the row markup is WordPress's own: id="tag-N", class "level-D", the parent in Quick Edit's hidden data
+	tbody.querySelectorAll( 'tr[id^="tag-"]' ).forEach( function ( tr ) {
+		var id = tr.id.slice( 4 );
+		var lvl = ( tr.className.match( /\blevel-(\d+)/ ) || [ 0, '0' ] )[ 1 ];
+		var par = tr.querySelector( '#inline_' + id + ' .parent' );
+		tr.setAttribute( 'data-id', id );
+		tr.setAttribute( 'data-depth', lvl );
+		tr.setAttribute( 'data-parent', par ? par.textContent.trim() || '0' : '0' );
+	} );
+	var rows = function () { return Array.prototype.slice.call( tbody.querySelectorAll( 'tr[data-id]' ) ); };
+	var depth = function ( tr ) { return parseInt( tr.getAttribute( 'data-depth' ) || '0', 10 ); };
+	var parent = function ( tr ) { return tr.getAttribute( 'data-parent' ) || '0'; };
+	// a row and the rows of its descendants that follow it
+	var block = function ( tr ) {
+		var out = [ tr ], d = depth( tr ), n = tr.nextElementSibling;
+		while ( n && n.hasAttribute( 'data-id' ) && depth( n ) > d ) {
+			out.push( n );
+			n = n.nextElementSibling;
+		}
+		return out;
+	};
+	var prevSibling = function ( tr ) {
+		var p = tr.previousElementSibling, d = depth( tr );
+		while ( p && p.hasAttribute( 'data-id' ) ) {
+			if ( depth( p ) < d ) {
+				return null;
+			}
+			if ( depth( p ) === d && parent( p ) === parent( tr ) ) {
+				return p;
+			}
+			p = p.previousElementSibling;
+		}
+		return null;
+	};
+	var nextSibling = function ( tr ) {
+		var b = block( tr ), n = b[ b.length - 1 ].nextElementSibling;
+		return n && n.hasAttribute( 'data-id' ) && depth( n ) === depth( tr ) && parent( n ) === parent( tr ) ? n : null;
+	};
+	var insertBlockBefore = function ( b, ref ) {
+		b.forEach( function ( r ) { tbody.insertBefore( r, ref ); } );
+	};
+	var insertBlockAfter = function ( b, target ) {
+		var tb = block( target ), ref = tb[ tb.length - 1 ].nextElementSibling;
+		b.forEach( function ( r ) { tbody.insertBefore( r, ref ); } );
+	};
+
+	var toast = document.createElement( 'div' );
+	toast.className = 'pm-toast';
+	toast.setAttribute( 'role', 'status' );
+	document.body.appendChild( toast );
+	var toastTimer;
+	var say = function ( msg, bad ) {
+		toast.textContent = msg;
+		toast.classList.toggle( 'is-bad', !! bad );
+		toast.classList.add( 'is-on' );
+		clearTimeout( toastTimer );
+		toastTimer = setTimeout( function () { toast.classList.remove( 'is-on' ); }, 2200 );
+	};
+	var saving = null;
+	var save = function () {
+		var body = new URLSearchParams();
+		body.append( 'action', 'pursae-term-order' );
+		body.append( 'taxonomy', tax );
+		body.append( '_wpnonce', nonce );
+		rows().forEach( function ( r ) { body.append( 'ids[]', r.getAttribute( 'data-id' ) ); } );
+		var req = fetch( window.ajaxurl || '/wp-admin/admin-ajax', { method: 'POST', credentials: 'same-origin', body: body } )
+			.then( function ( r ) { return r.text().then( function ( t ) { return r.ok && t.trim() === '1'; } ); } )
+			.catch( function () { return false; } );
+		saving = req;
+		req.then( function ( ok ) {
+			if ( saving === req ) {
+				say( ok ? labels.saved : labels.failed, ! ok );
+			}
+		} );
+	};
+	var refreshArrows = function () {
+		rows().forEach( function ( r ) {
+			var up = r.querySelector( '.pm-sort-up' ), down = r.querySelector( '.pm-sort-down' );
+			if ( up ) { up.disabled = ! prevSibling( r ); }
+			if ( down ) { down.disabled = ! nextSibling( r ); }
+		} );
+	};
+	var flash = function ( b ) {
+		b.forEach( function ( r ) {
+			r.classList.remove( 'pm-moved' );
+			void r.offsetWidth;
+			r.classList.add( 'pm-moved' );
+		} );
+	};
+
+	var dragBlock = null;
+	rows().forEach( function ( tr ) {
+		var cell = tr.querySelector( 'td.column-primary' );
+		if ( ! cell ) {
+			return;
+		}
+		var ctl = document.createElement( 'span' );
+		ctl.className = 'pm-sort';
+		ctl.innerHTML = '<button type="button" class="pm-sort-grip"><span class="dashicons dashicons-menu" aria-hidden="true"></span></button>' +
+			'<button type="button" class="pm-sort-up"><span class="dashicons dashicons-arrow-up-alt2" aria-hidden="true"></span></button>' +
+			'<button type="button" class="pm-sort-down"><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></button>';
+		var name = ( tr.querySelector( '.row-title' ) || {} ).textContent || '';
+		ctl.children[ 0 ].setAttribute( 'aria-label', ( labels.handle || '' ) + ': ' + name );
+		ctl.children[ 0 ].setAttribute( 'data-pm-tip', labels.handle || '' );
+		ctl.children[ 1 ].setAttribute( 'aria-label', ( labels.up || '' ) + ': ' + name );
+		ctl.children[ 1 ].setAttribute( 'data-pm-tip', labels.up || '' );
+		ctl.children[ 2 ].setAttribute( 'aria-label', ( labels.down || '' ) + ': ' + name );
+		ctl.children[ 2 ].setAttribute( 'data-pm-tip', labels.down || '' );
+		cell.insertBefore( ctl, cell.firstChild );
+
+		ctl.children[ 1 ].addEventListener( 'click', function () {
+			var p = prevSibling( tr );
+			if ( ! p ) { return; }
+			var b = block( tr );
+			insertBlockBefore( b, p );
+			flash( b ); refreshArrows(); save();
+			this.focus();
+		} );
+		ctl.children[ 2 ].addEventListener( 'click', function () {
+			var n = nextSibling( tr );
+			if ( ! n ) { return; }
+			var b = block( tr );
+			insertBlockAfter( b, n );
+			flash( b ); refreshArrows(); save();
+			this.focus();
+		} );
+		ctl.children[ 0 ].addEventListener( 'pointerdown', function ( e ) { startDrag( e, tr ); } );
+		// keyboard: Alt+↑ / Alt+↓ on any control of the row
+		ctl.addEventListener( 'keydown', function ( e ) {
+			if ( e.altKey && ( e.key === 'ArrowUp' || e.key === 'ArrowDown' ) ) {
+				e.preventDefault();
+				( e.key === 'ArrowUp' ? ctl.children[ 1 ] : ctl.children[ 2 ] ).click();
+			}
+		} );
+	} );
+
+	// pointer drag (mouse, touch and pen alike): the row follows under the pointer as a drop line
+	var targetAt = function ( x, y ) {
+		var el = document.elementFromPoint( x, y );
+		var tr = el && el.closest && el.closest( 'tr[data-id]' );
+		if ( ! tr || tr.parentNode !== tbody || ! dragBlock || dragBlock.indexOf( tr ) !== -1 ) {
+			return null;
+		}
+		var head = tr;
+		while ( head && head.hasAttribute( 'data-id' ) && depth( head ) > depth( dragBlock[ 0 ] ) ) {
+			head = head.previousElementSibling;
+		}
+		if ( ! head || depth( head ) !== depth( dragBlock[ 0 ] ) || parent( head ) !== parent( dragBlock[ 0 ] ) ) {
+			return null;
+		}
+		var rect = tr.getBoundingClientRect();
+		return { row: head, after: head !== tr || y > rect.top + rect.height / 2 };
+	};
+	var clearMarks = function () {
+		rows().forEach( function ( r ) { r.classList.remove( 'pm-drop-before', 'pm-drop-after' ); } );
+	};
+	var startDrag = function ( e, tr ) {
+		if ( e.button !== undefined && e.button !== 0 ) {
+			return;
+		}
+		e.preventDefault();
+		dragBlock = block( tr );
+		var target = null, moved = false, sx = e.clientX, sy = e.clientY;
+		var move = function ( ev ) {
+			if ( ! moved && Math.abs( ev.clientY - sy ) + Math.abs( ev.clientX - sx ) < 4 ) {
+				return;
+			}
+			if ( ! moved ) {
+				moved = true;
+				document.body.classList.add( 'pm-sorting' );
+				dragBlock.forEach( function ( r ) { r.classList.add( 'pm-dragging' ); } );
+			}
+			clearMarks();
+			target = targetAt( ev.clientX, ev.clientY );
+			if ( target ) {
+				if ( target.after ) {
+					var tb = block( target.row );
+					tb[ tb.length - 1 ].classList.add( 'pm-drop-after' );
+				} else {
+					target.row.classList.add( 'pm-drop-before' );
+				}
+			}
+		};
+		var up = function () {
+			document.removeEventListener( 'pointermove', move );
+			document.removeEventListener( 'pointerup', up );
+			document.removeEventListener( 'pointercancel', up );
+			document.body.classList.remove( 'pm-sorting' );
+			clearMarks();
+			var b = dragBlock;
+			b.forEach( function ( r ) { r.classList.remove( 'pm-dragging' ); } );
+			dragBlock = null;
+			if ( moved && target ) {
+				if ( target.after ) {
+					insertBlockAfter( b, target.row );
+				} else {
+					insertBlockBefore( b, target.row );
+				}
+				flash( b ); refreshArrows(); save();
+			}
+		};
+		document.addEventListener( 'pointermove', move );
+		document.addEventListener( 'pointerup', up );
+		document.addEventListener( 'pointercancel', up );
+	};
+
+	refreshArrows();
+	var table = tbody.closest( 'table' );
+	if ( table && labels.hint ) {
+		var hint = document.createElement( 'p' );
+		hint.className = 'pm-sort-hint';
+		hint.textContent = labels.hint;
+		table.parentNode.insertBefore( hint, table );
+	}
+} )();

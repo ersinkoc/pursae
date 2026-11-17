@@ -182,3 +182,66 @@ func TestMenuLocationsSeveral(t *testing.T) {
 		t.Errorf("menu_locations left after delete: %d", n)
 	}
 }
+
+// TestTermManualOrder: SetTermOrder puts terms in a hand-made order that the default query and the
+// tree follow; terms without a position come after, by name; an explicit name sort ignores it.
+func TestTermManualOrder(t *testing.T) {
+	s, _, _, _ := wbTestStore(t)
+	ctx := context.Background()
+	mk := func(name string, parent int64) *Term {
+		t.Helper()
+		tm := &Term{Taxonomy: "category", Name: name, ParentID: parent}
+		if err := s.InsertTerm(ctx, tm); err != nil {
+			t.Fatal(err)
+		}
+		return tm
+	}
+	a, b, c := mk("Alpha", 0), mk("Bravo", 0), mk("Charlie", 0)
+	b1, b2 := mk("B-one", b.ID), mk("B-two", b.ID)
+	names := func(ts []*Term) []string {
+		var out []string
+		for _, tm := range ts {
+			out = append(out, tm.Name)
+		}
+		return out
+	}
+	q := func(orderBy string) []string {
+		t.Helper()
+		ts, _, err := s.QueryTerms(ctx, TermQuery{Taxonomy: "category", OrderBy: orderBy, IDs: []int64{a.ID, b.ID, c.ID}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return names(ts)
+	}
+	if got := q(""); !slices.Equal(got, []string{"Alpha", "Bravo", "Charlie"}) {
+		t.Fatalf("no manual order yet: %v", got)
+	}
+	if err := s.SetTermOrder(ctx, "category", []int64{c.ID, a.ID}); err != nil {
+		t.Fatal(err)
+	}
+	if got := q(""); !slices.Equal(got, []string{"Charlie", "Alpha", "Bravo"}) {
+		t.Fatalf("placed terms first, the rest by name: %v", got)
+	}
+	if got := q("name"); !slices.Equal(got, []string{"Alpha", "Bravo", "Charlie"}) {
+		t.Fatalf("explicit name sort: %v", got)
+	}
+	if err := s.SetTermOrder(ctx, "post_tag", []int64{b.ID}); err != nil { // other taxonomy: ignored
+		t.Fatal(err)
+	}
+	if err := s.SetTermOrder(ctx, "category", []int64{b.ID, b2.ID, b1.ID, c.ID, a.ID}); err != nil {
+		t.Fatal(err)
+	}
+	tree, err := s.HierarchicalTerms(ctx, "category", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, tm := range tree {
+		if tm.ID == a.ID || tm.ID == b.ID || tm.ID == c.ID || tm.ID == b1.ID || tm.ID == b2.ID {
+			got = append(got, tm.Name)
+		}
+	}
+	if !slices.Equal(got, []string{"Bravo", "B-two", "B-one", "Charlie", "Alpha"}) {
+		t.Fatalf("tree follows the manual order, children under their parent: %v", got)
+	}
+}

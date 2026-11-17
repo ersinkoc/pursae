@@ -3,8 +3,10 @@ package server
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -55,6 +57,10 @@ type termsData struct {
 	AddNonce    string
 	BulkNonce   string
 	InlineNonce string // Quick Edit (taxinlineeditnonce)
+	// Sortable: the list is in manual order (no search, no column sort) and the user sees Pursae Modern,
+	// so rows can be dragged or moved with arrows; OrderNonce guards the save (pursae-term-order).
+	Sortable   bool
+	OrderNonce string
 	Pagination  pagination
 	Form        *store.Term // values to refill the add form after an error
 	SortLinks   map[string]sortLink
@@ -124,7 +130,7 @@ func (s *Server) renderTerms(c *gin.Context, lab taxLabels, form *store.Term, no
 	} else {
 		var err error
 		terms, total, err = s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: lab.Tax, Search: search,
-			OrderBy: c.DefaultQuery("orderby", "name"), Order: c.DefaultQuery("order", "asc"), Page: page, PerPage: perPage})
+			OrderBy: c.Query("orderby"), Order: c.DefaultQuery("order", "asc"), Page: page, PerPage: perPage})
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
@@ -137,6 +143,9 @@ func (s *Server) renderTerms(c *gin.Context, lab taxLabels, form *store.Term, no
 		d.All, _ = s.store.HierarchicalTerms(ctx, lab.Tax, false)
 	}
 	d.Pagination = newPagination(total, perPage, page, *c.Request.URL)
+	if search == "" && c.Query("orderby") == "" && adminThemeFor(u).Modern() && len(terms) > 1 {
+		d.Sortable, d.OrderNonce = true, s.nonce(c, "term-order_"+lab.Tax)
+	}
 	s.golylangTermsList(c, lab.Tax, &d) // Golylang: language columns and the Language field
 	s.setScreenOptions(c, screenOptions{Screen: "edit-" + lab.Tax, Columns: termListColumns, Hidden: d.Hidden,
 		PerPageOption: "edit_" + lab.Tax + "_per_page", PerPage: perPage})
@@ -429,3 +438,81 @@ func (s *Server) termDeleteFromQuery(c *gin.Context) bool {
 	c.Redirect(http.StatusFound, "/wp-admin/edit-tags?taxonomy="+lab.Tax+"&message=2")
 	return true
 }
+
+// termOrderAjax saves a new manual order from the category / tag list (Pursae Modern). ids[] are the
+// rows of the page that was reordered, top to bottom; the rest of the taxonomy keeps its place, so a
+// paged list only reorders the slice that was on screen. Responds with "1" or an error message.
+func (s *Server) termOrderAjax(c *gin.Context) {
+	lab, ok := taxLabelsFor(c.PostForm("taxonomy"))
+	if !ok {
+		c.String(http.StatusBadRequest, "Invalid taxonomy.")
+		return
+	}
+	if !s.checkNonceValue(c, c.PostForm("_wpnonce"), "term-order_"+lab.Tax) {
+		c.String(http.StatusForbidden, "-1")
+		return
+	}
+	if !currentUser(c).Can("manage_categories", nil) {
+		c.String(http.StatusForbidden, "Sorry, you are not allowed to manage terms in this taxonomy.")
+		return
+	}
+	var moved []int64
+	for _, v := range c.PostFormArray("ids[]") {
+		if id, err := strconv.ParseInt(v, 10, 64); err == nil && id > 0 {
+			moved = append(moved, id)
+		}
+	}
+	ctx := c.Request.Context()
+	var all []*store.Term
+	var err error
+	if lab.Hierarchical {
+		all, err = s.store.HierarchicalTerms(ctx, lab.Tax, false)
+	} else {
+		all, _, err = s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: lab.Tax})
+	}
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	order, err := spliceTermOrder(all, moved)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := s.store.SetTermOrder(ctx, lab.Tax, order); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	s.purgeAll(ctx) // menus and archive listings follow the new order
+	c.String(http.StatusOK, "1")
+}
+
+// spliceTermOrder puts moved (a reordering of some terms of all) into the slots those terms held in
+// all and returns every id in the new order. In a tree, a term moves only among its siblings: the
+// tree order is kept, and children follow their parent because positions are compared per parent.
+func spliceTermOrder(all []*store.Term, moved []int64) ([]int64, error) {
+	pos := make(map[int64]int, len(all))
+	for i, t := range all {
+		pos[t.ID] = i
+	}
+	slots := make([]int, 0, len(moved))
+	seen := map[int64]bool{}
+	for _, id := range moved {
+		i, ok := pos[id]
+		if !ok || seen[id] {
+			return nil, fmt.Errorf("unknown or repeated term %d", id)
+		}
+		seen[id] = true
+		slots = append(slots, i)
+	}
+	sort.Ints(slots)
+	out := make([]int64, len(all))
+	for i, t := range all {
+		out[i] = t.ID
+	}
+	for k, slot := range slots {
+		out[slot] = moved[k]
+	}
+	return out, nil
+}
+

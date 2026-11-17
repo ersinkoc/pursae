@@ -467,6 +467,8 @@ func (s *Server) adminAjax(c *gin.Context) {
 		s.inlineSave(c)
 	case "inline-save-tax":
 		s.inlineSaveTax(c)
+	case "pursae-term-order": // Pursae Modern: drag and drop / arrows on the category and tag lists
+		s.termOrderAjax(c)
 	case "ajax-tag-search":
 		s.tagSearchAjax(c)
 	case "replyto-comment":
