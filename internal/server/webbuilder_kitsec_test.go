@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -244,5 +246,36 @@ func TestWBKitRootAssetHeaders(t *testing.T) {
 	srv.purgeAll(ctx) // the 404 the page cache kept (a publish purges)
 	if code, body, _ := fetch("/app.js", nil); code == http.StatusOK && strings.Contains(body, "design") {
 		t.Errorf("served with no published page: %d", code)
+	}
+}
+
+// Staging a kit file never changes the live file before the commit (the staging folder starts as
+// hard links to it), and a kit deleted and uploaded again never reuses a version.
+func TestWBKitStagingAndVersions(t *testing.T) {
+	srv, _, admin := wbrStart(t)
+	wbsKit(t, admin, "stg", map[string]string{"css/a.css": "OLD", "css/b.css": "KEEP"})
+	live := filepath.Join(srv.wbKitRoot(), "stg", "css", "a.css")
+	if code, v, _ := admin.do(http.MethodPost, "/web-builder/v2/kits/stg/files", map[string]any{"files": []any{map[string]any{"path": "css/a.css", "text": "NEW"}}}, nil); code != http.StatusOK {
+		t.Fatalf("stage: %d %v", code, v)
+	}
+	if b, _ := os.ReadFile(live); string(b) != "OLD" {
+		t.Fatalf("the live file changed before the commit: %q", b)
+	}
+	if code, v, _ := admin.do(http.MethodPost, "/web-builder/v2/kits/stg/commit", map[string]any{}, nil); code != http.StatusOK || wbrObj(v)["version"] != float64(2) {
+		t.Fatalf("commit: %d %v", code, v)
+	}
+	if b, _ := os.ReadFile(live); string(b) != "NEW" {
+		t.Errorf("after the commit: %q", b)
+	}
+	if b, _ := os.ReadFile(filepath.Join(srv.wbKitRoot(), "stg", "css", "b.css")); string(b) != "KEEP" {
+		t.Errorf("unchanged file: %q", b)
+	}
+	// Delete and upload again: the version goes on.
+	if code, _, _ := admin.do(http.MethodDelete, "/web-builder/v2/kits/stg", nil, nil); code != http.StatusOK {
+		t.Fatal("delete")
+	}
+	wbsKit(t, admin, "stg", map[string]string{"css/a.css": "AGAIN"})
+	if v := srv.wbKitList()["stg"].Version; v != 3 {
+		t.Errorf("version after delete and upload: %d, want 3", v)
 	}
 }

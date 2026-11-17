@@ -148,7 +148,7 @@ func wbKitFiles(dir string) (map[string]int64, error) {
 			}
 			return nil
 		}
-		if !d.Type().IsRegular() {
+		if !d.Type().IsRegular() || strings.HasPrefix(d.Name(), ".wb-kit-") { // a write in progress (wbKitWriteFile)
 			return nil
 		}
 		rel, _ := filepath.Rel(dir, p)
@@ -322,7 +322,7 @@ func (s *Server) wbRESTKitFiles(c *gin.Context, r *restRequest) {
 			restErr(c, http.StatusInternalServerError, "wb_kit_io", "Could not write the kit.")
 			return
 		}
-		if err := os.WriteFile(dst, f.body, 0o644); err != nil {
+		if err := wbKitWriteFile(dst, f.body); err != nil {
 			restErr(c, http.StatusInternalServerError, "wb_kit_io", "Could not write the kit.")
 			return
 		}
@@ -398,7 +398,9 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 	kits := s.wbKitList()
 	k = kits[slug]
 	if k == nil {
-		k = &wbKit{Slug: slug, Name: slug}
+		// A kit deleted and uploaded again goes on from the old one's version: browsers keep the old
+		// files under their immutable ?v= URLs.
+		k = &wbKit{Slug: slug, Name: slug, Version: s.wbKitGoneVersions()[slug]}
 		kits[slug] = k
 	}
 	if name = strings.TrimSpace(name); name != "" {
@@ -626,11 +628,32 @@ func (s *Server) wbRESTKitDelete(c *gin.Context, r *restRequest) {
 	c.JSON(http.StatusOK, map[string]any{"deleted": true, "slug": slug})
 }
 
+// wbKitGoneOption keeps the last version of every deleted kit (slug → version), so a kit uploaded
+// again under the same slug never reuses a version (wbKitCommitStage).
+const wbKitGoneOption = "wb_design_kits_gone"
+
+func (s *Server) wbKitGoneVersions() map[string]int {
+	out := map[string]int{}
+	if raw := s.settings.Get(wbKitGoneOption); raw != nil {
+		if b, err := json.Marshal(raw); err == nil {
+			_ = json.Unmarshal(b, &out)
+		}
+	}
+	return out
+}
+
 // wbKitRemove deletes a kit and its files (the caller holds wbKitsMu); code is "" on success.
 func (s *Server) wbKitRemove(c *gin.Context, slug string) (status int, code, msg string) {
 	kits := s.wbKitList()
 	if kits[slug] == nil {
 		return http.StatusNotFound, "wb_kit_not_found", "No design kit has that slug."
+	}
+	gone := s.wbKitGoneVersions()
+	if v := kits[slug].Version; v > gone[slug] {
+		gone[slug] = v
+		if err := s.settings.Set(c, map[string]any{wbKitGoneOption: gone}); err != nil {
+			return http.StatusInternalServerError, "db_error", "Could not delete the kit."
+		}
 	}
 	delete(kits, slug)
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
@@ -748,6 +771,32 @@ func wbLocalFontNeeds(raw json.RawMessage, local string) json.RawMessage {
 	}
 	b, _ := json.Marshal(out)
 	return b
+}
+
+// wbKitWriteFile writes a staged file through a temporary file renamed over it. The staging folder
+// starts as hard links to the live files (wbKitCopy): writing into the existing name would change
+// the live file (served as immutable for a year) before the commit; the rename only replaces the
+// staging folder's link.
+func wbKitWriteFile(dst string, body []byte) error {
+	f, err := os.CreateTemp(filepath.Dir(dst), ".wb-kit-*")
+	if err != nil {
+		return err
+	}
+	tmp := f.Name()
+	_, err = f.Write(body)
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err == nil {
+		err = os.Chmod(tmp, 0o644)
+	}
+	if err == nil {
+		err = os.Rename(tmp, dst)
+	}
+	if err != nil {
+		_ = os.Remove(tmp)
+	}
+	return err
 }
 
 // wbKitCopy copies the live kit files into the staging folder.
