@@ -806,6 +806,42 @@ are ignored on publish. Privileged like `content.html`. Publish: `FillCodeWith` 
 are keyed `{section id}-w{data-wbc}` (`BindKey`): `data-wb-loop` values, form `{section}` route
 parameters; the loop query and the form schema are read from the stored doc.
 
+**Kit overrides** (classes and variables of a design; `internal/webbuilder/kitoverride.go`,
+`internal/server/webbuilder_kitoverride.go`, `builder/host/elements/overrides.ts`, `kitstyle.ts`). Not
+part of the doc: one override per design kit, in the `wb_kit_overrides` option
+(`{slug: {live, version, draft, draftVersion, updated}}`), edited through
+`GET|PUT kits/{slug}/override` and `POST kits/{slug}/override/publish` (routes in
+[Kits: REST](web-builder-code-sections.md#kits-rest); writing needs `edit_theme_options` and
+`unfiltered_html`):
+
+```json
+{"rules": [
+  {"ctx": ["@layer utilities"], "sel": ".rounded-2xl", "p": {"border-radius": "2rem"}},
+  {"ctx": ["@layer theme"], "sel": ":root, :host", "p": {"--color-brand-600": "#1d4ed8"}}]}
+```
+
+- `ctx`: at most 6 preludes of `@media`, `@layer`, `@supports` or `@container` (no blocks, `<`, `>`,
+  `\`, comments), outermost first; `sel`: a selector (no `{ } ; < >`, comment, URL or forbidden token,
+  balanced, ≤ 1024 bytes), unique per context; `p`: declarations as local styles take them. At most
+  2000 rules, 120 properties per rule, 256 KB. The printed stylesheet must pass `SanitizeCSS`
+  unchanged, else 422 `bad_css`.
+- `KitOverrideCSS` prints each rule on one line, wrapped in its contexts, declarations sorted by
+  property name: `@layer utilities{.rounded-2xl{border-radius:2rem}}`; a rule without a valid
+  declaration prints nothing. The editor's `overrideCSS` prints the same bytes (shared fixtures
+  `internal/webbuilder/testdata/override`).
+- Front end: a page whose code head links a kit's files (`/wp-content/uploads/web-builder/kits/{slug}/…`)
+  gets `<style data-wb-kit-override="{slug}">` with the live override right after the code head. The
+  snapshot never holds it, so publishing the override needs no page to be republished, and a kit
+  without a live override prints nothing.
+- The editor keeps its working copy in the doc's top-level `wbKits` field (`{slug: {rules}}`) so that
+  undo and redo cover class and variable edits; the host removes the field before every autosave and
+  publish, and from a loaded doc. The server ignores it.
+
+**Elements seam** (patch `0020-elements-seam`, `src/builder/elementsSeam.ts`): `handles(doc)`,
+`Canvas`, `Nav`, `Tab` (Style and Advanced), `Content` (`{s, fallback}`: the Content tab of a code
+section of a page the host draws; `fallback` is the builder's own content tab, the section's HTML and
+head code) and `title`.
+
 ### 8.2 Snapshot HTML
 
 - Elements: `div section header footer nav main article aside h1–h6 p span a strong b em i u s

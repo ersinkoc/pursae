@@ -50,7 +50,7 @@ index 327a4f2..f74093c 100644
      </motion.div>
    )
 diff --git a/src/builder/StudioPanel.tsx b/src/builder/StudioPanel.tsx
-index bf031d2..ccb3056 100644
+index bf031d2..ccd3107 100644
 --- a/src/builder/StudioPanel.tsx
 +++ b/src/builder/StudioPanel.tsx
 @@ -43,6 +43,7 @@ import { Toggle, cn, ease, spring } from './ui'
@@ -99,12 +99,14 @@ index bf031d2..ccb3056 100644
    // Breadcrumb through nested containers: Bölüm › Hücre 2 › İç grid › Hücre 1 …
    const path = sectionPath(b.doc.sections, s.id)
    const crumbs: { label: string; sel?: Selection }[] = []
-@@ -442,8 +461,8 @@ function Inspector({ s, el }: { s: Section; el?: string }) {
+@@ -441,9 +460,9 @@ function Inspector({ s, el }: { s: Section; el?: string }) {
+       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
          <AnimatePresence mode="wait" initial={false}>
            <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.16 }}>
-             {tab === 'content' && (isCell ? <CellLayoutTab s={s} el={el!} /> : isLayout ? <ContainerLayoutTab s={s} /> : <ContentTab s={s} el={el} />)}
+-            {tab === 'content' && (isCell ? <CellLayoutTab s={s} el={el!} /> : isLayout ? <ContainerLayoutTab s={s} /> : <ContentTab s={s} el={el} />)}
 -            {tab === 'style' && (isCell ? <CellStyleTab s={s} el={el!} /> : el ? <ElStyleTab s={s} el={el} /> : <ContainerStyleTab s={s} />)}
 -            {tab === 'advanced' && (isCell ? <CellAdvancedTab s={s} el={el!} /> : el ? <ElAdvancedTab s={s} el={el} /> : <ContainerAdvancedTab s={s} />)}
++            {tab === 'content' && (host?.Content ? <host.Content s={s} fallback={<ContentTab s={s} el={el} />} /> : isCell ? <CellLayoutTab s={s} el={el!} /> : isLayout ? <ContainerLayoutTab s={s} /> : <ContentTab s={s} el={el} />)}
 +            {tab === 'style' && (HostTab ? <HostTab s={s} tab="style" /> : isCell ? <CellStyleTab s={s} el={el!} /> : el ? <ElStyleTab s={s} el={el} /> : <ContainerStyleTab s={s} />)}
 +            {tab === 'advanced' && (HostTab ? <HostTab s={s} tab="advanced" /> : isCell ? <CellAdvancedTab s={s} el={el!} /> : el ? <ElAdvancedTab s={s} el={el} /> : <ContainerAdvancedTab s={s} />)}
            </motion.div>
@@ -112,11 +114,11 @@ index bf031d2..ccb3056 100644
        </div>
 diff --git a/src/builder/elementsSeam.ts b/src/builder/elementsSeam.ts
 new file mode 100644
-index 0000000..4dd19a3
+index 0000000..35998c2
 --- /dev/null
 +++ b/src/builder/elementsSeam.ts
-@@ -0,0 +1,28 @@
-+import type { ComponentType } from 'react'
+@@ -0,0 +1,30 @@
++import type { ComponentType, ReactNode } from 'react'
 +import type { DocState, Section } from './types'
 +
 +/**
@@ -133,6 +135,8 @@ index 0000000..4dd19a3
 +  Nav: ComponentType<{ s: Section }>
 +  /** The inspector's Style and Advanced tabs for a code section of a page the host draws. */
 +  Tab?: ComponentType<{ s: Section; tab: 'style' | 'advanced' }>
++  /** The inspector's Content tab for that section; fallback is the builder's own (the section's code). */
++  Content?: ComponentType<{ s: Section; fallback: ReactNode }>
 +  /** The inspector's title for that section ("Edit Heading"); null keeps the builder's. */
 +  title?: (s: Section) => string | null
 +}

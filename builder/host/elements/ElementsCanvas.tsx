@@ -10,7 +10,7 @@
  * structural change reloads the frame); Preview runs them without editing controls.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, Bold, ChevronRight, Clipboard, ClipboardPaste, Copy, CornerLeftUp, Eraser, Eye, EyeOff, GripVertical, Italic, Layers, Link2, Paintbrush, Pencil, RemoveFormatting, SquareDashed, Trash2, Ungroup, Zap } from 'lucide-react'
+import { ArrowDown, ArrowUp, Bold, ChevronRight, Clipboard, ClipboardPaste, Copy, CornerLeftUp, Eraser, Eye, EyeOff, GripVertical, Italic, Layers, Link2, Paintbrush, Palette as PaletteIcon, Pencil, Plus, RemoveFormatting, SquareDashed, Tags, Trash2, Ungroup, Zap } from 'lucide-react'
 import { useB, type BuilderApi } from '@/builder/store'
 import { openInspectorTab } from '@/builder/StudioPanel'
 import type { Section } from '@/builder/types'
@@ -28,6 +28,8 @@ import { bumpFrame, clipboard, getElState, setElState, toggleIn, useElState } fr
 import { localFonts, sectionsCSS, type LocalSection } from './local'
 import { fontUrlFor } from '@/builder/fonts'
 import { style as styleAct } from './actions'
+import { kitsCSS, kitsOf, loadKits, syncKits, useKitStore } from './kitstyle'
+import { Palette, type NewElement } from './PaletteDrawer'
 
 const WIDTH = { desktop: 1440, tablet: 768, mobile: 390 } as const
 const BAR = 34
@@ -43,6 +45,8 @@ function editCss(mode: FrameMode, hidden: ReadonlySet<string>, shown: ReadonlySe
   if (mode === 'preview') return ''
   const q = (id: string) => `[data-wbc="${CSS.escape(id)}"]`
   let css = '[data-wbc],a[href]{cursor:default}[data-wbc][contenteditable]{cursor:text;outline:none}'
+  // An empty container (a new Section, Flexbox, Grid or Div) has a size to see and drop into.
+  css += '[data-wbc]:empty:not(img,input,hr,br,iframe,video,audio,svg,textarea,select,canvas,embed,object,source,track,wbr,script,style,template){min-height:48px;outline:1px dashed rgba(34,113,177,.55);outline-offset:-1px}'
   for (const id of shown) css += `${q(id)}{display:revert!important;visibility:visible!important;opacity:1!important}`
   for (const id of hidden) css += `${q(id)}{display:none!important}`
   if (dragging) css += `${q(dragging)}{opacity:.35!important;pointer-events:none!important}`
@@ -97,7 +101,17 @@ export function ElementsCanvas() {
   const localCss = useMemo(() => localCssOf(secs, parts, kits, force), [secs, parts, kits, force?.id, force?.st]) // eslint-disable-line react-hooks/exhaustive-deps
   const localRef = useRef(localCss)
   localRef.current = localCss
-  const [srcdoc, setSrcdoc] = useState(() => frameDoc(secs, parts, mode, editCss(mode, st.hidden, st.shown, null), base, localCss))
+  // Class and variable edits (the kits' override stylesheets, kitstyle.ts).
+  const kitStore = useKitStore()
+  const kitList = useMemo(() => kitsOf(b.doc, parts as never).join(','), [b.doc, parts])
+  useEffect(() => {
+    void loadKits(kitList ? kitList.split(',') : [])
+  }, [kitList])
+  const kitCss = useMemo(() => kitsCSS(b.doc), [b.doc, kitStore.kits]) // eslint-disable-line react-hooks/exhaustive-deps
+  const kitRef = useRef(kitCss)
+  kitRef.current = kitCss
+  useEffect(() => syncKits(b.doc, (m) => b.notify(m)), [b.doc, kitStore.kits]) // eslint-disable-line react-hooks/exhaustive-deps
+  const [srcdoc, setSrcdoc] = useState(() => frameDoc(secs, parts, mode, editCss(mode, st.hidden, st.shown, null), base, localCss, kitCss))
   const shown = useRef<Record<string, string>>(htmlNow)
   const shownKey = useRef(structKey)
   const sync = useRef<FrameSync | null>(null)
@@ -115,7 +129,7 @@ export function ElementsCanvas() {
     shown.current = htmlNow
     shownKey.current = structKey
     const s = getElState()
-    setSrcdoc(frameDoc(secs, parts, mode, editCss(mode, s.hidden, s.shown, null), base, localRef.current))
+    setSrcdoc(frameDoc(secs, parts, mode, editCss(mode, s.hidden, s.shown, null), base, localRef.current, kitRef.current))
   }, [htmlNow, structKey, secs, parts, mode, base])
 
   useLayoutEffect(() => {
@@ -165,6 +179,15 @@ export function ElementsCanvas() {
       }
     }
   }, [localCss, loaded])
+
+  // The kits' overrides: rewritten on every change (no reload).
+  useEffect(() => {
+    const el = fdoc()?.querySelector('style[data-wb-kit]')
+    if (el && el.textContent !== kitCss) {
+      el.textContent = kitCss
+      bumpFrame()
+    }
+  }, [kitCss, loaded])
 
   // Editor stylesheet: hidden, temporarily shown, dragged element.
   const [dragId, setDragId] = useState<string | null>(null)
@@ -329,7 +352,8 @@ export function ElementsCanvas() {
   }, [])
 
   // ---------- frame events ----------
-  const drag = useRef<{ id: string; x0: number; y0: number; on: boolean; drop: Drop | null; lastX: number; lastY: number } | null>(null)
+  /** A drag: an element (id) or a new one from the palette (add). */
+  const drag = useRef<{ id: string | null; add?: NewElement; x0: number; y0: number; on: boolean; drop: Drop | null; lastX: number; lastY: number } | null>(null)
 
   const dragged = useRef(0)
   const finishDrag = useCallback((commitIt: boolean) => {
@@ -339,7 +363,8 @@ export function ElementsCanvas() {
     place(dropRef.current, null)
     if (!g?.on) return
     dragged.current = Date.now()
-    if (commitIt && g.drop) act.moveTo(cur.current.b, g.id, g.drop.place)
+    if (commitIt && g.drop && g.add) act.insertAt(cur.current.b, g.drop.place, g.add.html, g.add.local, g.add.label)
+    else if (commitIt && g.drop && g.id) act.moveTo(cur.current.b, g.id, g.drop.place)
   }, [])
 
   /** Drag step at frame point (x, y). */
@@ -352,10 +377,12 @@ export function ElementsCanvas() {
     if (!g.on) {
       if (Math.hypot(x - g.x0, y - g.y0) * cur.current.zoom < 6) return
       g.on = true
-      setDragId(g.id)
+      setDragId(g.id ?? '')
       setMenu(null)
     }
-    g.drop = dropAt(d, cur.current.page, x, y, g.id, cur.current.zoom)
+    const w = d.defaultView
+    const inside = !!w && x >= 0 && y >= 0 && x <= w.innerWidth && y <= w.innerHeight
+    g.drop = inside ? dropAt(d, cur.current.page, x, y, g.id, cur.current.zoom) : null
     const dr = dropRef.current
     if (dr) {
       place(dr, g.drop ? box(g.drop.line) : null)
@@ -550,6 +577,12 @@ export function ElementsCanvas() {
       const f = frame.current
       if (!g || !f) return
       if (e.buttons === 0) return finishDrag(true)
+      // Over the palette (it covers the frame): no drop.
+      if ((e.target as Element | null)?.closest?.('[data-wb-palette]')) {
+        g.drop = null
+        place(dropRef.current, null)
+        return
+      }
       const r = f.getBoundingClientRect()
       dragTo((e.clientX - r.left) / cur.current.zoom, (e.clientY - r.top) / cur.current.zoom)
     }
@@ -702,6 +735,15 @@ export function ElementsCanvas() {
     </button>
   )
 
+  /** A palette item pressed: dragging it onto the canvas inserts it where it is dropped. */
+  const startAddDrag = (e: React.PointerEvent, add: NewElement) => {
+    if (!frame.current || b.preview) return
+    const r = frame.current.getBoundingClientRect()
+    const x = (e.clientX - r.left) / zoom
+    const y = (e.clientY - r.top) / zoom
+    drag.current = { id: null, add, x0: x, y0: y, on: false, drop: null, lastX: x, lastY: y }
+  }
+
   const startHandleDrag = (e: React.PointerEvent) => {
     if (!st.sel || !frame.current) return
     e.preventDefault()
@@ -801,6 +843,8 @@ export function ElementsCanvas() {
         {menu && <ContextMenu b={b} menu={menu} page={page} close={() => setMenu(null)} hidden={st.hidden} shown={st.shown} toggleHidden={toggleHidden} toggleShown={toggleShown} beginText={beginText} />}
       </div>
 
+      {st.palette && !b.preview && <Palette startDrag={startAddDrag} secs={secs} parts={parts} />}
+
       {/* bottom bar: breadcrumb, live edit, layers */}
       <div className="absolute inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-white/[0.07] bg-ink-900 px-3 text-[11.5px] text-ink-300" style={{ height: BAR }} onClick={(e) => e.stopPropagation()}>
         <nav aria-label={t('Breadcrumb')} className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden" data-wb-breadcrumb="">
@@ -821,6 +865,30 @@ export function ElementsCanvas() {
         <span className="shrink-0 text-ink-500">
           {width} px{zoom < 1 ? ` · ${Math.round(zoom * 100)}%` : ''}
         </span>
+        {!b.preview && (
+          <button
+            type="button"
+            data-wb-add=""
+            aria-pressed={st.palette === 'elements' || st.palette === 'design'}
+            title={t('Add elements')}
+            onClick={() => setElState((s) => ({ palette: s.palette === 'elements' || s.palette === 'design' ? null : 'elements' }))}
+            className={`flex shrink-0 items-center gap-1 rounded-md px-2 py-1 ${st.palette === 'elements' || st.palette === 'design' ? 'bg-accent/25 text-accent-soft' : 'hover:bg-white/10 hover:text-white'}`}
+          >
+            <Plus size={12} /> {t('Add')}
+          </button>
+        )}
+        {!b.preview && (
+          <button
+            type="button"
+            data-wb-variables=""
+            aria-pressed={st.palette === 'variables'}
+            title={t('The design’s variables (colors, fonts, sizes)')}
+            onClick={() => setElState((s) => ({ palette: s.palette === 'variables' ? null : 'variables' }))}
+            className={`flex shrink-0 items-center gap-1 rounded-md px-2 py-1 ${st.palette === 'variables' ? 'bg-accent/25 text-accent-soft' : 'hover:bg-white/10 hover:text-white'}`}
+          >
+            <PaletteIcon size={12} /> {t('Variables')}
+          </button>
+        )}
         {!b.preview && (
           <button
             type="button"
@@ -906,6 +974,8 @@ function ContextMenu({
       {item(t('Copy style'), <Paintbrush size={13} />, () => styleAct.copy(b, id))}
       {item(t('Paste style'), <Paintbrush size={13} />, () => styleAct.paste(b, id), { disabled: !clipboard.style })}
       {item(t('Clear style'), <Eraser size={13} />, () => styleAct.clear(b, id), { disabled: !(b.doc.sections.find((s) => s.id === at.sec) as LocalSection | undefined)?.local?.[id] })}
+      {item(t('Copy classes'), <Tags size={13} />, () => act.copyClasses(b, id), { disabled: !attr(at.el, 'class') })}
+      {item(t('Paste classes'), <Tags size={13} />, () => act.pasteClasses(b, id), { disabled: !clipboard.classes })}
       <div className="my-1 h-px bg-white/10" />
       {item(t('Wrap in a Div'), <SquareDashed size={13} />, () => act.wrap(b, id), { disabled: !can })}
       {item(t('Unwrap'), <Ungroup size={13} />, () => act.unwrap(b, id), { disabled: !can })}

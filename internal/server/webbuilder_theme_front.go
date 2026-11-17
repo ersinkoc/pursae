@@ -271,6 +271,7 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	head.WriteString(css.String())
 	codeHead := webbuilder.MergeHeads(heads...)
 	head.WriteString(codeHead)
+	head.WriteString(s.wbKitOverrideStyles(codeHead))
 	v.Head = template.HTML(head.String())
 	if storeAssets {
 		v.Footer += template.HTML(s.gooStoreScripts(c, v.Q))

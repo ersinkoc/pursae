@@ -135,7 +135,11 @@ writing needs `edit_theme_options` **and** `unfiltered_html`.
 | `GET kits/{slug}` | the kit and `fileList: [{path, bytes}]` |
 | `POST kits/{slug}/files` | `{files: [{path, text} \| {path, data: base64}], delete?: [path], fresh?: bool}` — writes into the kit's staging folder (a copy of the live files, or empty with `fresh`). Paths are relative, plain segment names, web asset extensions only (css, js, mjs, map, json, txt, fonts, images, svg, video/audio, glb/gltf, wasm, pdf; no HTML, no server code); 15 MB per file, 2000 files and 100 MB per kit, 24 MB per request. |
 | `POST kits/{slug}/commit` | `{name?, breakpoints?: {tablet, mobile}}` — the staged files replace the live ones in one swap; the version goes up. Without `breakpoints` the local-style breakpoints are suggested from the kit's stylesheets (see [Styling](#styling)). |
-| `DELETE kits/{slug}` | removes the kit and its files. |
+| `DELETE kits/{slug}` | removes the kit, its files and its override. |
+| `GET kits/{slug}/override` | the kit's class and variable edits (see [Classes and variables](#classes-and-variables)): `{live: {rules}, version, draft: {rules}, draftVersion, pending, updated}` |
+| `PUT kits/{slug}/override` | `{draft: {rules}, base: draftVersion}` — replaces the draft (the editor sends it on every change); a stale `base` is 409 `wb_kit_override_conflict` (with the current state in `data.override`), an override that does not validate is 422 `bad_css`, more than 256 KB 413. |
+| `POST kits/{slug}/override/publish` | `{base?}` — the draft goes live on every page that loads the kit's files (the editor calls it after publishing a page of the kit). |
+| `GET kits/{slug}/pages` | `{pages: [{id, title, type, html}]}`: the code-section markup of every builder page and template using the kit (at most 500 pages, 8 MB), for the "From this design" palette and the class counts. Reading only. |
 
 ## Importing
 
@@ -420,14 +424,53 @@ frame only gets the `data-wbc` ids and one `<style data-wb-edit>`):
   column, grid, flow), the frame scrolls at its edges, and void elements, the inside of an `svg`,
   elements with text of their own, the element itself and the header / footer refuse the drop.
   Elements move into any container, also into an empty one and into another section;
-- the context menu copies and pastes elements (after or inside), duplicates, wraps, unwraps, selects
-  the parent, hides or temporarily shows;
+- the context menu copies and pastes elements (after or inside), copies and pastes styles and
+  classes, duplicates, wraps, unwraps, selects the parent, hides or temporarily shows;
 - a double-click on a text (or Enter, or a second click on the selected text) edits it in place, in
   the frame, with bold / italic / link / clear formatting; Enter or a click elsewhere saves, Escape
   cancels;
 - keys work inside the frame too: undo / redo, copy / paste, duplicate (Ctrl/⌘ D), Delete, Escape
   (parent), the arrows (previous / next sibling, parent, first child), Alt + arrows (move); keys are
   left alone while a text is being edited.
+
+**Adding elements** (bottom bar › **Add**, `elements/PaletteDrawer.tsx`). The drawer over the canvas's
+left edge has two palettes; an item is dragged onto the canvas (the drop indicator shows where it
+goes, with the same rules as moving an element) or clicked (it goes after the selected element, into
+it when that is an empty container, else at the end of the selected section's content). Each insert
+is one history entry and selects the new element.
+
+- **Elements** (`elements/palette.ts`): Section, Flexbox, Grid, Div; Heading, Text, Button, Link,
+  Divider, List, HTML / Embed; Image (a neutral placeholder), Icon (inline SVG), Video; form fields
+  (input, textarea, select, checkbox, submit). They are plain semantic HTML with a **local-style
+  preset** (a heading's size and weight, a button's padding, color and hover, a field's border…), so
+  they look reasonable inside any design without its classes, and every value of the preset is an
+  ordinary local style to change. An empty container shows a dashed outline and a minimum height in
+  the editor only.
+- **From this design** (`elements/miner.ts`): the design's own building blocks. The editor mines the
+  markup of every page and template using the kit (`GET kits/{slug}/pages`, plus the open page) for
+  elements with the same tag and class list (order ignored) at least three times, groups them —
+  buttons, headings, cards, badges, texts, links, list items, images, sections, containers — and shows
+  each with a live thumbnail drawn in a small frame with the design's stylesheets (and the kit's
+  override). Inserting one copies the first occurrence's markup with new `data-wbc` ids, its text
+  kept as the placeholder. In a utility-class design (Tailwind) this is how a new button or card
+  gets the design's look. The catalog is computed in the editor (it shares the editor's
+  source-preserving parser and element types, and it follows the published markup without an import
+  step) and cached in `localStorage` per kit and markup hash.
+
+**Content tab** (Studio › Content, `elements/ContentPanel.tsx`, through the seam's `Content`): what the
+selected element says and where it points — rich text (bold, italic, link, clear), a link (address,
+a page or post of the site from the search, new tab with `rel="noopener"`), an image (replace from the
+media library: `srcset` / `sizes` are removed and a `<picture>`'s sources point at the new file, width
+and height follow the new image; alt text; object fit as a local style), an icon (pick one of the
+editor's icons, paste SVG code or upload an `.svg`: sanitized to plain SVG, the icon keeps its classes,
+size and ARIA attributes), a video / embed source (poster, controls, autoplay, muted, loop, inline; an
+iframe's title), a form field (name, type, placeholder, value, required, a select's options), the
+**tag** (h2 → h3, div → section, ul ↔ ol, a ↔ button: attributes and children kept; void, raw-text,
+SVG elements and elements without an end tag are not changed), the **HTML inside** (embeds; new
+elements get `data-wbc` ids) and the **attributes** (id, `aria-*`, `data-*`, title, rel, …: names and
+values are checked — never `on…` handlers, `data-wbc`, `style`, `class` or `srcdoc`; `javascript:`,
+`vbscript:` and `data:` URLs are refused, an image source may be a `data:image`). Without a selected
+element the tab shows the section's HTML and head code as before (also under **Section code**).
 
 The **navigator** (Studio › Structure, or **Layers** in the bottom bar) lists each code section's
 elements with their type icons. Rows are dragged to reorder or reparent elements (also across
@@ -641,17 +684,78 @@ published again.
 Library fonts chosen in the panel are linked on the published code page (only those its local
 styles name) and in the editor's frame.
 
+### Classes and variables
+
+A design's own classes and variables are edited without writing the kit's files (plan §4.3 b, c):
+
+- **Class chips** (top of the Style tab, `elements/ClassPanel.tsx`): the element's classes; × removes
+  one, the field adds one (autocomplete from the classes the design's stylesheets define, read through
+  the frame's CSSOM), each one history entry. **Copy classes / Paste classes** (context menu) replace an
+  element's class list with another's.
+- **Editing a class.** A click on a chip first shows how many elements carry the class on this page
+  and on the site (`GET kits/{slug}/pages`) and which design rule the edit goes to; **Edit class**
+  turns the whole Style tab (the same controls, device and state switchers) into an editor of that
+  class: a change applies to every element with it. The edit is a declaration in the kit's
+  **override stylesheet** with the design rule's own selector inside the design rule's own at-rule
+  context — `@layer utilities{.rounded-2xl{border-top-left-radius:40px}}` for Tailwind's
+  `.rounded-2xl` — so it has the design rule's specificity and layer and wins exactly where the
+  design rule did. Tablet and mobile add the kit's `@media (max-width:…)`, a state adds the
+  pseudo-class (`.btn:hover`). A design `!important` declaration is overridden `!important`. A class
+  the design has no rule for alone gets a new unlayered rule. **Reset every change of this class**
+  removes its rules; **Done** returns to the element's own style.
+- **Variables** (bottom bar › **Variables**): the custom properties the design defines on `:root`,
+  `html` or `:host` (enerjiosgb: 65), grouped as colors (with a swatch and a color picker), fonts,
+  spacing and sizes, other. A new value is written to the override as the defining rule —
+  `@layer theme{:root, :host{--color-brand-600:#1d4ed8}}` — in the same layer, or the same media
+  query when the design only defines it there (a variable redefined in a dark mode or at a breakpoint
+  is edited at its first, unconditional definition). The reset button per variable goes back to the
+  design's value.
+- **Matched rules** (Advanced tab): every rule that applies to the selected element in the device and
+  state being edited, the winner first — its selector, file (`css/style.css`, `<style>`, Local style,
+  Class or variable edit) and context (`@layer utilities › @media (min-width: 40rem)`) — with each
+  declaration struck through unless it is the one in force.
+
+**Undo, draft, publish.** An edit writes the kit's whole new override into the document's `wbKits`
+field, so undo / redo treat it like any other change; the field is the editor's working copy and is
+never stored with the page (the host removes it before saving and publishing). Whenever the working
+copy differs from the server's draft it is sent (`PUT kits/{slug}/override`, debounced, versioned),
+so a reload or another page of the same design shows it. The frame prints every kit's working copy
+in `<style data-wb-kit>`, after the design's stylesheets. **Publishing** a page publishes the drafts
+of its kits (`POST kits/{slug}/override/publish`): from then on every page whose code head loads the
+kit's files prints `<style data-wb-kit-override="{slug}">` right after its code head — after the
+design's stylesheets and local styles — whether or not the page was published again. With no
+override (or after every edit is reset) nothing is printed, so the pages are byte for byte what they
+were. Writing the override needs `edit_theme_options` and `unfiltered_html`, like the kit; the
+server validates every rule (`webbuilder.ParseKitOverride`: `@media` / `@layer` / `@supports` /
+`@container` contexts only, selectors without blocks, markup, URLs or forbidden tokens, declarations
+as local styles take them, and the printed stylesheet must pass the CSS sanitizer unchanged). The
+override is kept in `wb_kit_overrides` beside the kit, so a new upload of the kit keeps it; deleting
+the kit drops it. Go's `KitOverrideCSS` and the editor's `overrideCSS` print the same bytes (shared
+fixtures `internal/webbuilder/testdata/override`).
+
 ## Limits
 
 - The element editor draws only header and footer templates made of code sections; a header made
   of builder sections is not shown around a code page in the editor (it is on the site).
-- Local styles (code pages) style one element; a change to every card at once (a class) and the
-  design's variables come with Faz 5. `::before` / `::after` are not styled yet. Style edits on mixed
-  pages stay inline styles (patch `0019`), and their frames do not show local styles.
+- `::before` / `::after` are not styled yet (neither locally nor in a class edit). Style edits on mixed
+  pages stay inline styles (patch `0019`), and their frames do not show local styles or class edits.
 - Where a value comes from is computed for a horizontal, left-to-right page; shadow DOM, `@scope` and
-  user-agent styles are not modelled, and stylesheets from other origins cannot be read.
-- New elements come from duplicating or pasting an existing one, which keeps the design's classes;
-  the palette of new elements comes later.
+  user-agent styles are not modelled, and stylesheets from other origins cannot be read (their
+  classes are not offered and cannot be edited; a class edit then makes a new unlayered rule). The
+  matched-rules view names a rule's file and its position, not its line; nested CSS rules (CSS
+  nesting) are listed under their parent's selector and are not class-editable.
+- A class edit goes to the class's own rule (`.btn`); rules that only use the class in a compound or
+  descendant selector (`.card .btn`, `.btn.primary`) keep their values and may still win. A variable
+  defined in an anonymous `@layer` cannot be overridden in the same layer and is not listed.
+- Class and variable edits are per kit and site-wide by design: there is no per-page variant of a
+  class (use the element's local style). Two editors changing the same kit at once: the second save
+  is refused (409) and asks for a reload.
+- "From this design" offers a sample as the design wrote it: an `li` card dropped outside a list stays
+  an `li`, and elements the design's scripts reveal (`.reveal`, scroll animations) stay hidden in the
+  static editor until Live edit or the published page runs the script. Thumbnails are drawn without
+  the design's scripts.
+- The palette's Image starts with an inline placeholder and the Video without a source: set them in
+  the Content tab. Form fields keep the design's own form handling (none for a field outside a form).
 - Editing a text replaces the element's inner markup with what the browser serialises (only when the
   text changed); inline `on…` handlers inside that element are not kept in static edit mode, and an
   element holding scripts or styles is not edited in place.

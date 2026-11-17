@@ -23,12 +23,16 @@ export interface ElState {
   editing: string | null
   /** Style panel: the state being styled (the device is the canvas device). */
   styleState: State
+  /** Style panel: the design class being edited (every element with it), null: the element's own style. */
+  classEdit: string | null
+  /** The palette drawer: closed, or its open tab. */
+  palette: null | 'elements' | 'design' | 'variables'
 }
 
 /** The canvas device as local styles name it. */
 export const deviceOf = (d: 'desktop' | 'tablet' | 'mobile'): Device => (d === 'desktop' ? '' : d)
 
-let state: ElState = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null, styleState: '' }
+let state: ElState = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null, styleState: '', classEdit: null, palette: null }
 const subs = new Set<() => void>()
 
 export const getElState = () => state
@@ -62,14 +66,15 @@ export function toggleIn(set: ReadonlySet<string>, id: string, on?: boolean): Se
  * The element clipboard (an element's markup and the local styles of the elements in it) and the
  * style clipboard (one element's local style); session only.
  */
-export const clipboard: { html: string | null; local: LocalStyles | null; style: LocalEntry | null } = { html: null, local: null, style: null }
+export const clipboard: { html: string | null; local: LocalStyles | null; style: LocalEntry | null; classes: string[] | null } = { html: null, local: null, style: null, classes: null }
 
 /** Resets everything (tests, a new document). */
 export function resetElState() {
-  state = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null, styleState: '' }
+  state = { sel: null, hover: null, hidden: new Set(), shown: new Set(), open: new Set(), live: false, editing: null, styleState: '', classEdit: null, palette: null }
   clipboard.html = null
   clipboard.local = null
   clipboard.style = null
+  clipboard.classes = null
   subs.forEach((f) => f())
 }
 
