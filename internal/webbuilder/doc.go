@@ -380,9 +380,10 @@ func (n *normalizer) section(s map[string]any) bool {
 		return false
 	}
 	id, _ := s["id"].(string)
-	if s["kind"] == KindCode { // the design's own markup: kept as written (privileged)
+	if s["kind"] == KindCode { // the design's own markup and local styles: kept as written (privileged)
 		return true
 	}
+	delete(s, "local") // local styles belong to code sections only
 	if content, ok := s["content"].(map[string]any); ok {
 		for k, v := range content {
 			str, ok := v.(string)
@@ -678,6 +679,12 @@ func (v *validator) section(s *Section, path string, depth int) {
 	case KindCode:
 		if depth > 0 {
 			v.add(ptr(path, "kind"), VErrKind, "a code section can only be a top-level section")
+		}
+		if s.Local != nil && v.opts.UnfilteredHTML {
+			raw, _ := json.Marshal(s.Local)
+			for _, p := range checkLocal(s.Local, len(raw)) {
+				v.add(ptr(path, append([]any{"local"}, p.path...)...), VErrCSS, p.msg)
+			}
 		}
 	case KindLoop:
 		v.loopDepth++

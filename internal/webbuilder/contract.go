@@ -493,6 +493,8 @@ type Section struct {
 	Els     map[string]ElStyle `json:"els,omitempty"`
 	Grid    *GridSettings      `json:"grid,omitempty"`
 	Bg      *BgSettings        `json:"bg,omitempty"`
+	// Local: a code section's local styles (local.go); privileged like content.html.
+	Local LocalStyles `json:"local,omitempty"`
 }
 
 type SiteSettings struct {

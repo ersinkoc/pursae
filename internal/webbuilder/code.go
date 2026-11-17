@@ -59,6 +59,12 @@ type CodeContent struct {
 	// Active is the rule that marks the current page's link (content.active, ActiveRule JSON).
 	Active string
 	Hidden bool
+	// Kit is the design kit's slug (content.kit); Local the section's local styles and Breakpoints
+	// the kit's devices (zero: DefaultBreakpoints), which the caller fills in (FillCode prints the
+	// local styles of the sections it fills, see local.go).
+	Kit         string
+	Local       LocalStyles
+	Breakpoints Breakpoints
 }
 
 // CodeSections lists the top-level code sections of a document (DocState JSON) and reports
@@ -70,6 +76,7 @@ func CodeSections(doc json.RawMessage) (list []CodeContent, only bool) {
 			Kind    string            `json:"kind"`
 			Hidden  bool              `json:"hidden"`
 			Content map[string]string `json:"content"`
+			Local   json.RawMessage   `json:"local"`
 		} `json:"sections"`
 	}
 	if len(doc) == 0 || json.Unmarshal(doc, &d) != nil {
@@ -81,8 +88,10 @@ func CodeSections(doc json.RawMessage) (list []CodeContent, only bool) {
 			only = false
 			continue
 		}
+		local, _ := ParseLocal(s.Local)
 		list = append(list, CodeContent{ID: s.ID, HTML: s.Content["html"], Head: s.Content["head"], Wrap: s.Content["wrap"],
-			Lang: s.Content["lang"], HTMLAttrs: s.Content["htmlAttrs"], BodyAttrs: s.Content["bodyAttrs"], Active: s.Content["active"], Hidden: s.Hidden})
+			Lang: s.Content["lang"], HTMLAttrs: s.Content["htmlAttrs"], BodyAttrs: s.Content["bodyAttrs"], Active: s.Content["active"], Hidden: s.Hidden,
+			Kit: s.Content["kit"], Local: local})
 	}
 	return list, only && len(list) > 0
 }
@@ -94,12 +103,20 @@ func HasCode(doc json.RawMessage) bool {
 
 // FillCode puts the code sections' markup into a sanitized snapshot (see the file comment). Each
 // placeholder becomes the section's own markup, with no element of its own; consecutive sections
-// with the same wrapper chain share one copy of each wrapper. A snapshot without placeholders comes
-// back unchanged.
+// with the same wrapper chain share one copy of each wrapper. The local styles of the sections it
+// fills give their elements a class and the head part a stylesheet (local.go). A snapshot without
+// placeholders comes back unchanged.
 func FillCode(snapshot string, sections []CodeContent, only bool) string {
 	if len(sections) == 0 || !strings.Contains(snapshot, AttrCode+`="`) {
 		return snapshot
 	}
+	post := ""
+	if loc := rootOpenRE.FindStringIndex(snapshot); loc != nil {
+		if m := rootPostRE.FindStringSubmatch(snapshot[:loc[1]]); m != nil {
+			post = m[1]
+		}
+	}
+	var localCSS strings.Builder
 	byID := make(map[string]CodeContent, len(sections))
 	for _, s := range sections {
 		byID[s.ID] = s
@@ -135,12 +152,24 @@ func FillCode(snapshot string, sections []CodeContent, only bool) string {
 			b.WriteString(w)
 			stack = append(stack, w)
 		}
-		b.WriteString(StripCodeIDs(s.HTML))
+		src := s.HTML
+		if ids := styledIDs(s.Local); len(ids) > 0 {
+			classes := make(map[string]string, len(ids))
+			for id := range ids {
+				classes[id] = LocalClass(post, id)
+			}
+			src = AddLocalClasses(src, classes)
+			localCSS.WriteString(LocalCSS(s.Local, s.Breakpoints, LocalSelector(post)))
+		}
+		b.WriteString(StripCodeIDs(src))
 	}
 	closeTo(0)
 	b.WriteString(snapshot[last:])
 	out := b.String()
 	head := CodeHeads(sections)
+	if localCSS.Len() > 0 {
+		head += `<style data-wb-local="">` + "\n" + localCSS.String() + `</style>` + "\n"
+	}
 	if loc := rootOpenRE.FindStringIndex(out); loc != nil {
 		open := out[:loc[1]]
 		if only {
