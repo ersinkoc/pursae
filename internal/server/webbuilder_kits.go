@@ -69,6 +69,10 @@ type wbKit struct {
 	// Origins are the https origins the kit's scripts and stylesheets name (CDN modules, APIs):
 	// pages using the kit allow them in their Content Security Policy.
 	Origins []string `json:"origins,omitempty"`
+	// Root (unix nanoseconds of the last site import of the kit, 0: never) serves the kit's files at
+	// the site's root as well (wbKitRootAsset): the site import maps the design's folders to the
+	// site's paths, so the URLs its scripts and stylesheets build keep working.
+	Root int64 `json:"root,omitempty"`
 }
 
 func (s *Server) wbKitList() map[string]*wbKit {
@@ -397,6 +401,68 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string) (k *wbKit, 
 	return k, http.StatusOK, "", ""
 }
 
+// wbKitRootAsset serves a file of a site-imported kit (wbKit.Root) at the site's root path, after
+// every route and before the site's 404: what a static host does for the design's folder. The site
+// import maps index.html to / and a/b.html to /a/b/, so the URLs the design builds at run time —
+// root-relative paths in its stylesheets (url(/assets/fonts/x.woff2)) and scripts, an import map's
+// "/assets/vendor/three.module.js", an inline module's import "./js/engine.js" on /post/, a
+// data-video="../assets/film.mp4" a script reads on /identity/ — reach the kit's files. Only GET and
+// HEAD of a path that is a valid kit file (web asset extensions, no HTML, no dot segments) outside
+// /wp-*; when several kits have the file, the most recently imported wins.
+func (s *Server) wbKitRootAsset(c *gin.Context) {
+	if c.IsAborted() || (c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead) {
+		return
+	}
+	p := path.Clean(c.Request.URL.Path)
+	if strings.HasPrefix(p, "/wp-") || !wbKitExts[strings.ToLower(path.Ext(p))] {
+		return
+	}
+	rel, ok := wbKitRel(strings.TrimPrefix(p, "/"))
+	if !ok {
+		return
+	}
+	var best *wbKit
+	full := ""
+	for _, k := range s.wbKitList() {
+		if k.Root <= 0 || (best != nil && k.Root <= best.Root) {
+			continue
+		}
+		f := filepath.Join(s.wbKitRoot(), k.Slug, filepath.FromSlash(rel))
+		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() {
+			best, full = k, f
+		}
+	}
+	if best == nil {
+		return
+	}
+	c.Header("Cache-Control", wbKitCacheShort)
+	http.ServeFile(c.Writer, c.Request, full)
+	c.Abort()
+}
+
+// wbKitSetRoot marks a kit as served at the site's root (on, the time of the site import) or not.
+func (s *Server) wbKitSetRoot(c *gin.Context, slug string, on bool) error {
+	wbKitsMu.Lock()
+	defer wbKitsMu.Unlock()
+	kits := s.wbKitList()
+	k := kits[slug]
+	if k == nil {
+		return nil
+	}
+	if on {
+		k.Root = time.Now().UnixNano()
+	} else if k.Root == 0 {
+		return nil
+	} else {
+		k.Root = 0
+	}
+	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
+		return err
+	}
+	s.purgeAll(c)
+	return nil
+}
+
 func (s *Server) wbRESTKitDelete(c *gin.Context, r *restRequest) {
 	if !wbKitUser(c, true) {
 		return
@@ -567,6 +633,12 @@ func (s *Server) wbCodeCSP(c *gin.Context, head, body string) {
 		return
 	}
 	src := head + body
+	// Code sections: images and media the design's scripts make in the page (a canvas exported with toBlob, a
+	// video from a fetched file): blob: URLs are the page's own content.
+	if head != "" || strings.Contains(src, wbKitURLPrefix) {
+		cspAllow(c, "img-src", "blob:")
+		cspAllow(c, "media-src", "blob:")
+	}
 	// The kits the markup loads from: the origins their files name.
 	if strings.Contains(src, wbKitURLPrefix) {
 		kits := s.wbKitList()

@@ -396,6 +396,10 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		warnings = append(warnings, "other published templates of the same types may compete with the imported ones (the imported ones have priority "+
 			itoa(wbSiteTemplatePriority)+"): "+strings.Join(others, ", "))
 	}
+	// The design's folders are the site's paths now: its files are served at the root too.
+	if err := s.wbKitSetRoot(c, kit, true); err != nil {
+		warnings = append(warnings, "could not serve the kit's files at the site's root: "+err.Error())
+	}
 	if frontID > 0 && !(args["front_page"] == false) {
 		if err := s.mcpREST(c, http.MethodPost, "/wp/v2/settings", map[string]any{"show_on_front": "page", "page_on_front": frontID}, nil); err != nil {
 			warnings = append(warnings, "could not set the front page: "+err.Error())

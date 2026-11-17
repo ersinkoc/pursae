@@ -302,3 +302,33 @@ func codeHTML(r *CodeImport) string {
 	}
 	return b.String()
 }
+
+// The umbral shape: a page in a folder whose scripts read file paths from data attributes and load
+// modules through an import map with root-relative URLs.
+func TestConvertCodeDataAttrsAndImportMap(t *testing.T) {
+	src := `<!doctype html><html><head>
+<script type="importmap">{"imports": {"three": "/assets/vendor/three.module.js", "three/addons/": "/assets/vendor/addons/", "other/": "/elsewhere/", "x": "../assets/vendor/x.js?v=2", "cdn": "https://cdn.example/a.js"}}</script>
+</head><body><main><section class="fable" data-wide="../assets/film.mp4" data-wide-poster="../assets/film.jpg#t" data-label="Fable" data-at="1.5" data-missing="../assets/none.mp4" data-src="../assets/film.jpg">
+<video poster="../assets/film.jpg"></video></section></main></body></html>`
+	res, err := ConvertCode(src, CodeImportOptions{KitURL: "/k/", Base: "identity",
+		KitFiles: map[string]bool{"assets/film.mp4": true, "assets/film.jpg": true, "assets/vendor/three.module.js": true, "assets/vendor/x.js": true, "assets/vendor/addons/a.js": true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := codeHTML(res)
+	for _, want := range []string{`data-wide="/k/assets/film.mp4"`, `data-wide-poster="/k/assets/film.jpg#t"`, `data-label="Fable"`, `data-at="1.5"`,
+		`data-missing="../assets/none.mp4"`, `data-src="/k/assets/film.jpg"`, `poster="/k/assets/film.jpg"`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %s in %s", want, body)
+		}
+	}
+	for _, want := range []string{`"three": "/k/assets/vendor/three.module.js"`, `"three/addons/": "/k/assets/vendor/addons/"`, `"other/": "/elsewhere/"`, `"x": "/k/assets/vendor/x.js?v=2"`, `"cdn": "https://cdn.example/a.js"`} {
+		if !strings.Contains(res.Head, want) {
+			t.Errorf("import map: missing %s in %s", want, res.Head)
+		}
+	}
+	// Data attributes are never reported as missing files (they need not be URLs).
+	if len(res.Missing) != 0 {
+		t.Errorf("missing: %v", res.Missing)
+	}
+}

@@ -1138,6 +1138,7 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		_ = s.settings.Set(c, map[string]any{"show_on_front": prev, "page_on_front": rec.PrevFront})
 	}
 	kitMsg := ""
+	_ = s.wbKitSetRoot(c, rec.Kit, false) // the kit's files leave the site's root with its pages
 	if rec.KitCreated {
 		wbKitsMu.Lock()
 		if status, code, _ := s.wbKitRemove(c, rec.Kit); code == "" || status == http.StatusNotFound {
