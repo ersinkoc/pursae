@@ -304,6 +304,46 @@ func TestDiskBytesBounded(t *testing.T) {
 	}
 }
 
+func TestDiskByteLimitUsesSerializedFileSize(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	page := &Entry{
+		Key: "http://h/first#d", Body: []byte("page"),
+		Created: now, Expires: now.Add(time.Hour),
+	}
+	other := &Entry{Key: "http://h/second#d", Created: now, Expires: now.Add(time.Hour)}
+	opts := StoreOptions{DiskDir: t.TempDir(), MaxEntries: 1, Now: func() time.Time { return now }}
+	probe, err := NewStore(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := probe.Set(page); err != nil {
+		t.Fatal(err)
+	}
+	fi, err := os.Stat(probe.disk.path(page.Key))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	opts.DiskDir = t.TempDir()
+	opts.MaxDiskBytes = fi.Size() - 1
+	s, err := NewStore(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Set(page); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Set(other); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(s.disk.path(page.Key)); !os.IsNotExist(err) {
+		t.Fatalf("oversized disk-only file should be removed, stat error: %v", err)
+	}
+	if _, ok := s.Get(other.Key); !ok {
+		t.Fatal("resident entry lost when the disk-only quota was enforced")
+	}
+}
+
 // Search result pages are bounded on their own, so random ?s= values cannot push posts out of the LRU.
 func TestStoreBoundsSearchEntries(t *testing.T) {
 	s, err := NewStore(StoreOptions{})

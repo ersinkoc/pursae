@@ -94,7 +94,7 @@ type item struct {
 	elem     *list.Element // position in the LRU list while resident in memory
 	diskElem *list.Element // position in the disk-only list while only on disk
 	bytes    int64
-	file     int64 // approximate size of its disk copy, counted in stubBytes while only on disk
+	file     int64 // serialized size of the disk copy, counted in stubBytes while only on disk
 }
 
 // Stats is a snapshot of store counters.
@@ -418,7 +418,7 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	if replacing {
 		s.removeLocked(old, false)
 	}
-	it := &item{key: e.Key, base: keyBase(e.Key), tags: e.Tags, expires: e.Expires, entry: e, bytes: size, file: size}
+	it := &item{key: e.Key, base: keyBase(e.Key), tags: e.Tags, expires: e.Expires, entry: e, bytes: size}
 	it.elem = s.lru.PushFront(it)
 	s.items[e.Key] = it
 	s.bytes += size
@@ -427,13 +427,21 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	s.mu.Unlock()
 
 	if s.disk != nil {
-		if err := s.disk.save(e); err != nil {
+		fileSize, err := s.disk.save(e)
+		if err != nil {
 			s.log.Warn("wpgo-cache: persisting entry", "key", e.Key, "err", err)
 		}
 		// A purge that ran while the file was being written must not leave it behind.
 		s.mu.Lock()
-		if _, ok := s.items[e.Key]; !ok {
+		if current := s.items[e.Key]; current == nil {
 			s.disk.remove(e.Key)
+		} else if current == it && err == nil {
+			it.file = fileSize
+			// The entry may have become disk-only while the file was being written.
+			if it.diskElem != nil {
+				s.stubBytes += fileSize
+				s.trimDiskLocked()
+			}
 		}
 		s.mu.Unlock()
 	}

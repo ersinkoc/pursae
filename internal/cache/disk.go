@@ -47,15 +47,15 @@ func (d *diskStore) path(key string) string {
 	return filepath.Join(d.dir, hex.EncodeToString(sum[:])+diskExt)
 }
 
-// save writes e atomically: to a temp file in the same directory, synced, then renamed.
-func (d *diskStore) save(e *Entry) error {
+// save writes e atomically and returns the serialized file size.
+func (d *diskStore) save(e *Entry) (int64, error) {
 	var meta bytes.Buffer
 	if err := gob.NewEncoder(&meta).Encode(diskMeta{Key: e.Key, Tags: e.Tags, Expires: e.Expires}); err != nil {
-		return err
+		return 0, err
 	}
 	tmp, err := os.CreateTemp(d.dir, ".tmp-*")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer os.Remove(tmp.Name()) // no-op after a successful rename
 	// bufio.Writer errors are sticky: a failed write here is reported by the Flush below.
@@ -67,20 +67,28 @@ func (d *diskStore) save(e *Entry) error {
 	_, _ = w.Write(meta.Bytes())
 	if err := gob.NewEncoder(w).Encode(e); err != nil {
 		tmp.Close()
-		return err
+		return 0, err
 	}
 	if err := w.Flush(); err != nil {
 		tmp.Close()
-		return err
+		return 0, err
+	}
+	info, err := tmp.Stat()
+	if err != nil {
+		tmp.Close()
+		return 0, err
 	}
 	if err := tmp.Sync(); err != nil {
 		tmp.Close()
-		return err
+		return 0, err
 	}
 	if err := tmp.Close(); err != nil {
-		return err
+		return 0, err
 	}
-	return os.Rename(tmp.Name(), d.path(e.Key))
+	if err := os.Rename(tmp.Name(), d.path(e.Key)); err != nil {
+		return 0, err
+	}
+	return info.Size(), nil
 }
 
 func readMeta(r *bufio.Reader) (diskMeta, error) {
