@@ -53,6 +53,20 @@ func TestPageCacheDroppedAfterCoreVersionChange(t *testing.T) {
 	get()
 	get() // fill the cache (and the disk) again
 
+	// An offline instance with a different cache directory misses the first instance's purge.
+	otherConfig := srv.cacheConfig()
+	otherConfig.DiskDir = t.TempDir()
+	other := cache.New(otherConfig, cache.Options{})
+	srv.dropCacheOfOtherCore(other)
+	now := time.Now()
+	stale, err := cache.NewEntry("http://example.test/#d", http.StatusOK, nil, []byte("old core"), nil, now, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := other.Store().Set(stale); err != nil {
+		t.Fatal(err)
+	}
+
 	old := Version
 	Version = "99.0.0"
 	t.Cleanup(func() { Version = old })
@@ -63,6 +77,11 @@ func TestPageCacheDroppedAfterCoreVersionChange(t *testing.T) {
 	}
 	if got := srv.settings.String(cacheCoreVersionOption); got != "99.0.0" {
 		t.Fatalf("recorded core version = %q after the update", got)
+	}
+	other = cache.New(otherConfig, cache.Options{})
+	srv.dropCacheOfOtherCore(other)
+	if _, ok := other.Store().Get(stale.Key); ok {
+		t.Fatal("old page survived the upgrade in the second disk cache")
 	}
 }
 
