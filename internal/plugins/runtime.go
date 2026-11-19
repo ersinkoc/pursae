@@ -220,12 +220,21 @@ func (rt *Runtime) Load(ctx context.Context, pkg *Package, granted []Permission,
 	if err != nil {
 		return fail(fmt.Errorf("compile plugin.wasm: %w", err))
 	}
-	p.compiled = compiled
 	if err := checkModuleShape(compiled); err != nil {
+		_ = compiled.Close(ctx)
 		return fail(err)
 	}
 
 	p.lock()
+	rt.mu.Lock()
+	current := rt.plugins[m.Slug] == p
+	rt.mu.Unlock()
+	if !current {
+		p.unlock()
+		_ = compiled.Close(ctx)
+		return nil, fmt.Errorf("%w: %s", ErrNotLoaded, m.Slug)
+	}
+	p.compiled = compiled
 	err = p.instantiate(ctx)
 	p.unlock()
 	if err != nil {
