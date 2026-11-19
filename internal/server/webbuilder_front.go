@@ -180,7 +180,7 @@ func (s *Server) wbContent(ctx context.Context, c *gin.Context, p *store.Post, s
 // wbBody is the stored snapshot with wp_filter_content_tags applied (once per request).
 func (s *Server) wbBody(ctx context.Context, fp *wbFrontPage) string {
 	if !fp.bodyDone {
-		fp.body, fp.bodyDone = s.wbSearchForms(ctx, s.wbContentTags(ctx, s.cspTrustContent(ctx, fp.doc.HTML))), true
+		fp.body, fp.bodyDone = s.wbSearchForms(ctx, s.wbContentTags(ctx, s.wbTrustedHTML(ctx, fp.doc))), true
 	}
 	return fp.body
 }
