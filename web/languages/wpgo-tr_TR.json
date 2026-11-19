@@ -4695,5 +4695,7 @@
  "Search installed themes": "Yüklü temalarda ara",
  "Number of Themes found: %d": "Bulunan tema sayısı: %d",
  "No themes found. Try a different search.": "Tema bulunamadı. Başka bir arama deneyin.",
- "Theme details: %s": "Tema ayrıntıları: %s"
+ "Theme details: %s": "Tema ayrıntıları: %s",
+ "Your active plugins, one click away.": "Etkin eklentilerin, bir tık uzağında.",
+ "Manage plugins →": "Eklentileri yönet →"
 }

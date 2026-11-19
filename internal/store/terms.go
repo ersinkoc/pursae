@@ -547,4 +547,3 @@ func (s *Store) SetTermOrder(ctx context.Context, taxonomy string, ids []int64) 
 		FROM unnest($2::bigint[]) WITH ORDINALITY AS o(id, ord) WHERE t.id = o.id AND t.taxonomy = $1`, taxonomy, ids)
 	return err
 }
-

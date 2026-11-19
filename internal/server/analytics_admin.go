@@ -129,7 +129,7 @@ type analyticsData struct {
 	Settings   analyticsSettings
 	Nonce      string
 	Saved      bool
-	CountryOff bool // no visit had a country header: explain where countries come from
+	CountryOff bool      // no visit had a country header: explain where countries come from
 	Modern     bool      // Pursae Modern admin theme: the modern layout and the country map
 	Map        *worldMap // visitors per country on a world map (Pursae Modern)
 }

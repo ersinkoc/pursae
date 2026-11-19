@@ -1430,6 +1430,19 @@ body.pursae-modern.post-type-product .wp-list-table.fixed thead .column-featured
 /* title fields that carry their own placeholder (products): WordPress's overlaid prompt would print the text twice */
 body.pursae-modern #titlewrap:has(#title[placeholder]:not([placeholder=""])) #title-prompt-text { display: none; }
 
+/* dashboard: active plugins as square quick-access tiles */
+body.pursae-modern .pm-apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 0; align-content: start; }
+body.pursae-modern .pm-app {
+	display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 18px; aspect-ratio: 1 / 1;
+	padding: 18px; color: var(--pm-text); text-decoration: none;
+	border-right: 1px solid var(--pm-border); border-bottom: 1px solid var(--pm-border); transition: background .15s;
+}
+body.pursae-modern .pm-app:hover, body.pursae-modern .pm-app:focus { background: var(--pm-hover); color: var(--pm-text); box-shadow: none; }
+body.pursae-modern .pm-app-ico { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: transform .2s cubic-bezier(.23,1,.32,1); }
+body.pursae-modern .pm-app:hover .pm-app-ico { transform: translateY(-2px); }
+body.pursae-modern .pm-app-ico .dashicons { width: 20px; height: 20px; font-size: 20px; color: inherit; }
+body.pursae-modern .pm-app-name { font-size: 13.5px; font-weight: 500; line-height: 1.3; }
+
 /* dashboard hero: the plus icon sits on the label's line, not on Dashicons' 30px line box */
 body.pursae-modern .pm-actions .button { display: inline-flex; align-items: center; gap: 6px; }
 body.pursae-modern .pm-actions .button .dashicons { width: 16px; height: 16px; font-size: 16px; line-height: 16px; margin: 0; }

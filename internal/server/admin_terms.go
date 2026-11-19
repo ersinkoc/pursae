@@ -61,11 +61,11 @@ type termsData struct {
 	// so rows can be dragged or moved with arrows; OrderNonce guards the save (pursae-term-order).
 	Sortable   bool
 	OrderNonce string
-	Pagination  pagination
-	Form        *store.Term // values to refill the add form after an error
-	SortLinks   map[string]sortLink
-	Hidden      map[string]bool // columns hidden through Screen Options
-	ColCount    int
+	Pagination pagination
+	Form       *store.Term // values to refill the add form after an error
+	SortLinks  map[string]sortLink
+	Hidden     map[string]bool // columns hidden through Screen Options
+	ColCount   int
 	// Plugin additions (Golylang): column headers before Count and fields of the add form.
 	PluginHeads  []template.HTML
 	PluginFields template.HTML
@@ -515,4 +515,3 @@ func spliceTermOrder(all []*store.Term, moved []int64) ([]int64, error) {
 	}
 	return out, nil
 }
-

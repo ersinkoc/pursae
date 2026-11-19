@@ -240,6 +240,10 @@
 		</a>{{end}}</div>
 	</section>
 
+	{{if $m.Apps}}<section class="pm-panel pm-split">
+		<header class="pm-split-l"><h2>Plugins</h2><p>Your active plugins, one click away.</p><p><a href="/wp-admin/plugins">Manage plugins →</a></p></header>
+		<div class="pm-apps">{{range $m.Apps}}<a class="pm-app" href="{{.URL}}"><span class="pm-app-ico pm-tint-{{.Tint}}"><span class="dashicons {{.Icon}}" aria-hidden="true"></span></span><span class="pm-app-name" translate="no">{{.Name}}</span></a>{{end}}</div>
+	</section>{{end}}
 	<section class="pm-panel pm-split">
 		<header class="pm-split-l"><h2>Traffic</h2><p>Pursae Analytics · cookieless</p>{{with $m.Chart}}<p class="pm-big">{{.Total}} <span>page views in 30 days</span></p>{{if .Delta}}<p class="pm-delta {{if .Up}}is-up{{else}}is-down{{end}}">{{if .Up}}+{{else}}−{{end}}{{.Delta}} <span>vs. the 30 days before</span></p>{{end}}{{end}}</header>
 		<div class="pm-cells pm-cells-main">

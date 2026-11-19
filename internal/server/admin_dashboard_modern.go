@@ -31,6 +31,13 @@ type pmDash struct {
 	Orders                  []pmOrder
 	TopPages                []pmRank
 	ActivePlugins           int
+	Apps                    []pmApp // active plugins with a screen of their own: one click from the dashboard
+}
+
+// pmApp is a quick-access tile for an active plugin.
+type pmApp struct {
+	Name, Icon, URL string
+	Tint            int
 }
 
 type pmStep struct {
@@ -47,14 +54,14 @@ type pmTile struct {
 }
 
 type pmChart struct {
-	W, H              int
-	Line, Area, Prev  string
-	YTicks            []pmTick
-	XTicks            []pmTick
-	Total, PrevTotal  int64
-	Delta             string
-	Up                bool
-	Points            []pmPoint // hover targets
+	W, H             int
+	Line, Area, Prev string
+	YTicks           []pmTick
+	XTicks           []pmTick
+	Total, PrevTotal int64
+	Delta            string
+	Up               bool
+	Points           []pmPoint // hover targets
 }
 
 type pmTick struct {
@@ -102,6 +109,13 @@ func (s *Server) modernDashboard(ctx context.Context, u *store.User, health heal
 	for _, v := range on {
 		if v {
 			d.ActivePlugins++
+		}
+	}
+	if u.Can("manage_options", nil) {
+		for _, r := range s.nativePluginRows() {
+			if r.Active && r.SettingsURL != "" {
+				d.Apps = append(d.Apps, pmApp{Name: r.Name, Icon: r.Icon(), URL: r.SettingsURL, Tint: r.Tint()})
+			}
 		}
 	}
 
@@ -168,7 +182,7 @@ func (s *Server) modernDashboard(ctx context.Context, u *store.User, health heal
 	}
 	for _, extra := range []struct {
 		label, icon, url string
-		n               int
+		n                int
 	}{{"Published posts", "dashicons-admin-post", "/wp-admin/edit", posts}, {"Pages", "dashicons-admin-page", "/wp-admin/edit?post_type=page", pages}, {"Awaiting moderation", "dashicons-format-chat", "/wp-admin/edit-comments?comment_status=moderated", pending}} {
 		if len(d.Tiles) >= 4 {
 			break

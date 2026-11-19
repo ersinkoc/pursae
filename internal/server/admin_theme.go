@@ -149,4 +149,3 @@ func rememberAdminLook(c *gin.Context, t adminTheme) {
 	}
 	c.SetCookie(adminLookCookie, want, 365*24*3600, "/", "", secure, false)
 }
-

@@ -20,7 +20,7 @@ type worldCountry struct {
 
 type worldMapPath struct {
 	D, Name, Title string
-	Level         int // 0 (no visitors) … 5 (the most)
+	Level          int // 0 (no visitors) … 5 (the most)
 }
 
 type worldMap struct {
