@@ -445,8 +445,11 @@ func sortByDeps(list []Asset) []Asset {
 // resetRegistrations forgets every hook, shortcode, route, settings page and
 // asset the plugin registered (before a fresh instance registers them again).
 func (p *Plugin) resetRegistrations() {
-	p.rt.hooks.RemoveAll(p.Slug())
 	p.state.Lock()
+	// A replacement may already have registered hooks under the same slug.
+	for _, id := range p.regs {
+		p.rt.hooks.Remove(id)
+	}
 	p.regs = map[RegisteredHook]HookID{}
 	p.shortcodes = nil
 	p.rest = nil
