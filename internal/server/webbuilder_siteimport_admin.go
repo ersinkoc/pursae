@@ -178,12 +178,25 @@ func (s *Server) wbWizSave(m *wbWizMeta) error {
 	if dir == "" {
 		return fmt.Errorf("bad id")
 	}
-	b, _ := json.Marshal(m)
-	tmp := filepath.Join(dir, "meta.json.tmp")
-	if err := os.WriteFile(tmp, b, 0o600); err != nil {
+	b, err := json.Marshal(m)
+	if err != nil {
 		return err
 	}
-	return os.Rename(tmp, filepath.Join(dir, "meta.json"))
+	f, err := os.CreateTemp(dir, ".meta-*.tmp")
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(b)
+	if closeErr := f.Close(); err == nil {
+		err = closeErr
+	}
+	if err == nil {
+		err = os.Rename(f.Name(), filepath.Join(dir, "meta.json"))
+	}
+	if err != nil {
+		_ = os.Remove(f.Name())
+	}
+	return err
 }
 
 // wbWizSweep removes sessions older than wbWizMaxAge (from their upload time; a folder without a
