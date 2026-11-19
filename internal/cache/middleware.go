@@ -306,7 +306,7 @@ func (c *Cache) serve(w http.ResponseWriter, r *http.Request, e *Entry, status s
 	body, etag := e.Body, e.ETag
 	if e.Gzip != nil {
 		addVary(h, "Accept-Encoding")
-		if acceptsGzip(r.Header.Get("Accept-Encoding")) {
+		if acceptsGzip(strings.Join(r.Header.Values("Accept-Encoding"), ",")) {
 			body = e.Gzip
 			etag = strings.TrimSuffix(e.ETag, `"`) + `-gz"`
 			h.Set("Content-Encoding", "gzip")
