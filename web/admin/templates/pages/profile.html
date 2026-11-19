@@ -21,7 +21,7 @@
 <td><fieldset id="admin-theme-picker" class="admin-theme-list">
 	<legend class="screen-reader-text"><span>Administration Theme</span></legend>
 	{{$curTheme := .Theme}}{{range .Themes}}<label class="admin-theme-option admin-theme-{{.Slug}}{{if eq .Slug $curTheme}} selected{{end}}" for="admin_theme_{{.Slug}}">
-		<span class="admin-theme-preview" aria-hidden="true"><i></i><b></b><em></em></span>
+		<span class="admin-theme-preview" aria-hidden="true"><i></i><b></b><em></em></span>{{if eq .Slug "modern"}}<span class="admin-theme-badge">Beta</span>{{end}}
 		<span class="admin-theme-text"><input name="admin_theme" id="admin_theme_{{.Slug}}" type="radio" value="{{.Slug}}"{{if eq .Slug $curTheme}} checked="checked"{{end}} /> <strong>{{.Name}}</strong>
 		<span class="description">{{.Description}}</span></span>
 	</label>

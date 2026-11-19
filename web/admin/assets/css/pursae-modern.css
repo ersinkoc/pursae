@@ -859,6 +859,10 @@ body.pursae-modern .wp-list-table.fixed thead .column-comments { width: 56px; }
 body.pursae-modern .wp-list-table.fixed thead [class*="column-seogo"] { width: 64px; }
 body.pursae-modern .wp-list-table thead th, body.pursae-modern .wp-list-table tfoot th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Media › Library (list): its actions stay text links, so they wrap instead of being cut off */
+body.pursae-modern .wp-list-table.media .row-actions { flex-wrap: wrap !important; row-gap: 2px; white-space: normal; }
+body.pursae-modern .wp-list-table.media .row-actions > span { white-space: nowrap; }
+
 /* row action icons sit under the title like WordPress's links, in WordPress's colours */
 body.pursae-modern .wp-list-table:not(.plugins) .row-actions { margin-top: 4px; min-height: 24px; gap: 0; }
 body.pursae-modern .wp-list-table:not(.plugins) .row-actions > span > a,
@@ -1105,7 +1109,12 @@ body.pursae-modern .media-toolbar-secondary .button { margin: 0 !important; }
 body.pursae-modern #drag-drop-area,
 body.pursae-modern .drag-drop #drag-drop-area { border: 1px dashed var(--pm-border-2); background: var(--pm-bg); border-radius: 0; }
 body.pursae-modern .drag-drop.drag-over #drag-drop-area { border-color: var(--pm-primary); background: var(--pm-primary-50); }
-body.pursae-modern .drag-drop-inside { padding-top: 20px; }
+/* the drop zone grows with its content (WordPress fixes it at 200px with a 60px top margin, and the icon above pushed the button out) */
+body.pursae-modern .drag-drop #drag-drop-area { display: flex; align-items: center; justify-content: center; height: auto !important; min-height: 260px; padding: 40px 24px; box-sizing: border-box; }
+body.pursae-modern .drag-drop-inside { width: auto; max-width: 420px; margin: 0 auto; padding: 0; text-align: center; }
+body.pursae-modern .drag-drop-inside p { margin: 6px 0; }
+body.pursae-modern .drag-drop-inside .drag-drop-buttons { margin-top: 12px; }
+body.pursae-modern #plupload-upload-ui + .upload-flash-bypass, body.pursae-modern .upload-flash-bypass, body.pursae-modern .max-upload-size { margin-top: 12px; }
 body.pursae-modern .drag-drop-inside:before { content: "\f317"; font-family: dashicons; display: block; font-size: 40px; line-height: 1; color: var(--pm-primary); margin-bottom: 12px; }
 body.pursae-modern .drag-drop-inside p.drag-drop-info { font-size: 18px; color: var(--pm-text); font-weight: 500; }
 body.pursae-modern .drag-drop-inside p { color: var(--pm-faint); }

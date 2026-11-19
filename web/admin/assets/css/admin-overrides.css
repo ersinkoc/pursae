@@ -12,7 +12,7 @@
 /* Profile › Administration Theme: two cards with a tiny preview of each look (admin_theme.go). */
 .admin-theme-list { display: flex; flex-wrap: wrap; gap: 12px; }
 .admin-theme-list > .description { flex-basis: 100%; margin: 0; }
-.admin-theme-option { display: flex; flex-direction: column; width: 220px; border: 1px solid #c3c4c7; background: #fff; cursor: pointer; }
+.admin-theme-option { position: relative; display: flex; flex-direction: column; width: 220px; border: 1px solid #c3c4c7; background: #fff; cursor: pointer; }
 .admin-theme-option.selected, .admin-theme-option:has(input:checked) { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
 .admin-theme-preview { position: relative; display: block; height: 72px; border-bottom: 1px solid #dcdcde; overflow: hidden; }
 .admin-theme-preview i, .admin-theme-preview b, .admin-theme-preview em { position: absolute; display: block; }
@@ -35,3 +35,4 @@
 #your-profile .admin-theme-mode legend, .admin-theme-mode legend { float: left; width: 100%; margin: 0 0 8px; padding: 0; font-size: 14px; font-weight: 600; }
 .admin-theme-mode label { display: inline-flex; align-items: center; gap: 6px; margin: 0; clear: none; }
 .admin-theme-mode label input { margin: 0; }
+.admin-theme-badge { position: absolute; top: 8px; right: 8px; padding: 2px 8px; background: #4c60ef; color: #fff; font-size: 10.5px; font-weight: 600; line-height: 16px; letter-spacing: .06em; text-transform: uppercase; }
