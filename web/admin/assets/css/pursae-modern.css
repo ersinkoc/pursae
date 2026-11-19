@@ -1400,6 +1400,33 @@ body.pursae-modern .pm-actions .button > span:not(.dashicons) { line-height: inh
 	body.pursae-modern .editor-header__post-preview-button { white-space: nowrap; padding: 0 6px; }
 }
 
+/* ===================================================================== Appearance › Widgets: each area is a card */
+body.pursae-modern .edit-widgets-block-editor { background: var(--pm-canvas); }
+body.pursae-modern .edit-widgets-block-editor .block-editor-block-list__layout.is-root-container { width: 100%; max-width: 760px; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box; }
+body.pursae-modern .edit-widgets-block-editor .wp-block-widget-area { max-width: none !important; width: 100%; }
+body.pursae-modern .wp-block-widget-area::after, body.pursae-modern .wp-block-widget-area::before { display: none !important; }
+body.pursae-modern .wp-block-widget-area:focus { outline: 0 !important; box-shadow: none !important; }
+body.pursae-modern .wp-block-widget-area { margin: 0 0 16px !important; background: var(--pm-bg) !important; border: 1px solid var(--pm-border) !important; box-shadow: none !important; }
+body.pursae-modern .wp-block-widget-area.is-selected, body.pursae-modern .wp-block-widget-area.has-child-selected { border-color: var(--pm-primary) !important; }
+body.pursae-modern .wp-block-widget-area > .components-panel__body { border: 0 !important; background: transparent !important; }
+body.pursae-modern .wp-block-widget-area .components-panel__body-title { margin: 0 !important; background: transparent !important; }
+body.pursae-modern .wp-block-widget-area .components-panel__body-toggle.components-button {
+	height: auto; padding: 16px 20px !important; background: transparent !important; color: var(--pm-text) !important;
+	font-family: var(--pm-font); font-size: 14px; font-weight: 600; letter-spacing: -.005em;
+}
+body.pursae-modern .wp-block-widget-area .components-panel__body-toggle:hover { background: var(--pm-hover) !important; }
+body.pursae-modern .wp-block-widget-area .components-panel__arrow { fill: var(--pm-muted) !important; color: var(--pm-muted) !important; }
+body.pursae-modern .wp-block-widget-area.is-opened .components-panel__body-title,
+body.pursae-modern .wp-block-widget-area .components-panel__body.is-opened > .components-panel__body-title { border-bottom: 1px solid var(--pm-border) !important; }
+body.pursae-modern .wp-block-widget-area__inner-blocks { padding: 16px 20px 20px !important; color: var(--pm-body); background: transparent !important; }
+body.pursae-modern .wp-block-widget-area__inner-blocks > .block-editor-block-list__layout { background: transparent !important; }
+body.pursae-modern .wp-block-widget-area__inner-blocks :is(h1, h2, h3, h4, h5, h6, p, li, a) { color: var(--pm-text); }
+body.pursae-modern .wp-block-widget-area .block-editor-button-block-appender {
+	height: 48px; background: transparent !important; color: var(--pm-muted) !important;
+	border: 1px dashed var(--pm-border-2) !important; box-shadow: none !important; border-radius: 0;
+}
+body.pursae-modern .wp-block-widget-area .block-editor-button-block-appender:hover { color: var(--pm-primary) !important; border-color: var(--pm-primary) !important; background: var(--pm-primary-50) !important; }
+
 /* ===================================================================== dark content mode (pm-dark, or pm-auto on a dark system) */
 /* The block editor's interface follows too (its canvas keeps the site's own styles). */
 body.pursae-modern.pm-dark {
@@ -1885,10 +1912,6 @@ body.pursae-modern.pm-auto .block-editor-tabbed-sidebar__close-button { backgrou
 body.pursae-modern.pm-dark .editor-layout__toggle-entities-saved-states-panel, body.pursae-modern.pm-dark .editor-layout__toggle-publish-panel, body.pursae-modern.pm-dark .editor-post-publish-panel, body.pursae-modern.pm-dark .editor-post-publish-panel__header, body.pursae-modern.pm-dark .editor-post-publish-panel__footer, body.pursae-modern.pm-dark .entities-saved-states__panel { background: var(--pm-bg) !important; color: var(--pm-body); border-color: var(--pm-border) !important; }
 @media (prefers-color-scheme: dark) {
 body.pursae-modern.pm-auto .editor-layout__toggle-entities-saved-states-panel, body.pursae-modern.pm-auto .editor-layout__toggle-publish-panel, body.pursae-modern.pm-auto .editor-post-publish-panel, body.pursae-modern.pm-auto .editor-post-publish-panel__header, body.pursae-modern.pm-auto .editor-post-publish-panel__footer, body.pursae-modern.pm-auto .entities-saved-states__panel { background: var(--pm-bg) !important; color: var(--pm-body); border-color: var(--pm-border) !important; }
-}
-body.pursae-modern.pm-dark .wp-block-widget-area .components-panel__body-toggle, body.pursae-modern.pm-dark .wp-block-widget-area .components-panel__body-title, body.pursae-modern.pm-dark .wp-block-widget-area .components-panel__arrow { color: #16171A !important; fill: currentColor; background: #fff !important; }
-@media (prefers-color-scheme: dark) {
-body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__body-toggle, body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__body-title, body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__arrow { color: #16171A !important; fill: currentColor; background: #fff !important; }
 }
 body.pursae-modern.pm-dark :is(.category-tabs, .wp-tab-bar) :is(.tabs, .wp-tab-active) a { color: var(--pm-text) !important; }
 @media (prefers-color-scheme: dark) {
