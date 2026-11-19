@@ -108,6 +108,10 @@ func sendProxyPurge(req *http.Request) error {
 		return fmt.Errorf("front proxy purge: %w", err)
 	}
 	defer resp.Body.Close()
+	// nginx's ngx_cache_purge answers 404 when the page is not in its cache: nothing to purge.
+	if resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		return fmt.Errorf("front proxy purge: HTTP %d", resp.StatusCode)
 	}
