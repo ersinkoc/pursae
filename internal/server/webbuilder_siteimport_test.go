@@ -3,6 +3,7 @@ package server
 import (
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -47,7 +48,7 @@ func siteTestPage(cur, title, body string) string {
 }
 
 func TestMCPImportSite(t *testing.T) {
-	ts, c := testServer(t)
+	ts, c, srv := newTestServer(t, true)
 	base := ts.URL
 	installAndLogin(t, ts, c)
 	_, call := mcpTestAgent(t, base, c, "Site agent", nil)
@@ -115,6 +116,31 @@ func TestMCPImportSite(t *testing.T) {
 		}
 		if !strings.Contains(html, `<html lang="tr" class="no-js" data-theme="light">`) || !strings.Contains(html, `data-x="1"`) || !strings.Contains(html, ` site`) {
 			t.Errorf("%s: html/body attributes: %.300s", x.path, html)
+		}
+	}
+	// The code parts are worked out once per input (wbCodePartsMemo): the next responses, and a
+	// response worked out without the memo, are the same page (bar the nonce).
+	nonceAttr := regexp.MustCompile(`nonce="[^"]*"`)
+	rendered := func(path string) string { // past the page cache
+		t.Helper()
+		if pc := srv.currentCache(); pc != nil {
+			pc.PurgeAll()
+		}
+		_, body := fetch(path)
+		return body
+	}
+	for _, path := range []string{"/", "/iletisim/", "/hizmet/1/", "/hizmet/2/"} {
+		wbCodePartsMemo.purge()
+		first := rendered(path)
+		if wbCodePartsMemo.len() == 0 {
+			t.Errorf("%s: nothing memoized", path)
+		}
+		second := rendered(path)
+		wbCodePartsMemo.purge()
+		plain := rendered(path)
+		a, b, c := nonceAttr.ReplaceAllString(first, ""), nonceAttr.ReplaceAllString(second, ""), nonceAttr.ReplaceAllString(plain, "")
+		if a != b || a != c {
+			t.Errorf("%s: memoized code parts differ (%d / %d / %d bytes)", path, len(a), len(b), len(c))
 		}
 	}
 	_, one := fetch("/hizmet/1/")

@@ -830,10 +830,14 @@ func wbKitCopy(src, dst string) error {
 // wbKitVersions caches slug → version (reset when a kit changes).
 var wbKitVersions sync.Map // "v" → *map[string]int
 
-func (s *Server) wbKitVersionMap() map[string]int {
+func (s *Server) wbKitVersionMap() map[string]int { return *s.wbKitVersionRef() }
+
+// wbKitVersionRef is the cached version map itself: a new map (never changed once stored) after
+// a kit changes, so its address identifies the versions.
+func (s *Server) wbKitVersionRef() *map[string]int {
 	if p, ok := wbKitVersions.Load("v"); ok {
 		if m, _ := p.(*map[string]int); m != nil {
-			return *m
+			return m
 		}
 	}
 	m := map[string]int{}
@@ -841,7 +845,7 @@ func (s *Server) wbKitVersionMap() map[string]int {
 		m[slug] = k.Version
 	}
 	wbKitVersions.Store("v", &m)
-	return m
+	return &m
 }
 
 // wbKitVersioned adds ?v=<kit version> to the kit file URLs of code-section markup, so the files
