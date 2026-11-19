@@ -301,12 +301,7 @@ func (e *cliEnv) announce(ctx context.Context, s *Server, p cache.Purge) error {
 	if err != nil || req == nil {
 		return err
 	}
-	resp, err := proxyPurgeClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("front proxy purge: %w", err)
-	}
-	resp.Body.Close()
-	return nil
+	return sendProxyPurge(req)
 }
 
 // User resolves a user reference: a numeric ID, an e-mail or a login (case-insensitive).

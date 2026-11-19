@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -87,7 +88,30 @@ func proxyPurgeRequest(ctx context.Context, endpoint, prefix string, p cache.Pur
 
 // proxyPurgeClient: the purge proxy is usually a local Varnish or nginx, so loopback and RFC1918
 // addresses are allowed; link-local (the metadata service) and other non-public addresses are refused.
-var proxyPurgeClient = lanClient(5*time.Second, "the purge URL points at a private network")
+var proxyPurgeClient = func() *http.Client {
+	client := lanClient(5*time.Second, "the purge URL points at a private network")
+	checkRedirect := client.CheckRedirect
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if req.Method != via[0].Method {
+			// Return the redirect response when following it would turn PURGE into GET.
+			return http.ErrUseLastResponse
+		}
+		return checkRedirect(req, via)
+	}
+	return client
+}()
+
+func sendProxyPurge(req *http.Request) error {
+	resp, err := proxyPurgeClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("front proxy purge: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("front proxy purge: HTTP %d", resp.StatusCode)
+	}
+	return nil
+}
 
 // forwardProxyPurge sends a purge to the configured front proxy, in the background.
 func (s *Server) forwardProxyPurge(p cache.Purge) {
@@ -104,11 +128,8 @@ func (s *Server) forwardProxyPurge(p cache.Purge) {
 		return
 	}
 	go func() {
-		resp, err := proxyPurgeClient.Do(req)
-		if err != nil {
+		if err := sendProxyPurge(req); err != nil {
 			slog.Warn("page cache: forwarding a purge to the front proxy", "err", err)
-			return
 		}
-		resp.Body.Close()
 	}()
 }
