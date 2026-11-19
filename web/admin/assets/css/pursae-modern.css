@@ -1812,3 +1812,29 @@ body.pursae-modern.pm-dark .wp-block-widget-area .components-panel__body-toggle,
 @media (prefers-color-scheme: dark) {
 body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__body-toggle, body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__body-title, body.pursae-modern.pm-auto .wp-block-widget-area .components-panel__arrow { color: #16171A !important; fill: currentColor; background: #fff !important; }
 }
+body.pursae-modern.pm-dark :is(.category-tabs, .wp-tab-bar) :is(.tabs, .wp-tab-active) a { color: var(--pm-text) !important; }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto :is(.category-tabs, .wp-tab-bar) :is(.tabs, .wp-tab-active) a { color: var(--pm-text) !important; }
+}
+body.pursae-modern.pm-dark .panel-wrap.product_data, body.pursae-modern.pm-dark .theme-browser .theme, body.pursae-modern.pm-dark .pf-admin-queue, body.pursae-modern.pm-dark .pll-modules tr, body.pursae-modern.pm-dark .pll-modules thead tr { background: var(--pm-bg) !important; }
+body.pursae-modern.pm-dark .product_data_tabs { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark .product_data_tabs li a { color: var(--pm-muted) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark .product_data_tabs li.active a { background: var(--pm-bg) !important; color: var(--pm-text) !important; }
+body.pursae-modern.pm-dark .product_data_tabs li a:hover { color: var(--pm-primary) !important; }
+body.pursae-modern.pm-dark :is(.goo-ext-card p, .pa-label, .px-labels span, .pf-admin-queue span) { color: var(--pm-muted) !important; }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto .panel-wrap.product_data, body.pursae-modern.pm-auto .theme-browser .theme, body.pursae-modern.pm-auto .pf-admin-queue, body.pursae-modern.pm-auto .pll-modules tr, body.pursae-modern.pm-auto .pll-modules thead tr { background: var(--pm-bg) !important; }
+body.pursae-modern.pm-auto .product_data_tabs { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto .product_data_tabs li a { color: var(--pm-muted) !important; border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto .product_data_tabs li.active a { background: var(--pm-bg) !important; color: var(--pm-text) !important; }
+body.pursae-modern.pm-auto .product_data_tabs li a:hover { color: var(--pm-primary) !important; }
+body.pursae-modern.pm-auto :is(.goo-ext-card p, .pa-label, .px-labels span, .pf-admin-queue span) { color: var(--pm-muted) !important; }
+}
+body.pursae-modern.pm-dark .product_data_tabs::after { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto .product_data_tabs::after { background: var(--pm-bg-2) !important; border-color: var(--pm-border) !important; }
+}
+body.pursae-modern.pm-dark .theme-browser .theme .theme-actions .button:not(.button-primary) { background: var(--pm-bg) !important; color: var(--pm-text) !important; border-color: var(--pm-border-2) !important; }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto .theme-browser .theme .theme-actions .button:not(.button-primary) { background: var(--pm-bg) !important; color: var(--pm-text) !important; border-color: var(--pm-border-2) !important; }
+}
