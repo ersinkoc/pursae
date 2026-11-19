@@ -4,28 +4,11 @@
  * Loaded after every other admin stylesheet when the user picks "Pursae Modern" in their profile
  * (admin_theme user meta, admin_theme.go). Every rule is scoped to body.pursae-modern, so WordPress
  * Classic (the default) is untouched. Layout: a dark L frame (top bar + menu) around a soft canvas,
- * content in bordered panels, square controls, 1px rules, Lexend type, Pursae blue for primary actions.
+ * content in bordered panels, square controls, 1px rules, the WordPress system font, Pursae blue for primary actions.
  */
 
-@font-face {
-	font-family: "Lexend";
-	font-style: normal;
-	font-weight: 300 700;
-	font-display: swap;
-	src: url(../fonts/lexend/lexend-latin-ext.woff2) format("woff2");
-	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-@font-face {
-	font-family: "Lexend";
-	font-style: normal;
-	font-weight: 300 700;
-	font-display: swap;
-	src: url(../fonts/lexend/lexend-latin.woff2) format("woff2");
-	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
 body.pursae-modern {
-	--pm-font: "Silka", "Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+	--pm-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 	--pm-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
 	/* content */
@@ -76,7 +59,7 @@ body.pursae-modern {
 }
 html:has(body.pursae-modern) { background: #F4F4F5; }
 
-/* Lexend everywhere in the admin chrome and screens; code and the block editor canvas keep their fonts. */
+/* The theme font everywhere in the admin chrome and screens; code and the block editor canvas keep their fonts. */
 body.pursae-modern,
 body.pursae-modern #wpadminbar *,
 body.pursae-modern #adminmenu,
@@ -1036,7 +1019,7 @@ body.pursae-modern {
 	--wp-components-color-accent-darker-10: #3346D6;
 	--wp-components-color-accent-darker-20: #2A3BB8;
 }
-/* Lexend in the editor's own interface (header, sidebars, popovers, dialogs); the canvas keeps the theme's fonts */
+/* The theme font in the editor's own interface (header, sidebars, popovers, dialogs); the canvas keeps the theme's fonts */
 body.pursae-modern :where(.interface-interface-skeleton__header, .interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .interface-interface-skeleton__footer, .components-popover, .components-modal__frame, .components-snackbar, .editor-post-publish-panel, .block-editor-inserter__menu),
 body.pursae-modern :where(.interface-interface-skeleton__header, .interface-interface-skeleton__sidebar, .interface-interface-skeleton__secondary-sidebar, .interface-interface-skeleton__footer, .components-popover, .components-modal__frame, .components-snackbar, .editor-post-publish-panel, .block-editor-inserter__menu) *:not(.dashicons):not([class*="dashicons-"]) {
 	font-family: var(--pm-font);

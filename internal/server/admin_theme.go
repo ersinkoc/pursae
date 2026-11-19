@@ -10,7 +10,7 @@ import (
 
 // adminTheme is one look of the whole admin. WordPress Classic is the stock WordPress admin and stays
 // the default; Pursae Modern restyles the same markup (dark top bar and menu, panels on a soft canvas,
-// Lexend type) with one extra stylesheet, so every core and plugin screen follows it without changes.
+// the WordPress system font) with one extra stylesheet, so every core and plugin screen follows it without changes.
 type adminTheme struct {
 	Slug, Name, Description string
 	// Mode is Pursae Modern's colour mode for the content: "light" (default), "dark", or "auto" (follows
