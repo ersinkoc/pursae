@@ -347,10 +347,11 @@ func (s *Server) gocdnDeleteItems(ctx context.Context, items []*gocdnItem) {
 	var urls []string
 	for _, it := range items {
 		cl, err := s.gocdnItemClient(st, it)
-		if err != nil {
-			continue
+		if err == nil {
+			err = cl.Delete(ctx, it.Key)
 		}
-		if err := cl.Delete(ctx, it.Key); err != nil {
+		if err != nil {
+			// The rows may be detached from the attachment already, so nothing cascades them away.
 			slog.Warn("gocdn: deleting an object", "key", it.Key, "err", err)
 			s.gocdnAddPendingDelete(ctx, it) // the row goes with the attachment: retry the delete later
 			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
