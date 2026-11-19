@@ -4691,5 +4691,9 @@
  "Light": "Açık",
  "Dark": "Koyu",
  "Match the system": "Sistemle aynı",
- "Sign in to manage your site.": "Siteni yönetmek için oturum aç."
+ "Sign in to manage your site.": "Siteni yönetmek için oturum aç.",
+ "Search installed themes": "Yüklü temalarda ara",
+ "Number of Themes found: %d": "Bulunan tema sayısı: %d",
+ "No themes found. Try a different search.": "Tema bulunamadı. Başka bir arama deneyin.",
+ "Theme details: %s": "Tema ayrıntıları: %s"
 }

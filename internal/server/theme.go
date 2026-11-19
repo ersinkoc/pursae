@@ -655,8 +655,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 		"themes": js,
 		"settings": map[string]any{"canInstall": u.Can("install_themes", nil), "installURI": "/wp-admin/theme-install",
 			"confirmDelete": "Are you sure you want to delete this theme?\n\nClick 'Cancel' to go back, 'OK' to confirm the delete.", "confirmRemoveDemo": "Remove the demo content? The pages, posts, images, categories, tags, menus and widgets it added are deleted permanently, and the settings it changed get their previous values back.", "adminUrl": "/wp-admin/"},
-		"l10n": map[string]string{"addNew": "Add Theme", "search": "Search installed themes", "themesFound": "Number of Themes found: %d",
-			"noThemesFound": "No themes found. Try a different search.", "themeViewed": "Theme details: %s"},
+		"l10n": themesL10n(func(m string) string { return s.__(c, m) }),
 	})
 	d.Settings = template.JS(settings)
 	a := s.pageAssets(c)
@@ -736,4 +735,15 @@ func (s *Server) installedTheme(slug string) *Theme {
 		return t
 	}
 	return nil
+}
+
+// themesL10n is theme.js's _wpThemeSettings.l10n in the admin's language (the "Add Theme" card,
+// the search placeholder and the result counts are drawn by JavaScript, after the page is translated).
+func themesL10n(tr func(string) string) map[string]string {
+	l := map[string]string{"addNew": "Add Theme", "search": "Search installed themes", "themesFound": "Number of Themes found: %d",
+		"noThemesFound": "No themes found. Try a different search.", "themeViewed": "Theme details: %s"}
+	for k, v := range l {
+		l[k] = tr(v)
+	}
+	return l
 }
