@@ -682,9 +682,9 @@ body.pursae-modern #col-right .col-wrap { padding: 0; }
 body.pursae-modern .form-wrap h2 { margin-top: 0; padding: 0 0 12px; border-bottom: 1px solid var(--pm-row); }
 body.pursae-modern .form-field input[type=text], body.pursae-modern .form-field textarea, body.pursae-modern .form-field select { width: 100%; }
 body.pursae-modern .form-wrap p, body.pursae-modern .form-field p { font-size: 12.5px; }
-@media screen and (max-width: 960px) {
-	body.pursae-modern #col-container { flex-direction: column; }
-	body.pursae-modern #col-left { width: 100%; position: static; }
+@media screen and (max-width: 1280px) {
+	body.pursae-modern #col-container { flex-direction: column; align-items: stretch; }
+	body.pursae-modern #col-left { width: 100%; max-width: 640px; position: static; }
 }
 
 /* ===================================================================== media library grid */
@@ -1348,6 +1348,29 @@ body.pm-sorting, body.pm-sorting * { cursor: grabbing !important; user-select: n
 	body.pursae-modern #wpbody-content :is(.pa-boxes, .goo-home-grid, .goo-leaders) > * { min-width: 0; }
 	body.pursae-modern #wpbody-content .pa-box { overflow-x: auto; }
 	body.pursae-modern #wpbody-content .pa-box :is(th, td).num { padding-left: 8px; padding-right: 8px; }
+}
+
+/* Mail SMTP report tiles: WordPress's 255px postbox minimum would push the fourth tile off screen */
+body.pursae-modern .wpms-stats .postbox { min-width: 0; }
+
+/* inputs never outgrow the box they sit in (Pixel settings side box, other narrow postboxes) */
+body.pursae-modern #wpbody-content .postbox .inside :is(.regular-text, .large-text) { max-width: 100%; box-sizing: border-box; }
+
+/* tablets and small laptops (783–1280px): list tables size their columns to the content, the
+   least needed columns of the post lists step aside, and wide data tables scroll in their box */
+@media screen and (min-width: 783px) and (max-width: 1280px) {
+	body.pursae-modern:not(.post-type-product) .wp-list-table:is(.posts, .pages, .comments) { table-layout: auto; }
+	body.pursae-modern:not(.post-type-product) .wp-list-table:is(.posts, .pages, .comments) :is(thead, tfoot) th { white-space: normal; overflow: visible; }
+	body.pursae-modern:not(.post-type-product) .wp-list-table:is(.posts, .pages, .comments) .column-primary { min-width: 200px; }
+	body.pursae-modern .wp-list-table :is(td, th).column-author { white-space: nowrap; }
+	body.pursae-modern .wp-list-table:is(.posts, .pages) :is(.column-tags, [class*="column-seogo"]) { display: none; }
+	body.pursae-modern #wpbody-content .wrap table.widefat:not(.wp-list-table) { display: block; max-width: 100%; overflow-x: auto; }
+	body.pursae-modern #wpbody-content .wpms-num { overflow-wrap: anywhere; }
+	body.pursae-modern #menu-management-liquid { min-width: 0; width: 100%; }
+	body.pursae-modern #menu-management #post-body-content { width: auto; min-width: 0; box-sizing: border-box; }
+	body.pursae-modern #wpbody-content .form-table td :is(.regular-text, .large-text, input[type=url], input[type=text], select) { max-width: 100%; box-sizing: border-box; }
+	body.pursae-modern .pa-cards { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+	body.pursae-modern :is(#menu-management-liquid, #menu-management, #menu-management .menu-edit, #menu-to-edit .menu-item-bar, #menu-to-edit .menu-item-handle) { box-sizing: border-box; max-width: 100%; }
 }
 
 /* block editor header on phones: no room for the Web Builder switch (the builder is a desktop tool), Preview on one line */
