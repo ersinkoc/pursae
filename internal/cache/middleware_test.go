@@ -317,6 +317,16 @@ func TestGzipNegotiationAndETag(t *testing.T) {
 	}
 }
 
+func TestQuotedETagIsNotAWildcard(t *testing.T) {
+	_, _, h := newTestCache(t, nil)
+	const target = "http://example.com/conditional/"
+	want := do(h, "GET", target)
+	w := do(h, "GET", target, "If-None-Match", `"old,*,version"`)
+	if w.Code != http.StatusOK || w.Body.String() != want.Body.String() || status(w) != "hit" {
+		t.Fatalf("conditional response status=%d cache=%q body=%q", w.Code, status(w), w.Body.String())
+	}
+}
+
 func TestUncacheableResponses(t *testing.T) {
 	cases := map[string]func(w http.ResponseWriter, r *http.Request){
 		"set-cookie":    func(w http.ResponseWriter, r *http.Request) { w.Header().Set("Set-Cookie", "a=b") },
