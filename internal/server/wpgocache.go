@@ -491,7 +491,7 @@ func (s *Server) cacheAction(c *gin.Context, page string) {
 		u := strings.TrimSpace(c.PostForm("purge_url"))
 		if pu, err := url.Parse(u); err == nil && cc != nil && u != "" {
 			if pu.Host == "" {
-				u = s.links(c).Home + "/" + strings.TrimLeft(pu.Path, "/")
+				u = s.links(c).Home + "/" + strings.TrimLeft(pu.EscapedPath(), "/")
 				if pu.RawQuery != "" {
 					u += "?" + pu.RawQuery
 				}
