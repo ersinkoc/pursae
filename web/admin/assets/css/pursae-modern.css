@@ -1976,3 +1976,6 @@ body.pursae-modern.pm-auto .px-btn--ghost { background: transparent; color: var(
 body.pursae-modern.pm-auto .px-btn--ghost:hover { background: var(--px-rail); }
 body.pursae-modern.pm-auto .px-team { background: #1B1D23; box-shadow: inset 0 0 0 1px var(--px-line); }
 }
+/* set by pursae-modern.js on light, colourless borders while the dark mode is on */
+body.pursae-modern #wpbody-content .pm-dk-border { border-color: var(--pm-border) !important; }
+body.pursae-modern #wpbody-content :is(input, select, textarea).pm-dk-border { border-color: var(--pm-border-2) !important; }

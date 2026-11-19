@@ -510,3 +510,72 @@
 		sysDark.addEventListener( 'change', applyAll );
 	}
 } )();
+
+/* Dark mode: plugin screens hard-code light grey borders (#c3c4c7, #dcdcde, #fff…). Rather than chase
+   each selector, borders that are light and colourless get the dark border token; coloured accents
+   (notices, focus, primary, status) keep their colour. Runs again for content added later. */
+( function () {
+	'use strict';
+	var body = document.body;
+	if ( ! body.classList.contains( 'pursae-modern' ) ) {
+		return;
+	}
+	var root = document.getElementById( 'wpbody-content' );
+	if ( ! root ) {
+		return;
+	}
+	var sysDark = window.matchMedia ? window.matchMedia( '(prefers-color-scheme: dark)' ) : null;
+	var isDark = function () {
+		return body.classList.contains( 'pm-dark' ) || ( body.classList.contains( 'pm-auto' ) && sysDark && sysDark.matches );
+	};
+	var sides = [ 'Top', 'Right', 'Bottom', 'Left' ];
+	var lightGrey = function ( c ) {
+		var m = c && c.match( /[\d.]+/g );
+		if ( ! m || m.length < 3 || ( m.length > 3 && +m[ 3 ] < 0.35 ) ) {
+			return false;
+		}
+		var r = +m[ 0 ], g = +m[ 1 ], b = +m[ 2 ];
+		var max = Math.max( r, g, b ), min = Math.min( r, g, b );
+		return ( 0.299 * r + 0.587 * g + 0.114 * b ) > 150 && ( max - min ) < 28;
+	};
+	var scan = function ( scope ) {
+		if ( ! isDark() ) {
+			return;
+		}
+		var els = ( scope || root ).querySelectorAll( '*' );
+		for ( var i = 0; i < els.length; i++ ) {
+			var el = els[ i ];
+			if ( el.classList.contains( 'pm-dk-border' ) || el.closest( '.seogo-serp, .pm-keep-light' ) || el.matches( '.nav-tab-active, .current, .active, .selected, .is-active, .is-selected, [aria-selected="true"], [aria-current], :focus' ) ) {
+				continue;
+			}
+			var cs = getComputedStyle( el );
+			for ( var s = 0; s < 4; s++ ) {
+				if ( cs[ 'border' + sides[ s ] + 'Style' ] !== 'none' && parseFloat( cs[ 'border' + sides[ s ] + 'Width' ] ) > 0 && lightGrey( cs[ 'border' + sides[ s ] + 'Color' ] ) ) {
+					el.classList.add( 'pm-dk-border' );
+					break;
+				}
+			}
+		}
+	};
+	var clear = function () {
+		root.querySelectorAll( '.pm-dk-border' ).forEach( function ( el ) { el.classList.remove( 'pm-dk-border' ); } );
+	};
+	var refresh = function () {
+		if ( isDark() ) {
+			scan();
+		} else {
+			clear();
+		}
+	};
+	refresh();
+	window.addEventListener( 'load', refresh );
+	new MutationObserver( refresh ).observe( body, { attributes: true, attributeFilter: [ 'class' ] } );
+	if ( sysDark && sysDark.addEventListener ) {
+		sysDark.addEventListener( 'change', refresh );
+	}
+	var timer;
+	new MutationObserver( function () {
+		clearTimeout( timer );
+		timer = setTimeout( function () { scan(); }, 150 );
+	} ).observe( root, { childList: true, subtree: true } );
+} )();
