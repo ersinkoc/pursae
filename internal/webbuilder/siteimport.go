@@ -3,8 +3,11 @@ package webbuilder
 import (
 	"fmt"
 	"path"
+	"slices"
 	"sort"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 // ConvertSite imports a whole static site (a folder of HTML pages whose files are a design kit) as
@@ -205,6 +208,12 @@ type SiteImportOptions struct {
 	URLs map[string]string
 	// NoSplit keeps every page's header and footer in the page (no header or footer templates).
 	NoSplit bool
+	// OldHosts, KeepOldLinks, SiteURL: the design's original site (CodeImportOptions, oldsite.go).
+	OldHosts     []string
+	KeepOldLinks bool
+	SiteURL      string
+	// Remap: files outside the kit with a URL of their own (CodeImportOptions.Remap).
+	Remap map[string]string
 }
 
 // SitePageImport is one converted page.
@@ -236,6 +245,13 @@ type SiteImport struct {
 	Warnings []string         `json:"warnings,omitempty"`
 	Unmapped []string         `json:"unmappedLinks,omitempty"`
 	Missing  []string         `json:"missingFiles,omitempty"`
+	// The design's original site (oldsite.go): the URLs of OldHosts the pages held (as written),
+	// the pages whose forms posted there ("blog/index.html: 2"), how many script URLs now point at
+	// this site, and the third-party tracking the pages load.
+	OldURLs      []string `json:"oldUrls,omitempty"`
+	OldForms     []string `json:"oldForms,omitempty"`
+	OldInScripts int      `json:"oldInScripts,omitempty"`
+	Trackers     []string `json:"trackers,omitempty"`
 }
 
 // ConvertSite converts the site's pages (see the file comment).
@@ -260,17 +276,42 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 	}
 	out := &SiteImport{}
 	unmapped, missing := map[string]bool{}, map[string]bool{}
+	oldURLs, trackers := map[string]bool{}, map[string]bool{}
 	var hs, fs []ActiveSample
 	var hIdx, fIdx []int
+	ids := make([]map[string]bool, len(pages))
 	for i, p := range pages {
-		base := path.Dir(p.Path)
+		ids[i] = volatileIDs(p.HTML)
+	}
+	pageOpts := func(i int) CodeImportOptions {
+		base := path.Dir(pages[i].Path)
 		if base == "." {
 			base = ""
 		}
-		res, err := ConvertCode(p.HTML, CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: !o.NoSplit})
+		return CodeImportOptions{KitURL: o.KitURL, KitFiles: o.KitFiles, Base: base, LinkMap: links, Split: !o.NoSplit,
+			Remap: o.Remap, OldHosts: o.OldHosts, KeepOldLinks: o.KeepOldLinks, SiteURL: o.SiteURL}
+	}
+	var footers map[int][]int
+	if !o.NoSplit {
+		footers = siteFooterHints(pages, ids, pageOpts)
+	}
+	for i, p := range pages {
+		po := pageOpts(i)
+		po.FooterAt = footers[i]
+		res, err := ConvertCode(p.HTML, po)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %v", p.Path, err)
 		}
+		for _, u := range res.OldURLs {
+			oldURLs[u] = true
+		}
+		for _, t := range res.Trackers {
+			trackers[t] = true
+		}
+		if res.OldForms > 0 {
+			out.OldForms = append(out.OldForms, fmt.Sprintf("%s: %d", p.Path, res.OldForms))
+		}
+		out.OldInScripts += res.OldInScripts
 		for _, u := range res.Unmapped {
 			unmapped[p.Path+": "+u] = true
 		}
@@ -287,7 +328,7 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 				parts = append(parts, b.Wrap+"\x05"+b.HTML)
 			}
 			parts = append(parts, res.Header.Wrap+"\x05"+res.Header.HTML)
-			hs = append(hs, ActiveSample{Path: o.URLs[p.Path], Parts: parts})
+			hs = append(hs, ActiveSample{Path: o.URLs[p.Path], Parts: parts, Volatile: ids[i]})
 			hIdx = append(hIdx, i)
 		}
 		// A footer the design put inside main stays on its page (FooterInPage): no template serves
@@ -297,7 +338,7 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 			for _, a := range res.FooterAfter {
 				parts = append(parts, a.Wrap+"\x05"+a.HTML)
 			}
-			fs = append(fs, ActiveSample{Path: o.URLs[p.Path], Parts: parts})
+			fs = append(fs, ActiveSample{Path: o.URLs[p.Path], Parts: parts, Volatile: ids[i]})
 			fIdx = append(fIdx, i)
 		}
 	}
@@ -309,6 +350,14 @@ func ConvertSite(pages []SitePage, o SiteImportOptions) (*SiteImport, error) {
 	}
 	sort.Strings(out.Unmapped)
 	sort.Strings(out.Missing)
+	for u := range oldURLs {
+		out.OldURLs = append(out.OldURLs, u)
+	}
+	for t := range trackers {
+		out.Trackers = append(out.Trackers, t)
+	}
+	sort.Strings(out.OldURLs)
+	sort.Strings(out.Trackers)
 	out.Headers = siteTemplates(out, hs, hIdx, true)
 	out.Footers = siteTemplates(out, fs, fIdx, false)
 	return out, nil
@@ -328,7 +377,7 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 	wraps := make([][]string, len(samples))
 	plain := make([]ActiveSample, len(samples))
 	for i, s := range samples {
-		plain[i].Path = s.Path
+		plain[i].Path, plain[i].Volatile = s.Path, s.Volatile
 		for _, p := range s.Parts {
 			w, h := split(p)
 			wraps[i] = append(wraps[i], w)
@@ -355,7 +404,20 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 		for _, cl := range ClusterParts(sub) {
 			first := members[cl.Members[0]]
 			res := out.Pages[idx[first]].Code
-			t := SiteTemplate{Head: res.Head, Lang: res.Lang, Attrs: [2]string{res.HTMLAttrs, res.BodyAttrs}, Rule: cl.Rule}
+			// The template's head: what every page it serves has in its head (a page's own
+			// structured data, a stylesheet with its own cache-buster stay in that page's head).
+			heads := make([]string, 0, len(cl.Members))
+			for _, m := range cl.Members {
+				heads = append(heads, out.Pages[idx[members[m]]].Code.Head)
+			}
+			// Its <html> and <body> attributes: those every page it serves has (a page's own
+			// body classes — WordPress's page-id-10, home — stay that page's).
+			var hattrs, battrs []string
+			for _, m := range cl.Members {
+				pc := out.Pages[idx[members[m]]].Code
+				hattrs, battrs = append(hattrs, pc.HTMLAttrs), append(battrs, pc.BodyAttrs)
+			}
+			t := SiteTemplate{Head: CommonHead(heads), Lang: res.Lang, Attrs: [2]string{CommonAttrs(hattrs), CommonAttrs(battrs)}, Rule: cl.Rule}
 			names := sitePartNames(res, header)
 			for j, h := range cl.Parts {
 				name := "Part"
@@ -381,6 +443,133 @@ func siteTemplates(out *SiteImport, samples []ActiveSample, idx []int, header bo
 		}
 	}
 	return list
+}
+
+// CommonAttrs is the attributes (an opening tag's, `class="a b" data-x="1"`) that every one of list
+// has: an attribute with the same value in all, and the classes all of them have.
+func CommonAttrs(list []string) string {
+	if len(list) == 0 {
+		return ""
+	}
+	if len(list) == 1 {
+		return list[0]
+	}
+	parse := func(s string) []html.Attribute {
+		nodes, err := parseFragment("<div " + s + "></div>")
+		if err != nil || len(nodes) == 0 {
+			return nil
+		}
+		return nodes[0].Attr
+	}
+	first := parse(list[0])
+	rest := make([][]html.Attribute, len(list)-1)
+	for i, s := range list[1:] {
+		rest[i] = parse(s)
+	}
+	get := func(attrs []html.Attribute, k string) (string, bool) {
+		for _, a := range attrs {
+			if a.Key == k && a.Namespace == "" {
+				return a.Val, true
+			}
+		}
+		return "", false
+	}
+	var b strings.Builder
+	for _, a := range first {
+		if a.Namespace != "" {
+			continue
+		}
+		val := a.Val
+		if a.Key == "class" {
+			var keep []string
+			for _, c := range strings.Fields(a.Val) {
+				all := true
+				for _, r := range rest {
+					v, _ := get(r, "class")
+					if !slices.Contains(strings.Fields(v), c) {
+						all = false
+						break
+					}
+				}
+				if all {
+					keep = append(keep, c)
+				}
+			}
+			if len(keep) == 0 {
+				continue
+			}
+			val = strings.Join(keep, " ")
+		} else {
+			all := true
+			for _, r := range rest {
+				if v, ok := get(r, a.Key); !ok || v != a.Val {
+					all = false
+					break
+				}
+			}
+			if !all {
+				continue
+			}
+		}
+		if b.Len() > 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(a.Key + `="` + html.EscapeString(val) + `"`)
+	}
+	return b.String()
+}
+
+// CommonHead is the head markup every one of heads has: the first head's top-level elements (and
+// the text between them) that each other head holds as written, in order.
+func CommonHead(heads []string) string {
+	if len(heads) == 0 {
+		return ""
+	}
+	if len(heads) == 1 {
+		return heads[0]
+	}
+	var keep []string
+	for _, e := range headElements(heads[0]) {
+		all := true
+		for _, h := range heads[1:] {
+			if !strings.Contains(h, e) {
+				all = false
+				break
+			}
+		}
+		if all {
+			keep = append(keep, e)
+		}
+	}
+	return strings.Join(keep, "\n")
+}
+
+// headElements splits head markup (one top-level element per line, as ConvertCode writes it; an
+// element over several lines, an inline style or script, is kept whole) into its elements.
+func headElements(head string) []string {
+	lines := strings.Split(head, "\n")
+	// The head markup is one top-level element per line (ConvertCode's head); an element over
+	// several lines (an inline style) is kept whole.
+	var elems []string
+	var cur strings.Builder
+	depth := 0
+	for _, l := range lines {
+		if cur.Len() > 0 {
+			cur.WriteByte('\n')
+		}
+		cur.WriteString(l)
+		depth += strings.Count(l, "<style") + strings.Count(l, "<script") + strings.Count(l, "<noscript") -
+			strings.Count(l, "</style>") - strings.Count(l, "</script>") - strings.Count(l, "</noscript>")
+		if depth <= 0 {
+			elems = append(elems, cur.String())
+			cur.Reset()
+			depth = 0
+		}
+	}
+	if cur.Len() > 0 {
+		elems = append(elems, cur.String())
+	}
+	return elems
 }
 
 // Uncovered lists the pages (indexes into Pages) that no header (header true) or footer template

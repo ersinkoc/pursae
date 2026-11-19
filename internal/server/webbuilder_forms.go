@@ -172,7 +172,7 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 	}
 	clean, errs := schema.Validate(values)
 	if len(errs) > 0 {
-		finish(wbFormInvalid, errs)
+		finish(wbFormInvalid, schema.InputErrors(errs))
 		return
 	}
 	if reason := s.wbFormCaptcha(c.Request.Context(), values, clientIP(c)); reason != "" {

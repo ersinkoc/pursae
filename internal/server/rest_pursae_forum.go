@@ -1,9 +1,9 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -156,12 +156,29 @@ func (s *Server) restForumTopic(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusBadRequest, "rest_invalid_param", "title and content are required.")
 		return
 	}
-	u := restCurrent(c)
-	t, err := s.forumCreateTopic(c, forumNewTopic{ForumID: f.ID, AuthorID: u.ID, Title: title, Content: content, IP: c.ClientIP(), At: time.Now()})
-	if err != nil {
-		restErr(c, http.StatusBadRequest, "forum_invalid", strings.TrimPrefix(err.Error(), "forum: "))
+	// The checks and the HTML filter of the site's new-topic form (forum_post.go).
+	t, pending, no := s.forumStartTopic(c, restCurrent(c), forumTopicIn{Forum: f, Title: title, Raw: content})
+	if no != nil {
+		msg := no.Msg
+		if no.Secs > 0 {
+			msg = fmt.Sprintf(msg, no.Secs)
+		}
+		code := "forum_refused"
+		switch no.Status {
+		case http.StatusTooManyRequests:
+			code = "forum_throttled"
+		case http.StatusForbidden:
+			code = "rest_forbidden"
+		case http.StatusUnprocessableEntity:
+			code = "forum_invalid"
+		}
+		restErr(c, no.Status, code, msg)
 		return
 	}
 	s.purgeAll(c)
-	c.JSON(http.StatusCreated, map[string]any{"id": t.ID, "title": t.Title, "forum_id": f.ID, "url": s.forumTopicURL(c, t, 1)})
+	status := "publish"
+	if pending {
+		status = "pending"
+	}
+	c.JSON(http.StatusCreated, map[string]any{"id": t.ID, "title": t.Title, "forum_id": f.ID, "status": status, "url": s.forumTopicURL(c, t, 1)})
 }

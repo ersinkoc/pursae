@@ -248,7 +248,7 @@ func cacheDiskDir(uploads string) string {
 }
 
 // cacheDiskClear removes the persisted page files (*.wpc) and temp files (.tmp-*) from dir, like
-// cache.diskStore.clear, and returns how many it removed. A missing dir is not an error.
+// cache.diskStore.clear, and returns how many it removed and any removal errors.
 func cacheDiskClear(dir string) (int, error) {
 	des, err := os.ReadDir(dir)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -258,15 +258,18 @@ func cacheDiskClear(dir string) (int, error) {
 		return 0, err
 	}
 	n := 0
+	var removeErrs []error
 	for _, de := range des {
 		name := de.Name()
 		if !de.IsDir() && (strings.HasSuffix(name, ".wpc") || strings.HasPrefix(name, ".tmp-")) {
 			if err := os.Remove(filepath.Join(dir, name)); err == nil {
 				n++
+			} else if !errors.Is(err, fs.ErrNotExist) {
+				removeErrs = append(removeErrs, err)
 			}
 		}
 	}
-	return n, nil
+	return n, errors.Join(removeErrs...)
 }
 
 // cacheDiskStats counts the persisted page files in dir and their size.
@@ -303,17 +306,29 @@ func registerCacheCLI(r *cli.Registry, e *cliEnv) {
 			"There is no object cache: this is the only cache to flush.\n\n" + cdnHint,
 		Examples: []string{"cache flush"},
 		Run: func(c *cli.Ctx) error {
-			if err := e.PurgeAll(c.Context); err != nil {
+			s, err := e.Server(c.Context)
+			if err != nil {
 				return err
 			}
+			ctx, cancel := context.WithTimeout(c.Context, cliCachePurgeTimeout)
+			defer cancel()
+			p := cache.Purge{All: true}
+			if err := s.notifyCachePurge(ctx, p); err != nil {
+				return err
+			}
+			proxyErr := s.purgeCLIProxy(ctx, p)
 			dir := cacheDiskDir(e.Config().UploadsDir)
 			if dir != "" {
 				n, err := cacheDiskClear(dir)
-				if err != nil {
-					c.Warning("disk cache %s: %v", dir, err)
-				} else if n > 0 {
+				if n > 0 {
 					c.Log("Removed %d persisted page file(s) from %s.", n, dir)
 				}
+				if err != nil {
+					return fmt.Errorf("disk cache %s: %w", dir, err)
+				}
+			}
+			if proxyErr != nil {
+				return proxyErr
 			}
 			c.Success("The page cache was flushed.")
 			return nil

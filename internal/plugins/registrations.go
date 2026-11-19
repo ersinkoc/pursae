@@ -422,22 +422,32 @@ func sortByDeps(list []Asset) []Asset {
 		byHandle[a.Handle] = a
 	}
 	var out []Asset
-	done := map[string]bool{}
-	var visit func(a Asset, depth int)
-	visit = func(a Asset, depth int) {
-		if done[a.Handle] || depth > maxAssetDeps {
-			return
+	seen := map[string]bool{}
+	type frame struct {
+		asset Asset
+		next  int
+	}
+	var stack []frame
+	for _, root := range list {
+		if seen[root.Handle] {
+			continue
 		}
-		done[a.Handle] = true
-		for _, d := range a.Deps {
-			if dep, ok := byHandle[d]; ok {
-				visit(dep, depth+1)
+		seen[root.Handle] = true
+		stack = append(stack, frame{asset: root})
+		for len(stack) > 0 {
+			top := &stack[len(stack)-1]
+			if top.next == len(top.asset.Deps) {
+				out = append(out, top.asset)
+				stack = stack[:len(stack)-1]
+				continue
+			}
+			handle := top.asset.Deps[top.next]
+			top.next++
+			if dep, ok := byHandle[handle]; ok && !seen[handle] {
+				seen[handle] = true
+				stack = append(stack, frame{asset: dep})
 			}
 		}
-		out = append(out, a)
-	}
-	for _, a := range list {
-		visit(a, 0)
 	}
 	return out
 }
@@ -445,8 +455,11 @@ func sortByDeps(list []Asset) []Asset {
 // resetRegistrations forgets every hook, shortcode, route, settings page and
 // asset the plugin registered (before a fresh instance registers them again).
 func (p *Plugin) resetRegistrations() {
-	p.rt.hooks.RemoveAll(p.Slug())
 	p.state.Lock()
+	// A replacement may already have registered hooks under the same slug.
+	for _, id := range p.regs {
+		p.rt.hooks.Remove(id)
+	}
 	p.regs = map[RegisteredHook]HookID{}
 	p.shortcodes = nil
 	p.rest = nil

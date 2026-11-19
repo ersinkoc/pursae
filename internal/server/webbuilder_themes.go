@@ -446,7 +446,7 @@ func (s *Server) wbRESTThemeImport(c *gin.Context, r *restRequest) {
 		return
 	}
 	wb := s.store.WebBuilder()
-	unfiltered := u.Can("unfiltered_html", nil)
+	unfiltered := wbUnfiltered(c, u)
 	var created []int64 // posts made by this call, trashed again when it fails
 	fail := func(msg string, status int) {
 		for _, id := range created {

@@ -215,6 +215,9 @@ func parseParts(parts []string) ([][]*html.Node, error) {
 type ActiveSample struct {
 	Path  string
 	Parts []string
+	// Volatile: the page's generated ids that nothing else on it names (volatileIDs): copies that
+	// differ only in them, cache-busters and nonces are one part (normVolatile).
+	Volatile map[string]bool
 }
 
 // ActiveCluster is a group of samples that are one part: Parts is the shared markup with every
@@ -244,9 +247,15 @@ func ClusterParts(samples []ActiveSample) []ActiveCluster {
 	var order []string
 	for i, s := range samples {
 		nodes, err := parseParts(s.Parts)
-		p := &parsed{plain: StripCodeIDs(strings.Join(s.Parts, "\x00"))}
-		norm[i] = ActiveSample{Path: s.Path, Parts: s.Parts}
-		if err == nil {
+		p := &parsed{plain: normVolatile(StripCodeIDs(strings.Join(s.Parts, "\x00")), s.Volatile)}
+		norm[i] = ActiveSample{Path: s.Path, Parts: s.Parts, Volatile: s.Volatile}
+		// The skeleton is read from the copy with its volatile bits normalized (same elements).
+		vparts := make([]string, len(s.Parts))
+		for j, x := range s.Parts {
+			vparts[j] = normVolatile(x, s.Volatile)
+		}
+		vnodes, verr := parseParts(vparts)
+		if err == nil && verr == nil {
 			p.nodes = nodes
 			norm[i].Parts = make([]string, len(nodes))
 			for j, ns := range nodes {
@@ -256,12 +265,11 @@ func ClusterParts(samples []ActiveSample) []ActiveCluster {
 				}
 				norm[i].Parts[j] = b.String()
 			}
-			var all []*html.Node
 			var sk strings.Builder
 			for j, ns := range nodes {
-				all = append(all, ns...)
-				els, k := activeElements(ns)
+				els, _ := activeElements(ns)
 				p.els = append(p.els, els...)
+				_, k := activeElements(vnodes[j])
 				sk.WriteString(strconv.Itoa(j) + "\x03" + k)
 			}
 			p.sk = sk.String()
@@ -544,12 +552,14 @@ func learnGroup(samples []ActiveSample, members []int, get func(int) ([][]*html.
 		plainBase[i] = StripCodeIDs(p)
 	}
 	base := strings.Join(plainBase, "\x00")
+	bestIDs := samples[members[best]].Volatile
 	for _, m := range members {
 		got := make([]string, len(samples[m].Parts))
 		for i, p := range samples[m].Parts {
 			got[i] = StripCodeIDs(p)
 		}
-		if len(got) == len(parts) && ApplyActive(base, rule, samples[m].Path) == strings.Join(got, "\x00") {
+		// Byte for byte, but for the volatile bits (the template keeps its own copy of them).
+		if len(got) == len(parts) && normVolatile(ApplyActive(base, rule, samples[m].Path), bestIDs) == normVolatile(strings.Join(got, "\x00"), samples[m].Volatile) {
 			cl.Members = append(cl.Members, m)
 		} else {
 			missed = append(missed, m)
@@ -621,9 +631,16 @@ func ApplyActive(src string, rule *ActiveRule, current string) string {
 	}
 	current = ActivePath(current)
 	byKey := make(map[string][]int, len(rule.Items))
+	// exactRole: roles some of whose links are marked on the page they link to. A link of such a
+	// role that the rule does not know (a menu item added after the import, bound to a Pursae menu)
+	// is marked the same way on its own page.
+	exactRole := map[int]bool{}
 	for i, it := range rule.Items {
 		k := strconv.Itoa(it.Role) + "\x00" + it.Key
 		byKey[k] = append(byKey[k], i)
+		if it.Exact && strings.HasPrefix(it.Key, "href:") {
+			exactRole[it.Role] = true
+		}
 	}
 	var out bytes.Buffer
 	z := html.NewTokenizer(strings.NewReader(src))
@@ -695,6 +712,9 @@ func ApplyActive(src string, rule *ActiveRule, current string) string {
 				if target != nil {
 					break
 				}
+			}
+			if target == nil && hp != "" && hp == current && exactRole[ri] && len(byKey[strconv.Itoa(ri)+"\x00"+key]) == 0 {
+				target = r.exactState()
 			}
 			if target != nil {
 				break

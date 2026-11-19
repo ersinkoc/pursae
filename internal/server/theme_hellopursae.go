@@ -37,6 +37,9 @@ type wbThemePartsView struct {
 	// Main replaces the content of the view (the page's own builder document, or the Single,
 	// Archive, Search Results, 404 … template that matched).
 	Main template.HTML
+	// Tail: a code main's scripts after the design's shell (webbuilder.SplitCodeTail), printed after
+	// the footer, where the design had them.
+	Tail template.HTML
 	// HasMain reports that Main carries its own <main> landmark: the theme then wraps it in
 	// div#content instead of main#content, so the page has exactly one main element.
 	HasMain bool

@@ -1031,7 +1031,7 @@ func mcpWBImportHTML(s *Server, c *gin.Context, args map[string]any) (any, error
 	method := argStr(args, "method")
 	if method == "" {
 		method = "exact"
-		if u := restCurrent(c); u != nil && u.Can("unfiltered_html", nil) {
+		if u := restCurrent(c); wbUnfiltered(c, u) {
 			method = "code" // 1:1 by construction for anyone who may publish the design's own code
 		}
 	}
@@ -1226,8 +1226,19 @@ func mcpBuilderTools() []*mcpTool {
 				"status":     statusProp,
 				"front_page": flag("Make index.html the front page (default true)."),
 				"templates":  flag("Split each page's header and footer into Theme Builder templates (default true); false keeps them in the pages."),
-				"site_name":  str("Name used in new template titles.")},
+				"menus":      flag("Make a Pursae menu from the header's navigation (primary location) and bind the design's list to it, so items are managed in Appearance › Menus with the design's markup (default true; only when the bound list reproduces the design)."),
+				"collections": map[string]any{"description": "Folders whose pages share one skeleton (hizmet/*.html) to import as page content under one Theme Builder single template each (URLs unchanged), and lists of those pages elsewhere bound as loops: true for every folder that qualifies, or a list of folder names. Default: none. The answer's bindings.collection_candidates lists the folders.",
+					"oneOf": []any{map[string]any{"type": "boolean"}, map[string]any{"type": "array", "items": map[string]any{"type": "string"}}}},
+				"site_name": str("Name used in new template titles."),
+				"old_domains": map[string]any{"type": "array", "items": map[string]any{"type": "string"},
+					"description": "The domain(s) the design was saved from (a copy of a live site). Default: detected from the pages' canonical/og:url links, else the host most pages link to; [] turns it off. Their URLs are taken as this site's paths: forms and the URLs in inline scripts (AJAX endpoints) always point at this site, so nothing posts to the original site; the answer's original_site counts them."},
+				"old_links": str("rewrite (default): links and files of old_domains become this site's paths (imported pages, kit files); keep: they keep pointing at the original site (forms and script endpoints still point here)."),
+				"media":     obj("Files of the design kept outside the kit (too large for it, e.g. a video put into the Media Library): {\"<path in the folder>\": \"<URL>\"}; references to them point at the URL.")},
 			Required: []string{"kit", "pages"}, run: run(mcpWBImportSite), listAlways: true},
+		{Name: "web_builder_bind", Desc: "Bind an element of an imported design (a code section) to content, keeping the design's markup: kind menu (a list whose items are templates, filled from a menu location or menu id), submenu (a dropdown list inside a menu item), loop (a container whose first child is the card template, repeated per post of query {postType, perPage, orderBy, order, terms, parent, offset}), field (an element filled from the post of the nearest loop card or the template's post: field title|excerpt|content|image|url|link|date|modified|author|terms|custom|pagination) or form (a <form> posting to the Pursae form endpoint: fields maps input names to name|email|phone|message|subject|company|… or field_<name>, done/error name the design's message elements by data-wbc). bind null removes the binding. Publishes the page.",
+			Path: "/web-builder/v2/documents/x", Props: map[string]any{"post_id": num("Page, post or template ID."), "element": str("The element's data-wbc id."),
+				"html_id": str("Or the element's id attribute (e.g. contact-form)."), "bind": obj("The binding: {kind, …} (see the description), or null to remove it.")},
+			Required: []string{"post_id"}, run: run(mcpWBBind), listAlways: true},
 		{Name: "web_builder_list_kits", Desc: "List the design kits (uploaded design files for code sections) with their base URL, version and size.",
 			Method: http.MethodGet, Path: "/web-builder/v2/kits"},
 		{Name: "web_builder_import_finish", Desc: "Finish an exact HTML import after its import_url was opened in a browser: converts the measured design into Web Builder sections, maps title, meta description, robots and Open Graph tags to the page and Pursae SEO, publishes, and lists SEO and fidelity notes. Waits up to `wait` seconds (default 45) for the browser.",

@@ -14,6 +14,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -56,10 +57,11 @@ type Server struct {
 	onPostSaved func(ctx context.Context, p *store.Post)
 	onPurgeAll  func(ctx context.Context)
 
-	cache   atomic.Pointer[pageCache] // wpgo-cache, rebuilt when its options change
-	plugins *pluginSystem
-	bmgr    bmgrRuntime // Backup Manager state (backup.go)
-	warm    warmState
+	cache        atomic.Pointer[pageCache] // wpgo-cache, rebuilt when its options change
+	cacheBuildMu sync.Mutex                // orders retirement and installation of caches
+	plugins      *pluginSystem
+	bmgr         bmgrRuntime // Backup Manager state (backup.go)
+	warm         warmState
 
 	// sandbox is set on a theme-preview sandbox (theme_preview.go): a second Server over its own
 	// database schema, uploads and themes directory, served under /wp-admin/theme-preview/<slug>/.
@@ -271,6 +273,9 @@ func (s *Server) routes() *gin.Engine {
 		if s.serveMovedUpload(c) { // a path a replaced file left: redirect to its successor (media_replace.go)
 			return
 		}
+		if rel := strings.TrimPrefix(path.Clean(c.Request.URL.Path), "/wp-content/uploads/"); strings.HasPrefix(rel, wbKitsDir+"/") {
+			wbKitFilePolicy(c.Writer.Header(), rel) // a design kit's scripts may start Web Workers (webbuilder_kits.go)
+		}
 		c.Header("Cache-Control", s.uploadCacheControl(c))
 		uploads.ServeHTTP(c.Writer, c.Request)
 	}
@@ -422,7 +427,7 @@ func (s *Server) routes() *gin.Engine {
 	}
 
 	// theme package assets, /<post>/embed/, site-imported design kits' files at the root, then the site
-	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.wbKitRootAsset, s.site)
+	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.site)
 	return r
 }
 

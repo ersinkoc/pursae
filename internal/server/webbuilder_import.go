@@ -34,6 +34,8 @@ import (
 const (
 	wbImportTTL      = 2 * time.Hour
 	wbImportMaxJobs  = 200
+	wbImportUserJobs = 5        // open jobs of one user
+	wbImportMaxBytes = 64 << 20 // the HTML and the extractions of every open job, in memory
 	wbImportMaxHTML  = 2 << 20
 	wbImportMaxData  = 12 << 20
 	wbImportDeskW    = 1440
@@ -52,7 +54,11 @@ type wbImportJob struct {
 	mobile  *webbuilder.Extract
 	done    chan struct{}
 	used    bool
+	data    int // bytes of the browser's extraction (wbImportReceive)
 }
+
+// size is what the job holds in memory (the caller holds the store's lock).
+func (j *wbImportJob) size() int { return len(j.html) + j.data }
 
 type wbImportStore struct {
 	mu   sync.Mutex
@@ -69,12 +75,21 @@ func (st *wbImportStore) create(userID int64, html string, args map[string]any) 
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	now := time.Now()
+	mine, total := 0, len(html)
 	for k, j := range st.jobs {
 		if now.Sub(j.created) > wbImportTTL {
 			delete(st.jobs, k)
+			continue
 		}
+		if j.userID == userID {
+			mine++
+		}
+		total += j.size()
 	}
-	if len(st.jobs) >= wbImportMaxJobs {
+	if mine >= wbImportUserJobs {
+		return nil, mcpErrf("you have %d HTML imports waiting for a browser; finish them (web_builder_import_finish) or wait until they expire (two hours)", mine)
+	}
+	if len(st.jobs) >= wbImportMaxJobs || total > wbImportMaxBytes {
 		return nil, mcpErrf("too many HTML imports are waiting; finish or wait for the open ones")
 	}
 	j := &wbImportJob{token: hex.EncodeToString(b), userID: userID, html: html, args: args, created: now, done: make(chan struct{})}
@@ -166,8 +181,17 @@ func (s *Server) wbImportReceive(c *gin.Context) {
 		return
 	}
 	wbImports.mu.Lock()
+	total := len(raw) - j.data
+	for _, o := range wbImports.jobs {
+		total += o.size()
+	}
+	if total > wbImportMaxBytes {
+		wbImports.mu.Unlock()
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "the site holds too many imports right now; try again later"})
+		return
+	}
 	first := j.desk == nil
-	j.desk, j.mobile = body.Desktop, body.Mobile
+	j.desk, j.mobile, j.data = body.Desktop, body.Mobile, len(raw)
 	wbImports.mu.Unlock()
 	if first {
 		close(j.done)

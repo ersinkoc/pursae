@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -251,6 +252,27 @@ func TestEnqueuedAssets(t *testing.T) {
 	}
 	if _, ok := p.PackageAsset("../plugin.json"); ok {
 		t.Fatal("path escape")
+	}
+}
+
+func TestSortByDepsKeepsLongChainsInOrder(t *testing.T) {
+	const chainLength = 20
+	var assets []Asset
+	for i := 0; i < chainLength; i++ {
+		asset := Asset{Handle: fmt.Sprintf("script-%d", i)}
+		if i+1 < chainLength {
+			asset.Deps = []string{fmt.Sprintf("script-%d", i+1)}
+		}
+		assets = append(assets, asset)
+	}
+	ordered := sortByDeps(assets)
+	if len(ordered) != len(assets) {
+		t.Fatalf("ordered %d of %d assets", len(ordered), len(assets))
+	}
+	for i, asset := range ordered {
+		if want := assets[len(assets)-1-i].Handle; asset.Handle != want {
+			t.Fatalf("asset %d = %q, want %q", i, asset.Handle, want)
+		}
 	}
 }
 

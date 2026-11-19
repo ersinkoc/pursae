@@ -15,7 +15,12 @@ import (
 // in the page's frame (locked, with a link that opens the template), so fixed headers, sticky
 // footers and the wrappers the parts share look as on the site. nil for a template, a canvas page,
 // another theme, or a page without code sections.
-func (s *Server) wbEditorCodeParts(c *gin.Context, p *store.Post, doc *wbDocument) *webbuilder.CodeParts {
+//
+// The sections go to anyone who can edit the page, so without edit_theme_options (who edits the
+// templates themselves) their content bindings are left out: a bound form names its recipients
+// (to, cc), redirects and messages there, and the editor draws the locked parts from their markup
+// alone.
+func (s *Server) wbEditorCodeParts(c *gin.Context, p *store.Post, u *store.User, doc *wbDocument) *webbuilder.CodeParts {
 	if wbIsTemplate(p) || doc == nil || !s.wbOn() {
 		return nil
 	}
@@ -40,12 +45,13 @@ func (s *Server) wbEditorCodeParts(c *gin.Context, p *store.Post, doc *wbDocumen
 		return nil
 	}
 	lb := s.links(c)
+	keepBinds := u != nil && u.Can("edit_theme_options", nil)
 	part := func(loc string) *webbuilder.CodeTemplate {
 		d, id := s.wbPickTemplate(c, loc, q)
 		if d == nil {
 			return nil
 		}
-		secs := wbCodeSectionsOf(d.Doc)
+		secs := wbCodeSectionsOf(d.Doc, keepBinds)
 		if len(secs) == 0 {
 			return nil
 		}
@@ -63,8 +69,9 @@ func (s *Server) wbEditorCodeParts(c *gin.Context, p *store.Post, doc *wbDocumen
 }
 
 // wbCodeSectionsOf is the visible sections of a stored doc when every one of them is a code
-// section (nil otherwise: the editor's frame draws code markup only).
-func wbCodeSectionsOf(raw json.RawMessage) []json.RawMessage {
+// section (nil otherwise: the editor's frame draws code markup only). Without keepBinds each
+// section's content.binds (webbuilder.ContentBinds) is removed.
+func wbCodeSectionsOf(raw json.RawMessage, keepBinds bool) []json.RawMessage {
 	var d struct {
 		Sections []json.RawMessage `json:"sections"`
 	}
@@ -86,9 +93,41 @@ func wbCodeSectionsOf(raw json.RawMessage) []json.RawMessage {
 		if head.Kind != webbuilder.KindCode {
 			return nil
 		}
+		if !keepBinds {
+			if sec = wbWithoutBinds(sec); sec == nil {
+				return nil
+			}
+		}
 		out = append(out, sec)
 	}
 	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// wbWithoutBinds is a code section's JSON without its content bindings (nil when it is not an
+// object); a section without bindings comes back as is.
+func wbWithoutBinds(sec json.RawMessage) json.RawMessage {
+	var m map[string]json.RawMessage
+	if json.Unmarshal(sec, &m) != nil || m == nil {
+		return nil
+	}
+	var content map[string]json.RawMessage
+	if json.Unmarshal(m["content"], &content) != nil || content == nil {
+		return sec
+	}
+	if _, ok := content[webbuilder.ContentBinds]; !ok {
+		return sec
+	}
+	delete(content, webbuilder.ContentBinds)
+	cb, err := json.Marshal(content)
+	if err != nil {
+		return nil
+	}
+	m["content"] = cb
+	out, err := json.Marshal(m)
+	if err != nil {
 		return nil
 	}
 	return out

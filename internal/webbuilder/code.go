@@ -58,7 +58,13 @@ type CodeContent struct {
 	Lang, HTMLAttrs, BodyAttrs string
 	// Active is the rule that marks the current page's link (content.active, ActiveRule JSON).
 	Active string
+	// Binds are the section's content bindings (content.binds, codebind.go).
+	Binds  string
 	Hidden bool
+	// Tail: the design's scripts after its shell (content.tail = "1"): when the sections at the end
+	// of a page are tail sections, FillCode puts CodeTailMark before them and a Hello Pursae request
+	// prints them after the footer template (SplitCodeTail), where the design had them.
+	Tail bool
 	// Kit is the design kit's slug (content.kit); Local the section's local styles and Breakpoints
 	// the kit's devices (zero: DefaultBreakpoints), which the caller fills in (FillCode prints the
 	// local styles of the sections it fills, see local.go).
@@ -90,8 +96,8 @@ func CodeSections(doc json.RawMessage) (list []CodeContent, only bool) {
 		}
 		local, _ := ParseLocal(s.Local)
 		list = append(list, CodeContent{ID: s.ID, HTML: s.Content["html"], Head: s.Content["head"], Wrap: s.Content["wrap"],
-			Lang: s.Content["lang"], HTMLAttrs: s.Content["htmlAttrs"], BodyAttrs: s.Content["bodyAttrs"], Active: s.Content["active"], Hidden: s.Hidden,
-			Kit: s.Content["kit"], Local: local})
+			Lang: s.Content["lang"], HTMLAttrs: s.Content["htmlAttrs"], BodyAttrs: s.Content["bodyAttrs"], Active: s.Content["active"], Binds: s.Content[ContentBinds], Hidden: s.Hidden,
+			Kit: s.Content["kit"], Local: local, Tail: s.Content["tail"] == "1"})
 	}
 	return list, only && len(list) > 0
 }
@@ -107,6 +113,11 @@ func HasCode(doc json.RawMessage) bool {
 // fills give their elements a class and the head part a stylesheet (local.go). A snapshot without
 // placeholders comes back unchanged.
 func FillCode(snapshot string, sections []CodeContent, only bool) string {
+	return FillCodeWith(snapshot, sections, only, CodeFillOptions{})
+}
+
+// FillCodeWith is FillCode with the options the sections' content bindings need (CompileBinds).
+func FillCodeWith(snapshot string, sections []CodeContent, only bool, o CodeFillOptions) string {
 	if len(sections) == 0 || !strings.Contains(snapshot, AttrCode+`="`) {
 		return snapshot
 	}
@@ -131,13 +142,30 @@ func FillCode(snapshot string, sections []CodeContent, only bool) string {
 		}
 	}
 	last := 0
-	for _, m := range codePlaceholderRE.FindAllStringSubmatchIndex(snapshot, -1) {
+	matches := codePlaceholderRE.FindAllStringSubmatchIndex(snapshot, -1)
+	// The page's tail: the run of tail sections its placeholders end with (hidden ones aside).
+	tailFrom := len(matches)
+	for i := len(matches) - 1; i >= 0; i-- {
+		s, ok := byID[snapshot[matches[i][4]:matches[i][5]]]
+		if !ok {
+			continue
+		}
+		if !s.Tail {
+			break
+		}
+		tailFrom = i
+	}
+	for i, m := range matches {
 		between := snapshot[last:m[0]]
 		if strings.TrimSpace(between) != "" {
 			closeTo(0)
 		}
 		b.WriteString(between)
 		last = m[1]
+		if i == tailFrom {
+			closeTo(0)
+			b.WriteString(CodeTailMark)
+		}
 		s, ok := byID[snapshot[m[4]:m[5]]]
 		if !ok {
 			continue
@@ -153,6 +181,9 @@ func FillCode(snapshot string, sections []CodeContent, only bool) string {
 			stack = append(stack, w)
 		}
 		src := s.HTML
+		if s.Binds != "" {
+			src = CompileBinds(src, s.ID, ParseCodeBinds(s.Binds), o)
+		}
 		if ids := styledIDs(s.Local); len(ids) > 0 {
 			classes := make(map[string]string, len(ids))
 			for id := range ids {
@@ -210,6 +241,25 @@ func closeTag(open string) string {
 		return "</" + m[1] + ">"
 	}
 	return ""
+}
+
+// CodeTailMark separates a filled page's tail sections (Tail) from the rest.
+const CodeTailMark = `<template data-wb-code-tail=""></template>`
+
+// SplitCodeTail cuts a filled page of code sections (its root already dropped, UnwrapCodePage) at
+// CodeTailMark: the page and its tail (printed after the footer); without the mark the tail is "".
+// Any other markup just loses the mark (StripCodeTail).
+func SplitCodeTail(filled string) (page, tail string) {
+	i := strings.Index(filled, CodeTailMark)
+	if i < 0 {
+		return filled, ""
+	}
+	return filled[:i], filled[i+len(CodeTailMark):]
+}
+
+// StripCodeTail removes CodeTailMark (the tail stays where it is: at the end of the part).
+func StripCodeTail(filled string) string {
+	return strings.Replace(filled, CodeTailMark, "", 1)
 }
 
 // UnwrapCodePage drops the root element of a page of code sections, so the design's elements are

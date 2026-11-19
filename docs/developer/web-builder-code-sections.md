@@ -25,7 +25,7 @@ stored (see [Limits](#limits)).
 | Piece | Where | What |
 |-------|-------|------|
 | Design kit | `uploads/web-builder/kits/<slug>/` | The design's files (CSS, JS, fonts, images) with their folder structure, so the design's relative references keep working. Option `wb_design_kits` lists kits: name, version, file count, size, and the https origins their scripts and stylesheets name. |
-| Code section | doc section `kind: "code"` | `content.html` — the part's markup; `content.head` — head markup it needs (stylesheets, preloads, head scripts, inline styles); `content.wrap` — the wrappers it sits in (opening tags, outermost first, one per line, e.g. `<main id="main">` then `<div class="aft">`); `content.kit`, `content.lang`, `content.body` (body class) for the editor; `content.htmlAttrs` / `content.bodyAttrs` — the design's other `<html>` attributes and its `<body>` attributes as written in an opening tag (`class="no-js" data-theme="dark"`), printed by the front end; `content.active` — on a header or footer template made by a site import, the rule that marks the current page's link ([Active links](#active-links)). Top-level only. |
+| Code section | doc section `kind: "code"` | `content.html` — the part's markup; `content.head` — head markup it needs (stylesheets, preloads, head scripts, inline styles); `content.wrap` — the wrappers it sits in (opening tags, outermost first, one per line, e.g. `<main id="main">` then `<div class="aft">`); `content.kit`, `content.lang`, `content.body` (body class) for the editor; `content.htmlAttrs` / `content.bodyAttrs` — the design's other `<html>` attributes and its `<body>` attributes as written in an opening tag (`class="no-js" data-theme="dark"`), printed by the front end; `content.active` — on a header or footer template made by a site import, the rule that marks the current page's link ([Active links](#active-links)); `content.binds` — the content bindings of its elements ([Binding to content](#binding-to-content)). Top-level only. |
 | Importer | `webbuilder.ConvertCode`, MCP `web_builder_import_html` with `method: "code"` | Splits an HTML document into code sections, gives every element a `data-wbc` id, points file references at the kit. No browser needed. |
 
 ## Publishing
@@ -52,9 +52,12 @@ placeholder with the section's markup, as written (`webbuilder.FillCode`):
   on a canvas page (`wbCanvas`) and under Hello Pursae, whose `<html lang>` is otherwise `en-US`. The
   lang matters to the pixel: `text-transform: uppercase` writes Turkish `i` as `İ` only under `lang="tr"`;
 - a code page's markup is printed as written: `wp_filter_content_tags` (image dimensions, `loading`,
-  `decoding`, `srcset`) does not run over it (`wbContentTags`). Pursae Cache's page optimizer, when its
-  options are on, still adds `loading="lazy"` / `decoding="async"` and collapses whitespace in the whole
-  response (it does not change what is drawn).
+  `decoding`, `srcset`) does not run over it (`wbContentTags`), and Pursae Cache's page optimizer adds
+  no `loading="lazy"` / `decoding="async"` / `fetchpriority` to it either: the front end sets the
+  internal header `X-WPGo-Cache-Optimize: as-written` on a code page (canvas, or a Hello Pursae page
+  whose main is a code page), which the cache strips and obeys (`cache.HeaderOptimize`). The design
+  decides what loads when (Salient's hero `<img fetchpriority="high">` was made lazy before). The
+  optimizer's other options (whitespace, scripts) still apply when they are on.
 
 ### Shared shell
 
@@ -72,6 +75,12 @@ checked before anything is cut (the shell must be the header's last element, the
 page's only one); otherwise each part keeps its own copy, as before. A canvas page (no header and footer
 part) prints its own shell once by construction.
 
+A page that shares more wrappers with its footer than with its header (Salient: the header sits in the
+shell, the page's rows and the footer in `#ajax-content-wrap` inside it) gets those printed once too
+(`webbuilder.ShellDepths`, `ShareShellDeep`): the header opens the shell, the page opens the deeper
+wrapper and keeps its content in it, the footer closes the deeper wrapper and the shell. A header that
+shares more with the page works the same way the other way round.
+
 A page without a footer (an app screen whose header bar, side panels and main sit in one grid wrapper:
 umbral's Motif page) or without a header shares the shell with the one part it has
 (`webbuilder.ShellPlan`): the header opens it and the page closes it, or the page opens it and the footer
@@ -82,7 +91,11 @@ templates.
 
 Kit file URLs in the published markup get `?v=<kit version>`; requests that name the current version
 are served `immutable`, others revalidate (`Cache-Control: public, no-cache`), so a changed kit is
-picked up at once. Uploading files to a kit purges the page cache.
+picked up at once. Uploading files to a kit purges the page cache. Versions never repeat: a staged file
+is written through a temporary file renamed over its name (the staging folder starts as hard links to
+the live files, which must not change before the commit), and a kit deleted and uploaded again under the
+same slug goes on from its last version (option `wb_design_kits_gone`), so browsers never get an old
+file for a new `?v=`.
 
 ### Content Security Policy
 
@@ -107,7 +120,10 @@ Code sections work under the site's nonce policy (`csp_mode` `report` and `enfor
   origins go to `script-src` and `connect-src`; `<link href>` origins and the `url()` / `@import`
   origins of inline CSS go to `style-src` and `font-src` (`fonts.googleapis.com` brings
   `fonts.gstatic.com`); `<iframe src>` origins (a Google Maps embed) go to `frame-src`. Only https
-  origins, at most 24 per directive. `img-src` and `media-src` already allow `https:`. In report
+  origins, at most 24 per directive. The origins are read from the stored code sections (their
+  `content.head` and `content.html`, `wbCodeSource`), their kits and, for a forum view printed by a
+  site template, the stored site templates — never from the filled page, whose comments, posts and
+  field values anyone may have written: a visitor's `url(https://…)` adds no origin. `img-src` and `media-src` already allow `https:`. In report
   mode the additions to `script-src` are also merged into the report-only policy (only into the
   directives it has). The editor page allows the kits' origins for users who may publish code
   sections (the design's frame inherits the editor's policy).
@@ -126,20 +142,23 @@ Code sections work under the site's nonce policy (`csp_mode` `report` and `enfor
 
 ## Kits: REST
 
-All under `web-builder/v2` (Web Builder on, the usual `X-WB-Api` handshake). Reading needs `edit_posts`;
-writing needs `edit_theme_options` **and** `unfiltered_html`.
+All under `web-builder/v2` (Web Builder on, the usual `X-WB-Api` handshake). The kit list and a kit's
+files need `unfiltered_html` (who may use a kit in a code section); the override and the pages need
+`edit_posts` (the editor reads them for every page of the kit); writing needs `edit_theme_options`
+**and** `unfiltered_html`, and with an Application Password the Appearance (`themes`) scope or full
+access ([scopes](rest-api/authentication.md#application-password-scopes)).
 
 | Route | |
 |-------|-|
 | `GET kits` | `[{slug, name, version, files, bytes, updated, url}]` |
 | `GET kits/{slug}` | the kit and `fileList: [{path, bytes}]` |
-| `POST kits/{slug}/files` | `{files: [{path, text} \| {path, data: base64}], delete?: [path], fresh?: bool}` — writes into the kit's staging folder (a copy of the live files, or empty with `fresh`). Paths are relative, plain segment names, web asset extensions only (css, js, mjs, map, json, txt, fonts, images, svg, video/audio, glb/gltf, wasm, pdf; no HTML, no server code); 15 MB per file, 2000 files and 100 MB per kit, 24 MB per request. |
+| `POST kits/{slug}/files` | `{files: [{path, text} \| {path, data: base64}], delete?: [path], fresh?: bool}` — writes into the kit's staging folder (a copy of the live files, or empty with `fresh`). Paths are relative, plain segment names, web asset extensions only (css, js, mjs, map, json, txt, fonts, images, svg, video/audio, glb/gltf, wasm, pdf; no HTML, no server code); 15 MB per file, 2000 files and 256 MB per kit, 24 MB per request. |
 | `POST kits/{slug}/commit` | `{name?, breakpoints?: {tablet, mobile}}` — the staged files replace the live ones in one swap; the version goes up. Without `breakpoints` the local-style breakpoints are suggested from the kit's stylesheets (see [Styling](#styling)). |
 | `DELETE kits/{slug}` | removes the kit, its files and its override. |
 | `GET kits/{slug}/override` | the kit's class and variable edits (see [Classes and variables](#classes-and-variables)): `{live: {rules}, version, draft: {rules}, draftVersion, pending, updated}` |
 | `PUT kits/{slug}/override` | `{draft: {rules}, base: draftVersion}` — replaces the draft (the editor sends it on every change); a stale `base` is 409 `wb_kit_override_conflict` (with the current state in `data.override`), an override that does not validate is 422 `bad_css`, more than 256 KB 413. |
 | `POST kits/{slug}/override/publish` | `{base?}` — the draft goes live on every page that loads the kit's files (the editor calls it after publishing a page of the kit). |
-| `GET kits/{slug}/pages` | `{pages: [{id, title, type, html}]}`: the code-section markup of every builder page and template using the kit (at most 500 pages, 8 MB), for the "From this design" palette and the class counts. Reading only. |
+| `GET kits/{slug}/pages` | `{pages: [{id, title, type, html}]}`: the code-section markup of the builder pages and templates using the kit (at most 500 pages, 8 MB), for the "From this design" palette and the class counts. Who may write the kit gets every page that is not trashed; anyone else the published pages without a password and the pages they may edit themselves (never another author's draft, private or password-protected page). Reading only. |
 
 ## Importing
 
@@ -150,8 +169,9 @@ writing needs `edit_theme_options` **and** `unfiltered_html`.
   sections' `head`; site icon, canonical, alternates, manifest and `<base>` are dropped (the site's own).
 - **Shell**: the importer finds the page's `main` (the first `<main>`), its site header (the first
   `<header>` before main that no `article`, `section`, `aside`, `nav`, `form` or `dialog` holds) and its
-  site footer (the first such `<footer>` after main; the last one of a page without main) at any depth,
-  and the nearest element that holds them all. The wrappers from the body down to it are the shell
+  site footer (the first such `<footer>` after main; the last one of a page without main; for a site
+  import, a page without either, the block every page ends with — `CodeImportOptions.FooterAt`, see
+  [Importing a site](#importing-a-site)) at any depth, and the nearest element that holds them all. The wrappers from the body down to it are the shell
   (`CodeImport.Shell`): every part's `wrap` starts with them. A header or footer inside a wrapper of
   the shell takes that wrapper along; a main inside wrappers that hold nothing else gets them in its
   sections' `wrap`.
@@ -166,7 +186,18 @@ writing needs `edit_theme_options` **and** `unfiltered_html`.
   shell as their `wrap`. Elements beside the shell's wrappers (a sprite before it in the body, a
   lightbox after it) become further sections of those templates (`HeaderBefore`, `FooterAfter`), each
   in the wrappers it sat in. A footer the design placed inside `main` stays on the page as well (the
-  design's CSS expects it there) and the footer template excludes that page.
+  design's CSS expects it there) and the footer template excludes that page. A page without main whose
+  footer sits in the content's wrapper (Salient: `#ajax-content-wrap` holds `.container-wrap` and
+  `#footer-outer`) has the wrappers down to the footer opened: what precedes the footer in them is the
+  page's content (in those wrappers), the footer and what follows it there the footer part (same
+  wrappers), what follows the wrappers further footer parts. The page's **scripts after the shell**
+  (WordPress's body-end scripts with the page's post id and nonces) stay on the page as **tail**
+  sections (`CodePart.Tail`, `content.tail`, no wrap): `FillCode` marks the run of tail sections a page
+  ends with (`CodeTailMark`) and a Hello Pursae request prints them after the footer template
+  (`SplitCodeTail`, `wbThemePartsView.Tail`), where the design had them — before, they were printed
+  inside the page's last wrapper, ahead of the footer. A canvas page prints them in place. A JSON-LD
+  script (`application/ld+json`, the page's own structured data) in the header or footer moves to the
+  page's head.
 - **Document**: `<html lang>` (`Lang`), the other `<html>` attributes (`HTMLAttrs`) and the `<body>`
   attributes (`BodyAttrs`, class included) are kept on every section.
 - **References**: relative and root-relative URLs in `src`, `href`, `srcset`, `poster`, `data-src`,
@@ -176,8 +207,15 @@ writing needs `edit_theme_options` **and** `unfiltered_html`.
   stays on the mapped URL (`hakkimizda.html?tab=2#x` → `/hakkimizda/?tab=2#x`, `app.js?x=1` → the kit
   URL with `?x=1`); a kit file's `?v=` is replaced by the kit version when the page is printed.
   Any other `data-*` attribute whose value is the path of a kit file (`data-wide="../assets/film.mp4"`,
-  read by the design's script) becomes its kit URL too; other `data-*` values are left alone and never
-  reported (they need not be URLs). The values of an `<script type="importmap">` (never its specifier
+  read by the design's script) becomes its kit URL too; so does every candidate of a srcset-like list
+  (`data-nectar-img-srcset="a.png 1489w, a-300x169.png 300w"`, a lazy loader's real `srcset`) of which
+  one candidate names a kit file, and the string values of a JSON list or object
+  (`data-slides='["a.jpg","b.jpg"]'`) that name kit files. A `data-*` value that reads as the path of a
+  design file (an asset extension: images, video, audio, fonts, CSS, JS, JSON, PDF) and names no file is
+  kept and reported missing; other `data-*` values are left alone (they need not be URLs). The `<source>`
+  and `<track>` elements of a `<video>` or `<audio>` are rewritten too (the media element itself is not
+  edited inside). `CodeImportOptions.Remap` gives files that are not in the kit a URL of their own (a
+  file too large for a kit, put into the Media Library by the admin's import). The values of an `<script type="importmap">` (never its specifier
   keys) that name kit files, or folders holding kit files (`"three/addons/": "/assets/vendor/addons/"`),
   point at the kit.
 - **Element ids**: every element outside an SVG drawing (the `<svg>` itself included) gets a
@@ -197,7 +235,7 @@ folder: `pursae_mcp.py kit-upload <folder> <kit>` then
 
 ### Importing a site
 
-`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, site_name?}` imports a whole
+`web_builder_import_site {kit, pages: [{path, html}], status?, front_page?, templates?, menus?, collections?, site_name?, old_domains?, old_links?}` imports a whole
 static site in one call (`internal/server/webbuilder_siteimport.go`, `webbuilder.ConvertSite`). Upload
 the folder's CSS, JS, fonts and images as the kit first (`web_builder_kit_upload`); the HTML files travel
 in `pages` (a kit holds no HTML, so nothing of the design is served as a page from uploads). Harness:
@@ -212,10 +250,40 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
 2. **Links**: the pages are created (drafts) or found first, and their permalinks (as published) make
    the link map of every link between the design's pages, folder links (`hizmet/`, `./`) included.
    Pretty permalinks are needed for the menu's active link (plain `?page_id=` links are warned about).
+   **Archive addresses**: a static copy of a WordPress site keeps its archives as files
+   (`author/admin/index.html`, `category/news/index.html`, `2026/09/index.html`); the router would give
+   those paths to this site's author, category, tag, date, post-format, search, custom post type or
+   post-permalink rules before looking for a page (`wbRouteShadowed`), so the imported page was never
+   reached. The import **claims** each such path for its page (option `wb_site_claims`,
+   `{path: {id, kit}}`, `internal/server/webbuilder_siteclaims.go`); `resolvePretty` serves a claimed
+   path's page before the archive rules, for page 1 without a feed (`/author/admin/page/2/` and
+   `/author/admin/feed/` stay the archive's), while the page is published or private and still has that
+   path. The analysis lists these pages ("Pages at archive addresses"), the answer `claimed_paths` and a
+   warning; a later import of the kit replaces its claims, "Remove this import" drops them, and a page
+   given another address gives the path back. To show the site's real archive there instead, give the
+   page another address (or bind its list to a loop, [Binding to content](#binding-to-content)).
 3. **Templates**: every page's header (with what goes with it) and footer are clustered
    (`webbuilder.ClusterParts`): copies that differ only in the current page's menu link are one
    template with an [active-link rule](#active-links); copies that differ otherwise, or that the rule
-   does not reproduce byte for byte, are clusters of their own. The largest header and footer cluster
+   does not reproduce byte for byte, are clusters of their own. **Volatile bits** do not count
+   (`internal/webbuilder/sitefooter.go`, `normVolatile`): a generated id (letters, then 8+ hex digits,
+   WPBakery's `id="fws_6af66492d500e"`) that nothing else on its page names (`volatileIDs`: the value
+   occurs only as an id), a cache-buster (`?ver=` / `?v=` / `?version=`) and a nonce-like token (8+ hex
+   digits mixing digits and letters) in an inline script or a hidden input; the template keeps the first
+   page's copy of them (nothing on the pages refers to them, and the original site's nonces mean
+   nothing here). Page-specific scripts are not in the templates at all: they are the pages' tail. A
+   **footer without a `<footer>` element** is found across the pages (`siteFooterHints`): from `<body>`,
+   down the wrappers that hold the site header (while nothing varies after the child holding it) and
+   then into the largest element after that child (the content's wrapper, not a drawer beside it), the
+   first level where every page's element children end with a run of the same elements (compared as
+   converted, volatile bits and classes aside) after content that differs: the run's first element is
+   the footer (Decoland: `.nectar-global-section` before `#footer-outer`, inside `#ajax-content-wrap`).
+   A template's **head** is what every page it serves has in its head (`CommonHead`; a page's JSON-LD
+   or a stylesheet with a cache-buster of its own stay in that page's head), and a request merges the
+   page's head first, so the design's order of stylesheets holds. Likewise a template's `<html>` and
+   `<body>` attributes are those all its pages share (`CommonAttrs`: equal values, the classes every
+   page has), so one page's classes (WordPress's `home page-id-10` on the template made from the front
+   page) do not reach every page through the template; each page brings its own. The largest header and footer cluster
    apply to the whole site (`include/general`), the others to their pages
    (`include/singular/page/<id>`, `include/404`); all with priority 10, so they win a tie with other
    whole-site templates (which are listed in the warnings). Pages that have no header (or footer) in
@@ -230,9 +298,35 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    A second import of the kit updates the same pages (slug and parent too) and templates; templates of an
    earlier import it no longer needs are turned into drafts.
 
-6. **Kit at the site's root**: the import marks its kit (`wbKit.Root`, the time of the import) and the site
-   then serves the kit's files at its root as well, after every route and before the 404
-   (`wbKitRootAsset`): `/assets/fonts/x.woff2` answers with the kit's `assets/fonts/x.woff2`. A static
+6. **The original site** (`internal/webbuilder/oldsite.go`): a saved copy of a live site still names
+   the domain it was saved from — absolute links to its pages and files, and the endpoints its forms
+   and scripts talk to (a plugin's inline `"ajax_url":"https:\/\/example.com\/wp-admin\/admin-ajax.php"`,
+   a comment form's `action`). `webbuilder.DetectOldHosts` finds the domain: a host that on at least half of
+   the pages is the absolute host of the `rel=canonical` link or `og:url`, of a WordPress endpoint or
+   folder (`/wp-admin/admin-ajax.php` in a plugin's inline config, `/wp-json/`, `/wp-content/…`, also
+   JSON-escaped), or of a link to one of the site's own pages other than its home (an agency's credit
+   link on every page points at the agency's root and does not count); the `www.` and bare forms both;
+   social, CDN and schema hosts never. Decoland, a wget copy whose canonical links are relative, is
+   found by its `decolandavm.com/wp-admin/admin-ajax.php` and `wp-json` URLs, not by the
+   `decoland.chainhouse.co` credit link. MCP `old_domains` overrides it (`[]` turns it off). Every URL of those hosts is then a path of this site: links, sources, srcsets,
+   `data-*` values and CSS `url()` map like root-relative ones (an imported page → its URL, a kit file
+   → the kit, anything else → the same path here) unless `old_links: "keep"` (admin: untick "Point links
+   to the original site at this site"); a form's `action` and every occurrence of the old origin in an
+   inline script or JSON (JSON-escaped too) **always** point at this site (its home URL), so by default
+   nothing an imported page sends reaches the original site. A form that posted there is listed (bind it
+   to a Pursae form, [Forms](#forms)). The answer's `original_site` gives the domains, the number of
+   URLs, of script URLs and the forms; a kit script or stylesheet naming the original site is warned
+   about (kit files are copied as they are). Third-party tracking (Google Tag Manager / Analytics, Meta
+   Pixel, Hotjar, Clarity, TikTok, LinkedIn, Bing, Yandex, PixelYourSite) is kept and listed
+   (`tracking`, the analysis's "Third-party tracking") so the site owner checks the ids and consent.
+7. **Kit at the site's root**: the import marks its kit (`wbKit.Root`, the time of the import) and the site
+   then serves the kit's files at its root as well, while a page or template of the import is published
+   (a draft import serves nothing there until it is published), after everything the site answers at a
+   path of its own and before the 404 (`wbKitRootAsset`, called by the front end after Pursae SEO's
+   redirections, `robots.txt`, sitemaps and IndexNow key, the shop's and the forum's paths and the
+   built-in `robots.txt`, `favicon.ico` and sitemaps; `robots.txt`, `favicon.ico`, `ads.txt`,
+   `security.txt`, `sitemap*` and the other conventional root files are never a design's):
+   `/assets/fonts/x.woff2` answers with the kit's `assets/fonts/x.woff2`. A static
    design addresses its files as its host serves its folder, and the site import maps that folder onto the
    site's paths (`a/index.html` → `/a/`), so URLs the design builds where the importer cannot see them keep
    working: root-relative `url(/assets/…)` in the kit's stylesheets, an inline module's
@@ -240,11 +334,20 @@ in `pages` (a kit holds no HTML, so nothing of the design is served as a page fr
    `/identity/`. Only `GET` / `HEAD` of a path outside `/wp-*` that is a valid kit file (the kit's
    extensions, no HTML, no dot segments) and exists; a route of the site always wins; with several such
    kits the most recent import wins. `Cache-Control: public, no-cache`. "Remove this import" takes the
-   mark away.
+   mark away. The files are data on the site's own origin: the type comes from the extension and is
+   never sniffed (`nosniff`; an unknown one is `application/octet-stream`, `.map` `application/json`,
+   `.glb` `model/gltf-binary`, `.gltf` `model/gltf+json`, `.svg` `image/svg+xml`), every file but a
+   script gets the uploads route's `Content-Security-Policy: sandbox; default-src 'none'; …` (an SVG or
+   a JSON file opened in a tab runs nothing), and a request with `Service-Worker: script` is refused, so a
+   design cannot install a service worker over the site. A response's policy applies to it only as a
+   document: the design's pages load its scripts, modules, stylesheets, fonts and images the same.
+   Scripts get no policy (also under `/wp-content/uploads/web-builder/kits/`): a script's own policy is
+   its Web Worker's, and the sandbox would give the worker an opaque origin and no `fetch` (checked in
+   Chromium); a `text/javascript` file with `nosniff` never runs as a page.
 
 The answer lists the pages (`post_id`, `url`, sections), `pages_created` / `pages_updated`, the templates
-(type, id, pages, conditions, `active_links`), `templates_disabled`, `unmapped_links`, `missing_files`
-and `warnings`. The import needs `unfiltered_html` and `edit_theme_options`; the templates show with the
+(type, id, pages, conditions, `active_links`), `templates_disabled`, `claimed_paths`, `original_site`,
+`tracking`, `unmapped_links`, `missing_files` and `warnings`. The import needs `unfiltered_html` and `edit_theme_options`; the templates show with the
 Hello Pursae theme.
 
 ### Importing from the admin
@@ -254,15 +357,37 @@ import without a command line or an agent (`internal/server/webbuilder_siteimpor
 `webbuilder_siteimport_zip.go`). The menu entry and every route need `edit_theme_options` **and**
 `unfiltered_html` with Web Builder on, like the MCP tool; the server checks the same on each request.
 
-1. **Upload** a zip of the design's folder (a form field for the kit slug, default: the zip's name). The
-   body is streamed to a file under `uploads/private/web-builder-imports/<id>/` (the private folder
-   only serves signed links), then unpacked entry by entry with the kit's limits (100 MB, 2000 files, 15 MB
-   a file). A path that leaves the folder (`..`, absolute, drive letter, backslashes counted as slashes),
-   a symbolic link, an entry that is not a plain file, case-twin names, and files a kit cannot keep
-   (extension outside the kit's list, names outside `wbKitRel`) reject the whole archive with the names
-   listed; `.git`, `.DS_Store`, `__MACOSX`, `Thumbs.db` and other dot files are skipped silently. `.html` / `.htm`
-   files are kept aside for the importer and never go into a kit. One top folder around everything is
-   stripped. Unpacked sites are removed after a week or with "Discard this upload".
+1. **Upload** a zip of the design's folder (a form field for the kit slug, default: the zip's name), up to
+   512 MB. The body is streamed to a file under `uploads/private/web-builder-imports/<id>/` (the private
+   folder only serves signed links) and read entry by entry (`wbZipExtract`). A path that leaves the
+   folder (`..`, absolute, drive letter, backslashes counted as slashes), a symbolic link, an entry that
+   is not a plain file, case-twin names and page names that cannot be imported reject the whole archive;
+   `.git`, `.DS_Store`, `__MACOSX`, `Thumbs.db` and other dot files are skipped silently. `.html` / `.htm`
+   files are kept aside for the importer, never go into a kit and do not count towards its limits. One
+   top folder around everything is stripped. **Only the files the pages use are unpacked**
+   (`webbuilder.SiteReferences`, followed transitively: the pages' URL attributes, `srcset` candidates,
+   `poster`, the sources of `<video>` / `<audio>`, `data-*` values that are paths, srcset-like lists or
+   JSON lists, `style` and `<style>` `url()` / `@import`, the head's links and meta images, the string
+   literals of inline scripts, JSON and `<noscript>` markup; in CSS `url()` (fonts, `@font-face`) and
+   `@import` relative to the stylesheet; in JS and JSON string literals naming a file — relative to the
+   script, to the root, or any file whose path ends with the literal, a path a script builds from its
+   theme's URL; the original domain's absolute URLs as root-relative paths). A saved copy of a live
+   WordPress site brings far more than it shows; Decoland's 163 MB zip keeps 263 of 273 files. Files
+   no page uses are left out and listed ("Files no page uses"), and so are used files a kit cannot hold
+   (extension outside the kit's list, a name outside `wbKitRel`: the pages report them missing). A used
+   file over a kit file's 15 MB that is a video, audio, image or PDF within the site's upload limit
+   (`maxUploadBytes`, 64 MB) is unpacked for the **Media Library** (Decoland's 19 MB hero video): the
+   analysis lists it with its future URL, the import puts it there (`insertAttachmentFile`) and passes
+   it as `media` (`{"<path>": "/wp-content/uploads/2026/11/film.mp4"}`, `CodeImportOptions.Remap`) so
+   every reference — a `data-nectar-video-src` too — points there, and "Remove this import" deletes it.
+   That keeps a kit a set of design files of a sane size and makes large content media what WordPress
+   makes of it, an item an editor can replace; a used file over that limit is left out and listed. The
+   kit's own limits apply to the files kept (2000 files, 256 MB); over them the upload is refused with
+   the largest used files named. Zip bombs: at most 20 000 entries, and every byte read from the archive
+   is counted against 1 GB (declared sizes are only a first check). An upload, its design preview and its compare step expire a day after the upload (checked
+   on every access, swept with every visit of the screen and hourly by the `wb_import_cleanup` event);
+   "Discard this upload" and "Remove this import" delete it at once. The import's record outlives the
+   upload: "Remove this import" works after it expired.
 2. **Analysis** (nothing is written to the site): `webbuilder.PlanSite` and `ConvertSite` run on the staged
    files — they are pure, so the analysis is the real conversion. It lists the pages with their proposed
    addresses (`SitePlan.URLs`) and whether each creates or updates a page of an earlier import of the kit, the
@@ -273,7 +398,11 @@ import without a command line or an agent (`internal/server/webbuilder_siteimpor
    of the CSS `@media` conditions (`webbuilder.SuggestBreakpoints`, listed only).
 3. **Options**: kit name and slug (an existing kit is replaced only after ticking a box), split the header
    and footer into templates (default on; off keeps them in every page, `layout: canvas`, MCP
-   `templates: false`), use `index.html` as the front page (default on), publish or import as drafts. Then
+   `templates: false`), use `index.html` as the front page (default on), make a Pursae menu of the header's
+   navigation (default on, MCP `menus`), the folders to import as collections (a checkbox per folder of two
+   pages or more, ticked when the analysis found that its pages reproduce under single templates; MCP
+   `collections`; the analysis's **Content** table lists the templates and the lists bound as loops, see
+   [Binding to content](#binding-to-content)), publish or import as drafts. Then
    **Import**: the staged assets are installed as the kit (the same stage + commit as the kit REST routes,
    `wbKitCommitStage`) and `mcpWBImportSite` runs, the very function behind `web_builder_import_site`. The
    request is synchronous (a 55-page site takes about two seconds; the server has no write timeout). The
@@ -387,25 +516,38 @@ A page made only of code sections (every imported page, and a header or footer t
 sections) is edited by the **element editor** (`builder/host/elements/`, installed through the thin
 seam patch `0020-elements-seam`, which hands the canvas and the navigator rows of code sections to
 the host). A page that mixes code sections with the builder's own sections keeps the per-run frames
-of patches `0018-code-sections` / `0019-code-blocks` (see below).
+of patches `0018-code-sections` / `0019-code-blocks`, made static by `0021-mixed-frames` (see below).
 
 **The canvas is one frame with the whole page**: the header template, the page's code sections and
 the footer template that Hello Pursae draws around the page on the site (`Boot.codeParts`, read on
 the server by `wbEditorCodeParts`; contract §2), in their shared wrappers, so fixed headers, sticky
-footers and the shared shell look as they do on the site. The header and footer are locked: hovering
+footers and the shared shell look as they do on the site (an editor without `edit_theme_options` gets
+their markup without their content bindings: a bound form's `to` / `cc` and redirects stay on the
+server). The header and footer are locked: hovering
 them shows **Edit header** / **Edit footer**, which opens that template in the editor. The device
 buttons set the frame's width — desktop is a fixed 1440 px page scaled to fit the panel, tablet
 768 px, mobile 390 px — so the design's own `@media` queries apply.
 
-**Static edit mode.** The frame gets a copy of the markup in which the design's scripts do not run
-(a `<script>`'s type becomes `text/x-wb-inert`, inline `on…` handlers are dropped, head scripts
-included); the stored markup is never changed. What is on screen is therefore the stored markup, and
-every operation is applied to the frame at once without reloading it (the changed sections' new
-markup is reconciled with the elements already there). **Live edit** (bottom bar, per editing
-session) runs the scripts again, for designs whose content only appears through them (sliders,
-counters); a structural change then reloads the frame. **Preview** always runs them. An element the
-design hides (a closed menu, the second slide) can be selected in the navigator and **shown
-temporarily** (toolbar or context menu); that is editor-only, like **Hide in the editor**.
+**Static edit mode.** The design's scripts do not run: the frame is sandboxed without
+`allow-scripts`, and it gets a neutralised copy of the markup (see [Security model](#security-model));
+the stored markup is never changed. **Embedded content** — a YouTube or Vimeo player, a map, any
+`iframe`, `object` or `embed` — does not play in the editor: the element stays (its tag, classes,
+attributes and styles, so its box and the layout around it are the published page's), loads nothing,
+and is drawn as a neutral placeholder with **Embedded content plays on the published page. Publish and
+open the page to watch it.** A click on the placeholder selects the element, so its source is still
+changed in the Content tab; the stored markup and the published page are unchanged and play
+(`elements/embeds.ts`). A `<video>` or `<audio>` file stays a native player. What is on screen is
+therefore the stored markup, and every
+operation is applied to the frame at once without reloading it (the changed sections' new markup is
+reconciled with the elements already there, as neutralised nodes). **Live edit** (bottom bar) runs
+the scripts again, for designs whose content only appears through them (sliders, counters); a
+structural change then reloads the frame. **Preview** runs them too. Both run the design with the
+author's admin access, so the first time in an editor session the editor asks **Run this design's
+scripts with your admin access**; until the author confirms, Live edit stays off and Preview shows
+the page without its scripts (a banner offers to run them). The answer is never stored: every editor
+session asks again. An element the design hides (a closed menu, the second slide) can be selected in
+the navigator and **shown temporarily** (toolbar or context menu); that is editor-only, like **Hide
+in the editor**.
 
 **Selecting and editing.** Every control is drawn over the frame, outside the design's DOM (the
 frame only gets the `data-wbc` ids and one `<style data-wb-edit>`):
@@ -424,7 +566,10 @@ frame only gets the `data-wbc` ids and one `<style data-wb-edit>`):
   classes, duplicates, wraps, unwraps, selects the parent, hides or temporarily shows;
 - a double-click on a text (or Enter, or a second click on the selected text) edits it in place, in
   the frame, with bold / italic / link / clear formatting; Enter or a click elsewhere saves, Escape
-  cancels;
+  cancels. The new markup is written from the source, not from the frame: the elements inside keep
+  their stored tags byte for byte (classes, ids, `on…` handlers the static copy does not have), an
+  `svg` or other code inside is copied as stored, and only what the edit added (bold, italic, a link
+  with a safe address, a line break) is written new, without attributes;
 - keys work inside the frame too: undo / redo, copy / paste, duplicate (Ctrl/⌘ D), Delete, Escape
   (parent), the arrows (previous / next sibling, parent, first child), Alt + arrows (move); keys are
   left alone while a text is being edited.
@@ -466,7 +611,11 @@ SVG elements and elements without an end tag are not changed), the **HTML inside
 elements get `data-wbc` ids) and the **attributes** (id, `aria-*`, `data-*`, title, rel, …: names and
 values are checked — never `on…` handlers, `data-wbc`, `style`, `class` or `srcdoc`; `javascript:`,
 `vbscript:` and `data:` URLs are refused, an image source may be a `data:image`). Without a selected
-element the tab shows the section's HTML and head code as before (also under **Section code**).
+element the tab shows the section's HTML and head code as before (also under **Section code**). The
+rich-text box is built node by node from the source tree, never by parsing the design's markup in the
+editor's page: `b`, `strong`, `i`, `em`, `u`, `s`, `a`, `br`, `span`, `code`, `sub` and `sup` without
+attributes (a link keeps its address when it is safe), text as text, anything else (an image, an
+icon) as a placeholder chip that is written back as stored.
 
 The **navigator** (Studio › Structure, or **Layers** in the bottom bar) lists each code section's
 elements with their type icons. Rows are dragged to reorder or reparent elements (also across
@@ -483,15 +632,248 @@ duplicate or a pasted element gets new `data-wbc` ids, and its HTML ids become `
 inside the copy following them, so the design's accordions, tabs and labels work on both; the inside
 of an `svg` is copied as is.
 
-**Mixed pages** (patches `0018` / `0019`): a run of consecutive code sections is drawn as one frame
-with the design's scripts running; a click selects an element and edits its text in place, the
-toolbar selects the parent, moves the element among its siblings, duplicates and deletes it, and
-**Style** sets inline styles (text color, background, font size and weight, alignment, padding,
-margin, gap, corner radius, width, max width, opacity), classes and the raw `style` attribute;
-**Layers** shows the run's elements. Structural changes reload the frame.
+**Mixed pages** (patches `0018` / `0019`, `0021`): a run of consecutive code sections is drawn as one
+frame (`CodeSection.tsx`, its document from `codeFrameDoc.ts`); the builder's own sections between
+the runs stay React components of the editor's page. The frame follows the element editor's static
+edit mode through the host's **frame guard** (`elements/guard.ts`, installed with the element editor's
+seam): it is sandboxed without `allow-scripts`, its head and body are the neutralised copy, embeds are
+placeholders, and its DOM is swept once loaded. A click selects an element (also an embed placeholder)
+and edits its text in place — written back from the source, so the handlers, scripts and ids inside
+the text stay as stored — the toolbar selects the parent, moves the element among its siblings,
+duplicates and deletes it, **Replace** changes an image, and **Style** sets inline styles (text color,
+background, font size and weight, alignment, padding, margin, gap, corner radius, width, max width,
+opacity), classes and the raw `style` attribute; **Layers** shows the run's elements. Attributes the
+toolbar writes are neutralised in the frame too. Structural changes reload the frame. **Preview**
+runs the design's scripts only after the same confirmation as the element editor (one answer per
+editor session for both); until then each run shows the page without its scripts and the banner.
+There is no Live edit on a mixed page.
+
+Mixed pages are not routed to the element editor's canvas: its frame holds code sections only, while
+the builder's sections are React components with the builder's own selection, inline editing and
+stylesheet in the editor's page; drawing them in the design's frame would mean a static copy of them
+(the published markup) without the builder's editing.
 
 In both, the section list reorders, hides, duplicates and removes code sections, and the inspector
 shows the section's HTML and head code for anything the canvas does not reach.
+
+### Security model
+
+The editor runs on the site's own origin and holds the author's REST nonce
+(`window.__WEB_BUILDER__`), so anything of the design that runs in a same-origin frame can act as the
+author. A code section is trusted when it is **published** (its author has `unfiltered_html`), but
+opening a page in the editor must not run a design the author has not chosen to run — an imported
+design may come from anywhere. The element editor therefore has three rules
+(`builder/host/elements/ElementsCanvas.tsx`, `frame.ts`, `neutral.ts`, `richtext.ts`):
+
+1. **Static edit mode runs nothing.** The frame is `sandbox="allow-same-origin"` without
+   `allow-scripts`: no script, handler, `javascript:` URL or nested document in it can run, whatever
+   the markup holds or however a parser reads it (nested frames inherit the sandbox). The editor does
+   all its work from outside — its listeners on the frame's document (selection, hover, drag and drop,
+   keys forwarded), measuring (`getBoundingClientRect`, `getComputedStyle`, the CSSOM read by the
+   Style panel), in-place text editing (`contenteditable`, the frame's own `execCommand`), the editor
+   stylesheets — which a sandbox without scripts allows. The sandbox and the document always change
+   together (a new frame element when they do).
+2. **The copy is neutralised by the browser's parser** (`neutral.ts`), independently of rule 1. The
+   frame's copy is parsed like the frame parses it (a `<template>` or the parent element as context,
+   in a document without a browsing context, so nothing loads or runs while it is read), every node is
+   walked in every namespace (HTML, SVG, MathML, template contents), and: scripts of every namespace
+   become empty `<script type="text/x-wb-inert">`; `on…` attributes, `srcdoc`, `xml:base` and a
+   template's `shadowrootmode` / `shadowroot` go; `javascript:`, `vbscript:` and non-media `data:`
+   URLs in any URL attribute (`href`, `src`, `action`, `formaction`, `data`, `poster`, `xlink:href`,
+   `srcset` candidates, SVG animation `values` / `to` / `from` / `by`, …) become
+   `about:blank#wb-blocked`; SVG animations of `href` or a handler, `<meta http-equiv=refresh>` and
+   `<base>` are removed; `<object>` / `<embed>` lose what they load; nested frames get `sandbox=""`;
+   `<noscript>` is emptied (as a frame with scripts would show it) and `<plaintext>` becomes `<pre>`.
+   Serialising and parsing again is repeated until the result is stable (else the markup is shown as
+   text), the frame's DOM is swept again after it loads, and the reconciler inserts only neutralised
+   nodes imported into the frame (no `createContextualFragment` or `innerHTML` of design markup in a
+   live document anywhere in the editor). The stored markup is never changed: only the frame's copy.
+3. **Running the design's scripts is the author's explicit choice**, once per editor session (Live
+   edit, Preview): they then run with the author's access, as on the published page. An opaque-origin
+   frame was considered for Live edit and Preview: it breaks the editing itself (the editor could not
+   reach the frame's DOM), the design's same-site fonts and module scripts (CORS from an origin of
+   `null`), and its `localStorage` / cookies, so the confirmation is the boundary instead.
+
+The **Content panel** never puts design markup into the editor's page (the text box is built from
+the source tree, see above), and text edits are written back from the source (`richtext.writeBack`).
+Tests: `test/host/elements-neutral.test.ts` (every payload of the review and a mutation-XSS list,
+jsdom) and the browser regression `node builder/test/security/editor-xss.mjs` (Playwright Chromium,
+not part of `make builder-test`: run `npx playwright install chromium` once in `builder/`), which
+draws all payloads with the editor's own modules under the report and the enforced CSP and edits
+them through the reconciler; it fails when one reads the nonce, and checks that the unprotected
+control does.
+
+The per-run frames of mixed pages follow the same three rules (patch `0021-mixed-frames`, the frame
+guard `elements/guard.ts`; see Editing). `html` sections are drawn in a frame with `allow-scripts`
+but without `allow-same-origin` (an opaque origin that cannot reach the editor's page or its nonce).
+Tests: `test/host/elements-embeds.test.ts` (placeholders, the mixed frame's document with every
+payload, write-back, neutralised toolbar attributes) and the mixed-page scenarios of
+`editor-xss.mjs` (two runs around a builder hero section: edit mode and Preview before the
+confirmation read nothing, under the report and the enforced policy, before and after an edit).
+
+## Binding to content
+
+An imported design need not stay a set of static pages: its navigation, its lists of posts, its
+repeated pages and its forms can be bound to what content editors manage in Pursae, while the markup
+and CSS stay the design's (`internal/webbuilder/codebind.go`, `sitebind.go`; server
+`webbuilder_slots.go`, `webbuilder_sitebind.go`, `webbuilder_codeforms.go`).
+
+### The model
+
+A binding names an element of a code section by its `data-wbc` id and is stored in the section's
+`content.binds` (JSON `{"<data-wbc>": CodeBind}`, contract §8.1); the markup is not touched. On publish
+`FillCodeWith` → `CompileBinds` turns the bindings into the dynamic engine's placeholder attributes
+(contract §11.5) on the bound elements only, splicing the source (every other byte stays), and the
+snapshot is filled per request like a Theme Builder template's (cached programs, `wb-loop` cache tag for
+loops, menu changes purge every page).
+
+| `kind` | On | What the site shows |
+|--------|----|---------------------|
+| `menu` | a list (`ul`, `ol`, a nav container) | one item per item of a Pursae menu: `location` (a theme location, Hello Pursae `primary` / `footer`) or `menu` (a menu id). Every element child of the list is an item **template**: an item uses the template it was imported from (`items`: menu item id → template `data-wbc`), else the first child holding a submenu when the item has sub-items (`parent`), else the first plain child. In the template the first `<a>` gets the item's URL and target (`menu.link`), the first element with text of its own (the link, else a button) its title, replacing only that text (`data-wb-text`: a chevron icon beside it stays). |
+| `submenu` | a list inside a menu item template | the item's sub-items, with the same template rules (one level). |
+| `loop` | a container | its first element child (the card template) once per post of `query` (`source` query by default; `postType`, `perPage` 1–24, `orderBy` date / modified / title / menu_order / comment_count / rand, `order`, `terms` `category:12,…`, `author`, `offset`, `parent` (children of an entry, for pages), `exclude: current`; `source: main` takes the request's own posts on an archive). The other children are the design's sample cards and are left out; the white space after the template separates the cards as in the design. |
+| `field` | any element (inside a loop's first card: that card's post; elsewhere the post a single template shows) | `title` (as stored, no texturizing), `excerpt` (`words`), `content` (imported markup is printed as stored; block content goes through the_content), `image` (the featured image's `src` and `alt` — `srcset: true` adds `srcset`, `sizes`, `width`, `height` of `size` —, else the URL field `name`), `url` (`href`), `link` (`href` and the title as its text), `date` / `modified` (`format`), `author`, `terms` (`tax`, `sep`; names as text, `links: true` term links), `custom` (`name`: a Pursae Custom Fields field, else the post meta value of that name — the compiled element carries `data-wb-meta`, which only bindings set (the snapshot sanitizer drops it from an author's markup, whose `post.field` slots read registered fields only, never other meta of the posts a loop shows); `attr` "" text, `html` sanitized like post content, `url` href / src, `attrs` the attributes from `<name>_href`, `<name>_src`, `<name>_alt`, … plus the text from `<name>` with `text: true`), `pagination` (the main loop's page links). An element with icons beside its text keeps them: only its own text is replaced. |
+| `form` | a `<form>` | posts to the form endpoint (below). |
+
+Editor: select an element and open **Advanced** in the inspector: **Content binding** binds it (the
+kinds the element can take: a list or container → Menu or Loop, a list inside a menu item → Submenu, an
+element of a loop's first card or of a template → Field, a `<form>` → Form) and shows what the site
+will list (the menu location's items, the loop query's posts). The frame keeps showing the design's
+own markup. MCP: `web_builder_bind {post_id, element | html_id, bind | null}` (publishes the page).
+
+### Active links with a bound menu
+
+The site import's active-link rule ([Active links](#active-links)) keeps working on a bound header: the
+generated items are the imported ones with the menu's URLs, so the rule finds them by `href`. A link the
+rule does not know (an item added in Appearance › Menus) that points at the requested page gets the
+look of its role's current item when that role marks links on the page they link to
+(`ApplyActive`). Pages of a group (below) are marked the same way in their template's own side menu
+(the template's first section carries a rule, applied to the main part).
+
+### Forms
+
+A bound `<form>` gets `action` = `/wp-json/web-builder/v2/forms/{post}/{section}-w{data-wbc}`,
+`method="post"`, `data-wb-form` (so it gets the nonce, the captcha widget and the redirect of builder
+forms, contract §3.5) and `data-wb-code-form`, plus the hidden `wb_t` and honeypot `wb_hp` inputs. Its
+schema is read from the stored markup on every submit (`CodeFormSchema`): every named `input`, `select`
+and `textarea` (not buttons, files, hidden or password inputs) is a field, mapped by `fields` (input
+name → `name email phone message date choice company subject` or `field_<name>`, `-` leaves it out;
+unmapped inputs map to themselves when they are one of those names, else to `field_<name>`), labelled
+by its `<label>`, required when it has `required` / `aria-required="true"` or is listed in `required`; a
+`select`'s value must be one of its options, a radio group's or checkbox's one of the `value`s its
+inputs declare (`on` without one). A refused submit answers 422 with `data.fields` keyed by the
+design's input names (`full-name`, not `field_full_name`), so the script marks those inputs
+`aria-invalid="true"`. Submissions are validated, stored and mailed like builder forms (Settings › Web
+Builder lists every field: the named ones, then each `field_<name>` by name, the message last; `to`,
+`cc`, `success`, `failure`, `redirect` override per form). The editor boot leaves the bindings of the
+header and footer parts out for users without `edit_theme_options`, since a form's recipients are there.
+
+Code pages load no builder runtime, so a small script (`wbCodeFormJS`) sends bound forms. The design's
+own submit handlers run first, so its validation shows its own errors. A handler that builds a
+`mailto:` link reads the address from a `data-*` attribute of the form (enerjiosgb: `data-mail`); while
+the submit is dispatched, reading such an address stops that handler there and counts as "the design
+accepted the form", so no mail program opens. After the handlers the form is sent with `fetch` when the
+design accepted it (it read the address, showed its success element or hid the form, or did not handle
+the submit at all and the browser's constraint validation passes); a field the design marked
+`aria-invalid="true"` keeps it from being sent. The answer shows the design's success element (`done`:
+its `data-wbc`; `hidden` attribute or `hidden` class removed, the form hidden the same way) or error
+element (`error`), else a status line after the form. Without JavaScript the form posts as a plain
+form and comes back with `?wb_form=sent`, where the script shows the success element.
+
+### Site import
+
+`web_builder_import_site` (and the admin's options) binds what a design shows to be content, and only
+where the bound markup reproduces the design: every plan is rendered with the planned content and
+compared with the design's markup (parsed, editor ids and binding attributes aside, white space and
+staggered `animation-delay` / `transition-delay` values normalized); what does not reproduce stays
+markup and is listed in the report's `bindings.notes`.
+
+- **Menu** (`menus`, default on): the first list inside a `nav` of the header template whose items all
+  have a label is made into the menu "Design navigation (<kit>)" (a page item for a link to an imported
+  page, else a custom link; `#` for a button that opens a panel), assigned to the `primary` location and
+  bound; a list inside an item whose items are links becomes its sub-items. A second list in the header
+  with the same items (a mobile menu) is bound to the same menu when it reproduces too. A second import
+  refills the menu; "Remove this import" deletes it.
+- **Collections** (`collections`: `true` or a list of folders; default none, the admin ticks the folders
+  that qualify): the pages of a folder (`hizmet/*.html`) are aligned element by element. Where they
+  differ: an attribute that a slot may write (href, src, srcset, alt, …), an element's own text, or —
+  where the structure differs — an element's whole content. Classes and state attributes are left to
+  an active-link rule (`ClusterParts` over the pages with every difference set to the first page's). The
+  varying `<h1>` is the **title** (other texts equal to it, a breadcrumb's last item, show the title
+  too), the largest region that differs on every page is the **content**, every other difference a
+  custom field `design_<n>` (`design_<n>_href`, `_src`, … for attributes) stored as post meta. A folder
+  qualifies when its pages share their sections, wrappers and head (their JSON-LD aside, cache-busters
+  and nonces normalized), have one varying `<h1>`, and besides the title and the content at most eight
+  regions differ (≤ 20 % of a page). What a saved WordPress site printed per page and nothing on this
+  site uses is not a difference: the original record numbers in `id`, `class` and `data-*` values and a
+  hidden input (`id="post-1699"`, `class="post-1699"`, `comment_post_ID`), an inline script's code (its
+  post id, a nonce) and the page's tail scripts when they load the same files — the template keeps the
+  first page's (the check compares the pages that way). Pages whose side menus come
+  in a few versions (enerjiosgb's four service categories) are split by that region into variants of two
+  pages or more, one template each.
+
+  **URLs**: the pages stay **pages** under the folder's parent page, so `/hizmet/3/` is still
+  `/hizmet/3/` with no rewrite rule — the hierarchical page type is the simplest scheme that keeps every
+  imported URL (a custom post type would need its own rewrite slug per folder, a category would change
+  the permalinks). Each page keeps its id, SEO and menu items; it loses its builder doc and holds its
+  title, its content (the varying region's markup) and its fields; the Theme Builder **single-page**
+  template draws it (`include/singular/page/child_of/<folder parent>` for the largest variant, so a
+  page added under the folder later gets it, `include/singular/page/<id>` for the other variants'
+  pages; priority 10). A folder that does not qualify stays builder pages; the report says why.
+
+  **Pretty-permalink posts** (`webbuilder.SiteLeafSets`): a WordPress copy saves every post as
+  `<slug>/index.html`, alone in its folder, at the site's top beside the pages (`blog/index.html`,
+  `hakkimizda/index.html`), so no folder holds them. The leaf pages of each parent folder (`*` at the
+  top, `<parent>/*` below) are a candidate set too, split by kind when their `<body>` classes (those
+  without digits) differ, each kind named by a class only its pages have (`*:single-post`, Decoland's six
+  posts; `*:page-template-default` its pages, which do not share a skeleton and stay pages). With the
+  `/%postname%/` permalink structure the top-level sets become **posts** (`SiteBindOptions.PostSets`,
+  `wbSitePostSets`): the pages are made posts (same address), the largest variant is the
+  **single-post** template of every post (`include/singular/post`, so a post written later is drawn by
+  it), and a list of them is a loop of posts, newest first (`postType: post`, `orderBy: date desc`; the
+  import dates them a second apart in the list's order, so the site's earlier posts come after them
+  and a later post first). Otherwise a set is grouped as pages (each page's own condition) and its
+  lists stay markup (a loop of pages selects by parent page, which the set's pages do not share). A
+  second import finds the posts again (`_wb_site_key`), makes them pages and decides anew; "Remove this
+  import" removes them as it removes pages. The admin lists such a set as `*/index.html (single-post)`.
+- **Listings**: a list on another page whose element children each link to a different page of a
+  collection folder (`haberler.html`'s news cards) becomes a loop over the folder's pages: query
+  `postType: page`, `parent` = the folder's parent page, `orderBy: menu_order asc`, `perPage` = the
+  number of cards, `offset`. The cards are aligned like pages: the link to the page is `url` (`link` when
+  it holds the title), a text equal to the page's `<h1>` is `title` (the pages' titles become their
+  `<h1>`), the longest other text (40+ characters) the `excerpt` (set on the page), a varying image the
+  `image` field (no featured image yet: its URL in the field `list<n>_<k>`), the rest custom fields
+  `list<n>_<k>`. The longest list sets the pages' `menu_order`; another list is bound when it shows a
+  window of that order (`offset`); the longest list that can be a loop sets the order (an author archive
+  whose cards differ in structure does not). A new page under the folder shows in the lists by its `menu_order`
+  (0 sorts first) with its title and link; its other fields are empty until they are filled.
+
+<h3 id="binding-limits">Limits</h3>
+
+- A menu item template is one element of the list. A design whose dropdown panel lives outside the
+  list (enerjiosgb's "Kurumsal" and "Hizmetlerimiz" mega panels sit after the nav) keeps that panel as
+  markup: the item's button is a menu item (`#`), its panel is not filled from sub-items. One submenu
+  level; items added in Appearance › Menus use the first plain item's markup (or the first item with a
+  submenu when they have sub-items).
+- Loops repeat their first child; per-card differences that are not content (a staggered
+  `animation-delay` in a `style` attribute) take the first card's value.
+- A group's custom fields are per page values the import found (prev / next links, a category label);
+  they are edited as post meta (Pursae Custom Fields shows them when it has a field of that name). A
+  region that differs in structure is kept as the design wrote it in the protected meta
+  `_wb_html_<name>` (printed as stored: only trusted code writes protected meta); a public field
+  `<name>` an editor sets instead is sanitized like post content.
+  Images of a group are URL fields, not featured images.
+- Collections are detected among the pages of one folder, and among the pretty-permalink pages
+  (`<slug>/index.html`) of one parent folder; other pages in the site's root are not grouped. Posts are
+  made only under the `/%postname%/` structure, from the site's top.
+- A group's template shows the first page's values of what the original site printed per page (its
+  record numbers in ids and classes, nonces, its post id in inline scripts) and loses the pages' JSON-LD
+  (Pursae SEO prints the posts' own structured data).
+- The bound form script stops a design's `mailto:` handler only when it reads the address from a
+  `data-*` attribute of the form; a design whose script hard-codes the address opens the mail program too
+  (the submission is still stored).
+- The editor shows the design's own markup in the frame (the bound loop's sample cards, the menu's
+  imported items); the binding panel lists what the site will show.
 
 ## Styling
 
@@ -593,6 +975,9 @@ were. Writing the override needs `edit_theme_options` and `unfiltered_html`, lik
 server validates every rule (`webbuilder.ParseKitOverride`: `@media` / `@layer` / `@supports` /
 `@container` contexts only, selectors without blocks, markup, URLs or forbidden tokens, declarations
 as local styles take them, and the printed stylesheet must pass the CSS sanitizer unchanged). The
+stored option is validated again when it is read (an override that no longer passes is left out and
+logged), and `KitOverrideCSS` never prints a selector or context the parser refuses, so an option
+written by anything else cannot close the `<style>` element. The
 override is kept in `wb_kit_overrides` beside the kit, so a new upload of the kit keeps it; deleting
 the kit drops it. Go's `KitOverrideCSS` and the editor's `overrideCSS` print the same bytes (shared
 fixtures `internal/webbuilder/testdata/override`).
@@ -603,6 +988,8 @@ fixtures `internal/webbuilder/testdata/override`).
   of builder sections is not shown around a code page in the editor (it is on the site).
 - `::before` / `::after` are not styled yet (neither locally nor in a class edit). Style edits on mixed
   pages stay inline styles (patch `0019`), and their frames do not show local styles or class edits.
+  Mixed pages have no Live edit: content only a design's script draws shows in Preview (after the
+  confirmation) and on the published page.
 - Where a value comes from is computed for a horizontal, left-to-right page; shadow DOM, `@scope` and
   user-agent styles are not modelled, and stylesheets from other origins cannot be read (their
   classes are not offered and cannot be edited; a class edit then makes a new unlayered rule). The
@@ -620,10 +1007,21 @@ fixtures `internal/webbuilder/testdata/override`).
   the design's scripts.
 - The palette's Image starts with an inline placeholder and the Video without a source: set them in
   the Content tab. Form fields keep the design's own form handling (none for a field outside a form).
-- Editing a text replaces the element's inner markup with what the browser serialises (only when the
-  text changed); inline `on…` handlers inside that element are not kept in static edit mode, and an
+- Editing a text rewrites the element's inner markup (only when the text changed): elements inside
+  keep their stored tags, text the edit did not touch keeps its spelling, but changed text is written
+  with the editor's escaping (`&amp;`, `&lt;`, `&gt;`; other entities as characters), and formatting
+  the browser adds that is not on the allowlist (a `style` on a span, a `<font>`) is dropped. An
   element holding scripts or styles is not edited in place.
-- Live edit is a setting of the editing session, not stored per page yet.
+- Static edit mode shows what the neutralised copy shows: embedded content (`iframe`, `object`,
+  `embed`: a YouTube or Vimeo player, a map) is a placeholder of the same box that does not play — it
+  plays on the published page; declarative shadow roots (`<template shadowrootmode>`) and
+  `<noscript>` content are not drawn; `data:` URLs other than images, fonts, audio and video (and SVG
+  images outside `img`, `image`, `source`, `video`, `input`, `link`) are blocked. An `object` or
+  `embed` without a `width` / `height` has no size of its own in the editor.
+- Live edit and Preview ask once per editor session before running the design's scripts (the element
+  editor and the mixed-page frames share the answer); the answer is not stored. Under the enforced
+  nonce policy the editor's frames inherit the editor's policy, so even then a design's scripts
+  without the nonce do not run in the editor (they do on the published page).
 
 - A code section is published as written: its markup is trusted (the author has `unfiltered_html`).
   Kits are site-wide code: only administrators should hold them.
@@ -650,11 +1048,15 @@ fixtures `internal/webbuilder/testdata/override`).
   from the kit's `a/img/x.png`, as the design's host did; but `a/b.html` becomes `/a/b/`, one folder
   deeper, so a relative URL built by a script on that page misses the kit (attributes and CSS are
   rewritten and are not affected). Root-relative URLs assume the site at the domain's root.
-- A design over the kit limits (100 MB, 2000 files) or with more than 500 pages (landing/new-landing:
-  1110 pages, 198 MB with documentation exports) is imported in parts (several kits) or trimmed first.
+- A design whose used files are over the kit limits (256 MB, 2000 files; files no page uses do not
+  count, the admin's import leaves them out) or with more than 500 pages (landing/new-landing: 1110
+  pages, 198 MB with documentation exports) is imported in parts (several kits) or trimmed first. The
+  MCP harness uploads the folder as it is (`pursae_mcp.py kit-upload`); the admin's zip import keeps
+  only the used files.
 - An app shell whose page is drawn by a JavaScript bundle from an API or a build step (a Vite `dist/`
   served under a base path, a dashboard reading a backend) is not a static site; it can be imported, but
   only the empty shell is a code section to edit.
 - A site import needs every page in one call (at most 500); the active-link rule matches request paths,
-  so it needs pretty permalinks. Forms keep the design's own handling (enerjiosgb's opens `mailto:`);
-  nothing on the site receives them yet.
+  so it needs pretty permalinks. A design's form keeps its own handling (enerjiosgb's opens `mailto:`)
+  until it is bound to the form endpoint ([Binding to content](#binding-to-content)).
+- Bindings: see [Binding to content › Limits](#binding-limits).

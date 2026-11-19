@@ -70,7 +70,7 @@ func TestWBCustomFieldSlots(t *testing.T) {
 	}
 	env := &wbSlotEnv{s: srv, ctx: ctx, v: &siteView{}}
 	r := &wbSlotResolver{env: env, post: &wbSlotPost{p: p}}
-	got, ok := env.fieldText(p, "subtitle")
+	got, ok := env.fieldText(p, "subtitle", false)
 	if !ok || !strings.Contains(got, "Best") {
 		t.Fatalf("fieldText = %q %v", got, ok)
 	}
@@ -81,15 +81,27 @@ func TestWBCustomFieldSlots(t *testing.T) {
 	if out := wbExec(t, `<p data-wb-slot="post.field" data-wb-field="nope"></p>`, r); strings.Contains(out, "Best") {
 		t.Errorf("unknown field printed: %s", out)
 	}
+	// Raw meta that is no registered field: an author's markup cannot print it (only a code
+	// binding's element, which carries data-wb-meta, may fall back to the post's own meta).
+	p.Meta["private_note"] = "hush"
+	if out := wbExec(t, `<p data-wb-slot="post.field" data-wb-field="private_note"></p>`, r); strings.Contains(out, "hush") {
+		t.Errorf("an author's post.field printed unregistered meta: %s", out)
+	}
+	if out := wbExec(t, `<a data-wb-slot="post.field-url" data-wb-field="private_note">x</a>`, r); strings.Contains(out, "hush") {
+		t.Errorf("an author's post.field-url printed unregistered meta: %s", out)
+	}
+	if out := wbExec(t, `<p data-wb-slot="post.field" data-wb-field="private_note" data-wb-meta=""></p>`, r); !strings.Contains(out, "hush") {
+		t.Errorf("a code binding's field does not read the post's meta: %s", out)
+	}
 	// Underscore (hidden) meta, an unknown field and a protected post print nothing.
-	if _, ok := env.fieldText(p, "_secret"); ok {
+	if _, ok := env.fieldText(p, "_secret", true); ok {
 		t.Error("hidden meta is readable")
 	}
 	p.Password = "pw"
-	if _, ok := env.fieldText(p, "subtitle"); ok {
+	if _, ok := env.fieldText(p, "subtitle", false); ok {
 		t.Error("a password protected post leaks a field")
 	}
-	if _, ok := (&wbSlotEnv{}).fieldText(p, "subtitle"); ok {
+	if _, ok := (&wbSlotEnv{}).fieldText(p, "subtitle", true); ok {
 		t.Error("no server must give nothing")
 	}
 }

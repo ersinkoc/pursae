@@ -69,6 +69,7 @@ Recommended scopes:
 |-----|--------|
 | Writing and publishing | `content`, `media`, `seo` |
 | Design work | `themes`, `media`, `cache` |
+| Importing HTML designs and sites (code sections, design kits) | `content`, `themes`, `media` |
 | Running the whole site | none (full access) |
 
 Revoke the password on the same screen to cut the agent off at once.
@@ -182,10 +183,10 @@ go to stderr.
 | Users | `list_users`, `get_me`, `create_user`, `update_user`, `delete_user` |
 | Start | `site_overview` (site, your role, active/inactive plugins with slugs, theme, front page, menus, pages, Web Builder state) |
 | Pursae Commerce (`commerce` scope, plugin active) | `commerce_list_products`, `commerce_get_product`, `commerce_create_product`, `commerce_update_product`, `commerce_update_stock`, `commerce_delete_product`, `commerce_list_orders`, `commerce_get_order`, `commerce_update_order`, `commerce_sales_report`, `commerce_list_categories`, `commerce_create_category`, `commerce_update_category`, `commerce_list_coupons`, `commerce_create_coupon`, `commerce_get_settings`, `commerce_update_settings`, `commerce_list_payment_gateways`, `commerce_update_payment_gateway`, `commerce_list_shipping_zones`, `commerce_create_shipping_zone` |
-| Pursae Web Builder (`content` scope) | `web_builder_catalog`, `web_builder_get_page`, `web_builder_build_page`, `web_builder_edit_page`, `web_builder_import_html`, `web_builder_import_site`, `web_builder_import_finish`, `web_builder_kit_upload`, `web_builder_list_kits`, `web_builder_publish`, `web_builder_import_theme_kit` (listed while the plugin is off; they answer how to turn it on), `web_builder_list_templates`, `web_builder_create_template`, `web_builder_set_template_conditions`, `web_builder_list_theme_kits`, `web_builder_get_document`, `web_builder_save_draft` — see [Building sites](#building-sites) |
+| Pursae Web Builder (`content` scope; `web_builder_import_html` method `code`, `web_builder_import_site`, `web_builder_kit_upload` and code sections in pages also need `themes`) | `web_builder_catalog`, `web_builder_get_page`, `web_builder_build_page`, `web_builder_edit_page`, `web_builder_import_html`, `web_builder_import_site`, `web_builder_import_finish`, `web_builder_kit_upload`, `web_builder_list_kits`, `web_builder_publish`, `web_builder_import_theme_kit` (listed while the plugin is off; they answer how to turn it on), `web_builder_list_templates`, `web_builder_create_template`, `web_builder_set_template_conditions`, `web_builder_list_theme_kits`, `web_builder_get_document`, `web_builder_save_draft` — see [Building sites](#building-sites) |
 | Menus in one call | `menu_build` (nested items, locations; refills a menu of the same name) |
 | Pursae Forum (`content` scope) | `forum_list`, `forum_create`, `forum_update`, `forum_delete`, `forum_create_topic`; the design of the views: `forum_list_templates`, `forum_get_template`, `forum_set_template`, `forum_delete_template` (administrators; [forum themes](../themes/forum.md#site-templates)); settings with `get_options` / `update_options` group `forum` |
-| Contact forms (`content` scope) | `contact_list_forms`, `contact_create_form`, `contact_update_form` (Pursae Contact Form, CF7-compatible) |
+| Contact forms (full access: the forms set mail recipients and headers) | `contact_list_forms`, `contact_create_form`, `contact_update_form` (Pursae Contact Form, CF7-compatible) |
 | Pursae SEO | `seo_get_meta`, `seo_update_meta`, `seo_analyze`, `seo_get_settings`, `seo_update_settings`, `seo_list_redirects`, `seo_create_redirect`, `seo_delete_redirect` |
 | Plugins | `list_plugins`, `activate_plugin`, `deactivate_plugin`, `install_plugin`, `delete_plugin` |
 | Site operations | `site_health`, `list_updates`, `run_update` (plugin, theme or core), `list_backups`, `create_backup`, `delete_theme`, `ai_activity` |

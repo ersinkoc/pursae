@@ -222,7 +222,8 @@ func uniqueName(dir, name string, reserved ...string) string {
 	}
 	cand := name
 	for i := 1; ; i++ {
-		if _, err := os.Stat(filepath.Join(dir, cand)); os.IsNotExist(err) && !held[strings.ToLower(cand)] && !variantTaken(existing, strings.TrimSuffix(cand, ext)) {
+		if _, err := os.Stat(filepath.Join(dir, cand)); os.IsNotExist(err) && !held[strings.ToLower(cand)] &&
+			!variantTaken(existing, strings.TrimSuffix(cand, ext)) && !variantOfOriginal(existing, cand) {
 			return cand
 		}
 		cand = base + "-" + strconv.Itoa(i) + ext
@@ -242,17 +243,39 @@ func variantTaken(names []string, base string) bool {
 		if dot <= 0 {
 			continue
 		}
-		switch rest[dot+1:] {
-		case "jpg", "jpeg", "jpe", "png", "gif", "webp", "avif", "heic", "bmp", "tif", "tiff":
-		default:
-			continue
-		}
-		if mid := rest[:dot]; mid == "scaled" || mid == "rotated" || isSizeSuffix(mid) {
+		if variantImageExt(rest[dot:]) && variantSuffix(rest[:dot]) {
 			return true
 		}
 	}
 	return false
 }
+
+// variantOfOriginal reserves names that an original image can generate later.
+func variantOfOriginal(names []string, name string) bool {
+	ext := filepath.Ext(name)
+	base := strings.ToLower(strings.TrimSuffix(name, ext))
+	dash := strings.LastIndexByte(base, '-')
+	if dash < 0 || !variantSuffix(base[dash+1:]) || !variantImageExt(strings.ToLower(ext)) {
+		return false
+	}
+	for _, n := range names {
+		ext := filepath.Ext(n)
+		if strings.TrimSuffix(n, ext) == base[:dash] && variantImageExt(ext) {
+			return true
+		}
+	}
+	return false
+}
+
+func variantImageExt(ext string) bool {
+	switch ext {
+	case ".jpg", ".jpeg", ".jpe", ".png", ".gif", ".webp", ".avif", ".heic", ".bmp", ".tif", ".tiff":
+		return true
+	}
+	return false
+}
+
+func variantSuffix(s string) bool { return s == "scaled" || s == "rotated" || isSizeSuffix(s) }
 
 // isSizeSuffix matches <digits>x<digits>.
 func isSizeSuffix(s string) bool {

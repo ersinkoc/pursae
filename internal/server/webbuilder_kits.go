@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html"
 	"io/fs"
 	"net/http"
@@ -15,10 +17,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
 )
 
@@ -37,7 +41,7 @@ const (
 	wbKitsDir       = "web-builder/kits"
 	wbKitStageDir   = ".next"
 	wbKitMaxFile    = 15 << 20
-	wbKitMaxTotal   = 100 << 20
+	wbKitMaxTotal   = 256 << 20 // a WordPress copy's used images alone are 140 MB (Decoland)
 	wbKitMaxFiles   = 2000
 	wbKitBodyMax    = 24 << 20 // one files request (base64 included)
 	wbKitURLPrefix  = "/wp-content/uploads/" + wbKitsDir + "/"
@@ -146,7 +150,7 @@ func wbKitFiles(dir string) (map[string]int64, error) {
 			}
 			return nil
 		}
-		if !d.Type().IsRegular() {
+		if !d.Type().IsRegular() || strings.HasPrefix(d.Name(), ".wb-kit-") { // a write in progress (wbKitWriteFile)
 			return nil
 		}
 		rel, _ := filepath.Rel(dir, p)
@@ -167,8 +171,8 @@ func (s *Server) wbRegisterKitREST(reg func(pattern string, methods map[string]r
 	s.wbRegisterKitOverrideREST(reg)
 }
 
-// wbKitUser: reading kits needs edit_posts (the editor shows them); writing needs unfiltered_html
-// and edit_theme_options.
+// wbKitUser: reading a kit's override needs edit_posts (the editor's frame shows it on every page
+// using the kit); writing needs unfiltered_html and edit_theme_options.
 func wbKitUser(c *gin.Context, write bool) bool {
 	if !write {
 		return wbUser(c, "edit_posts") != nil
@@ -177,15 +181,21 @@ func wbKitUser(c *gin.Context, write bool) bool {
 	if u == nil {
 		return false
 	}
-	if !u.Can("unfiltered_html", nil) {
+	if !wbUnfiltered(c, u) {
 		wbForbidden(c, u)
 		return false
 	}
 	return true
 }
 
+// wbKitReader: the kits themselves (their list, files and sizes) are for who may use them in a code
+// section, an unfiltered_html author.
+func wbKitReader(c *gin.Context) bool {
+	return wbUser(c, "unfiltered_html") != nil
+}
+
 func (s *Server) wbRESTKits(c *gin.Context, r *restRequest) {
-	if !wbKitUser(c, false) {
+	if !wbKitReader(c) {
 		return
 	}
 	kits := s.wbKitList()
@@ -203,7 +213,7 @@ func (s *Server) wbRESTKits(c *gin.Context, r *restRequest) {
 }
 
 func (s *Server) wbRESTKit(c *gin.Context, r *restRequest) {
-	if !wbKitUser(c, false) {
+	if !wbKitReader(c) {
 		return
 	}
 	slug := r.Params["slug"]
@@ -314,7 +324,7 @@ func (s *Server) wbRESTKitFiles(c *gin.Context, r *restRequest) {
 			restErr(c, http.StatusInternalServerError, "wb_kit_io", "Could not write the kit.")
 			return
 		}
-		if err := os.WriteFile(dst, f.body, 0o644); err != nil {
+		if err := wbKitWriteFile(dst, f.body); err != nil {
 			restErr(c, http.StatusInternalServerError, "wb_kit_io", "Could not write the kit.")
 			return
 		}
@@ -325,7 +335,7 @@ func (s *Server) wbRESTKitFiles(c *gin.Context, r *restRequest) {
 		total += n
 	}
 	if len(staged) > wbKitMaxFiles || total > wbKitMaxTotal {
-		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "A design kit holds at most 2000 files and 100 MB.")
+		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, fmt.Sprintf("A design kit holds at most %d files and %d MB.", wbKitMaxFiles, wbKitMaxTotal>>20))
 		return
 	}
 	c.JSON(http.StatusOK, map[string]any{"slug": slug, "staged": len(staged), "bytes": total, "written": len(files)})
@@ -390,7 +400,9 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 	kits := s.wbKitList()
 	k = kits[slug]
 	if k == nil {
-		k = &wbKit{Slug: slug, Name: slug}
+		// A kit deleted and uploaded again goes on from the old one's version: browsers keep the old
+		// files under their immutable ?v= URLs.
+		k = &wbKit{Slug: slug, Name: slug, Version: s.wbKitGoneVersions()[slug]}
 		kits[slug] = k
 	}
 	if name = strings.TrimSpace(name); name != "" {
@@ -414,25 +426,38 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 	return k, http.StatusOK, "", ""
 }
 
-// wbKitRootAsset serves a file of a site-imported kit (wbKit.Root) at the site's root path, after
-// every route and before the site's 404: what a static host does for the design's folder. The site
-// import maps index.html to / and a/b.html to /a/b/, so the URLs the design builds at run time —
-// root-relative paths in its stylesheets (url(/assets/fonts/x.woff2)) and scripts, an import map's
-// "/assets/vendor/three.module.js", an inline module's import "./js/engine.js" on /post/, a
-// data-video="../assets/film.mp4" a script reads on /identity/ — reach the kit's files. Only GET and
-// HEAD of a path that is a valid kit file (web asset extensions, no HTML, no dot segments) outside
-// /wp-*; when several kits have the file, the most recently imported wins.
-func (s *Server) wbKitRootAsset(c *gin.Context) {
-	if c.IsAborted() || (c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead) {
-		return
+// wbKitRootAsset serves a file of a site-imported kit (wbKit.Root) at the site's root path: what
+// a static host does for the design's folder. The site import maps index.html to / and a/b.html to
+// /a/b/, so the URLs the design builds at run time — root-relative paths in its stylesheets
+// (url(/assets/fonts/x.woff2)) and scripts, an import map's "/assets/vendor/three.module.js", an
+// inline module's import "./js/engine.js" on /post/, a data-video="../assets/film.mp4" a script
+// reads on /identity/ — reach the kit's files. It reports whether it answered.
+//
+// site() calls it after everything the site itself answers at a path of its own (Pursae SEO's
+// redirections, robots.txt, sitemaps and IndexNow key, the shop's and the forum's paths, the
+// built-in robots.txt, favicon.ico and sitemaps), so a design's file never stands in for one of
+// them; wbKitRootReserved keeps the conventional root files out even when nothing answers them.
+// Only GET and HEAD of a path that is a valid kit file (web asset extensions, no HTML, no dot
+// segments) outside /wp-*, of a kit with a published page or template of its import (a draft
+// import serves nothing at the root); when several kits have the file, the most recently imported
+// wins.
+//
+// The files are served as data on the site's own origin (the uploads route's policy, see
+// wbKitRootHeaders): a type from the extension, never sniffed; a sandbox policy for a file opened as
+// a document (an SVG, a JSON or .map file holding markup); no service worker. A response's policy
+// applies to it only as a document: the design's pages load the same scripts, modules, stylesheets,
+// fonts and images as subresources, as they do from /wp-content/uploads/.
+func (s *Server) wbKitRootAsset(c *gin.Context) bool {
+	if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead {
+		return false
 	}
 	p := path.Clean(c.Request.URL.Path)
-	if strings.HasPrefix(p, "/wp-") || !wbKitExts[strings.ToLower(path.Ext(p))] {
-		return
+	if strings.HasPrefix(p, "/wp-") || wbKitRootReserved(p) || !wbKitExts[strings.ToLower(path.Ext(p))] {
+		return false
 	}
 	rel, ok := wbKitRel(strings.TrimPrefix(p, "/"))
 	if !ok {
-		return
+		return false
 	}
 	var best *wbKit
 	full := ""
@@ -441,16 +466,129 @@ func (s *Server) wbKitRootAsset(c *gin.Context) {
 			continue
 		}
 		f := filepath.Join(s.wbKitRoot(), k.Slug, filepath.FromSlash(rel))
-		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() {
+		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() && s.wbKitRootLive(c, k.Slug) {
 			best, full = k, f
 		}
 	}
 	if best == nil {
-		return
+		return false
+	}
+	wbKitRootHeaders(c.Writer.Header(), rel)
+	if c.GetHeader("Service-Worker") != "" {
+		// A design may not register a service worker over the site's root (it would control every
+		// page, the admin included).
+		c.Header("Content-Type", "text/plain; charset=utf-8")
+		c.Header("Cache-Control", "no-store")
+		c.String(http.StatusForbidden, "A design's script cannot be a service worker.")
+		return true
 	}
 	c.Header("Cache-Control", wbKitCacheShort)
 	http.ServeFile(c.Writer, c.Request, full)
-	c.Abort()
+	return true
+}
+
+// wbKitRootTypes are the Content-Types of the kit files served at the site's root; any other file
+// is application/octet-stream (never sniffed as HTML).
+var wbKitRootTypes = map[string]string{
+	".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
+	".map": "application/json", ".json": "application/json", ".txt": "text/plain; charset=utf-8",
+	".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".otf": "font/otf", ".eot": "application/vnd.ms-fontobject",
+	".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".avif": "image/avif",
+	".svg": "image/svg+xml", ".ico": "image/x-icon",
+	".mp4": "video/mp4", ".webm": "video/webm", ".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".wav": "audio/wav",
+	".glb": "model/gltf-binary", ".gltf": "model/gltf+json", ".bin": "application/octet-stream", ".wasm": "application/wasm",
+	".pdf": "application/pdf",
+}
+
+// wbKitRootHeaders are the headers of a kit file served at the site's root: the type of the
+// extension, nosniff, and the uploads route's sandbox policy (wbKitFilePolicy).
+func wbKitRootHeaders(h http.Header, rel string) {
+	ct := wbKitRootTypes[strings.ToLower(path.Ext(rel))]
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	h.Set("Content-Type", ct)
+	h.Set("X-Content-Type-Options", "nosniff")
+	wbKitFilePolicy(h, rel)
+	h.Del("Service-Worker-Allowed")
+}
+
+// wbKitFilePolicy sets the policy of a kit file response (at the root and under /wp-content/uploads/):
+// the uploads route's sandbox for every file a browser could open as a document (an SVG, a JSON
+// file holding markup), none for a script. A response's policy only matters where the response is
+// the document: a page loads the design's scripts, modules, stylesheets, fonts and images the same
+// with or without it. A script's own response is the document of a Web Worker, though: under the
+// sandbox the worker runs with an opaque origin and default-src 'none', so its importScripts and
+// fetches fail (checked in Chromium). A script with nosniff and its text/javascript type is never
+// run as a page, so it gets no policy, as on a static host.
+func wbKitFilePolicy(h http.Header, rel string) {
+	h.Del("Content-Security-Policy-Report-Only")
+	switch strings.ToLower(path.Ext(rel)) {
+	case ".js", ".mjs":
+		h.Del("Content-Security-Policy")
+	default:
+		h.Set("Content-Security-Policy", wbKitSandboxPolicy)
+	}
+}
+
+// wbKitSandboxPolicy is the uploads route's policy (server.go).
+const wbKitSandboxPolicy = "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'"
+
+// wbKitRootReserved: root files a site answers by convention (robots.txt, favicon.ico, ads.txt,
+// security.txt …, sitemaps) are never a design's, even when nothing on the site answers them.
+func wbKitRootReserved(p string) bool {
+	name := strings.ToLower(strings.TrimPrefix(p, "/"))
+	if strings.Contains(name, "/") {
+		return false
+	}
+	switch name {
+	case "robots.txt", "favicon.ico", "ads.txt", "app-ads.txt", "sellers.json", "security.txt", "humans.txt", "llms.txt", "llms-full.txt":
+		return true
+	}
+	return strings.HasPrefix(name, "sitemap") || strings.Contains(name, "-sitemap")
+}
+
+// wbKitRootLiveCache: slug → whether a page or template of the kit's import is published (true
+// for wbKitRootLiveTTL, false for wbKitRootDeadTTL, so a publish shows at once).
+var wbKitRootLiveCache sync.Map
+
+type wbKitRootLiveEntry struct {
+	at   time.Time
+	live bool
+}
+
+const (
+	wbKitRootLiveTTL = 30 * time.Second
+	wbKitRootDeadTTL = 3 * time.Second
+)
+
+// wbKitRootLive reports whether the kit's site import has a published page or template.
+func (s *Server) wbKitRootLive(ctx context.Context, slug string) bool {
+	key := fmt.Sprintf("%p/%s", s, slug)
+	if v, ok := wbKitRootLiveCache.Load(key); ok {
+		e := v.(wbKitRootLiveEntry)
+		ttl := wbKitRootDeadTTL
+		if e.live {
+			ttl = wbKitRootLiveTTL
+		}
+		if time.Since(e.at) < ttl {
+			return e.live
+		}
+	}
+	var live bool
+	if err := s.store.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM posts WHERE status = 'publish' AND meta->>$1 = $2)`, wbSiteMetaKit, slug).Scan(&live); err != nil {
+		return false
+	}
+	wbKitRootLiveCache.Store(key, wbKitRootLiveEntry{at: time.Now(), live: live})
+	return live
+}
+
+// wbKitRootLiveReset forgets the published state of the kits (an import, its removal, a publish).
+func wbKitRootLiveReset() {
+	wbKitRootLiveCache.Range(func(k, _ any) bool {
+		wbKitRootLiveCache.Delete(k)
+		return true
+	})
 }
 
 // wbKitSetRoot marks a kit as served at the site's root (on, the time of the site import) or not.
@@ -472,6 +610,7 @@ func (s *Server) wbKitSetRoot(c *gin.Context, slug string, on bool) error {
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
 		return err
 	}
+	wbKitRootLiveReset()
 	s.purgeAll(c)
 	return nil
 }
@@ -490,11 +629,32 @@ func (s *Server) wbRESTKitDelete(c *gin.Context, r *restRequest) {
 	c.JSON(http.StatusOK, map[string]any{"deleted": true, "slug": slug})
 }
 
+// wbKitGoneOption keeps the last version of every deleted kit (slug → version), so a kit uploaded
+// again under the same slug never reuses a version (wbKitCommitStage).
+const wbKitGoneOption = "wb_design_kits_gone"
+
+func (s *Server) wbKitGoneVersions() map[string]int {
+	out := map[string]int{}
+	if raw := s.settings.Get(wbKitGoneOption); raw != nil {
+		if b, err := json.Marshal(raw); err == nil {
+			_ = json.Unmarshal(b, &out)
+		}
+	}
+	return out
+}
+
 // wbKitRemove deletes a kit and its files (the caller holds wbKitsMu); code is "" on success.
 func (s *Server) wbKitRemove(c *gin.Context, slug string) (status int, code, msg string) {
 	kits := s.wbKitList()
 	if kits[slug] == nil {
 		return http.StatusNotFound, "wb_kit_not_found", "No design kit has that slug."
+	}
+	gone := s.wbKitGoneVersions()
+	if v := kits[slug].Version; v > gone[slug] {
+		gone[slug] = v
+		if err := s.settings.Set(c, map[string]any{wbKitGoneOption: gone}); err != nil {
+			return http.StatusInternalServerError, "db_error", "Could not delete the kit."
+		}
 	}
 	delete(kits, slug)
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
@@ -614,6 +774,32 @@ func wbLocalFontNeeds(raw json.RawMessage, local string) json.RawMessage {
 	return b
 }
 
+// wbKitWriteFile writes a staged file through a temporary file renamed over it. The staging folder
+// starts as hard links to the live files (wbKitCopy): writing into the existing name would change
+// the live file (served as immutable for a year) before the commit; the rename only replaces the
+// staging folder's link.
+func wbKitWriteFile(dst string, body []byte) error {
+	f, err := os.CreateTemp(filepath.Dir(dst), ".wb-kit-*")
+	if err != nil {
+		return err
+	}
+	tmp := f.Name()
+	_, err = f.Write(body)
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err == nil {
+		err = os.Chmod(tmp, 0o644)
+	}
+	if err == nil {
+		err = os.Rename(tmp, dst)
+	}
+	if err != nil {
+		_ = os.Remove(tmp)
+	}
+	return err
+}
+
 // wbKitCopy copies the live kit files into the staging folder.
 func wbKitCopy(src, dst string) error {
 	files, err := wbKitFiles(src)
@@ -698,6 +884,42 @@ var (
 	wbCodeCSSURLRE = regexp.MustCompile(`(?i)(?:url\(\s*|@import\s+)(?:&#39;|&quot;|['"])?(https://[^'"\s)&;]+)`)
 )
 
+// wbCodeSourceCache: post id, rev and update time → the doc's code markup (wbCodeSource).
+var wbCodeSourceCache sync.Map
+
+// wbCodeSource is the stored markup of a doc's shown code sections (head and html, as their
+// unfiltered_html author published them), for wbCodeCSP; "" without code sections.
+func wbCodeSource(d *store.WebBuilderDoc) string {
+	if d == nil || !webbuilder.HasCode(d.Doc) {
+		return ""
+	}
+	key := strconv.FormatInt(d.PostID, 10) + ":" + strconv.Itoa(d.Rev) + ":" + strconv.FormatInt(d.UpdatedAt.UnixNano(), 10)
+	if v, ok := wbCodeSourceCache.Load(key); ok {
+		return v.(string)
+	}
+	list, _ := webbuilder.CodeSections(d.Doc)
+	var b strings.Builder
+	for _, sec := range list {
+		if sec.Hidden {
+			continue
+		}
+		b.WriteString(sec.Head)
+		b.WriteByte('\n')
+		b.WriteString(sec.HTML)
+		b.WriteByte('\n')
+	}
+	out := b.String()
+	wbCodeSourceLen.Add(1)
+	if wbCodeSourceLen.Load() > 512 { // a bound, not an LRU: the next requests fill it again
+		wbCodeSourceCache.Range(func(k, _ any) bool { wbCodeSourceCache.Delete(k); return true })
+		wbCodeSourceLen.Store(0)
+	}
+	wbCodeSourceCache.Store(key, out)
+	return out
+}
+
+var wbCodeSourceLen atomic.Int64
+
 // wbCodeOriginMax bounds the origins one directive takes from the code sections' markup (the kit
 // origins have the same cap, wbKitOrigins).
 const wbCodeOriginMax = 24
@@ -710,7 +932,9 @@ const (
 
 // wbCodeCSP adds what the code sections load from other origins to this response's policy (only
 // unfiltered_html authors can publish code sections; their scripts carry the response's nonce,
-// csp_trusted.go):
+// csp_trusted.go). code is the stored markup of the page's code sections (wbCodeSource) and of
+// other trusted markup (a forum site template): never the filled page, whose comments, posts and
+// field values anyone may have written, so a visitor's url(https://…) adds nothing.
 //
 //   - the kits the markup loads from: the https origins their scripts and stylesheets name, in
 //     script-src, connect-src, style-src and font-src;
@@ -722,17 +946,15 @@ const (
 //   - <iframe src> origins (a map, a video) in frame-src.
 //
 // Each list takes at most wbCodeOriginMax origins from the markup. Kit files are same-origin.
-func (s *Server) wbCodeCSP(c *gin.Context, head, body string) {
-	if c == nil {
+func (s *Server) wbCodeCSP(c *gin.Context, code string) {
+	if c == nil || strings.TrimSpace(code) == "" {
 		return
 	}
-	src := head + body
+	src := code
 	// Code sections: images and media the design's scripts make in the page (a canvas exported with toBlob, a
 	// video from a fetched file): blob: URLs are the page's own content.
-	if head != "" || strings.Contains(src, wbKitURLPrefix) {
-		cspAllow(c, "img-src", "blob:")
-		cspAllow(c, "media-src", "blob:")
-	}
+	cspAllow(c, "img-src", "blob:")
+	cspAllow(c, "media-src", "blob:")
 	// The kits the markup loads from: the origins their files name.
 	if strings.Contains(src, wbKitURLPrefix) {
 		kits := s.wbKitList()

@@ -47,11 +47,28 @@ const (
 var wbSiteTitleRE = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
 
 // wbSiteOwned finds the non-trashed post of a type the import of kit made for key (0: none).
+// A page of the import that a collection made a post (wbSiteGroups) is still the import's page:
+// "page" finds both.
 func (s *Server) wbSiteOwned(c *gin.Context, typ, kit, key string) int64 {
 	var id int64
-	_ = s.store.Pool.QueryRow(c, `SELECT id FROM posts WHERE type = $1 AND meta->>$2 = $3 AND meta->>$4 = $5
-		AND status NOT IN ('trash','auto-draft') ORDER BY id DESC LIMIT 1`, typ, wbSiteMetaKit, kit, wbSiteMetaKey, key).Scan(&id)
+	types := []string{typ}
+	if typ == "page" {
+		types = append(types, "post")
+	}
+	_ = s.store.Pool.QueryRow(c, `SELECT id FROM posts WHERE type = ANY($1) AND meta->>$2 = $3 AND meta->>$4 = $5
+		AND status NOT IN ('trash','auto-draft') ORDER BY id DESC LIMIT 1`, types, wbSiteMetaKit, kit, wbSiteMetaKey, key).Scan(&id)
 	return id
+}
+
+// wbSiteSetType makes an imported page a post or a post a page again (a collection of
+// pretty-permalink posts, wbSiteGroups); a post has no parent.
+func (s *Server) wbSiteSetType(c *gin.Context, id int64, typ string) error {
+	q := `UPDATE posts SET type = $2, updated_at = now() WHERE id = $1 AND type IN ('page','post') AND type <> $2`
+	if typ == "post" {
+		q = `UPDATE posts SET type = $2, parent_id = NULL, updated_at = now() WHERE id = $1 AND type IN ('page','post') AND type <> $2`
+	}
+	_, err := s.store.Pool.Exec(c, q, id, typ)
+	return err
 }
 
 func (s *Server) wbSiteMark(c *gin.Context, id int64, kit, key string) error {
@@ -64,6 +81,10 @@ func (s *Server) wbSiteMark(c *gin.Context, id int64, kit, key string) error {
 // with slug and title; an existing page gets the slug and parent of the plan.
 func (s *Server) wbSitePage(c *gin.Context, kit, key, slug, title string, parent int64) (int64, bool, error) {
 	if id := s.wbSiteOwned(c, "page", kit, key); id > 0 {
+		// A post an earlier import made of it is a page again until this import groups it.
+		if err := s.wbSiteSetType(c, id, "page"); err != nil {
+			return id, false, err
+		}
 		p, err := s.store.GetPost(c, id)
 		if err == nil && (p.Slug != slug || p.ParentID != parent) {
 			if err := s.mcpREST(c, http.MethodPost, "/wp/v2/pages/"+itoa64(id), map[string]any{"slug": slug, "parent": parent}, nil); err != nil {
@@ -90,8 +111,8 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		return nil, err
 	}
 	u := restCurrent(c)
-	if u == nil || !u.Can("unfiltered_html", nil) || !u.Can(webbuilder.TemplateCap, nil) {
-		return nil, mcpErrf("a site import keeps the design's own HTML, CSS and JavaScript and makes Theme Builder templates: the account needs unfiltered_html and edit_theme_options (an administrator)")
+	if u == nil || !wbUnfiltered(c, u) || !u.Can(webbuilder.TemplateCap, nil) {
+		return nil, mcpErrf("a site import keeps the design's own HTML, CSS and JavaScript and makes Theme Builder templates: the account needs unfiltered_html and edit_theme_options (an administrator), and an Application Password the Appearance (themes) scope or full access")
 	}
 	status, err := mcpPublishStatus(args)
 	if err != nil {
@@ -112,6 +133,20 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	opts := webbuilder.SiteImportOptions{KitURL: wbKitURLPrefix + kit + "/", KitFiles: map[string]bool{}, URLs: map[string]string{}, NoSplit: noSplit}
 	for p := range kfiles {
 		opts.KitFiles[p] = true
+	}
+	// media: files of the design outside the kit (too large for it, put into the Media Library):
+	// {"<path in the folder>": "<URL>"}; the pages point at those URLs.
+	if mm, ok := args["media"].(map[string]any); ok {
+		opts.Remap = map[string]string{}
+		for k, v := range mm {
+			u, _ := v.(string)
+			rel := strings.TrimPrefix(path.Clean("/"+strings.ReplaceAll(k, "\\", "/")), "/")
+			lu := strings.ToLower(u)
+			if rel == "" || !(strings.HasPrefix(u, "/") && !strings.HasPrefix(u, "//") || strings.HasPrefix(lu, "https://") || strings.HasPrefix(lu, "http://")) || strings.ContainsAny(u, "\"'<> ") {
+				return nil, mcpErrf("media: %q → %q is not a file path and a URL", k, u)
+			}
+			opts.Remap[rel] = u
+		}
 	}
 	// The pages.
 	src := map[string]string{}
@@ -250,15 +285,71 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			opts.URLs[p.Path] = "/" + opts.URLs[p.Path]
 		}
 	}
+	// Pages at addresses the router gives to an archive (a WordPress copy's /author/admin/,
+	// /category/news/, /2026/09/) claim them, so they answer there as in the design.
+	claims := map[string]int64{}
+	var claimed []string
+	for _, p := range plan.Pages {
+		if p.NotFound || p.Front {
+			continue
+		}
+		if why := s.wbRouteShadowed(c, opts.URLs[p.Path]); why != "" {
+			claims[opts.URLs[p.Path]] = ids[p.Path]
+			claimed = append(claimed, opts.URLs[p.Path]+" ("+why+")")
+		}
+	}
+	if err := s.wbSiteSetClaims(c, kit, claims); err != nil {
+		warnings = append(warnings, "could not keep the pages' addresses from the archives: "+err.Error())
+	} else if len(claimed) > 0 {
+		sort.Strings(claimed)
+		warnings = append(warnings, "these pages sit at addresses that are WordPress archives on this site; the imported pages answer there instead of the archive (page 1; /page/2/ and feeds stay the archive's): "+
+			strings.Join(wbFirst(claimed, 20), ", "))
+	}
 	var list []webbuilder.SitePage
 	for _, p := range plan.Pages {
 		list = append(list, webbuilder.SitePage{Path: p.Path, HTML: src[p.Path]})
 	}
+	// The design's original site: its URLs are this site's paths, its endpoints never called.
+	opts.OldHosts, opts.KeepOldLinks = wbSiteOldOptions(args, list)
+	opts.SiteURL = home
 	res, err := webbuilder.ConvertSite(list, opts)
 	if err != nil {
 		return nil, mcpErrf("the site could not be read: %v", err)
 	}
 	warnings = append(warnings, res.Warnings...)
+	warnings = append(warnings, wbSiteOldWarnings(res, opts.OldHosts, opts.KeepOldLinks, k.Origins)...)
+	// Binding to content (webbuilder_sitebind.go): the header's navigation as a menu, folders of
+	// pages as content under single templates, lists of those pages as loops.
+	menusOn, groups := wbSiteBindOptions(args)
+	if noSplit {
+		menusOn, groups = false, map[string]bool{}
+	}
+	parents := map[string]int64{}
+	folderParents := map[string]string{}
+	for f := range webbuilder.SiteFolders(res) {
+		if id := ids["dir:"+f]; id > 0 {
+			parents[f] = id
+			folderParents[f] = itoa64(id)
+		}
+	}
+	postSets := s.wbSitePostSets(res)
+	binding := webbuilder.BindSite(res, webbuilder.SiteBindOptions{Menus: menusOn, Groups: groups, FolderParents: folderParents, PostSets: postSets})
+	bindReport := map[string]any{}
+	if m := binding.Menu; m != nil && len(res.Headers) > 0 && m.Section < len(res.Headers[0].Sections) {
+		pageByURL := map[string]int64{}
+		for p, u := range opts.URLs {
+			pageByURL[webbuilder.ActivePath(u)] = ids[p]
+		}
+		menuID, itemIDs, err := s.wbSiteMenu(c, kit, m, pageByURL)
+		if err != nil {
+			warnings = append(warnings, "the navigation menu was not made: "+err.Error())
+		} else {
+			sec := &res.Headers[0].Sections[m.Section]
+			sec.Binds = m.Binds(sec.Binds, webbuilder.MenuLocationPrimary, itemIDs)
+			bindReport["menu"] = map[string]any{"id": menuID, "name": wbSiteMenuName(kit), "location": webbuilder.MenuLocationPrimary, "items": m.Items,
+				"edit_url": s.mcpAdminURL(c, "/wp-admin/nav-menus?menu="+itoa64(menuID))}
+		}
+	}
 	section := func(p webbuilder.CodePart, head, lang string, attrs [2]string, active *webbuilder.ActiveRule) map[string]any {
 		sec := wbCodeSection(p, head, kit, lang)
 		wbCodeSectionAttrs(sec, attrs[0], attrs[1], active)
@@ -275,6 +366,13 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		id := ids[pg.Path]
 		pageFor[i] = id
 		cr := pg.Code
+		if binding.GroupMember(i) {
+			// Content under a single template (wbSiteGroups); its SEO is the page's still.
+			if _, warn := s.wbImportSEO(c, id, cr.SEO); warn != "" {
+				warnings = append(warnings, pg.Path+": "+warn)
+			}
+			continue
+		}
 		secs := make([]map[string]any, 0, len(cr.Sections))
 		for _, p := range cr.Sections {
 			secs = append(secs, section(p, cr.Head, cr.Lang, [2]string{cr.HTMLAttrs, cr.BodyAttrs}, nil))
@@ -290,6 +388,10 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		title := strings.TrimSpace(cr.SEO.Title)
 		if title == "" {
 			title = titleOf(pg.Path)
+		}
+		pl := binding.Plans[i]
+		if pl != nil && pl.Title != "" {
+			title = pl.Title // a page a list shows: its title is its <h1>, as the list shows it
 		}
 		patch := map[string]any{"layout": "site", "title": truncRunes(title, 200)}
 		if noSplit {
@@ -308,10 +410,25 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		if _, warn := s.wbImportSEO(c, id, cr.SEO); warn != "" {
 			warnings = append(warnings, pg.Path+": "+warn)
 		}
+		if pl != nil {
+			if err := s.wbSitePagePlan(c, id, pl, nil, status); err != nil {
+				warnings = append(warnings, pg.Path+": "+err.Error())
+			}
+		}
 		report = append(report, map[string]any{"path": pg.Path, "post_id": id, "url": saved["url"], "sections": len(secs)})
 	}
 	out["pages"] = report
 	out["pages_created"], out["pages_updated"] = created, updated
+	if len(claimed) > 0 {
+		out["claimed_paths"] = claimed
+	}
+	if len(opts.OldHosts) > 0 {
+		out["original_site"] = map[string]any{"domains": opts.OldHosts, "urls": len(res.OldURLs), "script_urls": res.OldInScripts,
+			"forms": res.OldForms, "links": map[bool]string{true: "keep", false: "rewrite"}[opts.KeepOldLinks]}
+	}
+	if len(res.Trackers) > 0 {
+		out["tracking"] = res.Trackers
+	}
 
 	// The header and footer templates.
 	keep := map[string]bool{}
@@ -386,6 +503,28 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 				tplReport = append(tplReport, map[string]any{"type": string(webbuilder.Template404), "id": id, "conditions": []string{"include/404"}, "edit_url": s.mcpAdminURL(c, wbEditURL(id))})
 			}
 		}
+	}
+	// Single templates made from groups of pages.
+	if len(binding.Groups) > 0 {
+		gr, warn := s.wbSiteGroups(c, r, kit, status, res, binding, pageFor, parents, keep)
+		warnings = append(warnings, warn...)
+		bindReport["groups"] = gr
+	}
+	if len(binding.Listings) > 0 {
+		var ls []map[string]any
+		for _, l := range binding.Listings {
+			ls = append(ls, map[string]any{"page": res.Pages[l.Page].Path, "post_id": pageFor[l.Page], "folder": l.Folder, "items": len(l.Members), "offset": l.Offset})
+		}
+		bindReport["listings"] = ls
+	}
+	if len(binding.Notes) > 0 {
+		bindReport["notes"] = binding.Notes
+	}
+	if len(binding.Candidates) > 0 {
+		bindReport["collection_candidates"] = binding.Candidates
+	}
+	if len(bindReport) > 0 {
+		out["bindings"] = bindReport
 	}
 	out["templates"] = tplReport
 	// Templates of an earlier import of this kit that this one no longer needs.

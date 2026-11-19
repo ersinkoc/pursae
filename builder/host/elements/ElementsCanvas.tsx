@@ -6,8 +6,13 @@
  * the drop indicator, the context menu and the text toolbar.
  *
  * Edit mode is static (the design's scripts do not run, so what is on screen is the stored markup
- * and operations apply at once without reloading); "Live edit" runs the scripts as before (a
- * structural change reloads the frame); Preview runs them without editing controls.
+ * and operations apply at once without reloading): the frame is sandboxed WITHOUT allow-scripts
+ * (nothing in it can run, whatever the markup holds; the editor works on its DOM from outside) and
+ * its copy of the markup is neutralised by the browser's parser (neutral.ts). "Live edit" runs the
+ * scripts (a structural change reloads the frame); Preview runs them without editing controls.
+ * Both run the design with the author's admin access (same origin as the editor), so they need
+ * the author's confirmation once per editor session (ScriptsConsent); until then Preview shows
+ * the page without its scripts.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowUp, Bold, ChevronRight, Clipboard, ClipboardPaste, Copy, CornerLeftUp, Eraser, Eye, EyeOff, GripVertical, Italic, Layers, Link2, Paintbrush, Palette as PaletteIcon, Pencil, Plus, RemoveFormatting, SquareDashed, Tags, Trash2, Ungroup, Zap } from 'lucide-react'
@@ -23,13 +28,16 @@ import { boxIn, dropAt, frameEl, isLocked, union, type Box, type Drop } from './
 import { attr, ownText } from './html'
 import { KIND_ICON, kindLabel, kindOf, namesOf, tagName } from './kinds'
 import { childIds, locate, movable, parentId, tree, type Page } from './ops'
-import { format, startTextEdit, type TextEdit } from './richtext'
+import { format, mapSource, startTextEdit, writeBack, type TextEdit } from './richtext'
+import { sweep } from './neutral'
+import { embedCss, embedTarget } from './embeds'
 import { bumpFrame, clipboard, getElState, setElState, toggleIn, useElState } from './state'
 import { localFonts, sectionsCSS, type LocalSection } from './local'
 import { fontUrlFor } from '@/builder/fonts'
 import { style as styleAct } from './actions'
 import { kitsCSS, kitsOf, loadKits, syncKits, useKitStore } from './kitstyle'
 import { Palette, type NewElement } from './PaletteDrawer'
+import { ScriptsConsent } from './ScriptsGate'
 
 const WIDTH = { desktop: 1440, tablet: 768, mobile: 390 } as const
 const BAR = 34
@@ -40,9 +48,10 @@ function partsOf(p: CodeParts | null | undefined) {
   return { header: p?.header?.sections ?? [], footer: p?.footer?.sections ?? [] }
 }
 
-/** The editor-only stylesheet of the frame. */
-function editCss(mode: FrameMode, hidden: ReadonlySet<string>, shown: ReadonlySet<string>, dragging: string | null): string {
-  if (mode === 'preview') return ''
+/** The editor-only stylesheet of the frame (a static frame: embeds drawn as placeholders, also in Preview). */
+function editCss(mode: FrameMode, fmode: FrameMode, hidden: ReadonlySet<string>, shown: ReadonlySet<string>, dragging: string | null): string {
+  const embeds = fmode === 'static' ? embedCss() : ''
+  if (mode === 'preview') return embeds
   const q = (id: string) => `[data-wbc="${CSS.escape(id)}"]`
   let css = '[data-wbc],a[href]{cursor:default}[data-wbc][contenteditable]{cursor:text;outline:none}'
   // An empty container (a new Section, Flexbox, Grid or Div) has a size to see and drop into.
@@ -50,7 +59,7 @@ function editCss(mode: FrameMode, hidden: ReadonlySet<string>, shown: ReadonlySe
   for (const id of shown) css += `${q(id)}{display:revert!important;visibility:visible!important;opacity:1!important}`
   for (const id of hidden) css += `${q(id)}{display:none!important}`
   if (dragging) css += `${q(dragging)}{opacity:.35!important;pointer-events:none!important}`
-  return css
+  return embeds + css
 }
 
 /** Elements edited as text in place: text of their own and no code inside. */
@@ -82,11 +91,13 @@ export function ElementsCanvas() {
   const host = cmsHost()
   const parts = useMemo(() => partsOf(host?.boot.codeParts), [host])
   const kits = host?.boot.kitBreakpoints
-  const mode: FrameMode = b.preview ? 'preview' : st.live ? 'live' : 'static'
+  const mode: FrameMode = b.preview ? 'preview' : st.live && st.scripts ? 'live' : 'static'
+  /** The frame's document: the design's scripts run only once the author confirmed it (else static, inert). */
+  const fmode: FrameMode = mode !== 'static' && st.scripts ? mode : 'static'
   const secs = useMemo(() => b.doc.sections.filter((s) => s.kind === 'code' && !s.hidden), [b.doc.sections])
   const page = useMemo(() => pageOf(b.doc), [b.doc])
   const htmlNow = useMemo(() => Object.fromEntries(secs.map((s) => [s.id, s.content.html ?? ''])), [secs])
-  const structKey = mode + '\u0002' + secs.map((s, i) => [s.id, s.content.head, s.content.wrap, i === 0 ? `${s.content.lang}\u0000${s.content.body}\u0000${s.content.htmlAttrs}\u0000${s.content.bodyAttrs}` : ''].join('\u0000')).join('\u0001')
+  const structKey = mode + '\u0003' + fmode + '\u0002' + secs.map((s, i) => [s.id, s.content.head, s.content.wrap, i === 0 ? `${s.content.lang}\u0000${s.content.body}\u0000${s.content.htmlAttrs}\u0000${s.content.bodyAttrs}` : ''].join('\u0000')).join('\u0001')
 
   const area = useRef<HTMLDivElement>(null)
   const frame = useRef<HTMLIFrameElement>(null)
@@ -111,7 +122,9 @@ export function ElementsCanvas() {
   const kitRef = useRef(kitCss)
   kitRef.current = kitCss
   useEffect(() => syncKits(b.doc, (m) => b.notify(m)), [b.doc, kitStore.kits]) // eslint-disable-line react-hooks/exhaustive-deps
-  const [srcdoc, setSrcdoc] = useState(() => frameDoc(secs, parts, mode, editCss(mode, st.hidden, st.shown, null), base, localCss, kitCss))
+  // The document and whether the design's scripts may run in it change together: the sandbox the
+  // frame gets is always the one its document was made for (a new frame element when it changes).
+  const [frameSrc, setFrameSrc] = useState(() => ({ html: frameDoc(secs, parts, fmode, editCss(mode, fmode, st.hidden, st.shown, null), base, localCss, kitCss), scripts: fmode !== 'static' }))
   const shown = useRef<Record<string, string>>(htmlNow)
   const shownKey = useRef(structKey)
   const sync = useRef<FrameSync | null>(null)
@@ -129,14 +142,14 @@ export function ElementsCanvas() {
     shown.current = htmlNow
     shownKey.current = structKey
     const s = getElState()
-    setSrcdoc(frameDoc(secs, parts, mode, editCss(mode, s.hidden, s.shown, null), base, localRef.current, kitRef.current))
-  }, [htmlNow, structKey, secs, parts, mode, base])
+    setFrameSrc({ html: frameDoc(secs, parts, fmode, editCss(mode, fmode, s.hidden, s.shown, null), base, localRef.current, kitRef.current), scripts: fmode !== 'static' })
+  }, [htmlNow, structKey, secs, parts, mode, fmode, base])
 
   useLayoutEffect(() => {
     if (structKey !== shownKey.current) return rebuild()
     const changed = Object.keys(htmlNow).some((k) => htmlNow[k] !== shown.current[k])
     if (!changed) return
-    if (mode === 'static' && sync.current) {
+    if (fmode === 'static' && sync.current) {
       if (sync.current.update(shown.current, htmlNow)) {
         shown.current = htmlNow
         refresh()
@@ -193,8 +206,8 @@ export function ElementsCanvas() {
   const [dragId, setDragId] = useState<string | null>(null)
   useEffect(() => {
     const el = fdoc()?.querySelector('style[data-wb-edit]')
-    if (el) el.textContent = editCss(mode, st.hidden, st.shown, dragId)
-  }, [st.hidden, st.shown, dragId, mode, loaded])
+    if (el) el.textContent = editCss(mode, fmode, st.hidden, st.shown, dragId)
+  }, [st.hidden, st.shown, dragId, mode, fmode, loaded])
 
   // ---------- size ----------
   useLayoutEffect(() => {
@@ -217,6 +230,8 @@ export function ElementsCanvas() {
   const [menu, setMenu] = useState<Menu | null>(null)
   const [editing, setEditing] = useState<TextEdit | null>(null)
   const [hiddenNow, setHiddenNow] = useState(false)
+  /** The confirmation asked before the design's scripts run (for Live edit or for Preview). */
+  const [ask, setAsk] = useState<null | 'live' | 'preview'>(null)
 
   const cur = useRef({ b, page, mode, zoom, st, editing })
   cur.current = { b, page, mode, zoom, st, editing }
@@ -327,7 +342,9 @@ export function ElementsCanvas() {
     const drawn = mode === 'live' && norm(at.tree.src.slice(at.el.openEnd, at.el.closeStart)) !== norm(el.innerHTML)
     setMenu(null)
     selectEl(cur.current.b, id, page)
-    const session = startTextEdit(el, drawn, point ?? null, (html, text) => {
+    // The new text is written from the source (the frame's copy lacks handlers and more).
+    const map = mapSource(el, at.tree, at.el)
+    const session = startTextEdit(el, drawn, point ?? null, (e) => writeBack(e, at.tree, map), (html, text) => {
       setEditing(null)
       setElState({ editing: null })
       const { b, page } = cur.current
@@ -430,9 +447,13 @@ export function ElementsCanvas() {
     const d = fdoc()
     const w = fwin()
     if (!d || !w) return
-    const s = new FrameSync(d, cur.current.mode)
+    const inert = !frame.current?.sandbox.contains('allow-scripts')
+    // The static frame's DOM is swept once more (whatever a second parse made of the copy is
+    // inert too); nothing in it could run in between: no allow-scripts.
+    if (inert) sweep(d)
+    const s = new FrameSync(d)
     s.collect()
-    sync.current = cur.current.mode === 'static' ? s : null
+    sync.current = inert ? s : null
     if (keepY.current) w.scrollTo(0, keepY.current)
     setLoaded((n) => n + 1)
     bumpFrame(d)
@@ -458,7 +479,7 @@ export function ElementsCanvas() {
         dragTo(e.clientX, e.clientY)
         return
       }
-      lastTarget = e.target as Element
+      lastTarget = embedTarget(d, e.target as Element, e.clientX, e.clientY)
       if (!raf) raf = requestAnimationFrame(hoverAt)
     })
     d.addEventListener('pointerleave', () => {
@@ -474,7 +495,7 @@ export function ElementsCanvas() {
       (e) => {
         const { mode, st } = cur.current
         if (mode === 'preview' || e.button !== 0) return
-        const tg = e.target as Element
+        const tg = embedTarget(d, e.target as Element, e.clientX, e.clientY)!
         if (st.editing && tg.closest('[contenteditable]')) return
         if (partOf(tg)) return
         const el = tg.closest<HTMLElement>('[data-wbc]')
@@ -496,7 +517,8 @@ export function ElementsCanvas() {
     d.addEventListener(
       'click',
       (e) => {
-        const tg = e.target as Element
+        // An embed placeholder takes no pointer events: the one under the pointer is meant.
+        const tg = embedTarget(d, e.target as Element, e.clientX, e.clientY)!
         const a = tg.closest('a[href]')
         const { mode, st, b } = cur.current
         if (mode === 'preview') {
@@ -528,7 +550,7 @@ export function ElementsCanvas() {
       'dblclick',
       (e) => {
         if (cur.current.mode === 'preview') return
-        const el = (e.target as Element).closest<HTMLElement>('[data-wbc]')
+        const el = embedTarget(d, e.target as Element, e.clientX, e.clientY)!.closest<HTMLElement>('[data-wbc]')
         if (!el || isLocked(el) || cur.current.st.editing) return
         e.preventDefault()
         beginText(el.getAttribute('data-wbc')!, { x: e.clientX, y: e.clientY })
@@ -539,7 +561,7 @@ export function ElementsCanvas() {
       'contextmenu',
       (e) => {
         if (cur.current.mode === 'preview') return
-        const el = (e.target as Element).closest<HTMLElement>('[data-wbc]')
+        const el = embedTarget(d, e.target as Element, e.clientX, e.clientY)!.closest<HTMLElement>('[data-wbc]')
         if (!el || isLocked(el) || cur.current.st.editing) return
         e.preventDefault()
         // On the selected element (or inside it) the menu is the selection's.
@@ -774,15 +796,19 @@ export function ElementsCanvas() {
     <div ref={area} className="relative min-w-0 flex-1 overflow-hidden bg-ink-950" data-wb-elements="" onClick={() => !b.preview && (selectEl(b, null), b.select(null))}>
       <div className={`absolute inset-x-0 top-0 flex justify-center ${framed ? 'dots-bg pt-4' : ''}`} style={{ bottom: BAR }}>
         <div className={framed ? 'overflow-hidden rounded-[14px] shadow-[0_0_0_1px_rgba(255,255,255,.08),0_30px_80px_-20px_rgba(0,0,0,.7)]' : ''} style={{ width: width * zoom, height: stageH }}>
+          {/* Static: no allow-scripts (the editor drives the DOM from outside; nothing of the design
+              can run). With the author's confirmation only: the design's scripts, same origin. */}
           <iframe
+            key={frameSrc.scripts ? 'scripts' : 'inert'}
             ref={frame}
             title={t('Page canvas')}
-            srcDoc={srcdoc}
+            srcDoc={frameSrc.html}
             onLoad={onLoad}
             data-wb-frame={mode}
+            data-wb-scripts={frameSrc.scripts ? '1' : '0'}
             className="block border-0 bg-white"
             style={{ width, height: stageH / zoom, transform: `scale(${zoom})`, transformOrigin: '0 0' }}
-            sandbox="allow-scripts allow-same-origin allow-forms"
+            sandbox={frameSrc.scripts ? 'allow-scripts allow-same-origin allow-forms' : 'allow-same-origin'}
           />
         </div>
       </div>
@@ -845,6 +871,24 @@ export function ElementsCanvas() {
 
       {st.palette && !b.preview && <Palette startDrag={startAddDrag} secs={secs} parts={parts} />}
 
+      {b.preview && !st.scripts && (
+        <div data-wb-scripts-off="" className="absolute left-1/2 top-3 z-30 flex max-w-[92%] -translate-x-1/2 items-center gap-3 rounded-lg bg-[#1d2327] px-3 py-2 text-[12px] text-ink-200 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <span>{t('The design’s scripts are not running in this preview.')}</span>
+          <button type="button" data-wb-scripts-ask="" onClick={() => setAsk('preview')} className="shrink-0 rounded-md bg-amber-400/20 px-2 py-1 text-amber-200 hover:bg-amber-400/30">
+            {t('Run them…')}
+          </button>
+        </div>
+      )}
+      {ask && (
+        <ScriptsConsent
+          onCancel={() => setAsk(null)}
+          onRun={() => {
+            setElState(ask === 'live' ? { scripts: true, live: true, editing: null } : { scripts: true })
+            setAsk(null)
+          }}
+        />
+      )}
+
       {/* bottom bar: breadcrumb, live edit, layers */}
       <div className="absolute inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t border-white/[0.07] bg-ink-900 px-3 text-[11.5px] text-ink-300" style={{ height: BAR }} onClick={(e) => e.stopPropagation()}>
         <nav aria-label={t('Breadcrumb')} className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden" data-wb-breadcrumb="">
@@ -895,7 +939,7 @@ export function ElementsCanvas() {
             data-wb-live=""
             aria-pressed={st.live}
             title={t('Run the design’s scripts while editing (menus, sliders, animations). Structural changes reload the page.')}
-            onClick={() => setElState((s) => ({ live: !s.live, editing: null }))}
+            onClick={() => (st.live || st.scripts ? setElState((s) => ({ live: !s.live, editing: null })) : setAsk('live'))}
             className={`flex shrink-0 items-center gap-1 rounded-md px-2 py-1 ${st.live ? 'bg-amber-400/20 text-amber-200' : 'hover:bg-white/10 hover:text-white'}`}
           >
             <Zap size={12} /> {t('Live edit')}

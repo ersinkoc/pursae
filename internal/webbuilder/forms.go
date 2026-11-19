@@ -2,6 +2,7 @@ package webbuilder
 
 import (
 	"net/mail"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -13,8 +14,9 @@ import (
 
 // FormField is one input of a form section.
 type FormField struct {
-	Name     string   `json:"name"` // one of FormFields
-	Type     string   `json:"type"` // text | email | tel | date | textarea | select
+	Name     string   `json:"name"`            // one of FormFields (a code form: also field_<name>)
+	Input    string   `json:"input,omitempty"` // a code form: the design's input name ("" = Name)
+	Type     string   `json:"type"`            // text | email | tel | date | textarea | select (code forms: checkbox, radio)
 	Label    string   `json:"label"`
 	Required bool     `json:"required"`
 	Max      int      `json:"max"` // characters
@@ -120,6 +122,10 @@ func FormSchemas(d *DocState) []FormSchema {
 			if s.Kind == KindForm {
 				out = append(out, schemaOf(s))
 			}
+			if s.Kind == KindCode && depth == 0 && s.Content[ContentBinds] != "" {
+				// A design's forms bound to the endpoint (codebind.go).
+				out = append(out, codeFormSchemas(s.ID, s.Content["html"], ParseCodeBinds(s.Content[ContentBinds]))...)
+			}
 			for j := range s.Items {
 				if s.Items[j].Sub != nil {
 					walk([]Section{*s.Items[j].Sub}, depth+1)
@@ -177,7 +183,11 @@ func (fs FormSchema) Validate(values map[string]string) (clean map[string]string
 	clean = map[string]string{}
 	errs = map[string]string{}
 	for _, f := range fs.Fields {
-		v := strings.TrimSpace(strings.ToValidUTF8(values[f.Name], ""))
+		in := f.Name
+		if f.Input != "" {
+			in = f.Input
+		}
+		v := strings.TrimSpace(strings.ToValidUTF8(values[in], ""))
 		v = stripControl(v, f.Type == "textarea")
 		switch {
 		case v == "":
@@ -187,6 +197,10 @@ func (fs FormSchema) Validate(values map[string]string) (clean map[string]string
 			continue
 		case utf8.RuneCountInString(v) > f.Max:
 			errs[f.Name] = FormTooLong
+			continue
+		}
+		if (f.Type == "select" || f.Type == "radio" || f.Type == "checkbox") && len(f.Options) > 0 && fs.Variant == "code" && !slices.Contains(f.Options, v) {
+			errs[f.Name] = FormInvalid
 			continue
 		}
 		if f.Type == "email" {
@@ -199,6 +213,26 @@ func (fs FormSchema) Validate(values map[string]string) (clean map[string]string
 		clean[f.Name] = v
 	}
 	return clean, errs
+}
+
+// InputErrors keys Validate's errs by the design's input names (a code form's fields name the
+// Pursae field, Input the design's own input), so the form script marks the inputs the visitor
+// sees; other keys (captcha) and builder forms come back as they are.
+func (fs FormSchema) InputErrors(errs map[string]string) map[string]string {
+	if len(errs) == 0 || fs.Variant != "code" {
+		return errs
+	}
+	out := make(map[string]string, len(errs))
+	for k, v := range errs {
+		out[k] = v
+	}
+	for _, f := range fs.Fields {
+		if v, ok := errs[f.Name]; ok && f.Input != "" && f.Input != f.Name {
+			delete(out, f.Name)
+			out[f.Input] = v
+		}
+	}
+	return out
 }
 
 // stripControl removes control characters; single-line fields also lose CR/LF (header safety).

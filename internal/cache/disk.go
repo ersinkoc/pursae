@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -130,13 +131,19 @@ func (d *diskStore) load(key string) (*Entry, error) {
 	return &e, nil
 }
 
-// scan calls fn with the metadata of every readable entry file; corrupt files and
-// leftover temp files are removed.
+// scan calls fn with the metadata of every readable entry file, oldest modification
+// time first. Corrupt files and leftover temp files are removed.
 func (d *diskStore) scan(fn func(m diskMeta, size int64)) error {
 	des, err := os.ReadDir(d.dir)
 	if err != nil {
 		return err
 	}
+	type record struct {
+		meta     diskMeta
+		size     int64
+		modified time.Time
+	}
+	var records []record
 	for _, de := range des {
 		name := de.Name()
 		full := filepath.Join(d.dir, name)
@@ -151,17 +158,26 @@ func (d *diskStore) scan(fn func(m diskMeta, size int64)) error {
 		if err != nil {
 			continue
 		}
-		var size int64
-		if fi, err := f.Stat(); err == nil {
-			size = fi.Size()
-		}
+		info, _ := f.Stat()
 		m, err := readMeta(bufio.NewReaderSize(f, 4096))
 		f.Close()
 		if err != nil || d.path(m.Key) != full {
 			os.Remove(full)
 			continue
 		}
-		fn(m, size)
+		entry := record{meta: m}
+		if info != nil {
+			entry.size = info.Size()
+			entry.modified = info.ModTime()
+		}
+		records = append(records, entry)
+	}
+	// Access order is in memory only. Restore the order of persisted writes on restart.
+	slices.SortStableFunc(records, func(a, b record) int {
+		return a.modified.Compare(b.modified)
+	})
+	for _, entry := range records {
+		fn(entry.meta, entry.size)
 	}
 	return nil
 }

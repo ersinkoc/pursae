@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 // Dynamic snapshot engine (contract §11.5). A published snapshot is sanitized HTML whose
@@ -26,7 +27,12 @@ import (
 //   - data-wb-loop / data-wb-menu-loc repeat their single data-wb-loop-item child per item,
 //     show data-wb-loop-empty only without items, nest at most MaxLoopDepth deep and stop after
 //     MaxLoopIterations items;
-//   - unknown slots render empty and are never passed to the resolver.
+//   - unknown slots render empty and are never passed to the resolver;
+//   - data-wb-text fills only the element's first non-blank direct text node (code bindings);
+//   - a menu may hold several data-wb-loop-item templates: each item picks the one whose tokens
+//     name it ("k:<menu item id>", ItemKeyer), else "parent" for an item with sub-items, else
+//     "default", else the first; data-wb-menu-sub inside a template repeats its own templates per
+//     sub-item (SubMenuer).
 //
 // A snapshot without placeholders compiles to its own text (no parse, no re-serialization).
 
@@ -48,6 +54,9 @@ type SlotArgs struct {
 	Words  int    // data-wb-words, MinDynWords…MaxDynWords; 0 = not set
 	Field  string // data-wb-field, FieldPattern: a custom field name; "" = none
 	Item   string // data-wb-item, IDPattern: the cell whose stored DynSettings apply; "" = none
+	Raw    bool   // data-wb-raw: the value as stored (code bindings, AttrRaw)
+	Meta   bool   // data-wb-meta: a custom field may fall back to the post's own meta (code bindings, AttrMeta)
+	Tree   bool   // data-wb-menu-tree: a code menu (top level only; ItemKeyer and SubMenuer items)
 }
 
 // Resolver supplies slot values for one scope (the request, a loop item or a menu item). Item
@@ -67,6 +76,19 @@ type Resolver interface {
 	Loop(id string, a SlotArgs) (LoopIter, bool)
 	// Menu returns the top-level items of a menu location.
 	Menu(location string, a SlotArgs) (LoopIter, bool)
+}
+
+// ItemKeyer is implemented by item resolvers whose item may pick its own template among several
+// data-wb-loop-item children (a code section's menu: the design's own markup of each imported
+// item). ItemKey is the token naming the item ("k:12"); HasChildren selects a "parent" template.
+type ItemKeyer interface {
+	ItemKey() string
+	HasChildren() bool
+}
+
+// SubMenuer is implemented by menu item resolvers: the item's sub-items (data-wb-menu-sub).
+type SubMenuer interface {
+	SubMenu() (LoopIter, bool)
 }
 
 // LoopIter yields one Resolver per item. The engine calls Next at most MaxLoopIterations times
@@ -142,6 +164,7 @@ type seg struct {
 	static string
 	el     *dynElem
 	role   segRole
+	keys   []string // roleItem: the template's tokens (data-wb-loop-item value)
 }
 
 type cond struct {
@@ -166,14 +189,21 @@ type dynElem struct {
 	menu    string // data-wb-menu-loc location
 	isLoop  bool
 	isMenu  bool
-	badLoop bool // invalid id / location: zero items
-	part    int  // data-wb-loop-part: 0 none, 1 first half, 2 second half
+	badLoop bool   // invalid id / location: zero items
+	part    int    // data-wb-loop-part: 0 none, 1 first half, 2 second half
+	isSub   bool   // data-wb-menu-sub: the current menu item's sub-items
+	sep     string // loops: the white space written between two items (itemSeparators)
+
+	// ownText: this is the replaced text node of a data-wb-text element (lead and trail are the
+	// node's surrounding white space); slot is the text slot.
+	ownText     bool
+	lead, trail string
 
 	kids []seg
 }
 
 // Placeholder attributes that make an element dynamic.
-var dynMarkers = []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrMenuLoc}
+var dynMarkers = []string{AttrSlot, AttrIf, AttrIfNot, AttrLoop, AttrMenuLoc, AttrText, AttrMenuSub}
 
 var (
 	dynFormatRE  = regexp.MustCompile(DynFormatPattern)
@@ -210,17 +240,27 @@ func Compile(src string) (*Program, error) {
 	if !hasPlaceholders(src) {
 		return staticProgram(src), nil
 	}
-	nodes, err := parseFragment(src)
-	if err != nil {
-		return nil, err
-	}
 	c := &compiler{p: &Program{Uses: SlotSet{}}, dyn: map[*html.Node]bool{}, loops: map[string]bool{}, menus: map[string]bool{}}
-	for _, n := range nodes {
-		c.mark(n)
-	}
 	var segs []seg
-	for _, n := range nodes {
-		segs = c.node(n, segs)
+	if strings.Contains(src, AttrCodePage) || strings.Contains(src, codeHeadOpen) {
+		// A snapshot with code sections: only the elements that carry placeholders (with what is
+		// inside them) are parsed; every other byte stays the design's (the head template, the
+		// shell's wrappers and the markup the front end matches as text).
+		var err error
+		if segs, err = c.spliced(src); err != nil {
+			return nil, err
+		}
+	} else {
+		nodes, err := parseFragment(src)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range nodes {
+			c.mark(n)
+		}
+		for _, n := range nodes {
+			segs = c.node(n, segs)
+		}
 	}
 	c.p.segs = segs
 	c.p.HasDynamic = false
@@ -235,6 +275,57 @@ func Compile(src string) (*Program, error) {
 		return staticProgram(src), nil
 	}
 	return c.p, nil
+}
+
+// spliced compiles the outermost elements carrying placeholders one by one (parsed in the context
+// of their parent element) and keeps the source between them as it is.
+func (c *compiler) spliced(src string) ([]seg, error) {
+	root := parseSource(src)
+	var segs []seg
+	last := 0
+	var walk func(n *srcNode) error
+	walk = func(n *srcNode) error {
+		for _, k := range n.kids {
+			if k.tag == "" {
+				continue
+			}
+			marked := false
+			for _, a := range k.attrs {
+				for _, m := range dynMarkers {
+					if a.Key == m {
+						marked = true
+					}
+				}
+			}
+			if !marked {
+				if err := walk(k); err != nil {
+					return err
+				}
+				continue
+			}
+			ctx := &html.Node{Type: html.ElementNode, Data: "body", DataAtom: atom.Body}
+			if p := k.parent; p != nil && p.tag != "#root" && p.tag != "" {
+				ctx = &html.Node{Type: html.ElementNode, Data: p.tag, DataAtom: atom.Lookup([]byte(p.tag))}
+			}
+			nodes, err := html.ParseFragment(strings.NewReader(src[k.start:k.end]), ctx)
+			if err != nil {
+				return err
+			}
+			segs = appendStatic(segs, src[last:k.start])
+			for _, x := range nodes {
+				c.mark(x)
+			}
+			for _, x := range nodes {
+				segs = c.node(x, segs)
+			}
+			last = k.end
+		}
+		return nil
+	}
+	if err := walk(root); err != nil {
+		return nil, err
+	}
+	return appendStatic(segs, src[last:]), nil
 }
 
 func staticProgram(src string) *Program {
@@ -357,6 +448,8 @@ func (c *compiler) element(n *html.Node) *dynElem {
 		case "2/2":
 			e.part = 2
 		}
+	} else if hasAttr(n, AttrMenuSub) {
+		e.isSub = true
 	} else if v, ok := getAttr(n, AttrSlot); ok {
 		name := SlotName(strings.TrimSpace(v))
 		if mode, known := Slots[name]; known {
@@ -379,15 +472,41 @@ func (c *compiler) element(n *html.Node) *dynElem {
 			e.newline = true
 		}
 	}
+	// data-wb-text: the first direct text node that is not blank takes the slot's value.
+	var textNode *html.Node
+	var textSlot SlotName
+	if v, ok := getAttr(n, AttrText); ok {
+		name := SlotName(strings.TrimSpace(v))
+		if Slots[name] == SlotText {
+			for k := n.FirstChild; k != nil; k = k.NextSibling {
+				if k.Type == html.TextNode && strings.TrimSpace(k.Data) != "" {
+					textNode, textSlot = k, name
+					c.p.Uses[name] = true
+					break
+				}
+			}
+		}
+	}
 	seenItem, seenEmpty := false, false
 	for k := n.FirstChild; k != nil; k = k.NextSibling {
-		if e.isLoop || e.isMenu {
+		if k == textNode {
+			t := k.Data
+			body := strings.TrimSpace(t)
+			i := strings.Index(t, body)
+			e.kids = append(e.kids, seg{el: &dynElem{ownText: true, slot: textSlot, slotMode: SlotText, args: e.args,
+				lead: t[:i], trail: t[i+len(body):]}})
+			continue
+		}
+		if e.isLoop || e.isMenu || e.isSub {
 			if k.Type == html.ElementNode && hasAttr(k, AttrLoopItem) {
-				if seenItem {
-					continue // exactly one card template
+				if seenItem && e.isLoop {
+					continue // a post loop has exactly one card template
 				}
 				seenItem = true
-				e.kids = append(e.kids, c.roleSeg(k, roleItem))
+				sg := c.roleSeg(k, roleItem)
+				v, _ := getAttr(k, AttrLoopItem)
+				sg.keys = strings.Fields(v)
+				e.kids = append(e.kids, sg)
 				continue
 			}
 			if k.Type == html.ElementNode && hasAttr(k, AttrLoopEmpty) {
@@ -401,7 +520,43 @@ func (c *compiler) element(n *html.Node) *dynElem {
 		}
 		e.kids = c.node(k, e.kids)
 	}
+	if e.isLoop || e.isMenu || e.isSub {
+		e.kids, e.sep = itemSeparators(e.kids)
+	}
 	return e
+}
+
+// itemSeparators keeps the source's white space between repeated items: the blank text right
+// after the first item template separates every two items; blank text between templates (a code
+// menu keeps each item's markup as a template) is dropped.
+func itemSeparators(kids []seg) ([]seg, string) {
+	first, last := -1, -1
+	for i := range kids {
+		if kids[i].role == roleItem {
+			if first < 0 {
+				first = i
+			}
+			last = i
+		}
+	}
+	if first < 0 {
+		return kids, ""
+	}
+	blank := func(s *seg) bool {
+		return s.el == nil && s.role == roleNormal && strings.TrimSpace(s.static) == ""
+	}
+	sep := ""
+	if first+1 < len(kids) && blank(&kids[first+1]) {
+		sep = kids[first+1].static
+	}
+	out := kids[:0:0]
+	for i := range kids {
+		if i > first && i < last && blank(&kids[i]) {
+			continue
+		}
+		out = append(out, kids[i])
+	}
+	return out, sep
 }
 
 func (c *compiler) roleSeg(n *html.Node, role segRole) seg {
@@ -431,6 +586,15 @@ func slotArgs(n *html.Node) SlotArgs {
 	}
 	if v, ok := getAttr(n, AttrItem); ok && idPatternRE.MatchString(v) {
 		a.Item = v
+	}
+	if hasAttr(n, AttrRaw) {
+		a.Raw = true
+	}
+	if hasAttr(n, AttrMeta) {
+		a.Meta = true
+	}
+	if hasAttr(n, AttrMenuTree) {
+		a.Tree = true
 	}
 	if v, ok := getAttr(n, AttrWords); ok {
 		if w, err := strconv.Atoi(strings.TrimSpace(v)); err == nil && w >= MinDynWords && w <= MaxDynWords {
@@ -512,6 +676,16 @@ func empty(slot SlotName, a SlotArgs, r Resolver) bool {
 }
 
 func (x *execer) elem(e *dynElem, r Resolver) {
+	if e.ownText {
+		v, ok := r.Text(e.slot, e.args)
+		if !ok {
+			v = ""
+		}
+		x.w.WriteString(e.lead)
+		x.w.WriteString(html.EscapeString(v))
+		x.w.WriteString(e.trail)
+		return
+	}
 	for _, c := range e.conds {
 		isEmpty := !c.known || empty(c.slot, e.args, r)
 		if isEmpty != c.not {
@@ -519,7 +693,7 @@ func (x *execer) elem(e *dynElem, r Resolver) {
 		}
 	}
 	switch {
-	case e.isLoop || e.isMenu:
+	case e.isLoop || e.isMenu || e.isSub:
 		x.loop(e, r)
 		return
 	case e.unknown:
@@ -574,10 +748,14 @@ func (x *execer) elem(e *dynElem, r Resolver) {
 
 func (x *execer) loop(e *dynElem, r Resolver) {
 	var item, emptySeg *seg
+	var templates []*seg
 	for i := range e.kids {
 		switch e.kids[i].role {
 		case roleItem:
-			item = &e.kids[i]
+			if item == nil {
+				item = &e.kids[i]
+			}
+			templates = append(templates, &e.kids[i])
 		case roleEmpty:
 			emptySeg = &e.kids[i]
 		}
@@ -586,9 +764,14 @@ func (x *execer) loop(e *dynElem, r Resolver) {
 	if !e.badLoop && item != nil && x.depth < MaxLoopDepth {
 		var it LoopIter
 		var ok bool
-		if e.isLoop {
+		switch {
+		case e.isLoop:
 			it, ok = r.Loop(e.loop, e.args)
-		} else {
+		case e.isSub:
+			if sm, is := r.(SubMenuer); is {
+				it, ok = sm.SubMenu()
+			}
+		default:
 			it, ok = r.Menu(e.menu, e.args)
 		}
 		if ok && it != nil {
@@ -620,12 +803,18 @@ func (x *execer) loop(e *dynElem, r Resolver) {
 		case roleNormal:
 			x.seg(k, r)
 		case roleItem:
-			for _, ir := range items {
+			if k != item {
+				continue // the other templates render where the first one is
+			}
+			for n, ir := range items {
 				if x.w.Len() >= x.limit {
 					x.truncated = true
 					break
 				}
-				x.seg(item, ir)
+				if n > 0 && e.sep != "" {
+					x.w.WriteString(e.sep)
+				}
+				x.seg(pickTemplate(templates, ir), ir)
 			}
 		case roleEmpty:
 			if len(items) == 0 && emptySeg != nil {
@@ -635,6 +824,39 @@ func (x *execer) loop(e *dynElem, r Resolver) {
 	}
 	x.depth--
 	x.end(e)
+}
+
+// pickTemplate chooses an item's template (see the file comment).
+func pickTemplate(templates []*seg, ir Resolver) *seg {
+	if len(templates) == 1 {
+		return templates[0]
+	}
+	find := func(tok string) *seg {
+		for _, s := range templates {
+			for _, k := range s.keys {
+				if k == tok {
+					return s
+				}
+			}
+		}
+		return nil
+	}
+	if k, ok := ir.(ItemKeyer); ok {
+		if key := k.ItemKey(); key != "" {
+			if s := find(key); s != nil {
+				return s
+			}
+		}
+		if k.HasChildren() {
+			if s := find("parent"); s != nil {
+				return s
+			}
+		}
+	}
+	if s := find("default"); s != nil {
+		return s
+	}
+	return templates[0]
 }
 
 var attrEscaper = strings.NewReplacer(`&`, "&amp;", `'`, "&#39;", `<`, "&lt;", `>`, "&gt;", `"`, "&#34;", "\r", "&#13;")
@@ -758,7 +980,11 @@ func slotAttrValue(tag, key, v string) (string, bool) {
 		return strings.Join(toks, " "), len(toks) > 0
 	case "alt", "datetime":
 		return v, utf8.ValidString(v)
+	case "target":
+		v = strings.TrimSpace(v)
+		return v, v == "_blank" || v == "_self" || v == "_parent" || v == "_top"
 	}
+
 	return "", false
 }
 

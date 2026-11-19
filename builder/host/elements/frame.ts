@@ -2,27 +2,31 @@
  * The element editor's frame: one document with the header template, the page's code sections and
  * the footer template, in their shared wrappers (like the site prints them).
  *
- * Static edit mode (K7): the frame gets a copy of the markup whose scripts do not run (a script's
- * type becomes text/x-wb-inert, inline on* handlers are dropped); the stored markup is never
- * changed. The DOM on screen is then the source DOM, so an operation is applied to the frame by
- * reconciling the changed sections' new markup against the elements already there (FrameSync):
- * unchanged elements are kept (no reload, no image flash), changed ones updated or rebuilt.
+ * Static edit mode (K7): the design's scripts do not run. Two independent layers (security model:
+ * docs/web-builder-code-sections.md): the frame is sandboxed without allow-scripts (ElementsCanvas),
+ * and its copy of the markup is neutralised with the browser's own parser (neutral.ts: scripts of
+ * every namespace inert, on* handlers, srcdoc, javascript: URLs, declarative shadow roots, meta
+ * refresh, base … gone). The stored markup is never changed. The DOM on screen is then the source
+ * DOM, so an operation is applied to the frame by reconciling the changed sections' new markup
+ * against the elements already there (FrameSync): unchanged elements are kept (no reload, no image
+ * flash), changed ones updated, or rebuilt from neutralised nodes.
  *
  * Header and footer parts are locked: their data-wbc ids get an "h:" / "f:" prefix in the copy, so
  * they never clash with the page's ids and the canvas knows them apart. The only editor nodes in
- * the design's DOM are three stylesheets at the end of the head: <style data-wb-kit> (the kits'
- * class and variable overrides, kitstyle.ts), <style data-wb-local> (the local styles, like the
- * published page's, see local.ts) and <style data-wb-edit> (editor-only rules);
- * section boundaries are marked by comments while the frame loads and the comments are removed at
- * once (FrameSync.collect).
+ * the design's DOM are its <base data-wb-editor> and three stylesheets at the end of the head:
+ * <style data-wb-kit> (the kits' class and variable overrides, kitstyle.ts), <style data-wb-local>
+ * (the local styles, like the published page's, see local.ts) and <style data-wb-edit>
+ * (editor-only rules); section boundaries are marked by comments while the frame loads and the
+ * comments are removed at once (FrameSync.collect).
  */
 import type { Section } from '@/builder/types'
 import { RAW, attrEdit, elementKids, outer, parse, splice, wbc, type Edit, type El, type Node as SrcNode, type Tree } from './html'
+import { EDITOR_ATTR, neutralAttrs, neutralMarkup, neutralNodes } from './neutral'
 import { tree } from './ops'
 
-export type FrameMode = 'static' | 'live' | 'preview'
+export { INERT } from './neutral'
 
-export const INERT = 'text/x-wb-inert'
+export type FrameMode = 'static' | 'live' | 'preview'
 
 const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 const TAG_RE = /^<[a-zA-Z][a-zA-Z0-9-]{0,30}(?:\s[^<>]*)?>$/
@@ -35,47 +39,48 @@ export function wrapChain(wrap: string | undefined): string[] {
     .filter((l) => TAG_RE.test(l))
 }
 
-const closeOf = (open: string) => `</${/^<([a-zA-Z][a-zA-Z0-9-]*)/.exec(open)![1]}>`
+const tagOf = (open: string) => /^<([a-zA-Z][a-zA-Z0-9-]*)/.exec(open)![1].toLowerCase()
+const closeOf = (open: string) => `</${tagOf(open)}>`
 
-/** Edits that make markup inert: scripts get a type that does not run, on* handlers go. */
-function inertEdits(t: Tree, prefix?: string): Edit[] {
+/** Prefixes the data-wbc ids of markup (a locked part), byte for byte the same otherwise. */
+function prefixIds(html: string, prefix: string): string {
+  const t = parse(html)
   const edits: Edit[] = []
   for (const el of t.all) {
-    for (const a of el.attrs) {
-      if (/^on/.test(a.name)) edits.push(...attrEdit(t, el, a.name, null))
-    }
-    if (el.tag === 'script' && !el.foreign) edits.push(...attrEdit(t, el, 'type', INERT))
-    if (prefix) {
-      const w = wbc(el)
-      if (w !== null) edits.push(...attrEdit(t, el, 'data-wbc', prefix + w))
-    }
-  }
-  return edits
-}
-
-/** The frame's copy of markup: inert in static mode; ids prefixed for a locked part. */
-export function frameCopy(html: string, mode: FrameMode, prefix?: string): string {
-  if (mode !== 'static' && !prefix) return html
-  const t = parse(html)
-  const edits = mode === 'static' ? inertEdits(t, prefix) : []
-  if (mode !== 'static' && prefix) {
-    for (const el of t.all) {
-      const w = wbc(el)
-      if (w !== null) edits.push(...attrEdit(t, el, 'data-wbc', prefix + w))
-    }
+    const w = wbc(el)
+    if (w !== null) edits.push(...attrEdit(t, el, 'data-wbc', prefix + w))
   }
   return edits.length ? splice(html, edits) : html
 }
 
-/** Attributes written in an opening tag ("class=a data-x"): inert in static mode. */
+/**
+ * The frame's copy of markup: in static mode parsed by the browser, neutralised and serialised
+ * (neutral.ts); otherwise — the author chose to run the design's scripts — the markup itself.
+ * Ids are prefixed for a locked part.
+ */
+export function frameCopy(html: string, mode: FrameMode, prefix?: string): string {
+  if (mode === 'static') return neutralMarkup(html, prefix)
+  return prefix ? prefixIds(html, prefix) : html
+}
+
+/** A wrapper's opening tag in the frame's copy. */
+function openCopy(open: string, mode: FrameMode): string {
+  if (mode !== 'static') return open
+  const close = closeOf(open)
+  const out = neutralMarkup(open + close)
+  return out.startsWith(`<${tagOf(open)}`) && out.endsWith(close) ? out.slice(0, -close.length) : `<${tagOf(open)}>`
+}
+
+/** Attributes written in an opening tag ("class=a data-x"): neutralised in static mode. */
 function attrsCopy(attrs: string | undefined, mode: FrameMode): string {
   const a = (attrs ?? '').trim()
   if (!a || /[<>]/.test(a)) return ''
   if (mode !== 'static') return ' ' + a
-  const t = parse(`<x ${a}>`)
-  const el = t.all[0]
-  if (!el) return ''
-  return ' ' + splice(t.src, inertEdits(t)).slice(3, -1).trim()
+  const want = neutralAttrs(`<div ${a}></div>`, 'div')
+  let out = ''
+  // eslint-disable-next-line no-control-regex
+  for (const [n, v] of want ?? []) if (/^[^\s"'>/=\u0000-\u001f]+$/.test(n)) out += ` ${n}="${esc(v)}"`
+  return out
 }
 
 /** The head markup of all parts: each distinct top-level tag once, in order (like MergeHeads). */
@@ -100,8 +105,10 @@ export interface FrameParts {
   footer: Section[]
 }
 
-export const markStart = (id: string) => `<!--wb:${id}-->`
-export const markEnd = (id: string) => `<!--/wb:${id}-->`
+// Section ids are encoded: a marker never holds "-->" or "<".
+const markId = (id: string) => encodeURIComponent(id).replace(/%3A/g, ":")
+export const markStart = (id: string) => `<!--wb:${markId(id)}-->`
+export const markEnd = (id: string) => `<!--/wb:${markId(id)}-->`
 
 /**
  * The frame document. Sections are in page order between the header's and the footer's; wrappers
@@ -118,7 +125,7 @@ export function frameDoc(page: Section[], parts: FrameParts, mode: FrameMode, ed
     while (k < stack.length && k < chain.length && stack[k] === chain[k]) k++
     while (stack.length > k) body += closeOf(stack.pop()!)
     for (const w of chain.slice(k)) {
-      body += frameCopy(w + closeOf(w), mode).slice(0, -closeOf(w).length)
+      body += openCopy(w, mode)
       stack.push(w)
     }
     const id = (prefix ?? '') + s.id
@@ -130,7 +137,7 @@ export function frameDoc(page: Section[], parts: FrameParts, mode: FrameMode, ed
   const bodyAttrs = attrsCopy(c.bodyAttrs, mode).replace(/\sclass="[^"]*"/, bodyClass ? '' : '$&')
   return (
     `<!doctype html><html lang="${esc(c.lang || 'en')}"${attrsCopy(c.htmlAttrs, mode)}><head><meta charset="utf-8">` +
-    `<meta name="viewport" content="width=device-width,initial-scale=1"><base href="${esc(base)}">` +
+    `<meta name="viewport" content="width=device-width,initial-scale=1"><base href="${esc(base)}" ${EDITOR_ATTR}="">` +
     `${mergeHeads(all.map(({ s }) => s.content.head ?? ''), mode)}<style data-wb-kit>${kitCss.replace(/<\//g, '<\\/')}</style><style data-wb-local>${localCss.replace(/<\//g, '<\\/')}</style><style data-wb-edit>${editCss}</style></head><body${bodyClass}${bodyAttrs}>${body}</body></html>`
   )
 }
@@ -143,15 +150,14 @@ interface SecNodes {
 }
 
 /**
- * The page sections' nodes in the frame, and the reconciler that applies new markup to them.
+ * The page sections' nodes in the static frame, and the reconciler that applies new markup to
+ * them: changed elements get the neutralised copy's attributes, new markup becomes neutralised
+ * nodes (neutral.ts) — nothing the design wrote is ever parsed into the frame's own document.
  * Works in the browser (needs the frame's DOM).
  */
 export class FrameSync {
   readonly secs = new Map<string, SecNodes>()
-  constructor(
-    readonly doc: Document,
-    private mode: FrameMode,
-  ) {}
+  constructor(readonly doc: Document) {}
 
   /** Reads and removes the section markers; false when a section's markup is not well formed. */
   collect(): boolean {
@@ -159,27 +165,36 @@ export class FrameSync {
     const starts = new Map<string, Comment>()
     const marks: Comment[] = []
     let ok = true
+    const idOf = (data: string) => {
+      const m = /^(\/?)wb:(.+)$/.exec(data)
+      if (!m) return null
+      try {
+        return { end: !!m[1], id: decodeURIComponent(m[2]) }
+      } catch {
+        return null
+      }
+    }
     for (let n = w.nextNode() as Comment | null; n; n = w.nextNode() as Comment | null) {
-      const m = /^(\/?)wb:(.+)$/.exec(n.data)
+      const m = idOf(n.data)
       if (!m) continue
       marks.push(n)
-      if (!m[1]) starts.set(m[2], n)
+      if (!m.end) starts.set(m.id, n)
       else {
-        const s = starts.get(m[2])
+        const s = starts.get(m.id)
         if (!s || s.parentNode !== n.parentNode) {
           ok = false
           continue
         }
         const nodes: Node[] = []
         for (let x = s.nextSibling; x && x !== n; x = x.nextSibling) nodes.push(x)
-        if (!m[2].startsWith('h:') && !m[2].startsWith('f:')) this.secs.set(m[2], { parent: s.parentNode!, nodes })
+        if (!m.id.startsWith('h:') && !m.id.startsWith('f:')) this.secs.set(m.id, { parent: s.parentNode!, nodes })
       }
     }
     for (const c of marks) {
       // An empty section keeps an empty text node as its place.
-      const id = /^\/?wb:(.+)$/.exec(c.data)![1]
-      const e = this.secs.get(id)
-      if (e && !e.nodes.length && !c.data.startsWith('/')) {
+      const m = idOf(c.data)!
+      const e = this.secs.get(m.id)
+      if (e && !e.nodes.length && !m.end) {
         const t = this.doc.createTextNode('')
         c.parentNode!.insertBefore(t, c)
         e.nodes.push(t)
@@ -233,7 +248,7 @@ export class FrameSync {
     let pending = ''
     const flush = () => {
       if (!pending) return
-      out.push(...this.fragment(parent, pending))
+      out.push(...neutralNodes(pending, parent))
       pending = ''
     }
     for (const k of kids) {
@@ -250,9 +265,11 @@ export class FrameSync {
         out.push(fe)
         continue
       }
-      if (fe && was !== undefined && ctx.oldTag.get(id!) === k.tag && !RAW.has(k.tag) && k.tag !== 'svg' && !k.foreign && fe.parentNode) {
+      const want = fe && was !== undefined && ctx.oldTag.get(id!) === k.tag && !RAW.has(k.tag) && k.tag !== 'svg' && k.tag !== 'math' && !k.foreign && fe.parentNode ? this.want(fe, t, k) : null
+      if (fe && want) {
         flush()
-        this.attrs(fe, t, k)
+        for (const a of Array.from(fe.attributes)) if (!want.has(a.name)) fe.removeAttribute(a.name)
+        for (const [n, v] of want) if (fe.getAttribute(n) !== v) fe.setAttribute(n, v)
         this.list(fe, Array.from(fe.childNodes), null, t, k.children, ctx)
         out.push(fe)
         continue
@@ -271,21 +288,10 @@ export class FrameSync {
     return out
   }
 
-  /** Nodes parsed from source markup in the context of parent. */
-  private fragment(parent: Node, src: string): Node[] {
-    const r = this.doc.createRange()
-    r.selectNodeContents(parent)
-    const f = r.createContextualFragment(frameCopy(src, this.mode))
-    return Array.from(f.childNodes)
-  }
-
-  /** Gives the frame element the attributes of source element k (in the frame's copy). */
-  private attrs(fe: Element, t: Tree, k: El) {
-    const copy = parse(frameCopy(t.src.slice(k.start, k.openEnd) + '</' + k.tag + '>', this.mode)).all[0]
-    const want = new Map<string, string>()
-    for (const a of copy?.attrs ?? []) want.set(a.name, a.value ?? '')
-    for (const a of Array.from(fe.attributes)) if (!want.has(a.name)) fe.removeAttribute(a.name)
-    for (const [n, v] of want) if (fe.getAttribute(n) !== v) fe.setAttribute(n, v)
+  /** The attributes frame element fe gets for source element k (its neutralised copy); null: rebuild it. */
+  private want(fe: Element, t: Tree, k: El): Map<string, string> | null {
+    const ctx = fe.parentElement && fe.parentElement.namespaceURI === 'http://www.w3.org/1999/xhtml' ? fe.parentElement.localName : 'template'
+    return neutralAttrs(t.src.slice(k.start, k.openEnd) + '</' + k.tag + '>', k.tag, ctx)
   }
 }
 

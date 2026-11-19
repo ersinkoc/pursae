@@ -36,6 +36,12 @@ func wbCodeSection(p webbuilder.CodePart, head, kit, lang string) map[string]any
 	if lang != "" {
 		content["lang"] = lang
 	}
+	if p.Binds != "" {
+		content[webbuilder.ContentBinds] = p.Binds
+	}
+	if p.Tail {
+		content["tail"] = "1"
+	}
 	return map[string]any{
 		"id": wbCodeID(), "kind": webbuilder.KindCode, "name": p.Name, "hidden": false, "content": content, "items": []any{},
 		"style": map[string]any{"palette": "light", "align": "left", "padding": 0, "titleSize": 40, "hideOn": []any{}},
@@ -46,6 +52,9 @@ func mcpWBImportCode(s *Server, c *gin.Context, args map[string]any) (any, error
 	u := restCurrent(c)
 	if u == nil || !u.Can("unfiltered_html", nil) {
 		return nil, mcpErrf("method code keeps the design's own HTML, CSS and JavaScript: the account needs unfiltered_html (an administrator)")
+	}
+	if !restScopeSiteCode(c) {
+		return nil, mcpErrf("method code keeps the design's own HTML, CSS and JavaScript: an Application Password needs the Appearance (themes) scope or full access for it; method exact works with Content")
 	}
 	status, err := mcpPublishStatus(args)
 	if err != nil {

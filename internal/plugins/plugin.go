@@ -364,7 +364,7 @@ func (p *Plugin) recordFailure(ctx context.Context, cause error) {
 // shutdown disables the plugin, removes its hooks and closes its module.
 func (p *Plugin) shutdown(ctx context.Context, reason string) {
 	p.markDisabled(reason)
-	p.rt.hooks.RemoveAll(p.Slug())
+	p.removeHooks()
 	p.lock()
 	defer p.unlock()
 	p.disableLocked(ctx, reason)
@@ -373,7 +373,7 @@ func (p *Plugin) shutdown(ctx context.Context, reason string) {
 // disableLocked disables the plugin; callers hold the instance lock.
 func (p *Plugin) disableLocked(ctx context.Context, reason string) {
 	first := p.markDisabled(reason)
-	p.rt.hooks.RemoveAll(p.Slug())
+	p.removeHooks()
 	if p.mod != nil {
 		_ = p.mod.Close(ctx)
 		p.rt.forgetModule(p.modName)
@@ -381,6 +381,16 @@ func (p *Plugin) disableLocked(ctx context.Context, reason string) {
 	}
 	if first {
 		p.logs.add("error", "runtime", reason)
+	}
+}
+
+// removeHooks removes this instance's registrations. An overlapping Load may have registered
+// new hooks under the same slug after Unload released the runtime's reservation.
+func (p *Plugin) removeHooks() {
+	p.state.Lock()
+	defer p.state.Unlock()
+	for _, id := range p.regs {
+		p.rt.hooks.Remove(id)
 	}
 }
 

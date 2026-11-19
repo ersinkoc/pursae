@@ -394,7 +394,7 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 	preview := permalink + previewSep(permalink) + "preview=true"
 	editPost := lb.HomeURL("/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit")
 	publish := u.Can("publish_post", p)
-	parts := s.wbEditorCodeParts(c, p, doc)
+	parts := s.wbEditorCodeParts(c, p, u, doc)
 	// Theme Builder (contract §11.7): a template's boot names its type, rules and preview object;
 	// it exits to Appearance › Theme Builder and previews on the front with ?wb_template_preview.
 	var tplBoot *webbuilder.TemplateBoot

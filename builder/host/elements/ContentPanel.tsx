@@ -21,7 +21,8 @@ import type { CmsHost } from '../cms-host'
 import { t } from '../i18n'
 import { act, latest, pageOf, style as styleAct } from './actions'
 import { attrError, tagChoices, urlOK, type AttrError } from './attrs'
-import { attr, elementKids, inner, outer, ownText, wbc, type El, type Tree } from './html'
+import { attr, decode, elementKids, inner, outer, ownText, wbc, type El, type Tree } from './html'
+import { KEEP_ATTR, writeBack, type SrcMap } from './richtext'
 import { kindLabel, kindOf } from './kinds'
 import { locate, movable, withIds } from './ops'
 import { frameEl } from './geometry'
@@ -122,7 +123,7 @@ export function ContentTab({ s, fallback }: { s: Section; fallback: ReactNode })
           </select>
         )}
       </div>
-      {isText && <RichPanel key={id + '\u0000' + inner(tr, el)} b={b} id={id} html={inner(tr, el)} />}
+      {isText && <RichPanel key={id + '\u0000' + inner(tr, el)} b={b} id={id} html={inner(tr, el)} tr={tr} el={el} />}
       {tag === 'a' && <LinkPanel b={b} id={id} el={el} />}
       {tag === 'img' && <ImagePanel b={b} id={id} el={el} tr={tr} sec={s as LocalSection} />}
       {tag === 'svg' && <IconPanel b={b} id={id} tr={tr} el={el} />}
@@ -139,17 +140,64 @@ export function ContentTab({ s, fallback }: { s: Section; fallback: ReactNode })
 
 /* ---------- Text ---------- */
 
-function RichPanel({ b, id, html }: { b: B; id: string; html: string }) {
+/** Elements the text box shows as themselves (no attributes; a link keeps a safe address). */
+const RICH_TAGS = new Set(['b', 'strong', 'i', 'em', 'u', 's', 'a', 'br', 'span', 'code', 'sub', 'sup'])
+
+/**
+ * The text box's DOM, built from the source tree node by node — the design's markup is never
+ * parsed in the editor's document: allowlisted elements without attributes (a link keeps its
+ * address when it is safe), text as text, anything else (an image, an icon, code) a kept
+ * placeholder written back as it is (richtext.writeBack).
+ */
+export function richNodes(tr: Tree, el: El, map: SrcMap): DocumentFragment {
+  const f = document.createDocumentFragment()
+  const add = (parent: Node, kids: El['children']) => {
+    for (const k of kids) {
+      if (k.type === 'text') {
+        const n = document.createTextNode(decode(tr.src.slice(k.start, k.end)))
+        map.set(n, k)
+        parent.appendChild(n)
+      } else if (k.type === 'el' && RICH_TAGS.has(k.tag) && !k.foreign) {
+        const e = document.createElement(k.tag)
+        const href = k.tag === 'a' ? attr(k, 'href') : null
+        if (href && urlOK(href)) e.setAttribute('href', href)
+        map.set(e, k)
+        parent.appendChild(e)
+        if (k.tag !== 'br') add(e, k.children)
+      } else if (k.type === 'el' || k.type === 'comment') {
+        const ph = document.createElement('span')
+        ph.setAttribute(KEEP_ATTR, '')
+        ph.contentEditable = 'false'
+        if (k.type !== 'el') ph.hidden = true
+        else {
+          ph.textContent = `<${k.tag}>`
+          ph.className = 'mx-0.5 rounded bg-white/10 px-1 font-mono text-[10.5px] text-ink-400'
+        }
+        map.set(ph, k)
+        parent.appendChild(ph)
+      }
+    }
+  }
+  add(f, el.children)
+  return f
+}
+
+function RichPanel({ b, id, html, tr, el }: { b: B; id: string; html: string; tr: Tree; el: El }) {
   const box = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (box.current) box.current.innerHTML = html
-  }, [html])
+  const map = useRef<SrcMap>(new Map())
+  const fill = () => {
+    if (!box.current) return
+    map.current = new Map()
+    box.current.replaceChildren(richNodes(tr, el, map.current))
+  }
+  useEffect(fill, [html]) // eslint-disable-line react-hooks/exhaustive-deps
   const cmd = (c: string, v?: string) => {
     box.current?.focus()
     document.execCommand(c, false, v)
   }
   const save = () => {
-    const next = box.current?.innerHTML ?? html
+    if (!box.current) return
+    const next = writeBack(box.current, tr, map.current)
     if (next !== html) act.setInner(b, id, next)
   }
   const btn = (label: string, icon: ReactNode, on: () => void) => (
@@ -177,7 +225,7 @@ function RichPanel({ b, id, html }: { b: B; id: string; html: string }) {
         onKeyDown={(e) => {
           e.stopPropagation()
           if (e.key === 'Escape') {
-            if (box.current) box.current.innerHTML = html
+            fill()
             box.current?.blur()
           }
         }}

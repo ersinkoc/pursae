@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Element editor: the frame document (static copy, locked parts, shared wrappers), element types
  * and the drop rules / places the canvas and the navigator use.
@@ -16,7 +17,8 @@ describe('frame copy', () => {
   it('static mode: scripts do not run, inline handlers go, the stored markup is untouched', () => {
     const src = '<div onclick="x()" data-wbc="1"><script>boom()</script><script type="module" src="a.js"></script><svg onload="y()"><g/></svg></div>'
     const out = frameCopy(src, 'static')
-    expect(out).toBe(`<div data-wbc="1"><script type="${INERT}">boom()</script><script type="${INERT}" src="a.js"></script><svg><g/></svg></div>`)
+    // Parsed and serialised by the browser's parser (neutral.ts): scripts empty and inert.
+    expect(out).toBe(`<div data-wbc="1"><script type="${INERT}"></script><script type="${INERT}"></script><svg><g></g></svg></div>`)
     expect(frameCopy(src, 'live')).toBe(src)
   })
 

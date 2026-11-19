@@ -142,6 +142,9 @@ func (s *Server) site(c *gin.Context) {
 		s.sitemapPart(c, strings.TrimSuffix(strings.TrimPrefix(path, "wp-sitemap-"), ".xml"))
 		return
 	}
+	if s.wbKitRootAsset(c) { // Pursae Web Builder: a site-imported design's files at the root (webbuilder_kits.go)
+		return
+	}
 	if strings.HasPrefix(path, "wp-json") || strings.HasPrefix(path, "wp-content/") || strings.HasPrefix(path, "wp-includes/") || strings.HasPrefix(path, "wp-admin") {
 		c.Status(http.StatusNotFound)
 		return
@@ -364,6 +367,14 @@ func (s *Server) resolve(c *gin.Context, path string) (*siteQuery, error) {
 func (s *Server) resolvePretty(c *gin.Context, q *siteQuery, path string) (*siteQuery, error) {
 	ctx := c.Request.Context()
 	lb := s.links(ctx)
+	// A page a site import made at an address the archive rules below would take (a static copy of
+	// a WordPress site's /author/admin/ or /2026/09/): the imported page answers there
+	// (webbuilder_siteclaims.go). Page 1 only, no feed: /author/admin/page/2/ is the archive's.
+	if q.Paged <= 1 && q.Feed == "" && q.CPage == 0 {
+		if p := s.wbSiteClaimed(c, path); p != nil {
+			return s.singular(c, q, p)
+		}
+	}
 	catBase := strings.Trim(defaultStr(s.settings.String("category_base"), "category"), "/")
 	tagBase := strings.Trim(defaultStr(s.settings.String("tag_base"), "tag"), "/")
 	switch {
