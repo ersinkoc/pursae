@@ -49,3 +49,32 @@ func TestCLICacheFlushClearsDiskOnProxyFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCLICacheFlushReportsProxyAndDiskFailures(t *testing.T) {
+	ts, client, srv := newTestServer(t, false)
+	installAndLogin(t, ts, client)
+	proxy := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		panic(http.ErrAbortHandler)
+	}))
+	defer proxy.Close()
+	if err := srv.settings.Set(context.Background(), map[string]any{
+		"wpgo_cache_server": "generic", "wpgo_cache_purge_url": proxy.URL,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cfg := srv.cfg
+	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.UploadsDir = filepath.Join(t.TempDir(), "uploads")
+	dir := cacheDiskDir(cfg.UploadsDir)
+	if err := os.MkdirAll(filepath.Dir(dir), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dir, []byte("not a directory"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var out, errs bytes.Buffer
+	code := CLI(context.Background(), cfg, "pursae", []string{"cache", "flush"}, strings.NewReader(""), &out, &errs)
+	if code == 0 || !strings.Contains(errs.String(), "front proxy purge") || !strings.Contains(errs.String(), "disk cache") {
+		t.Fatalf("both failures should be reported: exit=%d stdout=%q stderr=%q", code, out.String(), errs.String())
+	}
+}

@@ -324,7 +324,7 @@ func registerCacheCLI(r *cli.Registry, e *cliEnv) {
 					c.Log("Removed %d persisted page file(s) from %s.", n, dir)
 				}
 				if err != nil {
-					return fmt.Errorf("disk cache %s: %w", dir, err)
+					return errors.Join(proxyErr, fmt.Errorf("disk cache %s: %w", dir, err))
 				}
 			}
 			if proxyErr != nil {
