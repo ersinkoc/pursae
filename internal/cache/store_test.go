@@ -196,7 +196,9 @@ func TestDiskSkipsExpiredAndCorrupt(t *testing.T) {
 	s, _ := NewStore(StoreOptions{DiskDir: dir})
 	e := mkEntry(t, "http://h/old#d", 10)
 	e.Expires = time.Now().Add(-time.Second)
-	s.disk.save(e)
+	if err := s.Set(e); err != nil {
+		t.Fatal(err)
+	}
 	os.WriteFile(filepath.Join(dir, "junk"+diskExt), []byte("garbage"), 0o600)
 	s2, err := NewStore(StoreOptions{DiskDir: dir})
 	if err != nil {

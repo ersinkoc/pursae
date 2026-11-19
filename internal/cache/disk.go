@@ -48,17 +48,23 @@ func (d *diskStore) path(key string) string {
 	return filepath.Join(d.dir, hex.EncodeToString(sum[:])+diskExt)
 }
 
-// save writes e atomically: to a temp file in the same directory, synced, then renamed.
-func (d *diskStore) save(e *Entry) error {
+// stage writes and syncs e to a temporary file in the same directory.
+// The caller owns the temporary path after a successful return.
+func (d *diskStore) stage(e *Entry) (name string, err error) {
 	var meta bytes.Buffer
 	if err := gob.NewEncoder(&meta).Encode(diskMeta{Key: e.Key, Tags: e.Tags, Expires: e.Expires}); err != nil {
-		return err
+		return "", err
 	}
 	tmp, err := os.CreateTemp(d.dir, ".tmp-*")
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer os.Remove(tmp.Name()) // no-op after a successful rename
+	defer func() {
+		if err != nil {
+			_ = tmp.Close()
+			_ = os.Remove(tmp.Name())
+		}
+	}()
 	// bufio.Writer errors are sticky: a failed write here is reported by the Flush below.
 	w := bufio.NewWriter(tmp)
 	_, _ = w.WriteString(diskMagic)
@@ -67,21 +73,22 @@ func (d *diskStore) save(e *Entry) error {
 	_, _ = w.Write(n[:])
 	_, _ = w.Write(meta.Bytes())
 	if err := gob.NewEncoder(w).Encode(e); err != nil {
-		tmp.Close()
-		return err
+		return "", err
 	}
 	if err := w.Flush(); err != nil {
-		tmp.Close()
-		return err
+		return "", err
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
+		return "", err
 	}
 	if err := tmp.Close(); err != nil {
-		return err
+		return "", err
 	}
-	return os.Rename(tmp.Name(), d.path(e.Key))
+	return tmp.Name(), nil
+}
+
+func (d *diskStore) publish(key, staged string) error {
+	return os.Rename(staged, d.path(key))
 }
 
 func readMeta(r *bufio.Reader) (diskMeta, error) {
