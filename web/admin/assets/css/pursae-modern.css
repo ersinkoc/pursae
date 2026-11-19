@@ -1372,6 +1372,11 @@ body.pursae-modern.post-type-product .wp-list-table.fixed thead .column-featured
 /* title fields that carry their own placeholder (products): WordPress's overlaid prompt would print the text twice */
 body.pursae-modern #titlewrap:has(#title[placeholder]:not([placeholder=""])) #title-prompt-text { display: none; }
 
+/* dashboard hero: the plus icon sits on the label's line, not on Dashicons' 30px line box */
+body.pursae-modern .pm-actions .button { display: inline-flex; align-items: center; gap: 6px; }
+body.pursae-modern .pm-actions .button .dashicons { width: 16px; height: 16px; font-size: 16px; line-height: 16px; margin: 0; }
+body.pursae-modern .pm-actions .button > span:not(.dashicons) { line-height: inherit; }
+
 /* tablets and small laptops (783–1280px): list tables size their columns to the content, the
    least needed columns of the post lists step aside, and wide data tables scroll in their box */
 @media screen and (min-width: 783px) and (max-width: 1280px) {
@@ -1912,4 +1917,30 @@ body.pursae-modern.pm-auto .product_data_tabs::after { background: var(--pm-bg-2
 body.pursae-modern.pm-dark .theme-browser .theme .theme-actions .button:not(.button-primary) { background: var(--pm-bg) !important; color: var(--pm-text) !important; border-color: var(--pm-border-2) !important; }
 @media (prefers-color-scheme: dark) {
 body.pursae-modern.pm-auto .theme-browser .theme .theme-actions .button:not(.button-primary) { background: var(--pm-bg) !important; color: var(--pm-text) !important; border-color: var(--pm-border-2) !important; }
+}
+body.pursae-modern.pm-dark #wpbody-content :is(input:not([type=submit]):not([type=button]):not([type=reset]):not(:checked), select, textarea) { border-color: var(--pm-border-2); }
+body.pursae-modern.pm-dark #wpbody-content :is(input, select, textarea):focus { border-color: var(--pm-primary); }
+body.pursae-modern.pm-dark #wpbody-content :is(.button:not(.button-primary), .tablenav-pages-navspan, .woocommerce-summary__item-container, .options_group, .wp-editor-container, .postbox .hndle, h2.hndle,
+	.gk-chart, .gk-thumb, .hg-main, .hg-side, .hg-side-foot, .hg-side-tools, .pf-admin-badgepreview, .pf-admin-chart__plot, .pf-admin-queue, .pf-admin-stat, .pf-admin-swatch__chip,
+	.seogo-tabs, .seogo-separators span, .asg-checks li, .asg-pill, .woocommerce-task-list__item, .woocommerce-task-list__item .dashicons, .goo-activity li, .wpcf7-editor-tabs,
+	.control-section.accordion-section, .wp-filter .filter-links a, .admin-theme-preview, .admin-theme-preview em, td.column-cb, iframe, summary) { border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-dark #wpbody-content .pf-admin-chart__line { border-color: var(--pm-border-2) !important; }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto #wpbody-content :is(input:not([type=submit]):not([type=button]):not([type=reset]):not(:checked), select, textarea) { border-color: var(--pm-border-2); }
+body.pursae-modern.pm-auto #wpbody-content :is(input, select, textarea):focus { border-color: var(--pm-primary); }
+body.pursae-modern.pm-auto #wpbody-content :is(.button:not(.button-primary), .tablenav-pages-navspan, .woocommerce-summary__item-container, .options_group, .wp-editor-container, .postbox .hndle, h2.hndle,
+	.gk-chart, .gk-thumb, .hg-main, .hg-side, .hg-side-foot, .hg-side-tools, .pf-admin-badgepreview, .pf-admin-chart__plot, .pf-admin-queue, .pf-admin-stat, .pf-admin-swatch__chip,
+	.seogo-tabs, .seogo-separators span, .asg-checks li, .asg-pill, .woocommerce-task-list__item, .woocommerce-task-list__item .dashicons, .goo-activity li, .wpcf7-editor-tabs,
+	.control-section.accordion-section, .wp-filter .filter-links a, .admin-theme-preview, .admin-theme-preview em, td.column-cb, iframe, summary) { border-color: var(--pm-border) !important; }
+body.pursae-modern.pm-auto #wpbody-content .pf-admin-chart__line { border-color: var(--pm-border-2) !important; }
+}
+body.pursae-modern.pm-dark .pf-admin .pf-badge-chip { background: color-mix(in srgb, var(--pf-c) 16%, transparent) !important; color: color-mix(in srgb, var(--pf-c) 45%, #ECEDEF) !important; border-color: color-mix(in srgb, var(--pf-c) 35%, transparent) !important; }
+body.pursae-modern.pm-dark .pf-admin .pf-badge-chip .pf-icon { color: color-mix(in srgb, var(--pf-c) 60%, #ECEDEF) !important; }
+body.pursae-modern.pm-dark #dashboard_activity li, body.pursae-modern.pm-dark #activity-widget li { background: transparent !important; }
+body.pursae-modern.pm-dark #dashboard_activity li:nth-child(odd), body.pursae-modern.pm-dark #activity-widget li:nth-child(odd) { background: var(--pm-bg-2) !important; }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto .pf-admin .pf-badge-chip { background: color-mix(in srgb, var(--pf-c) 16%, transparent) !important; color: color-mix(in srgb, var(--pf-c) 45%, #ECEDEF) !important; border-color: color-mix(in srgb, var(--pf-c) 35%, transparent) !important; }
+body.pursae-modern.pm-auto .pf-admin .pf-badge-chip .pf-icon { color: color-mix(in srgb, var(--pf-c) 60%, #ECEDEF) !important; }
+body.pursae-modern.pm-auto #dashboard_activity li, body.pursae-modern.pm-auto #activity-widget li { background: transparent !important; }
+body.pursae-modern.pm-auto #dashboard_activity li:nth-child(odd), body.pursae-modern.pm-auto #activity-widget li:nth-child(odd) { background: var(--pm-bg-2) !important; }
 }
