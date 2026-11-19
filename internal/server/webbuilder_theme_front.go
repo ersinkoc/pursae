@@ -309,19 +309,20 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	wbEmbedCSP(c, strings.Join(bodies, "\n"))
 	// The code's origins come from the stored code sections (and the forum's site templates), never
 	// from the filled parts (wbCodeCSP).
-	var code strings.Builder
+	docs := make([]*store.WebBuilderDoc, 0, len(tp.parts)+len(popups))
 	for _, p := range tp.parts {
-		code.WriteString(wbCodeSource(p.doc))
+		docs = append(docs, p.doc)
 	}
 	for _, p := range popups {
-		code.WriteString(wbCodeSource(p.doc))
+		docs = append(docs, p.doc)
 	}
+	var forum strings.Builder
 	if tp.forumMain != "" {
 		for _, t := range s.forumSiteTpls() {
-			code.WriteString(t.Source + "\n")
+			forum.WriteString(t.Source + "\n")
 		}
 	}
-	s.wbCodeCSP(c, code.String())
+	s.wbCodeCSPDocs(c, docs, forum.String())
 	wbAddCacheTags(c, true, loops)
 	if catalog {
 		wbAddTags(c, "goo:shop")

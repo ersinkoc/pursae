@@ -254,11 +254,11 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 		body = webbuilder.UnwrapCodePage(body)
 		c.Header(cache.HeaderOptimize, "as-written") // its images as written (no lazy optimizer)
 	}
-	code := wbCodeSource(d)
+	docs := []*store.WebBuilderDoc{d}
 	for _, p := range fp.popups {
-		code += wbCodeSource(p.doc)
+		docs = append(docs, p.doc)
 	}
-	s.wbCodeCSP(c, code)
+	s.wbCodeCSPDocs(c, docs, "")
 
 	// wp_head without the theme: a copy of the view whose theme brings no head, no block styles
 	// and no Additional CSS (the Customizer's CSS belongs to the theme).
