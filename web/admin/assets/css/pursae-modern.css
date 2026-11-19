@@ -592,6 +592,9 @@ body.pursae-modern .media-modal-content { border-radius: 0; }
 	body.pursae-modern .form-table th, body.pursae-modern .form-table td { padding: 12px 16px; }
 	body.pursae-modern .form-table th { padding-bottom: 0; border-bottom: 0; }
 	body.pursae-modern #adminmenu li.menu-top > a.menu-top { min-height: 44px; }
+	body.pursae-modern #adminmenu div.wp-menu-image { position: static; width: 50px; }
+	body.pursae-modern #adminmenu li.menu-top > a.menu-top { padding: 0; }
+	body.pursae-modern #adminmenu div.wp-menu-name { padding: 12px 12px 12px 0; }
 }
 
 /* ===================================================================== layout: centred page, equal gutters */
@@ -1325,6 +1328,34 @@ body.pm-sorting, body.pm-sorting * { cursor: grabbing !important; user-select: n
 	body.pursae-modern.auto-fold:not(.is-fullscreen-mode) .interface-interface-skeleton { left: var(--pm-side-folded); }
 }
 
+/* ===================================================================== phones: nothing wider than the screen */
+@media screen and (max-width: 782px) {
+	body.pursae-modern #wpbody-content .wrap { min-width: 0; max-width: 100%; }
+	body.pursae-modern #wpbody-content .wrap :is(input:not([type=checkbox]):not([type=radio]), select, textarea, .regular-text, .large-text, .button) { max-width: 100%; box-sizing: border-box; }
+	body.pursae-modern #wpbody-content .wrap .button { white-space: normal; height: auto; }
+	body.pursae-modern #wpbody-content .form-table { table-layout: fixed; width: 100%; }
+	body.pursae-modern #wpbody-content .form-table :is(th, td) { box-sizing: border-box; width: 100%; max-width: 100%; overflow-wrap: anywhere; }
+	body.pursae-modern #wpbody-content .form-table td :is(input:not([type=checkbox]):not([type=radio]), select, textarea) { width: 100% !important; }
+	body.pursae-modern #wpbody-content .wrap table.widefat:not(.wp-list-table) { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+	body.pursae-modern #wpbody-content .tablenav .actions { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; float: none; padding-right: 0; }
+	body.pursae-modern #wpbody-content .tablenav .actions > * { margin: 0; }
+	body.pursae-modern #wpbody-content .tablenav .actions select { flex: 1 1 140px; min-width: 0; }
+	body.pursae-modern #wpbody-content :is(.postbox, .postbox-container, .meta-box-sortables) { min-width: 0; max-width: 100%; box-sizing: border-box; }
+	body.pursae-modern #wpbody-content .postbox .hndle { flex-wrap: wrap; min-width: 0; }
+	body.pursae-modern #screen-meta-links { margin-right: 12px; }
+	body.pursae-modern .wp-list-table td.column-primary::before { display: none !important; }
+	body.pursae-modern #wpbody-content :is(.pa-boxes, .goo-home-grid, .goo-leaders, .pm-cells-main, .pm-hero, .pm-split) { grid-template-columns: minmax(0, 1fr) !important; }
+	body.pursae-modern #wpbody-content :is(.pa-boxes, .goo-home-grid, .goo-leaders) > * { min-width: 0; }
+	body.pursae-modern #wpbody-content .pa-box { overflow-x: auto; }
+	body.pursae-modern #wpbody-content .pa-box :is(th, td).num { padding-left: 8px; padding-right: 8px; }
+}
+
+/* block editor header on phones: no room for the Web Builder switch (the builder is a desktop tool), Preview on one line */
+@media screen and (max-width: 600px) {
+	body.pursae-modern #web-builder-switch-mode { display: none; }
+	body.pursae-modern .editor-header__post-preview-button { white-space: nowrap; padding: 0 6px; }
+}
+
 /* ===================================================================== dark content mode (pm-dark, or pm-auto on a dark system) */
 /* The block editor's interface follows too (its canvas keeps the site's own styles). */
 body.pursae-modern.pm-dark {
@@ -1570,6 +1601,11 @@ body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode > .ab-item:focus svg { stro
 body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode .pm-sun { display: none; }
 body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode [aria-pressed="true"] .pm-sun { display: block; }
 body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode [aria-pressed="true"] .pm-moon { display: none; }
+@media screen and (max-width: 782px) {
+	body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode { display: block; }
+	body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode > .ab-item { width: 46px; height: 46px; }
+	body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode svg { width: 22px; height: 22px; }
+}
 /* profile: colour mode radios */
 .admin-theme-mode { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
 .admin-theme-mode legend { float: left; margin-right: 6px; font-weight: 500; }
