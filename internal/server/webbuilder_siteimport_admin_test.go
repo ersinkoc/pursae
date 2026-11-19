@@ -4,17 +4,23 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"wpgo/internal/gocdn/s3fake"
+	"wpgo/internal/store"
 )
 
 // --- helpers ----------------------------------------------------------------------------------
@@ -908,5 +914,109 @@ func TestWBImportWizardMediaLibrary(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(srv.cfg.UploadsDir, filepath.FromSlash(mediaPath))); err == nil {
 		t.Errorf("the media file is left after the undo")
+	}
+}
+
+func TestWBImportWizardUndoKeepsFilesWhenMediaDeleteFails(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	const contents = "imported media bytes"
+	a, err := srv.insertAttachmentFile(t.Context(), "imported.mp4", strings.NewReader(contents), 1, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake := s3fake.New(gocdnTestKey, gocdnTestSecret, "auto", "media")
+	t.Cleanup(fake.Close)
+	sub := filepath.ToSlash(filepath.Dir(a.FilePath))
+	if sub == "." {
+		sub = ""
+	}
+	reservedDuringDelete := make(chan bool, 1)
+	storage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			names := srv.uploadReserved(r.Context())(sub)
+			reservedDuringDelete <- slices.Contains(names, filepath.Base(a.FilePath))
+		}
+		fake.Config.Handler.ServeHTTP(w, r)
+	}))
+	t.Cleanup(storage.Close)
+	settings := gocdnSettings{Provider: "minio", Endpoint: storage.URL, Region: "auto", Bucket: "media",
+		AccessKey: gocdnTestKey, SecretKey: gocdnTestSecret, PathStyle: true}
+	if err := srv.gocdnSave(t.Context(), settings); err != nil {
+		t.Fatal(err)
+	}
+	const key = "imported-copy.mp4"
+	fake.PutObject("media", key, []byte(contents), a.Mime)
+	if err := srv.gocdnSaveItem(t.Context(), &gocdnItem{
+		MediaID: a.ID, Path: a.FilePath, Provider: settings.Provider, Region: settings.Region,
+		Bucket: settings.Bucket, Key: key, Endpoint: storage.URL, Size: a.FileSize, Mime: a.Mime,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	id := wbWizNewID()
+	rec := &wbWizRecord{ID: id, Kit: "test-import", Media: []int64{a.ID}}
+	if err := srv.settings.Set(t.Context(), map[string]any{wbWizImportsOption: map[string]*wbWizRecord{id: rec}}); err != nil {
+		t.Fatal(err)
+	}
+	exec := func(query string, args ...any) {
+		t.Helper()
+		if _, err := srv.store.Pool.Exec(t.Context(), query, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	exec(`CREATE TABLE undo_media_guard (media_id bigint REFERENCES media(id))`)
+	t.Cleanup(func() {
+		_, _ = srv.store.Pool.Exec(context.Background(), `DROP TABLE IF EXISTS undo_media_guard`)
+	})
+	exec(`INSERT INTO undo_media_guard (media_id) VALUES ($1)`, a.ID)
+
+	undo := func() string {
+		t.Helper()
+		target := wbWizURL + "?action=undo&import=" + id
+		code, form, _ := w.get(target)
+		nonce := wizHiddenRE.FindStringSubmatch(form)
+		if code != http.StatusOK || len(nonce) != 2 {
+			t.Fatalf("undo form: %d %s", code, wbSnippet(form, "notice"))
+		}
+		code, body, _ := w.postForm(target, url.Values{"_wpnonce": {nonce[1]}, "confirm": {"1"}})
+		if code != http.StatusOK {
+			t.Fatalf("undo: %d %s", code, wbSnippet(body, "notice"))
+		}
+		return body
+	}
+	if body := undo(); !strings.Contains(body, "Retry the removal") {
+		t.Fatalf("missing retry notice: %s", wbSnippet(body, "notice"))
+	}
+	local := srv.gocdnLocalPath(a.FilePath)
+	if data, err := os.ReadFile(local); err != nil || string(data) != contents {
+		t.Fatalf("failed undo changed the local media: %q, %v", data, err)
+	}
+	if fake.Object("media", key) == nil || srv.gocdnItemByPath(t.Context(), a.FilePath) == nil || srv.wbWizRecords()[id] == nil {
+		t.Fatal("failed undo removed the offloaded object, its mapping or the import record")
+	}
+
+	srv.gocdnRemoveLocal(t.Context(), a.ID)
+	if _, err := os.Stat(local); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("could not make the fixture remote-only: %v", err)
+	}
+	exec(`DROP TABLE undo_media_guard`)
+	if body := undo(); !strings.Contains(body, "Removed 1 pages and templates") {
+		t.Fatalf("retry did not complete: %s", wbSnippet(body, "notice"))
+	}
+	if _, err := srv.store.GetAttachment(t.Context(), a.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("attachment after retry: %v", err)
+	}
+	if _, err := os.Stat(local); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("local media after retry: %v", err)
+	}
+	select {
+	case reserved := <-reservedDuringDelete:
+		if !reserved {
+			t.Fatal("upload name was released before the offloaded object was deleted")
+		}
+	default:
+		t.Fatal("retry did not reach the object store")
+	}
+	if fake.Object("media", key) != nil || srv.gocdnItemByPath(t.Context(), a.FilePath) != nil || srv.wbWizRecords()[id] != nil {
+		t.Fatal("retry left the offloaded object, its mapping or the import record")
 	}
 }

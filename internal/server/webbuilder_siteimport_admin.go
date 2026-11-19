@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"html/template"
@@ -1418,6 +1419,11 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 	if err == nil {
 		err = del(rec.Templates, webbuilder.TemplatePostType)
 	}
+	if err == nil {
+		var mediaDeleted int
+		mediaDeleted, err = s.wbWizUndoMedia(c, rec.Media)
+		deleted += mediaDeleted
+	}
 	if err != nil {
 		log.Printf("web builder: undo import: %v", err)
 		s.wbTemplatesChanged(c)
@@ -1425,15 +1431,6 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		return
 	}
 	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
-	for _, mid := range rec.Media {  // the files it put into the Media Library
-		if a, err := s.store.GetAttachment(c, mid); err == nil {
-			s.deleteAttachmentFiles(a)
-			if s.store.DeleteAttachment(c, mid) == nil {
-				s.purgeAttachment(a)
-				deleted++
-			}
-		}
-	}
 	// The navigation menu it made, when it is still the import's (same id, same name).
 	if rec.Menu > 0 && s.wbWizMenuID(c, rec.Kit) == rec.Menu {
 		if err := s.store.DeleteMenu(c, rec.Menu); err == nil {
@@ -1486,6 +1483,29 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		msg += fmt.Sprintf(" %d were already gone or no longer carry the import's mark and were left alone.", kept)
 	}
 	s.wbWizStartWith(c, notice{Type: "success", Message: template.HTML(html.EscapeString(msg)), Dismissible: true})
+}
+
+func (s *Server) wbWizUndoMedia(c *gin.Context, ids []int64) (int, error) {
+	deleted := 0
+	for _, id := range ids {
+		a, err := s.store.GetAttachment(c, id)
+		if errors.Is(err, store.ErrNotFound) {
+			continue // a previous attempt already removed this attachment
+		}
+		if err != nil {
+			return deleted, fmt.Errorf("load imported media %d: %w", id, err)
+		}
+		err = s.deleteAttachmentRecordAndFiles(c, a)
+		if errors.Is(err, store.ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return deleted, fmt.Errorf("delete imported media %d: %w", id, err)
+		}
+		s.purgeAttachment(a)
+		deleted++
+	}
+	return deleted, nil
 }
 
 // wbWizMenuID is the id of the navigation menu an import of kit makes (0: none).

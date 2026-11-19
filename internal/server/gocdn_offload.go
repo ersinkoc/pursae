@@ -91,6 +91,34 @@ func (s *Server) gocdnItemsForMedia(ctx context.Context, id int64) ([]*gocdnItem
 	return scanGocdnItems(rows)
 }
 
+// Keep the storage paths reserved until their objects are removed. Detaching the mappings and
+// deleting the attachment in one transaction leaves both intact on a failed delete.
+func (s *Server) detachOffloadsAndDeleteAttachment(ctx context.Context, id int64) ([]*gocdnItem, error) {
+	var items []*gocdnItem
+	err := pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
+		// A new offload mapping needs a foreign-key lock on this row.
+		var locked int64
+		err := tx.QueryRow(ctx, `SELECT id FROM media WHERE id = $1 FOR UPDATE`, id).Scan(&locked)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return store.ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		rows, err := tx.Query(ctx, `UPDATE gocdn_items SET media_id = NULL WHERE media_id = $1 RETURNING `+gocdnItemCols, id)
+		if err != nil {
+			return err
+		}
+		items, err = scanGocdnItems(rows)
+		if err != nil {
+			return err
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM media WHERE id = $1`, id)
+		return err
+	})
+	return items, err
+}
+
 func (s *Server) gocdnSaveItem(ctx context.Context, it *gocdnItem) error {
 	_, err := s.store.Pool.Exec(ctx, `INSERT INTO gocdn_items (media_id, path, provider, region, bucket, object_key, size, mime_type, local_removed, endpoint)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
@@ -305,7 +333,14 @@ func (s *Server) gocdnBeforeDelete(a *store.Attachment) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	items, err := s.gocdnItemsForMedia(ctx, a.ID)
-	if err != nil || len(items) == 0 {
+	if err != nil {
+		return
+	}
+	s.gocdnDeleteItems(ctx, items)
+}
+
+func (s *Server) gocdnDeleteItems(ctx context.Context, items []*gocdnItem) {
+	if len(items) == 0 {
 		return
 	}
 	st := s.gocdnLoad()
