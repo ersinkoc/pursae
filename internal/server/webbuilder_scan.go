@@ -3,7 +3,7 @@ package server
 import "strings"
 
 // Literal scanners for the regular expressions the Web Builder front end ran over whole pages on
-// every request (wbCodeCSSURLRE, wbKitRefRE). Go's regexp runs these patterns (an
+// every request (wbCodeCSSURLRE, wbMainRe, wbKitRefRE). Go's regexp runs these patterns (an
 // alternation or a case-insensitive prefix with no literal to skip to) through its NFA at every
 // byte of a 100-200 KB page; these find the few candidate positions with strings.Index /
 // IndexByte and check the pattern by hand there. Each one returns exactly what its regexp
@@ -121,6 +121,55 @@ func wbScanNext(src string, from int, b byte) int {
 		return from + i
 	}
 	return -1
+}
+
+// wbHasMainLandmark reports whether the snapshot already has a main landmark: a match of
+//
+//	(?i)<main[\s>]|\srole\s*=\s*["']?main\b
+//
+// Candidates are the '<' and '=' bytes: "<main" after a '<', "role" (and spaces) before a '='.
+func wbHasMainLandmark(body string) bool {
+	for i := strings.IndexByte(body, '<'); i >= 0; i = wbScanNext(body, i+1, '<') {
+		if j := scanFold(body, i+1, "main"); j > 0 && j < len(body) && (scanSpace(body[j]) || body[j] == '>') {
+			return true
+		}
+	}
+	for i := strings.IndexByte(body, '='); i >= 0; i = wbScanNext(body, i+1, '=') {
+		// Backwards: \s* then "role" then one \s.
+		k := i
+		for k > 0 && scanSpace(body[k-1]) {
+			k--
+		}
+		if k < 5 || !scanSpace(body[k-5]) || scanFold(body, k-4, "role") != k {
+			continue
+		}
+		// Forwards: \s* ["']? main \b.
+		j := i + 1
+		for j < len(body) && scanSpace(body[j]) {
+			j++
+		}
+		if j < len(body) && (body[j] == '"' || body[j] == '\'') {
+			if wbMainWord(body, j+1) {
+				return true
+			}
+			continue // without the quote the next byte would have to be 'm'
+		}
+		if wbMainWord(body, j) {
+			return true
+		}
+	}
+	return false
+}
+
+// wbMainWord reports whether s[i:] starts with "main" (any case) followed by a word boundary.
+func wbMainWord(s string, i int) bool {
+	j := scanFold(s, i, "main")
+	return j > 0 && (j == len(s) || !scanWordByte(s[j]))
+}
+
+// scanWordByte reports whether b is an ASCII word character (\w, as \b sees it).
+func scanWordByte(b byte) bool {
+	return b == '_' || '0' <= b && b <= '9' || 'a' <= b && b <= 'z' || 'A' <= b && b <= 'Z'
 }
 
 // wbKitRefs calls fn for every match of wbKitRefRE in src, in order, with the match's bounds and

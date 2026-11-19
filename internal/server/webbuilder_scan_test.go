@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -14,6 +15,7 @@ import (
 // replace return. The expressions are kept here as the reference.
 var (
 	refCSSURLRE = regexp.MustCompile(`(?i)(?:url\(\s*|@import\s+)(?:&#39;|&quot;|['"])?(https://[^'"\s)&;]+)`)
+	refMainRE   = regexp.MustCompile(`(?i)<main[\s>]|\srole\s*=\s*["']?main\b`)
 	refKitRefRE = regexp.MustCompile(`(/wp-content/uploads/web-builder/kits/([a-z0-9-]{1,64})/[A-Za-z0-9_./@+-]{1,512}?\.[A-Za-z0-9]{1,8})(\?v=\d+)?(["'\s)>,])`)
 )
 
@@ -52,6 +54,9 @@ func checkScanners(t *testing.T, src string) {
 	t.Helper()
 	if got, want := scanCSSURLs(src), refCSSURLs(src); !reflect.DeepEqual(got, want) {
 		t.Fatalf("wbCSSURLs(%q)\n got %q\nwant %q", src, got, want)
+	}
+	if got, want := wbHasMainLandmark(src), refMainRE.MatchString(src); got != want {
+		t.Fatalf("wbHasMainLandmark(%q) = %v, want %v", src, got, want)
 	}
 	if got, want := scanKitRefs(src), refKitRefs(src); !reflect.DeepEqual(got, want) {
 		t.Fatalf("wbKitRefs(%q)\n got %q\nwant %q", src, got, want)
@@ -154,6 +159,36 @@ func FuzzWBScanners(f *testing.F) {
 	})
 }
 
+// refKitVersioned is wbKitVersioned as it was (the regular expression).
+func refKitVersioned(src string, vers map[string]int) string {
+	if !strings.Contains(src, wbKitURLPrefix) {
+		return src
+	}
+	return refKitRefRE.ReplaceAllStringFunc(src, func(m string) string {
+		g := refKitRefRE.FindStringSubmatch(m)
+		v, ok := vers[g[2]]
+		if !ok {
+			return m
+		}
+		return g[1] + "?v=" + strconv.Itoa(v) + g[4]
+	})
+}
+
+func TestWBKitVersionedSame(t *testing.T) {
+	vers := map[string]int{"kit-a": 3, "k": 12, "site": 7}
+	docs := append([]string{}, scanCases...)
+	r := rand.New(rand.NewPCG(3, 4))
+	for i := 0; i < 50000; i++ {
+		docs = append(docs, randomScanDoc(r))
+	}
+	docs = append(docs, benchPage(t))
+	for _, src := range docs {
+		if got, want := wbKitVersionedWith(src, vers), refKitVersioned(src, vers); got != want {
+			t.Fatalf("wbKitVersionedWith(%.300q)\n got %.300q\nwant %.300q", src, got, want)
+		}
+	}
+}
+
 // benchPage is a large imported page: WPGO_BENCH_HTML (a file), else a synthetic one of about
 // 160 KB with kit files, CSS url() references, many tags and no main landmark.
 func benchPage(tb testing.TB) string {
@@ -175,6 +210,7 @@ func benchPage(tb testing.TB) string {
 
 func BenchmarkWBScanners(b *testing.B) {
 	src := benchPage(b)
+	vers := map[string]int{"site": 7}
 	bench := func(name string, f func()) {
 		b.Run(name, func(b *testing.B) {
 			b.ReportAllocs()
@@ -186,4 +222,8 @@ func BenchmarkWBScanners(b *testing.B) {
 	}
 	bench("CSSURLs/regexp", func() { refCSSURLs(src) })
 	bench("CSSURLs/scan", func() { scanCSSURLs(src) })
+	bench("MainLandmark/regexp", func() { refMainRE.MatchString(src) })
+	bench("MainLandmark/scan", func() { wbHasMainLandmark(src) })
+	bench("KitVersioned/regexp", func() { refKitVersioned(src, vers) })
+	bench("KitVersioned/scan", func() { wbKitVersionedWith(src, vers) })
 }

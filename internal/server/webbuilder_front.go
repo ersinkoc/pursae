@@ -352,12 +352,6 @@ func wbDraftNotice(s *Server, c *gin.Context) string {
 		"</div>\n"
 }
 
-// wbMainRe finds a main element or role="main" in a snapshot.
-var wbMainRe = regexp.MustCompile(`(?i)<main[\s>]|\srole\s*=\s*["']?main\b`)
-
-// wbHasMainLandmark reports whether the snapshot already has a main landmark.
-func wbHasMainLandmark(body string) bool { return wbMainRe.MatchString(body) }
-
 // --- site assets -------------------------------------------------------------------------------
 
 var wbSiteAssetsCache struct {

@@ -844,23 +844,40 @@ func (s *Server) wbKitVersionMap() map[string]int {
 	return m
 }
 
-var wbKitRefRE = regexp.MustCompile(`(/wp-content/uploads/web-builder/kits/([a-z0-9-]{1,64})/[A-Za-z0-9_./@+-]{1,512}?\.[A-Za-z0-9]{1,8})(\?v=\d+)?(["'\s)>,])`)
-
 // wbKitVersioned adds ?v=<kit version> to the kit file URLs of code-section markup, so the files
-// are served as immutable and a changed kit gets new URLs.
+// are served as immutable and a changed kit gets new URLs (the matches of wbKitRefRE, found by
+// wbKitRefs).
 func (s *Server) wbKitVersioned(src string) string {
 	if !strings.Contains(src, wbKitURLPrefix) {
 		return src
 	}
-	vers := s.wbKitVersionMap()
-	return wbKitRefRE.ReplaceAllStringFunc(src, func(m string) string {
-		g := wbKitRefRE.FindStringSubmatch(m)
-		v, ok := vers[g[2]]
+	return wbKitVersionedWith(src, s.wbKitVersionMap())
+}
+
+// wbKitVersionedWith is wbKitVersioned with the kits' versions by slug.
+func wbKitVersionedWith(src string, vers map[string]int) string {
+	var b strings.Builder
+	last := 0
+	wbKitRefs(src, func(start, end int, ref, slug, term string) {
+		v, ok := vers[slug]
 		if !ok {
-			return m
+			return
 		}
-		return g[1] + "?v=" + strconv.Itoa(v) + g[4]
+		if last == 0 {
+			b.Grow(len(src) + 256)
+		}
+		b.WriteString(src[last:start])
+		b.WriteString(ref)
+		b.WriteString("?v=")
+		b.WriteString(strconv.Itoa(v))
+		b.WriteString(term)
+		last = end
 	})
+	if last == 0 {
+		return src
+	}
+	b.WriteString(src[last:])
+	return b.String()
 }
 
 // wbKitCacheControl is the Cache-Control of a kit file: immutable when the request names the

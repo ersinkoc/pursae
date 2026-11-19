@@ -268,12 +268,12 @@ func (s *Server) wbKitOverrideStyles(head string) string {
 	}
 	var slugs []string
 	seen := map[string]bool{}
-	for _, m := range wbKitRefRE.FindAllStringSubmatch(head, -1) {
-		if slug := m[2]; !seen[slug] && live[slug] != "" {
+	wbKitRefs(head, func(_, _ int, _, slug, _ string) {
+		if !seen[slug] && live[slug] != "" {
 			seen[slug] = true
 			slugs = append(slugs, slug)
 		}
-	}
+	})
 	var b strings.Builder
 	for _, slug := range slugs {
 		b.WriteString(`<style data-wb-kit-override="` + html.EscapeString(slug) + `">` + "\n" + live[slug] + "</style>\n")
