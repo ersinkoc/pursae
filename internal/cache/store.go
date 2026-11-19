@@ -601,9 +601,20 @@ func (s *Store) Delete(key string) bool {
 
 // PurgeAll removes every entry, in memory and on disk.
 func (s *Store) PurgeAll() int {
+	if s.disk == nil {
+		return s.purgeAll(nil)
+	}
+	return s.purgeAll(s.disk.clear)
+}
+
+func (s *Store) purgeAll(clearDisk func()) int {
 	s.mu.Lock()
 	s.allGen = s.bumpLocked()
 	s.tagGen, s.baseGen, s.pathGen = nil, nil, nil
+	if clearDisk != nil {
+		// Finish disk cleanup before admitting entries in the new generation.
+		clearDisk()
+	}
 	n := len(s.items)
 	s.items = make(map[string]*item)
 	s.lru.Init()
@@ -614,9 +625,6 @@ func (s *Store) PurgeAll() int {
 	s.bytes = 0
 	s.searches = 0
 	s.mu.Unlock()
-	if s.disk != nil {
-		s.disk.clear()
-	}
 	return n
 }
 
