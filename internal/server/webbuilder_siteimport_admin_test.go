@@ -777,6 +777,78 @@ func TestWBImportWizardUndoKeepsOthers(t *testing.T) {
 	}
 }
 
+func TestWBImportWizardUndoCanRetryAfterDeleteFailure(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	const kit = "retry-kit"
+	code, _, loc := w.upload(wizSite(t), "site.zip", kit)
+	if code != http.StatusFound || !wizIDRE.MatchString(loc) {
+		t.Fatalf("upload: %d %q", code, loc)
+	}
+	id := wizIDRE.FindStringSubmatch(loc)[1]
+	_, analysis, _ := w.get(wbWizURL + "?import=" + id)
+	nonce := wizHiddenRE.FindStringSubmatch(analysis)
+	if len(nonce) != 2 {
+		t.Fatal("missing import form")
+	}
+	code, body, _ := w.postForm(wbWizURL+"?action=import&import="+id, url.Values{
+		"_wpnonce": {nonce[1]}, "kit": {kit}, "status": {"publish"},
+	})
+	rec := srv.wbWizRecords()[id]
+	if code != http.StatusSeeOther || rec == nil || len(rec.Pages) < 2 || srv.wbKitList()[kit] == nil {
+		t.Fatalf("import: %d, record=%+v, %s", code, rec, wbSnippet(body, "notice"))
+	}
+	blocked := rec.Pages[1]
+	const claim = "audit-held"
+	if err := srv.wbSiteSetClaims(t.Context(), kit, map[string]int64{claim: blocked}); err != nil {
+		t.Fatal(err)
+	}
+	exec := func(query string, args ...any) {
+		t.Helper()
+		if _, err := srv.store.Pool.Exec(t.Context(), query, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	exec(`CREATE TABLE undo_post_guard (post_id bigint REFERENCES posts(id))`)
+	t.Cleanup(func() {
+		_, _ = srv.store.Pool.Exec(context.Background(), `DROP TABLE IF EXISTS undo_post_guard`)
+	})
+	exec(`INSERT INTO undo_post_guard (post_id) VALUES ($1)`, blocked)
+
+	target := wbWizURL + "?action=undo&import=" + id
+	undo := func() string {
+		t.Helper()
+		code, form, _ := w.get(target)
+		nonce := wizHiddenRE.FindStringSubmatch(form)
+		if code != http.StatusOK || len(nonce) != 2 {
+			t.Fatalf("undo form: %d %s", code, wbSnippet(form, "notice"))
+		}
+		code, result, _ := w.postForm(target, url.Values{"_wpnonce": {nonce[1]}, "confirm": {"1"}})
+		if code != http.StatusOK {
+			t.Fatalf("undo: %d %s", code, wbSnippet(result, "notice"))
+		}
+		return result
+	}
+	if body := undo(); !strings.Contains(body, "Retry the removal") || !strings.Contains(body, "Delete permanently") {
+		t.Fatalf("missing retry form: %s", wbSnippet(body, "notice"))
+	}
+	if srv.wbWizRecords()[id] == nil || srv.wbKitList()[kit] == nil || srv.wbSiteClaims()[claim].ID != blocked {
+		t.Fatal("failed undo removed the record, kit or claim")
+	}
+	if _, err := os.Stat(srv.wbWizDir(id)); err != nil {
+		t.Fatalf("failed undo removed the staged upload: %v", err)
+	}
+	exec(`DROP TABLE undo_post_guard`)
+	if body := undo(); !strings.Contains(body, "and its design kit") {
+		t.Fatalf("retry did not finish: %s", wbSnippet(body, "notice"))
+	}
+	if srv.wbWizRecords()[id] != nil || srv.wbKitList()[kit] != nil || srv.wbSiteClaims()[claim].ID != 0 {
+		t.Fatal("completed undo left the record, kit or claim")
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE meta->>$1 = $2`, wbSiteMetaKit, kit); n != 0 {
+		t.Fatalf("completed undo left %d posts", n)
+	}
+}
+
 // A file the pages use that is too large for a design kit (a hero video) goes to the Media Library:
 // the analysis says so, the import puts it there and points the page at it, and "Remove this
 // import" removes it again.
