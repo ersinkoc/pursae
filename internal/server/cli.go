@@ -283,12 +283,23 @@ func (e *cliEnv) Purge(ctx context.Context, p cache.Purge) error {
 // PurgeAll is Purge(cache.Purge{All: true}); running servers also reload their media index.
 func (e *cliEnv) PurgeAll(ctx context.Context) error { return e.Purge(ctx, cache.Purge{All: true}) }
 
+const cliCachePurgeTimeout = 10 * time.Second
+
 func (e *cliEnv) announce(ctx context.Context, s *Server, p cache.Purge) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, cliCachePurgeTimeout)
 	defer cancel()
-	if _, err := s.store.Pool.Exec(ctx, `SELECT pg_notify($1, $2)`, cachePurgeChannel, cachePurgePayload(cacheOrigin(), p)); err != nil {
+	if err := s.notifyCachePurge(ctx, p); err != nil {
 		return err
 	}
+	return s.purgeCLIProxy(ctx, p)
+}
+
+func (s *Server) notifyCachePurge(ctx context.Context, p cache.Purge) error {
+	_, err := s.store.Pool.Exec(ctx, `SELECT pg_notify($1, $2)`, cachePurgeChannel, cachePurgePayload(cacheOrigin(), p))
+	return err
+}
+
+func (s *Server) purgeCLIProxy(ctx context.Context, p cache.Purge) error {
 	endpoint := s.settings.String("wpgo_cache_purge_url")
 	if !proxyPurgeConfigured(cache.ServerHint(s.settings.String("wpgo_cache_server")), endpoint) {
 		return nil

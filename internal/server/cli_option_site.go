@@ -303,9 +303,17 @@ func registerCacheCLI(r *cli.Registry, e *cliEnv) {
 			"There is no object cache: this is the only cache to flush.\n\n" + cdnHint,
 		Examples: []string{"cache flush"},
 		Run: func(c *cli.Ctx) error {
-			if err := e.PurgeAll(c.Context); err != nil {
+			s, err := e.Server(c.Context)
+			if err != nil {
 				return err
 			}
+			ctx, cancel := context.WithTimeout(c.Context, cliCachePurgeTimeout)
+			defer cancel()
+			p := cache.Purge{All: true}
+			if err := s.notifyCachePurge(ctx, p); err != nil {
+				return err
+			}
+			proxyErr := s.purgeCLIProxy(ctx, p)
 			dir := cacheDiskDir(e.Config().UploadsDir)
 			if dir != "" {
 				n, err := cacheDiskClear(dir)
@@ -314,6 +322,9 @@ func registerCacheCLI(r *cli.Registry, e *cliEnv) {
 				} else if n > 0 {
 					c.Log("Removed %d persisted page file(s) from %s.", n, dir)
 				}
+			}
+			if proxyErr != nil {
+				return proxyErr
 			}
 			c.Success("The page cache was flushed.")
 			return nil
