@@ -330,17 +330,25 @@ func (c *Cache) serve(w http.ResponseWriter, r *http.Request, e *Entry, status s
 
 // etagMatch implements weak comparison for If-None-Match against the selected representation.
 func etagMatch(header, etag string) bool {
+	header = strings.TrimSpace(header)
+	if header == "*" {
+		return true
+	}
 	base := strings.Trim(etag, `"`)
-	for _, part := range strings.Split(header, ",") {
-		part = strings.TrimSpace(part)
-		if part == "*" {
+	for header != "" {
+		header = strings.TrimPrefix(strings.TrimLeft(header, " \t,"), "W/")
+		if !strings.HasPrefix(header, `"`) {
+			return false
+		}
+		tag, rest, ok := strings.Cut(header[1:], `"`)
+		rest = strings.TrimLeft(rest, " \t")
+		if !ok || (rest != "" && rest[0] != ',') {
+			return false
+		}
+		if tag == base {
 			return true
 		}
-		part = strings.TrimPrefix(part, "W/")
-		part = strings.Trim(part, `"`)
-		if part == base {
-			return true
-		}
+		header = rest
 	}
 	return false
 }
