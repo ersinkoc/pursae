@@ -1,0 +1,64 @@
+/*
+ * Pursae Modern's toolbar on the site: the same colours as in the admin for users who picked
+ * Pursae Modern (frontAdminBar adds the pm-bar class and this sheet). Layout stays WordPress's.
+ */
+#wpadminbar.pm-bar {
+	--pm-chrome: #16171A;
+	--pm-chrome-2: #202227;
+	--pm-chrome-active: #26282E;
+	--pm-chrome-sub: #0E0F12;
+	--pm-chrome-border: #2A2C32;
+	--pm-chrome-text: #FFFFFF;
+	--pm-chrome-body: #DADBDE;
+	--pm-chrome-muted: #A8ACB3;
+	--pm-chrome-faint: #7C8189;
+	--pm-chrome-accent: #8796EC;
+}
+/* ===================================================================== top bar */
+/* Same layout as WordPress Classic (32px, same items in the same places); only the colours change. */
+#wpadminbar.pm-bar { background: var(--pm-chrome); }
+#wpadminbar.pm-bar,
+#wpadminbar.pm-bar .ab-item,
+#wpadminbar.pm-bar a.ab-item,
+#wpadminbar.pm-bar > #wp-toolbar span.ab-label,
+#wpadminbar.pm-bar > #wp-toolbar span.noticon {
+	color: var(--pm-chrome-body);
+}
+#wpadminbar.pm-bar .ab-icon,
+#wpadminbar.pm-bar .ab-icon:before,
+#wpadminbar.pm-bar .ab-item:before,
+#wpadminbar.pm-bar .ab-item:after { color: var(--pm-chrome-muted); }
+#wpadminbar.pm-bar .ab-top-menu > li.hover > .ab-item,
+#wpadminbar.pm-bar.nojq .quicklinks .ab-top-menu > li > .ab-item:focus,
+#wpadminbar.pm-bar:not(.mobile) .ab-top-menu > li:hover > .ab-item,
+#wpadminbar.pm-bar:not(.mobile) .ab-top-menu > li > .ab-item:focus {
+	background: var(--pm-chrome-2);
+	color: var(--pm-chrome-text);
+}
+#wpadminbar.pm-bar:not(.mobile) > #wp-toolbar li:hover span.ab-label,
+#wpadminbar.pm-bar:not(.mobile) li:hover .ab-icon:before,
+#wpadminbar.pm-bar:not(.mobile) li:hover .ab-item:before,
+#wpadminbar.pm-bar:not(.mobile) li:hover .ab-item:after { color: var(--pm-chrome-text); }
+#wpadminbar.pm-bar #wp-admin-bar-site-name > .ab-item { color: var(--pm-chrome-text); font-weight: 500; }
+#wpadminbar.pm-bar .menupop .ab-sub-wrapper,
+#wpadminbar.pm-bar .shortlink-input {
+	background: var(--pm-chrome);
+	border: 1px solid var(--pm-chrome-border);
+	box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .55);
+}
+#wpadminbar.pm-bar .quicklinks .menupop ul.ab-sub-secondary,
+#wpadminbar.pm-bar .quicklinks .menupop ul.ab-sub-secondary .ab-submenu { background: var(--pm-chrome-sub); }
+#wpadminbar.pm-bar .quicklinks .menupop ul li a,
+#wpadminbar.pm-bar .quicklinks .menupop ul li .ab-item { color: var(--pm-chrome-body); }
+#wpadminbar.pm-bar .quicklinks .menupop ul li a:hover,
+#wpadminbar.pm-bar .quicklinks .menupop ul li a:focus,
+#wpadminbar.pm-bar .quicklinks .menupop.hover ul li a:hover { color: var(--pm-chrome-text); background: var(--pm-chrome-2); }
+#wpadminbar.pm-bar #wp-admin-bar-user-info .display-name { color: var(--pm-chrome-text); }
+#wpadminbar.pm-bar #wp-admin-bar-user-info .username { color: var(--pm-chrome-muted); }
+#wpadminbar.pm-bar #wp-admin-bar-my-account.with-avatar > a img { object-fit: cover; }
+#wpadminbar.pm-bar #wp-admin-bar-user-info .avatar { border-radius: 50%; object-fit: cover; }
+#wpadminbar.pm-bar #wp-admin-bar-my-account .display-name { color: var(--pm-chrome-text); }
+#wpadminbar.pm-bar .ab-label.awaiting-mod,
+#wpadminbar.pm-bar .ab-label.count { border-radius: 9px; }
+
+/* ===================================================================== command palette */

@@ -131,6 +131,9 @@ func (s *Server) themeModeAjax(c *gin.Context) {
 // colour mode, so the log-in, lost-password and register screens (which have no user yet) can wear
 // the same look. It holds only "modern-light", "modern-dark" or "modern-auto"; it is read by an inline
 // script on those screens, so it is not HttpOnly. WordPress Classic users get no cookie.
+// modernBarCSS colours the toolbar on the site for Pursae Modern users (frontAdminBar).
+const modernBarCSS = "/wp-admin/assets/css/pursae-modern-bar.css"
+
 const adminLookCookie = "wpgo_admin_look"
 
 func rememberAdminLook(c *gin.Context, t adminTheme) {
