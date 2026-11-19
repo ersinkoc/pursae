@@ -1424,13 +1424,31 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		_ = s.settings.Set(c, map[string]any{"show_on_front": prev, "page_on_front": rec.PrevFront})
 	}
 	kitMsg := ""
-	_ = s.wbKitSetRoot(c, rec.Kit, false) // the kit's files leave the site's root with its pages
-	if rec.KitCreated {
-		wbKitsMu.Lock()
-		if status, code, _ := s.wbKitRemove(c, rec.Kit); code == "" || status == http.StatusNotFound {
-			kitMsg = " and its design kit"
+	// Another import of the same kit still needs its files and root paths. If this record created
+	// the kit, hand that cleanup responsibility to one of the remaining records.
+	var kitHeir *wbWizRecord
+	var kitHeirID string
+	for otherID, other := range recs {
+		if otherID == id || other == nil || other.Kit != rec.Kit {
+			continue
 		}
-		wbKitsMu.Unlock()
+		if kitHeir == nil || other.At > kitHeir.At || other.At == kitHeir.At && otherID > kitHeirID {
+			kitHeir, kitHeirID = other, otherID
+		}
+	}
+	if kitHeir != nil {
+		if rec.KitCreated {
+			kitHeir.KitCreated = true
+		}
+	} else {
+		_ = s.wbKitSetRoot(c, rec.Kit, false) // the kit's files leave the site's root with its pages
+		if rec.KitCreated {
+			wbKitsMu.Lock()
+			if status, code, _ := s.wbKitRemove(c, rec.Kit); code == "" || status == http.StatusNotFound {
+				kitMsg = " and its design kit"
+			}
+			wbKitsMu.Unlock()
+		}
 	}
 	delete(recs, id)
 	_ = s.wbWizSetRecords(c, recs)
