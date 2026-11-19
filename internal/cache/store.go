@@ -427,15 +427,18 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	s.mu.Unlock()
 
 	if s.disk != nil {
-		if err := s.disk.save(e); err != nil {
-			s.log.Warn("wpgo-cache: persisting entry", "key", e.Key, "err", err)
-		}
-		// A purge that ran while the file was being written must not leave it behind.
+		err := s.disk.save(e)
 		s.mu.Lock()
-		if _, ok := s.items[e.Key]; !ok {
+		current := s.items[e.Key]
+		// Drop files left by a purge or a failed replacement. If a newer item has
+		// taken the key, it may already have written its own file.
+		if current == nil || (err != nil && current == it) {
 			s.disk.remove(e.Key)
 		}
 		s.mu.Unlock()
+		if err != nil {
+			s.log.Warn("wpgo-cache: persisting entry", "key", e.Key, "err", err)
+		}
 	}
 	return nil
 }
