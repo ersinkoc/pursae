@@ -57,7 +57,8 @@ func proxyPurgeRequest(ctx context.Context, endpoint, prefix string, p cache.Pur
 			if err != nil {
 				return nil, err
 			}
-			base.Path = strings.TrimRight(base.Path, "/") + "/" + strings.TrimLeft(pu.Path, "/")
+			base.RawPath = strings.TrimRight(base.EscapedPath(), "/") + "/" + strings.TrimLeft(pu.EscapedPath(), "/")
+			base.Path, _ = url.PathUnescape(base.RawPath) // EscapedPath produces valid escapes.
 			base.RawQuery = pu.RawQuery
 			target = base.String()
 		}

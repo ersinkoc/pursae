@@ -97,6 +97,11 @@ describe('local styles follow their elements', () => {
     expect(rehome([sec('a', '<div data-wbc="1"></div>', { '1': red })])).toEqual({})
     expect(rehome([sec('a', '<div data-wbc="1"></div>')])).toEqual({})
   })
+  it('follows the parsed element id and ignores a matching id in a comment', () => {
+    const a = sec('a', '<!-- <p data-wbc="1"></p> -->', { '1': red })
+    const b = sec('b', "<p data-wbc='1'></p>")
+    expect(rehome([a, b])).toEqual({ a: undefined, b: { '1': red } })
+  })
   it('copies entries to new ids', () => {
     expect(copyEntries({ '1': red, '2': red }, ['1', '5'], ['x1', 'x2'])).toEqual({ x1: red })
   })

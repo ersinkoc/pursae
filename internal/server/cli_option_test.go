@@ -215,6 +215,21 @@ func TestCacheHelpers(t *testing.T) {
 	}
 }
 
+func TestCLICacheFlushReportsDiskError(t *testing.T) {
+	ts, client, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, client)
+	cfg := srv.cfg
+	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.UploadsDir = filepath.Join(t.TempDir(), "uploads")
+	if err := os.WriteFile(cacheDiskDir(cfg.UploadsDir), []byte("file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, errs, code := mediaCLIRun(t, cfg, "cache", "flush")
+	if code != 1 || !strings.Contains(errs, "disk cache") || strings.Contains(out+errs, "page cache was flushed") {
+		t.Fatalf("cache flush: exit=%d stdout=%q stderr=%q", code, out, errs)
+	}
+}
+
 func TestRewriteRows(t *testing.T) {
 	rows := rewriteRows("https://ex.com", "/%year%/%postname%/", "topics", "", time.UTC)
 	byKind := map[string]string{}

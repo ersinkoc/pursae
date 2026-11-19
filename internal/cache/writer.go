@@ -278,8 +278,9 @@ func (cw *captureWriter) finish() {
 	}
 	// HEAD responses carry no body, so only GET results are stored. A purge that ran while the
 	// page rendered (a post saved meanwhile) wins: the page is served but not stored.
-	if cw.r.Method == http.MethodGet {
-		_ = cw.c.store.SetSince(e, cw.gen)
+	if cw.r.Method == http.MethodGet && !cw.c.storeRendered(e, cw.gen) {
+		_ = cw.spill()
+		return
 	}
 	cw.releaseFlight()
 	cw.c.serve(cw.w, cw.r, e, "miss", cw.d.Private)

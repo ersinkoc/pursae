@@ -47,6 +47,31 @@ func TestResizeDims(t *testing.T) {
 	}
 }
 
+func TestSaveReservesNamesForFutureVariants(t *testing.T) {
+	dir := t.TempDir()
+	save := func(name string, size int) (*Stored, []byte) {
+		t.Helper()
+		var b bytes.Buffer
+		if err := png.Encode(&b, image.NewNRGBA(image.Rect(0, 0, size, size))); err != nil {
+			t.Fatal(err)
+		}
+		st, err := SaveIn(dir, "", name, bytes.NewReader(b.Bytes()), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return st, b.Bytes()
+	}
+	original, _ := save("banner.png", 200)
+	upload, want := save("banner-150x150.png", 33)
+	info, err := ProcessImage(dir, original.RelPath, []Size{{Name: "thumbnail", Width: 150, Height: 150}})
+	if err != nil || len(info.Variants) != 1 || info.Variants[0].File != "banner-150x150.png" {
+		t.Fatalf("thumbnail: %+v, %v", info, err)
+	}
+	if got, err := os.ReadFile(filepath.Join(dir, upload.RelPath)); err != nil || !bytes.Equal(got, want) {
+		t.Fatalf("separately uploaded %q overwritten: %v", upload.RelPath, err)
+	}
+}
+
 func TestApplyOpsUnsupportedRotationPreservesImage(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 2, 1))
 	img.Set(0, 0, color.RGBA{255, 0, 0, 255})

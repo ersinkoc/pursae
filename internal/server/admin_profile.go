@@ -414,9 +414,9 @@ func (s *Server) sendEmailChangeConfirmation(c *gin.Context, u *store.User, newE
 // avatarPicker wires the profile picture field to the media modal (wp.media), the same frame used for
 // featured images: pick from the library or upload. WordPress Go never calls Gravatar.
 func (s *Server) avatarPicker(c *gin.Context, u *store.User, d *profileData) {
-	if id, ok := u.Meta["avatar_id"].(float64); ok {
-		d.AvatarID = int64(id)
-	}
+	// avatarIDOf accepts a number (admin saves) or a numeric string (CLI/imports); reading only float64
+	// would render 0 for a string and the next profile save would drop the picture.
+	d.AvatarID = avatarIDOf(u)
 	d.CanUpload = currentUser(c).Can("upload_files", nil)
 	if !d.CanUpload {
 		return

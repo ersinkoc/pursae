@@ -34,8 +34,8 @@ func announceSetupToken(ctx context.Context, cfg config.Config, srv *server.Serv
 // that replaces the stored one (the old link stops working).
 func setupToken(ctx context.Context, cfg config.Config, out io.Writer) error {
 	if cfg.SetupToken != "" {
-		fmt.Fprintln(out, server.SetupURL(cfg.SiteURL, cfg.SetupToken))
-		return nil
+		_, err := fmt.Fprintln(out, server.SetupURL(cfg.SiteURL, cfg.SetupToken))
+		return err
 	}
 	pool, err := db.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -49,7 +49,9 @@ func setupToken(ctx context.Context, cfg config.Config, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(out, server.SetupURL(cfg.SiteURL, token))
-	fmt.Fprintln(out, "The previous setup token, if any, no longer works. This one stops working once the site is installed.")
-	return nil
+	if _, err := fmt.Fprintln(out, server.SetupURL(cfg.SiteURL, token)); err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(out, "The previous setup token, if any, no longer works. This one stops working once the site is installed.")
+	return err
 }

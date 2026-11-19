@@ -53,7 +53,7 @@ func (s *Server) pursaeCachePurge(c *gin.Context, r *restRequest) {
 			return
 		}
 		if pu.Host == "" {
-			u = s.links(c).Home + "/" + strings.TrimLeft(pu.Path, "/")
+			u = s.links(c).Home + "/" + strings.TrimLeft(pu.EscapedPath(), "/")
 			if pu.RawQuery != "" {
 				u += "?" + pu.RawQuery
 			}
