@@ -1356,6 +1356,22 @@ body.pursae-modern .wpms-stats .postbox { min-width: 0; }
 /* inputs never outgrow the box they sit in (Pixel settings side box, other narrow postboxes) */
 body.pursae-modern #wpbody-content .postbox .inside :is(.regular-text, .large-text) { max-width: 100%; box-sizing: border-box; }
 
+/* product list: the shared post-list widths (title 30%, date 14%) left Categories and Tags 0px wide */
+body.pursae-modern.post-type-product .wp-list-table.fixed thead .column-name { width: 19%; }
+body.pursae-modern.post-type-product .wp-list-table.fixed thead :is(.column-sku, .column-is_in_stock, .column-price) { width: 9%; }
+body.pursae-modern.post-type-product .wp-list-table.fixed thead .column-product_cat { width: 12%; }
+body.pursae-modern.post-type-product .wp-list-table.fixed thead .column-product_tag { width: 8%; }
+body.pursae-modern.post-type-product .wp-list-table.fixed thead .column-date { width: 11%; }
+body.pursae-modern.post-type-product .wp-list-table.fixed thead .column-featured { width: 44px; }
+@media screen and (min-width: 783px) and (max-width: 1280px) {
+	body.pursae-modern.post-type-product .wp-list-table :is(.column-product_tag, .column-sku) { display: none; }
+	body.pursae-modern.post-type-product .wp-list-table.fixed thead .column-name { width: 24%; }
+	body.pursae-modern.post-type-product .wp-list-table.fixed thead :is(.column-is_in_stock, .column-price, .column-date) { width: 11%; }
+}
+
+/* title fields that carry their own placeholder (products): WordPress's overlaid prompt would print the text twice */
+body.pursae-modern #titlewrap:has(#title[placeholder]:not([placeholder=""])) #title-prompt-text { display: none; }
+
 /* tablets and small laptops (783–1280px): list tables size their columns to the content, the
    least needed columns of the post lists step aside, and wide data tables scroll in their box */
 @media screen and (min-width: 783px) and (max-width: 1280px) {

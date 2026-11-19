@@ -446,3 +446,67 @@
 		fetch( window.ajaxurl || '/wp-admin/admin-ajax', { method: 'POST', credentials: 'same-origin', body: data } );
 	} );
 } )();
+
+/* Classic editor (TinyMCE): the writing area follows the dark content mode. Its iframe does not see
+   the admin styles, so a small style sheet goes in and a class on its body follows the admin's mode. */
+( function () {
+	'use strict';
+	var body = document.body;
+	if ( ! body.classList.contains( 'pursae-modern' ) ) {
+		return;
+	}
+	var sysDark = window.matchMedia ? window.matchMedia( '(prefers-color-scheme: dark)' ) : null;
+	var isDark = function () {
+		return body.classList.contains( 'pm-dark' ) || ( body.classList.contains( 'pm-auto' ) && sysDark && sysDark.matches );
+	};
+	var css = 'html.pm-dark-content,html.pm-dark-content body{background:#121317!important;color:#D3D5DA!important;color-scheme:dark}' +
+		'html.pm-dark-content body :is(h1,h2,h3,h4,h5,h6,strong,b,dt){color:#ECEDEF!important}' +
+		'html.pm-dark-content body a{color:#8796EC!important}' +
+		'html.pm-dark-content body :is(pre,code,kbd){background:#17191E!important;color:#ECEDEF!important;border-color:#2A2D35!important}' +
+		'html.pm-dark-content body :is(blockquote,hr,table,td,th){border-color:#3A3E47!important}' +
+		'html.pm-dark-content body ::selection{background:rgba(135,150,236,.35)}' +
+		'html.pm-dark-content body .mce-content-body [data-mce-selected],html.pm-dark-content body img::selection{outline-color:#8796EC!important}' +
+		'html.pm-dark-content body .mce-item-table,html.pm-dark-content body .mce-item-table :is(td,th,caption){border-color:#3A3E47!important}' +
+		'html.pm-dark-content body .wpview-wrap,html.pm-dark-content body .mce-wp-more,html.pm-dark-content body .mce-wp-nextpage{filter:invert(.88) hue-rotate(180deg)}';
+	var apply = function ( ed ) {
+		var doc = ed && ed.getDoc && ed.getDoc();
+		if ( ! doc || ! doc.documentElement ) {
+			return;
+		}
+		if ( ! doc.getElementById( 'pm-dark-content' ) ) {
+			var st = doc.createElement( 'style' );
+			st.id = 'pm-dark-content';
+			st.textContent = css;
+			( doc.head || doc.documentElement ).appendChild( st );
+		}
+		doc.documentElement.classList.toggle( 'pm-dark-content', isDark() );
+	};
+	var applyAll = function () {
+		if ( window.tinymce && window.tinymce.editors ) {
+			Array.prototype.forEach.call( window.tinymce.editors, function ( ed ) {
+				if ( ed.initialized ) {
+					apply( ed );
+				} else if ( ! ed.pmDarkHooked ) {
+					ed.pmDarkHooked = true;
+					ed.on( 'init', function () { apply( ed ); } );
+				}
+			} );
+		}
+	};
+	var hook = function () {
+		if ( ! window.tinymce ) {
+			return;
+		}
+		window.tinymce.on( 'AddEditor', function ( e ) {
+			e.editor.pmDarkHooked = true;
+			e.editor.on( 'init', function () { apply( e.editor ); } );
+		} );
+		applyAll();
+	};
+	hook();
+	window.addEventListener( 'load', applyAll );
+	new MutationObserver( applyAll ).observe( body, { attributes: true, attributeFilter: [ 'class' ] } );
+	if ( sysDark && sysDark.addEventListener ) {
+		sysDark.addEventListener( 'change', applyAll );
+	}
+} )();
