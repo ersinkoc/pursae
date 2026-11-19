@@ -40,9 +40,8 @@ type Options struct {
 	Store *Store
 	// IsLiteSpeed overrides detection of a LiteSpeed front server for HintAuto.
 	IsLiteSpeed func(*http.Request) bool
-	// OnPurge, when set, is called after every purge made through PurgeAll, PurgeTags and
-	// PurgeURL (not Apply, PurgeExpired or the store's own methods), so the core can pass it on
-	// to the other processes that serve the same site from their own memory.
+	// OnPurge, when set, is called for PurgeAll, PurgeTags, PurgeURL and retirement, so the core
+	// can pass the purge on to other processes serving the same site.
 	OnPurge func(Purge)
 	// TrustForwarded reports whether r's immediate peer may set X-Forwarded-Proto.
 	// Nil means the header is ignored: a client that is not a trusted proxy cannot
@@ -79,6 +78,9 @@ type Cache struct {
 	cspModeFn      func() string
 
 	onPurge func(Purge)
+
+	publishMu sync.RWMutex // orders stores and purges against retirement
+	retired   bool         // guarded by publishMu
 
 	flight     flightGroup
 	flightWait time.Duration // how long a request waits for a concurrent render of its page
@@ -135,6 +137,34 @@ func (c *Cache) Config() Config { return c.cfg.clone() }
 // Store returns the underlying store.
 func (c *Cache) Store() *Store { return c.store }
 
+// Retire empties the cache and prevents its middleware and purge methods from
+// modifying the store after its disk directory is handed to another cache.
+func (c *Cache) Retire() {
+	c.publishMu.Lock()
+	if c.retired {
+		c.publishMu.Unlock()
+		return
+	}
+	c.retired = true
+	c.store.PurgeAll()
+	c.publishMu.Unlock()
+
+	if c.onPurge != nil {
+		c.onPurge(Purge{All: true})
+	}
+}
+
+// storeRendered returns false if the cache has been retired during the request.
+func (c *Cache) storeRendered(e *Entry, generation uint64) bool {
+	c.publishMu.RLock()
+	defer c.publishMu.RUnlock()
+	if c.retired {
+		return false
+	}
+	_ = c.store.SetSince(e, generation)
+	return true
+}
+
 // PurgeAll empties the cache.
 func (c *Cache) PurgeAll() int { return c.purge(Purge{All: true}) }
 
@@ -160,6 +190,11 @@ func (c *Cache) purge(p Purge) int {
 // Apply runs a purge on this cache only, without calling [Options.OnPurge]: the core uses it for
 // purges another process announced.
 func (c *Cache) Apply(p Purge) int {
+	c.publishMu.RLock()
+	defer c.publishMu.RUnlock()
+	if c.retired {
+		return 0
+	}
 	switch {
 	case p.All:
 		return c.store.PurgeAll()

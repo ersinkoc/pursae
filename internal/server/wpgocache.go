@@ -151,10 +151,15 @@ func (s *Server) configureCache() {
 	if s.sandbox != nil { // a theme-preview sandbox is served without the page cache
 		return
 	}
-	// A rebuild at run time drops every page, also the copies on disk: the new cache would
-	// otherwise load them back (only the start-up keeps the persisted pages).
-	if old := s.currentCache(); old != nil {
-		old.PurgeAll()
+	s.cacheBuildMu.Lock()
+	defer s.cacheBuildMu.Unlock()
+	if old := s.cache.Load(); old != nil {
+		if old.h == nil {
+			// CLI commands restore this purge-only cache after reusing an admin path.
+			old.c.PurgeAll()
+		} else {
+			old.c.Retire()
+		}
 	}
 	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default(),
 		OnPurge: s.onCachePurge, TrustForwarded: s.peerTrusted, CSPMode: s.cspCacheState}) // the other instances purge too (wpgocache_sync.go)
