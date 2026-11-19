@@ -29,3 +29,9 @@
 .admin-theme-modern .admin-theme-preview em { background: #fff; border: 1px solid #e6e6e8; box-shadow: inset 0 3px 0 #4c60ef; }
 .admin-theme-text { display: block; padding: 10px 12px 12px; }
 .admin-theme-text .description { display: block; margin-top: 4px; }
+/* Pursae Modern's light / dark choice: only while Pursae Modern is the picked theme (follows the radio before saving) */
+.user-admin-theme-wrap .admin-theme-mode { display: none; margin: 16px 0 0; padding: 0; border: 0; }
+.user-admin-theme-wrap:has(#admin_theme_modern:checked) .admin-theme-mode { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
+#your-profile .admin-theme-mode legend, .admin-theme-mode legend { float: left; width: 100%; margin: 0 0 8px; padding: 0; font-size: 14px; font-weight: 600; }
+.admin-theme-mode label { display: inline-flex; align-items: center; gap: 6px; margin: 0; clear: none; }
+.admin-theme-mode label input { margin: 0; }

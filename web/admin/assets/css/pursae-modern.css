@@ -1651,8 +1651,6 @@ body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode [aria-pressed="true"] .pm-m
 	body.pursae-modern #wpadminbar #wp-admin-bar-pm-mode svg { width: 22px; height: 22px; }
 }
 /* profile: colour mode radios */
-.admin-theme-mode { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
-.admin-theme-mode legend { float: left; margin-right: 6px; font-weight: 500; }
 
 /* plugin and core boxes found by the dark-mode audit */
 body.pursae-modern.pm-dark :is(.woocommerce-summary, .woocommerce-summary__item, .goo-ext-card, .goo-theme-card, .goo-theme-shot, .woocommerce_order_items, .wc-order-item-thumbnail,
@@ -1943,4 +1941,38 @@ body.pursae-modern.pm-auto .pf-admin .pf-badge-chip { background: color-mix(in s
 body.pursae-modern.pm-auto .pf-admin .pf-badge-chip .pf-icon { color: color-mix(in srgb, var(--pf-c) 60%, #ECEDEF) !important; }
 body.pursae-modern.pm-auto #dashboard_activity li, body.pursae-modern.pm-auto #activity-widget li { background: transparent !important; }
 body.pursae-modern.pm-auto #dashboard_activity li:nth-child(odd), body.pursae-modern.pm-auto #activity-widget li:nth-child(odd) { background: var(--pm-bg-2) !important; }
+}
+body.pursae-modern.pm-dark :is(.px, .ptour) {
+	--px-ink: #ECEDEF; --px-ink-2: #D3D5DA; --px-muted: #A7ABB3; --px-faint: #7F848D;
+	--px-page: #17191E; --px-rail: #1B1D23; --px-canvas: #0F1013; --px-line: #2A2D35; --px-line-2: #22252C;
+	--px-blu: #8796EC; --px-blu-ink: #A3AFF2; --px-blu-50: rgba(135, 150, 236, .14);
+	--px-sky: rgba(56, 152, 214, .18); --px-sky-ink: #9CCFF0; --px-peach: rgba(240, 150, 70, .16); --px-peach-ink: #F5BE8C;
+	--px-mint: rgba(52, 190, 130, .16); --px-mint-ink: #86DDB6; --px-lilac: rgba(135, 120, 230, .18); --px-lilac-ink: #C2B8F5;
+}
+body.pursae-modern.pm-dark .px-about { --px-canvas: #0F1013; }
+body.pursae-modern.pm-dark .px-about__hero { box-shadow: inset 0 0 0 1px var(--px-line); }
+body.pursae-modern.pm-dark .px-about__hero::before { background-image: radial-gradient(rgba(236, 237, 239, .07) 1px, transparent 1px); }
+body.pursae-modern.pm-dark .px-about__glow { opacity: .22; }
+body.pursae-modern.pm-dark .px-about__big { background: #1F2228; box-shadow: inset 0 0 0 1px var(--px-line); color: #ECEDEF; }
+body.pursae-modern.pm-dark .px-btn { color: #0F1013; }
+body.pursae-modern.pm-dark .px-btn--ghost { background: transparent; color: var(--px-ink); box-shadow: inset 0 0 0 1px var(--px-line); }
+body.pursae-modern.pm-dark .px-btn--ghost:hover { background: var(--px-rail); }
+body.pursae-modern.pm-dark .px-team { background: #1B1D23; box-shadow: inset 0 0 0 1px var(--px-line); }
+@media (prefers-color-scheme: dark) {
+body.pursae-modern.pm-auto :is(.px, .ptour) {
+	--px-ink: #ECEDEF; --px-ink-2: #D3D5DA; --px-muted: #A7ABB3; --px-faint: #7F848D;
+	--px-page: #17191E; --px-rail: #1B1D23; --px-canvas: #0F1013; --px-line: #2A2D35; --px-line-2: #22252C;
+	--px-blu: #8796EC; --px-blu-ink: #A3AFF2; --px-blu-50: rgba(135, 150, 236, .14);
+	--px-sky: rgba(56, 152, 214, .18); --px-sky-ink: #9CCFF0; --px-peach: rgba(240, 150, 70, .16); --px-peach-ink: #F5BE8C;
+	--px-mint: rgba(52, 190, 130, .16); --px-mint-ink: #86DDB6; --px-lilac: rgba(135, 120, 230, .18); --px-lilac-ink: #C2B8F5;
+}
+body.pursae-modern.pm-auto .px-about { --px-canvas: #0F1013; }
+body.pursae-modern.pm-auto .px-about__hero { box-shadow: inset 0 0 0 1px var(--px-line); }
+body.pursae-modern.pm-auto .px-about__hero::before { background-image: radial-gradient(rgba(236, 237, 239, .07) 1px, transparent 1px); }
+body.pursae-modern.pm-auto .px-about__glow { opacity: .22; }
+body.pursae-modern.pm-auto .px-about__big { background: #1F2228; box-shadow: inset 0 0 0 1px var(--px-line); color: #ECEDEF; }
+body.pursae-modern.pm-auto .px-btn { color: #0F1013; }
+body.pursae-modern.pm-auto .px-btn--ghost { background: transparent; color: var(--px-ink); box-shadow: inset 0 0 0 1px var(--px-line); }
+body.pursae-modern.pm-auto .px-btn--ghost:hover { background: var(--px-rail); }
+body.pursae-modern.pm-auto .px-team { background: #1B1D23; box-shadow: inset 0 0 0 1px var(--px-line); }
 }
