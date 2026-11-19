@@ -52,6 +52,18 @@ func TestProxyPurgeRequest(t *testing.T) {
 	}
 }
 
+func TestProxyPurgeRequestPreservesEscapedPath(t *testing.T) {
+	req, err := proxyPurgeRequest(context.Background(), "http://proxy:8080/pur%67e/", "wpgo_", cache.Purge{
+		URL: "https://example.com/cat%61log/?page=2",
+	})
+	if err != nil || req == nil {
+		t.Fatalf("URL purge: %v %v", req, err)
+	}
+	if got, want := req.URL.RequestURI(), "/pur%67e/cat%61log/?page=2"; got != want {
+		t.Fatalf("request target = %q, want %q", got, want)
+	}
+}
+
 func TestProxyPurgeConfigured(t *testing.T) {
 	for _, tc := range []struct {
 		h    cache.ServerHint

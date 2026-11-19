@@ -280,6 +280,42 @@ func TestDiskEntriesBounded(t *testing.T) {
 	}
 }
 
+func TestDiskRestartKeepsNewestFiles(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	opts := StoreOptions{
+		DiskDir:        t.TempDir(),
+		MaxEntries:     2,
+		MaxDiskEntries: 1,
+		Now:            func() time.Time { return now },
+	}
+	s, err := NewStore(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// These keys produce filenames that sort with the newer file first.
+	oldKey := "https://example.test/page-a"
+	newKey := "https://example.test/page-b"
+	for i, key := range []string{oldKey, newKey} {
+		if err := s.Set(&Entry{Key: key, Created: now, Expires: now.Add(time.Hour)}); err != nil {
+			t.Fatal(err)
+		}
+		modified := now.Add(time.Duration(i) * time.Minute)
+		if err := os.Chtimes(s.disk.path(key), modified, modified); err != nil {
+			t.Fatal(err)
+		}
+	}
+	restarted, err := NewStore(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := restarted.Get(oldKey); ok {
+		t.Error("older file survived startup trimming")
+	}
+	if _, ok := restarted.Get(newKey); !ok {
+		t.Error("newer file did not survive startup trimming")
+	}
+}
+
 // The disk-only entries are bounded by bytes too, not only by count: a few large pages must not
 // fill the disk while staying under the entry count.
 func TestDiskBytesBounded(t *testing.T) {

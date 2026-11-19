@@ -12,6 +12,7 @@
  * Pure functions, no DOM.
  */
 import type { Section } from '@/builder/types'
+import { tree } from './ops'
 
 export type Device = '' | 'tablet' | 'mobile'
 export type State = '' | 'hover' | 'focus' | 'focus-visible' | 'active'
@@ -258,13 +259,9 @@ export function withoutDecls(style: string, names: Set<string>): string | null {
 
 /* ---------- Keeping local styles with their elements ---------- */
 
-const WBC_RE = /\sdata-wbc="([^"]*)"/g
-
-/** The data-wbc ids in markup (a cheap scan; the tree is not needed). */
+/** The element ids recognized by the editor's markup parser. */
 export function idsIn(html: string): Set<string> {
-  const out = new Set<string>()
-  for (const m of html.matchAll(WBC_RE)) out.add(m[1])
-  return out
+  return new Set(tree(html).byId.keys())
 }
 
 /**

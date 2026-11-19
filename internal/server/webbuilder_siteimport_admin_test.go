@@ -696,6 +696,58 @@ func TestWBImportWizardOptions(t *testing.T) {
 	}
 }
 
+// Removing the import that originally created a kit must keep the kit while a later import still
+// uses it, and transfer cleanup ownership so removing the last import eventually removes the kit.
+func TestWBImportWizardUndoTransfersSharedKitOwnership(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	importOne := func(split, replace bool) string {
+		t.Helper()
+		_, _, loc := w.upload(wizSite(t), "site.zip", "shared-kit")
+		id := wizIDRE.FindStringSubmatch(loc)[1]
+		_, page, _ := w.get("/wp-admin/web-builder-import?import=" + id)
+		form := url.Values{
+			"_wpnonce": {wizHiddenRE.FindStringSubmatch(page)[1]},
+			"kit":      {"shared-kit"},
+			"name":     {"Shared kit"},
+			"status":   {"publish"},
+		}
+		if split {
+			form.Set("templates", "1")
+		}
+		if replace {
+			form.Set("replace", "1")
+		}
+		if code, body, _ := w.postForm("/wp-admin/web-builder-import?action=import&import="+id, form); code != http.StatusSeeOther {
+			t.Fatalf("import %s: %d %s", id, code, wbSnippet(body, "notice"))
+		}
+		return id
+	}
+	undo := func(id string) {
+		t.Helper()
+		_, page, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id)
+		if code, body, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id, url.Values{
+			"_wpnonce": {wizHiddenRE.FindStringSubmatch(page)[1]}, "confirm": {"1"},
+		}); code != http.StatusOK {
+			t.Fatalf("undo %s: %d %s", id, code, wbSnippet(body, "notice"))
+		}
+	}
+
+	first := importOne(false, false)
+	second := importOne(true, true)
+	undo(first)
+	kit := srv.wbKitList()["shared-kit"]
+	if kit == nil || kit.Root == 0 {
+		t.Fatalf("shared kit was disabled or deleted: %+v", kit)
+	}
+	if rec := srv.wbWizRecords()[second]; rec == nil || !rec.KitCreated {
+		t.Fatalf("kit cleanup ownership was not transferred: %+v", rec)
+	}
+	undo(second)
+	if kit := srv.wbKitList()["shared-kit"]; kit != nil {
+		t.Fatalf("last import left its transferred kit behind: %+v", kit)
+	}
+}
+
 // Undo never deletes a post that no longer carries the import's mark.
 func TestWBImportWizardUndoKeepsOthers(t *testing.T) {
 	srv, _, _, w := wizStart(t)
@@ -722,6 +774,78 @@ func TestWBImportWizardUndoKeepsOthers(t *testing.T) {
 	}
 	if _, err := srv.store.GetPost(context.Background(), rec.Pages[0]); err != nil {
 		t.Errorf("a page without the mark was deleted: %v", err)
+	}
+}
+
+func TestWBImportWizardUndoCanRetryAfterDeleteFailure(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	const kit = "retry-kit"
+	code, _, loc := w.upload(wizSite(t), "site.zip", kit)
+	if code != http.StatusFound || !wizIDRE.MatchString(loc) {
+		t.Fatalf("upload: %d %q", code, loc)
+	}
+	id := wizIDRE.FindStringSubmatch(loc)[1]
+	_, analysis, _ := w.get(wbWizURL + "?import=" + id)
+	nonce := wizHiddenRE.FindStringSubmatch(analysis)
+	if len(nonce) != 2 {
+		t.Fatal("missing import form")
+	}
+	code, body, _ := w.postForm(wbWizURL+"?action=import&import="+id, url.Values{
+		"_wpnonce": {nonce[1]}, "kit": {kit}, "status": {"publish"},
+	})
+	rec := srv.wbWizRecords()[id]
+	if code != http.StatusSeeOther || rec == nil || len(rec.Pages) < 2 || srv.wbKitList()[kit] == nil {
+		t.Fatalf("import: %d, record=%+v, %s", code, rec, wbSnippet(body, "notice"))
+	}
+	blocked := rec.Pages[1]
+	const claim = "audit-held"
+	if err := srv.wbSiteSetClaims(t.Context(), kit, map[string]int64{claim: blocked}); err != nil {
+		t.Fatal(err)
+	}
+	exec := func(query string, args ...any) {
+		t.Helper()
+		if _, err := srv.store.Pool.Exec(t.Context(), query, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	exec(`CREATE TABLE undo_post_guard (post_id bigint REFERENCES posts(id))`)
+	t.Cleanup(func() {
+		_, _ = srv.store.Pool.Exec(context.Background(), `DROP TABLE IF EXISTS undo_post_guard`)
+	})
+	exec(`INSERT INTO undo_post_guard (post_id) VALUES ($1)`, blocked)
+
+	target := wbWizURL + "?action=undo&import=" + id
+	undo := func() string {
+		t.Helper()
+		code, form, _ := w.get(target)
+		nonce := wizHiddenRE.FindStringSubmatch(form)
+		if code != http.StatusOK || len(nonce) != 2 {
+			t.Fatalf("undo form: %d %s", code, wbSnippet(form, "notice"))
+		}
+		code, result, _ := w.postForm(target, url.Values{"_wpnonce": {nonce[1]}, "confirm": {"1"}})
+		if code != http.StatusOK {
+			t.Fatalf("undo: %d %s", code, wbSnippet(result, "notice"))
+		}
+		return result
+	}
+	if body := undo(); !strings.Contains(body, "Retry the removal") || !strings.Contains(body, "Delete permanently") {
+		t.Fatalf("missing retry form: %s", wbSnippet(body, "notice"))
+	}
+	if srv.wbWizRecords()[id] == nil || srv.wbKitList()[kit] == nil || srv.wbSiteClaims()[claim].ID != blocked {
+		t.Fatal("failed undo removed the record, kit or claim")
+	}
+	if _, err := os.Stat(srv.wbWizDir(id)); err != nil {
+		t.Fatalf("failed undo removed the staged upload: %v", err)
+	}
+	exec(`DROP TABLE undo_post_guard`)
+	if body := undo(); !strings.Contains(body, "and its design kit") {
+		t.Fatalf("retry did not finish: %s", wbSnippet(body, "notice"))
+	}
+	if srv.wbWizRecords()[id] != nil || srv.wbKitList()[kit] != nil || srv.wbSiteClaims()[claim].ID != 0 {
+		t.Fatal("completed undo left the record, kit or claim")
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE meta->>$1 = $2`, wbSiteMetaKit, kit); n != 0 {
+		t.Fatalf("completed undo left %d posts", n)
 	}
 }
 

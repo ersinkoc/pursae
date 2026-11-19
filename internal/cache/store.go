@@ -340,6 +340,7 @@ func (s *Store) get(key string) (*Entry, bool) {
 		s.mu.Unlock()
 		return nil, false
 	}
+	stub := it.diskElem
 	if it.entry != nil {
 		s.lru.MoveToFront(it.elem)
 		e := it.entry
@@ -368,19 +369,24 @@ func (s *Store) get(key string) (*Entry, bool) {
 		s.removeLocked(it, true)
 		return nil, false
 	}
+	if it.entry != nil {
+		s.lru.MoveToFront(it.elem)
+		return it.entry, true
+	}
 	if e == nil {
-		s.removeLocked(it, true)
+		// A successful promotion followed by eviction gives the item a new stub.
+		if it.diskElem == stub {
+			s.removeLocked(it, true)
+		}
 		return nil, false
 	}
-	if it.entry == nil {
-		s.dropStubLocked(it)
-		it.entry = e
-		it.bytes = e.size()
-		it.elem = s.lru.PushFront(it)
-		s.bytes += it.bytes
-		s.evictLocked(it)
-	}
-	return it.entry, true
+	s.dropStubLocked(it)
+	it.entry = e
+	it.bytes = e.size()
+	it.elem = s.lru.PushFront(it)
+	s.bytes += it.bytes
+	s.evictLocked(it)
+	return e, true
 }
 
 // Set stores a copy of e, replacing any entry with the same key, persisting it to disk when
@@ -626,9 +632,20 @@ func (s *Store) Delete(key string) bool {
 
 // PurgeAll removes every entry, in memory and on disk.
 func (s *Store) PurgeAll() int {
+	if s.disk == nil {
+		return s.purgeAll(nil)
+	}
+	return s.purgeAll(s.disk.clear)
+}
+
+func (s *Store) purgeAll(clearDisk func()) int {
 	s.mu.Lock()
 	s.allGen = s.bumpLocked()
 	s.tagGen, s.baseGen, s.pathGen = nil, nil, nil
+	if clearDisk != nil {
+		// Finish disk cleanup before admitting entries in the new generation.
+		clearDisk()
+	}
 	n := len(s.items)
 	s.items = make(map[string]*item)
 	s.lru.Init()
@@ -637,10 +654,8 @@ func (s *Store) PurgeAll() int {
 	s.tags = make(map[string]map[string]struct{})
 	s.bases = make(map[string]map[string]struct{})
 	s.bytes = 0
+	s.searches = 0
 	s.mu.Unlock()
-	if s.disk != nil {
-		s.disk.clear()
-	}
 	return n
 }
 

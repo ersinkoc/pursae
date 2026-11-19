@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -149,10 +151,15 @@ func (s *Server) configureCache() {
 	if s.sandbox != nil { // a theme-preview sandbox is served without the page cache
 		return
 	}
-	// A rebuild at run time drops every page, also the copies on disk: the new cache would
-	// otherwise load them back (only the start-up keeps the persisted pages).
-	if old := s.currentCache(); old != nil {
-		old.PurgeAll()
+	s.cacheBuildMu.Lock()
+	defer s.cacheBuildMu.Unlock()
+	if old := s.cache.Load(); old != nil {
+		if old.h == nil {
+			// CLI commands restore this purge-only cache after reusing an admin path.
+			old.c.PurgeAll()
+		} else {
+			old.c.Retire()
+		}
 	}
 	c := cache.New(s.cacheConfig(), cache.Options{LoginCookie: auth.CookieName, Logger: slog.Default(),
 		OnPurge: s.onCachePurge, TrustForwarded: s.peerTrusted, CSPMode: s.cspCacheState}) // the other instances purge too (wpgocache_sync.go)
@@ -160,18 +167,42 @@ func (s *Server) configureCache() {
 	s.cache.Store(&pageCache{c: c, h: c.Middleware(s.appHandler())})
 }
 
-// cacheCoreVersionOption records which core version filled the page cache.
+// Keep the shared setting for older cores that consult it after a rollback.
 const cacheCoreVersionOption = "wpgo_cache_core_version"
+
+const cacheCoreVersionFile = ".core-version"
 
 // dropCacheOfOtherCore purges the pages persisted on disk when they were rendered by another core
 // version: after a core update (or a rollback) they carry the old generator, asset versions and
 // markup, and would otherwise be served until they expire.
 func (s *Server) dropCacheOfOtherCore(c *cache.Cache) {
-	if s.settings.String(cacheCoreVersionOption) == Version {
-		return
+	recordedVersion := s.settings.String(cacheCoreVersionOption)
+	needsPurge := recordedVersion != Version
+	var marker string
+	if dir := c.Config().DiskDir; dir != "" {
+		marker = filepath.Join(dir, cacheCoreVersionFile)
+		version, err := os.ReadFile(marker)
+		needsPurge = err != nil || string(version) != Version
 	}
-	if n := c.PurgeAll(); n > 0 {
-		slog.Info("page cache emptied after a core version change", "pages", n, "version", Version)
+	if needsPurge {
+		var n int
+		if recordedVersion == Version {
+			// Another instance already announced the upgrade. Only this directory needs a purge.
+			n = c.Apply(cache.Purge{All: true})
+		} else {
+			n = c.PurgeAll()
+		}
+		if n > 0 {
+			slog.Info("page cache emptied after a core version change", "pages", n, "version", Version)
+		}
+		if marker != "" {
+			if err := writeFileAtomic(marker, []byte(Version), 0o600); err != nil {
+				slog.Warn("page cache: recording the disk cache version", "err", err)
+			}
+		}
+	}
+	if recordedVersion == Version {
+		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -491,7 +522,7 @@ func (s *Server) cacheAction(c *gin.Context, page string) {
 		u := strings.TrimSpace(c.PostForm("purge_url"))
 		if pu, err := url.Parse(u); err == nil && cc != nil && u != "" {
 			if pu.Host == "" {
-				u = s.links(c).Home + "/" + strings.TrimLeft(pu.Path, "/")
+				u = s.links(c).Home + "/" + strings.TrimLeft(pu.EscapedPath(), "/")
 				if pu.RawQuery != "" {
 					u += "?" + pu.RawQuery
 				}

@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"log"
 	"mime"
 	"net/http"
 	"net/url"
@@ -178,12 +179,25 @@ func (s *Server) wbWizSave(m *wbWizMeta) error {
 	if dir == "" {
 		return fmt.Errorf("bad id")
 	}
-	b, _ := json.Marshal(m)
-	tmp := filepath.Join(dir, "meta.json.tmp")
-	if err := os.WriteFile(tmp, b, 0o600); err != nil {
+	b, err := json.Marshal(m)
+	if err != nil {
 		return err
 	}
-	return os.Rename(tmp, filepath.Join(dir, "meta.json"))
+	f, err := os.CreateTemp(dir, ".meta-*.tmp")
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(b)
+	if closeErr := f.Close(); err == nil {
+		err = closeErr
+	}
+	if err == nil {
+		err = os.Rename(f.Name(), filepath.Join(dir, "meta.json"))
+	}
+	if err != nil {
+		_ = os.Remove(f.Name())
+	}
+	return err
 }
 
 // wbWizSweep removes sessions older than wbWizMaxAge (from their upload time; a folder without a
@@ -1327,7 +1341,7 @@ func wbWizEscPath(p string) string {
 
 // --- undo -------------------------------------------------------------------------------------
 
-func (s *Server) wbWizUndoPage(c *gin.Context, id string) {
+func (s *Server) wbWizUndoPage(c *gin.Context, id string, notices ...notice) {
 	rec := s.wbWizRecords()[id]
 	if rec == nil {
 		s.wbWizStartWith(c, notice{Type: "error", Message: "That import has nothing left to remove (it was removed, or it created nothing).", Dismissible: true})
@@ -1352,7 +1366,7 @@ func (s *Server) wbWizUndoPage(c *gin.Context, id string) {
 	u.KitGone = rec.KitCreated && s.wbKitList()[rec.Kit] != nil
 	u.Front = rec.FrontSet
 	v.Undo = u
-	s.wbWizRender(c, v)
+	s.wbWizRender(c, v, notices...)
 }
 
 // wbWizOwnedTitle is the title of a post if it still exists, has the type and still carries the
@@ -1385,21 +1399,31 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		return
 	}
 	deleted, kept := 0, 0
-	del := func(ids []int64, typ string) {
+	del := func(ids []int64, typ string) error {
 		for _, pid := range ids {
 			if s.wbWizOwnedTitle(c, pid, typ, rec.Kit) == "" {
 				kept++
 				continue
 			}
-			if err := s.store.DeletePost(c, pid); err == nil {
-				deleted++
+			if err := s.store.DeletePost(c, pid); err != nil {
+				return fmt.Errorf("delete imported %s %d: %w", typ, pid, err)
 			}
+			deleted++
 		}
+		return nil
 	}
 	// A placeholder parent holds the pages below it: children first is not needed, DeletePost moves
 	// the survivors up, and every page the import made goes anyway.
-	del(rec.Pages, "page")
-	del(rec.Templates, webbuilder.TemplatePostType)
+	err := del(rec.Pages, "page")
+	if err == nil {
+		err = del(rec.Templates, webbuilder.TemplatePostType)
+	}
+	if err != nil {
+		log.Printf("web builder: undo import: %v", err)
+		s.wbTemplatesChanged(c)
+		s.wbWizUndoPage(c, id, notice{Type: "error", Message: "Removing the import stopped after a database error. Retry the removal from this screen.", Dismissible: true})
+		return
+	}
 	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
 	for _, mid := range rec.Media {  // the files it put into the Media Library
 		if a, err := s.store.GetAttachment(c, mid); err == nil {
@@ -1424,13 +1448,31 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		_ = s.settings.Set(c, map[string]any{"show_on_front": prev, "page_on_front": rec.PrevFront})
 	}
 	kitMsg := ""
-	_ = s.wbKitSetRoot(c, rec.Kit, false) // the kit's files leave the site's root with its pages
-	if rec.KitCreated {
-		wbKitsMu.Lock()
-		if status, code, _ := s.wbKitRemove(c, rec.Kit); code == "" || status == http.StatusNotFound {
-			kitMsg = " and its design kit"
+	// Another import of the same kit still needs its files and root paths. If this record created
+	// the kit, hand that cleanup responsibility to one of the remaining records.
+	var kitHeir *wbWizRecord
+	var kitHeirID string
+	for otherID, other := range recs {
+		if otherID == id || other == nil || other.Kit != rec.Kit {
+			continue
 		}
-		wbKitsMu.Unlock()
+		if kitHeir == nil || other.At > kitHeir.At || other.At == kitHeir.At && otherID > kitHeirID {
+			kitHeir, kitHeirID = other, otherID
+		}
+	}
+	if kitHeir != nil {
+		if rec.KitCreated {
+			kitHeir.KitCreated = true
+		}
+	} else {
+		_ = s.wbKitSetRoot(c, rec.Kit, false) // the kit's files leave the site's root with its pages
+		if rec.KitCreated {
+			wbKitsMu.Lock()
+			if status, code, _ := s.wbKitRemove(c, rec.Kit); code == "" || status == http.StatusNotFound {
+				kitMsg = " and its design kit"
+			}
+			wbKitsMu.Unlock()
+		}
 	}
 	delete(recs, id)
 	_ = s.wbWizSetRecords(c, recs)

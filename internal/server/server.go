@@ -14,6 +14,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -56,10 +57,11 @@ type Server struct {
 	onPostSaved func(ctx context.Context, p *store.Post)
 	onPurgeAll  func(ctx context.Context)
 
-	cache   atomic.Pointer[pageCache] // wpgo-cache, rebuilt when its options change
-	plugins *pluginSystem
-	bmgr    bmgrRuntime // Backup Manager state (backup.go)
-	warm    warmState
+	cache        atomic.Pointer[pageCache] // wpgo-cache, rebuilt when its options change
+	cacheBuildMu sync.Mutex                // orders retirement and installation of caches
+	plugins      *pluginSystem
+	bmgr         bmgrRuntime // Backup Manager state (backup.go)
+	warm         warmState
 
 	// sandbox is set on a theme-preview sandbox (theme_preview.go): a second Server over its own
 	// database schema, uploads and themes directory, served under /wp-admin/theme-preview/<slug>/.

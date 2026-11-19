@@ -287,6 +287,12 @@ func TestGzipNegotiationAndETag(t *testing.T) {
 	if no := do(h, "GET", "http://example.com/g/", "Accept-Encoding", "gzip;q=0"); no.Header().Get("Content-Encoding") != "" {
 		t.Fatal("gzip served despite q=0")
 	}
+	if got := do(h, "GET", "http://example.com/g/", "Accept-Encoding", "br", "Accept-Encoding", "gzip").Header().Get("Content-Encoding"); got != "gzip" {
+		t.Fatalf("gzip on the second header line was ignored: %q", got)
+	}
+	if got := do(h, "GET", "http://example.com/g/", "Accept-Encoding", "*", "Accept-Encoding", "gzip;q=0").Header().Get("Content-Encoding"); got != "" {
+		t.Fatalf("the wildcard overrode explicit q=0: %q", got)
+	}
 	etag := plain.Header().Get("ETag")
 	if etag == "" || gz.Header().Get("ETag") == etag {
 		t.Fatalf("etags plain=%q gzip=%q", etag, gz.Header().Get("ETag"))
@@ -308,6 +314,16 @@ func TestGzipNegotiationAndETag(t *testing.T) {
 	}
 	if w := do(h, "GET", "http://example.com/g/", "If-None-Match", `"other"`); w.Code != 200 {
 		t.Fatalf("non-matching etag: %d", w.Code)
+	}
+}
+
+func TestQuotedETagIsNotAWildcard(t *testing.T) {
+	_, _, h := newTestCache(t, nil)
+	const target = "http://example.com/conditional/"
+	want := do(h, "GET", target)
+	w := do(h, "GET", target, "If-None-Match", `"old,*,version"`)
+	if w.Code != http.StatusOK || w.Body.String() != want.Body.String() || status(w) != "hit" {
+		t.Fatalf("conditional response status=%d cache=%q body=%q", w.Code, status(w), w.Body.String())
 	}
 }
 
