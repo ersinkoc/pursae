@@ -34,7 +34,7 @@ func checkLateDiskPublication(t *testing.T, replace bool) string {
 	const key = "https://example.test/page"
 	first := setDiskOrderEntry(t, s, key, "first")
 	item := s.items[key]
-	staged, err := s.disk.stage(first)
+	staged, size, err := s.disk.stage(first)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func checkLateDiskPublication(t *testing.T, replace bool) string {
 	done := make(chan error, 1)
 	go func() {
 		<-release
-		done <- s.finishDiskWrite(item, staged, nil)
+		done <- s.finishDiskWrite(item, staged, size, nil)
 	}()
 	released := false
 	defer func() {
@@ -92,12 +92,12 @@ func TestPendingDiskEntryDoesNotReadPredecessor(t *testing.T) {
 	first := setDiskOrderEntry(t, s, key, "first")
 	second := setDiskOrderEntry(t, s, key, "second")
 	item := s.items[key]
-	staged, err := s.disk.stage(second)
+	staged, size, err := s.disk.stage(second)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.Remove(staged) })
-	previous, err := s.disk.stage(first)
+	previous, _, err := s.disk.stage(first)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,10 +110,60 @@ func TestPendingDiskEntryDoesNotReadPredecessor(t *testing.T) {
 	if got, hit := s.Get(key); hit {
 		t.Fatalf("pending item reloaded %q", got.Body)
 	}
-	if err := s.finishDiskWrite(item, staged, nil); err != nil {
+	if err := s.finishDiskWrite(item, staged, size, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got, hit := s.Get(key); !hit || string(got.Body) != "second" {
 		t.Fatalf("published item did not reload: %v", got)
+	}
+}
+
+// An entry evicted while its disk write is pending is counted at its real file size once
+// the write lands, so the disk-only quota still holds.
+func TestDiskQuotaCountsFileFinishedAfterEviction(t *testing.T) {
+	now := time.Unix(1000, 0)
+	probe := newDiskOrderStore(t)
+	first := setDiskOrderEntry(t, probe, "https://example.test/first", "first page body")
+	fi, err := os.Stat(probe.disk.path(first.Key))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := NewStore(StoreOptions{MaxEntries: 1, DiskDir: t.TempDir(), MaxDiskBytes: fi.Size() - 1, Now: func() time.Time { return now }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	setDiskOrderEntry(t, s, first.Key, "first page body")
+	s.mu.Lock()
+	item := s.items[first.Key]
+	s.disk.remove(first.Key)
+	item.staging, item.file = true, 1 // a write still in flight, with only an estimate counted
+	s.mu.Unlock()
+	staged, size, err := s.disk.stage(first)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	second := setDiskOrderEntry(t, s, "https://example.test/second", "second")
+	s.mu.Lock()
+	stubbed := item.diskElem != nil
+	s.mu.Unlock()
+	if !stubbed {
+		t.Fatal("first entry should be disk-only after the second one evicted it")
+	}
+	if err := s.finishDiskWrite(item, staged, size, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(s.disk.path(first.Key)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("oversized disk-only file should be trimmed once its size is known: %v", err)
+	}
+	s.mu.Lock()
+	stub := s.stubBytes
+	s.mu.Unlock()
+	if stub != 0 {
+		t.Fatalf("stubBytes = %d after trimming, want 0", stub)
+	}
+	if _, ok := s.Get(second.Key); !ok {
+		t.Fatal("resident entry lost")
 	}
 }

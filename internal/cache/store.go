@@ -95,7 +95,7 @@ type item struct {
 	elem     *list.Element // position in the LRU list while resident in memory
 	diskElem *list.Element // position in the disk-only list while only on disk
 	bytes    int64
-	file     int64 // approximate size of its disk copy, counted in stubBytes while only on disk
+	file     int64 // size of its disk copy (an estimate until the write lands), counted in stubBytes while only on disk
 	staging  bool  // this item's disk copy has not been published yet
 }
 
@@ -440,8 +440,8 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	s.mu.Unlock()
 
 	if s.disk != nil {
-		staged, err := s.disk.stage(e)
-		if err := s.finishDiskWrite(it, staged, err); err != nil {
+		staged, fileSize, err := s.disk.stage(e)
+		if err := s.finishDiskWrite(it, staged, fileSize, err); err != nil {
 			s.log.Warn("wpgo-cache: persisting entry", "key", e.Key, "err", err)
 		}
 	}
@@ -450,7 +450,7 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 
 // finishDiskWrite publishes the file and its readiness under the same lock as
 // replacement, eviction and purge. The potentially slow write and sync run outside it.
-func (s *Store) finishDiskWrite(it *item, staged string, err error) error {
+func (s *Store) finishDiskWrite(it *item, staged string, fileSize int64, err error) error {
 	if staged != "" {
 		defer os.Remove(staged)
 	}
@@ -463,13 +463,22 @@ func (s *Store) finishDiskWrite(it *item, staged string, err error) error {
 		err = s.disk.publish(it.key, staged)
 	}
 	it.staging = false
-	if err != nil {
-		if it.entry == nil {
-			s.removeLocked(it, true)
-		} else {
-			s.disk.remove(it.key)
-			it.file = 0
+	if err == nil {
+		// Account the real file size; the entry may have become disk-only while it was written.
+		if it.diskElem != nil {
+			s.stubBytes += fileSize - it.file
 		}
+		it.file = fileSize
+		if it.diskElem != nil {
+			s.trimDiskLocked()
+		}
+		return nil
+	}
+	if it.entry == nil {
+		s.removeLocked(it, true)
+	} else {
+		s.disk.remove(it.key)
+		it.file = 0
 	}
 	return err
 }

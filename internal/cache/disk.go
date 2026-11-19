@@ -50,14 +50,15 @@ func (d *diskStore) path(key string) string {
 
 // stage writes and syncs e to a temporary file in the same directory.
 // The caller owns the temporary path after a successful return.
-func (d *diskStore) stage(e *Entry) (name string, err error) {
+// stage writes e to a synced temp file and returns its name and size.
+func (d *diskStore) stage(e *Entry) (name string, size int64, err error) {
 	var meta bytes.Buffer
 	if err := gob.NewEncoder(&meta).Encode(diskMeta{Key: e.Key, Tags: e.Tags, Expires: e.Expires}); err != nil {
-		return "", err
+		return "", 0, err
 	}
 	tmp, err := os.CreateTemp(d.dir, ".tmp-*")
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	defer func() {
 		if err != nil {
@@ -73,18 +74,22 @@ func (d *diskStore) stage(e *Entry) (name string, err error) {
 	_, _ = w.Write(n[:])
 	_, _ = w.Write(meta.Bytes())
 	if err := gob.NewEncoder(w).Encode(e); err != nil {
-		return "", err
+		return "", 0, err
 	}
 	if err := w.Flush(); err != nil {
-		return "", err
+		return "", 0, err
+	}
+	info, err := tmp.Stat()
+	if err != nil {
+		return "", 0, err
 	}
 	if err := tmp.Sync(); err != nil {
-		return "", err
+		return "", 0, err
 	}
 	if err := tmp.Close(); err != nil {
-		return "", err
+		return "", 0, err
 	}
-	return tmp.Name(), nil
+	return tmp.Name(), info.Size(), nil
 }
 
 func (d *diskStore) publish(key, staged string) error {
