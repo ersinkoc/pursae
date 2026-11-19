@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"wpgo/internal/webbuilder"
 )
 
 // The literal scanners (webbuilder_scan.go) must return exactly what the regular expressions they
@@ -226,4 +228,28 @@ func BenchmarkWBScanners(b *testing.B) {
 	bench("MainLandmark/scan", func() { wbHasMainLandmark(src) })
 	bench("KitVersioned/regexp", func() { refKitVersioned(src, vers) })
 	bench("KitVersioned/scan", func() { wbKitVersionedWith(src, vers) })
+}
+
+// BenchmarkWBFillProgram: what wbFill did per response before it compiled once per doc revision
+// (the stored scripts given the nonce placeholder, then the program cache keyed by the text's
+// hash) and the keyed hit it does now.
+func BenchmarkWBFillProgram(b *testing.B) {
+	page := benchPage(b) + `<script>window.x=1</script>`
+	c := webbuilder.NewProgramCache(0)
+	b.Run("trust+hash", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			if _, err := c.Compile(1, 1, cspTrustScripts(page)); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("keyed", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			if _, err := c.CompileFor("fill:1:1:1:trusted", func() string { return cspTrustScripts(page) }); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
 }
