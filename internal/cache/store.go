@@ -47,10 +47,16 @@ type Entry struct {
 	// Mode is Options.CSPMode() when the entry was stored: the stored policy header and the delayed-script
 	// loader depend on it, so an entry of another mode is not served.
 	Mode string
+	// NonceGz is the precompressed copy of a body that holds the nonce placeholder (noncegz.go): the
+	// deflate parts between placeholders back to back, NonceGzCuts their end offsets, NonceAt the
+	// placeholders' offsets in Body. Nil when the body holds no placeholder or did not compress.
+	NonceGz     []byte
+	NonceGzCuts []int
+	NonceAt     []int
 }
 
 // NoncePlaceholder is the per-process CSP nonce placeholder (internal/cspnonce). Bodies holding it
-// are stored uncompressed: the server's swap cannot reach into gzip.
+// get no Gzip copy (the server's swap cannot reach into gzip) but a NonceGz one (noncegz.go).
 var NoncePlaceholder = cspnonce.Placeholder
 
 // usable reports whether this process may serve the entry.
@@ -63,6 +69,9 @@ func (e *Entry) clone() *Entry {
 	copyOfEntry.Header = e.Header.Clone()
 	copyOfEntry.Body = bytes.Clone(e.Body)
 	copyOfEntry.Gzip = bytes.Clone(e.Gzip)
+	copyOfEntry.NonceGz = bytes.Clone(e.NonceGz)
+	copyOfEntry.NonceGzCuts = slices.Clone(e.NonceGzCuts)
+	copyOfEntry.NonceAt = slices.Clone(e.NonceAt)
 	copyOfEntry.Tags = slices.Clone(e.Tags)
 	return &copyOfEntry
 }
@@ -71,7 +80,7 @@ func (e *Entry) clone() *Entry {
 func (e *Entry) Fresh(now time.Time) bool { return now.Before(e.Expires) }
 
 func (e *Entry) size() int64 {
-	n := int64(len(e.Key) + len(e.Body) + len(e.Gzip) + len(e.ETag) + 128)
+	n := int64(len(e.Key) + len(e.Body) + len(e.Gzip) + len(e.NonceGz) + 8*(len(e.NonceGzCuts)+len(e.NonceAt)) + len(e.ETag) + 128)
 	for k, vs := range e.Header {
 		n += int64(len(k))
 		for _, v := range vs {
@@ -249,6 +258,11 @@ func NewEntry(key string, status int, header http.Header, body []byte, tags []st
 	inBody := NoncePlaceholder != "" && bytes.Contains(body, []byte(NoncePlaceholder))
 	if NoncePlaceholder != "" && (inBody || headerHolds(e.Header, NoncePlaceholder)) {
 		e.Placeholder = NoncePlaceholder
+	}
+	if inBody {
+		if data, cuts, at, ok := buildNonceGz(e.Body, []byte(NoncePlaceholder)); ok {
+			e.NonceGz, e.NonceGzCuts, e.NonceAt = data, cuts, at
+		}
 	}
 	if len(body) >= 256 && !inBody {
 		var buf bytes.Buffer
