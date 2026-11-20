@@ -1424,6 +1424,15 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		mediaDeleted, err = s.wbWizUndoMedia(c, rec.Media)
 		deleted += mediaDeleted
 	}
+	if err == nil && rec.Menu > 0 {
+		// Match both the recorded ID and the name at deletion time.
+		result, menuErr := s.store.Pool.Exec(c, `DELETE FROM menus WHERE id = $1 AND name = $2`, rec.Menu, wbSiteMenuName(rec.Kit))
+		if menuErr != nil {
+			err = fmt.Errorf("delete imported menu %d: %w", rec.Menu, menuErr)
+		} else {
+			deleted += int(result.RowsAffected())
+		}
+	}
 	if err != nil {
 		log.Printf("web builder: undo import: %v", err)
 		s.wbTemplatesChanged(c)
@@ -1431,12 +1440,6 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		return
 	}
 	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
-	// The navigation menu it made, when it is still the import's (same id, same name).
-	if rec.Menu > 0 && s.wbWizMenuID(c, rec.Kit) == rec.Menu {
-		if err := s.store.DeleteMenu(c, rec.Menu); err == nil {
-			deleted++
-		}
-	}
 	if rec.FrontSet && s.settings.String("show_on_front") == "page" && wbWizHas(rec.Pages, int64(s.settings.Int("page_on_front"))) {
 		prev := rec.PrevShow
 		if prev == "" {

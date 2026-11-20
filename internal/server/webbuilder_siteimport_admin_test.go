@@ -855,6 +855,66 @@ func TestWBImportWizardUndoCanRetryAfterDeleteFailure(t *testing.T) {
 	}
 }
 
+func TestWBImportWizardUndoCanRetryAfterMenuDeleteFailure(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	const kit = "navigation-import"
+	menu, err := srv.store.CreateMenu(t.Context(), wbSiteMenuName(kit))
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := wbWizNewID()
+	rec := &wbWizRecord{ID: id, Kit: kit, Menu: menu}
+	if err := srv.settings.Set(t.Context(), map[string]any{wbWizImportsOption: map[string]*wbWizRecord{id: rec}}); err != nil {
+		t.Fatal(err)
+	}
+	staged := srv.wbWizDir(id)
+	if err := os.MkdirAll(staged, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	exec := func(query string, args ...any) {
+		t.Helper()
+		if _, err := srv.store.Pool.Exec(t.Context(), query, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	exec(`CREATE TABLE undo_menu_guard (menu_id bigint REFERENCES menus(id))`)
+	t.Cleanup(func() {
+		_, _ = srv.store.Pool.Exec(context.Background(), `DROP TABLE IF EXISTS undo_menu_guard`)
+	})
+	exec(`INSERT INTO undo_menu_guard (menu_id) VALUES ($1)`, menu)
+
+	undo := func() string {
+		t.Helper()
+		target := wbWizURL + "?action=undo&import=" + id
+		code, form, _ := w.get(target)
+		nonce := wizHiddenRE.FindStringSubmatch(form)
+		if code != http.StatusOK || len(nonce) != 2 {
+			t.Fatalf("undo form: %d %s", code, wbSnippet(form, "notice"))
+		}
+		code, body, _ := w.postForm(target, url.Values{"_wpnonce": {nonce[1]}, "confirm": {"1"}})
+		if code != http.StatusOK {
+			t.Fatalf("undo: %d %s", code, wbSnippet(body, "notice"))
+		}
+		return body
+	}
+	if body := undo(); !strings.Contains(body, "Retry the removal") || srv.wbWizRecords()[id] == nil {
+		t.Fatalf("failed undo lost its retry: %s", wbSnippet(body, "notice"))
+	}
+	if _, err := os.Stat(staged); err != nil {
+		t.Fatalf("staging after failure: %v", err)
+	}
+	exec(`DROP TABLE undo_menu_guard`)
+	if body := undo(); !strings.Contains(body, "Removed 1 pages and templates") {
+		t.Fatalf("retry did not finish: %s", wbSnippet(body, "notice"))
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM menus WHERE id = $1`, menu); n != 0 || srv.wbWizRecords()[id] != nil {
+		t.Fatal("retry left the menu or import record")
+	}
+	if _, err := os.Stat(staged); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("staging after successful retry: %v", err)
+	}
+}
+
 // A file the pages use that is too large for a design kit (a hero video) goes to the Media Library:
 // the analysis says so, the import puts it there and points the page at it, and "Remove this
 // import" removes it again.
