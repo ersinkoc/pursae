@@ -56,7 +56,7 @@ func gocdnSite(t *testing.T) *gocdnTestSite {
 	if m == nil {
 		t.Fatal("no Activate link for Pursae CDN on the Plugins screen")
 	}
-	if code, _, loc := get(t, c, ts.URL+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, "activate=true") {
+	if code, _, loc := get(t, c, ts.URL+html.UnescapeString(m[1])); code != http.StatusFound || !activationOK(loc) {
 		t.Fatalf("activate Pursae CDN: %d %s", code, loc)
 	}
 	fake := s3fake.New(gocdnTestKey, gocdnTestSecret, "auto", "media")

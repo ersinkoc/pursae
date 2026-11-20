@@ -116,9 +116,9 @@ func TestSEOGoOffByDefaultAndToggle(t *testing.T) {
 		t.Errorf("get_head while off: %d", code)
 	}
 
-	// On: the first activation opens the wizard; the menu appears.
-	if loc := seogoToggle(t, c, base, "activate"); !strings.Contains(loc, "/wp-admin/seogo?page=wizard") {
-		t.Errorf("activation went to %q, not the setup wizard", loc)
+	// On: the first activation asks setup guide (the wizard) or settings; the menu appears.
+	if loc := seogoToggle(t, c, base, "activate"); loc != pluginSetupURL(seogoSlug, true) {
+		t.Errorf("activation went to %q, not the setup question", loc)
 	}
 	if !srv.seogoOn() || srv.seogoOpts().IndexNowKey == "" {
 		t.Fatal("Pursae SEO did not switch on")

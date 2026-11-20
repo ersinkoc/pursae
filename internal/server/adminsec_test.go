@@ -134,7 +134,7 @@ func asToggle(t *testing.T, c *http.Client, base, action string) {
 	if m == nil {
 		t.Fatalf("no %s link for Pursae Security", action)
 	}
-	if code, _, loc := get(t, c, base+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, action+"=true") {
+	if code, _, loc := get(t, c, base+html.UnescapeString(m[1])); code != http.StatusFound || !toggleOK(loc, action) {
 		t.Fatalf("%s: %d %s", action, code, loc)
 	}
 }
