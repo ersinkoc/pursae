@@ -1425,9 +1425,7 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		deleted += mediaDeleted
 	}
 	if err != nil {
-		log.Printf("web builder: undo import: %v", err)
-		s.wbTemplatesChanged(c)
-		s.wbWizUndoPage(c, id, notice{Type: "error", Message: "Removing the import stopped after a database error. Retry the removal from this screen.", Dismissible: true})
+		s.wbWizUndoError(c, id, err)
 		return
 	}
 	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
@@ -1461,15 +1459,20 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		if rec.KitCreated {
 			kitHeir.KitCreated = true
 		}
-	} else {
-		_ = s.wbKitSetRoot(c, rec.Kit, false) // the kit's files leave the site's root with its pages
-		if rec.KitCreated {
-			wbKitsMu.Lock()
-			if status, code, _ := s.wbKitRemove(c, rec.Kit); code == "" || status == http.StatusNotFound {
-				kitMsg = " and its design kit"
-			}
-			wbKitsMu.Unlock()
+	} else if rec.KitCreated {
+		// Removing the kit also removes its root registration.
+		wbKitsMu.Lock()
+		status, code, _ := s.wbKitRemove(c, rec.Kit)
+		wbKitsMu.Unlock()
+		wbKitRootLiveReset()
+		if code != "" && status != http.StatusNotFound {
+			s.wbWizUndoError(c, id, fmt.Errorf("delete imported design kit: %s", code))
+			return
 		}
+		kitMsg = " and its design kit"
+	} else if err := s.wbKitSetRoot(c, rec.Kit, false); err != nil {
+		s.wbWizUndoError(c, id, fmt.Errorf("disable imported design kit root: %w", err))
+		return
 	}
 	delete(recs, id)
 	_ = s.wbWizSetRecords(c, recs)
@@ -1483,6 +1486,12 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		msg += fmt.Sprintf(" %d were already gone or no longer carry the import's mark and were left alone.", kept)
 	}
 	s.wbWizStartWith(c, notice{Type: "success", Message: template.HTML(html.EscapeString(msg)), Dismissible: true})
+}
+
+func (s *Server) wbWizUndoError(c *gin.Context, id string, err error) {
+	log.Printf("web builder: undo import: %v", err)
+	s.wbTemplatesChanged(c)
+	s.wbWizUndoPage(c, id, notice{Type: "error", Message: "Removing the import stopped after a database error. Retry the removal from this screen.", Dismissible: true})
 }
 
 func (s *Server) wbWizUndoMedia(c *gin.Context, ids []int64) (int, error) {
