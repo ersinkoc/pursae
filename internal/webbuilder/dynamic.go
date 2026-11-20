@@ -991,18 +991,24 @@ func slotAttrValue(tag, key, v string) (string, bool) {
 // ---------------------------------------------------------------------------------------------
 // Compiled program cache.
 
-// ProgramCache is an LRU of compiled programs keyed ProgramKey(postID, rev, html). Snapshots
-// without placeholders are never hashed or stored (the static fast path costs one scan).
+// ProgramCache is an LRU of compiled programs. Compile keys them ProgramKey(postID, rev, html):
+// snapshots without placeholders are never hashed or stored there (the static fast path costs
+// one scan). CompileFor takes the caller's key instead and keeps static programs too, so a hit
+// neither hashes nor scans the snapshot. The cache holds at most max programs and about
+// CompiledCacheBytes of snapshot text.
 type ProgramCache struct {
-	mu  sync.Mutex
-	max int
-	ll  *list.List
-	m   map[string]*list.Element
+	mu       sync.Mutex
+	max      int
+	maxBytes int64
+	bytes    int64
+	ll       *list.List
+	m        map[string]*list.Element
 }
 
 type cacheEntry struct {
-	key string
-	p   *Program
+	key  string
+	p    *Program
+	size int64
 }
 
 // NewProgramCache returns an LRU holding at most max programs (≤ 0 = CompiledCacheSize).
@@ -1010,7 +1016,7 @@ func NewProgramCache(max int) *ProgramCache {
 	if max <= 0 {
 		max = CompiledCacheSize
 	}
-	return &ProgramCache{max: max, ll: list.New(), m: map[string]*list.Element{}}
+	return &ProgramCache{max: max, maxBytes: CompiledCacheBytes, ll: list.New(), m: map[string]*list.Element{}}
 }
 
 // ProgramKey is "postID:rev:sha256(html)[:16]" (hex).
@@ -1025,31 +1031,61 @@ func (c *ProgramCache) Compile(postID int64, rev int, src string) (*Program, err
 		return staticProgram(src), nil
 	}
 	key := ProgramKey(postID, rev, src)
-	c.mu.Lock()
-	if el, ok := c.m[key]; ok {
-		c.ll.MoveToFront(el)
-		p := el.Value.(*cacheEntry).p
-		c.mu.Unlock()
+	if p := c.get(key); p != nil {
 		return p, nil
 	}
-	c.mu.Unlock()
 	p, err := Compile(src)
 	if err != nil {
 		return nil, err
 	}
+	return c.put(key, p, int64(len(src))), nil
+}
+
+// CompileFor returns the program cached under key, compiling src() on a miss. key must identify
+// the text src returns (a stored snapshot's post id, revision and update time, and whatever the
+// caller changes in it): on a hit src is not called. Programs without placeholders are cached
+// too. A failed compile is not cached.
+func (c *ProgramCache) CompileFor(key string, src func() string) (*Program, error) {
+	if p := c.get(key); p != nil {
+		return p, nil
+	}
+	text := src()
+	p, err := Compile(text)
+	if err != nil {
+		return nil, err
+	}
+	return c.put(key, p, int64(len(text))), nil
+}
+
+func (c *ProgramCache) get(key string) *Program {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if el, ok := c.m[key]; ok {
 		c.ll.MoveToFront(el)
-		return el.Value.(*cacheEntry).p, nil
+		return el.Value.(*cacheEntry).p
 	}
-	c.m[key] = c.ll.PushFront(&cacheEntry{key: key, p: p})
-	for c.ll.Len() > c.max {
+	return nil
+}
+
+// put stores p under key (the program already stored there wins) and evicts the least recently
+// used programs over the bounds. size is the length of the program's source.
+func (c *ProgramCache) put(key string, p *Program, size int64) *Program {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if el, ok := c.m[key]; ok {
+		c.ll.MoveToFront(el)
+		return el.Value.(*cacheEntry).p
+	}
+	c.m[key] = c.ll.PushFront(&cacheEntry{key: key, p: p, size: size})
+	c.bytes += size
+	for c.ll.Len() > c.max || (c.bytes > c.maxBytes && c.ll.Len() > 1) {
 		old := c.ll.Back()
 		c.ll.Remove(old)
-		delete(c.m, old.Value.(*cacheEntry).key)
+		e := old.Value.(*cacheEntry)
+		delete(c.m, e.key)
+		c.bytes -= e.size
 	}
-	return p, nil
+	return p
 }
 
 // Len is the number of cached programs.
@@ -1065,4 +1101,5 @@ func (c *ProgramCache) Purge() {
 	defer c.mu.Unlock()
 	c.ll.Init()
 	c.m = map[string]*list.Element{}
+	c.bytes = 0
 }

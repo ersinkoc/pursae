@@ -180,7 +180,7 @@ func (s *Server) wbContent(ctx context.Context, c *gin.Context, p *store.Post, s
 // wbBody is the stored snapshot with wp_filter_content_tags applied (once per request).
 func (s *Server) wbBody(ctx context.Context, fp *wbFrontPage) string {
 	if !fp.bodyDone {
-		fp.body, fp.bodyDone = s.wbSearchForms(ctx, s.wbContentTags(ctx, s.cspTrustContent(ctx, fp.doc.HTML))), true
+		fp.body, fp.bodyDone = s.wbSearchForms(ctx, s.wbContentTags(ctx, s.wbTrustedHTML(ctx, fp.doc))), true
 	}
 	return fp.body
 }
@@ -254,11 +254,11 @@ func (s *Server) wbCanvas(c *gin.Context, v *siteView, fp *wbFrontPage, body str
 		body = webbuilder.UnwrapCodePage(body)
 		c.Header(cache.HeaderOptimize, "as-written") // its images as written (no lazy optimizer)
 	}
-	code := wbCodeSource(d)
+	docs := []*store.WebBuilderDoc{d}
 	for _, p := range fp.popups {
-		code += wbCodeSource(p.doc)
+		docs = append(docs, p.doc)
 	}
-	s.wbCodeCSP(c, code)
+	s.wbCodeCSPDocs(c, docs, "")
 
 	// wp_head without the theme: a copy of the view whose theme brings no head, no block styles
 	// and no Additional CSS (the Customizer's CSS belongs to the theme).
@@ -351,12 +351,6 @@ func wbDraftNotice(s *Server, c *gin.Context) string {
 		html.EscapeString(s.__(c, "This preview shows the last published version of the page. Publish your changes in Pursae Web Builder to see them here.")) +
 		"</div>\n"
 }
-
-// wbMainRe finds a main element or role="main" in a snapshot.
-var wbMainRe = regexp.MustCompile(`(?i)<main[\s>]|\srole\s*=\s*["']?main\b`)
-
-// wbHasMainLandmark reports whether the snapshot already has a main landmark.
-func wbHasMainLandmark(body string) bool { return wbMainRe.MatchString(body) }
 
 // --- site assets -------------------------------------------------------------------------------
 

@@ -839,11 +839,11 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 				}
 			}
 		}
-		for _, mm := range wbCodeCSSURLRE.FindAllStringSubmatch(src, -1) {
-			if o := wbHTTPSOrigin(mm[1]); o != "" {
+		wbCSSURLs(src, func(u string) {
+			if o := wbHTTPSOrigin(u); o != "" {
 				origins[o] = true
 			}
-		}
+		})
 		for _, mm := range wbWizStyleRE.FindAllStringSubmatch(src, -1) {
 			css = append(css, mm[1])
 		}

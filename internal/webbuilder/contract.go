@@ -1481,6 +1481,10 @@ const (
 	CompiledCacheSize = 256 // LRU of compiled snapshots, key postID:rev:sha256(html)[:16]
 )
 
+// CompiledCacheBytes bounds the snapshot text the compiled-snapshot LRU keeps (imported designs'
+// pages are 100-200 KB each).
+const CompiledCacheBytes = 32 << 20
+
 var (
 	LoopSources     = []string{LoopSourceMain, LoopSourceQuery, LoopSourceRelated}
 	LoopOrderBys    = []string{"date", "modified", "title", "menu_order", "comment_count", "rand"}

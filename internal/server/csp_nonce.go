@@ -58,6 +58,10 @@ func newNonceWriter(w http.ResponseWriter) *nonceWriter {
 
 func (nw *nonceWriter) Header() http.Header { return nw.w.Header() }
 
+// CSPNonce is the nonce this response carries in place of the placeholder (cspnonce.Source): the
+// page cache builds its precompressed nonced bodies with it.
+func (nw *nonceWriter) CSPNonce() string { return string(nw.nonce) }
+
 // Unwrap lets http.ResponseController reach the underlying writer.
 func (nw *nonceWriter) Unwrap() http.ResponseWriter { return nw.w }
 

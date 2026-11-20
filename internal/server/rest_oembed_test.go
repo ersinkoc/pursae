@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -132,10 +133,10 @@ func TestOEmbedProvider(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		buf := make([]byte, 64<<10)
-		n, _ := resp.Body.Read(buf)
+		// The whole body: one Read returns only what the first deflate block holds.
+		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		page := stripNonces(string(buf[:n]))
+		page := stripNonces(string(body))
 		if resp.StatusCode != http.StatusOK || resp.Header.Get("X-WP-embed") != "true" {
 			t.Fatalf("embed %s: %d X-WP-embed=%q", u, resp.StatusCode, resp.Header.Get("X-WP-embed"))
 		}
