@@ -45,6 +45,7 @@ var coreEvents = []struct{ Name, Recurrence string }{
 	{"seogo_404_trim", "hourly"},                    // Pursae SEO: keep the 404 log at its limit (seogo_front.go)
 	{"goo_import_cleanup", "daily"},                 // Pursae Commerce: delete abandoned product-import uploads (goo_admin_catalog_csv_batch.go)
 	{"wb_import_cleanup", "hourly"},                 // Pursae Web Builder: delete HTML site uploads older than a day (webbuilder_siteimport_admin.go)
+	{"wpgo_geoip_update", "daily"},                  // download DB-IP's monthly IP-to-country database once it is out (geoip.go)
 }
 
 // recurrenceInterval maps a recurrence name to its interval: the WordPress names above, or
@@ -125,6 +126,7 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 		"wp_privacy_delete_old_export_files": func(ctx context.Context, _ map[string]any) error { return s.privacyDeleteOldExports(ctx) },
 		"seogo_404_trim":                     func(ctx context.Context, _ map[string]any) error { return s.seogo404Trim(ctx) },
 		"goo_import_cleanup":                 func(ctx context.Context, _ map[string]any) error { return s.gooImportCleanup(ctx) },
+		"wpgo_geoip_update":                  s.geoipUpdateJob,
 		"wb_import_cleanup":                  func(context.Context, map[string]any) error { s.wbWizSweep(); return nil },
 		"wp_mail": func(ctx context.Context, p map[string]any) error {
 			var msg mail.Message

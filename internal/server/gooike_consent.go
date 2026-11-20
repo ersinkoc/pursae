@@ -197,22 +197,17 @@ var gooikeEEA = map[string]bool{"AT": true, "BE": true, "BG": true, "HR": true, 
 	"PL": true, "PT": true, "RO": true, "SK": true, "SI": true, "ES": true, "SE": true, "IS": true, "LI": true, "NO": true, "GB": true,
 	"CH": true}
 
-// gooikeCountry reads the visitor's country from the headers CDNs and proxies add.
-func gooikeCountry(c *gin.Context) string {
-	for _, h := range []string{"CF-IPCountry", "CloudFront-Viewer-Country", "X-Vercel-IP-Country", "Fastly-Geo-Country", "X-Country-Code", "X-Geo-Country"} {
-		if v := strings.ToUpper(strings.TrimSpace(c.GetHeader(h))); len(v) == 2 && v != "XX" {
-			return v
-		}
-	}
-	return ""
+// gooikeCountry is the visitor's country: a CDN or proxy header, else the local IP database (geoip.go).
+func (s *Server) gooikeCountry(c *gin.Context) string {
+	return s.visitorCountry(c.Request, clientIP(c))
 }
 
-// gooikeGeoREST tells gooike.js which regulation applies to the visitor (geo targeting). Without a
-// country header every visitor gets the main regulation.
+// gooikeGeoREST tells gooike.js which regulation applies to the visitor (geo targeting). When neither a
+// country header nor the IP database knows the country, the visitor gets the main regulation.
 func (s *Server) gooikeGeoREST(c *gin.Context, _ *restRequest) {
 	c.Header("Cache-Control", "no-store, private")
 	st := s.gooikeLoad()
-	country := gooikeCountry(c)
+	country := s.gooikeCountry(c)
 	reg := st.Regulation
 	if st.Geo && country != "" {
 		switch {

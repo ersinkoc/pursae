@@ -81,6 +81,9 @@ type Server struct {
 	// mediaIdx holds the uploads paths of replaced and re-cropped attachments: their file version,
 	// focal point and moved paths (media_replace.go).
 	mediaIdx mediaIndex
+
+	// geo is the local IP-to-country database (geoip.go).
+	geo geoipState
 }
 
 // New builds the server of the site.

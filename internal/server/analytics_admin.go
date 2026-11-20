@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -129,7 +130,8 @@ type analyticsData struct {
 	Settings   analyticsSettings
 	Nonce      string
 	Saved      bool
-	CountryOff bool // no visit had a country header: explain where countries come from
+	CountryOff bool // no visit had a country and there is no IP database: explain where countries come from
+	GeoIP      geoipStatus
 }
 
 // analyticsAdmin is /wp-admin/analytics: the overview, or ?tab=settings.
@@ -143,6 +145,17 @@ func (s *Server) analyticsAdmin(c *gin.Context) {
 	if c.Request.Method == http.MethodPost {
 		if !s.checkNonce(c, analyticsNonce) {
 			s.denyNonce(c)
+			return
+		}
+		if c.PostForm("action") == "geoip_update" {
+			ctx, cancel := context.WithTimeout(c.Request.Context(), 4*time.Minute)
+			defer cancel()
+			month, err := s.geoipUpdate(ctx, true)
+			q := "&geoip=" + url.QueryEscape(month)
+			if err != nil {
+				q = "&geoip-error=" + url.QueryEscape(err.Error())
+			}
+			c.Redirect(http.StatusFound, "/wp-admin/analytics?tab=settings"+q)
 			return
 		}
 		if c.PostForm("action") == "reset" {
@@ -169,6 +182,13 @@ func (s *Server) analyticsAdmin(c *gin.Context) {
 	if c.Query("reset") == "1" {
 		notices = append(notices, notice{Type: "success", Message: "All statistics were deleted.", Dismissible: true})
 	}
+	if m := c.Query("geoip"); m != "" {
+		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString("The country database was updated (DB-IP " + m + ").")), Dismissible: true})
+	}
+	if e := c.Query("geoip-error"); e != "" {
+		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString("The country database could not be updated: " + e + ". Countries keep working with the database already installed, if any.")), Dismissible: true})
+	}
+	d.GeoIP = s.geoipStatus()
 	if tab != "settings" {
 		d.Tab = ""
 		if err := s.analyticsOverview(c, &d, c.Query("range")); err != nil {
@@ -232,7 +252,7 @@ func (s *Server) analyticsOverview(ctx context.Context, d *analyticsData, key st
 		return err
 	}
 	for _, t := range d.Tables {
-		if t.ID == "countries" && len(t.Rows) == 1 && t.Rows[0].Label == "Unknown" {
+		if t.ID == "countries" && len(t.Rows) == 1 && t.Rows[0].Label == "Unknown" && !s.geoipStatus().Installed {
 			d.CountryOff = true
 		}
 	}
