@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 	"slices"
 	"sort"
 	"strings"
@@ -46,10 +47,16 @@ type Entry struct {
 	// Mode is Options.CSPMode() when the entry was stored: the stored policy header and the delayed-script
 	// loader depend on it, so an entry of another mode is not served.
 	Mode string
+	// NonceGz is the precompressed copy of a body that holds the nonce placeholder (noncegz.go): the
+	// deflate parts between placeholders back to back, NonceGzCuts their end offsets, NonceAt the
+	// placeholders' offsets in Body. Nil when the body holds no placeholder or did not compress.
+	NonceGz     []byte
+	NonceGzCuts []int
+	NonceAt     []int
 }
 
 // NoncePlaceholder is the per-process CSP nonce placeholder (internal/cspnonce). Bodies holding it
-// are stored uncompressed: the server's swap cannot reach into gzip.
+// get no Gzip copy (the server's swap cannot reach into gzip) but a NonceGz one (noncegz.go).
 var NoncePlaceholder = cspnonce.Placeholder
 
 // usable reports whether this process may serve the entry.
@@ -62,6 +69,9 @@ func (e *Entry) clone() *Entry {
 	copyOfEntry.Header = e.Header.Clone()
 	copyOfEntry.Body = bytes.Clone(e.Body)
 	copyOfEntry.Gzip = bytes.Clone(e.Gzip)
+	copyOfEntry.NonceGz = bytes.Clone(e.NonceGz)
+	copyOfEntry.NonceGzCuts = slices.Clone(e.NonceGzCuts)
+	copyOfEntry.NonceAt = slices.Clone(e.NonceAt)
 	copyOfEntry.Tags = slices.Clone(e.Tags)
 	return &copyOfEntry
 }
@@ -70,7 +80,7 @@ func (e *Entry) clone() *Entry {
 func (e *Entry) Fresh(now time.Time) bool { return now.Before(e.Expires) }
 
 func (e *Entry) size() int64 {
-	n := int64(len(e.Key) + len(e.Body) + len(e.Gzip) + len(e.ETag) + 128)
+	n := int64(len(e.Key) + len(e.Body) + len(e.Gzip) + len(e.NonceGz) + 8*(len(e.NonceGzCuts)+len(e.NonceAt)) + len(e.ETag) + 128)
 	for k, vs := range e.Header {
 		n += int64(len(k))
 		for _, v := range vs {
@@ -94,7 +104,8 @@ type item struct {
 	elem     *list.Element // position in the LRU list while resident in memory
 	diskElem *list.Element // position in the disk-only list while only on disk
 	bytes    int64
-	file     int64 // approximate size of its disk copy, counted in stubBytes while only on disk
+	file     int64 // size of its disk copy (an estimate until the write lands), counted in stubBytes while only on disk
+	staging  bool  // this item's disk copy has not been published yet
 }
 
 // Stats is a snapshot of store counters.
@@ -248,6 +259,11 @@ func NewEntry(key string, status int, header http.Header, body []byte, tags []st
 	if NoncePlaceholder != "" && (inBody || headerHolds(e.Header, NoncePlaceholder)) {
 		e.Placeholder = NoncePlaceholder
 	}
+	if inBody {
+		if data, cuts, at, ok := buildNonceGz(e.Body, []byte(NoncePlaceholder)); ok {
+			e.NonceGz, e.NonceGzCuts, e.NonceAt = data, cuts, at
+		}
+	}
 	if len(body) >= 256 && !inBody {
 		var buf bytes.Buffer
 		zw, _ := gzip.NewWriterLevel(&buf, gzip.DefaultCompression)
@@ -345,6 +361,11 @@ func (s *Store) get(key string) (*Entry, bool) {
 		s.mu.Unlock()
 		return e, true
 	}
+	if it.staging {
+		// The current item's file is not ready. The path might still hold its predecessor.
+		s.mu.Unlock()
+		return nil, false
+	}
 	s.mu.Unlock()
 
 	// Disk-only: load outside the lock, then re-check that the record is unchanged.
@@ -424,7 +445,7 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	if replacing {
 		s.removeLocked(old, false)
 	}
-	it := &item{key: e.Key, base: keyBase(e.Key), tags: e.Tags, expires: e.Expires, entry: e, bytes: size, file: size}
+	it := &item{key: e.Key, base: keyBase(e.Key), tags: e.Tags, expires: e.Expires, entry: e, bytes: size, file: size, staging: s.disk != nil}
 	it.elem = s.lru.PushFront(it)
 	s.items[e.Key] = it
 	s.bytes += size
@@ -433,20 +454,47 @@ func (s *Store) set(e *Entry, check bool, since uint64) error {
 	s.mu.Unlock()
 
 	if s.disk != nil {
-		err := s.disk.save(e)
-		s.mu.Lock()
-		current := s.items[e.Key]
-		// Drop files left by a purge or a failed replacement. If a newer item has
-		// taken the key, it may already have written its own file.
-		if current == nil || (err != nil && current == it) {
-			s.disk.remove(e.Key)
-		}
-		s.mu.Unlock()
-		if err != nil {
+		staged, fileSize, err := s.disk.stage(e)
+		if err := s.finishDiskWrite(it, staged, fileSize, err); err != nil {
 			s.log.Warn("wpgo-cache: persisting entry", "key", e.Key, "err", err)
 		}
 	}
 	return nil
+}
+
+// finishDiskWrite publishes the file and its readiness under the same lock as
+// replacement, eviction and purge. The potentially slow write and sync run outside it.
+func (s *Store) finishDiskWrite(it *item, staged string, fileSize int64, err error) error {
+	if staged != "" {
+		defer os.Remove(staged)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.items[it.key] != it {
+		return nil
+	}
+	if err == nil {
+		err = s.disk.publish(it.key, staged)
+	}
+	it.staging = false
+	if err == nil {
+		// Account the real file size; the entry may have become disk-only while it was written.
+		if it.diskElem != nil {
+			s.stubBytes += fileSize - it.file
+		}
+		it.file = fileSize
+		if it.diskElem != nil {
+			s.trimDiskLocked()
+		}
+		return nil
+	}
+	if it.entry == nil {
+		s.removeLocked(it, true)
+	} else {
+		s.disk.remove(it.key)
+		it.file = 0
+	}
+	return err
 }
 
 // evictLocked drops least recently used resident entries until limits hold, never
@@ -465,7 +513,7 @@ func (s *Store) evictLocked(keep *item) {
 			s.lru.MoveToFront(el)
 			continue
 		}
-		if s.disk != nil {
+		if s.disk != nil && it.file > 0 {
 			s.unloadLocked(it)
 			s.pushStubLocked(it)
 		} else {

@@ -25,7 +25,7 @@ func gooSite(t *testing.T) (string, *http.Client, *Server) {
 	if m == nil {
 		t.Fatal("no Activate link for Pursae Commerce on the Plugins screen")
 	}
-	if code, _, loc := get(t, c, ts.URL+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, "activate=true") {
+	if code, _, loc := get(t, c, ts.URL+html.UnescapeString(m[1])); code != http.StatusFound || !activationOK(loc) {
 		t.Fatalf("activate Pursae Commerce: %d %s", code, loc)
 	}
 	if !srv.gooOn() {

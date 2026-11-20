@@ -43,7 +43,7 @@ func gontactSetup(t *testing.T, on bool) (string, *http.Client, *Server) {
 	installAndLogin(t, ts, c)
 	if on {
 		code, _, loc := get(t, c, ts.URL+gontactLink(t, c, ts.URL, "activate"))
-		if code != http.StatusFound || !strings.Contains(loc, "activate=true") {
+		if code != http.StatusFound || !activationOK(loc) {
 			t.Fatalf("activate Pursae Contact Form: %d %s", code, loc)
 		}
 	}

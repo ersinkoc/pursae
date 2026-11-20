@@ -830,10 +830,14 @@ func wbKitCopy(src, dst string) error {
 // wbKitVersions caches slug → version (reset when a kit changes).
 var wbKitVersions sync.Map // "v" → *map[string]int
 
-func (s *Server) wbKitVersionMap() map[string]int {
+func (s *Server) wbKitVersionMap() map[string]int { return *s.wbKitVersionRef() }
+
+// wbKitVersionRef is the cached version map itself: a new map (never changed once stored) after
+// a kit changes, so its address identifies the versions.
+func (s *Server) wbKitVersionRef() *map[string]int {
 	if p, ok := wbKitVersions.Load("v"); ok {
 		if m, _ := p.(*map[string]int); m != nil {
-			return *m
+			return m
 		}
 	}
 	m := map[string]int{}
@@ -841,26 +845,43 @@ func (s *Server) wbKitVersionMap() map[string]int {
 		m[slug] = k.Version
 	}
 	wbKitVersions.Store("v", &m)
-	return m
+	return &m
 }
 
-var wbKitRefRE = regexp.MustCompile(`(/wp-content/uploads/web-builder/kits/([a-z0-9-]{1,64})/[A-Za-z0-9_./@+-]{1,512}?\.[A-Za-z0-9]{1,8})(\?v=\d+)?(["'\s)>,])`)
-
 // wbKitVersioned adds ?v=<kit version> to the kit file URLs of code-section markup, so the files
-// are served as immutable and a changed kit gets new URLs.
+// are served as immutable and a changed kit gets new URLs (the matches of wbKitRefRE, found by
+// wbKitRefs).
 func (s *Server) wbKitVersioned(src string) string {
 	if !strings.Contains(src, wbKitURLPrefix) {
 		return src
 	}
-	vers := s.wbKitVersionMap()
-	return wbKitRefRE.ReplaceAllStringFunc(src, func(m string) string {
-		g := wbKitRefRE.FindStringSubmatch(m)
-		v, ok := vers[g[2]]
+	return wbKitVersionedWith(src, s.wbKitVersionMap())
+}
+
+// wbKitVersionedWith is wbKitVersioned with the kits' versions by slug.
+func wbKitVersionedWith(src string, vers map[string]int) string {
+	var b strings.Builder
+	last := 0
+	wbKitRefs(src, func(start, end int, ref, slug, term string) {
+		v, ok := vers[slug]
 		if !ok {
-			return m
+			return
 		}
-		return g[1] + "?v=" + strconv.Itoa(v) + g[4]
+		if last == 0 {
+			b.Grow(len(src) + 256)
+		}
+		b.WriteString(src[last:start])
+		b.WriteString(ref)
+		b.WriteString("?v=")
+		b.WriteString(strconv.Itoa(v))
+		b.WriteString(term)
+		last = end
 	})
+	if last == 0 {
+		return src
+	}
+	b.WriteString(src[last:])
+	return b.String()
 }
 
 // wbKitCacheControl is the Cache-Control of a kit file: immutable when the request names the
@@ -880,8 +901,6 @@ var (
 	wbCodeScriptRE = regexp.MustCompile(`(?is)<script\b[^>]*\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))`)
 	wbCodeLinkRE   = regexp.MustCompile(`(?is)<link\b[^>]*\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))`)
 	wbCodeFrameRE  = regexp.MustCompile(`(?is)<iframe\b[^>]*\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))`)
-	// url(https://…) and @import "https://…" in the markup's <style> elements and style attributes.
-	wbCodeCSSURLRE = regexp.MustCompile(`(?i)(?:url\(\s*|@import\s+)(?:&#39;|&quot;|['"])?(https://[^'"\s)&;]+)`)
 )
 
 // wbCodeSourceCache: post id, rev and update time → the doc's code markup (wbCodeSource).
@@ -893,7 +912,7 @@ func wbCodeSource(d *store.WebBuilderDoc) string {
 	if d == nil || !webbuilder.HasCode(d.Doc) {
 		return ""
 	}
-	key := strconv.FormatInt(d.PostID, 10) + ":" + strconv.Itoa(d.Rev) + ":" + strconv.FormatInt(d.UpdatedAt.UnixNano(), 10)
+	key := wbDocKey(d)
 	if v, ok := wbCodeSourceCache.Load(key); ok {
 		return v.(string)
 	}
@@ -946,62 +965,161 @@ const (
 //   - <iframe src> origins (a map, a video) in frame-src.
 //
 // Each list takes at most wbCodeOriginMax origins from the markup. Kit files are same-origin.
+// Pages read the origins of their stored docs once per revision (wbCodeCSPDocs).
 func (s *Server) wbCodeCSP(c *gin.Context, code string) {
-	if c == nil || strings.TrimSpace(code) == "" {
+	if c == nil {
 		return
+	}
+	s.wbCodeCSPApply(c, wbCodeOriginsOf(code))
+}
+
+// wbCodeOrigins is what wbCodeCSP reads from a code markup (wbCodeOriginsOf).
+type wbCodeOrigins struct {
+	kits                           []string // the slugs of the kits the markup loads from, in order
+	scripts, styles, fonts, frames []string
+}
+
+// wbCodeOriginsOf reads the origins of a code markup; nil for blank markup.
+func wbCodeOriginsOf(code string) *wbCodeOrigins {
+	if strings.TrimSpace(code) == "" {
+		return nil
 	}
 	src := code
-	// Code sections: images and media the design's scripts make in the page (a canvas exported with toBlob, a
-	// video from a fetched file): blob: URLs are the page's own content.
-	cspAllow(c, "img-src", "blob:")
-	cspAllow(c, "media-src", "blob:")
-	// The kits the markup loads from: the origins their files name.
+	o := &wbCodeOrigins{}
 	if strings.Contains(src, wbKitURLPrefix) {
-		kits := s.wbKitList()
-		done := map[string]bool{}
-		for _, m := range wbKitRefRE.FindAllStringSubmatch(src, -1) {
-			if k := kits[m[2]]; k != nil && !done[m[2]] {
-				done[m[2]] = true
-				for _, dir := range []string{"script-src", "connect-src", "style-src", "font-src"} {
-					cspAllow(c, dir, k.Origins...)
-				}
-				if cspHas(k.Origins, wbGoogleFontsCSS) {
-					cspAllow(c, "font-src", wbGoogleFontsFiles)
-				}
+		wbKitRefs(src, func(_, _ int, _, slug, _ string) {
+			if !cspHas(o.kits, slug) {
+				o.kits = append(o.kits, slug)
 			}
-		}
+		})
 	}
 	if !strings.Contains(src, "https://") {
-		return
+		return o
 	}
-	var scripts, styles, fonts, frames []string
 	add := func(list *[]string, o string) {
 		if o != "" && len(*list) < wbCodeOriginMax && !cspHas(*list, o) {
 			*list = append(*list, o)
 		}
 	}
-	style := func(o string) {
-		add(&styles, o)
-		add(&fonts, o)
-		if o == wbGoogleFontsCSS {
-			add(&fonts, wbGoogleFontsFiles)
+	style := func(origin string) {
+		add(&o.styles, origin)
+		add(&o.fonts, origin)
+		if origin == wbGoogleFontsCSS {
+			add(&o.fonts, wbGoogleFontsFiles)
 		}
 	}
 	for _, m := range wbCodeScriptRE.FindAllStringSubmatch(src, -1) {
-		add(&scripts, wbHTTPSOrigin(html.UnescapeString(m[1]+m[2]+m[3])))
+		add(&o.scripts, wbHTTPSOrigin(html.UnescapeString(m[1]+m[2]+m[3])))
 	}
 	for _, m := range wbCodeLinkRE.FindAllStringSubmatch(src, -1) {
 		style(wbHTTPSOrigin(html.UnescapeString(m[1] + m[2] + m[3])))
 	}
-	for _, m := range wbCodeCSSURLRE.FindAllStringSubmatch(src, -1) {
-		style(wbHTTPSOrigin(m[1]))
-	}
+	wbCSSURLs(src, func(u string) { style(wbHTTPSOrigin(u)) })
 	for _, m := range wbCodeFrameRE.FindAllStringSubmatch(src, -1) {
-		add(&frames, wbHTTPSOrigin(html.UnescapeString(m[1]+m[2]+m[3])))
+		add(&o.frames, wbHTTPSOrigin(html.UnescapeString(m[1]+m[2]+m[3])))
 	}
-	cspAllow(c, "script-src", scripts...)
-	cspAllow(c, "connect-src", scripts...)
-	cspAllow(c, "style-src", styles...)
-	cspAllow(c, "font-src", fonts...)
-	cspAllow(c, "frame-src", frames...)
+	return o
+}
+
+// wbCodeCSPApply adds the origins of a code markup to this response's policy (wbCodeCSP).
+func (s *Server) wbCodeCSPApply(c *gin.Context, o *wbCodeOrigins) {
+	if c == nil || o == nil {
+		return
+	}
+	var kits map[string]*wbKit
+	if len(o.kits) > 0 {
+		kits = s.wbKitList()
+	}
+	wbCodeOriginsAllow(c, o, kits)
+}
+
+// wbCodeOriginsAllow is wbCodeCSPApply with the site's kits.
+func wbCodeOriginsAllow(c *gin.Context, o *wbCodeOrigins, kits map[string]*wbKit) {
+	// Code sections: images and media the design's scripts make in the page (a canvas exported with toBlob, a
+	// video from a fetched file): blob: URLs are the page's own content.
+	cspAllow(c, "img-src", "blob:")
+	cspAllow(c, "media-src", "blob:")
+	// The kits the markup loads from: the origins their files name.
+	for _, slug := range o.kits {
+		if k := kits[slug]; k != nil {
+			for _, dir := range []string{"script-src", "connect-src", "style-src", "font-src"} {
+				cspAllow(c, dir, k.Origins...)
+			}
+			if cspHas(k.Origins, wbGoogleFontsCSS) {
+				cspAllow(c, "font-src", wbGoogleFontsFiles)
+			}
+		}
+	}
+	cspAllow(c, "script-src", o.scripts...)
+	cspAllow(c, "connect-src", o.scripts...)
+	cspAllow(c, "style-src", o.styles...)
+	cspAllow(c, "font-src", o.fonts...)
+	cspAllow(c, "frame-src", o.frames...)
+}
+
+// wbCodeOriginsCache: the docs of a page (their post ids, revisions and update times, as
+// wbCodeSource keys them) → the origins of their code markup (*wbCodeOriginsEntry).
+var (
+	wbCodeOriginsCache sync.Map
+	wbCodeOriginsN     atomic.Int64
+)
+
+type wbCodeOriginsEntry struct{ o *wbCodeOrigins }
+
+// wbCodeOriginsMax bounds wbCodeOriginsCache (a bound, not an LRU: the next requests fill it again).
+const wbCodeOriginsMax = 512
+
+// wbCodeCSPDocs is wbCodeCSP for the stored code sections of docs, in order, followed by extra
+// trusted markup (the forum's site templates). A stored doc does not change without a new
+// revision or update time, so the origins of a set of docs are read once (wbCodeOriginsCache) and
+// only the kits' origins, which change with the kits, are looked up per response. With extra
+// markup, or a doc that was never stored, the origins are read for the response.
+func (s *Server) wbCodeCSPDocs(c *gin.Context, docs []*store.WebBuilderDoc, extra string) {
+	if c == nil {
+		return
+	}
+	code := func() string {
+		var b strings.Builder
+		for _, d := range docs {
+			b.WriteString(wbCodeSource(d))
+		}
+		b.WriteString(extra)
+		return b.String()
+	}
+	keyed := extra == ""
+	for _, d := range docs {
+		keyed = keyed && (d == nil || wbDocKeyed(d))
+	}
+	if !keyed {
+		s.wbCodeCSP(c, code())
+		return
+	}
+	var key strings.Builder
+	for _, d := range docs {
+		if d != nil {
+			key.WriteString(wbDocKey(d))
+		}
+		key.WriteByte(';')
+	}
+	if v, ok := wbCodeOriginsCache.Load(key.String()); ok {
+		s.wbCodeCSPApply(c, v.(*wbCodeOriginsEntry).o)
+		return
+	}
+	o := wbCodeOriginsOf(code())
+	if wbCodeOriginsN.Add(1) > wbCodeOriginsMax {
+		wbCodeOriginsCache.Clear()
+		wbCodeOriginsN.Store(0)
+	}
+	wbCodeOriginsCache.Store(key.String(), &wbCodeOriginsEntry{o})
+	s.wbCodeCSPApply(c, o)
+}
+
+// wbDocKeyed reports whether d is a stored doc (a revision and an update time), which wbDocKey
+// identifies.
+func wbDocKeyed(d *store.WebBuilderDoc) bool { return d.Rev > 0 && !d.UpdatedAt.IsZero() }
+
+// wbDocKey identifies a stored doc's revision: post id, revision and update time (a publish bumps
+// the revision; the time keeps two databases of one process, as in tests, apart).
+func wbDocKey(d *store.WebBuilderDoc) string {
+	return strconv.FormatInt(d.PostID, 10) + ":" + strconv.Itoa(d.Rev) + ":" + strconv.FormatInt(d.UpdatedAt.UnixNano(), 10)
 }

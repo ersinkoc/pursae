@@ -9,6 +9,8 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
 
@@ -74,15 +76,7 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 	if main == nil && q.Post != nil && (v.Template == "page" || v.Template == "single") {
 		if fp := s.wbFrontFor(c, q, q.Post); fp != nil {
 			main = &wbPart{loc: webbuilder.LocationMain, id: q.Post.ID, doc: fp.doc, draftNewer: fp.preview && fp.draftNewer}
-			var ds webbuilder.DocState
-			var ps webbuilder.PageSettings
-			if len(fp.doc.Doc) > 0 {
-				_ = json.Unmarshal(fp.doc.Doc, &ds)
-			}
-			if len(fp.doc.Page) > 0 {
-				_ = json.Unmarshal(fp.doc.Page, &ps)
-			}
-			out.canvas = webbuilder.EffectivePageLayout(ps, &ds) == webbuilder.PageLayoutCanvas
+			out.canvas = wbDocCanvas(fp.doc)
 		}
 	}
 	// Store views take only store types (single-product, product-archive: the store gate of
@@ -168,6 +162,42 @@ func (s *Server) wbThemeParts(c *gin.Context, v *siteView) *wbThemeParts {
 	s.wbCodeParts(c, out, header, main, footer)
 	out.view.Canvas = out.canvas // Hello Pursae then prints no header or footer at all
 	return out
+}
+
+// wbDocCanvasCache: a stored doc's revision (wbDocKey) → whether its page layout is canvas.
+var (
+	wbDocCanvasCache sync.Map
+	wbDocCanvasN     atomic.Int64
+)
+
+// wbDocCanvas reports whether a page's own doc has the canvas layout (no header and footer part),
+// read once per stored revision: the doc and its page settings change only with a publish.
+func wbDocCanvas(d *store.WebBuilderDoc) bool {
+	keyed := wbDocKeyed(d)
+	var key string
+	if keyed {
+		key = wbDocKey(d)
+		if v, ok := wbDocCanvasCache.Load(key); ok {
+			return v.(bool)
+		}
+	}
+	var ds webbuilder.DocState
+	var ps webbuilder.PageSettings
+	if len(d.Doc) > 0 {
+		_ = json.Unmarshal(d.Doc, &ds)
+	}
+	if len(d.Page) > 0 {
+		_ = json.Unmarshal(d.Page, &ps)
+	}
+	canvas := webbuilder.EffectivePageLayout(ps, &ds) == webbuilder.PageLayoutCanvas
+	if keyed {
+		if wbDocCanvasN.Add(1) > 512 { // a bound, not an LRU: the next requests fill it again
+			wbDocCanvasCache.Clear()
+			wbDocCanvasN.Store(0)
+		}
+		wbDocCanvasCache.Store(key, canvas)
+	}
+	return canvas
 }
 
 // wbHelloCSSRE is Hello Pursae's stylesheet link (theme_hellopursae.go).
@@ -309,19 +339,20 @@ func (s *Server) wbRenderTheme(c *gin.Context, v *siteView, status int) bool {
 	wbEmbedCSP(c, strings.Join(bodies, "\n"))
 	// The code's origins come from the stored code sections (and the forum's site templates), never
 	// from the filled parts (wbCodeCSP).
-	var code strings.Builder
+	docs := make([]*store.WebBuilderDoc, 0, len(tp.parts)+len(popups))
 	for _, p := range tp.parts {
-		code.WriteString(wbCodeSource(p.doc))
+		docs = append(docs, p.doc)
 	}
 	for _, p := range popups {
-		code.WriteString(wbCodeSource(p.doc))
+		docs = append(docs, p.doc)
 	}
+	var forum strings.Builder
 	if tp.forumMain != "" {
 		for _, t := range s.forumSiteTpls() {
-			code.WriteString(t.Source + "\n")
+			forum.WriteString(t.Source + "\n")
 		}
 	}
-	s.wbCodeCSP(c, code.String())
+	s.wbCodeCSPDocs(c, docs, forum.String())
 	wbAddCacheTags(c, true, loops)
 	if catalog {
 		wbAddTags(c, "goo:shop")

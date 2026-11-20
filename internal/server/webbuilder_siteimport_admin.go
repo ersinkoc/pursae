@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"html/template"
@@ -838,11 +839,11 @@ func (s *Server) wbWizAnalyze(c *gin.Context, m *wbWizMeta, kit string, split bo
 				}
 			}
 		}
-		for _, mm := range wbCodeCSSURLRE.FindAllStringSubmatch(src, -1) {
-			if o := wbHTTPSOrigin(mm[1]); o != "" {
+		wbCSSURLs(src, func(u string) {
+			if o := wbHTTPSOrigin(u); o != "" {
 				origins[o] = true
 			}
-		}
+		})
 		for _, mm := range wbWizStyleRE.FindAllStringSubmatch(src, -1) {
 			css = append(css, mm[1])
 		}
@@ -1418,6 +1419,20 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 	if err == nil {
 		err = del(rec.Templates, webbuilder.TemplatePostType)
 	}
+	if err == nil {
+		var mediaDeleted int
+		mediaDeleted, err = s.wbWizUndoMedia(c, rec.Media)
+		deleted += mediaDeleted
+	}
+	if err == nil && rec.Menu > 0 {
+		// Match both the recorded ID and the name at deletion time.
+		result, menuErr := s.store.Pool.Exec(c, `DELETE FROM menus WHERE id = $1 AND name = $2`, rec.Menu, wbSiteMenuName(rec.Kit))
+		if menuErr != nil {
+			err = fmt.Errorf("delete imported menu %d: %w", rec.Menu, menuErr)
+		} else {
+			deleted += int(result.RowsAffected())
+		}
+	}
 	if err != nil {
 		log.Printf("web builder: undo import: %v", err)
 		s.wbTemplatesChanged(c)
@@ -1425,21 +1440,6 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		return
 	}
 	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
-	for _, mid := range rec.Media {  // the files it put into the Media Library
-		if a, err := s.store.GetAttachment(c, mid); err == nil {
-			s.deleteAttachmentFiles(a)
-			if s.store.DeleteAttachment(c, mid) == nil {
-				s.purgeAttachment(a)
-				deleted++
-			}
-		}
-	}
-	// The navigation menu it made, when it is still the import's (same id, same name).
-	if rec.Menu > 0 && s.wbWizMenuID(c, rec.Kit) == rec.Menu {
-		if err := s.store.DeleteMenu(c, rec.Menu); err == nil {
-			deleted++
-		}
-	}
 	if rec.FrontSet && s.settings.String("show_on_front") == "page" && wbWizHas(rec.Pages, int64(s.settings.Int("page_on_front"))) {
 		prev := rec.PrevShow
 		if prev == "" {
@@ -1486,6 +1486,29 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		msg += fmt.Sprintf(" %d were already gone or no longer carry the import's mark and were left alone.", kept)
 	}
 	s.wbWizStartWith(c, notice{Type: "success", Message: template.HTML(html.EscapeString(msg)), Dismissible: true})
+}
+
+func (s *Server) wbWizUndoMedia(c *gin.Context, ids []int64) (int, error) {
+	deleted := 0
+	for _, id := range ids {
+		a, err := s.store.GetAttachment(c, id)
+		if errors.Is(err, store.ErrNotFound) {
+			continue // a previous attempt already removed this attachment
+		}
+		if err != nil {
+			return deleted, fmt.Errorf("load imported media %d: %w", id, err)
+		}
+		err = s.deleteAttachmentRecordAndFiles(c, a)
+		if errors.Is(err, store.ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return deleted, fmt.Errorf("delete imported media %d: %w", id, err)
+		}
+		s.purgeAttachment(a)
+		deleted++
+	}
+	return deleted, nil
 }
 
 // wbWizMenuID is the id of the navigation menu an import of kit makes (0: none).

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"wpgo/internal/cspnonce"
 )
 
 // Response headers the application uses to talk to the cache. All but HeaderStatus are
@@ -339,12 +341,22 @@ func (c *Cache) serve(w http.ResponseWriter, r *http.Request, e *Entry, status s
 	}
 
 	body, etag := e.Body, e.ETag
-	if e.Gzip != nil {
+	if e.Gzip != nil || e.NonceGz != nil {
 		addVary(h, "Accept-Encoding")
 		if acceptsGzip(strings.Join(r.Header.Values("Accept-Encoding"), ",")) {
-			body = e.Gzip
-			etag = strings.TrimSuffix(e.ETag, `"`) + `-gz"`
-			h.Set("Content-Encoding", "gzip")
+			gz := e.Gzip
+			if gz == nil {
+				// A nonced body: assembled with this response's nonce, so the server's swap (which
+				// skips encoded bodies) and its gzip middleware have nothing left to do.
+				if nonce, ok := cspnonce.FromWriter(w); ok {
+					gz, _ = e.nonceGzip(nonce)
+				}
+			}
+			if gz != nil {
+				body = gz
+				etag = strings.TrimSuffix(e.ETag, `"`) + `-gz"`
+				h.Set("Content-Encoding", "gzip")
+			}
 		}
 	}
 	if e.Status == http.StatusOK {

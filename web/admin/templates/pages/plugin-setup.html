@@ -1,0 +1,116 @@
+{{define "admin/plugin-setup"}}{{template "admin-header" .}}{{with .Data}}
+<style>
+.psg{max-width:980px}
+.psg-card{background:#fff;border:1px solid #c3c4c7;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.psg-welcome{max-width:720px;margin:40px auto 0;padding:36px 40px;text-align:center}
+.psg-welcome .psg-badge{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#edfaef;color:#00a32a;margin-bottom:12px}
+.psg-welcome .psg-badge .dashicons{font-size:32px;width:32px;height:32px}
+.psg-welcome h1{font-size:24px;line-height:1.3;margin:0 0 6px;padding:0}
+.psg-welcome .psg-lead{font-size:15px;color:#50575e;margin:0 0 26px}
+.psg-choices{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left}
+.psg-choice{margin:0}
+.psg-choice button{display:flex;flex-direction:column;gap:6px;width:100%;height:100%;padding:18px 20px;text-align:left;cursor:pointer;border:1px solid #c3c4c7;border-radius:8px;background:#fff;font:inherit;color:#1d2327;transition:border-color .15s,box-shadow .15s}
+.psg-choice button:hover,.psg-choice button:focus{border-color:#2271b1;box-shadow:0 0 0 1px #2271b1;outline:0}
+.psg-choice.primary button{border-color:#2271b1;background:#f0f6fc}
+.psg-choice .dashicons{color:#2271b1;font-size:24px;width:24px;height:24px}
+.psg-choice b{font-size:15px}
+.psg-choice span.d{color:#50575e;font-size:13px;line-height:1.5}
+.psg-note{color:#646970;font-size:13px;margin:22px 0 0}
+.psg-intro{color:#50575e;font-size:14px;margin:4px 0 16px}
+.psg-progress{display:flex;align-items:center;gap:12px;margin:0 0 18px;color:#50575e}
+.psg-bar{flex:1;max-width:420px;height:8px;background:#dcdcde;border-radius:4px;overflow:hidden}
+.psg-bar i{display:block;height:100%;background:#00a32a}
+.psg-body{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+.psg-steps{list-style:none;margin:0;padding:8px}
+.psg-steps li{margin:0}
+.psg-steps a{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:6px;text-decoration:none;color:#1d2327}
+.psg-steps a:hover{background:#f6f7f7}
+.psg-steps li.active a{background:#f0f6fc;font-weight:600}
+.psg-num{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;border:2px solid #c3c4c7;font-size:12px;font-weight:600;color:#50575e;line-height:1}
+.psg-steps li.active .psg-num{border-color:#2271b1;color:#2271b1}
+.psg-steps li.done .psg-num{border-color:#00a32a;background:#00a32a;color:#fff}
+.psg-steps li.done .psg-num .dashicons{font-size:16px;width:16px;height:16px}
+.psg-panel{padding:26px 30px}
+.psg-panel .psg-k{text-transform:uppercase;letter-spacing:.04em;font-size:12px;color:#646970;margin:0 0 6px}
+.psg-panel h2{font-size:20px;margin:0 0 10px}
+.psg-panel .psg-text{font-size:14px;line-height:1.65;color:#2c3338;margin:0 0 20px;max-width:620px}
+.psg-open{display:inline-flex !important;align-items:center;gap:6px}
+.psg-open .dashicons{font-size:16px;width:16px;height:16px;line-height:1.5}
+.psg-done-tag{display:inline-flex;align-items:center;gap:4px;color:#007017;font-weight:600;margin-left:10px}
+.psg-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:26px;padding-top:18px;border-top:1px solid #f0f0f1}
+.psg-nav form{display:inline}
+.psg-nav .psg-right{display:flex;gap:8px;align-items:center}
+.psg-finished{padding:30px;text-align:center}
+.psg-finished .dashicons{font-size:40px;width:40px;height:40px;color:#00a32a}
+.psg-finished h2{margin:8px 0}
+.psg-foot{margin-top:14px;color:#646970;font-size:13px}
+.psg-foot form{display:inline}
+.psg-linkbtn{background:none;border:0;padding:0;color:#2271b1;text-decoration:underline;cursor:pointer;font:inherit}
+@media (max-width:782px){.psg-choices,.psg-body{grid-template-columns:1fr}.psg-welcome{padding:26px 20px}.psg-panel{padding:20px}}
+</style>
+<div class="wrap psg">
+{{$g := .Guide}}
+{{if .Welcome}}
+	{{template "notices" $}}
+	<div class="psg-card psg-welcome">
+		<span class="psg-badge"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span></span>
+		<h1><span translate="no">{{$g.Name}}</span> <span>is active</span></h1>
+		<p class="psg-lead">How would you like to set it up?</p>
+		<div class="psg-choices">
+			<form method="post" action="/wp-admin/plugin-setup" class="psg-choice primary">
+				<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="plugin" value="{{$g.Slug}}" /><input type="hidden" name="do" value="start" />
+				<button type="submit"><span class="dashicons dashicons-welcome-learn-more" aria-hidden="true"></span><b>Start the setup guide</b><span class="d">{{if $g.WizardURL}}A setup wizard walks you through the essentials, one question at a time.{{else}}A short step-by-step guide walks you through the essentials and takes you to the right screen at every step.{{end}}</span></button>
+			</form>
+			<form method="post" action="/wp-admin/plugin-setup" class="psg-choice">
+				<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="plugin" value="{{$g.Slug}}" /><input type="hidden" name="do" value="settings" />
+				<button type="submit"><span class="dashicons dashicons-admin-settings" aria-hidden="true"></span><b>Go straight to the settings</b><span class="d">You know your way around: open the settings and set it up yourself.</span></button>
+			</form>
+		</div>
+		<p class="psg-note">You can open the setup guide any time from the Plugins screen.</p>
+	</div>
+{{else}}
+	<h1 class="wp-heading-inline"><span translate="no">{{$g.Name}}</span> <span>Setup Guide</span></h1>
+	{{if $g.SettingsURL}}<a class="page-title-action" href="{{$g.SettingsURL}}">Go to the settings</a>{{end}}
+	<hr class="wp-header-end">
+	{{template "notices" $}}
+	{{if $g.Intro}}<p class="psg-intro">{{$g.Intro}}</p>{{end}}
+	<div class="psg-progress"><div class="psg-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.Percent}}"><i style="width:{{.Percent}}%"></i></div><span>{{printf "%d of %d steps done" .DoneCount .Count}}</span></div>
+	{{if .Finished}}
+	<div class="psg-card psg-finished">
+		<span class="dashicons dashicons-awards" aria-hidden="true"></span>
+		<h2>All set!</h2>
+		<p>You finished the setup guide. You can change everything later in the settings.</p>
+		<p>{{if $g.SettingsURL}}<a class="button button-primary" href="{{$g.SettingsURL}}">Go to the settings</a> {{end}}<a class="button" href="/wp-admin/plugins">Back to Plugins</a></p>
+	</div>
+	{{end}}
+	<div class="psg-body">
+		<nav class="psg-card" aria-label="Setup steps">
+			<ol class="psg-steps">
+			{{range .Steps}}<li class="{{if .Active}}active{{end}}{{if .Done}} done{{end}}"><a href="{{.Link}}"{{if .Active}} aria-current="step"{{end}}><span class="psg-num">{{if .Done}}<span class="dashicons dashicons-yes" aria-hidden="true"></span>{{else}}{{.Num}}{{end}}</span><span{{if not $g.Native}} translate="no"{{end}}>{{.Title}}</span></a></li>
+			{{end}}</ol>
+		</nav>
+		{{with .Step}}
+		<section class="psg-card psg-panel" aria-live="polite">
+			<p class="psg-k">{{printf "Step %d of %d" .Num $.Data.Count}}</p>
+			<h2><span{{if not $g.Native}} translate="no"{{end}}>{{.Title}}</span>{{if .Done}}<span class="psg-done-tag"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span><span>Done</span></span>{{end}}</h2>
+			{{if .Body}}<p class="psg-text"{{if not $g.Native}} translate="no"{{end}}>{{.Body}}</p>{{end}}
+			{{if .URL}}<a class="button button-secondary psg-open" href="{{.URL}}" target="_blank" rel="noopener"><span>Open this screen</span><span class="dashicons dashicons-external" aria-hidden="true"></span><span class="screen-reader-text">(opens in a new tab)</span></a>{{end}}
+			<div class="psg-nav">
+				<div>{{if $.Data.Prev}}<a class="button" href="{{$.Data.Prev}}">&larr; Back</a>{{end}}</div>
+				<div class="psg-right">
+					{{if and $.Data.Next .Done}}<a class="button" href="{{$.Data.Next}}">Next step &rarr;</a>{{end}}
+					{{if .Done}}
+					<form method="post" action="/wp-admin/plugin-setup"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="plugin" value="{{$g.Slug}}" /><input type="hidden" name="step" value="{{.Index}}" /><input type="hidden" name="do" value="undo" /><button type="submit" class="psg-linkbtn">Mark as not done</button></form>
+					{{else}}
+					{{if $.Data.Next}}<a class="button" href="{{$.Data.Next}}">Skip this step</a>{{end}}
+					<form method="post" action="/wp-admin/plugin-setup"><input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}" /><input type="hidden" name="plugin" value="{{$g.Slug}}" /><input type="hidden" name="step" value="{{.Index}}" /><input type="hidden" name="do" value="done" /><button type="submit" class="button button-primary">{{if $.Data.Last}}Finish setup{{else}}Mark as done and continue{{end}}</button></form>
+					{{end}}
+				</div>
+			</div>
+		</section>
+		{{end}}
+	</div>
+	<div class="psg-foot">{{if .DoneCount}}<form method="post" action="/wp-admin/plugin-setup"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="plugin" value="{{$g.Slug}}" /><input type="hidden" name="do" value="restart" /><button type="submit" class="psg-linkbtn">Start the guide over</button></form>{{end}}</div>
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

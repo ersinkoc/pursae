@@ -35,8 +35,45 @@ import (
 // file escapes itself (term links, excerpts); attr slots return raw values that the engine checks
 // (SafeHref for href, ImageURLOK for src, …) before writing them.
 
-// wbPrograms caches compiled snapshots (key postID:rev:sha256(html)[:16]).
+// wbPrograms caches compiled snapshots: wbFill's by wbProgramKey, the others by
+// webbuilder.ProgramKey (postID:rev:sha256(html)[:16]).
 var wbPrograms = webbuilder.NewProgramCache(webbuilder.CompiledCacheSize)
+
+// wbTrustSource is the stored snapshot of d, its stored scripts given the nonce placeholder when
+// trust (cspTrustContent).
+func wbTrustSource(d *store.WebBuilderDoc, trust bool) string {
+	if trust {
+		return cspTrustScripts(d.HTML)
+	}
+	return d.HTML
+}
+
+// wbTrustedHTML is cspTrustContent(ctx, d.HTML): the text of the snapshot's compiled program
+// when it has no placeholders (a program without placeholders keeps its source as it is), else
+// read for the response.
+func (s *Server) wbTrustedHTML(ctx context.Context, d *store.WebBuilderDoc) string {
+	trust := s.cspTrustPage(ctx)
+	if wbDocKeyed(d) {
+		prog, err := wbPrograms.CompileFor(wbProgramKey(d, trust), func() string { return wbTrustSource(d, trust) })
+		if err == nil {
+			if text, ok := prog.Static(); ok {
+				return text
+			}
+		}
+	}
+	return wbTrustSource(d, trust)
+}
+
+// wbProgramKey identifies the snapshot wbFill compiles: the stored doc's revision (wbDocKey: a
+// publish changes the html with a new revision and update time) and whether its stored scripts
+// carry the nonce placeholder (the placeholder is the process's own, so the text is the same for
+// every request with the same answer).
+func wbProgramKey(d *store.WebBuilderDoc, trust bool) string {
+	if trust {
+		return "fill:" + wbDocKey(d) + ":trusted"
+	}
+	return "fill:" + wbDocKey(d)
+}
 
 // --- loop specs ----------------------------------------------------------------------------------
 
@@ -1177,11 +1214,20 @@ func (s *Server) wbFill(c *gin.Context, v *siteView, d *store.WebBuilderDoc, own
 	if ctx == nil {
 		ctx = c.Request.Context()
 	}
-	src := s.cspTrustContent(ctx, d.HTML) // html sections of an unfiltered_html author (csp_trusted.go)
-	prog, err := wbPrograms.Compile(d.PostID, d.Rev, src)
+	// The stored snapshot, its html sections' scripts given the nonce placeholder when they get it
+	// (an unfiltered_html author's, csp_trusted.go), compiled once per doc revision.
+	trust := s.cspTrustPage(ctx)
+	src := func() string { return wbTrustSource(d, trust) }
+	var prog *webbuilder.Program
+	var err error
+	if wbDocKeyed(d) {
+		prog, err = wbPrograms.CompileFor(wbProgramKey(d, trust), src)
+	} else { // a doc that was never stored: keyed by its text
+		prog, err = wbPrograms.Compile(d.PostID, d.Rev, src())
+	}
 	if err != nil {
 		log.Printf("web builder: compile %d: %v", d.PostID, err)
-		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.wbContentTags(ctx, src)))}
+		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.wbContentTags(ctx, src())))}
 	}
 	if static, ok := prog.Static(); ok {
 		return wbFilled{html: s.wbFormEnhance(c, d, s.wbSearchForms(ctx, s.wbContentTags(ctx, static)))}

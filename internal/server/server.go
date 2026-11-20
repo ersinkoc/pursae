@@ -384,6 +384,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/comment", s.commentScreen)
 	admin.GET("/plugins", s.pluginsScreen)
 	admin.POST("/plugins", s.pluginsScreen)
+	admin.GET("/plugin-setup", s.pluginSetupPage) // plugin setup guides (plugin_setup.go)
+	admin.POST("/plugin-setup", s.pluginSetupPage)
 	admin.GET("/plugin-install", s.pluginInstall)
 	admin.POST("/plugin-install", s.pluginInstall)
 	admin.GET("/plugin-keys", s.pluginKeys)

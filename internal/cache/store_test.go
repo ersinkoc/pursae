@@ -196,7 +196,9 @@ func TestDiskSkipsExpiredAndCorrupt(t *testing.T) {
 	s, _ := NewStore(StoreOptions{DiskDir: dir})
 	e := mkEntry(t, "http://h/old#d", 10)
 	e.Expires = time.Now().Add(-time.Second)
-	s.disk.save(e)
+	if err := s.Set(e); err != nil {
+		t.Fatal(err)
+	}
 	os.WriteFile(filepath.Join(dir, "junk"+diskExt), []byte("garbage"), 0o600)
 	s2, err := NewStore(StoreOptions{DiskDir: dir})
 	if err != nil {
@@ -337,6 +339,46 @@ func TestDiskBytesBounded(t *testing.T) {
 	}
 	if st := s2.Stats(); st.DiskEntries > 1 {
 		t.Fatalf("after restart: %+v", st)
+	}
+}
+
+func TestDiskByteLimitUsesSerializedFileSize(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	page := &Entry{
+		Key: "http://h/first#d", Body: []byte("page"),
+		Created: now, Expires: now.Add(time.Hour),
+	}
+	other := &Entry{Key: "http://h/second#d", Created: now, Expires: now.Add(time.Hour)}
+	opts := StoreOptions{DiskDir: t.TempDir(), MaxEntries: 1, Now: func() time.Time { return now }}
+	probe, err := NewStore(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := probe.Set(page); err != nil {
+		t.Fatal(err)
+	}
+	fi, err := os.Stat(probe.disk.path(page.Key))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	opts.DiskDir = t.TempDir()
+	opts.MaxDiskBytes = fi.Size() - 1
+	s, err := NewStore(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Set(page); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Set(other); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(s.disk.path(page.Key)); !os.IsNotExist(err) {
+		t.Fatalf("oversized disk-only file should be removed, stat error: %v", err)
+	}
+	if _, ok := s.Get(other.Key); !ok {
+		t.Fatal("resident entry lost when the disk-only quota was enforced")
 	}
 }
 
