@@ -81,10 +81,16 @@
 	<input type="number" name="retention_days" id="pa-retention" min="30" max="3650" value="{{.Settings.RetentionDays}}" class="small-text" /> days
 	<p class="description">Older visits are deleted every night.</p>
 </td></tr>
-<tr><th scope="row">Privacy</th><td><p class="description" style="max-width:640px">Pursae Analytics sets no cookies and stores nothing in the browser. A visitor is counted with a hash of the IP address and the browser, mixed with a secret that is replaced every day and then deleted, so nobody — not even you — can follow a visitor from one day to the next or find out who they are. IP addresses are never stored. That is why no consent banner is needed for it. Countries are shown when your proxy or CDN reports them (Cloudflare <code>CF-IPCountry</code>, CloudFront, Vercel or an <code>X-Country-Code</code> header).</p></td></tr>
+<tr><th scope="row">Privacy</th><td><p class="description" style="max-width:640px">Pursae Analytics sets no cookies and stores nothing in the browser. A visitor is counted with a hash of the IP address and the browser, mixed with a secret that is replaced every day and then deleted, so nobody — not even you — can follow a visitor from one day to the next or find out who they are. IP addresses are never stored. That is why no consent banner is needed for it.</p>
+	<p class="description" style="max-width:640px">Countries come from your proxy or CDN when it reports them (Cloudflare <code>CF-IPCountry</code>, CloudFront, Vercel or an <code>X-Country-Code</code> header). Otherwise the visitor's address is looked up, in memory only, in a country database stored on this server; only the two-letter country code is kept. No address is sent anywhere. The database is DB-IP's “IP to Country Lite” (CC BY 4.0) and is refreshed every month.</p></td></tr>
+<tr><th scope="row">Country database</th><td><p>{{if .GeoIP.Installed}}Installed{{if .GeoIP.Built}}, built {{.GeoIP.Built}}{{end}}{{if .GeoIP.Seed}} (the copy shipped with Pursae){{end}}.{{else}}Not installed: only proxy or CDN headers give countries.{{end}}
+	{{if .GeoIP.Auto}}A new version is downloaded automatically each month.{{else}}Automatic updates are off (<code>WPGO_GEOIP_UPDATE=off</code>).{{end}}</p>
+	<p class="description"><a href="{{.GeoIP.AttribURL}}" rel="noopener" target="_blank">{{.GeoIP.Attrib}}</a></p>
+	<p><button type="submit" form="pa-geoip" class="button">Update country database</button></p></td></tr>
 </table>
 <p class="submit"><input type="submit" class="button button-primary" value="Save Changes" /></p>
 </form>
+<form method="post" action="/wp-admin/analytics?tab=settings" id="pa-geoip"><input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="geoip_update" /></form>
 <hr />
 <form method="post" action="/wp-admin/analytics?tab=settings" data-confirm="Delete all statistics? This cannot be undone.">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="action" value="reset" />
@@ -111,7 +117,7 @@
 {{if .Rows}}<table><thead><tr><th>{{.Col}}</th><th class="num">Visitors</th>{{if .ShowViews}}<th class="num">{{if eq .ID "pages"}}Views{{else}}Count{{end}}</th>{{end}}</tr></thead><tbody>
 {{$t := .}}{{range .Rows}}<tr><td class="pa-bar"><i style="width:{{printf "%.1f" .Pct}}%"></i><span>{{if .Flag}}{{.Flag}} {{end}}{{if .Link}}<a href="{{.Link}}" target="_blank" rel="noopener">{{.Label}}</a>{{else}}{{.Label}}{{end}}{{if .Sub}}<small>{{.Sub}}</small>{{end}}</span></td><td class="num">{{.Visitors}}</td>{{if $t.ShowViews}}<td class="num">{{.Views}}</td>{{end}}</tr>{{end}}
 </tbody></table>{{else}}<p class="pa-empty">{{if eq .ID "campaigns"}}No visits with UTM parameters (?utm_source=…) in this period.{{else}}Nothing recorded in this period.{{end}}</p>{{end}}
-{{if and (eq .ID "countries") $d.CountryOff}}<p class="pa-empty">Countries need a proxy or CDN that reports them, such as Cloudflare. See Settings › Privacy.</p>{{end}}
+{{if and (eq .ID "countries") $d.CountryOff}}<p class="pa-empty">Countries need a proxy or CDN that reports them, such as Cloudflare, or the country database. See Settings › Country database.</p>{{end}}
 </div>{{end}}
 </div>
 {{end}}

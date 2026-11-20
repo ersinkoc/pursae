@@ -524,7 +524,7 @@ func TestGooikeScheduledScan(t *testing.T) {
 	}
 	// Geo status on the settings screen.
 	_, body, _ := get(t, c, base+"/wp-admin/gooike?page=settings")
-	if !strings.Contains(body, "Country header on this request") || !strings.Contains(body, "missing") {
+	if !strings.Contains(body, "Country of this request") || !strings.Contains(body, "missing") {
 		t.Error("settings screen lacks the geo header indicator")
 	}
 	scanPost(url.Values{})

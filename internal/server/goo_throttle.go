@@ -83,12 +83,12 @@ func (gooThrottledError) Error() string { return gooThrottledMsg }
 
 var errGooThrottled error = gooThrottledError{}
 
-// gooDefaultCountry is the default customer country: the visitor's own (CDN geo header) for the
+// gooDefaultCountry is the default customer country: the visitor's own (CDN geo header or the IP database) for the
 // "Geolocate" options, the shop base country otherwise.
 func (s *Server) gooDefaultCountry(c *gin.Context) string {
 	if c != nil && c.Request != nil {
 		if def := s.gooOptString("default_customer_address"); def == "geolocation" || def == "geolocation_ajax" {
-			if cc := gooikeCountry(c); cc != "" {
+			if cc := s.gooikeCountry(c); cc != "" {
 				return cc
 			}
 		}

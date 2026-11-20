@@ -73,7 +73,8 @@ type gooikeAdminData struct {
 	EditCat    *gooikeCategory
 	EditCookie *gooikeCookieRow
 	Scan       *gooikeScanResult
-	GeoCountry string // country the current request's CDN header reports; empty when there is none
+	GeoCountry string // the current request's country (CDN header or IP database); empty when unknown
+	GeoDB      geoipStatus
 
 	Services    []*gooikeService
 	EmbedOpts   []choice // embed providers beyond YouTube, Vimeo and Google Maps
@@ -173,7 +174,7 @@ func (s *Server) gooikeAdmin(c *gin.Context) {
 func (s *Server) gooikeRender(c *gin.Context, page string, scan *gooikeScanResult) {
 	st := s.gooikeLoad()
 	d := &gooikeAdminData{Page: page, Tab: c.Query("tab"), S: st, Nonce: s.nonce(c, gooikeNonce), Home: s.links(c).HomeURL("/"),
-		CacheOn: s.settings.Bool("wpgo_cache_enabled"), Scan: scan, GeoCountry: gooikeCountry(c)}
+		CacheOn: s.settings.Bool("wpgo_cache_enabled"), Scan: scan, GeoCountry: s.gooikeCountry(c), GeoDB: s.geoipStatus()}
 	if scan != nil {
 		d.Tab = "scan"
 	}

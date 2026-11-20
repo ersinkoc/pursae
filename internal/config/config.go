@@ -43,6 +43,11 @@ type Config struct {
 	LangDir         string
 	TranslationsAPI string // the WordPress.org translation API; default https://api.wordpress.org/translations
 
+	// GeoIPDB (WPGO_GEOIP_DB) is the IP-to-country database file (MMDB); default geoip/country.mmdb next
+	// to the uploads. GeoIPUpdateOff (WPGO_GEOIP_UPDATE=off) stops the monthly download from DB-IP.
+	GeoIPDB        string
+	GeoIPUpdateOff bool
+
 	// Outgoing mail. Without SMTPHost, messages are written as .eml files to MailDir (development).
 	SMTPHost, SMTPUser, SMTPPass, MailFrom string
 	SMTPPort                               string
@@ -72,6 +77,8 @@ func Load() Config {
 		SMTPPass:             os.Getenv("WPGO_SMTP_PASS"),
 		MailFrom:             os.Getenv("WPGO_MAIL_FROM"),
 		MailDir:              os.Getenv("WPGO_MAIL_DIR"),
+		GeoIPDB:              os.Getenv("WPGO_GEOIP_DB"),
+		GeoIPUpdateOff:       hubOff(os.Getenv("WPGO_GEOIP_UPDATE")),
 	}
 	if c.HubOff {
 		c.HubURL = "off" // hubBase() treats it as no Manager
