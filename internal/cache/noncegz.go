@@ -25,6 +25,11 @@ import (
 // nonceGzMinSize is the smallest nonced body worth precompressing (as NewEntry's gzip copy).
 const nonceGzMinSize = 256
 
+// nonceGzMaxParts caps the placeholders of a precompressed body. Each part needs a deflate writer
+// of its own (about 1 MB of state), so a page full of nonces would cost hundreds of megabytes to
+// store; such a page is gzipped per response instead.
+const nonceGzMaxParts = 128
+
 // buildNonceGz deflates body around the placeholder ph. It returns the deflate parts back to back,
 // the end offset of each part in that data, and the placeholders' offsets in body (one fewer than
 // the parts). ok is false when the body is too small, does not shrink, or has no unused byte value.
@@ -50,6 +55,9 @@ func buildNonceGz(body, ph []byte) (data []byte, cuts, at []int, ok bool) {
 		i := bytes.Index(body[off:], ph)
 		if i < 0 {
 			break
+		}
+		if len(at) == nonceGzMaxParts {
+			return nil, nil, nil, false
 		}
 		at = append(at, off+i)
 		off += i + len(ph)

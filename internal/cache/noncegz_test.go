@@ -46,8 +46,9 @@ func nonceBodies() map[string]string {
 		"adjacent":  strings.Repeat("y", 300) + ph + ph + ph + strings.Repeat("y", 300),
 		// The text after a placeholder repeats the placeholder's own prefix and suffix: a dictionary that
 		// held the placeholder would let a back-reference reach into the nonce.
-		"echo":   strings.Repeat(ph[:11]+"|"+ph[11:]+strings.Repeat(" lorem "+ph[5:16], 8)+ph+ph[:11]+" ipsum "+ph[11:], 20),
-		"window": string(big) + script + string(big[:20000]) + script + string(big[100:5000]),
+		"echo":      strings.Repeat(ph[:11]+"|"+ph[11:]+strings.Repeat(" lorem "+ph[5:16], 8)+ph+ph[:11]+" ipsum "+ph[11:], 20),
+		"window":    string(big) + script + string(big[:20000]) + script + string(big[100:5000]),
+		"max-parts": strings.Repeat(script+strings.Repeat("<p>lorem ipsum dolor sit amet</p>", 4), nonceGzMaxParts),
 	}
 }
 
@@ -86,6 +87,7 @@ func TestNonceGzipSkips(t *testing.T) {
 	for name, body := range map[string]string{
 		"small":      "<p>" + ph + "</p>",
 		"every-byte": string(every) + ph,
+		"too-many":   strings.Repeat(`<script nonce="`+ph+`">var a=1;</script><p>lorem ipsum</p>`, nonceGzMaxParts+1),
 		"incompressible": func() string {
 			rnd := rand.New(rand.NewPCG(3, 4))
 			b := make([]byte, 2000)
