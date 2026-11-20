@@ -1515,6 +1515,7 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 func (s *Server) wbWizUndoError(c *gin.Context, id string, err error) {
 	log.Printf("web builder: undo import: %v", err)
 	s.wbTemplatesChanged(c)
+	s.wbPurgePages() // pages already deleted must not be served from the cache until the retry
 	s.wbWizUndoPage(c, id, notice{Type: "error", Message: "Removing the import stopped after a database error. Retry the removal from this screen.", Dismissible: true})
 }
 
@@ -1544,6 +1545,7 @@ func (s *Server) wbWizUndoMedia(c *gin.Context, ids []int64) (int, error) {
 func (s *Server) wbWizUndoCleanupError(c *gin.Context, id string, err error) {
 	log.Printf("web builder: undo import: %v", err)
 	s.wbTemplatesChanged(c)
+	s.wbPurgePages() // pages already deleted must not be served from the cache until the retry
 	s.wbWizUndoPage(c, id, notice{Type: "error", Message: "Removing the import stopped before cleanup finished. Retry the removal from this screen.", Dismissible: true})
 }
 
