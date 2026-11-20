@@ -246,8 +246,8 @@ func TestGeoipUpdate(t *testing.T) {
 }
 
 func TestGeoipDBPath(t *testing.T) {
-	s := &Server{cfg: config.Config{UploadsDir: "/data/uploads"}}
-	if p := s.geoipDBPath(); p != "/data/geoip/country.mmdb" {
+	s := &Server{cfg: config.Config{UploadsDir: filepath.FromSlash("/data/uploads")}}
+	if p := s.geoipDBPath(); p != filepath.FromSlash("/data/geoip/country.mmdb") {
 		t.Errorf("default path: %s", p)
 	}
 	s.cfg.GeoIPDB = "/srv/geo/c.mmdb"
