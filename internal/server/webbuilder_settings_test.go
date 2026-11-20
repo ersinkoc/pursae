@@ -33,16 +33,18 @@ func TestWebBuilderPluginToggle(t *testing.T) {
 	}
 
 	loc := togglePlugin(t, c, base, "activate")
-	if loc != "/wp-admin/plugins?activate=true" || !srv.wbOn() {
+	if !activationOK(loc) || !srv.wbOn() {
 		t.Fatalf("activate: %s on=%v", loc, srv.wbOn())
 	}
 	if got := srv.settings.String("stylesheet"); got != wbHelloSlug {
 		t.Errorf("activation left the theme on %s", got)
 	}
+	// The first activation lands on the setup question, which keeps the theme notice.
 	_, body, _ = get(t, c, base+loc)
-	if !strings.Contains(body, "Plugin activated.") || strings.Contains(body, "Run Site Setup") || !strings.Contains(body, "Your site now uses Hello Pursae") {
+	if !strings.Contains(body, "Start the setup guide") || strings.Contains(body, "Run Site Setup") || !strings.Contains(body, "Your site now uses Hello Pursae") {
 		t.Error("activation notices")
 	}
+	_, body, _ = get(t, c, base+"/wp-admin/plugins")
 	row = regexp.MustCompile(`(?s)<tr class="active" data-slug="golementor".*?</tr>`).FindString(body)
 	if !strings.Contains(row, `href="`+strings.ReplaceAll(wbSettingsURL, "&", "&amp;")+`"`) && !strings.Contains(row, `href="`+wbSettingsURL+`"`) {
 		t.Errorf("the active row has no Settings link to Settings › Web Builder: %.600s", row)

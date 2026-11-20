@@ -123,9 +123,9 @@ func TestMailSMTPPlugin(t *testing.T) {
 		t.Fatalf("eml files: %d", len(files))
 	}
 
-	// Activation opens the Setup Wizard the first time.
+	// The first activation asks: setup guide (the Setup Wizard) or settings (plugin_setup.go).
 	code, _, loc := get(t, c, base+msPluginLink(t, c, base, "activate"))
-	if code != http.StatusFound || !strings.Contains(loc, "wp-mail-smtp-setup-wizard") {
+	if code != http.StatusFound || loc != pluginSetupURL(msSlug, true) {
 		t.Fatalf("activate: %d %s", code, loc)
 	}
 	dash := msPage(t, c, base+"/wp-admin/")

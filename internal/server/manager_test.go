@@ -57,7 +57,7 @@ func hubInstallWordCounter(t *testing.T, base string, c *http.Client) {
 	}
 	code, _, loc := post(t, c, base+"/wp-admin/plugins", url.Values{"action": {"activate"}, "plugin": {"word-counter"},
 		"permissions[]": {"posts:read"}, "_wpnonce": {formNonce(t, body[strings.Index(body, `name="plugin" value="word-counter"`):])}})
-	if code != http.StatusFound || !strings.Contains(loc, "activate=true") {
+	if code != http.StatusFound || !activationOK(loc) {
 		t.Fatalf("activate: %d %s", code, loc)
 	}
 }

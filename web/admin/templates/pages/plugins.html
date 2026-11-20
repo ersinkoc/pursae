@@ -60,7 +60,7 @@
 	<th scope="row" class="check-column"><input type="checkbox" name="checked[]" value="{{.Slug}}" id="checkbox_{{.Slug}}" /><label for="checkbox_{{.Slug}}"><span class="screen-reader-text">Select {{.Name}}</span></label></th>
 	<td class="plugin-title column-primary"><strong>{{.Name}}</strong>
 		<div class="row-actions visible">
-		{{if .Active}}{{if .SettingsURL}}<span class="settings"><a href="{{.SettingsURL}}">Settings</a> | </span>{{end}}<span class="deactivate"><a href="{{.DeactivateURL}}" aria-label="Deactivate {{.Name}}">Deactivate</a></span>
+		{{if .Active}}{{if .SettingsURL}}<span class="settings"><a href="{{.SettingsURL}}">Settings</a> | </span>{{end}}{{if .SetupURL}}<span class="setup"><a href="{{.SetupURL}}" aria-label="Setup guide for {{.Name}}">Setup guide</a> | </span>{{end}}<span class="deactivate"><a href="{{.DeactivateURL}}" aria-label="Deactivate {{.Name}}">Deactivate</a></span>
 		{{else}}<span class="activate"><a href="{{.ActivateURL}}" class="edit" aria-label="Activate {{.Name}}">Activate</a></span>{{if .DeleteURL}} | <span class="delete"><a href="{{.DeleteURL}}" class="delete" aria-label="Delete {{.Name}}" data-confirm="Are you sure you want to delete {{.Name}} and its data?">Delete</a></span>{{end}}{{end}}
 		</div>
 		{{if .AutoUpdateURL}}<div class="row-actions visible"><span class="autoupdate"><a href="{{.AutoUpdateURL}}" class="toggle-auto-update">{{if .AutoUpdate}}Disable auto-updates{{else}}Enable auto-updates{{end}}</a></span></div>{{end}}

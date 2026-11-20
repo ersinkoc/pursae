@@ -429,7 +429,7 @@ func togglePlugin(t *testing.T, c *http.Client, base, action string) string {
 		t.Fatalf("no %s link for Pursae Web Builder on the Plugins screen", action)
 	}
 	code, _, loc := get(t, c, base+html.UnescapeString(m[1]))
-	if code != http.StatusFound || !strings.Contains(loc, action+"=true") {
+	if code != http.StatusFound || !toggleOK(loc, action) {
 		t.Fatalf("%s Pursae Web Builder: %d %s", action, code, loc)
 	}
 	return loc

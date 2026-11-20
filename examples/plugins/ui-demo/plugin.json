@@ -6,5 +6,29 @@
   "author": "Pursae Contributors",
   "requires": "0.1.0",
   "license": "GPL-2.0-or-later",
-  "permissions": ["storage", "admin:pages", "admin:dashboard", "admin:metaboxes", "blocks:register", "builder:widgets"]
+  "permissions": [
+    "storage",
+    "admin:pages",
+    "admin:dashboard",
+    "admin:metaboxes",
+    "blocks:register",
+    "builder:widgets"
+  ],
+  "setup": [
+    {
+      "title": "Open the Gopher Board",
+      "body": "The board lives under Tools. Add a first note with the form at the top of the page.",
+      "url": "/wp-admin/admin?page=ui-demo"
+    },
+    {
+      "title": "Add the Dashboard widget",
+      "body": "The Gopher Board widget shows the latest notes on the Dashboard. Use Screen Options to show or hide it.",
+      "url": "/wp-admin/"
+    },
+    {
+      "title": "Use the block and the meta box",
+      "body": "Edit a post: the Gopher meta box sits under the editor and the Gopher Board block is in the block inserter.",
+      "url": "/wp-admin/post-new"
+    }
+  ]
 }

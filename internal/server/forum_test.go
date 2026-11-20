@@ -189,7 +189,7 @@ func forumActivateLink(t *testing.T, c *http.Client, base string) {
 	if m == nil {
 		t.Fatal("no Activate link for Pursae Forum")
 	}
-	if code, _, loc := get(t, c, base+html.UnescapeString(m[1])); code != http.StatusFound || !strings.Contains(loc, "activate=true") {
+	if code, _, loc := get(t, c, base+html.UnescapeString(m[1])); code != http.StatusFound || !activationOK(loc) {
 		t.Fatalf("activate Pursae Forum: %d %s", code, loc)
 	}
 }
