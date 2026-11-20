@@ -638,6 +638,7 @@ type pluginRow struct {
 	MissingPerms                                                   []string // asked by an update, never granted (reloadPlugin)
 	Permissions                                                    []permRow
 	ActivateURL, DeactivateURL, DeleteURL, SettingsURL             string
+	SetupURL                                                       string // the setup guide (plugin_setup.go), while active
 	Logs                                                           []plugins.LogEntry
 	Source                                                         string        // native | hub | upload
 	Update                                                         *pluginUpdate // a newer version on Pursae Manager (hub_updates.go)
@@ -672,6 +673,11 @@ func (s *Server) installedPlugins(c *gin.Context) []pluginRow {
 		rows[i].ActivateURL, rows[i].DeactivateURL = n("activate", rows[i].Slug), n("deactivate", rows[i].Slug)
 		if !rows[i].Native {
 			rows[i].DeleteURL = n("delete", rows[i].Slug)
+		}
+		if rows[i].Active {
+			if g, ok := s.setupGuideForRow(c.Request.Context(), rows[i]); ok {
+				rows[i].SetupURL = g.entryURL()
+			}
 		}
 	}
 	return rows
@@ -909,6 +915,9 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 	if action == "activate" || action == "deactivate" {
 		defer s.asAuditPlugin(c, action, slug)
 	}
+	if action == "activate" { // the first activation asks: setup guide or settings? (plugin_setup.go)
+		s.pluginSetupOnActivate(c, slug)
+	}
 	if action == "activate" || action == "deactivate" || action == "delete" { // statistics (hub_telemetry.go)
 		ver := s.pluginVersion(c.Request.Context(), slug)
 		defer func() {
@@ -957,10 +966,6 @@ func (s *Server) pluginAction(c *gin.Context, action, slug string) {
 		}
 		if err != nil {
 			fail(err)
-			return
-		}
-		if action == "activate" && !s.msLoad().WizardDone { // like upstream, the first activation opens the Setup Wizard
-			c.Redirect(http.StatusFound, "/wp-admin/admin?page=wp-mail-smtp-setup-wizard")
 			return
 		}
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")

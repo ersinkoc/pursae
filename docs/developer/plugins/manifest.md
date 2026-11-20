@@ -39,6 +39,7 @@ silently drop a permission.
 | `permissions` | yes (may be empty) | from the [permission vocabulary](permissions.md); no duplicates |
 | `hooks` | yes (may be empty) | every hook the plugin may subscribe to (letters, digits, `_ . : / -`, max 128). Registering a hook that is not listed is refused at runtime. A hook that needs a permission requires that permission to be declared |
 | `shortcodes` | no | every shortcode tag the plugin may register (`^[a-z0-9_-]{1,64}$`); needs `content:filter` |
+| `setup` | no | the plugin's step-by-step setup guide: up to 12 steps of `{"title", "body", "url"}`. `title` is required (max 120 characters), `body` is plain text (max 1000), `url` is an admin path under `/wp-admin/` (e.g. `/wp-admin/admin?page=my-plugin`) opened by the step's button. See [setup guide](#setup-guide) |
 | `assets` | filled in by `wpgo-pkg pack` | path → hex SHA-256 of every file under `assets/`. Do not write it by hand; see [assets](assets.md) |
 
 The Hub reads the same file and additionally understands `tested_core`, `author_url` and
@@ -61,3 +62,21 @@ The activation screen lists `permissions` with a one-line description each and l
 administrator grant a subset. The plugin receives the intersection of what it declared and what
 was granted; a call that needs more returns a `permission_denied` error to the plugin and is
 logged, but does not count as a failure.
+
+## Setup guide
+
+A plugin with `setup` steps gets a setup guide. The first time it is activated from the Plugins
+screen, the administrator is asked whether to **start the setup guide** or **go straight to the
+settings** (the URL of the first step that has one). The guide shows one step at a time with a
+button that opens the step's screen in a new tab, remembers which steps are done, and stays
+reachable from the plugin's **Setup guide** link on the Plugins screen while it is active.
+
+```json
+"setup": [
+  {"title": "Connect your account", "body": "Paste the API key from your dashboard.", "url": "/wp-admin/admin?page=my-plugin"},
+  {"title": "Choose what to sync", "url": "/wp-admin/admin?page=my-plugin&tab=sync"}
+]
+```
+
+Every built-in plugin ships a guide of its own; Pursae SMTP and Pursae SEO open their setup
+wizards instead.

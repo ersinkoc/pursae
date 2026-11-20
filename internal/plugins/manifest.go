@@ -71,6 +71,33 @@ type Manifest struct {
 	// by the package signature, the assets are too. A package may not carry
 	// asset files that are missing here.
 	Assets map[string]string `json:"assets,omitempty"`
+	// Setup is the plugin's step-by-step setup guide. When it is set, the first
+	// activation asks the admin whether to start with the guide or go straight
+	// to the settings; the Plugins screen links the guide afterwards.
+	Setup []SetupStep `json:"setup,omitempty"`
+}
+
+// SetupStep is one step of a plugin's setup guide.
+type SetupStep struct {
+	// Title names the step ("Connect your account").
+	Title string `json:"title"`
+	// Body explains what to do, in plain text.
+	Body string `json:"body,omitempty"`
+	// URL is the admin screen the step happens on: a path under /wp-admin/
+	// (e.g. "/wp-admin/admin?page=my-plugin").
+	URL string `json:"url,omitempty"`
+}
+
+// MaxSetupSteps bounds a setup guide.
+const MaxSetupSteps = 12
+
+// ValidSetupURL reports whether u is a same-site admin path a setup step may link to.
+func ValidSetupURL(u string) bool {
+	if !strings.HasPrefix(u, "/wp-admin/") || strings.ContainsAny(u, "\\\x00\r\n\t \"'<>") || strings.Contains(u, "//") {
+		return false
+	}
+	p, err := url.Parse(u)
+	return err == nil && p.Scheme == "" && p.Host == "" && !strings.Contains(p.Path, "..")
 }
 
 // maxManifestSize bounds plugin.json.
@@ -179,6 +206,23 @@ func (m *Manifest) Validate() error {
 	}
 	if len(m.Description) > 2000 {
 		add(`"description" is longer than 2000 characters`)
+	}
+	if len(m.Setup) > MaxSetupSteps {
+		add(`"setup" has %d steps; at most %d are allowed`, len(m.Setup), MaxSetupSteps)
+	}
+	for i, st := range m.Setup {
+		switch {
+		case strings.TrimSpace(st.Title) == "":
+			add(`"setup" step %d needs a "title"`, i+1)
+		case len(st.Title) > 120:
+			add(`"setup" step %d: "title" is longer than 120 characters`, i+1)
+		}
+		if len(st.Body) > 1000 {
+			add(`"setup" step %d: "body" is longer than 1000 characters`, i+1)
+		}
+		if st.URL != "" && !ValidSetupURL(st.URL) {
+			add(`"setup" step %d: "url" %q must be a path under /wp-admin/`, i+1, st.URL)
+		}
 	}
 	for _, f := range [...][2]string{{"author_uri", m.AuthorURI}, {"plugin_uri", m.PluginURI}} {
 		field, v := f[0], f[1]

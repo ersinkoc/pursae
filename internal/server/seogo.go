@@ -388,10 +388,7 @@ func (s *Server) seogoPluginAction(c *gin.Context, action string) {
 		c.Redirect(http.StatusFound, "/wp-admin/plugins?error="+template.URLQueryEscaper(err.Error()))
 		return
 	}
-	if action == "activate" && !s.seogoOpts().WizardDone {
-		c.Redirect(http.StatusFound, "/wp-admin/seogo?page=wizard")
-		return
-	}
+	// The first activation asks whether to start the setup wizard (plugin_setup.go).
 	c.Redirect(http.StatusFound, "/wp-admin/plugins?"+action+"=true")
 }
 

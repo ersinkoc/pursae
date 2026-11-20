@@ -204,7 +204,7 @@ func (s *Server) wbThemeNotice(c *gin.Context) (notice, bool) {
 	from := ""
 	switch c.Request.URL.Path {
 	case "/wp-admin", "/wp-admin/", "/wp-admin/index":
-	case "/wp-admin/plugins":
+	case "/wp-admin/plugins", pluginSetupPath: // the first activation lands on the setup question (plugin_setup.go)
 		from = "plugins"
 	case "/wp-admin/themes":
 		from = "themes"
