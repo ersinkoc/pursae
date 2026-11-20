@@ -114,6 +114,7 @@
 {{if eq .Step "result"}}{{with .R}}
 <h2 class="title">Import report</h2>
 <p>Design kit: <code>{{.Kit}}</code></p>{{if .Draft}}<p>The pages were imported as drafts.</p>{{end}}
+{{if .PublishFailures}}<div class="notice notice-error inline"><p><strong>Some pages could not be published.</strong></p><ul style="list-style:disc;margin-left:20px">{{range .PublishFailures}}<li>{{.}}</li>{{end}}</ul></div>{{end}}
 <table class="wp-list-table widefat fixed striped"><thead><tr><th>File</th><th>Page</th><th></th></tr></thead><tbody>
 {{range .Pages}}<tr><td><code>{{.Path}}</code></td><td>{{if .URL}}<code>{{.URL}}</code>{{else}}&mdash;{{end}}</td>
 <td><a href="/wp-admin/post?post={{.PostID}}&amp;action=web-builder">Edit</a>{{if .URL}} | <a href="{{.URL}}" target="_blank" rel="noopener">View</a>{{end}}</td></tr>

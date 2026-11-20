@@ -103,6 +103,9 @@ type wbWizResult struct {
 	Published bool        `json:"published,omitempty"`
 	// Bindings: what was bound to content (the menu, single templates, loops) and what was not.
 	Bindings []string `json:"bindings,omitempty"`
+
+	PublishFailures []string `json:"publishFailures,omitempty"`
+	SkipFront       bool     `json:"skipFront,omitempty"`
 }
 
 type wbWizMeta struct {
@@ -993,8 +996,10 @@ func (s *Server) wbWizPost(c *gin.Context, action string) {
 		s.wbWizUndoRun(c, id)
 		return
 	case "discard":
-		if dir := s.wbWizDir(id); dir != "" {
-			_ = os.RemoveAll(dir)
+		if err := os.RemoveAll(s.wbWizDir(id)); err != nil {
+			log.Printf("web builder: discard import upload: %v", err)
+			s.wbWizStartWith(c, notice{Type: "error", Message: "The upload could not be completely discarded.", Dismissible: true})
+			return
 		}
 		c.Redirect(http.StatusFound, wbWizURL)
 		return
@@ -1005,6 +1010,10 @@ func (s *Server) wbWizPost(c *gin.Context, action string) {
 		return
 	}
 	if action == "publish" {
+		if m.Result != nil && m.Result.Published {
+			c.Redirect(http.StatusSeeOther, wbWizURL+"?action=result&import="+m.ID)
+			return
+		}
 		s.wbWizPublish(c, m)
 		return
 	}
@@ -1095,7 +1104,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	if menuBefore == 0 {
 		rec.Menu = s.wbWizMenuID(c, kit)
 	}
-	res := &wbWizResult{At: rec.At, Kit: kit, Draft: draft, Split: split}
+	res := &wbWizResult{At: rec.At, Kit: kit, Draft: draft, Split: split, SkipFront: !wantFront}
 	if importErr != nil {
 		res.Failed = importErr.Error()
 	}
@@ -1255,12 +1264,17 @@ func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
 			}
 		}
 	}
+	if len(failed) < len(m.Result.Pages) {
+		wbKitRootLiveReset()
+	}
+	m.Result.PublishFailures = wbFirst(failed, 5)
 	notices := []notice{}
 	if len(failed) > 0 {
-		notices = append(notices, notice{Type: "error", Message: template.HTML(html.EscapeString(strings.Join(wbFirst(failed, 5), "; "))), Dismissible: true})
+		if err := s.wbWizSave(m); err != nil {
+			notices = append(notices, notice{Type: "error", Message: "The partial publication report could not be saved."})
+		}
 	} else {
 		m.Result.Published, m.Result.Draft = true, false
-		wbKitRootLiveReset() // the kit's files answer at the root now (wbKitRootAsset)
 		if front := wbWizFrontID(m.Result); front > 0 && c.PostForm("front") == "1" {
 			recs := s.wbWizRecords()
 			rec := recs[m.ID]
@@ -1278,8 +1292,11 @@ func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
 	s.wbWizResultPage(c, m, notices...)
 }
 
-// wbWizFrontID is the post of index.html in a result (0: none).
+// wbWizFrontID is the post of index.html or index.htm when the import requests a homepage.
 func wbWizFrontID(r *wbWizResult) int64 {
+	if r.SkipFront {
+		return 0
+	}
 	for _, p := range r.Pages {
 		if strings.EqualFold(p.Path, "index.html") || strings.EqualFold(p.Path, "index.htm") {
 			return p.PostID
