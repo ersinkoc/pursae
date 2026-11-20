@@ -345,7 +345,9 @@ func TestMCPImportSiteClaimsArchivePaths(t *testing.T) {
 	if _, body := get("/author/admin/"); strings.Contains(body, "Design author") {
 		t.Error("a deleted page still claims its path")
 	}
-	srv.wbSiteDropClaims(t.Context(), []int64{id})
+	if err := srv.wbSiteDropClaims(t.Context(), []int64{id}); err != nil {
+		t.Fatal(err)
+	}
 	if _, ok := srv.wbSiteClaims()["author/admin"]; ok {
 		t.Error("the claim of a removed page was kept")
 	}
