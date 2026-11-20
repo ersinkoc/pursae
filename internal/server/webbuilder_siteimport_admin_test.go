@@ -1080,3 +1080,69 @@ func TestWBImportWizardUndoKeepsFilesWhenMediaDeleteFails(t *testing.T) {
 		t.Fatal("retry left the offloaded object, its mapping or the import record")
 	}
 }
+
+func TestWBImportWizardUndoCanRetryAfterKitDeleteFailure(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	const kit = "retry-kit"
+	id := wbWizNewID()
+	rec := &wbWizRecord{ID: id, Kit: kit, KitCreated: true}
+	if err := srv.settings.Set(t.Context(), map[string]any{
+		wbWizImportsOption: map[string]*wbWizRecord{id: rec},
+		wbKitsOption:       map[string]*wbKit{kit: {Slug: kit, Name: "Retry kit", Version: 1, Root: 1}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	kitDir, staged := filepath.Join(srv.wbKitRoot(), kit), srv.wbWizDir(id)
+	for _, dir := range []string{kitDir, staged} {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(kitDir, "site.css"), []byte("body{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	exec := func(query string) {
+		t.Helper()
+		if _, err := srv.store.Pool.Exec(t.Context(), query); err != nil {
+			t.Fatal(err)
+		}
+	}
+	exec(`ALTER TABLE settings ADD CONSTRAINT undo_kit_guard CHECK (key <> 'wb_design_kits' OR value ? 'retry-kit')`)
+	undo := func() string {
+		t.Helper()
+		target := wbWizURL + "?action=undo&import=" + id
+		code, form, _ := w.get(target)
+		nonce := wizHiddenRE.FindStringSubmatch(form)
+		if code != http.StatusOK || len(nonce) != 2 {
+			t.Fatalf("undo form: %d %s", code, wbSnippet(form, "notice"))
+		}
+		code, body, _ := w.postForm(target, url.Values{"_wpnonce": {nonce[1]}, "confirm": {"1"}})
+		if code != http.StatusOK {
+			t.Fatalf("undo: %d %s", code, wbSnippet(body, "notice"))
+		}
+		return body
+	}
+	if body := undo(); !strings.Contains(body, "Retry the removal") || srv.wbWizRecords()[id] == nil {
+		t.Fatalf("missing retry: %s", wbSnippet(body, "notice"))
+	}
+	if k := srv.wbKitList()[kit]; k == nil || k.Root != 1 {
+		t.Fatalf("undo changed the kit root before deleting the kit: %+v", k)
+	}
+	for _, name := range []string{filepath.Join(kitDir, "site.css"), staged} {
+		if _, err := os.Stat(name); err != nil {
+			t.Fatalf("failed undo removed %q: %v", name, err)
+		}
+	}
+	exec(`ALTER TABLE settings DROP CONSTRAINT undo_kit_guard`)
+	if body := undo(); !strings.Contains(body, "and its design kit") {
+		t.Fatalf("retry did not finish: %s", wbSnippet(body, "notice"))
+	}
+	if srv.wbKitList()[kit] != nil || srv.wbWizRecords()[id] != nil {
+		t.Fatal("retry left the kit or import record")
+	}
+	for _, name := range []string{kitDir, staged} {
+		if _, err := os.Stat(name); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("retry left %q: %v", name, err)
+		}
+	}
+}
