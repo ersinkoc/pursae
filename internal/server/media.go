@@ -698,10 +698,29 @@ func (s *Server) checkNonceValue(c *gin.Context, nonce, action string) bool {
 // deleteAttachmentFiles is wp_delete_attachment_files(): the main file, its sizes, the original of a
 // "-scaled"/"-rotated" image and the image editor's backup (the pre-edit file and its sizes).
 func (s *Server) deleteAttachmentFiles(a *store.Attachment) {
+	s.removeAttachmentFiles(a, func() { s.gocdnBeforeDelete(a) })
+}
+
+// deleteAttachmentRecordAndFiles preserves the files when the database rejects the deletion.
+func (s *Server) deleteAttachmentRecordAndFiles(ctx context.Context, a *store.Attachment) error {
+	items, err := s.detachOffloadsAndDeleteAttachment(ctx, a.ID)
+	if err != nil {
+		return err
+	}
+	s.removeAttachmentFiles(a, func() {
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
+		defer cancel()
+		s.gocdnDeleteItems(ctx, items)
+	})
+	return nil
+}
+
+func (s *Server) removeAttachmentFiles(a *store.Attachment, removeOffload func()) {
 	s.mediaIdx.put(a.ID, nil) // its versions, focal point and moved paths (media_replace.go)
-	s.gocdnBeforeDelete(a)    // GoCDN: delete the offloaded copies (gocdn_offload.go)
-	s.gocdnDropVariants(gocdnAttachmentFiles(a))
-	for _, rel := range gocdnAttachmentFiles(a) {
+	removeOffload()
+	paths := gocdnAttachmentFiles(a)
+	s.gocdnDropVariants(paths)
+	for _, rel := range paths {
 		if p := s.gocdnLocalPath(rel); p != "" {
 			_ = os.Remove(p)
 		}
