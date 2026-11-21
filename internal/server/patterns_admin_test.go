@@ -103,7 +103,7 @@ func TestRESTPatternCategoryCRUD(t *testing.T) {
 }
 
 // Patterns (/wp/v2/blocks) carry their categories in wp_pattern_category and their sync status in
-// both the wp_pattern_sync_status field and meta, as the editor's "Create pattern" sends them.
+// the wp_pattern_sync_status field (written as the field or as meta, as the editor's "Create pattern" sends it).
 func TestRESTBlocksPatternCategories(t *testing.T) {
 	s := secStart(t)
 	_, contrib := s.user("conny", "contributor")
@@ -116,7 +116,7 @@ func TestRESTBlocksPatternCategories(t *testing.T) {
 	if code != http.StatusCreated {
 		t.Fatalf("create pattern: %d %v", code, made)
 	}
-	if made["wp_pattern_sync_status"] != "unsynced" || made["meta"].(map[string]any)["wp_pattern_sync_status"] != "unsynced" {
+	if _, inMeta := made["meta"].(map[string]any)["wp_pattern_sync_status"]; made["wp_pattern_sync_status"] != "unsynced" || inMeta {
 		t.Errorf("sync status: %v %v", made["wp_pattern_sync_status"], made["meta"])
 	}
 	if cats, _ := made["wp_pattern_category"].([]any); len(cats) != 2 {
@@ -163,8 +163,19 @@ func TestRESTBlocksPatternCategories(t *testing.T) {
 	if code != http.StatusOK || upd["wp_pattern_sync_status"] != "" || len(upd["wp_pattern_category"].([]any)) != 1 || upd["wp_pattern_category"].([]any)[0] != footers {
 		t.Errorf("update: %d %v %v", code, upd["wp_pattern_sync_status"], upd["wp_pattern_category"])
 	}
-	if code, e, _, _ := s.admin.do("POST", "/wp/v2/blocks/"+pid, map[string]any{"meta": map[string]any{"wp_pattern_sync_status": "sometimes"}}); code != http.StatusBadRequest || e["code"] != "rest_invalid_param" {
-		t.Errorf("invalid sync status: %d %v", code, e)
+	for _, bad := range []any{"sometimes", ""} {
+		code, e, _, _ := s.admin.do("POST", "/wp/v2/blocks/"+pid, map[string]any{"meta": map[string]any{"wp_pattern_sync_status": bad}})
+		params, _ := e["data"].(map[string]any)["params"].(map[string]any)
+		if code != http.StatusBadRequest || e["code"] != "rest_invalid_param" || params["meta"] == nil {
+			t.Errorf("invalid sync status %q: %d %v", bad, code, e)
+		}
+	}
+	// meta.wp_pattern_sync_status: null deletes the meta, so the pattern is synced again.
+	if code, got, _, _ := s.admin.do("POST", "/wp/v2/blocks/"+pid, map[string]any{"meta": map[string]any{"wp_pattern_sync_status": "partial"}}); code != http.StatusOK || got["wp_pattern_sync_status"] != "partial" {
+		t.Errorf("partial: %d %v", code, got["wp_pattern_sync_status"])
+	}
+	if code, got, _, _ := s.admin.do("POST", "/wp/v2/blocks/"+pid, map[string]any{"meta": map[string]any{"wp_pattern_sync_status": nil}}); code != http.StatusOK || got["wp_pattern_sync_status"] != "" {
+		t.Errorf("null sync status: %d %v", code, got["wp_pattern_sync_status"])
 	}
 	if _, got, _, _ := s.admin.do("GET", "/wp/v2/wp_pattern_category/"+itoa64(int64(heroes)), nil); got["count"] != float64(0) {
 		t.Errorf("term count after removal: %v", got["count"])

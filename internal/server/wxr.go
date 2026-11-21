@@ -526,9 +526,7 @@ func wxrCustomTaxonomies() []string {
 	for name := range acfgoRegistry.taxes {
 		out = append(out, name)
 	}
-	if acfgoRegistry.taxes[wxrPatternCategoryTax] == nil {
-		out = append(out, wxrPatternCategoryTax)
-	}
+	out = append(out, wxrPatternCategoryTax) // a reserved name, never a Custom Fields taxonomy
 	sort.Strings(out)
 	return out
 }

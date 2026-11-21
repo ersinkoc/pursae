@@ -790,7 +790,7 @@ var acfgoSlugRe = func(v string) string {
 var acfgoReservedTypes = map[string]bool{"post": true, "page": true, "attachment": true, "revision": true, "nav_menu_item": true, "custom_css": true,
 	"customize_changeset": true, "oembed_cache": true, "user_request": true, "wp_block": true, "wp_template": true, "wp_template_part": true,
 	"wp_global_styles": true, "wp_navigation": true, "action": true, "author": true, "order": true, "theme": true, "category": true, "post_tag": true,
-	"post_format": true, "link_category": true, "nav_menu": true, "wp_theme": true, "type": true, "name": true, "term": true, "taxonomy": true,
+	"post_format": true, "wp_pattern_category": true, "link_category": true, "nav_menu": true, "wp_theme": true, "type": true, "name": true, "term": true, "taxonomy": true,
 	// Pursae Web Builder: Theme Builder templates (webbuilder.TemplatePostType)
 	"wb_template": true,
 	// Pursae Forum (forum.go)

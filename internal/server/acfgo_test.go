@@ -696,6 +696,22 @@ func TestACFGoPostTypes(t *testing.T) {
 	if _, ok := acfgoTypeLabels("wb_template"); ok {
 		t.Error("wb_template registered as an ACF post type")
 	}
+	// Nor a reserved core taxonomy: wp_pattern_category stays the patterns' (object type wp_block).
+	if _, err := srv.acfgoImport(ctx, []byte(`[{"key":"taxonomy_wpc","title":"Hijack","taxonomy":"wp_pattern_category","object_type":["book"],
+		"active":true,"public":true,"labels":{"name":"Hijack","singular_name":"Hijack"}}]`)); err != nil {
+		t.Fatal(err)
+	}
+	var types string
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT name, public, object_types::text FROM taxonomies WHERE slug = 'wp_pattern_category'`).Scan(&name, &public, &types); err != nil ||
+		public || name != "Pattern Categories" || types != `["wp_block"]` {
+		t.Errorf("wp_pattern_category after import: %q public=%v types=%s err=%v", name, public, types, err)
+	}
+	if acfgoReservedTypes["wp_pattern_category"] != true || wxrIsCustomTaxonomy("wp_pattern_category") != true {
+		t.Error("wp_pattern_category not reserved")
+	}
+	if n := strings.Count(strings.Join(wxrCustomTaxonomies(), ","), "wp_pattern_category"); n != 1 {
+		t.Errorf("wp_pattern_category listed %d times for WXR", n)
+	}
 }
 
 // TestACFGoBlocks covers block.json registration, the editor ajax and front-end rendering.

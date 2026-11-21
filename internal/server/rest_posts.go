@@ -142,11 +142,10 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		}
 	}
 	if p.Type == "wp_block" {
-		// The sync status is both a field and the registered meta key the editor writes
-		// (register_post_meta( 'wp_block', 'wp_pattern_sync_status' )).
-		sync := metaString(p.Meta, "wp_pattern_sync_status")
-		out["wp_pattern_sync_status"] = sync
-		out["meta"].(map[string]any)["wp_pattern_sync_status"] = sync
+		// The sync status is the registered meta key the editor writes (register_post_meta( 'wp_block',
+		// 'wp_pattern_sync_status' )), answered only as the top-level field, never inside meta
+		// (WP_REST_Blocks_Controller::filter_response_by_context()).
+		out["wp_pattern_sync_status"] = metaString(p.Meta, "wp_pattern_sync_status")
 		out["wp_pattern_category"] = termIDs(s.postTerms(c.Request.Context(), p.ID, "wp_pattern_category"))
 	}
 	s.golylangRESTFields(c, pllPost, p.ID, p.Type, out) // Golylang: lang and translations
@@ -764,14 +763,12 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 // send), and checks that the caller may assign the wp_pattern_category terms it sends
 // (check_assign_terms_permission(): assign_terms is edit_posts). It answers the error and returns false
 // for a bad request.
+//
+// meta.wp_pattern_sync_status follows WP_REST_Meta_Fields: null deletes the meta (the pattern becomes
+// synced) and any value outside the enum, "" included, is "Invalid parameter(s): meta". The top-level
+// field also takes "" for synced, a Pursae convenience (WordPress has no writable top-level field).
 func restPatternFields(c *gin.Context, r *restRequest, u *store.User, p *store.Post) bool {
-	sync, has := r.Str(c, "wp_pattern_sync_status")
-	if meta, ok := r.Body["meta"].(map[string]any); ok {
-		if v, ok := meta["wp_pattern_sync_status"].(string); ok {
-			sync, has = v, true
-		}
-	}
-	if has {
+	if sync, has := r.Str(c, "wp_pattern_sync_status"); has {
 		switch sync {
 		case "": // fully synced, the default
 			delete(p.Meta, "wp_pattern_sync_status")
@@ -781,6 +778,20 @@ func restPatternFields(c *gin.Context, r *restRequest, u *store.User, p *store.P
 			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): wp_pattern_sync_status",
 				map[string]any{"params": map[string]string{"wp_pattern_sync_status": "wp_pattern_sync_status is not one of partial and unsynced."}})
 			return false
+		}
+	}
+	if meta, ok := r.Body["meta"].(map[string]any); ok {
+		if v, sent := meta["wp_pattern_sync_status"]; sent {
+			switch sv, _ := v.(string); {
+			case v == nil:
+				delete(p.Meta, "wp_pattern_sync_status")
+			case sv == "partial" || sv == "unsynced":
+				p.Meta["wp_pattern_sync_status"] = sv
+			default:
+				restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): meta",
+					map[string]any{"params": map[string]string{"meta": "meta.wp_pattern_sync_status is not one of partial and unsynced."}})
+				return false
+			}
 		}
 	}
 	if _, ok := r.IDs(c, "wp_pattern_category"); ok && !u.Can("edit_posts", nil) {
