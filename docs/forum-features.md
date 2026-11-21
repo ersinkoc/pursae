@@ -128,9 +128,27 @@ While registration is closed, Google cannot create accounts.
 ## Personal data
 
 Tools › Export Personal Data exports a member's topics and replies (with the stored author IP), forum
-profile settings, likes, points, subscriptions and the reports they filed. Erasing removes the author
-IP from their posts, deletes their subscriptions and saved draft, and takes their name and note off
-their reports; the posts, likes and points stay with the account until it is deleted.
+profile settings, likes, points, subscriptions and the reports they filed.
+
+Tools › Erase Personal Data **anonymizes** the member's forum presence, the way WordPress anonymizes
+comments. The account itself stays (as in WordPress); nothing in the forum links to it any more:
+
+| Data | Erase |
+| --- | --- |
+| Topics and replies | Stay published with their text, so threads and reply numbers do not break. The author is cleared (`author_id` NULL) and the stored author IP removed; every view shows **Deleted user** (translated, e.g. tr_TR *Silinmiş kullanıcı*) with an empty avatar and no profile link; REST answers `"author": null` |
+| Edit history | Revisions of forum posts they authored lose their author |
+| Post meta naming them | Last poster of a topic or forum (set to 0), who accepted a solution (removed), who moderated a post last (`by` set to 0), the moderators shown on a forum (removed from the list) |
+| Likes they gave | Kept as **anonymous likes** (`forum_likes.user_id` NULL): the post keeps its count and its author the points the like earned |
+| Points ledger | Their own rows are deleted (the posts that earned them are no longer theirs). Rows they caused for other members (a like, a manual adjustment they made) stay with `actor_id` NULL; a like of a post that already has an anonymous like row is merged into it (one event per kind, post and actor), so totals and *members of the week* do not change |
+| Subscriptions | Deleted |
+| Reports they filed | Stay in the moderation queue without reporter or note; reports they resolved lose `resolved_by` |
+| Forum profile | Bio, the photo the forum uploaded (the attachment is deleted), badges, the rules and digest settings and the saved draft are removed. An avatar an administrator picked in the core profile stays with the account |
+| Forum sign-in | Linked Google account and verified address stay with the account until it is deleted (reported as retained) |
+
+Every row changed counts as one item removed; the request screen lists the messages. No other
+member's posts, likes, points or settings change. Their profile page has no posts afterwards, so
+visitors get a 404 (moderators still see the empty profile). Posts of an account that is deleted
+later (`author_id` NULL) show as *Deleted user* the same way.
 
 ## The admin screen
 
@@ -204,7 +222,7 @@ cached pages by `forum.js` through the REST API.
 | **Topic tags** | topic `_forum_tags` [slugs] + `_forum_tag_names` [names] (GIN index `posts_forum_tags`) | tag field on the new-topic form (≤ 5, comma separated); `/forums/tag/<slug>/`, `/forums/tags/`, `?tag=` on forum, index and `/forums/topics/`; `GET forum/v1/tags` | Tags are plain text ≤ 30 characters, slugs from `SanitizeTitle` |
 | **Views** | `forum_topic_views (topic_id, views)` | `POST forum/v1/topics/<id>/view` (forum.js beacon) → `{views, counted}` | Counted once per visitor and topic per 30 minutes (member id, else a salted hash of address + user agent, never stored), not for robots or empty user agents, ≤ 120 per network per 10 minutes. Cached pages count too; no-JS visitors are not counted |
 | **Sort tabs** | — | `?sort=latest\|popular\|unanswered\|solved` on index, forum, `/forums/topics/`, tag pages and `forum/v1/forums/<id>/topics` | Popular = views + 10 × replies. `sort` and `tag` are page cache key parameters while the plugin is on; `?sort=latest` and unknown values are 301-redirected to the canonical URL |
-| **Likes** | `forum_likes (post_id, user_id)` | `forum_action=like\|unlike` (+ `post_id`) on the topic URL; `POST/DELETE forum/v1/posts/<id>/like` | Members who may post; not their own post; 60 per 10 minutes. A like purges only that topic's pages (`forum-topic:<id>` cache tag). The author earns `like_points` |
+| **Likes** | `forum_likes (post_id, user_id)`; `user_id` NULL is an anonymous like left by the personal data eraser (0109) | `forum_action=like\|unlike` (+ `post_id`) on the topic URL; `POST/DELETE forum/v1/posts/<id>/like` | Members who may post; not their own post; 60 per 10 minutes. A like purges only that topic's pages (`forum-topic:<id>` cache tag). The author earns `like_points` |
 | **Solved** | topic `_forum_solution` (reply id), `_forum_solved_at`, `_forum_solved_by` | `forum_action=solve\|unsolve`; `POST/DELETE forum/v1/topics/<id>/solution` | The topic's author (who may post) or a moderator. The answer is highlighted (`.pf-post--solution`) and repeated under the opening post; lists show a *Solved* badge. Trashing or spamming the answer withdraws it. Its author earns `solution_points` (not on their own topic); badge rule `solutions` |
 | **Who is online** | process memory (visitor key → forum, time) | `POST forum/v1/presence {forum}`, `GET forum/v1/online?forum=` | Window *Forums › Settings › Online* (5 minutes). Each instance counts its own visitors |
 | **Points ledger** | `forum_points (user_id, kind, points, post_id, actor_id, note, created_at)` | Forums › Members › member › *Adjust points*; `GET forum/v1/weekly` | One row per topic, reply, accepted answer, like received and manual adjustment. Totals stay computed from the posts (+ manual rows); the ledger dates them for **members of the week** (last 7 days, only rows whose post is still live) |
@@ -255,6 +273,8 @@ accepted answer and the rules URL.
 | `internal/server/forum_views_lists.go`, `forum_account_more.go` | 0.2.5: all topics, tags, unsubscribe views; sign-up choices and change the address |
 | `internal/db/migrations/0097_forum.sql` | the `forum`, `topic` and `reply` content types, their indexes, one account per Google subject |
 | `internal/db/migrations/0104_forum_engagement.sql` | 0.2.5: likes, views, the points ledger, subscriptions, reports; tag and solved indexes |
+| `internal/db/migrations/0109_forum_anonymous_likes.sql` | Anonymous likes: `forum_likes.user_id` nullable, one like per member and post kept by a partial unique index |
+| `internal/server/privacy_sources.go` | The forum's personal data exporter and eraser (anonymization) |
 | `web/forum/templates/*.html`, `web/forum/assets/forum.css`, `forum.js` | the default view templates, the stylesheet and the optional script |
 | `library/themes/{campfire,devboard,guild-hall,study-circle}` | the forum themes |
 | `internal/server/forum_*_test.go`, `theme_library_forum_*_test.go` | unit and integration tests |

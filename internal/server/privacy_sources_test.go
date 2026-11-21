@@ -221,11 +221,11 @@ func TestPrivacyForum(t *testing.T) {
 	}
 
 	res := f.runErase()
-	if res.Retained < 2 || len(res.Messages) == 0 {
-		t.Errorf("erase should report the posts it keeps: %+v", res)
+	if res.Removed < 2 || res.Retained != 1 || len(res.Messages) != 2 {
+		t.Errorf("erase should report the anonymized posts and the sign-in data it keeps: %+v", res)
 	}
-	if n := f.count(`SELECT count(*) FROM posts WHERE author_id = $1 AND meta ? '`+forumMetaIP+`'`, f.ada); n != 0 {
-		t.Error("Ada's posts still carry her IP")
+	if n := f.count(`SELECT count(*) FROM posts WHERE id = ANY($1) AND (author_id IS NOT NULL OR meta ? '`+forumMetaIP+`')`, []int64{adaTopic, adaReply}); n != 0 {
+		t.Error("Ada's posts still carry her account or IP")
 	}
 	if n := f.count(`SELECT count(*) FROM posts WHERE author_id = $1 AND meta ? '`+forumMetaIP+`'`, f.bob); n != 1 {
 		t.Error("Bob's IP was removed")
