@@ -98,6 +98,14 @@ func typeObject(home, slug, name, singular, base string, hierarchical bool, supp
 		o["capabilities"] = map[string]string{"edit_post": "edit_post", "read_post": "read_post", "delete_post": "delete_post",
 			"edit_posts": "edit_" + base, "edit_others_posts": "edit_others_" + base, "publish_posts": "publish_" + base,
 			"read_private_posts": "read_private_" + base, "create_posts": "edit_" + base}
+		if slug == "wp_block" { // register_post_type( 'wp_block' ): capability_type block, mapped onto the post caps
+			o["capabilities"] = map[string]string{"edit_post": "edit_block", "read_post": "read_block", "delete_post": "delete_block",
+				"edit_posts": "edit_posts", "edit_others_posts": "edit_others_posts", "delete_posts": "delete_posts",
+				"publish_posts": "publish_blocks", "read_private_posts": "read_private_blocks", "read": "edit_posts",
+				"delete_private_posts": "delete_private_blocks", "delete_published_posts": "delete_published_posts",
+				"delete_others_posts": "delete_others_posts", "edit_private_posts": "edit_private_blocks",
+				"edit_published_posts": "edit_published_posts", "create_posts": "publish_posts"}
+		}
 	}
 	return o
 }

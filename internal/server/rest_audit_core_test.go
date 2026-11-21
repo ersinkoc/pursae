@@ -193,9 +193,30 @@ func TestRESTAuditBlocksAccess(t *testing.T) {
 	if code, _, list, _ := contrib.do("GET", "/wp/v2/blocks", nil); code != http.StatusOK || len(list) != 1 {
 		t.Errorf("contributor pattern list: %d %v", code, list)
 	}
-	code, mine, _, _ := contrib.do("POST", "/wp/v2/blocks", map[string]any{"title": "Contrib pattern", "content": "<p>c</p>"})
-	if code != http.StatusCreated || mine["status"] == "publish" {
-		t.Errorf("contributor pattern published: %d %v", code, mine["status"])
+	// register_post_type( 'wp_block' ): create_posts is publish_posts, so a Contributor reads and
+	// uses patterns but cannot create one, and the Allow header the editor's canUser( 'create' )
+	// reads (the "Create pattern" menu item) leaves POST out.
+	if code, e, _, _ := contrib.do("POST", "/wp/v2/blocks", map[string]any{"title": "Contrib pattern", "content": "<p>c</p>"}); code != http.StatusForbidden || e["code"] != "rest_cannot_create" {
+		t.Errorf("contributor pattern create: %d %v", code, e["code"])
+	}
+	if _, _, _, hdr := contrib.do("OPTIONS", "/wp/v2/blocks", nil); strings.Contains(hdr.Get("Allow"), "POST") {
+		t.Errorf("contributor OPTIONS /wp/v2/blocks Allow: %q", hdr.Get("Allow"))
+	}
+	if _, _, _, hdr := contrib.do("OPTIONS", "/wp/v2/posts", nil); !strings.Contains(hdr.Get("Allow"), "POST") {
+		t.Errorf("contributor OPTIONS /wp/v2/posts Allow: %q", hdr.Get("Allow"))
+	}
+	if code, got, _, _ := contrib.do("GET", "/wp/v2/types/wp_block?context=edit", nil); code != http.StatusOK ||
+		got["capabilities"].(map[string]any)["create_posts"] != "publish_posts" {
+		t.Errorf("wp_block type capabilities: %d %v", code, got["capabilities"])
+	}
+	// An Author (publish_posts) creates one, published.
+	_, author := s.user("arty", "author")
+	if _, _, _, hdr := author.do("OPTIONS", "/wp/v2/blocks", nil); !strings.Contains(hdr.Get("Allow"), "POST") {
+		t.Errorf("author OPTIONS /wp/v2/blocks Allow: %q", hdr.Get("Allow"))
+	}
+	code, mine, _, _ := author.do("POST", "/wp/v2/blocks", map[string]any{"title": "Author pattern", "content": "<p>a</p>"})
+	if code != http.StatusCreated || mine["status"] != "publish" {
+		t.Errorf("author pattern: %d %v", code, mine["status"])
 	}
 }
 
