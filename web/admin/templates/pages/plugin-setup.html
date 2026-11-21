@@ -2,11 +2,11 @@
 <style>
 .psg{max-width:980px}
 .psg-card{background:#fff;border:1px solid #c3c4c7;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.psg-welcome{max-width:720px;margin:40px auto 0;padding:36px 40px;text-align:center}
-.psg-welcome .psg-badge{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#edfaef;color:#00a32a;margin-bottom:12px}
-.psg-welcome .psg-badge .dashicons{font-size:32px;width:32px;height:32px}
-.psg-welcome h1{font-size:24px;line-height:1.3;margin:0 0 6px;padding:0}
-.psg-welcome .psg-lead{font-size:15px;color:#50575e;margin:0 0 26px}
+.psg-welcome-head{display:flex;align-items:center;gap:10px}
+.psg-welcome-head h1{padding:9px 0 4px}
+.psg-badge{display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;border-radius:50%;background:#edfaef;color:#00a32a}
+.psg-badge .dashicons{font-size:22px;width:22px;height:22px}
+.psg-welcome{padding:24px}
 .psg-choices{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left}
 .psg-choice{margin:0}
 .psg-choice button{display:flex;flex-direction:column;gap:6px;width:100%;height:100%;padding:18px 20px;text-align:left;cursor:pointer;border:1px solid #c3c4c7;border-radius:8px;background:#fff;font:inherit;color:#1d2327;transition:border-color .15s,box-shadow .15s}
@@ -52,10 +52,12 @@
 {{$g := .Guide}}
 {{if .Welcome}}
 	{{template "notices" $}}
-	<div class="psg-card psg-welcome">
+	<div class="psg-welcome-head">
 		<span class="psg-badge"><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span></span>
 		<h1><span translate="no">{{$g.Name}}</span> <span>is active</span></h1>
-		<p class="psg-lead">How would you like to set it up?</p>
+	</div>
+	<p class="psg-intro">How would you like to set it up?</p>
+	<div class="psg-card psg-welcome">
 		<div class="psg-choices">
 			<form method="post" action="/wp-admin/plugin-setup" class="psg-choice primary">
 				<input type="hidden" name="_wpnonce" value="{{.Nonce}}" /><input type="hidden" name="plugin" value="{{$g.Slug}}" /><input type="hidden" name="do" value="start" />
