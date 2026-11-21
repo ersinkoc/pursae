@@ -126,6 +126,26 @@ jobs:
       - name: make builder-test
         run: make builder-test
 
+  # golangci-lint with .golangci.yml (bug-finding linters only). The tree predates it and has older
+  # findings, so only issues introduced by the pull request or push fail the job (make lint does the same
+  # against origin/main). Keep the version in step with GOLANGCI_LINT_VERSION in the Makefile.
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          only-new-issues: true
+          args: --timeout 15m
+
   vulncheck:
     runs-on: ubuntu-latest
     steps:
