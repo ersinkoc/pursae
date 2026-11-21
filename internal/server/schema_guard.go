@@ -51,10 +51,10 @@ func (s *Server) warnSchema(st db.SchemaStatus) {
 	}
 	s.schemaGuard.warn.Do(func() {
 		if st.TooOld() { // only reachable with WPGO_ALLOW_OLDER_BINARY=1
-			slog.Error("schema guard overridden by "+db.AllowOlderBinaryEnv+": "+(&db.BinaryTooOldError{Status: st}).Error(),
-				"version", st.Binary, "needs", st.MinBinary)
+			slog.Error("schema guard overridden by "+db.AllowOlderBinaryEnv,
+				"reason", (&db.BinaryTooOldError{Status: st}).Error(), "version", st.Binary, "needs", st.MinBinary)
 			return
 		}
-		slog.Warn("schema guard: "+st.Warning(), "version", st.Binary, "unknown_migrations", len(st.Unknown))
+		slog.Warn("schema guard: newer schema", "detail", st.Warning(), "version", st.Binary, "unknown_migrations", len(st.Unknown))
 	})
 }
