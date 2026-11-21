@@ -116,7 +116,7 @@
 <p>Design kit: <code>{{.Kit}}</code></p>{{if .Draft}}<p>The pages were imported as drafts.</p>{{end}}
 <table class="wp-list-table widefat fixed striped"><thead><tr><th>File</th><th>Page</th><th></th></tr></thead><tbody>
 {{range .Pages}}<tr><td><code>{{.Path}}</code></td><td>{{if .URL}}<code>{{.URL}}</code>{{else}}&mdash;{{end}}</td>
-<td><a href="/wp-admin/post?post={{.PostID}}&amp;action=web-builder">Edit</a>{{if .URL}} | <a href="{{.URL}}" target="_blank" rel="noopener">View</a>{{end}}</td></tr>
+<td><a href="{{.EditURL}}">Edit</a>{{if .URL}} | <a href="{{.URL}}" target="_blank" rel="noopener">View</a>{{end}}</td></tr>
 {{end}}</tbody></table>
 {{if .Templates}}<h3>Templates</h3>
 <table class="wp-list-table widefat fixed striped" style="max-width:700px"><thead><tr><th>Type</th><th>Pages</th><th></th></tr></thead><tbody>
@@ -149,7 +149,7 @@
 <iframe id="wb-import-design" title="Design" sandbox="allow-scripts allow-forms allow-popups" referrerpolicy="no-referrer" src="{{.DesignURL}}" style="width:100%;height:calc(100vh - 320px);min-height:480px;border:1px solid #c3c4c7;background:#fff"></iframe></div>
 <div style="flex:1;min-width:0"><h3>Pursae page</h3>
 {{if .PursaeURL}}<iframe id="wb-import-pursae" title="Pursae page" src="{{.PursaeURL}}" style="width:100%;height:calc(100vh - 320px);min-height:480px;border:1px solid #c3c4c7;background:#fff"></iframe>
-{{else}}<p class="description">This page is a draft: publish the pages to see it here.</p>{{end}}</div>
+{{else}}<p class="description">Publish this page to see it here.</p>{{end}}</div>
 </div>
 {{end}}
 <p class="submit"><a href="{{.URL}}?action=result&amp;import={{.ID}}" class="button">Back to the report</a></p>
