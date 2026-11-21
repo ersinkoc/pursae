@@ -93,7 +93,7 @@ func (s *Server) analyticsCollect(c *gin.Context) {
 			utm_campaign, country, device, browser, os) VALUES ($1,$2,'pageview',$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
 			visitor, pageID, path, s.analyticsReferrer(h.R, r.Host), analyticsTrim(strings.ToLower(q.Get("utm_source")), 100),
 			analyticsTrim(strings.ToLower(q.Get("utm_medium")), 100), analyticsTrim(q.Get("utm_campaign"), 150),
-			analyticsCountry(r), device, browser, osName)
+			s.visitorCountry(r, ip), device, browser, osName)
 	case "e":
 		if !analyticsEventNames[h.N] {
 			return
@@ -104,7 +104,7 @@ func (s *Server) analyticsCollect(c *gin.Context) {
 		}
 		device, browser, osName := analyticsUA(ua, h.W)
 		_, _ = s.store.Pool.Exec(ctx, `INSERT INTO analytics_events (visitor, page_id, name, path, target, country, device, browser, os)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, visitor, pageID, h.N, path, target, analyticsCountry(r), device, browser, osName)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, visitor, pageID, h.N, path, target, s.visitorCountry(r, ip), device, browser, osName)
 	case "x":
 		_, _ = s.store.Pool.Exec(ctx, `UPDATE analytics_events SET engaged_ms = GREATEST(engaged_ms, $3),
 			lcp_ms = COALESCE($4, lcp_ms), inp_ms = COALESCE($5, inp_ms), cls = COALESCE($6, cls),
@@ -232,18 +232,6 @@ func analyticsSourceName(host string) string {
 		}
 	}
 	return analyticsTrim(h, 100)
-}
-
-// analyticsCountry is the visitor's country as a proxy or CDN reports it (Cloudflare, CloudFront,
-// Vercel, nginx GeoIP), ” when no header gives one.
-func analyticsCountry(r *http.Request) string {
-	for _, k := range []string{"CF-IPCountry", "CloudFront-Viewer-Country", "X-Vercel-IP-Country", "X-Country-Code", "X-Geo-Country"} {
-		v := strings.ToUpper(strings.TrimSpace(r.Header.Get(k)))
-		if len(v) == 2 && v[0] >= 'A' && v[0] <= 'Z' && v[1] >= 'A' && v[1] <= 'Z' && v != "XX" && v != "T1" {
-			return v
-		}
-	}
-	return ""
 }
 
 // analyticsUA is the device class, browser and operating system of a user agent (the viewport

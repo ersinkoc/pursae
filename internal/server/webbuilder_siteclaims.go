@@ -59,7 +59,7 @@ func (s *Server) wbSiteSetClaims(c context.Context, kit string, claims map[strin
 }
 
 // wbSiteDropClaims removes the claims of pages that no longer exist (after "Remove this import").
-func (s *Server) wbSiteDropClaims(c context.Context, ids []int64) {
+func (s *Server) wbSiteDropClaims(c context.Context, ids []int64) error {
 	gone := map[int64]bool{}
 	for _, id := range ids {
 		gone[id] = true
@@ -73,8 +73,9 @@ func (s *Server) wbSiteDropClaims(c context.Context, ids []int64) {
 		}
 	}
 	if changed {
-		_ = s.settings.Set(c, map[string]any{wbSiteClaimsOption: all})
+		return s.settings.Set(c, map[string]any{wbSiteClaimsOption: all})
 	}
+	return nil
 }
 
 // wbSiteClaimed is the imported page that claims path (as resolvePretty sees it), nil when none.

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/media"
 	"wpgo/internal/store"
@@ -1351,14 +1352,14 @@ func (s *Server) wbWizUndoPage(c *gin.Context, id string, notices ...notice) {
 	v := &wbWizView{Step: "undo", ID: id, Kit: rec.Kit}
 	u := &wbWizUndoView{Kit: rec.Kit, Nonce: s.nonce(c, "wb-site-import-undo-"+id), BackURL: wbWizURL}
 	for _, pid := range rec.Pages {
-		if t := s.wbWizOwnedTitle(c, pid, "page", rec.Kit); t != "" {
+		if t, _ := s.wbWizOwnedTitle(c, pid, "page", rec.Kit); t != "" {
 			u.Pages = append(u.Pages, t)
 		} else {
 			u.Missing++
 		}
 	}
 	for _, tid := range rec.Templates {
-		if t := s.wbWizOwnedTitle(c, tid, webbuilder.TemplatePostType, rec.Kit); t != "" {
+		if t, _ := s.wbWizOwnedTitle(c, tid, webbuilder.TemplatePostType, rec.Kit); t != "" {
 			u.Templates = append(u.Templates, t)
 		} else {
 			u.Missing++
@@ -1371,21 +1372,24 @@ func (s *Server) wbWizUndoPage(c *gin.Context, id string, notices ...notice) {
 }
 
 // wbWizOwnedTitle is the title of a post if it still exists, has the type and still carries the
-// import's mark of the kit ("" otherwise: the post is not the import's to delete).
-func (s *Server) wbWizOwnedTitle(c *gin.Context, id int64, typ, kit string) string {
+// import's mark. An empty title with no error means no owned post matched.
+func (s *Server) wbWizOwnedTitle(c *gin.Context, id int64, typ, kit string) (string, error) {
 	var title string
 	types := []string{typ}
 	if typ == "page" {
 		types = append(types, "post") // a page a collection made a post
 	}
 	err := s.store.Pool.QueryRow(c, `SELECT title FROM posts WHERE id = $1 AND type = ANY($2) AND meta->>$3 = $4`, id, types, wbSiteMetaKit, kit).Scan(&title)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
 	if err != nil {
-		return ""
+		return "", err
 	}
 	if strings.TrimSpace(title) == "" {
 		title = "#" + itoa64(id)
 	}
-	return title
+	return title, nil
 }
 
 func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
@@ -1402,7 +1406,11 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 	deleted, kept := 0, 0
 	del := func(ids []int64, typ string) error {
 		for _, pid := range ids {
-			if s.wbWizOwnedTitle(c, pid, typ, rec.Kit) == "" {
+			title, err := s.wbWizOwnedTitle(c, pid, typ, rec.Kit)
+			if err != nil {
+				return fmt.Errorf("check imported %s %d ownership: %w", typ, pid, err)
+			}
+			if title == "" {
 				kept++
 				continue
 			}
@@ -1434,18 +1442,22 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		}
 	}
 	if err != nil {
-		log.Printf("web builder: undo import: %v", err)
-		s.wbTemplatesChanged(c)
-		s.wbWizUndoPage(c, id, notice{Type: "error", Message: "Removing the import stopped after a database error. Retry the removal from this screen.", Dismissible: true})
+		s.wbWizUndoError(c, id, err)
 		return
 	}
-	s.wbSiteDropClaims(c, rec.Pages) // their addresses go back to the archives
+	if err := s.wbSiteDropClaims(c, rec.Pages); err != nil {
+		s.wbWizUndoCleanupError(c, id, fmt.Errorf("remove imported URL claims: %w", err))
+		return
+	}
 	if rec.FrontSet && s.settings.String("show_on_front") == "page" && wbWizHas(rec.Pages, int64(s.settings.Int("page_on_front"))) {
 		prev := rec.PrevShow
 		if prev == "" {
 			prev = "posts"
 		}
-		_ = s.settings.Set(c, map[string]any{"show_on_front": prev, "page_on_front": rec.PrevFront})
+		if err := s.settings.Set(c, map[string]any{"show_on_front": prev, "page_on_front": rec.PrevFront}); err != nil {
+			s.wbWizUndoCleanupError(c, id, fmt.Errorf("restore previous homepage: %w", err))
+			return
+		}
 	}
 	kitMsg := ""
 	// Another import of the same kit still needs its files and root paths. If this record created
@@ -1464,28 +1476,47 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		if rec.KitCreated {
 			kitHeir.KitCreated = true
 		}
-	} else {
-		_ = s.wbKitSetRoot(c, rec.Kit, false) // the kit's files leave the site's root with its pages
-		if rec.KitCreated {
-			wbKitsMu.Lock()
-			if status, code, _ := s.wbKitRemove(c, rec.Kit); code == "" || status == http.StatusNotFound {
-				kitMsg = " and its design kit"
-			}
-			wbKitsMu.Unlock()
+	} else if rec.KitCreated {
+		// Removing the kit also removes its root registration.
+		wbKitsMu.Lock()
+		status, code, _ := s.wbKitRemove(c, rec.Kit)
+		wbKitsMu.Unlock()
+		wbKitRootLiveReset()
+		if code != "" && status != http.StatusNotFound {
+			s.wbWizUndoError(c, id, fmt.Errorf("delete imported design kit: %s", code))
+			return
+		}
+		kitMsg = " and its design kit"
+	} else if err := s.wbKitSetRoot(c, rec.Kit, false); err != nil {
+		s.wbWizUndoError(c, id, fmt.Errorf("disable imported design kit root: %w", err))
+		return
+	}
+	// Keep the retry record until staging cleanup has succeeded.
+	if dir := s.wbWizDir(id); dir != "" { // the upload goes with what it made
+		if err := os.RemoveAll(dir); err != nil {
+			s.wbWizUndoCleanupError(c, id, fmt.Errorf("remove staged upload: %w", err))
+			return
 		}
 	}
 	delete(recs, id)
-	_ = s.wbWizSetRecords(c, recs)
+	if err := s.wbWizSetRecords(c, recs); err != nil {
+		s.wbWizUndoCleanupError(c, id, fmt.Errorf("save import records: %w", err))
+		return
+	}
 	s.wbTemplatesChanged(c)
 	s.wbPurgePages()
-	if dir := s.wbWizDir(id); dir != "" { // the upload goes with what it made
-		_ = os.RemoveAll(dir)
-	}
 	msg := fmt.Sprintf("Removed %d pages and templates%s.", deleted, kitMsg)
 	if kept > 0 {
 		msg += fmt.Sprintf(" %d were already gone or no longer carry the import's mark and were left alone.", kept)
 	}
 	s.wbWizStartWith(c, notice{Type: "success", Message: template.HTML(html.EscapeString(msg)), Dismissible: true})
+}
+
+func (s *Server) wbWizUndoError(c *gin.Context, id string, err error) {
+	log.Printf("web builder: undo import: %v", err)
+	s.wbTemplatesChanged(c)
+	s.wbPurgePages() // pages already deleted must not be served from the cache until the retry
+	s.wbWizUndoPage(c, id, notice{Type: "error", Message: "Removing the import stopped after a database error. Retry the removal from this screen.", Dismissible: true})
 }
 
 func (s *Server) wbWizUndoMedia(c *gin.Context, ids []int64) (int, error) {
@@ -1509,6 +1540,13 @@ func (s *Server) wbWizUndoMedia(c *gin.Context, ids []int64) (int, error) {
 		deleted++
 	}
 	return deleted, nil
+}
+
+func (s *Server) wbWizUndoCleanupError(c *gin.Context, id string, err error) {
+	log.Printf("web builder: undo import: %v", err)
+	s.wbTemplatesChanged(c)
+	s.wbPurgePages() // pages already deleted must not be served from the cache until the retry
+	s.wbWizUndoPage(c, id, notice{Type: "error", Message: "Removing the import stopped before cleanup finished. Retry the removal from this screen.", Dismissible: true})
 }
 
 // wbWizMenuID is the id of the navigation menu an import of kit makes (0: none).

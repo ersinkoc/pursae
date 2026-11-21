@@ -2,6 +2,15 @@ FROM golang:1.27-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
+# Seed IP-to-country database: DB-IP "IP to Country Lite" (CC BY 4.0, https://db-ip.com), this month's
+# release or, early in the month, last month's. Optional: without network the image ships none and the
+# site downloads it itself (internal/server/geoip.go).
+RUN mkdir -p /out/geoip && y=$(date -u +%Y) && m=$(date -u +%m) && m=${m#0} \
+	&& if [ "$m" -eq 1 ]; then prev="$((y-1))-12"; else prev="$y-$(printf %02d $((m-1)))"; fi \
+	&& for v in "$y-$(printf %02d $m)" "$prev"; do \
+		wget -q -T 60 -O - "https://download.db-ip.com/free/dbip-country-lite-$v.mmdb.gz" 2>/dev/null | gunzip > /out/geoip/country.mmdb.tmp 2>/dev/null \
+		&& [ -s /out/geoip/country.mmdb.tmp ] && mv /out/geoip/country.mmdb.tmp /out/geoip/country.mmdb && break; \
+	done; rm -f /out/geoip/country.mmdb.tmp; true
 COPY . .
 # VERSION (optional) is the core version the binary reports, e.g. --build-arg VERSION=0.4.0.
 ARG VERSION=
@@ -20,13 +29,15 @@ RUN CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags "nodynamic $GO_TAGS" -
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 wpgo \
-	&& mkdir -p /data/uploads /data/plugins /data/plugin-cache /data/mail /data/themes /data/wpgo-cache /data/languages /data/bin /data/backups \
+	&& mkdir -p /data/uploads /data/plugins /data/plugin-cache /data/mail /data/themes /data/wpgo-cache /data/languages /data/bin /data/backups /data/geoip \
 	&& chown -R wpgo /data
 # The image's binary; `wpgo launch` installs it into /data/bin (a volume) and runs it from there, so
 # Dashboard › Updates can replace it and the update survives restarts, while a newer image still wins.
 COPY --from=build /out/wpgo /usr/local/lib/pursae/wpgo
 RUN ln -s /usr/local/lib/pursae/wpgo /usr/local/bin/wpgo \
 	&& ln -s /usr/local/lib/pursae/wpgo /usr/local/bin/pursae
+# The seed country database (may be absent); /data/geoip/country.mmdb, refreshed monthly, wins over it.
+COPY --from=build /out/geoip/ /usr/share/wpgo/geoip/
 # Demo marketplace: example plugin packages built by tools/build-plugins.sh (if present).
 COPY examples/plugins/dis[t]/*.zip examples/plugins/dis[t]/dev-key.pub /usr/share/wpgo/plugins/
 USER wpgo
