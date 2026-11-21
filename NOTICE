@@ -57,6 +57,8 @@ source: https://github.com/WordPress/wordpress-develop). GPLv2 or later (LICENSE
   unmodified; themes with per-block styles (Twenty Twenty-Five) inline the ones a page uses.
 * web/wp-includes/images, web/wp-admin/images — WordPress' images, except images/brand/ (Pursae's
   own logo) and images/icon-library/.
+* web/admin/assets/images/team/ — not from WordPress: Pursae's own team photos (About Pursae), as
+  published on pursae.com.
 * Dashicons (web/wp-includes/fonts/dashicons.*, web/admin/assets/fonts/dashicons.*,
   dashicons.min.css), version 1.006: "GPL version 2 or any later version with font exception"
   (http://www.gnu.org/licenses/gpl-faq.html#FontException), WordPress contributors.
