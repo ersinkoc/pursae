@@ -343,8 +343,9 @@ search while Pursae's does not. Method, every config, all tables and `make bench
 ## 📦 Installation & migration
 
 - **Docker** ([Quick start](#-quick-start)) or **one binary** against your own PostgreSQL — [install the binary](docs/developer/getting-started/install-binary.md).
-- **From WordPress**: export with Tools › Export (WXR), import with Tools › Import here — posts, pages, terms, comments, menus, media fetched from their public URLs, and WooCommerce products (with variations, attributes, categories and images) into Pursae Commerce. Orders and coupons are counted in the report, not imported. WooCommerce's product CSV works too.
-- Users' passwords, settings, PHP plugins and themes do not move — [content export and import](docs/developer/operations/backups.md#content-export).
+- **Can I move my site?** Yes. Install the **WP to Pursae** plugin on the WordPress site and click *Move to Pursae*. Users (they keep their passwords), content, media, menus, settings and the whole WooCommerce store (products, orders with refunds, customers, coupons) move in one go — [migrate from WordPress](docs/developer/operations/migrate-from-wordpress.md).
+- **Content only**: export with Tools › Export (WXR), import with Tools › Import here — posts, pages, terms, comments, menus, media fetched from their public URLs, and WooCommerce products into Pursae Commerce; no passwords, settings or orders — [content export and import](docs/developer/operations/backups.md#content-export). WooCommerce's product CSV works too.
+- PHP plugins and themes never move: Pursae does not run PHP.
 - **Pursae to Pursae**: Backup Manager moves a whole site in one archive — [Backup Manager](docs/backup-manager-features.md).
 
 ## 🔒 What Pursae sends to hub.pursae.com
