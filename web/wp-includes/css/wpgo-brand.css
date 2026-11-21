@@ -24,8 +24,8 @@ html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-lo
 		margin-top: 0 !important;
 	}
 }
-.login h1 a,
-.login .wp-login-logo a,
+.login h1 a:not(.pursae-mascot-link),
+.login .wp-login-logo a:not(.pursae-mascot-link),
 #logo {
 	background-image: url(../images/brand/logo-256.png) !important;
 	background-size: 84px !important;
@@ -33,6 +33,28 @@ html body #wpadminbar #wp-toolbar #wp-admin-bar-root-default #wp-admin-bar-wp-lo
 	width: 84px !important;
 	height: 84px !important;
 	background-repeat: no-repeat !important;
+}
+/* The stock mark drawn inline on the login screens (login.html "login-mascot", login-mascot.js): no
+   background image, the SVG takes the link's color. */
+.login h1 a.pursae-mascot-link {
+	display: block;
+	width: 84px;
+	height: 84px;
+	margin: 0 auto 24px;
+	padding: 0;
+	background: none;
+	text-indent: 0;
+	overflow: visible;
+	color: #16171A;
+}
+.login h1 a.pursae-mascot-link:hover,
+.login h1 a.pursae-mascot-link:focus {
+	color: #16171A;
+}
+.pursae-mascot {
+	display: block;
+	flex: none;
+	overflow: visible;
 }
 .wpgo-about-logo {
 	width: 96px;
