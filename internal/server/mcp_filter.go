@@ -18,7 +18,7 @@ var mcpRouteCaps = map[string]string{
 	"/pursae/v1/plugins": "activate_plugins", "/pursae/v1/themes": "switch_themes", "/pursae/v1/cache": "manage_options",
 	"/pursae/v1/seo": "manage_options", "/pursae/v1/options": "manage_options", "/pursae/v1/headless": "manage_options",
 	"/wp/v2/settings": "manage_options", "/wp/v2/users": "list_users", "/pursae/v1/mcp/activity": "manage_options",
-	"/pursae/v1/health": "manage_options", "/pursae/v1/backups": "manage_options", "/pursae/v1/updates": "update_plugins",
+	"/pursae/v1/health": "manage_options", "/pursae/v1/csp": "manage_options", "/pursae/v1/backups": "manage_options", "/pursae/v1/updates": "update_plugins",
 	"/wc/v3/products": "edit_products", "/wc/v3/orders": "edit_shop_orders", "/web-builder/v2": "edit_posts",
 	"/wc/v3/reports": "view_woocommerce_reports", "/wp/v2/users/me": "read",
 }

@@ -26,7 +26,7 @@ query so browsers refetch after an update.
 | Field | Meaning |
 |-------|---------|
 | `handle` | the tag id: `<handle>-css`, `<handle>-js` |
-| `src` | a path inside the package (served at `/wp-content/themes/<slug>/<path>`) or an absolute URL. Remote URLs must be allowed by the site's Content Security Policy (`style-src 'self'`; remote stylesheets are not allowed by default, remote scripts never) — ship fonts and scripts in the package |
+| `src` | a path inside the package (served at `/wp-content/themes/<slug>/<path>`) or an absolute URL. Remote URLs must be allowed by the site's Content Security Policy (`style-src 'self'`; remote stylesheets are not allowed by default, remote scripts never) — ship fonts and scripts in the package. The site owner can allow a stylesheet or font host, and the APIs your scripts `fetch()` from (`connect-src`), under Settings › Security › Allowed external sources ([security](../operations/security.md)); say in your theme's readme which hosts it needs |
 | `deps` | handles loaded first: the theme's own or core ones |
 | `media` | `all` (default), `print`, `screen and (min-width: …)` |
 | `in_footer` | print the script before `</body>` |

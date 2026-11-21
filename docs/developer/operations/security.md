@@ -30,6 +30,24 @@ section: operations
   `unfiltered_html` users can save a script there; untick **Administrator scripts** to block them as
   well. A proxy or CDN that caches pages serves one nonce to every visitor until the page expires
   there.
+- **Allowed external sources** (Settings › Security, `GET`/`POST /wp-json/pursae/v1/csp`, the MCP
+  tools `csp_get_settings` / `csp_update_settings`): the front-end policy keeps `connect-src`,
+  `font-src` and `style-src` on the site itself. The site owner may add named origins to those three
+  directives, e.g. `connect-src https://api.github.com` for a theme script that reads the GitHub API.
+  A directive the policy lacks starts from `default-src`, so the header becomes
+  `connect-src 'self' https://api.github.com`. Accepted: `https://host`, `https://host:port`,
+  `https://*.example.com` (leftmost wildcard only) and `wss://host` for `connect-src`; at most 20 per
+  directive. Rejected: `*`, `https:`, any `http:` source, `data:`, `blob:`, quoted keywords, paths,
+  IP addresses, `localhost` and public-suffix wildcards (`*.com`, `*.co.uk`). Hosts are converted to
+  punycode and every source is rebuilt in canonical form; the raw input never reaches the header,
+  and the stored option is validated again when it is read. `script-src` is never opened: it would
+  undo the nonce and `'strict-dynamic'` policy above. `img-src`, `media-src` and `frame-src` already
+  allow every `https:` source. The sources apply to front-end HTML only (not `/wp-admin`,
+  `/wp-login` or the REST API) and only to the enforced `Content-Security-Policy`, not the
+  report-only nonce policy. Page-cache entries remember the policy they were stored under, so a
+  change takes effect without a purge. The REST route needs `manage_options` (the `settings` scope
+  for Application Passwords); a list with an invalid entry is refused with 400 and nothing is saved.
+  Changes go to the server log and, with Pursae Security on, its activity log.
 - **Uploads are data, never code**: `/wp-content/uploads/` is served with a sandboxing CSP, so an
   uploaded HTML or SVG file cannot run scripts against the site.
 - **Content filtering**: users without `unfiltered_html` and all plugins have their post content
