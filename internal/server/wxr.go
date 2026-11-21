@@ -691,6 +691,10 @@ type wxrItem struct {
 		Approved string `xml:"comment_approved"`
 		Type     string `xml:"comment_type"`
 		Parent   int64  `xml:"comment_parent"`
+		Meta     []struct {
+			Key   string `xml:"meta_key"`
+			Value string `xml:"meta_value"`
+		} `xml:"commentmeta"`
 	} `xml:"comment"`
 }
 
@@ -705,6 +709,8 @@ func (it *wxrItem) meta(key string) string {
 
 type importReport struct {
 	Posts, Pages, Blocks, Templates, Skipped, Terms, Comments, Attachments, MenuItems int // Templates: Theme Builder (wb_template)
+	Products, Variations                                                              int // WooCommerce products into Pursae Commerce (wxr_products.go)
+	SkippedOrders, SkippedCoupons                                                     int // WooCommerce records that are counted, not imported
 	Log                                                                               []string
 }
 
@@ -799,6 +805,7 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 			oldTerms[t.TermID] = id
 		}
 	}
+	prodAttrs := map[string]*gooAttribute{} // pa_ taxonomies -> global attributes (wxr_products.go)
 	// Navigation menus (nav_menu terms): found by slug, created when missing.
 	menuBySlug := map[string]int64{}
 	ensureMenu := func(slug, name string) int64 {
@@ -824,9 +831,16 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 		if t.Taxonomy == "nav_menu" && t.Slug != "" {
 			ensureMenu(t.Slug, t.Name)
 		}
-		// Terms of taxonomies registered here (Pursae Custom Fields); others are skipped like posts
-		// of unknown types.
-		if t.Slug != "" && wxrIsCustomTaxonomy(t.Taxonomy) {
+		// WooCommerce's product taxonomies (attribute taxonomies get their global attribute first).
+		if t.Slug != "" && strings.HasPrefix(t.Taxonomy, "pa_") {
+			if _, err := s.wxrEnsureAttribute(ctx, prodAttrs, t.Taxonomy); err != nil {
+				rep.Log = append(rep.Log, fmt.Sprintf("Failed to import the product attribute %s: %v", t.Taxonomy, err))
+				continue
+			}
+		}
+		// Terms of taxonomies registered here (Pursae Custom Fields, the store's product taxonomies);
+		// others are skipped like posts of unknown types.
+		if t.Slug != "" && (wxrIsCustomTaxonomy(t.Taxonomy) || wxrIsProductTaxonomy(t.Taxonomy)) {
 			var parent int64
 			if t.Parent != "" {
 				parent = ensureTerm(t.Taxonomy, t.Parent, t.Parent, 0)
@@ -855,14 +869,28 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 		menu int64
 	}
 	var menuItems []menuItemRef
+	var products []*wxrItem        // imported once the media and posts are in (wxr_products.go)
+	wooSkipped := map[string]int{} // WooCommerce orders, coupons, ... counted by kind
 	for i := range doc.Channel.Items {
 		it := &doc.Channel.Items[i]
 		kind := it.Type
 		if acfgoIsPostType(kind) { // a post type registered here by Pursae Custom Fields
 			kind = "custom"
 		}
+		if what, ok := wxrWooSkippedTypes[kind]; ok {
+			wooSkipped[what]++
+			rep.Skipped++
+			continue
+		}
 		switch kind {
 		case "post", "page", "wp_block", "wb_template", "custom":
+		case "product", "product_variation":
+			if it.Status == "auto-draft" || it.Status == "trash" {
+				rep.Skipped++
+				continue
+			}
+			products = append(products, it)
+			continue
 		case "attachment":
 			if it.Status == "trash" {
 				rep.Skipped++
@@ -1041,27 +1069,18 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 		default:
 			rep.Blocks++
 		}
-		commentIDs := map[int64]int64{}
-		for _, cm := range it.Comments {
-			nc := &store.Comment{PostID: p.ID, AuthorName: cm.Author, AuthorEmail: cm.Email, AuthorURL: cm.URL, AuthorIP: cm.IP,
-				Content: cm.Content, Type: defaultStr(cm.Type, "comment"), Status: "approved"}
-			if cm.Parent != 0 { // a comment without comment_id must not become every top-level comment's parent
-				nc.ParentID = commentIDs[cm.Parent]
-			}
-			if cm.Approved != "1" {
-				nc.Status = "pending"
-			}
-			if cm.Approved == "spam" {
-				nc.Status = "spam"
-			}
-			if err := s.store.InsertComment(ctx, nc); err == nil {
-				commentIDs[cm.ID] = nc.ID
-				rep.Comments++
-				if t, err := time.ParseInLocation("2006-01-02 15:04:05", cm.Date, loc); err == nil {
-					_, _ = s.store.Pool.Exec(ctx, `UPDATE comments SET created_at = $2 WHERE id = $1`, nc.ID, t)
-				}
-			}
-		}
+		rep.Comments += s.wxrImportComments(ctx, it, p.ID, loc)
+	}
+	// WooCommerce products and variations, with their images (attachments are mapped by now).
+	var urlRep *strings.Replacer
+	if len(urlMap) > 0 {
+		urlRep = wxrURLReplacer(urlMap)
+	}
+	imported = append(imported, s.wxrImportProducts(ctx, u, products, &wxrProductEnv{ensureTerm: ensureTerm, idMap: idMap, remember: remember,
+		authors: authors, loc: loc, urls: urlRep, attrs: prodAttrs}, rep)...)
+	rep.SkippedOrders, rep.SkippedCoupons = wooSkipped["orders"], wooSkipped["coupons"]
+	if line := wxrWooSkippedLog(wooSkipped); line != "" {
+		rep.Log = append(rep.Log, line)
 	}
 	// backfill_parents(): parents that were imported after their children.
 	for id, oldParent := range postParents {
@@ -1168,6 +1187,40 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 	}
 	_ = s.store.RecountTerms(ctx, all)
 	return rep, nil
+}
+
+// wxrImportComments imports an item's comments (with their comment meta, such as a review's
+// rating) under our post, keeping the thread; it returns how many were imported.
+func (s *Server) wxrImportComments(ctx context.Context, it *wxrItem, postID int64, loc *time.Location) int {
+	n := 0
+	commentIDs := map[int64]int64{}
+	for _, cm := range it.Comments {
+		nc := &store.Comment{PostID: postID, AuthorName: cm.Author, AuthorEmail: cm.Email, AuthorURL: cm.URL, AuthorIP: cm.IP,
+			Content: cm.Content, Type: defaultStr(cm.Type, "comment"), Status: "approved"}
+		if cm.Parent != 0 { // a comment without comment_id must not become every top-level comment's parent
+			nc.ParentID = commentIDs[cm.Parent]
+		}
+		if cm.Approved != "1" {
+			nc.Status = "pending"
+		}
+		if cm.Approved == "spam" {
+			nc.Status = "spam"
+		}
+		if len(cm.Meta) > 0 {
+			nc.Meta = map[string]any{}
+			for _, m := range cm.Meta {
+				nc.Meta[m.Key] = m.Value
+			}
+		}
+		if err := s.store.InsertComment(ctx, nc); err == nil {
+			commentIDs[cm.ID] = nc.ID
+			n++
+			if t, err := time.ParseInLocation("2006-01-02 15:04:05", cm.Date, loc); err == nil {
+				_, _ = s.store.Pool.Exec(ctx, `UPDATE comments SET created_at = $2 WHERE id = $1`, nc.ID, t)
+			}
+		}
+	}
+	return n
 }
 
 func wxrTypeLabel(typ string) string {

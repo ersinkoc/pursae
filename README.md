@@ -342,7 +342,7 @@ search while Pursae's does not. Method, every config, all tables and `make bench
 ## 📦 Installation & migration
 
 - **Docker** ([Quick start](#-quick-start)) or **one binary** against your own PostgreSQL — [install the binary](docs/developer/getting-started/install-binary.md).
-- **From WordPress**: export with Tools › Export (WXR), import with Tools › Import here — posts, pages, terms, comments, menus, and media fetched from their public URLs. Products move with WooCommerce's product CSV.
+- **From WordPress**: export with Tools › Export (WXR), import with Tools › Import here — posts, pages, terms, comments, menus, media fetched from their public URLs, and WooCommerce products (with variations, attributes, categories and images) into Pursae Commerce. Orders and coupons are counted in the report, not imported. WooCommerce's product CSV works too.
 - Users' passwords, settings, PHP plugins and themes do not move — [content export and import](docs/developer/operations/backups.md#content-export).
 - **Pursae to Pursae**: Backup Manager moves a whole site in one archive — [Backup Manager](docs/backup-manager-features.md).
 

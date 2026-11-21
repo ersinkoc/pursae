@@ -76,5 +76,7 @@ on the site the archive came from.
 Tools › Export writes a WXR file with posts, pages, media references, comments and terms; "All
 content" also carries the posts and terms of Pursae Custom Fields post types and taxonomies. Tools ›
 Import reads one; items of a post type not registered on the site are skipped and listed in the
-report. It is a content transfer, not a backup: it does not carry users' passwords,
+report. WooCommerce products and variations in the file are imported into Pursae Commerce
+([details](../../goocommerce-features.md#wordpress-import-wxr)); WooCommerce orders, refunds and coupons are
+counted ("Skipped N orders / M coupons") and not imported. It is a content transfer, not a backup: it does not carry users' passwords,
 settings, plugins or themes.

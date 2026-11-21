@@ -198,3 +198,40 @@ outstanding balance) tabs appear in the Analytics menu while the module is switc
   directory) are deleted after 24 hours by the daily `goo_import_cleanup` event.
 - **Orders**, **Coupons** and **Subscriptions** lists have an "Export CSV" link that exports every row matching the list's
   filters (status view, search, month, customer); Customers has "Download". The links carry the store nonce.
+
+## WordPress import (WXR)
+
+Tools › Import (and `wpgo import`) reads WooCommerce products from a WordPress export file (Tools › Export on
+the WooCommerce site, "All content" or "Products"). Import the file with "Download and import file attachments"
+checked so the product images come along. The store does not have to be active; the products appear once it is.
+
+- **Product types**: simple, variable (with its `product_variation` children), grouped (`_children`) and external
+  (`_product_url`, `_button_text`), read from the `product_type` term. Other types (subscriptions, bundles,
+  bookings, ... of other plugins) are imported as simple products and named in the report.
+- **Product data** from the post meta: regular and sale price, sale schedule (`_sale_price_dates_from` / `_to`),
+  SKU, stock management, quantity, stock status, backorders, low stock amount, sold individually, weight and
+  dimensions, tax status and class, virtual, downloadable with the downloadable files (`_downloadable_files`;
+  disabled files are left out; files on the old site's uploads that the import fetched point at the new copies,
+  others keep their URL), download limit and expiry, purchase note.
+- **Attributes**: `_product_attributes` and `_default_attributes`. A taxonomy attribute (`pa_*`) becomes a global
+  attribute (created when missing; the file does not carry its label, so it is named after its slug, e.g.
+  `pa_shoe-size` → "Shoe size", and can be renamed under Products › Attributes) with the product's terms as options;
+  a custom attribute keeps its `A | B` values. Variations take their `attribute_*` values.
+- **Terms**: `product_cat` (with the hierarchy), `product_tag`, `product_shipping_class` and the `pa_*` terms. A
+  product without a category goes to Uncategorized. `product_visibility` sets "featured" and the catalog visibility
+  (`exclude-from-catalog` / `exclude-from-search`; the older `_featured` / `_visibility` meta is read too). Category
+  term meta (thumbnail, display type, order) is not imported.
+- **Images**: `_thumbnail_id` (product and variation image) and `_product_image_gallery` are mapped to the imported
+  attachments, which are attached to their product. Links in descriptions to the old uploads are rewritten.
+- **Links**: upsells (`_upsell_ids`), cross-sells (`_crosssell_ids`) and grouped children are remapped to the
+  imported products; ids of products that are not in the file are dropped.
+- **Reviews**: product comments come with their comment meta (`rating`, `verified`), and the average rating is
+  recalculated. `total_sales` and the stored rating counters are not copied.
+- Other post meta (custom fields, SEO plugins) is kept on the product post like for posts; the WooCommerce keys
+  above are read into the product data instead of being copied.
+- **Not imported**: orders (`shop_order`), refunds, coupons (`shop_coupon`) and subscriptions are counted and
+  reported ("Skipped N orders / M coupons"). Customers are not in a WXR file (only post authors are). A WooCommerce
+  site with High-Performance Order Storage does not export orders to WXR at all.
+- **Running it again**: a product with the same slug and name is skipped ("Product … already exists"), and so are
+  its variations that have the same attributes; a variation that is missing (an import that stopped half way) is
+  added. A SKU already used by another product here is left empty and named in the report.
