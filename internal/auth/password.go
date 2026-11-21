@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -136,9 +137,17 @@ var (
 // reports false. Callers use it when the user does not exist, so the response time does not tell an
 // unknown user from a wrong password.
 func CheckDummyPassword(ctx context.Context, password string) {
+	dummyChecks.Add(1)
 	dummyOnce.Do(func() { dummyHash, _ = HashPassword(RandomToken(16)) })
 	_, _ = CheckPasswordCtx(ctx, password, dummyHash)
 }
+
+// dummyChecks counts CheckDummyPassword calls, so tests can check that a path pays the argon2id
+// pass without timing it (wall-clock comparisons are flaky on shared CI runners).
+var dummyChecks atomic.Int64
+
+// DummyPasswordChecks reports how many times CheckDummyPassword has run.
+func DummyPasswordChecks() int64 { return dummyChecks.Load() }
 
 // RandomToken returns n random bytes encoded as URL-safe base64.
 func RandomToken(n int) string {
