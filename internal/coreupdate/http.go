@@ -21,5 +21,5 @@ func (httpClient) ok(ctx context.Context, url string) bool {
 		return false
 	}
 	resp.Body.Close()
-	return resp.StatusCode < 500
+	return resp.StatusCode == http.StatusOK
 }

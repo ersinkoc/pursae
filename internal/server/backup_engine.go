@@ -71,6 +71,7 @@ type bmgrSelection struct {
 	UserIDs    []int64
 	Note       string
 	Kind       string
+	NoFiles    bool // the tables only: no media, theme or plugin files (pre-update backups)
 }
 
 // bmgrEntry is a stored archive as the screen lists it.
@@ -255,6 +256,9 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 		return "", err
 	}
 	set, groups := sc.resolve(sel)
+	if sel.NoFiles {
+		groups = nil
+	}
 	if len(set) == 0 && len(groups) == 0 {
 		return "", errors.New("nothing is selected")
 	}
@@ -271,6 +275,8 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 		prefix = "pre-restore"
 	case bmgrScheduleKind:
 		prefix = bmgrScheduleKind
+	case bmgrPreUpdateKind:
+		prefix = bmgrPreUpdateKind
 	}
 	name := fmt.Sprintf("%s-%s-%s.zip", prefix, time.Now().Format("20060102-150405"), bmgrToken())
 	tmp := filepath.Join(dir, name+".part")

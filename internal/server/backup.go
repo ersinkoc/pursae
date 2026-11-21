@@ -86,7 +86,7 @@ var bmgrCategories = []bmgrCategory{
 }
 
 // bmgrNever are tables that are never exported: they only make sense on the site that owns them.
-var bmgrNever = map[string]bool{"schema_migrations": true, "sessions": true, "transients": true, "jobs": true}
+var bmgrNever = map[string]bool{"schema_migrations": true, "schema_meta": true, "sessions": true, "transients": true, "jobs": true}
 
 // bmgrKeepSettings are the options this site keeps when a backup is restored over it: its own secret
 // (so cookies and nonces stay valid), its address (rewritten from the archive's) and this plugin's state.

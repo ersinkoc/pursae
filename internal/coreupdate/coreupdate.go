@@ -234,7 +234,8 @@ func SwapPrev(exe, from, to string) error {
 	return nil
 }
 
-// WaitHealthy asks url until it answers below 500 (true) or ctx ends (false).
+// WaitHealthy asks url (the new binary's /readyz) every two seconds until it answers 200 OK (true)
+// or ctx ends (false). Redirects are not followed and count as not ready.
 func WaitHealthy(ctx context.Context, url string) bool {
 	client := &httpClient{}
 	for {

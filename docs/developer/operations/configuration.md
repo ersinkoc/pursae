@@ -26,6 +26,7 @@ edited in the admin.
 | `WPGO_LANG_DIR` | `languages/` next to uploads | installed language packs (Settings › General › Site Language, Dashboard › Updates › Translations) |
 | `WPGO_TRANSLATIONS_API` | `https://api.wordpress.org/translations` | the translation API language packs are downloaded from (a mirror, or a fake in tests) |
 | `WPGO_BIN_DIR` | — (`/data/bin` in the image) | persistent directory `wpgo launch` installs the binary into, so a core update made from the admin survives a container restart ([upgrading](../getting-started/upgrading.md)) |
+| `WPGO_ALLOW_OLDER_BINARY` | unset | `1` lets a binary start on a database whose schema needs a newer Pursae. Every migration run records in the `schema_meta` table the oldest release that may run on the schema (`min_binary_version`, raised only by a release whose migrations remove or change something older releases use, never lowered). A binary that finds migrations it does not know **and** is older than that release refuses to start (`serve`, `migrate` and every command that opens the database) with the version it needs; restore a backup taken before the update or install that version instead. With this variable it starts anyway, logs the condition, and `/readyz` answers `503` until a compatible binary runs. An older binary that is still at or above the floor starts normally and logs a warning once. **Emergency use only** |
 | `WPGO_LISTEN_FD` | — | **internal**: set by the running binary when it hands its listening socket to an updated binary; do not set it yourself |
 
 ## Database pool

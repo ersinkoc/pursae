@@ -283,6 +283,9 @@ func TestMigrateIsIdempotent(t *testing.T) {
 	if len(first) != len(files) {
 		t.Errorf("first run applied %d migrations, want %d", len(first), len(files))
 	}
+	if floor, err := MinBinary(ctx, pool); err != nil || floor != MinCompatibleBinary {
+		t.Errorf("min_binary_version = %q (%v), want %s", floor, err, MinCompatibleBinary)
+	}
 	second, err := Migrate(ctx, pool)
 	if err != nil {
 		t.Fatal(err)

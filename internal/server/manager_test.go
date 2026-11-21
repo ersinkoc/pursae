@@ -576,6 +576,16 @@ func TestCoreReinstallPrevious(t *testing.T) {
 	if _, _, loc := post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {nonce}, "version": {"0.0.2"}}); !strings.Contains(loc, "error=") {
 		t.Errorf("reinstall of another version: %s", loc)
 	}
+	// The schema guard: 0.0.1 is below the floor the migrations recorded, so it would not start.
+	if _, _, loc := post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {nonce}, "version": {"0.0.1"}}); !strings.Contains(loc, "cannot+run+on+this+database") {
+		t.Errorf("reinstall below the schema floor: %s", loc)
+	}
+	if b, _ := os.ReadFile(target); !bytes.Equal(b, newBin) {
+		t.Fatal("the executable changed although the reinstall was refused")
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE schema_meta SET value = '0.0.1' WHERE key = 'min_binary_version'`); err != nil {
+		t.Fatal(err)
+	}
 	if code, _, _ := post(t, c, base+"/wp-admin/update-core?action=do-core-reinstall", url.Values{"_wpnonce": {"bad"}, "version": {"0.0.1"}}); code == http.StatusOK {
 		t.Error("reinstall without a valid nonce")
 	}

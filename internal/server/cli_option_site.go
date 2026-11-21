@@ -816,7 +816,7 @@ func registerSearchReplaceCLI(r *cli.Registry, e *cliEnv) {
 		Short: "Search and replace a string in the database (e.g. to move the site to a new URL).",
 		Long: "Works on every text, varchar, json and jsonb column of the site's tables, except generated columns,\n" +
 			"primary keys and tables that only make sense on the running site (sessions, transients, jobs,\n" +
-			"schema_migrations). JSON values are searched in their stored text form with the strings JSON-escaped,\n" +
+			"schema_migrations, schema_meta). JSON values are searched in their stored text form with the strings JSON-escaped,\n" +
 			"so object keys match too. Everything runs in one transaction: an error changes nothing.\n\n" +
 			"The options auth_secret and siteurl are skipped unless --all-options is given; change the address\n" +
 			"with `option update home <url>` and `option update siteurl <url>`. Running servers reload changed\n" +

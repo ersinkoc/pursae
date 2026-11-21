@@ -22,8 +22,18 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   then migrates to the current code and checks that every seeded value, login and file survived.
 - Migration lint: new migrations need a unique `NNNN_name.sql` number, and destructive statements
   (DROP TABLE/COLUMN, ALTER … TYPE, RENAME) need a `-- pursae:contract` marker.
+- Schema guard: the database records the oldest release that may run on it (`schema_meta`, floor
+  0.2.4). A binary below the floor that finds migrations it does not know refuses to start with an
+  actionable message; `WPGO_ALLOW_OLDER_BINARY=1` overrides it. `/readyz` reports the condition.
+- Automatic core updates write a database backup (`pre-update-*.zip`, newest 3 kept) first and skip
+  the update, with a notice in Dashboard › Updates, when the backup fails.
 
 ### Changed
 
+- A core update is confirmed when `/readyz` answers 200 (database reachable, no pending migration,
+  schema guard satisfied) instead of when `/wp-login` answers below 500.
+- Automatic updates stay within the installed minor version; 0.3.x → 0.4.0 needs a click in
+  Dashboard › Updates.
+- Reinstall refuses to go back to a release below the schema's floor.
 - Docs: `upgrading.md` describes the expand/contract policy for schema changes instead of claiming that
   releases only add schema (0028, 0038 and 0105 drop tables or columns).

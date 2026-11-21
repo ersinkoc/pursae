@@ -32,11 +32,13 @@ The restart does not drop visitors: the listening socket is handed to the new bi
 meanwhile wait in the kernel's queue until the new version accepts them — a second or two, no
 error page, also behind a proxy such as Traefik in Dokploy.
 
-**Rollback.** The new binary confirms the update once it answers requests (within two minutes);
+**Rollback.** The new binary confirms the update once it is ready: `/readyz` answers 200, which means the
+database is reachable, no migration is pending and the [schema guard](#schema-changes) accepts it
+(within two minutes);
 until then `.update.json` stays *pending*. If it dies first and is started again — by Docker's
 `restart: unless-stopped` (set in `docker/compose.yaml`), systemd's `Restart=always` or any other
 supervisor — the second start puts `<executable>.prev` back and runs it, and Dashboard › Updates
-says *Pursae X did not start, so the site went back to Y*. If it keeps running but never answers
+says *Pursae X did not start, so the site went back to Y*. If it keeps running but never becomes ready
 within the two minutes, it puts `<executable>.prev` back itself and hands the socket over to it
 (*Pursae X started but did not answer requests, so the site went back to Y*). If re-executing fails
 outright, the previous binary is put back at once. Without a supervisor nothing restarts a crashed process, so
@@ -48,11 +50,19 @@ backup.
 
 **Automatic updates.** Dashboard › Updates › *Automatic updates* (off by default, option
 `pursae_core_auto_update`) lets the daily Manager check (`wpgo_hub_check`) install a newer release
-by itself, through the same steps as the button, rollback included. A release the site went back
-from is remembered (`pursae_core_auto_update_skip`) and not installed automatically again — a newer
-release is, and the button still offers it. The screen shows the last attempt: installed, failed
-(nothing changed, with the reason) or rolled back. Sites that cannot replace their binary (see
-below) get no automatic updates either.
+by itself, through the same steps as the button, rollback included. Only **patch releases of the
+running minor version** are installed automatically (0.3.1 → 0.3.2); a new minor or major version
+(0.3.x → 0.4.0) waits for a click on *Update to version X*. Before each automatic update the
+database is backed up into the backups directory (`WPGO_BACKUPS_DIR`) as a database-only Backup
+Manager archive (`pre-update-*.zip`: every table and user, no media, theme or plugin files), also
+when the Backup Manager plugin is off; the newest **3** of these are kept. When that backup fails
+(the disk is full, another backup or restore is running) the update is skipped, nothing changes and
+the next daily check tries again. A release the site went back from is remembered
+(`pursae_core_auto_update_skip`) and not installed automatically again — a newer release is, and the
+button still offers it. The screen shows the last attempt: installed (with the backup's name),
+failed (nothing changed, with the reason), skipped because the backup failed, waiting for a click
+(new minor version) or rolled back. Sites that cannot replace their binary (see below) get no
+automatic updates either.
 
 **Keeping the previous binary.** Once the update is confirmed, `.update.json` records it as
 *confirmed* (with the version the site came from) and `<executable>.prev` is kept for **24 hours**;

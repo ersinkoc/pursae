@@ -143,6 +143,16 @@ func (e *cliEnv) Pool(ctx context.Context) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("database: %w (check DATABASE_URL)", err)
 	}
+	// The schema guard (internal/db/schema_guard.go): a binary below the floor a newer release
+	// recorded does not touch the database; a newer but compatible schema is only a warning.
+	if st, err := db.GuardSchema(ctx, pool, Version); err != nil {
+		pool.Close()
+		return nil, err
+	} else if st.TooOld() {
+		fmt.Fprintf(e.stderr, "Warning: %s is set: %v\n", db.AllowOlderBinaryEnv, &db.BinaryTooOldError{Status: st})
+	} else if st.Newer() {
+		fmt.Fprintf(e.stderr, "Warning: %s.\n", st.Warning())
+	}
 	if n, err := db.Pending(ctx, pool); err != nil {
 		fmt.Fprintf(e.stderr, "Warning: could not check for pending migrations: %v\n", err)
 	} else if n > 0 {
