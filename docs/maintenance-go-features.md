@@ -113,7 +113,7 @@ Legend: **✓** implemented · **≈** implemented differently (reason given) ·
 | Subscribe form | ✓ E-mails go to the plugin's own `maintenance_subscribers` table, created on activation (no core migration). Nonce, honeypot, address validation, de-duplication. Per-address rate limit. Optional double opt-in (signed confirmation link; unconfirmed addresses are never mailed). Optional e-mail to the admin for each new (confirmed) subscriber, through the core mail queue. |
 | Notify subscribers | ✓ Subscribers tab: "Send to subscribers" (subject, message, `%sitetitle%`/`%siteurl%`) and an automatic mail when maintenance mode is switched off (manually or by the countdown). One mail per confirmed subscriber, once, through the mail queue (Pursae SMTP), each with a signed unsubscribe link (confirmation button, POST). |
 | GDPR / privacy note | ✓ Optional required-consent checkbox with your text and a link to the published Privacy Policy page. Only the e-mail, the time and the consent are stored, with no IP or user agent. |
-| Subscribers list | ✓ Subscribers tab: list, bulk delete, CSV export (protected against formula injection) |
+| Subscribers list | ✓ Subscribers tab: list, bulk delete, CSV export (protected against formula injection). Tools › Export / Erase Personal Data export and delete a subscriber's address. |
 | Mailing-list integrations (Mailchimp, Zapier…) | ✗ Needs third-party accounts and API keys; the CSV export covers the handover |
 | Social icons | ✓ Facebook, X, Instagram, LinkedIn, YouTube, Pinterest, WhatsApp, Reddit, Twitch, Spotify and e-mail. They use dashicons served from `/wp-includes`; `javascript:` and other non-http(s) URLs are dropped. |
 | Custom HTML | ✓ |

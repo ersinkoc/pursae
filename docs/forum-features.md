@@ -125,6 +125,13 @@ While registration is closed, Google cannot create accounts.
 - **Editing**: members edit their own posts within the edit window (30 minutes, 0 to turn it off,
   up to a week); moderators always can. Edited posts say so.
 
+## Personal data
+
+Tools › Export Personal Data exports a member's topics and replies (with the stored author IP), forum
+profile settings, likes, points, subscriptions and the reports they filed. Erasing removes the author
+IP from their posts, deletes their subscriptions and saved draft, and takes their name and note off
+their reports; the posts, likes and points stay with the account until it is deleted.
+
 ## The admin screen
 
 **Forums** in the admin menu, after Comments, visible with `forum_moderate`:
