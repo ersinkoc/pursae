@@ -13,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"wpgo/internal/auth"
 	"wpgo/internal/mail"
 	"wpgo/internal/store"
 )
@@ -193,8 +192,7 @@ func (s *Server) asAccountAction(c *gin.Context, u *store.User, d *asAccountData
 	f := d.F
 	back := "/wp-admin/admin?page=" + asSlug + "-account"
 	needPassword := func() bool {
-		ok, _ := auth.CheckPassword(c.PostForm("adminsec_password"), u.PasswordHash)
-		return ok
+		return s.checkUserPassword(c.Request.Context(), u, c.PostForm("adminsec_password"))
 	}
 	required := d.Enroll.Required
 	if required == "" {

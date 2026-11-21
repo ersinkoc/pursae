@@ -246,7 +246,7 @@ func (s *Server) forumLoginPost(c *gin.Context) {
 	u, err := s.store.UserByLoginOrEmail(ctx, login)
 	ok := false
 	if err == nil {
-		ok, _ = auth.CheckPasswordCtx(ctx, pass, u.PasswordHash)
+		ok = s.checkUserPassword(ctx, u, pass)
 	} else {
 		auth.CheckDummyPassword(ctx, pass) // no timing difference for unknown users
 	}
@@ -739,7 +739,7 @@ func (s *Server) forumAccountFormPost(c *gin.Context, action string) {
 				fail(http.StatusTooManyRequests, "Too many failed attempts. Please try again in 15 minutes.")
 				return
 			}
-			if ok, _ := auth.CheckPasswordCtx(ctx, cur, u.PasswordHash); !ok || cur == "" {
+			if cur == "" || !s.checkUserPassword(ctx, u, cur) {
 				s.auth.AttemptFailed(c, id)
 				fail(http.StatusUnprocessableEntity, "Your current password is not correct.")
 				return
