@@ -10,6 +10,56 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-22
+
+A livelier login screen, a readable Pursae News box, the team on About Pursae, forum data anonymized on
+erasure, WordPress-matching pattern permissions, and the last Elementor-derived parts removed (the
+project is GPL-2.0-or-later throughout).
+
+### Added
+
+- Login screens: the Pursae mascot comes alive. Its eyes follow the pointer, it glances around and
+  blinks, and it looks away while you type a hidden password (and peeks when you show it).
+  Reduced-motion users get a static mark. Sites with a custom Hub logo are unchanged.
+- About Pursae: an "Our team" section with photo cards and social links (photos bundled with the admin,
+  light and dark modes, Turkish translation).
+
+### Changed
+
+- Pursae Forum: Tools › Erase Personal Data anonymizes a member's forum data. Their topics and replies
+  stay published as "Deleted user", with author, IP and revision authorship removed. Likes they gave stay
+  as anonymous likes, so no other member's points change. Their points, subscriptions and forum profile
+  (bio, uploaded photo, badges, settings, draft) are deleted. Reports they filed stay without reporter or
+  note. The account and its forum sign-in are kept.
+- Pursae Forum: posts without an author (erased or deleted accounts) show "Deleted user" across the
+  front end, replacing "Former member" and the missing name in lists.
+- The admin footer's Pursae link goes to pursae.com instead of GitHub.
+- The plugin activation screen ("How would you like to set it up?") is left-aligned like the setup guide.
+
+### Fixed
+
+- Dashboard › Pursae News shows the release notes readably: rendered Markdown (no raw `###`, `-` or
+  backticks, no double-escaped `&#39;`), a localized release date with relative age, an Update available /
+  New badge, a short digest with colour-coded Added / Changed / Fixed / Security labels, and links to the
+  full notes, Updates and Update now. Dashboard › Updates shows the full release notes.
+- Patterns: creating a pattern requires `publish_posts`, as in WordPress. Contributors can still read and
+  use patterns but no longer see Add Pattern, Import from JSON or the editor's Create pattern item, and
+  `POST /wp/v2/blocks` returns 403 `rest_cannot_create` for them.
+- Geist, Geist Mono, Google Sans and Google Sans Code from the Web Builder's font library are served
+  locally like the other library fonts.
+
+### Removed
+
+- The last Elementor-derived parts: migrations 0005–0007 are empty steps (existing databases keep their
+  history; 0028 already dropped the tables), the Google Fonts list generated from Elementor is replaced by
+  the Web Builder's own font library, and Elementor's unused plugin icon is deleted. NOTICE no longer lists
+  Elementor, and `LICENSES/GPL-3.0.txt` is gone.
+
+### Database
+
+- Migration 0109: `forum_likes.user_id` is nullable (anonymous likes); one like per member and post is
+  enforced by a partial unique index. It only adds, so 0.4.0 still runs on the new schema.
+
 ## [0.4.0] - 2026-11-21
 
 Editor gaps, complete personal-data tools, licensing notices and a security policy, plus WordPress
