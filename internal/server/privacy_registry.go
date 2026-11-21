@@ -12,18 +12,23 @@ import (
 )
 
 // Personal data exporters and erasers (wp_privacy_personal_data_exporters / _erasers). The core's own
-// exporters (profile, comments, media) live in admin_tools2.go; every other feature with personal
-// data registers here so Tools > Export / Erase Personal Data covers it:
+// exporters (profile, session tokens, comments, media) live in admin_tools2.go; every other feature
+// with personal data registers here so Tools > Export / Erase Personal Data covers it:
 //   - Pursae Commerce: orders and download permissions (the erasure follows Settings > Accounts &
 //     Privacy: "Remove personal data from orders on request", "Remove access to downloads on request"),
 //   - Pursae Commerce account data: wishlists, points log, subscriptions and memberships of the user
 //     with that e-mail (wishlists are erased, subscriptions anonymized like orders, the rest retained),
-//   - Pursae SMTP: the e-mail log rows addressed to the person,
+//   - Pursae Commerce customer data (billing / shipping fields), saved payment methods and gift cards,
+//   - Pursae SMTP: the e-mail log rows addressed to the person or contact form notifications answering
+//     to them, and the finished mail and contact form webhook jobs of the queue,
+//   - Pursae Contact Form entries and Web Builder form submissions that carry the address,
+//   - maintenance mode subscribers,
+//   - Pursae Forum: topics, replies, profile, likes, points, subscriptions and reports,
+//   - security and activity logs of the account (exported; retained for the site's security),
 //   - Wasm plugins: the pursae_personal_data_export filter and the pursae_personal_data_erase action
 //     (docs/developer/plugins/hooks.md).
-//
-// Pursae Contact Form keeps no submissions and Pursae Pixel / Cookie log no personal data, so they
-// have nothing to export or erase.
+// The built-in sources other than Commerce's are in privacy_sources.go, which also lists why the
+// remaining tables with visitor data are not covered (anonymous or hashed data, consent proof).
 
 type personalDataExporter func(ctx context.Context, s *Server, email string) []exportGroup
 
@@ -59,6 +64,14 @@ func init() {
 	registerPersonalData(gooPersonalDataExporter, gooPersonalDataEraser)
 	registerPersonalData(gooAccountDataExporter, gooAccountDataEraser)
 	registerPersonalData(smtpLogExporter, smtpLogEraser)
+	registerPersonalData(gooCustomerDataExporter, gooCustomerDataEraser)
+	registerPersonalData(gooGiftCardsExporter, gooGiftCardsEraser)
+	registerPersonalData(gontactEntriesExporter, gontactEntriesEraser)
+	registerPersonalData(wbSubmissionsExporter, wbSubmissionsEraser)
+	registerPersonalData(maintSubscribersExporter, maintSubscribersEraser)
+	registerPersonalData(forumPrivacyExporter, forumPrivacyEraser)
+	registerPersonalData(nil, mailJobsEraser)
+	registerPersonalData(securityLogExporter, securityLogEraser)
 }
 
 // registeredPersonalData runs every registered exporter, then the plugin filter.
@@ -277,15 +290,22 @@ func gooPersonalDataEraser(ctx context.Context, s *Server, email string) eraseRe
 
 // ---- Pursae SMTP -----------------------------------------------------------------------------
 
+// smtpLogMatch is a logged e-mail sent to the address $1, or a contact form notification answering
+// to it (the visitor's address from a posted field in Reply-To, "Name <address>" or bare). Other
+// mail is not matched by Reply-To: a fixed Reply-To (the site admin on a form's receipt, the shop
+// owner on store e-mail) is the site's own address, and the mail is about the person it is sent to.
+const smtpLogMatch = `(EXISTS (SELECT 1 FROM unnest(to_addrs) a WHERE lower(a) = lower($1))
+	OR (initiator = '` + msContactFormInitiator + `' AND (lower(reply_to) = lower($1) OR position(lower('<' || $1 || '>') IN lower(reply_to)) > 0)))`
+
 func smtpLogExporter(ctx context.Context, s *Server, email string) []exportGroup {
 	rows, err := s.store.Pool.Query(ctx, `SELECT subject, from_addr, status, date_sent FROM wpmailsmtp_emails_log
-		WHERE EXISTS (SELECT 1 FROM unnest(to_addrs) a WHERE lower(a) = lower($1)) ORDER BY id`, email)
+		WHERE `+smtpLogMatch+` ORDER BY id`, email)
 	if err != nil {
 		return nil
 	}
 	defer rows.Close()
 	dateFmt := s.settings.String("date_format") + " " + s.settings.String("time_format")
-	g := exportGroup{ID: "email-log", Label: "Email log", Description: "E-mails this site sent to the address."}
+	g := exportGroup{ID: "email-log", Label: "Email log", Description: "E-mails this site sent to the address, or on its behalf."}
 	for rows.Next() {
 		var subject, from, status string
 		var at time.Time
@@ -300,7 +320,7 @@ func smtpLogExporter(ctx context.Context, s *Server, email string) []exportGroup
 }
 
 func smtpLogEraser(ctx context.Context, s *Server, email string) eraseResult {
-	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM wpmailsmtp_emails_log WHERE EXISTS (SELECT 1 FROM unnest(to_addrs) a WHERE lower(a) = lower($1))`, email)
+	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM wpmailsmtp_emails_log WHERE `+smtpLogMatch, email)
 	if err != nil {
 		return eraseResult{Err: err}
 	}

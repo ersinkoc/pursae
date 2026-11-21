@@ -191,6 +191,26 @@ func (sub *gfSubmission) composeBody(m gfMail, subject string) (text, htmlBody s
 	return text, htmlBody
 }
 
+// gontactVisitorReplyKind is the Message.Kind of a form mail whose Reply-To comes from a posted
+// field (Mail's default "Reply-To: [your-email]"): the address the visitor typed. Privacy requests
+// match such a message by its Reply-To; a fixed Reply-To (Mail (2)'s [_site_admin_email], a staff
+// address) does not mark the mail as being about that address.
+const gontactVisitorReplyKind = "gontact_visitor_reply"
+
+// gfHasFieldTag reports whether a template holds a mail-tag of a posted field (not a special
+// [_...] tag and not an escaped [[tag]]).
+func gfHasFieldTag(v string) bool {
+	for _, m := range gfMailTagRe.FindAllStringSubmatch(v, -1) {
+		if m[1] == "[" && m[4] == "]" {
+			continue
+		}
+		if !strings.HasPrefix(m[2], "_") {
+			return true
+		}
+	}
+	return false
+}
+
 // gfAddressList splits a comma list of addresses, keeping only valid ones.
 func gfAddressList(v string) []string {
 	var out []string
@@ -228,6 +248,9 @@ func (sub *gfSubmission) composeMail(m gfMail) (wpmail.Message, bool) {
 		case "reply-to":
 			if list := gfAddressList(v); len(list) > 0 {
 				msg.ReplyTo = list[0]
+				if _, raw, _ := strings.Cut(h, ":"); gfHasFieldTag(raw) {
+					msg.Kind = gontactVisitorReplyKind
+				}
 			}
 		case "cc":
 			msg.Cc = append(msg.Cc, gfAddressList(v)...)

@@ -276,7 +276,7 @@ func TestGontactSubmitFlow(t *testing.T) {
 	}
 	m := jobs[0]
 	to, _ := m["To"].([]any)
-	if len(to) != 1 || to[0] != "<admin@example.test>" || m["Subject"] != `Toggle Site "Hello there"` || m["ReplyTo"] != "<ann@example.org>" {
+	if len(to) != 1 || to[0] != "<admin@example.test>" || m["Subject"] != `Toggle Site "Hello there"` || m["ReplyTo"] != "<ann@example.org>" || m["Kind"] != gontactVisitorReplyKind {
 		t.Fatalf("mail: %v", m)
 	}
 	body2, _ := m["Body"].(string)

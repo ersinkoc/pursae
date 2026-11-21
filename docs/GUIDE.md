@@ -209,6 +209,34 @@ docker compose -f docker/compose.yaml exec -T db pg_restore -U wpgo -d wpgo --cl
 
 Archives in the `backups` volume stay on the same server; copy them elsewhere too.
 
+### Personal data requests (KVKK / GDPR)
+
+Tools › Export Personal Data and Tools › Erase Personal Data work as in WordPress. A request is
+matched on the e-mail address and, where data belongs to an account, on the user with that address.
+They cover:
+
+| Data | Export | Erase |
+|------|--------|-------|
+| Profile, session tokens, media (core) | ✓ | kept with the account (as in WordPress) |
+| Comments | ✓ | anonymized |
+| Pursae Contact Form entries, Web Builder form submissions (section and code forms) whose fields hold the address | ✓ | deleted |
+| Maintenance page subscribers | ✓ | deleted |
+| Pursae Forum topics and replies | ✓ | author IP removed; posts kept with the account |
+| Forum profile settings, likes, points | ✓ | kept with the account (draft removed) |
+| Forum subscriptions | ✓ | deleted |
+| Forum reports filed by the person | ✓ | reporter and note removed, report kept for the moderators |
+| Pursae Commerce orders, downloads, subscriptions | ✓ | per Commerce › Settings › Accounts & Privacy; open orders and subscriptions kept |
+| Commerce customer billing / shipping fields, saved payment methods | ✓ | deleted; a saved card an active subscription renews with is kept until the subscription ends or changes method |
+| Commerce gift cards (sender, recipient or redeemer) | ✓ (code shortened; a redeemer sees no sender, recipient or message) | the person's side (and, for sender or recipient, the message) cleared once the card is used up or expired; cards with a balance, active or disabled, kept |
+| Commerce wishlists, points, memberships | ✓ | wishlists deleted, the rest kept with the account |
+| Pursae SMTP e-mail log (sent to the address, or a contact form notification with the visitor's address as Reply-To), finished mail jobs, finished or failed contact form webhook jobs | log ✓ | deleted |
+| Login attempts, security log, known sign-in IPs, AI connector activity | ✓ | kept for the site's security until their retention period ends |
+
+What is kept is listed with its reason on the request screen. Pursae Analytics and the cookie
+consent log hold no data that can be matched to a person (hashed or truncated values only); the
+consent log is also the proof of consent the site has to keep. Wasm plugins add their own data with
+the `pursae_personal_data_export` / `pursae_personal_data_erase` hooks.
+
 ## Everyday commands
 
 ```sh

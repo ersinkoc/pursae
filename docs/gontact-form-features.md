@@ -15,7 +15,7 @@ Legend: ✅ implemented · ◐ implemented differently / partly · ✗ left out 
 | Post meta `_form`, `_mail`, `_mail_2`, `_messages`, `_additional_settings`, `_locale`, `_hash` | ✅ same keys in the post's `meta` jsonb; `post_content` keeps the form template too |
 | Default form, Mail, Mail (2), messages templates (`WPCF7_ContactFormTemplate`) | ✅ identical defaults |
 | "Contact form 1" created on first activation | ✅ |
-| Flamingo storage of submissions | ✅ built in: table `gontact_entries` (accepted submissions only, stored before the mail is queued); Contact › Entries lists, filters, searches, shows, deletes and exports them as CSV (formula-safe); retention in days (hourly event); `do_not_store: true` turns it off per form |
+| Flamingo storage of submissions | ✅ built in: table `gontact_entries` (accepted submissions only, stored before the mail is queued); Contact › Entries lists, filters, searches, shows, deletes and exports them as CSV (formula-safe); retention in days (hourly event); `do_not_store: true` turns it off per form; Tools › Export / Erase Personal Data export and delete the entries whose fields hold the person's address |
 | Capabilities `wpcf7_edit_contact_form(s)`, `wpcf7_read_contact_forms`, `wpcf7_delete_contact_form`, `wpcf7_manage_integration`, `wpcf7_submit` | ◐ mapped like CF7's `map_meta_cap` defaults: edit/delete → `publish_pages`, read → `edit_posts`, integration → `manage_options`, submit → `read` |
 
 ## 2. Admin screens (menu **Contact**, `dashicons-email`, after Comments)

@@ -14,6 +14,9 @@ inventory like the other built-in plugin pages.
 - Other tables: `goo_attributes`, `goo_coupons`, `goo_tax_rates`, `goo_shipping_zones`,
   `goo_shipping_methods`, `goo_sessions`, `goo_download_permissions`, `goo_api_keys`, `goo_webhooks`.
   Migrations: `0015_goocommerce.sql` and the `0016_goo_*` files of the modules.
+- Personal data requests (Tools › Export / Erase Personal Data) cover orders, downloads, customer
+  billing / shipping fields, saved payment methods, gift cards, wishlists, points, subscriptions and
+  memberships; see "Personal data requests" in docs/GUIDE.md for what is erased and what is kept.
 
 ## Modules
 

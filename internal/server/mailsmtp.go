@@ -469,11 +469,17 @@ func msClassify(subject string) (key, label string) {
 	return "", ""
 }
 
+// msContactFormInitiator is the log initiator of a contact form mail that answers to the visitor
+// (privacy requests match these rows by their Reply-To).
+const msContactFormInitiator = "Pursae Contact Form"
+
 func (s *Server) msDeliver(ctx context.Context, base *gomail.Mailer, msg gomail.Message, defaultFrom string) error {
 	o := s.msLoad()
 	ctrl, label := msClassifyMsg(msg)
 	source := "Pursae"
-	if label != "" {
+	if msg.Kind == gontactVisitorReplyKind {
+		source = msContactFormInitiator
+	} else if label != "" {
 		source = "Pursae: " + label
 	} else if msOwnFrom(base, msg, defaultFrom) != "" {
 		source = "Form"
