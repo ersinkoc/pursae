@@ -70,9 +70,7 @@ func (api *restAPI) registerMisc() {
 		restJSON(c, http.StatusOK, out)
 	}), nil)
 	api.register("oembed/1.0", "/oembed/1.0/proxy", g(api.oembedProxy), nil)
-	api.register("wp-block-editor/v1", "/wp-block-editor/v1/url-details", g(func(c *gin.Context, r *restRequest) {
-		restJSON(c, http.StatusOK, map[string]any{"title": "", "icon": "", "description": "", "image": ""})
-	}), nil)
+	api.register("wp-block-editor/v1", "/wp-block-editor/v1/url-details", g(api.urlDetails), nil) // rest_url_details.go
 }
 
 func typeObject(home, slug, name, singular, base string, hierarchical bool, supports map[string]bool, taxonomies []string, labels map[string]string, edit bool) map[string]any {
@@ -1292,6 +1290,7 @@ func (api *restAPI) registerMedia() {
 		http.MethodPost:   api.updateMedia,
 		http.MethodDelete: api.deleteMedia,
 	}, nil)
+	api.register("wp/v2", `/wp/v2/media/(?P<id>[\d]+)/edit`, map[string]restHandler{http.MethodPost: api.editMedia}, nil) // rest_media_edit.go
 	api.register("wp/v2", `/wp/v2/media/(?P<id>[\d]+)/post-process`, map[string]restHandler{http.MethodPost: func(c *gin.Context, r *restRequest) {
 		a, err := api.s.store.GetAttachment(c, r.ID())
 		if err != nil {
