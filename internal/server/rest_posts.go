@@ -142,8 +142,12 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		}
 	}
 	if p.Type == "wp_block" {
-		out["wp_pattern_sync_status"] = metaString(p.Meta, "wp_pattern_sync_status")
-		out["wp_pattern_category"] = []int64{}
+		// The sync status is both a field and the registered meta key the editor writes
+		// (register_post_meta( 'wp_block', 'wp_pattern_sync_status' )).
+		sync := metaString(p.Meta, "wp_pattern_sync_status")
+		out["wp_pattern_sync_status"] = sync
+		out["meta"].(map[string]any)["wp_pattern_sync_status"] = sync
+		out["wp_pattern_category"] = termIDs(s.postTerms(c.Request.Context(), p.ID, "wp_pattern_category"))
 	}
 	s.golylangRESTFields(c, pllPost, p.ID, p.Type, out) // Golylang: lang and translations
 	if ctxName == "edit" {
@@ -193,6 +197,11 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 			{"taxonomy": "post_tag", "embeddable": true, "href": home + "/wp-json/wp/v2/tags?post=" + itoa64(p.ID)},
 		}
 	}
+	if p.Type == "wp_block" {
+		extra["wp:term"] = []map[string]any{
+			{"taxonomy": "wp_pattern_category", "embeddable": true, "href": home + "/wp-json/wp/v2/wp_pattern_category?post=" + itoa64(p.ID)},
+		}
+	}
 	if ctxName == "edit" && u != nil {
 		plural := "posts"
 		if p.Type == "page" {
@@ -209,6 +218,11 @@ func (s *Server) restPost(c *gin.Context, p *store.Post, ctxName string) map[str
 		}
 		if u.Can("edit_others_"+plural, nil) {
 			extra["wp:action-assign-author"] = []map[string]any{{"href": self}}
+		}
+		if p.Type == "wp_block" && u.Can("edit_posts", nil) {
+			// A flat taxonomy: creating a term needs assign_terms, like assigning one (get_available_actions()).
+			extra["wp:action-create-wp_pattern_category"] = []map[string]any{{"href": self}}
+			extra["wp:action-assign-wp_pattern_category"] = []map[string]any{{"href": self}}
 		}
 		if p.Type == "post" {
 			if u.Can("manage_categories", nil) {
@@ -368,6 +382,13 @@ func (api *restAPI) embedPost(c *gin.Context, p *store.Post, item map[string]any
 		}
 		emb["wp:term"] = []any{cl, tl}
 	}
+	if p.Type == "wp_block" {
+		pc := []any{}
+		for _, t := range api.s.postTerms(ctx, p.ID, "wp_pattern_category") {
+			pc = append(pc, api.s.restTerm(c, t, "embed"))
+		}
+		emb["wp:term"] = []any{pc}
+	}
 	item["_embedded"] = emb
 	return item
 }
@@ -415,6 +436,14 @@ func (api *restAPI) listPosts(c *gin.Context, r *restRequest, typ string) {
 	q.ExcludeID = append(q.ExcludeID, s.gooListingExclude(withPluginUser(c.Request.Context(), u), "post")...) // Goocommerce Memberships
 	if !restCollectionFilters(c, r, s.loc(), &q) {
 		return
+	}
+	if typ == "wp_block" { // the wp_pattern_category taxonomy's collection parameters
+		if ids, ok := r.IDs(c, "wp_pattern_category"); ok && len(ids) > 0 {
+			q.TermClauses = append(q.TermClauses, store.TermClause{IDs: ids})
+		}
+		if ids, ok := r.IDs(c, "wp_pattern_category_exclude"); ok && len(ids) > 0 {
+			q.TermClauses = append(q.TermClauses, store.TermClause{IDs: ids, Exclude: true})
+		}
 	}
 	// Statuses beyond publish: callers who cannot edit others' posts see only what they may read
 	// (published/private posts and their own), filtered in SQL so X-WP-Total matches the items.
@@ -637,8 +666,8 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 	if p.Meta == nil {
 		p.Meta = map[string]any{}
 	}
-	if v, ok := r.Str(c, "wp_pattern_sync_status"); ok && typ == "wp_block" {
-		p.Meta["wp_pattern_sync_status"] = v
+	if typ == "wp_block" && !restPatternFields(c, r, u, p) {
+		return
 	}
 	// Registered REST meta: only "footnotes" (a string), where the block editor keeps the
 	// core/footnotes texts. Other keys are ignored, as WordPress ignores unregistered meta.
@@ -703,6 +732,9 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		return
 	}
 	s.acfgoRESTSave(c, r.Body, p) // ACF-Go
+	if ids, ok := r.IDs(c, "wp_pattern_category"); ok && typ == "wp_block" {
+		_ = s.store.SetPostTerms(c, p.ID, "wp_pattern_category", ids)
+	}
 	if typ == "post" {
 		if ids, ok := r.IDs(c, "categories"); ok {
 			if len(ids) == 0 {
@@ -725,6 +757,37 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 		status = http.StatusCreated
 	}
 	restJSON(c, status, s.restPost(c, p, "edit"))
+}
+
+// restPatternFields reads the pattern-only fields of a wp_block save: the sync status, sent as the
+// wp_pattern_sync_status field or as meta.wp_pattern_sync_status (what the editor and the JSON import
+// send), and checks that the caller may assign the wp_pattern_category terms it sends
+// (check_assign_terms_permission(): assign_terms is edit_posts). It answers the error and returns false
+// for a bad request.
+func restPatternFields(c *gin.Context, r *restRequest, u *store.User, p *store.Post) bool {
+	sync, has := r.Str(c, "wp_pattern_sync_status")
+	if meta, ok := r.Body["meta"].(map[string]any); ok {
+		if v, ok := meta["wp_pattern_sync_status"].(string); ok {
+			sync, has = v, true
+		}
+	}
+	if has {
+		switch sync {
+		case "": // fully synced, the default
+			delete(p.Meta, "wp_pattern_sync_status")
+		case "partial", "unsynced":
+			p.Meta["wp_pattern_sync_status"] = sync
+		default:
+			restErr(c, http.StatusBadRequest, "rest_invalid_param", "Invalid parameter(s): wp_pattern_sync_status",
+				map[string]any{"params": map[string]string{"wp_pattern_sync_status": "wp_pattern_sync_status is not one of partial and unsynced."}})
+			return false
+		}
+	}
+	if _, ok := r.IDs(c, "wp_pattern_category"); ok && !u.Can("edit_posts", nil) {
+		restErr(c, http.StatusForbidden, "rest_cannot_assign_term", "Sorry, you are not allowed to assign the provided terms.")
+		return false
+	}
+	return true
 }
 
 // afterPostSave runs the save_post-time side effects (cache purge, hooks).

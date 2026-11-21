@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,6 +20,10 @@ type taxLabels struct {
 	Tax, Name, Singular, AddNew, Search, NotFound, ParentLabel, Description, Screen string
 	Hierarchical                                                                    bool
 	FilterParam                                                                     string
+	// PostType is the type the Count column lists (edit?post_type=…); "" for posts.
+	PostType string
+	// NoView: the taxonomy is not publicly queryable, so its terms have no archive to view.
+	NoView bool
 }
 
 func taxLabelsFor(tax string) (taxLabels, bool) {
@@ -33,6 +38,11 @@ func taxLabelsFor(tax string) (taxLabels, bool) {
 			Search: "Search Tags", NotFound: "No tags found.",
 			Description: "The description is not prominent by default; however, some themes may show it.",
 			Screen:      "edit-tags?taxonomy=post_tag", FilterParam: "tag"}, true
+	case "wp_pattern_category": // create_initial_taxonomies(): show_ui, not public
+		return taxLabels{Tax: "wp_pattern_category", Name: "Pattern Categories", Singular: "Pattern Category", AddNew: "Add New Category",
+			Search: "Search Pattern Categories", NotFound: "No pattern categories found.",
+			Description: "The description is shown in the pattern inserter.",
+			Screen:      "edit-tags?taxonomy=wp_pattern_category", FilterParam: "wp_pattern_category", PostType: "wp_block", NoView: true}, true
 	}
 	if l, ok := gooTaxLabels(tax); ok { // Goocommerce product taxonomies
 		return l, true
@@ -160,6 +170,12 @@ func (s *Server) termRow(c *gin.Context, lab taxLabels, t *store.Term) termRow {
 		DeleteURL: "/wp-admin/edit-tags?action=delete&taxonomy=" + lab.Tax + "&tag_ID=" + itoa64(t.ID) + "&_wpnonce=" + s.nonce(c, "delete-tag_"+itoa64(t.ID)),
 		ViewURL:   s.links(c).TermLink(t),
 		CountURL:  "/wp-admin/edit?" + lab.FilterParam + "=" + t.Slug,
+	}
+	if lab.PostType != "" {
+		r.CountURL = "/wp-admin/edit?post_type=" + lab.PostType + "&" + lab.FilterParam + "=" + url.QueryEscape(t.Slug)
+	}
+	if lab.NoView {
+		r.ViewURL = ""
 	}
 	r.PluginCols = s.golylangTermCols(c, t)
 	if t.Depth > 0 {
@@ -354,6 +370,9 @@ func (s *Server) termEdit(c *gin.Context) {
 		DeleteURL: "/wp-admin/edit-tags?action=delete&taxonomy=" + lab.Tax + "&tag_ID=" + itoa64(t.ID) + "&_wpnonce=" + s.nonce(c, "delete-tag_"+itoa64(t.ID)),
 		ViewURL:   s.links(ctx).TermLink(t),
 		IsDefault: lab.Tax == "category" && t.ID == int64(s.settings.Int("default_category"))}
+	if lab.NoView {
+		d.ViewURL = ""
+	}
 	if lab.Hierarchical {
 		all, _ := s.store.HierarchicalTerms(ctx, lab.Tax, false)
 		for _, o := range all {

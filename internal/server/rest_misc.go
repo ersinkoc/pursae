@@ -39,7 +39,6 @@ func (api *restAPI) registerMisc() {
 	api.register("wp/v2", "/wp/v2/block-patterns/categories", g(api.blockPatternCategories), nil)
 	api.register("wp/v2", "/wp/v2/pattern-directory/patterns", g(func(c *gin.Context, r *restRequest) { restJSON(c, http.StatusOK, []any{}) }), nil)
 	api.register("wp/v2", "/wp/v2/block-directory/search", g(func(c *gin.Context, r *restRequest) { restJSON(c, http.StatusOK, []any{}) }), nil)
-	api.register("wp/v2", "/wp/v2/wp_pattern_category", g(func(c *gin.Context, r *restRequest) { paginate(c, 0, 100, 1); restJSON(c, http.StatusOK, []any{}) }), nil)
 	api.register("wp/v2", "/wp/v2/templates", g(func(c *gin.Context, r *restRequest) { restJSON(c, http.StatusOK, []any{}) }), nil)
 	// The editor looks up the front-page template on every post-new. With no block template to fall
 	// back on (classic themes: block-templates is false), WordPress answers an empty object, not a
@@ -174,8 +173,9 @@ func (api *restAPI) taxonomies(c *gin.Context, r *restRequest) {
 		return o
 	}
 	all := map[string]map[string]any{
-		"category": mk("category", "Categories", "Category", "categories", true),
-		"post_tag": mk("post_tag", "Tags", "Tag", "tags", false),
+		"category":            mk("category", "Categories", "Category", "categories", true),
+		"post_tag":            mk("post_tag", "Tags", "Tag", "tags", false),
+		"wp_pattern_category": patternCategoryTaxonomy(home, edit),
 	}
 	if t := r.Params["taxonomy"]; t != "" {
 		o, ok := all[t]
@@ -186,15 +186,40 @@ func (api *restAPI) taxonomies(c *gin.Context, r *restRequest) {
 		restJSON(c, http.StatusOK, api.s.translateLabels(c, o))
 		return
 	}
-	if typ := c.Query("type"); typ != "" && typ != "post" {
-		restJSON(c, http.StatusOK, map[string]any{})
-		return
-	}
+	typ := c.Query("type")
 	out := map[string]any{}
 	for k, v := range all {
+		if typ != "" && !slices.Contains(v["types"].([]string), typ) {
+			continue
+		}
 		out[k] = api.s.translateLabels(c, v)
 	}
 	restJSON(c, http.StatusOK, out)
+}
+
+// patternCategoryTaxonomy is the wp_pattern_category taxonomy object (create_initial_taxonomies()):
+// the categories of user patterns (wp_block), not public, shown in the editor and the admin.
+func patternCategoryTaxonomy(home string, edit bool) map[string]any {
+	o := map[string]any{"name": "Pattern Categories", "slug": "wp_pattern_category", "description": "", "types": []string{"wp_block"},
+		"hierarchical": false, "rest_base": "wp_pattern_category", "rest_namespace": "wp/v2",
+		"_links": map[string]any{"collection": []map[string]string{{"href": home + "/wp-json/wp/v2/taxonomies"}},
+			"wp:items": []map[string]string{{"href": home + "/wp-json/wp/v2/wp_pattern_category"}}}}
+	if edit {
+		o["show_cloud"] = false
+		o["visibility"] = map[string]bool{"public": false, "publicly_queryable": false, "show_admin_column": true, "show_in_nav_menus": false, "show_in_quick_edit": true, "show_ui": true}
+		o["capabilities"] = map[string]string{"manage_terms": "manage_categories", "edit_terms": "manage_categories", "delete_terms": "manage_categories", "assign_terms": "edit_posts"}
+		o["labels"] = map[string]any{"name": "Pattern Categories", "singular_name": "Pattern Category", "search_items": "Search Pattern Categories",
+			"popular_items": "Popular Pattern Categories", "all_items": "All Pattern Categories", "parent_item": nil, "parent_item_colon": nil,
+			"edit_item": "Edit Pattern Category", "view_item": "View Pattern Category", "update_item": "Update Pattern Category",
+			"add_new_item": "Add New Category", "new_item_name": "New Pattern Category Name",
+			"separate_items_with_commas": "Separate pattern categories with commas", "add_or_remove_items": "Add or remove pattern categories",
+			"choose_from_most_used": "Choose from the most used pattern categories", "not_found": "No pattern categories found.",
+			"no_terms": "No pattern categories", "back_to_items": "&larr; Go to Pattern Categories", "menu_name": "Pattern Categories",
+			"name_admin_bar": "Pattern Category", "most_used": "Most Used", "item_link": "Pattern Category Link",
+			"item_link_description": "A link to a pattern category.", "items_list": "Pattern Categories list",
+			"items_list_navigation": "Pattern Categories list navigation"}
+	}
+	return o
 }
 
 func (api *restAPI) statuses(c *gin.Context, r *restRequest) {
@@ -434,16 +459,16 @@ func (api *restAPI) search(c *gin.Context, r *restRequest) {
 
 func (s *Server) restTerm(c *gin.Context, t *store.Term, ctxName string) map[string]any {
 	home := s.links(c).Home
-	base := "categories"
-	if t.Taxonomy == "post_tag" {
-		base = "tags"
-	}
+	base := restTermBase(t.Taxonomy)
 	out := map[string]any{"id": t.ID, "count": t.Count, "description": t.Description, "link": s.links(c).TermLink(t),
 		"name": t.Name, "slug": t.Slug, "taxonomy": t.Taxonomy, "meta": []any{},
 		"_links": restLinks(home+"/wp-json/wp/v2/"+base+"/"+itoa64(t.ID), home+"/wp-json/wp/v2/"+base,
 			map[string]any{"about": []map[string]string{{"href": home + "/wp-json/wp/v2/taxonomies/" + t.Taxonomy}}})}
 	if t.Taxonomy == "category" {
 		out["parent"] = t.ParentID
+	}
+	if t.Taxonomy == "wp_pattern_category" {
+		out["_links"].(map[string]any)["wp:post_type"] = []map[string]string{{"href": home + "/wp-json/wp/v2/blocks?wp_pattern_category=" + itoa64(t.ID)}}
 	}
 	s.acfgoRESTTerm(c, t, out)                              // ACF-Go
 	s.golylangRESTFields(c, pllTerm, t.ID, t.Taxonomy, out) // Golylang: lang and translations
@@ -453,12 +478,26 @@ func (s *Server) restTerm(c *gin.Context, t *store.Term, ctxName string) map[str
 	return out
 }
 
+// restTermBase is the rest_base of a taxonomy served by the terms controller.
+func restTermBase(tax string) string {
+	switch tax {
+	case "post_tag":
+		return "tags"
+	case "wp_pattern_category":
+		return "wp_pattern_category"
+	}
+	return "categories"
+}
+
+// restCanCreateTerm is WP_REST_Terms_Controller::create_item_permissions_check(): edit_terms
+// (manage_categories), or for a flat taxonomy (tags, pattern categories) assign_terms (edit_posts).
+func restCanCreateTerm(u *store.User, tax string) bool {
+	return u.Can("manage_categories", nil) || ((tax == "post_tag" || tax == "wp_pattern_category") && u.Can("edit_posts", nil))
+}
+
 func (api *restAPI) registerTerms() {
-	for _, base := range []string{"categories", "tags"} {
-		tax := "category"
-		if base == "tags" {
-			tax = "post_tag"
-		}
+	for _, tax := range []string{"category", "post_tag", "wp_pattern_category"} {
+		base := restTermBase(tax)
 		api.register("wp/v2", "/wp/v2/"+base, map[string]restHandler{
 			http.MethodGet:  func(c *gin.Context, r *restRequest) { api.listTerms(c, r, tax) },
 			http.MethodPost: func(c *gin.Context, r *restRequest) { api.saveTerm(c, r, tax, 0) },
@@ -547,7 +586,7 @@ func (api *restAPI) saveTerm(c *gin.Context, r *restRequest, tax string, id int6
 			forbidden(c, "rest_cannot_update", "Sorry, you are not allowed to edit this term.")
 			return
 		}
-	} else if !(u.Can("manage_categories", nil) || (tax == "post_tag" && u.Can("edit_posts", nil))) {
+	} else if !restCanCreateTerm(u, tax) {
 		forbidden(c, "rest_cannot_create", "Sorry, you are not allowed to create terms in this taxonomy.")
 		return
 	}

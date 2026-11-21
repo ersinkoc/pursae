@@ -1,0 +1,89 @@
+{{define "admin/patterns-list"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">{{.Labels.Name}}</h1>
+{{if .CanCreate}}<a href="/wp-admin/post-new?post_type=wp_block" class="page-title-action">{{.Labels.AddNew}}</a>{{end}}
+{{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+<h2 class="screen-reader-text">Filter patterns list</h2>
+<ul class="subsubsub">
+{{range $i, $s := .Statuses}}	<li class="{{$s.Key}}">{{if $i}} |{{end}}<a href="{{$s.URL}}"{{if $s.Current}} class="current" aria-current="page"{{end}}>{{$s.Label}} <span class="count">({{num $s.Count}})</span></a></li>
+{{end}}</ul>
+<form id="posts-filter" method="get" action="/wp-admin/edit">
+<p class="search-box">
+	<label class="screen-reader-text" for="post-search-input">{{.Labels.Search}}:</label>
+	<input type="search" id="post-search-input" name="s" value="{{.Search}}" />
+	<input type="submit" id="search-submit" class="button button-compact" value="{{.Labels.Search}}" />
+</p>
+<input type="hidden" name="post_status" class="post_status_page" value="{{.Status}}" />
+<input type="hidden" name="post_type" class="post_type_page" value="wp_block" />
+<input type="hidden" name="_wpnonce" value="{{.BulkNonce}}" />
+
+<div class="tablenav top">
+	{{template "patterns-bulk" dict "Pos" "top" "Trash" .IsTrash}}
+	{{if .Categories}}<div class="alignleft actions">
+		<label class="screen-reader-text" for="wp_pattern_category">Filter by pattern category</label>
+		<select name="wp_pattern_category" id="wp_pattern_category" class="postform">
+			<option value="">All Pattern Categories</option>
+			{{range .Categories}}<option value="{{.Slug}}"{{if eq .Slug $.Data.Category}} selected="selected"{{end}}>{{.Name}}</option>{{end}}
+		</select>
+		<input type="submit" name="filter_action" id="post-query-submit" class="button button-compact" value="Filter" />
+	</div>{{end}}
+	{{if .IsTrash}}<div class="alignleft actions">{{if and .Rows .CanEmptyTrash}}<input type="submit" name="delete_all" id="delete_all" class="button apply" value="Empty Trash" />{{end}}</div>{{end}}
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+<h2 class="screen-reader-text">Patterns list</h2>
+<table class="wp-list-table widefat fixed striped table-view-list posts">
+	<caption class="screen-reader-text">Table ordered by {{if eq .Orderby "title"}}Title{{else}}Date{{end}}. {{if eq .Order "asc"}}Ascending{{else}}Descending{{end}}.</caption>
+	<thead>{{template "patterns-head" dict "Top" true "D" .}}</thead>
+	<tbody id="the-list">
+	{{range .Rows}}{{template "patterns-row" dict "R" . "D" $.Data}}
+	{{else}}<tr class="no-items"><td class="colspanchange" colspan="{{.ColCount}}">{{if .IsTrash}}{{.Labels.NotFoundTrash}}{{else}}{{.Labels.NotFound}}{{end}}</td></tr>
+	{{end}}
+	</tbody>
+	<tfoot>{{template "patterns-head" dict "Top" false "D" .}}</tfoot>
+</table>
+<div class="tablenav bottom">
+	{{template "patterns-bulk" dict "Pos" "bottom" "Trash" .IsTrash}}
+	<div class="alignleft actions">{{if and .IsTrash .Rows .CanEmptyTrash}}<input type="submit" name="delete_all" id="delete_all" class="button apply" value="Empty Trash" />{{end}}</div>
+	{{template "tablenav-pages" .Pagination}}
+	<br class="clear" />
+</div>
+</form>
+<div id="ajax-response"></div>
+<div class="clear"></div>
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}
+
+{{define "patterns-row"}}{{$d := .D}}{{with .R}}<tr id="post-{{.ID}}" class="{{.Classes}}">
+		<th scope="row" class="check-column">{{if .CanDelete}}<input id="cb-select-{{.ID}}" type="checkbox" name="post[]" value="{{.ID}}" /><label for="cb-select-{{.ID}}"><span class="screen-reader-text">Select {{.Title}}</span></label>{{end}}</th>
+		<td class="title column-title has-row-actions column-primary page-title" data-colname="Title">
+			<strong>{{if and .CanEdit (not .IsTrash)}}<a translate="no" class="row-title" href="{{.EditURL}}" aria-label="&#8220;{{.Title}}&#8221; (Edit)">{{.Title}}</a>{{else}}<span translate="no">{{.Title}}</span>{{end}}{{range $i, $st := .States}}{{if eq $i 0}} &mdash; {{else}}, {{end}}<span class="post-state">{{$st}}</span>{{end}}</strong>
+			<div class="row-actions">{{if .IsTrash}}{{if .CanDelete}}<span class="untrash"><a href="{{.RestoreURL}}" aria-label="Restore &#8220;{{.Title}}&#8221; from the Trash">Restore</a> | </span><span class="delete"><a href="{{.DeleteURL}}" class="submitdelete" aria-label="Delete &#8220;{{.Title}}&#8221; permanently">Delete Permanently</a></span>{{end}}{{else}}{{if .CanEdit}}<span class="edit"><a href="{{.EditURL}}" aria-label="Edit &#8220;{{.Title}}&#8221;">Edit</a> | </span>{{end}}{{if .CanDelete}}<span class="trash"><a href="{{.TrashURL}}" class="submitdelete" aria-label="Move &#8220;{{.Title}}&#8221; to the Trash">Trash</a> | </span>{{end}}<span class="export"><button type="button" class="wp-list-reusable-blocks__export button-link" data-id="{{.ID}}" aria-label="Export &#8220;{{.Title}}&#8221; as JSON">Export as JSON</button></span>{{end}}</div>
+			<button type="button" class="toggle-row"><span class="screen-reader-text">Show more details</span></button>
+		</td>
+		<td class="sync_status column-sync_status{{if index $d.Hidden "sync_status"}} hidden{{end}}" data-colname="Sync status">{{if .Synced}}Synced{{else}}Not synced{{end}}</td>
+		<td class="author column-author{{if index $d.Hidden "author"}} hidden{{end}}" data-colname="Author">{{if .Author}}<a href="{{.AuthorFilterURL}}">{{.Author}}</a>{{end}}</td>
+		<td class="taxonomy-wp_pattern_category column-taxonomy-wp_pattern_category{{if index $d.Hidden "taxonomy-wp_pattern_category"}} hidden{{end}}" data-colname="Pattern Categories">{{if .Categories}}{{.Categories}}{{else}}<span aria-hidden="true">&#8212;</span><span class="screen-reader-text">No pattern categories</span>{{end}}</td>
+		<td class="date column-date{{if index $d.Hidden "date"}} hidden{{end}}" data-colname="Date">{{.DateLabel}}<br />{{.DateValue}}</td>
+	</tr>{{end}}{{end}}
+
+{{define "patterns-bulk"}}<div class="alignleft actions bulkactions">
+	<label for="bulk-action-selector-{{.Pos}}" class="screen-reader-text">Select bulk action</label>
+	<select name="{{if eq .Pos "top"}}action{{else}}action2{{end}}" id="bulk-action-selector-{{.Pos}}">
+		<option value="-1">Bulk actions</option>
+		{{if .Trash}}<option value="untrash">Restore</option>
+		<option value="delete">Delete permanently</option>{{else}}<option value="trash">Move to Trash</option>{{end}}
+	</select>
+	<input type="submit" name="bulk_action" id="doaction{{if eq .Pos "bottom"}}2{{end}}" class="button action button-compact" value="Apply" />
+</div>{{end}}
+
+{{define "patterns-head"}}<tr>
+		<td{{if .Top}} id="cb"{{end}} class="manage-column column-cb check-column"><input id="cb-select-all-{{if .Top}}1{{else}}2{{end}}" type="checkbox" /><label for="cb-select-all-{{if .Top}}1{{else}}2{{end}}"><span class="screen-reader-text">Select All</span></label></td>
+		{{template "sort-th" dict "ID" (or (and .Top "title") "") "Col" "title" "Primary" true "Label" "Title" "Link" (index .D.SortLinks "title")}}
+		<th scope="col"{{if .Top}} id="sync_status"{{end}} class="manage-column column-sync_status{{if index .D.Hidden "sync_status"}} hidden{{end}}">Sync status</th>
+		{{template "sort-th" dict "ID" (or (and .Top "author") "") "Col" "author" "Label" "Author" "Link" (index .D.SortLinks "author") "Hidden" (index .D.Hidden "author")}}
+		<th scope="col"{{if .Top}} id="taxonomy-wp_pattern_category"{{end}} class="manage-column column-taxonomy-wp_pattern_category{{if index .D.Hidden "taxonomy-wp_pattern_category"}} hidden{{end}}">Pattern Categories</th>
+		{{template "sort-th" dict "ID" (or (and .Top "date") "") "Col" "date" "Label" "Date" "Link" (index .D.SortLinks "date") "Hidden" (index .D.Hidden "date")}}
+	</tr>{{end}}

@@ -33,6 +33,9 @@ func labelsFor(typ string) typeLabels {
 	if typ == "page" {
 		return typeLabels{"page", "Pages", "Page", "Add Page", "Search Pages", "No pages found.", "No pages found in Trash."}
 	}
+	if typ == "wp_block" {
+		return typeLabels{"wp_block", "Patterns", "Pattern", "Add Pattern", "Search Patterns", "No patterns found.", "No patterns found in Trash."}
+	}
 	if l, ok := acfgoTypeLabels(typ); ok { // ACF-Go post types
 		return l
 	}
@@ -200,6 +203,10 @@ func (s *Server) postsList(c *gin.Context) {
 		return
 	}
 	typ := c.DefaultQuery("post_type", "post")
+	if typ == "wp_block" { // the Patterns list (admin_patterns.go)
+		s.patternsList(c)
+		return
+	}
 	if typ != "post" && typ != "page" && !acfgoIsPostType(typ) {
 		c.String(http.StatusBadRequest, "Invalid post type.")
 		return
@@ -1139,7 +1146,7 @@ type screenOptions struct {
 
 // screenOptionNames are the per-page options set_screen_options() accepts.
 var screenOptionNames = map[string]bool{"edit_post_per_page": true, "edit_page_per_page": true, "edit_category_per_page": true,
-	"edit_post_tag_per_page": true, "edit_comments_per_page": true}
+	"edit_post_tag_per_page": true, "edit_comments_per_page": true, "edit_wp_block_per_page": true}
 
 // setScreenOptions queues the Screen Options tab for the page being rendered.
 func (s *Server) setScreenOptions(c *gin.Context, so screenOptions) {
@@ -1654,11 +1661,11 @@ func (s *Server) postNew(c *gin.Context) {
 	}
 	u := currentUser(c)
 	typ := c.DefaultQuery("post_type", "post")
-	if typ != "post" && typ != "page" && !acfgoIsPostType(typ) {
+	if typ != "post" && typ != "page" && typ != "wp_block" && !acfgoIsPostType(typ) {
 		c.String(http.StatusBadRequest, "Invalid post type.")
 		return
 	}
-	if !u.Can("edit_"+typ+"s", nil) {
+	if !u.Can("edit_"+restCapPlural(typ), nil) { // wp_block: edit_posts, like POST /wp/v2/blocks
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to create posts as this user.")
 		return
 	}
