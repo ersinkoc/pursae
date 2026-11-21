@@ -185,7 +185,7 @@ var appScopeRoutes = map[string]string{
 	"/wp/v2/users":      "users",
 	"/pursae/v1/forum":  "content",
 	"/wc/v3":            "commerce",
-	"/pursae/v1/health": "settings", "/pursae/v1/csp-reports": "settings", "/pursae/v1/analytics": "settings", "/pursae/v1/backups": "settings", "/pursae/v1/updates": "plugins",
+	"/pursae/v1/health": "settings", "/pursae/v1/csp-reports": "settings", "/pursae/v1/csp": "settings", "/pursae/v1/analytics": "settings", "/pursae/v1/backups": "settings", "/pursae/v1/updates": "plugins",
 }
 
 // appScopeFullAccessOnly are route prefixes that deliberately belong to no scope, so only a

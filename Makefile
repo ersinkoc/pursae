@@ -2,7 +2,7 @@ COMPOSE = docker compose -f docker/compose.yaml
 # Production: the development file plus compose.prod.yaml, settings from docker/.env (see docker/.env.example).
 PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f docker/compose.yaml -f docker/compose.prod.yaml
 
-.PHONY: bench dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release
+.PHONY: bench dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release lint
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -54,6 +54,15 @@ prod-logs:
 release:
 	@test -n "$(VERSION)" || { echo "usage: make release VERSION=0.2.0 [BETA=1] [DRY_RUN=1]"; exit 2; }
 	tools/release.sh $(VERSION) $(if $(BETA),--beta) $(if $(DRY_RUN),--dry-run)
+
+## lint: golangci-lint (.golangci.yml) on what changed since LINT_BASE (default origin/main), as CI does.
+## The tree has older findings; LINT_BASE= lints everything. Uses golangci-lint from PATH if it is
+## there, else go run of the version CI pins.
+GOLANGCI_LINT_VERSION = v2.15.0
+GOLANGCI_LINT ?= $(or $(shell command -v golangci-lint 2>/dev/null),go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION))
+LINT_BASE ?= origin/main
+lint:
+	$(GOLANGCI_LINT) run $(if $(LINT_BASE),--new-from-merge-base=$(LINT_BASE)) ./...
 
 ## docker-test: run the whole test suite inside a Go container next to Postgres
 docker-test:

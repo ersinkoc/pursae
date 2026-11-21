@@ -59,6 +59,7 @@ var asEventLabels = [][2]string{
 	{"plugin_deactivated", "Plugin deactivated"},
 	{"theme_switched", "Theme switched"},
 	{"settings_updated", "Settings changed"},
+	{"csp_sources_changed", "Allowed external sources changed"},
 	{"adminsec_settings", "Pursae Security settings changed"},
 	{"firewall_blocked", "Request blocked by the firewall"},
 	{"rate_limited", "Rate limit reached"},

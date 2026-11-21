@@ -499,6 +499,9 @@ func (s *Server) securityHeaders() gin.HandlerFunc {
 				"style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src "+cspScriptSrc(mode, false)+"; "+
 				"frame-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
 			cspReportOnly(h, mode, false)
+			if !strings.HasPrefix(p, "/wp-json") {
+				s.cspAllowExtra(c) // the site's allowed external sources (csp_extra.go); merged into HTML responses only
+			}
 		}
 		if s.requestHTTPS(c.Request) {
 			h.Set("Strict-Transport-Security", "max-age=31536000")

@@ -447,6 +447,14 @@ var mcpTools = func() []*mcpTool {
 	add(&mcpTool{Name: "cache_purge", Desc: "Purge the page cache: all=true, or url, or post (ID), or tags.", Method: http.MethodPost, Path: "/pursae/v1/cache/purge",
 		Props: map[string]any{"all": flag("Purge everything."), "url": str("A page URL or path."), "post": num("Purge the pages of this post."), "tags": strList("Cache tags, e.g. home, post:12.")}})
 	add(&mcpTool{Name: "cache_get_settings", Desc: "Get Pursae Cache settings (wpgo_cache_* and wpgo_opt_* options).", Method: http.MethodGet, Path: "/pursae/v1/cache/settings"})
+	add(&mcpTool{Name: "csp_get_settings", Desc: "Get the external sources the site allows in its front-end Content-Security-Policy (a theme script fetching an API, a web font host). " + cspExtraHelp,
+		Method: http.MethodGet, Path: "/pursae/v1/csp"})
+	add(&mcpTool{Name: "csp_update_settings", Desc: "Security decision: allow external origins in the front-end Content-Security-Policy. sources replaces the lists of the directives it names " +
+		"(an empty list clears one; others stay). Every page of the site can then reach these hosts, so add only services the site owner trusts. Invalid entries return 400 and nothing is saved. " + cspExtraHelp,
+		Method: http.MethodPost, Path: "/pursae/v1/csp", Props: map[string]any{"sources": map[string]any{"type": "object",
+			"description":          `Directive → origins, e.g. {"connect-src": ["https://api.github.com"]}.`,
+			"properties":           map[string]any{"connect-src": strList("Origins scripts may fetch / open WebSockets to."), "font-src": strList("Web font hosts."), "style-src": strList("Stylesheet hosts.")},
+			"additionalProperties": false}}, Required: []string{"sources"}})
 	add(&mcpTool{Name: "cache_update_settings", Desc: "Update Pursae Cache settings; keys as in cache_get_settings.", Method: http.MethodPost, Path: "/pursae/v1/cache/settings", Open: true})
 
 	hgUID := str("Content type or component UID, e.g. blog (see headless_list_types).")
