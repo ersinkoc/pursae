@@ -219,7 +219,7 @@ They cover:
 |------|--------|-------|
 | Profile, session tokens, media (core) | ✓ | kept with the account (as in WordPress) |
 | Comments | ✓ | anonymized |
-| Pursae Contact Form entries, Web Builder form submissions (section and code forms) whose fields hold the address | ✓ | deleted |
+| Pursae Contact Form entries, Web Builder form submissions (section and code forms) with the address in the form's e-mail field, or sent by the person's account while signed in¹ | ✓ | deleted |
 | Maintenance page subscribers | ✓ | deleted |
 | Pursae Forum topics and replies (and their edit history) | ✓ | anonymized: kept published as “Deleted user”, author and IP removed |
 | Forum likes given | ✓ | kept as anonymous likes, so other members' points do not change |
@@ -232,6 +232,12 @@ They cover:
 | Commerce wishlists, points, memberships | ✓ | wishlists deleted, the rest kept with the account |
 | Pursae SMTP e-mail log (sent to the address, or a contact form notification with the visitor's address as Reply-To), finished mail jobs, finished or failed contact form webhook jobs | log ✓ | deleted |
 | Login attempts, security log, known sign-in IPs, AI connector activity | ✓ | kept for the site's security until their retention period ends |
+
+¹ The e-mail fields are the form's email fields and the field its mail takes the sender or Reply-To
+from (for Contact Form also the Mail (2) recipient). An address typed into any other field (a
+"friend's e-mail" field, a message that is just an address) does not make the message that person's.
+Messages stored before migration 0110 have no record of their e-mail fields and match only on a field named
+`email`, `e-mail`, `your-email` or `eposta`. The same rule applies to the contact form webhook jobs.
 
 What is kept is listed with its reason on the request screen. Pursae Analytics and the cookie
 consent log hold no data that can be matched to a person (hashed or truncated values only); the

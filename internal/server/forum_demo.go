@@ -573,6 +573,9 @@ func (s *Server) forumRemoveDemo(ctx context.Context, slug string) {
 	// Members who own nothing any more.
 	for _, id := range ids(`SELECT u.id FROM users u WHERE u.`+mark+` AND NOT EXISTS (SELECT 1 FROM posts p WHERE p.author_id = u.id)
 		AND NOT EXISTS (SELECT 1 FROM media m WHERE m.uploader_id = u.id)`, slug) {
+		// Demo likes leave with the demo member (DeleteUser would keep them as anonymous likes).
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM forum_points WHERE actor_id = $1 AND kind <> 'manual'`, id)
+		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM forum_likes WHERE user_id = $1`, id)
 		_ = s.store.DeleteUser(ctx, id, 0)
 	}
 	// The forum title the import replaced.

@@ -78,13 +78,65 @@ func (sub *gfSubmission) storeEntry() {
 	if sub.skipMail {
 		mailStatus = "skipped"
 	}
-	err := sub.s.store.Pool.QueryRow(sub.ctx, `INSERT INTO gontact_entries (form_id, form_title, posted, ip, user_agent, page_url, status, mail_status)
-		VALUES ($1, $2, $3, $4, $5, $6, 'received', $7) RETURNING id`,
-		sub.form.ID, sub.form.Title, posted, sub.remoteIP, truncate(sub.userAgent, 500), truncate(sub.pageURL, 2000), mailStatus).Scan(&sub.entryID)
+	err := sub.s.store.Pool.QueryRow(sub.ctx, `INSERT INTO gontact_entries (form_id, form_title, posted, ip, user_agent, page_url, status, mail_status,
+		email_fields, user_id) VALUES ($1, $2, $3, $4, $5, $6, 'received', $7, $8, $9) RETURNING id`,
+		sub.form.ID, sub.form.Title, posted, sub.remoteIP, truncate(sub.userAgent, 500), truncate(sub.pageURL, 2000), mailStatus,
+		sub.emailFields(), sub.userID()).Scan(&sub.entryID)
 	if err != nil {
 		slog.Error("gontact form: store entry", "form", sub.form.ID, "err", err)
 		sub.entryID = 0
 	}
+}
+
+// emailFields are the names of the submission's e-mail fields, which the personal data exporter and
+// eraser match the address on (privacy_sources.go): the email / email* fields and the fields the
+// mails take their sender, Reply-To or (Mail (2), the autoresponder) recipient from. Other fields
+// that may hold someone's address (a "friend's e-mail" text field, the message) are not the
+// sender's. Never nil: an empty list (no e-mail field) is stored as such, NULL marks old entries.
+func (sub *gfSubmission) emailFields() []string {
+	fields := map[string]bool{}
+	email := map[string]bool{}
+	for _, t := range sub.tags {
+		if t.Name == "" {
+			continue
+		}
+		fields[t.Name] = true
+		if t.BaseType == "email" {
+			email[t.Name] = true
+		}
+	}
+	refs := func(v string) {
+		for _, m := range gfMailTagRe.FindAllStringSubmatch(v, -1) {
+			if !(m[1] == "[" && m[4] == "]") && fields[m[2]] {
+				email[m[2]] = true
+			}
+		}
+	}
+	for _, m := range []gfMail{sub.form.Mail, sub.form.Mail2} {
+		refs(m.Sender)
+		for _, h := range strings.Split(m.AdditionalHeaders, "\n") {
+			if k, v, ok := strings.Cut(h, ":"); ok && strings.EqualFold(strings.TrimSpace(k), "reply-to") {
+				refs(v)
+			}
+		}
+	}
+	if sub.form.Mail2.Active {
+		refs(sub.form.Mail2.Recipient)
+	}
+	out := make([]string, 0, len(email))
+	for n := range email {
+		out = append(out, n)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// userID is the signed-in visitor's id, or nil.
+func (sub *gfSubmission) userID() *int64 {
+	if sub.user == nil || sub.user.ID <= 0 {
+		return nil
+	}
+	return &sub.user.ID
 }
 
 func truncate(v string, n int) string {
