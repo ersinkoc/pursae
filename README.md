@@ -9,7 +9,7 @@ One binary · PostgreSQL · the admin you already know · 18 built-in plugins.</
 
 <p align="center">
   <img alt="Go 1.27" src="https://img.shields.io/badge/Go-1.27-00ADD8?logo=go&logoColor=white">
-  <img alt="PostgreSQL 17" src="https://img.shields.io/badge/PostgreSQL-17-336791?logo=postgresql&logoColor=white">
+  <img alt="PostgreSQL 16 or 17" src="https://img.shields.io/badge/PostgreSQL-16%20%7C%2017-336791?logo=postgresql&logoColor=white">
   <img alt="Plugins: Wasm" src="https://img.shields.io/badge/plugins-WebAssembly-654FF0?logo=webassembly&logoColor=white">
   <img alt="Docker" src="https://img.shields.io/badge/run-docker%20compose-2496ED?logo=docker&logoColor=white">
   <img alt="License GPL" src="https://img.shields.io/badge/license-GPL--2.0--or--later-blue">
@@ -60,7 +60,7 @@ Ports, env vars, proxies, backups: **[docs/GUIDE.md](docs/GUIDE.md)**.
 <table>
 <tr>
 <td width="25%" align="center"><h3>🐹</h3><b>One Go binary</b><br><sub>No PHP, no FPM, no extensions.</sub></td>
-<td width="25%" align="center"><h3>🐘</h3><b>PostgreSQL 17</b><br><sub>Typed schema, JSONB, migrations on start.</sub></td>
+<td width="25%" align="center"><h3>🐘</h3><b>PostgreSQL 16 or 17</b><br><sub>Typed schema, JSONB, migrations on start.</sub></td>
 <td width="25%" align="center"><h3>🧩</h3><b>Wasm plugins</b><br><sub>Signed, sandboxed, permission-gated.</sub></td>
 <td width="25%" align="center"><h3>🚀</h3><b>Fast by default</b><br><sub>Built-in page cache, static builder output.</sub></td>
 </tr>
@@ -307,7 +307,7 @@ lets Claude, Cursor and other MCP clients run the site:
 ## 🐹 Go architecture
 
 - One static binary (`CGO_ENABLED=0`) with the admin, the editors and the bundled themes embedded.
-- [gin](https://github.com/gin-gonic/gin) for HTTP, [pgx](https://github.com/jackc/pgx) on PostgreSQL 17 (14+ works); migrations run on start.
+- [gin](https://github.com/gin-gonic/gin) for HTTP, [pgx](https://github.com/jackc/pgx) on PostgreSQL 16 or 17 (CI tests both); migrations run on start.
 - Plugins run as WebAssembly in [wazero](https://wazero.io) — no cgo, no separate runtime.
 - Details: [What is Pursae](docs/developer/getting-started/index.md) · [binary install](docs/developer/getting-started/install-binary.md).
 
