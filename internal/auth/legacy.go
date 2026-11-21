@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"strings"
 
+	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,7 +23,9 @@ import (
 //   - "$P$…" / "$H$…": phpass portable hashes (WordPress before 6.8; "$H$" is phpBB's spelling).
 //   - "$2a$" / "$2b$" / "$2y$": plain bcrypt (plugins, other imports), checked like password_verify().
 //   - 32 lowercase hex digits: the unsalted MD5 that wp_check_password() still accepts.
-//   - "$argon2id$…": Pursae's own format (also what PHP's password_hash(PASSWORD_ARGON2ID) writes).
+//   - "$argon2id$…": Pursae's own format (also what PHP's password_hash(PASSWORD_ARGON2ID) writes, and
+//     what WordPress 6.8+ stores, without a "$wp" prefix, when wp_hash_password_algorithm picks it).
+//   - "$argon2i$…": PHP's PASSWORD_ARGON2I through the same filter; verified, then rehashed to argon2id.
 //
 // Work factors are capped so a stored hash cannot make one login take seconds of CPU: see
 // maxPhpassLog2 and maxBcryptCost. Hashes above the caps are treated as malformed.
@@ -37,6 +40,11 @@ const (
 	maxBcryptCost = 14
 	// maxLegacyPasswordLen is wp_check_password()'s limit: longer passwords never match.
 	maxLegacyPasswordLen = 4096
+	// Bounds on an imported argon2 hash (and on every "$argon2i$" one): at most 256 MiB (libsodium's
+	// "moderate" limit; PHP's default is 64 MiB), 16 passes and 16 lanes, and PHC-sized salt and key.
+	maxImportArgonMemory  = 256 * 1024 // KiB
+	maxImportArgonTime    = 16
+	maxImportArgonThreads = 16
 )
 
 const phpassItoa64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -46,6 +54,10 @@ func HashKind(encoded string) string {
 	switch {
 	case strings.HasPrefix(encoded, "$argon2id$"):
 		return "argon2id"
+	case strings.HasPrefix(encoded, "$argon2i$"):
+		if h, err := parseArgon2(encoded); err == nil && argon2Bounded(h) {
+			return "argon2i"
+		}
 	case strings.HasPrefix(encoded, "$wp$"):
 		if bcryptWellFormed(encoded[3:]) {
 			return "wp-bcrypt"
@@ -73,6 +85,30 @@ func IsWordPressHash(encoded string) bool {
 		return true
 	}
 	return false
+}
+
+// IsImportableHash reports whether encoded may be stored as-is when a user is moved from WordPress:
+// one of the IsWordPressHash formats, or a well-formed argon2id / argon2i PHC string within the
+// import bounds (WordPress 6.8+ stores plain password_hash() output when the
+// wp_hash_password_algorithm filter selects PASSWORD_ARGON2ID or PASSWORD_ARGON2I).
+func IsImportableHash(encoded string) bool {
+	if IsWordPressHash(encoded) {
+		return true
+	}
+	switch HashKind(encoded) {
+	case "argon2id":
+		h, err := parseArgon2(encoded)
+		return err == nil && argon2Bounded(h)
+	case "argon2i":
+		return true
+	}
+	return false
+}
+
+// argon2Bounded checks an argon2 hash against the import bounds.
+func argon2Bounded(h argon2Hash) bool {
+	return h.mem <= maxImportArgonMemory && h.t <= maxImportArgonTime && h.p <= maxImportArgonThreads &&
+		len(h.salt) >= 8 && len(h.salt) <= 64 && len(h.key) >= 16 && len(h.key) <= 64
 }
 
 // CheckUserPassword verifies a user's password against any supported stored format. rehash is true
@@ -104,6 +140,8 @@ func CheckUserPassword(ctx context.Context, password, encoded string) (ok, rehas
 		ok, err = checkBcrypt(ctx, pre, encoded[3:])
 	case "bcrypt":
 		ok, err = checkBcrypt(ctx, password, encoded)
+	case "argon2i":
+		ok, err = checkArgon2i(ctx, password, encoded)
 	}
 	if err != nil {
 		return false, false, err
@@ -166,6 +204,20 @@ func checkBcrypt(ctx context.Context, password, h string) (bool, error) {
 	defer func() { <-argonSem }()
 	// CompareHashAndPassword compares in constant time; any error (including a mismatch) is no match.
 	return bcrypt.CompareHashAndPassword([]byte(h), pw) == nil, nil
+}
+
+// checkArgon2i is password_verify() for a PHP "$argon2i$" hash, under the argon2 semaphore.
+func checkArgon2i(ctx context.Context, password, encoded string) (bool, error) {
+	h, err := parseArgon2(encoded)
+	if err != nil {
+		return false, err
+	}
+	if err := acquireHashSlot(ctx); err != nil {
+		return false, err
+	}
+	defer func() { <-argonSem }()
+	got := argon2.Key([]byte(password), h.salt, h.t, h.mem, h.p, uint32(len(h.key)))
+	return subtle.ConstantTimeCompare(got, h.key) == 1, nil
 }
 
 // acquireHashSlot takes a slot of argonSem (the bound on concurrent password hashing), giving up when

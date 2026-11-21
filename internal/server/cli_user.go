@@ -252,7 +252,7 @@ func registerUserCoreCLI(r *cli.Registry, e *cliEnv) {
 		Flags: []cli.Flag{
 			{Name: "role", Usage: "Role slug (see `role list`)."},
 			{Name: "user_pass", Usage: "Password (prefer the generated one: command lines end up in shell history)."},
-			{Name: "user_pass_hash", Usage: "A WordPress user_pass hash to keep as-is (migration): $wp$2y$, $P$/$H$ phpass, $2y$ bcrypt or MD5. It is rehashed to argon2id at the first sign-in."},
+			{Name: "user_pass_hash", Usage: "A WordPress user_pass hash to keep as-is (migration): $wp$2y$, $P$/$H$ phpass, $2y$ bcrypt, MD5, $argon2id$ or $argon2i$. It is rehashed to argon2id at the first sign-in."},
 			{Name: "display_name", Usage: "Display name (default: the login)."},
 			{Name: "first_name", Usage: "First name."},
 			{Name: "last_name", Usage: "Last name."},
@@ -351,8 +351,8 @@ func cliUserCreatePassword(c *cli.Ctx, s *Server, role, login, email string) (ha
 			return "", "", false, cli.Usagef("--user_pass and --user_pass_hash cannot be combined")
 		}
 		h := strings.TrimSpace(c.Flag("user_pass_hash"))
-		if !auth.IsWordPressHash(h) {
-			return "", "", false, cli.Errorf("--user_pass_hash is not a supported WordPress password hash ($wp$2y$…, $P$…, $H$…, $2y$… with cost 4-14, or 32-digit MD5)")
+		if !auth.IsImportableHash(h) {
+			return "", "", false, cli.Errorf("--user_pass_hash is not a supported WordPress password hash ($wp$2y$…, $P$…, $H$…, $2y$… with cost 4-14, 32-digit MD5, or $argon2id$/$argon2i$ up to 256 MiB, t=16, p=16)")
 		}
 		return h, "", false, nil
 	}

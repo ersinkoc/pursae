@@ -130,7 +130,10 @@ func TestCheckUserPasswordRejectsMalformed(t *testing.T) {
 		"$2y$5$" + string(slow[7:]), // one-digit cost
 		string(slow[:59]), "$wp$" + string(slow[:59]),
 		"$wp$P$B2quFTY/dB/kUQqA.Jj1pGh9WakUwP.",
-		"$argon2i$v=19$m=65536,t=3,p=2$c2FsdA$aGFzaA",
+		"$argon2i$v=19$m=65536,t=3,p=2$c2FsdA$aGFzaA",                                                        // 4-byte salt and key
+		"$argon2i$v=19$m=1048576,t=2,p=2$YzJBSzV4TUhkMzc3d3laeg$zqU/1IN0/AogfP4cmSJI1vc8lpXRW9/S0sYY2i2jHT0", // 1 GiB: over the cap
+		"$argon2i$v=16$m=1024,t=2,p=2$YzJBSzV4TUhkMzc3d3laeg$zqU/1IN0/AogfP4cmSJI1vc8lpXRW9/S0sYY2i2jHT0",    // argon2 1.0
+		"$argon2d$v=19$m=1024,t=2,p=2$YzJBSzV4TUhkMzc3d3laeg$zqU/1IN0/AogfP4cmSJI1vc8lpXRW9/S0sYY2i2jHT0",    // argon2d: not password_hash()
 	} {
 		ok, rehash, err := CheckUserPassword(ctx, "pw", h)
 		if ok || rehash || !errors.Is(err, errBadHash) {
@@ -200,4 +203,46 @@ func TestCheckUserPasswordWaitsForSlot(t *testing.T) {
 		}
 	}
 	release()
+}
+
+// PHP's PASSWORD_ARGON2I hashes (WordPress 6.8+ with the wp_hash_password_algorithm filter) verify
+// and ask for a rehash; argon2id and argon2i PHC strings within the import bounds are importable.
+func TestCheckUserPasswordArgon2i(t *testing.T) {
+	ctx := context.Background()
+	// password_hash('rasmuslerdorf', PASSWORD_ARGON2I, ['memory_cost' => 1024, 'time_cost' => 2, 'threads' => 2]) (PHP manual).
+	php := "$argon2i$v=19$m=1024,t=2,p=2$YzJBSzV4TUhkMzc3d3laeg$zqU/1IN0/AogfP4cmSJI1vc8lpXRW9/S0sYY2i2jHT0"
+	if ok, rehash, err := CheckUserPassword(ctx, "rasmuslerdorf", php); !ok || !rehash || err != nil {
+		t.Fatalf("PHP argon2i: ok=%v rehash=%v err=%v", ok, rehash, err)
+	}
+	if ok, rehash, err := CheckUserPassword(ctx, "wrong", php); ok || rehash || err != nil {
+		t.Fatalf("PHP argon2i, wrong password: ok=%v rehash=%v err=%v", ok, rehash, err)
+	}
+	if IsWordPressHash(php) || !IsImportableHash(php) {
+		t.Errorf("argon2i: IsWordPressHash=%v IsImportableHash=%v", IsWordPressHash(php), IsImportableHash(php))
+	}
+	own, err := HashPassword("s3cret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, h := range []string{own, "$argon2id$v=19$m=65536,t=4,p=1$eHlUOXBqYXpaVUI0bkRTag$T0+xyqKdm6w6XcEjgzZvGbLwMYa5jUDZMlKW/AekIng"} {
+		if !IsImportableHash(h) {
+			t.Errorf("%q: not importable", h)
+		}
+	}
+	for _, h := range []string{
+		"$argon2id$v=19$m=4194304,t=4,p=1$eHlUOXBqYXpaVUI0bkRTag$T0+xyqKdm6w6XcEjgzZvGbLwMYa5jUDZMlKW/AekIng", // 4 GiB
+		"$argon2id$v=19$m=65536,t=99,p=1$eHlUOXBqYXpaVUI0bkRTag$T0+xyqKdm6w6XcEjgzZvGbLwMYa5jUDZMlKW/AekIng",  // 99 passes
+		"$argon2id$v=19$m=65536,t=4,p=1$eHlUOXBqYXpaVUI0bkRTag",                                               // no key
+		"$argon2id$v=19$m=65536,t=4,p=1$c2FsdA$aGFzaA",                                                        // 4-byte salt and key
+		"$argon2id$",
+	} {
+		if IsImportableHash(h) {
+			t.Errorf("%q: importable", h)
+		}
+	}
+	for _, v := range wpVectors {
+		if !IsImportableHash(v.hash) {
+			t.Errorf("%s: WordPress hash not importable", v.name)
+		}
+	}
 }

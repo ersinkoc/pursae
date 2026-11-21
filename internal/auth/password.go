@@ -65,16 +65,40 @@ func CheckPassword(password, encoded string) (bool, error) {
 // CheckPasswordCtx is CheckPassword that stops waiting for an argon2 slot when ctx ends (the request
 // was cancelled); it then reports false with ctx's error.
 func CheckPasswordCtx(ctx context.Context, password, encoded string) (bool, error) {
-	parts := strings.Split(encoded, "$")
-	if len(parts) != 6 || parts[1] != "argon2id" {
+	h, err := parseArgon2(encoded)
+	if err != nil || h.variant != "argon2id" {
 		return false, errBadHash
 	}
+	got, err := argonIDKey(ctx, []byte(password), h.salt, h.t, h.mem, h.p, uint32(len(h.key)))
+	if err != nil {
+		return false, err
+	}
+	return subtle.ConstantTimeCompare(got, h.key) == 1, nil
+}
+
+// argon2Hash is a parsed PHC string "$argon2id$v=19$m=…,t=…,p=…$salt$key" (or "$argon2i$…").
+type argon2Hash struct {
+	variant   string // "argon2id" or "argon2i"
+	mem, t    uint32
+	p         uint8
+	salt, key []byte
+}
+
+// parseArgon2 parses the PHC string written by HashPassword and by PHP's password_hash() with
+// PASSWORD_ARGON2ID / PASSWORD_ARGON2I. Only version 19 (0x13) is accepted.
+func parseArgon2(encoded string) (argon2Hash, error) {
+	var h argon2Hash
+	parts := strings.Split(encoded, "$")
+	if len(parts) != 6 || parts[0] != "" || (parts[1] != "argon2id" && parts[1] != "argon2i") {
+		return h, errBadHash
+	}
+	h.variant = parts[1]
 	if !strings.HasPrefix(parts[2], "v=") || len(parts[2]) == 2 {
-		return false, errBadHash
+		return h, errBadHash
 	}
 	version, err := strconv.ParseUint(parts[2][2:], 10, 32)
 	if err != nil || int(version) != argon2.Version {
-		return false, errBadHash
+		return h, errBadHash
 	}
 	params := strings.Split(parts[3], ",")
 	parse := func(value, prefix string, bits int) (uint64, error) {
@@ -84,29 +108,23 @@ func CheckPasswordCtx(ctx context.Context, password, encoded string) (bool, erro
 		return strconv.ParseUint(value[len(prefix):], 10, bits)
 	}
 	if len(params) != 3 {
-		return false, errBadHash
+		return h, errBadHash
 	}
 	mem64, err1 := parse(params[0], "m=", 32)
 	t64, err2 := parse(params[1], "t=", 32)
 	p64, err3 := parse(params[2], "p=", 8)
-	mem, t, p := uint32(mem64), uint32(t64), uint8(p64)
-	if err1 != nil || err2 != nil || err3 != nil || mem == 0 || t == 0 || p == 0 || uint64(mem) < 8*uint64(p) {
-		return false, errBadHash
+	h.mem, h.t, h.p = uint32(mem64), uint32(t64), uint8(p64)
+	if err1 != nil || err2 != nil || err3 != nil || h.mem == 0 || h.t == 0 || h.p == 0 || uint64(h.mem) < 8*uint64(h.p) {
+		return h, errBadHash
 	}
 	b64 := base64.RawStdEncoding
-	salt, err := b64.DecodeString(parts[4])
-	if err != nil || len(salt) == 0 {
-		return false, errBadHash
+	if h.salt, err = b64.DecodeString(parts[4]); err != nil || len(h.salt) == 0 {
+		return h, errBadHash
 	}
-	want, err := b64.DecodeString(parts[5])
-	if err != nil || len(want) == 0 {
-		return false, errBadHash
+	if h.key, err = b64.DecodeString(parts[5]); err != nil || len(h.key) == 0 {
+		return h, errBadHash
 	}
-	got, err := argonIDKey(ctx, []byte(password), salt, t, mem, p, uint32(len(want)))
-	if err != nil {
-		return false, err
-	}
-	return subtle.ConstantTimeCompare(got, want) == 1, nil
+	return h, nil
 }
 
 var (

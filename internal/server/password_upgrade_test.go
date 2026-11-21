@@ -8,7 +8,9 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"wpgo/internal/auth"
 	"wpgo/internal/store"
@@ -161,10 +163,16 @@ func TestCLIUserCreatePassHash(t *testing.T) {
 			t.Errorf("%s: stored %q, want the hash as given", v.kind, u.PasswordHash)
 		}
 	}
+	// WordPress 6.8+ with wp_hash_password_algorithm = PASSWORD_ARGON2I / PASSWORD_ARGON2ID.
+	argon2i := "$argon2i$v=19$m=1024,t=2,p=2$YzJBSzV4TUhkMzc3d3laeg$zqU/1IN0/AogfP4cmSJI1vc8lpXRW9/S0sYY2i2jHT0"
+	argon2id := "$argon2id$v=19$m=65536,t=4,p=1$eHlUOXBqYXpaVUI0bkRTag$T0+xyqKdm6w6XcEjgzZvGbLwMYa5jUDZMlKW/AekIng"
+	run(true, "user", "create", "wp_argon2i", "wp_argon2i@example.test", "--role=author", "--user_pass_hash="+argon2i, "--porcelain")
+	run(true, "user", "create", "wp_argon2id", "wp_argon2id@example.test", "--role=author", "--user_pass_hash="+argon2id, "--porcelain")
+	run(false, "user", "create", "bad4", "bad4@example.test", "--user_pass_hash=$argon2id$v=19$m=4194304,t=4,p=1$eHlUOXBqYXpaVUI0bkRTag$T0+xyqKdm6w6XcEjgzZvGbLwMYa5jUDZMlKW/AekIng")
 	run(false, "user", "create", "bad1", "bad1@example.test", "--user_pass_hash=plaintext-password")
 	run(false, "user", "create", "bad2", "bad2@example.test", "--user_pass_hash=$P$S2quFTY/dB/kUQqA.Jj1pGh9WakUwP.") // over the round cap
 	run(false, "user", "create", "bad3", "bad3@example.test", "--user_pass=x", "--user_pass_hash="+wpLegacyHashes[0].hash)
-	for _, login := range []string{"bad1", "bad2", "bad3"} {
+	for _, login := range []string{"bad1", "bad2", "bad3", "bad4"} {
 		if _, err := srv.store.UserByLoginOrEmail(ctx, login); err == nil {
 			t.Errorf("%s was created", login)
 		}
@@ -174,5 +182,107 @@ func TestCLIUserCreatePassHash(t *testing.T) {
 	cl := &http.Client{Jar: jar, CheckRedirect: c.CheckRedirect}
 	if code, _, _ := post(t, cl, ts.URL+"/wp-login", url.Values{"log": {"wp_bcrypt68"}, "pwd": {"password"}}); code != http.StatusFound {
 		t.Errorf("imported user login = %d", code)
+	}
+	for login, pw := range map[string]string{"wp_argon2i": "rasmuslerdorf", "wp_argon2id": "password"} {
+		jar, _ := cookiejar.New(nil)
+		cl := &http.Client{Jar: jar, CheckRedirect: c.CheckRedirect}
+		if code, _, _ := post(t, cl, ts.URL+"/wp-login", url.Values{"log": {login}, "pwd": {pw}}); code != http.StatusFound {
+			t.Errorf("%s login = %d", login, code)
+		}
+	}
+	if u, _ := srv.store.UserByLoginOrEmail(ctx, "wp_argon2i"); u == nil || !strings.HasPrefix(u.PasswordHash, "$argon2id$") {
+		t.Errorf("argon2i hash was not rehashed to argon2id")
+	}
+	if u, _ := srv.store.UserByLoginOrEmail(ctx, "wp_argon2id"); u == nil || u.PasswordHash != argon2id {
+		t.Errorf("argon2id hash was rewritten")
+	}
+}
+
+// Two sign-ins that verified the same legacy hash: the one whose conditional UPDATE loses adopts the
+// stored argon2id hash, so a Headless Go token derived from u.PasswordHash still validates.
+func TestCheckUserPasswordConcurrentRehash(t *testing.T) {
+	_, _, srv := newTestServer(t, false)
+	ctx := context.Background()
+	st := srv.store
+	v := wpLegacyHashes[0]
+	id, err := st.CreateUser(ctx, store.NewUser{Login: v.login, Email: "x@example.test", PasswordHash: v.hash, Role: "subscriber"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := st.UserByID(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := *a // both requests read the legacy hash before either stored the new one
+	if !srv.checkUserPassword(ctx, a, v.password) || !srv.checkUserPassword(ctx, &b, v.password) {
+		t.Fatal("legacy password did not verify")
+	}
+	cur, err := st.UserByID(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(cur.PasswordHash, "$argon2id$") || a.PasswordHash != cur.PasswordHash || b.PasswordHash != cur.PasswordHash {
+		t.Errorf("stored %q, first %q, second %q: want all equal argon2id", cur.PasswordHash, a.PasswordHash, b.PasswordHash)
+	}
+}
+
+// Two concurrent Headless Go logins on a legacy hash both return tokens that validate.
+func TestHeadlessGoConcurrentLegacyLogin(t *testing.T) {
+	base, _, srv := hgSite(t)
+	ctx := context.Background()
+	v := wpLegacyHashes[0]
+	if _, err := srv.store.CreateUser(ctx, store.NewUser{Login: v.login, Email: "hg@example.test", PasswordHash: v.hash, Role: "subscriber"}); err != nil {
+		t.Fatal(err)
+	}
+	hs := srv.hgLoad()
+	hs.UserAuth = true
+	if err := srv.hgSaveSettings(ctx, hs); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	results := make([]hgResp, 2)
+	for i := range results {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			results[i] = hgCall(t, base, "POST", "/auth/local", "", map[string]any{"identifier": v.login, "password": v.password})
+		}()
+	}
+	wg.Wait()
+	for i, r := range results {
+		jwt, _ := r.Body["jwt"].(string)
+		if r.Code != http.StatusOK || jwt == "" {
+			t.Fatalf("login %d: %d %s", i, r.Code, r.Raw)
+		}
+		if me := hgCall(t, base, "GET", "/users/me", jwt, nil); me.Code != http.StatusOK {
+			t.Errorf("token of login %d rejected: %d %s", i, me.Code, me.Raw)
+		}
+	}
+}
+
+// A wrong password against a fast legacy hash costs about as much as the unknown-user path (one
+// argon2id pass), so response times do not reveal which imported accounts exist.
+func TestLegacyPasswordMismatchTiming(t *testing.T) {
+	_, _, srv := newTestServer(t, false)
+	ctx := context.Background()
+	u := &store.User{ID: -1, PasswordHash: wpLegacyHashes[3].hash} // MD5: microseconds without the dummy pass
+	auth.CheckDummyPassword(ctx, "warm-up")
+	measure := func(f func()) time.Duration {
+		best := time.Duration(1<<63 - 1)
+		for i := 0; i < 3; i++ {
+			start := time.Now()
+			f()
+			best = min(best, time.Since(start))
+		}
+		return best
+	}
+	unknown := measure(func() { auth.CheckDummyPassword(ctx, "wrong") })
+	legacy := measure(func() {
+		if srv.checkUserPassword(ctx, u, "wrong") {
+			t.Fatal("wrong password accepted")
+		}
+	})
+	if legacy < unknown/2 {
+		t.Errorf("legacy mismatch took %v, unknown user %v", legacy, unknown)
 	}
 }
