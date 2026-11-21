@@ -79,3 +79,22 @@ func TestFlipAndCrop(t *testing.T) {
 		t.Error("a crop outside the image succeeded")
 	}
 }
+
+func TestRotatedSize(t *testing.T) {
+	for _, tc := range []struct {
+		w, h   int
+		angle  float64
+		ww, wh int
+	}{
+		{40, 20, 0, 40, 20}, {40, 20, 90, 20, 40}, {40, 20, -90, 20, 40}, {40, 20, 180, 40, 20},
+		{40, 20, 450, 20, 40}, {100, 100, 45, 142, 142},
+	} {
+		if w, h := RotatedSize(tc.w, tc.h, tc.angle); w != tc.ww || h != tc.wh {
+			t.Errorf("%dx%d by %g: %dx%d, want %dx%d", tc.w, tc.h, tc.angle, w, h, tc.ww, tc.wh)
+		}
+		out := RotateDegrees(halves(tc.w, tc.h), tc.angle)
+		if b := out.Bounds(); b.Dx() != tc.ww || b.Dy() != tc.wh {
+			t.Errorf("RotateDegrees %dx%d by %g: %v, RotatedSize says %dx%d", tc.w, tc.h, tc.angle, b, tc.ww, tc.wh)
+		}
+	}
+}

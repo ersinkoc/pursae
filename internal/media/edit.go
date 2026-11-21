@@ -29,9 +29,7 @@ func RotateDegrees(img image.Image, angle float64) image.Image {
 	w, h := src.Rect.Dx(), src.Rect.Dy()
 	rad := a * math.Pi / 180
 	sin, cos := math.Sin(rad), math.Cos(rad)
-	nw := int(math.Ceil(math.Abs(float64(w)*cos) + math.Abs(float64(h)*sin) - 1e-9))
-	nh := int(math.Ceil(math.Abs(float64(w)*sin) + math.Abs(float64(h)*cos) - 1e-9))
-	nw, nh = max(nw, 1), max(nh, 1)
+	nw, nh := RotatedSize(w, h, angle)
 	dst := image.NewRGBA(image.Rect(0, 0, nw, nh))
 	cx, cy := float64(w)/2, float64(h)/2
 	ncx, ncy := float64(nw)/2, float64(nh)/2
@@ -46,6 +44,26 @@ func RotateDegrees(img image.Image, angle float64) image.Image {
 		}
 	}
 	return dst
+}
+
+// RotatedSize is the size of a w×h image after RotateDegrees(img, angle): the bounding box of
+// the turned image (w and h swapped for odd multiples of 90).
+func RotatedSize(w, h int, angle float64) (int, int) {
+	a := math.Mod(angle, 360)
+	if a < 0 {
+		a += 360
+	}
+	if q := math.Round(a / 90); math.Abs(a-q*90) < 1e-9 {
+		if int(q)%2 == 1 {
+			return h, w
+		}
+		return w, h
+	}
+	rad := a * math.Pi / 180
+	sin, cos := math.Sin(rad), math.Cos(rad)
+	nw := int(math.Ceil(math.Abs(float64(w)*cos) + math.Abs(float64(h)*sin) - 1e-9))
+	nh := int(math.Ceil(math.Abs(float64(w)*sin) + math.Abs(float64(h)*cos) - 1e-9))
+	return max(nw, 1), max(nh, 1)
 }
 
 // bilinear samples src (premultiplied RGBA) at (x, y), pixels outside counting as transparent.

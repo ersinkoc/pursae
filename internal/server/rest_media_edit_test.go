@@ -9,6 +9,7 @@ import (
 	"image/png"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -232,5 +233,77 @@ func TestRESTMediaEdit(t *testing.T) {
 		t.Errorf("author on own image: %d %v", code, e)
 	} else if e["author"] != mine["author"] {
 		t.Errorf("the edited copy belongs to %v, not the author %v", e["author"], mine["author"])
+	}
+}
+
+// An image saved by the wp-admin image editor keeps original_image pointing at the pre-edit upload;
+// the block editor's edit applies to the edited main file (the one src names), not to that original.
+func TestRESTMediaEditAfterImgedit(t *testing.T) {
+	s, a, call := imgeditEnv(t)
+	ctx := context.Background()
+	// Pretend the 600x400 main file is a "-scaled" copy of a bigger, different original upload.
+	if err := os.WriteFile(filepath.Join(s.srv.cfg.UploadsDir, "2026/11/pic-big.png"), halvesPNG(t, 1200, 800), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a.Meta["original_image"] = "pic-big.png"
+	if err := s.srv.store.UpdateAttachment(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+	if out := call(url.Values{"do": {"save"}, "target": {"all"}, "history": {`[{"c":{"x":0,"y":0,"w":"300","h":"200","r":0}}]`}}); out["success"] != true {
+		t.Fatalf("imgedit save: %v", out)
+	}
+	got, _ := s.srv.store.GetAttachment(ctx, a.ID)
+	if got.Meta["backup_file"] == nil || got.Meta["original_image"] != "pic-big.png" {
+		t.Fatalf("after imgedit save: %v", got.Meta)
+	}
+	code, m, _, _ := s.admin.do("POST", "/wp/v2/media/"+itoa64(a.ID)+"/edit", map[string]any{
+		"src":       "https://example.test/wp-content/uploads/" + got.FilePath,
+		"modifiers": []any{map[string]any{"type": "rotate", "args": map[string]any{"angle": 90}}}})
+	if code != http.StatusCreated {
+		t.Fatalf("edit: %d %v", code, m)
+	}
+	d, _ := m["media_details"].(map[string]any)
+	// The 300x200 crop, turned: 200x300 (the unedited original would give 800x1200).
+	if d["width"] != float64(200) || d["height"] != float64(300) {
+		t.Errorf("edited from the wrong file: %vx%v (%v)", d["width"], d["height"], d["file"])
+	}
+}
+
+// Rotations by angles that are not multiples of 90 grow the canvas; the result of each one is
+// bounded like the decoded source, and too many modifiers are refused.
+func TestRESTMediaEditRotationBounds(t *testing.T) {
+	s := secStart(t)
+	orig := rawUpload(t, s.admin, "big.png", "", halvesPNG(t, 200, 100))
+	src, _ := orig["source_url"].(string)
+	editPath := "/wp/v2/media/" + itoa64(int64(orig["id"].(float64))) + "/edit"
+	old := mediaEditMaxPixels
+	mediaEditMaxPixels = 60_000
+	t.Cleanup(func() { mediaEditMaxPixels = old })
+
+	rot := func(angle float64) any {
+		return map[string]any{"type": "rotate", "args": map[string]any{"angle": angle}}
+	}
+	flip := map[string]any{"type": "flip", "args": map[string]any{"flip": map[string]any{"horizontal": true, "vertical": false}}}
+
+	// 45, flip, 45: the second turn's canvas (about 85K px) exceeds the bound.
+	code, e, _, _ := s.admin.do("POST", editPath, map[string]any{"src": src, "modifiers": []any{rot(45), flip, rot(45)}})
+	if code != http.StatusBadRequest || e["code"] != "rest_image_rotation_failed" {
+		t.Errorf("growing rotations: %d %v", code, e)
+	}
+	// Consecutive rotations fold into one turn: 45 + 45 is a single 90 (100x200), within the bound.
+	code, m, _, _ := s.admin.do("POST", editPath, map[string]any{"src": src, "modifiers": []any{rot(45), rot(45)}})
+	if code != http.StatusCreated {
+		t.Fatalf("folded rotations: %d %v", code, m)
+	}
+	if d, _ := m["media_details"].(map[string]any); d["width"] != float64(100) || d["height"] != float64(200) {
+		t.Errorf("folded rotations: %vx%v", d["width"], d["height"])
+	}
+	// More than mediaEditMaxModifiers modifiers.
+	many := make([]any, mediaEditMaxModifiers+1)
+	for i := range many {
+		many[i] = flip
+	}
+	if code, e, _, _ := s.admin.do("POST", editPath, map[string]any{"src": src, "modifiers": many}); code != http.StatusBadRequest || e["code"] != "rest_invalid_param" {
+		t.Errorf("too many modifiers: %d %v", code, e)
 	}
 }

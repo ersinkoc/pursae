@@ -85,47 +85,35 @@ func (api *restAPI) editMedia(c *gin.Context, r *restRequest) {
 	}
 
 	rel := mediaEditSource(s, c, a)
-	img, format, err := media.Decode(s.cfg.UploadsDir, rel)
-	if err != nil || !mediaEditWritable(format) {
-		slog.Warn("media edit: the image could not be opened", "attachment", a.ID, "file", rel, "err", err)
-		restErr(c, http.StatusInternalServerError, "rest_unknown_image_file_type", "Unable to edit this image.")
+	// The decode slot is held for the whole edit (transforms and encoding included), so concurrent
+	// edits are throttled like uploads.
+	var buf bytes.Buffer
+	var editErr *mediaEditFailure
+	opened := false
+	err = media.DecodeAndProcess(s.cfg.UploadsDir, rel, func(img image.Image, format string) error {
+		if !mediaEditWritable(format) {
+			return nil
+		}
+		opened = true
+		img, editErr = applyMediaEdits(s, rel, a.FilePath, img, format, ops)
+		if editErr != nil {
+			return nil
+		}
+		return media.EncodeTo(&buf, img, format)
+	})
+	if editErr != nil {
+		restErr(c, editErr.status, editErr.code, editErr.msg)
 		return
 	}
-	if format == "jpeg" && rel != a.FilePath {
-		// The original upload may still carry its EXIF orientation; the editor shows it upright.
-		if f, err := os.Open(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(rel))); err == nil {
-			if o := media.JPEGOrientation(f); o > 1 {
-				img = media.Orient(img, o)
-			}
-			_ = f.Close()
+	if err != nil || !opened {
+		if !opened {
+			slog.Warn("media edit: the image could not be opened", "attachment", a.ID, "file", rel, "err", err)
+			restErr(c, http.StatusInternalServerError, "rest_unknown_image_file_type", "Unable to edit this image.")
+			return
 		}
-	}
-
-	for _, op := range ops {
-		switch op.kind {
-		case "rotate":
-			// The client's angle is clockwise; WP_Image_Editor::rotate() turns counter-clockwise.
-			if op.angle != 0 {
-				img = media.RotateDegrees(img, -op.angle)
-			}
-		case "flip":
-			img = media.Flip(img, op.horizontal, op.vertical)
-		case "crop":
-			b := img.Bounds()
-			x := int(math.Round(float64(b.Dx()) * op.left / 100))
-			y := int(math.Round(float64(b.Dy()) * op.top / 100))
-			w := int(math.Round(float64(b.Dx()) * op.width / 100))
-			h := int(math.Round(float64(b.Dy()) * op.height / 100))
-			if w == b.Dx() && h == b.Dy() {
-				continue
-			}
-			cropped, ok := media.Crop(img, image.Rect(x, y, x+w, y+h))
-			if !ok || w < 1 || h < 1 {
-				restErr(c, http.StatusBadRequest, "rest_image_crop_failed", "Unable to crop this image.")
-				return
-			}
-			img = cropped
-		}
+		slog.Warn("media edit: the image could not be encoded", "attachment", a.ID, "err", err)
+		restErr(c, http.StatusInternalServerError, "rest_image_save_failed", "Unable to save the edited image.")
+		return
 	}
 
 	// The file name: "<name>-edited.<ext>", never "-edited-edited" (wp_unique_filename adds -1, -2 …).
@@ -135,12 +123,6 @@ func (api *restAPI) editMedia(c *gin.Context, r *restRequest) {
 		name = mediaEditedSuffix.ReplaceAllString(name, "-edited")
 	} else {
 		name += "-edited"
-	}
-	var buf bytes.Buffer
-	if err := media.EncodeTo(&buf, img, format); err != nil {
-		slog.Warn("media edit: the image could not be encoded", "attachment", a.ID, "err", err)
-		restErr(c, http.StatusInternalServerError, "rest_image_save_failed", "Unable to save the edited image.")
-		return
 	}
 	na, err := s.insertAttachmentFile(c, name+ext, &buf, u.ID, 0)
 	if err != nil {
@@ -171,6 +153,74 @@ func (api *restAPI) editMedia(c *gin.Context, r *restRequest) {
 	restJSON(c, http.StatusCreated, s.restMedia(c, na, "edit"))
 }
 
+// mediaEditMaxPixels bounds every intermediate image of an edit (the decoded source has the same
+// bound); a variable so tests can lower it.
+var mediaEditMaxPixels int64 = media.MaxImagePixels
+
+// mediaEditMaxModifiers bounds the modifiers of one request. WordPress sets no maximum; the block
+// editor sends at most a rotation, a crop and a flip.
+const mediaEditMaxModifiers = 10
+
+// mediaEditFailure is an edit the request asked for that cannot be applied (a REST error).
+type mediaEditFailure struct {
+	status    int
+	code, msg string
+}
+
+// applyMediaEdits applies ops to img (decoded from rel; main is the attachment's main file) in
+// order. Consecutive rotations are folded into one turn, and a rotation whose result would exceed
+// mediaEditMaxPixels is refused before its canvas is allocated, so the intermediate images stay
+// within the same bound as the decoded source.
+func applyMediaEdits(s *Server, rel, main string, img image.Image, format string, ops []mediaEditOp) (image.Image, *mediaEditFailure) {
+	if format == "jpeg" && rel != main {
+		// The original upload may still carry its EXIF orientation; the editor shows it upright.
+		if f, err := os.Open(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(rel))); err == nil {
+			if o := media.JPEGOrientation(f); o > 1 {
+				img = media.Orient(img, o)
+			}
+			_ = f.Close()
+		}
+	}
+	for i := 0; i < len(ops); i++ {
+		op := ops[i]
+		switch op.kind {
+		case "rotate":
+			angle := op.angle
+			for i+1 < len(ops) && ops[i+1].kind == "rotate" {
+				i++
+				angle += ops[i].angle
+			}
+			if math.Mod(angle, 360) == 0 {
+				continue
+			}
+			// The client's angle is clockwise; WP_Image_Editor::rotate() turns counter-clockwise.
+			b := img.Bounds()
+			nw, nh := media.RotatedSize(b.Dx(), b.Dy(), -angle)
+			if int64(nw)*int64(nh) > mediaEditMaxPixels {
+				return nil, &mediaEditFailure{http.StatusBadRequest, "rest_image_rotation_failed", "Unable to rotate this image."}
+			}
+			img = media.RotateDegrees(img, -angle)
+		case "flip":
+			img = media.Flip(img, op.horizontal, op.vertical)
+		case "crop":
+			b := img.Bounds()
+			x := int(math.Round(float64(b.Dx()) * op.left / 100))
+			y := int(math.Round(float64(b.Dy()) * op.top / 100))
+			w := int(math.Round(float64(b.Dx()) * op.width / 100))
+			h := int(math.Round(float64(b.Dy()) * op.height / 100))
+			if w == b.Dx() && h == b.Dy() {
+				continue
+			}
+			cropped, ok := media.Crop(img, image.Rect(x, y, x+w, y+h))
+			if !ok || w < 1 || h < 1 {
+				return nil, &mediaEditFailure{http.StatusBadRequest, "rest_image_crop_failed", "Unable to crop this image."}
+			}
+			img = cropped
+		}
+	}
+	return img, nil
+}
+
 // mediaEditParentOK reports whether u may attach media to post id (edit_post on it).
 func (s *Server) mediaEditParentOK(c *gin.Context, u *store.User, id int64) bool {
 	p, err := s.store.GetPost(c, id)
@@ -179,8 +229,11 @@ func (s *Server) mediaEditParentOK(c *gin.Context, u *store.User, id int64) bool
 
 // mediaEditSource is the file the edits apply to: the original upload when the main file is a
 // "-scaled" or "-rotated" copy of it (wp_get_original_image_path()), else the attachment's file.
+// An image saved by the wp-admin image editor (backup_file set) is edited from its edited main
+// file, as regenerateAttachment does: original_image still names the pre-edit upload.
 func mediaEditSource(s *Server, c *gin.Context, a *store.Attachment) string {
-	if orig, ok := a.Meta["original_image"].(string); ok && orig != "" && path.Base(orig) == orig {
+	_, edited := a.Meta["backup_file"]
+	if orig, ok := a.Meta["original_image"].(string); ok && orig != "" && !edited && path.Base(orig) == orig {
 		rel := path.Join(path.Dir(a.FilePath), orig)
 		_ = s.gocdnEnsureLocal(c, rel) // GoCDN: the file may live only in the bucket
 		if _, err := os.Stat(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(rel))); err == nil && mediaEditTypes[media.MimeFor(rel)] {
@@ -242,8 +295,8 @@ func parseMediaEditOps(c *gin.Context, r *restRequest) (ops []mediaEditOp, param
 		if len(list) == 0 {
 			return nil, "modifiers", "modifiers must contain at least 1 items."
 		}
-		if len(list) > 32 {
-			return nil, "modifiers", "modifiers must contain at most 32 items."
+		if len(list) > mediaEditMaxModifiers {
+			return nil, "modifiers", fmt.Sprintf("modifiers must contain at most %d items.", mediaEditMaxModifiers)
 		}
 		for i, item := range list {
 			op, err := parseMediaEditModifier(item)
