@@ -236,8 +236,11 @@ They cover:
 ¹ The e-mail fields are the form's email fields and the field its mail takes the sender or Reply-To
 from (for Contact Form also the Mail (2) recipient). An address typed into any other field (a
 "friend's e-mail" field, a message that is just an address) does not make the message that person's.
-Messages stored before migration 0110 have no record of their e-mail fields and match only on a field named
-`email`, `e-mail`, `your-email` or `eposta`. The same rule applies to the contact form webhook jobs.
+Messages stored before migration 0110 have no record of their e-mail fields and match on a field named
+`email`, `e-mail`, `your-email` or `eposta`, on the names the Contact Form tag generator gives e-mail
+fields (`email-391`) and, for a Contact Form entry, on the e-mail fields of its form as it is now
+(fields referenced as `[_raw_x]` or `[_format_x]` count as `x`). The same rule applies to the contact
+form webhook jobs.
 
 What is kept is listed with its reason on the request screen. Pursae Analytics and the cookie
 consent log hold no data that can be matched to a person (hashed or truncated values only); the

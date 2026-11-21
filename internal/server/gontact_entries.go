@@ -94,9 +94,15 @@ func (sub *gfSubmission) storeEntry() {
 // that may hold someone's address (a "friend's e-mail" text field, the message) are not the
 // sender's. Never nil: an empty list (no e-mail field) is stored as such, NULL marks old entries.
 func (sub *gfSubmission) emailFields() []string {
+	return gfEmailFields(sub.form, sub.tags)
+}
+
+// gfEmailFields is emailFields of a form with the form-tags tags: also what entries stored before
+// the e-mail fields were recorded are matched on, from the form's current template.
+func gfEmailFields(form *gfForm, tags []*gfTag) []string {
 	fields := map[string]bool{}
 	email := map[string]bool{}
-	for _, t := range sub.tags {
+	for _, t := range tags {
 		if t.Name == "" {
 			continue
 		}
@@ -107,21 +113,28 @@ func (sub *gfSubmission) emailFields() []string {
 	}
 	refs := func(v string) {
 		for _, m := range gfMailTagRe.FindAllStringSubmatch(v, -1) {
-			if !(m[1] == "[" && m[4] == "]") && fields[m[2]] {
-				email[m[2]] = true
+			if m[1] == "[" && m[4] == "]" {
+				continue
+			}
+			// [_raw_x] and [_format_x] are field x too, as the mail engine resolves them (mailTag).
+			n := strings.TrimPrefix(strings.TrimPrefix(m[2], "_raw_"), "_format_")
+			if fields[n] {
+				email[n] = true
 			}
 		}
 	}
-	for _, m := range []gfMail{sub.form.Mail, sub.form.Mail2} {
-		refs(m.Sender)
-		for _, h := range strings.Split(m.AdditionalHeaders, "\n") {
-			if k, v, ok := strings.Cut(h, ":"); ok && strings.EqualFold(strings.TrimSpace(k), "reply-to") {
-				refs(v)
+	if form != nil {
+		for _, m := range []gfMail{form.Mail, form.Mail2} {
+			refs(m.Sender)
+			for _, h := range strings.Split(m.AdditionalHeaders, "\n") {
+				if k, v, ok := strings.Cut(h, ":"); ok && strings.EqualFold(strings.TrimSpace(k), "reply-to") {
+					refs(v)
+				}
 			}
 		}
-	}
-	if sub.form.Mail2.Active {
-		refs(sub.form.Mail2.Recipient)
+		if form.Mail2.Active {
+			refs(form.Mail2.Recipient)
+		}
 	}
 	out := make([]string, 0, len(email))
 	for n := range email {

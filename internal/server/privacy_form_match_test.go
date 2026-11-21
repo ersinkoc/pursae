@@ -307,3 +307,72 @@ func TestDeleteUsersWhoLikedSamePost(t *testing.T) {
 		t.Errorf("unlike: %d %v", n, err)
 	}
 }
+
+// Entries and webhook deliveries stored before the e-mail fields were recorded also match on the
+// tag generator's e-mail field names (email-391) and on the e-mail fields of their form's current
+// template, so upgrading does not hide (or leave behind on erasure) what 0.4.x found.
+func TestPrivacyLegacyEntriesMatchFormEmailFields(t *testing.T) {
+	f := newPrivacyFixture(t)
+	form := &gfForm{Title: "Legacy", Form: "[text* contact] [email* email-391] [textarea your-message]",
+		Mail: gfMail{Sender: "[_site_title] <wordpress@example.test>", Recipient: "[_site_admin_email]",
+			AdditionalHeaders: "Reply-To: [_raw_contact]"}}
+	// The plugin is not activated here; its post type is all the form needs.
+	f.exec(`INSERT INTO content_types (slug, name, public) VALUES ($1, 'Contact Forms', false) ON CONFLICT (slug) DO NOTHING`, gontactPostType)
+	if err := f.srv.gontactSave(f.ctx, form, 0); err != nil {
+		t.Fatal(err)
+	}
+	f.exec(`INSERT INTO gontact_entries (form_id, form_title, posted, email_fields) VALUES
+		($1, 'Legacy', '{"email-391":"ada@example.test","your-message":"ada-generated"}', NULL),
+		($1, 'Legacy', '{"contact":"ada@example.test","your-message":"ada-reply-to"}', NULL),
+		($1, 'Legacy', '{"your-message":"ada@example.test","contact":"bob@example.test"}', NULL),
+		(999999, 'Gone', '{"Email-12":"ada@example.test","your-message":"ada-gone-form"}', NULL),
+		(999999, 'Gone', '{"contact":"ada@example.test","your-message":"bob-gone-form"}', NULL)`, form.ID)
+	webhook := func(tag string, formID int64, posted map[string]string) {
+		t.Helper()
+		posted["tag"] = tag
+		body, _ := json.Marshal(map[string]any{"posted_data": posted})
+		raw, _ := json.Marshal(map[string]any{"url": "https://hook.example.test", "body": string(body), "form": formID})
+		f.exec(`INSERT INTO jobs (name, payload, status, run_at) VALUES ($1, $2, 'failed', now())`, gontactWebhookJob, string(raw))
+	}
+	webhook("ada-generated", form.ID, map[string]string{"email-391": "ada@example.test"})
+	webhook("ada-reply-to", form.ID, map[string]string{"contact": "ada@example.test"})
+	webhook("bob-message", form.ID, map[string]string{"contact": "bob@example.test", "your-message": "ada@example.test"})
+
+	var got []string
+	for _, g := range f.srv.registeredPersonalData(f.ctx, f.adaEmail) {
+		if g.ID != "pursae-contact-form-entries" {
+			continue
+		}
+		for _, item := range g.Items {
+			for _, kv := range item {
+				if kv.Name == "your-message" {
+					got = append(got, kv.Value)
+				}
+			}
+		}
+	}
+	if s := strings.Join(got, ","); s != "ada-generated,ada-reply-to,ada-gone-form" {
+		t.Errorf("Ada's legacy export: %q", s)
+	}
+	f.runErase()
+	if n := f.count(`SELECT count(*) FROM gontact_entries`); n != 2 {
+		t.Errorf("%d entries left, want Bob's two", n)
+	}
+	if n := f.count(`SELECT count(*) FROM jobs WHERE name = $1 AND payload->>'body' LIKE '%bob-message%'`, gontactWebhookJob); n != 1 {
+		t.Error("Bob's webhook delivery was erased")
+	}
+	if n := f.count(`SELECT count(*) FROM jobs WHERE name = $1 AND payload->>'body' LIKE '%ada-%'`, gontactWebhookJob); n != 0 {
+		t.Errorf("%d of Ada's legacy webhook deliveries left", n)
+	}
+}
+
+// A field the mails use as [_raw_x] or [_format_x] in Sender, Reply-To or the Mail (2) recipient is
+// an e-mail field, as the mail engine resolves those to field x.
+func TestGontactEmailFieldsRawFormatTags(t *testing.T) {
+	tags := []*gfTag{{Name: "contact", BaseType: "text"}, {Name: "auto", BaseType: "text"}, {Name: "other", BaseType: "text"}}
+	form := &gfForm{Mail: gfMail{AdditionalHeaders: "Reply-To: [_raw_contact]"},
+		Mail2: gfMail{Active: true, Recipient: `[_format_auto "x"]`, AdditionalHeaders: "Cc: [_raw_other]"}}
+	if got := strings.Join(gfEmailFields(form, tags), ","); got != "auto,contact" {
+		t.Errorf("email fields %q", got)
+	}
+}

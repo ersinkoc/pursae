@@ -101,28 +101,74 @@ func privacyCollect(ctx context.Context, s *Server, g exportGroup, sql string, a
 // formEmailFallbackNames are the field names that count as the sender's e-mail field in a stored
 // form message without e-mail field metadata (stored before the release that records it, migration
 // 0110): the default e-mail field of Pursae Contact Form ("your-email") and of Web Builder and code
-// forms ("email"), and the common spellings. It is deliberately short: a field with another name is
-// not matched (a missed old message can still be found in the entry lists), because matching every
+// forms ("email"), and the common spellings. Such a message also matches on the names the Contact
+// Form tag generator gives e-mail fields (formEmailFallbackPattern: "email-391") and, for a Contact
+// Form entry or webhook delivery, on the e-mail fields of its form's current template
+// (gontactLegacyEmailFields). A field with any other name is not matched, because matching every
 // field would hand one person's message to whoever's address appears in it.
 var formEmailFallbackNames = []string{"email", "e-mail", "your-email", "eposta"}
+
+// formEmailFallbackPattern is the name the Contact Form tag generator gives a new email field
+// (web/admin/assets/gontact/admin.js: type + "-" + a number), matched case-insensitively.
+const formEmailFallbackPattern = `^e-?mail-[0-9]+$`
 
 // formEntryMatch is the SQL condition "the form message is the person's": an address field of the
 // JSON object fieldsCol is the address $1, or the message was sent by the account $2 (0: no account)
 // while signed in (userCol). The address fields are the names in emailFieldsCol (a text[] or a
-// JSON array; NULL for old messages, which fall back to formEmailFallbackNames, case-insensitive).
-func formEntryMatch(fieldsCol, emailFieldsCol, userCol string) string {
+// JSON array; NULL for old messages, which fall back to formEmailFallbackNames and
+// formEmailFallbackPattern, case-insensitive, and, when formCol is set, to the names $3 (a JSON
+// object of form id to e-mail fields, gontactLegacyEmailFields) lists for the message's form).
+func formEntryMatch(fieldsCol, emailFieldsCol, userCol, formCol string) string {
+	legacy := ""
+	if formCol != "" {
+		legacy = ` OR kv.key IN (SELECT jsonb_array_elements_text(CASE WHEN jsonb_typeof($3::jsonb -> ((` + formCol + `)::text)) = 'array'
+				THEN $3::jsonb -> ((` + formCol + `)::text) ELSE '[]'::jsonb END))`
+	}
 	return `((` + userCol + `) IS NOT NULL AND $2::bigint <> 0 AND (` + userCol + `) = $2::bigint
 		OR EXISTS (SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(` + fieldsCol + `) = 'object' THEN ` + fieldsCol + ` ELSE '{}'::jsonb END) kv
 		WHERE lower(btrim(kv.value)) = lower($1) AND CASE WHEN (` + emailFieldsCol + `) IS NULL
 			THEN lower(kv.key) = ANY('{` + strings.Join(formEmailFallbackNames, ",") + `}'::text[])
+				OR lower(kv.key) ~ '` + formEmailFallbackPattern + `'` + legacy + `
 			ELSE kv.key = ANY(` + emailFieldsCol + `) END))`
 }
 
 // gontactEntryMatch and wbSubmissionMatch are formEntryMatch of the two tables.
 var (
-	gontactEntryMatch = formEntryMatch("posted", "email_fields", "user_id")
-	wbSubmissionMatch = formEntryMatch("fields", "email_fields", "user_id")
+	gontactEntryMatch = formEntryMatch("posted", "email_fields", "user_id", "form_id")
+	wbSubmissionMatch = formEntryMatch("fields", "email_fields", "user_id", "")
 )
+
+// gontactLegacyEmailFields is the $3 of gontactEntryMatch and webhookJobMatch: a JSON object of each
+// Contact Form's id to the e-mail fields of its current template and mails (gfEmailFields), which
+// entries and webhook deliveries stored without their own list are matched on. Trashed forms count:
+// their old entries are still stored.
+func gontactLegacyEmailFields(ctx context.Context, s *Server) string {
+	out := map[string][]string{}
+	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE type = $1`, gontactPostType)
+	if err == nil {
+		var ids []int64
+		for rows.Next() {
+			var id int64
+			if rows.Scan(&id) == nil {
+				ids = append(ids, id)
+			}
+		}
+		rows.Close()
+		for _, id := range ids {
+			p, err := s.store.GetPost(ctx, id)
+			if err != nil {
+				continue
+			}
+			f := gontactFormFromPost(p)
+			_, tags := gfScan(f.Form, nil)
+			if names := gfEmailFields(f, tags); len(names) > 0 {
+				out[strconv.FormatInt(id, 10)] = names
+			}
+		}
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
+}
 
 // fieldItems appends the posted fields, sorted by name, as export rows.
 func fieldItems(item []exportItem, raw []byte) []exportItem {
@@ -154,7 +200,7 @@ func gontactEntriesExporter(ctx context.Context, s *Server, email string) []expo
 	return privacyCollect(ctx, s, exportGroup{ID: "pursae-contact-form-entries", Label: "Contact form submissions",
 		Description: "Messages sent through the contact forms of this site."},
 		`SELECT id, form_title, posted, ip, user_agent, page_url, created_at FROM gontact_entries WHERE `+gontactEntryMatch+` ORDER BY id`,
-		[]any{email, privacyUserID(ctx, s, email)}, func(r pgxRows) []exportItem {
+		[]any{email, privacyUserID(ctx, s, email), gontactLegacyEmailFields(ctx, s)}, func(r pgxRows) []exportItem {
 			var id int64
 			var form, ip, ua, page string
 			var posted []byte
@@ -169,7 +215,7 @@ func gontactEntriesExporter(ctx context.Context, s *Server, email string) []expo
 }
 
 func gontactEntriesEraser(ctx context.Context, s *Server, email string) eraseResult {
-	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM gontact_entries WHERE `+gontactEntryMatch, email, privacyUserID(ctx, s, email))
+	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM gontact_entries WHERE `+gontactEntryMatch, email, privacyUserID(ctx, s, email), gontactLegacyEmailFields(ctx, s))
 	if err != nil {
 		return eraseResult{Err: err}
 	}
@@ -651,14 +697,16 @@ const mailJobMatch = `(name = 'wp_mail' AND (EXISTS (SELECT 1 FROM jsonb_array_e
 var webhookJobMatch = `(name = '` + gontactWebhookJob + `' AND CASE WHEN pg_input_is_valid(payload->>'body', 'jsonb')
 	THEN ` + formEntryMatch(`((payload->>'body')::jsonb->'posted_data')`,
 	`CASE WHEN jsonb_typeof(payload->'email_fields') = 'array' THEN ARRAY(SELECT jsonb_array_elements_text(payload->'email_fields')) END`,
-	`CASE WHEN jsonb_typeof(payload->'user_id') = 'number' THEN (payload->>'user_id')::bigint END`) + ` ELSE false END)`
+	`CASE WHEN jsonb_typeof(payload->'user_id') = 'number' THEN (payload->>'user_id')::bigint END`,
+	`payload->>'form'`) + ` ELSE false END)`
 
 // mailJobsEraser deletes the finished jobs of the address: mail (copies of messages the e-mail log
 // covers) and contact form webhook deliveries (copies of the entry, with the visitor's IP; a failed
 // one is never purged by the scheduler). Queued ones are left to run: among them may be this very
 // request's notices.
 func mailJobsEraser(ctx context.Context, s *Server, email string) eraseResult {
-	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE status IN ('done', 'failed') AND (`+mailJobMatch+` OR `+webhookJobMatch+`)`, email, privacyUserID(ctx, s, email))
+	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE status IN ('done', 'failed') AND (`+mailJobMatch+` OR `+webhookJobMatch+`)`, email, privacyUserID(ctx, s, email),
+		gontactLegacyEmailFields(ctx, s))
 	if err != nil {
 		return eraseResult{Err: err}
 	}
