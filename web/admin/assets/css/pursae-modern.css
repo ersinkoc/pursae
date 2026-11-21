@@ -2090,7 +2090,12 @@ body.pursae-modern.pm-dark .px-about__big { background: #1F2228; box-shadow: ins
 body.pursae-modern.pm-dark .px-btn { color: #0F1013; }
 body.pursae-modern.pm-dark .px-btn--ghost { background: transparent; color: var(--px-ink); box-shadow: inset 0 0 0 1px var(--px-line); }
 body.pursae-modern.pm-dark .px-btn--ghost:hover { background: var(--px-rail); }
-body.pursae-modern.pm-dark .px-team { background: #1B1D23; box-shadow: inset 0 0 0 1px var(--px-line); }
+body.pursae-modern.pm-dark .pursae-team-card { background: #1B1D23; }
+body.pursae-modern.pm-dark .pursae-team-card__photo { background: color-mix(in srgb, var(--pt-tint) 22%, #17191E); }
+body.pursae-modern.pm-dark .pursae-team-card__links a { background: #141518; color: #BFC3C8 !important; box-shadow: inset 0 0 0 1px #2F323A; }
+body.pursae-modern.pm-dark .pursae-team-card__links a:hover { background: #E2E3E6; color: #141518 !important; box-shadow: none; }
+body.pursae-modern.pm-dark .pursae-team-card__apply { background: #E2E3E6; color: #141518 !important; }
+body.pursae-modern.pm-dark .pursae-team-card__apply:hover { background: #8796EC; }
 @media (prefers-color-scheme: dark) {
 body.pursae-modern.pm-auto :is(.px, .ptour) {
 	--px-ink: #ECEDEF; --px-ink-2: #D3D5DA; --px-muted: #A7ABB3; --px-faint: #7F848D;
@@ -2107,7 +2112,12 @@ body.pursae-modern.pm-auto .px-about__big { background: #1F2228; box-shadow: ins
 body.pursae-modern.pm-auto .px-btn { color: #0F1013; }
 body.pursae-modern.pm-auto .px-btn--ghost { background: transparent; color: var(--px-ink); box-shadow: inset 0 0 0 1px var(--px-line); }
 body.pursae-modern.pm-auto .px-btn--ghost:hover { background: var(--px-rail); }
-body.pursae-modern.pm-auto .px-team { background: #1B1D23; box-shadow: inset 0 0 0 1px var(--px-line); }
+body.pursae-modern.pm-auto .pursae-team-card { background: #1B1D23; }
+body.pursae-modern.pm-auto .pursae-team-card__photo { background: color-mix(in srgb, var(--pt-tint) 22%, #17191E); }
+body.pursae-modern.pm-auto .pursae-team-card__links a { background: #141518; color: #BFC3C8 !important; box-shadow: inset 0 0 0 1px #2F323A; }
+body.pursae-modern.pm-auto .pursae-team-card__links a:hover { background: #E2E3E6; color: #141518 !important; box-shadow: none; }
+body.pursae-modern.pm-auto .pursae-team-card__apply { background: #E2E3E6; color: #141518 !important; }
+body.pursae-modern.pm-auto .pursae-team-card__apply:hover { background: #8796EC; }
 }
 /* set by pursae-modern.js on light, colourless borders while the dark mode is on */
 body.pursae-modern #wpbody-content .pm-dk-border { border-color: var(--pm-border) !important; }
