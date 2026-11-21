@@ -11,7 +11,6 @@ stand for the copyright lines NOTICE gives for each component.
 | File | License | Used by (see NOTICE for the full list) |
 | --- | --- | --- |
 | `GPL-2.0.txt` | GNU GPL v2 | Pursae, WordPress core and block editor, Plupload, mOxie, Iris, Dashicons (with font exception) |
-| `GPL-3.0.txt` | GNU GPL v3 | Elementor-derived migrations 0005–0007 (with the additional terms quoted in NOTICE) |
 | `LGPL-2.1.txt` | GNU LGPL v2.1 | TinyMCE, Crystal Project icons, libvips and GLib in wasm-vips |
 | `MPL-2.0.txt` | Mozilla Public License 2.0 | Mediabunny (block editor video conversion) |
 | `Apache-2.0.txt` | Apache License 2.0 | PDF.js, wazero, purego, pprof, MongoDB Go driver (bson), Mousetrap |

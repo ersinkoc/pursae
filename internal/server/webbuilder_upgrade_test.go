@@ -26,6 +26,18 @@ func wbuRegisterTheme(t *testing.T, th *Theme) {
 	})
 }
 
+// wbuOldThemesColumn adds themes.custom, the column a database that had the old builder still
+// carries (new installs never get it), and removes it again after the test.
+func wbuOldThemesColumn(t *testing.T, srv *Server) {
+	t.Helper()
+	if _, err := srv.store.Pool.Exec(context.Background(), `ALTER TABLE themes ADD COLUMN IF NOT EXISTS custom boolean NOT NULL DEFAULT false`); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = srv.store.Pool.Exec(context.Background(), `ALTER TABLE themes DROP COLUMN IF EXISTS custom`)
+	})
+}
+
 // wbuReset makes the upgrade run again on the next call, with the given options.
 func wbuReset(t *testing.T, srv *Server, values map[string]any) {
 	t.Helper()
@@ -137,6 +149,7 @@ func TestWebBuilderUpgrade(t *testing.T) {
 
 	// A theme saved with the old builder (themes.custom) and a design package also move; the
 	// previous theme is not used when it is itself a builder theme.
+	wbuOldThemesColumn(t, srv)
 	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO themes (slug, version, status, custom) VALUES ('wbu-saved', '1.0', 'active', true)
 		ON CONFLICT (slug) DO UPDATE SET custom = true`); err != nil {
 		t.Fatal(err)
@@ -199,6 +212,7 @@ func TestWebBuilderUpgradeKeepsHelloPursae(t *testing.T) {
 		t.Error("wbOldBuilderTheme(hello-pursae)")
 	}
 	// Even a stray saved-theme row under its slug does not make it one.
+	wbuOldThemesColumn(t, srv)
 	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO themes (slug, version, status, custom) VALUES ($1, '1.0', 'inactive', true)
 		ON CONFLICT (slug) DO UPDATE SET custom = true`, wbHelloSlug); err != nil {
 		t.Fatal(err)

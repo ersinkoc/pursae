@@ -1003,7 +1003,8 @@ body.pursae-modern.update-core-php .wrap > h2 {
 body.pursae-modern.update-core-php .wrap > h2 ~ p,
 body.pursae-modern.update-core-php .wrap > h2 ~ form,
 body.pursae-modern.update-core-php .wrap > h2 ~ table,
-body.pursae-modern.update-core-php .wrap > h2 ~ ul {
+body.pursae-modern.update-core-php .wrap > h2 ~ ul,
+body.pursae-modern.update-core-php .wrap > h2 ~ .pursae-release-notes {
 	margin: 0; padding: 6px 24px 18px; background: var(--pm-bg);
 	border: 1px solid var(--pm-border); border-top: 0;
 }

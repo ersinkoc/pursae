@@ -48,10 +48,12 @@ type Server struct {
 	// package directory per slug. Nil: the library comes from Pursae Manager (theme_library.go).
 	themeLibrary fs.FS
 	library      libraryState
-	tmpl         *templates
-	engine       *gin.Engine
-	trustedNets  []*net.IPNet // PURSAE_TRUSTED_PROXIES as parsed for gin; requestIP uses the same list
-	rest         *restAPI
+	// brandStock caches whether the logo is the stock Pursae mark (brand_mascot.go).
+	brandStock  brandStockState
+	tmpl        *templates
+	engine      *gin.Engine
+	trustedNets []*net.IPNet // PURSAE_TRUSTED_PROXIES as parsed for gin; requestIP uses the same list
+	rest        *restAPI
 	// staticRoots are the URL prefixes of the embedded asset directories (rtlStylesheets).
 	staticRoots []staticRoot
 

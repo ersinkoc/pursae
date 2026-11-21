@@ -17,22 +17,24 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"wpgo/internal/webbuilder"
 )
 
 // Google Fonts served from this site. Visitors' browsers never contact Google: the server downloads
 // a family's stylesheet from fonts.googleapis.com and its woff2 files from fonts.gstatic.com once,
 // stores them under uploads/web-builder/google-fonts/{css,fonts}/, rewrites the URLs (font-display:
 // swap) and the page links the local stylesheet plus a preload of the regular latin face
-// (gfontPreloadFile). Only families from the Google Fonts catalogue (gfonts_list.go) are handled.
+// (gfontPreloadFile). Only the families of the Web Builder's font library (webbuilder.LookupFont,
+// all of them Google Fonts families) are handled, with the weights the library lists for them.
 
 const (
-	gfontsBase        = builderUploadsDir + "/google-fonts" // under the uploads dir
+	gfontsBase = builderUploadsDir + "/google-fonts" // under the uploads dir
+	// A current desktop browser's user agent: Google Fonts picks the font format (woff2) by it.
 	gfontUserAgent    = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 	gfontDownloadTime = 3 * time.Minute
 	gfontFetchTime    = 60 * time.Second // one request
 )
-
-var gfontWeights = "100,100italic,200,200italic,300,300italic,400,400italic,500,500italic,600,600italic,700,700italic,800,800italic,900,900italic"
 
 // gfontFetch downloads one URL from Google Fonts. Tests replace it; the default refuses every
 // URL but https:// on fonts.googleapis.com and fonts.gstatic.com, never follows redirects and caps
@@ -70,23 +72,11 @@ var gfontFetch = func(ctx context.Context, raw string) ([]byte, error) {
 	return b, nil
 }
 
-var gfontCatalog = sync.OnceValue(func() map[string]string {
-	m := map[string]string{}
-	for _, line := range strings.Split(gfontList, "\n") {
-		if line = strings.TrimSpace(line); line == "" {
-			continue
-		}
-		if strings.HasPrefix(line, "*") {
-			m[line[1:]] = "earlyaccess"
-		} else {
-			m[line] = "googlefonts"
-		}
-	}
-	return m
-})
-
-// gfontType is "googlefonts", "earlyaccess" or "" (not a Google font).
-func gfontType(family string) string { return gfontCatalog()[strings.TrimSpace(family)] }
+// gfontFamily is the library font of that exact family name (false: not one the localizer serves).
+func gfontFamily(family string) (webbuilder.FontFamily, bool) {
+	f, ok := webbuilder.LookupFont(strings.TrimSpace(family))
+	return f, ok && f.Family == strings.TrimSpace(family)
+}
 
 // gfontKey is sanitize_key( family ).
 func gfontKey(family string) string {
@@ -109,9 +99,9 @@ var gfontJobs sync.Map // string -> chan struct{} (closed when done)
 // gfontEnsure downloads a family once; it returns true when the local stylesheet exists.
 // It waits at most wait for a running download (which carries on in the background).
 func (s *Server) gfontEnsure(family string, wait time.Duration) bool {
-	typ := gfontType(family)
+	f, ok := gfontFamily(family)
 	key := gfontKey(family)
-	if typ == "" || key == "" {
+	if !ok || key == "" {
 		return false
 	}
 	cssPath := filepath.Join(s.gfontsDir("css"), key+".css")
@@ -133,7 +123,7 @@ func (s *Server) gfontEnsure(family string, wait time.Duration) bool {
 			}()
 			ctx, cancel := context.WithTimeout(context.Background(), gfontDownloadTime)
 			defer cancel()
-			if err := s.gfontDownload(ctx, family, typ); err != nil {
+			if err := s.gfontDownload(ctx, f); err != nil {
 				gfontFailures.Store(job, time.Now())
 			}
 		}()
@@ -149,12 +139,20 @@ func (s *Server) gfontEnsure(family string, wait time.Duration) bool {
 
 var gfontFailures sync.Map
 
-// gfontURL is the stylesheet Google serves for a family (get_stable_google_fonts_url).
-func gfontURL(family, typ string) string {
-	if typ == "earlyaccess" {
-		return "https://fonts.googleapis.com/earlyaccess/" + strings.ToLower(strings.ReplaceAll(family, " ", "")) + ".css"
+// gfontURL is the Google Fonts stylesheet of a family with every weight and italic the library
+// lists for it, e.g. css?family=Inter:400,700,400italic&display=swap (400 when it lists none).
+func gfontURL(f webbuilder.FontFamily) string {
+	var axes []string
+	for _, w := range f.Weights {
+		axes = append(axes, strconv.Itoa(w))
 	}
-	return "https://fonts.googleapis.com/css?family=" + strings.ReplaceAll(family, " ", "+") + ":" + gfontWeights + "&display=swap"
+	for _, w := range f.Italics {
+		axes = append(axes, strconv.Itoa(w)+"italic")
+	}
+	if len(axes) == 0 {
+		axes = []string{"400"}
+	}
+	return "https://fonts.googleapis.com/css?family=" + strings.ReplaceAll(f.Family, " ", "+") + ":" + strings.Join(axes, ",") + "&display=swap"
 }
 
 var (
@@ -164,9 +162,10 @@ var (
 )
 
 // gfontDownload fetches a family's CSS and font files and writes the local stylesheet.
-func (s *Server) gfontDownload(ctx context.Context, family, typ string) error {
+func (s *Server) gfontDownload(ctx context.Context, f webbuilder.FontFamily) error {
+	family := f.Family
 	key := gfontKey(family)
-	css, err := gfontFetch(ctx, gfontURL(family, typ))
+	css, err := gfontFetch(ctx, gfontURL(f))
 	if err != nil {
 		return err
 	}
@@ -244,7 +243,7 @@ func (s *Server) gfontDownload(ctx context.Context, family, typ string) error {
 		}
 		return m
 	})
-	// font-display: swap on every face (the early access stylesheets have none).
+	// font-display: swap on every face, added where a face has none.
 	text = gfontFaceRe.ReplaceAllStringFunc(text, func(face string) string {
 		if gfontDisplayRe.MatchString(face) {
 			return gfontDisplayRe.ReplaceAllString(face, "font-display: swap")

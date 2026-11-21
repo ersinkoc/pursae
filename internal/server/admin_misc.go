@@ -89,6 +89,12 @@ func (s *Server) updateCore(c *gin.Context) {
 			}
 		}
 	}
+	// The full release notes of the latest release, from the cached index (release_notes.go).
+	if idx, err := s.hubIndexCached(c); err == nil && idx.Core != nil && idx.Core.Latest != "" && strings.TrimSpace(idx.Core.Notes) != "" {
+		d["Notes"] = renderReleaseNotes(idx.Core.Notes)
+		d["NotesVersion"] = idx.Core.Latest
+		d["NotesURL"] = notesSafeURL(idx.Core.NotesURL)
+	}
 	d["AutoUpdate"] = s.coreAutoUpdateView(c)
 	var notices []notice
 	switch c.Query("auto-update") {

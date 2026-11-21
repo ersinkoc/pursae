@@ -62,6 +62,9 @@ html.pm-login .pm-login-aside {
 	color: #DADBDE;
 }
 html.pm-login .pm-login-brand { display: flex; align-items: center; gap: 12px; color: #fff; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+html.pm-login .login h1 a.pursae-mascot-link,
+html.pm-login .login h1 a.pursae-mascot-link:hover,
+html.pm-login .login h1 a.pursae-mascot-link:focus { color: var(--pl-text); }
 html.pm-login .pm-login-site { margin: 0; color: #fff; font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
 html.pm-login .pm-login-tag { margin: 12px 0 0; color: #A8ACB3; font-size: 15px; }
 html.pm-login .pm-login-foot { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #7C8189; }
