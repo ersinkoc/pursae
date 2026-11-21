@@ -277,6 +277,19 @@ func (s *Store) SetUserPassword(ctx context.Context, userID int64, hash string) 
 	return err
 }
 
+// UpgradeUserPasswordHash replaces a verified legacy hash (WordPress phpass, bcrypt, MD5) with a new
+// one after a successful sign-in, like the rehash in wp_authenticate_username_password(). It only
+// writes while the stored hash is still oldHash, so a password changed meanwhile is never overwritten,
+// and it leaves sessions and any pending reset key alone: the password itself did not change. It
+// reports whether the row was updated.
+func (s *Store) UpgradeUserPasswordHash(ctx context.Context, userID int64, oldHash, newHash string) (bool, error) {
+	tag, err := s.Pool.Exec(ctx, `UPDATE users SET password_hash = $3 WHERE id = $1 AND password_hash = $2`, userID, oldHash, newHash)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
 // ConsumePasswordReset removes the user's password-reset key if it still has the given hash; it
 // reports whether this call removed it, so one key resets the password once.
 func (s *Store) ConsumePasswordReset(ctx context.Context, userID int64, hash string) (bool, error) {

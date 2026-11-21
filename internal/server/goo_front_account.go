@@ -376,7 +376,7 @@ func (s *Server) gooLoginPost(c *gin.Context) {
 	u, err := s.store.UserByLoginOrEmail(ctx, login)
 	ok := false
 	if err == nil {
-		ok, _ = auth.CheckPasswordCtx(c.Request.Context(), pass, u.PasswordHash)
+		ok = s.checkUserPassword(c.Request.Context(), u, pass)
 	} else {
 		auth.CheckDummyPassword(c.Request.Context(), pass) // no timing difference for unknown users
 	}
@@ -586,7 +586,7 @@ func (s *Server) gooSaveAccountPost(c *gin.Context) {
 		case p1 != p2:
 			errs = append(errs, "New passwords do not match.")
 		default:
-			if ok, _ := auth.CheckPassword(cur, u.PasswordHash); !ok {
+			if !s.checkUserPassword(c.Request.Context(), u, cur) {
 				errs = append(errs, "Your current password is incorrect.")
 			} else if msg := s.adminsecPasswordProblem(u.Roles, u.Login, email, p1); msg != "" { // Pursae Security password policy
 				errs = append(errs, msg)

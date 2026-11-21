@@ -169,7 +169,7 @@ func (s *Server) login(c *gin.Context) {
 		fail("<strong>Error:</strong> Could not log in right now. Please try again.")
 		return
 	}
-	ok, _ := auth.CheckPasswordCtx(c.Request.Context(), pass, u.PasswordHash)
+	ok := s.checkUserPassword(c.Request.Context(), u, pass)
 	if !ok {
 		if secOn {
 			s.adminsecLoginFailed(c, login, u, "Wrong password.", attemptID)

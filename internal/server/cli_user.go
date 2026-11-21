@@ -19,7 +19,8 @@ import (
 //
 // Nouns: user (+ user meta, user session, user application-password), role, cap.
 //
-// Every write follows the admin screens and REST: argon2id hashes only (auth.HashPassword), a new
+// Every write follows the admin screens and REST: argon2id hashes only (auth.HashPassword; the one
+// exception is `user create --user_pass_hash`, which keeps a WordPress hash for migration), a new
 // password ends every session and revokes application passwords and OAuth grants, the last
 // administrator cannot be removed, Pursae Security audit rows are written (username "cli", or
 // "cli:<login>" with --user), and a site-wide page cache purge is announced where the admin purges.
@@ -244,11 +245,14 @@ func registerUserCoreCLI(r *cli.Registry, e *cliEnv) {
 		Short: "Create a user.",
 		Long: "Creates a user with one role (default: the site's default_role setting). Without --user_pass a random\n" +
 			"password is generated and printed once. The Pursae Security password policy applies unless\n" +
-			"--skip-password-policy is given. No new-user e-mail is sent and plugin hooks do not run.",
+			"--skip-password-policy is given. No new-user e-mail is sent and plugin hooks do not run.\n" +
+			"--user_pass_hash moves a user from WordPress: the stored hash is kept, so the old password keeps\n" +
+			"working (the password policy cannot be checked against a hash).",
 		Args: []cli.Arg{{Name: "user-login", Usage: "Username."}, {Name: "user-email", Usage: "E-mail address."}},
 		Flags: []cli.Flag{
 			{Name: "role", Usage: "Role slug (see `role list`)."},
 			{Name: "user_pass", Usage: "Password (prefer the generated one: command lines end up in shell history)."},
+			{Name: "user_pass_hash", Usage: "A WordPress user_pass hash to keep as-is (migration): $wp$2y$, $P$/$H$ phpass, $2y$ bcrypt, MD5, $argon2id$ or $argon2i$. It is rehashed to argon2id at the first sign-in."},
 			{Name: "display_name", Usage: "Display name (default: the login)."},
 			{Name: "first_name", Usage: "First name."},
 			{Name: "last_name", Usage: "Last name."},
@@ -258,8 +262,9 @@ func registerUserCoreCLI(r *cli.Registry, e *cliEnv) {
 			{Name: "skip-password-policy", Bool: true, Usage: "Do not apply the Pursae Security password policy."},
 			{Name: "porcelain", Bool: true, Usage: "Print only the new user's ID."},
 		},
-		Examples: []string{"user create bob bob@example.com --role=author", "user create editor1 ed@example.com --role=editor --porcelain"},
-		Run:      func(c *cli.Ctx) error { return cliUserCreate(c, e) },
+		Examples: []string{"user create bob bob@example.com --role=author", "user create editor1 ed@example.com --role=editor --porcelain",
+			"user create alice alice@example.com --user_pass_hash='$wp$2y$10$...'"},
+		Run: func(c *cli.Ctx) error { return cliUserCreate(c, e) },
 	})
 
 	r.Add(cli.Command{
@@ -337,6 +342,36 @@ func cliUserEmailProblem(email string) string {
 	return ""
 }
 
+// cliUserCreatePassword is the stored hash of `user create`: a WordPress hash given with
+// --user_pass_hash is kept as-is (auth.CheckUserPassword verifies it and the first sign-in rehashes
+// it), otherwise the --user_pass or generated password is checked against the policy and hashed.
+func cliUserCreatePassword(c *cli.Ctx, s *Server, role, login, email string) (hash, pw string, generated bool, err error) {
+	if c.Has("user_pass_hash") {
+		if c.Has("user_pass") {
+			return "", "", false, cli.Usagef("--user_pass and --user_pass_hash cannot be combined")
+		}
+		h := strings.TrimSpace(c.Flag("user_pass_hash"))
+		if !auth.IsImportableHash(h) {
+			return "", "", false, cli.Errorf("--user_pass_hash is not a supported WordPress password hash ($wp$2y$…, $P$…, $H$…, $2y$… with cost 4-14, 32-digit MD5, or $argon2id$/$argon2i$ up to 256 MiB, t=16, p=16)")
+		}
+		return h, "", false, nil
+	}
+	pw, generated = c.Flag("user_pass"), false
+	if !c.Has("user_pass") {
+		pw, generated = cliUserGeneratePassword(), true
+	}
+	if msg := cliUserPasswordProblem(pw); msg != "" {
+		return "", "", false, cli.Errorf("%s", msg)
+	}
+	if !c.Bool("skip-password-policy") {
+		if msg := s.adminsecPasswordProblem([]string{role}, login, email, pw); msg != "" {
+			return "", "", false, cli.Errorf("%s (or pass --skip-password-policy)", msg)
+		}
+	}
+	hash, err = auth.HashPassword(pw)
+	return hash, pw, generated, err
+}
+
 func cliUserCreate(c *cli.Ctx, e *cliEnv) error {
 	ctx := c.Context
 	s, err := e.Server(ctx)
@@ -372,19 +407,7 @@ func cliUserCreate(c *cli.Ctx, e *cliEnv) error {
 	if et {
 		return cli.Errorf("the e-mail address '%s' is already registered", email)
 	}
-	pw, generated := c.Flag("user_pass"), false
-	if !c.Has("user_pass") {
-		pw, generated = cliUserGeneratePassword(), true
-	}
-	if msg := cliUserPasswordProblem(pw); msg != "" {
-		return cli.Errorf("%s", msg)
-	}
-	if !c.Bool("skip-password-policy") {
-		if msg := s.adminsecPasswordProblem([]string{role}, login, email, pw); msg != "" {
-			return cli.Errorf("%s (or pass --skip-password-policy)", msg)
-		}
-	}
-	hash, err := auth.HashPassword(pw)
+	hash, pw, generated, err := cliUserCreatePassword(c, s, role, login, email)
 	if err != nil {
 		return err
 	}

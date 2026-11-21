@@ -212,7 +212,7 @@ func (s *Server) hgLogin(c *gin.Context, st hgSettings) {
 		hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid identifier or password", nil)
 		return
 	}
-	good, _ := auth.CheckPasswordCtx(c, pass, u.PasswordHash)
+	good := s.checkUserPassword(c, u, pass)
 	if !good {
 		s.restLoginFailed(c, ident, u, "Wrong password (Headless API).", attemptID)
 		hgErr(c, http.StatusBadRequest, "ValidationError", "Invalid identifier or password", nil)
