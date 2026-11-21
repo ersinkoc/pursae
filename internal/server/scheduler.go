@@ -62,7 +62,8 @@ func recurrenceInterval(rec string) time.Duration {
 
 func (s *Server) jobHandlers() map[string]jobHandler {
 	return map[string]jobHandler{
-		"wxr_import": s.wxrImportJob, // the Import screen's background run (wxr_import.go)
+		"wxr_import":  s.wxrImportJob,  // the Import screen's background run (wxr_import.go)
+		"wp2p_import": s.wp2pImportJob, // WP to Pursae imports (wp2p_import.go)
 		"wp_scheduled_delete": func(ctx context.Context, _ map[string]any) error {
 			days := emptyTrashDays()
 			// One by one through DeletePost, so the children of a deleted page move up to its parent.

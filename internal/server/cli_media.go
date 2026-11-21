@@ -20,6 +20,7 @@ func registerMediaCLI(r *cli.Registry, e *cliEnv) {
 	registerMediaLibraryCLI(r, e)
 	registerMenuCLI(r, e)
 	registerImportCLI(r, e)
+	registerWP2PCLI(r, e) // import wordpress (cli_wp2p.go)
 }
 
 // mediaListFields are the default columns of `media list`.

@@ -581,7 +581,7 @@ func (s *Server) asStripVersion(c *gin.Context, b []byte) []byte {
 // prefixes, not whole namespaces, so admin routes those namespaces gain later stay blocked.
 var asRESTVisitorRoutes = []string{"/oembed/", "/" + gontactNamespace + "/", "/web-builder/v2/forms/",
 	"/" + gooikeNamespace + "/consent", "/" + gooikeNamespace + "/geo", "/" + pixelNamespace + "/event",
-	"/" + gooStoreNS + "/", "/" + hgNamespace + "/"}
+	"/" + gooStoreNS + "/", "/" + hgNamespace + "/", wp2pRouteMigrate + "/"} // migrate: the WP to Pursae plugin, authenticated by its token
 
 // adminsecRESTBlocked answers REST requests visitors may not make: user listing (enumeration) and,
 // when opted in, everything but the routes the front end needs. method is the effective method after

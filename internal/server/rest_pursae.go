@@ -98,6 +98,7 @@ func (s *Server) registerPursaeREST() {
 	}, nil)
 
 	s.registerPursaeOps(guard)
+	s.registerWP2PREST() // WP to Pursae push mode (wp2p_rest.go): its own token or an administrator
 
 	// MCP over streamable HTTP (mcp.go). Authentication is the REST API's: an Application Password.
 	api.register(pursaeNS, "/pursae/v1/mcp", map[string]restHandler{

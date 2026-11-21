@@ -384,6 +384,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/erase-personal-data", s.privacyTool("remove_personal_data"))
 	admin.GET("/import", s.importScreen)
 	admin.POST("/import", s.importScreen)
+	admin.GET("/import-wordpress", s.wp2pScreen) // Tools › Import › From WordPress (wp2p_admin.go)
+	admin.POST("/import-wordpress", s.wp2pScreen)
 	admin.GET("/user-new", s.userNew)
 	admin.POST("/user-new", s.userNew)
 	admin.GET("/user-edit", s.userEdit)

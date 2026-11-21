@@ -1,0 +1,649 @@
+package server
+
+import (
+	"archive/tar"
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"image"
+	"image/color"
+	"image/png"
+	"io"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
+	"os"
+	"path/filepath"
+	"slices"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
+	"wpgo/internal/auth"
+)
+
+// wp2pTestEntry is one file of a test package.
+type wp2pTestEntry struct {
+	Name string
+	Data []byte
+}
+
+// wp2pBuildPackage writes a package the way the WordPress plugin does: a tar stream sealed in chunks.
+func wp2pBuildPackage(t *testing.T, key wp2pKey, entries []wp2pTestEntry) []byte {
+	t.Helper()
+	var out bytes.Buffer
+	w, err := newWP2PWriter(&out, key, [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tw := tar.NewWriter(w)
+	for _, e := range entries {
+		if err := tw.WriteHeader(&tar.Header{Name: e.Name, Mode: 0o600, Size: int64(len(e.Data)), Typeflag: tar.TypeReg, Format: tar.FormatUSTAR}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tw.Write(e.Data); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return out.Bytes()
+}
+
+func wp2pJSONL(t *testing.T, rows ...any) []byte {
+	t.Helper()
+	var b bytes.Buffer
+	for _, r := range rows {
+		raw, err := json.Marshal(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b.Write(raw)
+		b.WriteByte('\n')
+	}
+	return b.Bytes()
+}
+
+func TestWP2PKeys(t *testing.T) {
+	var k wp2pKey
+	for i := range k {
+		k[i] = byte(i * 7)
+	}
+	for _, in := range []string{k.String(), " " + k.String()[:20] + "\n" + k.String()[20:] + " ", strings.Repeat("", 0) + hexKey(k)} {
+		got, err := wp2pParseKey(in)
+		if err != nil || got != k {
+			t.Errorf("parse %q: %v", in, err)
+		}
+	}
+	for _, bad := range []string{"", "short", k.String()[:40], strings.Repeat("z", 64)} {
+		if _, err := wp2pParseKey(bad); err == nil {
+			t.Errorf("%q must not parse", bad)
+		}
+	}
+	// The token key is HMAC-SHA256(token, label): the plugin computes the same with hash_hmac().
+	if got := wp2pTokenKey("pmt_test").String(); got != "J9XMgRgB2wNg1VRI5uGWA7vSpeLC33oZ6E92ALzbKPo" {
+		t.Errorf("token key = %s", got)
+	}
+}
+
+func hexKey(k wp2pKey) string {
+	const digits = "0123456789abcdef"
+	out := make([]byte, 0, 64)
+	for _, b := range k {
+		out = append(out, digits[b>>4], digits[b&15])
+	}
+	return string(out)
+}
+
+// The envelope: a round trip over several chunks; a wrong key, a flipped bit, a cut-off stream,
+// dropped or swapped chunks and data after the end all fail.
+func TestWP2PEnvelope(t *testing.T) {
+	key := wp2pTokenKey("pmt_envelope")
+	plain := bytes.Repeat([]byte("0123456789abcdef"), (wp2pMaxChunk*2)/16+1000) // three chunks
+	var sealed bytes.Buffer
+	w, err := newWP2PWriter(&sealed, key, [16]byte{9})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < len(plain); i += 1 << 20 {
+		_, _ = w.Write(plain[i:min(len(plain), i+1<<20)])
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	read := func(data []byte, k wp2pKey) ([]byte, error) {
+		r, err := newWP2PReader(bytes.NewReader(data), k)
+		if err != nil {
+			return nil, err
+		}
+		return io.ReadAll(r)
+	}
+	got, err := read(sealed.Bytes(), key)
+	if err != nil || !bytes.Equal(got, plain) {
+		t.Fatalf("round trip: %v (len %d of %d)", err, len(got), len(plain))
+	}
+	if _, err := read(sealed.Bytes(), wp2pTokenKey("pmt_other")); !errors.Is(err, errWP2PKey) {
+		t.Errorf("wrong key: %v", err)
+	}
+	flipped := bytes.Clone(sealed.Bytes())
+	flipped[len(flipped)/2] ^= 1
+	if _, err := read(flipped, key); err == nil {
+		t.Error("a flipped bit was accepted")
+	}
+	// Chunk boundaries: header, then [len][sealed]...
+	var offs []int
+	data := sealed.Bytes()
+	for p := wp2pHeaderLen; p < len(data); {
+		offs = append(offs, p)
+		p += 4 + int(uint32(data[p])<<24|uint32(data[p+1])<<16|uint32(data[p+2])<<8|uint32(data[p+3]))
+	}
+	if len(offs) != 3 {
+		t.Fatalf("%d chunks, want 3", len(offs))
+	}
+	if _, err := read(data[:offs[2]], key); err == nil {
+		t.Error("a stream without its last chunk was accepted")
+	}
+	dropped := append(bytes.Clone(data[:offs[1]]), data[offs[2]:]...)
+	if _, err := read(dropped, key); err == nil {
+		t.Error("a dropped chunk was accepted")
+	}
+	swapped := append(append(bytes.Clone(data[:offs[0]]), data[offs[1]:offs[2]]...), data[offs[0]:offs[1]]...)
+	swapped = append(swapped, data[offs[2]:]...)
+	if _, err := read(swapped, key); err == nil {
+		t.Error("swapped chunks were accepted")
+	}
+	if _, err := read(append(bytes.Clone(data), 0), key); err == nil {
+		t.Error("data after the last chunk was accepted")
+	}
+	if _, err := read([]byte("PURSAEWP\x02"+strings.Repeat("x", 16)), key); err == nil || !strings.Contains(err.Error(), "format 2") {
+		t.Errorf("newer format: %v", err)
+	}
+	if _, err := read([]byte("not a package at all......"), key); err == nil {
+		t.Error("not a package")
+	}
+}
+
+// Extraction writes only the known entries, inside the work directory.
+func TestWP2PExtract(t *testing.T) {
+	key := wp2pTokenKey("pmt_extract")
+	pkg := wp2pBuildPackage(t, key, []wp2pTestEntry{
+		{"manifest.json", []byte(`{"format":1,"home_url":"https://Old.Example/","counts":{"users":1}}`)},
+		{"users.jsonl", []byte(`{"id":1}` + "\n")},
+		{"../evil.txt", []byte("x")},
+		{"media/../../evil", []byte("x")},
+		{"media/12", []byte("png")},
+		{"woo/orders.jsonl", []byte("{}\n")},
+		{"woo/other.jsonl", []byte("{}\n")},
+		{"users.000002.jsonl", []byte(`{"id":3}` + "\n")},
+		{"users.000001.jsonl", []byte(`{"id":2}`)}, // no final newline
+		{"users.1.jsonl", []byte("{}")},
+	})
+	dir := t.TempDir()
+	path := filepath.Join(dir, "p.wp2p")
+	if err := os.WriteFile(path, pkg, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	work := filepath.Join(dir, "work")
+	man, ignored, err := wp2pExtract(path, key, work)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if man.HomeURL != "https://Old.Example/" || man.Counts["users"] != 1 || wp2pSource(man) != "old.example" {
+		t.Errorf("manifest: %+v", man)
+	}
+	if !slices.Equal(ignored, []string{"../evil.txt", "media/../../evil", "woo/other.jsonl", "users.1.jsonl"}) {
+		t.Errorf("ignored: %v", ignored)
+	}
+	for _, f := range []string{"users.jsonl", "media/12", "woo/orders.jsonl"} {
+		if _, err := os.Stat(filepath.Join(work, f)); err != nil {
+			t.Errorf("%s not extracted: %v", f, err)
+		}
+	}
+	var ids []string
+	_ = wp2pEachLine(filepath.Join(work, "users.jsonl"), func(raw []byte) error {
+		ids = append(ids, strings.TrimSpace(string(raw)))
+		return nil
+	})
+	if !slices.Equal(ids, []string{`{"id":1}`, `{"id":2}`, `{"id":3}`}) {
+		t.Errorf("parts read as %v", ids)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "evil.txt")); err == nil {
+		t.Error("an entry escaped the work directory")
+	}
+	if _, _, err := wp2pExtract(path, wp2pTokenKey("pmt_wrong"), filepath.Join(dir, "w2")); !errors.Is(err, errWP2PKey) {
+		t.Errorf("wrong key: %v", err)
+	}
+}
+
+func TestWP2POptionValues(t *testing.T) {
+	cases := []struct {
+		in, def, want any
+	}{
+		{"yes", false, true}, {"no", false, false}, {"1", false, true}, {"12", float64(10), float64(12)}, {"x", float64(10), nil},
+		{"EUR", "USD", "EUR"}, {[]any{"DE", "FR"}, []string{}, []any{"DE", "FR"}}, {"", []string{}, []any{}},
+	}
+	for _, c := range cases {
+		got, ok := wp2pOptionValue(c.in, c.def)
+		if c.want == nil {
+			if ok {
+				t.Errorf("%v as %T: %v, want refused", c.in, c.def, got)
+			}
+			continue
+		}
+		gj, _ := json.Marshal(got)
+		wj, _ := json.Marshal(c.want)
+		if !ok || string(gj) != string(wj) {
+			t.Errorf("%v as %T: %v (%v), want %v", c.in, c.def, got, ok, c.want)
+		}
+	}
+	if st, ok := wp2pOrderStatus("wc-completed"); st != "completed" || !ok {
+		t.Errorf("status: %s", st)
+	}
+	if st, ok := wp2pOrderStatus("wc-shipped"); st != "on-hold" || ok {
+		t.Errorf("custom status: %s", st)
+	}
+}
+
+// A whole site: users keep their WordPress passwords, content and media come from the package, the
+// store's settings, tax rates, coupons, orders (items, taxes, refunds, notes) and customers map to
+// Pursae Commerce; importing the package again adds nothing.
+func TestWP2PImportSite(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installUsersSite(t, c, ts.URL)
+	ctx := context.Background()
+	old := wxrFetchTransport
+	wxrFetchTransport = roundTripFunc(func(r *http.Request) (*http.Response, error) { return nil, errors.New("offline") })
+	t.Cleanup(func() { wxrFetchTransport = old })
+
+	wxr, err := os.ReadFile("testdata/wxr-woocommerce.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	img := image.NewRGBA(image.Rect(0, 0, 8, 8))
+	img.Set(1, 1, color.RGBA{R: 200, A: 255})
+	var pngBuf bytes.Buffer
+	_ = png.Encode(&pngBuf, img)
+
+	const wpPass = "password" // the hashes below are WordPress' for this password
+	created := time.Date(2024, 3, 3, 9, 12, 0, 0, time.UTC).Unix()
+	users := wp2pJSONL(t,
+		map[string]any{"id": 1, "login": "shopadmin", "email": "owner@shop.example.test", "pass": "$P$B2quFTY/dB/kUQqA.Jj1pGh9WakUwP.", "nicename": "shopadmin",
+			"display_name": "Shop Admin", "registered": "2020-05-01 10:00:00", "roles": []string{"administrator"}, "meta": map[string]string{"first_name": "Shop", "locale": "de_DE"}},
+		map[string]any{"id": 2, "login": "jane", "email": "jane@example.test", "pass": "$wp$2y$05$u//MIaiTMd889nQrv4tRLe6SFvcZuLdJ3PrPDBY/vdbwr4JX/Ye9u",
+			"display_name": "Jane Doe", "registered": "2023-01-02 03:04:05", "roles": []string{"customer", "made_up_role"},
+			"meta": map[string]string{"first_name": "Jane", "last_name": "Doe", "billing_city": "Berlin", "billing_country": "DE", "session_tokens": "x"}},
+		map[string]any{"id": 3, "login": "admin", "email": "someone@else.test", "pass": "$P$B2quFTY/dB/kUQqA.Jj1pGh9WakUwP.", "roles": []string{"administrator"}},
+		map[string]any{"id": 4, "login": "bad login!", "email": "bad@example.test", "pass": "x", "roles": []string{"subscriber"}},
+		map[string]any{"id": 5, "login": "nohash", "email": "nohash@example.test", "pass": "plain-text?", "roles": []string{"subscriber"}},
+	)
+	options, _ := json.Marshal(map[string]any{
+		"options": map[string]any{"blogname": "Demo Shop", "blogdescription": "Moved", "posts_per_page": "7", "woocommerce_currency": "EUR",
+			"woocommerce_calc_taxes": "yes", "woocommerce_stripe_settings": map[string]any{"secret": "s"}, "woocommerce_shop_page_id": "999", "admin_email": "evil@example.test"},
+		"theme": "storefront", "active_plugins": []string{"woocommerce/woocommerce.php"},
+	})
+	lineTax := map[string]any{"total": map[string]any{"7": "6.84"}, "subtotal": map[string]any{"7": "7.6"}}
+	orders := wp2pJSONL(t,
+		map[string]any{"id": 50, "status": "wc-completed", "currency": "EUR", "customer_id": 2, "order_key": "wc_order_abc",
+			"billing":        map[string]string{"first_name": "Jane", "email": "jane@example.test", "city": "Berlin", "country": "DE"},
+			"shipping":       map[string]string{"first_name": "Jane", "city": "Berlin"},
+			"payment_method": "bacs", "payment_method_title": "Direct bank transfer", "discount_total": "4", "shipping_total": "5", "cart_tax": "6.84",
+			"total": "92.84", "total_tax": "6.84", "date_created": created, "date_paid": created + 60, "date_completed": created + 3600,
+			"stock_reduced": true, "recorded_sales": true, "meta": map[string]any{"_custom_field": "kept"},
+			"items": []any{
+				map[string]any{"id": 101, "type": "line_item", "name": "Classic Tee", "meta": map[string]any{"_product_id": "40", "_variation_id": "0", "_qty": "2",
+					"_line_subtotal": "40", "_line_subtotal_tax": "7.6", "_line_total": "36", "_line_tax": "6.84", "_line_tax_data": lineTax, "_reduced_stock": "2", "Size": "M"}},
+				map[string]any{"id": 102, "type": "line_item", "name": "Hoodie - Blue", "meta": map[string]any{"_product_id": "41", "_variation_id": "43", "_qty": "1",
+					"_line_subtotal": "50", "_line_total": "50", "pa_color": "blue"}},
+				map[string]any{"id": 103, "type": "shipping", "name": "Flat rate", "meta": map[string]any{"method_id": "flat_rate", "instance_id": "1", "cost": "5", "total_tax": "0"}},
+				map[string]any{"id": 104, "type": "coupon", "name": "summer10", "meta": map[string]any{"discount_amount": "4", "discount_amount_tax": "0"}},
+				map[string]any{"id": 105, "type": "tax", "name": "DE-MWST-1", "meta": map[string]any{"rate_id": "7", "label": "MwSt", "compound": "", "tax_amount": "6.84", "shipping_tax_amount": "0", "rate_percent": "19"}},
+			},
+			"notes": []any{map[string]any{"content": "Order status changed from Processing to Completed.", "customer_note": false, "added_by": "system", "date": created + 3600}},
+			"refunds": []any{map[string]any{"id": 52, "amount": "10", "reason": "Damaged", "refunded_by": 1, "date_created": created + 7200,
+				"items": []any{map[string]any{"id": 106, "type": "line_item", "name": "Classic Tee", "meta": map[string]any{"_product_id": "40", "_qty": "-1",
+					"_line_subtotal": "-10", "_line_total": "-10", "_refunded_item_id": "101"}}}}},
+		},
+		map[string]any{"id": 53, "status": "wc-processing", "currency": "EUR", "billing": map[string]string{"email": "guest@example.test"}, "total": "12",
+			"date_created": created, "items": []any{map[string]any{"id": 107, "type": "line_item", "name": "Deleted product", "meta": map[string]any{"_product_id": "999", "_qty": "1", "_line_total": "12"}}}},
+		map[string]any{"id": 54, "status": "wc-shipped", "currency": "EUR", "total": "1", "date_created": created},
+	)
+	coupons := wp2pJSONL(t, map[string]any{"id": 51, "code": "Summer10", "status": "publish", "discount_type": "percent", "amount": "10", "product_ids": []int64{40, 999},
+		"product_categories": []int64{16}, "minimum_amount": "20", "maximum_amount": "", "usage_limit": "100", "usage_limit_per_user": "", "usage_count": 1,
+		"used_by": []string{"2"}, "date_expires": created + 86400*365, "date_created": created - 86400, "email_restrictions": []string{"*@example.test"}})
+	taxRates := wp2pJSONL(t, map[string]any{"id": 7, "country": "DE", "state": "", "rate": "19.0000", "name": "MwSt", "priority": 1, "compound": false, "shipping": true, "order": 0, "class": ""})
+	customers := wp2pJSONL(t,
+		map[string]any{"user_id": 2, "email": "jane@example.test", "billing": map[string]string{"city": "Berlin", "postcode": "10115"}, "shipping": map[string]string{"city": "Berlin"}, "is_paying_customer": true},
+		map[string]any{"user_id": 0, "email": "guest@example.test"})
+	media := wp2pJSONL(t, map[string]any{"id": 30, "name": "tee.png"}, map[string]any{"id": 31, "name": "hoodie.png"}, map[string]any{"id": 32, "name": "hoodie-back.png"})
+	manifest := []byte(`{"format":1,"generator":"wp-to-pursae/test","site_url":"https://shop.example.test","home_url":"https://shop.example.test","order_storage":"hpos",
+		"skipped":[{"kind":"media","item":"huge.mp4","reason":"larger than the size limit"}],"counts":{"users":5}}`)
+	key := wp2pTokenKey("pmt_site")
+	pkg := wp2pBuildPackage(t, key, []wp2pTestEntry{
+		// Batches come as numbered parts; content.xml is cut in the middle of a tag on purpose.
+		{"manifest.json", manifest}, {"users.jsonl", users}, {"options.json", options}, {"content.000001.xml", wxr[:len(wxr)/2+3]}, {"content.000002.xml", wxr[len(wxr)/2+3:]},
+		{"media.jsonl", media}, {"media/30", pngBuf.Bytes()}, {"media/31", pngBuf.Bytes()}, {"media/32", pngBuf.Bytes()},
+		{"woo/tax_rates.jsonl", taxRates}, {"woo/coupons.jsonl", coupons}, {"woo/orders.000001.jsonl", orders[:bytes.IndexByte(orders, '\n')+1]}, {"woo/orders.000002.jsonl", orders[bytes.IndexByte(orders, '\n')+1:]}, {"woo/customers.jsonl", customers},
+	})
+
+	importPkg := func() *wp2pRun {
+		t.Helper()
+		if err := os.MkdirAll(srv.wp2pImportDir(), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		id := wp2pNewID()
+		if err := os.WriteFile(srv.wp2pPackagePath(id), pkg, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, package_key, created_by, state) VALUES ($1, $2, 1, 'queued')`, id, key[:]); err != nil {
+			t.Fatal(err)
+		}
+		if err := srv.wp2pImportJob(ctx, map[string]any{"id": id}); err != nil {
+			t.Fatal(err)
+		}
+		var state, msg string
+		_ = srv.store.Pool.QueryRow(ctx, `SELECT state, error FROM wp2p_migrations WHERE id = $1`, id).Scan(&state, &msg)
+		if state != "done" {
+			t.Fatalf("import %s: %s", state, msg)
+		}
+		r, err := srv.wp2pLoadRun(ctx, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := os.Stat(srv.wp2pPackagePath(id)); err == nil {
+			t.Error("the uploaded package was not removed")
+		}
+		if _, err := os.Stat(srv.wp2pWorkDir(id)); err == nil {
+			t.Error("the extracted files were not removed")
+		}
+		var keyLeft []byte
+		_ = srv.store.Pool.QueryRow(ctx, `SELECT package_key FROM wp2p_migrations WHERE id = $1`, id).Scan(&keyLeft)
+		if keyLeft != nil {
+			t.Error("the package key was kept after the import")
+		}
+		return r
+	}
+	r := importPkg()
+	rep := r.rep
+	for k, want := range map[string]int{"users": 3, "orders": 3, "refunds": 1, "coupons": 1, "tax_rates": 1, "customers": 1, "guest_customers": 1,
+		"media": 3, "products": 6, "variations": 2, "users_password_reset": 1} {
+		if rep.Counts[k] != want {
+			t.Errorf("count %s = %d, want %d (%v)", k, rep.Counts[k], want, rep.Counts)
+		}
+	}
+	if rep.Existing["users"] != 1 {
+		t.Errorf("existing users = %d", rep.Existing["users"])
+	}
+	skipped := func(kind, item string) bool {
+		for _, s := range rep.Skipped {
+			if s.Kind == kind && s.Item == item {
+				return true
+			}
+		}
+		return false
+	}
+	if !skipped("user", "bad login!") || !skipped("media", "huge.mp4") || !skipped("user", "admin") {
+		t.Errorf("skipped: %+v", rep.Skipped)
+	}
+	if rep.Unmapped["order lines of products that were not imported (kept by name)"] != 1 || rep.Unmapped["coupon products that were not imported"] != 1 ||
+		rep.Unmapped["orders with a status Pursae Commerce does not have (imported as on-hold)"] != 1 {
+		t.Errorf("unmapped: %v", rep.Unmapped)
+	}
+
+	// Users sign in with their WordPress passwords (and are moved to argon2id on the way).
+	for _, login := range []string{"shopadmin", "jane"} {
+		u, err := srv.store.UserByLoginOrEmail(ctx, login)
+		if err != nil {
+			t.Fatalf("%s: %v", login, err)
+		}
+		if ok, _, _ := auth.CheckUserPassword(ctx, wpPass, u.PasswordHash); !ok {
+			t.Errorf("%s: the WordPress password does not verify (%s)", login, auth.HashKind(u.PasswordHash))
+		}
+	}
+	other := newClient()
+	if code, _, _ := post(t, other, ts.URL+"/wp-login", url.Values{"log": {"jane"}, "pwd": {wpPass}}); code != http.StatusFound {
+		t.Errorf("jane signs in: %d", code)
+	}
+	jane, _ := srv.store.UserByLoginOrEmail(ctx, "jane")
+	if jane.PrimaryRole() != "customer" || jane.Profile["first_name"] != "Jane" || jane.Meta["billing_city"] != "Berlin" || jane.Meta["billing_postcode"] != "10115" ||
+		jane.RegisteredAt.Year() != 2023 || jane.Meta["session_tokens"] != nil {
+		t.Errorf("jane: roles %v profile %v meta %v registered %v", jane.Roles, jane.Profile, jane.Meta, jane.RegisteredAt)
+	}
+	admin, _ := srv.store.UserByLoginOrEmail(ctx, "admin")
+	if ok, _, _ := auth.CheckUserPassword(ctx, "correct horse", admin.PasswordHash); !ok || admin.Email == "someone@else.test" {
+		t.Error("the existing admin was changed by the import")
+	}
+	shopadmin, _ := srv.store.UserByLoginOrEmail(ctx, "shopadmin")
+	if shopadmin.PrimaryRole() != "administrator" || shopadmin.Locale != "de_DE" {
+		t.Errorf("shopadmin: %v %q", shopadmin.Roles, shopadmin.Locale)
+	}
+
+	// Settings: core and store settings; nothing outside the lists.
+	if srv.settings.String("blogname") != "Demo Shop" || srv.settings.Int("posts_per_page") != 7 || srv.gooOptString("currency") != "EUR" || !srv.gooOptBool("calc_taxes") {
+		t.Errorf("settings: %q %d %q %v", srv.settings.String("blogname"), srv.settings.Int("posts_per_page"), srv.gooOptString("currency"), srv.gooOptBool("calc_taxes"))
+	}
+	if srv.settings.String("admin_email") == "evil@example.test" || srv.settings.Get(gooOptPrefix+"stripe_settings") != nil {
+		t.Error("an option outside the lists was imported")
+	}
+
+	// Content: products by the WXR importer, media from the package (not downloaded).
+	tee, err := srv.store.PostBySlug(ctx, "product", "classic-tee")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var teeImg int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE title = 'tee'`).Scan(&teeImg)
+	if teeImg == 0 || tee.FeaturedMediaID != teeImg {
+		t.Errorf("tee image %d / featured %d", teeImg, tee.FeaturedMediaID)
+	}
+	if tee.AuthorID != shopadmin.ID {
+		t.Errorf("product author %d, want shopadmin %d", tee.AuthorID, shopadmin.ID)
+	}
+	hoodie, _ := srv.store.PostBySlug(ctx, "product", "hoodie")
+	blue, _ := srv.store.PostBySlug(ctx, "product_variation", "hoodie-blue")
+
+	// Tax rate, coupon, orders.
+	var rateID int64
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT id FROM goo_tax_rates WHERE country = 'DE' AND name = 'MwSt'`).Scan(&rateID); err != nil {
+		t.Fatal(err)
+	}
+	cp, err := srv.gooCouponByCode(ctx, "summer10")
+	if err != nil {
+		t.Fatal(err)
+	}
+	clothing, _ := srv.store.TermBySlug(ctx, "product_cat", "clothing")
+	if cp.DiscountType != "percent" || cp.Amount != 10 || !slices.Equal(cp.ProductIDs, []int64{tee.ID}) || !slices.Equal(cp.ProductCategories, []int64{clothing.ID}) ||
+		cp.UsageCount != 1 || !slices.Equal(cp.UsedBy, []string{strconv.FormatInt(jane.ID, 10)}) || cp.UsageLimit == nil || *cp.UsageLimit != 100 ||
+		cp.UsageLimitPerUser != nil || cp.MinimumAmount == nil || *cp.MinimumAmount != 20 || cp.MaximumAmount != nil || cp.DateExpires == nil ||
+		cp.DateCreated.Unix() != created-86400 || !slices.Equal(cp.EmailRestrictions, []string{"*@example.test"}) {
+		t.Errorf("coupon: %+v", cp)
+	}
+	var orderID int64
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT new_id FROM wp2p_map WHERE kind = 'order' AND old_id = 50`).Scan(&orderID); err != nil {
+		t.Fatal(err)
+	}
+	o, err := srv.gooGetOrder(ctx, orderID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.Status != "completed" || o.Total != 92.84 || o.CartTax != 6.84 || o.CustomerID != jane.ID || o.OrderKey != "wc_order_abc" || o.Currency != "EUR" ||
+		o.DateCreated.Unix() != created || o.DatePaid == nil || o.DatePaid.Unix() != created+60 || !o.StockReduced || o.PaymentMethodTitle != "Direct bank transfer" ||
+		o.Billing["city"] != "Berlin" || o.Meta["_custom_field"] != "kept" || o.Meta["_recorded_sales"] != true || o.Meta["_wp2p_order_id"] != float64(50) {
+		t.Errorf("order: %+v", o)
+	}
+	if len(o.Items) != 5 {
+		t.Fatalf("items: %d", len(o.Items))
+	}
+	li, li2, ship, coup, tax := o.Items[0], o.Items[1], o.Items[2], o.Items[3], o.Items[4]
+	rk := strconv.FormatInt(rateID, 10)
+	if li.ProductID != tee.ID || li.Quantity != 2 || li.Subtotal != 40 || li.Total != 36 || li.TotalTax != 6.84 || li.Taxes.Total[rk] != 6.84 ||
+		li.Taxes.Subtotal[rk] != 7.6 || li.Meta["Size"] != "M" || li.Meta["_reduced_stock"] != float64(2) || li.Meta["_product_id"] != nil {
+		t.Errorf("line item: %+v", li)
+	}
+	if li2.ProductID != hoodie.ID || li2.VariationID != blue.ID || li2.Meta["pa_color"] != "blue" {
+		t.Errorf("variation line: %+v", li2)
+	}
+	if ship.Type != "shipping" || ship.Total != 5 || ship.Meta["method_id"] != "flat_rate" {
+		t.Errorf("shipping: %+v", ship)
+	}
+	if coup.Type != "coupon" || coup.Total != 4 || coup.Meta["coupon_id"] != float64(cp.ID) {
+		t.Errorf("coupon line: %+v", coup)
+	}
+	if tax.Type != "tax" || tax.Meta["rate_id"] != float64(rateID) || tax.Meta["tax_amount"] != 6.84 || tax.Meta["compound"] != false || tax.Name != "DE-MWST-1" {
+		t.Errorf("tax line: %+v", tax)
+	}
+	refunds, _ := srv.gooRefunds(ctx, o.ID)
+	if len(refunds) != 1 || refunds[0].Total != -10 || refunds[0].RefundReason != "Damaged" || refunds[0].RefundedBy != shopadmin.ID ||
+		len(refunds[0].Items) != 1 || refunds[0].Items[0].Meta["_refunded_item_id"] != float64(li.ID) || refunds[0].DateCreated.Unix() != created+7200 {
+		t.Errorf("refunds: %+v", refunds)
+	}
+	if got := srv.gooTotalRefunded(ctx, o.ID); got != 10 {
+		t.Errorf("refunded total %v", got)
+	}
+	notes, _ := srv.gooOrderNotes(ctx, o.ID, false)
+	if len(notes) != 1 || notes[0].AddedBy != "" || notes[0].CreatedAt.Unix() != created+3600 {
+		t.Errorf("notes: %+v", notes)
+	}
+	var guestStatus, customStatus, orig string
+	var guestCustomer int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT o.status, o.customer_id FROM goo_orders o JOIN wp2p_map m ON m.new_id = o.id AND m.kind = 'order' WHERE m.old_id = 53`).Scan(&guestStatus, &guestCustomer)
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT o.status, o.meta->>'_wp2p_original_status' FROM goo_orders o JOIN wp2p_map m ON m.new_id = o.id AND m.kind = 'order' WHERE m.old_id = 54`).Scan(&customStatus, &orig)
+	if guestStatus != "processing" || guestCustomer != 0 || customStatus != "on-hold" || orig != "wc-shipped" {
+		t.Errorf("guest order %s/%d, custom status %s (%s)", guestStatus, guestCustomer, customStatus, orig)
+	}
+
+	// Again: nothing is added twice.
+	count := func(q string) int {
+		var n int
+		if err := srv.store.Pool.QueryRow(ctx, q).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	queries := []string{`SELECT count(*) FROM goo_orders`, `SELECT count(*) FROM goo_order_items`, `SELECT count(*) FROM goo_coupons`, `SELECT count(*) FROM goo_tax_rates`,
+		`SELECT count(*) FROM users`, `SELECT count(*) FROM posts`, `SELECT count(*) FROM media`, `SELECT count(*) FROM goo_order_notes`}
+	before := make([]int, len(queries))
+	for i, q := range queries {
+		before[i] = count(q)
+	}
+	r2 := importPkg()
+	for i, q := range queries {
+		if n := count(q); n != before[i] {
+			t.Errorf("%s: %d after the second import, %d before", q, n, before[i])
+		}
+	}
+	if r2.rep.Existing["orders"] != 3 || r2.rep.Counts["orders"] != 0 || r2.rep.Existing["users"] != 4 || r2.rep.Existing["coupons"] != 1 {
+		t.Errorf("second run: counts %v existing %v", r2.rep.Counts, r2.rep.Existing)
+	}
+}
+
+// The push mode over REST: a token from the admin, start, chunks (one resent after a "lost"
+// answer), finish; the token works only for its import and only once.
+func TestWP2PPushREST(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installUsersSite(t, c, ts.URL)
+	ctx := context.Background()
+	admin, _ := srv.store.UserByLoginOrEmail(ctx, "admin")
+	token, id, _, err := srv.wp2pNewToken(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := wp2pTokenKey(token)
+	pkg := wp2pBuildPackage(t, key, []wp2pTestEntry{
+		{"manifest.json", []byte(`{"format":1,"home_url":"https://push.example.test"}`)},
+		{"users.jsonl", wp2pJSONL(t, map[string]any{"id": 9, "login": "pushed", "email": "pushed@example.test", "pass": "$P$B2quFTY/dB/kUQqA.Jj1pGh9WakUwP.", "roles": []string{"editor"}})},
+	})
+	do := func(method, path, tok string, body io.Reader, ctype string) (int, map[string]any) {
+		t.Helper()
+		req, _ := http.NewRequest(method, ts.URL+"/wp-json"+path, body)
+		if tok != "" {
+			req.Header.Set(wp2pTokenHeader, tok)
+		}
+		if ctype != "" {
+			req.Header.Set("Content-Type", ctype)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var out map[string]any
+		_ = json.NewDecoder(resp.Body).Decode(&out)
+		return resp.StatusCode, out
+	}
+	sum := sha256Hex(pkg)
+	start := func(tok string) (int, map[string]any) {
+		return do("POST", "/pursae/v1/migrate/start", tok, strings.NewReader(`{"size":`+strconv.Itoa(len(pkg))+`,"sha256":"`+sum+`"}`), "application/json")
+	}
+	if code, _ := start("pmt_wrong"); code != http.StatusUnauthorized {
+		t.Errorf("wrong token: %d", code)
+	}
+	if code, _ := start(""); code != http.StatusUnauthorized {
+		t.Errorf("no auth: %d", code)
+	}
+	code, out := start(token)
+	if code != http.StatusOK || out["id"] != id {
+		t.Fatalf("start: %d %v", code, out)
+	}
+	half := len(pkg) / 2
+	chunk := func(off, end int, tok string) (int, map[string]any) {
+		return do("PUT", "/pursae/v1/migrate/"+id+"/chunk?offset="+strconv.Itoa(off), tok, bytes.NewReader(pkg[off:end]), "application/octet-stream")
+	}
+	if code, out := chunk(0, half, token); code != http.StatusOK || out["received"] != float64(half) {
+		t.Fatalf("chunk 1: %d %v", code, out)
+	}
+	// The answer to the first chunk got lost: the plugin asks and resends from what was received.
+	if code, out := do("GET", "/pursae/v1/migrate/"+id, token, nil, ""); code != http.StatusOK || out["received"] != float64(half) || out["state"] != "receiving" {
+		t.Fatalf("status: %d %v", code, out)
+	}
+	if code, _ := chunk(half+10, len(pkg), token); code != http.StatusConflict {
+		t.Errorf("a gap was accepted: %d", code)
+	}
+	if code, _ := chunk(10, len(pkg), "pmt_wrong"); code != http.StatusUnauthorized {
+		t.Errorf("chunk with a wrong token: %d", code)
+	}
+	if code, _ := chunk(half-5, len(pkg), token); code != http.StatusOK {
+		t.Fatalf("resend: %d", code)
+	}
+	if code, out := do("POST", "/pursae/v1/migrate/"+id+"/finish", token, strings.NewReader("{}"), "application/json"); code != http.StatusAccepted || out["state"] != "queued" {
+		t.Fatalf("finish: %d %v", code, out)
+	}
+	if code, _ := start(token); code != http.StatusConflict {
+		t.Errorf("the token was usable twice: %d", code)
+	}
+	if err := srv.wp2pImportJob(ctx, map[string]any{"id": id}); err != nil {
+		t.Fatal(err)
+	}
+	if code, out := do("GET", "/pursae/v1/migrate/"+id, token, nil, ""); code != http.StatusOK || out["state"] != "done" {
+		t.Fatalf("after the import: %d %v", code, out)
+	}
+	u, err := srv.store.UserByLoginOrEmail(ctx, "pushed")
+	if err != nil || u.PrimaryRole() != "editor" {
+		t.Fatalf("pushed user: %v %v", u, err)
+	}
+	if ok, _, _ := auth.CheckUserPassword(ctx, "password", u.PasswordHash); !ok {
+		t.Error("the pushed user's password does not verify")
+	}
+	// The admin screen shows the import and its report.
+	_, body, _ := get(t, c, ts.URL+"/wp-admin/import-wordpress?run="+id)
+	if !strings.Contains(body, "All done.") || !strings.Contains(body, "push.example.test") {
+		t.Errorf("admin report: %s", body)
+	}
+}
+
+func newClient() *http.Client {
+	jar, _ := cookiejar.New(nil)
+	return &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+}
+
+func sha256Hex(b []byte) string {
+	h := sha256.Sum256(b)
+	return hex.EncodeToString(h[:])
+}
