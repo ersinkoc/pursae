@@ -32,11 +32,13 @@ The restart does not drop visitors: the listening socket is handed to the new bi
 meanwhile wait in the kernel's queue until the new version accepts them — a second or two, no
 error page, also behind a proxy such as Traefik in Dokploy.
 
-**Rollback.** The new binary confirms the update once it answers requests (within two minutes);
+**Rollback.** The new binary confirms the update once it is ready: `/readyz` answers 200, which means the
+database is reachable, no migration is pending and the [schema guard](#schema-changes) accepts it
+(within two minutes);
 until then `.update.json` stays *pending*. If it dies first and is started again — by Docker's
 `restart: unless-stopped` (set in `docker/compose.yaml`), systemd's `Restart=always` or any other
 supervisor — the second start puts `<executable>.prev` back and runs it, and Dashboard › Updates
-says *Pursae X did not start, so the site went back to Y*. If it keeps running but never answers
+says *Pursae X did not start, so the site went back to Y*. If it keeps running but never becomes ready
 within the two minutes, it puts `<executable>.prev` back itself and hands the socket over to it
 (*Pursae X started but did not answer requests, so the site went back to Y*). If re-executing fails
 outright, the previous binary is put back at once. Without a supervisor nothing restarts a crashed process, so
