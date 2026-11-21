@@ -1146,3 +1146,43 @@ func TestWBImportWizardUndoCanRetryAfterKitDeleteFailure(t *testing.T) {
 		}
 	}
 }
+
+func TestWBImportWizardCompletedPublishKeepsLaterVisibilityChange(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	_, _, loc := w.upload(wizSite(t), "site.zip", "publish-once")
+	id := wizIDRE.FindStringSubmatch(loc)[1]
+	_, analysis, _ := w.get(loc)
+	at := wbWizURL + "?import=" + id
+	code, _, result := w.postForm(at+"&action=import", url.Values{
+		"_wpnonce": {wizHiddenRE.FindStringSubmatch(analysis)[1]},
+		"kit":      {"publish-once"},
+		"status":   {"draft"},
+	})
+	if code != http.StatusSeeOther {
+		t.Fatalf("draft import: %d", code)
+	}
+	_, report, _ := w.get(result)
+	form := url.Values{"_wpnonce": {wizHiddenRE.FindStringSubmatch(report)[1]}}
+	publish := at + "&action=publish"
+	if code, body, _ := w.postForm(publish, form); code != http.StatusOK || strings.Contains(body, "Publish the pages") {
+		t.Fatalf("initial publish: %d %s", code, wbSnippet(body, "notice"))
+	}
+	m := srv.wbWizLoad(id)
+	if m == nil || m.Result == nil || !m.Result.Published || len(m.Result.Pages) == 0 {
+		t.Fatal("initial publication did not save its result")
+	}
+	pageID := m.Result.Pages[0].PostID
+	if _, err := srv.store.Pool.Exec(t.Context(), `UPDATE posts SET status = 'private' WHERE id = $1`, pageID); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, loc := w.postForm(publish, form); code != http.StatusSeeOther || loc != result {
+		t.Fatalf("completed publish: %d %q, want redirect to %q", code, loc, result)
+	}
+	post, err := srv.store.GetPost(t.Context(), pageID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if post.Status != "private" {
+		t.Fatalf("status after repeat publish = %q, want private", post.Status)
+	}
+}
