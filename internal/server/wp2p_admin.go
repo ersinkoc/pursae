@@ -1,16 +1,19 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 // Tools › Import › From WordPress (/wp-admin/import-wordpress): the Pursae side of WP to Pursae. The
@@ -30,6 +33,8 @@ type wp2pListRow struct {
 	Created                         time.Time
 	Token                           bool
 	Expired                         bool
+	CLI                             bool // run by `pursae import wordpress`
+	Stale                           bool // a command-line run that stopped writing progress (killed): it can be removed
 }
 
 // wp2pReportView is the report as the screen shows it.
@@ -112,8 +117,9 @@ func (s *Server) wp2pScreen(c *gin.Context) {
 				c.Redirect(http.StatusSeeOther, "/wp-admin/import-wordpress")
 				return
 			case "resume":
+				// A command-line run has no package or key here: it is resumed by running the command again.
 				if wxrTokenRE.MatchString(id) {
-					tag, err := s.store.Pool.Exec(ctx, `UPDATE wp2p_migrations SET state = 'queued', error = '', updated_at = now() WHERE id = $1 AND state = 'failed'`, id)
+					tag, err := s.store.Pool.Exec(ctx, `UPDATE wp2p_migrations SET state = 'queued', error = '', updated_at = now() WHERE id = $1 AND state = 'failed' AND NOT cli`, id)
 					if err == nil && tag.RowsAffected() == 1 {
 						_ = s.queueJob(ctx, "wp2p_import", map[string]any{"id": id}, time.Time{})
 					}
@@ -122,7 +128,8 @@ func (s *Server) wp2pScreen(c *gin.Context) {
 				return
 			case "delete":
 				if wxrTokenRE.MatchString(id) {
-					_, _ = s.store.Pool.Exec(ctx, `DELETE FROM wp2p_migrations WHERE id = $1 AND state NOT IN ('queued', 'running')`, id)
+					_, _ = s.store.Pool.Exec(ctx, `DELETE FROM wp2p_migrations WHERE id = $1 AND (state NOT IN ('queued', 'running') OR (cli AND updated_at < now() - make_interval(secs => $2)))`,
+						id, wp2pStaleCLI.Seconds())
 					_ = os.Remove(s.wp2pPackagePath(id))
 					_ = os.RemoveAll(s.wp2pWorkDir(id))
 				}
@@ -142,7 +149,8 @@ func (s *Server) wp2pScreen(c *gin.Context) {
 // wp2pList is the recent imports and tokens.
 func (s *Server) wp2pList(c *gin.Context) []wp2pListRow {
 	rows, err := s.store.Pool.Query(c.Request.Context(), `SELECT id, state, source, progress->>'phase', error, size, received, created_at, token_hash <> '',
-		coalesce(expires_at < now(), false) FROM wp2p_migrations ORDER BY created_at DESC LIMIT 20`)
+		coalesce(expires_at < now(), false), cli, cli AND state = 'running' AND updated_at < now() - make_interval(secs => $1)
+		FROM wp2p_migrations ORDER BY created_at DESC LIMIT 20`, wp2pStaleCLI.Seconds())
 	if err != nil {
 		return nil
 	}
@@ -151,7 +159,7 @@ func (s *Server) wp2pList(c *gin.Context) []wp2pListRow {
 	for rows.Next() {
 		var r wp2pListRow
 		var phase *string
-		if rows.Scan(&r.ID, &r.State, &r.Source, &phase, &r.Error, &r.Size, &r.Received, &r.Created, &r.Token, &r.Expired) == nil {
+		if rows.Scan(&r.ID, &r.State, &r.Source, &phase, &r.Error, &r.Size, &r.Received, &r.Created, &r.Token, &r.Expired, &r.CLI, &r.Stale) == nil {
 			if phase != nil {
 				r.Phase = wp2pPhaseLabels[*phase]
 			}
@@ -172,8 +180,9 @@ func (s *Server) wp2pRunView(c *gin.Context, id string, d map[string]any) {
 	}
 	var state, errMsg string
 	var prog, rep []byte
-	if err := s.store.Pool.QueryRow(c.Request.Context(), `SELECT state, error, progress, report FROM wp2p_migrations WHERE id = $1`, id).
-		Scan(&state, &errMsg, &prog, &rep); err != nil {
+	var cli bool
+	if err := s.store.Pool.QueryRow(c.Request.Context(), `SELECT state, error, progress, report, cli FROM wp2p_migrations WHERE id = $1`, id).
+		Scan(&state, &errMsg, &prog, &rep, &cli); err != nil {
 		d["Error"] = "This import is not known."
 		return
 	}
@@ -197,7 +206,7 @@ func (s *Server) wp2pRunView(c *gin.Context, id string, d map[string]any) {
 		view.Log = r.Content.Log
 	}
 	d["Run"] = map[string]any{"ID": id, "State": state, "Error": errMsg, "Phases": phases, "Report": view, "Source": r.Source,
-		"Active": state == "queued" || state == "running"}
+		"Active": state == "queued" || state == "running", "CLI": cli}
 }
 
 // wp2pUpload stores an uploaded package (streamed: it can be gigabytes) and queues its import. The
@@ -313,4 +322,106 @@ func fileSize(path string) int64 {
 		return st.Size()
 	}
 	return 0
+}
+
+// Retention of WP to Pursae imports (wp2p_cleanup, hourly). A package and its extracted files hold the
+// site's users with their password hashes and the customers' orders: they never stay longer than an
+// import needs them.
+const (
+	// wp2pAbandonAfter: an upload without activity, or an import that failed and was not resumed,
+	// loses its package and extracted files (and with them Resume).
+	wp2pAbandonAfter = 7 * 24 * time.Hour
+	// wp2pReportKeep: the report's itemized lists (skipped items, the content log) are dropped; the
+	// counts and notes stay.
+	wp2pReportKeep = 30 * 24 * time.Hour
+	// wp2pTokenGrace: a token keeps answering GET this long after its import ended.
+	wp2pTokenGrace = time.Hour
+	// wp2pStaleCLI: a command-line run that has not written progress for this long was killed.
+	wp2pStaleCLI = 6 * time.Hour
+)
+
+// wp2pCleanup is the wp2p_cleanup job: it closes abandoned uploads, deletes the files of imports that
+// will not go on, forgets the tokens of finished imports, trims old reports and removes files in the
+// import directory that no import owns.
+func (s *Server) wp2pCleanup(ctx context.Context) error {
+	pool := s.store.Pool
+	var gone []string
+	collect := func(sql string, args ...any) error {
+		rows, err := pool.Query(ctx, sql, args...)
+		if err != nil {
+			return err
+		}
+		ids, err := pgx.CollectRows(rows, pgx.RowTo[string])
+		gone = append(gone, ids...)
+		return err
+	}
+	// Tokens that expired unused, and uploads that stopped: closed, key forgotten.
+	if err := collect(`UPDATE wp2p_migrations SET state = 'expired', package_key = NULL, lease = '', updated_at = now(),
+			error = 'The upload did not finish in time; generate a new token to start again.'
+		WHERE (state = 'waiting' AND expires_at < now())
+			OR (state = 'receiving' AND (expires_at < now() OR (expires_at IS NULL AND updated_at < now() - make_interval(secs => $1))))
+		RETURNING id`, wp2pAbandonAfter.Seconds()); err != nil {
+		return err
+	}
+	// Command-line runs that were killed: failed (they are resumed by running the command again).
+	if err := collect(`UPDATE wp2p_migrations SET state = 'failed', updated_at = now(), error = 'The command stopped before the import was finished; run it again to continue.'
+		WHERE cli AND state = 'running' AND updated_at < now() - make_interval(secs => $1) RETURNING id`, wp2pStaleCLI.Seconds()); err != nil {
+		return err
+	}
+	// Failed imports nobody resumed: their files go, and Resume with them.
+	if err := collect(`UPDATE wp2p_migrations SET state = 'expired', package_key = NULL, updated_at = now(),
+			error = error || ' (Not resumed within 7 days: the package and its extracted files were deleted.)'
+		WHERE state = 'failed' AND NOT cli AND updated_at < now() - make_interval(secs => $1) RETURNING id`, wp2pAbandonAfter.Seconds()); err != nil {
+		return err
+	}
+	for _, id := range gone {
+		_ = os.Remove(s.wp2pPackagePath(id))
+		_ = os.RemoveAll(s.wp2pWorkDir(id))
+	}
+	// Tokens of imports that ended.
+	if _, err := pool.Exec(ctx, `UPDATE wp2p_migrations SET token_hash = '' WHERE token_hash <> '' AND state IN ('done', 'failed', 'expired', 'revoked')
+		AND updated_at < now() - make_interval(secs => $1)`, wp2pTokenGrace.Seconds()); err != nil {
+		return err
+	}
+	// Old reports keep their counts and notes only.
+	if _, err := pool.Exec(ctx, `UPDATE wp2p_migrations SET report = (report - 'skipped') #- '{content,Log}'
+		WHERE state IN ('done', 'failed', 'expired', 'revoked') AND updated_at < now() - make_interval(secs => $1)
+			AND (report ? 'skipped' OR coalesce(report->'content', '{}'::jsonb) ? 'Log')`, wp2pReportKeep.Seconds()); err != nil {
+		return err
+	}
+	return s.wp2pRemoveOrphans(ctx)
+}
+
+// wp2pRemoveOrphans removes what is in the import directory without an import that may still need it:
+// files of deleted rows, and the extracted files of finished ones (older than a day, so a package being
+// stored right now is not taken).
+func (s *Server) wp2pRemoveOrphans(ctx context.Context) error {
+	entries, err := os.ReadDir(s.wp2pImportDir())
+	if err != nil {
+		return nil //nolint:nilerr // no import directory: nothing to remove
+	}
+	keep := map[string]bool{}
+	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM wp2p_migrations WHERE state IN ('waiting', 'receiving', 'queued', 'running', 'failed')`)
+	if err != nil {
+		return err
+	}
+	ids, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		keep[id] = true
+	}
+	for _, e := range entries {
+		id := strings.TrimSuffix(e.Name(), ".wp2p")
+		if keep[id] {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil || time.Since(info.ModTime()) < 24*time.Hour {
+			continue
+		}
+		_ = os.RemoveAll(filepath.Join(s.wp2pImportDir(), e.Name()))
+	}
+	return nil
 }

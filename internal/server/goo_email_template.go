@@ -430,7 +430,7 @@ func (s *Server) gooEmailOrderDetails(ctx context.Context, o *gooOrder, admin bo
 	date := s.gooEmailDate(ctx, o.DateCreated)
 	title := gooET(ctx, "[Order #%s]", o.Number())
 	if admin && o.ID != 0 {
-		title = `<a class="link" href="` + gooEsc(s.links(ctx).HomeURL("/wp-admin/goocommerce?page=orders&action=edit&id="+o.Number())) + `" style="color:` + c.Base + `;font-weight:normal;text-decoration:underline;">` + title + `</a>`
+		title = `<a class="link" href="` + gooEsc(s.links(ctx).HomeURL("/wp-admin/goocommerce?page=orders&action=edit&id="+itoa64(o.ID))) + `" style="color:` + c.Base + `;font-weight:normal;text-decoration:underline;">` + title + `</a>`
 	}
 	var b strings.Builder
 	b.WriteString(`<h2 style="color:` + c.Base + `;display:block;font-family:` + gooEmailFont + `;font-size:18px;font-weight:bold;line-height:130%;margin:0 0 18px;text-align:left;">` +

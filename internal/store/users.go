@@ -236,26 +236,53 @@ func (s *Store) CreateUser(ctx context.Context, nu NewUser) (int64, error) {
 	}
 	var id int64
 	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		base := nicename
-		for i := 2; ; i++ {
-			var taken bool
-			if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE nicename=$1)`, nicename).Scan(&taken); err != nil {
-				return err
-			}
-			if !taken {
-				break
-			}
-			nicename = base + "-" + strconv.Itoa(i)
-		}
-		if err := tx.QueryRow(ctx, `INSERT INTO users(login, email, password_hash, nicename, display_name, profile)
-			VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-			nu.Login, nu.Email, nu.PasswordHash, nicename, nu.DisplayName, profile).Scan(&id); err != nil {
-			return userUniqueErr(err)
-		}
-		_, err := tx.Exec(ctx, `INSERT INTO user_roles(user_id, role_id, is_primary)
-			SELECT $1, id, true FROM roles WHERE slug = $2`, id, nu.Role)
+		var err error
+		id, err = createUserTx(ctx, tx, nu, profile, nicename)
 		return err
 	})
+	return id, err
+}
+
+// CreateUserTx is CreateUser inside the caller's transaction (an import that writes the user and
+// what belongs to it together).
+func (s *Store) CreateUserTx(ctx context.Context, tx pgx.Tx, nu NewUser) (int64, error) {
+	if nu.DisplayName == "" {
+		nu.DisplayName = nu.Login
+	}
+	if nu.Profile == nil {
+		nu.Profile = map[string]string{}
+	}
+	if _, ok := nu.Profile["nickname"]; !ok {
+		nu.Profile["nickname"] = nu.Login
+	}
+	profile, _ := json.Marshal(nu.Profile)
+	nicename := wp.SanitizeTitle(nu.Login)
+	if nicename == "" {
+		nicename = "user"
+	}
+	return createUserTx(ctx, tx, nu, profile, nicename)
+}
+
+func createUserTx(ctx context.Context, tx pgx.Tx, nu NewUser, profile []byte, nicename string) (int64, error) {
+	var id int64
+	base := nicename
+	for i := 2; ; i++ {
+		var taken bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE nicename=$1)`, nicename).Scan(&taken); err != nil {
+			return 0, err
+		}
+		if !taken {
+			break
+		}
+		nicename = base + "-" + strconv.Itoa(i)
+	}
+	if err := tx.QueryRow(ctx, `INSERT INTO users(login, email, password_hash, nicename, display_name, profile)
+		VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+		nu.Login, nu.Email, nu.PasswordHash, nicename, nu.DisplayName, profile).Scan(&id); err != nil {
+		return 0, userUniqueErr(err)
+	}
+	_, err := tx.Exec(ctx, `INSERT INTO user_roles(user_id, role_id, is_primary)
+		SELECT $1, id, true FROM roles WHERE slug = $2`, id, nu.Role)
 	return id, err
 }
 

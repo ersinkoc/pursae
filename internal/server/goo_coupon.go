@@ -77,6 +77,11 @@ func (s *Server) gooCouponByID(ctx context.Context, id int64) (*gooCoupon, error
 
 // gooSaveCoupon inserts (ID 0) or updates a coupon. Codes are unique (case-insensitive) among non-trashed coupons.
 func (s *Server) gooSaveCoupon(ctx context.Context, c *gooCoupon) error {
+	return s.gooSaveCouponOn(ctx, s.store.Pool, c)
+}
+
+// gooSaveCouponOn is gooSaveCoupon on q: the pool, or the caller's transaction.
+func (s *Server) gooSaveCouponOn(ctx context.Context, q querier, c *gooCoupon) error {
 	c.Code = strings.ToLower(strings.TrimSpace(c.Code))
 	if c.Code == "" {
 		return errors.New("Please enter a coupon code.")
@@ -93,7 +98,7 @@ func (s *Server) gooSaveCoupon(ctx context.Context, c *gooCoupon) error {
 		c.Amount = 100
 	}
 	var taken bool
-	_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM goo_coupons WHERE lower(code) = $1 AND id <> $2 AND status <> 'trash')`, c.Code, c.ID).Scan(&taken)
+	_ = q.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM goo_coupons WHERE lower(code) = $1 AND id <> $2 AND status <> 'trash')`, c.Code, c.ID).Scan(&taken)
 	if taken {
 		return fmt.Errorf("Coupon code already exists - customers will use the latest coupon with this code.")
 	}
@@ -103,7 +108,7 @@ func (s *Server) gooSaveCoupon(ctx context.Context, c *gooCoupon) error {
 		c.Meta = map[string]any{}
 	}
 	if c.ID == 0 {
-		return s.store.Pool.QueryRow(ctx, `INSERT INTO goo_coupons (code, description, status, discount_type, amount, date_expires, free_shipping,
+		return q.QueryRow(ctx, `INSERT INTO goo_coupons (code, description, status, discount_type, amount, date_expires, free_shipping,
 			minimum_amount, maximum_amount, individual_use, exclude_sale_items, product_ids, excluded_product_ids, product_categories,
 			excluded_product_categories, email_restrictions, usage_limit, usage_limit_per_user, limit_usage_to_x_items, meta)
 			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id, date_created, date_modified`,
@@ -111,7 +116,7 @@ func (s *Server) gooSaveCoupon(ctx context.Context, c *gooCoupon) error {
 			c.IndividualUse, c.ExcludeSaleItems, ids(c.ProductIDs), ids(c.ExcludedProductIDs), ids(c.ProductCategories), ids(c.ExcludedProductCategories),
 			strs(c.EmailRestrictions), c.UsageLimit, c.UsageLimitPerUser, c.LimitUsageToXItems, c.Meta).Scan(&c.ID, &c.DateCreated, &c.DateModified)
 	}
-	_, err := s.store.Pool.Exec(ctx, `UPDATE goo_coupons SET code=$2, description=$3, status=$4, discount_type=$5, amount=$6, date_expires=$7,
+	_, err := q.Exec(ctx, `UPDATE goo_coupons SET code=$2, description=$3, status=$4, discount_type=$5, amount=$6, date_expires=$7,
 		free_shipping=$8, minimum_amount=$9, maximum_amount=$10, individual_use=$11, exclude_sale_items=$12, product_ids=$13,
 		excluded_product_ids=$14, product_categories=$15, excluded_product_categories=$16, email_restrictions=$17, usage_limit=$18,
 		usage_limit_per_user=$19, limit_usage_to_x_items=$20, meta=$21, date_modified=now() WHERE id=$1`,

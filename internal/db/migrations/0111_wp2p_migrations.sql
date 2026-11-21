@@ -1,7 +1,9 @@
 -- WP to Pursae (Tools › Import › From WordPress): imports of a whole WordPress site from the package the
 -- "WP to Pursae" WordPress plugin builds. One row per import: a package uploaded in the admin, given to
 -- `pursae import wordpress`, or pushed by the plugin with a one-time migration token. The row keeps the
--- state, the progress of the background run (so a retry resumes) and the final report.
+-- state, the progress of the background run (so a retry resumes) and the final report. The report holds
+-- no e-mail addresses or logins; its itemized lists are dropped 30 days after the import ended, and the
+-- package and extracted files of imports that did not finish are deleted after 7 days (wp2p_cleanup).
 CREATE TABLE IF NOT EXISTS wp2p_migrations (
 	id          text PRIMARY KEY,                    -- 32 hex digits
 	token_hash  text NOT NULL DEFAULT '',            -- SHA-256 (hex) of the push token, '' for uploads
@@ -17,7 +19,10 @@ CREATE TABLE IF NOT EXISTS wp2p_migrations (
 	error       text NOT NULL DEFAULT '',
 	created_at  timestamptz NOT NULL DEFAULT now(),
 	updated_at  timestamptz NOT NULL DEFAULT now(),
-	expires_at  timestamptz                          -- when an unused token stops working
+	expires_at  timestamptz,                         -- when the token stops working (moved on while an upload is active)
+	cli         boolean NOT NULL DEFAULT false,      -- run by `pursae import wordpress`: resumed by running the command again
+	lease       text NOT NULL DEFAULT '',            -- the chunk upload writing the package now (push mode)
+	lease_until timestamptz                          -- when that upload's claim lapses
 );
 CREATE UNIQUE INDEX IF NOT EXISTS wp2p_migrations_token ON wp2p_migrations (token_hash) WHERE token_hash <> '';
 

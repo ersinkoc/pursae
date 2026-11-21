@@ -14,6 +14,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"wpgo/internal/auth"
 	"wpgo/internal/settings"
 	"wpgo/internal/store"
@@ -185,6 +188,39 @@ func (r *wp2pRun) mapLoad(ctx context.Context, kind string) map[int64]int64 {
 	return out
 }
 
+// wp2pRecordHook, when set (tests), is called for every record a phase handles, with the phase's
+// item kind.
+var wp2pRecordHook func(kind string)
+
+// item counts a record of the current phase.
+func (r *wp2pRun) item(kind string) {
+	r.prog.Items[kind]++
+	if wp2pRecordHook != nil {
+		wp2pRecordHook(kind)
+	}
+}
+
+// wp2pStopped reports whether err, met while writing one record, means the run must stop instead of
+// reporting the record as skipped and going on: the job's context ended (a shutdown, a restart) or
+// the database cannot be reached. A phase that skipped its remaining records for that reason would be
+// recorded as finished and never run again.
+func wp2pStopped(ctx context.Context, err error) bool {
+	if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	var ce *pgconn.ConnectError
+	return errors.As(err, &ce) || pgconn.Timeout(err)
+}
+
+// wp2pSkipReason is why a record is not imported (reported, not fatal).
+type wp2pSkipReason string
+
+func (e wp2pSkipReason) Error() string { return string(e) }
+
+// wp2pUserRef names a WordPress user in the report by id, not by login or e-mail address: the report
+// is kept and shown, and must not become a list of personal data.
+func wp2pUserRef(id int64) string { return "#" + strconv.FormatInt(id, 10) }
+
 // wp2pSource is the wp2p_map namespace of a site: its home URL without scheme and trailing slash.
 func wp2pSource(m *wp2pManifest) string {
 	u := strings.TrimSpace(m.HomeURL)
@@ -245,6 +281,11 @@ func (r *wp2pRun) run(ctx context.Context) error {
 		case "finish":
 			err = r.finish(ctx)
 		}
+		if err == nil {
+			// A phase whose records stopped coming because the run is being stopped is not finished,
+			// whatever it returned: the next run does it again (every record is looked up first).
+			err = ctx.Err()
+		}
 		if err != nil {
 			r.save(true)
 			return fmt.Errorf("%s: %w", strings.ToLower(wp2pPhaseLabels[phase]), err)
@@ -303,8 +344,10 @@ func wp2pUserMetaKept(k string) bool {
 	return strings.HasPrefix(k, "billing_") || strings.HasPrefix(k, "shipping_") || k == "paying_customer"
 }
 
-// importUsers creates the users with their WordPress password hashes. A user whose login or e-mail
-// is already here is not changed (its password stays): their content is assigned to that user.
+// importUsers creates the users with their WordPress password hashes. A user whose e-mail address
+// is already here is that account (it is not changed: its password stays) and their content is
+// assigned to it. A login that is taken here by an account with another e-mail address is another
+// person: the user is created under a free login (login-2) instead of being merged.
 func (r *wp2pRun) importUsers(ctx context.Context) error {
 	r.users, r.logins = map[int64]int64{}, map[string]int64{}
 	roles, err := r.s.store.Roles(ctx)
@@ -312,13 +355,16 @@ func (r *wp2pRun) importUsers(ctx context.Context) error {
 		return err
 	}
 	unknownRoles := map[string]int{}
-	err = wp2pEachLine(filepath.Join(r.dir, "users.jsonl"), func(raw []byte) error {
+	line := 0
+	err = wp2pEachLine(ctx, filepath.Join(r.dir, "users.jsonl"), func(raw []byte) error {
+		line++
 		var wu wp2pUser
 		if json.Unmarshal(raw, &wu) != nil || wu.ID == 0 || wu.Login == "" {
-			r.rep.skip("user", strings.TrimSpace(string(raw[:min(len(raw), 60)])), "unreadable line")
+			// The line number only: the raw record holds an e-mail address and a password hash.
+			r.rep.skip("user", "users.jsonl line "+strconv.Itoa(line), "unreadable line")
 			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
-		r.prog.Items["users"]++
+		r.item("users")
 		if id := r.mapGet(ctx, "user", wu.ID); id != 0 {
 			if _, err := r.s.store.UserByID(ctx, id); err == nil {
 				r.users[wu.ID], r.logins[wu.Login] = id, id
@@ -326,22 +372,24 @@ func (r *wp2pRun) importUsers(ctx context.Context) error {
 				return nil
 			}
 		}
-		id, created, reason := r.importUser(ctx, &wu, roles, unknownRoles)
-		if id == 0 {
-			r.rep.skip("user", wu.Login, reason)
+		id, how, err := r.importUser(ctx, &wu, roles, unknownRoles)
+		if err != nil {
+			if wp2pStopped(ctx, err) {
+				return err
+			}
+			r.rep.skip("user", wp2pUserRef(wu.ID), err.Error())
 			return nil
 		}
 		r.users[wu.ID], r.logins[wu.Login] = id, id
-		if err := r.mapSet(ctx, "user", wu.ID, id); err != nil {
-			return err
-		}
-		if created {
-			r.rep.Counts["users"]++
-		} else {
+		switch how {
+		case wp2pUserMerged:
 			r.rep.Existing["users"]++
-			if reason != "" && len(r.rep.Skipped) < wp2pMaxSkips {
-				r.rep.Skipped = append(r.rep.Skipped, wp2pSkip{Kind: "user", Item: wu.Login, Reason: reason})
-			}
+			r.rep.Counts["users_merged_by_email"]++
+		case wp2pUserRenamed:
+			r.rep.Counts["users"]++
+			r.rep.Counts["users_renamed"]++
+		default:
+			r.rep.Counts["users"]++
 		}
 		r.save(false)
 		return nil
@@ -352,31 +400,56 @@ func (r *wp2pRun) importUsers(ctx context.Context) error {
 	for role, n := range unknownRoles {
 		r.rep.note("The role “%s” does not exist here: %d user(s) got the role Subscriber instead.", role, n)
 	}
+	if n := r.rep.Counts["users_merged_by_email"]; n > 0 {
+		r.rep.note("%d user(s) have an account here with the same e-mail address: their content and orders were assigned to that account, whose password and profile were not changed.", n)
+	}
+	if n := r.rep.Counts["users_renamed"]; n > 0 {
+		r.rep.note("%d user(s) had a login that an account here already uses with another e-mail address: they were imported under a new login (with -2, -3 … added) and sign in with it or with their e-mail address.", n)
+	}
 	return nil
 }
 
-// importUser creates one user, or finds the user that is already here. It returns our id, whether it
-// was created, and a note (why it was skipped, or what happened to an existing user).
-func (r *wp2pRun) importUser(ctx context.Context, wu *wp2pUser, roles []store.Role, unknownRoles map[string]int) (int64, bool, string) {
+// How importUser placed a user.
+const (
+	wp2pUserCreated = iota
+	wp2pUserMerged  // an account here with the same e-mail address
+	wp2pUserRenamed // created under another login: the login is another person's here
+)
+
+// importUser creates one user, or finds the account that is already here (the same e-mail address).
+// The user, its roles, dates, meta and its wp2p_map row are written in one transaction, so a run that
+// stops never leaves a half-made user that the next run would take for an account of this site.
+// A wp2pSkipReason error means the user is skipped.
+func (r *wp2pRun) importUser(ctx context.Context, wu *wp2pUser, roles []store.Role, unknownRoles map[string]int) (int64, int, error) {
 	st := r.s.store
 	login, email := strings.TrimSpace(wu.Login), strings.TrimSpace(wu.Email)
-	if ex, err := st.UserByLoginOrEmail(ctx, login); err == nil && strings.EqualFold(ex.Login, login) {
-		return ex.ID, false, "a user with this login already exists here: kept as it is (its password was not changed)"
-	}
 	if email != "" {
-		if ex, err := st.UserByLoginOrEmail(ctx, email); err == nil {
-			return ex.ID, false, "a user with this e-mail address already exists here (" + ex.Login + "): content was assigned to it, its password was not changed"
+		var id int64
+		err := st.Pool.QueryRow(ctx, `SELECT id FROM users WHERE lower(email) = lower($1) ORDER BY id LIMIT 1`, email).Scan(&id)
+		if err == nil {
+			return id, wp2pUserMerged, r.mapSet(ctx, "user", wu.ID, id)
+		}
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return 0, 0, err
 		}
 	}
 	if !validUsername.MatchString(login) || len(login) > 60 {
-		return 0, false, "the login has characters Pursae does not allow in user names"
+		return 0, 0, wp2pSkipReason("the login has characters Pursae does not allow in user names")
+	}
+	how := wp2pUserCreated
+	free, err := r.freeLogin(ctx, login)
+	if err != nil {
+		return 0, 0, err
+	}
+	if free != login {
+		login, how = free, wp2pUserRenamed
 	}
 	hash := strings.TrimSpace(wu.Pass)
 	resetNeeded := false
 	if !auth.IsImportableHash(hash) {
 		h, err := auth.HashPassword(auth.RandomToken(24))
 		if err != nil {
-			return 0, false, err.Error()
+			return 0, 0, err
 		}
 		hash, resetNeeded = h, true
 	}
@@ -409,21 +482,9 @@ func (r *wp2pRun) importUser(ctx context.Context, wu *wp2pUser, roles []store.Ro
 		// A user without a role on the WordPress site (wp_capabilities empty) stays without one.
 		nu.Role = "subscriber"
 	}
-	id, err := st.CreateUser(ctx, nu)
-	if err != nil {
-		return 0, false, err.Error()
-	}
-	if primary == "" || len(extra) > 0 {
-		_ = st.SetUserRoles(ctx, id, primary, extra)
-	}
 	reg := time.Now().UTC()
 	if t, err := time.ParseInLocation("2006-01-02 15:04:05", wu.Registered, time.UTC); err == nil && t.Year() > 1970 {
 		reg = t
-	}
-	_, _ = r.s.store.Pool.Exec(ctx, `UPDATE users SET registered_at = $2, url = $3, locale = $4 WHERE id = $1`, id, reg, strings.TrimSpace(wu.URL), wu.Meta["locale"])
-	// WordPress' nicename keeps the author archive URL (/author/<nicename>/) when it is free here.
-	if nn := wp.SanitizeTitle(wu.Nicename); nn != "" {
-		_, _ = r.s.store.Pool.Exec(ctx, `UPDATE users SET nicename = $2 WHERE id = $1 AND NOT EXISTS (SELECT 1 FROM users WHERE nicename = $2 AND id <> $1)`, id, nn)
 	}
 	meta := map[string]any{}
 	for k, v := range wu.Meta {
@@ -431,14 +492,67 @@ func (r *wp2pRun) importUser(ctx context.Context, wu *wp2pUser, roles []store.Ro
 			meta[k] = v
 		}
 	}
-	if len(meta) > 0 {
-		_ = r.s.gooSetUserMeta(ctx, id, meta)
+	var id int64
+	err = pgx.BeginFunc(ctx, st.Pool, func(tx pgx.Tx) error {
+		var err error
+		if id, err = st.CreateUserTx(ctx, tx, nu); err != nil {
+			return err
+		}
+		if primary == "" || len(extra) > 0 {
+			if err := store.SetUserRolesTx(ctx, tx, id, primary, extra); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.Exec(ctx, `UPDATE users SET registered_at = $2, url = $3, locale = $4 WHERE id = $1`, id, reg, strings.TrimSpace(wu.URL), wu.Meta["locale"]); err != nil {
+			return err
+		}
+		// WordPress' nicename keeps the author archive URL (/author/<nicename>/) when it is free here.
+		if nn := wp.SanitizeTitle(wu.Nicename); nn != "" {
+			if _, err := tx.Exec(ctx, `UPDATE users SET nicename = $2 WHERE id = $1 AND NOT EXISTS (SELECT 1 FROM users WHERE nicename = $2 AND id <> $1)`, id, nn); err != nil {
+				return err
+			}
+		}
+		if len(meta) > 0 {
+			raw, _ := json.Marshal(meta)
+			if _, err := tx.Exec(ctx, `UPDATE users SET meta = coalesce(meta, '{}'::jsonb) || $2::jsonb WHERE id = $1`, id, raw); err != nil {
+				return err
+			}
+		}
+		_, err = tx.Exec(ctx, `INSERT INTO wp2p_map (source, kind, old_id, new_id) VALUES ($1, 'user', $2, $3)
+			ON CONFLICT (source, kind, old_id) DO UPDATE SET new_id = EXCLUDED.new_id`, r.src, wu.ID, id)
+		return err
+	})
+	if err != nil {
+		if errors.Is(err, store.ErrLoginTaken) || errors.Is(err, store.ErrEmailTaken) {
+			return 0, 0, wp2pSkipReason(err.Error())
+		}
+		return 0, 0, err
 	}
 	if resetNeeded {
 		r.rep.Counts["users_password_reset"]++
-		return id, true, ""
 	}
-	return id, true, ""
+	return id, how, nil
+}
+
+// freeLogin is login when no account here has it, else the first free login-2, login-3 … (at most 60
+// characters, as user names are).
+func (r *wp2pRun) freeLogin(ctx context.Context, login string) (string, error) {
+	cand := login
+	for i := 2; ; i++ {
+		var taken bool
+		if err := r.s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE lower(login) = lower($1))`, cand).Scan(&taken); err != nil {
+			return "", err
+		}
+		if !taken {
+			return cand, nil
+		}
+		suffix := "-" + strconv.Itoa(i)
+		base := login
+		if len(base)+len(suffix) > 60 {
+			base = base[:60-len(suffix)]
+		}
+		cand = base + suffix
+	}
 }
 
 // loadUsers rebuilds the user maps when the users phase ran in an earlier attempt.
@@ -447,7 +561,7 @@ func (r *wp2pRun) loadUsers(ctx context.Context) error {
 		return nil
 	}
 	r.users, r.logins = r.mapLoad(ctx, "user"), map[string]int64{}
-	return wp2pEachLine(filepath.Join(r.dir, "users.jsonl"), func(raw []byte) error {
+	return wp2pEachLine(ctx, filepath.Join(r.dir, "users.jsonl"), func(raw []byte) error {
 		var wu wp2pUser
 		if json.Unmarshal(raw, &wu) == nil {
 			if id, ok := r.users[wu.ID]; ok {
@@ -477,7 +591,7 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 		return err
 	}
 	files := map[int64]wp2pMedia{}
-	if err := wp2pEachLine(filepath.Join(r.dir, "media.jsonl"), func(raw []byte) error {
+	if err := wp2pEachLine(ctx, filepath.Join(r.dir, "media.jsonl"), func(raw []byte) error {
 		var m wp2pMedia
 		if json.Unmarshal(raw, &m) == nil && m.ID > 0 {
 			files[m.ID] = m
@@ -486,7 +600,13 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 	}); err != nil {
 		return err
 	}
-	f, err := wp2pOpen(filepath.Join(r.dir, "content.xml"))
+	contentPath := filepath.Join(r.dir, "content.xml")
+	if size, limit := wp2pSize(contentPath), wp2pMaxContent(); size > limit {
+		// The WXR importer reads the whole file into memory before it imports anything.
+		return fmt.Errorf("content.xml is %d MB, more than this site imports in one go (%d MB): raise WPGO_WP2P_MAX_CONTENT_MB where the server has the memory, "+
+			"or build the package in parts (one post type at a time)", size>>20, limit>>20)
+	}
+	f, err := wp2pOpen(contentPath)
 	if errors.Is(err, os.ErrNotExist) {
 		r.rep.note("The package has no content (content.xml).")
 		r.posts, r.terms = map[int64]int64{}, map[int64]int64{}
@@ -503,6 +623,16 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 	known := r.mapLoad(ctx, "post")
 	r.posts, r.terms = map[int64]int64{}, map[int64]int64{}
 	opts := wxrImportOptions{Known: known, Authors: authors, FetchAttachments: true, IDMap: r.posts, TermMap: r.terms, MenuItemsOnce: true, WooElsewhere: true,
+		// Every id goes to wp2p_map as soon as it is known: a run that stops halfway resumes with
+		// Known holding everything it created (drafts without a slug included), not a second copy.
+		OnMap: func(kind string, old, id int64) error {
+			r.item("content")
+			if err := r.mapSet(ctx, kind, old, id); err != nil {
+				return err
+			}
+			r.save(false)
+			return nil
+		},
 		LocalFile: func(postID int64) (string, string, bool) {
 			m, ok := files[postID]
 			if !ok {
@@ -536,6 +666,15 @@ func (r *wp2pRun) loadContentMaps(ctx context.Context) {
 	if r.terms == nil {
 		r.terms = r.mapLoad(ctx, "term")
 	}
+}
+
+// wp2pMaxContent is the largest content.xml imported (WPGO_WP2P_MAX_CONTENT_MB, default 2048 MB): the
+// WXR importer holds the whole file in memory.
+func wp2pMaxContent() int64 {
+	if n, err := strconv.ParseInt(strings.TrimSpace(os.Getenv("WPGO_WP2P_MAX_CONTENT_MB")), 10, 64); err == nil && n > 0 {
+		return n << 20
+	}
+	return 2048 << 20
 }
 
 // importTimezone sets timezone_string and gmt_offset from options.json (the options phase sets them

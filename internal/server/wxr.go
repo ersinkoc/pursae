@@ -760,8 +760,13 @@ type wxrImportOptions struct {
 	WooElsewhere bool
 	// Known, when set, gives our id of an item of the file that an earlier import of the same site
 	// created (WP to Pursae keeps that map): the item is skipped as already there, even when it has no
-	// slug to be found by (drafts).
+	// slug to be found by (drafts). Its posts get the featured image and parent of the file when they
+	// have none (a run that stopped before its backfills).
 	Known map[int64]int64
+	// OnMap, when set, is told every id of the file mapped to ours as soon as it is known ("post" for
+	// posts, attachments, products and variations; "term" for terms), so an importer that keeps the map
+	// (WP to Pursae) has it even when the run stops halfway. An error stops the import.
+	OnMap func(kind string, old, id int64) error
 }
 
 func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, opts wxrImportOptions) (*importReport, error) {
@@ -889,14 +894,34 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 			}
 		}
 	}
+	if opts.OnMap != nil {
+		for old, id := range oldTerms {
+			if err := opts.OnMap("term", old, id); err != nil {
+				return nil, err
+			}
+		}
+	}
 	idMap := map[int64]int64{}
+	var mapErr error // the first error of opts.OnMap
 	// remember maps an id of the file to ours. An item without wp:post_id (hand-written or third-party
 	// files) has id 0, which every parentless item and unattached file points at: it is not mapped.
 	remember := func(old, id int64) {
 		if old != 0 {
 			idMap[old] = id
+			if opts.OnMap != nil && mapErr == nil {
+				mapErr = opts.OnMap("post", old, id)
+			}
 		}
 	}
+	// stop is why the run must end now: the context ended (a shutdown) or the map could not be kept.
+	stop := func() error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		return mapErr
+	}
+	knownFeatured := map[int64]int64{} // Known posts: our id -> _thumbnail_id in the file
+	knownParents := map[int64]int64{}  // Known posts: our id -> parent id in the file
 	loc := s.loc()
 	urlMap := map[string]string{}    // attachment URLs in the file -> ours (backfill_attachment_urls)
 	featured := map[int64]int64{}    // our post id -> _thumbnail_id in the file
@@ -911,6 +936,9 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 	var products []*wxrItem        // imported once the media and posts are in (wxr_products.go)
 	wooSkipped := map[string]int{} // WooCommerce orders, coupons, ... counted by kind
 	for i := range doc.Channel.Items {
+		if err := stop(); err != nil {
+			return nil, err
+		}
 		it := &doc.Channel.Items[i]
 		kind := it.Type
 		if acfgoIsPostType(kind) { // a post type registered here by Pursae Custom Fields
@@ -918,6 +946,14 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 		}
 		if id := opts.Known[it.PostID]; id != 0 && it.PostID != 0 && kind != "nav_menu_item" && s.wxrStillThere(ctx, it.Type, id, it, urlMap) {
 			remember(it.PostID, id)
+			if it.Type != "attachment" {
+				if thumb, _ := strconv.ParseInt(it.meta("_thumbnail_id"), 10, 64); thumb != 0 {
+					knownFeatured[id] = thumb
+				}
+				if it.Parent != 0 {
+					knownParents[id] = it.Parent
+				}
+			}
 			rep.Skipped++
 			continue
 		}
@@ -1135,6 +1171,9 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 	}
 	imported = append(imported, s.wxrImportProducts(ctx, u, products, &wxrProductEnv{ensureTerm: ensureTerm, idMap: idMap, remember: remember,
 		authors: authors, loc: loc, urls: urlRep, attrs: prodAttrs}, rep)...)
+	if err := stop(); err != nil {
+		return nil, err
+	}
 	rep.SkippedOrders, rep.SkippedCoupons = wooSkipped["orders"], wooSkipped["coupons"]
 	if line := wxrWooSkippedLog(wooSkipped); line != "" {
 		rep.Log = append(rep.Log, line)
@@ -1154,6 +1193,17 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 	for id, oldThumb := range featured {
 		if att, ok := idMap[oldThumb]; ok {
 			_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET featured_media_id = $2 WHERE id = $1`, id, att)
+		}
+	}
+	// Posts an earlier, interrupted run created: what its backfills did not get to, where still empty.
+	for id, oldThumb := range knownFeatured {
+		if att, ok := idMap[oldThumb]; ok {
+			_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET featured_media_id = $2 WHERE id = $1 AND featured_media_id IS NULL`, id, att)
+		}
+	}
+	for id, oldParent := range knownParents {
+		if parent, ok := idMap[oldParent]; ok && parent != id {
+			_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET parent_id = $2 WHERE id = $1 AND parent_id IS NULL`, id, parent)
 		}
 	}
 	// backfill_attachment_urls(): links to the old site's uploads point at the imported files, longest URLs first.
@@ -1183,6 +1233,9 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 	menuItemIDs := map[int64]int64{}
 	menuOrphans := map[int64]int64{}
 	for _, ref := range menuItems {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		it := ref.item
 		kind := defaultStr(it.meta("_menu_item_type"), "custom")
 		objectID, _ := strconv.ParseInt(it.meta("_menu_item_object_id"), 10, 64)
@@ -1260,6 +1313,9 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 		all = append(all, id)
 	}
 	_ = s.store.RecountTerms(ctx, all)
+	if err := stop(); err != nil {
+		return nil, err
+	}
 	return rep, nil
 }
 
