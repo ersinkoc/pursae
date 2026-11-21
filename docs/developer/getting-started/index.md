@@ -32,7 +32,7 @@ down or read what it was not allowed to.
 | | Docker route | Binary route |
 |---|---|---|
 | Runtime | Docker Desktop or Docker Engine + Compose v2 | Go 1.27 to build; nothing else to run |
-| Database | started by compose (PostgreSQL 17) | PostgreSQL 14 or newer (17 is what compose uses) you can create tables in |
+| Database | started by compose (PostgreSQL 17) | PostgreSQL 16 or 17 (compose uses 17) you can create tables in |
 | Memory | 512 MB is comfortable | same |
 | Ports | 8088 for the site (`127.0.0.1` in production), 5432 for PostgreSQL (`127.0.0.1`, development only) | whatever `WPGO_ADDR` says (default `:8080`) |
 

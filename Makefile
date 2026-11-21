@@ -2,14 +2,16 @@ COMPOSE = docker compose -f docker/compose.yaml
 # Production: the development file plus compose.prod.yaml, settings from docker/.env (see docker/.env.example).
 PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f docker/compose.yaml -f docker/compose.prod.yaml
 
-.PHONY: bench dev db test upgrade-test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release lint
+.PHONY: bench dev db test upgrade-test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release lint e2e e2e-run smoke
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
 	WPGO_WEB_DIR=web go run -tags devhub ./cmd/wpgo serve
 
+# --wait: until the healthcheck passes, so the recipes that run psql or migrate right after do not hit a
+# PostgreSQL that is still starting.
 db:
-	$(COMPOSE) up -d db
+	$(COMPOSE) up -d --wait db
 
 ## bench: Pursae vs WordPress benchmark (bench/run.py, about an hour; docs/developer/benchmarks.md).
 ## Builds both stacks in Docker on ports 18081/18082, results in bench/results/<date>/. BENCH_ARGS passes
@@ -60,6 +62,25 @@ prod-logs:
 release:
 	@test -n "$(VERSION)" || { echo "usage: make release VERSION=0.2.0 [BETA=1] [DRY_RUN=1]"; exit 2; }
 	tools/release.sh $(VERSION) $(if $(BETA),--beta) $(if $(DRY_RUN),--dry-run)
+
+## e2e: wp-admin browser smoke test (Playwright, builder/test/e2e): builds bin/pursae, recreates the database
+## wpgo_e2e on the compose PostgreSQL, installs a site through the setup-token link, logs in, publishes a post in
+## the block editor, uploads an image, opens Dashboard › Updates and logs out (under a minute). Needs Playwright's
+## Chromium (cd builder && npx playwright install chromium). Output: builder/.work/e2e/.
+e2e: build db builder/node_modules/.package-lock.json
+	$(COMPOSE) exec -T db psql -q -U wpgo -d wpgo -c 'DROP DATABASE IF EXISTS wpgo_e2e WITH (FORCE)' -c 'CREATE DATABASE wpgo_e2e'
+	$(MAKE) e2e-run E2E_DATABASE_URL='postgres://wpgo:wpgo@localhost:'$${WPGO_DB_PORT:-5432}'/wpgo_e2e?sslmode=disable'
+
+## e2e-run: the same against E2E_DATABASE_URL (an empty database) and E2E_BIN (default bin/pursae), as CI runs it.
+e2e-run: builder/node_modules/.package-lock.json
+	@test -n "$(E2E_DATABASE_URL)" || { echo "e2e-run: set E2E_DATABASE_URL to an empty database"; exit 2; }
+	cd builder && E2E_DATABASE_URL='$(E2E_DATABASE_URL)' E2E_BIN='$(or $(E2E_BIN),$(CURDIR)/bin/pursae)' npx playwright test -c test/e2e/playwright.config.ts
+
+## smoke: smoke test of bin/pursae (tools/smoke-test.sh: version, migrate, serve, healthcheck, the setup-token
+## installer, an install, the front page) on the database wpgo_smoke of the compose PostgreSQL, recreated first.
+smoke: build db
+	$(COMPOSE) exec -T db psql -q -U wpgo -d wpgo -c 'DROP DATABASE IF EXISTS wpgo_smoke WITH (FORCE)' -c 'CREATE DATABASE wpgo_smoke'
+	DATABASE_URL='postgres://wpgo:wpgo@localhost:'$${WPGO_DB_PORT:-5432}'/wpgo_smoke?sslmode=disable' tools/smoke-test.sh bin/pursae
 
 ## lint: golangci-lint (.golangci.yml) on what changed since LINT_BASE (default origin/main), as CI does.
 ## The tree has older findings; LINT_BASE= lints everything. Uses golangci-lint from PATH if it is

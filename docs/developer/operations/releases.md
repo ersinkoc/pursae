@@ -65,7 +65,9 @@ Before building, `tools/release.sh` refuses to publish unless:
 
 - **CI passed on the commit.** `gh` must find a successful run of the `CI` workflow
   (`.github/workflows/ci.yml`) on github.com/pursae/pursae for HEAD, with every job of its latest
-  attempt green. Push the commit (normally: merge to `main`) and wait for the run; rerun failed jobs
+  attempt green: the tests on PostgreSQL 16 and 17, the upgrade test, the race detector, lint,
+  govulncheck, the Web Builder tests, smoke runs of the Linux, macOS and Windows release binaries
+  (`tools/smoke-test.sh`), the Docker image build and the wp-admin browser test (`make e2e`). Push the commit (normally: merge to `main`) and wait for the run; rerun failed jobs
   if they were flaky. The "Pursae 0.2.0" commit the script adds only sets the version string, so
   the run on the commit before it is the one checked; if a release stopped after that commit was
   made, HEAD is that commit and the run on its parent counts.
@@ -80,7 +82,7 @@ Before building, `tools/release.sh` refuses to publish unless:
 **Escape hatch.** `RELEASE_SKIP_CI_CHECK=1 make release VERSION=0.2.1` skips the CI check (only that
 one), with a loud warning before building and again before publishing. Use it only when shipping
 cannot wait for CI, for example a security fix while GitHub Actions is down, and run the tests
-locally (`make test`) first.
+locally (`make test`, `make smoke`, `make e2e`) first.
 
 ## 3. Import it in Pursae Manager
 

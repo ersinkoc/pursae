@@ -10,12 +10,18 @@ permissions:
   contents: read
 
 jobs:
+  # Supported PostgreSQL versions: 16 and 17 (docs/developer/getting-started/install-binary.md).
   test:
+    name: test (pg${{ matrix.postgres }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ["16", "17"]
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:${{ matrix.postgres }}-alpine
         env:
           POSTGRES_DB: wpgo
           POSTGRES_USER: wpgo
@@ -59,6 +65,23 @@ jobs:
       # -p 1: the server, store and settings packages each drop and recreate WPGO_TEST_DB.
       - name: test
         run: go test ./... -p 1 -count=1 -timeout 40m
+
+  # The branch protection on main requires a check called `test`; the matrix legs report as test (pg16) and
+  # test (pg17). This job keeps the `test` context and fails unless every leg succeeded (a failed, cancelled
+  # or skipped leg fails it).
+  test-result:
+    name: test
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: every PostgreSQL leg passed
+        env:
+          RESULT: ${{ needs.test.result }}
+        run: |
+          echo "test matrix: $RESULT"
+          test "$RESULT" = success
 
   # Upgrade path: v0.2.0 and the three newest releases each install and fill a site, then this commit
   # migrates and serves it and checks that every user, post, page, term, comment, menu, media file,
@@ -146,15 +169,17 @@ jobs:
           only-new-issues: true
           args: --timeout 15m
 
+  # Pinned like every other tool here; Dependabot does not see `go run pkg@version`, so bump it by hand.
   vulncheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
       - name: govulncheck
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 
   # The Windows release binary: vet, unit tests (integration tests skip without WPGO_TEST_DB), then a
   # smoke run of the release build against the runner's preinstalled PostgreSQL: migrate, serve,
@@ -214,3 +239,158 @@ jobs:
           if ($code -ne "302" -and $code -ne "200") { exit 1 }
           Stop-Process -Id $p.Id
           Get-Content serve.err | Select-Object -Last 20
+
+  # The Linux and macOS release binaries (tools/release.sh flags), smoke-run by tools/smoke-test.sh:
+  # version, migrate, serve, healthcheck, the installer locked without the setup token and open with
+  # the `setup-token` link, an install through it, and the front page.
+  smoke-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: wpgo
+          POSTGRES_USER: wpgo
+          POSTGRES_PASSWORD: wpgo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wpgo -d wpgo"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: build (release flags)
+        run: go build -trimpath -buildmode=exe -tags nodynamic -ldflags "-s -w" -o pursae ./cmd/wpgo
+      - name: static binary
+        run: |
+          file pursae
+          if file pursae | grep -q 'dynamically linked\|interpreter'; then exit 1; fi
+      - name: smoke test
+        env:
+          DATABASE_URL: postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable
+        run: tools/smoke-test.sh ./pursae
+
+  # macos-latest is arm64 (the release's darwin-arm64 binary). PostgreSQL 17 from Homebrew, initialised
+  # and started for the job.
+  smoke-macos:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      CGO_ENABLED: "0"
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: PostgreSQL 17
+        run: |
+          brew install postgresql@17
+          pg="$(brew --prefix postgresql@17)/bin"
+          "$pg/initdb" -D "$RUNNER_TEMP/pgdata" -U wpgo --auth=trust -E UTF8 >/dev/null
+          "$pg/pg_ctl" -D "$RUNNER_TEMP/pgdata" -l "$RUNNER_TEMP/pg.log" -o "-p 5432 -k $RUNNER_TEMP" -w start
+          "$pg/createdb" -h 127.0.0.1 -U wpgo wpgo
+      - name: build (release flags)
+        run: go build -trimpath -buildmode=exe -tags nodynamic -ldflags "-s -w" -o pursae ./cmd/wpgo
+      - name: smoke test
+        env:
+          DATABASE_URL: postgres://wpgo@127.0.0.1:5432/wpgo?sslmode=disable
+        run: tools/smoke-test.sh ./pursae
+
+  # The container image (docker/Dockerfile, not pushed): it builds, starts against PostgreSQL, passes its
+  # own HEALTHCHECK command and /healthz, runs as the unprivileged user and locks the installer.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: wpgo
+          POSTGRES_USER: wpgo
+          POSTGRES_PASSWORD: wpgo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wpgo -d wpgo"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker build
+        run: docker build -f docker/Dockerfile --build-arg VERSION=0.0.0-ci -t pursae:ci .
+      - name: run the image
+        run: |
+          docker run -d --name pursae --network host \
+            -e DATABASE_URL='postgres://wpgo:wpgo@127.0.0.1:5432/wpgo?sslmode=disable' \
+            -e WPGO_ADDR=127.0.0.1:8080 -e WPGO_SITE_URL=http://127.0.0.1:8080 -e WPGO_HUB=off \
+            pursae:ci
+          ok=0
+          for i in $(seq 1 90); do
+            if docker exec pursae wpgo healthcheck >/dev/null 2>&1; then ok=1; break; fi
+            [ "$(docker inspect -f '{{.State.Running}}' pursae)" = true ] || break
+            sleep 1
+          done
+          [ "$ok" = 1 ] || { docker logs pursae 2>&1 | tail -50; echo "the container did not become healthy"; exit 1; }
+      - name: check the container
+        run: |
+          set -x
+          docker exec pursae wpgo version | grep -q 0.0.0-ci
+          [ "$(docker exec pursae id -u)" = 10001 ]
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/healthz)" = 200 ]
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/wp-admin/install)" = 403 ]
+          link=$(docker exec pursae wpgo setup-token | head -1)
+          curl -s -L -c jar -b jar "$link" | grep -q 'name="language"'
+          docker exec pursae test -f /usr/share/doc/pursae/LICENSE
+      - name: container log
+        if: always()
+        run: docker logs pursae 2>&1 | tail -100 || true
+
+  # wp-admin in a browser (make e2e-run, builder/test/e2e): the release binary on an empty database is
+  # installed through the setup-token link; an administrator logs in, publishes a post in the block
+  # editor, uploads an image, opens Dashboard › Updates and logs out, with no console errors.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: wpgo
+          POSTGRES_USER: wpgo
+          POSTGRES_PASSWORD: wpgo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wpgo -d wpgo"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: builder/.nvmrc
+          cache: npm
+          cache-dependency-path: builder/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: npm ci
+        run: cd builder && npm ci --ignore-scripts --no-audit --no-fund
+      - name: Playwright Chromium
+        run: cd builder && npx playwright install --with-deps chromium
+      - name: build (release flags)
+        run: go build -trimpath -buildmode=exe -tags nodynamic -ldflags "-s -w" -o bin/pursae ./cmd/wpgo
+      - name: make e2e-run
+        run: make e2e-run E2E_DATABASE_URL='postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable'
+      - name: upload the server log and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: builder/.work/e2e/
+          retention-days: 7

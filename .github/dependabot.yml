@@ -1,0 +1,38 @@
+# Weekly dependency update pull requests. Minor and patch updates of each ecosystem arrive grouped in
+# one pull request; CI (.github/workflows/ci.yml) must pass before one is merged. Tools run with
+# `go run pkg@version` in CI (govulncheck) and the Makefile (golangci-lint) are not seen here.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      go-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # docker/Dockerfile: the golang and alpine base images, pinned by digest.
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: weekly
+
+  # The Pursae Web Builder workspace (builder/package.json); a bump that changes the built editor also needs
+  # `make builder` and the rebuilt web/web-builder committed.
+  - package-ecosystem: npm
+    directory: /builder
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      builder-minor:
+        update-types: [minor, patch]
