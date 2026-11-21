@@ -353,6 +353,10 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	if noSplit {
 		menusOn, groups = false, map[string]bool{}
 	}
+	if status == "draft-autosave" && len(groups) > 0 {
+		groups = nil
+		warnings = append(warnings, "Collection binding is skipped for editor drafts.")
+	}
 	parents := map[string]int64{}
 	folderParents := map[string]string{}
 	for f := range webbuilder.SiteFolders(res) {
@@ -386,20 +390,10 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	}
 	// The pages.
 	var pageFor = map[int]int64{}
-	for i, pg := range res.Pages {
-		if pg.Path == notFound {
-			continue
-		}
+	savePage := func(i int) (any, error) {
+		pg := res.Pages[i]
 		id := ids[pg.Path]
-		pageFor[i] = id
 		cr := pg.Code
-		if binding.GroupMember(i) {
-			// Content under a single template (wbSiteGroups); its SEO is the page's still.
-			if _, warn := s.wbImportSEO(c, id, cr.SEO); warn != "" {
-				warnings = append(warnings, pg.Path+": "+warn)
-			}
-			continue
-		}
 		secs := make([]map[string]any, 0, len(cr.Sections))
 		for _, p := range cr.Sections {
 			secs = append(secs, section(p, cr.Head, cr.Lang, [2]string{cr.HTMLAttrs, cr.BodyAttrs}, nil))
@@ -443,6 +437,24 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			}
 		}
 		report = append(report, map[string]any{"path": pg.Path, "post_id": id, "url": saved["url"], "sections": len(secs)})
+		return nil, nil
+	}
+	for i, pg := range res.Pages {
+		if pg.Path == notFound {
+			continue
+		}
+		id := ids[pg.Path]
+		pageFor[i] = id
+		if binding.GroupMember(i) {
+			// A collection member keeps its own SEO even when the template draws the page.
+			if _, warn := s.wbImportSEO(c, id, pg.Code.SEO); warn != "" {
+				warnings = append(warnings, pg.Path+": "+warn)
+			}
+			continue
+		}
+		if partial, err := savePage(i); err != nil {
+			return partial, err
+		}
 	}
 	if len(claimed) > 0 {
 		out["claimed_paths"] = claimed
@@ -531,9 +543,17 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	}
 	// Single templates made from groups of pages.
 	if len(binding.Groups) > 0 {
-		gr, warn := s.wbSiteGroups(c, r, kit, status, res, binding, pageFor, parents, keep)
+		gr, warn, bound := s.wbSiteGroups(c, r, kit, status, res, binding, pageFor, parents, keep)
 		warnings = append(warnings, warn...)
 		bindReport["groups"] = gr
+		for i := range res.Pages {
+			if binding.GroupMember(i) && !bound[i] {
+				if partial, err := savePage(i); err != nil {
+					return partial, err
+				}
+			}
+		}
+		out["pages"] = report
 	}
 	if len(binding.Listings) > 0 {
 		var ls []map[string]any
@@ -553,8 +573,12 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	}
 	out["templates"] = tplReport
 	// Templates of an earlier import of this kit that this one no longer needs.
-	if disabled := s.wbSiteDisableStale(c, kit, keep); len(disabled) > 0 {
-		out["templates_disabled"] = disabled
+	if status != "draft-autosave" {
+		disabled, warn := s.wbSiteDisableStale(c, kit, keep)
+		warnings = append(warnings, warn...)
+		if len(disabled) > 0 {
+			out["templates_disabled"] = disabled
+		}
 	}
 	if others := s.wbSiteOtherTemplates(c, kit); len(others) > 0 {
 		warnings = append(warnings, "other published templates of the same types may compete with the imported ones (the imported ones have priority "+
@@ -642,11 +666,11 @@ func (s *Server) wbSiteTemplate(c *gin.Context, r *webbuilder.ServerRenderer, ki
 }
 
 // wbSiteDisableStale turns the earlier import's templates that are not in keep into drafts.
-func (s *Server) wbSiteDisableStale(c *gin.Context, kit string, keep map[string]bool) []string {
-	rows, err := s.store.Pool.Query(c, `SELECT id, meta->>$2, title FROM posts WHERE type = $1 AND meta->>$3 = $4 AND status = 'publish'`,
+func (s *Server) wbSiteDisableStale(c *gin.Context, kit string, keep map[string]bool) (disabled, warnings []string) {
+	rows, err := s.store.Pool.Query(c, `SELECT id, meta->>$2, title FROM posts WHERE type = $1 AND meta->>$3 = $4 AND status = 'publish' AND meta->>$2 IS NOT NULL`,
 		webbuilder.TemplatePostType, wbSiteMetaKey, wbSiteMetaKit, kit)
 	if err != nil {
-		return nil
+		return nil, []string{"could not find obsolete import templates: " + err.Error()}
 	}
 	type row struct {
 		id    int64
@@ -656,23 +680,31 @@ func (s *Server) wbSiteDisableStale(c *gin.Context, kit string, keep map[string]
 	var stale []row
 	for rows.Next() {
 		var x row
-		if rows.Scan(&x.id, &x.key, &x.title) == nil && !keep[x.key] {
+		if err := rows.Scan(&x.id, &x.key, &x.title); err != nil {
+			rows.Close()
+			return nil, []string{"could not read obsolete import templates: " + err.Error()}
+		}
+		if !keep[x.key] {
 			stale = append(stale, x)
 		}
 	}
 	rows.Close()
-	var out []string
+	if err := rows.Err(); err != nil {
+		return nil, []string{"could not read obsolete import templates: " + err.Error()}
+	}
 	for _, x := range stale {
 		if _, err := s.store.Pool.Exec(c, `UPDATE posts SET status = 'draft', modified_at = now(), updated_at = now() WHERE id = $1 AND type = $2`,
-			x.id, webbuilder.TemplatePostType); err == nil {
-			out = append(out, x.title)
+			x.id, webbuilder.TemplatePostType); err != nil {
+			warnings = append(warnings, fmt.Sprintf("could not disable the obsolete template %q (%d): %v", x.title, x.id, err))
+			continue
 		}
+		disabled = append(disabled, x.title)
 	}
-	if len(out) > 0 {
+	if len(disabled) > 0 {
 		s.wbTemplatesChanged(c)
 	}
 	s.wbPurgePages()
-	return out
+	return disabled, warnings
 }
 
 // wbSiteOtherTemplates lists published header, footer and 404 templates the import did not make.
