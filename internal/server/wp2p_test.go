@@ -647,3 +647,75 @@ func sha256Hex(b []byte) string {
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }
+
+// A package the WordPress plugin built (integrations/wordpress/test: WordPress, WooCommerce with HPOS):
+// the PHP writer and this reader agree on the format, and the store arrives as WordPress had it.
+func TestWP2PFixtureFromPlugin(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installUsersSite(t, c, ts.URL)
+	ctx := context.Background()
+	key, err := wp2pParseKey("oT_EIQ1H0rTK3wMWwHbctyxQKAAkq9JXkPtZGNKeSXY")
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, _ := srv.store.UserByLoginOrEmail(ctx, "admin")
+	id := wp2pNewID()
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, created_by, state) VALUES ($1, $2, 'running')`, id, admin.ID); err != nil {
+		t.Fatal(err)
+	}
+	r := &wp2pRun{s: srv, id: id, dir: filepath.Join(t.TempDir(), "work"), pkg: "testdata/wp2p/wordpress-woocommerce.wp2p", keepPackage: true, key: &key, u: admin}
+	if err := r.run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if r.man.OrderStorage != "hpos" || !strings.HasPrefix(r.man.Generator, "wp-to-pursae/") {
+		t.Errorf("manifest: %+v", r.man)
+	}
+	for k, want := range map[string]int{"users": 5, "orders": 3, "refunds": 1, "coupons": 2, "products": 3, "variations": 2, "tax_rates": 1, "menu_items": 2} {
+		if r.rep.Counts[k] != want {
+			t.Errorf("%s = %d, want %d (%v)", k, r.rep.Counts[k], want, r.rep.Counts)
+		}
+	}
+	for login, pw := range map[string]string{"wpadmin": "Adm1n-pass-2026", "editor1": "Ed1tor-pass-2026", "customer1": "Cust0mer-1-pass"} {
+		u, err := srv.store.UserByLoginOrEmail(ctx, login)
+		if err != nil {
+			t.Fatalf("%s: %v", login, err)
+		}
+		if ok, _, _ := auth.CheckUserPassword(ctx, pw, u.PasswordHash); !ok {
+			t.Errorf("%s: the WordPress password does not verify (%s)", login, auth.HashKind(u.PasswordHash))
+		}
+	}
+	rows, err := srv.store.Pool.Query(ctx, `SELECT status, total::float8, discount_total::float8,
+		coalesce((SELECT sum(-x.total)::float8 FROM goo_orders x WHERE x.parent_id = o.id AND x.type = 'shop_order_refund'), 0)
+		FROM goo_orders o WHERE type = 'shop_order' ORDER BY (meta->>'_wp2p_order_id')::bigint`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for rows.Next() {
+		var st string
+		var total, disc, refunded float64
+		_ = rows.Scan(&st, &total, &disc, &refunded)
+		got = append(got, st+" "+strconv.FormatFloat(total, 'f', -1, 64)+" "+strconv.FormatFloat(disc, 'f', -1, 64)+" "+strconv.FormatFloat(refunded, 'f', -1, 64))
+	}
+	rows.Close()
+	if want := []string{"completed 48.79 4 0", "processing 59.5 0 0", "completed 28.56 0 12"}; !slices.Equal(got, want) {
+		t.Errorf("orders %v, want %v", got, want)
+	}
+	if cp, err := srv.gooCouponByCode(ctx, "summer10"); err != nil || cp.UsageCount != 1 || cp.Amount != 10 || len(cp.ProductIDs) != 1 {
+		t.Errorf("coupon: %+v %v", cp, err)
+	}
+	// Again, through the map: nothing new, the draft (no slug) included.
+	var posts int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM posts`).Scan(&posts)
+	id2 := wp2pNewID()
+	_, _ = srv.store.Pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, created_by, state) VALUES ($1, $2, 'running')`, id2, admin.ID)
+	r2 := &wp2pRun{s: srv, id: id2, dir: filepath.Join(t.TempDir(), "work2"), pkg: r.pkg, keepPackage: true, key: &key, u: admin}
+	if err := r2.run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var posts2 int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM posts`).Scan(&posts2)
+	if posts2 != posts || r2.rep.Counts["posts"] != 0 || r2.rep.Counts["orders"] != 0 {
+		t.Errorf("second import: %d posts after, %d before; counts %v", posts2, posts, r2.rep.Counts)
+	}
+}

@@ -49,7 +49,7 @@ type wp2pCount struct {
 }
 
 // wp2pCountLabels name the report's counters.
-var wp2pCountLabels = map[string]string{
+var wp2pCountLabels = map[string]string{ //nolint:gosec // labels, not credentials
 	"users": "Users", "posts": "Posts", "pages": "Pages", "patterns": "Patterns", "templates": "Theme Builder templates", "terms": "Categories, tags and terms",
 	"comments": "Comments and reviews", "media": "Media files", "menu_items": "Menu items", "products": "Products", "variations": "Variations",
 	"settings": "Settings", "tax_rates": "Tax rates", "coupons": "Coupons", "orders": "Orders", "refunds": "Refunds", "customers": "Customer accounts",

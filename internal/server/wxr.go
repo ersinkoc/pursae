@@ -758,6 +758,10 @@ type wxrImportOptions struct {
 	// WooElsewhere: the import brings WooCommerce orders, refunds and coupons in another form (WP to
 	// Pursae), so their WXR posts are skipped without being reported as left behind.
 	WooElsewhere bool
+	// Known, when set, gives our id of an item of the file that an earlier import of the same site
+	// created (WP to Pursae keeps that map): the item is skipped as already there, even when it has no
+	// slug to be found by (drafts).
+	Known map[int64]int64
 }
 
 func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, opts wxrImportOptions) (*importReport, error) {
@@ -911,6 +915,11 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 		kind := it.Type
 		if acfgoIsPostType(kind) { // a post type registered here by Pursae Custom Fields
 			kind = "custom"
+		}
+		if id := opts.Known[it.PostID]; id != 0 && it.PostID != 0 && kind != "nav_menu_item" && s.wxrStillThere(ctx, it.Type, id, it, urlMap) {
+			remember(it.PostID, id)
+			rep.Skipped++
+			continue
 		}
 		if what, ok := wxrWooSkippedTypes[kind]; ok {
 			if !opts.WooElsewhere {
@@ -1431,6 +1440,23 @@ func (s *Server) sideloadLocal(ctx context.Context, file, name string, uploaderI
 		return nil, errors.New("The file is empty.")
 	}
 	return a, err
+}
+
+// wxrStillThere reports whether our item id (from an earlier import) still exists; for an attachment
+// it also maps the file's URL to ours, so content imported now links to it.
+func (s *Server) wxrStillThere(ctx context.Context, typ string, id int64, it *wxrItem, urlMap map[string]string) bool {
+	if typ == "attachment" {
+		var file string
+		if s.store.Pool.QueryRow(ctx, `SELECT file_path FROM media WHERE id = $1`, id).Scan(&file) != nil {
+			return false
+		}
+		if it.AttachmentURL != "" {
+			urlMap[it.AttachmentURL] = s.uploadURL(ctx, file)
+		}
+		return true
+	}
+	var one int
+	return s.store.Pool.QueryRow(ctx, `SELECT 1 FROM posts WHERE id = $1 AND status <> 'trash'`, id).Scan(&one) == nil
 }
 
 // wxrSameMenuItem finds the item of mi's menu that mi repeats (same label, kind, object, target,

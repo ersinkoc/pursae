@@ -32,6 +32,35 @@ missing. The command writes into WPGO_UPLOADS_DIR: run it where the server's upl
 		},
 		Run: func(c *cli.Ctx) error { return cliImportWordPress(c, e) },
 	})
+	r.Add(cli.Command{
+		Path:  "import wordpress-token",
+		Short: "Generate a one-time migration token for the WP to Pursae plugin's \"Send to Pursae\".",
+		Long: `Prints a migration token, as Tools › Import › From WordPress › Generate a migration token does. Enter it in
+the plugin (or: wp pursae push --to=<this site> --token=<token>); it is shown once, works for one import
+and expires after 24 hours. The import runs as the --user (default: the first administrator).`,
+		Examples: []string{"import wordpress-token", "import wordpress-token --porcelain"},
+		Flags:    []cli.Flag{{Name: "porcelain", Bool: true, Usage: "Print only the token."}},
+		Run: func(c *cli.Ctx) error {
+			s, err := e.Server(c.Context)
+			if err != nil {
+				return err
+			}
+			u, err := e.Actor(c)
+			if err != nil {
+				return err
+			}
+			token, _, expires, err := s.wp2pNewToken(c.Context, u)
+			if err != nil {
+				return err
+			}
+			if c.Bool("porcelain") {
+				c.Println(token)
+				return nil
+			}
+			c.Println("Migration token (shown once, valid until " + expires.Local().Format("2006-01-02 15:04") + "): " + token)
+			return nil
+		},
+	})
 }
 
 func cliImportWordPress(c *cli.Ctx, e *cliEnv) error {

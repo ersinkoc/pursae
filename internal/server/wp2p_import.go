@@ -314,9 +314,9 @@ func (r *wp2pRun) importUsers(ctx context.Context) error {
 	unknownRoles := map[string]int{}
 	err = wp2pEachLine(filepath.Join(r.dir, "users.jsonl"), func(raw []byte) error {
 		var wu wp2pUser
-		if err := json.Unmarshal(raw, &wu); err != nil || wu.ID == 0 || wu.Login == "" {
+		if json.Unmarshal(raw, &wu) != nil || wu.ID == 0 || wu.Login == "" {
 			r.rep.skip("user", strings.TrimSpace(string(raw[:min(len(raw), 60)])), "unreadable line")
-			return nil
+			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
 		r.prog.Items["users"]++
 		if id := r.mapGet(ctx, "user", wu.ID); id != 0 {
@@ -471,6 +471,11 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 	if err := r.loadUsers(ctx); err != nil {
 		return err
 	}
+	// WXR dates are in the site's time zone: take WordPress' before reading them (a post published an
+	// hour ago in Berlin must not become scheduled because this site still runs on UTC).
+	if err := r.importTimezone(ctx); err != nil {
+		return err
+	}
 	files := map[int64]wp2pMedia{}
 	if err := wp2pEachLine(filepath.Join(r.dir, "media.jsonl"), func(raw []byte) error {
 		var m wp2pMedia
@@ -495,8 +500,9 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 	for login, id := range r.logins {
 		authors[login] = wxrAuthorChoice{UserID: id}
 	}
+	known := r.mapLoad(ctx, "post")
 	r.posts, r.terms = map[int64]int64{}, map[int64]int64{}
-	opts := wxrImportOptions{Authors: authors, FetchAttachments: true, IDMap: r.posts, TermMap: r.terms, MenuItemsOnce: true, WooElsewhere: true,
+	opts := wxrImportOptions{Known: known, Authors: authors, FetchAttachments: true, IDMap: r.posts, TermMap: r.terms, MenuItemsOnce: true, WooElsewhere: true,
 		LocalFile: func(postID int64) (string, string, bool) {
 			m, ok := files[postID]
 			if !ok {
@@ -530,6 +536,27 @@ func (r *wp2pRun) loadContentMaps(ctx context.Context) {
 	if r.terms == nil {
 		r.terms = r.mapLoad(ctx, "term")
 	}
+}
+
+// importTimezone sets timezone_string and gmt_offset from options.json (the options phase sets them
+// again, with the rest).
+func (r *wp2pRun) importTimezone(ctx context.Context) error {
+	raw, _ := os.ReadFile(filepath.Join(r.dir, "options.json")) // none: nothing to set
+	var o wp2pOptions
+	if len(raw) == 0 || json.Unmarshal(raw, &o) != nil {
+		return nil //nolint:nilerr // no usable options.json: nothing to set
+	}
+	vals := map[string]any{}
+	if v, ok := o.Options["timezone_string"].(string); ok {
+		vals["timezone_string"] = v
+	}
+	if v, ok := wp2pOptionValue(o.Options["gmt_offset"], float64(0)); ok && o.Options["gmt_offset"] != nil {
+		vals["gmt_offset"] = v
+	}
+	if len(vals) == 0 {
+		return nil
+	}
+	return r.s.settings.Set(ctx, vals)
 }
 
 // wp2pOptions is options.json.
@@ -609,7 +636,7 @@ func (r *wp2pRun) importOptions(ctx context.Context) error {
 	}
 	var o wp2pOptions
 	if err := json.Unmarshal(raw, &o); err != nil {
-		return fmt.Errorf("options.json: %v", err)
+		return fmt.Errorf("options.json: %w", err)
 	}
 	vals := map[string]any{}
 	for _, k := range wp2pCoreOptions {
@@ -692,6 +719,7 @@ func (r *wp2pRun) importOptions(ctx context.Context) error {
 		}
 	}
 	r.rep.Counts["settings"] = len(vals)
+	r.storePages(ctx, vals)
 	// Menu locations: a location of the same name gets the menu, if the location is free here.
 	if len(o.MenuLocations) > 0 {
 		menus, err := r.s.store.Menus(ctx)
@@ -729,6 +757,40 @@ func (r *wp2pRun) importOptions(ctx context.Context) error {
 		r.rep.note("%d active WordPress plugin(s) do not move (PHP plugins do not run on Pursae): see Plugins for the built-in equivalents.", n)
 	}
 	return nil
+}
+
+// wp2pStorePageMarkers are what WooCommerce's cart, checkout and account pages hold (the blocks of
+// WooCommerce 8.3+ or the classic shortcodes), which Pursae Commerce does not render.
+var wp2pStorePageMarkers = map[string][]string{
+	"cart":      {"wp:woocommerce/cart", "[woocommerce_cart"},
+	"checkout":  {"wp:woocommerce/checkout", "[woocommerce_checkout"},
+	"myaccount": {"[woocommerce_my_account", "wp:woocommerce/customer-account"},
+}
+
+// storePages gives the imported cart, checkout and account pages Pursae Commerce's own content
+// (gooPages), so the store works once Pursae Commerce is active.
+func (r *wp2pRun) storePages(ctx context.Context, vals map[string]any) {
+	for _, pg := range gooPages {
+		markers := wp2pStorePageMarkers[pg.Key]
+		id, _ := vals[gooOptPrefix+pg.Key+"_page_id"].(float64)
+		if len(markers) == 0 || id == 0 || pg.Content == "" {
+			continue
+		}
+		p, err := r.s.store.GetPost(ctx, int64(id))
+		if err != nil {
+			continue
+		}
+		for _, m := range markers {
+			if strings.Contains(p.Content, m) {
+				p.Content = pg.Content
+				if r.s.store.UpdatePost(ctx, p, r.u.ID) == nil {
+					short := pg.Content[strings.Index(pg.Content, "[") : strings.Index(pg.Content, "]")+1]
+					r.rep.note("The page “%s” now shows Pursae Commerce's %s instead of WooCommerce's block or shortcode.", p.Title, short)
+				}
+				break
+			}
+		}
+	}
 }
 
 // finish cleans up: term counts, the page cache, the extracted files.
@@ -811,8 +873,8 @@ func (s *Server) wp2pImportJob(ctx context.Context, raw map[string]any) error {
 		return errors.New("invalid WP to Pursae import job")
 	}
 	var state string
-	if err := s.store.Pool.QueryRow(ctx, `SELECT state FROM wp2p_migrations WHERE id = $1`, id).Scan(&state); err != nil {
-		return nil // the row was deleted
+	if s.store.Pool.QueryRow(ctx, `SELECT state FROM wp2p_migrations WHERE id = $1`, id).Scan(&state) != nil {
+		return nil //nolint:nilerr // the row was deleted
 	}
 	if state != "queued" && state != "running" {
 		return nil

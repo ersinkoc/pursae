@@ -299,7 +299,7 @@ func wp2pExtract(pkg string, key wp2pKey, dir string) (*wp2pManifest, []string, 
 	first := true
 	for {
 		h, err := tr.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -310,7 +310,7 @@ func wp2pExtract(pkg string, key wp2pKey, dir string) (*wp2pManifest, []string, 
 		}
 		first = false
 		name := strings.TrimPrefix(h.Name, "./")
-		if (h.Typeflag != tar.TypeReg && h.Typeflag != tar.TypeRegA) || !wp2pEntryRE.MatchString(name) {
+		if h.Typeflag != tar.TypeReg || !wp2pEntryRE.MatchString(name) {
 			if h.Typeflag != tar.TypeDir {
 				ignored = append(ignored, name)
 			}
@@ -352,7 +352,7 @@ func wp2pReadManifest(path string) (*wp2pManifest, error) {
 	}
 	var m wp2pManifest
 	if err := json.Unmarshal(raw, &m); err != nil {
-		return nil, fmt.Errorf("the package manifest is not valid JSON: %v", err)
+		return nil, fmt.Errorf("the package manifest is not valid JSON: %w", err)
 	}
 	if m.Format != wp2pFormat {
 		return nil, fmt.Errorf("the package content has format %d; this version of Pursae reads format %d", m.Format, wp2pFormat)
@@ -367,7 +367,7 @@ func wp2pReadManifest(path string) (*wp2pManifest, error) {
 // then its numbered parts (dir/users.000001.jsonl, ...) in order.
 func wp2pParts(path string) []string {
 	var out []string
-	if _, err := os.Stat(path); err == nil {
+	if _, err := os.Stat(path); err == nil { //nolint:gosec // path is the work directory's own file name, not input
 		out = append(out, path)
 	}
 	ext := filepath.Ext(path)

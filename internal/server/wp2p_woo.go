@@ -141,9 +141,9 @@ func (r *wp2pRun) importTaxRates(ctx context.Context) error {
 	r.taxRates = r.mapLoad(ctx, "tax_rate")
 	return wp2pEachLine(filepath.Join(r.dir, "woo", "tax_rates.jsonl"), func(raw []byte) error {
 		var t wp2pTaxRate
-		if err := json.Unmarshal(raw, &t); err != nil || t.ID == 0 {
+		if json.Unmarshal(raw, &t) != nil || t.ID == 0 {
 			r.rep.skip("tax_rate", "", "unreadable line")
-			return nil
+			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
 		r.prog.Items["tax_rates"]++
 		if _, ok := r.taxRates[t.ID]; ok {
@@ -221,9 +221,9 @@ func (r *wp2pRun) importCoupons(ctx context.Context) error {
 	r.coupons, r.couponByCode = r.mapLoad(ctx, "coupon"), map[string]int64{}
 	return wp2pEachLine(filepath.Join(r.dir, "woo", "coupons.jsonl"), func(raw []byte) error {
 		var wc wp2pCoupon
-		if err := json.Unmarshal(raw, &wc); err != nil || wc.ID == 0 {
+		if json.Unmarshal(raw, &wc) != nil || wc.ID == 0 {
 			r.rep.skip("coupon", "", "unreadable line")
-			return nil
+			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
 		r.prog.Items["coupons"]++
 		code := strings.ToLower(strings.TrimSpace(wc.Code))
@@ -514,9 +514,9 @@ func (r *wp2pRun) importOrders(ctx context.Context) error {
 	}
 	return wp2pEachLine(filepath.Join(r.dir, "woo", "orders.jsonl"), func(raw []byte) error {
 		var wo wp2pOrder
-		if err := json.Unmarshal(raw, &wo); err != nil || wo.ID == 0 {
+		if json.Unmarshal(raw, &wo) != nil || wo.ID == 0 {
 			r.rep.skip("order", "", "unreadable line")
-			return nil
+			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
 		r.prog.Items["orders"]++
 		if r.mapGet(ctx, "order", wo.ID) != 0 {
@@ -690,9 +690,9 @@ func (r *wp2pRun) importCustomers(ctx context.Context) error {
 	}
 	return wp2pEachLine(filepath.Join(r.dir, "woo", "customers.jsonl"), func(raw []byte) error {
 		var c wp2pCustomer
-		if err := json.Unmarshal(raw, &c); err != nil {
+		if json.Unmarshal(raw, &c) != nil {
 			r.rep.skip("customer", "", "unreadable line")
-			return nil
+			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
 		r.prog.Items["customers"]++
 		if c.UserID == 0 {

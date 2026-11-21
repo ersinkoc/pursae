@@ -37,7 +37,7 @@ import (
 // was received rewrites from there, so an interrupted upload resumes from GET's "received".
 
 const (
-	wp2pTokenHeader  = "X-Pursae-Migration-Token"
+	wp2pTokenHeader  = "X-Pursae-Migration-Token" //nolint:gosec // a header name, not a credential
 	wp2pTokenPrefix  = "pmt_"
 	wp2pTokenTTL     = 24 * time.Hour
 	wp2pChunkMax     = 32 << 20 // largest chunk a request may carry
