@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"wpgo/internal/store"
 	"wpgo/internal/wp"
 )
 
@@ -19,7 +20,8 @@ import (
 //
 //   - Pursae Contact Form entries (gontact_entries) and Web Builder form submissions
 //     (web_builder_form_submissions, which the code-defined forms share): the submissions that carry
-//     the address in one of their fields. Erased by deleting them, like Flamingo's eraser.
+//     the address in one of the form's e-mail fields, or that the person's account sent while signed
+//     in (formEntryMatch). Erased by deleting them, like Flamingo's eraser.
 //   - Maintenance mode subscribers (maintenance_subscribers): deleted.
 //   - Pursae Forum: the member's topics and replies, forum profile fields, likes, points,
 //     subscriptions and the reports they filed. Erasure anonymizes, like WordPress's comment eraser:
@@ -37,7 +39,10 @@ import (
 //     its own retention period).
 //
 // Everything is matched on the e-mail address (case-insensitive, whole value) and, where rows hang
-// off an account, on the id of the user with that address. No other person's rows are touched.
+// off an account, on the id of the user with that address. No other person's rows are touched: form
+// messages match on the form's e-mail fields only, so an address someone typed into another field
+// (a "friend's e-mail" field, a message that is just an address) neither makes the message that
+// person's nor hides it from its sender.
 //
 // Tables with visitor data that no exporter reads, and why:
 //   - analytics_events: a daily-salted visitor hash, no IP, address or account; nothing links a row
@@ -93,10 +98,76 @@ func privacyCollect(ctx context.Context, s *Server, g exportGroup, sql string, a
 	return []exportGroup{g}
 }
 
-// jsonFieldsMatch is the SQL condition "one of the fields of the JSON object col is the address $1".
-func jsonFieldsMatch(col string) string {
-	return `EXISTS (SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(` + col + `) = 'object' THEN ` + col + ` ELSE '{}'::jsonb END) kv
-		WHERE lower(btrim(kv.value)) = lower($1))`
+// formEmailFallbackNames are the field names that count as the sender's e-mail field in a stored
+// form message without e-mail field metadata (stored before the release that records it, migration
+// 0110): the default e-mail field of Pursae Contact Form ("your-email") and of Web Builder and code
+// forms ("email"), and the common spellings. Such a message also matches on the names the Contact
+// Form tag generator gives e-mail fields (formEmailFallbackPattern: "email-391") and, for a Contact
+// Form entry or webhook delivery, on the e-mail fields of its form's current template
+// (gontactLegacyEmailFields). A field with any other name is not matched, because matching every
+// field would hand one person's message to whoever's address appears in it.
+var formEmailFallbackNames = []string{"email", "e-mail", "your-email", "eposta"}
+
+// formEmailFallbackPattern is the name the Contact Form tag generator gives a new email field
+// (web/admin/assets/gontact/admin.js: type + "-" + a number), matched case-insensitively.
+const formEmailFallbackPattern = `^e-?mail-[0-9]+$`
+
+// formEntryMatch is the SQL condition "the form message is the person's": an address field of the
+// JSON object fieldsCol is the address $1, or the message was sent by the account $2 (0: no account)
+// while signed in (userCol). The address fields are the names in emailFieldsCol (a text[] or a
+// JSON array; NULL for old messages, which fall back to formEmailFallbackNames and
+// formEmailFallbackPattern, case-insensitive, and, when formCol is set, to the names $3 (a JSON
+// object of form id to e-mail fields, gontactLegacyEmailFields) lists for the message's form).
+func formEntryMatch(fieldsCol, emailFieldsCol, userCol, formCol string) string {
+	legacy := ""
+	if formCol != "" {
+		legacy = ` OR kv.key IN (SELECT jsonb_array_elements_text(CASE WHEN jsonb_typeof($3::jsonb -> ((` + formCol + `)::text)) = 'array'
+				THEN $3::jsonb -> ((` + formCol + `)::text) ELSE '[]'::jsonb END))`
+	}
+	return `((` + userCol + `) IS NOT NULL AND $2::bigint <> 0 AND (` + userCol + `) = $2::bigint
+		OR EXISTS (SELECT 1 FROM jsonb_each_text(CASE WHEN jsonb_typeof(` + fieldsCol + `) = 'object' THEN ` + fieldsCol + ` ELSE '{}'::jsonb END) kv
+		WHERE lower(btrim(kv.value)) = lower($1) AND CASE WHEN (` + emailFieldsCol + `) IS NULL
+			THEN lower(kv.key) = ANY('{` + strings.Join(formEmailFallbackNames, ",") + `}'::text[])
+				OR lower(kv.key) ~ '` + formEmailFallbackPattern + `'` + legacy + `
+			ELSE kv.key = ANY(` + emailFieldsCol + `) END))`
+}
+
+// gontactEntryMatch and wbSubmissionMatch are formEntryMatch of the two tables.
+var (
+	gontactEntryMatch = formEntryMatch("posted", "email_fields", "user_id", "form_id")
+	wbSubmissionMatch = formEntryMatch("fields", "email_fields", "user_id", "")
+)
+
+// gontactLegacyEmailFields is the $3 of gontactEntryMatch and webhookJobMatch: a JSON object of each
+// Contact Form's id to the e-mail fields of its current template and mails (gfEmailFields), which
+// entries and webhook deliveries stored without their own list are matched on. Trashed forms count:
+// their old entries are still stored.
+func gontactLegacyEmailFields(ctx context.Context, s *Server) string {
+	out := map[string][]string{}
+	rows, err := s.store.Pool.Query(ctx, `SELECT id FROM posts WHERE type = $1`, gontactPostType)
+	if err == nil {
+		var ids []int64
+		for rows.Next() {
+			var id int64
+			if rows.Scan(&id) == nil {
+				ids = append(ids, id)
+			}
+		}
+		rows.Close()
+		for _, id := range ids {
+			p, err := s.store.GetPost(ctx, id)
+			if err != nil {
+				continue
+			}
+			f := gontactFormFromPost(p)
+			_, tags := gfScan(f.Form, nil)
+			if names := gfEmailFields(f, tags); len(names) > 0 {
+				out[strconv.FormatInt(id, 10)] = names
+			}
+		}
+	}
+	b, _ := json.Marshal(out)
+	return string(b)
 }
 
 // fieldItems appends the posted fields, sorted by name, as export rows.
@@ -128,8 +199,8 @@ func fieldItems(item []exportItem, raw []byte) []exportItem {
 func gontactEntriesExporter(ctx context.Context, s *Server, email string) []exportGroup {
 	return privacyCollect(ctx, s, exportGroup{ID: "pursae-contact-form-entries", Label: "Contact form submissions",
 		Description: "Messages sent through the contact forms of this site."},
-		`SELECT id, form_title, posted, ip, user_agent, page_url, created_at FROM gontact_entries WHERE `+jsonFieldsMatch("posted")+` ORDER BY id`,
-		[]any{email}, func(r pgxRows) []exportItem {
+		`SELECT id, form_title, posted, ip, user_agent, page_url, created_at FROM gontact_entries WHERE `+gontactEntryMatch+` ORDER BY id`,
+		[]any{email, privacyUserID(ctx, s, email), gontactLegacyEmailFields(ctx, s)}, func(r pgxRows) []exportItem {
 			var id int64
 			var form, ip, ua, page string
 			var posted []byte
@@ -144,7 +215,7 @@ func gontactEntriesExporter(ctx context.Context, s *Server, email string) []expo
 }
 
 func gontactEntriesEraser(ctx context.Context, s *Server, email string) eraseResult {
-	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM gontact_entries WHERE `+jsonFieldsMatch("posted"), email)
+	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM gontact_entries WHERE `+gontactEntryMatch, email, privacyUserID(ctx, s, email), gontactLegacyEmailFields(ctx, s))
 	if err != nil {
 		return eraseResult{Err: err}
 	}
@@ -156,8 +227,8 @@ func gontactEntriesEraser(ctx context.Context, s *Server, email string) eraseRes
 func wbSubmissionsExporter(ctx context.Context, s *Server, email string) []exportGroup {
 	return privacyCollect(ctx, s, exportGroup{ID: "pursae-web-builder-submissions", Label: "Web Builder form submissions",
 		Description: "Messages sent through the forms of Web Builder pages."},
-		`SELECT id, form_title, page_url, fields, ip, created_at FROM web_builder_form_submissions WHERE `+jsonFieldsMatch("fields")+` ORDER BY id`,
-		[]any{email}, func(r pgxRows) []exportItem {
+		`SELECT id, form_title, page_url, fields, ip, created_at FROM web_builder_form_submissions WHERE `+wbSubmissionMatch+` ORDER BY id`,
+		[]any{email, privacyUserID(ctx, s, email)}, func(r pgxRows) []exportItem {
 			var id int64
 			var form, page, ip string
 			var fields []byte
@@ -172,7 +243,7 @@ func wbSubmissionsExporter(ctx context.Context, s *Server, email string) []expor
 }
 
 func wbSubmissionsEraser(ctx context.Context, s *Server, email string) eraseResult {
-	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM web_builder_form_submissions WHERE `+jsonFieldsMatch("fields"), email)
+	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM web_builder_form_submissions WHERE `+wbSubmissionMatch, email, privacyUserID(ctx, s, email))
 	if err != nil {
 		return eraseResult{Err: err}
 	}
@@ -350,22 +421,13 @@ var forumPrivacyEraseSteps = []string{
 		FROM jsonb_array_elements(meta->'` + forumMetaModerators + `') e WHERE e <> to_jsonb($1::bigint)))
 		WHERE type = 'forum' AND jsonb_typeof(meta->'` + forumMetaModerators + `') = 'array' AND meta->'` + forumMetaModerators + `' @> jsonb_build_array($1::bigint)`,
 	// Likes they gave stay, anonymous: the post's count and its author's points do not change.
-	`UPDATE forum_likes SET user_id = NULL WHERE user_id = $1`,
+	store.ForumAnonymizeLikesSQL,
 	// Their own points go: the posts that earned them are no longer theirs.
 	`DELETE FROM forum_points WHERE user_id = $1`,
 	// Ledger rows they caused for other members (a like, a manual adjustment they made) stay without
 	// them. An event is recorded once per (kind, post, actor), so their like of a post that already
 	// has an anonymous like ledger row is merged into that row: the author's points stay the same.
-	`WITH dup AS (
-		SELECT DISTINCT ON (r.id) r.id AS rid, e.id AS eid, r.points FROM forum_points r
-		JOIN forum_points e ON e.kind = r.kind AND e.post_id = r.post_id AND e.actor_id IS NULL
-		WHERE r.actor_id = $1 AND r.kind <> 'manual' ORDER BY r.id, e.id
-	), merged AS (
-		UPDATE forum_points e SET points = e.points + d.points FROM dup d WHERE e.id = d.eid RETURNING e.id
-	), dropped AS (
-		DELETE FROM forum_points WHERE id IN (SELECT rid FROM dup) RETURNING id
-	)
-	UPDATE forum_points SET actor_id = NULL WHERE actor_id = $1 AND id NOT IN (SELECT rid FROM dup)`,
+	store.ForumAnonymizeActorSQL,
 	`DELETE FROM forum_subscriptions WHERE user_id = $1`,
 	// A report stays in the moderation queue, without its reporter or the reporter's note.
 	`UPDATE forum_reports SET user_id = NULL, note = '' WHERE user_id = $1`,
@@ -629,17 +691,22 @@ const mailJobMatch = `(name = 'wp_mail' AND (EXISTS (SELECT 1 FROM jsonb_array_e
 	OR (payload->>'Kind' = '` + gontactVisitorReplyKind + `' AND (lower(coalesce(payload->>'ReplyTo', '')) = lower($1)
 		OR position(lower('<' || $1 || '>') IN lower(coalesce(payload->>'ReplyTo', ''))) > 0))))`
 
-// webhookJobMatch is a contact form webhook delivery whose posted data has a field that is the
-// address $1 (the same whole-value match as the entries).
+// webhookJobMatch is a contact form webhook delivery of the person: the same match as the entries
+// (formEntryMatch), with the e-mail fields and the account the payload records (deliveries queued
+// before it recorded them have neither and fall back to the field names).
 var webhookJobMatch = `(name = '` + gontactWebhookJob + `' AND CASE WHEN pg_input_is_valid(payload->>'body', 'jsonb')
-	THEN ` + jsonFieldsMatch(`((payload->>'body')::jsonb->'posted_data')`) + ` ELSE false END)`
+	THEN ` + formEntryMatch(`((payload->>'body')::jsonb->'posted_data')`,
+	`CASE WHEN jsonb_typeof(payload->'email_fields') = 'array' THEN ARRAY(SELECT jsonb_array_elements_text(payload->'email_fields')) END`,
+	`CASE WHEN jsonb_typeof(payload->'user_id') = 'number' THEN (payload->>'user_id')::bigint END`,
+	`payload->>'form'`) + ` ELSE false END)`
 
 // mailJobsEraser deletes the finished jobs of the address: mail (copies of messages the e-mail log
 // covers) and contact form webhook deliveries (copies of the entry, with the visitor's IP; a failed
 // one is never purged by the scheduler). Queued ones are left to run: among them may be this very
 // request's notices.
 func mailJobsEraser(ctx context.Context, s *Server, email string) eraseResult {
-	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE status IN ('done', 'failed') AND (`+mailJobMatch+` OR `+webhookJobMatch+`)`, email)
+	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE status IN ('done', 'failed') AND (`+mailJobMatch+` OR `+webhookJobMatch+`)`, email, privacyUserID(ctx, s, email),
+		gontactLegacyEmailFields(ctx, s))
 	if err != nil {
 		return eraseResult{Err: err}
 	}

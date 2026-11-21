@@ -39,6 +39,10 @@ type gontactWebhookJobPayload struct {
 	Secret string `json:"secret,omitempty"`
 	Body   string `json:"body"`
 	Form   int64  `json:"form"`
+	// What the personal data exporter and eraser match the delivery on, like the entry's columns:
+	// the e-mail fields of the posted data (gfSubmission.emailFields) and the signed-in visitor.
+	EmailFields []string `json:"email_fields"`
+	UserID      int64    `json:"user_id,omitempty"`
 }
 
 // gontactWebhookURLs are the valid http(s) endpoints of the form's webhook_url settings.
@@ -73,8 +77,13 @@ func (sub *gfSubmission) queueWebhooks() {
 		"entry_id": sub.entryID, "submitted_at": sub.timestamp.UTC().Format(time.RFC3339),
 		"page_url": sub.pageURL, "remote_ip": sub.remoteIP, "posted_data": sub.flatPosted(),
 	})
+	emailFields := sub.emailFields()
+	var uid int64
+	if id := sub.userID(); id != nil {
+		uid = *id
+	}
 	for _, u := range urls {
-		p := gontactWebhookJobPayload{URL: u, Secret: secret, Body: string(body), Form: sub.form.ID}
+		p := gontactWebhookJobPayload{URL: u, Secret: secret, Body: string(body), Form: sub.form.ID, EmailFields: emailFields, UserID: uid}
 		if err := sub.s.queueJob(context.WithoutCancel(sub.ctx), gontactWebhookJob, p, time.Time{}); err != nil {
 			slog.Error("gontact form: queue webhook", "form", sub.form.ID, "err", err)
 		}
