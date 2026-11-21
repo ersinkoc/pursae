@@ -2,11 +2,15 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
@@ -60,17 +64,33 @@ func wxrIsProductTaxonomy(tax string) bool {
 // wxrEnsureAttribute finds the global attribute of a pa_ taxonomy, creating it when missing. The file
 // does not carry the attribute's label (it lives in woocommerce_attribute_taxonomies), so a new one
 // is named after its slug ("pa_shoe-size" -> "Shoe size"), which can be renamed under Products › Attributes.
+//
+// WooCommerce keeps non-ASCII attribute slugs (wc_sanitize_taxonomy_name url-decodes them: "pa_размер");
+// Pursae Commerce's attribute slugs are ASCII, so such an attribute gets an ASCII slug here
+// (wxrAttrSlug) and its taxonomy differs from the file's: callers use the returned attribute's
+// Taxonomy() for its terms and keys, never the file's name.
 func (s *Server) wxrEnsureAttribute(ctx context.Context, cache map[string]*gooAttribute, tax string) (*gooAttribute, error) {
+	tax = wxrFileTaxonomy(tax)
 	if a, ok := cache[tax]; ok {
 		if a == nil {
 			return nil, fmt.Errorf("attribute %s could not be created", tax)
 		}
 		return a, nil
 	}
-	a := s.gooAttributeByTaxonomy(ctx, tax)
+	slug := strings.TrimPrefix(tax, "pa_")
+	ascii := wxrAttrSlug(slug)
+	name := wxrUcfirst(strings.NewReplacer("-", " ", "_", " ").Replace(slug))
+	a := s.gooAttributeByTaxonomy(ctx, "pa_"+ascii)
+	if a == nil && ascii != slug {
+		// An attribute made here by hand for the store being moved ("Размер" with the slug "razmer").
+		a = &gooAttribute{}
+		if err := s.store.Pool.QueryRow(ctx, `SELECT id, name, slug, type, order_by, has_archives FROM goo_attributes
+			WHERE lower(name) = lower($1) ORDER BY id LIMIT 1`, name).Scan(&a.ID, &a.Name, &a.Slug, &a.Type, &a.OrderBy, &a.HasArchives); err != nil {
+			a = nil
+		}
+	}
 	if a == nil {
-		slug := strings.TrimPrefix(tax, "pa_")
-		a = &gooAttribute{Name: ucfirstStr(strings.NewReplacer("-", " ", "_", " ").Replace(slug)), Slug: slug}
+		a = &gooAttribute{Name: name, Slug: ascii}
 		if err := s.gooSaveAttribute(ctx, a); err != nil {
 			cache[tax] = nil
 			return nil, err
@@ -78,6 +98,57 @@ func (s *Server) wxrEnsureAttribute(ctx context.Context, cache map[string]*gooAt
 	}
 	cache[tax] = a
 	return a, nil
+}
+
+// wxrFileTaxonomy is a taxonomy name of the file in its decoded form: variation meta keys carry
+// sanitize_title() of it ("pa_%d1%80..."), terms and _product_attributes the UTF-8 one.
+func wxrFileTaxonomy(tax string) string {
+	if rest, ok := strings.CutPrefix(tax, "pa_"); ok && strings.Contains(rest, "%") {
+		return "pa_" + wp.SanitizeTitle(rest)
+	}
+	return tax
+}
+
+// wxrAttrSlug is the ASCII attribute slug for a WooCommerce one: the same slug when it is valid here,
+// else its Latin transliteration ("größe" -> "grosse"), else (Cyrillic, Greek, CJK, ...) a slug derived
+// from a hash of it, so that importing the file again finds the same attribute.
+func wxrAttrSlug(slug string) string {
+	ascii := gooSanitizeKey(wp.RemoveAccents(slug))
+	if ascii == slug && len(ascii) <= 28 {
+		return ascii
+	}
+	sum := sha256.Sum256([]byte(slug))
+	hash := hex.EncodeToString(sum[:4])
+	switch {
+	case ascii == "":
+		return "attr-" + hash
+	case len(ascii) > 28:
+		return strings.TrimRight(ascii[:19], "-_") + "-" + hash
+	}
+	return ascii
+}
+
+// wxrUcfirst upper-cases the first letter (ucfirst on UTF-8; the name of a non-ASCII attribute).
+func wxrUcfirst(v string) string {
+	r, n := utf8.DecodeRuneInString(v)
+	if r == utf8.RuneError {
+		return v
+	}
+	return string(unicode.ToUpper(r)) + v[n:]
+}
+
+// wxrOurTaxonomy maps a pa_ taxonomy of the file (as a term domain, attribute name or variation key)
+// to the taxonomy of its attribute here; other keys are returned unchanged. An attribute this run has
+// not looked up (the variations of a product imported before) has the slug wxrAttrSlug gives it.
+func wxrOurTaxonomy(cache map[string]*gooAttribute, key string) string {
+	if !strings.HasPrefix(key, "pa_") {
+		return key
+	}
+	tax := wxrFileTaxonomy(key)
+	if a := cache[tax]; a != nil {
+		return a.Taxonomy()
+	}
+	return "pa_" + wxrAttrSlug(strings.TrimPrefix(tax, "pa_"))
 }
 
 // wxrMetaFloat reads a price-like meta value ("" = not set).
@@ -141,10 +212,10 @@ func (s *Server) wxrImportProducts(ctx context.Context, u *store.User, items []*
 			variations = append(variations, it)
 			continue
 		}
-		if ex, err := s.store.PostBySlug(ctx, "product", it.Name); err == nil && it.Name != "" && ex.Title == it.Title {
+		if exID := s.wxrExistingProduct(ctx, it, env.loc); exID != 0 {
 			rep.Log = append(rep.Log, fmt.Sprintf("Product “%s” already exists.", it.Title))
-			env.remember(it.PostID, ex.ID)
-			existing[ex.ID] = true
+			env.remember(it.PostID, exID)
+			existing[exID] = true
 			rep.Skipped++
 			continue
 		}
@@ -197,6 +268,10 @@ func (s *Server) wxrImportProducts(ctx context.Context, u *store.User, items []*
 				continue
 			}
 		}
+		if v.SKU != "" && s.gooSKUTaken(ctx, v.SKU, 0) {
+			rep.Log = append(rep.Log, fmt.Sprintf("Variation “%s”: the SKU %s is used by another product here, so it was left empty.", v.Name, v.SKU))
+			v.SKU = ""
+		}
 		if err := s.gooSaveProduct(ctx, v, u.ID); err != nil {
 			rep.Log = append(rep.Log, fmt.Sprintf("Failed to import variation “%s”: %v", it.Title, err))
 			continue
@@ -234,6 +309,35 @@ func (s *Server) wxrImportProducts(ctx context.Context, u *store.User, items []*
 	return created
 }
 
+// wxrExistingProduct is the product of the site that an item of the file already is, 0 when none: the
+// one with its slug and title, or, for an item without a slug (WordPress leaves post_name empty on
+// drafts and pending posts), the one with its title and date, as the WordPress importer's
+// post_exists() matches posts. Without a date, the title and content.
+func (s *Server) wxrExistingProduct(ctx context.Context, it *wxrItem, loc *time.Location) int64 {
+	if it.Name != "" {
+		if ex, err := s.store.PostBySlug(ctx, "product", it.Name); err == nil && ex.Title == it.Title {
+			return ex.ID
+		}
+		return 0
+	}
+	if it.Title == "" {
+		return 0
+	}
+	var id int64
+	var err error
+	if t, perr := time.ParseInLocation("2006-01-02 15:04:05", it.PostDate, loc); perr == nil {
+		err = s.store.Pool.QueryRow(ctx, `SELECT id FROM posts WHERE type = 'product' AND status <> 'trash' AND title = $1
+			AND date_trunc('second', published_at) = $2 ORDER BY id LIMIT 1`, it.Title, t).Scan(&id)
+	} else {
+		err = s.store.Pool.QueryRow(ctx, `SELECT id FROM posts WHERE type = 'product' AND status <> 'trash' AND title = $1
+			AND content = $2 ORDER BY id LIMIT 1`, it.Title, it.Content).Scan(&id)
+	}
+	if err != nil {
+		return 0
+	}
+	return id
+}
+
 type wxrProductLinks struct {
 	children, upsells, crosses []int64
 }
@@ -263,15 +367,16 @@ func (s *Server) wxrProduct(ctx context.Context, u *store.User, it *wxrItem, env
 		case cat.Domain == "product_shipping_class":
 			shipClass = env.ensureTerm("product_shipping_class", cat.Nicename, cat.Name, 0)
 		case strings.HasPrefix(cat.Domain, "pa_"):
-			if _, err := s.wxrEnsureAttribute(ctx, env.attrs, cat.Domain); err != nil {
+			ga, err := s.wxrEnsureAttribute(ctx, env.attrs, cat.Domain)
+			if err != nil {
 				continue
 			}
-			if id := env.ensureTerm(cat.Domain, cat.Nicename, cat.Name, 0); id != 0 {
+			if id := env.ensureTerm(ga.Taxonomy(), cat.Nicename, cat.Name, 0); id != 0 {
 				slug := cat.Nicename
 				if strings.Contains(slug, "%") {
 					slug = wp.SanitizeTitle(slug)
 				}
-				attrTerms[cat.Domain] = append(attrTerms[cat.Domain], slug)
+				attrTerms[ga.Taxonomy()] = append(attrTerms[ga.Taxonomy()], slug)
 			}
 		}
 	}
@@ -285,7 +390,7 @@ func (s *Server) wxrProduct(ctx context.Context, u *store.User, it *wxrItem, env
 	}
 	p := gooNewProduct(typ)
 	p.Name, p.Slug, p.Status = it.Title, it.Name, defaultStr(it.Status, "draft")
-	s.wxrProductData(ctx, p, it, env)
+	s.wxrProductData(ctx, u, p, it, env)
 	if p.SKU != "" && s.gooSKUTaken(ctx, p.SKU, 0) {
 		rep.Log = append(rep.Log, fmt.Sprintf("Product “%s”: the SKU %s is used by another product here, so it was left empty.", it.Title, p.SKU))
 		p.SKU = ""
@@ -345,7 +450,7 @@ func (s *Server) wxrProduct(ctx context.Context, u *store.User, it *wxrItem, env
 		return nil, ln, err
 	}
 	if len(cats) == 0 { // wp_set_object_terms with the default product category, as WooCommerce does
-		if t, err := s.store.TermBySlug(ctx, "product_cat", "uncategorized"); err == nil {
+		if t, err := s.store.TermBySlug(ctx, "product_cat", s.gooDefaultCatSlug()); err == nil {
 			cats = []int64{t.ID}
 		}
 	}
@@ -358,7 +463,7 @@ func (s *Server) wxrProduct(ctx context.Context, u *store.User, it *wxrItem, env
 }
 
 // wxrProductData reads the meta shared by products and variations.
-func (s *Server) wxrProductData(ctx context.Context, p *gooProduct, it *wxrItem, env *wxrProductEnv) {
+func (s *Server) wxrProductData(ctx context.Context, u *store.User, p *gooProduct, it *wxrItem, env *wxrProductEnv) {
 	p.SKU = strings.TrimSpace(it.meta("_sku"))
 	p.RegularPrice, p.SalePrice = wxrMetaFloat(it.meta("_regular_price")), wxrMetaFloat(it.meta("_sale_price"))
 	if p.RegularPrice == nil && p.SalePrice == nil && p.Type != gooTypeVariable && p.Type != gooTypeGrouped {
@@ -393,6 +498,9 @@ func (s *Server) wxrProductData(ctx context.Context, p *gooProduct, it *wxrItem,
 		p.DownloadExpiry = *n
 	}
 	p.PurchaseNote = it.meta("_purchase_note")
+	if !u.Can("unfiltered_html", nil) { // the note is HTML in the order emails (content_save_pre, as the CSV importer)
+		p.PurchaseNote = wp.KsesPost(p.PurchaseNote)
+	}
 	if p.Downloadable {
 		p.Downloads = wxrDownloads(it.meta("_downloadable_files"), env.urls)
 	}
@@ -431,7 +539,7 @@ func wxrDownloads(v string, urls *strings.Replacer) []gooDownload {
 }
 
 // wxrAttributes reads _product_attributes (and _default_attributes). A taxonomy attribute takes its
-// options from the product's pa_ terms, a custom one from its "A | B" value.
+// options from the product's pa_ terms (keyed by our taxonomy), a custom one from its "A | B" value.
 func (s *Server) wxrAttributes(ctx context.Context, it *wxrItem, terms map[string][]string, env *wxrProductEnv, rep *importReport) ([]gooProductAttr, map[string]string) {
 	defaults := map[string]string{}
 	parsed, err := phpUnserialize(it.meta("_product_attributes"))
@@ -463,7 +571,7 @@ func (s *Server) wxrAttributes(ctx context.Context, it *wxrItem, terms map[strin
 				rep.Log = append(rep.Log, fmt.Sprintf("Product “%s”: the attribute %s was skipped: %v", it.Title, name, err))
 				continue
 			}
-			a.ID, a.Name, a.Taxonomy, a.Options = ga.ID, ga.Name, ga.Taxonomy(), terms[name]
+			a.ID, a.Name, a.Taxonomy, a.Options = ga.ID, ga.Name, ga.Taxonomy(), terms[ga.Taxonomy()]
 		} else {
 			for _, o := range strings.Split(phpString(f.Get("value")), "|") {
 				if o = strings.TrimSpace(o); o != "" {
@@ -476,7 +584,7 @@ func (s *Server) wxrAttributes(ctx context.Context, it *wxrItem, terms map[strin
 	if parsed, err := phpUnserialize(it.meta("_default_attributes")); err == nil {
 		if d, ok := parsed.(*phpArray); ok {
 			for i, k := range d.Keys {
-				key := wxrAttrKey(out, phpString(k))
+				key := wxrAttrKey(out, wxrOurTaxonomy(env.attrs, phpString(k)))
 				if v := phpString(d.Vals[i]); key != "" && v != "" {
 					defaults[key] = v
 				}
@@ -486,9 +594,13 @@ func (s *Server) wxrAttributes(ctx context.Context, it *wxrItem, terms map[strin
 	return out, defaults
 }
 
-// wxrAttrKey maps a WooCommerce attribute key (a pa_ taxonomy or sanitize_title() of a custom
-// attribute's name) to the key Pursae Commerce uses for that attribute.
+// wxrAttrKey maps a WooCommerce attribute key (a pa_ taxonomy, already mapped to ours by
+// wxrOurTaxonomy, or sanitize_title() of a custom attribute's name, %xx-encoded when not ASCII) to the
+// key Pursae Commerce uses for that attribute.
 func wxrAttrKey(attrs []gooProductAttr, key string) string {
+	if strings.Contains(key, "%") {
+		key = wp.SanitizeTitle(key)
+	}
 	for _, a := range attrs {
 		if a.Taxonomy != "" && a.Taxonomy == key {
 			return a.Key()
@@ -511,11 +623,11 @@ func (s *Server) wxrVariation(ctx context.Context, u *store.User, it *wxrItem, p
 	if it.Status == "private" { // a disabled variation
 		v.Status = "private"
 	}
-	s.wxrProductData(ctx, v, it, env)
-	if v.SKU != "" && s.gooSKUTaken(ctx, v.SKU, 0) {
-		v.SKU = ""
-	}
+	s.wxrProductData(ctx, u, v, it, env)
 	v.Description = it.meta("_variation_description")
+	if !u.Can("unfiltered_html", nil) {
+		v.Description = wp.KsesPost(v.Description)
+	}
 	if thumb, err := strconv.ParseInt(it.meta("_thumbnail_id"), 10, 64); err == nil {
 		v.ImageID = env.idMap[thumb]
 	}
@@ -525,7 +637,7 @@ func (s *Server) wxrVariation(ctx context.Context, u *store.User, it *wxrItem, p
 			if strings.HasPrefix(k, "pa_") && strings.Contains(val, "%") {
 				val = wp.SanitizeTitle(val)
 			}
-			v.VariationAttrs[wxrAttrKey(parent.Attributes, k)] = val
+			v.VariationAttrs[wxrAttrKey(parent.Attributes, wxrOurTaxonomy(env.attrs, k))] = val
 		}
 	}
 	post := &store.Post{Type: "product_variation", AuthorID: parent.Post.AuthorID, MenuOrder: it.MenuOrder,

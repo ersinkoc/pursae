@@ -216,9 +216,12 @@ checked so the product images come along. The store does not have to be active; 
 - **Attributes**: `_product_attributes` and `_default_attributes`. A taxonomy attribute (`pa_*`) becomes a global
   attribute (created when missing; the file does not carry its label, so it is named after its slug, e.g.
   `pa_shoe-size` → "Shoe size", and can be renamed under Products › Attributes) with the product's terms as options;
-  a custom attribute keeps its `A | B` values. Variations take their `attribute_*` values.
+  a custom attribute keeps its `A | B` values. Variations take their `attribute_*` values. Attribute slugs here are
+  ASCII: a WooCommerce slug with accents is transliterated (`pa_größe` → `pa_grosse`), and one in another script
+  (`pa_размер`) gets a generated slug (`pa_attr-…`, keeping the name "Размер") unless an attribute of that name
+  already exists; its terms and the variations follow it.
 - **Terms**: `product_cat` (with the hierarchy), `product_tag`, `product_shipping_class` and the `pa_*` terms. A
-  product without a category goes to Uncategorized. `product_visibility` sets "featured" and the catalog visibility
+  product without a category goes to the default product category (Uncategorized unless changed). `product_visibility` sets "featured" and the catalog visibility
   (`exclude-from-catalog` / `exclude-from-search`; the older `_featured` / `_visibility` meta is read too). Category
   term meta (thumbnail, display type, order) is not imported.
 - **Images**: `_thumbnail_id` (product and variation image) and `_product_image_gallery` are mapped to the imported
@@ -227,11 +230,15 @@ checked so the product images come along. The store does not have to be active; 
   imported products; ids of products that are not in the file are dropped.
 - **Reviews**: product comments come with their comment meta (`rating`, `verified`), and the average rating is
   recalculated. `total_sales` and the stored rating counters are not copied.
+- The purchase note and variation descriptions are filtered like the descriptions when the importing user may not
+  post unfiltered HTML.
 - Other post meta (custom fields, SEO plugins) is kept on the product post like for posts; the WooCommerce keys
   above are read into the product data instead of being copied.
 - **Not imported**: orders (`shop_order`), refunds, coupons (`shop_coupon`) and subscriptions are counted and
   reported ("Skipped N orders / M coupons"). Customers are not in a WXR file (only post authors are). A WooCommerce
   site with High-Performance Order Storage does not export orders to WXR at all.
-- **Running it again**: a product with the same slug and name is skipped ("Product … already exists"), and so are
-  its variations that have the same attributes; a variation that is missing (an import that stopped half way) is
+- **Running it again**: a product with the same slug and name is skipped ("Product … already exists"); a product
+  without a slug (WordPress leaves it empty on drafts and pending products) is matched by name and date, as the
+  WordPress importer does. Its variations
+  that have the same attributes are skipped too; a variation that is missing (an import that stopped half way) is
   added. A SKU already used by another product here is left empty and named in the report.

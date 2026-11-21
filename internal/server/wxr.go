@@ -831,21 +831,25 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 		if t.Taxonomy == "nav_menu" && t.Slug != "" {
 			ensureMenu(t.Slug, t.Name)
 		}
-		// WooCommerce's product taxonomies (attribute taxonomies get their global attribute first).
+		// WooCommerce's product taxonomies (attribute taxonomies get their global attribute first, whose
+		// taxonomy here can differ from the file's: a non-ASCII slug gets an ASCII one).
+		tax := t.Taxonomy
 		if t.Slug != "" && strings.HasPrefix(t.Taxonomy, "pa_") {
-			if _, err := s.wxrEnsureAttribute(ctx, prodAttrs, t.Taxonomy); err != nil {
+			ga, err := s.wxrEnsureAttribute(ctx, prodAttrs, t.Taxonomy)
+			if err != nil {
 				rep.Log = append(rep.Log, fmt.Sprintf("Failed to import the product attribute %s: %v", t.Taxonomy, err))
 				continue
 			}
+			tax = ga.Taxonomy()
 		}
 		// Terms of taxonomies registered here (Pursae Custom Fields, the store's product taxonomies);
 		// others are skipped like posts of unknown types.
-		if t.Slug != "" && (wxrIsCustomTaxonomy(t.Taxonomy) || wxrIsProductTaxonomy(t.Taxonomy)) {
+		if t.Slug != "" && (wxrIsCustomTaxonomy(tax) || wxrIsProductTaxonomy(tax)) {
 			var parent int64
 			if t.Parent != "" {
-				parent = ensureTerm(t.Taxonomy, t.Parent, t.Parent, 0)
+				parent = ensureTerm(tax, t.Parent, t.Parent, 0)
 			}
-			if id := ensureTerm(t.Taxonomy, t.Slug, t.Name, parent); t.TermID != 0 {
+			if id := ensureTerm(tax, t.Slug, t.Name, parent); t.TermID != 0 {
 				oldTerms[t.TermID] = id
 			}
 		}

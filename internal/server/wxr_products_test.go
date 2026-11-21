@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"wpgo/internal/store"
 )
 
 func TestPHPUnserialize(t *testing.T) {
@@ -313,5 +315,195 @@ func TestWXRImportWooCommerceProducts(t *testing.T) {
 	}
 	if !strings.Contains(importSummary(rep), "skipped 1 orders / 1 coupons") {
 		t.Errorf("CLI summary: %s", importSummary(rep))
+	}
+}
+
+// wxrWooDraftFixture is a WooCommerce export of a draft variable product: no post_name (WordPress
+// leaves it empty on drafts), no category, a Cyrillic global attribute (pa_размер, which WooCommerce
+// keeps url-decoded while the variation meta keys are sanitize_title()'d, so %xx-encoded) and markup
+// in the purchase note and a variation description.
+const wxrWooDraftFixture = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:excerpt="http://wordpress.org/export/1.2/excerpt/" xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:wp="http://wordpress.org/export/1.2/">
+<channel>
+	<title>Магазин</title>
+	<wp:wxr_version>1.2</wp:wxr_version>
+	<wp:base_site_url>https://shop.example.test</wp:base_site_url>
+	<wp:term><wp:term_id>30</wp:term_id><wp:term_taxonomy><![CDATA[pa_размер]]></wp:term_taxonomy><wp:term_slug><![CDATA[s]]></wp:term_slug><wp:term_name><![CDATA[S]]></wp:term_name></wp:term>
+	<wp:term><wp:term_id>31</wp:term_id><wp:term_taxonomy><![CDATA[pa_размер]]></wp:term_taxonomy><wp:term_slug><![CDATA[m]]></wp:term_slug><wp:term_name><![CDATA[M]]></wp:term_name></wp:term>
+	<item>
+		<title><![CDATA[Худи]]></title>
+		<content:encoded><![CDATA[<p>Тёплое худи.</p>]]></content:encoded>
+		<excerpt:encoded><![CDATA[]]></excerpt:encoded>
+		<wp:post_id>60</wp:post_id>
+		<wp:post_date><![CDATA[2024-03-05 11:00:00]]></wp:post_date>
+		<wp:post_name><![CDATA[]]></wp:post_name>
+		<wp:status><![CDATA[draft]]></wp:status>
+		<wp:post_parent>0</wp:post_parent>
+		<wp:post_type><![CDATA[product]]></wp:post_type>
+		<category domain="pa_размер" nicename="s"><![CDATA[S]]></category>
+		<category domain="pa_размер" nicename="m"><![CDATA[M]]></category>
+		<category domain="product_type" nicename="variable"><![CDATA[variable]]></category>
+		<wp:postmeta><wp:meta_key><![CDATA[_sku]]></wp:meta_key><wp:meta_value><![CDATA[HOOD-1]]></wp:meta_value></wp:postmeta>
+		<wp:postmeta><wp:meta_key><![CDATA[_purchase_note]]></wp:meta_key><wp:meta_value><![CDATA[<a href="javascript:alert(1)">Claim</a><img src=x onerror=alert(2)>Thanks]]></wp:meta_value></wp:postmeta>
+		<wp:postmeta><wp:meta_key><![CDATA[_product_attributes]]></wp:meta_key><wp:meta_value><![CDATA[a:1:{s:15:"pa_размер";a:6:{s:4:"name";s:15:"pa_размер";s:5:"value";s:0:"";s:8:"position";i:0;s:10:"is_visible";i:1;s:12:"is_variation";i:1;s:11:"is_taxonomy";i:1;}}]]></wp:meta_value></wp:postmeta>
+		<wp:postmeta><wp:meta_key><![CDATA[_default_attributes]]></wp:meta_key><wp:meta_value><![CDATA[a:1:{s:15:"pa_размер";s:1:"m";}]]></wp:meta_value></wp:postmeta>
+	</item>
+	<item>
+		<title><![CDATA[Худи - S]]></title>
+		<wp:post_id>61</wp:post_id>
+		<wp:post_date><![CDATA[2024-03-05 11:00:00]]></wp:post_date>
+		<wp:post_name><![CDATA[]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_parent>60</wp:post_parent>
+		<wp:post_type><![CDATA[product_variation]]></wp:post_type>
+		<wp:postmeta><wp:meta_key><![CDATA[_sku]]></wp:meta_key><wp:meta_value><![CDATA[HOOD-S]]></wp:meta_value></wp:postmeta>
+		<wp:postmeta><wp:meta_key><![CDATA[_regular_price]]></wp:meta_key><wp:meta_value><![CDATA[30]]></wp:meta_value></wp:postmeta>
+		<wp:postmeta><wp:meta_key><![CDATA[_variation_description]]></wp:meta_key><wp:meta_value><![CDATA[<b>Small</b><script>alert(3)</script>]]></wp:meta_value></wp:postmeta>
+		<wp:postmeta><wp:meta_key><![CDATA[attribute_pa_%d1%80%d0%b0%d0%b7%d0%bc%d0%b5%d1%80]]></wp:meta_key><wp:meta_value><![CDATA[s]]></wp:meta_value></wp:postmeta>
+	</item>
+	<item>
+		<title><![CDATA[Худи - M]]></title>
+		<wp:post_id>62</wp:post_id>
+		<wp:post_date><![CDATA[2024-03-05 11:00:00]]></wp:post_date>
+		<wp:post_name><![CDATA[]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_parent>60</wp:post_parent>
+		<wp:post_type><![CDATA[product_variation]]></wp:post_type>
+		<wp:postmeta><wp:meta_key><![CDATA[_sku]]></wp:meta_key><wp:meta_value><![CDATA[TAKEN-M]]></wp:meta_value></wp:postmeta>
+		<wp:postmeta><wp:meta_key><![CDATA[_regular_price]]></wp:meta_key><wp:meta_value><![CDATA[32]]></wp:meta_value></wp:postmeta>
+		<wp:postmeta><wp:meta_key><![CDATA[attribute_pa_%d1%80%d0%b0%d0%b7%d0%bc%d0%b5%d1%80]]></wp:meta_key><wp:meta_value><![CDATA[m]]></wp:meta_value></wp:postmeta>
+	</item>
+</channel>
+</rss>`
+
+// A draft product without a slug is found again by its title and date (post_exists), so a second
+// import adds nothing; a non-ASCII global attribute gets an ASCII slug and its terms, options and
+// variation keys follow it; a variation whose SKU is taken is reported; the default product category
+// is the store's; markup is filtered for a user without unfiltered_html.
+func TestWXRImportWooDraftNonASCIIAttribute(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	uid, err := srv.store.CreateUser(ctx, store.NewUser{Login: "wxrmgr", Email: "wxrmgr@example.test", PasswordHash: "x", Role: "administrator"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.store.SetUserCapExceptions(ctx, uid, map[string]string{"unfiltered_html": "deny"}); err != nil {
+		t.Fatal(err)
+	}
+	u, err := srv.store.UserByID(ctx, uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if u.Can("unfiltered_html", nil) {
+		t.Fatal("the cap exception did not apply")
+	}
+	gooMakeSimple(t, srv, "Other", 5, func(p *gooProduct) { p.SKU = "TAKEN-M" })
+	def := &store.Term{Taxonomy: "product_cat", Slug: "sin-categoria", Name: "Sin categoría"}
+	if err := srv.store.InsertTerm(ctx, def); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooSetOpts(ctx, map[string]any{"default_product_cat": int(def.ID)}); err != nil {
+		t.Fatal(err)
+	}
+
+	rep, err := srv.importWXRWith(ctx, u, []byte(wxrWooDraftFixture), wxrImportOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.Products != 1 || rep.Variations != 2 {
+		t.Fatalf("report: products %d variations %d, log %v", rep.Products, rep.Variations, rep.Log)
+	}
+	log := strings.Join(rep.Log, "\n")
+	if !strings.Contains(log, "Variation “Худи - M”: the SKU TAKEN-M is used by another product here, so it was left empty.") {
+		t.Errorf("taken variation SKU not reported: %s", log)
+	}
+	if strings.Contains(log, "attribute") {
+		t.Errorf("attribute reported as failed: %s", log)
+	}
+
+	var id int64
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT id FROM posts WHERE type = 'product' AND title = 'Худи'`).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	p, err := srv.gooGetProduct(ctx, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ga := srv.gooAttributeByTaxonomy(ctx, "pa_"+wxrAttrSlug("размер"))
+	if ga == nil || ga.Name != "Размер" || !strings.HasPrefix(ga.Slug, "attr-") {
+		t.Fatalf("global attribute: %+v", ga)
+	}
+	tax := ga.Taxonomy()
+	if p.Status != "draft" || p.SKU != "HOOD-1" || len(p.Attributes) != 1 || p.Attributes[0].Taxonomy != tax || p.Attributes[0].Name != "Размер" ||
+		!p.Attributes[0].Variation || !slices.Equal(p.Attributes[0].Options, []string{"s", "m"}) || p.DefaultAttributes[tax] != "m" {
+		t.Errorf("product: status %q sku %q attributes %+v defaults %v", p.Status, p.SKU, p.Attributes, p.DefaultAttributes)
+	}
+	if terms, _ := srv.store.TermsForPosts(ctx, []int64{id}, tax); len(terms[id]) != 2 {
+		t.Errorf("attribute terms on the product: %v", terms[id])
+	}
+	if cats, _ := srv.store.TermsForPosts(ctx, []int64{id}, "product_cat"); len(cats[id]) != 1 || cats[id][0].ID != def.ID {
+		t.Errorf("default category: %v", cats[id])
+	}
+	if strings.Contains(p.PurchaseNote, "javascript:") || strings.Contains(p.PurchaseNote, "onerror") || !strings.Contains(p.PurchaseNote, "Thanks") {
+		t.Errorf("purchase note not filtered: %q", p.PurchaseNote)
+	}
+	vars, err := srv.gooVariations(ctx, id, true)
+	if err != nil || len(vars) != 2 {
+		t.Fatalf("variations: %d %v", len(vars), err)
+	}
+	for _, v := range vars {
+		if len(v.VariationAttrs) != 1 || (v.VariationAttrs[tax] != "s" && v.VariationAttrs[tax] != "m") {
+			t.Errorf("variation %q attributes %v", v.Name, v.VariationAttrs)
+		}
+		if v.VariationAttrs[tax] == "s" && (v.SKU != "HOOD-S" || strings.Contains(v.Description, "<script") || !strings.Contains(v.Description, "<b>Small</b>")) {
+			t.Errorf("variation S: sku %q description %q", v.SKU, v.Description)
+		}
+		if v.VariationAttrs[tax] == "m" && v.SKU != "" {
+			t.Errorf("variation M kept a taken SKU: %q", v.SKU)
+		}
+	}
+	if m, err := srv.gooMatchVariation(ctx, p, map[string]string{"attribute_" + tax: "m"}); err != nil || m.VariationAttrs[tax] != "m" {
+		t.Errorf("matching the M variation: %v", err)
+	}
+
+	// A second import finds the draft by title and date: nothing is added, and the existing
+	// variations are not reported as SKU conflicts.
+	rep, err = srv.importWXRWith(ctx, u, []byte(wxrWooDraftFixture), wxrImportOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var products, variations, attrs int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT (SELECT count(*) FROM posts WHERE type = 'product' AND title = 'Худи'),
+		(SELECT count(*) FROM posts WHERE type = 'product_variation'), (SELECT count(*) FROM goo_attributes)`).Scan(&products, &variations, &attrs)
+	if rep.Products != 0 || rep.Variations != 0 || products != 1 || variations != 2 || attrs != 1 {
+		t.Errorf("re-import: report %d/%d, rows: products %d variations %d attributes %d", rep.Products, rep.Variations, products, variations, attrs)
+	}
+	if strings.Contains(strings.Join(rep.Log, "\n"), "SKU") {
+		t.Errorf("re-import reported SKUs: %v", rep.Log)
+	}
+}
+
+func TestWXRAttrSlug(t *testing.T) {
+	for in, want := range map[string]string{"color": "color", "shoe-size": "shoe-size", "größe": "grosse", "taille_été": "taille_ete"} {
+		if got := wxrAttrSlug(in); got != want {
+			t.Errorf("wxrAttrSlug(%q) = %q, want %q", in, got, want)
+		}
+	}
+	if a, b := wxrAttrSlug("размер"), wxrAttrSlug("цвет"); !strings.HasPrefix(a, "attr-") || a == b || a != wxrAttrSlug("размер") {
+		t.Errorf("non-Latin slugs: %q %q", a, b)
+	}
+	if long := wxrAttrSlug(strings.Repeat("abcdefgh-", 5)); len(long) > 28 {
+		t.Errorf("long slug %q", long)
+	}
+	if got := wxrFileTaxonomy("pa_%d1%80%d0%b0%d0%b7%d0%bc%d0%b5%d1%80"); got != "pa_размер" {
+		t.Errorf("decoded taxonomy %q", got)
+	}
+	if got := wxrOurTaxonomy(map[string]*gooAttribute{"pa_размер": {Slug: "razmer"}}, "pa_%d1%80%d0%b0%d0%b7%d0%bc%d0%b5%d1%80"); got != "pa_razmer" {
+		t.Errorf("mapped taxonomy %q", got)
+	}
+	attrs := []gooProductAttr{{Name: "Shoe Size"}}
+	if k := wxrAttrKey(attrs, "shoe%2dsize"); k != "shoe-size" {
+		t.Errorf("encoded custom key %q", k)
 	}
 }

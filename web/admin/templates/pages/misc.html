@@ -691,7 +691,7 @@
 <div class="notice notice-info inline"><p><strong>{{if eq .State "running"}}Importing&hellip;{{else}}Waiting for the import to start&hellip;{{end}}</strong> The import runs in the background and this page refreshes on its own. You can leave it and come back to this address; the report stays available for a week.</p></div>{{end}}
 {{else if .Report}}{{with .Report}}
 <div class="notice notice-success"><p><strong>All done.</strong> Have fun!</p></div>
-<p>Imported {{.Posts}} posts, {{.Pages}} pages, {{.Blocks}} patterns, {{if .Templates}}{{.Templates}} Theme Builder templates, {{end}}{{.MenuItems}} menu items, {{.Attachments}} media files, {{.Comments}} comments and {{.Terms}} new categories and tags.{{if .Products}} Imported {{.Products}} products and {{.Variations}} variations into Pursae Commerce.{{end}}{{if .Skipped}} {{.Skipped}} items were skipped.{{end}}{{if or .SkippedOrders .SkippedCoupons}} Skipped {{.SkippedOrders}} orders / {{.SkippedCoupons}} coupons.{{end}}</p>
+<p>Imported {{.Posts}} posts, {{.Pages}} pages, {{.Blocks}} patterns, {{if .Templates}}{{.Templates}} Theme Builder templates, {{end}}{{.MenuItems}} menu items, {{.Attachments}} media files, {{.Comments}} comments and {{.Terms}} new categories and tags.{{if or .Products .Variations}} Imported {{.Products}} products and {{.Variations}} variations into Pursae Commerce.{{end}}{{if .Skipped}} {{.Skipped}} items were skipped.{{end}}{{if or .SkippedOrders .SkippedCoupons}} Skipped {{.SkippedOrders}} orders / {{.SkippedCoupons}} coupons.{{end}}</p>
 {{if .Log}}<ul>{{range .Log}}<li>{{.}}</li>{{end}}</ul>{{end}}
 <p><a href="/wp-admin/edit">View posts</a> &middot; <a href="/wp-admin/import">Import another file</a></p>
 {{end}}
