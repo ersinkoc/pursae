@@ -285,6 +285,17 @@ func SiteLeafParent(key string) (string, bool) {
 }
 
 // attrValue reads one attribute from an attribute string (`class="a b" data-x="1"`).
+// siteFieldRE matches the custom field names BindSite stores as plain post meta: design_<n> (the
+// varying parts of a group's pages) and list<n>_<k> (a listing's card fields), each with its
+// attribute companions (<name>_href, <name>_src, <name>_alt, <name>_aria_current, …).
+var siteFieldRE = regexp.MustCompile(`^(design_[1-9][0-9]{0,3}|list[1-9][0-9]{0,3}_[1-9][0-9]{0,3})(_[a-z]+(_[a-z]+)?)?$`)
+
+// SiteFieldName reports whether name is a custom field a site import stores as plain post meta
+// (design_<n>, list<n>_<k> and their attribute companions). The front end lets a code binding read
+// such a name from a post's meta without a Pursae Custom Fields field group defining it; any
+// other plain meta stays private.
+func SiteFieldName(name string) bool { return siteFieldRE.MatchString(name) }
+
 func attrValue(attrs, name string) string {
 	nodes, err := parseFragment("<div " + attrs + "></div>")
 	if err != nil || len(nodes) == 0 {

@@ -676,22 +676,24 @@ func (e *wbSlotEnv) menuByID(id int64) []*store.MenuItem {
 // fieldValue is the formatted Pursae Custom Fields value of a post's field; nil when the plugin is
 // off, the field is unset, or the post is password protected (its content is not shown either).
 //
-// Without meta the name must be a registered field (a field group defines it): an author's
-// markup can print the fields the site shows, never other meta of a post it can loop over.
+// The name must be a registered field (a field group defines it): markup can print the fields the
+// site shows, never other meta of a post it can loop over (a plugin's or a user's non-underscore
+// meta is not public just because it lacks the underscore; WordPress exposes meta only when it is
+// registered with show_in_rest).
 // meta (a code binding's element, webbuilder.AttrMeta, which the snapshot sanitizer drops from an
-// author's markup): the name the binding declares may also be plain post meta, get_field()'s raw
-// value or, with the plugin off, the post's own meta value when it is a string: what a site
-// import stores for the parts of a design's page that are not its title or content
-// (webbuilder.ConvertGroups).
+// author's markup) adds one more source: the post's own meta string for a name a site import
+// stores for the parts of a design's page that are not its title or content
+// (webbuilder.SiteFieldName: design_<n>, list<n>_<k> and their _href / _src / _alt companions),
+// so an imported site keeps working with Pursae Custom Fields off.
 func (e *wbSlotEnv) fieldValue(p *store.Post, name string, meta bool) any {
 	if e.s == nil || p == nil || name == "" || p.Password != "" || strings.HasPrefix(name, "_") {
 		return nil
 	}
-	if !meta {
-		return e.s.acfRegisteredField(e.ctx, name, p)
-	}
-	if v := e.s.acfGetField(e.ctx, name, p, true); v != nil {
+	if v := e.s.acfRegisteredField(e.ctx, name, p); v != nil || !meta {
 		return v
+	}
+	if !webbuilder.SiteFieldName(name) {
+		return nil
 	}
 	if s, ok := p.Meta[name].(string); ok && s != "" {
 		return s
