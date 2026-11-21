@@ -8,9 +8,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestDropOldBuilderMigration seeds a migrated database with the old builder's data (its tables
-// recreated from 0005-0007, posts, meta, options, user meta, saved themes) next to the new builder's
-// web_builder_* rows, runs 0028_drop_old_builder twice and checks that only the old data went.
+// TestDropOldBuilderMigration seeds a migrated database with the old builder's data (stand-ins for
+// its tables, posts, meta, options, user meta, saved themes) next to the new builder's web_builder_*
+// rows, runs 0028_drop_old_builder twice and checks that only the old data went.
 // Skipped without WPGO_TEST_ADMIN_DB.
 func TestDropOldBuilderMigration(t *testing.T) {
 	ctx := context.Background()
@@ -22,10 +22,9 @@ func TestDropOldBuilderMigration(t *testing.T) {
 	if _, err := Migrate(ctx, pool); err != nil {
 		t.Fatal(err)
 	}
-	// A database migrated before 0028: the old builder's schema is back.
-	for _, name := range []string{"migrations/0005_builder.sql", "migrations/0006_atomic.sql", "migrations/0007_pro.sql"} {
-		execFile(t, pool, name)
-	}
+	// A database migrated before 0028 by a release whose 0005-0007 still created the old builder's
+	// schema: the objects 0028 removes are back.
+	seedOldBuilderSchema(t, pool)
 
 	q := func(sql string, args ...any) {
 		t.Helper()
@@ -203,6 +202,74 @@ func TestDropOldBuilderMigration(t *testing.T) {
 	rows.Close()
 	if got := strings.Join(themes, ","); got != "my-saved,twentytwentyfive" {
 		t.Errorf("themes after 0028 = %s, want my-saved,twentytwentyfive", got)
+	}
+}
+
+// oldBuilderSchema stands in for what the old builder's migrations left in a database: the tables,
+// indexes, content types and the themes.custom column that 0028 removes or reads. Only the columns
+// the tests use are created; 0005-0007 are empty steps now.
+const oldBuilderSchema = `
+INSERT INTO content_types (slug, name, public) VALUES
+	('elementor_library', 'Templates', false), ('gwe_template', 'Theme Parts', false), ('elementor_component', 'Components', false)
+ON CONFLICT (slug) DO NOTHING;
+CREATE TABLE builder_revisions (revision_id bigint PRIMARY KEY REFERENCES post_revisions(id) ON DELETE CASCADE, data jsonb);
+CREATE TABLE gwe_global_classes (kit_id bigint, id text, PRIMARY KEY (kit_id, id));
+CREATE TABLE gwe_variables (kit_id bigint PRIMARY KEY);
+CREATE TABLE gwe_default_styles (kit_id bigint, tag text, PRIMARY KEY (kit_id, tag));
+CREATE TABLE gwe_form_submissions (id bigserial PRIMARY KEY, post_id bigint REFERENCES posts(id) ON DELETE SET NULL);
+CREATE INDEX posts_gwe_parts ON posts ((meta->>'_gwe_theme')) WHERE type = 'gwe_template';
+CREATE INDEX posts_gwe_components ON posts ((meta->>'_elementor_component_uid')) WHERE type = 'elementor_component';
+ALTER TABLE themes ADD COLUMN custom boolean NOT NULL DEFAULT false;
+`
+
+func seedOldBuilderSchema(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	if _, err := pool.Exec(context.Background(), oldBuilderSchema); err != nil {
+		t.Fatalf("old builder schema: %v", err)
+	}
+}
+
+// TestDropOldBuilderFreshInstall: on a database that never had the old builder (0005-0007 are
+// empty steps) 0028 still runs, finds nothing of it and removes only the blank theme it always
+// removed.
+func TestDropOldBuilderFreshInstall(t *testing.T) {
+	ctx := context.Background()
+	pool, err := Connect(ctx, tempDatabase(t, "wpgo_dbtest_r3f"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if _, err := Migrate(ctx, pool); err != nil {
+		t.Fatal(err)
+	}
+	var objs []string
+	if err := pool.QueryRow(ctx, `SELECT coalesce(array_agg(n), '{}') FROM (
+		SELECT tablename::text AS n FROM pg_tables WHERE schemaname = current_schema()
+		   AND (tablename = 'builder_revisions' OR tablename LIKE 'gwe\_%')
+		UNION ALL SELECT indexname::text FROM pg_indexes WHERE schemaname = current_schema() AND indexname LIKE 'posts\_gwe\_%'
+		UNION ALL SELECT 'themes.' || column_name FROM information_schema.columns
+		 WHERE table_schema = current_schema() AND table_name = 'themes' AND column_name = 'custom'
+		UNION ALL SELECT 'content type ' || slug FROM content_types
+		 WHERE slug IN ('elementor_library', 'gwe_template', 'elementor_component')) x`).Scan(&objs); err != nil {
+		t.Fatal(err)
+	}
+	if len(objs) != 0 {
+		t.Errorf("a fresh install has old builder objects: %v", objs)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO themes (slug, version, status) VALUES ('hello-web-builder', '1.0.0', 'inactive'),
+		('keep-me', '1.0.0', 'inactive') ON CONFLICT (slug) DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		execFile(t, pool, "migrations/0028_drop_old_builder.sql")
+	}
+	var left []string
+	if err := pool.QueryRow(ctx, `SELECT coalesce(array_agg(slug ORDER BY slug), '{}') FROM themes
+		WHERE slug IN ('hello-web-builder', 'keep-me')`).Scan(&left); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(left, ",") != "keep-me" {
+		t.Errorf("themes after 0028 on a fresh install = %v, want [keep-me]", left)
 	}
 }
 
