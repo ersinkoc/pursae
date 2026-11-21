@@ -118,6 +118,20 @@ func TestWBCustomFieldSlots(t *testing.T) {
 	if out := wbExec(t, `<img data-wb-slot="post.image" data-wb-raw="" data-wb-field="list1_2" data-wb-meta=""/>`, r); !strings.Contains(out, `src="https://example.test/card.jpg"`) || !strings.Contains(out, `alt="Card"`) {
 		t.Errorf("a site import's image field is not printed: %s", out)
 	}
+	// The bind tool warns about a custom field name that will print nothing: neither a registered
+	// field nor a site import's field.
+	// (price is a field of acfgoTestGroup.)
+	for name, warn := range map[string]bool{"subtitle": false, "design_1": false, "list1_2_alt": false, "price": false, "private_note": true, "unit_cost": true} {
+		for _, field := range []string{"custom", "image"} {
+			w := srv.wbBindFieldWarning(ctx, &webbuilder.CodeBind{Kind: webbuilder.BindField, Field: field, Name: name})
+			if (w != "") != warn || (warn && !strings.Contains(w, name)) {
+				t.Errorf("%s %s: warning %q", field, name, w)
+			}
+		}
+	}
+	if w := srv.wbBindFieldWarning(ctx, &webbuilder.CodeBind{Kind: webbuilder.BindField, Field: "title", Name: "price"}); w != "" {
+		t.Errorf("a title binding warns: %q", w)
+	}
 	// Underscore (hidden) meta, an unknown field and a protected post print nothing.
 	if _, ok := env.fieldText(p, "_secret", true); ok {
 		t.Error("hidden meta is readable")

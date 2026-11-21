@@ -747,7 +747,9 @@ Editor: select an element and open **Advanced** in the inspector: **Content bind
 kinds the element can take: a list or container → Menu or Loop, a list inside a menu item → Submenu, an
 element of a loop's first card or of a template → Field, a `<form>` → Form) and shows what the site
 will list (the menu location's items, the loop query's posts). The frame keeps showing the design's
-own markup. MCP: `web_builder_bind {post_id, element | html_id, bind | null}` (publishes the page).
+own markup. MCP: `web_builder_bind {post_id, element | html_id, bind | null}` (publishes the page;
+its result has a `warning` when a `custom` or `image` field name is neither a registered Pursae Custom
+Fields field nor a site import's field, since such a binding prints nothing).
 
 ### Active links with a bound menu
 

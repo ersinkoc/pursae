@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -221,6 +222,9 @@ func mcpWBBind(s *Server, c *gin.Context, args map[string]any) (any, error) {
 			return nil, err
 		}
 		out["section"], out["element"] = sec["id"], wbc
+		if w := s.wbBindFieldWarning(c, bind); w != "" {
+			out["warning"] = w
+		}
 		if bind != nil && bind.Kind == webbuilder.BindForm {
 			if sid, ok := sec["id"].(string); ok {
 				out["form"] = webbuilder.BindKey(sid, wbc)
@@ -229,6 +233,21 @@ func mcpWBBind(s *Server, c *gin.Context, args map[string]any) (any, error) {
 		return out, nil
 	}
 	return nil, mcpErrf("no element %q of a code section on page %d", el+htmlID, id)
+}
+
+// wbBindFieldWarning explains why a field binding's custom field will print nothing: the front end
+// reads a name that no Pursae Custom Fields field group defines from a post's meta only when it is
+// one a site import stores (webbuilder.SiteFieldName); any other plain meta stays private. "" when
+// the binding is no custom field or its name can print.
+func (s *Server) wbBindFieldWarning(ctx context.Context, b *webbuilder.CodeBind) string {
+	if b == nil || b.Kind != webbuilder.BindField || b.Name == "" || (b.Field != "custom" && b.Field != "image") {
+		return ""
+	}
+	if webbuilder.SiteFieldName(b.Name) || (s.acfgoOn() && s.acfgoFind(ctx, nil, b.Name) != nil) {
+		return ""
+	}
+	return fmt.Sprintf("%q is not a Pursae Custom Fields field: the site prints a custom field only when a field group defines it "+
+		"(or for the names a site import stores, design_<n> and list<n>_<k>), never other post meta, so this element stays empty until a field group defines %q", b.Name, b.Name)
 }
 
 // wbSiteGroups saves the groups: each page becomes content (no builder doc of its own, so the
