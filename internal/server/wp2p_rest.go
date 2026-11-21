@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -19,6 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 
+	"wpgo/internal/auth"
 	"wpgo/internal/store"
 )
 
@@ -34,7 +36,10 @@ import (
 // Import › From WordPress (header X-Pursae-Migration-Token; it works for these routes and its own
 // import only, and expires 24 hours after it was made), or an administrator's Application Password,
 // in which case start carries the package key the plugin generated. A chunk at an offset below what
-// was received rewrites from there, so an interrupted upload resumes from GET's "received".
+// was received rewrites from there, so an interrupted upload resumes from GET's "received". While an
+// upload is active every chunk moves the token's expiry to 24 hours later (at most 7 days after the
+// token was made), so a slow upload is not cut off. GET keeps answering with the token until the
+// hourly wp2p_cleanup forgets it, an hour after the import ended, so the plugin can show the result.
 
 const (
 	wp2pTokenHeader  = "X-Pursae-Migration-Token" //nolint:gosec // a header name, not a credential
@@ -45,6 +50,12 @@ const (
 	wp2pMaxPackage   = int64(64) << 30
 	wp2pIDPattern    = `(?P<id>[a-f0-9]{32})`
 	wp2pRouteMigrate = "/pursae/v1/migrate"
+	// wp2pUploadMax is how long after the token was made an active upload can go on.
+	wp2pUploadMax = 7 * 24 * time.Hour
+	// wp2pChunkTimeout is how long a chunk's body may take to arrive; wp2pLeaseTTL, longer, is how long
+	// a chunk holds the upload (two requests never write the package at once).
+	wp2pChunkTimeout = 5 * time.Minute
+	wp2pLeaseTTL     = wp2pChunkTimeout + time.Minute
 )
 
 func (s *Server) registerWP2PREST() {
@@ -191,77 +202,132 @@ func (s *Server) wp2pRESTStart(c *gin.Context, req *restRequest) {
 	restJSON(c, http.StatusOK, map[string]any{"id": id, "received": 0, "chunk_size": wp2pChunkSize})
 }
 
-// wp2pRESTChunk stores bytes at ?offset=N. The row is locked while the chunk is written, so two
-// requests for one import cannot interleave.
+// wp2pRESTChunk stores bytes at ?offset=N. A chunk claims the upload with a short lease on its row
+// (no transaction or row lock is held while the body arrives, which can take minutes), writes the
+// package, then records what was received if it still holds the lease. A second request for the same
+// import meanwhile gets 409 and retries.
 func (s *Server) wp2pRESTChunk(c *gin.Context, req *restRequest) {
 	ctx := c.Request.Context()
+	pool := s.store.Pool
 	offset, err := strconv.ParseInt(c.Query("offset"), 10, 64)
 	if err != nil || offset < 0 {
 		restErr(c, http.StatusBadRequest, "rest_invalid_param", "offset must be the byte offset of the chunk.")
 		return
 	}
-	var out map[string]any
-	status := http.StatusOK
-	err = pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
-		row, err := wp2pScanRow(tx.QueryRow(ctx, `SELECT `+wp2pRowCols+` FROM wp2p_migrations WHERE id = $1 FOR UPDATE`, req.Params["id"]))
-		if err != nil {
-			restErr(c, http.StatusNotFound, "pursae_migration_not_found", "Unknown import.")
-			return errWP2PAnswered
-		}
-		if !s.wp2pAuthorize(c, row, true) {
-			return errWP2PAnswered
-		}
-		if row.State != "receiving" {
-			restErr(c, http.StatusConflict, "pursae_migration_not_receiving", "This import is not receiving data (state: "+row.State+").")
-			return errWP2PAnswered
-		}
-		if offset > row.Received {
-			restErr(c, http.StatusConflict, "pursae_migration_offset", "The chunk does not continue the upload.", map[string]any{"received": row.Received})
-			return errWP2PAnswered
-		}
-		f, err := os.OpenFile(s.wp2pPackagePath(row.ID), os.O_CREATE|os.O_WRONLY, 0o600)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		if err := f.Truncate(offset); err != nil {
-			return err
-		}
-		if _, err := f.Seek(offset, io.SeekStart); err != nil {
-			return err
-		}
-		limit := min(int64(wp2pChunkMax), row.Size-offset)
-		n, err := io.Copy(f, io.LimitReader(c.Request.Body, limit+1))
-		if err != nil {
-			_ = f.Truncate(offset)
-			restErr(c, http.StatusBadRequest, "pursae_migration_chunk", "The chunk was not received completely: "+err.Error(), map[string]any{"received": offset})
-			return errWP2PAnswered
-		}
-		if n > limit {
-			_ = f.Truncate(offset)
-			restErr(c, http.StatusRequestEntityTooLarge, "pursae_migration_chunk_too_large", "The chunk is too large, or goes past the announced size.", map[string]any{"received": offset})
-			return errWP2PAnswered
-		}
-		if err := f.Sync(); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(ctx, `UPDATE wp2p_migrations SET received = $2, updated_at = now() WHERE id = $1`, row.ID, offset+n); err != nil {
-			return err
-		}
-		out = map[string]any{"received": offset + n, "size": row.Size}
-		return nil
-	})
-	if errors.Is(err, errWP2PAnswered) {
-		return
-	}
+	row, err := wp2pScanRow(pool.QueryRow(ctx, `SELECT `+wp2pRowCols+` FROM wp2p_migrations WHERE id = $1`, req.Params["id"]))
 	if err != nil {
-		restErr(c, http.StatusInternalServerError, "pursae_migration_storage", err.Error())
+		restErr(c, http.StatusNotFound, "pursae_migration_not_found", "Unknown import.")
 		return
 	}
-	restJSON(c, status, out)
+	if !s.wp2pAuthorize(c, row, true) {
+		return
+	}
+	if row.State != "receiving" {
+		restErr(c, http.StatusConflict, "pursae_migration_not_receiving", "This import is not receiving data (state: "+row.State+").")
+		return
+	}
+	if offset > row.Received {
+		restErr(c, http.StatusConflict, "pursae_migration_offset", "The chunk does not continue the upload.", map[string]any{"received": row.Received})
+		return
+	}
+	lease := auth.RandomToken(16)
+	tag, err := pool.Exec(ctx, `UPDATE wp2p_migrations SET lease = $2, lease_until = now() + make_interval(secs => $3)
+		WHERE id = $1 AND state = 'receiving' AND received >= $4 AND (lease = '' OR lease_until IS NULL OR lease_until < now())`,
+		row.ID, lease, wp2pLeaseTTL.Seconds(), offset)
+	if err != nil {
+		restErr(c, http.StatusInternalServerError, "rest_db_error", err.Error())
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		restErr(c, http.StatusConflict, "pursae_migration_busy", "Another chunk of this upload is being received; send this one again in a moment.", map[string]any{"received": row.Received})
+		return
+	}
+	wctx := context.WithoutCancel(ctx)
+	// release gives the lease back; after a failed write the package ends at offset, and so does received.
+	release := func(truncated bool) {
+		q := `UPDATE wp2p_migrations SET lease = '', lease_until = NULL WHERE id = $1 AND lease = $2`
+		if truncated {
+			q = `UPDATE wp2p_migrations SET lease = '', lease_until = NULL, received = least(received, $3) WHERE id = $1 AND lease = $2`
+			_, _ = pool.Exec(wctx, q, row.ID, lease, offset)
+			return
+		}
+		_, _ = pool.Exec(wctx, q, row.ID, lease)
+	}
+	// The body must be in before the lease lapses: a read deadline on the connection, or, where the
+	// writer offers none, closing the body when the time is up.
+	deadline := time.Now().Add(wp2pChunkTimeout)
+	if http.NewResponseController(c.Writer).SetReadDeadline(deadline) != nil {
+		t := time.AfterFunc(wp2pChunkTimeout, func() { _ = c.Request.Body.Close() })
+		defer t.Stop()
+	}
+	n, werr := s.wp2pWriteChunk(row, offset, c.Request.Body)
+	switch {
+	case errors.Is(werr, errWP2PChunkTooLarge):
+		release(true)
+		restErr(c, http.StatusRequestEntityTooLarge, "pursae_migration_chunk_too_large", "The chunk is too large, or goes past the announced size.", map[string]any{"received": offset})
+		return
+	case errors.Is(werr, errWP2PChunkBody):
+		release(true)
+		restErr(c, http.StatusBadRequest, "pursae_migration_chunk", "The chunk was not received completely: "+werr.Error(), map[string]any{"received": offset})
+		return
+	case werr != nil:
+		release(true)
+		restErr(c, http.StatusInternalServerError, "pursae_migration_storage", werr.Error())
+		return
+	}
+	// Recorded only while this request still holds the upload (not revoked, the lease not lapsed). An
+	// active upload keeps its token alive: 24 hours from now, at most wp2pUploadMax after it was made.
+	tag, err = pool.Exec(wctx, `UPDATE wp2p_migrations SET received = $3, lease = '', lease_until = NULL, updated_at = now(),
+		expires_at = CASE WHEN expires_at IS NULL THEN NULL
+			ELSE least(created_at + make_interval(secs => $4), greatest(expires_at, now() + make_interval(secs => $5))) END
+		WHERE id = $1 AND lease = $2 AND state = 'receiving'`, row.ID, lease, offset+n, wp2pUploadMax.Seconds(), wp2pTokenTTL.Seconds())
+	if err != nil {
+		release(true)
+		restErr(c, http.StatusInternalServerError, "rest_db_error", err.Error())
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		restErr(c, http.StatusConflict, "pursae_migration_busy", "The upload changed while this chunk was received; ask for its state and continue from there.")
+		return
+	}
+	restJSON(c, http.StatusOK, map[string]any{"received": offset + n, "size": row.Size})
 }
 
-var errWP2PAnswered = errors.New("answered")
+var (
+	errWP2PChunkTooLarge = errors.New("the chunk is too large")
+	errWP2PChunkBody     = errors.New("the request body failed")
+)
+
+// wp2pWriteChunk writes body into the package at offset (the package ends there first) and returns
+// how many bytes it wrote. On an error the package is cut back to offset.
+func (s *Server) wp2pWriteChunk(row *wp2pRow, offset int64, body io.Reader) (int64, error) {
+	f, err := os.OpenFile(s.wp2pPackagePath(row.ID), os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+	if err := f.Truncate(offset); err != nil {
+		return 0, err
+	}
+	if _, err := f.Seek(offset, io.SeekStart); err != nil {
+		return 0, err
+	}
+	limit := min(int64(wp2pChunkMax), row.Size-offset)
+	n, err := io.Copy(f, io.LimitReader(body, limit+1))
+	if err != nil {
+		_ = f.Truncate(offset)
+		return 0, fmt.Errorf("%w: %w", errWP2PChunkBody, err)
+	}
+	if n > limit {
+		_ = f.Truncate(offset)
+		return 0, errWP2PChunkTooLarge
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Truncate(offset)
+		return 0, err
+	}
+	return n, nil
+}
 
 // wp2pRESTFinish checks the upload and queues the import.
 func (s *Server) wp2pRESTFinish(c *gin.Context, req *restRequest) {
@@ -333,7 +399,8 @@ func (s *Server) wp2pRESTStatus(c *gin.Context, req *restRequest) {
 		if row.State == "done" || row.State == "failed" {
 			var r wp2pReport
 			if json.Unmarshal(rep, &r) == nil {
-				r.Content = nil // the long per-item log stays on the admin screen
+				// Counts only: the per-item lists and the content log stay on the admin screen.
+				r.Content, r.Skipped = nil, nil
 				out["report"] = r
 			}
 		}

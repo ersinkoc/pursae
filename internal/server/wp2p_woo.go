@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -136,29 +138,36 @@ type wp2pTaxRate struct {
 	Cities    []string `json:"cities"`
 }
 
-// importTaxRates adds the rates that are not here yet (the same location, rate, name and class is the same rate).
+// importTaxRates adds the rates that are not here yet. A rate already here is the same rate only when
+// everything that decides where and how it applies matches: location (country, state, postcodes and
+// cities), rate, name, class, priority, compound and shipping. Rates this import created are never
+// matched, so two rates of the file are never merged into one.
 func (r *wp2pRun) importTaxRates(ctx context.Context) error {
 	r.taxRates = r.mapLoad(ctx, "tax_rate")
-	return wp2pEachLine(filepath.Join(r.dir, "woo", "tax_rates.jsonl"), func(raw []byte) error {
+	return wp2pEachLine(ctx, filepath.Join(r.dir, "woo", "tax_rates.jsonl"), func(raw []byte) error {
 		var t wp2pTaxRate
 		if json.Unmarshal(raw, &t) != nil || t.ID == 0 {
 			r.rep.skip("tax_rate", "", "unreadable line")
 			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
-		r.prog.Items["tax_rates"]++
+		r.item("tax_rates")
 		if _, ok := r.taxRates[t.ID]; ok {
 			r.rep.Existing["tax_rates"]++
 			return nil
 		}
-		var exID int64
-		_ = r.s.store.Pool.QueryRow(ctx, `SELECT id FROM goo_tax_rates WHERE country = upper($1) AND state = upper($2) AND rate = $3 AND name = $4 AND class = $5
-			AND priority = $6 ORDER BY id LIMIT 1`, t.Country, t.State, float64(t.Rate), t.Name, t.Class, t.Priority).Scan(&exID)
+		exID, err := r.sameTaxRate(ctx, &t)
+		if err != nil {
+			return err
+		}
 		if exID != 0 {
 			r.rep.Existing["tax_rates"]++
 		} else {
 			gr := &gooTaxRate{Country: t.Country, State: t.State, Rate: float64(t.Rate), Name: defaultStr(t.Name, "Tax"), Priority: max(t.Priority, 1),
 				Compound: t.Compound, Shipping: t.Shipping, Position: t.Order, Class: t.Class, Postcodes: nonNilSlice(t.Postcodes), Cities: nonNilSlice(t.Cities)}
 			if err := r.s.gooSaveTaxRate(ctx, gr); err != nil {
+				if wp2pStopped(ctx, err) {
+					return err
+				}
 				r.rep.skip("tax_rate", t.Name, err.Error())
 				return nil
 			}
@@ -168,6 +177,45 @@ func (r *wp2pRun) importTaxRates(ctx context.Context) error {
 		r.taxRates[t.ID] = exID
 		return r.mapSet(ctx, "tax_rate", t.ID, exID)
 	})
+}
+
+// sameTaxRate is the id of a rate that was here before this site's import and equals t, or 0.
+func (r *wp2pRun) sameTaxRate(ctx context.Context, t *wp2pTaxRate) (int64, error) {
+	rows, err := r.s.store.Pool.Query(ctx, `SELECT id, postcodes, cities FROM goo_tax_rates WHERE country = upper($1) AND state = upper($2) AND rate = $3
+		AND name = $4 AND class = $5 AND priority = $6 AND compound = $7 AND shipping = $8
+		AND id NOT IN (SELECT new_id FROM wp2p_map WHERE source = $9 AND kind = 'tax_rate') ORDER BY id`,
+		strings.TrimSpace(strings.Trim(t.Country, "*")), strings.TrimSpace(strings.Trim(t.State, "*")), float64(t.Rate), defaultStr(t.Name, "Tax"), t.Class,
+		max(t.Priority, 1), t.Compound, t.Shipping, r.src)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var postcodes, cities []string
+		if err := rows.Scan(&id, &postcodes, &cities); err != nil {
+			return 0, err
+		}
+		if wp2pSameSet(postcodes, t.Postcodes) && wp2pSameSet(cities, t.Cities) {
+			return id, nil
+		}
+	}
+	return 0, rows.Err()
+}
+
+// wp2pSameSet compares two location lists ignoring order, case and surrounding spaces.
+func wp2pSameSet(a, b []string) bool {
+	norm := func(v []string) []string {
+		out := make([]string, 0, len(v))
+		for _, x := range v {
+			if x = strings.ToUpper(strings.TrimSpace(x)); x != "" {
+				out = append(out, x)
+			}
+		}
+		sort.Strings(out)
+		return out
+	}
+	return slices.Equal(norm(a), norm(b))
 }
 
 // Coupons -----------------------------------------------------------------------------------------
@@ -219,13 +267,13 @@ func (r *wp2pRun) importCoupons(ctx context.Context) error {
 	}
 	r.loadContentMaps(ctx)
 	r.coupons, r.couponByCode = r.mapLoad(ctx, "coupon"), map[string]int64{}
-	return wp2pEachLine(filepath.Join(r.dir, "woo", "coupons.jsonl"), func(raw []byte) error {
+	return wp2pEachLine(ctx, filepath.Join(r.dir, "woo", "coupons.jsonl"), func(raw []byte) error {
 		var wc wp2pCoupon
 		if json.Unmarshal(raw, &wc) != nil || wc.ID == 0 {
 			r.rep.skip("coupon", "", "unreadable line")
 			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
-		r.prog.Items["coupons"]++
+		r.item("coupons")
 		code := strings.ToLower(strings.TrimSpace(wc.Code))
 		if id, ok := r.coupons[wc.ID]; ok {
 			r.couponByCode[code] = id
@@ -235,8 +283,12 @@ func (r *wp2pRun) importCoupons(ctx context.Context) error {
 		if ex, err := r.s.gooCouponByCode(ctx, code); err == nil {
 			r.coupons[wc.ID], r.couponByCode[code] = ex.ID, ex.ID
 			r.rep.Existing["coupons"]++
-			r.rep.Skipped = append(r.rep.Skipped, wp2pSkip{Kind: "coupon", Item: code, Reason: "a coupon with this code already exists here: kept as it is"})
+			if len(r.rep.Skipped) < wp2pMaxSkips {
+				r.rep.Skipped = append(r.rep.Skipped, wp2pSkip{Kind: "coupon", Item: code, Reason: "a coupon with this code already exists here: kept as it is"})
+			}
 			return r.mapSet(ctx, "coupon", wc.ID, ex.ID)
+		} else if wp2pStopped(ctx, err) {
+			return err
 		}
 		status := "publish"
 		switch wc.Status {
@@ -261,10 +313,6 @@ func (r *wp2pRun) importCoupons(ctx context.Context) error {
 		default:
 			r.rep.Unmapped["coupon type "+wc.DiscountType+" (imported as a fixed cart discount)"]++
 		}
-		if err := r.s.gooSaveCoupon(ctx, c); err != nil {
-			r.rep.skip("coupon", code, err.Error())
-			return nil
-		}
 		// used_by holds user ids (or e-mails of guests): the ids become ours.
 		usedBy := make([]string, 0, len(wc.UsedBy))
 		for _, u := range wc.UsedBy {
@@ -277,14 +325,31 @@ func (r *wp2pRun) importCoupons(ctx context.Context) error {
 			usedBy = append(usedBy, u)
 		}
 		created := wc.DateCreated.or(time.Now())
-		if _, err := r.s.store.Pool.Exec(ctx, `UPDATE goo_coupons SET usage_count = $2, used_by = $3, date_created = $4, date_modified = $5 WHERE id = $1`,
-			c.ID, wc.UsageCount, usedBy, created, wc.DateModified.or(created)); err != nil {
+		// The coupon, its usage and dates and its wp2p_map row together: a run that stops in between
+		// must not leave a coupon the next run takes for one of this site's ("kept as it is").
+		err := pgx.BeginFunc(ctx, r.s.store.Pool, func(tx pgx.Tx) error {
+			if err := r.s.gooSaveCouponOn(ctx, tx, c); err != nil {
+				return err
+			}
+			if _, err := tx.Exec(ctx, `UPDATE goo_coupons SET usage_count = $2, used_by = $3, date_created = $4, date_modified = $5 WHERE id = $1`,
+				c.ID, wc.UsageCount, usedBy, created, wc.DateModified.or(created)); err != nil {
+				return err
+			}
+			_, err := tx.Exec(ctx, `INSERT INTO wp2p_map (source, kind, old_id, new_id) VALUES ($1, 'coupon', $2, $3)
+				ON CONFLICT (source, kind, old_id) DO UPDATE SET new_id = EXCLUDED.new_id`, r.src, wc.ID, c.ID)
 			return err
+		})
+		if err != nil {
+			if wp2pStopped(ctx, err) {
+				return err
+			}
+			r.rep.skip("coupon", code, err.Error())
+			return nil
 		}
 		r.coupons[wc.ID], r.couponByCode[code] = c.ID, c.ID
 		r.rep.Counts["coupons"]++
 		r.save(false)
-		return r.mapSet(ctx, "coupon", wc.ID, c.ID)
+		return nil
 	})
 }
 
@@ -512,18 +577,21 @@ func (r *wp2pRun) importOrders(ctx context.Context) error {
 			rows.Close()
 		}
 	}
-	return wp2pEachLine(filepath.Join(r.dir, "woo", "orders.jsonl"), func(raw []byte) error {
+	err := wp2pEachLine(ctx, filepath.Join(r.dir, "woo", "orders.jsonl"), func(raw []byte) error {
 		var wo wp2pOrder
 		if json.Unmarshal(raw, &wo) != nil || wo.ID == 0 {
 			r.rep.skip("order", "", "unreadable line")
 			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
-		r.prog.Items["orders"]++
+		r.item("orders")
 		if r.mapGet(ctx, "order", wo.ID) != 0 {
 			r.rep.Existing["orders"]++
 			return nil
 		}
 		if err := r.importOrder(ctx, &wo); err != nil {
+			if wp2pStopped(ctx, err) {
+				return err
+			}
 			r.rep.skip("order", "#"+strconv.FormatInt(wo.ID, 10), err.Error())
 			return nil
 		}
@@ -532,6 +600,43 @@ func (r *wp2pRun) importOrders(ctx context.Context) error {
 		r.save(false)
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	return r.orderNumbers(ctx)
+}
+
+// orderNumbers keeps new orders' numbers clear of the imported ones: the order id sequence moves past
+// the highest WordPress number, and orders that were here before and show a number an imported order
+// has too are reported.
+func (r *wp2pRun) orderNumbers(ctx context.Context) error {
+	pool := r.s.store.Pool
+	var top int64
+	if err := pool.QueryRow(ctx, `SELECT coalesce(max((meta->>'_wp2p_order_id')::bigint), 0) FROM goo_orders WHERE meta ? '_wp2p_order_id'`).Scan(&top); err != nil {
+		return err
+	}
+	if top == 0 {
+		return nil
+	}
+	var seq string
+	if err := pool.QueryRow(ctx, `SELECT coalesce(pg_get_serial_sequence('goo_orders', 'id'), '')`).Scan(&seq); err != nil {
+		return err
+	}
+	if seq != "" {
+		if _, err := pool.Exec(ctx, `SELECT setval($1::regclass, $2) WHERE $2 > (SELECT last_value FROM `+seq+`)`, seq, top); err != nil {
+			return err
+		}
+	}
+	var clash int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM goo_orders o WHERE o.type = 'shop_order' AND NOT (o.meta ? '_wp2p_order_id')
+		AND coalesce(nullif(o.meta->>'`+gooOrderNumberMeta+`', ''), o.id::text) IN
+			(SELECT i.meta->>'`+gooOrderNumberMeta+`' FROM goo_orders i WHERE i.type = 'shop_order' AND i.meta ? '_wp2p_order_id')`).Scan(&clash); err != nil {
+		return err
+	}
+	if clash > 0 {
+		r.rep.note("%d order(s) that were here before the import have the same number as an imported WordPress order: tell them apart by date and customer.", clash)
+	}
+	return nil
 }
 
 func wp2pMapValues(m map[int64]int64) []int64 {
@@ -558,7 +663,12 @@ func (r *wp2pRun) importOrder(ctx context.Context, wo *wp2pOrder) error {
 	if wo.RecordedCouponUsage {
 		meta["_recorded_coupon_usage_counts"] = true
 	}
-	meta["_wp2p_order_id"] = float64(wo.ID) // the order number customers know from WordPress
+	meta["_wp2p_order_id"] = float64(wo.ID)
+	// The number customers know from WordPress stays the order's number here (gooOrder.Number); a
+	// sequential order number plugin's own number (_order_number) is kept as it is.
+	if n, ok := meta[gooOrderNumberMeta]; !ok || strings.TrimSpace(fmt.Sprint(n)) == "" {
+		meta[gooOrderNumberMeta] = strconv.FormatInt(wo.ID, 10)
+	}
 	var customer int64
 	if wo.CustomerID != 0 {
 		if id, ok := r.users[wo.CustomerID]; ok {
@@ -683,25 +793,28 @@ type wp2pCustomer struct {
 }
 
 // importCustomers completes the customer accounts (created with the users) with their addresses;
-// guest customers have no account here either: Customers lists them from their orders.
+// guest customers have no account here either: Customers lists them from their orders. Only fields
+// that are empty on the account are written: an account that was here before (merged by e-mail
+// address) keeps the addresses it has.
 func (r *wp2pRun) importCustomers(ctx context.Context) error {
 	if err := r.loadUsers(ctx); err != nil {
 		return err
 	}
-	return wp2pEachLine(filepath.Join(r.dir, "woo", "customers.jsonl"), func(raw []byte) error {
+	kept := 0
+	err := wp2pEachLine(ctx, filepath.Join(r.dir, "woo", "customers.jsonl"), func(raw []byte) error {
 		var c wp2pCustomer
 		if json.Unmarshal(raw, &c) != nil {
 			r.rep.skip("customer", "", "unreadable line")
 			return nil //nolint:nilerr // a bad record is reported and skipped, not fatal
 		}
-		r.prog.Items["customers"]++
+		r.item("customers")
 		if c.UserID == 0 {
 			r.rep.Counts["guest_customers"]++
 			return nil
 		}
 		id, ok := r.users[c.UserID]
 		if !ok {
-			r.rep.skip("customer", c.Email, "the customer's user account was not imported")
+			r.rep.skip("customer", "of user "+wp2pUserRef(c.UserID), "the customer's user account was not imported")
 			return nil
 		}
 		meta := map[string]any{}
@@ -722,11 +835,36 @@ func (r *wp2pRun) importCustomers(ctx context.Context) error {
 			meta["_goo_last_active"] = float64(t.Unix())
 		}
 		if len(meta) > 0 {
-			if err := r.s.gooSetUserMeta(ctx, id, meta); err != nil {
+			u, err := r.s.store.UserByID(ctx, id)
+			if err != nil {
 				return fmt.Errorf("customer %d: %w", c.UserID, err)
+			}
+			fill, differs := map[string]any{}, false
+			for k, v := range meta {
+				cur := strings.TrimSpace(fmt.Sprint(u.Meta[k]))
+				if u.Meta[k] == nil || cur == "" {
+					fill[k] = v
+				} else if cur != fmt.Sprint(v) {
+					differs = true
+				}
+			}
+			if differs {
+				kept++
+			}
+			if len(fill) > 0 {
+				if err := r.s.gooSetUserMeta(ctx, id, fill); err != nil {
+					return fmt.Errorf("customer %d: %w", c.UserID, err)
+				}
 			}
 		}
 		r.rep.Counts["customers"]++
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	if kept > 0 {
+		r.rep.note("%d customer account(s) here already had other address details: those were kept, and only the empty fields were filled in from WordPress.", kept)
+	}
+	return nil
 }

@@ -208,7 +208,7 @@ func TestWP2PExtract(t *testing.T) {
 		}
 	}
 	var ids []string
-	_ = wp2pEachLine(filepath.Join(work, "users.jsonl"), func(raw []byte) error {
+	_ = wp2pEachLine(context.Background(), filepath.Join(work, "users.jsonl"), func(raw []byte) error {
 		ids = append(ids, strings.TrimSpace(string(raw)))
 		return nil
 	})
@@ -283,6 +283,8 @@ func TestWP2PImportSite(t *testing.T) {
 		map[string]any{"id": 3, "login": "admin", "email": "someone@else.test", "pass": "$P$B2quFTY/dB/kUQqA.Jj1pGh9WakUwP.", "roles": []string{"administrator"}},
 		map[string]any{"id": 4, "login": "bad login!", "email": "bad@example.test", "pass": "x", "roles": []string{"subscriber"}},
 		map[string]any{"id": 5, "login": "nohash", "email": "nohash@example.test", "pass": "plain-text?", "roles": []string{"subscriber"}},
+		// The site's admin under another login: the same e-mail address is the same person.
+		map[string]any{"id": 6, "login": "boss", "email": "Admin@Example.test", "pass": "$P$B2quFTY/dB/kUQqA.Jj1pGh9WakUwP.", "roles": []string{"customer"}},
 	)
 	options, _ := json.Marshal(map[string]any{
 		"options": map[string]any{"blogname": "Demo Shop", "blogdescription": "Moved", "posts_per_page": "7", "woocommerce_currency": "EUR",
@@ -318,10 +320,14 @@ func TestWP2PImportSite(t *testing.T) {
 	coupons := wp2pJSONL(t, map[string]any{"id": 51, "code": "Summer10", "status": "publish", "discount_type": "percent", "amount": "10", "product_ids": []int64{40, 999},
 		"product_categories": []int64{16}, "minimum_amount": "20", "maximum_amount": "", "usage_limit": "100", "usage_limit_per_user": "", "usage_count": 1,
 		"used_by": []string{"2"}, "date_expires": created + 86400*365, "date_created": created - 86400, "email_restrictions": []string{"*@example.test"}})
-	taxRates := wp2pJSONL(t, map[string]any{"id": 7, "country": "DE", "state": "", "rate": "19.0000", "name": "MwSt", "priority": 1, "compound": false, "shipping": true, "order": 0, "class": ""})
+	// Two rates that differ only in their postcodes are two rates.
+	taxRates := wp2pJSONL(t, map[string]any{"id": 7, "country": "DE", "state": "", "rate": "19.0000", "name": "MwSt", "priority": 1, "compound": false, "shipping": true, "order": 0, "class": ""},
+		map[string]any{"id": 8, "country": "DE", "state": "", "rate": "19.0000", "name": "MwSt", "priority": 1, "compound": false, "shipping": true, "order": 1, "class": "", "postcodes": []string{"27498"}})
 	customers := wp2pJSONL(t,
 		map[string]any{"user_id": 2, "email": "jane@example.test", "billing": map[string]string{"city": "Berlin", "postcode": "10115"}, "shipping": map[string]string{"city": "Berlin"}, "is_paying_customer": true},
-		map[string]any{"user_id": 0, "email": "guest@example.test"})
+		map[string]any{"user_id": 0, "email": "guest@example.test"},
+		// The merged admin: an address it has stays, empty fields are filled in.
+		map[string]any{"user_id": 6, "email": "admin@example.test", "billing": map[string]string{"city": "Berlin", "postcode": "10115"}})
 	media := wp2pJSONL(t, map[string]any{"id": 30, "name": "tee.png"}, map[string]any{"id": 31, "name": "hoodie.png"}, map[string]any{"id": 32, "name": "hoodie-back.png"})
 	manifest := []byte(`{"format":1,"generator":"wp-to-pursae/test","site_url":"https://shop.example.test","home_url":"https://shop.example.test","order_storage":"hpos",
 		"skipped":[{"kind":"media","item":"huge.mp4","reason":"larger than the size limit"}],"counts":{"users":5}}`)
@@ -370,10 +376,14 @@ func TestWP2PImportSite(t *testing.T) {
 		}
 		return r
 	}
+	siteAdmin, _ := srv.store.UserByLoginOrEmail(ctx, "admin")
+	if err := srv.gooSetUserMeta(ctx, siteAdmin.ID, map[string]any{"billing_city": "Hamburg"}); err != nil {
+		t.Fatal(err)
+	}
 	r := importPkg()
 	rep := r.rep
-	for k, want := range map[string]int{"users": 3, "orders": 3, "refunds": 1, "coupons": 1, "tax_rates": 1, "customers": 1, "guest_customers": 1,
-		"media": 3, "products": 6, "variations": 2, "users_password_reset": 1} {
+	for k, want := range map[string]int{"users": 4, "users_renamed": 1, "users_merged_by_email": 1, "orders": 3, "refunds": 1, "coupons": 1, "tax_rates": 2,
+		"customers": 2, "guest_customers": 1, "media": 3, "products": 6, "variations": 2, "users_password_reset": 1} {
 		if rep.Counts[k] != want {
 			t.Errorf("count %s = %d, want %d (%v)", k, rep.Counts[k], want, rep.Counts)
 		}
@@ -389,8 +399,16 @@ func TestWP2PImportSite(t *testing.T) {
 		}
 		return false
 	}
-	if !skipped("user", "bad login!") || !skipped("media", "huge.mp4") || !skipped("user", "admin") {
+	if !skipped("user", "#4") || !skipped("media", "huge.mp4") || len(rep.Skipped) != 2 {
 		t.Errorf("skipped: %+v", rep.Skipped)
+	}
+	// The report names users by their WordPress id: no e-mail address or login of anyone is kept.
+	var stored string
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT report::text FROM wp2p_migrations WHERE id = $1`, r.id).Scan(&stored)
+	for _, pii := range []string{"@example.test", "@else.test", "bad login", "nohash", `"admin"`, "jane"} {
+		if strings.Contains(stored, pii) {
+			t.Errorf("the report holds %q: %s", pii, stored)
+		}
 	}
 	if rep.Unmapped["order lines of products that were not imported (kept by name)"] != 1 || rep.Unmapped["coupon products that were not imported"] != 1 ||
 		rep.Unmapped["orders with a status Pursae Commerce does not have (imported as on-hold)"] != 1 {
@@ -419,6 +437,20 @@ func TestWP2PImportSite(t *testing.T) {
 	admin, _ := srv.store.UserByLoginOrEmail(ctx, "admin")
 	if ok, _, _ := auth.CheckUserPassword(ctx, "correct horse", admin.PasswordHash); !ok || admin.Email == "someone@else.test" {
 		t.Error("the existing admin was changed by the import")
+	}
+	// WordPress' "admin" is someone else (another e-mail address): a new account, not the site's admin.
+	admin2, err := srv.store.UserByLoginOrEmail(ctx, "admin-2")
+	if err != nil || admin2.Email != "someone@else.test" || admin2.ID == admin.ID {
+		t.Fatalf("WordPress' admin: %+v %v", admin2, err)
+	}
+	if ok, _, _ := auth.CheckUserPassword(ctx, wpPass, admin2.PasswordHash); !ok {
+		t.Error("the renamed user's WordPress password does not verify")
+	}
+	// "boss" has the admin's e-mail address: merged into the admin, whose address is kept and completed.
+	var bossID int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT new_id FROM wp2p_map WHERE kind = 'user' AND old_id = 6`).Scan(&bossID)
+	if bossID != admin.ID || admin.Meta["billing_city"] != "Hamburg" || admin.Meta["billing_postcode"] != "10115" || admin.PrimaryRole() != "administrator" {
+		t.Errorf("merged admin: map %d (admin %d), meta %v, roles %v", bossID, admin.ID, admin.Meta, admin.Roles)
 	}
 	shopadmin, _ := srv.store.UserByLoginOrEmail(ctx, "shopadmin")
 	if shopadmin.PrimaryRole() != "administrator" || shopadmin.Locale != "de_DE" {
@@ -451,8 +483,13 @@ func TestWP2PImportSite(t *testing.T) {
 
 	// Tax rate, coupon, orders.
 	var rateID int64
-	if err := srv.store.Pool.QueryRow(ctx, `SELECT id FROM goo_tax_rates WHERE country = 'DE' AND name = 'MwSt'`).Scan(&rateID); err != nil {
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT id FROM goo_tax_rates WHERE country = 'DE' AND name = 'MwSt' AND postcodes = '{}'`).Scan(&rateID); err != nil {
 		t.Fatal(err)
+	}
+	var islandRate int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_tax_rates WHERE country = 'DE' AND postcodes = '{27498}'`).Scan(&islandRate)
+	if islandRate != 1 {
+		t.Errorf("the rate that differs by postcode: %d", islandRate)
 	}
 	cp, err := srv.gooCouponByCode(ctx, "summer10")
 	if err != nil {
@@ -477,6 +514,18 @@ func TestWP2PImportSite(t *testing.T) {
 		o.DateCreated.Unix() != created || o.DatePaid == nil || o.DatePaid.Unix() != created+60 || !o.StockReduced || o.PaymentMethodTitle != "Direct bank transfer" ||
 		o.Billing["city"] != "Berlin" || o.Meta["_custom_field"] != "kept" || o.Meta["_recorded_sales"] != true || o.Meta["_wp2p_order_id"] != float64(50) {
 		t.Errorf("order: %+v", o)
+	}
+	// The order keeps its WordPress number everywhere it is shown, and new orders are numbered after it.
+	if o.Number() != "50" {
+		t.Errorf("order number %q, want 50", o.Number())
+	}
+	if found, _, err := srv.gooQueryOrders(ctx, gooOrderQuery{Search: "#50"}); err != nil || len(found) != 1 || found[0].ID != o.ID {
+		t.Errorf("searching #50: %v %v", found, err)
+	}
+	var nextID int64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT nextval(pg_get_serial_sequence('goo_orders', 'id'))`).Scan(&nextID)
+	if nextID <= 54 {
+		t.Errorf("the next order id %d is not after the imported numbers", nextID)
 	}
 	if len(o.Items) != 5 {
 		t.Fatalf("items: %d", len(o.Items))
@@ -539,7 +588,7 @@ func TestWP2PImportSite(t *testing.T) {
 			t.Errorf("%s: %d after the second import, %d before", q, n, before[i])
 		}
 	}
-	if r2.rep.Existing["orders"] != 3 || r2.rep.Counts["orders"] != 0 || r2.rep.Existing["users"] != 4 || r2.rep.Existing["coupons"] != 1 {
+	if r2.rep.Existing["orders"] != 3 || r2.rep.Counts["orders"] != 0 || r2.rep.Existing["users"] != 5 || r2.rep.Existing["coupons"] != 1 {
 		t.Errorf("second run: counts %v existing %v", r2.rep.Counts, r2.rep.Existing)
 	}
 }
@@ -623,6 +672,8 @@ func TestWP2PPushREST(t *testing.T) {
 	}
 	if code, out := do("GET", "/pursae/v1/migrate/"+id, token, nil, ""); code != http.StatusOK || out["state"] != "done" {
 		t.Fatalf("after the import: %d %v", code, out)
+	} else if rep, _ := out["report"].(map[string]any); rep == nil || rep["skipped"] != nil || rep["content"] != nil {
+		t.Errorf("the status report carries item lists: %v", out["report"])
 	}
 	u, err := srv.store.UserByLoginOrEmail(ctx, "pushed")
 	if err != nil || u.PrimaryRole() != "editor" {
@@ -717,5 +768,241 @@ func TestWP2PFixtureFromPlugin(t *testing.T) {
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM posts`).Scan(&posts2)
 	if posts2 != posts || r2.rep.Counts["posts"] != 0 || r2.rep.Counts["orders"] != 0 {
 		t.Errorf("second import: %d posts after, %d before; counts %v", posts2, posts, r2.rep.Counts)
+	}
+}
+
+// A shutdown in the middle of a phase (the content and the orders phase here) leaves that phase
+// unfinished and the import queued; resuming completes it to the same site a run without
+// interruptions makes, nothing missing and nothing twice (the draft without a slug included).
+func TestWP2PResumeAfterCancel(t *testing.T) {
+	key, err := wp2pParseKey("oT_EIQ1H0rTK3wMWwHbctyxQKAAkq9JXkPtZGNKeSXY")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture, err := os.ReadFile("testdata/wp2p/wordpress-woocommerce.wp2p")
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries := []string{`SELECT count(*) FROM posts`, `SELECT count(*) FROM media`, `SELECT count(*) FROM users`, `SELECT count(*) FROM goo_orders`,
+		`SELECT count(*) FROM goo_order_items`, `SELECT count(*) FROM goo_coupons`, `SELECT count(*) FROM goo_tax_rates`, `SELECT count(*) FROM terms`,
+		`SELECT count(*) FROM menu_items`, `SELECT count(*) FROM comments`, `SELECT count(*) FROM goo_order_notes`, `SELECT count(*) FROM goo_download_permissions`}
+	// site imports the fixture, cancelling the run at the n-th record of each phase in cuts.
+	site := func(cuts map[string]int) []int {
+		ts, c, srv := testServerBuilderOff(t)
+		installUsersSite(t, c, ts.URL)
+		ctx := context.Background()
+		if err := os.MkdirAll(srv.wp2pImportDir(), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		id := wp2pNewID()
+		if err := os.WriteFile(srv.wp2pPackagePath(id), fixture, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, package_key, created_by, state) VALUES ($1, $2, 1, 'queued')`, id, key[:]); err != nil {
+			t.Fatal(err)
+		}
+		for phase, n := range cuts {
+			jctx, cancel := context.WithCancel(ctx)
+			seen := 0
+			wp2pRecordHook = func(kind string) {
+				if kind == phase {
+					if seen++; seen == n {
+						cancel() // the process is being stopped
+					}
+				}
+			}
+			err := srv.wp2pImportJob(jctx, map[string]any{"id": id})
+			wp2pRecordHook = nil
+			cancel()
+			if !errors.Is(err, context.Canceled) {
+				t.Fatalf("cut in %s: %v", phase, err)
+			}
+			var state string
+			var prog []byte
+			_ = srv.store.Pool.QueryRow(ctx, `SELECT state, progress FROM wp2p_migrations WHERE id = $1`, id).Scan(&state, &prog)
+			var p wp2pProgress
+			_ = json.Unmarshal(prog, &p)
+			if state != "queued" || p.finished(phase) || p.Phase != phase {
+				t.Fatalf("after the cut in %s: state %s, progress %+v", phase, state, p)
+			}
+		}
+		if err := srv.wp2pImportJob(ctx, map[string]any{"id": id}); err != nil {
+			t.Fatal(err)
+		}
+		var state, msg string
+		_ = srv.store.Pool.QueryRow(ctx, `SELECT state, error FROM wp2p_migrations WHERE id = $1`, id).Scan(&state, &msg)
+		if state != "done" {
+			t.Fatalf("import %s: %s", state, msg)
+		}
+		out := make([]int, len(queries))
+		for i, q := range queries {
+			if err := srv.store.Pool.QueryRow(ctx, q).Scan(&out[i]); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return out
+	}
+	t.Cleanup(func() { wp2pRecordHook = nil })
+	want := site(nil)
+	got := site(map[string]int{"content": 16}) // after the posts and pages (the draft too), before the products
+	got2 := site(map[string]int{"orders": 2})
+	for i, q := range queries {
+		if got[i] != want[i] || got2[i] != want[i] {
+			t.Errorf("%s: %d (content cut), %d (orders cut), %d without a cut", q, got[i], got2[i], want[i])
+		}
+	}
+}
+
+// wp2p_cleanup: abandoned uploads and unresumed failures lose their files (and their key), tokens of
+// finished imports are forgotten, old reports keep their counts only, and files nobody owns go.
+func TestWP2PCleanup(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	pool := srv.store.Pool
+	if err := os.MkdirAll(srv.wp2pImportDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	type row struct {
+		state, token string
+		expires      string // SQL, or "" for NULL
+		cli          bool
+		age          string // updated_at = now() - age
+		files        bool
+	}
+	rows := map[string]row{
+		"expiredtoken": {state: "waiting", token: "a", expires: "now() - interval '1 hour'", age: "1 day", files: false},
+		"freshtoken":   {state: "waiting", token: "b", expires: "now() + interval '1 hour'", age: "1 minute"},
+		"idleupload":   {state: "receiving", expires: "", age: "8 days", files: true},
+		"activeupload": {state: "receiving", token: "c", expires: "now() + interval '20 hours'", age: "10 minutes", files: true},
+		"oldfailure":   {state: "failed", age: "8 days", files: true},
+		"newfailure":   {state: "failed", age: "1 day", files: true},
+		"killedcli":    {state: "running", cli: true, age: "7 hours"},
+		"olddone":      {state: "done", token: "d", age: "31 days"},
+		"newdone":      {state: "done", token: "e", age: "2 minutes"},
+	}
+	ids := map[string]string{}
+	report := `{"counts":{"users":2},"skipped":[{"kind":"user","item":"#4","reason":"x"}],"content":{"Posts":1,"Log":["a"]},"notes":["n"]}`
+	for name, r := range rows {
+		id := wp2pNewID()
+		ids[name] = id
+		exp := "NULL"
+		if r.expires != "" {
+			exp = r.expires
+		}
+		if _, err := pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, token_hash, package_key, state, cli, report, updated_at, expires_at)
+			VALUES ($1, $2, '\x00', $3, $4, $5, now() - $6::interval, `+exp+`)`, id, r.token, r.state, r.cli, report, r.age); err != nil {
+			t.Fatal(name, err)
+		}
+		if r.files {
+			_ = os.WriteFile(srv.wp2pPackagePath(id), []byte("x"), 0o600)
+			_ = os.MkdirAll(filepath.Join(srv.wp2pWorkDir(id), "media"), 0o700)
+			_ = os.WriteFile(filepath.Join(srv.wp2pWorkDir(id), "users.jsonl"), []byte("{}"), 0o600)
+		}
+	}
+	orphan := filepath.Join(srv.wp2pImportDir(), wp2pNewID())
+	_ = os.MkdirAll(orphan, 0o700)
+	old := time.Now().Add(-48 * time.Hour)
+	_ = os.Chtimes(orphan, old, old)
+	if err := srv.wp2pCleanup(ctx); err != nil {
+		t.Fatal(err)
+	}
+	type got struct {
+		state, token string
+		key          bool
+		report       string
+		files        bool
+	}
+	read := func(name string) got {
+		var g got
+		var key []byte
+		if err := pool.QueryRow(ctx, `SELECT state, token_hash, package_key, report::text FROM wp2p_migrations WHERE id = $1`, ids[name]).
+			Scan(&g.state, &g.token, &key, &g.report); err != nil {
+			t.Fatal(name, err)
+		}
+		g.key = key != nil
+		_, err1 := os.Stat(srv.wp2pPackagePath(ids[name]))
+		_, err2 := os.Stat(srv.wp2pWorkDir(ids[name]))
+		g.files = err1 == nil || err2 == nil
+		return g
+	}
+	for name, want := range map[string]struct {
+		state       string
+		key, files  bool
+		token, list bool
+	}{
+		"expiredtoken": {state: "expired", token: true, list: true},
+		"freshtoken":   {state: "waiting", key: true, token: true, list: true},
+		"idleupload":   {state: "expired", list: true},
+		"activeupload": {state: "receiving", key: true, files: true, token: true, list: true},
+		"oldfailure":   {state: "expired", list: true},
+		"newfailure":   {state: "failed", key: true, files: true, list: true},
+		"killedcli":    {state: "failed", key: true, list: true},
+		"olddone":      {state: "done", key: true},
+		"newdone":      {state: "done", key: true, token: true, list: true},
+	} {
+		g := read(name)
+		hasList := strings.Contains(g.report, `"skipped"`) && strings.Contains(g.report, `"Log"`)
+		if g.state != want.state || g.key != want.key || g.files != want.files || (g.token != "") != want.token || hasList != want.list {
+			t.Errorf("%s: %+v, want %+v", name, g, want)
+		}
+		if !strings.Contains(g.report, `"users": 2`) && !strings.Contains(g.report, `"users":2`) {
+			t.Errorf("%s: the counts were dropped: %s", name, g.report)
+		}
+	}
+	if _, err := os.Stat(orphan); err == nil {
+		t.Error("an orphaned directory was kept")
+	}
+}
+
+// The chunk lease: a second request while a chunk is being received is turned away, and an active
+// upload moves its token's expiry on.
+func TestWP2PChunkLeaseAndExpiry(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installUsersSite(t, c, ts.URL)
+	ctx := context.Background()
+	admin, _ := srv.store.UserByLoginOrEmail(ctx, "admin")
+	token, id, _, err := srv.wp2pNewToken(ctx, admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(srv.wp2pImportDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE wp2p_migrations SET state = 'receiving', size = 10, expires_at = now() + interval '1 hour' WHERE id = $1`, id); err != nil {
+		t.Fatal(err)
+	}
+	put := func(off int, body string) int {
+		req, _ := http.NewRequest("PUT", ts.URL+"/wp-json/pursae/v1/migrate/"+id+"/chunk?offset="+strconv.Itoa(off), strings.NewReader(body))
+		req.Header.Set(wp2pTokenHeader, token)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE wp2p_migrations SET lease = 'other', lease_until = now() + interval '1 minute' WHERE id = $1`, id)
+	if code := put(0, "hello"); code != http.StatusConflict {
+		t.Errorf("a chunk while another is received: %d", code)
+	}
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE wp2p_migrations SET lease_until = now() - interval '1 second' WHERE id = $1`, id) // that request died
+	if code := put(0, "hello"); code != http.StatusOK {
+		t.Fatalf("a chunk after the lease lapsed: %d", code)
+	}
+	var received int64
+	var lease string
+	var expiresIn float64
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT received, lease, extract(epoch FROM expires_at - now()) FROM wp2p_migrations WHERE id = $1`, id).Scan(&received, &lease, &expiresIn)
+	if received != 5 || lease != "" || expiresIn < float64(23*3600) {
+		t.Errorf("after the chunk: received %d, lease %q, expires in %.0fs", received, lease, expiresIn)
+	}
+	// The extension stops 7 days after the token was made.
+	_, _ = srv.store.Pool.Exec(ctx, `UPDATE wp2p_migrations SET created_at = now() - interval '7 days' + interval '1 hour' WHERE id = $1`, id)
+	if code := put(5, "world"); code != http.StatusOK {
+		t.Fatalf("second chunk: %d", code)
+	}
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT extract(epoch FROM expires_at - now()) FROM wp2p_migrations WHERE id = $1`, id).Scan(&expiresIn)
+	if expiresIn > 3700 {
+		t.Errorf("the expiry went past the upload's limit: %.0fs", expiresIn)
 	}
 }

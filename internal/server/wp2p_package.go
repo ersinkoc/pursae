@@ -3,6 +3,7 @@ package server
 import (
 	"archive/tar"
 	"bufio"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -376,6 +377,17 @@ func wp2pParts(path string) []string {
 	return append(out, parts...)
 }
 
+// wp2pSize is the size of the logical file path (all its parts).
+func wp2pSize(path string) int64 {
+	var n int64
+	for _, p := range wp2pParts(path) {
+		if st, err := os.Stat(p); err == nil {
+			n += st.Size()
+		}
+	}
+	return n
+}
+
 // wp2pOpen opens the logical file path as one stream of its parts (os.ErrNotExist when it has none).
 func wp2pOpen(path string) (io.ReadCloser, error) {
 	parts := wp2pParts(path)
@@ -425,17 +437,18 @@ func (p *wp2pPartsReader) Close() error {
 
 // wp2pEachLine calls fn with every line of the JSON-lines file at path and its parts (a missing file
 // has none). Lines may be long (an order with many items), so they are not limited to bufio's default
-// size.
-func wp2pEachLine(path string, fn func(raw []byte) error) error {
+// size. It stops with ctx's error when ctx ends, so a phase interrupted by a shutdown is never taken
+// for a finished one.
+func wp2pEachLine(ctx context.Context, path string, fn func(raw []byte) error) error {
 	for _, part := range wp2pParts(path) {
-		if err := wp2pEachLineOf(part, fn); err != nil {
+		if err := wp2pEachLineOf(ctx, part, fn); err != nil {
 			return err
 		}
 	}
-	return nil
+	return ctx.Err()
 }
 
-func wp2pEachLineOf(path string, fn func(raw []byte) error) error {
+func wp2pEachLineOf(ctx context.Context, path string, fn func(raw []byte) error) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return err
@@ -443,6 +456,9 @@ func wp2pEachLineOf(path string, fn func(raw []byte) error) error {
 	defer f.Close()
 	r := bufio.NewReaderSize(f, 1<<20)
 	for {
+		if cerr := ctx.Err(); cerr != nil {
+			return cerr
+		}
 		line, err := r.ReadBytes('\n')
 		if len(strings.TrimSpace(string(line))) > 0 {
 			if ferr := fn(line); ferr != nil {

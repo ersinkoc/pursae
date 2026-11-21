@@ -61,6 +61,8 @@ type Server struct {
 
 	cache        atomic.Pointer[pageCache] // wpgo-cache, rebuilt when its options change
 	cacheBuildMu sync.Mutex                // orders retirement and installation of caches
+	longJobs     sync.WaitGroup            // long jobs running beside the scheduler loop (scheduler.go)
+	longBusy     atomic.Bool               // a long job is running in this process
 	plugins      *pluginSystem
 	bmgr         bmgrRuntime // Backup Manager state (backup.go)
 	warm         warmState

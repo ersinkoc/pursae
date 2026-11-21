@@ -9,6 +9,8 @@
 {{if .Active}}<meta http-equiv="refresh" content="5" />{{end}}
 <h2>Import {{if .Source}}of {{.Source}}{{end}}</h2>
 {{if eq .State "done"}}<div class="notice notice-success inline"><p><strong>All done.</strong> The WordPress site is in Pursae now. Check the notes below.</p></div>
+{{else if and (eq .State "failed") .CLI}}<div class="notice notice-error inline"><p><strong>The import stopped:</strong> {{.Error}}</p>
+<p>This import ran on the command line: run <code>pursae import wordpress</code> with the same package again to continue. What was imported stays and is not added twice.</p></div>
 {{else if eq .State "failed"}}<div class="notice notice-error inline"><p><strong>The import stopped:</strong> {{.Error}}</p>
 <form method="post" action="/wp-admin/import-wordpress"><input type="hidden" name="_wpnonce" value="{{$.Data.ActionNonce}}" /><input type="hidden" name="action" value="resume" /><input type="hidden" name="id" value="{{.ID}}" />
 <p>What was imported stays; resuming continues where the import stopped and does not add anything twice. <input type="submit" class="button button-primary" value="Resume the import" /></p></form></div>
@@ -53,11 +55,12 @@
 
 {{if .Rows}}
 <h2>Imports</h2>
+<p class="description">Reports list WordPress users by their id, never by e-mail address or login, and their item lists are deleted 30 days after the import. The package and its extracted files are deleted when the import is done; those of an upload or import that stopped are deleted after 7 days.</p>
 <table class="widefat striped"><thead><tr><th>Started</th><th>Site</th><th>State</th><th>Progress</th><th></th></tr></thead><tbody>
 {{range .Rows}}<tr><td>{{.Created.Format "2006-01-02 15:04"}}</td><td>{{if .Source}}{{.Source}}{{else}}&mdash;{{end}}</td>
 <td>{{if eq .State "waiting"}}Token issued, waiting for the plugin{{else if eq .State "receiving"}}Receiving ({{.Received}} of {{.Size}} bytes){{else if eq .State "expired"}}Token expired{{else}}{{.State}}{{end}}</td>
 <td>{{.Phase}}</td>
-<td>{{if or (eq .State "waiting") (eq .State "receiving")}}<form method="post" action="/wp-admin/import-wordpress" style="display:inline"><input type="hidden" name="_wpnonce" value="{{$.Data.ActionNonce}}" /><input type="hidden" name="action" value="revoke" /><input type="hidden" name="id" value="{{.ID}}" /><input type="submit" class="button-link" value="Revoke" /></form>{{else}}<a href="/wp-admin/import-wordpress?run={{.ID}}">View</a>{{if and (ne .State "queued") (ne .State "running")}} &middot; <form method="post" action="/wp-admin/import-wordpress" style="display:inline"><input type="hidden" name="_wpnonce" value="{{$.Data.ActionNonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="{{.ID}}" /><input type="submit" class="button-link" value="Remove" /></form>{{end}}{{end}}</td></tr>{{end}}
+<td>{{if or (eq .State "waiting") (eq .State "receiving")}}<form method="post" action="/wp-admin/import-wordpress" style="display:inline"><input type="hidden" name="_wpnonce" value="{{$.Data.ActionNonce}}" /><input type="hidden" name="action" value="revoke" /><input type="hidden" name="id" value="{{.ID}}" /><input type="submit" class="button-link" value="Revoke" /></form>{{else}}<a href="/wp-admin/import-wordpress?run={{.ID}}">View</a>{{if or (and (ne .State "queued") (ne .State "running")) .Stale}} &middot; <form method="post" action="/wp-admin/import-wordpress" style="display:inline"><input type="hidden" name="_wpnonce" value="{{$.Data.ActionNonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="{{.ID}}" /><input type="submit" class="button-link" value="Remove" /></form>{{end}}{{end}}</td></tr>{{end}}
 </tbody></table>
 {{end}}
 {{end}}

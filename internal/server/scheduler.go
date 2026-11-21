@@ -46,6 +46,7 @@ var coreEvents = []struct{ Name, Recurrence string }{
 	{"goo_import_cleanup", "daily"},                 // Pursae Commerce: delete abandoned product-import uploads (goo_admin_catalog_csv_batch.go)
 	{"wb_import_cleanup", "hourly"},                 // Pursae Web Builder: delete HTML site uploads older than a day (webbuilder_siteimport_admin.go)
 	{"wpgo_geoip_update", "daily"},                  // download DB-IP's monthly IP-to-country database once it is out (geoip.go)
+	{"wp2p_cleanup", "hourly"},                      // WP to Pursae: abandoned uploads, extracted packages, expired tokens, old report lists (wp2p_admin.go)
 }
 
 // recurrenceInterval maps a recurrence name to its interval: the WordPress names above, or
@@ -63,7 +64,10 @@ func recurrenceInterval(rec string) time.Duration {
 func (s *Server) jobHandlers() map[string]jobHandler {
 	return map[string]jobHandler{
 		"wxr_import":  s.wxrImportJob,  // the Import screen's background run (wxr_import.go)
-		"wp2p_import": s.wp2pImportJob, // WP to Pursae imports (wp2p_import.go)
+		"wp2p_import": s.wp2pImportJob, // WP to Pursae imports (wp2p_import.go; a long job)
+		"wp2p_cleanup": func(ctx context.Context, _ map[string]any) error {
+			return s.wp2pCleanup(ctx) // abandoned WP to Pursae uploads, extracted files and old report lists (wp2p_admin.go)
+		},
 		"wp_scheduled_delete": func(ctx context.Context, _ map[string]any) error {
 			days := emptyTrashDays()
 			// One by one through DeletePost, so the children of a deleted page move up to its parent.
@@ -257,9 +261,14 @@ const (
 
 var jobHeartbeatEvery = time.Minute // a variable for tests
 
+// longJobNames are jobs that can run for hours (a whole site's import): each runs in its own goroutine
+// with its own heartbeat, so the loop keeps publishing posts and running the other jobs meanwhile.
+var longJobNames = map[string]bool{"wp2p_import": true}
+
 // RunScheduler runs scheduled posts and due jobs every 15 seconds until ctx ends. It returns once
-// the job in hand has finished (or, interrupted by ctx, was put back on the queue).
+// the jobs in hand have finished (or, interrupted by ctx, were put back on the queue).
 func (s *Server) RunScheduler(ctx context.Context) {
+	defer s.longJobs.Wait()
 	s.ensureEvents(ctx)
 	host, _ := os.Hostname()
 	// The random part keeps two processes apart that share hostname and pid (a container's
@@ -327,11 +336,35 @@ func (s *Server) runDueJobs(ctx context.Context, worker string, handlers map[str
 			_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', locked_by = NULL WHERE id = ANY($1) AND locked_by = $2`, ids, worker)
 			return
 		}
+		if longJobNames[j.name] {
+			s.startLongJob(ctx, wctx, worker, handlers, j)
+			continue
+		}
 		runErr := s.runJob(ctx, handlers, j)
 		s.finishJob(wctx, ctx, worker, j, runErr)
 	}
 	// Keep the table small: finished one-off jobs are kept for a week for Site Health.
 	_, _ = s.store.Pool.Exec(wctx, `DELETE FROM jobs WHERE status = 'done' AND recurrence = '' AND updated_at < now() - interval '7 days'`)
+}
+
+// startLongJob runs a long job in its own goroutine. The job row stays claimed ("running", locked by
+// this worker) and its own heartbeat keeps the claim fresh, so no other instance takes it; on shutdown
+// ctx ends the job and finishJob puts it back on the queue. RunScheduler waits for it before returning.
+// One long job runs at a time per process: another one that is due waits for a later tick.
+func (s *Server) startLongJob(ctx, wctx context.Context, worker string, handlers map[string]jobHandler, j dueJob) {
+	if !s.longBusy.CompareAndSwap(false, true) {
+		_, _ = s.store.Pool.Exec(wctx, `UPDATE jobs SET status = 'queued', locked_by = NULL, run_at = now() + interval '1 minute' WHERE id = $1 AND locked_by = $2`, j.id, worker)
+		return
+	}
+	s.longJobs.Add(1)
+	go func() {
+		defer s.longJobs.Done()
+		defer s.longBusy.Store(false)
+		stop := s.jobHeartbeat(wctx, worker)
+		defer stop()
+		runErr := s.runJob(ctx, handlers, j)
+		s.finishJob(wctx, ctx, worker, j, runErr)
+	}()
 }
 
 // runJob runs one job's handler (or the plugin action of that name); a panic is the job's error.

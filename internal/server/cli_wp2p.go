@@ -92,14 +92,16 @@ func cliImportWordPress(c *cli.Ctx, e *cliEnv) error {
 		return err
 	}
 	id := wp2pNewID()
-	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, created_by, state, size, received) VALUES ($1, $2, 'running', $3, $3)`,
+	// cli: the screen does not offer Resume for this row (the package and key are not kept here); the
+	// command is run again instead, and importing the same site again adds only what is missing.
+	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, created_by, state, size, received, cli) VALUES ($1, $2, 'running', $3, $3, true)`,
 		id, u.ID, fileSize(pkg)); err != nil {
 		return err
 	}
 	r := &wp2pRun{s: s, id: id, dir: s.wp2pWorkDir(id), pkg: pkg, keepPackage: true, key: &key, u: u,
 		logf: func(format string, args ...any) { c.Log(format, args...) }}
 	if err := r.run(ctx); err != nil {
-		s.wp2pSetState(ctx, id, "failed", err.Error())
+		s.wp2pSetState(ctx, id, "failed", err.Error()+" (run the command again to continue)")
 		_ = os.RemoveAll(r.dir)
 		return cli.Errorf("%v (what was imported stays; run the command again to continue)", err)
 	}

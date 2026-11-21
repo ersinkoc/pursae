@@ -208,6 +208,9 @@ func (s *Server) wxrImportProducts(ctx context.Context, u *store.User, items []*
 	existing := map[int64]bool{}       // our ids of products that were already here
 	var variations []*wxrItem
 	for _, it := range items {
+		if ctx.Err() != nil { // the run stops (the caller returns the error)
+			return created
+		}
 		if it.Type == "product_variation" {
 			variations = append(variations, it)
 			continue
@@ -238,6 +241,9 @@ func (s *Server) wxrImportProducts(ctx context.Context, u *store.User, items []*
 		}
 	}
 	for _, it := range variations {
+		if ctx.Err() != nil {
+			return created
+		}
 		parentID, ok := env.idMap[it.Parent]
 		if !ok {
 			rep.Log = append(rep.Log, fmt.Sprintf("Variation “%s” skipped: its product is not in the import.", it.Title))
