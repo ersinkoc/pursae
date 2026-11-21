@@ -20,6 +20,9 @@ import (
 // Dashboard › Updates › Automatic updates: off by default; on, the daily check installs a newer
 // release and restarts; a release the site went back from is not tried again by itself.
 func TestCoreAutoUpdate(t *testing.T) {
+	savedVersion := Version
+	Version = "9.9.0" // a patch release of the running minor version: installed automatically
+	t.Cleanup(func() { Version = savedVersion })
 	withRootKeys(t)
 	withTrustHubKeys(t, true)
 	base, c, srv, hub := managerSite(t)
@@ -99,6 +102,14 @@ func TestCoreAutoUpdate(t *testing.T) {
 	waitIdle()
 	if b, _ := os.ReadFile(target); !bytes.Equal(b, bin) {
 		t.Fatal("the executable was not replaced")
+	}
+	// The database was backed up first, into a Backup Manager archive, with the plugin off.
+	last := srv.coreAutoLast()
+	if last == nil || last.Backup == "" {
+		t.Fatalf("no pre-update backup recorded: %+v", last)
+	}
+	if m, err := bmgrReadManifest(filepath.Join(srv.bmgrDir(), last.Backup)); err != nil || m.Kind != bmgrPreUpdateKind || len(m.Tables) == 0 || len(m.Files) != 0 {
+		t.Fatalf("pre-update backup %s: %+v %v", last.Backup, m, err)
 	}
 	if st := coreupdate.Read(target); st == nil || st.Status != "pending" || st.To != "9.9.9" {
 		t.Fatalf("no pending update recorded: %+v", st)

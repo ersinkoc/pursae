@@ -24,6 +24,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/coreupdate"
+	"wpgo/internal/db"
 	"wpgo/internal/plugins"
 )
 
@@ -400,6 +401,12 @@ func (s *Server) reinstallCore(c *gin.Context) {
 	prev, kept := s.corePrevious(exe)
 	if prev == "" || c.PostForm("version") != prev {
 		fail("there is no previous version to reinstall")
+		return
+	}
+	// The schema guard (internal/db/schema_guard.go) would stop the reinstalled binary at its first
+	// start: a migration of this version raised the floor above it.
+	if floor, err := db.MinBinary(c.Request.Context(), s.store.Pool); err == nil && floor != "" && coreupdate.Less(prev, floor) && !db.AllowOlderBinary() {
+		fail(fmt.Sprintf("Pursae %s cannot run on this database any more: migrations of %s need Pursae %s or newer. Restore a database backup taken before the update to go back", prev, Version, floor))
 		return
 	}
 	if !kept.IsZero() {

@@ -42,6 +42,8 @@ type Server struct {
 	settings *settings.Store
 	auth     *auth.Manager
 	web      fs.FS
+	// schemaGuard caches the schema check of this binary against the database (schema_guard.go).
+	schemaGuard schemaGuardState
 	// themeLibrary is the directory source of the theme library (WPGO_THEME_LIBRARY_DIR): one theme
 	// package directory per slug. Nil: the library comes from Pursae Manager (theme_library.go).
 	themeLibrary fs.FS
@@ -130,6 +132,9 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	}
 	if sb != nil {
 		return s.startSandbox(ctx)
+	}
+	if _, err := s.schemaStatus(ctx); err != nil { // logs a schema newer than this binary (schema_guard.go)
+		slog.Warn("schema guard: the schema could not be checked", "err", err)
 	}
 	// After the sandbox return: a theme-preview sandbox starts no loops and is never Closed, so it
 	// must not register a child context with a long-lived parent.

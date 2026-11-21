@@ -426,8 +426,11 @@ func (s *Server) bmgrEntryView(c *gin.Context, e bmgrEntry) bmgrEntryView {
 		v.Safety = e.M.Kind == "safety"
 		v.Site, v.Note = e.M.SiteURL, e.M.Note
 		v.Kind = map[bool]string{true: "Safety snapshot", false: "Backup"}[v.Safety]
-		if e.M.Kind == bmgrScheduleKind {
+		switch e.M.Kind {
+		case bmgrScheduleKind:
 			v.Kind = "Scheduled backup"
+		case bmgrPreUpdateKind:
+			v.Kind = "Pre-update backup (database only)"
 		}
 		labels := map[string]string{}
 		for _, c := range bmgrCategories {

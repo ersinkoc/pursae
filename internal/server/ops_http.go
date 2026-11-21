@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -127,8 +128,9 @@ func (s *Server) healthz(w http.ResponseWriter, r *http.Request) {
 	probeAnswer(w, r, http.StatusOK, "ok")
 }
 
-// readyz is the readiness probe: the database answers and every migration of this binary is
-// applied.
+// readyz is the readiness probe: the database answers, every migration of this binary is applied
+// and the schema guard lets this binary run on the database. It is cheap (a ping, plus one small
+// query every schemaGuardTTL) and unauthenticated; the core update confirms a new binary with it.
 func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
@@ -144,7 +146,19 @@ func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 		}
 		migrationsApplied.Store(true) // migrations are embedded: once applied, they stay applied
 	}
-	probeAnswer(w, r, http.StatusOK, "ok")
+	// The schema guard (schema_guard.go): a binary below the floor a newer release recorded is not
+	// ready (it runs only with WPGO_ALLOW_OLDER_BINARY=1); a newer but compatible schema is.
+	st, err := s.schemaStatus(ctx)
+	switch {
+	case err != nil:
+		probeAnswer(w, r, http.StatusServiceUnavailable, "schema check failed")
+	case st.TooOld():
+		probeAnswer(w, r, http.StatusServiceUnavailable, "schema too new: the database needs Pursae "+st.MinBinary+" or newer, this is "+st.Binary)
+	case st.Newer():
+		probeAnswer(w, r, http.StatusOK, "ok (the database schema is newer than this binary: "+strconv.Itoa(len(st.Unknown))+" unknown migration(s))")
+	default:
+		probeAnswer(w, r, http.StatusOK, "ok")
+	}
 }
 
 var migrationsApplied atomic.Bool

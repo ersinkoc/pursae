@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +18,8 @@ import (
 	"syscall"
 	"time"
 	_ "time/tzdata" // site time zones work on minimal images
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"wpgo/internal/config"
 	"wpgo/internal/coreupdate"
@@ -111,7 +112,7 @@ func main() {
 			os.Exit(1)
 		}
 	case "adminsec": // AdminSecGo recovery: disable-hide-login, reset-user <login>, unlock-all, deactivate
-		pool, err := db.Connect(ctx, cfg.DatabaseURL)
+		pool, err := connectGuarded(ctx, cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -127,7 +128,7 @@ func main() {
 			os.Exit(1)
 		}
 	case "headless": // Pursae Headless: export / import entries as NDJSON
-		pool, err := db.Connect(ctx, cfg.DatabaseURL)
+		pool, err := connectGuarded(ctx, cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -203,6 +204,25 @@ func renameUsage(s, prog string) string {
 	return strings.ReplaceAll(s, "usage: wpgo ", "usage: "+prog+" ")
 }
 
+// connectGuarded connects for a command that does not migrate and applies the schema guard
+// (internal/db/schema_guard.go) that Migrate applies for serve and migrate: a binary below the
+// floor a newer release recorded in the database stops here with the version it needs.
+func connectGuarded(ctx context.Context, cfg config.Config) (*pgxpool.Pool, error) {
+	pool, err := db.Connect(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+	st, err := db.GuardSchema(ctx, pool, server.Version)
+	if err != nil {
+		pool.Close()
+		return nil, err
+	}
+	if w := st.Warning(); w != "" {
+		log.Printf("warning: %s", w)
+	}
+	return pool, nil
+}
+
 func serve(ctx context.Context, cfg config.Config) error {
 	pool, err := db.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -250,7 +270,7 @@ func serve(ctx context.Context, cfg config.Config) error {
 	}()
 	go srv.WatchSettings(ctx)    // settings changed by other instances (settings.Store.Watch)
 	go srv.WatchCachePurges(ctx) // page cache purges made by other instances
-	go confirmUpdate(ctx, cfg.Addr)
+	go confirmUpdate(ctx, cfg.Addr, pool)
 	go prunePrevBinary(ctx)
 	ln, err := coreupdate.Listen(cfg.Addr) // inherited across a core update's restart
 	if err != nil {
@@ -322,6 +342,24 @@ func executable() (string, error) {
 	return filepath.EvalSymlinks(exe)
 }
 
+// rollbackBlocked says why the site must not go back to the binary of version from ("" when it may):
+// the floor this database records (internal/db/schema_guard.go) is above it. Under expand/contract
+// a release never raises the floor above the release before it, so this only happens when that rule
+// was broken; the site then stays on the new binary rather than restoring one that refuses to start.
+func rollbackBlocked(ctx context.Context, pool *pgxpool.Pool, from string) string {
+	if pool == nil || from == "" {
+		return ""
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	floor, err := db.MinBinary(ctx, pool)
+	if err != nil || floor == "" || !coreupdate.Less(from, floor) {
+		return ""
+	}
+	return "the database now needs Pursae " + floor + " or newer, so the site stays on " + server.Version +
+		" instead of going back to " + from + " (check /readyz and this log)"
+}
+
 // prunePrevBinary removes the binary a core update replaced once it has been kept for
 // coreupdate.PrevRetention after the update was confirmed: checked at start and every hour.
 func prunePrevBinary(ctx context.Context) {
@@ -343,8 +381,11 @@ func prunePrevBinary(ctx context.Context) {
 	}
 }
 
-// confirmUpdate ends a pending core update once this binary answers requests (internal/coreupdate).
-func confirmUpdate(ctx context.Context, addr string) {
+// confirmUpdate ends a pending core update once this binary is ready: /readyz answers 200, so the
+// database is reachable, every migration of this binary is applied and the schema guard lets it run
+// (internal/coreupdate). /readyz is unauthenticated and answered before maintenance mode, Pursae
+// Security and the page cache, so neither a hidden login page nor a plugin decides the outcome.
+func confirmUpdate(ctx context.Context, addr string, pool *pgxpool.Pool) {
 	exe, err := executable()
 	if err != nil {
 		return
@@ -352,26 +393,11 @@ func confirmUpdate(ctx context.Context, addr string) {
 	if st := coreupdate.Read(exe); st == nil || st.Status != "pending" || st.To != server.Version {
 		return
 	}
-	host, port, err := net.SplitHostPort(addr)
+	ready, err := healthURL(addr, "/readyz")
 	if err != nil {
 		return
 	}
-	if host == "" || host == "0.0.0.0" || host == "::" {
-		host = "127.0.0.1"
-	}
-	parent := ctx
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-	defer cancel()
-	if coreupdate.WaitHealthy(ctx, "http://"+net.JoinHostPort(host, port)+"/wp-login") {
-		coreupdate.Confirm(exe, server.Version)
-		log.Printf("core update to %s confirmed", server.Version)
-		return
-	}
-	if parent.Err() != nil {
-		return // shutting down: not a failed update
-	}
-	// Running but never healthy: go back to the previous binary and hand the socket over to it.
-	if coreupdate.Rollback(exe, server.Version) {
+	if awaitReady(ctx, exe, ready, server.Version, pool, updateConfirmWindow) {
 		if err := coreupdate.Restart(exe, 10*time.Second); err != nil {
 			log.Printf("core update: restart into the previous binary failed: %v", err)
 			if coreupdate.Stopped() {
@@ -379,4 +405,33 @@ func confirmUpdate(ctx context.Context, addr string) {
 			}
 		}
 	}
+}
+
+// updateConfirmWindow is how long a new binary has to become ready before it is rolled back.
+const updateConfirmWindow = 2 * time.Minute
+
+// awaitReady waits up to window for readyURL to answer 200 and confirms the pending update to
+// version. When it never does, it puts the previous binary back (coreupdate.Rollback) and reports
+// true: the caller then restarts into it. It does not roll back when ctx ends first (shutting down
+// is not a failed update) or when the database no longer lets the previous binary run.
+func awaitReady(ctx context.Context, exe, readyURL, version string, pool *pgxpool.Pool, window time.Duration) bool {
+	wctx, cancel := context.WithTimeout(ctx, window)
+	defer cancel()
+	if coreupdate.WaitHealthy(wctx, readyURL) {
+		coreupdate.Confirm(exe, version)
+		log.Printf("core update to %s confirmed", version)
+		return false
+	}
+	if ctx.Err() != nil {
+		return false
+	}
+	// Running but never ready: go back to the previous binary, unless the database no longer lets
+	// that binary run (the schema guard would stop it at once).
+	if st := coreupdate.Read(exe); st != nil {
+		if why := rollbackBlocked(ctx, pool, st.From); why != "" {
+			log.Printf("core update: Pursae %s did not become ready in time; %s", version, why)
+			return false
+		}
+	}
+	return coreupdate.Rollback(exe, version)
 }

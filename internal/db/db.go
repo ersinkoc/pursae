@@ -141,6 +141,10 @@ var migrateLockPoll = 500 * time.Millisecond
 //     schema_migrations insert runs it again;
 //   - may leave an INVALID index behind when a build fails; Migrate drops that index
 //     (DROP INDEX CONCURRENTLY) before building it again.
+//
+// Before anything is applied the schema guard runs (GuardSchema with BinaryVersion): a binary below
+// the floor a newer release recorded fails with *BinaryTooOldError. Afterwards the floor
+// (MinCompatibleBinary) and BinaryVersion are recorded in schema_meta, never lowering either.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 	conn, err := pool.Acquire(ctx)
 	if err != nil {
@@ -172,6 +176,10 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 	if _, err := conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version text PRIMARY KEY,
 		applied_at timestamptz NOT NULL DEFAULT now())`); err != nil {
+		return nil, err
+	}
+	// A binary below the floor a newer one recorded must not touch the schema (schema_guard.go).
+	if _, err := GuardSchema(ctx, conn, BinaryVersion); err != nil {
 		return nil, err
 	}
 
@@ -206,8 +214,15 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 		}
 		applied = append(applied, version)
 	}
+	if err := recordSchemaMeta(ctx, conn, migrationFloor, BinaryVersion); err != nil {
+		return applied, fmt.Errorf("schema_meta: %w", err)
+	}
 	return applied, nil
 }
+
+// migrationFloor is what Migrate records as min_binary_version: MinCompatibleBinary, swapped only
+// by tests.
+var migrationFloor = MinCompatibleBinary
 
 // Migration timeouts. A DDL statement such as ALTER TABLE needs an ACCESS EXCLUSIVE lock; during a
 // rolling deploy the old instance may still run a long query on that table, and while the ALTER
