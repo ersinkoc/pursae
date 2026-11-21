@@ -16,9 +16,15 @@ func TestManifestABIField(t *testing.T) {
 		problem string // ParseManifest error, if any
 	}{
 		{field: "", want: 1, compat: true},
-		{field: `,"abi":1`, want: 1, compat: true},
-		{field: `,"abi":2`, want: 2, compat: false},
-		{field: `,"abi":-1`, problem: "positive integer"},
+		{field: `,"requires":"0.5.0","abi":1`, want: 1, compat: true},
+		{field: `,"requires":"0.5.0","abi":2`, want: 2, compat: false},
+		{field: `,"requires":"0.6.1","abi":2`, want: 2, compat: false},
+		// Releases before 0.5.0 reject a manifest with "abi", so it must require 0.5.0 or later.
+		{field: `,"abi":1`, problem: `needs "requires" "0.5.0"`},
+		{field: `,"requires":"0.1.0","abi":2`, problem: `needs "requires" "0.5.0"`},
+		{field: `,"requires":"0.4.9","abi":1`, problem: `needs "requires" "0.5.0"`},
+		{field: `,"requires":"0.5.0","abi":0`, problem: "positive integer"},
+		{field: `,"requires":"0.5.0","abi":-1`, problem: "positive integer"},
 		{field: `,"abi":"1"`, problem: "abi"},
 		{field: `,"abi":1.5`, problem: "abi"},
 	} {
@@ -35,7 +41,7 @@ func TestManifestABIField(t *testing.T) {
 		if got := m.EffectiveABI(); got != tc.want {
 			t.Errorf("abi%s: EffectiveABI=%d, want %d", tc.field, got, tc.want)
 		}
-		err = m.CheckCompatible("0.5.0")
+		err = m.CheckCompatible("0.6.1")
 		if (err == nil) != tc.compat {
 			t.Errorf("abi%s: CheckCompatible=%v, want ok=%v", tc.field, err, tc.compat)
 		}
@@ -52,12 +58,13 @@ func TestManifestABIField(t *testing.T) {
 // compiles any Wasm.
 func TestLoadRefusesUnsupportedABI(t *testing.T) {
 	ctx := context.Background()
+	abi2 := 2
 	rt, err := NewRuntime(ctx, NewRegistry(), Config{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer rt.Close(ctx)
-	pkg := &Package{Manifest: &Manifest{Slug: "abi-test", Name: "ABI Test", Version: "1.0.0", ABI: 2}, Wasm: []byte("not wasm")}
+	pkg := &Package{Manifest: &Manifest{Slug: "abi-test", Name: "ABI Test", Version: "1.0.0", Requires: "0.5.0", ABI: &abi2}, Wasm: []byte("not wasm")}
 	if _, err := rt.Load(ctx, pkg, nil, &translatorHost{}); err == nil || !strings.Contains(err.Error(), "plugin ABI version 2") {
 		t.Fatalf("Load: %v, want the ABI refusal", err)
 	}

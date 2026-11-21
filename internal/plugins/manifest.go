@@ -28,7 +28,6 @@ const ManifestFile = "plugin.json"
 //	  "author_uri": "https://…",
 //	  "plugin_uri": "https://…",
 //	  "requires": "0.1.0",
-//	  "abi": 1,
 //	  "license": "GPL-2.0-or-later",
 //	  "permissions": ["options:read", "content:filter"],
 //	  "hooks": ["the_content"],
@@ -54,9 +53,11 @@ type Manifest struct {
 	// Requires is the minimum wpgo version the plugin needs (e.g. "0.1.0").
 	Requires string `json:"requires,omitempty"`
 	// ABI is the plugin ABI version the package is built for (docs/developer/plugins/abi.md): a
-	// positive integer, 1 when absent. A host that does not support it refuses to install or
-	// activate the plugin (CheckCompatible).
-	ABI int `json:"abi,omitempty"`
+	// positive integer, 1 when absent (nil). A host that does not support it refuses to install or
+	// activate the plugin (CheckCompatible). Releases before 0.5.0 reject a plugin.json with this
+	// field, so a manifest that sets it must also set "requires" to 0.5.0 or later (Validate); while
+	// the ABI is 1 a package leaves it out.
+	ABI *int `json:"abi,omitempty"`
 	// RequiresPlugins lists the slugs of plugins (Wasm packages or built-in
 	// ones such as "contact-form-7" are matched by their Plugins screen slug)
 	// that must be active before this plugin can be activated.
@@ -194,8 +195,13 @@ func (m *Manifest) Validate() error {
 	} else if !versionRe.MatchString(m.Version) {
 		add(`"version" %q is not a version number like "1.0.0"`, m.Version)
 	}
-	if m.ABI < 0 {
-		add(`"abi" %d must be a positive integer (the plugin ABI version, e.g. 1)`, m.ABI)
+	if m.ABI != nil {
+		switch {
+		case *m.ABI <= 0:
+			add(`"abi" %d must be a positive integer (the plugin ABI version); leave it out for ABI 1`, *m.ABI)
+		case m.Requires == "" || (versionRe.MatchString(m.Requires) && compareVersions(m.Requires, MinABIFieldVersion) < 0):
+			add(`"abi" needs "requires" %q or later: Pursae releases before %s reject a plugin.json with "abi" (leave it out for ABI 1)`, MinABIFieldVersion, MinABIFieldVersion)
+		}
 	}
 	if m.Requires != "" && !versionRe.MatchString(m.Requires) {
 		add(`"requires" %q is not a version number like "0.1.0"`, m.Requires)
@@ -380,12 +386,16 @@ const ABIVersion = 1
 // SupportedABIs are the plugin ABI versions this host runs.
 var SupportedABIs = []int{ABIVersion}
 
+// MinABIFieldVersion is the first Pursae release that reads the manifest field "abi"; older ones
+// reject a plugin.json that has it, so a manifest with "abi" must require at least this version.
+const MinABIFieldVersion = "0.5.0"
+
 // EffectiveABI is the ABI version the plugin is built for: ABI, or 1 when the manifest has none.
 func (m *Manifest) EffectiveABI() int {
-	if m.ABI <= 0 {
+	if m.ABI == nil || *m.ABI <= 0 {
 		return 1
 	}
-	return m.ABI
+	return *m.ABI
 }
 
 // SupportsABI reports whether this host runs plugins built for ABI version v.

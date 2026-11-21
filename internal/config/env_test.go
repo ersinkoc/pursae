@@ -87,12 +87,46 @@ func TestEnvBothSet(t *testing.T) {
 		t.Errorf("Env = %q, warnings: %s", got, buf)
 	}
 
-	// An empty PURSAE_ value is a value: it wins over the old name (a test or compose file clearing it).
+	// An empty PURSAE_ value does not hide a non-empty old one: the compose files pass every
+	// PURSAE_ key (empty when .env has neither name) while an override file may set the WPGO_ name.
 	buf.Reset()
 	t.Setenv("PURSAE_ENVTEST_Z", "")
-	t.Setenv("WPGO_ENVTEST_Z", "1")
-	if v, ok := LookupEnv("ENVTEST_Z"); v != "" || !ok {
-		t.Errorf("LookupEnv = %q, %v; want the empty PURSAE_ value", v, ok)
+	t.Setenv("WPGO_ENVTEST_Z", "old-z-value")
+	if v, ok := LookupEnv("ENVTEST_Z"); v != "old-z-value" || !ok {
+		t.Errorf("LookupEnv = %q, %v; want the non-empty WPGO_ value", v, ok)
+	}
+	if out := buf.String(); strings.Count(out, "level=WARN") != 1 || !strings.Contains(out, "using=WPGO_ENVTEST_Z") || strings.Contains(out, "old-z-value") {
+		t.Errorf("want one warning saying the old name is used, without the value:\n%s", out)
+	}
+
+	// Both empty: set, empty, no warning.
+	buf.Reset()
+	t.Setenv("PURSAE_ENVTEST_W", "")
+	t.Setenv("WPGO_ENVTEST_W", "")
+	if v, ok := LookupEnv("ENVTEST_W"); v != "" || !ok || buf.Len() != 0 {
+		t.Errorf("LookupEnv = %q, %v; warnings: %s", v, ok, buf)
+	}
+}
+
+// In the Docker image the warning says to update the compose files before renaming .env.
+func TestEnvLegacyWarningInContainer(t *testing.T) {
+	buf := captureWarnings(t)
+	t.Setenv("PURSAE_BIN_DIR", "/data/bin")
+	t.Setenv("WPGO_BIN_DIR", "/data/bin")
+	t.Setenv("WPGO_ENVTEST_C", "1")
+	WarnDeprecatedEnv()
+	out := buf.String()
+	if !strings.Contains(out, "WPGO_ENVTEST_C") || !strings.Contains(out, "update the compose files") {
+		t.Errorf("want the compose hint:\n%s", out)
+	}
+	if strings.Contains(out, "BIN_DIR") {
+		t.Errorf("the same value under both names must not warn:\n%s", out)
+	}
+	unset(t, "PURSAE_BIN_DIR", "WPGO_BIN_DIR")
+	buf2 := captureWarnings(t)
+	Env("ENVTEST_C")
+	if strings.Contains(buf2.String(), "compose") {
+		t.Errorf("compose hint outside a container:\n%s", buf2)
 	}
 }
 
@@ -121,8 +155,10 @@ func TestLoadLegacyNames(t *testing.T) {
 	t.Setenv("PURSAE_SMTP_PORT", "")
 	t.Setenv("WPGO_SITE_URL", "https://old.example/")
 	t.Setenv("WPGO_HUB", "off")
-	if c := Load(); c.SiteURL != "http://localhost:8080" || c.HubOff {
-		t.Errorf("an empty PURSAE_ variable must win (default site URL, Manager on), got %+v", c)
+	// The compose files set every PURSAE_ key, empty when .env has neither name; an override file
+	// that still sets the WPGO_ name must keep working.
+	if c := Load(); c.SiteURL != "https://old.example" || !c.HubOff {
+		t.Errorf("an empty PURSAE_ variable hid the WPGO_ value, got %+v", c)
 	}
 	unset(t, "PURSAE_SITE_URL", "PURSAE_HUB", "PURSAE_ADDR", "PURSAE_SMTP_PORT")
 	t.Setenv("WPGO_ADDR", ":9999")
@@ -130,6 +166,11 @@ func TestLoadLegacyNames(t *testing.T) {
 	c := Load()
 	if c.SiteURL != "https://old.example" || !c.HubOff || c.Addr != ":9999" || c.SMTPPort != "2525" {
 		t.Errorf("WPGO_ names not read: %+v", c)
+	}
+	// Two non-empty values: PURSAE_ wins.
+	t.Setenv("PURSAE_SITE_URL", "https://new.example")
+	if c := Load(); c.SiteURL != "https://new.example" {
+		t.Errorf("PURSAE_SITE_URL did not win: %q", c.SiteURL)
 	}
 }
 
@@ -141,5 +182,32 @@ func unset(t *testing.T, names ...string) {
 		if err := os.Unsetenv(n); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+// A rollback execs a release before 0.5.0, which reads only the WPGO_* names.
+func TestWithLegacyNames(t *testing.T) {
+	in := []string{"PATH=/bin", "PURSAE_SITE_URL=https://a.example", "PURSAE_SECRET=", "PURSAE_HUB=on", "WPGO_HUB=off", "PURSAE_=x", "PURSAE_X=a=b"}
+	got := WithLegacyNames(in)
+	want := map[string]int{
+		"WPGO_SITE_URL=https://a.example": 1,
+		"WPGO_SECRET=":                    1,
+		"WPGO_HUB=off":                    1, // an existing old name is kept as it is
+		"WPGO_X=a=b":                      1,
+	}
+	count := map[string]int{}
+	for _, kv := range got {
+		count[kv]++
+	}
+	for kv, n := range want {
+		if count[kv] != n {
+			t.Errorf("%q appears %d times, want %d: %v", kv, count[kv], n, got)
+		}
+	}
+	if count["WPGO_HUB=on"] != 0 || count["WPGO_=x"] != 0 || len(got) != len(in)+3 {
+		t.Errorf("unexpected entries: %v", got)
+	}
+	if len(in) != 7 || in[0] != "PATH=/bin" {
+		t.Errorf("the input was changed: %v", in)
 	}
 }

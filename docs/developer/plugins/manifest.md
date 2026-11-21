@@ -18,7 +18,6 @@ silently drop a permission.
   "author_uri": "https://example.com",
   "plugin_uri": "https://example.com/gopher-facts",
   "requires": "0.1.0",
-  "abi": 1,
   "license": "GPL-2.0-or-later",
   "permissions": ["content:filter", "rest:routes", "options:read", "admin:settings"],
   "hooks": ["the_content", "cron_gopher_facts_refresh"],
@@ -35,7 +34,7 @@ silently drop a permission.
 | `description` | no | up to 2000 characters, plain text |
 | `author`, `author_uri`, `plugin_uri` | no | URIs must be absolute `http(s)` URLs |
 | `requires` | no | minimum Pursae version; the site refuses to install or activate a plugin that needs a newer core |
-| `abi` | no | the [plugin ABI version](abi.md#abi-versions) the package is built for: a positive integer, default `1`. A site whose Pursae does not support that version refuses to install or activate the plugin and says which ABI versions it supports (Pursae 0.5 supports `1`) |
+| `abi` | no | the [plugin ABI version](abi.md#abi-versions) the package is built for: a positive integer, `1` when absent. **Leave it out while your plugin is built for ABI 1**: Pursae releases before 0.5.0 reject a `plugin.json` with this field (`unknown field "abi"`). It is meant for ABI 2 and later, and a manifest that sets it must also set `requires` to `0.5.0` or later, or it fails validation. A site whose Pursae does not support the version refuses to install or activate the plugin and says which ABI versions it supports (Pursae 0.5 supports `1`) |
 | `requires_plugins` | no | slugs of plugins that must be active before this one can be activated (a Wasm plugin slug or a built-in plugin's Plugins screen slug, e.g. `contact-form-7`); activation is refused and lists the missing ones |
 | `license` | no | an SPDX identifier |
 | `permissions` | yes (may be empty) | from the [permission vocabulary](permissions.md); no duplicates |

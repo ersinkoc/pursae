@@ -39,7 +39,7 @@ services:
       PURSAE_SETUP_TOKEN: ${PURSAE_SETUP_TOKEN:-${WPGO_SETUP_TOKEN:-}}
       # Demo only (devhub builds): PURSAE_TRUST_DEV_KEY=1 trusts the development signing key of the
       # bundled example plugins. Its private half is public, so it stays off unless asked for.
-      PURSAE_TRUST_DEV_KEY: ${PURSAE_TRUST_DEV_KEY:-${WPGO_TRUST_DEV_KEY:-0}}
+      PURSAE_TRUST_DEV_KEY: ${PURSAE_TRUST_DEV_KEY:-${WPGO_TRUST_DEV_KEY:-}}
       # Development only (devhub builds): the Pursae Manager to use instead of https://hub.pursae.com,
       # by default the local one (pursae-manager on :8090 on the host, reached through the
       # pursae-manager.test alias below: plain http is only allowed for localhost / *.localhost /
@@ -55,11 +55,11 @@ services:
       # Development only (devhub builds): PURSAE_TRUST_HUB_KEYS=1 trusts every key the Manager lists,
       # endorsed by the release root or not, so a local Manager's throwaway key verifies updates
       # (internal/server/hub_trust.go). Off by default; automatic core updates never run under it.
-      PURSAE_TRUST_HUB_KEYS: ${PURSAE_TRUST_HUB_KEYS:-${WPGO_TRUST_HUB_KEYS:-0}}
+      PURSAE_TRUST_HUB_KEYS: ${PURSAE_TRUST_HUB_KEYS:-${WPGO_TRUST_HUB_KEYS:-}}
       # Outgoing mail (password resets, notifications). Without PURSAE_SMTP_HOST messages are only
       # written as .eml files to /data/mail.
       PURSAE_SMTP_HOST: ${PURSAE_SMTP_HOST:-${WPGO_SMTP_HOST:-}}
-      PURSAE_SMTP_PORT: ${PURSAE_SMTP_PORT:-${WPGO_SMTP_PORT:-587}}
+      PURSAE_SMTP_PORT: ${PURSAE_SMTP_PORT:-${WPGO_SMTP_PORT:-}}
       PURSAE_SMTP_USER: ${PURSAE_SMTP_USER:-${WPGO_SMTP_USER:-}}
       PURSAE_SMTP_PASS: ${PURSAE_SMTP_PASS:-${WPGO_SMTP_PASS:-}}
       PURSAE_MAIL_FROM: ${PURSAE_MAIL_FROM:-${WPGO_MAIL_FROM:-}}

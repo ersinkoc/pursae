@@ -31,10 +31,15 @@ var (
 )
 
 // Listen returns the socket inherited from the previous binary, or a new one on addr.
+//
+// When both variables are set and differ, WPGO_LISTEN_FD is the live one: a 0.5+ binary always sets
+// both to the same fd, while a release before 0.5.0 sets only WPGO_LISTEN_FD and clears only that
+// name, so a PURSAE_LISTEN_FD it inherited from a 0.5+ binary (an update that crossed 0.5.0 back and
+// forth) is stale and may name a closed or reused descriptor.
 func Listen(addr string) (net.Listener, error) {
 	v := os.Getenv(listenEnv)
-	if v == "" {
-		v = os.Getenv(legacyListenEnv)
+	if legacy := os.Getenv(legacyListenEnv); legacy != "" {
+		v = legacy
 	}
 	_ = os.Unsetenv(listenEnv)
 	_ = os.Unsetenv(legacyListenEnv)
@@ -92,7 +97,7 @@ func Restart(exe string, drainFor time.Duration) error {
 			}
 		}
 	}
-	err := execFn(exe, os.Args, env)
+	err := execBinary(exe, os.Args, env)
 	restarting.Store(false)
 	if err == nil {
 		err = errors.New("exec returned")

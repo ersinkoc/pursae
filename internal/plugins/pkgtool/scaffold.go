@@ -19,7 +19,6 @@ const manifestTmpl = `{
   "description": "",
   "author": "",
   "requires": "0.1.0",
-  "abi": 1,
   "license": "GPL-2.0-or-later",
   "permissions": ["content:filter"],
   "hooks": ["the_content"]

@@ -10,9 +10,10 @@ permalinks, mail sender, cache settings, trusted plugin keys) lives in the optio
 edited in the admin.
 
 **Names before 0.5.0.** These variables were called `WPGO_*` (`WPGO_SITE_URL`, `WPGO_SECRET` …)
-until Pursae 0.5.0. The old names still work: when only the old name is set it is used and the start-up
-log names its replacement once (`deprecated environment variable old=WPGO_SITE_URL new=PURSAE_SITE_URL`);
-when both are set to different values the `PURSAE_*` one wins and the log says the old one is ignored.
+until Pursae 0.5.0. The old names still work: when only the old name is set, or the new one is set but
+empty, the old value is used and the start-up log names its replacement once (`deprecated environment
+variable old=WPGO_SITE_URL new=PURSAE_SITE_URL`); when both are set to different non-empty values the
+`PURSAE_*` one wins and the log says the old one is ignored.
 Values are never logged. The old names are removed no earlier than 1.0; the full list is in
 [upgrading](../getting-started/upgrading.md#renamed-in-050-environment-variables-and-the-binary).
 

@@ -131,13 +131,22 @@ and makes `pursae` the binary's name. **Nothing has to change on upgrade**: the 
 working, with a deprecation warning.
 
 - **Environment variables.** The binary reads `PURSAE_<NAME>` first and falls back to
-  `WPGO_<NAME>`. A variable set only under its old name is used, and the start-up log says once
+  `WPGO_<NAME>`. A variable set only under its old name, or whose new name is set but empty, is
+  read from the old name, and the start-up log says once
   `deprecated environment variable … old=WPGO_<NAME> new=PURSAE_<NAME>`. When both names are set to
-  different values, `PURSAE_<NAME>` is used and the log says the old one is ignored. Values are
-  never logged.
+  different non-empty values, `PURSAE_<NAME>` is used and the log says the old one is ignored.
+  Values are never logged.
 - **Docker Compose.** `docker-compose.yml`, `docker/compose.yaml` and `docker/compose.prod.yaml`
   read `PURSAE_*` from `.env` / `docker/.env` and fall back to the `WPGO_*` names, so an existing
-  `.env` keeps working unchanged; the container gets the `PURSAE_*` names.
+  `.env` keeps working unchanged; the container gets the `PURSAE_*` names (empty when `.env` has
+  neither, so a `WPGO_*` value set in `docker-compose.override.yml`, an `env_file` or `docker run -e`
+  still applies). The development file `docker/compose.yaml` gives `PURSAE_SITE_URL`,
+  `PURSAE_DEV_HUB_URL` and `PURSAE_TRUSTED_PROXIES` a default of its own, which wins over a `WPGO_*`
+  name set outside `.env`: rename those three there.
+- **Rollbacks across 0.5.0.** A release before 0.5.0 reads only the `WPGO_*` names. Whenever Pursae
+  starts another binary (a core update, its rollback, Reinstall of an older version, the image's
+  launcher), it passes every `PURSAE_*` variable under its `WPGO_*` name too, unless that name is
+  already set, so going back to 0.4.x keeps the settings after you have renamed them.
 - **The binary.** Release downloads were already `pursae-<os>-<arch>`; `make build` writes
   `bin/pursae` and still a copy named `bin/wpgo`, and the image has `/usr/local/bin/pursae` and
   `/usr/local/bin/wpgo`. The binary answers to both names; `wpgo` is deprecated. Use `pursae` in
@@ -148,6 +157,13 @@ working, with a deprecation warning.
 
 To rename, change the prefix in your environment file (`sed -i 's/^WPGO_/PURSAE_/' .env`) or your
 service manager's environment, restart, and check that the log no longer warns.
+
+**Docker: update the compose files first.** Updating from the Dashboard (Updates) replaces only the
+binary; the compose files stay those of your checkout, and the ones from before 0.5.0 read only the
+`WPGO_*` names from `.env` (with `${WPGO_DB_PASSWORD:?}` and `${WPGO_SITE_URL:?}` required). Renaming
+`.env` with them makes `docker compose up` fail, or silently drops SMTP, the site URL and the proxy
+list. So `git pull` (or copy the new compose files) and `docker compose up -d` first, then rename
+`.env` and recreate the container. Inside the container the deprecation warning says this too.
 
 | Old name | New name | Where |
 |----------|----------|-------|

@@ -61,7 +61,7 @@ services:
       PURSAE_SECRET: ${PURSAE_SECRET:-${WPGO_SECRET:-}}
 
       # Pursae Manager (hub.pursae.com): 1 = on (default). off = no updates, marketplace or licenses.
-      PURSAE_HUB: ${PURSAE_HUB:-${WPGO_HUB:-1}}
+      PURSAE_HUB: ${PURSAE_HUB:-${WPGO_HUB:-}}
 
       # Reverse proxy and security
       PURSAE_TRUSTED_PROXIES: ${PURSAE_TRUSTED_PROXIES:-${WPGO_TRUSTED_PROXIES:-}}
@@ -75,7 +75,7 @@ services:
 
       # Outgoing mail. Without PURSAE_SMTP_HOST messages are written as .eml files to /data/mail.
       PURSAE_SMTP_HOST: ${PURSAE_SMTP_HOST:-${WPGO_SMTP_HOST:-}}
-      PURSAE_SMTP_PORT: ${PURSAE_SMTP_PORT:-${WPGO_SMTP_PORT:-587}}
+      PURSAE_SMTP_PORT: ${PURSAE_SMTP_PORT:-${WPGO_SMTP_PORT:-}}
       PURSAE_SMTP_USER: ${PURSAE_SMTP_USER:-${WPGO_SMTP_USER:-}}
       PURSAE_SMTP_PASS: ${PURSAE_SMTP_PASS:-${WPGO_SMTP_PASS:-}}
       PURSAE_MAIL_FROM: ${PURSAE_MAIL_FROM:-${WPGO_MAIL_FROM:-}}

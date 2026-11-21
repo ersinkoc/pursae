@@ -8,8 +8,11 @@ tested by the project today.
 
 ## ABI versions
 
-The ABI has a version number. A plugin states the version it is built for in
-[`plugin.json`](manifest.md) as `"abi": 1`; without the field it is version 1. The host lists the
+The ABI has a version number. A plugin without the [`plugin.json`](manifest.md) field `"abi"` is
+built for version 1, so a version 1 plugin leaves the field out: releases before 0.5.0 reject a
+manifest that has it. A plugin built for a later version states it (`"abi": 2`) together with
+`"requires": "0.5.0"` or later; a manifest with `"abi"` and an older or missing `requires` fails
+validation, and `"abi"` must be a positive integer. The host lists the
 versions it runs (Pursae 0.5: `[1]`, `plugins.SupportedABIs`) and refuses to install or activate a
 plugin built for any other, with an error naming the plugin's version and the supported ones.
 
