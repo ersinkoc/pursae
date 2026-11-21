@@ -40,6 +40,8 @@ type adminView struct {
 	Help           *helpTab      // contextual Help panel (screen-meta), nil when the screen has none
 	ScreenOptions  template.HTML // the Screen Options tab (screen-options-wrap), empty when the screen has none
 	Color          adminColor    // the user's admin color scheme
+	Theme          adminTheme    // the user's admin theme: WordPress Classic (default) or Pursae Modern
+	ThemeModeNonce string        // Pursae Modern: guards the account menu's dark mode switch (pursae-theme-mode)
 
 	CoreUpdate    string // a newer Pursae release for the "is available" notice (core_update_nag.go)
 	FooterUpdate  string // the same release for the footer's "Get Version X"
@@ -342,6 +344,12 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 		v.ScreenOptions = so.(template.HTML)
 	}
 	v.Color = adminColorFor(u)
+	v.Theme = adminThemeFor(u)
+	if v.Theme.Modern() { // Pursae Modern has its own colours: the colour schemes do not apply
+		v.Color = adminColors[0]
+		v.ThemeModeNonce = s.nonce(c, "pursae-theme-mode")
+	}
+	rememberAdminLook(c, v.Theme)
 	if tmpl != "admin/block-editor" && tmpl != "admin/dashboard" {
 		v.Help = helpFor(v.AdminPage, v.TypeNow)
 	}
@@ -462,6 +470,10 @@ func (s *Server) adminAjax(c *gin.Context) {
 		s.inlineSave(c)
 	case "inline-save-tax":
 		s.inlineSaveTax(c)
+	case "pursae-term-order": // Pursae Modern: drag and drop / arrows on the category and tag lists
+		s.termOrderAjax(c)
+	case "pursae-theme-mode": // Pursae Modern: light / dark / system colours
+		s.themeModeAjax(c)
 	case "ajax-tag-search":
 		s.tagSearchAjax(c)
 	case "replyto-comment":

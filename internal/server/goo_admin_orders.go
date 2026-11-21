@@ -1061,7 +1061,7 @@ func (s *Server) gooOrderEditView(c *gin.Context, o *gooOrder) *gooOrderEditData
 	notes, _ := s.gooOrderNotes(ctx, o.ID, false)
 	for _, n := range notes {
 		row := gooNoteRow{ID: n.ID, Content: template.HTML(wp.KsesPost(n.Content)), Customer: n.IsCustomer,
-			Date: "added on " + n.CreatedAt.In(s.loc()).Format("January 2, 2006 \\a\\t 3:04 pm"), By: n.AddedBy}
+			Date: "added on " + n.CreatedAt.In(s.loc()).Format("January 2, 2006 at 3:04 pm"), By: n.AddedBy}
 		row.Class = "note"
 		if n.IsCustomer {
 			row.Class += " customer-note"

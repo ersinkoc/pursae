@@ -72,12 +72,13 @@
 <table class="wp-list-table widefat fixed striped table-view-list tags">
 	<caption class="screen-reader-text">Table ordered by Name. Ascending.</caption>
 	<thead>{{template "terms-head" dict "Top" true "D" .}}</thead>
-	<tbody id="the-list" data-wp-lists="list:tag">
+	<tbody id="the-list" data-wp-lists="list:tag"{{if .Sortable}} data-pm-sort="{{.Labels.Tax}}" data-pm-nonce="{{.OrderNonce}}"{{end}}>
 	{{range .Rows}}{{template "terms-row" dict "R" . "D" $.Data}}
 	{{else}}<tr class="no-items"><td class="colspanchange" colspan="{{.ColCount}}">{{.Labels.NotFound}}</td></tr>
 	{{end}}
 	</tbody>
 	<tfoot>{{template "terms-head" dict "Top" false "D" .}}</tfoot>
+	{{if .Sortable}}<div id="pm-sort-labels" hidden><span data-k="handle">Drag to reorder</span><span data-k="up">Move up</span><span data-k="down">Move down</span><span data-k="saved">Order saved</span><span data-k="failed">The order could not be saved.</span><span data-k="hint">Drag the rows, or use the arrows, to set the order your site shows them in.</span></div>{{end}}
 </table>
 <div class="tablenav bottom">
 	<div class="alignleft actions bulkactions">

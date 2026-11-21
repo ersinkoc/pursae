@@ -17,7 +17,21 @@
 <p><label for="classic-editor-user-classic"><input type="radio" name="classic-editor-user-settings" id="classic-editor-user-classic" value="classic"{{if eq .DefaultEditor "classic"}} checked="checked"{{end}} /> Classic editor</label></p>
 <p><label for="classic-editor-user-block"><input type="radio" name="classic-editor-user-settings" id="classic-editor-user-block" value="block"{{if ne .DefaultEditor "classic"}} checked="checked"{{end}} /> Pursae Editor (block editor)</label></p>
 <p class="description">Used for posts and pages that have not been opened in an editor yet.</p></fieldset></td></tr>
-{{end}}<tr class="user-admin-color-wrap"><th scope="row">Administration Color Scheme</th>
+{{end}}<tr class="user-admin-theme-wrap"><th scope="row">Administration Theme</th>
+<td><fieldset id="admin-theme-picker" class="admin-theme-list">
+	<legend class="screen-reader-text"><span>Administration Theme</span></legend>
+	{{$curTheme := .Theme}}{{range .Themes}}<label class="admin-theme-option admin-theme-{{.Slug}}{{if eq .Slug $curTheme}} selected{{end}}" for="admin_theme_{{.Slug}}">
+		<span class="admin-theme-preview" aria-hidden="true"><i></i><b></b><em></em></span>{{if eq .Slug "modern"}}<span class="admin-theme-badge">Beta</span>{{end}}
+		<span class="admin-theme-text"><input name="admin_theme" id="admin_theme_{{.Slug}}" type="radio" value="{{.Slug}}"{{if eq .Slug $curTheme}} checked="checked"{{end}} /> <strong>{{.Name}}</strong>
+		<span class="description">{{.Description}}</span></span>
+	</label>
+	{{end}}
+	<p class="description">Applies to your own account. WordPress Classic is the default.</p>
+</fieldset>
+<fieldset id="admin-theme-mode" class="admin-theme-mode"><legend>Pursae Modern colours</legend>
+	{{$curMode := .ThemeMode}}{{range .ThemeModes}}<label><input type="radio" name="admin_theme_mode" value="{{.Slug}}"{{if eq .Slug $curMode}} checked="checked"{{end}} /> {{.Name}}</label>{{end}}
+</fieldset></td></tr>
+<tr class="user-admin-color-wrap"><th scope="row">Administration Color Scheme</th>
 <td><fieldset id="color-picker" class="scheme-list">
 	<legend class="screen-reader-text"><span>Administration Color Scheme</span></legend>
 	{{$cur := .Color}}{{range .Colors}}<div class="color-option{{if eq .Slug $cur}} selected{{end}}">

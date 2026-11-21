@@ -145,7 +145,7 @@ type TermQuery struct {
 	Taxonomy  string
 	Search    string
 	HideEmpty bool
-	OrderBy   string // name, count, slug, id, description
+	OrderBy   string // "" (the manual order, then name), name, count, slug, id, description, term_order
 	Order     string
 	Page      int
 	PerPage   int
@@ -172,6 +172,7 @@ func (s *Store) QueryTerms(ctx context.Context, q TermQuery) ([]*Term, int, erro
 		return nil, 0, err
 	}
 	col := "lower(name)"
+	manual := q.OrderBy == "" || q.OrderBy == "term_order"
 	switch q.OrderBy {
 	case "count":
 		col = "post_count"
@@ -186,7 +187,11 @@ func (s *Store) QueryTerms(ctx context.Context, q TermQuery) ([]*Term, int, erro
 	if strings.EqualFold(q.Order, "desc") {
 		dir = "DESC"
 	}
-	sql := `SELECT ` + termCols + ` FROM terms WHERE ` + where + ` ORDER BY ` + col + ` ` + dir + `, id`
+	orderBy := col + ` ` + dir + `, id`
+	if manual { // terms placed by hand (meta "order", Pursae Modern's drag and drop) first, the rest by name
+		orderBy = termOrderExpr + ` ` + dir + ` NULLS LAST, lower(name), id`
+	}
+	sql := `SELECT ` + termCols + ` FROM terms WHERE ` + where + ` ORDER BY ` + orderBy
 	if q.PerPage > 0 {
 		page := q.Page
 		if page < 1 {
@@ -529,4 +534,16 @@ func orEmpty(m map[string]any) map[string]any {
 		return map[string]any{}
 	}
 	return m
+}
+
+// termOrderExpr is a term's manual position: meta "order" when it is an integer (WooCommerce keeps
+// product_cat positions under the same key), NULL otherwise.
+const termOrderExpr = `(CASE WHEN meta->>'order' ~ '^-?[0-9]{1,9}$' THEN (meta->>'order')::int END)`
+
+// SetTermOrder stores ids, in that order, as the manual order (meta "order" = 1, 2, …) of the terms
+// of taxonomy; ids of other taxonomies are ignored.
+func (s *Store) SetTermOrder(ctx context.Context, taxonomy string, ids []int64) error {
+	_, err := s.Pool.Exec(ctx, `UPDATE terms t SET meta = coalesce(t.meta, '{}'::jsonb) || jsonb_build_object('order', o.ord)
+		FROM unnest($2::bigint[]) WITH ORDINALITY AS o(id, ord) WHERE t.id = o.id AND t.taxonomy = $1`, taxonomy, ids)
+	return err
 }

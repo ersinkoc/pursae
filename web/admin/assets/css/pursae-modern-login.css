@@ -1,0 +1,158 @@
+/*
+ * Pursae Modern on the log-in, lost-password, reset and register screens.
+ *
+ * Those screens have no user yet, so the admin remembers the look in the wpgo_admin_look cookie
+ * (admin_theme.go) and an inline script adds html.pm-login (+ pm-login-light|dark|auto) before the
+ * first paint. Without that class nothing here applies and the screens stay WordPress Classic.
+ */
+
+
+.pm-login-aside { display: none; }
+
+html.pm-login {
+	--pl-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	--pl-canvas: #F4F4F5;
+	--pl-bg: #FFFFFF;
+	--pl-field: #FFFFFF;
+	--pl-border: #E6E6E8;
+	--pl-border-2: #D6D7DB;
+	--pl-text: #16171A;
+	--pl-body: #2A2C31;
+	--pl-muted: #565B63;
+	--pl-faint: #868B93;
+	--pl-primary: #4C60EF;
+	--pl-primary-hover: #3346D6;
+	--pl-primary-50: #EEF1FE;
+	--pl-on-primary: #FFFFFF;
+	--pl-bad: #D3475B;
+	--pl-ok: #1C9A62;
+	--pl-chrome: #16171A;
+	background: var(--pl-canvas);
+}
+html.pm-login-dark {
+	--pl-canvas: #0F1013; --pl-bg: #17191E; --pl-field: #121317; --pl-border: #2A2D35; --pl-border-2: #3A3E47;
+	--pl-text: #ECEDEF; --pl-body: #D3D5DA; --pl-muted: #A7ABB3; --pl-faint: #7F848D;
+	--pl-primary: #8796EC; --pl-primary-hover: #A3AFF2; --pl-primary-50: rgba(135, 150, 236, .14); --pl-on-primary: #0F1013;
+	--pl-bad: #F28B9A; --pl-ok: #5BD39A; color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+	html.pm-login-auto {
+		--pl-canvas: #0F1013; --pl-bg: #17191E; --pl-field: #121317; --pl-border: #2A2D35; --pl-border-2: #3A3E47;
+		--pl-text: #ECEDEF; --pl-body: #D3D5DA; --pl-muted: #A7ABB3; --pl-faint: #7F848D;
+		--pl-primary: #8796EC; --pl-primary-hover: #A3AFF2; --pl-primary-50: rgba(135, 150, 236, .14); --pl-on-primary: #0F1013;
+		--pl-bad: #F28B9A; --pl-ok: #5BD39A; color-scheme: dark;
+	}
+}
+
+html.pm-login body.login {
+	display: flex; min-height: 100vh; margin: 0; padding: 0;
+	background: var(--pl-canvas); color: var(--pl-body);
+	font-family: var(--pl-font); font-size: 14px; -webkit-font-smoothing: antialiased;
+}
+html.pm-login body.login :is(input, button, select, textarea, label, p, a) { font-family: var(--pl-font); }
+
+/* brand panel */
+html.pm-login .pm-login-aside {
+	display: flex; flex-direction: column; justify-content: space-between;
+	width: 42%; max-width: 560px; min-height: 100vh; box-sizing: border-box; padding: 44px 48px;
+	background:
+		radial-gradient(70% 60% at 80% 35%, rgba(76, 96, 239, .30), transparent 70%),
+		repeating-linear-gradient(90deg, transparent 0 56px, rgba(135, 150, 236, .06) 56px 112px),
+		var(--pl-chrome);
+	color: #DADBDE;
+}
+html.pm-login .pm-login-brand { display: flex; align-items: center; gap: 12px; color: #fff; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+html.pm-login .pm-login-site { margin: 0; color: #fff; font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
+html.pm-login .pm-login-tag { margin: 12px 0 0; color: #A8ACB3; font-size: 15px; }
+html.pm-login .pm-login-foot { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #7C8189; }
+
+/* the form column */
+html.pm-login #login {
+	flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+	width: auto; margin: 0; padding: 48px 24px; box-sizing: border-box;
+}
+html.pm-login #login > * { width: 100%; max-width: 380px; box-sizing: border-box; }
+html.pm-login #login h1.wp-login-logo { display: none; }
+html.pm-login #loginform,
+html.pm-login #lostpasswordform,
+html.pm-login #registerform,
+html.pm-login #resetpassform,
+html.pm-login .login form {
+	margin: 0; padding: 28px 28px 24px; overflow: hidden;
+	background: var(--pl-bg); border: 1px solid var(--pl-border); border-radius: 0; box-shadow: none;
+}
+html.pm-login .login label { color: var(--pl-text); font-size: 13.5px; font-weight: 500; line-height: 1.5; }
+html.pm-login .login form .input,
+html.pm-login .login input[type=text],
+html.pm-login .login input[type=email],
+html.pm-login .login input[type=password] {
+	height: 44px; min-height: 44px; margin: 6px 0 18px; padding: 0 12px;
+	background: var(--pl-field); color: var(--pl-text); border: 1px solid var(--pl-border-2); border-radius: 0; box-shadow: none;
+	font-size: 15px; line-height: 1;
+}
+html.pm-login .login form .input:focus,
+html.pm-login .login input:focus { border-color: var(--pl-primary); box-shadow: 0 0 0 3px var(--pl-primary-50); outline: 0; }
+html.pm-login .login .wp-pwd { position: relative; }
+html.pm-login .login .wp-pwd .input { padding-right: 46px; }
+html.pm-login .login .button.wp-hide-pw {
+	top: 7px; right: 1px; width: 42px; height: 42px; min-height: 42px; margin: 0; padding: 0;
+	background: transparent; border: 0; border-radius: 0; box-shadow: none; color: var(--pl-faint);
+}
+html.pm-login .login .button.wp-hide-pw:hover, html.pm-login .login .button.wp-hide-pw:focus { color: var(--pl-primary); background: transparent; box-shadow: none; }
+html.pm-login .login .forgetmenot { float: none; margin: 0 0 18px; }
+html.pm-login .login .forgetmenot label { font-weight: 400; color: var(--pl-muted); }
+html.pm-login .login input[type=checkbox] { width: 18px; height: 18px; border: 1px solid var(--pl-border-2); border-radius: 3px; background: var(--pl-field); box-shadow: none; }
+html.pm-login .login input[type=checkbox]:checked { background: var(--pl-primary); border-color: var(--pl-primary); }
+html.pm-login .login input[type=checkbox]:checked::before { content: url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20d%3D%27M14.83%204.89l1.34.94-5.81%208.38H9.02L5.78%209.67l1.34-1.25%202.57%202.4z%27%20fill%3D%27%23ffffff%27%2F%3E%3C%2Fsvg%3E"); margin: -2px 0 0 -2px; }
+html.pm-login .login .submit { float: none; clear: both; margin: 0; padding: 0; }
+html.pm-login .login .button-primary,
+html.pm-login .wp-core-ui .button-primary {
+	float: none; width: 100%; height: 46px; min-height: 46px; line-height: 44px; margin: 0;
+	background: var(--pl-primary); border: 1px solid var(--pl-primary); border-radius: 0; box-shadow: none;
+	color: var(--pl-on-primary); font-size: 15px; font-weight: 500; text-shadow: none;
+}
+html.pm-login .login .button-primary:hover,
+html.pm-login .login .button-primary:focus { background: var(--pl-primary-hover); border-color: var(--pl-primary-hover); color: var(--pl-on-primary); box-shadow: 0 0 0 3px var(--pl-primary-50); }
+html.pm-login .login .button:not(.button-primary):not(.wp-hide-pw) {
+	background: var(--pl-bg); border: 1px solid var(--pl-border-2); border-radius: 0; color: var(--pl-text); box-shadow: none;
+}
+html.pm-login .login .description, html.pm-login .login .indicator-hint { color: var(--pl-faint); font-size: 13px; }
+html.pm-login .login #pass-strength-result { border-radius: 0; }
+
+/* notices */
+html.pm-login .login .notice, html.pm-login .login .message, html.pm-login .login #login_error, html.pm-login .login .success {
+	margin: 0 0 16px; padding: 12px 14px; background: var(--pl-bg); color: var(--pl-body);
+	border: 1px solid var(--pl-border); border-left: 3px solid var(--pl-primary); border-radius: 0; box-shadow: none;
+}
+html.pm-login .login #login_error, html.pm-login .login .notice-error { border-left-color: var(--pl-bad); }
+html.pm-login .login .success, html.pm-login .login .notice-success { border-left-color: var(--pl-ok); }
+html.pm-login .login .notice p, html.pm-login .login .message p { margin: 0; }
+
+/* links under the form */
+html.pm-login .login #nav, html.pm-login .login #backtoblog { margin: 18px 0 0; padding: 0; text-align: center; font-size: 13.5px; color: var(--pl-faint); }
+html.pm-login .login #backtoblog { margin-top: 8px; }
+html.pm-login .login #nav a, html.pm-login .login #backtoblog a { color: var(--pl-muted); text-decoration: none; }
+html.pm-login .login #nav a:hover, html.pm-login .login #backtoblog a:hover { color: var(--pl-primary); }
+html.pm-login .login a:focus { box-shadow: 0 0 0 2px var(--pl-primary-50); outline: 1px solid var(--pl-primary); }
+html.pm-login .login .privacy-policy-page-link { margin: 24px 0 0; text-align: center; }
+html.pm-login .login .privacy-policy-page-link a { color: var(--pl-faint); }
+
+/* language switcher */
+html.pm-login .language-switcher { margin-top: 28px; padding: 0; }
+html.pm-login .language-switcher form { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0; background: transparent; border: 0; }
+html.pm-login .language-switcher label .dashicons { color: var(--pl-faint); }
+html.pm-login .language-switcher label { display: flex; align-items: center; align-self: stretch; margin: 0; }
+html.pm-login .language-switcher select {
+	height: 36px; min-height: 36px; margin: 0; padding: 0 32px 0 12px; line-height: 34px; vertical-align: middle;
+	background-color: var(--pl-field); background-position: right 10px center; color: var(--pl-text);
+	border: 1px solid var(--pl-border-2); border-radius: 0; font-size: 14px;
+}
+html.pm-login .language-switcher .button { height: 36px; min-height: 36px; margin: 0; padding: 0 16px; line-height: 34px; width: auto; font-size: 14px; vertical-align: middle; }
+
+/* narrow screens: no brand panel, the mark above the form */
+@media screen and (max-width: 900px) {
+	html.pm-login body.login { display: block; }
+	html.pm-login .pm-login-aside { display: none; }
+	html.pm-login #login { min-height: 100vh; padding: 40px 16px; }
+	html.pm-login #login h1.wp-login-logo { display: block; margin-bottom: 20px; }
+}
