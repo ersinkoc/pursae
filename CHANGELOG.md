@@ -17,3 +17,13 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   CHANGELOG section. `RELEASE_SKIP_CI_CHECK=1` overrides the CI check in an emergency, with a warning.
 - Release notes come from this file's section for the version (`NOTES_FILE` still overrides them).
 - golangci-lint runs in CI (new issues only) and as `make lint`.
+- Upgrade-path test (`make upgrade-test`, CI job `upgrade`): installs v0.2.0 and the last three releases,
+  seeds users, content, media, menus, settings and a Web Builder page through each release's own paths,
+  then migrates to the current code and checks that every seeded value, login and file survived.
+- Migration lint: new migrations need a unique `NNNN_name.sql` number, and destructive statements
+  (DROP TABLE/COLUMN, ALTER … TYPE, RENAME) need a `-- pursae:contract` marker.
+
+### Changed
+
+- Docs: `upgrading.md` describes the expand/contract policy for schema changes instead of claiming that
+  releases only add schema (0028, 0038 and 0105 drop tables or columns).

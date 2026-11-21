@@ -60,6 +60,38 @@ jobs:
       - name: test
         run: go test ./... -p 1 -count=1 -timeout 40m
 
+  # Upgrade path: v0.2.0 and the three newest releases each install and fill a site, then this commit
+  # migrates and serves it and checks that every user, post, page, term, comment, menu, media file,
+  # option and Web Builder page is unchanged (tools/upgrade-test.sh, make upgrade-test).
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: wpgo
+          POSTGRES_USER: wpgo
+          POSTGRES_PASSWORD: wpgo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wpgo -d wpgo"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      CGO_ENABLED: "0"
+      UPGRADE_ADMIN_DSN: postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable
+      # Each release builds with the Go its go.mod asks for.
+      GOTOOLCHAIN: auto
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the release tags
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: upgrade test
+        run: tools/upgrade-test.sh
+
   # Data races in the unit tests (no database: the integration tests skip without WPGO_TEST_DB).
   race:
     runs-on: ubuntu-latest

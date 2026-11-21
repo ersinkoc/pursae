@@ -41,7 +41,10 @@ within the two minutes, it puts `<executable>.prev` back itself and hands the so
 (*Pursae X started but did not answer requests, so the site went back to Y*). If re-executing fails
 outright, the previous binary is put back at once. Without a supervisor nothing restarts a crashed process, so
 run Pursae under one. Migrations are forward-only: a rolled-back site keeps any migration the new
-version applied, which is why releases only add schema.
+version applied, so the previous release must still run on the new schema. New migrations follow
+the expand/contract rule that guarantees this ([schema changes](#schema-changes)); a few older
+ones did not (`0028`, `0038`, `0105` drop tables or columns), and their release notes ask for a
+backup.
 
 **Automatic updates.** Dashboard › Updates › *Automatic updates* (off by default, option
 `pursae_core_auto_update`) lets the daily Manager check (`wpgo_hub_check`) install a newer release
@@ -127,6 +130,36 @@ serving, which is handy in a deploy step.
    ([Hub](../hub/index.md)).
 3. Check plugin compatibility: a plugin's `plugin.json` names the minimum core version it needs
    (`requires`); the Plugins screen refuses to activate one that needs a newer core.
+
+## Schema changes
+
+For contributors: how a migration keeps the previous release working, so an update can roll back
+(above) and several instances can run different versions during a deploy.
+
+- **Expand, then contract.** A release may add tables, columns (nullable or with a default),
+  indexes and constraints the previous release does not violate. It may not drop, rename or
+  retype anything the previous release still reads or writes. To remove or change something,
+  release N stops using it (and, for a rename, writes both the old and the new place); release
+  N+1 or later drops it. The previous minor release then still runs on the new schema.
+- **Mark the contract step.** A migration that drops a table or column, changes a column's type
+  or renames anything carries a `-- pursae:contract` comment that says which release stopped
+  using it. `TestMigrationsExpandContract` (`internal/db/migrations_lint_test.go`) fails on such
+  a statement in a new migration without the marker; `0028`, `0038` and `0105` predate the rule.
+- **File names.** `NNNN_name.sql` with the next free number. The duplicate numbers that shipped
+  (`0016` ×9, `0020`, `0032`, `0098` ×2) stay as they are, since `schema_migrations` records the
+  full name; `TestMigrationFileNames` refuses new ones.
+- **Large rewrites.** A migration that rewrites a large table (like `0105`, which re-adds the
+  generated `posts.search` column and so rewrites every post) or locks it for long is called out
+  in the CHANGELOG and the release notes, with its expected duration. Index builds on large
+  tables use `CREATE INDEX CONCURRENTLY` in their own `-- wpgo:no-transaction` file
+  (`internal/db/db.go`).
+- **The upgrade test.** `make upgrade-test` (the `upgrade` CI job, on every pull request) builds
+  v0.2.0 and the three newest release tags, lets each install and fill a site through its own
+  installer, login and REST API (users, terms, media, posts, pages, a custom field, comments, a
+  menu, settings, an Application Password, a Web Builder page), then runs this checkout's
+  `migrate` and `serve` on it. It fails when a table loses rows in the migration, a seeded user
+  cannot log in with the old password, any recorded field differs, the uploaded file changed, or
+  the front page or a permalink stops answering 200 ([install from source](install-binary.md)).
 
 ## Release notes
 
