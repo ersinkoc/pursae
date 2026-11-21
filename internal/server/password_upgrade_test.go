@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/config"
 	"wpgo/internal/store"
 )
 
@@ -143,7 +143,7 @@ func TestCLIUserCreatePassHash(t *testing.T) {
 	ts, c, srv := newTestServer(t, false)
 	installAndLogin(t, ts, c)
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	ctx := context.Background()
 	run := func(want bool, args ...string) {
 		t.Helper()

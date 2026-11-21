@@ -636,7 +636,7 @@ func TestPluginSyncFollowsDatabaseAndLifecycleIsOwned(t *testing.T) {
 }
 
 // plugin_allow_unsigned alone (a database or CLI write) does not accept unsigned packages: the server
-// must also run with WPGO_ALLOW_UNSIGNED_PLUGINS=1 (PLG27-001).
+// must also run with PURSAE_ALLOW_UNSIGNED_PLUGINS=1 (PLG27-001).
 func TestUnsignedPluginsNeedEnvironmentOptIn(t *testing.T) {
 	_, _, srv := testServerBuilderOff(t)
 	ctx := context.Background()

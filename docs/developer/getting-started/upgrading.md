@@ -28,7 +28,7 @@ X**. The site then:
    version runs its migrations on start.
 
 The restart does not drop visitors: the listening socket is handed to the new binary
-(`WPGO_LISTEN_FD`), requests in flight finish first (up to 10 seconds), and connections that arrive
+(`PURSAE_LISTEN_FD`), requests in flight finish first (up to 10 seconds), and connections that arrive
 meanwhile wait in the kernel's queue until the new version accepts them — a second or two, no
 error page, also behind a proxy such as Traefik in Dokploy.
 
@@ -53,7 +53,7 @@ backup.
 by itself, through the same steps as the button, rollback included. Only **patch releases of the
 running minor version** are installed automatically (0.3.1 → 0.3.2); a new minor or major version
 (0.3.x → 0.4.0) waits for a click on *Update to version X*. Before each automatic update the
-database is backed up into the backups directory (`WPGO_BACKUPS_DIR`) as a database-only Backup
+database is backed up into the backups directory (`PURSAE_BACKUPS_DIR`) as a database-only Backup
 Manager archive (`pre-update-*.zip`: every table and user, no media, theme or plugin files), also
 when the Backup Manager plugin is off; the newest **3** of these are kept. When that backup fails
 (the disk is full, another backup or restore is running) the update is skipped, nothing changes and
@@ -97,8 +97,8 @@ such a binary built on a glibc machine does not start in the Alpine image.
 
 ## Docker
 
-The image starts with `wpgo launch`: it installs its binary into the `bin` volume (`/data/bin`,
-`WPGO_BIN_DIR`) and runs it from there, so an update made from Dashboard › Updates replaces that
+The image starts with `pursae launch`: it installs its binary into the `bin` volume (`/data/bin`,
+`PURSAE_BIN_DIR`) and runs it from there, so an update made from Dashboard › Updates replaces that
 copy and survives container restarts. A newer image wins: when the image's binary reports a higher
 version than the installed one, `launch` installs the image's. A rebuilt image that reports the
 same version (development builds without `VERSION`) also wins when its binary differs from the
@@ -117,12 +117,94 @@ A development stack is updated the same way with `git pull && make docker-up`.
 ```bash
 git pull
 make build
-systemctl restart wpgo    # or however you run it
+systemctl restart pursae  # or however you run it
 ```
 
 Several instances may start at the same time: the migration runner takes a PostgreSQL advisory
-lock, applies the missing migrations once and releases it. `wpgo migrate` applies them without
+lock, applies the missing migrations once and releases it. `pursae migrate` applies them without
 serving, which is handy in a deploy step.
+
+## Renamed in 0.5.0: environment variables and the binary
+
+Pursae 0.5.0 renames every `WPGO_*` environment variable to `PURSAE_*` (same suffix, same meaning)
+and makes `pursae` the binary's name. **Nothing has to change on upgrade**: the old names keep
+working, with a deprecation warning.
+
+- **Environment variables.** The binary reads `PURSAE_<NAME>` first and falls back to
+  `WPGO_<NAME>`. A variable set only under its old name is used, and the start-up log says once
+  `deprecated environment variable … old=WPGO_<NAME> new=PURSAE_<NAME>`. When both names are set to
+  different values, `PURSAE_<NAME>` is used and the log says the old one is ignored. Values are
+  never logged.
+- **Docker Compose.** `docker-compose.yml`, `docker/compose.yaml` and `docker/compose.prod.yaml`
+  read `PURSAE_*` from `.env` / `docker/.env` and fall back to the `WPGO_*` names, so an existing
+  `.env` keeps working unchanged; the container gets the `PURSAE_*` names.
+- **The binary.** Release downloads were already `pursae-<os>-<arch>`; `make build` writes
+  `bin/pursae` and still a copy named `bin/wpgo`, and the image has `/usr/local/bin/pursae` and
+  `/usr/local/bin/wpgo`. The binary answers to both names; `wpgo` is deprecated. Use `pursae` in
+  service files and scripts.
+- **Removal.** The `WPGO_*` names and the `wpgo` binary name are removed **no earlier than 1.0**, and
+  only after a release that announces it under *Deprecated* in `CHANGELOG.md`
+  ([compatibility policy](../compatibility.md)).
+
+To rename, change the prefix in your environment file (`sed -i 's/^WPGO_/PURSAE_/' .env`) or your
+service manager's environment, restart, and check that the log no longer warns.
+
+| Old name | New name | Where |
+|----------|----------|-------|
+| `WPGO_ADDR` | `PURSAE_ADDR` | server |
+| `WPGO_SITE_URL` | `PURSAE_SITE_URL` | server, compose |
+| `WPGO_UPLOADS_DIR` | `PURSAE_UPLOADS_DIR` | server |
+| `WPGO_SECRET` | `PURSAE_SECRET` | server, compose |
+| `WPGO_SETUP_TOKEN` | `PURSAE_SETUP_TOKEN` | server, compose |
+| `WPGO_WEB_DIR` | `PURSAE_WEB_DIR` | server (development) |
+| `WPGO_HUB` | `PURSAE_HUB` | server, compose |
+| `WPGO_DEV_HUB_URL` | `PURSAE_DEV_HUB_URL` | server (`devhub` builds), compose (development) |
+| `WPGO_TRUST_HUB_KEYS` | `PURSAE_TRUST_HUB_KEYS` | server (`devhub` builds), compose (development) |
+| `WPGO_TRUST_DEV_KEY` | `PURSAE_TRUST_DEV_KEY` | server (`devhub` builds), compose |
+| `WPGO_THEME_LIBRARY_DIR` | `PURSAE_THEME_LIBRARY_DIR` | server |
+| `WPGO_TRUSTED_PROXIES` | `PURSAE_TRUSTED_PROXIES` | server, compose |
+| `WPGO_EXPOSE_USERS` | `PURSAE_EXPOSE_USERS` | server, compose |
+| `WPGO_ALLOW_UNSIGNED_PLUGINS` | `PURSAE_ALLOW_UNSIGNED_PLUGINS` | server |
+| `WPGO_PLUGIN_KEYS` | `PURSAE_PLUGIN_KEYS` | server, compose |
+| `WPGO_MARKET_DIR` | `PURSAE_MARKET_DIR` | server |
+| `WPGO_LANG_DIR` | `PURSAE_LANG_DIR` | server |
+| `WPGO_TRANSLATIONS_API` | `PURSAE_TRANSLATIONS_API` | server |
+| `WPGO_SMTP_HOST` | `PURSAE_SMTP_HOST` | server, compose |
+| `WPGO_SMTP_PORT` | `PURSAE_SMTP_PORT` | server, compose |
+| `WPGO_SMTP_USER` | `PURSAE_SMTP_USER` | server, compose |
+| `WPGO_SMTP_PASS` | `PURSAE_SMTP_PASS` | server, compose |
+| `WPGO_MAIL_FROM` | `PURSAE_MAIL_FROM` | server, compose |
+| `WPGO_MAIL_DIR` | `PURSAE_MAIL_DIR` | server |
+| `WPGO_GEOIP_DB` | `PURSAE_GEOIP_DB` | server |
+| `WPGO_GEOIP_UPDATE` | `PURSAE_GEOIP_UPDATE` | server, compose |
+| `WPGO_BIN_DIR` | `PURSAE_BIN_DIR` | server (the image sets both names) |
+| `WPGO_BACKUPS_DIR` | `PURSAE_BACKUPS_DIR` | server |
+| `WPGO_THEMES_DIR` | `PURSAE_THEMES_DIR` | server |
+| `WPGO_DISALLOW_FILE_EDIT` | `PURSAE_DISALLOW_FILE_EDIT` | server, compose |
+| `WPGO_POST_REVISIONS` | `PURSAE_POST_REVISIONS` | server, compose |
+| `WPGO_EMPTY_TRASH_DAYS` | `PURSAE_EMPTY_TRASH_DAYS` | server, compose |
+| `WPGO_LOG_FORMAT` | `PURSAE_LOG_FORMAT` | server, compose |
+| `WPGO_FIREWALL` | `PURSAE_FIREWALL` | server, compose |
+| `WPGO_ADMINSEC_DISABLE_HIDE_LOGIN` | `PURSAE_ADMINSEC_DISABLE_HIDE_LOGIN` | server, compose |
+| `WPGO_CDN_SETTINGS` | `PURSAE_CDN_SETTINGS` | server, compose |
+| `WPGO_ALLOW_OLDER_BINARY` | `PURSAE_ALLOW_OLDER_BINARY` | server |
+| `WPGO_MIGRATE_LOCK_TIMEOUT` | `PURSAE_MIGRATE_LOCK_TIMEOUT` | server |
+| `WPGO_MIGRATE_STATEMENT_TIMEOUT` | `PURSAE_MIGRATE_STATEMENT_TIMEOUT` | server |
+| `WPGO_I18N_MISSES` | `PURSAE_I18N_MISSES` | server (development) |
+| `WPGO_BUILDER_AI`, `WPGO_BUILDER_AI_*` | `PURSAE_BUILDER_AI`, `PURSAE_BUILDER_AI_*` | Web Builder AI (designed, not read yet: [contract](../web-builder-contract.md)) |
+| `WPGO_DB_PASSWORD` | `PURSAE_DB_PASSWORD` | compose |
+| `WPGO_DB_NAME`, `WPGO_DB_USER` | `PURSAE_DB_NAME`, `PURSAE_DB_USER` | compose (`docker-compose.yml`) |
+| `WPGO_DB_PORT` | `PURSAE_DB_PORT` | compose (development), `make test`, `make upgrade-test` |
+| `WPGO_PORT`, `WPGO_BIND` | `PURSAE_PORT`, `PURSAE_BIND` | compose |
+| `WPGO_VERSION`, `WPGO_GO_TAGS` | `PURSAE_VERSION`, `PURSAE_GO_TAGS` | compose (image build arguments) |
+| `WPGO_SIGNING_KEY` | `PURSAE_SIGNING_KEY` | `tools/build-plugins.sh` |
+| `WPGO_TEST_DB`, `WPGO_TEST_ADMIN_DB` | `PURSAE_TEST_DB`, `PURSAE_TEST_ADMIN_DB` | Go integration tests, `make test`, CI |
+| `WPGO_PERF_SQL`, `WPGO_PERF_STACK`, `WPGO_PERF_DUMP`, `WPGO_I18N_MISSES_*`, `WPGO_SCAN_CORPUS`, `WPGO_BENCH_HTML` | `PURSAE_…` (same suffix) | Go tests (opt-in reports) |
+
+`WPGO_LISTEN_FD` and `WPGO_CLI_REEXEC` are not settings: one Pursae process passes them to the next
+(a core update hands over its socket; the CLI switches to the installed binary). 0.5.0 sets and reads
+both the `PURSAE_` and the `WPGO_` name, so updates and rollbacks across 0.5.0 work in both
+directions, and does not warn about them.
 
 ## Before you upgrade
 

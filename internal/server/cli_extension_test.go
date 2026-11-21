@@ -182,9 +182,9 @@ func TestExtensionCLIRegistered(t *testing.T) {
 	}
 }
 
-// extTestConfig is a config whose database is unreachable unless WPGO_TEST_DB is set: help never connects.
+// extTestConfig is a config whose database is unreachable unless PURSAE_TEST_DB is set: help never connects.
 func extTestConfig() (cfg config.Config) {
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	if cfg.DatabaseURL == "" {
 		cfg.DatabaseURL = "postgres://invalid.invalid:1/none"
 	}
@@ -196,7 +196,7 @@ func TestExtensionCLIDatabase(t *testing.T) {
 	ts, client, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, client)
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	run := func(args ...string) (int, string, string) {
 		t.Helper()
 		var out, errb bytes.Buffer
@@ -295,7 +295,7 @@ func TestExtensionCLIPackages(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	run := func(args ...string) (int, string, string) {
 		t.Helper()
 		var out, errb bytes.Buffer

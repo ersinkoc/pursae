@@ -26,7 +26,7 @@ import (
 // Pursae Security › Integrity: the file integrity scan (Wordfence's "core file" scan, for a site
 // whose core is one Go binary). It checks
 //   - the core: with the web files embedded (production) the binary's SHA-256 is recorded, and a
-//     binary that changed while the version stayed the same is reported; with WPGO_WEB_DIR set
+//     binary that changed while the version stayed the same is reported; with PURSAE_WEB_DIR set
 //     (development) every file on disk is compared with the copy the binary carries;
 //   - the bundled themes: edited copies in the themes directory (Theme File Editor overrides) that
 //     differ from the bundled file;
@@ -131,7 +131,7 @@ func (s *Server) asIntegrityScan(ctx context.Context, prev *asIntegrityReport) *
 		}
 	}
 	if dir := s.cfg.WebDir; dir != "" {
-		rep.Notes = append(rep.Notes, "WPGO_WEB_DIR is set: the core web files are read from "+dir+" and compared with the copies in the binary.")
+		rep.Notes = append(rep.Notes, "PURSAE_WEB_DIR is set: the core web files are read from "+dir+" and compared with the copies in the binary.")
 		disk := os.DirFS(dir)
 		seen := map[string]bool{}
 		_ = fs.WalkDir(embedded, ".", func(p string, d fs.DirEntry, err error) error {

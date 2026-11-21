@@ -31,7 +31,7 @@ through a small host API gated by **permissions** the administrator approves whe
 - **Portability.** One `plugin.wasm` runs on every platform Pursae runs on. The SDK is Go
   today (`wpgo/sdk/go/wpgo`); the ABI is plain JSON and documented in [the ABI page](abi.md), so other languages can follow.
   Test plugin code on a normal toolchain with `wpgotest` ([testing](testing.md)); scaffold and
-  package with `wpgo plugin new|build`.
+  package with `pursae plugin new|build`.
 
 ## What a plugin can do
 
@@ -56,7 +56,7 @@ through a small host API gated by **permissions** the administrator approves whe
 ## Signing and trust
 
 Packages are signed with Ed25519. A site installs a package only if its signature verifies
-against a key the site trusts (`WPGO_PLUGIN_KEYS` or the `plugin_trusted_keys` option), or if
+against a key the site trusts (`PURSAE_PLUGIN_KEYS` or the `plugin_trusted_keys` option), or if
 the administrator explicitly allows unsigned packages for development. Plugins published through
 the [Hub](../hub/publishing.md) are re-signed with the Hub's key, which sites trust
 automatically. Static files under `assets/` are covered by the signature through their digests

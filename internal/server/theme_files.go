@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/config"
 	"wpgo/internal/store"
 )
 
@@ -61,9 +62,9 @@ func (o overlayFS) overridden(name string) bool {
 	return err == nil && !st.IsDir()
 }
 
-// themeOverrideDir is where edited theme files live (WPGO_THEMES_DIR, default <data>/themes).
+// themeOverrideDir is where edited theme files live (PURSAE_THEMES_DIR, default <data>/themes).
 func themeOverrideDir(uploadsDir string) string {
-	if d := os.Getenv("WPGO_THEMES_DIR"); d != "" {
+	if d := config.Env("THEMES_DIR"); d != "" {
 		return d
 	}
 	return filepath.Join(filepath.Dir(filepath.Clean(uploadsDir)), "themes")
@@ -71,16 +72,16 @@ func themeOverrideDir(uploadsDir string) string {
 
 // fileEditingDisabled is DISALLOW_FILE_EDIT.
 func fileEditingDisabled() bool {
-	v := strings.ToLower(os.Getenv("WPGO_DISALLOW_FILE_EDIT"))
+	v := strings.ToLower(config.Env("DISALLOW_FILE_EDIT"))
 	return v == "1" || v == "true" || v == "yes"
 }
 
-// themeFileEditError is non-nil when theme files must not be changed: WPGO_DISALLOW_FILE_EDIT, or Pursae
+// themeFileEditError is non-nil when theme files must not be changed: PURSAE_DISALLOW_FILE_EDIT, or Pursae
 // Security's "Disable file editors" (DISALLOW_FILE_EDIT). saveThemeFile and restoreThemeFile check it
 // themselves, so every caller (admin editor, admin-ajax, REST) obeys it.
 func (s *Server) themeFileEditError() *themeFileError {
 	if fileEditingDisabled() {
-		return &themeFileError{"disallowed", "File editing is disabled on this site (WPGO_DISALLOW_FILE_EDIT)."}
+		return &themeFileError{"disallowed", "File editing is disabled on this site (PURSAE_DISALLOW_FILE_EDIT)."}
 	}
 	if s.adminsecOn() && s.asLoad().DisableFileEdit {
 		return &themeFileError{"disallowed", "File editing is disabled on this site (Pursae Security › Settings › Hardening)."}

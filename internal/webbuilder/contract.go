@@ -172,14 +172,14 @@ const (
 
 // Environment variables (read once by internal/config).
 const (
-	EnvAI                = "WPGO_BUILDER_AI" // unset/""/1/true/on/yes = on; 0/false/off/no = off; anything else = off + warning
-	EnvAIAnthropic       = "WPGO_BUILDER_AI_ANTHROPIC_KEY"
-	EnvAIOpenAI          = "WPGO_BUILDER_AI_OPENAI_KEY"
-	EnvAIGemini          = "WPGO_BUILDER_AI_GEMINI_KEY"
-	EnvAIMistral         = "WPGO_BUILDER_AI_MISTRAL_KEY"
-	EnvAIOllamaURL       = "WPGO_BUILDER_AI_OLLAMA_URL"
-	EnvAIModels          = "WPGO_BUILDER_AI_MODELS"       // "provider:model,provider:model"; unset = DefaultAIModels
-	EnvAIDailyBudget     = "WPGO_BUILDER_AI_DAILY_BUDGET" // tokens (input+output) per site per UTC day; unset = DefaultAIDailyBudget; 0 = no cap
+	EnvAI                = "PURSAE_BUILDER_AI" // unset/""/1/true/on/yes = on; 0/false/off/no = off; anything else = off + warning
+	EnvAIAnthropic       = "PURSAE_BUILDER_AI_ANTHROPIC_KEY"
+	EnvAIOpenAI          = "PURSAE_BUILDER_AI_OPENAI_KEY"
+	EnvAIGemini          = "PURSAE_BUILDER_AI_GEMINI_KEY"
+	EnvAIMistral         = "PURSAE_BUILDER_AI_MISTRAL_KEY"
+	EnvAIOllamaURL       = "PURSAE_BUILDER_AI_OLLAMA_URL"
+	EnvAIModels          = "PURSAE_BUILDER_AI_MODELS"       // "provider:model,provider:model"; unset = DefaultAIModels
+	EnvAIDailyBudget     = "PURSAE_BUILDER_AI_DAILY_BUDGET" // tokens (input+output) per site per UTC day; unset = DefaultAIDailyBudget; 0 = no cap
 	DefaultAIDailyBudget = 1_000_000
 )
 
@@ -786,7 +786,7 @@ type AIProviderInfo struct {
 	Models []AIModel  `json:"models"`
 }
 
-// BootAI is present in every Boot. With AI off (WPGO_BUILDER_AI=0) it is
+// BootAI is present in every Boot. With AI off (PURSAE_BUILDER_AI=0) it is
 // {"enabled":false,"providers":[],"llmBase":"","imagesUrl":"","allowCode":false}.
 type BootAI struct {
 	Enabled   bool             `json:"enabled"`

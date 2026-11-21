@@ -12,7 +12,7 @@ and the styles and scripts it loads. There are two kinds:
 | | Bundled Go themes | Theme packages |
 |---|---|---|
 | Examples | Twenty Sixteen, Twenty Seventeen, Twenty Twenty, Twenty Twenty-One, Twenty Twenty-Five, Classic, Hello Pursae | anything you upload |
-| Where | compiled into the binary (`web/themes/<slug>/` + a `theme_<slug>.go`) | `<data>/themes/<slug>/` (`WPGO_THEMES_DIR`) |
+| Where | compiled into the binary (`web/themes/<slug>/` + a `theme_<slug>.go`) | `<data>/themes/<slug>/` (`PURSAE_THEMES_DIR`) |
 | `functions.php` equivalent | Go code: a `*Theme` registered at start-up with hooks for `wp_head`, body classes, template data | `theme.json`: everything a Go theme registers in code, declared as data |
 | Install | ship with Pursae | Appearance › Themes › Add Theme › Upload, or from the [marketplace](../hub/marketplace.md) |
 | Code | yes (Go, reviewed with the core) | **none** — templates, CSS, JS, images. Not signed; verified by SHA-256 |

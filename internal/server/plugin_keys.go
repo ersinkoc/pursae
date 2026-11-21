@@ -95,7 +95,7 @@ func keyFingerprint(pub ed25519.PublicKey) string {
 }
 
 // parseTrustedKeys reads the option (one "key comment" per line; commas also separate keys, as
-// WPGO_PLUGIN_KEYS does). Invalid entries are skipped.
+// PURSAE_PLUGIN_KEYS does). Invalid entries are skipped.
 func parseTrustedKeys(text string) []trustedKey {
 	var out []trustedKey
 	for _, line := range strings.FieldsFunc(text, func(r rune) bool { return r == '\n' || r == ',' }) {
@@ -124,7 +124,7 @@ func formatTrustedKeys(keys []trustedKey) string {
 	return b.String()
 }
 
-// applySiteKeys makes the keys from WPGO_PLUGIN_KEYS (and the dev key) plus the option the trusted
+// applySiteKeys makes the keys from PURSAE_PLUGIN_KEYS (and the dev key) plus the option the trusted
 // set at once, without a restart.
 func (s *Server) applySiteKeys() {
 	ps := s.plugins

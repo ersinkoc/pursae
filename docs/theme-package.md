@@ -9,7 +9,7 @@ assets/**           style.css, scripts, fonts, images, screenshot.png — the th
 readme.md           optional, shown on the theme's marketplace page
 ```
 
-Installed themes live in the themes directory (`WPGO_THEMES_DIR`, default `<data>/themes`,
+Installed themes live in the themes directory (`PURSAE_THEMES_DIR`, default `<data>/themes`,
 the same directory the Theme File Editor writes its overrides to), one sub-directory per
 slug: `<data>/themes/<slug>/theme.json`. The server loads every such directory at start-up
 and right after Appearance › Themes › Add Theme › Upload Theme installs one; a package that
@@ -355,8 +355,8 @@ package directory whose name is its slug) and are published to Pursae Manager as
   Screenshots are fetched once from the Manager into the same directory and served by the site
   (`/wp-admin/theme-install?action=library-screenshot&theme=<slug>`), so the browser never talks to
   the Manager. When the Manager does not answer, it is not asked again for two minutes.
-- **a directory** when `WPGO_THEME_LIBRARY_DIR` is set (development, offline sites, the tests:
-  `WPGO_THEME_LIBRARY_DIR=library/themes make dev`). A directory that does not validate is logged
+- **a directory** when `PURSAE_THEME_LIBRARY_DIR` is set (development, offline sites, the tests:
+  `PURSAE_THEME_LIBRARY_DIR=library/themes make dev`). A directory that does not validate is logged
   and left out.
 - neither: the Library tab is empty and says why (no Manager configured, or not reachable).
 

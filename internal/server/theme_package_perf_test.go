@@ -46,7 +46,7 @@ func copyThemeDir(t *testing.T, src, dst string, edit func(string) string) {
 func perfPackageSite(t *testing.T) (string, *http.Client, *Server, string) {
 	t.Helper()
 	dir := t.TempDir()
-	t.Setenv("WPGO_THEMES_DIR", dir)
+	t.Setenv("PURSAE_THEMES_DIR", dir)
 	pkgDir := filepath.Join(dir, "starter")
 	copyThemeDir(t, starterDir, pkgDir, func(s string) string {
 		s = strings.Replace(s, `"preload_fonts": [],`, `"preload_fonts": ["assets/fonts/body.woff2"],`+"\n  \"block_styles\": true,", 1)

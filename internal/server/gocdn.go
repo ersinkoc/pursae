@@ -15,7 +15,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"regexp"
 	"slices"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/config"
 	"wpgo/internal/gocdn"
 	"wpgo/internal/store"
 )
@@ -41,7 +41,7 @@ import (
 // off: its routes answer 404, uploads are served from disk as before and no response is touched.
 // Settings live in the option gocdn_settings; the secret access key and the Cloudflare token are
 // AES-GCM encrypted with the server secret and never sent back to the browser. The settings can
-// also come from the environment variable WPGO_CDN_SETTINGS (JSON with the same keys, like WP
+// also come from the environment variable PURSAE_CDN_SETTINGS (JSON with the same keys, like WP
 // Offload Media's AS3CF_SETTINGS); keys set there are locked on the settings screen.
 // docs/gocdn-features.md is the feature inventory.
 
@@ -49,7 +49,7 @@ const (
 	gocdnSlug    = "gocdn"
 	gocdnSetting = "native_gocdn"   // the plugin is active
 	gocdnOption  = "gocdn_settings" // gocdnSettings as one JSON object
-	gocdnEnv     = "WPGO_CDN_SETTINGS"
+	gocdnEnv     = "PURSAE_CDN_SETTINGS"
 	gocdnVersion = "1.0.0"
 	gocdnImgPath = "/cdn-img/" // the image service: /cdn-img/<path in uploads>?w=&h=&fit=&q=&fm=&s=
 	gocdnNonce   = "gocdn-admin"
@@ -73,7 +73,7 @@ var gocdnPrivateHTTP = lanClient(120*time.Second, "CDN address points at a priva
 var gocdnCFBase = "https://api.cloudflare.com/client/v4"
 
 // gocdnSettings are the plugin's options. JSON names follow WP Offload Media's settings keys where
-// it has one (so a WPGO_CDN_SETTINGS made from an AS3CF_SETTINGS needs few changes).
+// it has one (so a PURSAE_CDN_SETTINGS made from an AS3CF_SETTINGS needs few changes).
 type gocdnSettings struct {
 	// Storage
 	Provider   string `json:"provider"` // aws, r2, do, b2, minio
@@ -201,9 +201,9 @@ func gocdnDefaults() gocdnSettings {
 // gocdnOn reports whether the plugin is active.
 func (s *Server) gocdnOn() bool { return s.settings.Bool(gocdnSetting) }
 
-// gocdnEnvSettings parses WPGO_CDN_SETTINGS: the values and the set of keys it defines.
+// gocdnEnvSettings parses PURSAE_CDN_SETTINGS: the values and the set of keys it defines.
 func gocdnEnvSettings() (map[string]any, error) {
-	raw := strings.TrimSpace(os.Getenv(gocdnEnv))
+	raw := strings.TrimSpace(config.Env(gocdnEnv))
 	if raw == "" {
 		return nil, nil
 	}
@@ -214,7 +214,7 @@ func gocdnEnvSettings() (map[string]any, error) {
 	return m, nil
 }
 
-// gocdnLoad returns the saved settings over the defaults, with WPGO_CDN_SETTINGS on top. Secrets
+// gocdnLoad returns the saved settings over the defaults, with PURSAE_CDN_SETTINGS on top. Secrets
 // stay sealed (gocdnReveal opens them).
 func (s *Server) gocdnLoad() gocdnSettings {
 	st := gocdnDefaults()
@@ -326,7 +326,7 @@ func gocdnUploadOptions(st gocdnSettings, rel string) gocdn.UploadOptions {
 	return gocdn.UploadOptions{PutOptions: gocdnPutOptions(st, rel), Threshold: th, PartSize: min(max(th, gocdn.MinPartSize), 64<<20)}
 }
 
-// gocdnLocked is the set of JSON keys defined by WPGO_CDN_SETTINGS (shown read-only).
+// gocdnLocked is the set of JSON keys defined by PURSAE_CDN_SETTINGS (shown read-only).
 func gocdnLocked() map[string]bool {
 	env, _ := gocdnEnvSettings()
 	out := map[string]bool{}
@@ -357,7 +357,7 @@ func (s *Server) gocdnSave(ctx context.Context, st gocdnSettings) error {
 		st.Previous[i].SSECKey = s.gocdnSeal(st.Previous[i].SSECKey)
 	}
 	st.ImgKey = s.gocdnSeal(st.ImgKey)
-	// Keys defined by WPGO_CDN_SETTINGS are never written to the database: what was stored before
+	// Keys defined by PURSAE_CDN_SETTINGS are never written to the database: what was stored before
 	// for them stays as it was.
 	raw, _ := json.Marshal(st)
 	var m map[string]any
@@ -403,7 +403,7 @@ func (s *Server) gocdnSeal(plain string) string {
 	return gocdnSealPrefix + base64.RawStdEncoding.EncodeToString(gcm.Seal(nonce, nonce, []byte(plain), nil))
 }
 
-// gocdnReveal decrypts a stored secret; values from WPGO_CDN_SETTINGS are plain and pass through.
+// gocdnReveal decrypts a stored secret; values from PURSAE_CDN_SETTINGS are plain and pass through.
 func (s *Server) gocdnReveal(v string) string {
 	raw, ok := strings.CutPrefix(v, gocdnSealPrefix)
 	if !ok {
@@ -425,7 +425,7 @@ func (s *Server) gocdnReveal(v string) string {
 
 // gocdnImgKey is the HMAC key of signed image URLs: a random key stored (sealed) with the
 // settings, so it can be rotated without touching the server secret; derived from the server
-// secret while none is stored (WPGO_CDN_SETTINGS may leave it out).
+// secret while none is stored (PURSAE_CDN_SETTINGS may leave it out).
 func (s *Server) gocdnImgKey(st gocdnSettings) []byte {
 	if k := s.gocdnReveal(st.ImgKey); k != "" {
 		return []byte(k)

@@ -19,7 +19,8 @@ Start here when writing a theme or a plugin:
 | REST clients / plugin routes | `rest-api/*.md` |
 | Running a site | `getting-started/*.md`, `operations/*.md` |
 | Shipping a core version | `operations/releases.md` (`make release`, then Manager › Core › Import) |
-| Command line (`pursae` / `wpgo`, WP-CLI style) | `operations/cli.md` |
+| Command line (`pursae`; `wpgo` is a deprecated alias; WP-CLI style) | `operations/cli.md` |
+| What is stable across 0.5.x, deprecations, versioning; upgrading from `WPGO_*` names | `compatibility.md`, `getting-started/upgrading.md` |
 | AI agents / MCP | `operations/ai-mcp.md` (tools, building sites with Web Builder, prompts, the `skills/pursae-site-builder` skill and harness), `rest-api/authentication.md` (scopes), `rest-api/endpoints.md` (`pursae/v1`), `web-builder-contract.md` §4.1 (server render) |
 
 Working examples: `examples/plugins/` and `examples/themes/`. Page format (front matter, sections):

@@ -320,7 +320,7 @@ func TestHeadlessGoFilterOperatorNestingBounded(t *testing.T) {
 }
 
 // Front-end user tokens and preview tokens are signed with the effective server secret: with
-// WPGO_SECRET set (newServer then never writes auth_secret) a token signed without it is refused,
+// PURSAE_SECRET set (newServer then never writes auth_secret) a token signed without it is refused,
 // and tokens the server issues still verify.
 func TestHeadlessGoUserJWTUsesServerSecret(t *testing.T) {
 	base, _, srv := hgSite(t)
@@ -329,7 +329,7 @@ func TestHeadlessGoUserJWTUsesServerSecret(t *testing.T) {
 	st := srv.hgLoad()
 	st.UserAuth = true
 	_ = srv.hgSaveSettings(ctx, st)
-	// The state of a site started with WPGO_SECRET from the first boot (server.go newServer).
+	// The state of a site started with PURSAE_SECRET from the first boot (server.go newServer).
 	srv.cfg.Secret = "operator-provided-wpgo-secret"
 	if err := srv.settings.Set(ctx, map[string]any{"auth_secret": ""}); err != nil {
 		t.Fatal(err)

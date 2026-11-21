@@ -84,7 +84,7 @@
 <tr><th scope="row">Privacy</th><td><p class="description" style="max-width:640px">Pursae Analytics sets no cookies and stores nothing in the browser. A visitor is counted with a hash of the IP address and the browser, mixed with a secret that is replaced every day and then deleted, so nobody — not even you — can follow a visitor from one day to the next or find out who they are. IP addresses are never stored. That is why no consent banner is needed for it.</p>
 	<p class="description" style="max-width:640px">Countries come from your proxy or CDN when it reports them (Cloudflare <code>CF-IPCountry</code>, CloudFront, Vercel or an <code>X-Country-Code</code> header). Otherwise the visitor's address is looked up, in memory only, in a country database stored on this server; only the two-letter country code is kept. No address is sent anywhere. The database is DB-IP's “IP to Country Lite” (CC BY 4.0) and is refreshed every month.</p></td></tr>
 <tr><th scope="row">Country database</th><td><p>{{if .GeoIP.Installed}}Installed{{if .GeoIP.Built}}, built {{.GeoIP.Built}}{{end}}{{if .GeoIP.Seed}} (the copy shipped with Pursae){{end}}.{{else}}Not installed: only proxy or CDN headers give countries.{{end}}
-	{{if .GeoIP.Auto}}A new version is downloaded automatically each month.{{else}}Automatic updates are off (<code>WPGO_GEOIP_UPDATE=off</code>).{{end}}</p>
+	{{if .GeoIP.Auto}}A new version is downloaded automatically each month.{{else}}Automatic updates are off (<code>PURSAE_GEOIP_UPDATE=off</code>).{{end}}</p>
 	<p class="description"><a href="{{.GeoIP.AttribURL}}" rel="noopener" target="_blank">{{.GeoIP.Attrib}}</a></p>
 	<p><button type="submit" form="pa-geoip" class="button">Update country database</button></p></td></tr>
 </table>

@@ -128,5 +128,5 @@ the site. A package whose slug matches a bundled theme is rejected.
 
 Either upload again, or edit in place with Appearance › Theme File Editor — the overlay directory
 is the same `<data>/themes/starter/` the installer wrote to ([file editor](file-editor.md)).
-During development point `WPGO_THEMES_DIR` at your working copy: the server loads every
+During development point `PURSAE_THEMES_DIR` at your working copy: the server loads every
 `<dir>/<slug>/theme.json` at start-up.

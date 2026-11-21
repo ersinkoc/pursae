@@ -35,7 +35,7 @@ Export in WordPress or Pursae), with the same importer as Tools › Import.
                old_login,new_login; a new login that does not exist is created
 
 Attachments are downloaded (public addresses only) unless --no-fetch-attachments is given. The
-command writes into WPGO_UPLOADS_DIR: run it where the server's uploads volume is mounted.`,
+command writes into PURSAE_UPLOADS_DIR: run it where the server's uploads volume is mounted.`,
 		Args: []cli.Arg{{Name: "file", Usage: "WXR file to import ('-' reads stdin).", Repeat: true}},
 		Flags: []cli.Flag{
 			{Name: "authors", Usage: "Author mapping: create, skip or a mapping file (see above)."},

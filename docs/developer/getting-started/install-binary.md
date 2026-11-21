@@ -13,35 +13,35 @@ the configured user can create tables in.
 ```bash
 git clone https://github.com/pursae/pursae.git
 cd pursae
-make build                # writes bin/wpgo
+make build                # writes bin/pursae (and bin/wpgo, its deprecated alias)
 ```
 
-`make build` is `CGO_ENABLED=0 go build -o bin/wpgo ./cmd/wpgo`: the result is a static binary
+`make build` is `CGO_ENABLED=0 go build -o bin/pursae ./cmd/wpgo` (plus a copy named `bin/wpgo`, the deprecated old name): the result is a static binary
 with the admin, the editors and the bundled themes embedded. Copy it anywhere.
 
 ## Run
 
 ```bash
 export DATABASE_URL='postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable'
-export WPGO_SITE_URL='https://blog.example.com'   # the public address, without a trailing slash
-export WPGO_UPLOADS_DIR=/var/lib/wpgo/uploads
-./bin/wpgo serve
+export PURSAE_SITE_URL='https://blog.example.com'   # the public address, without a trailing slash
+export PURSAE_UPLOADS_DIR=/var/lib/wpgo/uploads
+./bin/pursae serve
 ```
 
 On start the server runs the database migrations (under an advisory lock, so several instances
-can start at once), creates the uploads directory and listens on `WPGO_ADDR` (default `:8080`).
+can start at once), creates the uploads directory and listens on `PURSAE_ADDR` (default `:8080`).
 On a site that is not installed yet it also prints the install link with the setup token
 (`http://localhost:8080/wp-admin/install?token=…`): open it and the [installer](first-site.md)
-appears. `wpgo setup-token` prints a new link; `WPGO_SETUP_TOKEN` sets the token yourself.
+appears. `pursae setup-token` prints a new link; `PURSAE_SETUP_TOKEN` sets the token yourself.
 
 The main commands:
 
 | Command | Does |
 |---------|------|
-| `wpgo serve` | migrate, then serve (the default) |
-| `wpgo migrate` | apply pending migrations and exit |
-| `wpgo version` | print the version |
-| `wpgo setup-token` | print the install link with the setup token (a new token unless `WPGO_SETUP_TOKEN` is set; the old link stops working) |
+| `pursae serve` | migrate, then serve (the default) |
+| `pursae migrate` | apply pending migrations and exit |
+| `pursae version` | print the version |
+| `pursae setup-token` | print the install link with the setup token (a new token unless `PURSAE_SETUP_TOKEN` is set; the old link stops working) |
 
 ## Development mode
 
@@ -50,7 +50,7 @@ so edits show up on refresh:
 
 ```bash
 make db                                  # starts only PostgreSQL from the compose file
-WPGO_WEB_DIR=web go run ./cmd/wpgo serve
+PURSAE_WEB_DIR=web go run ./cmd/wpgo serve
 ```
 
 `make dev` does both. `make test` runs the unit tests and the PostgreSQL integration tests
@@ -74,11 +74,11 @@ The ones you will set first:
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `DATABASE_URL` | `postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable` | PostgreSQL connection string |
-| `WPGO_ADDR` | `:8080` | listen address |
-| `WPGO_SITE_URL` | `http://localhost:8080` | public URL, written to the settings at install |
-| `WPGO_UPLOADS_DIR` | `./data/uploads` | media uploads; plugins, themes, the plugin cache and mail go next to it |
-| `WPGO_SECRET` | generated | signing secret for sessions and nonces |
-| `WPGO_SMTP_HOST` … | — | outgoing mail; without it messages become `.eml` files |
+| `PURSAE_ADDR` | `:8080` | listen address |
+| `PURSAE_SITE_URL` | `http://localhost:8080` | public URL, written to the settings at install |
+| `PURSAE_UPLOADS_DIR` | `./data/uploads` | media uploads; plugins, themes, the plugin cache and mail go next to it |
+| `PURSAE_SECRET` | generated | signing secret for sessions and nonces |
+| `PURSAE_SMTP_HOST` … | — | outgoing mail; without it messages become `.eml` files |
 
 The complete list, including plugin keys and theme directories, is in the
 [configuration reference](../operations/configuration.md). A systemd unit and reverse-proxy

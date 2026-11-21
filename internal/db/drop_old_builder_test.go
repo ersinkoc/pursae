@@ -11,7 +11,7 @@ import (
 // TestDropOldBuilderMigration seeds a migrated database with the old builder's data (its tables
 // recreated from 0005-0007, posts, meta, options, user meta, saved themes) next to the new builder's
 // web_builder_* rows, runs 0028_drop_old_builder twice and checks that only the old data went.
-// Skipped without WPGO_TEST_ADMIN_DB.
+// Skipped without PURSAE_TEST_ADMIN_DB.
 func TestDropOldBuilderMigration(t *testing.T) {
 	ctx := context.Background()
 	pool, err := Connect(ctx, tempDatabase(t, "wpgo_dbtest_r3"))

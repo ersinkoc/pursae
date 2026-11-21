@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: wpgo
     ports:
       # Development: published on this machine only (tests and `make dev` use localhost:5432).
-      - "127.0.0.1:${WPGO_DB_PORT:-5432}:5432"
+      - "127.0.0.1:${PURSAE_DB_PORT:-${WPGO_DB_PORT:-5432}}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,54 +23,54 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       args:
-        VERSION: ${WPGO_VERSION:-}
+        VERSION: ${PURSAE_VERSION:-${WPGO_VERSION:-}}
         # Development build: the Manager URL and key trust below are read only by -tags devhub binaries.
-        GO_TAGS: ${WPGO_GO_TAGS:-devhub}
+        GO_TAGS: ${PURSAE_GO_TAGS:-${WPGO_GO_TAGS:-devhub}}
     depends_on:
       db:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://wpgo:wpgo@db:5432/wpgo?sslmode=disable
-      WPGO_SITE_URL: ${WPGO_SITE_URL:-http://localhost:8088}
-      WPGO_UPLOADS_DIR: /data/uploads
+      PURSAE_SITE_URL: ${PURSAE_SITE_URL:-${WPGO_SITE_URL:-http://localhost:8088}}
+      PURSAE_UPLOADS_DIR: /data/uploads
       # Guards /wp-admin/install until the site is installed. Empty: the server generates a token and
       # prints the install link in its log (`docker compose logs wpgo`); `docker compose exec wpgo
       # wpgo setup-token` prints a new one.
-      WPGO_SETUP_TOKEN: ${WPGO_SETUP_TOKEN:-}
-      # Demo only (devhub builds): WPGO_TRUST_DEV_KEY=1 trusts the development signing key of the
+      PURSAE_SETUP_TOKEN: ${PURSAE_SETUP_TOKEN:-${WPGO_SETUP_TOKEN:-}}
+      # Demo only (devhub builds): PURSAE_TRUST_DEV_KEY=1 trusts the development signing key of the
       # bundled example plugins. Its private half is public, so it stays off unless asked for.
-      WPGO_TRUST_DEV_KEY: ${WPGO_TRUST_DEV_KEY:-0}
+      PURSAE_TRUST_DEV_KEY: ${PURSAE_TRUST_DEV_KEY:-${WPGO_TRUST_DEV_KEY:-0}}
       # Development only (devhub builds): the Pursae Manager to use instead of https://hub.pursae.com,
       # by default the local one (pursae-manager on :8090 on the host, reached through the
       # pursae-manager.test alias below: plain http is only allowed for localhost / *.localhost /
       # *.test hosts); "off" disables it.
-      WPGO_DEV_HUB_URL: ${WPGO_DEV_HUB_URL:-http://pursae-manager.test:8090}
+      PURSAE_DEV_HUB_URL: ${PURSAE_DEV_HUB_URL:-${WPGO_DEV_HUB_URL:-http://pursae-manager.test:8090}}
       # Proxies whose X-Forwarded-For is believed (empty: loopback and private networks; "none": nobody).
       # Development has no proxy in front of the site, and Docker forwards host connections from a
       # private bridge address, so the default here trusts nobody: a client cannot pick its own address
       # with X-Forwarded-For to dodge the per-IP login limit.
-      WPGO_TRUSTED_PROXIES: ${WPGO_TRUSTED_PROXIES:-none}
+      PURSAE_TRUSTED_PROXIES: ${PURSAE_TRUSTED_PROXIES:-${WPGO_TRUSTED_PROXIES:-none}}
       # off: never contact hub.pursae.com (no updates, marketplace or licenses; not recommended).
-      WPGO_HUB: ${WPGO_HUB:-}
-      # Development only (devhub builds): WPGO_TRUST_HUB_KEYS=1 trusts every key the Manager lists,
+      PURSAE_HUB: ${PURSAE_HUB:-${WPGO_HUB:-}}
+      # Development only (devhub builds): PURSAE_TRUST_HUB_KEYS=1 trusts every key the Manager lists,
       # endorsed by the release root or not, so a local Manager's throwaway key verifies updates
       # (internal/server/hub_trust.go). Off by default; automatic core updates never run under it.
-      WPGO_TRUST_HUB_KEYS: ${WPGO_TRUST_HUB_KEYS:-0}
-      # Outgoing mail (password resets, notifications). Without WPGO_SMTP_HOST messages are only
+      PURSAE_TRUST_HUB_KEYS: ${PURSAE_TRUST_HUB_KEYS:-${WPGO_TRUST_HUB_KEYS:-0}}
+      # Outgoing mail (password resets, notifications). Without PURSAE_SMTP_HOST messages are only
       # written as .eml files to /data/mail.
-      WPGO_SMTP_HOST: ${WPGO_SMTP_HOST:-}
-      WPGO_SMTP_PORT: ${WPGO_SMTP_PORT:-587}
-      WPGO_SMTP_USER: ${WPGO_SMTP_USER:-}
-      WPGO_SMTP_PASS: ${WPGO_SMTP_PASS:-}
-      WPGO_MAIL_FROM: ${WPGO_MAIL_FROM:-}
+      PURSAE_SMTP_HOST: ${PURSAE_SMTP_HOST:-${WPGO_SMTP_HOST:-}}
+      PURSAE_SMTP_PORT: ${PURSAE_SMTP_PORT:-${WPGO_SMTP_PORT:-587}}
+      PURSAE_SMTP_USER: ${PURSAE_SMTP_USER:-${WPGO_SMTP_USER:-}}
+      PURSAE_SMTP_PASS: ${PURSAE_SMTP_PASS:-${WPGO_SMTP_PASS:-}}
+      PURSAE_MAIL_FROM: ${PURSAE_MAIL_FROM:-${WPGO_MAIL_FROM:-}}
     extra_hosts:
       - "host.docker.internal:host-gateway"
       # The host's Pursae Manager under a *.test name, so the site's http rule accepts it.
       - "pursae-manager.test:host-gateway"
     ports:
-      # Development: published on this machine only. WPGO_BIND=0.0.0.0 opens it to the network; with a
-      # proxy in front, set WPGO_TRUSTED_PROXIES to exactly its address.
-      - "${WPGO_BIND:-127.0.0.1}:${WPGO_PORT:-8088}:8080"
+      # Development: published on this machine only. PURSAE_BIND=0.0.0.0 opens it to the network; with a
+      # proxy in front, set PURSAE_TRUSTED_PROXIES to exactly its address.
+      - "${PURSAE_BIND:-${WPGO_BIND:-127.0.0.1}}:${PURSAE_PORT:-${WPGO_PORT:-8088}}:8080"
     # A core update that does not start is rolled back on the next start (internal/coreupdate).
     restart: unless-stopped
     volumes:
@@ -92,15 +92,15 @@ services:
       db:
         condition: service_healthy
     environment:
-      WPGO_TEST_DB: postgres://wpgo:wpgo@db:5432/wpgo_test?sslmode=disable
-      WPGO_TEST_ADMIN_DB: postgres://wpgo:wpgo@db:5432/wpgo?sslmode=disable
+      PURSAE_TEST_DB: postgres://wpgo:wpgo@db:5432/wpgo_test?sslmode=disable
+      PURSAE_TEST_ADMIN_DB: postgres://wpgo:wpgo@db:5432/wpgo?sslmode=disable
       CGO_ENABLED: "0"
       GOFLAGS: -mod=mod
     volumes:
       - ..:/src
       - gocache:/root/.cache/go-build
       - gomod:/go/pkg/mod
-    # -p 1: the server, store and settings packages each drop and recreate WPGO_TEST_DB.
+    # -p 1: the server, store and settings packages each drop and recreate PURSAE_TEST_DB.
     command: ["go", "test", "./...", "-p", "1", "-count=1", "-timeout", "40m"]
 
 volumes:

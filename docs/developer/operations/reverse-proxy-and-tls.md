@@ -5,7 +5,7 @@ weight: 40
 section: operations
 ---
 
-Pursae serves plain HTTP. Terminate TLS in a proxy and set `WPGO_SITE_URL` to the public
+Pursae serves plain HTTP. Terminate TLS in a proxy and set `PURSAE_SITE_URL` to the public
 `https://` address (or change Settings › General after installing).
 
 The server trusts `X-Forwarded-Proto: https` to decide that a request is secure: it then sets
@@ -17,16 +17,16 @@ instead of the proxy's. The header is believed only when the request comes from 
 default loopback and the private ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`,
 `fc00::/7`), which is where a proxy next to the server normally sits. A client that reaches the server directly
 from the internet is not trusted, so it cannot pick its own address. If your proxy has a public address, list it
-in `WPGO_TRUSTED_PROXIES` (comma separated IPs and CIDRs); `none` trusts no proxy. Without a trusted proxy in
+in `PURSAE_TRUSTED_PROXIES` (comma separated IPs and CIDRs); `none` trusts no proxy. Without a trusted proxy in
 front, every visitor would otherwise share the proxy's address, and five failed logins from one visitor would lock
 everybody out for 15 minutes.
 
 The private ranges are trusted by default because a proxy in Docker (on the host or in another container)
 reaches the server from a bridge address. That means **any** machine on those networks that can reach the
 server's port directly could pick its own address: publish the port only where the proxy can reach it
-(`docker/compose.prod.yaml` binds `127.0.0.1:8088`; `WPGO_BIND` changes the address) or set
-`WPGO_TRUSTED_PROXIES` to exactly your proxy's address. With `WPGO_SITE_URL` on `https://` and no
-`WPGO_TRUSTED_PROXIES`, the server logs a reminder at start-up. Sub-requests of `/batch/v1` cannot set
+(`docker/compose.prod.yaml` binds `127.0.0.1:8088`; `PURSAE_BIND` changes the address) or set
+`PURSAE_TRUSTED_PROXIES` to exactly your proxy's address. With `PURSAE_SITE_URL` on `https://` and no
+`PURSAE_TRUSTED_PROXIES`, the server logs a reminder at start-up. Sub-requests of `/batch/v1` cannot set
 `X-Forwarded-*`, `X-Real-IP` or `Forwarded` themselves; they carry the outer request's headers.
 
 ## Caddy
@@ -115,14 +115,14 @@ After=network.target postgresql.service
 [Service]
 User=wpgo
 EnvironmentFile=/etc/wpgo.env
-ExecStart=/usr/local/bin/wpgo serve
+ExecStart=/usr/local/bin/pursae serve
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-`/etc/wpgo.env` holds `DATABASE_URL`, `WPGO_SITE_URL`, `WPGO_UPLOADS_DIR`, `WPGO_SECRET` and the
+`/etc/wpgo.env` holds `DATABASE_URL`, `PURSAE_SITE_URL`, `PURSAE_UPLOADS_DIR`, `PURSAE_SECRET` and the
 mail settings ([configuration](configuration.md)).
 
 ## Several instances
@@ -132,7 +132,7 @@ Run as many `wpgo` processes as you like against one database with a shared uplo
 events run once, and migrations are serialised with an advisory lock (these session locks and
 `LISTEN`/`NOTIFY` below are why a PgBouncer in front must use session pooling; see
 [connection poolers](configuration.md#connection-poolers-pgbouncer)). Give every instance the
-same `WPGO_SECRET`. Settings are cached in memory per process; a change saved on one instance
+same `PURSAE_SECRET`. Settings are cached in memory per process; a change saved on one instance
 reaches the others through PostgreSQL `LISTEN`/`NOTIFY` within moments (each instance holds one
 extra database connection for it, and reloads every minute in case a notification was lost). Side
 effects of saving a setting, such as starting a plugin or reconfiguring the page cache, run only on

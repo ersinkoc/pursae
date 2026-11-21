@@ -19,7 +19,7 @@ import (
 )
 
 // Tests of the public form endpoint POST web-builder/v2/forms/{post}/{section}. The unit tests run
-// without a database; the integration tests need WPGO_TEST_ADMIN_DB / WPGO_TEST_DB.
+// without a database; the integration tests need PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB.
 
 // --- unit --------------------------------------------------------------------------------------
 

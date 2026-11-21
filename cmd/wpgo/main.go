@@ -36,18 +36,20 @@ func main() {
 	if len(os.Args) > 1 {
 		cmd = os.Args[1]
 	}
+	config.WarnDeprecatedEnv() // WPGO_* settings still work until 1.0; name each one's PURSAE_* successor
 	cfg := config.Load()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// In a container the server runs the binary Launch installed in WPGO_BIN_DIR, which a core
+	// In a container the server runs the binary Launch installed in PURSAE_BIN_DIR, which a core
 	// update replaces; `docker exec … pursae <command>` starts the image's (possibly older) binary.
 	// Commands that touch the site run the installed one when it is newer, so the CLI never
 	// works with older code than the server against the schema the server migrated.
-	if usesInstalledBinary(cmd) && os.Getenv(reexecEnv) == "" {
+	if usesInstalledBinary(cmd) && os.Getenv(reexecEnv) == "" && os.Getenv(legacyReexecEnv) == "" {
 		if exe, err := executable(); err == nil {
-			if bin := coreupdate.Installed(exe, os.Getenv("WPGO_BIN_DIR"), server.Version); bin != "" {
-				os.Setenv(reexecEnv, "1") // never loop
+			if bin := coreupdate.Installed(exe, config.Env("BIN_DIR"), server.Version); bin != "" {
+				os.Setenv(reexecEnv, "1")       // never loop
+				os.Setenv(legacyReexecEnv, "1") // an installed release before 0.5.0 reads only this name
 				err := coreupdate.Exec(bin, os.Args)
 				log.Printf("running the installed %s failed (%v); continuing with %s", bin, err, server.Version)
 			}
@@ -84,7 +86,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		dir := os.Getenv("WPGO_BIN_DIR")
+		dir := config.Env("BIN_DIR")
 		args := os.Args[2:]
 		if len(args) == 0 {
 			args = []string{"serve"}
@@ -92,7 +94,7 @@ func main() {
 		log.Fatal(coreupdate.Launch(exe, dir, args))
 	case "version":
 		fmt.Println("Pursae", server.Version)
-	case "healthcheck": // container HEALTHCHECK: GET /healthz on WPGO_ADDR (healthcheck.go)
+	case "healthcheck": // container HEALTHCHECK: GET /healthz on PURSAE_ADDR (healthcheck.go)
 		if err := healthcheck(cfg.Addr, os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, prog+" healthcheck:", err)
 			os.Exit(1)
@@ -122,7 +124,7 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println(renameUsage(out, prog))
-	case "setup-token": // print the install URL with the setup token (a new token unless WPGO_SETUP_TOKEN is set)
+	case "setup-token": // print the install URL with the setup token (a new token unless PURSAE_SETUP_TOKEN is set)
 		if err := setupToken(ctx, cfg, os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, prog+" setup-token:", err)
 			os.Exit(1)
@@ -143,9 +145,13 @@ func main() {
 }
 
 // reexecEnv marks a process that already switched to the installed binary.
-const reexecEnv = "WPGO_CLI_REEXEC"
+const reexecEnv = "PURSAE_CLI_REEXEC"
 
-// usesInstalledBinary reports whether cmd should run the newer binary in WPGO_BIN_DIR: every
+// legacyReexecEnv is reexecEnv's name before 0.5.0: an older image's CLI sets it when it runs a newer
+// installed binary, and an older installed binary reads only it.
+const legacyReexecEnv = "WPGO_CLI_REEXEC"
+
+// usesInstalledBinary reports whether cmd should run the newer binary in PURSAE_BIN_DIR: every
 // command except the ones that pick their binary themselves (serve, launch), the container
 // HEALTHCHECK and the MCP bridge, which do not touch the database.
 func usesInstalledBinary(cmd string) bool {

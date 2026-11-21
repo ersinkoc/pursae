@@ -21,7 +21,7 @@ import (
 )
 
 // Tests of the Theme Builder front (webbuilder_theme_front.go, webbuilder_slots.go). The unit
-// tests run without a database; the integration tests need WPGO_TEST_ADMIN_DB / WPGO_TEST_DB.
+// tests run without a database; the integration tests need PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB.
 
 // --- unit ------------------------------------------------------------------------------------------
 

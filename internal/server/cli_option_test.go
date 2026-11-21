@@ -219,7 +219,7 @@ func TestCLICacheFlushReportsDiskError(t *testing.T) {
 	ts, client, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, client)
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	cfg.UploadsDir = filepath.Join(t.TempDir(), "uploads")
 	if err := os.WriteFile(cacheDiskDir(cfg.UploadsDir), []byte("file"), 0o600); err != nil {
 		t.Fatal(err)
@@ -245,12 +245,12 @@ func TestRewriteRows(t *testing.T) {
 	}
 }
 
-// TestOptionCLI runs the option group's commands against a test database (WPGO_TEST_DB).
+// TestOptionCLI runs the option group's commands against a test database (PURSAE_TEST_DB).
 func TestOptionCLI(t *testing.T) {
 	_, _, srv := newTestServer(t, false)
 	cliTestInstalled(t, srv)
 	ctx := context.Background()
-	cfg := config.Config{DatabaseURL: os.Getenv("WPGO_TEST_DB"), UploadsDir: t.TempDir(), SiteURL: "http://example.test"}
+	cfg := config.Config{DatabaseURL: config.Env("TEST_DB"), UploadsDir: t.TempDir(), SiteURL: "http://example.test"}
 	run := func(stdin string, args ...string) (int, string, string) {
 		var out, errb bytes.Buffer
 		code := CLI(ctx, cfg, "pursae", args, strings.NewReader(stdin), &out, &errb)

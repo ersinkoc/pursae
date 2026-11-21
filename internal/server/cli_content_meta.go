@@ -446,7 +446,7 @@ func registerPostRevisionCLI(r *cli.Registry, e *cliEnv) {
 		Short: "Delete old revisions of every post, keeping the newest N per post.",
 		Long: `Like the Clean up revisions maintenance run: autosaves are left alone and the newest revision
 of each post always stays. Asks for confirmation (pass --yes in scripts).`,
-		Flags:    []cli.Flag{{Name: "keep", Usage: "Revisions to keep per post (default: WPGO_POST_REVISIONS, else 25)."}},
+		Flags:    []cli.Flag{{Name: "keep", Usage: "Revisions to keep per post (default: PURSAE_POST_REVISIONS, else 25)."}},
 		Examples: []string{"post revision prune --keep=5 --yes"},
 		Run: func(c *cli.Ctx) error {
 			keep, err := c.Int("keep", store.RevisionsLimit())
@@ -454,7 +454,7 @@ of each post always stays. Asks for confirmation (pass --yes in scripts).`,
 				return err
 			}
 			if keep < 0 {
-				return cli.Usagef("--keep must be 0 or more (WPGO_POST_REVISIONS is negative: pass --keep)")
+				return cli.Usagef("--keep must be 0 or more (PURSAE_POST_REVISIONS is negative: pass --keep)")
 			}
 			st, err := e.Store(c.Context)
 			if err != nil {

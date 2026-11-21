@@ -19,7 +19,7 @@ import (
 
 // Tests of the Theme Builder server side (webbuilder_templates*.go, webbuilder_dynamic_ctx.go):
 // the capability gate, the REST routes, the picker and its cache, the preview override, WXR and
-// Pursae Multi Language. Integration tests need WPGO_TEST_ADMIN_DB / WPGO_TEST_DB.
+// Pursae Multi Language. Integration tests need PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB.
 
 // --- unit ------------------------------------------------------------------------------------------
 

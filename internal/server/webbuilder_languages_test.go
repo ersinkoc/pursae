@@ -10,7 +10,7 @@ import (
 )
 
 // Pursae Multi Language in the Web Builder editor: GET documents/{id}/languages and
-// POST documents/{id}/translations. Integration test (needs WPGO_TEST_ADMIN_DB / WPGO_TEST_DB).
+// POST documents/{id}/translations. Integration test (needs PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB).
 func TestWebBuilderLanguages(t *testing.T) {
 	srv, base, w := wbrStart(t)
 	pg := wbrPost(t, srv, "page", "About us", "publish", 1)

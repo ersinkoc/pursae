@@ -76,7 +76,7 @@ func TestInstallSetupTokenWrongRejected(t *testing.T) {
 	}
 }
 
-// WPGO_SETUP_TOKEN opens the installer: the link sets the cookie and drops the token from the URL,
+// PURSAE_SETUP_TOKEN opens the installer: the link sets the cookie and drops the token from the URL,
 // the cookie carries the visitor through the language step to the install.
 func TestInstallSetupTokenFromEnv(t *testing.T) {
 	ts, _, srv := testServerBuilderOff(t)
@@ -96,7 +96,7 @@ func TestInstallSetupTokenFromEnv(t *testing.T) {
 	}
 }
 
-// Without WPGO_SETUP_TOKEN the server generates a token: one per site however many processes start,
+// Without PURSAE_SETUP_TOKEN the server generates a token: one per site however many processes start,
 // it opens the installer, `wpgo setup-token` (IssueSetupToken) replaces it, and the install revokes it.
 func TestInstallSetupTokenGenerated(t *testing.T) {
 	ts, c, srv := newTestServerSetup(t, false, "")

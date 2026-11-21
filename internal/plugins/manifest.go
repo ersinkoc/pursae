@@ -28,6 +28,7 @@ const ManifestFile = "plugin.json"
 //	  "author_uri": "https://…",
 //	  "plugin_uri": "https://…",
 //	  "requires": "0.1.0",
+//	  "abi": 1,
 //	  "license": "GPL-2.0-or-later",
 //	  "permissions": ["options:read", "content:filter"],
 //	  "hooks": ["the_content"],
@@ -52,6 +53,10 @@ type Manifest struct {
 	PluginURI string `json:"plugin_uri,omitempty"`
 	// Requires is the minimum wpgo version the plugin needs (e.g. "0.1.0").
 	Requires string `json:"requires,omitempty"`
+	// ABI is the plugin ABI version the package is built for (docs/developer/plugins/abi.md): a
+	// positive integer, 1 when absent. A host that does not support it refuses to install or
+	// activate the plugin (CheckCompatible).
+	ABI int `json:"abi,omitempty"`
 	// RequiresPlugins lists the slugs of plugins (Wasm packages or built-in
 	// ones such as "contact-form-7" are matched by their Plugins screen slug)
 	// that must be active before this plugin can be activated.
@@ -188,6 +193,9 @@ func (m *Manifest) Validate() error {
 		add(`"version" is required (e.g. "1.0.0")`)
 	} else if !versionRe.MatchString(m.Version) {
 		add(`"version" %q is not a version number like "1.0.0"`, m.Version)
+	}
+	if m.ABI < 0 {
+		add(`"abi" %d must be a positive integer (the plugin ABI version, e.g. 1)`, m.ABI)
 	}
 	if m.Requires != "" && !versionRe.MatchString(m.Requires) {
 		add(`"requires" %q is not a version number like "0.1.0"`, m.Requires)
@@ -363,9 +371,53 @@ func (m *Manifest) DeclaresHook(hook string) bool {
 	return false
 }
 
-// CheckCompatible returns an error when the plugin requires a newer wpgo
-// version than coreVersion. An empty Requires or coreVersion always passes.
+// ABIVersion is the plugin ABI version this host implements; SupportedABIs lists every version it
+// can run. Additive changes (a new host import, a new optional request or result field, a new hook
+// type) keep the version; removing or changing an import, export or envelope bumps it
+// (docs/developer/plugins/abi.md#abi-versions).
+const ABIVersion = 1
+
+// SupportedABIs are the plugin ABI versions this host runs.
+var SupportedABIs = []int{ABIVersion}
+
+// EffectiveABI is the ABI version the plugin is built for: ABI, or 1 when the manifest has none.
+func (m *Manifest) EffectiveABI() int {
+	if m.ABI <= 0 {
+		return 1
+	}
+	return m.ABI
+}
+
+// SupportsABI reports whether this host runs plugins built for ABI version v.
+func SupportsABI(v int) bool {
+	for _, s := range SupportedABIs {
+		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+// CheckABI returns an error when the plugin is built for an ABI version this host does not run.
+func (m *Manifest) CheckABI() error {
+	if v := m.EffectiveABI(); !SupportsABI(v) {
+		supported := make([]string, len(SupportedABIs))
+		for i, s := range SupportedABIs {
+			supported[i] = strconv.Itoa(s)
+		}
+		return fmt.Errorf("plugin %s is built for plugin ABI version %d, but this Pursae supports ABI version %s; install a release of the plugin built for a supported ABI, or a Pursae release that supports ABI %d",
+			m.Slug, v, strings.Join(supported, ", "), v)
+	}
+	return nil
+}
+
+// CheckCompatible returns an error when the plugin is built for an unsupported plugin ABI
+// (CheckABI) or requires a newer Pursae version than coreVersion. An empty Requires or coreVersion
+// skips the version check.
 func (m *Manifest) CheckCompatible(coreVersion string) error {
+	if err := m.CheckABI(); err != nil {
+		return err
+	}
 	if m.Requires == "" || coreVersion == "" {
 		return nil
 	}

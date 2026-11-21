@@ -167,7 +167,7 @@ func TestHubAccessBadges(t *testing.T) {
 
 func TestHubEventsBatching(t *testing.T) {
 	themesDir := t.TempDir()
-	t.Setenv("WPGO_THEMES_DIR", themesDir)
+	t.Setenv("PURSAE_THEMES_DIR", themesDir)
 	lib := libraryCopy(t)
 	base, c, srv, hub := managerSite(t)
 	srv.themeLibrary = os.DirFS(lib)

@@ -14,7 +14,7 @@ import (
 )
 
 // Secrets sealed with the site secret. Several built-in plugins keep credentials encrypted in the
-// database under a key derived from the server secret (WPGO_SECRET, else the auth_secret option):
+// database under a key derived from the server secret (PURSAE_SECRET, else the auth_secret option):
 // the Pursae SMTP passwords and API tokens, the Pursae CDN credentials, the Multi Language
 // machine-translation key and the Pursae Security TOTP secrets. A restore keeps this site's own
 // auth_secret (bmgrKeepSettings), so on another site (or a reinstalled one) those values would no
@@ -48,7 +48,7 @@ type bmgrResealer struct {
 }
 
 // line re-encrypts every sealed value of one archive row; values that do not open under the
-// archive's secret (sealed under a WPGO_SECRET the archive does not carry) are left as they are.
+// archive's secret (sealed under a PURSAE_SECRET the archive does not carry) are left as they are.
 func (r *bmgrResealer) line(s string) string {
 	if r == nil || !strings.Contains(s, ":v1:") {
 		return s
@@ -113,7 +113,7 @@ func bmgrArchiveSecret(f *zip.File) string {
 	return ""
 }
 
-// siteSecret is the secret this site seals with (WPGO_SECRET, else the auth_secret option).
+// siteSecret is the secret this site seals with (PURSAE_SECRET, else the auth_secret option).
 func (s *Server) siteSecret() string {
 	if s.cfg.Secret != "" {
 		return s.cfg.Secret

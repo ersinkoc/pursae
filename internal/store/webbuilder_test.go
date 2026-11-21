@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
 
+	"wpgo/internal/config"
 	"wpgo/internal/db"
 )
 
@@ -36,13 +36,13 @@ func TestRevConflictErrorIs(t *testing.T) {
 	}
 }
 
-// wbTestStore recreates the WPGO_TEST_DB database, migrates it and returns a store on it, a post
-// and two users. Skipped without WPGO_TEST_ADMIN_DB / WPGO_TEST_DB.
+// wbTestStore recreates the PURSAE_TEST_DB database, migrates it and returns a store on it, a post
+// and two users. Skipped without PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB.
 func wbTestStore(t *testing.T) (*Store, int64, int64, int64) {
 	t.Helper()
-	adminURL, testURL := os.Getenv("WPGO_TEST_ADMIN_DB"), os.Getenv("WPGO_TEST_DB")
+	adminURL, testURL := config.Env("TEST_ADMIN_DB"), config.Env("TEST_DB")
 	if adminURL == "" || testURL == "" {
-		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
+		t.Skip("PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB not set")
 	}
 	ctx := context.Background()
 	u, err := url.Parse(testURL)

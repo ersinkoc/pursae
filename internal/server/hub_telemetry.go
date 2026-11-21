@@ -18,7 +18,7 @@ import (
 // "POST /api/v1/sites/events"). They are on by default; Settings › License has a "Send usage
 // statistics" switch (statsOption). Off, the ping carries only what updates need (site address,
 // version, license key) and no events are queued. A site without a Manager (a devhub build with
-// WPGO_DEV_HUB_URL=off, or a test) sends nothing.
+// PURSAE_DEV_HUB_URL=off, or a test) sends nothing.
 //
 // The daily ping carries the site's URL, version, locale, OS and architecture, license key, active
 // theme and its plugin and theme inventory. Events (a plugin installed, a theme previewed, a demo
@@ -213,7 +213,7 @@ func (s *Server) hubPingBody(ctx context.Context) hubPingPayload {
 
 // themeInventory lists the installed themes with where they came from: bundled themes ship with the
 // core (native), library themes installed from Pursae Manager are hub, other packages were uploaded
-// (a theme from a local library directory, WPGO_THEME_LIBRARY_DIR, counts as native).
+// (a theme from a local library directory, PURSAE_THEME_LIBRARY_DIR, counts as native).
 func (s *Server) themeInventory() []hubPackageInfo {
 	active := ""
 	if t := s.activeTheme(); t != nil {

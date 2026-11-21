@@ -34,12 +34,12 @@ func withRootKeys(t *testing.T, roots ...ed25519.PublicKey) {
 	t.Cleanup(func() { rootKeysBuiltin, rootKeysLinked = savedBuiltin, savedLinked })
 }
 
-// withTrustHubKeys sets the devhub WPGO_TRUST_HUB_KEYS opt-in for one test; it also clears the
-// variable so a developer's exported WPGO_TRUST_HUB_KEYS=1 cannot turn "off" into "on" in a
+// withTrustHubKeys sets the devhub PURSAE_TRUST_HUB_KEYS opt-in for one test; it also clears the
+// variable so a developer's exported PURSAE_TRUST_HUB_KEYS=1 cannot turn "off" into "on" in a
 // devhub test run.
 func withTrustHubKeys(t *testing.T, on bool) {
 	t.Helper()
-	t.Setenv("WPGO_TRUST_HUB_KEYS", "")
+	t.Setenv("PURSAE_TRUST_HUB_KEYS", "")
 	saved := trustHubKeysForce
 	trustHubKeysForce = on
 	t.Cleanup(func() { trustHubKeysForce = saved })
@@ -87,9 +87,9 @@ func TestPursaeRootKeyPinned(t *testing.T) {
 	}
 }
 
-// A production build ignores WPGO_TRUST_HUB_KEYS: only a devhub build reads it.
+// A production build ignores PURSAE_TRUST_HUB_KEYS: only a devhub build reads it.
 func TestTrustHubKeysEnvIgnored(t *testing.T) {
-	t.Setenv("WPGO_TRUST_HUB_KEYS", "1")
+	t.Setenv("PURSAE_TRUST_HUB_KEYS", "1")
 	if trustHubKeysEnv() != config.DevHub {
 		t.Errorf("trustHubKeysEnv() = %v in a build with DevHub=%v", trustHubKeysEnv(), config.DevHub)
 	}
@@ -271,9 +271,9 @@ func TestComposeDevHubURLAllowed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := regexp.MustCompile(`WPGO_DEV_HUB_URL:\s*\$\{WPGO_DEV_HUB_URL:-([^}]+)\}`).FindSubmatch(raw)
+	m := regexp.MustCompile(`PURSAE_DEV_HUB_URL:\s*\$\{PURSAE_DEV_HUB_URL:-\$\{WPGO_DEV_HUB_URL:-([^}]+)\}\}`).FindSubmatch(raw)
 	if m == nil {
-		t.Fatal("docker/compose.yaml has no WPGO_DEV_HUB_URL default")
+		t.Fatal("docker/compose.yaml has no PURSAE_DEV_HUB_URL default")
 	}
 	u, err := url.Parse(string(m[1]) + "/api/v1/index")
 	if err != nil {

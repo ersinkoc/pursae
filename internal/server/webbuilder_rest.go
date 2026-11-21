@@ -866,7 +866,7 @@ func (s *Server) wbRESTPublish(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not record the revision.")
 		return
 	}
-	// The core cap (WPGO_POST_REVISIONS) also covers the revision a style-only publish inserts above.
+	// The core cap (PURSAE_POST_REVISIONS) also covers the revision a style-only publish inserts above.
 	if err := store.PruneRevisionsTx(c, tx, p.ID); err != nil {
 		restErr(c, http.StatusInternalServerError, "db_error", "Could not prune the old revisions.")
 		return

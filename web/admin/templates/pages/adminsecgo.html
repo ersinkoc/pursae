@@ -182,7 +182,7 @@
 <table class="form-table" role="presentation">
 <tr><th scope="row">Hide the login</th><td><label><input type="checkbox" name="hide_login" value="1"{{if .S.HideLogin}} checked{{end}}> Use a custom login URL; <code>/wp-login</code>, <code>/wp-login.php</code> and <code>/wp-admin</code> answer 404 to visitors who are not logged in</label></td></tr>
 <tr><th scope="row"><label for="login_slug">Login URL</label></th><td><code>{{.HomeURL}}/</code><input type="text" name="login_slug" id="login_slug" class="regular-text" value="{{.S.LoginSlug}}" placeholder="my-login" pattern="[a-z0-9][a-z0-9_\-]{2,63}">
-	<p class="description">Bookmark it. If you ever lose it, set <code>WPGO_ADMINSEC_DISABLE_HIDE_LOGIN=1</code> in the server's environment or run <code>wpgo adminsec disable-hide-login</code>: <code>/wp-login</code> works again.</p></td></tr>
+	<p class="description">Bookmark it. If you ever lose it, set <code>PURSAE_ADMINSEC_DISABLE_HIDE_LOGIN=1</code> in the server's environment or run <code>wpgo adminsec disable-hide-login</code>: <code>/wp-login</code> works again.</p></td></tr>
 <tr><th scope="row"><label for="hide_redirect">Hidden URLs</label></th><td><input type="text" name="hide_redirect" id="hide_redirect" class="regular-text" value="{{.S.HideRedirect}}" placeholder="404 page"><p class="description">Empty: the theme's 404 page. Or a path (like <code>/</code>) or URL to redirect to.</p></td></tr>
 </table>
 <h2 class="title">Login form</h2>
@@ -252,11 +252,11 @@
 </table>
 {{else if eq .Tab "firewall"}}
 <h2 class="title">Firewall</h2>
-{{if .FirewallEnvOff}}<div class="notice notice-warning inline"><p><strong>WPGO_FIREWALL=off</strong> is set in the server's environment: the firewall does not run, whatever is chosen here.</p></div>{{end}}
+{{if .FirewallEnvOff}}<div class="notice notice-warning inline"><p><strong>PURSAE_FIREWALL=off</strong> is set in the server's environment: the firewall does not run, whatever is chosen here.</p></div>{{end}}
 <p>The firewall runs before everything else, on every request. Pursae runs it with the defaults even without Pursae Security; the settings here change them. Addresses on the allow list (Lockouts &amp; IPs) are never limited or blocked.</p>
 <table class="form-table" role="presentation">
 <tr><th scope="row"><label for="rate_limit">Rate limit</label></th><td><input type="number" min="0" max="100000" class="small-text" name="rate_limit" id="rate_limit" value="{{.S.RateLimit}}"> requests a minute from one IP address <span class="description">(0: off; default {{.FirewallDefault}})</span>
-	<p class="description">Static files (CSS, scripts, images, fonts) do not count. Over the limit an address gets <code>429 Too Many Requests</code> until the minute ends. Loopback and trusted proxies (<code>WPGO_TRUSTED_PROXIES</code>) are never limited: behind a reverse proxy, set it so visitors' own addresses are seen.</p></td></tr>
+	<p class="description">Static files (CSS, scripts, images, fonts) do not count. Over the limit an address gets <code>429 Too Many Requests</code> until the minute ends. Loopback and trusted proxies (<code>PURSAE_TRUSTED_PROXIES</code>) are never limited: behind a reverse proxy, set it so visitors' own addresses are seen.</p></td></tr>
 <tr><th scope="row">Request rules</th><td><label><input type="checkbox" name="firewall" value="1"{{if .S.Firewall}} checked{{end}}> Block requests that look like attacks</label>
 	<p class="description">Answers <code>403</code> to path traversal (<code>../</code>), probes for <code>.env</code>, <code>.git</code>, <code>wp-config.php</code> and system files, and script, SQL and code injection in the query string or User-Agent. Only the URL and User-Agent are checked, never form or post content. Blocked requests are logged (one entry per address and minute).</p></td></tr>
 </table>

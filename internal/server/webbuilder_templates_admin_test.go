@@ -23,7 +23,7 @@ import (
 
 // Tests of Appearance › Theme Builder (webbuilder_templates_admin.go): section id regeneration,
 // condition labels, the screen, its row and bulk actions, the core post screen guards and the
-// "no Elementor" rule. Integration tests need WPGO_TEST_ADMIN_DB / WPGO_TEST_DB.
+// "no Elementor" rule. Integration tests need PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB.
 
 // --- unit ------------------------------------------------------------------------------------------
 

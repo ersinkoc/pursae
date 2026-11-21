@@ -27,7 +27,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Rule | Implementation | |
 |---|---|---|
 | **MFA = e-mailed one-time code**, usable on its own | Users › Security › *E-mailed codes (MFA)* | ✅ |
-| MFA needs working e-mail | `asMailReady()`: Pursae SMTP active with a non-default mailer whose required field (SMTP host / API key / client ID …) is set and *Do Not Send* off, **or** the core `WPGO_SMTP_HOST`. Otherwise the card is greyed out with the reason and a link to Pursae SMTP (or to the Plugins screen when it is not active); the server refuses the setup too | ✅ |
+| MFA needs working e-mail | `asMailReady()`: Pursae SMTP active with a non-default mailer whose required field (SMTP host / API key / client ID …) is set and *Do Not Send* off, **or** the core `PURSAE_SMTP_HOST`. Otherwise the card is greyed out with the reason and a link to Pursae SMTP (or to the Plugins screen when it is not active); the server refuses the setup too | ✅ |
 | Setup verifies the address | A 6-digit code is mailed to the address entered (default: the account e-mail); only after it is entered are codes switched on | ✅ |
 | **2FA = authenticator app (TOTP)** | RFC 6238 / RFC 4226: HMAC-SHA1, 6 digits, 30-second steps, 160-bit random secret, ±1 step drift, **replay protection** (the last accepted step is stored; an equal or older step is refused, updated atomically) | ✅ |
 | QR code generated server-side in pure Go | `adminsec_qr.go`: ISO 18004 byte mode, level M, versions 1–40, Reed–Solomon, all 8 masks with penalty scoring; rendered as inline SVG. Checked with the browser's `BarcodeDetector` | ✅ |
@@ -57,7 +57,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | After the grace period | Login succeeds but every admin screen redirects to Users › Security until the factor is set up (profile and heartbeat stay reachable); required factors cannot be removed | ✅ |
 | Users list | **Two-Step** column: `2FA app + e-mail`, `MFA e-mail` or —, plus “2FA required” / “MFA required” when unmet | ✅ |
 | Reset a user's factors | User-edit › *Reset two-step login*: removes factors, backup codes, remembered devices, pending challenges and restarts the grace period; logged | ✅ |
-| Recovery from the command line | `wpgo adminsec reset-user <login>` | ✅ |
+| Recovery from the command line | `pursae adminsec reset-user <login>` | ✅ |
 
 ## 5. Custom login URL (WPS Hide Login)
 
@@ -69,7 +69,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | How it is served | `adminsecFront` runs first in `Server.Handler()` — before Pursae Maintenance and the page cache — and serves the slug as `/wp-login` internally, so the cache never stores it and maintenance mode never closes it | ✅ |
 | Every core link uses it | `loginPath()` / template func `loginURL`: the login, lost-password, register and reset forms and their links, logout links (admin bar in wp-admin and on the front end, comment form, Login/out block, Pursae Maintenance login form), `auth_redirect`, redirects after logout/reset/registration, the password-reset, new-user and privacy-confirmation e-mails, generic error links. A response wrapper also rewrites any `Location: /wp-login…` | ✅ |
 | `authorize-application` | A visitor opening `/wp-admin/authorize-application` is sent to the new login with `redirect_to` | ✅ |
-| Escape hatch | `WPGO_ADMINSEC_DISABLE_HIDE_LOGIN=1` in the environment brings `/wp-login` back immediately (the settings screen says so); `wpgo adminsec disable-hide-login` switches the setting off in the database | ✅ |
+| Escape hatch | `PURSAE_ADMINSEC_DISABLE_HIDE_LOGIN=1` in the environment brings `/wp-login` back immediately (the settings screen says so); `pursae adminsec disable-hide-login` switches the setting off in the database | ✅ |
 | Deactivation | Restores `/wp-login` at once | ✅ |
 
 ## 6. Login protection
@@ -83,7 +83,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | IP allow list / block list | One IP or CIDR (IPv4/IPv6) per line, `#` comments. Allow list: never locked out. Block list: login, API, and optionally the whole site (403). The form refuses to block your own IP | ✅ |
 | Lockouts screen | Active lockouts with release / release all, manual IP lockout, lockout history | ✅ |
 | Generic error messages | “The username or password you entered is incorrect.” for unknown users and wrong passwords (default on) | ✅ |
-| User enumeration | `/?author=N` → 404, REST `wp/v2/users` → 401 and an empty users sitemap for visitors. **The core does this by default** (and the login form gives one message for an unknown account and a wrong password); `WPGO_EXPOSE_USERS=1` opts out. While Pursae Security is active its "block enumeration" and "generic errors" settings decide instead, so an administrator can relax them on purpose | ✅ |
+| User enumeration | `/?author=N` → 404, REST `wp/v2/users` → 401 and an empty users sitemap for visitors. **The core does this by default** (and the login form gives one message for an unknown account and a wrong password); `PURSAE_EXPOSE_USERS=1` opts out. While Pursae Security is active its "block enumeration" and "generic errors" settings decide instead, so an administrator can relax them on purpose | ✅ |
 | CAPTCHA on the login | Optional (Login tab): Turnstile or reCAPTCHA v3 on the login, registration and lost-password forms, using the keys and verifier of Pursae Contact Form. Not on the Pursae Commerce My Account forms | ✅ |
 | Password reset requests | At most 3 reset mails per account and per IP in 15 minutes (silently dropped, same answer), block list applied, `password_reset_requested` logged. Lockout alert mails: at most 5 an hour, none for unknown usernames | ✅ |
 
@@ -116,8 +116,8 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Hide the version | No generator meta tag, feeds without the version, front-end `?ver=0.1.0` replaced by a site-specific hash (default on) | ✅ |
 | REST only for logged-in users | Opt-in; visitors keep oEmbed, the contact-form routes, Cookie/Pixel visitor routes and the Commerce Store API plus configurable prefixes | ✅ |
 | Alerts | E-mail to the admin (or a configured address) on an administrator's login from a new IP (not the very first login) and on every lockout | ✅ |
-| Firewall (core, on by default) | `firewall.go`, before everything else on every request: a per-IP rate limit (900 requests a minute by default; static files, loopback and trusted proxies do not count; 429 with Retry-After) and basic WAF rules on the URL and User-Agent only (path traversal, null bytes, `.env`/`.git`/`wp-config.php` probes, script and SQL injection, `${jndi:` / shellshock). Runs with the defaults without the plugin; Settings › Firewall changes the limit or turns the rules off; `WPGO_FIREWALL=off` disables it; the allow list is exempt. Blocks are logged once per IP and minute | ✅ |
-| File integrity scan | Pursae Security › Integrity (Scan now) and the daily job: binary SHA-256 change at the same version, with `WPGO_WEB_DIR` every core web file against the embedded copy, edited bundled-theme files, and server-side scripts (`.php`, `.phtml`, double extensions, `.htaccess`, …) in the themes and uploads folders. New findings are logged and e-mailed (Settings › Firewall) | ✅ |
+| Firewall (core, on by default) | `firewall.go`, before everything else on every request: a per-IP rate limit (900 requests a minute by default; static files, loopback and trusted proxies do not count; 429 with Retry-After) and basic WAF rules on the URL and User-Agent only (path traversal, null bytes, `.env`/`.git`/`wp-config.php` probes, script and SQL injection, `${jndi:` / shellshock). Runs with the defaults without the plugin; Settings › Firewall changes the limit or turns the rules off; `PURSAE_FIREWALL=off` disables it; the allow list is exempt. Blocks are logged once per IP and minute | ✅ |
+| File integrity scan | Pursae Security › Integrity (Scan now) and the daily job: binary SHA-256 change at the same version, with `PURSAE_WEB_DIR` every core web file against the embedded copy, edited bundled-theme files, and server-side scripts (`.php`, `.phtml`, double extensions, `.htaccess`, …) in the themes and uploads folders. New findings are logged and e-mailed (Settings › Firewall) | ✅ |
 | Malware signature scan | — out of scope (no signature database) | — |
 
 ## 10. Activity log
@@ -141,10 +141,10 @@ lockouts, the login URL and recent activity.
 ## 12. Command line
 
 ```
-wpgo adminsec disable-hide-login   # custom login URL off (restart a running server, or use the env var)
-wpgo adminsec reset-user <login>   # remove a user's second factors and remembered devices
-wpgo adminsec unlock-all           # release every lockout and forget failed attempts
-wpgo adminsec deactivate           # switch the plugin off
+pursae adminsec disable-hide-login   # custom login URL off (restart a running server, or use the env var)
+pursae adminsec reset-user <login>   # remove a user's second factors and remembered devices
+pursae adminsec unlock-all           # release every lockout and forget failed attempts
+pursae adminsec deactivate           # switch the plugin off
 ```
 
 ## 13. Tests

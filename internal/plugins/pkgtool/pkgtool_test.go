@@ -42,6 +42,9 @@ func TestScaffoldBuildVerify(t *testing.T) {
 	if pkg.Manifest.Slug != "demo-plugin" {
 		t.Fatalf("slug %q", pkg.Manifest.Slug)
 	}
+	if pkg.Manifest.ABI != plugins.ABIVersion {
+		t.Errorf("scaffolded plugin.json declares abi %d, want %d", pkg.Manifest.ABI, plugins.ABIVersion)
+	}
 }
 
 func TestScaffoldSDKPathWithSpaces(t *testing.T) {

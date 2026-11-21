@@ -26,8 +26,8 @@ jobs:
           --health-interval 2s --health-timeout 3s --health-retries 30
     env:
       CGO_ENABLED: "0"
-      WPGO_TEST_ADMIN_DB: postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable
-      WPGO_TEST_DB: postgres://wpgo:wpgo@localhost:5432/wpgo_test?sslmode=disable
+      PURSAE_TEST_ADMIN_DB: postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable
+      PURSAE_TEST_DB: postgres://wpgo:wpgo@localhost:5432/wpgo_test?sslmode=disable
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -56,7 +56,7 @@ jobs:
           for d in examples/plugins/*/; do
             if [ -f "$d/plugin.json" ]; then go build -buildmode=c-shared -o /dev/null "./$d"; fi
           done
-      # -p 1: the server, store and settings packages each drop and recreate WPGO_TEST_DB.
+      # -p 1: the server, store and settings packages each drop and recreate PURSAE_TEST_DB.
       - name: test
         run: go test ./... -p 1 -count=1 -timeout 40m
 
@@ -92,7 +92,7 @@ jobs:
       - name: upgrade test
         run: tools/upgrade-test.sh
 
-  # Data races in the unit tests (no database: the integration tests skip without WPGO_TEST_DB).
+  # Data races in the unit tests (no database: the integration tests skip without PURSAE_TEST_DB).
   race:
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -156,7 +156,7 @@ jobs:
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
-  # The Windows release binary: vet, unit tests (integration tests skip without WPGO_TEST_DB), then a
+  # The Windows release binary: vet, unit tests (integration tests skip without PURSAE_TEST_DB), then a
   # smoke run of the release build against the runner's preinstalled PostgreSQL: migrate, serve,
   # /healthz and the install screen.
   windows:
@@ -181,9 +181,9 @@ jobs:
         shell: pwsh
         env:
           DATABASE_URL: postgres://postgres:root@localhost:5432/postgres?sslmode=disable
-          WPGO_ADDR: 127.0.0.1:8080
-          WPGO_SITE_URL: http://127.0.0.1:8080
-          WPGO_HUB: "off"
+          PURSAE_ADDR: 127.0.0.1:8080
+          PURSAE_SITE_URL: http://127.0.0.1:8080
+          PURSAE_HUB: "off"
         run: |
           $svc = Get-Service -Name "postgresql*" | Select-Object -First 1
           Set-Service -Name $svc.Name -StartupType Manual

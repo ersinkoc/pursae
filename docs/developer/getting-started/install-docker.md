@@ -16,7 +16,7 @@ Dashboard › Updates. Settings go in `docker/.env` (git-ignored):
 ```bash
 git clone https://github.com/pursae/pursae.git
 cd pursae
-cp docker/.env.example docker/.env   # set WPGO_DB_PASSWORD, WPGO_SITE_URL (https://…), WPGO_SMTP_*, WPGO_MAIL_FROM
+cp docker/.env.example docker/.env   # set PURSAE_DB_PASSWORD, PURSAE_SITE_URL (https://…), PURSAE_SMTP_*, PURSAE_MAIL_FROM
 make prod-up                         # site on 127.0.0.1:8088; point Caddy or nginx at it
 ```
 
@@ -25,7 +25,7 @@ Without `make`:
 `make prod-logs` follows the log, `make prod-down` stops the stack (data is kept). Put a TLS proxy in
 front ([reverse proxy and TLS](../operations/reverse-proxy-and-tls.md)), then open the install link
 the server printed (`make prod-logs`: `https://…/wp-admin/install?token=…`) and finish the installer.
-The setup token keeps strangers out of it; set your own with `WPGO_SETUP_TOKEN` in `docker/.env`.
+The setup token keeps strangers out of it; set your own with `PURSAE_SETUP_TOKEN` in `docker/.env`.
 What the production file changes: [Docker](../operations/docker.md#production-changes).
 
 ## On your machine
@@ -61,13 +61,13 @@ it finishes, open the install link from `docker compose -f docker/compose.yaml l
 The site URL is written into the settings at install time, so set it **before** the first run:
 
 ```bash
-WPGO_PORT=9000 WPGO_SITE_URL=http://localhost:9000 make docker-up
+PURSAE_PORT=9000 PURSAE_SITE_URL=http://localhost:9000 make docker-up
 ```
 
 To reach the site from another device on your network use your machine's LAN address:
 
 ```bash
-WPGO_SITE_URL=http://192.168.1.50:8088 make docker-up
+PURSAE_SITE_URL=http://192.168.1.50:8088 make docker-up
 ```
 
 If you already installed with the wrong URL, change it under Settings › General or start over
@@ -102,8 +102,8 @@ docker compose -f docker/compose.yaml restart wpgo
 ```
 
 The compose file builds a development (`devhub`) binary, publishes the site on 127.0.0.1 only
-(`WPGO_BIND=0.0.0.0` opens it to the network) and trusts no proxy's `X-Forwarded-For`. To install the
-bundled example plugins, start it with `WPGO_TRUST_DEV_KEY=1` (the demo key's private half is public, so it is
+(`PURSAE_BIND=0.0.0.0` opens it to the network) and trusts no proxy's `X-Forwarded-For`. To install the
+bundled example plugins, start it with `PURSAE_TRUST_DEV_KEY=1` (the demo key's private half is public, so it is
 off by default); production binaries ignore that variable. That is for development only: `make prod-up` adds `docker/compose.prod.yaml`, which turns it off — see
 [Docker](../operations/docker.md#production-changes), the [security](../operations/security.md) page and the
 full [configuration reference](../operations/configuration.md).
