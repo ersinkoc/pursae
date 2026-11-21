@@ -58,6 +58,16 @@ func restCapPlural(typ string) string {
 	return restBaseFor(typ)
 }
 
+// restCreateCap is the post type's create_posts capability. register_post_type( 'wp_block' ) maps
+// it to publish_posts ("You need to be able to publish posts, in order to create blocks"), so a
+// Contributor may read and use patterns but not create them; other types create with edit_posts.
+func restCreateCap(typ string) string {
+	if typ == "wp_block" {
+		return "publish_posts"
+	}
+	return "edit_" + restCapPlural(typ)
+}
+
 func gmt(t time.Time) string { return t.UTC().Format("2006-01-02T15:04:05") }
 
 // restPost is WP_REST_Posts_Controller::prepare_item_for_response().
@@ -575,7 +585,7 @@ func (api *restAPI) savePost(c *gin.Context, r *restRequest, typ string, id int6
 	var p *store.Post
 	isNew := id == 0
 	if isNew {
-		if !u.Can("edit_"+plural, nil) {
+		if !u.Can("edit_"+plural, nil) || !u.Can(restCreateCap(typ), nil) {
 			restErr(c, http.StatusForbidden, "rest_cannot_create", "Sorry, you are not allowed to create posts as this user.")
 			return
 		}

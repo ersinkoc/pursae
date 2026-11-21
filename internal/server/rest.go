@@ -426,6 +426,8 @@ func (api *restAPI) canWrite(u *store.User, pattern string) bool {
 		return u.Can("upload_files", nil)
 	case strings.HasPrefix(pattern, "/wp/v2/pages"):
 		return u.Can("edit_pages", nil)
+	case pattern == "/wp/v2/blocks": // creating a pattern: wp_block's create_posts is publish_posts
+		return u.Can(restCreateCap("wp_block"), nil)
 	case strings.HasPrefix(pattern, "/wp/v2/posts"), strings.HasPrefix(pattern, "/wp/v2/blocks"):
 		return u.Can("edit_posts", nil)
 	case strings.HasPrefix(pattern, "/wp/v2/settings"), strings.HasPrefix(pattern, "/wp/v2/global-styles"):

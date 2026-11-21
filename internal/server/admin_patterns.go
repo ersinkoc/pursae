@@ -17,7 +17,9 @@ import (
 // patterns (reusable blocks). WordPress maps the wp_block capabilities onto the post ones
 // (register_post_type( 'wp_block' ): read and edit_posts are edit_posts, edit_others_posts,
 // delete_others_posts, … stay the post caps), so the screen checks edit_posts and the per-post
-// meta caps resolve like a post's.
+// meta caps resolve like a post's. Only create_posts differs: it is publish_posts, so the Add
+// Pattern button (and the Import from JSON form list-reusable-blocks mounts next to it) is shown
+// to Authors and up, not to Contributors.
 
 // patternListColumns are the Screen Options column toggles of the Patterns list.
 var patternListColumns = []screenColumn{{"sync_status", "Sync status"}, {"author", "Author"},
@@ -123,7 +125,7 @@ func (s *Server) patternsList(c *gin.Context) {
 	}
 
 	d := patternsListData{Labels: lab, Search: search, Status: status, Category: cat, BulkNonce: s.nonce(c, "bulk-posts"),
-		CanCreate: u.Can("edit_posts", nil), IsTrash: status == "trash",
+		CanCreate: u.Can(restCreateCap(typ), nil), IsTrash: status == "trash",
 		CanEmptyTrash: othersVisible, Orderby: q.OrderBy, Order: strings.ToLower(q.Order), Hidden: s.hiddenColumns(u, "edit-"+typ)}
 	d.Categories, _, _ = s.store.QueryTerms(ctx, store.TermQuery{Taxonomy: "wp_pattern_category", OrderBy: "name", Order: "asc", PerPage: 1000, Page: 1})
 

@@ -1665,7 +1665,8 @@ func (s *Server) postNew(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid post type.")
 		return
 	}
-	if !u.Can("edit_"+restCapPlural(typ), nil) { // wp_block: edit_posts, like POST /wp/v2/blocks
+	// post-new.php: edit_posts and create_posts (publish_posts for wp_block), like POST /wp/v2/blocks.
+	if !u.Can("edit_"+restCapPlural(typ), nil) || !u.Can(restCreateCap(typ), nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to create posts as this user.")
 		return
 	}

@@ -180,10 +180,15 @@ func TestRESTBlocksPatternCategories(t *testing.T) {
 	if _, got, _, _ := s.admin.do("GET", "/wp/v2/wp_pattern_category/"+itoa64(int64(heroes)), nil); got["count"] != float64(0) {
 		t.Errorf("term count after removal: %v", got["count"])
 	}
-	// A contributor creates a pattern with a category (assign_terms is edit_posts); it stays a draft.
-	code, own, _, _ := contrib.do("POST", "/wp/v2/blocks", map[string]any{"title": "Mine", "content": "<p>m</p>", "status": "publish", "wp_pattern_category": []any{heroes}})
-	if code != http.StatusCreated || own["status"] == "publish" || len(own["wp_pattern_category"].([]any)) != 1 {
-		t.Errorf("contributor pattern: %d %v %v", code, own["status"], own["wp_pattern_category"])
+	// Creating a pattern needs publish_posts (wp_block's create_posts): a contributor cannot, even
+	// through the JSON import (which posts here), while an author creates one with a category.
+	if code, e, _, _ := contrib.do("POST", "/wp/v2/blocks", map[string]any{"title": "Mine", "content": "<p>m</p>", "status": "publish", "wp_pattern_category": []any{heroes}}); code != http.StatusForbidden || e["code"] != "rest_cannot_create" {
+		t.Errorf("contributor pattern: %d %v", code, e["code"])
+	}
+	_, author := s.user("arty", "author")
+	code, own, _, _ := author.do("POST", "/wp/v2/blocks", map[string]any{"title": "Mine", "content": "<p>m</p>", "status": "publish", "wp_pattern_category": []any{heroes}})
+	if code != http.StatusCreated || own["status"] != "publish" || len(own["wp_pattern_category"].([]any)) != 1 {
+		t.Errorf("author pattern: %d %v %v", code, own["status"], own["wp_pattern_category"])
 	}
 	// Deleting a category unassigns it.
 	if code, _, _, _ := s.admin.do("DELETE", "/wp/v2/wp_pattern_category/"+itoa64(int64(footers))+"?force=true", nil); code != http.StatusOK {
@@ -200,6 +205,7 @@ func TestAdminPatternsList(t *testing.T) {
 	s := secStart(t)
 	subC, _ := s.user("subby", "subscriber")
 	contribC, _ := s.user("conny", "contributor")
+	authorC, _ := s.user("arty", "author")
 	heroes := patternCategory(t, s.admin, "Heroes")
 	_, unsynced, _, _ := s.admin.do("POST", "/wp/v2/blocks", map[string]any{"title": "Unsynced hero", "content": "<p>u</p>", "status": "publish",
 		"meta": map[string]any{"wp_pattern_sync_status": "unsynced"}, "wp_pattern_category": []any{heroes}})
@@ -233,13 +239,19 @@ func TestAdminPatternsList(t *testing.T) {
 	if !strings.Contains(body, "Unsynced hero") || strings.Contains(body, "Synced footer") {
 		t.Error("category filter")
 	}
-	// Subscribers cannot see the list; contributors can (edit_posts).
+	// Subscribers cannot see the list; contributors can (edit_posts) but get no Add Pattern button
+	// (create_posts is publish_posts), so list-reusable-blocks mounts no Import from JSON either.
 	if code, _, _ := get(t, subC, s.base+"/wp-admin/edit?post_type=wp_block"); code != http.StatusForbidden {
 		t.Errorf("subscriber list: %d", code)
 	}
 	if code, body, _ := get(t, contribC, s.base+"/wp-admin/edit?post_type=wp_block"); code != http.StatusOK || !strings.Contains(body, "Synced footer") ||
-		strings.Contains(body, `<span class="trash"><a href="/wp-admin/post?post=`+sid) {
-		t.Errorf("contributor list: %d (trash link on another user's pattern: %v)", code, strings.Contains(body, "action=trash"))
+		strings.Contains(body, `<span class="trash"><a href="/wp-admin/post?post=`+sid) || strings.Contains(body, `class="page-title-action"`) {
+		t.Errorf("contributor list: %d (trash link on another user's pattern: %v, add button: %v)", code, strings.Contains(body, "action=trash"),
+			strings.Contains(body, "page-title-action"))
+	}
+	if code, body, _ := get(t, authorC, s.base+"/wp-admin/edit?post_type=wp_block"); code != http.StatusOK ||
+		!strings.Contains(body, `href="/wp-admin/post-new?post_type=wp_block" class="page-title-action"`) {
+		t.Errorf("author list: %d (no Add Pattern button)", code)
 	}
 
 	// Editing a pattern opens the block editor on the wp_block post; a new pattern too.
@@ -253,6 +265,15 @@ func TestAdminPatternsList(t *testing.T) {
 	}
 	if code, _, _ := get(t, subC, s.base+"/wp-admin/post-new?post_type=wp_block"); code != http.StatusForbidden {
 		t.Errorf("subscriber new pattern: %d", code)
+	}
+	if code, _, _ := get(t, contribC, s.base+"/wp-admin/post-new?post_type=wp_block"); code != http.StatusForbidden {
+		t.Errorf("contributor new pattern: %d", code)
+	}
+	if code, _, _ := get(t, contribC, s.base+"/wp-admin/post-new"); code != http.StatusOK { // posts stay creatable
+		t.Errorf("contributor new post: %d", code)
+	}
+	if code, body, _ := get(t, authorC, s.base+"/wp-admin/post-new?post_type=wp_block"); code != http.StatusOK || !strings.Contains(body, `"wp_block"`) {
+		t.Errorf("author new pattern: %d", code)
 	}
 
 	// Bulk trash, then the Trash view.
