@@ -24,7 +24,7 @@ func registerImportCLI(r *cli.Registry, e *cliEnv) {
 	r.Add(cli.Command{
 		Path:  "import",
 		Short: "Import content from WordPress eXtended RSS (WXR) files.",
-		Long: `Imports posts, pages, comments, terms, menus and attachments from WXR export files (Tools ›
+		Long: `Imports posts, pages, comments, terms, menus, attachments and WooCommerce products from WXR export files (Tools ›
 Export in WordPress or Pursae), with the same importer as Tools › Import.
 
 --authors decides who owns the imported content:
@@ -135,12 +135,17 @@ func importSummary(r *importReport) string {
 	add(r.Comments, "comments")
 	add(r.Attachments, "attachments")
 	add(r.MenuItems, "menu items")
+	add(r.Products, "products")
+	add(r.Variations, "variations")
 	if len(parts) == 0 {
 		parts = append(parts, "nothing new")
 	}
 	s := strings.Join(parts, ", ")
 	if r.Skipped > 0 {
 		s += fmt.Sprintf(" (%d skipped)", r.Skipped)
+	}
+	if r.SkippedOrders > 0 || r.SkippedCoupons > 0 {
+		s += fmt.Sprintf("; skipped %d orders / %d coupons", r.SkippedOrders, r.SkippedCoupons)
 	}
 	return s
 }
@@ -155,6 +160,10 @@ func addImportReport(dst, r *importReport) {
 	dst.Comments += r.Comments
 	dst.Attachments += r.Attachments
 	dst.MenuItems += r.MenuItems
+	dst.Products += r.Products
+	dst.Variations += r.Variations
+	dst.SkippedOrders += r.SkippedOrders
+	dst.SkippedCoupons += r.SkippedCoupons
 }
 
 // wxrAuthorLogins lists the author logins declared in a WXR file.
