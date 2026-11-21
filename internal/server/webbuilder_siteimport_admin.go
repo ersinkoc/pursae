@@ -1074,7 +1074,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	for _, f := range c.PostFormArray("collection") {
 		collections = append(collections, f)
 	}
-	args := map[string]any{"kit": kit, "pages": items, "status": status, "site_name": name, "templates": split, "front_page": wantFront && !draft,
+	args := map[string]any{"kit": kit, "pages": items, "status": status, "site_name": name, "templates": split, "front_page": wantFront,
 		"menus": c.PostForm("menus") == "1", "collections": collections}
 	if c.PostForm("old_links") != "rewrite" {
 		args["old_links"] = "keep"

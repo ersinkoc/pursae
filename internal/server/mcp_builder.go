@@ -52,12 +52,17 @@ func (s *Server) mcpRunTool(c *gin.Context, t *mcpTool, args map[string]any) map
 	if !t.readOnly {
 		s.mcpLogActivity(c, t.Name, http.MethodPost, mcpToolRoute(t), status, time.Since(started))
 	}
-	if err != nil {
+	if err != nil && out == nil {
 		return mcpToolError(err.Error())
 	}
 	b, _ := json.Marshal(out)
 	text, truncated := mcpTruncate(string(b), mcpMaxText)
-	res := map[string]any{"content": []map[string]any{{"type": "text", "text": text}}}
+	var res map[string]any
+	if err != nil {
+		res = mcpToolError(err.Error())
+	} else {
+		res = map[string]any{"content": []map[string]any{{"type": "text", "text": text}}}
+	}
 	if m, ok := out.(map[string]any); ok && !truncated {
 		res["structuredContent"] = m
 	}

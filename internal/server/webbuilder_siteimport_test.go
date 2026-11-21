@@ -609,3 +609,26 @@ func TestMCPImportSitePostCollection(t *testing.T) {
 		}
 	}
 }
+
+func TestMCPImportSiteDraftKeepsLiveHomepage(t *testing.T) {
+	ts, c, srv := newTestServer(t, true)
+	installAndLogin(t, ts, c)
+	_, call := mcpTestAgent(t, ts.URL, c, "Draft site import", nil)
+	home := wbrPost(t, srv, "page", "Existing homepage", "publish", 1)
+	if err := srv.settings.Set(t.Context(), map[string]any{"show_on_front": "page", "page_on_front": home.ID}); err != nil {
+		t.Fatal(err)
+	}
+	mcpStructured(t, "web_builder_kit_upload", call("web_builder_kit_upload", map[string]any{
+		"kit": "draft-home", "files": []any{map[string]any{"path": "site.css", "text": "body{color:green}"}},
+	}))
+	out := mcpStructured(t, "web_builder_import_site", call("web_builder_import_site", map[string]any{
+		"kit": "draft-home", "status": "unpublished", "front_page": true, "templates": false,
+		"pages": []any{map[string]any{"path": "index.html", "html": "<html><body><main><h1>New home</h1></main></body></html>"}},
+	}))
+	if srv.settings.Int("page_on_front") != int(home.ID) || srv.settings.String("show_on_front") != "page" || out["front_page"] != nil {
+		t.Fatalf("draft import replaced homepage %d: %v", home.ID, out)
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND status='draft' AND meta->>$1='draft-home'`, wbSiteMetaKit); n != 1 {
+		t.Fatalf("draft index count = %d, want 1", n)
+	}
+}
