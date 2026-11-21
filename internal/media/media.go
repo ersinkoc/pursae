@@ -850,6 +850,34 @@ func Decode(uploadsDir, relPath string) (image.Image, string, error) {
 	return image.Decode(f)
 }
 
+// DecodeAndProcess opens an image file like Decode and runs fn on it while still holding the
+// decode slot, so the whole edit (decode, transforms, encode) counts against cap(processSem) and
+// concurrent edits are throttled like uploads. The decode error, else fn's error, is returned.
+func DecodeAndProcess(uploadsDir, relPath string, fn func(img image.Image, format string) error) error {
+	f, err := os.Open(filepath.Join(uploadsDir, filepath.FromSlash(relPath)))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	cfg, _, err := image.DecodeConfig(f)
+	if err != nil {
+		return err
+	}
+	if int64(cfg.Width)*int64(cfg.Height) > MaxImagePixels {
+		return ErrTooLarge
+	}
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+	processSem <- struct{}{}
+	defer func() { <-processSem }()
+	img, format, err := image.Decode(f)
+	if err != nil {
+		return err
+	}
+	return fn(img, format)
+}
+
 // Resize scales an image to exactly w×h.
 func Resize(img image.Image, w, h int) image.Image { return resize(img, w, h, false, nil) }
 
