@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"wpgo/internal/store"
 )
 
 // The Flipbook screens (wp-admin/admin?page=pursae-flipbook): the list of books with their
@@ -40,14 +42,28 @@ type flipbookAdminData struct {
 
 func (s *Server) flipbookRowOf(c *gin.Context, b flipbook) flipbookRow {
 	base := "/wp-admin/admin?page=" + flipbookSlug
-	r := flipbookRow{flipbook: b, Shortcode: flipbookShortcodeText(b.ID), FullURL: flipbookPageURL(b.ID),
-		EditURL:   base + "&action=edit&id=" + strconv.Itoa(b.ID),
-		DeleteURL: base + "&action=delete&id=" + strconv.Itoa(b.ID) + "&_wpnonce=" + s.nonce(c, flipbookNonce+"-delete-"+strconv.Itoa(b.ID))}
+	r := flipbookRow{flipbook: b, Shortcode: flipbookShortcodeText(b.ID), FullURL: flipbookPageURL(b.ID)}
+	u := currentUser(c)
+	if flipbookCan(u, b, "edit_others_posts") {
+		r.EditURL = base + "&action=edit&id=" + strconv.Itoa(b.ID)
+	}
+	if flipbookCan(u, b, "delete_others_posts") {
+		r.DeleteURL = base + "&action=delete&id=" + strconv.Itoa(b.ID) + "&_wpnonce=" + s.nonce(c, flipbookNonce+"-delete-"+strconv.Itoa(b.ID))
+	}
 	r.AbsFullURL = flipbookAbsURL(s.links(c).HomeURL("/"), r.FullURL)
 	if t, err := time.Parse(time.RFC3339, b.Created); err == nil {
 		r.Date = t.In(s.loc()).Format("2006/01/02 15:04")
 	}
 	return r
+}
+
+// flipbookCan: anyone who may upload files manages their own books; another user's book (or one
+// made before authors were kept) needs others, edit_others_posts or delete_others_posts, like posts.
+func flipbookCan(u *store.User, b flipbook, others string) bool {
+	if u == nil || !u.Can("upload_files", nil) {
+		return false
+	}
+	return (b.Author != 0 && b.Author == u.ID) || u.Can(others, nil)
 }
 
 // flipbookAdmin serves admin?page=pursae-flipbook.
@@ -70,7 +86,14 @@ func (s *Server) flipbookAdmin(c *gin.Context) {
 			return
 		}
 		err := s.flipbookUpdate(c, func(st *flipbookStore) error {
-			st.Items = slices.DeleteFunc(st.Items, func(b flipbook) bool { return b.ID == id })
+			i := slices.IndexFunc(st.Items, func(b flipbook) bool { return b.ID == id })
+			if i < 0 {
+				return nil
+			}
+			if !flipbookCan(u, st.Items[i], "delete_others_posts") {
+				return errFlipbookNotYours
+			}
+			st.Items = slices.Delete(st.Items, i, i+1)
 			return nil
 		})
 		if err != nil {
@@ -87,6 +110,10 @@ func (s *Server) flipbookAdmin(c *gin.Context) {
 		b, ok := s.flipbookGet(id)
 		if !ok {
 			c.Redirect(http.StatusFound, base+"&pfb-error="+url.QueryEscape("That flipbook does not exist any more."))
+			return
+		}
+		if !flipbookCan(u, b, "edit_others_posts") {
+			c.Redirect(http.StatusFound, base+"&pfb-error="+url.QueryEscape(errFlipbookNotYours.Error()))
 			return
 		}
 		d.View, d.Edit, title = "edit", s.flipbookRowOf(c, b), "Edit Flipbook"
@@ -130,22 +157,27 @@ func (s *Server) flipbookAdminPost(c *gin.Context, base string) {
 	fail := func(back string, err error) {
 		c.Redirect(http.StatusFound, back+"&pfb-error="+url.QueryEscape(err.Error()))
 	}
+	u := currentUser(c)
+	// The PDF is the Media Library's: the picked attachment is looked up here and its own URL kept;
+	// the address and type the form carries are not trusted.
 	attID, _ := strconv.ParseInt(str("attachment_id"), 10, 64)
-	pdfURL := maintMediaURL(str("pdf_url"))
-	if (str("op") == "create" || str("pdf_url") != "") && !flipbookIsPDF(pdfURL, str("mime")) {
-		fail(base, errors.New("Please pick a PDF file."))
-		return
+	var pdfURL, fileName string
+	if str("op") == "create" || attID != 0 {
+		var err error
+		if pdfURL, fileName, err = s.flipbookPDF(c, attID); err != nil {
+			fail(base, err)
+			return
+		}
 	}
 	switch str("op") {
 	case "create":
 		title := str("title")
-		fileName := path.Base(str("file_name"))
 		if title == "" {
 			title = strings.TrimSuffix(fileName, path.Ext(fileName))
 		}
 		var id int
 		err := s.flipbookUpdate(c, func(st *flipbookStore) error {
-			b := flipbookNew(title, pdfURL, fileName, attID)
+			b := flipbookNew(title, pdfURL, fileName, attID, u.ID)
 			b.ID = st.NextID
 			st.NextID++
 			st.Items = append(st.Items, b)
@@ -166,11 +198,14 @@ func (s *Server) flipbookAdminPost(c *gin.Context, base string) {
 				if b.ID != id {
 					continue
 				}
+				if !flipbookCan(u, *b, "edit_others_posts") {
+					return errFlipbookNotYours
+				}
 				if t := str("title"); t != "" {
 					b.Title = t
 				}
 				if pdfURL != "" {
-					b.PDFURL, b.AttachmentID, b.FileName = pdfURL, attID, path.Base(str("file_name"))
+					b.PDFURL, b.AttachmentID, b.FileName = pdfURL, attID, fileName
 				}
 				b.Height, _ = strconv.Atoi(str("height"))
 				b.Background = str("background")
@@ -192,17 +227,23 @@ func (s *Server) flipbookAdminPost(c *gin.Context, base string) {
 	}
 }
 
-// flipbookIsPDF accepts the modal's choice when it is a PDF by MIME type or extension.
-func flipbookIsPDF(u, mime string) bool {
-	if u == "" {
-		return false
+var errFlipbookNotYours = errors.New("Sorry, you are not allowed to change that flipbook.")
+
+// flipbookPDF is the public URL and file name of a PDF in the Media Library.
+func (s *Server) flipbookPDF(c *gin.Context, id int64) (string, string, error) {
+	errPick := errors.New("Please pick a PDF file from the Media Library.")
+	if id <= 0 {
+		return "", "", errPick
 	}
-	if mime == "application/pdf" {
-		return true
+	a, err := s.store.GetAttachment(c, id)
+	if err != nil || a == nil {
+		return "", "", errPick
 	}
-	p := u
-	if pu, err := url.Parse(u); err == nil {
-		p = pu.Path
+	if !strings.EqualFold(a.Mime, "application/pdf") || !strings.EqualFold(path.Ext(a.FilePath), ".pdf") {
+		return "", "", errPick
 	}
-	return strings.EqualFold(path.Ext(p), ".pdf")
+	if mediaIsPrivateRel(a.FilePath) {
+		return "", "", errors.New("That PDF is private. Visitors could not open it; pick a public PDF.")
+	}
+	return s.uploadURL(c, a.FilePath), path.Base(a.FilePath), nil
 }

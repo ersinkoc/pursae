@@ -40,6 +40,7 @@ type flipbook struct {
 	ID           int    `json:"id"`
 	Title        string `json:"title"`
 	AttachmentID int64  `json:"attachment_id"`
+	Author       int64  `json:"author,omitempty"` // the user who made it (0: made before authors were kept)
 	PDFURL       string `json:"pdf_url"`
 	FileName     string `json:"file_name"`
 	Height       int    `json:"height"`     // px of the embed; the full-screen page uses the viewport
@@ -128,8 +129,8 @@ var flipbookColorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 // flipbookSanitize repairs a book read from the option or an import.
 func flipbookSanitize(b flipbook) flipbook {
 	b.Title = strings.TrimSpace(b.Title)
-	if len(b.Title) > 200 {
-		b.Title = b.Title[:200]
+	if r := []rune(b.Title); len(r) > 200 { // characters, like the form's maxlength
+		b.Title = string(r[:200])
 	}
 	b.PDFURL = maintMediaURL(strings.TrimSpace(b.PDFURL))
 	if b.Height < 240 || b.Height > 2000 {
@@ -141,9 +142,9 @@ func flipbookSanitize(b flipbook) flipbook {
 	return b
 }
 
-func flipbookNew(title, pdfURL, fileName string, attachmentID int64) flipbook {
+func flipbookNew(title, pdfURL, fileName string, attachmentID, author int64) flipbook {
 	now := time.Now().UTC().Format(time.RFC3339)
-	return flipbookSanitize(flipbook{Title: title, PDFURL: pdfURL, FileName: fileName, AttachmentID: attachmentID,
+	return flipbookSanitize(flipbook{Title: title, PDFURL: pdfURL, FileName: fileName, AttachmentID: attachmentID, Author: author,
 		Height: flipbookDefaultHeight, Background: flipbookDefaultBG, Download: true, Share: true, Created: now, Modified: now})
 }
 
@@ -204,10 +205,29 @@ func (s *Server) flipbookMenu(menu []*menuTop, u *store.User, screen string) []*
 	return append(out, menu[at:]...)
 }
 
-// registerFlipbook wires the assets and the full-screen page; both answer 404 while the plugin is off.
+// registerFlipbook wires the assets (404 while the plugin is off); the full-screen page is flipbookRoute.
 func (s *Server) registerFlipbook(r *gin.Engine) {
 	s.static(r, flipbookAssets, "flipbook", s.flipbookOnly())
-	r.GET("/flipbook/:id", s.flipbookOnly(), s.flipbookFullPage)
+}
+
+var flipbookPathRe = regexp.MustCompile(`^/flipbook/([1-9][0-9]{0,9})/?$`)
+
+// flipbookRoute serves /flipbook/N from the site's fallback chain (before the site itself), so any
+// other address under /flipbook/ (a page or post of that name) is still the site's.
+func (s *Server) flipbookRoute(c *gin.Context) {
+	m := flipbookPathRe.FindStringSubmatch(c.Request.URL.Path)
+	if m == nil || (c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead) || !s.flipbookOn() {
+		c.Next()
+		return
+	}
+	id, _ := strconv.Atoi(m[1])
+	b, ok := s.flipbookGet(id)
+	if !ok || b.PDFURL == "" {
+		c.Next()
+		return
+	}
+	s.flipbookFullPage(c, b)
+	c.Abort()
 }
 
 // --- Front end -----------------------------------------------------------------------------------
@@ -254,9 +274,14 @@ func firstNonEmpty(v ...string) string {
 	return ""
 }
 
-// flipbookAllowPDF lets the viewer fetch a PDF kept on another host (an offloaded upload).
+// flipbookAllowPDF lets the viewer fetch a PDF kept on another host (an offloaded upload) and run
+// pdf.js's worker from this site (without worker-src, strict nonce policies would block it).
 func flipbookAllowPDF(c *gin.Context, pdf string) {
-	if c == nil || strings.HasPrefix(pdf, "/") {
+	if c == nil {
+		return
+	}
+	cspAllow(c, "worker-src", "'self'")
+	if strings.HasPrefix(pdf, "/") {
 		return
 	}
 	if src := cspRedirectSource(pdf); src != "" {
@@ -303,13 +328,7 @@ func flipbookEmbedHTML(b flipbook, full bool) string {
 }
 
 // flipbookFullPage serves /flipbook/:id, the book alone on a full-screen page (the share link).
-func (s *Server) flipbookFullPage(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	b, ok := s.flipbookGet(id)
-	if !ok || b.PDFURL == "" {
-		c.Status(http.StatusNotFound)
-		return
-	}
+func (s *Server) flipbookFullPage(c *gin.Context, b flipbook) {
 	flipbookAllowPDF(c, b.PDFURL)
 	e := html.EscapeString
 	site := s.settings.String("blogname")

@@ -32,17 +32,17 @@
 			<span class="pfb-cover-hover"><span class="dashicons dashicons-fullscreen-alt" aria-hidden="true"></span> Full screen</span>
 		</button>
 		<div class="pfb-card-body">
-			<h2 class="pfb-card-title"><a href="{{.EditURL}}">{{.Title}}</a></h2>
+			<h2 class="pfb-card-title">{{if .EditURL}}<a href="{{.EditURL}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}</h2>
 			<p class="pfb-card-meta">{{if .FileName}}{{.FileName}} · {{end}}{{.Date}}</p>
 			<div class="pfb-code">
 				<input type="text" readonly value="{{.Shortcode}}" aria-label="Shortcode">
 				<button type="button" class="button pfb-copy-icon" data-pfb-copy="{{.Shortcode}}" title="Copy shortcode"><span class="dashicons dashicons-admin-page" aria-hidden="true"></span><span class="pfb-copy-label screen-reader-text">Copy</span></button>
 			</div>
 			<div class="pfb-card-actions">
-				<a href="{{.EditURL}}">Edit</a>
+				{{if .EditURL}}<a href="{{.EditURL}}">Edit</a>{{end}}
 				<button type="button" class="button-link" data-pfb-view="{{.FullURL}}">Full screen</button>
 				<a href="{{.FullURL}}" target="_blank" rel="noopener">Open link<span class="screen-reader-text"> (opens in a new tab)</span></a>
-				<a href="{{.DeleteURL}}" class="pfb-delete" data-pfb-confirm="Delete “{{.Title}}”? The PDF stays in the Media Library; pages that use its shortcode will show nothing.">Delete</a>
+				{{if .DeleteURL}}<a href="{{.DeleteURL}}" class="pfb-delete" data-pfb-confirm="Delete “{{.Title}}”? The PDF stays in the Media Library; pages that use its shortcode will show nothing.">Delete</a>{{end}}
 			</div>
 		</div>
 	</article>
@@ -88,7 +88,7 @@
 			</div>
 		</div>
 		<div class="pfb-edit-foot">
-			<a href="{{.DeleteURL}}" class="pfb-delete" data-pfb-confirm="Delete “{{.Title}}”? The PDF stays in the Media Library.">Delete</a>
+			{{if .DeleteURL}}<a href="{{.DeleteURL}}" class="pfb-delete" data-pfb-confirm="Delete “{{.Title}}”? The PDF stays in the Media Library.">Delete</a>{{else}}<span></span>{{end}}
 			<button type="submit" class="button button-primary button-large">Save Changes</button>
 		</div></div>
 
