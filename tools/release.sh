@@ -202,7 +202,9 @@ trap cleanup EXIT
 if tar --version 2>/dev/null | grep -q 'GNU tar'; then
 	tar_owner=(--owner=0 --group=0 --numeric-owner)
 else
-	tar_owner=(--uid 0 --gid 0 --uname root --gname root)
+	# bsdtar (macOS): also leave out extended attributes, ACLs and Mac metadata, which it would
+	# otherwise store as LIBARCHIVE.xattr.* / SCHILY.xattr.* pax headers (GNU tar warns on them).
+	tar_owner=(--uid 0 --gid 0 --uname root --gname root --no-xattrs --no-acls --no-mac-metadata)
 fi
 for t in $TARGETS; do
 	os="${t%-*}"

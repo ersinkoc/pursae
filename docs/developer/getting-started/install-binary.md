@@ -25,15 +25,18 @@ under your own supervisor.
 ```bash
 VERSION=0.5.0                          # the release you install
 ARCH=amd64                             # or arm64
-cd /tmp
+cd "$(mktemp -d)"                      # a private working directory, not the shared /tmp
 curl -fLO "https://github.com/pursae/pursae/releases/download/v$VERSION/pursae-linux-$ARCH.tar.gz"
 curl -fLO "https://github.com/pursae/pursae/releases/download/v$VERSION/SHA256SUMS"
 sha256sum --check --ignore-missing SHA256SUMS   # must print "pursae-linux-…tar.gz: OK"
 tar -xzf "pursae-linux-$ARCH.tar.gz"
+# the extracted binary is the release's bare pursae-linux-$ARCH asset, listed in SHA256SUMS too
+echo "$(grep " pursae-linux-$ARCH\$" SHA256SUMS | cut -d" " -f1)  pursae-linux-$ARCH/pursae" | sha256sum --check
 ./pursae-linux-$ARCH/pursae version
 ```
 
-(On macOS: `shasum -a 256 --check --ignore-missing SHA256SUMS`.)
+(On macOS: `shasum -a 256 --check` in place of `sha256sum --check`.) Run steps 1 and 2 in the same
+shell: step 2 installs from this directory.
 
 ### 2. User and directories
 
@@ -116,8 +119,12 @@ prints the install link in its log, or print a new one (the old link stops worki
 
 ```bash
 journalctl -u pursae | grep wp-admin/install
-sudo -u pursae sh -c 'set -a; . /etc/pursae/pursae.env; exec pursae setup-token'
+sudo systemd-run --pipe --wait --quiet -p User=pursae -p EnvironmentFile=/etc/pursae/pursae.env \
+  /opt/pursae/bin/pursae setup-token
 ```
+
+`systemd-run` reads the environment file the way the service does (a shell would not: `&` in a
+`DATABASE_URL` with several query parameters, or `$` or a space in a password, would break it).
 
 Open the link (`https://blog.example.com/wp-admin/install?token=…`) and the
 [installer](first-site.md) appears. `WPGO_SETUP_TOKEN` in the environment file sets the token
@@ -136,6 +143,7 @@ the previous binary back. To update by hand, verify the new release as in step 1
 ```bash
 sudo systemctl disable --now pursae
 sudo rm /etc/systemd/system/pursae.service /usr/local/bin/pursae
+sudo rm -rf /etc/systemd/system/pursae.service.d   # drop-ins from systemctl edit
 sudo systemctl daemon-reload
 sudo rm -r /opt/pursae /usr/share/doc/pursae
 ```

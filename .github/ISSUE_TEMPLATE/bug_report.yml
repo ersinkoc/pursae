@@ -12,7 +12,7 @@ body:
     id: version
     attributes:
       label: Pursae version
-      description: "`pursae version` (`docker compose exec wpgo wpgo version`), or Dashboard › Updates."
+      description: "`pursae version` (`docker compose exec pursae pursae version`), or Dashboard › Updates."
       placeholder: Pursae 0.5.0
     validations:
       required: true
@@ -68,7 +68,7 @@ body:
     attributes:
       label: Logs
       description: |
-        The server log around the time it happened (`journalctl -u pursae`, `docker compose logs wpgo`)
+        The server log around the time it happened (`journalctl -u pursae`, `docker compose logs pursae`)
         and the browser console, if relevant. Remove passwords, tokens, cookies and personal data first.
       render: text
   - type: textarea
