@@ -107,23 +107,41 @@ a browser's WebSocket is accepted only from the site's own origin or a CORS orig
 
 ## systemd unit
 
+The repository ships a hardened unit,
+[`deploy/systemd/pursae.service`](https://github.com/pursae/pursae/blob/main/deploy/systemd/pursae.service);
+[install the binary](../getting-started/install-binary.md#install-a-release) sets up the user,
+directories and environment file it expects. Its core:
+
 ```ini
 [Unit]
 Description=Pursae
-After=network.target postgresql.service
+After=network-online.target postgresql.service
+Wants=network-online.target
 
 [Service]
-User=wpgo
-EnvironmentFile=/etc/wpgo.env
-ExecStart=/usr/local/bin/wpgo serve
+User=pursae
+Group=pursae
+EnvironmentFile=/etc/pursae/pursae.env
+WorkingDirectory=/var/lib/pursae
+ExecStart=/opt/pursae/bin/pursae serve
 Restart=always
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/pursae/bin /var/lib/pursae
+ProtectHome=yes
+PrivateTmp=yes
+# … more sandboxing in the shipped file
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-`/etc/wpgo.env` holds `DATABASE_URL`, `WPGO_SITE_URL`, `WPGO_UPLOADS_DIR`, `WPGO_SECRET` and the
-mail settings ([configuration](configuration.md)).
+`/etc/pursae/pursae.env` holds `DATABASE_URL`, `WPGO_SITE_URL`, `WPGO_ADDR` (`127.0.0.1:8080`
+behind the proxy), `WPGO_UPLOADS_DIR=/var/lib/pursae/uploads`, `WPGO_SECRET` and the mail settings
+([configuration](configuration.md)). The binary sits in `/opt/pursae/bin`, a directory the
+`pursae` user owns, so **Dashboard › Updates** can replace it and restart in place; with the
+binary in a root-owned directory such as `/usr/local/bin` a core update is refused and you update
+by replacing the file yourself.
 
 ## Several instances
 
