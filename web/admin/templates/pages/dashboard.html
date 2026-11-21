@@ -45,9 +45,10 @@
 	</div>
 </div>
 <div class="wrap">
-	<h1>Dashboard</h1>
+	<h1{{if .Data.Modern}} class="screen-reader-text"{{end}}>Dashboard</h1>
 	{{template "notices" .}}
 	{{with .Data}}
+	{{with .Modern}}{{template "pm-dashboard" (dict "M" . "U" $.User)}}{{end}}
 	{{if $.User.Can "edit_theme_options" nil}}
 	<div id="welcome-panel" class="welcome-panel px{{if not .ShowWelcome}} hidden{{end}}">
 		<a class="welcome-panel-close" href="/wp-admin/?welcome=0" aria-label="Dismiss the welcome panel">Dismiss</a>
@@ -217,3 +218,73 @@
 				<a href="/wp-admin/update-core">Updates</a>
 			</p>
 		{{template "dashboard-postbox-end"}}{{end}}
+
+{{define "pm-dashboard"}}{{$m := .M}}<div class="pm-dash">
+	<section class="pm-panel pm-hero">
+		<div class="pm-hero-l">
+			<p class="pm-eyebrow"><span>{{$m.Date}}</span> · <span>{{$m.Weekday}}</span></p>
+			<h2 class="pm-hero-title"><span>{{$m.Greeting}}</span>, <span translate="no">{{.U.DisplayName}}</span></h2>
+			<p class="pm-hero-text"><span>Your site is</span> <strong>{{$m.StepsPct}}%</strong> <span>set up.</span> <span>Finish the remaining steps to go live.</span></p>
+			<p class="pm-actions">{{if .U.Can "edit_posts" nil}}<a class="button button-primary" href="/wp-admin/post-new"><span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span><span>Write a post</span></a>{{end}}{{if .U.Can "edit_theme_options" nil}} <a class="button" href="/wp-admin/themes?page=web-builder-templates">Open Web Builder</a>{{end}}</p>
+		</div>
+		<ol class="pm-steps">{{range $m.Steps}}<li class="pm-step{{if .Done}} is-done{{end}}"><a href="{{.URL}}"><span class="pm-check" aria-hidden="true"></span><span class="pm-step-label">{{.Label}}</span>{{if .Hint}}<em>{{.Hint}}</em>{{else if .Done}}<em>done</em>{{end}}</a></li>{{end}}
+			<li class="pm-progress" aria-hidden="true"><i style="width:{{$m.StepsPct}}%"></i></li></ol>
+	</section>
+
+	<section class="pm-panel pm-split">
+		<header class="pm-split-l"><h2>Overview</h2><p>Last 7 days, compared with the 7 before.</p></header>
+		<div class="pm-cells pm-cells-4">{{range $m.Tiles}}<a class="pm-stat" href="{{.URL}}">
+			<span class="pm-stat-top"><span class="pm-stat-label">{{.Label}}</span><span class="dashicons {{.Icon}}" aria-hidden="true"></span></span>
+			<span class="pm-stat-value">{{.Value}}</span>
+			<span class="pm-stat-foot">{{if not .Flat}}<span class="pm-delta {{if .Up}}is-up{{else}}is-down{{end}}">{{if .Up}}+{{else}}−{{end}}{{.Delta}}</span>{{else}}<span class="pm-delta">—</span>{{end}}{{with .Spark}}<svg class="pm-spark" viewBox="0 0 90 28" aria-hidden="true"><polyline points="{{.}}"/></svg>{{end}}</span>
+		</a>{{end}}</div>
+	</section>
+
+	{{if $m.Apps}}<section class="pm-panel pm-split">
+		<header class="pm-split-l"><h2>Plugins</h2><p>Your active plugins, one click away.</p><p><a href="/wp-admin/plugins">Manage plugins →</a></p></header>
+		<div class="pm-apps">{{range $m.Apps}}<a class="pm-app" href="{{.URL}}"><span class="pm-app-ico pm-tint-{{.Tint}}"><span class="dashicons {{.Icon}}" aria-hidden="true"></span></span><span class="pm-app-name" translate="no">{{.Name}}</span></a>{{end}}</div>
+	</section>{{end}}
+	<section class="pm-panel pm-split">
+		<header class="pm-split-l"><h2>Traffic</h2><p>Pursae Analytics · cookieless</p>{{with $m.Chart}}<p class="pm-big">{{.Total}} <span>page views in 30 days</span></p>{{if .Delta}}<p class="pm-delta {{if .Up}}is-up{{else}}is-down{{end}}">{{if .Up}}+{{else}}−{{end}}{{.Delta}} <span>vs. the 30 days before</span></p>{{end}}{{end}}</header>
+		<div class="pm-cells pm-cells-main">
+			<div class="pm-cell">
+				{{with $m.Chart}}<div class="pm-cell-head"><h3>Page views</h3><p>Dashed line: the 30 days before</p></div>
+				<div class="pm-chart"><svg viewBox="0 0 {{.W}} {{.H}}" preserveAspectRatio="none" role="img" aria-label="Page views per day, last 30 days">
+					<defs><linearGradient id="pm-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4C60EF" stop-opacity=".14"/><stop offset="1" stop-color="#4C60EF" stop-opacity="0"/></linearGradient></defs>
+					{{range .YTicks}}<line class="pm-grid" x1="44" x2="630" y1="{{.Pos}}" y2="{{.Pos}}"/><text class="pm-axis" x="36" y="{{.Pos}}" dy="4" text-anchor="end">{{.Text}}</text>{{end}}
+					{{range .XTicks}}<text class="pm-axis" x="{{.Pos}}" y="236" text-anchor="middle">{{.Text}}</text>{{end}}
+					<path class="pm-prev" d="{{.Prev}}"/><path fill="url(#pm-fill)" d="{{.Area}}"/><path class="pm-line" d="{{.Line}}"/>
+					{{range .Points}}<circle class="pm-dot" cx="{{.X}}" cy="{{.Y}}" r="4"><title>{{.Label}}: {{.Value}}</title></circle>{{end}}
+				</svg></div>{{else}}{{if $m.AnalyticsOff}}<div class="pm-empty"><span class="dashicons dashicons-chart-area" aria-hidden="true"></span><h3>See who visits, without cookies</h3><p>Turn on Pursae Analytics to see visitors, page views and Core Web Vitals here.</p><a class="button button-primary" href="/wp-admin/plugins">Go to Plugins</a></div>{{end}}{{end}}
+			</div>
+			<div class="pm-cell">
+				<div class="pm-cell-head"><h3>Site Health</h3>{{if .U.Can "view_site_health_checks" nil}}<a href="/wp-admin/site-health">Details →</a>{{end}}</div>
+				<p class="pm-health"><b>{{$m.HealthPct}}</b> <span>/ 100 · {{$m.Health.Label}}</span></p>
+				<div class="pm-meter" aria-hidden="true">{{range $m.HealthSegments}}<i{{if .}} class="on"{{end}}></i>{{end}}</div>
+				<ul class="pm-list">
+					<li><span>Critical issues</span><span class="pm-chip {{if $m.Health.Critical}}is-bad{{else}}is-ok{{end}}">{{$m.Health.Critical}}</span></li>
+					<li><span>Recommended improvements</span><span class="pm-chip {{if $m.Health.Recommended}}is-warn{{else}}is-ok{{end}}">{{$m.Health.Recommended}}</span></li>
+					<li><span>Passed checks</span><span class="pm-chip is-ok">{{$m.Health.Good}}</span></li>
+				</ul>
+			</div>
+		</div>
+	</section>
+
+	{{if or $m.Orders $m.TopPages}}<section class="pm-panel pm-split">
+		<header class="pm-split-l"><h2>Store &amp; content</h2><p>The latest orders and the most viewed pages.</p></header>
+		<div class="pm-cells pm-cells-main">
+			<div class="pm-cell">
+				<div class="pm-cell-head"><h3>Latest orders</h3>{{if $m.Orders}}<a href="/wp-admin/goocommerce?page=orders">All orders →</a>{{end}}</div>
+				{{if $m.Orders}}<table class="pm-table"><thead><tr><th>Order number</th><th>Customer</th><th>Status</th><th class="pm-hide-sm">Date</th><th class="pm-num">Total</th></tr></thead><tbody>
+				{{range $m.Orders}}<tr><td><a class="pm-mono" href="{{.URL}}">{{.Number}}</a></td><td><span class="pm-person"><span class="pm-avatar" aria-hidden="true">{{.Initials}}</span><span translate="no">{{.Customer}}</span></span></td><td><span class="pm-chip is-{{.StatusClass}}">{{.Status}}</span></td><td class="pm-hide-sm pm-mono">{{.When}}</td><td class="pm-num">{{.Total}}</td></tr>{{end}}
+				</tbody></table>{{else}}<p class="description">No orders yet.</p>{{end}}
+			</div>
+			<div class="pm-cell">
+				<div class="pm-cell-head"><h3>Top pages</h3><span class="pm-mono">7 days</span></div>
+				{{if $m.TopPages}}<ul class="pm-bars">{{range $m.TopPages}}<li><span class="pm-bar-label pm-mono" translate="no">{{.Label}}</span><span class="pm-bar"><i style="width:{{.Pct}}%"></i></span><span class="pm-bar-value">{{.Value}}</span></li>{{end}}</ul>{{else}}<p class="description">No page views yet.</p>{{end}}
+			</div>
+		</div>
+	</section>{{end}}
+
+	<h2 class="pm-section-title">Widgets</h2>
+</div>{{end}}

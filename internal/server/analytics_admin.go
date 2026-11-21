@@ -132,6 +132,8 @@ type analyticsData struct {
 	Saved      bool
 	CountryOff bool // no visit had a country and there is no IP database: explain where countries come from
 	GeoIP      geoipStatus
+	Modern     bool      // Pursae Modern admin theme: the modern layout and the country map
+	Map        *worldMap // visitors per country on a world map (Pursae Modern)
 }
 
 // analyticsAdmin is /wp-admin/analytics: the overview, or ?tab=settings.
@@ -193,6 +195,9 @@ func (s *Server) analyticsAdmin(c *gin.Context) {
 		d.Tab = ""
 		if err := s.analyticsOverview(c, &d, c.Query("range")); err != nil {
 			notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString("The statistics could not be read: " + err.Error()))})
+		}
+		if d.Modern = adminThemeFor(u).Modern(); d.Modern && d.HasData {
+			d.Map = s.analyticsWorldMap(c, d.Range.From, d.Range.To)
 		}
 	}
 	s.adminPage(c, analyticsMenuScreen(tab), "Analytics", "toplevel_page_pursae-analytics", "admin/analytics", d, notices...)

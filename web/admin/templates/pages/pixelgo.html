@@ -37,14 +37,14 @@
 <div class="px-cards">
 	<div class="px-card"><span class="lbl">Platforms enabled</span><span class="num">{{.ActiveCount}}</span><span class="sub">of {{len .Platforms}}</span></div>
 	<div class="px-card"><span class="lbl">Server-side ready</span><span class="num">{{.ServerCount}}</span><span class="sub">with an API token</span></div>
-	<div class="px-card good"><span class="lbl">Delivered (7 days)</span><span class="num">{{.Delivered}}</span><span class="sub">server-side events</span></div>
-	<div class="px-card bad"><span class="lbl">Failed (7 days)</span><span class="num">{{.Failed}}</span><span class="sub">see the Delivery Log</span></div>
+	<div class="px-card good{{if not .Delivered}} is-zero{{end}}"><span class="lbl">Delivered (7 days)</span><span class="num">{{.Delivered}}</span><span class="sub">server-side events</span></div>
+	<div class="px-card bad{{if not .Failed}} is-zero{{end}}"><span class="lbl">Failed (7 days)</span><span class="num">{{.Failed}}</span><span class="sub">see the Delivery Log</span></div>
 </div>
 <div class="px-grid2">
 <div>
 <div class="postbox"><h2 class="hndle">Platforms</h2><div class="inside"><ul class="px-list">
-{{range .Platforms}}<li><span><strong>{{.Def.Name}}</strong>{{if .Cfg.IDs}} &mdash; {{range $i, $id := .Cfg.IDs}}{{if $i}}, {{end}}<code>{{$id}}</code>{{end}}{{end}}</span>
-<span>{{if .Active}}<span class="px-ok">Active</span>{{else}}<span class="px-no">Off</span>{{end}} &middot; server-side {{if and .Active .Cfg.ServerSide}}<span class="px-ok">on</span>{{else}}<span class="px-no">off</span>{{end}} &middot; <span class="px-badge">{{.ConsentOn}}</span></span></li>{{end}}
+{{range .Platforms}}<li class="px-plat{{if .Active}} is-on{{end}}"><span class="px-plat-name"><a href="/wp-admin/pixelgo?page=pixels#ids_{{.Def.Key}}"><strong>{{.Def.Name}}</strong></a>{{if .Cfg.IDs}}<span class="px-plat-ids"> &mdash; {{range $i, $id := .Cfg.IDs}}{{if $i}}, {{end}}<code>{{$id}}</code>{{end}}</span>{{end}}</span>
+<span class="px-plat-meta">{{if .Active}}<span class="px-ok px-state">Active</span>{{else}}<span class="px-no px-state">Off</span>{{end}}<span class="px-sep"> &middot; </span><span class="px-srv">server-side {{if and .Active .Cfg.ServerSide}}<span class="px-ok">on</span>{{else}}<span class="px-no">off</span>{{end}}</span><span class="px-sep"> &middot; </span><span class="px-badge">{{.ConsentOn}}</span></span></li>{{end}}
 </ul></div></div>
 <div class="postbox"><h2 class="hndle">Latest server-side events</h2><div class="inside">
 {{if .Logs}}<table class="widefat striped"><thead><tr><th>Time</th><th>Platform</th><th>Event</th><th>Status</th></tr></thead><tbody>
@@ -53,7 +53,7 @@
 </div></div>
 </div>
 <div class="postbox"><h2 class="hndle">Getting started</h2><div class="inside"><ul class="px-list">
-{{range .Checklist}}<li><span>{{.Label}}</span><span>{{if .Done}}<span class="px-ok">&#10003;</span>{{else}}<span class="px-no">&#9675;</span>{{end}}</span></li>{{end}}
+{{range .Checklist}}<li class="px-step{{if .Done}} is-done{{end}}"><span>{{.Label}}</span><span>{{if .Done}}<span class="px-ok">&#10003;</span>{{else}}<span class="px-no">&#9675;</span>{{end}}</span></li>{{end}}
 </ul></div></div>
 </div>
 

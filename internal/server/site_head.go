@@ -169,7 +169,12 @@ func (s *Server) frontAdminBar(c *gin.Context, q *siteQuery, lb *links.Builder, 
 	esc := html.EscapeString
 	site := esc(s.settings.String("blogname"))
 	var sb strings.Builder
-	sb.WriteString(`<div id="wpadminbar" class="nojq nojs">
+	barClass := "nojq nojs"
+	if adminThemeFor(u).Modern() { // Pursae Modern's toolbar colours on the site too (admin_theme.go)
+		sb.WriteString(`<link rel="stylesheet" id="pursae-modern-bar-css" href="` + modernBarCSS + `?ver=` + Version + `" media="all" />`)
+		barClass = "nojq nojs pm-bar"
+	}
+	sb.WriteString(`<div id="wpadminbar" class="` + barClass + `">
 	<a class="screen-reader-shortcut" href="#wp-toolbar" tabindex="1">Skip to toolbar</a>
 	<div class="quicklinks" id="wp-toolbar" role="navigation" aria-label="Toolbar">
 		<ul role='menu' id='wp-admin-bar-root-default' class="ab-top-menu">`)

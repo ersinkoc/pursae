@@ -63,7 +63,10 @@ const (
 	wbWizNonceUpload = "wb-site-import-upload"
 )
 
-var wbWizIDRE = regexp.MustCompile(`^[0-9a-f]{32}$`)
+var (
+	wbWizIDRE           = regexp.MustCompile(`^[0-9a-f]{32}$`)
+	errWBWizInvalidMeta = errors.New("invalid site import metadata")
+)
 
 // wbWizAllowed: the screen and everything behind it need edit_theme_options and unfiltered_html with
 // Web Builder on, like the MCP tool.
@@ -75,11 +78,19 @@ func (s *Server) wbWizAllowed(c *gin.Context) bool {
 // --- staging ---------------------------------------------------------------------------------
 
 type wbWizPage struct {
-	Path    string `json:"path"`
-	PostID  int64  `json:"postId"`
-	URL     string `json:"url,omitempty"`
-	Title   string `json:"title,omitempty"`
-	Created bool   `json:"created,omitempty"`
+	Path        string `json:"path"`
+	PostID      int64  `json:"postId"`
+	URL         string `json:"url,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Created     bool   `json:"created,omitempty"`
+	ContentOnly bool   `json:"contentOnly,omitempty"`
+}
+
+func (p wbWizPage) EditURL() string {
+	if p.ContentOnly {
+		return "/wp-admin/post?post=" + itoa64(p.PostID) + "&action=edit"
+	}
+	return wbEditURL(p.PostID)
 }
 
 type wbWizTpl struct {
@@ -103,6 +114,9 @@ type wbWizResult struct {
 	Published bool        `json:"published,omitempty"`
 	// Bindings: what was bound to content (the menu, single templates, loops) and what was not.
 	Bindings []string `json:"bindings,omitempty"`
+
+	PublishFailures []string `json:"publishFailures,omitempty"`
+	SkipFront       bool     `json:"skipFront,omitempty"`
 }
 
 type wbWizMeta struct {
@@ -161,19 +175,32 @@ func (s *Server) wbWizLoad(id string) *wbWizMeta {
 	if dir == "" {
 		return nil
 	}
-	b, err := os.ReadFile(filepath.Join(dir, "meta.json"))
+	m, err := wbWizReadMeta(dir, id)
 	if err != nil {
 		return nil
 	}
-	var m wbWizMeta
-	if json.Unmarshal(b, &m) != nil || m.ID != id {
-		return nil
-	}
-	if at, err := time.Parse(time.RFC3339, m.Created); err != nil || time.Since(at) > wbWizMaxAge {
+	if m.expired() {
 		_ = os.RemoveAll(dir)
 		return nil
 	}
-	return &m
+	return m
+}
+
+func wbWizReadMeta(dir, id string) (*wbWizMeta, error) {
+	b, err := os.ReadFile(filepath.Join(dir, "meta.json"))
+	if err != nil {
+		return nil, err
+	}
+	var m wbWizMeta
+	if json.Unmarshal(b, &m) != nil || m.ID != id {
+		return nil, errWBWizInvalidMeta
+	}
+	return &m, nil
+}
+
+func (m *wbWizMeta) expired() bool {
+	at, err := time.Parse(time.RFC3339, m.Created)
+	return err != nil || time.Since(at) > wbWizMaxAge
 }
 
 func (s *Server) wbWizSave(m *wbWizMeta) error {
@@ -214,12 +241,19 @@ func (s *Server) wbWizSweep() {
 		if !e.IsDir() || !wbWizIDRE.MatchString(e.Name()) {
 			continue
 		}
-		if _, err := os.Stat(filepath.Join(s.wbWizBase(), e.Name(), "meta.json")); err == nil {
-			s.wbWizLoad(e.Name()) // removes it when expired
+		dir := filepath.Join(s.wbWizBase(), e.Name())
+		m, err := wbWizReadMeta(dir, e.Name())
+		if err == nil {
+			if m.expired() {
+				_ = os.RemoveAll(dir)
+			}
+			continue
+		}
+		if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, errWBWizInvalidMeta) {
 			continue
 		}
 		if info, err := e.Info(); err == nil && time.Since(info.ModTime()) > wbWizMaxAge {
-			_ = os.RemoveAll(filepath.Join(s.wbWizBase(), e.Name()))
+			_ = os.RemoveAll(dir)
 		}
 	}
 }
@@ -330,11 +364,13 @@ type wbWizView struct {
 	Nonce           string          // the step's form nonce
 	DiscardNonce    string
 
-	R          *wbWizResult
-	Compare    []wbWizCmpRow
-	Cur        *wbWizCmpRow
-	Undo       *wbWizUndoView
-	DesignHint string
+	R           *wbWizResult
+	SavedReport bool
+	CanUndo     bool
+	Compare     []wbWizCmpRow
+	Cur         *wbWizCmpRow
+	Undo        *wbWizUndoView
+	DesignHint  string
 }
 
 type wbWizRecView struct {
@@ -394,9 +430,12 @@ func (s *Server) wbWizScreen(c *gin.Context) {
 		s.wbWizStartWith(c, notice{Type: "error", Message: "That upload is gone (uploads are kept for a day). Upload the zip again.", Dismissible: true})
 		return
 	}
+	if action == "result" || action == "compare" {
+		s.wbWizRestoreCollectionRows(c, m)
+	}
 	switch action {
 	case "result":
-		s.wbWizResultPage(c, m)
+		s.wbWizResultPage(c, m, true)
 	case "compare":
 		s.wbWizComparePage(c, m)
 	default:
@@ -993,8 +1032,10 @@ func (s *Server) wbWizPost(c *gin.Context, action string) {
 		s.wbWizUndoRun(c, id)
 		return
 	case "discard":
-		if dir := s.wbWizDir(id); dir != "" {
-			_ = os.RemoveAll(dir)
+		if err := os.RemoveAll(s.wbWizDir(id)); err != nil {
+			log.Printf("web builder: discard import upload: %v", err)
+			s.wbWizStartWith(c, notice{Type: "error", Message: "The upload could not be completely discarded.", Dismissible: true})
+			return
 		}
 		c.Redirect(http.StatusFound, wbWizURL)
 		return
@@ -1005,6 +1046,10 @@ func (s *Server) wbWizPost(c *gin.Context, action string) {
 		return
 	}
 	if action == "publish" {
+		if m.Result != nil && m.Result.Published {
+			c.Redirect(http.StatusSeeOther, wbWizURL+"?action=result&import="+m.ID)
+			return
+		}
 		s.wbWizPublish(c, m)
 		return
 	}
@@ -1074,7 +1119,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	for _, f := range c.PostFormArray("collection") {
 		collections = append(collections, f)
 	}
-	args := map[string]any{"kit": kit, "pages": items, "status": status, "site_name": name, "templates": split, "front_page": wantFront && !draft,
+	args := map[string]any{"kit": kit, "pages": items, "status": status, "site_name": name, "templates": split, "front_page": wantFront,
 		"menus": c.PostForm("menus") == "1", "collections": collections}
 	if c.PostForm("old_links") != "rewrite" {
 		args["old_links"] = "keep"
@@ -1095,7 +1140,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	if menuBefore == 0 {
 		rec.Menu = s.wbWizMenuID(c, kit)
 	}
-	res := &wbWizResult{At: rec.At, Kit: kit, Draft: draft, Split: split}
+	res := &wbWizResult{At: rec.At, Kit: kit, Draft: draft, Split: split, SkipFront: !wantFront}
 	if importErr != nil {
 		res.Failed = importErr.Error()
 	}
@@ -1104,7 +1149,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	}
 	if om, ok := out.(map[string]any); ok {
 		w := res.Warnings
-		wbWizFillResult(res, om)
+		s.wbWizFillResult(c, res, om)
 		res.Warnings = append(w, res.Warnings...)
 	}
 	for rel, u := range remap {
@@ -1119,11 +1164,16 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	if len(rec.Pages)+len(rec.Templates)+len(rec.Media) > 0 || rec.KitCreated || rec.Menu > 0 {
 		recs := s.wbWizRecords()
 		recs[m.ID] = rec
-		_ = s.wbWizSetRecords(c, recs)
+		if err := s.wbWizSetRecords(c, recs); err != nil {
+			res.Warnings = append(res.Warnings, "The removal record could not be saved. To undo this import, remove the imported items manually.")
+		}
 	}
 	m.Slug = kit
 	m.Result = res
-	_ = s.wbWizSave(m)
+	if err := s.wbWizSave(m); err != nil {
+		s.wbWizResultPage(c, m, false, notice{Type: "error", Message: "The import report could not be saved. Use the edit links below to manage the imported pages."})
+		return
+	}
 	c.Redirect(http.StatusSeeOther, wbWizURL+"?action=result&import="+m.ID)
 }
 
@@ -1173,7 +1223,7 @@ func (s *Server) wbWizInstallKit(c *gin.Context, id, slug, name string, assets m
 }
 
 // wbWizFillResult reads the report of mcpWBImportSite.
-func wbWizFillResult(res *wbWizResult, out map[string]any) {
+func (s *Server) wbWizFillResult(c *gin.Context, res *wbWizResult, out map[string]any) {
 	b, _ := json.Marshal(out)
 	var r struct {
 		Pages []struct {
@@ -1215,8 +1265,10 @@ func wbWizFillResult(res *wbWizResult, out map[string]any) {
 	if m := r.Bindings.Menu; m != nil {
 		res.Bindings = append(res.Bindings, fmt.Sprintf("Menu “%s” (%s location, %d items) fills the header's navigation; edit it in Appearance › Menus.", m.Name, m.Location, len(m.Items)))
 	}
+	var members []string
 	for _, g := range r.Bindings.Groups {
 		res.Bindings = append(res.Bindings, fmt.Sprintf("%s/: %d pages are content under single template #%d.", g.Folder, len(g.Pages), g.Template))
+		members = append(members, g.Pages...)
 	}
 	for _, l := range r.Bindings.Listings {
 		res.Bindings = append(res.Bindings, fmt.Sprintf("%s: the list of %s/ pages is a loop (%d items).", l.Page, l.Folder, l.Items))
@@ -1233,10 +1285,120 @@ func wbWizFillResult(res *wbWizResult, out map[string]any) {
 		res.Templates = append(res.Templates, wbWizTpl{Type: t.Type, ID: t.ID, Pages: t.Pages})
 	}
 	res.Warnings, res.Missing, res.Unmapped = r.Warnings, r.Missing, r.Unmapped
+	s.wbWizAddCollectionRows(c, res, members, nil, created)
+}
+
+// wbWizAddCollectionRows resolves saved native content for the member paths reported by the import.
+// A non-nil allowed list restricts recovery to the original import's recorded post IDs.
+func (s *Server) wbWizAddCollectionRows(c *gin.Context, res *wbWizResult, paths []string, allowed []int64, created map[string]bool) {
+	if len(paths) == 0 {
+		return
+	}
+	rows, err := s.store.Pool.Query(c, `SELECT DISTINCT ON (p.meta->>$2)
+		p.id, p.type, coalesce(p.parent_id, 0), p.slug, p.status, p.meta->>$2
+		FROM posts p WHERE p.type IN ('page', 'post') AND p.meta->>$1 = $3 AND p.meta->>$2 = ANY($4)
+		AND ($5::bigint[] IS NULL OR (p.id = ANY($5) AND p.content <> '')) AND p.status NOT IN ('trash', 'auto-draft')
+		AND NOT EXISTS (SELECT 1 FROM web_builder_docs d WHERE d.post_id = p.id)
+		ORDER BY p.meta->>$2, p.id DESC`, wbSiteMetaKit, wbSiteMetaKey, res.Kit, paths, allowed)
+	if err != nil {
+		res.Warnings = append(res.Warnings, "Could not load the imported collection members.")
+		return
+	}
+	posts := map[string]store.Post{}
+	for rows.Next() {
+		var p store.Post
+		var path string
+		if err := rows.Scan(&p.ID, &p.Type, &p.ParentID, &p.Slug, &p.Status, &path); err != nil {
+			rows.Close()
+			res.Warnings = append(res.Warnings, "Could not load the imported collection members.")
+			return
+		}
+		posts[path] = p
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		res.Warnings = append(res.Warnings, "Could not load the imported collection members.")
+		return
+	}
+	seen := map[string]bool{}
+	for _, p := range res.Pages {
+		seen[p.Path] = true
+	}
+	lb := s.links(c)
+	for _, path := range paths {
+		if p, ok := posts[path]; ok && !seen[path] {
+			res.Pages = append(res.Pages, wbWizPage{Path: path, PostID: p.ID, URL: lb.Permalink(&p), Created: allowed != nil || created[path], ContentOnly: true})
+			seen[path] = true
+		}
+	}
+}
+
+// Older reports recorded collection counts in prose and omitted their rows. The undo record
+// identifies which content the original import created.
+func (s *Server) wbWizRestoreCollectionRows(c *gin.Context, m *wbWizMeta) {
+	if m.Result == nil {
+		return
+	}
+	for _, p := range m.Result.Pages {
+		if p.ContentOnly {
+			return
+		}
+	}
+	for _, line := range m.Result.Bindings {
+		if strings.Contains(line, " pages are content under single template #") {
+			if rec := s.wbWizRecords()[m.ID]; rec != nil && rec.Kit == m.Result.Kit && len(rec.Pages) > 0 {
+				s.wbWizAddCollectionRows(c, m.Result, m.HTML, rec.Pages, nil)
+			}
+			return
+		}
+	}
+}
+
+func (s *Server) wbWizPublishPage(c *gin.Context, kit string, page wbWizPage) (string, error) {
+	rev, err := s.store.WebBuilder().DocRev(c, page.PostID)
+	if err != nil {
+		return "", err
+	}
+	if rev == 0 {
+		p, err := s.store.GetPost(c, page.PostID)
+		if err != nil {
+			return "", err
+		}
+		if (p.Type == "page" || p.Type == "post") && p.Meta[wbSiteMetaKit] == kit &&
+			p.Meta[wbSiteMetaKey] == page.Path && (page.ContentOnly || strings.TrimSpace(p.Content) != "") {
+			switch p.Status {
+			case "publish":
+				return s.links(c).Permalink(p), nil
+			case "draft":
+				route := "/wp/v2/pages/"
+				if p.Type == "post" {
+					route = "/wp/v2/posts/"
+				}
+				var saved struct {
+					Status string `json:"status"`
+					Link   string `json:"link"`
+				}
+				if err := s.mcpREST(c, http.MethodPost, route+itoa64(p.ID), map[string]any{"status": "publish"}, &saved); err != nil {
+					return "", err
+				}
+				if saved.Status != "publish" {
+					return "", fmt.Errorf("page status after publishing is %q", saved.Status)
+				}
+				return saved.Link, nil
+			}
+		}
+	}
+	out, err := mcpWBPublish(s, c, map[string]any{"post_id": page.PostID})
+	if err != nil {
+		return "", err
+	}
+	m, _ := out.(map[string]any)
+	return argStr(m, "url"), nil
 }
 
 // wbWizPublish publishes the pages of a draft import and sets its front page.
 func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
+	s.wbWizRestoreCollectionRows(c, m)
 	if m.Result == nil || len(m.Result.Pages) == 0 {
 		s.wbWizAnalysisPage(c, m, nil)
 		return
@@ -1244,42 +1406,57 @@ func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
 	s.wbWizRESTSession(c)
 	var failed []string
 	for i, p := range m.Result.Pages {
-		out, err := mcpWBPublish(s, c, map[string]any{"post_id": p.PostID})
+		link, err := s.wbWizPublishPage(c, m.Result.Kit, p)
 		if err != nil {
 			failed = append(failed, p.Path+": "+err.Error())
 			continue
 		}
-		if om, ok := out.(map[string]any); ok {
-			if u, _ := om["url"].(string); u != "" {
-				m.Result.Pages[i].URL = u
-			}
+		if link != "" {
+			m.Result.Pages[i].URL = link
 		}
 	}
+	if len(failed) < len(m.Result.Pages) {
+		wbKitRootLiveReset()
+	}
+	m.Result.PublishFailures = wbFirst(failed, 5)
 	notices := []notice{}
 	if len(failed) > 0 {
-		notices = append(notices, notice{Type: "error", Message: template.HTML(html.EscapeString(strings.Join(wbFirst(failed, 5), "; "))), Dismissible: true})
+		if err := s.wbWizSave(m); err != nil {
+			notices = append(notices, notice{Type: "error", Message: "The partial publication report could not be saved."})
+		}
 	} else {
 		m.Result.Published, m.Result.Draft = true, false
-		wbKitRootLiveReset() // the kit's files answer at the root now (wbKitRootAsset)
 		if front := wbWizFrontID(m.Result); front > 0 && c.PostForm("front") == "1" {
 			recs := s.wbWizRecords()
 			rec := recs[m.ID]
 			prevShow, prevFront := s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
-			if err := s.mcpREST(c, http.MethodPost, "/wp/v2/settings", map[string]any{"show_on_front": "page", "page_on_front": front}, nil); err == nil {
+			if err := s.mcpREST(c, http.MethodPost, "/wp/v2/settings", map[string]any{"show_on_front": "page", "page_on_front": front}, nil); err != nil {
+				m.Result.Warnings = append(m.Result.Warnings, "Setting the homepage failed. Choose the homepage in Reading Settings.")
+			} else {
 				m.Result.Front = front
+				for i := range m.Result.Pages {
+					if m.Result.Pages[i].PostID == front {
+						m.Result.Pages[i].URL = s.links(c).HomeURL("/")
+					}
+				}
 				if rec != nil {
 					rec.FrontSet, rec.PrevShow, rec.PrevFront = true, prevShow, prevFront
 					_ = s.wbWizSetRecords(c, recs)
 				}
 			}
 		}
-		_ = s.wbWizSave(m)
+		if err := s.wbWizSave(m); err != nil {
+			notices = append(notices, notice{Type: "error", Message: "The publication report could not be saved. Reopening it may show the previous result."})
+		}
 	}
-	s.wbWizResultPage(c, m, notices...)
+	s.wbWizResultPage(c, m, true, notices...)
 }
 
-// wbWizFrontID is the post of index.html in a result (0: none).
+// wbWizFrontID is the post of index.html or index.htm when the import requests a homepage.
 func wbWizFrontID(r *wbWizResult) int64 {
+	if r.SkipFront {
+		return 0
+	}
 	for _, p := range r.Pages {
 		if strings.EqualFold(p.Path, "index.html") || strings.EqualFold(p.Path, "index.htm") {
 			return p.PostID
@@ -1290,17 +1467,46 @@ func wbWizFrontID(r *wbWizResult) int64 {
 
 // --- result and compare -----------------------------------------------------------------------
 
-func (s *Server) wbWizResultPage(c *gin.Context, m *wbWizMeta, extra ...notice) {
+func (s *Server) wbWizResultPage(c *gin.Context, m *wbWizMeta, saved bool, extra ...notice) {
 	if m.Result == nil {
 		s.wbWizAnalysisPage(c, m, nil)
 		return
 	}
-	v := &wbWizView{Step: "result", ID: m.ID, Kit: m.Result.Kit, R: m.Result, Nonce: s.nonce(c, "wb-site-import-publish-"+m.ID)}
+	v := &wbWizView{Step: "result", ID: m.ID, Kit: m.Result.Kit, R: m.Result, SavedReport: saved, CanUndo: s.wbWizRecords()[m.ID] != nil,
+		Nonce: s.nonce(c, "wb-site-import-publish-"+m.ID)}
 	v.Front = wbWizFrontID(m.Result) > 0 && m.Result.Front == 0
+	v.R = s.wbWizPublicResultLinks(c, m.Result)
 	if m.Result.Failed != "" {
 		extra = append(extra, notice{Type: "error", Message: template.HTML("The import stopped: " + html.EscapeString(m.Result.Failed)), Dismissible: false})
 	}
 	s.wbWizRender(c, v, extra...)
+}
+
+// Show public links only for the rows that are currently published. Keep the saved report intact.
+func (s *Server) wbWizPublicResultLinks(c *gin.Context, result *wbWizResult) *wbWizResult {
+	if len(result.Pages) == 0 {
+		return result
+	}
+	ids := make([]int64, 0, len(result.Pages))
+	for _, p := range result.Pages {
+		ids = append(ids, p.PostID)
+	}
+	live := map[int64]bool{}
+	if rows, err := s.store.Pool.Query(c, `SELECT id FROM posts WHERE id = ANY($1) AND status = 'publish'`, ids); err == nil {
+		if published, err := pgx.CollectRows(rows, pgx.RowTo[int64]); err == nil {
+			for _, id := range published {
+				live[id] = true
+			}
+		}
+	}
+	view := *result
+	view.Pages = append([]wbWizPage(nil), result.Pages...)
+	for i, p := range result.Pages {
+		if !live[p.PostID] {
+			view.Pages[i].URL = ""
+		}
+	}
+	return &view
 }
 
 func (s *Server) wbWizComparePage(c *gin.Context, m *wbWizMeta) {
@@ -1310,18 +1516,14 @@ func (s *Server) wbWizComparePage(c *gin.Context, m *wbWizMeta) {
 	}
 	v := &wbWizView{Step: "compare", ID: m.ID, Kit: m.Result.Kit, R: m.Result}
 	cur := c.Query("file")
+	current := m.Result.Pages[0]
 	for i, p := range m.Result.Pages {
-		row := wbWizCmpRow{Path: p.Path, Title: wbWizTitle("", p.Path), EditURL: wbEditURL(p.PostID),
+		row := wbWizCmpRow{Path: p.Path, Title: wbWizTitle("", p.Path), EditURL: p.EditURL(),
 			DesignURL: wbWizDesignRoute + m.ID + "/" + wbWizEscPath(p.Path), Select: wbWizURL + "?action=compare&import=" + m.ID + "&file=" + url.QueryEscape(p.Path)}
-		if !m.Result.Draft && p.URL != "" {
-			if u, err := url.Parse(p.URL); err == nil {
-				row.PursaeURL = u.RequestURI()
-				row.ViewURL = p.URL
-			}
-		}
 		row.Current = p.Path == cur || (cur == "" && i == 0)
 		v.Compare = append(v.Compare, row)
 		if row.Current {
+			current = p
 			r := row
 			v.Cur = &r
 		}
@@ -1329,6 +1531,12 @@ func (s *Server) wbWizComparePage(c *gin.Context, m *wbWizMeta) {
 	if v.Cur == nil {
 		v.Cur = &v.Compare[0]
 		v.Compare[0].Current = true
+	}
+	if post, err := s.store.GetPost(c, current.PostID); err == nil && post.Status == "publish" {
+		link := s.links(c).Permalink(post)
+		if u, err := url.Parse(link); err == nil {
+			v.Cur.PursaeURL, v.Cur.ViewURL = u.RequestURI(), link
+		}
 	}
 	s.wbWizRender(c, v)
 }

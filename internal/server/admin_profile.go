@@ -39,6 +39,10 @@ type profileData struct {
 	SyntaxOff        bool   // "Disable syntax highlighting when editing code"
 	Colors           []adminColor
 	Color            string // admin_color
+	Themes           []adminTheme
+	Theme            string // admin_theme
+	ThemeModes       []struct{ Slug, Name string }
+	ThemeMode        string // admin_theme_mode (Pursae Modern)
 	OtherSessions    int
 	AvatarID         int64
 	CanUpload        bool
@@ -88,6 +92,14 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 	d.Languages, _ = s.languageChoices(d.Locale, true)
 	d.ShowEditorChoice, d.DefaultEditor = s.classicSwitchAllowed(), s.userDefaultEditor(target)
 	d.SyntaxOff, d.Colors, d.Color = !syntaxHighlighting(target), adminColors, adminColorFor(target).Slug
+	d.Themes, d.Theme = adminThemes, adminThemeFor(target).Slug
+	d.ThemeModes, d.ThemeMode = adminThemeModes, adminThemeFor(target).Mode
+	if d.ThemeMode == "" {
+		d.ThemeMode = "light"
+	}
+	if d.Theme == "modern" {
+		d.Color = adminColors[0].Slug
+	}
 	seen := map[string]bool{}
 	add := func(v string) {
 		v = strings.TrimSpace(v)
@@ -359,6 +371,14 @@ func (s *Server) saveUser(c *gin.Context, target *store.User) {
 		if sc.Slug == c.PostForm("admin_color") {
 			_ = s.setUserMeta(c, target, "admin_color", sc.Slug)
 		}
+	}
+	for _, t := range adminThemes {
+		if t.Slug == c.PostForm("admin_theme") {
+			_ = s.setUserMeta(c, target, "admin_theme", t.Slug)
+		}
+	}
+	if m := c.PostForm("admin_theme_mode"); validThemeMode(m) {
+		_ = s.setUserMeta(c, target, "admin_theme_mode", m)
 	}
 	s.saveAvatar(c, target)
 	if pass1 != "" {

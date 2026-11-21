@@ -51,62 +51,20 @@ func wbSiteMenuName(kit string) string { return "Design navigation (" + kit + ")
 // location and returns the items' ids in depth-first order and the menu id. pageByURL maps the
 // imported pages' site paths to their ids (those items link the page, so they follow its URL).
 func (s *Server) wbSiteMenu(c *gin.Context, kit string, m *webbuilder.SiteMenu, pageByURL map[string]int64) (int64, []int64, error) {
-	name := wbSiteMenuName(kit)
-	var menuID int64
-	menus, err := s.store.Menus(c)
-	if err != nil {
-		return 0, nil, err
-	}
-	for _, x := range menus {
-		if x.Name == name {
-			menuID = x.ID
-			break
-		}
-	}
-	if menuID == 0 {
-		if menuID, err = s.store.CreateMenu(c, name); err != nil {
-			return 0, nil, err
-		}
-	} else {
-		// A second import of the kit: the menu is made again from the design.
-		old, err := s.store.AllMenuItems(c, menuID)
-		if err != nil {
-			return 0, nil, err
-		}
-		for _, it := range old {
-			if err := s.store.DeleteMenuItem(c, it.ID); err != nil {
-				return 0, nil, err
-			}
-		}
-	}
-	var ids []int64
-	order := 0
-	var add func(items []webbuilder.SiteMenuItem, parent int64) error
-	add = func(items []webbuilder.SiteMenuItem, parent int64) error {
+	var plan func([]webbuilder.SiteMenuItem) []store.MenuTreeItem
+	plan = func(items []webbuilder.SiteMenuItem) []store.MenuTreeItem {
+		out := make([]store.MenuTreeItem, 0, len(items))
 		for _, it := range items {
-			order++
-			e := &store.EditItem{MenuID: menuID, ParentID: parent, Order: order, Kind: "custom", Object: "custom", URL: it.URL,
+			e := store.EditItem{Kind: "custom", Object: "custom", URL: it.URL,
 				Label: it.Label, Target: it.Target, Status: "publish"}
 			if id, ok := pageByURL[webbuilder.ActivePath(it.URL)]; ok && id > 0 && !strings.Contains(it.URL, "#") {
 				e.Kind, e.Object, e.TargetID, e.URL = "post_type", "page", id, ""
 			}
-			if err := s.store.AddMenuItem(c, e); err != nil {
-				return err
-			}
-			ids = append(ids, e.ID)
-			if err := add(it.Children, e.ID); err != nil {
-				return err
-			}
+			out = append(out, store.MenuTreeItem{Item: e, Children: plan(it.Children)})
 		}
-		return nil
+		return out
 	}
-	if err := add(m.Items, 0); err != nil {
-		return menuID, nil, err
-	}
-	if err := s.store.SetMenuLocations(c, map[string]int64{webbuilder.MenuLocationPrimary: menuID}); err != nil {
-		return menuID, ids, err
-	}
-	return menuID, ids, nil
+	return s.store.ReplaceNamedMenu(c, wbSiteMenuName(kit), webbuilder.MenuLocationPrimary, plan(m.Items))
 }
 
 var wbSiteFieldKeyRE = regexp.MustCompile(`^(_wb_html_)?(design|list\d+)_`)
@@ -277,9 +235,10 @@ func mcpWBBind(s *Server, c *gin.Context, args map[string]any) (any, error) {
 // single template draws it), each group a single-page template (the largest of a folder for every
 // child of the folder's parent page, the others for their own pages).
 func (s *Server) wbSiteGroups(c *gin.Context, r *webbuilder.ServerRenderer, kit, status string, res *webbuilder.SiteImport, b *webbuilder.SiteBinding,
-	pageFor map[int]int64, parents map[string]int64, keep map[string]bool) ([]map[string]any, []string) {
+	pageFor map[int]int64, parents map[string]int64, keep map[string]bool) ([]map[string]any, []string, map[int]bool) {
 	var report []map[string]any
 	var warnings []string
+	bound := map[int]bool{}
 	// Largest group of each folder first.
 	order := make([]int, len(b.Groups))
 	for i := range order {
@@ -368,11 +327,13 @@ func (s *Server) wbSiteGroups(c *gin.Context, r *webbuilder.ServerRenderer, kit,
 			}
 			if err := s.store.WebBuilder().DeleteDoc(c, pid); err != nil && !errors.Is(err, store.ErrNotFound) {
 				warnings = append(warnings, res.Pages[p.Page].Path+": could not remove its builder page: "+err.Error())
+				continue
 			}
+			bound[p.Page] = true
 			pages = append(pages, res.Pages[p.Page].Path)
 		}
 		report = append(report, map[string]any{"folder": g.Folder, "template": id, "conditions": conds, "pages": pages, "fields": g.Fields,
 			"type": ptype, "edit_url": s.mcpAdminURL(c, wbEditURL(id))})
 	}
-	return report, warnings
+	return report, warnings, bound
 }

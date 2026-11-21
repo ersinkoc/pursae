@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -71,9 +72,16 @@ func (s *Server) wbSiteSetType(c *gin.Context, id int64, typ string) error {
 	return err
 }
 
-func (s *Server) wbSiteMark(c *gin.Context, id int64, kit, key string) error {
+// wbSiteMarkNew records a newly created draft or removes it if the mark cannot be saved.
+func (s *Server) wbSiteMarkNew(c *gin.Context, id int64, kit, key string) error {
 	_, err := s.store.Pool.Exec(c, `UPDATE posts SET meta = meta || jsonb_build_object($2::text, $3::text, $4::text, $5::text) WHERE id = $1`,
 		id, wbSiteMetaKit, kit, wbSiteMetaKey, key)
+	if err != nil {
+		err = fmt.Errorf("mark new import post %d: %w", id, err)
+		if cleanupErr := s.store.DeletePost(c, id); cleanupErr != nil {
+			err = errors.Join(err, fmt.Errorf("remove unmarked import post %d: %w", id, cleanupErr))
+		}
+	}
 	return err
 }
 
@@ -103,7 +111,10 @@ func (s *Server) wbSitePage(c *gin.Context, kit, key, slug, title string, parent
 	if err := s.mcpREST(c, http.MethodPost, "/wp/v2/pages", body, &created); err != nil {
 		return 0, false, err
 	}
-	return created.ID, true, s.wbSiteMark(c, created.ID, kit, key)
+	if err := s.wbSiteMarkNew(c, created.ID, kit, key); err != nil {
+		return 0, false, err
+	}
+	return created.ID, true, nil
 }
 
 func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error) {
@@ -185,6 +196,24 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	var warnings []string
 	ids := map[string]int64{}
 	created, updated := []string{}, []string{}
+	out := map[string]any{"kit": kit}
+	report := []map[string]any{}
+	enableRoot := func() {
+		if err := s.wbKitSetRoot(c, kit, true); err != nil {
+			warnings = append(warnings, "could not serve the kit's files at the site's root: "+err.Error())
+		}
+	}
+	finishReport := func(err error) (any, error) {
+		if err != nil && status == "publish" && len(report) > 0 {
+			enableRoot() // The pages that are already live need their assets.
+		}
+		out["pages"] = report
+		out["pages_created"], out["pages_updated"] = created, updated
+		if len(warnings) > 0 {
+			out["warnings"] = warnings
+		}
+		return out, err
+	}
 	titleOf := func(p string) string {
 		if m := wbSiteTitleRE.FindStringSubmatch(src[p]); m != nil {
 			if t := strings.TrimSpace(html.UnescapeString(m[1])); t != "" {
@@ -254,7 +283,7 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			continue
 		}
 		if _, err := ensurePage(p.Path, 0); err != nil {
-			return nil, err
+			return finishReport(err)
 		}
 	}
 	// The URLs (as they will be once published).
@@ -265,14 +294,14 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		if p.NotFound {
 			continue
 		}
-		if p.Front {
+		if p.Front && args["front_page"] != false {
 			opts.URLs[p.Path] = webbuilder.ActivePath(lb.HomeURL("/"))
 			frontID = ids[p.Path]
 			continue
 		}
 		post, err := s.store.GetPost(c, ids[p.Path])
 		if err != nil {
-			return nil, err
+			return finishReport(err)
 		}
 		cp := *post
 		cp.Status = "publish"
@@ -314,7 +343,7 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	opts.SiteURL = home
 	res, err := webbuilder.ConvertSite(list, opts)
 	if err != nil {
-		return nil, mcpErrf("the site could not be read: %v", err)
+		return finishReport(mcpErrf("the site could not be read: %v", err))
 	}
 	warnings = append(warnings, res.Warnings...)
 	warnings = append(warnings, wbSiteOldWarnings(res, opts.OldHosts, opts.KeepOldLinks, k.Origins)...)
@@ -323,6 +352,10 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	menusOn, groups := wbSiteBindOptions(args)
 	if noSplit {
 		menusOn, groups = false, map[string]bool{}
+	}
+	if status == "draft-autosave" && len(groups) > 0 {
+		groups = nil
+		warnings = append(warnings, "Collection binding is skipped for editor drafts.")
 	}
 	parents := map[string]int64{}
 	folderParents := map[string]string{}
@@ -356,34 +389,22 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		return sec
 	}
 	// The pages.
-	out := map[string]any{"kit": kit}
-	report := []map[string]any{}
 	var pageFor = map[int]int64{}
-	for i, pg := range res.Pages {
-		if pg.Path == notFound {
-			continue
-		}
+	savePage := func(i int) (any, error) {
+		pg := res.Pages[i]
 		id := ids[pg.Path]
-		pageFor[i] = id
 		cr := pg.Code
-		if binding.GroupMember(i) {
-			// Content under a single template (wbSiteGroups); its SEO is the page's still.
-			if _, warn := s.wbImportSEO(c, id, cr.SEO); warn != "" {
-				warnings = append(warnings, pg.Path+": "+warn)
-			}
-			continue
-		}
 		secs := make([]map[string]any, 0, len(cr.Sections))
 		for _, p := range cr.Sections {
 			secs = append(secs, section(p, cr.Head, cr.Lang, [2]string{cr.HTMLAttrs, cr.BodyAttrs}, nil))
 		}
 		d, doc, page, err := s.mcpLoadDoc(c, id, false)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %v", pg.Path, err)
+			return finishReport(fmt.Errorf("%s: %w", pg.Path, err))
 		}
 		doc.Sections = secs
 		if doc.Site, err = mcpSite(r, doc.Site, nil); err != nil {
-			return nil, err
+			return finishReport(err)
 		}
 		title := strings.TrimSpace(cr.SEO.Title)
 		if title == "" {
@@ -405,7 +426,7 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		}
 		saved, err := s.mcpSaveDoc(c, id, d, doc, page, patch, status, nil)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %v", pg.Path, err)
+			return finishReport(fmt.Errorf("%s: %w", pg.Path, err))
 		}
 		if _, warn := s.wbImportSEO(c, id, cr.SEO); warn != "" {
 			warnings = append(warnings, pg.Path+": "+warn)
@@ -416,9 +437,25 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 			}
 		}
 		report = append(report, map[string]any{"path": pg.Path, "post_id": id, "url": saved["url"], "sections": len(secs)})
+		return nil, nil
 	}
-	out["pages"] = report
-	out["pages_created"], out["pages_updated"] = created, updated
+	for i, pg := range res.Pages {
+		if pg.Path == notFound {
+			continue
+		}
+		id := ids[pg.Path]
+		pageFor[i] = id
+		if binding.GroupMember(i) {
+			// A collection member keeps its own SEO even when the template draws the page.
+			if _, warn := s.wbImportSEO(c, id, pg.Code.SEO); warn != "" {
+				warnings = append(warnings, pg.Path+": "+warn)
+			}
+			continue
+		}
+		if partial, err := savePage(i); err != nil {
+			return partial, err
+		}
+	}
 	if len(claimed) > 0 {
 		out["claimed_paths"] = claimed
 	}
@@ -506,9 +543,17 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	}
 	// Single templates made from groups of pages.
 	if len(binding.Groups) > 0 {
-		gr, warn := s.wbSiteGroups(c, r, kit, status, res, binding, pageFor, parents, keep)
+		gr, warn, bound := s.wbSiteGroups(c, r, kit, status, res, binding, pageFor, parents, keep)
 		warnings = append(warnings, warn...)
 		bindReport["groups"] = gr
+		for i := range res.Pages {
+			if binding.GroupMember(i) && !bound[i] {
+				if partial, err := savePage(i); err != nil {
+					return partial, err
+				}
+			}
+		}
+		out["pages"] = report
 	}
 	if len(binding.Listings) > 0 {
 		var ls []map[string]any
@@ -528,18 +573,20 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	}
 	out["templates"] = tplReport
 	// Templates of an earlier import of this kit that this one no longer needs.
-	if disabled := s.wbSiteDisableStale(c, kit, keep); len(disabled) > 0 {
-		out["templates_disabled"] = disabled
+	if status != "draft-autosave" {
+		disabled, warn := s.wbSiteDisableStale(c, kit, keep)
+		warnings = append(warnings, warn...)
+		if len(disabled) > 0 {
+			out["templates_disabled"] = disabled
+		}
 	}
 	if others := s.wbSiteOtherTemplates(c, kit); len(others) > 0 {
 		warnings = append(warnings, "other published templates of the same types may compete with the imported ones (the imported ones have priority "+
 			itoa(wbSiteTemplatePriority)+"): "+strings.Join(others, ", "))
 	}
 	// The design's folders are the site's paths now: its files are served at the root too.
-	if err := s.wbKitSetRoot(c, kit, true); err != nil {
-		warnings = append(warnings, "could not serve the kit's files at the site's root: "+err.Error())
-	}
-	if frontID > 0 && !(args["front_page"] == false) {
+	enableRoot()
+	if frontID > 0 && status == "publish" {
 		if err := s.mcpREST(c, http.MethodPost, "/wp/v2/settings", map[string]any{"show_on_front": "page", "page_on_front": frontID}, nil); err != nil {
 			warnings = append(warnings, "could not set the front page: "+err.Error())
 		} else {
@@ -565,10 +612,7 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 	if len(res.Missing) > 0 {
 		out["missing_files"] = wbFirst(res.Missing, 40)
 	}
-	if len(warnings) > 0 {
-		out["warnings"] = warnings
-	}
-	return out, nil
+	return finishReport(nil)
 }
 
 // wbCodeSectionAttrs adds the design's document attributes and the active-link rule to a code
@@ -602,8 +646,8 @@ func (s *Server) wbSiteTemplate(c *gin.Context, r *webbuilder.ServerRenderer, ki
 			return 0, err
 		}
 		id = created.ID
-		if err := s.wbSiteMark(c, id, kit, key); err != nil {
-			return id, err
+		if err := s.wbSiteMarkNew(c, id, kit, key); err != nil {
+			return 0, err
 		}
 	}
 	if err := s.mcpREST(c, http.MethodPut, "/web-builder/v2/templates/"+itoa64(id)+"/conditions", map[string]any{"conditions": conds, "priority": wbSiteTemplatePriority}, nil); err != nil {
@@ -622,11 +666,11 @@ func (s *Server) wbSiteTemplate(c *gin.Context, r *webbuilder.ServerRenderer, ki
 }
 
 // wbSiteDisableStale turns the earlier import's templates that are not in keep into drafts.
-func (s *Server) wbSiteDisableStale(c *gin.Context, kit string, keep map[string]bool) []string {
-	rows, err := s.store.Pool.Query(c, `SELECT id, meta->>$2, title FROM posts WHERE type = $1 AND meta->>$3 = $4 AND status = 'publish'`,
+func (s *Server) wbSiteDisableStale(c *gin.Context, kit string, keep map[string]bool) (disabled, warnings []string) {
+	rows, err := s.store.Pool.Query(c, `SELECT id, meta->>$2, title FROM posts WHERE type = $1 AND meta->>$3 = $4 AND status = 'publish' AND meta->>$2 IS NOT NULL`,
 		webbuilder.TemplatePostType, wbSiteMetaKey, wbSiteMetaKit, kit)
 	if err != nil {
-		return nil
+		return nil, []string{"could not find obsolete import templates: " + err.Error()}
 	}
 	type row struct {
 		id    int64
@@ -636,23 +680,31 @@ func (s *Server) wbSiteDisableStale(c *gin.Context, kit string, keep map[string]
 	var stale []row
 	for rows.Next() {
 		var x row
-		if rows.Scan(&x.id, &x.key, &x.title) == nil && !keep[x.key] {
+		if err := rows.Scan(&x.id, &x.key, &x.title); err != nil {
+			rows.Close()
+			return nil, []string{"could not read obsolete import templates: " + err.Error()}
+		}
+		if !keep[x.key] {
 			stale = append(stale, x)
 		}
 	}
 	rows.Close()
-	var out []string
+	if err := rows.Err(); err != nil {
+		return nil, []string{"could not read obsolete import templates: " + err.Error()}
+	}
 	for _, x := range stale {
 		if _, err := s.store.Pool.Exec(c, `UPDATE posts SET status = 'draft', modified_at = now(), updated_at = now() WHERE id = $1 AND type = $2`,
-			x.id, webbuilder.TemplatePostType); err == nil {
-			out = append(out, x.title)
+			x.id, webbuilder.TemplatePostType); err != nil {
+			warnings = append(warnings, fmt.Sprintf("could not disable the obsolete template %q (%d): %v", x.title, x.id, err))
+			continue
 		}
+		disabled = append(disabled, x.title)
 	}
-	if len(out) > 0 {
+	if len(disabled) > 0 {
 		s.wbTemplatesChanged(c)
 	}
 	s.wbPurgePages()
-	return out
+	return disabled, warnings
 }
 
 // wbSiteOtherTemplates lists published header, footer and 404 templates the import did not make.

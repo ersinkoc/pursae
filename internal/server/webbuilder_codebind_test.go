@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"wpgo/internal/webbuilder"
 )
 
 // A small static site whose header menu, news pages, news list and contact form a site import binds
@@ -258,4 +260,34 @@ func regexpGroup(re, s string) string {
 		return m[1]
 	}
 	return ""
+}
+
+func TestWBImportMenuKeepsActiveItemsAfterReplacementFailure(t *testing.T) {
+	srv, _, _ := wbrStart(t)
+	menu := &webbuilder.SiteMenu{Items: []webbuilder.SiteMenuItem{
+		{Label: "Existing parent", URL: "/existing/", Children: []webbuilder.SiteMenuItem{
+			{Label: "Existing child", URL: "/existing/child/"},
+		}},
+	}}
+	_, ids, err := srv.wbSiteMenu(wbsGin(), "menu-rollback", menu, nil)
+	if err != nil || len(ids) != 2 {
+		t.Fatalf("save existing menu: %v, %v", ids, err)
+	}
+	if _, err := srv.store.Pool.Exec(t.Context(),
+		`ALTER TABLE menu_items ADD CONSTRAINT rejected_import_item CHECK (label <> 'Blocked replacement')`); err != nil {
+		t.Fatal(err)
+	}
+	menu.Items[0].Label = "New parent"
+	menu.Items[0].Children[0].Label = "Blocked replacement"
+	if _, _, err := srv.wbSiteMenu(wbsGin(), "menu-rollback", menu, nil); err == nil {
+		t.Fatal("replacement should fail")
+	}
+	active, err := srv.store.MenuAt(t.Context(), webbuilder.MenuLocationPrimary)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(active) != 1 || active[0].ID != ids[0] || active[0].Label != "Existing parent" ||
+		len(active[0].Children) != 1 || active[0].Children[0].ID != ids[1] || active[0].Children[0].Label != "Existing child" {
+		t.Fatalf("replacement changed the active menu: %+v", active)
+	}
 }

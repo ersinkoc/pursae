@@ -44,3 +44,21 @@ func TestFrontToolbarWebBuilder(t *testing.T) {
 		t.Error("the toolbar shows Pursae Web Builder while it is off")
 	}
 }
+
+// The site's toolbar takes Pursae Modern's colours (pm-bar and its stylesheet) only for a user who
+// picked Pursae Modern; WordPress Classic users get WordPress's toolbar untouched.
+func TestFrontToolbarModernColours(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	_, body, _ := get(t, c, ts.URL+"/")
+	if strings.Contains(body, "pm-bar") || strings.Contains(body, modernBarCSS) {
+		t.Fatal("a WordPress Classic user gets the Pursae Modern toolbar")
+	}
+	if _, err := srv.store.Pool.Exec(context.Background(), `UPDATE users SET meta = meta || '{"admin_theme":"modern"}'::jsonb WHERE login = 'admin'`); err != nil {
+		t.Fatal(err)
+	}
+	_, body, _ = get(t, c, ts.URL+"/")
+	if !strings.Contains(body, `class="nojq nojs pm-bar"`) || !strings.Contains(body, modernBarCSS) {
+		t.Fatal("a Pursae Modern user's site toolbar lacks pm-bar and its stylesheet")
+	}
+}

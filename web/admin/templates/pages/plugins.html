@@ -52,7 +52,28 @@
 	<br class="clear" />
 </div>
 <h2 class="screen-reader-text">Plugins list</h2>
-<table class="wp-list-table widefat plugins">
+{{if $.Theme.Modern}}<div class="pm-plugins" id="the-list">
+{{range .Rows}}<article class="pm-plugin{{if .Active}} is-active{{end}}{{if .Update}} has-update{{end}}" data-slug="{{.Slug}}">
+	<div class="pm-plugin-top">
+		<span class="pm-plugin-ic pm-tint-{{.Tint}}" aria-hidden="true"><span class="dashicons {{.Icon}}"></span></span>
+		<label class="pm-plugin-cb"><input type="checkbox" name="checked[]" value="{{.Slug}}" /><span class="screen-reader-text">Select {{.Name}}</span></label>
+		{{if .Active}}<a class="pm-switch is-on" role="switch" aria-checked="true" href="{{.DeactivateURL}}" aria-label="Deactivate {{.Name}}"><span></span></a>{{else}}<a class="pm-switch" role="switch" aria-checked="false" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}"><span></span></a>{{end}}
+	</div>
+	<h3 class="pm-plugin-name">{{.Name}}</h3>
+	<div class="pm-plugin-desc">{{safe .Description}}</div>
+	{{if .Like}}<p class="pm-plugin-like"><span>Replaces</span> {{.Like}}</p>{{end}}
+	{{if .Disabled}}<div class="notice inline notice-error notice-alt"><p>Stopped by the sandbox: {{.DisabledWhy}}</p></div>{{end}}
+	{{if .MissingPerms}}<div class="notice inline notice-warning notice-alt"><p>This version asks for new permissions that were not granted: {{range $i, $p := .MissingPerms}}{{if $i}}, {{end}}<code>{{$p}}</code>{{end}}.</p></div>{{end}}
+	{{with .Update}}<div class="notice inline notice-warning notice-alt"><p><span>Version</span> {{.Version}} <span>is available.</span> <a href="{{.URL}}" class="update-link">Update now</a></p></div>{{end}}
+	<footer class="pm-plugin-foot">
+		<span class="pm-chip {{if .Active}}is-ok{{else}}is-muted{{end}}">{{if .Active}}Active{{else}}Inactive{{end}}</span>
+		<span class="pm-mono">{{.Version}} · {{if .Native}}<span>built-in</span>{{else}}<span>sandbox</span>{{end}}</span>
+		<span class="pm-plugin-links">{{if and .Active .SettingsURL}}<a href="{{.SettingsURL}}">Settings →</a>{{end}}{{if and (not .Active) .DeleteURL}}<a class="pm-del" href="{{.DeleteURL}}" data-confirm="Are you sure you want to delete {{.Name}} and its data?">Delete</a>{{end}}</span>
+	</footer>
+</article>
+{{else}}<p class="pm-plugins-empty">No plugins found.</p>{{end}}
+</div>
+{{else}}<table class="wp-list-table widefat plugins">
 <thead>{{template "plugins-head" true}}</thead>
 <tbody id="the-list">
 {{range $row := .Rows}}
@@ -79,7 +100,7 @@
 {{else}}<tr class="no-items"><td class="colspanchange" colspan="3">No plugins found.</td></tr>{{end}}
 </tbody>
 <tfoot>{{template "plugins-head" false}}</tfoot>
-</table>
+</table>{{end}}
 <div class="tablenav bottom">
 	<div class="alignleft actions bulkactions">
 		<label for="bulk-action-selector-bottom" class="screen-reader-text">Select bulk action</label>

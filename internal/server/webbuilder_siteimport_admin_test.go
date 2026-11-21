@@ -267,6 +267,44 @@ func wizStart(t *testing.T) (*Server, string, *wbrClient, *wizClient) {
 	return srv, base, admin, newWizClient(t, base, admin)
 }
 
+func TestWBImportWizardPublishesCollectionDrafts(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	site := wizZipBytes(t, []wizEntry{
+		{"css/site.css", "body{color:green}", 0},
+		{"index.html", bindTestPage("index.html", "Home", "<section><h1>Home</h1></section>"), 0},
+		{"haber/a.html", bindNews("a", "Alpha", "<p>Alpha is the first story with more than a title.</p>"), 0},
+		{"haber/b.html", bindNews("b", "Beta", "<p>Beta is the second story with its distinct body text.</p>"), 0},
+		{"haber/c.html", bindNews("c", "Gamma", "<p>Gamma is the third story with its own distinct facts.</p>"), 0},
+	})
+	code, _, loc := w.upload(site, "site.zip", "wizard-draft-collection")
+	match := wizIDRE.FindStringSubmatch(loc)
+	if code != http.StatusFound || len(match) != 2 {
+		t.Fatalf("upload: %d %q", code, loc)
+	}
+	id := match[1]
+	_, analysis, _ := w.get(loc)
+	code, _, loc = w.postForm(wbWizURL+"?action=import&import="+id, url.Values{
+		"_wpnonce": {wizHiddenRE.FindStringSubmatch(analysis)[1]}, "kit": {"wizard-draft-collection"},
+		"status": {"draft"}, "templates": {"1"}, "collection": {"haber"},
+	})
+	if code != http.StatusSeeOther {
+		t.Fatalf("import drafts: %d", code)
+	}
+	_, report, _ := w.get(loc)
+	if !strings.Contains(report, "3 pages are content under single template") || !strings.Contains(report, "<code>haber/b.html</code>") {
+		t.Fatalf("collection is missing from the report: %s", wbSnippet(report, "Content"))
+	}
+	code, report, _ = w.postForm(wbWizURL+"?action=publish&import="+id,
+		url.Values{"_wpnonce": {wizHiddenRE.FindStringSubmatch(report)[1]}})
+	if code != http.StatusOK || strings.Contains(report, "Publish the pages") {
+		t.Fatalf("publish staged collection: %d %s", code, wbSnippet(report, "notice"))
+	}
+	if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE type='page' AND status='publish'
+		AND meta->>$1='wizard-draft-collection' AND meta->>$2 LIKE 'haber/%.html'`, wbSiteMetaKit, wbSiteMetaKey); n != 3 {
+		t.Fatalf("published collection members = %d, want 3", n)
+	}
+}
+
 func TestWBImportWizardPermissions(t *testing.T) {
 	srv, base, admin, w := wizStart(t)
 	code, page, _ := w.get("/wp-admin/web-builder-import")
@@ -1144,5 +1182,45 @@ func TestWBImportWizardUndoCanRetryAfterKitDeleteFailure(t *testing.T) {
 		if _, err := os.Stat(name); !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("retry left %q: %v", name, err)
 		}
+	}
+}
+
+func TestWBImportWizardCompletedPublishKeepsLaterVisibilityChange(t *testing.T) {
+	srv, _, _, w := wizStart(t)
+	_, _, loc := w.upload(wizSite(t), "site.zip", "publish-once")
+	id := wizIDRE.FindStringSubmatch(loc)[1]
+	_, analysis, _ := w.get(loc)
+	at := wbWizURL + "?import=" + id
+	code, _, result := w.postForm(at+"&action=import", url.Values{
+		"_wpnonce": {wizHiddenRE.FindStringSubmatch(analysis)[1]},
+		"kit":      {"publish-once"},
+		"status":   {"draft"},
+	})
+	if code != http.StatusSeeOther {
+		t.Fatalf("draft import: %d", code)
+	}
+	_, report, _ := w.get(result)
+	form := url.Values{"_wpnonce": {wizHiddenRE.FindStringSubmatch(report)[1]}}
+	publish := at + "&action=publish"
+	if code, body, _ := w.postForm(publish, form); code != http.StatusOK || strings.Contains(body, "Publish the pages") {
+		t.Fatalf("initial publish: %d %s", code, wbSnippet(body, "notice"))
+	}
+	m := srv.wbWizLoad(id)
+	if m == nil || m.Result == nil || !m.Result.Published || len(m.Result.Pages) == 0 {
+		t.Fatal("initial publication did not save its result")
+	}
+	pageID := m.Result.Pages[0].PostID
+	if _, err := srv.store.Pool.Exec(t.Context(), `UPDATE posts SET status = 'private' WHERE id = $1`, pageID); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, loc := w.postForm(publish, form); code != http.StatusSeeOther || loc != result {
+		t.Fatalf("completed publish: %d %q, want redirect to %q", code, loc, result)
+	}
+	post, err := srv.store.GetPost(t.Context(), pageID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if post.Status != "private" {
+		t.Fatalf("status after repeat publish = %q, want private", post.Status)
 	}
 }

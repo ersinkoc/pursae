@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strconv"
 
@@ -57,6 +58,10 @@ func (s *Store) Menus(ctx context.Context) ([]*Menu, error) {
 
 // CreateMenu is wp_create_nav_menu(); the slug is made unique.
 func (s *Store) CreateMenu(ctx context.Context, name string) (int64, error) {
+	return createMenu(ctx, s.Pool, name)
+}
+
+func createMenu(ctx context.Context, q DBTX, name string) (int64, error) {
 	base := wp.SanitizeTitle(name)
 	if base == "" {
 		base = "menu"
@@ -64,7 +69,7 @@ func (s *Store) CreateMenu(ctx context.Context, name string) (int64, error) {
 	slug := base
 	for i := 2; ; i++ {
 		var taken bool
-		if err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM menus WHERE slug = $1)`, slug).Scan(&taken); err != nil {
+		if err := q.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM menus WHERE slug = $1)`, slug).Scan(&taken); err != nil {
 			return 0, err
 		}
 		if !taken {
@@ -73,7 +78,7 @@ func (s *Store) CreateMenu(ctx context.Context, name string) (int64, error) {
 		slug = base + "-" + strconv.Itoa(i)
 	}
 	var id int64
-	err := s.Pool.QueryRow(ctx, `INSERT INTO menus(slug, name) VALUES ($1, $2) RETURNING id`, slug, name).Scan(&id)
+	err := q.QueryRow(ctx, `INSERT INTO menus(slug, name) VALUES ($1, $2) RETURNING id`, slug, name).Scan(&id)
 	return id, err
 }
 
@@ -92,19 +97,80 @@ func (s *Store) DeleteMenu(ctx context.Context, id int64) error {
 func (s *Store) SetMenuLocations(ctx context.Context, locs map[string]int64) error {
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
 		for loc, id := range locs {
-			// An id that names no menu leaves the location unassigned, like 0.
-			if _, err := tx.Exec(ctx, `DELETE FROM menu_locations WHERE location = $1`, loc); err != nil {
+			if err := setMenuLocation(ctx, tx, loc, id); err != nil {
 				return err
-			}
-			if id > 0 {
-				if _, err := tx.Exec(ctx, `INSERT INTO menu_locations (location, menu_id)
-					SELECT $1, id FROM menus WHERE id = $2`, loc, id); err != nil {
-					return err
-				}
 			}
 		}
 		return nil
 	})
+}
+
+func setMenuLocation(ctx context.Context, q DBTX, location string, id int64) error {
+	if _, err := q.Exec(ctx, `DELETE FROM menu_locations WHERE location = $1`, location); err != nil {
+		return err
+	}
+	// An ID that names no menu leaves the location unassigned, like 0.
+	if id > 0 {
+		_, err := q.Exec(ctx, `INSERT INTO menu_locations (location, menu_id)
+			SELECT $1, id FROM menus WHERE id = $2`, location, id)
+		return err
+	}
+	return nil
+}
+
+// MenuTreeItem describes a menu item and its children before the database assigns their IDs.
+type MenuTreeItem struct {
+	Item     EditItem
+	Children []MenuTreeItem
+}
+
+// ReplaceNamedMenu saves an imported menu and its location in one transaction.
+// It returns the menu ID and the item IDs in depth-first order.
+func (s *Store) ReplaceNamedMenu(ctx context.Context, name, location string, items []MenuTreeItem) (int64, []int64, error) {
+	var id int64
+	var ids []int64
+	err := pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
+		if err := lockSlug(ctx, tx, "menu", "", name); err != nil {
+			return err
+		}
+		err := tx.QueryRow(ctx, `SELECT id FROM menus WHERE name = $1 ORDER BY id LIMIT 1 FOR UPDATE`, name).Scan(&id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			id, err = createMenu(ctx, tx, name)
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `UPDATE menu_items SET parent_id = NULL WHERE menu_id <> $1
+			AND parent_id IN (SELECT id FROM menu_items WHERE menu_id = $1)`, id); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM menu_items WHERE menu_id = $1`, id); err != nil {
+			return err
+		}
+		var insert func([]MenuTreeItem, int64) error
+		insert = func(nodes []MenuTreeItem, parent int64) error {
+			for _, node := range nodes {
+				item := node.Item
+				item.MenuID, item.ParentID, item.Order = id, parent, len(ids)+1
+				if err := addMenuItem(ctx, tx, &item); err != nil {
+					return err
+				}
+				ids = append(ids, item.ID)
+				if err := insert(node.Children, item.ID); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+		if err := insert(items, 0); err != nil {
+			return err
+		}
+		return setMenuLocation(ctx, tx, location, id)
+	})
+	if err != nil {
+		return 0, nil, err
+	}
+	return id, ids, nil
 }
 
 const editItemCols = `id, menu_id, coalesce(parent_id,0), coalesce(target_id,0), kind, object, status, url, label, target,
@@ -141,7 +207,11 @@ func (s *Store) MenuItem(ctx context.Context, id int64) (*EditItem, error) {
 
 // AddMenuItem inserts an item (status draft for items added on the Menus screen until it is saved).
 func (s *Store) AddMenuItem(ctx context.Context, it *EditItem) error {
-	return s.Pool.QueryRow(ctx, `INSERT INTO menu_items(menu_id, parent_id, sort_order, kind, object, target_id, url, label, target,
+	return addMenuItem(ctx, s.Pool, it)
+}
+
+func addMenuItem(ctx context.Context, q DBTX, it *EditItem) error {
+	return q.QueryRow(ctx, `INSERT INTO menu_items(menu_id, parent_id, sort_order, kind, object, target_id, url, label, target,
 		css_classes, attr_title, description, xfn, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
 		it.MenuID, nullable(it.ParentID), it.Order, it.Kind, it.Object, nullable(it.TargetID), it.URL, it.Label, it.Target,
 		it.Classes, it.AttrTitle, it.Description, it.XFN, defaultStatus(it.Status)).Scan(&it.ID)
