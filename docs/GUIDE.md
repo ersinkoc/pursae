@@ -221,8 +221,9 @@ They cover:
 | Comments | ✓ | anonymized |
 | Pursae Contact Form entries, Web Builder form submissions (section and code forms) whose fields hold the address | ✓ | deleted |
 | Maintenance page subscribers | ✓ | deleted |
-| Pursae Forum topics and replies | ✓ | author IP removed; posts kept with the account |
-| Forum profile settings, likes, points | ✓ | kept with the account (draft removed) |
+| Pursae Forum topics and replies (and their edit history) | ✓ | anonymized: kept published as “Deleted user”, author and IP removed |
+| Forum likes given | ✓ | kept as anonymous likes, so other members' points do not change |
+| Forum points, profile (bio, uploaded photo, badges, settings, draft) | ✓ | deleted; the forum sign-in (linked Google account, verified address) kept with the account |
 | Forum subscriptions | ✓ | deleted |
 | Forum reports filed by the person | ✓ | reporter and note removed, report kept for the moderators |
 | Pursae Commerce orders, downloads, subscriptions | ✓ | per Commerce › Settings › Accounts & Privacy; open orders and subscriptions kept |

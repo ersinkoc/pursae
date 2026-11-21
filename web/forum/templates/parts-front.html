@@ -15,7 +15,7 @@ dot is noted on each one. Forms only render for logged-in members (their pages a
 <div class="pf-count"><span class="pf-count-num">{{num .ReplyCount}}</span> <span class="pf-count-label">{{if eq .ReplyCount 1}}{{$p.T "reply"}}{{else}}{{$p.T "replies"}}{{end}}</span></div>
 <div class="pf-last">{{if .LastTopicURL}}{{if .LastAuthor}}{{forum_avatar .LastAuthor 32}}{{end}}
 <div class="pf-last-text"><a class="pf-last-title" href="{{.LastTopicURL}}">{{.LastTopicTitle}}</a>
-<span class="pf-last-meta">{{if .LastAuthor}}{{.LastAuthor.DisplayName}} &middot; {{end}}<time datetime="{{forum_iso .LastActive}}">{{$p.Ago .LastActive}}</time></span></div>
+<span class="pf-last-meta">{{if .LastAuthor}}{{.LastAuthor.DisplayName}}{{else}}{{$p.T "Deleted user"}}{{end}} &middot; <time datetime="{{forum_iso .LastActive}}">{{$p.Ago .LastActive}}</time></span></div>
 {{- else}}<span class="pf-last-none">{{$p.T "No topics yet"}}</span>{{end}}</div>
 </li>{{end}}{{end}}
 
@@ -29,14 +29,14 @@ dot is noted on each one. Forms only render for logged-in members (their pages a
 {{- if .Closed}} <span class="pf-badge pf-badge--closed">{{$p.T "Closed"}}</span>{{end}}
 {{- if eq .Status "pending"}} <span class="pf-badge pf-badge--pending">{{$p.T "Pending"}}</span>{{end}}
 {{- if .Spam}} <span class="pf-badge pf-badge--spam">{{$p.T "Spam"}}</span>{{else if eq .Status "trash"}} <span class="pf-badge pf-badge--trash">{{$p.T "Trash"}}</span>{{end}}</h3>
-<p class="pf-topic-meta">{{if .Author}}<a href="{{.Author.ProfileURL}}">{{.Author.DisplayName}}</a> &middot; {{end}}<time datetime="{{forum_iso .CreatedAt}}">{{$p.Ago .CreatedAt}}</time>
+<p class="pf-topic-meta">{{if .Author}}<a href="{{.Author.ProfileURL}}">{{.Author.DisplayName}}</a>{{else}}<span class="pf-deleted-user">{{$p.T "Deleted user"}}</span>{{end}} &middot; <time datetime="{{forum_iso .CreatedAt}}">{{$p.Ago .CreatedAt}}</time>
 {{- if and $showForum .ForumTitle}} &middot; <a class="pf-forum-chip{{with .ForumColor}} pf-c-{{.}}{{end}}"{{with .ForumColorStyle}} style="{{.}}"{{end}} href="{{.ForumURL}}">{{.ForumTitle}}</a>{{end}}
 {{- range .Tags}} <a class="pf-chip pf-chip--tag" href="{{.URL}}">#{{.Name}}</a>{{end}}</p>
 </div>
 <div class="pf-count"><span class="pf-count-num">{{num .ReplyCount}}</span> <span class="pf-count-label">{{if eq .ReplyCount 1}}{{$p.T "reply"}}{{else}}{{$p.T "replies"}}{{end}}</span></div>
 <div class="pf-count pf-count--views"><span class="pf-count-num">{{$p.Compact .Views}}</span> <span class="pf-count-label">{{if eq .Views 1}}{{$p.T "view"}}{{else}}{{$p.T "views"}}{{end}}</span></div>
 <div class="pf-last">{{if .Participants}}<span class="pf-avatars">{{range .Participants}}{{forum_avatar . 24}}{{end}}</span>{{else if .LastAuthor}}{{forum_avatar .LastAuthor 32}}{{end}}
-<div class="pf-last-text">{{if .LastAuthor}}<span class="pf-last-author">{{.LastAuthor.DisplayName}}</span>{{end}}
+<div class="pf-last-text"><span class="pf-last-author">{{if .LastAuthor}}{{.LastAuthor.DisplayName}}{{else}}{{$p.T "Deleted user"}}{{end}}</span>
 <span class="pf-last-meta"><time datetime="{{forum_iso .LastActive}}">{{$p.Ago .LastActive}}</time></span></div></div>
 </li>{{end}}{{end}}
 
@@ -52,7 +52,7 @@ dot is noted on each one. Forms only render for logged-in members (their pages a
 {{- if .Badges}}<span class="pf-post-author-badges pf-badges--icons">{{range $p.FewBadges . 3}}{{$p.BadgeChip .}}{{end}}
 {{- with $p.MoreBadges . 3}}<a class="pf-badge-more" href="{{$.Author.ProfileURL}}" title="{{$p.T "All badges"}}">+{{.}}</a>{{end}}</span>{{end}}
 {{- if .Stats}}<span class="pf-post-author-stats">{{$p.Count (add .Topics .Replies) "%s post" "%s posts"}}</span>{{end}}</div>
-{{- else}}{{forum_avatar nil 56}}<div class="pf-post-author-text"><span class="pf-post-author-name">{{$p.T "Former member"}}</span></div>{{end}}
+{{- else}}{{forum_avatar nil 56}}<div class="pf-post-author-text"><span class="pf-post-author-name">{{$p.T "Deleted user"}}</span></div>{{end}}
 </div>
 <div class="pf-post-main">
 <header class="pf-post-meta">
@@ -172,6 +172,6 @@ Dot: *forumPostView. */}}
 <div class="pf-result-main">
 <h3 class="pf-result-title"><a href="{{.URL}}">{{if .Reply}}{{$p.Tf "Reply to “%s”" .Topic.Title}}{{else}}{{.Topic.Title}}{{end}}</a></h3>
 {{- if .Excerpt}}<p class="pf-result-excerpt">{{.Excerpt}}</p>{{end}}
-<p class="pf-result-meta">{{if .Author}}<a href="{{.Author.ProfileURL}}">{{.Author.DisplayName}}</a> &middot; {{end}}<time datetime="{{forum_iso .At}}">{{$p.Ago .At}}</time>{{if .Topic.ForumTitle}} &middot; <a href="{{.Topic.ForumURL}}">{{.Topic.ForumTitle}}</a>{{end}}</p>
+<p class="pf-result-meta">{{if .Author}}<a href="{{.Author.ProfileURL}}">{{.Author.DisplayName}}</a>{{else}}<span class="pf-deleted-user">{{$p.T "Deleted user"}}</span>{{end}} &middot; <time datetime="{{forum_iso .At}}">{{$p.Ago .At}}</time>{{if .Topic.ForumTitle}} &middot; <a href="{{.Topic.ForumURL}}">{{.Topic.ForumTitle}}</a>{{end}}</p>
 </div>
 </li>{{end}}{{end}}

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"wpgo/internal/wp"
 )
 
@@ -20,10 +22,10 @@ import (
 //     the address in one of their fields. Erased by deleting them, like Flamingo's eraser.
 //   - Maintenance mode subscribers (maintenance_subscribers): deleted.
 //   - Pursae Forum: the member's topics and replies, forum profile fields, likes, points,
-//     subscriptions and the reports they filed. Erasure removes the author IP from their posts,
-//     deletes subscriptions and the saved draft, and detaches their reports; the posts themselves,
-//     likes, points and the account's forum settings stay with the account (bbPress has no eraser;
-//     WordPress keeps account-bound content until the account is deleted or reassigned).
+//     subscriptions and the reports they filed. Erasure anonymizes, like WordPress's comment eraser:
+//     the posts stay published as "Deleted user" without author or IP, likes they gave stay
+//     anonymous (no other member's points change), and their points, subscriptions and forum
+//     profile go; the account and its forum sign-in stay (forumPrivacyEraser).
 //   - Pursae Commerce customer data (billing / shipping fields of the account), saved payment
 //     methods and gift cards (WooCommerce's customer data and payment token exporters / erasers). A
 //     saved card an open subscription renews with is kept (deleting the row would not stop the
@@ -326,45 +328,131 @@ func forumPrivacyExporter(ctx context.Context, s *Server, email string) []export
 	return groups
 }
 
+// forumPrivacyEraseMeta are the users.meta keys the forum eraser removes: what the member set up or
+// was given in the forum. The sign-in keys (linked Google account, verified address, confirmation
+// state) stay with the account, which still signs in with them.
+var forumPrivacyEraseMeta = []string{forumUMetaDraft, forumUMetaRules, forumUMetaDigest, forumUMetaBadges, forumUMetaAvatar}
+
+// forumPrivacySignInMeta are the users.meta keys of the account's forum sign-in, kept by the eraser.
+var forumPrivacySignInMeta = []string{forumUMetaGoogleSub, forumUMetaGoogleEmail, forumUMetaEmailVerified}
+
+// forumPrivacyEraseSteps run in order, in one transaction, with $1 the member's user id; each row
+// they change counts as one item removed.
+var forumPrivacyEraseSteps = []string{
+	// Revisions of forum posts (an edit in the post editor) they authored.
+	`UPDATE post_revisions SET author_id = NULL WHERE author_id = $1 AND post_id IN (SELECT id FROM posts WHERE type IN ('topic', 'reply'))`,
+	// Forum post meta that names them: last poster of a topic or forum, who accepted a solution, who
+	// moderated a post last, the moderators shown on a forum.
+	`UPDATE posts SET meta = jsonb_set(meta, '{` + forumMetaLastAuthor + `}', '0') WHERE type IN ('topic', 'forum') AND meta->>'` + forumMetaLastAuthor + `' = $1::bigint::text`,
+	`UPDATE posts SET meta = meta - '` + forumMetaSolvedBy + `' WHERE type = 'topic' AND meta->>'` + forumMetaSolvedBy + `' = $1::bigint::text`,
+	`UPDATE posts SET meta = jsonb_set(meta, '{_forum_mod,by}', '0') WHERE type IN ('topic', 'reply') AND meta->'_forum_mod'->>'by' = $1::bigint::text`,
+	`UPDATE posts SET meta = jsonb_set(meta, '{` + forumMetaModerators + `}', (SELECT coalesce(jsonb_agg(e), '[]'::jsonb)
+		FROM jsonb_array_elements(meta->'` + forumMetaModerators + `') e WHERE e <> to_jsonb($1::bigint)))
+		WHERE type = 'forum' AND jsonb_typeof(meta->'` + forumMetaModerators + `') = 'array' AND meta->'` + forumMetaModerators + `' @> jsonb_build_array($1::bigint)`,
+	// Likes they gave stay, anonymous: the post's count and its author's points do not change.
+	`UPDATE forum_likes SET user_id = NULL WHERE user_id = $1`,
+	// Their own points go: the posts that earned them are no longer theirs.
+	`DELETE FROM forum_points WHERE user_id = $1`,
+	// Ledger rows they caused for other members (a like, a manual adjustment they made) stay without
+	// them. An event is recorded once per (kind, post, actor), so their like of a post that already
+	// has an anonymous like ledger row is merged into that row: the author's points stay the same.
+	`WITH dup AS (
+		SELECT DISTINCT ON (r.id) r.id AS rid, e.id AS eid, r.points FROM forum_points r
+		JOIN forum_points e ON e.kind = r.kind AND e.post_id = r.post_id AND e.actor_id IS NULL
+		WHERE r.actor_id = $1 AND r.kind <> 'manual' ORDER BY r.id, e.id
+	), merged AS (
+		UPDATE forum_points e SET points = e.points + d.points FROM dup d WHERE e.id = d.eid RETURNING e.id
+	), dropped AS (
+		DELETE FROM forum_points WHERE id IN (SELECT rid FROM dup) RETURNING id
+	)
+	UPDATE forum_points SET actor_id = NULL WHERE actor_id = $1 AND id NOT IN (SELECT rid FROM dup)`,
+	`DELETE FROM forum_subscriptions WHERE user_id = $1`,
+	// A report stays in the moderation queue, without its reporter or the reporter's note.
+	`UPDATE forum_reports SET user_id = NULL, note = '' WHERE user_id = $1`,
+	`UPDATE forum_reports SET resolved_by = NULL WHERE resolved_by = $1`,
+}
+
+// forumPrivacyEraser anonymizes the member's forum presence, the way WordPress anonymizes comments:
+// their topics and replies stay published (threads must not break) but lose every link to the
+// account and show as "Deleted user"; the stored author IP goes, and so does the authorship of the
+// edit history of those posts. Likes they gave stay as anonymous likes and the points ledger rows
+// they caused for other members stay without them, so no other member's points change. Their own
+// points, subscriptions, saved draft and forum profile (bio, the photo the forum uploaded, badges,
+// rules and digest settings) are removed; their reports stay in the moderation queue without
+// reporter or note. The account's forum sign-in (linked Google account, verified address) stays.
 func forumPrivacyEraser(ctx context.Context, s *Server, email string) eraseResult {
-	var res eraseResult
 	uid := privacyUserID(ctx, s, email)
 	if uid == 0 {
-		return res
+		return eraseResult{}
 	}
-	exec := func(sql string) int {
-		if res.Err != nil {
-			return 0
-		}
-		tag, err := s.store.Pool.Exec(ctx, sql, uid)
+	var posts, avatar int64
+	removed := 0
+	signIn := false
+	err := pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
+		// The topics and replies: no author, no IP. The text stays.
+		tag, err := tx.Exec(ctx, `UPDATE posts SET author_id = NULL, meta = coalesce(meta, '{}') - '`+forumMetaIP+`'
+			WHERE author_id = $1 AND type IN ('topic', 'reply')`, uid)
 		if err != nil {
-			res.Err = err
-			return 0
+			return err
 		}
-		return int(tag.RowsAffected())
+		posts = tag.RowsAffected()
+		removed += int(posts)
+		for _, q := range forumPrivacyEraseSteps {
+			tag, err := tx.Exec(ctx, q, uid)
+			if err != nil {
+				return err
+			}
+			removed += int(tag.RowsAffected())
+		}
+		// The forum profile: bio, the photo the forum uploaded (its file is deleted after the commit),
+		// badges, settings and the saved draft; each value is one item.
+		var meta map[string]any
+		var bio string
+		if err := tx.QueryRow(ctx, `SELECT coalesce(meta, '{}'), coalesce(profile->>'description', '') FROM users WHERE id = $1 FOR UPDATE`,
+			uid).Scan(&meta, &bio); err != nil {
+			return err
+		}
+		del := []string{}
+		for _, k := range forumPrivacyEraseMeta {
+			if _, ok := meta[k]; ok {
+				del = append(del, k)
+			}
+		}
+		avatar = forumMetaInt64(meta, forumUMetaAvatar)
+		if avatar > 0 && forumMetaInt64(meta, "avatar_id") == avatar {
+			del = append(del, "avatar_id")
+		}
+		if bio != "" {
+			removed++
+		}
+		removed += len(del)
+		if _, err := tx.Exec(ctx, `UPDATE users SET meta = coalesce(meta, '{}') - $2::text[], profile = coalesce(profile, '{}') - 'description'
+			WHERE id = $1`, uid, del); err != nil {
+			return err
+		}
+		for _, k := range forumPrivacySignInMeta {
+			if v, ok := meta[k]; ok && v != nil && v != "" {
+				signIn = true
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return eraseResult{Err: err}
 	}
-	// The author IP is moderation data, not content: it goes (WordPress anonymizes comment IPs too).
-	res.Removed += exec(`UPDATE posts SET meta = meta - '` + forumMetaIP + `' WHERE author_id = $1 AND type IN ('topic', 'reply') AND meta ? '` + forumMetaIP + `'`)
-	res.Removed += exec(`DELETE FROM forum_subscriptions WHERE user_id = $1`)
-	// A report stays in the moderation queue, without its reporter or the reporter's note.
-	res.Removed += exec(`UPDATE forum_reports SET user_id = NULL, note = '' WHERE user_id = $1`)
-	res.Removed += exec(`UPDATE users SET meta = meta - '` + forumUMetaDraft + `' WHERE id = $1 AND meta ? '` + forumUMetaDraft + `'`)
-	if res.Err != nil {
-		return res
-	}
-	var posts, engagement int
-	if err := s.store.Pool.QueryRow(ctx, `SELECT (SELECT count(*) FROM posts WHERE author_id = $1 AND type IN ('topic', 'reply')),
-		(SELECT count(*) FROM forum_likes WHERE user_id = $1) + (SELECT count(*) FROM forum_points WHERE user_id = $1)`, uid).Scan(&posts, &engagement); err != nil {
-		res.Err = err
-		return res
+	res := eraseResult{Removed: removed}
+	if avatar > 0 {
+		s.forumDeleteOwnAttachment(ctx, avatar, uid)
 	}
 	if posts > 0 {
-		res.Retained += posts
-		res.Messages = append(res.Messages, "Forum topics and replies stay published under the member's account; they are removed or reassigned when the account is deleted.")
+		res.Messages = append(res.Messages, "Forum topics and replies stay published without their author; they show as “Deleted user”.")
 	}
-	if engagement > 0 {
-		res.Retained += engagement
-		res.Messages = append(res.Messages, "Forum likes and points belong to the member's account and are removed when the account is deleted.")
+	if signIn {
+		res.Retained++
+		res.Messages = append(res.Messages, "The forum sign-in of the account (linked Google account, verified address) stays with the account until it is deleted.")
+	}
+	if removed > 0 {
+		s.forumPurge(ctx)
 	}
 	return res
 }
