@@ -7,12 +7,14 @@
  *    scope: the editor ships with every upstream ai/** module stubbed).
  *  - No remote stylesheet @import (Google Fonts) in shipped CSS; no upstream public/ files.
  *  - manifest.json and BUILD.json have the contract shape and point at files that exist.
+ *  - THIRD_PARTY_LICENSES.txt carries the notice of every bundled npm package (scripts/licenses.mjs).
  *  - Size budgets.
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { fileURLToPath } from 'node:url'
+import { bundledPackages, LICENSES_FILE } from '../scripts/licenses.mjs'
 
 const BUILDER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.resolve(BUILDER, '..', 'web', 'web-builder')
@@ -96,6 +98,17 @@ if (buildInfo) {
   if (!buildInfo.patches || typeof buildInfo.patches !== 'object' || Array.isArray(buildInfo.patches)) fail('BUILD.json patches must be an object')
   else for (const [k, v] of Object.entries(buildInfo.patches)) if (!/^[0-9a-f]{64}$/.test(v)) fail(`BUILD.json patch ${k} has no sha256`)
   for (const k of ['apiVersion', 'rendererVersion']) if (!Number.isInteger(buildInfo[k]) || buildInfo[k] < 1) fail(`BUILD.json ${k} must be a positive integer`)
+}
+
+/* ---------- third-party notices ---------- */
+
+{
+  const file = path.join(OUT, LICENSES_FILE)
+  if (!fs.existsSync(file)) fail(`${LICENSES_FILE} is missing (scripts/licenses.mjs)`)
+  else {
+    const text = fs.readFileSync(file, 'utf8')
+    for (const p of bundledPackages(BUILDER)) if (!text.includes(`\n${p.name} ${p.version} (`)) fail(`${LICENSES_FILE} has no notice for ${p.name} ${p.version}; rebuild (make builder)`)
+  }
 }
 
 /* ---------- forbidden strings ---------- */
