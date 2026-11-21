@@ -1,4 +1,6 @@
-FROM golang:1.27-alpine AS build
+# Base images are pinned by digest (the multi-platform index of the tag) so a build is reproducible;
+# Dependabot (.github/dependabot.yml) proposes new digests weekly.
+FROM golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -27,7 +29,7 @@ ARG GO_TAGS=
 # with its embedded WebAssembly build instead of a system libavif).
 RUN CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags "nodynamic $GO_TAGS" -ldflags="-s -w${VERSION:+ -X wpgo/internal/server.Version=$VERSION}${ROOT_KEYS:+ -X wpgo/internal/server.rootKeysLinked=$ROOT_KEYS}" -o /out/wpgo ./cmd/wpgo
 
-FROM alpine:3.22
+FROM alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 wpgo \
 	&& mkdir -p /data/uploads /data/plugins /data/plugin-cache /data/mail /data/themes /data/wpgo-cache /data/languages /data/bin /data/backups /data/geoip \
 	&& chown -R wpgo /data

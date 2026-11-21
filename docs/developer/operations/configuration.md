@@ -21,7 +21,7 @@ Values are never logged. The old names are removed no earlier than 1.0; the full
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `DATABASE_URL` | `postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable` | PostgreSQL connection string (pgx URL format) |
+| `DATABASE_URL` | `postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable` | PostgreSQL connection string (pgx URL format); PostgreSQL 16 or 17 |
 | `PURSAE_ADDR` | `:8080` | address the HTTP server listens on |
 | `PURSAE_SITE_URL` | `http://localhost:8080` | public URL without a trailing slash; written to the `siteurl` and `home` options by the installer |
 | `PURSAE_SETUP_TOKEN` | generated on the first start of an uninstalled site | the token the installer (`/wp-admin/install`) asks for, so nobody but the operator can install a fresh instance and become its administrator. When empty, the first process to start on an uninstalled site generates a random token, stores only its SHA-256 in the database (every instance and restart checks the same one) and prints the install link `<PURSAE_SITE_URL>/wp-admin/install?token=…` in its log. `pursae setup-token` prints the link: with this variable set, with its value; otherwise with a newly issued token that replaces the stored one. Entered once, the token is remembered for 12 hours by a signed cookie; installing the site deletes it, so the token and the cookie stop working |

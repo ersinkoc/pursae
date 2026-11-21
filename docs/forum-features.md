@@ -150,6 +150,10 @@ member's posts, likes, points or settings change. Their profile page has no post
 visitors get a 404 (moderators still see the empty profile). Posts of an account that is deleted
 later (`author_id` NULL) show as *Deleted user* the same way.
 
+Deleting an account (Users › Delete) keeps the likes it gave the same way: they become anonymous
+likes and its like ledger rows lose their actor, merged into the post's existing anonymous row, so
+the posts keep their counts and their authors their points however many likers are deleted.
+
 ## The admin screen
 
 **Forums** in the admin menu, after Comments, visible with `forum_moderate`:
@@ -222,7 +226,7 @@ cached pages by `forum.js` through the REST API.
 | **Topic tags** | topic `_forum_tags` [slugs] + `_forum_tag_names` [names] (GIN index `posts_forum_tags`) | tag field on the new-topic form (≤ 5, comma separated); `/forums/tag/<slug>/`, `/forums/tags/`, `?tag=` on forum, index and `/forums/topics/`; `GET forum/v1/tags` | Tags are plain text ≤ 30 characters, slugs from `SanitizeTitle` |
 | **Views** | `forum_topic_views (topic_id, views)` | `POST forum/v1/topics/<id>/view` (forum.js beacon) → `{views, counted}` | Counted once per visitor and topic per 30 minutes (member id, else a salted hash of address + user agent, never stored), not for robots or empty user agents, ≤ 120 per network per 10 minutes. Cached pages count too; no-JS visitors are not counted |
 | **Sort tabs** | — | `?sort=latest\|popular\|unanswered\|solved` on index, forum, `/forums/topics/`, tag pages and `forum/v1/forums/<id>/topics` | Popular = views + 10 × replies. `sort` and `tag` are page cache key parameters while the plugin is on; `?sort=latest` and unknown values are 301-redirected to the canonical URL |
-| **Likes** | `forum_likes (post_id, user_id)`; `user_id` NULL is an anonymous like left by the personal data eraser (0109) | `forum_action=like\|unlike` (+ `post_id`) on the topic URL; `POST/DELETE forum/v1/posts/<id>/like` | Members who may post; not their own post; 60 per 10 minutes. A like purges only that topic's pages (`forum-topic:<id>` cache tag). The author earns `like_points` |
+| **Likes** | `forum_likes (post_id, user_id)`; `user_id` NULL is an anonymous like left by the personal data eraser or a deleted account (0109) | `forum_action=like\|unlike` (+ `post_id`) on the topic URL; `POST/DELETE forum/v1/posts/<id>/like` | Members who may post; not their own post; 60 per 10 minutes. A like purges only that topic's pages (`forum-topic:<id>` cache tag). The author earns `like_points` |
 | **Solved** | topic `_forum_solution` (reply id), `_forum_solved_at`, `_forum_solved_by` | `forum_action=solve\|unsolve`; `POST/DELETE forum/v1/topics/<id>/solution` | The topic's author (who may post) or a moderator. The answer is highlighted (`.pf-post--solution`) and repeated under the opening post; lists show a *Solved* badge. Trashing or spamming the answer withdraws it. Its author earns `solution_points` (not on their own topic); badge rule `solutions` |
 | **Who is online** | process memory (visitor key → forum, time) | `POST forum/v1/presence {forum}`, `GET forum/v1/online?forum=` | Window *Forums › Settings › Online* (5 minutes). Each instance counts its own visitors |
 | **Points ledger** | `forum_points (user_id, kind, points, post_id, actor_id, note, created_at)` | Forums › Members › member › *Adjust points*; `GET forum/v1/weekly` | One row per topic, reply, accepted answer, like received and manual adjustment. Totals stay computed from the posts (+ manual rows); the ledger dates them for **members of the week** (last 7 days, only rows whose post is still live) |
