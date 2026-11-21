@@ -86,8 +86,7 @@ func (s *Server) wp2pScreen(c *gin.Context) {
 	d := map[string]any{"UploadNonce": s.nonce(c, wp2pNonceUpload), "ActionNonce": s.nonce(c, wp2pNonceAction), "MaxUpload": "64 GB"}
 	if c.Request.Method == http.MethodPost {
 		if c.Query("action") == "upload" {
-			s.wp2pUpload(c, d)
-			if c.IsAborted() || c.Writer.Written() {
+			if s.wp2pUpload(c, d) {
 				return
 			}
 		} else {
@@ -204,7 +203,8 @@ func (s *Server) wp2pRunView(c *gin.Context, id string, d map[string]any) {
 // wp2pUpload stores an uploaded package (streamed: it can be gigabytes) and queues its import. The
 // form sends the key before the file, so the key is known when the file arrives; the nonce is in the
 // query string, since reading it from the form would buffer the whole upload.
-func (s *Server) wp2pUpload(c *gin.Context, d map[string]any) {
+// It reports whether it answered the request itself (a redirect, or the expired-link screen).
+func (s *Server) wp2pUpload(c *gin.Context, d map[string]any) bool {
 	var uid int64
 	var token string
 	if u := currentUser(c); u != nil {
@@ -215,18 +215,18 @@ func (s *Server) wp2pUpload(c *gin.Context, d map[string]any) {
 	}
 	if s.auth.VerifyNonce(c.Query("_wpnonce"), wp2pNonceUpload, uid, token) <= 0 {
 		s.denyNonce(c)
-		return
+		return true
 	}
 	ctx := c.Request.Context()
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, wp2pMaxPackage+1<<20)
 	mr, err := c.Request.MultipartReader()
 	if err != nil {
 		d["Error"] = "No file was received."
-		return
+		return false
 	}
 	if err := os.MkdirAll(s.wp2pImportDir(), 0o700); err != nil {
 		d["Error"] = err.Error()
-		return
+		return false
 	}
 	var keyText string
 	id := wp2pNewID()
@@ -248,7 +248,7 @@ func (s *Server) wp2pUpload(c *gin.Context, d map[string]any) {
 			f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o600)
 			if err != nil {
 				d["Error"] = err.Error()
-				return
+				return false
 			}
 			_, err = io.Copy(f, part)
 			if cerr := f.Close(); err == nil {
@@ -257,14 +257,14 @@ func (s *Server) wp2pUpload(c *gin.Context, d map[string]any) {
 			if err != nil {
 				_ = os.Remove(path)
 				d["Error"] = "The upload failed: " + err.Error()
-				return
+				return false
 			}
 			got = true
 		}
 	}
 	if !got {
 		d["Error"] = "No file was received."
-		return
+		return false
 	}
 	key, err := wp2pParseKey(keyText)
 	if err == nil {
@@ -273,19 +273,20 @@ func (s *Server) wp2pUpload(c *gin.Context, d map[string]any) {
 	if err != nil {
 		_ = os.Remove(path)
 		d["Error"] = ucfirstStr(err.Error()) + "."
-		return
+		return false
 	}
 	if _, err := s.store.Pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, package_key, created_by, state, size, received) VALUES ($1, $2, $3, 'queued', $4, $4)`,
 		id, key[:], uid, fileSize(path)); err != nil {
 		_ = os.Remove(path)
 		d["Error"] = err.Error()
-		return
+		return false
 	}
 	if err := s.queueJob(ctx, "wp2p_import", map[string]any{"id": id}, time.Time{}); err != nil {
 		d["Error"] = err.Error()
-		return
+		return false
 	}
 	c.Redirect(http.StatusSeeOther, "/wp-admin/import-wordpress?run="+id)
+	return true
 }
 
 // wp2pCheckPackage opens the first chunk of a package, so a wrong key is reported at once instead of

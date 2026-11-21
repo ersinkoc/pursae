@@ -14,7 +14,7 @@
 <p>What was imported stays; resuming continues where the import stopped and does not add anything twice. <input type="submit" class="button button-primary" value="Resume the import" /></p></form></div>
 {{else if eq .State "receiving"}}<div class="notice notice-info inline"><p>The WP to Pursae plugin is sending the package&hellip;</p></div>
 {{else if .Active}}<div class="notice notice-info inline"><p><strong>{{if eq .State "running"}}Importing&hellip;{{else}}Waiting for the import to start&hellip;{{end}}</strong> The import runs in the background and this page refreshes on its own. You can leave it and come back.</p></div>{{end}}
-<ol class="wp2p-phases">{{range .Phases}}<li class="wp2p-{{.State}}">{{if eq .State "done"}}&#10003; {{else if eq .State "running"}}&#9654; {{else if eq .State "failed"}}&#10007; {{end}}{{.Label}}</li>{{end}}</ol>
+<ol class="wp2p-phases" style="list-style:none;margin-left:0">{{range .Phases}}<li class="wp2p-{{.State}}">{{if eq .State "done"}}&#10003; {{else if eq .State "running"}}&#9654; {{else if eq .State "failed"}}&#10007; {{end}}{{.Label}}</li>{{end}}</ol>
 {{with .Report}}
 {{if .Counts}}<h3>Imported</h3><table class="widefat striped" style="max-width:640px"><tbody>{{range .Counts}}<tr><td>{{.Label}}</td><td style="text-align:right">{{.N}}</td></tr>{{end}}</tbody></table>{{end}}
 {{if .Existing}}<h3>Already here (kept, not duplicated)</h3><table class="widefat striped" style="max-width:640px"><tbody>{{range .Existing}}<tr><td>{{.Label}}</td><td style="text-align:right">{{.N}}</td></tr>{{end}}</tbody></table>{{end}}
