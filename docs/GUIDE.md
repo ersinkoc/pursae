@@ -226,10 +226,10 @@ They cover:
 | Forum subscriptions | ✓ | deleted |
 | Forum reports filed by the person | ✓ | reporter and note removed, report kept for the moderators |
 | Pursae Commerce orders, downloads, subscriptions | ✓ | per Commerce › Settings › Accounts & Privacy; open orders and subscriptions kept |
-| Commerce customer billing / shipping fields, saved payment methods | ✓ | deleted |
-| Commerce gift cards (sender or recipient) | ✓ (code shortened) | the person's side cleared once the card is used up or expired |
+| Commerce customer billing / shipping fields, saved payment methods | ✓ | deleted; a saved card an active subscription renews with is kept until the subscription ends or changes method |
+| Commerce gift cards (sender, recipient or redeemer) | ✓ (code shortened; a redeemer sees no sender, recipient or message) | the person's side (and, for sender or recipient, the message) cleared once the card is used up or expired; cards with a balance, active or disabled, kept |
 | Commerce wishlists, points, memberships | ✓ | wishlists deleted, the rest kept with the account |
-| Pursae SMTP e-mail log (to or Reply-To the address), finished mail jobs | log ✓ | deleted |
+| Pursae SMTP e-mail log (sent to the address, or a contact form notification with the visitor's address as Reply-To), finished mail jobs, finished or failed contact form webhook jobs | log ✓ | deleted |
 | Login attempts, security log, known sign-in IPs, AI connector activity | ✓ | kept for the site's security until their retention period ends |
 
 What is kept is listed with its reason on the request screen. Pursae Analytics and the cookie

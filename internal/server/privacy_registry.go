@@ -19,8 +19,8 @@ import (
 //   - Pursae Commerce account data: wishlists, points log, subscriptions and memberships of the user
 //     with that e-mail (wishlists are erased, subscriptions anonymized like orders, the rest retained),
 //   - Pursae Commerce customer data (billing / shipping fields), saved payment methods and gift cards,
-//   - Pursae SMTP: the e-mail log rows addressed to the person or answering to them, and the finished
-//     mail jobs of the queue,
+//   - Pursae SMTP: the e-mail log rows addressed to the person or contact form notifications answering
+//     to them, and the finished mail and contact form webhook jobs of the queue,
 //   - Pursae Contact Form entries and Web Builder form submissions that carry the address,
 //   - maintenance mode subscribers,
 //   - Pursae Forum: topics, replies, profile, likes, points, subscriptions and reports,
@@ -290,10 +290,12 @@ func gooPersonalDataEraser(ctx context.Context, s *Server, email string) eraseRe
 
 // ---- Pursae SMTP -----------------------------------------------------------------------------
 
-// smtpLogMatch is a logged e-mail sent to the address $1 or answering to it (a contact form's
-// notification to the site owner carries the visitor in Reply-To, "Name <address>" or bare).
+// smtpLogMatch is a logged e-mail sent to the address $1, or a contact form notification answering
+// to it (the visitor's address from a posted field in Reply-To, "Name <address>" or bare). Other
+// mail is not matched by Reply-To: a fixed Reply-To (the site admin on a form's receipt, the shop
+// owner on store e-mail) is the site's own address, and the mail is about the person it is sent to.
 const smtpLogMatch = `(EXISTS (SELECT 1 FROM unnest(to_addrs) a WHERE lower(a) = lower($1))
-	OR lower(reply_to) = lower($1) OR position(lower('<' || $1 || '>') IN lower(reply_to)) > 0)`
+	OR (initiator = '` + msContactFormInitiator + `' AND (lower(reply_to) = lower($1) OR position(lower('<' || $1 || '>') IN lower(reply_to)) > 0)))`
 
 func smtpLogExporter(ctx context.Context, s *Server, email string) []exportGroup {
 	rows, err := s.store.Pool.Query(ctx, `SELECT subject, from_addr, status, date_sent FROM wpmailsmtp_emails_log

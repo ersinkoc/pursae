@@ -25,8 +25,12 @@ import (
 //     likes, points and the account's forum settings stay with the account (bbPress has no eraser;
 //     WordPress keeps account-bound content until the account is deleted or reassigned).
 //   - Pursae Commerce customer data (billing / shipping fields of the account), saved payment
-//     methods and gift cards (WooCommerce's customer data and payment token exporters / erasers).
-//   - Queued mail: finished wp_mail jobs addressed to the person (copies of the e-mail log).
+//     methods and gift cards (WooCommerce's customer data and payment token exporters / erasers). A
+//     saved card an open subscription renews with is kept (deleting the row would not stop the
+//     renewal, which charges the token stored on the subscription).
+//   - Queued jobs: finished wp_mail jobs addressed to the person (copies of the e-mail log) or
+//     contact form notifications answering to them, and finished or failed contact form webhook
+//     deliveries whose posted data holds the address (copies of the entry, with the visitor's IP).
 //   - Security and activity logs of the account: exported, retained (legitimate interest; each has
 //     its own retention period).
 //
@@ -438,39 +442,62 @@ func gooCustomerDataEraser(ctx context.Context, s *Server, email string) eraseRe
 	}
 	res.Removed += int(tag.RowsAffected())
 	// WooCommerce's eraser removes saved payment methods (the gateway keeps its own customer record).
-	tag, err = s.store.Pool.Exec(ctx, `DELETE FROM goo_payment_tokens WHERE user_id = $1`, uid)
+	// A card an open subscription renews with stays: the renewal charges the token stored on the
+	// subscription, so deleting the row would only hide a card that is still being charged.
+	tag, err = s.store.Pool.Exec(ctx, `DELETE FROM goo_payment_tokens t WHERE user_id = $1 AND NOT `+gooTokenInUse, uid)
 	if err != nil {
 		res.Err = err
 		return res
 	}
 	res.Removed += int(tag.RowsAffected())
+	var kept int
+	if err := s.store.Pool.QueryRow(ctx, `SELECT count(*) FROM goo_payment_tokens t WHERE user_id = $1 AND `+gooTokenInUse, uid).Scan(&kept); err != nil {
+		res.Err = err
+		return res
+	}
+	if kept > 0 {
+		res.Retained += kept
+		res.Messages = append(res.Messages, "Saved payment methods used by active subscriptions have been retained; they are removed when the subscription ends or the customer changes its payment method.")
+	}
 	return res
 }
+
+// gooTokenInUse is "the saved payment method t is the renewal token of an open subscription of $1".
+const gooTokenInUse = `EXISTS (SELECT 1 FROM goo_subscriptions sub WHERE sub.customer_id = $1 AND sub.status IN ` + gooOpenSubscriptionStatuses + `
+	AND sub.meta->>'_payment_token' = t.token)`
 
 // gooGiftCardMatch is the gift cards the person bought ($1 sender e-mail) or received ($1 recipient,
 // or $2 the account that redeemed it).
 const gooGiftCardMatch = `(lower(sender_email) = lower($1) OR lower(recipient) = lower($1) OR ($2 <> 0 AND redeemed_by = $2))`
 
-// gooGiftCardOpen is a card that still holds money.
-const gooGiftCardOpen = `(status = 'active' AND balance > 0 AND (expires IS NULL OR expires >= current_date))`
+// gooGiftCardOpen is a card that still holds money (a disabled one may be enabled again).
+const gooGiftCardOpen = `(status IN ('active', 'disabled') AND balance > 0 AND (expires IS NULL OR expires >= current_date))`
 
 func gooGiftCardsExporter(ctx context.Context, s *Server, email string) []exportGroup {
 	uid := privacyUserID(ctx, s, email)
 	return privacyCollect(ctx, s, exportGroup{ID: "woocommerce-gift-cards", Label: "Gift cards",
 		Description: "Gift cards bought by or sent to the address."},
-		`SELECT code, balance::text, currency, status, recipient, recipient_name, sender, sender_email, message, created FROM goo_gift_cards
+		`SELECT code, balance::text, currency, status, recipient, recipient_name, sender, sender_email, message, created,
+		lower(sender_email) = lower($1) OR lower(recipient) = lower($1) FROM goo_gift_cards
 		WHERE `+gooGiftCardMatch+` ORDER BY id`, []any{email, uid}, func(r pgxRows) []exportItem {
 			var code, balance, currency, status, to, toName, from, fromEmail, msg string
 			var at time.Time
-			if r.Scan(&code, &balance, &currency, &status, &to, &toName, &from, &fromEmail, &msg, &at) != nil {
+			var party bool
+			if r.Scan(&code, &balance, &currency, &status, &to, &toName, &from, &fromEmail, &msg, &at, &party) != nil {
 				return nil
 			}
 			// The code is a bearer credential: the export shows its end only.
 			if len(code) > 4 {
 				code = "…" + code[len(code)-4:]
 			}
-			return []exportItem{{"Card", code}, {"Balance", balance + " " + currency}, {"Status", status}, {"Recipient", to},
-				{"Recipient name", toName}, {"Sender", from}, {"Sender email", fromEmail}, {"Message", msg}, {"Created", s.privacyDate(at)}}
+			item := []exportItem{{"Card", code}, {"Balance", balance + " " + currency}, {"Status", status}}
+			// A card the person only redeemed: the sender, the recipient and their message are
+			// other people's data.
+			if party {
+				item = append(item, exportItem{"Recipient", to}, exportItem{"Recipient name", toName}, exportItem{"Sender", from},
+					exportItem{"Sender email", fromEmail}, exportItem{"Message", msg})
+			}
+			return append(item, exportItem{"Created", s.privacyDate(at)})
 		})
 }
 
@@ -478,14 +505,15 @@ func gooGiftCardsEraser(ctx context.Context, s *Server, email string) eraseResul
 	var res eraseResult
 	uid := privacyUserID(ctx, s, email)
 	args := []any{email, uid}
-	// Only the person's side of a card is cleared; the other party's name and address stay.
+	// Only the person's side of a card is cleared; the other party's name and address stay. The
+	// message goes with the sender or the recipient (their correspondence), not with a redeemer.
 	tag, err := s.store.Pool.Exec(ctx, `UPDATE goo_gift_cards SET
 		sender = CASE WHEN lower(sender_email) = lower($1) THEN '' ELSE sender END,
 		sender_email = CASE WHEN lower(sender_email) = lower($1) THEN '' ELSE sender_email END,
 		recipient_name = CASE WHEN lower(recipient) = lower($1) THEN '' ELSE recipient_name END,
 		recipient = CASE WHEN lower(recipient) = lower($1) THEN '' ELSE recipient END,
 		redeemed_by = CASE WHEN $2 <> 0 AND redeemed_by = $2 THEN 0 ELSE redeemed_by END,
-		message = ''
+		message = CASE WHEN lower(sender_email) = lower($1) OR lower(recipient) = lower($1) THEN '' ELSE message END
 		WHERE `+gooGiftCardMatch+` AND NOT `+gooGiftCardOpen, args...)
 	if err != nil {
 		return eraseResult{Err: err}
@@ -503,17 +531,27 @@ func gooGiftCardsEraser(ctx context.Context, s *Server, email string) eraseResul
 	return res
 }
 
-// ---- Queued mail -------------------------------------------------------------------------------
+// ---- Queued jobs -------------------------------------------------------------------------------
 
-// mailJobMatch is a wp_mail job (a mail.Message payload) sent to the address $1 or answering to it.
-const mailJobMatch = `name = 'wp_mail' AND (EXISTS (SELECT 1 FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(payload->'To') = 'array'
+// mailJobMatch is a wp_mail job (a mail.Message payload) sent to the address $1, or a contact form
+// notification answering to it (Kind gontactVisitorReplyKind; see smtpLogMatch for why other mail
+// is not matched by Reply-To).
+const mailJobMatch = `(name = 'wp_mail' AND (EXISTS (SELECT 1 FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(payload->'To') = 'array'
 	THEN payload->'To' ELSE '[]'::jsonb END) a WHERE lower(a) = lower($1))
-	OR lower(coalesce(payload->>'ReplyTo', '')) = lower($1) OR position(lower('<' || $1 || '>') IN lower(coalesce(payload->>'ReplyTo', ''))) > 0)`
+	OR (payload->>'Kind' = '` + gontactVisitorReplyKind + `' AND (lower(coalesce(payload->>'ReplyTo', '')) = lower($1)
+		OR position(lower('<' || $1 || '>') IN lower(coalesce(payload->>'ReplyTo', ''))) > 0))))`
 
-// mailJobsEraser deletes the finished mail jobs of the address (copies of messages the e-mail log
-// covers). Queued ones are left to be sent: among them may be this very request's notices.
+// webhookJobMatch is a contact form webhook delivery whose posted data has a field that is the
+// address $1 (the same whole-value match as the entries).
+var webhookJobMatch = `(name = '` + gontactWebhookJob + `' AND CASE WHEN pg_input_is_valid(payload->>'body', 'jsonb')
+	THEN ` + jsonFieldsMatch(`((payload->>'body')::jsonb->'posted_data')`) + ` ELSE false END)`
+
+// mailJobsEraser deletes the finished jobs of the address: mail (copies of messages the e-mail log
+// covers) and contact form webhook deliveries (copies of the entry, with the visitor's IP; a failed
+// one is never purged by the scheduler). Queued ones are left to run: among them may be this very
+// request's notices.
 func mailJobsEraser(ctx context.Context, s *Server, email string) eraseResult {
-	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE status IN ('done', 'failed') AND `+mailJobMatch, email)
+	tag, err := s.store.Pool.Exec(ctx, `DELETE FROM jobs WHERE status IN ('done', 'failed') AND (`+mailJobMatch+` OR `+webhookJobMatch+`)`, email)
 	if err != nil {
 		return eraseResult{Err: err}
 	}

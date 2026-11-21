@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -84,6 +85,34 @@ func TestPrivacyFieldHelpers(t *testing.T) {
 	}
 	if items := fieldItems([]exportItem{{"k", "v"}}, []byte(`not json`)); len(items) != 1 {
 		t.Errorf("bad JSON %v", items)
+	}
+}
+
+// Only a form mail whose Reply-To comes from a posted field is marked as answering to the visitor:
+// Mail (2)'s receipt (Reply-To the site admin) and a fixed staff Reply-To are not.
+func TestPrivacyContactFormReplyToKind(t *testing.T) {
+	sub := &gfSubmission{form: &gfForm{}, s: &Server{}, tags: []*gfTag{{Name: "your-email", BaseType: "email"}},
+		posted: map[string][]string{"your-email": {"ada@example.test"}}, raw: map[string][]string{}, files: map[string][]gfUpload{}}
+	for _, c := range []struct {
+		headers string
+		want    string
+	}{
+		{"Reply-To: [your-email]", gontactVisitorReplyKind},
+		{"Reply-To: Visitor <[your-email]>", gontactVisitorReplyKind},
+		{"Reply-To: staff@example.test", ""},
+		{"Reply-To: [[your-email]] <staff@example.test>", ""},
+		{"X-Note: [your-email]", ""},
+	} {
+		msg, ok := sub.composeMail(gfMail{Recipient: "owner@example.test", Subject: "s", Body: "b", AdditionalHeaders: c.headers})
+		if !ok {
+			t.Fatalf("%q: not composed", c.headers)
+		}
+		if msg.Kind != c.want {
+			t.Errorf("%q: Kind %q, want %q", c.headers, msg.Kind, c.want)
+		}
+	}
+	if !gfHasFieldTag("[your-email]") || gfHasFieldTag("[_site_admin_email]") || gfHasFieldTag("[[your-email]]") {
+		t.Error("gfHasFieldTag")
 	}
 }
 
@@ -222,18 +251,28 @@ func TestPrivacyCommerceCustomerData(t *testing.T) {
 	f := newPrivacyFixture(t)
 	f.exec(`UPDATE users SET meta = coalesce(meta, '{}') || '{"billing_first_name":"Ada","billing_phone":"555-0100","shipping_city":"London","locale_pref":"x"}' WHERE id = $1`, f.ada)
 	f.exec(`UPDATE users SET meta = coalesce(meta, '{}') || '{"billing_first_name":"Bob"}' WHERE id = $1`, f.bob)
-	f.exec(`INSERT INTO goo_payment_tokens (user_id, gateway_id, token, brand, last4, exp_month, exp_year) VALUES ($1, 'stripe', 'tok_a', 'visa', '4242', 1, 2030), ($2, 'stripe', 'tok_b', 'visa', '1111', 1, 2030)`, f.ada, f.bob)
-	f.exec(`INSERT INTO goo_gift_cards (code, balance, recipient, recipient_name, sender, sender_email, message, status) VALUES
-		('CARD-USED-0001', 0, 'friend@example.test', 'Friend', 'Ada', 'ada@example.test', 'For you', 'redeemed'),
-		('CARD-OPEN-0002', 10, 'ada@example.test', 'Ada', 'Bob', 'bob@example.test', 'Enjoy', 'active'),
-		('CARD-BOBS-0003', 0, 'carol@example.test', 'Carol', 'Bob', 'bob@example.test', 'Hi', 'redeemed')`)
+	f.exec(`INSERT INTO goo_payment_tokens (user_id, gateway_id, token, brand, last4, exp_month, exp_year) VALUES ($1, 'stripe', 'tok_a', 'visa', '4242', 1, 2030),
+		($2, 'stripe', 'tok_b', 'visa', '1111', 1, 2030), ($1, 'stripe', 'tok_sub', 'visa', '5555', 1, 2031), ($1, 'stripe', 'tok_old', 'visa', '6666', 1, 2031)`, f.ada, f.bob)
+	// tok_sub renews an active subscription (the renewal charges the token on the subscription, so
+	// the saved method stays); tok_old was used by a cancelled one.
+	f.exec(`INSERT INTO goo_subscriptions (customer_id, status, meta) VALUES ($1, 'active', '{"_payment_token":"tok_sub"}'), ($1, 'cancelled', '{"_payment_token":"tok_old"}'),
+		($2, 'active', '{"_payment_token":"tok_a"}')`, f.ada, f.bob)
+	f.exec(`INSERT INTO goo_gift_cards (code, balance, recipient, recipient_name, sender, sender_email, message, status, redeemed_by) VALUES
+		('CARD-USED-0001', 0, 'friend@example.test', 'Friend', 'Ada', 'ada@example.test', 'For you', 'redeemed', 0),
+		('CARD-OPEN-0002', 10, 'ada@example.test', 'Ada', 'Bob', 'bob@example.test', 'Enjoy', 'active', 0),
+		('CARD-BOBS-0003', 0, 'carol@example.test', 'Carol', 'Bob', 'bob@example.test', 'Hi', 'redeemed', 0),
+		('CARD-HOLD-0004', 25, 'ada@example.test', 'Ada', 'Bob', 'bob@example.test', 'Held', 'disabled', 0),
+		('CARD-PASS-0005', 0, 'roger@example.test', 'Roger', 'Sam', 'sam@example.test', 'Private note to Roger', 'redeemed', $1)`, f.ada)
 	g := f.groupsByID()
-	if len(g["woocommerce-customer-data"]) != 1 || len(g["woocommerce-customer-tokens"]) != 1 || len(g["woocommerce-gift-cards"]) != 2 {
+	if len(g["woocommerce-customer-data"]) != 1 || len(g["woocommerce-customer-tokens"]) != 3 || len(g["woocommerce-gift-cards"]) != 4 {
 		t.Fatalf("export groups: customer %d, tokens %d, gift cards %d", len(g["woocommerce-customer-data"]), len(g["woocommerce-customer-tokens"]), len(g["woocommerce-gift-cards"]))
 	}
 	html := f.exportString()
 	if !strings.Contains(html, "555-0100") || !strings.Contains(html, "4242") || strings.Contains(html, "CARD-USED-0001") || strings.Contains(html, "1111") {
 		t.Error("export content wrong (gift card codes must be shortened, Bob's card absent)")
+	}
+	if !strings.Contains(html, "0005") || strings.Contains(html, "roger@example.test") || strings.Contains(html, "sam@example.test") || strings.Contains(html, "Private note to Roger") {
+		t.Error("a card Ada only redeemed must be exported without its sender, recipient and message")
 	}
 	res := f.runErase()
 	if res.Retained < 1 || !strings.Contains(strings.Join(res.Messages, " "), "Gift cards") {
@@ -248,8 +287,20 @@ func TestPrivacyCommerceCustomerData(t *testing.T) {
 	if n := f.count(`SELECT count(*) FROM users WHERE id = $1 AND meta->>'billing_first_name' = 'Bob'`, f.bob); n != 1 {
 		t.Error("Bob's address was removed")
 	}
-	if n := f.count(`SELECT count(*) FROM goo_payment_tokens`); n != 1 {
-		t.Errorf("%d tokens left, want Bob's", n)
+	if n := f.count(`SELECT count(*) FROM goo_payment_tokens WHERE user_id = $1`, f.bob); n != 1 {
+		t.Error("Bob's token was removed")
+	}
+	if n := f.count(`SELECT count(*) FROM goo_payment_tokens WHERE user_id = $1`, f.ada); n != 1 || f.count(`SELECT count(*) FROM goo_payment_tokens WHERE token = 'tok_sub'`) != 1 {
+		t.Errorf("Ada has %d tokens left, want only the one her active subscription renews with", n)
+	}
+	if !strings.Contains(strings.Join(res.Messages, " "), "Saved payment methods used by active subscriptions") {
+		t.Errorf("the kept payment method is not reported: %v", res.Messages)
+	}
+	if n := f.count(`SELECT count(*) FROM goo_gift_cards WHERE code = 'CARD-HOLD-0004' AND recipient = 'ada@example.test' AND message = 'Held'`); n != 1 {
+		t.Error("a disabled card with a balance lost its recipient")
+	}
+	if n := f.count(`SELECT count(*) FROM goo_gift_cards WHERE code = 'CARD-PASS-0005' AND redeemed_by = 0 AND recipient = 'roger@example.test' AND message = 'Private note to Roger'`); n != 1 {
+		t.Error("a card Ada only redeemed: redeemer not cleared, or the sender's message to the recipient removed")
 	}
 	if n := f.count(`SELECT count(*) FROM goo_gift_cards WHERE code = 'CARD-USED-0001' AND sender = '' AND sender_email = '' AND recipient = 'friend@example.test'`); n != 1 {
 		t.Error("Ada's side of the used card was not cleared, or the recipient's was")
@@ -264,23 +315,56 @@ func TestPrivacyCommerceCustomerData(t *testing.T) {
 
 func TestPrivacyMailLogReplyToAndJobs(t *testing.T) {
 	f := newPrivacyFixture(t)
-	f.exec(`INSERT INTO wpmailsmtp_emails_log (subject, to_addrs, reply_to) VALUES
-		('Contact: Ada', ARRAY['owner@example.test'], 'Ada Lovelace <ada@example.test>'),
-		('Contact: Bob', ARRAY['owner@example.test'], 'bob@example.test')`)
+	// Ada's address is also the Reply-To of mail about other people (as the site admin on a form's
+	// receipt, as the shop owner on store mail): those rows are not hers.
+	f.exec(`INSERT INTO wpmailsmtp_emails_log (subject, to_addrs, reply_to, initiator) VALUES
+		('Contact: Ada', ARRAY['owner@example.test'], 'Ada Lovelace <ada@example.test>', $1),
+		('Contact: Bob', ARRAY['owner@example.test'], 'bob@example.test', $1),
+		('Receipt: Carol', ARRAY['carol@example.test'], 'ada@example.test', 'Form'),
+		('Order: Carol', ARRAY['carol@example.test'], 'ada@example.test', 'Pursae')`, msContactFormInitiator)
 	f.exec(`INSERT INTO jobs (name, payload, status, run_at) VALUES
 		('wp_mail', '{"To":["ada@example.test"],"Subject":"done"}', 'done', now()),
-		('wp_mail', '{"To":["owner@example.test"],"ReplyTo":"ada@example.test","Subject":"failed"}', 'failed', now()),
+		('wp_mail', '{"To":["owner@example.test"],"ReplyTo":"ada@example.test","Kind":"` + gontactVisitorReplyKind + `","gontact_entry":3,"Subject":"failed"}', 'failed', now()),
 		('wp_mail', '{"To":["ada@example.test"],"Subject":"queued"}', 'queued', now()),
-		('wp_mail', '{"To":["bob@example.test"],"Subject":"bob"}', 'done', now())`)
+		('wp_mail', '{"To":["bob@example.test"],"Subject":"bob"}', 'done', now()),
+		('wp_mail', '{"To":["carol@example.test"],"ReplyTo":"ada@example.test","Subject":"receipt"}', 'done', now())`)
+	webhook := func(email, status string) {
+		t.Helper()
+		body, _ := json.Marshal(map[string]any{"remote_ip": "198.51.100.7", "posted_data": map[string]any{"your-email": email, "your-message": "hi"}})
+		f.exec(`INSERT INTO jobs (name, payload, status, run_at) VALUES ($1, jsonb_build_object('url', 'https://hook.example.test', 'body', $2::text, 'form', 1), $3, now())`,
+			gontactWebhookJob, string(body), status)
+	}
+	webhook("ada@example.test", "failed")
+	webhook("Ada@Example.test", "done")
+	webhook("ada@example.test", "queued")
+	webhook("bob@example.test", "failed")
+	f.exec(`INSERT INTO jobs (name, payload, status, run_at) VALUES ($1, '{"body":"not json"}', 'failed', now())`, gontactWebhookJob)
 	if g := f.groupsByID()["email-log"]; len(g) != 1 {
-		t.Fatalf("e-mail log export: %d rows, want the one answering to Ada", len(g))
+		t.Fatalf("e-mail log export: %d rows, want the notification answering to Ada", len(g))
 	}
 	f.runErase()
-	if n := f.count(`SELECT count(*) FROM wpmailsmtp_emails_log`); n != 1 {
-		t.Errorf("%d log rows left, want Bob's", n)
+	var logLeft []string
+	rows, err := f.srv.store.Pool.Query(f.ctx, `SELECT subject FROM wpmailsmtp_emails_log ORDER BY id`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var s string
+		_ = rows.Scan(&s)
+		logLeft = append(logLeft, s)
+	}
+	rows.Close()
+	if strings.Join(logLeft, ",") != "Contact: Bob,Receipt: Carol,Order: Carol" {
+		t.Errorf("log rows left %v, want Bob's and Carol's", logLeft)
+	}
+	if n := f.count(`SELECT count(*) FROM jobs WHERE name = $1`, gontactWebhookJob); n != 3 {
+		t.Errorf("%d webhook jobs left, want the queued one, Bob's and the unreadable one", n)
+	}
+	if n := f.count(`SELECT count(*) FROM jobs WHERE name = $1 AND status = 'queued'`, gontactWebhookJob); n != 1 {
+		t.Error("the queued webhook was removed")
 	}
 	var left []string
-	rows, err := f.srv.store.Pool.Query(f.ctx, `SELECT payload->>'Subject' FROM jobs WHERE name = 'wp_mail' ORDER BY id`)
+	rows, err = f.srv.store.Pool.Query(f.ctx, `SELECT payload->>'Subject' FROM jobs WHERE name = 'wp_mail' ORDER BY id`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -290,8 +374,8 @@ func TestPrivacyMailLogReplyToAndJobs(t *testing.T) {
 		left = append(left, s)
 	}
 	rows.Close()
-	if strings.Join(left, ",") != "queued,bob" {
-		t.Errorf("mail jobs left %v, want the queued one and Bob's", left)
+	if strings.Join(left, ",") != "queued,bob,receipt" {
+		t.Errorf("mail jobs left %v, want the queued one, Bob's and Carol's receipt", left)
 	}
 }
 
