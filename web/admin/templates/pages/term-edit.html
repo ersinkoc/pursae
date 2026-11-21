@@ -39,6 +39,6 @@
 	{{if not .IsDefault}}<span id="delete-link"><a class="delete" href="{{.DeleteURL}}">Delete</a></span>{{end}}
 </div>
 </form>
-<p><a href="{{.ViewURL}}">View {{lower .Labels.Singular}} archive</a> &nbsp;|&nbsp; <a href="/wp-admin/edit-tags?taxonomy={{.Labels.Tax}}">&larr; Go to {{.Labels.Name}}</a></p>
+<p>{{if .ViewURL}}<a href="{{.ViewURL}}">View {{lower .Labels.Singular}} archive</a> &nbsp;|&nbsp; {{end}}<a href="/wp-admin/edit-tags?taxonomy={{.Labels.Tax}}">&larr; Go to {{.Labels.Name}}</a></p>
 </div>
 {{end}}{{template "admin-footer" .}}{{end}}

@@ -159,6 +159,9 @@ func (s *Server) restPreload(c *gin.Context, paths []preloadPath) map[string]any
 // use_block_editor_for_post_type(), a post type gets the block editor when it supports "editor"
 // and is shown in REST: posts, pages, and Custom Fields post types with Show in REST.
 func (s *Server) useBlockEditor(c *gin.Context, p *store.Post) bool {
+	if p.Type == "wp_block" { // patterns are block content: the classic editor has no screen for them
+		return true
+	}
 	if p.Type != "post" && p.Type != "page" && !acfgoBlockEditorType(p.Type) {
 		return false
 	}
@@ -358,8 +361,8 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 	if isNew {
 		title = lab.AddNew
 		screen = "post-new"
-		if p.Type == "page" {
-			screen = "post-new?post_type=page"
+		if p.Type == "page" || p.Type == "wp_block" {
+			screen = "post-new?post_type=" + p.Type
 		}
 	}
 	s.adminPage(c, screen, title, "post-php post-type-"+p.Type+" block-editor-page wp-embed-responsive is-fullscreen-mode", "admin/block-editor",
@@ -367,7 +370,7 @@ func (s *Server) renderBlockEditor(c *gin.Context, p *store.Post, isNew bool) {
 }
 
 func (s *Server) classicSwitchURL(p *store.Post) string {
-	if !s.classicSwitchAllowed() {
+	if !s.classicSwitchAllowed() || p.Type == "wp_block" {
 		return ""
 	}
 	return "/wp-admin/post?post=" + itoa64(p.ID) + "&action=edit&classic-editor"

@@ -517,20 +517,30 @@ func wxrCustomTypes() []string {
 	return out
 }
 
-// wxrCustomTaxonomies are the taxonomies registered by Pursae Custom Fields (empty while it is off).
+// wxrCustomTaxonomies are the taxonomies registered by Pursae Custom Fields (none while it is off)
+// and wp_pattern_category.
 func wxrCustomTaxonomies() []string {
 	acfgoRegistry.RLock()
 	defer acfgoRegistry.RUnlock()
-	out := make([]string, 0, len(acfgoRegistry.taxes))
+	out := make([]string, 0, len(acfgoRegistry.taxes)+1)
 	for name := range acfgoRegistry.taxes {
 		out = append(out, name)
 	}
+	out = append(out, wxrPatternCategoryTax) // a reserved name, never a Custom Fields taxonomy
 	sort.Strings(out)
 	return out
 }
 
-// wxrIsCustomTaxonomy reports whether tax is registered by Pursae Custom Fields.
+// wxrPatternCategoryTax is the core taxonomy of pattern (wp_block) categories, exported and imported
+// like the Pursae Custom Fields taxonomies (export_wp() writes every taxonomy's terms).
+const wxrPatternCategoryTax = "wp_pattern_category"
+
+// wxrIsCustomTaxonomy reports whether tax is registered by Pursae Custom Fields, or is the core
+// pattern categories taxonomy.
 func wxrIsCustomTaxonomy(tax string) bool {
+	if tax == wxrPatternCategoryTax {
+		return true
+	}
 	acfgoRegistry.RLock()
 	defer acfgoRegistry.RUnlock()
 	return acfgoRegistry.taxes[tax] != nil

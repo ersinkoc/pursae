@@ -121,6 +121,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 			{slug: "customize", title: "Customize", cap: "edit_theme_options"},
 			{slug: "widgets", title: "Widgets", cap: "edit_theme_options"},
 			{slug: "nav-menus", title: "Menus", cap: "edit_theme_options"},
+			{slug: "edit?post_type=wp_block", title: "Patterns", cap: "edit_posts", match: []string{"post?post_type=wp_block", "post-new?post_type=wp_block", "edit-tags?taxonomy=wp_pattern_category"}},
 			{slug: "theme-editor", title: "Theme File Editor", cap: "edit_themes"},
 		}},
 		{slug: "plugins", title: `Plugins <span class="update-plugins count-0"><span class="plugin-count">0</span></span>`, cap: "activate_plugins", id: "menu-plugins", icon: "dashicons-admin-plugins", sub: []subDef{
@@ -251,6 +252,7 @@ func buildMenu(u *store.User, screen string, pending int, cache bool) []*menuTop
 var screenStyles = map[string][]string{
 	"admin/dashboard":            {"/wp-admin/css/site-health.min.css", "wpgo/pursae-brand.css"},
 	"admin/posts-list":           {},
+	"admin/patterns-list":        {},
 	"admin/post-edit":            {},
 	"admin/terms":                {},
 	"admin/term-edit":            {},
