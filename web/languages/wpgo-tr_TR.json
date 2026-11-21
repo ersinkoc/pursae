@@ -4907,5 +4907,21 @@
  "No themes found. Try a different search.": "Tema bulunamadı. Başka bir arama deneyin.",
  "Theme details: %s": "Tema ayrıntıları: %s",
  "Your active plugins, one click away.": "Etkin eklentilerin, bir tık uzağında.",
- "Manage plugins →": "Eklentileri yönet →"
+ "Manage plugins →": "Eklentileri yönet →",
+ "Pursae News": "Pursae Haberleri",
+ "Update available": "Güncelleme var",
+ "Read the full release notes": "Sürüm notlarının tamamını okuyun",
+ "Read the release notes online": "Sürüm notlarını çevrimiçi okuyun",
+ "Pursae %s release notes": "Pursae %s sürüm notları",
+ "%s more changes": "%s değişiklik daha",
+ "1 more change": "1 değişiklik daha",
+ "Added": "Eklendi",
+ "Changed": "Değişti",
+ "Fixed": "Düzeltildi",
+ "Security": "Güvenlik",
+ "Deprecated": "Kullanımdan kalktı",
+ "Removed": "Kaldırıldı",
+ "Changes": "Değişiklikler",
+ "Updates": "Güncellemeler",
+ "Release news from Pursae Hub appears here once this site has checked for updates.": "Bu site güncellemeleri denetledikten sonra Pursae Hub'dan gelen sürüm haberleri burada görünür."
 }

@@ -25,6 +25,11 @@
 {{else}}
 <h2>You have the latest version of Pursae.</h2>
 {{end}}
+{{if .Notes}}
+<h2 id="release-notes">Pursae {{.NotesVersion}} release notes</h2>
+<div class="pursae-release-notes"><div class="pursae-release-notes-body" translate="no">{{.Notes}}</div>
+{{if .NotesURL}}<p><a href="{{.NotesURL}}" target="_blank" rel="noopener noreferrer">Read the release notes online<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></p>{{end}}</div>
+{{end}}
 {{if .Previous}}
 <h2>Previous version</h2>
 <form method="post" action="/wp-admin/update-core?action=do-core-reinstall" name="reinstall" class="upgrade" data-confirm="Reinstall Pursae {{.Previous}}? Database changes made by {{.Version}} are not undone, so features of {{.Version}} may stop working until you update again.">
