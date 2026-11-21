@@ -105,7 +105,7 @@ func (s *Server) modernDashboard(ctx context.Context, u *store.User, health heal
 	d.Date = now.Format("02.01.2006")
 
 	on := []bool{s.acfgoOn(), s.adminsecOn(), s.analyticsOn(), s.bmgrOn(), s.forumOn(), s.gocdnOn(), s.golylangOn(), s.gontactOn(),
-		s.gooOn(), s.gooikeOn(), s.hgOn(), s.mailSMTPOn(), s.pixelOn(), s.seogoOn(), s.wbOn(), s.pageCacheOn()}
+		s.gooOn(), s.gooikeOn(), s.hgOn(), s.mailSMTPOn(), s.pixelOn(), s.seogoOn(), s.wbOn(), s.pageCacheOn(), s.flipbookOn()}
 	for _, v := range on {
 		if v {
 			d.ActivePlugins++

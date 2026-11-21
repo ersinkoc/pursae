@@ -1,0 +1,131 @@
+{{define "admin/flipbook"}}{{template "admin-header" .}}{{with .Data}}
+<link rel="stylesheet" href="{{.AssetsURL}}/admin.css?ver={{.Version}}">
+<div class="wrap pfb-admin" data-pfb-admin data-worker="{{.AssetsURL}}/vendor/pdf.worker.min.mjs?ver={{.Version}}"{{if .AutoOpen}} data-autoopen="1"{{end}}>
+<h1 class="wp-heading-inline"><span class="dashicons dashicons-book-alt pfb-h-icon" aria-hidden="true"></span>{{if eq .View "edit"}}Edit Flipbook{{else}}Flipbooks{{end}}</h1>
+<button type="button" class="page-title-action" data-pfb-add>Add New</button>
+{{if eq .View "edit"}}<a href="/wp-admin/admin?page=pursae-flipbook" class="page-title-action">All Flipbooks</a>{{end}}
+<hr class="wp-header-end">
+{{template "notices" $}}
+
+<form id="pfb-create" method="post" action="/wp-admin/admin?page=pursae-flipbook" hidden>
+	<input type="hidden" name="_wpnonce" value="{{.Nonce}}"><input type="hidden" name="op" value="create">
+	<input type="hidden" name="attachment_id"><input type="hidden" name="pdf_url"><input type="hidden" name="title">
+	<input type="hidden" name="file_name"><input type="hidden" name="mime">
+</form>
+
+{{if eq .View "list"}}
+{{if not .Items}}
+<div class="pfb-empty">
+	<div class="pfb-empty-art" aria-hidden="true"><span></span><span></span></div>
+	<h2>Create your first flipbook</h2>
+	<p>Pick a PDF from the Media Library, or upload a new one. You get a shortcode to place the book in any post or page, and a full-screen link to share.</p>
+	<button type="button" class="button button-primary button-hero" data-pfb-add><span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span> Add New Flipbook</button>
+</div>
+{{else}}
+<p class="pfb-count">{{len .Items}} flipbook{{if gt (len .Items) 1}}s{{end}}</p>
+<div class="pfb-grid">
+	{{range .Items}}
+	<article class="pfb-card">
+		<button type="button" class="pfb-cover" data-pfb-view="{{.FullURL}}" data-pfb-cover="{{.PDFURL}}" style="--pfb-bg:{{.Background}}" aria-label="View {{.Title}} full screen">
+			<span class="pfb-cover-ph dashicons dashicons-pdf" aria-hidden="true"></span>
+			<span class="pfb-cover-pages" hidden></span>
+			<span class="pfb-cover-hover"><span class="dashicons dashicons-fullscreen-alt" aria-hidden="true"></span> Full screen</span>
+		</button>
+		<div class="pfb-card-body">
+			<h2 class="pfb-card-title">{{if .EditURL}}<a href="{{.EditURL}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}</h2>
+			<p class="pfb-card-meta">{{if .FileName}}{{.FileName}} · {{end}}{{.Date}}</p>
+			<div class="pfb-code">
+				<input type="text" readonly value="{{.Shortcode}}" aria-label="Shortcode">
+				<button type="button" class="button pfb-copy-icon" data-pfb-copy="{{.Shortcode}}" title="Copy shortcode"><span class="dashicons dashicons-admin-page" aria-hidden="true"></span><span class="pfb-copy-label screen-reader-text">Copy</span></button>
+			</div>
+			<div class="pfb-card-actions">
+				{{if .EditURL}}<a href="{{.EditURL}}">Edit</a>{{end}}
+				<button type="button" class="button-link" data-pfb-view="{{.FullURL}}">Full screen</button>
+				<a href="{{.FullURL}}" target="_blank" rel="noopener">Open link<span class="screen-reader-text"> (opens in a new tab)</span></a>
+				{{if .DeleteURL}}<a href="{{.DeleteURL}}" class="pfb-delete" data-pfb-confirm="Delete “{{.Title}}”? The PDF stays in the Media Library; pages that use its shortcode will show nothing.">Delete</a>{{end}}
+			</div>
+		</div>
+	</article>
+	{{end}}
+</div>
+{{end}}
+{{end}}
+
+{{if eq .View "edit"}}{{with .Edit}}
+<div class="pfb-edit">
+	<form method="post" action="/wp-admin/admin?page=pursae-flipbook" class="pfb-edit-main" id="pfb-edit-form">
+		<input type="hidden" name="_wpnonce" value="{{$.Data.Nonce}}"><input type="hidden" name="op" value="save"><input type="hidden" name="id" value="{{.ID}}">
+		<input type="hidden" name="attachment_id" value=""><input type="hidden" name="pdf_url" value=""><input type="hidden" name="file_name" value=""><input type="hidden" name="mime" value="">
+		<div class="postbox"><div class="inside">
+			<label class="pfb-title-label" for="pfb-title">Title</label>
+			<input type="text" id="pfb-title" name="title" value="{{.Title}}" class="pfb-title-input" required maxlength="200">
+
+			<div class="pfb-field">
+				<span class="pfb-label">PDF</span>
+				<div class="pfb-file">
+					<span class="dashicons dashicons-pdf" aria-hidden="true"></span>
+					<span class="pfb-file-name" data-pfb-file>{{if .FileName}}{{.FileName}}{{else}}{{.PDFURL}}{{end}}</span>
+					<button type="button" class="button" data-pfb-replace>Replace PDF</button>
+				</div>
+			</div>
+
+			<div class="pfb-field-row">
+				<div class="pfb-field">
+					<label class="pfb-label" for="pfb-height">Height in posts</label>
+					<span class="pfb-unit"><input type="number" id="pfb-height" name="height" min="240" max="2000" step="10" value="{{.Height}}"> px</span>
+					<p class="description">The full-screen page always fills the screen.</p>
+				</div>
+				<div class="pfb-field">
+					<label class="pfb-label" for="pfb-bg">Background</label>
+					<span class="pfb-color"><input type="color" id="pfb-bg" name="background" value="{{.Background}}"><code data-pfb-bg-code>{{.Background}}</code></span>
+				</div>
+			</div>
+
+			<div class="pfb-field">
+				<span class="pfb-label">Toolbar</span>
+				<label class="pfb-toggle"><input type="checkbox" name="download" value="1"{{if .Download}} checked{{end}}><span class="pfb-switch" aria-hidden="true"></span> Download button</label>
+				<label class="pfb-toggle"><input type="checkbox" name="share" value="1"{{if .Share}} checked{{end}}><span class="pfb-switch" aria-hidden="true"></span> Share button (copies the full-screen link)</label>
+			</div>
+		</div>
+		<div class="pfb-edit-foot">
+			{{if .DeleteURL}}<a href="{{.DeleteURL}}" class="pfb-delete" data-pfb-confirm="Delete “{{.Title}}”? The PDF stays in the Media Library.">Delete</a>{{else}}<span></span>{{end}}
+			<button type="submit" class="button button-primary button-large">Save Changes</button>
+		</div></div>
+
+		<div class="postbox pfb-preview-box">
+			<div class="postbox-header"><h2>Preview</h2><button type="button" class="button-link" data-pfb-view="{{.FullURL}}"><span class="dashicons dashicons-fullscreen-alt" aria-hidden="true"></span> Full screen</button></div>
+			<div class="inside"><iframe class="pfb-preview" src="{{.FullURL}}?embed=1" title="Preview of {{.Title}}" style="height:{{.Height}}px" allow="fullscreen"></iframe>
+			<p class="description">Save to see changes to the settings here.</p></div>
+		</div>
+	</form>
+
+	<aside class="pfb-edit-side">
+		<div class="postbox"><div class="postbox-header"><h2>Shortcode</h2></div><div class="inside">
+			<p>Paste it into a post, a page or a Shortcode block.</p>
+			<div class="pfb-code">
+				<input type="text" readonly value="{{.Shortcode}}" aria-label="Shortcode">
+				<button type="button" class="button button-primary" data-pfb-copy="{{.Shortcode}}"><span class="dashicons dashicons-admin-page" aria-hidden="true"></span><span class="pfb-copy-label">Copy</span></button>
+			</div>
+			<p class="description">Different height on one page: <code>[pursae_flipbook id="{{.ID}}" height="480"]</code></p>
+		</div></div>
+		<div class="postbox"><div class="postbox-header"><h2>Full-screen link</h2></div><div class="inside">
+			<div class="pfb-code">
+				<input type="text" readonly value="{{.AbsFullURL}}" aria-label="Full-screen link">
+				<button type="button" class="button" data-pfb-copy="{{.AbsFullURL}}"><span class="dashicons dashicons-admin-links" aria-hidden="true"></span><span class="pfb-copy-label">Copy</span></button>
+			</div>
+			<p class="pfb-side-actions">
+				<button type="button" class="button" data-pfb-view="{{.FullURL}}"><span class="dashicons dashicons-fullscreen-alt" aria-hidden="true"></span> View full screen</button>
+				<a class="button" href="{{.FullURL}}" target="_blank" rel="noopener"><span class="dashicons dashicons-external" aria-hidden="true"></span> Open</a>
+			</p>
+		</div></div>
+	</aside>
+</div>
+{{end}}{{end}}
+
+<div class="pfb-overlay" id="pfb-overlay" hidden role="dialog" aria-modal="true" aria-label="Flipbook">
+	<button type="button" class="pfb-overlay-close" data-pfb-close aria-label="Close"><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>
+	<iframe title="Flipbook" allow="fullscreen"></iframe>
+</div>
+</div>
+<script type="module" {{cspNonce}} src="{{.AssetsURL}}/admin.js?ver={{.Version}}"></script>
+{{end}}{{template "admin-footer" .}}{{end}}

@@ -80,6 +80,7 @@ var pluginIcons = map[string]string{
 	"pursae-analytics": "dashicons-chart-bar", "pursae-forum": "dashicons-format-chat", "wp-mail-smtp": "dashicons-email",
 	"acf-go": "dashicons-welcome-widgets-menus", "golylang": "dashicons-translation", "gontact-form": "dashicons-email-alt",
 	"maintenance": "dashicons-hammer", "backup-manager": "dashicons-database-export", "classic-editor": "dashicons-edit",
+	"pursae-flipbook": "dashicons-book-alt",
 }
 
 // Icon is the plugin card's dashicon (a puzzle piece for plugins without one).

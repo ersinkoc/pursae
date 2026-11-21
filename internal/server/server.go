@@ -397,6 +397,7 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/admin", s.pluginAdmin)
 	s.acfgoRegisterRoutes(admin)    // ACF-Go screens (acfgo.go)
 	s.registerSEOGoAdmin(admin)     // Pursae SEO screens (seogo_admin.go)
+	s.registerFlipbook(r)           // Pursae Flipbook: assets (the /flipbook/N page is flipbookRoute in NoRoute)
 	s.registerGooike(r, admin)      // Gooike: assets and screens (gooike.go)
 	s.registerPixel(r, admin)       // Pursae Pixel: assets, screens, product feed (pixelgo.go)
 	s.registerAnalytics(r, admin)   // Pursae Analytics: collector and screen (analytics.go)
@@ -432,7 +433,7 @@ func (s *Server) routes() *gin.Engine {
 	}
 
 	// theme package assets, /<post>/embed/, site-imported design kits' files at the root, then the site
-	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.site)
+	r.NoRoute(s.packageThemeAsset, s.embedRoute, s.flipbookRoute, s.site)
 	return r
 }
 

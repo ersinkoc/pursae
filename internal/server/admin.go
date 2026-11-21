@@ -372,6 +372,7 @@ func (s *Server) adminPage(c *gin.Context, screen, title, bodyClass, tmpl string
 	v.Menu = s.acfgoMenu(c, v.Menu, screen)
 	// Pursae SEO's menu (seogo.go)
 	v.Menu = s.seogoMenu(v.Menu, u, screen)
+	v.Menu = s.flipbookMenu(v.Menu, u, screen)  // Pursae Flipbook (flipbook.go)
 	v.Menu = s.gooikeMenu(v.Menu, u, screen)    // Gooike (gooike.go)
 	v.Menu = s.pixelMenu(v.Menu, u, screen)     // Pursae Pixel (pixelgo.go)
 	v.Menu = s.analyticsMenu(v.Menu, u, screen) // Pursae Analytics (analytics.go)
