@@ -79,7 +79,7 @@ func cmdResetDB(args []string) error {
 	admin := fs.String("admin", "", "DSN of a database to connect to (not the one reset)")
 	name := fs.String("db", "", "database to drop and create")
 	dropOnly := fs.Bool("drop", false, "only drop it")
-	fs.Parse(args)
+	_ = fs.Parse(args) // ExitOnError: Parse exits on a bad flag
 	if *admin == "" || !regexp.MustCompile(`^[a-z0-9_]+$`).MatchString(*name) {
 		return errors.New("resetdb needs -admin and a -db of [a-z0-9_]")
 	}
@@ -133,7 +133,7 @@ func cmdCounts(args []string) error {
 	dsn := fs.String("dsn", "", "database")
 	out := fs.String("out", "", "write the counts here")
 	compare := fs.String("compare", "", "compare with the counts in this file")
-	fs.Parse(args)
+	_ = fs.Parse(args) // ExitOnError: Parse exits on a bad flag
 	got, err := tableCounts(context.Background(), *dsn)
 	if err != nil {
 		return err
@@ -247,7 +247,7 @@ func (c *client) rest(method, route string, body any, want int, hdr map[string]s
 	}
 	var out map[string]any
 	if err := json.Unmarshal(b, &out); err != nil {
-		return nil, fmt.Errorf("%s %s: %v: %s", method, route, err, clip(b))
+		return nil, fmt.Errorf("%s %s: %w: %s", method, route, err, clip(b))
 	}
 	return out, nil
 }
@@ -262,7 +262,7 @@ func clip(b []byte) string {
 
 // login posts the login form and expects the redirect to wp-admin that a good password earns.
 func (c *client) login(user, pass string) error {
-	c.do(http.MethodGet, "/wp-login", nil, nil) // the test cookie, like a browser
+	_, _, _, _ = c.do(http.MethodGet, "/wp-login", nil, nil) // the test cookie, like a browser
 	code, h, b, err := c.form("/wp-login", url.Values{"log": {user}, "pwd": {pass}, "rememberme": {"forever"}, "redirect_to": {"/wp-admin/"}, "testcookie": {"1"}})
 	if err != nil {
 		return err
@@ -381,7 +381,7 @@ func cmdSeed(args []string) error {
 	token := fs.String("token", "", "setup token (releases with a setup token)")
 	version := fs.String("version", "", "release being seeded (for the report)")
 	wbFixture := fs.String("wb-fixture", "", "Web Builder fixture prefix (<prefix>.doc.json and <prefix>.render.json); empty skips the builder page")
-	fs.Parse(args)
+	_ = fs.Parse(args) // ExitOnError: Parse exits on a bad flag
 	s := &snapshot{Version: *version, Users: map[string]string{}, Media: map[string]string{}}
 	c := newClient(*base)
 	if err := install(c, *token); err != nil {
@@ -456,7 +456,9 @@ func testPNG() []byte {
 		}
 	}
 	var buf bytes.Buffer
-	png.Encode(&buf, img)
+	if err := png.Encode(&buf, img); err != nil {
+		panic(err) // in-memory encode of a fixed image
+	}
 	return buf.Bytes()
 }
 
@@ -706,7 +708,7 @@ func seed(c *client, s *snapshot, wbFixture string) error {
 				return fmt.Errorf("%s: no link", r.name)
 			}
 			if code, _, b, err := c.do(http.MethodGet, e.Page, nil, nil); err != nil || code != http.StatusOK || !bytes.Contains(b, []byte(e.Expect)) {
-				return fmt.Errorf("%s: %s answers %d (err %v) on the old release", r.name, e.Page, code, err)
+				return fmt.Errorf("%s: %s answers %d (err %w) on the old release", r.name, e.Page, code, err)
 			}
 		}
 	}
@@ -879,7 +881,7 @@ func cmdVerify(args []string) error {
 	fs := flag.NewFlagSet("verify", flag.ExitOnError)
 	base := fs.String("url", "", "site URL")
 	snapFile := fs.String("snapshot", "", "snapshot written by seed")
-	fs.Parse(args)
+	_ = fs.Parse(args) // ExitOnError: Parse exits on a bad flag
 	b, err := os.ReadFile(*snapFile)
 	if err != nil {
 		return err
