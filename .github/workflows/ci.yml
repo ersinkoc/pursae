@@ -140,8 +140,8 @@ jobs:
         with:
           # Pull requests compare against the merge base locally: the action's only-new-issues fetches
           # the PR diff from the API, which GitHub refuses for more than 300 files, and then lints the
-          # whole tree.
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          # whole tree. Full history, so origin/<base> and the merge base are there.
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
