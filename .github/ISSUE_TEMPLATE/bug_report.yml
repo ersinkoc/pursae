@@ -1,0 +1,78 @@
+name: Bug report
+description: Something in Pursae does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Security problems do not belong here**: report them privately as
+        described in [SECURITY.md](https://github.com/pursae/pursae/blob/main/SECURITY.md).
+        Questions and help with a site: the [forum](https://pursae.com/forum/).
+  - type: input
+    id: version
+    attributes:
+      label: Pursae version
+      description: "`pursae version` (`docker compose exec wpgo wpgo version`), or Dashboard › Updates."
+      placeholder: Pursae 0.5.0
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How Pursae runs
+      options:
+        - Docker image / compose
+        - Release binary (systemd or by hand)
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and architecture
+      placeholder: Ubuntu 24.04, amd64
+    validations:
+      required: true
+  - type: input
+    id: database
+    attributes:
+      label: PostgreSQL version
+      description: "`SELECT version();`, and whether a pooler (PgBouncer) or a managed service sits in front."
+      placeholder: PostgreSQL 17.6, direct connection
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: For problems in the admin or on the site.
+      placeholder: Firefox 145
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to Posts › Add New
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        The server log around the time it happened (`journalctl -u pursae`, `docker compose logs wpgo`)
+        and the browser console, if relevant. Remove passwords, tokens, cookies and personal data first.
+      render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Active plugins and theme, screenshots, whether it worked in an earlier version.
