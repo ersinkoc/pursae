@@ -196,7 +196,7 @@ func (s *Server) dashboard(c *gin.Context) {
 	if adminThemeFor(u).Modern() {
 		d.Modern = s.modernDashboard(ctx, u, d.Health, d.Posts, d.Pages, d.Comments, d.Pending)
 	}
-	d.News = s.dashboardNewsCached(ctx)
+	d.News = s.dashboardNewsCached(c)
 	d.Closed = userMetaSet(u, "closedpostboxes_dashboard")
 	var pluginIDs []string
 	pluginIDs, d.Plugin = s.pluginDashboardWidgets(c, u, d.Closed) // Wasm plugins (plugins_ui.go)
@@ -345,20 +345,57 @@ func (s *Server) metaBoxOrderAjax(c *gin.Context) {
 	c.String(http.StatusOK, "1")
 }
 
-// dashboardNews is the Pursae News box: the latest core release the Hub announced in /api/v1/index.
+// dashboardNews is the Pursae News box: the latest core release the Hub announced in /api/v1/index,
+// with a digest of its notes (release_notes.go).
 type dashboardNews struct {
-	Version, Released, Notes, NotesURL string
-	Newer                              bool // newer than the running version
+	Version  string
+	NotesURL string // the full notes: the Hub's notes_url, else Dashboard › Updates
+	External bool   // NotesURL leaves the site (opened in a new tab)
+	// Released: the release date in the site's time zone ("21 November 2026"; month names are
+	// translated with the page), ReleasedISO its RFC 3339 form for <time datetime>, Ago "2 hours ago".
+	Released, ReleasedISO, Ago string
+	Digest                     *notesDigest
+	Newer                      bool // newer than the running version
+	Fresh                      bool // released in the last two weeks: the "New" badge
+	CanUpdate                  bool // Newer and the user may update core: the "Update now" button
 }
 
 // dashboardNewsCached reads the cached Hub index only: the Dashboard never waits on the network.
 // Nil while the site has not contacted the Hub (or the Hub is off).
-func (s *Server) dashboardNewsCached(ctx context.Context) *dashboardNews {
+func (s *Server) dashboardNewsCached(c *gin.Context) *dashboardNews {
 	var idx hubIndex
-	if !s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_index"), &idx) || idx.Core == nil || idx.Core.Latest == "" {
+	if !s.hubCacheGet(c.Request.Context(), s.hubCacheKey("wpgo_hub_index"), &idx) || idx.Core == nil || idx.Core.Latest == "" {
 		return nil
 	}
-	n := &dashboardNews{Version: idx.Core.Latest, Released: idx.Core.Released, Notes: wp.TrimWords(idx.Core.Notes, 60, "…"), NotesURL: idx.Core.NotesURL}
+	n := &dashboardNews{Version: idx.Core.Latest, NotesURL: "/wp-admin/update-core#release-notes"}
+	if u := notesSafeURL(idx.Core.NotesURL); u != "" {
+		n.NotesURL, n.External = u, true
+	}
+	if t, ok := parseReleaseDate(idx.Core.Released); ok {
+		now := time.Now()
+		n.Released = wp.FormatDate(t.In(s.loc()), "j F Y")
+		n.ReleasedISO = t.UTC().Format(time.RFC3339)
+		if !t.After(now) {
+			n.Ago = strings.Replace(s.__(c, "%s ago"), "%s", wp.HumanTimeDiffN(t, now, s.catalog(c).N), 1)
+		}
+		n.Fresh = now.Sub(t) < 14*24*time.Hour
+	} else if r := strings.TrimSpace(idx.Core.Released); r != "" {
+		n.Released = r
+	}
+	n.Digest = releaseNotesDigest(idx.Core.Notes, notesDigestItems)
 	n.Newer = versionLess(Version, idx.Core.Latest)
+	n.CanUpdate = n.Newer && currentUser(c).Can("update_core", nil)
 	return n
+}
+
+// parseReleaseDate reads the Hub's release date: RFC 3339, or a plain date (UTC midnight).
+func parseReleaseDate(s string) (time.Time, bool) {
+	s = strings.TrimSpace(s)
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t, true
+	}
+	if t, err := time.Parse("2006-01-02", s); err == nil {
+		return t, true
+	}
+	return time.Time{}, false
 }

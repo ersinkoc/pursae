@@ -211,11 +211,25 @@
 			</div>{{end}}
 		{{template "dashboard-postbox-end"}}{{end}}
 {{define "dw-dashboard_primary"}}{{template "dashboard-postbox-start" dict "ID" "dashboard_primary" "Title" "Pursae News" "Closed" (index .Closed "dashboard_primary")}}
-			<div class="wordpress-news hide-if-no-js">
-				<div class="rss-widget">{{with .News}}<ul><li><a class="rsswidget" href="{{if .NotesURL}}{{.NotesURL}}{{else}}/wp-admin/update-core{{end}}">Pursae {{.Version}}</a>{{if .Released}} <span class="rss-date">{{.Released}}</span>{{end}}{{if .Notes}}<div class="rssSummary">{{.Notes}}</div>{{end}}{{if .Newer}}<div class="rssSummary"><a href="/wp-admin/update-core">A new version is available. Update now.</a></div>{{end}}</li></ul>{{else}}<p>Release news from Pursae Hub appears here once this site has checked for updates.</p>{{end}}</div>
+			<div class="pursae-news">{{with .News}}
+				<div class="pursae-news-head">
+					<a class="pursae-news-title" href="{{.NotesURL}}"{{if .External}} target="_blank" rel="noopener noreferrer"{{end}} translate="no">Pursae {{.Version}}</a>{{if .Newer}}
+					<span class="pursae-news-badge is-update">Update available</span>{{else if .Fresh}}
+					<span class="pursae-news-badge is-new">New</span>{{end}}
+				</div>{{if .Released}}
+				<p class="pursae-news-meta">{{if .ReleasedISO}}<time datetime="{{.ReleasedISO}}" title="{{.ReleasedISO}}">{{.Released}}</time>{{else}}<span>{{.Released}}</span>{{end}}{{if .Ago}}<span class="pursae-news-sep" aria-hidden="true"> · </span><span class="pursae-news-ago">{{.Ago}}</span>{{end}}</p>{{end}}{{with .Digest}}{{if .Summary}}
+				<p class="pursae-news-summary" translate="no">{{.Summary}}</p>{{end}}{{if .Groups}}
+				<div class="pursae-news-digest">{{range .Groups}}
+					<div class="pursae-news-group is-{{.Class}}"><span class="pursae-news-label">{{if .Label}}{{.Label}}{{else}}Changes{{end}}</span><ul>{{range .Items}}<li translate="no">{{.}}</li>{{end}}</ul></div>{{end}}
+				</div>{{end}}{{if .More}}
+				<p class="pursae-news-more">{{if eq .More 1}}1 more change{{else}}{{.More}} more changes{{end}}</p>{{end}}{{end}}{{else}}
+				<p class="pursae-news-empty">Release news from Pursae Hub appears here once this site has checked for updates.</p>{{end}}
 			</div>
-			<p class="community-events-footer">
-				<a href="/wp-admin/update-core">Updates</a>
+			<p class="community-events-footer pursae-news-footer">{{with .News}}
+				<a href="{{.NotesURL}}"{{if .External}} target="_blank" rel="noopener noreferrer"{{end}}>Read the full release notes{{if .External}}<span class="screen-reader-text"> (opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span>{{end}}</a>
+				<span aria-hidden="true">|</span>{{end}}
+				<a href="/wp-admin/update-core">Updates</a>{{with .News}}{{if .CanUpdate}}
+				<a class="button button-primary button-small pursae-news-update" href="/wp-admin/update-core">Update now</a>{{end}}{{end}}
 			</p>
 		{{template "dashboard-postbox-end"}}{{end}}
 
