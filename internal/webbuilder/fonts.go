@@ -75,6 +75,16 @@ func LookupFont(name string) (FontFamily, bool) {
 	return f, ok
 }
 
+// FontFamilies lists the library's family names (every one a Google Fonts family), sorted.
+func FontFamilies() []string {
+	out := make([]string, 0, len(fontCatalog))
+	for fam := range fontCatalog {
+		out = append(out, fam)
+	}
+	sort.Strings(out)
+	return out
+}
+
 func snapWeight(list []int, w int) int {
 	if len(list) == 0 {
 		return w

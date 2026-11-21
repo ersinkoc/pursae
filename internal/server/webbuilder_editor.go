@@ -511,7 +511,7 @@ var wbMediaTypes = sync.OnceValue(func() []string {
 // wbFontFamilies maps a font key (gfontKey) to its Google Fonts family name.
 var wbFontFamilies = sync.OnceValue(func() map[string]string {
 	m := map[string]string{}
-	for fam := range gfontCatalog() {
+	for _, fam := range webbuilder.FontFamilies() {
 		m[gfontKey(fam)] = fam
 	}
 	return m

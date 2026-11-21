@@ -165,6 +165,10 @@ For contributors: how a migration keeps the previous release working, so an upda
 
 ## Release notes
 
+- **Migrations 0005–0007 are empty steps (0.4.1).** They created the earlier page builder's tables,
+  which `0028_drop_old_builder` already drops. A database that applied them keeps its history
+  (`schema_migrations` records names only, never file contents), a new install runs them as
+  no-ops, and nothing needs to be done when upgrading.
 - **Pursae Web Builder: Theme Builder and Hello Pursae.** Headers, footers and single, page,
   custom post type, front page, archive, search and 404 templates are designed in the builder
   (Web Builder › Theme Builder) and shown by the new bundled theme **Hello Pursae**
@@ -186,8 +190,8 @@ For contributors: how a migration keeps the previous release working, so an upda
     when enabled, an archive (`/<archive slug>/`); old `?p=<id>` links redirect to them. Check
     that no page or post uses the same slug as a custom post type's rewrite or archive slug.
 - **New Pursae Web Builder — back up the database before upgrading: old Web Builder data is
-  deleted.** The release that brings the new builder replaces the previous Elementor-derived builder
-  and deletes everything it stored, with no converter (migration `0028_drop_old_builder`): its tables (builder revisions,
+  deleted.** The release that brings the new builder replaces the previous builder and deletes
+  everything it stored, with no converter (migration `0028_drop_old_builder`): its tables (builder revisions,
   global classes and variables, default styles, form submissions), saved templates, theme parts,
   popups and components, every `_elementor_*`/`_gwe_*` post meta key, its options (integration API
   keys, reCAPTCHA keys, custom fonts and icon sets, role manager, site kit) and the themes saved
