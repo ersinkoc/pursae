@@ -192,6 +192,7 @@ go to stderr.
 | Site operations | `site_health`, `list_updates`, `run_update` (plugin, theme or core), `list_backups`, `create_backup`, `delete_theme`, `ai_activity` |
 | Themes | `list_themes`, `activate_theme`, `install_theme`, `list_theme_files`, `read_theme_file`, `write_theme_file`, `restore_theme_file` |
 | Pursae Cache | `cache_status`, `cache_purge`, `cache_get_settings`, `cache_update_settings` |
+| Content Security Policy (`settings` scope, `manage_options`) | `csp_get_settings`, `csp_update_settings`: the external origins the front-end policy allows in `connect-src`, `font-src` and `style-src` ([security](security.md)); `sources` replaces the lists of the directives it names |
 | Pursae Headless (settings scope) | `headless_list_types`, `headless_save_type`, `headless_update_type`, `headless_delete_type`, `headless_find`, `headless_get_entry`, `headless_create_entry`, `headless_save_entry`, `headless_publish`, `headless_unpublish`, `headless_delete_entry` |
 | Built-in plugin settings | `list_option_groups`, `get_options`, `update_options` (`contact`, `cookie`, `gocdn`, `headless`, `maintenance`, `multilang`, `pixel`, `security`, `seo`, `smtp`; secrets masked) |
 | Anything else | `site_info`, `rest_request` (any REST route, same permissions) |

@@ -198,12 +198,17 @@ func (s *Server) cspMode() string {
 }
 
 // cspCacheState is what the page cache stores with each entry (cache.Options.CSPMode): the mode,
-// and whether stored administrator scripts carry the nonce (csp_trusted.go).
+// whether stored administrator scripts carry the nonce (csp_trusted.go), and a hash of the allowed
+// external sources (csp_extra.go).
 func (s *Server) cspCacheState() string {
+	st := s.cspMode()
 	if s.cspTrustOn() {
-		return s.cspMode() + ":admin-scripts"
+		st += ":admin-scripts"
 	}
-	return s.cspMode()
+	if _, h := s.cspExtraState(); h != "" {
+		st += ":extra-" + h // the allowed external sources (csp_extra.go) are part of the stored header
+	}
+	return st
 }
 
 // cspNonceScriptSrc is the nonce policy's script-src: only scripts carrying the response's nonce, and
