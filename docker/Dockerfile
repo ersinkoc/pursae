@@ -38,6 +38,9 @@ RUN ln -s /usr/local/lib/pursae/wpgo /usr/local/bin/wpgo \
 	&& ln -s /usr/local/lib/pursae/wpgo /usr/local/bin/pursae
 # The seed country database (may be absent); /data/geoip/country.mmdb, refreshed monthly, wins over it.
 COPY --from=build /out/geoip/ /usr/share/wpgo/geoip/
+# License and third-party notices of everything the binary bundles (NOTICE lists the components).
+COPY LICENSE NOTICE /usr/share/doc/pursae/
+COPY LICENSES/ /usr/share/doc/pursae/LICENSES/
 # Demo marketplace: example plugin packages built by tools/build-plugins.sh (if present).
 COPY examples/plugins/dis[t]/*.zip examples/plugins/dis[t]/dev-key.pub /usr/share/wpgo/plugins/
 USER wpgo

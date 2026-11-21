@@ -8,10 +8,11 @@
  *   site/wb.*.css      the published-page stylesheet (scripts/live.mjs)
  *   manifest.json      entry files per bundle (contract: Manifest)
  *   BUILD.json         upstream SHA, patch hashes, API and renderer versions (contract: BuildInfo)
+ *   THIRD_PARTY_LICENSES.txt  license notices of the bundled npm packages (scripts/licenses.mjs)
  *
  * Steps: check the submodule is at UPSTREAM_SHA → clone it into .work/upstream → apply
  * patches/*.patch in name order with `git apply --3way` (zero patches is fine) → clean the output
- * → vite build (editor, runtime), site css → manifest + BUILD.json → renderStatic fixtures
+ * → vite build (editor, runtime), site css → manifest + BUILD.json + THIRD_PARTY_LICENSES.txt → renderStatic fixtures
  * (internal/webbuilder/testdata/render, scripts/live.mjs) → test/audit.mjs.
  *
  * Usage: node scripts/build.mjs [--watch | --prepare]   (--watch rebuilds the editor on source
@@ -24,6 +25,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { writeLicenses } from './licenses.mjs'
 import { buildServerRender, buildSiteCss, exportFixtures } from './live.mjs'
 
 const BUILDER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -188,6 +190,7 @@ function audit() {
 await buildRuntime()
 siteCssFile = await buildSiteCss({ work: WORK, siteDir: path.join(OUT, 'site') })
 writeBuildInfo()
+writeLicenses({ builder: BUILDER, outDir: OUT })
 
 if (!watch) {
   await build({ configFile, mode: 'production' })

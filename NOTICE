@@ -1,11 +1,33 @@
 Pursae — third-party notices
 ==================================
 
-Elementor Pro 4.3.0
--------------------
+Pursae is licensed under the GNU General Public License, version 2 or (at your option) any later
+version (LICENSE). It bundles the third-party components listed below; each keeps its own license.
+The full texts of those licenses are in LICENSES/ (see LICENSES/README.md); the permissive licenses
+(MIT, BSD, ISC, …) are reproduced there once as a template, and the copyright holders they refer to
+are named in this file. Where a component ships its own license file in the tree, that file is named.
+
+Versions come from the files' own headers, WordPress' script registry
+(internal/server/defaults/wp-registry.json, "ver"), package-lock.json or go.sum.
+
+Contents
+  1. Elementor (database migrations 0005–0007)
+  2. WordPress core files (web/wp-includes, web/wp-admin)
+  3. Libraries bundled by WordPress core
+  4. WordPress block editor (Gutenberg) packages
+  5. Themes and fonts
+  6. Pursae Web Builder (web/web-builder, builder/)
+  7. Pursae Flipbook (web/flipbook/vendor)
+  8. Maps, geolocation data and translations
+  9. Go modules compiled into the wpgo binary
+ 10. Docker image
+
+
+1. Elementor Pro 4.3.0
+----------------------
 Copyright Elementor Ltd. (https://elementor.com). Licensed under the GNU General Public License
 version 3 with the following additional terms (GPL section 7), reproduced from the original
-license.txt:
+license.txt (full GPLv3 text: LICENSES/GPL-3.0.txt):
 
   "The origin of the Program must not be misrepresented; you must not claim that you wrote the
   original Program. Altered source versions must be plainly marked as such, and must not be
@@ -22,42 +44,338 @@ What remains:
 Pursae is not Elementor and is not endorsed by Elementor Ltd.; "Elementor" is a trademark of
 Elementor Ltd.
 
+
+2. WordPress core files
+-----------------------
+WordPress 7.1.3, Copyright 2011-2026 by the WordPress contributors (https://wordpress.org,
+source: https://github.com/WordPress/wordpress-develop). GPLv2 or later (LICENSE).
+
+* web/wp-includes/js/*.js, web/wp-includes/css/*.css, web/wp-admin/js, web/wp-admin/css,
+  web/admin/assets/css/wp/ — WordPress' own scripts and stylesheets, copied unmodified unless the
+  file says otherwise. Files named wpgo-*, seogo-*, pll-visual.* and wpgo/ are Pursae's own.
+* web/wp-includes/blocks/*/style.min.css (87 blocks) — the per-block stylesheets, copied
+  unmodified; themes with per-block styles (Twenty Twenty-Five) inline the ones a page uses.
+* web/wp-includes/images, web/wp-admin/images — WordPress' images, except images/brand/ (Pursae's
+  own logo) and images/icon-library/.
+* Dashicons (web/wp-includes/fonts/dashicons.*, web/admin/assets/fonts/dashicons.*,
+  dashicons.min.css), version 1.006: "GPL version 2 or any later version with font exception"
+  (http://www.gnu.org/licenses/gpl-faq.html#FontException), WordPress contributors.
+* Crystal Project Icons (web/wp-includes/images/crystal/), by Everaldo Coelho
+  (http://everaldo.com), modified February 2008 for WordPress. LGPL (license.txt in that
+  directory; text: LICENSES/LGPL-2.1.txt).
+* WordPress' smilies (web/wp-includes/images/smilies/), GPLv2 or later.
+
+"WordPress" is a trademark of the WordPress Foundation; Pursae is not affiliated with or endorsed by
+it.
+
+
+3. Libraries bundled by WordPress core (web/wp-includes/js, web/wp-admin/js)
+-----------------------------------------------------------------------------
+Copied as WordPress 7.1.3 ships them (minified; some carry WordPress patches, as in WordPress).
+
+  Component (path)                                  Version        License         Copyright / source
+  jQuery (js/jquery/jquery.min.js)                  3.7.1          MIT             OpenJS Foundation and other contributors; https://jquery.com
+  jQuery Migrate (jquery-migrate.min.js)            3.4.1          MIT             OpenJS Foundation and other contributors; https://github.com/jquery/jquery-migrate
+  jQuery UI (js/jquery/ui/*, 37 files)              1.14.2         MIT             OpenJS Foundation and other contributors; https://jqueryui.com
+  jQuery Color (jquery.color.min.js)                3.0.0          MIT             OpenJS Foundation and other contributors; https://github.com/jquery/jquery-color
+  jQuery Form (jquery.form.min.js)                  4.3.0          MIT or LGPL-2.1+ M. Alsup, Kevin Morris; https://github.com/jquery-form/form
+  jQuery Hotkeys (jquery.hotkeys.min.js)            0.0.2m         MIT or GPL      Tzury Bar Yochay; modified for WordPress
+  jQuery Query (jquery.query.js)                    2.2.3          WTFPL           Blair Mitchelmore
+  jQuery Schedule (jquery.schedule.js)              20m            GPL             Ralf S. Engelschall
+  jQuery serializeObject (jquery.serialize-object.js) 0.2-wp       MIT or GPL      "Cowboy" Ben Alman (2010); http://benalman.com/projects/jquery-misc-plugins/
+  jQuery Table Hotkeys (jquery.table-hotkeys.min.js) —             GPLv2+          WordPress contributors
+  jQuery UI Touch Punch (jquery.ui.touch-punch.js)  0.2.2          MIT or GPLv2    Dave Furfero (2011)
+  jQuery Suggest (suggest.min.js)                   1.1-20110113   permissive      Peter Vulgaris, patched by Mark Jaquith ("do whatever you want with this file")
+  Masonry v2 shim (jquery.masonry.min.js)           3.1.2b         MIT             David DeSandro; https://masonry.desandro.com
+  Masonry (masonry.min.js)                          4.2.2          MIT             David DeSandro; https://masonry.desandro.com
+  imagesLoaded (imagesloaded.min.js)                5.0.0          MIT             David DeSandro; https://imagesloaded.desandro.com
+  Underscore.js (underscore.min.js)                 1.13.8         MIT             Jeremy Ashkenas, Julian Gonggrijp, and DocumentCloud and Investigative Reporters & Editors; https://underscorejs.org
+  Backbone.js (backbone.min.js)                     1.6.1          MIT             Jeremy Ashkenas and DocumentCloud; https://backbonejs.org
+  clipboard.js (clipboard.min.js)                   2.0.11         MIT             Zeno Rocha; https://clipboardjs.com
+  hoverIntent (hoverIntent.min.js)                  1.10.2         MIT             Brian Cherne; https://briancherne.github.io/jquery-hoverIntent/
+  hoverintent (hoverintent-js.min.js)               2.2.1          MIT             Tristen Brown and contributors; https://github.com/tristen/hoverintent
+  JSON2 (json2.min.js)                              2015-05-03     Public domain   Douglas Crockford
+  SWFObject (swfobject.min.js)                      2.2            MIT             Geoff Stearns, Michael Williams, Bobby van der Sluis
+  SWFUpload (js/swfupload/)                         —              MIT             SWFUpload contributors (WordPress ships an empty license.txt; the stub left is WordPress' own)
+  Simple AJAX Code-Kit (tw-sack.min.js)             1.6.1          X11 (modified)  Gregory Wild-Smith (2005)
+  colorpicker.js (colorpicker.min.js)               3517m          permissive      Matt Kruse ("You may use this code for any purpose")
+  Thickbox (js/thickbox/)                           3.1-20121105   MIT             Cody Lindley (2007)
+  Jcrop (js/jcrop/)                                 0.9.15         MIT             Tapmodo Interactive LLC (2008-2018); https://github.com/tapmodo/Jcrop
+  imgAreaSelect (js/imgareaselect/)                 0.9.x (WP)     MIT or GPL      Michal Wojciechowski; https://odyniec.net/projects/imgareaselect/
+  Cropper (js/crop/cropper.js)                      —              BSD-3-Clause    David Spurr (2006); http://www.defusion.org.uk/
+  Plupload (js/plupload/plupload.min.js)            2.1.9          GPLv2           Ephox Corporation / Moxiecode Systems AB; https://www.plupload.com (license.txt in that directory)
+  mOxie (js/plupload/moxie.min.js)                  1.3.5.1        GPLv2           Ephox Corporation / Moxiecode Systems AB; https://github.com/moxiecode/moxie
+  MediaElement.js (js/mediaelement/)                4.2.17         MIT             John Dyer and contributors (2010-2017); https://www.mediaelementjs.com
+  TinyMCE (js/tinymce/)                             4.9.11         LGPL-2.1        Ephox Corporation / Tiny Technologies, Inc.; https://github.com/tinymce/tinymce (license.txt in that directory; LICENSES/LGPL-2.1.txt). The wordpress, wp* plugins and the wordpress skin are WordPress' own (GPLv2+).
+  CodeMirror (js/codemirror/codemirror.min.js)      5.65.20        MIT             Marijn Haverbeke and others; https://codemirror.net
+  CSSLint (js/codemirror/csslint.js)                1.0.4          MIT             Nicole Sullivan and Nicholas C. Zakas (2016)
+  Esprima (js/codemirror/esprima.js)                4.0.1          BSD-2-Clause    JS Foundation and other contributors; https://esprima.org
+  Espree (js/codemirror/espree.min.js)              —              BSD-2-Clause    OpenJS Foundation and other contributors; bundles Acorn and acorn-jsx (MIT, Marijn Haverbeke and others)
+  HTMLHint (js/codemirror/htmlhint.js)              1.9.2          MIT             HTMLHint (2026); https://htmlhint.com
+  JSON Lint (js/codemirror/jsonlint.js)             1.6.3          MIT             Zachary Carter; https://github.com/zaach/jsonlint
+  zxcvbn (zxcvbn.min.js)                            4.4.1          MIT             Dropbox, Inc. (2012); https://github.com/dropbox/zxcvbn
+  Twemoji (twemoji.min.js, wp-emoji-release.min.js) 17.0.1         MIT             Twitter, Inc. and other contributors; https://github.com/jdecked/twemoji (the emoji images are not bundled: they load from the CDN, CC-BY 4.0)
+  Iris (wp-admin/js/iris.min.js)                    1.1.1          GPLv2           Matt Wiebe / Automattic (2021); https://github.com/Automattic/Iris
+  Farbtastic (wp-admin/js/farbtastic.js)            1.3u           GPL             Steven Wittens / Matt Farina; https://github.com/mattfarina/farbtastic (modified for WordPress)
+
+Vendor scripts of the block editor (web/wp-includes/js/dist/vendor):
+
+  React, ReactDOM (react.min.js, react-dom.min.js)  18.3.1         MIT             Facebook, Inc. and its affiliates (Meta); https://react.dev
+  React JSX runtime (react-jsx-runtime*.min.js)     18.3.1 / 19    MIT             Meta Platforms, Inc. and affiliates
+  Lodash (lodash.min.js)                            4.18.1         MIT             OpenJS Foundation and other contributors; https://lodash.com (includes Underscore.js 1.8.3 code, MIT)
+  Moment.js (moment.min.js)                         2.30.1         MIT             JS Foundation and other contributors; https://momentjs.com
+  regenerator-runtime (regenerator-runtime.min.js)  0.14.1         MIT             Meta Platforms, Inc. and affiliates
+  core-js (wp-polyfill.min.js)                      3.39.0         MIT             Denis Pushkarev (2014-2024); https://github.com/zloirock/core-js
+  whatwg-fetch (wp-polyfill-fetch.min.js)           3.6.20         MIT             GitHub, Inc.; https://github.com/JakeChampion/fetch
+  formdata-polyfill (wp-polyfill-formdata.min.js)   4.0.10         MIT             Jimmy Wärting; https://github.com/jimmywarting/FormData
+  URL polyfill (wp-polyfill-url.min.js)             3.6.4          MIT             Denis Pushkarev (core-js-url-browser)
+  Node.contains / DOMRect (wp-polyfill-node-contains, -dom-rect) 4.8.0 MIT       Financial Times (polyfill-library); https://github.com/Financial-Times/polyfill-library
+  element-closest (wp-polyfill-element-closest.min.js) 3.0.2       CC0-1.0         Jonathan Neal; https://github.com/jonathantneal/element-closest
+  objectFitPolyfill (wp-polyfill-object-fit.min.js) 2.3.5          ISC             Constance Chen; https://github.com/constancecchen/object-fit-polyfill
+  inert polyfill (wp-polyfill-inert.min.js)         3.1.3          W3C-20150513    Google / WICG contributors; https://github.com/WICG/inert (LICENSES/W3C-20150513.txt)
+  React Refresh (dist/development/)                 —              MIT             Meta Platforms, Inc. and affiliates
+
+
+4. WordPress block editor (Gutenberg) packages
+----------------------------------------------
+web/wp-includes/js/dist/*.min.js (65 @wordpress/* packages: a11y, annotations, api-fetch, autop,
+block-editor, block-library, blocks, components, compose, core-data, data, editor, edit-post,
+edit-site, element, hooks, i18n, rich-text, … ), web/wp-includes/js/dist/script-modules/ (30
+modules, among them @wordpress/interactivity and interactivity-router) and their stylesheets in
+web/wp-includes/css/dist/ (21 packages), as shipped with WordPress 7.1.3. Copyright 2011-2026 by
+the WordPress contributors (https://github.com/WordPress/gutenberg). GPLv2 or later.
+
+These bundles include npm dependencies. Those whose license headers the build kept:
+
+  autosize 4.0.2 (MIT, Jack Moore); fast-average-color (MIT, Denis Seleznev 2022); is-plain-object
+  (MIT, Jon Schlinkert 2014-2017); moment-timezone 0.5.43 with 1970-2030 data (MIT, JS Foundation
+  and other contributors); normalize-wheel (BSD-3-Clause, Facebook, Inc.); react-is 16.13.1 and
+  use-sync-external-store (MIT, Meta Platforms, Inc. and affiliates); tabbable 6.4.0 (MIT,
+  focus-trap contributors); Temml (MIT, Ron Kok; script-modules/latex-to-mathml).
+
+  script-modules/video-conversion/worker.min.js bundles Mediabunny, Copyright (c) 2026-present,
+  Vanilagy and contributors, Mozilla Public License 2.0 (LICENSES/MPL-2.0.txt). Source:
+  https://github.com/Vanilagy/mediabunny.
+
+  script-modules/vips/worker.min.js bundles wasm-vips (MIT, Kleis Auke Wolthuizen and contributors,
+  https://github.com/kleisauke/wasm-vips): libvips (LGPL-2.1-or-later, John Cupitt and others,
+  https://github.com/libvips/libvips) and the libraries it is built with (among them GLib,
+  LGPL-2.1-or-later; libjpeg-turbo, libpng, libwebp, Little CMS, expat, zlib-ng and Highway under
+  BSD/MIT/zlib-style licenses), compiled to WebAssembly. wasm-vips' THIRD-PARTY-NOTICES.md lists
+  them all with their licenses.
+
+  The other dependencies of the @wordpress/* packages (for example Ariakit, Framer Motion, colord,
+  cmdk, react-colorful, showdown, date-fns, PostCSS (MIT) and Mousetrap (Apache-2.0)) are listed with
+  their licenses in each package's package.json at the version WordPress 7.1.3 ships.
+
+
+5. Themes and fonts
+-------------------
 Twenty Twenty-Five 1.5
-----------------------
-Twenty Twenty-Five WordPress Theme, (C) 2024-2026 WordPress.org and contributors. Licensed under
-the GNU General Public License version 2 or later. web/themes/twentytwentyfive/ is Pursae's
-port of the theme: ALTERED — the block templates, template parts and patterns are rewritten as Go
-templates (templates/*.html, internal/server/theme_twentytwentyfive.go) that print the same
-markup; assets/style.min.css and assets/css/ are generated from the theme's theme.json, style
-variations and style.min.css together with WordPress' block library styles (GPLv2 or later) by
-tools/twentytwentyfive/build.php; js/navigation.js replaces the navigation block's Interactivity
-API script. assets/style.css and assets/readme.txt are the theme's own files, unmodified.
+  Twenty Twenty-Five WordPress Theme, (C) 2024-2026 WordPress.org and contributors. Licensed under
+  the GNU General Public License version 2 or later. web/themes/twentytwentyfive/ is Pursae's
+  port of the theme: ALTERED — the block templates, template parts and patterns are rewritten as Go
+  templates (templates/*.html, internal/server/theme_twentytwentyfive.go) that print the same
+  markup; assets/style.min.css and assets/css/ are generated from the theme's theme.json, style
+  variations and style.min.css together with WordPress' block library styles (GPLv2 or later) by
+  tools/twentytwentyfive/build.php; js/navigation.js replaces the navigation block's Interactivity
+  API script. assets/style.css and assets/readme.txt are the theme's own files, unmodified.
 
-* Fonts: Manrope (Copyright (c) 2018 The Manrope Project Authors) and Fira Code (Copyright (c) 2014,
-  The Fira Code Project Authors), SIL Open Font License 1.1 (https://opensource.org/licenses/OFL-1.1),
-  web/themes/twentytwentyfive/assets/fonts/, unmodified.
-* Images: the theme's photographs from rawpixel.com, public domain (CC0 1.0,
-  https://creativecommons.org/publicdomain/zero/1.0/): assets/images/404-image.webp (resized) and
-  the demo content images under demos/*/demo/images/ and assets/demos/ (resized and recompressed
-  to WebP by tools/twentytwentyfive/demos.py). Sources are listed in assets/readme.txt. The demo
-  texts are original.
+  * Fonts: Manrope 4.504 (Copyright 2019 The Manrope Project Authors) and Fira Code 5.002
+    (Copyright 2014-2020 The Fira Code Project Authors), SIL Open Font License 1.1,
+    web/themes/twentytwentyfive/assets/fonts/, unmodified.
+  * Images: the theme's photographs from rawpixel.com, public domain (CC0 1.0,
+    https://creativecommons.org/publicdomain/zero/1.0/): assets/images/404-image.webp (resized) and
+    the demo content images under demos/*/demo/images/ and assets/demos/ (resized and recompressed
+    to WebP by tools/twentytwentyfive/demos.py). Sources are listed in assets/readme.txt. The demo
+    texts are original.
 
-Mona Sans
----------
-Copyright (c) 2023 GitHub, Inc. Licensed under the SIL Open Font License 1.1
-(https://opensource.org/licenses/OFL-1.1). web/admin/assets/fonts/mona-1.woff2 and mona-2.woff2 are
-Latin and Latin Extended subsets, used by the admin welcome panel, tour and About screen.
+Hello Pursae (web/themes/hello-pursae) and the 67 themes of the theme library (library/themes/*)
+  Pursae's own themes, GPLv2 or later. Their demo texts and images are original works made for the
+  themes (several readme.md files dedicate the artwork to the public domain, CC0 1.0).
 
-WordPress block styles
-----------------------
-web/wp-includes/blocks/*/style.min.css are the per-block stylesheets of WordPress 7.1.3
-(GPLv2 or later), copied unmodified; themes with per-block styles (Twenty Twenty-Five) inline the
-ones a page uses.
+Fonts in library/themes/*/assets/fonts/ and web/web-builder/editor/assets/ — all under the SIL Open
+Font License 1.1 (LICENSES/OFL-1.1.txt), self-hosted, subset or unmodified WOFF2 files. Copyright
+lines as embedded in the font files ("Reserved Font Name" where the font declares one):
 
-DB-IP IP to Country Lite
-------------------------
-IP geolocation by DB-IP (https://db-ip.com). The "IP to Country Lite" database is licensed under the
-Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/).
-The Docker image ships an unmodified copy at /usr/share/wpgo/geoip/country.mmdb, and sites download
-the monthly release into their data directory (internal/server/geoip.go). Pursae Analytics shows the
-attribution on its Settings screen.
+  Albert Sans 1.025          Copyright 2021 The Albert Sans Project Authors (https://github.com/usted/Albert-Sans)
+  Alegreya Sans 2.004        Copyright 2013 The Alegreya Sans Project Authors (https://github.com/huertatipografica/Alegreya-Sans)
+  Anton 2.116                Copyright 2020 The Anton Project Authors (https://github.com/googlefonts/AntonFont)
+  Archivo 2.001              Copyright 2020 The Archivo Project Authors (https://github.com/Omnibus-Type/Archivo)
+  Atkinson Hyperlegible 1.006 Copyright 2020 Braille Institute of America, Inc.
+  Barlow 1.408               Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
+  Bebas Neue 2.000           Copyright 2019 The Bebas Neue Project Authors (https://github.com/dharmatype/Bebas-Neue)
+  Big Shoulders Display 2.002 Copyright 2019 The Big Shoulders Project Authors (https://github.com/xotypeco/big_shoulders)
+  Bitter 3.021               Copyright 2011 The Bitter Project Authors (https://github.com/solmatas/BitterPro)
+  Bodoni Moda 2.005          Copyright 2020 The Bodoni Moda Project Authors (https://github.com/indestructible-type/Bodoni)
+  Bricolage Grotesque 1.001  Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
+  Caveat 2.000               Copyright 2014 The Caveat Project Authors (https://github.com/googlefonts/caveat)
+  Chakra Petch 1.000         Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch)
+  Chivo Mono 1.008           Copyright 2018 The Chivo Project Authors (https://github.com/Omnibus-Type/Chivo)
+  Cormorant Garamond 4.001   Copyright 2015 The Cormorant Project Authors (github.com/CatharsisFonts/Cormorant)
+  Crimson Pro 1.003          Copyright 2018 The Crimson Pro Project Authors (https://github.com/Fonthausen/CrimsonPro)
+  DM Sans 4.004              Copyright 2014 The DM Sans Project Authors (https://github.com/googlefonts/dm-fonts)
+  DM Serif Display 5.200     Copyright 2014-2017 Adobe Systems Incorporated (http://www.adobe.com/), with Reserved Font Name 'Source'. Copyright 2019 Google LLC.
+  Epilogue 2.112             Copyright 2020 The Epilogue Project Authors (https://github.com/Etcetera-Type-Co/Epilogue)
+  Figtree 2.002              Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)
+  Fraunces 1.000             Copyright 2020 The Fraunces Project Authors (github.com/undercasetype/Fraunces)
+  Fredoka 2.001              Copyright 2016 The Fredoka Project Authors (https://github.com/hafontia/Fredoka-One)
+  Gilda Display 1.002        Copyright 2012 The Gilda Display Project Authors (https://github.com/etunni/gilda-display), with Reserved Font Name 'Gilda'
+  Great Vibes 1.103          Copyright 2010 The Great Vibes Pro Project Authors (https://github.com/googlefonts/great-vibes)
+  Hanken Grotesk 3.013       Copyright 2021 The Hanken Grotesk Project Authors (https://github.com/marcologous/hanken-grotesk)
+  IBM Plex Mono 2.3          Copyright 2017 IBM Corp. All rights reserved. (Plex's OFL file adds Reserved Font Name "Plex")
+  IBM Plex Sans 3.201        Copyright 2019 IBM Corp. All rights reserved. (as above)
+  Instrument Sans 1.000      Copyright 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)
+  Instrument Serif 1.000     Copyright 2022 The Instrument Serif Project Authors (https://github.com/Instrument/instrument-serif)
+  Inter 4.001                Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+  Inter Tight 3.004          Copyright 2022 The Inter Project Authors (https://github.com/rsms/inter-tight)
+  JetBrains Mono 2.211       Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
+  Jost 3.710                 Copyright 2020 The Jost Project Authors (https://github.com/indestructible-type/Jost)
+  Karla 2.004                Copyright 2019 The Karla Project Authors (https://github.com/googlefonts/karla)
+  Lexend 1.007               Copyright 2019 The Lexend Project Authors (https://github.com/googlefonts/lexend)
+  Libre Caslon Display 1.100 Copyright 2012 The Libre Caslon Display Authors (https://github.com/impallari/Libre-Caslon-Display)
+  Libre Caslon Text 1.100    Copyright 2012 The Libre Caslon Text Project Authors (https://github.com/impallari/Libre-Caslon-Text)
+  Libre Franklin 3.000       Copyright 2020 The Libre Franklin Project Authors (https://github.com/googlefonts/Libre-Franklin)
+  Lora 3.008                 Copyright 2011 The Lora Project Authors (https://github.com/cyrealtype/Lora-Cyrillic), with Reserved Font Name "Lora"
+  Manrope 4.505              Copyright 2019 The Manrope Project Authors (https://github.com/googlefonts/manrope)
+  Marcellus 1.000            Copyright (c) 2012 by Brian J. Bonislawsky DBA Astigmatic (AOETI), with Reserved Font Name "Marcellus"
+  Mulish 3.603               Copyright 2016 The Mulish Project Authors (https://github.com/googlefonts/mulish)
+  Newsreader 1.003           Copyright 2020 The Newsreader Project Authors (http://github.com/productiontype/Newsreader)
+  Nunito 3.602               Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito)
+  Oswald 4.103               Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont)
+  Outfit 1.100               Copyright 2021 The Outfit Project Authors (https://github.com/Outfitio/Outfit-Fonts)
+  Parisienne 1.000           Copyright (c) 2012 by Brian J. Bonislawsky DBA Astigmatic (AOETI), with Reserved Font Name "Parisienne"
+  Pirata One 1.001           Copyright (c) 2012, Rodrigo Fuenzalida, Nicolas Massi, with Reserved Font Name 'Pirata'
+  Playfair Display 1.203     Copyright 2017 The Playfair Display Project Authors (https://github.com/clauseggers/Playfair-Display), with Reserved Font Name "Playfair Display"
+  Plus Jakarta Sans 2.071    Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans)
+  Press Start 2P 3.000       Copyright 2012 The Press Start 2P Project Authors, with Reserved Font Name "Press Start 2P"
+  Public Sans 2.001          Copyright 2015 The Public Sans Project Authors (https://github.com/uswds/public-sans)
+  Red Hat Display / Text 1.030 Copyright 2024 The Red Hat Project Authors (https://github.com/RedHatOfficial/RedHatFont)
+  Sora 2.000                 Copyright 2019 The Sora Project Authors (https://github.com/sora-xor/sora-font)
+  Source Sans 3 3.052        Copyright 2023 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'
+  Source Serif 4 4.004       Copyright 2014-2021 Adobe Systems Incorporated (http://www.adobe.com/), with Reserved Font Name 'Source'
+  Space Grotesk 2.000        Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk)
+  Spectral 2.005             Copyright 2017 The Spectral Project Authors (https://github.com/productiontype/Spectral)
+  Spline Sans Mono 1.004     Copyright 2022 The Spline Sans Mono Project Authors (https://github.com/SorkinType/SplineSansMono)
+  Work Sans 2.012            Copyright 2019 The Work Sans Project Authors (https://github.com/weiweihuanghuang/Work-Sans)
+  Young Serif 3.003          Copyright 2023 The Young Serif Project Authors (https://github.com/noirblancrouge/YoungSerif)
+  Zilla Slab 1.1             Copyright 2017, The Mozilla Foundation
+
+Mona Sans 2.000
+  Copyright 2022 The Mona Sans Project Authors (https://github.com/github/mona-sans), with Reserved
+  Font Name "Mona". SIL Open Font License 1.1. web/admin/assets/fonts/mona-1.woff2 and mona-2.woff2
+  are Latin and Latin Extended subsets, used by the admin welcome panel, tour and About screen.
+
+
+6. Pursae Web Builder (web/web-builder, builder/)
+-------------------------------------------------
+web/web-builder/ is built by builder/scripts/build.mjs from builder/host (Pursae, GPLv2 or later)
+and builder/upstream, a git submodule of https://github.com/pursae/Builder pinned in
+builder/UPSTREAM_SHA, patched with builder/patches/*.patch (Pursae). The bundled npm packages —
+React and ReactDOM 19.3.1 and scheduler 0.28.0 (MIT, Meta Platforms, Inc. and affiliates),
+Motion / Framer Motion 14.9.0 with motion-dom and motion-utils (MIT, Motion B.V. and Framer B.V.),
+lucide-react 1.66.0 (ISC, Lucide Icons and Contributors; includes Feather icons, MIT), tslib
+2.9.1 (0BSD, Microsoft Corporation), Tailwind CSS 4.3.3 generated CSS (MIT, Tailwind Labs, Inc.)
+and the Fontsource 5.3.0 packages of Inter, Space Grotesk, JetBrains Mono and Instrument Serif
+(OFL-1.1, see section 5) — have their notices reproduced in full in
+web/web-builder/THIRD_PARTY_LICENSES.txt, which the build writes (scripts/licenses.mjs) and
+`make builder-test` checks.
+
+pursae/Builder carries no license file of its own (its package.json is the "figma-make-app"
+template, private: true); see the project's licensing notes before redistributing it separately.
+
+
+7. Pursae Flipbook (web/flipbook/vendor)
+----------------------------------------
+* PDF.js 4.10.38 (pdf.min.mjs, pdf.worker.min.mjs), Copyright 2024 Mozilla Foundation, Apache
+  License 2.0 (LICENSE.pdfjs.txt in that directory; LICENSES/Apache-2.0.txt).
+  https://github.com/mozilla/pdf.js
+* StPageFlip (page-flip) 2.0.7 (page-flip.module.js), Copyright (c) 2020 Nodlik, MIT
+  (LICENSE.page-flip.txt in that directory). https://github.com/Nodlik/StPageFlip
+The plugin's behaviour follows the thecoolPDF WordPress plugin; thecoolPDF's player files are not
+used.
+
+
+8. Maps, geolocation data and translations
+------------------------------------------
+* World map (web/admin/assets/maps/world-110m.svg): Natural Earth 1:110m admin-0 countries (public
+  domain, https://www.naturalearthdata.com) through the world-atlas 2.0.2 npm package, Copyright
+  2013-2019 Michael Bostock, ISC (LICENSES/ISC.txt; https://github.com/topojson/world-atlas),
+  converted by tools/worldmap/topo2svg.py.
+* DB-IP IP to Country Lite: IP geolocation by DB-IP (https://db-ip.com). The "IP to Country Lite"
+  database is licensed under the Creative Commons Attribution 4.0 International License
+  (https://creativecommons.org/licenses/by/4.0/, LICENSES/CC-BY-4.0.txt). The Docker image ships an
+  unmodified copy at /usr/share/wpgo/geoip/country.mmdb, and sites download the monthly release
+  into their data directory (internal/server/geoip.go). Pursae Analytics shows the attribution on
+  its Settings screen.
+* Translations (web/languages/wpgo-*.json, 135 locales): translations of Pursae's own interface
+  strings, written for Pursae (git history; the files carry no translate.wordpress.org headers),
+  GPLv2 or later like the rest of Pursae. WordPress' own language packs are not bundled: a site
+  downloads them from translate.wordpress.org when an administrator picks a language (GPLv2 or
+  later, WordPress translators).
+
+
+9. Go modules compiled into the wpgo binary
+-------------------------------------------
+The Go standard library and runtime, Copyright 2009 The Go Authors, BSD-3-Clause
+(https://go.dev/LICENSE). Modules linked into ./cmd/wpgo (go list -deps, linux/amd64 and
+linux/arm64; versions from go.mod):
+
+  Module                                     Version                              License        Copyright
+  github.com/aymerick/douceur                v0.2.0                               MIT            2015 Aymerick JEHANNE
+  github.com/dlclark/regexp2/v2              v2.11.0                              MIT            Doug Clark
+  github.com/dop251/goja                     v0.0.0-20261110204830-f493a2b600d6   MIT            2016 Dmitry Panov
+  github.com/ebitengine/purego               v0.10.1                              Apache-2.0     The Ebitengine Authors (includes code from Go, BSD-3-Clause)
+  github.com/gabriel-vasile/mimetype         v1.4.12                              MIT            2018 Gabriel Vasile
+  github.com/gen2brain/avif                  v0.6.0                               MIT            2024 gen2brain
+  github.com/gen2brain/webp                  v0.6.4                               MIT            2024 gen2brain
+  github.com/gin-contrib/sse                 v1.1.0                               MIT            2014 Manuel Martínez-Almeida
+  github.com/gin-gonic/gin                   v1.12.0                              MIT            2014 Manuel Martínez-Almeida
+  github.com/go-playground/locales           v0.14.1                              MIT            2016 Go Playground
+  github.com/go-playground/universal-translator v0.18.1                           MIT            2016 Go Playground
+  github.com/go-playground/validator/v10     v10.30.1                             MIT            2015 Dean Karn
+  github.com/go-sourcemap/sourcemap          v2.1.3+incompatible                  BSD-2-Clause   2016 The github.com/go-sourcemap/sourcemap Contributors
+  github.com/goccy/go-yaml                   v1.19.2                              MIT            2019 Masaaki Goshima
+  github.com/google/pprof                    v0.0.0-20230207041349-798e818bf904   Apache-2.0     Google Inc.
+  github.com/gorilla/css                     v1.0.1                               BSD-3-Clause   2023 The Gorilla Authors
+  github.com/jackc/pgpassfile                v1.0.0                               MIT            2019 Jack Christensen
+  github.com/jackc/pgservicefile             v0.0.0-20240606120523-5a60cdf6a761   MIT            2020 Jack Christensen
+  github.com/jackc/pgx/v5                    v5.11.0                              MIT            2013-2021 Jack Christensen
+  github.com/jackc/puddle/v2                 v2.2.2                               MIT            2018 Jack Christensen
+  github.com/leodido/go-urn                  v1.4.0                               MIT            2018 Leonardo Di Donato
+  github.com/mattn/go-isatty                 v0.0.20                              MIT            Yasuhiro MATSUMOTO
+  github.com/microcosm-cc/bluemonday         v1.0.27                              BSD-3-Clause   2014 David Kitchen
+  github.com/oschwald/maxminddb-golang/v2    v2.9.1                               ISC            2015 Gregory J. Oschwald
+  github.com/pelletier/go-toml/v2            v2.2.4                               MIT            2021-2023 Thomas Pelletier
+  github.com/quic-go/qpack                   v0.6.0                               MIT            2019 Marten Seemann
+  github.com/quic-go/quic-go                 v0.59.1                              MIT            2016 the quic-go authors & Google, Inc.
+  github.com/tetratelabs/wazero              v1.12.0                              Apache-2.0     2020-2023 wazero authors (NOTICE: "wazero / Copyright 2020-2023 wazero authors")
+  github.com/ugorji/go/codec                 v1.3.1                               MIT            2012-2020 Ugorji Nwoke
+  go.mongodb.org/mongo-driver/v2             v2.5.0                               Apache-2.0     MongoDB, Inc. (only the bson package is linked; its THIRD-PARTY-NOTICES names AWS SDK for Go code, Apache-2.0, Amazon.com, Inc. and Stripe, Inc.)
+  golang.org/x/crypto                        v0.58.0                              BSD-3-Clause   2009 The Go Authors
+  golang.org/x/image                         v0.47.0                              BSD-3-Clause   2009 The Go Authors
+  golang.org/x/net                           v0.62.0                              BSD-3-Clause   2009 The Go Authors
+  golang.org/x/sync                          v0.24.0                              BSD-3-Clause   2009 The Go Authors
+  golang.org/x/sys                           v0.50.0                              BSD-3-Clause   2009 The Go Authors
+  golang.org/x/text                          v0.43.0                              BSD-3-Clause   2009 The Go Authors
+  google.golang.org/protobuf                 v1.36.10                             BSD-3-Clause   2018 The Go Authors
+
+gen2brain/avif and gen2brain/webp embed C libraries compiled to WebAssembly:
+  libavif 1.4.2 (BSD-2-Clause, Copyright 2019 Joe Drago; https://github.com/AOMediaCodec/libavif),
+  dav1d 1.5.3 (BSD-2-Clause, VideoLAN and dav1d authors; https://code.videolan.org/videolan/dav1d),
+  libaom 3.14.1 (BSD-2-Clause, Copyright (c) 2016, Alliance for Open Media, together with the
+  Alliance for Open Media Patent License 1.0, https://aomedia.org/license/patent-license/),
+  libyuv (BSD-3-Clause, The LibYuv Project Authors; https://chromium.googlesource.com/libyuv/libyuv),
+  libwebp 1.6.0 with libsharpyuv (BSD-3-Clause, Copyright (c) 2010, Google Inc.;
+  https://github.com/webmproject/libwebp).
+
+The remaining requirements in go.mod (bytedance/sonic, cloudwego/base64x, klauspost/cpuid,
+twitchyliquid64/golang-asm, …) are not linked into the binary on the supported platforms.
+
+
+10. Docker image
+----------------
+The image (docker/Dockerfile) is based on Alpine Linux 3.22 (https://alpinelinux.org) and adds the
+ca-certificates (the Mozilla CA list, MPL-2.0) and tzdata (public domain) packages. Alpine's packages keep their own licenses (BusyBox and apk-tools GPL-2.0, musl
+libc MIT, …); their sources are published at https://gitlab.alpinelinux.org/alpine/aports. The
+image carries LICENSE, NOTICE and LICENSES/ in /usr/share/doc/pursae/.
