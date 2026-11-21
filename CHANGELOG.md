@@ -10,6 +10,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-21
+
+Safe upgrades: every release is now gated on green CI, every pull request proves that upgrading from
+older releases keeps the data, and an older binary no longer runs silently on a newer schema.
+
 ### Added
 
 - Release gate: `tools/release.sh` refuses to publish a commit without a successful CI run on GitHub
