@@ -154,6 +154,11 @@ func nativeSetupGuides() map[string]setupGuide {
 			{"Schedule automatic backups", "Back up daily or weekly and choose how many backups to keep.", "/wp-admin/admin?page=backup-manager&tab=schedule"},
 			{"Download a copy", "Download a backup and keep it off the server. To move the site, import that file on the new one.", "/wp-admin/admin?page=backup-manager&tab=backups"},
 		}},
+		flipbookSlug: {Intro: "Turn a PDF into a flipbook in three steps.", Steps: []setupGuideStep{
+			{"Add a PDF", "Click Add New and pick a PDF from the Media Library, or upload a new one.", "/wp-admin/admin?page=pursae-flipbook&action=new"},
+			{"Adjust the look", "Set the height in posts, the background and the toolbar buttons, and check the preview.", "/wp-admin/admin?page=pursae-flipbook"},
+			{"Place it on a page", "Copy the shortcode into a post or a page, or share the full-screen link.", "/wp-admin/edit?post_type=page"},
+		}},
 		maintSlug: {Intro: "Show a maintenance or coming soon page in four steps.", Steps: []setupGuideStep{
 			{"Choose the mode and the texts", "Pick maintenance or coming soon, write the title and the message, and set a countdown if you like.", "/wp-admin/admin?page=maintenance&tab=general"},
 			{"Pick a design", "Choose a theme for the page and add your logo and social links.", "/wp-admin/admin?page=maintenance&tab=themes"},

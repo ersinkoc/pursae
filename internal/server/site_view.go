@@ -481,6 +481,7 @@ func (s *Server) theContent(ctx context.Context, c *gin.Context, p *store.Post, 
 	content = s.doShortcodes(ctx, content)      // plugin shortcodes (do_shortcode at priority 11)
 	content = s.gontactShortcodes(ctx, content) // Gontact Form's [contact-form-7]
 	content = s.seogoContent(ctx, content)      // Pursae SEO breadcrumb shortcodes and Image SEO
+	content = s.flipbookContent(ctx, content)   // Pursae Flipbook: [pursae_flipbook id="N"]
 	content = s.gooikeShortcodes(ctx, content)  // Gooike: [gooike_preferences], [gooike_cookie_table], …
 	content = s.gooShortcodes(ctx, content)     // Goocommerce: [goocommerce_cart], [products], … (goo_front.go)
 	content = s.forumShortcodes(ctx, content)   // Pursae Forum: the view body and [pursae_forum] (forum_render.go)

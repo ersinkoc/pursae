@@ -400,6 +400,10 @@ func (s *Server) pluginAdmin(c *gin.Context) {
 		s.bmgrAdmin(c)
 		return
 	}
+	if page == flipbookSlug { // Pursae Flipbook (flipbook_admin.go)
+		s.flipbookAdmin(c)
+		return
+	}
 	if page == maintSlug { // Maintenance-Go (maintenance_admin.go)
 		s.maintAdmin(c)
 		return
