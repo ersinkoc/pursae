@@ -66,6 +66,23 @@ jobs:
       - name: test
         run: go test ./... -p 1 -count=1 -timeout 40m
 
+  # The branch protection on main requires a check called `test`; the matrix legs report as test (pg16) and
+  # test (pg17). This job keeps the `test` context and fails unless every leg succeeded (a failed, cancelled
+  # or skipped leg fails it).
+  test-result:
+    name: test
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: every PostgreSQL leg passed
+        env:
+          RESULT: ${{ needs.test.result }}
+        run: |
+          echo "test matrix: $RESULT"
+          test "$RESULT" = success
+
   # Upgrade path: v0.2.0 and the three newest releases each install and fill a site, then this commit
   # migrates and serves it and checks that every user, post, page, term, comment, menu, media file,
   # option and Web Builder page is unchanged (tools/upgrade-test.sh, make upgrade-test).

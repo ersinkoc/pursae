@@ -8,8 +8,10 @@ PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f do
 dev: db
 	WPGO_WEB_DIR=web go run -tags devhub ./cmd/wpgo serve
 
+# --wait: until the healthcheck passes, so the recipes that run psql or migrate right after do not hit a
+# PostgreSQL that is still starting.
 db:
-	$(COMPOSE) up -d db
+	$(COMPOSE) up -d --wait db
 
 ## bench: Pursae vs WordPress benchmark (bench/run.py, about an hour; docs/developer/benchmarks.md).
 ## Builds both stacks in Docker on ports 18081/18082, results in bench/results/<date>/. BENCH_ARGS passes
