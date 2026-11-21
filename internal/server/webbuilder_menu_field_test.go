@@ -90,8 +90,47 @@ func TestWBCustomFieldSlots(t *testing.T) {
 	if out := wbExec(t, `<a data-wb-slot="post.field-url" data-wb-field="private_note">x</a>`, r); strings.Contains(out, "hush") {
 		t.Errorf("an author's post.field-url printed unregistered meta: %s", out)
 	}
-	if out := wbExec(t, `<p data-wb-slot="post.field" data-wb-field="private_note" data-wb-meta=""></p>`, r); !strings.Contains(out, "hush") {
-		t.Errorf("a code binding's field does not read the post's meta: %s", out)
+	// A code binding's element (data-wb-meta) does not make other meta public either: only the
+	// names a site import stores (design_<n>, list<n>_<k> and their companions) fall back to the
+	// post's meta.
+	for _, src := range []string{
+		`<p data-wb-slot="post.field" data-wb-field="private_note" data-wb-meta=""></p>`,
+		`<p data-wb-slot="post.field-html" data-wb-field="private_note" data-wb-meta=""></p>`,
+		`<a data-wb-slot="post.field-url" data-wb-field="private_note" data-wb-meta="">x</a>`,
+	} {
+		if out := wbExec(t, src, r); strings.Contains(out, "hush") {
+			t.Errorf("a code binding printed unregistered meta: %s", out)
+		}
+	}
+	p.Meta["design_1"] = "Imported part"
+	p.Meta["design_2_href"] = "https://example.test/next"
+	p.Meta["list1_2"] = "https://example.test/card.jpg"
+	p.Meta["list1_2_alt"] = "Card"
+	if out := wbExec(t, `<p data-wb-slot="post.field" data-wb-field="design_1" data-wb-meta=""></p>`, r); !strings.Contains(out, "Imported part") {
+		t.Errorf("a code binding does not read a site import's field: %s", out)
+	}
+	if out := wbExec(t, `<p data-wb-slot="post.field" data-wb-field="design_1"></p>`, r); strings.Contains(out, "Imported part") {
+		t.Errorf("an author's post.field printed unregistered meta: %s", out)
+	}
+	if out := wbExec(t, `<a data-wb-slot="post.field-attrs" data-wb-field="design_2" data-wb-meta="">x</a>`, r); !strings.Contains(out, `href="https://example.test/next"`) {
+		t.Errorf("a site import's attribute field is not printed: %s", out)
+	}
+	if out := wbExec(t, `<img data-wb-slot="post.image" data-wb-raw="" data-wb-field="list1_2" data-wb-meta=""/>`, r); !strings.Contains(out, `src="https://example.test/card.jpg"`) || !strings.Contains(out, `alt="Card"`) {
+		t.Errorf("a site import's image field is not printed: %s", out)
+	}
+	// The bind tool warns about a custom field name that will print nothing: neither a registered
+	// field nor a site import's field.
+	// (price is a field of acfgoTestGroup.)
+	for name, warn := range map[string]bool{"subtitle": false, "design_1": false, "list1_2_alt": false, "price": false, "private_note": true, "unit_cost": true} {
+		for _, field := range []string{"custom", "image"} {
+			w := srv.wbBindFieldWarning(ctx, &webbuilder.CodeBind{Kind: webbuilder.BindField, Field: field, Name: name})
+			if (w != "") != warn || (warn && !strings.Contains(w, name)) {
+				t.Errorf("%s %s: warning %q", field, name, w)
+			}
+		}
+	}
+	if w := srv.wbBindFieldWarning(ctx, &webbuilder.CodeBind{Kind: webbuilder.BindField, Field: "title", Name: "price"}); w != "" {
+		t.Errorf("a title binding warns: %q", w)
 	}
 	// Underscore (hidden) meta, an unknown field and a protected post print nothing.
 	if _, ok := env.fieldText(p, "_secret", true); ok {

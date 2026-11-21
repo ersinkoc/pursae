@@ -251,6 +251,18 @@ func TestMCPImportSiteBindings(t *testing.T) {
 	if body := refused("pref", "fax"); !strings.Contains(body, `"pref":"invalid"`) {
 		t.Errorf("undeclared radio value: %s", body)
 	}
+	// A custom field binding to plain meta no field group defines is saved, but the result warns
+	// that it prints nothing; a site import's field name does not warn.
+	priced := mcpStructured(t, "web_builder_bind", call("web_builder_bind", map[string]any{"post_id": contactID, "html_id": "cf-wrap",
+		"bind": map[string]any{"kind": "field", "field": "custom", "name": "price"}}))
+	if w, _ := priced["warning"].(string); !strings.Contains(w, `"price" is not a Pursae Custom Fields field`) {
+		t.Errorf("no warning for an unregistered custom field: %v", priced)
+	}
+	designed := mcpStructured(t, "web_builder_bind", call("web_builder_bind", map[string]any{"post_id": contactID, "html_id": "cf-wrap",
+		"bind": map[string]any{"kind": "field", "field": "custom", "name": "design_1"}}))
+	if _, ok := designed["warning"]; ok {
+		t.Errorf("a site import's field warns: %v", designed)
+	}
 }
 
 func regexpFind(re, s string) bool { return regexp.MustCompile(re).MatchString(s) }

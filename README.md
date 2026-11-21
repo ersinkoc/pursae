@@ -338,6 +338,7 @@ search while Pursae's does not. Method, every config, all tables and `make bench
 - Plugins are signed and sandboxed; a site installs only packages whose signature it trusts.
 - Multi-role users: capabilities are the union of the roles, with per-user allow and deny — deny wins.
 - **Pursae Security** adds 2FA, lockouts, a custom login URL and an activity log — [features](docs/adminsecgo-features.md).
+- Found a vulnerability? Report it privately, as the [security policy](SECURITY.md) explains.
 
 ## 📦 Installation & migration
 
