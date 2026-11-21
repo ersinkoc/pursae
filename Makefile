@@ -2,7 +2,7 @@ COMPOSE = docker compose -f docker/compose.yaml
 # Production: the development file plus compose.prod.yaml, settings from docker/.env (see docker/.env.example).
 PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f docker/compose.yaml -f docker/compose.prod.yaml
 
-.PHONY: bench dev db test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release lint
+.PHONY: bench dev db test upgrade-test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release lint
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -31,6 +31,12 @@ test: db
 	WPGO_TEST_ADMIN_DB=postgres://wpgo:wpgo@localhost:$${WPGO_DB_PORT:-5432}/wpgo?sslmode=disable \
 	WPGO_TEST_DB=postgres://wpgo:wpgo@localhost:$${WPGO_DB_PORT:-5432}/$(TEST_DB)?sslmode=disable \
 	go test ./... -p 1 -count=1 -timeout 40m
+
+## upgrade-test: sites created by older releases (v0.2.0 and the three newest tags) keep their data when
+## this checkout takes them over (tools/upgrade-test.sh). Builds each tag, so it needs the release tags
+## (git fetch --tags). UPGRADE_TAGS="v0.2.5 v0.2.8" picks the releases; databases are wpgo_upg_*.
+upgrade-test: db
+	tools/upgrade-test.sh
 
 docker-up:
 	$(COMPOSE) up -d --build

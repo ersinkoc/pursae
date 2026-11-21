@@ -58,6 +58,15 @@ against the compose database, one package at a time; they drop and recreate the 
 `TEST_DB` names (default `wpgo_test`), so give each checkout running tests at once its own,
 e.g. `make test TEST_DB=wpgo_test_feature`.
 
+`make upgrade-test` checks that sites made by older releases survive an upgrade to your checkout
+(`tools/upgrade-test.sh`, a few minutes): it builds v0.2.0 and the three newest release tags
+(fetch them first: `git fetch --tags`), lets each one install and fill a site over HTTP, then
+migrates and serves that site with your code and compares users, posts, pages, terms, comments,
+menus, media, options and a Web Builder page. `UPGRADE_TAGS="v0.2.5"` picks the releases; it
+creates its own databases (`wpgo_upg_<tag>`, `UPGRADE_DB_PREFIX`) next to the compose one and
+keeps a failed run's database, logs and snapshots. CI runs it on every pull request (job
+`upgrade`). See [schema changes](upgrading.md#schema-changes) for the migration rules.
+
 ## Environment variables
 
 The ones you will set first:
