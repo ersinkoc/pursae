@@ -137,14 +137,19 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Pull requests compare against the merge base locally: the action's only-new-issues fetches
+          # the PR diff from the API, which GitHub refuses for more than 300 files, and then lints the
+          # whole tree.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
-          only-new-issues: true
-          args: --timeout 15m
+          only-new-issues: ${{ github.event_name != 'pull_request' }}
+          args: --timeout 15m ${{ github.event_name == 'pull_request' && format('--new-from-merge-base=origin/{0}', github.base_ref) || '' }}
 
   vulncheck:
     runs-on: ubuntu-latest
