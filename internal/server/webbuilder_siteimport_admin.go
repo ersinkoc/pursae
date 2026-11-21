@@ -63,7 +63,10 @@ const (
 	wbWizNonceUpload = "wb-site-import-upload"
 )
 
-var wbWizIDRE = regexp.MustCompile(`^[0-9a-f]{32}$`)
+var (
+	wbWizIDRE           = regexp.MustCompile(`^[0-9a-f]{32}$`)
+	errWBWizInvalidMeta = errors.New("invalid site import metadata")
+)
 
 // wbWizAllowed: the screen and everything behind it need edit_theme_options and unfiltered_html with
 // Web Builder on, like the MCP tool.
@@ -161,19 +164,32 @@ func (s *Server) wbWizLoad(id string) *wbWizMeta {
 	if dir == "" {
 		return nil
 	}
-	b, err := os.ReadFile(filepath.Join(dir, "meta.json"))
+	m, err := wbWizReadMeta(dir, id)
 	if err != nil {
 		return nil
 	}
-	var m wbWizMeta
-	if json.Unmarshal(b, &m) != nil || m.ID != id {
-		return nil
-	}
-	if at, err := time.Parse(time.RFC3339, m.Created); err != nil || time.Since(at) > wbWizMaxAge {
+	if m.expired() {
 		_ = os.RemoveAll(dir)
 		return nil
 	}
-	return &m
+	return m
+}
+
+func wbWizReadMeta(dir, id string) (*wbWizMeta, error) {
+	b, err := os.ReadFile(filepath.Join(dir, "meta.json"))
+	if err != nil {
+		return nil, err
+	}
+	var m wbWizMeta
+	if json.Unmarshal(b, &m) != nil || m.ID != id {
+		return nil, errWBWizInvalidMeta
+	}
+	return &m, nil
+}
+
+func (m *wbWizMeta) expired() bool {
+	at, err := time.Parse(time.RFC3339, m.Created)
+	return err != nil || time.Since(at) > wbWizMaxAge
 }
 
 func (s *Server) wbWizSave(m *wbWizMeta) error {
@@ -214,12 +230,19 @@ func (s *Server) wbWizSweep() {
 		if !e.IsDir() || !wbWizIDRE.MatchString(e.Name()) {
 			continue
 		}
-		if _, err := os.Stat(filepath.Join(s.wbWizBase(), e.Name(), "meta.json")); err == nil {
-			s.wbWizLoad(e.Name()) // removes it when expired
+		dir := filepath.Join(s.wbWizBase(), e.Name())
+		m, err := wbWizReadMeta(dir, e.Name())
+		if err == nil {
+			if m.expired() {
+				_ = os.RemoveAll(dir)
+			}
+			continue
+		}
+		if !errors.Is(err, fs.ErrNotExist) && !errors.Is(err, errWBWizInvalidMeta) {
 			continue
 		}
 		if info, err := e.Info(); err == nil && time.Since(info.ModTime()) > wbWizMaxAge {
-			_ = os.RemoveAll(filepath.Join(s.wbWizBase(), e.Name()))
+			_ = os.RemoveAll(dir)
 		}
 	}
 }
@@ -330,11 +353,13 @@ type wbWizView struct {
 	Nonce           string          // the step's form nonce
 	DiscardNonce    string
 
-	R          *wbWizResult
-	Compare    []wbWizCmpRow
-	Cur        *wbWizCmpRow
-	Undo       *wbWizUndoView
-	DesignHint string
+	R           *wbWizResult
+	SavedReport bool
+	CanUndo     bool
+	Compare     []wbWizCmpRow
+	Cur         *wbWizCmpRow
+	Undo        *wbWizUndoView
+	DesignHint  string
 }
 
 type wbWizRecView struct {
@@ -396,7 +421,7 @@ func (s *Server) wbWizScreen(c *gin.Context) {
 	}
 	switch action {
 	case "result":
-		s.wbWizResultPage(c, m)
+		s.wbWizResultPage(c, m, true)
 	case "compare":
 		s.wbWizComparePage(c, m)
 	default:
@@ -1119,11 +1144,16 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	if len(rec.Pages)+len(rec.Templates)+len(rec.Media) > 0 || rec.KitCreated || rec.Menu > 0 {
 		recs := s.wbWizRecords()
 		recs[m.ID] = rec
-		_ = s.wbWizSetRecords(c, recs)
+		if err := s.wbWizSetRecords(c, recs); err != nil {
+			res.Warnings = append(res.Warnings, "The removal record could not be saved. To undo this import, remove the imported items manually.")
+		}
 	}
 	m.Slug = kit
 	m.Result = res
-	_ = s.wbWizSave(m)
+	if err := s.wbWizSave(m); err != nil {
+		s.wbWizResultPage(c, m, false, notice{Type: "error", Message: "The import report could not be saved. Use the edit links below to manage the imported pages."})
+		return
+	}
 	c.Redirect(http.StatusSeeOther, wbWizURL+"?action=result&import="+m.ID)
 }
 
@@ -1265,7 +1295,9 @@ func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
 			recs := s.wbWizRecords()
 			rec := recs[m.ID]
 			prevShow, prevFront := s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
-			if err := s.mcpREST(c, http.MethodPost, "/wp/v2/settings", map[string]any{"show_on_front": "page", "page_on_front": front}, nil); err == nil {
+			if err := s.mcpREST(c, http.MethodPost, "/wp/v2/settings", map[string]any{"show_on_front": "page", "page_on_front": front}, nil); err != nil {
+				m.Result.Warnings = append(m.Result.Warnings, "Setting the homepage failed. Choose the homepage in Reading Settings.")
+			} else {
 				m.Result.Front = front
 				if rec != nil {
 					rec.FrontSet, rec.PrevShow, rec.PrevFront = true, prevShow, prevFront
@@ -1273,9 +1305,11 @@ func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
 				}
 			}
 		}
-		_ = s.wbWizSave(m)
+		if err := s.wbWizSave(m); err != nil {
+			notices = append(notices, notice{Type: "error", Message: "The publication report could not be saved. Reopening it may show the previous result."})
+		}
 	}
-	s.wbWizResultPage(c, m, notices...)
+	s.wbWizResultPage(c, m, true, notices...)
 }
 
 // wbWizFrontID is the post of index.html in a result (0: none).
@@ -1290,12 +1324,13 @@ func wbWizFrontID(r *wbWizResult) int64 {
 
 // --- result and compare -----------------------------------------------------------------------
 
-func (s *Server) wbWizResultPage(c *gin.Context, m *wbWizMeta, extra ...notice) {
+func (s *Server) wbWizResultPage(c *gin.Context, m *wbWizMeta, saved bool, extra ...notice) {
 	if m.Result == nil {
 		s.wbWizAnalysisPage(c, m, nil)
 		return
 	}
-	v := &wbWizView{Step: "result", ID: m.ID, Kit: m.Result.Kit, R: m.Result, Nonce: s.nonce(c, "wb-site-import-publish-"+m.ID)}
+	v := &wbWizView{Step: "result", ID: m.ID, Kit: m.Result.Kit, R: m.Result, SavedReport: saved, CanUndo: s.wbWizRecords()[m.ID] != nil,
+		Nonce: s.nonce(c, "wb-site-import-publish-"+m.ID)}
 	v.Front = wbWizFrontID(m.Result) > 0 && m.Result.Front == 0
 	if m.Result.Failed != "" {
 		extra = append(extra, notice{Type: "error", Message: template.HTML("The import stopped: " + html.EscapeString(m.Result.Failed)), Dismissible: false})

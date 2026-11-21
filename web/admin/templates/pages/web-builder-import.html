@@ -127,12 +127,14 @@
 {{if .Missing}}<div class="notice notice-error inline"><p><strong>Missing files</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Missing}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
 {{if .Unmapped}}<div class="notice notice-info inline"><p><strong>Links to pages that are not in the zip</strong></p><ul style="list-style:disc;margin-left:20px">{{range .Unmapped}}<li><code>{{.}}</code></li>{{end}}</ul></div>{{end}}
 {{end}}
-<p class="submit">
+{{if or .SavedReport .CanUndo}}<p class="submit">
+{{if .SavedReport}}
 <a href="{{.URL}}?action=compare&amp;import={{.ID}}" class="button button-primary" id="wb-import-compare">Compare with the design</a>
 {{if .R.Draft}}<form method="post" action="{{.URL}}?action=publish&amp;import={{.ID}}" style="display:inline;margin-left:8px">
 <input type="hidden" name="_wpnonce" value="{{.Nonce}}" />{{if .Front}}<input type="hidden" name="front" value="1" />{{end}}
 <button type="submit" class="button">Publish the pages</button></form>{{end}}
-<a href="{{.URL}}?action=undo&amp;import={{.ID}}" class="button-link button-link-delete" style="margin-left:12px">Remove this import</a></p>
+{{end}}
+{{if .CanUndo}}<a href="{{.URL}}?action=undo&amp;import={{.ID}}" class="button-link button-link-delete" style="margin-left:12px">Remove this import</a>{{end}}</p>{{end}}
 {{end}}
 
 {{if eq .Step "compare"}}
