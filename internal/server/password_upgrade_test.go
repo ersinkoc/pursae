@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/config"
 	"wpgo/internal/store"
 )
 
@@ -143,7 +142,7 @@ func TestCLIUserCreatePassHash(t *testing.T) {
 	ts, c, srv := newTestServer(t, false)
 	installAndLogin(t, ts, c)
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	ctx := context.Background()
 	run := func(want bool, args ...string) {
 		t.Helper()
@@ -260,29 +259,32 @@ func TestHeadlessGoConcurrentLegacyLogin(t *testing.T) {
 	}
 }
 
-// A wrong password against a fast legacy hash costs about as much as the unknown-user path (one
-// argon2id pass), so response times do not reveal which imported accounts exist.
+// A wrong password against a legacy hash also pays the argon2id dummy pass that an unknown login pays,
+// so response times do not reveal which imported accounts exist. Checked by counting the dummy passes
+// rather than timing them: wall-clock comparisons were flaky on shared CI runners.
 func TestLegacyPasswordMismatchTiming(t *testing.T) {
 	_, _, srv := newTestServer(t, false)
 	ctx := context.Background()
-	u := &store.User{ID: -1, PasswordHash: wpLegacyHashes[3].hash} // MD5: microseconds without the dummy pass
-	auth.CheckDummyPassword(ctx, "warm-up")
-	measure := func(f func()) time.Duration {
-		best := time.Duration(1<<63 - 1)
-		for i := 0; i < 3; i++ {
-			start := time.Now()
-			f()
-			best = min(best, time.Since(start))
-		}
-		return best
-	}
-	unknown := measure(func() { auth.CheckDummyPassword(ctx, "wrong") })
-	legacy := measure(func() {
+	for _, v := range wpLegacyHashes {
+		u := &store.User{ID: -1, PasswordHash: v.hash}
+		before := auth.DummyPasswordChecks()
 		if srv.checkUserPassword(ctx, u, "wrong") {
-			t.Fatal("wrong password accepted")
+			t.Fatalf("%s: wrong password accepted", v.login)
 		}
-	})
-	if legacy < unknown/2 {
-		t.Errorf("legacy mismatch took %v, unknown user %v", legacy, unknown)
+		if got := auth.DummyPasswordChecks() - before; got != 1 {
+			t.Errorf("%s (%s): wrong password ran %d dummy argon2id passes, want 1", v.login, auth.HashKind(v.hash), got)
+		}
+	}
+	// An argon2id hash already costs a full pass on a mismatch: no extra dummy pass.
+	h, err := auth.HashPassword("right")
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := auth.DummyPasswordChecks()
+	if srv.checkUserPassword(ctx, &store.User{ID: -1, PasswordHash: h}, "wrong") {
+		t.Fatal("wrong password accepted")
+	}
+	if got := auth.DummyPasswordChecks() - before; got != 0 {
+		t.Errorf("argon2id mismatch ran %d dummy passes, want 0", got)
 	}
 }

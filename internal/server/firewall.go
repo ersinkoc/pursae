@@ -6,24 +6,24 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"wpgo/internal/config"
 )
 
 // The core firewall: a per-IP request rate limit and a few request rules (a basic WAF). It is on
 // by default, before Pursae Security and the page cache, so every site gets it without a plugin.
 // Pursae Security (Settings › Firewall) can change the limit or turn either part off; with the
-// plugin off the core defaults apply. WPGO_FIREWALL=off switches both off for the process.
+// plugin off the core defaults apply. PURSAE_FIREWALL=off switches both off for the process.
 //
 // Only the URL (path and query) and the User-Agent are inspected, never a request body: post
 // content, block markup and code in the Theme File Editor are legitimate input there.
 //
-// Addresses that are loopback or a trusted proxy (WPGO_TRUSTED_PROXIES) are never rate limited:
+// Addresses that are loopback or a trusted proxy (PURSAE_TRUSTED_PROXIES) are never rate limited:
 // without a forwarded header they are the proxy itself, which carries every visitor.
 
 // fwDefaultRateLimit is the core default: requests per minute from one IP address. Static files
@@ -86,9 +86,9 @@ type fwConfig struct {
 	AllowList string
 }
 
-// fwEnvOff reports WPGO_FIREWALL=off.
+// fwEnvOff reports PURSAE_FIREWALL=off.
 func fwEnvOff() bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv("WPGO_FIREWALL")))
+	v := strings.ToLower(strings.TrimSpace(config.Env("FIREWALL")))
 	return v == "off" || v == "0" || v == "false"
 }
 

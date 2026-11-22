@@ -109,7 +109,7 @@ var wbManifestCache struct {
 }
 
 // wbManifest is web/web-builder/manifest.json: read once from the embedded files, or on every call
-// in development (WPGO_WEB_DIR), where `make builder-watch` rewrites it.
+// in development (PURSAE_WEB_DIR), where `make builder-watch` rewrites it.
 func (s *Server) wbManifest() (*webbuilder.Manifest, error) {
 	if s.cfg.WebDir != "" {
 		return wbReadManifest(s.web)

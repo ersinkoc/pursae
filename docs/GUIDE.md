@@ -56,13 +56,13 @@ The site URL is stored at install time, so set it **before** the first run (or r
 [Troubleshooting](#troubleshooting)):
 
 ```sh
-WPGO_PORT=9000 WPGO_SITE_URL=http://localhost:9000 make docker-up
+PURSAE_PORT=9000 PURSAE_SITE_URL=http://localhost:9000 make docker-up
 ```
 
 To reach the site from another device on your network, use your machine's LAN address:
 
 ```sh
-WPGO_SITE_URL=http://192.168.1.50:8088 make docker-up
+PURSAE_SITE_URL=http://192.168.1.50:8088 make docker-up
 ```
 
 ## First run: the installer
@@ -78,8 +78,8 @@ WordPress' five-minute install:
 The installer creates "Hello world!", its first comment, the Sample Page, a draft Privacy
 Policy page and the default sidebar widgets. The installer asks for the **setup token** first, so a stranger who reaches a fresh site cannot
 install it and become its administrator: open the link the server prints in its log on the first
-start (`…/wp-admin/install?token=…`), or set `WPGO_SETUP_TOKEN` yourself and enter it on the token
-screen. `wpgo setup-token` (`docker compose exec wpgo wpgo setup-token`) prints a new link; the
+start (`…/wp-admin/install?token=…`), or set `PURSAE_SETUP_TOKEN` yourself and enter it on the token
+screen. `pursae setup-token` (`docker compose exec wpgo pursae setup-token`) prints a new link; the
 token stops working once the site is installed.
 Then sign in at `/wp-login` and you are in the
 admin (`/wp-admin/`).
@@ -98,19 +98,19 @@ make db
 
 # 2. Run the app; templates, CSS and JS are read from ./web so edits show up on refresh
 export DATABASE_URL='postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable'
-export WPGO_SITE_URL='http://localhost:8080'
-WPGO_WEB_DIR=web go run ./cmd/wpgo serve
+export PURSAE_SITE_URL='http://localhost:8080'
+PURSAE_WEB_DIR=web go run ./cmd/wpgo serve
 ```
 
 `make dev` does steps 1 and 2 for you. To build a single binary instead:
 
 ```sh
-make build              # writes bin/wpgo
-./bin/wpgo serve
+make build              # writes bin/pursae (and bin/wpgo, its deprecated alias)
+./bin/pursae serve
 ```
 
 Migrations run automatically on start (under a database advisory lock, so several instances
-can start safely). You can also run them alone with `wpgo migrate`.
+can start safely). You can also run them alone with `pursae migrate`.
 
 ## Configuration
 
@@ -121,42 +121,42 @@ Everything is configured with environment variables.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `DATABASE_URL` | `postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable` | PostgreSQL connection string |
-| `WPGO_ADDR` | `:8080` | Address the server listens on |
-| `WPGO_SITE_URL` | `http://localhost:8080` | Public URL; written to the settings at install |
-| `WPGO_UPLOADS_DIR` | `./data/uploads` | Where media uploads are stored |
-| `WPGO_SECRET` | generated | Signing secret; generated and stored on first start if unset |
-| `WPGO_WEB_DIR` | embedded | Read templates/CSS/JS from disk instead of the embedded copy (development) |
-| `WPGO_BACKUPS_DIR` | `backups/` next to uploads | Backup Manager archives (keep it outside the public uploads) |
-| `WPGO_LANG_DIR` | `languages/` next to uploads | Installed language packs |
-| `WPGO_TRANSLATIONS_API` | `https://api.wordpress.org/translations` | Where language packs are downloaded from |
-| `WPGO_BIN_DIR` | `/data/bin` in the image | Where `wpgo launch` keeps the (self-updated) binary |
+| `PURSAE_ADDR` | `:8080` | Address the server listens on |
+| `PURSAE_SITE_URL` | `http://localhost:8080` | Public URL; written to the settings at install |
+| `PURSAE_UPLOADS_DIR` | `./data/uploads` | Where media uploads are stored |
+| `PURSAE_SECRET` | generated | Signing secret; generated and stored on first start if unset |
+| `PURSAE_WEB_DIR` | embedded | Read templates/CSS/JS from disk instead of the embedded copy (development) |
+| `PURSAE_BACKUPS_DIR` | `backups/` next to uploads | Backup Manager archives (keep it outside the public uploads) |
+| `PURSAE_LANG_DIR` | `languages/` next to uploads | Installed language packs |
+| `PURSAE_TRANSLATIONS_API` | `https://api.wordpress.org/translations` | Where language packs are downloaded from |
+| `PURSAE_BIN_DIR` | `/data/bin` in the image | Where `pursae launch` keeps the (self-updated) binary |
 
 **Compose-only** (`make prod-up` reads these from `docker/.env`)
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `WPGO_PORT` | `8088` | Host port for the site |
-| `WPGO_BIND` | `127.0.0.1` | Host address the site is published on (production file only) |
-| `WPGO_DB_PORT` | `5432` | Host port for PostgreSQL, on `127.0.0.1` (development file only; production does not publish it) |
-| `WPGO_DB_PASSWORD` | — | Database password (production file only, required) |
+| `PURSAE_PORT` | `8088` | Host port for the site |
+| `PURSAE_BIND` | `127.0.0.1` | Host address the site is published on (production file only) |
+| `PURSAE_DB_PORT` | `5432` | Host port for PostgreSQL, on `127.0.0.1` (development file only; production does not publish it) |
+| `PURSAE_DB_PASSWORD` | — | Database password (production file only, required) |
 
 **Mail** — without an SMTP host, messages are written as `.eml` files so you can inspect them.
 The compose file passes these through; for `make prod-up` set them in `docker/.env`.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `WPGO_SMTP_HOST` | — | SMTP server |
-| `WPGO_SMTP_PORT` | `587` | `465` = implicit TLS |
-| `WPGO_SMTP_USER` / `WPGO_SMTP_PASS` | — | Credentials |
-| `WPGO_MAIL_FROM` | — | Sender address |
-| `WPGO_MAIL_DIR` | `mail/` next to uploads | Where `.eml` files go when SMTP is off |
+| `PURSAE_SMTP_HOST` | — | SMTP server |
+| `PURSAE_SMTP_PORT` | `587` | `465` = implicit TLS |
+| `PURSAE_SMTP_USER` / `PURSAE_SMTP_PASS` | — | Credentials |
+| `PURSAE_MAIL_FROM` | — | Sender address |
+| `PURSAE_MAIL_DIR` | `mail/` next to uploads | Where `.eml` files go when SMTP is off |
 
 **Pursae Manager.** Every Pursae install talks to `https://hub.pursae.com` (marketplace, licenses,
 release checks and self-update, and the site statistics: daily ping with version and inventory, usage
 events; always on). There is no variable or option to change it in a production binary, and the
 Pursae release root key is pinned in it: only Manager keys endorsed by that root verify core updates
 and Manager-signed plugins. Development builds (`go run -tags devhub`, `make dev`, the development
-compose file with `GO_TAGS=devhub`) read `WPGO_DEV_HUB_URL` and `WPGO_TRUST_HUB_KEYS` below to test
+compose file with `GO_TAGS=devhub`) read `PURSAE_DEV_HUB_URL` and `PURSAE_TRUST_HUB_KEYS` below to test
 against a local Manager. The `ROOT_KEYS` build arg (`-ldflags -X wpgo/internal/server.rootKeysLinked=…`)
 adds release roots for a key rotation; it never removes the pinned one.
 
@@ -164,19 +164,19 @@ adds release roots for a key rotation; it never removes the pinned one.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `WPGO_THEMES_DIR` | `<data>/themes` | Where edited theme files are saved |
-| `WPGO_DISALLOW_FILE_EDIT` | off | Set to make the Theme File Editor read-only |
-| `WPGO_PLUGIN_KEYS` | — | Comma-separated Ed25519 public keys trusted to sign plugin packages |
-| `WPGO_MARKET_DIR` | — | Local plugin packages offered on Plugins › Add Plugin (besides the Hub catalog) |
-| `WPGO_DEV_HUB_URL` | `http://pursae-manager.test:8090` in compose | **Development builds only** (`-tags devhub`): the Pursae Manager to use instead of `https://hub.pursae.com` (`off` disables it). Production binaries ignore it |
-| `WPGO_TRUST_HUB_KEYS` | unset | **Development builds only** (`-tags devhub`): `1` trusts every signing key the Manager lists, endorsed by the release root or not (a local Manager's key). Production binaries ignore it |
-| `WPGO_TRUST_DEV_KEY` | unset | **Development builds only** (`-tags devhub`): trust the demo signing key of the bundled example plugins. Production binaries ignore it |
-| `WPGO_ALLOW_UNSIGNED_PLUGINS` | unset | `1` lets the `plugin_allow_unsigned` option accept unsigned plugins (development only) |
-| `WPGO_EXPOSE_USERS` | unset | `1` lets visitors list accounts (REST users, `/?author=N`, users sitemap) |
-| `WPGO_TRUSTED_PROXIES` | loopback and private ranges | Proxies whose `X-Forwarded-For` is believed; `none` trusts none |
-| `WPGO_THEME_LIBRARY_DIR` | — (from the Hub) | Serve the theme library from a local directory (development, offline) |
-| `WPGO_ADMINSEC_DISABLE_HIDE_LOGIN` | unset | `1` brings `/wp-login` back when Pursae Security's custom login URL locked you out |
-| `WPGO_CDN_SETTINGS` | unset | Pursae CDN settings as a JSON object; its keys override the saved settings and are read-only in the admin |
+| `PURSAE_THEMES_DIR` | `<data>/themes` | Where edited theme files are saved |
+| `PURSAE_DISALLOW_FILE_EDIT` | off | Set to make the Theme File Editor read-only |
+| `PURSAE_PLUGIN_KEYS` | — | Comma-separated Ed25519 public keys trusted to sign plugin packages |
+| `PURSAE_MARKET_DIR` | — | Local plugin packages offered on Plugins › Add Plugin (besides the Hub catalog) |
+| `PURSAE_DEV_HUB_URL` | `http://pursae-manager.test:8090` in compose | **Development builds only** (`-tags devhub`): the Pursae Manager to use instead of `https://hub.pursae.com` (`off` disables it). Production binaries ignore it |
+| `PURSAE_TRUST_HUB_KEYS` | unset | **Development builds only** (`-tags devhub`): `1` trusts every signing key the Manager lists, endorsed by the release root or not (a local Manager's key). Production binaries ignore it |
+| `PURSAE_TRUST_DEV_KEY` | unset | **Development builds only** (`-tags devhub`): trust the demo signing key of the bundled example plugins. Production binaries ignore it |
+| `PURSAE_ALLOW_UNSIGNED_PLUGINS` | unset | `1` lets the `plugin_allow_unsigned` option accept unsigned plugins (development only) |
+| `PURSAE_EXPOSE_USERS` | unset | `1` lets visitors list accounts (REST users, `/?author=N`, users sitemap) |
+| `PURSAE_TRUSTED_PROXIES` | loopback and private ranges | Proxies whose `X-Forwarded-For` is believed; `none` trusts none |
+| `PURSAE_THEME_LIBRARY_DIR` | — (from the Hub) | Serve the theme library from a local directory (development, offline) |
+| `PURSAE_ADMINSEC_DISABLE_HIDE_LOGIN` | unset | `1` brings `/wp-login` back when Pursae Security's custom login URL locked you out |
+| `PURSAE_CDN_SETTINGS` | unset | Pursae CDN settings as a JSON object; its keys override the saved settings and are read-only in the admin |
 
 ## Data and volumes
 
@@ -219,7 +219,7 @@ They cover:
 |------|--------|-------|
 | Profile, session tokens, media (core) | ✓ | kept with the account (as in WordPress) |
 | Comments | ✓ | anonymized |
-| Pursae Contact Form entries, Web Builder form submissions (section and code forms) whose fields hold the address | ✓ | deleted |
+| Pursae Contact Form entries, Web Builder form submissions (section and code forms) with the address in the form's e-mail field, or sent by the person's account while signed in¹ | ✓ | deleted |
 | Maintenance page subscribers | ✓ | deleted |
 | Pursae Forum topics and replies (and their edit history) | ✓ | anonymized: kept published as “Deleted user”, author and IP removed |
 | Forum likes given | ✓ | kept as anonymous likes, so other members' points do not change |
@@ -232,6 +232,15 @@ They cover:
 | Commerce wishlists, points, memberships | ✓ | wishlists deleted, the rest kept with the account |
 | Pursae SMTP e-mail log (sent to the address, or a contact form notification with the visitor's address as Reply-To), finished mail jobs, finished or failed contact form webhook jobs | log ✓ | deleted |
 | Login attempts, security log, known sign-in IPs, AI connector activity | ✓ | kept for the site's security until their retention period ends |
+
+¹ The e-mail fields are the form's email fields and the field its mail takes the sender or Reply-To
+from (for Contact Form also the Mail (2) recipient). An address typed into any other field (a
+"friend's e-mail" field, a message that is just an address) does not make the message that person's.
+Messages stored before migration 0110 have no record of their e-mail fields and match on a field named
+`email`, `e-mail`, `your-email` or `eposta`, on the names the Contact Form tag generator gives e-mail
+fields (`email-391`) and, for a Contact Form entry, on the e-mail fields of its form as it is now
+(fields referenced as `[_raw_x]` or `[_format_x]` count as `x`). The same rule applies to the contact
+form webhook jobs.
 
 What is kept is listed with its reason on the request screen. Pursae Analytics and the cookie
 consent log hold no data that can be matched to a person (hashed or truncated values only); the
@@ -248,7 +257,7 @@ make prod-down          # stop the production stack (data is kept)
 make prod-logs          # follow the production server log
 make test               # unit tests + PostgreSQL integration tests
 make docker-test        # the same suite inside a Go container
-make build              # compile bin/wpgo
+make build              # compile bin/pursae (and the deprecated alias bin/wpgo)
 make builder            # rebuild the Web Builder editor into web/web-builder (needs Node 22+)
 ```
 
@@ -274,10 +283,10 @@ A development stack (`make docker-up`) gets no updates from `hub.pursae.com`: `g
 ## Editing theme files
 
 Appearance › **Theme File Editor** works without recompiling. Saving a file writes an override
-into the themes volume (`/data/themes`, or `WPGO_THEMES_DIR`); the template set is re-parsed
+into the themes volume (`/data/themes`, or `PURSAE_THEMES_DIR`); the template set is re-parsed
 immediately and the page is test-rendered. If the change has a template or render error it is
 **rolled back automatically** and the editor shows the error. **Restore original** removes the
-override. Set `WPGO_DISALLOW_FILE_EDIT=1` to turn editing off.
+override. Set `PURSAE_DISALLOW_FILE_EDIT=1` to turn editing off.
 
 Themes can also be installed as code-free **theme packages** (`theme.json`, Go templates, assets)
 through Appearance › Themes › Add Theme; the format is in [docs/theme-package.md](./theme-package.md)
@@ -323,28 +332,28 @@ Back up the database first; see [Upgrading](./developer/getting-started/upgradin
 
 ## Production checklist
 
-- Put Pursae behind a TLS-terminating reverse proxy and set `WPGO_SITE_URL` to the
+- Put Pursae behind a TLS-terminating reverse proxy and set `PURSAE_SITE_URL` to the
   `https://` address.
 - Put your settings in `docker/.env` (git-ignored) and start the production build:
 
   ```sh
-  cp docker/.env.example docker/.env   # set WPGO_DB_PASSWORD, WPGO_SITE_URL (https://…), SMTP
+  cp docker/.env.example docker/.env   # set PURSAE_DB_PASSWORD, PURSAE_SITE_URL (https://…), SMTP
   make prod-up
   ```
 
   It adds `docker/compose.prod.yaml`, which builds without the `devhub` tag (updates come only from
-  `https://hub.pursae.com`), sets the database password from `WPGO_DB_PASSWORD`, does not publish
+  `https://hub.pursae.com`), sets the database password from `PURSAE_DB_PASSWORD`, does not publish
   PostgreSQL, publishes the site on `127.0.0.1:8088` only and does not trust the public demo plugin
-  key (`WPGO_TRUST_DEV_KEY=0`). Without `make`:
+  key (`PURSAE_TRUST_DEV_KEY=0`). Without `make`:
 
   ```sh
   docker compose --env-file docker/.env -f docker/compose.yaml -f docker/compose.prod.yaml up -d --build
   ```
 
-  For real plugins list your own signing keys in `WPGO_PLUGIN_KEYS`.
+  For real plugins list your own signing keys in `PURSAE_PLUGIN_KEYS`.
 - Open the install link from the log (`make prod-logs`) and finish the installer; it asks for the
-  setup token (`WPGO_SETUP_TOKEN`, or the generated one), so nobody else can run it.
-- Configure SMTP (`WPGO_SMTP_*` and `WPGO_MAIL_FROM` in `docker/.env`) so password resets and
+  setup token (`PURSAE_SETUP_TOKEN`, or the generated one), so nobody else can run it.
+- Configure SMTP (`PURSAE_SMTP_*` and `PURSAE_MAIL_FROM` in `docker/.env`) so password resets and
   notifications are delivered.
 - Back up the `pgdata`, `uploads`, `plugins` and `themes` volumes, and copy the `backups` volume
   off the server.
@@ -371,7 +380,7 @@ brings the containers back with the development settings and the wrong database 
 
 **Links or assets point at the wrong address (old IP or port).** The site URL was stored at
 install time. Either change it in Settings › General, or start over with the right
-`WPGO_SITE_URL` (see the next item).
+`PURSAE_SITE_URL` (see the next item).
 
 **Start from scratch.** This **deletes** every volume: the database, uploads, plugins, edited
 themes, backups and the updated binary:
@@ -384,13 +393,13 @@ make docker-up
 **Port 8088 or 5432 is already in use.** Pick other host ports:
 
 ```sh
-WPGO_PORT=9000 WPGO_DB_PORT=5433 WPGO_SITE_URL=http://localhost:9000 make docker-up
+PURSAE_PORT=9000 PURSAE_DB_PORT=5433 PURSAE_SITE_URL=http://localhost:9000 make docker-up
 ```
 
 **The first build is slow or fails to download modules.** The Go image downloads modules on the
 first build; make sure Docker has network access. Later builds are cached.
 
-**Port already taken by a local WordPress.** Stop it, or use `WPGO_PORT` as above.
+**Port already taken by a local WordPress.** Stop it, or use `PURSAE_PORT` as above.
 
 ## What works in 0.1
 

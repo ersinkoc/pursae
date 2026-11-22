@@ -20,13 +20,13 @@ import (
 )
 
 // Visitor country: the header a CDN or proxy adds wins (Cloudflare CF-IPCountry and the like); without
-// one the visitor address (clientIP / requestIP, which honour WPGO_TRUSTED_PROXIES) is looked up in a
+// one the visitor address (clientIP / requestIP, which honour PURSAE_TRUSTED_PROXIES) is looked up in a
 // local IP-to-country database. The address is only looked up in memory, never written anywhere; only the
 // two-letter country code leaves this file.
 //
 // The database is DB-IP "IP to Country Lite" (MMDB, CC BY 4.0, https://db-ip.com): no license key and it
 // may be redistributed, so the Docker image ships a copy (geoipSeedPath) and the site downloads a fresh
-// one every month into the data directory (geoipDBPath, WPGO_GEOIP_DB). A MaxMind GeoLite2 Country file
+// one every month into the data directory (geoipDBPath, PURSAE_GEOIP_DB). A MaxMind GeoLite2 Country file
 // placed at the same path works too: both use the same record layout. Without any file only the headers
 // count, as before.
 
@@ -70,7 +70,7 @@ type geoipState struct {
 
 func (s *Server) geoip() *geoipState { return &s.geo }
 
-// geoipDBPath is where the downloaded database lives: WPGO_GEOIP_DB, or geoip/country.mmdb next to the
+// geoipDBPath is where the downloaded database lives: PURSAE_GEOIP_DB, or geoip/country.mmdb next to the
 // uploads (in Docker /data/geoip/country.mmdb, on the data volume).
 func (s *Server) geoipDBPath() string {
 	if p := strings.TrimSpace(s.cfg.GeoIPDB); p != "" {

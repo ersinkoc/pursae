@@ -1,13 +1,15 @@
--- Pursae Web Builder replaced the old (Elementor-derived) builder, and the old builder's data goes
--- with it (owner decision: no converter, deleted completely). This cannot be undone: the release
--- notes ask for a database backup before upgrading (docs/developer/getting-started/upgrading.md).
+-- Pursae Web Builder replaced the old builder, and the old builder's data goes with it (owner
+-- decision: no converter, deleted completely). This cannot be undone: the release notes ask for a
+-- database backup before upgrading (docs/developer/getting-started/upgrading.md).
 --
--- What goes: the tables of migrations 0005/0006/0007, the template/theme-part/component posts and
--- their content types, every _elementor_*/_gwe_* post meta key, the old builder's options and user
--- meta, and its saved themes. What stays: the new builder's web_builder_* tables and options,
--- native_golementor (the plugin switch, shared with the new builder) and golementor_previous_theme
--- (read and cleared at the next start by the theme fallback, internal/server/webbuilder_upgrade.go).
--- Every statement is idempotent, so a database that never had the old builder is left as it was.
+-- What goes: the tables the old builder created (migrations 0005/0006/0007, now empty steps), the
+-- template/theme-part/component posts and their content types, every _elementor_*/_gwe_* post
+-- meta key, the old builder's options and user meta, and its saved themes. What stays: the new
+-- builder's web_builder_* tables and options, native_golementor (the plugin switch, shared with the
+-- new builder) and golementor_previous_theme (read and cleared at the next start by the theme
+-- fallback, internal/server/webbuilder_upgrade.go).
+-- Every statement is idempotent, so a database that never had the old builder (every install made
+-- since 0005-0007 became empty steps) is left as it was.
 
 -- Tables. builder_revisions goes before the posts below cascade into post_revisions.
 DROP TABLE IF EXISTS builder_revisions;
@@ -55,8 +57,17 @@ DELETE FROM transients WHERE key LIKE 'gwe\_%' OR key LIKE 'elementor\_%' OR key
 
 -- Themes saved with the old builder ("Save as theme") and its blank theme, unless the site still
 -- runs on one: the start-up fallback (webbuilder_upgrade.go) needs that row to recognise the theme
--- and switches away from it.
-DELETE FROM themes
- WHERE (custom OR slug IN ('hello-web-builder', 'hello-gowebeditor'))
-   AND status <> 'active'
-   AND slug NOT IN (SELECT value #>> '{}' FROM settings WHERE key IN ('stylesheet', 'template') AND jsonb_typeof(value) = 'string');
+-- and switches away from it. themes.custom only exists in databases that had the old builder.
+DO $$
+DECLARE
+	saved text := '';
+BEGIN
+	IF EXISTS (SELECT 1 FROM information_schema.columns
+	            WHERE table_schema = current_schema() AND table_name = 'themes' AND column_name = 'custom') THEN
+		saved := 'custom OR ';
+	END IF;
+	EXECUTE 'DELETE FROM themes WHERE (' || saved || $q$slug IN ('hello-web-builder', 'hello-gowebeditor'))
+	   AND status <> 'active'
+	   AND slug NOT IN (SELECT value #>> '{}' FROM settings WHERE key IN ('stylesheet', 'template') AND jsonb_typeof(value) = 'string')$q$;
+END
+$$;

@@ -46,7 +46,7 @@ type adminView struct {
 	CoreUpdate    string // a newer Pursae release for the "is available" notice (core_update_nag.go)
 	FooterUpdate  string // the same release for the footer's "Get Version X"
 	CanUpdateCore bool   // the user may run the update (update_core)
-	HubOff        bool   // WPGO_HUB=off: the "updates are off" notice for those who may update
+	HubOff        bool   // PURSAE_HUB=off: the "updates are off" notice for those who may update
 }
 
 type notice struct {

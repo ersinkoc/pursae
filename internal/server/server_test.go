@@ -9,7 +9,6 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"regexp"
 	"runtime/pprof"
 	"strings"
@@ -24,8 +23,8 @@ import (
 )
 
 // testServer starts the app against a freshly created database. It needs
-// WPGO_TEST_ADMIN_DB (a connection to an existing database used to recreate the
-// test database) and WPGO_TEST_DB (the test database URL); docker compose's test
+// PURSAE_TEST_ADMIN_DB (a connection to an existing database used to recreate the
+// test database) and PURSAE_TEST_DB (the test database URL); docker compose's test
 // profile sets both. Without them the integration tests are skipped.
 func testServer(t *testing.T) (*httptest.Server, *http.Client) {
 	t.Helper()
@@ -47,18 +46,18 @@ func newTestServer(t *testing.T, builder bool) (*httptest.Server, *http.Client, 
 	return newTestServerSetup(t, builder, testSetupToken)
 }
 
-// testSetupToken is the WPGO_SETUP_TOKEN of the test servers. newTestServer's client has entered it
+// testSetupToken is the PURSAE_SETUP_TOKEN of the test servers. newTestServer's client has entered it
 // (the installer's cookie is in its jar), so tests install the site as an owner holding the token would.
 const testSetupToken = "test-setup-token-0123456789"
 
-// newTestServerSetup is newTestServer with setupToken as WPGO_SETUP_TOKEN. With a token the returned
+// newTestServerSetup is newTestServer with setupToken as PURSAE_SETUP_TOKEN. With a token the returned
 // client has already opened the install link (?token=); with "" the server generates nothing until the
 // test calls EnsureSetupToken, and the client holds no setup cookie.
 func newTestServerSetup(t *testing.T, builder bool, setupToken string) (*httptest.Server, *http.Client, *Server) {
 	t.Helper()
-	adminURL, testURL := os.Getenv("WPGO_TEST_ADMIN_DB"), os.Getenv("WPGO_TEST_DB")
+	adminURL, testURL := config.Env("TEST_ADMIN_DB"), config.Env("TEST_DB")
 	if adminURL == "" || testURL == "" {
-		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
+		t.Skip("PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB not set")
 	}
 	// Every test gets a fresh site, so the in-process password reset throttle starts empty too
 	// (it is keyed by IP and user id, both of which repeat across tests).
@@ -153,8 +152,8 @@ func closeTestServer(t *testing.T, srv *Server) {
 // Every test Server's long-lived loops end with the test: none of them is left running after the
 // subtests' cleanups.
 func TestTestServerReleasesBackground(t *testing.T) {
-	if os.Getenv("WPGO_TEST_ADMIN_DB") == "" || os.Getenv("WPGO_TEST_DB") == "" {
-		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
+	if config.Env("TEST_ADMIN_DB") == "" || config.Env("TEST_DB") == "" {
+		t.Skip("PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB not set")
 	}
 	var servers []*Server
 	for i := range 3 {
@@ -398,7 +397,7 @@ func TestInstallLoginPublishAndView(t *testing.T) {
 
 func getPool(t *testing.T) *pgx.Conn {
 	t.Helper()
-	conn, err := pgx.Connect(context.Background(), os.Getenv("WPGO_TEST_DB"))
+	conn, err := pgx.Connect(context.Background(), config.Env("TEST_DB"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
+	"wpgo/internal/config"
 	"wpgo/internal/coreupdate"
 )
 
@@ -42,7 +42,7 @@ const MinCompatibleBinary = "0.2.4"
 var BinaryVersion string
 
 // AllowOlderBinaryEnv, set to 1, lets a binary below the schema's floor start anyway.
-const AllowOlderBinaryEnv = "WPGO_ALLOW_OLDER_BINARY"
+const AllowOlderBinaryEnv = "PURSAE_ALLOW_OLDER_BINARY"
 
 const (
 	metaMinBinary  = "min_binary_version"
@@ -111,9 +111,9 @@ func (e *BinaryTooOldError) Error() string {
 		by, s.MinBinary, s.Binary, len(s.Unknown), listShort(s.Unknown), s.MinBinary, AllowOlderBinaryEnv)
 }
 
-// AllowOlderBinary reports whether WPGO_ALLOW_OLDER_BINARY overrides the schema guard.
+// AllowOlderBinary reports whether PURSAE_ALLOW_OLDER_BINARY overrides the schema guard.
 func AllowOlderBinary() bool {
-	switch strings.ToLower(strings.TrimSpace(os.Getenv(AllowOlderBinaryEnv))) {
+	switch strings.ToLower(strings.TrimSpace(config.Env(AllowOlderBinaryEnv))) {
 	case "1", "true", "yes", "on":
 		return true
 	}
@@ -154,7 +154,7 @@ func CheckSchema(ctx context.Context, q querier, binary string) (SchemaStatus, e
 }
 
 // GuardSchema is CheckSchema plus the refusal: a *BinaryTooOldError when the binary is below the
-// floor and WPGO_ALLOW_OLDER_BINARY is not set. The status is returned either way, so the caller
+// floor and PURSAE_ALLOW_OLDER_BINARY is not set. The status is returned either way, so the caller
 // can warn about a newer schema (SchemaStatus.Warning).
 func GuardSchema(ctx context.Context, q querier, binary string) (SchemaStatus, error) {
 	st, err := CheckSchema(ctx, q, binary)

@@ -10,7 +10,7 @@ import (
 )
 
 // The schema guard (internal/db/schema_guard.go) from the server's side: Migrate refuses a binary
-// below the floor a newer release recorded (unless WPGO_ALLOW_OLDER_BINARY=1), the start-up logs a
+// below the floor a newer release recorded (unless PURSAE_ALLOW_OLDER_BINARY=1), the start-up logs a
 // warning once when the schema is newer than this binary but still compatible, and /readyz reports
 // both conditions.
 
@@ -50,7 +50,7 @@ func (s *Server) warnSchema(st db.SchemaStatus) {
 		return
 	}
 	s.schemaGuard.warn.Do(func() {
-		if st.TooOld() { // only reachable with WPGO_ALLOW_OLDER_BINARY=1
+		if st.TooOld() { // only reachable with PURSAE_ALLOW_OLDER_BINARY=1
 			slog.Error("schema guard overridden by "+db.AllowOlderBinaryEnv,
 				"reason", (&db.BinaryTooOldError{Status: st}).Error(), "version", st.Binary, "needs", st.MinBinary)
 			return

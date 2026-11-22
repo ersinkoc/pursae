@@ -45,12 +45,16 @@ make release VERSION=0.2.0 DRY_RUN=1   # only build and check, into dist/release
 3. builds `linux-amd64`, `linux-arm64`, `darwin-arm64`, `darwin-amd64` and `windows-amd64` with
    `CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags nodynamic -ldflags "-s -w -X wpgo/internal/server.Version=0.2.0"`,
    checks that the Linux binaries are static and that the binary for your machine reports the version;
-4. writes `SHA256SUMS`;
+4. packs each binary into an archive for manual installs, `pursae-<os>-<arch>.tar.gz` (`.zip` on
+   Windows), with the binary as `pursae` (`pursae.exe`), `LICENSE`, `NOTICE`, `LICENSES/` and a short
+   `README.txt`, and writes `SHA256SUMS` over the binaries and the archives;
 5. asks before publishing, then sets `Version` in `internal/server/server.go` to `0.2.0` in a
    "Pursae 0.2.0" commit (so a build straight from the repository, e.g. `docker compose`, reports
    the release too), tags that commit `v0.2.0`, pushes both to the `public` remote (github.com/pursae/pursae)
    and creates the GitHub release in `pursae/pursae` with the binaries (`pursae-<os>-<arch>`,
-   `.exe` on Windows) and `SHA256SUMS`.
+   `.exe` on Windows), the archives and `SHA256SUMS`. Pursae Manager imports only the bare binaries
+   (assets named exactly `pursae-<os>-<arch>[.exe]`); the archives are for people
+   [installing by hand](../getting-started/install-binary.md#install-a-release).
 
 It needs Go, git and the GitHub CLI (`gh auth login`). Settings: `RELEASE_REPO` (default
 `pursae/pursae`; it must be public, sites download without credentials; the CI runs are looked up
@@ -65,7 +69,9 @@ Before building, `tools/release.sh` refuses to publish unless:
 
 - **CI passed on the commit.** `gh` must find a successful run of the `CI` workflow
   (`.github/workflows/ci.yml`) on github.com/pursae/pursae for HEAD, with every job of its latest
-  attempt green. Push the commit (normally: merge to `main`) and wait for the run; rerun failed jobs
+  attempt green: the tests on PostgreSQL 16 and 17, the upgrade test, the race detector, lint,
+  govulncheck, the Web Builder tests, smoke runs of the Linux, macOS and Windows release binaries
+  (`tools/smoke-test.sh`), the Docker image build and the wp-admin browser test (`make e2e`). Push the commit (normally: merge to `main`) and wait for the run; rerun failed jobs
   if they were flaky. The "Pursae 0.2.0" commit the script adds only sets the version string, so
   the run on the commit before it is the one checked; if a release stopped after that commit was
   made, HEAD is that commit and the run on its parent counts.
@@ -80,14 +86,14 @@ Before building, `tools/release.sh` refuses to publish unless:
 **Escape hatch.** `RELEASE_SKIP_CI_CHECK=1 make release VERSION=0.2.1` skips the CI check (only that
 one), with a loud warning before building and again before publishing. Use it only when shipping
 cannot wait for CI, for example a security fix while GitHub Actions is down, and run the tests
-locally (`make test`) first.
+locally (`make test`, `make smoke`, `make e2e`) first.
 
 ## 3. Import it in Pursae Manager
 
 **Core › Import**: tag `v0.2.0`, channel (stable, or beta for sites with a beta license), notes
 (empty: the GitHub release notes), *Import Release*. The Manager:
 
-- reads the release from the GitHub API and takes every `pursae-<os>-<arch>` asset;
+- reads the release from the GitHub API and takes every `pursae-<os>-<arch>` asset (not the archives);
 - downloads each once, checks it against `SHA256SUMS` and that Linux binaries are static;
 - signs `pursae-core-v1\n{version}\n{os}-{arch}\n{sha256}` with its active, endorsed key;
 - stores the hash, the signature and the GitHub download URL, and publishes the release.

@@ -17,6 +17,11 @@ type WebBuilderSubmission struct {
 	IP        string
 	Mailed    bool
 	CreatedAt time.Time
+	// EmailFields are the names of the form's e-mail fields (personal data export and erasure match
+	// the address on them; stored as an empty list when nil, NULL marks rows of older releases).
+	// UserID is the signed-in visitor, 0 for anonymous ones. Neither is read back by the list.
+	EmailFields []string
+	UserID      int64
 }
 
 // AddSubmission stores a submission and fills ID and CreatedAt.
@@ -25,9 +30,17 @@ func (w WebBuilderDB) AddSubmission(ctx context.Context, s *WebBuilderSubmission
 	if err != nil {
 		return err
 	}
-	return w.q.QueryRow(ctx, `INSERT INTO web_builder_form_submissions (post_id, section_id, form_title, page_url, fields, ip, mailed)
-		VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at`,
-		s.PostID, s.SectionID, s.FormTitle, s.PageURL, raw, s.IP, s.Mailed).Scan(&s.ID, &s.CreatedAt)
+	emailFields := s.EmailFields
+	if emailFields == nil {
+		emailFields = []string{}
+	}
+	var uid *int64
+	if s.UserID > 0 {
+		uid = &s.UserID
+	}
+	return w.q.QueryRow(ctx, `INSERT INTO web_builder_form_submissions (post_id, section_id, form_title, page_url, fields, ip, mailed, email_fields, user_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at`,
+		s.PostID, s.SectionID, s.FormTitle, s.PageURL, raw, s.IP, s.Mailed, emailFields, uid).Scan(&s.ID, &s.CreatedAt)
 }
 
 // SetSubmissionMailed records that the message of a stored submission was queued.

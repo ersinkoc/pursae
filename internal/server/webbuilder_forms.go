@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -185,7 +186,10 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 	var stored *store.WebBuilderSubmission
 	if s.wbFormStoreOn() {
 		stored = &store.WebBuilderSubmission{PostID: p.ID, SectionID: schema.SectionID, FormTitle: wbFormTitleOf(p, schema),
-			PageURL: link, Fields: clean, IP: clientIP(c)}
+			PageURL: link, Fields: clean, IP: clientIP(c), EmailFields: wbFormEmailFields(schema)}
+		if u := currentUser(c); u != nil {
+			stored.UserID = u.ID
+		}
 		if err := s.store.WebBuilder().AddSubmission(ctx, stored); err != nil {
 			slog.Error("web builder form: store", "post", p.ID, "section", schema.SectionID, "err", err)
 			stored = nil
@@ -205,6 +209,19 @@ func (s *Server) wbRESTForm(c *gin.Context, r *restRequest) {
 		_ = s.store.WebBuilder().SetSubmissionMailed(ctx, stored.ID, true)
 	}
 	finish(wbFormSent, nil)
+}
+
+// wbFormEmailFields are the names of the form's e-mail fields: type email (a section form's email,
+// a code form's type="email" input or the input bound to email) and email, which the notification
+// answers to (Reply-To). Personal data export and erasure match the address on them only.
+func wbFormEmailFields(schema webbuilder.FormSchema) []string {
+	out := []string{}
+	for _, f := range schema.Fields {
+		if (f.Type == "email" || f.Name == "email") && !slices.Contains(out, f.Name) {
+			out = append(out, f.Name)
+		}
+	}
+	return out
 }
 
 // wbFormTarget loads the published page and the stored schema of the {section} form. Anything that

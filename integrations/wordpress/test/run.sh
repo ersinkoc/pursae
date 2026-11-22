@@ -18,7 +18,7 @@ TEST="$ROOT/integrations/wordpress/test"
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/wp2p-e2e.XXXXXX")
 PORT=${WP2P_PURSAE_PORT:-18089}
 DB=${WP2P_DB:-wpgo_wp2p}
-PGPORT=${WPGO_DB_PORT:-5432}
+PGPORT=${PURSAE_DB_PORT:-${WPGO_DB_PORT:-5432}}
 COMPOSE=(docker compose -p "${WP2P_COMPOSE_PROJECT:-wp2p-e2e}" -f "$TEST/docker-compose.yml")
 WPURL="http://127.0.0.1:${WP2P_WP_PORT:-8089}"
 PG=(docker compose -f "$ROOT/docker/compose.yaml")
@@ -54,9 +54,9 @@ echo "== Pursae database $DB"
 "${PG[@]}" exec -T db psql -U wpgo -d wpgo -qc "DROP DATABASE IF EXISTS $DB WITH (FORCE)" -c "CREATE DATABASE $DB" >/dev/null
 "${PG[@]}" exec -T db psql -U wpgo -d wpgo -qc "DROP DATABASE IF EXISTS ${DB}_web WITH (FORCE)" -c "CREATE DATABASE ${DB}_web" >/dev/null
 export DATABASE_URL="postgres://wpgo:wpgo@localhost:$PGPORT/$DB?sslmode=disable"
-export WPGO_UPLOADS_DIR="$WORK/uploads" WPGO_SITE_URL="http://127.0.0.1:$PORT" WPGO_ADDR=":$PORT" WPGO_HUB=off WPGO_MAIL_DIR="$WORK/mail"
+export PURSAE_UPLOADS_DIR="$WORK/uploads" PURSAE_SITE_URL="http://127.0.0.1:$PORT" PURSAE_ADDR=":$PORT" PURSAE_HUB=off PURSAE_MAIL_DIR="$WORK/mail"
 "$PURSAE" db migrate >/dev/null
-"$PURSAE" core install --url="$WPGO_SITE_URL" --title="Pursae" --admin_user=admin --admin_email=admin@pursae.test --admin_password='Pursae-admin-2026' >/dev/null
+"$PURSAE" core install --url="$PURSAE_SITE_URL" --title="Pursae" --admin_user=admin --admin_email=admin@pursae.test --admin_password='Pursae-admin-2026' >/dev/null
 
 echo "== WordPress + WooCommerce"
 mkdir -p "$TEST/exports"
@@ -113,7 +113,7 @@ check "post author" "$(sql "SELECT u.login FROM posts p JOIN users u ON u.id = p
 check "pages" "$(sql "SELECT string_agg(slug, ',' ORDER BY slug) FROM posts WHERE type = 'page' AND slug IN ('about', 'contact')")" "about,contact"
 check "comment" "$(sql "SELECT count(*) FROM comments c JOIN posts p ON p.id = c.post_id WHERE p.title = 'Hello from WordPress' AND c.content = 'Nice move!'")" "1"
 media=$(sql "SELECT file_path FROM media WHERE title = 'Pursae picture'")
-if [ -n "$media" ] && [ -f "$WPGO_UPLOADS_DIR/$media" ]; then ok "media file $media"; else bad "media file missing ($media)"; fi
+if [ -n "$media" ] && [ -f "$PURSAE_UPLOADS_DIR/$media" ]; then ok "media file $media"; else bad "media file missing ($media)"; fi
 check "media alt text" "$(sql "SELECT alt_text FROM media WHERE title = 'Pursae picture'")" "A blue picture"
 check "featured image" "$(sql "SELECT count(*) FROM posts p JOIN media m ON m.id = p.featured_media_id WHERE p.title = 'Hello from WordPress' AND m.title = 'Pursae picture'")" "1"
 check "menu items" "$(sql "SELECT string_agg(i.label, ',' ORDER BY i.sort_order) FROM menu_items i JOIN menus m ON m.id = i.menu_id WHERE m.name = 'Main menu'")" "About,Pursae"
@@ -191,9 +191,9 @@ check "the screen built the package" "$(jq -r .data.status <<<"$res")" "built"
 if [ "$steps" -gt 3 ]; then ok "it took $steps requests (one export_wp() batch each)"; else bad "only $steps requests: the content was not batched"; fi
 curl -s -b "$JAR" -o "$WORK/web.wp2p" "$(jq -r .data.download <<<"$res")"
 (
-	export DATABASE_URL="postgres://wpgo:wpgo@localhost:$PGPORT/${DB}_web?sslmode=disable" WPGO_UPLOADS_DIR="$WORK/uploads-web"
+	export DATABASE_URL="postgres://wpgo:wpgo@localhost:$PGPORT/${DB}_web?sslmode=disable" PURSAE_UPLOADS_DIR="$WORK/uploads-web"
 	"$PURSAE" db migrate >/dev/null
-	"$PURSAE" core install --url="$WPGO_SITE_URL" --title="Pursae" --admin_user=admin --admin_email=admin@pursae.test --admin_password='Pursae-admin-2026' >/dev/null
+	"$PURSAE" core install --url="$PURSAE_SITE_URL" --title="Pursae" --admin_user=admin --admin_email=admin@pursae.test --admin_password='Pursae-admin-2026' >/dev/null
 	"$PURSAE" import wordpress "$WORK/web.wp2p" --key="$(jq -r .data.key <<<"$res")" >"$WORK/import-web.log"
 ) || bad "importing the screen's package failed: $(tail -3 "$WORK/import-web.log" 2>/dev/null)"
 same() { # same <description> <query>: the screen's package gives what the command-line package gave

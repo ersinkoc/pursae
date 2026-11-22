@@ -382,7 +382,7 @@ func forumBuilderCompactJSON(s string) string {
 // member profile, log in and join inside it (anonymous, and a topic as a logged-in moderator with
 // the reply form), checks the Customizer layout and accent, and removes the demo again.
 func TestForumBuilderThemesInstall(t *testing.T) {
-	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
+	t.Setenv("PURSAE_THEMES_DIR", t.TempDir())
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{

@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"context"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -146,12 +145,12 @@ func TestCLIContentHelp(t *testing.T) {
 	}
 }
 
-// TestCLIContentIntegration runs the content commands against a fresh database (WPGO_TEST_DB).
+// TestCLIContentIntegration runs the content commands against a fresh database (PURSAE_TEST_DB).
 func TestCLIContentIntegration(t *testing.T) {
 	_, _, srv := newTestServerSetup(t, false, "")
 	cliTestInstalled(t, srv)
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	ctx := context.Background()
 	if _, err := srv.store.CreateUser(ctx, store.NewUser{Login: "admin", Email: "admin@example.com", PasswordHash: "x", Role: "administrator"}); err != nil {
 		t.Fatal(err)

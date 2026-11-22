@@ -262,7 +262,7 @@ func TestForumDesignEngage(t *testing.T) {
 	_, body, _ = getHdr(t, bob, topic.URL)
 	rnonce := forumFormNonce(t, body, "reply")
 	before := len(sentMail(t))
-	if code, _, _ := post(t, bob, topic.URL, url.Values{"forum_action": {"reply"}, "_wpnonce": {rnonce}, "content": {"<p>Set WPGO_SITE_URL to https.</p>"}}); code != 302 {
+	if code, _, _ := post(t, bob, topic.URL, url.Values{"forum_action": {"reply"}, "_wpnonce": {rnonce}, "content": {"<p>Set PURSAE_SITE_URL to https.</p>"}}); code != 302 {
 		t.Fatalf("reply: %d", code)
 	}
 	mails := sentMail(t)[before:]

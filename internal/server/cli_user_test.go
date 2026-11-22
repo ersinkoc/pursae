@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"context"
-	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -135,12 +134,12 @@ func TestCLIUserHelp(t *testing.T) {
 	}
 }
 
-// TestCLIUserIntegration runs the user commands against a fresh database (WPGO_TEST_DB).
+// TestCLIUserIntegration runs the user commands against a fresh database (PURSAE_TEST_DB).
 func TestCLIUserIntegration(t *testing.T) {
 	_, _, srv := newTestServerSetup(t, false, "")
 	cliTestInstalled(t, srv)
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	ctx := context.Background()
 	run := func(want int, args ...string) string {
 		t.Helper()

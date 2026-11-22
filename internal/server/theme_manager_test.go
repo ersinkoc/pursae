@@ -164,7 +164,7 @@ func (m *fakeManager) serveThemes(w http.ResponseWriter, r *http.Request) {
 // managerThemeSite is managerSite with the library read from the fake Manager (not library/themes).
 func managerThemeSite(t *testing.T) (base string, c *http.Client, srv *Server, hub *fakeManager) {
 	t.Helper()
-	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
+	t.Setenv("PURSAE_THEMES_DIR", t.TempDir())
 	base, c, srv, hub = managerSite(t)
 	srv.themeLibrary = nil
 	t.Cleanup(srv.closePreviews)
@@ -389,7 +389,7 @@ func TestManagerThemeUpdate(t *testing.T) {
 }
 
 func TestManagerThemePreinstall(t *testing.T) {
-	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
+	t.Setenv("PURSAE_THEMES_DIR", t.TempDir())
 	ts, c, srv := testServerBuilderOff(t)
 	srv.themeLibrary = nil
 	t.Cleanup(srv.closePreviews)

@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/config"
 	"wpgo/internal/settings"
 	"wpgo/internal/store"
 )
@@ -136,7 +137,7 @@ func goldenMarkups(t *testing.T) []string {
 			return nil
 		})
 	}
-	if v := os.Getenv("WPGO_SCAN_CORPUS"); v != "" {
+	if v := config.Env("SCAN_CORPUS"); v != "" {
 		for _, dir := range filepath.SplitList(v) {
 			_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
 				if err == nil && !d.IsDir() && strings.HasSuffix(strings.ToLower(p), ".html") {

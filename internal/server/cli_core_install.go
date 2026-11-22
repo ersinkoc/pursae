@@ -56,7 +56,7 @@ func registerCoreInstallCLI(r *cli.Registry, e *cliEnv) {
 			"language pack when needed and makes it the site language. The recommended themes the install\n" +
 			"screen downloads in the background are not fetched; install them with 'theme install'.",
 		Flags: []cli.Flag{
-			{Name: "url", Usage: "The site address (http or https). Default: WPGO_SITE_URL."},
+			{Name: "url", Usage: "The site address (http or https). Default: PURSAE_SITE_URL."},
 			{Name: "title", Usage: "The site title.", Default: "My Pursae Site"},
 			{Name: "admin_user", Usage: "The administrator's login.", Required: true},
 			{Name: "admin_email", Usage: "The administrator's e-mail (also the site's admin e-mail).", Required: true},

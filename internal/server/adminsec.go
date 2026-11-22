@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -21,6 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"wpgo/internal/config"
 	"wpgo/internal/store"
 )
 
@@ -44,7 +44,7 @@ const (
 	asOption  = "adminsecgo_settings"
 
 	asDeviceCookie = "wpgo_adminsec_device"
-	asEscapeEnv    = "WPGO_ADMINSEC_DISABLE_HIDE_LOGIN"
+	asEscapeEnv    = "PURSAE_ADMINSEC_DISABLE_HIDE_LOGIN"
 )
 
 // asSettings is the plugin's one JSON option.
@@ -208,10 +208,10 @@ func (s *Server) adminsecStart() {}
 
 // --- custom login URL --------------------------------------------------------------------
 
-// asEscapeHatch is the recovery switch: WPGO_ADMINSEC_DISABLE_HIDE_LOGIN=1 (or `wpgo adminsec
+// asEscapeHatch is the recovery switch: PURSAE_ADMINSEC_DISABLE_HIDE_LOGIN=1 (or `wpgo adminsec
 // disable-hide-login`, which turns the setting off for good) brings /wp-login back.
 func asEscapeHatch() bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv(asEscapeEnv)))
+	v := strings.ToLower(strings.TrimSpace(config.Env(asEscapeEnv)))
 	return v == "1" || v == "true" || v == "yes"
 }
 
@@ -435,7 +435,7 @@ func (s *Server) adminsecIdle() time.Duration {
 // --- e-mail delivery ---------------------------------------------------------------------
 
 // asMailReady reports whether e-mail can actually be delivered: WPGO Mail SMTP with a configured
-// SMTP or API mailer, or the core WPGO_SMTP_* transport. Without it MFA cannot be set up.
+// SMTP or API mailer, or the core PURSAE_SMTP_* transport. Without it MFA cannot be set up.
 func (s *Server) asMailReady() (bool, string) {
 	if s.mailSMTPOn() {
 		o := s.msLoad()
@@ -449,7 +449,7 @@ func (s *Server) asMailReady() (bool, string) {
 	if s.cfg.SMTPHost != "" {
 		return true, ""
 	}
-	return false, "E-mail delivery is not set up: configure an SMTP server or an e-mail API in Pursae SMTP (or the WPGO_SMTP_* environment variables) so codes can reach users."
+	return false, "E-mail delivery is not set up: configure an SMTP server or an e-mail API in Pursae SMTP (or the PURSAE_SMTP_* environment variables) so codes can reach users."
 }
 
 // msConnReady reports whether a connection's mailer has its required settings.
@@ -638,7 +638,7 @@ func (s *Server) asBlockAuthorSitemap() bool {
 }
 
 // blockEnumeration reports whether visitors are kept from listing accounts (REST users, /?author=N, the users
-// sitemap). This is the core's own default, so a site is safe without enabling any plugin: WPGO_EXPOSE_USERS=1 turns
+// sitemap). This is the core's own default, so a site is safe without enabling any plugin: PURSAE_EXPOSE_USERS=1 turns
 // it off, and when AdminSecGo is active its "block enumeration" setting (on by default) decides instead.
 func (s *Server) blockEnumeration() bool {
 	if s.adminsecOn() {

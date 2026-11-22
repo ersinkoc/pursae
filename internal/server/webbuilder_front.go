@@ -361,7 +361,7 @@ var wbSiteAssetsCache struct {
 }
 
 // wbSiteAssets names the public runtime and base CSS from web/web-builder/manifest.json: read once
-// from the embedded files, on every call in development (WPGO_WEB_DIR).
+// from the embedded files, on every call in development (PURSAE_WEB_DIR).
 func (s *Server) wbSiteAssets() (webbuilder.SiteManifest, error) {
 	if s.cfg.WebDir != "" {
 		return wbReadSiteAssets(s.web)

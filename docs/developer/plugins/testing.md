@@ -91,9 +91,9 @@ fake; declare them in `plugin.json` as usual.
 
 ## On a site
 
-- Run the site with `WPGO_WEB_DIR=web` and `plugin_allow_unsigned` during development; upload,
+- Run the site with `PURSAE_WEB_DIR=web` and `plugin_allow_unsigned` during development; upload,
   activate, read the plugin log on the Plugins screen.
 - The log receives your `wpgo.Log` lines, `println` output (stderr), refused registrations and
   failures. The server log has the same lines with `plugin=<slug>`.
-- `WPGO_MARKET_DIR=/path/to/zips` lists your packages on Plugins › Add Plugin so you can install
+- `PURSAE_MARKET_DIR=/path/to/zips` lists your packages on Plugins › Add Plugin so you can install
   them with one click.

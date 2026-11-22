@@ -85,7 +85,7 @@ The **Schedule** tab turns on automatic local backups:
 
 ## Storage and security
 
-* Archives live in `WPGO_BACKUPS_DIR` (default `<data>/backups`, next to uploads, never inside the public
+* Archives live in `PURSAE_BACKUPS_DIR` (default `<data>/backups`, next to uploads, never inside the public
   uploads directory) with mode 0600, named `backup-<time>-<random>.zip`.
 * Download, delete, upload and restore need an administrator and a nonce; file names are validated against
   `^[A-Za-z0-9][A-Za-z0-9._-]*\.zip$`.

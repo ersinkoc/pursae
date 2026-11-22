@@ -13,18 +13,18 @@ slow SMTP server never delays a request ([cron](cron.md)).
 ## SMTP
 
 ```bash
-WPGO_SMTP_HOST=smtp.example.com
-WPGO_SMTP_PORT=587            # 465 = implicit TLS; other ports use STARTTLS when offered
-WPGO_SMTP_USER=postmaster@example.com
-WPGO_SMTP_PASS=…
-WPGO_MAIL_FROM='Example Blog <no-reply@example.com>'
+PURSAE_SMTP_HOST=smtp.example.com
+PURSAE_SMTP_PORT=587            # 465 = implicit TLS; other ports use STARTTLS when offered
+PURSAE_SMTP_USER=postmaster@example.com
+PURSAE_SMTP_PASS=…
+PURSAE_MAIL_FROM='Example Blog <no-reply@example.com>'
 ```
 
 With Docker, `docker/compose.yaml` passes these variables through to the server. For `make prod-up`
 put them in `docker/.env` (copied from `docker/.env.example`) and run `make prod-up` again to apply
 a change.
 
-Without `WPGO_MAIL_FROM` the sender is `<Site title> <wordpress@host>`, the host taken from the
+Without `PURSAE_MAIL_FROM` the sender is `<Site title> <wordpress@host>`, the host taken from the
 site URL — set a real address so receiving servers accept the mail (and set up SPF/DKIM for it).
 
 Delivery failures are retried with back-off (1, 4, 9, 16 minutes); after five attempts the job is
@@ -32,7 +32,7 @@ marked failed and shows up in Tools › Site Health.
 
 ## Development: .eml files
 
-Without `WPGO_SMTP_HOST` every message is written as an `.eml` file to `WPGO_MAIL_DIR` (default:
+Without `PURSAE_SMTP_HOST` every message is written as an `.eml` file to `PURSAE_MAIL_DIR` (default:
 `mail/` next to the uploads directory, `/data/mail` in Docker, kept in the `mail` volume). Open the file in a mail client or
 read it as text to see the password reset link.
 

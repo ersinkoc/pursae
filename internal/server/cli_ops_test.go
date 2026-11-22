@@ -300,7 +300,7 @@ func TestHealthActionText(t *testing.T) {
 	}
 }
 
-// --- integration (WPGO_TEST_DB) ---------------------------------------------------------
+// --- integration (PURSAE_TEST_DB) ---------------------------------------------------------
 
 // runOpsCLI runs one command against the test server's database.
 func runOpsCLI(t *testing.T, cfg config.Config, args ...string) (int, string, string) {
@@ -314,8 +314,8 @@ func TestOpsCLIIntegration(t *testing.T) {
 	ts, client, srv := newTestServer(t, false)
 	installAndLogin(t, ts, client)
 	ctx := context.Background()
-	cfg := config.Config{DatabaseURL: os.Getenv("WPGO_TEST_DB"), UploadsDir: srv.cfg.UploadsDir, WebDir: srv.cfg.WebDir, HubURL: "off"}
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	cfg := config.Config{DatabaseURL: config.Env("TEST_DB"), UploadsDir: srv.cfg.UploadsDir, WebDir: srv.cfg.WebDir, HubURL: "off"}
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	pool := srv.store.Pool
 
 	// cron

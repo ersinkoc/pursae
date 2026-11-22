@@ -25,7 +25,7 @@ set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
 
-admin_dsn=${UPGRADE_ADMIN_DSN:-postgres://wpgo:wpgo@localhost:${WPGO_DB_PORT:-5432}/wpgo?sslmode=disable}
+admin_dsn=${UPGRADE_ADMIN_DSN:-postgres://wpgo:wpgo@localhost:${PURSAE_DB_PORT:-${WPGO_DB_PORT:-5432}}/wpgo?sslmode=disable}
 db_prefix=${UPGRADE_DB_PREFIX:-wpgo_upg}
 port=${UPGRADE_PORT:-18490}
 site="http://127.0.0.1:$port"
@@ -133,6 +133,9 @@ for tag in "${tags[@]}"; do
 	git archive "$tag" | tar -x -C "$dir/src"
 	(cd "$dir/src" && go build -tags nodynamic -o "$dir/pursae" ./cmd/wpgo)
 
+	# The releases under test predate PURSAE_* (0.5.0) and read only the WPGO_* names. HEAD gets the same
+	# environment, so the run also checks that a deployment keeping the old names still works (and that
+	# HEAD names the new variables in its log, below).
 	export DATABASE_URL WPGO_ADDR="127.0.0.1:$port" WPGO_SITE_URL="$site" WPGO_HUB=off \
 		WPGO_UPLOADS_DIR="$dir/uploads" WPGO_GEOIP_UPDATE=off WPGO_SETUP_TOKEN="upgrade-test-setup-token-0123456789"
 	DATABASE_URL=$(dsn_for "$name")
@@ -159,7 +162,11 @@ for tag in "${tags[@]}"; do
 	log "$tag: HEAD serve and verify"
 	start_server "$work/pursae-head" "$dir/serve-head.log"
 	ok=0
-	if "$helper" verify -url "$site" -snapshot "$dir/snapshot.json"; then
+	if ! grep -q 'deprecated environment variable.*new=PURSAE_SITE_URL' "$dir/serve-head.log"; then
+		echo "upgrade-test: HEAD did not warn about WPGO_SITE_URL (deprecated name)" >&2
+		results+=("$tag -> $head_label: FAILED (no deprecation warning)")
+		failed=1
+	elif "$helper" verify -url "$site" -snapshot "$dir/snapshot.json"; then
 		ok=1
 		results+=("$tag -> $head_label: ok ($((SECONDS - t0))s)")
 	else

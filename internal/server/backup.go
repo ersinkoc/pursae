@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"html/template"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/config"
 	"wpgo/internal/store"
 )
 
@@ -31,7 +31,7 @@ import (
 // Restoring replaces the chosen tables inside one transaction (nothing changes when it fails),
 // rewrites the old site address to the new one, keeps this site's own secret and address, and
 // resets the id sequences. A safety snapshot of the current site is taken first unless switched off.
-// Backups are stored outside the web root (WPGO_BACKUPS_DIR, default <data>/backups) and are only
+// Backups are stored outside the web root (PURSAE_BACKUPS_DIR, default <data>/backups) and are only
 // ever served to administrators.
 
 const (
@@ -145,10 +145,10 @@ type bmgrRuntime struct {
 // bmgrOn reports whether the plugin is active.
 func (s *Server) bmgrOn() bool { return s.settings.Bool(bmgrSetting) }
 
-// bmgrDir is where archives live: WPGO_BACKUPS_DIR, default <data>/backups next to the uploads. It is
+// bmgrDir is where archives live: PURSAE_BACKUPS_DIR, default <data>/backups next to the uploads. It is
 // never inside the uploads directory, which is served publicly.
 func (s *Server) bmgrDir() string {
-	if d := os.Getenv("WPGO_BACKUPS_DIR"); d != "" {
+	if d := config.Env("BACKUPS_DIR"); d != "" {
 		return d
 	}
 	return filepath.Join(filepath.Dir(filepath.Clean(s.cfg.UploadsDir)), "backups")

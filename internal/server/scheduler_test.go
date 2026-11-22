@@ -50,9 +50,9 @@ func TestQueueJobUsesDatabaseClock(t *testing.T) {
 
 func TestEmptyTrashDays(t *testing.T) {
 	for v, want := range map[string]int{"": 30, "7": 7, "0": 0, "-1": 30, "x": 30, " 14 ": 14} {
-		t.Setenv("WPGO_EMPTY_TRASH_DAYS", v)
+		t.Setenv("PURSAE_EMPTY_TRASH_DAYS", v)
 		if got := emptyTrashDays(); got != want {
-			t.Errorf("WPGO_EMPTY_TRASH_DAYS=%q: %d, want %d", v, got, want)
+			t.Errorf("PURSAE_EMPTY_TRASH_DAYS=%q: %d, want %d", v, got, want)
 		}
 	}
 }

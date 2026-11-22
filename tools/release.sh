@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds the Pursae core for every platform and publishes it as a GitHub release, which
 # Pursae Manager then imports (Core › Import): it signs the binaries' hashes and points sites
-# at the GitHub downloads. See docs/developer/operations/releases.md.
+# at the GitHub downloads. Each binary also ships in an archive with the license files
+# (pursae-<os>-<arch>.tar.gz, .zip on Windows). See docs/developer/operations/releases.md.
 #
 #   tools/release.sh 0.2.0                 build, tag v0.2.0, push the tag, create the release
 #   tools/release.sh 0.3.0-beta.1 --beta   the same, marked as a pre-release
@@ -23,7 +24,7 @@
 #   YES=1            do not ask before publishing
 set -euo pipefail
 
-usage() { sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+usage() { sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
 VERSION="${1:-}"
 [[ -n "$VERSION" && "$VERSION" != -* ]] || usage
@@ -186,6 +187,64 @@ for t in $TARGETS; do
 		fi
 	fi
 done
+
+# Next to each bare binary (what Pursae Manager imports and sites update from; it only takes assets
+# named exactly pursae-<os>-<arch>[.exe]), an archive for people installing by hand: the binary as
+# pursae(.exe), LICENSE, NOTICE, LICENSES/ and a short README. pursae-<os>-<arch>.tar.gz, .zip on
+# Windows. Owner, group and extra attributes are left out so the archives say nothing of this machine.
+root_dir="$PWD"
+stage="$(mktemp -d "${TMPDIR:-/tmp}/pursae-release-stage.XXXXXX")"
+cleanup() {
+	rm -rf "$stage"
+	if [[ -n "${notes_file:-}" && -z "${NOTES_FILE:-}" ]]; then rm -f "$notes_file"; fi
+}
+trap cleanup EXIT
+if tar --version 2>/dev/null | grep -q 'GNU tar'; then
+	tar_owner=(--owner=0 --group=0 --numeric-owner)
+else
+	# bsdtar (macOS): also leave out extended attributes, ACLs and Mac metadata, which it would
+	# otherwise store as LIBARCHIVE.xattr.* / SCHILY.xattr.* pax headers (GNU tar warns on them).
+	tar_owner=(--uid 0 --gid 0 --uname root --gname root --no-xattrs --no-acls --no-mac-metadata)
+fi
+for t in $TARGETS; do
+	os="${t%-*}"
+	src="pursae-$t" exe=pursae
+	[[ "$os" == windows ]] && src="$src.exe" exe=pursae.exe
+	dir="$stage/pursae-$t"
+	mkdir -p "$dir"
+	cp "$OUT/$src" "$dir/$exe"
+	cp LICENSE NOTICE "$dir/"
+	cp -R LICENSES "$dir/LICENSES"
+	cat >"$dir/README.txt" <<EOF
+Pursae $VERSION ($t)
+https://github.com/$REPO
+
+Pursae is a WordPress-compatible CMS in one binary, backed by PostgreSQL 16 or 17.
+
+  $exe version
+      print the version
+  $exe serve
+      run the database migrations, then serve the site (settings from the environment:
+      DATABASE_URL, PURSAE_SITE_URL, PURSAE_UPLOADS_DIR, ...; see the configuration reference)
+  $exe setup-token
+      print the install link of a site that is not installed yet
+
+Install guide, systemd unit and configuration reference:
+https://github.com/$REPO/blob/$TAG/docs/developer/getting-started/install-binary.md
+
+Pursae is licensed under the GNU General Public License, version 2 or (at your option) any
+later version (LICENSE). The third-party components it bundles and their licenses are listed in
+NOTICE; the license texts are in LICENSES/.
+EOF
+	chmod 0755 "$dir/$exe"
+	if [[ "$os" == windows ]]; then
+		command -v zip >/dev/null || { echo "release: zip is needed for the Windows archive" >&2; exit 1; }
+		(cd "$stage" && zip -qrX "$root_dir/$OUT/pursae-$t.zip" "pursae-$t")
+	else
+		(cd "$stage" && COPYFILE_DISABLE=1 tar "${tar_owner[@]}" -czf "$root_dir/$OUT/pursae-$t.tar.gz" "pursae-$t")
+	fi
+	echo "== pursae-$t.$([[ "$os" == windows ]] && echo zip || echo tar.gz)"
+done
 (cd "$OUT" && shasum -a 256 pursae-* >SHA256SUMS)
 echo
 cat "$OUT/SHA256SUMS"
@@ -193,7 +252,7 @@ du -sh "$OUT" | awk '{print "Total: " $1}'
 
 if [[ $DRY == 1 ]]; then
 	echo
-	echo "Dry run: the binaries are in $OUT; nothing was tagged or published."
+	echo "Dry run: the binaries and archives are in $OUT; nothing was tagged or published."
 	exit 0
 fi
 

@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"io/fs"
 	"net/url"
-	"os"
 	"regexp"
 	"runtime"
 	"sort"
 	"strings"
 	"time"
+	"wpgo/internal/config"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -250,20 +250,20 @@ type migrationSettings struct {
 	attempts         int           // total tries on lock_not_available, at least 1
 }
 
-// loadMigrationSettings reads WPGO_MIGRATE_LOCK_TIMEOUT and WPGO_MIGRATE_STATEMENT_TIMEOUT (Go
+// loadMigrationSettings reads PURSAE_MIGRATE_LOCK_TIMEOUT and PURSAE_MIGRATE_STATEMENT_TIMEOUT (Go
 // durations such as "5s" or "30m"). It lives in this package rather than in main so every caller
 // of Migrate (serve, wpgo migrate, theme previews, tests) gets the same limits. An invalid or
 // negative value falls back to the default.
 func loadMigrationSettings() migrationSettings {
 	return migrationSettings{
-		lockTimeout:      envDuration("WPGO_MIGRATE_LOCK_TIMEOUT", defaultMigrationLockTimeout),
-		statementTimeout: envDuration("WPGO_MIGRATE_STATEMENT_TIMEOUT", 0),
+		lockTimeout:      envDuration("PURSAE_MIGRATE_LOCK_TIMEOUT", defaultMigrationLockTimeout),
+		statementTimeout: envDuration("PURSAE_MIGRATE_STATEMENT_TIMEOUT", 0),
 		attempts:         defaultMigrationAttempts,
 	}
 }
 
 func envDuration(key string, def time.Duration) time.Duration {
-	v := strings.TrimSpace(os.Getenv(key))
+	v := strings.TrimSpace(config.Env(key))
 	if v == "" {
 		return def
 	}

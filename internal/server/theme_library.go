@@ -33,7 +33,7 @@ import (
 //     <data>/theme-library-cache/<slug>/<version>/; screenshots are fetched once into the same
 //     directory and served by the site, so pro and private ones work and the browser never talks
 //     to the Manager;
-//   - a directory of package directories when WPGO_THEME_LIBRARY_DIR is set (development, offline
+//   - a directory of package directories when PURSAE_THEME_LIBRARY_DIR is set (development, offline
 //     sites and the tests; the repository keeps the library in library/themes).
 //
 // Install hands the package to installThemePackage, so a library theme is validated, extracted to
@@ -65,7 +65,7 @@ func themeCategoryLabel(slug string) string { return themeCategoryLabels[slug] }
 const (
 	themeSourceFile    = ".pursae-source"
 	themeSourceHub     = "hub"     // the library, from Pursae Manager
-	themeSourceLibrary = "library" // the library, from WPGO_THEME_LIBRARY_DIR
+	themeSourceLibrary = "library" // the library, from PURSAE_THEME_LIBRARY_DIR
 	themeSourceUpload  = "upload"  // Add Themes › Upload
 )
 

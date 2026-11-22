@@ -1,4 +1,6 @@
-FROM golang:1.27-alpine AS build
+# Base images are pinned by digest (the multi-platform index of the tag) so a build is reproducible;
+# Dependabot (.github/dependabot.yml) proposes new digests weekly.
+FROM golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -19,7 +21,7 @@ ARG VERSION=
 # self-update or a Manager-signed plugin (internal/server/hub_trust.go).
 ARG ROOT_KEYS=
 # GO_TAGS (optional): extra build tags. "devhub" builds a development binary that reads
-# WPGO_DEV_HUB_URL (a local Pursae Manager) and WPGO_TRUST_HUB_KEYS; production images leave it empty,
+# PURSAE_DEV_HUB_URL (a local Pursae Manager) and PURSAE_TRUST_HUB_KEYS; production images leave it empty,
 # so the binary always talks to https://hub.pursae.com and trusts only endorsed keys.
 ARG GO_TAGS=
 # A static binary (no ELF interpreter), so the same file runs on musl and glibc systems:
@@ -27,7 +29,7 @@ ARG GO_TAGS=
 # with its embedded WebAssembly build instead of a system libavif).
 RUN CGO_ENABLED=0 go build -trimpath -buildmode=exe -tags "nodynamic $GO_TAGS" -ldflags="-s -w${VERSION:+ -X wpgo/internal/server.Version=$VERSION}${ROOT_KEYS:+ -X wpgo/internal/server.rootKeysLinked=$ROOT_KEYS}" -o /out/wpgo ./cmd/wpgo
 
-FROM alpine:3.22
+FROM alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 wpgo \
 	&& mkdir -p /data/uploads /data/plugins /data/plugin-cache /data/mail /data/themes /data/wpgo-cache /data/languages /data/bin /data/backups /data/geoip \
 	&& chown -R wpgo /data
@@ -44,11 +46,13 @@ COPY LICENSES/ /usr/share/doc/pursae/LICENSES/
 # Demo marketplace: example plugin packages built by tools/build-plugins.sh (if present).
 COPY examples/plugins/dis[t]/*.zip examples/plugins/dis[t]/dev-key.pub /usr/share/wpgo/plugins/
 USER wpgo
-ENV WPGO_BIN_DIR=/data/bin
-# The installer asks for a setup token: WPGO_SETUP_TOKEN, or the one the server prints in its log on a
+# WPGO_BIN_DIR is the name releases before 0.5.0 read: a core update rollback may run one of them from
+# /data/bin. The same value under both names is not reported as a deprecated setting.
+ENV PURSAE_BIN_DIR=/data/bin WPGO_BIN_DIR=/data/bin
+# The installer asks for a setup token: PURSAE_SETUP_TOKEN, or the one the server prints in its log on a
 # fresh site (`docker exec <container> wpgo setup-token` prints a new install link).
 EXPOSE 8080
-# Liveness: GET /healthz on WPGO_ADDR through the binary itself (no curl in the image). The start
+# Liveness: GET /healthz on PURSAE_ADDR through the binary itself (no curl in the image). The start
 # period covers the migrations a new version runs before it listens.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD ["/usr/local/lib/pursae/wpgo", "healthcheck"]
 ENTRYPOINT ["/usr/local/lib/pursae/wpgo", "launch"]

@@ -28,7 +28,7 @@ func TestPublishDuePostIDsReturnsPublished(t *testing.T) {
 func TestRevisionsAreCapped(t *testing.T) {
 	s, _, u1, _ := wbTestStore(t)
 	ctx := context.Background()
-	t.Setenv("WPGO_POST_REVISIONS", "3")
+	t.Setenv("PURSAE_POST_REVISIONS", "3")
 	p := &Post{Type: "post", AuthorID: u1, Title: "v0", Status: "publish"}
 	if err := s.InsertPost(ctx, p); err != nil {
 		t.Fatal(err)
@@ -55,7 +55,7 @@ func TestRevisionsAreCapped(t *testing.T) {
 	if n, err := s.PruneRevisions(ctx, 1); err != nil || n != 2 || count() != 1 {
 		t.Errorf("PruneRevisions(1) = %d, %v; left %d", n, err, count())
 	}
-	t.Setenv("WPGO_POST_REVISIONS", "-1")
+	t.Setenv("PURSAE_POST_REVISIONS", "-1")
 	for _, title := range []string{"a", "b", "c"} {
 		p.Title = title
 		_ = s.UpdatePost(ctx, p, u1)

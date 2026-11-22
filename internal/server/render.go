@@ -228,8 +228,11 @@ func (t *templates) coreFuncs(s *Server) template.FuncMap {
 			return m
 		},
 		"version": func() string { return Version },
-		"list":    func(v ...string) []string { return v },
-		"split":   strings.Split,
+		// brandStockLogo: the logo is the stock Pursae mark, drawn inline and animated on the login
+		// screens; false when the Hub replaced it with another image (brand_mascot.go).
+		"brandStockLogo": s.brandStockLogo,
+		"list":           func(v ...string) []string { return v },
+		"split":          strings.Split,
 		"checklist": func(it checklistItem, idx int, disabled ...bool) template.HTML {
 			return checklistHTML(it, idx, disabled...)
 		},

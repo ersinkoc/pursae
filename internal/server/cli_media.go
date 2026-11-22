@@ -30,7 +30,7 @@ var mediaListFields = []string{"ID", "title", "file", "mime_type", "post_id", "d
 var mediaGetFields = []string{"ID", "title", "slug", "file", "url", "mime_type", "file_size", "width", "height", "alt", "caption",
 	"description", "post_id", "author", "date", "modified", "sizes"}
 
-const mediaUploadsNote = `Files are read and written in WPGO_UPLOADS_DIR: run the command where the server's uploads
+const mediaUploadsNote = `Files are read and written in PURSAE_UPLOADS_DIR: run the command where the server's uploads
 volume is mounted (in Docker: docker exec <container> pursae ...).`
 
 func registerMediaLibraryCLI(r *cli.Registry, e *cliEnv) {

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"wpgo/internal/config"
 	"wpgo/internal/webbuilder"
 )
 
@@ -122,11 +123,11 @@ func TestWBScannersRandom(t *testing.T) {
 }
 
 // TestWBScannersCorpus runs the scanners over the repository's HTML fixtures and, when
-// WPGO_SCAN_CORPUS names folders (a list, separated by the OS's path list separator), over every
+// PURSAE_SCAN_CORPUS names folders (a list, separated by the OS's path list separator), over every
 // .html / .css / .js file under them (imported designs).
 func TestWBScannersCorpus(t *testing.T) {
 	dirs := []string{"../webbuilder/testdata", "testdata"}
-	if v := os.Getenv("WPGO_SCAN_CORPUS"); v != "" {
+	if v := config.Env("SCAN_CORPUS"); v != "" {
 		dirs = append(dirs, filepath.SplitList(v)...)
 	}
 	n := 0
@@ -191,10 +192,10 @@ func TestWBKitVersionedSame(t *testing.T) {
 	}
 }
 
-// benchPage is a large imported page: WPGO_BENCH_HTML (a file), else a synthetic one of about
+// benchPage is a large imported page: PURSAE_BENCH_HTML (a file), else a synthetic one of about
 // 160 KB with kit files, CSS url() references, many tags and no main landmark.
 func benchPage(tb testing.TB) string {
-	if p := os.Getenv("WPGO_BENCH_HTML"); p != "" {
+	if p := config.Env("BENCH_HTML"); p != "" {
 		raw, err := os.ReadFile(p)
 		if err != nil {
 			tb.Fatal(err)

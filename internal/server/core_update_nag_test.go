@@ -108,13 +108,13 @@ func TestValidReleaseVersion(t *testing.T) {
 	}
 }
 
-// WPGO_HUB=off: every admin page tells those who may update that updates are off and how to turn
+// PURSAE_HUB=off: every admin page tells those who may update that updates are off and how to turn
 // them back on; nobody else sees it, and nothing is announced.
 func TestHubOffNotice(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)
-	const want = "To get updates, remove <code>WPGO_HUB</code> from the environment and restart Pursae."
+	const want = "To get updates, remove <code>PURSAE_HUB</code> from the environment and restart Pursae."
 	if _, body, _ := get(t, c, base+"/wp-admin/"); strings.Contains(body, want) {
 		t.Fatal("the hub-off notice shows while the Manager is on")
 	}

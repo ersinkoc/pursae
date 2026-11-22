@@ -6,6 +6,25 @@ compiles to `wasm32-wasi` and can export functions can implement it; the Go SDK
 packages a fraction of the size of a standard Go build, but only the standard Go toolchain is
 tested by the project today.
 
+## ABI versions
+
+The ABI has a version number. A plugin without the [`plugin.json`](manifest.md) field `"abi"` is
+built for version 1, so a version 1 plugin leaves the field out: releases before 0.5.0 reject a
+manifest that has it. A plugin built for a later version states it (`"abi": 2`) together with
+`"requires": "0.5.0"` or later; a manifest with `"abi"` and an older or missing `requires` fails
+validation, and `"abi"` must be a positive integer. The host lists the
+versions it runs (Pursae 0.5: `[1]`, `plugins.SupportedABIs`) and refuses to install or activate a
+plugin built for any other, with an error naming the plugin's version and the supported ones.
+
+- **Additive changes keep the version.** A new host import, a new optional field in a request or a
+  result, a new value of `type` sent to `wpgo_handle`, or a new permission is added to ABI 1. A
+  module that imports a host function an older Pursae does not have fails to load there, so set
+  `requires` (the minimum Pursae version) to the release that added it.
+- **Removals and changes bump it.** Removing or renaming an import or export, changing a
+  signature, the packing of values, the envelope, or the meaning of an existing field makes ABI 2.
+  A host that introduces ABI 2 keeps running ABI 1 plugins for at least the deprecation period of the
+  [compatibility policy](../compatibility.md).
+
 ## ABI (version 1)
 
 The plugin is a WASI preview1 **reactor** module. In Go, build it with
@@ -54,6 +73,8 @@ The import returns `0` if no response could be delivered.
 | `http_get` | `{"url":"https://…"}` | `{"status":200,"header":{…},"body":"…"}` | `http:outbound` |
 | `storage_get` | `{"key":"…"}` | `{"found":bool,"value":"…"}` | `storage` |
 | `storage_set` | `{"key":"…","value":"…"}` | – | `storage` |
+| `storage_delete` | `{"key":"…"}` | – (deleting a missing key is not an error) | `storage` |
+| `storage_list` | `{"prefix":"…","after":"…","limit":100}` (all optional) | `{"keys":["…"],"next":"…"}` | `storage`; keys in byte order, after `after`; `limit` 1–500 (default and cap 500); `next` is the last key when more remain (pass it as `after`), else `""` |
 | `add_admin_notice` | `{"type":"info\|success\|warning\|error","message":"…"}` | – | `admin:notices` |
 | `register_shortcode` | `{"tag":"…","callback":"…"}` | – | `content:filter` + tag in manifest `shortcodes` |
 | `register_rest_route` | `{"namespace":"<slug>/v1","route":"/items/(?P<id>\\d+)","methods":["GET"],"callback":"…"}` | – | `rest:routes`; namespace is `<slug>` or `<slug>/vN` |

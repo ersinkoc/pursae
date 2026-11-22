@@ -36,3 +36,45 @@
 .admin-theme-mode label { display: inline-flex; align-items: center; gap: 6px; margin: 0; clear: none; }
 .admin-theme-mode label input { margin: 0; }
 .admin-theme-badge { position: absolute; top: 8px; right: 8px; padding: 2px 8px; background: #4c60ef; color: #fff; font-size: 10.5px; font-weight: 600; line-height: 16px; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Dashboard › Pursae News and Dashboard › Updates: the release notes of the latest Pursae
+   (release_notes.go). Colours fall back to the default admin and follow Pursae Modern's tokens,
+   light, dark and auto alike. */
+#dashboard_primary .pursae-news { padding: 0 12px; }
+.pursae-news-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 12px 0 2px; }
+.pursae-news-title { font-size: 14px; font-weight: 600; text-decoration: none; }
+.pursae-news-badge { display: inline-block; padding: 0 7px; border-radius: 9px; font-size: 11px; font-weight: 600; line-height: 18px; }
+.pursae-news-badge.is-update { background: var(--pm-warn, #dba617); color: #1d2327; }
+.pursae-news-badge.is-new { background: var(--pm-ok, #00a32a); color: #fff; }
+body.pursae-modern.pm-dark .pursae-news-badge.is-new { color: #0F1013; }
+@media (prefers-color-scheme: dark) { body.pursae-modern.pm-auto .pursae-news-badge.is-new { color: #0F1013; } }
+.pursae-news-meta { margin: 0 0 10px; color: var(--pm-muted, #646970); font-size: 12px; }
+.pursae-news-meta time { cursor: help; }
+.pursae-news-summary { margin: 0 0 12px; font-size: 13px; line-height: 1.55; }
+.pursae-news-digest { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 10px; align-items: start; margin: 0 0 10px; }
+.pursae-news-group { display: contents; }
+.pursae-news-group ul { margin: 0; padding: 0; list-style: none; }
+.pursae-news-group li { margin: 0 0 6px; line-height: 1.5; overflow-wrap: anywhere; }
+.pursae-news-group li:last-child { margin-bottom: 0; }
+.pursae-news-label { justify-self: stretch; margin-top: 1px; padding: 0 6px; border-radius: 3px; font-size: 10px; font-weight: 600; line-height: 18px; letter-spacing: .04em; text-align: center; text-transform: uppercase; color: var(--pm-muted, #50575e); background: color-mix(in srgb, currentColor 13%, transparent); }
+.is-added > .pursae-news-label { color: var(--pm-ok, #007017); }
+.is-changed > .pursae-news-label { color: var(--pm-info, #2271b1); }
+.is-fixed > .pursae-news-label { color: var(--pm-primary, #7a3fc2); }
+.is-deprecated > .pursae-news-label, .is-removed > .pursae-news-label { color: var(--pm-warn, #996800); }
+.is-security > .pursae-news-label { color: #fff; background: var(--pm-bad, #d63638); }
+body.pursae-modern.pm-dark .is-security > .pursae-news-label { color: #0F1013; }
+@media (prefers-color-scheme: dark) { body.pursae-modern.pm-auto .is-security > .pursae-news-label { color: #0F1013; } }
+.pursae-news-more { margin: 0 0 12px; color: var(--pm-muted, #646970); font-size: 12px; }
+.pursae-news-empty { margin: 12px 0; }
+.pursae-news code, .pursae-release-notes code { padding: 1px 4px; border-radius: 3px; font-size: 12px; background: var(--pm-hover, #f0f0f1); color: inherit; overflow-wrap: anywhere; }
+#dashboard_primary .pursae-news-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.pursae-news-footer .dashicons-external, .pursae-release-notes .dashicons-external { font-size: 14px; width: 14px; height: 14px; margin-inline-start: 2px; vertical-align: -2px; text-decoration: none; }
+#dashboard_primary .pursae-news-update { margin-inline-start: auto; }
+.pursae-release-notes-body { max-width: 52em; }
+.pursae-release-notes-body > :first-child { margin-top: 0; }
+.pursae-release-notes h3 { margin: 1.4em 0 .5em; font-size: 14px; }
+.pursae-release-notes h4 { margin: 1.2em 0 .4em; font-size: 13px; }
+.pursae-release-notes ul { margin: 0 0 1em; padding-inline-start: 20px; list-style: disc; }
+.pursae-release-notes li { margin-bottom: 6px; line-height: 1.55; }
+.pursae-release-notes pre { overflow: auto; padding: 8px 10px; background: var(--pm-hover, #f0f0f1); }
+.pursae-release-notes pre code { padding: 0; background: none; }

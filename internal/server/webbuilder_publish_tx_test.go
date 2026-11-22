@@ -3,9 +3,9 @@ package server
 import (
 	"context"
 	"net/http"
-	"os"
 	"testing"
 	"time"
+	"wpgo/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -62,7 +62,7 @@ func TestWebBuilderRESTPublishOneConnection(t *testing.T) {
 	page := wbrPost(t, srv, "page", "Tiny Pool", "draft", 1)
 	doc, render := wbrFixture(t, "initial")
 
-	cfg, err := pgxpool.ParseConfig(os.Getenv("WPGO_TEST_DB"))
+	cfg, err := pgxpool.ParseConfig(config.Env("TEST_DB"))
 	if err != nil {
 		t.Fatal(err)
 	}

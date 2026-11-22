@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/config"
 	"wpgo/internal/mail"
 )
 
@@ -157,14 +158,14 @@ func (s *Server) jobHandlers() map[string]jobHandler {
 }
 
 // emptyTrashDays is EMPTY_TRASH_DAYS: how long trashed posts and comments are kept before
-// wp_scheduled_delete removes them, from WPGO_EMPTY_TRASH_DAYS (default 30). 0 empties the trash
+// wp_scheduled_delete removes them, from PURSAE_EMPTY_TRASH_DAYS (default 30). 0 empties the trash
 // at every run of the daily job, as WordPress' cron does with EMPTY_TRASH_DAYS = 0.
 func emptyTrashDays() int {
-	if v := strings.TrimSpace(os.Getenv("WPGO_EMPTY_TRASH_DAYS")); v != "" {
+	if v := strings.TrimSpace(config.Env("EMPTY_TRASH_DAYS")); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
 			return n
 		}
-		slog.Warn("WPGO_EMPTY_TRASH_DAYS is not a whole number of days; using 30", "value", v)
+		slog.Warn("PURSAE_EMPTY_TRASH_DAYS is not a whole number of days; using 30", "value", v)
 	}
 	return 30
 }

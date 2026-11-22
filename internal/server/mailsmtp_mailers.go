@@ -26,7 +26,7 @@ var msSESRegions = [][2]string{{"us-east-1", "US East (N. Virginia)"}, {"us-east
 
 var msMailers = []msMailerDef{
 	{Slug: "mail", Title: "Default (none)", Color: "#646970",
-		Desc: "You currently have the Default (none) mailer selected, which won't improve email deliverability. Pursae then sends with its built-in transport: the WPGO_SMTP_* environment variables, or .eml files in the mail directory on development sites."},
+		Desc: "You currently have the Default (none) mailer selected, which won't improve email deliverability. Pursae then sends with its built-in transport: the PURSAE_SMTP_* environment variables, or .eml files in the mail directory on development sites."},
 	{Slug: "sendlayer", Title: "SendLayer", Recommended: true, Color: "#0d6efd", Docs: "https://sendlayer.com",
 		Desc:   "SendLayer is our #1 recommended mailer. Its affordable pricing and simple setup make it the perfect choice for WordPress sites.",
 		Fields: []msField{{Key: "api_key", Label: "API Key", Type: "password", Desc: "Follow this link to get an API Key from SendLayer: Get API Key."}}},

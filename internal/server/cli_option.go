@@ -297,7 +297,7 @@ func registerOptionCommands(r *cli.Registry, e *cliEnv) {
 				}
 			}
 			if optContains(keys, "home") {
-				c.Warning("deleting 'home' makes links fall back to WPGO_SITE_URL.")
+				c.Warning("deleting 'home' makes links fall back to PURSAE_SITE_URL.")
 			}
 			if err := c.Confirm("Delete %d option(s): %s?", len(keys), strings.Join(keys, ", ")); err != nil {
 				return err

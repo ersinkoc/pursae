@@ -31,7 +31,7 @@ func registerOpsBackupCLI(r *cli.Registry, e *cliEnv) {
 	r.Add(cli.Command{
 		Path:  "backup list",
 		Short: "List the backup archives in the backups directory.",
-		Long:  "Lists WPGO_BACKUPS_DIR (default <data>/backups), newest first. Unfinished .zip.part files older\nthan an hour are swept, as on the Backups tab.",
+		Long:  "Lists PURSAE_BACKUPS_DIR (default <data>/backups), newest first. Unfinished .zip.part files older\nthan an hour are swept, as on the Backups tab.",
 		Examples: []string{
 			"backup list",
 			"backup list --fields=name,size,site_url,schema --format=json",
@@ -383,7 +383,7 @@ func opsNewLogLines(printed, cur []string) []string {
 
 // --- language -----------------------------------------------------------------------
 
-// langDir is where language packs live: WPGO_LANG_DIR, else <data>/languages (initLanguages).
+// langDir is where language packs live: PURSAE_LANG_DIR, else <data>/languages (initLanguages).
 func (e *cliEnv) langDir() string {
 	if d := e.cfg.LangDir; d != "" {
 		return d
@@ -471,7 +471,7 @@ func registerOpsLanguageCLI(r *cli.Registry, e *cliEnv) {
 		Path:  "language core install",
 		Short: "Download language packs.",
 		Long: "Downloads the WordPress core pack of each locale from the WordPress.org translation API, then the\n" +
-			"translations of the plugins the built-in plugins share strings with, into WPGO_LANG_DIR (default\n" +
+			"translations of the plugins the built-in plugins share strings with, into PURSAE_LANG_DIR (default\n" +
 			"<data>/languages). --activate then makes the (last) locale the site language.",
 		Args: []cli.Arg{{Name: "language", Usage: "Locale, e.g. de_DE.", Repeat: true}},
 		Flags: []cli.Flag{
@@ -633,8 +633,8 @@ func registerOpsMailCLI(r *cli.Registry, e *cliEnv) {
 		Short: "Send a test e-mail through the site's mail transport.",
 		Long: "Sends a message synchronously through the transport wp_mail uses: Pursae SMTP's connection when\n" +
 			"the plugin is active (the attempt is written to its Email Log and debug events, and Do Not Send\n" +
-			"is respected), else WPGO_SMTP_HOST. Without either the message is only saved as an .eml file in\n" +
-			"WPGO_MAIL_DIR and not delivered.",
+			"is respected), else PURSAE_SMTP_HOST. Without either the message is only saved as an .eml file in\n" +
+			"PURSAE_MAIL_DIR and not delivered.",
 		Args: []cli.Arg{{Name: "to", Usage: "Recipient address."}},
 		Flags: []cli.Flag{
 			{Name: "html", Bool: true, Usage: "Send an HTML message (Pursae SMTP)."},
@@ -676,7 +676,7 @@ func registerOpsMailCLI(r *cli.Registry, e *cliEnv) {
 				return cli.Errorf("sending failed: %v", err)
 			}
 			if !m.Configured() && m.Transport == nil {
-				c.Warning("no SMTP server is configured (WPGO_SMTP_HOST) and Pursae SMTP is inactive: the message was saved as an .eml file in %s, not delivered.", m.Dir)
+				c.Warning("no SMTP server is configured (PURSAE_SMTP_HOST) and Pursae SMTP is inactive: the message was saved as an .eml file in %s, not delivered.", m.Dir)
 				return nil
 			}
 			c.Success("Test e-mail sent to %s through %s:%s.", to, m.Host, m.Port)

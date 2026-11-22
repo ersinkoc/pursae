@@ -20,6 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/cli"
+	"wpgo/internal/config"
 	"wpgo/internal/plugins"
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
@@ -65,12 +66,12 @@ func (s *Server) extPluginSystem(ctx context.Context) {
 	}
 	ps := &pluginSystem{hooks: plugins.NewRegistry()}
 	ps.dir, _ = s.pluginDirs()
-	for _, k := range strings.FieldsFunc(os.Getenv("WPGO_PLUGIN_KEYS"), func(r rune) bool { return r == ',' || r == '\n' || r == ' ' }) {
+	for _, k := range strings.FieldsFunc(config.Env("PLUGIN_KEYS"), func(r rune) bool { return r == ',' || r == '\n' || r == ' ' }) {
 		if pub, err := plugins.ParsePublicKey(k); err == nil {
 			ps.envKeys = append(ps.envKeys, pub)
 		}
 	}
-	for _, dir := range []string{os.Getenv("WPGO_MARKET_DIR"), "examples/plugins/dist", "/usr/share/wpgo/plugins"} {
+	for _, dir := range []string{config.Env("MARKET_DIR"), "examples/plugins/dist", "/usr/share/wpgo/plugins"} {
 		if dir == "" {
 			continue
 		}
@@ -557,7 +558,7 @@ func registerPluginCLI(r *cli.Registry, e *cliEnv) {
 		Path:  "plugin install",
 		Short: "Install plugin packages from a zip file or by slug.",
 		Long: "A file (or - for standard input) is verified against the trusted keys and installed like an\n" +
-			"upload. A slug is installed from Pursae Manager, or from the market directory (WPGO_MARKET_DIR)\n" +
+			"upload. A slug is installed from Pursae Manager, or from the market directory (PURSAE_MARKET_DIR)\n" +
 			"when no Manager is configured. A new plugin is installed inactive; a new version of an active\n" +
 			"plugin is loaded right away. An older version, or a package signed by another publisher, is\n" +
 			"refused unless --force is given (files and market packages only).",
@@ -587,7 +588,7 @@ func registerPluginCLI(r *cli.Registry, e *cliEnv) {
 	r.Add(cli.Command{
 		Path:     "plugin key list",
 		Short:    "List the trusted plugin signing keys.",
-		Long:     "Keys from the Trusted Keys screen (source option) and from WPGO_PLUGIN_KEYS (source env, read-only).",
+		Long:     "Keys from the Trusted Keys screen (source option) and from PURSAE_PLUGIN_KEYS (source env, read-only).",
 		Examples: []string{"plugin key list", "plugin key list --format=json"},
 		Run: func(c *cli.Ctx) error {
 			s, err := e.extServer(c.Context)
@@ -630,7 +631,7 @@ func registerPluginCLI(r *cli.Registry, e *cliEnv) {
 	r.Add(cli.Command{
 		Path:     "plugin key remove",
 		Short:    "Stop trusting a signing key.",
-		Long:     "Installed plugins signed with the key keep running; new packages signed with it are refused.\nKeys from WPGO_PLUGIN_KEYS cannot be removed here.",
+		Long:     "Installed plugins signed with the key keep running; new packages signed with it are refused.\nKeys from PURSAE_PLUGIN_KEYS cannot be removed here.",
 		Args:     []cli.Arg{{Name: "fingerprint", Usage: "The key's fingerprint (plugin key list)."}},
 		Examples: []string{"plugin key remove 3f2a9c… --yes"},
 		Run: func(c *cli.Ctx) error {
@@ -641,7 +642,7 @@ func registerPluginCLI(r *cli.Registry, e *cliEnv) {
 			fp := strings.TrimSpace(c.Arg(0))
 			for _, k := range s.plugins.envKeys {
 				if keyFingerprint(k) == fp {
-					return cli.Errorf("that key comes from WPGO_PLUGIN_KEYS; remove it from the environment")
+					return cli.Errorf("that key comes from PURSAE_PLUGIN_KEYS; remove it from the environment")
 				}
 			}
 			if err := c.Confirm("Stop trusting the key %s?", fp); err != nil {
@@ -934,7 +935,7 @@ func (s *Server) pluginInstallStatus(ctx context.Context, slug string) string {
 	return status
 }
 
-// marketPackage is the market directory's package of slug (WPGO_MARKET_DIR …), or "".
+// marketPackage is the market directory's package of slug (PURSAE_MARKET_DIR …), or "".
 func (s *Server) marketPackage(slug string) string {
 	for _, path := range s.plugins.market {
 		if pkg, err := plugins.LoadPackageFile(path, nil, false); err == nil && pkg.Manifest.Slug == slug {
@@ -1073,7 +1074,7 @@ func (e *cliEnv) pluginUpdate(c *cli.Ctx) error {
 		return cli.Usagef("please specify one or more plugins, or use --all")
 	}
 	if s.hubBase() == "" {
-		return cli.Errorf("no Pursae Manager is configured (WPGO_HUB_URL); update uploaded plugins with 'plugin install <zip>'")
+		return cli.Errorf("Pursae Manager is off (PURSAE_HUB=off); update uploaded plugins with 'plugin install <zip>'")
 	}
 	ups := s.hubPluginUpdates(c.Context)
 	rows := s.pluginInventory(c.Context)

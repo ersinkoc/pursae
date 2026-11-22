@@ -29,7 +29,7 @@ func bmgrFakeArchive(t *testing.T, dir, name, kind string, created time.Time) {
 
 func TestBmgrPruneSafetyKeepsNewest(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WPGO_BACKUPS_DIR", dir)
+	t.Setenv("PURSAE_BACKUPS_DIR", dir)
 	s := &Server{}
 	now := time.Now()
 	for i := 0; i < 5; i++ {
@@ -52,7 +52,7 @@ func TestBmgrPruneSafetyKeepsNewest(t *testing.T) {
 
 func TestBmgrSweepsStaleParts(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WPGO_BACKUPS_DIR", dir)
+	t.Setenv("PURSAE_BACKUPS_DIR", dir)
 	s := &Server{}
 	old, fresh := filepath.Join(dir, "backup-old.zip.part"), filepath.Join(dir, "backup-new.zip.part")
 	for _, p := range []string{old, fresh} {
@@ -105,7 +105,7 @@ func TestBmgrUnreadableFileIsReported(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	ctx := context.Background()
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	bad := filepath.Join(srv.cfg.UploadsDir, "unreadable-test.bin")
 	if err := os.MkdirAll(srv.cfg.UploadsDir, 0o755); err != nil {
 		t.Fatal(err)

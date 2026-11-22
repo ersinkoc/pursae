@@ -107,7 +107,7 @@ func TestMediaCLIHelp(t *testing.T) {
 	}
 }
 
-// --- integration (WPGO_TEST_DB) -------------------------------------------------------------
+// --- integration (PURSAE_TEST_DB) -------------------------------------------------------------
 
 func mediaCLIRun(t *testing.T, cfg config.Config, args ...string) (string, string, int) {
 	t.Helper()
@@ -130,7 +130,7 @@ func TestMediaCLIIntegration(t *testing.T) {
 	cliTestInstalled(t, srv)
 	ctx := context.Background()
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	hash, err := auth.HashPassword("correct horse battery")
 	if err != nil {
 		t.Fatal(err)

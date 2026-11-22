@@ -799,7 +799,7 @@ func (c *client) seedWebBuilder(s *snapshot, prefix string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	// The plugin's slug kept Elementor's old name (webbuilder.PluginSlug).
+	// The plugin's slug kept the old builder's name (webbuilder.PluginSlug).
 	if _, err := c.rest(http.MethodPost, "/pursae/v1/plugins/golementor/activate", nil, http.StatusOK, nil); err != nil {
 		return 0, err
 	}

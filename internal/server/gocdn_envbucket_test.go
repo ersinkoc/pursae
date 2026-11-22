@@ -13,7 +13,7 @@ import (
 )
 
 // TestGoCDNEnvBucketChangeIsRemembered changes the bucket (another endpoint and credentials) only
-// through WPGO_CDN_SETTINGS: the old connection is remembered, sealed, and files offloaded to the
+// through PURSAE_CDN_SETTINGS: the old connection is remembered, sealed, and files offloaded to the
 // old bucket are still served from it with the old credentials.
 func TestGoCDNEnvBucketChangeIsRemembered(t *testing.T) {
 	s := gocdnSite(t)
@@ -35,7 +35,7 @@ func TestGoCDNEnvBucketChangeIsRemembered(t *testing.T) {
 	}
 	s.srv.gocdnRemoveLocal(context.Background(), id)
 
-	// The deployment points WPGO_CDN_SETTINGS at a new bucket on another endpoint with other keys.
+	// The deployment points PURSAE_CDN_SETTINGS at a new bucket on another endpoint with other keys.
 	fake2 := s3fake.New("AKNEWKEY", "new-secret/value", "auto", "media2")
 	t.Cleanup(fake2.Close)
 	t.Setenv(gocdnEnv, env(fake2.URL, "media2", "AKNEWKEY", "new-secret/value"))

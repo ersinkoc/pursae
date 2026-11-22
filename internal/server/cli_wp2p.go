@@ -23,7 +23,7 @@ store: products, tax rates, coupons, orders with refunds and notes, and customer
 
 The package is encrypted: pass the key the plugin showed with --key, or in the environment variable
 PURSAE_WP2P_KEY (keeps it out of the shell history). Importing the same site again adds only what is
-missing. The command writes into WPGO_UPLOADS_DIR: run it where the server's uploads volume is mounted.`,
+missing. The command writes into PURSAE_UPLOADS_DIR: run it where the server's uploads volume is mounted.`,
 		Args:  []cli.Arg{{Name: "package", Usage: "The .wp2p package file."}},
 		Flags: []cli.Flag{{Name: "key", Usage: "The package key (43 characters) the plugin showed."}},
 		Examples: []string{

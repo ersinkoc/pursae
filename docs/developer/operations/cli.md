@@ -1,14 +1,16 @@
 ---
 title: Command line (pursae CLI)
-description: The pursae / wpgo binary's commands, and the WP-CLI style command line that manages a site from a shell.
+description: The pursae binary (alias wpgo, deprecated)'s commands, and the WP-CLI style command line that manages a site from a shell.
 weight: 25
 section: operations
 ---
 
 ## One binary, two names
 
-The Pursae binary answers to both **`pursae`** and **`wpgo`**: `pursae serve` and `wpgo serve` do the
-same thing. Release downloads are named `pursae-<os>-<arch>`; `make build` writes `bin/pursae` and a copy
+The Pursae binary is **`pursae`**. It also answers to its older name **`wpgo`**: `pursae serve` and
+`wpgo serve` do the same thing. The `wpgo` name is **deprecated**: it keeps working throughout 0.5.x and
+is removed no earlier than 1.0 ([compatibility policy](../compatibility.md)); use `pursae` in scripts
+and service files. Release downloads are named `pursae-<os>-<arch>`; `make build` writes `bin/pursae` and a copy
 `bin/wpgo`; the Docker image has both `/usr/local/bin/pursae` and `/usr/local/bin/wpgo`. Usage text and
 log lines use the name the binary was started with. Without arguments the binary runs `serve`.
 
@@ -42,13 +44,13 @@ pursae help post list          # one command: arguments, flags, examples
 `pursae plugin pack -h`), shows its help and runs nothing.
 
 Like WP-CLI loads WordPress, it works on the site's **database and files directly**: run it with the
-same environment as the server (`DATABASE_URL`, `WPGO_UPLOADS_DIR`, …). With Docker:
+same environment as the server (`DATABASE_URL`, `PURSAE_UPLOADS_DIR`, …). With Docker:
 
 ```bash
 docker compose exec wpgo pursae post list --post_type=page
 ```
 
-In the container the server runs the binary installed in `WPGO_BIN_DIR` (`/data/bin`), which
+In the container the server runs the binary installed in `PURSAE_BIN_DIR` (`/data/bin`), which
 Dashboard › Updates replaces, while `docker compose exec … pursae` starts the image's binary. When the
 installed binary is newer, the command re-executes it, so the command line always runs the same code
 as the server (`pursae core version` reports that version).

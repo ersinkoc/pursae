@@ -212,7 +212,7 @@ func (s *Server) hgDeleteToken(ctx context.Context, id int64) error {
 // Preview -------------------------------------------------------------------------------------------
 
 // hgPreviewKey signs preview tokens with the front-end preview secret and the site secret
-// (WPGO_SECRET, else the generated auth_secret option): nil when either is missing.
+// (PURSAE_SECRET, else the generated auth_secret option): nil when either is missing.
 func (s *Server) hgPreviewKey(st hgSettings) []byte {
 	secret := s.siteSecret()
 	if st.PreviewSecret == "" || secret == "" {

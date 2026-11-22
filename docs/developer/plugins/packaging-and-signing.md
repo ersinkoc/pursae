@@ -23,7 +23,7 @@ A package is a zip with these files at its root and nothing else:
 The tool lives in the Pursae repository:
 
 ```bash
-wpgo plugin keygen|pack|verify|new|build   # the same tool is built into the wpgo binary
+pursae plugin keygen|pack|verify|new|build   # the same tool is built into the pursae binary
 go build -o wpgo-pkg ./internal/plugins/cmd/wpgo-pkg
 
 wpgo-pkg keygen -out mykey [-comment "My plugins key"]
@@ -34,12 +34,12 @@ wpgo-pkg verify -pub mykey.pub my-plugin-1.0.0.zip
 #   verifies the signature and prints the manifest summary
 ```
 
-Key files are base64 with optional `#` comment lines — the same format `WPGO_PLUGIN_KEYS` and
+Key files are base64 with optional `#` comment lines — the same format `PURSAE_PLUGIN_KEYS` and
 the `plugin_trusted_keys` option expect.
 
 `tools/build-plugins.sh [plugin-dir …]` builds and packs the example plugins (or the directories
 you pass) into `examples/plugins/dist/`, generating a development key there if none exists. Use
-`WPGO_SIGNING_KEY=/path/to/key` to sign with your own.
+`PURSAE_SIGNING_KEY=/path/to/key` to sign with your own.
 
 ## The signature
 
@@ -64,13 +64,13 @@ and `icon.svg` are not signed (they are display-only).
 
 `plugin_allow_unsigned` is an option without a screen (set it with `wpgo` SQL access or the REST
 settings of a development site) and takes effect only when the server also runs with
-`WPGO_ALLOW_UNSIGNED_PLUGINS=1`; never turn either on in production.
+`PURSAE_ALLOW_UNSIGNED_PLUGINS=1`; never turn either on in production.
 
-Trusted keys come from `WPGO_PLUGIN_KEYS` (comma-separated), the `plugin_trusted_keys` option
+Trusted keys come from `PURSAE_PLUGIN_KEYS` (comma-separated), the `plugin_trusted_keys` option
 (both read at start-up), the Manager's key list (replaced on every index refresh, so a key the
 Manager stops listing stops being trusted; with a pinned release root key only keys the root
 endorsed, see [Pursae Manager](../hub/index.md#root-of-trust)), and — in development only — the
-`dev-key.pub` next to the example packages when `WPGO_TRUST_DEV_KEY=1` (read by `-tags devhub`
+`dev-key.pub` next to the example packages when `PURSAE_TRUST_DEV_KEY=1` (read by `-tags devhub`
 builds only).
 
 ## Updates and the signer
@@ -97,5 +97,5 @@ the latest published one; a site re-installing the same slug replaces the packag
 
 Site owners add keys under Plugins > Trusted Keys (public key plus a comment). The list is the
 `plugin_trusted_keys` option and takes effect immediately, without a restart; keys from
-`WPGO_PLUGIN_KEYS` are always trusted in addition. Removing a key does not uninstall plugins already
+`PURSAE_PLUGIN_KEYS` are always trusted in addition. Removing a key does not uninstall plugins already
 signed with it. A package larger than 64 MiB is refused on upload and from the Manager alike.

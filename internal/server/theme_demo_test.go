@@ -131,7 +131,7 @@ func TestThemeDemoValidation(t *testing.T) {
 
 func TestThemeLibraryAndDemoContent(t *testing.T) {
 	themesDir := t.TempDir()
-	t.Setenv("WPGO_THEMES_DIR", themesDir)
+	t.Setenv("PURSAE_THEMES_DIR", themesDir)
 	lib := libraryCopy(t)
 	ts, c, srv := testServerBuilderOff(t)
 	srv.themeLibrary = os.DirFS(lib)

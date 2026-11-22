@@ -14,7 +14,7 @@ The **Hub** is a small service (`wpgo-hub`) every Pursae site talks to. It has t
 
 The Hub is `https://hub.pursae.com`, and every production Pursae binary talks to it: there is no
 environment variable or option to point a site elsewhere. Only development builds (`-tags devhub`)
-read `WPGO_DEV_HUB_URL` to use a local Manager
+read `PURSAE_DEV_HUB_URL` to use a local Manager
 ([development builds](../operations/configuration.md#development-builds-devhub)). Sites only talk to
 a Hub over **https**; plain http is accepted for `localhost`, loopback addresses and `*.localhost` /
 `*.test` development hosts.
@@ -84,7 +84,7 @@ Hub operator asks for an endorsement whenever they generate a new key.
 
 Plugin packages are verified only against endorsed Hub keys too (with `wpgo_hub_trust_keys` on).
 A production binary cannot relax any of this. A development build (`-tags devhub`) with
-`WPGO_TRUST_HUB_KEYS=1` (opt-in, also in the development compose file) trusts every listed key, endorsed
+`PURSAE_TRUST_HUB_KEYS=1` (opt-in, also in the development compose file) trusts every listed key, endorsed
 or not, so a local Manager with a throwaway key can publish test releases and plugins. Automatic core
 updates never install under that trust; update by hand.
 
@@ -127,7 +127,7 @@ a Pro/Beta badge next to *Valid*.
 
 Statistics are on by default and can be switched off under Settings › License › "Send usage
 statistics" (option `pursae_send_stats`). Off, the ping carries only `url`, `version` and `license`
-(what updates need), with empty `plugins`/`themes`, and no events are queued. Only a development build with `WPGO_DEV_HUB_URL=off` sends
+(what updates need), with empty `plugins`/`themes`, and no events are queued. Only a development build with `PURSAE_DEV_HUB_URL=off` sends
 nothing — it then has no marketplace, no license and no update notices either.
 
 **Every request** carries the site's home URL and, if one is entered, its license key (above).

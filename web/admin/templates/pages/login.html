@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="/wp-includes/css/wpgo-brand.css?ver={{version}}">
 <link rel="stylesheet" href="/wp-admin/assets/css/pursae-modern-login.css?ver={{version}}">
 <script {{cspNonce}}>/* Pursae Modern look, remembered by the admin (admin_theme.go) */(function(){var m=document.cookie.match(/(?:^|; )wpgo_admin_look=modern-(light|dark|auto)(?:;|$)/);if(m){document.documentElement.classList.add('pm-login','pm-login-'+m[1]);}})();</script>
+{{if brandStockLogo}}<script {{cspNonce}} src="/wp-admin/assets/js/login-mascot.js?ver={{version}}" defer></script>{{end}}
 <link rel="icon" href="/wp-includes/images/brand/logo-32.png" sizes="32x32">
 <link rel="icon" href="/wp-includes/images/brand/logo-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="/wp-includes/images/brand/logo-192.png">
@@ -24,12 +25,12 @@
 <script {{cspNonce}}>document.body.className = document.body.className.replace('no-js','js');</script>
 <h1 class="screen-reader-text">{{.Title}}</h1>
 <aside class="pm-login-aside" aria-hidden="true">
-	<div class="pm-login-brand"><img src="/wp-includes/images/brand/pursae-mark-white.svg" alt="" width="28" height="28"><span>Pursae</span></div>
+	<div class="pm-login-brand">{{if brandStockLogo}}{{template "login-mascot" 28}}{{else}}<img src="/wp-includes/images/brand/pursae-mark-white.svg" alt="" width="28" height="28">{{end}}<span>Pursae</span></div>
 	<div class="pm-login-pitch"><p class="pm-login-site" translate="no">{{.SiteName}}</p><p class="pm-login-tag">Sign in to manage your site.</p></div>
 	<p class="pm-login-foot">Pursae {{version}}</p>
 </aside>
 <div id="login">
-	<h1 role="presentation" class="wp-login-logo"><a href="{{.HomeURL}}">Powered by Pursae</a></h1>
+	<h1 role="presentation" class="wp-login-logo">{{if brandStockLogo}}<a class="pursae-mascot-link" href="{{.HomeURL}}">{{template "login-mascot" 84}}<span class="screen-reader-text">Powered by Pursae</span></a>{{else}}<a href="{{.HomeURL}}">Powered by Pursae</a>{{end}}</h1>
 	{{if .Error}}<div id="login_error" class="notice notice-error"><p>{{.Error}}</p></div>{{end}}
 	{{if .Message}}<div class="notice notice-info message"><p>{{.Message}}</p></div>{{end}}
 	<form name="loginform" id="loginform" action="{{loginURL}}" method="post">
@@ -98,6 +99,7 @@
 <link rel="stylesheet" href="/wp-includes/css/wpgo-brand.css?ver={{version}}">
 <link rel="stylesheet" href="/wp-admin/assets/css/pursae-modern-login.css?ver={{version}}">
 <script {{cspNonce}}>/* Pursae Modern look, remembered by the admin (admin_theme.go) */(function(){var m=document.cookie.match(/(?:^|; )wpgo_admin_look=modern-(light|dark|auto)(?:;|$)/);if(m){document.documentElement.classList.add('pm-login','pm-login-'+m[1]);}})();</script>
+{{if brandStockLogo}}<script {{cspNonce}} src="/wp-admin/assets/js/login-mascot.js?ver={{version}}" defer></script>{{end}}
 <link rel="icon" href="/wp-includes/images/brand/logo-32.png" sizes="32x32">
 <link rel="icon" href="/wp-includes/images/brand/logo-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="/wp-includes/images/brand/logo-192.png">
@@ -106,12 +108,12 @@
 <script {{cspNonce}}>document.body.className = document.body.className.replace('no-js','js');</script>
 <h1 class="screen-reader-text">{{.Title}}</h1>
 <aside class="pm-login-aside" aria-hidden="true">
-	<div class="pm-login-brand"><img src="/wp-includes/images/brand/pursae-mark-white.svg" alt="" width="28" height="28"><span>Pursae</span></div>
+	<div class="pm-login-brand">{{if brandStockLogo}}{{template "login-mascot" 28}}{{else}}<img src="/wp-includes/images/brand/pursae-mark-white.svg" alt="" width="28" height="28">{{end}}<span>Pursae</span></div>
 	<div class="pm-login-pitch"><p class="pm-login-site" translate="no">{{.SiteName}}</p><p class="pm-login-tag">Sign in to manage your site.</p></div>
 	<p class="pm-login-foot">Pursae {{version}}</p>
 </aside>
 <div id="login">
-	<h1 role="presentation" class="wp-login-logo"><a href="{{.HomeURL}}">Powered by Pursae</a></h1>
+	<h1 role="presentation" class="wp-login-logo">{{if brandStockLogo}}<a class="pursae-mascot-link" href="{{.HomeURL}}">{{template "login-mascot" 84}}<span class="screen-reader-text">Powered by Pursae</span></a>{{else}}<a href="{{.HomeURL}}">Powered by Pursae</a>{{end}}</h1>
 	{{if .Error}}<div id="login_error" class="notice notice-error"><p>{{.Error}}</p></div>{{end}}{{end}}
 
 {{define "admin/login-lost"}}{{template "login-head" .}}
@@ -168,3 +170,6 @@
 	<p id="backtoblog"><a href="{{.HomeURL}}">&larr; Go to {{.SiteName}}</a></p>
 </div>
 </body></html>{{end}}
+
+{{/* login-mascot: the Pursae mark drawn inline (brand_mascot.go), its eyes animated by login-mascot.js; the argument is its size in px. */}}
+{{define "login-mascot"}}<svg class="pursae-mascot" viewBox="0 0 64 64" width="{{.}}" height="{{.}}" aria-hidden="true" focusable="false"><path d="M14 59C13.2 50 12.6 38 13 28C13.5 15.5 22.6 7 34 7C45.6 7 55 16 55 27C55 38.5 45.6 47 34 47L27.5 47C22.5 47 18.6 50.6 14 59Z" fill="none" stroke="currentColor" stroke-width="4.2" stroke-linejoin="round"/><g class="pursae-mascot-eyes"><ellipse class="pursae-mascot-eye" cx="30" cy="24.5" rx="3.1" ry="4.1" fill="currentColor"/><ellipse class="pursae-mascot-eye" cx="41.5" cy="24.5" rx="3.1" ry="4.1" fill="currentColor"/></g></svg>{{end}}

@@ -26,6 +26,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 
+	"wpgo/internal/config"
 	"wpgo/internal/mail"
 	"wpgo/internal/plugins"
 	"wpgo/internal/settings"
@@ -47,11 +48,11 @@ type pluginSystem struct {
 	market  []string
 	initErr error
 
-	// The trusted signing keys: the site's own (WPGO_PLUGIN_KEYS, plugin_trusted_keys, the dev key)
+	// The trusted signing keys: the site's own (PURSAE_PLUGIN_KEYS, plugin_trusted_keys, the dev key)
 	// and the Manager's, replaced on every index refresh (hubTrustKeys). Read them with trusted().
 	keyMu    sync.RWMutex
 	siteKeys []ed25519.PublicKey
-	envKeys  []ed25519.PublicKey // WPGO_PLUGIN_KEYS and the dev key: siteKeys without the option's keys
+	envKeys  []ed25519.PublicKey // PURSAE_PLUGIN_KEYS and the dev key: siteKeys without the option's keys
 	hubKeys  []ed25519.PublicKey
 }
 
@@ -99,13 +100,13 @@ func (s *Server) startPlugins(ctx context.Context) {
 	// verifying it, so whoever can write that directory could run code outside the sandbox. The
 	// directory of earlier versions is removed.
 	_ = os.RemoveAll(cacheDir)
-	for _, k := range strings.FieldsFunc(os.Getenv("WPGO_PLUGIN_KEYS"), func(r rune) bool { return r == ',' || r == '\n' || r == ' ' }) {
+	for _, k := range strings.FieldsFunc(config.Env("PLUGIN_KEYS"), func(r rune) bool { return r == ',' || r == '\n' || r == ' ' }) {
 		if pub, err := plugins.ParsePublicKey(k); err == nil {
 			ps.envKeys = append(ps.envKeys, pub)
 		}
 	}
 	// Marketplace demo: packages shipped next to the binary (or built by tools/build-plugins.sh).
-	for _, dir := range []string{os.Getenv("WPGO_MARKET_DIR"), "examples/plugins/dist", "/usr/share/wpgo/plugins"} {
+	for _, dir := range []string{config.Env("MARKET_DIR"), "examples/plugins/dist", "/usr/share/wpgo/plugins"} {
 		if dir == "" {
 			continue
 		}
@@ -114,7 +115,7 @@ func (s *Server) startPlugins(ctx context.Context) {
 			if pub, err := os.ReadFile(filepath.Join(dir, "dev-key.pub")); err == nil && devTrustDevKey() { //nolint:gosec // G703: the market directory is operator configuration
 				if k, err := plugins.ParsePublicKey(lastLine(string(pub))); err == nil {
 					ps.envKeys = append(ps.envKeys, k)
-					slog.Warn("WPGO_TRUST_DEV_KEY=1: plugins signed with the public demo key are trusted; development only, set it to 0 in production", "key", filepath.Join(dir, "dev-key.pub"))
+					slog.Warn("PURSAE_TRUST_DEV_KEY=1: plugins signed with the public demo key are trusted; development only, set it to 0 in production", "key", filepath.Join(dir, "dev-key.pub"))
 				}
 			}
 			break
@@ -1203,7 +1204,7 @@ func (s *Server) builtinPluginSlug(slug string) bool {
 
 // pluginSigner is the stored form of the key that verified a package ("" when unsigned).
 // allowUnsignedPlugins reports whether unsigned plugin packages are accepted: the plugin_allow_unsigned
-// setting and the WPGO_ALLOW_UNSIGNED_PLUGINS environment opt-in must both be on. The setting alone is a
+// setting and the PURSAE_ALLOW_UNSIGNED_PLUGINS environment opt-in must both be on. The setting alone is a
 // database row any administrator (or the CLI) can write, too weak a switch for turning signature checks off.
 func (s *Server) allowUnsignedPlugins() bool {
 	if !s.settings.Bool("plugin_allow_unsigned") {
@@ -1211,7 +1212,7 @@ func (s *Server) allowUnsignedPlugins() bool {
 	}
 	if !s.cfg.AllowUnsignedPlugins {
 		unsignedIgnoredOnce.Do(func() {
-			slog.Warn("plugin_allow_unsigned is on but ignored: set WPGO_ALLOW_UNSIGNED_PLUGINS=1 in the server environment to accept unsigned plugin packages (development only)")
+			slog.Warn("plugin_allow_unsigned is on but ignored: set PURSAE_ALLOW_UNSIGNED_PLUGINS=1 in the server environment to accept unsigned plugin packages (development only)")
 		})
 		return false
 	}
@@ -1281,7 +1282,7 @@ func (s *Server) installPackageChecked(ctx context.Context, data []byte, source,
 	// confirmed with "Replace current with uploaded", a retry from the CLI or the Manager).
 	if !pkg.Verified() {
 		if _, seen := unverifiedWarned.LoadOrStore(fmt.Sprintf("%x", pkg.Digest), true); !seen {
-			slog.Warn("installing a plugin package whose signature was not verified (plugin_allow_unsigned and WPGO_ALLOW_UNSIGNED_PLUGINS are on; development only)", "plugin", slug)
+			slog.Warn("installing a plugin package whose signature was not verified (plugin_allow_unsigned and PURSAE_ALLOW_UNSIGNED_PLUGINS are on; development only)", "plugin", slug)
 		}
 	}
 	if wantSlug != "" && slug != wantSlug {

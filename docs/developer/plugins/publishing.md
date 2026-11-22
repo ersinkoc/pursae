@@ -46,5 +46,5 @@ Publish a new version the same way with a higher `version`. Old versions stay do
 ## Running your own Hub
 
 Production sites always use `https://hub.pursae.com`. A Hub of your own serves development
-builds (`-tags devhub`, `WPGO_DEV_HUB_URL`) for testing packages before you publish them
+builds (`-tags devhub`, `PURSAE_DEV_HUB_URL`) for testing packages before you publish them
 ([running your own Hub](../hub/running-your-own-hub.md)).

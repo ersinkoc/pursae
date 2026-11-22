@@ -9,7 +9,7 @@ One binary · PostgreSQL · the admin you already know · 18 built-in plugins.</
 
 <p align="center">
   <img alt="Go 1.27" src="https://img.shields.io/badge/Go-1.27-00ADD8?logo=go&logoColor=white">
-  <img alt="PostgreSQL 17" src="https://img.shields.io/badge/PostgreSQL-17-336791?logo=postgresql&logoColor=white">
+  <img alt="PostgreSQL 16 or 17" src="https://img.shields.io/badge/PostgreSQL-16%20%7C%2017-336791?logo=postgresql&logoColor=white">
   <img alt="Plugins: Wasm" src="https://img.shields.io/badge/plugins-WebAssembly-654FF0?logo=webassembly&logoColor=white">
   <img alt="Docker" src="https://img.shields.io/badge/run-docker%20compose-2496ED?logo=docker&logoColor=white">
   <img alt="License GPL" src="https://img.shields.io/badge/license-GPL--2.0--or--later-blue">
@@ -37,13 +37,13 @@ You need Docker (with Compose v2), git and make.
 
 ```sh
 git clone https://github.com/pursae/pursae.git && cd pursae
-cp .env.example .env                  # set WPGO_DB_PASSWORD, WPGO_SITE_URL (https://…), SMTP
+cp .env.example .env                  # set PURSAE_DB_PASSWORD, PURSAE_SITE_URL (https://…), SMTP
 docker compose up -d --build          # → 127.0.0.1:8088; point Caddy or nginx at it
 ```
 
 The installer is locked with a setup token: open the install link the server prints on its first start
 (`docker compose logs pursae`, a line like `https://example.com/wp-admin/install?token=…`), or set your own
-`WPGO_SETUP_TOKEN` in `.env`. Lost the link? `docker compose exec pursae wpgo setup-token` prints a new one.
+`PURSAE_SETUP_TOKEN` in `.env`. Lost the link? `docker compose exec pursae pursae setup-token` prints a new one.
 Updates arrive in **Dashboard › Updates** (one click); data lives in Docker volumes. Every setting is listed
 in [`.env.example`](.env.example).
 
@@ -60,7 +60,7 @@ Ports, env vars, proxies, backups: **[docs/GUIDE.md](docs/GUIDE.md)**.
 <table>
 <tr>
 <td width="25%" align="center"><h3>🐹</h3><b>One Go binary</b><br><sub>No PHP, no FPM, no extensions.</sub></td>
-<td width="25%" align="center"><h3>🐘</h3><b>PostgreSQL 17</b><br><sub>Typed schema, JSONB, migrations on start.</sub></td>
+<td width="25%" align="center"><h3>🐘</h3><b>PostgreSQL 16 or 17</b><br><sub>Typed schema, JSONB, migrations on start.</sub></td>
 <td width="25%" align="center"><h3>🧩</h3><b>Wasm plugins</b><br><sub>Signed, sandboxed, permission-gated.</sub></td>
 <td width="25%" align="center"><h3>🚀</h3><b>Fast by default</b><br><sub>Built-in page cache, static builder output.</sub></td>
 </tr>
@@ -288,7 +288,7 @@ lets Claude, Cursor and other MCP clients run the site:
   backups, Pursae Cache, SEO, Commerce, Headless and the built-in plugins' settings.
 - Sign-in with **OAuth 2.1** (a consent screen in the browser) or an **Application Password** with
   scopes; every tool runs as a REST request with the same capabilities.
-- `wpgo mcp` bridges clients that only start local (stdio) servers.
+- `pursae mcp` bridges clients that only start local (stdio) servers.
 - Every write is logged for 90 days; revoke a client under Users › Profile.
 
 <a href="docs/developer/operations/ai-mcp.md">AI agents (MCP) →</a>
@@ -307,7 +307,7 @@ lets Claude, Cursor and other MCP clients run the site:
 ## 🐹 Go architecture
 
 - One static binary (`CGO_ENABLED=0`) with the admin, the editors and the bundled themes embedded.
-- [gin](https://github.com/gin-gonic/gin) for HTTP, [pgx](https://github.com/jackc/pgx) on PostgreSQL 17 (14+ works); migrations run on start.
+- [gin](https://github.com/gin-gonic/gin) for HTTP, [pgx](https://github.com/jackc/pgx) on PostgreSQL 16 or 17 (CI tests both); migrations run on start.
 - Plugins run as WebAssembly in [wazero](https://wazero.io) — no cgo, no separate runtime.
 - Details: [What is Pursae](docs/developer/getting-started/index.md) · [binary install](docs/developer/getting-started/install-binary.md).
 
@@ -373,11 +373,11 @@ What a site gets back:
 - **Themes**: the theme library with demo content, checked against their SHA-256.
 - **Licenses** for pro and beta packages, and the product logo.
 
-**Turning it off.** Set `WPGO_HUB=off` in the environment (with Docker: in `docker/.env`) and restart;
+**Turning it off.** Set `PURSAE_HUB=off` in the environment (with Docker: in `docker/.env`) and restart;
 the site then sends nothing to hub.pursae.com. **We do not recommend it**: the site gets no update
 notices or one-click updates — security fixes included —, no marketplace, no signed plugins and no
 licenses, and you have to replace the binary yourself for every release. While it is off, every admin
-page says so; remove `WPGO_HUB` and restart to get updates again.
+page says so; remove `PURSAE_HUB` and restart to get updates again.
 
 ## 🛠️ Build on it
 
@@ -387,10 +387,11 @@ page says so; remove `WPGO_HUB` and restart to get updates again.
 | 🎨 **Themes** — Go templates + theme.json | [docs/developer/themes](docs/developer/themes/index.md) |
 | 💬 **Forum themes** — Pursae Forum wrapper, view overrides, `--pf-*` tokens | [docs/developer/themes/forum.md](docs/developer/themes/forum.md) |
 | 🔗 **REST API** — `wp/v2` + plugin routes, Application Password scopes, OAuth 2.1 | [docs/developer/rest-api](docs/developer/rest-api/index.md) |
-| ⌨️ **Command line** — `pursae` (alias `wpgo`), WP-CLI style `pursae post list`, `pursae help` | [docs/developer/operations/cli.md](docs/developer/operations/cli.md) |
-| 🤖 **AI agents** — MCP server, `wpgo mcp` bridge, tool list | [docs/developer/operations/ai-mcp.md](docs/developer/operations/ai-mcp.md) |
+| ⌨️ **Command line** — `pursae` (deprecated alias `wpgo`), WP-CLI style `pursae post list`, `pursae help` | [docs/developer/operations/cli.md](docs/developer/operations/cli.md) |
+| 🤖 **AI agents** — MCP server, `pursae mcp` bridge, tool list | [docs/developer/operations/ai-mcp.md](docs/developer/operations/ai-mcp.md) |
 | 🏪 **Hub** — marketplace, updates, licenses | [docs/developer/hub](docs/developer/hub/index.md) |
 | ⚙️ **Operations** — config, TLS, backups, cron | [docs/developer/operations](docs/developer/operations/configuration.md) |
+| 🧷 **Compatibility** — what stays stable in 0.5.x, deprecations, versioning | [docs/developer/compatibility.md](docs/developer/compatibility.md) |
 
 ## 📚 More
 

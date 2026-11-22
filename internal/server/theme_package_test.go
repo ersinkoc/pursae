@@ -240,7 +240,7 @@ func postZip(t *testing.T, c *http.Client, u, nonce, field, name string, data []
 
 func TestThemePackageInstallActivateDelete(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WPGO_THEMES_DIR", dir)
+	t.Setenv("PURSAE_THEMES_DIR", dir)
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{
@@ -485,7 +485,7 @@ func TestThemePackageInstallActivateDelete(t *testing.T) {
 // Every inactive theme can be deleted from Appearance › Themes, as in WordPress. A bundled theme's
 // edited files go and it leaves the list; Add Themes offers it again and Install brings it back.
 func TestDeleteBundledThemeAndReinstall(t *testing.T) {
-	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
+	t.Setenv("PURSAE_THEMES_DIR", t.TempDir())
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)

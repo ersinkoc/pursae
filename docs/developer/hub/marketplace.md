@@ -9,7 +9,7 @@ section: hub
 
 The screen lists the Hub catalog (`GET /api/v1/plugins`, sorted by last update, searchable by
 name, slug, description and author) next to the built-in plugins and any packages in
-`WPGO_MARKET_DIR`. A card shows the name, author, version, description, icon, the **permissions
+`PURSAE_MARKET_DIR`. A card shows the name, author, version, description, icon, the **permissions
 the plugin asks for**, download count and minimum core version; the detail view shows the
 package's `readme.md`.
 
@@ -30,7 +30,7 @@ it: later versions must come from the same publisher and must not be older
 permission screen where you grant what the plugin may do ([permissions](../plugins/permissions.md)).
 
 The **Upload Plugin** tab installs a zip you have on disk; it goes through the same signature
-check, so your own key must be in `WPGO_PLUGIN_KEYS` or `plugin_trusted_keys`, or
+check, so your own key must be in `PURSAE_PLUGIN_KEYS` or `plugin_trusted_keys`, or
 `plugin_allow_unsigned` must be on for development.
 
 ## Appearance › Themes › Add Theme
@@ -46,7 +46,7 @@ Screenshots are fetched once by the site and served from that cache.
 
 Listings marked **preinstall** by the operator are installed (not activated) on every new site
 right after its installer, in the background; existing sites get them with **Install recommended
-themes** on the Library tab. Without a reachable Hub the tab says so; `WPGO_THEME_LIBRARY_DIR`
+themes** on the Library tab. Without a reachable Hub the tab says so; `PURSAE_THEME_LIBRARY_DIR`
 serves the library from a local directory instead (development, offline sites).
 
 ## Updates
@@ -79,4 +79,4 @@ theme packages are updated by uploading the new version. Nothing is updated auto
 ## Offline sites
 
 Without a reachable Hub the screens show only built-in plugins, bundled themes and local packages
-(and the theme library of `WPGO_THEME_LIBRARY_DIR`, if set), and uploads still work. Nothing else in the admin depends on the Hub.
+(and the theme library of `PURSAE_THEME_LIBRARY_DIR`, if set), and uploads still work. Nothing else in the admin depends on the Hub.

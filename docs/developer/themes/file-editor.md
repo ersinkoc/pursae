@@ -12,7 +12,7 @@ in the browser, as in WordPress — bundled themes included, although their Go g
 ## How it works
 
 Theme files are read through an **overlay**: the server first looks in
-`<data>/themes/<slug>/<path>` (`WPGO_THEMES_DIR`, the `themes` volume in Docker), then in the
+`<data>/themes/<slug>/<path>` (`PURSAE_THEMES_DIR`, the `themes` volume in Docker), then in the
 copy embedded in the binary or, for packages, the installed package directory. Saving a file in
 the editor writes it to the overlay, re-parses the theme's template set and **test-renders a
 page**. If the save produces a template or render error it is **rolled back automatically** and
@@ -29,13 +29,13 @@ otherwise cached for a year, so the package records it in `.edited-files` and se
 
 ## Editing on disk
 
-Anything you put under `WPGO_THEMES_DIR/<slug>/` is picked up the same way; templates are parsed
+Anything you put under `PURSAE_THEMES_DIR/<slug>/` is picked up the same way; templates are parsed
 on the next request. This is the quickest loop while developing a package: point
-`WPGO_THEMES_DIR` at your working copy and edit with your editor.
+`PURSAE_THEMES_DIR` at your working copy and edit with your editor.
 
 ## Turning it off
 
-`WPGO_DISALLOW_FILE_EDIT=1` makes the editor read-only (WordPress' `DISALLOW_FILE_EDIT`); the
+`PURSAE_DISALLOW_FILE_EDIT=1` makes the editor read-only (WordPress' `DISALLOW_FILE_EDIT`); the
 overlay still applies to files already there. The editor requires the `edit_themes` capability
 (administrators).
 

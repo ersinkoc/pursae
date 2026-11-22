@@ -10,42 +10,22 @@ are named in this file. Where a component ships its own license file in the tree
 Versions come from the files' own headers, WordPress' script registry
 (internal/server/defaults/wp-registry.json, "ver"), package-lock.json or go.sum.
 
+Pursae's earlier page builder, derived from Elementor, was removed in 0.4.1 (migrations 0005–0007
+are empty steps).
+
 Contents
-  1. Elementor (database migrations 0005–0007)
-  2. WordPress core files (web/wp-includes, web/wp-admin)
-  3. Libraries bundled by WordPress core
-  4. WordPress block editor (Gutenberg) packages
-  5. Themes and fonts
-  6. Pursae Web Builder (web/web-builder, builder/)
-  7. Pursae Flipbook (web/flipbook/vendor)
-  8. Maps, geolocation data and translations
-  9. Go modules compiled into the wpgo binary
- 10. Docker image
+  1. WordPress core files (web/wp-includes, web/wp-admin)
+  2. Libraries bundled by WordPress core
+  3. WordPress block editor (Gutenberg) packages
+  4. Themes and fonts
+  5. Pursae Web Builder (web/web-builder, builder/)
+  6. Pursae Flipbook (web/flipbook/vendor)
+  7. Maps, geolocation data and translations
+  8. Go modules compiled into the wpgo binary
+  9. Docker image
 
 
-1. Elementor Pro 4.3.0
-----------------------
-Copyright Elementor Ltd. (https://elementor.com). Licensed under the GNU General Public License
-version 3 with the following additional terms (GPL section 7), reproduced from the original
-license.txt (full GPLv3 text: LICENSES/GPL-3.0.txt):
-
-  "The origin of the Program must not be misrepresented; you must not claim that you wrote the
-  original Program. Altered source versions must be plainly marked as such, and must not be
-  misrepresented as being the original Program."
-
-Pursae's earlier page builder was derived from Elementor and Elementor Pro; it has been removed.
-What remains:
-
-* internal/db/migrations/0005_builder.sql, 0006_atomic.sql and 0007_pro.sql — ALTERED: PostgreSQL
-  schemas modelled on Elementor's and Elementor Pro's data (templates, global classes, form
-  submissions). They stay unchanged so that existing databases migrate in order; a later
-  migration drops the data.
-
-Pursae is not Elementor and is not endorsed by Elementor Ltd.; "Elementor" is a trademark of
-Elementor Ltd.
-
-
-2. WordPress core files
+1. WordPress core files
 -----------------------
 WordPress 7.1.3, Copyright 2011-2026 by the WordPress contributors (https://wordpress.org,
 source: https://github.com/WordPress/wordpress-develop). GPLv2 or later (LICENSE).
@@ -57,6 +37,8 @@ source: https://github.com/WordPress/wordpress-develop). GPLv2 or later (LICENSE
   unmodified; themes with per-block styles (Twenty Twenty-Five) inline the ones a page uses.
 * web/wp-includes/images, web/wp-admin/images — WordPress' images, except images/brand/ (Pursae's
   own logo) and images/icon-library/.
+* web/admin/assets/images/team/ — not from WordPress: Pursae's own team photos (About Pursae), as
+  published on pursae.com.
 * Dashicons (web/wp-includes/fonts/dashicons.*, web/admin/assets/fonts/dashicons.*,
   dashicons.min.css), version 1.006: "GPL version 2 or any later version with font exception"
   (http://www.gnu.org/licenses/gpl-faq.html#FontException), WordPress contributors.
@@ -69,8 +51,8 @@ source: https://github.com/WordPress/wordpress-develop). GPLv2 or later (LICENSE
 it.
 
 
-3. Libraries bundled by WordPress core (web/wp-includes/js, web/wp-admin/js)
------------------------------------------------------------------------------
+2. Libraries bundled by WordPress core (web/wp-includes/js, web/wp-admin/js)
+----------------------------------------------------------------------------
 Copied as WordPress 7.1.3 ships them (minified; some carry WordPress patches, as in WordPress).
 
   Component (path)                                  Version        License         Copyright / source
@@ -136,7 +118,7 @@ Vendor scripts of the block editor (web/wp-includes/js/dist/vendor):
   React Refresh (dist/development/)                 —              MIT             Meta Platforms, Inc. and affiliates
 
 
-4. WordPress block editor (Gutenberg) packages
+3. WordPress block editor (Gutenberg) packages
 ----------------------------------------------
 web/wp-includes/js/dist/*.min.js (65 @wordpress/* packages: a11y, annotations, api-fetch, autop,
 block-editor, block-library, blocks, components, compose, core-data, data, editor, edit-post,
@@ -169,7 +151,7 @@ These bundles include npm dependencies. Those whose license headers the build ke
   their licenses in each package's package.json at the version WordPress 7.1.3 ships.
 
 
-5. Themes and fonts
+4. Themes and fonts
 -------------------
 Twenty Twenty-Five 1.5
   Twenty Twenty-Five WordPress Theme, (C) 2024-2026 WordPress.org and contributors. Licensed under
@@ -267,7 +249,7 @@ Mona Sans 2.000
   are Latin and Latin Extended subsets, used by the admin welcome panel, tour and About screen.
 
 
-6. Pursae Web Builder (web/web-builder, builder/)
+5. Pursae Web Builder (web/web-builder, builder/)
 -------------------------------------------------
 web/web-builder/ is built by builder/scripts/build.mjs from builder/host (Pursae, GPLv2 or later)
 and builder/upstream, a git submodule of https://github.com/pursae/Builder pinned in
@@ -277,7 +259,7 @@ Motion / Framer Motion 14.9.0 with motion-dom and motion-utils (MIT, Motion B.V.
 lucide-react 1.66.0 (ISC, Lucide Icons and Contributors; includes Feather icons, MIT), tslib
 2.9.1 (0BSD, Microsoft Corporation), Tailwind CSS 4.3.3 generated CSS (MIT, Tailwind Labs, Inc.)
 and the Fontsource 5.3.0 packages of Inter, Space Grotesk, JetBrains Mono and Instrument Serif
-(OFL-1.1, see section 5) — have their notices reproduced in full in
+(OFL-1.1, see section 4) — have their notices reproduced in full in
 web/web-builder/THIRD_PARTY_LICENSES.txt, which the build writes (scripts/licenses.mjs) and
 `make builder-test` checks.
 
@@ -285,7 +267,7 @@ pursae/Builder carries no license file of its own (its package.json is the "figm
 template, private: true); see the project's licensing notes before redistributing it separately.
 
 
-7. Pursae Flipbook (web/flipbook/vendor)
+6. Pursae Flipbook (web/flipbook/vendor)
 ----------------------------------------
 * PDF.js 4.10.38 (pdf.min.mjs, pdf.worker.min.mjs), Copyright 2024 Mozilla Foundation, Apache
   License 2.0 (LICENSE.pdfjs.txt in that directory; LICENSES/Apache-2.0.txt).
@@ -296,7 +278,7 @@ The plugin's behaviour follows the thecoolPDF WordPress plugin; thecoolPDF's pla
 used.
 
 
-8. Maps, geolocation data and translations
+7. Maps, geolocation data and translations
 ------------------------------------------
 * World map (web/admin/assets/maps/world-110m.svg): Natural Earth 1:110m admin-0 countries (public
   domain, https://www.naturalearthdata.com) through the world-atlas 2.0.2 npm package, Copyright
@@ -315,7 +297,7 @@ used.
   later, WordPress translators).
 
 
-9. Go modules compiled into the wpgo binary
+8. Go modules compiled into the wpgo binary
 -------------------------------------------
 The Go standard library and runtime, Copyright 2009 The Go Authors, BSD-3-Clause
 (https://go.dev/LICENSE). Modules linked into ./cmd/wpgo (go list -deps, linux/amd64 and
@@ -373,8 +355,8 @@ The remaining requirements in go.mod (bytedance/sonic, cloudwego/base64x, klausp
 twitchyliquid64/golang-asm, …) are not linked into the binary on the supported platforms.
 
 
-10. Docker image
-----------------
+9. Docker image
+---------------
 The image (docker/Dockerfile) is based on Alpine Linux 3.22 (https://alpinelinux.org) and adds the
 ca-certificates (the Mozilla CA list, MPL-2.0) and tzdata (public domain) packages. Alpine's packages keep their own licenses (BusyBox and apk-tools GPL-2.0, musl
 libc MIT, …); their sources are published at https://gitlab.alpinelinux.org/alpine/aports. The

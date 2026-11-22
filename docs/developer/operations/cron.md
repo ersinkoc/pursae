@@ -19,7 +19,7 @@ caught up one by one: the event runs once, then waits for the next slot of its s
 
 | Job | Recurrence | Does |
 |-----|------------|------|
-| `wp_scheduled_delete` | daily | empties posts and comments that have been in the trash for 30 days (`WPGO_EMPTY_TRASH_DAYS`, [configuration](configuration.md)) |
+| `wp_scheduled_delete` | daily | empties posts and comments that have been in the trash for 30 days (`PURSAE_EMPTY_TRASH_DAYS`, [configuration](configuration.md)) |
 | `wp_scheduled_auto_draft_delete` | daily | removes auto-drafts older than 7 days |
 | `delete_expired_transients` | daily | drops expired transients |
 | `wp_session_gc` | hourly | expires login sessions and old login attempts |

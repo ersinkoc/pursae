@@ -58,11 +58,11 @@ section: operations
   trust can install.
 - **Installer locked by a setup token**: until the site is installed, `/wp-admin/install` asks for the
   setup token, so whoever reaches a fresh instance first cannot install it and make themselves its
-  administrator. The token is `WPGO_SETUP_TOKEN` when set; otherwise the first process that starts on an
+  administrator. The token is `PURSAE_SETUP_TOKEN` when set; otherwise the first process that starts on an
   uninstalled site generates a random one, stores only its SHA-256 in the database (every instance and
   restart checks the same one; the comparison is constant time) and prints the install link
-  `<WPGO_SITE_URL>/wp-admin/install?token=…` in its log. `wpgo setup-token` prints the link again (with a
-  newly issued token that replaces the stored one, unless `WPGO_SETUP_TOKEN` is set). A token given in
+  `<PURSAE_SITE_URL>/wp-admin/install?token=…` in its log. `pursae setup-token` prints the link again (with a
+  newly issued token that replaces the stored one, unless `PURSAE_SETUP_TOKEN` is set). A token given in
   the URL is moved into a signed cookie bound to that token (12 hours) and dropped from the URL, so it
   does not stay in the history or leak in a `Referer`. Installing the site deletes the token, so the link
   and the cookie stop working (`internal/server/setup_token.go`, [configuration](configuration.md#core)).
@@ -72,7 +72,7 @@ section: operations
     `429 Too Many Requests` and `Retry-After` until the minute ends. Static files (`/wp-includes/`,
     `/wp-content/`, the admin's assets, and `.css`, `.js`, images, fonts, media and PDF by extension)
     and the CSP report endpoint (which has its own limit) do not count; loopback addresses and trusted
-    proxies (`WPGO_TRUSTED_PROXIES`) are never limited, since without a forwarded header they carry
+    proxies (`PURSAE_TRUSTED_PROXIES`) are never limited, since without a forwarded header they carry
     every visitor. The visitor address is the one [the proxy settings](reverse-proxy-and-tls.md) derive.
     The count is kept in each process's memory: with several instances behind a load balancer each
     counts separately.
@@ -84,7 +84,7 @@ section: operations
   - Blocks are logged once per address, event and minute (`firewall` in the server log and, with
     Pursae Security on, its activity log). Pursae Security's **Firewall** tab changes the limit (0
     switches it off) and switches the rules off; addresses on its allow list (**Lockouts & IPs**) skip
-    both. With the plugin off the defaults above apply. `WPGO_FIREWALL=off` switches the whole
+    both. With the plugin off the defaults above apply. `PURSAE_FIREWALL=off` switches the whole
     firewall off for the process, for example when a WAF in front of Pursae does the same job
     ([configuration](configuration.md#core)). WordPress has no core firewall; this is Pursae's own.
 - **No third-party calls from visitors' browsers**: no Gravatar, no remote fonts (Google Fonts are
@@ -93,21 +93,21 @@ section: operations
 
 ## Checklist
 
-1. Terminate TLS in a proxy and set `WPGO_SITE_URL` to the `https://` address
+1. Terminate TLS in a proxy and set `PURSAE_SITE_URL` to the `https://` address
    ([reverse proxy and TLS](reverse-proxy-and-tls.md)).
 2. Start with `make prod-up` and settings in `docker/.env` (it adds `docker/compose.prod.yaml`, see
-   [Docker](docker.md#production-changes)): it takes the database password from `WPGO_DB_PASSWORD`,
-   does not publish port 5432, sets `WPGO_TRUST_DEV_KEY=0` and builds the production binary that gets
+   [Docker](docker.md#production-changes)): it takes the database password from `PURSAE_DB_PASSWORD`,
+   does not publish port 5432, sets `PURSAE_TRUST_DEV_KEY=0` and builds the production binary that gets
    core updates from `https://hub.pursae.com`. The installer is locked by the setup token (above):
-   open the install link from the log (`docker compose logs wpgo`), or set `WPGO_SETUP_TOKEN`, and keep
+   open the install link from the log (`docker compose logs wpgo`), or set `PURSAE_SETUP_TOKEN`, and keep
    the link private until the site is installed.
-3. List your own plugin signing keys in `WPGO_PLUGIN_KEYS` or the `plugin_trusted_keys` option; leave
-   `plugin_allow_unsigned` off and never trust the public demo key (`WPGO_TRUST_DEV_KEY` must stay `0`).
-4. Set `WPGO_SECRET` yourself when running several instances, and keep it secret.
-5. Set `WPGO_DISALLOW_FILE_EDIT=1` (or Pursae Security › Hardening › Disable file editors) if nobody
+3. List your own plugin signing keys in `PURSAE_PLUGIN_KEYS` or the `plugin_trusted_keys` option; leave
+   `plugin_allow_unsigned` off and never trust the public demo key (`PURSAE_TRUST_DEV_KEY` must stay `0`).
+4. Set `PURSAE_SECRET` yourself when running several instances, and keep it secret.
+5. Set `PURSAE_DISALLOW_FILE_EDIT=1` (or Pursae Security › Hardening › Disable file editors) if nobody
    should edit theme files; it applies to the admin editors and the REST theme-file routes alike.
 6. Let clients reach the server only through your proxy (`docker/compose.prod.yaml` publishes the port on
-   `127.0.0.1`), and set `WPGO_TRUSTED_PROXIES` to the proxy's address when other machines share its
+   `127.0.0.1`), and set `PURSAE_TRUSTED_PROXIES` to the proxy's address when other machines share its
    private network ([reverse proxy](reverse-proxy-and-tls.md)).
 7. Configure SMTP so password resets reach their recipients ([mail](mail.md)).
 8. Back up the database and the data directories ([backups](backups.md)).
@@ -115,7 +115,7 @@ section: operations
    failing is disabled automatically after five consecutive failures.
 10. The core already keeps visitors from listing accounts, without any plugin: `/?author=N` answers 404, `/wp/v2/users` needs a
    login, the users sitemap is empty and the login form gives the same message for an unknown account and a wrong password.
-   Set `WPGO_EXPOSE_USERS=1` only if you need the public author list (a headless front end, say). Author archive pages
+   Set `PURSAE_EXPOSE_USERS=1` only if you need the public author list (a headless front end, say). Author archive pages
    (`/author/<nicename>`) stay public for authors with published posts and the slug comes from the account's login name, so
    set a *display name* and nickname that differ from the login for every account that publishes. **Pursae Security** (Plugins ›
    Installed Plugins; [Pursae Security](../../adminsecgo-features.md)) adds two-step login, a custom login URL and
@@ -136,16 +136,16 @@ DB-IP, Google Fonts, payment and mail APIs) are https and are named below.
 
 | Connection | When | What it sends | How to turn it off |
 |------------|------|---------------|--------------------|
-| **Pursae Manager** `https://hub.pursae.com` (`hub.go`, `hub_telemetry.go`, `core_update.go`) | daily ping (cron `wpgo_hub_check`), update checks and one-click core updates, marketplace plugin and theme library downloads, license checks, the product logo the Hub announces | site URL, version, license key; with statistics on also language, OS/arch, the installed plugins and themes, and package events; whatever that switch, the name, e-mail address and role of users who opted in to Pursae product update e-mails ([what a site sends](../hub/index.md#what-a-site-sends-statistics)). Never content, visitors or other users | statistics only: Settings › License › "Send usage statistics". Everything: `WPGO_HUB=off` (no updates, security fixes included, no marketplace, no licenses; **not recommended**) |
-| **DB-IP** `https://download.db-ip.com` (`geoip.go`) | the daily cron event `wpgo_geoip_update` downloads the free IP-to-country database once a month (and Pursae Analytics › Settings can update it by hand) | nothing about the site or its visitors: a plain file download. Visitor addresses are only looked up locally, in memory | `WPGO_GEOIP_UPDATE=off` (the copy shipped in the Docker image, or a file you place at `WPGO_GEOIP_DB`, is used; without any file only CDN country headers count) |
+| **Pursae Manager** `https://hub.pursae.com` (`hub.go`, `hub_telemetry.go`, `core_update.go`) | daily ping (cron `wpgo_hub_check`), update checks and one-click core updates, marketplace plugin and theme library downloads, license checks, the product logo the Hub announces | site URL, version, license key; with statistics on also language, OS/arch, the installed plugins and themes, and package events; whatever that switch, the name, e-mail address and role of users who opted in to Pursae product update e-mails ([what a site sends](../hub/index.md#what-a-site-sends-statistics)). Never content, visitors or other users | statistics only: Settings › License › "Send usage statistics". Everything: `PURSAE_HUB=off` (no updates, security fixes included, no marketplace, no licenses; **not recommended**) |
+| **DB-IP** `https://download.db-ip.com` (`geoip.go`) | the daily cron event `wpgo_geoip_update` downloads the free IP-to-country database once a month (and Pursae Analytics › Settings can update it by hand) | nothing about the site or its visitors: a plain file download. Visitor addresses are only looked up locally, in memory | `PURSAE_GEOIP_UPDATE=off` (the copy shipped in the Docker image, or a file you place at `PURSAE_GEOIP_DB`, is used; without any file only CDN country headers count) |
 | **Google Fonts** `https://fonts.googleapis.com`, `https://fonts.gstatic.com` (`gfonts.go`) | when a Web Builder page uses a Google font that is not on disk yet: the server downloads the stylesheet and `woff2` files once into `uploads/web-builder/google-fonts/` | the font family name | do not pick Google fonts in the Web Builder (system fonts and uploaded fonts never download anything). Visitors' browsers never contact Google: the fonts are served from the site |
 | **oEmbed providers** (`rest_extra.go`) | `GET /oembed/1.0/proxy`, used by the block editor when an author embeds a URL; users with `edit_posts` only; results cached for a day | the embedded URL, to the provider's own oEmbed endpoint from a fixed list (YouTube, Vimeo, X/Twitter, SoundCloud, Spotify, Flickr, Dailymotion, TikTok, Reddit; `oembedProviders`). Unlike WordPress, no other provider and no discovery from arbitrary pages | no switch: do not embed those URLs |
 | **Feeds** (`site_blocks.go`) | the RSS block or widget fetches the feed URL the author entered, cached for `feed_cache_transient_lifetime` | a GET to that URL (public hosts only) | remove the block |
 | **Trackbacks** (`admin_trackbacks.go`) | publishing a post whose "Send trackbacks to" field lists URLs | the post's title, link, excerpt and site name to those URLs (public hosts only) | leave the field empty. Pursae sends no pingbacks and no update pings to ping services (WordPress's `ping_sites`, Ping-O-Matic) |
-| **Language packs** `https://api.wordpress.org/translations` and the download URLs it returns (`internal/i18n`) | an administrator installs or updates a language (Settings › General › Site Language, Dashboard › Updates › Translations, `wpgo language …`) | which packs are wanted (locale, version) | do not install languages; `WPGO_TRANSLATIONS_API` points at a mirror |
+| **Language packs** `https://api.wordpress.org/translations` and the download URLs it returns (`internal/i18n`) | an administrator installs or updates a language (Settings › General › Site Language, Dashboard › Updates › Translations, `pursae language …`) | which packs are wanted (locale, version) | do not install languages; `PURSAE_TRANSLATIONS_API` points at a mirror |
 | **WXR import** (`wxr.go`) | Tools › Import with "Download and import file attachments" ticked | GETs of the attachment URLs in the file (public hosts only, 5 redirects, 30 s each) | leave the box unticked |
 | **MCP / AI tools** (`mcp.go`) | `upload_media` or `replace_media_file` called with a `source_url` | a GET to that URL (public hosts only, 64 MB at most) | do not pass URLs; the MCP server needs an OAuth grant or application password |
-| **Mail** (`internal/mail`) | every message (`wp_mail`) | the message, to `WPGO_SMTP_HOST` | without `WPGO_SMTP_HOST` messages are written as `.eml` files to `WPGO_MAIL_DIR` instead |
+| **Mail** (`internal/mail`) | every message (`wp_mail`) | the message, to `PURSAE_SMTP_HOST` | without `PURSAE_SMTP_HOST` messages are written as `.eml` files to `PURSAE_MAIL_DIR` instead |
 | **WebAssembly plugins** (`plugins.go`) | a plugin granted the `http:outbound` permission makes a request | what the plugin sends (public hosts only, 8 s) | do not grant the permission; deactivate the plugin |
 | **CAPTCHA** (`captcha.go`) | a form protected by Cloudflare Turnstile or reCAPTCHA (Pursae Contact Form, Pursae Security's login form CAPTCHA) when the keys are set | the visitor's token, IP address and the secret, to the provider's `siteverify` | leave the keys empty |
 
@@ -154,7 +154,7 @@ DB-IP, Google Fonts, payment and mail APIs) are https and are named below.
 | Plugin | Connections | Off |
 |--------|-------------|-----|
 | Pursae SMTP | the mailer you choose: SMTP, or the API of SendGrid, Mailgun, Postmark, SparkPost, Amazon SES, Brevo, SMTP.com, SendLayer, Resend, SMTP2GO, Gmail or Microsoft (OAuth); failure alerts to Slack, Discord, Teams, a webhook or Twilio; SES bounce notifications (SNS) | the mailer and alert settings |
-| Pursae CDN | the S3-compatible bucket (offload, Backup Manager's bucket copy) and the purge APIs of CloudFront, Bunny, KeyCDN or Fastly | the CDN settings (`WPGO_CDN_SETTINGS`) |
+| Pursae CDN | the S3-compatible bucket (offload, Backup Manager's bucket copy) and the purge APIs of CloudFront, Bunny, KeyCDN or Fastly | the CDN settings (`PURSAE_CDN_SETTINGS`) |
 | Pursae Cache | `PURGE` requests to the reverse proxy you configured (Varnish, nginx; private addresses allowed, link-local refused). Preloading runs in-process, without network | the proxy purge setting |
 | Pursae SEO | IndexNow (`https://api.indexnow.org`, off by default) with the changed URLs; Google Search Console (OAuth, `googleapis.com`) when connected | the IndexNow module; disconnect Search Console |
 | Pursae Pixel | server-side events to Meta Conversions API, TikTok Events API, Pinterest and GA4 Measurement Protocol, with the customer data each platform takes; with Pursae Cookie's consent gate on, only for the platforms a visitor consented to | the server-side tokens of each platform |
@@ -163,7 +163,7 @@ DB-IP, Google Fonts, payment and mail APIs) are https and are named below.
 | Pursae Security | Have I Been Pwned's range API (opt-in): only the first five hex characters of a new password's SHA-1 | Passwords › breached-password check |
 | Pursae Forum | Google sign-in (OAuth, `accounts.google.com`, `oauth2.googleapis.com`) | the Google client id |
 
-The Web Builder AI module (`WPGO_BUILDER_AI*`) is not shipped and connects nowhere. Scripts in a
+The Web Builder AI module (`PURSAE_BUILDER_AI*`) is not shipped and connects nowhere. Scripts in a
 design or theme the administrator imports may load third-party resources in visitors' browsers; the
 Content Security Policy above lists the hosts they may use.
 
@@ -173,7 +173,7 @@ Who Pursae trusts with what, and where it draws the line:
 
 - **Administrators are trusted with code, as in WordPress.** A user with `unfiltered_html` may publish
   scripts (Custom HTML blocks, Web Builder HTML and code sections, the theme file editor unless
-  `WPGO_DISALLOW_FILE_EDIT`); those scripts get the CSP nonce. Users without it have their content
+  `PURSAE_DISALLOW_FILE_EDIT`); those scripts get the CSP nonce. Users without it have their content
   filtered (KSES) and cannot change a stored script (the builder keeps the stored privileged section).
 - **An administrator who imports a design trusts its scripts.** A design (an HTML site, a kit) may come
   from anywhere, so the import wizard treats the upload as hostile: it runs nothing while reading it,

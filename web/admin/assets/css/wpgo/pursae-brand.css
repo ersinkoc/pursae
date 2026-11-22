@@ -161,17 +161,36 @@
 .px-row .px-ico{width:34px;height:34px;border-radius:9px}
 .px-row .px-ico .dashicons{width:18px;height:18px;font-size:18px}
 
-.px-team{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px;margin-top:48px;padding:26px 28px;border-radius:16px;background:var(--px-ink);color:#fff}
-.px-team small{display:block;font-size:12px;font-weight:500;color:#9ba1aa;margin-bottom:6px}
-.px-team strong{display:block;font-size:20px;font-weight:650;letter-spacing:-.02em}
-.px-team strong+span{display:block;margin-top:2px;font-size:14px;color:#c4c8ce}
-.px-team__links{display:flex;gap:8px}
-.px-team__links a{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;color:#fff;text-decoration:none;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:background .2s}
-.px-team__links a:hover,.px-team__links a:focus{background:rgba(255,255,255,.18);color:#fff}
-.px-team__links svg{width:17px;height:17px;fill:currentColor}
-.px-team__links .dashicons{width:18px;height:18px;font-size:18px}
+/* Team: photo cards on the rail, each photo on its logo pastel (as on pursae.com, section #ekip). */
+.pursae-team__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0;padding:0;list-style:none}
+.pursae-team-card{--pt-tint:var(--px-sky);display:flex;flex-direction:column;margin:0;padding:10px 10px 18px;border-radius:24px;background:var(--px-rail);box-shadow:inset 0 0 0 1px var(--px-line);
+	transition:transform .3s var(--px-ease),box-shadow .3s var(--px-ease)}
+.pursae-team-card--bora{--pt-tint:#D6ECFA}
+.pursae-team-card--aleyna{--pt-tint:#D3F1E5}
+.pursae-team-card--davut{--pt-tint:#FFE7CF}
+.pursae-team-card--open{--pt-tint:#E6E2FA}
+.pursae-team-card__photo{aspect-ratio:1;border-radius:18px;overflow:hidden;background:var(--pt-tint)}
+.pursae-team-card__photo img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .6s var(--px-ease)}
+.px .pursae-team-card h3{margin:16px 6px 0;font-size:18px;line-height:1.25;font-weight:620;letter-spacing:-.018em;color:var(--px-ink)}
+.px .pursae-team-card p{margin:4px 6px 0;font-size:13.5px;line-height:1.45;color:var(--px-muted)}
+.pursae-team-card__links{display:flex;flex-wrap:wrap;gap:6px;margin:14px 6px 0}
+.pursae-team-card__links a{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--px-page);color:var(--px-ink-2) !important;text-decoration:none;
+	box-shadow:inset 0 0 0 1px var(--px-line);transition:background-color .2s,color .2s,transform .14s var(--px-ease)}
+.pursae-team-card__links a:hover{background:var(--px-ink);color:var(--px-page) !important;box-shadow:none}
+.pursae-team-card__links a:active{transform:scale(.94)}
+.pursae-team-card__links a:focus-visible,.pursae-team-card__apply:focus-visible{outline:2px solid var(--px-blu);outline-offset:2px;box-shadow:none}
+.pursae-team-card__links svg{width:17px;height:17px;fill:currentColor}
+.pursae-team-card__links svg.is-stroke{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pursae-team-card__apply{display:inline-flex;align-items:center;align-self:flex-start;height:38px;margin:14px 6px 0;padding:0 18px;border-radius:999px;background:var(--px-ink);color:var(--px-page) !important;
+	font-size:14px;font-weight:550;text-decoration:none;transition:background-color .2s,transform .14s var(--px-ease)}
+.pursae-team-card__apply:hover{background:var(--px-blu)}
+.pursae-team-card__apply:active{transform:scale(.97)}
+@media (hover:hover){.pursae-team-card:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px var(--px-line),0 24px 48px -32px rgba(22,23,26,.45)}.pursae-team-card:hover .pursae-team-card__photo img{transform:scale(1.04)}}
+@media (prefers-reduced-motion:reduce){.pursae-team-card,.pursae-team-card__photo img{transition:none}.pursae-team-card:hover{transform:none}.pursae-team-card:hover .pursae-team-card__photo img{transform:none}}
 .px-foot{margin:18px 2px 0 !important;font-size:12.5px;color:var(--px-faint)}
 
+@media (max-width:1279px){.pursae-team__grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:1000px){.px-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.px-about__big{width:120px;height:120px;border-radius:30px;top:28px;inset-inline-end:28px}.px-about__big svg{width:76px;height:76px}}
 @media (max-width:782px){.px-about{padding:0 10px;margin-top:12px}.px-about__hero{padding:32px 22px}.px-about__big{display:none}.px-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.px-stat:nth-child(3){border-inline-start:0}.px-stat:nth-child(n+3){border-top:1px solid var(--px-line)}
 	.px-grid,.px-list{grid-template-columns:1fr}.px-row:nth-child(2){border-top:1px solid var(--px-line-2)}.px-row:nth-child(even){border-inline-start:0}}
+@media (max-width:520px){.pursae-team__grid{grid-template-columns:minmax(0,1fr)}}

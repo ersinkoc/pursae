@@ -10,7 +10,7 @@ import (
 )
 
 // Tests of the theme library of Pursae Web Builder (webbuilder_themes.go). The unit test reads the
-// packages in library/themes; the integration test needs WPGO_TEST_ADMIN_DB / WPGO_TEST_DB.
+// packages in library/themes; the integration test needs PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB.
 
 func TestWBThemePacksOfTheLibrary(t *testing.T) {
 	entries, err := os.ReadDir(themeLibraryDir)

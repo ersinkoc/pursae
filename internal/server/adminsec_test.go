@@ -18,6 +18,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"wpgo/internal/auth"
+	"wpgo/internal/config"
 	"wpgo/internal/db"
 	"wpgo/internal/store"
 )
@@ -346,7 +347,7 @@ func TestAdminSecMFA(t *testing.T) {
 		t.Error("2FA set up without MFA")
 	}
 
-	srv.cfg.SMTPHost = "smtp.example.test" // the core WPGO_SMTP_* transport counts as e-mail delivery
+	srv.cfg.SMTPHost = "smtp.example.test" // the core PURSAE_SMTP_* transport counts as e-mail delivery
 	backup := asEnableMFA(t, c, base, "admin@example.test")
 	if len(backup) != 10 {
 		t.Fatalf("%d backup codes shown", len(backup))
@@ -783,7 +784,7 @@ func TestAdminSecHideLogin(t *testing.T) {
 		t.Error("hidden again without the variable")
 	}
 	// ... and the CLI switches the setting off in the database.
-	pool, err := db.Connect(context.Background(), os.Getenv("WPGO_TEST_DB"))
+	pool, err := db.Connect(context.Background(), config.Env("TEST_DB"))
 	if err != nil {
 		t.Fatal(err)
 	}

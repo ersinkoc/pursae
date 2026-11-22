@@ -9,8 +9,8 @@ and the plugin source (`awesomemotive/wp-mail-smtp`, `src/Options.php` for optio
 Like Classic Editor, Pursae Cache and Pursae Web Builder it ships inside the binary, is listed on
 **Plugins › Installed Plugins** and **Add Plugin**, starts **inactive** and adds nothing (menu,
 routes, notices, dashboard widget, mail behaviour) while inactive. While it is inactive,
-`wp_mail()` keeps working exactly as before: the `WPGO_SMTP_*` environment variables, or `.eml`
-files in `WPGO_MAIL_DIR` on development sites.
+`wp_mail()` keeps working exactly as before: the `PURSAE_SMTP_*` environment variables, or `.eml`
+files in `PURSAE_MAIL_DIR` on development sites.
 
 Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · — left out (reason given).
 
@@ -21,7 +21,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Replaces `wp_mail()`'s PHPMailer instance (`phpmailer_init`) | `Server.mailer()` attaches a `mail.Transport` to the `mail.Mailer` while the plugin is active. Every sender goes through it: the queued `wp_mail` job (core notifications) and direct `Send` calls. | ✅ |
 | Plugin data in options `wp_mail_smtp`, `wp_mail_smtp_*` | One JSON option `wp_mail_smtp` (same group/key names: `mail.from_email`, `smtp.host`, `mailgun.api_key`, …), activation switch `native_wp_mail_smtp` | ✅ |
 | Email log in `{prefix}wpmailsmtp_emails_log`, debug events in `{prefix}wpmailsmtp_debug_events` | Tables `wpmailsmtp_emails_log`, `wpmailsmtp_debug_events` (migration `0011_wp_mail_smtp.sql`) | ✅ |
-| Secrets stored in plain text in `wp_options` (or a constant) | Secrets (SMTP password, API keys, client secrets, OAuth tokens, Twilio token) are AES-256-GCM encrypted with a key derived from the server secret (`WPGO_SECRET` / `auth_secret`), stored as `enc:v1:…`, never printed back into a form (the field shows a "saved" placeholder and a *Remove* checkbox; leaving it blank keeps the saved value) | ◐ stronger than upstream |
+| Secrets stored in plain text in `wp_options` (or a constant) | Secrets (SMTP password, API keys, client secrets, OAuth tokens, Twilio token) are AES-256-GCM encrypted with a key derived from the server secret (`PURSAE_SECRET` / `auth_secret`), stored as `enc:v1:…`, never printed back into a form (the field shows a "saved" placeholder and a *Remove* checkbox; leaving it blank keeps the saved value) | ◐ stronger than upstream |
 
 ## 2. Setup Wizard (`admin?page=wp-mail-smtp-setup-wizard`)
 
@@ -46,7 +46,7 @@ Legend: ✅ implemented · ◐ implemented with a Pursae specific difference · 
 | Return Path ("Set the return-path to match the From Email") | The SMTP envelope sender (bounces) is the From Email; when a message keeps its own From (not forced) the envelope follows it only with Return Path on | ◐ (no PHP `mail()`) |
 | Mailer | Default (none), Other SMTP and every mailer below. Pro-only mailers are included (no license) | ✅ |
 | Other SMTP: SMTP Host, Encryption (None / SSL / TLS), SMTP Port (25 / 465 / 587 suggested per encryption), Auto TLS, Authentication, SMTP Username, SMTP Password | Native `net/smtp` client; SSL = implicit TLS, TLS = STARTTLS required, None + Auto TLS = STARTTLS when the server offers it; AUTH PLAIN (LOGIN fallback when the server only advertises LOGIN) | ✅ |
-| Default (none) = PHP `mail()` | Pursae's built-in transport: `WPGO_SMTP_*` env SMTP, or `.eml` files | ◐ |
+| Default (none) = PHP `mail()` | Pursae's built-in transport: `PURSAE_SMTP_*` env SMTP, or `.eml` files | ◐ |
 | Backup Connection (Pro) | Pick one Additional Connection; when the primary connection fails the message is retried once through it; the log records which connection delivered it | ✅ |
 | Rate limiting (Pro, per minute/hour/day/week/month) | Under Misc. Each send reserves its slot in `wpmailsmtp_rate` inside a transaction under an advisory lock before it goes out (concurrent sends cannot overshoot; a failed send gives the slot back); over a limit the message is re-queued as a `wp_mail` job for when the window allows it (a form's own From is not kept on the re-queued copy) | ✅ |
 | Optimized email sending (Pro, background queue) | Always on in Pursae: core e-mail is already sent by the job runner | ◐ |
