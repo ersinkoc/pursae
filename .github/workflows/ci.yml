@@ -35,8 +35,8 @@ jobs:
       PURSAE_TEST_ADMIN_DB: postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable
       PURSAE_TEST_DB: postgres://wpgo:wpgo@localhost:5432/wpgo_test?sslmode=disable
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: gofmt
@@ -106,10 +106,10 @@ jobs:
       # Each release builds with the Go its go.mod asks for.
       GOTOOLCHAIN: auto
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # the release tags
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: upgrade test
@@ -122,8 +122,8 @@ jobs:
     env:
       CGO_ENABLED: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: test -race
@@ -135,15 +135,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: builder/.nvmrc
           cache: npm
           cache-dependency-path: builder/package-lock.json
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: make builder-test
@@ -159,13 +159,13 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Pull requests compare against the merge base locally: the action's only-new-issues fetches
           # the PR diff from the API, which GitHub refuses for more than 300 files, and then lints the
           # whole tree. Full history, so origin/<base> and the merge base are there.
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v9
@@ -179,8 +179,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: govulncheck
@@ -192,7 +192,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "7.4"
@@ -223,8 +223,8 @@ jobs:
     steps:
       # Byte-identical checkout: golden files, patch hashes and templates are compared as LF.
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: vet
@@ -291,8 +291,8 @@ jobs:
     env:
       CGO_ENABLED: "0"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: build (release flags)
@@ -316,8 +316,8 @@ jobs:
       HOMEBREW_NO_AUTO_UPDATE: "1"
       HOMEBREW_NO_INSTALL_CLEANUP: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: PostgreSQL 17
@@ -351,7 +351,7 @@ jobs:
           --health-cmd "pg_isready -U wpgo -d wpgo"
           --health-interval 2s --health-timeout 3s --health-retries 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: docker build
         run: docker build -f docker/Dockerfile --build-arg VERSION=0.0.0-ci -t pursae:ci .
       - name: run the image
@@ -401,13 +401,13 @@ jobs:
     env:
       CGO_ENABLED: "0"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: builder/.nvmrc
           cache: npm
           cache-dependency-path: builder/package-lock.json
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: npm ci
@@ -420,7 +420,7 @@ jobs:
         run: make e2e-run E2E_DATABASE_URL='postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable'
       - name: upload the server log and traces
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-results
           path: builder/.work/e2e/
