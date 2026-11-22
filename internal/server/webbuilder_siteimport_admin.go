@@ -313,26 +313,30 @@ func (s *Server) wbWizSetRecords(c *gin.Context, recs map[string]*wbWizRecord) e
 }
 
 // wbWizOwned lists the ids of the pages and templates carrying the kit's import mark, any status.
-func (s *Server) wbWizOwned(c *gin.Context, kit string) (pages, templates map[int64]bool) {
+func (s *Server) wbWizOwned(c *gin.Context, kit string) (pages, templates map[int64]bool, err error) {
 	pages, templates = map[int64]bool{}, map[int64]bool{}
 	rows, err := s.store.Pool.Query(c, `SELECT id, type FROM posts WHERE type IN ('page', 'post', $1) AND meta->>$2 = $3`,
 		webbuilder.TemplatePostType, wbSiteMetaKit, kit)
 	if err != nil {
-		return
+		return nil, nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var id int64
 		var typ string
-		if rows.Scan(&id, &typ) == nil {
-			if typ == "page" || typ == "post" { // a post: a page a collection made a post
-				pages[id] = true
-			} else {
-				templates[id] = true
-			}
+		if err := rows.Scan(&id, &typ); err != nil {
+			return nil, nil, err
+		}
+		if typ == "page" || typ == "post" { // a post: a page a collection made a post
+			pages[id] = true
+		} else {
+			templates[id] = true
 		}
 	}
-	return
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return pages, templates, nil
 }
 
 func wbWizNew(after, before map[int64]bool) []int64 {
@@ -1069,6 +1073,10 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 		again("The kit slug may hold lowercase letters, digits and dashes only.")
 		return
 	}
+	if old := s.wbWizRecords()[m.ID]; old != nil && old.Kit != kit {
+		again("This upload already belongs to the design kit " + old.Kit + ". Upload the zip again to choose another kit.")
+		return
+	}
 	q := c.Request.URL.Query()
 	q.Set("kit", kit)
 	c.Request.URL.RawQuery = q.Encode()
@@ -1094,6 +1102,11 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	for rel := range m.Media {
 		delete(assets, rel) // for the Media Library, not the kit
 	}
+	pagesBefore, tplBefore, err := s.wbWizOwned(c, kit)
+	if err != nil {
+		again("Could not check existing imported content: " + err.Error())
+		return
+	}
 	// 1. The design kit: the staged assets, committed like the kit REST routes do.
 	if err := s.wbWizInstallKit(c, m.ID, kit, name, assets); err != nil {
 		again("The design kit could not be written: " + err.Error())
@@ -1101,7 +1114,6 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	}
 	// Files too large for a kit (a video) go to the Media Library; the pages point at them there.
 	remap, mediaIDs, mediaErr := s.wbWizMediaUpload(c, m)
-	pagesBefore, tplBefore := s.wbWizOwned(c, kit)
 	menuBefore := s.wbWizMenuID(c, kit)
 	prevShow, prevFront := s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
 	// 2. The import: the code of the MCP tool web_builder_import_site.
@@ -1137,9 +1149,19 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	s.wbWizRESTSession(c)
 	out, importErr := mcpWBImportSite(s, c, args)
 	// 3. What it made, recorded even when it stopped half way.
-	pagesAfter, tplAfter := s.wbWizOwned(c, kit)
-	rec := &wbWizRecord{ID: m.ID, Kit: kit, KitCreated: !existing, Pages: wbWizNew(pagesAfter, pagesBefore), Templates: wbWizNew(tplAfter, tplBefore),
-		At: wbTime(time.Now()), By: currentUser(c).ID, Media: mediaIDs}
+	pagesAfter, tplAfter, ownedErr := s.wbWizOwned(c, kit)
+	recs := s.wbWizRecords()
+	rec := recs[m.ID]
+	if rec == nil {
+		rec = &wbWizRecord{ID: m.ID, Kit: kit, At: wbTime(time.Now()), By: currentUser(c).ID}
+	}
+	rec.KitCreated = rec.KitCreated || !existing
+	rec.Pages = append(rec.Pages, wbWizNew(pagesAfter, pagesBefore)...)
+	rec.Templates = append(rec.Templates, wbWizNew(tplAfter, tplBefore)...)
+	rec.Media = append(rec.Media, mediaIDs...)
+	if rec.FrontSet {
+		prevShow, prevFront = rec.PrevShow, rec.PrevFront
+	}
 	if menuBefore == 0 {
 		rec.Menu = s.wbWizMenuID(c, kit)
 	}
@@ -1155,6 +1177,10 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 		s.wbWizFillResult(c, res, om)
 		res.Warnings = append(w, res.Warnings...)
 	}
+	if ownedErr != nil {
+		log.Printf("web builder: record imported content: %v", ownedErr)
+		res.Warnings = append(res.Warnings, "The removal record may be incomplete. Some imported pages or templates could not be listed.")
+	}
 	for rel, u := range remap {
 		res.Bindings = append(res.Bindings, rel+" is in the Media Library: "+u)
 	}
@@ -1166,7 +1192,6 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 		}
 	}
 	if len(rec.Pages)+len(rec.Templates)+len(rec.Media) > 0 || rec.KitCreated || rec.Menu > 0 {
-		recs := s.wbWizRecords()
 		recs[m.ID] = rec
 		if err := s.wbWizSetRecords(c, recs); err != nil {
 			res.Warnings = append(res.Warnings, "The removal record could not be saved. To undo this import, remove the imported items manually.")
@@ -1194,12 +1219,23 @@ func (s *Server) wbWizRESTSession(c *gin.Context) {
 func (s *Server) wbWizInstallKit(c *gin.Context, id, slug, name string, assets map[string]int64) error {
 	wbKitsMu.Lock()
 	defer wbKitsMu.Unlock()
-	live := filepath.Join(s.wbKitRoot(), slug)
-	stage := filepath.Join(live, wbKitStageDir)
-	_ = os.RemoveAll(stage)
-	if err := os.MkdirAll(stage, 0o755); err != nil {
+	kitDir := s.wbKitRoot()
+	if err := os.MkdirAll(kitDir, 0o755); err != nil {
 		return err
 	}
+	root, err := os.OpenRoot(kitDir)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	staged := filepath.Join(slug, wbKitStageDir)
+	if err := root.RemoveAll(staged); err != nil {
+		return fmt.Errorf("clear kit staging: %w", err)
+	}
+	if err := root.MkdirAll(staged, 0o755); err != nil {
+		return err
+	}
+	stage := filepath.Join(kitDir, staged)
 	src := s.wbWizSiteDir(id)
 	for rel := range assets {
 		if _, ok := wbKitRel(rel); !ok {
