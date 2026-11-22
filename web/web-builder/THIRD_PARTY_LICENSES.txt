@@ -404,7 +404,7 @@ FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 
 ==============================================================================
-framer-motion 14.9.0 (MIT)
+framer-motion 14.14.0 (MIT)
 https://github.com/motiondivision/motion/
 ==============================================================================
 
@@ -431,7 +431,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ==============================================================================
-lucide-react 1.66.0 (ISC)
+lucide-react 1.76.0 (ISC)
 https://github.com/lucide-icons/lucide
 ==============================================================================
 
@@ -480,7 +480,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ==============================================================================
-motion 14.9.0 (MIT)
+motion 14.14.0 (MIT)
 https://github.com/motiondivision/motion
 ==============================================================================
 
@@ -507,7 +507,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ==============================================================================
-motion-dom 14.9.0 (MIT)
+motion-dom 14.14.0 (MIT)
 https://github.com/motiondivision/motion
 ==============================================================================
 
@@ -642,7 +642,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ==============================================================================
-tailwindcss 4.3.3 (MIT)
+tailwindcss 4.3.5 (MIT)
 https://github.com/tailwindlabs/tailwindcss
 ==============================================================================
 
