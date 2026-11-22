@@ -6,6 +6,8 @@
  * archive entry, sealed as it is added. The writer can stop after any batch and go on in the next
  * request: commit() seals what is buffered and records how many bytes of the file are complete, and
  * a later open() cuts the file back to that size, so a request that died mid-batch is simply redone.
+ * Chunks sealed again that way get new random nonces (WP2P_Crypto::seal), so no nonce is ever used
+ * twice under the package key, even for chunks that reached the disk before the request died.
  *
  * @package WP_To_Pursae
  */
@@ -34,7 +36,7 @@ class WP2P_Writer {
 	private $key;
 
 	/**
-	 * Persistent state: file, prefix, index, committed.
+	 * Persistent state: file, index (of the next chunk), committed (bytes), closed.
 	 *
 	 * @var array
 	 */
@@ -55,15 +57,13 @@ class WP2P_Writer {
 	 * @throws RuntimeException When the file cannot be written.
 	 */
 	public static function create( $file ) {
-		$prefix = random_bytes( 16 );
-		$header = WP2P_Crypto::header( $prefix );
+		$header = WP2P_Crypto::header( random_bytes( 16 ) );
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- streamed binary output, not a WP_Filesystem job.
 		if ( false === file_put_contents( $file, $header ) ) {
 			throw new RuntimeException( 'The package file cannot be written.' );
 		}
 		return array(
 			'file'      => $file,
-			'prefix'    => base64_encode( $prefix ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- binary nonce prefix in an option.
 			'index'     => 0,
 			'committed' => strlen( $header ),
 			'closed'    => false,
@@ -210,8 +210,7 @@ class WP2P_Writer {
 	 * @throws RuntimeException When the disk is full.
 	 */
 	private function seal( $plain, $last ) {
-		$prefix = base64_decode( $this->state['prefix'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- binary nonce prefix.
-		$sealed = WP2P_Crypto::seal( $plain, $this->key, $prefix, (int) $this->state['index'], $last );
+		$sealed = WP2P_Crypto::seal( $plain, $this->key, (int) $this->state['index'], $last );
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- streamed binary output.
 		if ( false === fwrite( $this->fh, $sealed ) ) {
 			throw new RuntimeException( 'Writing the package failed (is the disk full?).' );

@@ -8,16 +8,19 @@
 # migration token) and nothing may be duplicated.
 #
 # Needs Docker, Go, curl and jq, and internet access (WordPress images, WooCommerce from wordpress.org).
-# KEEP=1 leaves the containers and Pursae running for a look; WP2P_WOO_VERSION pins WooCommerce.
+# KEEP=1 leaves the containers and Pursae running for a look; WP2P_WOO_VERSION pins WooCommerce;
+# WP2P_DB names the Pursae database (default wpgo_wp2p, plus <name>_web) and WP2P_COMPOSE_PROJECT the
+# WordPress containers (default wp2p-e2e), so two checkouts can run it side by side.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 TEST="$ROOT/integrations/wordpress/test"
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/wp2p-e2e.XXXXXX")
 PORT=${WP2P_PURSAE_PORT:-18089}
-DB=wpgo_wp2p
+DB=${WP2P_DB:-wpgo_wp2p}
 PGPORT=${WPGO_DB_PORT:-5432}
-COMPOSE=(docker compose -f "$TEST/docker-compose.yml")
+COMPOSE=(docker compose -p "${WP2P_COMPOSE_PROJECT:-wp2p-e2e}" -f "$TEST/docker-compose.yml")
+WPURL="http://127.0.0.1:${WP2P_WP_PORT:-8089}"
 PG=(docker compose -f "$ROOT/docker/compose.yaml")
 PURSAE="$WORK/pursae"
 PASS=0
@@ -41,6 +44,7 @@ check() { # check <description> <got> <want>
 	if [ "$2" == "$3" ]; then ok "$1"; else bad "$1: got '$2', want '$3'"; fi
 }
 sql() { "${PG[@]}" exec -T db psql -U wpgo -d "$DB" -Atc "$1"; }
+sqlweb() { "${PG[@]}" exec -T db psql -U wpgo -d "${DB}_web" -Atc "$1"; }
 
 echo "== Pursae binary"
 (cd "$ROOT" && CGO_ENABLED=0 go build -o "$PURSAE" ./cmd/wpgo)
@@ -48,6 +52,7 @@ echo "== Pursae binary"
 echo "== Pursae database $DB"
 "${PG[@]}" up -d --wait db >/dev/null
 "${PG[@]}" exec -T db psql -U wpgo -d wpgo -qc "DROP DATABASE IF EXISTS $DB WITH (FORCE)" -c "CREATE DATABASE $DB" >/dev/null
+"${PG[@]}" exec -T db psql -U wpgo -d wpgo -qc "DROP DATABASE IF EXISTS ${DB}_web WITH (FORCE)" -c "CREATE DATABASE ${DB}_web" >/dev/null
 export DATABASE_URL="postgres://wpgo:wpgo@localhost:$PGPORT/$DB?sslmode=disable"
 export WPGO_UPLOADS_DIR="$WORK/uploads" WPGO_SITE_URL="http://127.0.0.1:$PORT" WPGO_ADDR=":$PORT" WPGO_HUB=off WPGO_MAIL_DIR="$WORK/mail"
 "$PURSAE" db migrate >/dev/null
@@ -168,6 +173,39 @@ check "pushed import finished" "$state" "done"
 check "nothing duplicated (users|posts|media|menu items|orders|coupons|items)" "$(counts)" "$before"
 check "the token cannot be used again" "$(curl -s -o /dev/null -w '%{http_code}' -H "X-Pursae-Migration-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"size":10}' "http://127.0.0.1:$PORT/wp-json/pursae/v1/migrate/start")" "409"
 check "the plugin deleted its package" "$("${COMPOSE[@]}" exec -T cli sh -c 'ls -d /var/www/html/wp-content/uploads/wp-to-pursae-* 2>/dev/null | wc -l' | tr -d ' ')" "0"
+
+echo "== The admin screen's build (AJAX steps, content in batches of 2 posts) into a fresh site"
+"${COMPOSE[@]}" exec -T cli sh -c "echo \"<?php add_filter( 'wp2p_content_batch', function () { return 2; } );\" > wp-content/mu-plugins/wp2p-batch.php"
+JAR="$WORK/wp.cookies"
+curl -s -o /dev/null -c "$JAR" -b "wordpress_test_cookie=WP%20Cookie%20check" --data-urlencode "log=wpadmin" --data-urlencode "pwd=Adm1n-pass-2026" \
+	--data-urlencode "testcookie=1" "$WPURL/wp-login.php"
+NONCE=$(curl -s -b "$JAR" "$WPURL/wp-admin/tools.php?page=wp-to-pursae" | grep -o 'var wp2p = {"ajax":"[^"]*","nonce":"[0-9a-f]*"' | cut -d'"' -f8)
+ajax() { curl -s -b "$JAR" --data-urlencode "action=$1" --data-urlencode "_ajax_nonce=$NONCE" "${@:2}" "$WPURL/wp-admin/admin-ajax.php"; }
+res=$(ajax wp2p_start --data-urlencode "mode=download")
+steps=0
+while [ "$(jq -r '.data.status // "failed"' <<<"$res")" = "building" ] && [ $steps -lt 300 ]; do
+	res=$(ajax wp2p_step)
+	steps=$((steps + 1))
+done
+check "the screen built the package" "$(jq -r .data.status <<<"$res")" "built"
+if [ "$steps" -gt 3 ]; then ok "it took $steps requests (one export_wp() batch each)"; else bad "only $steps requests: the content was not batched"; fi
+curl -s -b "$JAR" -o "$WORK/web.wp2p" "$(jq -r .data.download <<<"$res")"
+(
+	export DATABASE_URL="postgres://wpgo:wpgo@localhost:$PGPORT/${DB}_web?sslmode=disable" WPGO_UPLOADS_DIR="$WORK/uploads-web"
+	"$PURSAE" db migrate >/dev/null
+	"$PURSAE" core install --url="$WPGO_SITE_URL" --title="Pursae" --admin_user=admin --admin_email=admin@pursae.test --admin_password='Pursae-admin-2026' >/dev/null
+	"$PURSAE" import wordpress "$WORK/web.wp2p" --key="$(jq -r .data.key <<<"$res")" >"$WORK/import-web.log"
+) || bad "importing the screen's package failed: $(tail -3 "$WORK/import-web.log" 2>/dev/null)"
+same() { # same <description> <query>: the screen's package gives what the command-line package gave
+	check "$1" "$(sqlweb "$2")" "$(sql "$2")"
+}
+same "same posts (type, status, slug, title, author)" "SELECT string_agg(p.type || ' ' || p.status || ' ' || p.slug || ' ' || p.title || ' ' || coalesce(u.login, ''), ';' ORDER BY p.type, p.slug, p.title) FROM posts p LEFT JOIN users u ON u.id = p.author_id"
+same "same terms" "SELECT string_agg(t.slug, ',' ORDER BY t.slug) FROM terms t"
+same "same menu items" "SELECT string_agg(i.label, ',' ORDER BY i.sort_order) FROM menu_items i"
+same "same media" "SELECT string_agg(title, ',' ORDER BY title) FROM media"
+same "same comments" "SELECT count(*) FROM comments"
+same "same orders" "SELECT string_agg(meta->>'_wp2p_order_id' || ' ' || total::text, ',' ORDER BY meta->>'_wp2p_order_id') FROM goo_orders WHERE type = 'shop_order'"
+"${COMPOSE[@]}" exec -T cli rm -f wp-content/mu-plugins/wp2p-batch.php
 
 echo
 echo "WP to Pursae e2e: $PASS passed, $FAIL failed"

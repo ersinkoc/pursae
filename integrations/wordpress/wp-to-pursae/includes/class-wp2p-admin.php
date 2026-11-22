@@ -32,7 +32,7 @@ class WP2P_Admin {
 	 * Adds the Tools entry.
 	 */
 	public static function menu() {
-		add_management_page( __( 'Move to Pursae', 'wp-to-pursae' ), __( 'Move to Pursae', 'wp-to-pursae' ), 'manage_options', self::SLUG, array( __CLASS__, 'page' ) );
+		add_management_page( __( 'Move to Pursae', 'wp-to-pursae' ), __( 'Move to Pursae', 'wp-to-pursae' ), WP2P_Exporter::capability(), self::SLUG, array( __CLASS__, 'page' ) );
 	}
 
 	/**
@@ -118,10 +118,11 @@ class WP2P_Admin {
 	}
 
 	/**
-	 * Checks the capability and the nonce of an AJAX request.
+	 * Checks the capability of an AJAX request (see WP2P_Exporter::allowed(): on multisite only a
+	 * super admin may export the network's users).
 	 */
 	private static function guard() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! WP2P_Exporter::allowed() ) {
 			wp_send_json_error( array( 'message' => __( 'Sorry, you are not allowed to do that.', 'wp-to-pursae' ) ), 403 );
 		}
 	}
@@ -236,7 +237,7 @@ class WP2P_Admin {
 	 * Streams the built package.
 	 */
 	public static function download() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! WP2P_Exporter::allowed() ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'wp-to-pursae' ), 403 );
 		}
 		check_admin_referer( 'wp2p_download' );
@@ -261,7 +262,7 @@ class WP2P_Admin {
 	 * The screen.
 	 */
 	public static function page() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! WP2P_Exporter::allowed() ) {
 			return;
 		}
 		$woo = WP2P_Woo::active();

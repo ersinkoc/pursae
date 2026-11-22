@@ -156,8 +156,8 @@ jobs:
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
-  # The WP to Pursae WordPress plugin (integrations/wordpress): php -l on the oldest PHP it supports (7.4)
-  # and the WordPress coding standards. The end-to-end test with WordPress + WooCommerce is wp2p-e2e.yml.
+  # The WP to Pursae WordPress plugin (integrations/wordpress): php -l on the oldest PHP it supports (7.4),
+  # its unit tests and the WordPress coding standards. The end-to-end test with WordPress + WooCommerce is wp2p-e2e.yml.
   wordpress-plugin:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -170,6 +170,8 @@ jobs:
           coverage: none
       - name: php -l (PHP 7.4)
         run: find integrations/wordpress -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Unit tests (multisite guard, resumed package encryption, content batches, cleanup)
+        run: php integrations/wordpress/test/unit/run.php
       - name: WordPress coding standards
         run: |
           mkdir -p "$RUNNER_TEMP/phpcs" && cd "$RUNNER_TEMP/phpcs"

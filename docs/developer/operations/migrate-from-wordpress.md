@@ -93,7 +93,9 @@ keeps its WordPress number in the meta field `_wp2p_order_id`.
   pages. The importer replaces the WooCommerce blocks or shortcodes on the store's cart, checkout
   and My account pages with Pursae Commerce's (`[goocommerce_cart]`, …), and the report says so.
   Other Woo blocks placed elsewhere in the content stay as they are.
-- **Multisite networks.** The plugin moves the site it runs on, with the users of that site.
+- **Multisite networks.** The plugin moves the site it runs on, with the users of that site. On a
+  network only a super admin can use it: a site's own administrators would otherwise export the
+  password hashes of network users, super admins included.
 - **Domain.** If the site moves to another address, links inside the content still point at the
   old one. The report then gives the `pursae search-replace` command that fixes them.
 
@@ -113,9 +115,13 @@ same.
 - The plugin writes nothing unencrypted. Every batch of users, orders or content goes straight into
   the encrypted file. Its working directory has a random name and refuses web access (`.htaccess`,
   `web.config`); define `WP2P_WORK_DIR` to keep it outside the web root. The package is deleted once
-  it is sent, when the owner deletes it, or after 24 hours.
-- The plugin's screen and its requests need `manage_options` and carry nonces. Password hashes are
-  never shown or logged.
+  it is sent, when the owner deletes it, or after 24 hours (an hourly cron event, also removed when
+  the plugin is deactivated or deleted).
+- The plugin's screen and its requests need `manage_options` (on multisite: a super admin) and
+  carry nonces. Password hashes are never shown or logged.
+- The build runs in short requests that each stop after a time budget, including the content: it
+  is exported with WordPress' own `export_wp()` in ranges of post ids, so a large site never needs
+  one long request, and a request that dies redoes only its own batch.
 - In Pursae, the import routes accept either the token or an administrator with `manage_options`
   and `import`. A token is stored only as a SHA-256 hash, works only for its own import, cannot
   start a second upload, and expires after 24 hours. Uploads and extracted files are kept outside
@@ -124,10 +130,13 @@ same.
 
 ## The package format
 
-A `.wp2p` file starts with `PURSAEWP`, a format byte (1) and a 16-byte random nonce prefix. Then
-come chunks: a big-endian `uint32` with the length of the sealed chunk, then the chunk sealed with
-`crypto_secretbox` under the 32-byte key. The nonce is the prefix followed by the big-endian
-`uint64` chunk index, with the top bit set on the last chunk. Keys are shown as 43 characters of
+A `.wp2p` file starts with `PURSAEWP`, a format byte (2) and a 16-byte random package id. Then
+come chunks: a big-endian `uint32` with the length of what follows, a random 24-byte nonce, then
+the chunk sealed with `crypto_secretbox` under the 32-byte key and that nonce. The sealed plaintext
+starts with the big-endian `uint64` chunk index, with the top bit set on the last chunk, so chunks
+cannot be reordered, dropped or cut off. Nonces are random because the plugin seals a chunk again
+when a request died after writing it; format 1, which used the id followed by the index as the
+nonce, then reused a nonce, and is not read any more. Keys are shown as 43 characters of
 unpadded base64url. A token's key is `HMAC-SHA256(key = token, message = "pursae-wp2p-package-key-v1")`.
 
 The plaintext is a ustar archive with:

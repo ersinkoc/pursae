@@ -18,8 +18,25 @@ defined( 'ABSPATH' ) || exit;
  */
 class WP2P_Exporter {
 
-	const OPTION = 'wp2p_job';
-	const TTL    = DAY_IN_SECONDS;
+	const OPTION         = 'wp2p_job';
+	const TTL            = DAY_IN_SECONDS;
+	const CLEANUP        = 'wp2p_cleanup';
+	const CONTENT_FORMAT = 1; // manifest.json's "format": the archive's entries (the envelope is WP2P_Crypto::FORMAT).
+
+	/**
+	 * Whether export_wp() already ran in this PHP process: it declares its helper functions (wxr_cdata,
+	 * ...) when it runs, so a second call in the same process would end in a fatal error.
+	 *
+	 * @var bool
+	 */
+	private static $exported = false;
+
+	/**
+	 * Set by a step that cannot go on in this request (the content step after its export_wp() batch).
+	 *
+	 * @var bool
+	 */
+	private static $yield = false;
 
 	/**
 	 * The steps, in order.
@@ -92,6 +109,34 @@ class WP2P_Exporter {
 	public static $user_meta = array( 'first_name', 'last_name', 'nickname', 'description', 'locale', 'paying_customer' );
 
 	/**
+	 * Whether a user may build and send packages. A package holds the password hashes of every user
+	 * of the site, so on multisite, where a site's administrators have manage_options but network
+	 * users (super admins among them) are members of their site, only a super admin may.
+	 *
+	 * @param int|null $user_id User; the current user when null.
+	 * @return bool
+	 */
+	public static function allowed( $user_id = null ) {
+		$user_id = null === $user_id ? get_current_user_id() : (int) $user_id;
+		if ( $user_id <= 0 ) {
+			return false;
+		}
+		if ( is_multisite() ) {
+			return is_super_admin( $user_id );
+		}
+		return user_can( $user_id, 'manage_options' );
+	}
+
+	/**
+	 * The capability of the Tools entry (allowed() is checked on every request as well).
+	 *
+	 * @return string
+	 */
+	public static function capability() {
+		return is_multisite() ? 'manage_network_options' : 'manage_options';
+	}
+
+	/**
 	 * The current job, or null.
 	 *
 	 * @return array|null
@@ -158,10 +203,18 @@ class WP2P_Exporter {
 		);
 		$job['writer'] = WP2P_Writer::create( $job['file'] );
 		self::save( $job );
-		if ( ! wp_next_scheduled( 'wp2p_cleanup' ) ) {
-			wp_schedule_single_event( time() + self::TTL + HOUR_IN_SECONDS, 'wp2p_cleanup' );
-		}
+		self::schedule_cleanup();
 		return $job;
+	}
+
+	/**
+	 * Makes sure the hourly cleanup event exists while there is a job: it removes the job once it is
+	 * older than TTL, whenever that job was started.
+	 */
+	public static function schedule_cleanup() {
+		if ( ! wp_next_scheduled( self::CLEANUP ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', self::CLEANUP );
+		}
 	}
 
 	/**
@@ -197,12 +250,19 @@ class WP2P_Exporter {
 	}
 
 	/**
-	 * Cron: removes a package older than a day.
+	 * Cron (hourly while there is a job): removes a job older than TTL with its package, key, token
+	 * and Application Password. The event ends itself once nothing is left.
 	 */
 	public static function cleanup_expired() {
 		$job = self::job();
-		if ( $job && time() - (int) $job['created'] > self::TTL ) {
+		if ( $job && time() - (int) ( isset( $job['created'] ) ? $job['created'] : 0 ) > self::TTL ) {
 			self::discard();
+			$job = null;
+		}
+		if ( $job ) {
+			self::schedule_cleanup(); // An older version's single event may have been this one.
+		} else {
+			wp_clear_scheduled_hook( self::CLEANUP );
 		}
 	}
 
@@ -231,8 +291,9 @@ class WP2P_Exporter {
 		if ( ! $job || 'building' !== $job['status'] ) {
 			return $job;
 		}
-		$until  = microtime( true ) + $budget;
-		$key    = WP2P_Crypto::decode_key( $job['key'] );
+		$until       = microtime( true ) + $budget;
+		self::$yield = false;
+		$key         = WP2P_Crypto::decode_key( $job['key'] );
 		$writer = new WP2P_Writer( $job['writer'], $key );
 		$steps  = count( self::$steps );
 		try {
@@ -255,7 +316,7 @@ class WP2P_Exporter {
 					$job['part']   = 0;
 				}
 				self::save( $job );
-				if ( microtime( true ) >= $until ) {
+				if ( self::$yield || microtime( true ) >= $until ) {
 					break;
 				}
 			}
@@ -286,7 +347,7 @@ class WP2P_Exporter {
 			case 'options':
 				return self::step_options( $job, $writer );
 			case 'content':
-				return self::step_content( $job, $writer );
+				return self::step_content( $job, $writer, $until );
 			case 'media':
 				return self::step_media( $job, $writer, $until );
 			case 'tax_rates':
@@ -441,16 +502,92 @@ class WP2P_Exporter {
 	}
 
 	/**
-	 * All content as WordPress' own WXR export (Tools › Export › All content), written in parts as
-	 * export_wp() prints it. WooCommerce orders, refunds and coupons are left out: they come in their
-	 * own files.
+	 * How many posts (of any type) one content batch covers. WP-CLI has no request time limit and
+	 * exports the rest in one go (0).
+	 *
+	 * @return int
+	 */
+	private static function content_batch() {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return 0;
+		}
+		/**
+		 * Filters how many posts one content batch of the package covers in a web request.
+		 *
+		 * @param int $n Posts.
+		 */
+		return max( 1, (int) apply_filters( 'wp2p_content_batch', 200 ) );
+	}
+
+	/**
+	 * All content as WordPress' own WXR export (Tools › Export › All content), in batches of post ids
+	 * so no request has to export the whole site: each request runs export_wp() for the posts after
+	 * the cursor (it can run only once per PHP process), and the batch is committed with the cursor.
+	 * The parts form one WXR document: the first batch keeps export_wp()'s head (site, every author,
+	 * categories, tags, terms, menus), later batches only their <item>s, and the last step closes the
+	 * channel. WooCommerce orders, refunds and coupons are left out: they come in their own files.
 	 *
 	 * @param array       $job    Job.
 	 * @param WP2P_Writer $writer Writer.
+	 * @param float       $until  Deadline.
 	 * @return bool
+	 * @throws RuntimeException When the content cannot be exported.
 	 */
-	private static function step_content( array &$job, WP2P_Writer $writer ) {
-		global $wp_post_types;
+	private static function step_content( array &$job, WP2P_Writer $writer, $until ) {
+		global $wpdb;
+		$after = (int) $job['cursor'];
+		$first = 0 === (int) $job['part'];
+		$limit = self::content_batch();
+		if ( $limit > 0 ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$upto = $wpdb->get_var( $wpdb->prepare( "SELECT MAX(ID) FROM (SELECT ID FROM {$wpdb->posts} WHERE ID > %d ORDER BY ID LIMIT %d) b", $after, $limit ) );
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$upto = $wpdb->get_var( $wpdb->prepare( "SELECT MAX(ID) FROM {$wpdb->posts} WHERE ID > %d", $after ) );
+		}
+		$upto = max( $after, (int) $upto );
+		if ( $upto === $after && ! $first ) {
+			$writer->add( self::part( $job, 'content', '.xml' ), "</channel>\n</rss>\n" );
+			return true;
+		}
+		if ( self::$exported ) {
+			if ( 0 === $limit ) {
+				throw new RuntimeException( 'The content was exported once in this process already.' );
+			}
+			// The next batch needs a request of its own.
+			self::$yield = true;
+			return false;
+		}
+		if ( $limit > 0 && microtime( true ) >= $until ) {
+			self::$yield = true;
+			return false;
+		}
+		// A whole-site export in one go (WP-CLI from the start) is right even unlimited.
+		self::export_range( $job, $writer, $after, $upto, $first, 0 === $limit && 0 === $after );
+		$job['cursor'] = $upto;
+		if ( 0 === $limit ) {
+			// Everything there was: posts added meanwhile wait for the next package.
+			$writer->add( self::part( $job, 'content', '.xml' ), "</channel>\n</rss>\n" );
+			return true;
+		}
+		self::$yield = true;
+		return false;
+	}
+
+	/**
+	 * Runs export_wp() for the posts with ids in ($after, $upto] and writes its output as content
+	 * parts: with the document head for the first batch, else only the <item>s; never the closing tags.
+	 *
+	 * @param array       $job    Job.
+	 * @param WP2P_Writer $writer Writer.
+	 * @param int         $after  Last post id of the previous batch.
+	 * @param int         $upto   Last post id of this batch.
+	 * @param bool        $head   Whether to keep the head.
+	 * @param bool        $whole  Whether the batch is the whole site, so the range may be missed.
+	 * @throws RuntimeException When export_wp() could not be limited to the batch.
+	 */
+	private static function export_range( array &$job, WP2P_Writer $writer, $after, $upto, $head, $whole ) {
+		global $wp_post_types, $wpdb;
 		require_once ABSPATH . 'wp-admin/includes/export.php';
 		$hidden = array();
 		foreach ( array( 'shop_order', 'shop_order_refund', 'shop_order_placehold', 'shop_coupon', 'shop_subscription', 'scheduled-action' ) as $type ) {
@@ -459,21 +596,35 @@ class WP2P_Exporter {
 				$hidden[]                           = $type;
 			}
 		}
-		$written = 0;
-		ob_start(
-			function ( $chunk ) use ( &$job, $writer, &$written ) {
-				if ( '' !== $chunk ) {
-					$writer->add( self::part( $job, 'content', '.xml' ), $chunk );
-					$written += strlen( $chunk );
-				}
-				return '';
+		// export_wp() has no id range: its post id query gets one here. The head's author list is
+		// kept whole, as a single export would have it (later batches' items need those authors).
+		$limited = false;
+		$posts   = $wpdb->posts;
+		$range   = $wpdb->prepare( " AND {$wpdb->posts}.ID > %d AND {$wpdb->posts}.ID <= %d ORDER BY {$wpdb->posts}.ID", $after, $upto );
+		$filter  = static function ( $query ) use ( &$limited, $posts, $range ) {
+			if ( ! $limited && 0 === strpos( $query, "SELECT ID FROM {$posts} " ) && false !== strpos( $query, "WHERE {$posts}.post_type" ) && false === stripos( $query, ' LIMIT ' ) ) {
+				$limited = true;
+				return $query . $range;
+			}
+			if ( 0 === strpos( $query, "SELECT DISTINCT post_author FROM {$posts} WHERE post_status != 'auto-draft' AND ID IN (" ) ) {
+				return "SELECT DISTINCT post_author FROM {$posts} WHERE post_status != 'auto-draft'";
+			}
+			return $query;
+		};
+		$out = new WP2P_Content_Filter(
+			function ( $data ) use ( &$job, $writer ) {
+				$writer->add( self::part( $job, 'content', '.xml' ), $data );
 			},
-			4 * MB_IN_BYTES
+			$head
 		);
+		add_filter( 'query', $filter, PHP_INT_MAX );
+		ob_start( array( $out, 'chunk' ), 4 * MB_IN_BYTES );
+		self::$exported = true;
 		try {
 			export_wp( array( 'content' => 'all' ) );
 		} finally {
 			ob_end_flush();
+			remove_filter( 'query', $filter, PHP_INT_MAX );
 			foreach ( $hidden as $type ) {
 				$wp_post_types[ $type ]->can_export = true;
 			}
@@ -484,8 +635,10 @@ class WP2P_Exporter {
 				header_remove( 'Content-Type' );
 			}
 		}
-		$job['counts']['content_bytes'] = $written;
-		return true;
+		if ( ! $limited && ! $whole ) {
+			throw new RuntimeException( esc_html__( 'This WordPress version\'s export cannot be split into batches. Delete the package and build it with WP-CLI instead (wp pursae export).', 'wp-to-pursae' ) );
+		}
+		self::count( $job, 'content_bytes', $out->finish() );
 	}
 
 	/**
@@ -611,17 +764,19 @@ class WP2P_Exporter {
 			return true;
 		}
 		while ( microtime( true ) < $until ) {
-			$page = (int) $job['cursor'] + 1;
-			$rows = WP2P_Woo::orders( $page, 50 );
-			if ( ! $rows ) {
+			// By order id, not page number: orders deleted or added meanwhile cannot shift a page.
+			$batch = WP2P_Woo::orders( (int) $job['cursor'], 50 );
+			if ( ! $batch['rows'] && $batch['last'] === (int) $job['cursor'] ) {
 				return true;
 			}
-			$writer->add( self::part( $job, 'woo/orders', '.jsonl' ), self::jsonl( $rows ) );
-			self::count( $job, 'orders', count( $rows ) );
-			foreach ( $rows as $r ) {
-				self::count( $job, 'refunds', count( $r['refunds'] ) );
+			if ( $batch['rows'] ) {
+				$writer->add( self::part( $job, 'woo/orders', '.jsonl' ), self::jsonl( $batch['rows'] ) );
+				self::count( $job, 'orders', count( $batch['rows'] ) );
+				foreach ( $batch['rows'] as $r ) {
+					self::count( $job, 'refunds', count( $r['refunds'] ) );
+				}
 			}
-			$job['cursor'] = $page;
+			$job['cursor'] = $batch['last'];
 		}
 		return false;
 	}
@@ -662,7 +817,7 @@ class WP2P_Exporter {
 	private static function step_close( array &$job, WP2P_Writer $writer ) {
 		global $wp_version;
 		$manifest = array(
-			'format'        => WP2P_Crypto::FORMAT,
+			'format'        => self::CONTENT_FORMAT,
 			'generator'     => 'wp-to-pursae/' . WP2P_VERSION,
 			'site_url'      => site_url(),
 			'home_url'      => home_url(),

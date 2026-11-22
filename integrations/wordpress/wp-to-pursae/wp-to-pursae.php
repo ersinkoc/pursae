@@ -35,6 +35,7 @@ define( 'WP2P_DIR', plugin_dir_path( __FILE__ ) );
 require_once WP2P_DIR . 'includes/class-wp2p-crypto.php';
 require_once WP2P_DIR . 'includes/class-wp2p-writer.php';
 require_once WP2P_DIR . 'includes/class-wp2p-woo.php';
+require_once WP2P_DIR . 'includes/class-wp2p-content-filter.php';
 require_once WP2P_DIR . 'includes/class-wp2p-exporter.php';
 require_once WP2P_DIR . 'includes/class-wp2p-pusher.php';
 

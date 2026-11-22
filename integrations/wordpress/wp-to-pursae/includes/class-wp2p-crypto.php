@@ -3,9 +3,11 @@
  * Package encryption.
  *
  * The package is sealed in chunks with libsodium's crypto_secretbox (XSalsa20-Poly1305). WordPress
- * ships sodium_compat, so this works even where PHP's sodium extension is missing (slower). Chunk i
- * uses the nonce prefix || uint64(i) with the top bit set on the last chunk, which lets Pursae detect
- * reordered, dropped or cut-off chunks. The format is described in Pursae's
+ * ships sodium_compat, so this works even where PHP's sodium extension is missing (slower). Every
+ * chunk has its own random 24-byte nonce, stored in front of it, so a chunk that is sealed again
+ * after a request died (the writer cuts the file back to its last commit) never reuses a nonce. The
+ * sealed plaintext starts with uint64(i), the chunk's index with the top bit set on the last chunk,
+ * which lets Pursae detect reordered, dropped or cut-off chunks. The format is described in Pursae's
  * docs/developer/operations/migrate-from-wordpress.md.
  *
  * @package WP_To_Pursae
@@ -19,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
 class WP2P_Crypto {
 
 	const MAGIC     = 'PURSAEWP';
-	const FORMAT    = 1;
+	const FORMAT    = 2; // The envelope: 1 used a counter nonce, which a resumed build could reuse.
 	const KEY_LABEL = 'pursae-wp2p-package-key-v1';
 
 	/**
@@ -64,30 +66,30 @@ class WP2P_Crypto {
 	}
 
 	/**
-	 * The file header: magic, format, nonce prefix.
+	 * The file header: magic, format, a random package id.
 	 *
-	 * @param string $prefix 16-byte nonce prefix.
+	 * @param string $id 16 random bytes.
 	 * @return string
 	 */
-	public static function header( $prefix ) {
-		return self::MAGIC . chr( self::FORMAT ) . $prefix;
+	public static function header( $id ) {
+		return self::MAGIC . chr( self::FORMAT ) . $id;
 	}
 
 	/**
-	 * Seals one chunk: a big-endian length, then the secretbox.
+	 * Seals one chunk: a big-endian length, then a fresh random nonce and the secretbox of the
+	 * chunk's index (uint64, top bit on the last chunk) followed by the plaintext.
 	 *
-	 * @param string $plain  Plaintext (at most 8 MiB).
-	 * @param string $key    Raw key.
-	 * @param string $prefix Nonce prefix.
-	 * @param int    $index  Chunk index.
-	 * @param bool   $last   Whether this is the last chunk.
+	 * @param string $plain Plaintext (at most 8 MiB).
+	 * @param string $key   Raw key.
+	 * @param int    $index Chunk index.
+	 * @param bool   $last  Whether this is the last chunk.
 	 * @return string
 	 */
-	public static function seal( $plain, $key, $prefix, $index, $last ) {
+	public static function seal( $plain, $key, $index, $last ) {
 		$high   = ( $index >> 32 ) & 0x7fffffff;
 		$high  |= $last ? 0x80000000 : 0;
-		$nonce  = $prefix . pack( 'NN', $high, $index & 0xffffffff );
-		$sealed = sodium_crypto_secretbox( $plain, $nonce, $key );
+		$nonce  = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+		$sealed = $nonce . sodium_crypto_secretbox( pack( 'NN', $high, $index & 0xffffffff ) . $plain, $nonce, $key );
 		return pack( 'N', strlen( $sealed ) ) . $sealed;
 	}
 }

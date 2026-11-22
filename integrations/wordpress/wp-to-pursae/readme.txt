@@ -36,7 +36,7 @@ WP-CLI: `wp pursae export --file=site.wp2p` and `wp pursae push --to=https://new
 * The package holds your users' password hashes, so it is always encrypted (libsodium secretbox, in authenticated chunks). A downloaded package has a random key that only you see. A pushed package uses a key derived from the one-time token.
 * Nothing is written unencrypted. Every batch goes straight into the encrypted file, in a working directory with a random name that refuses web access. Define `WP2P_WORK_DIR` in `wp-config.php` to keep it outside the web root.
 * The package is deleted once it is sent, when you delete it, or after 24 hours.
-* Only administrators (`manage_options`) can use the plugin; every request carries a nonce. Sending requires HTTPS, except for local test hosts. Define `WP2P_ALLOW_HTTP` to allow plain HTTP elsewhere.
+* Only administrators (`manage_options`) can use the plugin, and on multisite only super admins; every request carries a nonce. Sending requires HTTPS, except for local test hosts. Define `WP2P_ALLOW_HTTP` to allow plain HTTP elsewhere.
 * Password hashes are never displayed or logged.
 
 == Installation ==

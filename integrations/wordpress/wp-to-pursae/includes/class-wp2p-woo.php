@@ -173,30 +173,48 @@ class WP2P_Woo {
 	}
 
 	/**
-	 * A page of orders.
+	 * The ids of the next orders after $after, in id order, from whichever table holds them.
 	 *
-	 * @param int $page  Page (1-based).
-	 * @param int $limit Page size.
-	 * @return array[]
+	 * @param int $after Last order id done.
+	 * @param int $limit Batch size.
+	 * @return int[]
 	 */
-	public static function orders( $page, $limit ) {
-		$orders = wc_get_orders(
-			array(
-				'type'    => 'shop_order',
-				'status'  => self::order_statuses(),
-				'limit'   => $limit,
-				'page'    => $page,
-				'orderby' => 'ID',
-				'order'   => 'ASC',
-			)
-		);
-		$rows   = array();
-		foreach ( $orders as $o ) {
-			if ( $o instanceof WC_Order ) {
+	private static function order_ids( $after, $limit ) {
+		global $wpdb;
+		$statuses = self::order_statuses();
+		$in       = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+		if ( 'hpos' === self::order_storage() ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- placeholders built above.
+			$ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}wc_orders WHERE type = 'shop_order' AND status IN ($in) AND id > %d ORDER BY id LIMIT %d", array_merge( $statuses, array( $after, $limit ) ) ) );
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- placeholders built above.
+			$ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'shop_order' AND post_status IN ($in) AND ID > %d ORDER BY ID LIMIT %d", array_merge( $statuses, array( $after, $limit ) ) ) );
+		}
+		return array_map( 'intval', (array) $ids );
+	}
+
+	/**
+	 * A batch of orders after an order id (a cursor, not a page number: on a live store orders
+	 * that are deleted or change status between requests cannot shift later pages).
+	 *
+	 * @param int $after Last order id done.
+	 * @param int $limit Batch size.
+	 * @return array{rows: array[], last: int}
+	 */
+	public static function orders( $after, $limit ) {
+		$rows = array();
+		$last = $after;
+		foreach ( self::order_ids( $after, $limit ) as $id ) {
+			$last = $id;
+			$o    = wc_get_order( $id );
+			if ( $o instanceof WC_Order && ! ( $o instanceof WC_Order_Refund ) ) {
 				$rows[] = self::order( $o );
 			}
 		}
-		return $rows;
+		return array(
+			'rows' => $rows,
+			'last' => $last,
+		);
 	}
 
 	/**
@@ -331,7 +349,8 @@ class WP2P_Woo {
 	 * A batch of customers: users with the customer role, then the guest customers WooCommerce
 	 * Analytics knows (wc_customer_lookup), which Pursae lists from their orders.
 	 *
-	 * @param int $after Last user id done (-1 once the users are done: guests follow).
+	 * @param int $after Last user id done; once the users are done, -1 - the last guest's
+	 *                   customer_id in wc_customer_lookup (so -1 starts the guests).
 	 * @param int $limit Batch size.
 	 * @return array{rows: array[], last: int, done: bool}
 	 */
@@ -366,19 +385,22 @@ class WP2P_Woo {
 				'done' => false,
 			);
 		}
-		// Guests: one batch is enough for the report (they are recreated from orders anyway).
+		// Guests, in batches by customer_id like the users.
 		global $wpdb;
+		$from = -1 - $after;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		foreach ( (array) $wpdb->get_col( "SELECT email FROM {$wpdb->prefix}wc_customer_lookup WHERE user_id IS NULL" ) as $email ) {
+		$guests = $wpdb->get_results( $wpdb->prepare( "SELECT customer_id, email FROM {$wpdb->prefix}wc_customer_lookup WHERE user_id IS NULL AND customer_id > %d ORDER BY customer_id LIMIT %d", $from, $limit ), ARRAY_A );
+		foreach ( (array) $guests as $g ) {
 			$rows[] = array(
 				'user_id' => 0,
-				'email'   => $email,
+				'email'   => $g['email'],
 			);
+			$from   = (int) $g['customer_id'];
 		}
 		return array(
 			'rows' => $rows,
-			'last' => -1,
-			'done' => true,
+			'last' => -1 - $from,
+			'done' => count( (array) $guests ) < $limit,
 		);
 	}
 

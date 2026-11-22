@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
@@ -26,12 +27,15 @@ import (
 // WordPress plugin (integrations/wordpress/wp-to-pursae) and read here (wp2p_import.go). The format
 // is written down in docs/developer/operations/migrate-from-wordpress.md; in short:
 //
-// Envelope. "PURSAEWP", a version byte (1) and a 16-byte random nonce prefix, then chunks: a
-// big-endian uint32 with the length of the sealed chunk, then the chunk sealed with NaCl secretbox
-// (XSalsa20-Poly1305, libsodium's crypto_secretbox) under the 32-byte package key. Chunk i is sealed
-// with the nonce prefix || uint64(i), the top bit of i set on the last chunk, so chunks cannot be
-// reordered, dropped or cut off: a stream that ends before a last chunk, or goes on after it, fails.
-// The package holds password hashes, which is why it is encrypted at all.
+// Envelope. "PURSAEWP", a version byte (2) and a 16-byte random package id, then chunks: a
+// big-endian uint32 with the length of what follows, a random 24-byte nonce, then the chunk sealed
+// with NaCl secretbox (XSalsa20-Poly1305, libsodium's crypto_secretbox) under the 32-byte package key
+// and that nonce. The sealed plaintext of chunk i starts with the big-endian uint64 i, its top bit
+// set on the last chunk, so chunks cannot be reordered, dropped or cut off: a stream that ends before
+// a last chunk, or goes on after it, fails. Nonces are random rather than counters because the plugin
+// builds a package over many requests and seals a chunk again when a request died after writing it
+// (format 1 used prefix || i, which then reused a nonce). The package holds password hashes, which is
+// why it is encrypted at all.
 //
 // Plaintext. A ustar archive: manifest.json first, then users.jsonl, options.json, content.xml (the
 // WXR of WordPress' export_wp()), media.jsonl with media/<attachment id> (the original upload of each
@@ -46,12 +50,14 @@ import (
 // the token: HMAC-SHA256(key = token, message = "pursae-wp2p-package-key-v1").
 
 const (
-	wp2pMagic        = "PURSAEWP"
-	wp2pFormat       = 1
-	wp2pMaxChunk     = 8 << 20 // largest plaintext chunk
-	wp2pKeyLabel     = "pursae-wp2p-package-key-v1"
-	wp2pHeaderLen    = len(wp2pMagic) + 1 + 16
-	wp2pLastChunkBit = uint64(1) << 63
+	wp2pMagic         = "PURSAEWP"
+	wp2pFormat        = 2                           // the envelope
+	wp2pContentFormat = 1                           // manifest.json's "format": the archive's entries
+	wp2pMaxChunk      = 8 << 20                     // largest plaintext chunk
+	wp2pChunkOverhead = 24 + secretbox.Overhead + 8 // nonce, MAC, index
+	wp2pKeyLabel      = "pursae-wp2p-package-key-v1"
+	wp2pHeaderLen     = len(wp2pMagic) + 1 + 16
+	wp2pLastChunkBit  = uint64(1) << 63
 )
 
 // wp2pKey is the 32-byte package key.
@@ -97,13 +103,12 @@ var errWP2PKey = errors.New("the package cannot be opened with this key (wrong k
 
 // wp2pReader decrypts a package stream.
 type wp2pReader struct {
-	r      *bufio.Reader
-	key    wp2pKey
-	prefix [16]byte
-	n      uint64
-	buf    []byte // decrypted bytes not read yet
-	last   bool   // the last chunk was opened
-	err    error
+	r    *bufio.Reader
+	key  wp2pKey
+	n    uint64
+	buf  []byte // decrypted bytes not read yet
+	last bool   // the last chunk was opened
+	err  error
 }
 
 // newWP2PReader checks the header and returns the plaintext stream. Every chunk is authenticated
@@ -120,20 +125,7 @@ func newWP2PReader(r io.Reader, key wp2pKey) (*wp2pReader, error) {
 	if hdr[len(wp2pMagic)] != wp2pFormat {
 		return nil, fmt.Errorf("this package has format %d; this version of Pursae reads format %d (update Pursae or the plugin)", hdr[len(wp2pMagic)], wp2pFormat)
 	}
-	d := &wp2pReader{r: br, key: key}
-	copy(d.prefix[:], hdr[len(wp2pMagic)+1:])
-	return d, nil
-}
-
-func (d *wp2pReader) nonce(last bool) *[24]byte {
-	var n [24]byte
-	copy(n[:16], d.prefix[:])
-	i := d.n
-	if last {
-		i |= wp2pLastChunkBit
-	}
-	binary.BigEndian.PutUint64(n[16:], i)
-	return &n
+	return &wp2pReader{r: br, key: key}, nil
 }
 
 func (d *wp2pReader) Read(p []byte) (int, error) {
@@ -156,7 +148,7 @@ func (d *wp2pReader) Read(p []byte) (int, error) {
 			return 0, d.err
 		}
 		size := binary.BigEndian.Uint32(lb[:])
-		if size < secretbox.Overhead || size > wp2pMaxChunk+secretbox.Overhead {
+		if size < wp2pChunkOverhead || size > wp2pMaxChunk+wp2pChunkOverhead {
 			d.err = errWP2PKey
 			return 0, d.err
 		}
@@ -166,17 +158,20 @@ func (d *wp2pReader) Read(p []byte) (int, error) {
 			return 0, d.err
 		}
 		k := [32]byte(d.key)
-		out, ok := secretbox.Open(nil, sealed, d.nonce(false), &k)
+		nonce := [24]byte(sealed[:24])
+		out, ok := secretbox.Open(nil, sealed[24:], &nonce, &k)
 		if !ok {
-			out, ok = secretbox.Open(nil, sealed, d.nonce(true), &k)
-			if !ok {
-				d.err = errWP2PKey
-				return 0, d.err
-			}
-			d.last = true
+			d.err = errWP2PKey
+			return 0, d.err
 		}
+		i := binary.BigEndian.Uint64(out[:8])
+		if i&^wp2pLastChunkBit != d.n {
+			d.err = errors.New("the package's chunks are out of order or missing (damaged file)")
+			return 0, d.err
+		}
+		d.last = i&wp2pLastChunkBit != 0
 		d.n++
-		d.buf = out
+		d.buf = out[8:]
 	}
 	n := copy(p, d.buf)
 	d.buf = d.buf[n:]
@@ -187,31 +182,33 @@ func (d *wp2pReader) Read(p []byte) (int, error) {
 type wp2pWriter struct {
 	w      io.Writer
 	key    wp2pKey
-	prefix [16]byte
 	n      uint64
 	buf    []byte
 	closed bool
 }
 
-func newWP2PWriter(w io.Writer, key wp2pKey, prefix [16]byte) (*wp2pWriter, error) {
+func newWP2PWriter(w io.Writer, key wp2pKey, id [16]byte) (*wp2pWriter, error) {
 	hdr := append([]byte(wp2pMagic), wp2pFormat)
-	hdr = append(hdr, prefix[:]...)
+	hdr = append(hdr, id[:]...)
 	if _, err := w.Write(hdr); err != nil {
 		return nil, err
 	}
-	return &wp2pWriter{w: w, key: key, prefix: prefix}, nil
+	return &wp2pWriter{w: w, key: key}, nil
 }
 
 func (e *wp2pWriter) seal(chunk []byte, last bool) error {
 	var n [24]byte
-	copy(n[:16], e.prefix[:])
+	if _, err := rand.Read(n[:]); err != nil {
+		return err
+	}
 	i := e.n
 	if last {
 		i |= wp2pLastChunkBit
 	}
-	binary.BigEndian.PutUint64(n[16:], i)
+	plain := binary.BigEndian.AppendUint64(make([]byte, 0, 8+len(chunk)), i)
+	plain = append(plain, chunk...)
 	k := [32]byte(e.key)
-	sealed := secretbox.Seal(nil, chunk, &n, &k)
+	sealed := secretbox.Seal(n[:], plain, &n, &k)
 	var lb [4]byte
 	binary.BigEndian.PutUint32(lb[:], uint32(len(sealed)))
 	if _, err := e.w.Write(lb[:]); err != nil {
@@ -355,8 +352,8 @@ func wp2pReadManifest(path string) (*wp2pManifest, error) {
 	if err := json.Unmarshal(raw, &m); err != nil {
 		return nil, fmt.Errorf("the package manifest is not valid JSON: %w", err)
 	}
-	if m.Format != wp2pFormat {
-		return nil, fmt.Errorf("the package content has format %d; this version of Pursae reads format %d", m.Format, wp2pFormat)
+	if m.Format != wp2pContentFormat {
+		return nil, fmt.Errorf("the package content has format %d; this version of Pursae reads format %d", m.Format, wp2pContentFormat)
 	}
 	if m.Counts == nil {
 		m.Counts = map[string]int{}

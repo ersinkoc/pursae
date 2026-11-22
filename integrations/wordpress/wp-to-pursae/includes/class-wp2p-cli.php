@@ -13,6 +13,16 @@ defined( 'ABSPATH' ) || exit;
 class WP2P_CLI {
 
 	/**
+	 * Refuses a sub-site administrator on multisite (--user): the package holds the password hashes
+	 * of network users. Without --user, shell access to the server is the permission.
+	 */
+	private function guard() {
+		if ( is_multisite() && get_current_user_id() > 0 && ! WP2P_Exporter::allowed() ) {
+			WP_CLI::error( 'On a multisite network only a super admin can move a site to Pursae.' );
+		}
+	}
+
+	/**
 	 * Builds a migration package for `pursae import wordpress`.
 	 *
 	 * The package is encrypted. The key is printed once; pass it to Pursae with --key (or the
@@ -37,6 +47,7 @@ class WP2P_CLI {
 	 * @param array $assoc_args Options.
 	 */
 	public function export( $args, $assoc_args ) {
+		$this->guard();
 		$key = WP2P_Crypto::random_key();
 		if ( ! empty( $assoc_args['key'] ) ) {
 			$key = WP2P_Crypto::decode_key( $assoc_args['key'] );
@@ -85,6 +96,7 @@ class WP2P_CLI {
 	 * @param array $assoc_args Options.
 	 */
 	public function push( $args, $assoc_args ) {
+		$this->guard();
 		$url = WP2P_Pusher::check_url( $assoc_args['to'] );
 		if ( is_wp_error( $url ) ) {
 			WP_CLI::error( $url->get_error_message() );
@@ -122,6 +134,7 @@ class WP2P_CLI {
 	 * @param array $assoc_args Options.
 	 */
 	public function resume( $args, $assoc_args ) {
+		$this->guard();
 		$job = WP2P_Exporter::job();
 		if ( ! $job ) {
 			WP_CLI::error( 'Nothing to resume.' );
@@ -145,6 +158,7 @@ class WP2P_CLI {
 	 * Deletes the package and its working files.
 	 */
 	public function clean() {
+		$this->guard();
 		WP2P_Exporter::discard();
 		WP_CLI::success( 'Removed.' );
 	}
