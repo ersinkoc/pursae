@@ -341,3 +341,34 @@ func TestWBKitOverrideTamperedOption(t *testing.T) {
 		t.Errorf("override view: %d %v", code, v)
 	}
 }
+
+func TestWBKitFailedCommitKeepsLiveFilesAndStage(t *testing.T) {
+	srv, _, admin := wbrStart(t)
+	wbsKit(t, admin, "kit-rollback", map[string]string{"site.css": "OLD"})
+	route := "/web-builder/v2/kits/kit-rollback"
+	if code, body, _ := admin.do(http.MethodPost, route+"/files", map[string]any{
+		"files": []any{map[string]any{"path": "site.css", "text": "NEW"}},
+	}, nil); code != http.StatusOK {
+		t.Fatalf("stage: %d %v", code, body)
+	}
+	if _, err := srv.store.Pool.Exec(t.Context(), `ALTER TABLE settings ADD CONSTRAINT reject_kit_version
+		CHECK (key <> 'wb_design_kits' OR (value->'kit-rollback'->>'version')::integer = 1)`); err != nil {
+		t.Fatal(err)
+	}
+	if code, body, _ := admin.do(http.MethodPost, route+"/commit", map[string]any{}, nil); code != http.StatusInternalServerError {
+		t.Fatalf("expected commit to fail: %d %v", code, body)
+	}
+	dir := filepath.Join(srv.wbKitRoot(), "kit-rollback")
+	for file, want := range map[string]string{filepath.Join(dir, "site.css"): "OLD", filepath.Join(dir, wbKitStageDir, "site.css"): "NEW"} {
+		raw, err := os.ReadFile(file)
+		if err != nil || string(raw) != want {
+			t.Fatalf("file %s = %q (%v), want %q", file, raw, err, want)
+		}
+	}
+	if _, err := srv.store.Pool.Exec(t.Context(), `ALTER TABLE settings DROP CONSTRAINT reject_kit_version`); err != nil {
+		t.Fatal(err)
+	}
+	if code, body, _ := admin.do(http.MethodPost, route+"/commit", map[string]any{}, nil); code != http.StatusOK || wbrObj(body)["version"] != float64(2) {
+		t.Fatalf("retry without restaging: %d %v", code, body)
+	}
+}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -391,7 +392,6 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 		_ = os.Rename(tmp, live)
 		return nil, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit."
 	}
-	_ = os.RemoveAll(tmp)
 	files, _ := wbKitFiles(live)
 	var total int64
 	for _, n := range files {
@@ -419,8 +419,21 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 		k.Breakpoints = &bp
 	}
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
+		rollbackErr := os.Rename(live, next)
+		if rollbackErr == nil {
+			if rollbackErr = os.Rename(tmp, live); rollbackErr != nil {
+				rollbackErr = errors.Join(rollbackErr, os.Rename(next, live))
+			} else {
+				rollbackErr = os.Rename(next, stage)
+			}
+		}
+		if rollbackErr != nil {
+			log.Printf("web builder: restore kit %q after settings write failed: %v", slug, rollbackErr)
+			return nil, http.StatusInternalServerError, "db_error", "Could not save the kit or restore its files."
+		}
 		return nil, http.StatusInternalServerError, "db_error", "Could not save the kit."
 	}
+	_ = os.RemoveAll(tmp)
 	wbKitVersions.Delete("v")
 	s.purgeAll(c)
 	return k, http.StatusOK, "", ""
