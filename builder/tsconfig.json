@@ -7,7 +7,6 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": { "@/*": ["./.work/upstream/src/*"] },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,

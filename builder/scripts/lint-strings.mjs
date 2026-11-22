@@ -30,7 +30,8 @@ import { fileURLToPath } from 'node:url'
 const BUILDER = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const HOST = path.join(BUILDER, 'host')
 const require = createRequire(path.join(BUILDER, 'package.json'))
-const ts = require('typescript')
+// TypeScript 7 (the native compiler) has no JS API; the parser comes from the 5.9 line.
+const ts = require('typescript-api')
 
 const TURKISH_LETTER = /[çğıöşüÇĞİÖŞÜâîû]/
 const WORD = /[A-Za-zçğıöşüÇĞİÖŞÜâîû]+/g

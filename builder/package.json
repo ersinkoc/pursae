@@ -34,7 +34,8 @@
     "@vitejs/plugin-react": "6.3.0",
     "jsdom": "31.0.1",
     "tailwindcss": "4.3.5",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
+    "typescript-api": "npm:typescript@5.9.3",
     "vite": "8.3.8",
     "vitest": "5.1.1"
   }
