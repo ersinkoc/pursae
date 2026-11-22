@@ -10,6 +10,16 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Added
+
+- **Cart and Checkout blocks.** The block editor inserts `woocommerce/cart` and `woocommerce/checkout` and edits
+  their sections (cross-sells, coupon form, returning customer login, order notes, return to cart link),
+  headings, the empty cart message and the checkout's company, apartment and phone fields. The front end
+  renders them on the server with the cart and checkout pages of `[goocommerce_cart]` /
+  `[goocommerce_checkout]`. Pages imported from WordPress keep WooCommerce's Cart and Checkout blocks and work
+  as they were set up there: removed inner blocks hide their sections, the Empty cart block's content shows,
+  unknown blocks are ignored.
+
 ## [0.5.0] - 2026-11-22
 
 0.5.0, the stable beta: the contract is frozen (see [compatibility](docs/developer/compatibility.md)),
