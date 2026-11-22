@@ -10,6 +10,14 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Added
+
+- **Block theme sites point to Web Builder.** Importing a WordPress site that uses a block theme turns its
+  navigation menus (`wp_navigation`) into ordinary menus (links to imported posts and terms kept, submenus
+  as sub-items, the first one on the Primary Menu location when it is free). Its templates, template parts,
+  global styles and fonts are counted in one report line with a link to the Theme Builder instead of one
+  "Invalid post type" line each. New guide: [coming from the Site Editor](docs/developer/web-builder-site-editor.md).
+
 ## [0.5.0] - 2026-11-22
 
 0.5.0, the stable beta: the contract is frozen (see [compatibility](docs/developer/compatibility.md)),
