@@ -1450,18 +1450,17 @@ func (api *restAPI) uploadMedia(c *gin.Context, r *restRequest) {
 		param = c.GetQuery
 		postID, _ = strconv.ParseInt(c.Query("post"), 10, 64)
 		a, err = s.insertAttachmentFile(c, name, c.Request.Body, u.ID, postID)
-		switch {
-		case errors.Is(err, errUploadEmpty):
-			restErr(c, http.StatusBadRequest, "rest_upload_no_data", "No data supplied.")
-			return
-		case errors.Is(err, errUploadTooLarge):
-			restErr(c, http.StatusBadRequest, "rest_upload_file_too_big", "The uploaded file exceeds the maximum upload size for this site.")
-			return
-		}
 	} else {
 		a, err = s.saveUpload(c, "file", postID)
 	}
-	if err != nil {
+	switch {
+	case errors.Is(err, errUploadEmpty):
+		restErr(c, http.StatusBadRequest, "rest_upload_no_data", "No data supplied.")
+		return
+	case errors.Is(err, errUploadTooLarge):
+		restErr(c, http.StatusBadRequest, "rest_upload_file_too_big", "The uploaded file exceeds the maximum upload size for this site.")
+		return
+	case err != nil:
 		// A rejected file (disallowed type, unsafe SVG) is the client's fault: 400, not the 500
 		// WordPress historically sends with rest_upload_sideload_error.
 		code, status := "rest_upload_unknown_error", http.StatusInternalServerError

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 
 	"wpgo/internal/gocdn"
 	"wpgo/internal/media"
@@ -187,11 +188,17 @@ func (s *Server) gocdnImportLink(ctx context.Context, st gocdnSettings, cl *gocd
 			a.Width, a.Height = cfg.Width, cfg.Height
 		}
 	}
-	if err := s.store.InsertAttachment(ctx, a); err != nil {
+	err = pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
+		if err := store.InsertAttachmentTx(ctx, tx, a); err != nil {
+			return err
+		}
+		return gocdnSaveItemWith(ctx, tx.Exec, &gocdnItem{MediaID: a.ID, Path: rel, Provider: st.Provider, Region: gocdnRegion(st), Bucket: st.Bucket,
+			Key: key, Size: obj.Size, Mime: mime, LocalRemoved: true, Endpoint: gocdnEndpoint(st)})
+	})
+	if err != nil {
 		return 0, err
 	}
-	return a.ID, s.gocdnSaveItem(ctx, &gocdnItem{MediaID: a.ID, Path: rel, Provider: st.Provider, Region: gocdnRegion(st), Bucket: st.Bucket,
-		Key: key, Size: obj.Size, Mime: mime, LocalRemoved: true, Endpoint: gocdnEndpoint(st)})
+	return a.ID, nil
 }
 
 var errAlreadyInLibrary = errors.New("already in the library")

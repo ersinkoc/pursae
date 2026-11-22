@@ -50,13 +50,15 @@ import (
 // as the admin origin.
 
 const (
-	wbWizPageSlug      = "web-builder-import"
-	wbWizURL           = "/wp-admin/" + wbWizPageSlug
-	wbWizRoot          = mediaPrivateDir + "/web-builder-imports"
-	wbWizImportsOption = "wb_site_imports"
-	wbWizDesignRoute   = "/wb-design-preview/"
-	wbWizMaxAge        = 24 * time.Hour
-	wbWizMaxPageBytes  = 15 << 20
+	wbWizPageSlug       = "web-builder-import"
+	wbWizURL            = "/wp-admin/" + wbWizPageSlug
+	wbWizRoot           = mediaPrivateDir + "/web-builder-imports"
+	wbWizImportsOption  = "wb_site_imports"
+	wbWizMediaImportKey = "_wb_site_import_media"
+	wbWizMediaSourceKey = "_wb_site_import_media_path"
+	wbWizDesignRoute    = "/wb-design-preview/"
+	wbWizMaxAge         = 24 * time.Hour
+	wbWizMaxPageBytes   = 15 << 20
 	// wbWizMaxUpload bounds the zip itself: only the files its pages use are unpacked
 	// (wbZipExtract), so a saved copy of a live site may be much larger than its kit.
 	wbWizMaxUpload   = 512 << 20
@@ -392,14 +394,16 @@ type wbWizCmpRow struct {
 }
 
 type wbWizUndoView struct {
-	Kit       string
-	KitGone   bool
-	Pages     []string
-	Templates []string
-	Missing   int
-	Nonce     string
-	BackURL   string
-	Front     bool
+	Kit              string
+	KitGone          bool
+	Pages            []string
+	Templates        []string
+	Media            []string
+	MediaUnavailable bool
+	Missing          int
+	Nonce            string
+	BackURL          string
+	Front            bool
 }
 
 func (s *Server) wbWizDeny(c *gin.Context) { s.wbTBDeny(c) }
@@ -937,11 +941,34 @@ func (s *Server) wbWizMediaGuess(m *wbWizMeta) map[string]string {
 }
 
 // wbWizMediaUpload puts the upload's files that are too large for a kit into the Media Library
-// (the site's own upload limit, maxUploadBytes, holds) and gives each one's URL (a site path) by
-// its path in the design, and the items made.
-func (s *Server) wbWizMediaUpload(c *gin.Context, m *wbWizMeta) (map[string]string, []int64, error) {
+// and returns the attachment IDs and URLs. An attachment's upload and source path are recorded
+// with its row so a retry can reuse it even when saving the removal record failed.
+func (s *Server) wbWizMediaUpload(c *gin.Context, m *wbWizMeta, kit string) (map[string]string, map[int64]bool, error) {
+	if len(m.Media) == 0 {
+		return nil, nil, nil
+	}
+	importKey := m.ID + "/" + kit
+	type importedMedia struct {
+		Source, FilePath string
+		ID               int64
+	}
+	rows, err := s.store.Pool.Query(c, `SELECT meta->>$1, file_path, id FROM media
+		WHERE meta->>$2 = $3 ORDER BY id`, wbWizMediaSourceKey, wbWizMediaImportKey, importKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	imported, err := pgx.CollectRows(rows, pgx.RowToStructByPos[importedMedia])
+	if err != nil {
+		return nil, nil, err
+	}
 	out := map[string]string{}
-	var ids []int64
+	ids := map[int64]bool{}
+	for _, a := range imported {
+		if _, staged := m.Media[a.Source]; staged {
+			out[a.Source] = "/wp-content/uploads/" + a.FilePath
+			ids[a.ID] = true
+		}
+	}
 	rels := make([]string, 0, len(m.Media))
 	for rel := range m.Media {
 		rels = append(rels, rel)
@@ -949,18 +976,22 @@ func (s *Server) wbWizMediaUpload(c *gin.Context, m *wbWizMeta) (map[string]stri
 	sort.Strings(rels)
 	var firstErr error
 	for _, rel := range rels {
+		if _, exists := out[rel]; exists {
+			continue
+		}
 		f, err := os.Open(filepath.Join(s.wbWizSiteDir(m.ID), filepath.FromSlash(rel)))
 		if err != nil {
 			firstErr = cmpOr(firstErr, err)
 			continue
 		}
-		a, err := s.insertAttachmentFile(c, path.Base(rel), f, currentUser(c).ID, 0)
+		a, err := s.insertAttachmentFileWithMeta(c, path.Base(rel), f, currentUser(c).ID, 0,
+			map[string]any{wbWizMediaImportKey: importKey, wbWizMediaSourceKey: rel})
 		f.Close()
 		if err != nil {
 			firstErr = cmpOr(firstErr, fmt.Errorf("%s: %v", rel, err))
 			continue
 		}
-		ids = append(ids, a.ID)
+		ids[a.ID] = true
 		out[rel] = "/wp-content/uploads/" + a.FilePath
 	}
 	return out, ids, firstErr
@@ -1034,6 +1065,8 @@ func (s *Server) wbWizPost(c *gin.Context, action string) {
 		s.denyNonce(c)
 		return
 	}
+	s.wbWizMutationMu.Lock()
+	defer s.wbWizMutationMu.Unlock()
 	switch action {
 	case "undo":
 		s.wbWizUndoRun(c, id)
@@ -1113,7 +1146,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 		return
 	}
 	// Files too large for a kit (a video) go to the Media Library; the pages point at them there.
-	remap, mediaIDs, mediaErr := s.wbWizMediaUpload(c, m)
+	remap, mediaIDs, mediaErr := s.wbWizMediaUpload(c, m, kit)
 	menuBefore := s.wbWizMenuID(c, kit)
 	prevShow, prevFront := s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
 	// 2. The import: the code of the MCP tool web_builder_import_site.
@@ -1158,7 +1191,11 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 	rec.KitCreated = rec.KitCreated || !existing
 	rec.Pages = append(rec.Pages, wbWizNew(pagesAfter, pagesBefore)...)
 	rec.Templates = append(rec.Templates, wbWizNew(tplAfter, tplBefore)...)
-	rec.Media = append(rec.Media, mediaIDs...)
+	mediaBefore := make(map[int64]bool, len(rec.Media))
+	for _, mid := range rec.Media {
+		mediaBefore[mid] = true
+	}
+	rec.Media = append(rec.Media, wbWizNew(mediaIDs, mediaBefore)...)
 	if rec.FrontSet {
 		prevShow, prevFront = rec.PrevShow, rec.PrevFront
 	}
@@ -1639,6 +1676,19 @@ func (s *Server) wbWizUndoPage(c *gin.Context, id string, notices ...notice) {
 			u.Templates = append(u.Templates, t)
 		} else {
 			u.Missing++
+		}
+	}
+	attachments, err := s.store.GetAttachments(c, rec.Media)
+	u.MediaUnavailable = err != nil
+	if err == nil {
+		for _, mid := range rec.Media {
+			if a := attachments[mid]; a != nil {
+				title := strings.TrimSpace(a.Title)
+				if title == "" {
+					title = path.Base(a.FilePath)
+				}
+				u.Media = append(u.Media, title)
+			}
 		}
 	}
 	u.KitGone = rec.KitCreated && s.wbKitList()[rec.Kit] != nil

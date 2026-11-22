@@ -88,6 +88,8 @@ type Server struct {
 	// focal point and moved paths (media_replace.go).
 	mediaIdx mediaIndex
 
+	wbWizMutationMu sync.Mutex // serializes updates to site imports and their removal records
+
 	// geo is the local IP-to-country database (geoip.go).
 	geo geoipState
 }

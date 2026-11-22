@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"wpgo/internal/gocdn"
 	"wpgo/internal/media"
@@ -120,7 +121,11 @@ func (s *Server) detachOffloadsAndDeleteAttachment(ctx context.Context, id int64
 }
 
 func (s *Server) gocdnSaveItem(ctx context.Context, it *gocdnItem) error {
-	_, err := s.store.Pool.Exec(ctx, `INSERT INTO gocdn_items (media_id, path, provider, region, bucket, object_key, size, mime_type, local_removed, endpoint)
+	return gocdnSaveItemWith(ctx, s.store.Pool.Exec, it)
+}
+
+func gocdnSaveItemWith(ctx context.Context, exec func(context.Context, string, ...any) (pgconn.CommandTag, error), it *gocdnItem) error {
+	_, err := exec(ctx, `INSERT INTO gocdn_items (media_id, path, provider, region, bucket, object_key, size, mime_type, local_removed, endpoint)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 		ON CONFLICT (path) DO UPDATE SET media_id = EXCLUDED.media_id, provider = EXCLUDED.provider, region = EXCLUDED.region,
 			bucket = EXCLUDED.bucket, object_key = EXCLUDED.object_key, size = EXCLUDED.size, mime_type = EXCLUDED.mime_type,

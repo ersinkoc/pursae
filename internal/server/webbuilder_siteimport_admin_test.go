@@ -1003,10 +1003,27 @@ func TestWBImportWizardMediaLibrary(t *testing.T) {
 	if !strings.Contains(string(b), `data-nectar-video-src="/wp-content/uploads/`+mediaPath+`"`) {
 		t.Errorf("the page does not point at the Media Library: %s", wbSnippet(string(b), "nectar-video-src"))
 	}
-	if rec := srv.wbWizRecords()[id]; rec == nil || len(rec.Media) != 1 {
+	rec := srv.wbWizRecords()[id]
+	if rec == nil || len(rec.Media) != 1 {
 		t.Fatalf("record: %+v", rec)
 	}
+	code, _, loc = w.postForm("/wp-admin/web-builder-import?action=import&import="+id, url.Values{
+		"_wpnonce": {nonce}, "kit": {"film"}, "name": {"Film"}, "templates": {"1"}, "front": {"1"}, "status": {"publish"}, "replace": {"1"}})
+	if code != http.StatusSeeOther {
+		t.Fatalf("repeat import: %d", code)
+	}
+	_, report, _ := w.get(loc)
+	var copies int
+	err = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM media WHERE title = 'film'`).Scan(&copies)
+	again := srv.wbWizRecords()[id]
+	if err != nil || copies != 1 || again == nil || !slices.Equal(again.Media, rec.Media) ||
+		!strings.Contains(report, "/wp-content/uploads/"+mediaPath) {
+		t.Fatalf("repeat import: rows=%d prior=%+v current=%+v err=%v", copies, rec, again, err)
+	}
 	_, undo, _ := w.get("/wp-admin/web-builder-import?action=undo&import=" + id)
+	if !strings.Contains(undo, "<h3>Media Library</h3>") || !strings.Contains(undo, "<li>film</li>") {
+		t.Fatal("undo confirmation must disclose the imported attachment")
+	}
 	un := wizHiddenRE.FindStringSubmatch(undo)[1]
 	if code, done, _ := w.postForm("/wp-admin/web-builder-import?action=undo&import="+id, url.Values{"_wpnonce": {un}, "confirm": {"1"}}); code != http.StatusOK || !strings.Contains(done, "Removed") {
 		t.Fatalf("undo: %d", code)

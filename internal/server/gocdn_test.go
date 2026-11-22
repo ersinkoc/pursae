@@ -1004,3 +1004,23 @@ func TestGoCDNDeactivateRestoresLocalServing(t *testing.T) {
 		t.Errorf("screen after deactivation: %d", code)
 	}
 }
+
+func TestGoCDNRejectedRemoteMappingRollsBackAttachment(t *testing.T) {
+	s := gocdnSite(t)
+	s.configure(nil)
+	const name = "unmapped.txt"
+	const key = "wp-content/uploads/" + name
+	s.fake.PutObject("media", key, []byte("remote media"), "text/plain")
+	if _, err := s.srv.store.Pool.Exec(t.Context(), `ALTER TABLE gocdn_items ADD CONSTRAINT reject_remote_mapping CHECK (path <> 'unmapped.txt')`); err != nil {
+		t.Fatal(err)
+	}
+	code, _, loc := s.pageForm("remote", url.Values{"do": {"import"}, "mode": {"link"}, "keys[]": {key}})
+	if code != http.StatusFound || !strings.Contains(loc, "reject_remote_mapping") {
+		t.Fatalf("link outcome: %d %s", code, loc)
+	}
+	var rows int
+	err := s.srv.store.Pool.QueryRow(t.Context(), `SELECT count(*) FROM media WHERE file_path = $1`, name).Scan(&rows)
+	if err != nil || rows != 0 || s.fake.Object("media", key) == nil {
+		t.Fatalf("rejected mapping: media rows=%d bucket object kept=%t err=%v", rows, s.fake.Object("media", key) != nil, err)
+	}
+}
