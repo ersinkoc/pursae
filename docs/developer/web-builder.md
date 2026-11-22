@@ -197,7 +197,8 @@ Not in the builder (yet):
 - Pursae Commerce: product templates and widgets exist (Theme Builder), but not a product loop
   card designed widget by widget (the products grid uses the store's own cards), filters or the
   account page as a widget.
-- **Global classes**, **kits** and a colour picker in the editor that writes design tokens: the
+- **Global classes** and a colour picker in the editor that writes design tokens (popups and design
+  kits do exist, see Popups above and [code sections](web-builder-code-sections.md)): the
   tokens themselves exist (below), but the editor's own colour and font fields still write fixed
   values; use `var(--wb-color-primary)` in custom CSS or an HTML section to follow a token.
 - A setup wizard and a template library beyond saved sections. (The builder menu has **Revisions** — restore loads a published version as your draft — **Schedule publish**, and in a popup template **Popup settings**; builder revisions are pruned to the newest 50 per page, Settings › Web Builder › Revisions to keep.)

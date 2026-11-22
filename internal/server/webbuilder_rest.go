@@ -29,7 +29,7 @@ import (
 // Pursae Web Builder REST API, namespace web-builder/v2 (docs/developer/web-builder-contract.md §3):
 // documents (load, autosave, edit lock, publish), revisions, the site's saved components, the
 // user's editor preferences and the local Google Fonts stylesheet. The public form endpoint lives
-// in webbuilder_forms.go and the AI proxy (off for now) in webbuilder_ai.go.
+// in webbuilder_forms.go.
 //
 // Authentication is the core one (restAuthUser: cookie + X-WP-Nonce, or an Application Password).
 // Every route answers 404 rest_no_route while the plugin is off, and every route but fonts/css2

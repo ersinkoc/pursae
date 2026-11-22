@@ -225,11 +225,10 @@ types/taxonomies, the Wasm `get_post` payload.
 
 - Widget locations: no meta storage in Pursae for widgets.
 - Field value revisions: core revisions do not store meta.
-- Bidirectional relationships (6.2): updating the other post's field on save.
 - PHP APIs/hooks (`acf/load_value`, `acf/format_value`, `acf/validate_value` filters, `acf_form()`
   front-end forms): there is no PHP; Wasm plugins read values through `get_post` and write through REST.
 - select2 "stylised UI" (the ajax lazy load of Post Object / Page Link / User exists, as a search box above a native select), the wpLink modal, jQuery UI date
   pickers and the Google Maps JS picker: replaced by simpler native controls (settings are kept
   and exported unchanged).
 - Custom post types: their taxonomies are not listed in `/wp/v2/types` (no REST routes for ACF taxonomies). ACF taxonomies on posts/pages work
-  everywhere the core's term screens and post terms do; their front-end archives are not routed.
+  everywhere the core's term screens and post terms do; their front-end archives are routed at `/?taxonomy=<slug>&term=<term>` (public taxonomies; hierarchical ones include child terms), but have no pretty permalink.

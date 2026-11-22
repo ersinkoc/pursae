@@ -51,10 +51,10 @@ translation](#machine-translation) with DeepL, Google or an OpenAI-compatible AP
 | Notices: Language added. / updated. / deleted. | ✅ |
 | Creating a language creates its default category, linked to the default category | ✅ |
 | Deleting the default language picks another default; the language's strings and menu locations go | ✅ |
-| Downloading the WordPress `.mo` language pack | ✗ Pursae has no `.mo` translations of core |
+| Downloading the WordPress `.mo` language pack | ◐ not from the Languages screen. Pursae reads WordPress's official `.mo` / JSON language packs for core and built-in plugin texts (`internal/i18n`), installed under Settings › General › Site Language or with `pursae language core install` |
 | Setup wizard | ✗ the Languages screen does the same steps: the first language becomes the default and takes the existing content |
 | Custom flags in `/wp-content/polylang/` | ✗ there is no `wp-content` directory for site files; any two-letter code can be used as the flag |
-| Pro: locale fallback | ✗ there are no `.mo` files to fall back between |
+| Pro: locale fallback | ✗ a language falls back to the default language, not to another locale's `.mo` pack |
 
 ## Languages > Settings (modules)
 
@@ -270,7 +270,7 @@ Privacy and security:
 | REST `pll/v1/visual/strings` (POST `{lang, items:[{original, translation}]}`) | ✅ Pursae addition; `manage_options` and the `wp_rest` nonce; an empty translation removes it; the default language is refused |
 | REST `lang` parameter on wp/v2 collections; `lang` and `translations` fields on posts, pages, categories and tags; on writes in the JSON or form body (`{"lang":"fr","translations":{"en":12}}`) or the query string (`?lang=fr&translations[en]=12`) | ✅ |
 | Block editor: `apiFetch` middleware adds `lang=<post language>` to the term panels and the parent page selector (follows the Languages panel); the classic editor's category checklist and parent dropdown show the post's language | ✅ |
-| WP-CLI `wp pll` | ✗ there is no WP-CLI |
+| WP-CLI `wp pll` | ✗ there is no `pll` command. Pursae has its own WP-CLI style command line (`pursae <noun> <verb>`, see [Command line](developer/operations/cli.md)); `pursae language core` manages core language packs |
 | Language capabilities (`translate_{lang}`, `manage_translations`) | ✅ Pursae addition: `manage_translations` (every language) or `translate_{lang}` (one language, for example `translate_de`) opens Languages › Translations, Translate visually, `pll/v1/visual/strings` and `pll/v1/translate` for that language only (also "Translate all empty strings" and the string save). Grant them as per-user allow exceptions or in a role; they never open Languages or Settings, and PO import/export stays `manage_options`. `manage_languages` is not used: the Languages and Settings screens need `manage_options` |
 | Integrations (ACF, Yoast, WooCommerce, page builders) | ✗ not applicable. Pursae Web Builder pages translate like any page: "Duplicate content" copies the builder document and its published snapshot to the new translation (form actions point at it); custom-field synchronization never copies the builder's `_web_builder*` meta. While Pursae Web Builder is on, Theme Builder templates (`wb_template`) are a translated type: each language shows the published translation of the template that wins the display conditions |
 

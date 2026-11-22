@@ -20,7 +20,7 @@ Each part is a checkbox; the archive stores only what was ticked.
 | Site settings | settings | |
 | Themes | themes | edited/installed theme files |
 | Plugins | plugins, plugin_data | plugin packages |
-| Page builder | gwe_*, builder_revisions | |
+| Page builder | web_builder_* | |
 | Pursae Commerce / Headless / Multi Language / SEO / Contact forms / CDN / Cookie / SMTP / Security | by table prefix | |
 | Other plugin data | every table no part claims | |
 
