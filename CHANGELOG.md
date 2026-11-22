@@ -10,6 +10,15 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Added
+
+- **Passkeys in Pursae Security.** Users add any number of named passkeys under Users › Security and log in
+  with them from the login form, by the button or the browser's passkey autofill, without typing a username.
+  After a password, a passkey also works as the second step. Settings › Two-Factor switches passkeys off,
+  decides whether a passkey sign-in counts as two-step login (default) or only replaces the password, and can
+  require a passkey per role. Challenges are single use and expire after 5 minutes; a passkey whose signature
+  counter goes backwards is refused as a possible copy.
+
 ## [0.5.0] - 2026-11-22
 
 0.5.0, the stable beta: the contract is frozen (see [compatibility](docs/developer/compatibility.md)),
