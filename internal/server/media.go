@@ -214,6 +214,9 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	if err != nil {
 		return nil, errors.New("No file was uploaded.")
 	}
+	if fh.Size == 0 {
+		return nil, errUploadEmpty
+	}
 	if fh.Size > maxUploadBytes {
 		return nil, fmt.Errorf("The uploaded file exceeds the maximum upload size for this site.")
 	}
@@ -251,11 +254,7 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	} else if strings.HasPrefix(st.Mime, "audio/") || strings.HasPrefix(st.Mime, "video/") {
 		s.readAVMeta(s.cfg.UploadsDir, a)
 	}
-	if err := s.store.InsertAttachment(c, a); err != nil {
-		return nil, err
-	}
-	s.gocdnOffloadAsync(a) // GoCDN: copy to the bucket (gocdn_offload.go)
-	return a, nil
+	return s.registerUploadedAttachment(c, a)
 }
 
 var (
@@ -267,6 +266,10 @@ var (
 // uploads directory, the image sizes are generated and the attachment is inserted. The importers
 // (WXR, theme demo content) use it.
 func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Reader, uploaderID, postID int64) (*store.Attachment, error) {
+	return s.insertAttachmentFileWithMeta(ctx, name, r, uploaderID, postID, nil)
+}
+
+func (s *Server) insertAttachmentFileWithMeta(ctx context.Context, name string, r io.Reader, uploaderID, postID int64, meta map[string]any) (*store.Attachment, error) {
 	st, err := media.SaveWith(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, io.LimitReader(r, maxUploadBytes+1), s.uploadReserved(ctx))
 	if err != nil {
 		return nil, err
@@ -280,18 +283,49 @@ func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Rea
 		return nil, errUploadEmpty
 	}
 	title := strings.TrimSuffix(filepath.Base(st.Original), filepath.Ext(st.Original))
+	if meta == nil {
+		meta = make(map[string]any)
+	}
+	meta["filesize"] = st.Size
 	a := &store.Attachment{UploaderID: uploaderID, PostID: postID, FilePath: st.RelPath, Mime: st.Mime, FileSize: st.Size,
-		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
+		Title: title, Slug: wp.SanitizeTitle(title), Meta: meta}
 	if strings.HasPrefix(st.Mime, "image/") {
 		s.createImageSubsizes(ctx, a)
 	} else if strings.HasPrefix(st.Mime, "audio/") || strings.HasPrefix(st.Mime, "video/") {
 		s.readAVMeta(s.cfg.UploadsDir, a)
 	}
+	return s.registerUploadedAttachment(ctx, a)
+}
+
+func (s *Server) registerUploadedAttachment(ctx context.Context, a *store.Attachment) (*store.Attachment, error) {
 	if err := s.store.InsertAttachment(ctx, a); err != nil {
+		if a.ID != 0 {
+			// The connection can fail after COMMIT. Check the row before reclaiming its files.
+			check, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+			defer cancel()
+			if _, loadErr := s.store.GetAttachment(check, a.ID); !errors.Is(loadErr, store.ErrNotFound) {
+				return nil, err
+			}
+		}
+		s.removeUnregisteredUpload(a)
 		return nil, err
 	}
-	s.gocdnOffloadAsync(a) // GoCDN: copy to the bucket (gocdn_offload.go)
+	s.gocdnOffloadAsync(a)
 	return a, nil
+}
+
+func (s *Server) removeUnregisteredUpload(a *store.Attachment) {
+	root, err := os.OpenRoot(s.cfg.UploadsDir)
+	if err != nil {
+		slog.Warn("could not open uploads for cleanup", "err", err)
+		return
+	}
+	defer root.Close()
+	for _, rel := range gocdnAttachmentFiles(a) {
+		if err := root.Remove(filepath.FromSlash(rel)); err != nil && !errors.Is(err, os.ErrNotExist) {
+			slog.Warn("could not clean up an unregistered upload", "err", err)
+		}
+	}
 }
 
 // mimeIcon is wp_mime_type_icon() with the SVG icon set.

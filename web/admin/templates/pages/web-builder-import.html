@@ -165,6 +165,9 @@
 {{if .Pages}}<ul style="list-style:disc;margin-left:20px">{{range .Pages}}<li>{{.}}</li>{{end}}</ul>{{else}}<p>None left.</p>{{end}}
 <h3>Templates</h3>
 {{if .Templates}}<ul style="list-style:disc;margin-left:20px">{{range .Templates}}<li>{{.}}</li>{{end}}</ul>{{else}}<p>None left.</p>{{end}}
+{{if .Media}}<h3>Media Library</h3>
+<ul style="list-style:disc;margin-left:20px">{{range .Media}}<li>{{.}}</li>{{end}}</ul>{{end}}
+{{if .MediaUnavailable}}<p>The Media Library items to be removed could not be listed.</p>{{end}}
 {{if .KitGone}}<h3>Design kit</h3><p><code>{{.Kit}}</code></p>{{end}}
 {{if .Front}}<p>The front page setting is restored.</p>{{end}}
 <form method="post" action="{{$d.URL}}?action=undo&amp;import={{$d.ID}}">

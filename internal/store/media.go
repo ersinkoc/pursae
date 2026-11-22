@@ -168,23 +168,28 @@ func (s *Store) GetAttachments(ctx context.Context, ids []int64) (map[int64]*Att
 
 // InsertAttachment stores an attachment and its sub-sizes.
 func (s *Store) InsertAttachment(ctx context.Context, a *Attachment) error {
-	meta, _ := json.Marshal(orEmpty(a.Meta))
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		if err := tx.QueryRow(ctx, `INSERT INTO media(uploader_id, post_id, slug, file_path, mime_type, file_size, width, height,
-			alt_text, title, caption, description, meta) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-			RETURNING id, created_at, updated_at`,
-			nullable(a.UploaderID), nullable(a.PostID), a.Slug, a.FilePath, a.Mime, a.FileSize, nullInt(a.Width), nullInt(a.Height),
-			a.Alt, a.Title, a.Caption, a.Description, meta).Scan(&a.ID, &a.CreatedAt, &a.UpdatedAt); err != nil {
+		return InsertAttachmentTx(ctx, tx, a)
+	})
+}
+
+// InsertAttachmentTx stores an attachment and its sub-sizes in a caller's transaction.
+func InsertAttachmentTx(ctx context.Context, tx pgx.Tx, a *Attachment) error {
+	meta, _ := json.Marshal(orEmpty(a.Meta))
+	if err := tx.QueryRow(ctx, `INSERT INTO media(uploader_id, post_id, slug, file_path, mime_type, file_size, width, height,
+		alt_text, title, caption, description, meta) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+		RETURNING id, created_at, updated_at`,
+		nullable(a.UploaderID), nullable(a.PostID), a.Slug, a.FilePath, a.Mime, a.FileSize, nullInt(a.Width), nullInt(a.Height),
+		a.Alt, a.Title, a.Caption, a.Description, meta).Scan(&a.ID, &a.CreatedAt, &a.UpdatedAt); err != nil {
+		return err
+	}
+	for _, v := range a.Variants {
+		if _, err := tx.Exec(ctx, `INSERT INTO media_variants(media_id, name, file_path, width, height, mime_type, file_size)
+			VALUES ($1,$2,$3,$4,$5,$6,$7)`, a.ID, v.Name, v.FilePath, v.Width, v.Height, v.Mime, v.FileSize); err != nil {
 			return err
 		}
-		for _, v := range a.Variants {
-			if _, err := tx.Exec(ctx, `INSERT INTO media_variants(media_id, name, file_path, width, height, mime_type, file_size)
-				VALUES ($1,$2,$3,$4,$5,$6,$7)`, a.ID, v.Name, v.FilePath, v.Width, v.Height, v.Mime, v.FileSize); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func nullInt(n int) any {
