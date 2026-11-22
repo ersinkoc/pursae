@@ -371,28 +371,37 @@ func (s *Server) wbRESTKitCommit(c *gin.Context, r *restRequest) {
 // bumps the version and saves the kit's entry with the given local-style breakpoints (nil:
 // suggested from the kit's stylesheets). On failure it returns a nil kit and the REST error.
 func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints *webbuilder.Breakpoints) (k *wbKit, status int, code, msg string) {
-	live := filepath.Join(s.wbKitRoot(), slug)
+	kitDir := s.wbKitRoot()
+	root, err := os.OpenRoot(kitDir)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, http.StatusConflict, "wb_kit_nothing_staged", "Nothing is staged for this kit: send files first."
+	}
+	if err != nil {
+		return nil, http.StatusInternalServerError, "wb_kit_io", "Could not open the kits folder."
+	}
+	defer root.Close()
+	live := slug
 	stage := filepath.Join(live, wbKitStageDir)
-	if _, err := os.Stat(stage); err != nil {
+	if _, err := root.Stat(stage); err != nil {
 		return nil, http.StatusConflict, "wb_kit_nothing_staged", "Nothing is staged for this kit: send files first."
 	}
 	// Swap: the staged folder becomes the kit (the old files go, the staging folder with them).
 	tmp := live + ".old-" + strconv.FormatInt(time.Now().UnixNano(), 36)
-	parent := filepath.Dir(live)
-	next := filepath.Join(parent, "."+slug+".next")
-	_ = os.RemoveAll(next)
-	if err := os.Rename(stage, next); err != nil {
+	next := "." + slug + ".next"
+	_ = root.RemoveAll(next)
+	if err := root.Rename(stage, next); err != nil {
 		return nil, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit."
 	}
-	if err := os.Rename(live, tmp); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		_ = os.Rename(next, stage)
+	if err := root.Rename(live, tmp); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		_ = root.Rename(next, stage)
 		return nil, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit."
 	}
-	if err := os.Rename(next, live); err != nil {
-		_ = os.Rename(tmp, live)
+	if err := root.Rename(next, live); err != nil {
+		_ = root.Rename(tmp, live)
 		return nil, http.StatusInternalServerError, "wb_kit_io", "Could not publish the kit."
 	}
-	files, _ := wbKitFiles(live)
+	liveDir := filepath.Join(kitDir, live)
+	files, _ := wbKitFiles(liveDir)
 	var total int64
 	for _, n := range files {
 		total += n
@@ -410,30 +419,30 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 	}
 	k.Version++
 	k.Files, k.Bytes, k.Updated = len(files), total, wbTime(time.Now())
-	k.Origins = wbKitOrigins(live, files)
+	k.Origins = wbKitOrigins(liveDir, files)
 	if breakpoints != nil {
 		bp := breakpoints.Normalize()
 		k.Breakpoints = &bp
 	} else {
-		bp := webbuilder.SuggestLocalBreakpoints(wbKitCSS(live, files))
+		bp := webbuilder.SuggestLocalBreakpoints(wbKitCSS(liveDir, files))
 		k.Breakpoints = &bp
 	}
 	if err := s.settings.Set(c, map[string]any{wbKitsOption: kits}); err != nil {
-		rollbackErr := os.Rename(live, next)
+		rollbackErr := root.Rename(live, next)
 		if rollbackErr == nil {
-			if rollbackErr = os.Rename(tmp, live); rollbackErr != nil {
-				rollbackErr = errors.Join(rollbackErr, os.Rename(next, live))
+			if rollbackErr = root.Rename(tmp, live); rollbackErr != nil {
+				rollbackErr = errors.Join(rollbackErr, root.Rename(next, live))
 			} else {
-				rollbackErr = os.Rename(next, stage)
+				rollbackErr = root.Rename(next, stage)
 			}
 		}
 		if rollbackErr != nil {
-			log.Printf("web builder: restore kit %q after settings write failed: %v", slug, rollbackErr)
+			log.Printf("web builder: kit rollback after settings write failed: %v", rollbackErr)
 			return nil, http.StatusInternalServerError, "db_error", "Could not save the kit or restore its files."
 		}
 		return nil, http.StatusInternalServerError, "db_error", "Could not save the kit."
 	}
-	_ = os.RemoveAll(tmp)
+	_ = root.RemoveAll(tmp)
 	wbKitVersions.Delete("v")
 	s.purgeAll(c)
 	return k, http.StatusOK, "", ""

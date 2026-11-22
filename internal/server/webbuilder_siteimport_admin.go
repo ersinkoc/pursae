@@ -1215,14 +1215,23 @@ func (s *Server) wbWizRESTSession(c *gin.Context) {
 func (s *Server) wbWizInstallKit(c *gin.Context, id, slug, name string, assets map[string]int64) error {
 	wbKitsMu.Lock()
 	defer wbKitsMu.Unlock()
-	live := filepath.Join(s.wbKitRoot(), slug)
-	stage := filepath.Join(live, wbKitStageDir)
-	if err := os.RemoveAll(stage); err != nil {
-		return fmt.Errorf("clear kit staging: %w", err)
-	}
-	if err := os.MkdirAll(stage, 0o755); err != nil {
+	kitDir := s.wbKitRoot()
+	if err := os.MkdirAll(kitDir, 0o755); err != nil {
 		return err
 	}
+	root, err := os.OpenRoot(kitDir)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	staged := filepath.Join(slug, wbKitStageDir)
+	if err := root.RemoveAll(staged); err != nil {
+		return fmt.Errorf("clear kit staging: %w", err)
+	}
+	if err := root.MkdirAll(staged, 0o755); err != nil {
+		return err
+	}
+	stage := filepath.Join(kitDir, staged)
 	src := s.wbWizSiteDir(id)
 	for rel := range assets {
 		if _, ok := wbKitRel(rel); !ok {
