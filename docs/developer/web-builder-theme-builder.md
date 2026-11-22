@@ -210,6 +210,8 @@ are in the contract (§11.12).
 ## Limits
 
 - Only the top level of a menu is shown (no drop-down sub-menus yet).
-- Archives of Pursae Custom Fields taxonomies are not routed yet; rules for them are accepted but
-  match nothing until they are.
-- No popups, global classes or kits; colours and fonts are set per template.
+- Archives of Pursae Custom Fields taxonomies are routed (`/?taxonomy=…&term=…`) and match the
+  taxonomy and term rules of Archive templates.
+- Popups (a template type, see [Web Builder](web-builder.md#popups)) and design kits (files a design
+  brings, see [code sections](web-builder-code-sections.md)) exist, but there are no global classes.
+  Colours and fonts are set per template.

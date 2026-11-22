@@ -20,7 +20,7 @@ import (
 
 func TestBmgrCategoriesAndPaths(t *testing.T) {
 	for table, want := range map[string]string{"posts": "content", "media": "media", "users": "users", "settings": "settings", "goo_orders": "commerce",
-		"gwe_global_classes": "builder", "hg_entries": "headless", "pll_languages": "multilang", "redirects": "seo", "seogo_404": "seo",
+		"web_builder_docs": "builder", "web_builder_revisions": "builder", "hg_entries": "headless", "pll_languages": "multilang", "redirects": "seo", "seogo_404": "seo",
 		"adminsec_log": "security", "audit_log": "security", "maintenance_subscribers": "other", "plugins": "plugins"} {
 		if got := bmgrCategoryOf(table); got != want {
 			t.Errorf("bmgrCategoryOf(%q) = %q, want %q", table, got, want)

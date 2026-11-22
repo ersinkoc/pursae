@@ -15,8 +15,9 @@ ones; `HEAD` works wherever `GET` does and `PUT`/`PATCH` wherever `POST` does.
 | `/posts`, `/pages`, `/blocks` | GET, POST | `page`, `per_page`, `offset`, `search`, `author`, `author_exclude`, `categories`, `categories_exclude`, `tags`, `tags_exclude`, `tax_relation` (`AND` default, or `OR`), `after`, `before`, `modified_after`, `modified_before`, `status`, `orderby`, `order`, `slug` (comma list or `slug[]`), `include`, `exclude`, `parent`, `parent_exclude`, `sticky` (posts only), `_embed`, `_fields`; a malformed filter value is a 400 `rest_invalid_param`. Without `edit_others_posts` other statuses list only what the caller may read. `/blocks` (synced patterns) needs `edit_posts` to read, and a new pattern is published only for users with `publish_posts`; `context=edit` for raw content (needs `edit_posts`/`edit_pages`; items the caller cannot edit omit `password`, and password-protected or members-only ones also omit `content.raw` and `excerpt.raw`). `meta.footnotes` (the block editor's footnotes, a JSON string) is read and written |
 | `/posts/{id}`, `/pages/{id}`, `/blocks/{id}` | GET, POST, DELETE | `?force=true` deletes instead of trashing. Pages read and write `template` (`_wp_page_template`): `""` is the default template, otherwise one of the theme's page templates (a package's `page_templates`) or the page's current template; another value is a 400 |
 | `/posts/{id}/autosaves`, `/pages/{id}/autosaves`, `/blocks/{id}/autosaves` | GET, POST | the editor's autosave |
-| `/posts/{parent}/autosaves/{id}`, … | GET | one autosave of the parent (404 `rest_post_invalid_id` when it is not one) |
-| `/posts/{id}/revisions`, `/pages/{id}/revisions`, … | GET | |
+| `/posts/{parent}/autosaves/{id}`, `/pages/{parent}/autosaves/{id}`, `/blocks/{parent}/autosaves/{id}` | GET | one autosave of the parent (404 `rest_post_invalid_id` when it is not one) |
+| `/posts/{id}/revisions`, `/pages/{id}/revisions`, `/blocks/{id}/revisions` | GET | |
+| `/posts/{parent}/revisions/{id}`, `/pages/{parent}/revisions/{id}`, `/blocks/{parent}/revisions/{id}` | GET, DELETE | one revision; `DELETE` needs `?force=true` |
 
 With Pursae Multi Language on, posts, pages, categories and tags (and the translated custom types and
 taxonomies) carry `lang` and `translations` (`{"en": 12, "fr": 15}`). Collections take `?lang=fr` (that
@@ -31,25 +32,29 @@ language, of the same type, that the user may edit; an entry for the saved objec
 |-------|---------|-------|
 | `/media` | GET, POST | upload with `multipart/form-data` (`file`) or a raw body with `Content-Disposition: attachment; filename=…`; image sizes are generated (in the format of Settings › Media › Image output format) |
 | `/media/{id}` | GET, POST, DELETE | `title`, `caption`, `alt_text`, `description`, `post`; images also `focal_point` (`{"x": 0.3, "y": 0.2}` from the top left, 0–1, or `null` for the centre): cropped sizes are made again around it, and `media_details.focal_point` returns it. A replaced or re-cropped file has `media_details.file_version`, and its URLs end in `?v=<version>`. With Pursae Multi Language and its Media module on: `?lang=` returns that language's texts, `context=edit` adds `pll_i18n` (per-language overrides) and updates accept it |
+| `/media/{id}/edit` | POST | the block editor's image crop / rotate / flip: `modifiers` are applied in order and the result is saved as a new item `<name>-edited.<ext>` (201); the original is untouched. JPEG, PNG, GIF and WebP only |
 | `/media/{id}/post-process` | POST | |
 
 ## Terms
 
 | Route | Methods | Notes |
 |-------|---------|-------|
-| `/categories`, `/tags` | GET, POST | `search`, `parent`, `post`, `slug`, `hide_empty`, `orderby` |
-| `/categories/{id}`, `/tags/{id}` | GET, POST, DELETE | updating or deleting needs `manage_categories` (creating a tag only needs `edit_posts`) |
+| `/categories`, `/tags`, `/wp_pattern_category` | GET, POST | `search`, `parent`, `post`, `slug`, `hide_empty`, `orderby`. `/wp_pattern_category` holds the categories of synced patterns |
+| `/categories/{id}`, `/tags/{id}`, `/wp_pattern_category/{id}` | GET, POST, DELETE | updating or deleting needs `manage_categories` (creating a tag or pattern category only needs `edit_posts`) |
 | `/taxonomies`, `/taxonomies/{taxonomy}` | GET | |
 
 ## Users and comments
 
 | Route | Methods | Notes |
 |-------|---------|-------|
-| `/users` | GET | public profiles (`who=authors`), or all users with `list_users`; `capabilities`, `offset`. Without `list_users`, `search` matches only the id, login, slug and display name |
-| `/users/{id}` | GET | |
-| `/users/me` | GET, POST | the current user; `context=edit` for the full record (and `meta.persisted_preferences`, which only that context returns) |
+| `/users` | GET, POST | `GET`: public profiles (`who=authors`), or all users with `list_users`; `capabilities`, `offset`. Without `list_users`, `search` matches only the id, login, slug and display name. `POST` creates a user (`create_users`; `username`, `email`, `password`) |
+| `/users/{id}` | GET, POST, DELETE | `POST` updates; `DELETE` needs `?force=true` (users cannot be trashed) and `delete_users`, and `reassign` moves the user's content to another user |
+| `/users/me` | GET, POST, DELETE | the current user; `context=edit` for the full record (and `meta.persisted_preferences`, which only that context returns) |
 | `/comments` | GET, POST | `post`, `parent`, `parent_exclude`, `include`, `exclude`, `author`, `author_exclude`, `author_email`, `type`, `status`, `offset`; anonymous comments honour the Discussion settings |
 | `/comments/{id}` | GET, POST, DELETE | |
+| `/users/{user_id}/application-passwords` | GET, POST, DELETE | `{user_id}` is an ID or `me`. List, create (`name`, `app_id`, `scopes` or `full_access`; the password is returned once) or revoke all. Also managed on the profile page |
+| `/users/{user_id}/application-passwords/{uuid}` | GET, POST, DELETE | read, rename and change scopes, or revoke one |
+| `/users/{user_id}/application-passwords/introspect` | GET | the Application Password that authenticated this request (404 `rest_no_authenticated_app_password` for any other login) |
 
 ## Site
 
@@ -60,15 +65,19 @@ language, of the same type, that the user may edit; an entry for the saved objec
 | `/statuses`, `/statuses/{status}` | GET | |
 | `/themes`, `/themes/{stylesheet}` | GET | `status=active` returns the active theme with its `theme_supports` |
 | `/search` | GET | `search`, `type`, `subtype`: post subtypes are limited to the searchable public types (posts, pages, public custom types); another subtype is a 400 |
-| `/sidebars`, `/sidebars/{id}` | GET, POST | widget areas |
+| `/sidebars` | GET | widget areas |
+| `/sidebars/{id}` | GET, POST | one widget area; `POST` changes its widgets |
 | `/widgets`, `/widgets/{id}` | GET, POST, DELETE | |
 | `/widget-types`, `/widget-types/{id}`, `/widget-types/{id}/encode`, `/widget-types/{id}/render` | GET, POST | |
-| `/menu-locations` | GET | |
+| `/menus`, `/menu-items` | GET, POST | navigation menus and their items; like WordPress, every request needs `edit_theme_options` (401 for visitors, 403 otherwise). `menu-items` takes `menus` as a filter |
+| `/menus/{id}`, `/menu-items/{id}` | GET, POST, DELETE | `DELETE` needs `?force=true` (menus cannot be trashed) |
+| `/menu-locations`, `/menu-locations/{location}` | GET | theme menu locations and the menu assigned to each (`edit_theme_options`) |
 | `/block-renderer/{name}` | GET, POST | server-side rendering of dynamic blocks |
 | `/block-patterns/patterns`, `/block-patterns/categories` | GET | core's patterns and the active theme's (Twenty Twenty-Five); users who can edit posts |
-| `/block-types`, `/block-directory/search`, `/pattern-directory/patterns`, `/wp_pattern_category` | GET | empty lists |
-| `/templates`, `/templates/lookup`, `/template-parts` | GET | empty (no site editor) |
-| `/global-styles/{id}`, `/global-styles/themes/{stylesheet}`, `/global-styles/themes/{stylesheet}/variations` | GET, POST | |
+| `/block-types` | GET | the blocks registered on the server (dynamic blocks; `namespace` filters). Blocks the editor registers only in JavaScript are not listed |
+| `/block-directory/search`, `/pattern-directory/patterns` | GET | empty lists |
+| `/templates`, `/templates/lookup`, `/template-parts` | GET | stubs: empty (there is no Site Editor) |
+| `/global-styles/{id}`, `/global-styles/themes/{stylesheet}`, `/global-styles/themes/{stylesheet}/variations` | GET | stubs: empty settings and styles; read only |
 
 ## Site management (`pursae/v1`)
 
@@ -97,6 +106,8 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/pursae/v1/seo/redirects` | GET, POST | list; create or update (`id`) with `source`, `target`, `code` (301, 302, 307, 410, 451), `match_type`, `status` |
 | `/pursae/v1/seo/redirects/{id}` | DELETE | |
 | `/pursae/v1/analytics` | GET | Pursae Analytics overview for `?range=today\|7d\|30d\|month\|90d\|12m`: `summary`, `reports` (pages, entry, sources, campaigns, countries, devices, browsers, os, goals, outbound, downloads, notfound), `web_vitals` p75 (`manage_options`, plugin active, scope `settings`) |
+| `/pursae/v1/csp` | GET, POST | allowed external sources of the front-end Content Security Policy (see [Security](../operations/security.md)) |
+| `/pursae/v1/csp-reports` | GET, DELETE | the CSP violation reports the site collected: list, or clear (`manage_options`) |
 | `/pursae/v1/health` | GET | version, database, cron queue (`queued`, `running`, `failed`, `overdue`, `last_error`), Site Health score, plugins, cache, `updates_available`, last backup (`manage_options`) |
 | `/pursae/v1/updates` | GET, POST | updates Pursae Manager offers (`update_plugins`); `POST {"type": "plugin"\|"theme"\|"core", "slug": "…"}` installs one. Core replaces the binary and restarts the site a second after the answer (`update_core`) |
 | `/pursae/v1/backups` | GET, POST | stored archives, or `?job=<id>` for a running backup; `POST {"categories": [...], "note": "…"}` starts one in the background (202 with `job`; default: every category) (`manage_options`) |
@@ -159,8 +170,9 @@ null for a deleted account. Dates are RFC 3339 UTC. A page past the last one is 
 |-------|---------|-------|
 | `/` (`/wp-json/`) | GET | the index: site info, namespaces, every route with its methods |
 | `/batch/v1` | POST | up to 25 requests in one call; a sub-request cannot be another batch |
-| `/oembed/1.0/proxy` | GET | `url=` — fetches the provider's oEmbed for the editor |
-| `/wp-block-editor/v1/url-details` | GET | `url=` — title, icon, description of a link |
+| `/oembed/1.0/embed` | GET | Pursae as an oEmbed provider: `url=` (a post or page of this site), `format=json\|xml`, `maxwidth` (200–600); 404 `oembed_invalid_url` otherwise. Public |
+| `/oembed/1.0/proxy` | GET | `url=` — fetches the provider's oEmbed for the editor (`edit_posts`) |
+| `/wp-block-editor/v1/url-details` | GET | `url=` — title, icon, description of a link (public addresses only; cached for an hour) |
 | `/pll/v1/languages`, `/pll/v1/languages/{id or code}`, `/pll/v1/settings` | GET, POST, DELETE | Pursae Multi Language (Polylang's routes); only while the plugin is on. Settings are checked like the URL modifications form: `domains` are http(s) URLs, `force_lang` 2 and 3 need pretty permalinks, 3 a domain for every language (else 400 `rest_invalid_param`) |
 | `/pll/v1/media/{id}/i18n` | GET, POST | per-language `alt_text`, `title`, `caption`, `description` of a media item: `{"fr":{"alt_text":"…"}}`, null or blank falls back to the item; `upload_files` plus own item or `edit_others_posts`; 404 while the Media module is off |
 | `/pll/v1/translate`, `/pll/v1/translate/test` | POST | machine translation proxy: `{texts[], target, source?, html?}` → `{translations, target}`; `manage_options`, cookie auth with the `wp_rest` nonce, 60 calls per user per minute, 200 texts / 200 KB, never saves |
