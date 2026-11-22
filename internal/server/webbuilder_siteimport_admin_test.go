@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -1222,5 +1223,72 @@ func TestWBImportWizardCompletedPublishKeepsLaterVisibilityChange(t *testing.T) 
 	}
 	if post.Status != "private" {
 		t.Fatalf("status after repeat publish = %q, want private", post.Status)
+	}
+}
+
+func TestWBImportWizardRetriesPreserveLaterVisibilityChanges(t *testing.T) {
+	for _, direct := range []bool{false, true} {
+		name := "partial publication"
+		if direct {
+			name = "replaced draft"
+		}
+		t.Run(name, func(t *testing.T) {
+			srv, _, _, w := wizStart(t)
+			code, _, loc := w.upload(wizSite(t), "site.zip", "visibility-retry")
+			parts := wizIDRE.FindStringSubmatch(loc)
+			if code != http.StatusFound || len(parts) != 2 {
+				t.Fatalf("upload: %d %q", code, loc)
+			}
+			at := wbWizURL + "?import=" + parts[1]
+			_, analysis, _ := w.get(loc)
+			importForm := url.Values{"_wpnonce": {wizHiddenRE.FindStringSubmatch(analysis)[1]}, "kit": {"visibility-retry"}, "status": {"draft"}}
+			code, _, result := w.postForm(at+"&action=import", importForm)
+			if code != http.StatusSeeOther {
+				t.Fatalf("import drafts: %d", code)
+			}
+			_, report, _ := w.get(result)
+			publishForm := url.Values{"_wpnonce": {wizHiddenRE.FindStringSubmatch(report)[1]}}
+			publish := at + "&action=publish"
+			m := srv.wbWizLoad(parts[1])
+			if m == nil || m.Result == nil || len(m.Result.Pages) < 2 {
+				t.Fatal("missing drafts in report")
+			}
+			protected, pending := m.Result.Pages[0].PostID, m.Result.Pages[1].PostID
+			wantResponse := http.StatusOK
+			if direct {
+				importForm.Set("replace", "1")
+				importForm.Set("status", "publish")
+				if code, _, _ := w.postForm(at+"&action=import", importForm); code != http.StatusSeeOther {
+					t.Fatalf("direct replacement: %d", code)
+				}
+				wantResponse = http.StatusSeeOther
+			} else {
+				if _, err := srv.store.Pool.Exec(t.Context(), fmt.Sprintf(
+					`ALTER TABLE posts ADD CONSTRAINT reject_retry_post CHECK (id <> %d OR status <> 'publish')`, pending)); err != nil {
+					t.Fatal(err)
+				}
+				if code, _, _ := w.postForm(publish, publishForm); code != http.StatusOK {
+					t.Fatalf("partial publication: %d", code)
+				}
+				if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE id=$1 AND status='draft'`, pending); n != 1 {
+					t.Fatal("fixture did not leave a draft to retry")
+				}
+				if _, err := srv.store.Pool.Exec(t.Context(), `ALTER TABLE posts DROP CONSTRAINT reject_retry_post`); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE id=$1 AND status='publish'`, protected); n != 1 {
+				t.Fatal("fixture did not publish the protected page")
+			}
+			if _, err := srv.store.Pool.Exec(t.Context(), `UPDATE posts SET status='private' WHERE id=$1`, protected); err != nil {
+				t.Fatal(err)
+			}
+			if code, _, _ := w.postForm(publish, publishForm); code != wantResponse {
+				t.Fatalf("repeated publication: %d, want %d", code, wantResponse)
+			}
+			if n := wizCount(t, srv, `SELECT count(*) FROM posts WHERE (id=$1 AND status='private') OR (id=$2 AND status='publish')`, protected, pending); n != 2 {
+				t.Fatal("repeated publication did not preserve the private page and publish the pending page")
+			}
+		})
 	}
 }
