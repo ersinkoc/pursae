@@ -1,0 +1,53 @@
+# WP to Pursae end-to-end test (run.sh, `make wp2p-test`): WordPress with WooCommerce on MySQL, the plugin
+# mounted from ../wp-to-pursae, and a WP-CLI container that seeds the site and builds the package. The
+# WordPress web server is only needed to try the plugin's admin screen by hand:
+# http://127.0.0.1:${WP2P_WP_PORT:-8089}/wp-admin/ (wpadmin / Adm1n-pass-2026).
+name: wp2p-e2e
+
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: wordpress-root
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uwordpress", "-pwordpress"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+
+  wordpress:
+    image: wordpress:php8.3-apache
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: &wpenv
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    ports:
+      - "127.0.0.1:${WP2P_WP_PORT:-8089}:80"
+    volumes: &wpvolumes
+      - wp:/var/www/html
+      - ../wp-to-pursae:/var/www/html/wp-content/plugins/wp-to-pursae:ro
+      - ./seed:/seed:ro
+      - ./exports:/exports
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  cli:
+    image: wordpress:cli-php8.3
+    user: "33:33"
+    depends_on:
+      - wordpress
+    environment: *wpenv
+    volumes: *wpvolumes
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["sleep", "infinity"]
+
+volumes:
+  wp: {}

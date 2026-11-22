@@ -186,6 +186,32 @@ jobs:
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 
+  # The WP to Pursae WordPress plugin (integrations/wordpress): php -l on the oldest PHP it supports (7.4),
+  # its unit tests and the WordPress coding standards. The end-to-end test with WordPress + WooCommerce is wp2p-e2e.yml.
+  wordpress-plugin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "7.4"
+          tools: composer
+          coverage: none
+      - name: php -l (PHP 7.4)
+        run: find integrations/wordpress -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Unit tests (multisite guard, resumed package encryption, content batches, cleanup)
+        run: php integrations/wordpress/test/unit/run.php
+      - name: WordPress coding standards
+        run: |
+          mkdir -p "$RUNNER_TEMP/phpcs" && cd "$RUNNER_TEMP/phpcs"
+          composer init -n -q --name=ci/phpcs
+          composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer require -q --dev wp-coding-standards/wpcs:^3.1 dealerdirect/phpcodesniffer-composer-installer
+          cd "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/phpcs/vendor/bin/phpcs" --standard=WordPress --extensions=php --warning-severity=0 \
+            --runtime-set testVersion 7.4- --runtime-set text_domain wp-to-pursae integrations/wordpress/wp-to-pursae
+
   # The Windows release binary: vet, unit tests (integration tests skip without PURSAE_TEST_DB), then a
   # smoke run of the release build against the runner's preinstalled PostgreSQL: migrate, serve,
   # /healthz and the install screen.

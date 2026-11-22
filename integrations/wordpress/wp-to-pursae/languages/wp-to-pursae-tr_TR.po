@@ -1,0 +1,253 @@
+# Turkish translation of WP to Pursae.
+# This file is distributed under the same license as the WP to Pursae plugin (GPL-2.0-or-later).
+msgid ""
+msgstr ""
+"Project-Id-Version: WP to Pursae 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/pursae/pursae/issues\n"
+"Language: tr_TR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Domain: wp-to-pursae\n"
+
+#: includes/class-wp2p-admin.php:35 includes/class-wp2p-admin.php:45
+#: includes/class-wp2p-admin.php:270 includes/class-wp2p-admin.php:301
+msgid "Move to Pursae"
+msgstr "Pursae'ye taşı"
+
+#: includes/class-wp2p-admin.php:68
+msgid "Building the package…"
+msgstr "Paket hazırlanıyor…"
+
+#: includes/class-wp2p-admin.php:69
+msgid "The package is ready"
+msgstr "Paket hazır"
+
+#: includes/class-wp2p-admin.php:70
+msgid "Sent to Pursae"
+msgstr "Pursae'ye gönderildi"
+
+#: includes/class-wp2p-admin.php:71
+msgid "Start a new move"
+msgstr "Yeni bir taşıma başlat"
+
+#: includes/class-wp2p-admin.php:72
+msgid "Sending to Pursae…"
+msgstr "Pursae'ye gönderiliyor…"
+
+#. translators: %s: percentage.
+#: includes/class-wp2p-admin.php:74
+#, php-format
+msgid "Sent: %s"
+msgstr "Gönderilen: %s"
+
+#: includes/class-wp2p-admin.php:75
+msgid "Something went wrong:"
+msgstr "Bir sorun çıktı:"
+
+#: includes/class-wp2p-admin.php:76
+msgid "Delete the package and start over?"
+msgstr "Paket silinip baştan başlansın mı?"
+
+#: includes/class-wp2p-admin.php:77
+msgid "The request failed; retrying…"
+msgstr "İstek başarısız oldu; yeniden deneniyor…"
+
+#: includes/class-wp2p-admin.php:78
+msgid "Pursae is importing the site:"
+msgstr "Pursae siteyi içe aktarıyor:"
+
+#: includes/class-wp2p-admin.php:79
+msgid "Pursae has imported the site."
+msgstr "Pursae siteyi içe aktardı."
+
+#: includes/class-wp2p-admin.php:80
+msgid "The import stopped in Pursae:"
+msgstr "Pursae'deki içe aktarma durdu:"
+
+#: includes/class-wp2p-admin.php:125 includes/class-wp2p-admin.php:240
+msgid "Sorry, you are not allowed to do that."
+msgstr "Üzgünüz, bunu yapma izniniz yok."
+
+#: includes/class-wp2p-admin.php:165
+msgid "Enter the migration token from Pursae (or an administrator's Application Password)."
+msgstr "Pursae'den aldığınız taşıma anahtarını (ya da bir yöneticinin Uygulama Parolasını) girin."
+
+#: includes/class-wp2p-admin.php:184
+msgid "There is no package in progress."
+msgstr "Hazırlanmakta olan bir paket yok."
+
+#: includes/class-wp2p-admin.php:245
+msgid "There is no package to download."
+msgstr "İndirilecek bir paket yok."
+
+#: includes/class-wp2p-admin.php:271
+msgid "Move this site to Pursae in one go. Your users keep their passwords; posts, pages, comments, categories and tags, media files, menus and the main settings come along."
+msgstr "Bu siteyi tek seferde Pursae'ye taşıyın. Kullanıcılarınız parolalarını korur; yazılar, sayfalar, yorumlar, kategoriler ve etiketler, ortam dosyaları, menüler ve temel ayarlar da taşınır."
+
+#: includes/class-wp2p-admin.php:273
+msgid "So does the WooCommerce store: products and variations, tax rates, coupons, orders with their refunds and notes, and customers."
+msgstr "WooCommerce mağazası da taşınır: ürünler ve varyasyonlar, vergi oranları, kuponlar, iadeleri ve notlarıyla siparişler ve müşteriler."
+
+#: includes/class-wp2p-admin.php:275
+msgid "Themes and plugins do not move: they are PHP code, and Pursae is not PHP. Pick a Pursae theme after the move; most popular plugins have a built-in Pursae equivalent. Payment gateway settings are not exported: set up payments again in Pursae."
+msgstr "Temalar ve eklentiler taşınmaz: bunlar PHP kodudur, Pursae ise PHP değildir. Taşımadan sonra bir Pursae teması seçin; popüler eklentilerin çoğunun Pursae'de yerleşik bir karşılığı vardır. Ödeme altyapısı ayarları dışa aktarılmaz: ödemeleri Pursae'de yeniden kurun."
+
+#: includes/class-wp2p-admin.php:278
+msgid "How do you want to move?"
+msgstr "Nasıl taşımak istersiniz?"
+
+#: includes/class-wp2p-admin.php:280
+msgid "Send to Pursae"
+msgstr "Pursae'ye gönder"
+
+#: includes/class-wp2p-admin.php:280
+msgid "recommended: the package goes straight to your Pursae site, and the import starts on its own."
+msgstr "önerilen: paket doğrudan Pursae sitenize gider ve içe aktarma kendiliğinden başlar."
+
+#: includes/class-wp2p-admin.php:281
+msgid "Download a package"
+msgstr "Paketi indir"
+
+#. translators: %s: the command, pursae import WordPress.
+#: includes/class-wp2p-admin.php:284
+#, php-format
+msgid "upload it in Pursae yourself (Tools › Import › From WordPress) or import it with %s."
+msgstr "paketi Pursae'ye kendiniz yükleyin (Araçlar › İçe aktar › WordPress'ten) ya da %s komutuyla içe aktarın."
+
+#: includes/class-wp2p-admin.php:289
+msgid "Pursae site address"
+msgstr "Pursae site adresi"
+
+#: includes/class-wp2p-admin.php:291
+msgid "Migration token"
+msgstr "Taşıma anahtarı"
+
+#: includes/class-wp2p-admin.php:293
+msgid "In Pursae: Tools › Import › From WordPress › Generate a migration token. It works once, for 24 hours."
+msgstr "Pursae'de: Araçlar › İçe aktar › WordPress'ten › Taşıma anahtarı oluştur. Anahtar bir kez ve 24 saat boyunca geçerlidir."
+
+#: includes/class-wp2p-admin.php:294
+msgid "Use an Application Password instead"
+msgstr "Bunun yerine Uygulama Parolası kullan"
+
+#: includes/class-wp2p-admin.php:295
+msgid "Pursae administrator username"
+msgstr "Pursae yönetici kullanıcı adı"
+
+#: includes/class-wp2p-admin.php:297
+msgid "Application Password"
+msgstr "Uygulama Parolası"
+
+#: includes/class-wp2p-admin.php:311
+msgid "The package is ready. Copy the key now and keep it safe: Pursae needs it to open the package, and the package holds your users' password hashes."
+msgstr "Paket hazır. Paket şifresini şimdi kopyalayın ve güvenli bir yerde saklayın: Pursae paketi açmak için bu şifreye ihtiyaç duyar ve paket kullanıcılarınızın parola özetlerini içerir."
+
+#: includes/class-wp2p-admin.php:312
+msgid "Package key"
+msgstr "Paket şifresi"
+
+#: includes/class-wp2p-admin.php:314
+msgid "Download the package"
+msgstr "Paketi indir"
+
+#: includes/class-wp2p-admin.php:315
+msgid "The package is deleted from this server automatically after 24 hours, or now with the button below."
+msgstr "Paket 24 saat sonra bu sunucudan kendiliğinden silinir; aşağıdaki düğmeyle hemen de silebilirsiniz."
+
+#: includes/class-wp2p-admin.php:318
+msgid "The package was sent to Pursae and deleted from this server."
+msgstr "Paket Pursae'ye gönderildi ve bu sunucudan silindi."
+
+#: includes/class-wp2p-admin.php:320
+msgid "Open the import in Pursae"
+msgstr "İçe aktarmayı Pursae'de aç"
+
+#: includes/class-wp2p-admin.php:324
+msgid "Continue"
+msgstr "Devam et"
+
+#: includes/class-wp2p-admin.php:325
+msgid "Delete the package and start over"
+msgstr "Paketi sil ve baştan başla"
+
+#: includes/class-wp2p-exporter.php:178
+msgid "The working directory cannot be created. Check that the uploads directory is writable."
+msgstr "Çalışma klasörü oluşturulamadı. Yüklemeler klasörünün yazılabilir olduğunu denetleyin."
+
+#: includes/class-wp2p-exporter.php:520
+msgid "the file is missing on the WordPress server"
+msgstr "dosya WordPress sunucusunda yok"
+
+#. translators: %s: size limit, e.g. "64 MB".
+#: includes/class-wp2p-exporter.php:530
+#, php-format
+msgid "larger than %s: copy it by hand"
+msgstr "%s boyutundan büyük: elle kopyalayın"
+
+#: includes/class-wp2p-exporter.php:701
+msgid "Users"
+msgstr "Kullanıcılar"
+
+#: includes/class-wp2p-exporter.php:702
+msgid "Settings"
+msgstr "Ayarlar"
+
+#: includes/class-wp2p-exporter.php:703
+msgid "Content (posts, pages, menus, products)"
+msgstr "İçerik (yazılar, sayfalar, menüler, ürünler)"
+
+#: includes/class-wp2p-exporter.php:704
+msgid "Media files"
+msgstr "Ortam dosyaları"
+
+#: includes/class-wp2p-exporter.php:705
+msgid "Tax rates"
+msgstr "Vergi oranları"
+
+#: includes/class-wp2p-exporter.php:706
+msgid "Coupons"
+msgstr "Kuponlar"
+
+#: includes/class-wp2p-exporter.php:707
+msgid "Orders"
+msgstr "Siparişler"
+
+#: includes/class-wp2p-exporter.php:708
+msgid "Customers"
+msgstr "Müşteriler"
+
+#: includes/class-wp2p-exporter.php:709
+msgid "Finishing the package"
+msgstr "Paket tamamlanıyor"
+
+#: includes/class-wp2p-pusher.php:35
+msgid "Enter the address of the Pursae site, for example https://example.com."
+msgstr "Pursae sitesinin adresini girin, örneğin https://example.com."
+
+#: includes/class-wp2p-pusher.php:40
+msgid "The Pursae address must start with https://: the package holds your users' password hashes and goes over the network."
+msgstr "Pursae adresi https:// ile başlamalıdır: paket kullanıcılarınızın parola özetlerini içerir ve ağ üzerinden gönderilir."
+
+#. translators: 1: HTTP status code, 2: message from Pursae.
+#: includes/class-wp2p-pusher.php:100
+#, php-format
+msgid "Pursae answered %1$d: %2$s"
+msgstr "Pursae'nin yanıtı %1$d: %2$s"
+
+#: includes/class-wp2p-pusher.php:141
+msgid "The package file is gone; build it again."
+msgstr "Paket dosyası artık yok; paketi yeniden hazırlayın."
+
+#: includes/class-wp2p-pusher.php:222
+msgid "Follow the import in Pursae (Tools › Import › From WordPress)."
+msgstr "İçe aktarmayı Pursae'den izleyin (Araçlar › İçe aktar › WordPress'ten)."
+
+#. Plugin Name of the plugin
+msgid "WP to Pursae"
+msgstr "WP to Pursae"
+
+#. Description of the plugin
+msgid "Move this WordPress site to Pursae in one go: users (with their passwords), content, media, menus, settings and the WooCommerce store with its orders, customers and coupons."
+msgstr "Bu WordPress sitesini tek seferde Pursae'ye taşıyın: kullanıcılar (parolalarıyla), içerik, ortam dosyaları, menüler, ayarlar ve siparişleri, müşterileri ve kuponlarıyla WooCommerce mağazası."

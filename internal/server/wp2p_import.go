@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/config"
 	"wpgo/internal/settings"
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
@@ -603,7 +604,7 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 	contentPath := filepath.Join(r.dir, "content.xml")
 	if size, limit := wp2pSize(contentPath), wp2pMaxContent(); size > limit {
 		// The WXR importer reads the whole file into memory before it imports anything.
-		return fmt.Errorf("content.xml is %d MB, more than this site imports in one go (%d MB): raise WPGO_WP2P_MAX_CONTENT_MB where the server has the memory, "+
+		return fmt.Errorf("content.xml is %d MB, more than this site imports in one go (%d MB): raise PURSAE_WP2P_MAX_CONTENT_MB where the server has the memory, "+
 			"or build the package in parts (one post type at a time)", size>>20, limit>>20)
 	}
 	f, err := wp2pOpen(contentPath)
@@ -668,10 +669,10 @@ func (r *wp2pRun) loadContentMaps(ctx context.Context) {
 	}
 }
 
-// wp2pMaxContent is the largest content.xml imported (WPGO_WP2P_MAX_CONTENT_MB, default 2048 MB): the
+// wp2pMaxContent is the largest content.xml imported (PURSAE_WP2P_MAX_CONTENT_MB, default 2048 MB): the
 // WXR importer holds the whole file in memory.
 func wp2pMaxContent() int64 {
-	if n, err := strconv.ParseInt(strings.TrimSpace(os.Getenv("WPGO_WP2P_MAX_CONTENT_MB")), 10, 64); err == nil && n > 0 {
+	if n, err := strconv.ParseInt(strings.TrimSpace(config.Env("WP2P_MAX_CONTENT_MB")), 10, 64); err == nil && n > 0 {
 		return n << 20
 	}
 	return 2048 << 20

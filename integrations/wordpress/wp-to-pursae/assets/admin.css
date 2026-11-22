@@ -1,0 +1,30 @@
+.wp2p [hidden] {
+	display: none !important;
+}
+
+.wp2p .card {
+	max-width: 760px;
+}
+
+.wp2p .wp2p-bar {
+	background: #dcdcde;
+	border-radius: 3px;
+	height: 10px;
+	overflow: hidden;
+}
+
+.wp2p .wp2p-bar span {
+	background: #2271b1;
+	display: block;
+	height: 100%;
+	transition: width 0.3s;
+	width: 0;
+}
+
+.wp2p #wp2p-counts {
+	columns: 2;
+}
+
+.wp2p .wp2p-skipped li {
+	color: #996800;
+}

@@ -1,0 +1,43 @@
+name: WP to Pursae e2e
+
+# The WP to Pursae end-to-end test (integrations/wordpress/test/run.sh, `make wp2p-test`): a real WordPress
+# with WooCommerce in Docker builds a package with the plugin, a binary built from the commit imports it,
+# users sign in with their WordPress passwords and the store is compared, then the same site is pushed
+# again with a migration token. It downloads WordPress images and WooCommerce, so it runs on demand and on
+# pull requests that touch the migration code, not on every push.
+on:
+  workflow_dispatch:
+    inputs:
+      woocommerce:
+        description: WooCommerce version (empty = latest)
+        required: false
+        default: ""
+  pull_request:
+    paths:
+      - "integrations/wordpress/**"
+      - "internal/server/wp2p_*.go"
+      - "internal/server/cli_wp2p.go"
+      - "internal/server/wxr.go"
+      - ".github/workflows/wp2p-e2e.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CGO_ENABLED: "0"
+      WP2P_WOO_VERSION: ${{ github.event.inputs.woocommerce }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: make wp2p-test
+        run: make wp2p-test
+      - name: logs
+        if: failure()
+        run: |
+          docker compose -f integrations/wordpress/test/docker-compose.yml logs --tail=200 || true

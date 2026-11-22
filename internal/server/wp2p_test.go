@@ -148,6 +148,18 @@ func TestWP2PEnvelope(t *testing.T) {
 	if len(offs) != 3 {
 		t.Fatalf("%d chunks, want 3", len(offs))
 	}
+	// Every chunk carries its own random nonce (format 1's counter nonce repeated when the plugin
+	// sealed a chunk again after a request died).
+	nonces := map[string]bool{}
+	for _, o := range offs {
+		nonces[string(data[o+4:o+28])] = true
+	}
+	if len(nonces) != len(offs) {
+		t.Errorf("%d distinct nonces for %d chunks", len(nonces), len(offs))
+	}
+	if _, err := read([]byte("PURSAEWP\x01"+strings.Repeat("x", 16)), key); err == nil || !strings.Contains(err.Error(), "format 1") {
+		t.Errorf("format 1 (counter nonces): %v", err)
+	}
 	if _, err := read(data[:offs[2]], key); err == nil {
 		t.Error("a stream without its last chunk was accepted")
 	}
@@ -163,7 +175,7 @@ func TestWP2PEnvelope(t *testing.T) {
 	if _, err := read(append(bytes.Clone(data), 0), key); err == nil {
 		t.Error("data after the last chunk was accepted")
 	}
-	if _, err := read([]byte("PURSAEWP\x02"+strings.Repeat("x", 16)), key); err == nil || !strings.Contains(err.Error(), "format 2") {
+	if _, err := read([]byte("PURSAEWP\x03"+strings.Repeat("x", 16)), key); err == nil || !strings.Contains(err.Error(), "format 3") {
 		t.Errorf("newer format: %v", err)
 	}
 	if _, err := read([]byte("not a package at all......"), key); err == nil {

@@ -2,7 +2,7 @@ COMPOSE = docker compose -f docker/compose.yaml
 # Production: the development file plus compose.prod.yaml, settings from docker/.env (see docker/.env.example).
 PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f docker/compose.yaml -f docker/compose.prod.yaml
 
-.PHONY: bench dev db test upgrade-test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release lint e2e e2e-run smoke
+.PHONY: bench dev db test upgrade-test wp2p-test docker-up docker-down prod-up prod-down prod-logs docker-test build publish-themes builder builder-watch builder-test builder-parity builder-fidelity builder-bump release lint e2e e2e-run smoke
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
@@ -62,6 +62,12 @@ prod-logs:
 release:
 	@test -n "$(VERSION)" || { echo "usage: make release VERSION=0.2.0 [BETA=1] [DRY_RUN=1]"; exit 2; }
 	tools/release.sh $(VERSION) $(if $(BETA),--beta) $(if $(DRY_RUN),--dry-run)
+
+## wp2p-test: WP to Pursae end to end (integrations/wordpress/test/run.sh): WordPress + WooCommerce in Docker
+## build a package with the plugin, this checkout's binary imports it into wpgo_wp2p on the compose
+## Postgres, users sign in with their WordPress passwords, the store matches. Needs internet; KEEP=1 keeps it up.
+wp2p-test: db
+	integrations/wordpress/test/run.sh
 
 ## e2e: wp-admin browser smoke test (Playwright, builder/test/e2e): builds bin/pursae, recreates the database
 ## wpgo_e2e on the compose PostgreSQL, installs a site through the setup-token link, logs in, publishes a post in

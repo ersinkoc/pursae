@@ -1,0 +1,284 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the WP to Pursae package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: WP to Pursae 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/pursae/pursae/issues\n"
+"POT-Creation-Date: 2026-11-22 00:59+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: includes/class-wp2p-admin.php:35 includes/class-wp2p-admin.php:45
+#: includes/class-wp2p-admin.php:270 includes/class-wp2p-admin.php:301
+msgid "Move to Pursae"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:68
+msgid "Building the package…"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:69
+msgid "The package is ready"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:70
+msgid "Sent to Pursae"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:71
+msgid "Start a new move"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:72
+msgid "Sending to Pursae…"
+msgstr ""
+
+#. translators: %s: percentage.
+#: includes/class-wp2p-admin.php:74
+#, php-format
+msgid "Sent: %s"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:75
+msgid "Something went wrong:"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:76
+msgid "Delete the package and start over?"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:77
+msgid "The request failed; retrying…"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:78
+msgid "Pursae is importing the site:"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:79
+msgid "Pursae has imported the site."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:80
+msgid "The import stopped in Pursae:"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:125 includes/class-wp2p-admin.php:240
+msgid "Sorry, you are not allowed to do that."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:165
+msgid ""
+"Enter the migration token from Pursae (or an administrator's Application "
+"Password)."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:184
+msgid "There is no package in progress."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:245
+msgid "There is no package to download."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:271
+msgid ""
+"Move this site to Pursae in one go. Your users keep their passwords; posts, "
+"pages, comments, categories and tags, media files, menus and the main "
+"settings come along."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:273
+msgid ""
+"So does the WooCommerce store: products and variations, tax rates, coupons, "
+"orders with their refunds and notes, and customers."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:275
+msgid ""
+"Themes and plugins do not move: they are PHP code, and Pursae is not PHP. "
+"Pick a Pursae theme after the move; most popular plugins have a built-in "
+"Pursae equivalent. Payment gateway settings are not exported: set up "
+"payments again in Pursae."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:278
+msgid "How do you want to move?"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:280
+msgid "Send to Pursae"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:280
+msgid ""
+"recommended: the package goes straight to your Pursae site, and the import "
+"starts on its own."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:281
+msgid "Download a package"
+msgstr ""
+
+#. translators: %s: the command, pursae import WordPress.
+#: includes/class-wp2p-admin.php:284
+#, php-format
+msgid ""
+"upload it in Pursae yourself (Tools › Import › From WordPress) or import it "
+"with %s."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:289
+msgid "Pursae site address"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:291
+msgid "Migration token"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:293
+msgid ""
+"In Pursae: Tools › Import › From WordPress › Generate a migration token. It "
+"works once, for 24 hours."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:294
+msgid "Use an Application Password instead"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:295
+msgid "Pursae administrator username"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:297
+msgid "Application Password"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:311
+msgid ""
+"The package is ready. Copy the key now and keep it safe: Pursae needs it to "
+"open the package, and the package holds your users' password hashes."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:312
+msgid "Package key"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:314
+msgid "Download the package"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:315
+msgid ""
+"The package is deleted from this server automatically after 24 hours, or now "
+"with the button below."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:318
+msgid "The package was sent to Pursae and deleted from this server."
+msgstr ""
+
+#: includes/class-wp2p-admin.php:320
+msgid "Open the import in Pursae"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:324
+msgid "Continue"
+msgstr ""
+
+#: includes/class-wp2p-admin.php:325
+msgid "Delete the package and start over"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:178
+msgid ""
+"The working directory cannot be created. Check that the uploads directory is "
+"writable."
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:520
+msgid "the file is missing on the WordPress server"
+msgstr ""
+
+#. translators: %s: size limit, e.g. "64 MB".
+#: includes/class-wp2p-exporter.php:530
+#, php-format
+msgid "larger than %s: copy it by hand"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:701
+msgid "Users"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:702
+msgid "Settings"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:703
+msgid "Content (posts, pages, menus, products)"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:704
+msgid "Media files"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:705
+msgid "Tax rates"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:706
+msgid "Coupons"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:707
+msgid "Orders"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:708
+msgid "Customers"
+msgstr ""
+
+#: includes/class-wp2p-exporter.php:709
+msgid "Finishing the package"
+msgstr ""
+
+#: includes/class-wp2p-pusher.php:35
+msgid "Enter the address of the Pursae site, for example https://example.com."
+msgstr ""
+
+#: includes/class-wp2p-pusher.php:40
+msgid ""
+"The Pursae address must start with https://: the package holds your users' "
+"password hashes and goes over the network."
+msgstr ""
+
+#. translators: 1: HTTP status code, 2: message from Pursae.
+#: includes/class-wp2p-pusher.php:100
+#, php-format
+msgid "Pursae answered %1$d: %2$s"
+msgstr ""
+
+#: includes/class-wp2p-pusher.php:141
+msgid "The package file is gone; build it again."
+msgstr ""
+
+#: includes/class-wp2p-pusher.php:222
+msgid "Follow the import in Pursae (Tools › Import › From WordPress)."
+msgstr ""
+
+#. Plugin Name of the plugin
+msgid "WP to Pursae"
+msgstr ""
+
+#. Description of the plugin
+msgid "Move this WordPress site to Pursae in one go: users (with their passwords), content, media, menus, settings and the WooCommerce store with its orders, customers and coupons."
+msgstr ""
