@@ -63,6 +63,8 @@ type Server struct {
 
 	cache        atomic.Pointer[pageCache] // wpgo-cache, rebuilt when its options change
 	cacheBuildMu sync.Mutex                // orders retirement and installation of caches
+	longJobs     sync.WaitGroup            // long jobs running beside the scheduler loop (scheduler.go)
+	longBusy     atomic.Bool               // a long job is running in this process
 	plugins      *pluginSystem
 	bmgr         bmgrRuntime // Backup Manager state (backup.go)
 	warm         warmState
@@ -386,6 +388,8 @@ func (s *Server) routes() *gin.Engine {
 	admin.POST("/erase-personal-data", s.privacyTool("remove_personal_data"))
 	admin.GET("/import", s.importScreen)
 	admin.POST("/import", s.importScreen)
+	admin.GET("/import-wordpress", s.wp2pScreen) // Tools › Import › From WordPress (wp2p_admin.go)
+	admin.POST("/import-wordpress", s.wp2pScreen)
 	admin.GET("/user-new", s.userNew)
 	admin.POST("/user-new", s.userNew)
 	admin.GET("/user-edit", s.userEdit)

@@ -214,3 +214,45 @@ func TestEnsureEventsOnce(t *testing.T) {
 		t.Fatal("a second wp_session_gc row was accepted")
 	}
 }
+
+// A long job (a WP to Pursae import) runs beside the scheduler loop: runDueJobs returns while it is
+// still running, and the job finishes and is recorded on its own.
+func TestLongJobRunsBesideTheLoop(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	pool := srv.store.Pool
+	_ = srv.queueJob(ctx, "wp2p_import", nil, time.Time{})
+	_ = srv.queueJob(ctx, "wpgo_test_short", nil, time.Time{})
+	release := make(chan struct{})
+	ran := make(chan struct{}, 1)
+	handlers := map[string]jobHandler{
+		"wp2p_import":     func(context.Context, map[string]any) error { <-release; return nil },
+		"wpgo_test_short": func(context.Context, map[string]any) error { ran <- struct{}{}; return nil },
+	}
+	done := make(chan struct{})
+	go func() {
+		srv.runDueJobs(ctx, "w1", handlers)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("runDueJobs waited for the long job")
+	}
+	select {
+	case <-ran:
+	default:
+		t.Error("the short job did not run while the long one was running")
+	}
+	var status string
+	_ = pool.QueryRow(ctx, `SELECT status FROM jobs WHERE name = 'wp2p_import'`).Scan(&status)
+	if status != "running" {
+		t.Errorf("long job while running: %q", status)
+	}
+	close(release)
+	srv.longJobs.Wait()
+	_ = pool.QueryRow(ctx, `SELECT status FROM jobs WHERE name = 'wp2p_import'`).Scan(&status)
+	if status != "done" {
+		t.Errorf("long job after it finished: %q", status)
+	}
+}

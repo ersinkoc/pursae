@@ -1,0 +1,68 @@
+{{define "admin/import-wordpress"}}{{template "admin-header" .}}{{with .Data}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Import from WordPress</h1>
+<a href="/wp-admin/import" class="page-title-action">All importers</a>
+<hr class="wp-header-end" />
+{{if .Error}}<div class="notice notice-error"><p>{{.Error}}</p></div>{{end}}
+
+{{with .Run}}
+{{if .Active}}<meta http-equiv="refresh" content="5" />{{end}}
+<h2>Import {{if .Source}}of {{.Source}}{{end}}</h2>
+{{if eq .State "done"}}<div class="notice notice-success inline"><p><strong>All done.</strong> The WordPress site is in Pursae now. Check the notes below.</p></div>
+{{else if and (eq .State "failed") .CLI}}<div class="notice notice-error inline"><p><strong>The import stopped:</strong> {{.Error}}</p>
+<p>This import ran on the command line: run <code>pursae import wordpress</code> with the same package again to continue. What was imported stays and is not added twice.</p></div>
+{{else if eq .State "failed"}}<div class="notice notice-error inline"><p><strong>The import stopped:</strong> {{.Error}}</p>
+<form method="post" action="/wp-admin/import-wordpress"><input type="hidden" name="_wpnonce" value="{{$.Data.ActionNonce}}" /><input type="hidden" name="action" value="resume" /><input type="hidden" name="id" value="{{.ID}}" />
+<p>What was imported stays; resuming continues where the import stopped and does not add anything twice. <input type="submit" class="button button-primary" value="Resume the import" /></p></form></div>
+{{else if eq .State "receiving"}}<div class="notice notice-info inline"><p>The WP to Pursae plugin is sending the package&hellip;</p></div>
+{{else if .Active}}<div class="notice notice-info inline"><p><strong>{{if eq .State "running"}}Importing&hellip;{{else}}Waiting for the import to start&hellip;{{end}}</strong> The import runs in the background and this page refreshes on its own. You can leave it and come back.</p></div>{{end}}
+<ol class="wp2p-phases" style="list-style:none;margin-left:0">{{range .Phases}}<li class="wp2p-{{.State}}">{{if eq .State "done"}}&#10003; {{else if eq .State "running"}}&#9654; {{else if eq .State "failed"}}&#10007; {{end}}{{.Label}}</li>{{end}}</ol>
+{{with .Report}}
+{{if .Counts}}<h3>Imported</h3><table class="widefat striped" style="max-width:640px"><tbody>{{range .Counts}}<tr><td>{{.Label}}</td><td style="text-align:right">{{.N}}</td></tr>{{end}}</tbody></table>{{end}}
+{{if .Existing}}<h3>Already here (kept, not duplicated)</h3><table class="widefat striped" style="max-width:640px"><tbody>{{range .Existing}}<tr><td>{{.Label}}</td><td style="text-align:right">{{.N}}</td></tr>{{end}}</tbody></table>{{end}}
+{{if .Notes}}<h3>Notes</h3><ul class="ul-disc">{{range .Notes}}<li>{{.}}</li>{{end}}</ul>{{end}}
+{{if .Unmapped}}<h3>WordPress data with no Pursae equivalent</h3><table class="widefat striped" style="max-width:640px"><tbody>{{range .Unmapped}}<tr><td>{{.Label}}</td><td style="text-align:right">{{.N}}</td></tr>{{end}}</tbody></table>{{end}}
+{{if .Skipped}}<h3>Skipped</h3><table class="widefat striped"><thead><tr><th>Type</th><th>Item</th><th>Reason</th></tr></thead><tbody>{{range .Skipped}}<tr><td>{{.Kind}}</td><td>{{.Item}}</td><td>{{.Reason}}</td></tr>{{end}}</tbody></table>{{end}}
+{{if .Log}}<details><summary>Content import log ({{len .Log}} lines)</summary><ul class="ul-disc">{{range .Log}}<li>{{.}}</li>{{end}}</ul></details>{{end}}
+{{end}}
+<p><a href="/wp-admin/import-wordpress">&larr; Back to Import from WordPress</a></p>
+{{else}}
+
+{{if .NewToken}}
+<div class="notice notice-success"><p><strong>Your migration token</strong> (shown only once; it works until {{.TokenExpires}} and for one import):</p>
+<p><input type="text" class="large-text code" readonly value="{{.NewToken}}" onfocus="this.select()" aria-label="Migration token" /></p>
+<p>In WordPress, open <strong>Tools › Move to Pursae</strong>, choose <strong>Send to Pursae</strong>, and enter this site's address (<code>{{.ImportURL}}</code>) and the token.</p></div>
+{{end}}
+
+<p>Move a whole WordPress site here: users (they keep their passwords), posts, pages, media, menus, settings and the WooCommerce store with its products, orders, customers and coupons. Install the <strong>WP to Pursae</strong> plugin on the WordPress site (Tools › Move to Pursae), then use one of the two ways below. <a href="https://pursae.com/docs/operations/migrate-from-wordpress/">What moves and what does not</a>.</p>
+
+<div class="card" style="max-width:none">
+<h2 class="title">1. Send it from WordPress (recommended)</h2>
+<p>Generate a one-time migration token here and paste it into the plugin. The plugin uploads the encrypted package straight to this site, resuming if the connection drops, and the import starts on its own.</p>
+<form method="post" action="/wp-admin/import-wordpress"><input type="hidden" name="_wpnonce" value="{{.ActionNonce}}" /><input type="hidden" name="action" value="token" />
+<p><input type="submit" class="button button-primary" value="Generate a migration token" /></p></form>
+</div>
+
+<div class="card" style="max-width:none">
+<h2 class="title">2. Upload a package</h2>
+<p>In the plugin choose <strong>Download a package</strong>; it gives you a <code>.wp2p</code> file and a package key. Upload both here (maximum size: {{.MaxUpload}}). For very large packages the command line is faster: <code>pursae import wordpress site.wp2p --key=…</code></p>
+<form enctype="multipart/form-data" method="post" action="/wp-admin/import-wordpress?action=upload&amp;_wpnonce={{.UploadNonce}}">
+<p><label for="wp2p-key">Package key:</label><br /><input type="password" id="wp2p-key" name="key" class="regular-text code" autocomplete="off" required /></p>
+<p><label for="wp2p-package">Package file:</label><br /><input type="file" id="wp2p-package" name="package" accept=".wp2p" required /></p>
+<p class="submit"><input type="submit" class="button button-primary" value="Upload and import" /></p>
+</form>
+</div>
+
+{{if .Rows}}
+<h2>Imports</h2>
+<p class="description">Reports list WordPress users by their id, never by e-mail address or login, and their item lists are deleted 30 days after the import. The package and its extracted files are deleted when the import is done; those of an upload or import that stopped are deleted after 7 days.</p>
+<table class="widefat striped"><thead><tr><th>Started</th><th>Site</th><th>State</th><th>Progress</th><th></th></tr></thead><tbody>
+{{range .Rows}}<tr><td>{{.Created.Format "2006-01-02 15:04"}}</td><td>{{if .Source}}{{.Source}}{{else}}&mdash;{{end}}</td>
+<td>{{if eq .State "waiting"}}Token issued, waiting for the plugin{{else if eq .State "receiving"}}Receiving ({{.Received}} of {{.Size}} bytes){{else if eq .State "expired"}}Token expired{{else}}{{.State}}{{end}}</td>
+<td>{{.Phase}}</td>
+<td>{{if or (eq .State "waiting") (eq .State "receiving")}}<form method="post" action="/wp-admin/import-wordpress" style="display:inline"><input type="hidden" name="_wpnonce" value="{{$.Data.ActionNonce}}" /><input type="hidden" name="action" value="revoke" /><input type="hidden" name="id" value="{{.ID}}" /><input type="submit" class="button-link" value="Revoke" /></form>{{else}}<a href="/wp-admin/import-wordpress?run={{.ID}}">View</a>{{if or (and (ne .State "queued") (ne .State "running")) .Stale}} &middot; <form method="post" action="/wp-admin/import-wordpress" style="display:inline"><input type="hidden" name="_wpnonce" value="{{$.Data.ActionNonce}}" /><input type="hidden" name="action" value="delete" /><input type="hidden" name="id" value="{{.ID}}" /><input type="submit" class="button-link" value="Remove" /></form>{{end}}{{end}}</td></tr>{{end}}
+</tbody></table>
+{{end}}
+{{end}}
+</div>
+{{end}}{{template "admin-footer" .}}{{end}}

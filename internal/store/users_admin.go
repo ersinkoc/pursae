@@ -244,26 +244,31 @@ func (s *Store) UserPostCounts(ctx context.Context, ids []int64) (map[int64]int,
 // SetUserRoles replaces a user's roles: one primary role plus extra roles (the multi-role union).
 func (s *Store) SetUserRoles(ctx context.Context, userID int64, primary string, extra []string) error {
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		if _, err := tx.Exec(ctx, `DELETE FROM user_roles WHERE user_id = $1`, userID); err != nil {
-			return err
-		}
-		if primary == "" {
-			return nil // "No role for this site"
-		}
-		if _, err := tx.Exec(ctx, `INSERT INTO user_roles(user_id, role_id, is_primary) SELECT $1, id, true FROM roles WHERE slug = $2`, userID, primary); err != nil {
-			return err
-		}
-		for _, r := range extra {
-			if r == primary {
-				continue
-			}
-			if _, err := tx.Exec(ctx, `INSERT INTO user_roles(user_id, role_id, is_primary) SELECT $1, id, false FROM roles WHERE slug = $2
-				ON CONFLICT DO NOTHING`, userID, r); err != nil {
-				return err
-			}
-		}
-		return nil
+		return SetUserRolesTx(ctx, tx, userID, primary, extra)
 	})
+}
+
+// SetUserRolesTx is SetUserRoles inside the caller's transaction.
+func SetUserRolesTx(ctx context.Context, tx pgx.Tx, userID int64, primary string, extra []string) error {
+	if _, err := tx.Exec(ctx, `DELETE FROM user_roles WHERE user_id = $1`, userID); err != nil {
+		return err
+	}
+	if primary == "" {
+		return nil // "No role for this site"
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO user_roles(user_id, role_id, is_primary) SELECT $1, id, true FROM roles WHERE slug = $2`, userID, primary); err != nil {
+		return err
+	}
+	for _, r := range extra {
+		if r == primary {
+			continue
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO user_roles(user_id, role_id, is_primary) SELECT $1, id, false FROM roles WHERE slug = $2
+			ON CONFLICT DO NOTHING`, userID, r); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // UserCapExceptions returns the per-user allow/deny capability overrides.

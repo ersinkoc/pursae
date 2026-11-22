@@ -230,8 +230,25 @@ func (o *gooOrder) ItemsOf(typ string) []*gooOrderItem {
 	return out
 }
 
-// Number is get_order_number().
-func (o *gooOrder) Number() string { return itoa64(o.ID) }
+// Number is get_order_number(): the id, or the number the order was given elsewhere (_order_number,
+// the meta WooCommerce's sequential order number plugins keep, which WP to Pursae sets to the order's
+// WordPress number so imported orders keep the number their customers know).
+func (o *gooOrder) Number() string {
+	switch v := o.Meta[gooOrderNumberMeta].(type) {
+	case string:
+		if v = strings.TrimSpace(v); v != "" {
+			return v
+		}
+	case float64:
+		if v > 0 {
+			return strconv.FormatFloat(v, 'f', -1, 64)
+		}
+	}
+	return itoa64(o.ID)
+}
+
+// gooOrderNumberMeta is the order meta holding a number other than the id (Number).
+const gooOrderNumberMeta = "_order_number"
 
 // IsPaid is is_paid().
 func (o *gooOrder) IsPaid() bool { return containsStr(gooPaidStatuses, o.Status) }
@@ -1165,6 +1182,9 @@ func (s *Server) gooQueryOrders(ctx context.Context, q gooOrderQuery) ([]*gooOrd
 		cond := "(lower(billing::text) LIKE " + p + " OR lower(shipping::text) LIKE " + p + " OR id IN (SELECT order_id FROM goo_order_items WHERE lower(name) LIKE " + p + ")"
 		if n, err := strconv.ParseInt(strings.TrimPrefix(q.Search, "#"), 10, 64); err == nil {
 			cond += " OR id = " + add(n)
+		}
+		if num := strings.TrimSpace(strings.TrimPrefix(q.Search, "#")); num != "" {
+			cond += " OR meta->>'" + gooOrderNumberMeta + "' = " + add(num)
 		}
 		conds = append(conds, cond+")")
 	}

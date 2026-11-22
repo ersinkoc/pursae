@@ -1,14 +1,17 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"sort"
 	"strconv"
@@ -742,11 +745,38 @@ type wxrAuthorChoice struct {
 type wxrImportOptions struct {
 	Authors          map[string]wxrAuthorChoice
 	FetchAttachments bool // "Download and import file attachments"
+	// LocalFile, when set, gives the file of an attachment that came with the import (a WP to Pursae
+	// package, wp2p_import.go) by its id in the file: the path on disk and the original file name.
+	// Attachments it does not know are downloaded when FetchAttachments is set.
+	LocalFile func(postID int64) (path, name string, ok bool)
+	// IDMap and TermMap, when set, receive the ids of the file mapped to ours: posts, attachments,
+	// products and variations; terms.
+	IDMap, TermMap map[int64]int64
+	// MenuItemsOnce skips a menu item its menu already has (same label, kind, object, link and
+	// parent), so importing the same site again does not add every menu item a second time.
+	MenuItemsOnce bool
+	// WooElsewhere: the import brings WooCommerce orders, refunds and coupons in another form (WP to
+	// Pursae), so their WXR posts are skipped without being reported as left behind.
+	WooElsewhere bool
+	// Known, when set, gives our id of an item of the file that an earlier import of the same site
+	// created (WP to Pursae keeps that map): the item is skipped as already there, even when it has no
+	// slug to be found by (drafts). Its posts get the featured image and parent of the file when they
+	// have none (a run that stopped before its backfills).
+	Known map[int64]int64
+	// OnMap, when set, is told every id of the file mapped to ours as soon as it is known ("post" for
+	// posts, attachments, products and variations; "term" for terms), so an importer that keeps the map
+	// (WP to Pursae) has it even when the run stops halfway. An error stops the import.
+	OnMap func(kind string, old, id int64) error
 }
 
 func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, opts wxrImportOptions) (*importReport, error) {
+	return s.importWXRReader(ctx, u, bytes.NewReader(data), opts)
+}
+
+// importWXRReader is importWXRWith reading the file from r.
+func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader, opts wxrImportOptions) (*importReport, error) {
 	var doc wxrDoc
-	dec := xml.NewDecoder(strings.NewReader(string(data)))
+	dec := xml.NewDecoder(r)
 	dec.Strict = false
 	if err := dec.Decode(&doc); err != nil {
 		return nil, fmt.Errorf("this does not appear to be a WXR file: %v", err)
@@ -864,14 +894,34 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 			}
 		}
 	}
+	if opts.OnMap != nil {
+		for old, id := range oldTerms {
+			if err := opts.OnMap("term", old, id); err != nil {
+				return nil, err
+			}
+		}
+	}
 	idMap := map[int64]int64{}
+	var mapErr error // the first error of opts.OnMap
 	// remember maps an id of the file to ours. An item without wp:post_id (hand-written or third-party
 	// files) has id 0, which every parentless item and unattached file points at: it is not mapped.
 	remember := func(old, id int64) {
 		if old != 0 {
 			idMap[old] = id
+			if opts.OnMap != nil && mapErr == nil {
+				mapErr = opts.OnMap("post", old, id)
+			}
 		}
 	}
+	// stop is why the run must end now: the context ended (a shutdown) or the map could not be kept.
+	stop := func() error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		return mapErr
+	}
+	knownFeatured := map[int64]int64{} // Known posts: our id -> _thumbnail_id in the file
+	knownParents := map[int64]int64{}  // Known posts: our id -> parent id in the file
 	loc := s.loc()
 	urlMap := map[string]string{}    // attachment URLs in the file -> ours (backfill_attachment_urls)
 	featured := map[int64]int64{}    // our post id -> _thumbnail_id in the file
@@ -886,14 +936,32 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 	var products []*wxrItem        // imported once the media and posts are in (wxr_products.go)
 	wooSkipped := map[string]int{} // WooCommerce orders, coupons, ... counted by kind
 	for i := range doc.Channel.Items {
+		if err := stop(); err != nil {
+			return nil, err
+		}
 		it := &doc.Channel.Items[i]
 		kind := it.Type
 		if acfgoIsPostType(kind) { // a post type registered here by Pursae Custom Fields
 			kind = "custom"
 		}
-		if what, ok := wxrWooSkippedTypes[kind]; ok {
-			wooSkipped[what]++
+		if id := opts.Known[it.PostID]; id != 0 && it.PostID != 0 && kind != "nav_menu_item" && s.wxrStillThere(ctx, it.Type, id, it, urlMap) {
+			remember(it.PostID, id)
+			if it.Type != "attachment" {
+				if thumb, _ := strconv.ParseInt(it.meta("_thumbnail_id"), 10, 64); thumb != 0 {
+					knownFeatured[id] = thumb
+				}
+				if it.Parent != 0 {
+					knownParents[id] = it.Parent
+				}
+			}
 			rep.Skipped++
+			continue
+		}
+		if what, ok := wxrWooSkippedTypes[kind]; ok {
+			if !opts.WooElsewhere {
+				wooSkipped[what]++
+				rep.Skipped++
+			}
 			continue
 		}
 		switch kind {
@@ -910,7 +978,12 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 				rep.Skipped++
 				continue
 			}
-			if !opts.FetchAttachments {
+			var localPath, localName string
+			haveLocal := false
+			if opts.LocalFile != nil {
+				localPath, localName, haveLocal = opts.LocalFile(it.PostID)
+			}
+			if !haveLocal && !opts.FetchAttachments {
 				rep.Skipped++
 				continue
 			}
@@ -930,7 +1003,13 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 					continue
 				}
 			}
-			a, err := s.sideloadURL(ctx, it.AttachmentURL, authors[it.Creator], 0)
+			var a *store.Attachment
+			var err error
+			if haveLocal {
+				a, err = s.sideloadLocal(ctx, localPath, localName, authors[it.Creator])
+			} else {
+				a, err = s.sideloadURL(ctx, it.AttachmentURL, authors[it.Creator], 0)
+			}
 			if err != nil {
 				rep.Log = append(rep.Log, fmt.Sprintf("Failed to import Media “%s”: %v", it.Title, err))
 				rep.Skipped++
@@ -1092,6 +1171,9 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 	}
 	imported = append(imported, s.wxrImportProducts(ctx, u, products, &wxrProductEnv{ensureTerm: ensureTerm, idMap: idMap, remember: remember,
 		authors: authors, loc: loc, urls: urlRep, attrs: prodAttrs}, rep)...)
+	if err := stop(); err != nil {
+		return nil, err
+	}
 	rep.SkippedOrders, rep.SkippedCoupons = wooSkipped["orders"], wooSkipped["coupons"]
 	if line := wxrWooSkippedLog(wooSkipped); line != "" {
 		rep.Log = append(rep.Log, line)
@@ -1111,6 +1193,17 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 	for id, oldThumb := range featured {
 		if att, ok := idMap[oldThumb]; ok {
 			_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET featured_media_id = $2 WHERE id = $1`, id, att)
+		}
+	}
+	// Posts an earlier, interrupted run created: what its backfills did not get to, where still empty.
+	for id, oldThumb := range knownFeatured {
+		if att, ok := idMap[oldThumb]; ok {
+			_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET featured_media_id = $2 WHERE id = $1 AND featured_media_id IS NULL`, id, att)
+		}
+	}
+	for id, oldParent := range knownParents {
+		if parent, ok := idMap[oldParent]; ok && parent != id {
+			_, _ = s.store.Pool.Exec(ctx, `UPDATE posts SET parent_id = $2 WHERE id = $1 AND parent_id IS NULL`, id, parent)
 		}
 	}
 	// backfill_attachment_urls(): links to the old site's uploads point at the imported files, longest URLs first.
@@ -1140,6 +1233,9 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 	menuItemIDs := map[int64]int64{}
 	menuOrphans := map[int64]int64{}
 	for _, ref := range menuItems {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		it := ref.item
 		kind := defaultStr(it.meta("_menu_item_type"), "custom")
 		objectID, _ := strconv.ParseInt(it.meta("_menu_item_object_id"), 10, 64)
@@ -1177,6 +1273,13 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 				mi.ParentID = pid
 			}
 		}
+		if opts.MenuItemsOnce {
+			if exID := s.wxrSameMenuItem(ctx, mi); exID != 0 {
+				menuItemIDs[it.PostID] = exID
+				rep.Skipped++
+				continue
+			}
+		}
 		if err := s.store.AddMenuItem(ctx, mi); err != nil {
 			rep.Log = append(rep.Log, fmt.Sprintf("Failed to import menu item “%s”: %v", it.Title, err))
 			continue
@@ -1192,7 +1295,17 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 			_, _ = s.store.Pool.Exec(ctx, `UPDATE menu_items SET parent_id = $2 WHERE id = $1`, id, pid)
 		}
 	}
-	if !opts.FetchAttachments {
+	if opts.IDMap != nil {
+		for k, v := range idMap {
+			opts.IDMap[k] = v
+		}
+	}
+	if opts.TermMap != nil {
+		for k, v := range oldTerms {
+			opts.TermMap[k] = v
+		}
+	}
+	if !opts.FetchAttachments && opts.LocalFile == nil {
 		rep.Log = append(rep.Log, "File attachments were not downloaded; links keep pointing at the old site. Import the file again with “Download and import file attachments” checked to fetch them.")
 	}
 	var all []int64
@@ -1200,6 +1313,9 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 		all = append(all, id)
 	}
 	_ = s.store.RecountTerms(ctx, all)
+	if err := stop(); err != nil {
+		return nil, err
+	}
 	return rep, nil
 }
 
@@ -1359,6 +1475,60 @@ func (s *Server) sideloadURL(ctx context.Context, rawURL string, uploaderID, pos
 		return nil, errors.New("Zero size file downloaded.")
 	}
 	return a, err
+}
+
+// sideloadLocal is sideloadURL for a file on disk (a media file that came with a WP to Pursae package).
+func (s *Server) sideloadLocal(ctx context.Context, file, name string, uploaderID int64) (*store.Attachment, error) {
+	name = path.Base(strings.ReplaceAll(name, "\\", "/"))
+	if name == "" || name == "/" || name == "." || name == ".." {
+		return nil, errors.New("Invalid file name.")
+	}
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	a, err := s.insertAttachmentFile(ctx, name, f, uploaderID, 0)
+	switch {
+	case errors.Is(err, errUploadTooLarge):
+		return nil, errors.New("The file is too large, limit is " + media.HumanSize(maxUploadBytes) + ".")
+	case errors.Is(err, errUploadEmpty):
+		return nil, errors.New("The file is empty.")
+	}
+	return a, err
+}
+
+// wxrStillThere reports whether our item id (from an earlier import) still exists; for an attachment
+// it also maps the file's URL to ours, so content imported now links to it.
+func (s *Server) wxrStillThere(ctx context.Context, typ string, id int64, it *wxrItem, urlMap map[string]string) bool {
+	if typ == "attachment" {
+		var file string
+		if s.store.Pool.QueryRow(ctx, `SELECT file_path FROM media WHERE id = $1`, id).Scan(&file) != nil {
+			return false
+		}
+		if it.AttachmentURL != "" {
+			urlMap[it.AttachmentURL] = s.uploadURL(ctx, file)
+		}
+		return true
+	}
+	var one int
+	return s.store.Pool.QueryRow(ctx, `SELECT 1 FROM posts WHERE id = $1 AND status <> 'trash'`, id).Scan(&one) == nil
+}
+
+// wxrSameMenuItem finds the item of mi's menu that mi repeats (same label, kind, object, target,
+// link and parent): 0 when there is none.
+func (s *Server) wxrSameMenuItem(ctx context.Context, mi *store.EditItem) int64 {
+	items, err := s.store.MenuItems(ctx, mi.MenuID)
+	if err != nil {
+		return 0
+	}
+	for _, ex := range items {
+		if ex.Label == mi.Label && ex.Kind == mi.Kind && ex.Object == mi.Object && ex.TargetID == mi.TargetID &&
+			ex.URL == mi.URL && ex.ParentID == mi.ParentID {
+			return ex.ID
+		}
+	}
+	return 0
 }
 
 // wxrURLReplacer is backfill_attachment_urls()'s replacer: every old attachment URL becomes the

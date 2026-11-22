@@ -83,6 +83,10 @@ func requestBodyLimit(r *http.Request) int64 {
 		if q.Get("page") == bmgrSlug && q.Get("action") == "upload" {
 			return 0
 		}
+	case "/wp-admin/import-wordpress":
+		if r.URL.Query().Get("action") == "upload" {
+			return 0 // a WP to Pursae package: wp2pUpload streams it to disk with its own limit
+		}
 	}
 	return maxRequestBody
 }
