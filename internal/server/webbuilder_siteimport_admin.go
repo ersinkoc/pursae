@@ -84,6 +84,8 @@ type wbWizPage struct {
 	Title       string `json:"title,omitempty"`
 	Created     bool   `json:"created,omitempty"`
 	ContentOnly bool   `json:"contentOnly,omitempty"`
+	// PublishComplete records the outcome of this wizard's attempt, independent of later edits.
+	PublishComplete bool `json:"publishComplete,omitempty"`
 }
 
 func (p wbWizPage) EditURL() string {
@@ -148,6 +150,7 @@ type wbWizRecord struct {
 	PrevShow   string  `json:"prevShow,omitempty"`
 	PrevFront  int64   `json:"prevFront,omitempty"`
 	FrontSet   bool    `json:"frontSet,omitempty"`
+	FrontPage  int64   `json:"frontPage,omitempty"`
 	// Menu: the navigation menu this import created (removed with it).
 	Menu int64 `json:"menu,omitempty"`
 	// Media: the Media Library items it made (files too large for the kit).
@@ -1046,7 +1049,7 @@ func (s *Server) wbWizPost(c *gin.Context, action string) {
 		return
 	}
 	if action == "publish" {
-		if m.Result != nil && m.Result.Published {
+		if m.Result != nil && (!m.Result.Draft || m.Result.Published) {
 			c.Redirect(http.StatusSeeOther, wbWizURL+"?action=result&import="+m.ID)
 			return
 		}
@@ -1159,6 +1162,7 @@ func (s *Server) wbWizImport(c *gin.Context, m *wbWizMeta) {
 		if id := argInt(fp, "front_page"); id > 0 {
 			res.Front = id
 			rec.FrontSet, rec.PrevShow, rec.PrevFront = true, prevShow, prevFront
+			rec.FrontPage = id
 		}
 	}
 	if len(rec.Pages)+len(rec.Templates)+len(rec.Media) > 0 || rec.KitCreated || rec.Menu > 0 {
@@ -1393,7 +1397,42 @@ func (s *Server) wbWizPublishPage(c *gin.Context, kit string, page wbWizPage) (s
 		return "", err
 	}
 	m, _ := out.(map[string]any)
+	if status := argStr(m, "status"); status != "publish" {
+		return "", fmt.Errorf("page status after publishing is %q", status)
+	}
 	return argStr(m, "url"), nil
+}
+
+func (s *Server) wbWizSetHomepage(c *gin.Context, m *wbWizMeta, front int64) error {
+	// Match the capability required by the REST settings endpoint.
+	if !restCurrent(c).Can("manage_options", nil) {
+		return fmt.Errorf("the account cannot manage site settings")
+	}
+	p, err := s.store.GetPost(c, front)
+	if err != nil {
+		return err
+	}
+	if p.Type != "page" || p.Status != "publish" {
+		return fmt.Errorf("the homepage must be a published page")
+	}
+	values := map[string]any{"show_on_front": "page", "page_on_front": front}
+	recs := s.wbWizRecords()
+	if rec := recs[m.ID]; rec != nil {
+		rec.FrontSet, rec.FrontPage = true, front
+		rec.PrevShow, rec.PrevFront = s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
+		values[wbWizImportsOption] = recs
+	}
+	if err := s.settings.Set(c, values); err != nil {
+		return err
+	}
+	s.purgeAll(c)
+	m.Result.Front = front
+	for i := range m.Result.Pages {
+		if m.Result.Pages[i].PostID == front {
+			m.Result.Pages[i].URL = s.links(c).HomeURL("/")
+		}
+	}
+	return nil
 }
 
 // wbWizPublish publishes the pages of a draft import and sets its front page.
@@ -1405,17 +1444,23 @@ func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
 	}
 	s.wbWizRESTSession(c)
 	var failed []string
+	publishedNow := false
 	for i, p := range m.Result.Pages {
+		if p.PublishComplete {
+			continue
+		}
 		link, err := s.wbWizPublishPage(c, m.Result.Kit, p)
 		if err != nil {
 			failed = append(failed, p.Path+": "+err.Error())
 			continue
 		}
+		m.Result.Pages[i].PublishComplete = true
+		publishedNow = true
 		if link != "" {
 			m.Result.Pages[i].URL = link
 		}
 	}
-	if len(failed) < len(m.Result.Pages) {
+	if publishedNow {
 		wbKitRootLiveReset()
 	}
 	m.Result.PublishFailures = wbFirst(failed, 5)
@@ -1427,22 +1472,9 @@ func (s *Server) wbWizPublish(c *gin.Context, m *wbWizMeta) {
 	} else {
 		m.Result.Published, m.Result.Draft = true, false
 		if front := wbWizFrontID(m.Result); front > 0 && c.PostForm("front") == "1" {
-			recs := s.wbWizRecords()
-			rec := recs[m.ID]
-			prevShow, prevFront := s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
-			if err := s.mcpREST(c, http.MethodPost, "/wp/v2/settings", map[string]any{"show_on_front": "page", "page_on_front": front}, nil); err != nil {
+			if err := s.wbWizSetHomepage(c, m, front); err != nil {
+				log.Printf("web builder: set import homepage: %v", err)
 				m.Result.Warnings = append(m.Result.Warnings, "Setting the homepage failed. Choose the homepage in Reading Settings.")
-			} else {
-				m.Result.Front = front
-				for i := range m.Result.Pages {
-					if m.Result.Pages[i].PostID == front {
-						m.Result.Pages[i].URL = s.links(c).HomeURL("/")
-					}
-				}
-				if rec != nil {
-					rec.FrontSet, rec.PrevShow, rec.PrevFront = true, prevShow, prevFront
-					_ = s.wbWizSetRecords(c, recs)
-				}
 			}
 		}
 		if err := s.wbWizSave(m); err != nil {
@@ -1657,7 +1689,9 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		s.wbWizUndoCleanupError(c, id, fmt.Errorf("remove imported URL claims: %w", err))
 		return
 	}
-	if rec.FrontSet && s.settings.String("show_on_front") == "page" && wbWizHas(rec.Pages, int64(s.settings.Int("page_on_front"))) {
+	front := int64(s.settings.Int("page_on_front"))
+	if rec.FrontSet && s.settings.String("show_on_front") == "page" && front > 0 &&
+		(rec.FrontPage == front || rec.FrontPage == 0 && wbWizHas(rec.Pages, front)) {
 		prev := rec.PrevShow
 		if prev == "" {
 			prev = "posts"
