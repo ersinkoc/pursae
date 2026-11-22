@@ -10,6 +10,88 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.5.0-rc.1] - 2026-11-22
+
+Release candidate for 0.5.0, the stable beta: the contract is frozen (see
+[compatibility](docs/developer/compatibility.md)), environment variables are renamed to `PURSAE_*`, and a
+whole WordPress site, WooCommerce store included, can move to Pursae with users keeping their passwords.
+Published on the beta channel; 0.5.0 follows after at least a week on real sites.
+
+### Added
+
+- **Move a WordPress site to Pursae (WP to Pursae).** Tools › Import › From WordPress imports a whole site
+  from the WP to Pursae plugin's package. Users keep their WordPress passwords; content, media, menus and
+  settings move, and so does the WooCommerce store: products, tax rates, coupons, orders with refunds and
+  notes, and customers. Upload a package with its key, or generate a one-time migration token and let the
+  plugin send it. `pursae import wordpress <package> --key=…` and `pursae import wordpress-token` do the
+  same from the command line. Importing the same site again, or resuming one that stopped, adds only what
+  is new. Accounts are merged only when the e-mail address matches; imported orders keep their WordPress
+  order numbers. Packages and extracted files of imports that stopped are deleted after 7 days, and import
+  reports keep no e-mail addresses or logins.
+- **WP to Pursae WordPress plugin** (`integrations/wordpress/wp-to-pursae`). Install it on a WordPress
+  site, open Tools › Move to Pursae, and move the whole site in one go. The package is built in short,
+  resumable requests; on multisite only a super admin can use it. Download an encrypted package, or send
+  it straight to Pursae with a one-time migration token, resuming if the connection drops. Works with
+  WooCommerce's HPOS and the older order storage. WP-CLI: `wp pursae export`, `wp pursae push`. Turkish
+  translation included. Docs: [Migrate from WordPress](docs/developer/operations/migrate-from-wordpress.md).
+- `docs/developer/compatibility.md`: what is stable across 0.5.x (REST `wp/v2` and `pursae/v1`, CLI,
+  `PURSAE_*` variables, plugin ABI v1, theme package, schema rules, MCP tool names), what is not, the
+  deprecation process and versioning.
+- Plugin manifest field `abi` (plugin ABI version, default 1; set it only for ABI 2 and later, together
+  with `requires` 0.5.0 or later). Pursae refuses to install or activate a plugin built for an ABI it does
+  not support (this release supports 1).
+- Release archives `pursae-<os>-<arch>.tar.gz` (`.zip` on Windows) with the binary, LICENSE, NOTICE,
+  LICENSES/ and a README, next to the bare binaries; SHA256SUMS covers both.
+- A hardened systemd unit (`deploy/systemd/pursae.service`) that keeps Dashboard › Updates working, and a
+  guide to installing a release binary as a service, updating and uninstalling.
+- GitHub issue forms (bug report, feature request) and a pull request template.
+
+### Changed
+
+- Environment variables are now named `PURSAE_*` (`PURSAE_SITE_URL`, `PURSAE_SECRET`, …). Compose files,
+  `.env.example`, the Docker image and the docs use the new names; compose still reads an existing `.env`
+  with `WPGO_*` names.
+- `pursae` is the binary's primary name in `make build` output and the docs.
+- PostgreSQL 16 and 17 are the supported versions; CI runs the test suite on both.
+- Backup Manager's Page builder part backs up the Web Builder's `web_builder_*` tables.
+- Docs: the REST API endpoint reference matches the code, and a test keeps it in sync; feature docs for
+  Custom Fields, Web Builder, Maintenance and Multi Language are corrected; README lists what is not
+  supported; the install guide's build command and systemd example are corrected.
+
+### Deprecated
+
+- `WPGO_*` environment variables: still read when the `PURSAE_*` name is unset or empty, with a start-up
+  warning naming the replacement. Docker users update the compose files before renaming `.env`. Removed no
+  earlier than 1.0.
+- The `wpgo` binary name (`bin/wpgo`, `/usr/local/bin/wpgo`): use `pursae`. Removed no earlier than 1.0.
+
+### Fixed
+
+- Personal data export and erasure: Contact Form entries, Web Builder form submissions and contact form
+  webhook jobs match on the form's e-mail fields and on the account that sent them while signed in; an
+  address typed into another field no longer makes the message that person's. Messages stored before this
+  release match fields named `email`, `e-mail`, `your-email`, `eposta` or `email-NNN` and, for Contact Form
+  entries, the e-mail fields of their form as it is now.
+- Users › Delete: deleting two accounts that liked the same forum post no longer fails. The likes a deleted
+  account gave stay as anonymous likes, so posts keep their like counts and authors keep their points.
+
+### Removed
+
+- Unused plugin logo images from the admin assets.
+
+### Database
+
+- Migration 0110: `gontact_entries` and `web_builder_form_submissions` get `email_fields` and `user_id`.
+- Migration 0111: `wp2p_migrations` and `wp2p_map` for WordPress imports.
+- Both only add, so 0.4.x still runs on the new schema.
+
+### Internal
+
+- CI smoke-tests the Linux and macOS release binaries, builds and checks the Docker image, and runs a
+  wp-admin browser smoke test (`make e2e`); `make smoke` smoke-tests a local build.
+- Docker base images are pinned by digest and govulncheck to a fixed version; Dependabot proposes weekly
+  updates.
+
 ## [0.4.1] - 2026-11-22
 
 A livelier login screen, a readable Pursae News box, the team on About Pursae, forum data anonymized on
