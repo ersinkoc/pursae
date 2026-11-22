@@ -292,7 +292,7 @@
 <div class="card"><h2 class="title">Scheduled Actions</h2><p>See queued, running and failed background jobs (mail, cron events, imports) with their last error, and retry or delete them.</p><p><a class="button" href="/wp-admin/scheduled-actions">Open Scheduled Actions</a></p></div>
 <div class="card"><h2 class="title">Page cache</h2><p>Purge or warm the Pursae Cache.</p><p><a class="button" href="/wp-admin/admin?page=wpgo-cache-toolbox">Cache Toolbox</a></p></div>
 {{with .Data}}{{if .CanPrune}}<div class="card" id="revisions-cleanup"><h2 class="title">Revisions</h2>
-<p>{{.Total}} revision(s) are stored. {{if .Unlimited}}Posts keep every revision (WPGO_POST_REVISIONS is negative).{{else}}Each post keeps its newest {{.Keep}} revisions when it is saved.{{end}} {{if .Excess}}{{.Excess}} older revision(s) can be deleted.{{else}}No post is over the number below.{{end}}</p>
+<p>{{.Total}} revision(s) are stored. {{if .Unlimited}}Posts keep every revision (PURSAE_POST_REVISIONS is negative).{{else}}Each post keeps its newest {{.Keep}} revisions when it is saved.{{end}} {{if .Excess}}{{.Excess}} older revision(s) can be deleted.{{else}}No post is over the number below.{{end}}</p>
 <form method="post" action="/wp-admin/tools"><input type="hidden" name="_wpnonce" value="{{.Nonce}}">
 <p><label for="revisions-keep">Revisions to keep per post</label> <input type="number" class="small-text" min="1" id="revisions-keep" name="keep" value="{{.Keep}}"> <input type="submit" class="button" value="Clean up old revisions"></p></form></div>{{end}}{{end}}
 </div>
@@ -762,7 +762,7 @@
 <div class="wrap">
 <h1>{{if eq .Kind "theme"}}Edit Themes{{else}}Edit Plugins{{end}}</h1>
 {{if .Editable}}{{if .Restored}}<div id="message" class="notice notice-success is-dismissible"><p>The original file has been restored.</p></div>{{end}}
-{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>WPGO_DISALLOW_FILE_EDIT</code>). Add custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
+{{else}}<div id="message" class="notice notice-info"><p>{{if eq .Kind "theme"}}<strong>Read-only.</strong> {{if .Nonce}}{{else}}File editing is disabled on this site (<code>PURSAE_DISALLOW_FILE_EDIT</code>). Add custom CSS in the <a href="/wp-admin/customize">Customizer</a>.{{end}}{{else}}<strong>Read-only.</strong> Plugins are signed WebAssembly packages, so their files can be browsed here but not changed. Rebuild and re-sign the package to change a plugin.{{end}}</p></div>{{end}}
 {{template "notices" $}}
 {{if and (eq .Kind "plugin") (not .Choices)}}
 <p>You do not appear to have any WebAssembly plugins installed. <a href="/wp-admin/plugin-install">Add a plugin</a>.</p>

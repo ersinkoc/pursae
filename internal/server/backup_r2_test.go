@@ -107,7 +107,7 @@ func TestBmgrRestoreCaseDuplicateUsers(t *testing.T) {
 	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	pool := srv.store.Pool
 	index := func(name string) bool {
 		var ok bool
@@ -172,9 +172,9 @@ func TestBmgrRestoreResealsSecrets(t *testing.T) {
 	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	if srv.cfg.Secret != "" {
-		t.Skip("WPGO_SECRET is set for the tests")
+		t.Skip("PURSAE_SECRET is set for the tests")
 	}
 	if err := srv.settings.Set(ctx, map[string]any{"r2_sealed_probe": srv.msSeal("smtp-pass")}); err != nil {
 		t.Fatal(err)

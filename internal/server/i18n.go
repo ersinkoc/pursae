@@ -17,6 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/config"
 	"wpgo/internal/i18n"
 )
 
@@ -43,7 +44,7 @@ func (s *Server) initLanguages() {
 		extra = sub
 	}
 	s.lang = i18n.NewManager(dir, extra)
-	if path := os.Getenv("WPGO_I18N_MISSES"); path != "" && i18n.MissHook == nil {
+	if path := config.Env("I18N_MISSES"); path != "" && i18n.MissHook == nil {
 		var mu sync.Mutex
 		seen := map[string]bool{}
 		i18n.MissHook = func(text string) {

@@ -19,7 +19,7 @@ import (
 // Compressed static text assets: stylesheets, scripts, SVG and JSON under the static directories
 // (wp-includes, wp-admin assets, bundled themes) go out gzipped to clients that accept it, the way
 // a web server's mod_deflate would serve WordPress' files. The compressed bytes and the ETag are
-// computed once per file (on every request in development, where files are read from WPGO_WEB_DIR
+// computed once per file (on every request in development, where files are read from PURSAE_WEB_DIR
 // and change).
 
 var gzipStaticExt = map[string]bool{".css": true, ".js": true, ".svg": true, ".json": true, ".txt": true, ".map": true}
@@ -36,7 +36,7 @@ type staticFile struct {
 	etag string // quoted; the gzipped representation adds "-gzip"
 }
 
-// staticInfo reads and prepares a static file (cached unless files are read live from WPGO_WEB_DIR).
+// staticInfo reads and prepares a static file (cached unless files are read live from PURSAE_WEB_DIR).
 func (s *Server) staticInfo(fsys fs.FS, dir, name string) *staticFile {
 	key := dir + "/" + name
 	if v, ok := gzipStaticCache.Load(key); ok && s.cfg.WebDir == "" {

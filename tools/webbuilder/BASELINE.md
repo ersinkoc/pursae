@@ -15,8 +15,8 @@ before any change of the old-builder removal. Later packages compare against thi
 Command (own database, Postgres on localhost:5432):
 
 ```sh
-WPGO_TEST_ADMIN_DB='postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable' \
-WPGO_TEST_DB='postgres://wpgo:wpgo@localhost:5432/wpgo_test_w0?sslmode=disable' \
+PURSAE_TEST_ADMIN_DB='postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable' \
+PURSAE_TEST_DB='postgres://wpgo:wpgo@localhost:5432/wpgo_test_w0?sslmode=disable' \
 go test -p 1 -count=1 ./internal/...
 ```
 
@@ -52,7 +52,7 @@ Counts are top-level tests (subtests not counted separately).
 | Test | Reason |
 |---|---|
 | builder TestProBDump | `PROB_DUMP` not set (manual dump helper) |
-| server TestAdminUntranslated, TestStoreFrontUntranslated | `WPGO_I18N_MISSES` not set (manual report) |
+| server TestAdminUntranslated, TestStoreFrontUntranslated | `PURSAE_I18N_MISSES` not set (manual report) |
 | server TestHubMarketplaceAndUpdates, TestLicenseScreenAndHeaders, TestHubAccessBadges, TestHubEventsBatching, TestHubPluginUpdate, TestCoreSelfUpdate, TestManagerThemeLibrary, TestManagerThemeUpdate, TestManagerThemePreinstall | example packages not built: run `tools/build-plugins.sh` first (`examples/plugins/dist/*.zip` missing) |
 | server TestSEOGoHeadHidesProtectedPostContent | Pursae SEO emits no FAQ schema in this setup (test skips itself) |
 

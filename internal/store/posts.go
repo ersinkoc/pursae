@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"wpgo/internal/blocks"
+	"wpgo/internal/config"
 	"wpgo/internal/wp"
 )
 
@@ -831,10 +831,10 @@ func UpdatePostTx(ctx context.Context, tx pgx.Tx, p *Post, editorID int64) error
 	return err
 }
 
-// RevisionsLimit is how many revisions a post keeps (WP_POST_REVISIONS): WPGO_POST_REVISIONS, default 25;
+// RevisionsLimit is how many revisions a post keeps (WP_POST_REVISIONS): PURSAE_POST_REVISIONS, default 25;
 // a negative value keeps them all.
 func RevisionsLimit() int {
-	if v := strings.TrimSpace(os.Getenv("WPGO_POST_REVISIONS")); v != "" {
+	if v := strings.TrimSpace(config.Env("POST_REVISIONS")); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			return n
 		}

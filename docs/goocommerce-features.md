@@ -204,7 +204,7 @@ outstanding balance) tabs appear in the Analytics menu while the module is switc
 
 ## WordPress import (WXR)
 
-Tools › Import (and `wpgo import`) reads WooCommerce products from a WordPress export file (Tools › Export on
+Tools › Import (and `pursae import`) reads WooCommerce products from a WordPress export file (Tools › Export on
 the WooCommerce site, "All content" or "Products"). Import the file with "Download and import file attachments"
 checked so the product images come along. The store does not have to be active; the products appear once it is.
 

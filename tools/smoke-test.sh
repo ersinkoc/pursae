@@ -15,7 +15,7 @@ bin=${1:?usage: tools/smoke-test.sh <binary>}
 port=${SMOKE_PORT:-18480}
 site="http://127.0.0.1:$port"
 work=$(mktemp -d "${TMPDIR:-/tmp}/pursae-smoke.XXXXXX")
-export WPGO_ADDR="127.0.0.1:$port" WPGO_SITE_URL="$site" WPGO_HUB=off WPGO_UPLOADS_DIR="$work/data/uploads"
+export PURSAE_ADDR="127.0.0.1:$port" PURSAE_SITE_URL="$site" PURSAE_HUB=off PURSAE_UPLOADS_DIR="$work/data/uploads"
 
 pid=""
 cleanup() {

@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
+	"wpgo/internal/config"
 )
 
 func TestCLICachePurgeReportsProxyFailure(t *testing.T) {
 	ts, client, srv := newTestServer(t, false)
 	installAndLogin(t, ts, client)
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 
 	for _, tc := range []struct {
 		name   string
@@ -65,7 +65,7 @@ func TestCLICacheURLPurgeAcceptsUncachedPage(t *testing.T) {
 	ts, client, srv := newTestServer(t, false)
 	installAndLogin(t, ts, client)
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	var method, path string
 	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		method, path = r.Method, r.URL.Path

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"wpgo/internal/config"
 )
 
 func TestCLICacheFlushClearsDiskOnProxyFailure(t *testing.T) {
@@ -24,7 +25,7 @@ func TestCLICacheFlushClearsDiskOnProxyFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	cfg.UploadsDir = filepath.Join(t.TempDir(), "uploads")
 	dir := cacheDiskDir(cfg.UploadsDir)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -63,7 +64,7 @@ func TestCLICacheFlushReportsProxyAndDiskFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := srv.cfg
-	cfg.DatabaseURL = os.Getenv("WPGO_TEST_DB")
+	cfg.DatabaseURL = config.Env("TEST_DB")
 	cfg.UploadsDir = filepath.Join(t.TempDir(), "uploads")
 	dir := cacheDiskDir(cfg.UploadsDir)
 	if err := os.MkdirAll(filepath.Dir(dir), 0o700); err != nil {

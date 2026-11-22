@@ -205,7 +205,7 @@ func TestThemeLibraryGPackages(t *testing.T) {
 }
 
 func TestThemeLibraryG(t *testing.T) {
-	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
+	t.Setenv("PURSAE_THEMES_DIR", t.TempDir())
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	ctx := context.Background()

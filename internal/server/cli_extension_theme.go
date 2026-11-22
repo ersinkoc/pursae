@@ -229,7 +229,7 @@ func registerThemeCLI(r *cli.Registry, e *cliEnv) {
 		Long: "A file (or - for standard input) is validated and installed like an upload (Appearance > Add\n" +
 			"Themes > Upload); an installed package is replaced only by a higher version. A slug restores a\n" +
 			"deleted bundled theme, or installs the theme from the library (Pursae Manager, or\n" +
-			"WPGO_THEME_LIBRARY_DIR). Demo content is not imported. Running servers see new or updated\n" +
+			"PURSAE_THEME_LIBRARY_DIR). Demo content is not imported. Running servers see new or updated\n" +
 			"packages after a restart.",
 		Args:     []cli.Arg{{Name: "theme", Usage: "Zip file, - or slug.", Repeat: true}},
 		Flags:    []cli.Flag{{Name: "activate", Bool: true, Usage: "Activate the (last) installed theme."}},
@@ -302,7 +302,7 @@ func registerThemeCLI(r *cli.Registry, e *cliEnv) {
 	r.Add(cli.Command{
 		Path:     "theme search",
 		Short:    "Search the theme library.",
-		Long:     "Lists the library themes (Pursae Manager, or WPGO_THEME_LIBRARY_DIR) whose name, slug,\ndescription, category or tags match. Without a term every library theme is listed.",
+		Long:     "Lists the library themes (Pursae Manager, or PURSAE_THEME_LIBRARY_DIR) whose name, slug,\ndescription, category or tags match. Without a term every library theme is listed.",
 		Args:     []cli.Arg{{Name: "search", Usage: "Search term.", Optional: true}},
 		Examples: []string{"theme search", "theme search portfolio --fields=name,version,category"},
 		Run: func(c *cli.Ctx) error {
@@ -312,7 +312,7 @@ func registerThemeCLI(r *cli.Registry, e *cliEnv) {
 			}
 			list, err := s.libraryThemesErr(c.Context)
 			if errors.Is(err, errLibraryOff) {
-				return cli.Errorf("no theme library is configured (Pursae Manager or WPGO_THEME_LIBRARY_DIR)")
+				return cli.Errorf("no theme library is configured (Pursae Manager or PURSAE_THEME_LIBRARY_DIR)")
 			}
 			if err != nil {
 				return cli.Errorf("theme library: %v", err)
@@ -443,7 +443,7 @@ func (e *cliEnv) themeUpdate(c *cli.Ctx) error {
 		return cli.Usagef("please specify one or more themes, or use --all")
 	}
 	if s.hubBase() == "" {
-		return cli.Errorf("no Pursae Manager is configured (WPGO_HUB_URL); update theme packages with 'theme install <zip>'")
+		return cli.Errorf("Pursae Manager is off (PURSAE_HUB=off); update theme packages with 'theme install <zip>'")
 	}
 	ups := s.hubThemeUpdates(c.Context)
 	targets := c.Args

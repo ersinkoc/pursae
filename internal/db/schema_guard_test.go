@@ -59,7 +59,7 @@ func useBinary(t *testing.T, version, floor string) {
 
 // TestSchemaGuard plays a downgrade: a newer binary migrates and raises the floor, a compatible older
 // one still starts (and does not lower the floor), one below the floor is refused unless
-// WPGO_ALLOW_OLDER_BINARY=1. Skipped without WPGO_TEST_ADMIN_DB.
+// PURSAE_ALLOW_OLDER_BINARY=1. Skipped without PURSAE_TEST_ADMIN_DB.
 func TestSchemaGuard(t *testing.T) {
 	ctx := context.Background()
 	pool, err := Connect(ctx, tempDatabase(t, "wpgo_test_guard"))

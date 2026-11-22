@@ -94,7 +94,7 @@ ever part of it.**
 
 `ai` (BootAi):
 
-| Field | AI off (`WPGO_BUILDER_AI=0`) | AI on |
+| Field | AI off (`PURSAE_BUILDER_AI=0`) | AI on |
 |-------|------------------------------|-------|
 | `enabled` | `false` | `true` |
 | `providers` | `[]` | configured providers only (`{id, models:[{id,name}]}`); `[]` when no key is set — the editor then runs only the demo engine and nothing leaves the browser |
@@ -680,7 +680,7 @@ draft and the Wasm host's `UpdatePost`, whether or not the plugin is active. It 
 
 | URL prefix | Served from | Rules |
 |------------|-------------|-------|
-| `/wp-content/plugins/web-builder/dist/editor/` | `web/web-builder/editor/` | AI build; **404 when `WPGO_BUILDER_AI=0`**; plugin active only |
+| `/wp-content/plugins/web-builder/dist/editor/` | `web/web-builder/editor/` | AI build; **404 when `PURSAE_BUILDER_AI=0`**; plugin active only |
 | `/wp-content/plugins/web-builder/dist/editor-noai/` | `web/web-builder/editor-noai/` | no-AI build (no provider strings, no `/ai/` paths); plugin active only |
 | `/wp-content/web-builder/site/` | `web/web-builder/site/` | public `runtime.<hash>.js` and `wb.<hash>.css`; `Cache-Control: public, max-age=31536000, immutable` |
 | `/wp-content/uploads/web-builder/css/` | uploads | page CSS above 24 KiB of published pages without a password: `post-<id>-<rev>.css` |
@@ -887,21 +887,21 @@ head code) and `title`.
 > **Status: not implemented.** AI is out of scope for the first release. The only bundle built is
 > `editor/`, with every upstream `src/builder/ai/**` module stubbed out (`builder/vite/noai.ts`);
 > the boot config always sends `ai.enabled = false` with no providers, no `/ai/*` route is
-> registered and no `WPGO_BUILDER_AI*` variable is read. This section is the design for when AI
+> registered and no `PURSAE_BUILDER_AI*` variable is read. This section is the design for when AI
 > comes back; nothing below is live yet.
 
 ### 9.1 Environment (read once by `internal/config` as `Config.BuilderAI` and friends)
 
 | Variable | Values | Effect |
 |----------|--------|--------|
-| `WPGO_BUILDER_AI` | unset, `""`, `1`, `true`, `on`, `yes` → **on**; `0`, `false`, `off`, `no` → **off**; anything else → off with a startup warning | master switch |
-| `WPGO_BUILDER_AI_ANTHROPIC_KEY` | API key | enables provider `anthropic` |
-| `WPGO_BUILDER_AI_OPENAI_KEY` | API key | enables `openai` |
-| `WPGO_BUILDER_AI_GEMINI_KEY` | API key | enables `google` (Gemini, OpenAI-compatible endpoint) |
-| `WPGO_BUILDER_AI_MISTRAL_KEY` | API key | enables `mistral` |
-| `WPGO_BUILDER_AI_OLLAMA_URL` | `http(s)://host:port` | enables `ollama` at that base |
-| `WPGO_BUILDER_AI_MODELS` | `provider:model,provider:model` | model allowlist; unset = defaults (`DefaultAIModels`) |
-| `WPGO_BUILDER_AI_DAILY_BUDGET` | integer tokens/day (input + output, site-wide, UTC day) | unset = 1 000 000; `0` = no cap |
+| `PURSAE_BUILDER_AI` | unset, `""`, `1`, `true`, `on`, `yes` → **on**; `0`, `false`, `off`, `no` → **off**; anything else → off with a startup warning | master switch |
+| `PURSAE_BUILDER_AI_ANTHROPIC_KEY` | API key | enables provider `anthropic` |
+| `PURSAE_BUILDER_AI_OPENAI_KEY` | API key | enables `openai` |
+| `PURSAE_BUILDER_AI_GEMINI_KEY` | API key | enables `google` (Gemini, OpenAI-compatible endpoint) |
+| `PURSAE_BUILDER_AI_MISTRAL_KEY` | API key | enables `mistral` |
+| `PURSAE_BUILDER_AI_OLLAMA_URL` | `http(s)://host:port` | enables `ollama` at that base |
+| `PURSAE_BUILDER_AI_MODELS` | `provider:model,provider:model` | model allowlist; unset = defaults (`DefaultAIModels`) |
+| `PURSAE_BUILDER_AI_DAILY_BUDGET` | integer tokens/day (input + output, site-wide, UTC day) | unset = 1 000 000; `0` = no cap |
 
 **AI off (`=0`)**: only `editor-noai` is served and `dist/editor/` answers 404; no
 `/web-builder/v2/ai/*` route is registered (404); no AI settings UI; no key is read; zero outbound
@@ -924,7 +924,7 @@ Keys live only in the environment. They are never sent to the browser, logged or
   | `openai` | `https://api.openai.com` | `v1/chat/completions` |
   | `google` | `https://generativelanguage.googleapis.com` | `v1beta/openai/chat/completions` |
   | `mistral` | `https://api.mistral.ai` | `v1/chat/completions` |
-  | `ollama` | `WPGO_BUILDER_AI_OLLAMA_URL` | `v1/chat/completions` |
+  | `ollama` | `PURSAE_BUILDER_AI_OLLAMA_URL` | `v1/chat/completions` |
 
 - Request body: the provider-native JSON the upstream `ai/llm.ts` already builds (Anthropic
   Messages or OpenAI chat completions), ≤ 8 MiB. `model` must be in the allowlist (**422**

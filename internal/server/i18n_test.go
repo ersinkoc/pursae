@@ -205,7 +205,7 @@ func TestAdminRTLAndScriptTranslations(t *testing.T) {
 	}
 }
 
-// TestEmbeddedOwnStrings guards the embed list of web/web.go: the Docker image has no WPGO_WEB_DIR,
+// TestEmbeddedOwnStrings guards the embed list of web/web.go: the Docker image has no PURSAE_WEB_DIR,
 // so WordPress Go's own translations must be compiled in.
 func TestEmbeddedOwnStrings(t *testing.T) {
 	fsys := web.FS("")

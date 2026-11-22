@@ -20,7 +20,7 @@ import (
 )
 
 // Tests of the Web Builder REST API (web-builder/v2). The unit tests run without a database; the
-// integration tests need WPGO_TEST_ADMIN_DB / WPGO_TEST_DB like the rest of the package.
+// integration tests need PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB like the rest of the package.
 
 // --- unit ------------------------------------------------------------------------------------------
 

@@ -346,7 +346,7 @@ func TestSEOGoHeadHidesProtectedPostContent(t *testing.T) {
 }
 
 // The core must not leak account names even when AdminSecGo is off: no /?author=N redirect to the author's
-// slug, no anonymous user list, no per-account login messages. WPGO_EXPOSE_USERS=1 is the opt-out.
+// slug, no anonymous user list, no per-account login messages. PURSAE_EXPOSE_USERS=1 is the opt-out.
 func TestCoreBlocksUserEnumerationWithoutAnyPlugin(t *testing.T) {
 	s := secStart(t)
 	if s.srv.adminsecOn() {
@@ -386,7 +386,7 @@ func TestCoreBlocksUserEnumerationWithoutAnyPlugin(t *testing.T) {
 	// The explicit opt-out brings the public behaviour back.
 	s.srv.cfg.ExposeUsers = true
 	if code, _, _, _ := arc.do("GET", "/wp/v2/users", nil); code != http.StatusOK {
-		t.Errorf("with WPGO_EXPOSE_USERS the list should be public again: %d", code)
+		t.Errorf("with PURSAE_EXPOSE_USERS the list should be public again: %d", code)
 	}
 }
 

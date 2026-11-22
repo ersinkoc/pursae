@@ -71,7 +71,7 @@ func TestBmgrRoundTrip(t *testing.T) {
 	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	pool := srv.store.Pool
 
 	// The screens render for an administrator.
@@ -289,7 +289,7 @@ func TestBmgrPartialRestoreKeepsLinks(t *testing.T) {
 	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	pool := srv.store.Pool
 
 	p := &store.Post{Type: "post", Status: "publish", Title: "Linked", Slug: "linked", AuthorID: 1, Meta: map[string]any{}}
@@ -342,7 +342,7 @@ func TestBmgrRestoreLegacyMenuLocations(t *testing.T) {
 	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	pool := srv.store.Pool
 	mainID, err := srv.store.CreateMenu(ctx, "Main")
 	if err != nil {
@@ -458,7 +458,7 @@ func TestBmgrChecksumsRemoteOnlyAndTamper(t *testing.T) {
 	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO gocdn_items(path, provider, bucket, object_key, local_removed)
 		VALUES ('2026/01/a.jpg', 's3', 'b', 'k', true)`); err != nil {
 		t.Skipf("cannot seed gocdn_items: %v", err)

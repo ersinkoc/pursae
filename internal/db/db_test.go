@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"io/fs"
 	"net/url"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
 	"testing"
 	"testing/fstest"
 	"time"
+	"wpgo/internal/config"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -107,7 +107,7 @@ func indexValid(t *testing.T, pool *pgxpool.Pool, name string) (exists, valid bo
 
 // TestMigrateNoTransactionConcurrentIndex applies a "-- wpgo:no-transaction" migration with
 // CREATE INDEX CONCURRENTLY, which a transactional migration cannot run; a second run applies
-// nothing. Skipped without WPGO_TEST_ADMIN_DB.
+// nothing. Skipped without PURSAE_TEST_ADMIN_DB.
 func TestMigrateNoTransactionConcurrentIndex(t *testing.T) {
 	ctx := context.Background()
 	pool, err := Connect(ctx, tempDatabase(t, "wpgo_notx"))
@@ -147,7 +147,7 @@ func TestMigrateNoTransactionConcurrentIndex(t *testing.T) {
 
 // TestMigrateRebuildsInvalidIndex leaves an INVALID index behind (a failed concurrent unique build)
 // under the name a no-transaction migration builds: IF NOT EXISTS alone would keep the broken index.
-// Skipped without WPGO_TEST_ADMIN_DB.
+// Skipped without PURSAE_TEST_ADMIN_DB.
 func TestMigrateRebuildsInvalidIndex(t *testing.T) {
 	ctx := context.Background()
 	pool, err := Connect(ctx, tempDatabase(t, "wpgo_invalidx"))
@@ -177,7 +177,7 @@ func TestMigrateRebuildsInvalidIndex(t *testing.T) {
 
 // TestMigrateLockTimeoutDoesNotHang runs a transactional ALTER while another connection holds a
 // conflicting lock: Migrate must fail with lock_not_available after its retries, not wait forever.
-// Skipped without WPGO_TEST_ADMIN_DB.
+// Skipped without PURSAE_TEST_ADMIN_DB.
 func TestMigrateLockTimeoutDoesNotHang(t *testing.T) {
 	ctx := context.Background()
 	pool, err := Connect(ctx, tempDatabase(t, "wpgo_migratelock"))
@@ -196,7 +196,7 @@ func TestMigrateLockTimeoutDoesNotHang(t *testing.T) {
 	if _, err := holder.Exec(ctx, `LOCK TABLE locked_t IN ACCESS SHARE MODE`); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("WPGO_MIGRATE_LOCK_TIMEOUT", "100ms")
+	t.Setenv("PURSAE_MIGRATE_LOCK_TIMEOUT", "100ms")
 	prev := migrationRetryBackoff
 	migrationRetryBackoff = 10 * time.Millisecond
 	t.Cleanup(func() { migrationRetryBackoff = prev })
@@ -218,7 +218,7 @@ func TestMigrateLockTimeoutDoesNotHang(t *testing.T) {
 
 // TestConcurrentMigrateWithConcurrentIndex starts two instances' Migrate at once while one of them
 // builds an index concurrently: the waiting instance must not hold a snapshot the build waits for,
-// which PostgreSQL would report as a deadlock. Skipped without WPGO_TEST_ADMIN_DB.
+// which PostgreSQL would report as a deadlock. Skipped without PURSAE_TEST_ADMIN_DB.
 func TestConcurrentMigrateWithConcurrentIndex(t *testing.T) {
 	ctx := context.Background()
 	dbURL := tempDatabase(t, "wpgo_migraterace")
@@ -267,7 +267,7 @@ func TestConcurrentMigrateWithConcurrentIndex(t *testing.T) {
 }
 
 // TestMigrateIsIdempotent runs every migration in a fresh database and then runs Migrate again, which must apply
-// nothing. Skipped without WPGO_TEST_ADMIN_DB.
+// nothing. Skipped without PURSAE_TEST_ADMIN_DB.
 func TestMigrateIsIdempotent(t *testing.T) {
 	ctx := context.Background()
 	pool, err := Connect(ctx, tempDatabase(t, "wpgo_dbtest"))
@@ -332,19 +332,19 @@ func TestConnectHonorsCancel(t *testing.T) {
 }
 
 func TestLoadMigrationSettingsFromEnv(t *testing.T) {
-	t.Setenv("WPGO_MIGRATE_LOCK_TIMEOUT", "")
-	t.Setenv("WPGO_MIGRATE_STATEMENT_TIMEOUT", "")
+	t.Setenv("PURSAE_MIGRATE_LOCK_TIMEOUT", "")
+	t.Setenv("PURSAE_MIGRATE_STATEMENT_TIMEOUT", "")
 	s := loadMigrationSettings()
 	if s.lockTimeout != defaultMigrationLockTimeout || s.statementTimeout != 0 || s.attempts != defaultMigrationAttempts {
 		t.Errorf("defaults = %+v", s)
 	}
-	t.Setenv("WPGO_MIGRATE_LOCK_TIMEOUT", "250ms")
-	t.Setenv("WPGO_MIGRATE_STATEMENT_TIMEOUT", "45m")
+	t.Setenv("PURSAE_MIGRATE_LOCK_TIMEOUT", "250ms")
+	t.Setenv("PURSAE_MIGRATE_STATEMENT_TIMEOUT", "45m")
 	if s := loadMigrationSettings(); s.lockTimeout != 250*time.Millisecond || s.statementTimeout != 45*time.Minute {
 		t.Errorf("from env = %+v", s)
 	}
-	t.Setenv("WPGO_MIGRATE_LOCK_TIMEOUT", "soon")
-	t.Setenv("WPGO_MIGRATE_STATEMENT_TIMEOUT", "-1s")
+	t.Setenv("PURSAE_MIGRATE_LOCK_TIMEOUT", "soon")
+	t.Setenv("PURSAE_MIGRATE_STATEMENT_TIMEOUT", "-1s")
 	if s := loadMigrationSettings(); s.lockTimeout != defaultMigrationLockTimeout || s.statementTimeout != 0 {
 		t.Errorf("invalid values must fall back to defaults, got %+v", s)
 	}
@@ -353,7 +353,7 @@ func TestLoadMigrationSettingsFromEnv(t *testing.T) {
 // TestApplyMigrationLockTimeout holds a lock that conflicts with an ALTER TABLE from another
 // connection: the migration must give up with lock_not_available instead of waiting (and queueing
 // live traffic behind it) forever, and leave no schema_migrations row. Once the lock is gone the same
-// migration applies. Skipped without WPGO_TEST_ADMIN_DB.
+// migration applies. Skipped without PURSAE_TEST_ADMIN_DB.
 func TestApplyMigrationLockTimeout(t *testing.T) {
 	ctx := context.Background()
 	pool, err := Connect(ctx, tempDatabase(t, "wpgo_locktimeout"))
@@ -415,7 +415,7 @@ func TestApplyMigrationLockTimeout(t *testing.T) {
 }
 
 // TestApplyMigrationRetriesLockTimeout releases the conflicting lock while applyMigration backs off
-// between attempts: a later attempt must succeed. Skipped without WPGO_TEST_ADMIN_DB.
+// between attempts: a later attempt must succeed. Skipped without PURSAE_TEST_ADMIN_DB.
 func TestApplyMigrationRetriesLockTimeout(t *testing.T) {
 	ctx := context.Background()
 	pool, err := Connect(ctx, tempDatabase(t, "wpgo_lockretry"))
@@ -448,13 +448,13 @@ func TestApplyMigrationRetriesLockTimeout(t *testing.T) {
 	}
 }
 
-// tempDatabase creates an empty database next to the admin database (WPGO_TEST_ADMIN_DB, an existing database
+// tempDatabase creates an empty database next to the admin database (PURSAE_TEST_ADMIN_DB, an existing database
 // such as "wpgo") and drops it after the test, so the test needs no other database to exist. Skipped without it.
 func tempDatabase(t *testing.T, prefix string) string {
 	t.Helper()
-	adminURL := os.Getenv("WPGO_TEST_ADMIN_DB")
+	adminURL := config.Env("TEST_ADMIN_DB")
 	if adminURL == "" {
-		t.Skip("WPGO_TEST_ADMIN_DB not set")
+		t.Skip("PURSAE_TEST_ADMIN_DB not set")
 	}
 	ctx := context.Background()
 	admin, err := pgx.Connect(ctx, adminURL)

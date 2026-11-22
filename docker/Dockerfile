@@ -21,7 +21,7 @@ ARG VERSION=
 # self-update or a Manager-signed plugin (internal/server/hub_trust.go).
 ARG ROOT_KEYS=
 # GO_TAGS (optional): extra build tags. "devhub" builds a development binary that reads
-# WPGO_DEV_HUB_URL (a local Pursae Manager) and WPGO_TRUST_HUB_KEYS; production images leave it empty,
+# PURSAE_DEV_HUB_URL (a local Pursae Manager) and PURSAE_TRUST_HUB_KEYS; production images leave it empty,
 # so the binary always talks to https://hub.pursae.com and trusts only endorsed keys.
 ARG GO_TAGS=
 # A static binary (no ELF interpreter), so the same file runs on musl and glibc systems:
@@ -46,11 +46,13 @@ COPY LICENSES/ /usr/share/doc/pursae/LICENSES/
 # Demo marketplace: example plugin packages built by tools/build-plugins.sh (if present).
 COPY examples/plugins/dis[t]/*.zip examples/plugins/dis[t]/dev-key.pub /usr/share/wpgo/plugins/
 USER wpgo
-ENV WPGO_BIN_DIR=/data/bin
-# The installer asks for a setup token: WPGO_SETUP_TOKEN, or the one the server prints in its log on a
+# WPGO_BIN_DIR is the name releases before 0.5.0 read: a core update rollback may run one of them from
+# /data/bin. The same value under both names is not reported as a deprecated setting.
+ENV PURSAE_BIN_DIR=/data/bin WPGO_BIN_DIR=/data/bin
+# The installer asks for a setup token: PURSAE_SETUP_TOKEN, or the one the server prints in its log on a
 # fresh site (`docker exec <container> wpgo setup-token` prints a new install link).
 EXPOSE 8080
-# Liveness: GET /healthz on WPGO_ADDR through the binary itself (no curl in the image). The start
+# Liveness: GET /healthz on PURSAE_ADDR through the binary itself (no curl in the image). The start
 # period covers the migrations a new version runs before it listens.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD ["/usr/local/lib/pursae/wpgo", "healthcheck"]
 ENTRYPOINT ["/usr/local/lib/pursae/wpgo", "launch"]

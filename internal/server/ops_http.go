@@ -17,6 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/config"
 	"wpgo/internal/db"
 )
 
@@ -147,7 +148,7 @@ func (s *Server) readyz(w http.ResponseWriter, r *http.Request) {
 		migrationsApplied.Store(true) // migrations are embedded: once applied, they stay applied
 	}
 	// The schema guard (schema_guard.go): a binary below the floor a newer release recorded is not
-	// ready (it runs only with WPGO_ALLOW_OLDER_BINARY=1); a newer but compatible schema is.
+	// ready (it runs only with PURSAE_ALLOW_OLDER_BINARY=1); a newer but compatible schema is.
 	st, err := s.schemaStatus(ctx)
 	switch {
 	case err != nil:
@@ -179,11 +180,11 @@ func probeAnswer(w http.ResponseWriter, r *http.Request, code int, msg string) {
 }
 
 // accessLog writes one line per request: status, method, URI, duration and request ID. With
-// WPGO_LOG_FORMAT=json the line is a JSON object (log/slog) for log shippers. Static assets are
+// PURSAE_LOG_FORMAT=json the line is a JSON object (log/slog) for log shippers. Static assets are
 // not logged; probes never reach it (opsHandler answers them).
 func accessLog() gin.HandlerFunc {
 	var jl *slog.Logger
-	if strings.EqualFold(os.Getenv("WPGO_LOG_FORMAT"), "json") {
+	if strings.EqualFold(config.Env("LOG_FORMAT"), "json") {
 		jl = slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	}
 	return func(c *gin.Context) {

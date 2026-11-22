@@ -39,7 +39,7 @@ import (
 // new one, then the old root leaves rootKeysBuiltin.
 //
 // A production binary cannot relax this. Only a development build (-tags devhub, see
-// hub_trust_devhub.go) reads WPGO_TRUST_HUB_KEYS=1, which trusts every key the Manager lists,
+// hub_trust_devhub.go) reads PURSAE_TRUST_HUB_KEYS=1, which trusts every key the Manager lists,
 // endorsed or not, so a site can update from a local Pursae Manager whose throwaway key no root
 // endorsed (the development compose file builds with devhub and sets it).
 //
@@ -81,7 +81,7 @@ func rootKeys() []ed25519.PublicKey {
 // trustHubKeysForce is a test seam for the devhub opt-in.
 var trustHubKeysForce bool
 
-// trustHubKeysEnv is the development opt-in to the keys the Manager lists: WPGO_TRUST_HUB_KEYS=1 in
+// trustHubKeysEnv is the development opt-in to the keys the Manager lists: PURSAE_TRUST_HUB_KEYS=1 in
 // a devhub build (hub_trust_devhub.go). Always false in a production build.
 func trustHubKeysEnv() bool { return trustHubKeysForce || devTrustHubKeys() }
 
@@ -105,7 +105,7 @@ func (k hubKey) endorsed(roots []ed25519.PublicKey) bool {
 }
 
 // errCoreNoRoot is why a build without a root key does not update itself.
-var errCoreNoRoot = errors.New("this build has no pinned Pursae release key, so a release announced by Pursae Manager cannot be verified; replace the executable (or pull the new container image) yourself, or use a development build (-tags devhub) with WPGO_TRUST_HUB_KEYS=1")
+var errCoreNoRoot = errors.New("this build has no pinned Pursae release key, so a release announced by Pursae Manager cannot be verified; replace the executable (or pull the new container image) yourself, or use a development build (-tags devhub) with PURSAE_TRUST_HUB_KEYS=1")
 
 // coreTrustCheck reports why this build cannot verify core releases, if it cannot.
 func coreTrustCheck() error {
@@ -116,7 +116,7 @@ func coreTrustCheck() error {
 }
 
 // coreReleaseKeys are the Manager keys that may verify a core release: every listed one with the
-// devhub WPGO_TRUST_HUB_KEYS opt-in, the endorsed ones when a root key is pinned, otherwise none.
+// devhub PURSAE_TRUST_HUB_KEYS opt-in, the endorsed ones when a root key is pinned, otherwise none.
 func coreReleaseKeys(keys []hubKey) ([]hubKey, error) {
 	if trustHubKeysEnv() {
 		return keys, nil
@@ -155,7 +155,7 @@ func pluginHubKeys(keys []hubKey) []ed25519.PublicKey {
 // Transport rules for Pursae Manager -------------------------------------------------------------
 
 // errHubInsecure refuses a plain-http Manager on a public host.
-var errHubInsecure = errors.New("Pursae Manager must be reached over https (http is only allowed for localhost and *.localhost / *.test development hosts); check WPGO_DEV_HUB_URL")
+var errHubInsecure = errors.New("Pursae Manager must be reached over https (http is only allowed for localhost and *.localhost / *.test development hosts); check PURSAE_DEV_HUB_URL")
 
 // localDevHost reports whether host is a loopback or development name, where http is acceptable.
 func localDevHost(host string) bool {

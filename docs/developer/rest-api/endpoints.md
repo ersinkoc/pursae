@@ -84,7 +84,7 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 | `/pursae/v1/themes/{slug}` | DELETE | delete an inactive theme (`delete_themes`) |
 | `/pursae/v1/themes/{slug}/activate` | POST | switch theme |
 | `/pursae/v1/themes/{slug}/files` | GET | editable files (`edit_themes`): `style.css`, asset paths, `templates/…` |
-| `/pursae/v1/themes/{slug}/file?file=…` | GET, POST, DELETE | read; `POST {"file", "content"}` saves like the Theme File Editor (template parse + render check, rolled back on failure); `DELETE` restores the original. Refused while file editing is disabled (`WPGO_DISALLOW_FILE_EDIT` or Pursae Security) |
+| `/pursae/v1/themes/{slug}/file?file=…` | GET, POST, DELETE | read; `POST {"file", "content"}` saves like the Theme File Editor (template parse + render check, rolled back on failure); `DELETE` restores the original. Refused while file editing is disabled (`PURSAE_DISALLOW_FILE_EDIT` or Pursae Security) |
 | `/pursae/v1/media/{id}/replace` | POST | a new file for a media item, as `multipart/form-data` (`file`) or a raw body with `Content-Disposition: attachment; filename=…` (`upload_files`, plus own item or `edit_others_posts`; scope `media`). The item keeps its ID; a file of the same type keeps its URL and size names, another type (or aspect ratio) gets new names and the old paths redirect (301) to them. Same kind only: image for image, video for video, audio for audio, other files for other files. Answers like `GET /wp/v2/media/{id}` (`upload_warning` when no sizes could be made) |
 | `/pursae/v1/cache` | GET | Pursae Cache status, stats and crawler (`manage_options`) |
 | `/pursae/v1/cache/purge` | POST | `{"all": true}`, `{"url": "/about/"}`, `{"post": 12}` or `{"tags": ["home"]}` |

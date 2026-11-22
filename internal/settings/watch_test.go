@@ -3,7 +3,6 @@ package settings
 import (
 	"context"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -12,15 +11,16 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"wpgo/internal/config"
 	"wpgo/internal/db"
 )
 
-// testPool recreates WPGO_TEST_DB and migrates it; skipped without the test databases.
+// testPool recreates PURSAE_TEST_DB and migrates it; skipped without the test databases.
 func testPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	adminURL, testURL := os.Getenv("WPGO_TEST_ADMIN_DB"), os.Getenv("WPGO_TEST_DB")
+	adminURL, testURL := config.Env("TEST_ADMIN_DB"), config.Env("TEST_DB")
 	if adminURL == "" || testURL == "" {
-		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
+		t.Skip("PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB not set")
 	}
 	ctx := context.Background()
 	u, err := url.Parse(testURL)

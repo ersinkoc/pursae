@@ -225,7 +225,7 @@ func TestGeoipUpdate(t *testing.T) {
 			t.Errorf("after a %s download: %q", m, got)
 		}
 	}
-	// The scheduled job swallows errors and is off with WPGO_GEOIP_UPDATE=off.
+	// The scheduled job swallows errors and is off with PURSAE_GEOIP_UPDATE=off.
 	if err := s.geoipUpdateJob(ctx, nil); err != nil {
 		t.Errorf("job: %v", err)
 	}
@@ -252,7 +252,7 @@ func TestGeoipDBPath(t *testing.T) {
 	}
 	s.cfg.GeoIPDB = "/srv/geo/c.mmdb"
 	if p := s.geoipDBPath(); p != "/srv/geo/c.mmdb" {
-		t.Errorf("WPGO_GEOIP_DB: %s", p)
+		t.Errorf("PURSAE_GEOIP_DB: %s", p)
 	}
 }
 

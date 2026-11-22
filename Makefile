@@ -6,7 +6,7 @@ PROD = docker compose $(if $(wildcard docker/.env),--env-file docker/.env) -f do
 
 ## dev: run Postgres in Docker and the app locally, reading templates from ./web
 dev: db
-	WPGO_WEB_DIR=web go run -tags devhub ./cmd/wpgo serve
+	PURSAE_WEB_DIR=web go run -tags devhub ./cmd/wpgo serve
 
 # --wait: until the healthcheck passes, so the recipes that run psql or migrate right after do not hit a
 # PostgreSQL that is still starting.
@@ -19,19 +19,19 @@ db:
 bench:
 	python3 bench/run.py $(BENCH_ARGS)
 
-## build: bin/pursae, plus bin/wpgo (the same binary under its older name; it answers to both)
+## build: bin/pursae, plus bin/wpgo (the same binary under its older name, deprecated: removed no earlier than 1.0)
 build:
 	CGO_ENABLED=0 go build -buildmode=exe -tags nodynamic -o bin/pursae ./cmd/wpgo
 	cp bin/pursae bin/wpgo
 
 ## test: unit tests plus the Postgres integration tests against the compose database. -p 1: the packages
-## with integration tests (server, store, settings) each drop and recreate WPGO_TEST_DB, so they must not
+## with integration tests (server, store, settings) each drop and recreate PURSAE_TEST_DB, so they must not
 ## run at the same time; the internal/server suite alone takes about ten minutes, past go test's default
 ## timeout. TEST_DB names the database (default wpgo_test): give parallel checkouts their own.
 TEST_DB ?= wpgo_test
 test: db
-	WPGO_TEST_ADMIN_DB=postgres://wpgo:wpgo@localhost:$${WPGO_DB_PORT:-5432}/wpgo?sslmode=disable \
-	WPGO_TEST_DB=postgres://wpgo:wpgo@localhost:$${WPGO_DB_PORT:-5432}/$(TEST_DB)?sslmode=disable \
+	PURSAE_TEST_ADMIN_DB=postgres://wpgo:wpgo@localhost:$${PURSAE_DB_PORT:-$${WPGO_DB_PORT:-5432}}/wpgo?sslmode=disable \
+	PURSAE_TEST_DB=postgres://wpgo:wpgo@localhost:$${PURSAE_DB_PORT:-$${WPGO_DB_PORT:-5432}}/$(TEST_DB)?sslmode=disable \
 	go test ./... -p 1 -count=1 -timeout 40m
 
 ## upgrade-test: sites created by older releases (v0.2.0 and the three newest tags) keep their data when
@@ -48,7 +48,7 @@ docker-down:
 
 ## prod-up: production build (updates from hub.pursae.com), settings from docker/.env, on 127.0.0.1 behind your TLS proxy
 prod-up:
-	@test -f docker/.env || { echo "Create docker/.env first: cp docker/.env.example docker/.env (set WPGO_DB_PASSWORD and WPGO_SITE_URL)"; exit 1; }
+	@test -f docker/.env || { echo "Create docker/.env first: cp docker/.env.example docker/.env (set PURSAE_DB_PASSWORD and PURSAE_SITE_URL)"; exit 1; }
 	$(PROD) up -d --build
 
 prod-down:
@@ -69,7 +69,7 @@ release:
 ## Chromium (cd builder && npx playwright install chromium). Output: builder/.work/e2e/.
 e2e: build db builder/node_modules/.package-lock.json
 	$(COMPOSE) exec -T db psql -q -U wpgo -d wpgo -c 'DROP DATABASE IF EXISTS wpgo_e2e WITH (FORCE)' -c 'CREATE DATABASE wpgo_e2e'
-	$(MAKE) e2e-run E2E_DATABASE_URL='postgres://wpgo:wpgo@localhost:'$${WPGO_DB_PORT:-5432}'/wpgo_e2e?sslmode=disable'
+	$(MAKE) e2e-run E2E_DATABASE_URL='postgres://wpgo:wpgo@localhost:'$${PURSAE_DB_PORT:-$${WPGO_DB_PORT:-5432}}'/wpgo_e2e?sslmode=disable'
 
 ## e2e-run: the same against E2E_DATABASE_URL (an empty database) and E2E_BIN (default bin/pursae), as CI runs it.
 e2e-run: builder/node_modules/.package-lock.json
@@ -80,7 +80,7 @@ e2e-run: builder/node_modules/.package-lock.json
 ## installer, an install, the front page) on the database wpgo_smoke of the compose PostgreSQL, recreated first.
 smoke: build db
 	$(COMPOSE) exec -T db psql -q -U wpgo -d wpgo -c 'DROP DATABASE IF EXISTS wpgo_smoke WITH (FORCE)' -c 'CREATE DATABASE wpgo_smoke'
-	DATABASE_URL='postgres://wpgo:wpgo@localhost:'$${WPGO_DB_PORT:-5432}'/wpgo_smoke?sslmode=disable' tools/smoke-test.sh bin/pursae
+	DATABASE_URL='postgres://wpgo:wpgo@localhost:'$${PURSAE_DB_PORT:-$${WPGO_DB_PORT:-5432}}'/wpgo_smoke?sslmode=disable' tools/smoke-test.sh bin/pursae
 
 ## lint: golangci-lint (.golangci.yml) on what changed since LINT_BASE (default origin/main), as CI does.
 ## The tree has older findings; LINT_BASE= lints everything. Uses golangci-lint from PATH if it is

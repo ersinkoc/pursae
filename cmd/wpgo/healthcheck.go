@@ -41,7 +41,7 @@ func healthcheck(addr string, args []string) error {
 func healthURL(addr, path string) (string, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
-		return "", fmt.Errorf("WPGO_ADDR %q: %w", addr, err)
+		return "", fmt.Errorf("PURSAE_ADDR %q: %w", addr, err)
 	}
 	if host == "" || host == "0.0.0.0" || host == "::" {
 		host = "127.0.0.1"

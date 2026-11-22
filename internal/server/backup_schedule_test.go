@@ -19,7 +19,7 @@ func TestBmgrScheduledBackups(t *testing.T) {
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	ctx := context.Background()
-	t.Setenv("WPGO_BACKUPS_DIR", t.TempDir())
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
 	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
 		t.Fatal(err)
 	}

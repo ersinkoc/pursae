@@ -57,7 +57,7 @@ func gocdnItemOnCurrent(st gocdnSettings, it *gocdnItem) bool {
 }
 
 // gocdnConnFor is the settings to reach an item of another bucket: the saved previous connection
-// it was written with, else (no record: the settings came from WPGO_CDN_SETTINGS, or rows older
+// it was written with, else (no record: the settings came from PURSAE_CDN_SETTINGS, or rows older
 // than the endpoint column) the current credentials with the item's provider, region, bucket and
 // endpoint and no delivery domain.
 func gocdnConnFor(st gocdnSettings, it *gocdnItem) gocdnSettings {
@@ -106,7 +106,7 @@ func (s *Server) gocdnRememberConn(ctx context.Context, prev, next gocdnSettings
 
 // The connection in effect is also kept in the option gocdn_conn_seen (secrets sealed). The Storage
 // screen remembers a replaced connection itself (gocdnRememberConn), but settings that come from
-// WPGO_CDN_SETTINGS change behind the plugin's back: the next load after the environment variable
+// PURSAE_CDN_SETTINGS change behind the plugin's back: the next load after the environment variable
 // names another bucket, endpoint or provider compares the connection in effect with the one seen
 // last time and remembers the old one, so files offloaded to the old bucket are still reached with
 // the old credentials (and keep their URLs) until the move job has copied them.

@@ -105,7 +105,7 @@ func TestCoreAutoUpdateSkippedWhenBackupFails(t *testing.T) {
 	ctx := context.Background()
 	blocker := filepath.Join(t.TempDir(), "not-a-dir")
 	os.WriteFile(blocker, nil, 0o600)
-	t.Setenv("WPGO_BACKUPS_DIR", filepath.Join(blocker, "backups")) // cannot be created
+	t.Setenv("PURSAE_BACKUPS_DIR", filepath.Join(blocker, "backups")) // cannot be created
 	if v := srv.coreAutoUpdate(ctx); v != "" {
 		t.Fatalf("updated without a backup: %q", v)
 	}
@@ -125,7 +125,7 @@ func TestCoreAutoUpdateSkippedWhenBackupFails(t *testing.T) {
 	}
 
 	// Another backup still running counts as a failure too.
-	t.Setenv("WPGO_BACKUPS_DIR", "")
+	t.Setenv("PURSAE_BACKUPS_DIR", "")
 	j, err := srv.bmgrStart("backup")
 	if err != nil {
 		t.Fatal(err)

@@ -32,8 +32,8 @@ jobs:
           --health-interval 2s --health-timeout 3s --health-retries 30
     env:
       CGO_ENABLED: "0"
-      WPGO_TEST_ADMIN_DB: postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable
-      WPGO_TEST_DB: postgres://wpgo:wpgo@localhost:5432/wpgo_test?sslmode=disable
+      PURSAE_TEST_ADMIN_DB: postgres://wpgo:wpgo@localhost:5432/wpgo?sslmode=disable
+      PURSAE_TEST_DB: postgres://wpgo:wpgo@localhost:5432/wpgo_test?sslmode=disable
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -62,7 +62,7 @@ jobs:
           for d in examples/plugins/*/; do
             if [ -f "$d/plugin.json" ]; then go build -buildmode=c-shared -o /dev/null "./$d"; fi
           done
-      # -p 1: the server, store and settings packages each drop and recreate WPGO_TEST_DB.
+      # -p 1: the server, store and settings packages each drop and recreate PURSAE_TEST_DB.
       - name: test
         run: go test ./... -p 1 -count=1 -timeout 40m
 
@@ -115,7 +115,7 @@ jobs:
       - name: upgrade test
         run: tools/upgrade-test.sh
 
-  # Data races in the unit tests (no database: the integration tests skip without WPGO_TEST_DB).
+  # Data races in the unit tests (no database: the integration tests skip without PURSAE_TEST_DB).
   race:
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -160,14 +160,19 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Pull requests compare against the merge base locally: the action's only-new-issues fetches
+          # the PR diff from the API, which GitHub refuses for more than 300 files, and then lints the
+          # whole tree. Full history, so origin/<base> and the merge base are there.
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.15.0
-          only-new-issues: true
-          args: --timeout 15m
+          only-new-issues: ${{ github.event_name != 'pull_request' }}
+          args: --timeout 15m ${{ github.event_name == 'pull_request' && format('--new-from-merge-base=origin/{0}', github.base_ref) || '' }}
 
   # Pinned like every other tool here; Dependabot does not see `go run pkg@version`, so bump it by hand.
   vulncheck:
@@ -181,7 +186,7 @@ jobs:
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 
-  # The Windows release binary: vet, unit tests (integration tests skip without WPGO_TEST_DB), then a
+  # The Windows release binary: vet, unit tests (integration tests skip without PURSAE_TEST_DB), then a
   # smoke run of the release build against the runner's preinstalled PostgreSQL: migrate, serve,
   # /healthz and the install screen.
   windows:
@@ -206,9 +211,9 @@ jobs:
         shell: pwsh
         env:
           DATABASE_URL: postgres://postgres:root@localhost:5432/postgres?sslmode=disable
-          WPGO_ADDR: 127.0.0.1:8080
-          WPGO_SITE_URL: http://127.0.0.1:8080
-          WPGO_HUB: "off"
+          PURSAE_ADDR: 127.0.0.1:8080
+          PURSAE_SITE_URL: http://127.0.0.1:8080
+          PURSAE_HUB: "off"
         run: |
           $svc = Get-Service -Name "postgresql*" | Select-Object -First 1
           Set-Service -Name $svc.Name -StartupType Manual
@@ -327,7 +332,7 @@ jobs:
         run: |
           docker run -d --name pursae --network host \
             -e DATABASE_URL='postgres://wpgo:wpgo@127.0.0.1:5432/wpgo?sslmode=disable' \
-            -e WPGO_ADDR=127.0.0.1:8080 -e WPGO_SITE_URL=http://127.0.0.1:8080 -e WPGO_HUB=off \
+            -e PURSAE_ADDR=127.0.0.1:8080 -e PURSAE_SITE_URL=http://127.0.0.1:8080 -e PURSAE_HUB=off \
             pursae:ci
           ok=0
           for i in $(seq 1 90); do

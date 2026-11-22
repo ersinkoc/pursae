@@ -244,7 +244,7 @@ func TestMailSMTPPlugin(t *testing.T) {
 
 	t.Run("site title with specials still makes a valid From", func(t *testing.T) {
 		if srv.cfg.MailFrom != "" {
-			t.Skip("WPGO_MAIL_FROM is set")
+			t.Skip("PURSAE_MAIL_FROM is set")
 		}
 		old := srv.settings.String("blogname")
 		_ = srv.settings.Set(ctx, map[string]any{"blogname": "Acme, Inc.: News"})

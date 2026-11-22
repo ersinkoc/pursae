@@ -9,8 +9,8 @@ section: getting-started
 
 Open the site. Until it is installed every request redirects to `/wp-admin/install`. It first asks
 for the **setup token**, so nobody but you can install a fresh site: open the link the server printed
-when it started (`…/wp-admin/install?token=…`), or enter `WPGO_SETUP_TOKEN` if you set one; run
-`wpgo setup-token` on the server for a new link. Then comes the same five-minute install as WordPress:
+when it started (`…/wp-admin/install?token=…`), or enter `PURSAE_SETUP_TOKEN` if you set one; run
+`pursae setup-token` on the server for a new link. Then comes the same five-minute install as WordPress:
 
 1. **Site title**
 2. **Username** and **password** of the first administrator

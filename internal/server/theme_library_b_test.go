@@ -384,7 +384,7 @@ func libBCheckDemo(t *testing.T, dir string, locations []themeManifestLocation, 
 // TestThemeLibraryBRender installs each package through the upload form, activates it and renders
 // the front page, a post, a page, a category archive, a search and a 404.
 func TestThemeLibraryBRender(t *testing.T) {
-	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
+	t.Setenv("PURSAE_THEMES_DIR", t.TempDir())
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	installAndLogin(t, ts, c)

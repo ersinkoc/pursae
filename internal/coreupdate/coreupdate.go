@@ -24,6 +24,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"wpgo/internal/config"
 )
 
 // State is the content of <exe>.update.json.
@@ -38,6 +40,13 @@ type State struct {
 
 // execFn replaces the process (tests swap it).
 var execFn = syscall.Exec
+
+// execBinary replaces the process with path. The environment also carries the WPGO_* name of every
+// PURSAE_* variable (config.WithLegacyNames): the binary may be a release before 0.5.0 (a rollback,
+// a Reinstall of an older version, an older installed binary), which reads only the old names.
+func execBinary(path string, argv, env []string) error {
+	return execFn(path, argv, config.WithLegacyNames(env))
+}
 
 func statePath(exe string) string { return exe + ".update.json" }
 
@@ -108,7 +117,7 @@ func Guard(exe, version string) {
 	st.At = time.Now().UTC()
 	_ = write(exe, st)
 	fmt.Fprintln(os.Stderr, "pursae: "+st.Message)
-	_ = execFn(exe, os.Args, os.Environ())
+	_ = execBinary(exe, os.Args, os.Environ())
 }
 
 // Restore puts the previous binary back right away (the new one could not even be started) and
@@ -280,7 +289,7 @@ func Launch(image, dir string, args []string) error {
 			}
 		}
 	}
-	return execFn(target, append([]string{target}, args...), os.Environ())
+	return execBinary(target, append([]string{target}, args...), os.Environ())
 }
 
 // Installed returns the binary Launch installed in dir (named like exe) when it is another file
@@ -307,7 +316,7 @@ func Installed(exe, dir, version string) string {
 }
 
 // Exec replaces the process with bin, run with args (args[0] is the program name it sees).
-func Exec(bin string, args []string) error { return execFn(bin, args, os.Environ()) }
+func Exec(bin string, args []string) error { return execBinary(bin, args, os.Environ()) }
 
 // sameContent reports whether two files have the same bytes (size first, then a streamed compare).
 // Any error counts as different, so the caller reinstalls the image's binary.

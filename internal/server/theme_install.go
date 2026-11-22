@@ -156,7 +156,7 @@ func unpackThemeZip(data []byte) ([]themeZipFile, *themeManifest, error) {
 	return files, m, nil
 }
 
-// themesDir is the directory the packages live in (WPGO_THEMES_DIR, default <data>/themes).
+// themesDir is the directory the packages live in (PURSAE_THEMES_DIR, default <data>/themes).
 func (s *Server) themesDir() string {
 	if o, ok := s.overlay(); ok && o.dir != "" {
 		return o.dir

@@ -42,6 +42,11 @@ func TestScaffoldBuildVerify(t *testing.T) {
 	if pkg.Manifest.Slug != "demo-plugin" {
 		t.Fatalf("slug %q", pkg.Manifest.Slug)
 	}
+	// No "abi" while the ABI is 1: releases before 0.5.0 reject a plugin.json with the field, and
+	// the scaffold requires only 0.1.0.
+	if pkg.Manifest.ABI != nil || pkg.Manifest.EffectiveABI() != plugins.ABIVersion {
+		t.Errorf("scaffolded plugin.json declares abi %v, want none (ABI %d)", pkg.Manifest.ABI, plugins.ABIVersion)
+	}
 }
 
 func TestScaffoldSDKPathWithSpaces(t *testing.T) {

@@ -44,7 +44,7 @@ type Server struct {
 	web      fs.FS
 	// schemaGuard caches the schema check of this binary against the database (schema_guard.go).
 	schemaGuard schemaGuardState
-	// themeLibrary is the directory source of the theme library (WPGO_THEME_LIBRARY_DIR): one theme
+	// themeLibrary is the directory source of the theme library (PURSAE_THEME_LIBRARY_DIR): one theme
 	// package directory per slug. Nil: the library comes from Pursae Manager (theme_library.go).
 	themeLibrary fs.FS
 	library      libraryState
@@ -52,7 +52,7 @@ type Server struct {
 	brandStock  brandStockState
 	tmpl        *templates
 	engine      *gin.Engine
-	trustedNets []*net.IPNet // WPGO_TRUSTED_PROXIES as parsed for gin; requestIP uses the same list
+	trustedNets []*net.IPNet // PURSAE_TRUSTED_PROXIES as parsed for gin; requestIP uses the same list
 	rest        *restAPI
 	// staticRoots are the URL prefixes of the embedded asset directories (rtlStylesheets).
 	staticRoots []staticRoot
@@ -124,7 +124,7 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	}
 	if cfg.ThemeLibraryDir != "" && sb == nil {
 		if st, err := os.Stat(cfg.ThemeLibraryDir); err != nil || !st.IsDir() {
-			slog.Warn("theme library: WPGO_THEME_LIBRARY_DIR is not a directory", "dir", cfg.ThemeLibraryDir)
+			slog.Warn("theme library: PURSAE_THEME_LIBRARY_DIR is not a directory", "dir", cfg.ThemeLibraryDir)
 		}
 		s.themeLibrary = os.DirFS(cfg.ThemeLibraryDir)
 	}
@@ -246,13 +246,13 @@ func (s *Server) routes() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	if err := applyTrustedProxies(r, s.cfg.TrustedProxies); err != nil {
-		log.Printf("wpgo: WPGO_TRUSTED_PROXIES: %v; trusting no proxy", err)
+		log.Printf("wpgo: PURSAE_TRUSTED_PROXIES: %v; trusting no proxy", err)
 		_ = r.SetTrustedProxies(nil)
 		s.trustedNets = nil
 	} else {
 		s.trustedNets, _ = trustedProxyNets(s.cfg.TrustedProxies) // parsed the same way, so it cannot fail here
 		if strings.TrimSpace(s.cfg.TrustedProxies) == "" && strings.HasPrefix(s.cfg.SiteURL, "https://") {
-			log.Printf("wpgo: WPGO_TRUSTED_PROXIES is not set: X-Forwarded-For is believed from loopback and private networks; " +
+			log.Printf("wpgo: PURSAE_TRUSTED_PROXIES is not set: X-Forwarded-For is believed from loopback and private networks; " +
 				"set it to your proxy's address, or \"none\" (docs: operations/reverse-proxy-and-tls)")
 		}
 	}
@@ -768,18 +768,18 @@ func clientIP(c *gin.Context) string {
 // them, so it cannot choose its own address with an X-Forwarded-For header. The private ranges stay in
 // the default because in Docker a proxy on the host (or in another container) reaches the server from a
 // bridge address (172.16/12 and the like), not loopback. A server whose port is reachable from other
-// machines on a private network should set WPGO_TRUSTED_PROXIES to its proxy's address; the production
+// machines on a private network should set PURSAE_TRUSTED_PROXIES to its proxy's address; the production
 // compose file publishes the port on 127.0.0.1 only.
 const defaultTrustedProxies = "127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
 
-// applyTrustedProxies sets which peers may report the visitor address (WPGO_TRUSTED_PROXIES: a comma separated
+// applyTrustedProxies sets which peers may report the visitor address (PURSAE_TRUSTED_PROXIES: a comma separated
 // list of IPs and CIDRs; empty means defaultTrustedProxies; "none" trusts nobody). Without this gin would
 // believe X-Forwarded-For from every client, and behind a proxy every visitor would share the proxy's address.
 func applyTrustedProxies(r *gin.Engine, spec string) error {
 	return r.SetTrustedProxies(trustedProxyList(spec))
 }
 
-// trustedProxyList splits WPGO_TRUSTED_PROXIES (see applyTrustedProxies) into its entries.
+// trustedProxyList splits PURSAE_TRUSTED_PROXIES (see applyTrustedProxies) into its entries.
 func trustedProxyList(spec string) []string {
 	spec = strings.TrimSpace(spec)
 	if spec == "" {
@@ -794,7 +794,7 @@ func trustedProxyList(spec string) []string {
 	return list
 }
 
-// trustedProxyNets parses WPGO_TRUSTED_PROXIES the way gin does: a bare IP becomes a /32 or /128 network.
+// trustedProxyNets parses PURSAE_TRUSTED_PROXIES the way gin does: a bare IP becomes a /32 or /128 network.
 func trustedProxyNets(spec string) ([]*net.IPNet, error) {
 	var nets []*net.IPNet
 	for _, p := range trustedProxyList(spec) {
@@ -820,7 +820,7 @@ func trustedProxyNets(spec string) ([]*net.IPNet, error) {
 
 // peerTrusted reports whether r's immediate peer may supply forwarded client headers
 // (X-Forwarded-For, X-Forwarded-Proto). A unix-socket peer is trusted, as gin trusts it;
-// any other peer must be in WPGO_TRUSTED_PROXIES (see isTrustedProxy).
+// any other peer must be in PURSAE_TRUSTED_PROXIES (see isTrustedProxy).
 func (s *Server) peerTrusted(r *http.Request) bool {
 	if r == nil {
 		return false

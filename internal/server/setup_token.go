@@ -21,7 +21,7 @@ import (
 )
 
 // The setup token guards /wp-admin/install: without it, whoever reaches a fresh instance first could
-// install the site and become its administrator. The token is WPGO_SETUP_TOKEN when set; otherwise the
+// install the site and become its administrator. The token is PURSAE_SETUP_TOKEN when set; otherwise the
 // first process that starts on an uninstalled site generates one, keeps its SHA-256 in the setup_token
 // table (so every instance and restart checks the same token) and prints the install URL once
 // (cmd/wpgo). `wpgo setup-token` issues a new one. Entered once, the token is remembered by a signed
@@ -74,7 +74,7 @@ func IssueSetupToken(ctx context.Context, q querier) (string, error) {
 	return token, nil
 }
 
-// EnsureSetupToken runs at start-up. On an uninstalled site without WPGO_SETUP_TOKEN it generates the
+// EnsureSetupToken runs at start-up. On an uninstalled site without PURSAE_SETUP_TOKEN it generates the
 // setup token unless another process (or an earlier run) already did, and returns it so it can be
 // printed; "" means there is nothing to print (installed, token from the environment, or already issued).
 func (s *Server) EnsureSetupToken(ctx context.Context) (string, error) {
@@ -96,7 +96,7 @@ func (s *Server) EnsureSetupToken(ctx context.Context) (string, error) {
 	return token, nil
 }
 
-// setupTokenHash is the SHA-256 of the token in force: WPGO_SETUP_TOKEN, else the stored one. nil means
+// setupTokenHash is the SHA-256 of the token in force: PURSAE_SETUP_TOKEN, else the stored one. nil means
 // no token was issued, and the installer stays closed.
 func (s *Server) setupTokenHash(ctx context.Context) ([]byte, error) {
 	if s.cfg.SetupToken != "" {

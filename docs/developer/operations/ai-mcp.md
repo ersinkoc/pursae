@@ -21,7 +21,7 @@ Application Password.
   Every tool runs as a REST request with the same credentials, so capabilities and
   [scopes](../rest-api/authentication.md#application-password-scopes) apply exactly as they do
   for direct REST calls.
-- **stdio:** `wpgo mcp` is a small bridge for clients that start a local command. It forwards
+- **stdio:** `pursae mcp` is a small bridge for clients that start a local command. It forwards
   stdin/stdout to the endpoint above; the site can be local or remote.
 - **Resources:** the developer docs (`pursae-docs://developer/…`), so the agent can read how themes,
   templates, `theme.json` and plugins work before it changes them.
@@ -55,7 +55,7 @@ claude mcp add --transport http pursae https://example.com/wp-json/pursae/v1/mcp
 
 Cursor and other clients that support remote MCP with OAuth need only the URL.
 
-**Application Password.** Use it for clients without OAuth, scripts and `wpgo mcp`.
+**Application Password.** Use it for clients without OAuth, scripts and `pursae mcp`.
 
 ### Create an Application Password
 
@@ -96,7 +96,7 @@ Claude Desktop starts local commands, so use the bridge. In `claude_desktop_conf
 {
   "mcpServers": {
     "pursae": {
-      "command": "/usr/local/bin/wpgo",
+      "command": "/usr/local/bin/pursae",
       "args": ["mcp"],
       "env": {
         "PURSAE_URL": "https://example.com",
@@ -128,9 +128,9 @@ In `~/.cursor/mcp.json` (or `.cursor/mcp.json` in a project):
 
 The header value is `Basic ` followed by base64 of `user:password`
 (`printf 'admin:abcd efgh ijkl mnop qrst uvwx' | base64`). Any other MCP client works the same way:
-streamable HTTP with that header, or `wpgo mcp` over stdio.
+streamable HTTP with that header, or `pursae mcp` over stdio.
 
-### `wpgo mcp` flags
+### `pursae mcp` flags
 
 | Flag | Environment | |
 |------|-------------|---|
@@ -140,10 +140,10 @@ streamable HTTP with that header, or `wpgo mcp` over stdio.
 
 ### Signing in with OAuth instead of a password
 
-`wpgo mcp login --url https://example.com [--scope "content media"] [--no-browser]` runs the OAuth 2.1
+`pursae mcp login --url https://example.com [--scope "content media"] [--no-browser]` runs the OAuth 2.1
 authorization-code flow with PKCE: it registers a client, opens the consent screen (loopback redirect on
 `127.0.0.1`), and stores the token pair in `<user config dir>/pursae/mcp-<host>.json` with mode `0600`
-(`PURSAE_CONFIG_DIR` overrides the directory). After that `wpgo mcp --url https://example.com` needs no user
+(`PURSAE_CONFIG_DIR` overrides the directory). After that `pursae mcp --url https://example.com` needs no user
 or password: it sends the Bearer token and, when the site answers 401, refreshes the pair once (rotating
 refresh token, file rewritten) and retries. The bridge keeps the `Mcp-Session-Id` the site returns at `initialize`, sends it on every
 POST, opens the server→client SSE stream for that session (so `notifications/tools/list_changed` reaches the
@@ -287,7 +287,7 @@ python3 scripts/pursae_mcp.py import-html design.html method=exact title="Home" 
 - Tool answers over 400 KB are cut on a character boundary and then carry no `structuredContent`.
 - Give the agent the narrowest scopes and the least powerful user that does the job.
 - `write_theme_file` checks templates before keeping them (the change is rolled back if the site
-  stops rendering), and `restore_theme_file` undoes edits. Set `WPGO_DISALLOW_FILE_EDIT=1` or turn
+  stops rendering), and `restore_theme_file` undoes edits. Set `PURSAE_DISALLOW_FILE_EDIT=1` or turn
   on "Disable file editing" in Pursae Security to forbid theme file changes entirely.
 - `upload_media` fetches URLs only from public addresses.
 - Pursae Security's lockouts and IP block list apply to the endpoint like to any REST request.

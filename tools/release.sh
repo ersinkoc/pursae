@@ -225,7 +225,7 @@ Pursae is a WordPress-compatible CMS in one binary, backed by PostgreSQL 16 or 1
       print the version
   $exe serve
       run the database migrations, then serve the site (settings from the environment:
-      DATABASE_URL, WPGO_SITE_URL, WPGO_UPLOADS_DIR, ...; see the configuration reference)
+      DATABASE_URL, PURSAE_SITE_URL, PURSAE_UPLOADS_DIR, ...; see the configuration reference)
   $exe setup-token
       print the install link of a site that is not installed yet
 

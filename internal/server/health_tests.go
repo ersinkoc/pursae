@@ -45,7 +45,7 @@ func (s *Server) healthTests(ctx context.Context) []healthTest {
 		add(healthTest{Label: "Your website is using an active HTTPS connection", Status: "good", Badge: "Security", Description: "An HTTPS connection helps keep your site and its visitors safe."})
 	} else {
 		add(healthTest{Label: "Your website does not use HTTPS", Status: "recommended", Badge: "Security",
-			Description: "HTTPS is already supported by most hosts and makes your site more secure. Put Pursae behind a TLS-terminating proxy and set WPGO_SITE_URL to an https:// address."})
+			Description: "HTTPS is already supported by most hosts and makes your site more secure. Put Pursae behind a TLS-terminating proxy and set PURSAE_SITE_URL to an https:// address."})
 	}
 	if f, err := os.CreateTemp(s.cfg.UploadsDir, ".health-*"); err == nil {
 		f.Close()
@@ -90,7 +90,7 @@ func (s *Server) healthTests(ctx context.Context) []healthTest {
 
 	if s.cfg.SMTPHost == "" && !s.mailSMTPOn() {
 		add(healthTest{Label: "Email delivery is not configured", Status: "critical", Badge: "Performance",
-			Description: "Without SMTP, every message (password resets, order and privacy confirmations) is only saved as an .eml file and never reaches the recipient. Set WPGO_SMTP_HOST or activate Pursae SMTP.",
+			Description: "Without SMTP, every message (password resets, order and privacy confirmations) is only saved as an .eml file and never reaches the recipient. Set PURSAE_SMTP_HOST or activate Pursae SMTP.",
 			Action:      `<a href="/wp-admin/plugins">Manage plugins</a>`})
 	}
 	var failedJobs int

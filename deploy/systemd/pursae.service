@@ -5,7 +5,7 @@
 #                             replaces it in place (keeping the previous one as pursae.prev) and
 #                             re-executes it, so a core update needs no root and survives restarts
 #   /var/lib/pursae/          uploads/, plugins/, themes/, languages/, backups/, … (owned by pursae)
-#   /etc/pursae/pursae.env    DATABASE_URL, WPGO_SITE_URL, WPGO_UPLOADS_DIR, WPGO_SECRET, mail
+#   /etc/pursae/pursae.env    DATABASE_URL, PURSAE_SITE_URL, PURSAE_UPLOADS_DIR, PURSAE_SECRET, mail
 #                             settings (root:pursae, mode 0640)
 #
 # Install: cp pursae.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now pursae

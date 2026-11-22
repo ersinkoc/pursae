@@ -62,7 +62,7 @@ type asAdminData struct {
 	ExportURL  string
 	// Integrity
 	Integrity *asIntegrityReport
-	// Firewall tab: the core default and whether WPGO_FIREWALL=off overrides the settings
+	// Firewall tab: the core default and whether PURSAE_FIREWALL=off overrides the settings
 	FirewallDefault int
 	FirewallEnvOff  bool
 	// Hardening tab: the REST routes visitors always keep

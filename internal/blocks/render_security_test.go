@@ -7,6 +7,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"testing"
+	"wpgo/internal/config"
 )
 
 // Deeply nested block delimiters in stored content must not drive the recursive tree walks without
@@ -16,7 +17,7 @@ import (
 // re-parses 200,000 nested levels (5.4 MB).
 func TestBlocksDeepNestingDoesNotOverflowStack(t *testing.T) {
 	const n = 200000
-	if os.Getenv("WPGO_BLOCKS_DEEP_CHILD") == "1" {
+	if config.Env("BLOCKS_DEEP_CHILD") == "1" {
 		debug.SetMaxStack(32 << 20)
 		in := strings.Repeat("<!-- wp:group -->", n) + "<p>x</p>" + strings.Repeat("<!-- /wp:group -->", n)
 		_ = Render(context.Background(), in)
@@ -24,7 +25,7 @@ func TestBlocksDeepNestingDoesNotOverflowStack(t *testing.T) {
 		return
 	}
 	cmd := exec.Command(os.Args[0], "-test.run=^TestBlocksDeepNestingDoesNotOverflowStack$", "-test.count=1")
-	cmd.Env = []string{"WPGO_BLOCKS_DEEP_CHILD=1"}
+	cmd.Env = []string{"PURSAE_BLOCKS_DEEP_CHILD=1"}
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		msg := string(out)

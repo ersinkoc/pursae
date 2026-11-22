@@ -14,7 +14,7 @@ import (
 
 func TestThemeFileEditor(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WPGO_THEMES_DIR", dir)
+	t.Setenv("PURSAE_THEMES_DIR", dir)
 	ts, c := testServer(t)
 	base := ts.URL
 	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{

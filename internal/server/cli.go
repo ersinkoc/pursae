@@ -26,7 +26,7 @@ import (
 )
 
 // The WP-CLI style command line: `pursae <noun> <verb> [args] [--flags]`. Like wp-cli loading
-// WordPress, it works on the site's database (DATABASE_URL) and files (WPGO_UPLOADS_DIR …) directly,
+// WordPress, it works on the site's database (DATABASE_URL) and files (PURSAE_UPLOADS_DIR …) directly,
 // so it must run with the same environment as `serve` (in Docker: docker exec into the container).
 // What it writes reaches a running server live: settings through the settings NOTIFY trigger
 // (settings.Store.Watch), page cache purges through the wpgo_cache_purge channel
@@ -130,7 +130,7 @@ type cliEnv struct {
 	srv  *Server
 }
 
-// Config is the process configuration (WPGO_* environment).
+// Config is the process configuration (PURSAE_* environment).
 func (e *cliEnv) Config() config.Config { return e.cfg }
 
 // Pool connects to the database on first use. It warns (stderr through slog) when migrations
@@ -235,7 +235,7 @@ func (e *cliEnv) Server(ctx context.Context) (*Server, error) {
 // plugin runtime (s.plugins == nil: plugin hooks are no-ops, like wp-cli --skip-plugins), run
 // ACF-Go registration, start background loops or resume media jobs, and it never writes
 // auth_secret. What it does set up:
-//   - cfg, store, settings, auth (secret from WPGO_SECRET or the stored auth_secret), web overlay
+//   - cfg, store, settings, auth (secret from PURSAE_SECRET or the stored auth_secret), web overlay
 //     FS, theme library dir, the media index;
 //   - a purge-only page cache: every purge helper (purgePost, purgeTerm, purgeAttachment,
 //     purgeTags, purgeAll, onPostSaved) ends in a synchronous pg_notify on wpgo_cache_purge that
@@ -407,11 +407,11 @@ func IsPkgtoolVerb(verb string) bool { _, ok := pkgtoolVerbs[verb]; return ok }
 // registerCoreCLI documents the commands main handles itself and wires the plugin packaging tool.
 func registerCoreCLI(r *cli.Registry, e *cliEnv) {
 	external := []cli.Command{
-		{Path: "serve", Short: "Run the web server (the default command).", Long: "Applies pending migrations, then serves the site on WPGO_ADDR."},
-		{Path: "launch", Short: "Container entrypoint: run the installed binary (core updates).", Long: "Runs the binary installed in WPGO_BIN_DIR (internal/coreupdate), with the given arguments (default: serve)."},
+		{Path: "serve", Short: "Run the web server (the default command).", Long: "Applies pending migrations, then serves the site on PURSAE_ADDR."},
+		{Path: "launch", Short: "Container entrypoint: run the installed binary (core updates).", Long: "Runs the binary installed in PURSAE_BIN_DIR (internal/coreupdate), with the given arguments (default: serve)."},
 		{Path: "migrate", Short: "Apply pending database migrations."},
 		{Path: "version", Short: "Print the Pursae version."},
-		{Path: "healthcheck", Short: "Container HEALTHCHECK: GET /healthz on WPGO_ADDR."},
+		{Path: "healthcheck", Short: "Container HEALTHCHECK: GET /healthz on PURSAE_ADDR."},
 		{Path: "mcp", Short: "Stdio MCP bridge to a site's /wp-json/pursae/v1/mcp."},
 		{Path: "setup-token", Short: "Print the install URL with a new setup token."},
 		{Path: "adminsec", Short: "Pursae Security recovery: disable-hide-login | reset-user <login> | unlock-all | deactivate.",

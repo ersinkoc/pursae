@@ -34,7 +34,7 @@ can add you to it as a collaborator.
 
 ### What to include
 
-- the affected version (`wpgo version`, or **Dashboard › Updates**) or commit, and
+- the affected version (`pursae version`, or **Dashboard › Updates**) or commit, and
   whether it is a production build or a development (`devhub`) build;
 - the component: core, a built-in plugin (which one), the Pursae Manager (Hub) client, the Web
   Builder, the CLI or the MCP server;
@@ -106,8 +106,8 @@ Out of scope:
 - Findings from automated scanners without a demonstrated impact, missing headers that do not lead
   to an attack, self-XSS, clickjacking of pages with no state-changing action, rate limits on
   non-sensitive routes, and denial of service by sheer request volume.
-- Sites running a development (`devhub`) build, `WPGO_TRUST_DEV_KEY=1`,
-  `WPGO_ALLOW_UNSIGNED_PLUGINS=1` or other settings documented as development only.
+- Sites running a development (`devhub`) build, `PURSAE_TRUST_DEV_KEY=1`,
+  `PURSAE_ALLOW_UNSIGNED_PLUGINS=1` or other settings documented as development only.
 
 The operator's checklist for a production site is in
 [docs/developer/operations/security.md](docs/developer/operations/security.md).

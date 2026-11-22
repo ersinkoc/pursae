@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"os"
 	"strings"
 	"testing"
 
@@ -14,7 +13,7 @@ import (
 // install screen does, and checks is-installed and the refusals.
 func TestCoreInstallCLI(t *testing.T) {
 	_, _, srv := newTestServer(t, false) // a migrated, empty database
-	cfg := config.Config{DatabaseURL: os.Getenv("WPGO_TEST_DB"), UploadsDir: srv.cfg.UploadsDir, WebDir: srv.cfg.WebDir, HubURL: "off", SiteURL: "http://default.test"}
+	cfg := config.Config{DatabaseURL: config.Env("TEST_DB"), UploadsDir: srv.cfg.UploadsDir, WebDir: srv.cfg.WebDir, HubURL: "off", SiteURL: "http://default.test"}
 	ctx := context.Background()
 
 	if code, _, _ := runOpsCLI(t, cfg, "core", "is-installed"); code != 1 {

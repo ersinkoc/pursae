@@ -15,7 +15,7 @@ import (
 
 // Tests of the Web Builder hooks into the rest of the CMS (webbuilder_hooks.go): drift, WXR,
 // Pursae Multi Language copies and Pursae Cache tags. The unit tests run without a database; the
-// integration tests need WPGO_TEST_ADMIN_DB / WPGO_TEST_DB and reuse the REST test helpers.
+// integration tests need PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB and reuse the REST test helpers.
 
 // --- unit ------------------------------------------------------------------------------------------
 

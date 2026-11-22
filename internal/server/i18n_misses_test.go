@@ -16,18 +16,19 @@ import (
 	"sync"
 	"testing"
 
+	"wpgo/internal/config"
 	"wpgo/internal/i18n"
 )
 
 // TestAdminUntranslated lists the admin texts that have no translation in the locales named by
-// WPGO_I18N_MISSES (e.g. "tr_TR,sv_SE,he_IL"): it activates every native plugin, crawls the admin
+// PURSAE_I18N_MISSES (e.g. "tr_TR,sv_SE,he_IL"): it activates every native plugin, crawls the admin
 // screens (links on the pages, two levels) and collects what the catalog reports through
-// i18n.MissHook; WPGO_I18N_MISSES_PLUGINS limits which plugins are activated (WPGO_I18N_MISSES_REAL=1 downloads the real WordPress language packs, so only WordPress Go's own
-// texts are left). WPGO_I18N_MISSES_OUT is a directory that gets one <locale>.txt per locale.
+// i18n.MissHook; PURSAE_I18N_MISSES_PLUGINS limits which plugins are activated (PURSAE_I18N_MISSES_REAL=1 downloads the real WordPress language packs, so only WordPress Go's own
+// texts are left). PURSAE_I18N_MISSES_OUT is a directory that gets one <locale>.txt per locale.
 func TestAdminUntranslated(t *testing.T) {
-	locales := strings.Split(os.Getenv("WPGO_I18N_MISSES"), ",")
+	locales := strings.Split(config.Env("I18N_MISSES"), ",")
 	if locales[0] == "" {
-		t.Skip("WPGO_I18N_MISSES not set")
+		t.Skip("PURSAE_I18N_MISSES not set")
 	}
 	ts, c, srv := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
@@ -51,13 +52,13 @@ func TestAdminUntranslated(t *testing.T) {
 		w.Write(pack.Bytes())
 	}))
 	defer api.Close()
-	if os.Getenv("WPGO_I18N_MISSES_REAL") == "" { // offline: an empty core pack, so WordPress' own texts count as untranslated too
+	if config.Env("I18N_MISSES_REAL") == "" { // offline: an empty core pack, so WordPress' own texts count as untranslated too
 		srv.cfg.TranslationsAPI = api.URL
 	}
 
 	// Activate every native plugin.
 	_, body, _ := get(t, c, base+"/wp-admin/plugins")
-	only := os.Getenv("WPGO_I18N_MISSES_PLUGINS") // e.g. "gocdn,headlessgo"; empty: all
+	only := config.Env("I18N_MISSES_PLUGINS") // e.g. "gocdn,headlessgo"; empty: all
 	for _, m := range regexp.MustCompile(`href="(/wp-admin/plugins\?action=activate&amp;plugin=([^&"]*)[^"]*)"`).FindAllStringSubmatch(body, -1) {
 		if only == "" || strings.Contains(","+only+",", ","+strings.Split(m[2], "/")[0]+",") {
 			get(t, c, base+html.UnescapeString(m[1]))
@@ -80,7 +81,7 @@ func TestAdminUntranslated(t *testing.T) {
 		if srv.siteLocale() != loc {
 			t.Fatalf("locale %s not set (%s)", loc, srv.siteLocale())
 		}
-		if os.Getenv("WPGO_I18N_MISSES_REAL") != "" { // the plugin packs download in the background: wait for them
+		if config.Env("I18N_MISSES_REAL") != "" { // the plugin packs download in the background: wait for them
 			if err := srv.lang.Install(context.Background(), srv.langInstaller(), loc, langPluginPacks); err != nil {
 				t.Logf("%s: language packs: %v", loc, err)
 			}
@@ -115,22 +116,22 @@ func TestAdminUntranslated(t *testing.T) {
 		mu.Unlock()
 		sort.Strings(list)
 		t.Logf("%s: %d pages, %d untranslated texts", loc, len(seen), len(list))
-		if dir := os.Getenv("WPGO_I18N_MISSES_OUT"); dir != "" {
+		if dir := config.Env("I18N_MISSES_OUT"); dir != "" {
 			os.WriteFile(dir+"/"+loc+".txt", []byte(strings.Join(list, "\n")+"\n"), 0o644)
 		}
 	}
 }
 
 // TestStoreFrontUntranslated lists the store front texts (shop, product, cart, checkout, order
-// received, My account) without a translation in the locales of WPGO_I18N_MISSES, with the real
+// received, My account) without a translation in the locales of PURSAE_I18N_MISSES, with the real
 // WordPress.org packs (core and WooCommerce): what is left is Pursae Commerce's own text.
-// WPGO_I18N_MISSES_OUT gets one store-<locale>.txt per locale; WPGO_I18N_MISSES_DUMP is a directory
+// PURSAE_I18N_MISSES_OUT gets one store-<locale>.txt per locale; PURSAE_I18N_MISSES_DUMP is a directory
 // for the pages themselves (<locale>-NN.html). Every optional module is on, so their front end
 // (wishlist and compare buttons, My account endpoints, points messages, …) is crawled too.
 func TestStoreFrontUntranslated(t *testing.T) {
-	locales := strings.Split(os.Getenv("WPGO_I18N_MISSES"), ",")
+	locales := strings.Split(config.Env("I18N_MISSES"), ",")
 	if locales[0] == "" {
-		t.Skip("WPGO_I18N_MISSES not set")
+		t.Skip("PURSAE_I18N_MISSES not set")
 	}
 	base, admin, srv := gooSite(t)
 	ctx := context.Background()
@@ -166,7 +167,7 @@ func TestStoreFrontUntranslated(t *testing.T) {
 		n := 0
 		get := func(t *testing.T, c *http.Client, u string) (int, string, string) {
 			code, body, where := get(t, c, u)
-			if dir := os.Getenv("WPGO_I18N_MISSES_DUMP"); dir != "" && code == http.StatusOK {
+			if dir := config.Env("I18N_MISSES_DUMP"); dir != "" && code == http.StatusOK {
 				n++
 				os.WriteFile(fmt.Sprintf("%s/%s-%02d.html", dir, loc, n), []byte("<!-- "+u+" -->\n"+body), 0o644)
 			}
@@ -207,7 +208,7 @@ func TestStoreFrontUntranslated(t *testing.T) {
 		mu.Unlock()
 		sort.Strings(list)
 		t.Logf("%s: %d untranslated store texts", loc, len(list))
-		if dir := os.Getenv("WPGO_I18N_MISSES_OUT"); dir != "" {
+		if dir := config.Env("I18N_MISSES_OUT"); dir != "" {
 			os.WriteFile(dir+"/store-"+loc+".txt", []byte(strings.Join(list, "\n")+"\n"), 0o644)
 		}
 	}

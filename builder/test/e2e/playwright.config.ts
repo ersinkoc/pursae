@@ -28,10 +28,10 @@ if (!databaseURL) {
 /** The environment of the server and of the CLI commands the test runs (setup-token). */
 export const serverEnv: Record<string, string> = {
   DATABASE_URL: databaseURL,
-  WPGO_ADDR: `127.0.0.1:${port}`,
-  WPGO_SITE_URL: site,
-  WPGO_HUB: 'off',
-  WPGO_UPLOADS_DIR: path.join(work, 'data', 'uploads'),
+  PURSAE_ADDR: `127.0.0.1:${port}`,
+  PURSAE_SITE_URL: site,
+  PURSAE_HUB: 'off',
+  PURSAE_UPLOADS_DIR: path.join(work, 'data', 'uploads'),
 }
 
 export default defineConfig({

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"wpgo/internal/config"
 	"wpgo/internal/db"
 )
 
@@ -30,13 +30,13 @@ func attemptsManager(t *testing.T) *Manager {
 	return NewManager(pool, "test-secret")
 }
 
-// tempDatabase creates an empty database next to the admin database (WPGO_TEST_ADMIN_DB, an existing database
+// tempDatabase creates an empty database next to the admin database (PURSAE_TEST_ADMIN_DB, an existing database
 // such as "wpgo") and drops it after the test, so the test needs no other database to exist. Skipped without it.
 func tempDatabase(t *testing.T, prefix string) string {
 	t.Helper()
-	adminURL := os.Getenv("WPGO_TEST_ADMIN_DB")
+	adminURL := config.Env("TEST_ADMIN_DB")
 	if adminURL == "" {
-		t.Skip("WPGO_TEST_ADMIN_DB not set")
+		t.Skip("PURSAE_TEST_ADMIN_DB not set")
 	}
 	ctx := context.Background()
 	admin, err := pgx.Connect(ctx, adminURL)

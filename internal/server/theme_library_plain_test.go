@@ -97,7 +97,7 @@ func TestThemeDemoIgnoresBuilderTrees(t *testing.T) {
 }
 
 func TestPlainStoreThemesInstall(t *testing.T) {
-	t.Setenv("WPGO_THEMES_DIR", t.TempDir())
+	t.Setenv("PURSAE_THEMES_DIR", t.TempDir())
 	base, c, srv := gooSite(t)
 	_, body, _ := get(t, c, base+"/wp-admin/theme-install?browse=upload")
 	nonce := formNonce(t, body)

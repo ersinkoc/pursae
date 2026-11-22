@@ -150,7 +150,7 @@ func TestPluginSignerPinDowngradeAndRollback(t *testing.T) {
 	}
 }
 
-// Without a pinned root key a build refuses to update itself unless WPGO_TRUST_HUB_KEYS=1; with
+// Without a pinned root key a build refuses to update itself unless PURSAE_TRUST_HUB_KEYS=1; with
 // one, only a Manager key the root endorsed verifies the release.
 func TestCoreSelfUpdateNeedsPinnedRoot(t *testing.T) {
 	base, c, srv, hub := managerSite(t)
@@ -173,7 +173,7 @@ func TestCoreSelfUpdateNeedsPinnedRoot(t *testing.T) {
 	hub.keys = append(hub.keys, map[string]string{"id": "hub-2026", "public": base64.StdEncoding.EncodeToString(pub)})
 	srv.hubDropCaches(ctx)
 	_, body, _ := get(t, c, base+"/wp-admin/update-core")
-	if !strings.Contains(body, "This site cannot update itself") || !strings.Contains(body, "WPGO_TRUST_HUB_KEYS") {
+	if !strings.Contains(body, "This site cannot update itself") || !strings.Contains(body, "PURSAE_TRUST_HUB_KEYS") {
 		t.Error("the Updates screen does not explain why a build without a root key cannot update")
 	}
 	if _, err := srv.coreUpdate(ctx, target); err == nil {

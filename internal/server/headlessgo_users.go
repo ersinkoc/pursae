@@ -35,7 +35,7 @@ const (
 	hgUserIssuer = "headlessgo"
 )
 
-// hgUserKey signs front-end user tokens with the site secret (WPGO_SECRET, else the generated
+// hgUserKey signs front-end user tokens with the site secret (PURSAE_SECRET, else the generated
 // auth_secret option): nil when there is none, which hgJWTVerify refuses.
 func (s *Server) hgUserKey() []byte {
 	secret := s.siteSecret()

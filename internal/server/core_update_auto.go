@@ -102,11 +102,11 @@ func (s *Server) coreAutoUpdate(ctx context.Context) string {
 		return ""
 	}
 	if devTrustHubKeys() {
-		// WPGO_TRUST_HUB_KEYS=1 (devhub builds) trusts every key the Manager lists, endorsed by the
+		// PURSAE_TRUST_HUB_KEYS=1 (devhub builds) trusts every key the Manager lists, endorsed by the
 		// release root or not: whoever answers as the Manager could sign a binary. An update made by
 		// hand still works; an unattended one is never installed under that trust.
 		coreAutoDevTrustOnce.Do(func() {
-			slog.Warn("core auto-update skipped: WPGO_TRUST_HUB_KEYS=1 trusts unendorsed Manager keys; update by hand under Dashboard › Updates")
+			slog.Warn("core auto-update skipped: PURSAE_TRUST_HUB_KEYS=1 trusts unendorsed Manager keys; update by hand under Dashboard › Updates")
 		})
 		return ""
 	}

@@ -453,7 +453,7 @@ func forumNativeCheckCampfireIndex(t *testing.T, set *template.Template) {
 
 func TestForumNativeThemeInstall(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WPGO_THEMES_DIR", dir)
+	t.Setenv("PURSAE_THEMES_DIR", dir)
 	ts, c, srv := testServerBuilderOff(t)
 	base := ts.URL
 	if code, body, _ := post(t, c, base+"/wp-admin/install?step=2", url.Values{

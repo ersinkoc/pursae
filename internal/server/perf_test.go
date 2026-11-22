@@ -31,12 +31,12 @@ type queryCounter struct {
 	n   atomic.Int64
 	log atomic.Bool // record statement texts in sql
 	mu  sync.Mutex
-	sql map[string]int // statement texts while logging (WPGO_PERF_SQL=1)
+	sql map[string]int // statement texts while logging (PURSAE_PERF_SQL=1)
 }
 
 func (q *queryCounter) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.TraceQueryStartData) context.Context {
 	q.n.Add(1)
-	if q.log.Load() || os.Getenv("WPGO_PERF_SQL") != "" {
+	if q.log.Load() || config.Env("PERF_SQL") != "" {
 		q.mu.Lock()
 		if q.sql == nil {
 			q.sql = map[string]int{}
@@ -46,7 +46,7 @@ func (q *queryCounter) TraceQueryStart(ctx context.Context, _ *pgx.Conn, d pgx.T
 			k = k[:600]
 		}
 		q.sql[k]++
-		if sub := os.Getenv("WPGO_PERF_STACK"); sub != "" && strings.Contains(k, sub) {
+		if sub := config.Env("PERF_STACK"); sub != "" && strings.Contains(k, sub) {
 			pcs := make([]uintptr, 30)
 			frames := runtime.CallersFrames(pcs[:runtime.Callers(3, pcs)])
 			var fn []string
@@ -93,9 +93,9 @@ func (q *queryCounter) TraceQueryEnd(context.Context, *pgx.Conn, pgx.TraceQueryE
 // newCountingTestServer is newTestServer (Web Builder off) on a pool whose statements are counted.
 func newCountingTestServer(t *testing.T) (*httptest.Server, *http.Client, *Server, *queryCounter) {
 	t.Helper()
-	adminURL, testURL := os.Getenv("WPGO_TEST_ADMIN_DB"), os.Getenv("WPGO_TEST_DB")
+	adminURL, testURL := config.Env("TEST_ADMIN_DB"), config.Env("TEST_DB")
 	if adminURL == "" || testURL == "" {
-		t.Skip("WPGO_TEST_ADMIN_DB / WPGO_TEST_DB not set")
+		t.Skip("PURSAE_TEST_ADMIN_DB / PURSAE_TEST_DB not set")
 	}
 	ctx := context.Background()
 	u, err := url.Parse(testURL)
@@ -211,7 +211,7 @@ func TestFrontQueryCount(t *testing.T) {
 			t.Fatalf("%s: %d", path, code)
 		}
 		n := qc.n.Load() - before
-		if os.Getenv("WPGO_PERF_SQL") != "" && strings.Contains(path, "count") {
+		if config.Env("PERF_SQL") != "" && strings.Contains(path, "count") {
 			qc.dump(t)
 		}
 		return n, body
@@ -222,7 +222,7 @@ func TestFrontQueryCount(t *testing.T) {
 	if strings.Count(body, `class="wp-block-post `) < 10 {
 		t.Fatalf("home lists %d posts", strings.Count(body, `class="wp-block-post `))
 	}
-	if out := os.Getenv("WPGO_PERF_DUMP"); out != "" {
+	if out := config.Env("PERF_DUMP"); out != "" {
 		_ = os.WriteFile(out+"/tt5-home.html", []byte(perfVolatile.ReplaceAllString(body, "$1=X")), 0o644)
 	}
 	if n > 30 {
@@ -237,7 +237,7 @@ func TestFrontQueryCount(t *testing.T) {
 	if hi, lazy := strings.Count(body, `decoding="async" fetchpriority="high" srcset`), strings.Count(body, `decoding="async" loading="lazy" srcset`); hi != 1 || lazy != 9 {
 		t.Errorf("thumbnails: %d high priority, %d lazy; want 1 and 9", hi, lazy)
 	}
-	if out := os.Getenv("WPGO_PERF_DUMP"); out != "" {
+	if out := config.Env("PERF_DUMP"); out != "" {
 		_ = os.WriteFile(out+"/byte-notes-home.html", []byte(perfVolatile.ReplaceAllString(body, "$1=X")), 0o644)
 	}
 	if n > 40 {
@@ -265,7 +265,7 @@ func TestFrontQueryCount(t *testing.T) {
 	measure(single + "?warm=3")
 	n, body = measure(single + "?count=3")
 	t.Logf("byte-notes single post: %d queries", n)
-	if out := os.Getenv("WPGO_PERF_DUMP"); out != "" {
+	if out := config.Env("PERF_DUMP"); out != "" {
 		_ = os.WriteFile(out+"/byte-notes-single.html", []byte(perfVolatile.ReplaceAllString(body, "$1=X")), 0o644)
 	}
 }
