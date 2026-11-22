@@ -312,6 +312,10 @@ func (s *Server) gooValidateCheckout(c *gin.Context, cart *gooCart, d *gooChecko
 		}
 	}
 	checked := map[int64]bool{}
+	awaiting := int64(0)
+	if cart.sess != nil {
+		awaiting = cart.sess.Data.OrderAwaitingPayment
+	}
 	for _, it := range cart.Items {
 		if it.product == nil {
 			continue
@@ -321,9 +325,15 @@ func (s *Server) gooValidateCheckout(c *gin.Context, cart *gooCart, d *gooChecko
 			continue
 		}
 		checked[owner] = true
-		if !s.gooHasEnoughStock(c.Request.Context(), it.product, need[owner]) {
+		// Units other unpaid orders hold are not available (wc_get_held_stock_quantity(), excluding
+		// this session's order awaiting payment).
+		held := 0
+		if s.gooManagingStock(c.Request.Context(), it.product) && !s.gooBackordersAllowed(c.Request.Context(), it.product) {
+			held = s.gooHeldStock(c.Request.Context(), it.product, awaiting)
+		}
+		if !s.gooHasEnoughStock(c.Request.Context(), it.product, need[owner]+held) {
 			errs = append(errs, fmt.Sprintf("Sorry, we do not have enough &quot;%s&quot; in stock to fulfill your order (%d available). We apologize for any inconvenience caused.",
-				html.EscapeString(s.gooProductTitle(c.Request.Context(), it.product)), max(s.gooStockQty(c.Request.Context(), it.product), 0)))
+				html.EscapeString(s.gooProductTitle(c.Request.Context(), it.product)), max(s.gooStockQty(c.Request.Context(), it.product)-held, 0)))
 		}
 	}
 	return errs
@@ -391,6 +401,11 @@ func (s *Server) gooProcessCheckout(c *gin.Context, form map[string][]string) (*
 		}
 		cart.Empty()
 		return &gooPaymentResult{Result: "success", Redirect: s.gooOrderReceivedURL(ctx, o)}, o, nil
+	}
+	// wc_reserve_stock_for_order(): the order's stock is held while the customer pays, so another
+	// checkout cannot sell the same last unit meanwhile. The order stays pending (a retry reuses it).
+	if err := s.gooReserveStock(ctx, o); err != nil {
+		return nil, o, []string{err.Error()}
 	}
 	gw := s.gooGateway(d.PaymentMethod)
 	res, err := gw.ProcessPayment(s, c, o)
