@@ -302,7 +302,16 @@ lets Claude, Cursor and other MCP clients run the site:
 - **Editors**: the real block editor (`@wordpress/*` bundles) and a built-in Classic Editor.
 - **REST API**: `wp/v2` with cookie + nonce and Application Passwords; `wc/v3` with Commerce on — [REST docs](docs/developer/rest-api/index.md).
 - **Content**: WXR import and export under Tools; WooCommerce's product CSV under Products.
-- **Not supported**: PHP plugins and PHP themes (themes are Go templates with a [`theme.json` manifest](docs/developer/themes/theme-json.md)) and multisite.
+- **Not supported**: see below.
+
+### Not supported
+
+- Full Site Editing and the Site Editor: `wp/v2/templates`, `template-parts` and `global-styles` are stubs that return empty data.
+- Multisite.
+- XML-RPC.
+- Incoming pingbacks and trackbacks (Pursae can send trackbacks, not receive them).
+- REST: `wp/v2/plugins`, `wp-site-health/v1` and `wp/v2/font-families` (plugins and site health are managed under `pursae/v1`).
+- PHP plugins and PHP themes: themes are Go templates with a [`theme.json` manifest](docs/developer/themes/theme-json.md), plugins are Wasm.
 
 ## 🐹 Go architecture
 

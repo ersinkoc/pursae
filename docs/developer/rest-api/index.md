@@ -47,7 +47,8 @@ cookie + nonce and Application Passwords — is on [authentication](authenticati
 
 - No `wp-site-health/v1`, `wp/v2/plugins`, `wp/v2/templates` (returns an empty list) or
   `wp/v2/font-families` yet.
-- Block types, pattern directory and block directory searches return empty lists; the editor
-  ships its block types client-side.
-- The index advertises `application-passwords` authentication; the admin screen to create them
-  is not in this version ([authentication](authentication.md)).
+- `wp/v2/block-types` lists only the blocks registered on the server; the editor ships the rest
+  client-side. Pattern directory and block directory searches return empty lists. Templates,
+  template parts and global styles are stubs (there is no Site Editor).
+- The index advertises `application-passwords` authentication; create and revoke them under
+  Users › Profile › Application Passwords ([authentication](authentication.md)).
