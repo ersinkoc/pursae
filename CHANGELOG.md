@@ -10,6 +10,8 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-11-23
+
 ### Fixed
 
 - **Pursae SEO: the front page and the posts page are analyzed as visitors see them.** A Pursae Multi
