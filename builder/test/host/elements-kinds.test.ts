@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { attr, elementKids, parse, type El, type Tree } from '../../host/elements/html'
+import { attr, elementKids, parse, textOf, type El, type Tree } from '../../host/elements/html'
 import { KIND_ICON, ROW_CAP, autoName, groupKids, humanClass, kindLabel, kindOf, labelWithCount, sectionName, tagName, type Kind } from '../../host/elements/kinds'
 import { childIds } from '../../host/elements/ops'
 
@@ -222,5 +222,19 @@ describe('quiet code elements and caps', () => {
     expect(ids).toHaveLength(1000)
     expect(Math.min(ids.length, ROW_CAP)).toBe(ROW_CAP) // only ROW_CAP rows render until "Show N more"
     expect(labelWithCount('cards', ids.length)).toBe('Cards · 1000')
+  })
+})
+
+describe('names keep inline text together', () => {
+  it('a heading with inline spans is named as it reads', () => {
+    const src = '<section data-wbc="1"><h1 data-wbc="2">Birlikteyiz; çünkü <span data-wbc="3">güvenli iş</span>, <span data-wbc="4">sağlıklı işçi</span> bizim işimiz</h1><div data-wbc="5"><p data-wbc="6">One</p><p data-wbc="7">Two</p></div></section>'
+    const tr = parse(src)
+    const els = (e: El): El[] => [e, ...elementKids(e).flatMap(els)]
+    const all = elementKids(tr.root).flatMap(els)
+    const h1 = all.find((e) => e.tag === 'h1')!
+    const div = all.find((e) => e.tag === 'div')!
+    expect(textOf(tr, h1)).toBe("Birlikteyiz; çünkü güvenli iş, sağlıklı işçi bizim işimiz")
+    expect(autoName(tr, h1)).toMatch(/^Birlikteyiz; çünkü güvenli/)
+    expect(textOf(tr, div)).toBe("One Two")
   })
 })
