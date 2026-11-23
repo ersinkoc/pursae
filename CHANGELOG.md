@@ -28,6 +28,14 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Backup Manager: remote retention, sealed secrets, restore paths.** A remote backup uploaded in the
+  same second as another is no longer deleted in its place when their names sort the other way. A secret
+  or passphrase that begins with `bkr:v1:` is stored sealed, and sealing fails closed if the system has
+  no entropy. Endpoints that embed a metadata or loopback address in NAT64 or 6to4, and Azure's
+  WireServer address, are refused even when `PURSAE_BACKUP_S3_ALLOW_PRIVATE=1` (that setting still
+  allows loopback, private and carrier-grade NAT addresses). Restoring files no longer follows a symlink
+  out of the destination directory, and a database row larger than 256 MB fails the restore instead of
+  buffering without a limit.
 - **WP to Pursae: killed `pursae import wordpress` runs.** A running import now touches its row every 30
   seconds, so a command that was killed (SIGKILL, a crash, a lost terminal) is recognised after 30 minutes
   instead of 6 hours (still 6 hours for an import started with 0.5.0, which does not heartbeat). Its import is

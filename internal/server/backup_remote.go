@@ -241,11 +241,27 @@ func bmgrRemoteCheckEndpoint(raw string, allowPrivate bool) error {
 }
 
 // bmgrRemoteMetadata are cloud metadata services outside the link-local range.
-var bmgrRemoteMetadata = []net.IP{net.ParseIP("100.100.100.200"), net.ParseIP("fd00:ec2::254")}
+// 169.254.169.254 and the other link-local metadata addresses are refused by
+// IsLinkLocalUnicast before this list is consulted.
+var bmgrRemoteMetadata = []net.IP{
+	net.ParseIP("100.100.100.200"), // Alibaba Cloud
+	net.ParseIP("fd00:ec2::254"),   // AWS metadata, IPv6
+	net.ParseIP("168.63.129.16"),   // Azure WireServer (not link-local, not an RFC1918 address)
+}
 
 // bmgrRemoteAddrOK decides whether the storage may be reached at ip.
+// NAT64 (64:ff9b::/96) and 6to4 (2002::/16) are judged as the IPv4 address they embed, so a
+// mapped metadata or loopback address cannot skip the checks below. With the private-network
+// override, only loopback, RFC1918 and carrier-grade NAT are added; reserved, documentation
+// and metadata addresses stay refused.
 func bmgrRemoteAddrOK(ip net.IP, allowPrivate bool) error {
-	if ip == nil || ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() || ip.IsInterfaceLocalMulticast() {
+	if ip == nil {
+		return errors.New("the endpoint points at a link-local or reserved address")
+	}
+	if inner := bmgrEmbeddedIPv4(ip); inner != nil {
+		return bmgrRemoteAddrOK(inner, allowPrivate)
+	}
+	if ip.IsUnspecified() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsMulticast() || ip.IsInterfaceLocalMulticast() {
 		return errors.New("the endpoint points at a link-local or reserved address")
 	}
 	for _, m := range bmgrRemoteMetadata {
@@ -253,10 +269,39 @@ func bmgrRemoteAddrOK(ip net.IP, allowPrivate bool) error {
 			return errors.New("the endpoint points at a cloud metadata service")
 		}
 	}
-	if !allowPrivate && !publicIP(ip) {
+	if publicIP(ip) {
+		return nil
+	}
+	if allowPrivate && (ip.IsLoopback() || ip.IsPrivate() || bmgrCGNAT(ip)) {
+		return nil
+	}
+	if !allowPrivate {
 		return errors.New("the endpoint points at this server or the private network (set " + config.EnvName("BACKUP_S3_ALLOW_PRIVATE") + "=1 for a storage server on your own network)")
 	}
+	return errors.New("the endpoint points at a link-local or reserved address")
+}
+
+// bmgrEmbeddedIPv4 returns the IPv4 address carried by a NAT64 or 6to4 address, or nil.
+// IPv4-mapped IPv6 (::ffff:0:0/96) is left alone: net.IP's own predicates already unwrap it.
+func bmgrEmbeddedIPv4(ip net.IP) net.IP {
+	ip16 := ip.To16()
+	if ip16 == nil || ip.To4() != nil {
+		return nil
+	}
+	switch {
+	case ip16[0] == 0x00 && ip16[1] == 0x64 && ip16[2] == 0xff && ip16[3] == 0x9b && isZero(ip16[4:12]): // 64:ff9b::/96
+		return net.IP(ip16[12:16])
+	case ip16[0] == 0x20 && ip16[1] == 0x02: // 2002::/16
+		return net.IP(ip16[2:6])
+	}
 	return nil
+}
+
+// bmgrCGNAT reports 100.64.0.0/10 (carrier-grade NAT). The Azure and Alibaba metadata
+// addresses inside it are rejected earlier, by the metadata list.
+func bmgrCGNAT(ip net.IP) bool {
+	ip4 := ip.To4()
+	return ip4 != nil && ip4[0] == 100 && ip4[1]&0xc0 == 0x40
 }
 
 // bmgrRemoteHTTP is the client for the storage: every connection's address is checked after DNS
@@ -320,15 +365,22 @@ func (s *Server) bmgrRemoteAEAD() cipher.AEAD {
 	return gcm
 }
 
-// bmgrRemoteSeal encrypts a secret for the option; empty and sealed values pass through.
-func (s *Server) bmgrRemoteSeal(plain string) string {
-	if plain == "" || strings.HasPrefix(plain, bmgrRemoteSealPfx) {
-		return plain
+// bmgrRand is the entropy source for sealed secrets. Tests replace it.
+var bmgrRand = rand.Reader
+
+// bmgrRemoteSeal encrypts a secret for the option. An empty value stays empty. Every other value
+// is sealed, including one that already begins with the seal prefix: that prefix is how a stored
+// value is recognised, so treating it as "already sealed" would write the secret in plain text.
+func (s *Server) bmgrRemoteSeal(plain string) (string, error) {
+	if plain == "" {
+		return "", nil
 	}
 	gcm := s.bmgrRemoteAEAD()
 	nonce := make([]byte, gcm.NonceSize())
-	_, _ = rand.Read(nonce)
-	return bmgrRemoteSealPfx + base64.RawStdEncoding.EncodeToString(gcm.Seal(nonce, nonce, []byte(plain), nil))
+	if _, err := io.ReadFull(bmgrRand, nonce); err != nil {
+		return "", fmt.Errorf("sealing the remote storage secret: %w", err)
+	}
+	return bmgrRemoteSealPfx + base64.RawStdEncoding.EncodeToString(gcm.Seal(nonce, nonce, []byte(plain), nil)), nil
 }
 
 // bmgrRemoteReveal opens a sealed secret ("" when it does not open: the site secret changed).
@@ -380,15 +432,23 @@ func (s *Server) bmgrRemoteSave(ctx context.Context, in bmgrRemoteSettings, clea
 		return fmt.Errorf("keep between 0 and %d remote backups (0 keeps all)", bmgrRemoteKeepMax)
 	}
 	old := s.bmgrRemoteStored()
-	if !clearSecrets {
+	var err error
+	if clearSecrets {
+		in.SecretKey, in.Passphrase = "", ""
+	} else {
+		// An empty field keeps the value already stored (it is sealed). A new value is sealed
+		// here and only here, so a stored blob is not sealed a second time.
 		if in.SecretKey == "" {
 			in.SecretKey = old.SecretKey
+		} else if in.SecretKey, err = s.bmgrRemoteSeal(in.SecretKey); err != nil {
+			return err
 		}
 		if in.Passphrase == "" {
 			in.Passphrase = old.Passphrase
+		} else if in.Passphrase, err = s.bmgrRemoteSeal(in.Passphrase); err != nil {
+			return err
 		}
 	}
-	in.SecretKey, in.Passphrase = s.bmgrRemoteSeal(in.SecretKey), s.bmgrRemoteSeal(in.Passphrase)
 	m := map[string]any{"endpoint": in.Endpoint, "region": in.Region, "bucket": in.Bucket, "prefix": in.Prefix,
 		"access_key": in.AccessKey, "secret_key": in.SecretKey, "path_style": in.PathStyle, "passphrase": in.Passphrase,
 		"auto": in.Auto, "keep": in.Keep}
@@ -537,6 +597,7 @@ func (s *Server) bmgrRemoteUpload(ctx context.Context, name string, logf func(st
 	key = st.Prefix + name + backupcrypt.Suffix
 	size := fi.Size() + backupcrypt.Overhead(fi.Size())
 	pr, pw := io.Pipe()
+	encErr := make(chan error, 1)
 	go func() {
 		w, err := backupcrypt.NewWriter(pw, []byte(st.Passphrase))
 		if err == nil {
@@ -546,6 +607,7 @@ func (s *Server) bmgrRemoteUpload(ctx context.Context, name string, logf func(st
 			}
 		}
 		pw.CloseWithError(err)
+		encErr <- err
 	}()
 	start := time.Now()
 	n, err := bmgrRemotePutStream(ctx, cl, key, pr, size, func(done int64) {
@@ -554,14 +616,24 @@ func (s *Server) bmgrRemoteUpload(ctx context.Context, name string, logf func(st
 		}
 	})
 	pr.CloseWithError(errors.New("upload stopped")) // ends the encrypting goroutine on failure
+	eerr := <-encErr                                // joined before f.Close, which runs as this function returns
 	if err != nil {
 		return "", st.redact(fmt.Errorf("upload to %s failed: %w", st.Bucket, err))
+	}
+	if eerr != nil {
+		// The bytes that were uploaded are not a finished ciphertext. Remove that object; a failed
+		// multipart upload was already aborted and must not be deleted here, because that would
+		// remove an earlier backup stored under the same key.
+		dctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+		_ = cl.Delete(dctx, key)
+		cancel()
+		return "", st.redact(fmt.Errorf("upload to %s failed: %w", st.Bucket, eerr))
 	}
 	if logf != nil {
 		logf("Uploaded %s encrypted (%s) to %s/%s in %s", name, bmgrHuman(n), st.Bucket, key, time.Since(start).Round(time.Second))
 	}
 	if st.Keep > 0 {
-		removed, perr := bmgrRemotePrune(ctx, cl, st, st.Keep)
+		removed, perr := bmgrRemotePrune(ctx, cl, st, st.Keep, key)
 		if perr != nil && logf != nil {
 			logf("Remote retention: %v", perr)
 		}
@@ -575,13 +647,31 @@ func (s *Server) bmgrRemoteUpload(ctx context.Context, name string, logf func(st
 }
 
 // bmgrRemotePrune deletes the oldest encrypted backups under the prefix so that keep remain.
-func bmgrRemotePrune(ctx context.Context, cl *gocdn.Client, st bmgrRemoteSettings, keep int) ([]string, error) {
+// protect, when set, is the object just uploaded: S3's LastModified resolution is one second, and
+// the random suffix of a backup name is not an upload order, so a tie would otherwise delete the
+// backup that was just stored and keep an older one.
+func bmgrRemotePrune(ctx context.Context, cl *gocdn.Client, st bmgrRemoteSettings, keep int, protect string) ([]string, error) {
 	if keep <= 0 {
 		return nil, nil
 	}
 	list, err := bmgrRemoteList(ctx, cl, st)
 	if err != nil {
 		return nil, err
+	}
+	if protect != "" {
+		rest := make([]bmgrRemoteObject, 0, len(list))
+		var top *bmgrRemoteObject
+		for i := range list {
+			if top == nil && list[i].Key == protect {
+				o := list[i]
+				top = &o
+				continue
+			}
+			rest = append(rest, list[i])
+		}
+		if top != nil {
+			list = append([]bmgrRemoteObject{*top}, rest...)
+		}
 	}
 	var removed []string
 	var errs []error
