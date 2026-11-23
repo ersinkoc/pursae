@@ -55,15 +55,24 @@ const MIXED = [
   ['mixed-control', { guard: false, edit: true, sandbox: 'allow-scripts allow-same-origin allow-forms' }],
 ]
 
-// The canvas's first frame decided from the boot object (trust.ts): before the user's choice an
-// untrusted design (another kit trusted, no kit at all, a stale trust list without unfiltered_html)
-// must load static and read nothing, with the prompt up; a kit the user trusts ("Always for this
-// design", remembered on the server) loads live and runs, like the control.
+// The canvas's frame decided from the boot object (trust.ts) and after an insert into the open
+// page: before the user's choice a design the user does not trust must load static and read
+// nothing, with the prompt up — another kit trusted, no kit at all, a stale trust list without
+// unfiltered_html, (a) a section without a kit next to a trusted one, (c) a section that only names
+// a trusted kit (content.kit) or loads its stylesheet but brings its own code, a trusted kit whose
+// inline code was never approved, (b) a section of an untrusted kit inserted into a Live page; a
+// page whose kits and code the user trusts ("Always for this design", remembered on the server)
+// loads live and runs, like the control.
 const TRUST = [
-  ['prompt-untrusted', { canRunScripts: true, scriptTrust: ['other'], kit: 'acme' }, { live: false, prompt: true }],
-  ['prompt-nokit', { canRunScripts: true, scriptTrust: ['acme'] }, { live: false, prompt: true }],
-  ['no-unfiltered-html', { canRunScripts: false, scriptTrust: ['acme'], kit: 'acme' }, { live: false, prompt: false }],
-  ['trusted-kit', { canRunScripts: true, scriptTrust: ['acme'], kit: 'acme' }, { live: true, prompt: false }],
+  ['prompt-untrusted', { canRunScripts: true, scriptTrust: ['other'], secs: [{ kit: 'acme' }] }, { live: false, prompt: true }],
+  ['prompt-nokit', { canRunScripts: true, scriptTrust: ['acme'], approve: true, secs: [{}] }, { live: false, prompt: true }],
+  ['no-unfiltered-html', { canRunScripts: false, scriptTrust: ['acme'], approve: true, secs: [{ kit: 'acme' }] }, { live: false, prompt: false }],
+  ['a-nokit-section-beside-trusted', { canRunScripts: true, scriptTrust: ['acme'], secs: [{ kit: 'acme', html: '<p>x</p>' }, { html: '<script>steal()</script>' }] }, { live: false, prompt: true }],
+  ['c-label-only', { canRunScripts: true, scriptTrust: ['acme'], approve: true, secs: [{ label: 'acme' }] }, { live: false, prompt: true }],
+  ['c-code-unapproved', { canRunScripts: true, scriptTrust: ['acme'], secs: [{ kit: 'acme', label: 'acme' }] }, { live: false, prompt: true }],
+  ['b-insert-untrusted-kit', { canRunScripts: true, scriptTrust: ['acme'], approve: true, secs: [{ kit: 'acme' }], insert: { kit: 'evil', html: '<p>x</p>' } }, { live: false, prompt: true }],
+  ['b-insert-new-code', { canRunScripts: true, scriptTrust: ['acme'], approve: true, secs: [{ kit: 'acme' }], insert: { kit: 'acme', html: '<img src=x onerror="steal()">' } }, { live: false, prompt: true }],
+  ['trusted-kit', { canRunScripts: true, scriptTrust: ['acme'], approve: true, secs: [{ kit: 'acme' }] }, { live: true, prompt: false }],
 ]
 
 // PW_CHROMIUM: a Chromium (headless shell) other than the one this Playwright version installs (the same

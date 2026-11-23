@@ -9,8 +9,9 @@
  *                                                         published page (POST documents/{id}/live-frame,
  *                                                         internal/server/webbuilder_liveframe.go: real location,
  *                                                         the front end's CSP and nonce, shell, tail, attributes);
- *                                                         { srcdoc } (liveDoc) only when that route is missing
- *   liveDoc(input, nonce?)        → string                the client-built fallback document (srcdoc)
+ *                                                         throws when the server cannot (the canvas stays in Safe mode)
+ *   liveDoc(input, nonce?)        → string                the client's model of that document (tests; never loaded
+ *                                                         with the design's scripts in the editor)
  *   LIVE_SANDBOX                                          the sandbox a live frame gets (scripts, same origin,
  *                                                         forms, popups, modals; never top navigation)
  *   loadLive(frame, source)       → Promise<Document|null> releases the frame's current document (WebGL
@@ -35,7 +36,6 @@
  */
 import type { Section } from '@/builder/types'
 import type { CmsHost } from '../cms-host'
-import { isRestError } from '../rest'
 import { RAW, attrEdit, elementKids, outer, parse, splice, wbc, type Edit, type El, type Node as SrcNode, type Tree } from './html'
 import { prefixIds, wrapChain } from './frame'
 
@@ -85,6 +85,8 @@ export type LiveApply = { reload: false; touched: Element[] } | { reload: true; 
  * The sandbox of a live frame: the design runs as on the site (scripts, same origin for its fonts,
  * modules, storage and for the editor to reach the DOM, forms, popups, alert/confirm, downloads,
  * pointer lock, presentation), but it can never navigate the editor's page (no allow-top-navigation).
+ * This is not a security boundary: the design runs with the author's access in it (same origin),
+ * which is why it runs only after the author's choice (trust.ts).
  */
 export const LIVE_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-pointer-lock allow-presentation'
 
@@ -226,13 +228,15 @@ const wire = (s: Section) => ({ id: s.id, kind: s.kind, hidden: false, content: 
 
 /**
  * The frame's source for input: the server renders it at the page's own address (true location,
- * CSP and nonce of the published page); the client-built srcdoc only when the route is missing
- * (an older server). Other errors (no permission: the user may not run scripts) are thrown.
+ * CSP and nonce of the published page). Every failure is thrown — the route missing (an older
+ * server), no permission, too large, offline — and the canvas stays in Safe mode: the design's
+ * scripts never run in a srcdoc frame under the editor's own policy and origin. liveDoc stays the
+ * client's model of the served document (tests compare the two).
  */
 export async function openLive(input: LiveInput): Promise<LiveSource> {
   const h = host()
-  if (!h || !input.postId) return { srcdoc: liveDoc(input, editorNonce()) }
-  try {
+  if (!h || !input.postId) throw new Error('The live canvas needs a saved page.')
+  {
     const r = await h.rest.request<{ url: string }>('POST', `web-builder/v2/documents/${input.postId}/live-frame`, {
       json: {
         url: input.url,
@@ -245,10 +249,8 @@ export async function openLive(input: LiveInput): Promise<LiveSource> {
         hook: GL_HOOK,
       },
     })
+    if (!r.data || typeof r.data.url !== 'string' || !r.data.url.startsWith('/') || r.data.url.startsWith('//')) throw new Error('The server did not return a live frame.')
     return { src: r.data.url }
-  } catch (e) {
-    if (isRestError(e) && (e.status === 404 && /no_route/.test(e.code))) return { srcdoc: liveDoc(input, editorNonce()) }
-    throw e
   }
 }
 
@@ -317,6 +319,10 @@ export function setLiveStyles(doc: Document, css: { kit?: string; local?: string
  * handle itself (not defaultPrevented once every listener ran) and that would load another
  * document in the frame is stopped; onLeave gets its URL (the canvas may offer to open it).
  * Same-document links (#hash) and links opening another window work as on the site.
+ *
+ * A usability guard (the canvas stays on the page while the author works), not a security
+ * boundary: a design script can always navigate its own frame (location.href = …) or reach the
+ * editor's page, since it runs same-origin with the author's access.
  */
 export function guardLive(doc: Document, onLeave?: (url: string) => void): () => void {
   const win = doc.defaultView

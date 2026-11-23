@@ -23,7 +23,12 @@
  * they need the user's choice first: the non-blocking TrustPrompt (Always for this design / This
  * session only / Not now). The mode is decided from the boot object before the first frame is
  * made, so a trusted page loads once; switching modes makes a new frame element (the sandbox and
- * the document always change together).
+ * the document always change together). The choice covers what the page ran when it was given
+ * (trust.ts): on every change of the code sections the canvas reads what the page runs now
+ * (needsOf) and, when something is not covered (a section of another kit inserted, code pasted or
+ * edited), draws the change static in the same render and asks again (runsNow, reconcileTrust).
+ * Live never falls back to a frame in the editor's own document: when the server cannot give the
+ * live frame, the canvas stays in Safe mode with a notice.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ArrowDown, ArrowUp, Bold, ChevronRight, Clipboard, ClipboardPaste, Copy, CornerLeftUp, Eraser, Eye, EyeOff, GripVertical, Italic, Layers, Link2, MousePointerClick, Paintbrush, Palette as PaletteIcon, Pencil, Plus, RemoveFormatting, Shield, ShieldOff, SquareDashed, Tags, Trash2, Ungroup, Zap } from 'lucide-react'
@@ -48,10 +53,10 @@ import { fontUrlFor } from '@/builder/fonts'
 import { style as styleAct } from './actions'
 import { kitsCSS, kitsOf, loadKits, syncKits, useKitStore } from './kitstyle'
 import { Palette, type NewElement } from './PaletteDrawer'
-import { TrustPrompt, revokeTrust, trustAlways, trustLater, trustSession } from './ScriptsGate'
+import { TrustPrompt, reconcileTrust, revokeTrust, trustAlways, trustLater, trustSession } from './ScriptsGate'
 import { applyToLive, guardLive, liveGeometry, liveShellOf, loadLive, openLive, releaseLive, reloadPreserving, setLiveStyles, type LiveInput } from './live'
 import { drawnText, holdLabel, leavesFrame, liveChange, measureLoop, passesThrough, sourceTarget, watchFrame } from './interact'
-import { frameModeOf, markupReadOnly, sandboxOf } from './trust'
+import { covers, frameModeOf, grantsOf, markupReadOnly, needsOf, runsNow, sandboxOf } from './trust'
 import { tc } from './canvas-tr'
 
 const BAR = 34
@@ -112,10 +117,14 @@ export function ElementsCanvas() {
   const readOnly = markupReadOnly(host?.boot)
   const parts = useMemo(() => partsOf(host?.boot.codeParts), [host])
   const kits = host?.boot.kitBreakpoints
-  const mode: FrameMode = b.preview ? 'preview' : st.live && st.scripts ? 'live' : 'static'
-  /** The frame's document: the design's scripts run only once the user chose it (else static, inert). */
-  const fmode: FrameMode = frameModeOf(b.preview, st.live, st.scripts)
   const secs = useMemo(() => b.doc.sections.filter((s) => s.kind === 'code' && !s.hidden), [b.doc.sections])
+  /** What the page runs now (its kits, its own code), read from the markup on every change. */
+  const needs = useMemo(() => needsOf(parts.header, secs, parts.footer), [parts, secs])
+  /** The design's scripts run: the user chose it and the choice covers what the page runs NOW. */
+  const run = runsNow(st, needs)
+  const mode: FrameMode = b.preview ? 'preview' : st.live && run ? 'live' : 'static'
+  /** The frame's document: the design's scripts run only once the user chose it (else static, inert). */
+  const fmode: FrameMode = frameModeOf(b.preview, st.live, run, st.canRun)
   const page = useMemo(() => pageOf(b.doc), [b.doc])
   const htmlNow = useMemo(() => Object.fromEntries(secs.map((s) => [s.id, s.content.html ?? ''])), [secs])
   const structKey = mode + '\u0003' + fmode + '\u0002' + secs.map((s, i) => [s.id, s.content.head, s.content.wrap, i === 0 ? `${s.content.lang}\u0000${s.content.body}\u0000${s.content.htmlAttrs}\u0000${s.content.bodyAttrs}` : ''].join('\u0000')).join('\u0001')
@@ -141,8 +150,9 @@ export function ElementsCanvas() {
   // Class and variable edits (the kits' override stylesheets, kitstyle.ts).
   const kitStore = useKitStore()
   const kitList = useMemo(() => kitsOf(b.doc, parts as never).join(','), [b.doc, parts])
-  /** The page's kits (its sections', its header's and footer's): what "Always for this design" trusts. */
-  const pageKits = useMemo(() => (kitList ? kitList.split(',') : []), [kitList])
+  // The page brought in something the user's choice does not cover: the frame above is already
+  // static (run is false in this render); the choice is withdrawn and the prompt asks again.
+  useLayoutEffect(() => reconcileTrust(needs), [needs, st.scripts])
   useEffect(() => {
     void loadKits(kitList ? kitList.split(',') : [])
   }, [kitList])
@@ -248,7 +258,19 @@ export function ElementsCanvas() {
     if (!frameSrc.scripts || !f || !input) return
     let cancelled = false
     void (async () => {
-      const source = await openLive(input)
+      let source
+      try {
+        source = await openLive(input)
+      } catch (e) {
+        // No live frame (refused, too large, offline, an older server): Safe mode, never a blank
+        // canvas; the user's choice stays (Live asks the server again).
+        if (cancelled) return
+        console.warn('[web-builder] live canvas unavailable', e)
+        setElState({ live: false, interact: false, editing: null })
+        if (cur.current.b.preview) setElState({ scripts: false })
+        cur.current.b.notify(tc('The live canvas could not be loaded ({message}). The canvas is in Safe mode.', { message: e instanceof Error ? e.message : String(e) }))
+        return
+      }
       if (cancelled) return
       const d = frameSrc.keep ? await reloadPreserving(f, source) : await loadLive(f, source)
       if (cancelled || !d || frame.current !== f) return
@@ -467,29 +489,44 @@ export function ElementsCanvas() {
     const at = locate(page, id)!
     // Text a script drew differently from the source (Live): its SOURCE text is edited in a
     // popover, the DOM the script drew is never read back (K5).
-    const drawn = mode === 'live' && drawnText(at.tree.src.slice(at.el.openEnd, at.el.closeStart), el.innerHTML)
+    const live = mode === 'live'
+    const drawn = live && drawnText(at.tree.src.slice(at.el.openEnd, at.el.closeStart), el)
     setMenu(null)
     selectEl(cur.current.b, id, page)
-    if (drawn) {
-      if (at.el.children.some((c) => c.type === 'el')) {
+    /** The source text in a popover (the design's DOM is never read back). */
+    const popover = () => {
+      const a = locate(cur.current.page, id)
+      if (!a) return
+      if (a.el.children.some((c) => c.type === 'el')) {
         cur.current.b.notify(t('This text is drawn by the design’s script: edit it in the section’s HTML code.'))
-        return true
+        return
       }
-      const bx = box(el.getBoundingClientRect())
-      setSrcText({ id, value: decode(at.tree.src.slice(at.el.openEnd, at.el.closeStart)), x: bx ? Math.max(4, bx.x) : 16, y: bx ? Math.max(4, bx.y + bx.h + 6) : 16 })
+      const e2 = fdoc() && frameEl(fdoc()!, id)
+      const bx = e2 ? box(e2.getBoundingClientRect()) : null
+      setSrcText({ id, value: decode(a.tree.src.slice(a.el.openEnd, a.el.closeStart)), x: bx ? Math.max(4, bx.x) : 16, y: bx ? Math.max(4, bx.y + bx.h + 6) : 16 })
+    }
+    if (drawn) {
+      popover()
       return true
     }
-    // The new text is written from the source (the frame's copy lacks handlers and more).
+    // The new text is written from the source (the frame's copy lacks handlers and more). In Live
+    // mode the element is watched while it is edited: if the design changes it meanwhile (not the
+    // user's typing), nothing is saved and the source text is edited in the popover instead (K5).
     const map = mapSource(el, at.tree, at.el)
-    const session = startTextEdit(el, false, point ?? null, (e) => writeBack(e, at.tree, map), (html) => {
+    const session = startTextEdit(el, false, point ?? null, (e) => writeBack(e, at.tree, map), (html, _text, foreign) => {
       setEditing(null)
       setElState({ editing: null })
       const { b, page } = cur.current
+      if (foreign) {
+        b.notify(tc('The design’s script changed this text while you edited it, so it was not saved. Edit the stored text here instead.'))
+        popover()
+        return
+      }
       if (html === null) return
       const a = locate(page, id)
       if (a && cur.current.mode === 'live') expect.current[a.sec] = a.tree.src.slice(0, a.el.openEnd) + html + a.tree.src.slice(a.el.closeStart)
       act.setInner(b, id, html)
-    })
+    }, live)
     setEditing(session)
     setElState({ editing: id, sel: id })
     return true
@@ -1045,13 +1082,13 @@ export function ElementsCanvas() {
         )}
         {editing && (
           <div ref={textBarRef} data-wb-textbar="" className="pointer-events-auto absolute left-0 top-0 flex items-center gap-0.5 rounded-lg bg-[#1d2327] p-0.5 text-white shadow-xl" onPointerDown={(e) => e.preventDefault()} onClick={(e) => e.stopPropagation()}>
-            {bx(t('Bold'), <Bold size={14} />, () => format(editing.el.ownerDocument, 'bold'))}
-            {bx(t('Italic'), <Italic size={14} />, () => format(editing.el.ownerDocument, 'italic'))}
+            {bx(t('Bold'), <Bold size={14} />, () => editing.user(() => format(editing.el.ownerDocument, 'bold')))}
+            {bx(t('Italic'), <Italic size={14} />, () => editing.user(() => format(editing.el.ownerDocument, 'italic')))}
             {bx(t('Link'), <Link2 size={14} />, () => {
               const url = window.prompt(t('Link address'), 'https://')
-              if (url) format(editing.el.ownerDocument, 'link', url)
+              if (url) editing.user(() => format(editing.el.ownerDocument, 'link', url))
             })}
-            {bx(t('Clear formatting'), <RemoveFormatting size={14} />, () => format(editing.el.ownerDocument, 'clear'))}
+            {bx(t('Clear formatting'), <RemoveFormatting size={14} />, () => editing.user(() => format(editing.el.ownerDocument, 'clear')))}
           </div>
         )}
         {menu && <ContextMenu b={b} menu={menu} page={page} close={() => setMenu(null)} hidden={st.hidden} shown={st.shown} toggleHidden={toggleHidden} toggleShown={toggleShown} beginText={beginText} />}
@@ -1059,11 +1096,11 @@ export function ElementsCanvas() {
 
       {st.palette && !b.preview && <Palette startDrag={startAddDrag} secs={secs} parts={parts} />}
 
-      {b.preview && !st.scripts && (
+      {b.preview && !run && (
         <div data-wb-scripts-off="" className="absolute left-1/2 top-3 z-30 flex max-w-[92%] -translate-x-1/2 items-center gap-3 rounded-lg bg-[#1d2327] px-3 py-2 text-[12px] text-ink-200 shadow-xl" onClick={(e) => e.stopPropagation()}>
           <span>{t('The design’s scripts are not running in this preview.')}</span>
           {st.canRun ? (
-            <button type="button" data-wb-scripts-ask="" onClick={() => setElState({ prompt: true })} className="shrink-0 rounded-md bg-amber-400/20 px-2 py-1 text-amber-200 hover:bg-amber-400/30">
+            <button type="button" data-wb-scripts-ask="" onClick={() => (covers(needs, grantsOf(st)) ? setElState({ scripts: true }) : setElState({ prompt: true }))} className="shrink-0 rounded-md bg-amber-400/20 px-2 py-1 text-amber-200 hover:bg-amber-400/30">
               {t('Run them…')}
             </button>
           ) : (
@@ -1071,15 +1108,15 @@ export function ElementsCanvas() {
           )}
         </div>
       )}
-      {st.prompt && !st.scripts && (
+      {st.prompt && !run && (
         <TrustPrompt
-          kits={pageKits}
-          trust={st.trust}
+          needs={needs}
+          grants={grantsOf(st)}
           canRun={st.canRun}
           busy={trustBusy}
           error={trustError}
-          onAlways={() => void runTrust(() => trustAlways(pageKits))}
-          onSession={() => (setTrustError(''), trustSession())}
+          onAlways={() => void runTrust(() => trustAlways(needs))}
+          onSession={() => (setTrustError(''), trustSession(needs))}
           onLater={() => (setTrustError(''), trustLater())}
         />
       )}
@@ -1149,24 +1186,24 @@ export function ElementsCanvas() {
         )}
         {!b.preview &&
           (st.canRun ? (
-            <div role="group" aria-label={tc('Live')} className="flex shrink-0 items-center rounded-md bg-white/[0.06] p-0.5" data-wb-mode={st.live && st.scripts ? 'live' : 'safe'}>
+            <div role="group" aria-label={tc('Live')} className="flex shrink-0 items-center rounded-md bg-white/[0.06] p-0.5" data-wb-mode={st.live && run ? 'live' : 'safe'}>
               <button
                 type="button"
                 data-wb-live=""
-                aria-pressed={st.live && st.scripts}
+                aria-pressed={st.live && run}
                 title={tc('Live: the design’s scripts run and the canvas matches your site.')}
-                onClick={() => (st.scripts ? setElState({ live: true, editing: null, interact: false }) : setElState({ prompt: true }))}
-                className={`flex items-center gap-1 rounded px-2 py-0.5 ${st.live && st.scripts ? 'bg-amber-400/20 text-amber-200' : 'hover:bg-white/10 hover:text-white'}`}
+                onClick={() => (covers(needs, grantsOf(st)) ? setElState({ scripts: true, live: true, editing: null, interact: false }) : setElState({ prompt: true }))}
+                className={`flex items-center gap-1 rounded px-2 py-0.5 ${st.live && run ? 'bg-amber-400/20 text-amber-200' : 'hover:bg-white/10 hover:text-white'}`}
               >
                 <Zap size={12} /> {tc('Live')}
               </button>
               <button
                 type="button"
                 data-wb-safe=""
-                aria-pressed={!(st.live && st.scripts)}
+                aria-pressed={!(st.live && run)}
                 title={tc('Safe mode: the design’s scripts do not run in the editor (they run on the published page).')}
                 onClick={() => setElState({ live: false, editing: null, interact: false })}
-                className={`flex items-center gap-1 rounded px-2 py-0.5 ${!(st.live && st.scripts) ? 'bg-white/15 text-white' : 'hover:bg-white/10 hover:text-white'}`}
+                className={`flex items-center gap-1 rounded px-2 py-0.5 ${!(st.live && run) ? 'bg-white/15 text-white' : 'hover:bg-white/10 hover:text-white'}`}
               >
                 <Shield size={12} /> {tc('Safe mode')}
               </button>
@@ -1176,7 +1213,7 @@ export function ElementsCanvas() {
               <Shield size={12} /> {tc('Safe mode · scripts run on the published page')}
             </span>
           ))}
-        {!b.preview && st.canRun && pageKits.some((k) => st.trust.has(k)) && (
+        {!b.preview && st.canRun && needs.kits.some((k) => st.trust.has(k)) && (
           <button
             type="button"
             data-wb-untrust=""
@@ -1185,7 +1222,7 @@ export function ElementsCanvas() {
             aria-label={tc('Stop always running this design’s scripts')}
             onClick={() =>
               void runTrust(async () => {
-                await revokeTrust(pageKits)
+                await revokeTrust(needs.kits)
                 b.notify(tc('This design’s scripts no longer run automatically in the editor.'))
               })
             }

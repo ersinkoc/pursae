@@ -86,12 +86,16 @@ describe('rest client', () => {
 })
 
 describe('kit script trust', () => {
-  it('PUTs {trust} to kits/{slug}/trust with the handshake and returns the trusted kits', async () => {
-    const m = mockFetch({ 'PUT web-builder/v2/kits/my-kit/trust': (c) => ({ json: { trust: (c.body as { trust: boolean }).trust, scriptTrust: ['a', 'my-kit', 3] } }) })
+  it('PUTs {trust, code} to kits/{slug}/trust with the handshake and returns the trusted kits and their code', async () => {
+    const h = 'a'.repeat(64)
+    const m = mockFetch({
+      'PUT web-builder/v2/kits/my-kit/trust': (c) => ({ json: { trust: (c.body as { trust: boolean }).trust, scriptTrust: ['a', 'my-kit', 3], scriptCode: { 'my-kit': [h, 'bad', 1], x: 'no' } } }),
+    })
     const rest = createRest({ root: ROOT, nonce: 'n', nonceUrl: '', fetch: m.fetch })
-    await expect(setKitTrust(rest, 'my-kit', true)).resolves.toEqual(['a', 'my-kit'])
-    await setKitTrust(rest, 'my-kit', false)
-    expect(m.calls.map((c) => c.body)).toEqual([{ trust: true }, { trust: false }])
+    await expect(setKitTrust(rest, 'my-kit', true)).resolves.toEqual({ trust: ['a', 'my-kit'], code: { 'my-kit': [h] } })
+    await setKitTrust(rest, 'my-kit', true, [h])
+    await setKitTrust(rest, 'my-kit', false, [h])
+    expect(m.calls.map((c) => c.body)).toEqual([{ trust: true }, { trust: true, code: [h] }, { trust: false }])
     expect(m.calls[0].headers['x-wb-api']).toBe(String(API_VERSION))
     expect(m.calls[0].headers['x-wp-nonce']).toBe('n')
   })
