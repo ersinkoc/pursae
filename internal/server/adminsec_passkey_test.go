@@ -12,11 +12,13 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/protocol/webauthncbor"
 	"github.com/go-webauthn/webauthn/protocol/webauthncose"
 )
@@ -628,3 +630,51 @@ func TestAdminSecPasskeyName(t *testing.T) {
 
 // pkAdmin reports whether a login redirected to the dashboard.
 func pkAdmin(loc string) bool { return strings.HasSuffix(strings.TrimSuffix(loc, "/"), "/wp-admin") }
+
+// TestAdminSecPasskeyCounterRace: the library checks the signature counter against the row read before
+// the signature was verified. An answer whose counter is no longer greater than the stored one by the time
+// it is recorded (a parallel answer stored a newer counter meanwhile) must be refused and flagged, not
+// accepted with the stored counter kept.
+func TestAdminSecPasskeyCounterRace(t *testing.T) {
+	lbase, c, srv := pkStart(t)
+	ctx := context.Background()
+	a := newFakeAuthenticator(t, lbase)
+	pkRegister(t, c, lbase, a, "Race", "correct horse")
+	u, err := srv.store.UserByLoginOrEmail(ctx, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys := srv.asPasskeys(ctx, u.ID)
+	if len(keys) != 1 {
+		t.Fatalf("%d passkeys", len(keys))
+	}
+	gc, _ := gin.CreateTestContext(httptest.NewRecorder())
+	gc.Request = httptest.NewRequest(http.MethodPost, "/wp-login", nil)
+	answer := func(stale asPasskey, counter uint32) bool {
+		cred := stale.credential()
+		cred.Authenticator.UpdateCounter(counter) // what the library does with the row it read
+		return srv.asPasskeyUsed(gc, u, &stale, &cred)
+	}
+
+	stale := keys[0] // read with the registration's counter
+	if !answer(stale, 7) {
+		t.Fatal("a greater counter was refused")
+	}
+	if n := asCount(t, `SELECT sign_count FROM adminsec_passkeys WHERE id = $1`, stale.ID); n != 7 {
+		t.Fatalf("stored counter %d, want 7", n)
+	}
+	// A second answer checked against the same stale row: the library sees 5 > 0, but 7 is stored now.
+	if answer(stale, 5) {
+		t.Error("an answer with an older counter than the stored one was accepted")
+	}
+	if n := asCount(t, `SELECT count(*) FROM adminsec_passkeys WHERE id = $1 AND clone_warning`, stale.ID); n != 1 {
+		t.Error("the counter regression was not flagged")
+	}
+	if n := asCount(t, `SELECT sign_count FROM adminsec_passkeys WHERE id = $1`, stale.ID); n != 7 {
+		t.Errorf("stored counter went to %d", n)
+	}
+	// Flagged: even a greater counter is refused from now on.
+	if answer(stale, 99) {
+		t.Error("a flagged passkey was accepted")
+	}
+}

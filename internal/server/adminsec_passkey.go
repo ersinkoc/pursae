@@ -306,17 +306,34 @@ func (s *Server) asTakeCeremony(ctx context.Context, token, purpose string) (*as
 // asPasskeyUsed stores what an accepted assertion changed (counter, backup state) and refuses a
 // clone: a counter that did not increase flags the passkey for good.
 func (s *Server) asPasskeyUsed(c *gin.Context, u *store.User, key *asPasskey, cred *webauthn.Credential) bool {
-	if cred.Authenticator.CloneWarning {
+	flag := func(stored int64) bool {
 		_, _ = s.store.Pool.Exec(c, `UPDATE adminsec_passkeys SET clone_warning = true WHERE id = $1`, key.ID)
 		s.asAudit(c, asEvent{Event: "passkey_clone_warning", Severity: "critical", User: u, Object: u.Login,
 			Message: fmt.Sprintf("Passkey “%s” sent a signature counter that did not increase (%d after %d): it may have been copied. It is refused until it is removed.",
-				key.Name, cred.Authenticator.SignCount, key.SignCount)})
+				key.Name, cred.Authenticator.SignCount, stored)})
 		return false
 	}
-	// GREATEST: two answers checked at the same time can't store the older counter last.
-	_, _ = s.store.Pool.Exec(c, `UPDATE adminsec_passkeys SET sign_count = GREATEST(sign_count, $2), backup_state = $3, user_verified = user_verified OR $4,
-		last_used_at = now() WHERE id = $1`, key.ID, int64(cred.Authenticator.SignCount), cred.Flags.BackupState, cred.Flags.UserVerified)
-	return true
+	if cred.Authenticator.CloneWarning {
+		return flag(key.SignCount)
+	}
+	// The library compared the counter with the row read before the signature check; another answer may
+	// have stored a newer counter since. The counter moves forward only if it is still greater than the
+	// stored one (or both are 0: authenticators without a counter), checked and stored in one statement,
+	// so two answers with the same or an older counter can't both pass.
+	n := int64(cred.Authenticator.SignCount)
+	var id int64
+	err := s.store.Pool.QueryRow(c, `UPDATE adminsec_passkeys SET sign_count = $2, backup_state = $3, user_verified = user_verified OR $4,
+		last_used_at = now() WHERE id = $1 AND NOT clone_warning AND (sign_count < $2 OR (sign_count = 0 AND $2 = 0)) RETURNING id`,
+		key.ID, n, cred.Flags.BackupState, cred.Flags.UserVerified).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		var stored int64
+		var flagged bool
+		if s.store.Pool.QueryRow(c, `SELECT sign_count, clone_warning FROM adminsec_passkeys WHERE id = $1`, key.ID).Scan(&stored, &flagged) != nil || flagged {
+			return false // removed or already flagged meanwhile
+		}
+		return flag(stored)
+	}
+	return err == nil
 }
 
 // --- registration (Users › Security) ------------------------------------------------------------
