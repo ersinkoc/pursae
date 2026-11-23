@@ -16,10 +16,11 @@ import { withBindPanel } from './BindPanel'
 import { ContentTab } from './ContentPanel'
 import { frameGuard } from './guard'
 import { BasicCode, basicSummary } from './BasicCode'
+import { SectionThumb } from './SectionThumb'
 
 /** The element editor draws this doc: it has sections and every one is a code section. */
 export const handlesDoc = (doc: DocState) => doc.sections.length > 0 && doc.sections.every((s) => s.kind === 'code')
 
 export function installElements() {
-  setElementsSeam({ handles: handlesDoc, Canvas: ElementsCanvas, Nav: ElementsNav, Tab: withBindPanel(StyleTab), Content: ContentTab, title: styleTitle, guard: frameGuard, Basic: BasicCode, summary: basicSummary })
+  setElementsSeam({ handles: handlesDoc, Canvas: ElementsCanvas, Nav: ElementsNav, Tab: withBindPanel(StyleTab), Content: ContentTab, title: styleTitle, guard: frameGuard, Basic: BasicCode, summary: basicSummary, Thumb: SectionThumb })
 }

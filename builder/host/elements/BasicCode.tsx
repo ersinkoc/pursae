@@ -27,6 +27,7 @@ import { KEEP_ATTR, writeBack, type SrcMap } from './richtext'
 import { PagePicker, richNodes } from './ContentPanel'
 import { tbasic } from './basic-tr'
 import { useElState } from './state'
+import { useLiveEdit } from './livefield'
 import { KIND_ICON, blockOf, elementName, kindOf, namesOf, topBlocks } from './kinds'
 import { tk } from './kinds-tr'
 import { markupReadOnly } from './trust'
@@ -83,20 +84,29 @@ function blockTitle(s: Section): string | null {
 
 /* ---------- Inputs ---------- */
 
-/** A text box that commits on Enter or blur and goes back on Escape. */
-function TextBox({ value, onCommit, onFocus, disabled, multi, placeholder, label, mono }: { value: string; onCommit: (v: string) => void; onFocus?: () => void; disabled?: boolean; multi?: boolean; placeholder?: string; label: string; mono?: boolean }) {
+/**
+ * A text box: the canvas follows while typing (livefield.ts: debounced, one history entry for the
+ * whole typing session), Enter or blur ends the session and Escape goes back to what it was.
+ * `live` false: written on Enter / blur only (an address that would load half of what is typed).
+ */
+function TextBox({ value, onCommit, onFocus, disabled, multi, placeholder, label, mono, live = true }: { value: string; onCommit: (v: string, live: boolean) => boolean | void; onFocus?: () => void; disabled?: boolean; multi?: boolean; placeholder?: string; label: string; mono?: boolean; live?: boolean }) {
   const [draft, setDraft] = useState<string | null>(null)
   const area = useRef<HTMLTextAreaElement>(null)
+  const now = useRef(value)
+  now.current = value
+  const edit = useLiveEdit<string>(
+    (v, isLive) => {
+      if (v === now.current || (isLive && !live)) return false
+      return onCommit(v, isLive)
+    },
+    () => now.current,
+  )
   useEffect(() => {
     const a = area.current
     if (!a) return
     a.style.height = 'auto'
     a.style.height = `${a.scrollHeight}px`
   }, [draft, value])
-  const done = () => {
-    if (draft !== null && draft !== value) onCommit(draft)
-    setDraft(null)
-  }
   const props = {
     value: draft ?? value,
     disabled,
@@ -104,14 +114,22 @@ function TextBox({ value, onCommit, onFocus, disabled, multi, placeholder, label
     spellCheck: !mono,
     'aria-label': label,
     onFocus,
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
-    onBlur: done,
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const v = e.target.value
+      setDraft(v)
+      edit.touch(() => v)
+    },
+    onBlur: () => {
+      edit.commit()
+      setDraft(null)
+    },
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       e.stopPropagation()
       if (e.key === 'Enter') {
         e.preventDefault()
         ;(e.target as HTMLElement).blur()
       } else if (e.key === 'Escape') {
+        edit.revert()
         setDraft(null)
         ;(e.target as HTMLElement).blur()
       }
@@ -128,22 +146,30 @@ function RichBox({ b, f, tr, el, disabled, onFocus }: { b: B; f: Field; tr: Tree
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<SrcMap>(new Map())
   const html = inner(tr, el)
-  const fill = () => {
+  // What the box was drawn from: edits are written back against it (the tree of that moment), whole,
+  // so the box is not redrawn (and the caret kept) while the canvas follows the typing.
+  const base = useRef({ tr, el, html })
+  const focused = useRef(false)
+  const paint = () => {
     if (!box.current) return
     map.current = new Map()
-    box.current.replaceChildren(richNodes(tr, el, map.current))
+    box.current.replaceChildren(richNodes(base.current.tr, base.current.el, map.current))
     // The kept placeholders name what they are (an icon, an image), not their tag.
     for (const ph of Array.from(box.current.querySelectorAll(`[${KEEP_ATTR}]`))) {
       const m = /^<(\w+)>$/.exec(ph.textContent ?? '')
       if (m) ph.textContent = CHIP[m[1]] ? tbasic(CHIP[m[1]]) : '…'
     }
   }
-  useEffect(fill, [html]) // eslint-disable-line react-hooks/exhaustive-deps
-  const save = () => {
-    if (!box.current) return
-    const next = writeBack(box.current, tr, map.current)
-    if (next !== html) act.setInner(b, f.id, next)
-  }
+  useEffect(() => {
+    if (focused.current) return
+    base.current = { tr, el, html }
+    paint()
+  }, [html]) // eslint-disable-line react-hooks/exhaustive-deps
+  const read = () => (box.current ? writeBack(box.current, base.current.tr, map.current) : base.current.html)
+  const edit = useLiveEdit<string>(
+    (next) => (next === html ? false : act.setInner(b, f.id, next)),
+    () => base.current.html,
+  )
   return (
     <div
       ref={box}
@@ -153,15 +179,23 @@ function RichBox({ b, f, tr, el, disabled, onFocus }: { b: B; f: Field; tr: Tree
       aria-label={tbasic(LABEL[f.kind])}
       aria-disabled={disabled || undefined}
       data-wb-basic-rich=""
-      onFocus={onFocus}
-      onBlur={save}
+      onFocus={() => {
+        focused.current = true
+        onFocus()
+      }}
+      onInput={() => edit.touch(read)}
+      onBlur={() => {
+        focused.current = false
+        edit.commit()
+      }}
       onKeyDown={(e) => {
         e.stopPropagation()
         if (e.key === 'Enter') {
           e.preventDefault()
           box.current?.blur()
         } else if (e.key === 'Escape') {
-          fill()
+          edit.revert()
+          paint()
           box.current?.blur()
         }
       }}
@@ -176,17 +210,20 @@ function AddressBox({ b, f, disabled, onFocus, target = 'a' }: { b: B; f: Field;
   const name = f.kind === 'video' ? 'src' : 'href'
   const value = (f.kind === 'video' ? f.src : f.href) ?? ''
   const id = f.kind === 'video' ? f.srcId : f.id
-  const set = (v: string) => {
+  const set = (v: string, live = false): boolean => {
     const e = v ? attrError(name, v, target) : null
-    if (e) return b.notify(t('This address is not allowed (javascript:, data: …).'))
-    act.setAttrs(b, id, { [name]: v.trim() || null }, name === 'href' ? t('Link changed') : undefined)
+    if (e) {
+      if (!live) b.notify(t('This address is not allowed (javascript:, data: …).'))
+      return false
+    }
+    return act.setAttrs(b, id, { [name]: v.trim() || null }, name === 'href' ? t('Link changed') : undefined)
   }
   return (
     <div>
       <span className="mb-1 flex items-center gap-1.5 text-[11.5px] text-ink-500">
         <Link2 size={11} /> {tbasic('Address')}
       </span>
-      <TextBox value={value} label={tbasic('Address')} mono disabled={disabled} onFocus={onFocus} placeholder="https:// · /page/ · #id" onCommit={set} />
+      <TextBox value={value} label={tbasic('Address')} mono live={name === 'href'} disabled={disabled} onFocus={onFocus} placeholder="https:// · /page/ · #id" onCommit={set} />
       {name === 'href' && !disabled && host() && (
         <>
           <button type="button" onClick={() => setPick((p) => !p)} className="mt-1.5 text-[11.5px] text-accent hover:underline">
@@ -261,17 +298,17 @@ function FieldView({ b, f, tr, active, disabled, onFocus }: { b: B; f: Field; tr
       <div className="space-y-2.5">
         {(f.kind === 'heading' || f.kind === 'text' || f.kind === 'button' || f.kind === 'link') &&
           (f.edit === 'plain' ? (
-            <TextBox key={f.id + '\u0000' + f.text} value={f.text} multi={f.kind === 'text'} label={label} disabled={disabled} onFocus={focus} onCommit={commitText} />
+            <TextBox key={f.id} value={f.text} multi={f.kind === 'text'} label={label} disabled={disabled} onFocus={focus} onCommit={commitText} />
           ) : f.edit === 'rich' ? (
-            <RichBox key={f.id + '\u0000' + inner(tr, el)} b={b} f={f} tr={tr} el={el} disabled={disabled} onFocus={focus} />
+            <RichBox key={f.id} b={b} f={f} tr={tr} el={el} disabled={disabled} onFocus={focus} />
           ) : f.text ? (
             <div className="px-0.5 text-[13px] text-ink-300" onClick={focus}>
               {f.text}
             </div>
           ) : null)}
-        {f.href !== null && <AddressBox key={f.id + '\u0000' + f.href} b={b} f={f} disabled={disabled} onFocus={focus} />}
+        {f.href !== null && <AddressBox key={f.id} b={b} f={f} disabled={disabled} onFocus={focus} />}
         {f.kind === 'image' && <ImageBox key={f.id + '\u0000' + f.src} b={b} f={f} tr={tr} el={el} disabled={disabled} onFocus={focus} />}
-        {f.kind === 'input' && <TextBox key={f.id + '\u0000' + f.placeholder} value={f.placeholder ?? ''} label={tbasic('Placeholder')} disabled={disabled} onFocus={focus} onCommit={(v) => act.setAttrs(b, f.id, { placeholder: v })} />}
+        {f.kind === 'input' && <TextBox key={f.id} value={f.placeholder ?? ''} label={tbasic('Placeholder')} disabled={disabled} onFocus={focus} onCommit={(v) => act.setAttrs(b, f.id, { placeholder: v })} />}
         {f.kind === 'video' && <AddressBox key={f.srcId + '\u0000' + f.src} b={b} f={f} disabled={disabled} onFocus={focus} target={f.tag} />}
       </div>
     </div>

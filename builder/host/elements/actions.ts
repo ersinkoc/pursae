@@ -69,6 +69,18 @@ export const latest: { doc: DocState | null } = { doc: null }
 
 const docOf = (b: B) => latest.doc ?? b.doc
 
+/** The history key of the typing session whose write is being made (livefield.ts): the store merges a session's writes into one entry. */
+let writeKey: string | undefined
+export function withKey<T>(key: string, fn: () => T): T {
+  const prev = writeKey
+  writeKey = key
+  try {
+    return fn()
+  } finally {
+    writeKey = prev
+  }
+}
+
 /** Selects element id (null: nothing) and its section in the builder. */
 export function selectEl(b: Pick<B, 'select' | 'doc'>, id: string | null, page?: Page) {
   setElState((s) => ({ sel: id, editing: null, classEdit: s.sel === id ? s.classEdit : null }))
@@ -101,7 +113,7 @@ export function commit(b: B, label: string, res: Result | null, extra?: Record<s
   }
   doc = withLocal(doc, rehome(doc.sections as LocalSection[]))
   latest.doc = doc
-  b.dispatch({ type: 'replace', doc, label })
+  b.dispatch({ type: 'replace', doc, label, ...(writeKey ? { key: writeKey } : {}) })
   if (res.select !== undefined) selectEl(b, res.select, pageOf(doc))
   return true
 }

@@ -107,3 +107,14 @@ export const PALETTE: PaletteItem[] = [
 ]
 
 export const paletteItem = (id: string) => PALETTE.find((p) => p.id === id)
+
+/**
+ * What Basic mode (for people who do not write code) leaves out of the Elements tab: the raw HTML
+ * element, whose markup only Studio's Content tab edits.
+ */
+export const BASIC_HIDDEN: ReadonlySet<PaletteId> = new Set<PaletteId>(['html'])
+
+/** The Elements tab's items of a group in the given mode. */
+export function paletteItems(group: PaletteItem['group'], mode: string): PaletteItem[] {
+  return PALETTE.filter((p) => p.group === group && !(mode === 'basic' && BASIC_HIDDEN.has(p.id)))
+}
