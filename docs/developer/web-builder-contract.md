@@ -91,6 +91,8 @@ ever part of it.**
 | `dynamic` | DynContext | sample data for dynamic widgets (§11.6): the template's preview object, else the post itself |
 | `kitBreakpoints` | `{[kit]: {tablet, mobile}}` | local-style breakpoints (max-width px) of every design kit the page's code sections and its `codeParts` name (`content.kit`); a section without a kit uses `{tablet: 1023, mobile: 639}`. The element editor's Style panel prints the frame's local styles with them |
 | `codeParts` | CodeParts \| null | the header and footer templates Hello Pursae draws around this page, when they are made of code sections: `{header, footer}`, each `null` or `{id, title, editUrl, sections}` (`sections`: the template's published visible sections, every one `kind: "code"`, as stored; without `edit_theme_options` their `content.binds` is left out, since a bound form's recipients and redirects are there). The element editor draws them locked in the page's frame. `null` for a template, a canvas page, a page without code sections, or another theme |
+| `scriptTrust` | string[] | the design kits (slugs, sorted) whose scripts this user chose to always run in the editor (`PUT kits/{slug}/trust`, [code sections](web-builder-code-sections.md#kits-rest)). Only kits that still exist as the installation that was trusted; `[]` without `canRunScripts`. The editor opens a page whose every kit is listed in Live mode with no prompt |
+| `canRunScripts` | bool | the user has `unfiltered_html` (the same capability as `caps.unfilteredHtml`): the editor may run a design's scripts (Live, Preview), the user may trust a kit and edit the markup of code sections. `false`: Safe mode only, code markup read-only. Additive; an editor reads `caps.unfilteredHtml` when an older server leaves it out |
 | `siteStyle` | SiteSettings \| null | the site style: `{brand, fontPair, corners, headingFont?, headingWeight?, bodyFont?, bodyWeight?}`, `null` while none was saved. A doc whose `site.global` is `true` follows it (§3.x *Site style*) |
 
 `ai` (BootAi):
@@ -178,6 +180,8 @@ Request bodies of document routes are capped at **4 MiB** (`413 wb_too_large`, `
 | GET | `/site-settings` | `edit_theme_options` | — → SiteSettings (§3.6) |
 | PUT | `/site-settings` | `edit_theme_options` | partial SiteSettingsRequest → SiteSettings; `tokens: {colors:{primary,secondary,accent,text,background}, fonts:{heading,body}}` sets the design tokens (CSS variables `--wb-color-*`, `--wb-font-*`) |
 | GET | `/preview-context?object=` | `edit_posts` (+ `read_post` for `post:<id>`) | — → DynContext (§11.6) |
+| PUT | `/kits/{slug}/trust` | `unfiltered_html` (Application Password: `themes` scope) | `{trust: bool}` → `{trust, scriptTrust}`: the calling user always runs, or is asked again about, a design kit's scripts in the editor (§3.x *Script trust*) |
+| POST | `/documents/{id}/live-frame` | `edit_post` + `unfiltered_html` | the editor's code sections and stylesheets (≤ 8 MiB) → `{url, path}`: the Live canvas frame, served at the page's path with `?wb-live-frame=<token>` (§3.x *Live frame*) |
 
 `{id}` of a document route must be a post of an enabled post type (pages by default, posts
 optional) or a `wb_template`: otherwise **404** `wb_not_enabled`. Trashed posts answer **404**
@@ -467,6 +471,23 @@ Error codes added: `wb_bad_language` (400), `wb_translation_exists` (409).
   or corner in the editor sets `global: false`. `GET outdated` (and Regenerate pages) also lists published
   docs with `site.global` whose stored site keys differ from the style, so after a style change they are
   drawn and published again with it.
+- **Script trust** (element editor Live mode): `PUT kits/{slug}/trust` with `{trust: true|false}` answers
+  `{trust, scriptTrust}`. The calling user's trusted kits live in their own user meta
+  `_web_builder_kit_trust` (`{slug: installation id}`, at most 256, never in the core users REST meta)
+  and come back as `Boot.scriptTrust`. A design kit has an installation id (`Install`, random, set when
+  the kit is created, kept by commits, never shown by the REST API): a kit deleted and uploaded again
+  under the same slug is another installation, so an old trust is not reported and is pruned; deleting a
+  kit removes its entries from every user. Errors: 403 `rest_forbidden` (no `unfiltered_html`), 404
+  `wb_kit_not_found`, 400 `rest_invalid_param` (`trust` not a boolean), 413 `wb_too_large` (`limit`).
+  Details: [code sections › security model](web-builder-code-sections.md#security-model).
+- **Live frame**: `POST documents/{id}/live-frame` takes `{url, title, shell: theme|canvas|part, page,
+  header, footer, css: {kit, local, edit}, hook}` (sections as the editor holds them, `{id, kind, hidden,
+  content}`) and answers `{url, path}`. The server renders the document as the front end prints the
+  page and keeps it **in memory** for the calling user for 15 minutes (a random token; at most 6 per
+  user, 64 in all); `GET <path>?wb-live-frame=<token>` serves it only to that user, at that path, as a
+  same-origin frame (`Sec-Fetch-Dest` / `Sec-Fetch-Site`), with the front end's Content Security Policy
+  and nonce, `Cache-Control: no-store, private` and `X-Robots-Tag: noindex`; anything else is 404.
+  Nothing is stored in the database. Not part of the doc.
 - **Audience rules** (§11): `include|exclude/user/logged_in`, `user/logged_out`, `user/role/<role>`. They never
   place or score a template: with include audience rules the visitor must match one of them, a matching
   exclude vetoes. `SiteBoot.roles` lists the roles. Cache: while any published template has an audience rule,
@@ -853,7 +874,9 @@ part of the doc: one override per design kit, in the `wb_kit_overrides` option
 **Elements seam** (patch `0020-elements-seam`, `src/builder/elementsSeam.ts`): `handles(doc)`,
 `Canvas`, `Nav`, `Tab` (Style and Advanced), `Content` (`{s, fallback}`: the Content tab of a code
 section of a page the host draws; `fallback` is the builder's own content tab, the section's HTML and
-head code) and `title`.
+head code) and `title`. Patch `0024-basic-seam` adds `Basic` (`{s}`: Basic mode's editor of a code
+section, in place of the HTML code and Head code fields) and `summary` (`s` → `{title, sub?}` or `null`:
+the section list row's name and line).
 
 ### 8.2 Snapshot HTML
 

@@ -10,6 +10,67 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Added
+
+- **Web Builder: the editor canvas is the published page (Live mode).** A design imported 1:1 as code
+  sections now runs its own scripts in the editor, so three.js / WebGL scenes, theme toggles, sliders,
+  counters and content a script draws look and work as on the site: the canvas is the page's own document
+  at its own address, with the site's shell, header and footer, and each device button is that device's
+  viewport (1440 × 900, 768 × 1024, 390 × 844) so `100vh` and media queries match. Live and Safe mode are
+  two buttons in the bottom bar; Safe mode is the earlier static canvas. Details and what still differs:
+  [code sections](docs/developer/web-builder-code-sections.md#editing).
+- **Web Builder: trust is asked once per design, remembered per user, and revocable.** The first time a
+  page of an untrusted design with scripts opens, the editor asks to run them with your admin access:
+  **Always for this design**, **This session only** or **Not now (safe mode)**. "Always" is stored on the
+  server in your own user meta, bound to that installation of the design kit (a kit deleted and uploaded
+  again asks again; your own edits do not), and a button in the bottom bar stops it. Only users with
+  `unfiltered_html` can run or trust scripts.
+- **Web Builder: Interact mode.** The **Interact** button, or holding Alt (⌥ on a Mac), sends clicks and
+  keys to the design so a theme toggle, menu, tab or slider can be tried. What the interaction changes
+  (`html.dark`, a stored theme) is kept when you go back to editing and is never written into the page.
+- **Web Builder: edits without a reload.** In Live mode a text, style, class, attribute, move, duplicate,
+  delete or insert is patched into the running page, so animations, the WebGL scene and script state keep
+  running. The canvas reloads only when it must (a script changed, a section added or removed), and then
+  keeps the scroll position and the theme state.
+- **Web Builder: Basic mode shows blocks, not HTML.** A code section is a named block (Hero, Features,
+  Pricing, FAQ …) with its headings, texts, button and link labels and addresses, images, form
+  placeholders and repeated cards as fields. The HTML and Head code fields are Studio only. New elements
+  seam patch `0024-basic-seam`.
+- **Web Builder: readable element names.** The navigator, canvas outline and Basic panel name elements by
+  what they are and say (Menu, Slider, 3D / Canvas, Cards · 6, Hero, Form, Table, Map …) instead of
+  "Code", taken from the tag, role, label, text, id or class.
+- **Web Builder: Studio "Edit code".** The selected element's own markup (**Whole element**) or its
+  **HTML inside** can be edited in a small code editor, checked for unclosed and mismatched tags, applied
+  as one undo step, with the editor's ids preserved and unapplied drafts kept.
+- **New Web Builder REST routes.** `PUT web-builder/v2/kits/{slug}/trust` stores the calling user's script
+  trust of a design kit, and `POST web-builder/v2/documents/{id}/live-frame` renders the Live canvas frame.
+  `Boot` gains `scriptTrust` and `canRunScripts` (additive). See the
+  [contract](docs/developer/web-builder-contract.md#3-rest-namespace-web-builderv2).
+- Test harnesses for the editor: `builder/test/editor-parity` (editor canvas against the published page,
+  pixels and behaviour) and `builder/test/live` (the live frame), both run with Playwright; `PW_CHROMIUM`
+  names the browser. See [Testing the editor](docs/developer/web-builder-code-sections.md#testing-the-editor).
+
+### Changed
+
+- **Web Builder: "Live edit" is now Live mode, on by default for trusted designs.** The per-session
+  "Run this design's scripts" confirmation is replaced by the per-design prompt above; mixed pages
+  (code and builder sections) keep their Safe-mode frames and a Preview that runs scripts for a trusted
+  design or after the per-session confirmation.
+- **Web Builder: the editor's Content Security Policy allows the script origins named in code sections'
+  HTML**, as the published page does (`<script src>` origins, iframe origins, `blob:` images and media),
+  not only those in the head and the design kits.
+
+### Security
+
+- **Web Builder: users without `unfiltered_html` get Safe mode only.** They cannot run a design's scripts
+  or trust a kit (both routes answer 403), and the canvas's element operations, Basic fields, Edit code
+  and Section code are read-only for them (the server already ignored such edits).
+- **The Live frame is served only to its creator.** `?wb-live-frame=<token>` is answered at the page's own
+  path only to the user who made it, only while they have `unfiltered_html`, only as a same-origin frame,
+  for 15 minutes, from memory, with the front end's CSP and nonce, `no-store` and `noindex`. It is never
+  given `allow-top-navigation`. Safe mode keeps the static, neutralised copy and the sandbox without
+  `allow-scripts`.
+
 ## [0.5.1] - 2026-11-23
 
 The first 0.5.x update: Cart and Checkout blocks, stock reservation, passkeys, remote backups, metrics, Web
