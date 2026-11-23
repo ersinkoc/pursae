@@ -571,6 +571,9 @@ type gocdnRuntime struct {
 	job      *gocdnJobState
 	reRemove map[string]bool // fetched-back copies waiting to be deleted again
 	orphans  []string        // the last orphan scan's result (gocdnScanOrphans)
+
+	// Writers publish objects and their mappings together with respect to untracked-object cleanup.
+	objectWrites sync.RWMutex
 }
 
 var gocdnRuntimes sync.Map // *Server → *gocdnRuntime
