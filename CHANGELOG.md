@@ -85,16 +85,20 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   go" error are gone.
 - **WP to Pursae: media over 64 MB.** Media files of a package are no longer held to the 64 MB upload limit.
   They are streamed from the package to the uploads directory, up to `PURSAE_WP2P_MAX_MEDIA_MB` (default
-  4096); the plugin packs files up to 4 GB (filter `wp2p_max_media_bytes`) and gives a big file a request of its
-  own. The upload limit still applies to uploads.
+  4096); the plugin packs files up to 4 GB (filter `wp2p_max_media_bytes`, never above 8 GiB) and gives a big
+  file a request of its own. Only one request builds a package at a time, and the package checksum is made over
+  several requests on PHP 8.1 and later, so a very large package no longer risks a killed request that repeats
+  forever. Update Pursae before sending files over 64 MB: 0.5.0 skips them. The upload limit still applies to
+  uploads. A WXR element larger than 256 MB (or a CDATA section never closed) fails the import cleanly.
 
 ### Fixed
 
 - **WP to Pursae: killed `pursae import wordpress` runs.** A running import now touches its row every 30
   seconds, so a command that was killed (SIGKILL, a crash, a lost terminal) is recognised after 30 minutes
-  instead of 6 hours: its import is closed as failed and the files it extracted (users and orders) are deleted,
-  by the hourly cleanup or at once when `pursae import wordpress` is run again. Failed command-line imports are
-  closed after 7 days like the others.
+  instead of 6 hours (still 6 hours for an import started with 0.5.0, which does not heartbeat). Its import is
+  closed as failed and the files it extracted (users and orders) are deleted, by the hourly cleanup or at once
+  when `pursae import wordpress` is run again. A run whose row was closed meanwhile stops instead of going on,
+  and cannot mark the row done afterwards. Failed command-line imports are closed after 7 days like the others.
 
 ## [0.5.0] - 2026-11-22
 

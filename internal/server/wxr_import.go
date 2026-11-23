@@ -128,7 +128,7 @@ func (s *Server) wxrUpload(c *gin.Context, d map[string]any) {
 		d["Error"] = "The file is larger than 256 MB."
 		return
 	}
-	hdr, nItems, err := wxrParseFile(path)
+	hdr, nItems, err := wxrParseFile(c.Request.Context(), path)
 	if err != nil {
 		os.Remove(path)
 		d["Error"] = "Sorry, there has been an error. " + err.Error()
@@ -158,13 +158,13 @@ func (s *Server) wxrUpload(c *gin.Context, d map[string]any) {
 }
 
 // wxrParseFile reads the file once, token by token: its authors and terms, and how many items it has.
-func wxrParseFile(path string) (*wxrHeader, int, error) {
+func wxrParseFile(ctx context.Context, path string) (*wxrHeader, int, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer f.Close()
-	return wxrReadHeader(bufio.NewReaderSize(f, 1<<20))
+	return wxrReadHeader(ctx, bufio.NewReaderSize(f, 1<<20))
 }
 
 // wxrQueue is step two: the author choices are read from the form and the job is queued.

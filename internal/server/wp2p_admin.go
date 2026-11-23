@@ -340,6 +340,10 @@ const (
 	// crash, a lost terminal). A live run touches its row every wp2pHeartbeat, whatever it is doing
 	// (also during a long extraction or one huge file), so this is many missed heartbeats.
 	wp2pStaleCLI = 30 * time.Minute
+	// wp2pStaleCLILegacy: the same for a run that never heartbeated (progress has no "hb"): an import
+	// started with the 0.5.0 binary, which only writes progress when it handles records and may be busy
+	// for hours in one phase. Such a run may still be alive after a Pursae update.
+	wp2pStaleCLILegacy = 6 * time.Hour
 )
 
 // wp2pHeartbeat is how often a running import touches its row (updated_at). A variable for tests.
@@ -409,7 +413,9 @@ func (s *Server) wp2pCleanup(ctx context.Context) error {
 func (s *Server) wp2pFailStaleCLI(ctx context.Context) ([]string, error) {
 	rows, err := s.store.Pool.Query(ctx, `UPDATE wp2p_migrations SET state = 'failed', package_key = NULL, updated_at = now(),
 			error = 'The command stopped before the import was finished (the process was killed); run it again to continue.'
-		WHERE cli AND state = 'running' AND updated_at < now() - make_interval(secs => $1) RETURNING id`, wp2pStaleCLI.Seconds())
+		WHERE cli AND state = 'running'
+			AND updated_at < now() - make_interval(secs => CASE WHEN progress->>'hb' = 'true' THEN $1::float8 ELSE $2::float8 END)
+		RETURNING id`, wp2pStaleCLI.Seconds(), wp2pStaleCLILegacy.Seconds())
 	if err != nil {
 		return nil, err
 	}

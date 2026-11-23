@@ -156,18 +156,34 @@ class WP2P_Exporter {
 	}
 
 	/**
-	 * The largest media file that is packed (default 4 GB, what Pursae takes from a package; files are streamed, never read into memory).
+	 * The largest file a tar header can describe: 11 octal digits, 8 GiB - 1.
+	 */
+	const MAX_ENTRY = 8589934591;
+
+	/**
+	 * Media files over this size are packed in a request of their own.
+	 */
+	const BIG_FILE = 67108864;
+
+	/**
+	 * The largest media file that is packed: 4 GB by default (what Pursae takes from a package). Files are
+	 * streamed, never read into memory. The filter's result is kept between 0 and 8 GiB - 1 (what the
+	 * archive format can hold) and within PHP's integer range (32-bit builds).
 	 *
 	 * @return int
 	 */
 	public static function max_media_bytes() {
+		$default = (float) min( 4096 * MB_IN_BYTES, PHP_INT_MAX );
 		/**
 		 * Filters the size above which a media file is left out of the package (it is listed in the
 		 * report so it can be copied by hand).
 		 *
 		 * @param int $bytes Size in bytes.
 		 */
-		return (int) apply_filters( 'wp2p_max_media_bytes', 4096 * MB_IN_BYTES );
+		$limit = apply_filters( 'wp2p_max_media_bytes', (int) $default );
+		$limit = is_numeric( $limit ) ? (float) $limit : $default;
+		$cap   = (float) min( PHP_INT_MAX, self::MAX_ENTRY );
+		return (int) max( 0.0, min( $limit, $cap ) );
 	}
 
 	/**
@@ -281,7 +297,11 @@ class WP2P_Exporter {
 	}
 
 	/**
-	 * Works on the job for at most $budget seconds.
+	 * Works on the job for at most $budget seconds. Only one request works on a job at a time: the
+	 * package file is cut back to the last saved point when a run opens it, so a second run (Resume
+	 * clicked while a timed-out request still writes) would destroy what the first one writes. The lock
+	 * is an flock on a file in the job's directory, which the system releases when the request ends,
+	 * however it ends. While another request holds it, run() returns the job as it is.
 	 *
 	 * @param float $budget Seconds.
 	 * @return array The job.
@@ -291,24 +311,81 @@ class WP2P_Exporter {
 		if ( ! $job || 'building' !== $job['status'] ) {
 			return $job;
 		}
+		$lock = self::lock( $job );
+		if ( false === $lock ) {
+			return $job;
+		}
+		try {
+			return self::run_locked( $budget );
+		} finally {
+			if ( is_resource( $lock ) ) {
+				flock( $lock, LOCK_UN );
+				fclose( $lock ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+			}
+		}
+	}
+
+	/**
+	 * Takes the job's lock.
+	 *
+	 * @param array $job Job.
+	 * @return resource|true|false The lock; true when the file system cannot lock (the run goes on
+	 *                              unlocked); false when another request holds it.
+	 */
+	private static function lock( array $job ) {
+		if ( empty( $job['dir'] ) || ! is_dir( $job['dir'] ) ) {
+			return true;
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.PHP.NoSilencedErrors.Discouraged
+		$fh = @fopen( $job['dir'] . '/.lock', 'c' );
+		if ( ! $fh ) {
+			return true;
+		}
+		if ( ! flock( $fh, LOCK_EX | LOCK_NB ) ) {
+			fclose( $fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+			return false;
+		}
+		return $fh;
+	}
+
+	/**
+	 * run() with the lock held.
+	 *
+	 * @param float $budget Seconds.
+	 * @return array The job.
+	 */
+	private static function run_locked( $budget ) {
+		// The request that held the lock before may have saved progress since run() read the job.
+		wp_cache_delete( self::OPTION, 'options' );
+		$job = self::job();
+		if ( ! $job || 'building' !== $job['status'] ) {
+			return $job;
+		}
 		$until       = microtime( true ) + $budget;
 		self::$yield = false;
 		$key         = WP2P_Crypto::decode_key( $job['key'] );
-		$writer = new WP2P_Writer( $job['writer'], $key );
-		$steps  = count( self::$steps );
+		$writer      = new WP2P_Writer( $job['writer'], $key );
+		$steps       = count( self::$steps );
 		try {
 			while ( $job['step'] < $steps ) {
 				$step = self::$steps[ $job['step'] ];
-				$done = self::step( $step, $job, $writer, $until );
 				if ( 'close' === $step ) {
-					$job['writer'] = $writer->finish();
-					$job['size']   = filesize( $job['file'] );
-					$job['sha256'] = hash_file( 'sha256', $job['file'] );
-					$job['status'] = 'built';
-					++$job['step'];
+					if ( empty( $job['writer']['closed'] ) ) {
+						self::step_close( $job, $writer );
+						$job['writer'] = $writer->finish();
+						$job['size']   = filesize( $job['file'] );
+						self::save( $job );
+					}
+					$writer->close();
+					// The checksum of a package of many gigabytes is made over several requests.
+					if ( self::hash_step( $job, $until ) ) {
+						$job['status'] = 'built';
+						++$job['step'];
+					}
 					self::save( $job );
 					return $job;
 				}
+				$done          = self::step( $step, $job, $writer, $until );
 				$job['writer'] = $writer->commit();
 				if ( $done ) {
 					++$job['step'];
@@ -329,6 +406,58 @@ class WP2P_Exporter {
 		}
 		$writer->close();
 		return $job;
+	}
+
+	/**
+	 * Computes the package's SHA-256 in pieces. From PHP 8.1 the hash state is serializable, so each
+	 * request hashes for as long as its budget lasts (at least one piece) and saves the state in the job;
+	 * a request that is killed repeats only its own piece. Before 8.1 the state cannot be kept, and the
+	 * whole file is hashed in one go (hash_file streams it; about 0.5 GB/s, so a package would have to
+	 * be tens of gigabytes to meet a request time limit).
+	 *
+	 * @param array $job   Job.
+	 * @param float $until Deadline.
+	 * @return bool Whether the checksum is done (in $job['sha256']).
+	 */
+	private static function hash_step( array &$job, $until ) {
+		if ( PHP_VERSION_ID < 80100 ) {
+			$job['sha256'] = hash_file( 'sha256', $job['file'] );
+			return true;
+		}
+		$size = (int) $job['size'];
+		$pos  = isset( $job['hash_pos'] ) ? (int) $job['hash_pos'] : 0;
+		$ctx  = false;
+		if ( $pos > 0 && ! empty( $job['hash_state'] ) ) {
+			$ctx = @unserialize( base64_decode( $job['hash_state'] ), array( 'allowed_classes' => array( 'HashContext' ) ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize, WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+		if ( ! $ctx instanceof HashContext ) {
+			$ctx = hash_init( 'sha256' );
+			$pos = 0;
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- streamed binary input.
+		$in = fopen( $job['file'], 'rb' );
+		if ( ! $in ) {
+			throw new RuntimeException( 'The package file cannot be read.' );
+		}
+		fseek( $in, $pos );
+		do {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- streamed binary input.
+			$data = fread( $in, (int) min( 4 * MB_IN_BYTES, max( 1, $size - $pos ) ) );
+			if ( false === $data || '' === $data ) {
+				break;
+			}
+			hash_update( $ctx, $data );
+			$pos += strlen( $data );
+		} while ( $pos < $size && microtime( true ) < $until );
+		fclose( $in ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		if ( $pos >= $size ) {
+			$job['sha256'] = hash_final( $ctx );
+			unset( $job['hash_state'], $job['hash_pos'] );
+			return true;
+		}
+		$job['hash_pos']   = $pos;
+		$job['hash_state'] = base64_encode( serialize( $ctx ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+		return false;
 	}
 
 	/**
@@ -660,8 +789,13 @@ class WP2P_Exporter {
 			}
 			$rows = array();
 			$last = (int) $job['cursor'];
-			foreach ( $ids as $id ) {
+			foreach ( $ids as $n => $id ) {
+				// The time budget is checked after every file, not only between batches of 25.
+				if ( $n > 0 && microtime( true ) >= $until ) {
+					break;
+				}
 				$id   = (int) $id;
+				$prev = $last;
 				$last = $id;
 				$file = function_exists( 'wp_get_original_image_path' ) ? wp_get_original_image_path( $id ) : false;
 				if ( ! $file || ! is_readable( $file ) ) {
@@ -686,6 +820,11 @@ class WP2P_Exporter {
 					);
 					continue;
 				}
+				if ( $size > self::BIG_FILE && $rows ) {
+					// A big file takes a request of its own: what is packed so far is saved first.
+					$last = $prev;
+					break;
+				}
 				if ( ! $writer->add_file( 'media/' . $id, $file ) ) {
 					continue;
 				}
@@ -697,9 +836,8 @@ class WP2P_Exporter {
 					'mime' => get_post_mime_type( $id ),
 				);
 				self::count( $job, 'media_bytes', (int) $size );
-				if ( $size > 64 * MB_IN_BYTES ) {
-					// A big file takes a request of its own: what was packed so far is saved before the next one starts.
-					break;
+				if ( $size > self::BIG_FILE ) {
+					break; // ... and is the last of its request.
 				}
 			}
 			if ( $rows ) {

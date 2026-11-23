@@ -47,6 +47,9 @@ type wp2pProgress struct {
 	Phase string         `json:"phase"`
 	Done  []string       `json:"done"`  // finished phases
 	Items map[string]int `json:"items"` // records handled in the current phase
+	// Heartbeat marks a run that touches its row while it works (0.5.1 and later). A row without it
+	// belongs to a run of the 0.5.0 binary, which does not: wp2pFailStaleCLI waits much longer for those.
+	Heartbeat bool `json:"hb,omitempty"`
 }
 
 func (p *wp2pProgress) finished(phase string) bool {
@@ -238,7 +241,7 @@ func wp2pSource(m *wp2pManifest) string {
 // that is busy for a long time without a record to count (opening a big package, copying one huge
 // file) still shows that it is alive; a run whose process was killed stops touching it, which is how
 // wp2p_cleanup and `import wordpress` find it (wp2pFailStaleCLI).
-func (r *wp2pRun) heartbeat() (stop func()) {
+func (r *wp2pRun) heartbeat(closed context.CancelCauseFunc) (stop func()) {
 	done := make(chan struct{})
 	finished := make(chan struct{})
 	go func() {
@@ -250,7 +253,15 @@ func (r *wp2pRun) heartbeat() (stop func()) {
 			case <-done:
 				return
 			case <-t.C:
-				_, _ = r.s.store.Pool.Exec(context.Background(), `UPDATE wp2p_migrations SET updated_at = now() WHERE id = $1 AND state = 'running'`, r.id)
+				ctx, cancel := context.WithTimeout(context.Background(), wp2pHeartbeatTimeout)
+				tag, err := r.s.store.Pool.Exec(ctx, `UPDATE wp2p_migrations SET updated_at = now() WHERE id = $1 AND state = 'running'`, r.id)
+				cancel()
+				if err == nil && tag.RowsAffected() == 0 {
+					// The row is no longer "running": it was closed as stale (or deleted) while this
+					// process was thought dead, and its extracted files are gone. Stop instead of going on.
+					closed(errWP2PClosed)
+					return
+				}
 			}
 		}
 	}()
@@ -259,9 +270,21 @@ func (r *wp2pRun) heartbeat() (stop func()) {
 
 // run goes through the phases that are not finished yet.
 func (r *wp2pRun) run(ctx context.Context) error {
-	defer r.heartbeat()()
-	return r.runPhases(ctx)
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	defer r.heartbeat(cancel)()
+	err := r.runPhases(ctx)
+	if err != nil && errors.Is(context.Cause(ctx), errWP2PClosed) {
+		return errWP2PClosed
+	}
+	return err
 }
+
+// errWP2PClosed ends a run whose row was closed under it (wp2pFailStaleCLI, the cleanup, a deleted import).
+var errWP2PClosed = errors.New("this import was closed while it was running (it was taken for dead); run it again to continue")
+
+// wp2pHeartbeatTimeout bounds one heartbeat's query, so a stuck database cannot hold the run.
+var wp2pHeartbeatTimeout = 10 * time.Second
 
 func (r *wp2pRun) runPhases(ctx context.Context) error {
 	if r.prog == nil {
@@ -270,6 +293,7 @@ func (r *wp2pRun) runPhases(ctx context.Context) error {
 	if r.rep == nil {
 		r.rep = newWP2PReport()
 	}
+	r.prog.Heartbeat = true
 	for _, phase := range wp2pPhases {
 		if r.prog.finished(phase) {
 			if phase == "extract" && r.man == nil {
@@ -1028,6 +1052,13 @@ func (s *Server) wp2pSetState(ctx context.Context, id, state, msg string) {
 	_, _ = s.store.Pool.Exec(context.WithoutCancel(ctx), `UPDATE wp2p_migrations SET state = $2, error = $3, updated_at = now() WHERE id = $1`, id, state, msg)
 }
 
+// wp2pEnd records how a run ended ("done" or "failed"), but only on a row that is still queued or running: a
+// run whose row was closed under it (failed as stale, expired by the cleanup) must not bring it back.
+func (s *Server) wp2pEnd(ctx context.Context, id, state, msg string) {
+	_, _ = s.store.Pool.Exec(context.WithoutCancel(ctx), `UPDATE wp2p_migrations SET state = $2, error = $3, updated_at = now()
+		WHERE id = $1 AND state IN ('queued', 'running')`, id, state, msg)
+}
+
 // wp2pImportJob is the background run ("wp2p_import" job, payload {"id": ...}). A failure is recorded
 // on the row (the screen offers Resume, which queues the job again); a shutdown leaves the job queued.
 func (s *Server) wp2pImportJob(ctx context.Context, raw map[string]any) error {
@@ -1053,10 +1084,10 @@ func (s *Server) wp2pImportJob(ctx context.Context, raw map[string]any) error {
 			s.wp2pSetState(ctx, id, "queued", "")
 			return err
 		}
-		s.wp2pSetState(ctx, id, "failed", err.Error())
+		s.wp2pEnd(ctx, id, "failed", err.Error())
 		return nil
 	}
-	s.wp2pSetState(ctx, id, "done", "")
+	s.wp2pEnd(ctx, id, "done", "")
 	return nil
 }
 

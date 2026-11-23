@@ -683,19 +683,66 @@ type wxrHeader struct {
 	Terms      []wxrTerm
 }
 
+// wxrMaxItemBytes bounds one element of a WXR file (an item, with its content, meta and comments). The
+// XML decoder holds a whole text node in memory, so one giant node, or a CDATA section that is never
+// closed, would otherwise read the rest of the file into memory. A variable for tests.
+var wxrMaxItemBytes int64 = 256 << 20
+
+var errWXRItemTooBig = errors.New("wxr element too large")
+
+// wxrReader feeds the XML decoder: it stops with the context, and when more than max bytes were read since
+// n was last reset (wxrScan resets it after every element it has finished).
+type wxrReader struct {
+	ctx context.Context
+	r   io.Reader
+	n   int64
+	max int64
+}
+
+func (w *wxrReader) Read(p []byte) (int, error) {
+	if err := w.ctx.Err(); err != nil {
+		return 0, err
+	}
+	if w.n > w.max {
+		return 0, errWXRItemTooBig
+	}
+	n, err := w.r.Read(p)
+	w.n += int64(n)
+	return n, err
+}
+
+// ctxReader makes a long copy observe ctx.
+type ctxReader struct {
+	ctx context.Context
+	r   io.Reader
+}
+
+func (c ctxReader) Read(p []byte) (int, error) {
+	if err := c.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return c.r.Read(p)
+}
+
 // wxrScan reads a WXR file token by token, so that only one <item> is in memory at a time (a large
 // site's export is gigabytes: decoding it into a wxrDoc holds all of it, several times over). It
 // calls header for each author, category, tag and term of the channel and item for each <item>, in
 // file order; either may be nil. It stops at the first error of a callback. Parsing is as lenient as
 // decoding a wxrDoc was (Strict off, any root element, elements matched by local name).
-func wxrScan(r io.Reader, header func(v any), item func(*wxrItem) error) error {
-	dec := xml.NewDecoder(r)
+func wxrScan(ctx context.Context, r io.Reader, header func(v any), item func(*wxrItem) error) error {
+	lr := &wxrReader{ctx: ctx, r: r, max: wxrMaxItemBytes}
+	dec := xml.NewDecoder(lr)
 	dec.Strict = false
 	notWXR := func(err error) error {
-		if errors.Is(err, io.EOF) {
+		switch {
+		case errors.Is(err, errWXRItemTooBig):
+			return fmt.Errorf("an element of this WXR file is larger than %d MB (a tag or CDATA section that is never closed?)", lr.max>>20)
+		case ctx.Err() != nil:
+			return ctx.Err()
+		case errors.Is(err, io.EOF):
 			err = io.ErrUnexpectedEOF
 		}
-		return fmt.Errorf("this does not appear to be a WXR file: %v", err)
+		return fmt.Errorf("this does not appear to be a WXR file: %w", err)
 	}
 	depth := 0 // 0 outside the root, 1 inside the root, 2 inside a channel
 	for {
@@ -714,12 +761,14 @@ func wxrScan(r io.Reader, header func(v any), item func(*wxrItem) error) error {
 			}
 			if depth == 1 && t.Name.Local == "channel" {
 				depth = 2
+				lr.n = 0
 				continue
 			}
 			if depth == 1 {
 				if err := dec.Skip(); err != nil {
 					return notWXR(err)
 				}
+				lr.n = 0
 				continue
 			}
 			var v any
@@ -739,11 +788,13 @@ func wxrScan(r io.Reader, header func(v any), item func(*wxrItem) error) error {
 				if err := dec.Skip(); err != nil {
 					return notWXR(err)
 				}
+				lr.n = 0
 				continue
 			}
 			if err := dec.DecodeElement(v, &t); err != nil {
 				return notWXR(err)
 			}
+			lr.n = 0 // the bound is per element: the next one starts counting again
 			if it, ok := v.(*wxrItem); ok {
 				if item != nil {
 					if err := item(it); err != nil {
@@ -765,10 +816,10 @@ func wxrScan(r io.Reader, header func(v any), item func(*wxrItem) error) error {
 // wxrReadHeader is the first pass over a WXR file: it reads the whole file once (so a file that is
 // cut off or malformed fails here, before anything is imported), keeps the header and counts the
 // items. Items are not kept.
-func wxrReadHeader(r io.Reader) (*wxrHeader, int, error) {
+func wxrReadHeader(ctx context.Context, r io.Reader) (*wxrHeader, int, error) {
 	var h wxrHeader
 	n := 0
-	err := wxrScan(r, func(v any) {
+	err := wxrScan(ctx, r, func(v any) {
 		switch v := v.(type) {
 		case *wxrAuthor:
 			h.Authors = append(h.Authors, *v)
@@ -893,16 +944,6 @@ func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, 
 	return s.importWXRStream(ctx, u, func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(data)), nil }, opts)
 }
 
-// importWXRReader is importWXRWith reading the file from r, which is read to its end and kept in
-// memory (the file is read twice). Large files go through importWXRStream.
-func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader, opts wxrImportOptions) (*importReport, error) {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("this does not appear to be a WXR file: %v", err)
-	}
-	return s.importWXRWith(ctx, u, data, opts)
-}
-
 // errWXRStop ends a wxrScan from inside an iterator whose loop was left.
 var errWXRStop = errors.New("wxr scan stopped")
 
@@ -917,7 +958,7 @@ func (s *Server) importWXRStream(ctx context.Context, u *store.User, open func()
 	if err != nil {
 		return nil, err
 	}
-	hdr, _, err := wxrReadHeader(first)
+	hdr, _, err := wxrReadHeader(ctx, first)
 	first.Close()
 	if err != nil {
 		return nil, err
@@ -930,7 +971,7 @@ func (s *Server) importWXRStream(ctx context.Context, u *store.User, open func()
 			return
 		}
 		defer rc.Close()
-		err = wxrScan(rc, nil, func(it *wxrItem) error {
+		err = wxrScan(ctx, rc, nil, func(it *wxrItem) error {
 			if !yield(it) {
 				return errWXRStop
 			}
@@ -1666,7 +1707,11 @@ func (s *Server) sideloadLocal(ctx context.Context, file, name string, uploaderI
 	defer f.Close()
 	// A file of a package is not an upload: it is kept whatever the upload limit is, up to wp2pMaxMedia.
 	limit := wp2pMaxMedia()
-	a, err := s.insertAttachmentFileLimit(ctx, name, f, uploaderID, 0, nil, limit)
+	if st, err := f.Stat(); err == nil && st.Size() > limit {
+		// Refused before a byte is written.
+		return nil, errors.New("The file is too large, limit is " + media.HumanSize(limit) + " (PURSAE_WP2P_MAX_MEDIA_MB).")
+	}
+	a, err := s.insertAttachmentFileLimit(ctx, name, ctxReader{ctx, f}, uploaderID, 0, nil, limit)
 	switch {
 	case errors.Is(err, errUploadTooLarge):
 		return nil, errors.New("The file is too large, limit is " + media.HumanSize(limit) + " (PURSAE_WP2P_MAX_MEDIA_MB).")

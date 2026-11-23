@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -27,7 +28,7 @@ func TestWxrScanMatchesDecode(t *testing.T) {
 	}
 	var items []wxrItem
 	hdr := wxrHeader{}
-	err = wxrScan(bytes.NewReader(raw), func(v any) {
+	err = wxrScan(context.Background(), bytes.NewReader(raw), func(v any) {
 		switch v := v.(type) {
 		case *wxrAuthor:
 			hdr.Authors = append(hdr.Authors, *v)
@@ -52,7 +53,7 @@ func TestWxrScanMatchesDecode(t *testing.T) {
 		!reflect.DeepEqual(hdr.Tags, doc.Channel.Tags) || !reflect.DeepEqual(hdr.Terms, doc.Channel.Terms) {
 		t.Error("the header differs from a whole-document decode")
 	}
-	h2, n, err := wxrReadHeader(bytes.NewReader(raw))
+	h2, n, err := wxrReadHeader(context.Background(), bytes.NewReader(raw))
 	if err != nil || n != len(items) || !reflect.DeepEqual(*h2, hdr) {
 		t.Errorf("wxrReadHeader: %d items (%d), %v", n, len(items), err)
 	}
@@ -69,13 +70,13 @@ func TestWxrScanErrors(t *testing.T) {
 		"cut tag":   `<rss><channel><item><title>a</title></item></chan`,
 		"only decl": `<?xml version="1.0"?>`,
 	} {
-		_, _, err := wxrReadHeader(strings.NewReader(in))
+		_, _, err := wxrReadHeader(context.Background(), strings.NewReader(in))
 		if err == nil || !strings.Contains(err.Error(), "does not appear to be a WXR file") {
 			t.Errorf("%s: %v", name, err)
 		}
 	}
 	// A well-formed file with no channel is an empty import, as it always was.
-	if _, n, err := wxrReadHeader(strings.NewReader(`<rss></rss>`)); err != nil || n != 0 {
+	if _, n, err := wxrReadHeader(context.Background(), strings.NewReader(`<rss></rss>`)); err != nil || n != 0 {
 		t.Errorf("no channel: %d %v", n, err)
 	}
 }
@@ -107,7 +108,7 @@ func TestWxrScanStreams(t *testing.T) {
 	var size int64
 	var peak uint64
 	var last int64
-	err := wxrScan(pr, nil, func(it *wxrItem) error {
+	err := wxrScan(context.Background(), pr, nil, func(it *wxrItem) error {
 		count++
 		size += int64(len(it.Content))
 		last = it.PostID
@@ -179,6 +180,10 @@ func TestWXRStreamImport(t *testing.T) {
 	opener := func(data string) func() (io.ReadCloser, error) {
 		return func() (io.ReadCloser, error) { opens++; return io.NopCloser(strings.NewReader(data)), nil }
 	}
+	writer := srv.wxrCreateAuthor(ctx, "writer", "writer@example.test", "Writer")
+	if writer == 0 {
+		t.Fatal("no author")
+	}
 	good := fmt.Sprintf(wxrOutOfOrderFixture, "")
 	broken := good[:len(good)-40]
 	var posts int
@@ -208,7 +213,8 @@ func TestWXRStreamImport(t *testing.T) {
 		JOIN users u ON u.id = p.author_id WHERE p.slug = 'streamed-post' AND t.slug = 'late-cat'`).Scan(&cat, &author); err != nil {
 		t.Fatal(err)
 	}
-	if cat != "late-cat" || author != "admin" || oldTerms[5] == 0 {
+	// Without the header (read after the item in this file) the item's creator would be the importer.
+	if cat != "late-cat" || author != "writer" || oldTerms[5] == 0 {
 		t.Errorf("category %q author %q terms %v", cat, author, oldTerms)
 	}
 	// Again: nothing new.
@@ -314,7 +320,7 @@ func TestWP2PHeartbeatAndStaleCLI(t *testing.T) {
 
 	newRow := func(state string, cli bool, age string) string {
 		id := wp2pNewID()
-		if _, err := pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, state, cli, updated_at) VALUES ($1, $2, $3, now() - $4::interval)`, id, state, cli, age); err != nil {
+		if _, err := pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, state, cli, progress, updated_at) VALUES ($1, $2, $3, '{"hb":true}', now() - $4::interval)`, id, state, cli, age); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.MkdirAll(filepath.Join(srv.wp2pWorkDir(id), "media"), 0o700); err != nil {
@@ -332,7 +338,8 @@ func TestWP2PHeartbeatAndStaleCLI(t *testing.T) {
 	}
 	live := newRow("running", true, "2 hours")
 	r := &wp2pRun{s: srv, id: live}
-	stop := r.heartbeat()
+	_, cancelRun := context.WithCancelCause(ctx)
+	stop := r.heartbeat(cancelRun)
 	time.Sleep(200 * time.Millisecond)
 	if a := age(live); a > 5 {
 		t.Errorf("the row was not touched while the run was alive: %.0f s old", a)
@@ -386,5 +393,177 @@ func TestWP2PHeartbeatAndStaleCLI(t *testing.T) {
 	_ = pool.QueryRow(ctx, `SELECT error FROM wp2p_migrations WHERE id = $1`, killed).Scan(&msg)
 	if !strings.Contains(msg, "run it again") {
 		t.Errorf("message %q", msg)
+	}
+}
+
+// An element larger than the bound fails cleanly instead of being read into memory: one giant text
+// node, or a CDATA section that is never closed. Many items that are each under the bound are fine.
+func TestWxrScanElementBound(t *testing.T) {
+	old := wxrMaxItemBytes
+	wxrMaxItemBytes = 1 << 20
+	t.Cleanup(func() { wxrMaxItemBytes = old })
+	head := `<rss xmlns:wp="http://wordpress.org/export/1.2/" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>`
+	// 5 MB in one CDATA that is never closed: the reader is stopped after about the bound, not at the end.
+	unclosed := io.MultiReader(strings.NewReader(head+`<item><content:encoded><![CDATA[`), io.LimitReader(zeroReader{}, 5<<20))
+	cr := &countReader{r: unclosed}
+	_, _, err := wxrReadHeader(context.Background(), cr)
+	if err == nil || !strings.Contains(err.Error(), "larger than 1 MB") {
+		t.Fatalf("unclosed CDATA: %v", err)
+	}
+	if cr.n > 2<<20 {
+		t.Errorf("read %d bytes before giving up", cr.n)
+	}
+	// One giant text node.
+	giant := strings.NewReader(head + `<item><title>` + strings.Repeat("a", 3<<20) + `</title></item></channel></rss>`)
+	if _, _, err := wxrReadHeader(context.Background(), giant); err == nil || !strings.Contains(err.Error(), "larger than") {
+		t.Errorf("giant node: %v", err)
+	}
+	// 30 items of 100 KB (3 MB in all): each is under the bound.
+	var b strings.Builder
+	b.WriteString(head)
+	for i := 0; i < 30; i++ {
+		fmt.Fprintf(&b, `<item><title>%s</title><wp:post_id>%d</wp:post_id></item>`, strings.Repeat("b", 100<<10), i+1)
+	}
+	b.WriteString(`</channel></rss>`)
+	if _, n, err := wxrReadHeader(context.Background(), strings.NewReader(b.String())); err != nil || n != 30 {
+		t.Errorf("many small items: %d %v", n, err)
+	}
+}
+
+type countReader struct {
+	r io.Reader
+	n int64
+}
+
+func (c *countReader) Read(p []byte) (int, error) {
+	n, err := c.r.Read(p)
+	c.n += int64(n)
+	return n, err
+}
+
+// The first pass stops with its context.
+func TestWxrReadHeaderContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, _, err := wxrReadHeader(ctx, strings.NewReader(`<rss><channel><item><title>a</title></item></channel></rss>`))
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("got %v", err)
+	}
+}
+
+// A file over the package limit is refused from its size, before anything is written, and the copy of
+// one that is allowed stops with its context.
+func TestWP2PSideloadLimitAndContext(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	big := filepath.Join(t.TempDir(), "big.mp4")
+	f, err := os.Create(big)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Truncate(3 << 20); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+	count := func() int {
+		n := 0
+		_ = filepath.WalkDir(srv.cfg.UploadsDir, func(p string, d os.DirEntry, err error) error {
+			if err == nil && !d.IsDir() {
+				n++
+			}
+			return nil
+		})
+		return n
+	}
+	before := count()
+	t.Setenv("PURSAE_WP2P_MAX_MEDIA_MB", "1")
+	if _, err := srv.sideloadLocal(ctx, big, "big.mp4", 0); err == nil || !strings.Contains(err.Error(), "too large") {
+		t.Fatalf("over the limit: %v", err)
+	}
+	if count() != before {
+		t.Error("a file over the limit was written (and left behind)")
+	}
+	t.Setenv("PURSAE_WP2P_MAX_MEDIA_MB", "")
+	cctx, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := srv.sideloadLocal(cctx, big, "big.mp4", 0); err == nil {
+		t.Error("a canceled context did not stop the copy")
+	}
+	if count() != before {
+		t.Error("a canceled copy left a file behind")
+	}
+}
+
+// A run whose row was closed under it stops (its context is canceled), and a run that ends cannot bring a
+// closed row back.
+func TestWP2PClosedRowStopsRun(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	pool := srv.store.Pool
+	old := wp2pHeartbeat
+	wp2pHeartbeat = 15 * time.Millisecond
+	t.Cleanup(func() { wp2pHeartbeat = old })
+
+	id := wp2pNewID()
+	if _, err := pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, state, cli) VALUES ($1, 'failed', true)`, id); err != nil {
+		t.Fatal(err)
+	}
+	rctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	r := &wp2pRun{s: srv, id: id}
+	stop := r.heartbeat(cancel)
+	select {
+	case <-rctx.Done():
+		if !errors.Is(context.Cause(rctx), errWP2PClosed) {
+			t.Errorf("cause %v", context.Cause(rctx))
+		}
+	case <-time.After(3 * time.Second):
+		t.Error("the run was not stopped although its row is closed")
+	}
+	stop()
+
+	state := func(id string) string {
+		var s string
+		_ = pool.QueryRow(ctx, `SELECT state FROM wp2p_migrations WHERE id = $1`, id).Scan(&s)
+		return s
+	}
+	for from, want := range map[string]string{"failed": "failed", "expired": "expired", "running": "done", "queued": "done"} {
+		id := wp2pNewID()
+		if _, err := pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, state) VALUES ($1, $2)`, id, from); err != nil {
+			t.Fatal(err)
+		}
+		srv.wp2pEnd(ctx, id, "done", "")
+		if got := state(id); got != want {
+			t.Errorf("ending a %s import: %s, want %s", from, got, want)
+		}
+	}
+}
+
+// Rows without a heartbeat marker (a command still running on the 0.5.0 binary) keep the old six hours.
+func TestWP2PStaleLegacyCLI(t *testing.T) {
+	_, _, srv := testServerBuilderOff(t)
+	ctx := context.Background()
+	pool := srv.store.Pool
+	add := func(progress, age string) string {
+		id := wp2pNewID()
+		if _, err := pool.Exec(ctx, `INSERT INTO wp2p_migrations (id, state, cli, progress, updated_at) VALUES ($1, 'running', true, $2::jsonb, now() - $3::interval)`, id, progress, age); err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	legacyLive := add(`{"phase":"content","items":{"content":3}}`, "2 hours")
+	legacyDead := add(`{"phase":"content"}`, "7 hours")
+	beating := add(`{"phase":"content","hb":true}`, "45 minutes")
+	beatingLive := add(`{"phase":"content","hb":true}`, "10 minutes")
+	ids, err := srv.wp2pFailStaleCLI(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]bool{}
+	for _, id := range ids {
+		got[id] = true
+	}
+	if got[legacyLive] || !got[legacyDead] || !got[beating] || got[beatingLive] {
+		t.Errorf("closed %v (legacy live %s, legacy dead %s, beating %s, beating live %s)", ids, legacyLive, legacyDead, beating, beatingLive)
 	}
 }

@@ -61,7 +61,7 @@ Orders placed after the package was built are not in it. Put the store in mainte
 
 = Large sites? =
 
-The package is built in short steps that survive PHP time limits, and uploaded in 8 MB chunks. Media files are streamed, never read into memory; those over 4 GB are left out and listed (copy them by hand). The filter `wp2p_max_media_bytes` changes that limit.
+The package is built in short steps that survive PHP time limits, and uploaded in 8 MB chunks. Media files are streamed, never read into memory; those over 4 GB are left out and listed (copy them by hand). The filter `wp2p_max_media_bytes` changes that limit (never above 8 GiB, which the archive format cannot hold). Update Pursae first: Pursae 0.5.0 refuses package media files over 64 MB (they are skipped and listed in its report), later versions import them. The plugin cannot ask the Pursae site for its version before it packs, so it does not check this itself.
 
 == Changelog ==
 

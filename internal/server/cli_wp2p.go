@@ -106,11 +106,11 @@ func cliImportWordPress(c *cli.Ctx, e *cliEnv) error {
 	r := &wp2pRun{s: s, id: id, dir: s.wp2pWorkDir(id), pkg: pkg, keepPackage: true, key: &key, u: u,
 		logf: func(format string, args ...any) { c.Log(format, args...) }}
 	if err := r.run(ctx); err != nil {
-		s.wp2pSetState(ctx, id, "failed", err.Error()+" (run the command again to continue)")
+		s.wp2pEnd(ctx, id, "failed", err.Error()+" (run the command again to continue)")
 		_ = os.RemoveAll(r.dir)
 		return cli.Errorf("%v (what was imported stays; run the command again to continue)", err)
 	}
-	s.wp2pSetState(ctx, id, "done", "")
+	s.wp2pEnd(ctx, id, "done", "")
 	rep := r.rep
 	for _, n := range rep.Notes {
 		c.Log("-- %s", n)
