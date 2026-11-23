@@ -10,6 +10,13 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Fixed
+
+- **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
+  default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
+  Languages › Translations, and each language shows its translation, so the automatic table of contents no
+  longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
+
 ## [0.5.2] - 2026-11-23
 
 The editor canvas is now the published page: an imported design runs its own scripts in the editor once you
