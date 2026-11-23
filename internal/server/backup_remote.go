@@ -630,7 +630,7 @@ func (s *Server) bmgrRemoteFetch(ctx context.Context, name, passOverride string,
 	defer body.Close()
 	dst := filepath.Join(s.bmgrDir(), local)
 	tmp := dst + ".part"
-	out, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	out, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600) //nolint:gosec // G703: name matched bmgrRemoteNameRe (no path separators)
 	if err != nil {
 		return "", err
 	}
@@ -638,7 +638,7 @@ func (s *Server) bmgrRemoteFetch(ctx context.Context, name, passOverride string,
 	defer func() {
 		if !ok {
 			out.Close()
-			os.Remove(tmp)
+			os.Remove(tmp) //nolint:gosec // G703: name matched bmgrRemoteNameRe (no path separators)
 		}
 	}()
 	src := io.Reader(body)
@@ -662,7 +662,7 @@ func (s *Server) bmgrRemoteFetch(ctx context.Context, name, passOverride string,
 	if _, err := bmgrReadManifest(tmp); err != nil {
 		return "", fmt.Errorf("the decrypted file is not a usable backup: %w", err)
 	}
-	if err := os.Rename(tmp, dst); err != nil {
+	if err := os.Rename(tmp, dst); err != nil { //nolint:gosec // G703: name matched bmgrRemoteNameRe (no path separators)
 		return "", err
 	}
 	ok = true
