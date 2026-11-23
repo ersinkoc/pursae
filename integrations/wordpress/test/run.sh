@@ -123,8 +123,11 @@ check "site title" "$(sql "SELECT value #>> '{}' FROM settings WHERE key = 'blog
 # rendered on the server: no block markup reaches the page.
 check "the cart page holds the Cart block or Pursae Commerce's cart" "$(sql "SELECT count(*) FROM posts WHERE id = (SELECT (value #>> '{}')::bigint FROM settings WHERE key = 'goocommerce_cart_page_id') AND (content LIKE '%wp:woocommerce/cart%' OR content LIKE '%[goocommerce_cart]%')")" "1"
 cart_slug=$(sql "SELECT slug FROM posts WHERE id = (SELECT (value #>> '{}')::bigint FROM settings WHERE key = 'goocommerce_cart_page_id')")
-cart_html=$(curl -s "http://127.0.0.1:$PORT/$cart_slug/")
-check "no block comment reaches the cart page" "$(grep -c 'wp:woocommerce' <<<"$cart_html" | tr -d ' ')" "0"
+cart_code=$(curl -sL -o "$WORK/cart.html" -w '%{http_code}' "http://127.0.0.1:$PORT/$cart_slug/")
+check "the cart page answers" "$cart_code" "200"
+# gooCartPageView's wrapper: the block was rendered by Pursae Commerce, not dropped.
+check "the cart page shows Pursae Commerce's cart" "$(grep -q '<div class="woocommerce">' "$WORK/cart.html" && echo yes || echo no)" "yes"
+check "no block comment reaches the cart page" "$(grep -q 'wp:woocommerce' "$WORK/cart.html" && echo yes || echo no)" "no"
 check "store currency" "$(sql "SELECT value #>> '{}' FROM settings WHERE key = 'goocommerce_currency'")" "EUR"
 
 # Products.
