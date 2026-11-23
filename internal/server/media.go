@@ -270,11 +270,18 @@ func (s *Server) insertAttachmentFile(ctx context.Context, name string, r io.Rea
 }
 
 func (s *Server) insertAttachmentFileWithMeta(ctx context.Context, name string, r io.Reader, uploaderID, postID int64, meta map[string]any) (*store.Attachment, error) {
-	st, err := media.SaveWith(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, io.LimitReader(r, maxUploadBytes+1), s.uploadReserved(ctx))
+	return s.insertAttachmentFileLimit(ctx, name, r, uploaderID, postID, meta, maxUploadBytes)
+}
+
+// insertAttachmentFileLimit is insertAttachmentFileWithMeta with its own size limit: the upload limit
+// applies to what people upload, a WP to Pursae package brings files the old site accepted (wp2pMaxMedia).
+// The file is streamed to disk either way.
+func (s *Server) insertAttachmentFileLimit(ctx context.Context, name string, r io.Reader, uploaderID, postID int64, meta map[string]any, limit int64) (*store.Attachment, error) {
+	st, err := media.SaveWith(s.cfg.UploadsDir, s.settings.Bool("uploads_use_yearmonth_folders"), time.Now(), name, io.LimitReader(r, limit+1), s.uploadReserved(ctx))
 	if err != nil {
 		return nil, err
 	}
-	if st.Size > maxUploadBytes {
+	if st.Size > limit {
 		_ = os.Remove(filepath.Join(s.cfg.UploadsDir, filepath.FromSlash(st.RelPath)))
 		return nil, errUploadTooLarge
 	}
