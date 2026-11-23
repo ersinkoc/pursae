@@ -35,6 +35,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   listed and given an `id`, which broke the page's JavaScript or CSS; those are now skipped. The editor's
   Table of Contents block also reads heading text with an inert `DOMParser`, so markup in another
   author's heading (an `<img onerror>`) no longer runs in your editor.
+- **Pursae Security: a required passkey/2FA or a forced password change now also closes the REST API.**
+  Past the grace period these only kept the HTML admin on the fix-it screen; the same cookie still got a
+  REST nonce from the heartbeat and full REST access, enough to mint an Application Password and skip the
+  requirement for good. Cookie-authenticated REST now answers 403 `adminsec_account_action_required` and
+  the heartbeat hands out no REST nonce until the account is fixed.
 
 ## [0.5.2] - 2026-11-23
 
