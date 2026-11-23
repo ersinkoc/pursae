@@ -265,3 +265,26 @@ func TestGooReservedStockReleaseAndExpiry(t *testing.T) {
 		t.Errorf("reservations with Hold stock off: %v", held)
 	}
 }
+
+// A customer who leaves the external payment page (back button) and checks out again is not refused
+// the last unit because of the hold of their own abandoned order: the new order takes it over.
+func TestGooReserveStockSameVisitorRetry(t *testing.T) {
+	srv := gooResvSetup(t)
+	p := gooMakeSimple(t, srv, "Only One", 10, func(p *gooProduct) { p.Virtual, p.ManageStock, p.StockQuantity = true, true, gooIntPtr(1) })
+	c := gooResvVisitor(t, srv, p, 1)
+	first, errs := gxCheckout(t, srv, c, "goo_resv_redirect")
+	if len(errs) > 0 {
+		t.Fatal(errs)
+	}
+	second, errs := gxCheckout(t, srv, c, "goo_resv_redirect")
+	if len(errs) > 0 {
+		t.Fatalf("the same visitor's retry was refused: %v", errs)
+	}
+	if held := gooResvHeld(t, srv, p.ID); len(held) != 1 || held[second.ID] != 1 {
+		t.Errorf("reservations %v, want only order %d (first %d) holding 1", held, second.ID, first.ID)
+	}
+	// Another visitor still cannot take the held unit.
+	if _, errs := gxCheckout(t, srv, gooResvVisitor(t, srv, p, 1), "goo_resv_redirect"); len(errs) == 0 || !strings.Contains(errs[0], "(0 available)") {
+		t.Errorf("another visitor while the unit is held: %v", errs)
+	}
+}
