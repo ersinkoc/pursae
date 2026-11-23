@@ -407,9 +407,12 @@ export interface Boot {
   /**
    * Design kits (slugs, sorted) whose scripts this user chose to always run in the editor
    * (routes.kitTrust): only kits that still exist as the installation trusted (a kit deleted and
-   * uploaded again is asked about again; its new versions are not). Empty without canRunScripts.
+   * uploaded again is asked about again, and so is a new version whose scripts changed). Empty
+   * without canRunScripts.
    */
   scriptTrust?: string[]
+  /** Per trusted kit, the hashes of the inline code the user approved with it (trust.ts needsOf). */
+  scriptCode?: Record<string, string[]>
   /** The user has unfiltered_html: the editor may run a design's scripts, and the user may trust a kit. */
   canRunScripts?: boolean
 }
@@ -419,6 +422,8 @@ export interface KitTrustResponse {
   trust: boolean
   /** The user's trusted kits after the change (Boot.scriptTrust). */
   scriptTrust: string[]
+  /** Their approved inline code (Boot.scriptCode). */
+  scriptCode?: Record<string, string[]>
 }
 
 /** Boot.siteStyle: the doc.site keys a site style sets. */

@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	pathpkg "path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/i18n"
+	"wpgo/internal/store"
 	"wpgo/internal/webbuilder"
 )
 
@@ -38,15 +40,27 @@ import (
 //     administrator scripts get the nonce (cspTrustOn) — the nonce on every script, as the
 //     published page gives the code sections' scripts (cspTrustScripts).
 //
-// Only users with unfiltered_html (who may publish the scripts anyway) and edit rights on the post
-// get a frame; the markup is theirs and is shown to them only. Nothing is stored in the database.
+// The frame's path is the server's: the post's permalink (a draft's ?p= / ?page_id= address, a
+// template's preview address), never one the request names; a path under /wp-admin, /wp-login.php,
+// /wp-json, /wp-content, /wp-includes or /xmlrpc.php is refused (wbLiveAddr). The middleware answers
+// the token at that path whatever route would otherwise serve it.
+//
+// Only users with unfiltered_html (who may publish the scripts anyway; with an Application Password
+// the site-code scope too, wbUnfiltered) and edit rights on the post get a frame; the markup is
+// theirs and is shown to them only. Nothing is stored in the database: the frames are kept in
+// memory, at most wbLiveMaxTotal bytes in all and wbLiveUserBytes per user (the oldest go first),
+// each for wbLiveTTL. The response says Referrer-Policy: no-referrer, so the token in its address
+// is not sent on with the design's requests (GL_HOOK also takes it out of the address before any
+// design script runs).
 
 const (
-	wbLiveQuery    = "wb-live-frame"
-	wbLiveTTL      = 15 * time.Minute
-	wbLiveMax      = 64 // frames kept in all (oldest dropped)
-	wbLivePerUser  = 6  // frames kept per user
-	wbLiveMaxBytes = 8 << 20
+	wbLiveQuery     = "wb-live-frame"
+	wbLiveTTL       = 15 * time.Minute
+	wbLiveMax       = 64       // frames kept in all (oldest dropped)
+	wbLivePerUser   = 6        // frames kept per user
+	wbLiveMaxBytes  = 8 << 20  // one request body
+	wbLiveMaxTotal  = 64 << 20 // bytes of all frames kept (oldest dropped)
+	wbLiveUserBytes = 24 << 20 // bytes of one user's frames kept (their oldest dropped)
 )
 
 type wbLiveEntry struct {
@@ -58,11 +72,68 @@ type wbLiveEntry struct {
 var wbLiveFrames = struct {
 	sync.Mutex
 	m     map[string]*wbLiveEntry
-	order []string
+	order []string // oldest first
+	bytes int      // the html of every frame kept
 }{m: map[string]*wbLiveEntry{}}
 
-// wbLivePut keeps e under a new token.
+// wbLiveSize is what a kept frame counts against the caps.
+func wbLiveSize(e *wbLiveEntry) int { return len(e.html) + len(e.path) + 64 }
+
+// wbLivePrune drops expired frames, then the oldest of e's user beyond wbLivePerUser - 1 frames or
+// wbLiveUserBytes - size bytes, then the oldest of all beyond wbLiveMax - 1 frames or
+// wbLiveMaxTotal - size bytes, making room for a frame of size bytes (size 0, e nil: expiry only).
+// The caller holds the lock.
+func wbLivePrune(now time.Time, e *wbLiveEntry, size int) {
+	f := &wbLiveFrames
+	drop := map[string]bool{}
+	for _, k := range f.order {
+		if x := f.m[k]; x == nil || now.Sub(x.at) >= wbLiveTTL {
+			drop[k] = true
+		}
+	}
+	if e != nil {
+		n, b := 0, 0
+		for i := len(f.order) - 1; i >= 0; i-- { // newest first: what the user keeps
+			k := f.order[i]
+			x := f.m[k]
+			if drop[k] || x == nil || x.user != e.user {
+				continue
+			}
+			n++
+			b += wbLiveSize(x)
+			if n >= wbLivePerUser || b+size > wbLiveUserBytes {
+				drop[k] = true
+			}
+		}
+	}
+	keep := f.order[:0]
+	f.bytes = 0
+	for _, k := range f.order {
+		if drop[k] {
+			delete(f.m, k)
+			continue
+		}
+		keep = append(keep, k)
+		f.bytes += wbLiveSize(f.m[k])
+	}
+	f.order = keep
+	if e == nil {
+		return
+	}
+	for len(f.order) > 0 && (len(f.order) >= wbLiveMax || f.bytes+size > wbLiveMaxTotal) {
+		k := f.order[0]
+		f.bytes -= wbLiveSize(f.m[k])
+		delete(f.m, k)
+		f.order = f.order[1:]
+	}
+}
+
+// wbLivePut keeps e under a new token ("" when e alone is larger than a user may keep).
 func wbLivePut(e *wbLiveEntry) string {
+	size := wbLiveSize(e)
+	if size > wbLiveUserBytes || size > wbLiveMaxTotal {
+		return ""
+	}
 	var b [18]byte
 	_, _ = rand.Read(b[:])
 	tok := hex.EncodeToString(b[:])
@@ -70,41 +141,23 @@ func wbLivePut(e *wbLiveEntry) string {
 	f.Lock()
 	defer f.Unlock()
 	now := time.Now()
-	mine := 0
-	keep := f.order[:0]
-	for i := len(f.order) - 1; i >= 0; i-- { // newest first: count this user's frames
-		x := f.m[f.order[i]]
-		if x != nil && x.user == e.user {
-			mine++
-			if mine >= wbLivePerUser {
-				delete(f.m, f.order[i])
-			}
-		}
-	}
-	for _, k := range f.order {
-		if x := f.m[k]; x != nil && now.Sub(x.at) < wbLiveTTL {
-			keep = append(keep, k)
-		} else {
-			delete(f.m, k)
-		}
-	}
-	f.order = keep
-	for len(f.order) >= wbLiveMax {
-		delete(f.m, f.order[0])
-		f.order = f.order[1:]
-	}
+	wbLivePrune(now, e, size)
 	e.at = now
 	f.m[tok] = e
 	f.order = append(f.order, tok)
+	f.bytes += size
 	return tok
 }
 
+// wbLiveGet is the frame kept under tok (nil when it expired); expired frames are dropped.
 func wbLiveGet(tok string) *wbLiveEntry {
 	f := &wbLiveFrames
 	f.Lock()
 	defer f.Unlock()
+	now := time.Now()
+	wbLivePrune(now, nil, 0)
 	e := f.m[tok]
-	if e == nil || time.Since(e.at) >= wbLiveTTL {
+	if e == nil || now.Sub(e.at) >= wbLiveTTL {
 		return nil
 	}
 	return e
@@ -147,7 +200,7 @@ func (s *Server) wbLiveFrameServe(c *gin.Context) {
 	}
 	u := currentUser(c)
 	// Only its user, only while they may still run scripts, only at the page's path, only as a frame.
-	if e == nil || u == nil || u.ID != e.user || !u.Can("unfiltered_html", nil) || r.URL.Path != e.path ||
+	if e == nil || u == nil || u.ID != e.user || !wbUnfiltered(c, u) || r.URL.Path != e.path ||
 		(r.Header.Get("Sec-Fetch-Dest") != "" && r.Header.Get("Sec-Fetch-Dest") != "iframe") ||
 		(r.Header.Get("Sec-Fetch-Site") != "" && r.Header.Get("Sec-Fetch-Site") != "same-origin") {
 		notFound()
@@ -161,12 +214,15 @@ func (s *Server) wbLiveFrameServe(c *gin.Context) {
 	wbEmbedCSP(c, e.html)
 	c.Header("Cache-Control", "no-store, private")
 	c.Header("X-Robots-Tag", "noindex")
+	// The token is in the frame's address: no Referer carries it to the design's requests.
+	c.Header("Referrer-Policy", "no-referrer")
 	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(out))
 }
 
 // wbLiveBody is the POST body: the editor's sections and stylesheets.
 type wbLiveBody struct {
-	// URL is the page's address on the site (the frame is served at its path).
+	// URL is ignored (older editors send the page's address): the server builds the frame's path
+	// from the post (wbLiveAddr).
 	URL   string `json:"url"`
 	Title string `json:"title"`
 	// Shell: "theme" (Hello Pursae with parts), "canvas" (a canvas page) or "part" (a template alone).
@@ -182,14 +238,19 @@ type wbLiveBody struct {
 	Hook string `json:"hook"`
 }
 
-// wbRESTLiveFrame is POST documents/{id}/live-frame → {url}.
+// wbRESTLiveFrame is POST documents/{id}/live-frame → {url, path}.
 func (s *Server) wbRESTLiveFrame(c *gin.Context, r *restRequest) {
 	u, p := s.wbPost(c, r)
 	if p == nil {
 		return
 	}
-	if !u.Can("unfiltered_html", nil) {
+	if !wbUnfiltered(c, u) {
 		wbForbidden(c, u)
+		return
+	}
+	path, query, ok := wbLivePath(s.wbLiveAddr(c, p), s.links(c).HomeURL("/"))
+	if !ok {
+		restErr(c, http.StatusConflict, "wb_live_path", "This item has no front-end address the live canvas can use.")
 		return
 	}
 	raw, ok := wbBody(c, r, wbLiveMaxBytes)
@@ -200,9 +261,12 @@ func (s *Server) wbRESTLiveFrame(c *gin.Context, r *restRequest) {
 	if !wbDecode(c, raw, &body) {
 		return
 	}
-	path, query := wbLivePath(body.URL)
 	doc := s.wbLiveRender(c, p.ID, path, &body)
 	tok := wbLivePut(&wbLiveEntry{user: u.ID, post: p.ID, path: path, html: doc})
+	if tok == "" {
+		restErr(c, http.StatusRequestEntityTooLarge, webbuilder.ErrTooLarge, "The page is too large for the live canvas.", map[string]any{"limit": wbLiveUserBytes})
+		return
+	}
 	q := url.Values{}
 	if query != "" {
 		q, _ = url.ParseQuery(query)
@@ -212,13 +276,61 @@ func (s *Server) wbRESTLiveFrame(c *gin.Context, r *restRequest) {
 	c.JSON(http.StatusOK, map[string]any{"url": path + "?" + q.Encode(), "path": path})
 }
 
-// wbLivePath is the path and query of a page address (the site's own: only its path counts).
-func wbLivePath(addr string) (path, query string) {
-	pu, err := url.Parse(strings.TrimSpace(addr))
-	if err != nil || pu.Path == "" || !strings.HasPrefix(pu.Path, "/") || strings.HasPrefix(pu.Path, "//") {
-		return "/", ""
+// wbLiveAddr is the front-end address of p as the editor's links name it: its permalink (a draft's
+// or a pending item's is its ?p= / ?page_id= address, which the token is answered at like any
+// other), a Theme Builder template's preview address.
+func (s *Server) wbLiveAddr(c *gin.Context, p *store.Post) string {
+	if wbIsTemplate(p) {
+		if t, err := s.store.WebBuilder().Template(c, p.ID); err == nil {
+			if info, _ := s.wbTemplatePreviewInfo(c, t); info.URL != "" {
+				return info.URL
+			}
+		}
+		return s.links(c).HomeURL("/")
 	}
-	return pu.EscapedPath(), pu.RawQuery
+	return s.links(c).Permalink(p)
+}
+
+// wbLiveReserved are the site's own non-front-end paths (relative to the home path; a folder with
+// everything under it): a live frame is never served there.
+var wbLiveReserved = []string{"/wp-admin", "/wp-login.php", "/wp-json", "/wp-content", "/wp-includes", "/wp-cron.php", "/wp-signup.php", "/wp-activate.php", "/xmlrpc.php"}
+
+// wbLivePath is the path and query of a front-end address of the site (home: the site's home
+// URL); ok is false for an address that is not a front-end page of the site (another host, a
+// relative or malformed address, a wbLiveReserved path, a REST route in the query).
+func wbLivePath(addr, home string) (path, query string, ok bool) {
+	pu, err := url.Parse(strings.TrimSpace(addr))
+	hu, herr := url.Parse(home)
+	if err != nil || herr != nil || pu.Path == "" || !strings.HasPrefix(pu.Path, "/") || strings.HasPrefix(pu.Path, "//") ||
+		strings.Contains(pu.Path, "\\") || strings.HasSuffix(strings.ToLower(pu.Path), ".php") || pu.Opaque != "" || pu.User != nil {
+		return "", "", false
+	}
+	if pu.Host != "" && (!strings.EqualFold(pu.Host, hu.Host) || pu.Scheme != hu.Scheme) {
+		return "", "", false
+	}
+	if clean := pathpkg.Clean(pu.Path); clean != pu.Path && clean+"/" != pu.Path {
+		return "", "", false // dot segments, doubled slashes
+	}
+	rel := pu.Path
+	if base := strings.TrimSuffix(hu.Path, "/"); base != "" {
+		if rel != base && !strings.HasPrefix(rel, base+"/") {
+			return "", "", false
+		}
+		rel = strings.TrimPrefix(rel, base)
+		if rel == "" {
+			rel = "/"
+		}
+	}
+	low := strings.ToLower(rel)
+	for _, r := range wbLiveReserved {
+		if low == r || strings.HasPrefix(low, r+"/") {
+			return "", "", false
+		}
+	}
+	if v, _ := url.ParseQuery(pu.RawQuery); v.Has("rest_route") {
+		return "", "", false
+	}
+	return pu.EscapedPath(), pu.RawQuery, true
 }
 
 // wbLiveKeepID / wbLiveID: FillCode removes the editor's data-wbc ids (StripCodeIDs); the live

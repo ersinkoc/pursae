@@ -48,11 +48,36 @@ const cssEscape = (v: string) => (typeof CSS !== 'undefined' && CSS.escape ? CSS
 
 /**
  * Text whose live DOM differs from its source (a script drew or changed it): edited as source text
- * (K5), never read back from the DOM.
+ * (K5), never read back from the DOM. Both sides are compared as the browser reads them — the
+ * source parsed in an inert document (entities decoded, `<br/>` and `<br>` alike) — by their
+ * element names and text, whitespace collapsed; attributes a script changes (a class it toggles)
+ * do not count, they are never written back (richtext.writeBack keeps the source tags).
  */
-export function drawnText(srcInner: string, liveInner: string): boolean {
-  const norm = (v: string) => v.replace(/\s+/g, ' ').trim()
-  return norm(srcInner) !== norm(liveInner)
+export function drawnText(srcInner: string, live: string | Element): boolean {
+  return shapeOf(srcInner) !== (typeof live === 'string' ? shapeOf(live) : shapeOfNode(live))
+}
+
+const shapeOf = (markup: string): string => {
+  if (typeof DOMParser === 'undefined') return markup.replace(/\s+/g, ' ').trim()
+  const d = new DOMParser().parseFromString(`<!DOCTYPE html><body>${markup}`, 'text/html')
+  return shapeOfNode(d.body)
+}
+
+function shapeOfNode(root: Node): string {
+  let out = ''
+  const walk = (n: Node) => {
+    for (let k = n.firstChild; k; k = k.nextSibling) {
+      if (k.nodeType === 3) out += (k as Text).data
+      else if (k.nodeType === 1) {
+        const tag = (k as Element).localName
+        out += `<${tag}>`
+        walk(k)
+        out += `</${tag}>`
+      }
+    }
+  }
+  walk(root)
+  return out.replace(/\s+/g, ' ').trim()
 }
 
 /**

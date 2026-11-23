@@ -86,6 +86,11 @@ type wbKit struct {
 	// deleted and uploaded again under the same slug gets a new one. Users' script trust names it
 	// (webbuilder_trust.go). Never shown by the REST API.
 	Install string `json:"install,omitempty"`
+	// Code is the hash of the kit's executable content (wbKitCodeHash: its .js, .mjs, .wasm and
+	// .svg files), set on every commit (computed on first use for a kit stored before it existed).
+	// Users' script trust names it with Install: a commit that changes it is asked about again.
+	// Never shown by the REST API.
+	Code string `json:"code,omitempty"`
 }
 
 func (s *Server) wbKitList() map[string]*wbKit {
@@ -425,6 +430,7 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 	k.Version++
 	k.Files, k.Bytes, k.Updated = len(files), total, wbTime(time.Now())
 	k.Origins = wbKitOrigins(liveDir, files)
+	k.Code = wbKitCodeHash(liveDir, files)
 	if breakpoints != nil {
 		bp := breakpoints.Normalize()
 		k.Breakpoints = &bp

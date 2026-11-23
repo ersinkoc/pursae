@@ -206,14 +206,19 @@ export async function uploadMedia(rest: RestClient, file: File, postId: number):
 
 /**
  * Remembers (on) or forgets (off) that the user always runs the kit's scripts in the editor
- * (PUT kits/{slug}/trust). Resolves to the user's trusted kits afterwards (Boot.scriptTrust);
- * RestError 403 without unfiltered_html, 404 for an unknown kit.
+ * (PUT kits/{slug}/trust), with the hashes of the page's inline code approved with it (code, on
+ * only). Resolves to the user's trusted kits and their approved code afterwards (Boot.scriptTrust,
+ * Boot.scriptCode); RestError 403 without unfiltered_html, 404 for an unknown kit.
  */
-export async function setKitTrust(rest: RestClient, slug: string, on: boolean): Promise<string[]> {
-  const r = await rest.request<KitTrustResponse>('PUT', routes.kitTrust(slug), { json: { trust: on } })
+export async function setKitTrust(rest: RestClient, slug: string, on: boolean, code: readonly string[] = []): Promise<{ trust: string[]; code: Record<string, string[]> }> {
+  const r = await rest.request<KitTrustResponse>('PUT', routes.kitTrust(slug), { json: on && code.length ? { trust: on, code } : { trust: on } })
   const list = r.data && Array.isArray(r.data.scriptTrust) ? r.data.scriptTrust : null
   if (!list) throw new RestError(500, 'wb_bad_response', 'The server did not return the trusted design kits.')
-  return list.filter((s): s is string => typeof s === 'string')
+  const out: Record<string, string[]> = {}
+  const raw = r.data.scriptCode
+  if (raw && typeof raw === 'object' && !Array.isArray(raw))
+    for (const [k, v] of Object.entries(raw)) if (Array.isArray(v)) out[k] = v.filter((h): h is string => typeof h === 'string' && /^[0-9a-f]{64}$/.test(h))
+  return { trust: list.filter((s): s is string => typeof s === 'string'), code: out }
 }
 
 /* ---------- Theme Builder: id search in core collections (contract §11.3 dialog) ---------- */

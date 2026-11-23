@@ -20,6 +20,9 @@ const tr: Record<string, string> = {
   "Stop always running this design’s scripts": "Bu tasarımın betiklerini artık her zaman çalıştırma", // i18n-ignore
   "This design’s scripts no longer run automatically in the editor.": "Bu tasarımın betikleri artık editörde kendiliğinden çalışmayacak.", // i18n-ignore
   "Your choice could not be saved: {message}": "Seçiminiz kaydedilemedi: {message}", // i18n-ignore
+  "The server did not confirm the trust. Try again.": "Sunucu güveni onaylamadı. Yeniden deneyin.", // i18n-ignore
+  "The design’s script changed this text while you edited it, so it was not saved. Edit the stored text here instead.": "Siz düzenlerken tasarımın betiği bu metni değiştirdi, bu yüzden kaydedilmedi. Saklanan metni burada düzenleyin.", // i18n-ignore
+  "The live canvas could not be loaded ({message}). The canvas is in Safe mode.": "Canlı tuval yüklenemedi ({message}). Tuval güvenli modda.", // i18n-ignore
   "Interact": "Etkileşim", // i18n-ignore
   "Interact with the page: clicks and keys go to the design (theme switch, menus, tabs, sliders). Hold {key} to interact for a moment.": "Sayfayla etkileşim: tıklamalar ve tuşlar tasarıma gider (tema düğmesi, menüler, sekmeler, kaydırıcılar). Kısa bir etkileşim için {key} tuşunu basılı tutun.", // i18n-ignore
   "Interacting with the page · Esc or Interact to go back to editing": "Sayfayla etkileşimdesiniz · düzenlemeye dönmek için Esc ya da Etkileşim", // i18n-ignore

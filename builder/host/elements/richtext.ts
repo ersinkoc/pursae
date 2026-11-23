@@ -22,6 +22,53 @@ export interface TextEdit {
   el: HTMLElement
   /** Ends the session (commit: write the change). */
   end(commit: boolean): void
+  /** Runs an edit of the user's (a toolbar command): its DOM changes are the user's, not the design's. */
+  user<T>(f: () => T): T
+}
+
+/**
+ * Watches an element being edited in a frame where the design's scripts run (Live, K5): every
+ * change of its content (child nodes, text) is the user's when it happens between a beforeinput
+ * and its input event, seen first on the frame's window (capture), or inside user(); any other
+ * change — a script typing a counter, re-rendering the element, adding a node — makes the edit
+ * foreign, and the caller does not save it (the DOM then holds what the design wrote).
+ */
+export function watchEdit(el: HTMLElement): { user<T>(f: () => T): T; foreign(): boolean; stop(): void } {
+  const win = el.ownerDocument.defaultView
+  const MO = (win as unknown as { MutationObserver?: typeof MutationObserver } | null)?.MutationObserver ?? (typeof MutationObserver !== 'undefined' ? MutationObserver : null)
+  if (!MO || !win) return { user: (f) => f(), foreign: () => false, stop: () => {} }
+  let tainted = false
+  const mo = new MO(() => {
+    // Delivered after a task: whatever is still pending was not taken at a user boundary.
+    tainted = true
+  })
+  mo.observe(el, { childList: true, characterData: true, subtree: true })
+  const check = () => {
+    if (mo.takeRecords().length) tainted = true
+  }
+  const take = () => void mo.takeRecords()
+  win.addEventListener('beforeinput', check, true)
+  win.addEventListener('input', take, true)
+  return {
+    user<T>(f: () => T): T {
+      check()
+      try {
+        return f()
+      } finally {
+        take()
+      }
+    },
+    foreign() {
+      check()
+      return tainted
+    },
+    stop() {
+      check()
+      mo.disconnect()
+      win.removeEventListener('beforeinput', check, true)
+      win.removeEventListener('input', take, true)
+    },
+  }
 }
 
 /** DOM nodes → the source nodes they show. */
@@ -119,11 +166,14 @@ export function writeBack(root: Node, t: Tree, map: SrcMap): string {
 /**
  * Starts editing el. plain: plain text only (text a script drew differently from the source).
  * write: the new inner markup of el (from the source, writeBack). onDone gets it (null: nothing
- * changed or cancelled) and the plain text.
+ * changed or cancelled) and the plain text; foreign (live: the frame runs the design's scripts,
+ * watchEdit): the design changed the element during the edit — nothing is saved, the element gets
+ * back its nodes of before, and onDone's foreign is true.
  */
-export function startTextEdit(el: HTMLElement, plain: boolean, at: { x: number; y: number } | null, write: (el: HTMLElement) => string, onDone: (html: string | null, text: string) => void): TextEdit {
+export function startTextEdit(el: HTMLElement, plain: boolean, at: { x: number; y: number } | null, write: (el: HTMLElement) => string, onDone: (html: string | null, text: string, foreign?: boolean) => void, live = false): TextEdit {
   const doc = el.ownerDocument
   const before = el.innerHTML
+  const watch = live ? watchEdit(el) : null
   // Escape puts the nodes themselves back (never markup parsed again).
   const saved = Array.from(el.childNodes).map((n) => n.cloneNode(true))
   el.setAttribute('contenteditable', plain ? 'plaintext-only' : 'true')
@@ -151,10 +201,12 @@ export function startTextEdit(el: HTMLElement, plain: boolean, at: { x: number; 
     finished = true
     el.removeEventListener('keydown', key, true)
     el.removeEventListener('blur', blur)
-    if (!commit) el.replaceChildren(...saved)
+    const foreign = !!watch?.foreign()
+    watch?.stop()
+    if (!commit || foreign) el.replaceChildren(...saved)
     el.removeAttribute('contenteditable')
-    const changed = commit && el.innerHTML !== before
-    onDone(changed ? write(el) : null, el.textContent ?? '')
+    const changed = commit && !foreign && el.innerHTML !== before
+    onDone(changed ? write(el) : null, el.textContent ?? '', foreign)
   }
   const key = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -169,7 +221,7 @@ export function startTextEdit(el: HTMLElement, plain: boolean, at: { x: number; 
   const blur = () => end(true)
   el.addEventListener('keydown', key, true)
   el.addEventListener('blur', blur)
-  return { id: el.getAttribute('data-wbc') ?? '', el, end }
+  return { id: el.getAttribute('data-wbc') ?? '', el, end, user: (f) => (watch ? watch.user(f) : f()) }
 }
 
 /** Formatting commands of the in-frame text toolbar. */

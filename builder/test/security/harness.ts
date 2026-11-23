@@ -10,7 +10,7 @@ import { sweep } from '../../host/elements/neutral'
 import { codeFrameDoc } from '@/builder/codeFrameDoc'
 import { frameGuard } from '../../host/elements/guard'
 import { HEAD_PAYLOADS, PAYLOADS, hitJs } from './payloads'
-import { frameModeOf, initialScripts, sandboxOf } from '../../host/elements/trust'
+import { frameModeOf, initialScripts, needsOf, runsNow, sandboxOf } from '../../host/elements/trust'
 
 declare global {
   interface Window {
@@ -157,23 +157,59 @@ async function runMixed(scenario: string, opts: { guard: boolean; edit: boolean;
   return { scenario, loadHits, editHits, reconciled: null }
 }
 
+/** A section of a TRUST scenario: kit (loads that kit's files by URL), label (content.kit only), html. */
+export interface TrustSec {
+  kit?: string
+  label?: string
+  html?: string
+}
+
+const KITURL = (k: string, f: string) => `/wp-content/uploads/web-builder/kits/${k}/${f}`
+const trustSec = (t: TrustSec) =>
+  ({
+    kind: 'code',
+    content: {
+      html: (t.html ?? '<script>x()</script>') + (t.kit ? `<script src="${KITURL(t.kit, 'app.js')}"></script>` : ''),
+      head: t.kit ? `<link rel="stylesheet" href="${KITURL(t.kit, 'site.css')}">` : '',
+      ...(t.label ? { kit: t.label } : {}),
+    },
+  }) as const
+
 /**
- * The canvas's first frame for a page, as the editor decides it from the boot object before it
- * makes the frame (trust.ts initialScripts → frameModeOf → sandboxOf): a design the user does not
- * trust must load static and inert (the prompt shows, nothing has run); a trusted one loads live.
+ * The canvas's frame for a page, as the editor decides it (trust.ts): from the boot object before
+ * it makes the first frame (initialScripts → frameModeOf → sandboxOf), then — with insert — after
+ * a section is inserted, pasted or imported into the open page (runsNow in the same render, before
+ * the frame draws it; reconcileTrust then asks). A page the user does not trust (its kits, or its
+ * own code) must load static and inert, with the prompt up; a trusted one loads live. approve: the
+ * server holds the page's inline code as approved with the trusted kits (Boot.scriptCode).
  */
-async function runTrust(scenario: string, o: { canRunScripts: boolean; scriptTrust: string[]; kit?: string; wait?: number }): Promise<Result & { live: boolean; prompt: boolean }> {
+async function runTrust(
+  scenario: string,
+  o: { canRunScripts: boolean; scriptTrust: string[]; secs: TrustSec[]; approve?: boolean; insert?: TrustSec; wait?: number },
+): Promise<Result & { live: boolean; prompt: boolean }> {
+  const secs = o.secs.map(trustSec)
+  const page = needsOf(secs)
+  const scriptCode: Record<string, string[]> = {}
+  if (o.approve) for (const k of o.scriptTrust) scriptCode[k] = page.code
   const bootObj = {
     caps: { unfilteredHtml: o.canRunScripts },
     canRunScripts: o.canRunScripts,
     scriptTrust: o.scriptTrust,
+    scriptCode,
     codeParts: null,
-    document: { doc: { sections: [{ kind: 'code', content: { html: '<script>x()</script>', ...(o.kit ? { kit: o.kit } : {}) } }] }, draft: null },
+    document: { doc: { sections: secs }, draft: null },
   } as unknown as Parameters<typeof initialScripts>[0]
   const s = initialScripts(bootObj)
-  const fmode = frameModeOf(false, s.live, s.scripts)
-  const res = await run(scenario, { static: fmode === 'static', sandbox: sandboxOf(s.scripts), wait: o.wait })
-  return { ...res, live: fmode === 'live', prompt: s.prompt }
+  let on = s.scripts
+  let prompt = s.prompt
+  if (o.insert) {
+    const next = needsOf([...secs, trustSec(o.insert)])
+    on = runsNow(s, next)
+    prompt = s.prompt || (s.scripts && !on && next.scripts)
+  }
+  const fmode = frameModeOf(false, s.live, on, s.canRun)
+  const res = await run(scenario, { static: fmode === 'static', sandbox: sandboxOf(on, s.canRun), wait: o.wait })
+  return { ...res, live: fmode === 'live', prompt }
 }
 
 window.WB = { run, runMixed, runTrust, names: PAYLOADS.map(([n]) => n).concat(HEAD_PAYLOADS.map(([n]) => n)) }

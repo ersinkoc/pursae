@@ -829,8 +829,12 @@ type Boot struct {
 	SiteStyle *SiteSettings `json:"siteStyle"`
 	// ScriptTrust: the design kits (slugs, sorted) whose scripts this user chose to always run in
 	// the editor (PUT kits/{slug}/trust): only kits that still exist as the installation that was
-	// trusted; empty without CanRunScripts.
+	// trusted, with the same executable content (a commit changing the kit's scripts is asked about
+	// again); empty without CanRunScripts.
 	ScriptTrust []string `json:"scriptTrust"`
+	// ScriptCode: per trusted kit, the hashes of the inline code (inline scripts, handlers,
+	// javascript: URLs, non-kit script addresses) the user approved with it.
+	ScriptCode map[string][]string `json:"scriptCode"`
 	// CanRunScripts: the user has unfiltered_html, so the editor may run a design's scripts (Live
 	// edit, Preview) and the user may trust a kit.
 	CanRunScripts bool `json:"canRunScripts"`
