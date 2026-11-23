@@ -12,6 +12,12 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Added
 
+- **Passkeys in Pursae Security.** Users add any number of named passkeys under Users › Security and log in
+  with them from the login form, by the button or the browser's passkey autofill, without typing a username.
+  After a password, a passkey also works as the second step. Settings › Two-Factor switches passkeys off,
+  decides whether a passkey sign-in counts as two-step login (default) or only replaces the password, and can
+  require a passkey per role. Challenges are single use and expire after 5 minutes; a passkey whose signature
+  counter goes backwards is refused as a possible copy.
 - **Commerce: stock is reserved during checkout.** Placing an order holds its stock for *Hold stock
   (minutes)* while the customer pays (WooCommerce's `wc_reserve_stock_for_order`, new table
   `goo_reserved_stock`, expand-only migration `0113`), so the last unit can no longer be sold to two
