@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -48,6 +50,15 @@ func TestBmgrPlaceWithinDoesNotFollowSymlinkOut(t *testing.T) {
 	root := t.TempDir()
 	outside := t.TempDir()
 	if err := os.Symlink(outside, filepath.Join(root, "escape")); err != nil {
+		if runtime.GOOS == "windows" {
+			t.Skipf("cannot create symlinks here (needs Developer Mode or the symlink privilege): %v", err)
+		}
+		t.Fatal(err)
+	}
+	// Temporary directories may sit behind a symlink (/var on macOS) or an 8.3 short name (Windows), and
+	// bmgrPlaceWithin returns resolved paths, so compare against the resolved directories.
+	resolvedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := bmgrPlaceWithin(root, filepath.Join(root, "escape", "pwned.txt")); err == nil {
@@ -70,7 +81,7 @@ func TestBmgrPlaceWithinDoesNotFollowSymlinkOut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if inside != filepath.Join(root, "real", "a.txt") {
+	if inside != filepath.Join(resolvedRoot, "real", "a.txt") {
 		t.Fatalf("internal symlink resolved to %s", inside)
 	}
 
@@ -83,7 +94,11 @@ func TestBmgrPlaceWithinDoesNotFollowSymlinkOut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if placed != filepath.Join(real, "2026", "a.jpg") {
+	resolvedReal, err := filepath.EvalSymlinks(real)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if placed != filepath.Join(resolvedReal, "2026", "a.jpg") {
 		t.Fatalf("symlink root resolved to %s", placed)
 	}
 	if _, err := os.Stat(filepath.Join(real, "2026")); err != nil {
@@ -97,7 +112,7 @@ func TestBmgrReadLineLimit(t *testing.T) {
 		t.Fatalf("short line: %q %v", got, err)
 	}
 	got, err = bmgrReadLine(bufio.NewReader(strings.NewReader("no-nl")), 64)
-	if err != io.EOF || got != "no-nl" {
+	if !errors.Is(err, io.EOF) || got != "no-nl" {
 		t.Fatalf("last line: %q %v", got, err)
 	}
 	_, err = bmgrReadLine(bufio.NewReader(strings.NewReader(strings.Repeat("x", 100)+"\n")), 32)

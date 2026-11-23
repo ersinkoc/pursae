@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -211,7 +212,7 @@ type bmgrRestoreOpts struct {
 
 // bmgrMaxJSONLine is the largest database row a restore will buffer. The reader stops at this
 // size instead of growing without a bound, so one crafted line cannot exhaust the process.
-const bmgrMaxJSONLine = 256 << 20
+const bmgrMaxJSONLine = 64 << 20
 
 // bmgrReadLine reads one newline-terminated row, or the last row when the file ends without one.
 // A row longer than max is refused before the rest of it is buffered.
@@ -223,10 +224,10 @@ func bmgrReadLine(r *bufio.Reader, max int) (string, error) {
 			return "", fmt.Errorf("a row is larger than %d bytes", max)
 		}
 		b = append(b, frag...)
-		if err == nil || err == io.EOF {
+		if err == nil || errors.Is(err, io.EOF) {
 			return string(b), err
 		}
-		if err == bufio.ErrBufferFull {
+		if errors.Is(err, bufio.ErrBufferFull) {
 			continue
 		}
 		return string(b), err
