@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -147,4 +148,51 @@ func must(b []byte, err error) []byte {
 		panic(err)
 	}
 	return b
+}
+
+// With Pursae Multi Language on, the default TOC title is a registered string translated into the
+// post's language; a block's own title stays as written.
+func TestSEOGoTOCTitleFollowsLanguage(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	seogoToggle(t, c, base, "activate")
+	golylangToggle(t, c, base, "activate")
+	pllAddLanguage(t, c, base, "English", "en_US", "en", "us")
+	pllAddLanguage(t, c, base, "Türkçe", "tr_TR", "tr", "tr")
+	if err := srv.pllSetString(t.Context(), "tr", "Table of Contents", "İçindekiler"); err != nil {
+		t.Fatal(err)
+	}
+	srv.pllFlushStrings()
+
+	heads := `<!-- wp:heading --><h2 class="wp-block-heading">First part</h2><!-- /wp:heading --><!-- wp:heading --><h2 class="wp-block-heading">Second part</h2><!-- /wp:heading -->`
+	mk := func(lang, title, toc string) string {
+		t.Helper()
+		code, obj, _ := pllREST(t, c, base, http.MethodPost, "/wp-json/wp/v2/posts", map[string]any{
+			"title": title, "status": "publish", "lang": lang, "content": toc + heads})
+		if code != http.StatusCreated {
+			t.Fatalf("create %s: %d %v", title, code, obj)
+		}
+		return obj["link"].(string)
+	}
+	cases := []struct{ link, want string }{
+		{mk("en", "English TOC", `<!-- wp:seogo/toc /-->`), `aria-label="Table of Contents"`},
+		{mk("tr", "Turkish TOC", `<!-- wp:seogo/toc /-->`), `aria-label="İçindekiler"`},
+		{mk("tr", "Own title TOC", `<!-- wp:seogo/toc {"title":"Konular"} /-->`), `aria-label="Konular"`},
+	}
+	for _, tc := range cases {
+		_, front, _ := get(t, c, tc.link)
+		if !strings.Contains(front, tc.want) {
+			i := strings.Index(front, "seogo-toc")
+			t.Errorf("%s lacks %s; near: %.200s", tc.link, tc.want, front[max(i, 0):])
+		}
+	}
+	srv.pllCaptureFlush(t.Context())
+	found := false
+	for _, r := range srv.pllStrings(t.Context()) {
+		found = found || (r.String == "Table of Contents" && r.Name == seogoTOCTitleName)
+	}
+	if !found {
+		t.Error("TOC title not registered on Languages › Translations")
+	}
 }
