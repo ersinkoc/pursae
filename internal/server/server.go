@@ -302,6 +302,7 @@ func (s *Server) routes() *gin.Engine {
 	s.registerGontact(r) // Gontact Form front-end assets
 	s.registerWebBuilder(r)
 	s.registerWebBuilderRedirects(r) // old builder admin URLs -> 301 (before the /wp-admin routes: it adds a middleware)
+	s.registerWebBuilderLiveFrame(r) // the element editor's live frame at the page's path (webbuilder_liveframe.go; a middleware)
 
 	r.GET("/wp-admin/install", s.installForm)
 	r.POST("/wp-admin/install", s.installSubmit)
@@ -437,6 +438,7 @@ func (s *Server) routes() *gin.Engine {
 	s.registerGooREST()      // Goocommerce: wc/store/v1 and wc/v3 (goo_rest.go)
 	// Pursae Web Builder: web-builder/v2 (webbuilder_rest.go)
 	s.registerWebBuilderREST()
+	s.registerWebBuilderLiveFrameREST() // POST documents/{id}/live-frame (webbuilder_liveframe.go)
 	s.registerPursaeHeadlessREST()
 	s.registerPursaeREST()      // pursae/v1: plugins, themes, cache, SEO settings, option groups, MCP (rest_pursae*.go, mcp.go)
 	s.registerForumManageREST() // pursae/v1/forum: manage forums, topics, settings (rest_pursae_forum.go)
