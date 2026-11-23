@@ -10,15 +10,6 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
-### Fixed
-
-- **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
-  checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
-- **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
-  default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
-  Languages › Translations, and each language shows its translation, so the automatic table of contents no
-  longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
-
 ### Added
 
 - **Web Builder: the editor canvas is the published page (Live mode).** A design imported 1:1 as code
@@ -96,6 +87,12 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
+  checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
+- **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
+  default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
+  Languages › Translations, and each language shows its translation, so the automatic table of contents no
+  longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
 - **WP to Pursae: killed `pursae import wordpress` runs.** A running import now touches its row every 30
   seconds, so a command that was killed (SIGKILL, a crash, a lost terminal) is recognised after 30 minutes
   instead of 6 hours (still 6 hours for an import started with 0.5.0, which does not heartbeat). Its import is
