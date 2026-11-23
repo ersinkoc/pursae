@@ -19,12 +19,32 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   `[goocommerce_checkout]`. Pages imported from WordPress keep WooCommerce's Cart and Checkout blocks and work
   as they were set up there: removed inner blocks hide their sections, the Empty cart block's content shows,
   unknown blocks are ignored.
+
+- **Prometheus metrics and slow query log.** `PURSAE_METRICS=1` with `PURSAE_METRICS_ADDR` (own listener) or
+  `PURSAE_METRICS_TOKEN` (bearer token, `/metrics` on the site port) exposes request counts and duration
+  histograms by route group and status class, requests in flight, the database pool, the Go runtime and build
+  info, written by a small built-in text-format writer: no new dependency, fixed memory (about 12 KB of heap, no
+  allocation per request), no URL or user labels. Off by default and not installed at all while off.
+  `PURSAE_SLOW_QUERY=250ms` logs (SQL text only, never arguments) and counts slow database queries. See
+  [metrics](docs/developer/operations/metrics.md).
+
 - **Pursae SEO: SEO Details column and Table of Contents.** The posts and pages lists show one SEO Details
   column: the score as "84 / 100", the focus keyword, the schema type, readability and internal, external and
   incoming link counts. A new Table of Contents block (Pursae SEO category) lists the post's headings with
   jump links and gives headings without an id one; SEO › General Settings › Table of Contents sets its
   defaults (title, heading levels, numbered, collapsible) and can insert it automatically before the first
   heading of chosen post types.
+- **Block theme sites point to Web Builder.** Importing a WordPress site that uses a block theme turns its
+  navigation menus (`wp_navigation`) into ordinary menus (links to imported posts and terms kept, submenus
+  as sub-items, the first one on the Primary Menu location when it is free). Its templates, template parts,
+  global styles and fonts are counted in one report line with a link to the Theme Builder instead of one
+  "Invalid post type" line each. New guide: [coming from the Site Editor](docs/developer/web-builder-site-editor.md).
+
+### Changed
+
+- **Translations completed.** The 567 admin strings added since the language packs were last updated (Pursae
+  product updates, forum, remote storage, import recovery, setup wizard and more) are now translated in every
+  `web/languages/wpgo-*.json` pack except the English variants; regional variants share their base language.
 
 ## [0.5.0] - 2026-11-22
 

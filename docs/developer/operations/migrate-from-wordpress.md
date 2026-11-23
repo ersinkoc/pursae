@@ -84,6 +84,11 @@ keeps its WordPress number in the meta field `_wp2p_order_id`.
 - **PHP themes and plugins.** Pursae does not run PHP. Pick a Pursae theme under Appearance ›
   Themes. Most popular plugins have a built-in equivalent; the report names the active plugins
   that did not move.
+- **Block theme templates and global styles** (the Site Editor). Pursae has no Site Editor: the
+  report counts the templates, template parts, global styles and fonts it skipped, and the
+  header, footer and templates are designed again in Pursae Web Builder's Theme Builder. Block
+  theme navigation menus (`wp_navigation`) do move, as ordinary menus. See
+  [coming from the Site Editor](../web-builder-site-editor.md).
 - **Payment gateway settings and API keys.** They are deliberately not exported. Set up payments
   again in Pursae Commerce.
 - **WooCommerce extensions' own data** (subscriptions, bookings, memberships) and order statuses

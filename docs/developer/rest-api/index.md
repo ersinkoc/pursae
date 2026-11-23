@@ -49,6 +49,7 @@ cookie + nonce and Application Passwords — is on [authentication](authenticati
   `wp/v2/font-families` yet.
 - `wp/v2/block-types` lists only the blocks registered on the server; the editor ships the rest
   client-side. Pattern directory and block directory searches return empty lists. Templates,
-  template parts and global styles are stubs (there is no Site Editor).
+  template parts and global styles are stubs (there is no Site Editor; site-wide design is done in
+  [Pursae Web Builder](../web-builder-site-editor.md)).
 - The index advertises `application-passwords` authentication; create and revoke them under
   Users › Profile › Application Passwords ([authentication](authentication.md)).
