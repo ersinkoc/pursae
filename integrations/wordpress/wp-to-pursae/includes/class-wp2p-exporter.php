@@ -156,7 +156,7 @@ class WP2P_Exporter {
 	}
 
 	/**
-	 * The largest media file that is packed (Pursae's upload limit is 64 MB).
+	 * The largest media file that is packed (default 4 GB, what Pursae takes from a package; files are streamed, never read into memory).
 	 *
 	 * @return int
 	 */
@@ -167,7 +167,7 @@ class WP2P_Exporter {
 		 *
 		 * @param int $bytes Size in bytes.
 		 */
-		return (int) apply_filters( 'wp2p_max_media_bytes', 64 * MB_IN_BYTES );
+		return (int) apply_filters( 'wp2p_max_media_bytes', 4096 * MB_IN_BYTES );
 	}
 
 	/**
@@ -659,8 +659,10 @@ class WP2P_Exporter {
 				return true;
 			}
 			$rows = array();
+			$last = (int) $job['cursor'];
 			foreach ( $ids as $id ) {
 				$id   = (int) $id;
+				$last = $id;
 				$file = function_exists( 'wp_get_original_image_path' ) ? wp_get_original_image_path( $id ) : false;
 				if ( ! $file || ! is_readable( $file ) ) {
 					$file = get_attached_file( $id );
@@ -695,12 +697,16 @@ class WP2P_Exporter {
 					'mime' => get_post_mime_type( $id ),
 				);
 				self::count( $job, 'media_bytes', (int) $size );
+				if ( $size > 64 * MB_IN_BYTES ) {
+					// A big file takes a request of its own: what was packed so far is saved before the next one starts.
+					break;
+				}
 			}
 			if ( $rows ) {
 				$writer->add( self::part( $job, 'media', '.jsonl' ), self::jsonl( $rows ) );
 				self::count( $job, 'media', count( $rows ) );
 			}
-			$job['cursor'] = (int) end( $ids );
+			$job['cursor'] = $last;
 			// Media batches are heavy: hand back after each so progress is saved.
 			return false;
 		}

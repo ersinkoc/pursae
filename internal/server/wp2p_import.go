@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -30,7 +31,7 @@ import (
 // report in its wp2p_migrations row, so a run that stops (a restart, a failure) resumes where it was:
 // finished phases are skipped, and inside a phase every record is looked up in wp2p_map before it is
 // created, so running it again never duplicates anything. Content goes through the WXR importer
-// (importWXRReader) with the package's media files instead of downloads.
+// (importWXRStream, which reads the file token by token) with the package's media files instead of downloads.
 
 // wp2pPhases are the phases in order.
 var wp2pPhases = []string{"extract", "users", "content", "options", "tax_rates", "coupons", "orders", "customers", "finish"}
@@ -233,8 +234,36 @@ func wp2pSource(m *wp2pManifest) string {
 	return u
 }
 
+// heartbeat touches the run's row every wp2pHeartbeat until the returned function is called, so a run
+// that is busy for a long time without a record to count (opening a big package, copying one huge
+// file) still shows that it is alive; a run whose process was killed stops touching it, which is how
+// wp2p_cleanup and `import wordpress` find it (wp2pFailStaleCLI).
+func (r *wp2pRun) heartbeat() (stop func()) {
+	done := make(chan struct{})
+	finished := make(chan struct{})
+	go func() {
+		defer close(finished)
+		t := time.NewTicker(wp2pHeartbeat)
+		defer t.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-t.C:
+				_, _ = r.s.store.Pool.Exec(context.Background(), `UPDATE wp2p_migrations SET updated_at = now() WHERE id = $1 AND state = 'running'`, r.id)
+			}
+		}
+	}()
+	return func() { close(done); <-finished }
+}
+
 // run goes through the phases that are not finished yet.
 func (r *wp2pRun) run(ctx context.Context) error {
+	defer r.heartbeat()()
+	return r.runPhases(ctx)
+}
+
+func (r *wp2pRun) runPhases(ctx context.Context) error {
 	if r.prog == nil {
 		r.prog = &wp2pProgress{}
 	}
@@ -248,7 +277,7 @@ func (r *wp2pRun) run(ctx context.Context) error {
 				if err != nil {
 					// The extracted files are gone (cleaned up, another machine): open the package again.
 					r.prog.Done = nil
-					return r.run(ctx)
+					return r.runPhases(ctx)
 				}
 				r.man = m
 				r.src = wp2pSource(m)
@@ -602,21 +631,13 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 		return err
 	}
 	contentPath := filepath.Join(r.dir, "content.xml")
-	if size, limit := wp2pSize(contentPath), wp2pMaxContent(); size > limit {
-		// The WXR importer reads the whole file into memory before it imports anything.
-		return fmt.Errorf("content.xml is %d MB, more than this site imports in one go (%d MB): raise PURSAE_WP2P_MAX_CONTENT_MB where the server has the memory, "+
-			"or build the package in parts (one post type at a time)", size>>20, limit>>20)
-	}
-	f, err := wp2pOpen(contentPath)
-	if errors.Is(err, os.ErrNotExist) {
+	// content.xml is read from disk token by token (importWXRStream), item by item: its size is not
+	// limited by this machine's memory.
+	if len(wp2pParts(contentPath)) == 0 {
 		r.rep.note("The package has no content (content.xml).")
 		r.posts, r.terms = map[int64]int64{}, map[int64]int64{}
 		return nil
 	}
-	if err != nil {
-		return err
-	}
-	defer f.Close()
 	authors := map[string]wxrAuthorChoice{}
 	for login, id := range r.logins {
 		authors[login] = wxrAuthorChoice{UserID: id}
@@ -645,7 +666,7 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 			}
 			return p, m.Name, true
 		}}
-	rep, err := r.s.importWXRReader(ctx, r.u, f, opts)
+	rep, err := r.s.importWXRStream(ctx, r.u, func() (io.ReadCloser, error) { return wp2pOpen(contentPath) }, opts)
 	if err != nil {
 		return err
 	}
@@ -669,13 +690,14 @@ func (r *wp2pRun) loadContentMaps(ctx context.Context) {
 	}
 }
 
-// wp2pMaxContent is the largest content.xml imported (PURSAE_WP2P_MAX_CONTENT_MB, default 2048 MB): the
-// WXR importer holds the whole file in memory.
-func wp2pMaxContent() int64 {
-	if n, err := strconv.ParseInt(strings.TrimSpace(config.Env("WP2P_MAX_CONTENT_MB")), 10, 64); err == nil && n > 0 {
+// wp2pMaxMedia is the largest media file taken from a package (PURSAE_WP2P_MAX_MEDIA_MB, default 4096
+// MB). It is not the upload limit (64 MB): the files were uploaded to the old site under its own
+// limit, and they are streamed from the extracted package to the uploads directory.
+func wp2pMaxMedia() int64 {
+	if n, err := strconv.ParseInt(strings.TrimSpace(config.Env("WP2P_MAX_MEDIA_MB")), 10, 64); err == nil && n > 0 {
 		return n << 20
 	}
-	return 2048 << 20
+	return 4096 << 20
 }
 
 // importTimezone sets timezone_string and gmt_offset from options.json (the options phase sets them

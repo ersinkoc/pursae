@@ -638,33 +638,152 @@ func phpUnserializeStrings(v string) []string {
 
 type wxrDoc struct {
 	Channel struct {
-		Authors []struct {
-			ID          int64  `xml:"author_id"`
-			Login       string `xml:"author_login"`
-			Email       string `xml:"author_email"`
-			DisplayName string `xml:"author_display_name"`
-		} `xml:"author"`
-		Categories []struct {
-			TermID int64  `xml:"term_id"`
-			Slug   string `xml:"category_nicename"`
-			Parent string `xml:"category_parent"`
-			Name   string `xml:"cat_name"`
-			Desc   string `xml:"category_description"`
-		} `xml:"category"`
-		Tags []struct {
-			TermID int64  `xml:"term_id"`
-			Slug   string `xml:"tag_slug"`
-			Name   string `xml:"tag_name"`
-		} `xml:"tag"`
-		Terms []struct {
-			TermID   int64  `xml:"term_id"`
-			Taxonomy string `xml:"term_taxonomy"`
-			Slug     string `xml:"term_slug"`
-			Parent   string `xml:"term_parent"`
-			Name     string `xml:"term_name"`
-		} `xml:"term"`
-		Items []wxrItem `xml:"item"`
+		Authors    []wxrAuthor   `xml:"author"`
+		Categories []wxrCategory `xml:"category"`
+		Tags       []wxrTag      `xml:"tag"`
+		Terms      []wxrTerm     `xml:"term"`
+		Items      []wxrItem     `xml:"item"`
 	} `xml:"channel"`
+}
+
+type wxrAuthor struct {
+	ID          int64  `xml:"author_id"`
+	Login       string `xml:"author_login"`
+	Email       string `xml:"author_email"`
+	DisplayName string `xml:"author_display_name"`
+}
+
+type wxrCategory struct {
+	TermID int64  `xml:"term_id"`
+	Slug   string `xml:"category_nicename"`
+	Parent string `xml:"category_parent"`
+	Name   string `xml:"cat_name"`
+	Desc   string `xml:"category_description"`
+}
+
+type wxrTag struct {
+	TermID int64  `xml:"term_id"`
+	Slug   string `xml:"tag_slug"`
+	Name   string `xml:"tag_name"`
+}
+
+type wxrTerm struct {
+	TermID   int64  `xml:"term_id"`
+	Taxonomy string `xml:"term_taxonomy"`
+	Slug     string `xml:"term_slug"`
+	Parent   string `xml:"term_parent"`
+	Name     string `xml:"term_name"`
+}
+
+// wxrHeader is what a WXR file says about its site outside the items: the authors and the terms.
+type wxrHeader struct {
+	Authors    []wxrAuthor
+	Categories []wxrCategory
+	Tags       []wxrTag
+	Terms      []wxrTerm
+}
+
+// wxrScan reads a WXR file token by token, so that only one <item> is in memory at a time (a large
+// site's export is gigabytes: decoding it into a wxrDoc holds all of it, several times over). It
+// calls header for each author, category, tag and term of the channel and item for each <item>, in
+// file order; either may be nil. It stops at the first error of a callback. Parsing is as lenient as
+// decoding a wxrDoc was (Strict off, any root element, elements matched by local name).
+func wxrScan(r io.Reader, header func(v any), item func(*wxrItem) error) error {
+	dec := xml.NewDecoder(r)
+	dec.Strict = false
+	notWXR := func(err error) error {
+		if errors.Is(err, io.EOF) {
+			err = io.ErrUnexpectedEOF
+		}
+		return fmt.Errorf("this does not appear to be a WXR file: %v", err)
+	}
+	depth := 0 // 0 outside the root, 1 inside the root, 2 inside a channel
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			if depth == 0 && errors.Is(err, io.EOF) {
+				return notWXR(io.EOF) // no root element at all
+			}
+			return notWXR(err)
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			if depth == 0 {
+				depth = 1
+				continue
+			}
+			if depth == 1 && t.Name.Local == "channel" {
+				depth = 2
+				continue
+			}
+			if depth == 1 {
+				if err := dec.Skip(); err != nil {
+					return notWXR(err)
+				}
+				continue
+			}
+			var v any
+			switch t.Name.Local {
+			case "author":
+				v = new(wxrAuthor)
+			case "category":
+				v = new(wxrCategory)
+			case "tag":
+				v = new(wxrTag)
+			case "term":
+				v = new(wxrTerm)
+			case "item":
+				v = new(wxrItem)
+			}
+			if v == nil {
+				if err := dec.Skip(); err != nil {
+					return notWXR(err)
+				}
+				continue
+			}
+			if err := dec.DecodeElement(v, &t); err != nil {
+				return notWXR(err)
+			}
+			if it, ok := v.(*wxrItem); ok {
+				if item != nil {
+					if err := item(it); err != nil {
+						return err
+					}
+				}
+			} else if header != nil {
+				header(v)
+			}
+		case xml.EndElement:
+			depth--
+			if depth == 0 {
+				return nil // the root element is closed: what follows is not read
+			}
+		}
+	}
+}
+
+// wxrReadHeader is the first pass over a WXR file: it reads the whole file once (so a file that is
+// cut off or malformed fails here, before anything is imported), keeps the header and counts the
+// items. Items are not kept.
+func wxrReadHeader(r io.Reader) (*wxrHeader, int, error) {
+	var h wxrHeader
+	n := 0
+	err := wxrScan(r, func(v any) {
+		switch v := v.(type) {
+		case *wxrAuthor:
+			h.Authors = append(h.Authors, *v)
+		case *wxrCategory:
+			h.Categories = append(h.Categories, *v)
+		case *wxrTag:
+			h.Tags = append(h.Tags, *v)
+		case *wxrTerm:
+			h.Terms = append(h.Terms, *v)
+		}
+	}, func(*wxrItem) error { n++; return nil })
+	if err != nil {
+		return nil, 0, err
+	}
+	return &h, n, nil
 }
 
 type wxrItem struct {
@@ -771,21 +890,60 @@ type wxrImportOptions struct {
 }
 
 func (s *Server) importWXRWith(ctx context.Context, u *store.User, data []byte, opts wxrImportOptions) (*importReport, error) {
-	return s.importWXRReader(ctx, u, bytes.NewReader(data), opts)
+	return s.importWXRStream(ctx, u, func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(data)), nil }, opts)
 }
 
-// importWXRReader is importWXRWith reading the file from r.
+// importWXRReader is importWXRWith reading the file from r, which is read to its end and kept in
+// memory (the file is read twice). Large files go through importWXRStream.
 func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader, opts wxrImportOptions) (*importReport, error) {
-	var doc wxrDoc
-	dec := xml.NewDecoder(r)
-	dec.Strict = false
-	if err := dec.Decode(&doc); err != nil {
+	data, err := io.ReadAll(r)
+	if err != nil {
 		return nil, fmt.Errorf("this does not appear to be a WXR file: %v", err)
+	}
+	return s.importWXRWith(ctx, u, data, opts)
+}
+
+// errWXRStop ends a wxrScan from inside an iterator whose loop was left.
+var errWXRStop = errors.New("wxr scan stopped")
+
+// importWXRStream imports a WXR file without holding it in memory: open is called twice and must give
+// the whole file each time. The first pass reads the authors and terms (the part of the file the
+// items depend on, wherever it is in the file) and checks that the file is well formed, so a damaged
+// file fails before anything is imported; the second pass imports the items one at a time. Only the
+// items that are imported last (products, menu items, block theme navigation) are kept in memory until
+// then.
+func (s *Server) importWXRStream(ctx context.Context, u *store.User, open func() (io.ReadCloser, error), opts wxrImportOptions) (*importReport, error) {
+	first, err := open()
+	if err != nil {
+		return nil, err
+	}
+	hdr, _, err := wxrReadHeader(first)
+	first.Close()
+	if err != nil {
+		return nil, err
+	}
+	var scanErr error
+	items := func(yield func(*wxrItem) bool) {
+		rc, err := open()
+		if err != nil {
+			scanErr = err
+			return
+		}
+		defer rc.Close()
+		err = wxrScan(rc, nil, func(it *wxrItem) error {
+			if !yield(it) {
+				return errWXRStop
+			}
+			return nil
+		})
+		if err != nil && !errors.Is(err, errWXRStop) {
+			scanErr = err
+		}
 	}
 	rep := &importReport{}
 	authors := map[string]int64{}
 	matched := map[string]bool{} // logins that exist on this site (not mapped to the importer)
-	for _, a := range doc.Channel.Authors {
+	for _, a := range hdr.Authors {
 		choice, chosen := opts.Authors[a.Login]
 		switch {
 		case chosen && choice.UserID != 0:
@@ -832,7 +990,7 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 		termID[key] = t.ID
 		return t.ID
 	}
-	for _, cat := range doc.Channel.Categories {
+	for _, cat := range hdr.Categories {
 		var parent int64
 		if cat.Parent != "" {
 			parent = ensureTerm("category", cat.Parent, cat.Parent, 0)
@@ -841,7 +999,7 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 			oldTerms[cat.TermID] = id
 		}
 	}
-	for _, t := range doc.Channel.Tags {
+	for _, t := range hdr.Tags {
 		if id := ensureTerm("post_tag", t.Slug, t.Name, 0); t.TermID != 0 {
 			oldTerms[t.TermID] = id
 		}
@@ -868,7 +1026,7 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 		menuBySlug[slug] = id
 		return id
 	}
-	for _, t := range doc.Channel.Terms {
+	for _, t := range hdr.Terms {
 		if t.Taxonomy == "nav_menu" && t.Slug != "" {
 			ensureMenu(t.Slug, t.Name)
 		}
@@ -937,11 +1095,10 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 	var products []*wxrItem        // imported once the media and posts are in (wxr_products.go)
 	var navs []*wxrItem            // block theme navigation menus, made into menus at the end (wxr_site_editor.go)
 	wooSkipped := map[string]int{} // WooCommerce orders, coupons, ... counted by kind
-	for i := range doc.Channel.Items {
+	for it := range items {
 		if err := stop(); err != nil {
 			return nil, err
 		}
-		it := &doc.Channel.Items[i]
 		kind := it.Type
 		if acfgoIsPostType(kind) { // a post type registered here by Pursae Custom Fields
 			kind = "custom"
@@ -1176,6 +1333,9 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 		}
 		rep.Comments += s.wxrImportComments(ctx, it, p.ID, loc)
 	}
+	if scanErr != nil {
+		return nil, scanErr
+	}
 	// WooCommerce products and variations, with their images (attachments are mapped by now).
 	var urlRep *strings.Replacer
 	if len(urlMap) > 0 {
@@ -1235,7 +1395,7 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 	// Author ids in the file -> ours (Theme Builder conditions). Only authors that exist here: a
 	// rule about an author who was mapped to the importer is dropped, not moved to the importer.
 	oldUsers := map[int64]int64{}
-	for _, a := range doc.Channel.Authors {
+	for _, a := range hdr.Authors {
 		if a.ID != 0 && matched[a.Login] {
 			oldUsers[a.ID] = authors[a.Login]
 		}
@@ -1504,10 +1664,12 @@ func (s *Server) sideloadLocal(ctx context.Context, file, name string, uploaderI
 		return nil, err
 	}
 	defer f.Close()
-	a, err := s.insertAttachmentFile(ctx, name, f, uploaderID, 0)
+	// A file of a package is not an upload: it is kept whatever the upload limit is, up to wp2pMaxMedia.
+	limit := wp2pMaxMedia()
+	a, err := s.insertAttachmentFileLimit(ctx, name, f, uploaderID, 0, nil, limit)
 	switch {
 	case errors.Is(err, errUploadTooLarge):
-		return nil, errors.New("The file is too large, limit is " + media.HumanSize(maxUploadBytes) + ".")
+		return nil, errors.New("The file is too large, limit is " + media.HumanSize(limit) + " (PURSAE_WP2P_MAX_MEDIA_MB).")
 	case errors.Is(err, errUploadEmpty):
 		return nil, errors.New("The file is empty.")
 	}

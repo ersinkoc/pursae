@@ -888,7 +888,10 @@ func TestWP2PCleanup(t *testing.T) {
 		"activeupload": {state: "receiving", token: "c", expires: "now() + interval '20 hours'", age: "10 minutes", files: true},
 		"oldfailure":   {state: "failed", age: "8 days", files: true},
 		"newfailure":   {state: "failed", age: "1 day", files: true},
-		"killedcli":    {state: "running", cli: true, age: "7 hours"},
+		"killedcli":    {state: "running", cli: true, age: "7 hours", files: true},
+		"killedcli1h":  {state: "running", cli: true, age: "45 minutes", files: true},
+		"livecli":      {state: "running", cli: true, age: "2 minutes", files: true},
+		"oldfailedcli": {state: "failed", cli: true, age: "8 days", files: true},
 		"olddone":      {state: "done", token: "d", age: "31 days"},
 		"newdone":      {state: "done", token: "e", age: "2 minutes"},
 	}
@@ -948,7 +951,10 @@ func TestWP2PCleanup(t *testing.T) {
 		"activeupload": {state: "receiving", key: true, files: true, token: true, list: true},
 		"oldfailure":   {state: "expired", list: true},
 		"newfailure":   {state: "failed", key: true, files: true, list: true},
-		"killedcli":    {state: "failed", key: true, list: true},
+		"killedcli":    {state: "failed", list: true},
+		"killedcli1h":  {state: "failed", list: true},
+		"livecli":      {state: "running", key: true, files: true, list: true},
+		"oldfailedcli": {state: "expired", list: true},
 		"olddone":      {state: "done", key: true},
 		"newdone":      {state: "done", key: true, token: true, list: true},
 	} {

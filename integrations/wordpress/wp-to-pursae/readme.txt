@@ -61,7 +61,7 @@ Orders placed after the package was built are not in it. Put the store in mainte
 
 = Large sites? =
 
-The package is built in short steps that survive PHP time limits, and uploaded in 8 MB chunks. Media files over 64 MB are left out and listed (copy them by hand). The filter `wp2p_max_media_bytes` changes that limit.
+The package is built in short steps that survive PHP time limits, and uploaded in 8 MB chunks. Media files are streamed, never read into memory; those over 4 GB are left out and listed (copy them by hand). The filter `wp2p_max_media_bytes` changes that limit.
 
 == Changelog ==
 
