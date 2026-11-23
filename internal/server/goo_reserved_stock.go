@@ -119,15 +119,56 @@ func (s *Server) gooReleaseStock(ctx context.Context, orderID int64) {
 }
 
 // gooHeldStock is wc_get_held_stock_quantity(): the units of the product's stock reserved by unpaid
-// orders other than exclude.
-func (s *Server) gooHeldStock(ctx context.Context, p *gooProduct, exclude int64) int {
+// orders other than those of mine (the visitor's own orders, see gooVisitorOrders).
+func (s *Server) gooHeldStock(ctx context.Context, p *gooProduct, mine gooOwnOrders) int {
 	if s.gooReserveMinutes() == 0 {
 		return 0
 	}
 	var held int
-	_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(sum(stock_quantity), 0) FROM goo_reserved_stock
-		WHERE product_id = $1 AND order_id <> $2 AND expires_at > now()`, s.gooStockWriteOwner(ctx, p).ID, exclude).Scan(&held)
+	_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(sum(r.stock_quantity), 0) FROM goo_reserved_stock r
+		JOIN goo_orders o ON o.id = r.order_id
+		WHERE r.product_id = $1 AND r.expires_at > now() AND r.order_id <> ALL($2) AND ($3 = 0 OR o.customer_id <> $3)`,
+		s.gooStockWriteOwner(ctx, p).ID, mine.IDs, mine.Customer).Scan(&held)
 	return held
+}
+
+// gooOwnOrders are the orders of one visitor: those its session placed (the order awaiting payment
+// and the guest orders) and, signed in, the customer's.
+type gooOwnOrders struct {
+	IDs      []int64
+	Customer int64
+}
+
+// gooVisitorOrders is the visitor's own orders. A customer who leaves an external payment page and
+// checks out again must not be refused by the hold of their own abandoned order.
+func gooVisitorOrders(sess *gooSession, customer int64) gooOwnOrders {
+	own := gooOwnOrders{IDs: []int64{}, Customer: customer}
+	if sess != nil {
+		if sess.Data.OrderAwaitingPayment != 0 {
+			own.IDs = append(own.IDs, sess.Data.OrderAwaitingPayment)
+		}
+		raw, _ := sess.Data.Extra["guest_orders"].([]any)
+		for _, v := range raw {
+			if id := gooInt(v); id != 0 {
+				own.IDs = append(own.IDs, id)
+			}
+		}
+	}
+	return own
+}
+
+// gooReleaseOwnHolds drops the holds of the visitor's other unpaid orders when keep (a new attempt)
+// is placed: the new order takes the units over (they stay pending; paying one later reduces stock
+// only from what is free).
+func (s *Server) gooReleaseOwnHolds(ctx context.Context, mine gooOwnOrders, keep int64) {
+	if len(mine.IDs) == 0 && mine.Customer == 0 {
+		return
+	}
+	if _, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_reserved_stock r USING goo_orders o
+		WHERE o.id = r.order_id AND r.order_id <> $1 AND (r.order_id = ANY($2) OR ($3 <> 0 AND o.customer_id = $3))`,
+		keep, mine.IDs, mine.Customer); err != nil {
+		slog.Warn("goocommerce: release the visitor's earlier holds", "order", keep, "err", err)
+	}
 }
 
 // gooCleanupReservedStock deletes expired reservations (they count for nothing already).
