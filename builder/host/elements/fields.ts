@@ -13,7 +13,7 @@
  *
  * Labels here are English keys; BasicCode.tsx translates them (basic-tr.ts).
  */
-import { attr, decode, elementKids, escText, ownText, wbc, type El, type Tree } from './html'
+import { attr, decode, elementKids, escText, linesApart, ownText, wbc, type El, type Tree } from './html'
 import { tree } from './ops'
 
 export type FieldKind = 'heading' | 'text' | 'button' | 'link' | 'image' | 'input' | 'video'
@@ -86,10 +86,10 @@ function shown(tr: Tree, el: El): string {
       if (c.type === 'text') out += decode(tr.src.slice(c.start, c.end))
       else if (c.type === 'el') {
         if (c.tag === 'script' || c.tag === 'style' || c.tag === 'svg' || c.tag === 'template' || c.foreign || attr(c, 'aria-hidden') === 'true') continue
-        const inline = INLINE.has(c.tag)
+        const inline = INLINE.has(c.tag) && !linesApart(c)
         if (!inline || c.tag === 'br') out += ' '
         walk(c)
-        if (!inline) out += ' '
+        if (!inline || c.tag === 'br') out += ' '
       }
     }
   }
