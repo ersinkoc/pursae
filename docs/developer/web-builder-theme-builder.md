@@ -13,6 +13,8 @@ site's real content at request time, and shown by the bundled **Hello Pursae** t
 conditions decide which template appears where.
 
 The field-by-field rules are in the [contract, section 11](web-builder-contract.md#11-theme-builder).
+Pursae has no WordPress Site Editor; [coming from the Site Editor](web-builder-site-editor.md) maps its
+features to the Theme Builder.
 
 ## Before you start
 

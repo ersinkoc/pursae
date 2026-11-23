@@ -76,7 +76,7 @@ language, of the same type, that the user may edit; an entry for the saved objec
 | `/block-patterns/patterns`, `/block-patterns/categories` | GET | core's patterns and the active theme's (Twenty Twenty-Five); users who can edit posts |
 | `/block-types` | GET | the blocks registered on the server (dynamic blocks; `namespace` filters). Blocks the editor registers only in JavaScript are not listed |
 | `/block-directory/search`, `/pattern-directory/patterns` | GET | empty lists |
-| `/templates`, `/templates/lookup`, `/template-parts` | GET | stubs: empty (there is no Site Editor) |
+| `/templates`, `/templates/lookup`, `/template-parts` | GET | stubs: empty (there is no Site Editor; templates are Web Builder's, [coming from the Site Editor](../web-builder-site-editor.md)) |
 | `/global-styles/{id}`, `/global-styles/themes/{stylesheet}`, `/global-styles/themes/{stylesheet}/variations` | GET | stubs: empty settings and styles; read only |
 
 ## Site management (`pursae/v1`)

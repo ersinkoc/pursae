@@ -4971,5 +4971,12 @@
  "Uploaded to remote storage.": "Uzak depolamaya yüklendi.",
  "The backup was created on this server, but the upload to remote storage failed:": "Yedek bu sunucuda oluşturuldu, ancak uzak depolamaya yükleme başarısız oldu:",
  "To keep a copy off this server as well, set up <a href=\"/wp-admin/admin?page=backup-manager&amp;tab=remote\">Remote storage</a> with automatic upload.": "Bu sunucunun dışında da bir kopya tutmak için otomatik yüklemeli <a href=\"/wp-admin/admin?page=backup-manager&amp;tab=remote\">Uzak depolama</a> kurun.",
- "The two passphrases do not match.": "İki parola eşleşmiyor."
+ "The two passphrases do not match.": "İki parola eşleşmiyor.",
+ "%d block theme navigation menus were imported as menus (Appearance › Menus).": "%d blok teması gezinme menüsü menü olarak içe aktarıldı (Görünüm › Menüler).",
+ "%d Site Editor items (block theme templates, template parts, global styles and fonts) were not imported: Pursae has no Site Editor. Design the header, footer, single, archive, search and 404 templates and the site style with Pursae Web Builder instead.": "%d Site Düzenleyici öğesi (blok teması şablonları, şablon parçaları, genel stiller ve yazı tipleri) içe aktarılmadı: Pursae'de Site Düzenleyici yoktur. Üst bilgi, alt bilgi, tekil, arşiv, arama ve 404 şablonlarını ve site stilini bunun yerine Pursae Web Builder ile tasarlayın.",
+ "Coming from the Site Editor": "Site Düzenleyici'den geçiş",
+ "Menu “%s” already exists.": "“%s” menüsü zaten var.",
+ "Menu “%s” was assigned to the Primary Menu location.": "“%s” menüsü Birincil Menü konumuna atandı.",
+ "Failed to import the navigation menu “%s”: %s": "“%s” gezinme menüsü içe aktarılamadı: %s",
+ "Skipped %d Site Editor items (block theme templates, template parts, global styles and fonts): design the header, footer and templates in the Theme Builder of Pursae Web Builder.": "%d Site Düzenleyici öğesi atlandı (blok teması şablonları, şablon parçaları, genel stiller ve yazı tipleri): üst bilgi, alt bilgi ve şablonları Pursae Web Builder'ın Tema oluşturucusunda tasarlayın."
 }
