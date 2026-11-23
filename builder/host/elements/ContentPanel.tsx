@@ -19,14 +19,17 @@ import { ICON_SET } from '@/builder/icons'
 import { cleanSvgCode } from '@/builder/svgTint'
 import type { CmsHost } from '../cms-host'
 import { t } from '../i18n'
-import { act, latest, pageOf, style as styleAct } from './actions'
+import { act, commit, latest, pageOf, style as styleAct } from './actions'
 import { attrError, tagChoices, urlOK, type AttrError } from './attrs'
-import { attr, decode, elementKids, inner, outer, ownText, wbc, type El, type Tree } from './html'
+import { attr, decode, elementKids, inner, outer, ownText, VOID, wbc, type El, type Tree } from './html'
 import { KEEP_ATTR, writeBack, type SrcMap } from './richtext'
 import { kindLabel, kindOf } from './kinds'
-import { locate, movable, withIds } from './ops'
+import { locate, movable } from './ops'
+import { applyCode, checkMarkup, codeView, type CodeProblem, type Part } from './codeops'
+import { CodeEditor } from './CodeEditor'
+import { tc } from './code-tr'
 import { frameEl } from './geometry'
-import { frameInfo, useElState } from './state'
+import { frameInfo, getElState, useElState } from './state'
 import { variantOf, type LocalSection } from './local'
 
 type B = ReturnType<typeof useB>
@@ -129,11 +132,9 @@ export function ContentTab({ s, fallback }: { s: Section; fallback: ReactNode })
       {tag === 'svg' && <IconPanel b={b} id={id} tr={tr} el={el} />}
       {(tag === 'video' || tag === 'audio' || tag === 'iframe' || tag === 'embed' || tag === 'source') && <MediaPanel b={b} id={id} el={el} />}
       {(tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'label' || tag === 'form') && <FieldPanel b={b} id={id} el={el} tr={tr} />}
-      {!el.foreign && tag !== 'svg' && !['img', 'input', 'hr', 'br', 'video', 'audio', 'iframe', 'source', 'textarea', 'select'].includes(tag) && <HtmlPanel key={id} b={b} id={id} html={inner(tr, el)} open={!isText && !elementKids(el).length} />}
+      {!el.foreign && <CodePanel key={id} b={b} id={id} tr={tr} el={el} inside={tag !== 'svg' && !VOID.has(tag) && !['img', 'input', 'hr', 'br', 'video', 'audio', 'iframe', 'source', 'textarea', 'select'].includes(tag)} open={!isText && !elementKids(el).length && tag !== 'svg'} sel={id} />}
       <AttrsPanel b={b} id={id} el={el} />
-      <Panel title={t('Section code')} open={false}>
-        <div className="-mx-4">{fallback}</div>
-      </Panel>
+      <SectionCode key={s.id} b={b} s={s} sel={id} />
     </div>
   )
 }
@@ -575,31 +576,219 @@ function FieldPanel({ b, id, el, tr }: { b: B; id: string; el: El; tr: Tree }) {
   )
 }
 
-/* ---------- HTML / Embed ---------- */
+/* ---------- Edit code (the element's own markup) and Section code ---------- */
 
-function HtmlPanel({ b, id, html, open }: { b: B; id: string; html: string; open: boolean }) {
-  const [draft, setDraft] = useState(html)
-  useEffect(() => setDraft(html), [html])
+/** Drafts that were not applied, kept while the page stays open (key → the source they started from and the text). */
+const drafts = new Map<string, { base: string; text: string }>()
+export const codeDrafts = drafts
+
+/** Who may write code: users with unfiltered_html (the same users whose code sections are accepted). */
+const mayCode = () => host()?.boot?.caps?.unfilteredHtml !== false
+
+function problemText(p: CodeProblem): string {
+  const v = { line: p.line, tag: p.tag ?? '' }
+  if (p.kind === 'unclosed') return tc('Line {line}: <{tag}> is never closed.', v)
+  if (p.kind === 'stray') return tc('Line {line}: </{tag}> has no opening tag.', v)
+  if (p.kind === 'unterminated') return tc('Line {line}: <{tag}> is not finished (a quote or > is missing).', v)
+  return tc('Line {line}: this code would change <{tag}> outside the element.', v)
+}
+
+/** A text kept as a draft until it is applied; warns when the element it belongs to is left with unapplied changes. */
+function useDraft(key: string, base: string, b: B, watch: string | null) {
+  const kept = drafts.get(key)
+  const [draft, setDraft] = useState(kept && kept.base === base ? kept.text : base)
+  const [restored, setRestored] = useState(!!kept && kept.base === base && kept.text !== base)
+  const [seen, setSeen] = useState(base)
+  if (seen !== base) {
+    // The source changed under us (applied, undo, another panel): start again from it.
+    setSeen(base)
+    setDraft(base)
+    setRestored(false)
+  }
+  useEffect(() => {
+    if (draft === base) drafts.delete(key)
+    else drafts.set(key, { base, text: draft })
+  }, [key, draft, base])
+  useEffect(
+    () => () => {
+      if (drafts.has(key) && getElState().sel !== watch) b.notify(tc('You have code changes that were not applied. They are kept while you stay on this page; open the element again to continue.'))
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+  return { draft, setDraft, restored, setRestored }
+}
+
+function CodeBox({ b, id, tr, el, part, readOnly, sel }: { b: B; id: string; tr: Tree; el: El; part: Part; readOnly: boolean; sel: string | null }) {
+  const view = useMemo(() => codeView(tr, el, part), [tr, el, part])
+  const key = part + '\u0000' + id
+  const { draft, setDraft, restored, setRestored } = useDraft(key, view.text, b, sel)
+  const [msg, setMsg] = useState('')
+  const [empty, setEmpty] = useState(false)
+  const dirty = draft !== view.text
+  const apply = () => {
+    if (readOnly) return
+    setEmpty(false)
+    if (!dirty) return setMsg(tc('Nothing changed.'))
+    const r = applyCode(pageOf(latest.doc ?? b.doc), id, draft, view.slots, part)
+    if (r.error === 'empty') {
+      setMsg(tc('The code is empty. Delete the element instead?'))
+      return setEmpty(true)
+    }
+    if (r.error) return setMsg(r.problem ? problemText(r.problem) : tc('Nothing was applied: the element is gone or cannot be edited here.'))
+    if (!r.result || !Object.keys(r.result.html).length) return setMsg(tc('Nothing changed.'))
+    setMsg('')
+    drafts.delete(key)
+    commit(b, part === 'outer' ? tc('Edit code') : t('HTML changed'), r.result)
+  }
+  const outerPart = part === 'outer'
   return (
-    <Panel title={t('HTML inside')} open={open}>
-      <textarea
+    <div className="space-y-2" data-wb-code-box={part}>
+      <div className="text-[10.5px] text-ink-500">{(outerPart ? tc('The element’s own markup, as stored. The editor’s ids are kept for you.') : tc('The markup inside the element.')) + ' ' + t('Scripts run on the published page only.')}</div>
+      {readOnly && (
+        <div className="text-[10.5px] text-amber-300" data-wb-code-readonly="">
+          {tc('Your role may not edit code (it needs unfiltered HTML). It is shown here read-only.')}
+        </div>
+      )}
+      {restored && !readOnly && (
+        <div className="flex items-center justify-between gap-2 text-[10.5px] text-amber-300" data-wb-code-restored="">
+          <span>{tc('A draft you had not applied was restored.')}</span>
+          <button
+            type="button"
+            className="shrink-0 underline"
+            onClick={() => {
+              setDraft(view.text)
+              setRestored(false)
+              setMsg('')
+            }}
+          >
+            {tc('Discard draft')}
+          </button>
+        </div>
+      )}
+      <CodeEditor
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => e.stopPropagation()}
-        rows={8}
-        spellCheck={false}
-        name="wb-inner-html"
-        className={cn(inputCls, 'h-auto w-full py-1.5 font-mono text-[10.5px]')}
+        onChange={(v) => {
+          setDraft(v)
+          if (msg) setMsg('')
+          setEmpty(false)
+        }}
+        label={outerPart ? tc('Element code') : tc('Code inside the element')}
+        name={outerPart ? 'wb-outer-html' : 'wb-inner-html'}
+        title={outerPart ? tc('Element code') : tc('Code inside the element')}
+        readOnly={readOnly}
+        invalid={!!msg}
+        onApply={apply}
+        extra={
+          !readOnly && (
+            <button type="button" disabled={!dirty} onClick={apply} className="h-7 shrink-0 rounded-[5px] bg-accent px-2.5 text-[11.5px] font-semibold text-white disabled:opacity-40">
+              {tc('Apply')}
+            </button>
+          )
+        }
       />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10.5px] text-ink-500">{t('Scripts run on the published page only.')}</span>
-        <button type="button" disabled={draft === html} onClick={() => act.setInner(b, id, withIds(draft), t('HTML changed'))} className="h-7 shrink-0 rounded-[5px] bg-accent px-2.5 text-[11.5px] font-semibold text-white disabled:opacity-40" data-wb-html-apply="">
-          {t('Apply')}
-        </button>
-      </div>
+      {msg && (
+        <div role="alert" className="text-[10.5px] text-red-300" data-wb-code-error="">
+          {msg}
+          {empty && (
+            <button
+              type="button"
+              className="ml-2 underline"
+              onClick={() => {
+                drafts.delete(key)
+                act.remove(b, id)
+              }}
+              data-wb-code-delete=""
+            >
+              {tc('Delete element')}
+            </button>
+          )}
+        </div>
+      )}
+      {!readOnly && (
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            disabled={!dirty}
+            onClick={() => {
+              setDraft(view.text)
+              setMsg('')
+              setEmpty(false)
+              setRestored(false)
+            }}
+            className="h-7 shrink-0 rounded-[5px] px-2 text-[11.5px] text-ink-300 hover:text-white disabled:opacity-40"
+          >
+            {tc('Revert')}
+          </button>
+          <button type="button" disabled={!dirty} onClick={apply} className="h-7 shrink-0 rounded-[5px] bg-accent px-2.5 text-[11.5px] font-semibold text-white disabled:opacity-40" data-wb-code-apply={part} {...(outerPart ? {} : { 'data-wb-html-apply': '' })}>
+            {tc('Apply')}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** The Edit code group: the element's whole markup, and (where it has an inside) what is inside it. */
+function CodePanel({ b, id, tr, el, inside, open, sel }: { b: B; id: string; tr: Tree; el: El; inside: boolean; open: boolean; sel: string }) {
+  const [part, setPart] = useState<Part>('outer')
+  const readOnly = !mayCode()
+  return (
+    <Panel title={tc('Edit code')} open={open}>
+      {inside && (
+        <div role="tablist" className="flex gap-1" data-wb-code-tabs="">
+          {(['outer', 'inner'] as const).map((p) => (
+            <button key={p} type="button" role="tab" aria-selected={part === p} onClick={() => setPart(p)} className={cn('h-6 rounded px-2 text-[11px]', part === p ? 'bg-white/10 text-white' : 'text-ink-400 hover:text-white')} data-wb-code-tab={p}>
+              {p === 'outer' ? tc('Whole element') : t('HTML inside')}
+            </button>
+          ))}
+        </div>
+      )}
+      <CodeBox key={part} b={b} id={id} tr={tr} el={el} part={inside ? part : 'outer'} readOnly={readOnly} sel={sel} />
     </Panel>
   )
 }
+
+/** The section's own HTML and head code, edited as one history entry. */
+function SectionCode({ b, s, sel }: { b: B; s: Section; sel: string }) {
+  const readOnly = !mayCode()
+  const html0 = s.content.html ?? ''
+  const head0 = s.content.head ?? ''
+  const h = useDraft('section-html\u0000' + s.id, html0, b, sel)
+  const d = useDraft('section-head\u0000' + s.id, head0, b, sel)
+  const dirty = h.draft !== html0 || d.draft !== head0
+  const warn = h.draft !== html0 ? checkMarkup(h.draft) : null
+  const apply = () => {
+    if (readOnly || !dirty) return
+    drafts.delete('section-html\u0000' + s.id)
+    drafts.delete('section-head\u0000' + s.id)
+    commit(b, tc('Code changed'), { html: h.draft !== html0 ? { [s.id]: h.draft } : {} }, d.draft !== head0 ? { [s.id]: { head: d.draft } } : undefined)
+  }
+  return (
+    <Panel title={t('Section code')} open={false}>
+      {readOnly && <div className="text-[10.5px] text-amber-300">{tc('Your role may not edit code (it needs unfiltered HTML). It is shown here read-only.')}</div>}
+      <Ctl label={tc('HTML code')} stack>
+        <CodeEditor value={h.draft} onChange={h.setDraft} label={tc('HTML code')} name="wb-section-html" title={tc('HTML code')} readOnly={readOnly} maxHeight={320} onApply={apply} />
+      </Ctl>
+      {warn && (
+        <div className="text-[10.5px] text-amber-300" data-wb-code-warn="">
+          {problemText(warn)}
+        </div>
+      )}
+      <Ctl label={tc('Head code')} stack>
+        <CodeEditor value={d.draft} onChange={d.setDraft} label={tc('Head code')} name="wb-section-head" title={tc('Head code')} readOnly={readOnly} minRows={3} maxHeight={200} onApply={apply} />
+      </Ctl>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <button type="button" disabled={!dirty} onClick={apply} className="h-7 shrink-0 rounded-[5px] bg-accent px-2.5 text-[11.5px] font-semibold text-white disabled:opacity-40" data-wb-section-code-apply="">
+            {tc('Apply')}
+          </button>
+        </div>
+      )}
+    </Panel>
+  )
+}
+
 
 /* ---------- Attributes ---------- */
 
