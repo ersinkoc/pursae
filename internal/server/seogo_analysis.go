@@ -434,7 +434,7 @@ func seogoAnalyzeSEO(in seogoAnalysisInput) seogoAnalysis {
 	if h1 >= 2 {
 		out = append(out, scored(1, "singleH1", "Single title: H1s should only be used as your main title. Find all H1s in your text that aren't your main title and change them to a lower heading level!"))
 	} else {
-		out = append(out, scored(8, "singleH1", "Single title: You don't have multiple H1 headings, well done!"))
+		out = append(out, scored(9, "singleH1", "Single title: You don't have multiple H1 headings, well done!"))
 	}
 
 	imgs := imgTagRe.FindAllString(in.Content, -1)
@@ -659,7 +659,7 @@ func seogoAnalyzeSEO(in seogoAnalysisInput) seogoAnalysis {
 		if st.competing > 0 {
 			out = append(out, scored(2, "competingLinks", "Competing links: You're linking to another page with the words you want this page to rank for. Don't do that!"))
 		} else {
-			out = append(out, scored(8, "competingLinks", "Competing links: There are no links which use your keyphrase or synonym as their anchor text. Nice!"))
+			out = append(out, scored(9, "competingLinks", "Competing links: There are no links which use your keyphrase or synonym as their anchor text. Nice!"))
 		}
 	}
 
