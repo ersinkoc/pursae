@@ -14,7 +14,7 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 - **Commerce: stock is reserved during checkout.** Placing an order holds its stock for *Hold stock
   (minutes)* while the customer pays (WooCommerce's `wc_reserve_stock_for_order`, new table
-  `goo_reserved_stock`, expand-only migration `0112`), so the last unit can no longer be sold to two
+  `goo_reserved_stock`, expand-only migration `0113`), so the last unit can no longer be sold to two
   customers paying at the same time: the second checkout is told it is out of stock before paying. The hold
   ends when the order is paid, put on hold, cancelled or failed, or when the time runs out.
 - **Pursae SEO: SEO Details column and Table of Contents.** The posts and pages lists show one SEO Details
