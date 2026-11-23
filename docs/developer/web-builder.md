@@ -316,8 +316,8 @@ Cookie + `X-WP-Nonce` (or an Application Password), plus `X-WB-Api: 1` on every 
 | `GET documents/{id}/revisions[/{rid}]`, `POST …/{rid}/restore` | revisions |
 | `GET` / `POST library`, `DELETE library/{id}` | saved sections |
 | `GET` / `PUT prefs` | the user's editor preferences |
-| `PUT kits/{slug}/trust` | the calling user always runs (or is asked again about) a design kit's scripts in the editor ([code sections](web-builder-code-sections.md#kits-rest)) |
-| `POST documents/{id}/live-frame` | renders the editor's code sections as the front end prints them, for the Live canvas frame (kept in memory 15 minutes) |
+| `PUT kits/{slug}/trust` | the calling user always runs (or is asked again about) a design kit's scripts in the editor, bound to the kit's installation and executable files, with the page's approved inline code hashes ([code sections](web-builder-code-sections.md#kits-rest)) |
+| `POST documents/{id}/live-frame` | renders the editor's code sections as the front end prints them, for the Live canvas frame at the post's own path (kept in memory 15 minutes, at most 24 MB per user and 64 MB in all) |
 | `GET fonts/css2` | Google Fonts css2 query answered with local files |
 | `POST forms/{id}/{section}` | public form endpoint |
 | `GET templates?type=`, `POST templates` | list templates, create a draft template |

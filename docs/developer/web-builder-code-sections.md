@@ -125,11 +125,11 @@ Code sections work under the site's nonce policy (`csp_mode` `report` and `enfor
   site template, the stored site templates — never from the filled page, whose comments, posts and
   field values anyone may have written: a visitor's `url(https://…)` adds no origin. `img-src` and `media-src` already allow `https:`. In report
   mode the additions to `script-src` are also merged into the report-only policy (only into the
-  directives it has). The editor page allows the same for users who may publish code sections: the
-  kits' origins, and the origins named in the sections' markup (`wbCodeCSP`, as above). The Live canvas
-  frame does not inherit it: it is served with the front end's own policy (see
-  [Security model](#security-model)); only the fallback frame, mixed-page frames and previews inherit
-  the editor's.
+  directives it has). The editor page, for users who may publish code sections, allows only what its
+  own frames need (`wbEditorFrameCSP`): a page of code sections only gets the style and font origins
+  (and `blob:` images and media), a mixed page also the script, connect and frame origins of the
+  published page (see [Security model](#security-model)). The Live canvas frame does not inherit it:
+  it is served with the front end's own policy; only the mixed-page frames inherit the editor's.
 - **`blob:` images and media**: a page with code sections allows `blob:` in `img-src` and `media-src`
   (a design that exports a canvas with `toBlob` and shows it, or plays a fetched file); a blob URL is
   content the page made itself.
@@ -163,8 +163,8 @@ of the table belong to the element editor's live canvas (see [Editing](#editing)
 | `PUT kits/{slug}/override` | `{draft: {rules}, base: draftVersion}` — replaces the draft (the editor sends it on every change); a stale `base` is 409 `wb_kit_override_conflict` (with the current state in `data.override`), an override that does not validate is 422 `bad_css`, more than 256 KB 413. |
 | `POST kits/{slug}/override/publish` | `{base?}` — the draft goes live on every page that loads the kit's files (the editor calls it after publishing a page of the kit). |
 | `GET kits/{slug}/pages` | `{pages: [{id, title, type, html}]}`: the code-section markup of the builder pages and templates using the kit (at most 500 pages, 8 MB), for the "From this design" palette and the class counts. Who may write the kit gets every page that is not trashed; anyone else the published pages without a password and the pages they may edit themselves (never another author's draft, private or password-protected page). Reading only. |
-| `PUT kits/{slug}/trust` | `{trust: bool}` → `{trust, scriptTrust: [slug]}`: the **calling user** always runs (`true`) or is asked again about (`false`) this kit's scripts in the editor. Stored in the user's own meta `_web_builder_kit_trust` as `{slug: installation id}`; there is no user parameter. Needs `unfiltered_html` (with an Application Password the `themes` scope or full access, like every site-code write), the REST nonce under cookie authentication and the `X-WB-Api` header. 404 `wb_kit_not_found`, 400 `rest_invalid_param` without a boolean `trust`, 413 `wb_too_large` past 256 trusted kits; `Cache-Control: no-store`. `scriptTrust` is the user's whole list, as `Boot.scriptTrust`: sorted, and only kits that still exist as the installation that was trusted. A kit deleted and uploaded again is a new installation (trust gone); a commit keeps it; deleting a kit removes it from every user. |
-| `POST documents/{id}/live-frame` | the editor's code sections and stylesheets `{url, title, shell: "theme"\|"canvas"\|"part", page, header, footer, css: {kit, local, edit}, hook}` (at most 8 MiB) → `{url, path}`: `url` is the page's path with `?wb-live-frame=<token>`, to be loaded as a same-origin frame. Needs `edit_post` on the document **and** `unfiltered_html` (403 otherwise). The rendered page is kept in memory for the calling user for 15 minutes and served only to them, at that path, as a frame; see [Security model](#security-model). Nothing is stored. |
+| `PUT kits/{slug}/trust` | `{trust: bool, code?: [sha256 hex]}` → `{trust, scriptTrust: [slug], scriptCode: {slug: [sha256 hex]}}`: the **calling user** always runs (`true`) or is asked again about (`false`) this kit's scripts in the editor; with `true`, `code` adds the hashes of the page's inline code approved together with the kit (at most 512 per request; the newest 512 per kit are kept). Stored in the user's own meta `_web_builder_kit_trust` as `{slug: {i: installation id, h: hash of the kit's executable files, c: [inline code hashes]}}`; there is no user parameter. Needs `unfiltered_html` (with an Application Password the `themes` scope or full access, like every site-code write), the REST nonce under cookie authentication and the `X-WB-Api` header. 404 `wb_kit_not_found`, 400 `rest_invalid_param` without a boolean `trust` or with a `code` entry that is not a lowercase hex SHA-256, 413 `wb_too_large` past 512 hashes or 256 trusted kits; `Cache-Control: no-store`. `scriptTrust` is the user's whole list, as `Boot.scriptTrust` (sorted), and `scriptCode` the inline code approved per kit, as `Boot.scriptCode`: only kits that still exist as the installation **with the executable content** that was trusted. A kit deleted and uploaded again is a new installation, and a commit that changes one of its `.js`, `.mjs`, `.wasm` or `.svg` files changes its content: the trust is gone in both cases (for every user, the committer too); a commit of stylesheets, images or fonts only keeps it. Deleting a kit removes it from every user. |
+| `POST documents/{id}/live-frame` | the editor's code sections and stylesheets `{title, shell: "theme"\|"canvas"\|"part", page, header, footer, css: {kit, local, edit}, hook}` (at most 8 MiB; a `url` older editors send is ignored) → `{url, path}`: `url` is the page's path — taken by the server from the post's permalink (a draft's `?p=` / `?page_id=` address, a template's preview address) — with `?wb-live-frame=<token>`, to be loaded as a same-origin frame. Needs `edit_post` on the document **and** `unfiltered_html` (403 otherwise). 409 `wb_live_path` when the item has no front-end address the frame can use (another host, a `.php` path, `/wp-admin`, `/wp-login.php`, `/wp-json`, `/wp-content`, `/wp-includes`, `/xmlrpc.php` and the like, a `rest_route` query); 413 `wb_too_large` when the rendered page is larger than a user may keep (24 MB). The rendered page is kept in memory for the calling user for 15 minutes and served only to them, at that path, as a frame; see [Security model](#security-model). Nothing is stored. |
 
 ## Importing
 
@@ -547,26 +547,46 @@ bar's **Preview** (top bar) runs the scripts too, when they are allowed. A user 
 says **Safe mode · scripts run on the published page**.
 
 **Trust: the first time per design.** Running a design's scripts is the author's explicit choice, asked
-once per design (design kit), not once per session. When a page whose markup holds scripts (a
-`<script>`, an inline `on…` handler or a `javascript:` URL) opens in Safe mode, a non-blocking prompt
-over the canvas asks **This design uses scripts. Run them so the editor matches your site?** It warns
-that scripts run in the editor with your admin access and can do anything you can do on the site, and
-offers three answers (the page stays editable under it):
+once per design (design kit), not once per session. What a page runs is read from its markup, never
+from labels (`trust.ts` `needsOf`): the design kits it loads (every kit file address in a section's
+HTML or head) and **its own inline code** — each inline `<script>`, `on…` handler, `javascript:` /
+`vbscript:` URL, `srcdoc`, `<base>`, SVG animation of a handler or link and script loaded from
+anywhere but a kit, hashed (SHA-256) one by one; markup a browser could read as more code than the
+editor found counts as one item, the whole section. When a page that runs something opens in Safe
+mode, a non-blocking prompt over the canvas asks **This design uses scripts. Run them so the editor
+matches your site?** It warns that scripts run in the editor with your admin access and can do
+anything you can do on the site, and offers three answers (the page stays editable under it):
 
 | Answer | What it does |
 |--------|--------------|
-| **Always for this design** | Stores the trust for you and this design (see below) and switches to Live. Shown only when the page's code sections name a design kit; a page of several kits trusts all of them. |
-| **This session only** | Switches to Live until the editor is closed. Nothing is stored; the next session asks again. |
+| **Always for this design** | Stores the trust for you and this design (see below) and switches to Live. Shown only when the page's code sections load a design kit; a page of several kits trusts all of them. |
+| **This session only** | Switches to Live until the editor is closed, for exactly the kits and inline code the page had when you answered. Nothing is stored; the next session asks again. |
 | **Not now (safe mode)** | Closes the prompt and stays in Safe mode. The **Live** button asks again. |
 
-*What "Always for this design" stores.* The kit's slug and the kit's **installation id**, in your own
-user meta (`_web_builder_kit_trust`), on the server — not in the browser — through
-`PUT web-builder/v2/kits/{slug}/trust` (see [Kits: REST](#kits-rest)). It is yours alone: another user
-is asked for themselves, and only a user with `unfiltered_html` can give it. Opening a page whose every
-kit is trusted starts in Live mode with no prompt, and the frame loads once. Your own edits and new
-versions of the kit (a commit) keep the trust. If the kit is **deleted and uploaded again** under the
-same name (another installation), or deleted, the trust is gone and the editor **asks again**: it is
-never reported to the editor, and it is removed from every user's list when the kit is deleted.
+*What "Always for this design" stores.* For each kit: its slug, its **installation id**, the **hash
+of its executable files** (every `.js`, `.mjs`, `.wasm` and `.svg` file of the kit, path and bytes),
+and the hashes of the page's inline code you approved with it — in your own user meta
+(`_web_builder_kit_trust`), on the server, not in the browser, through
+`PUT web-builder/v2/kits/{slug}/trust` (see [Kits: REST](#kits-rest)); `Boot.scriptTrust` and
+`Boot.scriptCode` hand it back. It is yours alone: another user is asked for themselves, and only a
+user with `unfiltered_html` can give it. Opening a page whose every kit and every piece of inline code
+is trusted starts in Live mode with no prompt, and the frame loads once. Your edits of text, styles,
+classes and attributes keep the trust; a commit of the kit that changes only stylesheets, images or
+fonts keeps it. The editor **asks again** when:
+
+- the kit is **deleted and uploaded again** under the same name (another installation), or deleted;
+- a commit changes one of the kit's `.js`, `.mjs`, `.wasm` or `.svg` files — for **every** user,
+  the one who committed it too (uploading a design is never consent to run it in the editor);
+- the page gains a kit or inline code nobody approved: a palette element or a section of another
+  kit inserted, markup with a `<script>` or a handler pasted, **Edit code** or Section code adding or
+  changing code, an undo or redo bringing old code back. The canvas drops to Safe mode in the same
+  render, before the new markup reaches a frame that runs scripts, and the prompt appears; the same
+  holds for a **This session only** answer.
+
+Trust stored by an earlier version (a bare installation id per kit, before code hashes) is not
+trust: after the upgrade each user is asked once more. Trust that no longer matches is never reported
+to the editor and is removed from the user's list when it is next read or written; deleting a kit
+removes it from every user.
 
 *Revoke.* While a page's design is trusted, the bottom bar shows a **Stop always running this
 design's scripts** button (shield with a slash). It removes the trust on the server, puts the canvas
@@ -601,7 +621,17 @@ toggle's `html.dark` or `data-theme`); `localStorage` and cookies outlive it as 
 load releases the old document's WebGL contexts first (the browser keeps only about 16 alive), so many
 reloads never hit "too many active WebGL contexts". A text a script draws differently from its source
 is edited as the stored text (the dialog says **Text shown by the design's script**: the script may
-still change it on the page). Changing the mode from Live to Safe loads the static frame again.
+still change it on the page). A text edited in place in Live mode is watched while you type: if the
+design's script changes it meanwhile (a counter, a re-render, a node added), nothing is saved, the
+element gets back what it showed, and a notice (**The design's script changed this text while you
+edited it, so it was not saved. Edit the stored text here instead.**) opens the stored text in the
+text dialog. Changing the mode from Live to Safe loads the static frame again.
+
+**When the live frame cannot be loaded** (the server refuses it, the page is too large, the site is
+offline, an older server without the route), the canvas goes to **Safe mode** with the notice **The
+live canvas could not be loaded ({message}). The canvas is in Safe mode.** There is no fallback that
+runs the design's scripts in a `srcdoc` frame under the editor's own policy; **Live** asks the server
+again.
 
 **Geometry per device.** The device buttons size the live frame as that device's own viewport:
 desktop **1440 × 900**, tablet **768 × 1024**, mobile **390 × 844**, scaled to fit the panel with a CSS
@@ -689,6 +719,17 @@ editor's page: `b`, `strong`, `i`, `em`, `u`, `s`, `a`, `br`, `span`, `code`, `s
 attributes (a link keeps its address when it is safe), text as text, anything else (an image, an
 icon) as a placeholder chip that is written back as stored.
 
+**Live typing** (`elements/livefield.ts`). Text, link label, alt text and attribute fields of the
+Content tab and the Basic panel change the canvas **while you type**: 250 ms after the last keystroke
+the draft is written through the same element operation as a commit, so in Live mode it is patched
+into the running page without a reload. A typing session is **one history entry** however long the
+pauses (the store merges `field:` keys, patch `0024-basic-seam`); Enter or leaving the field ends it,
+**Escape** takes it back. A value the rules refuse (an unsafe address) is skipped while typing and
+refused with the reason when the field is left. Fields whose half-typed value would load something
+(an image, video or poster source) are written on Enter or blur only. The writes go through the
+builder's history like any other edit, so a typed change that adds code to the page is checked by the
+trust rules at once ([Trust](#editing)).
+
 The **navigator** (Studio › Structure, or **Layers** in the bottom bar) lists each code section's
 elements with an icon and a readable **name**, the same name wherever the element is shown (navigator,
 canvas outline and breadcrumb, Basic panel). The name is, in order: your own rename; for a top-level
@@ -728,7 +769,16 @@ and classes, at least twice) are grouped (**Card 1**, **Card 2** …) and a run 
 links or buttons becomes **Links** / **Buttons**. Empty and hidden elements, scripts, styles and SVG
 internals are left out. The panel shows 60 fields at a time (**Show N more**, at most 600 per section)
 and offers **Switch to Studio** for more control. The HTML code and Head code fields **do not appear in
-Basic mode**; they are in Studio. Edits splice the stored source like every other element operation
+Basic mode**; they are in Studio, and the palette's **HTML / Embed** element is not offered in Basic
+mode either. Each row of the section list shows a small **thumbnail** of the section (`SectionThumb.tsx`,
+`thumb.ts`): built only once the row is near the viewport, drawn from the neutralised copy with the
+design's stylesheets in a frame sandboxed without `allow-scripts` and under a `script-src 'none'`
+policy, so nothing of the design runs in it, and cached by markup. The section settings of a code
+section in Basic mode leave out **background, background decoration and motion**: a code section is
+published as its own markup and those settings would have no effect on it. On a **mixed page** (code
+and builder sections) a code section in Basic mode shows **This part of the design is its own code,
+which Simple mode does not show. To change it, switch to Studio.** with a **Switch to Studio** button
+instead of the HTML fields. Edits splice the stored source like every other element operation
 (one history entry each). For a user without `unfiltered_html` the fields are shown **read-only**: the
 server would drop the edit anyway (see [Limits](#limits)).
 
@@ -831,10 +881,16 @@ design may come from anywhere. The element editor therefore has three rules
 3. **Running the design's scripts is the author's explicit choice, per design, remembered per user.**
    The prompt (**This design uses scripts. Run them so the editor matches your site?**) names the risk:
    the scripts run with the author's access, as on the published page. **Always for this design** is
-   stored on the server in the user's own meta, bound to the kit's installation (a kit deleted and
-   uploaded again is asked about again), revocable at any time, and only a user with `unfiltered_html`
-   can give it; **This session only** is never stored; without an answer the canvas stays in Safe mode,
-   which keeps rules 1 and 2. This replaces the earlier rule that asked every editor session and stored
+   stored on the server in the user's own meta, bound to the kit's installation **and the hash of its
+   executable files** (a kit deleted and uploaded again, or a commit changing its `.js`, `.mjs`,
+   `.wasm` or `.svg` files, is asked about again, by every user), with the hashes of the page's inline
+   code approved with it; revocable at any time, and only a user with `unfiltered_html` can give it.
+   **This session only** is never stored and covers what the page ran when it was given. The page's
+   needs are read again from the markup on every change of its code sections (an insert, a paste,
+   Edit code, undo): new or changed inline code, or a kit not covered, drops the canvas (and the
+   mixed pages' Preview frames) to Safe mode in the same render, before the markup reaches a frame
+   that runs scripts, and asks again. Without an answer the canvas stays in Safe mode, which keeps
+   rules 1 and 2. This replaces the earlier rule that asked every editor session and stored
    nothing. An opaque-origin frame was considered for Live and Preview: it breaks the editing itself
    (the editor could not reach the frame's DOM), the design's same-site fonts and module scripts (CORS
    from an origin of `null`), and its `localStorage` / cookies, so the author's choice is the boundary
@@ -852,19 +908,25 @@ URLs needing a `<base>`) but a same-origin document at the page's own address:
    parts' `<html>` / `<body>` attributes and active links, the heads merged page first, the tail after
    the footer, Hello Pursae's or the canvas page's `<main>` — keeps the editor's `data-wbc` ids, and
    keeps the document in memory under a random token (18 random bytes, hex). It writes nothing to the
-   database. Only a user with `unfiltered_html` who may edit the post gets a frame.
+   database. Only a user with `unfiltered_html` who may edit the post gets a frame. **The frame's path
+   is the server's**: the post's permalink (a draft's `?p=` / `?page_id=` address, a template's preview
+   address); a `url` in the request is ignored, and a path of the site's own machinery (`/wp-admin`,
+   `/wp-login.php`, `/wp-json`, `/wp-content`, `/wp-includes`, `/xmlrpc.php`, any `.php` path, a
+   `rest_route` query) or of another host is refused (409 `wb_live_path`).
 2. The frame loads `<the page's path>?wb-live-frame=<token>`. A middleware answers it before any route,
    and only if **all** hold: the token exists and is under **15 minutes** old; the requester is the user
    who made it and still has `unfiltered_html`; the path is the page's path; it is a `GET` or `HEAD`;
    and the request is a frame of this origin (`Sec-Fetch-Dest: iframe`, `Sec-Fetch-Site: same-origin`
    when the browser sends them). Otherwise it answers 404 ("This live frame has expired. Reload the
-   editor's canvas."). At most 6 frames per user and 64 in all are kept (the oldest go first), in memory
-   only: a restart expires them and the canvas asks for a new one.
+   editor's canvas."). Frames are kept in memory only, at most **64 MB** and 64 frames in all and
+   **24 MB** and 6 frames per user (the oldest go first); a page larger than 24 MB on its own is
+   refused with 413 `wb_too_large`. A restart expires them and the canvas asks for a new one.
 3. The response carries the **front end's** Content Security Policy for that path, with the origins the
    design names (`wbCodeCSP`, `wbEmbedCSP`) and, when stored administrator scripts get the nonce
    (Settings › Security `csp_admin_scripts`), the nonce on every script, as the published page gives the
-   code sections' scripts (`cspTrustScripts`); `Cache-Control: no-store, private` and
-   `X-Robots-Tag: noindex`. Under the enforced policy with `csp_admin_scripts` off the design's scripts
+   code sections' scripts (`cspTrustScripts`); `Cache-Control: no-store, private`,
+   `X-Robots-Tag: noindex` and `Referrer-Policy: no-referrer` (the token in the frame's address is not
+   sent on with the design's requests). Under the enforced policy with `csp_admin_scripts` off the design's scripts
    are blocked here exactly as they are on the published page.
 4. The frame element has the sandbox `allow-scripts allow-same-origin allow-forms allow-popups
    allow-popups-to-escape-sandbox allow-modals allow-downloads allow-pointer-lock allow-presentation` and
@@ -873,16 +935,18 @@ URLs needing a `<base>`) but a same-origin document at the page's own address:
    first head script (editor-owned, removed at once) records WebGL contexts and takes the token out of
    `location` before the design runs.
 
-**Fallback.** Only when the route is missing (an older server answers `rest_no_route`) the canvas builds
-the live document in the editor and loads it as `srcdoc` (`liveDoc`): scripts then carry **the editor
-page's** nonce and the frame inherits the editor's policy, a `<base>` stands in for the address, and the
-differences below (address, policy) apply. Any other error — a user without `unfiltered_html` — is not
-retried: the canvas stays in Safe mode.
+**No fallback.** Every failure of the route — missing on an older server (`rest_no_route`), 403, 409,
+413, offline — leaves the canvas in Safe mode with a notice. The design's scripts never run in a
+`srcdoc` frame under the editor's own origin, policy and nonce.
 
-The **editor page's own policy** also allows, for a user with `unfiltered_html`, the origins the design
-names in the sections' markup as the published page does (`<script src>` origins to `script-src` and
-`connect-src`, `<iframe src>` origins, `blob:` images and media: `wbCodeCSP`), next to the kits' origins
-it already allowed — for the fallback frame, Preview in mixed pages and the editor's own previews.
+The **editor page's own policy** adds, for a user with `unfiltered_html`, only what its own frames
+need (`wbEditorFrameCSP`, `internal/server/webbuilder_editor.go`). A page of **code sections only**
+(its frames are static: Safe mode and the thumbnails run nothing) gets the style and font origins of
+the sections' markup, of their head and of the kits it loads, and `blob:` images and media — no
+script, connect or frame origins. A **mixed page** (code and builder sections: its Preview runs the
+design's scripts, after the author's confirmation, in `srcdoc` frames that inherit this policy) also
+gets the `script-src`, `connect-src` and `frame-src` origins the published page allows for the same
+markup (`wbCodeCSP`). The Live canvas and its Preview carry the front end's policy of the live frame.
 
 **Users without `unfiltered_html`** (authors, contributors, editors on a network): **Safe mode only,
 read-only markup.** `Boot.canRunScripts` is `false`, the Live button, the prompt and the trust button
@@ -1244,8 +1308,7 @@ fixtures `internal/webbuilder/testdata/override`).
   - Under the enforced Content Security Policy the frame has the front end's policy, which has neither
     `'unsafe-eval'` nor `'wasm-unsafe-eval'`: `WebAssembly` modules the published page's policy blocks
     are blocked in the Live frame too. The editor page's own policy allows `'unsafe-eval'`, so the
-    fallback `srcdoc` frame and the mixed-page frames, which inherit it, are more permissive than the
-    site. With `csp_admin_scripts` off the design's scripts are blocked on both.
+    mixed-page frames, which inherit it, are more permissive than the site. With `csp_admin_scripts` off the design's scripts are blocked on both.
   - Edits are patched into the running page without running the design's scripts again, so a script
     that read the DOM once at load (a counted list, a slider that cloned its slides) does not see an
     edit until the frame reloads; the canvas reloads by itself when it finds a script's copy of an
@@ -1253,12 +1316,13 @@ fixtures `internal/webbuilder/testdata/override`).
     `class`, `style` and `data-*`; state a script keeps in variables is lost.
   - **Kits and trust.** A page of designs the user does not trust opens in Safe mode with a prompt
     (only when its markup holds scripts); a page with no design kit (code sections without a kit) can be
-    run for the session only. Trust belongs to the design kit's installation, never to a page or a site.
+    run for the session only. Trust belongs to the design kit's installation and executable content
+    (and the inline code approved with it), never to a page or a site. A commit that changes a kit's
+    scripts asks every user again, the one who committed it too.
 - **Basic mode** shows at most 600 fields per section and 60 at a time (**Show N more**); a section with
   nothing the panel recognises says **Nothing to edit here yet.** and points to Studio. The fields are
   those found in the stored markup: text a script draws is not a field.
-- Under the enforced nonce policy the frames of mixed pages and the fallback frame inherit the editor's
-  policy, so a design's scripts without the nonce do not run there (they do on the published page); the
+- Under the enforced nonce policy the frames of mixed pages inherit the editor's policy, so a design's scripts without the nonce do not run there (they do on the published page); the
   Live canvas frame carries the front end's policy and the nonce the published page gives.
 
 - A code section is published as written: its markup is trusted (the author has `unfiltered_html`).
