@@ -12,6 +12,7 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Changed
 
+### Changed
 - **Pursae SEO: content analysis scores what visitors see.** Pages are rendered like the front end
   (theme template or Pursae Web Builder canvas) and the analysis reads their `<main>`, without navigation,
   sidebars, comments, the title heading or Pursae SEO's table of contents; posts read their rendered content
@@ -24,6 +25,7 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
   Languages › Translations, and each language shows its translation, so the automatic table of contents no
   longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
+
 ## [0.5.2] - 2026-11-23
 
 The editor canvas is now the published page: an imported design runs its own scripts in the editor once you
