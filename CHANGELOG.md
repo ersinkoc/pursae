@@ -12,6 +12,12 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Added
 
+- **Pursae SEO: SEO Details column and Table of Contents.** The posts and pages lists show one SEO Details
+  column: the score as "84 / 100", the focus keyword, the schema type, readability and internal, external and
+  incoming link counts. A new Table of Contents block (Pursae SEO category) lists the post's headings with
+  jump links and gives headings without an id one; SEO › General Settings › Table of Contents sets its
+  defaults (title, heading levels, numbered, collapsible) and can insert it automatically before the first
+  heading of chosen post types.
 - **Block theme sites point to Web Builder.** Importing a WordPress site that uses a block theme turns its
   navigation menus (`wp_navigation`) into ordinary menus (links to imported posts and terms kept, submenus
   as sub-items, the first one on the Primary Menu location when it is free). Its templates, template parts,
