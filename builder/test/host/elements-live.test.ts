@@ -102,6 +102,20 @@ describe('applyToLive', () => {
     expect(p.style.transform).toBe('translateY(0px)')
     expect(d.querySelector('[data-wbc="1"]')).toBe(sec1) // same node
   })
+  it('patches a section whose body script sits next to its elements (no id on the script)', () => {
+    // An imported page: the body's inline script ends its last section; the design filled a list.
+    const S = '<section data-wbc="1"><ul data-wbc="2"><li data-wbc="3"><img data-wbc="4" src="/a.png" alt="Old"></li></ul></section>\n<script>fill()</script>'
+    const d = live(`<main>${S.replace('<script>fill()</script>', '<script type="x">fill()</script>')}</main>`)
+    d.querySelector('ul')!.insertAdjacentHTML('beforeend', '<li>From JSON</li><li>More</li>')
+    const img = d.querySelector('img')!
+    const r = applyToLive(d, { s: S }, { s: S.replace('alt="Old"', 'alt="New"') })
+    expect(r.reload ? r.reason : '').toBe('')
+    expect(img.getAttribute('alt')).toBe('New')
+    expect(d.querySelectorAll('li').length).toBe(3)
+    // An element the script is next to but the source does not know: reload, not a guess.
+    const d2 = live(`<main><section data-wbc="1"></section><div>by a script</div></main>`)
+    expect(applyToLive(d2, { s: '<section data-wbc="1"></section>\n<script>x()</script>' }, { s: '<section data-wbc="1" class="x"></section>\n<script>x()</script>' }).reload).toBe(true)
+  })
   it('edits text and moves elements, keeping the live nodes (a running canvas)', () => {
     const d = live(`<div id="shell">${A}</div>`)
     const canvas = d.querySelector('canvas')!

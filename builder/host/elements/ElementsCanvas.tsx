@@ -49,7 +49,7 @@ import { style as styleAct } from './actions'
 import { kitsCSS, kitsOf, loadKits, syncKits, useKitStore } from './kitstyle'
 import { Palette, type NewElement } from './PaletteDrawer'
 import { TrustPrompt, revokeTrust, trustAlways, trustLater, trustSession } from './ScriptsGate'
-import { LIVE_SANDBOX, applyToLive, guardLive, liveGeometry, liveShellOf, loadLive, openLive, releaseLive, reloadPreserving, setLiveStyles, type LiveInput } from './live'
+import { applyToLive, guardLive, liveGeometry, liveShellOf, loadLive, openLive, releaseLive, reloadPreserving, setLiveStyles, type LiveInput } from './live'
 import { drawnText, holdLabel, leavesFrame, liveChange, measureLoop, passesThrough, sourceTarget, watchFrame } from './interact'
 import { frameModeOf, sandboxOf } from './trust'
 import { tc } from './canvas-tr'
@@ -215,7 +215,19 @@ export function ElementsCanvas() {
     // Live: the change is patched into the running page (the scripts keep their state); a reload
     // only when it cannot be (live.ts says why). A text edited in the frame is already shown.
     const d = fdoc()
-    const how = liveChange(shown.current, htmlNow, expect.current, fmode !== 'static' && d && liveReady.current ? () => applyToLive(d, shown.current, htmlNow) : null)
+    const how = liveChange(
+      shown.current,
+      htmlNow,
+      expect.current,
+      fmode !== 'static' && d && liveReady.current
+        ? () => {
+            const r = applyToLive(d, shown.current, htmlNow)
+            // Why an edit reloaded the live page (K4: only when it cannot be patched in place).
+            if (r.reload) console.info(`[web-builder] live canvas reloaded: ${r.reason}`)
+            return r
+          }
+        : null,
+    )
     if (how === 'shown' || how === 'patched') {
       shown.current = htmlNow
       if (how === 'patched') {
@@ -885,6 +897,11 @@ export function ElementsCanvas() {
     }
     const s = b.doc.sections.find((x) => x.id === sel.sec)
     out.unshift({ id: null, label: s?.name || t('Section') })
+    // A name the crumb before already says (a block named by its own heading) shows the type instead.
+    for (let i = 1; i < out.length; i++) {
+      const el = out[i].id ? sel.tree.byId.get(out[i].id!) : undefined
+      if (el && out[i].label === out[i - 1].label && !names[out[i].id!]) out[i] = { ...out[i], label: kindLabel(kindOf(sel.tree, el)) }
+    }
     return out
   }, [sel, names, b.doc.sections])
 
@@ -974,7 +991,7 @@ export function ElementsCanvas() {
             data-wb-scripts={frameSrc.scripts ? '1' : '0'}
             className="block border-0 bg-white"
             style={{ width, height: geo.height, transform: `scale(${zoom})`, transformOrigin: '0 0' }}
-            sandbox={frameSrc.scripts ? LIVE_SANDBOX : sandboxOf(false)}
+            sandbox={sandboxOf(frameSrc.scripts)}
           />
         </div>
       </div>

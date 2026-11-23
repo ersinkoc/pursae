@@ -610,6 +610,7 @@ function children(ctx: Ctx, parent: Node, cur: Node[], anchor: Node | null, wt: 
     if (id !== null && l.getAttribute('data-wbc') !== id) need("the design's scripts changed this element's children")
   })
   const byOld = new Map<El, Element>(oldEls.map((k, i) => [k, liveEls[i]]))
+  const usedNoId = new Set<number>()
   // 2. The new children: kept live nodes (patched), or new nodes from the new markup.
   const out: Node[] = []
   let pending = ''
@@ -638,6 +639,17 @@ function children(ctx: Ctx, parent: Node, cur: Node[], anchor: Node | null, wt: 
       continue
     }
     const id = wbc(k)
+    if (id === null) {
+      // An element without id (a script, a style): the old one with the same markup keeps its
+      // live node (a script that ran is not run again, nor removed).
+      const same = oldEls.findIndex((o, i) => !usedNoId.has(i) && wbc(o) === null && o.tag === k.tag && wt.src.slice(o.start, o.end) === nt.src.slice(k.start, k.end))
+      if (same >= 0) {
+        usedNoId.add(same)
+        flush()
+        out.push(liveEls[same])
+        continue
+      }
+    }
     const src = id !== null ? ctx.old.get(id) : undefined
     let n: Element | null = null
     if (src) {
@@ -702,8 +714,23 @@ export function applyToLive(doc: Document, prev: Record<string, string>, next: R
     const spots = trees.map(({ id, wt, nt }) => {
       const tops = elementKids(wt.root)
       if (!tops.length) need(`section ${id} has no element on the live page`)
-      const nodes = tops.map((k) => liveOf(ctx, k))
-      if (nodes.some((n) => !n)) need('a section element is not on the live page (or is there more than once)')
+      // Elements with an id are found by it (once on the page); those without (a script, a style,
+      // a template: the editor gives code elements no id — an imported page's body scripts sit at
+      // the end of its last section) by their place next to them, with the same tag.
+      const nodes: (Element | null)[] = tops.map((k) => (wbc(k) !== null ? liveOf(ctx, k) : null))
+      if (tops.some((k, i) => wbc(k) !== null && !nodes[i])) need('a section element is not on the live page (or is there more than once)')
+      const known = nodes.findIndex((n) => !!n)
+      if (known < 0) need(`section ${id} has no element with an id`)
+      const sameTag = (n: Element | null, k: El) => !!n && n.localName.toLowerCase() === k.tag
+      for (let i = known - 1; i >= 0; i--) {
+        nodes[i] = nodes[i + 1]!.previousElementSibling
+        if (!sameTag(nodes[i], tops[i])) need('a section element is not on the live page (or is there more than once)')
+      }
+      for (let i = known + 1; i < tops.length; i++) {
+        if (nodes[i]) continue
+        nodes[i] = nodes[i - 1]!.nextElementSibling
+        if (!sameTag(nodes[i], tops[i])) need('a section element is not on the live page (or is there more than once)')
+      }
       const parent = nodes[0]!.parentNode!
       if (nodes.some((n) => n!.parentNode !== parent)) need("the section's elements are not side by side on the live page")
       // The section's live nodes: from its first to its last element, with the text around them.

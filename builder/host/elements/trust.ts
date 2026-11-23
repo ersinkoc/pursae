@@ -12,6 +12,7 @@
 import type { CmsHost } from '../cms-host'
 import type { Boot } from '../contract'
 import { setKitTrust as restSetKitTrust } from '../rest'
+import { LIVE_SANDBOX } from './live'
 
 /** The boot fields the trust decision reads (Boot.scriptTrust, Boot.canRunScripts: the trust store). */
 type TrustBoot = Pick<Boot, 'caps' | 'codeParts' | 'document' | 'scriptTrust' | 'canRunScripts'>
@@ -118,7 +119,7 @@ export function frameModeOf(preview: boolean, live: boolean, scripts: boolean): 
 }
 
 /** The frame's sandbox for a document that may (or may not) run the design's scripts. */
-export const sandboxOf = (scripts: boolean) => (scripts ? 'allow-scripts allow-same-origin allow-forms' : 'allow-same-origin')
+export const sandboxOf = (scripts: boolean) => (scripts ? LIVE_SANDBOX : 'allow-same-origin')
 
 /**
  * Trusts (or stops trusting) a kit for this user: `PUT web-builder/v2/kits/{slug}/trust`

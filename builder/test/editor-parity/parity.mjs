@@ -20,8 +20,8 @@
 // Environment instead of flags: PARITY_SITE, PARITY_USER, PARITY_PASS, PARITY_APP_PASSWORD;
 // PW_CHROMIUM: path of a Chromium / headless shell binary (else Playwright's own; same variable for
 // builder/test/live/live-frame.mjs and builder/test/security/editor-xss.mjs).
-// Exit status: 0 when every shot is at or under --target % and every check passes, 1 otherwise,
-// 2 on a usage error. A baseline run on today's editor is expected to fail: the report is the point.
+// Exit status: 0 when every Live shot (live, always) is at or under --target % and every check passes,
+// 1 otherwise, 2 on a usage error. Safe mode (static) is reported but never fails the run.
 
 import fs from 'node:fs'
 import path from 'node:path'
@@ -49,6 +49,9 @@ const KIT = args.kit || 'editor-parity'
 const CSP = args.csp || 'keep'
 const TARGET = Number(args.target ?? 0.5)
 const HEIGHT = 900
+/** The viewport height of each device (live.ts LIVE_VIEWPORT: the editor's frame is the device's viewport). */
+const VIEW_H = { 1440: 900, 768: 1024, 390: 844 }
+const heightOf = (width) => VIEW_H[width] ?? HEIGHT
 const DEVICE = { 1440: 'desktop', 768: 'tablet', 390: 'mobile' }
 const DEVICE_LABELS = { desktop: ['Desktop', 'Masaüstü'], tablet: ['Tablet'], mobile: ['Mobile', 'Mobil'] }
 const FIXTURE = path.join(here, 'fixture')
@@ -337,7 +340,7 @@ function watch(page) {
 }
 
 async function published(width) {
-  const ctx = await browser.newContext({ viewport: { width, height: HEIGHT }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block' })
+  const ctx = await browser.newContext({ viewport: { width, height: heightOf(width) }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block' })
   const page = await ctx.newPage()
   const problems = watch(page)
   await page.goto(pageURL, { waitUntil: 'load' })
@@ -363,7 +366,7 @@ async function published(width) {
   return { info, afterClick, afterReload, shots, problems }
 }
 
-/** Resizes the editor window until the canvas frame is the device width at zoom 1 and HEIGHT tall. */
+/** Resizes the editor window until the canvas frame is the device's viewport (width × heightOf) at zoom 1. */
 async function fitEditor(page, width) {
   for (let i = 0; i < 6; i++) {
     const g = await page.evaluate((sel) => {
@@ -373,10 +376,11 @@ async function fitEditor(page, width) {
     }, FRAME)
     // Whole pixels too: a frame centred at x.5 is drawn between pixels (and shot one pixel wider).
     const whole = g.x === Math.round(g.x) && g.y === Math.round(g.y)
-    if (Math.abs(g.w - width) < 1 && Math.abs(g.h - HEIGHT) < 1 && whole) return g
-    let vw = Math.round(g.w < width - 0.5 ? g.vw + (width - g.w) / Math.max(0.2, g.w / g.vw) : g.vw)
+    if (Math.abs(g.w - width) < 1 && Math.abs(g.h - heightOf(width)) < 1 && whole) return g
+    // The panels around the canvas have fixed sizes: the window grows by what the frame lacks.
+    let vw = Math.round(g.w < width - 0.5 ? g.vw + (width - g.w) + 2 : g.vw)
     if (Math.abs(g.w - width) < 1 && !whole) vw += 1
-    const vh = Math.round(g.vh + (HEIGHT - g.h))
+    const vh = Math.round(g.vh + (heightOf(width) - g.h))
     await page.setViewportSize({ width: Math.min(4000, vw), height: Math.max(400, vh) })
     await page.waitForTimeout(250)
   }
@@ -468,7 +472,7 @@ async function setInteract(page, on) {
 
 async function editor(width, mode, real) {
   // real: a laptop window (1440 × 900) as an author has it; else the window is grown until the
-  // frame is the device's width at zoom 1 and HEIGHT tall, so the pixels can be compared 1:1.
+  // frame is the device's viewport at zoom 1, so the pixels can be compared 1:1.
   const ctx = await browser.newContext({ viewport: { width: 1440, height: HEIGHT }, deviceScaleFactor: real ? 2 : 1, reducedMotion: 'reduce', serviceWorkers: 'block', storageState: storage })
   const page = await ctx.newPage()
   const problems = watch(page)
@@ -694,7 +698,8 @@ for (const r of results)
     }
     const differs = Object.entries(e.functional).filter(([, v]) => v.editor !== v.published).map(([k]) => k)
     const max = Math.max(...Object.values(e.diffs).map((d) => d.pct))
-    if (differs.length || max > TARGET) failed = true
+    // Safe mode (static) runs none of the design's scripts by design: reported, never a failure.
+    if (mode !== 'static' && (differs.length || max > TARGET)) failed = true
     summary.rows.push({ width: r.width, mode, top: e.diffs.top.pct, scrolled: e.diffs.scrolled.pct, dark: e.diffs.dark.pct, differs })
   }
 fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify({ summary, results }, null, 2))

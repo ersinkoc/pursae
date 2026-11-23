@@ -45,8 +45,9 @@ The clicks on the design (theme toggle, slider dot) go through **Interact** mode
 (`--clicks interact`); `--clicks edit` clicks the canvas as an editor would (the click selects).
 
 Output: `report.json`, `report.html` (side-by-side published / editor / diff images) and `import.json`
-in `--out` (default `builder/.work/editor-parity`). Exit 1 when a shot is over `--target` % (default 0.5)
-or a check differs; on today's editor that is expected.
+in `--out` (default `builder/.work/editor-parity`). Exit 1 when a Live shot (`live`, `always`) is over
+`--target` % (default 0.5) or a check differs; Safe mode (`static`) runs no design script by design and
+is reported only.
 
 Determinism: reduced motion, transitions and animations off, fonts loaded and the page scrolled through
 before the shots, a seeded scene without time-based animation, no network (the fixture's font is copied

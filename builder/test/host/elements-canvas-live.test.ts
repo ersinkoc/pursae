@@ -12,7 +12,7 @@ import { bootKits, bootTrust, canRunScripts, frameModeOf, initialScripts, pageTr
 import { getElState, resetElState, setElState } from '../../host/elements/state'
 import { TrustPrompt, promptChoices, revokeTrust, trustAlways, trustLater, trustSession } from '../../host/elements/ScriptsGate'
 import { drawnText, leavesFrame, liveChange, measureLoop, passesThrough, sourceTarget, watchFrame } from '../../host/elements/interact'
-import { applyToLive } from '../../host/elements/live'
+import { LIVE_SANDBOX, applyToLive } from '../../host/elements/live'
 
 const SCRIPTED = '<div data-wbc="1"><button onclick="toggle()">Dark</button></div><script>init()</script>'
 
@@ -62,7 +62,7 @@ describe('mode before the first frame (K1, K2)', () => {
     const s = getElState()
     expect([s.live, s.scripts, s.prompt, s.canRun]).toEqual([true, true, false, true])
     expect(frameModeOf(false, s.live, s.scripts)).toBe('live')
-    expect(sandboxOf(s.scripts)).toBe('allow-scripts allow-same-origin allow-forms')
+    expect(sandboxOf(s.scripts)).toBe(LIVE_SANDBOX)
   })
 
   it('an untrusted design never runs before the choice: Safe mode, inert sandbox, prompt', () => {
