@@ -230,48 +230,83 @@ func accessLog() gin.HandlerFunc {
 	}
 }
 
-// sensitiveQuery names query parameters that are credentials. WooCommerce accepts
-// consumer_secret on the query string; order and download links use key. The access log must not
-// keep them.
+// sensitiveQuery names query parameters that carry credentials in URLs Pursae accepts or makes.
+// WooCommerce accepts consumer_secret on the query string; order, download and password-reset
+// links use key; the installer, mail webhooks and gift card links use token; OAuth callbacks
+// (Search Console, Google sign-in, SMTP) carry code and state; headless previews use
+// previewToken; privacy requests use confirm_key; the admin e-mail change uses adminhash; the Web
+// Builder live frame uses wb-live-frame; WordPress nonces ride as _wpnonce, _ajax_nonce,
+// _wcsnonce, nonce and preview_nonce. The access log must not keep them.
 func sensitiveQuery(k string) bool {
 	switch strings.ToLower(k) {
 	case "consumer_secret", "password", "passwd", "pass", "secret", "token",
-		"access_token", "refresh_token", "key":
+		"access_token", "refresh_token", "key",
+		"code", "state", "previewtoken", "preview_token", "confirm_key", "adminhash",
+		"wb-live-frame", "_wpnonce", "_ajax_nonce", "_wcsnonce", "nonce", "preview_nonce":
 		return true
 	}
 	return false
 }
 
-// redactRequestURI is RequestURI with credential query values replaced. A URI with none of those
-// parameters is returned unchanged, including its original encoding and parameter order.
+// redactRequestURI is RequestURI with credential query values replaced by "redacted". The raw
+// query is scanned pair by pair (split on & and ;) rather than parsed, so a malformed query that
+// url.ParseQuery rejects is still redacted, and the other parameters keep their order and
+// encoding. A URI with none of those parameters is returned unchanged.
 func redactRequestURI(u *url.URL) string {
-	if u == nil || u.RawQuery == "" {
-		if u == nil {
-			return ""
-		}
+	if u == nil {
+		return ""
+	}
+	if u.RawQuery == "" {
 		return u.RequestURI()
 	}
-	q, err := url.ParseQuery(u.RawQuery)
-	if err != nil {
-		return u.RequestURI()
-	}
+	raw := u.RawQuery
+	var b strings.Builder
 	changed := false
-	for k, vs := range q {
-		if !sensitiveQuery(k) {
-			continue
+	for raw != "" {
+		pair, sep := raw, ""
+		if i := strings.IndexAny(raw, "&;"); i >= 0 {
+			pair, sep, raw = raw[:i], raw[i:i+1], raw[i+1:]
+		} else {
+			raw = ""
 		}
-		for i := range vs {
-			if vs[i] != "redacted" {
-				vs[i] = "redacted"
-				changed = true
-			}
+		if k, v, ok := strings.Cut(pair, "="); ok && v != "redacted" && sensitiveQuery(lenientUnescape(k)) {
+			pair = k + "=redacted"
+			changed = true
 		}
-		q[k] = vs
+		b.WriteString(pair)
+		b.WriteString(sep)
 	}
 	if !changed {
 		return u.RequestURI()
 	}
 	clone := *u
-	clone.RawQuery = q.Encode()
+	clone.RawQuery = b.String()
 	return clone.RequestURI()
+}
+
+// lenientUnescape decodes a query key like url.QueryUnescape but never fails: '+' is a space, a
+// valid %XX is its byte, and a broken escape is kept as written.
+func lenientUnescape(s string) string {
+	if k, err := url.QueryUnescape(s); err == nil {
+		return k
+	}
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c == '+':
+			b.WriteByte(' ')
+		case c == '%' && i+2 < len(s) && isHexDigit(s[i+1]) && isHexDigit(s[i+2]):
+			n, _ := strconv.ParseUint(s[i+1:i+3], 16, 8)
+			b.WriteByte(byte(n))
+			i += 2
+		default:
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
+}
+
+func isHexDigit(c byte) bool {
+	return '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 }

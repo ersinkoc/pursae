@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -181,6 +182,55 @@ func TestRedactRequestURI(t *testing.T) {
 	keyed := httptest.NewRequest(http.MethodGet, "/checkout/order-received/9/?key=wc_order_secret", nil)
 	if got := redactRequestURI(keyed.URL); strings.Contains(got, "wc_order_secret") || !strings.Contains(got, "key=redacted") {
 		t.Fatalf("order key leaked: %q", got)
+	}
+}
+
+// Credentials Pursae itself puts in URLs: OAuth callbacks, previews, privacy and admin e-mail
+// confirmations, the Web Builder live frame and nonces.
+func TestRedactRequestURIPursaeCredentials(t *testing.T) {
+	for _, q := range []string{
+		"code=oauth-secret&state=state-secret",
+		"previewToken=oauth-secret",
+		"action=confirmaction&request_id=3&confirm_key=oauth-secret",
+		"adminhash=oauth-secret",
+		"wb-live-frame=oauth-secret",
+		"_wpnonce=oauth-secret",
+		"_ajax_nonce=oauth-secret",
+		"_wcsnonce=oauth-secret",
+		"preview_id=4&preview_nonce=oauth-secret&preview=true",
+		"token=oauth-secret",
+		"%5Fwpnonce=oauth-secret", // escaped key
+		"TOKEN=oauth-secret",
+	} {
+		u := &url.URL{Path: "/x", RawQuery: q}
+		got := redactRequestURI(u)
+		if strings.Contains(got, "secret") || !strings.Contains(got, "=redacted") {
+			t.Errorf("%q: credential leaked: %q", q, got)
+		}
+	}
+	u := &url.URL{Path: "/x", RawQuery: "preview_id=4&preview_nonce=n&preview=true"}
+	if got, want := redactRequestURI(u), "/x?preview_id=4&preview_nonce=redacted&preview=true"; got != want {
+		t.Errorf("got %q, want %q (order and other parameters kept)", got, want)
+	}
+}
+
+// A query url.ParseQuery rejects (a bad escape, a semicolon) is still redacted.
+func TestRedactRequestURIMalformedQuery(t *testing.T) {
+	for q, want := range map[string]string{
+		"a=%zz&token=abc":        "/x?a=%zz&token=redacted",
+		"token=abc&a=%zz":        "/x?token=redacted&a=%zz",
+		"a=1;key=abc":            "/x?a=1;key=redacted",
+		"to%6Ben=abc&b=%":        "/x?to%6Ben=redacted&b=%",
+		"%zz=1&_wpnonce=abc&c":   "/x?%zz=1&_wpnonce=redacted&c",
+		"code=abc%zz&state=s%zz": "/x?code=redacted&state=redacted",
+	} {
+		u := &url.URL{Path: "/x", RawQuery: q}
+		if _, err := url.ParseQuery(q); err == nil {
+			t.Fatalf("%q parses; the test wants a malformed query", q)
+		}
+		if got := redactRequestURI(u); got != want {
+			t.Errorf("%q: got %q, want %q", q, got, want)
+		}
 	}
 }
 

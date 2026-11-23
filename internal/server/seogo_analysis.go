@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"wpgo/internal/wp"
 )
 
 // Content analysis: Yoast's SEO and readability assessments (with their thresholds) plus Rank
@@ -20,10 +22,13 @@ type seogoAnalysisInput struct {
 	Description string   `json:"description"`
 	Slug        string   `json:"slug"`
 	URL         string   `json:"url"`
-	Content     string   `json:"content"` // HTML
+	Content     string   `json:"content"` // HTML: what a visitor sees (seogoVisibleContent), else the stored content
+	Raw         string   `json:"-"`       // the stored content (block markup) when Content is rendered
+	TOC         bool     `json:"-"`       // the rendered page had a Pursae SEO table of contents (removed from Content)
 	Keywords    []string `json:"keywords"`
 	Cornerstone bool     `json:"cornerstone"`
 	Taxonomy    bool     `json:"taxonomy"`
+	IsFront     bool     `json:"-"` // the static front page (or a translation of it): its URL is the site root, it has no slug
 	UsedBy      []string `json:"-"` // titles of other posts with the same focus keyphrase
 	SiteHost    string   `json:"-"`
 	Locale      string   `json:"-"` // post locale (en_US, tr_TR, ...); "" means English
@@ -212,6 +217,12 @@ func countPhrase(text, phrase string) int {
 }
 
 // allWordsIn reports whether every content word of the phrase occurs in the text, in any order.
+// seogoSlugFold is a word as a slug spells it: slugs drop Latin accents (sanitize_title), so the
+// keyphrase "özgeçmiş" is in the slug "ozgecmis" (Yoast transliterates the keyphrase the same way).
+func seogoSlugFold(s string) string {
+	return strings.ToLower(wp.RemoveAccents(s))
+}
+
 func allWordsIn(text, phrase string) bool {
 	set := map[string]bool{}
 	for _, w := range words(text) {
@@ -434,7 +445,7 @@ func seogoAnalyzeSEO(in seogoAnalysisInput) seogoAnalysis {
 	if h1 >= 2 {
 		out = append(out, scored(1, "singleH1", "Single title: H1s should only be used as your main title. Find all H1s in your text that aren't your main title and change them to a lower heading level!"))
 	} else {
-		out = append(out, scored(8, "singleH1", "Single title: You don't have multiple H1 headings, well done!"))
+		out = append(out, scored(9, "singleH1", "Single title: You don't have multiple H1 headings, well done!"))
 	}
 
 	imgs := imgTagRe.FindAllString(in.Content, -1)
@@ -572,16 +583,17 @@ func seogoAnalyzeSEO(in seogoAnalysisInput) seogoAnalysis {
 		}
 	}
 
-	// Keyphrase in slug: 1–2 word keyphrases need all words, longer ones more than half
-	if in.Slug != "" {
+	// Keyphrase in slug: 1–2 word keyphrases need all words, longer ones more than half. Not applicable
+	// to the front page, whose address is the site root (its stored slug is never shown).
+	if in.Slug != "" && !in.IsFront {
 		slugText := strings.NewReplacer("-", " ", "_", " ").Replace(in.Slug)
 		set := map[string]bool{}
 		for _, w := range words(slugText) {
-			set[stem(w)] = true
+			set[stem(seogoSlugFold(w))] = true
 		}
 		found := 0
 		for _, w := range cw {
-			if set[stem(w)] {
+			if set[stem(seogoSlugFold(w))] {
 				found++
 			}
 		}
@@ -659,7 +671,7 @@ func seogoAnalyzeSEO(in seogoAnalysisInput) seogoAnalysis {
 		if st.competing > 0 {
 			out = append(out, scored(2, "competingLinks", "Competing links: You're linking to another page with the words you want this page to rank for. Don't do that!"))
 		} else {
-			out = append(out, scored(8, "competingLinks", "Competing links: There are no links which use your keyphrase or synonym as their anchor text. Nice!"))
+			out = append(out, scored(9, "competingLinks", "Competing links: There are no links which use your keyphrase or synonym as their anchor text. Nice!"))
 		}
 	}
 
@@ -750,7 +762,7 @@ func seogoRankMathTips(in seogoAnalysisInput, kw string, tw []string) []seogoRes
 	} else {
 		out = append(out, scored(3, "contentHasShortParagraphs", "At least one paragraph is long. Consider using short paragraphs."))
 	}
-	if strings.Contains(in.Content, "wp:seogo/toc") || strings.Contains(in.Content, "table-of-contents") || strings.Contains(in.Content, `id="toc"`) {
+	if in.TOC || strings.Contains(in.Raw, "wp:seogo/toc") || strings.Contains(in.Content, "wp:seogo/toc") || strings.Contains(in.Content, "table-of-contents") || strings.Contains(in.Content, `id="toc"`) {
 		out = append(out, scored(9, "contentHasTOC", "You seem to be using a Table of Contents to break down your text."))
 	}
 	return out
@@ -772,8 +784,8 @@ func seogoRankMathPoints(in seogoAnalysisInput, kw string, tw []string, st linkS
 	text := strings.Join(tw, " ")
 	add(containsPhrase(in.SEOTitle, kw), 36)
 	add(containsPhrase(in.Description, kw), 2)
-	if in.Slug != "" {
-		add(allWordsIn(strings.ReplaceAll(in.Slug, "-", " "), kw), 5)
+	if in.Slug != "" && !in.IsFront {
+		add(allWordsIn(seogoSlugFold(strings.ReplaceAll(in.Slug, "-", " ")), seogoSlugFold(kw)), 5)
 	}
 	head := tw
 	if len(tw) > 400 {
@@ -853,6 +865,8 @@ func seogoRankMathPoints(in seogoAnalysisInput, kw string, tw []string, st linkS
 		ap = 6
 	}
 	vids := len(ytRe.FindAllString(in.Content, -1)) + len(vimeoRe.FindAllString(in.Content, -1))
+	// An embed renders as an iframe (or a consent placeholder): the stored markup still names the video.
+	vids = max(vids, len(ytRe.FindAllString(in.Raw, -1))+len(vimeoRe.FindAllString(in.Raw, -1)))
 	ap += min(vids, 2)
 	earned += min(ap, 6)
 	total += 6

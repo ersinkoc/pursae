@@ -897,3 +897,37 @@ func TestWebBuilderRESTRenameOutsideBuilder(t *testing.T) {
 		t.Errorf("title after republish: %q", p.Title)
 	}
 }
+
+// An edit undone back to the stored page leaves a draft equal to it: the editor must not offer it
+// back as unpublished changes, while a real change still is.
+func TestWebBuilderRESTDraftEqualToStoredIsNotUnpublished(t *testing.T) {
+	srv, _, admin := wbrStart(t)
+	page := wbrPost(t, srv, "page", "Old Title", "draft", 1)
+	doc, render := wbrFixture(t, "initial")
+	if code, v, _ := admin.do(http.MethodPost, wbrDocPath(page.ID, "/publish"), wbrPublishBody(doc, render, 0, "publish", nil), nil); code != http.StatusOK {
+		t.Fatalf("publish: %d %v", code, v)
+	}
+	_, v, _ := admin.do(http.MethodGet, wbrDocPath(page.ID, ""), nil, nil)
+	boot := wbrObj(v)
+	stored, bootPage := boot["doc"], boot["page"]
+	if boot["draft"] != nil {
+		t.Fatalf("draft after publish: %v", boot["draft"])
+	}
+	if code, v, _ := admin.do(http.MethodPut, wbrDocPath(page.ID, "/autosave"), map[string]any{"doc": stored, "page": bootPage, "baseRev": 1}, nil); code != http.StatusOK {
+		t.Fatalf("autosave equal: %d %v", code, v)
+	}
+	if _, v, _ = admin.do(http.MethodGet, wbrDocPath(page.ID, ""), nil, nil); wbrObj(v)["draft"] != nil {
+		t.Fatalf("a draft equal to the stored page was offered: %v", wbrObj(v)["draft"])
+	}
+	changed := map[string]any{}
+	for k, x := range wbrObj(bootPage) {
+		changed[k] = x
+	}
+	changed["title"] = "Another title"
+	if code, v, _ := admin.do(http.MethodPut, wbrDocPath(page.ID, "/autosave"), map[string]any{"doc": stored, "page": changed, "baseRev": 1}, nil); code != http.StatusOK {
+		t.Fatalf("autosave changed: %d %v", code, v)
+	}
+	if _, v, _ = admin.do(http.MethodGet, wbrDocPath(page.ID, ""), nil, nil); wbrObj(v)["draft"] == nil {
+		t.Fatalf("a changed draft was dropped: %v", v)
+	}
+}

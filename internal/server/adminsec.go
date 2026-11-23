@@ -50,7 +50,7 @@ const (
 // asSettings is the plugin's one JSON option.
 type asSettings struct {
 	// Two-factor
-	RequireRoles map[string]string `json:"require_roles"` // role -> "" | "mfa" | "2fa"
+	RequireRoles map[string]string `json:"require_roles"` // role -> "" | "mfa" | "2fa" | "passkey"
 	GraceDays    int               `json:"grace_days"`
 	RememberDays int               `json:"remember_days"` // 0: no "remember this device"
 

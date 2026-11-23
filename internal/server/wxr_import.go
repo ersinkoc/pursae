@@ -1,11 +1,11 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -128,7 +128,7 @@ func (s *Server) wxrUpload(c *gin.Context, d map[string]any) {
 		d["Error"] = "The file is larger than 256 MB."
 		return
 	}
-	doc, err := wxrParseFile(path)
+	hdr, nItems, err := wxrParseFile(c.Request.Context(), path)
 	if err != nil {
 		os.Remove(path)
 		d["Error"] = "Sorry, there has been an error. " + err.Error()
@@ -136,7 +136,7 @@ func (s *Server) wxrUpload(c *gin.Context, d map[string]any) {
 	}
 	ctx := c.Request.Context()
 	var rows []wxrAuthorRow
-	for i, a := range doc.Channel.Authors {
+	for i, a := range hdr.Authors {
 		row := wxrAuthorRow{Index: i, Login: a.Login, Email: a.Email, DisplayName: a.DisplayName, Selected: "new"}
 		if ex, err := s.store.UserByLoginOrEmail(ctx, a.Login); err == nil {
 			row.Selected, row.Exists = strconv.FormatInt(ex.ID, 10), true
@@ -154,22 +154,17 @@ func (s *Server) wxrUpload(c *gin.Context, d map[string]any) {
 	d["ImportNonce"] = s.nonce(c, "import-wxr")
 	d["Authors"] = rows
 	d["Users"] = users
-	d["Counts"] = fmt.Sprintf("%d items", len(doc.Channel.Items))
+	d["Counts"] = fmt.Sprintf("%d items", nItems)
 }
 
-func wxrParseFile(path string) (*wxrDoc, error) {
+// wxrParseFile reads the file once, token by token: its authors and terms, and how many items it has.
+func wxrParseFile(ctx context.Context, path string) (*wxrHeader, int, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer f.Close()
-	var doc wxrDoc
-	dec := xml.NewDecoder(f)
-	dec.Strict = false
-	if err := dec.Decode(&doc); err != nil {
-		return nil, fmt.Errorf("this does not appear to be a WXR file: %v", err)
-	}
-	return &doc, nil
+	return wxrReadHeader(ctx, bufio.NewReaderSize(f, 1<<20))
 }
 
 // wxrQueue is step two: the author choices are read from the form and the job is queued.
@@ -290,8 +285,7 @@ func (s *Server) wxrImportJob(ctx context.Context, raw map[string]any) error {
 		_ = s.store.SetTransient(context.WithoutCancel(ctx), wxrStateKey(p.Token), st, 7*24*time.Hour)
 	}
 	path := s.wxrImportFile(p.Token)
-	data, err := os.ReadFile(path)
-	if err != nil {
+	if _, err := os.Stat(path); err != nil {
 		setState(wxrImportState{State: "failed", Error: "the uploaded file is gone."})
 		return nil // retrying cannot bring the file back
 	}
@@ -301,7 +295,13 @@ func (s *Server) wxrImportJob(ctx context.Context, raw map[string]any) error {
 		return nil
 	}
 	setState(wxrImportState{State: "running"})
-	rep, err := s.importWXRWith(ctx, u, data, wxrImportOptions{Authors: p.Authors, FetchAttachments: p.Fetch})
+	rep, err := s.importWXRStream(ctx, u, func() (io.ReadCloser, error) {
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		return readCloser{bufio.NewReaderSize(f, 1<<20), f}, nil
+	}, wxrImportOptions{Authors: p.Authors, FetchAttachments: p.Fetch})
 	if err != nil {
 		if errors.Is(err, context.Canceled) || ctx.Err() != nil {
 			return err
@@ -315,4 +315,10 @@ func (s *Server) wxrImportJob(ctx context.Context, raw map[string]any) error {
 	os.Remove(path)
 	setState(wxrImportState{State: "done", Report: rep})
 	return nil
+}
+
+// readCloser is a buffered reader that closes the file under it.
+type readCloser struct {
+	io.Reader
+	io.Closer
 }

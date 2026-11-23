@@ -6,6 +6,8 @@
 import type { BuilderApi } from '@/builder/store'
 import type { DocState, Section } from '@/builder/types'
 import { t } from '../i18n'
+import { tc } from './canvas-tr'
+import { markupReadOnly } from './trust'
 import { clipboard, getElState, setElState } from './state'
 import { attr, outer } from './html'
 import { copyEntries, entryOf, idsIn, parseStyleAttr, rehome, setDecls, variantOf, withoutDecls, type Device, type LocalEntry, type LocalSection, type LocalStyles, type State } from './local'
@@ -67,6 +69,18 @@ export const latest: { doc: DocState | null } = { doc: null }
 
 const docOf = (b: B) => latest.doc ?? b.doc
 
+/** The history key of the typing session whose write is being made (livefield.ts): the store merges a session's writes into one entry. */
+let writeKey: string | undefined
+export function withKey<T>(key: string, fn: () => T): T {
+  const prev = writeKey
+  writeKey = key
+  try {
+    return fn()
+  } finally {
+    writeKey = prev
+  }
+}
+
 /** Selects element id (null: nothing) and its section in the builder. */
 export function selectEl(b: Pick<B, 'select' | 'doc'>, id: string | null, page?: Page) {
   setElState((s) => ({ sel: id, editing: null, classEdit: s.sel === id ? s.classEdit : null }))
@@ -82,6 +96,12 @@ export function selectEl(b: Pick<B, 'select' | 'doc'>, id: string | null, page?:
  */
 export function commit(b: B, label: string, res: Result | null, extra?: Record<string, Record<string, string>>, local?: Record<string, LocalStyles | undefined>, src?: LocalStyles | null): boolean {
   if (!res || (!Object.keys(res.html).length && !extra && !local)) return false
+  // Code sections are the design's own markup: without unfiltered_html the server keeps none of
+  // their edits, so none is made here either (trust.ts markupReadOnly; the panels are read-only too).
+  if (markupReadOnly()) {
+    b.notify(tc('Your role may not change this part of the design.'))
+    return false
+  }
   let doc = withContent(docOf(b), res.html, extra)
   if (local) doc = withLocal(doc, local)
   if (res.copies?.to.length) {
@@ -93,7 +113,7 @@ export function commit(b: B, label: string, res: Result | null, extra?: Record<s
   }
   doc = withLocal(doc, rehome(doc.sections as LocalSection[]))
   latest.doc = doc
-  b.dispatch({ type: 'replace', doc, label })
+  b.dispatch({ type: 'replace', doc, label, ...(writeKey ? { key: writeKey } : {}) })
   if (res.select !== undefined) selectEl(b, res.select, pageOf(doc))
   return true
 }

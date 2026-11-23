@@ -70,7 +70,7 @@ With WP-CLI: `wp pursae export --file=site.wp2p` prints the key.
 |---|---|
 | **Users** | Login, e-mail, display name, website, registration date, roles (a role Pursae does not have becomes Subscriber, as the report says), first and last name, nickname, bio, locale, WooCommerce billing and shipping addresses. The **password hash** is kept as WordPress stored it (`$wp$2y$…` from 6.8, phpass `$P$…` before, bcrypt, MD5), so users sign in with their old password. The first sign-in moves the hash to argon2id. A user whose login or e-mail already exists here is not changed: their content is assigned to the existing account. |
 | **Content** | Everything Tools › Export › All content exports: posts, pages, custom post types, comments, categories, tags and custom taxonomies, patterns, navigation menus. Pursae imports it with its WXR importer, so content runs through the same checks and mapping (Yoast and Rank Math SEO fields too). |
-| **Media** | The original file of every attachment travels in the package, so nothing is downloaded from the old site. Image sizes are generated again. Links in the content are rewritten to the new files. Files over 64 MB (Pursae's upload limit) are left out and listed in the report. Copy those by hand. |
+| **Media** | The original file of every attachment travels in the package, so nothing is downloaded from the old site. Image sizes are generated again. Links in the content are rewritten to the new files. Files are streamed from the package to the uploads directory, so large videos and archives work: the plugin packs files up to 4 GB (filter `wp2p_max_media_bytes`) and Pursae takes files up to `PURSAE_WP2P_MAX_MEDIA_MB` (default 4096). Larger ones are left out and listed in the report. Copy those by hand. **Update Pursae before sending a site with files over 64 MB:** Pursae 0.5.0 and 0.5.1 refuse them (they are skipped and listed in its report), and the plugin cannot see the Pursae version before it packs. |
 | **Settings** | Title, tagline, permalink structure, time zone, date and time formats, reading settings (front page, posts page, posts per page), discussion and media settings, site icon, language. Menus go to theme locations with the same name, if the location is free. |
 | **WooCommerce** | Products and variations, with attributes, categories, tags, images, prices, stock and downloads (through the WXR importer). Store settings that Pursae Commerce has (currency, address, taxes, …). Tax rates. Coupons with their type, amount, expiry, limits, usage counts and product, category and e-mail restrictions. Orders with statuses, line items (linked to the imported products and variations), shipping, fee, coupon and tax lines, totals, customer, addresses, payment method title, transaction id, notes, refunds, download permissions and dates. Customer accounts with their addresses. |
 
@@ -111,6 +111,20 @@ recorded with its WordPress id (table `wp2p_map`, per source site), so a second 
 what is new. If an import stops (a restart, an error), the screen offers **Resume the import**,
 which continues with the step that was running. Running `pursae import wordpress` again does the
 same.
+
+If the command is killed (`kill -9`, a crash, a closed terminal), its import stays "running" until it
+is noticed: a running import touches its record every 30 seconds, and one that has been silent for 30
+minutes is closed as failed, with the files it extracted deleted (an import started with 0.5.0, which
+does not touch its record, gets 6 hours). A run whose record was closed under it stops by itself. That happens when you run the
+command again, or within the hour in the cleanup job. Nothing the import created is lost; running the
+command again continues where it left off. Failed imports are closed after 7 days.
+
+## Large sites
+
+The WXR (`content.xml`) is never loaded whole: Pursae reads it token by token, one post at a time, so
+a site of any size imports with a small, steady amount of memory (a single element larger than 256 MB, or a CDATA section that is never closed, fails the import with a clear message instead; only the products, menu items and
+navigation menus are kept until the end, since they are created last). Media files are copied from the
+package to the uploads directory as streams.
 
 ## Security
 

@@ -108,9 +108,10 @@
 	function headingsOf( list, out ) {
 		( list || [] ).forEach( function ( b ) {
 			if ( b.name === 'core/heading' ) {
-				var d = document.createElement( 'div' );
-				d.innerHTML = String( b.attributes.content || '' );
-				var t = ( d.textContent || '' ).trim();
+				// DOMParser builds an inert document: no script runs and no image loads, so markup in a
+				// heading (another author's <img onerror>) cannot act in this editor.
+				var d = new DOMParser().parseFromString( String( b.attributes.content || '' ), 'text/html' );
+				var t = ( ( d.body && d.body.textContent ) || '' ).trim();
 				if ( t ) { out.push( { level: b.attributes.level || 2, text: t } ); }
 			}
 			headingsOf( b.innerBlocks, out );

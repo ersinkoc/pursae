@@ -336,9 +336,18 @@ const (
 	wp2pReportKeep = 30 * 24 * time.Hour
 	// wp2pTokenGrace: a token keeps answering GET this long after its import ended.
 	wp2pTokenGrace = time.Hour
-	// wp2pStaleCLI: a command-line run that has not written progress for this long was killed.
-	wp2pStaleCLI = 6 * time.Hour
+	// wp2pStaleCLI: a command-line run whose row was not touched for this long was killed (SIGKILL, a
+	// crash, a lost terminal). A live run touches its row every wp2pHeartbeat, whatever it is doing
+	// (also during a long extraction or one huge file), so this is many missed heartbeats.
+	wp2pStaleCLI = 30 * time.Minute
+	// wp2pStaleCLILegacy: the same for a run that never heartbeated (progress has no "hb"): an import
+	// started with the 0.5.0 binary, which only writes progress when it handles records and may be busy
+	// for hours in one phase. Such a run may still be alive after a Pursae update.
+	wp2pStaleCLILegacy = 6 * time.Hour
 )
+
+// wp2pHeartbeat is how often a running import touches its row (updated_at). A variable for tests.
+var wp2pHeartbeat = 30 * time.Second
 
 // wp2pCleanup is the wp2p_cleanup job: it closes abandoned uploads, deletes the files of imports that
 // will not go on, forgets the tokens of finished imports, trims old reports and removes files in the
@@ -363,15 +372,19 @@ func (s *Server) wp2pCleanup(ctx context.Context) error {
 		RETURNING id`, wp2pAbandonAfter.Seconds()); err != nil {
 		return err
 	}
-	// Command-line runs that were killed: failed (they are resumed by running the command again).
-	if err := collect(`UPDATE wp2p_migrations SET state = 'failed', updated_at = now(), error = 'The command stopped before the import was finished; run it again to continue.'
-		WHERE cli AND state = 'running' AND updated_at < now() - make_interval(secs => $1) RETURNING id`, wp2pStaleCLI.Seconds()); err != nil {
+	// Command-line runs that were killed: failed, their extracted files deleted (they are resumed by
+	// running the command again).
+	stale, err := s.wp2pFailStaleCLI(ctx)
+	if err != nil {
 		return err
 	}
-	// Failed imports nobody resumed: their files go, and Resume with them.
+	gone = append(gone, stale...)
+	// Failed imports nobody resumed: their files go, and Resume with them. A command-line import has
+	// no package here to delete (the file is the person's own) and no Resume: it is only closed.
 	if err := collect(`UPDATE wp2p_migrations SET state = 'expired', package_key = NULL, updated_at = now(),
-			error = error || ' (Not resumed within 7 days: the package and its extracted files were deleted.)'
-		WHERE state = 'failed' AND NOT cli AND updated_at < now() - make_interval(secs => $1) RETURNING id`, wp2pAbandonAfter.Seconds()); err != nil {
+			error = error || CASE WHEN cli THEN ' (Closed after 7 days; run the command again to import.)'
+				ELSE ' (Not resumed within 7 days: the package and its extracted files were deleted.)' END
+		WHERE state = 'failed' AND updated_at < now() - make_interval(secs => $1) RETURNING id`, wp2pAbandonAfter.Seconds()); err != nil {
 		return err
 	}
 	for _, id := range gone {
@@ -390,6 +403,30 @@ func (s *Server) wp2pCleanup(ctx context.Context) error {
 		return err
 	}
 	return s.wp2pRemoveOrphans(ctx)
+}
+
+// wp2pFailStaleCLI closes the command-line imports that are "running" but whose process is gone (no
+// heartbeat for wp2pStaleCLI): their state becomes failed, and the files the run extracted (users with
+// password hashes, orders) are deleted. It returns their ids. `import wordpress` calls it before it starts,
+// so running the command again after a kill cleans up after the one that died; the wp2p_cleanup job
+// calls it hourly.
+func (s *Server) wp2pFailStaleCLI(ctx context.Context) ([]string, error) {
+	rows, err := s.store.Pool.Query(ctx, `UPDATE wp2p_migrations SET state = 'failed', package_key = NULL, updated_at = now(),
+			error = 'The command stopped before the import was finished (the process was killed); run it again to continue.'
+		WHERE cli AND state = 'running'
+			AND updated_at < now() - make_interval(secs => CASE WHEN progress->>'hb' = 'true' THEN $1::float8 ELSE $2::float8 END)
+		RETURNING id`, wp2pStaleCLI.Seconds(), wp2pStaleCLILegacy.Seconds())
+	if err != nil {
+		return nil, err
+	}
+	ids, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		_ = os.RemoveAll(s.wp2pWorkDir(id))
+	}
+	return ids, nil
 }
 
 // wp2pRemoveOrphans removes what is in the import directory without an import that may still need it:

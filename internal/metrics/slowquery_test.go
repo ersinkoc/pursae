@@ -38,7 +38,9 @@ func TestSlowQueryLogOmitsArgsAndLimitsLines(t *testing.T) {
 	log.SetOutput(&buf)
 	t.Cleanup(func() { log.SetOutput(prev) })
 
-	tr := &SlowQueryTracer{Threshold: time.Nanosecond}
+	// A fixed clock keeps all 15 calls in one rate window: with the wall clock, a second boundary
+	// during the loop would reset the window and let more than 10 lines through.
+	tr := &SlowQueryTracer{Threshold: time.Nanosecond, unixNow: func() int64 { return 1_700_000_000 }}
 	ctx := tr.TraceQueryStart(context.Background(), nil, pgx.TraceQueryStartData{
 		SQL:  "SELECT $1 FROM accounts",
 		Args: []any{"password-secret"},

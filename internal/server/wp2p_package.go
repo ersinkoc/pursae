@@ -374,17 +374,6 @@ func wp2pParts(path string) []string {
 	return append(out, parts...)
 }
 
-// wp2pSize is the size of the logical file path (all its parts).
-func wp2pSize(path string) int64 {
-	var n int64
-	for _, p := range wp2pParts(path) {
-		if st, err := os.Stat(p); err == nil {
-			n += st.Size()
-		}
-	}
-	return n
-}
-
 // wp2pOpen opens the logical file path as one stream of its parts (os.ErrNotExist when it has none).
 func wp2pOpen(path string) (io.ReadCloser, error) {
 	parts := wp2pParts(path)

@@ -12,10 +12,181 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
-- JSON language packs pick the right plural form when the core language pack is not installed. One-form languages (Japanese, Chinese, and the others) no longer fall back to English for counts such as "%s seconds", and languages with three or more forms (Russian, Arabic, Polish, and the others) no longer show the wrong form.
-- A request whose measured duration is negative, because the clock stepped backwards, no longer wraps the Prometheus duration histogram into a multi-year sum.
-- Closing a request body while it is still being read no longer races on the idle-timeout flag.
-- The access log no longer records credential query values (`consumer_secret`, `password`, `token`, `key`, and the same kind of parameter).
+- **Pursae Security: the options API accepts a passkey requirement.** `POST /pursae/v1/options/security` (and
+  the MCP `update_options` tool) only knew the `mfa` and `2fa` requirements, so on a site where a role must use
+  a passkey (Two-Factor › Requirement per role) every security update was refused, whatever it changed.
+  `passkey` is now accepted, as on the settings screen, while passkeys are allowed.
+- **Translations: JSON language packs pick the right plural form without the core language pack.**
+  One-form languages (Japanese, Chinese and the others) no longer fall back to English for counts such as
+  "%s seconds", and languages with three or more forms (Russian, Arabic, Polish and the others) no longer
+  show the wrong form.
+- **Metrics: a negative request duration no longer corrupts the duration histogram.** When the clock stepped
+  backwards, the Prometheus duration sum wrapped into a multi-year value; such a duration now counts as zero.
+- **Closing a request body while it is still being read no longer races on the idle-timeout flag.**
+- **The access log no longer records credential query values.** OAuth codes, preview tokens, nonces,
+  password-reset and API keys, `consumer_secret`, `password`, `token` and the same kind of parameter are
+  written as `redacted`, even when the query string is malformed.
+
+## [0.5.3] - 2026-11-23
+
+### Fixed
+
+- **Pursae SEO: the front page and the posts page are analyzed as visitors see them.** A Pursae Multi
+  Language translation of the front page (served at /tr/, for example) is now analyzed, titled and given
+  breadcrumbs and schema as the front page, so it scores like the original; the posts page and its
+  translations are scored on the blog listing a visitor sees there, not only their intro text; and the front
+  page, whose address is the site root, no longer fails "Keyphrase in slug" (the check is left out of its score).
+- **Pursae SEO: a keyphrase with accented letters is found in its slug.** "Keyphrase in slug" compared
+  "özgeçmiş" with the slug `ozgecmis` letter by letter and failed; both are now compared without Latin
+  accents, as WordPress drops them from slugs.
+
+## [0.5.2] - 2026-11-23
+
+The editor canvas is now the published page: an imported design runs its own scripts in the editor once you
+trust it (Live mode), with Interact mode, edits without a reload, Basic mode blocks instead of HTML and Studio's
+Edit code. Large WordPress sites and media over 64 MB move with WP to Pursae. Script trust given before this
+release is asked once more.
+
+### Added
+
+- **Web Builder: the editor canvas is the published page (Live mode).** A design imported 1:1 as code
+  sections now runs its own scripts in the editor, so three.js / WebGL scenes, theme toggles, sliders,
+  counters and content a script draws look and work as on the site: the canvas is the page's own document
+  at its own address, with the site's shell, header and footer, and each device button is that device's
+  viewport (1440 × 900, 768 × 1024, 390 × 844) so `100vh` and media queries match. Live and Safe mode are
+  two buttons in the bottom bar; Safe mode is the earlier static canvas. Details and what still differs:
+  [code sections](docs/developer/web-builder-code-sections.md#editing).
+- **Web Builder: trust is asked once per design, remembered per user, and revocable.** The first time a
+  page of an untrusted design with scripts opens, the editor asks to run them with your admin access:
+  **Always for this design**, **This session only** or **Not now (safe mode)**. "Always" is stored on the
+  server in your own user meta, bound to that installation of the design kit and the hash of its `.js`,
+  `.mjs`, `.wasm` and `.svg` files, together with the hashes of the page's inline code you approved; a
+  button in the bottom bar stops it. "This session only" covers what the page ran when you answered. A
+  kit deleted and uploaded again, a commit that changes the kit's scripts (for every user, the committer
+  too; stylesheets, images and fonts keep the trust), and new or changed inline code or another kit on
+  the page (an insert, a paste, Edit code, an undo) stop the scripts before the change reaches a frame
+  that runs them and ask again. Only users with `unfiltered_html` can run or trust scripts.
+- **Web Builder: Interact mode.** The **Interact** button, or holding Alt (⌥ on a Mac), sends clicks and
+  keys to the design so a theme toggle, menu, tab or slider can be tried. What the interaction changes
+  (`html.dark`, a stored theme) is kept when you go back to editing and is never written into the page.
+- **Web Builder: edits without a reload.** In Live mode a text, style, class, attribute, move, duplicate,
+  delete or insert is patched into the running page, so animations, the WebGL scene and script state keep
+  running. The canvas reloads only when it must (a script changed, a section added or removed), and then
+  keeps the scroll position and the theme state.
+- **Web Builder: Basic mode shows blocks, not HTML.** A code section is a named block (Hero, Features,
+  Pricing, FAQ …) with a small thumbnail (drawn without the design's scripts) and its headings, texts,
+  button and link labels and addresses, images, form placeholders and repeated cards as fields. The
+  HTML and Head code fields and the palette's HTML / Embed element are Studio only; background,
+  decoration and motion settings, which have no effect on a code section, are not offered for one; on a
+  mixed page a code section points to Studio. New elements seam patch `0024-basic-seam`.
+- **Web Builder: live typing.** Text, label, alt and attribute fields of the Content tab and the Basic
+  panel update the canvas while you type (debounced, patched into the running page in Live mode), as
+  one history entry per typing session; Escape takes it back.
+- **Web Builder: readable element names.** The navigator, canvas outline and Basic panel name elements by
+  what they are and say (Menu, Slider, 3D / Canvas, Cards · 6, Hero, Form, Table, Map …) instead of
+  "Code", taken from the tag, role, label, text, id or class.
+- **Web Builder: Studio "Edit code".** The selected element's own markup (**Whole element**) or its
+  **HTML inside** can be edited in a small code editor, checked for unclosed and mismatched tags, applied
+  as one undo step, with the editor's ids preserved and unapplied drafts kept.
+- **New Web Builder REST routes.** `PUT web-builder/v2/kits/{slug}/trust` stores the calling user's script
+  trust of a design kit, and `POST web-builder/v2/documents/{id}/live-frame` renders the Live canvas frame.
+  The trust route takes `{trust, code?}` (at most 512 SHA-256 hashes) and answers `{trust, scriptTrust,
+  scriptCode}`. `Boot` gains `scriptTrust`, `scriptCode` and `canRunScripts` (additive). See the
+  [contract](docs/developer/web-builder-contract.md#3-rest-namespace-web-builderv2).
+- Test harnesses for the editor: `builder/test/editor-parity` (editor canvas against the published page,
+  pixels and behaviour) and `builder/test/live` (the live frame), both run with Playwright; `PW_CHROMIUM`
+  names the browser. See [Testing the editor](docs/developer/web-builder-code-sections.md#testing-the-editor).
+
+### Changed
+
+- **WP to Pursae: very large sites.** The WXR of a package (and of an uploaded WXR file) is read token by token,
+  one item at a time, instead of being loaded whole, so the memory an import needs no longer grows with the
+  size of the site. A first pass reads the authors and terms and checks the whole file is well formed (a damaged
+  file still imports nothing); the second pass imports the items. Packages, resume, re-import and the id map
+  behave as before. `PURSAE_WP2P_MAX_CONTENT_MB` and the "content.xml is more than this site imports in one
+  go" error are gone.
+- **WP to Pursae: media over 64 MB.** Media files of a package are no longer held to the 64 MB upload limit.
+  They are streamed from the package to the uploads directory, up to `PURSAE_WP2P_MAX_MEDIA_MB` (default
+  4096); the plugin packs files up to 4 GB (filter `wp2p_max_media_bytes`, never above 8 GiB) and gives a big
+  file a request of its own. Only one request builds a package at a time, and the package checksum is made over
+  several requests on PHP 8.1 and later, so a very large package no longer risks a killed request that repeats
+  forever. Update Pursae before sending files over 64 MB: 0.5.0 and 0.5.1 skip them. The upload limit still applies to
+  uploads. A WXR element larger than 256 MB (or a CDATA section never closed) fails the import cleanly.
+- **Web Builder: "Live edit" is now Live mode, on by default for trusted designs.** The per-session
+  "Run this design's scripts" confirmation is replaced by the per-design prompt above; mixed pages
+  (code and builder sections) keep their Safe-mode frames and a Preview that runs scripts for a trusted
+  design or after the per-session confirmation.
+- **Web Builder: the editor's Content Security Policy allows only what its frames need.** A page of code
+  sections only gets the style and font origins of its markup, head and kits and `blob:` images and
+  media; a mixed page, whose Preview runs the design in frames of the editor's page, also gets the script,
+  connect and frame origins the published page allows. The kits' script origins are no longer added to
+  every editor page.
+- **Pursae SEO: content analysis scores what visitors see.** Pages are rendered like the front end
+  (theme template or Pursae Web Builder canvas) and the analysis reads their `<main>`, without navigation,
+  sidebars, comments, the title heading or Pursae SEO's table of contents; posts read their rendered content
+  (dynamic blocks expanded). A page whose text and images come from its template or a dynamic block no
+  longer scores as nearly empty. The editor's live analysis renders the unsaved content the same way.
+
+### Fixed
+
+- **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
+  checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
+- **Login: the key icon on Log in with a passkey sits on the text line.** WordPress's button icon line height
+  pushed it about 10 px below the label.
+- **Login: the login page is never shown from the browser's cache.** It now sends `no-store` (as wp-login.php
+  does), so going back to it or restoring a tab no longer shows a stale copy, such as the passkey button after
+  Pursae Security was switched off.
+- **WP to Pursae: killed `pursae import wordpress` runs.** A running import now touches its row every 30
+  seconds, so a command that was killed (SIGKILL, a crash, a lost terminal) is recognised after 30 minutes
+  instead of 6 hours (still 6 hours for an import started with 0.5.0, which does not heartbeat). Its import is
+  closed as failed and the files it extracted (users and orders) are deleted, by the hourly cleanup or at once
+  when `pursae import wordpress` is run again. A run whose row was closed meanwhile stops instead of going on,
+  and cannot mark the row done afterwards. Failed command-line imports are closed after 7 days like the others.
+- **Web Builder: Basic fields and block names keep the gaps between parts of a text.** A heading or label whose
+  parts are laid out as blocks (`<br>`, block/flex spans, a flex link with an icon) no longer reads glued
+  together ("ENERJİ OSGBSakarya"); the stored markup is unchanged.
+- **Web Builder: no "unpublished changes restored" after an undo.** A draft equal to the stored page is not
+  offered back when the editor opens.
+- **Pursae Web Builder: removing a site import restores the right homepage.** Publishing an import a
+  second time (after its report failed to save) recorded the imported page as the site's previous
+  homepage, so *Remove this import* set the homepage to a page it had just deleted. Removal also left
+  the homepage or posts page pointing at a deleted page when it had been moved to another page of the
+  same import. The original homepage is now kept from the first change, and removal resets the
+  reading settings whenever they point at a page it deletes.
+- **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
+  default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
+  Languages › Translations, and each language shows its translation, so the automatic table of contents no
+  longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
+- **Pursae SEO: the Table of Contents no longer touches scripts, styles or comments.** A heading-looking
+  string inside a `<script>`, `<style>`, `<textarea>`, `<template>`, `<noscript>` or an HTML comment was
+  listed and given an `id`, which broke the page's JavaScript or CSS; those are now skipped. The editor's
+  Table of Contents block also reads heading text with an inert `DOMParser`, so markup in another
+  author's heading (an `<img onerror>`) no longer runs in your editor.
+- **Pursae Security: a required passkey/2FA or a forced password change now also closes the REST API.**
+  Past the grace period these only kept the HTML admin on the fix-it screen; the same cookie still got a
+  REST nonce from the heartbeat and full REST access, enough to mint an Application Password and skip the
+  requirement for good. Cookie-authenticated REST now answers 403 `adminsec_account_action_required` and
+  the heartbeat hands out no REST nonce until the account is fixed.
+
+### Security
+
+- **Web Builder: users without `unfiltered_html` get Safe mode only.** They cannot run a design's scripts
+  or trust a kit (both routes answer 403), and the canvas's element operations, Basic fields, Edit code
+  and Section code are read-only for them (the server already ignored such edits).
+- **The Live frame is served only to its creator.** `?wb-live-frame=<token>` is answered at the page's own
+  path only to the user who made it, only while they have `unfiltered_html`, only as a same-origin frame,
+  for 15 minutes, from memory, with the front end's CSP and nonce, `no-store` and `noindex`. It is never
+  given `allow-top-navigation`. Safe mode keeps the static, neutralised copy and the sandbox without
+  `allow-scripts`.
+- **The Live frame's address is the server's.** Its path is the post's permalink; a `url` in the request
+  is ignored, and admin, REST, `wp-content` and `.php` paths are refused. Frames are kept in memory up to
+  64 MB in all and 24 MB / 6 frames per user (413 for a larger page), and are served with
+  `Referrer-Policy: no-referrer`. When the frame cannot be loaded the canvas stays in Safe mode with a
+  notice: the design's scripts never run in a `srcdoc` frame under the editor's own policy.
+- **Live text edits are not saved when the design changes the text meanwhile.** A script that rewrites
+  the element being edited in place (a counter, a re-render) aborts the edit with a notice.
+- **Existing script trust is asked again once.** Trust stored before code hashes (a bare kit
+  installation id) is not trust any more.
 
 ## [0.5.1] - 2026-11-23
 

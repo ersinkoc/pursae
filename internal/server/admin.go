@@ -529,7 +529,9 @@ func (s *Server) heartbeat(c *gin.Context) {
 		out["nonces_expired"] = true
 	}
 	if c.PostForm("data[wp-refresh-post-nonces][post_id]") != "" || c.PostForm("data[wp-refresh-nonces]") != "" {
-		out["rest_nonce"] = s.nonce(c, "wp_rest")
+		if s.adminsecBlocked(c, currentUser(c)) == "" { // a blocked session gets no REST (restAuthUser)
+			out["rest_nonce"] = s.nonce(c, "wp_rest")
+		}
 		out["heartbeat_nonce"] = s.nonce(c, "heartbeat-nonce")
 	}
 	s.heartbeatAutosave(c, out)

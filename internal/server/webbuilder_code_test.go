@@ -121,7 +121,7 @@ func TestWBCodeBlocksTaggedOnLoad(t *testing.T) {
 	if err := srv.store.WebBuilder().PublishDoc(context.Background(), &store.WebBuilderDoc{PostID: p.ID, Doc: doc, Page: json.RawMessage(`{}`), Renderer: 1}, 0); err != nil {
 		t.Fatal(err)
 	}
-	if err := srv.store.WebBuilder().SaveDraft(context.Background(), &store.WebBuilderDraft{PostID: p.ID, UserID: 1, Doc: doc, Page: json.RawMessage(`{}`), BaseRev: 1}); err != nil {
+	if err := srv.store.WebBuilder().SaveDraft(context.Background(), &store.WebBuilderDraft{PostID: p.ID, UserID: 1, Doc: json.RawMessage(strings.Replace(string(doc), ">Hi<", ">Hello<", 1)), Page: json.RawMessage(`{}`), BaseRev: 1}); err != nil {
 		t.Fatal(err)
 	}
 	code, v, _ := admin.do(http.MethodGet, wbrDocPath(p.ID, ""), nil, nil)
@@ -139,8 +139,13 @@ func TestWBCodeBlocksTaggedOnLoad(t *testing.T) {
 	}
 	got := wbrObj(v)
 	draft, _ := got["draft"].(map[string]any)
+	// The draft differs from the stored page (an identical one is not offered at all).
 	for name, h := range map[string]string{"doc": htmlOf(got["doc"]), "draft": htmlOf(draft["doc"])} {
-		want := `<section class="hero" data-wbc="4"><h1 data-wbc="3">Hi</h1><div class="cards" data-wbc="5"><div class="card" data-wbc="6">A</div></div></section>`
+		hi := "Hi"
+		if name == "draft" {
+			hi = "Hello"
+		}
+		want := `<section class="hero" data-wbc="4"><h1 data-wbc="3">` + hi + `</h1><div class="cards" data-wbc="5"><div class="card" data-wbc="6">A</div></div></section>`
 		if h != want {
 			t.Errorf("editor %s: %s", name, h)
 		}
