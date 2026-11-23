@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -30,7 +31,7 @@ import (
 // report in its wp2p_migrations row, so a run that stops (a restart, a failure) resumes where it was:
 // finished phases are skipped, and inside a phase every record is looked up in wp2p_map before it is
 // created, so running it again never duplicates anything. Content goes through the WXR importer
-// (importWXRReader) with the package's media files instead of downloads.
+// (importWXRStream, which reads the file token by token) with the package's media files instead of downloads.
 
 // wp2pPhases are the phases in order.
 var wp2pPhases = []string{"extract", "users", "content", "options", "tax_rates", "coupons", "orders", "customers", "finish"}
@@ -46,6 +47,9 @@ type wp2pProgress struct {
 	Phase string         `json:"phase"`
 	Done  []string       `json:"done"`  // finished phases
 	Items map[string]int `json:"items"` // records handled in the current phase
+	// Heartbeat marks a run that touches its row while it works (0.5.1 and later). A row without it
+	// belongs to a run of the 0.5.0 binary, which does not: wp2pFailStaleCLI waits much longer for those.
+	Heartbeat bool `json:"hb,omitempty"`
 }
 
 func (p *wp2pProgress) finished(phase string) bool {
@@ -233,14 +237,63 @@ func wp2pSource(m *wp2pManifest) string {
 	return u
 }
 
+// heartbeat touches the run's row every wp2pHeartbeat until the returned function is called, so a run
+// that is busy for a long time without a record to count (opening a big package, copying one huge
+// file) still shows that it is alive; a run whose process was killed stops touching it, which is how
+// wp2p_cleanup and `import wordpress` find it (wp2pFailStaleCLI).
+func (r *wp2pRun) heartbeat(closed context.CancelCauseFunc) (stop func()) {
+	done := make(chan struct{})
+	finished := make(chan struct{})
+	go func() {
+		defer close(finished)
+		t := time.NewTicker(wp2pHeartbeat)
+		defer t.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-t.C:
+				ctx, cancel := context.WithTimeout(context.Background(), wp2pHeartbeatTimeout)
+				tag, err := r.s.store.Pool.Exec(ctx, `UPDATE wp2p_migrations SET updated_at = now() WHERE id = $1 AND state = 'running'`, r.id)
+				cancel()
+				if err == nil && tag.RowsAffected() == 0 {
+					// The row is no longer "running": it was closed as stale (or deleted) while this
+					// process was thought dead, and its extracted files are gone. Stop instead of going on.
+					closed(errWP2PClosed)
+					return
+				}
+			}
+		}
+	}()
+	return func() { close(done); <-finished }
+}
+
 // run goes through the phases that are not finished yet.
 func (r *wp2pRun) run(ctx context.Context) error {
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	defer r.heartbeat(cancel)()
+	err := r.runPhases(ctx)
+	if err != nil && errors.Is(context.Cause(ctx), errWP2PClosed) {
+		return errWP2PClosed
+	}
+	return err
+}
+
+// errWP2PClosed ends a run whose row was closed under it (wp2pFailStaleCLI, the cleanup, a deleted import).
+var errWP2PClosed = errors.New("this import was closed while it was running (it was taken for dead); run it again to continue")
+
+// wp2pHeartbeatTimeout bounds one heartbeat's query, so a stuck database cannot hold the run.
+var wp2pHeartbeatTimeout = 10 * time.Second
+
+func (r *wp2pRun) runPhases(ctx context.Context) error {
 	if r.prog == nil {
 		r.prog = &wp2pProgress{}
 	}
 	if r.rep == nil {
 		r.rep = newWP2PReport()
 	}
+	r.prog.Heartbeat = true
 	for _, phase := range wp2pPhases {
 		if r.prog.finished(phase) {
 			if phase == "extract" && r.man == nil {
@@ -248,7 +301,7 @@ func (r *wp2pRun) run(ctx context.Context) error {
 				if err != nil {
 					// The extracted files are gone (cleaned up, another machine): open the package again.
 					r.prog.Done = nil
-					return r.run(ctx)
+					return r.runPhases(ctx)
 				}
 				r.man = m
 				r.src = wp2pSource(m)
@@ -602,21 +655,13 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 		return err
 	}
 	contentPath := filepath.Join(r.dir, "content.xml")
-	if size, limit := wp2pSize(contentPath), wp2pMaxContent(); size > limit {
-		// The WXR importer reads the whole file into memory before it imports anything.
-		return fmt.Errorf("content.xml is %d MB, more than this site imports in one go (%d MB): raise PURSAE_WP2P_MAX_CONTENT_MB where the server has the memory, "+
-			"or build the package in parts (one post type at a time)", size>>20, limit>>20)
-	}
-	f, err := wp2pOpen(contentPath)
-	if errors.Is(err, os.ErrNotExist) {
+	// content.xml is read from disk token by token (importWXRStream), item by item: its size is not
+	// limited by this machine's memory.
+	if len(wp2pParts(contentPath)) == 0 {
 		r.rep.note("The package has no content (content.xml).")
 		r.posts, r.terms = map[int64]int64{}, map[int64]int64{}
 		return nil
 	}
-	if err != nil {
-		return err
-	}
-	defer f.Close()
 	authors := map[string]wxrAuthorChoice{}
 	for login, id := range r.logins {
 		authors[login] = wxrAuthorChoice{UserID: id}
@@ -645,7 +690,7 @@ func (r *wp2pRun) importContent(ctx context.Context) error {
 			}
 			return p, m.Name, true
 		}}
-	rep, err := r.s.importWXRReader(ctx, r.u, f, opts)
+	rep, err := r.s.importWXRStream(ctx, r.u, func() (io.ReadCloser, error) { return wp2pOpen(contentPath) }, opts)
 	if err != nil {
 		return err
 	}
@@ -669,13 +714,14 @@ func (r *wp2pRun) loadContentMaps(ctx context.Context) {
 	}
 }
 
-// wp2pMaxContent is the largest content.xml imported (PURSAE_WP2P_MAX_CONTENT_MB, default 2048 MB): the
-// WXR importer holds the whole file in memory.
-func wp2pMaxContent() int64 {
-	if n, err := strconv.ParseInt(strings.TrimSpace(config.Env("WP2P_MAX_CONTENT_MB")), 10, 64); err == nil && n > 0 {
+// wp2pMaxMedia is the largest media file taken from a package (PURSAE_WP2P_MAX_MEDIA_MB, default 4096
+// MB). It is not the upload limit (64 MB): the files were uploaded to the old site under its own
+// limit, and they are streamed from the extracted package to the uploads directory.
+func wp2pMaxMedia() int64 {
+	if n, err := strconv.ParseInt(strings.TrimSpace(config.Env("WP2P_MAX_MEDIA_MB")), 10, 64); err == nil && n > 0 {
 		return n << 20
 	}
-	return 2048 << 20
+	return 4096 << 20
 }
 
 // importTimezone sets timezone_string and gmt_offset from options.json (the options phase sets them
@@ -1006,6 +1052,13 @@ func (s *Server) wp2pSetState(ctx context.Context, id, state, msg string) {
 	_, _ = s.store.Pool.Exec(context.WithoutCancel(ctx), `UPDATE wp2p_migrations SET state = $2, error = $3, updated_at = now() WHERE id = $1`, id, state, msg)
 }
 
+// wp2pEnd records how a run ended ("done" or "failed"), but only on a row that is still queued or running: a
+// run whose row was closed under it (failed as stale, expired by the cleanup) must not bring it back.
+func (s *Server) wp2pEnd(ctx context.Context, id, state, msg string) {
+	_, _ = s.store.Pool.Exec(context.WithoutCancel(ctx), `UPDATE wp2p_migrations SET state = $2, error = $3, updated_at = now()
+		WHERE id = $1 AND state IN ('queued', 'running')`, id, state, msg)
+}
+
 // wp2pImportJob is the background run ("wp2p_import" job, payload {"id": ...}). A failure is recorded
 // on the row (the screen offers Resume, which queues the job again); a shutdown leaves the job queued.
 func (s *Server) wp2pImportJob(ctx context.Context, raw map[string]any) error {
@@ -1031,10 +1084,10 @@ func (s *Server) wp2pImportJob(ctx context.Context, raw map[string]any) error {
 			s.wp2pSetState(ctx, id, "queued", "")
 			return err
 		}
-		s.wp2pSetState(ctx, id, "failed", err.Error())
+		s.wp2pEnd(ctx, id, "failed", err.Error())
 		return nil
 	}
-	s.wp2pSetState(ctx, id, "done", "")
+	s.wp2pEnd(ctx, id, "done", "")
 	return nil
 }
 

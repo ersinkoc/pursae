@@ -91,6 +91,11 @@ func cliImportWordPress(c *cli.Ctx, e *cliEnv) error {
 	if err != nil {
 		return err
 	}
+	// A run of this command that was killed (SIGKILL, a crash) left its row "running" and its extracted
+	// files behind: close it and delete them now instead of waiting for the hourly cleanup.
+	if ids, err := s.wp2pFailStaleCLI(ctx); err == nil && len(ids) > 0 {
+		c.Log("Closed %d earlier import(s) whose command was killed; their extracted files were deleted.", len(ids))
+	}
 	id := wp2pNewID()
 	// cli: the screen does not offer Resume for this row (the package and key are not kept here); the
 	// command is run again instead, and importing the same site again adds only what is missing.
@@ -101,11 +106,11 @@ func cliImportWordPress(c *cli.Ctx, e *cliEnv) error {
 	r := &wp2pRun{s: s, id: id, dir: s.wp2pWorkDir(id), pkg: pkg, keepPackage: true, key: &key, u: u,
 		logf: func(format string, args ...any) { c.Log(format, args...) }}
 	if err := r.run(ctx); err != nil {
-		s.wp2pSetState(ctx, id, "failed", err.Error()+" (run the command again to continue)")
+		s.wp2pEnd(ctx, id, "failed", err.Error()+" (run the command again to continue)")
 		_ = os.RemoveAll(r.dir)
 		return cli.Errorf("%v (what was imported stays; run the command again to continue)", err)
 	}
-	s.wp2pSetState(ctx, id, "done", "")
+	s.wp2pEnd(ctx, id, "done", "")
 	rep := r.rep
 	for _, n := range rep.Notes {
 		c.Log("-- %s", n)
