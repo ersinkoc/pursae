@@ -12,7 +12,6 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Changed
 
-### Changed
 - **Pursae SEO: content analysis scores what visitors see.** Pages are rendered like the front end
   (theme template or Pursae Web Builder canvas) and the analysis reads their `<main>`, without navigation,
   sidebars, comments, the title heading or Pursae SEO's table of contents; posts read their rendered content
