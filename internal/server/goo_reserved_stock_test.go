@@ -362,6 +362,29 @@ func TestGooPaymentShortageSubtractsHolds(t *testing.T) {
 	}
 }
 
+// When the counter drops below what other orders hold (stock edited after the hold), the shortage
+// reports 0 available, never a negative count.
+func TestGooPaymentShortageNeverNegative(t *testing.T) {
+	srv := gooResvSetup(t)
+	ctx := context.Background()
+	p := gooMakeSimple(t, srv, "Overheld", 10, func(p *gooProduct) { p.ManageStock, p.StockQuantity = true, gooIntPtr(2) })
+	holder := gooRaceOrder(t, srv, "a@example.test", 0, map[*gooProduct]int{p: 2})
+	other := gooRaceOrder(t, srv, "b@example.test", 0, map[*gooProduct]int{p: 1})
+	if err := srv.gooReserveStock(ctx, holder); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE goo_products SET stock_quantity = 0 WHERE post_id = $1`, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	var sh *gooStockShortage
+	if err := srv.gooReduceStock(ctx, other, true); !errors.As(err, &sh) {
+		t.Fatalf("reduce stock: %v, want a shortage", err)
+	}
+	if sh.Available != 0 {
+		t.Fatalf("shortage reports %d available, want 0", sh.Available)
+	}
+}
+
 // A customer who leaves the external payment page (back button) and checks out again is not refused
 // the last unit because of the hold of their own abandoned order: the new order takes it over.
 func TestGooReserveStockSameVisitorRetry(t *testing.T) {

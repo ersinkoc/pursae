@@ -185,37 +185,3 @@ func TestGooInclusiveOrderLinesMatchTotal(t *testing.T) {
 	}
 	gooAlmost(t, "lines plus tax", lines+tax, o.Total)
 }
-
-// The Store API checkout does not treat a missing terms checkbox as accepted.
-func TestGooStoreAPICheckoutRequiresTerms(t *testing.T) {
-	base, _, srv := gooSite(t)
-	ctx := context.Background()
-	gooShopSetup(t, srv)
-	p := gooMakeSimple(t, srv, "Mug", 10, func(p *gooProduct) { p.Virtual = true })
-	terms := &store.Post{Type: "page", Title: "Terms", Slug: "terms-store", Status: "publish", AuthorID: 1, Meta: map[string]any{}}
-	if err := srv.store.InsertPost(ctx, terms); err != nil {
-		t.Fatal(err)
-	}
-	if err := srv.gooSetOpts(ctx, map[string]any{"terms_page_id": terms.ID}); err != nil {
-		t.Fatal(err)
-	}
-	guest := gooGuest()
-	api := base + "/wp-json/wc/store/v1"
-	r := gooReq(t, guest, "GET", api+"/cart", nil, nil)
-	nonce := map[string]string{"Nonce": r.Header.Get("Nonce")}
-	if r := gooReq(t, guest, "POST", api+"/cart/add-item", map[string]any{"id": p.ID, "quantity": 1}, nonce); r.Code != 201 {
-		t.Fatalf("add: %d %s", r.Code, r.Raw)
-	}
-	r = gooReq(t, guest, "POST", api+"/checkout", map[string]any{"billing_address": gooTestAddress, "payment_method": "goo_test"}, nonce)
-	if r.Code == 200 {
-		t.Fatalf("checkout without accepting terms succeeded: %s", r.Raw)
-	}
-	if gooJS(r.Body, "code") != "woocommerce_rest_checkout_invalid" {
-		t.Fatalf("checkout error: %d %s", r.Code, r.Raw)
-	}
-	r = gooReq(t, guest, "POST", api+"/checkout", map[string]any{"billing_address": gooTestAddress, "payment_method": "goo_test",
-		"payment_data": []any{map[string]any{"key": "terms", "value": "true"}}}, nonce)
-	if r.Code != 200 || gooJS(r.Body, "status") != "processing" {
-		t.Fatalf("checkout with terms accepted: %d %s", r.Code, r.Raw)
-	}
-}

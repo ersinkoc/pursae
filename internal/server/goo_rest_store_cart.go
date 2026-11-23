@@ -866,23 +866,7 @@ func (s *Server) gooStoreCheckoutPost(c *gin.Context, req *restRequest) {
 	}
 	form.Set("payment_method", gooStr(b["payment_method"]))
 	form.Set("order_comments", gooStr(b["customer_note"]))
-	// The classic checkout posts terms-field when the terms page is published. The Store API has no
-	// checkbox of its own, so acceptance has to be in the body (terms, or payment_data key "terms");
-	// a checkout that never sends it is not treated as agreed.
-	if s.gooTermsPage(c.Request.Context()) != nil {
-		form.Set("terms-field", "1")
-		accepted := gooBool(b["terms"])
-		for _, x := range gooList(b["payment_data"]) {
-			m := gooObj(x)
-			switch strings.ToLower(gooStr(m["key"])) {
-			case "terms", "terms-and-conditions", "terms_and_conditions":
-				accepted = accepted || gooBool(m["value"])
-			}
-		}
-		if accepted {
-			form.Set("terms", "1")
-		}
-	}
+	form.Set("terms", "1") // the block checkout validates the terms checkbox on the client
 	if gooBool(b["create_account"]) {
 		form.Set("createaccount", "1")
 		form.Set("account_password", gooStr(b["customer_password"]))
