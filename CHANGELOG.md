@@ -10,6 +10,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Fixed
+
+- **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
+  checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
+
 ### Added
 
 - **Web Builder: the editor canvas is the published page (Live mode).** A design imported 1:1 as code
