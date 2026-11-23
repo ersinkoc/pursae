@@ -23,6 +23,12 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   status|set|test|list|push|pull|delete` and `pursae backup decrypt`; REST: `/pursae/v1/backups/remote`.
   Without a bucket nothing changes.
 - The documented `pg_dump` / `pg_restore` database backup is now tested in CI against PostgreSQL 16 and 17.
+- **Passkeys in Pursae Security.** Users add any number of named passkeys under Users › Security and log in
+  with them from the login form, by the button or the browser's passkey autofill, without typing a username.
+  After a password, a passkey also works as the second step. Settings › Two-Factor switches passkeys off,
+  decides whether a passkey sign-in counts as two-step login (default) or only replaces the password, and can
+  require a passkey per role. Challenges are single use and expire after 5 minutes; a passkey whose signature
+  counter goes backwards is refused as a possible copy.
 - **Prometheus metrics and slow query log.** `PURSAE_METRICS=1` with `PURSAE_METRICS_ADDR` (own listener) or
   `PURSAE_METRICS_TOKEN` (bearer token, `/metrics` on the site port) exposes request counts and duration
   histograms by route group and status class, requests in flight, the database pool, the Go runtime and build
