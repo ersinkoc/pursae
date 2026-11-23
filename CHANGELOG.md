@@ -10,6 +10,13 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Fixed
+
+- **Pursae Security: the options API accepts a passkey requirement.** `POST /pursae/v1/options/security` (and
+  the MCP `update_options` tool) only knew the `mfa` and `2fa` requirements, so on a site where a role must use
+  a passkey (Two-Factor › Requirement per role) every security update was refused, whatever it changed.
+  `passkey` is now accepted, as on the settings screen, while passkeys are allowed.
+
 ## [0.5.3] - 2026-11-23
 
 ### Fixed
