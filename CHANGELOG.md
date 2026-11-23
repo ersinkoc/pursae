@@ -14,6 +14,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 - **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
   checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
+- **Pursae SEO: content analysis scores what visitors see.** Pages are rendered like the front end
+  (theme template or Pursae Web Builder canvas) and the analysis reads their `<main>`, without navigation,
+  sidebars, comments, the title heading or Pursae SEO's table of contents; posts read their rendered content
+  (dynamic blocks expanded). A page whose text and images come from its template or a dynamic block no
+  longer scores as nearly empty. The editor's live analysis renders the unsaved content the same way.
 
 ### Added
 
