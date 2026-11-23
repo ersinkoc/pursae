@@ -127,6 +127,10 @@ cart_code=$(curl -sL -o "$WORK/cart.html" -w '%{http_code}' "http://127.0.0.1:$P
 check "the cart page answers" "$cart_code" "200"
 # gooCartPageView's wrapper: the block was rendered by Pursae Commerce, not dropped.
 check "the cart page shows Pursae Commerce's cart" "$(grep -q '<div class="woocommerce">' "$WORK/cart.html" && echo yes || echo no)" "yes"
+if ! grep -q '<div class="woocommerce">' "$WORK/cart.html"; then
+	echo "--- cart page ($cart_slug) content:"; sql "SELECT left(content, 2500) FROM posts WHERE slug = '$cart_slug' AND type = 'page'"
+	echo "--- cart page HTML (body):"; sed -n '/<body/,$p' "$WORK/cart.html" | head -c 5000; echo
+fi
 check "no block comment reaches the cart page" "$(grep -q 'wp:woocommerce' "$WORK/cart.html" && echo yes || echo no)" "no"
 check "store currency" "$(sql "SELECT value #>> '{}' FROM settings WHERE key = 'goocommerce_currency'")" "EUR"
 
