@@ -20,7 +20,9 @@ type seogoAnalysisInput struct {
 	Description string   `json:"description"`
 	Slug        string   `json:"slug"`
 	URL         string   `json:"url"`
-	Content     string   `json:"content"` // HTML
+	Content     string   `json:"content"` // HTML: what a visitor sees (seogoVisibleContent), else the stored content
+	Raw         string   `json:"-"`       // the stored content (block markup) when Content is rendered
+	TOC         bool     `json:"-"`       // the rendered page had a Pursae SEO table of contents (removed from Content)
 	Keywords    []string `json:"keywords"`
 	Cornerstone bool     `json:"cornerstone"`
 	Taxonomy    bool     `json:"taxonomy"`
@@ -750,7 +752,7 @@ func seogoRankMathTips(in seogoAnalysisInput, kw string, tw []string) []seogoRes
 	} else {
 		out = append(out, scored(3, "contentHasShortParagraphs", "At least one paragraph is long. Consider using short paragraphs."))
 	}
-	if strings.Contains(in.Content, "wp:seogo/toc") || strings.Contains(in.Content, "table-of-contents") || strings.Contains(in.Content, `id="toc"`) {
+	if in.TOC || strings.Contains(in.Raw, "wp:seogo/toc") || strings.Contains(in.Content, "wp:seogo/toc") || strings.Contains(in.Content, "table-of-contents") || strings.Contains(in.Content, `id="toc"`) {
 		out = append(out, scored(9, "contentHasTOC", "You seem to be using a Table of Contents to break down your text."))
 	}
 	return out
@@ -853,6 +855,8 @@ func seogoRankMathPoints(in seogoAnalysisInput, kw string, tw []string, st linkS
 		ap = 6
 	}
 	vids := len(ytRe.FindAllString(in.Content, -1)) + len(vimeoRe.FindAllString(in.Content, -1))
+	// An embed renders as an iframe (or a consent placeholder): the stored markup still names the video.
+	vids = max(vids, len(ytRe.FindAllString(in.Raw, -1))+len(vimeoRe.FindAllString(in.Raw, -1)))
 	ap += min(vids, 2)
 	earned += min(ap, 6)
 	total += 6

@@ -10,6 +10,14 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Changed
+
+- **Pursae SEO: content analysis scores what visitors see.** Pages are rendered like the front end
+  (theme template or Pursae Web Builder canvas) and the analysis reads their `<main>`, without navigation,
+  sidebars, comments, the title heading or Pursae SEO's table of contents; posts read their rendered content
+  (dynamic blocks expanded). A page whose text and images come from its template or a dynamic block no
+  longer scores as nearly empty. The editor's live analysis renders the unsaved content the same way.
+
 ### Fixed
 
 - **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
