@@ -201,7 +201,9 @@ export function liveDoc(input: LiveInput, nonce = ''): string {
   const lang = first.lang || (theme || input.shell === 'part' ? 'en-US' : 'en')
   const htmlAttrs = (first.htmlAttrs ?? '').trim()
   const bodyAttrs = (first.bodyAttrs ?? '').trim()
-  const bodyClass = [input.shell === 'canvas' ? 'web-builder-page' : '', first.body ?? ''].filter(Boolean).join(' ')
+  // The body's class: the design's (bodyAttrs, as the front end merges it, and content.body).
+  const fromAttrs = /(?:^|\s)class="([^"]*)"/.exec(bodyAttrs)?.[1] ?? ''
+  const bodyClass = [...new Set([input.shell === 'canvas' ? 'web-builder-page' : '', ...fromAttrs.split(/\s+/), ...(first.body ?? '').split(/\s+/)].filter(Boolean))].join(' ')
   const okAttrs = (a: string) => (a && !/[<>]/.test(a) ? ' ' + a : '')
   const bodyRest = okAttrs(bodyAttrs).replace(/\sclass="[^"]*"/, '')
   const head = mergeLiveHeads([...main, ...tail, ...header, ...footer].map((s) => s.content.head ?? ''))
@@ -236,6 +238,7 @@ export async function openLive(input: LiveInput): Promise<LiveSource> {
         header: input.header.map((s) => wire({ ...s, content: { ...s.content, html: prefixIds(s.content.html ?? '', 'h:') } })),
         footer: input.footer.map((s) => wire({ ...s, content: { ...s.content, html: prefixIds(s.content.html ?? '', 'f:') } })),
         css: { kit: input.kitCss, local: input.localCss, edit: input.editCss },
+        hook: GL_HOOK,
       },
     })
     return { src: r.data.url }
@@ -547,6 +550,19 @@ function patchEl(ctx: Ctx, n: Element, wt: Tree, was: El, nt: Tree, now: El): El
   const ni = nt.src.slice(now.openEnd, now.closeStart)
   if (wi === ni) return n
   if (now.tag === 'script') need('a script changed')
+  if (sameShape(wt, was, nt, now)) {
+    // Only what is inside the children changed: each child is patched where it is on the live
+    // page (by data-wbc), whatever the design's scripts did around it (a slider's track).
+    const ok = (k: SrcNode): k is El => k.type === 'el'
+    const nk = now.children.filter(ok)
+    was.children.filter(ok).forEach((k, i) => {
+      const id = wbc(k)
+      const copies = id !== null ? (ctx.live.get(id) ?? []) : []
+      if (!copies.length) need('an element is not on the live page')
+      patchEl(ctx, copies[0], wt, k, nt, nk[i])
+    })
+    return n
+  }
   if (RAW.has(now.tag) || now.tag === 'svg' || now.tag === 'math' || now.foreign) {
     // Raw text, a template, an svg: rebuilt from the new markup as one element.
     const fresh = fragment(ctx.doc, outer(nt, now), foreignOf(now)).find((x) => x.nodeType === 1) as Element | undefined
@@ -557,6 +573,20 @@ function patchEl(ctx: Ctx, n: Element, wt: Tree, was: El, nt: Tree, now: El): El
   }
   children(ctx, n, Array.from(n.childNodes), null, wt, was.children, nt, now.children, foreignOf(now))
   return n
+}
+
+/**
+ * Whether two versions of an element have the same children (texts equal, elements with the same
+ * tag and id in the same order, each with its own id): only their insides changed.
+ */
+function sameShape(wt: Tree, was: El, nt: Tree, now: El): boolean {
+  if (was.children.length !== now.children.length || RAW.has(now.tag)) return false
+  return was.children.every((a, i) => {
+    const b = now.children[i]
+    if (a.type !== b.type) return false
+    if (a.type !== 'el' || b.type !== 'el') return wt.src.slice(a.start, a.end) === nt.src.slice(b.start, b.end)
+    return a.tag === b.tag && wbc(a) !== null && wbc(a) === wbc(b) && a.foreign === b.foreign
+  })
 }
 
 /**
@@ -721,6 +751,7 @@ function validate(ctx: Ctx, wt: Tree, nt: Tree): void {
     const wi = src.t.src.slice(src.el.openEnd, src.el.closeStart)
     const ni = nt.src.slice(k.openEnd, k.closeStart)
     if (wi === ni) continue // attributes only: fine even for copies (applied to the first; see children)
+    if (sameShape(src.t, src.el, nt, k)) continue // its children are checked themselves
     if (live.length > 1) need('the element is on the live page more than once (a copy the design made)')
     if (RAW.has(k.tag) || k.foreign || k.tag === 'svg' || k.tag === 'math') continue
     const l = live[0]

@@ -177,6 +177,9 @@ type wbLiveBody struct {
 	CSS    struct {
 		Kit, Local, Edit string
 	} `json:"css"`
+	// Hook is the editor's first head script (live.ts GL_HOOK: it records the design's WebGL
+	// contexts so a reload can release them, then removes itself).
+	Hook string `json:"hook"`
 }
 
 // wbRESTLiveFrame is POST documents/{id}/live-frame → {url}.
@@ -346,7 +349,11 @@ func (s *Server) wbLiveRender(c *gin.Context, postID int64, path string, b *wbLi
 	if htmlAttrs != "" {
 		sb.WriteString(" " + htmlAttrs)
 	}
-	sb.WriteString(">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
+	sb.WriteString(">\n<head>\n")
+	if h := strings.TrimSpace(b.Hook); h != "" && !strings.Contains(strings.ToLower(h), "</script") && len(h) < 4096 {
+		sb.WriteString("<script>" + h + "</script>")
+	}
+	sb.WriteString("<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
 	if b.Shell == "theme" {
 		sb.WriteString("<link rel=\"profile\" href=\"https://gmpg.org/xfn/11\">\n")
 	}
