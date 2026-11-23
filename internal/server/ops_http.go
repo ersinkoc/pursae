@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -217,13 +218,60 @@ func accessLog() gin.HandlerFunc {
 		}
 		d := time.Since(start).Round(time.Microsecond)
 		id := c.Request.Header.Get(HeaderRequestID)
+		uri := redactRequestURI(c.Request.URL)
 		if jl != nil {
 			jl.LogAttrs(c.Request.Context(), slog.LevelInfo, "request",
 				slog.Int("status", c.Writer.Status()), slog.String("method", c.Request.Method),
-				slog.String("uri", c.Request.URL.RequestURI()), slog.Duration("duration", d),
+				slog.String("uri", uri), slog.Duration("duration", d),
 				slog.String("ip", c.ClientIP()), slog.String("request_id", id))
 			return
 		}
-		log.Printf("%d %s %s %s id=%s", c.Writer.Status(), c.Request.Method, c.Request.URL.RequestURI(), d, id)
+		log.Printf("%d %s %s %s id=%s", c.Writer.Status(), c.Request.Method, uri, d, id)
 	}
+}
+
+// sensitiveQuery names query parameters that are credentials. WooCommerce accepts
+// consumer_secret on the query string; order and download links use key. The access log must not
+// keep them.
+func sensitiveQuery(k string) bool {
+	switch strings.ToLower(k) {
+	case "consumer_secret", "password", "passwd", "pass", "secret", "token",
+		"access_token", "refresh_token", "key":
+		return true
+	}
+	return false
+}
+
+// redactRequestURI is RequestURI with credential query values replaced. A URI with none of those
+// parameters is returned unchanged, including its original encoding and parameter order.
+func redactRequestURI(u *url.URL) string {
+	if u == nil || u.RawQuery == "" {
+		if u == nil {
+			return ""
+		}
+		return u.RequestURI()
+	}
+	q, err := url.ParseQuery(u.RawQuery)
+	if err != nil {
+		return u.RequestURI()
+	}
+	changed := false
+	for k, vs := range q {
+		if !sensitiveQuery(k) {
+			continue
+		}
+		for i := range vs {
+			if vs[i] != "redacted" {
+				vs[i] = "redacted"
+				changed = true
+			}
+		}
+		q[k] = vs
+	}
+	if !changed {
+		return u.RequestURI()
+	}
+	clone := *u
+	clone.RawQuery = q.Encode()
+	return clone.RequestURI()
 }

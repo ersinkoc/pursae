@@ -165,6 +165,25 @@ func TestRequestBodyLimit(t *testing.T) {
 	}
 }
 
+func TestRedactRequestURI(t *testing.T) {
+	plain := httptest.NewRequest(http.MethodGet, "/wp-json/wp/v2/posts?per_page=10&page=2", nil)
+	if got := redactRequestURI(plain.URL); got != plain.URL.RequestURI() {
+		t.Errorf("URI without credentials changed: %q", got)
+	}
+	secret := httptest.NewRequest(http.MethodGet, "/wp-json/wc/v3/orders?consumer_key=ck_abc&consumer_secret=cs_supersecret&page=2", nil)
+	got := redactRequestURI(secret.URL)
+	if strings.Contains(got, "cs_supersecret") || !strings.Contains(got, "consumer_secret=redacted") {
+		t.Fatalf("consumer_secret leaked: %q", got)
+	}
+	if !strings.Contains(got, "consumer_key=ck_abc") || !strings.Contains(got, "page=2") {
+		t.Fatalf("non-secret parameters dropped: %q", got)
+	}
+	keyed := httptest.NewRequest(http.MethodGet, "/checkout/order-received/9/?key=wc_order_secret", nil)
+	if got := redactRequestURI(keyed.URL); strings.Contains(got, "wc_order_secret") || !strings.Contains(got, "key=redacted") {
+		t.Fatalf("order key leaked: %q", got)
+	}
+}
+
 // Read and Close of a request body run on different goroutines (the handler reads, the server
 // closes when the request is canceled). idleBody's done flag must not be a data race.
 func TestIdleBodyReadCloseRace(t *testing.T) {

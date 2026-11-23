@@ -15,6 +15,7 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 - JSON language packs pick the right plural form when the core language pack is not installed. One-form languages (Japanese, Chinese, and the others) no longer fall back to English for counts such as "%s seconds", and languages with three or more forms (Russian, Arabic, Polish, and the others) no longer show the wrong form.
 - A request whose measured duration is negative, because the clock stepped backwards, no longer wraps the Prometheus duration histogram into a multi-year sum.
 - Closing a request body while it is still being read no longer races on the idle-timeout flag.
+- The access log no longer records credential query values (`consumer_secret`, `password`, `token`, `key`, and the same kind of parameter).
 
 ## [0.5.1] - 2026-11-23
 
