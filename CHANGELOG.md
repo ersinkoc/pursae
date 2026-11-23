@@ -12,6 +12,12 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Pursae Web Builder: removing a site import restores the right homepage.** Publishing an import a
+  second time (after its report failed to save) recorded the imported page as the site's previous
+  homepage, so *Remove this import* set the homepage to a page it had just deleted. Removal also left
+  the homepage or posts page pointing at a deleted page when it had been moved to another page of the
+  same import. The original homepage is now kept from the first change, and removal resets the
+  reading settings whenever they point at a page it deletes.
 - **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
   checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
 
