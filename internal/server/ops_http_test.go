@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -162,4 +163,31 @@ func TestRequestBodyLimit(t *testing.T) {
 	if readErr != nil || read != 4<<10 {
 		t.Errorf("backup import: read %d, err %v", read, readErr)
 	}
+}
+
+// Read and Close of a request body run on different goroutines (the handler reads, the server
+// closes when the request is canceled). idleBody's done flag must not be a data race.
+func TestIdleBodyReadCloseRace(t *testing.T) {
+	rec := httptest.NewRecorder()
+	body := &idleBody{
+		ReadCloser: io.NopCloser(strings.NewReader(strings.Repeat("a", 1<<16))),
+		rc:         http.NewResponseController(rec),
+		idle:       time.Second,
+	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		buf := make([]byte, 32)
+		for {
+			if _, err := body.Read(buf); err != nil {
+				return
+			}
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		_ = body.Close()
+	}()
+	wg.Wait()
 }

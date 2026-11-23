@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -108,27 +109,39 @@ type idleBody struct {
 	io.ReadCloser
 	rc   *http.ResponseController
 	idle time.Duration
+
+	mu   sync.Mutex
 	done bool
 }
 
 func (b *idleBody) Read(p []byte) (int, error) {
+	b.mu.Lock()
 	if !b.done {
 		_ = b.rc.SetReadDeadline(time.Now().Add(b.idle))
 	}
+	b.mu.Unlock()
 	n, err := b.ReadCloser.Read(p)
-	if err != nil && !b.done {
-		b.done = true
-		_ = b.rc.SetReadDeadline(time.Time{})
+	if err != nil {
+		b.finish()
 	}
 	return n, err
 }
 
 func (b *idleBody) Close() error {
-	if !b.done {
-		b.done = true
-		_ = b.rc.SetReadDeadline(time.Time{})
-	}
+	b.finish()
 	return b.ReadCloser.Close()
+}
+
+// finish clears the read deadline once. Read and Close run on different goroutines: the handler
+// reads the body while net/http closes it when the request is canceled.
+func (b *idleBody) finish() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.done {
+		return
+	}
+	b.done = true
+	_ = b.rc.SetReadDeadline(time.Time{})
 }
 
 // healthz is the liveness probe: the process serves HTTP. It does not touch the database, so a
