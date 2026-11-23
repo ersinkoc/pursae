@@ -55,7 +55,19 @@ const MIXED = [
   ['mixed-control', { guard: false, edit: true, sandbox: 'allow-scripts allow-same-origin allow-forms' }],
 ]
 
-const browser = await chromium.launch()
+// The canvas's first frame decided from the boot object (trust.ts): before the user's choice an
+// untrusted design (another kit trusted, no kit at all, a stale trust list without unfiltered_html)
+// must load static and read nothing, with the prompt up; a kit the user trusts ("Always for this
+// design", remembered on the server) loads live and runs, like the control.
+const TRUST = [
+  ['prompt-untrusted', { canRunScripts: true, scriptTrust: ['other'], kit: 'acme' }, { live: false, prompt: true }],
+  ['prompt-nokit', { canRunScripts: true, scriptTrust: ['acme'] }, { live: false, prompt: true }],
+  ['no-unfiltered-html', { canRunScripts: false, scriptTrust: ['acme'], kit: 'acme' }, { live: false, prompt: false }],
+  ['trusted-kit', { canRunScripts: true, scriptTrust: ['acme'], kit: 'acme' }, { live: true, prompt: false }],
+]
+
+// PW_CHROMIUM: a Chromium (headless shell) other than the one this Playwright version installs.
+const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {})
 let failed = false
 const rows = []
 for (const [mode, headers] of Object.entries(MODES)) {
@@ -83,6 +95,18 @@ for (const [mode, headers] of Object.entries(MODES)) {
     rows.push({ mode, scenario: name, load: res.loadHits.length, edit: res.editHits.length, reconciled: res.reconciled, ok })
     if (!isControl && leaked.length) console.log(`[${mode}/${name}] LEAKED:`, leaked.join(' | '))
     if (isControl) console.log(`[${mode}/${name}] control hits (expected): ${leaked.length} — ${[...new Set(leaked.map((h) => h.split('@')[0]))].join(', ')}`)
+  }
+  for (const [name, opts, want] of TRUST) {
+    const res = await page.evaluate(([n, o]) => window.WB.runTrust(n, o), [`${name}-${mode}`, opts])
+    const leaked = [...res.loadHits, ...res.editHits].filter((h) => h.includes('SECRET'))
+    const decided = res.live === want.live && res.prompt === want.prompt
+    // A trusted kit runs the design (with the user's access, by their choice): it must reach the
+    // nonce in report mode like the control; under the enforced policy the frame inherits it.
+    const ok = decided && (want.live ? leaked.length > 0 || mode === 'enforce' : leaked.length === 0 && res.reconciled !== false)
+    if (!ok) failed = true
+    rows.push({ mode, scenario: name, load: res.loadHits.length, edit: res.editHits.length, reconciled: res.reconciled ?? '-', ok })
+    if (!want.live && leaked.length) console.log(`[${mode}/${name}] LEAKED:`, leaked.join(' | '))
+    if (!decided) console.log(`[${mode}/${name}] decided live=${res.live} prompt=${res.prompt}, want ${JSON.stringify(want)}`)
   }
   for (const [name, opts] of MIXED) {
     const res = await page.evaluate(([n, o]) => window.WB.runMixed(n, o), [`${name}-${mode}`, opts])

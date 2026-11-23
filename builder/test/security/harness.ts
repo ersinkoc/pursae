@@ -10,12 +10,13 @@ import { sweep } from '../../host/elements/neutral'
 import { codeFrameDoc } from '@/builder/codeFrameDoc'
 import { frameGuard } from '../../host/elements/guard'
 import { HEAD_PAYLOADS, PAYLOADS, hitJs } from './payloads'
+import { frameModeOf, initialScripts, sandboxOf } from '../../host/elements/trust'
 
 declare global {
   interface Window {
     hits: string[]
     hit: (n: string) => void
-    WB: { run: typeof run; runMixed: typeof runMixed; names: string[] }
+    WB: { run: typeof run; runMixed: typeof runMixed; runTrust: typeof runTrust; names: string[] }
   }
 }
 
@@ -156,4 +157,23 @@ async function runMixed(scenario: string, opts: { guard: boolean; edit: boolean;
   return { scenario, loadHits, editHits, reconciled: null }
 }
 
-window.WB = { run, runMixed, names: PAYLOADS.map(([n]) => n).concat(HEAD_PAYLOADS.map(([n]) => n)) }
+/**
+ * The canvas's first frame for a page, as the editor decides it from the boot object before it
+ * makes the frame (trust.ts initialScripts → frameModeOf → sandboxOf): a design the user does not
+ * trust must load static and inert (the prompt shows, nothing has run); a trusted one loads live.
+ */
+async function runTrust(scenario: string, o: { canRunScripts: boolean; scriptTrust: string[]; kit?: string; wait?: number }): Promise<Result & { live: boolean; prompt: boolean }> {
+  const bootObj = {
+    caps: { unfilteredHtml: o.canRunScripts },
+    canRunScripts: o.canRunScripts,
+    scriptTrust: o.scriptTrust,
+    codeParts: null,
+    document: { doc: { sections: [{ kind: 'code', content: { html: '<script>x()</script>', ...(o.kit ? { kit: o.kit } : {}) } }] }, draft: null },
+  } as unknown as Parameters<typeof initialScripts>[0]
+  const s = initialScripts(bootObj)
+  const fmode = frameModeOf(false, s.live, s.scripts)
+  const res = await run(scenario, { static: fmode === 'static', sandbox: sandboxOf(s.scripts), wait: o.wait })
+  return { ...res, live: fmode === 'live', prompt: s.prompt }
+}
+
+window.WB = { run, runMixed, runTrust, names: PAYLOADS.map(([n]) => n).concat(HEAD_PAYLOADS.map(([n]) => n)) }
