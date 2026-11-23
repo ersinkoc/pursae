@@ -119,7 +119,12 @@ check "featured image" "$(sql "SELECT count(*) FROM posts p JOIN media m ON m.id
 check "menu items" "$(sql "SELECT string_agg(i.label, ',' ORDER BY i.sort_order) FROM menu_items i JOIN menus m ON m.id = i.menu_id WHERE m.name = 'Main menu'")" "About,Pursae"
 check "menu item points at the page" "$(sql "SELECT p.slug FROM menu_items i JOIN posts p ON p.id = i.target_id WHERE i.label = 'About'")" "about"
 check "site title" "$(sql "SELECT value #>> '{}' FROM settings WHERE key = 'blogname'")" "WP2P Shop"
-check "the cart page shows Pursae Commerce's cart" "$(sql "SELECT count(*) FROM posts WHERE id = (SELECT (value #>> '{}')::bigint FROM settings WHERE key = 'goocommerce_cart_page_id') AND content LIKE '%[goocommerce_cart]%'")" "1"
+# The Cart page keeps WooCommerce's Cart block (or gets [goocommerce_cart] for the classic shortcode),
+# rendered on the server: no block markup reaches the page.
+check "the cart page holds the Cart block or Pursae Commerce's cart" "$(sql "SELECT count(*) FROM posts WHERE id = (SELECT (value #>> '{}')::bigint FROM settings WHERE key = 'goocommerce_cart_page_id') AND (content LIKE '%wp:woocommerce/cart%' OR content LIKE '%[goocommerce_cart]%')")" "1"
+cart_slug=$(sql "SELECT slug FROM posts WHERE id = (SELECT (value #>> '{}')::bigint FROM settings WHERE key = 'goocommerce_cart_page_id')")
+cart_html=$(curl -s "http://127.0.0.1:$PORT/$cart_slug/")
+check "no block comment reaches the cart page" "$(grep -c 'wp:woocommerce' <<<"$cart_html" | tr -d ' ')" "0"
 check "store currency" "$(sql "SELECT value #>> '{}' FROM settings WHERE key = 'goocommerce_currency'")" "EUR"
 
 # Products.
