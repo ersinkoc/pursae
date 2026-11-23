@@ -89,7 +89,7 @@ function inspect(doc, win) {
     dots: doc.querySelectorAll('#dots .dot').length,
     items: doc.querySelectorAll('#items li').length,
     revealed: reveals.filter((r) => r.classList.contains('visible')).length + '/' + reveals.length,
-    path: win.location.pathname,
+    path: win.location.pathname + win.location.search,
     lang: html.lang,
     // wp_footer's site-wide scripts (script#…-js: comment-reply) are not the design's.
     bodyKids: Array.from(doc.body.children).filter((e) => !(e.localName === 'script' && /-js$/.test(e.id))).map((e) => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '')).join(' '),
@@ -160,10 +160,10 @@ const mount = async (zoom) =>
     },
     { zoom, url: pageURL },
   )
-const frameOf = () => page.frames().find((f) => f.parentFrame() && f.url().includes('wb-live-frame'))
+const frameOf = async () => (await page.$('iframe[data-live]'))?.contentFrame()
 
 const m1 = await mount(1)
-const lf = frameOf()
+const lf = await frameOf()
 if (!lf) throw new Error('no live frame: ' + JSON.stringify(m1))
 await settle(page, lf)
 const liv = await lf.evaluate(`${INSPECT}(document, window)`)
@@ -190,7 +190,7 @@ const diff = await page.evaluate(async ([a, b]) => {
 
 // Scaled like the canvas (zoom 0.6): geometry and clicks through the transform.
 await mount(0.6)
-const sf = frameOf()
+const sf = await frameOf()
 await settle(page, sf)
 const scaled = await sf.evaluate(`${INSPECT}(document, window)`)
 if (!args.generic) {
@@ -248,7 +248,7 @@ const rows = {
   'counter / slider / dots drawn': same('counter') && same('activeIndex') && same('dots'),
   'reveals (IntersectionObserver)': same('revealed'),
   'viewport 1440 × 900, 100vh hero, fixed header': same('viewport') && liv.hero100vh && liv.headerFixed,
-  'location.pathname is the page path': same('path'),
+  "location (path + query) is the page's": same('path'),
   'lang and body structure': same('lang') && same('bodyKids'),
   'scaled frame keeps the 1440 × 900 viewport': scaled.viewport.join() === '1440,900' && scaled.hero100vh,
   'click through the transform: theme toggle + localStorage': clicked.dark && stored === 'dark',
@@ -263,7 +263,7 @@ const rows = {
 const GENERIC = !!args.generic
 const generic = {
   'lang and body structure': same('lang') && same('bodyKids'),
-  'location.pathname is the page path': same('path'),
+  "location (path + query) is the page's": same('path'),
   'scaled frame keeps the 1440 × 900 viewport': scaled.viewport.join() === '1440,900',
   'reloadPreserving: scroll': Math.abs(kept.y - 700) <= 2 || kept.y < 700,
   'no "too many WebGL contexts" after 24 reloads': !problems.length,

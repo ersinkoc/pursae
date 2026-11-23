@@ -94,12 +94,16 @@ const GL_KEY = '__wbLiveGL'
 /**
  * The live document's first head script: records the WebGL contexts the design creates (so a
  * reload can release them, see releaseContexts) and removes itself at once, so the design's DOM
- * has no editor node in its head. getContext keeps its behaviour.
+ * has no editor node in its head. getContext keeps its behaviour. It also takes the frame's
+ * token (?wb-live-frame=…) out of the address before any design script runs, so location.search
+ * and location.href are the published page's (a reload the design itself makes then shows the
+ * published page; the canvas reloads with a new token).
  */
 export const GL_HOOK =
   `(function(){var P=HTMLCanvasElement.prototype,g=P.getContext,L=window.${GL_KEY}=[];` +
   `P.getContext=function(t){var c=g.apply(this,arguments);if(c&&/webgl/i.test(String(t))&&L.indexOf(c)<0)L.push(c);return c};` +
   `if(window.OffscreenCanvas){var O=OffscreenCanvas.prototype,h=O.getContext;O.getContext=function(t){var c=h.apply(this,arguments);if(c&&/webgl/i.test(String(t))&&L.indexOf(c)<0)L.push(c);return c}}` +
+  `try{var u=location.href,v=u.replace(/([?&])wb-live-frame=[^&#]*&?/,'$1').replace(/[?&](#|$)/,'$1');if(v!==u)history.replaceState(history.state,'',v)}catch(e){}` +
   `var s=document.currentScript;if(s)s.remove()})()`
 
 const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
