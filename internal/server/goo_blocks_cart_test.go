@@ -163,7 +163,7 @@ func TestGooCartCheckoutBlocksImported(t *testing.T) {
 
 	// The empty cart shows the Empty cart block's own content.
 	_, body, _ := get(t, v, base+"/cart/")
-	gooMustContain(t, "empty cart", body, "Nothing in here yet!", "wp-block-woocommerce-empty-cart-block")
+	gooMustContain(t, "empty cart", body, `<div class="woocommerce">`, "Nothing in here yet!", "wp-block-woocommerce-empty-cart-block") // the wrapper make wp2p-test looks for
 	noBlockLeft("empty cart", body)
 	if strings.Contains(body, "Your cart is currently empty.") {
 		t.Error("the default empty cart notice shows next to the block's content")
