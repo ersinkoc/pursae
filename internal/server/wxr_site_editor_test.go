@@ -116,3 +116,48 @@ func TestWXRImportBlockTheme(t *testing.T) {
 		t.Errorf("re-import menus: %d", len(menus))
 	}
 }
+
+func TestWXRNavSafeURL(t *testing.T) {
+	for in, want := range map[string]string{
+		"javascript:alert(1)": "#", " JaVaScRiPt:alert(1)": "#", "java\tscript:alert(1)": "#", "data:text/html,x": "#", "vbscript:x": "#",
+		"https://a.test/x": "https://a.test/x", "/about/": "/about/", "#top": "#top", "mailto:a@b.test": "mailto:a@b.test", "": "",
+	} {
+		if got := wxrNavSafeURL(in); got != want {
+			t.Errorf("wxrNavSafeURL(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestWXRImportNavigationScriptURL(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installUsersSite(t, c, ts.URL)
+	ctx := context.Background()
+	admin, _ := srv.store.UserByLoginOrEmail(ctx, "admin")
+	file := `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:wp="http://wordpress.org/export/1.2/">
+<channel><wp:wxr_version>1.2</wp:wxr_version>
+<item><title>Evil</title><content:encoded><![CDATA[<!-- wp:navigation-link {"label":"x","url":"javascript:alert(1)","kind":"custom"} /-->
+<!-- wp:navigation-link {"label":"y","url":"data:text/html,x","kind":"custom"} /-->
+<!-- wp:navigation-link {"label":"ok","url":"https://ok.test/","kind":"custom"} /-->]]></content:encoded>
+<wp:post_id>20</wp:post_id><wp:post_date>2024-01-02 10:00:00</wp:post_date><wp:post_name>evil</wp:post_name><wp:status>publish</wp:status><wp:post_type>wp_navigation</wp:post_type></item>
+</channel></rss>`
+	if _, err := srv.importWXRWith(ctx, admin, []byte(file), wxrImportOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := srv.store.Pool.Query(ctx, `SELECT url FROM menu_items ORDER BY id`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var got []string
+	for rows.Next() {
+		var u string
+		if err := rows.Scan(&u); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, u)
+	}
+	if strings.Join(got, " ") != "# # https://ok.test/" {
+		t.Errorf("stored urls: %q", got)
+	}
+}

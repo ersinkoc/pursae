@@ -69,6 +69,16 @@ func wxrNavLinks(content string) []wxrNavLink {
 	return walk(blocks.Parse(content))
 }
 
+// wxrNavSafeURL keeps a link of an imported file only when esc_url() would print it (an allowed
+// protocol or a relative URL); javascript:, data: and the like are stored as "#", so no consumer of
+// the menu (REST, the Web Builder's menu slots) is handed a script URL by an untrusted file.
+func wxrNavSafeURL(u string) string {
+	if strings.TrimSpace(u) != "" && wp.CleanURL(u) == "" {
+		return "#"
+	}
+	return u
+}
+
 // wxrNavText is a block attribute as plain text (labels may hold inline markup).
 func wxrNavText(v any) string {
 	s, _ := v.(string)
@@ -122,7 +132,7 @@ func (s *Server) wxrImportNavigations(ctx context.Context, navs []*wxrItem, idMa
 		var add func(list []wxrNavLink, parent int64)
 		add = func(list []wxrNavLink, parent int64) {
 			for i, l := range list {
-				mi := &store.EditItem{MenuID: menuID, ParentID: parent, Kind: "custom", URL: l.URL, Label: l.Label, Order: i + 1, Status: "publish"}
+				mi := &store.EditItem{MenuID: menuID, ParentID: parent, Kind: "custom", URL: wxrNavSafeURL(l.URL), Label: l.Label, Order: i + 1, Status: "publish"}
 				switch {
 				case l.Kind == "post-type" && idMap[l.ID] != 0:
 					mi.Kind, mi.Object, mi.TargetID, mi.URL = "post_type", defaultStr(l.Type, "page"), idMap[l.ID], ""
