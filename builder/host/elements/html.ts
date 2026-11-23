@@ -332,14 +332,23 @@ export function ownText(t: Tree, el: El): boolean {
 }
 
 /** Plain text of an element (scripts and styles skipped), whitespace collapsed. */
+/** Elements whose text runs on with the text around them (textOf). */
+const INLINE_TEXT = new Set(['a', 'abbr', 'b', 'bdi', 'bdo', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u', 'var'])
+
 export function textOf(t: Tree, el: El, max = 200): string {
   let out = ''
   const walk = (e: El) => {
     if (e.tag === 'script' || e.tag === 'style' || e.tag === 'svg') return
     for (const c of e.children) {
       if (out.length > max) return
-      if (c.type === 'text') out += ' ' + decode(t.src.slice(c.start, c.end))
-      else if (c.type === 'el') walk(c)
+      if (c.type === 'text') out += decode(t.src.slice(c.start, c.end))
+      else if (c.type === 'el') {
+        // Inline elements join their text as the page shows it ("iş</span>, " is "iş,"); others are apart.
+        const gap = INLINE_TEXT.has(c.tag) ? '' : ' '
+        out += gap
+        walk(c)
+        out += gap
+      }
     }
   }
   walk(el)

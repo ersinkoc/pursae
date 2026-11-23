@@ -77,20 +77,15 @@ func (s *Server) wbEditor(c *gin.Context, p *store.Post) {
 	// The editor UI is left-to-right in every language (its catalogs translate text only).
 	lang := strings.ReplaceAll(s.userLocale(c), "_", "-")
 	page := wbEditorHTML(title, lang, "ltr", s.links(c).HomeURL(prefix), entry, wbScriptJSON(boot))
-	// Code sections draw the design in a frame of the editor's page (it inherits this policy): the
-	// origins the design kits name, for authors who may publish them.
-	if u.Can("unfiltered_html", nil) {
-		for _, k := range s.wbKitList() {
-			for _, dir := range []string{"script-src", "connect-src", "style-src", "font-src"} {
-				cspAllow(c, dir, k.Origins...)
-			}
-		}
-		// And the origins the code sections' head markup names (a web font stylesheet), the
-		// header's and footer's included: the frame draws them with the page.
+	// Code sections are drawn in frames of the editor's page; a srcdoc frame inherits this policy.
+	// Only what those frames need is added (wbEditorFrameCSP); the element editor's Live canvas and
+	// Preview are served at the page's address with their own policy (webbuilder_liveframe.go).
+	if wbUnfiltered(c, u) {
 		heads := []json.RawMessage{doc.Doc}
 		if doc.Draft != nil {
 			heads = append(heads, doc.Draft.Doc)
 		}
+		mixed := wbDocMixed(heads...)
 		if boot.CodeParts != nil {
 			for _, p := range []*webbuilder.CodeTemplate{boot.CodeParts.Header, boot.CodeParts.Footer} {
 				if p != nil {
@@ -98,13 +93,107 @@ func (s *Server) wbEditor(c *gin.Context, p *store.Post) {
 				}
 			}
 		}
-		if o := wbCodeHeadOrigins(heads...); len(o) > 0 {
-			for _, dir := range []string{"script-src", "style-src", "font-src"} {
-				cspAllow(c, dir, o...)
+		s.wbEditorFrameCSP(c, wbEditorCodeMarkup(heads...), wbCodeHeadOrigins(heads...), mixed)
+	}
+	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(page))
+}
+
+// wbEditorFrameCSP adds to the editor page's policy what its code frames need (code: the head and
+// html of the page's code sections and parts, heads: the origins their head markup names):
+//
+//   - the static frames (Safe mode, the mixed pages' runs in edit mode: no scripts run in them) draw
+//     the design's stylesheets and fonts: style-src and font-src of the markup, of its head and of
+//     the kits it loads, blob: images and media;
+//   - only a mixed page (code sections and builder sections: its Preview runs the design's scripts,
+//     after the author's confirmation, in srcdoc frames that inherit this policy) also gets the
+//     script-src, connect-src and frame-src origins, as the published page does (wbCodeCSP).
+//
+// The element editor's canvas never runs a design's scripts under this policy: Live and Preview
+// load the served live frame, and without it they stay in Safe mode.
+func (s *Server) wbEditorFrameCSP(c *gin.Context, code string, heads []string, mixed bool) {
+	o := wbCodeOriginsOf(code)
+	if mixed {
+		s.wbCodeCSPApply(c, o)
+		cspAllow(c, "script-src", heads...)
+		cspAllow(c, "style-src", heads...)
+		cspAllow(c, "font-src", heads...)
+		return
+	}
+	cspAllow(c, "img-src", "blob:")
+	cspAllow(c, "media-src", "blob:")
+	cspAllow(c, "style-src", heads...)
+	cspAllow(c, "font-src", heads...)
+	if o == nil {
+		return
+	}
+	cspAllow(c, "style-src", o.styles...)
+	cspAllow(c, "font-src", o.fonts...)
+	if len(o.kits) > 0 {
+		kits := s.wbKitList()
+		for _, slug := range o.kits {
+			if k := kits[slug]; k != nil {
+				cspAllow(c, "style-src", k.Origins...)
+				cspAllow(c, "font-src", k.Origins...)
+				if cspHas(k.Origins, wbGoogleFontsCSS) {
+					cspAllow(c, "font-src", wbGoogleFontsFiles)
+				}
 			}
 		}
 	}
-	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(page))
+}
+
+// wbDocMixed reports whether one of docs mixes code sections with builder sections (a mixed page,
+// drawn in per-run frames: patch 0021).
+func wbDocMixed(docs ...json.RawMessage) bool {
+	for _, raw := range docs {
+		var d struct {
+			Sections []struct {
+				Kind   string `json:"kind"`
+				Hidden bool   `json:"hidden"`
+			} `json:"sections"`
+		}
+		if len(raw) == 0 || json.Unmarshal(raw, &d) != nil {
+			continue
+		}
+		code, other := false, false
+		for _, sec := range d.Sections {
+			if sec.Hidden {
+				continue
+			}
+			if sec.Kind == webbuilder.KindCode {
+				code = true
+			} else {
+				other = true
+			}
+		}
+		if code && other {
+			return true
+		}
+	}
+	return false
+}
+
+// wbEditorCodeMarkup is the head and html of the code sections of docs or single sections (hidden
+// ones too: the editor can show them), for wbCodeCSP.
+func wbEditorCodeMarkup(raws ...json.RawMessage) string {
+	var b strings.Builder
+	for _, raw := range raws {
+		if len(raw) == 0 {
+			continue
+		}
+		list, _ := webbuilder.CodeSections(raw)
+		if list == nil {
+			// A single section (Boot.codeParts).
+			list, _ = webbuilder.CodeSections(json.RawMessage(`{"sections":[` + string(raw) + `]}`))
+		}
+		for _, sec := range list {
+			b.WriteString(sec.Head)
+			b.WriteByte('\n')
+			b.WriteString(sec.HTML)
+			b.WriteByte('\n')
+		}
+	}
+	return b.String()
 }
 
 // wbEditorFailed answers a storage error of the editor page: logged, not shown.
@@ -168,6 +257,12 @@ type wbBoot struct {
 	KitBreakpoints map[string]webbuilder.Breakpoints `json:"kitBreakpoints"`
 	// SiteStyle: the site style designs can follow (webbuilder_site_style.go).
 	SiteStyle *webbuilder.SiteSettings `json:"siteStyle"`
+	// ScriptTrust and CanRunScripts: the kits whose scripts the user always runs
+	// (webbuilder_trust.go) and whether they may run a design's scripts at all.
+	ScriptTrust []string `json:"scriptTrust"`
+	// ScriptCode: the inline code hashes approved with each trusted kit (webbuilder_trust.go).
+	ScriptCode    map[string][]string `json:"scriptCode"`
+	CanRunScripts bool                `json:"canRunScripts"`
 }
 
 // wbDocument is webbuilder.DocumentResponse with raw doc / page JSON (GET documents/{id} answers it
@@ -422,6 +517,7 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 		publish = u.Can(webbuilder.TemplateCap, nil)
 	}
 	dyn := s.wbDynamicFor(c, p, tpl)
+	trust, trustCode := s.wbKitTrustBoot(c, u, wbUnfiltered(c, u))
 	return &wbBoot{
 		APIVersion:      webbuilder.APIVersion,
 		RendererVersion: webbuilder.RendererVersion,
@@ -454,6 +550,9 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 		CodeParts:      parts,
 		KitBreakpoints: s.wbEditorKitBreakpoints(doc, parts),
 		SiteStyle:      s.wbSiteStyle(),
+		ScriptTrust:    trust,
+		ScriptCode:     trustCode,
+		CanRunScripts:  wbUnfiltered(c, u),
 	}
 }
 

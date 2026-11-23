@@ -10,6 +10,56 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Added
+
+- **Web Builder: the editor canvas is the published page (Live mode).** A design imported 1:1 as code
+  sections now runs its own scripts in the editor, so three.js / WebGL scenes, theme toggles, sliders,
+  counters and content a script draws look and work as on the site: the canvas is the page's own document
+  at its own address, with the site's shell, header and footer, and each device button is that device's
+  viewport (1440 × 900, 768 × 1024, 390 × 844) so `100vh` and media queries match. Live and Safe mode are
+  two buttons in the bottom bar; Safe mode is the earlier static canvas. Details and what still differs:
+  [code sections](docs/developer/web-builder-code-sections.md#editing).
+- **Web Builder: trust is asked once per design, remembered per user, and revocable.** The first time a
+  page of an untrusted design with scripts opens, the editor asks to run them with your admin access:
+  **Always for this design**, **This session only** or **Not now (safe mode)**. "Always" is stored on the
+  server in your own user meta, bound to that installation of the design kit and the hash of its `.js`,
+  `.mjs`, `.wasm` and `.svg` files, together with the hashes of the page's inline code you approved; a
+  button in the bottom bar stops it. "This session only" covers what the page ran when you answered. A
+  kit deleted and uploaded again, a commit that changes the kit's scripts (for every user, the committer
+  too; stylesheets, images and fonts keep the trust), and new or changed inline code or another kit on
+  the page (an insert, a paste, Edit code, an undo) stop the scripts before the change reaches a frame
+  that runs them and ask again. Only users with `unfiltered_html` can run or trust scripts.
+- **Web Builder: Interact mode.** The **Interact** button, or holding Alt (⌥ on a Mac), sends clicks and
+  keys to the design so a theme toggle, menu, tab or slider can be tried. What the interaction changes
+  (`html.dark`, a stored theme) is kept when you go back to editing and is never written into the page.
+- **Web Builder: edits without a reload.** In Live mode a text, style, class, attribute, move, duplicate,
+  delete or insert is patched into the running page, so animations, the WebGL scene and script state keep
+  running. The canvas reloads only when it must (a script changed, a section added or removed), and then
+  keeps the scroll position and the theme state.
+- **Web Builder: Basic mode shows blocks, not HTML.** A code section is a named block (Hero, Features,
+  Pricing, FAQ …) with a small thumbnail (drawn without the design's scripts) and its headings, texts,
+  button and link labels and addresses, images, form placeholders and repeated cards as fields. The
+  HTML and Head code fields and the palette's HTML / Embed element are Studio only; background,
+  decoration and motion settings, which have no effect on a code section, are not offered for one; on a
+  mixed page a code section points to Studio. New elements seam patch `0024-basic-seam`.
+- **Web Builder: live typing.** Text, label, alt and attribute fields of the Content tab and the Basic
+  panel update the canvas while you type (debounced, patched into the running page in Live mode), as
+  one history entry per typing session; Escape takes it back.
+- **Web Builder: readable element names.** The navigator, canvas outline and Basic panel name elements by
+  what they are and say (Menu, Slider, 3D / Canvas, Cards · 6, Hero, Form, Table, Map …) instead of
+  "Code", taken from the tag, role, label, text, id or class.
+- **Web Builder: Studio "Edit code".** The selected element's own markup (**Whole element**) or its
+  **HTML inside** can be edited in a small code editor, checked for unclosed and mismatched tags, applied
+  as one undo step, with the editor's ids preserved and unapplied drafts kept.
+- **New Web Builder REST routes.** `PUT web-builder/v2/kits/{slug}/trust` stores the calling user's script
+  trust of a design kit, and `POST web-builder/v2/documents/{id}/live-frame` renders the Live canvas frame.
+  The trust route takes `{trust, code?}` (at most 512 SHA-256 hashes) and answers `{trust, scriptTrust,
+  scriptCode}`. `Boot` gains `scriptTrust`, `scriptCode` and `canRunScripts` (additive). See the
+  [contract](docs/developer/web-builder-contract.md#3-rest-namespace-web-builderv2).
+- Test harnesses for the editor: `builder/test/editor-parity` (editor canvas against the published page,
+  pixels and behaviour) and `builder/test/live` (the live frame), both run with Playwright; `PW_CHROMIUM`
+  names the browser. See [Testing the editor](docs/developer/web-builder-code-sections.md#testing-the-editor).
+
 ### Changed
 
 - **WP to Pursae: very large sites.** The WXR of a package (and of an uploaded WXR file) is read token by token,
@@ -25,6 +75,15 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   several requests on PHP 8.1 and later, so a very large package no longer risks a killed request that repeats
   forever. Update Pursae before sending files over 64 MB: 0.5.0 and 0.5.1 skip them. The upload limit still applies to
   uploads. A WXR element larger than 256 MB (or a CDATA section never closed) fails the import cleanly.
+- **Web Builder: "Live edit" is now Live mode, on by default for trusted designs.** The per-session
+  "Run this design's scripts" confirmation is replaced by the per-design prompt above; mixed pages
+  (code and builder sections) keep their Safe-mode frames and a Preview that runs scripts for a trusted
+  design or after the per-session confirmation.
+- **Web Builder: the editor's Content Security Policy allows only what its frames need.** A page of code
+  sections only gets the style and font origins of its markup, head and kits and `blob:` images and
+  media; a mixed page, whose Preview runs the design in frames of the editor's page, also gets the script,
+  connect and frame origins the published page allows. The kits' script origins are no longer added to
+  every editor page.
 
 ### Fixed
 
@@ -34,6 +93,26 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   closed as failed and the files it extracted (users and orders) are deleted, by the hourly cleanup or at once
   when `pursae import wordpress` is run again. A run whose row was closed meanwhile stops instead of going on,
   and cannot mark the row done afterwards. Failed command-line imports are closed after 7 days like the others.
+
+### Security
+
+- **Web Builder: users without `unfiltered_html` get Safe mode only.** They cannot run a design's scripts
+  or trust a kit (both routes answer 403), and the canvas's element operations, Basic fields, Edit code
+  and Section code are read-only for them (the server already ignored such edits).
+- **The Live frame is served only to its creator.** `?wb-live-frame=<token>` is answered at the page's own
+  path only to the user who made it, only while they have `unfiltered_html`, only as a same-origin frame,
+  for 15 minutes, from memory, with the front end's CSP and nonce, `no-store` and `noindex`. It is never
+  given `allow-top-navigation`. Safe mode keeps the static, neutralised copy and the sandbox without
+  `allow-scripts`.
+- **The Live frame's address is the server's.** Its path is the post's permalink; a `url` in the request
+  is ignored, and admin, REST, `wp-content` and `.php` paths are refused. Frames are kept in memory up to
+  64 MB in all and 24 MB / 6 frames per user (413 for a larger page), and are served with
+  `Referrer-Policy: no-referrer`. When the frame cannot be loaded the canvas stays in Safe mode with a
+  notice: the design's scripts never run in a `srcdoc` frame under the editor's own policy.
+- **Live text edits are not saved when the design changes the text meanwhile.** A script that rewrites
+  the element being edited in place (a counter, a re-render) aborts the edit with a notice.
+- **Existing script trust is asked again once.** Trust stored before code hashes (a bare kit
+  installation id) is not trust any more.
 
 ## [0.5.1] - 2026-11-23
 

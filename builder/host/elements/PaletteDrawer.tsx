@@ -44,14 +44,14 @@ import { cn } from '@/builder/ui'
 import { inputCls } from '@/builder/StudioPanel'
 import { t } from '../i18n'
 import { act, latest } from './actions'
-import { frameCopy, mergeHeads } from './frame'
-import { embedCss } from './embeds'
+import { mergeHeads } from './frame'
+import { THUMB_SANDBOX, thumbDoc } from './thumb'
 import { hexOf, rootVariables, type VarDef, type VarGroup } from './cssom'
 import { kitsOf, loadCatalog, overrideOf, setOverride, useKitStore } from './kitstyle'
 import type { LocalStyles } from './local'
 import { KIND_ORDER, type Sample, type SampleKind } from './miner'
 import { overrideCSS, ruleOf, setRuleDecls } from './overrides'
-import { PALETTE, type PaletteId, type PaletteItem } from './palette'
+import { paletteItems, type PaletteId, type PaletteItem } from './palette'
 import { frameInfo, getElState, setElState, useElState, useFrameVersion } from './state'
 
 export interface NewElement {
@@ -215,6 +215,7 @@ function useInsert() {
 
 function ElementsTab({ startDrag }: { startDrag: StartDrag }) {
   const insert = useInsert()
+  const mode = useB().mode
   const groups: PaletteItem['group'][] = ['layout', 'basic', 'media', 'form']
   return (
     <div className="space-y-3">
@@ -223,7 +224,7 @@ function ElementsTab({ startDrag }: { startDrag: StartDrag }) {
         <div key={g}>
           <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-ink-500">{groupLabel(g)}</div>
           <div className="grid grid-cols-3 gap-1">
-            {PALETTE.filter((p) => p.group === g).map((p) => {
+            {paletteItems(g, mode).map((p) => {
               const I = ICONS[p.id]
               const add: NewElement = { html: p.html, local: p.local, label: t('{el} added', { el: itemLabel(p.id) }) }
               return (
@@ -279,20 +280,14 @@ function Thumb({ sample, shell, kitCss }: { sample: Sample; shell: { head: strin
   }, [show])
   const W = 640
   const base = typeof location !== 'undefined' ? location.origin + '/' : '/'
-  const doc = useMemo(
-    () =>
-      `<!doctype html><html><head><meta charset="utf-8"><base href="${base}">${shell.head}<style data-wb-kit>${kitCss.replace(/<\//g, '<\\/')}</style><style>${embedCss()}</style>` +
-      `<style>html,body{margin:0!important;background:transparent!important;overflow:hidden!important}body>div[data-wb-thumb]{display:flow-root;padding:12px;width:max-content;max-width:${W - 24}px}</style></head>` +
-      `<body class="${shell.body}"><div data-wb-thumb>${frameCopy(sample.html, 'static')}</div></body></html>`,
-    [shell, sample.html, kitCss, base],
-  )
+  const doc = useMemo(() => thumbDoc({ head: shell.head, body: shell.body, markup: sample.html, css: kitCss, base, width: W, fit: 'content' }), [shell, sample.html, kitCss, base])
   return (
     <div ref={box} className="relative h-[110px] overflow-hidden rounded-md border border-white/[0.06] bg-white" data-wb-thumb-box="">
       {show && (
         <iframe
           title={sample.sig}
           srcDoc={doc}
-          sandbox="allow-same-origin"
+          sandbox={THUMB_SANDBOX}
           tabIndex={-1}
           aria-hidden="true"
           className="pointer-events-none absolute left-0 top-0 origin-top-left border-0"

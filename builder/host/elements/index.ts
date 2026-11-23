@@ -1,7 +1,8 @@
 /**
  * The element editor (builder/host/elements): installs the canvas and the navigator branch through
  * the builder's elements seam (patch 0020-elements-seam), and the inspector's Content, Style and
- * Advanced tabs for its elements (ContentPanel, StylePanel: local styles, classes, variables). A page made only of code sections is drawn
+ * Advanced tabs for its elements (ContentPanel, StylePanel: local styles, classes, variables), and
+ * Basic mode's block panel and section rows (BasicCode, fields: patch 0024-basic-seam). A page made only of code sections is drawn
  * and edited by it; every other page keeps the builder's own canvas (and code sections in a
  * mixed page keep the per-run frames of patches 0018 / 0019, made static by the frame guard of
  * patch 0021: guard.ts).
@@ -14,10 +15,12 @@ import { StyleTab, styleTitle } from './StylePanel'
 import { withBindPanel } from './BindPanel'
 import { ContentTab } from './ContentPanel'
 import { frameGuard } from './guard'
+import { BasicCode, basicSummary } from './BasicCode'
+import { SectionThumb } from './SectionThumb'
 
 /** The element editor draws this doc: it has sections and every one is a code section. */
 export const handlesDoc = (doc: DocState) => doc.sections.length > 0 && doc.sections.every((s) => s.kind === 'code')
 
 export function installElements() {
-  setElementsSeam({ handles: handlesDoc, Canvas: ElementsCanvas, Nav: ElementsNav, Tab: withBindPanel(StyleTab), Content: ContentTab, title: styleTitle, guard: frameGuard })
+  setElementsSeam({ handles: handlesDoc, Canvas: ElementsCanvas, Nav: ElementsNav, Tab: withBindPanel(StyleTab), Content: ContentTab, title: styleTitle, guard: frameGuard, Basic: BasicCode, summary: basicSummary, Thumb: SectionThumb })
 }

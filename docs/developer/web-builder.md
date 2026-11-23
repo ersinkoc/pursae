@@ -59,6 +59,18 @@ and lists the pages whose published markup came from an older renderer
 6. **Preview** (`?preview=true`) shows the last published snapshot; when your draft is newer a notice
    says so.
 
+**Imported designs (code pages).** A page imported 1:1 as code sections opens in the element editor,
+whose canvas is the published page: in **Live** mode the design's own scripts run (three.js / WebGL
+scenes, theme toggles, sliders, script-drawn content), the **Interact** button (or holding Alt / ⌥)
+sends clicks to the design to try them, and edits change the running page without reloading it. The
+first time, the editor asks whether to run the design's scripts with your admin access — **Always for
+this design** (remembered for you, revocable from the bottom bar), **This session only** or **Not now**
+(Safe mode: nothing runs; the only mode for users without `unfiltered_html`). In **Basic** mode a code
+section is a set of named blocks (headings, texts, buttons, links, images, repeated cards) with their
+fields, never HTML; in **Studio** the navigator names every element (Menu, Slider, 3D / Canvas …) and
+**Edit code** changes the selected element's own markup. Details:
+[code sections › Editing](web-builder-code-sections.md#editing).
+
 Editing a built page somewhere else (block or classic editor, Quick Edit, REST) **detaches** it: the
 site then shows that edited content inside the theme, and the builder warns "Edited outside the
 builder" with two choices — publish again from the builder (discarding the outside edits) or leave
@@ -304,6 +316,8 @@ Cookie + `X-WP-Nonce` (or an Application Password), plus `X-WB-Api: 1` on every 
 | `GET documents/{id}/revisions[/{rid}]`, `POST …/{rid}/restore` | revisions |
 | `GET` / `POST library`, `DELETE library/{id}` | saved sections |
 | `GET` / `PUT prefs` | the user's editor preferences |
+| `PUT kits/{slug}/trust` | the calling user always runs (or is asked again about) a design kit's scripts in the editor, bound to the kit's installation and executable files, with the page's approved inline code hashes ([code sections](web-builder-code-sections.md#kits-rest)) |
+| `POST documents/{id}/live-frame` | renders the editor's code sections as the front end prints them, for the Live canvas frame at the post's own path (kept in memory 15 minutes, at most 24 MB per user and 64 MB in all) |
 | `GET fonts/css2` | Google Fonts css2 query answered with local files |
 | `POST forms/{id}/{section}` | public form endpoint |
 | `GET templates?type=`, `POST templates` | list templates, create a draft template |
@@ -348,6 +362,9 @@ the build loudly.
 - `0009-template-mode` — template mode driven by the host (`BuilderHost.template()`, top-bar
   controls, `beforePublish`, the page `layout` setting while Hello Pursae is active). The Theme
   Builder dialogs themselves (Display Conditions, Preview as) live in `builder/host/`.
+- `0024-basic-seam` — Basic mode shows a code section as named blocks (the elements seam's `Basic`
+  panel and `summary` row) instead of its HTML code and Head code fields; the panel is
+  `builder/host/elements/BasicCode.tsx`.
 
 (`0003`, the AI seam, is reserved for when AI comes back.) Change a patch by editing the patched
 copy, regenerating the diff against the pinned upstream and rebuilding.
@@ -359,6 +376,11 @@ and the API and renderer versions; a Go test checks it against the repository. A
 change to the static markup or the `data-wb-*` attributes bumps `RendererVersion` (pages then show
 up under Regenerate pages; additive attributes do not); an incompatible payload change bumps
 `APIVersion`.
+
+The element editor's live canvas (Live / Safe mode, trust, Interact mode) is checked against the
+published page by two Playwright harnesses outside `make builder-test`: `builder/test/editor-parity`
+and `builder/test/live` (see [Testing the editor](web-builder-code-sections.md#testing-the-editor):
+`PW_CHROMIUM` names the Chromium to use).
 
 `builder/test/audit.mjs` fails the build when an AI provider URL or key header shows up in the
 bundles, and enforces the size budgets.
