@@ -10,37 +10,6 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
-### Changed
-
-- **Pursae SEO: content analysis scores what visitors see.** Pages are rendered like the front end
-  (theme template or Pursae Web Builder canvas) and the analysis reads their `<main>`, without navigation,
-  sidebars, comments, the title heading or Pursae SEO's table of contents; posts read their rendered content
-  (dynamic blocks expanded). A page whose text and images come from its template or a dynamic block no
-  longer scores as nearly empty. The editor's live analysis renders the unsaved content the same way.
-
-### Fixed
-
-- **Pursae Web Builder: removing a site import restores the right homepage.** Publishing an import a
-  second time (after its report failed to save) recorded the imported page as the site's previous
-  homepage, so *Remove this import* set the homepage to a page it had just deleted. Removal also left
-  the homepage or posts page pointing at a deleted page when it had been moved to another page of the
-  same import. The original homepage is now kept from the first change, and removal resets the
-  reading settings whenever they point at a page it deletes.
-- **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
-  default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
-  Languages › Translations, and each language shows its translation, so the automatic table of contents no
-  longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
-- **Pursae SEO: the Table of Contents no longer touches scripts, styles or comments.** A heading-looking
-  string inside a `<script>`, `<style>`, `<textarea>`, `<template>`, `<noscript>` or an HTML comment was
-  listed and given an `id`, which broke the page's JavaScript or CSS; those are now skipped. The editor's
-  Table of Contents block also reads heading text with an inert `DOMParser`, so markup in another
-  author's heading (an `<img onerror>`) no longer runs in your editor.
-- **Pursae Security: a required passkey/2FA or a forced password change now also closes the REST API.**
-  Past the grace period these only kept the HTML admin on the fix-it screen; the same cookie still got a
-  REST nonce from the heartbeat and full REST access, enough to mint an Application Password and skip the
-  requirement for good. Cookie-authenticated REST now answers 403 `adminsec_account_action_required` and
-  the heartbeat hands out no REST nonce until the account is fixed.
-
 ## [0.5.2] - 2026-11-23
 
 The editor canvas is now the published page: an imported design runs its own scripts in the editor once you
@@ -122,6 +91,11 @@ release is asked once more.
   media; a mixed page, whose Preview runs the design in frames of the editor's page, also gets the script,
   connect and frame origins the published page allows. The kits' script origins are no longer added to
   every editor page.
+- **Pursae SEO: content analysis scores what visitors see.** Pages are rendered like the front end
+  (theme template or Pursae Web Builder canvas) and the analysis reads their `<main>`, without navigation,
+  sidebars, comments, the title heading or Pursae SEO's table of contents; posts read their rendered content
+  (dynamic blocks expanded). A page whose text and images come from its template or a dynamic block no
+  longer scores as nearly empty. The editor's live analysis renders the unsaved content the same way.
 
 ### Fixed
 
@@ -143,6 +117,26 @@ release is asked once more.
   together ("ENERJİ OSGBSakarya"); the stored markup is unchanged.
 - **Web Builder: no "unpublished changes restored" after an undo.** A draft equal to the stored page is not
   offered back when the editor opens.
+- **Pursae Web Builder: removing a site import restores the right homepage.** Publishing an import a
+  second time (after its report failed to save) recorded the imported page as the site's previous
+  homepage, so *Remove this import* set the homepage to a page it had just deleted. Removal also left
+  the homepage or posts page pointing at a deleted page when it had been moved to another page of the
+  same import. The original homepage is now kept from the first change, and removal resets the
+  reading settings whenever they point at a page it deletes.
+- **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
+  default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
+  Languages › Translations, and each language shows its translation, so the automatic table of contents no
+  longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
+- **Pursae SEO: the Table of Contents no longer touches scripts, styles or comments.** A heading-looking
+  string inside a `<script>`, `<style>`, `<textarea>`, `<template>`, `<noscript>` or an HTML comment was
+  listed and given an `id`, which broke the page's JavaScript or CSS; those are now skipped. The editor's
+  Table of Contents block also reads heading text with an inert `DOMParser`, so markup in another
+  author's heading (an `<img onerror>`) no longer runs in your editor.
+- **Pursae Security: a required passkey/2FA or a forced password change now also closes the REST API.**
+  Past the grace period these only kept the HTML admin on the fix-it screen; the same cookie still got a
+  REST nonce from the heartbeat and full REST access, enough to mint an Application Password and skip the
+  requirement for good. Cookie-authenticated REST now answers 403 `adminsec_account_action_required` and
+  the heartbeat hands out no REST nonce until the account is fixed.
 
 ### Security
 
