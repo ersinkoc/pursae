@@ -124,15 +124,22 @@ type seogoTOCItem struct {
 // before the first listed heading when auto is set and the content has none. Headings without an
 // id get one, so the links have a target.
 func seogoTOCContent(content string, def seogoTOCOpts, auto bool, minHeadings int) string {
-	has := strings.Contains(content, seogoTOCMarker)
+	if !strings.Contains(content, seogoTOCMarker) && !auto {
+		return content
+	}
+	// Comments and raw-text elements (an inline script, a style, a textarea) are not scanned: a
+	// heading or marker string there is neither listed nor touched.
+	skip := seogoRawRangesOf(content)
+	marks := seogoTOCMarks(content, skip)
+	has := len(marks) > 0
 	if !has && !auto {
 		return content
 	}
 	// Collect the levels any table of contents lists.
 	tocs := []seogoTOCOpts{}
-	for _, m := range seogoTOCMarkRe.FindAllStringSubmatch(content, -1) {
+	for _, m := range marks {
 		t := def
-		if raw, err := url.QueryUnescape(m[1]); err == nil {
+		if raw, err := url.QueryUnescape(content[m[2]:m[3]]); err == nil {
 			_ = json.Unmarshal([]byte(raw), &t)
 		}
 		tocs = append(tocs, t)
@@ -156,6 +163,9 @@ func seogoTOCContent(content string, def seogoTOCOpts, auto bool, minHeadings in
 	var sb strings.Builder
 	last := 0
 	for _, loc := range seogoHeadingRe.FindAllStringSubmatchIndex(content, -1) {
+		if skip.inside(loc[0]) {
+			continue
+		}
 		open, closeLvl := content[loc[2]:loc[3]], content[loc[8]:loc[9]]
 		if open != closeLvl {
 			continue
@@ -207,18 +217,23 @@ func seogoTOCContent(content string, def seogoTOCOpts, auto bool, minHeadings in
 		// The first heading is at the same place in out: only later headings or the heading itself changed.
 		out = out[:firstAt] + seogoTOCMarkerFor(def) + out[firstAt:]
 	}
-	i := 0
-	return seogoTOCMarkRe.ReplaceAllStringFunc(out, func(string) string {
+	// Fill the markers: the same ones in the same order, as only headings outside the ranges changed.
+	var res strings.Builder
+	last = 0
+	for i, m := range seogoTOCMarks(out, seogoRawRangesOf(out)) {
 		t := tocs[min(i, len(tocs)-1)]
-		i++
 		var list []seogoTOCItem
 		for _, it := range items {
 			if slices.Contains(t.Levels, it.Level) {
 				list = append(list, it)
 			}
 		}
-		return seogoTOCHTML(t, list)
-	})
+		res.WriteString(out[last:m[0]])
+		res.WriteString(seogoTOCHTML(t, list))
+		last = m[1]
+	}
+	res.WriteString(out[last:])
+	return res.String()
 }
 
 // seogoTOCHTML renders one table of contents as a nested list.
@@ -313,4 +328,77 @@ func (s *Server) seogoTOCFor(ctx context.Context, content string) string {
 		}
 	}
 	return seogoTOCContent(content, s.seogoTOCDefaultsFor(ctx), auto, o.TOCMin)
+}
+
+// seogoRawOpenRe finds the start of what the table of contents does not scan: a comment, or an
+// element whose content is text, inert or not shown (a heading-looking string there is no heading).
+var seogoRawOpenRe = regexp.MustCompile(`(?i)<!--|<(script|style|textarea|title|template|noscript|xmp|iframe)[\s>/]`)
+
+// seogoRawRanges are the byte ranges [start, end) of a content's comments and of its script, style,
+// textarea, title, template, noscript, xmp and iframe elements, in order. An unclosed one runs to the end.
+type seogoRawRanges [][2]int
+
+func seogoRawRangesOf(content string) seogoRawRanges {
+	var rs seogoRawRanges
+	lower := "" // content with A-Z lower-cased (same byte offsets), made on the first element
+	for pos := 0; pos < len(content); {
+		loc := seogoRawOpenRe.FindStringSubmatchIndex(content[pos:])
+		if loc == nil {
+			break
+		}
+		start, end := pos+loc[0], len(content)
+		if loc[2] < 0 { // a comment
+			if i := strings.Index(content[start+4:], "-->"); i >= 0 {
+				end = start + 4 + i + 3
+			}
+		} else {
+			if lower == "" {
+				b := []byte(content)
+				for i, c := range b {
+					if 'A' <= c && c <= 'Z' {
+						b[i] = c + 'a' - 'A'
+					}
+				}
+				lower = string(b)
+			}
+			from := pos + loc[1]
+			if i := strings.Index(lower[from:], "</"+lower[pos+loc[2]:pos+loc[3]]); i >= 0 {
+				end = from + i
+				if j := strings.IndexByte(content[end:], '>'); j >= 0 {
+					end += j + 1
+				} else {
+					end = len(content)
+				}
+			}
+		}
+		rs = append(rs, [2]int{start, end})
+		pos = end
+	}
+	return rs
+}
+
+// inside reports whether pos lies in a range that starts before it (a marker comment that starts at
+// pos is its own range, not inside one).
+func (rs seogoRawRanges) inside(pos int) bool {
+	lo, hi := 0, len(rs)
+	for lo < hi { // the first range that ends after pos
+		if mid := (lo + hi) / 2; rs[mid][1] > pos {
+			hi = mid
+		} else {
+			lo = mid + 1
+		}
+	}
+	return lo < len(rs) && rs[lo][0] < pos
+}
+
+// seogoTOCMarks are the table of contents markers of a content (submatch indexes) that are not inside
+// another comment or a raw-text element: a marker string in a script is not a marker.
+func seogoTOCMarks(content string, rs seogoRawRanges) [][]int {
+	var out [][]int
+	for _, m := range seogoTOCMarkRe.FindAllStringSubmatchIndex(content, -1) {
+		if !rs.inside(m[0]) {
+			out = append(out, m)
+		}
+	}
+	return out
 }

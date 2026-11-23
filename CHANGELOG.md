@@ -16,6 +16,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
   Languages › Translations, and each language shows its translation, so the automatic table of contents no
   longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
+- **Pursae SEO: the Table of Contents no longer touches scripts, styles or comments.** A heading-looking
+  string inside a `<script>`, `<style>`, `<textarea>`, `<template>`, `<noscript>` or an HTML comment was
+  listed and given an `id`, which broke the page's JavaScript or CSS; those are now skipped. The editor's
+  Table of Contents block also reads heading text with an inert `DOMParser`, so markup in another
+  author's heading (an `<img onerror>`) no longer runs in your editor.
 
 ## [0.5.2] - 2026-11-23
 
