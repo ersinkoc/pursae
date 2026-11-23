@@ -14,6 +14,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 - **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
   checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
+- **Pursae SEO: the Table of Contents no longer touches scripts, styles or comments.** A heading-looking
+  string inside a `<script>`, `<style>`, `<textarea>`, `<template>`, `<noscript>` or an HTML comment was
+  listed and given an `id`, which broke the page's JavaScript or CSS; those are now skipped. The editor's
+  Table of Contents block also reads heading text with an inert `DOMParser`, so markup in another
+  author's heading (an `<img onerror>`) no longer runs in your editor.
 
 ### Added
 
