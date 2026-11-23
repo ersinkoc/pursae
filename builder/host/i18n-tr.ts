@@ -337,7 +337,6 @@ const tr: Record<string, string> = {
   "Element wrapped in a Div": "Öğe bir Div ile sarıldı", // i18n-ignore
   "Expand": "Genişlet", // i18n-ignore
   "Flexbox": "Flexbox", // i18n-ignore
-  "Form element": "Form öğesi", // i18n-ignore
   "Grid": "Grid", // i18n-ignore
   "Heading": "Başlık", // i18n-ignore
   "Hide in the editor": "Editörde gizle", // i18n-ignore
