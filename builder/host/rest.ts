@@ -8,7 +8,7 @@
  *
  * No React, no globals: everything comes in through RestOptions, so tests pass a mocked fetch.
  */
-import { API_HEADER, API_VERSION, NONCE_HEADER, REST_NAMESPACE, routes, type MediaItem, type RestErrorData } from './contract'
+import { API_HEADER, API_VERSION, NONCE_HEADER, REST_NAMESPACE, routes, type KitTrustResponse, type MediaItem, type RestErrorData } from './contract'
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
 
@@ -200,6 +200,20 @@ export async function uploadMedia(rest: RestClient, file: File, postId: number):
   const r = await rest.request<MediaItem>('POST', routes.media(), { body: fd })
   if (!r.data || typeof r.data.source_url !== 'string') throw new RestError(500, 'wb_upload', 'The upload did not return a file URL.')
   return r.data
+}
+
+/* ---------- Design kits: the user's script trust ---------- */
+
+/**
+ * Remembers (on) or forgets (off) that the user always runs the kit's scripts in the editor
+ * (PUT kits/{slug}/trust). Resolves to the user's trusted kits afterwards (Boot.scriptTrust);
+ * RestError 403 without unfiltered_html, 404 for an unknown kit.
+ */
+export async function setKitTrust(rest: RestClient, slug: string, on: boolean): Promise<string[]> {
+  const r = await rest.request<KitTrustResponse>('PUT', routes.kitTrust(slug), { json: { trust: on } })
+  const list = r.data && Array.isArray(r.data.scriptTrust) ? r.data.scriptTrust : null
+  if (!list) throw new RestError(500, 'wb_bad_response', 'The server did not return the trusted design kits.')
+  return list.filter((s): s is string => typeof s === 'string')
 }
 
 /* ---------- Theme Builder: id search in core collections (contract §11.3 dialog) ---------- */

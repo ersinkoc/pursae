@@ -103,8 +103,35 @@ func (s *Server) wbEditor(c *gin.Context, p *store.Post) {
 				cspAllow(c, dir, o...)
 			}
 		}
+		// And what the published page allows for the same markup (wbCodeCSP): the <script src>
+		// origins of the sections' html too (script-src, connect-src), <iframe src> origins, blob:
+		// images and media, so the design's scripts run in the frame as on the site.
+		s.wbCodeCSP(c, wbEditorCodeMarkup(heads...))
 	}
 	c.Data(http.StatusOK, "text/html; charset=UTF-8", []byte(page))
+}
+
+// wbEditorCodeMarkup is the head and html of the code sections of docs or single sections (hidden
+// ones too: the editor can show them), for wbCodeCSP.
+func wbEditorCodeMarkup(raws ...json.RawMessage) string {
+	var b strings.Builder
+	for _, raw := range raws {
+		if len(raw) == 0 {
+			continue
+		}
+		list, _ := webbuilder.CodeSections(raw)
+		if list == nil {
+			// A single section (Boot.codeParts).
+			list, _ = webbuilder.CodeSections(json.RawMessage(`{"sections":[` + string(raw) + `]}`))
+		}
+		for _, sec := range list {
+			b.WriteString(sec.Head)
+			b.WriteByte('\n')
+			b.WriteString(sec.HTML)
+			b.WriteByte('\n')
+		}
+	}
+	return b.String()
 }
 
 // wbEditorFailed answers a storage error of the editor page: logged, not shown.
@@ -168,6 +195,10 @@ type wbBoot struct {
 	KitBreakpoints map[string]webbuilder.Breakpoints `json:"kitBreakpoints"`
 	// SiteStyle: the site style designs can follow (webbuilder_site_style.go).
 	SiteStyle *webbuilder.SiteSettings `json:"siteStyle"`
+	// ScriptTrust and CanRunScripts: the kits whose scripts the user always runs
+	// (webbuilder_trust.go) and whether they may run a design's scripts at all.
+	ScriptTrust   []string `json:"scriptTrust"`
+	CanRunScripts bool     `json:"canRunScripts"`
 }
 
 // wbDocument is webbuilder.DocumentResponse with raw doc / page JSON (GET documents/{id} answers it
@@ -454,6 +485,8 @@ func (s *Server) wbBootFor(c *gin.Context, p *store.Post, u *store.User, doc *wb
 		CodeParts:      parts,
 		KitBreakpoints: s.wbEditorKitBreakpoints(doc, parts),
 		SiteStyle:      s.wbSiteStyle(),
+		ScriptTrust:    s.wbKitTrustBoot(c, u),
+		CanRunScripts:  u.Can("unfiltered_html", nil),
 	}
 }
 

@@ -105,6 +105,8 @@ func (s *Server) registerWebBuilderREST() {
 	s.wbRegisterThemeREST(reg)
 	// Design kits for code sections (webbuilder_kits.go)
 	s.wbRegisterKitREST(reg)
+	// A user's script trust of a kit (webbuilder_trust.go)
+	reg(wbKitTrustRoute, map[string]restHandler{http.MethodPut: s.wbRESTKitTrust}, true)
 }
 
 // --- shared helpers --------------------------------------------------------------------------------

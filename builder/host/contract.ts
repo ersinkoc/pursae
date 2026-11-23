@@ -67,6 +67,8 @@ export const routes = {
   /** Pursae SEO's own route (plugin namespace seogo/v1, not web-builder/v2). */
   seoMeta: (id: number) => `seogo/v1/meta/${id}`,
   previewContext: () => 'web-builder/v2/preview-context',
+  /** PUT {trust: boolean} → KitTrustResponse: the user always runs (or no longer) the kit's scripts. */
+  kitTrust: (slug: string) => `web-builder/v2/kits/${encodeURIComponent(slug)}/trust`,
   media: () => 'wp/v2/media',
 } as const
 
@@ -402,6 +404,21 @@ export interface Boot {
    * while none was saved. Saved through site-settings (`site_style`, edit_theme_options).
    */
   siteStyle?: SiteStyle | null
+  /**
+   * Design kits (slugs, sorted) whose scripts this user chose to always run in the editor
+   * (routes.kitTrust): only kits that still exist as the installation trusted (a kit deleted and
+   * uploaded again is asked about again; its new versions are not). Empty without canRunScripts.
+   */
+  scriptTrust?: string[]
+  /** The user has unfiltered_html: the editor may run a design's scripts, and the user may trust a kit. */
+  canRunScripts?: boolean
+}
+
+/** PUT routes.kitTrust(slug) answer. */
+export interface KitTrustResponse {
+  trust: boolean
+  /** The user's trusted kits after the change (Boot.scriptTrust). */
+  scriptTrust: string[]
 }
 
 /** Boot.siteStyle: the doc.site keys a site style sets. */

@@ -81,6 +81,11 @@ type wbKit struct {
 	// Breakpoints are the tablet and mobile thresholds of local styles (element editor, Style
 	// panel): set on commit (the request's, else suggested from the kit's stylesheets).
 	Breakpoints *webbuilder.Breakpoints `json:"breakpoints,omitempty"`
+	// Install identifies this installation of the kit (random, set when the kit is created; a kit
+	// stored before it existed gets one when a user first trusts it): commits keep it, a kit
+	// deleted and uploaded again under the same slug gets a new one. Users' script trust names it
+	// (webbuilder_trust.go). Never shown by the REST API.
+	Install string `json:"install,omitempty"`
 }
 
 func (s *Server) wbKitList() map[string]*wbKit {
@@ -411,7 +416,7 @@ func (s *Server) wbKitCommitStage(c *gin.Context, slug, name string, breakpoints
 	if k == nil {
 		// A kit deleted and uploaded again goes on from the old one's version: browsers keep the old
 		// files under their immutable ?v= URLs.
-		k = &wbKit{Slug: slug, Name: slug, Version: s.wbKitGoneVersions()[slug]}
+		k = &wbKit{Slug: slug, Name: slug, Version: s.wbKitGoneVersions()[slug], Install: wbNewKitInstall()}
 		kits[slug] = k
 	}
 	if name = strings.TrimSpace(name); name != "" {
@@ -684,6 +689,7 @@ func (s *Server) wbKitRemove(c *gin.Context, slug string) (status int, code, msg
 	}
 	_ = os.RemoveAll(filepath.Join(s.wbKitRoot(), slug))
 	s.wbKitOverrideDrop(c, slug)
+	s.wbKitTrustDrop(c, slug)
 	wbKitVersions.Delete("v")
 	s.purgeAll(c)
 	return http.StatusOK, "", ""
