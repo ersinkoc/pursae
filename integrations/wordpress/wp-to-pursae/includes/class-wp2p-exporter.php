@@ -349,7 +349,7 @@ class WP2P_Exporter {
 	}
 
 	/**
-	 * run() with the lock held.
+	 * Works on the job with the lock held.
 	 *
 	 * @param float $budget Seconds.
 	 * @return array The job.
@@ -418,6 +418,7 @@ class WP2P_Exporter {
 	 * @param array $job   Job.
 	 * @param float $until Deadline.
 	 * @return bool Whether the checksum is done (in $job['sha256']).
+	 * @throws RuntimeException When the package file cannot be read.
 	 */
 	private static function hash_step( array &$job, $until ) {
 		if ( PHP_VERSION_ID < 80100 ) {

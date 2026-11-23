@@ -10,6 +10,36 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Changed
+
+- **WP to Pursae: very large sites.** The WXR of a package (and of an uploaded WXR file) is read token by token,
+  one item at a time, instead of being loaded whole, so the memory an import needs no longer grows with the
+  size of the site. A first pass reads the authors and terms and checks the whole file is well formed (a damaged
+  file still imports nothing); the second pass imports the items. Packages, resume, re-import and the id map
+  behave as before. `PURSAE_WP2P_MAX_CONTENT_MB` and the "content.xml is more than this site imports in one
+  go" error are gone.
+- **WP to Pursae: media over 64 MB.** Media files of a package are no longer held to the 64 MB upload limit.
+  They are streamed from the package to the uploads directory, up to `PURSAE_WP2P_MAX_MEDIA_MB` (default
+  4096); the plugin packs files up to 4 GB (filter `wp2p_max_media_bytes`, never above 8 GiB) and gives a big
+  file a request of its own. Only one request builds a package at a time, and the package checksum is made over
+  several requests on PHP 8.1 and later, so a very large package no longer risks a killed request that repeats
+  forever. Update Pursae before sending files over 64 MB: 0.5.0 and 0.5.1 skip them. The upload limit still applies to
+  uploads. A WXR element larger than 256 MB (or a CDATA section never closed) fails the import cleanly.
+
+### Fixed
+
+- **WP to Pursae: killed `pursae import wordpress` runs.** A running import now touches its row every 30
+  seconds, so a command that was killed (SIGKILL, a crash, a lost terminal) is recognised after 30 minutes
+  instead of 6 hours (still 6 hours for an import started with 0.5.0, which does not heartbeat). Its import is
+  closed as failed and the files it extracted (users and orders) are deleted, by the hourly cleanup or at once
+  when `pursae import wordpress` is run again. A run whose row was closed meanwhile stops instead of going on,
+  and cannot mark the row done afterwards. Failed command-line imports are closed after 7 days like the others.
+
+## [0.5.1] - 2026-11-23
+
+The first 0.5.x update: Cart and Checkout blocks, stock reservation, passkeys, remote backups, metrics, Web
+Builder site style and drop-down menus, and completed translations. Releases continue as 0.5.2, 0.5.3…
+
 ### Added
 
 - **Cart and Checkout blocks.** The block editor inserts `woocommerce/cart` and `woocommerce/checkout` and edits
@@ -77,28 +107,26 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   product updates, forum, remote storage, import recovery, setup wizard and more) are now translated in every
   `web/languages/wpgo-*.json` pack except the English variants; regional variants share their base language.
 
-- **WP to Pursae: very large sites.** The WXR of a package (and of an uploaded WXR file) is read token by token,
-  one item at a time, instead of being loaded whole, so the memory an import needs no longer grows with the
-  size of the site. A first pass reads the authors and terms and checks the whole file is well formed (a damaged
-  file still imports nothing); the second pass imports the items. Packages, resume, re-import and the id map
-  behave as before. `PURSAE_WP2P_MAX_CONTENT_MB` and the "content.xml is more than this site imports in one
-  go" error are gone.
-- **WP to Pursae: media over 64 MB.** Media files of a package are no longer held to the 64 MB upload limit.
-  They are streamed from the package to the uploads directory, up to `PURSAE_WP2P_MAX_MEDIA_MB` (default
-  4096); the plugin packs files up to 4 GB (filter `wp2p_max_media_bytes`, never above 8 GiB) and gives a big
-  file a request of its own. Only one request builds a package at a time, and the package checksum is made over
-  several requests on PHP 8.1 and later, so a very large package no longer risks a killed request that repeats
-  forever. Update Pursae before sending files over 64 MB: 0.5.0 skips them. The upload limit still applies to
-  uploads. A WXR element larger than 256 MB (or a CDATA section never closed) fails the import cleanly.
-
 ### Fixed
 
-- **WP to Pursae: killed `pursae import wordpress` runs.** A running import now touches its row every 30
-  seconds, so a command that was killed (SIGKILL, a crash, a lost terminal) is recognised after 30 minutes
-  instead of 6 hours (still 6 hours for an import started with 0.5.0, which does not heartbeat). Its import is
-  closed as failed and the files it extracted (users and orders) are deleted, by the hourly cleanup or at once
-  when `pursae import wordpress` is run again. A run whose row was closed meanwhile stops instead of going on,
-  and cannot mark the row done afterwards. Failed command-line imports are closed after 7 days like the others.
+- **Web Builder design import recovers from interruptions.** Retrying an import skips pages it already
+  finished and keeps their later changes; scheduled results show as pending publication; the homepage and
+  its rollback record are written together, and undo restores the previous homepage without deleting a
+  reused page. Retries keep the original removal record and kit, kit files are restored when saving
+  settings fails, and the wizard stops before publishing if an old staging folder cannot be cleared.
+- **Interrupted media transfers in design imports.** A retry reuses the attachments it already created
+  (same IDs and URLs), files of a rejected attachment are cleaned up, zero-byte multipart uploads are
+  rejected like empty raw uploads, and the removal confirmation lists the remaining Media Library items.
+
+### Database
+
+- Migration 0112: `adminsec_passkey_users`, `adminsec_passkeys`, `adminsec_passkey_ceremonies`.
+- Migration 0113: `goo_reserved_stock`.
+- Both only add, so 0.5.0 still runs on the new schema.
+
+### Internal
+
+- Dependency updates (Dependabot), including TypeScript 7 and vitest 5 for the Web Builder.
 
 ## [0.5.0] - 2026-11-22
 
