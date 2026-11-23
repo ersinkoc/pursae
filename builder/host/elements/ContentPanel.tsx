@@ -25,6 +25,7 @@ import { attr, decode, elementKids, inner, outer, ownText, VOID, wbc, type El, t
 import { KEEP_ATTR, writeBack, type SrcMap } from './richtext'
 import { kindLabel, kindOf } from './kinds'
 import { locate, movable } from './ops'
+import { useLiveEdit } from './livefield'
 import { applyCode, checkMarkup, codeView, type CodeProblem, type Part } from './codeops'
 import { CodeEditor } from './CodeEditor'
 import { tc } from './code-tr'
@@ -56,24 +57,42 @@ function errText(e: AttrError): string {
   }
 }
 
-/** A text field that commits on Enter or blur. */
-function Field({ value, onCommit, placeholder, mono, name, area }: { value: string; onCommit: (v: string) => void; placeholder?: string; mono?: boolean; name?: string; area?: boolean }) {
+/**
+ * A text field: the canvas follows while typing (livefield.ts: debounced, one history entry per
+ * typing session); Enter or blur ends the session, Escape takes it back. `live` false: written on
+ * Enter / blur only (an address that would load the half-typed value, a list rewritten as markup).
+ */
+function Field({ value, onCommit, placeholder, mono, name, area, live = true }: { value: string; onCommit: (v: string, live: boolean) => boolean | void; placeholder?: string; mono?: boolean; name?: string; area?: boolean; live?: boolean }) {
   const [draft, setDraft] = useState<string | null>(null)
-  const done = () => {
-    if (draft !== null && draft !== value) onCommit(draft)
-    setDraft(null)
-  }
+  const now = useRef(value)
+  now.current = value
+  const edit = useLiveEdit<string>(
+    (v, isLive) => {
+      if (v === now.current) return false
+      if (isLive && !live) return false
+      return onCommit(v, isLive)
+    },
+    () => now.current,
+  )
   const props = {
     value: draft ?? value,
     placeholder,
     name,
     spellCheck: false,
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
-    onBlur: done,
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const v = e.target.value
+      setDraft(v)
+      edit.touch(() => v)
+    },
+    onBlur: () => {
+      edit.commit()
+      setDraft(null)
+    },
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       e.stopPropagation()
       if (e.key === 'Enter' && !area) (e.target as HTMLInputElement).blur()
       if (e.key === 'Escape') {
+        edit.revert()
         setDraft(null)
         ;(e.target as HTMLInputElement).blur()
       }
@@ -86,13 +105,16 @@ function Field({ value, onCommit, placeholder, mono, name, area }: { value: stri
   )
 }
 
-/** Sets one attribute, refusing what the rules refuse (with a message). */
-function setOne(b: B, id: string, tag: string, name: string, value: string | null, label?: string) {
+/** Sets one attribute, refusing what the rules refuse (with a message, unless the value is a draft being typed). */
+function setOne(b: B, id: string, tag: string, name: string, value: string | null, label?: string, live = false): boolean {
   if (value !== null) {
     const e = attrError(name, value, tag)
-    if (e) return b.notify(errText(e))
+    if (e) {
+      if (!live) b.notify(errText(e))
+      return false
+    }
   }
-  act.setAttrs(b, id, { [name]: value }, label)
+  return act.setAttrs(b, id, { [name]: value }, label)
 }
 
 /* ---------- The tab ---------- */
@@ -127,7 +149,7 @@ export function ContentTab({ s, fallback }: { s: Section; fallback: ReactNode })
           </select>
         )}
       </div>
-      {isText && <RichPanel key={id + '\u0000' + inner(tr, el)} b={b} id={id} html={inner(tr, el)} tr={tr} el={el} />}
+      {isText && <RichPanel key={id} b={b} id={id} html={inner(tr, el)} tr={tr} el={el} />}
       {tag === 'a' && <LinkPanel b={b} id={id} el={el} />}
       {tag === 'img' && <ImagePanel b={b} id={id} el={el} tr={tr} sec={s as LocalSection} />}
       {tag === 'svg' && <IconPanel b={b} id={id} tr={tr} el={el} />}
@@ -187,20 +209,30 @@ export function richNodes(tr: Tree, el: El, map: SrcMap): DocumentFragment {
 function RichPanel({ b, id, html, tr, el }: { b: B; id: string; html: string; tr: Tree; el: El }) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<SrcMap>(new Map())
-  const fill = () => {
+  // What the box was drawn from: its edits are written back against this (the tree of that moment),
+  // whole, so the box need not be redrawn (and lose the caret) while the canvas follows the typing.
+  const base = useRef({ tr, el, html })
+  const focused = useRef(false)
+  const paint = () => {
     if (!box.current) return
     map.current = new Map()
-    box.current.replaceChildren(richNodes(tr, el, map.current))
+    box.current.replaceChildren(richNodes(base.current.tr, base.current.el, map.current))
   }
-  useEffect(fill, [html]) // eslint-disable-line react-hooks/exhaustive-deps
+  const fill = () => {
+    base.current = { tr, el, html }
+    paint()
+  }
+  useEffect(() => {
+    if (!focused.current) fill()
+  }, [html]) // eslint-disable-line react-hooks/exhaustive-deps
+  const read = () => (box.current ? writeBack(box.current, base.current.tr, map.current) : base.current.html)
+  const edit = useLiveEdit<string>(
+    (next) => (next === html ? false : act.setInner(b, id, next)),
+    () => base.current.html,
+  )
   const cmd = (c: string, v?: string) => {
     box.current?.focus()
     document.execCommand(c, false, v)
-  }
-  const save = () => {
-    if (!box.current) return
-    const next = writeBack(box.current, tr, map.current)
-    if (next !== html) act.setInner(b, id, next)
   }
   const btn = (label: string, icon: ReactNode, on: () => void) => (
     <button type="button" title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={on} className="grid size-7 place-items-center rounded text-ink-300 hover:bg-white/10 hover:text-white">
@@ -223,11 +255,17 @@ function RichPanel({ b, id, html, tr, el }: { b: B; id: string; html: string; tr
         contentEditable
         suppressContentEditableWarning
         data-wb-rich=""
-        onBlur={save}
+        onFocus={() => (focused.current = true)}
+        onInput={() => edit.touch(read)}
+        onBlur={() => {
+          focused.current = false
+          edit.commit()
+        }}
         onKeyDown={(e) => {
           e.stopPropagation()
           if (e.key === 'Escape') {
-            fill()
+            edit.revert()
+            paint()
             box.current?.blur()
           }
         }}
@@ -312,7 +350,7 @@ function LinkPanel({ b, id, el }: { b: B; id: string; el: El }) {
   return (
     <Panel title={t('Link')}>
       <Ctl label={t('Address')} stack>
-        <Field value={href} name="href" mono placeholder="https:// · /page/ · #id" onCommit={(v) => setOne(b, id, 'a', 'href', v.trim() || null, t('Link changed'))} />
+        <Field value={href} name="href" mono placeholder="https:// · /page/ · #id" onCommit={(v, live) => setOne(b, id, 'a', 'href', v.trim() || null, t('Link changed'), live)} />
       </Ctl>
       <Ctl label={t('Link to a page of the site')} stack>
         <PagePicker onPick={(u) => setOne(b, id, 'a', 'href', u, t('Link changed'))} />
@@ -361,7 +399,7 @@ function ImagePanel({ b, id, el, tr, sec }: { b: B; id: string; el: El; tr: Tree
         <ImageIcon size={13} /> {t('Replace from the media library')}
       </button>
       <Ctl label={t('Address')} stack>
-        <Field value={src} name="src" mono onCommit={(v) => act.setAttrs(b, id, attrError('src', v, 'img') ? {} : { src: v || null, srcset: null, sizes: null }, t('Image replaced'))} />
+        <Field value={src} name="src" mono live={false} onCommit={(v) => act.setAttrs(b, id, attrError('src', v, 'img') ? {} : { src: v || null, srcset: null, sizes: null }, t('Image replaced'))} />
       </Ctl>
       <Ctl label={t('Alternative text')} stack>
         <Field value={attr(el, 'alt') ?? ''} name="alt" placeholder={t('Describe the image (empty: decorative)')} onCommit={(v) => act.setAttrs(b, id, { alt: v }, t('Alternative text changed'))} />
@@ -472,12 +510,12 @@ function MediaPanel({ b, id, el }: { b: B; id: string; el: El }) {
   return (
     <Panel title={tag === 'iframe' || tag === 'embed' ? t('Embed') : t('Video')}>
       <Ctl label={t('Address')} stack>
-        <Field value={attr(srcEl, 'src') ?? ''} name="src" mono placeholder="https://" onCommit={(v) => setOne(b, srcId, srcEl.tag, 'src', v.trim() || null, t('Source changed'))} />
+        <Field value={attr(srcEl, 'src') ?? ''} name="src" mono placeholder="https://" live={false} onCommit={(v) => setOne(b, srcId, srcEl.tag, 'src', v.trim() || null, t('Source changed'))} />
       </Ctl>
       {tag === 'video' && (
         <>
           <Ctl label={t('Poster image')} stack>
-            <Field value={attr(el, 'poster') ?? ''} name="poster" mono onCommit={(v) => setOne(b, id, tag, 'poster', v.trim() || null, t('Video changed'))} />
+            <Field value={attr(el, 'poster') ?? ''} name="poster" mono live={false} onCommit={(v) => setOne(b, id, tag, 'poster', v.trim() || null, t('Video changed'))} />
           </Ctl>
           <div className="grid grid-cols-2 gap-1">
             {flag('controls', t('Controls'))}
@@ -512,7 +550,7 @@ function FieldPanel({ b, id, el, tr }: { b: B; id: string; el: El; tr: Tree }) {
       {(tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button') && (
         <Ctl label={t('Name')}>
           <div className="w-[150px]">
-            <Field value={attr(el, 'name') ?? ''} name="name" mono onCommit={(v) => setOne(b, id, tag, 'name', v.trim() || null, label)} />
+            <Field value={attr(el, 'name') ?? ''} name="name" mono onCommit={(v, live) => setOne(b, id, tag, 'name', v.trim() || null, label, live)} />
           </div>
         </Ctl>
       )}
@@ -557,6 +595,7 @@ function FieldPanel({ b, id, el, tr }: { b: B; id: string; el: El; tr: Tree }) {
         <Ctl label={t('Options (value|label, one per line)')} stack>
           <Field
             area
+            live={false}
             value={optText}
             name="options"
             onCommit={(v) =>
@@ -834,7 +873,7 @@ function AttrsPanel({ b, id, el }: { b: B; id: string; el: El }) {
               {a.name}
             </span>
             <div className="min-w-0 flex-1">
-              <Field value={a.value ?? ''} mono name={`attr-${a.name}`} onCommit={(v) => setOne(b, id, el.tag, a.name, v, t('Attribute changed'))} />
+              <Field value={a.value ?? ''} mono name={`attr-${a.name}`} onCommit={(v, live) => setOne(b, id, el.tag, a.name, v, t('Attribute changed'), live)} />
             </div>
             <button type="button" aria-label={t('Remove')} onClick={() => act.setAttrs(b, id, { [a.name]: null }, t('Attribute removed'))} className="grid size-6 shrink-0 place-items-center rounded text-ink-500 hover:text-red-300">
               <X size={11} />
