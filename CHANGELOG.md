@@ -18,8 +18,16 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   the homepage or posts page pointing at a deleted page when it had been moved to another page of the
   same import. The original homepage is now kept from the first change, and removal resets the
   reading settings whenever they point at a page it deletes.
-- **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
-  checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
+- **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
+  default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
+  Languages › Translations, and each language shows its translation, so the automatic table of contents no
+  longer reads "Table of Contents" on Turkish posts. A block's own title is shown as written.
+## [0.5.2] - 2026-11-23
+
+The editor canvas is now the published page: an imported design runs its own scripts in the editor once you
+trust it (Live mode), with Interact mode, edits without a reload, Basic mode blocks instead of HTML and Studio's
+Edit code. Large WordPress sites and media over 64 MB move with WP to Pursae. Script trust given before this
+release is asked once more.
 
 ### Added
 
@@ -98,6 +106,8 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
+  checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
 - **Login: the key icon on Log in with a passkey sits on the text line.** WordPress's button icon line height
   pushed it about 10 px below the label.
 - **Login: the login page is never shown from the browser's cache.** It now sends `no-store` (as wp-login.php
@@ -109,6 +119,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   closed as failed and the files it extracted (users and orders) are deleted, by the hourly cleanup or at once
   when `pursae import wordpress` is run again. A run whose row was closed meanwhile stops instead of going on,
   and cannot mark the row done afterwards. Failed command-line imports are closed after 7 days like the others.
+- **Web Builder: Basic fields and block names keep the gaps between parts of a text.** A heading or label whose
+  parts are laid out as blocks (`<br>`, block/flex spans, a flex link with an icon) no longer reads glued
+  together ("ENERJİ OSGBSakarya"); the stored markup is unchanged.
+- **Web Builder: no "unpublished changes restored" after an undo.** A draft equal to the stored page is not
+  offered back when the editor opens.
 
 ### Security
 
