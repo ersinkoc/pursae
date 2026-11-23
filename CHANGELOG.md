@@ -14,6 +14,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 - **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
   checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
+- **Pursae Security: a required passkey/2FA or a forced password change now also closes the REST API.**
+  Past the grace period these only kept the HTML admin on the fix-it screen; the same cookie still got a
+  REST nonce from the heartbeat and full REST access, enough to mint an Application Password and skip the
+  requirement for good. Cookie-authenticated REST now answers 403 `adminsec_account_action_required` and
+  the heartbeat hands out no REST nonce until the account is fixed.
 
 ### Added
 

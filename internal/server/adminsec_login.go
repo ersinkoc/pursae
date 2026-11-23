@@ -234,6 +234,29 @@ func (s *Server) asEnrollState(c *gin.Context, u *store.User) asEnrollment {
 	return e
 }
 
+const (
+	asProfileGateURL = "/wp-admin/profile?adminsec=password#password"
+	asAccountGateURL = "/wp-admin/admin?page=" + asSlug + "-account&required=1"
+)
+
+// adminsecBlocked reports whether the user must fix their account before using the site as
+// themselves: a forced password change (asProfileGateURL) or a role requirement past its grace
+// period (asAccountGateURL). It returns the screen that fixes it, or "" when nothing blocks the user.
+// The HTML admin (adminsecGate), the login (asFinishLogin) and cookie-authenticated REST
+// (restAuthUser) all decide with it.
+func (s *Server) adminsecBlocked(c *gin.Context, u *store.User) string {
+	if u == nil || !s.adminsecOn() {
+		return ""
+	}
+	if s.asForcePassword(c, u) {
+		return asProfileGateURL
+	}
+	if e := s.asEnrollState(c, u); !e.Satisfied && e.Expired {
+		return asAccountGateURL
+	}
+	return ""
+}
+
 // adminsecGate runs in requireLogin: a forced password change, or a requirement past its grace
 // period, keeps the user on the screens that fix it.
 func (s *Server) adminsecGate(c *gin.Context, u *store.User) bool {
@@ -241,25 +264,19 @@ func (s *Server) adminsecGate(c *gin.Context, u *store.User) bool {
 		return false
 	}
 	p := strings.TrimSuffix(c.Request.URL.Path, ".php")
-	page := c.Query("page")
 	if p == "/wp-admin/admin-ajax" && isBackgroundPoll(c) {
-		return false
+		return false // the heartbeat withholds its REST nonce from blocked users (heartbeat)
 	}
-	if s.asForcePassword(c, u) {
-		if p == "/wp-admin/profile" {
-			return false
-		}
-		c.Redirect(http.StatusFound, "/wp-admin/profile?adminsec=password#password")
+	switch target := s.adminsecBlocked(c, u); {
+	case target == "":
+		return false
+	case target == asProfileGateURL && p == "/wp-admin/profile",
+		target == asAccountGateURL && p == "/wp-admin/admin" && c.Query("page") == asSlug+"-account":
+		return false
+	default:
+		c.Redirect(http.StatusFound, target)
 		return true
 	}
-	if p == "/wp-admin/admin" && page == asSlug+"-account" {
-		return false
-	}
-	if e := s.asEnrollState(c, u); !e.Satisfied && e.Expired {
-		c.Redirect(http.StatusFound, "/wp-admin/admin?page="+asSlug+"-account&required=1")
-		return true
-	}
-	return false
 }
 
 // --- lockouts ----------------------------------------------------------------------------
@@ -907,10 +924,8 @@ func (s *Server) asFinishLogin(c *gin.Context, u *store.User, remember bool, red
 	if (target == "/wp-admin/" || target == "/wp-admin") && !u.Can("edit_posts", nil) {
 		target = "/wp-admin/profile"
 	}
-	if s.asForcePassword(c, u) {
-		target = "/wp-admin/profile?adminsec=password#password"
-	} else if e := s.asEnrollState(c, u); !e.Satisfied && e.Expired {
-		target = "/wp-admin/admin?page=" + asSlug + "-account&required=1"
+	if blocked := s.adminsecBlocked(c, u); blocked != "" {
+		target = blocked
 	}
 	c.Redirect(http.StatusFound, target)
 }
