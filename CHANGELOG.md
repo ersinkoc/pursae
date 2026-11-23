@@ -20,6 +20,17 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   as they were set up there: removed inner blocks hide their sections, the Empty cart block's content shows,
   unknown blocks are ignored.
 
+- **Backup Manager: remote storage.** A new Remote storage tab copies backups to an S3-compatible bucket
+  (AWS S3, Cloudflare R2, Backblaze B2, Wasabi, MinIO …), encrypted on the server with a passphrase first
+  (AES-256-GCM, scrypt), streamed as a multipart upload so large backups are never held in memory. Optional
+  automatic upload of every new manual and scheduled backup, retention of the newest *N* in the bucket,
+  *Download and restore* from the bucket, and a connection test. The secret key and passphrase are stored
+  sealed and never shown again; `PURSAE_BACKUP_S3_*` and `PURSAE_BACKUP_PASSPHRASE` keep them out of the
+  database. The endpoint must be https on a public address, checked after DNS resolution
+  (`PURSAE_BACKUP_S3_ALLOW_PRIVATE=1` for a MinIO on your own network). CLI: `pursae backup remote
+  status|set|test|list|push|pull|delete` and `pursae backup decrypt`; REST: `/pursae/v1/backups/remote`.
+  Without a bucket nothing changes.
+- The documented `pg_dump` / `pg_restore` database backup is now tested in CI against PostgreSQL 16 and 17.
 - **Passkeys in Pursae Security.** Users add any number of named passkeys under Users › Security and log in
   with them from the login form, by the button or the browser's passkey autofill, without typing a username.
   After a password, a passkey also works as the second step. Settings › Two-Factor switches passkeys off,
