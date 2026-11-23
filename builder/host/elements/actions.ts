@@ -6,6 +6,8 @@
 import type { BuilderApi } from '@/builder/store'
 import type { DocState, Section } from '@/builder/types'
 import { t } from '../i18n'
+import { tc } from './canvas-tr'
+import { markupReadOnly } from './trust'
 import { clipboard, getElState, setElState } from './state'
 import { attr, outer } from './html'
 import { copyEntries, entryOf, idsIn, parseStyleAttr, rehome, setDecls, variantOf, withoutDecls, type Device, type LocalEntry, type LocalSection, type LocalStyles, type State } from './local'
@@ -82,6 +84,12 @@ export function selectEl(b: Pick<B, 'select' | 'doc'>, id: string | null, page?:
  */
 export function commit(b: B, label: string, res: Result | null, extra?: Record<string, Record<string, string>>, local?: Record<string, LocalStyles | undefined>, src?: LocalStyles | null): boolean {
   if (!res || (!Object.keys(res.html).length && !extra && !local)) return false
+  // Code sections are the design's own markup: without unfiltered_html the server keeps none of
+  // their edits, so none is made here either (trust.ts markupReadOnly; the panels are read-only too).
+  if (markupReadOnly()) {
+    b.notify(tc('Your role may not change this part of the design.'))
+    return false
+  }
   let doc = withContent(docOf(b), res.html, extra)
   if (local) doc = withLocal(doc, local)
   if (res.copies?.to.length) {

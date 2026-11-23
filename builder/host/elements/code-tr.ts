@@ -42,6 +42,7 @@ const tr: Record<string, string> = {
   "You have code changes that were not applied. They are kept while you stay on this page; open the element again to continue.": "Uygulanmamış kod değişiklikleriniz var. Bu sayfada kaldığınız sürece saklanır; devam etmek için öğeyi yeniden açın.", // i18n-ignore
   "A draft you had not applied was restored.": "Uygulamadığınız bir taslak geri getirildi.", // i18n-ignore
   "Discard draft": "Taslağı sil", // i18n-ignore
+  "Scripts run on the published page and in the Live canvas.": "Betikler yayınlanan sayfada ve canlı tuvalde çalışır.", // i18n-ignore
 }
 
 /** The panel's string `source` in the editor's language. */

@@ -51,7 +51,7 @@ import { Palette, type NewElement } from './PaletteDrawer'
 import { TrustPrompt, revokeTrust, trustAlways, trustLater, trustSession } from './ScriptsGate'
 import { applyToLive, guardLive, liveGeometry, liveShellOf, loadLive, openLive, releaseLive, reloadPreserving, setLiveStyles, type LiveInput } from './live'
 import { drawnText, holdLabel, leavesFrame, liveChange, measureLoop, passesThrough, sourceTarget, watchFrame } from './interact'
-import { frameModeOf, sandboxOf } from './trust'
+import { frameModeOf, markupReadOnly, sandboxOf } from './trust'
 import { tc } from './canvas-tr'
 
 const BAR = 34
@@ -108,6 +108,8 @@ export function ElementsCanvas() {
   latest.doc = b.doc
   const st = useElState()
   const host = cmsHost()
+  // Without unfiltered_html the design's markup is read-only (trust.ts; actions.commit refuses too).
+  const readOnly = markupReadOnly(host?.boot)
   const parts = useMemo(() => partsOf(host?.boot.codeParts), [host])
   const kits = host?.boot.kitBreakpoints
   const mode: FrameMode = b.preview ? 'preview' : st.live && st.scripts ? 'live' : 'static'
@@ -459,7 +461,7 @@ export function ElementsCanvas() {
   const beginText = useCallback((id: string, point?: { x: number; y: number }) => {
     const d = fdoc()
     const { page, mode } = cur.current
-    if (!d || mode === 'preview' || !textEditable(page, id)) return false
+    if (!d || mode === 'preview' || markupReadOnly() || !textEditable(page, id)) return false
     const el = frameEl(d, id)
     if (!el) return false
     const at = locate(page, id)!
@@ -933,7 +935,7 @@ export function ElementsCanvas() {
   }
 
   const startHandleDrag = (e: React.PointerEvent) => {
-    if (!st.sel || !frame.current) return
+    if (!st.sel || !frame.current || readOnly) return
     e.preventDefault()
     e.stopPropagation()
     const r = frame.current.getBoundingClientRect()
@@ -972,7 +974,7 @@ export function ElementsCanvas() {
   const framed = b.device !== 'desktop'
   const SelIcon = selKind ? KIND_ICON[selKind] : null
   const selName = sel && selKind ? elementName(sel.tree, sel.el, names, selKind) : ''
-  const canEditText = !!st.sel && textEditable(page, st.sel)
+  const canEditText = !readOnly && !!st.sel && textEditable(page, st.sel)
 
   return (
     <div ref={area} className="relative min-w-0 flex-1 overflow-hidden bg-ink-950" data-wb-elements="" onClick={() => !b.preview && (selectEl(b, null), b.select(null))}>
@@ -1021,21 +1023,23 @@ export function ElementsCanvas() {
         <div ref={dropRef} data-wb-drop="" className="absolute left-0 top-0 rounded-sm bg-[#2271b1] data-[inside='1']:border-2 data-[inside='1']:border-dashed data-[inside='1']:border-[#2271b1] data-[inside='1']:bg-[#2271b1]/10" style={{ display: 'none' }} />
         {sel && !b.preview && !editing && (
           <div ref={toolRef} data-wb-toolbar="" className="pointer-events-auto absolute left-0 top-0 flex items-center gap-0.5 rounded-lg bg-[#1d2327] p-0.5 text-white shadow-xl" style={{ display: 'none' }} onClick={(e) => e.stopPropagation()}>
-            <span title={t('Drag to move')} onPointerDown={startHandleDrag} className="grid size-7 cursor-grab place-items-center rounded-md hover:bg-white/15" data-wb-handle="">
-              <GripVertical size={14} />
-            </span>
+            {!readOnly && (
+              <span title={t('Drag to move')} onPointerDown={startHandleDrag} className="grid size-7 cursor-grab place-items-center rounded-md hover:bg-white/15" data-wb-handle="">
+                <GripVertical size={14} />
+              </span>
+            )}
             {bx(t('Select parent'), <CornerLeftUp size={14} />, () => act.parent(b, st.sel!))}
-            {bx(t('Move up'), <ArrowUp size={14} />, () => act.step(b, st.sel!, -1))}
-            {bx(t('Move down'), <ArrowDown size={14} />, () => act.step(b, st.sel!, 1))}
+            {!readOnly && bx(t('Move up'), <ArrowUp size={14} />, () => act.step(b, st.sel!, -1))}
+            {!readOnly && bx(t('Move down'), <ArrowDown size={14} />, () => act.step(b, st.sel!, 1))}
             {canEditText && bx(t('Edit text'), <Pencil size={14} />, () => beginText(st.sel!))}
             {bx(t('Style'), <Paintbrush size={14} />, () => {
               b.setMode('studio')
               openInspectorTab('style')
             })}
-            {bx(t('Duplicate'), <Copy size={14} />, () => act.duplicate(b, st.sel!))}
-            {bx(t('Wrap in a Div'), <SquareDashed size={14} />, () => act.wrap(b, st.sel!))}
+            {!readOnly && bx(t('Duplicate'), <Copy size={14} />, () => act.duplicate(b, st.sel!))}
+            {!readOnly && bx(t('Wrap in a Div'), <SquareDashed size={14} />, () => act.wrap(b, st.sel!))}
             {(hiddenNow || st.shown.has(st.sel!)) && bx(t('Show temporarily'), st.shown.has(st.sel!) ? <EyeOff size={14} /> : <Eye size={14} />, () => toggleShown(st.sel!), { active: st.shown.has(st.sel!) })}
-            {bx(t('Delete'), <Trash2 size={14} />, () => act.remove(b, st.sel!), { danger: true })}
+            {!readOnly && bx(t('Delete'), <Trash2 size={14} />, () => act.remove(b, st.sel!), { danger: true })}
           </div>
         )}
         {editing && (
@@ -1290,7 +1294,7 @@ function ContextMenu({
   const id = menu.id
   const at = locate(page, id)
   if (!at) return null
-  const can = movable(at.el)
+  const can = movable(at.el) && !markupReadOnly()
   const item = (label: string, icon: ReactNode, on: () => void, opts: { disabled?: boolean; danger?: boolean; kbd?: string } = {}) => (
     <button
       type="button"

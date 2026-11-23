@@ -657,9 +657,10 @@ function CodeBox({ b, id, tr, el, part, readOnly, sel }: { b: B; id: string; tr:
     commit(b, part === 'outer' ? tc('Edit code') : t('HTML changed'), r.result)
   }
   const outerPart = part === 'outer'
+  const es = useElState()
   return (
     <div className="space-y-2" data-wb-code-box={part}>
-      <div className="text-[10.5px] text-ink-500">{(outerPart ? tc('The element’s own markup, as stored. The editor’s ids are kept for you.') : tc('The markup inside the element.')) + ' ' + t('Scripts run on the published page only.')}</div>
+      <div className="text-[10.5px] text-ink-500">{(outerPart ? tc('The element’s own markup, as stored. The editor’s ids are kept for you.') : tc('The markup inside the element.')) + ' ' + (es.live && es.scripts ? tc('Scripts run on the published page and in the Live canvas.') : t('Scripts run on the published page only.'))}</div>
       {readOnly && (
         <div className="text-[10.5px] text-amber-300" data-wb-code-readonly="">
           {tc('Your role may not edit code (it needs unfiltered HTML). It is shown here read-only.')}

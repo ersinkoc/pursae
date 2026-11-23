@@ -36,7 +36,8 @@ export function canRunScripts(boot: Partial<TrustBoot> | undefined = bootOf()): 
 
 /**
  * Markup is read-only for this user (no unfiltered_html: the server would drop the edit): the
- * Basic fields of a code section, Edit code and Section code. Same rule as canRunScripts; without
+ * Basic fields of a code section, Edit code, Section code and the canvas's element operations
+ * (actions.commit, the toolbar, text editing). Same rule as canRunScripts; without
  * any boot object (unit tests of a panel alone) nothing is read-only.
  */
 export function markupReadOnly(boot: Partial<TrustBoot> | undefined = hostOf()?.boot ?? bootOf()): boolean {

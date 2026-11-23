@@ -28,6 +28,7 @@ const tr: Record<string, string> = {
   "The design’s scripts run on the published page.": "Tasarımın betikleri yayındaki sayfada çalışır.", // i18n-ignore
   "Text shown by the design’s script": "Tasarımın betiğinin gösterdiği metin", // i18n-ignore
   "On the page the design’s script shows this text differently. This edits the text stored in the page; the script may still change it.": "Sayfada tasarımın betiği bu metni farklı gösteriyor. Burada sayfada saklanan metni düzenlersiniz; betik onu yine değiştirebilir.", // i18n-ignore
+  "Your role may not change this part of the design.": "Rolünüz tasarımın bu bölümünü değiştiremez.", // i18n-ignore
   "Save": "Kaydet", // i18n-ignore
   "Cancel": "Vazgeç", // i18n-ignore
 }
