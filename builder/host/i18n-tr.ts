@@ -351,7 +351,6 @@ const tr: Record<string, string> = {
   "Link address": "Bağlantı adresi", // i18n-ignore
   "Link": "Bağlantı", // i18n-ignore
   "List": "Liste", // i18n-ignore
-  "Live edit": "Canlı düzenle", // i18n-ignore
   "The design’s scripts are not running in this preview.": "Bu önizlemede tasarımın betikleri çalışmıyor.", // i18n-ignore
   "Run them…": "Çalıştır…", // i18n-ignore
   "Run this design’s scripts?": "Bu tasarımın betikleri çalıştırılsın mı?", // i18n-ignore
@@ -365,7 +364,6 @@ const tr: Record<string, string> = {
   "Paste after": "Sonrasına yapıştır", // i18n-ignore
   "Paste inside": "İçine yapıştır", // i18n-ignore
   "Preview": "Önizleme", // i18n-ignore
-  "Run the design’s scripts while editing (menus, sliders, animations). Structural changes reload the page.": "Düzenlerken tasarımın betiklerini çalıştırır (menüler, kaydırıcılar, animasyonlar). Yapısal değişiklikler sayfayı yeniden yükler.", // i18n-ignore
   "Section": "Bölüm", // i18n-ignore
   "Select parent": "Üst öğeyi seç", // i18n-ignore
   "Show in the editor": "Editörde göster", // i18n-ignore
