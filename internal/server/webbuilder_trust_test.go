@@ -2,27 +2,39 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
 
 // Unit: what counts as trust.
 func TestWBKitTrustedPrune(t *testing.T) {
-	kits := map[string]*wbKit{"a": {Slug: "a", Install: "i1"}, "b": {Slug: "b", Install: "i2"}, "legacy": {Slug: "legacy"}}
-	m := map[string]string{"a": "i1", "b": "old", "legacy": "", "gone": "i9"}
+	kits := map[string]*wbKit{"a": {Slug: "a", Install: "i1", Code: "h1"}, "b": {Slug: "b", Install: "i2", Code: "h2"}, "c": {Slug: "c", Install: "i3", Code: "h3new"},
+		"legacy": {Slug: "legacy"}}
+	h := strings.Repeat("ab", 32)
+	m := map[string]*wbKitTrustEntry{"a": {Install: "i1", Code: "h1", Inline: []string{h}}, "b": {Install: "old", Code: "h2"}, "c": {Install: "i3", Code: "h3"},
+		"legacy": {Install: "", Code: ""}, "gone": {Install: "i9", Code: "h9"}}
 	if got := wbKitTrusted(kits, m); !reflect.DeepEqual(got, []string{"a"}) {
 		t.Errorf("trusted = %v", got)
 	}
-	if !wbKitTrustPrune(kits, m) || !reflect.DeepEqual(m, map[string]string{"a": "i1"}) {
+	if got := wbKitTrustCode(kits, m); !reflect.DeepEqual(got, map[string][]string{"a": {h}}) {
+		t.Errorf("code = %v", got)
+	}
+	if !wbKitTrustPrune(kits, m) || len(m) != 1 || m["a"] == nil {
 		t.Errorf("pruned = %v", m)
 	}
 	if wbKitTrustPrune(kits, m) {
 		t.Error("second prune changed something")
 	}
-	if got := wbKitTrustDecode([]byte(`{"a":"i1","B":"x","c":3,"d":"","e":"ok"}`)); !reflect.DeepEqual(got, map[string]string{"a": "i1", "e": "ok"}) {
+	// Old format (a bare install id), bad slugs, entries without a code hash: not trust.
+	got := wbKitTrustDecode([]byte(`{"a":"i1","B":{"i":"x","h":"y"},"c":3,"d":{"i":"x"},"e":{"i":"ok","h":"hh","c":["` + h + `","zz",3]}}`))
+	if len(got) != 1 || got["e"] == nil || got["e"].Install != "ok" || !reflect.DeepEqual(got["e"].Inline, []string{h}) {
 		t.Errorf("decode = %v", got)
 	}
 	if got := wbKitTrustDecode([]byte(`[1]`)); len(got) != 0 {
@@ -30,6 +42,54 @@ func TestWBKitTrustedPrune(t *testing.T) {
 	}
 	if a, b := wbNewKitInstall(), wbNewKitInstall(); a == b || len(a) != 32 {
 		t.Errorf("install ids %q %q", a, b)
+	}
+	// Inline hashes: newest kept, once each, sorted.
+	many := make([]string, 0, wbKitTrustCodeMax+5)
+	for i := range wbKitTrustCodeMax + 5 {
+		many = append(many, fmt.Sprintf("%064x", i))
+	}
+	if l := wbTrustHashes(many[:10], many[5:]); len(l) != wbKitTrustCodeMax || !slices.Contains(l, many[len(many)-1]) || slices.Contains(l, many[0]) {
+		t.Errorf("hashes kept: %d", len(l))
+	}
+}
+
+// The code hash covers the kit's executable files only: path and bytes.
+func TestWBKitCodeHash(t *testing.T) {
+	dir := t.TempDir()
+	write := func(rel, body string) {
+		p := filepath.Join(dir, filepath.FromSlash(rel))
+		_ = os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	hash := func() string {
+		files, err := wbKitFiles(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return wbKitCodeHash(dir, files)
+	}
+	write("css/site.css", ".a{}")
+	write("js/app.js", "a()")
+	h0 := hash()
+	write("css/site.css", ".a{color:red}")
+	write("img/x.png", "png")
+	if hash() != h0 {
+		t.Error("a stylesheet or image changed the code hash")
+	}
+	for _, step := range []func(){
+		func() { write("js/app.js", "b()") },
+		func() { write("js/mod.mjs", "export {}") },
+		func() { write("w/x.wasm", "\x00asm") },
+		func() { write("icons/a.svg", "<svg/>") },
+		func() { _ = os.Rename(filepath.Join(dir, "js", "app.js"), filepath.Join(dir, "js", "app2.js")) },
+	} {
+		before := hash()
+		step()
+		if hash() == before {
+			t.Error("an executable change kept the code hash")
+		}
 	}
 }
 
@@ -168,16 +228,53 @@ func TestWBKitTrustREST(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	boot := func() []string { return srv.wbKitTrustBoot(ctx, adminU) }
+	boot := func() []string { l, _ := srv.wbKitTrustBoot(ctx, adminU, true); return l }
+	bootCode := func() map[string][]string { _, m := srv.wbKitTrustBoot(ctx, adminU, true); return m }
 
-	// A commit (a new version of the same installation) keeps the trust.
+	// Inline code approved with a kit: kept with the entry, merged, valid hashes only.
+	h1, h2 := strings.Repeat("a", 64), strings.Repeat("b", 64)
+	if code, v := put(admin, "tk", map[string]any{"trust": true, "code": []string{h1}}, nil); code != http.StatusOK {
+		t.Fatalf("trust with code: %d %v", code, v)
+	}
+	if code, v := put(admin, "tk", map[string]any{"trust": true, "code": []string{h2, h1}}, nil); code != http.StatusOK ||
+		!reflect.DeepEqual(wbrObj(v)["scriptCode"], map[string]any{"tk": []any{h1, h2}}) {
+		t.Fatalf("trust with more code: %d %v", code, v)
+	}
+	for _, bad := range []any{[]string{"x"}, []string{strings.Repeat("A", 64)}, []any{1}} {
+		if code, v := put(admin, "tk", map[string]any{"trust": true, "code": bad}, nil); code != http.StatusBadRequest {
+			t.Errorf("code %v: %d %v", bad, code, v)
+		}
+	}
+	if got := bootCode(); !reflect.DeepEqual(got, map[string][]string{"tk": {h1, h2}}) {
+		t.Errorf("boot code: %v", got)
+	}
+
+	// A commit that changes only stylesheets keeps the trust; one that changes a script is asked
+	// about again, by everyone (the committer too), with its inline code.
 	install := srv.wbKitList()["tk"].Install
-	wbsKit(t, admin, "tk", map[string]string{"site.css": ".a{color:blue}", "app.js": "window.a=2"})
-	if k := srv.wbKitList()["tk"]; k.Install != install || k.Version < 2 {
-		t.Errorf("commit changed the install: %q → %q (v%d)", install, k.Install, k.Version)
+	codeHash := srv.wbKitList()["tk"].Code
+	wbsKit(t, admin, "tk", map[string]string{"site.css": ".a{color:blue}", "app.js": "window.a=1"})
+	if k := srv.wbKitList()["tk"]; k.Install != install || k.Code != codeHash || k.Version < 2 {
+		t.Errorf("css commit: install %q → %q, code %q → %q (v%d)", install, k.Install, codeHash, k.Code, k.Version)
 	}
 	if got := boot(); !reflect.DeepEqual(got, []string{"tk", "tk2"}) {
-		t.Errorf("after commit: %v", got)
+		t.Errorf("after a css commit: %v", got)
+	}
+	wbsKit(t, admin, "tk", map[string]string{"site.css": ".a{color:blue}", "app.js": "window.a=2"})
+	if k := srv.wbKitList()["tk"]; k.Install != install || k.Code == codeHash {
+		t.Errorf("script commit: install %q → %q, code %q → %q", install, k.Install, codeHash, k.Code)
+	}
+	if got := boot(); !reflect.DeepEqual(got, []string{"tk2"}) {
+		t.Errorf("after a script commit: %v", got)
+	}
+	if got := bootCode(); len(got) != 0 {
+		t.Errorf("after a script commit, code: %v", got)
+	}
+	if m := wbtMeta(t, srv, adminID); strings.Contains(m, `"tk"`) {
+		t.Errorf("changed kit not pruned: %s", m)
+	}
+	if code, v := put(admin, "tk", map[string]any{"trust": true}, nil); code != http.StatusOK || !reflect.DeepEqual(wbtList(v), []string{"tk", "tk2"}) {
+		t.Fatalf("trust tk again: %d %v", code, v)
 	}
 	// Deleting a kit removes it from every user; uploading it again is a new installation.
 	if code, v, _ := admin.do(http.MethodDelete, "/web-builder/v2/kits/tk", nil, nil); code != http.StatusOK {
@@ -198,9 +295,10 @@ func TestWBKitTrustREST(t *testing.T) {
 	if got := boot(); !reflect.DeepEqual(got, []string{"tk2"}) {
 		t.Errorf("after re-install: %v", got)
 	}
-	// A stale entry (an install id that is not the kit's) is not trust and is pruned at boot.
-	if _, err := srv.store.Pool.Exec(ctx, `UPDATE users SET meta = meta || jsonb_build_object($2::text, jsonb_build_object('tk', 'feedfeedfeedfeedfeedfeedfeedfeed', 'tk2', meta->$2::text->>'tk2', 'gone', 'x'))
-		WHERE id = $1`, adminID, wbKitTrustMeta); err != nil {
+	// A stale entry (an install id that is not the kit's, the old bare-id format) is not trust and
+	// is pruned at boot.
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE users SET meta = meta || jsonb_build_object($2::text, jsonb_build_object('tk', jsonb_build_object('i', 'feedfeedfeedfeedfeedfeedfeedfeed', 'h', $3::text), 'tk2', meta->$2::text->'tk2', 'gone', jsonb_build_object('i', 'x', 'h', 'y')))
+		WHERE id = $1`, adminID, wbKitTrustMeta, srv.wbKitList()["tk"].Code); err != nil {
 		t.Fatal(err)
 	}
 	if got := boot(); !reflect.DeepEqual(got, []string{"tk2"}) {
@@ -209,21 +307,36 @@ func TestWBKitTrustREST(t *testing.T) {
 	if m := wbtMeta(t, srv, adminID); strings.Contains(m, `"tk"`) || strings.Contains(m, "gone") || !strings.Contains(m, "tk2") {
 		t.Errorf("not pruned: %s", m)
 	}
-
-	// A kit stored before install ids: trusting it gives it one, kept by commits.
-	kits := srv.wbKitList()
-	kits["tk"].Install = ""
-	if err := srv.settings.Set(ctx, map[string]any{wbKitsOption: kits}); err != nil {
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE users SET meta = meta || jsonb_build_object($2::text, jsonb_build_object('tk', $3::text, 'tk2', meta->$2::text->'tk2'))
+		WHERE id = $1`, adminID, wbKitTrustMeta, srv.wbKitList()["tk"].Install); err != nil {
 		t.Fatal(err)
 	}
 	if got := boot(); !reflect.DeepEqual(got, []string{"tk2"}) {
-		t.Errorf("legacy kit: %v", got)
+		t.Errorf("old-format entry: %v", got)
+	}
+
+	// A kit stored before install ids and code hashes: trusting it gives it both, kept by commits
+	// that do not change its scripts.
+	kits := srv.wbKitList()
+	kits["tk"].Install, kits["tk"].Code = "", ""
+	if err := srv.settings.Set(ctx, map[string]any{wbKitsOption: kits}); err != nil {
+		t.Fatal(err)
 	}
 	if code, v := put(admin, "tk", map[string]any{"trust": true}, nil); code != http.StatusOK || !reflect.DeepEqual(wbtList(v), []string{"tk", "tk2"}) {
 		t.Fatalf("trust legacy kit: %d %v", code, v)
 	}
-	if srv.wbKitList()["tk"].Install == "" {
-		t.Error("legacy kit got no install id")
+	if k := srv.wbKitList()["tk"]; k.Install == "" || k.Code == "" {
+		t.Errorf("legacy kit got install %q code %q", k.Install, k.Code)
+	}
+	// The code hash of a kit without one is computed on first use (the boot) too.
+	kits = srv.wbKitList()
+	want := kits["tk2"].Code
+	kits["tk2"].Code = ""
+	if err := srv.settings.Set(ctx, map[string]any{wbKitsOption: kits}); err != nil {
+		t.Fatal(err)
+	}
+	if got := boot(); !reflect.DeepEqual(got, []string{"tk", "tk2"}) || srv.wbKitList()["tk2"].Code != want {
+		t.Errorf("lazy code hash: %v %q (want %q)", got, srv.wbKitList()["tk2"].Code, want)
 	}
 	// Revoking.
 	if code, v := put(admin, "tk", map[string]any{"trust": false}, nil); code != http.StatusOK || wbrObj(v)["trust"] != false || !reflect.DeepEqual(wbtList(v), []string{"tk2"}) {
@@ -268,8 +381,8 @@ func TestWBKitTrustBoot(t *testing.T) {
 	// An author: no scripts, no trust (even with a stored value).
 	author, authorID := wbsLogin(t, srv, base, "bootauthor", "author")
 	own := wbrPost(t, srv, "post", "Author post", "draft", authorID)
-	if _, err := srv.store.Pool.Exec(context.Background(), `UPDATE users SET meta = meta || jsonb_build_object($2::text, jsonb_build_object('bk', $3::text)) WHERE id = $1`,
-		authorID, wbKitTrustMeta, srv.wbKitList()["bk"].Install); err != nil {
+	if _, err := srv.store.Pool.Exec(context.Background(), `UPDATE users SET meta = meta || jsonb_build_object($2::text, jsonb_build_object('bk', jsonb_build_object('i', $3::text, 'h', $4::text))) WHERE id = $1`,
+		authorID, wbKitTrustMeta, srv.wbKitList()["bk"].Install, srv.wbKitList()["bk"].Code); err != nil {
 		t.Fatal(err)
 	}
 	if b := open(author.c, own.ID); b["canRunScripts"] != false || !reflect.DeepEqual(b["scriptTrust"], []any{}) {
@@ -279,64 +392,101 @@ func TestWBKitTrustBoot(t *testing.T) {
 
 var wbtNonceRe = regexp.MustCompile(`'nonce-([A-Za-z0-9+/=_-]+)'`)
 
-// The editor page's policy lets a design's scripts run in the frame (a srcdoc document inherits
-// it) for a user who may run them, under csp_mode enforce: the response's nonce (which the editor
-// stamps on the frame's scripts), the origins the published page allows for the same markup, blob:
-// workers, images and media. A user without unfiltered_html gets none of the design's origins.
+// The editor page's policy (csp_mode enforce): the element editor's frames never run a design's
+// scripts under it (Live and Preview are served frames with their own policy), so a code page gets
+// only what its static frames draw — the design's stylesheets and fonts — never its script or
+// connect origins, even in Safe mode. A mixed page (code and builder sections: its Preview runs the
+// scripts in srcdoc frames that inherit the editor's policy) gets what the published page allows.
+// A user without unfiltered_html gets none of the design's origins.
 func TestWBEditorCodeCSP(t *testing.T) {
 	srv, base, admin := wbrStart(t)
 	ctx := context.Background()
 	if err := srv.settings.Set(ctx, map[string]any{"csp_mode": cspModeEnforce}); err != nil {
 		t.Fatal(err)
 	}
-	wbsKit(t, admin, "ck", map[string]string{"site.css": ".a{color:red}", "app.js": `fetch("https://api.kit.example/x")`})
+	wbsKit(t, admin, "ck", map[string]string{"site.css": `@import "https://fonts.kit.example/a.css";.a{color:red}`, "app.js": `fetch("https://api.kit.example/x")`})
 	html := `<section><canvas id="c"></canvas><script src="https://cdn.body.example/three.module.js" type="module"></script>` +
-		`<iframe src="https://maps.frame.example/embed"></iframe></section>`
+		`<iframe src="https://maps.frame.example/embed"></iframe><link rel="stylesheet" href="https://css.body.example/x.css"></section>`
 	head := `<link rel="stylesheet" href="/wp-content/uploads/web-builder/kits/ck/site.css"><script type="importmap">{"imports":{"three":"https://cdn.head.example/three.js"}}</script>` +
 		`<script src="https://cdn.head.example/three.js"></script>`
 	page := wbsCodePage(t, srv, admin, "CSP page", "ck", html, head)
 
-	// The published page's policy for the same markup.
-	resp, err := http.Get(base + "/csp-page/")
+	policy := func(c *http.Client, id int64) map[string]string {
+		t.Helper()
+		code, body, h := wbOpen(t, c, base, id)
+		if code != http.StatusOK {
+			t.Fatalf("editor: %d", code)
+		}
+		csp := h.Get("Content-Security-Policy")
+		dirs := cspDirectives(csp)
+		m := wbtNonceRe.FindStringSubmatch(dirs["script-src"])
+		if m == nil || !strings.Contains(dirs["script-src"], "'strict-dynamic'") {
+			t.Fatalf("enforced nonce policy missing: %q", csp)
+		}
+		if !strings.Contains(body, `<script nonce="`+m[1]+`">window.__WEB_BUILDER__`) {
+			t.Errorf("the boot script does not carry the policy's nonce %s", m[1])
+		}
+		return dirs
+	}
+	has := func(dirs map[string]string, dir, src string) bool { return strings.Contains(" "+dirs[dir]+" ", " "+src+" ") }
+
+	dirs := policy(admin.c, page)
+	for _, dir := range []string{"script-src", "connect-src"} {
+		for _, o := range []string{"https://cdn.body.example", "https://cdn.head.example", "https://api.kit.example"} {
+			if has(dirs, dir, o) {
+				t.Errorf("code page: editor %s allows %s: %q", dir, o, dirs[dir])
+			}
+		}
+	}
+	if has(dirs, "frame-src", "https://maps.frame.example") {
+		t.Errorf("code page: frame-src %q", dirs["frame-src"])
+	}
+	for dir, want := range map[string][]string{
+		"style-src": {"https://css.body.example", "https://fonts.kit.example"},
+		"img-src":   {"blob:"},
+		"media-src": {"blob:"},
+	} {
+		for _, w := range want {
+			if !has(dirs, dir, w) {
+				t.Errorf("code page: editor %s lacks %s: %q", dir, w, dirs[dir])
+			}
+		}
+	}
+
+	// A mixed page: the published page's origins for the design.
+	mixed := wbrPost(t, srv, "page", "CSP mixed", "draft", 1)
+	style := map[string]any{"palette": "light", "align": "left", "padding": 0, "titleSize": 40, "hideOn": []any{}}
+	doc := map[string]any{"site": map[string]any{"brand": "#2271b1", "fontPair": "modern", "corners": "soft"}, "sections": []any{
+		map[string]any{"id": "b1", "kind": "hero", "name": "Hero", "hidden": false, "items": []any{}, "style": style, "content": map[string]any{"title": "Hi"}},
+		map[string]any{"id": "c1", "kind": "code", "name": "Code", "hidden": false, "items": []any{}, "style": style, "content": map[string]any{"html": html, "head": head, "kit": "ck"}},
+	}}
+	body := wbrPublishBody(doc, map[string]any{}, 0, "publish", map[string]any{"title": "CSP mixed", "slug": "csp-mixed", "indexable": true})
+	body["serverRender"] = true
+	if code, v, _ := admin.do(http.MethodPost, wbrDocPath(mixed.ID, "/publish"), body, nil); code != http.StatusOK {
+		t.Fatalf("publish mixed: %d %v", code, v)
+	}
+	dirs = policy(admin.c, mixed.ID)
+	for dir, want := range map[string][]string{
+		"script-src":  {"https://cdn.body.example", "https://cdn.head.example", "https://api.kit.example"},
+		"connect-src": {"https://cdn.body.example", "https://api.kit.example"},
+		"img-src":     {"blob:"},
+	} {
+		for _, w := range want {
+			if !has(dirs, dir, w) {
+				t.Errorf("mixed page: editor %s lacks %s: %q", dir, w, dirs[dir])
+			}
+		}
+	}
+	resp, err := http.Get(base + "/csp-mixed/")
 	if err != nil {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	published := resp.Header.Get("Content-Security-Policy")
-
-	code, body, h := wbOpen(t, admin.c, base, page)
-	if code != http.StatusOK {
-		t.Fatalf("editor: %d", code)
-	}
-	csp := h.Get("Content-Security-Policy")
-	dirs := cspDirectives(csp)
-	m := wbtNonceRe.FindStringSubmatch(dirs["script-src"])
-	if m == nil || !strings.Contains(dirs["script-src"], "'strict-dynamic'") {
-		t.Fatalf("enforced nonce policy missing: %q", csp)
-	}
-	if !strings.Contains(body, `<script nonce="`+m[1]+`">window.__WEB_BUILDER__`) {
-		t.Errorf("the boot script does not carry the policy's nonce %s", m[1])
-	}
-	for dir, want := range map[string][]string{
-		"script-src":  {"https://cdn.body.example", "https://cdn.head.example", "https://api.kit.example"},
-		"connect-src": {"'self'", "https://cdn.body.example", "https://api.kit.example"},
-		"worker-src":  {"'self'", "blob:"},
-		"img-src":     {"blob:"},
-		"media-src":   {"blob:"},
-		"frame-src":   {"https:"},
-	} {
-		for _, w := range want {
-			if !strings.Contains(" "+dirs[dir]+" ", " "+w+" ") {
-				t.Errorf("editor %s lacks %s: %q", dir, w, dirs[dir])
-			}
-		}
-	}
-	// Every origin the published page allows for the design is allowed in the editor.
-	pub := cspDirectives(published)
-	for _, dir := range []string{"script-src", "connect-src", "style-src", "font-src", "img-src", "media-src"} {
+	pub := cspDirectives(resp.Header.Get("Content-Security-Policy"))
+	for _, dir := range []string{"script-src", "connect-src", "style-src", "font-src"} {
 		for _, src := range strings.Fields(pub[dir]) {
-			if strings.HasPrefix(src, "https://") && !strings.Contains(" "+dirs[dir]+" ", " "+src+" ") && !strings.Contains(" "+dirs[dir]+" ", " https: ") {
-				t.Errorf("published %s allows %s, the editor does not: %q", dir, src, dirs[dir])
+			if strings.HasPrefix(src, "https://") && !has(dirs, dir, src) && !has(dirs, dir, "https:") {
+				t.Errorf("mixed page: published %s allows %s, the editor does not: %q", dir, src, dirs[dir])
 			}
 		}
 	}
@@ -346,13 +496,15 @@ func TestWBEditorCodeCSP(t *testing.T) {
 	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO user_capabilities (user_id, capability, effect) VALUES ($1, 'unfiltered_html', 'deny')`, limitedID); err != nil {
 		t.Fatal(err)
 	}
-	code, _, h = wbOpen(t, limited.c, base, page)
-	if code != http.StatusOK {
-		t.Fatalf("limited editor: %d", code)
-	}
-	for _, o := range []string{"cdn.body.example", "cdn.head.example", "api.kit.example"} {
-		if strings.Contains(h.Get("Content-Security-Policy"), o) {
-			t.Errorf("limited editor's policy names %s", o)
+	for _, id := range []int64{page, mixed.ID} {
+		code, _, h := wbOpen(t, limited.c, base, id)
+		if code != http.StatusOK {
+			t.Fatalf("limited editor: %d", code)
+		}
+		for _, o := range []string{"cdn.body.example", "cdn.head.example", "api.kit.example", "css.body.example"} {
+			if strings.Contains(h.Get("Content-Security-Policy"), o) {
+				t.Errorf("limited editor's policy names %s", o)
+			}
 		}
 	}
 }
