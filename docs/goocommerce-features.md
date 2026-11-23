@@ -133,7 +133,14 @@ goes on hold or is paid: when another order got the last unit or the coupon's la
 payment puts the order on hold with a note ("Not enough units of … are available", "Usage limit for
 coupon … has been reached") instead of overselling; products that allow backorders go below zero as
 before, and a status set by a person in the admin or through `wc/v3` is applied like WooCommerce does.
-Checkout still validates stock but does not reserve it (WooCommerce's `wc_reserved_stock`).
+Placing an order reserves its stock while the customer pays (WooCommerce's `wc_reserve_stock_for_order`
+and `wc_reserved_stock`, table `goo_reserved_stock`) for **Hold stock (minutes)** (Settings › Products ›
+Inventory; 0 turns it off): the product rows are locked while the reservation is checked and written, so
+of two checkouts for the last unit only one reaches the payment page and the other is told it is out of
+stock. A payment cannot take units another unpaid order holds. The hold ends when the order is paid or
+put on hold (the stock is reduced instead), cancelled or failed, or when the time runs out (expired holds
+count for nothing; the hourly job deletes them and cancels the unpaid order). Products that do not manage
+stock or allow backorders are not reserved.
 
 ## Known limits
 
@@ -149,8 +156,6 @@ Checkout still validates stock but does not reserve it (WooCommerce's `wc_reserv
   refund those by hand and record it on the order. Bookings do not support refunds either.
 - Geolocate uses the country from the request headers when available (CDN or proxy header) and falls
   back to the store base country; there is no GeoIP database lookup.
-- Cart and Checkout have no block editor blocks yet; use the `[goocommerce_cart]` and
-  `[goocommerce_checkout]` shortcodes (the pages are created for you).
 
 ## Blocks
 
@@ -161,6 +166,30 @@ rendered while the store is off): `goocommerce/products` (attributes `columns`, 
 `goocommerce/product-search` (`title`). They render on the front end from block markup such as
 `<!-- wp:goocommerce/products {"columns":3,"limit":6} /-->`; the editor inserter entries are not
 registered yet (insert them with the code editor or a Custom HTML block holding the comment).
+
+### Cart and Checkout blocks
+
+`woocommerce/cart` and `woocommerce/checkout` (aliases `goocommerce/cart`, `goocommerce/checkout`) are in the
+block editor's inserter. They are hybrid: the editor sets their attributes, and the front end renders the
+cart and checkout pages of `[goocommerce_cart]` / `[goocommerce_checkout]` on the server (no Store API
+React app, the same forms, scripts and validation). Attributes:
+
+- Cart: `showCrossSells`, `showCouponForm` (booleans, default on), `emptyCartMessage`.
+- Checkout: `showLoginReminder`, `showCouponForm`, `showOrderNotes`, `showReturnToCart` (booleans, default on),
+  `billingTitle`, `additionalTitle`, `orderTitle` (headings, empty for the default ones), and the fields
+  `showCompanyField` / `requireCompanyField`, `showApartmentField` / `requireApartmentField`,
+  `showPhoneField` / `requirePhoneField`. The field attributes of the block on the store's checkout page
+  replace the `checkout_*_field` options for the form and its validation (My account's address forms too);
+  a field without attributes keeps its option.
+
+Pages imported from WordPress keep WooCommerce's block markup and its inner blocks. The inner blocks are
+read as settings: without `woocommerce/cart-cross-sells-block`, `woocommerce/cart-order-summary-coupon-form-block`,
+`woocommerce/checkout-order-note-block` or `woocommerce/checkout-order-summary-coupon-form-block` the
+section is not shown; the `title` of `woocommerce/checkout-billing-address-block` and
+`woocommerce/checkout-additional-information-block` and `showReturnToCart` of
+`woocommerce/checkout-actions-block` are used; the Empty cart block's own blocks show while the cart is
+empty. Inner blocks Pursae does not render are ignored. The block's own attributes win over its inner
+blocks. The Web Builder has the same cart and checkout as its Cart page and Checkout page widgets.
 
 ### Bookings: calendar and overnight blocks
 
