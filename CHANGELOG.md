@@ -10,6 +10,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-23
+
+The first 0.5.x update: Cart and Checkout blocks, stock reservation, passkeys, remote backups, metrics, Web
+Builder site style and drop-down menus, and completed translations. Releases continue as 0.5.2, 0.5.3…
+
 ### Added
 
 - **Cart and Checkout blocks.** The block editor inserts `woocommerce/cart` and `woocommerce/checkout` and edits
@@ -76,6 +81,27 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 - **Translations completed.** The 567 admin strings added since the language packs were last updated (Pursae
   product updates, forum, remote storage, import recovery, setup wizard and more) are now translated in every
   `web/languages/wpgo-*.json` pack except the English variants; regional variants share their base language.
+
+### Fixed
+
+- **Web Builder design import recovers from interruptions.** Retrying an import skips pages it already
+  finished and keeps their later changes; scheduled results show as pending publication; the homepage and
+  its rollback record are written together, and undo restores the previous homepage without deleting a
+  reused page. Retries keep the original removal record and kit, kit files are restored when saving
+  settings fails, and the wizard stops before publishing if an old staging folder cannot be cleared.
+- **Interrupted media transfers in design imports.** A retry reuses the attachments it already created
+  (same IDs and URLs), files of a rejected attachment are cleaned up, zero-byte multipart uploads are
+  rejected like empty raw uploads, and the removal confirmation lists the remaining Media Library items.
+
+### Database
+
+- Migration 0112: `adminsec_passkey_users`, `adminsec_passkeys`, `adminsec_passkey_ceremonies`.
+- Migration 0113: `goo_reserved_stock`.
+- Both only add, so 0.5.0 still runs on the new schema.
+
+### Internal
+
+- Dependency updates (Dependabot), including TypeScript 7 and vitest 5 for the Web Builder.
 
 ## [0.5.0] - 2026-11-22
 
