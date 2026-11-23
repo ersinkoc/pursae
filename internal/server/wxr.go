@@ -724,6 +724,7 @@ type importReport struct {
 	Posts, Pages, Blocks, Templates, Skipped, Terms, Comments, Attachments, MenuItems int // Templates: Theme Builder (wb_template)
 	Products, Variations                                                              int // WooCommerce products into Pursae Commerce (wxr_products.go)
 	SkippedOrders, SkippedCoupons                                                     int // WooCommerce records that are counted, not imported
+	Navigations, SkippedSiteEditor                                                    int // block theme menus made into menus; other Site Editor items (wxr_site_editor.go)
 	Log                                                                               []string
 }
 
@@ -934,6 +935,7 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 	}
 	var menuItems []menuItemRef
 	var products []*wxrItem        // imported once the media and posts are in (wxr_products.go)
+	var navs []*wxrItem            // block theme navigation menus, made into menus at the end (wxr_site_editor.go)
 	wooSkipped := map[string]int{} // WooCommerce orders, coupons, ... counted by kind
 	for i := range doc.Channel.Items {
 		if err := stop(); err != nil {
@@ -955,6 +957,16 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 				}
 			}
 			rep.Skipped++
+			continue
+		}
+		if wxrSiteEditorTypes[kind] {
+			rep.SkippedSiteEditor++
+			continue
+		}
+		if kind == "wp_navigation" {
+			if it.Status == "publish" {
+				navs = append(navs, it)
+			}
 			continue
 		}
 		if what, ok := wxrWooSkippedTypes[kind]; ok {
@@ -1294,6 +1306,10 @@ func (s *Server) importWXRReader(ctx context.Context, u *store.User, r io.Reader
 		if pid, ok := menuItemIDs[parentOld]; ok {
 			_, _ = s.store.Pool.Exec(ctx, `UPDATE menu_items SET parent_id = $2 WHERE id = $1`, id, pid)
 		}
+	}
+	rep.Navigations = s.wxrImportNavigations(ctx, navs, idMap, oldTerms, rep)
+	if line := wxrSiteEditorLog(rep.SkippedSiteEditor); line != "" {
+		rep.Log = append(rep.Log, line)
 	}
 	if opts.IDMap != nil {
 		for k, v := range idMap {

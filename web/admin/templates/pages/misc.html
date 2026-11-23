@@ -705,6 +705,8 @@
 {{else if .Report}}{{with .Report}}
 <div class="notice notice-success"><p><strong>All done.</strong> Have fun!</p></div>
 <p>Imported {{.Posts}} posts, {{.Pages}} pages, {{.Blocks}} patterns, {{if .Templates}}{{.Templates}} Theme Builder templates, {{end}}{{.MenuItems}} menu items, {{.Attachments}} media files, {{.Comments}} comments and {{.Terms}} new categories and tags.{{if or .Products .Variations}} Imported {{.Products}} products and {{.Variations}} variations into Pursae Commerce.{{end}}{{if .Skipped}} {{.Skipped}} items were skipped.{{end}}{{if or .SkippedOrders .SkippedCoupons}} Skipped {{.SkippedOrders}} orders / {{.SkippedCoupons}} coupons.{{end}}</p>
+{{if .Navigations}}<p>{{.Navigations}} block theme navigation menus were imported as menus (Appearance › Menus).</p>{{end}}
+{{if .SkippedSiteEditor}}<div class="notice notice-info inline"><p>{{.SkippedSiteEditor}} Site Editor items (block theme templates, template parts, global styles and fonts) were not imported: Pursae has no Site Editor. Design the header, footer, single, archive, search and 404 templates and the site style with Pursae Web Builder instead.</p><p><a href="/wp-admin/themes?page=web-builder-templates">Open the Theme Builder</a> &middot; <a href="https://pursae.com/docs/built-in-plugins/web-builder-site-editor/">Coming from the Site Editor</a></p></div>{{end}}
 {{if .Log}}<ul>{{range .Log}}<li>{{.}}</li>{{end}}</ul>{{end}}
 <p><a href="/wp-admin/edit">View posts</a> &middot; <a href="/wp-admin/import">Import another file</a></p>
 {{end}}
