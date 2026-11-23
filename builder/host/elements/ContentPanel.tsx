@@ -21,7 +21,7 @@ import type { CmsHost } from '../cms-host'
 import { t } from '../i18n'
 import { act, commit, latest, pageOf, style as styleAct } from './actions'
 import { attrError, tagChoices, urlOK, type AttrError } from './attrs'
-import { attr, decode, elementKids, inner, outer, ownText, VOID, wbc, type El, type Tree } from './html'
+import { attr, decode, elementKids, inner, linesApart, outer, ownText, VOID, wbc, type El, type Tree } from './html'
 import { KEEP_ATTR, writeBack, type SrcMap } from './richtext'
 import { kindLabel, kindOf } from './kinds'
 import { locate, movable } from './ops'
@@ -185,6 +185,8 @@ export function richNodes(tr: Tree, el: El, map: SrcMap): DocumentFragment {
         const e = document.createElement(k.tag)
         const href = k.tag === 'a' ? attr(k, 'href') : null
         if (href && urlOK(href)) e.setAttribute('href', href)
+        // An inline tag the design shows as a block (Tailwind block, a flex child): drawn apart here too.
+        if (k.tag !== 'br' && linesApart(k)) e.style.display = 'block'
         map.set(e, k)
         parent.appendChild(e)
         if (k.tag !== 'br') add(e, k.children)

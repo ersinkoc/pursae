@@ -5,6 +5,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { extractFields, fieldFor, flatFields, limitItems, nameOf, pathTo, summarize, type Field, type Group } from '../../host/elements/fields'
 import { setIdSource, tree, withIds } from '../../host/elements/ops'
+import { textOf } from '../../host/elements/html'
+import { splice } from '../../host/elements/html'
 
 let n = 0
 beforeEach(() => {
@@ -202,5 +204,52 @@ describe('summarize and names', () => {
 
   it('reads the name from the first visible top-level element', () => {
     expect(nameOf(tree('<script>1</script><footer data-wbc="a">x</footer>'))).toMatchObject({ name: 'Footer', landmark: true })
+  })
+
+  describe('text as a reader sees it (blocks and line breaks apart)', () => {
+    const one = (html: string) => {
+      const w = ided(html)
+      return { f: flatFields(extractFields(w))[0], title: summarize(w).title, label: textOf(tree(w), tree(w).root) }
+    }
+
+    it('a heading of spans around a line break reads with a space', () => {
+      const r = one('<h1 class="text-4xl"><span>ENERJİ OSGB</span><br><span>Sakarya İş Sağlığı</span></h1>')
+      expect(r.f.text).toBe('ENERJİ OSGB Sakarya İş Sağlığı')
+      expect(r.title).toBe('ENERJİ OSGB Sakarya İş Sağlığı')
+      expect(r.label).toBe('ENERJİ OSGB Sakarya İş Sağlığı')
+      expect(r.f.edit).toBe('rich')
+    })
+
+    it('spans made blocks (Tailwind block, display style) and flex children are apart', () => {
+      expect(one('<h1><span class="block">ENERJİ OSGB</span><span class="block">Sakarya</span></h1>').f.text).toBe('ENERJİ OSGB Sakarya')
+      expect(one('<p>ENERJİ OSGB<span class="md:block">Sakarya</span></p>').f.text).toBe('ENERJİ OSGB Sakarya')
+      expect(one('<p>A<span style="display: block">B</span></p>').label).toBe('A B')
+      expect(one('<a href="/x" class="inline-flex items-center gap-2"><svg class="h-4 w-4"></svg><span>Ana</span><span>Sayfa</span></a>').f.text).toBe('Ana Sayfa')
+    })
+
+    it('inline neighbours without a gap stay joined, as the page shows them', () => {
+      expect(one('<p>iş<span class="font-bold">ten</span>, <em>x</em></p>').f.text).toBe('işten, x')
+      expect(one('<a href="/x"><span class="inline-block">a</span><span>b</span></a>').f.text).toBe('ab')
+    })
+
+    it('Tailwind cards and nav links read with their separators', () => {
+      const f = flatFields(extractFields(ided(`<div class="grid grid-cols-2">
+        <div class="rounded-xl p-6"><h3 class="font-semibold"><span class="block text-sm">Paket</span><span class="block text-xl">Pro</span></h3><p class="mt-2">Aylık<span class="block">99 TL</span></p></div>
+        <div class="rounded-xl p-6"><h3 class="font-semibold">Basic</h3><p class="mt-2">Ücretsiz</p></div></div>`)))
+      expect(f.map((x) => x.text)).toEqual(['Paket Pro', 'Aylık 99 TL', 'Basic', 'Ücretsiz'])
+    })
+
+    it('an edit of such a field keeps the source: untouched tags and no display spaces written', () => {
+      const html = '<h1 data-wbc="a"><span class="block" data-wbc="b">ENERJİ OSGB</span><span class="block" data-wbc="c">Sakarya</span></h1>'
+      const f = flatFields(extractFields(html))[0]
+      expect(f.text).toBe('ENERJİ OSGB Sakarya')
+      // Inline structure: edited in the rich box (writeBack keeps the tags), never a plain input.
+      expect(f.edit).toBe('rich')
+      const t = tree(html)
+      const el = t.byId.get('a')!
+      const out = splice(html, [{ start: el.openEnd, end: el.closeStart, text: html.slice(el.openEnd, el.closeStart) }])
+      expect(out).toBe(html)
+      expect(out).not.toContain('ENERJİ OSGB Sakarya')
+    })
   })
 })
