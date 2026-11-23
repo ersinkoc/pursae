@@ -11,24 +11,35 @@
  */
 import type { CmsHost } from '../cms-host'
 import type { Boot } from '../contract'
+import { setKitTrust as restSetKitTrust } from '../rest'
 
-/**
- * TODO(merge #2): Boot.scriptTrust / Boot.canRunScripts are added to contract.ts by the trust
- * branch (editor-live/2-*); until then they are read defensively from the boot object. Without
- * canRunScripts the older caps.unfilteredHtml says the same.
- */
-type TrustBoot = Pick<Boot, 'caps' | 'codeParts' | 'document'> & { scriptTrust?: unknown; canRunScripts?: unknown }
+/** The boot fields the trust decision reads (Boot.scriptTrust, Boot.canRunScripts: the trust store). */
+type TrustBoot = Pick<Boot, 'caps' | 'codeParts' | 'document' | 'scriptTrust' | 'canRunScripts'>
 
 const KIT = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/
 
 const bootOf = (): Partial<TrustBoot> | undefined => (typeof window !== 'undefined' ? (window.__WEB_BUILDER__ as Partial<TrustBoot> | undefined) : undefined)
 const hostOf = () => (typeof window !== 'undefined' ? (window.__WEB_BUILDER_HOST__ as CmsHost | undefined) : undefined)
 
-/** The user may run (and trust) a design's scripts in the editor. */
+/**
+ * The user may run (and trust) a design's scripts in the editor, and edit markup (code sections,
+ * element code, Basic fields of a code section): both are `unfiltered_html`. The one rule every
+ * panel and the canvas use (Boot.canRunScripts; caps.unfilteredHtml is the same capability, read
+ * when an older server leaves canRunScripts out).
+ */
 export function canRunScripts(boot: Partial<TrustBoot> | undefined = bootOf()): boolean {
   if (!boot) return false
   if (typeof boot.canRunScripts === 'boolean') return boot.canRunScripts
   return !!boot.caps?.unfilteredHtml
+}
+
+/**
+ * Markup is read-only for this user (no unfiltered_html: the server would drop the edit): the
+ * Basic fields of a code section, Edit code and Section code. Same rule as canRunScripts; without
+ * any boot object (unit tests of a panel alone) nothing is read-only.
+ */
+export function markupReadOnly(boot: Partial<TrustBoot> | undefined = hostOf()?.boot ?? bootOf()): boolean {
+  return !!boot && !canRunScripts(boot)
 }
 
 /** The kits this user always runs (Boot.scriptTrust). */
@@ -111,18 +122,12 @@ export const sandboxOf = (scripts: boolean) => (scripts ? 'allow-scripts allow-s
 
 /**
  * Trusts (or stops trusting) a kit for this user: `PUT web-builder/v2/kits/{slug}/trust`
- * `{trust}` → `{trust, scriptTrust}`; resolves to the user's whole trusted list.
- * RestError 403 without unfiltered_html, 404 wb_kit_not_found.
- * TODO(merge #2): replace the body with `return restSetKitTrust(h.rest, slug, on)` (rest.ts
- * setKitTrust(rest, slug, on), route routes.kitTrust(slug)) once editor-live/2-trust lands; this
- * shim sends the same request and checks the answer the same way.
+ * `{trust}` → `{trust, scriptTrust}` (rest.ts setKitTrust); resolves to the user's whole trusted
+ * list. RestError 403 without unfiltered_html, 404 wb_kit_not_found.
  */
 export async function setKitTrust(slug: string, on: boolean): Promise<string[]> {
   const h = hostOf()
   if (!h) throw new Error('The editor is not ready.')
   if (!KIT.test(slug)) throw new Error('Unknown design kit.')
-  const r = await h.rest.request<{ trust?: boolean; scriptTrust?: unknown }>('PUT', `web-builder/v2/kits/${encodeURIComponent(slug)}/trust`, { json: { trust: on } })
-  const list = r.data && Array.isArray(r.data.scriptTrust) ? r.data.scriptTrust : null
-  if (!list) throw new Error('The server did not return the trusted design kits.')
-  return list.filter((s): s is string => typeof s === 'string')
+  return restSetKitTrust(h.rest, slug, on)
 }

@@ -30,6 +30,7 @@ import { CodeEditor } from './CodeEditor'
 import { tc } from './code-tr'
 import { frameEl } from './geometry'
 import { frameInfo, getElState, useElState } from './state'
+import { markupReadOnly } from './trust'
 import { variantOf, type LocalSection } from './local'
 
 type B = ReturnType<typeof useB>
@@ -245,9 +246,21 @@ interface SearchHit {
   subtype?: string
 }
 
-function LinkPanel({ b, id, el }: { b: B; id: string; el: El }) {
-  const href = attr(el, 'href') ?? ''
-  const blank = attr(el, 'target') === '_blank'
+/** A site address as the link stores it: a path on this site, else the full URL. */
+function localUrl(url: string): string {
+  try {
+    const u = new URL(url, location.href)
+    return u.origin === location.origin ? u.pathname + u.search + u.hash : url
+  } catch {
+    return url
+  }
+}
+
+/**
+ * Pages and posts of the site by name (core search), so a link can point at one: the Link panel
+ * (Studio) and Basic mode's address fields share it. `big` is Basic mode's larger box.
+ */
+export function PagePicker({ onPick, big, autoFocus }: { onPick: (url: string) => void; big?: boolean; autoFocus?: boolean }) {
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<SearchHit[]>([])
   useEffect(() => {
@@ -265,42 +278,44 @@ function LinkPanel({ b, id, el }: { b: B; id: string; el: El }) {
       clearTimeout(tm)
     }
   }, [q])
-  const local = (url: string) => {
-    try {
-      const u = new URL(url, location.href)
-      return u.origin === location.origin ? u.pathname + u.search + u.hash : url
-    } catch {
-      return url
-    }
-  }
+  return (
+    <div className={big ? 'mt-1.5 space-y-1.5' : 'space-y-1'}>
+      <label className="relative block">
+        <Search size={big ? 13 : 12} className={big ? 'absolute left-2.5 top-2.5 text-ink-500' : 'absolute left-2 top-2 text-ink-500'} />
+        <input autoFocus={autoFocus} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder={t('Search pages and posts')} className={cn(inputCls, big ? 'h-9 w-full rounded-lg pl-8' : 'w-full pl-6')} data-wb-link-search="" />
+      </label>
+      {hits.length > 0 && (
+        <div className={cn('overflow-y-auto border border-white/[0.08]', big ? 'max-h-44 rounded-lg' : 'max-h-48 rounded-md')}>
+          {hits.map((h) => (
+            <button
+              key={h.id + h.url}
+              type="button"
+              onClick={() => {
+                onPick(localUrl(h.url))
+                setQ('')
+              }}
+              className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-[11.5px] hover:bg-white/[0.06]"
+            >
+              <span className="truncate text-ink-100">{h.title || localUrl(h.url)}</span>
+              <span className="shrink-0 font-mono text-[10px] text-ink-500">{localUrl(h.url)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LinkPanel({ b, id, el }: { b: B; id: string; el: El }) {
+  const href = attr(el, 'href') ?? ''
+  const blank = attr(el, 'target') === '_blank'
   return (
     <Panel title={t('Link')}>
       <Ctl label={t('Address')} stack>
         <Field value={href} name="href" mono placeholder="https:// · /page/ · #id" onCommit={(v) => setOne(b, id, 'a', 'href', v.trim() || null, t('Link changed'))} />
       </Ctl>
       <Ctl label={t('Link to a page of the site')} stack>
-        <label className="relative block">
-          <Search size={12} className="absolute left-2 top-2 text-ink-500" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder={t('Search pages and posts')} className={cn(inputCls, 'w-full pl-6')} data-wb-link-search="" />
-        </label>
-        {hits.length > 0 && (
-          <div className="max-h-48 overflow-y-auto rounded-md border border-white/[0.08]">
-            {hits.map((h) => (
-              <button
-                key={h.id + h.url}
-                type="button"
-                onClick={() => {
-                  setOne(b, id, 'a', 'href', local(h.url), t('Link changed'))
-                  setQ('')
-                }}
-                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-[11.5px] hover:bg-white/[0.06]"
-              >
-                <span className="truncate text-ink-100">{h.title || local(h.url)}</span>
-                <span className="shrink-0 font-mono text-[10px] text-ink-500">{local(h.url)}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <PagePicker onPick={(u) => setOne(b, id, 'a', 'href', u, t('Link changed'))} />
       </Ctl>
       <label className="flex items-center gap-2 text-[11.5px] text-ink-300">
         <input
@@ -582,8 +597,8 @@ function FieldPanel({ b, id, el, tr }: { b: B; id: string; el: El; tr: Tree }) {
 const drafts = new Map<string, { base: string; text: string }>()
 export const codeDrafts = drafts
 
-/** Who may write code: users with unfiltered_html (the same users whose code sections are accepted). */
-const mayCode = () => host()?.boot?.caps?.unfilteredHtml !== false
+/** Who may write code: users with unfiltered_html (the same users whose code sections are accepted; trust.ts markupReadOnly). */
+const mayCode = () => !markupReadOnly()
 
 function problemText(p: CodeProblem): string {
   const v = { line: p.line, tag: p.tag ?? '' }

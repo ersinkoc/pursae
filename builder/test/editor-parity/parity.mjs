@@ -3,19 +3,23 @@
 // design kit and imported as a code page through the MCP route an agent uses (web_builder_kit_upload,
 // then web_builder_import_site or web_builder_import_html method "code"), published, and then shot
 // (a) on the published page and (b) in the Web Builder editor's canvas frame, at 1440 / 768 / 390 px,
-// in the editor's default mode and in Live edit (consent accepted). Per viewport and mode: the share
+// in Safe mode (static), in Live mode answered "This session only" (live) and "Always for this design"
+// (always: reopening the editor must be Live with no question; the trust is revoked again after it).
+// Clicks on the design go through Interact mode (--clicks interact, default; --clicks edit: plain
+// canvas clicks, which select elements). Per viewport and mode: the share
 // of differing pixels (top of the page, a scrolled position, dark theme) and functional checks (the
 // canvas scene drew, the theme toggle works and is remembered, script-drawn text, the JSON fetch, the
 // module + import map, the web font, 100vh, the fixed header). Output: report.json and report.html in
 // --out (default builder/.work/editor-parity).
 //
 //   node builder/test/editor-parity/parity.mjs --site http://127.0.0.1:8191 --user admin --pass '…'
-//     [--app-password 'xxxx xxxx …'] [--out dir] [--widths 1440,768,390] [--modes static,live]
+//     [--app-password 'xxxx xxxx …'] [--out dir] [--widths 1440,768,390] [--modes static,live,always] [--clicks interact|edit]
 //     [--import site|html] [--kit editor-parity] [--csp keep|report|enforce|off] [--target 0.5] [--skip-import]
 //     [--setup]   (fresh site: activate Pursae Web Builder and the Hello Pursae theme first)
 //
 // Environment instead of flags: PARITY_SITE, PARITY_USER, PARITY_PASS, PARITY_APP_PASSWORD;
-// PARITY_CHROMIUM: path of a Chromium / headless shell binary (else Playwright's own).
+// PW_CHROMIUM: path of a Chromium / headless shell binary (else Playwright's own; same variable for
+// builder/test/live/live-frame.mjs and builder/test/security/editor-xss.mjs).
 // Exit status: 0 when every shot is at or under --target % and every check passes, 1 otherwise,
 // 2 on a usage error. A baseline run on today's editor is expected to fail: the report is the point.
 
@@ -38,7 +42,8 @@ let madeAppUUID = ''
 let APP = args['app-password'] || process.env.PARITY_APP_PASSWORD || ''
 const OUT = path.resolve(args.out || path.join(repo, 'builder', '.work', 'editor-parity'))
 const WIDTHS = (args.widths || '1440,768,390').split(',').map(Number)
-const MODES = (args.modes || 'static,live').split(',')
+const MODES = (args.modes || 'static,live,always').split(',')
+const CLICKS = args.clicks || 'interact'
 const IMPORT = args.import || 'site'
 const KIT = args.kit || 'editor-parity'
 const CSP = args.csp || 'keep'
@@ -66,9 +71,9 @@ function parseArgs(argv) {
 /* ---------- browser ---------- */
 
 // Deterministic rasterization as fidelity.mjs; WebGL through SwiftShader (no GPU).
-// PARITY_CHROMIUM: a Chromium binary to use when Playwright's own build is not installed.
+// PW_CHROMIUM: a Chromium binary to use when Playwright's own build is not installed.
 const browser = await chromium.launch({
-  executablePath: process.env.PARITY_CHROMIUM || undefined,
+  executablePath: process.env.PW_CHROMIUM || undefined,
   args: ['--disable-lcd-text', '--force-color-profile=srgb', '--disable-gpu', '--font-render-hinting=none', '--disable-partial-raster', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars'],
 })
 const FREEZE = '*,*::before,*::after{transition:none!important;animation:none!important;caret-color:transparent!important;scroll-behavior:auto!important}'
@@ -408,13 +413,57 @@ async function setDevice(page, width) {
   throw new Error(`no device button for ${dev}`)
 }
 
-async function enterLive(page) {
-  await page.locator('[data-wb-live]').click()
-  const consent = page.locator('[data-wb-scripts-run]')
-  const asked = await consent.isVisible({ timeout: 5000 }).catch(() => false)
-  if (asked) await consent.click()
+/** The trust prompt is on the canvas (an untrusted design with scripts): its answer, or null when it did not come. */
+async function promptShown(page, timeout = 4000) {
+  return page
+    .locator('[data-wb-trust-prompt]')
+    .waitFor({ state: 'visible', timeout })
+    .then(() => true)
+    .catch(() => false)
+}
+
+/**
+ * Puts the canvas in the run's mode:
+ *  - static: Safe mode (the prompt answered "Not now", or the Safe button);
+ *  - live: "This session only" (nothing stored);
+ *  - always: "Always for this design" (stored per user and kit: reopening the editor is Live at once).
+ * The prompt appears by itself on an untrusted page; else the Live button asks.
+ */
+async function enterMode(page, mode) {
+  const out = { prompted: await promptShown(page), answer: null }
+  if (mode === 'static') {
+    if (out.prompted) {
+      await page.locator('[data-wb-trust="later"]').click()
+      out.answer = 'later'
+    }
+    if ((await page.locator(FRAME).getAttribute('data-wb-scripts')) === '1') await page.locator('[data-wb-safe]').click()
+    await frameReady(page, '0')
+    return out
+  }
+  if ((await page.locator(FRAME).getAttribute('data-wb-scripts')) === '1' && !out.prompted) {
+    // Trusted already ("Always" earlier): Live from the start, nothing asked.
+    await frameReady(page, '1')
+    return out
+  }
+  if (!out.prompted) {
+    await page.locator('[data-wb-live]').click()
+    out.prompted = await promptShown(page, 5000)
+  }
+  const answer = mode === 'always' ? 'always' : 'session'
+  if (out.prompted) {
+    await page.locator(`[data-wb-trust="${answer}"]`).click()
+    out.answer = answer
+  }
   await frameReady(page, '1')
-  return { consentAsked: asked }
+  return out
+}
+
+/** Interact mode on or off (the canvas passes clicks to the design while it is on). */
+async function setInteract(page, on) {
+  const b = page.locator('[data-wb-interact]')
+  if (!(await b.count())) return false
+  if (((await b.getAttribute('aria-pressed')) === 'true') !== on) await b.click()
+  return (await b.getAttribute('aria-pressed')) === 'true'
 }
 
 async function editor(width, mode, real) {
@@ -427,19 +476,28 @@ async function editor(width, mode, real) {
   await frameReady(page, null)
   const defaultMode = await page.locator(FRAME).getAttribute('data-wb-frame')
   if (DEVICE[width] !== 'desktop') await setDevice(page, width)
-  let consent = null
-  if (mode === 'live') consent = await enterLive(page)
+  const consent = await enterMode(page, mode)
+  const out = { defaultMode, consent, problems }
+  if (mode === 'always') {
+    // Trusted: a new editor session opens Live with no question.
+    const p2 = await ctx.newPage()
+    await p2.goto(editURL, { waitUntil: 'load' })
+    await frameReady(p2, null)
+    out.reopen = { frame: await p2.locator(FRAME).getAttribute('data-wb-frame'), scripts: await p2.locator(FRAME).getAttribute('data-wb-scripts'), prompted: await promptShown(p2, 2500) }
+    await p2.close()
+  }
   const geom = real ? null : await fitEditor(page, width)
-  if (!real) await frameReady(page, mode === 'live' ? '1' : '0')
+  if (!real) await frameReady(page, mode === 'static' ? '0' : '1')
   await page.mouse.move(1, 1)
   const ev = await settleDoc(page, 'frame')
-  const frameAttrs = await page.evaluate((sel) => {
+  out.geom = geom
+  out.frameAttrs = await page.evaluate((sel) => {
     const f = document.querySelector(sel)
     return { mode: f.getAttribute('data-wb-frame'), scripts: f.getAttribute('data-wb-scripts'), sandbox: f.getAttribute('sandbox'), transform: f.style.transform, cssSize: [f.offsetWidth, f.offsetHeight], rect: [Math.round(f.getBoundingClientRect().width), Math.round(f.getBoundingClientRect().height)] }
   }, FRAME)
-  const info = await page.evaluate(inFrame(`${INSPECT}(doc, win)`))
-  const out = { defaultMode, consent, geom, frameAttrs, info, problems }
+  out.info = await page.evaluate(inFrame(`${INSPECT}(doc, win)`))
   if (real) {
+    if (mode === 'always') out.revoked = await revoke(page)
     await ctx.close()
     return out
   }
@@ -454,7 +512,9 @@ async function editor(width, mode, real) {
   await page.mouse.move(1, 1)
   out.shots.scrolled = await el.screenshot({ animations: 'disabled', caret: 'hide' })
   await ev(`(win.scrollTo(0, 0), 1)`)
-  // The theme toggle, clicked like a user would (through the canvas).
+  // The theme toggle, clicked like a user would (through the canvas): in Interact mode (--clicks
+  // interact, the default) the click is the design's; with --clicks edit it selects the element.
+  const interact = CLICKS === 'interact' ? await setInteract(page, true) : false
   const fl = page.frameLocator(FRAME)
   let clickError = null
   try {
@@ -464,6 +524,7 @@ async function editor(width, mode, real) {
   }
   await page.waitForTimeout(200)
   out.afterClick = await page.evaluate(inFrame(`${INSPECT}(doc, win)`))
+  out.afterClick.interact = interact
   out.afterClick.clickError = clickError
   out.afterClick.selected = await page.locator('[data-wb-selected]').getAttribute('data-wb-selected').catch(() => null)
   await page.mouse.move(1, 1)
@@ -477,6 +538,13 @@ async function editor(width, mode, real) {
   await page.waitForTimeout(200)
   out.afterClick.slideAfterDot = await page.evaluate(inFrame(`Array.from(doc.querySelectorAll('.slide')).findIndex((x) => x.classList.contains('active'))`))
   out.afterClick.selectedAfterDot = await page.locator('[data-wb-selected]').getAttribute('data-wb-selected').catch(() => null)
+  if (interact) {
+    // Back to editing: what the design's scripts changed stays (K3).
+    await setInteract(page, false)
+    await page.waitForTimeout(150)
+    out.afterClick.darkAfterInteract = await page.evaluate(inFrame(`doc.documentElement.classList.contains('dark')`))
+    out.afterClick.slideAfterInteract = await page.evaluate(inFrame(`Array.from(doc.querySelectorAll('.slide')).findIndex((x) => x.classList.contains('active'))`))
+  }
   await page.keyboard.press('Escape').catch(() => undefined)
   await page.evaluate(inFrame(`(win.scrollTo(0, 0), 1)`))
   // The remembered theme (same origin as the published page: one localStorage) on a fresh load.
@@ -484,11 +552,20 @@ async function editor(width, mode, real) {
   await page.reload({ waitUntil: 'load' })
   await frameReady(page, null)
   if (DEVICE[width] !== 'desktop') await setDevice(page, width)
-  if (mode === 'live') out.consentAgain = await enterLive(page)
+  out.consentAgain = await enterMode(page, mode)
   out.afterReload = await page.evaluate(inFrame(`${INSPECT}(doc, win)`))
   await page.evaluate(() => localStorage.removeItem('parity-theme'))
   await ctx.close()
   return out
+}
+
+/** "Stop always running this design's scripts" (the bottom bar): back to Safe mode, the trust gone. */
+async function revoke(page) {
+  const b = page.locator('[data-wb-untrust]')
+  if (!(await b.count())) return { done: false }
+  await b.click()
+  await frameReady(page, '0')
+  return { done: true, frame: await page.locator(FRAME).getAttribute('data-wb-frame'), untrustShown: (await page.locator('[data-wb-untrust]').count()) > 0 }
 }
 
 /* ---------- comparing (YIQ distance, as fidelity.mjs / builder/test/parity) ---------- */
@@ -580,8 +657,18 @@ for (const width of WIDTHS) {
       toggleStored: { editor: ed.afterClick?.stored === 'dark', published: pub.afterClick?.stored === 'dark' },
       themeRememberedOnLoad: { editor: !!ed.afterReload?.dark, published: !!pub.afterReload?.dark },
     }
+    if (ed.afterClick?.interact) {
+      // Leaving Interact mode keeps what the design's scripts did (the theme, the slide).
+      functional.darkKeptAfterInteract = { editor: !!ed.afterClick.darkAfterInteract, published: !!pub.afterClick?.dark }
+      functional.slideKeptAfterInteract = { editor: ed.afterClick.slideAfterInteract === 1, published: pub.afterClick?.slideAfterDot === 1 }
+    }
+    if (mode === 'always') {
+      // Trusted: a new editor session opens Live at once, with no question.
+      functional.alwaysReopensLive = { editor: ed.reopen?.scripts === '1' && ed.reopen?.prompted === false, published: true }
+    }
     const real = await editor(width, mode, true).catch((e) => ({ error: String(e.message || e) }))
-    row.editor[mode] = { defaultMode: ed.defaultMode, consent: ed.consent, consentAgain: ed.consentAgain, fit: ed.geom, frame: ed.frameAttrs, info: ed.info, afterClick: ed.afterClick, afterReload: ed.afterReload, diffs, functional, real, problems: ed.problems }
+    if (mode === 'always') functional.revokeGoesSafe = { editor: real?.revoked?.done === true && real?.revoked?.frame === 'static', published: true }
+    row.editor[mode] = { defaultMode: ed.defaultMode, consent: ed.consent, consentAgain: ed.consentAgain, reopen: ed.reopen, clicks: CLICKS, fit: ed.geom, frame: ed.frameAttrs, info: ed.info, afterClick: ed.afterClick, afterReload: ed.afterReload, diffs, functional, real, problems: ed.problems }
     const bad = Object.entries(functional).filter(([, v]) => v.editor !== v.published).map(([k]) => k)
     log(`editor ${mode} (default frame mode: ${ed.defaultMode}): diff top ${diffs.top.pct} %, scrolled ${diffs.scrolled.pct} %, dark ${diffs.dark.pct} %; differs: ${bad.join(', ') || 'none'}`)
   }

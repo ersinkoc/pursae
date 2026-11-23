@@ -55,10 +55,10 @@ const tr: Record<string, string> = {
   "No items.": "Öğe yok.", // i18n-ignore
   "Loading…": "Yükleniyor…", // i18n-ignore
   "The items of the list are templates: each menu item uses the one it was imported from, new items the first plain one. Mark a dropdown list inside an item as Submenu.": "Listenin öğeleri şablondur: her menü öğesi içe aktarıldığı öğeyi, yeni öğeler ilk sade öğeyi kullanır. Bir öğenin içindeki açılır listeyi Alt menü olarak işaretleyin.", // i18n-ignore
-  "The first child is the card template; bind its elements to fields. The other children are the design's samples and are left out on the site.": "İlk çocuk kart şablonudur; içindeki öğeleri alanlara bağlayın. Diğer çocuklar tasarımın örnekleridir ve sitede gösterilmez.", // i18n-ignore
+  "The first child is the card template; bind its elements to fields. The other children are the design’s samples and are left out on the site.": "İlk çocuk kart şablonudur; içindeki öğeleri alanlara bağlayın. Diğer çocuklar tasarımın örnekleridir ve sitede gösterilmez.", // i18n-ignore
   "Filled from the post of the loop card, else from the post the template shows.": "Döngü kartının yazısından, yoksa şablonun gösterdiği yazıdan doldurulur.", // i18n-ignore
-  "The form posts to Pursae: submissions are stored and mailed (Settings › Web Builder). The design's own validation still runs.": "Form Pursae'ye gönderilir: gönderimler saklanır ve e-postayla iletilir (Ayarlar › Web Builder). Tasarımın kendi doğrulaması çalışmaya devam eder.", // i18n-ignore
-  "Fills its dropdown list from the item's sub-items (one level).": "Açılır listesini öğenin alt öğeleriyle doldurur (bir düzey).", // i18n-ignore
+  "The form posts to Pursae: submissions are stored and mailed (Settings › Web Builder). The design’s own validation still runs.": "Form Pursae'ye gönderilir: gönderimler saklanır ve e-postayla iletilir (Ayarlar › Web Builder). Tasarımın kendi doğrulaması çalışmaya devam eder.", // i18n-ignore
+  "Fills its dropdown list from the item’s sub-items (one level).": "Açılır listesini öğenin alt öğeleriyle doldurur (bir düzey).", // i18n-ignore
   "Shows {n} items:": "{n} öğe gösterir:", // i18n-ignore
 }
 

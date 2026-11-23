@@ -146,7 +146,7 @@ func (s *Server) wbKitTrustBoot(ctx context.Context, u *store.User) []string {
 	m, err := s.wbKitTrustRead(ctx, u.ID)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
-			log.Printf("web builder: script trust of user %d: %v", u.ID, err)
+			log.Printf("web builder: script trust of user %d: %v", u.ID, err) //nolint:gosec // G706: a numeric user id and a database error, no request text
 		}
 		return []string{}
 	}
@@ -154,7 +154,7 @@ func (s *Server) wbKitTrustBoot(ctx context.Context, u *store.User) []string {
 	trusted := wbKitTrusted(kits, m)
 	if len(trusted) < len(m) {
 		if _, err := s.wbKitTrustUpdate(ctx, u.ID, func(cur map[string]string) { wbKitTrustPrune(kits, cur) }); err != nil {
-			log.Printf("web builder: pruning the script trust of user %d: %v", u.ID, err)
+			log.Printf("web builder: pruning the script trust of user %d: %v", u.ID, err) //nolint:gosec // G706: a numeric user id and a database error, no request text
 		}
 	}
 	return trusted

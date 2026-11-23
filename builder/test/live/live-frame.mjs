@@ -16,7 +16,7 @@
  *
  *   cd builder && node test/live/live-frame.mjs --site http://127.0.0.1:8193 --user admin --pass '…' \
  *     --post 4 [--out .work/live-frame] [--generic]   (--generic: any design; pixels and structure only)
- * PARITY_CHROMIUM may name a Chromium / headless-shell binary. Exit 1 on a difference.
+ * PW_CHROMIUM may name a Chromium / headless-shell binary (the same variable as editor-parity/parity.mjs and security/editor-xss.mjs). Exit 1 on a difference.
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -42,7 +42,7 @@ const bundle = await rolldown({ input: path.join(here, 'harness.ts'), resolve: {
 const { output } = await bundle.generate({ format: 'iife' })
 const JS = output[0].code
 
-const browser = await chromium.launch({ executablePath: process.env.PARITY_CHROMIUM || undefined, args: ['--force-color-profile=srgb', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
+const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || undefined, args: ['--force-color-profile=srgb', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 const page = await ctx.newPage()
 const problems = []

@@ -66,7 +66,8 @@ const TRUST = [
   ['trusted-kit', { canRunScripts: true, scriptTrust: ['acme'], kit: 'acme' }, { live: true, prompt: false }],
 ]
 
-// PW_CHROMIUM: a Chromium (headless shell) other than the one this Playwright version installs.
+// PW_CHROMIUM: a Chromium (headless shell) other than the one this Playwright version installs (the same
+// variable as live/live-frame.mjs and editor-parity/parity.mjs).
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {})
 let failed = false
 const rows = []

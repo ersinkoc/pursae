@@ -11,8 +11,10 @@ page-relative `fetch('data/items.json')` works on `/parity/`) or `web_builder_im
 (`--import html`). The page is published, then shot
 
 - on the published page, and
-- in the editor's canvas frame (`iframe[data-wb-frame]`), in the editor's default mode (`static`) and in
-  **Live edit** (the consent dialog accepted),
+- in the editor's canvas frame (`iframe[data-wb-frame]`) in three modes: `static` (Safe mode: the trust
+  prompt answered "Not now"), `live` ("This session only") and `always` ("Always for this design": a
+  second editor session must then open Live with no prompt; the trust is revoked with the bottom bar's
+  button at the end of the mode, which must put the canvas back in Safe mode),
 
 at 1440 / 768 / 390 px. For the pixel comparison the editor window is grown until the frame is the
 device's width at zoom 1 and as tall as the published viewport (900 px), so only content differences
@@ -36,6 +38,11 @@ slider, after the dark-mode toggle was clicked) and functional checks, editor vs
 | toggleClick / toggleStored | a click on the theme toggle sets `html.dark` and localStorage |
 | sliderDotClick | a click on the second slider dot shows slide 2 |
 | themeRememberedOnLoad | with `parity-theme=dark` stored, the early head script applies it on load |
+| darkKeptAfterInteract / slideKeptAfterInteract | leaving Interact mode keeps what the clicks changed (`--clicks interact`) |
+| alwaysReopensLive / revokeGoesSafe | `always` mode: Live at once in a new session; revoking goes back to Safe mode |
+
+The clicks on the design (theme toggle, slider dot) go through **Interact** mode by default
+(`--clicks interact`); `--clicks edit` clicks the canvas as an editor would (the click selects).
 
 Output: `report.json`, `report.html` (side-by-side published / editor / diff images) and `import.json`
 in `--out` (default `builder/.work/editor-parity`). Exit 1 when a shot is over `--target` % (default 0.5)
@@ -54,7 +61,7 @@ cd builder
 npm ci                                   # @playwright/test
 node test/editor-parity/parity.mjs --site http://127.0.0.1:8191 --user admin --pass '…' \
   [--setup] [--csp keep|report|enforce|off] [--import site|html] [--widths 1440,768,390] \
-  [--modes static,live] [--out dir] [--kit editor-parity] [--app-password '…'] [--target 0.5]
+  [--modes static,live,always] [--clicks interact|edit] [--out dir] [--kit editor-parity] [--app-password '…'] [--target 0.5]
 ```
 
 - `--setup` on a fresh site: activates Pursae Web Builder and the Hello Pursae theme (the site import
@@ -63,7 +70,8 @@ node test/editor-parity/parity.mjs --site http://127.0.0.1:8191 --user admin --p
 - Without `--app-password` a throwaway Application Password (full access) is made through the REST API
   with the login and deleted at the end.
 - Environment instead of flags: `PARITY_SITE`, `PARITY_USER`, `PARITY_PASS`, `PARITY_APP_PASSWORD`;
-  `PARITY_CHROMIUM` = a Chromium / headless-shell binary when Playwright's own build of the installed
+  `PW_CHROMIUM` = a Chromium / headless-shell binary (the same variable for `test/live/live-frame.mjs` and
+  `test/security/editor-xss.mjs`) when Playwright's own build of the installed
   version is missing (e.g.
   `~/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell`).
 - `make builder` (scripts/build.mjs) deletes `builder/.work`: copy a report elsewhere before building.

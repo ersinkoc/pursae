@@ -10,6 +10,7 @@ const tr: Record<string, string> = {
   "This design uses scripts. Run them so the editor matches your site?": "Bu tasarım betik kullanıyor. Editör sitenizle aynı görünsün diye çalıştırılsın mı?", // i18n-ignore
   "Scripts run inside the editor with your admin access: they can do anything you can do on this site, such as change content, settings and users. Only run designs you trust.": "Betikler editörde yönetici yetkinizle çalışır: bu sitede sizin yapabildiğiniz her şeyi (içeriği, ayarları, kullanıcıları değiştirmek gibi) yapabilirler. Yalnızca güvendiğiniz tasarımları çalıştırın.", // i18n-ignore
   "Always for this design": "Bu tasarım için her zaman", // i18n-ignore
+  "Links open on the published page, not in the editor: {url}": "Bağlantılar editörde değil, yayındaki sayfada açılır: {url}", // i18n-ignore
   "This session only": "Yalnızca bu oturum", // i18n-ignore
   "Not now (safe mode)": "Şimdi değil (güvenli mod)", // i18n-ignore
   "Live": "Canlı", // i18n-ignore

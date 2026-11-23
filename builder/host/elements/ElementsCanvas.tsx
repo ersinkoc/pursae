@@ -1,7 +1,7 @@
 /**
  * The element editor's canvas (plan §4.4, K5–K8): one frame with the whole page — the header
- * template, the page's code sections and the footer template — at the device's width (desktop is
- * a fixed 1440 px wide page scaled to fit the panel), and every editing control drawn outside the
+ * template, the page's code sections and the footer template — in the device's viewport (live.ts
+ * liveGeometry: 1440 × 900, 768 × 1024 or 390 × 844, scaled to fit the panel), and every editing control drawn outside the
  * frame, over it: hover and selection outlines, the element's type, the toolbar, the breadcrumb,
  * the drop indicator, the context menu and the text toolbar.
  *
@@ -37,7 +37,7 @@ import { act, commit, latest, pageOf, selectEl } from './actions'
 import { FrameSync, frameDoc, type FrameMode } from './frame'
 import { boxIn, dropAt, frameEl, isLocked, union, type Box, type Drop } from './geometry'
 import { attr, decode, escText, ownText } from './html'
-import { KIND_ICON, kindLabel, kindOf, namesOf, tagName } from './kinds'
+import { KIND_ICON, elementName, kindLabel, kindOf, namesOf } from './kinds'
 import { childIds, locate, movable, parentId, tree, type Page } from './ops'
 import { format, mapSource, startTextEdit, writeBack, type TextEdit } from './richtext'
 import { sweep } from './neutral'
@@ -49,12 +49,11 @@ import { style as styleAct } from './actions'
 import { kitsCSS, kitsOf, loadKits, syncKits, useKitStore } from './kitstyle'
 import { Palette, type NewElement } from './PaletteDrawer'
 import { TrustPrompt, revokeTrust, trustAlways, trustLater, trustSession } from './ScriptsGate'
-import { applyToLive, liveShellOf, loadLive, openLive, releaseLive, reloadPreserving, setLiveStyles, type LiveInput } from './live'
+import { LIVE_SANDBOX, applyToLive, guardLive, liveGeometry, liveShellOf, loadLive, openLive, releaseLive, reloadPreserving, setLiveStyles, type LiveInput } from './live'
 import { drawnText, holdLabel, leavesFrame, liveChange, measureLoop, passesThrough, sourceTarget, watchFrame } from './interact'
 import { frameModeOf, sandboxOf } from './trust'
 import { tc } from './canvas-tr'
 
-const WIDTH = { desktop: 1440, tablet: 768, mobile: 390 } as const
 const BAR = 34
 
 const cmsHost = () => (typeof window !== 'undefined' ? (window.__WEB_BUILDER_HOST__ as CmsHost | undefined) : undefined)
@@ -122,9 +121,14 @@ export function ElementsCanvas() {
   const area = useRef<HTMLDivElement>(null)
   const frame = useRef<HTMLIFrameElement>(null)
   const [size, setSize] = useState({ w: 1200, h: 800 })
-  const width = WIDTH[b.device]
-  const zoom = Math.min(1, Math.max(0.2, (size.w - (b.device === 'desktop' ? 0 : 48)) / width))
-  const stageH = Math.max(200, size.h - BAR - (b.device === 'desktop' ? 0 : 32))
+  // The frame is the device's viewport (1440 × 900, 768 × 1024, 390 × 844: innerWidth, innerHeight
+  // and 100vh are the device's, as on the published page), scaled with a transform to fit the panel.
+  // Live and Safe mode share it, so switching modes does not move the page.
+  const geo = liveGeometry(b.device, { w: Math.max(100, size.w - (b.device === 'desktop' ? 0 : 48)), h: Math.max(100, size.h - BAR - (b.device === 'desktop' ? 0 : 32)) })
+  const width = geo.width
+  const zoom = geo.zoom
+  /** The scaled frame's height on screen. */
+  const stageH = geo.height * zoom
 
   // ---------- frame document ----------
   const base = typeof location !== 'undefined' ? location.origin + '/' : '/'
@@ -175,7 +179,7 @@ export function ElementsCanvas() {
     page: secs,
     header: parts.header,
     footer: parts.footer,
-    shell: liveShellOf(!!host?.boot.codeParts, (host?.boot.document.page as { layout?: string } | undefined)?.layout, !!host?.boot.template),
+    shell: liveShellOf(!!host?.boot.site?.themeParts, (host?.boot.document.page as { layout?: string } | undefined)?.layout, !!host?.boot.template),
     url: host?.boot.links.permalink || base,
     kitCss,
     localCss,
@@ -645,8 +649,12 @@ export function ElementsCanvas() {
         const a = tg.closest('a[href]')
         const { mode, st, b } = cur.current
         if (mode === 'preview' || passes(e)) {
-          // The design gets the click; only following a link away from the page is stopped.
-          if (leavesFrame(a)) e.preventDefault()
+          // The design gets the click; only following a link away from the page is stopped: with
+          // the design's scripts by guardLive (after the design's own handlers, so a script that
+          // handles the link itself still works), without them here.
+          if (!d.defaultView || !guarded.has(d.defaultView)) {
+            if (leavesFrame(a)) e.preventDefault()
+          }
           return
         }
         if (st.editing && tg.closest('[contenteditable]')) return
@@ -698,6 +706,12 @@ export function ElementsCanvas() {
       },
       true,
     )
+    // A live page stays on its address (Interact mode, Preview): a link or form the design does
+    // not handle itself is stopped after the design's own listeners ran (live.ts guardLive).
+    if (frameSrc.scripts) {
+      guarded.add(w)
+      guardLive(d, (url) => cur.current.b.notify(tc('Links open on the published page, not in the editor: {url}', { url: url.length > 80 ? url.slice(0, 79) + '…' : url })))
+    }
     // A form never submits the frame away (also in Interact mode: the design's own handlers still run).
     d.addEventListener('submit', (e) => e.preventDefault(), true)
     // Keys inside the frame reach the editor's shortcuts (undo, delete, arrows…), not while typing
@@ -867,7 +881,7 @@ export function ElementsCanvas() {
     const out: { id: string | null; label: string }[] = []
     for (let p = sel.el; p && p.tag !== '#root'; p = p.parent!) {
       const id = attr(p, 'data-wbc')
-      if (id) out.unshift({ id, label: names[id] || tagName(p) })
+      if (id) out.unshift({ id, label: elementName(sel.tree, p, names) })
     }
     const s = b.doc.sections.find((x) => x.id === sel.sec)
     out.unshift({ id: null, label: s?.name || t('Section') })
@@ -940,12 +954,13 @@ export function ElementsCanvas() {
 
   const framed = b.device !== 'desktop'
   const SelIcon = selKind ? KIND_ICON[selKind] : null
+  const selName = sel && selKind ? elementName(sel.tree, sel.el, names, selKind) : ''
   const canEditText = !!st.sel && textEditable(page, st.sel)
 
   return (
     <div ref={area} className="relative min-w-0 flex-1 overflow-hidden bg-ink-950" data-wb-elements="" onClick={() => !b.preview && (selectEl(b, null), b.select(null))}>
       <div className={`absolute inset-x-0 top-0 flex justify-center ${framed ? 'dots-bg pt-4' : ''}`} style={{ bottom: BAR }}>
-        <div className={framed ? 'overflow-hidden rounded-[14px] shadow-[0_0_0_1px_rgba(255,255,255,.08),0_30px_80px_-20px_rgba(0,0,0,.7)]' : ''} style={{ width: width * zoom, height: stageH }}>
+        <div className={framed ? 'overflow-hidden rounded-[14px] shadow-[0_0_0_1px_rgba(255,255,255,.08),0_30px_80px_-20px_rgba(0,0,0,.7)]' : ''} style={{ width: width * zoom, height: stageH }} data-wb-stage="">
           {/* Static: no allow-scripts (the editor drives the DOM from outside; nothing of the design
               can run). With the user's choice only (trust or this session): the design's scripts,
               same origin, the document from live.ts. */}
@@ -958,8 +973,8 @@ export function ElementsCanvas() {
             data-wb-frame={mode}
             data-wb-scripts={frameSrc.scripts ? '1' : '0'}
             className="block border-0 bg-white"
-            style={{ width, height: stageH / zoom, transform: `scale(${zoom})`, transformOrigin: '0 0' }}
-            sandbox={sandboxOf(frameSrc.scripts)}
+            style={{ width, height: geo.height, transform: `scale(${zoom})`, transformOrigin: '0 0' }}
+            sandbox={frameSrc.scripts ? LIVE_SANDBOX : sandboxOf(false)}
           />
         </div>
       </div>
@@ -982,7 +997,7 @@ export function ElementsCanvas() {
         <div ref={selRef} data-wb-selected={st.sel ?? ''} className="absolute left-0 top-0 border-2 border-[#2271b1]" style={{ display: 'none' }}>
           {sel && SelIcon && (
             <span className="absolute -top-[22px] left-[-2px] flex h-[22px] max-w-[320px] items-center gap-1 truncate rounded-t-md bg-[#2271b1] px-2 text-[11px] font-medium text-white">
-              <SelIcon size={12} /> {kindLabel(selKind!)} · {names[st.sel!] || tagName(sel.el)}
+              <SelIcon size={12} /> {selName === kindLabel(selKind!) ? selName : `${kindLabel(selKind!)} · ${selName}`}
             </span>
           )}
         </div>
@@ -1302,6 +1317,9 @@ function ContextMenu({
     </div>
   )
 }
+
+/** Frame windows guardLive watches (their links are stopped after the design's handlers). */
+const guarded = new WeakSet<Window>()
 
 /** Exposed for the navigator: write the result of an element operation. */
 export { commit }

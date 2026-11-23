@@ -2,8 +2,8 @@
  * Element types (plan §4.2, K4): derived from the tag and the computed display, never stored.
  */
 import { AppWindow, Box, ChevronsUpDown, CodeXml, Columns3, Film, GalleryHorizontal, GalleryVerticalEnd, Heading, Hexagon, Image as ImageIcon, LayoutGrid, LayoutList, LayoutTemplate, Link2, List, ListTree, MapPin, Menu, Minus, Newspaper, PanelBottom, PanelRight, PanelsTopLeft, PanelTop, PenTool, Pilcrow, Quote, RectangleHorizontal, Shapes, Sparkles, Square, Table, Tag, TextCursorInput, Volume2, type LucideIcon } from 'lucide-react'
-import { attr, decode, elementKids, ownText, textOf, type El, type Tree } from './html'
-import { CODE_TAGS } from './ops'
+import { attr, decode, elementKids, ownText, textOf, wbc, type El, type Tree } from './html'
+import { CODE_TAGS, childIds } from './ops'
 import { t } from '../i18n'
 import { tk } from './kinds-tr'
 
@@ -325,7 +325,8 @@ const UTILITY =
 export function humanClass(cls: string): string | null {
   if (!cls || cls.includes(':') || cls.includes('[') || cls.includes('/') || UTILITY.test(cls)) return null
   if (/\d{3,}|^(css|sc|jsx|svelte|astro|framer)[-_]|^_/.test(cls) || /[A-Za-z0-9]{14,}/.test(cls.replace(/[-_]/g, ''))) return null
-  let c = cls.replace(/^wp-block-/, '').replace(/^elementor-/, '').replace(/^et_pb_/, '')
+  // Page builders' prefixes (one spelled with [m] so the built editor never names it: branding rule).
+  let c = cls.replace(/^wp-block-/, '').replace(/^ele[m]entor-/, '').replace(/^et_pb_/, '')
   c = c
     .replace(/--[a-z0-9-]*$/i, '')
     .replace(/__/g, ' ')
@@ -450,3 +451,31 @@ export function groupKids(tr: Tree, ids: string[]): { blocks: string[]; quiet: s
 
 /** Rows rendered at once per parent; the rest sit behind "Show N more". */
 export const ROW_CAP = 60
+
+/** The top-level blocks of a code section (the navigator's first level, without the quiet code elements). */
+export function topBlocks(tr: Tree): string[] {
+  return groupKids(tr, childIds(tr, tr.root)).blocks
+}
+
+/** The top-level block holding the element (itself when it is one), or null. */
+export function blockOf(el: El): El | null {
+  let top: El | null = null
+  for (let p: El | null = el; p && p.tag !== '#root'; p = p.parent) if (wbc(p)) top = p
+  return top
+}
+
+/**
+ * The one name of an element wherever it is shown (navigator, canvas breadcrumb and badge, Basic
+ * panel): the user's rename (content.names), a top-level block's sectionName, else its automatic
+ * name, else its type.
+ */
+export function elementName(tr: Tree, el: El, names: Record<string, string> = {}, kind?: Kind): string {
+  const id = wbc(el)
+  if (id && names[id]) return names[id]
+  if (id) {
+    const i = topBlocks(tr).indexOf(id)
+    if (i >= 0) return sectionName(tr, el, i)
+  }
+  const k = kind ?? kindOf(tr, el)
+  return autoName(tr, el, k) || kindLabel(k)
+}

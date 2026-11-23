@@ -13,7 +13,7 @@
  * unfiltered_html: the server ignores the edit) sees the fields read-only with a note.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronRight, Image as ImageIcon, Link2, Search } from 'lucide-react'
+import { ChevronRight, Image as ImageIcon, Link2 } from 'lucide-react'
 import { useB } from '@/builder/store'
 import type { Section } from '@/builder/types'
 import { cn } from '@/builder/ui'
@@ -24,20 +24,20 @@ import { attrError } from './attrs'
 import { attr, elementKids, inner, wbc, type El, type Tree } from './html'
 import { tree as parseTree } from './ops'
 import { KEEP_ATTR, writeBack, type SrcMap } from './richtext'
-import { richNodes } from './ContentPanel'
+import { PagePicker, richNodes } from './ContentPanel'
 import { tbasic } from './basic-tr'
 import { useElState } from './state'
+import { KIND_ICON, blockOf, elementName, kindOf, namesOf, topBlocks } from './kinds'
+import { tk } from './kinds-tr'
+import { markupReadOnly } from './trust'
 import { extractFields, fieldFor, limitItems, pathTo, plainInner, summarize, type Field, type FieldKind, type Group, type Item } from './fields'
 
 type B = ReturnType<typeof useB>
 
 const host = () => (typeof window !== 'undefined' ? (window.__WEB_BUILDER_HOST__ as CmsHost | undefined) : undefined)
 
-/** The user may change code sections (the server ignores the edits of one who may not). */
-export function canEditCode(): boolean {
-  const h = host()
-  return h ? !!h.boot?.caps?.unfilteredHtml : true
-}
+/** The user may change code sections (the server ignores the edits of one who may not): trust.ts markupReadOnly. */
+export const canEditCode = (): boolean => !markupReadOnly()
 
 const PAGE = 60
 const LABEL: Record<FieldKind, string> = { heading: 'Heading', text: 'Text', button: 'Button', link: 'Link', image: 'Image', input: 'Form field', video: 'Video' }
@@ -61,8 +61,24 @@ export function basicSummary(s: Section): { title: string; sub?: string } | null
   const parts = PLURAL.filter(([k]) => sum.counts[k] > 0)
     .slice(0, 3)
     .map(([k, one, many]) => tbasic(sum.counts[k] === 1 ? one : many, { count: sum.counts[k] }))
-  const title = sum.title ? (sum.named ? tbasic(sum.title) : sum.title) : s.name
-  return { title, sub: parts.join(' · ') }
+  return { title: blockTitle(s) ?? (sum.title ? (sum.named ? tbasic(sum.title) : sum.title) : s.name), sub: parts.join(' · ') }
+}
+
+/**
+ * A code section made of one block is called what the navigator calls that block (kinds.ts
+ * elementName: the user's rename, its heading, landmark, label …); null when it has several blocks
+ * or nothing but the generic "Section N" to say.
+ */
+function blockTitle(s: Section): string | null {
+  const html = s.content.html ?? ''
+  if (!html.trim()) return null
+  const tr = parseTree(html)
+  const blocks = topBlocks(tr)
+  if (blocks.length !== 1) return null
+  const el = tr.byId.get(blocks[0])
+  if (!el) return null
+  const name = elementName(tr, el, namesOf(s.content.names))
+  return name === tk('Section {n}', { n: 1 }) ? null : name
 }
 
 /* ---------- Inputs ---------- */
@@ -154,59 +170,6 @@ function RichBox({ b, f, tr, el, disabled, onFocus }: { b: B; f: Field; tr: Tree
   )
 }
 
-interface SearchHit {
-  id: number
-  title: string
-  url: string
-}
-
-/** Pages and posts of the site by name (core search), so a link can point at one. */
-function PagePicker({ onPick }: { onPick: (url: string) => void }) {
-  const [q, setQ] = useState('')
-  const [hits, setHits] = useState<SearchHit[]>([])
-  useEffect(() => {
-    const h = host()
-    if (!h || q.trim().length < 2) return setHits([])
-    let off = false
-    const tm = setTimeout(() => {
-      h.rest
-        .request<SearchHit[]>('GET', 'wp/v2/search', { query: { search: q.trim(), per_page: 8, type: 'post' } })
-        .then((r) => !off && setHits(Array.isArray(r.data) ? r.data : []))
-        .catch(() => !off && setHits([]))
-    }, 250)
-    return () => {
-      off = true
-      clearTimeout(tm)
-    }
-  }, [q])
-  const local = (url: string) => {
-    try {
-      const u = new URL(url, location.href)
-      return u.origin === location.origin ? u.pathname + u.search + u.hash : url
-    } catch {
-      return url
-    }
-  }
-  return (
-    <div className="mt-1.5 space-y-1.5">
-      <label className="relative block">
-        <Search size={13} className="absolute left-2.5 top-2.5 text-ink-500" />
-        <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder={tbasic('Search pages and posts')} className={cn(inputCls, 'h-9 pl-8')} />
-      </label>
-      {hits.length > 0 && (
-        <div className="max-h-44 overflow-y-auto rounded-lg border border-white/[0.08]">
-          {hits.map((h) => (
-            <button key={h.id + h.url} type="button" onClick={() => onPick(local(h.url))} className="flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left text-[12px] hover:bg-white/[0.06]">
-              <span className="truncate text-ink-100">{h.title || local(h.url)}</span>
-              <span className="shrink-0 font-mono text-[10px] text-ink-500">{local(h.url)}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 /** A link's address: typed, or one of the site's pages. */
 function AddressBox({ b, f, disabled, onFocus, target = 'a' }: { b: B; f: Field; disabled: boolean; onFocus: () => void; target?: string }) {
   const [pick, setPick] = useState(false)
@@ -231,6 +194,8 @@ function AddressBox({ b, f, disabled, onFocus, target = 'a' }: { b: B; f: Field;
           </button>
           {pick && (
             <PagePicker
+              big
+              autoFocus
               onPick={(u) => {
                 set(u)
                 setPick(false)
@@ -355,6 +320,9 @@ export function BasicCode({ s, readOnly }: { s: Section; readOnly?: boolean }) {
   const disabled = readOnly ?? !canEditCode()
   const own = useRef<string | null>(null)
   const shown = useMemo(() => limitItems(items, limit), [items, limit])
+  const names = useMemo(() => namesOf(s.content.names), [s.content.names])
+  // The fields under the name of the block (top-level element) they are in, as the navigator shows it.
+  const parts = useMemo(() => byBlock(shown.items, tree), [shown.items, tree])
   const toggle = (g: Group) => {
     setOpen((o) => {
       const n = new Set(o)
@@ -407,6 +375,24 @@ export function BasicCode({ s, readOnly }: { s: Section; readOnly?: boolean }) {
           <p className="text-[12.5px] leading-relaxed text-ink-500">
             {tbasic('Nothing to edit here yet.')} {tbasic("This section is made of the design's own layout. To change more of it, switch to Studio.")}
           </p>
+        ) : parts.length > 1 ? (
+          <div className="space-y-5">
+            {parts.map((p, n) => {
+              const el = p.id ? tree.byId.get(p.id) : undefined
+              const Icon = el ? KIND_ICON[kindOf(tree, el)] : null
+              return (
+                <div key={p.id ?? `@${n}`} data-wb-basic-block={p.id ?? ''}>
+                  {el && (
+                    <button type="button" onClick={() => selectEl(b, p.id!)} className="mb-2 flex w-full items-center gap-2 text-left text-[12.5px] font-semibold text-ink-200 hover:text-white">
+                      {Icon && <Icon size={14} className="shrink-0 text-ink-500" />}
+                      <span className="truncate">{elementName(tree, el, names)}</span>
+                    </button>
+                  )}
+                  <Items b={b} items={p.items} tr={tree} sel={sel} open={open} toggle={toggle} disabled={disabled} onFocus={onFocus} />
+                </div>
+              )
+            })}
+          </div>
         ) : (
           <Items b={b} items={shown.items} tr={tree} sel={sel} open={open} toggle={toggle} disabled={disabled} onFocus={onFocus} />
         )}
@@ -442,4 +428,30 @@ function flatIndex(items: Item[], id: string): number {
     return -1
   }
   return walk(items)
+}
+
+/** The first element id an item stands for (a field, a group or its first field). */
+function firstId(i: Item): string | null {
+  if (i.type === 'field') return i.id
+  if (i.id) return i.id
+  for (const x of i.items) {
+    const r = firstId(x)
+    if (r) return r
+  }
+  return null
+}
+
+/** Consecutive items split by the top-level block they are in (kinds.blockOf). */
+function byBlock(items: Item[], tr: Tree): { id: string | null; items: Item[] }[] {
+  const out: { id: string | null; items: Item[] }[] = []
+  for (const i of items) {
+    const fid = firstId(i)
+    const el = fid ? tr.byId.get(fid) : undefined
+    const blk = el ? blockOf(el) : null
+    const id = blk ? wbc(blk) : null
+    const last = out[out.length - 1]
+    if (last && last.id === id) last.items.push(i)
+    else out.push({ id, items: [i] })
+  }
+  return out
 }
