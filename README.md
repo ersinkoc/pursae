@@ -306,7 +306,7 @@ lets Claude, Cursor and other MCP clients run the site:
 
 ### Not supported
 
-- Full Site Editing and the Site Editor: `wp/v2/templates`, `template-parts` and `global-styles` are stubs that return empty data.
+- Full Site Editing and the Site Editor: design the header, footer, templates and site style with [Pursae Web Builder's Theme Builder](docs/developer/web-builder-theme-builder.md) instead ([coming from the Site Editor](docs/developer/web-builder-site-editor.md)). `wp/v2/templates`, `template-parts` and `global-styles` are stubs that return empty data; on import, block theme navigation menus become menus and the other Site Editor items are counted and skipped.
 - Multisite.
 - XML-RPC.
 - Incoming pingbacks and trackbacks (Pursae can send trackbacks, not receive them).
