@@ -21,6 +21,9 @@ import (
 
 const seogoTOCMarker = "<!--seogo-toc:"
 
+// seogoTOCDefaultTitle is the title when the settings leave it empty.
+const seogoTOCDefaultTitle = "Table of Contents"
+
 // seogoTOCOpts are the settings of one table of contents (block attributes over the defaults).
 type seogoTOCOpts struct {
 	Title       string `json:"title"`
@@ -42,6 +45,24 @@ func (o *seogoOptions) seogoTOCDefaults() seogoTOCOpts {
 	t := seogoTOCOpts{Title: o.TOCTitle, Levels: o.TOCLevels, Numbered: o.TOCNumbered, Collapsible: o.TOCCollapsible}
 	if len(t.Levels) == 0 {
 		t.Levels = []int{2, 3, 4}
+	}
+	return t
+}
+
+// seogoTOCTitleName is the label of the default title on Languages › Translations.
+const seogoTOCTitleName = "Table of Contents title"
+
+// seogoTOCDefaultsFor are the panel's defaults with the title in the request language: with Pursae
+// Multi Language on, the title is a registered string (group Pursae SEO), translated like any other.
+// A block's own title attribute is left as written.
+func (s *Server) seogoTOCDefaultsFor(ctx context.Context) seogoTOCOpts {
+	t := s.seogoOpts().seogoTOCDefaults()
+	if strings.TrimSpace(t.Title) == "" {
+		t.Title = seogoTOCDefaultTitle
+	}
+	if l := s.pllCurrent(ctx); l != nil {
+		s.pllRegisterString(ctx, seogoTOCTitleName, t.Title, "Pursae SEO", false)
+		t.Title = s.pllTranslate(ctx, t.Title, l.Slug)
 	}
 	return t
 }
@@ -90,7 +111,7 @@ func (s *Server) seogoRegisterTOCBlock() {
 		if !s.seogoOn() || !s.seogoModule("toc") {
 			return ""
 		}
-		return seogoTOCMarkerFor(seogoTOCBlockOpts(s.seogoOpts().seogoTOCDefaults(), b.Attrs))
+		return seogoTOCMarkerFor(seogoTOCBlockOpts(s.seogoTOCDefaultsFor(ctx), b.Attrs))
 	})
 }
 
@@ -242,7 +263,7 @@ func seogoTOCHTML(t seogoTOCOpts, items []seogoTOCItem) string {
 	b.WriteString("</" + tag + ">")
 	title := strings.TrimSpace(t.Title)
 	if title == "" {
-		title = "Table of Contents"
+		title = seogoTOCDefaultTitle
 	}
 	et := html.EscapeString(title)
 	if t.Collapsible {
@@ -291,5 +312,5 @@ func (s *Server) seogoTOCFor(ctx context.Context, content string) string {
 			auto = (k == "single" || k == "page" || k == "front-page") && slices.Contains(o.TOCAutoTypes, rc.q.Post.Type)
 		}
 	}
-	return seogoTOCContent(content, o.seogoTOCDefaults(), auto, o.TOCMin)
+	return seogoTOCContent(content, s.seogoTOCDefaultsFor(ctx), auto, o.TOCMin)
 }
