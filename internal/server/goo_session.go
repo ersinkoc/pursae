@@ -101,14 +101,19 @@ func (s *Server) gooSessionFor(c *gin.Context) *gooSession {
 			// Logging in merges the visitor cart into the customer's (wc_load_persistent_cart).
 			guest := &gooSession{Key: guestKey}
 			if s.gooLoadSession(ctx, guest) && (len(guest.Data.Cart) > 0 || len(guest.Data.Extra) > 0) {
-				have := map[string]bool{}
-				for _, it := range sess.Data.Cart {
-					have[it.Key] = true
+				have := map[string]int{}
+				for i, it := range sess.Data.Cart {
+					have[it.Key] = i
 				}
 				for _, it := range guest.Data.Cart {
-					if !have[it.Key] {
-						sess.Data.Cart = append(sess.Data.Cart, it)
+					if i, ok := have[it.Key]; ok {
+						// The same line in both carts: keep both quantities (a guest who added
+						// two more of something already in the account must not lose them).
+						sess.Data.Cart[i].Quantity = s.gooMergedLineQty(ctx, sess.Data.Cart[i], it.Quantity)
+						continue
 					}
+					sess.Data.Cart = append(sess.Data.Cart, it)
+					have[it.Key] = len(sess.Data.Cart) - 1
 				}
 				for _, code := range guest.Data.AppliedCoupons {
 					if !containsStr(sess.Data.AppliedCoupons, code) {
@@ -157,6 +162,35 @@ func (s *Server) gooSessionFor(c *gin.Context) *gooSession {
 	}
 	c.Set(gooCtxSession, sess)
 	return sess
+}
+
+// gooMergedLineQty is the quantity of a line present in both the account cart and the guest cart
+// at login. Sold individually stays at one; anything else is the sum, capped like Add.
+func (s *Server) gooMergedLineQty(ctx context.Context, it gooStoredItem, add int) int {
+	q := it.Quantity + add
+	if q > gooMaxLineQty {
+		q = gooMaxLineQty
+	}
+	if q < 1 {
+		q = 1
+	}
+	pid := it.ProductID
+	if it.VariationID != 0 {
+		pid = it.VariationID
+	}
+	p, err := s.gooGetProduct(ctx, pid)
+	if err != nil {
+		return q
+	}
+	if p.SoldIndividually {
+		return 1
+	}
+	if p.Type == gooTypeVariation {
+		if parent := s.gooParent(ctx, p); parent != nil && parent.SoldIndividually {
+			return 1
+		}
+	}
+	return q
 }
 
 func gooHexOnly(v string) bool {

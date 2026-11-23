@@ -28,6 +28,7 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Commerce: cart, coupons, tax rounding, stock holds, Store API terms.** Logging in adds a guest line's quantity to the same line already in the account cart (sold individually stays at one). Recalculating an order no longer changes a fixed-cart coupon's total by a cent. With prices entered including tax and rounding at subtotal, the order lines add up to the charged total. A checkout of a different product no longer drops the stock hold of an order still awaiting payment, and taking that hold over cannot leave the units free in between. A payment blocked by another order's hold reports the units that are actually free. `POST /wc/store/v1/checkout` requires the terms when a terms page is published. Coupon e-mail restrictions honour every `*` (`*@*.edu`), not only the first.
 - **WP to Pursae: killed `pursae import wordpress` runs.** A running import now touches its row every 30
   seconds, so a command that was killed (SIGKILL, a crash, a lost terminal) is recognised after 30 minutes
   instead of 6 hours (still 6 hours for an import started with 0.5.0, which does not heartbeat). Its import is
