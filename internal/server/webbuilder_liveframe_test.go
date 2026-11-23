@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"html"
 	"io"
 	"net/http"
 	"strconv"
@@ -282,5 +283,17 @@ func TestWBLiveFrameREST(t *testing.T) {
 	}
 	if st, doc, _ := fetch(admin.c, base+du, "iframe"); st != http.StatusOK || !strings.Contains(doc, `<section data-wbc="1">`) {
 		t.Errorf("draft frame: %d %.200s", st, doc)
+	}
+
+	// Without a title from the editor, the frame has the front end's document title.
+	delete(body, "title")
+	code, v, _ = admin.do(http.MethodPost, wbrDocPath(post.ID, "/live-frame"), body, nil)
+	if code != http.StatusOK {
+		t.Fatalf("untitled: %d %v", code, v)
+	}
+	tu, _ := wbrObj(v)["url"].(string)
+	want := "<title>Live page \u2013 " + html.EscapeString(srv.settings.String("blogname")) + "</title>"
+	if st, doc, _ := fetch(admin.c, base+tu, "iframe"); st != http.StatusOK || !strings.Contains(doc, want) {
+		t.Errorf("title: want %q in %d %.400s", want, st, doc)
 	}
 }

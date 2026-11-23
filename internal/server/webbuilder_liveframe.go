@@ -261,6 +261,9 @@ func (s *Server) wbRESTLiveFrame(c *gin.Context, r *restRequest) {
 	if !wbDecode(c, raw, &body) {
 		return
 	}
+	if strings.TrimSpace(body.Title) == "" {
+		body.Title = s.wbLiveTitle(c, p)
+	}
 	doc := s.wbLiveRender(c, p.ID, path, &body)
 	tok := wbLivePut(&wbLiveEntry{user: u.ID, post: p.ID, path: path, html: doc})
 	if tok == "" {
@@ -274,6 +277,23 @@ func (s *Server) wbRESTLiveFrame(c *gin.Context, r *restRequest) {
 	q.Del(wbLiveQuery)
 	q.Set(wbLiveQuery, tok)
 	c.JSON(http.StatusOK, map[string]any{"url": path + "?" + q.Encode(), "path": path})
+}
+
+// wbLiveTitle is the document title the front end prints for p (documentTitle, as plain text):
+// the site name and tagline for the front page, else the item's title and the site name. A
+// template has the site name.
+func (s *Server) wbLiveTitle(c *gin.Context, p *store.Post) string {
+	site := s.settings.String("blogname")
+	if wbIsTemplate(p) {
+		return site
+	}
+	if s.settings.String("show_on_front") == "page" && p.ID == s.golylangPage(c, int64(s.settings.Int("page_on_front"))) {
+		if d := s.settings.String("blogdescription"); d != "" {
+			return site + " \u2013 " + d
+		}
+		return site
+	}
+	return p.Title + " \u2013 " + site
 }
 
 // wbLiveAddr is the front-end address of p as the editor's links name it: its permalink (a draft's

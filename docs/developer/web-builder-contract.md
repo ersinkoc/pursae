@@ -489,7 +489,7 @@ Error codes added: `wb_bad_language` (400), `wb_translation_exists` (409).
   Details: [code sections › security model](web-builder-code-sections.md#security-model).
 - **Live frame**: `POST documents/{id}/live-frame` takes `{title, shell: theme|canvas|part, page,
   header, footer, css: {kit, local, edit}, hook}` (sections as the editor holds them, `{id, kind, hidden,
-  content}`; a `url` field is ignored) and answers `{url, path}`. The path is the server's: the post's
+  content}`; a `url` field is ignored; without a `title` the frame gets the front end's document title) and answers `{url, path}`. The path is the server's: the post's
   permalink (a draft's `?p=` / `?page_id=` address, a template's preview address); 409 `wb_live_path` when
   it is not a front-end page of the site (another host, a `.php` path, `/wp-admin`, `/wp-login.php`,
   `/wp-json`, `/wp-content`, `/wp-includes`, `/xmlrpc.php` …, a `rest_route` query). The server renders the
