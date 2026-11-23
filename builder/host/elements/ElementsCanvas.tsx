@@ -734,7 +734,8 @@ export function ElementsCanvas() {
       'keydown',
       (e) => {
         const tg = e.target as HTMLElement
-        if (cur.current.st.interact || tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)) return
+        // A key the design's script dispatched is not the user's: it never reaches the editor's shortcuts.
+        if (!e.isTrusted || cur.current.st.interact || tg.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)) return
         const fwd = new KeyboardEvent('keydown', { key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, repeat: e.repeat, bubbles: true, cancelable: true })
         document.body.dispatchEvent(fwd)
         if (fwd.defaultPrevented) e.preventDefault()

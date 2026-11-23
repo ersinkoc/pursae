@@ -11,8 +11,12 @@ export const HOLD_KEY = 'Alt'
 /** The held key as the platform names it. */
 export const holdLabel = () => (typeof navigator !== 'undefined' && /Mac|iP(hone|ad)/.test(navigator.platform) ? '⌥' : 'Alt')
 
-/** A pointer event goes to the design, not the editor: Interact mode is on or the modifier is held. */
-export const passesThrough = (interact: boolean, e: { altKey?: boolean }) => interact || !!e.altKey
+/**
+ * A pointer event goes to the design, not the editor: Interact mode is on, the modifier is held, or
+ * the design's own script sent it (`el.click()`, a dispatched event: not a user's, isTrusted false;
+ * a carousel or tabs that click their own buttons keep working in Edit mode).
+ */
+export const passesThrough = (interact: boolean, e: { altKey?: boolean; isTrusted?: boolean }) => interact || !!e.altKey || e.isTrusted === false
 
 /**
  * A link the design's page would leave the frame with: the editor's document must stay (a `#` link

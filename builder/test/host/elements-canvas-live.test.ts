@@ -204,6 +204,9 @@ describe('Interact mode (K3)', () => {
     expect(passesThrough(false, { altKey: false })).toBe(false)
     expect(passesThrough(false, { altKey: true })).toBe(true)
     expect(passesThrough(true, {})).toBe(true)
+    // the design's own script clicking its buttons (el.click()): the design's, not a selection
+    expect(passesThrough(false, { altKey: false, isTrusted: false })).toBe(true)
+    expect(passesThrough(false, { altKey: false, isTrusted: true })).toBe(false)
   })
 
   it('the toggle ends a text edit and Safe mode turns it off', () => {
