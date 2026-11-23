@@ -1,9 +1,11 @@
 package server
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -425,5 +427,56 @@ func TestBmgrRemoteTurkish(t *testing.T) {
 		if strings.Contains(body, fragment) {
 			t.Errorf("remote tab still shows the English %q", fragment)
 		}
+	}
+}
+
+// An archive never carries the remote storage settings: they hold the bucket credentials and the
+// encryption passphrase sealed with the site secret, which the same archive carries in auth_secret.
+func TestBmgrRemoteSettingsNotInArchive(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+	ctx := context.Background()
+	t.Setenv("PURSAE_BACKUPS_DIR", t.TempDir())
+	if err := srv.bmgrPluginAction(ctx, "activate"); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.bmgrRemoteSave(ctx, bmgrRemoteSettings{Endpoint: "https://s3.eu-central-1.amazonaws.com", Bucket: "bkt",
+		AccessKey: "AKIAARCHIVETEST", SecretKey: "archive-secret-key", Passphrase: "archive-passphrase-long"}, false); err != nil {
+		t.Fatal(err)
+	}
+	j, _ := srv.bmgrStart("backup")
+	name, err := srv.bmgrRunBackup(ctx, j, bmgrSelection{Categories: []string{"settings"}, UserMode: "all"})
+	srv.bmgrFinish(j, err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zr, err := zip.OpenReader(filepath.Join(srv.bmgrDir(), name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zr.Close()
+	found := false
+	for _, f := range zr.File {
+		if f.Name != "database/settings.jsonl" {
+			continue
+		}
+		found = true
+		rc, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := io.ReadAll(rc)
+		rc.Close()
+		if !strings.Contains(string(b), `"auth_secret"`) {
+			t.Fatal("settings.jsonl does not look like the settings table")
+		}
+		for _, leak := range []string{bmgrOptRemote, bmgrRemoteSealPfx, "AKIAARCHIVETEST"} {
+			if strings.Contains(string(b), leak) {
+				t.Errorf("the archive carries %q", leak)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("no settings in the archive")
 	}
 }

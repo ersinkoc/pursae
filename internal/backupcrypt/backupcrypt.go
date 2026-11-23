@@ -42,8 +42,8 @@ const (
 	// DefaultLogN is the scrypt cost of new files: N = 2^16 (64 MiB of memory, a fraction of a second).
 	DefaultLogN = 16
 	// maxLogN bounds the cost a file may ask for, so a crafted header cannot make the reader
-	// allocate gigabytes.
-	maxLogN = 20
+	// allocate gigabytes: scrypt needs 128·r·N bytes, 256 MiB at 2^18 (1 GiB at 2^20).
+	maxLogN = 18
 	minLogN = 10
 	// Suffix is the file-name suffix of an encrypted archive.
 	Suffix = ".enc"

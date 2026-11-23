@@ -165,3 +165,27 @@ func TestFreshSaltAndNonce(t *testing.T) {
 		t.Error("salt or nonce reused")
 	}
 }
+
+// A header asking for an scrypt cost above maxLogN is refused before any key is derived, so a file
+// planted in the bucket cannot make a restore allocate a gigabyte or more.
+func TestCostBound(t *testing.T) {
+	var out bytes.Buffer
+	w, err := NewWriterCost(&out, []byte("x"), testCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = w.Close()
+	b := out.Bytes()
+	for _, logN := range []byte{19, 20, 31} {
+		b[5] = logN
+		if _, err := NewReader(bytes.NewReader(b), []byte("x")); !errors.Is(err, ErrFormat) {
+			t.Errorf("logN %d: err=%v, want ErrFormat", logN, err)
+		}
+		if _, err := NewWriterCost(io.Discard, []byte("x"), int(logN)); err == nil {
+			t.Errorf("NewWriterCost accepted logN %d", logN)
+		}
+	}
+	if DefaultLogN > maxLogN {
+		t.Fatal("the default cost is above the bound")
+	}
+}

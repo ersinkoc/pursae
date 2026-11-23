@@ -93,6 +93,11 @@ var bmgrNever = map[string]bool{"schema_migrations": true, "schema_meta": true, 
 var bmgrKeepSettings = []string{"auth_secret", "siteurl", "home", bmgrSetting, bmgrOptSchedule, bmgrOptKeep, bmgrOptCats, bmgrOptLast,
 	bmgrOptRemote}
 
+// bmgrNoExportSettings are options never written into an archive: the remote storage settings hold
+// the bucket credentials and the encryption passphrase (sealed with the site secret, which the
+// archive also carries), and a restore keeps this site's own values anyway (bmgrKeepSettings).
+var bmgrNoExportSettings = []string{bmgrOptRemote}
+
 // bmgrCategoryOf returns the category key a table belongs to.
 func bmgrCategoryOf(table string) string {
 	for _, c := range bmgrCategories {
