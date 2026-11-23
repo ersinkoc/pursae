@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editor parity fixture</title>
+<!-- Early theme: applied before the first paint from localStorage (like most dark-mode toggles). -->
+<script>try{if(localStorage.getItem('parity-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}</script>
+<link rel="stylesheet" href="css/site.css">
+<script type="importmap">{"imports":{"mini3":"./js/vendor/mini3.js"}}</script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body class="parity">
+<header class="site-header" id="top">
+  <a class="brand" href="#top">Parity<span>Lab</span></a>
+  <nav class="nav" aria-label="Main">
+    <a href="#features">Features</a><a href="#slider">Slides</a><a href="#data">Data</a>
+  </nav>
+  <button type="button" id="theme-toggle" class="toggle" aria-pressed="false">Dark mode</button>
+</header>
+<main id="main">
+  <section class="hero" id="hero">
+    <div class="stage" id="stage"><canvas id="scene" aria-label="3D scene"></canvas></div>
+    <div class="hero-copy">
+      <h1>Every pixel, <em>both</em> places.</h1>
+      <p class="lede">A design whose scene, theme and content come from its scripts.</p>
+      <p class="stat"><span id="counter" data-to="42">0</span> projects shipped</p>
+    </div>
+  </section>
+  <section class="slider" id="slider">
+    <div class="slides">
+      <article class="slide"><h2>Slide one</h2><p>Shown by the script, not by the markup.</p></article>
+      <article class="slide"><h2>Slide two</h2><p>Hidden until a dot is pressed.</p></article>
+      <article class="slide"><h2>Slide three</h2><p>Hidden until a dot is pressed.</p></article>
+    </div>
+    <div class="dots" id="dots"></div>
+  </section>
+  <section class="features" id="features">
+    <div class="card reveal"><h3>Scroll reveal</h3><p>Visible once observed.</p></div>
+    <div class="card reveal"><h3>Breakpoints</h3><p>Three columns, then one.</p></div>
+    <div class="card reveal"><h3>Web font</h3><p>Loaded from the kit.</p></div>
+  </section>
+  <section class="data" id="data">
+    <h2>From data/items.json</h2>
+    <p id="items-status">Loading…</p>
+    <ul id="items"></ul>
+  </section>
+</main>
+<footer class="site-footer"><p>Parity fixture · no network</p></footer>
+<script>
+(function () {
+  var html = document.documentElement
+  html.setAttribute('data-js', '1')
+  // Theme toggle: a class on <html>, remembered in localStorage.
+  var btn = document.getElementById('theme-toggle')
+  function sync() {
+    var dark = html.classList.contains('dark')
+    btn.setAttribute('aria-pressed', dark ? 'true' : 'false')
+    btn.textContent = dark ? 'Light mode' : 'Dark mode'
+  }
+  sync()
+  btn.addEventListener('click', function () {
+    html.classList.toggle('dark')
+    try { localStorage.setItem('parity-theme', html.classList.contains('dark') ? 'dark' : 'light') } catch (e) {}
+    sync()
+  })
+  // Counter: drawn by the script (no animation: deterministic).
+  var c = document.getElementById('counter')
+  c.textContent = c.getAttribute('data-to')
+  // Slider: slide 1 active, dots built by the script.
+  var slides = document.querySelectorAll('.slide')
+  var dots = document.getElementById('dots')
+  function show(i) {
+    for (var k = 0; k < slides.length; k++) {
+      slides[k].classList.toggle('active', k === i)
+      dots.children[k].setAttribute('aria-current', k === i ? 'true' : 'false')
+    }
+  }
+  for (var i = 0; i < slides.length; i++) {
+    var d = document.createElement('button')
+    d.type = 'button'
+    d.className = 'dot'
+    d.setAttribute('aria-label', 'Slide ' + (i + 1))
+    d.addEventListener('click', show.bind(null, i))
+    dots.appendChild(d)
+  }
+  show(0)
+  // Scroll reveal.
+  var io = new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target) }
+    })
+  })
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el) })
+  // A URL built by the script, relative to the page.
+  fetch('data/items.json').then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    return r.json()
+  }).then(function (j) {
+    var ul = document.getElementById('items')
+    j.items.forEach(function (t) { var li = document.createElement('li'); li.textContent = t; ul.appendChild(li) })
+    document.getElementById('items-status').textContent = j.items.length + ' items'
+    html.setAttribute('data-json', 'ok')
+  }).catch(function (e) {
+    document.getElementById('items-status').textContent = 'Could not load items'
+    html.setAttribute('data-json', 'fail: ' + e.message)
+  })
+})()
+</script>
+</body>
+</html>
