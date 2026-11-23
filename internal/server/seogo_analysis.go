@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"wpgo/internal/wp"
 )
 
 // Content analysis: Yoast's SEO and readability assessments (with their thresholds) plus Rank
@@ -215,6 +217,12 @@ func countPhrase(text, phrase string) int {
 }
 
 // allWordsIn reports whether every content word of the phrase occurs in the text, in any order.
+// seogoSlugFold is a word as a slug spells it: slugs drop Latin accents (sanitize_title), so the
+// keyphrase "özgeçmiş" is in the slug "ozgecmis" (Yoast transliterates the keyphrase the same way).
+func seogoSlugFold(s string) string {
+	return strings.ToLower(wp.RemoveAccents(s))
+}
+
 func allWordsIn(text, phrase string) bool {
 	set := map[string]bool{}
 	for _, w := range words(text) {
@@ -581,11 +589,11 @@ func seogoAnalyzeSEO(in seogoAnalysisInput) seogoAnalysis {
 		slugText := strings.NewReplacer("-", " ", "_", " ").Replace(in.Slug)
 		set := map[string]bool{}
 		for _, w := range words(slugText) {
-			set[stem(w)] = true
+			set[stem(seogoSlugFold(w))] = true
 		}
 		found := 0
 		for _, w := range cw {
-			if set[stem(w)] {
+			if set[stem(seogoSlugFold(w))] {
 				found++
 			}
 		}
@@ -777,7 +785,7 @@ func seogoRankMathPoints(in seogoAnalysisInput, kw string, tw []string, st linkS
 	add(containsPhrase(in.SEOTitle, kw), 36)
 	add(containsPhrase(in.Description, kw), 2)
 	if in.Slug != "" && !in.IsFront {
-		add(allWordsIn(strings.ReplaceAll(in.Slug, "-", " "), kw), 5)
+		add(allWordsIn(seogoSlugFold(strings.ReplaceAll(in.Slug, "-", " ")), seogoSlugFold(kw)), 5)
 	}
 	head := tw
 	if len(tw) > 400 {

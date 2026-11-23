@@ -17,6 +17,9 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   breadcrumbs and schema as the front page, so it scores like the original; the posts page and its
   translations are scored on the blog listing a visitor sees there, not only their intro text; and the front
   page, whose address is the site root, no longer fails "Keyphrase in slug" (the check is left out of its score).
+- **Pursae SEO: a keyphrase with accented letters is found in its slug.** "Keyphrase in slug" compared
+  "özgeçmiş" with the slug `ozgecmis` letter by letter and failed; both are now compared without Latin
+  accents, as WordPress drops them from slugs.
 
 ## [0.5.2] - 2026-11-23
 
