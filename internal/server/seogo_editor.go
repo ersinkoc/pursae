@@ -198,7 +198,7 @@ func (s *Server) seogoRescoreSaved(c *gin.Context, p *store.Post) {
 
 // seogoStoreScores keeps the current scores in meta for the dashboard and the bulk editor.
 func (s *Server) seogoStoreScores(ctx context.Context, p *store.Post) {
-	sc := &seogoCtx{s: s, ctx: ctx, lb: s.links(ctx), Kind: s.seogoQueryForPost(p).Kind, Post: p}
+	sc := &seogoCtx{s: s, ctx: ctx, lb: s.links(ctx), Kind: s.seogoQueryForPost(ctx, p).Kind, Post: p}
 	in := s.seogoAnalysisInputFor(ctx, sc)
 	seo, read := seogoAnalyzeSEO(in), seogoAnalyzeReadability(in)
 	p.Meta[seogoKey("seo_score")] = strconv.Itoa(seo.Score)
@@ -209,7 +209,12 @@ func (s *Server) seogoStoreScores(ctx context.Context, p *store.Post) {
 func (s *Server) seogoAnalysisInputFor(ctx context.Context, sc *seogoCtx) seogoAnalysisInput {
 	p := sc.Post
 	in := seogoAnalysisInput{SEOTitle: sc.title(), PostTitle: p.Title, Description: sc.description(), Slug: p.Slug, Content: p.Content,
-		Keywords: seogoFocusList(seogoMeta(p.Meta, "focus")), Cornerstone: seogoMeta(p.Meta, "cornerstone") == "1"}
+		Keywords: seogoFocusList(seogoMeta(p.Meta, "focus")), Cornerstone: seogoMeta(p.Meta, "cornerstone") == "1",
+		IsFront: sc.Kind == "front-page"}
+	// What a visitor sees: the rendered page or content (seogo_rendered.go); the stored markup stays
+	// at hand for the checks that look for blocks.
+	in.Content, in.TOC = s.seogoVisibleContent(ctx, p)
+	in.Raw = p.Content
 	in.Locale = s.seogoPostLocale(ctx, p)
 	if sc.Focus != "" {
 		in.Keywords = seogoFocusList(sc.Focus)
@@ -313,7 +318,7 @@ func (s *Server) seogoRESTAnalyze(c *gin.Context, r *restRequest) {
 			}
 		}
 	}
-	sc := &seogoCtx{s: s, ctx: ctx, lb: s.links(ctx), Kind: s.seogoQueryForPost(p).Kind, Post: p}
+	sc := &seogoCtx{s: s, ctx: ctx, lb: s.links(ctx), Kind: s.seogoQueryForPost(ctx, p).Kind, Post: p}
 	in := s.seogoAnalysisInputFor(ctx, sc)
 	if p.Status == "auto-draft" || in.URL == "" {
 		cp := *p

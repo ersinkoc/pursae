@@ -4,14 +4,15 @@
  * container (also into another section), rename (stored in the section's content.names, keyed by
  * data-wbc, so the design's markup stays clean), hide / show in the editor only, collapse.
  */
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useState, type ReactNode } from 'react'
 import { ChevronDown, Eye, EyeOff, LayoutTemplate } from 'lucide-react'
 import { useB, type BuilderApi } from '@/builder/store'
 import type { Section } from '@/builder/types'
 import { t } from '../i18n'
 import { act, latest, pageOf, selectEl } from './actions'
-import { type El, type Tree } from './html'
-import { KIND_ICON, kindLabel, kindOf, namesOf, snippet, tagName } from './kinds'
+import { contains, type El, type Tree } from './html'
+import { KIND_ICON, ROW_CAP, autoName, groupKids, kindLabel, kindOf, labelWithCount, namesOf, sectionName, tagName } from './kinds'
+import { tk } from './kinds-tr'
 import { childIds, container, dropError, locate, movable, placeBy, tree, whereIs, type Place } from './ops'
 import { setElState, toggleIn, useElState } from './state'
 
@@ -165,9 +166,7 @@ export function ElementsNav({ s }: { s: Section }) {
       </div>
       {isOpen && (
         <div>
-          {childIds(tr, tr.root).map((id) => (
-            <Row key={id} b={b} sec={s.id} tr={tr} id={id} depth={1} names={names} sel={st.sel} hidden={st.hidden} open={open} toggle={toggle} />
-          ))}
+          <Kids b={b} sec={s.id} tr={tr} parent={tr.root} pkey={s.id} depth={1} names={names} sel={st.sel} hidden={st.hidden} open={open} toggle={toggle} />
         </div>
       )}
     </div>
@@ -216,6 +215,8 @@ interface RowProps {
   sec: string
   tr: Tree
   id: string
+  /** Position among the parent's blocks (names top-level rows "Section N"). */
+  idx: number
   depth: number
   names: Record<string, string>
   sel: string | null
@@ -224,7 +225,7 @@ interface RowProps {
   toggle: (k: string) => void
 }
 
-const Row = memo(function Row({ b, sec, tr, id, depth, names, sel, hidden, open, toggle }: RowProps) {
+const Row = memo(function Row({ b, sec, tr, id, idx, depth, names, sel, hidden, open, toggle }: RowProps) {
   const el = tr.byId.get(id) as El
   const [renaming, setRenaming] = useState(false)
   if (!el) return null
@@ -233,7 +234,11 @@ const Row = memo(function Row({ b, sec, tr, id, depth, names, sel, hidden, open,
   const kids = childIds(tr, el)
   const isOpen = kids.length > 0 && open(id)
   const name = names[id]
-  const text = snippet(tr, el, 28)
+  // Type + a meaningful name: the user's rename, else the source's own words (never "div.mx-auto").
+  const label = labelWithCount(kind, kids.length)
+  const auto = name ? '' : depth === 1 ? sectionName(tr, el, idx) : autoName(tr, el, kind)
+  const joined = !name && auto.toLowerCase().startsWith(kindLabel(kind).toLowerCase()) // "Section 3"
+  const quiet = kind === 'code'
   const indent = 4 + depth * 14
   const selected = sel === id
   return (
@@ -251,7 +256,7 @@ const Row = memo(function Row({ b, sec, tr, id, depth, names, sel, hidden, open,
         onMouseEnter={() => setElState({ hover: id })}
         onMouseLeave={() => setElState({ hover: null })}
         style={{ paddingLeft: kids.length ? indent : indent + 24 }}
-        className={`group/row ${ROW} ${selected ? 'bg-accent/20 text-white' : 'text-ink-400 hover:bg-white/[0.05]'} ${hidden.has(id) ? 'opacity-50' : ''}`}
+        className={`group/row ${ROW} ${selected ? 'bg-accent/20 text-white' : 'text-ink-400 hover:bg-white/[0.05]'} ${hidden.has(id) ? 'opacity-50' : quiet ? 'opacity-55' : ''}`}
         title={tagName(el)}
       >
         {kids.length > 0 && <Chevron open={isOpen} onClick={() => toggle(id)} />}
@@ -261,7 +266,7 @@ const Row = memo(function Row({ b, sec, tr, id, depth, names, sel, hidden, open,
             autoFocus
             aria-label={t('Element name')}
             defaultValue={name ?? ''}
-            placeholder={kindLabel(kind)}
+            placeholder={auto || label}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => {
@@ -277,20 +282,84 @@ const Row = memo(function Row({ b, sec, tr, id, depth, names, sel, hidden, open,
           />
         ) : (
           <>
-            <span className={`shrink-0 ${name ? 'text-ink-200' : 'text-ink-300'}`}>{name || kindLabel(kind)}</span>
-            {!name && text && <span className="min-w-0 flex-1 truncate text-ink-500">{text}</span>}
-            {(name || !text) && <span className="min-w-0 flex-1" />}
+            <span className={`shrink-0 ${name ? 'text-ink-200' : 'text-ink-300'}`}>{name || (joined ? auto : label)}</span>
+            {!name && !joined && auto && <span className="min-w-0 flex-1 truncate text-ink-500">{auto}</span>}
+            {(name || joined || !auto) && <span className="min-w-0 flex-1" />}
           </>
         )}
         <EyeBtn hidden={hidden.has(id)} label={hidden.has(id) ? t('Show in the editor') : t('Hide in the editor')} onClick={() => setElState((x) => ({ hidden: toggleIn(x.hidden, id) }))} />
       </div>
       {isOpen && (
         <div>
-          {kids.map((k) => (
-            <Row key={k} b={b} sec={sec} tr={tr} id={k} depth={depth + 1} names={names} sel={sel} hidden={hidden} open={open} toggle={toggle} />
-          ))}
+          <Kids b={b} sec={sec} tr={tr} parent={el} pkey={id} depth={depth + 1} names={names} sel={sel} hidden={hidden} open={open} toggle={toggle} />
         </div>
       )}
     </div>
   )
 })
+
+interface KidsProps {
+  b: BuilderApi
+  sec: string
+  tr: Tree
+  parent: El
+  /** Open-state key of the parent (the group of quiet code elements adds "#code"). */
+  pkey: string
+  depth: number
+  names: Record<string, string>
+  sel: string | null
+  hidden: ReadonlySet<string>
+  open: (k: string) => boolean
+  toggle: (k: string) => void
+}
+
+/**
+ * A parent's rows: the blocks first (at most ROW_CAP at a time, "Show N more" for the rest, so a
+ * page of thousands of elements stays quick), then the quiet code elements (script, style ...)
+ * dimmed and collapsed into one group row.
+ */
+function Kids({ b, sec, tr, parent, pkey, depth, names, sel, hidden, open, toggle }: KidsProps) {
+  const [shown, setShown] = useState(ROW_CAP)
+  const ids = useMemo(() => childIds(tr, parent), [tr, parent])
+  const { blocks, quiet } = useMemo(() => groupKids(tr, ids), [tr, ids])
+  // The selection stays visible: show every block up to the one holding it.
+  const need = useMemo(() => {
+    const target = sel ? tr.byId.get(sel) : undefined
+    if (!target) return 0
+    const i = blocks.findIndex((id) => {
+      const e = tr.byId.get(id)
+      return !!e && (e === target || contains(e, target))
+    })
+    return i + 1
+  }, [sel, tr, blocks])
+  const cut = Math.max(shown, need)
+  const rest = blocks.length - cut
+  const props = { b, sec, tr, depth, names, sel, hidden, open, toggle }
+  const group = `${pkey}#code`
+  const quietOpen = quiet.length > 0 && (quiet.length === 1 || (sel != null && quiet.includes(sel)) || open(group))
+  const indent = 4 + depth * 14
+  let more: ReactNode = null
+  if (rest > 0)
+    more = (
+      <button type="button" onClick={() => setShown(cut + ROW_CAP)} style={{ paddingLeft: indent + 24 }} className={`${ROW} h-6 w-[calc(100%-8px)] text-left text-ink-500 hover:text-ink-200`}>
+        {tk('Show {n} more', { n: rest })}
+      </button>
+    )
+  const CodeIcon = KIND_ICON.code
+  return (
+    <>
+      {blocks.slice(0, cut).map((id, i) => (
+        <Row key={id} id={id} idx={i} {...props} />
+      ))}
+      {more}
+      {quiet.length > 1 && (
+        <div data-wb-nav-quiet="" onClick={() => toggle(group)} style={{ paddingLeft: indent }} className={`${ROW} h-6 text-[11px] text-ink-500 opacity-60 hover:bg-white/[0.05]`}>
+          <Chevron open={quietOpen} onClick={() => toggle(group)} />
+          <CodeIcon size={12} className="shrink-0" />
+          <span className="truncate">{tk('{n} code blocks', { n: quiet.length })}</span>
+        </div>
+      )}
+      {quietOpen && quiet.map((id, i) => <Row key={id} id={id} idx={blocks.length + i} {...props} />)}
+    </>
+  )
+}

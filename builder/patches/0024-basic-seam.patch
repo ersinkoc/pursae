@@ -1,0 +1,204 @@
+diff --git a/src/builder/BasicPanel.tsx b/src/builder/BasicPanel.tsx
+index f44f4b7..02392e5 100644
+--- a/src/builder/BasicPanel.tsx
++++ b/src/builder/BasicPanel.tsx
+@@ -42,9 +42,10 @@ import { useB, type BasicView } from './store'
+ import { entranceLabel, getMotion, motionPatch, replayMotion } from './motion'
+ import { FontPresetGrid } from './TypographyControls'
+ import { DesignPicker, LibraryButton } from './variants/VariantControls'
+-import type { CellType, CornerId, Payload, Section, SectionKind } from './types'
++import type { CellType, CornerId, DocState, Payload, Section, SectionKind } from './types'
+ import { Segmented, Toggle, cn, ease, spring } from './ui'
+ import { t } from './i18n'
++import { elementsSeam } from './elementsSeam'
+ 
+ const DEPTH: Record<BasicView, number> = { list: 0, design: 0, editor: 1, add: 1 }
+ 
+@@ -109,7 +110,7 @@ function Thumb({ s, size = 38 }: { s: Section; size?: number }) {
+   const { doc } = useB()
+   const p = palette(s.style.palette, doc.site.brand)
+   const Icon = KINDS[s.kind].icon
+-  return (
++  const icon = (
+     <span
+       className="grid shrink-0 place-items-center rounded-[10px] ring-1 ring-inset ring-white/10 transition-colors duration-300"
+       style={{ width: size, height: size, background: s.style.bg || p.bg, color: p.fg }}
+@@ -117,11 +118,22 @@ function Thumb({ s, size = 38 }: { s: Section; size?: number }) {
+       <Icon size={size * 0.45} strokeWidth={1.8} />
+     </span>
+   )
++  // A code section of a page the host draws: a small snapshot of the section itself (the kind icon until it is there).
++  const seam = elementsSeam()
++  const HostThumb = s.kind === 'code' && seam?.Thumb && seam.handles(doc) ? seam.Thumb : null
++  return HostThumb ? <HostThumb s={s} size={size} fallback={icon} /> : icon
++}
++
++/** The host's name and line for a code section of a page its element editor draws (elementsSeam). */
++function hostSummary(doc: DocState, s: Section) {
++  const seam = elementsSeam()
++  return s.kind === 'code' && seam?.summary && seam.handles(doc) ? seam.summary(s) : null
+ }
+ 
+ function Row({ s, dragHandle }: { s: Section; dragHandle?: ReactNode }) {
+   const b = useB()
+   const pinned = isPinned(s.kind)
++  const sum = hostSummary(b.doc, s)
+   return (
+     <div
+       onMouseEnter={() => b.setHoverSection(s.id)}
+@@ -137,8 +149,8 @@ function Row({ s, dragHandle }: { s: Section; dragHandle?: ReactNode }) {
+         <Thumb s={s} />
+       </span>
+       <span className={cn('min-w-0 flex-1 transition-opacity', s.hidden && 'opacity-50')}>
+-        <span className="block truncate text-[14px] font-medium text-ink-100">{s.name}</span>
+-        <span className="block truncate text-[12px] text-ink-400">{s.hidden ? t('Hidden') : sectionSummary(s)}</span>
++        <span className="block truncate text-[14px] font-medium text-ink-100">{sum ? sum.title : s.name}</span>
++        <span className="block truncate text-[12px] text-ink-400">{s.hidden ? t('Hidden') : sum ? (sum.sub ?? '') : sectionSummary(s)}</span>
+       </span>
+       <button
+         type="button"
+@@ -387,6 +399,12 @@ function SectionEditor({ s }: { s: Section }) {
+   const def = KINDS[s.kind]
+   const root = useRef<HTMLDivElement>(null)
+   const idx = b.doc.sections.findIndex((x) => x.id === s.id)
++  // A code section of a page the host's element editor draws: its blocks, not the code fields.
++  const seam = elementsSeam()
++  const HostBasic = s.kind === 'code' && seam?.Basic && seam.handles(b.doc) ? seam.Basic : null
++  // A code section is published as its own markup: its background, decoration and motion settings are not printed, so Simple mode does not offer them.
++  const codeSec = s.kind === 'code'
++  const sum = hostSummary(b.doc, s)
+ 
+   useEffect(() => {
+     const req = b.focusReq
+@@ -424,7 +442,7 @@ function SectionEditor({ s }: { s: Section }) {
+         </button>
+         <Thumb s={s} size={34} />
+         <div className="min-w-0">
+-          <div className="truncate text-[15px] font-semibold text-ink-100">{s.name}</div>
++          <div className="truncate text-[15px] font-semibold text-ink-100">{sum ? sum.title : s.name}</div>
+           <div className="text-[12px] text-ink-500">
+             {idx >= 0 ? t('Section {v} / {count}', { v: idx + 1, count: b.doc.sections.length }) : t('Inner container')}
+           </div>
+@@ -433,7 +451,18 @@ function SectionEditor({ s }: { s: Section }) {
+ 
+       <DesignPicker s={s} />
+ 
+-      {(() => {
++      {HostBasic && <HostBasic s={s} />}
++
++      {codeSec && !HostBasic && (
++        <Group title={t('Code section')}>
++          <p className="text-[12.5px] leading-relaxed text-ink-400">{t('This part of the design is its own code, which Simple mode does not show. To change it, switch to Studio.')}</p>
++          <button type="button" onClick={() => b.setMode('studio')} className="h-9 rounded-lg bg-white/[0.07] px-3 text-[12.5px] text-ink-100 transition hover:bg-white/[0.12]">
++            {t('Switch to Studio')}
++          </button>
++        </Group>
++      )}
++
++      {!codeSec && (() => {
+         const visible = def.fields.filter((f) => f.el !== 'image' && (!f.showIf || f.showIf(s)))
+         const groups = [...new Set(visible.map((f) => f.group ?? t('Texts')))]
+         return groups.map((g) => (
+@@ -534,6 +563,7 @@ function SectionEditor({ s }: { s: Section }) {
+ 
+       {s.kind === 'layout' && <LayoutGroups s={s} />}
+ 
++      {!codeSec && (
+       <Group title={t('Appearance')}>
+         <Choice label={t('Background color')}>
+           <div className="flex justify-between">
+@@ -588,6 +618,9 @@ function SectionEditor({ s }: { s: Section }) {
+         )}
+       </Group>
+ 
++      )}
++
++      {!codeSec && (
+       <Group title={t('Background decoration')}>
+         <DecorPicker value={getBg(s).decor} size="lg" onChange={(d) => b.dispatch({ type: 'bg', id: s.id, patch: { decor: d }, label: t('Background decoration changed') })} />
+         {getBg(s).decor !== 'none' && (
+@@ -632,6 +665,7 @@ function SectionEditor({ s }: { s: Section }) {
+           )}
+         </Choice>
+       </Group>
++      )}
+ 
+       {GRID_CAPS[s.kind]?.cols && (
+         <Group title={t('Card layout')}>
+@@ -659,6 +693,7 @@ function SectionEditor({ s }: { s: Section }) {
+         </Group>
+       )}
+ 
++      {!codeSec && (
+       <Group title={t('Motion')}>
+         <Choice label={t('Fade in on scroll')}>
+           <Segmented
+@@ -692,6 +727,7 @@ function SectionEditor({ s }: { s: Section }) {
+         )}
+         <p className="text-[12px] text-ink-500">{t('Content is not hidden while you edit; the effect plays in preview (P) and on the live site.')}</p>
+       </Group>
++      )}
+ 
+       <Group title={t('Section')}>
+         <div className="grid grid-cols-5 gap-1.5">
+diff --git a/src/builder/elementsSeam.ts b/src/builder/elementsSeam.ts
+index ddd07ff..79238ec 100644
+--- a/src/builder/elementsSeam.ts
++++ b/src/builder/elementsSeam.ts
+@@ -19,6 +19,12 @@ export interface ElementsSeam {
+   Content?: ComponentType<{ s: Section; fallback: ReactNode }>
+   /** The inspector's title for that section ("Edit Heading"); null keeps the builder's. */
+   title?: (s: Section) => string | null
++  /** Basic mode: the editor of a code section, in place of the builder's HTML / Head code fields. */
++  Basic?: ComponentType<{ s: Section }>
++  /** Basic mode: the section list row of a code section (a name and a line under it); null keeps the builder's. */
++  summary?: (s: Section) => { title: string; sub?: string } | null
++  /** Basic mode: the section list row's thumbnail of a code section; `fallback` is the builder's kind icon. */
++  Thumb?: ComponentType<{ s: Section; size: number; fallback: ReactNode }>
+   /**
+    * What the per-run code frames of the pages the host does not draw (code sections next to
+    * builder sections, CodeSection.tsx) use to draw the design without running it. Absent in the
+diff --git a/src/builder/i18n/tr.ts b/src/builder/i18n/tr.ts
+index f855fe7..afbf120 100644
+--- a/src/builder/i18n/tr.ts
++++ b/src/builder/i18n/tr.ts
+@@ -1574,6 +1574,7 @@ const tr: Record<string, string> = {
+   'Upsells': 'Yukarı satışlar',
+   'You may also like…': 'Bunları da beğenebilirsiniz…',
+   'Code section': 'Kod bölümü',
++  'This part of the design is its own code, which Simple mode does not show. To change it, switch to Studio.': 'Bu bölüm tasarımın kendi kodudur; Basit mod bunu göstermez. Değiştirmek için Studio\'ya geçin.',
+   'Code sections': 'Kod bölümleri',
+   'A part of an imported design, kept as its own code': 'İçe aktarılan bir tasarımın, kendi koduyla korunan bir parçası',
+   'The section as the design wrote it. Click texts, links and images on the canvas to edit them.': 'Bölüm, tasarımın yazdığı haliyle. Düzenlemek için tuvaldeki metinlere, bağlantılara ve görsellere tıklayın.',
+diff --git a/src/builder/store.ts b/src/builder/store.ts
+index aaf8e3d..7342860 100644
+--- a/src/builder/store.ts
++++ b/src/builder/store.ts
+@@ -31,7 +31,8 @@ export type DocAction =
+   /** Theme Builder: settings of a dynamic widget cell. */
+   | { type: 'dyn'; id: string; itemId: string; patch: Partial<DynSettings>; key?: string }
+   | { type: 'setElStyle'; id: string; el: string; style: ElStyle }
+-  | { type: 'replace'; doc: DocState; label: string }
++  /** A whole new document; `key` (a host field's typing session) merges consecutive edits into one entry, however slowly typed. */
++  | { type: 'replace'; doc: DocState; label: string; key?: string }
+   | { type: 'jump'; cursor: number }
+   | { type: 'undo' }
+   | { type: 'redo' }
+@@ -281,7 +282,7 @@ function apply(doc: DocState, a: DocAction): { doc: DocState; label: string; key
+     case 'setElStyle':
+       return { doc: mapSection(doc, a.id, (s) => ({ ...s, els: { ...s.els, [a.el]: a.style } })), label: t('Style pasted') }
+     case 'replace':
+-      return { doc: a.doc, label: a.label, structural: true }
++      return { doc: a.doc, label: a.label, structural: true, key: a.key }
+     case 'site': {
+       // Changing a colour, font or corner of a design that follows the site style detaches it.
+       const patch = doc.site.global && !('global' in a.patch) ? { ...a.patch, global: false } : a.patch
+@@ -302,7 +303,7 @@ export function historyReducer(state: HistoryState, a: DocAction): HistoryState
+   const res = apply(current, a)
+   if (!res) return state
+   const now = Date.now()
+-  const coalesce = !!res.key && res.key === state.lastKey && now - state.lastAt < 1500
++  const coalesce = !!res.key && res.key === state.lastKey && (now - state.lastAt < 1500 || res.key.startsWith('field:'))
+   const kept = state.entries.slice(0, state.cursor + 1)
+   const entries = coalesce
+     ? [...kept.slice(0, -1), { doc: res.doc, label: res.label, at: now }]

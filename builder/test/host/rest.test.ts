@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { RestError, createRest, listMedia } from '../../host/rest'
+import { RestError, createRest, listMedia, setKitTrust } from '../../host/rest'
 import { ROOT, mockFetch, restErr } from './helpers'
 import { API_VERSION } from '../../host/contract'
 
@@ -82,6 +82,29 @@ describe('rest client', () => {
     await Promise.all([rest.request('GET', 'x'), rest.request('GET', 'x')])
     expect(n).toBe(1)
     expect(seen).toEqual(['fresh1'])
+  })
+})
+
+describe('kit script trust', () => {
+  it('PUTs {trust, code} to kits/{slug}/trust with the handshake and returns the trusted kits and their code', async () => {
+    const h = 'a'.repeat(64)
+    const m = mockFetch({
+      'PUT web-builder/v2/kits/my-kit/trust': (c) => ({ json: { trust: (c.body as { trust: boolean }).trust, scriptTrust: ['a', 'my-kit', 3], scriptCode: { 'my-kit': [h, 'bad', 1], x: 'no' } } }),
+    })
+    const rest = createRest({ root: ROOT, nonce: 'n', nonceUrl: '', fetch: m.fetch })
+    await expect(setKitTrust(rest, 'my-kit', true)).resolves.toEqual({ trust: ['a', 'my-kit'], code: { 'my-kit': [h] } })
+    await setKitTrust(rest, 'my-kit', true, [h])
+    await setKitTrust(rest, 'my-kit', false, [h])
+    expect(m.calls.map((c) => c.body)).toEqual([{ trust: true }, { trust: true, code: [h] }, { trust: false }])
+    expect(m.calls[0].headers['x-wb-api']).toBe(String(API_VERSION))
+    expect(m.calls[0].headers['x-wp-nonce']).toBe('n')
+  })
+
+  it('encodes the slug and passes server errors on', async () => {
+    const m = mockFetch({ 'PUT web-builder/v2/kits/a%2Fb/trust': restErr(404, 'wb_kit_not_found'), 'PUT web-builder/v2/kits/x/trust': { json: {} } })
+    const rest = createRest({ root: ROOT, nonce: 'n', nonceUrl: '', fetch: m.fetch })
+    await expect(setKitTrust(rest, 'a/b', true)).rejects.toMatchObject({ status: 404, code: 'wb_kit_not_found' })
+    await expect(setKitTrust(rest, 'x', true)).rejects.toMatchObject({ code: 'wb_bad_response' })
   })
 })
 

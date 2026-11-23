@@ -519,14 +519,42 @@ func (s *Server) seogoDocumentTitle(c *gin.Context, q *siteQuery) template.HTML 
 	return template.HTML(html.EscapeString(t))
 }
 
-// seogoQueryForPost is the main query a post would have on the front end (REST, previews).
-func (s *Server) seogoQueryForPost(p *store.Post) *siteQuery {
+// seogoQueryForPost is the main query a post would have on the front end (REST, previews, the
+// editor's analysis), decided the way the front end decides it (home and singular in site.go): with a
+// static front page, page_on_front and its Multi Language translations are the front page of their
+// language, and page_for_posts and its translations are the blog index ("home" with PostsPage).
+func (s *Server) seogoQueryForPost(ctx context.Context, p *store.Post) *siteQuery {
 	q := &siteQuery{Kind: "single", Post: p, Paged: 1}
-	if p.Type == "page" {
-		q.Kind = "page"
-		if s.settings.String("show_on_front") == "page" && int64(s.settings.Int("page_on_front")) == p.ID {
-			q.Kind = "front-page"
-		}
+	if p.Type != "page" {
+		return q
+	}
+	q.Kind = "page"
+	if s.settings.String("show_on_front") != "page" {
+		return q
+	}
+	switch {
+	case s.seogoIsStaticPage(ctx, p, "page_on_front"):
+		q.Kind = "front-page"
+	case s.seogoIsStaticPage(ctx, p, "page_for_posts"):
+		q.Kind, q.PostsPage, q.Post = "home", p, nil
 	}
 	return q
+}
+
+// seogoIsStaticPage reports whether p is the page a static page option (page_on_front,
+// page_for_posts) names, or its translation in p's language: the page golylangPage gives the front
+// end for that option in that language.
+func (s *Server) seogoIsStaticPage(ctx context.Context, p *store.Post, option string) bool {
+	id := int64(s.settings.Int(option))
+	if id <= 0 || p.ID <= 0 {
+		return false
+	}
+	if p.ID == id {
+		return true
+	}
+	if !s.golylangOn() || !s.pllTranslatedType(p.Type) {
+		return false
+	}
+	lang := s.pllObjLang(ctx, pllPost, p.ID)
+	return lang != "" && s.pllFrontTranslations(ctx, id)[lang] == p.ID
 }

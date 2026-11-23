@@ -43,7 +43,7 @@ const tagOf = (open: string) => /^<([a-zA-Z][a-zA-Z0-9-]*)/.exec(open)![1].toLow
 const closeOf = (open: string) => `</${tagOf(open)}>`
 
 /** Prefixes the data-wbc ids of markup (a locked part), byte for byte the same otherwise. */
-function prefixIds(html: string, prefix: string): string {
+export function prefixIds(html: string, prefix: string): string {
   const t = parse(html)
   const edits: Edit[] = []
   for (const el of t.all) {

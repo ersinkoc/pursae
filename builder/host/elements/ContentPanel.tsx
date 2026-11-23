@@ -19,14 +19,19 @@ import { ICON_SET } from '@/builder/icons'
 import { cleanSvgCode } from '@/builder/svgTint'
 import type { CmsHost } from '../cms-host'
 import { t } from '../i18n'
-import { act, latest, pageOf, style as styleAct } from './actions'
+import { act, commit, latest, pageOf, style as styleAct } from './actions'
 import { attrError, tagChoices, urlOK, type AttrError } from './attrs'
-import { attr, decode, elementKids, inner, outer, ownText, wbc, type El, type Tree } from './html'
+import { attr, decode, elementKids, inner, linesApart, outer, ownText, VOID, wbc, type El, type Tree } from './html'
 import { KEEP_ATTR, writeBack, type SrcMap } from './richtext'
 import { kindLabel, kindOf } from './kinds'
-import { locate, movable, withIds } from './ops'
+import { locate, movable } from './ops'
+import { useLiveEdit } from './livefield'
+import { applyCode, checkMarkup, codeView, type CodeProblem, type Part } from './codeops'
+import { CodeEditor } from './CodeEditor'
+import { tc } from './code-tr'
 import { frameEl } from './geometry'
-import { frameInfo, useElState } from './state'
+import { frameInfo, getElState, useElState } from './state'
+import { markupReadOnly } from './trust'
 import { variantOf, type LocalSection } from './local'
 
 type B = ReturnType<typeof useB>
@@ -52,24 +57,42 @@ function errText(e: AttrError): string {
   }
 }
 
-/** A text field that commits on Enter or blur. */
-function Field({ value, onCommit, placeholder, mono, name, area }: { value: string; onCommit: (v: string) => void; placeholder?: string; mono?: boolean; name?: string; area?: boolean }) {
+/**
+ * A text field: the canvas follows while typing (livefield.ts: debounced, one history entry per
+ * typing session); Enter or blur ends the session, Escape takes it back. `live` false: written on
+ * Enter / blur only (an address that would load the half-typed value, a list rewritten as markup).
+ */
+function Field({ value, onCommit, placeholder, mono, name, area, live = true }: { value: string; onCommit: (v: string, live: boolean) => boolean | void; placeholder?: string; mono?: boolean; name?: string; area?: boolean; live?: boolean }) {
   const [draft, setDraft] = useState<string | null>(null)
-  const done = () => {
-    if (draft !== null && draft !== value) onCommit(draft)
-    setDraft(null)
-  }
+  const now = useRef(value)
+  now.current = value
+  const edit = useLiveEdit<string>(
+    (v, isLive) => {
+      if (v === now.current) return false
+      if (isLive && !live) return false
+      return onCommit(v, isLive)
+    },
+    () => now.current,
+  )
   const props = {
     value: draft ?? value,
     placeholder,
     name,
     spellCheck: false,
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
-    onBlur: done,
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const v = e.target.value
+      setDraft(v)
+      edit.touch(() => v)
+    },
+    onBlur: () => {
+      edit.commit()
+      setDraft(null)
+    },
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       e.stopPropagation()
       if (e.key === 'Enter' && !area) (e.target as HTMLInputElement).blur()
       if (e.key === 'Escape') {
+        edit.revert()
         setDraft(null)
         ;(e.target as HTMLInputElement).blur()
       }
@@ -82,13 +105,16 @@ function Field({ value, onCommit, placeholder, mono, name, area }: { value: stri
   )
 }
 
-/** Sets one attribute, refusing what the rules refuse (with a message). */
-function setOne(b: B, id: string, tag: string, name: string, value: string | null, label?: string) {
+/** Sets one attribute, refusing what the rules refuse (with a message, unless the value is a draft being typed). */
+function setOne(b: B, id: string, tag: string, name: string, value: string | null, label?: string, live = false): boolean {
   if (value !== null) {
     const e = attrError(name, value, tag)
-    if (e) return b.notify(errText(e))
+    if (e) {
+      if (!live) b.notify(errText(e))
+      return false
+    }
   }
-  act.setAttrs(b, id, { [name]: value }, label)
+  return act.setAttrs(b, id, { [name]: value }, label)
 }
 
 /* ---------- The tab ---------- */
@@ -123,17 +149,15 @@ export function ContentTab({ s, fallback }: { s: Section; fallback: ReactNode })
           </select>
         )}
       </div>
-      {isText && <RichPanel key={id + '\u0000' + inner(tr, el)} b={b} id={id} html={inner(tr, el)} tr={tr} el={el} />}
+      {isText && <RichPanel key={id} b={b} id={id} html={inner(tr, el)} tr={tr} el={el} />}
       {tag === 'a' && <LinkPanel b={b} id={id} el={el} />}
       {tag === 'img' && <ImagePanel b={b} id={id} el={el} tr={tr} sec={s as LocalSection} />}
       {tag === 'svg' && <IconPanel b={b} id={id} tr={tr} el={el} />}
       {(tag === 'video' || tag === 'audio' || tag === 'iframe' || tag === 'embed' || tag === 'source') && <MediaPanel b={b} id={id} el={el} />}
       {(tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'label' || tag === 'form') && <FieldPanel b={b} id={id} el={el} tr={tr} />}
-      {!el.foreign && tag !== 'svg' && !['img', 'input', 'hr', 'br', 'video', 'audio', 'iframe', 'source', 'textarea', 'select'].includes(tag) && <HtmlPanel key={id} b={b} id={id} html={inner(tr, el)} open={!isText && !elementKids(el).length} />}
+      {!el.foreign && <CodePanel key={id} b={b} id={id} tr={tr} el={el} inside={tag !== 'svg' && !VOID.has(tag) && !['img', 'input', 'hr', 'br', 'video', 'audio', 'iframe', 'source', 'textarea', 'select'].includes(tag)} open={!isText && !elementKids(el).length && tag !== 'svg'} sel={id} />}
       <AttrsPanel b={b} id={id} el={el} />
-      <Panel title={t('Section code')} open={false}>
-        <div className="-mx-4">{fallback}</div>
-      </Panel>
+      <SectionCode key={s.id} b={b} s={s} sel={id} />
     </div>
   )
 }
@@ -161,6 +185,8 @@ export function richNodes(tr: Tree, el: El, map: SrcMap): DocumentFragment {
         const e = document.createElement(k.tag)
         const href = k.tag === 'a' ? attr(k, 'href') : null
         if (href && urlOK(href)) e.setAttribute('href', href)
+        // An inline tag the design shows as a block (Tailwind block, a flex child): drawn apart here too.
+        if (k.tag !== 'br' && linesApart(k)) e.style.display = 'block'
         map.set(e, k)
         parent.appendChild(e)
         if (k.tag !== 'br') add(e, k.children)
@@ -185,20 +211,30 @@ export function richNodes(tr: Tree, el: El, map: SrcMap): DocumentFragment {
 function RichPanel({ b, id, html, tr, el }: { b: B; id: string; html: string; tr: Tree; el: El }) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<SrcMap>(new Map())
-  const fill = () => {
+  // What the box was drawn from: its edits are written back against this (the tree of that moment),
+  // whole, so the box need not be redrawn (and lose the caret) while the canvas follows the typing.
+  const base = useRef({ tr, el, html })
+  const focused = useRef(false)
+  const paint = () => {
     if (!box.current) return
     map.current = new Map()
-    box.current.replaceChildren(richNodes(tr, el, map.current))
+    box.current.replaceChildren(richNodes(base.current.tr, base.current.el, map.current))
   }
-  useEffect(fill, [html]) // eslint-disable-line react-hooks/exhaustive-deps
+  const fill = () => {
+    base.current = { tr, el, html }
+    paint()
+  }
+  useEffect(() => {
+    if (!focused.current) fill()
+  }, [html]) // eslint-disable-line react-hooks/exhaustive-deps
+  const read = () => (box.current ? writeBack(box.current, base.current.tr, map.current) : base.current.html)
+  const edit = useLiveEdit<string>(
+    (next) => (next === html ? false : act.setInner(b, id, next)),
+    () => base.current.html,
+  )
   const cmd = (c: string, v?: string) => {
     box.current?.focus()
     document.execCommand(c, false, v)
-  }
-  const save = () => {
-    if (!box.current) return
-    const next = writeBack(box.current, tr, map.current)
-    if (next !== html) act.setInner(b, id, next)
   }
   const btn = (label: string, icon: ReactNode, on: () => void) => (
     <button type="button" title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={on} className="grid size-7 place-items-center rounded text-ink-300 hover:bg-white/10 hover:text-white">
@@ -221,11 +257,17 @@ function RichPanel({ b, id, html, tr, el }: { b: B; id: string; html: string; tr
         contentEditable
         suppressContentEditableWarning
         data-wb-rich=""
-        onBlur={save}
+        onFocus={() => (focused.current = true)}
+        onInput={() => edit.touch(read)}
+        onBlur={() => {
+          focused.current = false
+          edit.commit()
+        }}
         onKeyDown={(e) => {
           e.stopPropagation()
           if (e.key === 'Escape') {
-            fill()
+            edit.revert()
+            paint()
             box.current?.blur()
           }
         }}
@@ -244,9 +286,21 @@ interface SearchHit {
   subtype?: string
 }
 
-function LinkPanel({ b, id, el }: { b: B; id: string; el: El }) {
-  const href = attr(el, 'href') ?? ''
-  const blank = attr(el, 'target') === '_blank'
+/** A site address as the link stores it: a path on this site, else the full URL. */
+function localUrl(url: string): string {
+  try {
+    const u = new URL(url, location.href)
+    return u.origin === location.origin ? u.pathname + u.search + u.hash : url
+  } catch {
+    return url
+  }
+}
+
+/**
+ * Pages and posts of the site by name (core search), so a link can point at one: the Link panel
+ * (Studio) and Basic mode's address fields share it. `big` is Basic mode's larger box.
+ */
+export function PagePicker({ onPick, big, autoFocus }: { onPick: (url: string) => void; big?: boolean; autoFocus?: boolean }) {
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<SearchHit[]>([])
   useEffect(() => {
@@ -264,42 +318,44 @@ function LinkPanel({ b, id, el }: { b: B; id: string; el: El }) {
       clearTimeout(tm)
     }
   }, [q])
-  const local = (url: string) => {
-    try {
-      const u = new URL(url, location.href)
-      return u.origin === location.origin ? u.pathname + u.search + u.hash : url
-    } catch {
-      return url
-    }
-  }
+  return (
+    <div className={big ? 'mt-1.5 space-y-1.5' : 'space-y-1'}>
+      <label className="relative block">
+        <Search size={big ? 13 : 12} className={big ? 'absolute left-2.5 top-2.5 text-ink-500' : 'absolute left-2 top-2 text-ink-500'} />
+        <input autoFocus={autoFocus} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder={t('Search pages and posts')} className={cn(inputCls, big ? 'h-9 w-full rounded-lg pl-8' : 'w-full pl-6')} data-wb-link-search="" />
+      </label>
+      {hits.length > 0 && (
+        <div className={cn('overflow-y-auto border border-white/[0.08]', big ? 'max-h-44 rounded-lg' : 'max-h-48 rounded-md')}>
+          {hits.map((h) => (
+            <button
+              key={h.id + h.url}
+              type="button"
+              onClick={() => {
+                onPick(localUrl(h.url))
+                setQ('')
+              }}
+              className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-[11.5px] hover:bg-white/[0.06]"
+            >
+              <span className="truncate text-ink-100">{h.title || localUrl(h.url)}</span>
+              <span className="shrink-0 font-mono text-[10px] text-ink-500">{localUrl(h.url)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LinkPanel({ b, id, el }: { b: B; id: string; el: El }) {
+  const href = attr(el, 'href') ?? ''
+  const blank = attr(el, 'target') === '_blank'
   return (
     <Panel title={t('Link')}>
       <Ctl label={t('Address')} stack>
-        <Field value={href} name="href" mono placeholder="https:// · /page/ · #id" onCommit={(v) => setOne(b, id, 'a', 'href', v.trim() || null, t('Link changed'))} />
+        <Field value={href} name="href" mono placeholder="https:// · /page/ · #id" onCommit={(v, live) => setOne(b, id, 'a', 'href', v.trim() || null, t('Link changed'), live)} />
       </Ctl>
       <Ctl label={t('Link to a page of the site')} stack>
-        <label className="relative block">
-          <Search size={12} className="absolute left-2 top-2 text-ink-500" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder={t('Search pages and posts')} className={cn(inputCls, 'w-full pl-6')} data-wb-link-search="" />
-        </label>
-        {hits.length > 0 && (
-          <div className="max-h-48 overflow-y-auto rounded-md border border-white/[0.08]">
-            {hits.map((h) => (
-              <button
-                key={h.id + h.url}
-                type="button"
-                onClick={() => {
-                  setOne(b, id, 'a', 'href', local(h.url), t('Link changed'))
-                  setQ('')
-                }}
-                className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-[11.5px] hover:bg-white/[0.06]"
-              >
-                <span className="truncate text-ink-100">{h.title || local(h.url)}</span>
-                <span className="shrink-0 font-mono text-[10px] text-ink-500">{local(h.url)}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <PagePicker onPick={(u) => setOne(b, id, 'a', 'href', u, t('Link changed'))} />
       </Ctl>
       <label className="flex items-center gap-2 text-[11.5px] text-ink-300">
         <input
@@ -345,7 +401,7 @@ function ImagePanel({ b, id, el, tr, sec }: { b: B; id: string; el: El; tr: Tree
         <ImageIcon size={13} /> {t('Replace from the media library')}
       </button>
       <Ctl label={t('Address')} stack>
-        <Field value={src} name="src" mono onCommit={(v) => act.setAttrs(b, id, attrError('src', v, 'img') ? {} : { src: v || null, srcset: null, sizes: null }, t('Image replaced'))} />
+        <Field value={src} name="src" mono live={false} onCommit={(v) => act.setAttrs(b, id, attrError('src', v, 'img') ? {} : { src: v || null, srcset: null, sizes: null }, t('Image replaced'))} />
       </Ctl>
       <Ctl label={t('Alternative text')} stack>
         <Field value={attr(el, 'alt') ?? ''} name="alt" placeholder={t('Describe the image (empty: decorative)')} onCommit={(v) => act.setAttrs(b, id, { alt: v }, t('Alternative text changed'))} />
@@ -456,12 +512,12 @@ function MediaPanel({ b, id, el }: { b: B; id: string; el: El }) {
   return (
     <Panel title={tag === 'iframe' || tag === 'embed' ? t('Embed') : t('Video')}>
       <Ctl label={t('Address')} stack>
-        <Field value={attr(srcEl, 'src') ?? ''} name="src" mono placeholder="https://" onCommit={(v) => setOne(b, srcId, srcEl.tag, 'src', v.trim() || null, t('Source changed'))} />
+        <Field value={attr(srcEl, 'src') ?? ''} name="src" mono placeholder="https://" live={false} onCommit={(v) => setOne(b, srcId, srcEl.tag, 'src', v.trim() || null, t('Source changed'))} />
       </Ctl>
       {tag === 'video' && (
         <>
           <Ctl label={t('Poster image')} stack>
-            <Field value={attr(el, 'poster') ?? ''} name="poster" mono onCommit={(v) => setOne(b, id, tag, 'poster', v.trim() || null, t('Video changed'))} />
+            <Field value={attr(el, 'poster') ?? ''} name="poster" mono live={false} onCommit={(v) => setOne(b, id, tag, 'poster', v.trim() || null, t('Video changed'))} />
           </Ctl>
           <div className="grid grid-cols-2 gap-1">
             {flag('controls', t('Controls'))}
@@ -496,7 +552,7 @@ function FieldPanel({ b, id, el, tr }: { b: B; id: string; el: El; tr: Tree }) {
       {(tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button') && (
         <Ctl label={t('Name')}>
           <div className="w-[150px]">
-            <Field value={attr(el, 'name') ?? ''} name="name" mono onCommit={(v) => setOne(b, id, tag, 'name', v.trim() || null, label)} />
+            <Field value={attr(el, 'name') ?? ''} name="name" mono onCommit={(v, live) => setOne(b, id, tag, 'name', v.trim() || null, label, live)} />
           </div>
         </Ctl>
       )}
@@ -541,6 +597,7 @@ function FieldPanel({ b, id, el, tr }: { b: B; id: string; el: El; tr: Tree }) {
         <Ctl label={t('Options (value|label, one per line)')} stack>
           <Field
             area
+            live={false}
             value={optText}
             name="options"
             onCommit={(v) =>
@@ -575,31 +632,220 @@ function FieldPanel({ b, id, el, tr }: { b: B; id: string; el: El; tr: Tree }) {
   )
 }
 
-/* ---------- HTML / Embed ---------- */
+/* ---------- Edit code (the element's own markup) and Section code ---------- */
 
-function HtmlPanel({ b, id, html, open }: { b: B; id: string; html: string; open: boolean }) {
-  const [draft, setDraft] = useState(html)
-  useEffect(() => setDraft(html), [html])
+/** Drafts that were not applied, kept while the page stays open (key → the source they started from and the text). */
+const drafts = new Map<string, { base: string; text: string }>()
+export const codeDrafts = drafts
+
+/** Who may write code: users with unfiltered_html (the same users whose code sections are accepted; trust.ts markupReadOnly). */
+const mayCode = () => !markupReadOnly()
+
+function problemText(p: CodeProblem): string {
+  const v = { line: p.line, tag: p.tag ?? '' }
+  if (p.kind === 'unclosed') return tc('Line {line}: <{tag}> is never closed.', v)
+  if (p.kind === 'stray') return tc('Line {line}: </{tag}> has no opening tag.', v)
+  if (p.kind === 'unterminated') return tc('Line {line}: <{tag}> is not finished (a quote or > is missing).', v)
+  return tc('Line {line}: this code would change <{tag}> outside the element.', v)
+}
+
+/** A text kept as a draft until it is applied; warns when the element it belongs to is left with unapplied changes. */
+function useDraft(key: string, base: string, b: B, watch: string | null) {
+  const kept = drafts.get(key)
+  const [draft, setDraft] = useState(kept && kept.base === base ? kept.text : base)
+  const [restored, setRestored] = useState(!!kept && kept.base === base && kept.text !== base)
+  const [seen, setSeen] = useState(base)
+  if (seen !== base) {
+    // The source changed under us (applied, undo, another panel): start again from it.
+    setSeen(base)
+    setDraft(base)
+    setRestored(false)
+  }
+  useEffect(() => {
+    if (draft === base) drafts.delete(key)
+    else drafts.set(key, { base, text: draft })
+  }, [key, draft, base])
+  useEffect(
+    () => () => {
+      if (drafts.has(key) && getElState().sel !== watch) b.notify(tc('You have code changes that were not applied. They are kept while you stay on this page; open the element again to continue.'))
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+  return { draft, setDraft, restored, setRestored }
+}
+
+function CodeBox({ b, id, tr, el, part, readOnly, sel }: { b: B; id: string; tr: Tree; el: El; part: Part; readOnly: boolean; sel: string | null }) {
+  const view = useMemo(() => codeView(tr, el, part), [tr, el, part])
+  const key = part + '\u0000' + id
+  const { draft, setDraft, restored, setRestored } = useDraft(key, view.text, b, sel)
+  const [msg, setMsg] = useState('')
+  const [empty, setEmpty] = useState(false)
+  const dirty = draft !== view.text
+  const apply = () => {
+    if (readOnly) return
+    setEmpty(false)
+    if (!dirty) return setMsg(tc('Nothing changed.'))
+    const r = applyCode(pageOf(latest.doc ?? b.doc), id, draft, view.slots, part)
+    if (r.error === 'empty') {
+      setMsg(tc('The code is empty. Delete the element instead?'))
+      return setEmpty(true)
+    }
+    if (r.error) return setMsg(r.problem ? problemText(r.problem) : tc('Nothing was applied: the element is gone or cannot be edited here.'))
+    if (!r.result || !Object.keys(r.result.html).length) return setMsg(tc('Nothing changed.'))
+    setMsg('')
+    drafts.delete(key)
+    commit(b, part === 'outer' ? tc('Edit code') : t('HTML changed'), r.result)
+  }
+  const outerPart = part === 'outer'
+  const es = useElState()
   return (
-    <Panel title={t('HTML inside')} open={open}>
-      <textarea
+    <div className="space-y-2" data-wb-code-box={part}>
+      <div className="text-[10.5px] text-ink-500">{(outerPart ? tc('The element’s own markup, as stored. The editor’s ids are kept for you.') : tc('The markup inside the element.')) + ' ' + (es.live && es.scripts ? tc('Scripts run on the published page and in the Live canvas.') : t('Scripts run on the published page only.'))}</div>
+      {readOnly && (
+        <div className="text-[10.5px] text-amber-300" data-wb-code-readonly="">
+          {tc('Your role may not edit code (it needs unfiltered HTML). It is shown here read-only.')}
+        </div>
+      )}
+      {restored && !readOnly && (
+        <div className="flex items-center justify-between gap-2 text-[10.5px] text-amber-300" data-wb-code-restored="">
+          <span>{tc('A draft you had not applied was restored.')}</span>
+          <button
+            type="button"
+            className="shrink-0 underline"
+            onClick={() => {
+              setDraft(view.text)
+              setRestored(false)
+              setMsg('')
+            }}
+          >
+            {tc('Discard draft')}
+          </button>
+        </div>
+      )}
+      <CodeEditor
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => e.stopPropagation()}
-        rows={8}
-        spellCheck={false}
-        name="wb-inner-html"
-        className={cn(inputCls, 'h-auto w-full py-1.5 font-mono text-[10.5px]')}
+        onChange={(v) => {
+          setDraft(v)
+          if (msg) setMsg('')
+          setEmpty(false)
+        }}
+        label={outerPart ? tc('Element code') : tc('Code inside the element')}
+        name={outerPart ? 'wb-outer-html' : 'wb-inner-html'}
+        title={outerPart ? tc('Element code') : tc('Code inside the element')}
+        readOnly={readOnly}
+        invalid={!!msg}
+        onApply={apply}
+        extra={
+          !readOnly && (
+            <button type="button" disabled={!dirty} onClick={apply} className="h-7 shrink-0 rounded-[5px] bg-accent px-2.5 text-[11.5px] font-semibold text-white disabled:opacity-40">
+              {tc('Apply')}
+            </button>
+          )
+        }
       />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10.5px] text-ink-500">{t('Scripts run on the published page only.')}</span>
-        <button type="button" disabled={draft === html} onClick={() => act.setInner(b, id, withIds(draft), t('HTML changed'))} className="h-7 shrink-0 rounded-[5px] bg-accent px-2.5 text-[11.5px] font-semibold text-white disabled:opacity-40" data-wb-html-apply="">
-          {t('Apply')}
-        </button>
-      </div>
+      {msg && (
+        <div role="alert" className="text-[10.5px] text-red-300" data-wb-code-error="">
+          {msg}
+          {empty && (
+            <button
+              type="button"
+              className="ml-2 underline"
+              onClick={() => {
+                drafts.delete(key)
+                act.remove(b, id)
+              }}
+              data-wb-code-delete=""
+            >
+              {tc('Delete element')}
+            </button>
+          )}
+        </div>
+      )}
+      {!readOnly && (
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            disabled={!dirty}
+            onClick={() => {
+              setDraft(view.text)
+              setMsg('')
+              setEmpty(false)
+              setRestored(false)
+            }}
+            className="h-7 shrink-0 rounded-[5px] px-2 text-[11.5px] text-ink-300 hover:text-white disabled:opacity-40"
+          >
+            {tc('Revert')}
+          </button>
+          <button type="button" disabled={!dirty} onClick={apply} className="h-7 shrink-0 rounded-[5px] bg-accent px-2.5 text-[11.5px] font-semibold text-white disabled:opacity-40" data-wb-code-apply={part} {...(outerPart ? {} : { 'data-wb-html-apply': '' })}>
+            {tc('Apply')}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** The Edit code group: the element's whole markup, and (where it has an inside) what is inside it. */
+function CodePanel({ b, id, tr, el, inside, open, sel }: { b: B; id: string; tr: Tree; el: El; inside: boolean; open: boolean; sel: string }) {
+  const [part, setPart] = useState<Part>('outer')
+  const readOnly = !mayCode()
+  return (
+    <Panel title={tc('Edit code')} open={open}>
+      {inside && (
+        <div role="tablist" className="flex gap-1" data-wb-code-tabs="">
+          {(['outer', 'inner'] as const).map((p) => (
+            <button key={p} type="button" role="tab" aria-selected={part === p} onClick={() => setPart(p)} className={cn('h-6 rounded px-2 text-[11px]', part === p ? 'bg-white/10 text-white' : 'text-ink-400 hover:text-white')} data-wb-code-tab={p}>
+              {p === 'outer' ? tc('Whole element') : t('HTML inside')}
+            </button>
+          ))}
+        </div>
+      )}
+      <CodeBox key={part} b={b} id={id} tr={tr} el={el} part={inside ? part : 'outer'} readOnly={readOnly} sel={sel} />
     </Panel>
   )
 }
+
+/** The section's own HTML and head code, edited as one history entry. */
+function SectionCode({ b, s, sel }: { b: B; s: Section; sel: string }) {
+  const readOnly = !mayCode()
+  const html0 = s.content.html ?? ''
+  const head0 = s.content.head ?? ''
+  const h = useDraft('section-html\u0000' + s.id, html0, b, sel)
+  const d = useDraft('section-head\u0000' + s.id, head0, b, sel)
+  const dirty = h.draft !== html0 || d.draft !== head0
+  const warn = h.draft !== html0 ? checkMarkup(h.draft) : null
+  const apply = () => {
+    if (readOnly || !dirty) return
+    drafts.delete('section-html\u0000' + s.id)
+    drafts.delete('section-head\u0000' + s.id)
+    commit(b, tc('Code changed'), { html: h.draft !== html0 ? { [s.id]: h.draft } : {} }, d.draft !== head0 ? { [s.id]: { head: d.draft } } : undefined)
+  }
+  return (
+    <Panel title={t('Section code')} open={false}>
+      {readOnly && <div className="text-[10.5px] text-amber-300">{tc('Your role may not edit code (it needs unfiltered HTML). It is shown here read-only.')}</div>}
+      <Ctl label={tc('HTML code')} stack>
+        <CodeEditor value={h.draft} onChange={h.setDraft} label={tc('HTML code')} name="wb-section-html" title={tc('HTML code')} readOnly={readOnly} maxHeight={320} onApply={apply} />
+      </Ctl>
+      {warn && (
+        <div className="text-[10.5px] text-amber-300" data-wb-code-warn="">
+          {problemText(warn)}
+        </div>
+      )}
+      <Ctl label={tc('Head code')} stack>
+        <CodeEditor value={d.draft} onChange={d.setDraft} label={tc('Head code')} name="wb-section-head" title={tc('Head code')} readOnly={readOnly} minRows={3} maxHeight={200} onApply={apply} />
+      </Ctl>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <button type="button" disabled={!dirty} onClick={apply} className="h-7 shrink-0 rounded-[5px] bg-accent px-2.5 text-[11.5px] font-semibold text-white disabled:opacity-40" data-wb-section-code-apply="">
+            {tc('Apply')}
+          </button>
+        </div>
+      )}
+    </Panel>
+  )
+}
+
 
 /* ---------- Attributes ---------- */
 
@@ -629,7 +875,7 @@ function AttrsPanel({ b, id, el }: { b: B; id: string; el: El }) {
               {a.name}
             </span>
             <div className="min-w-0 flex-1">
-              <Field value={a.value ?? ''} mono name={`attr-${a.name}`} onCommit={(v) => setOne(b, id, el.tag, a.name, v, t('Attribute changed'))} />
+              <Field value={a.value ?? ''} mono name={`attr-${a.name}`} onCommit={(v, live) => setOne(b, id, el.tag, a.name, v, t('Attribute changed'), live)} />
             </div>
             <button type="button" aria-label={t('Remove')} onClick={() => act.setAttrs(b, id, { [a.name]: null }, t('Attribute removed'))} className="grid size-6 shrink-0 place-items-center rounded text-ink-500 hover:text-red-300">
               <X size={11} />

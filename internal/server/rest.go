@@ -244,6 +244,12 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 	if !s.checkNonceValue(c, nonce, "wp_rest") {
 		return nil, errors.New("rest_cookie_invalid_nonce")
 	}
+	// AdminSecGo: a session that must first change its password or set up the factor its role
+	// requires gets no API either (only the HTML screens that fix it), or it could mint an
+	// Application Password and keep API access without ever meeting the requirement.
+	if s.adminsecBlocked(c, u) != "" {
+		return nil, errors.New("adminsec_account_blocked")
+	}
 	return u, nil
 }
 
@@ -314,6 +320,8 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		} else if err.Error() == "invalid_token" {
 			c.Header("WWW-Authenticate", s.oauthChallenge(c, "invalid_token"))
 			restErr(c, http.StatusUnauthorized, "invalid_token", "The access token is invalid or expired.")
+		} else if err.Error() == "adminsec_account_blocked" {
+			restErr(c, http.StatusForbidden, "adminsec_account_action_required", "Your account needs attention before it can use the REST API: change your password or set up the sign-in method your role requires.")
 		} else if err.Error() == "adminsec_locked" {
 			restErr(c, http.StatusTooManyRequests, "too_many_retries", "Too many failed login attempts, or access from this IP address is blocked.")
 		} else {
