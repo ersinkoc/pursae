@@ -1491,8 +1491,12 @@ func (s *Server) wbWizSetHomepage(c *gin.Context, m *wbWizMeta, front int64) err
 	values := map[string]any{"show_on_front": "page", "page_on_front": front}
 	recs := s.wbWizRecords()
 	if rec := recs[m.ID]; rec != nil {
+		// Only the first homepage change records what to restore: a repeated publish must not
+		// record the import's own page as the site's previous homepage.
+		if !rec.FrontSet {
+			rec.PrevShow, rec.PrevFront = s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
+		}
 		rec.FrontSet, rec.FrontPage = true, front
-		rec.PrevShow, rec.PrevFront = s.settings.String("show_on_front"), int64(s.settings.Int("page_on_front"))
 		values[wbWizImportsOption] = recs
 	}
 	if err := s.settings.Set(c, values); err != nil {
@@ -1730,6 +1734,7 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		return
 	}
 	deleted, kept := 0, 0
+	gone := map[int64]bool{} // the pages deleted below
 	del := func(ids []int64, typ string) error {
 		for _, pid := range ids {
 			title, err := s.wbWizOwnedTitle(c, pid, typ, rec.Kit)
@@ -1742,6 +1747,9 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 			}
 			if err := s.store.DeletePost(c, pid); err != nil {
 				return fmt.Errorf("delete imported %s %d: %w", typ, pid, err)
+			}
+			if typ == "page" {
+				gone[pid] = true
 			}
 			deleted++
 		}
@@ -1776,13 +1784,26 @@ func (s *Server) wbWizUndoRun(c *gin.Context, id string) {
 		return
 	}
 	front := int64(s.settings.Int("page_on_front"))
-	if rec.FrontSet && s.settings.String("show_on_front") == "page" && front > 0 &&
-		(rec.FrontPage == front || rec.FrontPage == 0 && wbWizHas(rec.Pages, front)) {
-		prev := rec.PrevShow
-		if prev == "" {
-			prev = "posts"
+	homepage := map[string]any{}
+	// Restore the previous homepage when the import's homepage is still in place, and also when
+	// the homepage is any page just deleted (it was moved within the import): never leave it
+	// pointing at a page that no longer exists.
+	if s.settings.String("show_on_front") == "page" && front > 0 &&
+		(rec.FrontSet && (rec.FrontPage == front || rec.FrontPage == 0 && wbWizHas(rec.Pages, front)) || gone[front]) {
+		prevShow, prevFront := rec.PrevShow, rec.PrevFront
+		if !rec.FrontSet || gone[prevFront] {
+			prevShow, prevFront = "", 0
 		}
-		if err := s.settings.Set(c, map[string]any{"show_on_front": prev, "page_on_front": rec.PrevFront}); err != nil {
+		if prevShow == "" || prevShow == "page" && prevFront == 0 {
+			prevShow = "posts"
+		}
+		homepage["show_on_front"], homepage["page_on_front"] = prevShow, prevFront
+	}
+	if posts := int64(s.settings.Int("page_for_posts")); posts > 0 && gone[posts] {
+		homepage["page_for_posts"] = 0
+	}
+	if len(homepage) > 0 {
+		if err := s.settings.Set(c, homepage); err != nil {
 			s.wbWizUndoCleanupError(c, id, fmt.Errorf("restore previous homepage: %w", err))
 			return
 		}

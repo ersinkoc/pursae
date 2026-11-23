@@ -20,6 +20,12 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Pursae Web Builder: removing a site import restores the right homepage.** Publishing an import a
+  second time (after its report failed to save) recorded the imported page as the site's previous
+  homepage, so *Remove this import* set the homepage to a page it had just deleted. Removal also left
+  the homepage or posts page pointing at a deleted page when it had been moved to another page of the
+  same import. The original homepage is now kept from the first change, and removal resets the
+  reading settings whenever they point at a page it deletes.
 - **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the
   default title (General Settings › Table of Contents) is a registered string under *Pursae SEO* on
   Languages › Translations, and each language shows its translation, so the automatic table of contents no
