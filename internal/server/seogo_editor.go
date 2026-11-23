@@ -210,6 +210,10 @@ func (s *Server) seogoAnalysisInputFor(ctx context.Context, sc *seogoCtx) seogoA
 	p := sc.Post
 	in := seogoAnalysisInput{SEOTitle: sc.title(), PostTitle: p.Title, Description: sc.description(), Slug: p.Slug, Content: p.Content,
 		Keywords: seogoFocusList(seogoMeta(p.Meta, "focus")), Cornerstone: seogoMeta(p.Meta, "cornerstone") == "1"}
+	// What a visitor sees: the rendered page or content (seogo_rendered.go); the stored markup stays
+	// at hand for the checks that look for blocks.
+	in.Content, in.TOC = s.seogoVisibleContent(ctx, p)
+	in.Raw = p.Content
 	in.Locale = s.seogoPostLocale(ctx, p)
 	if sc.Focus != "" {
 		in.Keywords = seogoFocusList(sc.Focus)

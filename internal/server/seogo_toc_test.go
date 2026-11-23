@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -40,6 +41,60 @@ func TestSeogoTOCContentAuto(t *testing.T) {
 	}
 	if seogoTOCContent(in, def, false, 1) != in {
 		t.Error("content without a block changed")
+	}
+}
+
+// Headings and markers inside a script, style, textarea, template or comment are not headings: they
+// are neither listed nor given an id, so the published script or style is byte for byte unchanged.
+func TestSeogoTOCContentSkipsRawText(t *testing.T) {
+	def := seogoTOCOpts{Title: "Contents", Levels: []int{2, 3}}
+	raw := []string{
+		`<script>var t = "<h2>From script</h2>"; el.innerHTML = '<h3 class="x">Also script</h3>';</script>`,
+		`<SCRIPT type="module">document.write("<h2>Upper script</h2>")</SCRIPT >`,
+		`<style>.a::before{content:"<h2>From style</h2>"}</style>`,
+		`<textarea name="n"><h2>From textarea</h2></textarea>`,
+		`<template><h2>From template</h2></template>`,
+		`<!-- <h2>From comment</h2> -->`,
+		`<script>var m = "` + seogoTOCMarkerFor(def) + `";</script>`,
+	}
+	in := `<p>intro</p>` + seogoTOCMarkerFor(def) + raw[0] + `<h2>Real One</h2>` + raw[1] + raw[2] + raw[3] +
+		`<h3 class="c">Real Two</h3>` + raw[4] + raw[5] + raw[6] + `<h2>Real Three</h2>`
+	out := seogoTOCContent(in, def, false, 1)
+	for _, r := range raw {
+		if !strings.Contains(out, r) {
+			t.Errorf("raw text changed: %q missing in\n%s", r, out)
+		}
+	}
+	for _, want := range []string{`<h2 id="real-one">`, `<h3 class="c" id="real-two">`, `<h2 id="real-three">`,
+		`<a href="#real-one">Real One</a>`, `<a href="#real-two">Real Two</a>`, `<a href="#real-three">Real Three</a>`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q in\n%s", want, out)
+		}
+	}
+	if n := strings.Count(out, `<nav class="seogo-toc`); n != 1 {
+		t.Errorf("%d tables of contents, want 1:\n%s", n, out)
+	}
+	for _, bad := range []string{"From script", "Also script", "Upper script", "From style", "From textarea", "From template", "From comment"} {
+		if strings.Contains(out, bad+"</a>") {
+			t.Errorf("%q listed:\n%s", bad, out)
+		}
+	}
+
+	// A marker that only appears inside a script is no table of contents, and the auto insert still
+	// goes before the first real heading.
+	in = raw[6] + `<p>x</p>` + raw[0] + `<h2>A</h2><h2>B</h2>`
+	if out := seogoTOCContent(in, def, false, 1); out != in {
+		t.Errorf("a marker string in a script was filled:\n%s", out)
+	}
+	out = seogoTOCContent(in, def, true, 2)
+	if !strings.HasPrefix(out, raw[6]+`<p>x</p>`+raw[0]+`<nav class="seogo-toc`) || !strings.Contains(out, `<h2 id="a">A</h2><h2 id="b">B</h2>`) {
+		t.Errorf("auto insert:\n%s", out)
+	}
+
+	// An unclosed script runs to the end.
+	in = seogoTOCMarkerFor(def) + `<h2>Before</h2><script>"<h2>x</h2>"`
+	if out := seogoTOCContent(in, def, false, 1); !strings.HasSuffix(out, `<script>"<h2>x</h2>"`) || !strings.Contains(out, `<a href="#before">`) {
+		t.Errorf("unclosed script:\n%s", out)
 	}
 }
 
@@ -93,4 +148,51 @@ func must(b []byte, err error) []byte {
 		panic(err)
 	}
 	return b
+}
+
+// With Pursae Multi Language on, the default TOC title is a registered string translated into the
+// post's language; a block's own title stays as written.
+func TestSEOGoTOCTitleFollowsLanguage(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	base := ts.URL
+	installAndLogin(t, ts, c)
+	seogoToggle(t, c, base, "activate")
+	golylangToggle(t, c, base, "activate")
+	pllAddLanguage(t, c, base, "English", "en_US", "en", "us")
+	pllAddLanguage(t, c, base, "Türkçe", "tr_TR", "tr", "tr")
+	if err := srv.pllSetString(t.Context(), "tr", "Table of Contents", "İçindekiler"); err != nil {
+		t.Fatal(err)
+	}
+	srv.pllFlushStrings()
+
+	heads := `<!-- wp:heading --><h2 class="wp-block-heading">First part</h2><!-- /wp:heading --><!-- wp:heading --><h2 class="wp-block-heading">Second part</h2><!-- /wp:heading -->`
+	mk := func(lang, title, toc string) string {
+		t.Helper()
+		code, obj, _ := pllREST(t, c, base, http.MethodPost, "/wp-json/wp/v2/posts", map[string]any{
+			"title": title, "status": "publish", "lang": lang, "content": toc + heads})
+		if code != http.StatusCreated {
+			t.Fatalf("create %s: %d %v", title, code, obj)
+		}
+		return obj["link"].(string)
+	}
+	cases := []struct{ link, want string }{
+		{mk("en", "English TOC", `<!-- wp:seogo/toc /-->`), `aria-label="Table of Contents"`},
+		{mk("tr", "Turkish TOC", `<!-- wp:seogo/toc /-->`), `aria-label="İçindekiler"`},
+		{mk("tr", "Own title TOC", `<!-- wp:seogo/toc {"title":"Konular"} /-->`), `aria-label="Konular"`},
+	}
+	for _, tc := range cases {
+		_, front, _ := get(t, c, tc.link)
+		if !strings.Contains(front, tc.want) {
+			i := strings.Index(front, "seogo-toc")
+			t.Errorf("%s lacks %s; near: %.200s", tc.link, tc.want, front[max(i, 0):])
+		}
+	}
+	srv.pllCaptureFlush(t.Context())
+	found := false
+	for _, r := range srv.pllStrings(t.Context()) {
+		found = found || (r.String == "Table of Contents" && r.Name == seogoTOCTitleName)
+	}
+	if !found {
+		t.Error("TOC title not registered on Languages › Translations")
+	}
 }
