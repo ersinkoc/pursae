@@ -591,7 +591,7 @@ func (s *Server) seogoBulkRows(ctx context.Context, typ, search string, per, pag
 	lb := s.links(ctx)
 	var out []seogoBulkRow
 	for _, p := range posts {
-		sc := &seogoCtx{s: s, ctx: ctx, lb: lb, Kind: s.seogoQueryForPost(p).Kind, Post: p}
+		sc := &seogoCtx{s: s, ctx: ctx, lb: lb, Kind: s.seogoQueryForPost(ctx, p).Kind, Post: p}
 		r := seogoBulkRow{ID: p.ID, Title: p.Title, URL: lb.Permalink(p), Status: p.Status, SEOTitle: seogoMeta(p.Meta, "title"),
 			Desc: seogoMeta(p.Meta, "description"), Focus: seogoMeta(p.Meta, "focus"), Noindex: seogoMeta(p.Meta, "noindex") == "noindex"}
 		r.TitlePlaceholder = sc.replace(s.seogoOpts().Types[typ].Title)

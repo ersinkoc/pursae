@@ -92,7 +92,9 @@ func (s *Server) seogoVisibleContent(ctx context.Context, p *store.Post) (out st
 		lang.Path = strings.Trim(req.URL.Path, "/")
 		pllSet(c, lang)
 	}
-	q := s.seogoQueryForPost(p)
+	// The front end's query: a translated front page is the front page, the posts page is the blog
+	// index with its posts loop (what a visitor sees there is the listing, not the page's own text).
+	q := s.seogoQueryForPost(base, p)
 	c.Set(ctxSiteQuery, q)
 
 	if p.Type != "page" {
@@ -105,7 +107,8 @@ func (s *Server) seogoVisibleContent(ctx context.Context, p *store.Post) (out st
 	if err != nil || v == nil {
 		return p.Content, false
 	}
-	rendered := ""
+	postsPage := q.Kind == "home"
+	rendered := p.Content // the posts page: the blog index has no post of its own
 	if v.Post != nil {
 		rendered = string(v.Post.Content)
 	}
@@ -115,7 +118,9 @@ func (s *Server) seogoVisibleContent(ctx context.Context, p *store.Post) (out st
 	if rec.Code < 300 {
 		if main, ok := seogoMainHTML(rec.Body.String()); ok {
 			mc, mtoc := seogoCleanContent(main, p.Title, true)
-			if rc, _ := seogoCleanContent(rendered, "", false); len(words(plainText(mc))) >= len(words(plainText(rc))) {
+			// A page's <main> is kept unless it shows less than the page's own content (a template that
+			// leaves the content out); the posts page shows its listing, whatever its own text.
+			if rc, _ := seogoCleanContent(rendered, "", false); postsPage || len(words(plainText(mc))) >= len(words(plainText(rc))) {
 				return mc, mtoc
 			}
 		}

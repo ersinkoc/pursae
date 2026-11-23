@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"wpgo/internal/wp"
 )
 
 // Content analysis: Yoast's SEO and readability assessments (with their thresholds) plus Rank
@@ -26,6 +28,7 @@ type seogoAnalysisInput struct {
 	Keywords    []string `json:"keywords"`
 	Cornerstone bool     `json:"cornerstone"`
 	Taxonomy    bool     `json:"taxonomy"`
+	IsFront     bool     `json:"-"` // the static front page (or a translation of it): its URL is the site root, it has no slug
 	UsedBy      []string `json:"-"` // titles of other posts with the same focus keyphrase
 	SiteHost    string   `json:"-"`
 	Locale      string   `json:"-"` // post locale (en_US, tr_TR, ...); "" means English
@@ -214,6 +217,12 @@ func countPhrase(text, phrase string) int {
 }
 
 // allWordsIn reports whether every content word of the phrase occurs in the text, in any order.
+// seogoSlugFold is a word as a slug spells it: slugs drop Latin accents (sanitize_title), so the
+// keyphrase "özgeçmiş" is in the slug "ozgecmis" (Yoast transliterates the keyphrase the same way).
+func seogoSlugFold(s string) string {
+	return strings.ToLower(wp.RemoveAccents(s))
+}
+
 func allWordsIn(text, phrase string) bool {
 	set := map[string]bool{}
 	for _, w := range words(text) {
@@ -574,16 +583,17 @@ func seogoAnalyzeSEO(in seogoAnalysisInput) seogoAnalysis {
 		}
 	}
 
-	// Keyphrase in slug: 1–2 word keyphrases need all words, longer ones more than half
-	if in.Slug != "" {
+	// Keyphrase in slug: 1–2 word keyphrases need all words, longer ones more than half. Not applicable
+	// to the front page, whose address is the site root (its stored slug is never shown).
+	if in.Slug != "" && !in.IsFront {
 		slugText := strings.NewReplacer("-", " ", "_", " ").Replace(in.Slug)
 		set := map[string]bool{}
 		for _, w := range words(slugText) {
-			set[stem(w)] = true
+			set[stem(seogoSlugFold(w))] = true
 		}
 		found := 0
 		for _, w := range cw {
-			if set[stem(w)] {
+			if set[stem(seogoSlugFold(w))] {
 				found++
 			}
 		}
@@ -774,8 +784,8 @@ func seogoRankMathPoints(in seogoAnalysisInput, kw string, tw []string, st linkS
 	text := strings.Join(tw, " ")
 	add(containsPhrase(in.SEOTitle, kw), 36)
 	add(containsPhrase(in.Description, kw), 2)
-	if in.Slug != "" {
-		add(allWordsIn(strings.ReplaceAll(in.Slug, "-", " "), kw), 5)
+	if in.Slug != "" && !in.IsFront {
+		add(allWordsIn(seogoSlugFold(strings.ReplaceAll(in.Slug, "-", " ")), seogoSlugFold(kw)), 5)
 	}
 	head := tw
 	if len(tw) > 400 {

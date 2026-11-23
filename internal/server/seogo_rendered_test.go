@@ -200,7 +200,7 @@ func TestSEOGoAnalyzesRenderedPage(t *testing.T) {
 	pp := stored(postID)
 	seogoSetMeta(pp.Meta, "focus", "plain posts")
 	srv.seogoStoreScores(ctx, pp)
-	sc := &seogoCtx{s: srv, ctx: ctx, lb: srv.links(ctx), Kind: srv.seogoQueryForPost(pp).Kind, Post: pp}
+	sc := &seogoCtx{s: srv, ctx: ctx, lb: srv.links(ctx), Kind: srv.seogoQueryForPost(ctx, pp).Kind, Post: pp}
 	in := srv.seogoAnalysisInputFor(ctx, sc)
 	in.Content, in.TOC = pp.Content, false
 	if want, got := seogoAnalyzeSEO(in).Score, seogoMeta(pp.Meta, "seo_score"); got != strconv.Itoa(want) {
