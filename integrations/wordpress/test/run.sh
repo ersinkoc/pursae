@@ -89,6 +89,10 @@ for login in $(jq -r '.users | keys[]' "$EXP"); do
 done
 check "the Pursae administrator is untouched" "$(sql "SELECT email FROM users WHERE login = 'admin'")" "admin@pursae.test"
 
+# The import leaves Pursae Commerce off ("activate it in Plugins to open the store"); the shop owner's next
+# step is to switch it on, after which the imported Cart page must show the cart.
+if "$PURSAE" plugin activate goocommerce >"$WORK/activate.log" 2>&1; then ok "Pursae Commerce activates on the imported site"; else bad "Pursae Commerce activation: $(cat "$WORK/activate.log")"; fi
+
 if curl -fs "http://127.0.0.1:$PORT/healthz" >/dev/null 2>&1; then
 	echo "Something already listens on port $PORT: stop it or set WP2P_PURSAE_PORT." >&2
 	exit 1
@@ -129,7 +133,7 @@ check "the cart page answers" "$cart_code" "200"
 check "the cart page shows Pursae Commerce's cart" "$(grep -q '<div class="woocommerce">' "$WORK/cart.html" && echo yes || echo no)" "yes"
 if ! grep -q '<div class="woocommerce">' "$WORK/cart.html"; then
 	echo "--- cart page ($cart_slug) content:"; sql "SELECT left(content, 2500) FROM posts WHERE slug = '$cart_slug' AND type = 'page'"
-	echo "--- cart page HTML (body):"; sed -n '/<body/,$p' "$WORK/cart.html" | head -c 5000; echo
+	echo "--- cart page HTML (main):"; tr '\n' ' ' <"$WORK/cart.html" | grep -o '<main.*' | head -c 5000; echo
 fi
 check "no block comment reaches the cart page" "$(grep -q 'wp:woocommerce' "$WORK/cart.html" && echo yes || echo no)" "no"
 check "store currency" "$(sql "SELECT value #>> '{}' FROM settings WHERE key = 'goocommerce_currency'")" "EUR"
