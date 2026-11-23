@@ -87,6 +87,8 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Login: the key icon on Log in with a passkey sits on the text line.** WordPress's button icon line height
+  pushed it about 10 px below the label.
 - **WP to Pursae: killed `pursae import wordpress` runs.** A running import now touches its row every 30
   seconds, so a command that was killed (SIGKILL, a crash, a lost terminal) is recognised after 30 minutes
   instead of 6 hours (still 6 hours for an import started with 0.5.0, which does not heartbeat). Its import is
