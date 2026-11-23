@@ -428,7 +428,9 @@ func TestWBEditorCodeCSP(t *testing.T) {
 		}
 		return dirs
 	}
-	has := func(dirs map[string]string, dir, src string) bool { return strings.Contains(" "+dirs[dir]+" ", " "+src+" ") }
+	has := func(dirs map[string]string, dir, src string) bool {
+		return strings.Contains(" "+dirs[dir]+" ", " "+src+" ")
+	}
 
 	dirs := policy(admin.c, page)
 	for _, dir := range []string{"script-src", "connect-src"} {
