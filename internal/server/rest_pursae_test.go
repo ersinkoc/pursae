@@ -264,6 +264,28 @@ func TestPursaeREST(t *testing.T) {
 	if st := srv.asLoad(); st.BlockList != "203.0.113.7" || st.HideLogin || st.IdleMinutes != 30 || st.FailWindow == 0 {
 		t.Errorf("refused security settings were stored: %+v", st)
 	}
+	// A passkey requirement (Two-Factor › Requirement per role) is a valid value: it can be set while
+	// passkeys are allowed, and a site that has one can still change its other settings.
+	if code, body, _ := api("POST", "/pursae/v1/options/security", map[string]any{"settings": map[string]any{"passkeys": true, "require_roles": map[string]any{"editor": "passkey"}}}); code != http.StatusOK {
+		t.Errorf("passkey requirement: %d %v", code, body)
+	}
+	if code, body, _ := api("POST", "/pursae/v1/options/security", map[string]any{"settings": map[string]any{"idle_minutes": 31}}); code != http.StatusOK {
+		t.Errorf("update on a site that requires a passkey: %d %v", code, body)
+	}
+	if st := srv.asLoad(); st.RequireRoles["editor"] != "passkey" || st.IdleMinutes != 31 {
+		t.Errorf("passkey requirement not kept: %q, idle %d", st.RequireRoles["editor"], st.IdleMinutes)
+	}
+	for name, patch := range map[string]map[string]any{
+		"passkey without passkeys": {"passkeys": false},
+		"unknown requirement":      {"require_roles": map[string]any{"editor": "sms"}},
+	} {
+		if code, body, _ := api("POST", "/pursae/v1/options/security", map[string]any{"settings": patch}); code != http.StatusBadRequest {
+			t.Errorf("security %s: %d %v", name, code, body)
+		}
+	}
+	if code, body, _ := api("POST", "/pursae/v1/options/security", map[string]any{"settings": map[string]any{"require_roles": map[string]any{}, "idle_minutes": 30}}); code != http.StatusOK {
+		t.Errorf("clearing the passkey requirement: %d %v", code, body)
+	}
 
 	// SEO settings and redirects.
 	if code, body, _ := api("POST", "/pursae/v1/seo/settings", map[string]any{"settings": map[string]any{"separator": "|"}}); code != http.StatusOK ||

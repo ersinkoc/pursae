@@ -180,13 +180,26 @@ Who Pursae trusts with what, and where it draws the line:
   previews it under a sandboxing Content Security Policy, and serves kit files with a sandbox policy. Once imported, the
   design is the site's own code: its scripts run on the published pages with the nonce, like any
   script an administrator publishes. Import only designs you would publish yourself.
-- **The editor does not run a design until you say so.** Opening a page in the Web Builder element
-  editor runs none of its scripts (static edit mode: a frame without `allow-scripts`, and a copy of the
-  markup neutralised by the browser's parser). **Live edit** and **Preview** run the design's scripts
-  only after the user confirms, once per editor session, and then they run **in the editor's origin
-  with that user's access** (the REST nonce): a script there can do whatever the user can. An opaque
-  origin was rejected because it breaks editing, the design's same-site fonts and modules and its
-  storage, so the confirmation is the boundary. Details:
+- **The editor does not run a design until you say so.** Opening a page of a design you have not
+  trusted in the Web Builder element editor runs none of its scripts (Safe mode: a frame without
+  `allow-scripts`, and a copy of the markup neutralised by the browser's parser). **Live** mode and
+  **Preview** run the design's scripts only after you choose to: **Always for this design** (stored for
+  you alone, bound to that installation of the design kit and the hash of its script, module,
+  WebAssembly and SVG files, with the hashes of the page's inline code you approved; revocable; asked
+  again after the kit is deleted and uploaded again or a commit changes its scripts, for every user
+  including the committer) or **This session only** (never stored, covering what the page ran then).
+  New or changed inline code or another kit (an insert, a paste, Edit code, an undo) stops the scripts
+  before the new markup reaches a frame that runs them, and asks again. Then they run **in the editor's
+  origin with your access** (the REST nonce): a script there can do whatever you can. Users without
+  `unfiltered_html` never run them (Safe mode only, read-only code). An opaque origin was rejected
+  because it breaks editing, the design's same-site fonts and modules and its storage, so the
+  author's choice is the boundary. The Live frame itself is served at the page's own address (the server's
+  permalink of the post, never a path the request names; admin, REST and `.php` paths are refused)
+  under the front end's Content Security Policy, with `Referrer-Policy: no-referrer`, only to the user
+  who made it, for 15 minutes, from a capped memory store. When it cannot be loaded the canvas stays in
+  Safe mode: the design never runs in a frame under the editor's own policy. The editor page's policy
+  adds only what its frames need (style and font origins for a page of code sections; script, connect
+  and frame origins only for a mixed page, whose Preview runs the design). Details:
   [Web Builder code sections › security model](../web-builder-code-sections.md#security-model).
 - **Plugins are untrusted** until you grant permissions: WebAssembly with no filesystem, network only
   as granted and public hosts only, memory and time limits, signed packages.

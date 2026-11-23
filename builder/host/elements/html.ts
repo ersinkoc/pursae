@@ -332,14 +332,46 @@ export function ownText(t: Tree, el: El): boolean {
 }
 
 /** Plain text of an element (scripts and styles skipped), whitespace collapsed. */
+/** Elements whose text runs on with the text around them (textOf). */
+const INLINE_TEXT = new Set(['a', 'abbr', 'b', 'bdi', 'bdo', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'span', 'strong', 'sub', 'sup', 'time', 'u', 'var'])
+
+const BLOCKISH = /^(block|flex|grid|table|list-item|flow-root|table-row|table-cell|table-caption)$/
+const FLEXISH = /^(flex|grid|inline-flex|inline-grid)$/
+
+/** The display values an element's own markup sets: its inline style's, else its classes' (Tailwind variants like md:block included). */
+function displays(el: El): string[] {
+  const st = /(?:^|;)\s*display\s*:\s*([a-z-]+)/i.exec(attr(el, 'style') ?? '')
+  if (st) return [st[1].toLowerCase()]
+  return (attr(el, 'class') ?? '')
+    .split(/\s+/)
+    .map((c) => c.slice(c.lastIndexOf(':') + 1).replace(/^!/, ''))
+    .filter(Boolean)
+}
+
+/**
+ * The element shows on a line of its own although its tag is inline: it is made a block (class
+ * block, flex, grid …, or a display style) or it is a child of a flex / grid container (blockified).
+ * Display only: nothing is written from this (the source keeps its markup).
+ */
+export function linesApart(el: El): boolean {
+  if (displays(el).some((d) => BLOCKISH.test(d))) return true
+  return !!el.parent && displays(el.parent).some((d) => FLEXISH.test(d))
+}
+
 export function textOf(t: Tree, el: El, max = 200): string {
   let out = ''
   const walk = (e: El) => {
     if (e.tag === 'script' || e.tag === 'style' || e.tag === 'svg') return
     for (const c of e.children) {
       if (out.length > max) return
-      if (c.type === 'text') out += ' ' + decode(t.src.slice(c.start, c.end))
-      else if (c.type === 'el') walk(c)
+      if (c.type === 'text') out += decode(t.src.slice(c.start, c.end))
+      else if (c.type === 'el') {
+        // Inline elements join their text as the page shows it ("iş</span>, " is "iş,"); others are apart.
+        const gap = INLINE_TEXT.has(c.tag) && !linesApart(c) ? '' : ' '
+        out += gap
+        walk(c)
+        out += gap
+      }
     }
   }
   walk(el)

@@ -827,6 +827,17 @@ type Boot struct {
 	// SiteStyle: the site style designs can follow (SiteSettings.Global), null while none was
 	// saved; saved through site-settings ("site_style", edit_theme_options).
 	SiteStyle *SiteSettings `json:"siteStyle"`
+	// ScriptTrust: the design kits (slugs, sorted) whose scripts this user chose to always run in
+	// the editor (PUT kits/{slug}/trust): only kits that still exist as the installation that was
+	// trusted, with the same executable content (a commit changing the kit's scripts is asked about
+	// again); empty without CanRunScripts.
+	ScriptTrust []string `json:"scriptTrust"`
+	// ScriptCode: per trusted kit, the hashes of the inline code (inline scripts, handlers,
+	// javascript: URLs, non-kit script addresses) the user approved with it.
+	ScriptCode map[string][]string `json:"scriptCode"`
+	// CanRunScripts: the user has unfiltered_html, so the editor may run a design's scripts (Live
+	// edit, Preview) and the user may trust a kit.
+	CanRunScripts bool `json:"canRunScripts"`
 }
 
 // CodeParts are the header and footer templates around a page, as the editor draws them.

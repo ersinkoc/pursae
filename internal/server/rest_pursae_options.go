@@ -443,18 +443,23 @@ func (s *Server) asCheckAPISettings(c *gin.Context, old, st asSettings) []string
 	for role, n := range st.PwMinStrength {
 		inRange("pw_min_strength."+role, n, 0, 4)
 	}
-	required := false
+	required, passkey := false, false
 	for role, v := range st.RequireRoles {
 		switch v {
 		case "":
 		case "mfa", "2fa":
 			required = required || old.RequireRoles[role] != v
+		case "passkey": // as on Two-Factor › Requirement per role (asParseSettings)
+			passkey = true
 		default:
-			errs = append(errs, "require_roles."+role+" must be \"\", \"mfa\" or \"2fa\".")
+			errs = append(errs, "require_roles."+role+" must be \"\", \"mfa\", \"2fa\" or \"passkey\".")
 		}
 	}
 	if ok, why := s.asMailReady(); required && !ok {
 		errs = append(errs, "Two-step login can only be required once e-mail can be delivered. "+why)
+	}
+	if passkey && !st.Passkeys {
+		errs = append(errs, "A passkey can only be required while passkeys are allowed.")
 	}
 	if (st.HideLogin != old.HideLogin || st.LoginSlug != old.LoginSlug) && (st.HideLogin || st.LoginSlug != "") {
 		switch slug := st.LoginSlug; {
