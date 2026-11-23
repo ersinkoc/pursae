@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -335,6 +336,11 @@ func (s *Server) wbDocumentFor(ctx context.Context, p *store.Post, u *store.User
 				// The draft keeps what its own session loaded (autosave stores it): a Pursae SEO
 				// edit made since is not mistaken for a builder change of the draft's old values.
 				draftLoaded = &l
+			}
+			if row != nil && wbJSONSame(dr.Doc, row.Doc) && wbPageSame(page, d.Page) {
+				// An edit undone back to the stored page: the draft says nothing the page does not,
+				// so the editor does not offer it as unpublished changes.
+				break
 			}
 			d.Draft = &wbDraft{Doc: dr.Doc, Page: page, BaseRev: dr.BaseRev,
 				SavedAt: dr.UpdatedAt.UTC().Format(time.RFC3339)}
@@ -709,4 +715,32 @@ func wbPostDate(p *store.Post) string {
 		return ""
 	}
 	return wbTime(*p.PublishedAt)
+}
+
+// wbJSONSame reports whether two JSON values are equal as data (key order and spacing aside).
+func wbJSONSame(a, b json.RawMessage) bool {
+	var x, y any
+	if json.Unmarshal(a, &x) != nil || json.Unmarshal(b, &y) != nil {
+		return false
+	}
+	return reflect.DeepEqual(x, y)
+}
+
+// wbPageSame reports whether two page objects hold the same settings, the session stamp
+// (wbPageLoadedKey) left out.
+func wbPageSame(a, b json.RawMessage) bool {
+	strip := func(raw json.RawMessage) (any, bool) {
+		var m map[string]any
+		if len(raw) == 0 {
+			return map[string]any{}, true
+		}
+		if json.Unmarshal(raw, &m) != nil {
+			return nil, false
+		}
+		delete(m, wbPageLoadedKey)
+		return m, true
+	}
+	x, ok1 := strip(a)
+	y, ok2 := strip(b)
+	return ok1 && ok2 && reflect.DeepEqual(x, y)
 }

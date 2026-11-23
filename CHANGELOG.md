@@ -87,6 +87,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Login: the key icon on Log in with a passkey sits on the text line.** WordPress's button icon line height
+  pushed it about 10 px below the label.
+- **Login: the login page is never shown from the browser's cache.** It now sends `no-store` (as wp-login.php
+  does), so going back to it or restoring a tab no longer shows a stale copy, such as the passkey button after
+  Pursae Security was switched off.
 - **Pursae SEO: a post that passes every check now scores 100.** The *Single title* and *Competing links*
   checks gave 8 points for a pass instead of 9, so a fully green post stopped at 99/100. Both now give 9.
 - **Pursae SEO: the Table of Contents title follows the page language.** With Pursae Multi Language on, the

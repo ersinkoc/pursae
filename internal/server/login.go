@@ -33,6 +33,10 @@ func (s *Server) login(c *gin.Context) {
 	if s.adminsecLoginGate(c) { // AdminSecGo: /wp-login is hidden behind the custom login URL
 		return
 	}
+	// nocache_headers(), as wp-login.php: the form carries nonces, a captcha and what Pursae Security
+	// offers (the passkey button), so a browser must not show a stored copy (back/forward, restored tabs).
+	c.Header("Cache-Control", "no-cache, must-revalidate, max-age=0, no-store, private")
+	c.Header("Expires", "Wed, 11 Jan 1984 05:00:00 GMT")
 	action := c.Query("action")
 	switch action {
 	case "logout":
