@@ -1614,7 +1614,7 @@ func (s *Server) pluginInstall(c *gin.Context) {
 	var notices []notice
 	// The marketplace: packages published on the WordPress Go Hub.
 	if s.hubBase() != "" {
-		items, err := s.hubCatalog(ctx, "plugins")
+		items, err := s.hubCatalogFresh(ctx, "plugins") // live: a new Hub listing shows at once
 		if err != nil {
 			notices = append(notices, notice{Type: "warning", Message: template.HTML("Pursae Manager could not be reached (" + html.EscapeString(err.Error()) + "). Only locally available packages are listed."), Dismissible: true})
 		}
