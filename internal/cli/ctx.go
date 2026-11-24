@@ -266,7 +266,9 @@ func (c *Ctx) Print(rows []Row, v View) error {
 	}
 	if c.Field != "" {
 		for _, r := range rows {
-			fmt.Fprintln(c.io.Out, Sanitize(Stringify(lookupField(r, c.Field))))
+			if _, err := fmt.Fprintln(c.io.Out, Sanitize(Stringify(lookupField(r, c.Field)))); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -285,11 +287,11 @@ func (c *Ctx) Print(rows []Row, v View) error {
 		for _, r := range rows {
 			parts = append(parts, Sanitize(Stringify(lookupField(r, id))))
 		}
-		fmt.Fprintln(c.io.Out, strings.Join(parts, " "))
-		return nil
+		_, err := fmt.Fprintln(c.io.Out, strings.Join(parts, " "))
+		return err
 	case "count":
-		fmt.Fprintln(c.io.Out, len(rows))
-		return nil
+		_, err := fmt.Fprintln(c.io.Out, len(rows))
+		return err
 	}
 	return Write(c.io.Out, c.Format, rows, fields)
 }
@@ -311,8 +313,8 @@ func (c *Ctx) PrintItem(item Row, fields []string) error {
 		if !ok {
 			return Errorf("invalid field: %s", c.Field)
 		}
-		fmt.Fprintln(c.io.Out, Sanitize(Stringify(v)))
-		return nil
+		_, err := fmt.Fprintln(c.io.Out, Sanitize(Stringify(v)))
+		return err
 	}
 	switch c.Format {
 	case "json", "yaml":
@@ -336,14 +338,15 @@ func (c *Ctx) PrintValue(v any) error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(c.io.Out, string(b))
-		return nil
+		_, err = fmt.Fprintln(c.io.Out, string(b))
+		return err
 	case "yaml":
-		writeYAMLValue(c.io.Out, v, 0)
-		return nil
+		out := outputWriter{w: c.io.Out}
+		writeYAMLValue(&out, v, 0)
+		return out.err
 	}
-	fmt.Fprintln(c.io.Out, Sanitize(Stringify(v)))
-	return nil
+	_, err := fmt.Fprintln(c.io.Out, Sanitize(Stringify(v)))
+	return err
 }
 
 // checkFields rejects a --field or --fields entry that names no field: not a key of any row

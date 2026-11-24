@@ -56,6 +56,8 @@ func TestSetupToken(t *testing.T) {
 func TestParseSlowQuery(t *testing.T) {
 	for in, want := range map[string]time.Duration{
 		"": 0, "0": 0, "-5": 0, "abc": 0, "250": 250 * time.Millisecond, "250ms": 250 * time.Millisecond, "1s": time.Second, "-1s": 0,
+		"9223372036854": 9223372036854 * time.Millisecond,
+		"9223372036855": 0, "20000000000000": 0,
 	} {
 		if got := parseSlowQuery(in); got != want {
 			t.Errorf("parseSlowQuery(%q) = %v, want %v", in, got, want)

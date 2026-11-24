@@ -92,7 +92,7 @@ func (r *Registry) parse(cmd *Command, rest []string) (*parsed, error) {
 			continue
 		}
 		if !hasVal {
-			if i+1 >= len(rest) {
+			if i+1 >= len(rest) || rest[i+1] == "--" {
 				return nil, fmt.Errorf("--%s needs a value", name)
 			}
 			i++
