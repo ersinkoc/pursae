@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -67,5 +68,55 @@ func TestShortSQL(t *testing.T) {
 	}
 	if got := shortSQL(strings.Repeat("é", 400)); len(got) > 310 || !strings.HasSuffix(got, "…") {
 		t.Errorf("not cut: %d", len(got))
+	}
+}
+
+func TestSlowQueryRateWindowDoesNotMoveBackward(t *testing.T) {
+	var out bytes.Buffer
+	prev := log.Writer()
+	log.SetOutput(&out)
+	t.Cleanup(func() { log.SetOutput(prev) })
+	var ticks, now, count atomic.Int64
+	now.Store(11)
+	began, release, done := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	tr := &SlowQueryTracer{Threshold: -time.Second, OnSlow: func() { count.Add(1) }, unixNow: func() int64 {
+		if ticks.Add(1) == 1 {
+			close(began)
+			<-release
+			return 10
+		}
+		return now.Load()
+	}}
+	run := func(sql string) {
+		ctx := tr.TraceQueryStart(context.Background(), nil, pgx.TraceQueryStartData{SQL: sql})
+		tr.TraceQueryEnd(ctx, nil, pgx.TraceQueryEndData{})
+	}
+	go func() { run("previous window"); close(done) }()
+	<-began
+	for range 12 {
+		run("current window")
+	}
+	control := strings.Count(out.String(), "current window")
+	close(release)
+	<-done
+	if control != 10 {
+		t.Fatalf("control: logged %d current events", control)
+	}
+	for range 2 {
+		run("current window")
+	}
+	got, want := strings.Count(out.String(), "current window"), 10
+	if count.Load() != 15 {
+		t.Errorf("all 15 slow queries should be counted")
+	}
+	now.Store(12)
+	for range 12 {
+		run("next window")
+	}
+	if g := strings.Count(out.String(), "next window"); g != 10 {
+		t.Errorf("next window lines = %d", g)
+	}
+	if got != want {
+		t.Errorf("logged %d current-window queries, want %d", got, want)
 	}
 }

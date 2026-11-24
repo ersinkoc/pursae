@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"strings"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -19,8 +19,9 @@ type SlowQueryTracer struct {
 	Threshold time.Duration
 	OnSlow    func()
 
-	window atomic.Int64 // unix second of the current rate window
-	logged atomic.Int32 // lines written in that second
+	mu     sync.Mutex
+	window int64 // unix second of the current rate window
+	logged int   // lines written in that second
 
 	unixNow func() int64 // clock for the rate window; nil is time.Now().Unix (tests fix it)
 }
@@ -54,13 +55,18 @@ func (t *SlowQueryTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, data p
 	} else {
 		now = time.Now().Unix()
 	}
-	if t.window.Swap(now) != now {
-		t.logged.Store(0)
+	t.mu.Lock()
+	if t.logged == 0 || now > t.window {
+		t.window, t.logged = now, 0
 	}
-	if t.logged.Add(1) > 10 {
-		return
+	canLog := now == t.window && t.logged < 10
+	if canLog {
+		t.logged++
 	}
-	log.Printf("slow query %s: %s", d.Round(time.Millisecond), shortSQL(q.sql))
+	t.mu.Unlock()
+	if canLog {
+		log.Printf("slow query %s: %s", d.Round(time.Millisecond), shortSQL(q.sql))
+	}
 }
 
 func shortSQL(sql string) string {

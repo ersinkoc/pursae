@@ -17,6 +17,7 @@ func TestGroup(t *testing.T) {
 		"/wp-admin/":                 GroupAdmin,
 		"/wp-admin/edit":             GroupAdmin,
 		"/wp-login.php":              GroupAdmin,
+		"/wp-login-help/":            GroupFrontend,
 		"/wp-json/wp/v2/posts":       GroupREST,
 		"/wp-json":                   GroupREST,
 		"/wp-admin/assets/css/a.css": GroupStatic,
