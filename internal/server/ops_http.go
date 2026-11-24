@@ -8,10 +8,12 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -108,27 +110,39 @@ type idleBody struct {
 	io.ReadCloser
 	rc   *http.ResponseController
 	idle time.Duration
+
+	mu   sync.Mutex
 	done bool
 }
 
 func (b *idleBody) Read(p []byte) (int, error) {
+	b.mu.Lock()
 	if !b.done {
 		_ = b.rc.SetReadDeadline(time.Now().Add(b.idle))
 	}
+	b.mu.Unlock()
 	n, err := b.ReadCloser.Read(p)
-	if err != nil && !b.done {
-		b.done = true
-		_ = b.rc.SetReadDeadline(time.Time{})
+	if err != nil {
+		b.finish()
 	}
 	return n, err
 }
 
 func (b *idleBody) Close() error {
-	if !b.done {
-		b.done = true
-		_ = b.rc.SetReadDeadline(time.Time{})
-	}
+	b.finish()
 	return b.ReadCloser.Close()
+}
+
+// finish clears the read deadline once. Read and Close run on different goroutines: the handler
+// reads the body while net/http closes it when the request is canceled.
+func (b *idleBody) finish() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.done {
+		return
+	}
+	b.done = true
+	_ = b.rc.SetReadDeadline(time.Time{})
 }
 
 // healthz is the liveness probe: the process serves HTTP. It does not touch the database, so a
@@ -204,13 +218,97 @@ func accessLog() gin.HandlerFunc {
 		}
 		d := time.Since(start).Round(time.Microsecond)
 		id := c.Request.Header.Get(HeaderRequestID)
+		uri := redactRequestURI(c.Request.URL)
 		if jl != nil {
 			jl.LogAttrs(c.Request.Context(), slog.LevelInfo, "request",
 				slog.Int("status", c.Writer.Status()), slog.String("method", c.Request.Method),
-				slog.String("uri", c.Request.URL.RequestURI()), slog.Duration("duration", d),
+				slog.String("uri", uri), slog.Duration("duration", d),
 				slog.String("ip", c.ClientIP()), slog.String("request_id", id))
 			return
 		}
-		log.Printf("%d %s %s %s id=%s", c.Writer.Status(), c.Request.Method, c.Request.URL.RequestURI(), d, id)
+		// The URI comes from the request line and the id from a header: net/http rejects CR and LF in
+		// both, so neither can start a forged log line.
+		log.Printf("%d %s %s %s id=%s", c.Writer.Status(), c.Request.Method, uri, d, id) //nolint:gosec // G706: see above
 	}
+}
+
+// sensitiveQuery names query parameters that carry credentials in URLs Pursae accepts or makes.
+// WooCommerce accepts consumer_secret on the query string; order, download and password-reset
+// links use key; the installer, mail webhooks and gift card links use token; OAuth callbacks
+// (Search Console, Google sign-in, SMTP) carry code and state; headless previews use
+// previewToken; privacy requests use confirm_key; the admin e-mail change uses adminhash; the Web
+// Builder live frame uses wb-live-frame; WordPress nonces ride as _wpnonce, _ajax_nonce,
+// _wcsnonce, nonce and preview_nonce. The access log must not keep them.
+func sensitiveQuery(k string) bool {
+	switch strings.ToLower(k) {
+	case "consumer_secret", "password", "passwd", "pass", "secret", "token",
+		"access_token", "refresh_token", "key",
+		"code", "state", "previewtoken", "preview_token", "confirm_key", "adminhash",
+		"wb-live-frame", "_wpnonce", "_ajax_nonce", "_wcsnonce", "nonce", "preview_nonce":
+		return true
+	}
+	return false
+}
+
+// redactRequestURI is RequestURI with credential query values replaced by "redacted". The raw
+// query is scanned pair by pair (split on & and ;) rather than parsed, so a malformed query that
+// url.ParseQuery rejects is still redacted, and the other parameters keep their order and
+// encoding. A URI with none of those parameters is returned unchanged.
+func redactRequestURI(u *url.URL) string {
+	if u == nil {
+		return ""
+	}
+	if u.RawQuery == "" {
+		return u.RequestURI()
+	}
+	raw := u.RawQuery
+	var b strings.Builder
+	changed := false
+	for raw != "" {
+		pair, sep := raw, ""
+		if i := strings.IndexAny(raw, "&;"); i >= 0 {
+			pair, sep, raw = raw[:i], raw[i:i+1], raw[i+1:]
+		} else {
+			raw = ""
+		}
+		if k, v, ok := strings.Cut(pair, "="); ok && v != "redacted" && sensitiveQuery(lenientUnescape(k)) {
+			pair = k + "=redacted"
+			changed = true
+		}
+		b.WriteString(pair)
+		b.WriteString(sep)
+	}
+	if !changed {
+		return u.RequestURI()
+	}
+	clone := *u
+	clone.RawQuery = b.String()
+	return clone.RequestURI()
+}
+
+// lenientUnescape decodes a query key like url.QueryUnescape but never fails: '+' is a space, a
+// valid %XX is its byte, and a broken escape is kept as written.
+func lenientUnescape(s string) string {
+	if k, err := url.QueryUnescape(s); err == nil {
+		return k
+	}
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c == '+':
+			b.WriteByte(' ')
+		case c == '%' && i+2 < len(s) && isHexDigit(s[i+1]) && isHexDigit(s[i+2]):
+			n, _ := strconv.ParseUint(s[i+1:i+3], 16, 8)
+			b.WriteByte(byte(n))
+			i += 2
+		default:
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
+}
+
+func isHexDigit(c byte) bool {
+	return '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 }

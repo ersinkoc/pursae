@@ -12,6 +12,16 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
+- **Translations: JSON language packs pick the right plural form without the core language pack.**
+  One-form languages (Japanese, Chinese and the others) no longer fall back to English for counts such as
+  "%s seconds", and languages with three or more forms (Russian, Arabic, Polish and the others) no longer
+  show the wrong form.
+- **Metrics: a negative request duration no longer corrupts the duration histogram.** When the clock stepped
+  backwards, the Prometheus duration sum wrapped into a multi-year value; such a duration now counts as zero.
+- **Closing a request body while it is still being read no longer races on the idle-timeout flag.**
+- **The access log no longer records credential query values.** OAuth codes, preview tokens, nonces,
+  password-reset and API keys, `consumer_secret`, `password`, `token` and the same kind of parameter are
+  written as `redacted`, even when the query string is malformed.
 - **Pursae Security: the options API accepts a passkey requirement.** `POST /pursae/v1/options/security` (and
   the MCP `update_options` tool) only knew the `mfa` and `2fa` requirements, so on a site where a role must use
   a passkey (Two-Factor › Requirement per role) every security update was refused, whatever it changed.

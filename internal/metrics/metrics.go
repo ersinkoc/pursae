@@ -100,6 +100,11 @@ func class(status int) int {
 func (m *Metrics) observe(group, status int, d time.Duration) {
 	c := class(status)
 	n := d.Nanoseconds()
+	if n < 0 {
+		// time.Since is negative when the clock steps backwards during the request. A negative
+		// int64 becomes a huge uint64 and the histogram sum jumps by ~2^64 nanoseconds.
+		n = 0
+	}
 	b := len(bucketNanos)
 	for i, le := range bucketNanos {
 		if n <= le {
@@ -229,13 +234,16 @@ func (m *Metrics) render(b []byte) []byte {
 	b = appendInt(append(b, "pursae_start_time_seconds "...), m.started.Unix())
 	b = append(b, '\n')
 
-	// Snapshot first so count, sum and buckets of one series agree.
+	// Snapshot first so count, sum and buckets of one series agree. Reading the sum later would
+	// include a request whose bucket was not in the snapshot (or the reverse).
 	var snap [numGroups][numClasses][numBuckets]uint64
+	var sums [numGroups][numClasses]uint64
 	for g := range snap {
 		for c := range snap[g] {
 			for i := range snap[g][c] {
 				snap[g][c][i] = m.buckets[g][c][i].Load()
 			}
+			sums[g][c] = m.sumNs[g][c].Load()
 		}
 	}
 	b = head(b, "pursae_http_requests_total", "HTTP requests served, by route group and status class.", "counter")
@@ -283,7 +291,7 @@ func (m *Metrics) render(b []byte) []byte {
 			b = append(b, "pursae_http_request_duration_seconds_sum{"...)
 			b = append(b, lbl...)
 			b = append(b, "} "...)
-			b = strconv.AppendFloat(b, float64(m.sumNs[g][c].Load())/1e9, 'g', -1, 64)
+			b = strconv.AppendFloat(b, float64(sums[g][c])/1e9, 'g', -1, 64)
 			b = append(b, "\npursae_http_request_duration_seconds_count{"...)
 			b = append(b, lbl...)
 			b = append(b, "} "...)

@@ -8,7 +8,9 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -162,4 +164,99 @@ func TestRequestBodyLimit(t *testing.T) {
 	if readErr != nil || read != 4<<10 {
 		t.Errorf("backup import: read %d, err %v", read, readErr)
 	}
+}
+
+func TestRedactRequestURI(t *testing.T) {
+	plain := httptest.NewRequest(http.MethodGet, "/wp-json/wp/v2/posts?per_page=10&page=2", nil)
+	if got := redactRequestURI(plain.URL); got != plain.URL.RequestURI() {
+		t.Errorf("URI without credentials changed: %q", got)
+	}
+	secret := httptest.NewRequest(http.MethodGet, "/wp-json/wc/v3/orders?consumer_key=ck_abc&consumer_secret=cs_supersecret&page=2", nil)
+	got := redactRequestURI(secret.URL)
+	if strings.Contains(got, "cs_supersecret") || !strings.Contains(got, "consumer_secret=redacted") {
+		t.Fatalf("consumer_secret leaked: %q", got)
+	}
+	if !strings.Contains(got, "consumer_key=ck_abc") || !strings.Contains(got, "page=2") {
+		t.Fatalf("non-secret parameters dropped: %q", got)
+	}
+	keyed := httptest.NewRequest(http.MethodGet, "/checkout/order-received/9/?key=wc_order_secret", nil)
+	if got := redactRequestURI(keyed.URL); strings.Contains(got, "wc_order_secret") || !strings.Contains(got, "key=redacted") {
+		t.Fatalf("order key leaked: %q", got)
+	}
+}
+
+// Credentials Pursae itself puts in URLs: OAuth callbacks, previews, privacy and admin e-mail
+// confirmations, the Web Builder live frame and nonces.
+func TestRedactRequestURIPursaeCredentials(t *testing.T) {
+	for _, q := range []string{
+		"code=oauth-secret&state=state-secret",
+		"previewToken=oauth-secret",
+		"action=confirmaction&request_id=3&confirm_key=oauth-secret",
+		"adminhash=oauth-secret",
+		"wb-live-frame=oauth-secret",
+		"_wpnonce=oauth-secret",
+		"_ajax_nonce=oauth-secret",
+		"_wcsnonce=oauth-secret",
+		"preview_id=4&preview_nonce=oauth-secret&preview=true",
+		"token=oauth-secret",
+		"%5Fwpnonce=oauth-secret", // escaped key
+		"TOKEN=oauth-secret",
+	} {
+		u := &url.URL{Path: "/x", RawQuery: q}
+		got := redactRequestURI(u)
+		if strings.Contains(got, "secret") || !strings.Contains(got, "=redacted") {
+			t.Errorf("%q: credential leaked: %q", q, got)
+		}
+	}
+	u := &url.URL{Path: "/x", RawQuery: "preview_id=4&preview_nonce=n&preview=true"}
+	if got, want := redactRequestURI(u), "/x?preview_id=4&preview_nonce=redacted&preview=true"; got != want {
+		t.Errorf("got %q, want %q (order and other parameters kept)", got, want)
+	}
+}
+
+// A query url.ParseQuery rejects (a bad escape, a semicolon) is still redacted.
+func TestRedactRequestURIMalformedQuery(t *testing.T) {
+	for q, want := range map[string]string{
+		"a=%zz&token=abc":        "/x?a=%zz&token=redacted",
+		"token=abc&a=%zz":        "/x?token=redacted&a=%zz",
+		"a=1;key=abc":            "/x?a=1;key=redacted",
+		"to%6Ben=abc&b=%":        "/x?to%6Ben=redacted&b=%",
+		"%zz=1&_wpnonce=abc&c":   "/x?%zz=1&_wpnonce=redacted&c",
+		"code=abc%zz&state=s%zz": "/x?code=redacted&state=redacted",
+	} {
+		u := &url.URL{Path: "/x", RawQuery: q}
+		if _, err := url.ParseQuery(q); err == nil {
+			t.Fatalf("%q parses; the test wants a malformed query", q)
+		}
+		if got := redactRequestURI(u); got != want {
+			t.Errorf("%q: got %q, want %q", q, got, want)
+		}
+	}
+}
+
+// Read and Close of a request body run on different goroutines (the handler reads, the server
+// closes when the request is canceled). idleBody's done flag must not be a data race.
+func TestIdleBodyReadCloseRace(t *testing.T) {
+	rec := httptest.NewRecorder()
+	body := &idleBody{
+		ReadCloser: io.NopCloser(strings.NewReader(strings.Repeat("a", 1<<16))),
+		rc:         http.NewResponseController(rec),
+		idle:       time.Second,
+	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		buf := make([]byte, 32)
+		for {
+			if _, err := body.Read(buf); err != nil {
+				return
+			}
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		_ = body.Close()
+	}()
+	wg.Wait()
 }

@@ -21,6 +21,8 @@ type SlowQueryTracer struct {
 
 	window atomic.Int64 // unix second of the current rate window
 	logged atomic.Int32 // lines written in that second
+
+	unixNow func() int64 // clock for the rate window; nil is time.Now().Unix (tests fix it)
 }
 
 type startKey struct{}
@@ -46,7 +48,12 @@ func (t *SlowQueryTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, data p
 	if t.OnSlow != nil {
 		t.OnSlow()
 	}
-	now := time.Now().Unix()
+	var now int64
+	if t.unixNow != nil {
+		now = t.unixNow()
+	} else {
+		now = time.Now().Unix()
+	}
 	if t.window.Swap(now) != now {
 		t.logged.Store(0)
 	}

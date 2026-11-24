@@ -77,6 +77,23 @@ func TestMiddlewareAndRender(t *testing.T) {
 	}
 }
 
+// A clock step backwards during a request makes the measured duration negative. That must not
+// wrap the histogram sum (uint64 of a negative int64 is about 2^64 nanoseconds).
+func TestObserveNegativeDuration(t *testing.T) {
+	m := New("x")
+	m.observe(GroupFrontend, 200, -5*time.Second)
+	out := string(m.render(nil))
+	if !strings.Contains(out, `pursae_http_requests_total{group="frontend",class="2xx"} 1`) {
+		t.Fatalf("negative duration was not counted:\n%s", out)
+	}
+	if !strings.Contains(out, `pursae_http_request_duration_seconds_sum{group="frontend",class="2xx"} 0`) {
+		t.Fatalf("negative duration wrapped the histogram sum:\n%s", out)
+	}
+	if !strings.Contains(out, `pursae_http_request_duration_seconds_bucket{group="frontend",class="2xx",le="0.005"} 1`) {
+		t.Fatalf("negative duration was not clamped into the first bucket:\n%s", out)
+	}
+}
+
 func TestHandlerMethods(t *testing.T) {
 	m := New("x")
 	rec := httptest.NewRecorder()
