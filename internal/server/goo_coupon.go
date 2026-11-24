@@ -257,22 +257,41 @@ func (s *Server) gooValidateCoupon(ctx context.Context, c *gooCoupon, cart *gooC
 	return nil
 }
 
-// gooEmailAllowed matches an e-mail against restrictions, which may use * wildcards (*@example.com).
+// gooEmailAllowed matches an e-mail against restrictions, which may use * wildcards
+// (*@example.com, *@*.edu). Each * is any run of characters, including an empty one, and the
+// pieces do not overlap, so *@example.com does not match user@example.com.evil.
 func gooEmailAllowed(email string, list []string) bool {
 	email = strings.ToLower(strings.TrimSpace(email))
 	for _, r := range list {
 		r = strings.ToLower(strings.TrimSpace(r))
-		if r == email {
+		if r == email || gooEmailGlob(r, email) {
 			return true
-		}
-		if strings.Contains(r, "*") {
-			pre, post, _ := strings.Cut(r, "*")
-			if strings.HasPrefix(email, pre) && strings.HasSuffix(email, post) && len(email) >= len(pre)+len(post) {
-				return true
-			}
 		}
 	}
 	return false
+}
+
+// gooEmailGlob reports whether s matches a pattern that contains *. A pattern with no * is not a glob.
+func gooEmailGlob(pattern, s string) bool {
+	if !strings.Contains(pattern, "*") {
+		return false
+	}
+	parts := strings.Split(pattern, "*")
+	if !strings.HasPrefix(s, parts[0]) {
+		return false
+	}
+	s = s[len(parts[0]):]
+	for _, part := range parts[1 : len(parts)-1] {
+		if part == "" {
+			continue
+		}
+		i := strings.Index(s, part)
+		if i < 0 {
+			return false
+		}
+		s = s[i+len(part):]
+	}
+	return strings.HasSuffix(s, parts[len(parts)-1])
 }
 
 // gooCouponAppliesTo is WC_Coupon::is_valid_for_product() for a cart item.

@@ -1682,7 +1682,13 @@ func (s *Server) gooOrderApplyCoupons(ctx context.Context, o *gooOrder) {
 				}
 			}
 		}
-		var total float64
+		type gooCouponShare struct {
+			it     *gooOrderItem
+			before float64
+			disc   float64
+		}
+		var shares []gooCouponShare
+		var rawSum, total float64
 		for _, it := range eligible {
 			f := factor[it]
 			ref := it.Subtotal * f
@@ -1700,9 +1706,50 @@ func (s *Server) gooOrderApplyCoupons(ctx context.Context, o *gooOrder) {
 					disc = cp.Amount * ref / base
 				}
 			}
-			disc = gooRound(min(disc/f, it.Total), dp) // gross → ex-tax
-			it.Total = gooRound(it.Total-disc, dp)
-			total += disc
+			raw := disc / f // gross → ex-tax
+			if raw > it.Total {
+				raw = it.Total
+			}
+			if raw < 0 {
+				raw = 0
+			}
+			rounded := gooRound(raw, dp)
+			shares = append(shares, gooCouponShare{it: it, before: it.Total, disc: rounded})
+			rawSum += raw
+			total += rounded
+		}
+		// Rounding each line's share drops or adds a cent (10.00 across three equal lines is
+		// 3.33+3.33+3.33). The cart gives those cents back; Recalculate has to as well, or the
+		// order total changes by a cent when nothing else did.
+		unit := 1.0
+		for i := 0; i < dp; i++ {
+			unit /= 10
+		}
+		short := gooRound(gooRound(rawSum, dp)-total, dp)
+		for gooRound(short, dp) != 0 {
+			moved := false
+			for i := range shares {
+				if short >= unit && shares[i].before-shares[i].disc >= unit {
+					shares[i].disc = gooRound(shares[i].disc+unit, dp)
+					short = gooRound(short-unit, dp)
+					total = gooRound(total+unit, dp)
+					moved = true
+				} else if short <= -unit && shares[i].disc >= unit {
+					shares[i].disc = gooRound(shares[i].disc-unit, dp)
+					short = gooRound(short+unit, dp)
+					total = gooRound(total-unit, dp)
+					moved = true
+				}
+				if gooRound(short, dp) == 0 {
+					break
+				}
+			}
+			if !moved {
+				break
+			}
+		}
+		for _, sh := range shares {
+			sh.it.Total = gooRound(sh.before-sh.disc, dp)
 		}
 		ci.Total = gooRound(total, dp)
 		ci.Subtotal = ci.Total

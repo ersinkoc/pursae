@@ -266,6 +266,125 @@ func TestGooReservedStockReleaseAndExpiry(t *testing.T) {
 	}
 }
 
+// Buying a different product does not give away the hold on an order that is still awaiting payment,
+// and a stranger still cannot take that held unit.
+func TestGooReserveStockOtherProductKeepsHold(t *testing.T) {
+	srv := gooResvSetup(t)
+	ctx := context.Background()
+	ticket := gooMakeSimple(t, srv, "Ticket", 10, func(p *gooProduct) { p.Virtual, p.ManageStock, p.StockQuantity = true, true, gooIntPtr(1) })
+	shirt := gooMakeSimple(t, srv, "Shirt", 10, func(p *gooProduct) { p.Virtual, p.ManageStock, p.StockQuantity = true, true, gooIntPtr(5) })
+	c := gooResvVisitor(t, srv, ticket, 1)
+	first, errs := gxCheckout(t, srv, c, "goo_resv_redirect")
+	if len(errs) > 0 {
+		t.Fatal(errs)
+	}
+	cart := srv.gooCartFor(c)
+	cart.Empty()
+	if _, err := cart.Add(ctx, shirt.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, errs := gxCheckout(t, srv, c, "goo_resv_redirect"); len(errs) > 0 {
+		t.Fatalf("shirt checkout: %v", errs)
+	}
+	if held := gooResvHeld(t, srv, ticket.ID); held[first.ID] != 1 {
+		t.Fatalf("ticket reservations after buying something else: %v, want order %d still holding 1", held, first.ID)
+	}
+	if _, errs := gxCheckout(t, srv, gooResvVisitor(t, srv, ticket, 1), "goo_resv_redirect"); len(errs) == 0 || !strings.Contains(errs[0], "(0 available)") {
+		t.Errorf("a stranger took the held ticket: %v", errs)
+	}
+}
+
+// Taking over your own hold and a stranger reserving the same unit cannot both succeed, and the
+// takeover cannot lose: the old hold is removed only in the transaction that writes the new one.
+func TestGooReserveStockTakeoverRace(t *testing.T) {
+	srv := gooResvSetup(t)
+	ctx := context.Background()
+	p := gooMakeSimple(t, srv, "Last", 10, func(p *gooProduct) { p.ManageStock, p.StockQuantity = true, gooIntPtr(1) })
+	for round := range 12 {
+		if _, err := srv.store.Pool.Exec(ctx, `DELETE FROM goo_reserved_stock`); err != nil {
+			t.Fatal(err)
+		}
+		holder := gooRaceOrder(t, srv, "a@example.test", 0, map[*gooProduct]int{p: 1})
+		next := gooRaceOrder(t, srv, "a@example.test", 0, map[*gooProduct]int{p: 1})
+		stranger := gooRaceOrder(t, srv, "b@example.test", 0, map[*gooProduct]int{p: 1})
+		if err := srv.gooReserveStock(ctx, holder); err != nil {
+			t.Fatal(err)
+		}
+		var mu sync.Mutex
+		var nextErr, strangerErr error
+		gooRace(func() {
+			err := srv.gooReserveStockMine(ctx, next, gooOwnOrders{IDs: []int64{holder.ID}})
+			mu.Lock()
+			nextErr = err
+			mu.Unlock()
+		}, func() {
+			err := srv.gooReserveStock(ctx, stranger)
+			mu.Lock()
+			strangerErr = err
+			mu.Unlock()
+		})
+		if nextErr != nil {
+			t.Fatalf("round %d: the visitor lost their own hold: %v", round, nextErr)
+		}
+		var sh *gooStockShortage
+		if !errors.As(strangerErr, &sh) {
+			t.Fatalf("round %d: stranger reserved the held unit: %v", round, strangerErr)
+		}
+		if held := gooResvHeld(t, srv, p.ID); len(held) != 1 || held[next.ID] != 1 {
+			t.Fatalf("round %d: reservations %v, want only order %d", round, held, next.ID)
+		}
+	}
+}
+
+// A payment that cannot take a unit another order holds says none are available, not the raw counter.
+func TestGooPaymentShortageSubtractsHolds(t *testing.T) {
+	srv := gooResvSetup(t)
+	ctx := context.Background()
+	p := gooMakeSimple(t, srv, "Held", 10, func(p *gooProduct) { p.ManageStock, p.StockQuantity = true, gooIntPtr(1) })
+	holder := gooRaceOrder(t, srv, "a@example.test", 0, map[*gooProduct]int{p: 1})
+	other := gooRaceOrder(t, srv, "b@example.test", 0, map[*gooProduct]int{p: 1})
+	if err := srv.gooReserveStock(ctx, holder); err != nil {
+		t.Fatal(err)
+	}
+	if err := srv.gooPaymentComplete(ctx, other, "tx"); err != nil {
+		t.Fatal(err)
+	}
+	notes, err := srv.gooOrderNotes(ctx, other.ID, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var text string
+	for _, n := range notes {
+		text += n.Content
+	}
+	if !strings.Contains(text, "(0 available)") {
+		t.Fatalf("shortage note: %q", text)
+	}
+}
+
+// When the counter drops below what other orders hold (stock edited after the hold), the shortage
+// reports 0 available, never a negative count.
+func TestGooPaymentShortageNeverNegative(t *testing.T) {
+	srv := gooResvSetup(t)
+	ctx := context.Background()
+	p := gooMakeSimple(t, srv, "Overheld", 10, func(p *gooProduct) { p.ManageStock, p.StockQuantity = true, gooIntPtr(2) })
+	holder := gooRaceOrder(t, srv, "a@example.test", 0, map[*gooProduct]int{p: 2})
+	other := gooRaceOrder(t, srv, "b@example.test", 0, map[*gooProduct]int{p: 1})
+	if err := srv.gooReserveStock(ctx, holder); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `UPDATE goo_products SET stock_quantity = 0 WHERE post_id = $1`, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	var sh *gooStockShortage
+	if err := srv.gooReduceStock(ctx, other, true); !errors.As(err, &sh) {
+		t.Fatalf("reduce stock: %v, want a shortage", err)
+	}
+	if sh.Available != 0 {
+		t.Fatalf("shortage reports %d available, want 0", sh.Available)
+	}
+}
+
 // A customer who leaves the external payment page (back button) and checks out again is not refused
 // the last unit because of the hold of their own abandoned order: the new order takes it over.
 func TestGooReserveStockSameVisitorRetry(t *testing.T) {
