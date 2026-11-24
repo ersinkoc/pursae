@@ -1,11 +1,13 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -152,16 +154,26 @@ func (s *Server) hgUploadPost(c *gin.Context, a *hgAuth) {
 	}
 	infos := hgFileInfos(form.Value["fileInfo"])
 	var saved []*store.Attachment
-	cleanup := func() {
+	rollback := func() bool {
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), 2*time.Minute)
+		defer cancel()
+		failed := false
 		for _, att := range saved {
-			s.deleteAttachmentFiles(att)
-			_ = s.store.DeleteAttachment(c, att.ID)
+			if err := s.deleteAttachmentRecordAndFiles(ctx, att); err != nil && !errors.Is(err, store.ErrNotFound) {
+				failed = true
+			}
 		}
+		if failed {
+			hgErr(c, http.StatusInternalServerError, "ApplicationError", "Some uploaded files could not be rolled back.", nil)
+		}
+		return !failed
 	}
 	for i, fh := range files {
 		f, err := fh.Open()
 		if err != nil {
-			cleanup()
+			if !rollback() {
+				return
+			}
 			hgErr(c, http.StatusBadRequest, "ValidationError", "The file could not be read", nil)
 			return
 		}
@@ -173,7 +185,9 @@ func (s *Server) hgUploadPost(c *gin.Context, a *hgAuth) {
 		att, err := s.insertAttachmentFile(c, name, f, 0, 0)
 		f.Close()
 		if err != nil {
-			cleanup()
+			if !rollback() {
+				return
+			}
 			msg := err.Error()
 			if errors.Is(err, errUploadTooLarge) {
 				hgErr(c, http.StatusRequestEntityTooLarge, "PayloadTooLargeError", msg, nil)
@@ -191,7 +205,9 @@ func (s *Server) hgUploadPost(c *gin.Context, a *hgAuth) {
 			_ = s.store.UpdateAttachment(c, att)
 		}
 		if field != nil && len(field.Allowed) > 0 && !containsStr(field.Allowed, hgMediaKind(att.Mime)) {
-			cleanup()
+			if !rollback() {
+				return
+			}
 			hgErr(c, http.StatusBadRequest, "ValidationError", "The file type of "+fh.Filename+" is not allowed in "+field.Name, nil)
 			return
 		}
@@ -199,7 +215,9 @@ func (s *Server) hgUploadPost(c *gin.Context, a *hgAuth) {
 	if sc != nil {
 		e, err := s.hgGetEntry(c, sc.UID, doc, loc)
 		if err != nil {
-			cleanup()
+			if !rollback() {
+				return
+			}
 			hgNotFound(c)
 			return
 		}
@@ -212,7 +230,9 @@ func (s *Server) hgUploadPost(c *gin.Context, a *hgAuth) {
 		}
 		ne, events, err := s.hgSaveEntry(c, sc, doc, map[string]any{field.Name: ids}, hgSaveOpts{Locale: loc})
 		if err != nil {
-			cleanup()
+			if !rollback() {
+				return
+			}
 			hgFail(c, err)
 			return
 		}

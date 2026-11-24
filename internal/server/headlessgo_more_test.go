@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -391,6 +392,25 @@ func TestHeadlessGoUpload(t *testing.T) {
 	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM media`).Scan(&after)
 	if after != before {
 		t.Fatalf("a refused upload left %d files", after-before)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `CREATE FUNCTION reject_upload_cleanup() RETURNS trigger LANGUAGE plpgsql AS $$
+		BEGIN
+			IF OLD.title = 'held-upload' THEN RAISE EXCEPTION 'attachment is referenced'; END IF;
+			RETURN OLD;
+		END $$;
+		CREATE TRIGGER reject_cleanup BEFORE DELETE ON media FOR EACH ROW EXECUTE FUNCTION reject_upload_cleanup()`); err != nil {
+		t.Fatal(err)
+	}
+	r = hgUpload(t, base, full, map[string][]byte{"held-upload.txt": []byte("original data")}, map[string]string{"ref": "author", "refId": auth, "field": "avatar"})
+	if r.Code != http.StatusInternalServerError || !strings.Contains(r.Raw, "could not be rolled back") {
+		t.Fatalf("incomplete rollback: %d %s", r.Code, r.Raw)
+	}
+	var heldPath string
+	if err := srv.store.Pool.QueryRow(ctx, `SELECT file_path FROM media WHERE title = 'held-upload'`).Scan(&heldPath); err != nil {
+		t.Fatal(err)
+	}
+	if data, err := os.ReadFile(srv.gocdnLocalPath(heldPath)); err != nil || string(data) != "original data" {
+		t.Fatalf("failed rollback changed file: %q %v", data, err)
 	}
 	for _, bad := range []map[string]string{{"ref": "nope", "refId": doc, "field": "cover"}, {"ref": "article", "refId": doc, "field": "title"}, {"ref": "article", "refId": "missing", "field": "cover"}} {
 		if r := hgUpload(t, base, full, map[string][]byte{"x.png": pic}, bad); r.Code != 400 && r.Code != 404 {

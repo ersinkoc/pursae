@@ -167,7 +167,7 @@ func (s *Server) uploadReserved(ctx context.Context) func(sub string) []string {
 		}
 		rows, err := s.store.Pool.Query(ctx, `SELECT path FROM gocdn_items WHERE (local_removed OR media_id IS NULL) AND starts_with(path, $1)`, prefix)
 		if err != nil {
-			return nil
+			return s.pendingMediaFileNames(ctx, prefix)
 		}
 		defer rows.Close()
 		var out []string
@@ -179,7 +179,7 @@ func (s *Server) uploadReserved(ctx context.Context) func(sub string) []string {
 				}
 			}
 		}
-		return out
+		return append(out, s.pendingMediaFileNames(ctx, prefix)...)
 	}
 }
 
@@ -665,8 +665,10 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 				c.String(http.StatusOK, "-1")
 				return true
 			}
-			s.deleteAttachmentFiles(a)
-			_ = s.store.DeleteAttachment(c, id)
+			if err := s.deleteAttachmentRecordAndFiles(c, a); err != nil {
+				c.String(http.StatusOK, "0")
+				return true
+			}
 			s.purgeAttachment(a)
 			c.String(http.StatusOK, "1")
 			return true
@@ -747,11 +749,12 @@ func (s *Server) deleteAttachmentRecordAndFiles(ctx context.Context, a *store.At
 	if err != nil {
 		return err
 	}
-	s.removeAttachmentFiles(a, func() {
-		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
-		defer cancel()
-		s.gocdnDeleteItems(ctx, items)
-	})
+	s.mediaIdx.put(a.ID, nil)
+	cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Minute)
+	defer cancel()
+	s.gocdnDeleteItems(cleanup, items)
+	s.gocdnDropVariants(gocdnAttachmentFiles(a))
+	s.cleanupMediaFileDeletes(cleanup, a.ID)
 	return nil
 }
 

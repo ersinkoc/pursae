@@ -1706,8 +1706,10 @@ func (s *Server) postEdit(c *gin.Context) {
 					c.String(http.StatusForbidden, "Sorry, you are not allowed to delete this item.")
 					return
 				}
-				s.deleteAttachmentFiles(a)
-				_ = s.store.DeleteAttachment(c, id)
+				if err := s.deleteAttachmentRecordAndFiles(c, a); err != nil {
+					c.Redirect(http.StatusFound, "/wp-admin/upload?delete-failed=1")
+					return
+				}
 				s.purgeAttachment(a)
 				c.Redirect(http.StatusFound, "/wp-admin/upload?deleted=1")
 				return

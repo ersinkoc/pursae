@@ -98,12 +98,7 @@ func (s *Server) detachOffloadsAndDeleteAttachment(ctx context.Context, id int64
 	var items []*gocdnItem
 	err := pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
 		// A new offload mapping needs a foreign-key lock on this row.
-		var locked int64
-		err := tx.QueryRow(ctx, `SELECT id FROM media WHERE id = $1 FOR UPDATE`, id).Scan(&locked)
-		if errors.Is(err, pgx.ErrNoRows) {
-			return store.ErrNotFound
-		}
-		if err != nil {
+		if err := recordMediaFileDeletes(ctx, tx, id); err != nil {
 			return err
 		}
 		rows, err := tx.Query(ctx, `UPDATE gocdn_items SET media_id = NULL WHERE media_id = $1 RETURNING `+gocdnItemCols, id)

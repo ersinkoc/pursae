@@ -451,12 +451,14 @@ func (s *Server) gocdnHousekeepingOnce(ctx context.Context) {
 	// Deletions can outlive a request or happen while the plugin is deactivated.
 	s.gocdnRetryDetachedDeletes(ctx)
 	if !s.gocdnTracking() {
+		s.cleanupMediaFileDeletes(ctx, 0)
 		return
 	}
 	s.gocdnResumeInterrupted(ctx)
 	s.gocdnRetryPendingDeletes(ctx)
 	s.gocdnRetryFailedUploads(ctx, 500)
 	s.gocdnCleanupLocal(ctx)
+	s.cleanupMediaFileDeletes(ctx, 0)
 }
 
 // gocdnStartHousekeeping runs the pass shortly after start-up and then daily, until Server.Close.
