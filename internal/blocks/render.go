@@ -80,11 +80,13 @@ func DynamicNames() []string {
 	mu.RLock()
 	defer mu.RUnlock()
 	out := make([]string, 0, len(dynamic)+len(raw))
-	for n := range dynamic {
-		out = append(out, n)
+	for n, render := range dynamic {
+		if render != nil {
+			out = append(out, n)
+		}
 	}
-	for n := range raw {
-		if dynamic[n] == nil {
+	for n, render := range raw {
+		if render != nil && dynamic[n] == nil {
 			out = append(out, n)
 		}
 	}

@@ -230,3 +230,37 @@ func TestBuildReplyToAndAttachmentNameAreHeaderSafe(t *testing.T) {
 		t.Fatalf("valid Reply-To lost:\n%s", raw)
 	}
 }
+
+func TestAPIUsesRecipientAcceptance(t *testing.T) {
+	for _, tc := range []struct {
+		mailer, response, id string
+		failed               bool
+	}{
+		{"mandrill", `[{"status":"rejected","reject_reason":"policy"},{"status":"sent","_id":"accepted"}]`, "accepted", false},
+		{"mandrill", `[{"status":"rejected","reject_reason":"policy"},{"status":"invalid"}]`, "", true},
+		{"sparkpost", `{"results":{"id":"rejected","total_accepted_recipients":0,"total_rejected_recipients":2}}`, "", true},
+		{"sparkpost", `{"results":{"id":"partial","total_accepted_recipients":1,"total_rejected_recipients":1}}`, "partial", false},
+	} {
+		a := &API{Mailer: tc.mailer, Opts: map[string]string{"api_key": "key"}, Client: &http.Client{Transport: auditRoundTripper(func(*http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(tc.response))}, nil
+		})}}
+		id, err := a.Send(context.Background(), Email{
+			FromEmail: "from@example.test",
+			To:        []string{"one@example.test", "two@example.test"},
+			Text:      "example",
+		})
+		if id != tc.id || (err != nil) != tc.failed {
+			t.Errorf("%s sent ID %q, error %v", tc.mailer, id, err)
+		}
+	}
+}
+
+func TestOAuthRejectsPartiallyDecodedToken(t *testing.T) {
+	o := &OAuth{Mailer: "gmail", Client: &http.Client{Transport: auditRoundTripper(func(*http.Request) (*http.Response, error) {
+		const response = `{"access_token":"token","expires_in":{"invalid":true}}`
+		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(response))}, nil
+	})}}
+	if token, err := o.Exchange(context.Background(), "code"); err == nil || token != nil {
+		t.Fatalf("exchange returned a token from an invalid response, err=%v", err)
+	}
+}

@@ -12,6 +12,7 @@ import (
 	"net/mail"
 	"net/textproto"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -754,6 +755,10 @@ func (a *API) messageID(hdr http.Header, body []byte) (string, error) {
 	case "sendgrid", "mailersend":
 		return hdr.Get("X-Message-Id"), nil
 	case "sparkpost":
+		if rejected, _ := strconv.Atoi(str("results", "total_rejected_recipients")); rejected > 0 &&
+			str("results", "total_accepted_recipients") == "0" {
+			return "", fmt.Errorf("sparkpost: rejected all %d recipients", rejected)
+		}
 		return str("results", "id"), nil
 	case "amazonses":
 		return str("MessageId"), nil
@@ -772,8 +777,21 @@ func (a *API) messageID(hdr http.Header, body []byte) (string, error) {
 		}
 		return str("data", "email_id"), nil
 	case "mandrill":
-		if st := str(0, "status"); st == "rejected" || st == "invalid" {
-			return "", fmt.Errorf("mandrill: message %s (%s)", st, str(0, "reject_reason"))
+		recipients, _ := v.([]any)
+		var firstFailure error
+		for i := range recipients {
+			switch st := str(i, "status"); st {
+			case "sent", "queued", "scheduled":
+				// At least one accepted recipient makes retrying the whole message unsafe.
+				return str(i, "_id"), nil
+			case "rejected", "invalid":
+				if firstFailure == nil {
+					firstFailure = fmt.Errorf("mandrill: message %s (%s)", st, str(i, "reject_reason"))
+				}
+			}
+		}
+		if firstFailure != nil {
+			return "", firstFailure
 		}
 		return str(0, "_id"), nil
 	}
