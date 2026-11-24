@@ -197,7 +197,7 @@ func TestACFGoSaveSkipsFieldsOutsideLocationRules(t *testing.T) {
 	acfgoSaveGroupForm(t, c, base, 0, map[string]any{"title": "Everyone",
 		"location": []any{[]any{map[string]any{"param": "user_form", "operator": "==", "value": "all"}}},
 		"fields":   []any{map[string]any{"key": "field_bio_extra", "label": "Extra", "name": "bio_extra", "type": "text"}}})
-	subID := asCreateUser(t, srv, "reader", "subscriber", asStrongPass)
+	subID := asCreateUser(t, srv, "reader", "contributor", asStrongPass) // a role with wp-admin (subscribers have none)
 	sc := asNewClient()
 	if code, _, _ := asLogin(t, sc, base, "/wp-login", "reader", asStrongPass); code != http.StatusFound {
 		t.Fatalf("login: %d", code)

@@ -221,7 +221,12 @@ func (s *Server) login(c *gin.Context) {
 
 	target := safeRedirect(v.RedirectTo, "/wp-admin/")
 	// Users without dashboard capabilities land on their profile, like WordPress.
-	if (target == "/wp-admin/" || target == "/wp-admin") && !u.Can("edit_posts", nil) {
+	if frontEndOnly(u) {
+		// No wp-admin for front-end members (admin_access.go): any admin target becomes their account page.
+		if p := strings.SplitN(target, "?", 2)[0]; p == "/wp-admin" || strings.HasPrefix(p, "/wp-admin/") {
+			target = s.frontEndHome(c)
+		}
+	} else if (target == "/wp-admin/" || target == "/wp-admin") && !u.Can("edit_posts", nil) {
 		target = "/wp-admin/profile"
 	}
 	c.Redirect(http.StatusFound, target)

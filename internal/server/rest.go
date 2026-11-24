@@ -181,7 +181,7 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 		}
 		uid, _ := c.Get(restOAuthUserKey)
 		u, err := s.store.UserByID(c, uid.(int64))
-		if err != nil || u == nil {
+		if err != nil || u == nil || !appPasswordsAvailable(u) { // no API tokens for front-end members (admin_access.go)
 			return nil, errors.New("invalid_token")
 		}
 		return scopedUser(u, restScopes(c)), nil
@@ -258,6 +258,10 @@ func (s *Server) restAuthUser(c *gin.Context, route, method string) (*store.User
 // working client normally costs one argon2 check per few minutes instead of one per stored password.
 func (s *Server) checkAppPassword(c *gin.Context, u *store.User, pass string) bool {
 	pass = strings.ReplaceAll(pass, " ", "")
+	if !appPasswordsAvailable(u) {
+		// A front-end member's passwords (made before this check, or kept from a higher role) do not sign in.
+		return false
+	}
 	m, ok := s.matchAppPassword(c, u.ID, pass)
 	if !ok {
 		return false

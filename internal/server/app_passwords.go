@@ -137,6 +137,13 @@ var (
 // createAppPassword is WP_Application_Passwords::create_new_application_password(): returns the plaintext
 // password (shown once) and the stored record.
 func (s *Server) createAppPassword(c context.Context, userID int64, name, appID string, scopes ...string) (string, *appPassword, error) {
+	owner, err := s.store.UserByID(c, userID)
+	if err != nil {
+		return "", nil, err
+	}
+	if !appPasswordsAvailable(owner) { // front-end members get no API credentials (admin_access.go)
+		return "", nil, errAppPasswordsUnavailable
+	}
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return "", nil, errAppPasswordEmptyName

@@ -600,6 +600,10 @@ func (s *Server) requireLogin() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		// Forum participants, subscribers and customers use the front end only (admin_access.go).
+		if s.denyFrontEndAdmin(c, u) {
+			return
+		}
 		if s.adminsecGate(c, u) { // AdminSecGo: forced password change, 2FA required by the role
 			c.Abort()
 			return

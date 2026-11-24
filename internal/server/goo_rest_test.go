@@ -679,6 +679,12 @@ func TestGooAPIConsumerKeys(t *testing.T) {
 	if r := gooReq(t, anon, "GET", api+"/products", nil, gooBasic(rck, rcs)); r.Code != 200 {
 		t.Errorf("read key GET: %d", r.Code)
 	}
+	// A key that belongs to a front-end member (a customer: admin_access.go) does not sign in.
+	custID := asCreateUser(t, srv, "keycustomer", "customer", asStrongPass)
+	cck, ccs, _, _ := srv.gooRESTNewKey(ctx, custID, "Customer key", "read")
+	if r := gooReq(t, anon, "GET", api+"/products", nil, gooBasic(cck, ccs)); r.Code != 401 || gooJS(r.Body, "code") != "woocommerce_rest_authentication_error" {
+		t.Errorf("customer key: %d %s", r.Code, r.Raw)
+	}
 	if r := gooReq(t, anon, "POST", api+"/products", map[string]any{"name": "X"}, gooBasic(rck, rcs)); r.Code != 401 || !strings.Contains(gooJS(r.Body, "message"), "write permissions") {
 		t.Errorf("read key POST: %d %s", r.Code, r.Raw)
 	}

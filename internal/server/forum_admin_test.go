@@ -189,7 +189,7 @@ func TestForumAdminCaps(t *testing.T) {
 		t.Error("a moderator changed the settings")
 	}
 	part := hgSecondUser(t, srv, base, "parti", forumRoleParticipant)
-	if code, _, _ := get(t, part, base+"/wp-admin/forum?tab=moderation"); code != http.StatusForbidden {
+	if code, _, _ := get(t, part, base+"/wp-admin/forum?tab=moderation"); code != http.StatusFound { // front-end member: no wp-admin
 		t.Errorf("participant GET moderation: %d", code)
 	}
 }

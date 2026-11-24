@@ -241,7 +241,7 @@ func TestAdminPatternsList(t *testing.T) {
 	}
 	// Subscribers cannot see the list; contributors can (edit_posts) but get no Add Pattern button
 	// (create_posts is publish_posts), so list-reusable-blocks mounts no Import from JSON either.
-	if code, _, _ := get(t, subC, s.base+"/wp-admin/edit?post_type=wp_block"); code != http.StatusForbidden {
+	if code, _, _ := get(t, subC, s.base+"/wp-admin/edit?post_type=wp_block"); code != http.StatusFound { // front-end member: no wp-admin
 		t.Errorf("subscriber list: %d", code)
 	}
 	if code, body, _ := get(t, contribC, s.base+"/wp-admin/edit?post_type=wp_block"); code != http.StatusOK || !strings.Contains(body, "Synced footer") ||
@@ -263,7 +263,7 @@ func TestAdminPatternsList(t *testing.T) {
 	if code != http.StatusOK || !strings.Contains(body, `wp.editPost.initializeEditor( 'editor', "wp_block", `) {
 		t.Errorf("new pattern: %d", code)
 	}
-	if code, _, _ := get(t, subC, s.base+"/wp-admin/post-new?post_type=wp_block"); code != http.StatusForbidden {
+	if code, _, _ := get(t, subC, s.base+"/wp-admin/post-new?post_type=wp_block"); code != http.StatusFound {
 		t.Errorf("subscriber new pattern: %d", code)
 	}
 	if code, _, _ := get(t, contribC, s.base+"/wp-admin/post-new?post_type=wp_block"); code != http.StatusForbidden {

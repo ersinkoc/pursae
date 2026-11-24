@@ -128,7 +128,7 @@ func TestAdminR2Permissions(t *testing.T) {
 		t.Fatal(err)
 	}
 	subC, _ := s.user("reader", "subscriber")
-	if code, body, _ := get(t, subC, s.base+"/wp-admin/post?post="+itoa64(a.ID)+"&action=edit"); code != http.StatusForbidden || strings.Contains(body, "Admin file") {
+	if code, body, _ := get(t, subC, s.base+"/wp-admin/post?post="+itoa64(a.ID)+"&action=edit"); (code != http.StatusForbidden && code != http.StatusFound) || strings.Contains(body, "Admin file") {
 		t.Errorf("subscriber opened another user's attachment: %d", code)
 	}
 	if code, body, _ := get(t, s.admin.c, s.base+"/wp-admin/post?post="+itoa64(a.ID)+"&action=edit"); code != http.StatusOK || !strings.Contains(body, "Admin file") {
