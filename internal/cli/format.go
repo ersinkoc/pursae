@@ -35,8 +35,7 @@ func Write(w io.Writer, format string, rows []Row, fields []string, opts ...writ
 	}
 	switch format {
 	case "table", "":
-		writeTable(w, rows, fields)
-		return nil
+		return writeTable(w, rows, fields)
 	case "csv":
 		cw := csv.NewWriter(w)
 		if err := cw.Write(fields); err != nil {
@@ -77,22 +76,23 @@ func Write(w io.Writer, format string, rows []Row, fields []string, opts ...writ
 		_, err := w.Write(buf.Bytes())
 		return err
 	case "yaml":
-		if o.single {
-			if len(rows) == 0 {
-				fmt.Fprintln(w, "{}")
-				return nil
-			}
-			writeYAMLRow(w, rows[0], fields, 0, false)
-			return nil
+		if o.single && (len(rows) == 0 || len(fields) == 0) {
+			_, err := io.WriteString(w, "{}\n")
+			return err
 		}
 		if len(rows) == 0 {
-			fmt.Fprintln(w, "[]")
-			return nil
+			_, err := io.WriteString(w, "[]\n")
+			return err
 		}
-		for _, r := range rows {
-			writeYAMLRow(w, r, fields, 0, true)
+		out := outputWriter{w: w}
+		if o.single {
+			writeYAMLRow(&out, rows[0], fields, 0, false)
+		} else {
+			for _, r := range rows {
+				writeYAMLRow(&out, r, fields, 0, true)
+			}
 		}
-		return nil
+		return out.err
 	}
 	return fmt.Errorf("unsupported format %q", format)
 }
@@ -293,9 +293,9 @@ func allKeys(rows []Row) []string {
 
 // writeTable draws a WP-CLI style ASCII table. Nothing is printed for zero rows. Newlines and
 // tabs inside cells are shown as spaces so the grid stays intact.
-func writeTable(w io.Writer, rows []Row, fields []string) {
+func writeTable(w io.Writer, rows []Row, fields []string) error {
 	if len(rows) == 0 || len(fields) == 0 {
-		return
+		return nil
 	}
 	cells := make([][]string, len(rows))
 	width := make([]int, len(fields))
@@ -338,7 +338,23 @@ func writeTable(w io.Writer, rows []Row, fields []string) {
 		line(r)
 	}
 	sep()
-	io.WriteString(w, b.String())
+	_, err := io.WriteString(w, b.String())
+	return err
+}
+
+// outputWriter remembers the first error while the YAML helpers write nested values.
+type outputWriter struct {
+	w   io.Writer
+	err error
+}
+
+func (out *outputWriter) Write(p []byte) (int, error) {
+	if out.err != nil {
+		return 0, out.err
+	}
+	n, err := out.w.Write(p)
+	out.err = err
+	return n, err
 }
 
 // --- YAML ----------------------------------------------------------------------------
@@ -501,10 +517,13 @@ func yamlPlainOK(s string) bool {
 		return false
 	}
 	switch strings.ToLower(s) {
-	case "null", "~", "true", "false", "yes", "no", "on", "off", "y", "n":
+	case "null", "~", "true", "false", "yes", "no", "on", "off", "y", "n", ".inf", "+.inf", "-.inf", ".nan":
 		return false
 	}
 	if _, err := strconv.ParseFloat(s, 64); err == nil {
+		return false
+	}
+	if _, err := strconv.ParseUint(strings.TrimPrefix(s, "+"), 0, 64); err == nil {
 		return false
 	}
 	if strings.ContainsAny(s[:1], "-?:,[]{}#&*!|>'\"%@`") {

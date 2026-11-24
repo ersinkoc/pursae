@@ -3,6 +3,7 @@ package settings
 import (
 	"context"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -125,5 +126,120 @@ func TestConcurrentSetsDoNotDeadlock(t *testing.T) {
 	}
 	if got := s.String("kaa"); got != stored {
 		t.Errorf("cache %q, database %q", got, stored)
+	}
+}
+
+type changingJSONValue int
+
+func (v *changingJSONValue) MarshalJSON() ([]byte, error) {
+	*v = *v + 1
+	return []byte(strconv.Itoa(int(*v))), nil
+}
+
+func TestSetCachesTheCommittedJSON(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	s := New(pool)
+	value := changingJSONValue(0)
+	if err := s.Set(ctx, map[string]any{"custom": &value}); err != nil {
+		t.Fatal(err)
+	}
+	var stored string
+	if err := pool.QueryRow(ctx, `SELECT value #>> '{}' FROM settings WHERE key = 'custom'`).Scan(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.String("custom"); stored != "1" || got != stored {
+		t.Fatalf("cache = %q, database = %q, want 1 for both", got, stored)
+	}
+}
+
+func TestSetRespectsAutoload(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	s := New(pool)
+	if err := s.Set(ctx, map[string]any{"cache_probe": "cached"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE settings SET autoload = false WHERE key = 'cache_probe'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Set(ctx, map[string]any{"cache_probe": "saved"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.Get("cache_probe"); got != nil {
+		t.Fatalf("non-autoloaded value remains cached: %v", got)
+	}
+	var stored string
+	if err := pool.QueryRow(ctx, `SELECT value #>> '{}' FROM settings WHERE key = 'cache_probe'`).Scan(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if stored != "saved" {
+		t.Fatalf("database = %q, want saved", stored)
+	}
+}
+
+type settingsReloadGate struct {
+	loaded  chan struct{}
+	release chan struct{}
+}
+
+func (g settingsReloadGate) TraceQueryStart(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
+	if data.SQL == `SELECT key, value FROM settings WHERE autoload` {
+		return context.WithValue(ctx, g, true)
+	}
+	return ctx
+}
+func (g settingsReloadGate) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryEndData) {
+	if ctx.Value(g) == nil {
+		return
+	}
+	select {
+	case g.loaded <- struct{}{}:
+		select {
+		case <-g.release:
+		case <-ctx.Done():
+		}
+	default:
+	}
+}
+func TestLoadPreservesConcurrentCommit(t *testing.T) {
+	base := testPool(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	gate := settingsReloadGate{make(chan struct{}, 1), make(chan struct{})}
+	poolCfg := base.Config()
+	poolCfg.ConnConfig.Tracer = gate
+	poolCfg.MaxConns = 2
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	s := New(pool)
+	if err := s.Set(ctx, map[string]any{"audit_reload": "old"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.String("audit_reload"); got != "old" {
+		t.Fatalf("control = %q", got)
+	}
+	done := make(chan error, 1)
+	go func() { done <- s.Load(ctx) }()
+	select {
+	case <-gate.loaded:
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
+	}
+	if err := s.Set(ctx, map[string]any{"audit_reload": "new"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := s.String("audit_reload"); got != "new" {
+		t.Fatalf("before reload resumes: %q", got)
+	}
+	close(gate.release)
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if got := s.String("audit_reload"); got != "new" {
+		t.Fatalf("cache = %q after concurrent reload, want new", got)
 	}
 }

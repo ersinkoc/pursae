@@ -281,7 +281,7 @@ func (r *Registry) Run(ctx context.Context, args []string, std IO) int {
 		ctx = context.Background()
 	}
 
-	// Leading global flags (`pursae --format=json post list`) are moved behind the path.
+	// Gather leading global flags (`pursae --format=json post list`) before looking up the path.
 	var lead []string
 	for len(args) > 0 && strings.HasPrefix(args[0], "-") && args[0] != "-" && args[0] != "--" {
 		if isHelpFlag(args[0]) {
@@ -299,6 +299,13 @@ func (r *Registry) Run(ctx context.Context, args []string, std IO) int {
 		}
 	}
 
+	if len(args) == 0 && len(lead) > 0 {
+		if _, err := r.parse(&Command{}, lead); err != nil && !errors.Is(err, errHelp) {
+			fmt.Fprintln(std.Err, "Error: "+Sanitize(err.Error()))
+			fmt.Fprintf(std.Err, "See '%s help'.\n", r.Prog)
+			return ExitUsage
+		}
+	}
 	if len(args) == 0 || isHelpFlag(args[0]) || args[0] == "help" {
 		var topic []string
 		if len(args) > 0 {
@@ -319,7 +326,7 @@ func (r *Registry) Run(ctx context.Context, args []string, std IO) int {
 		path = append(path, args[i])
 		i++
 	}
-	rest := append(append([]string(nil), args[i:]...), lead...)
+	rest := args[i:]
 
 	if n == r.root {
 		fmt.Fprintf(std.Err, "Error: '%s' is not a %s command.%s\n", args[0], r.Prog, r.suggestion(r.root, args[0], nil))
@@ -351,11 +358,12 @@ func (r *Registry) Run(ctx context.Context, args []string, std IO) int {
 		if len(rest) > 0 && isHelpFlag(rest[0]) {
 			return r.help(std, path)
 		}
-		c := &Ctx{Context: ctx, Prog: r.Prog, Cmd: cmd, Args: rest, flags: map[string]string{}, io: std, Format: "table", reg: r}
+		rawArgs := append(append([]string(nil), rest...), lead...)
+		c := &Ctx{Context: ctx, Prog: r.Prog, Cmd: cmd, Args: rawArgs, flags: map[string]string{}, io: std, Format: "table", reg: r}
 		return r.exec(c)
 	}
 
-	parsed, err := r.parse(cmd, rest)
+	parsed, err := r.parse(cmd, append(lead, rest...))
 	if err != nil {
 		if errors.Is(err, errHelp) {
 			return r.help(std, path)

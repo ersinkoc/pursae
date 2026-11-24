@@ -160,9 +160,10 @@ var Defaults = map[string]any{
 }
 
 type Store struct {
-	pool  *pgxpool.Pool
-	mu    sync.RWMutex
-	cache map[string]any
+	pool          *pgxpool.Pool
+	mu            sync.RWMutex
+	cache         map[string]any
+	cacheRevision uint64
 	// writeMu orders Set's commit and cache update, so the cache ends with the
 	// value committed last when two Sets of one key race.
 	writeMu sync.Mutex
@@ -174,9 +175,31 @@ func New(pool *pgxpool.Pool) *Store {
 
 // Load fills the cache with every autoloaded row.
 func (s *Store) Load(ctx context.Context) error {
+	for {
+		s.mu.RLock()
+		revision := s.cacheRevision
+		s.mu.RUnlock()
+
+		cache, err := s.readCache(ctx)
+		if err != nil {
+			return err
+		}
+		s.mu.Lock()
+		if s.cacheRevision == revision {
+			s.cache = cache
+			s.cacheRevision++
+			s.mu.Unlock()
+			return nil
+		}
+		s.mu.Unlock()
+		// A Set or another Load published during the read. Retry with a fresh snapshot.
+	}
+}
+
+func (s *Store) readCache(ctx context.Context) (map[string]any, error) {
 	rows, err := s.pool.Query(ctx, `SELECT key, value FROM settings WHERE autoload`)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer rows.Close()
 	m := map[string]any{}
@@ -184,21 +207,18 @@ func (s *Store) Load(ctx context.Context) error {
 		var k string
 		var raw []byte
 		if err := rows.Scan(&k, &raw); err != nil {
-			return err
+			return nil, err
 		}
 		var v any
 		if err := json.Unmarshal(raw, &v); err != nil {
-			return fmt.Errorf("setting %s: %w", k, err)
+			return nil, fmt.Errorf("setting %s: %w", k, err)
 		}
 		m[k] = v
 	}
 	if err := rows.Err(); err != nil {
-		return err
+		return nil, err
 	}
-	s.mu.Lock()
-	s.cache = m
-	s.mu.Unlock()
-	return nil
+	return m, nil
 }
 
 // Installed reports whether the install wizard has run.
@@ -320,15 +340,25 @@ func (s *Store) Set(ctx context.Context, values map[string]any) error {
 		return err
 	}
 	defer tx.Rollback(ctx)
+	loaded := make(map[string]any, len(values))
 	for _, k := range keys {
 		v := values[k]
 		raw, err := json.Marshal(v)
 		if err != nil {
 			return err
 		}
-		if _, err := tx.Exec(ctx, `INSERT INTO settings(key, value) VALUES ($1, $2)
-			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, k, raw); err != nil {
+		var autoload bool
+		if err := tx.QueryRow(ctx, `INSERT INTO settings(key, value) VALUES ($1, $2)
+			ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+			RETURNING autoload`, k, raw).Scan(&autoload); err != nil {
 			return err
+		}
+		if autoload {
+			var value any
+			if err := json.Unmarshal(raw, &value); err != nil {
+				return fmt.Errorf("setting %s: %w", k, err)
+			}
+			loaded[k] = value
 		}
 	}
 	// Commit and refresh the cache under writeMu: a Set blocked on our row locks
@@ -338,17 +368,18 @@ func (s *Store) Set(ctx context.Context, values map[string]any) error {
 	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
-	// Round-trip through JSON so cached values have the same types as loaded ones.
 	s.mu.Lock()
 	if s.cache == nil {
 		s.cache = map[string]any{}
 	}
-	for k, v := range values {
-		raw, _ := json.Marshal(v)
-		var norm any
-		_ = json.Unmarshal(raw, &norm)
-		s.cache[k] = norm
+	for _, k := range keys {
+		if value, ok := loaded[k]; ok {
+			s.cache[k] = value
+		} else {
+			delete(s.cache, k)
+		}
 	}
+	s.cacheRevision++
 	s.mu.Unlock()
 	return nil
 }

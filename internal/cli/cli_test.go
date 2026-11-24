@@ -515,6 +515,10 @@ func TestWriteEdgeCases(t *testing.T) {
 	if b.String() != want {
 		t.Errorf("yaml nested:\n%s\nwant:\n%s", b.String(), want)
 	}
+	b.Reset()
+	if err := Write(&b, "yaml", []Row{{}}, nil, singleObject()); err != nil || b.String() != "{}\n" {
+		t.Errorf("empty YAML mapping: %q, %v", b.String(), err)
+	}
 	if err := Write(&b, "xml", nil, nil); err == nil {
 		t.Error("unknown format accepted")
 	}
@@ -547,7 +551,7 @@ func TestStringify(t *testing.T) {
 
 func TestYAMLScalars(t *testing.T) {
 	plain := []string{"hello", "hello world", "a-b", "x:y", "ünï"}
-	quoted := []string{"", " x", "yes", "No", "null", "~", "12", "1.5", "-x", "#c", "a: b", "a #b", "end:", "line\nbreak", "*star", "@at", "'q"}
+	quoted := []string{"", " x", "yes", "No", "null", "~", "12", "1.5", "0x10", "0o10", "0b100", ".Inf", ".nan", "-x", "#c", "a: b", "a #b", "end:", "line\nbreak", "*star", "@at", "'q"}
 	for _, s := range plain {
 		if yamlString(s) != s {
 			t.Errorf("%q should be plain, got %s", s, yamlString(s))
@@ -660,5 +664,61 @@ func TestUnknownFieldIsAnError(t *testing.T) {
 	}
 	if res := run(t, r, "", false, "post", "list", "--field=POST_TITLE"); res.code != 0 || res.out != "Hello\nWorld, again\n" {
 		t.Errorf("known field: code %d out %q", res.code, res.out)
+	}
+}
+
+type failingCLIOutput struct{ err error }
+
+func (w failingCLIOutput) Write([]byte) (int, error) { return 0, w.err }
+
+func TestOutputFormatsPropagateWriteFailure(t *testing.T) {
+	want := errors.New("output failed")
+	w := failingCLIOutput{want}
+	for _, format := range []string{"table", "json", "yaml", "csv"} {
+		if err := Write(w, format, []Row{{"value": 1}}, []string{"value"}); !errors.Is(err, want) {
+			t.Errorf("%s: %v, want %v", format, err, want)
+		}
+	}
+	c := &Ctx{Format: "yaml", io: IO{Out: w}}
+	if err := c.PrintValue(map[string]any{"value": 1}); !errors.Is(err, want) {
+		t.Errorf("YAML value: %v, want %v", err, want)
+	}
+}
+
+func TestLeadingGlobalFlagsKeepArgumentOrder(t *testing.T) {
+	var last *Ctx
+	r := testRegistry(&last)
+	for _, tc := range []struct {
+		args []string
+		want string
+	}{
+		{[]string{"--format", "json", "post", "list", "--format=csv"}, "csv"},
+		{[]string{"--format", "json", "post", "list", "--"}, "json"},
+	} {
+		if res := run(t, r, "", false, tc.args...); res.code != ExitOK || last.Format != tc.want {
+			t.Errorf("%q: got %+v, want %s output", tc.args, res, tc.want)
+		}
+	}
+}
+
+func TestFlagCannotConsumeEndOfOptions(t *testing.T) {
+	var last *Ctx
+	r := testRegistry(&last)
+	if res := run(t, r, "", false, "post", "create", "--post_title", "--"); res.code != ExitUsage ||
+		!strings.Contains(res.err, "--post_title needs a value") {
+		t.Errorf("bare end marker: %+v", res)
+	}
+	if res := run(t, r, "", false, "post", "create", "--post_title=--"); res.code != ExitOK || last.Flag("post_title") != "--" {
+		t.Errorf("explicit -- value: %+v", res)
+	}
+}
+
+func TestMalformedStandaloneGlobalFlag(t *testing.T) {
+	var last *Ctx
+	r := testRegistry(&last)
+	for _, flag := range []string{"--unrecognized-option", "--format"} {
+		if res := run(t, r, "", false, flag); res.code != ExitUsage || !strings.Contains(res.err, flag) {
+			t.Errorf("%s: %+v", flag, res)
+		}
 	}
 }

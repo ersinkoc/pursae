@@ -2,6 +2,7 @@
 package config
 
 import (
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -131,8 +132,8 @@ func parseSlowQuery(v string) time.Duration {
 	if v == "" {
 		return 0
 	}
-	if n, err := strconv.Atoi(v); err == nil {
-		if n < 0 {
+	if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+		if n <= 0 || n > math.MaxInt64/int64(time.Millisecond) {
 			return 0
 		}
 		return time.Duration(n) * time.Millisecond
