@@ -20,8 +20,9 @@ func TestTwentyTwentyFiveDemoSets(t *testing.T) {
 	anon := &http.Client{CheckRedirect: c.CheckRedirect}
 
 	_, body, _ := get(t, c, base+"/wp-admin/themes")
-	if !strings.Contains(body, `href="/wp-admin/themes?action=demo-content&amp;stylesheet=twentytwentyfive"`) {
-		t.Fatal("the active theme's card has no Import Demo Content link")
+	// Import Demo Content is offered in the active theme's Theme Details (theme.js data), not on its card.
+	if !strings.Contains(body, `"wpgoDemoImport":"/wp-admin/themes?action=demo-content\u0026stylesheet=twentytwentyfive"`) {
+		t.Fatal("the active theme has no Import Demo Content link")
 	}
 	code, body, _ := get(t, c, base+"/wp-admin/themes?action=demo-content&stylesheet=twentytwentyfive")
 	if code != http.StatusOK {

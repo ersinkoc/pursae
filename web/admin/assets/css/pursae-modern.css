@@ -1287,8 +1287,6 @@ body.pursae-modern .theme-browser .theme.active .theme-actions {
 body.pursae-modern .theme-browser .theme:is(:hover, :focus-within) .theme-actions,
 body.pursae-modern .theme-browser .theme.active .theme-actions { display: flex; }
 body.pursae-modern .theme-browser .theme .theme-actions .button { float: none; margin: 0; }
-body.pursae-modern .theme-browser .theme.active .theme-id-container { flex-wrap: wrap; padding: 12px 16px; }
-body.pursae-modern .theme-browser .theme.active .theme-id-container .theme-name { flex-basis: 100%; }
 body.pursae-modern .theme-browser .theme.add-new-theme { display: flex; min-height: 100%; }
 body.pursae-modern .theme-browser .theme.add-new-theme a { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-height: 260px; color: var(--pm-muted); }
 body.pursae-modern .theme-browser .theme.add-new-theme a:hover { color: var(--pm-primary); background: var(--pm-primary-50); }

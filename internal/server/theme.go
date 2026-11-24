@@ -712,9 +712,17 @@ func (s *Server) previewTheme(c *gin.Context) *Theme {
 }
 
 // themeVisible reports whether a theme may be listed, previewed or activated: every registered
-// theme the site has not deleted.
+// theme the site has not deleted, except Hello Pursae while Pursae Web Builder is off.
 func (s *Server) themeVisible(t *Theme) bool {
-	return t != nil && !s.themeDeleted(t.Slug)
+	if t == nil || s.themeDeleted(t.Slug) {
+		return false
+	}
+	// Hello Pursae comes with Pursae Web Builder: while the plugin is off it is not offered, unless the
+	// site still runs it (an owner who chose it keeps it after deactivation).
+	if t.Slug == wbHelloSlug && !s.wbOn() && s.settings.String("stylesheet") != wbHelloSlug {
+		return false
+	}
+	return true
 }
 
 // installedThemes is allThemes without the deleted ones.

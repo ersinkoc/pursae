@@ -333,8 +333,9 @@ func TestHelloPursaeSwitching(t *testing.T) {
 		t.Errorf("missing previous theme: now %s, want %s", got, defaultTheme)
 	}
 
-	// Hello Pursae was deleted: activation installs it again.
-	if err := srv.deleteTheme(ctx, wbHelloSlug); err != nil {
+	// Hello Pursae was deleted (by an earlier version, which listed it with the plugin off): activation
+	// installs it again.
+	if err := srv.settings.Set(ctx, map[string]any{deletedThemesSetting: []string{wbHelloSlug}}); err != nil {
 		t.Fatal(err)
 	}
 	togglePlugin(t, c, base, "activate")

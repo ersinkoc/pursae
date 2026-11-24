@@ -10,6 +10,16 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hello Pursae only with Pursae Web Builder.** The builder's blank-canvas theme is no longer listed,
+  previewed or activated while the plugin is off (Themes screen, REST, MCP and CLI); a site that still
+  runs it keeps it.
+- **Theme cards keep the WordPress layout.** On Appearance › Themes every card has the same footer height:
+  the active card shows Customize only (demo content stays in Theme Details), and Activate / Live Preview
+  sit beside the name instead of covering it. On Add Themes the category line under the name no longer
+  runs out of the card. In the theme preview the close, previous and next icons are centered.
+
 ## [0.5.4] - 2026-11-24
 
 ### Changed
