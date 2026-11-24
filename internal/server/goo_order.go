@@ -701,7 +701,12 @@ func (s *Server) gooReduceStock(ctx context.Context, o *gooOrder, strict bool) e
 			_, _ = s.gooClaimOrderFlag(ctx, o, "stock_reduced", false)
 			avail := 0
 			_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(stock_quantity, 0) FROM goo_products WHERE post_id = $1`, owner.ID).Scan(&avail)
-			return &gooStockShortage{Name: s.gooProductTitle(ctx, p), Available: avail}
+			// Units other orders still hold are not available. Reporting the raw counter says "1 available"
+			// when that 1 is reserved, and the order note then looks like the line can be fulfilled.
+			held := 0
+			_ = s.store.Pool.QueryRow(ctx, `SELECT coalesce(sum(stock_quantity), 0) FROM goo_reserved_stock
+				WHERE product_id = $1 AND order_id <> $2 AND expires_at > now()`, owner.ID, o.ID).Scan(&held)
+			return &gooStockShortage{Name: s.gooProductTitle(ctx, p), Available: max(0, avail-held)}
 		}
 		if err != nil {
 			// wc_reduce_stock_levels(): the order stays marked reduced and the line keeps no

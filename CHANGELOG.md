@@ -12,10 +12,6 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ### Fixed
 
-- **Pursae Security: the options API accepts a passkey requirement.** `POST /pursae/v1/options/security` (and
-  the MCP `update_options` tool) only knew the `mfa` and `2fa` requirements, so on a site where a role must use
-  a passkey (Two-Factor › Requirement per role) every security update was refused, whatever it changed.
-  `passkey` is now accepted, as on the settings screen, while passkeys are allowed.
 - **Translations: JSON language packs pick the right plural form without the core language pack.**
   One-form languages (Japanese, Chinese and the others) no longer fall back to English for counts such as
   "%s seconds", and languages with three or more forms (Russian, Arabic, Polish and the others) no longer
@@ -26,6 +22,17 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 - **The access log no longer records credential query values.** OAuth codes, preview tokens, nonces,
   password-reset and API keys, `consumer_secret`, `password`, `token` and the same kind of parameter are
   written as `redacted`, even when the query string is malformed.
+- **Pursae Security: the options API accepts a passkey requirement.** `POST /pursae/v1/options/security` (and
+  the MCP `update_options` tool) only knew the `mfa` and `2fa` requirements, so on a site where a role must use
+  a passkey (Two-Factor › Requirement per role) every security update was refused, whatever it changed.
+  `passkey` is now accepted, as on the settings screen, while passkeys are allowed.
+- **Commerce: cart, coupons, tax rounding, stock holds.** Logging in adds a guest line's quantity to the same
+  line already in the account cart (sold individually stays at one). Recalculating an order no longer changes a
+  fixed-cart coupon's total by a cent. With prices entered including tax and rounding at subtotal, the order
+  lines add up to the charged total. A checkout of a different product no longer drops the stock hold of an
+  order still awaiting payment, and taking that hold over cannot leave the units free in between. A payment
+  blocked by another order's hold reports the units that are actually free. Coupon e-mail restrictions honour
+  every `*` (`*@*.edu`), not only the first.
 
 ## [0.5.3] - 2026-11-23
 
