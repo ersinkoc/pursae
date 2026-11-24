@@ -58,3 +58,10 @@ func TestAddClassMatchesTagFiltersCaseInsensitively(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestAddClassPreservesNonASCIIWhitespaceInToken(t *testing.T) {
+	got := AddClass("<p class=\"card\u00a0wide\">x</p>", "active")
+	if want := "<p class=\"card\u00a0wide active\">x</p>"; got != want {
+		t.Errorf("AddClass = %q, want %q", got, want)
+	}
+}

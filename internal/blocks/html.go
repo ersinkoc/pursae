@@ -59,7 +59,9 @@ func AddClass(html, classes string, tags ...string) string {
 				start, end = m[6], m[7]
 				unquoted = true
 			}
-			existing := strings.Fields(tag[start:end])
+			existing := strings.FieldsFunc(tag[start:end], func(r rune) bool {
+				return strings.ContainsRune(" \t\n\f\r", r) // HTML ASCII whitespace
+			})
 			for _, c := range strings.Fields(classes) { // already filtered by SafeClassTokens
 				if !contains(existing, c) {
 					existing = append(existing, c)
