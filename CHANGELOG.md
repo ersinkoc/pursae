@@ -10,8 +10,38 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-11-24
+
+### Changed
+
+- **Go plugin SDK: the `wpgotest` fake host behaves like a real site.** `query_posts` defaults to the `post`
+  type, accepts `per_page` 0–100 and orders by date by default (also `title`, `modified`, `id`); transients
+  expire; nested test hosts restore in order. A plugin test that queried pages without a type, passed
+  `per_page` -1 or relied on ID order may need updating.
+
 ### Fixed
 
+- **Custom post types keep their own admin list.** The list of a type created in Pursae Custom Fields
+  highlights that type's menu instead of Posts, and its status views (All, Published, Drafts …), Mine, the
+  author filter, **Add New** and Screen Options stay on that type instead of opening the Posts list.
+- **Media and GoCDN: deletions no longer lose files.** A rejected or failed media delete keeps the
+  attachment and its files; local files whose delete failed are retried later, and objects of detached
+  attachments are removed from the bucket by the daily housekeeping. Linking or cleaning up remote media no
+  longer takes over or deletes an object another attachment still uses, and a database error now keeps the
+  object instead of deleting it.
+- **Dates and feeds.** WordPress date formats accept signed and longer years, a site timezone written as an
+  offset (`+05:45`) is honoured, and imported RSS/Atom items dated with US zone abbreviations (EST, PDT …) get
+  their real time instead of UTC. Atom `xml:base` links and RSS `guid` permalinks resolve correctly.
+- **Links, mail and blocks.** Plain `?p=` links of custom post types, comment feed links of a static front page
+  and paged URLs keep their path and fragment. SparkPost and Mandrill sends count as delivered when any
+  recipient was accepted, so a retry no longer sends duplicates; an OAuth token reply that is not JSON is
+  rejected.
+- **Translations.** Lookups match normalized strings, a plural form in a lower language-pack layer is found,
+  a standalone `<locale>.mo` counts as installed, and a plugin language pack that cannot be extracted is
+  reported.
+- **Metrics and core updates.** `/wp-login` requests are grouped correctly, `Flush`, `Hijack` and `ReadFrom`
+  keep their errors, and the slow-query limiter is safe under concurrency. A core update stages its backup and
+  state with atomic renames and puts the previous backup back if saving the state fails.
 - **Translations: JSON language packs pick the right plural form without the core language pack.**
   One-form languages (Japanese, Chinese and the others) no longer fall back to English for counts such as
   "%s seconds", and languages with three or more forms (Russian, Arabic, Polish and the others) no longer
