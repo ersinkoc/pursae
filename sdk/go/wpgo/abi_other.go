@@ -4,12 +4,17 @@ package wpgo
 
 import (
 	"encoding/json"
+	"slices"
 	"sync"
 )
 
+type testHostRegistration struct {
+	call func(name string, body []byte) ([]byte, error)
+}
+
 var (
 	testHostMu sync.RWMutex
-	testHost   func(name string, body []byte) ([]byte, error)
+	testHosts  []*testHostRegistration
 )
 
 // SetHostForTest routes every host function call of a non-Wasm build to fn, which receives the
@@ -17,14 +22,16 @@ var (
 // ({"ok":true,"result":...} or {"ok":false,"code":...,"error":...}). It returns a function that
 // removes the hook again. Use the wpgotest package instead of calling this directly.
 func SetHostForTest(fn func(name string, body []byte) ([]byte, error)) (restore func()) {
+	registration := &testHostRegistration{call: fn}
 	testHostMu.Lock()
-	prev := testHost
-	testHost = fn
+	testHosts = append(testHosts, registration)
 	testHostMu.Unlock()
 	return func() {
 		testHostMu.Lock()
-		testHost = prev
-		testHostMu.Unlock()
+		defer testHostMu.Unlock()
+		if i := slices.Index(testHosts, registration); i >= 0 {
+			testHosts = slices.Delete(testHosts, i, i+1)
+		}
 	}
 }
 
@@ -32,8 +39,11 @@ func SetHostForTest(fn func(name string, body []byte) ([]byte, error)) (restore 
 // function fails with ErrNotInHost. Hook registration and Dispatch still work,
 // which lets plugin authors unit test callbacks with a normal toolchain.
 func invokeHost(name string, body []byte) ([]byte, error) {
+	var th func(string, []byte) ([]byte, error)
 	testHostMu.RLock()
-	th := testHost
+	if n := len(testHosts); n > 0 {
+		th = testHosts[n-1].call
+	}
 	testHostMu.RUnlock()
 	if th != nil {
 		return th(name, body)

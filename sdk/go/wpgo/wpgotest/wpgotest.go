@@ -15,11 +15,16 @@
 package wpgotest
 
 import (
+	"cmp"
 	"encoding/json"
+	"fmt"
+	"maps"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"wpgo/sdk/go/wpgo"
 )
@@ -27,12 +32,17 @@ import (
 // Mail is a message captured from wpgo.SendMail.
 type Mail = wpgo.Mail
 
+type transient struct {
+	value     json.RawMessage
+	expiresAt time.Time
+}
+
 // Host is the fake host. Create it with New.
 type Host struct {
 	mu         sync.Mutex
 	options    map[string]json.RawMessage
 	storage    map[string]string
-	transients map[string]json.RawMessage
+	transients map[string]transient
 	posts      map[int64]wpgo.Post
 	nextPostID int64
 	user       *wpgo.User
@@ -48,7 +58,7 @@ type Host struct {
 func New(t testing.TB) *Host {
 	h := &Host{
 		options: map[string]json.RawMessage{}, storage: map[string]string{},
-		transients: map[string]json.RawMessage{}, posts: map[int64]wpgo.Post{}, nextPostID: 1,
+		transients: map[string]transient{}, posts: map[int64]wpgo.Post{}, nextPostID: 1,
 		http: map[string]wpgo.HTTPResponse{},
 	}
 	restore := wpgo.SetHostForTest(h.handle)
@@ -69,7 +79,7 @@ func (h *Host) Option(name string) (json.RawMessage, bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	v, ok := h.options[name]
-	return v, ok
+	return slices.Clone(v), ok
 }
 
 // SetStorage presets a plugin storage key.
@@ -128,21 +138,33 @@ func (h *Host) StubHTTP(url string, status int, body string) {
 func (h *Host) Requests() []wpgo.HTTPRequestArgs {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return append([]wpgo.HTTPRequestArgs(nil), h.requests...)
+	out := slices.Clone(h.requests)
+	for i := range out {
+		out[i].Headers = maps.Clone(out[i].Headers)
+	}
+	return out
 }
 
 // Mails returns the messages queued with wpgo.SendMail.
 func (h *Host) Mails() []Mail {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return append([]Mail(nil), h.mails...)
+	out := slices.Clone(h.mails)
+	for i := range out {
+		out[i].To = slices.Clone(out[i].To)
+	}
+	return out
 }
 
 // Notices returns the admin notices as {"type","message"} maps.
 func (h *Host) Notices() []map[string]string {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return append([]map[string]string(nil), h.notices...)
+	out := slices.Clone(h.notices)
+	for i, notice := range out {
+		out[i] = maps.Clone(notice)
+	}
+	return out
 }
 
 // Logs returns "level: message" lines written with wpgo.Log.
@@ -220,10 +242,28 @@ func (h *Host) handle(name string, body []byte) ([]byte, error) {
 		}
 		return ok(map[string]any{"keys": keys, "next": next})
 	case "transient_get":
-		v, found := h.transients[str("key")]
-		return ok(map[string]any{"found": found, "value": v})
+		key := str("key")
+		v, found := h.transients[key]
+		if found && !v.expiresAt.IsZero() && !time.Now().Before(v.expiresAt) {
+			delete(h.transients, key)
+			found = false
+		}
+		if !found {
+			return ok(map[string]any{"found": false})
+		}
+		return ok(map[string]any{"found": true, "value": v.value})
 	case "transient_set":
-		h.transients[str("key")] = req["value"]
+		var ttl int64
+		_ = json.Unmarshal(req["ttl"], &ttl)
+		const maxTTL = 365 * 24 * 3600 // Seconds, as in the production transient_set ABI.
+		if ttl < 0 || ttl > maxTTL {
+			return fail(wpgo.CodeInvalidRequest, fmt.Sprintf("ttl must be 0 (no expiry) to %d seconds", maxTTL))
+		}
+		v := transient{value: req["value"]}
+		if ttl > 0 {
+			v.expiresAt = time.Now().Add(time.Duration(ttl) * time.Second)
+		}
+		h.transients[str("key")] = v
 		return ok(map[string]any{})
 	case "transient_delete":
 		delete(h.transients, str("key"))
@@ -266,15 +306,19 @@ func (h *Host) handle(name string, body []byte) ([]byte, error) {
 	case "query_posts":
 		var q wpgo.PostQuery
 		_ = json.Unmarshal(body, &q)
+		if q.Type == "" {
+			q.Type = "post"
+		}
+		const maxPerPage = 100 // Mirrors the production query_posts limit.
+		if q.PerPage < 0 || q.PerPage > maxPerPage {
+			return fail(wpgo.CodeInvalidRequest, fmt.Sprintf("per_page must be 1-%d", maxPerPage))
+		}
 		var list []wpgo.Post
 		for _, p := range h.posts {
-			if q.Type != "" && p.Type != q.Type {
+			if p.Type != q.Type {
 				continue
 			}
-			if q.Status != "" && q.Status != "any" && p.Status != q.Status {
-				continue
-			}
-			if q.Status == "" && p.Status != "publish" {
+			if !matchesPostStatus(p.Status, q.Status) {
 				continue
 			}
 			if q.Author != 0 && p.Author != q.Author {
@@ -283,17 +327,35 @@ func (h *Host) handle(name string, body []byte) ([]byte, error) {
 			if q.Search != "" && !strings.Contains(strings.ToLower(p.Title+" "+p.Content), strings.ToLower(q.Search)) {
 				continue
 			}
+			if q.Term != 0 && !postHasTerm(p, q.Term) {
+				continue
+			}
 			list = append(list, p)
 		}
-		sort.Slice(list, func(i, j int) bool {
-			if strings.EqualFold(q.Order, "ASC") {
-				return list[i].ID < list[j].ID
+		ascending := strings.EqualFold(q.Order, "ASC")
+		slices.SortFunc(list, func(a, b wpgo.Post) int {
+			if !ascending {
+				a, b = b, a
 			}
-			return list[i].ID > list[j].ID
+			var order int
+			switch q.OrderBy {
+			case "id":
+				return cmp.Compare(a.ID, b.ID)
+			case "title":
+				order = cmp.Compare(strings.ToLower(a.Title), strings.ToLower(b.Title))
+			case "modified":
+				order = comparePostTimes(a.Modified, b.Modified)
+			default:
+				order = comparePostTimes(a.Date, b.Date)
+			}
+			if order != 0 {
+				return order
+			}
+			return cmp.Compare(a.ID, b.ID)
 		})
 		total := len(list)
 		per := q.PerPage
-		if per <= 0 {
+		if per == 0 {
 			per = 10
 		}
 		page := q.Page
@@ -311,4 +373,34 @@ func (h *Host) handle(name string, body []byte) ([]byte, error) {
 		return ok(wpgo.PostList{Posts: append([]wpgo.Post{}, list[lo:hi]...), Total: total, Pages: (total + per - 1) / per})
 	}
 	return fail(wpgo.CodeHostError, "wpgotest: host function "+name+" is not faked")
+}
+
+func postHasTerm(p wpgo.Post, id int64) bool {
+	for _, terms := range p.Terms {
+		if slices.ContainsFunc(terms, func(t wpgo.Term) bool { return t.ID == id }) {
+			return true
+		}
+	}
+	return false
+}
+
+func comparePostTimes(a, b string) int {
+	left, _ := time.Parse(time.RFC3339, a)
+	right, _ := time.Parse(time.RFC3339, b)
+	return left.Compare(right)
+}
+
+func matchesPostStatus(status, filter string) bool {
+	switch filter {
+	case "":
+		return status == "publish"
+	case "any":
+		switch status {
+		case "publish", "draft", "pending", "private", "future":
+			return true
+		}
+		return false
+	default:
+		return status == filter
+	}
 }
