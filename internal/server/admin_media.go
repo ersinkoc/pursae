@@ -103,6 +103,13 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		}
 		notices = append(notices, notice{Type: "success", Message: template.HTML(msg), Dismissible: true})
 	}
+	if n, _ := strconv.Atoi(c.Query("delete-failed")); n > 0 {
+		msg := "A media file could not be deleted."
+		if n > 1 {
+			msg = strconv.Itoa(n) + " media files could not be deleted."
+		}
+		notices = append(notices, notice{Type: "error", Message: template.HTML(msg), Dismissible: true})
+	}
 	if m := c.Query("gocdn-media-msg"); m != "" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(m)), Dismissible: true})
 	}
@@ -208,20 +215,25 @@ func (s *Server) mediaBulkDelete(c *gin.Context) {
 		s.denyNonce(c)
 		return
 	}
-	n := 0
+	deleted, failed := 0, 0
 	for _, raw := range c.QueryArray("media[]") {
 		id, _ := strconv.ParseInt(raw, 10, 64)
 		a, err := s.store.GetAttachment(c, id)
 		if err != nil || (a.UploaderID != u.ID && !u.Can("delete_others_posts", nil)) {
 			continue
 		}
-		s.deleteAttachmentFiles(a)
-		if s.store.DeleteAttachment(c, id) == nil {
-			s.purgeAttachment(a)
-			n++
+		if err := s.deleteAttachmentRecordAndFiles(c, a); err != nil {
+			failed++
+			continue
 		}
+		s.purgeAttachment(a)
+		deleted++
 	}
-	c.Redirect(http.StatusFound, "/wp-admin/upload?mode=list&deleted="+strconv.Itoa(n))
+	target := "/wp-admin/upload?mode=list&deleted=" + strconv.Itoa(deleted)
+	if failed > 0 {
+		target += "&delete-failed=" + strconv.Itoa(failed)
+	}
+	c.Redirect(http.StatusFound, target)
 }
 
 // mediaRegenerate is the "Regenerate thumbnails" bulk action (selected items) and its "all" variant.

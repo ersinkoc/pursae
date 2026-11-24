@@ -249,11 +249,14 @@ func (s *Server) gocdnOffloadAttachment(ctx context.Context, st gocdnSettings, c
 	n := 0
 	var errs []error
 	for _, rel := range files {
-		if it := have[rel]; it != nil && gocdnItemOnCurrent(st, it) {
-			if it.MediaID == 0 { // a remote import that became an attachment
-				_, _ = s.store.Pool.Exec(ctx, `UPDATE gocdn_items SET media_id = $2 WHERE id = $1`, it.ID, a.ID)
+		if it := have[rel]; it != nil {
+			if it.MediaID == 0 {
+				errs = append(errs, fmt.Errorf("%s is reserved for a pending deletion", rel))
+				continue
 			}
-			continue
+			if gocdnItemOnCurrent(st, it) {
+				continue
+			}
 		}
 		if _, err := os.Stat(s.gocdnLocalPath(rel)); errors.Is(err, os.ErrNotExist) && rel != a.FilePath {
 			continue // an editor backup or size that is gone
@@ -351,23 +354,59 @@ func (s *Server) gocdnDeleteItems(ctx context.Context, items []*gocdnItem) {
 	st := s.gocdnLoad()
 	var urls []string
 	for _, it := range items {
+		if it.MediaID == 0 {
+			u, err := s.gocdnDeleteDetachedItem(ctx, st, it.ID)
+			if err != nil {
+				slog.Warn("gocdn: deleting a detached object", "item", it.ID, "err", err)
+			} else if u != "" {
+				urls = append(urls, u)
+			}
+			continue
+		}
 		cl, err := s.gocdnItemClient(st, it)
 		if err == nil {
 			err = cl.Delete(ctx, it.Key)
 		}
 		if err != nil {
-			// The rows may be detached from the attachment already, so nothing cascades them away.
 			slog.Warn("gocdn: deleting an object", "key", it.Key, "err", err)
-			s.gocdnAddPendingDelete(ctx, it) // the row goes with the attachment: retry the delete later
-			_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
-			continue
+			s.gocdnAddPendingDelete(ctx, it)
+		} else {
+			urls = append(urls, gocdnItemURL(st, it))
 		}
-		urls = append(urls, gocdnItemURL(st, it))
 		_, _ = s.store.Pool.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
 	}
 	if s.gocdnOn() && len(gocdnPurgeTargets(st)) > 0 && st.CFAuto && len(urls) > 0 {
 		s.gocdnQueuePurge(st, urls) // coalesced with other purges (gocdn_purge.go)
 	}
+}
+
+// gocdnDeleteDetachedItem locks the cleanup record while deleting the object. An interrupted
+// operation leaves the record available for the next pass and storage deletion is idempotent.
+func (s *Server) gocdnDeleteDetachedItem(ctx context.Context, st gocdnSettings, id int64) (string, error) {
+	var delivery string
+	err := pgx.BeginFunc(ctx, s.store.Pool, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, `SELECT `+gocdnItemCols+` FROM gocdn_items
+			WHERE id = $1 AND media_id IS NULL FOR UPDATE SKIP LOCKED`, id)
+		if err != nil {
+			return err
+		}
+		items, err := scanGocdnItems(rows)
+		if err != nil || len(items) == 0 {
+			return err
+		}
+		it := items[0]
+		cl, err := s.gocdnItemClient(st, it)
+		if err != nil {
+			return err
+		}
+		if err := cl.Delete(ctx, it.Key); err != nil {
+			return err
+		}
+		delivery = gocdnItemURL(st, it)
+		_, err = tx.Exec(ctx, `DELETE FROM gocdn_items WHERE id = $1`, it.ID)
+		return err
+	})
+	return delivery, err
 }
 
 // gocdnItemClient is the client for the bucket an item lives in: the configured one, or the
@@ -423,7 +462,7 @@ func (s *Server) gocdnServeUpload(w http.ResponseWriter, r *http.Request, st goc
 		return false
 	}
 	it := s.gocdnItemByPath(r.Context(), path.Clean("/" + rel)[1:])
-	if it == nil {
+	if it == nil || it.MediaID == 0 {
 		return false
 	}
 	if gocdnActiveExt(rel) {

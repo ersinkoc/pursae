@@ -400,8 +400,31 @@ func (s *Server) gocdnCleanupLocal(ctx context.Context) int {
 	return n
 }
 
+func (s *Server) gocdnRetryDetachedDeletes(ctx context.Context) {
+	const batchSize = 200
+	var lastID int64
+	for {
+		rows, err := s.store.Pool.Query(ctx, `SELECT `+gocdnItemCols+` FROM gocdn_items
+			WHERE media_id IS NULL AND id > $1 ORDER BY id LIMIT $2`, lastID, batchSize)
+		if err != nil {
+			return
+		}
+		items, err := scanGocdnItems(rows)
+		if err != nil {
+			return
+		}
+		s.gocdnDeleteItems(ctx, items)
+		if len(items) < batchSize || ctx.Err() != nil {
+			return
+		}
+		lastID = items[len(items)-1].ID
+	}
+}
+
 // gocdnHousekeepingOnce is one pass: resume an interrupted job, retry pending deletes, clean up.
 func (s *Server) gocdnHousekeepingOnce(ctx context.Context) {
+	// Deletions can outlive a request or happen while the plugin is deactivated.
+	s.gocdnRetryDetachedDeletes(ctx)
 	if !s.gocdnTracking() {
 		return
 	}

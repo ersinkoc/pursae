@@ -209,11 +209,16 @@ copies). Media has no trash, so this cannot be undone: it asks for confirmation 
 				return err
 			}
 			list := make([]*store.Attachment, 0, len(ids))
+			seen := make(map[int64]bool, len(ids))
 			for _, id := range ids {
+				if seen[id] {
+					continue
+				}
 				a, err := cliGetAttachment(ctx, s, id)
 				if err != nil {
 					return err
 				}
+				seen[id] = true
 				list = append(list, a)
 			}
 			if err := c.Confirm("Delete %d media item(s) and their files permanently?", len(list)); err != nil {
@@ -221,8 +226,7 @@ copies). Media has no trash, so this cannot be undone: it asks for confirmation 
 			}
 			failed := 0
 			for _, a := range list {
-				s.deleteAttachmentFiles(a)
-				if err := s.store.DeleteAttachment(ctx, a.ID); err != nil {
+				if err := s.deleteAttachmentRecordAndFiles(ctx, a); err != nil {
 					c.Warning("Failed deleting media %d: %v", a.ID, err)
 					failed++
 					continue
