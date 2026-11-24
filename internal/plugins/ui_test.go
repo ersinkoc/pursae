@@ -33,6 +33,8 @@ func TestUIRegistrationValidation(t *testing.T) {
 		{"block of another plugin", hostRegisterBlock, BlockType{Name: "other/x", Title: "X", Callback: "cb"}},
 		{"block bad category", hostRegisterBlock, BlockType{Name: "x", Title: "X", Category: "nope", Callback: "cb"}},
 		{"widget underscore", hostRegisterBuilderWidget, BuilderWidget{ID: "a_b", Title: "X", Callback: "cb"}},
+		{"block image attribute", hostRegisterBlock, BlockType{Name: "pic", Title: "X", Callback: "cb", Attributes: []SettingsField{{ID: "i", Type: "image"}}}},
+		{"widget image control", hostRegisterBuilderWidget, BuilderWidget{ID: "pic", Title: "X", Callback: "cb", Controls: []SettingsField{{ID: "i", Type: "image"}}}},
 	}
 	for _, c := range bad {
 		if err := reg(c.fn, c.v); err == nil {
@@ -57,7 +59,7 @@ func TestUIRegistrationValidation(t *testing.T) {
 	if b := p.BlockTypes(); len(b) != 1 || b[0].Name != "demo/card" || b[0].Category != "widgets" {
 		t.Fatalf("blocks = %+v", b)
 	}
-	if err := reg(hostRegisterMetaBox, MetaBox{ID: "b", Title: "B", Fields: []SettingsField{{ID: "c", Type: "color"}}}); err != nil {
+	if err := reg(hostRegisterMetaBox, MetaBox{ID: "b", Title: "B", Fields: []SettingsField{{ID: "c", Type: "color"}, {ID: "i", Type: "image"}}}); err != nil {
 		t.Fatal(err)
 	}
 	if m := p.MetaBoxes(); len(m) != 1 || m[0].Context != "normal" || !m[0].ForType("page") || m[0].ForType("product") {

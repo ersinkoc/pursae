@@ -263,6 +263,7 @@ func (s *Server) pluginMetaBoxesClassic(c *gin.Context, p *store.Post, where str
 	if len(boxes) == 0 {
 		return ""
 	}
+	s.pluginMetaBoxMediaJS(c, boxes)
 	ctx, cancel := pluginUICtx(c.Request.Context())
 	defer cancel()
 	var b strings.Builder
@@ -273,6 +274,21 @@ func (s *Server) pluginMetaBoxesClassic(c *gin.Context, p *store.Post, where str
 		b.WriteString(editPostbox(pluginMetaBoxDOMID(pb), pb.Box.Title, s.pluginMetaBoxInner(ctx, pb, p, u)))
 	}
 	return template.HTML(b.String())
+}
+
+// pluginMetaBoxMediaJS adds the image field script once per edit screen when a box has an image
+// field (the edit screens enqueue the media modal themselves).
+func (s *Server) pluginMetaBoxMediaJS(c *gin.Context, boxes []plugins.PluginMetaBox) {
+	if _, done := c.Get("pluginMediaFieldJS"); done {
+		return
+	}
+	for _, pb := range boxes {
+		if pluginFieldsHaveImage(pb.Box.Fields) {
+			c.Set("pluginMediaFieldJS", true)
+			s.pageAssets(c).AddInline("media-editor", pluginMediaFieldJS)
+			return
+		}
+	}
 }
 
 // editPostbox is the markup of an edit-screen box (edit-postbox-start/end in post-edit.html).
@@ -298,6 +314,7 @@ func (s *Server) pluginMetaBoxesBlockEditor(c *gin.Context, p *store.Post) templ
 	if len(boxes) == 0 {
 		return ""
 	}
+	s.pluginMetaBoxMediaJS(c, boxes)
 	ctx, cancel := pluginUICtx(c.Request.Context())
 	defer cancel()
 	type loc struct {

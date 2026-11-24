@@ -112,7 +112,7 @@ domain is forced to the plugin's slug and the string is listed under
 unchanged, so the import is always safe to call.
 
 Post objects are `{"id","title","content","excerpt","status","type","slug","date","modified","author","link","terms":{"category":[…],"post_tag":[…]},"meta":{…}}`.
-Settings fields are `{"id","label","type":"text\|textarea\|number\|checkbox\|select","description","placeholder","default","options":[{"value","label"}],"min","max","rows"}`;
+Settings fields are `{"id","label","type":"text\|textarea\|number\|checkbox\|select\|radio\|email\|url\|password\|color\|date\|image","description","placeholder","default","options":[{"value","label"}],"min","max","rows"}`;
 the core renders the page under Settings › *menu_title* and saves each field
 in the option `plugin_<slug>_<id>` (dashes in the slug become underscores).
 Registrations made with `register_*` and `enqueue_*` are kept by the runtime

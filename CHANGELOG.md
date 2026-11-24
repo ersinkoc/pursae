@@ -10,6 +10,14 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Added
+
+- **Plugin settings: an `image` field type with the media library picker.** A Wasm plugin's settings page or
+  meta box can declare `Type: "image"`: the field shows the image's address, a **Select image** button that
+  opens the media library (upload a file or pick one), a preview and Remove. The value is the image URL (an
+  http(s) URL or a site-relative path; anything else is refused on save). Blocks and Web Builder widgets
+  refuse the type for now. Plugins using it should require 0.5.5.
+
 ### Fixed
 
 - **Hello Pursae only with Pursae Web Builder.** The builder's blank-canvas theme is no longer listed,

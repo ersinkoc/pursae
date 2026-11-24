@@ -95,7 +95,7 @@ wpgo.RegisterBlock(wpgo.Block{
 
 - The block name is `<plugin slug>/<name>`; the slug is added when you leave it out.
 - In Pursae Editor the block shows the `Attributes` as inspector controls (text, textarea, number,
-  checkbox, select, radio, email, url, color, date) and a server-rendered preview
+  checkbox, select, radio, email, url, color, date; not image) and a server-rendered preview
   (`/wp/v2/block-renderer/<name>`). It is a dynamic block: only the attributes are saved in the
   post, the HTML is rendered for every view (and cached by Pursae Cache with the page).
 - `attrs` holds the declared attributes (defaults filled in) plus `className`, `align` and

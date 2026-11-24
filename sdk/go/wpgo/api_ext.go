@@ -388,9 +388,12 @@ type SettingsPage struct {
 
 // SettingsField is one input on a SettingsPage.
 type SettingsField struct {
-	ID          string           `json:"id"` // lowercase letters, digits and _
-	Label       string           `json:"label"`
-	Type        string           `json:"type"` // text, textarea, number, checkbox, select, radio, email, url, password, color, date
+	ID    string `json:"id"` // lowercase letters, digits and _
+	Label string `json:"label"`
+	// Type is text, textarea, number, checkbox, select, radio, email, url, password, color, date
+	// or image (settings pages and meta boxes only, core 0.5.5+): a URL input with a "Select
+	// image" button that opens the media library; the value is the image's URL.
+	Type        string           `json:"type"`
 	Description string           `json:"description,omitempty"`
 	Placeholder string           `json:"placeholder,omitempty"`
 	Default     any              `json:"default,omitempty"`

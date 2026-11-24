@@ -56,9 +56,10 @@ var (
 	handleRe    = regexp.MustCompile(`^[a-z0-9_-]{1,64}$`)
 	fieldIDRe   = regexp.MustCompile(`^[a-z0-9_]{1,64}$`)
 	// fieldTypes are the declarative field types of settings pages, meta boxes, block attributes and
-	// Web Builder widget controls.
+	// Web Builder widget controls. "image" (a media library picker) is rendered by the admin forms
+	// only, so blocks and widgets refuse it (checkNoImage).
 	fieldTypes = map[string]bool{"text": true, "textarea": true, "number": true, "checkbox": true, "select": true,
-		"radio": true, "email": true, "url": true, "password": true, "color": true, "date": true}
+		"radio": true, "email": true, "url": true, "password": true, "color": true, "date": true, "image": true}
 	assetWhere = map[string]bool{"front": true, "admin": true, "both": true}
 )
 

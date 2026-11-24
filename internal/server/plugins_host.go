@@ -720,6 +720,10 @@ func (s *Server) pluginSettingsScreen(c *gin.Context, slug string) bool {
 		v.Row = template.HTML(pluginFieldRow(name, f, stored))
 		d.Fields = append(d.Fields, v)
 	}
+	if pluginFieldsHaveImage(page.Fields) { // the media modal for image fields (plugins_fields.go)
+		s.enqueueMedia(c, 0)
+		s.pageAssets(c).AddInline("media-editor", pluginMediaFieldJS)
+	}
 	var notices []notice
 	if c.Query("settings-updated") == "true" {
 		notices = append(notices, notice{Type: "success", Message: "Settings saved.", Dismissible: true})

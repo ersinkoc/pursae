@@ -205,6 +205,17 @@ func checkFields(fields []SettingsField, min, max int, what string) error {
 	return nil
 }
 
+// checkNoImage refuses image fields where no media picker is rendered (block inspector, Web
+// Builder panel); settings pages and meta boxes support them.
+func checkNoImage(fields []SettingsField, what string) error {
+	for _, f := range fields {
+		if f.Type == "image" {
+			return invalid("field %q: the image type is supported on settings pages and meta boxes, not in %s (use url)", f.ID, what)
+		}
+	}
+	return nil
+}
+
 // FieldTypes lists the declarative field types, sorted.
 func FieldTypes() []string {
 	out := make([]string, 0, len(fieldTypes))
@@ -424,6 +435,9 @@ func hostRegisterBlock(_ context.Context, p *Plugin, req []byte) (any, error) {
 	if err := checkFields(b.Attributes, 0, maxSettingsField, "a block"); err != nil {
 		return nil, err
 	}
+	if err := checkNoImage(b.Attributes, "block attributes"); err != nil {
+		return nil, err
+	}
 	if err := checkCallback(b.Callback); err != nil {
 		return nil, err
 	}
@@ -464,6 +478,9 @@ func hostRegisterBuilderWidget(_ context.Context, p *Plugin, req []byte) (any, e
 		return nil, invalid("icon must be a dashicon name such as chart-bar")
 	}
 	if err := checkFields(w.Controls, 0, maxSettingsField, "a widget"); err != nil {
+		return nil, err
+	}
+	if err := checkNoImage(w.Controls, "Web Builder widget controls"); err != nil {
 		return nil, err
 	}
 	if err := checkCallback(w.Callback); err != nil {

@@ -2,6 +2,7 @@ package server
 
 import (
 	"html"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -77,6 +78,8 @@ func pluginFieldRow(name string, f plugins.SettingsField, v any) string {
 			mm += ` max="` + strconv.FormatFloat(*f.Max, 'f', -1, 64) + `"`
 		}
 		td = `<input name="` + n + `" type="number" id="` + n + `" value="` + e(text) + `" class="small-text"` + mm + ` step="any"` + ph + ` />` + desc
+	case "image":
+		td = pluginImageField(n, label, text, ph) + desc
 	case "select":
 		var b strings.Builder
 		b.WriteString(`<select name="` + n + `" id="` + n + `">`)
@@ -152,6 +155,16 @@ func pluginFieldValue(f plugins.SettingsField, raw string, present bool) (any, b
 			return nil, false
 		}
 		return clean, true
+	case "image":
+		raw = strings.TrimSpace(raw)
+		if raw == "" {
+			return "", true
+		}
+		clean := pluginImageURL(raw)
+		if clean == "" {
+			return nil, false
+		}
+		return clean, true
 	case "color":
 		raw = strings.TrimSpace(raw)
 		if raw != "" && !pluginColorRe.MatchString(raw) {
@@ -178,3 +191,81 @@ func pluginFieldValue(f plugins.SettingsField, raw string, present bool) (any, b
 	}
 	return strings.ReplaceAll(raw, "\r\n", "\n"), true
 }
+
+// pluginImageURL accepts the address of an image field: an http(s) URL (what the media library
+// hands out) or a site-relative path such as /wp-content/uploads/…; "" when it is neither.
+func pluginImageURL(raw string) string {
+	if strings.HasPrefix(raw, "/") && !strings.HasPrefix(raw, "//") && !strings.HasPrefix(raw, "/\\") {
+		clean := wp.CleanURL(raw)
+		if !strings.HasPrefix(clean, "/") || strings.HasPrefix(clean, "//") || len(clean) > 2048 {
+			return ""
+		}
+		return clean
+	}
+	if u, err := url.Parse(raw); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return ""
+	}
+	clean := wp.CleanURL(raw, "http", "https")
+	if len(clean) > 2048 {
+		return ""
+	}
+	return clean
+}
+
+// pluginImageField is the control of an image field: the address in a URL input (which works
+// without JavaScript), a "Select image" button that opens the media library (upload or pick), a
+// Remove link and a preview. pluginMediaFieldJS wires the buttons.
+func pluginImageField(n, label, value, ph string) string {
+	e := html.EscapeString
+	hidden := ""
+	if value == "" {
+		hidden = " hidden"
+	}
+	return `<div class="pursae-media-field">` +
+		`<input name="` + n + `" type="url" id="` + n + `" value="` + e(value) + `" class="regular-text code pursae-media-field__url"` + ph + ` /> ` +
+		`<button type="button" class="button pursae-media-field__select hide-if-no-js" data-title="` + label + `">Select image</button> ` +
+		`<button type="button" class="button-link button-link-delete pursae-media-field__remove hide-if-no-js"` + hidden + `>Remove</button>` +
+		`<p class="pursae-media-field__preview-wrap"` + hidden + `><img class="pursae-media-field__preview" src="` + e(value) + `" alt="" style="display:block;max-width:120px;max-height:120px;margin-top:8px;padding:6px;background:#f0f0f1;border:1px solid #dcdcde;border-radius:4px" /></p>` +
+		`</div>`
+}
+
+// pluginFieldsHaveImage reports whether a list of fields holds an image field.
+func pluginFieldsHaveImage(fields []plugins.SettingsField) bool {
+	for _, f := range fields {
+		if f.Type == "image" {
+			return true
+		}
+	}
+	return false
+}
+
+// pluginMediaFieldJS wires the image fields of plugin settings pages and meta boxes to the media
+// modal. Handlers are delegated, so meta boxes Pursae Editor reloads after a save keep working.
+const pluginMediaFieldJS = `jQuery( function( $ ) {
+	function sync( $wrap ) {
+		var v = $.trim( $wrap.find( '.pursae-media-field__url' ).val() || '' );
+		$wrap.find( '.pursae-media-field__preview' ).attr( 'src', v );
+		$wrap.find( '.pursae-media-field__preview-wrap, .pursae-media-field__remove' ).prop( 'hidden', ! v );
+	}
+	$( document ).on( 'click', '.pursae-media-field__select', function( event ) {
+		event.preventDefault();
+		var $wrap = $( this ).closest( '.pursae-media-field' ), frame = $wrap.data( 'frame' );
+		if ( ! frame ) {
+			frame = wp.media( { title: $( this ).data( 'title' ) || 'Select image', library: { type: 'image' }, button: { text: 'Use this image' }, multiple: false } );
+			frame.on( 'select', function() {
+				var a = frame.state().get( 'selection' ).first().toJSON();
+				$wrap.find( '.pursae-media-field__url' ).val( a.url ).trigger( 'change' );
+			} );
+			$wrap.data( 'frame', frame );
+		}
+		frame.open();
+	} );
+	$( document ).on( 'click', '.pursae-media-field__remove', function( event ) {
+		event.preventDefault();
+		var $wrap = $( this ).closest( '.pursae-media-field' );
+		$wrap.find( '.pursae-media-field__url' ).val( '' ).trigger( 'change' );
+	} );
+	$( document ).on( 'change input', '.pursae-media-field__url', function() {
+		sync( $( this ).closest( '.pursae-media-field' ) );
+	} );
+} );`

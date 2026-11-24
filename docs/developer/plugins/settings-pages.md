@@ -45,8 +45,15 @@ func init() {
 | `password` | string; never printed back, an empty input keeps the stored value | `Placeholder` |
 | `color` | string, `#rgb`, `#rrggbb` or `#rrggbbaa`, or "" | — |
 | `date` | string `YYYY-MM-DD` or "" | — |
+| `image` | string, an http(s) URL or a site-relative path (`/wp-content/uploads/…`), or "" | `Placeholder`; a **Select image** button opens the media library (upload or pick), with a preview and Remove. Since 0.5.5 |
 
-The same field types are used by [meta boxes, block attributes and Web Builder widget controls](admin-ui.md).
+The same field types are used by [meta boxes, block attributes and Web Builder widget controls](admin-ui.md),
+except `image`, which settings pages and meta boxes support and blocks and widgets refuse (use `url` there).
+
+An `image` field stores the image's address, so `wpgo.SettingString("icon", "")` gives a URL you can
+put in an `<img src>`. The field stays a plain URL input when JavaScript is off. Registering an
+`image` field on a core older than 0.5.5 fails (unknown field type) and the whole settings page is
+left out, so set `"requires": "0.5.5"` in plugin.json when you use it.
 
 Rules: `ID` is `^[a-z0-9_]{1,64}$` and unique; 1–50 fields per page; labels and placeholders
 ≤200 characters, descriptions ≤2000. Everything is escaped when rendered — HTML in labels is

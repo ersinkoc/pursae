@@ -38,6 +38,14 @@ func TestPluginFieldValues(t *testing.T) {
 		{plugins.SettingsField{Type: "radio", Options: []plugins.SettingsOption{{Value: "a"}}}, "a", true, "a", true},
 		{plugins.SettingsField{Type: "text"}, "a\nb", true, "a b", true},
 		{plugins.SettingsField{Type: "text"}, "", false, nil, false},
+		{plugins.SettingsField{Type: "image"}, " https://x.test/wp-content/uploads/a.svg ", true, "https://x.test/wp-content/uploads/a.svg", true},
+		{plugins.SettingsField{Type: "image"}, "/wp-content/uploads/2026/11/a.png", true, "/wp-content/uploads/2026/11/a.png", true},
+		{plugins.SettingsField{Type: "image"}, "", true, "", true},
+		{plugins.SettingsField{Type: "image"}, "javascript:alert(1)", true, nil, false},
+		{plugins.SettingsField{Type: "image"}, "data:image/svg+xml,<svg onload=alert(1)>", true, nil, false},
+		{plugins.SettingsField{Type: "image"}, "//evil.test/a.png", true, nil, false},
+		{plugins.SettingsField{Type: "image"}, `/\evil.test/a.png`, true, nil, false},
+		{plugins.SettingsField{Type: "image"}, "a.png", true, nil, false},
 	}
 	for i, c := range cases {
 		got, ok := pluginFieldValue(c.f, c.raw, c.present)
@@ -48,6 +56,15 @@ func TestPluginFieldValues(t *testing.T) {
 	row := pluginFieldRow("plugin_x_pw", plugins.SettingsField{ID: "pw", Label: "Key", Type: "password"}, "secret")
 	if strings.Contains(row, "secret") || !strings.Contains(row, `type="password"`) {
 		t.Errorf("password row leaks the value: %s", row)
+	}
+	row = pluginFieldRow("plugin_x_img", plugins.SettingsField{ID: "img", Label: `Icon "x"`, Type: "image"}, `https://x.test/a.svg?"><script>`)
+	for _, want := range []string{`type="url" id="plugin_x_img" value="https://x.test/a.svg?&#34;&gt;&lt;script&gt;"`, `class="button pursae-media-field__select hide-if-no-js" data-title="Icon &#34;x&#34;"`, `<img class="pursae-media-field__preview" src="https://x.test/a.svg?&#34;&gt;&lt;script&gt;"`} {
+		if !strings.Contains(row, want) {
+			t.Errorf("image row misses %s:\n%s", want, row)
+		}
+	}
+	if row = pluginFieldRow("plugin_x_img", plugins.SettingsField{ID: "img", Label: "Icon", Type: "image"}, nil); strings.Count(row, " hidden") != 2 {
+		t.Errorf("empty image row should hide the preview and Remove: %s", row)
 	}
 	row = pluginFieldRow("plugin_x_r", plugins.SettingsField{ID: "r", Label: "R", Type: "radio", Options: []plugins.SettingsOption{{Value: "a", Label: "<A>"}}}, "a")
 	if !strings.Contains(row, `value="a" checked="checked"`) || !strings.Contains(row, "&lt;A&gt;") {
