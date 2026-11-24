@@ -70,7 +70,7 @@ func TestErrorInBodyPreservesReadFailure(t *testing.T) {
 		t.Run(prefix, func(t *testing.T) {
 			body := io.NopCloser(io.MultiReader(strings.NewReader(prefix), failedResponseReader{}))
 			defer body.Close()
-			err := errorInBody(&http.Response{StatusCode: http.StatusOK, Body: body})
+			err := errorInBody(&http.Response{StatusCode: http.StatusOK, Body: body}, "CopyObjectResult")
 			if !errors.Is(err, io.ErrUnexpectedEOF) {
 				t.Fatalf("got %v, want unexpected EOF", err)
 			}
@@ -90,12 +90,12 @@ func TestErrorInBodyParsesXMLRoot(t *testing.T) {
 		{`<CopyObjectResult>`, "", true},
 		{"", "", true},
 		{`<CopyObjectResult><ETag>ok</ETag></CopyObjectResult>`, "", false},
-		{`<CompleteMultipartUploadResult xmlns="urn:s3"><ETag>ok</ETag></CompleteMultipartUploadResult>`, "", false},
+		{`<CompleteMultipartUploadResult xmlns="urn:s3"><ETag>ok</ETag></CompleteMultipartUploadResult>`, "", true},
 	} {
 		t.Run(tc.body, func(t *testing.T) {
 			body := io.NopCloser(strings.NewReader(tc.body))
 			defer body.Close()
-			err := errorInBody(&http.Response{StatusCode: http.StatusOK, Body: body})
+			err := errorInBody(&http.Response{StatusCode: http.StatusOK, Body: body}, "CopyObjectResult")
 			if (err != nil) != tc.fail {
 				t.Fatalf("error = %v, want failure %v", err, tc.fail)
 			}

@@ -355,12 +355,17 @@ func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([
 		return nil, fmt.Errorf("GetRange: unexpected Content-Range %q", contentRange)
 	}
 	rangeAndSize := contentRange[len("bytes "):]
-	rangePart, _, hasSize := strings.Cut(rangeAndSize, "/")
+	rangePart, sizePart, hasSize := strings.Cut(rangeAndSize, "/")
 	startPart, endPart, hasEnd := strings.Cut(rangePart, "-")
 	start, startErr := strconv.ParseInt(startPart, 10, 64)
 	end, endErr := strconv.ParseInt(endPart, 10, 64)
 	if !hasSize || !hasEnd || startErr != nil || endErr != nil || start != first || end < start || end > last {
 		return nil, fmt.Errorf("GetRange: unexpected Content-Range %q", contentRange)
+	}
+	if sizePart != "*" {
+		if size, err := strconv.ParseInt(sizePart, 10, 64); err != nil || size <= end {
+			return nil, fmt.Errorf("GetRange: unexpected Content-Range %q", contentRange)
+		}
 	}
 	limit := end - start
 	if limit < math.MaxInt64 {
@@ -372,6 +377,12 @@ func (c *Client) GetRange(ctx context.Context, key string, first, last int64) ([
 	}
 	if int64(len(data))-1 != end-start {
 		return nil, io.ErrUnexpectedEOF
+	}
+	var extra [1]byte
+	if _, err := io.ReadFull(resp.Body, extra[:]); err == nil {
+		return nil, errors.New("GetRange: body is longer than Content-Range")
+	} else if err != io.EOF {
+		return nil, err
 	}
 	return data, nil
 }
@@ -402,7 +413,7 @@ func (c *Client) Delete(ctx context.Context, key string) error {
 // List is ListObjectsV2: one page of keys under prefix. With delimiter "/" the sub-folders come
 // back as Prefixes. token is the NextToken of the previous page.
 func (c *Client) List(ctx context.Context, prefix, delimiter, token string, max int) (*ListResult, error) {
-	q := url.Values{"list-type": {"2"}}
+	q := url.Values{"list-type": {"2"}, "encoding-type": {"url"}}
 	if prefix != "" {
 		q.Set("prefix", prefix)
 	}
@@ -422,6 +433,7 @@ func (c *Client) List(ctx context.Context, prefix, delimiter, token string, max 
 	defer resp.Body.Close()
 	var x struct {
 		XMLName               xml.Name `xml:"ListBucketResult"`
+		EncodingType          string   `xml:"EncodingType"`
 		IsTruncated           bool     `xml:"IsTruncated"`
 		NextContinuationToken string   `xml:"NextContinuationToken"`
 		Contents              []struct {
@@ -434,24 +446,75 @@ func (c *Client) List(ctx context.Context, prefix, delimiter, token string, max 
 			Prefix string `xml:"Prefix"`
 		} `xml:"CommonPrefixes"`
 	}
-	if err := xml.NewDecoder(io.LimitReader(resp.Body, 32<<20)).Decode(&x); err != nil {
+	const maxListBody = 32 << 20
+	body := &io.LimitedReader{R: resp.Body, N: maxListBody + 1}
+	dec := xml.NewDecoder(body)
+	if err := dec.Decode(&x); err != nil {
 		return nil, fmt.Errorf("ListObjectsV2: %w", err)
+	}
+	if err := endListDocument(dec); err != nil {
+		return nil, err
+	}
+	if body.N == 0 {
+		return nil, errors.New("ListObjectsV2: response is too large")
 	}
 	if x.IsTruncated && x.NextContinuationToken == "" {
 		return nil, errors.New("ListObjectsV2: truncated response has no continuation token")
 	}
+	if x.IsTruncated && x.NextContinuationToken == token {
+		return nil, errors.New("ListObjectsV2: continuation token did not advance")
+	}
+	decodeName := func(name string) (string, error) {
+		if x.EncodingType == "url" {
+			return url.PathUnescape(name)
+		}
+		return name, nil
+	}
 	out := &ListResult{Truncated: x.IsTruncated, NextToken: x.NextContinuationToken}
 	for _, o := range x.Contents {
+		key, err := decodeName(o.Key)
+		if err != nil {
+			return nil, fmt.Errorf("ListObjectsV2: decoding object key: %w", err)
+		}
 		t, _ := time.Parse(time.RFC3339, o.LastModified)
-		out.Objects = append(out.Objects, Object{Key: o.Key, Size: o.Size, ETag: strings.Trim(o.ETag, `"`), LastModified: t})
+		out.Objects = append(out.Objects, Object{Key: key, Size: o.Size, ETag: strings.Trim(o.ETag, `"`), LastModified: t})
 	}
 	for _, p := range x.CommonPrefixes {
-		out.Prefixes = append(out.Prefixes, p.Prefix)
+		prefix, err := decodeName(p.Prefix)
+		if err != nil {
+			return nil, fmt.Errorf("ListObjectsV2: decoding common prefix: %w", err)
+		}
+		out.Prefixes = append(out.Prefixes, prefix)
 	}
 	if !out.Truncated {
 		out.NextToken = ""
 	}
 	return out, nil
+}
+
+func endListDocument(dec *xml.Decoder) error {
+	for {
+		tok, err := dec.Token()
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("ListObjectsV2: %w", err)
+		}
+		switch tok := tok.(type) {
+		case xml.Comment:
+			continue
+		case xml.ProcInst:
+			if tok.Target != "xml" {
+				continue
+			}
+		case xml.CharData:
+			if strings.Trim(string(tok), " \t\r\n") == "" {
+				continue
+			}
+		}
+		return errors.New("ListObjectsV2: unexpected content after result")
+	}
 }
 
 // PresignGet is a time-limited GET URL for a private object.

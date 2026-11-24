@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -230,6 +231,8 @@ func TestListRejectsUnexpectedResponseRoot(t *testing.T) {
 		{`<Error><Code>InternalError</Code></Error>`, true},
 		{`<Other/>`, true},
 		{`<ListBucketResult>`, true},
+		{`<ListBucketResult/><Error/>`, true},
+		{"<ListBucketResult/>\n<!-- listing complete -->\n", false},
 		{`<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><IsTruncated>false</IsTruncated></ListBucketResult>`, false},
 	} {
 		c := &gocdn.Client{Endpoint: "https://example.test", Bucket: "bucket", AccessKey: "key", SecretKey: "secret", PathStyle: true, HTTP: &http.Client{Transport: listResponseTransport(tc.body)}}
@@ -239,19 +242,43 @@ func TestListRejectsUnexpectedResponseRoot(t *testing.T) {
 	}
 }
 
-func TestListRejectsTruncatedPageWithoutToken(t *testing.T) {
+func TestListRejectsTruncatedPageWithoutNewToken(t *testing.T) {
 	for _, tc := range []struct {
 		body    string
 		wantErr bool
 	}{
 		{`<ListBucketResult><IsTruncated>true</IsTruncated></ListBucketResult>`, true},
 		{`<ListBucketResult><IsTruncated>true</IsTruncated><NextContinuationToken></NextContinuationToken></ListBucketResult>`, true},
+		{`<ListBucketResult><IsTruncated>true</IsTruncated><NextContinuationToken>current</NextContinuationToken></ListBucketResult>`, true},
 		{`<ListBucketResult><IsTruncated>true</IsTruncated><NextContinuationToken>next</NextContinuationToken></ListBucketResult>`, false},
 		{`<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>`, false},
 	} {
 		c := &gocdn.Client{Endpoint: "https://example.test", Bucket: "bucket", AccessKey: "key", SecretKey: "secret", PathStyle: true, HTTP: &http.Client{Transport: listResponseTransport(tc.body)}}
-		if _, err := c.List(context.Background(), "", "", "", 10); (err != nil) != tc.wantErr {
+		if _, err := c.List(context.Background(), "", "", "current", 10); (err != nil) != tc.wantErr {
 			t.Errorf("List response %q: error = %v, want error %t", tc.body, err, tc.wantErr)
 		}
+	}
+}
+
+func TestListDecodesObjectNames(t *testing.T) {
+	const body = `<ListBucketResult><EncodingType>url</EncodingType><IsTruncated>true</IsTruncated>
+<NextContinuationToken>cursor%2F+</NextContinuationToken><Contents><Key>caf%C3%A9+.png</Key></Contents>
+<CommonPrefixes><Prefix>a%20b%2F</Prefix></CommonPrefixes></ListBucketResult>`
+	transport := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("encoding-type"); got != "url" {
+			t.Errorf("encoding-type = %q, want url", got)
+		}
+		_, _ = io.WriteString(w, body)
+	})
+	s := httptest.NewServer(transport)
+	defer s.Close()
+	c := &gocdn.Client{Endpoint: s.URL, Bucket: "bucket", AccessKey: "key", SecretKey: "secret", PathStyle: true}
+	page, err := c.List(context.Background(), "", "/", "", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Objects) != 1 || page.Objects[0].Key != "café+.png" ||
+		len(page.Prefixes) != 1 || page.Prefixes[0] != "a b/" || page.NextToken != "cursor%2F+" {
+		t.Fatalf("unexpected listing: %+v", page)
 	}
 }

@@ -47,24 +47,30 @@ func TestGetRangeRejectsInvalidBoundsWithoutRequest(t *testing.T) {
 	}
 }
 
-type contentRangeTransport string
+type contentRangeTransport struct {
+	value string
+	body  string
+}
 
 func (r contentRangeTransport) RoundTrip(*http.Request) (*http.Response, error) {
-	return &http.Response{StatusCode: http.StatusPartialContent, Header: http.Header{"Content-Range": {string(r)}}, Body: io.NopCloser(strings.NewReader("abc"))}, nil
+	return &http.Response{StatusCode: http.StatusPartialContent, Header: http.Header{"Content-Range": {r.value}}, Body: io.NopCloser(strings.NewReader(r.body))}, nil
 }
 
 func TestGetRangeChecksContentRange(t *testing.T) {
 	for _, tc := range []struct {
 		value   string
+		body    string
 		wantErr bool
 	}{
-		{"bytes 0-2/10", true},
-		{"bytes 1-4/10", true},
-		{"", true},
-		{"bytes 1-3/10", false},
-		{"bytes 1-2/3", false},
+		{"bytes 0-2/10", "abc", true},
+		{"bytes 1-4/10", "abcd", true},
+		{"", "abc", true},
+		{"bytes 1-3/10", "abc", false},
+		{"bytes 1-2/3", "ab", false},
+		{"bytes 1-3/3", "abc", true},
+		{"bytes 1-3/*", "abc", false},
 	} {
-		c := &gocdn.Client{Endpoint: "https://s3.example.test", Bucket: "b", AccessKey: "a", SecretKey: "s", PathStyle: true, HTTP: &http.Client{Transport: contentRangeTransport(tc.value)}}
+		c := &gocdn.Client{Endpoint: "https://s3.example.test", Bucket: "b", AccessKey: "a", SecretKey: "s", PathStyle: true, HTTP: &http.Client{Transport: contentRangeTransport{tc.value, tc.body}}}
 		if _, err := c.GetRange(context.Background(), "x", 1, 3); (err != nil) != tc.wantErr {
 			t.Errorf("Content-Range %q: error = %v, want error %t", tc.value, err, tc.wantErr)
 		}
@@ -81,7 +87,7 @@ func TestGetRangeRejectsShortBody(t *testing.T) {
 	for _, tc := range []struct {
 		body    string
 		wantErr bool
-	}{{"", true}, {"ab", true}, {"abc", false}} {
+	}{{"", true}, {"ab", true}, {"abc", false}, {"abcd", true}} {
 		c := &gocdn.Client{Endpoint: "https://s3.example.test", Bucket: "b", AccessKey: "a", SecretKey: "s", PathStyle: true, HTTP: &http.Client{Transport: shortRangeTransport(tc.body)}}
 		if _, err := c.GetRange(context.Background(), "x", 1, 3); (err != nil) != tc.wantErr {
 			t.Errorf("body %q: error = %v, want error %t", tc.body, err, tc.wantErr)
