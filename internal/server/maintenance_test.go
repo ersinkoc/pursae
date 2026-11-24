@@ -295,7 +295,7 @@ func TestMaintenanceGate(t *testing.T) {
 	if code, _ := restGet(t, c, base, "/wp-json/wp/v2/posts"); code != http.StatusOK {
 		t.Errorf("admin REST after the role change: %d", code)
 	}
-	if code, _, _ := get(t, sub, base+"/wp-admin/profile"); code != http.StatusOK {
+	if code, _, _ := get(t, sub, base+"/wp-admin/profile"); code != http.StatusFound { // front-end member: no wp-admin
 		t.Errorf("subscriber's profile in wp-admin: %d", code)
 	}
 	if code, _, _ := get(t, c, base+"/"); code != http.StatusOK {

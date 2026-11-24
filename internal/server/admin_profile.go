@@ -61,6 +61,8 @@ type profileData struct {
 	OAuthGrants    []oauthGrantRow // connected MCP clients (oauth.go)
 	AppScopes      []scopeChoice   // the scope checkboxes of "Add New Application Password"
 	NewAppPassword *appPasswordCreated
+	// AppPasswordsOn: the user may have Application Passwords (not a front-end member, admin_access.go).
+	AppPasswordsOn bool
 	// CanAIAccess: the own profile of a user who may open Tools › AI Access (the one-step MCP connect).
 	CanAIAccess bool
 	// AdminSec is AdminSecGo's block: two-step login status and the session list.
@@ -154,6 +156,7 @@ func (s *Server) profileView(c *gin.Context, target *store.User) profileData {
 		}
 	}
 	d.AppPasswords = s.appPasswordRows(c, target)
+	d.AppPasswordsOn = appPasswordsAvailable(target)
 	d.AppScopes = scopeChoices(oauthDefaultScopes)
 	d.CanAIAccess = d.Self && currentUser(c).Can("manage_options", nil)
 	d.OAuthGrants = s.oauthGrantRows(c, target.ID)

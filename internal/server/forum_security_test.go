@@ -18,8 +18,14 @@ import (
 func seedUserCredentials(t *testing.T, srv *Server, uid int64) string {
 	t.Helper()
 	ctx := context.Background()
-	plain, _, err := srv.createAppPassword(gooTestCtx(), uid, "minted app", "")
+	// Stored directly: front-end members cannot create one (admin_access.go), but a password made before
+	// that rule, or while the account had a higher role, must still be revoked.
+	plain := generateAppPassword()
+	phash, err := auth.HashPassword(plain)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO app_passwords(user_id, uuid, app_id, name, password_hash, scopes) VALUES ($1, $2::uuid, '', 'minted app', $3, '{full_access}')`, uid, newUUID(), phash); err != nil {
 		t.Fatal(err)
 	}
 	client := fmt.Sprintf("00000000-0000-4000-8000-%012d", uid)
@@ -79,10 +85,7 @@ func TestForumGoogleAutoLinkRevokesCredentials(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	plain := seedUserCredentials(t, srv, vid)
-	if code := basicStatus(t, base, "victim", plain); code != http.StatusOK {
-		t.Fatalf("precondition: app password does not authenticate (%d)", code)
-	}
+	plain := seedUserCredentials(t, srv, vid) // a subscriber's password no longer signs in (admin_access.go); the row must still go
 
 	// The victim signs in with Google; the account is auto-linked to their Google identity.
 	if code, loc := forumGoogleRun(t, base, forumJarClient(), fg.as("sub-victim", "victim@example.test"), "", ""); code != http.StatusFound || loc != "/forums/" {
@@ -113,12 +116,14 @@ func TestForumGoogleAutoLinkProvenKeepsCredentials(t *testing.T) {
 	if err := srv.forumSetUserMeta(ctx, uid, map[string]any{forumUMetaEmailVerified: "owner@example.test"}); err != nil {
 		t.Fatal(err)
 	}
-	plain := seedUserCredentials(t, srv, uid)
+	seedUserCredentials(t, srv, uid)
 	if code, loc := forumGoogleRun(t, ts.URL, forumJarClient(), fg.as("sub-owner", "owner@example.test"), "", ""); code != http.StatusFound || loc != "/forums/" {
 		t.Fatalf("auto-link: %d %s", code, loc)
 	}
-	if code := basicStatus(t, ts.URL, "owner", plain); code != http.StatusOK {
-		t.Errorf("a proven owner's application password stopped working after linking Google: %d", code)
+	var n int
+	_ = srv.store.Pool.QueryRow(ctx, `SELECT count(*) FROM app_passwords WHERE user_id = $1`, uid).Scan(&n)
+	if n != 1 {
+		t.Errorf("a proven owner's application password was revoked when linking Google (%d left)", n)
 	}
 }
 

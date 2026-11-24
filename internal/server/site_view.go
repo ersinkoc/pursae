@@ -291,6 +291,9 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 		bodyClasses = append(bodyClasses, "logged-in")
 	}
 	showBar := u != nil && cs == nil && !s.pllVisualOn(c) // the Customizer preview and visual translation (golylang_visual.go) have no toolbar
+	if frontEndOnly(u) {
+		showBar = false // front-end members have no wp-admin to link to (admin_access.go)
+	}
 	if u != nil {
 		if b, ok := u.Meta["show_admin_bar_front"].(bool); ok && !b {
 			showBar = false // the user's "Show Toolbar" choice can hide it, never bring it back into a preview

@@ -152,13 +152,14 @@
 <div class="application-passwords" id="application-passwords-section">
 <h2>Application Passwords</h2>
 <p>Application passwords allow authentication via non-interactive systems, such as XML-RPC or the REST API, without providing your actual password. Application passwords can be easily revoked. They cannot be used for traditional logins to your website.</p>
+{{if not .AppPasswordsOn}}<p><em>Application passwords are not available for this account: its role only uses the site's front end.</em></p>{{end}}
 {{if .CanAIAccess}}<p>Connecting Claude or another AI tool? <a href="/wp-admin/ai-access">Tools &rsaquo; AI Access</a> creates the password together with the ready-made MCP command.</p>{{end}}
 {{with .NewAppPassword}}<div class="notice notice-success is-dismissible new-application-password-notice" role="alert" tabindex="-1">
 	<p class="application-password-display"><label for="new-application-password-value">Your new password for <strong>{{.Name}}</strong> is:</label>
 	<input id="new-application-password-value" type="text" class="code" readonly="readonly" value="{{.Password}}" /></p>
 	<p>Be sure to save this in a safe location. You will not be able to retrieve it.</p>
 </div>{{end}}
-<div class="create-application-password form-wrap">
+{{if .AppPasswordsOn}}<div class="create-application-password form-wrap">
 	<div class="form-field">
 		<label for="new_application_password_name">New Application Password Name</label>
 		<input type="text" size="30" id="new_application_password_name" name="new_application_password_name" class="input" aria-required="true" aria-describedby="new_application_password_name_desc" />
@@ -167,7 +168,7 @@
 	{{template "scope-picker" (dict "Name" "new_application_password_scopes[]" "Scopes" .AppScopes "Narrow" true)}}
 	<p class="form-field"><label style="display:block"><input type="checkbox" name="full_access" value="1" /> <strong>Full access</strong> &mdash; everything this user can do, including installing plugins, editing theme files and managing users. Ignores the boxes above.</label></p>
 	<button type="submit" name="do_new_application_password" value="1" id="do_new_application_password" class="button button-secondary">Add New Application Password</button>
-</div>
+</div>{{end}}
 <div class="application-passwords-list-table-wrapper" style="margin-top:20px">
 <table class="wp-list-table widefat fixed striped table-view-list application-passwords-user">
 <thead><tr>

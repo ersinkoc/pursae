@@ -282,7 +282,7 @@ func TestWebBuilderEditorCaps(t *testing.T) {
 	adminPage := wbTestPost(t, srv, "page", "Admin page", "publish", 1)
 
 	sub := hgSecondUser(t, srv, base, "sub", "subscriber")
-	if code, body, _ := wbOpen(t, sub, base, adminPage.ID); code != http.StatusForbidden || strings.Contains(body, "__WEB_BUILDER__") {
+	if code, body, _ := wbOpen(t, sub, base, adminPage.ID); (code != http.StatusForbidden && code != http.StatusFound) || strings.Contains(body, "__WEB_BUILDER__") {
 		t.Errorf("subscriber: %d", code)
 	}
 	contrib := hgSecondUser(t, srv, base, "contrib", "contributor")

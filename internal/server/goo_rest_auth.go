@@ -101,6 +101,11 @@ func (s *Server) gooKeyAuth(c *gin.Context, ck, cs, method string) (*store.User,
 	if err != nil {
 		return nil, gooErr(http.StatusUnauthorized, "woocommerce_rest_authentication_error", "Consumer key is invalid.")
 	}
+	// The same gates as Application Passwords: no API keys for front-end members (admin_access.go), and
+	// none for an account Pursae Security holds until it changes its password or sets up two-step login.
+	if !appPasswordsAvailable(u) || s.adminsecBlocked(c, u) != "" {
+		return nil, gooErr(http.StatusUnauthorized, "woocommerce_rest_authentication_error", "API keys are not available for this account.")
+	}
 	_, _ = s.store.Pool.Exec(c, `UPDATE goo_api_keys SET last_access = now() WHERE id = $1 AND (last_access IS NULL OR last_access < now() - interval '1 minute')`, id)
 	c.Set(restUserKey, u)
 	c.Set(gooCtxAPIKey, id)

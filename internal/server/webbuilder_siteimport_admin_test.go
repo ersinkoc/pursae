@@ -318,7 +318,7 @@ func TestWBImportWizardPermissions(t *testing.T) {
 	_ = admin
 	for _, role := range []string{"editor", "author", "subscriber"} {
 		sub := newWizClient(t, base, wbrUser(t, srv, base, "wiz"+role, role))
-		if code, _, _ := sub.get("/wp-admin/web-builder-import"); code != http.StatusForbidden {
+		if code, _, _ := sub.get("/wp-admin/web-builder-import"); code != http.StatusForbidden && !(role == "subscriber" && code == http.StatusFound) {
 			t.Errorf("%s GET: %d", role, code)
 		}
 		if code, _, _ := sub.uploadWith(wizNonceRE.FindStringSubmatch(page)[1], wizSite(t), "site.zip", ""); code != http.StatusForbidden {
