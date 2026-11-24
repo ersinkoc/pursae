@@ -177,7 +177,7 @@ func (c *Client) CompleteMultipartUpload(ctx context.Context, key, uploadID stri
 		return err
 	}
 	defer resp.Body.Close()
-	return errorInBody(resp)
+	return errorInBody(resp, "CompleteMultipartUploadResult")
 }
 
 // AbortMultipartUpload discards an unfinished upload and its parts.
@@ -207,12 +207,12 @@ func (c *Client) Copy(ctx context.Context, srcBucket, srcKey, key string, o PutO
 		return err
 	}
 	defer resp.Body.Close()
-	return errorInBody(resp)
+	return errorInBody(resp, "CopyObjectResult")
 }
 
 // errorInBody reads a 200 answer that may still carry an <Error> (CompleteMultipartUpload,
 // CopyObject).
-func errorInBody(resp *http.Response) error {
+func errorInBody(resp *http.Response, resultRoot string) error {
 	data, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return err
@@ -225,8 +225,12 @@ func errorInBody(resp *http.Response) error {
 	if err := xml.Unmarshal(data, &x); err != nil {
 		return fmt.Errorf("S3 response: %w", err)
 	}
-	if x.XMLName.Local != "Error" {
+	switch x.XMLName.Local {
+	case "Error":
+		return &Error{Status: resp.StatusCode, Code: x.Code, Message: x.Message}
+	case resultRoot:
 		return nil
+	default:
+		return fmt.Errorf("S3 response: expected %s, got %q", resultRoot, x.XMLName.Local)
 	}
-	return &Error{Status: resp.StatusCode, Code: x.Code, Message: x.Message}
 }

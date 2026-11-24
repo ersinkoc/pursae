@@ -94,3 +94,77 @@ func TestReadAVGarbage(t *testing.T) {
 		}
 	}
 }
+
+func TestReadMP3XingBitrate(t *testing.T) {
+	for _, tc := range []struct {
+		frames, size uint32
+		length, rate int
+	}{
+		{50, 19200, 1, 128000},
+		{20, 3840, 0, 64000},
+	} {
+		data := make([]byte, 384)
+		copy(data, []byte{0xff, 0xfb, 0x94, 0}) // MPEG1 Layer III at 48 kHz
+		copy(data[36:], "Xing")
+		binary.BigEndian.PutUint32(data[40:], 3)
+		binary.BigEndian.PutUint32(data[44:], tc.frames)
+		binary.BigEndian.PutUint32(data[48:], tc.size)
+		got := readAV(bytes.NewReader(data), int64(len(data)), ".mp3")
+		if got.Length != tc.length || got.Bitrate != tc.rate {
+			t.Errorf("%d frames: got %+v, want %d seconds and %d bps", tc.frames, got, tc.length, tc.rate)
+		}
+	}
+}
+
+func TestReadID3v23UnsynchronizedTag(t *testing.T) {
+	// The title has one inserted zero after 0xff. Its frame size describes the decoded body.
+	data := []byte("ID3\x03\x00\x80\x00\x00\x00\x21" +
+		"TIT2\x00\x00\x00\x05\x00\x00\x00A\xff\x00\xe2B" +
+		"TPE1\x00\x00\x00\x07\x00\x00\x00Artist")
+	info := readAV(bytes.NewReader(data), int64(len(data)), ".mp3")
+	if info.Title != "AÿâB" || info.Artist != "Artist" {
+		t.Fatalf("got %+v, want the decoded title and following artist", info)
+	}
+}
+
+func TestReadMP4UnknownDuration(t *testing.T) {
+	for _, version := range []byte{0, 1} {
+		mvhd := make([]byte, 112)
+		mvhd[0] = version
+		if version == 0 {
+			binary.BigEndian.PutUint32(mvhd[12:], 1000)
+			binary.BigEndian.PutUint32(mvhd[16:], ^uint32(0))
+		} else {
+			binary.BigEndian.PutUint32(mvhd[20:], 1000)
+			binary.BigEndian.PutUint64(mvhd[24:], ^uint64(0))
+		}
+		data := append(box("ftyp", []byte("isom\x00\x00\x02\x00")), box("moov", box("mvhd", mvhd))...)
+		info := readAV(bytes.NewReader(data), int64(len(data)), ".mp4")
+		if info.Format != "mp4" || info.Length != 0 {
+			t.Errorf("mvhd version %d: got %+v, want unknown length", version, info)
+		}
+	}
+}
+
+func TestReadWAVUsesRIFFExtent(t *testing.T) {
+	chunk := func(id string, body []byte) []byte {
+		h := make([]byte, 8)
+		copy(h, id)
+		binary.LittleEndian.PutUint32(h[4:], uint32(len(body)))
+		return append(h, body...)
+	}
+	format := make([]byte, 16)
+	binary.LittleEndian.PutUint16(format, 1) // PCM
+	binary.LittleEndian.PutUint16(format[2:], 1)
+	binary.LittleEndian.PutUint32(format[4:], 8000)
+	binary.LittleEndian.PutUint32(format[8:], 8000)
+	binary.LittleEndian.PutUint16(format[12:], 1)
+	binary.LittleEndian.PutUint16(format[14:], 8)
+	wave := append([]byte("WAVE"), chunk("fmt ", format)...)
+	wave = append(wave, chunk("data", make([]byte, 8000))...)
+	data := append(chunk("RIFF", wave), chunk("data", make([]byte, 24000))...)
+	info := readAV(bytes.NewReader(data), int64(len(data)), ".wav")
+	if info.Length != 1 || info.Bitrate != 64000 {
+		t.Fatalf("got %+v, want the metadata from inside RIFF", info)
+	}
+}

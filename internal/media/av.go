@@ -1,6 +1,7 @@
 package media
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
 	"math"
@@ -53,7 +54,8 @@ func readAV(r io.ReaderAt, size int64, ext string) (info AVInfo) {
 	case len(head) >= 4 && binary.BigEndian.Uint32(head) == 0x1A45DFA3:
 		return readMatroska(r, size)
 	case len(head) >= 12 && string(head[:4]) == "RIFF" && string(head[8:12]) == "WAVE":
-		return readWAV(r, size)
+		riffEnd := 8 + int64(binary.LittleEndian.Uint32(head[4:8]))
+		return readWAV(r, min(size, riffEnd))
 	case len(head) >= 3 && string(head[:3]) == "ID3", len(head) >= 2 && head[0] == 0xFF && head[1]&0xE0 == 0xE0:
 		return readMP3(r, size)
 	}
@@ -129,9 +131,9 @@ func readMP3(r io.ReaderAt, size int64) AVInfo {
 					if tag == "Xing" {
 						info.BitrateMode = "vbr"
 					}
-					if flags&2 != 0 && off+16 <= len(buf) && info.Length > 0 {
-						bytes := int64(binary.BigEndian.Uint32(buf[off+12:]))
-						info.Bitrate = int(bytes * 8 / int64(info.Length))
+					if flags&2 != 0 && frames > 0 {
+						byteCount := int64(binary.BigEndian.Uint32(buf[off+12:]))
+						info.Bitrate = int(byteCount * 8 * int64(sr) / (frames * int64(spf)))
 					}
 					return info
 				}
@@ -159,6 +161,10 @@ func tailID3v1(r io.ReaderAt, size int64) bool {
 }
 
 func parseID3(info *AVInfo, ver, flags byte, b []byte) {
+	if ver == 3 && flags&0x80 != 0 {
+		// ID3v2.3 applies unsynchronisation to the whole tag, outside the frame lengths.
+		b = bytes.ReplaceAll(b, []byte{0xff, 0}, []byte{0xff})
+	}
 	if flags&0x40 != 0 && len(b) >= 4 && ver >= 3 { // extended header
 		var l int
 		if ver == 4 {
@@ -285,12 +291,12 @@ func readMP4(r io.ReaderAt, size int64) AVInfo {
 				m, _ := r.ReadAt(b, start+hl)
 				if m >= 20 && b[0] == 0 {
 					ts, d := binary.BigEndian.Uint32(b[12:]), binary.BigEndian.Uint32(b[16:])
-					if ts > 0 {
+					if ts > 0 && d != math.MaxUint32 {
 						info.Length = int(math.Round(float64(d) / float64(ts)))
 					}
 				} else if m >= 32 && b[0] == 1 {
 					ts, d := binary.BigEndian.Uint32(b[20:]), binary.BigEndian.Uint64(b[24:])
-					if ts > 0 {
+					if ts > 0 && d != math.MaxUint64 {
 						info.Length = int(math.Round(float64(d) / float64(ts)))
 					}
 				}
