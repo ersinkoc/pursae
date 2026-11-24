@@ -28,11 +28,9 @@ document.addEventListener('click', function (e) {
 	<button type="button" class="more-details" id="{{.Slug}}-action" aria-label="View Theme Details for {{.Name}}">Theme Details</button>
 	<div class="theme-author">By {{.Author}}</div>
 	<div class="theme-id-container">
-		{{if .Active}}<h2 class="theme-name" id="{{.Slug}}-name"><span>Active:</span> {{.Name}}</h2>{{else}}<h2 class="theme-name" id="{{.Slug}}-name">{{.Name}}</h2>{{end}}
+		{{if .Active}}<h2 class="theme-name" id="{{.Slug}}-name" title="{{.Name}}"><span>Active:</span> {{.Name}}</h2>{{else}}<h2 class="theme-name" id="{{.Slug}}-name" title="{{.Name}}">{{.Name}}</h2>{{end}}
 		<div class="theme-actions">
 			{{if .Active}}<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{customizeURL}}" aria-label="Customize {{.Name}}">Customize</a>
-			{{if .DemoImportURL}}<a class="button button-compact wpgo-import-demo" href="{{.DemoImportURL}}" aria-label="Import demo content of {{.Name}}">Import Demo Content</a>{{end}}
-			{{if .DemoRemoveURL}}<a class="button button-compact wpgo-remove-demo" href="{{.DemoRemoveURL}}" aria-label="Remove demo content of {{.Name}}">Remove Demo Content</a>{{end}}
 			{{else}}<a class="button button-compact activate" href="{{.ActivateURL}}" aria-label="Activate {{.Name}}">Activate</a>
 			<a class="button button-compact button-primary load-customize hide-if-no-customize" href="{{.PreviewURL}}" aria-label="Live Preview {{.Name}}">Live Preview</a>{{end}}
 		</div>
@@ -47,12 +45,18 @@ document.addEventListener('click', function (e) {
 .theme-overlay .theme-actions .wpgo-delete-theme{color:#b32d2e;text-decoration:none;border-color:transparent;box-shadow:none;background:transparent;position:absolute;right:10px;bottom:5px}
 .theme-overlay .theme-actions .wpgo-delete-theme:hover,.theme-overlay .theme-actions .wpgo-delete-theme:focus{background:#b32d2e;color:#fff;border-color:#b32d2e;box-shadow:0 0 0 1px #b32d2e}
 @media only screen and (max-width:1080px){.theme-overlay .theme-actions .wpgo-delete-theme{position:relative;right:auto;bottom:auto}}
-/* Active card: the name gets the full width on its own row and the buttons sit on a row below it, on the
-   same (color-scheme) background, so long names and extra buttons (demo import) never cover the name. */
-.theme-browser .theme.active .theme-name{padding-right:15px;padding-bottom:58px}
-.theme-browser .theme.active .theme-actions{top:auto;bottom:0;left:0;right:auto;transform:none;padding:0 15px 14px;white-space:nowrap}
-.theme-browser .theme.active .theme-actions .button{margin:0 6px 0 0}
-@media only screen and (max-width:782px){.theme-browser .theme.active .theme-name span{display:inline}.theme-browser .theme.active .theme-name{padding-bottom:62px}}
+/* Cards: one footer row of the same height on every card. The name keeps the row and is cut with an
+   ellipsis (full name in its title); the Activate / Live Preview buttons take their own place at the
+   right on hover instead of covering the name, and the active card shows only Customize (demo content
+   is in Theme Details), so it is as tall as the others. */
+.theme-browser .theme:not(.active) .theme-id-container{display:flex;align-items:center;gap:8px;border-top:1px solid rgb(0 0 0 / 10%);background:#fff}
+.theme-browser .theme:not(.active) .theme-name{flex:1 1 auto;min-width:0;border-top:0;background:transparent}
+.theme-browser .theme:not(.active) .theme-actions{position:static;transform:none;flex:none;display:none;gap:6px;padding:0 12px 0 0;background:transparent;border:0}
+.theme-browser .theme:not(.active):is(:hover,.focus,:focus-within) .theme-actions{display:flex;opacity:1}
+.theme-browser .theme:not(.active):is(:hover,.focus,:focus-within) .theme-name{padding-right:0}
+.theme-browser .theme .theme-actions .button{margin:0}
+.theme-browser .theme.active .theme-name{padding-right:118px}
+@media (hover:none){.theme-browser .theme:not(.active) .theme-actions{display:flex}.theme-browser .theme:not(.active) .theme-name{padding-right:0}}
 </style>
 <p class="no-themes">No themes found. Try a different search.</p>
 </div><!-- .wrap -->
@@ -85,11 +89,6 @@ document.addEventListener('click', function (e) {
 		<# if ( data.active ) { #>
 			<# if ( data.actions.customize ) { #>
 				<a class="button button-compact button-primary customize load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}" aria-label="Customize {{ data.name }}">Customize</a>
-			<# } #>
-			<# if ( data.wpgoDemoImport ) { #>
-				<a class="button button-compact wpgo-import-demo" href="{{{ data.wpgoDemoImport }}}" aria-label="Import demo content of {{ data.name }}">Import Demo Content</a>
-			<# } else if ( data.wpgoDemoRemove ) { #>
-				<a class="button button-compact wpgo-remove-demo" href="{{{ data.wpgoDemoRemove }}}" aria-label="Remove demo content of {{ data.name }}">Remove Demo Content</a>
 			<# } #>
 		<# } else { #>
 			<a class="button button-compact activate" href="{{{ data.actions.activate }}}" aria-label="Activate {{ data.name }}">Activate</a>

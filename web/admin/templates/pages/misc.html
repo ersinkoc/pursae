@@ -398,7 +398,7 @@
 			{{if .Installed}}<a class="more-details" href="/wp-admin/themes?theme={{.Slug}}">Details &amp; Preview</a>{{else if .DemoPreviewURL}}<a class="more-details wpgo-live-preview" href="{{.DemoPreviewURL}}" aria-label="Live Preview {{.Name}} with its demo content">Live Preview</a>{{end}}
 			<div class="theme-author">By {{.Author}}</div>
 			<div class="theme-id-container">
-				<h3 class="theme-name">{{.Name}}{{if or .CategoryLabel .Style}}<span class="wpgo-theme-meta">{{.CategoryLabel}}{{if and .CategoryLabel .Style}} &middot; {{end}}{{.Style}}</span>{{end}}</h3>
+				<h3 class="theme-name" title="{{.Name}}">{{.Name}}{{if or .CategoryLabel .Style}}<span class="wpgo-theme-meta">{{.CategoryLabel}}{{if and .CategoryLabel .Style}} &middot; {{end}}{{.Style}}</span>{{end}}</h3>
 				<div class="theme-actions">
 				{{if .InstallURL}}<a class="button button-primary button-compact theme-install" data-slug="{{.Slug}}" href="{{.InstallURL}}" aria-label="Install {{.Name}}">Install</a>
 					{{if .DemoURL}}<a class="button button-compact theme-install wpgo-install-demo" href="{{.DemoURL}}" aria-label="Install {{.Name}}, activate it and import its demo content">Install &amp; Import Demo</a>{{end}}

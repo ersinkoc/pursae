@@ -454,9 +454,7 @@ func TestBlockLibraryHead(t *testing.T) {
 		t.Error("package theme: the block library has no ?ver=")
 	}
 
-	if err := srv.switchTheme(ctx, wbHelloSlug); err != nil {
-		t.Fatal(err)
-	}
+	helloWithBuilderOff(t, srv)
 	_, body, _ = get(t, anon, ts.URL+path+"?hello=1")
 	if strings.Contains(body, "block-library/style.min.css") || strings.Contains(body, "wpgo:block-styles") {
 		t.Error("Hello Pursae loads the whole block library")

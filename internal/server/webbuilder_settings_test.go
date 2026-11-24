@@ -60,9 +60,7 @@ func TestWebBuilderPluginToggle(t *testing.T) {
 
 	// A site already on Hello Pursae (the owner's own choice) keeps it after deactivation.
 	ctx := context.Background()
-	if err := srv.switchTheme(ctx, wbHelloSlug); err != nil {
-		t.Fatal(err)
-	}
+	helloWithBuilderOff(t, srv)
 	if err := srv.wbSetActive(ctx, true); err != nil {
 		t.Fatal(err)
 	}

@@ -67,3 +67,50 @@
 .wpgo-install-recommended .button {
 	vertical-align: middle;
 }
+
+/* Library cards: one footer of the same height on every card, the name above its category/style line.
+   Both lines are cut with an ellipsis instead of running out of the card, and the buttons take their own
+   place at the end of the row on hover instead of covering the name. */
+.theme-install-php .theme-browser .theme .theme-id-container {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 66px;
+	border-top: 1px solid rgb(0 0 0 / 10%);
+	background: #fff;
+}
+.theme-install-php .theme-browser .theme .theme-name {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: auto;
+	padding: 12px 15px;
+	border-top: 0;
+	background: transparent;
+	line-height: 1.35;
+}
+.theme-install-php .theme-browser .theme .theme-actions {
+	position: static;
+	transform: none;
+	flex: none;
+	display: none;
+	gap: 6px;
+	padding: 0;
+	padding-inline-end: 12px;
+	background: transparent;
+	border: 0;
+}
+.theme-install-php .theme-browser .theme:is(:hover, .focus, :focus-within) .theme-actions {
+	display: flex;
+	opacity: 1;
+}
+.theme-install-php .theme-browser .theme:is(:hover, .focus, :focus-within) .theme-name {
+	padding-inline-end: 0;
+}
+.theme-install-php .theme-browser .theme .theme-actions .button {
+	margin: 0;
+}
+@media (hover: none) {
+	.theme-install-php .theme-browser .theme .theme-actions {
+		display: flex;
+	}
+}

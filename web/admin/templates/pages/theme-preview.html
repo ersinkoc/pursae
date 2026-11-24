@@ -49,7 +49,9 @@
 .wpgo-theme-preview .wpgo-theme-meta{margin:-8px 0 12px;color:#50575e}
 .wpgo-theme-preview .wpgo-preview-note{clear:both;margin:16px 0 0;padding-top:12px;border-top:1px solid #dcdcde;color:#50575e;font-size:12px}
 .wpgo-theme-preview .theme-details .theme-description{float:none}
-.wpgo-theme-preview .wp-full-overlay-header a.previous-theme,.wpgo-theme-preview .wp-full-overlay-header a.next-theme,.wpgo-theme-preview .wp-full-overlay-header span.previous-theme,.wpgo-theme-preview .wp-full-overlay-header span.next-theme,.wpgo-theme-preview .wp-full-overlay-header a.close-full-overlay{display:block;text-decoration:none;box-sizing:border-box}
+.wpgo-theme-preview .wp-full-overlay-header a.previous-theme,.wpgo-theme-preview .wp-full-overlay-header a.next-theme,.wpgo-theme-preview .wp-full-overlay-header span.previous-theme,.wpgo-theme-preview .wp-full-overlay-header span.next-theme,.wpgo-theme-preview .wp-full-overlay-header a.close-full-overlay{display:flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box}
+.wpgo-theme-preview .wp-full-overlay-header :is(.close-full-overlay,.previous-theme,.next-theme)::before{position:static;top:auto;left:auto;width:20px;height:20px;line-height:20px;text-align:center}
+.wpgo-theme-preview .wp-full-overlay-header .close-full-overlay::before{width:22px;height:22px;line-height:22px}
 .wpgo-theme-preview .wp-full-overlay-main iframe{border:0;background:#fff;display:block}
 </style>
 <script {{cspNonce}}>
