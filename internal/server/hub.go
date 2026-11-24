@@ -304,14 +304,35 @@ func (s *Server) hubTrustKeys(keys []hubKey) {
 const hubCatalogMaxPages = 50
 
 // hubCatalog lists the Hub's plugins or themes (kind "plugins" | "themes"), every page of them in
-// the Manager's order, cached for 12 hours under the license's cache key.
+// the Manager's order, cached for 12 hours under the license's cache key. The update checks read it
+// on every Plugins screen, so they take the cached copy; Add Plugins reads it fresh (hubCatalogFresh).
 func (s *Server) hubCatalog(ctx context.Context, kind string) ([]hubItem, error) {
 	var list hubList
-	key := s.hubCacheKey("wpgo_hub_" + kind)
-	if s.hubCacheGet(ctx, key, &list) {
+	if s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_"+kind), &list) {
 		return list.Items, nil
 	}
-	list = hubList{}
+	return s.hubFetchCatalog(ctx, kind)
+}
+
+// hubCatalogFresh reads the catalog from the Manager on every call, so a plugin published (or
+// withdrawn) on the Hub shows on Add Plugins at once, and refreshes the cached copy the update
+// checks use. When the Manager cannot be reached it falls back to the cached copy, if there is one.
+func (s *Server) hubCatalogFresh(ctx context.Context, kind string) ([]hubItem, error) {
+	items, err := s.hubFetchCatalog(ctx, kind)
+	if err != nil {
+		var list hubList
+		if s.hubCacheGet(ctx, s.hubCacheKey("wpgo_hub_"+kind), &list) {
+			return list.Items, nil
+		}
+	}
+	return items, err
+}
+
+// hubFetchCatalog reads every page of the catalog from the Manager and caches the answer; an error
+// answer is not cached.
+func (s *Server) hubFetchCatalog(ctx context.Context, kind string) ([]hubItem, error) {
+	key := s.hubCacheKey("wpgo_hub_" + kind)
+	list := hubList{}
 	for page := 1; page <= hubCatalogMaxPages; page++ {
 		var p hubList
 		// sort=position: the order the Manager's operator set for the catalog (a Manager that does

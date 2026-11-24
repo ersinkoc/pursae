@@ -98,3 +98,43 @@ func TestHubBulkUpdatePartialFailure(t *testing.T) {
 		t.Errorf("partial failure not reported: %s", loc)
 	}
 }
+
+// TestHubCatalogFreshShowsNewListing: a plugin published on the Hub after the catalog was cached
+// shows on Add Plugins at once, and when the Manager is down the page falls back to the cached copy.
+func TestHubCatalogFreshShowsNewListing(t *testing.T) {
+	ts, c, srv := testServerBuilderOff(t)
+	installAndLogin(t, ts, c)
+
+	var slugs atomic.Value
+	slugs.Store([]string{})
+	var down atomic.Bool
+	hub := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/plugins" {
+			http.NotFound(w, r)
+			return
+		}
+		if down.Load() {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		var items []map[string]any
+		for _, s := range slugs.Load().([]string) {
+			items = append(items, map[string]any{"slug": s, "name": "Fresh " + s, "version": "1.0.0"})
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"total": len(items), "pages": 1, "items": items})
+	}))
+	defer hub.Close()
+	srv.cfg.HubURL = hub.URL
+
+	if _, body, _ := get(t, c, ts.URL+"/wp-admin/plugin-install"); !strings.Contains(body, "No plugins are published on Pursae Hub yet") {
+		t.Fatal("empty Hub: the empty notice is missing")
+	}
+	slugs.Store([]string{"new-plugin"})
+	if _, body, _ := get(t, c, ts.URL+"/wp-admin/plugin-install"); !strings.Contains(body, "Fresh new-plugin") {
+		t.Error("a plugin published after the catalog was cached does not show on Add Plugins")
+	}
+	down.Store(true)
+	if _, body, _ := get(t, c, ts.URL+"/wp-admin/plugin-install"); !strings.Contains(body, "Fresh new-plugin") {
+		t.Error("with the Manager down Add Plugins did not fall back to the cached catalog")
+	}
+}
