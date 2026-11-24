@@ -371,3 +371,69 @@ func TestFrontPagePageLink(t *testing.T) {
 		}
 	}
 }
+
+func TestPlainPagedPreservesFragmentQuestionMark(t *testing.T) {
+	b := &Builder{Home: "https://example.test"}
+	const base = "https://example.test#part?view=compact"
+	if got := b.Paged(base, 1); got != base {
+		t.Errorf("page 1 = %q, want %q", got, base)
+	}
+	if got := b.Paged(base, 2); got != "https://example.test/?paged=2#part?view=compact" {
+		t.Errorf("page 2 = %q", got)
+	}
+}
+
+func TestPostPageLinkPreservesEscapedFinalSlash(t *testing.T) {
+	b := &Builder{Home: "https://example.test", Structure: "/%postname%/", LinkFilter: func(string, any, string) string {
+		return "https://example.test/a%2F?lang=tr#top"
+	}}
+	p := &store.Post{ID: 7, Type: "post", Status: "publish", Slug: "article"}
+	if got, want := b.PostPageLink(p, 2), "https://example.test/a%2F/2/?lang=tr#top"; got != want {
+		t.Errorf("post page = %q, want %q", got, want)
+	}
+}
+
+func TestDerivedLinksKeepUnroutedPostQuery(t *testing.T) {
+	b := &Builder{Home: "https://example.test", Structure: "/%postname%/"}
+	p := &store.Post{ID: 7, Type: "book", Status: "publish", Slug: "article"}
+	for _, tc := range []struct{ got, want string }{
+		{b.PostPageLink(p, 2), "https://example.test/?p=7&page=2"},
+		{b.CommentPageLink(p, 2, 3, false), "https://example.test/?cpage=2&p=7"},
+		{b.PostCommentsFeed(p), "https://example.test/?feed=rss2&p=7"},
+	} {
+		if tc.got != tc.want {
+			t.Errorf("derived link = %q, want %q", tc.got, tc.want)
+		}
+	}
+}
+
+func TestCommentsFeedLinkAppliesFilterOnce(t *testing.T) {
+	for _, format := range []string{"", "rss2", "atom"} {
+		calls := 0
+		b := &Builder{Home: "https://example.test", LinkFilter: func(_ string, _ any, link string) string {
+			calls++
+			return link
+		}}
+		b.CommentsFeedLink(format)
+		if calls != 1 {
+			t.Errorf("format %q applied the filter %d times", format, calls)
+		}
+	}
+}
+
+func TestHistoricalDateLinksKeepFourDigitYear(t *testing.T) {
+	b := &Builder{Home: "https://example.test", Structure: "/%year%/%postname%/"}
+	date := time.Date(42, 10, 22, 0, 0, 0, 0, time.UTC)
+	p := &store.Post{ID: 7, Type: "post", Status: "publish", Slug: "article", PublishedAt: &date}
+	path := strings.Trim(strings.TrimPrefix(b.Permalink(p), b.Home), "/")
+	if fields, ok := NewMatcher(b.Structure).Match(path); !ok || fields["year"] != "0042" {
+		t.Errorf("generated path %q matched as %v, %v", path, fields, ok)
+	}
+	if got := b.DayLink(42, 10, 22); got != "https://example.test/0042/10/22/" {
+		t.Errorf("date archive = %q", got)
+	}
+	b.Structure = ""
+	if got := b.DayLink(42, 10, 22); got != "https://example.test/?m=00421022" {
+		t.Errorf("date query = %q", got)
+	}
+}

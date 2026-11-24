@@ -167,7 +167,7 @@ func (b *Builder) postLink(p *store.Post) string {
 		author = escPath(b.authorSlug(p.AuthorID))
 	}
 	r := strings.NewReplacer(
-		"%year%", strconv.Itoa(t.Year()),
+		"%year%", fmt.Sprintf("%04d", t.Year()),
 		"%monthnum%", fmt.Sprintf("%02d", int(t.Month())),
 		"%day%", fmt.Sprintf("%02d", t.Day()),
 		"%hour%", fmt.Sprintf("%02d", t.Hour()),
@@ -311,27 +311,27 @@ func (b *Builder) YearLink(y int) string { return b.filter("home", nil, b.yearLi
 
 func (b *Builder) yearLink(y int) string {
 	if !b.Pretty() {
-		return b.HomeURL("/?m=" + strconv.Itoa(y))
+		return b.HomeURL(fmt.Sprintf("/?m=%04d", y))
 	}
-	return b.HomeURL(b.trailing(fmt.Sprintf("/%d", y)))
+	return b.HomeURL(b.trailing(fmt.Sprintf("/%04d", y)))
 }
 
 func (b *Builder) MonthLink(y, m int) string { return b.filter("home", nil, b.monthLink(y, m)) }
 
 func (b *Builder) monthLink(y, m int) string {
 	if !b.Pretty() {
-		return b.HomeURL(fmt.Sprintf("/?m=%d%02d", y, m))
+		return b.HomeURL(fmt.Sprintf("/?m=%04d%02d", y, m))
 	}
-	return b.HomeURL(b.trailing(fmt.Sprintf("/%d/%02d", y, m)))
+	return b.HomeURL(b.trailing(fmt.Sprintf("/%04d/%02d", y, m)))
 }
 
 func (b *Builder) DayLink(y, m, d int) string { return b.filter("home", nil, b.dayLink(y, m, d)) }
 
 func (b *Builder) dayLink(y, m, d int) string {
 	if !b.Pretty() {
-		return b.HomeURL(fmt.Sprintf("/?m=%d%02d%02d", y, m, d))
+		return b.HomeURL(fmt.Sprintf("/?m=%04d%02d%02d", y, m, d))
 	}
-	return b.HomeURL(b.trailing(fmt.Sprintf("/%d/%02d/%02d", y, m, d)))
+	return b.HomeURL(b.trailing(fmt.Sprintf("/%04d/%02d/%02d", y, m, d)))
 }
 
 // FeedLink is get_feed_link(): "" for posts, "comments_" prefix handled by the caller.
@@ -358,10 +358,7 @@ func (b *Builder) feedLink(feed string) string {
 
 // PostCommentsFeed is get_post_comments_feed_link().
 func (b *Builder) PostCommentsFeed(p *store.Post) string {
-	if !b.Pretty() || draftLike(p) || b.isStaticFrontPage(p) {
-		return b.addQueryArg(b.commentFeedPermalink(p), "feed", "rss2")
-	}
-	return appendURLPath(b.Permalink(p), b.trailing("/feed"))
+	return b.PostCommentsFeedFormat(p, "rss2")
 }
 
 // Trailing is user_trailingslashit(): the path gets the trailing slash of the permalink structure.
@@ -369,13 +366,18 @@ func (b *Builder) Trailing(path string) string { return b.trailing(path) }
 
 // PostCommentsFeedFormat is get_post_comments_feed_link( $id, $feed ) for a feed format such as "atom".
 func (b *Builder) PostCommentsFeedFormat(p *store.Post, feed string) string {
-	if feed == "" || feed == "rss2" {
-		return b.PostCommentsFeed(p)
+	if feed == "" {
+		feed = "rss2"
 	}
-	if !b.Pretty() || draftLike(p) || b.isStaticFrontPage(p) {
-		return b.addQueryArg(b.commentFeedPermalink(p), "feed", feed)
+	link := b.commentFeedPermalink(p)
+	if b.isStaticFrontPage(p) || b.usesPlainPostLink(p, link) {
+		return b.addQueryArg(link, "feed", feed)
 	}
-	return appendURLPath(b.Permalink(p), b.trailing("/feed/"+feed))
+	path := "/feed"
+	if feed != "rss2" {
+		path += "/" + feed
+	}
+	return appendURLPath(link, b.trailing(path))
 }
 
 func (b *Builder) commentFeedPermalink(p *store.Post) string {
@@ -394,10 +396,9 @@ func appendURLPath(link, suffix string) string {
 	if err != nil {
 		return link
 	}
-	u.Path = strings.TrimSuffix(u.Path, "/") + suffix
-	if u.RawPath != "" {
-		u.RawPath = strings.TrimSuffix(u.RawPath, "/") + suffix
-	}
+	escapedSuffix := (&url.URL{Path: suffix}).EscapedPath()
+	u.RawPath = strings.TrimSuffix(u.EscapedPath(), "/") + escapedSuffix
+	u.Path, _ = url.PathUnescape(u.RawPath)
 	return u.String()
 }
 
@@ -408,7 +409,7 @@ func (b *Builder) CommentsFeedLink(feed string) string {
 
 func (b *Builder) commentsFeedLink(feed string) string {
 	if feed == "" || feed == "rss2" {
-		return b.FeedLink("comments_rss2")
+		return b.feedLink("comments_rss2")
 	}
 	if !b.Pretty() {
 		return b.HomeURL("/?feed=comments-" + feed)
@@ -429,7 +430,7 @@ func (b *Builder) CommentPageLink(p *store.Post, page, maxPage int, newestFirst 
 	if !paged {
 		return result
 	}
-	if !b.Pretty() || draftLike(p) {
+	if b.usesPlainPostLink(p, result) {
 		return b.addQueryArg(result, "cpage", strconv.Itoa(page))
 	}
 	return appendURLPath(result, b.trailing("/comment-page-"+strconv.Itoa(page)))
@@ -441,7 +442,7 @@ func (b *Builder) PostPageLink(p *store.Post, n int) string {
 	if n <= 1 {
 		return link
 	}
-	if !b.Pretty() || draftLike(p) {
+	if b.usesPlainPostLink(p, link) {
 		return b.addQueryArg(link, "page", strconv.Itoa(n))
 	}
 	if b.FrontPageID != 0 && p.ID == b.FrontPageID && p.Type == "page" && p.Status == "publish" {
@@ -450,6 +451,18 @@ func (b *Builder) PostPageLink(p *store.Post, n int) string {
 		return appendURLPath(link, b.trailing("/page/"+strconv.Itoa(n)))
 	}
 	return appendURLPath(link, b.trailing("/"+strconv.Itoa(n)))
+}
+
+func (b *Builder) usesPlainPostLink(p *store.Post, link string) bool {
+	if !b.Pretty() || draftLike(p) {
+		return true
+	}
+	u, err := url.Parse(link)
+	if err != nil {
+		return false
+	}
+	q := u.Query()
+	return q.Get("p") != "" || q.Get("page_id") != ""
 }
 
 func (b *Builder) addQueryArg(link, key, value string) string {
@@ -477,11 +490,10 @@ func (b *Builder) Paged(base string, n int) string {
 			q.Set("paged", strconv.Itoa(n))
 		}
 		u.RawQuery = q.Encode()
-		s := u.String()
-		if u.Path == "" {
-			s = strings.Replace(s, "?", "/?", 1)
+		if u.Path == "" && (u.RawQuery != "" || u.ForceQuery) {
+			u.Path = "/"
 		}
-		return s
+		return u.String()
 	}
 	q := u.Query()
 	q.Del("paged")
