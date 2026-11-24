@@ -67,9 +67,13 @@ func (c *Catalog) X(msgid, ctx string) string {
 
 // N picks the singular or plural translation for n (_n()).
 func (c *Catalog) N(single, plural string, n int) string {
-	if e, rule := c.find(single); e != nil {
-		if i := rule.index(int64(n)); i >= 0 && i < len(e) && e[i] != "" {
-			return e[i]
+	if c != nil {
+		for _, l := range c.layers {
+			if e, ok := l.mo.entries[single]; ok {
+				if i := l.mo.plural.index(int64(n)); i >= 0 && i < len(e) && e[i] != "" {
+					return e[i]
+				}
+			}
 		}
 	}
 	if n == 1 {
@@ -104,8 +108,17 @@ func (c *Catalog) lookup(msgid string) (string, bool) {
 	if tr, ok := c.anyCtx[msgid]; ok {
 		return tr, true
 	}
+	normalized := normalizeMsgid(msgid)
+	if normalized != msgid {
+		if e, _ := c.find(normalized); e != nil && e[0] != normalized {
+			return e[0], true
+		}
+		if tr, ok := c.anyCtx[normalized]; ok {
+			return tr, true
+		}
+	}
 	// "What&#8217;s new" in the catalog, "What’s new" on the page.
-	if tr, ok := c.norm[normalizeMsgid(msgid)]; ok {
+	if tr, ok := c.norm[normalized]; ok {
 		return tr, true
 	}
 	return c.lookupUpstream(msgid)
@@ -284,12 +297,17 @@ func (m *Manager) Installed() []string {
 	if m.Dir == "" {
 		return nil
 	}
-	files, _ := filepath.Glob(filepath.Join(m.Dir, "admin-*.mo"))
+	files, _ := os.ReadDir(m.Dir)
+	seen := make(map[string]bool)
 	var out []string
-	for _, f := range files {
-		l := strings.TrimSuffix(strings.TrimPrefix(filepath.Base(f), "admin-"), ".mo")
-		if !strings.HasPrefix(l, "network-") && validLocale(l) {
-			out = append(out, l)
+	for _, file := range files {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".mo") {
+			continue
+		}
+		locale := strings.TrimPrefix(strings.TrimSuffix(file.Name(), ".mo"), "admin-")
+		if !seen[locale] && validLocale(locale) && m.IsInstalled(locale) {
+			seen[locale] = true
+			out = append(out, locale)
 		}
 	}
 	sort.Strings(out)
@@ -304,8 +322,12 @@ func (m *Manager) IsInstalled(locale string) bool {
 	if m.Dir == "" || !validLocale(locale) {
 		return false
 	}
-	_, err := os.Stat(filepath.Join(m.Dir, "admin-"+locale+".mo"))
-	return err == nil
+	for _, name := range []string{"admin-" + locale + ".mo", locale + ".mo"} {
+		if info, err := os.Stat(filepath.Join(m.Dir, name)); err == nil && info.Mode().IsRegular() {
+			return true
+		}
+	}
+	return false
 }
 
 // brands maps the upstream product names in plugin translations to WordPress Go's own. Longer

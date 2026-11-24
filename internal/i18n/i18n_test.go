@@ -466,3 +466,62 @@ func TestTranslateHTMLPlainMessagesStayText(t *testing.T) {
 		}
 	}
 }
+
+func TestCatalogPluralCanUseLowerLayer(t *testing.T) {
+	c := &Catalog{layers: []layer{
+		{mo: &moFile{entries: map[string]entry{"Item": {"Element"}}}},
+		{mo: &moFile{entries: map[string]entry{"Item": {"Objekt", "Objekte"}}}},
+	}}
+	if got := c.N("Item", "Items", 1); got != "Element" {
+		t.Errorf("singular = %q", got)
+	}
+	if got := c.N("Item", "Items", 2); got != "Objekte" {
+		t.Errorf("plural = %q", got)
+	}
+}
+
+func TestCatalogLookupNormalizesIncomingText(t *testing.T) {
+	c := &Catalog{layers: []layer{{mo: &moFile{entries: map[string]entry{
+		"Where’s my post?": {"Yazım nerede?"},
+	}}}}}
+	if got, ok := c.Lookup("  Where&#8217;s my\n post? "); !ok || got != "Yazım nerede?" {
+		t.Errorf("lookup = %q, found = %v", got, ok)
+	}
+}
+
+func TestManagerFindsStandaloneCorePacks(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"de_DE.mo", "tr_TR.mo", "admin-tr_TR.mo", "admin-network-fr_FR.mo"} {
+		if err := os.WriteFile(filepath.Join(dir, name), writeMO(map[string]string{"Hello": "Translated"}), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	m := NewManager(dir, nil)
+	if got := strings.Join(m.Installed(), ","); got != "de_DE,tr_TR" {
+		t.Errorf("installed locales = %q", got)
+	}
+	if !m.IsInstalled("de_DE") || m.IsInstalled("fr_FR") {
+		t.Error("core catalog detection disagrees with the installed locales")
+	}
+}
+
+func TestMixedNumberedAndImplicitFormatArguments(t *testing.T) {
+	if got := Sprintf("%2$s then %s", "first", "second"); got != "second then first" {
+		t.Errorf("formatted = %q", got)
+	}
+	c := &Catalog{layers: []layer{{mo: &moFile{entries: map[string]entry{
+		"%2$s reports %s": {"%1$s meldet %2$s"},
+	}}}}}
+	if got := c.Text("Ana reports Kai"); got != "Kai meldet Ana" {
+		t.Errorf("translated = %q", got)
+	}
+}
+
+func TestSignedNumericTranslationPattern(t *testing.T) {
+	c := &Catalog{layers: []layer{{mo: &moFile{entries: map[string]entry{
+		"Balance %d": {"Saldo %d"},
+	}}}}}
+	if got := c.Text("Balance -4"); got != "Saldo -4" {
+		t.Errorf("translated = %q", got)
+	}
+}

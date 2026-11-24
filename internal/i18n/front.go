@@ -85,7 +85,7 @@ var frontNoAttrs = map[string]bool{"html": true, "head": true, "meta": true, "li
 func (w *frontWalker) run() {
 	src := w.src
 	skipName, skipDepth := "", 0
-	lastOpen := "" // the last opening tag: a text node right after <option> is never wrapped
+	inOption := false // even text inside an option child is never wrapped
 	textStart := 0
 	i := 0
 	flush := func(end int) {
@@ -93,7 +93,7 @@ func (w *frontWalker) run() {
 			if skipDepth > 0 {
 				w.out.WriteString(src[textStart:end])
 			} else {
-				w.text(src[textStart:end], lastOpen != "option", true)
+				w.text(src[textStart:end], !inOption, true)
 			}
 		}
 	}
@@ -144,8 +144,8 @@ func (w *frontWalker) run() {
 			if skipDepth > 0 && name == skipName {
 				skipDepth--
 			}
-			if name == lastOpen || name == "select" {
-				lastOpen = ""
+			if name == "option" || name == "optgroup" || name == "select" {
+				inOption = false
 			}
 			continue
 		}
@@ -174,16 +174,18 @@ func (w *frontWalker) run() {
 		} else {
 			w.out.WriteString(w.attrs(tag, name, attrs))
 		}
-		if !selfClosing {
-			lastOpen = name
-		}
 		if selfClosing {
 			continue
+		}
+		if name == "option" {
+			inOption = true
+		} else if name == "optgroup" || name == "select" {
+			inOption = false
 		}
 		if name == "title" { // RCDATA: its text is one string, never wrapped
 			end := indexClose(src, i, "title")
 			if end < 0 {
-				continue
+				end = len(src)
 			}
 			w.text(src[i:end], false, false)
 			i, textStart = end, end
@@ -204,7 +206,7 @@ func (w *frontWalker) run() {
 		if skipDepth > 0 {
 			w.out.WriteString(src[textStart:])
 		} else {
-			w.text(src[textStart:], lastOpen != "option", true)
+			w.text(src[textStart:], !inOption, true)
 		}
 	}
 }
@@ -218,18 +220,24 @@ func isTagStart(c byte) bool {
 // unclosed one runs to the end of the document.
 func (w *frontWalker) commentEnd(i int) int {
 	src := w.src
-	if strings.HasPrefix(src[i:], "<!--pll:uc") {
-		depth := 0
-		k := i
+	const openingPrefix = "<!--pll:uc"
+	if ms, me, _, _, _ := ucPlainAt(src, i+4, i); ms == i && strings.HasPrefix(src[i:], openingPrefix) {
+		depth := 1
+		k := me
 		for k < len(src) {
-			o := strings.Index(src[k:], "<!--pll:uc")
+			o := strings.Index(src[k:], openingPrefix)
 			c := strings.Index(src[k:], UCClose)
 			if c < 0 {
 				return len(src)
 			}
 			if o >= 0 && o < c {
-				depth++
-				k += o + len("<!--pll:uc")
+				start := k + o
+				if ms, me, _, _, _ := ucPlainAt(src, start+4, start); ms == start {
+					depth++
+					k = me
+				} else {
+					k = start + len(openingPrefix)
+				}
 				continue
 			}
 			depth--
@@ -416,7 +424,7 @@ func ReplaceUserContentSentinels(doc []byte, repl func(open bool, post int64) st
 
 // ucPlainAt parses the sentinel whose "pll:uc" is at doc[i] when it is written the way UCOpen,
 // UCClose and UCOpenPost write it (the common case, no regexp); ms is -1 otherwise.
-func ucPlainAt(doc []byte, i, lo int) (ms, me int, open bool, post int64, plain bool) {
+func ucPlainAt[S ~string | ~[]byte](doc S, i, lo int) (ms, me int, open bool, post int64, plain bool) {
 	open = true
 	ms = i - 4
 	if ms >= lo && i > 0 && doc[i-1] == '/' {
@@ -431,10 +439,14 @@ func ucPlainAt(doc []byte, i, lo int) (ms, me int, open bool, post int64, plain 
 		for d < len(doc) && doc[d] >= '0' && doc[d] <= '9' {
 			d++
 		}
-		if d == k+6 || d-(k+6) > 18 {
+		if d == k+6 {
 			return -1, 0, false, 0, false
 		}
-		post, _ = strconv.ParseInt(string(doc[k+6:d]), 10, 64)
+		var err error
+		post, err = strconv.ParseInt(string(doc[k+6:d]), 10, 64)
+		if err != nil {
+			return -1, 0, false, 0, false
+		}
 		k = d
 	}
 	if len(doc)-k < 3 || string(doc[k:k+3]) != "-->" {
