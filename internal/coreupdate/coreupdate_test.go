@@ -409,3 +409,129 @@ func TestInstalled(t *testing.T) {
 		t.Fatalf("no dir: %q", got)
 	}
 }
+
+func TestPreviousDoesNotAdvertiseDirectoryAsBackup(t *testing.T) {
+	exe := filepath.Join(t.TempDir(), "pursae")
+	if err := os.Mkdir(PrevPath(exe), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := write(exe, &State{From: "0.4.2", To: "0.5.0", Status: "confirmed", At: time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC)}); err != nil {
+		t.Fatal(err)
+	}
+	if from, until := Previous(exe, "0.5.0"); from != "0.4.2" || !until.IsZero() {
+		t.Fatalf("previous version = %q, locally available until %v", from, until)
+	}
+}
+
+func TestFailedPrepareKeepsEarlierBackup(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		writeCurrent bool
+	}{
+		{"missing executable", false},
+		{"state destination refused", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			exe := filepath.Join(t.TempDir(), "pursae")
+			if err := os.WriteFile(PrevPath(exe), []byte("older"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if tc.writeCurrent {
+				if err := os.WriteFile(exe, []byte("running"), 0o700); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Mkdir(statePath(exe), 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := Prepare(exe, "0.5.0", "0.5.1"); err == nil {
+				t.Fatal("preparation succeeded despite the injected failure")
+			}
+			if got, err := os.ReadFile(PrevPath(exe)); err != nil || string(got) != "older" {
+				t.Fatalf("previous binary = %q, err=%v", got, err)
+			}
+		})
+	}
+}
+
+func TestStateWritePreservesValidState(t *testing.T) {
+	exe := filepath.Join(t.TempDir(), "pursae")
+	if err := os.Mkdir(statePath(exe)+".tmp", 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := write(exe, &State{Status: "confirmed"}); err != nil {
+		t.Fatal(err)
+	}
+	invalid := &State{Status: "pending", At: time.Date(10000, 1, 1, 0, 0, 0, 0, time.UTC)}
+	if err := write(exe, invalid); err == nil {
+		t.Fatal("invalid state was accepted")
+	}
+	if st := Read(exe); st == nil || st.Status != "confirmed" {
+		t.Fatalf("previous valid state = %+v", st)
+	}
+	if info, err := os.Stat(statePath(exe) + ".tmp"); err != nil || !info.IsDir() {
+		t.Fatalf("existing scratch directory changed, err=%v", err)
+	}
+}
+
+func TestSwapPrevRetainsExistingScratchFile(t *testing.T) {
+	exe := filepath.Join(t.TempDir(), "pursae")
+	if err := os.WriteFile(exe, []byte("running"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	staged := make(chan struct{})
+	var stageErr error
+	go func() {
+		stageErr = os.WriteFile(exe+".reinstall", []byte("previous attempt"), 0o700)
+		close(staged)
+	}()
+	<-staged
+	if stageErr != nil {
+		t.Fatal(stageErr)
+	}
+	if err := SwapPrev(exe, "0.5.0", "0.4.2"); err == nil {
+		t.Fatal("swap succeeded without a previous binary")
+	}
+	if got, err := os.ReadFile(exe + ".reinstall"); err != nil || string(got) != "previous attempt" {
+		t.Fatalf("earlier staged binary = %q, err=%v", got, err)
+	}
+}
+
+func TestLaunchUsesImageForEquivalentVersion(t *testing.T) {
+	dir := t.TempDir()
+	image, data := filepath.Join(dir, "pursae"), filepath.Join(dir, "data")
+	if err := os.Mkdir(data, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	installed := filepath.Join(data, "pursae")
+	fakeBinary(t, image, "0.5.0+image")
+	fakeBinary(t, installed, "0.5.0+installed")
+	stubExec(t)
+	if err := Launch(image, data, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := binaryVersion(installed); got != "0.5.0+image" {
+		t.Fatalf("installed version = %q", got)
+	}
+}
+
+func TestSwapPrevKeepsStateDestinationAfterPrepareFails(t *testing.T) {
+	exe := filepath.Join(t.TempDir(), "pursae")
+	for path, content := range map[string]string{exe: "running", PrevPath(exe): "previous"} {
+		if err := os.WriteFile(path, []byte(content), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Mkdir(statePath(exe), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := SwapPrev(exe, "0.5.0", "0.4.2"); err == nil {
+		t.Fatal("expected state publication failure")
+	}
+	if info, err := os.Stat(statePath(exe)); err != nil || !info.IsDir() {
+		t.Fatalf("previous state destination removed, err=%v", err)
+	}
+	if got, err := os.ReadFile(PrevPath(exe)); err != nil || string(got) != "previous" {
+		t.Fatalf("prior backup = %q, err=%v", got, err)
+	}
+}
