@@ -403,12 +403,14 @@ func (s *Server) gocdnCleanupLocal(ctx context.Context) int {
 // gocdnHousekeepingOnce is one pass: resume an interrupted job, retry pending deletes, clean up.
 func (s *Server) gocdnHousekeepingOnce(ctx context.Context) {
 	if !s.gocdnTracking() {
+		s.cleanupMediaFileDeletes(ctx, 0)
 		return
 	}
 	s.gocdnResumeInterrupted(ctx)
 	s.gocdnRetryPendingDeletes(ctx)
 	s.gocdnRetryFailedUploads(ctx, 500)
 	s.gocdnCleanupLocal(ctx)
+	s.cleanupMediaFileDeletes(ctx, 0)
 }
 
 // gocdnStartHousekeeping runs the pass shortly after start-up and then daily, until Server.Close.

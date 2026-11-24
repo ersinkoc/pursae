@@ -103,6 +103,13 @@ func (s *Server) mediaLibrary(c *gin.Context) {
 		}
 		notices = append(notices, notice{Type: "success", Message: template.HTML(msg), Dismissible: true})
 	}
+	if n, _ := strconv.Atoi(c.Query("delete-failed")); n > 0 {
+		msg := "A media file could not be deleted."
+		if n > 1 {
+			msg = strconv.Itoa(n) + " media files could not be deleted."
+		}
+		notices = append(notices, notice{Type: "error", Message: template.HTML(msg), Dismissible: true})
+	}
 	if m := c.Query("gocdn-media-msg"); m != "" {
 		notices = append(notices, notice{Type: "success", Message: template.HTML(template.HTMLEscapeString(m)), Dismissible: true})
 	}
