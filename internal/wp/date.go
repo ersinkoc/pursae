@@ -97,7 +97,12 @@ func FormatDateNames(t time.Time, format string, names *DateNames) string {
 			y, _ := t.ISOWeek()
 			sb.WriteString(strconv.Itoa(y))
 		case 'Y':
-			fmt.Fprintf(&sb, "%04d", t.Year())
+			year := t.Year()
+			if year < 0 {
+				sb.WriteByte('-')
+				year = -year
+			}
+			fmt.Fprintf(&sb, "%04d", year)
 		case 'y':
 			fmt.Fprintf(&sb, "%02d", t.Year()%100)
 		case 'a':
@@ -205,6 +210,14 @@ func Location(tzString string, gmtOffset float64) *time.Location {
 	if tzString != "" {
 		if loc, err := time.LoadLocation(tzString); err == nil {
 			return loc
+		}
+		const offsetLayout = "-07:00"
+		if t, err := time.ParseInLocation(offsetLayout, tzString, time.UTC); err == nil {
+			// Reject offsets whose overflow was normalized by time.Parse.
+			if t.Format(offsetLayout) == tzString || tzString == "-00:00" {
+				_, seconds := t.Zone()
+				return time.FixedZone(tzString, seconds)
+			}
 		}
 	}
 	if gmtOffset == 0 {

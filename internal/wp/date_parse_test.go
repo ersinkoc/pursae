@@ -89,3 +89,48 @@ func TestParseDateValidatesWeekday(t *testing.T) {
 		}
 	}
 }
+
+func TestParseDateRejectsMismatchedOrdinal(t *testing.T) {
+	if _, ok := ParseDate("22th October 2026", "jS F Y"); ok {
+		t.Fatal("accepted an ordinal suffix that disagrees with the day")
+	}
+	if _, ok := ParseDate("22nd October 2026", "jS F Y"); !ok {
+		t.Fatal("rejected a matching ordinal suffix")
+	}
+}
+
+func TestDateSignedAndExpandedYear(t *testing.T) {
+	for _, tc := range []struct {
+		year int
+		want string
+	}{
+		{-55, "-0055-10-22"},
+		{0, "0000-10-22"},
+		{10191, "10191-10-22"},
+	} {
+		date := time.Date(tc.year, 10, 22, 0, 0, 0, 0, time.UTC)
+		if got := FormatDate(date, "Y-m-d"); got != tc.want {
+			t.Errorf("year %d formats as %q, want %q", tc.year, got, tc.want)
+		}
+		if got, ok := ParseDate(tc.want, "Y-m-d"); !ok || !got.Equal(date) {
+			t.Errorf("ParseDate(%q) = %s, %v", tc.want, got, ok)
+		}
+	}
+}
+
+func TestLocationPrefersExplicitOffset(t *testing.T) {
+	for _, tc := range []struct {
+		zone string
+		want int
+	}{
+		{"+05:45", 20700},
+		{"-03:30", -12600},
+		{"UTC", 0},
+		{"+05:75", -14400},
+	} {
+		_, got := time.Date(2026, 1, 1, 0, 0, 0, 0, Location(tc.zone, -4)).Zone()
+		if got != tc.want {
+			t.Errorf("Location(%q, -4) gave offset %d, want %d", tc.zone, got, tc.want)
+		}
+	}
+}

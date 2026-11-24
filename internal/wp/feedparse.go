@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
+	"net/url"
 	"strings"
 	"time"
 
@@ -26,23 +27,36 @@ type Feed struct {
 	Items []FeedItem
 }
 
+const atomNamespace = "http://www.w3.org/2005/Atom"
+
 type feedLink struct {
+	Base string `xml:"http://www.w3.org/XML/1998/namespace base,attr"`
 	Rel  string `xml:"rel,attr"`
 	Href string `xml:"href,attr"`
 	Text string `xml:",chardata"`
 }
 
+func (l feedLink) isAlternate(atom bool) bool {
+	return l.Rel == "" || l.Rel == "alternate" ||
+		(atom && l.Rel == "http://www.iana.org/assignments/relation/alternate")
+}
+
 type feedItem struct {
-	Title       string     `xml:"title"`
-	Links       []feedLink `xml:"link"`
-	Description string     `xml:"description"`
-	Encoded     string     `xml:"http://purl.org/rss/1.0/modules/content/ encoded"`
-	Summary     feedText   `xml:"summary"`
-	Content     feedText   `xml:"content"`
-	PubDate     string     `xml:"pubDate"`
-	DCDate      string     `xml:"http://purl.org/dc/elements/1.1/ date"`
-	Published   string     `xml:"published"`
-	Updated     string     `xml:"updated"`
+	Base  string     `xml:"http://www.w3.org/XML/1998/namespace base,attr"`
+	Title feedText   `xml:"title"`
+	Links []feedLink `xml:"link"`
+	GUID  struct {
+		IsPermalink string `xml:"isPermaLink,attr"`
+		Text        string `xml:",chardata"`
+	} `xml:"guid"`
+	Description string   `xml:"description"`
+	Encoded     string   `xml:"http://purl.org/rss/1.0/modules/content/ encoded"`
+	Summary     feedText `xml:"summary"`
+	Content     feedText `xml:"content"`
+	PubDate     string   `xml:"pubDate"`
+	DCDate      string   `xml:"http://purl.org/dc/elements/1.1/ date"`
+	Published   string   `xml:"published"`
+	Updated     string   `xml:"updated"`
 	Author      struct {
 		Name string `xml:"name"`      // Atom <author><name>
 		Text string `xml:",chardata"` // RSS <author>
@@ -77,10 +91,7 @@ func (t *feedText) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 type feedDoc struct {
 	XMLName xml.Name
-	Title   string `xml:"title"`
-	Author  struct {
-		Name string `xml:"name"`
-	} `xml:"author"`
+	feedItem
 	Channel *struct {
 		Title string     `xml:"title"`
 		Items []feedItem `xml:"item"`
@@ -107,9 +118,11 @@ func ParseFeed(data []byte) (*Feed, error) {
 	if err := dec.Decode(&doc); err != nil {
 		return nil, ErrNotFeed
 	}
-	f := &Feed{Title: strings.TrimSpace(doc.Title)}
+	f := &Feed{Title: strings.TrimSpace(string(doc.Title))}
 	var raw []feedItem
-	switch strings.ToLower(doc.XMLName.Local) {
+	kind := strings.ToLower(doc.XMLName.Local)
+	atom := kind == "feed" || kind == "entry"
+	switch kind {
 	case "rss":
 		if doc.Channel == nil {
 			return nil, ErrNotFeed
@@ -123,11 +136,24 @@ func ParseFeed(data []byte) (*Feed, error) {
 		raw = doc.Items
 	case "feed":
 		raw = doc.Entries
+	case "entry":
+		if doc.XMLName.Space != atomNamespace {
+			return nil, ErrNotFeed
+		}
+		raw = []feedItem{doc.feedItem}
 	default:
 		return nil, ErrNotFeed
 	}
+	var rootBase *url.URL
+	if atom {
+		rootBase = feedBase(nil, doc.Base)
+	}
 	for _, it := range raw {
-		item := FeedItem{Title: strings.TrimSpace(it.Title), Description: it.Description}
+		item := FeedItem{Title: strings.TrimSpace(string(it.Title)), Description: it.Description}
+		itemBase := rootBase
+		if kind == "feed" {
+			itemBase = feedBase(rootBase, it.Base)
+		}
 		if item.Description == "" {
 			item.Description = it.Encoded
 		}
@@ -137,19 +163,29 @@ func ParseFeed(data []byte) (*Feed, error) {
 		if item.Description == "" {
 			item.Description = string(it.Content)
 		}
+		var linkBase string
 		for _, l := range it.Links {
-			if l.Href != "" && (l.Rel == "" || l.Rel == "alternate") {
-				item.Link = strings.TrimSpace(l.Href)
+			if href := strings.TrimSpace(l.Href); href != "" && l.isAlternate(atom) {
+				item.Link, linkBase = href, l.Base
 				break
 			}
 		}
 		if item.Link == "" {
 			for _, l := range it.Links {
-				if l.Href != "" || (l.Rel != "" && l.Rel != "alternate") || strings.TrimSpace(l.Text) == "" {
+				if strings.TrimSpace(l.Href) != "" || !l.isAlternate(atom) || strings.TrimSpace(l.Text) == "" {
 					continue
 				}
-				item.Link = strings.TrimSpace(l.Text)
+				item.Link, linkBase = strings.TrimSpace(l.Text), l.Base
 				break
+			}
+		}
+		if atom && item.Link != "" {
+			item.Link = atomItemLink(itemBase, linkBase, item.Link)
+		}
+		if item.Link == "" && kind == "rss" && (it.GUID.IsPermalink == "" || strings.EqualFold(it.GUID.IsPermalink, "true")) {
+			guid := strings.TrimSpace(it.GUID.Text)
+			if u, err := url.Parse(guid); err == nil && u.IsAbs() && u.Host != "" {
+				item.Link = guid
 			}
 		}
 		item.Author = strings.TrimSpace(it.Creator)
@@ -159,10 +195,10 @@ func ParseFeed(data []byte) (*Feed, error) {
 		if item.Author == "" {
 			item.Author = strings.TrimSpace(it.Author.Text)
 		}
-		if item.Author == "" && strings.EqualFold(doc.XMLName.Local, "feed") {
+		if item.Author == "" && atom {
 			item.Author = strings.TrimSpace(it.Source.Author.Name)
 		}
-		if item.Author == "" && strings.EqualFold(doc.XMLName.Local, "feed") {
+		if item.Author == "" && atom {
 			item.Author = strings.TrimSpace(doc.Author.Name)
 		}
 		for _, d := range []string{it.PubDate, it.DCDate, it.Published, it.Updated} {
@@ -176,6 +212,35 @@ func ParseFeed(data []byte) (*Feed, error) {
 	return f, nil
 }
 
+func feedBase(parent *url.URL, value string) *url.URL {
+	if value == "" {
+		return parent
+	}
+	base, err := url.Parse(value)
+	if err != nil {
+		return parent
+	}
+	if base.IsAbs() {
+		return base
+	}
+	if parent != nil {
+		return parent.ResolveReference(base)
+	}
+	return nil
+}
+
+func atomItemLink(parent *url.URL, override, value string) string {
+	base := feedBase(parent, override)
+	if base == nil {
+		return value
+	}
+	ref, err := url.Parse(value)
+	if err != nil || ref.IsAbs() {
+		return value
+	}
+	return base.ResolveReference(ref).String()
+}
+
 var feedDateLayouts = []string{
 	time.RFC1123Z, time.RFC1123, time.RFC822Z, time.RFC822, time.RFC3339, time.RFC3339Nano,
 	"Mon, 2 Jan 2006 15:04:05 -0700", "Mon, 2 Jan 2006 15:04:05 MST", "2 Jan 2006 15:04:05 -0700",
@@ -183,13 +248,25 @@ var feedDateLayouts = []string{
 	"2006-01-02T15:04:05Z07:00", "2006-01-02T15:04Z07:00", "2006-01-02 15:04:05", "2006-01-02",
 }
 
+// US time zone abbreviations in the RSS date format (RFC 822).
+var rssNamedZoneHours = map[string]int{
+	"EST": -5, "EDT": -4, "CST": -6, "CDT": -5,
+	"MST": -7, "MDT": -6, "PST": -8, "PDT": -7,
+}
+
 func parseFeedDate(s string) (time.Time, bool) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return time.Time{}, false
 	}
+	loc := time.UTC
+	if _, zone, ok := strings.CutLast(s, " "); ok {
+		if hours, known := rssNamedZoneHours[zone]; known {
+			loc = time.FixedZone(zone, hours*60*60)
+		}
+	}
 	for _, l := range feedDateLayouts {
-		if t, err := time.Parse(l, s); err == nil {
+		if t, err := time.ParseInLocation(l, s, loc); err == nil {
 			return t, true
 		}
 	}

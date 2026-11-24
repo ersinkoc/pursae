@@ -44,7 +44,7 @@ func ParseDate(text, format string) (time.Time, bool) {
 		case 'n':
 			group(`\d{1,2}`, 'n')
 		case 'Y':
-			group(`\d{4}`, 'Y')
+			group(`-?\d{4,}?`, 'Y')
 		case 'y':
 			group(`\d{2}`, 'y')
 		case 'F':
@@ -56,7 +56,7 @@ func ParseDate(text, format string) (time.Time, bool) {
 		case 'l':
 			group(alt(en.Weekdays[:]), 'l')
 		case 'S':
-			group(`st|nd|rd|th`, '-')
+			group(`st|nd|rd|th`, 'S')
 		case 'g':
 			group(`\d{1,2}`, 'h')
 		case 'h':
@@ -87,16 +87,21 @@ func ParseDate(text, format string) (time.Time, bool) {
 	}
 	year, month, day, hour, min, sec := 1, 1, 1, 0, 0, 0
 	weekday := -1
+	var suffix string
+	hasDay := false
 	pm, has12 := false, false
 	for i, k := range kinds {
 		v := m[i+1]
-		n, _ := strconv.Atoi(v)
+		n, numberErr := strconv.Atoi(v)
 		switch k {
 		case 'd':
-			day = n
+			day, hasDay = n, true
 		case 'n':
 			month = n
 		case 'Y':
+			if numberErr != nil {
+				return time.Time{}, false
+			}
 			year = n
 		case 'y':
 			year = 2000 + n
@@ -104,6 +109,11 @@ func ParseDate(text, format string) (time.Time, bool) {
 			month = indexOf(en.Months[:], v) + 1
 		case 'M':
 			month = indexOf(en.MonthsShort[:], v) + 1
+		case 'S':
+			if suffix != "" && suffix != v {
+				return time.Time{}, false
+			}
+			suffix = v
 		case 'D':
 			weekday = indexOf(en.WeekdaysShort[:], v)
 		case 'l':
@@ -131,6 +141,9 @@ func ParseDate(text, format string) (time.Time, bool) {
 	}
 	result := time.Date(year, time.Month(month), day, hour, min, sec, 0, time.UTC)
 	if result.Year() != year || int(result.Month()) != month || result.Day() != day {
+		return time.Time{}, false
+	}
+	if hasDay && suffix != "" && suffix != ordinalSuffix(result.Day()) {
 		return time.Time{}, false
 	}
 	if weekday >= 0 && result.Weekday() != time.Weekday(weekday) {
