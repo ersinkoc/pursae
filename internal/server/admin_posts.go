@@ -304,12 +304,9 @@ func (s *Server) postsList(c *gin.Context) {
 		counts, _ = s.store.StatusCountsReadable(ctx, typ, u.ID, q.ReadablePrivate)
 	}
 	all := counts["publish"] + counts["future"] + counts["draft"] + counts["pending"] + counts["private"]
-	base := "/wp-admin/edit"
-	if typ == "page" {
-		base += "?post_type=page"
-	}
+	base := postsListURL(typ)
 	withStatus := func(st string) string {
-		if typ == "page" {
+		if typ != "post" {
 			return base + "&post_status=" + st
 		}
 		return base + "?post_status=" + st
@@ -372,10 +369,7 @@ func (s *Server) postsList(c *gin.Context) {
 		d.SortLinks[col] = s.sortLinkFor(c, col, q.OrderBy, strings.ToLower(q.Order))
 	}
 
-	screen := "edit"
-	if typ == "page" {
-		screen = "edit?post_type=page"
-	}
+	screen := strings.TrimPrefix(postsListURL(typ), "/wp-admin/") // the menu entry to highlight: Posts, Pages or the type's own menu
 	s.setScreenOptions(c, screenOptions{Screen: "edit-" + typ, Columns: postListColumns(typ), Hidden: d.Hidden,
 		PerPageOption: "edit_" + typ + "_per_page", PerPage: perPage, ViewMode: mode})
 	s.pageAssets(c).Script("inline-edit-post")
@@ -757,7 +751,16 @@ func (s *Server) postsBulk(c *gin.Context) {
 	if s.setScreenOption(c) {
 		return
 	}
-	c.Redirect(http.StatusSeeOther, "/wp-admin/edit")
+	c.Redirect(http.StatusSeeOther, postsListURL(c.DefaultQuery("post_type", c.DefaultPostForm("post_type", "post"))))
+}
+
+// postsListURL is the admin list of a post type: edit.php for posts, edit.php?post_type=<type> for
+// pages and every other type, so links and the highlighted menu stay on that type's own list.
+func postsListURL(typ string) string {
+	if typ == "" || typ == "post" {
+		return "/wp-admin/edit"
+	}
+	return "/wp-admin/edit?post_type=" + url.QueryEscape(typ)
 }
 
 // postsBulkAction applies a bulk action from the list table (trash, untrash, delete, edit).
@@ -1111,10 +1114,7 @@ func (s *Server) inlineSave(c *gin.Context) {
 // postRowHTML renders one list row (WP_Posts_List_Table::display_rows() for a single post).
 func (s *Server) postRowHTML(c *gin.Context, p *store.Post, mode string) string {
 	u := currentUser(c)
-	base := "/wp-admin/edit"
-	if p.Type == "page" {
-		base += "?post_type=page"
-	}
+	base := postsListURL(p.Type)
 	d := postsListData{Labels: labelsFor(p.Type), ShowCatCols: p.Type == "post", EditorSwitch: s.classicSwitchAllowed(),
 		Hidden: s.hiddenColumns(u, "edit-"+p.Type), Mode: defaultStr(mode, "list")}
 	s.postRows(c, &d, []*store.Post{p}, base)

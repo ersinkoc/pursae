@@ -669,6 +669,28 @@ func TestACFGoPostTypes(t *testing.T) {
 	if code, body, _ := get(t, c, base+"/wp-admin/edit?post_type=book"); code != http.StatusOK || !strings.Contains(body, "Books") {
 		t.Errorf("book list: %d", code)
 	}
+	// The list stays on the type: its own menu is open (not Posts), and the status views and
+	// "Add New" keep post_type=book instead of falling back to the Posts list.
+	draft := &store.Post{Type: "book", AuthorID: 1, Status: "draft", Title: "Draft book", Content: "x"}
+	if err := srv.store.InsertPost(ctx, draft); err != nil {
+		t.Fatal(err)
+	}
+	_, body, _ = get(t, c, base+"/wp-admin/edit?post_type=book")
+	if !regexp.MustCompile(`wp-has-current-submenu[^"]*menu-posts-book"`).MatchString(body) {
+		t.Error("book list: the Books menu is not the current one")
+	}
+	if regexp.MustCompile(`wp-has-current-submenu[^"]*menu-posts"`).MatchString(body) {
+		t.Error("book list: the Posts menu is highlighted")
+	}
+	if !strings.Contains(body, `href="/wp-admin/edit?post_type=book"`) || !strings.Contains(body, `href="/wp-admin/edit?post_type=book&amp;post_status=draft"`) {
+		t.Error("book list: status views lost post_type")
+	}
+	if strings.Contains(body, `href="/wp-admin/edit?post_status=`) {
+		t.Error("book list: a status view points at the Posts list")
+	}
+	if !strings.Contains(body, `href="/wp-admin/post-new?post_type=book" class="page-title-action"`) {
+		t.Error("book list: Add New does not create a book")
+	}
 	if code, body, _ := get(t, c, base+"/wp-admin/edit-tags?taxonomy=genre&post_type=book"); code != http.StatusOK || !strings.Contains(body, "Genres") {
 		t.Errorf("genre terms screen: %d", code)
 	}

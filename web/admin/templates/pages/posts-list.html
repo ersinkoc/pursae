@@ -1,7 +1,7 @@
 {{define "admin/posts-list"}}{{template "admin-header" .}}{{$u := .User}}{{with .Data}}
 <div class="wrap">
 <h1 class="wp-heading-inline">{{.Labels.Name}}</h1>
-{{if .CanCreate}}<a href="/wp-admin/post-new{{if eq .Labels.Type "page"}}?post_type=page{{end}}" class="page-title-action">{{.Labels.AddNew}}</a>{{end}}
+{{if .CanCreate}}<a href="/wp-admin/post-new{{if ne .Labels.Type "post"}}?post_type={{.Labels.Type}}{{end}}" class="page-title-action">{{.Labels.AddNew}}</a>{{end}}
 {{if .Search}}<span class="subtitle">Search results for: <strong>{{.Search}}</strong></span>{{end}}
 <hr class="wp-header-end">
 {{template "notices" $}}
