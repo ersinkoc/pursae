@@ -197,3 +197,24 @@ func TestTranslateFrontWithRecord(t *testing.T) {
 		t.Fatalf("visited %v", visited)
 	}
 }
+
+func TestTranslateFrontLeavesTitlesAndOptionTextUnwrapped(t *testing.T) {
+	lookup := frontTable(map[string]string{"Pick": "Choisir"})
+	visit := func(string, string) string { return "m" }
+	for _, tc := range []struct{ in, want string }{
+		{"<title>Pick", "<title>Choisir"},
+		{"<select><option><span>Pick</span></option></select>", "<select><option><span>Choisir</span></option></select>"},
+	} {
+		if got := string(TranslateFront([]byte(tc.in), lookup, visit)); got != tc.want {
+			t.Errorf("translated %s as %s, want %s", tc.in, got, tc.want)
+		}
+	}
+}
+
+func TestTranslateFrontDistinguishesSentinelsFromOrdinaryComments(t *testing.T) {
+	in := "<!--pll:uc-note--><p>Pick</p><!--pll:uc post=12--><p>Pick</p><!--/pll:uc-->"
+	want := "<!--pll:uc-note--><p>Choisir</p><!--pll:uc post=12--><p>Pick</p><!--/pll:uc-->"
+	if got := string(TranslateFront([]byte(in), frontTable(map[string]string{"Pick": "Choisir"}), nil)); got != want {
+		t.Errorf("translated = %s, want %s", got, want)
+	}
+}

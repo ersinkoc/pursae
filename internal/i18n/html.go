@@ -637,14 +637,21 @@ func compilePattern(msgid string, raw bool) (*pattern, string) {
 			re.WriteString("%")
 			continue
 		}
-		seq++
-		n := seq
+		var n int
 		if m[2] >= 0 {
 			n, _ = strconv.Atoi(msgid[m[2]:m[3]])
+		} else {
+			seq++
+			n = seq
 		}
 		args = append(args, n)
-		if strings.ContainsAny(msgid[m[4]:m[5]], "dfuF") {
-			re.WriteString(`([\d.,\s\x{00a0}]+?)`)
+		verb := msgid[m[4]:m[5]]
+		if strings.ContainsAny(verb, "dfuF") {
+			re.WriteByte('(')
+			if verb != "u" {
+				re.WriteString(`[+-]?`)
+			}
+			re.WriteString(`[\d.,\s\x{00a0}]+?)`)
 		} else {
 			re.WriteString("(.+?)")
 		}
@@ -793,10 +800,12 @@ func fillPlaceholders(msgstr string, vals map[int]string, raw bool) string {
 		if m[2] == "%" {
 			return "%"
 		}
-		seq++
-		n := seq
+		var n int
 		if m[1] != "" {
 			n, _ = strconv.Atoi(m[1])
+		} else {
+			seq++
+			n = seq
 		}
 		if v, ok := vals[n]; ok {
 			if raw {

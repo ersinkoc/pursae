@@ -268,20 +268,27 @@ func (m *Manager) Install(ctx context.Context, in *Installer, locale string, plu
 	if err != nil {
 		return err
 	}
-	if _, err := extract(zipData, m.Dir); err != nil {
+	installed, err := extract(zipData, m.Dir)
+	if err != nil {
 		return err
 	}
+	if installed == 0 {
+		return fmt.Errorf("translation archive for %s contains no catalog files", locale)
+	}
+	var pluginErrors []error
 	for _, slug := range plugins {
 		pkg, err := in.packageFor(ctx, "plugins/1.0/?slug="+slug, locale)
 		if err != nil || pkg == "" {
 			continue
 		}
 		if zipData, err := in.get(ctx, pkg, maxPack); err == nil {
-			_, _ = extract(zipData, filepath.Join(m.Dir, "plugins"))
+			if _, err := extract(zipData, filepath.Join(m.Dir, "plugins")); err != nil {
+				pluginErrors = append(pluginErrors, fmt.Errorf("%s translation for %s: %w", slug, locale, err))
+			}
 		}
 	}
 	m.Reset()
-	return nil
+	return errors.Join(pluginErrors...)
 }
 
 // ScriptTranslations returns the JSON locale data WordPress stores for a script (load_script_textdomain):
