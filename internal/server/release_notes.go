@@ -316,20 +316,27 @@ func notesInlineHTML(s string) string {
 
 // renderReleaseNotes renders the full notes as sanitised HTML. Headings start at <h3> (the notes sit
 // under the screen's <h1>/<h2>): "#", "##" and "###" are <h3>, "####" and deeper <h4>.
+//
+// A Keep a Changelog section heading ("Added", "Fixed", "Security"...) carries its colour (the
+// Dashboard digest's), and its items are cards in that colour: an item that starts with a bold title
+// is a closed <details> whose summary is the title, so the screen lists the titles and a click shows
+// the rest.
 func renderReleaseNotes(md string) template.HTML {
 	var b strings.Builder
+	cls := "other" // the section of the lists that follow
 	for _, bl := range parseReleaseNotes(md) {
 		switch bl.Kind {
 		case 'h':
-			tag := "h3"
 			if bl.Level >= 4 {
-				tag = "h4"
+				b.WriteString("<h4>" + notesInlineHTML(bl.Text) + "</h4>\n")
+				continue
 			}
-			b.WriteString("<" + tag + ">" + notesInlineHTML(bl.Text) + "</" + tag + ">\n")
+			cls = notesSectionClass(bl.Text)
+			b.WriteString(`<h3 class="pursae-notes-section is-` + cls + `"><span class="pursae-news-label">` + notesInlineHTML(bl.Text) + "</span></h3>\n")
 		case 'l':
-			b.WriteString("<ul>\n")
+			b.WriteString(`<ul class="pursae-notes-cards is-` + cls + `">` + "\n")
 			for _, it := range bl.Items {
-				b.WriteString("<li>" + notesInlineHTML(it) + "</li>\n")
+				b.WriteString("<li>" + notesCardHTML(it) + "</li>\n")
 			}
 			b.WriteString("</ul>\n")
 		case 'c':
@@ -339,6 +346,29 @@ func renderReleaseNotes(md string) template.HTML {
 		}
 	}
 	return template.HTML(wp.KsesPost(b.String())) //nolint:gosec // built from escaped text above and sanitised by KsesPost
+}
+
+// notesCardHTML renders one list item: "**Title.** details" as a closed <details> card with the title
+// as its summary; an item without a leading bold title, or with nothing after it, as plain text.
+func notesCardHTML(item string) string {
+	parts := parseNotesInline(item)
+	for len(parts) > 0 && parts[0].Kind == 't' && strings.TrimSpace(parts[0].Text) == "" {
+		parts = parts[1:]
+	}
+	if len(parts) < 2 || parts[0].Kind != 'b' {
+		return notesInlineHTML(item)
+	}
+	rest := parts[1:]
+	if rest[0].Kind == 't' {
+		rest = append([]notesInline{{Kind: 't', Text: strings.TrimLeft(rest[0].Text, " \t")}}, rest[1:]...)
+	}
+	var title, body strings.Builder
+	renderNotesInline(&title, parts[:1])
+	renderNotesInline(&body, rest)
+	if strings.TrimSpace(body.String()) == "" {
+		return title.String()
+	}
+	return `<details class="pursae-note"><summary>` + title.String() + `</summary><div class="pursae-note-body">` + body.String() + "</div></details>"
 }
 
 // notesDigest is the short form of the notes for the Dashboard: the summary (the first paragraph

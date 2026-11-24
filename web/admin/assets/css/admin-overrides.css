@@ -76,5 +76,24 @@ body.pursae-modern.pm-dark .is-security > .pursae-news-label { color: #0F1013; }
 .pursae-release-notes h4 { margin: 1.2em 0 .4em; font-size: 13px; }
 .pursae-release-notes ul { margin: 0 0 1em; padding-inline-start: 20px; list-style: disc; }
 .pursae-release-notes li { margin-bottom: 6px; line-height: 1.55; }
+/* Section headings with the digest's colours; their items as cards, closed until clicked */
+.pursae-release-notes h3.pursae-notes-section { margin: 1.4em 0 .6em; }
+.pursae-release-notes h3.pursae-notes-section .pursae-news-label { display: inline-block; padding: 0 8px; font-size: 11px; line-height: 20px; }
+.pursae-release-notes ul.pursae-notes-cards { padding: 0; list-style: none; }
+.pursae-notes-cards { --pn-c: var(--pm-muted, #646970); }
+.pursae-notes-cards.is-added { --pn-c: var(--pm-ok, #007017); }
+.pursae-notes-cards.is-changed { --pn-c: var(--pm-info, #2271b1); }
+.pursae-notes-cards.is-fixed { --pn-c: var(--pm-primary, #7a3fc2); }
+.pursae-notes-cards.is-deprecated, .pursae-notes-cards.is-removed { --pn-c: var(--pm-warn, #996800); }
+.pursae-notes-cards.is-security { --pn-c: var(--pm-bad, #d63638); }
+.pursae-release-notes ul.pursae-notes-cards > li { margin: 0 0 6px; padding: 8px 12px; border: 1px solid var(--pm-border, #dcdcde); border-inline-start: 3px solid var(--pn-c); border-radius: 4px; background: color-mix(in srgb, var(--pn-c) 5%, var(--pm-bg, #fff)); overflow-wrap: anywhere; }
+.pursae-note > summary { position: relative; padding-inline-start: 18px; cursor: pointer; list-style: none; }
+.pursae-note > summary::-webkit-details-marker { display: none; }
+.pursae-note > summary::before { content: ""; position: absolute; inset-inline-start: 2px; top: .5em; width: 6px; height: 6px; border: solid var(--pn-c); border-width: 0 2px 2px 0; transform: rotate(-45deg); transition: transform .15s; }
+.pursae-note[open] > summary::before { top: .4em; transform: rotate(45deg); }
+[dir="rtl"] .pursae-note:not([open]) > summary::before { transform: rotate(135deg); }
+.pursae-note > summary:hover strong { color: var(--pn-c); }
+.pursae-note > summary:focus-visible { outline: 2px solid var(--pn-c); outline-offset: 2px; border-radius: 2px; }
+.pursae-note-body { margin: 6px 0 2px; padding-inline-start: 18px; }
 .pursae-release-notes pre { overflow: auto; padding: 8px 10px; background: var(--pm-hover, #f0f0f1); }
 .pursae-release-notes pre code { padding: 0; background: none; }
