@@ -36,11 +36,38 @@ func (h *Host) registerUI(name string, body []byte) ([]byte, error) {
 func (h *Host) Registered(hostFunction string) []map[string]any {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return append([]map[string]any(nil), h.ui[hostFunction]...)
+	out := append([]map[string]any(nil), h.ui[hostFunction]...)
+	for i, reg := range out {
+		out[i] = cloneRegistrationValue(reg).(map[string]any)
+	}
+	return out
+}
+
+func cloneRegistrationValue(value any) any {
+	switch v := value.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(v))
+		for k, child := range v {
+			out[k] = cloneRegistrationValue(child)
+		}
+		return out
+	case []any:
+		out := make([]any, len(v))
+		for i, child := range v {
+			out[i] = cloneRegistrationValue(child)
+		}
+		return out
+	default:
+		return value
+	}
 }
 
 func (h *Host) findUI(hostFunction, key, value, callbackKey string) (string, error) {
-	for _, r := range h.Registered(hostFunction) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	registrations := h.ui[hostFunction]
+	for i := len(registrations) - 1; i >= 0; i-- {
+		r := registrations[i]
 		if fmt.Sprint(r[key]) == value {
 			if cb, _ := r[callbackKey].(string); cb != "" {
 				return cb, nil
