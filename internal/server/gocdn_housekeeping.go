@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"wpgo/internal/gocdn"
 	"wpgo/internal/store"
 )
 
@@ -164,7 +165,8 @@ func (s *Server) gocdnScanOrphans(ctx context.Context) ([]string, error) {
 		}
 		if len(keys) > 0 {
 			known := map[string]bool{}
-			rows, err := s.store.Pool.Query(ctx, `SELECT object_key FROM gocdn_items WHERE bucket = $1 AND object_key = ANY($2)`, st.Bucket, keys)
+			rows, err := s.store.Pool.Query(ctx, `SELECT object_key FROM gocdn_items
+				WHERE bucket = $1 AND object_key = ANY($2) AND (endpoint = $3 OR endpoint = '')`, cl.Bucket, keys, cl.Endpoint)
 			if err != nil {
 				return out, err
 			}
@@ -175,8 +177,13 @@ func (s *Server) gocdnScanOrphans(ctx context.Context) ([]string, error) {
 				}
 			}
 			rows.Close()
+			if err := rows.Err(); err != nil {
+				return out, err
+			}
 			for _, it := range s.gocdnPendingDeletes() {
-				known[it.Key] = true
+				if it.Bucket == cl.Bucket && (it.Endpoint == cl.Endpoint || it.Endpoint == "") {
+					known[it.Key] = true
+				}
 			}
 			for _, k := range keys {
 				if !known[k] {
@@ -204,18 +211,36 @@ func (s *Server) gocdnDeleteOrphans(ctx context.Context, keys []string) (int, er
 	n := 0
 	var errs []error
 	for _, k := range keys {
-		var have bool
-		_ = s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM gocdn_items WHERE bucket = $1 AND object_key = $2)`, st.Bucket, k).Scan(&have)
-		if have || !strings.HasPrefix(k, st.Prefix) {
+		if !strings.HasPrefix(k, st.Prefix) {
 			continue
 		}
-		if err := cl.Delete(ctx, k); err != nil {
+		deleted, err := s.gocdnDeleteUntrackedObject(ctx, cl, k, true)
+		if err != nil {
 			errs = append(errs, err)
-			continue
+		} else if deleted {
+			n++
 		}
-		n++
 	}
 	return n, errors.Join(errs...)
+}
+
+// A missing endpoint on a legacy row conservatively protects the object in a same-named bucket.
+// Automatic retries can remove a detached object, while manual orphan cleanup skips those records.
+func (s *Server) gocdnDeleteUntrackedObject(ctx context.Context, cl *gocdn.Client, key string, includeDetached bool) (bool, error) {
+	writes := &s.gocdnRT().objectWrites
+	writes.Lock()
+	defer writes.Unlock()
+	var tracked bool
+	err := s.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM gocdn_items
+		WHERE bucket = $1 AND object_key = $2 AND (endpoint = $3 OR endpoint = '')
+		AND ($4::boolean OR media_id IS NOT NULL))`, cl.Bucket, key, cl.Endpoint, includeDetached).Scan(&tracked)
+	if err != nil || tracked {
+		return false, err
+	}
+	if err := cl.Delete(ctx, key); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // Processed image cache limit -------------------------------------------------------------------
@@ -351,7 +376,7 @@ func (s *Server) gocdnRetryPendingDeletes(ctx context.Context) int {
 		it := list[i]
 		cl, err := s.gocdnItemClient(st, &it)
 		if err == nil {
-			err = cl.Delete(ctx, it.Key)
+			_, err = s.gocdnDeleteUntrackedObject(ctx, cl, it.Key, false)
 		}
 		if err != nil {
 			left = append(left, it)

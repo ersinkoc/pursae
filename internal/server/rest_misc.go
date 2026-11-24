@@ -1594,8 +1594,14 @@ func (api *restAPI) deleteMedia(c *gin.Context, r *restRequest) {
 		return
 	}
 	prev := s.restMedia(c, a, "edit")
-	s.deleteAttachmentFiles(a)
-	_ = s.store.DeleteAttachment(c, a.ID)
+	if err := s.deleteAttachmentRecordAndFiles(c, a); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
+		} else {
+			restErr(c, http.StatusInternalServerError, "rest_cannot_delete", "The attachment cannot be deleted.")
+		}
+		return
+	}
 	s.purgeAttachment(a)
 	restJSON(c, http.StatusOK, map[string]any{"deleted": true, "previous": prev})
 }

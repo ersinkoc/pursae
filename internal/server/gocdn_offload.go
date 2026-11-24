@@ -121,16 +121,20 @@ func (s *Server) detachOffloadsAndDeleteAttachment(ctx context.Context, id int64
 }
 
 func (s *Server) gocdnSaveItem(ctx context.Context, it *gocdnItem) error {
-	return gocdnSaveItemWith(ctx, s.store.Pool.Exec, it)
+	return gocdnSaveItemWith(ctx, s.store.Pool.Exec, it, true)
 }
 
-func gocdnSaveItemWith(ctx context.Context, exec func(context.Context, string, ...any) (pgconn.CommandTag, error), it *gocdnItem) error {
-	_, err := exec(ctx, `INSERT INTO gocdn_items (media_id, path, provider, region, bucket, object_key, size, mime_type, local_removed, endpoint)
+func gocdnSaveItemWith(ctx context.Context, exec func(context.Context, string, ...any) (pgconn.CommandTag, error), it *gocdnItem, replace bool) error {
+	result, err := exec(ctx, `INSERT INTO gocdn_items (media_id, path, provider, region, bucket, object_key, size, mime_type, local_removed, endpoint)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
 		ON CONFLICT (path) DO UPDATE SET media_id = EXCLUDED.media_id, provider = EXCLUDED.provider, region = EXCLUDED.region,
 			bucket = EXCLUDED.bucket, object_key = EXCLUDED.object_key, size = EXCLUDED.size, mime_type = EXCLUDED.mime_type,
-			local_removed = EXCLUDED.local_removed, endpoint = EXCLUDED.endpoint`,
-		nullable64(it.MediaID), it.Path, it.Provider, it.Region, it.Bucket, it.Key, it.Size, it.Mime, it.LocalRemoved, it.Endpoint)
+			local_removed = EXCLUDED.local_removed, endpoint = EXCLUDED.endpoint
+		WHERE $11::boolean`,
+		nullable64(it.MediaID), it.Path, it.Provider, it.Region, it.Bucket, it.Key, it.Size, it.Mime, it.LocalRemoved, it.Endpoint, replace)
+	if err == nil && result.RowsAffected() == 0 {
+		return errGocdnPathReserved
+	}
 	return err
 }
 
@@ -231,6 +235,9 @@ func (s *Server) gocdnUploadFile(ctx context.Context, st gocdnSettings, cl *gocd
 	}
 	key := s.gocdnNewKey(st, rel)
 	opts := gocdnUploadOptions(st, rel)
+	writes := &s.gocdnRT().objectWrites
+	writes.RLock()
+	defer writes.RUnlock()
 	if _, err := cl.Upload(ctx, key, f, fi.Size(), opts); err != nil {
 		return fmt.Errorf("%s: %w", rel, err)
 	}

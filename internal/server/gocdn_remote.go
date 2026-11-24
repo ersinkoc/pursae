@@ -145,8 +145,15 @@ func (s *Server) gocdnImportLink(ctx context.Context, st gocdnSettings, cl *gocd
 	if local == "" {
 		return 0, errors.New("invalid key")
 	}
-	if it := s.gocdnItemByPath(ctx, rel); it != nil && it.MediaID != 0 {
-		return it.MediaID, errAlreadyInLibrary
+	writes := &s.gocdnRT().objectWrites
+	writes.RLock()
+	defer writes.RUnlock()
+	current, err := s.gocdnItemsByPaths(ctx, []string{rel})
+	if err != nil {
+		return 0, err
+	}
+	if it := current[rel]; it != nil {
+		return gocdnLinkPathConflict(it)
 	}
 	if _, err := os.Stat(local); err == nil {
 		return 0, errors.New("a local file has the same path; use Copy")
@@ -193,15 +200,32 @@ func (s *Server) gocdnImportLink(ctx context.Context, st gocdnSettings, cl *gocd
 			return err
 		}
 		return gocdnSaveItemWith(ctx, tx.Exec, &gocdnItem{MediaID: a.ID, Path: rel, Provider: st.Provider, Region: gocdnRegion(st), Bucket: st.Bucket,
-			Key: key, Size: obj.Size, Mime: mime, LocalRemoved: true, Endpoint: gocdnEndpoint(st)})
+			Key: key, Size: obj.Size, Mime: mime, LocalRemoved: true, Endpoint: gocdnEndpoint(st)}, false)
 	})
+	if errors.Is(err, errGocdnPathReserved) {
+		current, err := s.gocdnItemsByPaths(ctx, []string{rel})
+		if err != nil {
+			return 0, err
+		}
+		return gocdnLinkPathConflict(current[rel])
+	}
 	if err != nil {
 		return 0, err
 	}
 	return a.ID, nil
 }
 
-var errAlreadyInLibrary = errors.New("already in the library")
+var (
+	errAlreadyInLibrary  = errors.New("already in the library")
+	errGocdnPathReserved = errors.New("the uploads path is already reserved; try again later")
+)
+
+func gocdnLinkPathConflict(it *gocdnItem) (int64, error) {
+	if it != nil && it.MediaID != 0 {
+		return it.MediaID, errAlreadyInLibrary
+	}
+	return 0, errGocdnPathReserved
+}
 
 // gocdnSanitizeRemoteSVG reads a linked SVG, strips scripts and external URLs, and writes the
 // cleaned bytes back when they differ. The attachment is not registered if the write fails.
