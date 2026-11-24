@@ -410,10 +410,10 @@ func (s *Server) gooProcessCheckout(c *gin.Context, form map[string][]string) (*
 	}
 	// wc_reserve_stock_for_order(): the order's stock is held while the customer pays, so another
 	// checkout cannot sell the same last unit meanwhile. The order stays pending (a retry reuses it).
-	// Holds of this visitor's earlier unpaid orders pass to this one (a retry after leaving the
-	// payment page places a new order).
-	s.gooReleaseOwnHolds(ctx, gooVisitorOrders(sess, customerID), o.ID)
-	if err := s.gooReserveStock(ctx, o); err != nil {
+	// Holds this visitor already has on these same products pass to this order inside the reservation
+	// (one transaction, so the units are never free in between). Holds on other products stay, so
+	// buying something else does not give away the stock of an order still awaiting payment.
+	if err := s.gooReserveStockMine(ctx, o, gooVisitorOrders(sess, customerID)); err != nil {
 		return nil, o, []string{err.Error()}
 	}
 	gw := s.gooGateway(d.PaymentMethod)
@@ -651,7 +651,98 @@ func (s *Server) gooOrderItemsFromCart(ctx context.Context, cart *gooCart) []*go
 		items = append(items, &gooOrderItem{Type: "coupon", Name: cp.Code, Total: cart.CouponExTax[cp.Code], TotalTax: cart.CouponTax[cp.Code],
 			Meta: map[string]any{"discount_amount": cart.CouponExTax[cp.Code], "discount_amount_tax": cart.CouponTax[cp.Code], "coupon_id": float64(cp.ID)}})
 	}
+	// Rounding each line (or leaving taxes unrounded when rounding at subtotal) can leave the lines a
+	// cent away from the cart total the customer is charged. The difference goes on the last line.
+	dp := s.gooDecimals()
+	var lines, ships []*gooOrderItem
+	for _, it := range items {
+		switch it.Type {
+		case "line_item":
+			lines = append(lines, it)
+		case "shipping":
+			ships = append(ships, it)
+		}
+	}
+	gooReconcileItemMoney(lines, cart.CartContentsTotal, cart.CartContentsTax, cart.Subtotal, cart.SubtotalTax, dp)
+	gooReconcileItemMoney(ships, cart.ShippingTotal, cart.ShippingTax, 0, 0, dp)
 	return items
+}
+
+// gooReconcileItemMoney rounds item amounts to dp and moves the leftover cents onto the last item so
+// the lines add up to the cart totals (wantTotal / wantTax, and the pre-discount subtotals).
+func gooReconcileItemMoney(items []*gooOrderItem, wantTotal, wantTax, wantSub, wantSubTax float64, dp int) {
+	if len(items) == 0 {
+		return
+	}
+	var sumT, sumTax, sumS, sumSTax float64
+	for _, it := range items {
+		it.Total = gooRound(it.Total, dp)
+		it.Subtotal = gooRound(it.Subtotal, dp)
+		gooRoundTaxMap(it.Taxes.Total, dp)
+		gooRoundTaxMap(it.Taxes.Subtotal, dp)
+		if len(it.Taxes.Total) > 0 {
+			it.TotalTax = gooRound(gooSumStringMap(it.Taxes.Total), dp)
+		} else {
+			it.TotalTax = gooRound(it.TotalTax, dp)
+		}
+		if len(it.Taxes.Subtotal) > 0 {
+			it.SubtotalTax = gooRound(gooSumStringMap(it.Taxes.Subtotal), dp)
+		} else {
+			it.SubtotalTax = gooRound(it.SubtotalTax, dp)
+		}
+		sumT += it.Total
+		sumTax += it.TotalTax
+		sumS += it.Subtotal
+		sumSTax += it.SubtotalTax
+	}
+	last := items[len(items)-1]
+	taxed := last
+	for i := len(items) - 1; i >= 0; i-- {
+		if len(items[i].Taxes.Total) > 0 {
+			taxed = items[i]
+			break
+		}
+	}
+	dT := gooRound(wantTotal-sumT, dp)
+	dTax := gooRound(wantTax-sumTax, dp)
+	dS := gooRound(wantSub-sumS, dp)
+	dSTax := gooRound(wantSubTax-sumSTax, dp)
+	if dT == 0 && dTax == 0 && dS == 0 && dSTax == 0 {
+		return
+	}
+	last.Total = gooRound(last.Total+dT, dp)
+	last.Subtotal = gooRound(last.Subtotal+dS, dp)
+	taxed.TotalTax = gooRound(taxed.TotalTax+dTax, dp)
+	taxed.SubtotalTax = gooRound(taxed.SubtotalTax+dSTax, dp)
+	gooAdjustTaxMap(taxed.Taxes.Total, dTax, dp)
+	gooAdjustTaxMap(taxed.Taxes.Subtotal, dSTax, dp)
+}
+
+func gooRoundTaxMap(m map[string]float64, dp int) {
+	for k, v := range m {
+		m[k] = gooRound(v, dp)
+	}
+}
+
+func gooSumStringMap(m map[string]float64) float64 {
+	var sum float64
+	for _, v := range m {
+		sum += v
+	}
+	return sum
+}
+
+func gooAdjustTaxMap(m map[string]float64, delta float64, dp int) {
+	if len(m) == 0 || delta == 0 {
+		return
+	}
+	key := ""
+	for k := range m {
+		if key == "" || k < key {
+			key = k
+		}
+	}
+	m[key] = gooRound(m[key]+delta, dp)
 }
 
 // gooOrderReceivedURL is WC_Order::get_checkout_order_received_url().

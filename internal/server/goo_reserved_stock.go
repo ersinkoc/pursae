@@ -40,6 +40,14 @@ func (s *Server) gooReserveMinutes() int {
 // transaction. When a product does not have enough unreserved stock nothing changes and a
 // *gooStockShortage is returned.
 func (s *Server) gooReserveStock(ctx context.Context, o *gooOrder) error {
+	return s.gooReserveStockMine(ctx, o, gooOwnOrders{})
+}
+
+// gooReserveStockMine is gooReserveStock that also takes over holds mine already has on the same
+// products (a visitor paying again, or checking out once more). Those rows are deleted in the same
+// transaction as the new hold, after the product row is locked, so the units are never free for
+// someone else to reserve in between. Holds on products this order does not buy are left alone.
+func (s *Server) gooReserveStockMine(ctx context.Context, o *gooOrder, mine gooOwnOrders) error {
 	mins := s.gooReserveMinutes()
 	if mins == 0 || o == nil || o.ID == 0 {
 		return nil
@@ -85,6 +93,20 @@ func (s *Server) gooReserveStock(ctx context.Context, o *gooOrder) error {
 			}
 			if !manage || backorders != "no" {
 				continue
+			}
+			// Take over this visitor's other holds of the same product only after the row is locked,
+			// and in this transaction, so a concurrent checkout cannot reserve the units in the gap.
+			ownIDs := mine.IDs
+			if ownIDs == nil {
+				ownIDs = []int64{}
+			}
+			if len(ownIDs) > 0 || mine.Customer != 0 {
+				if _, err := tx.Exec(ctx, `DELETE FROM goo_reserved_stock r USING goo_orders o
+					WHERE o.id = r.order_id AND r.product_id = $1 AND r.order_id <> $2
+					AND (r.order_id = ANY($3) OR ($4 <> 0 AND o.customer_id = $4))`,
+					id, o.ID, ownIDs, mine.Customer); err != nil {
+					return err
+				}
 			}
 			// A new statement after the lock: its snapshot sees every hold committed before it.
 			var held int
@@ -155,20 +177,6 @@ func gooVisitorOrders(sess *gooSession, customer int64) gooOwnOrders {
 		}
 	}
 	return own
-}
-
-// gooReleaseOwnHolds drops the holds of the visitor's other unpaid orders when keep (a new attempt)
-// is placed: the new order takes the units over (they stay pending; paying one later reduces stock
-// only from what is free).
-func (s *Server) gooReleaseOwnHolds(ctx context.Context, mine gooOwnOrders, keep int64) {
-	if len(mine.IDs) == 0 && mine.Customer == 0 {
-		return
-	}
-	if _, err := s.store.Pool.Exec(ctx, `DELETE FROM goo_reserved_stock r USING goo_orders o
-		WHERE o.id = r.order_id AND r.order_id <> $1 AND (r.order_id = ANY($2) OR ($3 <> 0 AND o.customer_id = $3))`,
-		keep, mine.IDs, mine.Customer); err != nil {
-		slog.Warn("goocommerce: release the visitor's earlier holds", "order", keep, "err", err)
-	}
 }
 
 // gooCleanupReservedStock deletes expired reservations (they count for nothing already).
