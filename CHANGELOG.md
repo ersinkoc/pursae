@@ -10,6 +10,8 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-11-25
+
 ### Added
 
 - **Plugin settings: an `image` field type with the media library picker.** A Wasm plugin's settings page or
@@ -18,8 +20,36 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   http(s) URL or a site-relative path; anything else is refused on save). Blocks and Web Builder widgets
   refuse the type for now. Plugins using it should require 0.5.5.
 
+### Changed
+
+- **The catalog follows Pursae Manager's order.** The theme library and Add Plugins list the Manager's
+  listings in the order its operator set on the Manager's Plugins/Themes screens instead of by name; a
+  directory theme library and local packages stay sorted by name.
+- **Add Plugins reads the Manager catalog live.** A plugin published on the Manager shows at once instead of
+  after the 12-hour cache expires; the cached copy is the fallback when the Manager cannot be reached.
+- **Release notes as cards.** On Dashboard › Updates every section of the release notes has its colour
+  (Added green, Changed blue, Fixed purple, Security red) and each item is a card that shows its title;
+  a click opens the details.
+- **Installer wording.** The setup token step is headed "Pursae Install" and names the command
+  `pursae setup-token`.
+
+### Security
+
+- **Front-end members get no wp-admin and no API credentials.** Accounts whose only capabilities are
+  `read`, `level_0` or `forum_participate` (subscribers, forum members, store customers) are sent from
+  wp-admin to the forum account page or the home page, cannot create Application Passwords, and their
+  existing Application Passwords, OAuth tokens and Goocommerce `ck_` keys no longer sign in. `ck_` keys also
+  stop for an account Pursae Security holds for a password change or two-step setup. Authors, editors,
+  moderators, shop managers and custom roles keep wp-admin and their credentials.
+
 ### Fixed
 
+- **GoCDN S3 client and media metadata.** Copy and multipart results, `Content-Range` totals, listing
+  names and continuation tokens are checked; MP3 (Xing, ID3v2.3), MP4 and WAV durations and bitrates are
+  read correctly.
+- **Settings and CLI.** Cached settings stay consistent with the database and keep their autoload
+  visibility; CLI write failures are reported, YAML output quotes numeric-looking strings, the last of a
+  repeated flag wins, `--` is kept and malformed global flags are reported.
 - **Hello Pursae only with Pursae Web Builder.** The builder's blank-canvas theme is no longer listed,
   previewed or activated while the plugin is off (Themes screen, REST, MCP and CLI); a site that still
   runs it keeps it.
