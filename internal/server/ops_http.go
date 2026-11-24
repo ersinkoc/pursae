@@ -226,7 +226,9 @@ func accessLog() gin.HandlerFunc {
 				slog.String("ip", c.ClientIP()), slog.String("request_id", id))
 			return
 		}
-		log.Printf("%d %s %s %s id=%s", c.Writer.Status(), c.Request.Method, uri, d, id)
+		// The URI comes from the request line and the id from a header: net/http rejects CR and LF in
+		// both, so neither can start a forged log line.
+		log.Printf("%d %s %s %s id=%s", c.Writer.Status(), c.Request.Method, uri, d, id) //nolint:gosec // G706: see above
 	}
 }
 
