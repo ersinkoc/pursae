@@ -28,8 +28,8 @@ func TestRenderReleaseNotesBlocks(t *testing.T) {
 	got := string(renderReleaseNotes(md))
 	for _, want := range []string{
 		"<p>Summary line one line two.</p>",
-		"<h3>Added</h3>",
-		"<ul>\n<li>First item wraps here.</li>\n<li>Second <code>code</code> item</li>\n</ul>",
+		`<h3 class="pursae-notes-section is-added"><span class="pursae-news-label">Added</span></h3>`,
+		"<ul class=\"pursae-notes-cards is-added\">\n<li>First item wraps here.</li>\n<li>Second <code>code</code> item</li>\n</ul>",
 		"<h4>Sub</h4>",
 		"<li>Lazy continuation</li>",
 		"<p>After the list.</p>",
@@ -41,6 +41,28 @@ func TestRenderReleaseNotesBlocks(t *testing.T) {
 	}
 	if strings.Contains(got, "###") || strings.Contains(got, "- First") || strings.Contains(got, "`") {
 		t.Errorf("raw markdown left:\n%s", got)
+	}
+}
+
+// An item that starts with a bold title is a closed card: the title is the summary, the rest opens on
+// a click; the cards take the colour of their section.
+func TestRenderReleaseNotesCards(t *testing.T) {
+	md := "### Security\n\n- **Members get no wp-admin.** Their `ck_` keys stop.\n- **Title only.**\n- No title here.\n\n### Something else\n\n- **A.** b\n"
+	got := string(renderReleaseNotes(md))
+	for _, want := range []string{
+		`<h3 class="pursae-notes-section is-security"><span class="pursae-news-label">Security</span></h3>`,
+		`<ul class="pursae-notes-cards is-security">`,
+		`<li><details class="pursae-note"><summary><strong>Members get no wp-admin.</strong></summary><div class="pursae-note-body">Their <code>ck_</code> keys stop.</div></details></li>`,
+		"<li><strong>Title only.</strong></li>",
+		"<li>No title here.</li>",
+		`<ul class="pursae-notes-cards is-other">`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, " open") {
+		t.Errorf("a card is open by default:\n%s", got)
 	}
 }
 
