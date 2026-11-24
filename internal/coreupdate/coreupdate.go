@@ -16,6 +16,7 @@ package coreupdate
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -67,8 +68,16 @@ func Read(exe string) *State {
 }
 
 func write(exe string, st *State) error {
-	b, _ := json.MarshalIndent(st, "", "  ")
-	tmp := statePath(exe) + ".tmp"
+	b, err := json.MarshalIndent(st, "", "  ")
+	if err != nil {
+		return err
+	}
+	stage, err := os.MkdirTemp(filepath.Dir(exe), ".pursae-update-state-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(stage)
+	tmp := filepath.Join(stage, "state.json")
 	if err := os.WriteFile(tmp, b, 0o644); err != nil {
 		return err
 	}
@@ -81,14 +90,53 @@ func Clear(exe string) { _ = os.Remove(statePath(exe)) }
 // Prepare keeps the running binary as <exe>.prev and records an update from → to. Call it right
 // before the new binary is renamed over exe.
 func Prepare(exe, from, to string) error {
-	prev := PrevPath(exe)
-	_ = os.Remove(prev)
-	if err := os.Link(exe, prev); err != nil { // same directory: a hard link costs nothing
-		if err := copyFile(exe, prev); err != nil {
-			return fmt.Errorf("keeping the current binary: %w", err)
-		}
+	stage, err := os.MkdirTemp(filepath.Dir(exe), ".pursae-previous-")
+	if err != nil {
+		return fmt.Errorf("keeping the current binary: %w", err)
 	}
-	return write(exe, &State{From: from, To: to, Status: "pending", At: time.Now().UTC()})
+	keepStage := false
+	defer func() {
+		if !keepStage {
+			_ = os.RemoveAll(stage)
+		}
+	}()
+	next := filepath.Join(stage, "current")
+	if err := linkOrCopy(exe, next); err != nil {
+		return fmt.Errorf("keeping the current binary: %w", err)
+	}
+	prev := PrevPath(exe)
+	saved := filepath.Join(stage, "previous")
+	_, err = os.Lstat(prev)
+	hadPrevious := err == nil
+	if hadPrevious {
+		if err := linkOrCopy(prev, saved); err != nil {
+			return fmt.Errorf("keeping the earlier backup: %w", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	if err := os.Rename(next, prev); err != nil {
+		return fmt.Errorf("publishing the current binary backup: %w", err)
+	}
+	if err := write(exe, &State{From: from, To: to, Status: "pending", At: time.Now().UTC()}); err != nil {
+		if hadPrevious {
+			if restoreErr := os.Rename(saved, prev); restoreErr != nil {
+				keepStage = true
+				return errors.Join(err, fmt.Errorf("restoring the earlier binary from %s: %w", saved, restoreErr))
+			}
+		} else if removeErr := os.Remove(prev); removeErr != nil && !os.IsNotExist(removeErr) {
+			return errors.Join(err, fmt.Errorf("removing the new backup: %w", removeErr))
+		}
+		return err
+	}
+	return nil
+}
+
+func linkOrCopy(src, dst string) error {
+	if err := os.Link(src, dst); err == nil {
+		return nil
+	}
+	return copyFile(src, dst)
 }
 
 // Guard runs first when the server starts. When exe is the new binary of a pending update that
@@ -204,7 +252,7 @@ func Previous(exe, version string) (from string, keptUntil time.Time) {
 	if st == nil || st.Status != "confirmed" || st.To != version {
 		return "", time.Time{}
 	}
-	if _, err := os.Stat(PrevPath(exe)); err == nil {
+	if info, err := os.Stat(PrevPath(exe)); err == nil && info.Mode().IsRegular() {
 		keptUntil = st.At.Add(PrevRetention)
 	}
 	return st.From, keptUntil
@@ -222,21 +270,34 @@ func SwapPrev(exe, from, to string) error {
 			Clear(exe)
 		}
 	}
+	stage, err := os.MkdirTemp(filepath.Dir(exe), ".pursae-reinstall-")
+	if err != nil {
+		return err
+	}
+	keepStage := false
+	defer func() {
+		if !keepStage {
+			_ = os.RemoveAll(stage)
+		}
+	}()
 	prev := PrevPath(exe)
-	tmp := exe + ".reinstall"
-	_ = os.Remove(tmp)
+	tmp := filepath.Join(stage, "previous")
 	if err := os.Rename(prev, tmp); err != nil {
 		return fmt.Errorf("the previous binary is gone: %w", err)
 	}
+	restore := func(cause error) error {
+		if err := os.Rename(tmp, prev); err != nil {
+			// Keep the staged binary when it could not be moved back.
+			keepStage = true
+			return errors.Join(cause, fmt.Errorf("restoring the previous binary from %s: %w", tmp, err))
+		}
+		return cause
+	}
 	if err := Prepare(exe, from, to); err != nil {
-		_ = os.Remove(prev)
-		_ = os.Rename(tmp, prev)
-		undo()
-		return err
+		return restore(err)
 	}
 	if err := os.Rename(tmp, exe); err != nil {
-		_ = os.Remove(prev)
-		_ = os.Rename(tmp, prev)
+		err = restore(err)
 		undo()
 		return err
 	}
@@ -270,15 +331,17 @@ func Launch(image, dir string, args []string) error {
 		if err := os.MkdirAll(dir, 0o755); err == nil {
 			installed := filepath.Join(dir, filepath.Base(image))
 			iv, cv := binaryVersion(image), binaryVersion(installed)
+			imageNewer := Less(cv, iv)
+			equivalent := iv != "" && cv != "" && !imageNewer && !Less(iv, cv)
 			switch {
 			// A rebuilt image with the same version (development builds all report the same one)
 			// also wins when its binary differs: an admin update always installs a newer version,
 			// so an equal version with other bytes can only be a stale copy of an older image.
-			case cv == "" || Less(cv, iv) || (cv == iv && !sameContent(image, installed)):
+			case cv == "" || imageNewer || (equivalent && !sameContent(image, installed)):
 				if err := copyFile(image, installed+".new"); err == nil && os.Rename(installed+".new", installed) == nil {
 					target = installed
 					switch {
-					case cv == iv:
+					case equivalent:
 						fmt.Fprintf(os.Stderr, "pursae: the image has a different %s build than the installed one; using the image's\n", iv)
 					case cv != "":
 						fmt.Fprintf(os.Stderr, "pursae: the image has %s, newer than the installed %s; using the image's\n", iv, cv)

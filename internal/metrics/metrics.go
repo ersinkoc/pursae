@@ -77,7 +77,9 @@ func Group(path string) int {
 		return GroupStatic
 	case path == "/wp-json" || hasPrefix(path, "/wp-json/"):
 		return GroupREST
-	case path == "/wp-admin" || hasPrefix(path, "/wp-admin/") || hasPrefix(path, "/wp-login"):
+	case path == "/wp-admin" || hasPrefix(path, "/wp-admin/"):
+		return GroupAdmin
+	case path == "/wp-login" || path == "/wp-login/" || path == "/wp-login.php" || path == "/wp-login.php/":
 		return GroupAdmin
 	}
 	return GroupFrontend
@@ -162,13 +164,16 @@ func (w *statusWriter) Write(p []byte) (int, error) {
 
 func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
-func (w *statusWriter) Flush() {
-	if f, ok := w.ResponseWriter.(http.Flusher); ok {
-		if w.status == 0 {
-			w.status = http.StatusOK
-		}
-		f.Flush()
+func (w *statusWriter) Flush() { _ = w.FlushError() }
+
+func (w *statusWriter) FlushError() error {
+	if err := http.NewResponseController(w.ResponseWriter).Flush(); err != nil {
+		return err
 	}
+	if w.status == 0 {
+		w.status = http.StatusOK
+	}
+	return nil
 }
 
 func (w *statusWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
@@ -176,22 +181,24 @@ func (w *statusWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if !ok {
 		return nil, nil, errors.New("metrics: the response writer does not support hijacking")
 	}
-	if w.status == 0 {
+	conn, rw, err := h.Hijack()
+	if err == nil && w.status == 0 {
 		w.status = http.StatusSwitchingProtocols
 	}
-	return h.Hijack()
+	return conn, rw, err
 }
 
 type onlyWriter struct{ io.Writer }
 
 func (w *statusWriter) ReadFrom(r io.Reader) (int64, error) {
-	if w.status == 0 {
-		w.status = http.StatusOK
-	}
 	if rf, ok := w.ResponseWriter.(io.ReaderFrom); ok {
-		return rf.ReadFrom(r)
+		n, err := rf.ReadFrom(r)
+		if n > 0 && w.status == 0 {
+			w.status = http.StatusOK
+		}
+		return n, err
 	}
-	return io.Copy(onlyWriter{w.ResponseWriter}, r)
+	return io.Copy(onlyWriter{w}, r)
 }
 
 // runtime/metrics samples exposed as gauges/counters: name, Prometheus name, help, type.
