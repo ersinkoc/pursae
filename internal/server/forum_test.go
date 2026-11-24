@@ -299,9 +299,7 @@ func TestForumFoundation(t *testing.T) {
 		t.Errorf("private view headers: %v", hdr)
 	}
 	// Inside Hello Pursae (blank canvas): the placeholder still renders.
-	if err := srv.switchTheme(ctx, wbHelloSlug); err != nil {
-		t.Fatal(err)
-	}
+	helloWithBuilderOff(t, srv)
 	if code, body, _ := forumRenderTest(t, srv, forumViewIndex); code != http.StatusOK || !strings.Contains(body, `data-view="index"`) || !strings.Contains(body, "wp-theme-"+wbHelloSlug) {
 		t.Errorf("Hello Pursae render: %d", code)
 	}

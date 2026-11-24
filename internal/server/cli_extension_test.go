@@ -240,7 +240,11 @@ func TestExtensionCLIDatabase(t *testing.T) {
 		t.Errorf("unknown plugin: exit %d", code)
 	}
 
-	// Themes.
+	// Themes. With Pursae Web Builder on, Hello Pursae is the second bundled theme (it is not offered
+	// while the plugin is off).
+	if err := srv.settings.Set(context.Background(), map[string]any{webbuilder.PluginOption: true}); err != nil {
+		t.Fatal(err)
+	}
 	if code, out, errOut = run("theme", "list", "--status=active", "--field=name"); code != 0 || strings.TrimSpace(out) == "" {
 		t.Fatalf("theme list: %d %q %s", code, out, errOut)
 	}
