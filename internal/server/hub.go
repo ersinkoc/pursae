@@ -303,8 +303,8 @@ func (s *Server) hubTrustKeys(keys []hubKey) {
 // hubCatalogMaxPages bounds the pages of one catalog read (100 listings each).
 const hubCatalogMaxPages = 50
 
-// hubCatalog lists the Hub's plugins or themes (kind "plugins" | "themes"), every page of them,
-// cached for 12 hours under the license's cache key.
+// hubCatalog lists the Hub's plugins or themes (kind "plugins" | "themes"), every page of them in
+// the Manager's order, cached for 12 hours under the license's cache key.
 func (s *Server) hubCatalog(ctx context.Context, kind string) ([]hubItem, error) {
 	var list hubList
 	key := s.hubCacheKey("wpgo_hub_" + kind)
@@ -314,7 +314,9 @@ func (s *Server) hubCatalog(ctx context.Context, kind string) ([]hubItem, error)
 	list = hubList{}
 	for page := 1; page <= hubCatalogMaxPages; page++ {
 		var p hubList
-		if err := s.hubGet(ctx, "/api/v1/"+kind+"?per_page=100&sort=downloads&page="+strconv.Itoa(page), &p); err != nil {
+		// sort=position: the order the Manager's operator set for the catalog (a Manager that does
+		// not know it answers newest first).
+		if err := s.hubGet(ctx, "/api/v1/"+kind+"?per_page=100&sort=position&page="+strconv.Itoa(page), &p); err != nil {
 			return nil, err
 		}
 		list.Items = append(list.Items, p.Items...)

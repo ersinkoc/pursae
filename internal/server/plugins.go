@@ -1652,9 +1652,14 @@ func (s *Server) pluginInstall(c *gin.Context) {
 		}
 		featured = append(featured, it)
 	}
+	// Pursae Manager's listings first, in the order the Manager gives them (its operator's order);
+	// then the local packages by name.
 	sort.SliceStable(featured, func(i, j int) bool {
 		if featured[i].Hub != featured[j].Hub {
 			return featured[i].Hub
+		}
+		if featured[i].Hub {
+			return false
 		}
 		return featured[i].Name < featured[j].Name
 	})

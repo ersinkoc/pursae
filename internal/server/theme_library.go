@@ -105,7 +105,8 @@ type libraryState struct {
 	installMu sync.Mutex // preinstall runs one at a time
 }
 
-// libraryThemes lists the valid library themes, sorted by name (empty when there is no library).
+// libraryThemes lists the valid library themes (empty when there is no library): a directory
+// library by name, the Manager's in the order the Manager gives them.
 func (s *Server) libraryThemes(ctx context.Context) []libraryTheme {
 	out, _ := s.libraryThemesErr(ctx)
 	return out
@@ -118,17 +119,18 @@ func (s *Server) libraryThemesErr(ctx context.Context) ([]libraryTheme, error) {
 	switch {
 	case s.themeLibrary != nil:
 		out = s.dirLibraryThemes()
+		sort.Slice(out, func(i, j int) bool {
+			return strings.ToLower(out[i].Manifest.Name) < strings.ToLower(out[j].Manifest.Name)
+		})
 	case s.hubBase() == "" || s.sandbox != nil:
 		return nil, errLibraryOff
 	default:
+		// The Manager's order: the one its operator set on the Themes screen.
 		var err error
 		if out, err = s.managerLibraryThemes(ctx); err != nil {
 			return nil, err
 		}
 	}
-	sort.Slice(out, func(i, j int) bool {
-		return strings.ToLower(out[i].Manifest.Name) < strings.ToLower(out[j].Manifest.Name)
-	})
 	return out, nil
 }
 
