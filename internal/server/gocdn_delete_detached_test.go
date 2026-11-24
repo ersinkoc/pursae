@@ -5,9 +5,8 @@ import (
 	"testing"
 )
 
-// Rows detached from a deleted attachment do not cascade away, so an object that cannot be
-// reached is queued for a later delete and its row is still removed.
-func TestGocdnDeleteItemsQueuesUnreachableDetachedObjects(t *testing.T) {
+// An unreachable detached object keeps its durable mapping for housekeeping to retry.
+func TestGocdnDeleteItemsRetainsUnreachableDetachedObjects(t *testing.T) {
 	ts, client, srv := newTestServer(t, false)
 	installAndLogin(t, ts, client)
 	a, err := srv.insertAttachmentFile(t.Context(), "detached.mp4", strings.NewReader("bytes"), 1, 0)
@@ -25,12 +24,14 @@ func TestGocdnDeleteItemsQueuesUnreachableDetachedObjects(t *testing.T) {
 	if err != nil || len(items) != 1 {
 		t.Fatalf("detach: %d items, %v", len(items), err)
 	}
-	srv.gocdnDeleteItems(t.Context(), items)
-	if srv.gocdnItemByPath(t.Context(), a.FilePath) != nil {
-		t.Fatal("the detached mapping was left behind")
+	if _, err := srv.store.Pool.Exec(t.Context(), `ALTER TABLE settings ADD CONSTRAINT reject_pending_record CHECK (key <> 'gocdn_pending_deletes')`); err != nil {
+		t.Fatal(err)
 	}
-	pending := srv.gocdnPendingDeletes()
-	if len(pending) != 1 || pending[0].Key != "detached.mp4" {
-		t.Fatalf("pending deletes = %+v, want the unreachable object", pending)
+	srv.gocdnDeleteItems(t.Context(), items)
+	if it := srv.gocdnItemByPath(t.Context(), a.FilePath); it == nil || it.MediaID != 0 || it.Key != "detached.mp4" {
+		t.Fatalf("the durable cleanup record was lost: %+v", it)
+	}
+	if pending := srv.gocdnPendingDeletes(); len(pending) != 0 {
+		t.Fatalf("unexpected settings-based retries: %+v", pending)
 	}
 }

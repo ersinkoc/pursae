@@ -157,16 +157,15 @@ func ksesMediaPatch(u *store.User, patch pllMediaText) {
 }
 
 // uploadReserved lists the names of an uploads sub-folder ("" or "2026/11") that live only in
-// the bucket (Pursae CDN removed the local copy, or linked a bucket object): a new upload must not
-// take one of them (or a size name of one), it would overwrite that file's object and take over its
-// gocdn_items row. WP Offload Media hooks wp_unique_filename for the same reason.
+// the bucket or are reserved by a pending deletion. A new upload must leave these paths and their
+// generated size names alone until their mappings are removed.
 func (s *Server) uploadReserved(ctx context.Context) func(sub string) []string {
 	return func(sub string) []string {
 		prefix := ""
 		if sub != "" {
 			prefix = strings.Trim(sub, "/") + "/"
 		}
-		rows, err := s.store.Pool.Query(ctx, `SELECT path FROM gocdn_items WHERE local_removed AND starts_with(path, $1)`, prefix)
+		rows, err := s.store.Pool.Query(ctx, `SELECT path FROM gocdn_items WHERE (local_removed OR media_id IS NULL) AND starts_with(path, $1)`, prefix)
 		if err != nil {
 			return nil
 		}
