@@ -23,6 +23,14 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
   order still awaiting payment, and taking that hold over cannot leave the units free in between. A payment
   blocked by another order's hold reports the units that are actually free. Coupon e-mail restrictions honour
   every `*` (`*@*.edu`), not only the first.
+- **Backup Manager: remote retention, sealed secrets, restore paths.** A remote backup uploaded in the
+  same second as another is no longer deleted in its place when their names sort the other way. A secret
+  or passphrase that begins with `bkr:v1:` is stored sealed, and sealing fails closed if the system has
+  no entropy. Endpoints that embed a metadata or loopback address in NAT64 or 6to4, and Azure's
+  WireServer address, are refused even when `PURSAE_BACKUP_S3_ALLOW_PRIVATE=1` (that setting still
+  allows loopback, private and carrier-grade NAT addresses). Restoring files no longer follows a symlink
+  out of the destination directory, and a database row larger than 64 MB fails the restore instead of
+  buffering without a limit.
 
 ## [0.5.3] - 2026-11-23
 

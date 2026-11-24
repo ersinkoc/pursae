@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -209,6 +210,30 @@ type bmgrRestoreOpts struct {
 	Reseal    *bmgrResealer // re-encrypts sealed secrets from the archive's site secret to this site's (nil: none)
 }
 
+// bmgrMaxJSONLine is the largest database row a restore will buffer. The reader stops at this
+// size instead of growing without a bound, so one crafted line cannot exhaust the process.
+const bmgrMaxJSONLine = 64 << 20
+
+// bmgrReadLine reads one newline-terminated row, or the last row when the file ends without one.
+// A row longer than max is refused before the rest of it is buffered.
+func bmgrReadLine(r *bufio.Reader, max int) (string, error) {
+	var b []byte
+	for {
+		frag, err := r.ReadSlice('\n')
+		if len(b) > max-len(frag) {
+			return "", fmt.Errorf("a row is larger than %d bytes", max)
+		}
+		b = append(b, frag...)
+		if err == nil || errors.Is(err, io.EOF) {
+			return string(b), err
+		}
+		if errors.Is(err, bufio.ErrBufferFull) {
+			continue
+		}
+		return string(b), err
+	}
+}
+
 // bmgrRestoreDB replaces the chosen tables from the archive inside one transaction. Foreign keys are
 // made deferrable for its duration (and back afterwards); orphans left by a partial restore are
 // repaired by the key's own ON DELETE rule before the constraints are checked.
@@ -343,7 +368,7 @@ func bmgrRestoreDB(ctx context.Context, tx pgx.Tx, sc *bmgrSchema, o bmgrRestore
 			return nil
 		}
 		for {
-			line, err := sc2.ReadString('\n')
+			line, err := bmgrReadLine(sc2, bmgrMaxJSONLine)
 			line = strings.TrimSpace(line)
 			if line != "" {
 				if t == "settings" {

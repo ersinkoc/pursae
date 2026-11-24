@@ -2,9 +2,11 @@ package server
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -12,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -41,6 +44,81 @@ func TestBmgrCategoriesAndPaths(t *testing.T) {
 		}
 	}
 	_ = s
+}
+
+func TestBmgrPlaceWithinDoesNotFollowSymlinkOut(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(root, "escape")); err != nil {
+		if runtime.GOOS == "windows" {
+			t.Skipf("cannot create symlinks here (needs Developer Mode or the symlink privilege): %v", err)
+		}
+		t.Fatal(err)
+	}
+	// Temporary directories may sit behind a symlink (/var on macOS) or an 8.3 short name (Windows), and
+	// bmgrPlaceWithin returns resolved paths, so compare against the resolved directories.
+	resolvedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := bmgrPlaceWithin(root, filepath.Join(root, "escape", "pwned.txt")); err == nil {
+		t.Fatal("a symlink pointing out of the restore directory was accepted")
+	}
+	if _, err := os.Stat(filepath.Join(outside, "pwned.txt")); !os.IsNotExist(err) {
+		t.Fatal("restore wrote through the symlink")
+	}
+	if entries, _ := os.ReadDir(outside); len(entries) != 0 {
+		t.Fatalf("restore created %d entries outside the directory", len(entries))
+	}
+
+	if err := os.Mkdir(filepath.Join(root, "real"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("real", filepath.Join(root, "link")); err != nil {
+		t.Fatal(err)
+	}
+	inside, err := bmgrPlaceWithin(root, filepath.Join(root, "link", "a.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inside != filepath.Join(resolvedRoot, "real", "a.txt") {
+		t.Fatalf("internal symlink resolved to %s", inside)
+	}
+
+	real := t.TempDir()
+	linkRoot := filepath.Join(t.TempDir(), "uploads")
+	if err := os.Symlink(real, linkRoot); err != nil {
+		t.Fatal(err)
+	}
+	placed, err := bmgrPlaceWithin(linkRoot, filepath.Join(linkRoot, "2026", "a.jpg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolvedReal, err := filepath.EvalSymlinks(real)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if placed != filepath.Join(resolvedReal, "2026", "a.jpg") {
+		t.Fatalf("symlink root resolved to %s", placed)
+	}
+	if _, err := os.Stat(filepath.Join(real, "2026")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBmgrReadLineLimit(t *testing.T) {
+	got, err := bmgrReadLine(bufio.NewReader(strings.NewReader("short\n")), 64)
+	if err != nil || got != "short\n" {
+		t.Fatalf("short line: %q %v", got, err)
+	}
+	got, err = bmgrReadLine(bufio.NewReader(strings.NewReader("no-nl")), 64)
+	if !errors.Is(err, io.EOF) || got != "no-nl" {
+		t.Fatalf("last line: %q %v", got, err)
+	}
+	_, err = bmgrReadLine(bufio.NewReader(strings.NewReader(strings.Repeat("x", 100)+"\n")), 32)
+	if err == nil {
+		t.Fatal("a row over the limit was accepted")
+	}
 }
 
 func bmgrRun(t *testing.T, s *Server, kind string, f func(j *bmgrJob) error) {

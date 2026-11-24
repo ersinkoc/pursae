@@ -116,9 +116,11 @@ altogether (each one is then read-only on the screen):
 
 The endpoint must be `https` on a public address. The address is checked again when each connection is
 made, after DNS resolution, and redirects are not followed, so a host name cannot be used to reach the
-server's own network (SSRF). Link-local and cloud metadata addresses are always refused. For a MinIO on
-your own network set `PURSAE_BACKUP_S3_ALLOW_PRIVATE=1`; it is an environment setting on purpose, so an
-administrator account alone cannot point the server at internal services.
+server's own network (SSRF). Link-local and cloud metadata addresses are always refused, including
+Azure's WireServer (`168.63.129.16`) and the same addresses embedded in NAT64 (`64:ff9b::/96`) or 6to4
+(`2002::/16`). `PURSAE_BACKUP_S3_ALLOW_PRIVATE=1` adds only loopback, private (RFC 1918 and IPv6
+unique-local) and carrier-grade NAT addresses, plus plain `http`; it is an environment setting on
+purpose, so an administrator account alone cannot point the server at internal services.
 
 The same from the command line (secrets are read from files, `-` for stdin, never from flags):
 

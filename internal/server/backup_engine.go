@@ -843,8 +843,8 @@ func (s *Server) bmgrRunRestore(ctx context.Context, j *bmgrJob, req bmgrRestore
 				return err
 			}
 			rel, _ := filepath.Rel(stage, p)
-			dst := filepath.Join(root, rel)
-			if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			dst, err := bmgrPlaceWithin(root, filepath.Join(root, rel))
+			if err != nil {
 				return err
 			}
 			if err := os.Rename(p, dst); err != nil {
@@ -878,6 +878,77 @@ func contains(l []string, v string) bool {
 		}
 	}
 	return false
+}
+
+// bmgrPlaceWithin returns the path at which dst should be created so the file stays inside root.
+// A symlink used as a directory is followed only when its target is still inside root; one that
+// points outside is refused before any directory is created through it. The returned path has no
+// symlink as a parent, so the following rename does not write through one.
+func bmgrPlaceWithin(root, dst string) (string, error) {
+	rel, err := filepath.Rel(root, dst)
+	if err != nil || !filepath.IsLocal(rel) {
+		return "", errors.New("invalid path")
+	}
+	resolvedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return "", err
+	}
+	cur := root
+	if parent := filepath.Dir(rel); parent != "." {
+		for _, elem := range strings.Split(parent, string(filepath.Separator)) {
+			if elem == "" || elem == "." || elem == ".." {
+				return "", errors.New("invalid path")
+			}
+			next := filepath.Join(cur, elem)
+			fi, lerr := os.Lstat(next)
+			switch {
+			case os.IsNotExist(lerr):
+				if err := os.Mkdir(next, 0o755); err != nil {
+					return "", err
+				}
+				cur = next
+			case lerr != nil:
+				return "", lerr
+			case fi.Mode()&os.ModeSymlink != 0:
+				resolved, err := filepath.EvalSymlinks(next)
+				if err != nil {
+					return "", err
+				}
+				if err := bmgrInside(resolvedRoot, resolved); err != nil {
+					return "", err
+				}
+				info, err := os.Stat(resolved)
+				if err != nil {
+					return "", err
+				}
+				if !info.IsDir() {
+					return "", fmt.Errorf("%s is not a directory", elem)
+				}
+				cur = resolved
+			case !fi.IsDir():
+				return "", fmt.Errorf("%s is not a directory", elem)
+			default:
+				cur = next
+			}
+		}
+	}
+	resolvedCur, err := filepath.EvalSymlinks(cur)
+	if err != nil {
+		return "", err
+	}
+	if err := bmgrInside(resolvedRoot, resolvedCur); err != nil {
+		return "", err
+	}
+	return filepath.Join(resolvedCur, filepath.Base(dst)), nil
+}
+
+// bmgrInside reports whether path is root or a path inside it.
+func bmgrInside(root, path string) error {
+	rel, err := filepath.Rel(root, path)
+	if err != nil || (rel != "." && !filepath.IsLocal(rel)) {
+		return errors.New("refusing to follow a symlink out of the restore directory")
+	}
+	return nil
 }
 
 // bmgrSafeJoin joins an archive path under root, refusing anything that would leave it.

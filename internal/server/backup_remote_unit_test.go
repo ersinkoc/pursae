@@ -6,13 +6,17 @@ import (
 	"crypto/rand"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"wpgo/internal/backupcrypt"
+	"wpgo/internal/config"
 	"wpgo/internal/gocdn"
 	"wpgo/internal/gocdn/s3fake"
 )
@@ -51,6 +55,17 @@ func TestBmgrRemoteCheckEndpoint(t *testing.T) {
 		{"http://[fd00:ec2::254]", true, false},
 		{"https://0.0.0.0", true, false},
 		{"https://s3.amazonaws.com:99999", false, false},
+		{"https://8.8.8.8", true, true},
+		{"http://[fc00::1]", true, true},        // IPv6 unique-local, a MinIO on the private network
+		{"http://100.64.1.1", true, true},       // carrier-grade NAT
+		{"https://168.63.129.16", false, false}, // Azure WireServer
+		{"https://168.63.129.16", true, false},
+		{"https://[::ffff:168.63.129.16]", true, false},
+		{"https://[64:ff9b::a9fe:a9fe]", false, false}, // NAT64 of 169.254.169.254
+		{"https://[64:ff9b::a9fe:a9fe]", true, false},
+		{"https://[2002:a9fe:a9fe::]", true, false}, // 6to4 of 169.254.169.254
+		{"https://[64:ff9b::808:808]", false, true}, // NAT64 of 8.8.8.8 stays reachable
+		{"https://192.0.2.1", true, false},          // documentation range, not a private LAN
 	} {
 		err := bmgrRemoteCheckEndpoint(tc.url, tc.allowPrivate)
 		if (err == nil) != tc.ok {
@@ -102,6 +117,129 @@ func TestBmgrRemoteRedact(t *testing.T) {
 		t.Error("nil error changed")
 	}
 }
+
+// A name that resolves to loopback or link-local is refused after DNS, including when the
+// connected host is bucket.endpoint rather than the endpoint that was saved.
+func TestBmgrRemoteHTTPBlocksResolvedLoopback(t *testing.T) {
+	ips, err := net.LookupIP("127.0.0.1.nip.io")
+	if err != nil || len(ips) == 0 || !ips[0].IsLoopback() {
+		t.Skip("resolver did not map 127.0.0.1.nip.io to a loopback address")
+	}
+	hits := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { hits++ }))
+	defer srv.Close()
+	u, err := url.Parse(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := "http://127.0.0.1.nip.io:" + port + "/latest/meta-data/"
+	if _, err := bmgrRemoteHTTP(false).Get(target); err == nil || !strings.Contains(err.Error(), "private network") {
+		t.Fatalf("loopback name reached: %v", err)
+	}
+	if hits != 0 {
+		t.Fatalf("handler was called %d times", hits)
+	}
+	resp, err := bmgrRemoteHTTP(true).Get(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if hits != 1 {
+		t.Fatalf("allow-private did not reach the loopback name, hits=%d", hits)
+	}
+
+	meta, err := net.LookupIP("169.254.169.254.nip.io")
+	linkLocal := err == nil && len(meta) > 0
+	for _, ip := range meta {
+		if !ip.IsLinkLocalUnicast() {
+			linkLocal = false
+		}
+	}
+	if !linkLocal {
+		t.Skip("resolver did not map 169.254.169.254.nip.io to only link-local addresses")
+	}
+	cl := &gocdn.Client{Endpoint: "https://nip.io", Region: "us-east-1", Bucket: "169.254.169.254", AccessKey: "AK", SecretKey: "SK",
+		HTTP: bmgrRemoteHTTP(true)}
+	if err := cl.Put(context.Background(), "k", []byte("x"), gocdn.PutOptions{}); err == nil || !strings.Contains(err.Error(), "link-local") {
+		t.Fatalf("virtual-hosted metadata name was not refused: %v", err)
+	}
+}
+
+// Two backups uploaded in the same second used to be ordered by name. The random suffix then
+// deleted the object that had just been uploaded. The key passed as protect is the one kept.
+func TestBmgrRemotePruneKeepsJustUploaded(t *testing.T) {
+	fake := s3fake.New("AK", "SK", "us-east-1", "bk")
+	defer fake.Close()
+	cl := &gocdn.Client{Endpoint: fake.URL, Region: "us-east-1", Bucket: "bk", AccessKey: "AK", SecretKey: "SK", PathStyle: true,
+		HTTP: bmgrRemoteHTTP(true)}
+	st := bmgrRemoteSettings{Prefix: "p/"}
+	put := func(name string, when time.Time) string {
+		t.Helper()
+		key := "p/" + name
+		fake.PutObject("bk", key, []byte(name), "")
+		fake.Object("bk", key).Modified = when
+		return key
+	}
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	// Same LastModified, as S3 reports for two uploads in one second. The greater name would win
+	// the old sort; the upload that just finished is the lower name.
+	high := put("backup-20260101-120000-ffffffff.zip.enc", t0)
+	low := put("backup-20260101-120000-00000000.zip.enc", t0)
+	if _, err := bmgrRemotePrune(context.Background(), cl, st, 1, low); err != nil {
+		t.Fatal(err)
+	}
+	if fake.Object("bk", low) == nil || fake.Object("bk", high) != nil {
+		t.Fatalf("timestamp tie kept the wrong object: %v", fake.Keys("bk"))
+	}
+
+	// The protected object is kept even when its timestamp is the oldest of the set, and the
+	// next-newest of the others fills the remaining slots.
+	fake = s3fake.New("AK", "SK", "us-east-1", "bk")
+	defer fake.Close()
+	cl.Endpoint = fake.URL
+	oldest := put("backup-20260101-000000-00000000.zip.enc", t0)
+	middle := put("backup-20260101-000001-aaaaaaaa.zip.enc", t0.Add(time.Second))
+	newest := put("backup-20260101-000002-ffffffff.zip.enc", t0.Add(2*time.Second))
+	if _, err := bmgrRemotePrune(context.Background(), cl, st, 2, oldest); err != nil {
+		t.Fatal(err)
+	}
+	if fake.Object("bk", oldest) == nil || fake.Object("bk", newest) == nil || fake.Object("bk", middle) != nil {
+		t.Fatalf("protected object not kept with the newest other: %v", fake.Keys("bk"))
+	}
+}
+
+func TestBmgrRemoteSealEncryptsPrefixedSecret(t *testing.T) {
+	s := &Server{cfg: config.Config{Secret: "site-secret-for-remote-seal"}}
+	const plain = "bkr:v1:this-is-a-real-passphrase"
+	sealed, err := s.bmgrRemoteSeal(plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sealed == plain || !strings.HasPrefix(sealed, bmgrRemoteSealPfx) || strings.Contains(sealed, "this-is-a-real-passphrase") {
+		t.Fatalf("secret stored so it can be read back: %q", sealed)
+	}
+	if got := s.bmgrRemoteReveal(sealed); got != plain {
+		t.Fatalf("reveal = %q", got)
+	}
+	again, err := s.bmgrRemoteSeal(plain)
+	if err != nil || again == sealed {
+		t.Fatal("a second seal reused the nonce or failed")
+	}
+	prev := bmgrRand
+	bmgrRand = failReader{}
+	t.Cleanup(func() { bmgrRand = prev })
+	if _, err := s.bmgrRemoteSeal("another-long-passphrase"); err == nil {
+		t.Fatal("a seal with no entropy was stored")
+	}
+}
+
+type failReader struct{}
+
+func (failReader) Read([]byte) (int, error) { return 0, errors.New("no entropy") }
 
 func TestBmgrRemoteCleanPrefix(t *testing.T) {
 	for in, want := range map[string]string{"": "", "/": "", "backups": "backups/", "/a/b/": "a/b/", "a//b": "a/b/", " x ": "x/"} {
