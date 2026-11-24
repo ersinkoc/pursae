@@ -22,15 +22,15 @@ func announceSetupToken(ctx context.Context, cfg config.Config, srv *server.Serv
 	case token != "":
 		log.Printf("Pursae is not installed yet. To install it, open this URL in your browser:")
 		log.Printf("    %s", server.SetupURL(cfg.SiteURL, token))
-		log.Printf("The setup token stops working once the site is installed. Run `wpgo setup-token` for a new one.")
+		log.Printf("The setup token stops working once the site is installed. Run `pursae setup-token` for a new one.")
 	case cfg.SetupToken != "" && !srv.Installed():
 		log.Printf("Pursae is not installed yet. Open %s/wp-admin/install and enter PURSAE_SETUP_TOKEN.", cfg.SiteURL)
 	case !srv.Installed():
-		log.Printf("Pursae is not installed yet. A setup token was already issued; run `wpgo setup-token` to print a new install URL.")
+		log.Printf("Pursae is not installed yet. A setup token was already issued; run `pursae setup-token` to print a new install URL.")
 	}
 }
 
-// setupToken is `wpgo setup-token`: the install URL with PURSAE_SETUP_TOKEN, or with a newly issued token
+// setupToken is `pursae setup-token`: the install URL with PURSAE_SETUP_TOKEN, or with a newly issued token
 // that replaces the stored one (the old link stops working).
 func setupToken(ctx context.Context, cfg config.Config, out io.Writer) error {
 	if cfg.SetupToken != "" {
