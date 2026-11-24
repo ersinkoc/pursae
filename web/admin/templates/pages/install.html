@@ -33,9 +33,9 @@
 </table>
 <p class="step"><a href="/wp-login" class="button button-large">Log In</a></p>
 {{else if .NeedToken}}
-<h1>Setup token</h1>
+<h1>Pursae Install</h1>
 <p>To keep strangers from installing this site before you do, the installer asks for the setup token.</p>
-<p>Open the install link printed in the server log when Pursae started, or enter the token below: it is the <code>PURSAE_SETUP_TOKEN</code> setting if you set one, otherwise run <code>wpgo setup-token</code> on the server to print a new link.</p>
+<p>Open the install link printed in the server log when Pursae started, or enter the token below: it is the <code>PURSAE_SETUP_TOKEN</code> setting if you set one, otherwise run <code>pursae setup-token</code> on the server to print a new link.</p>
 {{if .Error}}<p class="message" role="alert">{{.Error}}</p>{{end}}
 <form id="setup" method="get" action="/wp-admin/install">
 	<table class="form-table" role="presentation">

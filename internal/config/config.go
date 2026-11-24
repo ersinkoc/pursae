@@ -19,7 +19,7 @@ type Config struct {
 	UploadsDir  string
 	Secret      string // optional; generated and stored in settings when empty
 	// SetupToken (PURSAE_SETUP_TOKEN) guards /wp-admin/install until the site is installed. Empty: the
-	// server generates one on an uninstalled site and prints the install URL (`wpgo setup-token` issues a new one).
+	// server generates one on an uninstalled site and prints the install URL (`pursae setup-token` issues a new one).
 	SetupToken string
 	WebDir     string // when set, web assets and templates are read from this directory and reloaded per request
 	// HubURL is Pursae Manager (marketplace, licenses, release checks, statistics): always DefaultHubURL.

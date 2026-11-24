@@ -24,7 +24,7 @@ import (
 // install the site and become its administrator. The token is PURSAE_SETUP_TOKEN when set; otherwise the
 // first process that starts on an uninstalled site generates one, keeps its SHA-256 in the setup_token
 // table (so every instance and restart checks the same token) and prints the install URL once
-// (cmd/wpgo). `wpgo setup-token` issues a new one. Entered once, the token is remembered by a signed
+// (cmd/wpgo). `pursae setup-token` issues a new one. Entered once, the token is remembered by a signed
 // cookie bound to it; installing the site deletes it, so the token and the cookie stop working.
 
 const (
@@ -182,7 +182,7 @@ func (s *Server) setupGate(c *gin.Context) bool {
 	}
 	v := installView{NeedToken: true}
 	if given != "" {
-		v.Error = "That setup token is not valid. Use the link printed in the server log, or run \"wpgo setup-token\" on the server for a new one."
+		v.Error = "That setup token is not valid. Use the link printed in the server log, or run \"pursae setup-token\" on the server for a new one."
 	}
 	c.Header("Referrer-Policy", "no-referrer")
 	s.renderAdminTemplate(c, http.StatusForbidden, "admin/install", v)
