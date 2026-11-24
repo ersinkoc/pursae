@@ -185,7 +185,9 @@ func (o *OAuth) token(ctx context.Context, f url.Values) (*Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	_ = json.Unmarshal(body, &v)
+	if err := json.Unmarshal(body, &v); err != nil && status < 300 {
+		return nil, fmt.Errorf("%s token request: invalid response: %w", o.Mailer, err)
+	}
 	if status >= 300 || v.AccessToken == "" {
 		return nil, fmt.Errorf("%s token request failed (HTTP %d): %s", o.Mailer, status, firstNonEmpty(v.Description, v.Error, truncate(string(body), 200)))
 	}
