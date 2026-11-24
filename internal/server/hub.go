@@ -146,6 +146,25 @@ func (s *Server) hubNewRequest(ctx context.Context, method, u string, body io.Re
 	return req, nil
 }
 
+// hubSiteIsLocal reports whether the site's address is a local one (localhost, *.localhost, *.local,
+// *.test, a loopback, private or link-local IP) talking to a Manager on the internet: such a site
+// sends that Manager no ping and no events, so development and test installs never reach
+// hub.pursae.com's site list or statistics. A local Manager (a development hub, the tests' fake
+// one) still gets them.
+func (s *Server) hubSiteIsLocal() bool { return hubLocalSite(s.hubBase(), s.settings.String("home")) }
+
+// hubLocalSite is hubSiteIsLocal for a Manager address and a site home URL.
+func hubLocalSite(hubBase, home string) bool {
+	if hu, err := url.Parse(hubBase); err == nil && hu.Hostname() != "" && isLocalHost(strings.ToLower(hu.Hostname())) {
+		return false
+	}
+	u, err := url.Parse(strings.TrimSpace(home))
+	if err != nil || u.Hostname() == "" {
+		return false
+	}
+	return isLocalHost(strings.ToLower(u.Hostname()))
+}
+
 // hubSiteURL normalises the home URL like the Manager does for pings: scheme://host[:port], the host
 // lower-cased, default ports, path, query and user info dropped.
 func hubSiteURL(home string) string {
@@ -414,26 +433,31 @@ func (s *Server) hubPing(ctx context.Context) error {
 	if hubSiteURL(s.settings.String("home")) == "" {
 		return nil
 	}
-	body, _ := json.Marshal(s.hubPingBody(ctx))
-	req, err := s.hubNewRequest(ctx, http.MethodPost, base+"/api/v1/sites/ping", bytes.NewReader(body))
-	if err != nil {
-		return err
+	// A site on localhost, a .test/.local name or a private address is a development or test
+	// install: it still reads the Manager's index (updates, the catalog) but reports nothing, so it
+	// never shows up among the Manager's sites or in its statistics.
+	if !s.hubSiteIsLocal() {
+		body, _ := json.Marshal(s.hubPingBody(ctx))
+		req, err := s.hubNewRequest(ctx, http.MethodPost, base+"/api/v1/sites/ping", bytes.NewReader(body))
+		if err != nil {
+			return err
+		}
+		resp, err := s.hubClient().Do(req)
+		if err != nil {
+			return err
+		}
+		io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20)) //nolint:errcheck
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusTooManyRequests {
+			return fmt.Errorf("hub: ping: HTTP %d", resp.StatusCode)
+		}
+		if resp.StatusCode == http.StatusOK && s.settings.String(hubReportedVersionOption) != Version {
+			_ = s.settings.Set(ctx, map[string]any{hubReportedVersionOption: Version})
+		}
+		s.hubFlushEvents(ctx)
 	}
-	resp, err := s.hubClient().Do(req)
-	if err != nil {
-		return err
-	}
-	io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20)) //nolint:errcheck
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusTooManyRequests {
-		return fmt.Errorf("hub: ping: HTTP %d", resp.StatusCode)
-	}
-	if resp.StatusCode == http.StatusOK && s.settings.String(hubReportedVersionOption) != Version {
-		_ = s.settings.Set(ctx, map[string]any{hubReportedVersionOption: Version})
-	}
-	s.hubFlushEvents(ctx)
 	s.licenseWatch(ctx) // expiring / revoked license: notice + one e-mail (license_watch.go)
-	_, err = s.hubFetchIndex(ctx)
+	_, err := s.hubFetchIndex(ctx)
 	if err == nil {
 		s.hubAutoUpdatePlugins(ctx) // plugins with auto-updates on (hub_updates.go)
 		s.coreAutoUpdate(ctx)       // core with automatic updates on (core_update_auto.go); restarts last

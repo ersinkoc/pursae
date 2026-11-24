@@ -71,7 +71,7 @@ type hubEventQueue struct {
 
 // hubEvent queues a statistics event: typ is one of the contract's types, kind plugin|theme|core.
 func (s *Server) hubEvent(typ, kind, slug, version string) {
-	if s.sandbox != nil || s.hubBase() == "" || !s.statsEnabled() {
+	if s.sandbox != nil || s.hubBase() == "" || !s.statsEnabled() || s.hubSiteIsLocal() {
 		return
 	}
 	q := &s.mgr.events
