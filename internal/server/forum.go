@@ -150,6 +150,9 @@ type forumSettings struct {
 	RequireRules  bool   `json:"require_rules"`  // sign-up needs the rules accepted
 	OnlineMinutes int    `json:"online_minutes"` // the "online" window, 5 (1..60)
 	Notify        bool   `json:"notify"`         // topic subscriptions email new replies (default true)
+	// OGImage is the social-share image of the public forum pages ("" = Pursae SEO's default image):
+	// a site path (/wp-content/uploads/…) or an http(s) address.
+	OGImage string `json:"og_image"`
 }
 
 func forumDefaults() forumSettings {
@@ -220,6 +223,10 @@ func forumSanitize(st forumSettings) forumSettings {
 	}
 	if st.RulesURL == "" {
 		st.RequireRules = false // nothing to accept
+	}
+	st.OGImage = strings.TrimSpace(st.OGImage)
+	if st.OGImage != "" && !forumRulesURLOK(st.OGImage) {
+		st.OGImage = ""
 	}
 	st.GoogleClientID = strings.TrimSpace(st.GoogleClientID)
 	st.GoogleClientSecret = strings.TrimSpace(st.GoogleClientSecret)

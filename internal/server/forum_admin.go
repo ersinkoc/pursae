@@ -901,6 +901,7 @@ func (s *Server) forumAdminSettings(c *gin.Context, d *forumAdminData) bool {
 			st.RequireRules = c.PostForm("require_rules") == "1"
 			st.OnlineMinutes, _ = strconv.Atoi(strings.TrimSpace(c.PostForm("online_minutes")))
 			st.Notify = c.PostForm("notify") == "1"
+			st.OGImage = c.PostForm("og_image")
 		}
 		st.GoogleClientSecret = "" // keep the stored secret
 		if err := s.forumSave(ctx, st); err != nil {

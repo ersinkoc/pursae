@@ -318,6 +318,9 @@
 	<td><input type="hidden" name="v025" value="1" /><input name="rules_url" id="pf-rules-url" type="text" value="{{.RulesURL}}" class="regular-text" placeholder="/community-rules/" />
 	<p><label for="pf-require-rules"><input name="require_rules" id="pf-require-rules" type="checkbox" value="1"{{if .RequireRules}} checked{{end}} /> New members accept the rules to sign up</label></p>
 	<p class="description">A page of this site (/rules/) or a full address. Sign-up remembers when the rules were accepted.</p></td></tr>
+<tr><th scope="row"><label for="pf-og-image">Social image</label></th>
+	<td><input name="og_image" id="pf-og-image" type="text" value="{{.OGImage}}" class="regular-text" placeholder="/wp-content/uploads/forum-og.png" />
+	<p class="description">Shown when forum pages are shared (Open Graph / Twitter). A site path or a full address; empty uses the Pursae SEO default image (1200×630 recommended).</p></td></tr>
 <tr><th scope="row"><label for="pf-online">Online</label></th>
 	<td>Count members and visitors seen in the last <input name="online_minutes" id="pf-online" type="number" value="{{.OnlineMinutes}}" class="small-text" min="1" max="60" /> minutes</td></tr>
 <tr><th scope="row">Notifications</th>

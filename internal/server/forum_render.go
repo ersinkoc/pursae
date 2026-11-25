@@ -496,13 +496,16 @@ func (s *Server) forumSEOHead(c *gin.Context, q *siteQuery) string {
 	return b.String()
 }
 
-// forumSocialImage is Pursae SEO's default social image (Titles & Meta › default image) while that
-// plugin is on, with its size, type and alt text when it is a Media Library upload; nil otherwise.
+// forumSocialImage is the forum's own social image (Forums › Settings), else Pursae SEO's default
+// social image (Titles & Meta › default image) while that plugin is on, with its size, type and alt text when it is a Media Library upload; nil otherwise.
 func (s *Server) forumSocialImage(ctx context.Context) *seogoImage {
-	if !s.seogoOn() {
-		return nil
+	u := strings.TrimSpace(s.forumLoad().OGImage) // Forums › Settings › Social image wins
+	if u == "" {
+		if !s.seogoOn() {
+			return nil
+		}
+		u = strings.TrimSpace(s.seogoOpts().DefaultImage)
 	}
-	u := strings.TrimSpace(s.seogoOpts().DefaultImage)
 	if u == "" {
 		return nil
 	}
