@@ -8,12 +8,14 @@ import (
 	"html/template"
 	"net/http"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/mail"
+	"wpgo/internal/settings"
 	"wpgo/internal/store"
 )
 
@@ -270,8 +272,35 @@ func (s *Server) gooikeOnly() gin.HandlerFunc {
 	}
 }
 
-// gooikeLoad returns the saved settings over the defaults, repaired where needed.
+// gooikeMemo holds the decoded settings for the settings store's current revision (gooikeLoad runs
+// several times per page view while the plugin is on).
+var gooikeMemo settings.Memo[gooikeSettings]
+
+// gooikeLoad returns the saved settings over the defaults, repaired where needed. Its slices are
+// copies: callers may change them.
 func (s *Server) gooikeLoad() gooikeSettings {
+	return gooikeMemo.Get(s.settings, s.gooikeDecode).clone()
+}
+
+// clone copies every slice of the settings (the rest are values).
+func (st gooikeSettings) clone() gooikeSettings {
+	st.EmbedsOff = slices.Clone(st.EmbedsOff)
+	st.ScanNew = slices.Clone(st.ScanNew)
+	st.Scripts = slices.Clone(st.Scripts)
+	st.Cookies = slices.Clone(st.Cookies)
+	if st.Categories != nil {
+		cats := make([]gooikeCategory, len(st.Categories))
+		for i, c := range st.Categories {
+			c.Signals = slices.Clone(c.Signals)
+			cats[i] = c
+		}
+		st.Categories = cats
+	}
+	return st
+}
+
+// gooikeDecode reads the stored option over the defaults and repairs it.
+func (s *Server) gooikeDecode() gooikeSettings {
 	st := gooikeDefaults()
 	if v := s.settings.Get(gooikeOptions); v != nil {
 		if raw, err := json.Marshal(v); err == nil {

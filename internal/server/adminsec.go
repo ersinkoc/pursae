@@ -6,21 +6,21 @@ import (
 	_ "embed"
 	"encoding/json"
 	"html/template"
+	"maps"
 	"net"
 	"net/http"
 	"net/url"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"wpgo/internal/config"
+	"wpgo/internal/settings"
 	"wpgo/internal/store"
 )
 
@@ -135,20 +135,23 @@ func asDefaults() asSettings {
 // adminsecOn reports whether the plugin is active: one cached option read.
 func (s *Server) adminsecOn() bool { return s.settings.Bool(asSetting) }
 
-type asCache struct {
-	src map[string]any // the stored option the settings were parsed from (kept: its address stays unique)
-	st  asSettings
+// asMemo holds the decoded settings for the settings store's current revision: asLoad runs on every
+// request while the plugin is on, and decoding the option costs a JSON round trip.
+var asMemo settings.Memo[asSettings]
+
+// asLoad returns the settings over the defaults (decoded once per settings revision). The maps are
+// copies: callers may change them.
+func (s *Server) asLoad() asSettings {
+	st := asMemo.Get(s.settings, s.asDecode)
+	st.RequireRoles = maps.Clone(st.RequireRoles)
+	st.PwMinLength = maps.Clone(st.PwMinLength)
+	st.PwMinStrength = maps.Clone(st.PwMinStrength)
+	return st
 }
 
-var asCached atomic.Pointer[asCache]
-
-// asLoad returns the settings over the defaults (parsed once per stored version of the option).
-func (s *Server) asLoad() asSettings {
+// asDecode reads the stored option over the defaults.
+func (s *Server) asDecode() asSettings {
 	raw := s.settings.Get(asOption)
-	m, _ := raw.(map[string]any)
-	if c := asCached.Load(); c != nil && m != nil && reflect.ValueOf(c.src).Pointer() == reflect.ValueOf(m).Pointer() {
-		return c.st
-	}
 	st := asDefaults()
 	if raw != nil {
 		if b, err := json.Marshal(raw); err == nil {
@@ -163,9 +166,6 @@ func (s *Server) asLoad() asSettings {
 	}
 	if st.PwMinStrength == nil {
 		st.PwMinStrength = map[string]int{}
-	}
-	if m != nil {
-		asCached.Store(&asCache{src: m, st: st})
 	}
 	return st
 }

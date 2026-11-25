@@ -225,6 +225,24 @@ func (s *Server) currentCache() *cache.Cache {
 // every public post change purges; the rest carry what they list (site_memo.go): the terms and
 // authors of their posts, the objects of their menus, "archive:<type>" for Twenty Twenty-Five's page
 // navigation and More posts or for previous/next links, and their ancestors.
+// cachePostTerms is every term of the post: from the request memo when the page loaded them already
+// (prefetchPosts on the single view), else with one query.
+func (s *Server) cachePostTerms(c *gin.Context, postID int64) []*store.Term {
+	if m := viewMemoFrom(c.Request.Context()); m != nil {
+		m.mu.Lock()
+		ts, ok := m.terms[postID]
+		m.mu.Unlock()
+		if ok {
+			return ts
+		}
+	}
+	terms, err := s.store.TermsForPosts(c, []int64{postID}, "")
+	if err != nil {
+		return nil
+	}
+	return terms[postID]
+}
+
 func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 	widgets, deps := s.pageCacheDeps(c.Request.Context())
 	var tags []string
@@ -238,10 +256,8 @@ func (s *Server) cacheTags(c *gin.Context, q *siteQuery) {
 	case "single", "page", "attachment":
 		if q.Post != nil {
 			tags = append(tags, "post:"+itoa64(q.Post.ID), "author:"+itoa64(q.Post.AuthorID))
-			if terms, err := s.store.TermsForPosts(c, []int64{q.Post.ID}, ""); err == nil {
-				for _, t := range terms[q.Post.ID] {
-					tags = append(tags, "term:"+itoa64(t.ID))
-				}
+			for _, t := range s.cachePostTerms(c, q.Post.ID) {
+				tags = append(tags, "term:"+itoa64(t.ID))
 			}
 			if q.Kind == "page" && q.Post.ID == int64(s.settings.Int("page_on_front")) {
 				tags = append(tags, "home")

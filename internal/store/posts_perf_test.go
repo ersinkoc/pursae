@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -252,7 +253,7 @@ func TestPostListOrderAndIndexes(t *testing.T) {
 	if !strings.Contains(plan.String(), "posts_title_trgm") || !strings.Contains(plan.String(), "posts_search") {
 		t.Errorf("search plan:\n%s", plan.String())
 	}
-	for _, idx := range []string{"users_lower_email_key", "users_lower_login_key", "comments_parent", "posts_featured_media", "widgets_area", "posts_title_trgm"} {
+	for _, idx := range []string{"users_lower_email_key", "users_lower_login_key", "comments_parent", "posts_featured_media", "widgets_area", "posts_title_trgm", "posts_sticky"} {
 		var ok bool
 		_ = s.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = $1)`, idx).Scan(&ok)
 		if !ok {
@@ -328,5 +329,75 @@ func TestPublishDuePostsRecountsOwnTerms(t *testing.T) {
 	}
 	if !strings.Contains(plan.String(), "posts_future") {
 		t.Errorf("due posts do not use posts_future:\n%s", plan.String())
+	}
+}
+
+// TestQueryPostsNoTotalAndLeanLookups: NoTotal (and an unlimited query) report len(posts) without the
+// count query, the totals of limited queries stay exact, and the no-content lookups (adjacent posts,
+// PostsByIDsNoContent, GetPostNoContent) keep everything but the excerpt and body, ties included.
+func TestQueryPostsNoTotalAndLeanLookups(t *testing.T) {
+	s, _, u1, _ := wbTestStore(t)
+	ctx := context.Background()
+	at := time.Date(2026, 5, 1, 12, 0, 0, 0, time.UTC)
+	if _, err := s.Pool.Exec(ctx, `INSERT INTO content_types (slug, name) VALUES ('lean', 'Lean') ON CONFLICT DO NOTHING`); err != nil {
+		t.Fatal(err)
+	}
+	var posts []*Post
+	for i, d := range []time.Duration{0, time.Hour, time.Hour, 2 * time.Hour} { // two posts share a date
+		pub := at.Add(d)
+		p := &Post{Type: "lean", AuthorID: u1, Title: "Lean " + strconv.Itoa(i), Excerpt: "ex", Content: "body", Status: "publish", PublishedAt: &pub,
+			Meta: map[string]any{"k": "v"}}
+		if err := s.InsertPost(ctx, p); err != nil {
+			t.Fatal(err)
+		}
+		posts = append(posts, p)
+	}
+	q := PostQuery{Types: []string{"lean"}, Statuses: []string{"publish"}, PerPage: 2, Page: 1}
+	if got, total, err := s.QueryPosts(ctx, q); err != nil || len(got) != 2 || total != 4 {
+		t.Errorf("limited query: %d posts, total %d, %v", len(got), total, err)
+	}
+	q.NoTotal = true
+	if got, total, err := s.QueryPosts(ctx, q); err != nil || len(got) != 2 || total != 2 {
+		t.Errorf("NoTotal: %d posts, total %d, %v", len(got), total, err)
+	}
+	if got, total, err := s.QueryPosts(ctx, PostQuery{Types: []string{"lean"}, Statuses: []string{"publish"}, PerPage: -1}); err != nil || len(got) != 4 || total != 4 {
+		t.Errorf("unlimited query: %d posts, total %d, %v", len(got), total, err)
+	}
+	off := 1
+	if got, total, err := s.QueryPosts(ctx, PostQuery{Types: []string{"lean"}, Statuses: []string{"publish"}, Offset: &off}); err != nil || len(got) != 3 || total != 4 {
+		t.Errorf("offset query: %d posts, total %d, %v", len(got), total, err)
+	}
+
+	// Adjacent walks date then id, both ways, across the tie between posts[1] and posts[2].
+	for i, p := range posts {
+		next, err := s.Adjacent(ctx, p, false)
+		if i == len(posts)-1 {
+			if !errors.Is(err, ErrNotFound) {
+				t.Errorf("next of the newest: %v %v", next, err)
+			}
+		} else if err != nil || next.ID != posts[i+1].ID {
+			t.Errorf("next of %d: %v %v", p.ID, next, err)
+		} else if next.Content != "" || next.Excerpt != "" || next.Title == "" || next.Meta["k"] != "v" || next.PublishedAt == nil {
+			t.Errorf("adjacent post carries %+v", next)
+		}
+		prev, err := s.Adjacent(ctx, p, true)
+		if i == 0 {
+			if !errors.Is(err, ErrNotFound) {
+				t.Errorf("previous of the oldest: %v %v", prev, err)
+			}
+		} else if err != nil || prev.ID != posts[i-1].ID {
+			t.Errorf("previous of %d: %v %v", p.ID, prev, err)
+		}
+	}
+
+	byID, err := s.PostsByIDsNoContent(ctx, []int64{posts[0].ID, posts[3].ID, -1})
+	if err != nil || len(byID) != 2 || byID[posts[0].ID].Content != "" || byID[posts[3].ID].Title != "Lean 3" || byID[posts[3].ID].Meta["k"] != "v" {
+		t.Errorf("PostsByIDsNoContent: %v %v", byID, err)
+	}
+	if p, err := s.GetPostNoContent(ctx, posts[2].ID); err != nil || p.Content != "" || p.Excerpt != "" || p.Title != "Lean 2" {
+		t.Errorf("GetPostNoContent: %+v %v", p, err)
+	}
+	if _, err := s.GetPostNoContent(ctx, -1); !errors.Is(err, ErrNotFound) {
+		t.Errorf("GetPostNoContent of a missing post: %v", err)
 	}
 }

@@ -30,11 +30,15 @@ import (
 // fm=auto (the default) sends WebP to browsers that accept it, with Vary: Accept. With URL signing
 // on, s must be the HMAC of the path and the canonical parameters under the site's image key;
 // unsigned or tampered URLs get 403. Sizes are capped, sources over the pixel limit are refused and
-// at most one transformation per CPU runs at a time. Variants are cached on disk
+// at most cap(gocdnImgSem) transformations run at a time. Variants are cached on disk
 // (<data>/gocdn-cache) and optionally in the bucket (gocdn-cache/…), and served with an ETag and
 // an immutable Cache-Control.
 
-var gocdnImgSem = make(chan struct{}, max(2, runtime.NumCPU()))
+// gocdnImgSem bounds concurrent on-the-fly transformations the way media uploads are bounded
+// (media.processSem): each slot can hold a 64 MB source plus a decoded image of up to the pixel
+// limit (hundreds of MB), so one slot per CPU could reach gigabytes on a large host under a burst of
+// cold variants. Waiting requests queue and still honour cancellation.
+var gocdnImgSem = make(chan struct{}, max(1, min(4, runtime.NumCPU()/2)))
 
 // gocdnAnimKey adds the frame budget to the cache key of animations (it decides animated or flat).
 func gocdnAnimKey(anim bool, st gocdnSettings) string {

@@ -86,7 +86,8 @@ func (s *Server) gooAcceptsPost(c *gin.Context) bool {
 	if gooAjaxAction(c) != "" || gooWCAPIName(c) != "" { // AJAX, payment provider callbacks (goo_gateway_api.go)
 		return true
 	}
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil && c.Request.PostForm == nil {
+	// Only form values are read here: 1 MB in memory, files beyond it spool to the temp directory.
+	if err := c.Request.ParseMultipartForm(1 << 20); err != nil && c.Request.PostForm == nil { //nolint:gosec // G120: the body is capped by requestBodyLimit (maxRequestBody); parts over 1 MB spool to disk
 		_ = c.Request.ParseForm()
 	}
 	for _, k := range gooPostMarkers {
@@ -1135,6 +1136,11 @@ func (s *Server) gooImageURL(ctx context.Context, id int64, size string) (string
 	if err != nil {
 		return "", 0, 0
 	}
+	return s.gooImageURLOf(ctx, a, size)
+}
+
+// gooImageURLOf is gooImageURL for an attachment already loaded.
+func (s *Server) gooImageURLOf(ctx context.Context, a *store.Attachment, size string) (string, int, int) {
 	if size != "full" {
 		if v := a.Variant(size); v != nil {
 			return s.uploadURL(ctx, v.FilePath), v.Width, v.Height

@@ -170,7 +170,7 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 	v.HasMenus = len(primary)+len(social) > 0
 
 	if id := int64(s.settings.Int("wp_page_for_privacy_policy")); id > 0 {
-		if p, err := s.store.GetPost(ctx, id); err == nil && p.Status == "publish" {
+		if p, err := s.store.GetPostNoContent(ctx, id); err == nil && p.Status == "publish" {
 			v.PrivacyLink = template.HTML(fmt.Sprintf(`<a class="privacy-policy-link" href="%s" rel="privacy-policy">%s</a><span role="separator" aria-hidden="true"></span>`,
 				html.EscapeString(lb.Permalink(p)), html.EscapeString(p.Title)))
 		}
@@ -194,10 +194,8 @@ func (s *Server) buildSiteView(c *gin.Context, q *siteQuery) (*siteView, error) 
 			cacheDep(ctx, "archive:"+q.Post.Type) // the previous/next links change with the type's posts
 		}
 		if q.Post.ParentID != 0 { // the permalink and breadcrumbs carry the ancestors' slugs and titles
-			if anc, err := s.store.Ancestors(ctx, q.Post); err == nil {
-				for _, a := range anc {
-					cacheDep(ctx, "post:"+itoa64(a.ID))
-				}
+			for _, a := range s.ancestors(ctx, q.Post) { // request memo: the permalinks walked it already
+				cacheDep(ctx, "post:"+itoa64(a.ID))
 			}
 		}
 		if s.commentsOpen(q.Post) || q.Post.CommentCount > 0 {

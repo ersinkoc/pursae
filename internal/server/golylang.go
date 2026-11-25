@@ -7,8 +7,10 @@ import (
 	"html"
 	"html/template"
 	"log"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/cache"
+	"wpgo/internal/settings"
 	"wpgo/internal/store"
 )
 
@@ -75,8 +78,42 @@ func pllDefaultOptions() pllOptions {
 		StringCapture: true, MTProvider: "deepl", MTModel: "gpt-4o-mini", MTFormality: "default"}
 }
 
-// pllOpts reads the option; missing keys keep Polylang's defaults.
+// pllOptsMemo holds the decoded option for the settings store's current revision (pllOpts runs many
+// times per request while Golylang is on).
+var pllOptsMemo settings.Memo[pllOptions]
+
+// pllOpts reads the option; missing keys keep Polylang's defaults. Its slices and maps are copies:
+// callers may change them.
 func (s *Server) pllOpts() pllOptions {
+	return pllOptsMemo.Get(s.settings, s.pllDecodeOpts).clone()
+}
+
+// clone copies every slice and map of the options.
+func (o pllOptions) clone() pllOptions {
+	o.PostTypes = slices.Clone(o.PostTypes)
+	o.Taxonomies = slices.Clone(o.Taxonomies)
+	o.Sync = slices.Clone(o.Sync)
+	o.Domains = maps.Clone(o.Domains)
+	if o.NavMenus != nil {
+		menus := make(map[string]map[string]map[string]int64, len(o.NavMenus))
+		for theme, locs := range o.NavMenus {
+			if locs == nil {
+				menus[theme] = nil
+				continue
+			}
+			lm := make(map[string]map[string]int64, len(locs))
+			for loc, langs := range locs {
+				lm[loc] = maps.Clone(langs)
+			}
+			menus[theme] = lm
+		}
+		o.NavMenus = menus
+	}
+	return o
+}
+
+// pllDecodeOpts reads the stored option over Polylang's defaults.
+func (s *Server) pllDecodeOpts() pllOptions {
 	o := pllDefaultOptions()
 	if v := s.settings.Get(golylangOption); v != nil {
 		if raw, err := json.Marshal(v); err == nil {

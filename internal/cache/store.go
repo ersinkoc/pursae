@@ -266,14 +266,27 @@ func NewEntry(key string, status int, header http.Header, body []byte, tags []st
 	}
 	if len(body) >= 256 && !inBody {
 		var buf bytes.Buffer
-		zw, _ := gzip.NewWriterLevel(&buf, gzip.DefaultCompression)
+		zw := gzipWriters.Get().(*gzip.Writer)
+		zw.Reset(&buf)
 		zw.Write(body)
 		if zw.Close() == nil && buf.Len() < len(body) {
-			e.Gzip = buf.Bytes()
+			// A copy of exactly the compressed length: the buffer's spare capacity would stay
+			// alive with the entry but not be counted by size(), which counts len.
+			e.Gzip = bytes.Clone(buf.Bytes())
 		}
+		zw.Reset(nil) // drop the reference to buf before the writer goes back to the pool
+		gzipWriters.Put(zw)
 	}
 	return e, nil
 }
+
+// gzipWriters holds gzip writers at DefaultCompression for NewEntry. A writer carries about
+// 1 MB of compressor state, which was allocated afresh for every stored page; Reset keeps that
+// state and makes the writer equivalent to a new one, so the output is byte for byte the same.
+var gzipWriters = sync.Pool{New: func() any {
+	zw, _ := gzip.NewWriterLevel(nil, gzip.DefaultCompression)
+	return zw
+}}
 
 // unstoredHeaders are never kept in an entry: they are per-response, per-connection
 // or recomputed when serving.

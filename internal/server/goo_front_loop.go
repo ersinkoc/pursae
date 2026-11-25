@@ -389,6 +389,62 @@ func (s *Server) gooPrefetchLoop(c *gin.Context, list []*gooProduct) {
 			c.Set("goo.terms."+itoa64(id), all[id])
 		}
 	}
+	s.gooPrefetchImages(c, images)
+	s.gooPrefetchVariations(c, list)
+}
+
+// gooPrefetchVariations fills what gooVariationsCached reads for the variable products of a list: one query for
+// the published variation ids of all parents (menu_order, id, as gooVariations) and one gooGetProducts.
+func (s *Server) gooPrefetchVariations(c *gin.Context, list []*gooProduct) {
+	ctx := c.Request.Context()
+	parents := map[int64]*gooProduct{}
+	var pids []int64
+	for _, p := range list {
+		if !gooSubsVariableLike(p.Type) || parents[p.ID] != nil {
+			continue
+		}
+		if _, ok := c.Get("goo.vars." + itoa64(p.ID)); ok {
+			continue
+		}
+		parents[p.ID] = p
+		pids = append(pids, p.ID)
+	}
+	if len(pids) < 2 { // a single product costs the same through gooVariationsCached
+		return
+	}
+	rows, err := s.store.Pool.Query(ctx, `SELECT parent_id, id FROM posts WHERE type = 'product_variation' AND parent_id = ANY($1) AND status = 'publish'
+		ORDER BY menu_order, id`, pids)
+	if err != nil {
+		return
+	}
+	byParent := map[int64][]int64{}
+	var all []int64
+	for rows.Next() {
+		var pid, id int64
+		if rows.Scan(&pid, &id) == nil {
+			byParent[pid] = append(byParent[pid], id)
+			all = append(all, id)
+		}
+	}
+	rows.Close()
+	m, err := s.gooGetProducts(ctx, all)
+	if err != nil {
+		return
+	}
+	for _, pid := range pids {
+		vars := make([]*gooProduct, 0, len(byParent[pid]))
+		for _, id := range byParent[pid] {
+			if v := m[id]; v != nil {
+				v.parent = parents[pid]
+				vars = append(vars, v)
+			}
+		}
+		c.Set("goo.vars."+itoa64(pid), vars)
+	}
+}
+
+// gooPrefetchImages loads the attachments with one query and keeps them for gooLoopImageHTML/gooLoopAttachment.
+func (s *Server) gooPrefetchImages(c *gin.Context, images []int64) {
 	if len(images) > 0 {
 		atts := s.attachmentsByIDs(c.Request.Context(), images) // fills the request memo when there is one
 		if prev, ok := c.Get(gooLoopImagesKey); ok {
@@ -400,6 +456,16 @@ func (s *Server) gooPrefetchLoop(c *gin.Context, list []*gooProduct) {
 		}
 		c.Set(gooLoopImagesKey, atts)
 	}
+}
+
+// gooLoopAttachment is GetAttachment reading what gooPrefetchImages loaded first.
+func (s *Server) gooLoopAttachment(c *gin.Context, id int64) (*store.Attachment, error) {
+	if v, ok := c.Get(gooLoopImagesKey); ok && id > 0 {
+		if a := v.(map[int64]*store.Attachment)[id]; a != nil {
+			return a, nil
+		}
+	}
+	return s.store.GetAttachment(c.Request.Context(), id)
 }
 
 // gooLoopImagesKey holds the attachments gooPrefetchLoop loaded, for lists rendered without a request memo.

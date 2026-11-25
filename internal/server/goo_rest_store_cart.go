@@ -199,8 +199,10 @@ func (s *Server) gooStoreItemJSON(ctx context.Context, cart *gooCart, it *gooCar
 		}
 	}
 	images := []any{}
-	if im := s.gooImageJSON(ctx, s.gooImageOf(ctx, p)); im != nil {
-		images = append(images, im)
+	if imgID := s.gooImageOf(ctx, p); imgID != 0 {
+		if a, err := s.gooLoopAttachment(cart.c, imgID); err == nil {
+			images = append(images, s.gooImageJSONOf(ctx, a))
+		}
 	}
 	maxQty := 9999
 	if q := s.gooStockQty(ctx, p); q >= 0 && !s.gooBackordersAllowed(ctx, p) {
@@ -237,6 +239,13 @@ func (s *Server) gooStoreCartJSON(c *gin.Context, cart *gooCart) map[string]any 
 	ctx := c.Request.Context()
 	items := []any{}
 	weight := 0.0
+	var imgIDs []int64
+	for _, it := range cart.Items {
+		if id := s.gooImageOf(ctx, it.Product()); id > 0 {
+			imgIDs = append(imgIDs, id)
+		}
+	}
+	s.gooPrefetchImages(c, imgIDs)
 	for _, it := range cart.Items {
 		weight += s.gooWeightOf(ctx, it.Product()) * float64(it.Quantity)
 		if !s.gooCartItemVisible(ctx, it, "store_api") { // e.g. a bundled item set to hide in the cart
@@ -283,10 +292,7 @@ func (s *Server) gooStoreCartJSON(c *gin.Context, cart *gooCart) map[string]any 
 	}
 	taxLines := []any{}
 	for _, t := range cart.TaxTotals() {
-		rate := ""
-		if r := s.gooTaxRateByID(ctx, t.RateID); r != nil {
-			rate = strconv.FormatFloat(r.Rate, 'f', -1, 64) + "%"
-		}
+		rate := strconv.FormatFloat(t.Rate, 'f', -1, 64) + "%"
 		taxLines = append(taxLines, map[string]any{"name": t.Label, "price": s.gooMinor(t.Amount), "rate": rate})
 	}
 	errs := []any{}
@@ -324,7 +330,15 @@ func (s *Server) gooStoreCrossSells(ctx context.Context, cart *gooCart) []any {
 		in[it.ProductID] = true
 	}
 	for _, it := range cart.Items {
-		if p, err := s.gooGetProduct(ctx, it.ProductID); err == nil {
+		p := it.product
+		if p != nil && p.Type == gooTypeVariation {
+			p = p.parent
+		}
+		var err error
+		if p == nil || p.ID != it.ProductID { // the loaded product (or its parent) is the item's ProductID; otherwise load it
+			p, err = s.gooGetProduct(ctx, it.ProductID)
+		}
+		if err == nil {
 			for _, id := range p.CrossSellIDs {
 				if !in[id] {
 					in[id] = true
@@ -532,8 +546,7 @@ func (s *Server) gooStoreSetCustomer(c *gin.Context, b map[string]any) {
 
 func (s *Server) gooStoreUpdateCustomer(c *gin.Context, req *restRequest) {
 	s.gooStoreSetCustomer(c, req.Body)
-	cart := s.gooCartFor(c)
-	cart.Calculate()
+	cart := s.gooCartForRecalc(c)
 	s.gooStoreCartRespond(c, http.StatusOK, cart)
 }
 
@@ -739,11 +752,14 @@ const gooDraftKey = "store_api_draft_order"
 // after a day by the daily job. An empty cart has no draft.
 func (s *Server) gooStoreDraftOrder(c *gin.Context) *gooOrder {
 	ctx := c.Request.Context()
+	_, existed := c.Get("goo.cart")
 	cart := s.gooCartFor(c)
 	if cart.IsEmpty() {
 		return nil
 	}
-	cart.Calculate()
+	if existed { // a cart built just now was calculated from the current session
+		cart.Calculate()
+	}
 	sess := s.gooSessionFor(c)
 	var o *gooOrder
 	if id := gooInt(sess.Data.Extra[gooDraftKey]); id != 0 {

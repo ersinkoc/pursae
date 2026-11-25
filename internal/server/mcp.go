@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -580,6 +581,20 @@ func mcpToolByName(name string) *mcpTool {
 }
 
 var mcpPathArg = regexp.MustCompile(`\{([a-z_]+)\}`)
+
+// mcpRouteCache memoises mcpRouteFor by tool path (paths are constants).
+var mcpRouteCache sync.Map
+
+// mcpRouteFor replaces the {placeholders} of a tool path with plain words, once per path.
+func mcpRouteFor(p string) string {
+	if v, ok := mcpRouteCache.Load(p); ok {
+		return v.(string)
+	}
+	r := mcpPathArg.ReplaceAllString(p, "x")
+	mcpRouteCache.Store(p, r)
+	return r
+}
+
 var mcpSafeSegment = regexp.MustCompile(`^[A-Za-z0-9_\-.]+$`)
 
 // mcpCall runs a tool as a REST request and wraps the answer as an MCP tool result.
@@ -838,7 +853,11 @@ type mcpDoc struct{ uri, name, title, file string }
 
 const mcpDocScheme = "pursae-docs://"
 
-func mcpDocs() []mcpDoc {
+// mcpDocs lists the developer docs and skill files as resources. The embedded FS never changes, so
+// the list is built once; the slice is shared and read-only.
+var mcpDocs = sync.OnceValue(buildMCPDocs)
+
+func buildMCPDocs() []mcpDoc {
 	var out []mcpDoc
 	_ = fs.WalkDir(docs.Developer, "developer", func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || path.Ext(p) != ".md" {

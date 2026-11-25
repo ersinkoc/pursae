@@ -56,7 +56,13 @@ func (s *Server) gooExtOn(module string) bool {
 	if !s.gooOn() {
 		return false
 	}
-	on, _ := s.gooOptMap("extensions")[module].(bool)
+	// One member of the stored object, without copying the whole map (this runs dozens of times per
+	// product page). An option that is not an object falls back to gooOptMap (defaults included).
+	v, isObject := s.settings.Lookup(gooOptPrefix+"extensions", module)
+	if !isObject {
+		v = s.gooOptMap("extensions")[module]
+	}
+	on, _ := v.(bool)
 	return on
 }
 

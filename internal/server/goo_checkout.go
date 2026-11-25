@@ -595,7 +595,8 @@ func (s *Server) gooOrderItemsFromCart(ctx context.Context, cart *gooCart) []*go
 			meta["_goo_"+k] = v
 		}
 		var display []any
-		for _, kv := range s.gooItemData(ctx, it) {
+		itemData := s.gooItemData(ctx, it)
+		for _, kv := range itemData {
 			display = append(display, map[string]any{"key": kv.Key, "value": kv.Value})
 		}
 		if len(display) > 0 {
@@ -606,7 +607,7 @@ func (s *Server) gooOrderItemsFromCart(ctx context.Context, cart *gooCart) []*go
 			if sum := s.gooVariationSummary(ctx, it.product); sum != "" {
 				name += " - " + strings.Join(func() []string {
 					var vals []string
-					for _, kv := range s.gooItemData(ctx, it)[:min(len(s.gooItemData(ctx, it)), 3)] {
+					for _, kv := range itemData[:min(len(itemData), 3)] {
 						vals = append(vals, kv.Value)
 					}
 					return vals

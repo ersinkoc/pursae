@@ -109,7 +109,11 @@ func (s *Server) adminL10nFor(cat *i18n.Catalog) *adminL10n {
 		h.Write([]byte(l.js))
 		l.ver = cat.Locale + "-" + strconv.FormatUint(h.Sum64(), 36)
 	}
-	adminL10nCache.Store(cat, l)
+	// An empty catalog (en_US) is a new pointer on every Manager.Catalog call: caching it would add an
+	// entry per request that is never removed. Its dictionary is empty anyway.
+	if !cat.Empty() {
+		adminL10nCache.Store(cat, l)
+	}
 	return l
 }
 

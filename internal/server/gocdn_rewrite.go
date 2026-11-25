@@ -184,7 +184,97 @@ func (w *gocdnWriter) Flush() {
 }
 
 // gocdnUploadsURL finds upload URLs: an optional scheme and host, then /wp-content/uploads/<path>.
-var gocdnUploadsURL = regexp.MustCompile(`(?:https?:)?(?://([A-Za-z0-9.\-]+(?::\d+)?))?/wp-content/uploads/([^\s"'<>()\\?#,&;]+)`)
+// It returns what the regexp
+//
+//	(?:https?:)?(?://([A-Za-z0-9.\-]+(?::\d+)?))?/wp-content/uploads/([^\s"'<>()\\?#,&;]+)
+//
+// returns from FindAllSubmatchIndex (the tests keep it as the oracle), but it searches for the
+// literal /wp-content/uploads/ and reads the optional scheme and host backwards from there: about
+// a hundred times faster than the regexp engine, which tried every byte of the page as a start.
+var gocdnUploadsURL uploadsURLScanner
+
+type uploadsURLScanner struct{}
+
+var uploadsLit = []byte("/wp-content/uploads/")
+
+// FindAllSubmatchIndex is regexp.Regexp.FindAllSubmatchIndex for the pattern above: per match
+// [start, end, host start, host end, path start, path end], the host pair -1 when there is none.
+// n < 0 means all matches.
+func (uploadsURLScanner) FindAllSubmatchIndex(body []byte, n int) [][]int {
+	var out [][]int
+	var backing []int
+	last := 0 // the end of the previous match: a match cannot start before it
+	for from := 0; n < 0 || len(out) < n; {
+		j := bytes.Index(body[from:], uploadsLit)
+		if j < 0 {
+			break
+		}
+		p := from + j
+		pe := p + len(uploadsLit)
+		e := pe
+		for e < len(body) && uploadsPathChar(body[e]) {
+			e++
+		}
+		if e == pe { // no path: the next match can start right after this one's first byte
+			from = p + 1
+			continue
+		}
+		s, h0, h1 := p, -1, -1
+		// The host form: "//" host (":" digits)? right before p.
+		d := p
+		for d > last && body[d-1] >= '0' && body[d-1] <= '9' {
+			d--
+		}
+		hostEnd := p
+		if d < p && d-1 >= last && body[d-1] == ':' {
+			hostEnd = d - 1
+		}
+		hs := hostEnd
+		for hs > last && uploadsHostChar(body[hs-1]) {
+			hs--
+		}
+		if hs < hostEnd && hs-2 >= last && body[hs-2] == '/' && body[hs-1] == '/' {
+			s, h0, h1 = hs-2, hs, p
+		} else if hostEnd != p { // ":digits" without a host before it: the digits may be the host
+			hs = p
+			for hs > last && uploadsHostChar(body[hs-1]) {
+				hs--
+			}
+			if hs < p && hs-2 >= last && body[hs-2] == '/' && body[hs-1] == '/' {
+				s, h0, h1 = hs-2, hs, p
+			}
+		}
+		// The optional scheme right before the host form, or before the path when there is none.
+		if s-6 >= last && string(body[s-6:s]) == "https:" {
+			s -= 6
+		} else if s-5 >= last && string(body[s-5:s]) == "http:" {
+			s -= 5
+		}
+		if len(backing) < 6 {
+			backing = make([]int, 6*16)
+		}
+		m := backing[:6:6]
+		backing = backing[6:]
+		m[0], m[1], m[2], m[3], m[4], m[5] = s, e, h0, h1, pe, e
+		out = append(out, m)
+		last, from = e, e
+	}
+	return out
+}
+
+func uploadsHostChar(c byte) bool {
+	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '.' || c == '-'
+}
+
+// uploadsPathChar is [^\s"'<>()\\?#,&;] for one byte (\s being RE2's ASCII [\t\n\f\r ]). Bytes of
+// UTF-8 sequences are path bytes, as their runes are for the regexp.
+func uploadsPathChar(c byte) bool {
+	switch c {
+	case ' ', '\t', '\n', '\f', '\r', '"', '\'', '<', '>', '(', ')', '\\', '?', '#', ',', '&', ';':
+		return false
+	}
+	return true
+}
 
 // gocdnHosts are the host names that count as this site.
 func (s *Server) gocdnHosts(c *gin.Context) map[string]bool {

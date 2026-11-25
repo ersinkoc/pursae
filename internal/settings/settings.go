@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -240,6 +241,73 @@ func (s *Store) Get(key string) any {
 		return v
 	}
 	return cloneValue(Defaults[key])
+}
+
+// Revision is a counter that changes whenever the cache does (every Set and
+// every Load, including the reloads Watch runs on NOTIFY). Two equal reads
+// mean Get returned the same values in between, so a value derived from
+// settings and read after a Revision call can be memoized under it (see Memo).
+func (s *Store) Revision() uint64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.cacheRevision
+}
+
+// Lookup returns the member sub of the JSON object stored under key (over
+// Defaults, like Get) without cloning the rest of the object: v is what
+// Get(key).(map[string]any)[sub] would be (nil when there is no such member).
+// isObject is false when the value is not a JSON object (unset, null or
+// another type); v is then nil.
+func (s *Store) Lookup(key, sub string) (v any, isObject bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	raw, found := s.cache[key]
+	if !found {
+		raw = Defaults[key]
+	}
+	m, isObject := raw.(map[string]any)
+	if !isObject {
+		return nil, false
+	}
+	return cloneValue(m[sub]), true
+}
+
+// Memo caches one value derived from a Store's settings, rebuilt when the
+// Store's Revision changes. The zero value is ready; a Memo is safe for
+// concurrent use and its hit path takes no lock beyond Revision's RLock.
+// The cached value is shared by every caller: build's result must not be
+// mutated afterwards, so callers that may modify it must copy it.
+type Memo[T any] struct {
+	p atomic.Pointer[memoEntry[T]]
+}
+
+type memoEntry[T any] struct {
+	store *Store // kept: its address cannot be reused while the entry lives
+	rev   uint64
+	v     T
+}
+
+// Get returns the value built for store's current revision, calling build on
+// a miss. The revision is read before build runs, so a value built from newer
+// settings is at worst rebuilt once more, never served for a later revision.
+func (m *Memo[T]) Get(store *Store, build func() T) T {
+	rev := store.Revision()
+	if e := m.p.Load(); e != nil && e.store == store && e.rev == rev {
+		return e.v
+	}
+	v := build()
+	m.p.Store(&memoEntry[T]{store: store, rev: rev, v: v})
+	return v
+}
+
+// Peek returns the cached value whatever its revision, for builders that can
+// reuse part of the previous result (ok is false when there is none or it
+// belongs to another Store).
+func (m *Memo[T]) Peek(store *Store) (v T, ok bool) {
+	if e := m.p.Load(); e != nil && e.store == store {
+		return e.v, true
+	}
+	return v, false
 }
 
 // Cached JSON objects and arrays must not escape: callers may modify values while

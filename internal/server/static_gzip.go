@@ -53,7 +53,7 @@ func (s *Server) staticInfo(fsys fs.FS, dir, name string) *staticFile {
 		zw, _ := gzip.NewWriterLevel(&buf, gzip.BestCompression)
 		_, _ = zw.Write(raw)
 		_ = zw.Close()
-		f.gz = buf.Bytes()
+		f.gz = bytes.Clone(buf.Bytes()) // exact length: the buffer's spare capacity would live on in the cache
 	}
 	if s.cfg.WebDir == "" {
 		gzipStaticCache.Store(key, f)

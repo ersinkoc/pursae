@@ -7,11 +7,13 @@ import (
 	"html/template"
 	"io/fs"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 
 	"wpgo/internal/links"
 	"wpgo/internal/store"
+	"wpgo/web"
 )
 
 // wpHead reproduces what wp_head() prints on a fresh install; the theme adds its enqueued assets.
@@ -157,11 +159,40 @@ func (s *Server) wpFooter(c *gin.Context, q *siteQuery, lb *links.Builder, admin
 
 // webFile returns an embedded asset as text (inline styles).
 func (s *Server) webFile(name string) string {
+	memo := s.webFileMemoable(name)
+	if memo {
+		if v, ok := webFileMemo.Load(name); ok {
+			return v.(string)
+		}
+	}
 	b, err := fs.ReadFile(s.web, name)
 	if err != nil {
 		return ""
 	}
-	return strings.TrimSpace(string(b))
+	out := strings.TrimSpace(string(b))
+	if memo {
+		webFileMemo.Store(name, out)
+	}
+	return out
+}
+
+// webFileMemo holds webFile's results for files of the binary's embedded assets, which never change:
+// several are inlined into every page head (and every block's style), and each was read and copied
+// per call. The names are the callers' fixed paths and the block style directories, a bounded set.
+var webFileMemo sync.Map // name -> trimmed content
+
+// webFileMemoable reports whether name always reads the same from s.web: assets come from the binary
+// (not PURSAE_WEB_DIR, read live) and name is not under themes/, where overlayFS serves an edited
+// copy as soon as it is saved. Servers on any other file system (tests) are never memoised.
+func (s *Server) webFileMemoable(name string) bool {
+	if s.cfg.WebDir != "" || strings.HasPrefix(name, "themes/") {
+		return false
+	}
+	base := s.web
+	if o, ok := base.(overlayFS); ok {
+		base = o.base
+	}
+	return base == web.FS("") // the embed.FS value; comparing it with another type is false, not a panic
 }
 
 // frontAdminBar is the toolbar shown on the site to logged-in users (wp_admin_bar_render()).

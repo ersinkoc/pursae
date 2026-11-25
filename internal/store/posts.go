@@ -111,13 +111,28 @@ func (s *Store) GetPost(ctx context.Context, id int64) (*Post, error) {
 	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE id = $1`, id))
 }
 
+// GetPostNoContent is GetPost with Excerpt and Content left empty, for callers that only need the
+// post's slug, title, parent, meta or link.
+func (s *Store) GetPostNoContent(ctx context.Context, id int64) (*Post, error) {
+	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postColsNoContent+` FROM posts WHERE id = $1`, id))
+}
+
 // PostsByIDs loads several posts (any status) in one query; missing ids are absent from the map.
 func (s *Store) PostsByIDs(ctx context.Context, ids []int64) (map[int64]*Post, error) {
+	return s.postsByIDs(ctx, ids, postCols)
+}
+
+// PostsByIDsNoContent is PostsByIDs with Excerpt and Content left empty (menus, link lists).
+func (s *Store) PostsByIDsNoContent(ctx context.Context, ids []int64) (map[int64]*Post, error) {
+	return s.postsByIDs(ctx, ids, postColsNoContent)
+}
+
+func (s *Store) postsByIDs(ctx context.Context, ids []int64, cols string) (map[int64]*Post, error) {
 	out := map[int64]*Post{}
 	if len(ids) == 0 {
 		return out, nil
 	}
-	rows, err := s.Pool.Query(ctx, `SELECT `+postCols+` FROM posts WHERE id = ANY($1)`, ids)
+	rows, err := s.Pool.Query(ctx, `SELECT `+cols+` FROM posts WHERE id = ANY($1)`, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -263,6 +278,10 @@ type PostQuery struct {
 	// NoContent leaves Excerpt and Content empty, for lists that only print titles and links
 	// (the Page List block) and would otherwise load every body.
 	NoContent bool
+	// NoTotal skips the count(*) query: the returned total is len(posts), not the number of matches.
+	// For callers that discard the total. A query without a limit or offset (PerPage <= 0, no Offset)
+	// skips the count on its own, its total being exactly len(posts).
+	NoTotal bool
 	// REST collection filters (WP_REST_Posts_Controller::get_items()).
 	AuthorIDs        []int64 // author__in
 	ExcludeAuthorIDs []int64 // author__not_in
@@ -568,8 +587,11 @@ func (s *Store) QueryPosts(ctx context.Context, q PostQuery) ([]*Post, int, erro
 	var args []any
 	where := q.where(&args) + QueryFilter.cond(ctx, "post", &args)
 	var total int
-	if err := s.Pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE `+where, args...).Scan(&total); err != nil {
-		return nil, 0, err
+	countRows := !q.NoTotal && (q.PerPage > 0 || q.Offset != nil)
+	if countRows {
+		if err := s.Pool.QueryRow(ctx, `SELECT count(*) FROM posts WHERE `+where, args...).Scan(&total); err != nil {
+			return nil, 0, err
+		}
 	}
 	cols := postCols
 	if q.NoContent {
@@ -590,6 +612,9 @@ func (s *Store) QueryPosts(ctx context.Context, q PostQuery) ([]*Post, int, erro
 		return nil, 0, err
 	}
 	posts, err := scanPosts(rows)
+	if !countRows {
+		total = len(posts)
+	}
 	return posts, total, err
 }
 
@@ -1170,9 +1195,9 @@ func (s *Store) AdjacentExcept(ctx context.Context, p *Post, previous bool, excl
 	if p.PublishedAt == nil {
 		return nil, ErrNotFound
 	}
-	cmp, dir := ">", "ASC"
+	cmp, bound, dir := ">", ">=", "ASC"
 	if previous {
-		cmp, dir = "<", "DESC"
+		cmp, bound, dir = "<", "<=", "DESC"
 	}
 	if exclude == nil {
 		exclude = []int64{}
@@ -1180,7 +1205,10 @@ func (s *Store) AdjacentExcept(ctx context.Context, p *Post, previous bool, excl
 	// QueryFilter keeps to the request language (Polylang's pll_post_langs join on get_adjacent_post()).
 	args := []any{p.Type, *p.PublishedAt, p.ID, exclude}
 	filter := QueryFilter.cond(ctx, "post", &args)
-	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postCols+` FROM posts WHERE type = $1 AND status = 'publish'
+	// The navigation prints only titles and links: no excerpt or content. "published_at <= $2" (">=" for
+	// next) is implied by the OR below; spelled out, it gives the planner a range on posts_list_date.
+	return scanPost(s.Pool.QueryRow(ctx, `SELECT `+postColsNoContent+` FROM posts WHERE type = $1 AND status = 'publish'
+		AND published_at `+bound+` $2
 		AND (published_at `+cmp+` $2 OR (published_at = $2 AND id `+cmp+` $3)) AND NOT (id = ANY($4))`+filter+`
 		ORDER BY published_at `+dir+`, id `+dir+` LIMIT 1`, args...))
 }

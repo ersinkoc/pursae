@@ -60,7 +60,6 @@ func (s *Server) serveMovedUpload(c *gin.Context) bool {
 }
 
 var (
-	mediaImgTagRe   = regexp.MustCompile(`(?is)<img\s[^>]*>`)
 	mediaStyleRe    = regexp.MustCompile(`(?i)\sstyle=("([^"]*)"|'([^']*)')`)
 	mediaUploadsMrk = []byte("/wp-content/uploads/")
 )
@@ -74,10 +73,60 @@ func (s *Server) mediaRefreshHTML(c *gin.Context, body []byte) []byte {
 		return body
 	}
 	hosts := s.gocdnHosts(c)
-	body = mediaImgTagRe.ReplaceAllFunc(body, func(tag []byte) []byte {
-		return []byte(s.mediaFixImgTag(string(tag), hosts))
-	})
+	body = mediaImgTags(body, func(tag string) string { return s.mediaFixImgTag(tag, hosts) })
 	return s.mediaVersionURLs(body, hosts)
+}
+
+// mediaImgTags replaces every <img> tag of body with fix(tag): what the regexp (?is)<img\s[^>]*>
+// with ReplaceAllFunc does (the tests keep it as the oracle), found with byte searches instead, and
+// copying body only once fix changes a tag. Most pages have nothing to change, and the regexp copied
+// the whole page regardless. body itself is returned when nothing changed.
+func mediaImgTags(body []byte, fix func(tag string) string) []byte {
+	var out []byte // nil until a tag changes
+	last := 0      // body[:last] is in out (or unchanged)
+	for i := 0; ; {
+		j := bytes.IndexByte(body[i:], '<')
+		if j < 0 {
+			break
+		}
+		start := i + j
+		if start+4 >= len(body) || !isImgTagStart(body[start+1:start+5]) {
+			i = start + 1
+			continue
+		}
+		k := bytes.IndexByte(body[start+5:], '>')
+		if k < 0 {
+			break // no '>' after this tag: no later one can match either
+		}
+		end := start + 5 + k + 1
+		tag := string(body[start:end])
+		if fixed := fix(tag); fixed != tag {
+			if out == nil {
+				out = make([]byte, 0, len(body)+len(body)/64)
+			}
+			out = append(out, body[last:start]...)
+			out = append(out, fixed...)
+			last = end
+		}
+		i = end
+	}
+	if out == nil {
+		return body
+	}
+	return append(out, body[last:]...)
+}
+
+// isImgTagStart reports whether b (4 bytes) is "img" in any case and a whitespace byte, as \s is
+// for RE2: [\t\n\f\r ].
+func isImgTagStart(b []byte) bool {
+	if b[0]|0x20 != 'i' || b[1]|0x20 != 'm' || b[2]|0x20 != 'g' {
+		return false
+	}
+	switch b[3] {
+	case ' ', '\t', '\n', '\f', '\r':
+		return true
+	}
+	return false
 }
 
 // mediaRelOf is the uploads path of a URL of this site ("" when it is not one).

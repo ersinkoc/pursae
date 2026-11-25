@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,12 +32,18 @@ import (
 // forumSlugRe is a slug as a path segment (decoded): lowercase letters of any script, digits, -, _,
 // %, and . (nicenames may contain dots and @).
 var (
-	forumSlugRe     = regexp.MustCompile(`^[\p{L}\p{Mn}\p{Mc}\p{N}_%-]{1,200}$`)
-	forumNicenameRe = regexp.MustCompile(`^[\p{Ll}\p{Lo}\p{Lm}\p{Mn}\p{Mc}\p{N}_%.@-]{1,100}$`)
+	forumSlugRe     = regexp.MustCompile(`^[\p{L}\p{Mn}\p{Mc}\p{N}_%-]+$`)
+	forumNicenameRe = regexp.MustCompile(`^[\p{Ll}\p{Lo}\p{Lm}\p{Mn}\p{Mc}\p{N}_%.@-]+$`)
 )
 
+// The length limits (200 / 100 runes) are checked outside the regexps: a counted {1,200} repeat over
+// these Unicode classes compiles to a huge program (~8 MB of heap retained per process).
 func forumValidSlug(s string) bool {
-	return s == strings.ToLower(s) && forumSlugRe.MatchString(s)
+	return utf8.RuneCountInString(s) <= 200 && s == strings.ToLower(s) && forumSlugRe.MatchString(s)
+}
+
+func forumValidNicename(s string) bool {
+	return utf8.RuneCountInString(s) <= 100 && forumNicenameRe.MatchString(s)
 }
 
 // forumParsePath maps a site path (golylang-stripped, no slashes at either end) to a forum route.
@@ -108,7 +115,7 @@ func forumParsePath(base, path string) (forumRoute, bool) {
 		rt.View, rt.ID = forumViewEdit, v
 	case segs[0] == "search" && len(segs) == 1:
 		rt.View = forumViewSearch
-	case segs[0] == "u" && len(segs) == 2 && forumNicenameRe.MatchString(segs[1]):
+	case segs[0] == "u" && len(segs) == 2 && forumValidNicename(segs[1]):
 		rt.View, rt.Slug = forumViewProfile, segs[1]
 	case len(segs) == 1 && segs[0] == "members":
 		rt.View = forumViewMembers

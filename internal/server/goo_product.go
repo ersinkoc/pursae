@@ -199,7 +199,7 @@ func (s *Server) gooGetProducts(ctx context.Context, ids []int64) (map[int64]*go
 	if len(ids) == 0 {
 		return out, nil
 	}
-	posts, _, err := s.store.QueryPosts(gooPllUnfiltered(ctx), store.PostQuery{Types: []string{"product", "product_variation"}, IDs: ids, Statuses: []string{"publish", "private", "draft", "pending", "future"}, PerPage: len(ids)})
+	posts, _, err := s.store.QueryPosts(gooPllUnfiltered(ctx), store.PostQuery{Types: []string{"product", "product_variation"}, IDs: ids, Statuses: []string{"publish", "private", "draft", "pending", "future"}, PerPage: len(ids), NoTotal: true})
 	if err != nil {
 		return nil, err
 	}

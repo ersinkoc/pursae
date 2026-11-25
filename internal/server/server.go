@@ -144,8 +144,8 @@ func newServer(ctx context.Context, cfg config.Config, pool *pgxpool.Pool, sb *s
 	if _, err := s.schemaStatus(ctx); err != nil { // logs a schema newer than this binary (schema_guard.go)
 		slog.Warn("schema guard: the schema could not be checked", "err", err)
 	}
-	// After the sandbox return: a theme-preview sandbox starts no loops and is never Closed, so it
-	// must not register a child context with a long-lived parent.
+	// After the sandbox return: a theme-preview sandbox starts no loops (shutdownSandbox Closes it when
+	// it is dropped), so it must not register a child context with a long-lived parent.
 	s.rt.startBackground(ctx)
 	s.auth.Idle = s.adminsecIdle // AdminSecGo: idle session timeout
 	s.previews = newPreviewManager(s)
@@ -251,6 +251,10 @@ func stripPHP(p string) (string, bool) {
 func (s *Server) routes() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	// Multipart bodies keep at most 8 MB of files in memory per request (gin's default is 32 MB);
+	// larger parts spool to the temp directory and are removed when the request ends, as parts over
+	// 32 MB already did. Bounds RAM under concurrent uploads.
+	r.MaxMultipartMemory = 8 << 20
 	if err := applyTrustedProxies(r, s.cfg.TrustedProxies); err != nil {
 		log.Printf("wpgo: PURSAE_TRUSTED_PROXIES: %v; trusting no proxy", err)
 		_ = r.SetTrustedProxies(nil)
@@ -724,8 +728,7 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		Loc:       s.loc(),
 	}
 	b.Ancestors = func(p *store.Post) []*store.Post {
-		a, _ := s.store.Ancestors(ctx, p)
-		return a
+		return s.ancestors(ctx, p) // request memo (site_memo.go)
 	}
 	b.FirstCategory = func(p *store.Post) *store.Term {
 		if ts := s.postTerms(ctx, p.ID, "category"); len(ts) > 0 { // request memo (site_memo.go)
@@ -734,17 +737,7 @@ func (s *Server) links(ctx context.Context) *links.Builder {
 		return nil
 	}
 	b.CategoryPath = func(t *store.Term) string {
-		path := t.Slug
-		cur := t
-		for i := 0; cur.ParentID != 0 && i < 20; i++ {
-			parent, err := s.store.GetTerm(ctx, cur.ParentID)
-			if err != nil {
-				break
-			}
-			path = parent.Slug + "/" + path
-			cur = parent
-		}
-		return path
+		return s.categoryPath(ctx, t) // request memo (site_memo.go)
 	}
 	b.AuthorSlug = func(id int64) string {
 		if u := s.displayUser(ctx, id); u != nil { // request memo (site_memo.go)

@@ -95,7 +95,8 @@ type gooCart struct {
 	ShippingTaxes                      map[int64]float64
 
 	TaxLocation gooLocation
-	errors      []string // validation messages produced while loading (removed items, coupons)
+	rateCache   map[string][]gooTaxRate // tax rates looked up by Calculate, reused for the request
+	errors      []string                // validation messages produced while loading (removed items, coupons)
 }
 
 func gooMD5(v string) string {
@@ -145,6 +146,17 @@ func (s *Server) gooCartFor(c *gin.Context) *gooCart {
 	cart.load(c.Request.Context())
 	cart.Calculate()
 	c.Set("goo.cart", cart)
+	return cart
+}
+
+// gooCartForRecalc is gooCartFor followed by Calculate when the cart was built earlier in the request
+// (before the caller changed the session); a cart built just now was calculated from the current session.
+func (s *Server) gooCartForRecalc(c *gin.Context) *gooCart {
+	_, existed := c.Get("goo.cart")
+	cart := s.gooCartFor(c)
+	if existed {
+		cart.Calculate()
+	}
 	return cart
 }
 
@@ -689,7 +701,10 @@ func (cart *gooCart) Calculate() {
 	loc := cart.taxLocation()
 	cart.TaxLocation = loc
 	base := s.gooBaseLocation()
-	rateCache := map[string][]gooTaxRate{}
+	if cart.rateCache == nil {
+		cart.rateCache = map[string][]gooTaxRate{}
+	}
+	rateCache := cart.rateCache
 	ratesFor := func(class string, l gooLocation, ship bool) []gooTaxRate {
 		k := fmt.Sprintf("%s|%v|%v", class, l, ship)
 		if r, ok := rateCache[k]; ok {
@@ -1068,6 +1083,7 @@ type gooTaxTotal struct {
 	Label    string
 	Amount   float64
 	Compound bool
+	Rate     float64 // the rate's percentage
 }
 
 func (cart *gooCart) TaxTotals() []gooTaxTotal {
@@ -1085,7 +1101,7 @@ func (cart *gooCart) TaxTotals() []gooTaxTotal {
 		if r == nil {
 			continue
 		}
-		out = append(out, gooTaxTotal{RateID: id, Code: gooTaxRateCode(r), Label: r.Name, Amount: gooRound(amt, cart.s.gooDecimals()), Compound: r.Compound})
+		out = append(out, gooTaxTotal{RateID: id, Code: gooTaxRateCode(r), Label: r.Name, Amount: gooRound(amt, cart.s.gooDecimals()), Compound: r.Compound, Rate: r.Rate})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].RateID < out[j].RateID })
 	return out

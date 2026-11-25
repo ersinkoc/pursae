@@ -58,6 +58,7 @@ func (s *Server) gooCartPageView(c *gin.Context, v gooCartView) string {
 		b.WriteString(`</div>`)
 		return b.String()
 	}
+	s.gooPrefetchCartImages(c, cart)
 	b.WriteString(string(s.gooPageHTML(c, "cart_before")))
 	cartURL := s.gooPageURL(ctx, "cart")
 	b.WriteString(`<form class="woocommerce-cart-form" id="goo-cart-form" action="` + gooEsc(cartURL) + `" method="post">`)
@@ -74,7 +75,7 @@ func (s *Server) gooCartPageView(c *gin.Context, v gooCartView) string {
 		b.WriteString(`<tr class="woocommerce-cart-form__cart-item cart_item">`)
 		b.WriteString(`<td class="product-remove"><a role="button" href="` + gooEsc(s.gooCartActionURL(c, "remove_item", it.Key)) + `" class="remove" aria-label="Remove ` + gooEsc(parentName) +
 			` from cart" data-product_id="` + itoa64(it.ProductID) + `" data-product_sku="` + gooEsc(p.SKU) + `" data-cart_item_key="` + it.Key + `">&times;</a></td>`)
-		b.WriteString(`<td class="product-thumbnail"><a href="` + gooEsc(link) + `">` + s.gooImageHTML(ctx, s.gooImageOf(ctx, p), "thumbnail", "attachment-woocommerce_thumbnail size-woocommerce_thumbnail") + `</a></td>`)
+		b.WriteString(`<td class="product-thumbnail"><a href="` + gooEsc(link) + `">` + s.gooLoopImageHTML(c, s.gooImageOf(ctx, p), "thumbnail", "attachment-woocommerce_thumbnail size-woocommerce_thumbnail") + `</a></td>`)
 		b.WriteString(`<td class="product-name" data-title="Product"><a href="` + gooEsc(link) + `">` + gooEsc(parentName) + `</a>`)
 		b.WriteString(s.gooItemDataHTML(ctx, it))
 		if s.gooManagingStock(ctx, p) && s.gooBackordersAllowed(ctx, p) && s.gooStockQty(ctx, p) < it.Quantity && s.gooStockOwner(ctx, p).Backorders == "notify" {
@@ -382,6 +383,18 @@ func gooStateInput(name, id, country, value, label, class string, required bool)
 	return `<input type="text" class="input-text ` + class + `" value="` + gooEsc(value) + `" placeholder="" name="` + name + `" id="` + id + `" autocomplete="address-level1" data-input-classes=""` + req + ` />`
 }
 
+// gooPrefetchCartImages loads the images of the cart items with one query (see gooLoopImageHTML).
+func (s *Server) gooPrefetchCartImages(c *gin.Context, cart *gooCart) {
+	ctx := c.Request.Context()
+	var ids []int64
+	for _, it := range cart.Items {
+		if id := s.gooImageOf(ctx, it.product); id > 0 {
+			ids = append(ids, id)
+		}
+	}
+	s.gooPrefetchImages(c, ids)
+}
+
 // Mini cart -----------------------------------------------------------------------------------------------------
 
 // gooMiniCart is woocommerce_mini_cart(): div.widget_shopping_cart_content.
@@ -394,6 +407,7 @@ func (s *Server) gooMiniCart(c *gin.Context) template.HTML {
 		b.WriteString(`<p class="woocommerce-mini-cart__empty-message">No products in the cart.</p></div>`)
 		return template.HTML(s.gooL10n(c, b.String()))
 	}
+	s.gooPrefetchCartImages(c, cart)
 	b.WriteString(`<ul class="woocommerce-mini-cart cart_list product_list_widget">`)
 	for _, it := range cart.Items {
 		if !s.gooCartItemVisible(ctx, it, "mini_cart") {
@@ -404,7 +418,7 @@ func (s *Server) gooMiniCart(c *gin.Context) template.HTML {
 		b.WriteString(`<li class="woocommerce-mini-cart-item mini_cart_item">`)
 		b.WriteString(`<a role="button" href="` + gooEsc(s.gooCartActionURL(c, "remove_item", it.Key)) + `" class="remove remove_from_cart_button" aria-label="Remove ` + gooEsc(name) + ` from cart" data-product_id="` +
 			itoa64(it.ProductID) + `" data-cart_item_key="` + it.Key + `" data-product_sku="` + gooEsc(p.SKU) + `" data-success_message="&ldquo;` + gooEsc(name) + `&rdquo; has been removed from your cart">&times;</a>`)
-		b.WriteString(`<a href="` + gooEsc(s.gooPermalink(ctx, p)) + `">` + s.gooImageHTML(ctx, s.gooImageOf(ctx, p), "thumbnail", "attachment-woocommerce_thumbnail size-woocommerce_thumbnail") + gooEsc(name) + `</a>`)
+		b.WriteString(`<a href="` + gooEsc(s.gooPermalink(ctx, p)) + `">` + s.gooLoopImageHTML(c, s.gooImageOf(ctx, p), "thumbnail", "attachment-woocommerce_thumbnail size-woocommerce_thumbnail") + gooEsc(name) + `</a>`)
 		b.WriteString(s.gooItemDataHTML(ctx, it))
 		b.WriteString(`<span class="quantity">` + strconv.Itoa(it.Quantity) + ` &times; ` + string(s.gooPrice(cart.ItemPriceDisplay(it))) + `</span>`)
 		b.WriteString(`</li>`)
@@ -760,7 +774,7 @@ func (s *Server) gooShippingCalcAction(c *gin.Context) {
 	}
 	cu.CalculatedShip = true
 	sess.touch()
-	s.gooCartFor(c).Calculate()
+	s.gooCartForRecalc(c)
 	s.gooAddNotice(c, "success", "Shipping costs updated.")
 	s.gooRedirect(c, cartURL)
 }

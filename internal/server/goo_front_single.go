@@ -117,13 +117,14 @@ func (s *Server) gooGalleryHTML(c *gin.Context, p *gooProduct) string {
 	if len(ids) == 0 {
 		b.WriteString(`<div class="woocommerce-product-gallery__image--placeholder">` + s.gooPlaceholderImg(ctx, "") + `</div>`)
 	}
+	s.gooPrefetchImages(c, ids)
 	for i, id := range ids {
-		a, err := s.store.GetAttachment(ctx, id)
+		a, err := s.gooLoopAttachment(c, id)
 		if err != nil {
 			continue
 		}
 		full := s.uploadURL(ctx, a.FilePath)
-		thumb, _, _ := s.gooImageURL(ctx, id, "thumbnail")
+		thumb, _, _ := s.gooImageURLOf(ctx, a, "thumbnail")
 		if thumb == "" {
 			thumb = full
 		}
@@ -289,6 +290,15 @@ func gooVariationAttrs(p *gooProduct) []gooProductAttr {
 func (s *Server) gooVariableForm(c *gin.Context, p *gooProduct, action string) string {
 	ctx := c.Request.Context()
 	vars := s.gooVariationsCached(c, p)
+	var varImgs []int64
+	for _, v := range vars {
+		if v.ImageID > 0 {
+			varImgs = append(varImgs, v.ImageID)
+		} else if p.ImageID > 0 {
+			varImgs = append(varImgs, p.ImageID)
+		}
+	}
+	s.gooPrefetchImages(c, varImgs)
 	var data []map[string]any
 	for _, v := range vars {
 		if d := s.gooVariationData(c, p, v); d != nil {
@@ -390,12 +400,14 @@ func (s *Server) gooVariationData(c *gin.Context, parent, v *gooProduct) map[str
 	}
 	img := map[string]any{}
 	imgID := s.gooImageOf(ctx, v)
-	if a, err := s.store.GetAttachment(ctx, imgID); err == nil && imgID > 0 {
-		src, w, h := s.gooImageURL(ctx, imgID, "large")
-		thumb, tw, th := s.gooImageURL(ctx, imgID, "thumbnail")
-		img = map[string]any{"title": a.Title, "caption": a.Caption, "url": s.uploadURL(ctx, a.FilePath), "alt": a.Alt, "src": src, "srcset": "", "sizes": "",
-			"full_src": s.uploadURL(ctx, a.FilePath), "full_src_w": a.Width, "full_src_h": a.Height, "gallery_thumbnail_src": thumb,
-			"gallery_thumbnail_src_w": tw, "gallery_thumbnail_src_h": th, "thumb_src": thumb, "thumb_src_w": tw, "thumb_src_h": th, "src_w": w, "src_h": h}
+	if imgID > 0 {
+		if a, err := s.gooLoopAttachment(c, imgID); err == nil {
+			src, w, h := s.gooImageURLOf(ctx, a, "large")
+			thumb, tw, th := s.gooImageURLOf(ctx, a, "thumbnail")
+			img = map[string]any{"title": a.Title, "caption": a.Caption, "url": s.uploadURL(ctx, a.FilePath), "alt": a.Alt, "src": src, "srcset": "", "sizes": "",
+				"full_src": s.uploadURL(ctx, a.FilePath), "full_src_w": a.Width, "full_src_h": a.Height, "gallery_thumbnail_src": thumb,
+				"gallery_thumbnail_src_w": tw, "gallery_thumbnail_src_h": th, "thumb_src": thumb, "thumb_src_w": tw, "thumb_src_h": th, "src_w": w, "src_h": h}
+		}
 	}
 	weight := v.Weight
 	if weight == "" {

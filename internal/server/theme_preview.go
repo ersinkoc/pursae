@@ -291,11 +291,10 @@ func (m *previewManager) build(ctx context.Context, b, old *previewBox, pkg []by
 func (b *previewBox) fail(err error) {
 	b.mu.Lock()
 	b.err = err
-	if b.pool != nil {
-		b.pool.Close()
-	}
+	srv, pool := b.srv, b.pool
 	b.srv, b.pool, b.handler = nil, nil, nil
 	b.mu.Unlock()
+	shutdownSandbox(srv, pool)
 }
 
 // close shuts a sandbox down (its schema and files stay).
@@ -304,12 +303,31 @@ func (b *previewBox) close() {
 		b.cancel()
 	}
 	<-b.done
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	if b.pool != nil {
-		b.pool.Close()
-	}
+	b.mu.Lock() // waits for the requests being served
+	srv, pool := b.srv, b.pool
 	b.srv, b.pool, b.handler, b.closed = nil, nil, nil, true
+	b.mu.Unlock()
+	shutdownSandbox(srv, pool)
+}
+
+// previewCloseLimit bounds the drain of a sandbox's background work when it is closed.
+const previewCloseLimit = 10 * time.Second
+
+// shutdownSandbox releases a sandbox Server that serves no more requests and its own pool: Close
+// drains its queued writes (they need the pool, so it is closed last), then the Server is removed
+// from the process-wide maps (server_forget.go), once now and once more after processStateResweep
+// for timers that ran meanwhile. Nothing it releases is shared with the site's Server.
+func shutdownSandbox(srv *Server, pool *pgxpool.Pool) {
+	if srv != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), previewCloseLimit)
+		srv.Close(ctx)
+		cancel()
+		srv.forgetProcessState()
+		time.AfterFunc(processStateResweep, srv.forgetProcessState)
+	}
+	if pool != nil {
+		pool.Close()
+	}
 }
 
 func (m *previewManager) sandboxConfig(b *previewBox) config.Config {
@@ -350,7 +368,7 @@ func (m *previewManager) open(ctx context.Context, b *previewBox) (bool, error) 
 	}
 	srv, err := m.newSandboxServer(ctx, b, pool)
 	if err != nil || srv.activeTheme().Slug != b.slug {
-		pool.Close()
+		shutdownSandbox(srv, pool) // srv is nil on an error
 		return false, err
 	}
 	b.ready(srv, pool)
@@ -381,16 +399,16 @@ func (m *previewManager) create(ctx context.Context, b *previewBox, pkg []byte) 
 		return err
 	}
 	ok := false
+	var srv *Server
 	defer func() {
 		if !ok {
-			pool.Close()
+			shutdownSandbox(srv, pool) // a Server built before the failure goes too
 		}
 	}()
 	if _, err := db.Migrate(ctx, pool); err != nil {
 		return err
 	}
-	srv, err := m.newSandboxServer(ctx, b, pool)
-	if err != nil {
+	if srv, err = m.newSandboxServer(ctx, b, pool); err != nil {
 		return err
 	}
 	if err := srv.install(ctx, installView{SiteTitle: "Theme Preview", UserName: "admin", Password: auth.RandomToken(32),

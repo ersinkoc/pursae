@@ -286,9 +286,22 @@ func renderLatestPosts(ctx context.Context, b *blocks.Block, _ string) string {
 		q.AuthorID = int64(a)
 	}
 	q.ExcludeID = rc.s.gooListingExclude(ctx, "post") // Goocommerce Memberships
+	q.NoTotal = true
+	q.NoContent = !attrBool(b, "displayPostContent", false) // titles, dates and authors only
 	posts, _, err := rc.s.store.QueryPosts(ctx, q)
 	if err != nil {
 		return ""
+	}
+	// The authors (and, for a %category% permalink, the categories) of every listed post in one query
+	// each through the request memo, instead of one lookup per post.
+	if rc.lb != nil && strings.Contains(rc.lb.Structure, "%category%") {
+		rc.s.prefetchPosts(ctx, posts)
+	} else if attrBool(b, "displayAuthor", false) {
+		ids := make([]int64, 0, len(posts))
+		for _, p := range posts {
+			ids = append(ids, p.AuthorID)
+		}
+		rc.s.prefetchUsers(ctx, ids)
 	}
 	loc := rc.s.loc()
 	var items strings.Builder
@@ -301,7 +314,7 @@ func renderLatestPosts(ctx context.Context, b *blocks.Block, _ string) string {
 		items.WriteString("<li>")
 		fmt.Fprintf(&items, `<a class="wp-block-latest-posts__post-title" href="%s">%s</a>`, html.EscapeString(link), wp.Texturize(wp.EscText(title)))
 		if attrBool(b, "displayAuthor", false) {
-			if u, err := rc.s.store.UserByID(ctx, p.AuthorID); err == nil {
+			if u := rc.s.displayUser(ctx, p.AuthorID); u != nil { // request memo (site_memo.go)
 				fmt.Fprintf(&items, `<div class="wp-block-latest-posts__post-author">by %s</div>`, html.EscapeString(u.DisplayName))
 			}
 		}
@@ -369,6 +382,23 @@ func renderLatestComments(ctx context.Context, b *blocks.Block, _ string) string
 	if err != nil {
 		return ""
 	}
+	// The commented posts (titles and links only), the commenters' avatars and the registered
+	// commenters in one query each, not one per comment.
+	postIDs := make([]int64, 0, len(comments))
+	var emails []string
+	var userIDs []int64
+	for _, cm := range comments {
+		postIDs = append(postIDs, cm.PostID)
+		if avatar {
+			emails = append(emails, cm.AuthorEmail)
+		}
+		if cm.UserID != 0 && commentAuthorURL(cm.AuthorURL) == "" {
+			userIDs = append(userIDs, cm.UserID)
+		}
+	}
+	posts, _ := rc.s.store.PostsByIDsNoContent(ctx, postIDs) // a comment whose post fails to load is skipped
+	rc.s.prefetchAvatars(ctx, emails)
+	rc.s.prefetchUsers(ctx, userIDs)
 	loc := rc.s.loc()
 	var items strings.Builder
 	shown := 0
@@ -376,8 +406,8 @@ func renderLatestComments(ctx context.Context, b *blocks.Block, _ string) string
 		if shown >= want {
 			break
 		}
-		p, err := rc.s.store.GetPost(ctx, cm.PostID)
-		if err != nil {
+		p := posts[cm.PostID]
+		if p == nil {
 			continue
 		}
 		// The discussion of a password-protected post is as protected as the post (comments feeds and
@@ -398,7 +428,7 @@ func renderLatestComments(ctx context.Context, b *blocks.Block, _ string) string
 		}
 		authorURL := commentAuthorURL(cm.AuthorURL) // stored rows may predate the save-time check
 		if authorURL == "" && cm.UserID != 0 {
-			if u, err := rc.s.store.UserByID(ctx, cm.UserID); err == nil {
+			if u := rc.s.displayUser(ctx, cm.UserID); u != nil { // request memo (site_memo.go)
 				authorURL = rc.lb.AuthorLink(u.ID, u.Nicename)
 			}
 		}

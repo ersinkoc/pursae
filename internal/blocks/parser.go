@@ -308,7 +308,6 @@ func matchDelimiter(doc string, start int) (tokenType, string, map[string]any, i
 	}
 
 	var attrs map[string]any
-	hasAttrs := false
 	if i < len(doc) && doc[i] == '{' {
 		// Lazy match up to the first "}" + whitespace + optional "/" + "-->".
 		search := i
@@ -327,13 +326,14 @@ func matchDelimiter(doc string, start int) (tokenType, string, map[string]any, i
 				w--
 			}
 			if w < e && w-1 >= i && doc[w-1] == '}' {
-				hasAttrs = true
-				var parsed map[string]any
-				if json.Unmarshal([]byte(doc[i:w]), &parsed) == nil {
-					attrs = parsed
-				}
 				isVoid := e < end
-				return finishToken(closer, isVoid, hasAttrs, namespace+name, attrs, end+3)
+				if !closer || isVoid { // a closer's attrs are dropped (finishToken): not worth parsing
+					var parsed map[string]any
+					if json.Unmarshal([]byte(doc[i:w]), &parsed) == nil {
+						attrs = parsed
+					}
+				}
+				return finishToken(closer, isVoid, namespace, name, attrs, end+3)
 			}
 			search = end + 3
 		}
@@ -348,19 +348,21 @@ func matchDelimiter(doc string, start int) (tokenType, string, map[string]any, i
 	if !strings.HasPrefix(doc[i:], "-->") {
 		return 0, "", nil, 0, false
 	}
-	return finishToken(closer, isVoid, false, namespace+name, nil, i+3)
+	return finishToken(closer, isVoid, namespace, name, nil, i+3)
 }
 
-func finishToken(closer, isVoid, hasAttrs bool, name string, attrs map[string]any, end int) (tokenType, string, map[string]any, int, bool) {
+// finishToken builds the token. A closer comes back without its name and attrs, which proceed never
+// reads (it needs only the closer's offsets), so neither the name is concatenated nor an attrs map
+// made for it. The void "/" wins over the closing one: "<!-- /wp:x /-->" is a void block.
+func finishToken(closer, isVoid bool, namespace, name string, attrs map[string]any, end int) (tokenType, string, map[string]any, int, bool) {
+	if closer && !isVoid {
+		return blockCloser, "", nil, end, true
+	}
 	if attrs == nil {
 		attrs = map[string]any{}
 	}
-	switch {
-	case isVoid:
-		return voidBlock, name, attrs, end, true
-	case closer:
-		return blockCloser, name, nil, end, true
-	default:
-		return blockOpener, name, attrs, end, true
+	if isVoid {
+		return voidBlock, namespace + name, attrs, end, true
 	}
+	return blockOpener, namespace + name, attrs, end, true
 }

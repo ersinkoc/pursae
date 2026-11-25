@@ -542,10 +542,18 @@ func (s *Server) resolveMenu(ctx context.Context, items []*store.MenuItem, lb *l
 	collect(items)
 	s.pllPrimeObjLangs(ctx, pllPost, postIDs) // Golylang: the targets' languages in one query each
 	s.pllPrimeObjLangs(ctx, pllTerm, termIDs)
-	posts, err := s.store.PostsByIDs(ctx, postIDs)
+	posts, err := s.store.PostsByIDsNoContent(ctx, postIDs) // titles and permalinks only; meta kept
 	if err != nil {
 		posts = map[int64]*store.Post{}
 	}
+	// The child pages' parent chains (their permalinks carry the ancestors' slugs): one query per depth.
+	var children []*store.Post
+	for _, p := range posts {
+		if p.ParentID != 0 && (p.Type == "page" || siteTypeHierarchical(p.Type)) {
+			children = append(children, p)
+		}
+	}
+	s.prefetchAncestors(ctx, children)
 	terms, err := s.store.TermsByIDs(ctx, termIDs)
 	if err != nil {
 		terms = map[int64]*store.Term{}

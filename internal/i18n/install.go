@@ -268,6 +268,7 @@ func (m *Manager) Install(ctx context.Context, in *Installer, locale string, plu
 	if err != nil {
 		return err
 	}
+	defer m.Reset() // also after a failed extract: files may be half written, cached results are stale
 	installed, err := extract(zipData, m.Dir)
 	if err != nil {
 		return err
@@ -287,7 +288,6 @@ func (m *Manager) Install(ctx context.Context, in *Installer, locale string, plu
 			}
 		}
 	}
-	m.Reset()
 	return errors.Join(pluginErrors...)
 }
 
@@ -303,6 +303,29 @@ func (m *Manager) ScriptTranslations(locale, relPath, plugin string) []byte {
 	if strings.HasSuffix(rel, ".min.js") {
 		rel = strings.TrimSuffix(rel, ".min.js") + ".js"
 	}
+	key := locale + "|" + rel + "|" + plugin
+	m.scriptMu.Lock()
+	out, ok := m.scripts[key]
+	m.scriptMu.Unlock()
+	if ok {
+		return out
+	}
+	out = m.readScriptTranslations(locale, rel, plugin)
+	m.scriptMu.Lock()
+	// Bounded: the keys come from registered script paths, but never let the map grow without limit.
+	if len(m.scripts) < 4096 {
+		if m.scripts == nil {
+			m.scripts = map[string][]byte{}
+		}
+		m.scripts[key] = out
+	}
+	m.scriptMu.Unlock()
+	return out
+}
+
+// readScriptTranslations reads and converts one script's JSON file (nil when absent or invalid).
+// A file another process changes shows up after Reset or a restart, like the .mo catalogs.
+func (m *Manager) readScriptTranslations(locale, rel, plugin string) []byte {
 	sum := md5.Sum([]byte(rel))
 	name := locale + "-" + hex.EncodeToString(sum[:]) + ".json"
 	path := filepath.Join(m.Dir, name)

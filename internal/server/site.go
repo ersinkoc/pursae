@@ -854,7 +854,7 @@ func (s *Server) prependSticky(ctx context.Context, posts []*store.Post, pq stor
 	if len(ids) == 0 {
 		return posts, nil
 	}
-	sticky, _, err := s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, ExcludeID: pq.ExcludeID, Types: []string{"post"}, Statuses: pq.Statuses, PerPage: -1, Page: 1, Loc: pq.Loc})
+	sticky, _, err := s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, ExcludeID: pq.ExcludeID, Types: []string{"post"}, Statuses: pq.Statuses, PerPage: -1, Page: 1, Loc: pq.Loc, NoTotal: true})
 	if err != nil {
 		return posts, err
 	}

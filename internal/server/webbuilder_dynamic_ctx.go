@@ -158,7 +158,7 @@ func (s *Server) wbResolvePreview(c *gin.Context, pv wbPreview, t *store.WBTempl
 				}
 			}
 		}
-		posts, _, err := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"}, OrderBy: "date", Order: "DESC", Page: 1, PerPage: 1})
+		posts, _, err := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"}, OrderBy: "date", Order: "DESC", Page: 1, PerPage: 1, NoTotal: true})
 		if err != nil || len(posts) == 0 {
 			return nil, errWBPreviewNone
 		}
@@ -633,7 +633,7 @@ func (s *Server) wbDynSamplePosts(ctx context.Context, c *gin.Context, cur *stor
 			continue
 		}
 		posts, _, err := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"},
-			OrderBy: "date", Order: "desc", Page: 1, PerPage: webbuilder.MaxLoopPerPage, Loc: s.loc()})
+			OrderBy: "date", Order: "desc", Page: 1, PerPage: webbuilder.MaxLoopPerPage, Loc: s.loc(), NoTotal: true})
 		if err != nil {
 			log.Printf("web builder: preview sample posts: %v", err)
 			continue

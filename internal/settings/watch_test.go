@@ -153,6 +153,28 @@ func TestSetCachesTheCommittedJSON(t *testing.T) {
 	}
 }
 
+// TestRevisionFollowsEveryChange: Set and Load (the path Watch takes on NOTIFY) each move Revision,
+// so values memoized under it are rebuilt.
+func TestRevisionFollowsEveryChange(t *testing.T) {
+	pool := testPool(t)
+	ctx := context.Background()
+	s := New(pool)
+	r0 := s.Revision()
+	if err := s.Load(ctx); err != nil {
+		t.Fatal(err)
+	}
+	r1 := s.Revision()
+	if r1 == r0 {
+		t.Fatal("Load kept the revision")
+	}
+	if err := s.Set(ctx, map[string]any{"blogname": "Revision"}); err != nil {
+		t.Fatal(err)
+	}
+	if s.Revision() == r1 {
+		t.Fatal("Set kept the revision")
+	}
+}
+
 func TestSetRespectsAutoload(t *testing.T) {
 	pool := testPool(t)
 	ctx := context.Background()

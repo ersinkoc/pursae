@@ -525,7 +525,7 @@ func renderPageListBlock(ctx context.Context, b *blocks.Block, _ string) string 
 	if rc == nil {
 		return ""
 	}
-	pages, _, err := rc.s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish"}, OrderBy: "menu_order", Order: "asc", PerPage: -1, NoContent: true})
+	pages, _, err := rc.s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"page"}, Statuses: []string{"publish"}, OrderBy: "menu_order", Order: "asc", PerPage: -1, NoContent: true, NoTotal: true})
 	if err != nil || len(pages) == 0 {
 		return ""
 	}

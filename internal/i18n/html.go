@@ -183,7 +183,7 @@ func (c *Catalog) miss(core string) {
 	if MissHook == nil {
 		return
 	}
-	plain := html.UnescapeString(spaceRun.ReplaceAllString(core, " "))
+	plain := html.UnescapeString(collapseWS(core))
 	if !c.has(plain) && !c.has(core) {
 		MissHook(plain)
 	}
@@ -191,7 +191,7 @@ func (c *Catalog) miss(core string) {
 
 // translateText translates escaped HTML text; the result is escaped HTML too.
 func (c *Catalog) translateText(core string) (string, bool) {
-	norm := spaceRun.ReplaceAllString(core, " ")
+	norm := collapseWS(core)
 	// msgids keep entities as WordPress writes them ("&hellip;"), so try the raw text first.
 	if tr, ok := c.lookup(norm); ok {
 		return escapeText(tr), true
@@ -508,7 +508,7 @@ func leadingControl(src string, i int) (int, int, bool) {
 // translateMarkup translates inner HTML that WordPress writes as one message with markup.
 func (c *Catalog) translateMarkup(inner string) (string, bool) {
 	core := strings.TrimSpace(inner)
-	norm := spaceRun.ReplaceAllString(core, " ")
+	norm := collapseWS(core)
 	tr, ok := c.lookup(norm)
 	if !ok {
 		tr, ok = c.matchMarkup(norm)

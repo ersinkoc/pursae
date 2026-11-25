@@ -27,11 +27,11 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/net/idna"
 	"golang.org/x/net/publicsuffix"
+	"wpgo/internal/settings"
 	"wpgo/internal/store"
 )
 
@@ -205,14 +205,18 @@ func cspExtraFromAny(v any) (map[string][]string, bool) {
 	return out, true
 }
 
-// cspExtraCache memoizes the validated option by its stored JSON (validation runs IDNA and the
-// public-suffix lookup; the option is read on every front-end response).
-var cspExtraCache struct {
-	sync.Mutex
+// cspExtraValue is the validated option with the stored JSON it was validated from.
+type cspExtraValue struct {
 	raw   string
 	value map[string][]string
 	hash  string
 }
+
+// cspExtraMemo memoizes the validated option per settings revision, with no global mutex (the option is
+// read on every front-end response, page-cache hits included). After an unrelated settings change the
+// stored JSON is compared, so validation (IDNA, the public-suffix lookup) runs only when the option
+// itself changed. The cached map is shared: callers must not modify it.
+var cspExtraMemo settings.Memo[*cspExtraValue]
 
 // cspExtraSources is the stored option, validated: only canonical sources of allowed directives.
 func (s *Server) cspExtraSources() map[string][]string {
@@ -225,12 +229,16 @@ func (s *Server) cspExtraState() (map[string][]string, string) {
 	if s.settings == nil {
 		return nil, ""
 	}
+	e := cspExtraMemo.Get(s.settings, s.cspExtraBuild)
+	return e.value, e.hash
+}
+
+// cspExtraBuild validates the stored option, reusing the previous result when its JSON is unchanged.
+func (s *Server) cspExtraBuild() *cspExtraValue {
 	v := s.settings.Get(cspExtraOption)
 	b, _ := json.Marshal(v)
-	cspExtraCache.Lock()
-	defer cspExtraCache.Unlock()
-	if cspExtraCache.raw == string(b) && cspExtraCache.value != nil {
-		return cspExtraCache.value, cspExtraCache.hash
+	if prev, ok := cspExtraMemo.Peek(s.settings); ok && prev.raw == string(b) {
+		return prev
 	}
 	in, _ := cspExtraFromAny(v)
 	norm, issues := cspNormalizeExtra(in)
@@ -249,8 +257,7 @@ func (s *Server) cspExtraState() (map[string][]string, string) {
 		sum := sha256.Sum256(canon)
 		hash = hex.EncodeToString(sum[:6])
 	}
-	cspExtraCache.raw, cspExtraCache.value, cspExtraCache.hash = string(b), out, hash
-	return out, hash
+	return &cspExtraValue{raw: string(b), value: out, hash: hash}
 }
 
 // cspAllowExtra adds the site's external sources to this front-end response's policy.

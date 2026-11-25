@@ -10,6 +10,31 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Changed
+
+- **Faster pages with fewer database queries.** A page with child-page and child-category menu links and the
+  Latest Posts / Latest Comments blocks went from 65 to 22 queries: ancestors and category paths are resolved
+  once per request, menus and the privacy-policy link no longer load post content, previous/next links read
+  only what they show, and lists that throw the total away skip `count(*)`. A new partial index
+  (`posts_sticky`, migration 0115, built concurrently) finds sticky posts without scanning every post.
+- **Pursae Commerce:** a variable product's page and gallery load their images in one query instead of about six
+  per variation; the cart page, mini-cart and Store API batch item images, reuse loaded products for
+  cross-sells and tax rates within a request, and skip a repeated cart recalculation.
+- **Less memory and CPU per request.** The Pursae Security and Maintenance settings caches now actually hit
+  (they re-read settings on every request), Cookie consent, Multi Language and CSP settings are memoised the
+  same way, the page cache reuses its gzip writers (about 1 MB less garbage per stored page) and stores
+  compressed copies at their exact size, three whole-page scans (block styles, upload URLs, image tags) are
+  10–130× faster, the forum's URL patterns no longer hold about 8 MB of memory in every process, and
+  non-English admin pages translate with less work.
+- **Bounded resource use.** On-the-fly CDN image transformations run at most `min(4, CPUs/2)` at a time; a
+  multipart request keeps at most 8 MB in memory (1 MB for the store's form check) and spools the rest to the
+  temp directory; the backup screen keeps the 20 most recent finished jobs in memory (archives are untouched).
+
+### Fixed
+
+- Theme previews that were evicted or rebuilt no longer leak their whole sandbox site in memory.
+- English admin pages no longer grow the admin script-strings cache by one entry per request.
+
 ## [0.5.7] - 2026-11-25
 
 ### Added

@@ -225,7 +225,7 @@ func TestFrontQueryCount(t *testing.T) {
 	if out := config.Env("PERF_DUMP"); out != "" {
 		_ = os.WriteFile(out+"/tt5-home.html", []byte(perfVolatile.ReplaceAllString(body, "$1=X")), 0o644)
 	}
-	if n > 30 {
+	if n > 20 {
 		t.Errorf("twentytwentyfive home costs %d queries", n)
 	}
 
@@ -240,7 +240,7 @@ func TestFrontQueryCount(t *testing.T) {
 	if out := config.Env("PERF_DUMP"); out != "" {
 		_ = os.WriteFile(out+"/byte-notes-home.html", []byte(perfVolatile.ReplaceAllString(body, "$1=X")), 0o644)
 	}
-	if n > 40 {
+	if n > 26 {
 		t.Errorf("byte-notes home costs %d queries", n)
 	}
 	// A %category%/%author% structure looks the category and author up through the same memo.
@@ -253,7 +253,7 @@ func TestFrontQueryCount(t *testing.T) {
 	if !strings.Contains(body, "/meadows/admin/perf-note-10/") {
 		t.Error("home misses the category/author permalink")
 	}
-	if n > 40 {
+	if n > 25 {
 		t.Errorf("byte-notes home with /%%category%%/ links costs %d queries", n)
 	}
 	if err := srv.settings.Set(context.Background(), map[string]any{"permalink_structure": "/%year%/%monthnum%/%day%/%postname%/"}); err != nil {
@@ -267,6 +267,9 @@ func TestFrontQueryCount(t *testing.T) {
 	t.Logf("byte-notes single post: %d queries", n)
 	if out := config.Env("PERF_DUMP"); out != "" {
 		_ = os.WriteFile(out+"/byte-notes-single.html", []byte(perfVolatile.ReplaceAllString(body, "$1=X")), 0o644)
+	}
+	if n > 24 {
+		t.Errorf("byte-notes single post costs %d queries", n)
 	}
 }
 
@@ -397,6 +400,46 @@ func TestMenuAndContentImagesBatched(t *testing.T) {
 	if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO menu_items (menu_id, sort_order, kind, object, target_id) VALUES ($1, 9, 'taxonomy', 'category', $2)`, menu, cat); err != nil {
 		t.Fatal(err)
 	}
+	addItem := func(order int, kind, object string, id int64) {
+		t.Helper()
+		if _, err := srv.store.Pool.Exec(ctx, `INSERT INTO menu_items (menu_id, sort_order, kind, object, target_id) VALUES ($1, $2, $3, $4, $5)`, menu, order, kind, object, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Child pages share their parents' walk (links.Builder.Ancestors through the request memo): one
+	// lookup per ancestor, not one per ancestor and page.
+	section := mustInsertPost(t, srv, &store.Post{Type: "page", AuthorID: admin, Title: "Section", Slug: "section", Status: "publish"})
+	var firstChild *store.Post
+	for i := 0; i < 3; i++ {
+		ch := mustInsertPost(t, srv, &store.Post{Type: "page", AuthorID: admin, Title: "Child " + itoa(i+1), Slug: "child-" + itoa(i+1), ParentID: section.ID, Status: "publish"})
+		if firstChild == nil {
+			firstChild = ch
+		}
+		addItem(10+i, "post_type", "page", ch.ID)
+	}
+	grand := mustInsertPost(t, srv, &store.Post{Type: "page", AuthorID: admin, Title: "Grandchild", Slug: "grandchild", ParentID: firstChild.ID, Status: "publish"})
+	addItem(20, "post_type", "page", grand.ID)
+	// Child categories: the parent's slug path is resolved once (links.Builder.CategoryPath).
+	habitats := &store.Term{Taxonomy: "category", Slug: "habitats", Name: "Habitats"}
+	if err := srv.store.InsertTerm(ctx, habitats); err != nil {
+		t.Fatal(err)
+	}
+	for i, slug := range []string{"wetlands", "forests", "dunes"} {
+		tm := &store.Term{Taxonomy: "category", Slug: slug, Name: slug, ParentID: habitats.ID}
+		if err := srv.store.InsertTerm(ctx, tm); err != nil {
+			t.Fatal(err)
+		}
+		addItem(30+i, "taxonomy", "category", tm.ID)
+	}
+	// Latest posts (with authors) and latest comments of registered commenters: posts, users and
+	// avatars in one query each, not one per row.
+	for i := 0; i < 5; i++ {
+		lp := mustInsertPost(t, srv, &store.Post{Type: "post", AuthorID: admin, Title: "Listed " + itoa(i+1), Status: "publish", CommentStatus: "open"})
+		if err := srv.store.InsertComment(ctx, &store.Comment{PostID: lp.ID, UserID: admin, AuthorName: "admin", AuthorEmail: "admin@example.com",
+			Content: "Comment " + itoa(i+1), Status: "approved"}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	var content strings.Builder
 	for i := 0; i < 4; i++ {
 		a := &store.Attachment{UploaderID: admin, Slug: "img" + itoa(i), FilePath: "2026/11/img" + itoa(i) + ".jpg", Mime: "image/jpeg", Width: 800, Height: 600,
@@ -406,6 +449,7 @@ func TestMenuAndContentImagesBatched(t *testing.T) {
 		}
 		content.WriteString(`<!-- wp:image {"id":` + itoa64(a.ID) + `} --><figure class="wp-block-image"><img src="/wp-content/uploads/2026/11/img` + itoa(i) + `.jpg" alt="" class="wp-image-` + itoa64(a.ID) + `"/></figure><!-- /wp:image -->` + "\n")
 	}
+	content.WriteString(`<!-- wp:latest-posts {"postsToShow":5,"displayAuthor":true} /-->` + "\n" + `<!-- wp:latest-comments {"commentsToShow":5} /-->` + "\n")
 	p := mustInsertPost(t, srv, &store.Post{Type: "post", AuthorID: admin, Title: "Gallery", Content: content.String(), Status: "publish"})
 	anon := &http.Client{CheckRedirect: c.CheckRedirect}
 	path := pathOf(t, ts.URL, srv.links(ctx).Permalink(p))
@@ -414,12 +458,17 @@ func TestMenuAndContentImagesBatched(t *testing.T) {
 	qc.sql = nil
 	qc.mu.Unlock()
 	qc.log.Store(true)
+	before := qc.n.Load()
 	code, body, _ := get(t, anon, ts.URL+path+"?count=1")
+	n := qc.n.Load() - before
 	qc.log.Store(false)
 	if code != http.StatusOK {
 		t.Fatalf("single: %d", code)
 	}
-	for _, want := range []string{"Menu page 1", "Menu page 4", "img3-300x225.jpg 300w", `width="800" height="600"`} {
+	t.Logf("single post with a 12-item menu (child pages, child categories), latest posts and comments: %d queries", n)
+	for _, want := range []string{"Menu page 1", "Menu page 4", "img3-300x225.jpg 300w", `width="800" height="600"`,
+		"/section/child-2/", "/section/child-1/grandchild/", "/category/habitats/dunes/", "Listed 5", "by admin",
+		"wp-block-latest-comments__comment-author"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page misses %q", want)
 		}
@@ -427,11 +476,17 @@ func TestMenuAndContentImagesBatched(t *testing.T) {
 	qc.mu.Lock()
 	defer qc.mu.Unlock()
 	for stmt, n := range qc.sql {
+		if config.Env("PERF_SQL") != "" {
+			t.Logf("%4d %.160s", n, stmt)
+		}
 		perItem := strings.Contains(stmt, "FROM posts WHERE id = $1") || strings.Contains(stmt, "FROM terms WHERE id = $1") ||
-			strings.Contains(stmt, "FROM media WHERE id = $1")
+			strings.Contains(stmt, "FROM media WHERE id = $1") || strings.Contains(stmt, "FROM users WHERE id = $1")
 		if perItem && n > 1 {
 			t.Errorf("%d× %s", n, stmt)
 		}
+	}
+	if n > 30 {
+		t.Errorf("single post with menu and list blocks costs %d queries", n)
 	}
 }
 

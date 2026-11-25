@@ -183,7 +183,7 @@ func (s *Server) sitemapURLs(ctx context.Context, provider, subtype string, page
 			return out
 		}
 		// Only links and dates are printed: up to 2000 posts per page are loaded without their content.
-		posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, Types: []string{subtype}, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc", NoContent: true})
+		posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, Types: []string{subtype}, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc", NoContent: true, NoTotal: true})
 		for _, p := range posts {
 			if p.Password != "" {
 				continue

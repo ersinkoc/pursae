@@ -90,6 +90,11 @@ func (s *Server) gooImageJSON(ctx context.Context, id int64) map[string]any {
 	if err != nil {
 		return nil
 	}
+	return s.gooImageJSONOf(ctx, a)
+}
+
+// gooImageJSONOf is gooImageJSON for an attachment already loaded.
+func (s *Server) gooImageJSONOf(ctx context.Context, a *store.Attachment) map[string]any {
 	src := s.uploadURL(ctx, a.FilePath)
 	thumb := src
 	var srcset []string
@@ -245,12 +250,22 @@ func (s *Server) gooStoreProductJSON(ctx context.Context, p *gooProduct, terms m
 	variations := []any{}
 	if gooSubsVariableLike(p.Type) {
 		vars, _ := s.gooVariations(ctx, p.ID, false)
-		for _, v := range vars {
-			var va []any
+		type varAttr struct {
+			a     gooProductAttr
+			label string
+		}
+		var vattrs []varAttr // labels once per product, not per variation
+		if len(vars) > 0 {
 			for _, a := range p.Attributes {
 				if a.Variation {
-					va = append(va, map[string]any{"name": s.gooAttrLabel(ctx, a), "value": nilIfEmpty(v.VariationAttrs[a.Key()])})
+					vattrs = append(vattrs, varAttr{a, s.gooAttrLabel(ctx, a)})
 				}
+			}
+		}
+		for _, v := range vars {
+			var va []any
+			for _, x := range vattrs {
+				va = append(va, map[string]any{"name": x.label, "value": nilIfEmpty(v.VariationAttrs[x.a.Key()])})
 			}
 			variations = append(variations, map[string]any{"id": v.ID, "attributes": nonNilSlice(va)})
 		}

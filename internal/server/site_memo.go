@@ -20,6 +20,8 @@ type viewMemo struct {
 	attachments map[int64]*store.Attachment
 	avatarIDs   map[string]int64 // lower-cased email → avatar attachment id (0: none)
 	categorized *bool
+	ancestors   map[int64][]*store.Post // parent id → that parent's chain, root first (no content); nil: not found
+	catPaths    map[int64]string        // parent term id → "grandparent/parent/" slug prefix of its children's paths
 
 	// Pursae Cache dependencies found while building the page (cacheTags, wpgocache.go): widgets is
 	// set when the page shows something only the blunt "widgets" tag tracks (a widget area, a list
@@ -38,7 +40,8 @@ func withViewMemo(ctx context.Context) context.Context {
 		return ctx
 	}
 	return context.WithValue(ctx, viewMemoKey{}, &viewMemo{terms: map[int64][]*store.Term{}, users: map[int64]*store.User{},
-		attachments: map[int64]*store.Attachment{}, avatarIDs: map[string]int64{}, deps: map[string]bool{}})
+		attachments: map[int64]*store.Attachment{}, avatarIDs: map[string]int64{}, deps: map[string]bool{},
+		ancestors: map[int64][]*store.Post{}, catPaths: map[int64]string{}})
 }
 
 func viewMemoFrom(ctx context.Context) *viewMemo {
@@ -181,6 +184,188 @@ func (s *Server) displayUser(ctx context.Context, id int64) *store.User {
 		m.mu.Unlock()
 	}
 	return u
+}
+
+// prefetchUsers loads the display users of ids into the request memo in one query (displayUser then
+// answers from it).
+func (s *Server) prefetchUsers(ctx context.Context, ids []int64) {
+	m := viewMemoFrom(ctx)
+	if m == nil {
+		return
+	}
+	var need []int64
+	seen := map[int64]bool{}
+	m.mu.Lock()
+	for _, id := range ids {
+		if _, ok := m.users[id]; ok || id == 0 || seen[id] {
+			continue
+		}
+		seen[id] = true
+		need = append(need, id)
+	}
+	m.mu.Unlock()
+	if len(need) == 0 {
+		return
+	}
+	users, err := s.store.UserNames(ctx, need)
+	if err != nil {
+		return
+	}
+	m.mu.Lock()
+	for _, id := range need {
+		m.users[id] = users[id]
+	}
+	m.mu.Unlock()
+}
+
+// ancestors is store.Ancestors (the parent chain, root first) through the request memo, keyed by the
+// parent: sibling pages in a menu or list share one walk, and a walk stops at a parent already known.
+// The posts carry no excerpt or content (permalinks read slugs, breadcrumbs titles and ids). A chain
+// whose walk fails is nil, as links.Builder.Ancestors gets it without a memo.
+func (s *Server) ancestors(ctx context.Context, p *store.Post) []*store.Post {
+	if p.ParentID == 0 {
+		return nil
+	}
+	m := viewMemoFrom(ctx)
+	if m == nil {
+		a, _ := s.store.Ancestors(ctx, p)
+		return a
+	}
+	m.mu.Lock()
+	a, ok := m.ancestors[p.ParentID]
+	m.mu.Unlock()
+	if ok {
+		return a
+	}
+	var chain []*store.Post
+	cur := p
+	for i := 0; cur.ParentID != 0 && i < 20; i++ {
+		m.mu.Lock()
+		known, ok := m.ancestors[cur.ParentID]
+		m.mu.Unlock()
+		if ok {
+			if known == nil { // that walk failed: so does this one
+				chain = nil
+			} else {
+				chain = append(append([]*store.Post{}, known...), chain...)
+				if len(chain) > 20 { // store.Ancestors stops after 20 levels: keep the nearest
+					chain = chain[len(chain)-20:]
+				}
+			}
+			break
+		}
+		parent, err := s.store.GetPostNoContent(ctx, cur.ParentID)
+		if err != nil {
+			chain = nil
+			break
+		}
+		chain = append([]*store.Post{parent}, chain...)
+		cur = parent
+	}
+	chain = chain[:len(chain):len(chain)] // a caller appending never writes into the memo
+	m.mu.Lock()
+	m.ancestors[p.ParentID] = chain
+	m.mu.Unlock()
+	return chain
+}
+
+// prefetchAncestors fills the request memo with the parent chains of posts, loading the missing
+// ancestors one depth level per query (a menu of child pages costs one query, not one per parent).
+// Without a memo, or if a query fails, ancestors walks lazily as before.
+func (s *Server) prefetchAncestors(ctx context.Context, posts []*store.Post) {
+	m := viewMemoFrom(ctx)
+	if m == nil || len(posts) == 0 {
+		return
+	}
+	known := map[int64]*store.Post{}
+	var want []*store.Post
+	m.mu.Lock()
+	for _, p := range posts {
+		known[p.ID] = p
+		if _, ok := m.ancestors[p.ParentID]; !ok && p.ParentID != 0 {
+			want = append(want, p)
+		}
+	}
+	m.mu.Unlock()
+	if len(want) == 0 {
+		return
+	}
+	tried := map[int64]bool{}
+	for round := 0; round < 20; round++ {
+		var need []int64
+		for _, p := range known {
+			if id := p.ParentID; id != 0 && known[id] == nil && !tried[id] {
+				tried[id] = true
+				need = append(need, id)
+			}
+		}
+		if len(need) == 0 {
+			break
+		}
+		got, err := s.store.PostsByIDsNoContent(ctx, need)
+		if err != nil {
+			return
+		}
+		for id, p := range got {
+			known[id] = p
+		}
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, p := range want {
+		if _, ok := m.ancestors[p.ParentID]; ok {
+			continue
+		}
+		// store.Ancestors' walk: at most 20 levels, nil when a parent does not exist.
+		var chain []*store.Post
+		cur := p
+		for i := 0; cur.ParentID != 0 && i < 20; i++ {
+			par := known[cur.ParentID]
+			if par == nil {
+				if !tried[cur.ParentID] {
+					return // not loaded (the round limit): leave the rest to the lazy walk
+				}
+				chain = nil
+				break
+			}
+			chain = append([]*store.Post{par}, chain...)
+			cur = par
+		}
+		m.ancestors[p.ParentID] = chain[:len(chain):len(chain)]
+	}
+}
+
+// categoryPath is the term's parent/child slug path (links.Builder.CategoryPath), with the prefix of
+// each parent remembered in the request memo: a categories list resolves every parent once.
+func (s *Server) categoryPath(ctx context.Context, t *store.Term) string {
+	if t.ParentID == 0 {
+		return t.Slug
+	}
+	m := viewMemoFrom(ctx)
+	if m != nil {
+		m.mu.Lock()
+		prefix, ok := m.catPaths[t.ParentID]
+		m.mu.Unlock()
+		if ok {
+			return prefix + t.Slug
+		}
+	}
+	prefix := ""
+	cur := t
+	for i := 0; cur.ParentID != 0 && i < 20; i++ {
+		parent, err := s.store.GetTerm(ctx, cur.ParentID)
+		if err != nil {
+			break
+		}
+		prefix = parent.Slug + "/" + prefix
+		cur = parent
+	}
+	if m != nil {
+		m.mu.Lock()
+		m.catPaths[t.ParentID] = prefix
+		m.mu.Unlock()
+	}
+	return prefix + t.Slug
 }
 
 // attachment is GetAttachment through the request memo. The page then depends on the media item

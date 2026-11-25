@@ -13,12 +13,12 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"reflect"
+	"slices"
 	"strings"
-	"sync"
 	"time"
 
 	"wpgo/internal/auth"
+	"wpgo/internal/settings"
 	"wpgo/internal/store"
 )
 
@@ -209,21 +209,22 @@ func (s *Server) maintOn() bool {
 
 // maintLoad returns the saved settings over the defaults.
 //
-// The decoded value is cached against the settings store's cached option value, which is replaced
-// (never mutated) by every save: while the option is unchanged, the gate that runs for every request
-// does not marshal and unmarshal about sixty fields again.
+// The decoded value is memoized per settings revision: while no setting changes, the gate that runs
+// for every request does not marshal and unmarshal about sixty fields again. Social and BypassRoles
+// are copies, so callers may change them.
 func (s *Server) maintLoad() maintSettings {
+	st := maintMemo.Get(s.settings, s.maintDecode)
+	st.Social = maps.Clone(st.Social)
+	st.BypassRoles = slices.Clone(st.BypassRoles)
+	return st
+}
+
+// maintMemo holds the last decoded settings with the settings revision they were decoded at.
+var maintMemo settings.Memo[maintSettings]
+
+// maintDecode reads the stored option over the defaults.
+func (s *Server) maintDecode() maintSettings {
 	v := s.settings.Get(maintOptions)
-	if m, ok := v.(map[string]any); ok {
-		maintCache.Lock()
-		if maintCache.src != nil && reflect.ValueOf(maintCache.src).Pointer() == reflect.ValueOf(m).Pointer() {
-			st := maintCache.st
-			maintCache.Unlock()
-			st.Social = maps.Clone(st.Social)
-			return st
-		}
-		maintCache.Unlock()
-	}
 	st := maintDefaults()
 	if v != nil {
 		if raw, err := json.Marshal(v); err == nil {
@@ -239,21 +240,7 @@ func (s *Server) maintLoad() maintSettings {
 	if maintThemeByKey(st.Theme) == nil {
 		st.Theme = "default"
 	}
-	if m, ok := v.(map[string]any); ok {
-		cached := st
-		cached.Social = maps.Clone(st.Social)
-		maintCache.Lock()
-		maintCache.src, maintCache.st = m, cached
-		maintCache.Unlock()
-	}
 	return st
-}
-
-// maintCache holds the last decoded settings with the option map they were decoded from.
-var maintCache struct {
-	sync.Mutex
-	src map[string]any
-	st  maintSettings
 }
 
 // maintSave stores the settings and drops every cached page: what visitors see changes.

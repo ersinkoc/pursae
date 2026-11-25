@@ -418,7 +418,7 @@ func (s *Server) tt5PostNav(ctx context.Context, p *store.Post, lb *links.Builde
 
 // tt5MorePosts is twentytwentyfive/more-posts: the four latest posts.
 func (s *Server) tt5MorePosts(ctx context.Context, lb *links.Builder, u *store.User) template.HTML {
-	pq := store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, OrderBy: "date", Order: "DESC", PerPage: 4, Page: 1}
+	pq := store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, OrderBy: "date", Order: "DESC", PerPage: 4, Page: 1, NoTotal: true, NoContent: true}
 	pq.ExcludeID = s.gooListingExclude(withPluginUser(ctx, u), "post") // Goocommerce Memberships: hidden restricted posts
 	posts, _, err := s.store.QueryPosts(ctx, pq)
 	if err != nil || len(posts) == 0 {

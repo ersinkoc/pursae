@@ -9,7 +9,7 @@ import (
 
 // mcpToolRoute is the REST route a tool reaches, with {placeholders} left as plain words.
 func mcpToolRoute(t *mcpTool) string {
-	return mcpPathArg.ReplaceAllString(t.Path, "x")
+	return mcpRouteFor(t.Path)
 }
 
 // mcpRouteCaps are the capabilities a route's handlers need, by prefix (longest wins); a route

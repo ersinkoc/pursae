@@ -108,10 +108,34 @@ func (s *Server) bmgrStart(kind string) (*bmgrJob, error) {
 	if s.bmgr.jobs == nil {
 		s.bmgr.jobs = map[string]*bmgrJob{}
 	}
+	s.bmgrPruneJobsLocked()
 	j := &bmgrJob{ID: bmgrToken() + bmgrToken(), Kind: kind, State: "running", Phase: "Starting", Started: time.Now()}
 	s.bmgr.jobs[j.ID] = j
 	s.bmgr.busy = true
 	return j, nil
+}
+
+// bmgrKeepJobs is how many finished jobs stay in memory for the screen to show; older ones are
+// dropped so scheduled backups do not grow the job list (and its logs) for the life of the process.
+// The archives themselves are untouched.
+const bmgrKeepJobs = 20
+
+// bmgrPruneJobsLocked drops all but the bmgrKeepJobs most recently finished jobs. Running jobs are
+// always kept. The caller holds s.bmgr.mu.
+func (s *Server) bmgrPruneJobsLocked() {
+	var done []*bmgrJob
+	for _, j := range s.bmgr.jobs {
+		if j.State != "running" {
+			done = append(done, j)
+		}
+	}
+	if len(done) <= bmgrKeepJobs {
+		return
+	}
+	sort.Slice(done, func(a, b int) bool { return done[a].Finished.After(done[b].Finished) })
+	for _, j := range done[bmgrKeepJobs:] {
+		delete(s.bmgr.jobs, j.ID)
+	}
 }
 
 func (s *Server) bmgrUpdate(j *bmgrJob, f func(*bmgrJob)) {

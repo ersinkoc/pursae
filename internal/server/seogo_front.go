@@ -367,7 +367,7 @@ func (s *Server) seogoSitemapURLs(reqCtx context.Context, typ string, page int) 
 	var out []seogoURL
 	switch s.seogoSitemapKind(ctx, typ) {
 	case "post":
-		posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"}, PerPage: per, Page: page, OrderBy: "id", Order: "asc"})
+		posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{typ}, Statuses: []string{"publish"}, PerPage: per, Page: page, OrderBy: "id", Order: "asc", NoTotal: true})
 		excluded := idSet(o.SitemapExclude)
 		if typ == "page" {
 			for id := range s.seogoStorePrivatePages(ctx) {
@@ -433,7 +433,7 @@ func (s *Server) seogoSitemapURLs(reqCtx context.Context, typ string, page int) 
 				}
 			}
 			if len(missing) > 0 {
-				others, _, _ := s.store.QueryPosts(ctx, store.PostQuery{IDs: missing, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc"})
+				others, _, _ := s.store.QueryPosts(ctx, store.PostQuery{IDs: missing, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc", NoTotal: true})
 				for _, p := range others {
 					if loc := s.seogoPostLoc(reqCtx, lb, p); s.seogoIndexable(o, p, loc, excluded) {
 						locs[p.ID] = loc
@@ -652,7 +652,7 @@ func (s *Server) seogoNewsSitemap(c *gin.Context) {
 		name = s.settings.String("blogname")
 	}
 	// Titles, links and dates only: the newest 1000 posts are loaded without their content.
-	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, PerPage: 1000, Page: 1, OrderBy: "date", Order: "desc", NoContent: true})
+	posts, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post"}, Statuses: []string{"publish"}, PerPage: 1000, Page: 1, OrderBy: "date", Order: "desc", NoContent: true, NoTotal: true})
 	excluded := idSet(o.SitemapExclude)
 	var sb strings.Builder
 	sb.WriteString(s.seogoXMLHead(ctx) + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">` + "\n")
@@ -698,7 +698,7 @@ func (s *Server) seogoVideoSitemap(c *gin.Context) {
 		rows.Close()
 	}
 	if len(ids) > 0 {
-		posts, _, _ = s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, Types: types, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc"})
+		posts, _, _ = s.store.QueryPosts(ctx, store.PostQuery{IDs: ids, Types: types, Statuses: []string{"publish"}, PerPage: -1, OrderBy: "id", Order: "asc", NoTotal: true})
 	}
 	excluded := idSet(o.SitemapExclude)
 	var sb strings.Builder

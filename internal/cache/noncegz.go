@@ -5,6 +5,7 @@ import (
 	"compress/flate"
 	"encoding/binary"
 	"hash/crc32"
+	"sync"
 )
 
 // Precompressed bodies that hold the CSP nonce placeholder.
@@ -81,14 +82,23 @@ func buildNonceGz(body, ph []byte) (data []byte, cuts, at []int, ok bool) {
 		}
 		var zw *flate.Writer
 		if start == 0 {
-			zw, _ = flate.NewWriter(&buf, flate.DefaultCompression)
+			zw = flateWriters.Get().(*flate.Writer)
+			zw.Reset(&buf)
 		} else {
+			// No pooling here: flate.Writer.Reset refills only the dictionary the writer was made
+			// with, and every part has a different one, so a reused writer would not give the
+			// same bytes as NewWriterDict.
 			zw, _ = flate.NewWriterDict(&buf, flate.DefaultCompression, dict[max(0, start-32*1024):start])
 		}
-		if _, err := zw.Write(body[start:end]); err != nil {
-			return nil, nil, nil, false
+		_, err := zw.Write(body[start:end])
+		if err == nil {
+			err = zw.Flush() // sync flush: the part ends on a byte boundary, not final
 		}
-		if err := zw.Flush(); err != nil { // sync flush: the part ends on a byte boundary, not final
+		if start == 0 {
+			zw.Reset(nil) // drop the reference to buf before the writer goes back to the pool
+			flateWriters.Put(zw)
+		}
+		if err != nil {
 			return nil, nil, nil, false
 		}
 		cuts = append(cuts, buf.Len())
@@ -97,8 +107,17 @@ func buildNonceGz(body, ph []byte) (data []byte, cuts, at []int, ok bool) {
 	if buf.Len()+len(at)*(5+len(ph))+20 >= len(body) {
 		return nil, nil, nil, false
 	}
-	return buf.Bytes(), cuts, at, true
+	// A copy of exactly the data's length: the buffer's spare capacity would stay alive with the
+	// entry but not be counted by size(), which counts len.
+	return bytes.Clone(buf.Bytes()), cuts, at, true
 }
+
+// flateWriters holds dictionary-less deflate writers at DefaultCompression for the first part of
+// buildNonceGz (about 1 MB of state each). Reset makes a writer equivalent to a new one.
+var flateWriters = sync.Pool{New: func() any {
+	zw, _ := flate.NewWriter(nil, flate.DefaultCompression)
+	return zw
+}}
 
 // gzipHeader is a gzip member header: deflate, no flags, no mtime, unknown OS (as compress/gzip).
 var gzipHeader = []byte{0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 0xff}

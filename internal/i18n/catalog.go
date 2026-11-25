@@ -85,6 +85,9 @@ func (c *Catalog) N(single, plural string, n int) string {
 // lookup is T without the fallback: ok is false when nothing translates msgid. Rendered text
 // carries no context, so a msgid only known with one ("Add New Post" in "post") still matches.
 func (c *Catalog) lookup(msgid string) (string, bool) {
+	if c.Empty() { // English or a missing pack: every path below ends in ("", false)
+		return "", false
+	}
 	if e, _ := c.find(msgid); e != nil && e[0] != msgid {
 		return e[0], true
 	}
@@ -174,7 +177,40 @@ func (c *Catalog) Lookup(msgid string) (string, bool) { return c.lookup(msgid) }
 var wsRun = regexp.MustCompile(`\s+`)
 
 func normalizeMsgid(s string) string {
-	return strings.TrimSpace(wsRun.ReplaceAllString(html.UnescapeString(s), " "))
+	return strings.TrimSpace(collapseWS(html.UnescapeString(s)))
+}
+
+// collapseWS is spaceRun/wsRun.ReplaceAllString(s, " ") without the regexp: every run of RE2 \s
+// ([\t\n\f\r ]) becomes one space. A string with neither a doubled space nor a non-space
+// whitespace byte is returned as it is (no allocation), which is almost every msgid and text node.
+func collapseWS(s string) string {
+	need := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == '\t' || c == '\n' || c == '\f' || c == '\r' || (c == ' ' && i+1 < len(s) && s[i+1] == ' ') {
+			need = true
+			break
+		}
+	}
+	if !need {
+		return s
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	inRun := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == ' ' || c == '\t' || c == '\n' || c == '\f' || c == '\r' {
+			if !inRun {
+				b.WriteByte(' ')
+				inRun = true
+			}
+			continue
+		}
+		inRun = false
+		b.WriteByte(c)
+	}
+	return b.String()
 }
 
 // Manager loads catalogs from a WordPress-style languages directory (WP_LANG_DIR): core files
@@ -186,6 +222,9 @@ type Manager struct {
 
 	mu   sync.Mutex
 	cats map[string]*catalogLoad
+
+	scriptMu sync.Mutex
+	scripts  map[string][]byte // ScriptTranslations results (nil = none) by locale|rel|plugin; cleared by Reset
 }
 
 // catalogLoad is one locale's catalog, loaded once: the first caller parses the .mo files outside
@@ -228,6 +267,9 @@ func (m *Manager) Reset() {
 	m.mu.Lock()
 	m.cats = map[string]*catalogLoad{}
 	m.mu.Unlock()
+	m.scriptMu.Lock()
+	m.scripts = nil
+	m.scriptMu.Unlock()
 }
 
 var localeRe = regexp.MustCompile(`^[a-z]{2,3}(_[A-Za-z0-9]{2,8}){0,2}$`)
