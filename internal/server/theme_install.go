@@ -258,7 +258,7 @@ func (s *Server) installThemePackageFrom(ctx context.Context, data []byte, sourc
 			bak, files, err := backupEditedThemeFiles(dir, cur, m.Slug, version)
 			if err != nil {
 				cleanup()
-				return nil, fmt.Errorf("could not back up the edited theme files: %v", err)
+				return nil, fmt.Errorf("could not back up the edited theme files: %w", err)
 			}
 			if bak != "" {
 				rememberThemeBackup(dir, m.Slug, bak, files)

@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
@@ -123,31 +124,47 @@ const themeEditBaseFile = ".edit-base.json"
 
 var themeEditBaseMu sync.Mutex
 
+// themeEditBasePath is the sidecar of a bundled theme; "" for a slug that is not a plain theme slug
+// (no separators or dots), so it can never point outside the themes folder.
+func themeEditBasePath(dir, slug string) string {
+	if !themeSlugRe.MatchString(slug) {
+		return ""
+	}
+	return filepath.Join(dir, slug, themeEditBaseFile)
+}
+
 func readThemeEditBase(dir, slug string) map[string]string {
 	m := map[string]string{}
-	if b, err := os.ReadFile(filepath.Join(dir, slug, themeEditBaseFile)); err == nil {
+	p := themeEditBasePath(dir, slug)
+	if p == "" {
+		return m
+	}
+	if b, err := os.ReadFile(p); err == nil { //nolint:gosec // G703: slug matched themeSlugRe (no path separators)
 		_ = json.Unmarshal(b, &m)
 	}
 	return m
 }
 
 func writeThemeEditBase(dir, slug string, m map[string]string) error {
-	p := filepath.Join(dir, slug, themeEditBaseFile)
+	p := themeEditBasePath(dir, slug)
+	if p == "" {
+		return fmt.Errorf("invalid theme slug %q", slug)
+	}
 	if len(m) == 0 {
-		if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+		if err := os.Remove(p); err != nil && !os.IsNotExist(err) { //nolint:gosec // G703: slug matched themeSlugRe (no path separators)
 			return err
 		}
 		return nil
 	}
-	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil { //nolint:gosec // G703: slug matched themeSlugRe (no path separators)
 		return err
 	}
 	b, _ := json.MarshalIndent(m, "", "  ")
 	tmp := p + ".tmp"
-	if err := os.WriteFile(tmp, b, 0o644); err != nil {
+	if err := os.WriteFile(tmp, b, 0o644); err != nil { //nolint:gosec // G703: slug matched themeSlugRe (no path separators)
 		return err
 	}
-	return os.Rename(tmp, p)
+	return os.Rename(tmp, p) //nolint:gosec // G703: slug matched themeSlugRe (no path separators)
 }
 
 func hashBytes(b []byte) string {
