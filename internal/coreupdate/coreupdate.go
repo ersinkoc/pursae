@@ -229,7 +229,7 @@ func Confirm(exe, version string) {
 // whether a file was removed.
 func PrunePrev(exe string, now time.Time) bool {
 	prev := PrevPath(exe)
-	if _, err := os.Stat(prev); err != nil {
+	if info, err := os.Lstat(prev); err != nil || !info.Mode().IsRegular() {
 		return false
 	}
 	st := Read(exe)

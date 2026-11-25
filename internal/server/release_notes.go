@@ -50,9 +50,11 @@ func parseReleaseNotes(md string) []notesBlock {
 			list = nil
 		}
 	}
+	codeFence := 0
 	for _, line := range strings.Split(md, "\n") {
 		if code != nil {
-			if strings.HasPrefix(strings.TrimSpace(line), "```") {
+			fence := strings.TrimSpace(line)
+			if len(fence) >= codeFence && strings.Trim(fence, "`") == "" {
 				out = append(out, *code)
 				code = nil
 				continue
@@ -72,6 +74,7 @@ func parseReleaseNotes(md string) []notesBlock {
 		case strings.HasPrefix(trimmed, "```"):
 			flushPara()
 			flushList()
+			codeFence = len(trimmed) - len(strings.TrimLeft(trimmed, "`"))
 			code = &notesBlock{Kind: 'c'}
 		case indent < 4 && notesHeadingLevel(trimmed) > 0:
 			flushPara()

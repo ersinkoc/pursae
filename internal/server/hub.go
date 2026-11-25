@@ -342,6 +342,9 @@ func (s *Server) hubFetchCatalog(ctx context.Context, kind string) ([]hubItem, e
 		}
 		list.Items = append(list.Items, p.Items...)
 		list.Total, list.Pages = p.Total, p.Pages
+		if len(list.Items) < p.Total && (len(p.Items) == 0 || page >= p.Pages) {
+			return nil, fmt.Errorf("hub: incomplete %s catalog: got %d of %d listings", kind, len(list.Items), p.Total)
+		}
 		if len(p.Items) == 0 || page >= p.Pages || len(list.Items) >= p.Total {
 			break
 		}

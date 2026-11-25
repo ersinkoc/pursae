@@ -183,6 +183,24 @@ func TestPrunePrevAfterRetention(t *testing.T) {
 	}
 }
 
+func TestPrunePrevPreservesDirectoryAtBackupPath(t *testing.T) {
+	exe := filepath.Join(t.TempDir(), "pursae")
+	prev := PrevPath(exe)
+	if err := os.Mkdir(prev, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 11, 26, 0, 0, 0, 0, time.UTC)
+	if err := write(exe, &State{Status: "confirmed", At: now.Add(-PrevRetention)}); err != nil {
+		t.Fatal(err)
+	}
+	if PrunePrev(exe, now) {
+		t.Fatal("pruned a directory as an expired binary")
+	}
+	if info, err := os.Lstat(prev); err != nil || !info.IsDir() {
+		t.Fatalf("backup path changed: %v, %v", info, err)
+	}
+}
+
 func TestPrunePrevKeepsPendingAndRemovesOrphans(t *testing.T) {
 	exe := filepath.Join(t.TempDir(), "wpgo")
 	fakeBinary(t, exe, "0.3.0")
