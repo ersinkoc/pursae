@@ -5,31 +5,32 @@
 <h1 align="center">Pursae</h1>
 
 <p align="center"><b>WordPress, rewritten in Go.</b><br>
-One binary · PostgreSQL · the admin you already know · 18 built-in plugins.</p>
+The admin you already know, on one binary and PostgreSQL, with 18 plugins built in and no PHP anywhere.</p>
 
 <p align="center">
   <img alt="Go 1.27" src="https://img.shields.io/badge/Go-1.27-00ADD8?logo=go&logoColor=white">
   <img alt="PostgreSQL 16 or 17" src="https://img.shields.io/badge/PostgreSQL-16%20%7C%2017-336791?logo=postgresql&logoColor=white">
-  <img alt="Plugins: Wasm" src="https://img.shields.io/badge/plugins-WebAssembly-654FF0?logo=webassembly&logoColor=white">
-  <img alt="Docker" src="https://img.shields.io/badge/run-docker%20compose-2496ED?logo=docker&logoColor=white">
-  <img alt="License GPL" src="https://img.shields.io/badge/license-GPL--2.0--or--later-blue">
+  <img alt="Plugins: WebAssembly" src="https://img.shields.io/badge/plugins-WebAssembly-654FF0?logo=webassembly&logoColor=white">
+  <img alt="Run with docker compose" src="https://img.shields.io/badge/run-docker%20compose-2496ED?logo=docker&logoColor=white">
+  <img alt="License GPL-2.0-or-later" src="https://img.shields.io/badge/license-GPL--2.0--or--later-blue">
 </p>
 
 <p align="center">
-  <a href="#-quick-start">Quick start</a> ·
-  <a href="#-tour">Tour</a> ·
-  <a href="#-built-in-plugins">Plugins</a> ·
-  <a href="#-ai-agents-mcp">AI agents</a> ·
-  <a href="#-what-pursae-sends-to-hubpursaecom">Privacy</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#why-pursae">Why Pursae</a> ·
+  <a href="#tour">Tour</a> ·
+  <a href="#built-in-plugins">Plugins</a> ·
+  <a href="#ai-agents-mcp">AI agents</a> ·
+  <a href="#what-pursae-sends-to-hubpursaecom">Privacy</a> ·
   <a href="docs/GUIDE.md">Full guide</a> ·
   <a href="docs/developer/README.md">Developer docs</a>
 </p>
 
 <p align="center">
-  <img src="docs/readme/hero.webp" alt="Pursae admin, block editor, Web Builder and a site" width="100%">
+  <img src="docs/readme/hero.webp" alt="The Welcome to Pursae card, shown on your first admin login" width="100%">
 </p>
 
-## ⚡ Quick start
+## Quick start
 
 You need Docker (with Compose v2), git and make.
 
@@ -55,172 +56,269 @@ make docker-up                        # → http://localhost:8088
 
 Ports, env vars, proxies, backups: **[docs/GUIDE.md](docs/GUIDE.md)**.
 
-## ✨ Why Pursae
+## Why Pursae
 
 <table>
 <tr>
-<td width="25%" align="center"><h3>🐹</h3><b>One Go binary</b><br><sub>No PHP, no FPM, no extensions.</sub></td>
+<td width="25%" align="center"><h3>🐹</h3><b>One Go binary</b><br><sub>No PHP, no FPM, no extensions. Admin, editors and bundled themes are embedded.</sub></td>
 <td width="25%" align="center"><h3>🐘</h3><b>PostgreSQL 16 or 17</b><br><sub>Typed schema, JSONB, migrations on start.</sub></td>
 <td width="25%" align="center"><h3>🧩</h3><b>Wasm plugins</b><br><sub>Signed, sandboxed, permission-gated.</sub></td>
-<td width="25%" align="center"><h3>🚀</h3><b>Fast by default</b><br><sub>Built-in page cache, static builder output.</sub></td>
+<td width="25%" align="center"><h3>🚀</h3><b>Fast by default</b><br><sub>Built-in page cache, static Web Builder output. <a href="#performance-benchmarks">Numbers</a>.</sub></td>
+</tr>
+<tr>
+<td align="center"><h3>🖥️</h3><b>The admin you know</b><br><sub>The classic WordPress admin, 1:1, under <code>/wp-admin/</code>.</sub></td>
+<td align="center"><h3>📦</h3><b>Batteries included</b><br><sub>Store, SEO, security, forum, forms, backups and more, without installing a plugin first.</sub></td>
+<td align="center"><h3>🤖</h3><b>AI-ready</b><br><sub>A built-in MCP server lets Claude, Cursor and other clients run the site.</sub></td>
+<td align="center"><h3>🛡️</h3><b>Secure by default</b><br><sub>argon2id, login throttling, CSP, security headers, signed packages.</sub></td>
 </tr>
 </table>
 
-## 🧭 Tour
+## Tour
+
+The first admin login greets you with the **Welcome to Pursae** card above. The screenshots below use the **Classic**
+admin theme, the WordPress look and the default. **Pursae Modern** is an optional beta theme: pick it under
+**Users › Profile › Administration Theme**.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/readme/dashboard.webp" alt="Dashboard"><p align="center"><b>Dashboard</b> — the WordPress admin, 1:1</p></td>
-<td width="50%"><img src="docs/readme/block-editor.webp" alt="Pursae Editor"><p align="center"><b>Pursae Editor</b> — the real block editor</p></td>
+<td width="50%"><img src="docs/readme/dashboard.webp" alt="Dashboard" width="100%"><p align="center"><b>Dashboard</b> — the classic WordPress admin, 1:1</p></td>
+<td width="50%"><img src="docs/readme/block-editor.webp" alt="Pursae Editor" width="100%"><p align="center"><b>Pursae Editor</b> — the real block editor</p></td>
 </tr>
 <tr>
-<td><img src="docs/readme/web-builder-editor.webp" alt="Pursae Web Builder"><p align="center"><b>Pursae Web Builder</b> — visual pages, static output</p></td>
-<td><img src="docs/readme/front-home.webp" alt="Twenty Twenty-Five"><p align="center"><b>Twenty Twenty-Five</b> — demo content in one click</p></td>
+<td><img src="docs/readme/web-builder-editor.webp" alt="Pursae Web Builder" width="100%"><p align="center"><b>Pursae Web Builder</b> — visual pages, static output</p></td>
+<td><img src="docs/readme/front-home.webp" alt="Twenty Twenty-Five" width="100%"><p align="center"><b>Twenty Twenty-Five</b> — demo content in one click</p></td>
 </tr>
 </table>
 
 <details>
-<summary><b>📸 More core screens</b> — posts, media, themes, menus, plugins, users, health, settings</summary>
+<summary><b>More core screens</b> — posts, media, themes, menus, plugins, users, health, settings</summary>
 <br>
 <table>
 <tr>
-<td width="50%"><img src="docs/readme/posts.webp" alt="Posts"><p align="center">Posts</p></td>
-<td width="50%"><img src="docs/readme/media.webp" alt="Media Library"><p align="center">Media Library</p></td>
+<td width="50%"><img src="docs/readme/posts.webp" alt="Posts" width="100%"><p align="center">Posts</p></td>
+<td width="50%"><img src="docs/readme/media.webp" alt="Media Library" width="100%"><p align="center">Media Library</p></td>
 </tr>
 <tr>
-<td><img src="docs/readme/themes.webp" alt="Themes"><p align="center">Themes</p></td>
-<td><img src="docs/readme/menus.webp" alt="Menus"><p align="center">Menus</p></td>
+<td><img src="docs/readme/themes.webp" alt="Themes" width="100%"><p align="center">Themes</p></td>
+<td><img src="docs/readme/menus.webp" alt="Menus" width="100%"><p align="center">Menus</p></td>
 </tr>
 <tr>
-<td><img src="docs/readme/plugins.webp" alt="Plugins"><p align="center">Plugins</p></td>
-<td><img src="docs/readme/users.webp" alt="Users"><p align="center">Users &amp; multi-role</p></td>
+<td><img src="docs/readme/plugins.webp" alt="Plugins" width="100%"><p align="center">Plugins</p></td>
+<td><img src="docs/readme/users.webp" alt="Users" width="100%"><p align="center">Users &amp; multi-role</p></td>
 </tr>
 <tr>
-<td><img src="docs/readme/site-health.webp" alt="Site Health"><p align="center">Site Health</p></td>
-<td><img src="docs/readme/settings.webp" alt="Settings"><p align="center">Settings</p></td>
+<td><img src="docs/readme/site-health.webp" alt="Site Health" width="100%"><p align="center">Site Health</p></td>
+<td><img src="docs/readme/settings.webp" alt="Settings" width="100%"><p align="center">Settings</p></td>
 </tr>
 </table>
 </details>
 
-## 🧩 Built-in plugins
+## Built-in plugins
 
-Native, switched on and off with one click under **Plugins**; all of them are off on a fresh install
-except Pursae Cache and Classic Editor. Click a heading below the table to open its screenshots.
+Native, switched on and off with one click under **Plugins**. All of them are off on a fresh install except
+Pursae Cache and Classic Editor. Each name below jumps to its section, with screenshots.
 
 | | Plugin | In one line | Docs |
 |---|---|---|---|
-| 🛒 | **Pursae Commerce** | Store, cart, checkout, orders, bookings & premium modules | [→](docs/goocommerce-features.md) |
-| 🎨 | **Pursae Web Builder** | Visual pages, Theme Builder, popups, theme library | [→](docs/developer/web-builder.md) |
-| 🔎 | **Pursae SEO** | Analysis, schema, sitemaps, redirects | [→](docs/seo-go-features.md) |
-| ⚡ | **Pursae Cache** | Full-page cache + page optimization | [→](docs/developer/operations/caching.md) |
-| 🛡️ | **Pursae Security** | 2FA, MFA codes, lockouts, activity log | [→](docs/adminsecgo-features.md) |
-| ☁️ | **Pursae CDN** | S3/R2 offload, image service, purge | [→](docs/gocdn-features.md) |
-| 🔌 | **Pursae Headless** | Content types, REST, GraphQL, webhooks | [→](docs/headlessgo-features.md) |
-| 🍪 | **Pursae Cookie** | GDPR/KVKK banner, Consent Mode v2 | [→](docs/gooike-features.md) |
-| 📈 | **Pursae Pixel** | Meta, GA4, Ads, TikTok + server-side | [→](docs/pixelgo-features.md) |
-| 📊 | **Pursae Analytics** | Cookieless stats + real-user Core Web Vitals | [→](docs/analytics-features.md) |
-| 💬 | **Pursae Forum** | Forums, email + Google sign-up, levels & badges | [→](docs/forum-features.md) |
-| ✉️ | **Pursae SMTP** | Mailers, email log, reports | [→](docs/wpgo-mail-smtp-features.md) |
-| 🗂️ | **Pursae Custom Fields** | Field groups, CPTs, options pages | [→](docs/acf-go-features.md) |
-| 🌍 | **Pursae Multi Language** | Languages, translations, hreflang | [→](docs/golylang-features.md) |
-| 📝 | **Pursae Contact Form** | Forms, mail templates, spam guard | [→](docs/gontact-form-features.md) |
-| 🚧 | **Pursae Maintenance** | Maintenance / coming-soon page | [→](docs/maintenance-go-features.md) |
-| 💾 | **Pursae Backup Manager** | One-click backup &amp; migrate | [→](docs/backup-manager-features.md) |
-| 📄 | **Classic Editor** | TinyMCE editing, per-user switch | — |
+| 🛒 | **[Pursae Commerce](#pursae-commerce)** | Store, cart, checkout, orders, bookings & premium modules | [→](docs/goocommerce-features.md) |
+| 🎨 | **[Pursae Web Builder](#pursae-web-builder)** | Visual pages, Theme Builder, popups, theme library | [→](docs/developer/web-builder.md) |
+| 🔎 | **[Pursae SEO](#pursae-seo)** | Analysis, schema, sitemaps, redirects | [→](docs/seo-go-features.md) |
+| ⚡ | **[Pursae Cache](#pursae-cache)** | Full-page cache + page optimization | [→](docs/developer/operations/caching.md) |
+| 🛡️ | **[Pursae Security](#pursae-security)** | 2FA, MFA codes, lockouts, activity log | [→](docs/adminsecgo-features.md) |
+| ☁️ | **[Pursae CDN](#pursae-cdn)** | S3/R2 offload, image service, purge | [→](docs/gocdn-features.md) |
+| 🔌 | **[Pursae Headless](#pursae-headless)** | Content types, REST, GraphQL, webhooks | [→](docs/headlessgo-features.md) |
+| 🍪 | **[Pursae Cookie](#pursae-cookie)** | GDPR/KVKK banner, Consent Mode v2 | [→](docs/gooike-features.md) |
+| 📈 | **[Pursae Pixel](#pursae-pixel)** | Meta, GA4, Ads, TikTok + server-side | [→](docs/pixelgo-features.md) |
+| 📊 | **[Pursae Analytics](#pursae-analytics)** | Cookieless stats + real-user Core Web Vitals | [→](docs/analytics-features.md) |
+| 💬 | **[Pursae Forum](#pursae-forum)** | Forums, email + Google sign-up, levels & badges | [→](docs/forum-features.md) |
+| ✉️ | **[Pursae SMTP](#pursae-smtp)** | Mailers, email log, reports | [→](docs/wpgo-mail-smtp-features.md) |
+| 🗂️ | **[Pursae Custom Fields](#pursae-custom-fields)** | Field groups, CPTs, options pages | [→](docs/acf-go-features.md) |
+| 🌍 | **[Pursae Multi Language](#pursae-multi-language)** | Languages, translations, hreflang | [→](docs/golylang-features.md) |
+| 📝 | **[Pursae Contact Form](#pursae-contact-form)** | Forms, mail templates, spam guard | [→](docs/gontact-form-features.md) |
+| 🚧 | **[Pursae Maintenance](#pursae-maintenance)** | Maintenance / coming-soon page | [→](docs/maintenance-go-features.md) |
+| 💾 | **[Pursae Backup Manager](#pursae-backup-manager)** | One-click backup &amp; migrate | [→](docs/backup-manager-features.md) |
+| 📄 | **[Classic Editor](#classic-editor)** | TinyMCE editing, per-user switch | — |
 
-<details>
-<summary><h3>🛒 Pursae Commerce</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/commerce-themes.webp" alt="Store Themes"><p align="center">Store themes with a full demo shop</p></td>
-<td width="50%"><img src="docs/readme/commerce-extensions.webp" alt="Extensions"><p align="center">Premium modules, built in</p></td>
-</tr><tr>
-<td><img src="docs/readme/commerce-home.webp" alt="Commerce home"><p align="center">Home &amp; setup tasks</p></td>
-<td><img src="docs/readme/commerce-analytics.webp" alt="Analytics"><p align="center">Analytics</p></td>
-</tr></table>
-<p align="right"><a href="docs/goocommerce-features.md">All features →</a></p>
-</details>
+### Pursae Commerce
 
-<details>
-<summary><h3>🎨 Pursae Web Builder</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/web-builder-editor.webp" alt="Web Builder editor"><p align="center">Sections, design, devices</p></td>
-<td width="50%"><img src="docs/readme/web-builder-theme.webp" alt="Theme Builder"><p align="center">Theme Builder: header, footer, templates</p></td>
-</tr></table>
-<p align="right"><a href="docs/developer/web-builder.md">All features →</a> · <a href="docs/developer/web-builder-theme-builder.md">Theme Builder →</a> · <a href="docs/developer/web-builder-theme-library.md">Theme library →</a></p>
-</details>
+A WooCommerce-style store built into the binary: products, cart, checkout, tax, shipping, coupons, orders and
+payment gateways, with the premium extensions included as modules.
 
-<details>
-<summary><h3>🔎 Pursae SEO</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/seo.webp" alt="SEO dashboard"><p align="center">Scores &amp; modules</p></td>
-<td width="50%"><img src="docs/readme/seo-titles.webp" alt="Search Appearance"><p align="center">Titles &amp; meta</p></td>
-</tr></table>
-<p align="right"><a href="docs/seo-go-features.md">All features →</a></p>
-</details>
+- Orders, products and the rest live in dedicated tables; both REST APIs are there, with `wc/v3` for existing tooling.
+- Fourteen modules under **Commerce › Extensions**, all off by default: Bookings, Subscriptions, Memberships, Gift Cards, Product Bundles, Pre-Orders, Product Add-Ons, Dynamic Pricing, Table Rate Shipping, PDF Invoices & Packing Slips, Points and Rewards, Wishlists, Product Compare and Quick View.
+- Store pages render inside the active theme, keep WooCommerce's markup and classes, and `woocommerce_*` shortcodes still work.
+- Cart and Checkout blocks, an Analytics screen, and CSV and WXR import.
 
-<details>
-<summary><h3>⚡ Pursae Cache</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/cache.webp" alt="Cache dashboard"><p align="center">Dashboard &amp; purges</p></td>
-<td width="50%"><img src="docs/readme/cache-optimize.webp" alt="Page Optimization"><p align="center">Page optimization</p></td>
-</tr></table>
-<p align="right"><a href="docs/developer/operations/caching.md">All features →</a></p>
-</details>
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/commerce-themes.webp" alt="Commerce store themes" width="100%"><p align="center">Store themes with a full demo shop</p></td>
+<td width="50%"><img src="docs/readme/commerce-extensions.webp" alt="Commerce extensions" width="100%"><p align="center">Premium modules, built in</p></td>
+</tr>
+<tr>
+<td><img src="docs/readme/commerce-home.webp" alt="Commerce home" width="100%"><p align="center">Home &amp; setup tasks</p></td>
+<td><img src="docs/readme/commerce-analytics.webp" alt="Commerce analytics" width="100%"><p align="center">Analytics</p></td>
+</tr>
+<tr>
+<td><img src="docs/readme/commerce-settings.webp" alt="Commerce settings" width="100%"><p align="center">Settings</p></td>
+<td></td>
+</tr>
+</table>
 
-<details>
-<summary><h3>🛡️ Pursae Security</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/security.webp" alt="Security dashboard"><p align="center">Security score &amp; checklist</p></td>
-<td width="50%"><img src="docs/readme/security-settings.webp" alt="Security settings"><p align="center">2FA per role</p></td>
-</tr></table>
-<p align="right"><a href="docs/adminsecgo-features.md">All features →</a></p>
-</details>
+<p align="right"><a href="docs/goocommerce-features.md">All Commerce features →</a></p>
 
-<details>
-<summary><h3>☁️ Pursae CDN</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/cdn.webp" alt="CDN storage"><p align="center">S3-compatible storage</p></td>
-<td width="50%"><img src="docs/readme/cdn-images.webp" alt="Image service"><p align="center">On-the-fly WebP image service</p></td>
-</tr></table>
-<p align="right"><a href="docs/gocdn-features.md">All features →</a></p>
-</details>
+### Pursae Web Builder
 
-<details>
-<summary><h3>🔌 Pursae Headless</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/headless-builder.webp" alt="Content-Type Builder"><p align="center">Content-Type Builder</p></td>
-<td width="50%"><img src="docs/readme/headless-graphql.webp" alt="GraphQL"><p align="center">GraphQL playground</p></td>
-</tr></table>
-<p align="right"><a href="docs/headlessgo-features.md">All features →</a></p>
-</details>
+A section-based visual page builder. Visitors never load the editor: a published page is a static HTML/CSS
+snapshot with a small optional script.
 
-<details>
-<summary><h3>🍪 Pursae Cookie</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/cookie-banner.webp" alt="Banner themes"><p align="center">14 banner themes</p></td>
-<td width="50%"><img src="docs/readme/cookie.webp" alt="Consent dashboard"><p align="center">Consent dashboard</p></td>
-</tr></table>
-<p align="right"><a href="docs/gooike-features.md">All features →</a></p>
-</details>
+- Build pages from sections (navigation, hero, features, FAQ, call to action, footer and more) or saved library sections, with desktop, tablet and mobile views; changes autosave as your own draft.
+- **Theme Builder** designs the header, footer and content templates, shown by the bundled **Hello Pursae** theme.
+- Images come from the Media Library; Google Fonts are downloaded once and served from your site.
+- Import a theme from the theme library, or an HTML design 1:1.
 
-<details>
-<summary><h3>📈 Pursae Pixel</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/pixel.webp" alt="Pixel dashboard"><p align="center">All platforms at a glance</p></td>
-<td width="50%"><img src="docs/readme/pixel-pixels.webp" alt="Pixels and APIs"><p align="center">Pixels &amp; Conversions APIs</p></td>
-</tr></table>
-<p align="right"><a href="docs/pixelgo-features.md">All features →</a></p>
-</details>
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/web-builder-editor.webp" alt="Web Builder editor" width="100%"><p align="center">Sections, design, devices</p></td>
+<td width="50%"><img src="docs/readme/web-builder-theme.webp" alt="Theme Builder" width="100%"><p align="center">Theme Builder: header, footer, templates</p></td>
+</tr>
+</table>
 
-<details>
-<summary><h3>📊 Pursae Analytics</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/analytics.webp" alt="Analytics overview"><p align="center">Visitors, views and Core Web Vitals</p></td>
-<td width="50%"><img src="docs/readme/analytics-settings.webp" alt="Analytics settings"><p align="center">Who is counted, goals, retention</p></td>
-</tr></table>
+<p align="right"><a href="docs/developer/web-builder.md">Web Builder →</a> · <a href="docs/developer/web-builder-theme-builder.md">Theme Builder →</a> · <a href="docs/developer/web-builder-theme-library.md">Theme library →</a></p>
+
+### Pursae SEO
+
+Yoast SEO Premium and Rank Math Pro in one plugin, with a WordPress-style admin.
+
+- Per-post box in both editors: focus keyphrase, snippet preview, SEO and readability analysis with traffic lights.
+- Search Appearance templates with variables (Rank Math's `%var%` and Yoast's `%%var%%` both work); reads existing Yoast and Rank Math meta.
+- Schema, breadcrumbs, XML sitemaps (including news and video), robots and instant indexing.
+- Redirections, a 404 monitor, a link counter and a bulk editor.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/seo.webp" alt="SEO dashboard" width="100%"><p align="center">Scores &amp; modules</p></td>
+<td width="50%"><img src="docs/readme/seo-titles.webp" alt="Search Appearance" width="100%"><p align="center">Titles &amp; meta</p></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/seo-go-features.md">All SEO features →</a></p>
+
+### Pursae Cache
+
+A full-page cache inside the Go process (on by default), modelled on LiteSpeed Cache but working with any server.
+
+- Public pages of logged-out visitors are cached and purged precisely by tag when content changes.
+- Can tell a front proxy or CDN to cache too (`auto`, LiteSpeed, nginx or generic headers); optional disk persistence across restarts.
+- Page Optimization: lazy-load images, defer scripts, minify HTML, preload the theme's fonts.
+- Per-path exclusions and tracking query parameters ignored for the cache key.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/cache.webp" alt="Cache dashboard" width="100%"><p align="center">Dashboard &amp; purges</p></td>
+<td width="50%"><img src="docs/readme/cache-optimize.webp" alt="Page Optimization" width="100%"><p align="center">Page optimization</p></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/developer/operations/caching.md">Caching docs →</a></p>
+
+### Pursae Security
+
+Login security in the class of Wordfence Login Security, Two Factor and WPS Hide Login, plus passkeys.
+
+- **MFA** with e-mailed one-time codes, **2FA** with an authenticator app (TOTP), backup codes and **passkeys** (WebAuthn); enforce them per role.
+- Custom login URL; `/wp-login` and `/wp-admin` answer 404 to visitors.
+- Lockouts per IP and per username, IP allow and block lists, optional CAPTCHA on login forms.
+- Activity log, security headers, file-editor lockdown and a file integrity scan.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/security.webp" alt="Security dashboard" width="100%"><p align="center">Security score &amp; checklist</p></td>
+<td width="50%"><img src="docs/readme/security-settings.webp" alt="Security settings" width="100%"><p align="center">2FA per role</p></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/adminsecgo-features.md">All Security features →</a></p>
+
+### Pursae CDN
+
+Object storage, CDN delivery and an on-the-fly image service, covering WP Offload Media, an image CDN and CDN Enabler.
+
+- Offload uploads to Amazon S3, Cloudflare R2, DigitalOcean Spaces, Backblaze B2 or any S3-compatible storage, with a connection test and a bulk, resumable job for existing media.
+- Image service with resize, crop, quality, **WebP** and **AVIF** output and signed URLs.
+- Rewrites theme, plugin and core asset URLs to a pull CDN.
+- Purges Pursae Cache and Cloudflare, CloudFront, BunnyCDN, KeyCDN or Fastly.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/cdn.webp" alt="CDN storage" width="100%"><p align="center">S3-compatible storage</p></td>
+<td width="50%"><img src="docs/readme/cdn-images.webp" alt="Image service" width="100%"><p align="center">On-the-fly WebP image service</p></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/gocdn-features.md">All CDN features →</a></p>
+
+### Pursae Headless
+
+A headless CMS next to WordPress: model your own content, deliver it over REST or GraphQL, keep the admin.
+
+- **Content-Type Builder**: collection and single types, components and dynamic zones, relations (also to posts, pages and users).
+- Content Manager with draft & publish, scheduled publishing, history, review and i18n through Pursae Multi Language.
+- Delivery REST API at `/wp-json/headlessgo/v1` and **GraphQL**, with API tokens, CORS and rate limits.
+- Webhooks, preview URLs, and export and import of entries (NDJSON) and schemas.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/headless.webp" alt="Headless overview" width="100%"><p align="center">Types, entries, API at a glance</p></td>
+<td width="50%"><img src="docs/readme/headless-builder.webp" alt="Content-Type Builder" width="100%"><p align="center">Content-Type Builder</p></td>
+</tr>
+<tr>
+<td><img src="docs/readme/headless-graphql.webp" alt="GraphQL playground" width="100%"><p align="center">GraphQL playground</p></td>
+<td></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/headlessgo-features.md">All Headless features →</a></p>
+
+### Pursae Cookie
+
+Cookie consent built to comply by design with GDPR / ePrivacy, KVKK, CCPA/CPRA and Google Consent Mode v2.
+
+- Banner with equally prominent **Reject all**, **Accept all** and **Customize**, and a preferences modal per category.
+- 14 banner themes, positions and a live preview.
+- Script manager that blocks scripts and embeds until consent; cookie declaration and scanner.
+- Consent log with CSV export; policy versions re-prompt visitors.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/cookie-banner.webp" alt="Banner themes" width="100%"><p align="center">14 banner themes</p></td>
+<td width="50%"><img src="docs/readme/cookie.webp" alt="Consent dashboard" width="100%"><p align="center">Consent dashboard</p></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/gooike-features.md">All Cookie features →</a></p>
+
+### Pursae Pixel
+
+Ad and analytics tracking in the class of PixelYourSite Pro and GTM4WP, one event model for every platform.
+
+- Browser tags for Meta, Google Analytics 4, Google Ads, TikTok, Pinterest, Microsoft Advertising and Google Tag Manager; several IDs per platform.
+- Server-side delivery with deduplication: Meta, TikTok and Pinterest conversion APIs, and GA4 for purchases.
+- Events: page view, search, scroll depth, outbound links, downloads, forms, video and the full WooCommerce funnel.
+- Tags stay inert until consent (works with Pursae Cookie); product catalog feed.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/pixel.webp" alt="Pixel dashboard" width="100%"><p align="center">All platforms at a glance</p></td>
+<td width="50%"><img src="docs/readme/pixel-pixels.webp" alt="Pixels and APIs" width="100%"><p align="center">Pixels &amp; Conversions APIs</p></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/pixelgo-features.md">All Pixel features →</a></p>
+
+### Pursae Analytics
 
 Privacy-friendly site statistics on one page (**Analytics** in the admin menu), without cookies, without
-storing IP addresses and without a consent banner — in the class of Plausible and Jetpack Stats:
+storing IP addresses and without a consent banner, in the class of Plausible and Jetpack Stats.
 
 - **Visitors, visits, page views**, views per visit, bounce rate and visit duration, each compared with the previous period, a chart and live visitors.
 - **Top and entry pages, sources** (Google, ChatGPT, social networks, other sites), **UTM campaigns**, countries, devices, browsers and operating systems.
@@ -228,17 +326,18 @@ storing IP addresses and without a consent banner — in the class of Plausible 
 - **Real-user Core Web Vitals**: LCP, INP, CLS, FCP and TTFB at the 75th percentile, site-wide and for the slowest pages.
 - A 2.3 KB script (1.2 KB gzipped) that works behind the page cache; visitors are counted with a daily salted hash that cannot be followed across days. JSON summary at `GET /pursae/v1/analytics`.
 
-<p align="right"><a href="docs/analytics-features.md">All features →</a></p>
-</details>
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/analytics.webp" alt="Analytics overview" width="100%"><p align="center">Visitors, views and Core Web Vitals</p></td>
+<td width="50%"><img src="docs/readme/analytics-settings.webp" alt="Analytics settings" width="100%"><p align="center">Who is counted, goals, retention</p></td>
+</tr>
+</table>
 
-<details>
-<summary><h3>💬 Pursae Forum</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/forum.webp" alt="Forum overview"><p align="center">Overview, moderation, members, badges</p></td>
-<td width="50%"><img src="docs/readme/forum-front.webp" alt="Campfire forum theme"><p align="center">Campfire theme with its demo content</p></td>
-</tr></table>
+<p align="right"><a href="docs/analytics-features.md">All Analytics features →</a></p>
 
-A bbPress-class discussion board that renders inside any theme (**Forums** in the admin menu):
+### Pursae Forum
+
+A bbPress-class discussion board that renders inside any theme (**Forums** in the admin menu).
 
 - **Categories, forums, topics and replies**, pinned and closed topics, search, profiles and a member list — all plain forms, no JavaScript.
 - **Membership on the front end**: email sign-up with confirmation, "Continue with Google" (OAuth with PKCE), an account page with profile photos.
@@ -246,39 +345,132 @@ A bbPress-class discussion board that renders inside any theme (**Forums** in th
 - **Moderation**: approve, pin, close, spam, trash and block from the post itself or the admin queue; first-post moderation, flood and hourly limits.
 - **Themes**: four forum themes with demo content (Campfire, Devboard, Guild Hall, Study Circle), `--pf-*` design tokens and per-view template overrides; works with Pursae Web Builder and Pursae Multi Language. REST API at `/wp-json/forum/v1`: public read routes (forums, topics, replies, tags, stats, online counts and more), plus community write routes — a view beacon and presence (no login), and likes, reports, follows, solutions, previews and drafts for logged-in members (cookie + `X-WP-Nonce` or an Application Password). See [the endpoint list](docs/developer/rest-api/endpoints.md#pursae-forum-forumv1).
 
-<p align="right"><a href="docs/forum-features.md">All features →</a> · <a href="docs/developer/themes/forum.md">Making a forum theme →</a></p>
-</details>
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/forum.webp" alt="Forum overview" width="100%"><p align="center">Overview, moderation, members, badges</p></td>
+<td width="50%"><img src="docs/readme/forum-front.webp" alt="Campfire forum theme" width="100%"><p align="center">Campfire theme with its demo content</p></td>
+</tr>
+</table>
 
-<details>
-<summary><h3>✉️ Pursae SMTP</h3></summary>
+<p align="right"><a href="docs/forum-features.md">All Forum features →</a> · <a href="docs/developer/themes/forum.md">Making a forum theme →</a></p>
+
+### Pursae SMTP
+
+A native clone of WP Mail SMTP (Lite and Pro): send site mail through a real mailer instead of the server.
+
+- Mailers: Other SMTP, SendLayer, SMTP.com, Brevo, Mailgun, SendGrid, Postmark, SparkPost, Amazon SES, Microsoft 365 / Outlook, Gmail, Zoho Mail, Elastic Email and Mailjet.
+- Setup wizard and a connection test; secrets are stored sealed.
+- Email log and email reports, alerts and email controls.
+- Plain `PURSAE_SMTP_*` environment variables keep working while the plugin is off.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/smtp.webp" alt="SMTP settings" width="100%"><p align="center">Pick a mailer</p></td>
+<td width="50%"><img src="docs/readme/smtp-reports.webp" alt="Email reports" width="100%"><p align="center">Email reports</p></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/wpgo-mail-smtp-features.md">All SMTP features →</a></p>
+
+### Pursae Custom Fields
+
+A native clone of Advanced Custom Fields PRO 6.x.
+
+- Field groups with all of ACF's field types, location rules, conditional logic and validation.
+- Options pages, and a UI for custom post types and taxonomies.
+- ACF Blocks, a REST field and the template functions themes expect.
+- Field groups and saved values are kept when the plugin is deactivated.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/acf.webp" alt="Field Groups" width="100%"><p align="center">Field Groups</p></td>
+<td></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/acf-go-features.md">All Custom Fields features →</a></p>
+
+### Pursae Multi Language
+
+A functional clone of Polylang Pro, with TranslatePress-style extras.
+
+- Languages from the directory (`/fr/`), a subdomain, a domain or content; per-language menus, site title and sitemaps.
+- `hreflang` links, `<html lang>` and RTL support, and a language switcher.
+- Visual translation of a page and automatic capture of theme, plugin and builder text.
+- Machine translation with DeepL, Google or an OpenAI-compatible API.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/languages.webp" alt="Languages" width="100%"><p align="center">Languages</p></td>
+<td></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/golylang-features.md">All Multi Language features →</a></p>
+
+### Pursae Contact Form
+
+A native clone of Contact Form 7: same post type, form-tags and behaviour.
+
+- Form and mail templates, embedded with a shortcode or a block.
+- Spam guard: reCAPTCHA v3, Cloudflare Turnstile, a built-in image CAPTCHA, a quiz and disallowed keys.
+- Validation and a response message per form.
+- Akismet is not supported.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/contact.webp" alt="Contact forms" width="100%"><p align="center">Forms</p></td>
+<td width="50%"><img src="docs/readme/contact-edit.webp" alt="Contact form editor" width="100%"><p align="center">Form and mail templates</p></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/gontact-form-features.md">All Contact Form features →</a></p>
+
+### Pursae Maintenance
+
+A maintenance or coming-soon page, covering Maintenance by WebFactory and parts of its PRO version.
+
+- **Maintenance** mode answers HTTP 503 with `Retry-After`; **Coming Soon** mode answers 200.
+- `noindex`, no-cache headers, and a switch to show the normal site to crawlers.
+- A status badge on the menu and an indicator in the admin bar.
+- Meta description, favicon and image picked from the Media Library.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/maintenance.webp" alt="Maintenance" width="100%"><p align="center">Maintenance</p></td>
+<td></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/maintenance-go-features.md">All Maintenance features →</a></p>
+
+### Pursae Backup Manager
+
+Back a whole site up into one `.zip` and restore it on the same or another Pursae site. No `pg_dump` needed.
+
+- Pick what goes in: posts, media, users, settings, themes, plugins, page builder and each plugin's data.
+- Restore runs in one transaction and rolls back on any failure; a safety snapshot is taken first by default.
+- Scheduled daily or weekly backups with a retention count.
+- Copy backups, encrypted first, to S3-compatible storage; rewrite the old site address on restore.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/readme/backup.webp" alt="Backup Manager" width="100%"><p align="center">Backup Manager</p></td>
+<td></td>
+</tr>
+</table>
+
+<p align="right"><a href="docs/backup-manager-features.md">All Backup Manager features →</a></p>
+
+### Classic Editor
+
+TinyMCE and Quicktags editing with Add Media and featured images, on by default. Each user can choose the
+Classic editor or the Pursae Editor (block editor) under **Users › Profile**. See the [guide](docs/GUIDE.md).
+
+## AI agents (MCP)
+
 <table><tr>
-<td width="50%"><img src="docs/readme/smtp.webp" alt="SMTP settings"><p align="center">Pick a mailer</p></td>
-<td width="50%"><img src="docs/readme/smtp-reports.webp" alt="Email reports"><p align="center">Email reports</p></td>
-</tr></table>
-<p align="right"><a href="docs/wpgo-mail-smtp-features.md">All features →</a></p>
-</details>
-
-<details>
-<summary><h3>🗂️ Custom Fields · 🌍 Multi Language · 📝 Contact Form</h3></summary>
-<table><tr>
-<td width="33%"><img src="docs/readme/acf.webp" alt="Field Groups"><p align="center"><a href="docs/acf-go-features.md">Custom Fields →</a></p></td>
-<td width="33%"><img src="docs/readme/languages.webp" alt="Languages"><p align="center"><a href="docs/golylang-features.md">Multi Language →</a></p></td>
-<td width="33%"><img src="docs/readme/contact-edit.webp" alt="Contact form"><p align="center"><a href="docs/gontact-form-features.md">Contact Form →</a></p></td>
-</tr></table>
-</details>
-
-<details>
-<summary><h3>🚧 Maintenance · 💾 Backup Manager</h3></summary>
-<table><tr>
-<td width="50%"><img src="docs/readme/maintenance.webp" alt="Maintenance"><p align="center"><a href="docs/maintenance-go-features.md">Maintenance →</a></p></td>
-<td width="50%"><img src="docs/readme/backup.webp" alt="Backup Manager"><p align="center"><a href="docs/backup-manager-features.md">Backup Manager →</a></p></td>
-</tr></table>
-</details>
-
-## 🤖 AI agents (MCP)
-
-<table><tr>
-<td width="50%"><img src="docs/readme/ai-access.webp" alt="Tools › AI Access"><p align="center"><b>Tools › AI Access</b> — endpoint, client configs, connected apps, activity log</p></td>
+<td width="50%"><img src="docs/readme/ai-access.webp" alt="Tools › AI Access" width="100%"><p align="center"><b>Tools › AI Access</b> — endpoint, client configs, connected apps, activity log</p></td>
 <td width="50%">
 
 A built-in [Model Context Protocol](https://modelcontextprotocol.io) server at `/wp-json/pursae/v1/mcp`
@@ -296,9 +488,9 @@ lets Claude, Cursor and other MCP clients run the site:
 </td>
 </tr></table>
 
-## 🔁 WordPress compatibility
+## WordPress compatibility
 
-- **Admin**: the WordPress admin markup and CSS 1:1 under `/wp-admin/` (old `.php` URLs still work).
+- **Admin**: the WordPress admin markup and CSS 1:1 under `/wp-admin/` (old `.php` URLs still work). The Classic admin theme is the default; Pursae Modern is an optional beta theme.
 - **Editors**: the real block editor (`@wordpress/*` bundles) and a built-in Classic Editor.
 - **REST API**: `wp/v2` with cookie + nonce and Application Passwords; `wc/v3` with Commerce on — [REST docs](docs/developer/rest-api/index.md).
 - **Content**: WXR import and export under Tools; WooCommerce's product CSV under Products.
@@ -313,20 +505,20 @@ lets Claude, Cursor and other MCP clients run the site:
 - REST: `wp/v2/plugins`, `wp-site-health/v1` and `wp/v2/font-families` (plugins and site health are managed under `pursae/v1`).
 - PHP plugins and PHP themes: themes are Go templates with a [`theme.json` manifest](docs/developer/themes/theme-json.md), plugins are Wasm.
 
-## 🐹 Go architecture
+## Go architecture
 
 - One static binary (`CGO_ENABLED=0`) with the admin, the editors and the bundled themes embedded.
 - [gin](https://github.com/gin-gonic/gin) for HTTP, [pgx](https://github.com/jackc/pgx) on PostgreSQL 16 or 17 (CI tests both); migrations run on start.
 - Plugins run as WebAssembly in [wazero](https://wazero.io) — no cgo, no separate runtime.
 - Details: [What is Pursae](docs/developer/getting-started/index.md) · [binary install](docs/developer/getting-started/install-binary.md).
 
-## 🧩 The WordPress ecosystem without PHP
+### The WordPress ecosystem without PHP
 
 - **Plugins** are Go compiled to signed Wasm, sandboxed and permission-gated — [plugin docs](docs/developer/plugins/index.md), [signing](docs/developer/plugins/packaging-and-signing.md).
-- **Built in**: Commerce, Web Builder, SEO, Cache, Security, CDN, Headless, Cookie, Pixel, Analytics, Forum, SMTP, Custom Fields, Multi Language, Contact Form, Maintenance, Backup Manager, Classic Editor ([table below](#-built-in-plugins); [what each replaces](docs/developer/benchmarks.md#whats-built-in)).
+- **Built in**: the [18 plugins above](#built-in-plugins) ([what each replaces](docs/developer/benchmarks.md#whats-built-in)).
 - **Themes** are zip packages of templates and assets with no code in them — [theme packages](docs/theme-package.md); a marketplace of both on the [Hub](docs/developer/hub/index.md).
 
-## 📊 Performance benchmarks
+## Performance benchmarks
 
 Same content (1000 posts, 200 products), Twenty Twenty-Five, same container limits; WordPress 7.1.4 + PHP 8.3 OPcache
 against Pursae 0.1.9, Apple M2 Pro under Docker, 2026-11-09:
@@ -341,7 +533,7 @@ against Pursae 0.1.9, Apple M2 Pro under Docker, 2026-11-09:
 Cached pages tie (WP Super Cache + nginx ≈ Pursae Cache), cold start is the same, and WordPress' page cache serves
 search while Pursae's does not. Method, every config, all tables and `make bench`: [benchmarks](docs/developer/benchmarks.md).
 
-## 🛡️ Security
+## Security
 
 - Core secure by default: argon2id, login throttling, nonces, CSP and security headers, no account enumeration, sandboxed uploads — [security](docs/developer/operations/security.md).
 - Plugins are signed and sandboxed; a site installs only packages whose signature it trusts.
@@ -349,15 +541,15 @@ search while Pursae's does not. Method, every config, all tables and `make bench
 - **Pursae Security** adds 2FA, lockouts, a custom login URL and an activity log — [features](docs/adminsecgo-features.md).
 - Found a vulnerability? Report it privately, as the [security policy](SECURITY.md) explains.
 
-## 📦 Installation & migration
+## Installation & migration
 
-- **Docker** ([Quick start](#-quick-start)) or **one binary** against your own PostgreSQL — [install the binary](docs/developer/getting-started/install-binary.md).
+- **Docker** ([Quick start](#quick-start)) or **one binary** against your own PostgreSQL — [install the binary](docs/developer/getting-started/install-binary.md).
 - **Can I move my site?** Yes. Install the **WP to Pursae** plugin on the WordPress site and click *Move to Pursae*. Users (they keep their passwords), content, media, menus, settings and the whole WooCommerce store (products, orders with refunds, customers, coupons) move in one go — [migrate from WordPress](docs/developer/operations/migrate-from-wordpress.md).
 - **Content only**: export with Tools › Export (WXR), import with Tools › Import here — posts, pages, terms, comments, menus, media fetched from their public URLs, and WooCommerce products into Pursae Commerce; no passwords, settings or orders — [content export and import](docs/developer/operations/backups.md#content-export). WooCommerce's product CSV works too.
 - PHP plugins and themes never move: Pursae does not run PHP.
 - **Pursae to Pursae**: Backup Manager moves a whole site in one archive — [Backup Manager](docs/backup-manager-features.md).
 
-## 🔒 What Pursae sends to hub.pursae.com
+## What Pursae sends to hub.pursae.com
 
 Every production build talks to **Pursae Manager at https://hub.pursae.com**. It is how a site gets
 updates, the theme and plugin marketplace and licenses. Here is everything it sends, plainly:
@@ -388,7 +580,7 @@ notices or one-click updates — security fixes included —, no marketplace, no
 licenses, and you have to replace the binary yourself for every release. While it is off, every admin
 page says so; remove `PURSAE_HUB` and restart to get updates again.
 
-## 🛠️ Build on it
+## Build on it
 
 | | |
 |---|---|
@@ -402,7 +594,7 @@ page says so; remove `PURSAE_HUB` and restart to get updates again.
 | ⚙️ **Operations** — config, TLS, backups, cron | [docs/developer/operations](docs/developer/operations/configuration.md) |
 | 🧷 **Compatibility** — what stays stable in 0.5.x, deprecations, versioning | [docs/developer/compatibility.md](docs/developer/compatibility.md) |
 
-## 📚 More
+## More
 
 [Full guide](docs/GUIDE.md) (install, configuration, troubleshooting, project layout) ·
 [Developer docs](docs/developer/README.md) · [License](LICENSE) · [Notice](NOTICE)
