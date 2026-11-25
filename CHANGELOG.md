@@ -10,6 +10,8 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.5.8] - 2026-11-26
+
 ### Changed
 
 - **Faster pages with fewer database queries.** A page with child-page and child-category menu links and the
@@ -34,6 +36,19 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 - Theme previews that were evicted or rebuilt no longer leak their whole sandbox site in memory.
 - English admin pages no longer grow the admin script-strings cache by one entry per request.
+- **Release notes on the Dashboard** keep literal trailing `#`s, blank lines at the start of code blocks and
+  shorter backtick fences inside a code block; code spans close only on a backtick run of the same length, and
+  excerpts keep a whole word at the limit without running past it.
+- **Pursae Manager catalogs:** releases sort by full SemVer (large numeric parts too); a catalog that exceeds its
+  page limit, stops short or answers `null` is reported and the last complete cached catalog is kept.
+- **Core updates:** an invalid rollback backup (for example a directory at the backup path) is refused before the
+  running binary or the update state is touched, and retention never removes a directory.
+- **Forum:** whitespace-padded sorts and the search `/page/1/` alias redirect to their canonical URL; only local
+  images use attachment metadata for the social image.
+- **Web Builder site import:** mixed-case index files belong to their folder, imported folders get valid UTF-8
+  placeholder titles, and head elements are shared only when every source page has them complete.
+- Packaged theme assets named `index.html` are served at their explicit URLs, and plugins removed after a load
+  failure no longer keep a retry delay.
 
 ## [0.5.7] - 2026-11-25
 
