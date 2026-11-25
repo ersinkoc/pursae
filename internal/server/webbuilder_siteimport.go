@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 
@@ -244,7 +245,8 @@ func mcpWBImportSite(s *Server, c *gin.Context, args map[string]any) (any, error
 		if err != nil {
 			return 0, err
 		}
-		title := strings.ToUpper(f.Slug[:1]) + f.Slug[1:]
+		_, firstWidth := utf8.DecodeRuneInString(f.Slug)
+		title := strings.ToUpper(f.Slug[:firstWidth]) + f.Slug[firstWidth:]
 		id, isNew, err := s.wbSitePage(c, kit, key, f.Slug, title, parent)
 		if err != nil {
 			return 0, fmt.Errorf("the parent page of %s/: %v", strings.TrimPrefix(key, "dir:"), err)

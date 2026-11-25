@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -513,16 +514,22 @@ func (s *Server) forumSocialImage(ctx context.Context) *seogoImage {
 		u = s.links(ctx).HomeURL(u)
 	}
 	img := &seogoImage{URL: u}
-	if i := strings.Index(u, "/wp-content/uploads/"); i >= 0 {
-		rel := u[i+len("/wp-content/uploads/"):]
-		if q := strings.IndexAny(rel, "?#"); q >= 0 {
-			rel = rel[:q]
-		}
-		var id int64
-		if s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE file_path = $1 ORDER BY id LIMIT 1`, rel).Scan(&id) == nil {
-			if a := s.seogoAttachmentImage(ctx, id); a != nil {
-				img.Width, img.Height, img.Mime, img.Alt = a.Width, a.Height, a.Mime, a.Alt
-			}
+	source, err := url.Parse(u)
+	if err != nil {
+		return img
+	}
+	uploads, err := url.Parse(s.uploadURLPlain(ctx, ""))
+	if err != nil || !strings.EqualFold(source.Host, uploads.Host) {
+		return img
+	}
+	rel, ok := strings.CutPrefix(source.Path, uploads.Path)
+	if !ok || rel == "" {
+		return img
+	}
+	var id int64
+	if s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE file_path = $1 ORDER BY id LIMIT 1`, rel).Scan(&id) == nil {
+		if a := s.seogoAttachmentImage(ctx, id); a != nil {
+			img.Width, img.Height, img.Mime, img.Alt = a.Width, a.Height, a.Mime, a.Alt
 		}
 	}
 	return img
