@@ -151,7 +151,7 @@ func parseNotesInline(s string) []notesInline {
 				n++
 			}
 			fence := s[i : i+n]
-			if end := strings.Index(s[i+n:], fence); end >= 0 {
+			if end := notesCodeSpanEnd(s[i+n:], n); end >= 0 {
 				flush()
 				inner := s[i+n : i+n+end]
 				if t := strings.TrimSpace(inner); t != "" {
@@ -190,6 +190,25 @@ func parseNotesInline(s string) []notesInline {
 	}
 	flush()
 	return mergeNotesText(out)
+}
+
+// notesCodeSpanEnd finds the next complete backtick run matching the opening delimiter.
+func notesCodeSpanEnd(s string, width int) int {
+	for i := 0; i < len(s); {
+		next := strings.IndexByte(s[i:], '`')
+		if next < 0 {
+			break
+		}
+		start := i + next
+		i = start + 1
+		for i < len(s) && s[i] == '`' {
+			i++
+		}
+		if i-start == width {
+			return start
+		}
+	}
+	return -1
 }
 
 // mergeNotesText joins neighbouring text pieces.
@@ -555,7 +574,13 @@ func trimNotesInline(parts []notesInline, limit int) string {
 	var kept []notesInline
 	switch {
 	case bestPiece < 0:
-		kept = parts[:1] // a single first piece longer than the limit: keep it whole
+		kept = []notesInline{parts[0]}
+		if kept[0].Kind == 't' {
+			// Keep the first word intact even when it exceeds the limit.
+			if off := strings.IndexFunc(kept[0].Text, unicode.IsSpace); off > 0 {
+				kept[0].Text = kept[0].Text[:off]
+			}
+		}
 	case bestOff < 0:
 		kept = parts[:bestPiece]
 	default:

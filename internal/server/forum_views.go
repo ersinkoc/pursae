@@ -506,6 +506,11 @@ func (s *Server) forumViewEdit(c *gin.Context, rt forumRoute, p *forumPage) bool
 
 func (s *Server) forumViewSearch(c *gin.Context, rt forumRoute, p *forumPage) bool {
 	ctx := c.Request.Context()
+	base := s.forumURL(ctx, "search")
+	forumNoStore(c)
+	if forumCanonicalPage301(c, rt, base) {
+		return true
+	}
 	q := strings.TrimSpace(c.Query("q"))
 	if utf8.RuneCountInString(q) > forumSearchMaxLen {
 		q = string([]rune(q)[:forumSearchMaxLen])
@@ -528,7 +533,7 @@ func (s *Server) forumViewSearch(c *gin.Context, rt forumRoute, p *forumPage) bo
 		if rt.Page > pages {
 			return false
 		}
-		p.Pagination = s.forumPagination(c, s.forumURL(ctx, "search")+"?q="+url.QueryEscape(q), rt.Page, pages)
+		p.Pagination = s.forumPagination(c, base+"?q="+url.QueryEscape(q), rt.Page, pages)
 		p.Title = p.Tf("Search results for “%s”", q)
 	} else if rt.Page > 1 {
 		return false
