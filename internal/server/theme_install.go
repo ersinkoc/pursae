@@ -365,7 +365,13 @@ func (s *Server) packageThemeAsset(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	if st, err := fs.Stat(sub, file); err != nil || st.IsDir() {
+	f, err := http.FS(sub).Open(file)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	st, err := f.Stat()
+	if err != nil || st.IsDir() {
 		return
 	}
 	// The theme's styles and scripts are linked with ?ver=<theme version>, and a new version is a new
@@ -377,7 +383,7 @@ func (s *Server) packageThemeAsset(c *gin.Context) {
 	} else {
 		c.Header("Cache-Control", "no-cache")
 	}
-	http.StripPrefix(t.URI(), http.FileServer(http.FS(sub))).ServeHTTP(c.Writer, c.Request)
+	http.ServeContent(c.Writer, c.Request, st.Name(), st.ModTime(), f)
 	c.Abort()
 }
 
