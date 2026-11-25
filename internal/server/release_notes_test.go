@@ -251,7 +251,7 @@ func TestDashboardNewsRendersReleaseNotes(t *testing.T) {
 
 	// Dashboard › Updates: the full notes, rendered the same way.
 	_, body, _ = get(t, c, ts.URL+"/wp-admin/update-core")
-	for _, want := range []string{`<h2 id="release-notes">Pursae 99.0.0 release notes</h2>`, `<h3>Security</h3>`,
+	for _, want := range []string{`<h2 id="release-notes">Pursae 99.0.0 release notes</h2>`, `<h3 class="pursae-notes-section is-security"><span class="pursae-news-label">Security</span></h3>`,
 		"Patterns created as &#34;Not synced&#34; keep their sync status (<code>meta.wp_pattern_sync_status</code>).", "Read the release notes online"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("update-core: missing %q", want)
