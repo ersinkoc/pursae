@@ -10,6 +10,11 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+### Added
+
+- **Forum: a social image setting.** Forums › Settings has a **Social image** field (a site path or an http(s)
+  address). Public forum pages use it for `og:image` and `twitter:image`; empty keeps the Pursae SEO default image.
+
 ## [0.5.5] - 2026-11-25
 
 ### Added
