@@ -400,12 +400,17 @@ func (p *forumPage) forumSortTabs(base, cur, tag string, withSolved bool) []foru
 // forumListQuery reads ?sort= and ?tag= of a list request. ok is false when the URL must be
 // redirected (an unknown sort): redirect is the canonical URL then.
 func (s *Server) forumListQuery(c *gin.Context, base string) (sort, tag string, redirect string, ok bool) {
-	sort, valid := forumSortOf(c.Query("sort"))
+	rawSort := c.Query("sort")
+	sort, valid := forumSortOf(rawSort)
+	canonicalSort := sort
+	if sort == "latest" {
+		canonicalSort = ""
+	}
 	tag = strings.TrimSpace(c.Query("tag"))
 	if tag != "" && !forumValidSlug(tag) {
 		tag = forumTagSlug(tag)
 	}
-	if !valid || c.Query("sort") == "latest" || (c.Query("tag") != "" && tag != c.Query("tag")) {
+	if !valid || rawSort != canonicalSort || (c.Query("tag") != "" && tag != c.Query("tag")) {
 		return sort, tag, forumListURL(base, sort, tag), false
 	}
 	return sort, tag, "", true

@@ -200,11 +200,16 @@ func (s *Server) syncPluginsOnce(ctx context.Context, pending map[string]string)
 	for rows.Next() {
 		var slug string
 		var r row
-		if rows.Scan(&slug, &r.status, &r.version, &r.perms) == nil {
-			db[slug] = r
+		if err := rows.Scan(&slug, &r.status, &r.version, &r.perms); err != nil {
+			rows.Close()
+			return
 		}
+		db[slug] = r
 	}
 	rows.Close()
+	if rows.Err() != nil {
+		return
+	}
 	want := map[string]string{} // slug -> action
 	for slug, r := range db {
 		p, loaded := rt.Plugin(slug)
@@ -250,11 +255,14 @@ func (s *Server) syncPluginsOnce(ctx context.Context, pending map[string]string)
 			delete(pending, slug)
 		}
 	}
-	for slug, r := range db { // deactivated or deleted: a later activation starts afresh
-		if r.status != "active" {
-			s.plugins.forgetLoadFail(slug)
+	ps := s.plugins
+	ps.failMu.Lock()
+	for slug := range ps.fails { // deactivated or deleted: a later activation starts afresh
+		if db[slug].status != "active" {
+			delete(ps.fails, slug)
 		}
 	}
+	ps.failMu.Unlock()
 }
 
 func lastLine(v string) string {

@@ -262,6 +262,14 @@ func Previous(exe, version string) (from string, keptUntil time.Time) {
 // (version from) as the new previous binary, and records the change as a pending update, so a
 // previous binary that does not start goes back like any update (Guard).
 func SwapPrev(exe, from, to string) error {
+	prev := PrevPath(exe)
+	info, err := os.Lstat(prev)
+	if err != nil {
+		return fmt.Errorf("the previous binary is gone: %w", err)
+	}
+	if !info.Mode().IsRegular() {
+		return errors.New("the previous binary is not a regular file")
+	}
 	before := Read(exe)
 	undo := func() {
 		if before != nil {
@@ -280,7 +288,6 @@ func SwapPrev(exe, from, to string) error {
 			_ = os.RemoveAll(stage)
 		}
 	}()
-	prev := PrevPath(exe)
 	tmp := filepath.Join(stage, "previous")
 	if err := os.Rename(prev, tmp); err != nil {
 		return fmt.Errorf("the previous binary is gone: %w", err)
