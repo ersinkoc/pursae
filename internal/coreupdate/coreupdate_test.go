@@ -535,3 +535,26 @@ func TestSwapPrevKeepsStateDestinationAfterPrepareFails(t *testing.T) {
 		t.Fatalf("prior backup = %q, err=%v", got, err)
 	}
 }
+
+func TestSwapPrevRejectsDirectoryWithoutChangingBackup(t *testing.T) {
+	exe := filepath.Join(t.TempDir(), "pursae")
+	if err := os.WriteFile(exe, []byte("running"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	prev := PrevPath(exe)
+	if err := os.Mkdir(prev, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := SwapPrev(exe, "2.0.0", "1.0.0"); err == nil {
+		t.Fatal("swapped a directory over the running binary")
+	}
+	if info, err := os.Stat(prev); err != nil || !info.IsDir() {
+		t.Fatalf("backup path changed: %v, %v", info, err)
+	}
+	if data, err := os.ReadFile(exe); err != nil || string(data) != "running" {
+		t.Fatalf("running binary changed: %q, %v", data, err)
+	}
+	if st := Read(exe); st != nil {
+		t.Fatalf("unexpected update state: %+v", st)
+	}
+}
