@@ -10,6 +10,34 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.5.7] - 2026-11-25
+
+### Added
+
+- **Build your own plugin / theme.** Plugins has a **Build your own plugin** button next to Add Plugin and
+  Themes a **Build your own theme** button next to Add Theme. The pages explain both kinds (Wasm or native
+  plugins; theme packages or Web Builder themes), how to share one with everyone (email hello@pursae.com and
+  open a forum topic; after review it is signed and listed) and how to keep one for your own site. New
+  developer docs: native plugins, themes with Pursae Web Builder, sharing your theme, and "Your own plugins
+  and themes" in Upgrading.
+
+### Changed
+
+- **Core updates no longer hide what they break.** An active plugin that cannot load (after an update: a
+  newer `requires`, an unsupported ABI, an untrusted signer, a missing package) stays active, says why on the
+  Plugins screen and emails the administrator once, instead of only logging every 10 seconds. A theme package
+  that fails to load is named on Themes and the Dashboard (with the default theme shown meanwhile and the
+  theme choice kept). Edited files of a bundled theme that Pursae changed since are listed in the Theme File
+  Editor with the new original and Restore. Updating an uploaded theme keeps the files edited on the server
+  in `themes/.backup/`.
+- **A manual core update takes a backup first**, like the automatic one, and pre-update backups now hold the
+  plugin packages and theme files besides the database. A failed backup stops the update.
+
+### Fixed
+
+- **The admin bar showed the Hub's dark logo on the dark bar.** With only a light-mode logo set on the Hub,
+  the admin bar's mark now keeps the shipped light mark instead of the light-mode logo.
+
 ## [0.5.6] - 2026-11-25
 
 ### Added
