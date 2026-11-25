@@ -113,14 +113,27 @@ func IsSitePage(p string) bool {
 func PlanSite(files []string) SitePlan {
 	var plan SitePlan
 	sort.Strings(files)
-	have := map[string]bool{}
+	have := map[string]string{}
 	for _, f := range files {
-		have[f] = true
+		ext := path.Ext(f)
+		name := strings.TrimSuffix(path.Base(f), ext)
+		lowerExt := strings.ToLower(ext)
+		key := strings.TrimSuffix(f, ext) + lowerExt
+		have[f] = f
+		if have[key] == "" {
+			have[key] = f
+		}
+		if strings.EqualFold(name, "index") {
+			key = strings.TrimSuffix(f, name+ext) + "index" + lowerExt
+			if have[key] == "" {
+				have[key] = f
+			}
+		}
 	}
 	folderPage := func(dir string) string {
 		for _, c := range []string{dir + ".html", dir + ".htm", dir + "/index.html", dir + "/index.htm"} {
-			if have[c] {
-				return c
+			if page := have[c]; page != "" {
+				return page
 			}
 		}
 		return ""
@@ -528,11 +541,15 @@ func CommonHead(heads []string) string {
 	if len(heads) == 1 {
 		return heads[0]
 	}
+	other := make([][]string, 0, len(heads)-1)
+	for _, h := range heads[1:] {
+		other = append(other, headElements(h))
+	}
 	var keep []string
 	for _, e := range headElements(heads[0]) {
 		all := true
-		for _, h := range heads[1:] {
-			if !strings.Contains(h, e) {
+		for _, elements := range other {
+			if !slices.Contains(elements, e) {
 				all = false
 				break
 			}

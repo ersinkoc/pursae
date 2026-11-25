@@ -35,7 +35,7 @@ func parseReleaseNotes(md string) []notesBlock {
 		out      []notesBlock
 		para     []string
 		list     *notesBlock
-		code     *notesBlock
+		code     []string
 		afterGap bool // a blank line since the last line of the list
 	)
 	flushPara := func() {
@@ -53,14 +53,11 @@ func parseReleaseNotes(md string) []notesBlock {
 	for _, line := range strings.Split(md, "\n") {
 		if code != nil {
 			if strings.HasPrefix(strings.TrimSpace(line), "```") {
-				out = append(out, *code)
+				out = append(out, notesBlock{Kind: 'c', Text: strings.Join(code, "\n")})
 				code = nil
 				continue
 			}
-			if code.Text != "" {
-				code.Text += "\n"
-			}
-			code.Text += line
+			code = append(code, line)
 			continue
 		}
 		trimmed := strings.TrimSpace(line)
@@ -72,12 +69,17 @@ func parseReleaseNotes(md string) []notesBlock {
 		case strings.HasPrefix(trimmed, "```"):
 			flushPara()
 			flushList()
-			code = &notesBlock{Kind: 'c'}
+			code = []string{}
 		case indent < 4 && notesHeadingLevel(trimmed) > 0:
 			flushPara()
 			flushList()
 			lvl := notesHeadingLevel(trimmed)
-			out = append(out, notesBlock{Kind: 'h', Level: lvl, Text: strings.TrimSpace(strings.TrimRight(strings.TrimSpace(trimmed[lvl:]), "#"))})
+			title := trimmed[lvl:]
+			if before := strings.TrimRight(title, "#"); before != title &&
+				(strings.HasSuffix(before, " ") || strings.HasSuffix(before, "\t")) {
+				title = before
+			}
+			out = append(out, notesBlock{Kind: 'h', Level: lvl, Text: strings.TrimSpace(title)})
 		case notesBullet(trimmed) && (list != nil || indent < 4):
 			flushPara()
 			if list == nil {
@@ -95,7 +97,7 @@ func parseReleaseNotes(md string) []notesBlock {
 		}
 	}
 	if code != nil {
-		out = append(out, *code)
+		out = append(out, notesBlock{Kind: 'c', Text: strings.Join(code, "\n")})
 	}
 	flushPara()
 	flushList()
@@ -537,7 +539,7 @@ func trimNotesInline(parts []notesInline, limit int) string {
 		}
 		r := 0
 		for off, c := range p.Text {
-			if pos+r >= limit {
+			if pos+r > limit {
 				break
 			}
 			if unicode.IsSpace(c) {
