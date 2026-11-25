@@ -203,7 +203,7 @@ func (s *Server) dashboard(c *gin.Context) {
 	d.Normal, d.Side, d.Col3, d.Col4 = dashboardLayout(u, d.MailSMTP != "", pluginIDs...)
 	// Drag, collapse and move up/down of the boxes (postbox.js on top of jquery-ui-sortable).
 	s.pageAssets(c).Script("postbox").AddInline("postbox", `jQuery(function(){postboxes.add_postbox_toggles(pagenow);});`)
-	s.adminPage(c, "", "Dashboard", "index-php", "admin/dashboard", d)
+	s.adminPage(c, "", "Dashboard", "index-php", "admin/dashboard", d, s.themeLoadNotices(c)...) // theme packages that failed to load (theme_safety.go)
 }
 
 // quickDraft saves the Quick Draft box (wp_dashboard_quick_press()).

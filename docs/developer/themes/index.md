@@ -66,4 +66,7 @@ the views in `templates/forum.html`, sets the `--pf-*` tokens and may replace an
 Appearance › **Theme File Editor** edits any theme's templates and CSS in place; saves are
 validated and rolled back on error ([file editor](file-editor.md)).
 
+Prefer designing in the builder over writing templates? See [themes with Pursae Web Builder](builder-themes.md).
+To share a finished package, see [sharing your theme](publishing.md).
+
 Start with [your first theme](your-first-theme.md).

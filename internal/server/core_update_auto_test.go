@@ -108,8 +108,14 @@ func TestCoreAutoUpdate(t *testing.T) {
 	if last == nil || last.Backup == "" {
 		t.Fatalf("no pre-update backup recorded: %+v", last)
 	}
-	if m, err := bmgrReadManifest(filepath.Join(srv.bmgrDir(), last.Backup)); err != nil || m.Kind != bmgrPreUpdateKind || len(m.Tables) == 0 || len(m.Files) != 0 {
+	if m, err := bmgrReadManifest(filepath.Join(srv.bmgrDir(), last.Backup)); err != nil || m.Kind != bmgrPreUpdateKind || len(m.Tables) == 0 {
 		t.Fatalf("pre-update backup %s: %+v %v", last.Backup, m, err)
+	} else {
+		for _, f := range m.Files { // plugin packages and theme files, never the media uploads
+			if f.Group != "plugins" && f.Group != "themes" {
+				t.Fatalf("pre-update backup holds the %s files", f.Group)
+			}
+		}
 	}
 	if st := coreupdate.Read(target); st == nil || st.Status != "pending" || st.To != "9.9.9" {
 		t.Fatalf("no pending update recorded: %+v", st)

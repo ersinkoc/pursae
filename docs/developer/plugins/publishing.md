@@ -24,9 +24,19 @@ listing details.
 
 ## Submit
 
-Send the zip to the Hub operator (for the public Hub: through the repository's plugin submission
-process; for a private Hub, however your organisation agreed). The operator uploads it under
-Admin › Plugins and publishes it. On publish the Hub:
+To publish a plugin for everyone:
+
+1. Email the package (the zip), a link to the source and a short description to
+   **hello@pursae.com**.
+2. Open a topic in the Pursae forum at [pursae.com/forum](https://pursae.com/forum/) so people can
+   discuss and test it.
+
+After review the package is signed with the Pursae key and listed on the Hub, so it appears under
+Plugins › Add Plugin on every site. For a private Hub, deliver the zip however your organisation
+agreed. Native plugins are different: they are reviewed for inclusion in the core and ship in a core
+release ([native plugins](native-plugins.md)).
+
+On publish the Hub:
 
 1. parses and validates the zip and the manifest, and rejects a version that already exists or
    is lower than the latest published version of the slug;
@@ -37,6 +47,22 @@ Admin › Plugins and publishes it. On publish the Hub:
 The listing then appears in `GET /api/v1/plugins` with `download_url`, `sha256`, `signed_by`
 and your permissions list, and in every site's Plugins › Add Plugin within 12 hours (the catalog
 is cached that long). Sites verify the SHA-256 and the Hub signature on install.
+
+## Keeping a plugin to yourself
+
+You do not have to submit anything. Sign the package with your own key, trust that key on your
+sites and upload it:
+
+```bash
+pursae plugin keygen -out mykey
+pursae plugin build -dir . -key mykey.key -out my-plugin.zip
+pursae plugin verify -pub mykey.pub my-plugin.zip
+```
+
+Trust `mykey.pub` under Plugins › Trusted Keys (`/wp-admin/plugin-keys`), with
+`pursae plugin key add`, or in `PURSAE_PLUGIN_KEYS`, then upload the zip under Plugins › Add Plugin ›
+Upload. Keep `mykey.key` safe and backed up: without it you cannot sign updates that your sites
+trust ([upgrading](../getting-started/upgrading.md#your-own-plugins-and-themes)).
 
 ## Updates
 

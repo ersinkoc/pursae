@@ -117,7 +117,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 		{slug: "edit-comments", title: comments, cap: "edit_posts", id: "menu-comments", icon: "dashicons-admin-comments"},
 		{separator: true, cap: "read"},
 		{slug: "themes", title: "Appearance", cap: "switch_themes", id: "menu-appearance", icon: "dashicons-admin-appearance", sub: []subDef{
-			{slug: "themes", title: "Themes", cap: "switch_themes"},
+			{slug: "themes", title: "Themes", cap: "switch_themes", match: []string{"theme-build"}},
 			{slug: "customize", title: "Customize", cap: "edit_theme_options"},
 			{slug: "widgets", title: "Widgets", cap: "edit_theme_options"},
 			{slug: "nav-menus", title: "Menus", cap: "edit_theme_options"},
@@ -125,7 +125,7 @@ func adminMenu(pending int, cache bool) []menuDef {
 			{slug: "theme-editor", title: "Theme File Editor", cap: "edit_themes"},
 		}},
 		{slug: "plugins", title: `Plugins <span class="update-plugins count-0"><span class="plugin-count">0</span></span>`, cap: "activate_plugins", id: "menu-plugins", icon: "dashicons-admin-plugins", sub: []subDef{
-			{slug: "plugins", title: "Installed Plugins", cap: "activate_plugins"},
+			{slug: "plugins", title: "Installed Plugins", cap: "activate_plugins", match: []string{"plugin-build"}},
 			{slug: "plugin-install", title: "Add Plugin", cap: "install_plugins"},
 			{slug: "plugin-keys", title: "Trusted Keys", cap: "install_plugins"},
 			{slug: "plugin-editor", title: "Plugin File Editor", cap: "edit_plugins"},

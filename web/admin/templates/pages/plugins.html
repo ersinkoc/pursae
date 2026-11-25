@@ -1,7 +1,7 @@
 {{define "admin/plugins"}}{{template "admin-header" .}}{{with .Data}}
 <div class="wrap">
 <h1 class="wp-heading-inline">Plugins</h1>
-{{if $.User.Can "install_plugins" nil}}<a href="/wp-admin/plugin-install" class="page-title-action">Add Plugin</a>{{end}}
+{{if $.User.Can "install_plugins" nil}}<a href="/wp-admin/plugin-install" class="page-title-action">Add Plugin</a> <a href="/wp-admin/plugin-build" class="page-title-action">Build your own plugin</a>{{end}}
 <hr class="wp-header-end">
 {{template "notices" $}}
 {{if .RuntimeErr}}<div class="notice notice-error"><p>The WebAssembly plugin runtime could not start: {{.RuntimeErr}}</p></div>{{end}}
@@ -62,7 +62,7 @@
 	<h3 class="pm-plugin-name">{{.Name}}</h3>
 	<div class="pm-plugin-desc">{{safe .Description}}</div>
 	{{if .Like}}<p class="pm-plugin-like"><span>Replaces</span> {{.Like}}</p>{{end}}
-	{{if .Disabled}}<div class="notice inline notice-error notice-alt"><p>Stopped by the sandbox: {{.DisabledWhy}}</p></div>{{end}}
+	{{if .Disabled}}<div class="notice inline notice-error notice-alt"><p>{{if .LoadFailed}}This plugin is active but is not running: {{.DisabledWhy}}{{else}}Stopped by the sandbox: {{.DisabledWhy}}{{end}}</p></div>{{end}}
 	{{if .MissingPerms}}<div class="notice inline notice-warning notice-alt"><p>This version asks for new permissions that were not granted: {{range $i, $p := .MissingPerms}}{{if $i}}, {{end}}<code>{{$p}}</code>{{end}}.</p></div>{{end}}
 	{{with .Update}}<div class="notice inline notice-warning notice-alt"><p><span>Version</span> {{.Version}} <span>is available.</span> <a href="{{.URL}}" class="update-link">Update now</a></p></div>{{end}}
 	<footer class="pm-plugin-foot">
@@ -90,7 +90,7 @@
 		<div class="plugin-description"><p>{{safe .Description}}</p></div>
 		<div class="active second plugin-version-author-uri"><span>Version {{.Version}}</span> | <span>By {{if .AuthorURI}}<a href="{{.AuthorURI}}">{{.Author}}</a>{{else}}{{.Author}}{{end}}</span>{{if .Native}} | <span style="color:#2271b1">Built-in</span>{{if .Like}} | <span style="color:#50575e;font-weight:600">Like {{.Like}}</span>{{end}}{{else}} | <span style="color:#8c8f94">WebAssembly sandbox</span>{{end}}{{if .PluginURI}} | <a href="{{.PluginURI}}">Visit plugin site</a>{{end}}</div>
 		{{if .Permissions}}<p class="description" style="margin-top:6px"><span>Permissions:</span> {{range $i, $p := .Permissions}}{{if $i}}, {{end}}<code title="{{$p.Description}}">{{$p.Name}}</code>{{end}}</p>{{end}}
-		{{if .Disabled}}<div class="notice inline notice-error notice-alt"><p>Stopped by the sandbox: {{.DisabledWhy}}</p></div>{{end}}
+		{{if .Disabled}}<div class="notice inline notice-error notice-alt"><p>{{if .LoadFailed}}This plugin is active but is not running: {{.DisabledWhy}}{{else}}Stopped by the sandbox: {{.DisabledWhy}}{{end}}</p></div>{{end}}
 		{{if .MissingPerms}}<div class="notice inline notice-warning notice-alt"><p>This version asks for new permissions that were not granted: {{range $i, $p := .MissingPerms}}{{if $i}}, {{end}}<code>{{$p}}</code>{{end}}. Calls that need them are refused. <a href="{{.DeactivateURL}}">Deactivate</a> and activate it again to review them.</p></div>{{end}}
 		{{if .Logs}}<details style="margin-top:6px"><summary>Recent log</summary><pre style="white-space:pre-wrap;font-size:12px">{{range .Logs}}{{.Time.Format "15:04:05"}} [{{.Level}}] {{.Message}}
 {{end}}</pre></details>{{end}}

@@ -1,0 +1,48 @@
+{{define "admin/theme-build"}}{{template "admin-header" .}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Build your own theme</h1>
+<a href="/wp-admin/themes" class="page-title-action">Back to Themes</a>
+<hr class="wp-header-end">
+<p>Anyone can build a theme for their own site, also with an AI assistant such as Claude Code.</p>
+<p>The developer documentation is written so that an AI can follow it step by step, and Pursae also exposes it to AI agents over MCP.</p>
+<div style="display:flex;flex-wrap:wrap;gap:20px;margin:20px 0">
+<div class="card" style="flex:1 1 380px;max-width:none;margin:0">
+<h2 class="title">Theme package (native theme)</h2>
+<p>A theme.json file, Go html/template files and assets, zipped and uploaded. No code runs and the package is not signed: it is checked by its SHA-256 hash.</p>
+<pre style="overflow-x:auto;white-space:pre-wrap;word-break:break-all"><code>my-theme/
+  theme.json
+  templates/
+    index.html
+    header.html
+    footer.html
+  assets/
+    style.css</code></pre>
+<p>Start from the starter example in the documentation. Set PURSAE_THEMES_DIR for a live development loop.</p>
+<p><a href="/wp-admin/theme-install">Upload Theme</a></p>
+</div>
+<div class="card" style="flex:1 1 380px;max-width:none;margin:0">
+<h2 class="title">Web Builder theme</h2>
+<p>Design the header, footer and templates visually with Pursae Web Builder (Theme Builder), shown by the bundled Hello Pursae theme.</p>
+<p>You can also import your own HTML design or a theme kit.</p>
+<p><a href="https://pursae.com/docs/themes/builder-themes/" target="_blank" rel="noopener">Web Builder themes documentation</a></p>
+</div>
+</div>
+<h2>Share it with everyone</h2>
+<p>Send us the package (the .zip), a link to the source and a short description:</p>
+<p><a href="mailto:hello@pursae.com?subject=Theme%20submission%3A%20">Email hello@pursae.com</a></p>
+<p>Then open a topic in the Pursae forum describing your theme:</p>
+<p><a href="https://pursae.com/forum/" target="_blank" rel="noopener">Open the Pursae forum</a></p>
+<p>After review it appears under Add Theme as an official theme.</p>
+<h2>Just for my own site</h2>
+<p>No submission is needed. Follow the documentation to write, zip and upload your theme.</p>
+<p>Core updates never change uploaded theme packages. Edit a copy instead of editing a bundled theme in place, so updates of the bundled theme still reach you.</p>
+<h2>Documentation</h2>
+<ul>
+<li><a href="https://pursae.com/docs/themes/" target="_blank" rel="noopener">Themes overview</a></li>
+<li><a href="https://pursae.com/docs/themes/your-first-theme/" target="_blank" rel="noopener">Your first theme</a></li>
+<li><a href="https://pursae.com/docs/themes/builder-themes/" target="_blank" rel="noopener">Web Builder themes</a></li>
+<li><a href="https://pursae.com/docs/themes/publishing/" target="_blank" rel="noopener">Publishing your theme</a></li>
+<li><a href="https://pursae.com/docs/themes/hello-pursae/" target="_blank" rel="noopener">Hello Pursae theme</a></li>
+</ul>
+</div>
+{{template "admin-footer" .}}{{end}}

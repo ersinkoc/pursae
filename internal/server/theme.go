@@ -662,7 +662,7 @@ func (s *Server) themesScreen(c *gin.Context) {
 	a.Script("theme")
 	// theme.js routes on themes.php; WordPress Go URLs have no .php.
 	a.AddInline("theme", `wp.themes.Router = wp.themes.Router.extend({routes:{"themes?theme=:slug":"theme","themes?search=:query":"search","themes?s=:query":"search","themes":"themes","":"themes"},baseUrl:function(e){return "themes"+e;}});`)
-	var notices []notice
+	notices := append(append(s.themeLoadNotices(c), s.themeStaleEditsNotices(c)...), s.themeBackupNotices(c)...)
 	if msg := c.Query("error"); msg != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(msg)), Dismissible: true})
 	}

@@ -35,8 +35,8 @@ import (
 //   - it stays within the running minor version: 0.3.1 → 0.3.2 is automatic, 0.3.x → 0.4.0 waits for
 //     a click on "Update to version X" (a new minor may bring migrations or changes worth reading the
 //     release notes for);
-//   - the database is backed up first (preUpdateBackup, a database-only Backup Manager archive, also
-//     with the plugin off); when that backup fails the update is skipped, and the newest
+//   - the database, plugin packages and theme files are backed up first (preUpdateBackup, a Backup
+//     Manager archive without the media uploads, also with the plugin off); when that backup fails the update is skipped, and the newest
 //     preUpdateBackupKeep of these archives are kept.
 
 const (
@@ -133,7 +133,7 @@ func (s *Server) coreAutoUpdate(ctx context.Context) string {
 	if !coreBusy.CompareAndSwap(false, true) {
 		return ""
 	}
-	backup, err := s.preUpdateBackup(ctx, latest)
+	backup, err := s.preUpdateBackup(ctx, latest, true)
 	if err != nil {
 		coreBusy.Store(false)
 		slog.Warn("core auto-update skipped: the database backup before the update failed", "version", latest, "err", err)
@@ -160,11 +160,13 @@ const preUpdateBackupKeep = 3
 // bmgrPreUpdateKind is the manifest kind and file-name prefix of pre-update backups.
 const bmgrPreUpdateKind = "pre-update"
 
-// preUpdateBackup writes a database-only Backup Manager archive (every table, every user, no media,
-// theme or plugin files) into the backups directory before an automatic core update, whether the
-// Backup Manager plugin is on or not, and prunes the older ones. It fails when another backup or
-// restore is running, the disk is too full or the export fails: the update is then skipped.
-func (s *Server) preUpdateBackup(ctx context.Context, to string) (string, error) {
+// preUpdateBackup writes a Backup Manager archive of the database (every table, every user) plus the
+// installed plugin packages and theme files, without the media uploads, into the backups directory
+// before a core update (automatic or by hand), whether the Backup Manager plugin is on or not, and
+// prunes the older ones. The packages are small and are what a core update can break: with them the
+// archive restores the site as it was. It fails when another backup or restore is running, the disk is
+// too full or the export fails: the update is then not installed.
+func (s *Server) preUpdateBackup(ctx context.Context, to string, auto bool) (string, error) {
 	j, err := s.bmgrStart("backup")
 	if err != nil {
 		return "", err
@@ -173,8 +175,12 @@ func (s *Server) preUpdateBackup(ctx context.Context, to string) (string, error)
 	for _, c := range bmgrCategories {
 		cats = append(cats, c.Key)
 	}
+	note := "Backup taken automatically before the automatic update from Pursae " + Version + " to " + to
+	if !auto {
+		note = "Backup taken automatically before the update from Pursae " + Version + " to " + to
+	}
 	name, err := s.bmgrRunBackup(ctx, j, bmgrSelection{Categories: cats, UserMode: "all", Kind: bmgrPreUpdateKind, NoFiles: true,
-		Note: "Database backup taken automatically before the automatic update from Pursae " + Version + " to " + to})
+		KeepFiles: []string{"plugins", "themes"}, Note: note})
 	s.bmgrUpdate(j, func(j *bmgrJob) { j.File = name })
 	s.bmgrFinish(j, err)
 	if err != nil {

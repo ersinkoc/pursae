@@ -58,7 +58,8 @@ every size; when the block goes away the shipped logo comes back.
 The block may also carry `logo_dark_url` and `logo_dark_version`: a logo for dark backgrounds (a
 light mark). It is fetched the same way into `uploads/brand/logo-dark.*` and served in place of the
 dark-background files (`pursae-mark-white.svg`, `logo-dark.svg`); every other file keeps `logo_url`.
-Without it, those files show `logo_url` too. Sites read the index when they
+Without it, those files keep the shipped light mark (never `logo_url`, a dark mark that would vanish
+on the dark admin bar). Sites read the index when they
 check for updates (at most every 12 hours, or at once from Dashboard › Updates › Check again).
 
 ## Root of trust

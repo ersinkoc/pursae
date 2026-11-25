@@ -314,3 +314,29 @@ Plugin and theme packages are updated through Plugins › Add Plugin and Appeara
 (upload a newer package, or install the newer version from the marketplace). Re-installing a plugin
 with the same slug replaces the package and keeps the granted permissions; deactivate and activate
 it again to load the new version, and review the permissions it asks for on the activation screen.
+
+## Your own plugins and themes
+
+A core update (Dashboard › Updates, a new image or a new binary) replaces **only the binary**.
+
+**Not touched:** installed plugin zips (`<data>/plugins`), theme packages (`PURSAE_THEMES_DIR`,
+default `<data>/themes`), uploads, options and granted permissions. Plugin ABI 1 and the theme
+package format are under the [compatibility promise](../compatibility.md), so a plugin or theme that
+worked keeps working across releases. If one can no longer load, you are told on the Plugins or
+Themes screen and by email.
+
+**Can change:** bundled themes ship inside the binary. If you edited one in place (Theme File Editor),
+your edit is stored as an overlay that shadows that file, so it also hides the improved version of the
+file that the update brings. Installing the same theme slug at a higher version replaces its folder,
+and edits made to the old package on the server are lost.
+
+Best practices:
+
+- **Keep your signing key safe.** Back up `mykey.key` offline and never put it on a server; losing it
+  means your sites will not trust your next update, and leaking it lets others sign as you.
+- **Make your own theme package** (a copy with its own slug) instead of editing a bundled theme in
+  place ([your first theme](../themes/your-first-theme.md)). Keep the source in version control and
+  upload new versions with a higher `version`.
+- **Back up `<data>/plugins` and `<data>/themes`** with the database and uploads
+  ([backups](../operations/backups.md)).
+- Test a new core release on a staging copy before updating production.

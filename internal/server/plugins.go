@@ -54,6 +54,10 @@ type pluginSystem struct {
 	siteKeys []ed25519.PublicKey
 	envKeys  []ed25519.PublicKey // PURSAE_PLUGIN_KEYS and the dev key: siteKeys without the option's keys
 	hubKeys  []ed25519.PublicKey
+
+	// Active plugins this process could not load (loadActivePlugin): not retried on every sync tick.
+	failMu sync.Mutex
+	fails  map[string]pluginLoadFail
 }
 
 // trusted is a snapshot of every trusted signing key.
@@ -134,26 +138,24 @@ func (s *Server) startPlugins(ctx context.Context) {
 	}
 	ps.rt = rt
 	s.hubTrustCached(ctx) // the Manager's keys from the cached index, before Manager-signed plugins load
-	rows, err := s.store.Pool.Query(ctx, `SELECT slug, permissions FROM plugins WHERE status = 'active' ORDER BY slug`)
+	rows, err := s.store.Pool.Query(ctx, `SELECT slug, version, permissions FROM plugins WHERE status = 'active' ORDER BY slug`)
 	if err != nil {
 		return
 	}
 	type active struct {
-		slug  string
-		perms []byte
+		slug, version string
+		perms         []byte
 	}
 	var list []active
 	for rows.Next() {
 		var a active
-		if rows.Scan(&a.slug, &a.perms) == nil {
+		if rows.Scan(&a.slug, &a.version, &a.perms) == nil {
 			list = append(list, a)
 		}
 	}
 	rows.Close()
 	for _, a := range list {
-		if err := s.loadPlugin(ctx, a.slug, a.perms); err != nil {
-			slog.Error("plugin load", "plugin", a.slug, "err", err)
-		}
+		_ = s.loadActivePlugin(ctx, a.slug, a.version, a.perms)
 	}
 	ps.hooks.DoAction(ctx, "init")
 	s.goBackground(s.pluginSyncLoop) // stops on Server.Close (background.go)
@@ -208,6 +210,9 @@ func (s *Server) syncPluginsOnce(ctx context.Context, pending map[string]string)
 		p, loaded := rt.Plugin(slug)
 		switch {
 		case r.status == "active" && !loaded:
+			if s.plugins.loadFailedRecently(slug, r.version, s.pluginTrustTag()) {
+				continue // failed before with the same package and keys: retried later, not every tick
+			}
 			want[slug] = "load"
 		case r.status == "active" && loaded && p.Manifest().Version != r.version:
 			want[slug] = "reload"
@@ -233,8 +238,7 @@ func (s *Server) syncPluginsOnce(ctx context.Context, pending map[string]string)
 			if act == "reload" {
 				_ = rt.Unload(ctx, slug)
 			}
-			if err := s.loadPlugin(ctx, slug, db[slug].perms); err != nil {
-				slog.Error("plugin sync load", "plugin", slug, "err", err)
+			if err := s.loadActivePlugin(ctx, slug, db[slug].version, db[slug].perms); err != nil {
 				continue
 			}
 			s.plugins.hooks.DoActionOwner(ctx, slug, "init")
@@ -244,6 +248,11 @@ func (s *Server) syncPluginsOnce(ctx context.Context, pending map[string]string)
 	for slug := range pending {
 		if _, ok := want[slug]; !ok {
 			delete(pending, slug)
+		}
+	}
+	for slug, r := range db { // deactivated or deleted: a later activation starts afresh
+		if r.status != "active" {
+			s.plugins.forgetLoadFail(slug)
 		}
 	}
 }
@@ -636,6 +645,7 @@ type pluginRow struct {
 	Like                                                           string // "Like WP Mail SMTP": the WordPress plugin it replaces
 	Native, Active, Disabled                                       bool
 	DisabledWhy                                                    string
+	LoadFailed                                                     bool     // active, but its package could not be loaded (DisabledWhy says why)
 	MissingPerms                                                   []string // asked by an update, never granted (reloadPlugin)
 	Permissions                                                    []permRow
 	ActivateURL, DeactivateURL, DeleteURL, SettingsURL             string
@@ -780,6 +790,12 @@ func (s *Server) pluginInventory(ctx context.Context) []pluginRow {
 		}
 		if !row.Active && r.why != "" {
 			row.Disabled, row.DisabledWhy = true, r.why
+		}
+		if row.Active && r.why != "" && s.plugins.rt != nil {
+			if _, loaded := s.plugins.rt.Plugin(r.slug); !loaded {
+				// Active, but this process could not load it (loadActivePlugin): it is not running.
+				row.Disabled, row.DisabledWhy, row.LoadFailed = true, r.why, true
+			}
 		}
 		if pkg, err := plugins.LoadPackageFile(filepath.Join(s.plugins.dir, r.slug+".zip"), s.plugins.trusted(), false); err == nil {
 			m := pkg.Manifest

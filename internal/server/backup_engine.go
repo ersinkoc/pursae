@@ -71,7 +71,8 @@ type bmgrSelection struct {
 	UserIDs    []int64
 	Note       string
 	Kind       string
-	NoFiles    bool // the tables only: no media, theme or plugin files (pre-update backups)
+	NoFiles    bool     // the tables only: no media, theme or plugin files (pre-update backups)
+	KeepFiles  []string // with NoFiles: the file groups still written (pre-update backups keep "plugins" and "themes")
 }
 
 // bmgrEntry is a stored archive as the screen lists it.
@@ -257,7 +258,13 @@ func (s *Server) bmgrRunBackup(ctx context.Context, j *bmgrJob, sel bmgrSelectio
 	}
 	set, groups := sc.resolve(sel)
 	if sel.NoFiles {
-		groups = nil
+		var keep []string
+		for _, g := range groups {
+			if contains(sel.KeepFiles, g) {
+				keep = append(keep, g)
+			}
+		}
+		groups = keep
 	}
 	if len(set) == 0 && len(groups) == 0 {
 		return "", errors.New("nothing is selected")

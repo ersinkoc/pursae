@@ -6,8 +6,20 @@ section: hub
 ---
 
 Publishing goes through the Hub's admin panel (Admin › Plugins, Admin › Themes): the operator
-uploads a zip, reviews the listing and **publishes** it. Developers deliver the package and the
-listing details; for the public Hub, through the project's submission process.
+uploads a zip, reviews the listing and **publishes** it.
+
+## Submitting to the public Hub
+
+To publish a plugin or theme for everyone:
+
+1. Email the package (zip), a link to the source and a short description to **hello@pursae.com**.
+2. Open a topic in the Pursae forum at [pursae.com/forum](https://pursae.com/forum/).
+
+After review it is signed with the Pursae key and listed on the Hub, so it appears under Add Plugin
+or Add Theme on every site. Native plugins are reviewed for inclusion in the core and ship in a core
+release ([native plugins](../plugins/native-plugins.md)). Guides for developers:
+[publishing a plugin](../plugins/publishing.md), [sharing a theme](../themes/publishing.md). On a
+private Hub the operator uploads packages directly.
 
 ## Plugins
 

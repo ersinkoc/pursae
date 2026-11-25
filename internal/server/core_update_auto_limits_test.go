@@ -150,7 +150,7 @@ func TestPreUpdateBackupRetention(t *testing.T) {
 		bmgrFakeArchive(t, dir, "pre-update-old-"+string(rune('a'+i))+".zip", bmgrPreUpdateKind, now.Add(-time.Duration(i+1)*time.Hour))
 	}
 	bmgrFakeArchive(t, dir, "backup-manual.zip", "manual", now.Add(-48*time.Hour))
-	name, err := srv.preUpdateBackup(ctx, "9.9.9")
+	name, err := srv.preUpdateBackup(ctx, "9.9.9", true)
 	if err != nil {
 		t.Fatal(err)
 	}

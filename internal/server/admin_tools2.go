@@ -207,7 +207,11 @@ func (s *Server) themeEditor(c *gin.Context) {
 	if theme.Slug == s.activeTheme().Slug {
 		d.State = "active"
 	}
-	if b, err := fs.ReadFile(s.web, src); err == nil {
+	view := s.web
+	if o, ok := s.overlay(); ok && c.Query("original") == "1" && theme.Package == nil { // the shipped original of an edited file (theme_safety.go)
+		view, d.Editable = o.base, false
+	}
+	if b, err := fs.ReadFile(view, src); err == nil {
 		d.Content = string(b)
 	} else {
 		d.NotFound = true
@@ -219,7 +223,7 @@ func (s *Server) themeEditor(c *gin.Context) {
 		d.Choices = append(d.Choices, menuChoice{Value: t.Slug, Label: template.HTMLEscapeString(t.Name), Selected: t.Slug == theme.Slug})
 	}
 	s.fileEditorAssets(c, d)
-	s.adminPage(c, "theme-editor", "Edit Themes", "theme-editor-php", "admin/file-editor", d)
+	s.adminPage(c, "theme-editor", "Edit Themes", "theme-editor-php", "admin/file-editor", d, s.themeEditorStaleNotice(c, theme.Slug)...)
 }
 
 // themeFileList is the theme's editable files, as the Theme File Editor names them: paths under

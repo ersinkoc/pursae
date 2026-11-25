@@ -178,6 +178,15 @@ func (s *Server) saveThemeFile(c *gin.Context, slug, file, content string) error
 				return &themeFileError{"unable_to_write", "Unable to write to file: " + err.Error()}
 			}
 		}
+		if strings.HasPrefix(clean, "templates/") { // remembered so an update backs it up (theme_safety.go)
+			if err := th.Package.markEdited(themeTemplateEditPrefix + clean); err != nil {
+				restore()
+				return &themeFileError{"unable_to_write", "Unable to write to file: " + err.Error()}
+			}
+		}
+	} else if err := recordThemeEditBase(o, webPath, o.overridden(webPath)); err != nil { // base of the edit (theme_safety.go)
+		restore()
+		return &themeFileError{"unable_to_write", "Unable to write to file: " + err.Error()}
 	}
 	if strings.HasPrefix(clean, "templates/") {
 		if err := s.tmpl.load(); err != nil {
@@ -251,6 +260,7 @@ func (s *Server) restoreThemeFile(c *gin.Context, slug, file string) error {
 	if err := os.Remove(filepath.Join(o.dir, filepath.FromSlash(strings.TrimPrefix(webPath, "themes/")))); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
+	_ = recordThemeEditBase(o, webPath, false)
 	if strings.HasPrefix(clean, "templates/") {
 		_ = s.tmpl.load()
 	}

@@ -174,6 +174,7 @@ func (s *Server) loadThemePackages() {
 		}
 	}
 	dir := s.themesDir()
+	resetThemeLoadFailures(dir)
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return
@@ -189,6 +190,7 @@ func (s *Server) loadThemePackages() {
 		t, err := loadThemePackage(sub, e.Name())
 		if err != nil {
 			log.Printf("theme package %s skipped: %v", e.Name(), err)
+			recordThemeLoadFailure(dir, e.Name(), err) // shown as an admin notice (theme_safety.go)
 			continue
 		}
 		s.registerPackage(t)
@@ -246,6 +248,22 @@ func (s *Server) installThemePackageFrom(ctx context.Context, data []byte, sourc
 	final := filepath.Join(dir, m.Slug)
 	old := ""
 	if _, err := os.Stat(final); err == nil {
+		// Keep the files edited on this server: the new version replaces the whole folder (theme_safety.go).
+		{
+			cur, version := &themePackage{Dir: final}, "unknown" // also a package that failed to load
+			cur.loadEdited()
+			if t := themeBySlug(m.Slug); t != nil && t.Package != nil {
+				version = t.Version
+			}
+			bak, files, err := backupEditedThemeFiles(dir, cur, m.Slug, version)
+			if err != nil {
+				cleanup()
+				return nil, fmt.Errorf("could not back up the edited theme files: %v", err)
+			}
+			if bak != "" {
+				rememberThemeBackup(dir, m.Slug, bak, files)
+			}
+		}
 		old = filepath.Join(dir, strings.Replace(filepath.Base(tmp), ".install-", ".old-", 1))
 		if err := os.Rename(final, old); err != nil {
 			cleanup()
@@ -266,6 +284,7 @@ func (s *Server) installThemePackageFrom(ctx context.Context, data []byte, sourc
 	if err != nil {
 		return nil, err
 	}
+	clearThemeLoadFailure(dir, t.Slug)
 	s.registerPackage(t)
 	s.afterThemeChange(ctx, t.Slug)
 	s.hubEvent(event, "theme", t.Slug, t.Version) // statistics (hub_telemetry.go)
@@ -536,7 +555,7 @@ func (s *Server) themeInstall(c *gin.Context) {
 		}
 	}
 	sort.SliceStable(cards, func(i, j int) bool { return cards[i].Active && !cards[j].Active })
-	var notices []notice
+	notices := s.themeLoadNotices(c)
 	if msg := c.Query("error"); msg != "" {
 		notices = append(notices, notice{Type: "error", Message: template.HTML(template.HTMLEscapeString(msg)), Dismissible: true})
 	}

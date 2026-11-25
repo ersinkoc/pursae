@@ -86,8 +86,9 @@ func TestHubBrandLogo(t *testing.T) {
 		}
 	}
 
-	// Without a dark-mode logo the admin bar's mark shows the Hub's logo too.
-	if _, body, _ := get(t, c, base+mark); body != svg {
+	// Without a dark-mode logo the admin bar's mark keeps the shipped light mark: the Hub's
+	// light-mode logo is a dark mark, invisible on the dark admin bar.
+	if _, body, _ := get(t, c, base+mark); body == svg || !strings.Contains(body, "<svg") {
 		t.Errorf("admin bar mark without a dark logo: %q", body)
 	}
 	// With one, the mark shows it and every other file keeps the light-mode logo.
@@ -100,10 +101,10 @@ func TestHubBrandLogo(t *testing.T) {
 	if _, body, _ := get(t, c, base+"/wp-includes/images/brand/logo-256.png"); body != svg {
 		t.Errorf("login logo with a dark logo: %q", body)
 	}
-	// Dropping the dark logo brings the light one back on the mark.
+	// Dropping the dark logo brings the shipped mark back, not the light-mode logo.
 	brand = map[string]any{"logo_url": "/media/logo.svg", "logo_version": "1"}
 	srv.hubRefresh(ctx)
-	if _, body, _ := get(t, c, base+mark); body != svg {
+	if _, body, _ := get(t, c, base+mark); body == svg || body == darkSVG {
 		t.Errorf("admin bar mark after the dark logo is dropped: %q", body)
 	}
 

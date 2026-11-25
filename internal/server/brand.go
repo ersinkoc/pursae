@@ -26,8 +26,9 @@ import (
 // downloaded into uploads/brand and served in place of every default size.
 //
 // The Hub may also announce brand.logo_dark_url: a light mark for dark backgrounds. It is served in
-// place of the files in brandDarkFiles (the admin bar's mark); without it those show the Hub's
-// logo_url too, as before.
+// place of the files in brandDarkFiles (the admin bar's mark); without it those keep the shipped
+// light mark. They never show logo_url: a light-mode logo is a dark mark, invisible on the dark
+// admin bar.
 
 const (
 	brandDir      = "/images/brand/" // under /wp-includes
@@ -72,7 +73,8 @@ func (s *Server) brandOverrideFile(name string) (path, ctype string) {
 }
 
 // serveBrandOverride answers a /wp-includes/images/brand/ request with the Hub's logo: its dark-mode
-// logo for the files drawn on dark backgrounds when it has one, its light-mode logo otherwise.
+// logo for the files drawn on dark backgrounds, its light-mode logo for every other file. A file
+// without its variant keeps the shipped one.
 func (s *Server) serveBrandOverride(c *gin.Context, file string) bool {
 	if !strings.HasPrefix(file, brandDir) {
 		return false
@@ -80,8 +82,7 @@ func (s *Server) serveBrandOverride(c *gin.Context, file string) bool {
 	var p, ct string
 	if brandDarkFiles[file] {
 		p, ct = s.brandOverrideFile(brandDark)
-	}
-	if p == "" {
+	} else {
 		p, ct = s.brandOverride()
 	}
 	if p == "" {

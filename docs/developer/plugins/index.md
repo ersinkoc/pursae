@@ -71,3 +71,4 @@ in `plugin.json`.
    [assets](assets.md).
 4. [Permissions](permissions.md), [packaging and signing](packaging-and-signing.md),
    [publishing](publishing.md), [testing](testing.md), [limits and sandbox](limits-and-sandbox.md).
+5. Compiled into the core instead? [Native plugins](native-plugins.md) (rarely the right choice).

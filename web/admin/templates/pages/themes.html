@@ -13,7 +13,7 @@ document.addEventListener('click', function (e) {
 </script>
 <div class="wrap">
 	<h1 class="wp-heading-inline">Themes <span class="title-count theme-count">{{.Count}}</span></h1>
-	{{if $.User.Can "install_themes" nil}}<a href="/wp-admin/theme-install" class="hide-if-no-js page-title-action">Add Theme</a>{{end}}
+	{{if $.User.Can "install_themes" nil}}<a href="/wp-admin/theme-install" class="hide-if-no-js page-title-action">Add Theme</a> <a href="/wp-admin/theme-build" class="hide-if-no-js page-title-action">Build your own theme</a>{{end}}
 	<hr class="wp-header-end">
 	<form class="search-form search-themes"><p class="search-box"></p></form>
 {{template "notices" $}}

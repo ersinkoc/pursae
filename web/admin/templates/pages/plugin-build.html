@@ -1,0 +1,49 @@
+{{define "admin/plugin-build"}}{{template "admin-header" .}}
+<div class="wrap">
+<h1 class="wp-heading-inline">Build your own plugin</h1>
+<a href="/wp-admin/plugins" class="page-title-action">Back to Plugins</a>
+<hr class="wp-header-end">
+<p>Anyone can build a plugin for their own site, also with an AI assistant such as Claude Code.</p>
+<p>The developer documentation is written so that an AI can follow it step by step, and Pursae also exposes it to AI agents over MCP.</p>
+<div class="pursae-build-cards" style="display:flex;flex-wrap:wrap;gap:20px;margin:20px 0">
+<div class="card" style="flex:1 1 380px;max-width:none;margin:0">
+<h2 class="title">WebAssembly plugin (recommended)</h2>
+<p>A Go program compiled to WebAssembly. It runs in a sandbox, installs as a signed .zip package and survives core updates thanks to the stable plugin interface (ABI 1).</p>
+<ol>
+<li>Create the plugin and a signing key, then build the package:</li>
+</ol>
+<pre style="overflow-x:auto;white-space:pre-wrap;word-break:break-all"><code>pursae plugin new my-plugin
+pursae plugin keygen -out mykey
+pursae plugin build -dir . -key mykey.key -out my-plugin-1.0.0.zip</code></pre>
+<ol start="2">
+<li>Trust <code>mykey.pub</code> under <a href="/wp-admin/plugin-keys">Trusted Keys</a>.</li>
+<li>Upload the .zip under <a href="/wp-admin/plugin-install?tab=upload">Add Plugin › Upload Plugin</a>.</li>
+<li>Activate the plugin and approve its permissions.</li>
+</ol>
+</div>
+<div class="card" style="flex:1 1 380px;max-width:none;margin:0">
+<h2 class="title">Native plugin</h2>
+<p>Go code compiled into the Pursae core itself, like the built-in Cache, SEO and Commerce plugins.</p>
+<p>A native plugin cannot be installed from a .zip. It ships only as part of Pursae, so it is either contributed to Pursae and released in a core update, or built into your own fork.</p>
+<p><a href="https://pursae.com/docs/plugins/native-plugins/" target="_blank" rel="noopener">Native plugins documentation</a></p>
+</div>
+</div>
+<h2>Share it with everyone</h2>
+<p>Send us the package (the .zip), a link to the source and a short description:</p>
+<p><a href="mailto:hello@pursae.com?subject=Plugin%20submission%3A%20">Email hello@pursae.com</a></p>
+<p>Then open a topic in the Pursae forum describing your plugin:</p>
+<p><a href="https://pursae.com/forum/" target="_blank" rel="noopener">Open the Pursae forum</a></p>
+<p>After review it is signed with the Pursae key and appears under Add Plugin as an official plugin. Native plugins go the same way: they are reviewed for inclusion in the core.</p>
+<h2>Just for my own site</h2>
+<p>No submission is needed. Follow the documentation to write, sign and upload your plugin.</p>
+<p>Core updates never change your installed plugins, because they live in the site's data folder and not in the Pursae binary. If a plugin cannot load after an update, you will be told on the Plugins screen.</p>
+<h2>Documentation</h2>
+<ul>
+<li><a href="https://pursae.com/docs/plugins/" target="_blank" rel="noopener">Plugins overview</a></li>
+<li><a href="https://pursae.com/docs/plugins/your-first-plugin/" target="_blank" rel="noopener">Your first plugin</a></li>
+<li><a href="https://pursae.com/docs/plugins/packaging-and-signing/" target="_blank" rel="noopener">Packaging and signing</a></li>
+<li><a href="https://pursae.com/docs/plugins/native-plugins/" target="_blank" rel="noopener">Native plugins</a></li>
+<li><a href="https://pursae.com/docs/plugins/publishing/" target="_blank" rel="noopener">Publishing your plugin</a></li>
+</ul>
+</div>
+{{template "admin-footer" .}}{{end}}

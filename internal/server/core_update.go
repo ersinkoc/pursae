@@ -272,6 +272,11 @@ func (s *Server) coreUpdate(ctx context.Context, target string) (string, error) 
 	return idx.Core.Latest, nil
 }
 
+// corePreUpdateBackup is the backup a manual core update takes first (a variable for tests).
+var corePreUpdateBackup = func(s *Server, ctx context.Context, to string) (string, error) {
+	return s.preUpdateBackup(ctx, to, false)
+}
+
 // upgradeCore is Dashboard › Updates › Update to version X (update-core.php?action=do-core-upgrade).
 func (s *Server) upgradeCore(c *gin.Context) {
 	if !s.checkNonce(c, "upgrade-core") {
@@ -296,12 +301,36 @@ func (s *Server) upgradeCore(c *gin.Context) {
 		fail(err.Error())
 		return
 	}
+	// Like the automatic update (core_update_auto.go), a backup comes first and the update is not
+	// installed without one.
+	// coreUpdate reads the index again; checking here first means a click with nothing to install
+	// does not take (and prune older) backups.
+	if s.hubBase() == "" {
+		fail(errHubOff.Error())
+		return
+	}
+	idx, err := s.hubFetchIndex(c.Request.Context())
+	if err != nil {
+		fail(err.Error())
+		return
+	}
+	if idx.Core == nil || !versionLess(Version, idx.Core.Latest) {
+		fail("there is no newer release")
+		return
+	}
+	to := idx.Core.Latest
+	backup, err := corePreUpdateBackup(s, c.Request.Context(), to)
+	if err != nil {
+		slog.Warn("core update not installed: the backup before the update failed", "err", err)
+		fail(fmt.Sprintf("The backup before the update failed, so nothing was changed: %v. Free some disk space or wait until the running backup or restore has finished, then try again.", err))
+		return
+	}
 	version, err := s.coreUpdate(c.Request.Context(), target)
 	if err != nil {
 		fail(err.Error())
 		return
 	}
-	slog.Info("core updated, restarting", "from", Version, "to", version, "exe", target)
+	slog.Info("core updated, restarting", "from", Version, "to", version, "exe", target, "backup", backup)
 	s.hubEvent("core_update", "core", "", version)
 	handedOver = true
 	s.coreRestartInto(c, target, version, false)
