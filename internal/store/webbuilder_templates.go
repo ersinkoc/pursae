@@ -188,7 +188,7 @@ func (w WebBuilderDB) Templates(ctx context.Context, f WBTemplateFilter) ([]*WBT
 	if f.Type != "" {
 		sql += ` AND p.meta->>'` + webbuilder.MetaTemplateType + `' = ` + add(string(f.Type))
 	}
-	if q := strings.TrimSpace(f.Search); q != "" {
+	if q := strings.TrimSpace(ValidText(f.Search)); q != "" {
 		sql += ` AND p.title ILIKE ` + add("%"+likeEscape(q)+"%")
 	}
 	sql += ` ORDER BY p.modified_at DESC, p.id DESC`

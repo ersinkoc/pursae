@@ -233,7 +233,8 @@ func (s *Server) fwLog(r *http.Request, ip, event, msg string) {
 	slog.Warn("firewall", "event", event, "ip", ip, "msg", msg)
 	if s.adminsecOn() {
 		ua := r.UserAgent()
-		go s.asAudit(context.Background(), asEvent{Event: event, Severity: "warning", IP: ip, Object: fwTrim(ua, 200), Message: msg})
+		ev := asEvent{Event: event, Severity: "warning", IP: ip, Object: fwTrim(ua, 200), Message: msg}
+		safeGo("firewall.fwLog", func() { s.asAudit(context.Background(), ev) })
 	}
 }
 

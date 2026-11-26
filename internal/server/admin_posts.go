@@ -18,6 +18,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/caps"
 	"wpgo/internal/links"
 	"wpgo/internal/store"
 	"wpgo/internal/wp"
@@ -1013,6 +1014,21 @@ func setPageTemplate(p *store.Post, tpl string) {
 	p.Meta["_wp_page_template"] = tpl
 }
 
+// genericEditType reports whether the core's generic post handlers (Quick Edit, the Custom Fields
+// box, the featured image, the Heartbeat autosave, the SEO fields) may act on a post of type typ:
+// posts, pages and patterns, a Pursae Custom Fields post type, and a type whose capabilities a
+// plugin registered (products and variations while Commerce is on, Theme Builder templates, forum
+// content while the forum is on, ACF-Go's configuration, contact forms). Those handlers take any
+// post id; a post of another type (one left by a plugin that is off, an internal type) has no
+// capabilities of its own, and the post capabilities would decide who may change it.
+func genericEditType(typ string) bool {
+	switch typ {
+	case "post", "page", "wp_block":
+		return true
+	}
+	return acfgoIsPostType(typ) || caps.HasTypeCaps(typ)
+}
+
 // inlineSave is wp_ajax_inline_save(): Quick Edit posts the row's fields and gets the re-rendered row back.
 func (s *Server) inlineSave(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -1028,7 +1044,7 @@ func (s *Server) inlineSave(c *gin.Context) {
 		return
 	}
 	typ := p.Type
-	if !u.Can("edit_post", p) {
+	if !genericEditType(typ) || !u.Can("edit_post", p) {
 		c.String(http.StatusOK, "Sorry, you are not allowed to edit this "+typ+".")
 		return
 	}
@@ -1526,7 +1542,7 @@ func (s *Server) addMetaAjax(c *gin.Context) {
 		c.String(http.StatusOK, "0")
 		return
 	}
-	if !u.Can("edit_post", p) {
+	if !genericEditType(p.Type) || !u.Can("edit_post", p) {
 		c.String(http.StatusOK, "-1")
 		return
 	}
@@ -1631,7 +1647,7 @@ func (s *Server) deleteMetaAjax(c *gin.Context) {
 		c.String(http.StatusOK, "1")
 		return
 	}
-	if !u.Can("edit_post", p) {
+	if !genericEditType(p.Type) || !u.Can("edit_post", p) {
 		c.String(http.StatusOK, "-1")
 		return
 	}

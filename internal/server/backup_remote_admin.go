@@ -120,14 +120,14 @@ func (s *Server) bmgrPostRemote(c *gin.Context, do string) {
 			c.Redirect(http.StatusFound, s.bmgrBack("&tab=backups"+bmgrErrParam(err)))
 			return
 		}
-		go func() {
+		safeGo("backup_remote_admin.bmgrPostRemote", func() {
 			jctx := s.bmgrCancelable(j)
 			s.bmgrUpdate(j, func(j *bmgrJob) { j.File = file })
 			key, err := s.bmgrRemoteUpload(jctx, file, func(f string, a ...any) { s.bmgrLog(j, f, a...) },
 				func(p int) { s.bmgrProgress(j, "Uploading to remote storage", p) })
 			s.bmgrUpdate(j, func(j *bmgrJob) { j.Remote = key })
 			s.bmgrFinish(j, err)
-		}()
+		})
 		c.Redirect(http.StatusFound, s.bmgrBack("&tab=backups&job="+j.ID))
 	case "remote-fetch":
 		name := c.PostForm("fetch")
@@ -141,14 +141,14 @@ func (s *Server) bmgrPostRemote(c *gin.Context, do string) {
 			c.Redirect(http.StatusFound, s.bmgrRemoteBack(bmgrErrParam(err)))
 			return
 		}
-		go func() {
+		safeGo("backup_remote_admin.bmgrPostRemote#2", func() {
 			jctx := s.bmgrCancelable(j)
 			s.bmgrProgress(j, "Downloading from remote storage", 0)
 			local, err := s.bmgrRemoteFetch(jctx, name, pass, func(f string, a ...any) { s.bmgrLog(j, f, a...) },
 				func(p int) { s.bmgrProgress(j, "Downloading from remote storage", p) })
 			s.bmgrUpdate(j, func(j *bmgrJob) { j.File = local })
 			s.bmgrFinish(j, err)
-		}()
+		})
 		c.Redirect(http.StatusFound, s.bmgrRemoteBack("&job="+j.ID))
 	default:
 		c.Redirect(http.StatusFound, s.bmgrRemoteBack(""))

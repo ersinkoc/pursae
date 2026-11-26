@@ -80,3 +80,63 @@ func TestGooStripeEventLookupErrors(t *testing.T) {
 		t.Fatalf("redelivery after the failure: %d %s", code, body)
 	}
 }
+
+// O9: a completed setup session moves the subscription it names to the new card. A missing
+// subscription, another customer's or an ended one is acknowledged and left alone; a failed lookup is
+// returned (the webhook then answers 500 and releases the event) instead of the change being lost.
+func TestGooStripeSetupSubscriptionLookupError(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gooStripeEnable(t, srv)
+	gxaOn(t, srv, gsubKey, true)
+	u := gxaCustomer(t, srv, "stripe-setup@example.test")
+	other := gxaCustomer(t, srv, "stripe-setup-other@example.test")
+	if err := srv.gooSetUserMeta(ctx, u.ID, map[string]any{"_goo_stripe_customer_id_test": "cus_fake"}); err != nil {
+		t.Fatal(err)
+	}
+	newSub := func(customer int64, status string) *gooSubscription {
+		t.Helper()
+		sub := &gooSubscription{CustomerID: customer, Status: status, Period: "month", Interval: 1, Currency: "USD",
+			PaymentMethod: "bacs", Billing: map[string]string{}, Shipping: map[string]string{}, Meta: map[string]any{}}
+		if err := srv.gsubSave(ctx, sub); err != nil {
+			t.Fatal(err)
+		}
+		return sub
+	}
+	mine, theirs, ended := newSub(u.ID, "active"), newSub(other.ID, "active"), newSub(u.ID, "cancelled")
+	setup := func(subID int64) map[string]any {
+		return map[string]any{"id": "cs_setup", "object": "checkout.session", "mode": "setup", "status": "complete", "customer": "cus_fake",
+			"metadata": map[string]any{"user_id": itoa64(u.ID), "site": srv.links(ctx).HomeURL("/"), "subscription_id": itoa64(subID)},
+			"setup_intent": map[string]any{"id": "seti_1", "status": "succeeded", "payment_method": map[string]any{"id": "pm_new",
+				"card": map[string]any{"brand": "visa", "last4": "4242", "exp_month": float64(1), "exp_year": float64(2031)}}}}
+	}
+	for name, id := range map[string]int64{"missing": 987654321, "another customer's": theirs.ID, "cancelled": ended.ID} {
+		if got, err := srv.gooStripeApplySetup(ctx, setup(id), 0); got != 0 || err != nil {
+			t.Errorf("%s subscription: %d %v, want an acknowledged no-op", name, got, err)
+		}
+	}
+	if sub, _ := srv.gsubGet(ctx, theirs.ID); sub == nil || sub.PaymentMethod != "bacs" {
+		t.Errorf("another customer's subscription changed: %+v", sub)
+	}
+
+	// The subscriptions table unreadable: the error reaches the webhook handler.
+	if _, err := srv.store.Pool.Exec(ctx, `ALTER TABLE goo_subscriptions RENAME TO goo_subscriptions_unreadable`); err != nil {
+		t.Fatal(err)
+	}
+	_, applyErr := srv.gooStripeApplySetup(ctx, setup(mine.ID), 0)
+	eventErr := srv.gooStripeEvent(ctx, "checkout.session.completed", setup(mine.ID))
+	if _, err := srv.store.Pool.Exec(ctx, `ALTER TABLE goo_subscriptions_unreadable RENAME TO goo_subscriptions`); err != nil {
+		t.Fatal(err)
+	}
+	if applyErr == nil || eventErr == nil {
+		t.Fatalf("setup with the subscription lookup failing was acknowledged: %v / %v", applyErr, eventErr)
+	}
+
+	// The redelivery applies the card.
+	if err := srv.gooStripeEvent(ctx, "checkout.session.completed", setup(mine.ID)); err != nil {
+		t.Fatal(err)
+	}
+	if sub, _ := srv.gsubGet(ctx, mine.ID); sub == nil || sub.PaymentMethod != gooStripeID || gxaStr(sub.Meta, "_payment_token") != "pm_new" {
+		t.Errorf("subscription after the redelivery: %+v", sub)
+	}
+}

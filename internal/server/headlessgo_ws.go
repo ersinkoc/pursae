@@ -158,10 +158,10 @@ func (wc *hgWSConn) serve() {
 	defer wc.closeWith(1000, "")
 	defer wc.stopAll()
 	wc.wg.Add(1)
-	go func() {
+	safeGo("headlessgo_ws.serve", func() {
 		defer wc.wg.Done()
 		wc.keepAlive()
-	}()
+	})
 	acked := false
 	_ = wc.ws.SetReadDeadline(time.Now().Add(hgWSInitTimeout))
 	for {
@@ -303,7 +303,7 @@ func (wc *hgWSConn) subscribe(id string, payload json.RawMessage) bool {
 	wc.ops[id] = stop
 	wc.mu.Unlock()
 	wc.wg.Add(1)
-	go func() {
+	safeGo("headlessgo_ws.subscribe", func() {
 		defer wc.wg.Done()
 		defer sub.close()
 		for {
@@ -325,7 +325,7 @@ func (wc *hgWSConn) subscribe(id string, payload json.RawMessage) bool {
 				}
 			}
 		}
-	}()
+	})
 	return true
 }
 

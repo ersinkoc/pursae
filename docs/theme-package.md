@@ -1,6 +1,8 @@
 # Theme packages
 
-A Pursae theme is a directory (or a zip of that directory) with no Go code in it:
+A Pursae theme is a directory (or a zip of that directory) with no Go code in it — but it is not
+inert: its templates and `scripts` put JavaScript on every page of the site (see
+[Trust](#trust)):
 
 ```
 theme.json          metadata and everything a Go theme would register in code
@@ -90,7 +92,8 @@ Rules:
   and `theme_url` are http(s) URLs. `screenshot` defaults to `assets/screenshot.png`.
 - `styles`/`scripts`: `handle` is `^[a-z0-9]+([_-][a-z0-9]+)*$` and unique within its
   list; `src` is a theme-relative path under `assets/` (served under the theme URI with
-  `?ver=<version>`) or an absolute http(s) URL. `deps` may reference core handles
+  `?ver=<version>`); a style may also be an absolute http(s) URL, a script may not (remote
+  scripts are refused: a script gets the page's CSP nonce). `deps` may reference core handles
   (`wp-block-library`, `jquery`, …) or the theme's own handles; the theme's assets are
   printed after core's, ordered so that each follows its own dependencies like
   `wp_enqueue_*` (a cycle is an error), in declared order otherwise. Styles print in
@@ -181,12 +184,14 @@ also get `.Data.Settings` (every Customizer setting, typed, with defaults applie
 settings hold the image URL) and `.Data.Nav` (rendered menus by location).
 
 Functions, on top of the generic ones (`date`, `plural`, `num`, `dict`, `safe`,
-`settingStr`, …): `{{nav_menu . "primary"}}` and `{{has_nav_menu . "primary"}}`
+`settingStr`, …; the `setting*` functions read only public settings such as `blogname`,
+`date_format` or `page_on_front` and the active theme's mods, any other key reads as empty):
+`{{nav_menu . "primary"}}` and `{{has_nav_menu . "primary"}}`
 (`wp_nav_menu` / `has_nav_menu`), `{{dynamic_sidebar . "sidebar-1"}}` and
 `{{is_active_sidebar . "sidebar-1"}}`, and `{{theme_mod . "accent"}}` (`get_theme_mod`
 with the declared default). Package themes get `singular` or `hfeed` on the body like the
 bundled ones. See `examples/themes/starter` for a complete, minimal theme and
-`web/themes/classic/templates` for a bundled one.
+`web/themes/twentytwentyfive/templates` for a bundled one.
 
 ## Packaging
 
@@ -198,8 +203,23 @@ per package, 4 MiB per file, 64 MiB extracted, 2000 files, only these extensions
 `.json .html .css .js .map .svg .png .jpg .jpeg .gif .webp .avif .ico .woff .woff2 .ttf
 .otf .md .txt`. The templates must parse before anything is replaced. Uploading needs the
 `install_themes` capability; a package whose slug is already installed replaces it only
-when its version is higher (theme mods and widgets are kept). Themes carry no executable
-code, so they are not signed; the Hub and the installer verify the SHA-256 of the zip.
+when its version is higher (theme mods and widgets are kept). Themes are not signed; the Hub
+and the installer verify the SHA-256 of the zip.
+
+## Trust
+
+A package carries no Go code, but it is code all the same: its templates are free to print
+`<script>` elements and its `scripts[]` are printed with the page's CSP nonce, so its JavaScript
+runs on every page, also for logged-in administrators, with whatever a script on the site may do.
+Themes are not signed — the SHA-256 the Manager lists is all that vouches for a Library package —
+so **install and activate only themes you trust**. What the core does limit:
+
+- the template functions `setting`, `settingStr`, … return only public settings: never secrets,
+  keys, licenses, the admin e-mail or plugin settings;
+- `scripts[]` must be files of the package (no remote URLs), so what runs is what was installed;
+- the file types are limited (below) and templates cannot read files or run commands;
+- Live Preview shows the theme in a sandboxed frame (see [Live Preview](#live-preview-with-demo-content)), so
+  previewing a theme you do not trust yet does not expose the site.
 
 ## Library metadata
 
@@ -427,3 +447,15 @@ as if it were the site at the site's own address; the preview prefix is added to
 responses on the way out (absolute and root-relative links, assets, uploads, `srcset`, `url()`,
 JSON-escaped URLs, redirects), so navigation stays inside the preview. A sandbox keeps its theme
 packages in its own registry and has no page cache, plugin runtime, scheduler, mail or Hub.
+
+The previewed theme's code is not trusted, so every sandbox response carries
+`Content-Security-Policy: sandbox allow-scripts allow-forms allow-popups` (merged into the
+sandbox's own policy; no `allow-same-origin`, no `X-Frame-Options`, `frame-ancestors 'self'`):
+the preview runs in an opaque origin, its scripts work but cannot read the site's cookies, call the
+admin or the REST API as you, touch the preview screen around it or navigate the top window. A
+sandboxed frame does not send the login cookie for its own assets and links, so a browser that
+loads `/wp-admin/theme-preview/<slug>/…` (the iframe, a link) is redirected to
+`/wp-content/theme-preview/<slug>/<token>/…`, where a token — an HMAC over the theme, the user
+and an expiry (6–7 hours), checked together with the user's `switch_themes` on every request —
+replaces the cookie. It only opens that theme's preview, read-only. The *Preparing preview…*
+page is core markup and is not sandboxed (its status poll needs the cookie).

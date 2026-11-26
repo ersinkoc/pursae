@@ -132,7 +132,7 @@ func (s *Server) gocdnStartJobWith(ctx context.Context, kind string, resume bool
 	rt.job = j
 	rt.mu.Unlock()
 	s.gocdnPersistJob()
-	go s.gocdnRunJob(j)
+	safeGo("gocdn_job.gocdnRunJob", func() { s.gocdnRunJob(j) })
 	return nil
 }
 
@@ -231,11 +231,11 @@ func (s *Server) gocdnRunJob(j *gocdnJobState) {
 		var wg sync.WaitGroup
 		for i, id := range ids {
 			wg.Add(1)
-			go func() {
+			safeGo("gocdn_job.gocdnRunJob", func() {
 				defer wg.Done()
 				n, perr := s.gocdnJobOne(ctx, j, st, cl, id)
 				out[i] = res{id, n, perr}
-			}()
+			})
 		}
 		wg.Wait()
 		rt.mu.Lock()

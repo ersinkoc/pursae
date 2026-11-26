@@ -35,8 +35,8 @@ func wbsBasic(t *testing.T, base, pass, method, route string, body any) (int, ma
 	return resp.StatusCode, out
 }
 
-// An Application Password with only the Content scope (which carries unfiltered_html, as WordPress
-// gives raw HTML in posts) cannot write site-wide code: no code import, no code sections kept in a
+// An Application Password with only the Content scope (which no longer carries unfiltered_html: only
+// Appearance does) cannot write site-wide code: no code import, no code sections kept in a
 // published page, no kit or kit override writes, no contact form changes (contact-form-7/v1 belongs
 // to no scope). With Appearance (themes) as well, or full access, the same calls work.
 func TestWBContentScopeNoSiteCode(t *testing.T) {
@@ -49,7 +49,7 @@ func TestWBContentScopeNoSiteCode(t *testing.T) {
 	// MCP web_builder_import_html, method code.
 	html := `<!doctype html><html><head><title>T</title></head><body><section><h1>Hi</h1><script>window.x=1</script></section></body></html>`
 	r := contentCall("web_builder_import_html", map[string]any{"title": "Code page", "method": "code", "html": html})
-	if r["isError"] != true || !strings.Contains(mcpText(r), "Appearance") {
+	if r["isError"] != true || !(strings.Contains(mcpText(r), "Appearance") || strings.Contains(mcpText(r), "unfiltered_html")) {
 		t.Errorf("content scope, method code: %s", mcpText(r))
 	}
 	if r := themesCall("web_builder_import_html", map[string]any{"title": "Code page", "method": "code", "html": html}); r["isError"] == true {

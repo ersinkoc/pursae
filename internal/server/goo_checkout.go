@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"net/mail"
@@ -367,6 +368,9 @@ func (s *Server) gooProcessCheckout(c *gin.Context, form map[string][]string) (*
 	if ce := cart.Errors(); len(ce) > 0 {
 		return nil, nil, ce
 	}
+	if err := s.gooCheckOrderLines(cart); err != nil {
+		return nil, nil, []string{err.Error()}
+	}
 	errs := s.gooValidateCheckout(c, cart, d)
 	if len(errs) > 0 {
 		return nil, nil, errs
@@ -436,6 +440,9 @@ func (s *Server) gooProcessCheckout(c *gin.Context, form map[string][]string) (*
 // lines copied from the calculated cart. The order starts pending.
 func (s *Server) gooCreateOrderFromCart(c *gin.Context, cart *gooCart, d *gooCheckoutData, customerID int64) (*gooOrder, error) {
 	ctx := c.Request.Context()
+	if err := s.gooCheckOrderLines(cart); err != nil {
+		return nil, err
+	}
 	o := &gooOrder{Status: "pending", Currency: s.gooCurrency(), PricesIncludeTax: s.gooPricesIncludeTax(), CustomerID: customerID,
 		Billing: map[string]string{}, Shipping: map[string]string{}, PaymentMethod: d.PaymentMethod, CustomerIP: c.ClientIP(),
 		UserAgent: c.Request.UserAgent(), CustomerNote: d.OrderComments, CreatedVia: "checkout", Meta: map[string]any{}}
@@ -574,6 +581,24 @@ func (s *Server) gooCreateOrderFromCart(c *gin.Context, cart *gooCart, d *gooChe
 	_ = s.gooAddOrderNote(ctx, o, "Order created.", false, "")
 	s.gooFire(ctx, "order_created", o)
 	return o, nil
+}
+
+// errGooInvalidCartLine refuses an order with a line no cart operation should have produced.
+var errGooInvalidCartLine = errors.New("Sorry, an item in your cart is not valid. Please review your cart and try again.")
+
+// gooCheckOrderLines is the last check before a calculated cart becomes an order: every line has a
+// quantity within 1…gooMaxLineQty and a subtotal and total that are not negative. Calculate already
+// drops such lines; an order is never placed with one (a negative line lowers the total, down to a
+// free order that skips payment).
+func (s *Server) gooCheckOrderLines(cart *gooCart) error {
+	dp := s.gooDecimals()
+	for _, it := range cart.Items {
+		if it.product == nil || it.Quantity < 1 || it.Quantity > gooMaxLineQty ||
+			!(gooRound(it.LineSubtotal, dp) >= 0) || !(gooRound(it.LineTotal, dp) >= 0) {
+			return errGooInvalidCartLine
+		}
+	}
+	return nil
 }
 
 // gooOrderItemsFromCart turns the calculated cart into order items.

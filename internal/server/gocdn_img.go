@@ -368,11 +368,12 @@ func (s *Server) gocdnImage(w http.ResponseWriter, r *http.Request, st gocdnSett
 	gocdnImgStore(cacheFile, data)
 	s.gocdnMaybePrune(st)
 	if cl != nil {
-		go func(data []byte) {
+		data := append([]byte(nil), data...)
+		safeGo("gocdn_img.gocdnImage", func() {
 			o := gocdnPutOptions(st, "variant"+gocdn.Ext(out))
 			o.ContentType = gocdn.ContentType(out)
 			_ = cl.Put(context.Background(), bucketKey, data, o)
-		}(append([]byte(nil), data...))
+		})
 	}
 	gocdnImgWrite(w, r, out, data, "miss")
 }

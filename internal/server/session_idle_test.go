@@ -44,18 +44,29 @@ func TestHeartbeatDoesNotRefreshSession(t *testing.T) {
 	}
 }
 
-// The core per-login throttle keys on the account: failures recorded under the username also
-// count when the same account is tried by its e-mail address. Integration test.
+// The core per-login limits key on the account: failures recorded under the username also count when
+// the same account is tried by its e-mail address (here: the smaller budget a network gets at an account
+// under attack, which username and e-mail share). Integration test.
 func TestCoreLoginThrottleSharesUsernameAndEmail(t *testing.T) {
 	ts, c, _ := testServerBuilderOff(t)
 	installAndLogin(t, ts, c)
 	ctx := context.Background()
+	stubLoginSlowdown(t)
+	// The admin's own sign-in made this network known to the account; forget it.
+	if _, err := getPool(t).Exec(ctx, `DELETE FROM login_attempts`); err != nil {
+		t.Fatal(err)
+	}
 	for i := 0; i < auth.MaxFailedLoginsPerLogin; i++ {
 		if _, err := getPool(t).Exec(ctx, `INSERT INTO login_attempts(ip, login, success, pending) VALUES ($1, 'admin', false, false)`, fmt.Sprintf("203.0.113.%d", i+1)); err != nil {
 			t.Fatal(err)
 		}
 	}
 	anon := asNewClient()
+	for _, log := range []string{"admin", "ADMIN@example.test"} {
+		if _, body, _ := post(t, anon, ts.URL+"/wp-login", url.Values{"log": {log}, "pwd": {"wrong"}}); strings.Contains(body, "Too many failed login attempts") {
+			t.Fatalf("%s refused before the network's budget at the account was used", log)
+		}
+	}
 	_, body, _ := post(t, anon, ts.URL+"/wp-login", url.Values{"log": {"ADMIN@example.test"}, "pwd": {"wrong"}})
 	if !strings.Contains(body, "Too many failed login attempts") {
 		t.Error("the e-mail address has its own per-login budget")

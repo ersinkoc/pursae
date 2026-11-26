@@ -35,7 +35,7 @@ func (s *Server) gocdnOffloadAsync(a *store.Attachment) {
 		return
 	}
 	id := a.ID
-	run := func(f func()) { go f() }
+	run := func(f func()) { safeGo("gocdn_housekeeping.gocdnOffloadAsync", f) }
 	if gocdnOffloadInline {
 		run = func(f func()) { f() }
 	}
@@ -260,10 +260,10 @@ func (s *Server) gocdnMaybePrune(st gocdnSettings) {
 	if !gocdnPruneBusy.CompareAndSwap(false, true) {
 		return
 	}
-	go func() {
+	safeGo("gocdn_housekeeping.gocdnMaybePrune", func() {
 		defer gocdnPruneBusy.Store(false)
 		gocdnPruneDir(s.gocdnCacheDir(), int64(st.ImgCacheMaxMB)<<20)
-	}()
+	})
 }
 
 // gocdnPruneDir deletes the oldest files under dir until the total is within limit bytes.

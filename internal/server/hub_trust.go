@@ -157,8 +157,14 @@ func pluginHubKeys(keys []hubKey) []ed25519.PublicKey {
 // errHubInsecure refuses a plain-http Manager on a public host.
 var errHubInsecure = errors.New("Pursae Manager must be reached over https (http is only allowed for localhost and *.localhost / *.test development hosts); check PURSAE_DEV_HUB_URL")
 
-// localDevHost reports whether host is a loopback or development name, where http is acceptable.
+// localDevHost reports whether host is a loopback or development name, where http is acceptable and
+// the dial may reach loopback. Only a devhub build (a local Pursae Manager) has such hosts
+// (devLocalHubs): a production build's Manager is https://hub.pursae.com, so there a redirect or a
+// listed URL naming localhost, *.test or 127.0.0.1 is refused like any other private target.
 func localDevHost(host string) bool {
+	if !devLocalHubs() {
+		return false
+	}
 	host = strings.ToLower(strings.TrimSuffix(host, "."))
 	if host == "localhost" || strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".test") {
 		return true

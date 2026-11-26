@@ -264,7 +264,7 @@ func (s *Server) hgKickDelivery(id int64, wait time.Duration) {
 		s.hgDeliverQueued(context.Background(), id)
 	}
 	if wait <= 0 {
-		go run()
+		safeGo("headlessgo_webhooks.hgKickDelivery", run)
 		return
 	}
 	time.AfterFunc(wait, run)
@@ -348,12 +348,12 @@ func (s *Server) hgAttemptBatch(ctx context.Context, due []*hgQueued, workers in
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go func() {
+		safeGo("headlessgo_webhooks.hgAttemptBatch", func() {
 			defer wg.Done()
 			for q := range next {
 				s.hgAttemptQueued(ctx, q, false)
 			}
-		}()
+		})
 	}
 	var left []int64
 	for _, q := range due {

@@ -33,7 +33,8 @@ const (
 	themeZipMaxFiles   = 2000
 )
 
-// themeFileExt lists the file types a package may contain: themes carry no executable code.
+// themeFileExt lists the file types a package may contain: no server-side code, but .js (and the
+// templates' inline scripts) run in the browser on every page, so a package is trusted code.
 var themeFileExt = map[string]bool{
 	".json": true, ".html": true, ".css": true, ".js": true, ".map": true, ".svg": true, ".png": true, ".jpg": true, ".jpeg": true,
 	".gif": true, ".webp": true, ".avif": true, ".ico": true, ".woff": true, ".woff2": true, ".ttf": true, ".otf": true, ".md": true, ".txt": true,

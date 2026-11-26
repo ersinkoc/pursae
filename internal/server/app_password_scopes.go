@@ -20,6 +20,13 @@ import (
 //     belongs to no scope (plugin routes, application passwords themselves), is refused.
 //
 // Scopes only ever remove capabilities: a scope's list is intersected with what the user already has.
+//
+// unfiltered_html (raw HTML and scripts in posts, pages, comments, widgets, Web Builder code sections)
+// belongs to the Appearance (themes) scope, not to Content: a stolen or prompt-injected token with the
+// default Content and Media scopes writes HTML through the same KSES filter as a user without
+// unfiltered_html, so it cannot plant a script that runs for an administrator. Appearance, Plugins and
+// Users can each reach full control of the site (site-wide scripts and theme files; plugins with
+// dangerous permissions; this account's own password), so the scope picker says so (appScopeFull).
 
 // appScope describes one scope for the profile screen and the docs.
 type appScope struct {
@@ -34,13 +41,13 @@ var postCaps = []string{"read", "edit_posts", "edit_others_posts", "edit_publish
 
 // appScopes are the scopes in display order.
 var appScopes = []appScope{
-	{"content", "Content", "Posts, pages, reusable blocks, categories, tags, comments and Web Builder documents (their HTML and code sections, custom CSS and design kits also need Appearance).",
-		append(slices.Clone(postCaps), "manage_categories", "moderate_comments", "edit_comment", "unfiltered_html", "list_users")},
+	{"content", "Content", "Posts, pages, reusable blocks, categories, tags, comments and Web Builder documents. HTML is filtered as for an Author (no scripts, event handlers or iframes); raw HTML, code sections, custom CSS and design kits also need Appearance.",
+		append(slices.Clone(postCaps), "manage_categories", "moderate_comments", "edit_comment", "list_users")},
 	{"media", "Media", "Upload and edit files in the Media Library.",
 		[]string{"read", "upload_files", "edit_posts", "edit_others_posts", "edit_published_posts", "delete_posts", "delete_others_posts", "delete_published_posts"}},
-	{"themes", "Appearance", "Themes, theme files, templates, global styles, menus and widgets.",
-		[]string{"read", "switch_themes", "edit_theme_options", "edit_themes", "install_themes", "update_themes", "delete_themes", "customize"}},
-	{"plugins", "Plugins", "List, install, activate and deactivate plugins.",
+	{"themes", "Appearance", "Themes, theme files, templates, global styles, menus and widgets, and raw HTML and scripts (unfiltered_html) wherever the other scopes let the password write.",
+		[]string{"read", "switch_themes", "edit_theme_options", "edit_themes", "install_themes", "update_themes", "delete_themes", "customize", "unfiltered_html"}},
+	{"plugins", "Plugins", "List, install, activate and deactivate plugins (dangerous plugin permissions only when named).",
 		[]string{"read", "activate_plugins", "install_plugins", "update_plugins", "delete_plugins"}},
 	{"cache", "Cache", "Pursae Cache status, purging and settings.",
 		[]string{"read", "manage_options"}},
@@ -53,9 +60,17 @@ var appScopes = []appScope{
 		[]string{"read", "manage_woocommerce", "view_woocommerce_reports", "edit_products", "edit_others_products", "publish_products", "read_private_products",
 			"delete_products", "delete_others_products", "delete_published_products", "delete_private_products", "edit_published_products", "edit_private_products",
 			"manage_product_terms", "edit_shop_orders", "edit_shop_coupons", "moderate_comments", "list_users"}},
-	{"users", "Users", "List, create and edit users.",
-		[]string{"read", "list_users", "create_users", "edit_users", "promote_users", "delete_users"}},
+	{"users", "Users", "List, create, edit and delete users, and change this account's own email and password. Roles, and other users' email and password, need full access.",
+		[]string{"read", "list_users", "create_users", "edit_users", "delete_users"}},
 }
+
+// appScopeFull are the scopes that can reach full control of the site on an administrator's account:
+// Appearance (theme files, site-wide scripts), Plugins (a plugin activated with dangerous permissions)
+// and Users (this account's own password and email). The scope picker marks them.
+var appScopeFull = map[string]bool{"themes": true, "plugins": true, "users": true}
+
+// FullEquivalent reports whether the scope is marked as equivalent to full access (scope picker).
+func (sc appScope) FullEquivalent() bool { return appScopeFull[sc.Slug] }
 
 func appScopeBySlug(slug string) *appScope {
 	for i := range appScopes {
@@ -216,11 +231,29 @@ func appScopeForRoute(route string) string {
 // restScopeSiteCode reports whether the request may write site-wide code: a design's own HTML, CSS
 // and JavaScript (Pursae Web Builder html and code sections, custom CSS, design kits and their
 // overrides, imported sites). The user needs unfiltered_html for that too; a scoped password also
-// needs the themes scope (Appearance). The content scope keeps unfiltered_html for what WordPress
-// gives it (raw HTML in posts and pages), not for code that every page of the site loads.
+// needs the themes scope (Appearance), the only scope that keeps unfiltered_html, so the two checks
+// agree (this one stays as a second line).
 func restScopeSiteCode(c *gin.Context) bool {
 	scopes := restScopes(c)
 	return len(scopes) == 0 || slices.Contains(scopes, "themes")
+}
+
+// appScopeCredentialNeed is what a scoped credential (scopes not empty) lacks to set field ("email",
+// "password" or "roles") of target as actor: "" when it may, "users" when it needs the Users scope,
+// "full_access" when only full access may. The Users scope covers the account's own email and
+// password (/wp/v2/users/me, as documented); roles, and another account's credentials, would let the
+// credential take that account over or hand out administrator, so they need full access.
+func appScopeCredentialNeed(scopes []string, actor, target *store.User, field string) string {
+	if len(scopes) == 0 {
+		return ""
+	}
+	if field == "roles" || actor == nil || target == nil || actor.ID != target.ID {
+		return appScopeFullAccess
+	}
+	if !slices.Contains(scopes, "users") {
+		return "users"
+	}
+	return ""
 }
 
 // restScopeAllows reports whether the scopes of the request's password cover the route.

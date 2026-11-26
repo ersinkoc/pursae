@@ -598,7 +598,7 @@ func (s *Server) bmgrRemoteUpload(ctx context.Context, name string, logf func(st
 	size := fi.Size() + backupcrypt.Overhead(fi.Size())
 	pr, pw := io.Pipe()
 	encErr := make(chan error, 1)
-	go func() {
+	safeGo("backup_remote.bmgrRemoteUpload", func() {
 		w, err := backupcrypt.NewWriter(pw, []byte(st.Passphrase))
 		if err == nil {
 			_, err = io.Copy(w, f)
@@ -608,7 +608,7 @@ func (s *Server) bmgrRemoteUpload(ctx context.Context, name string, logf func(st
 		}
 		pw.CloseWithError(err)
 		encErr <- err
-	}()
+	})
 	start := time.Now()
 	n, err := bmgrRemotePutStream(ctx, cl, key, pr, size, func(done int64) {
 		if pct != nil && size > 0 {

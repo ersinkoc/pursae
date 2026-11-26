@@ -244,7 +244,7 @@ func wp2pSource(m *wp2pManifest) string {
 func (r *wp2pRun) heartbeat(closed context.CancelCauseFunc) (stop func()) {
 	done := make(chan struct{})
 	finished := make(chan struct{})
-	go func() {
+	safeGo("wp2p_import.heartbeat", func() {
 		defer close(finished)
 		t := time.NewTicker(wp2pHeartbeat)
 		defer t.Stop()
@@ -264,7 +264,7 @@ func (r *wp2pRun) heartbeat(closed context.CancelCauseFunc) (stop func()) {
 				}
 			}
 		}
-	}()
+	})
 	return func() { close(done); <-finished }
 }
 

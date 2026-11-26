@@ -383,6 +383,7 @@ func (s *Server) routes() *gin.Engine {
 		admin.GET("/theme-preview", s.themePreviewScreen)
 		admin.POST("/theme-preview", s.themePreviewScreen)
 		admin.Any("/theme-preview/*rest", s.themePreviewSite)
+		r.Any(previewFrameRoute+"/*rest", s.themePreviewFrame) // the sandboxed preview: a token, no cookie (theme_preview_frame.go)
 	}
 	admin.GET("/site-health", s.siteHealth)
 	admin.GET("/scheduled-actions", s.scheduledActionsScreen)
@@ -525,6 +526,7 @@ func (s *Server) securityHeaders() gin.HandlerFunc {
 			h.Set("Strict-Transport-Security", "max-age=31536000")
 		}
 		c.Writer = &cspWriter{ResponseWriter: c.Writer, c: c} // per-response CSP allow-list (csp_embed.go)
+		c.Writer = newNoStoreWriter(c)                        // no-store for admin pages and signed-in requests (nocache.go)
 		c.Next()
 	}
 }

@@ -160,7 +160,7 @@ func (r *phpReader) str() (string, error) {
 	if err := r.expect('"'); err != nil {
 		return "", err
 	}
-	if r.i+n > len(r.s) {
+	if n > len(r.s)-r.i { // not r.i+n > len: a length near MaxInt overflows the sum and passes
 		return "", errPHPSerialized
 	}
 	out := r.s[r.i : r.i+n]

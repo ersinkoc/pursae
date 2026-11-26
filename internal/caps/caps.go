@@ -72,6 +72,52 @@ func RegisterTypeCapWhen(postType, cap string, on func() bool) {
 	typeCaps[postType] = typeCap{cap: cap, on: on}
 }
 
+// typePlurals maps a post type to its own capability type, the plural of register_post_type()'s
+// capability_type with map_meta_cap: the meta capabilities on a Commerce product map to
+// edit_products, edit_others_products, publish_products, read_private_products, delete_products…
+// instead of the post capabilities, so a role that may edit everyone's posts (an editor) does not
+// edit the store's catalogue. Filled once at start-up by RegisterTypePlural(When); read-only afterwards.
+var typePlurals = map[string]typePlural{}
+
+// typePlural is a registered capability type; on (when set) says whether it applies right now.
+type typePlural struct {
+	plural string
+	on     func() bool
+}
+
+// RegisterTypePlural maps the post meta capabilities on posts of postType to the capabilities of
+// plural ("products": edit_products, edit_others_products, …). Call it during package initialisation only.
+func RegisterTypePlural(postType, plural string) { typePlurals[postType] = typePlural{plural: plural} }
+
+// RegisterTypePluralWhen is RegisterTypePlural that applies only while on() reports true (a native
+// plugin's post type, whose name another source may use while the plugin is off).
+// Call it during package initialisation only.
+func RegisterTypePluralWhen(postType, plural string, on func() bool) {
+	typePlurals[postType] = typePlural{plural: plural, on: on}
+}
+
+// Plural is the plural of the primitive capabilities that the meta capabilities on a post of
+// postType map to: "pages" for pages, a registered capability type, otherwise "posts".
+func Plural(postType string) string {
+	if postType == "page" {
+		return "pages"
+	}
+	if tp, ok := typePlurals[postType]; ok && (tp.on == nil || tp.on()) {
+		return tp.plural
+	}
+	return "posts"
+}
+
+// HasTypeCaps reports whether postType has capabilities of its own right now: a type capability
+// (RegisterTypeCap) or a capability type (RegisterTypePlural) that applies.
+func HasTypeCaps(postType string) bool {
+	if tc, ok := typeCaps[postType]; ok && (tc.on == nil || tc.on()) {
+		return true
+	}
+	tp, ok := typePlurals[postType]
+	return ok && (tp.on == nil || tp.on())
+}
+
 // MapMetaCap returns the primitive capabilities required for cap, like WordPress' map_meta_cap().
 func MapMetaCap(userID int64, cap string, post Post) []string {
 	if post != nil {
@@ -89,10 +135,7 @@ func MapMetaCap(userID int64, cap string, post Post) []string {
 		}
 		return []string{cap}
 	}
-	plural := "posts"
-	if post.PostType() == "page" {
-		plural = "pages"
-	}
+	plural := Plural(post.PostType())
 	own := userID != 0 && post.PostAuthorID() == userID
 	status := post.PostStatus()
 

@@ -35,18 +35,57 @@ func (s *Server) lostPassword(c *gin.Context, v loginView) {
 				s.renderAdminTemplate(c, http.StatusOK, "admin/login-lost", v)
 				return
 			}
-			if u, err := s.store.UserByLoginOrEmail(c, login); err == nil {
-				if s.resetRequestAllowed(c, u) {
-					s.asAudit(c, asEvent{Event: "password_reset_requested", Severity: "notice", User: u, Username: u.Login, Message: "A password reset link was requested."})
-					s.sendResetLink(c, u)
-				}
+			// The same answer, after the same time, whether or not the account exists, so the form can't be
+			// used to find accounts: the lookup, the throttle, the key and the mail run beside the request
+			// (lostPasswordRequest), and the answer waits for resetResponseTime whatever they do.
+			start := time.Now()
+			s.goResetRequest(c.Copy(), login)
+			wait := time.NewTimer(resetResponseTime - time.Since(start))
+			select {
+			case <-wait.C:
+			case <-c.Request.Context().Done():
 			}
-			// The same answer whether or not the account exists, so the form can't be used to find accounts.
+			wait.Stop()
 			c.Redirect(http.StatusFound, s.loginPath()+"?checkemail=confirm")
 			return
 		}
 	}
 	s.renderAdminTemplate(c, http.StatusOK, "admin/login-lost", v)
+}
+
+// resetResponseTime is how long every lost-password request takes before it is answered. The work of an
+// existing account (throttle, activity log, key, mail: a few milliseconds of database writes) normally
+// ends well within it, so existing and unknown accounts answer after the same time.
+const resetResponseTime = 250 * time.Millisecond
+
+// goResetRequest runs lostPasswordRequest on its own goroutine, owned by the Server's background
+// machinery when there is one (Close waits for it). c is a copy of the request's context (gin.Context.Copy),
+// so it stays usable after the request was answered.
+func (s *Server) goResetRequest(c *gin.Context, login string) {
+	run := func(context.Context) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("lost password request panicked", "panic", r)
+			}
+		}()
+		s.lostPasswordRequest(c, login)
+	}
+	if s.rt.bgCtx != nil {
+		s.goBackground(run)
+		return
+	}
+	safeGo("lost-password", func() { run(context.Background()) })
+}
+
+// lostPasswordRequest is the work behind a lost-password form: when login names an account and the
+// request is within the reset throttle, log it and mail the account a reset link.
+func (s *Server) lostPasswordRequest(c *gin.Context, login string) {
+	u, err := s.store.UserByLoginOrEmail(c, login)
+	if err != nil || !s.resetRequestAllowed(c, u) {
+		return
+	}
+	s.asAudit(c, asEvent{Event: "password_reset_requested", Severity: "notice", User: u, Username: u.Login, Message: "A password reset link was requested."})
+	s.sendResetLink(c, u)
 }
 
 // resetLink is get_password_reset_key() + the wp-login.php?action=rp URL: a fresh key (hashed in user
@@ -259,9 +298,10 @@ func (s *Server) notifyNewUser(c *gin.Context, u *store.User, sendUser bool) {
 	}
 }
 
-// Password reset requests are limited per IP address and per account so the form cannot be used to
-// flood a mailbox (every request mails the owner and replaces the previous key). The answer shown to
-// the visitor stays the same whether or not a request was throttled or the account exists.
+// Password reset requests are limited per client network (auth.ClientNet: an IPv6 /64 counts as one)
+// and per account so the form cannot be used to flood a mailbox (every request mails the owner and
+// replaces the previous key). The answer shown to the visitor stays the same whether or not a request
+// was throttled or the account exists.
 const (
 	resetRequestMax    = 3
 	resetRequestWindow = 15 * time.Minute
@@ -291,7 +331,7 @@ func (s *Server) resetRequestAllowed(c *gin.Context, u *store.User) bool {
 			resetReqSeen[k] = v
 		}
 	}
-	keys := []string{"ip:" + ip, "user:" + strconv.FormatInt(u.ID, 10)}
+	keys := []string{"ip:" + auth.ClientNet(ip), "user:" + strconv.FormatInt(u.ID, 10)} // IPv6 by its /64
 	for _, k := range keys {
 		if len(resetReqSeen[k]) >= resetRequestMax {
 			return false

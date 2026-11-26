@@ -84,11 +84,11 @@ func (s *Server) queueTrackbacks(p *store.Post, link string) {
 	if raw, _ := p.Meta["_to_ping"].(string); strings.TrimSpace(raw) == "" {
 		return
 	}
-	go func() {
+	safeGo("admin_trackbacks.queueTrackbacks", func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 		s.deliverTrackbacks(ctx, p.ID, link)
-	}()
+	})
 }
 
 // stripTagsSimple drops markup for the trackback excerpt.

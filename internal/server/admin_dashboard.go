@@ -155,7 +155,13 @@ func (s *Server) dashboard(c *gin.Context) {
 		return p.Title
 	}
 
-	future, _, _ := s.store.QueryPosts(ctx, store.PostQuery{Types: []string{"post"}, Statuses: []string{"future"}, OrderBy: "date", Order: "asc", PerPage: 5})
+	// Publishing Soon lists the scheduled posts the user may edit (wp_dashboard_recent_posts() with
+	// perm "editable"): their own unless they may edit everyone's.
+	fq := store.PostQuery{Types: []string{"post"}, Statuses: []string{"future"}, OrderBy: "date", Order: "asc", PerPage: 5}
+	if !u.Can("edit_others_posts", nil) {
+		fq.AuthorID = u.ID
+	}
+	future, _, _ := s.store.QueryPosts(ctx, fq)
 	for _, p := range future {
 		d.Future = append(d.Future, activityItem{Title: title(p), EditURL: links.EditLink(p.ID), When: when(p.Date())})
 	}

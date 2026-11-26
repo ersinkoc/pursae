@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -17,8 +18,9 @@ import (
 // with argon2id (64 MiB). Without care a client could make the server hash every stored password of a
 // user on every request, from any number of requests at once. Here:
 //
-//   - the core login throttle (auth.BeginAttempt) applies to Basic auth, or Pursae Security's limits when
-//     it is active; a password that matched recently (the cache below) is not counted;
+//   - wrong passwords are limited per client network in a bucket of their own (restBeginAttempt,
+//     auth.BeginAppPasswordAttempt), apart from account passwords and account lockouts; a password that
+//     matched recently (the cache below) is not counted;
 //   - auth bounds how many argon2 computations run at once (auth.argonSem);
 //   - the most recently used password is tried first, and a successful match is remembered for a few
 //     minutes, keyed by a SHA-256 of user and password: a working client then costs no argon2 at all
@@ -120,11 +122,52 @@ func (s *Server) matchAppPassword(c *gin.Context, userID int64, pass string) (ap
 	return appPassMatch{}, false
 }
 
+// appPasswordAttempt reports whether a sign-in at login is REST Basic authentication with an Application
+// Password (restAuthUser, rest.go, passes the Basic user name). The Headless API's password sign-in
+// (hgLogin, under hgAPIPrefix) shares restBeginAttempt and restLoginFailed but checks the account
+// password, so it keeps the account limits even when a Basic header names the same user.
+func appPasswordAttempt(c *gin.Context, login string) bool {
+	user, _, ok := c.Request.BasicAuth()
+	if !ok || user != login {
+		return false
+	}
+	p := c.Request.URL.Path
+	return p != hgAPIPrefix && !strings.HasPrefix(p, hgAPIPrefix+"/")
+}
+
+// appPasswordFailureLimit is how many wrong Application Passwords one client network may send per
+// auth.FailedWindow: Pursae Security's ip_max_failures when it is active (0 there means the core
+// default; an allow-listed address has no limit), else auth.MaxFailedLogins.
+func (s *Server) appPasswordFailureLimit(c *gin.Context) int {
+	if s.adminsecOn() {
+		st := s.asLoad()
+		if maintIPAllowed(st.AllowList, clientIP(c)) {
+			return 0
+		}
+		if st.IPMaxFailures > 0 {
+			return st.IPMaxFailures
+		}
+	}
+	return auth.MaxFailedLogins
+}
+
 // restBeginAttempt is the login throttle for Basic auth: the attempt is stored as a failure before any
-// password is hashed and the counts include it, so parallel requests cannot all slip past (auth.BeginAttempt,
-// or Pursae Security's own limits when it is active). refused means too many recent failures; otherwise pass
-// id to restLoginFailed, or drop it when the password is right.
+// password is hashed and the counts include it, so parallel requests cannot all slip past. Application
+// Passwords count in a bucket of their own per client network (auth.BeginAppPasswordAttempt): wrong
+// account passwords and account lockouts never refuse them, and their failures never count against the
+// account. A password sign-in (the Headless API) goes through the account limits (auth.BeginLogin, or
+// Pursae Security's own when it is active). refused means too many recent failures; otherwise pass id to
+// restLoginFailed, or drop it when the password is right.
 func (s *Server) restBeginAttempt(c *gin.Context, login string) (id int64, refused bool) {
+	if appPasswordAttempt(c, login) {
+		id, throttled, err := s.auth.BeginAppPasswordAttempt(c, clientIP(c), strings.ToLower(strings.TrimSpace(login)), s.appPasswordFailureLimit(c))
+		if err != nil {
+			log.Printf("wpgo: application password throttle: %v; attempt refused", err)
+			s.auth.DropAttempt(c, id)
+			return 0, true
+		}
+		return id, throttled
+	}
 	if s.adminsecOn() {
 		id, msg := s.adminsecBeginAttempt(c, login)
 		return id, msg != ""
@@ -133,8 +176,16 @@ func (s *Server) restBeginAttempt(c *gin.Context, login string) (id int64, refus
 	return id, throttled
 }
 
-// restLoginFailed records a failed Basic-auth sign-in for the throttle (or Pursae Security's log).
+// restLoginFailed records a failed Basic-auth sign-in for the throttle (or Pursae Security's log). A wrong
+// Application Password is logged but feeds no lockout: only its own per-network bucket.
 func (s *Server) restLoginFailed(c *gin.Context, login string, u *store.User, reason string, attemptID int64) {
+	if appPasswordAttempt(c, login) {
+		s.auth.AttemptFailed(c, attemptID)
+		if s.adminsecOn() && !s.asLoad().LogFailedSkip {
+			s.asAudit(c, asEvent{Event: "login_failed", Severity: "notice", User: u, Username: login, Object: s.asNormLogin(c, login, u), Message: reason})
+		}
+		return
+	}
 	if s.adminsecOn() {
 		s.adminsecLoginFailed(c, login, u, reason, attemptID)
 		return

@@ -15,11 +15,11 @@ and the styles and scripts it loads. There are two kinds:
 | Where | compiled into the binary (`web/themes/<slug>/` + a `theme_<slug>.go`) | `<data>/themes/<slug>/` (`PURSAE_THEMES_DIR`) |
 | `functions.php` equivalent | Go code: a `*Theme` registered at start-up with hooks for `wp_head`, body classes, template data | `theme.json`: everything a Go theme registers in code, declared as data |
 | Install | ship with Pursae | Appearance › Themes › Add Theme › Upload, or from the [marketplace](../hub/marketplace.md) |
-| Code | yes (Go, reviewed with the core) | **none** — templates, CSS, JS, images. Not signed; verified by SHA-256 |
+| Code | yes (Go, reviewed with the core) | no Go code, but templates, CSS, images **and JavaScript that runs on the site**. Not signed; verified by SHA-256 |
 
 This section is about **theme packages**: what you write to make a theme for Pursae.
-Everything a package can express is also what the bundled Classic theme uses, so its templates in
-`web/themes/classic/templates` are the reference implementation.
+Everything a package can express is also what the bundled Twenty Twenty-Five theme uses, so its templates in
+`web/themes/twentytwentyfive/templates` are the reference implementation.
 
 ## What a theme controls
 
@@ -38,7 +38,15 @@ Everything a package can express is also what the bundled Classic theme uses, so
 The core builds the whole page model — the document title, `wp_head()` output, body classes,
 the loop, pagination, comments, menus, widget areas, the admin bar — and the theme decides how
 to print it. A theme never queries the database or sanitises input; it formats data the core
-already prepared, which is why packages can be code-free and safe to install.
+already prepared. Templates read only the site's **public** settings (`setting`, `settingStr`, …
+answer the zero value for anything else, see [templates](templates.md#functions)).
+
+That does not make a package harmless: its templates may print inline scripts and its `scripts[]`
+run on every page of the site, in the visitors' and the logged-in administrators' browsers, with
+the access any script on the site has. Themes are not signed (the Library and the installer only
+check the SHA-256 the Manager lists), so **install only themes you trust**, from the Library or an
+author you know. Live Preview runs the previewed theme in a sandboxed frame (an opaque origin,
+without your login), so previewing an untrusted theme is safe; installing it is not.
 
 ## Pursae Web Builder pages and templates
 

@@ -102,7 +102,7 @@ func (s *Store) QueryComments(ctx context.Context, q CommentQuery) ([]*Comment, 
 		where = append(where, "c.type IN ('pingback','trackback')")
 	}
 	if q.Search != "" {
-		p := arg(likeContains(strings.ToLower(q.Search)))
+		p := arg(likeContains(strings.ToLower(ValidText(q.Search))))
 		if q.SearchPublic {
 			where = append(where, "(lower(c.content) LIKE "+p+" OR lower(c.author_name) LIKE "+p+")")
 		} else {
@@ -174,6 +174,7 @@ func (s *Store) SetCommentStatus(ctx context.Context, id int64, status string) e
 
 // UpdateComment saves the fields editable on comment.php.
 func (s *Store) UpdateComment(ctx context.Context, c *Comment) error {
+	validComment(c)
 	_, err := s.Pool.Exec(ctx, `UPDATE comments SET author_name = $2, author_email = $3, author_url = $4, content = $5,
 		status = $6, created_at = $7 WHERE id = $1`, c.ID, c.AuthorName, c.AuthorEmail, c.AuthorURL, c.Content, c.Status, c.CreatedAt)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -308,5 +309,190 @@ func TestGooExtBundlesHiddenItems(t *testing.T) {
 	}
 	if h, _ := srv.gooEmailOrderDetails(ctx, o, false, nil); !strings.Contains(h, "Hidden Sockpair") {
 		t.Error("hidden item still hidden with the module off")
+	}
+}
+
+// K1: a bundled item without an admin max took any quantity, and its line (that quantity × the
+// bundle's) wrapped around: 6148914691236516864 × 3 is -24 in int64, a negative line that brought
+// the cart total to 0 and placed a guest order without payment. Quantities are now bounded at add
+// to cart, a forged stamp drops its bundle, and Calculate / checkout never keep a negative line.
+func TestGooExtBundlesQuantityOverflow(t *testing.T) {
+	_, _, srv := gooSite(t)
+	ctx := context.Background()
+	gxTestGateway(t, srv)
+	virt := func(p *gooProduct) { p.Virtual = true }
+	widget := gooMakeSimple(t, srv, "Widget", 100, virt)
+	part := gooMakeSimple(t, srv, "Spare part", 100, virt)
+	b := gooNewProduct(bnType)
+	b.Name, b.RegularPrice, b.Virtual = "Parts kit", gooFloatPtr(0), true
+	b = gxSavePanels(t, srv, b, bnKey, url.Values{
+		"bundle_item_id[]":             {""},
+		"bundle_product_id[]":          {itoa64(part.ID)},
+		"bundle_quantity_default[]":    {"1"},
+		"bundle_quantity_min[]":        {"1"},
+		"bundle_quantity_max[]":        {""}, // no limit
+		"bundle_optional[]":            {"no"},
+		"bundle_priced_individually[]": {"yes"},
+	})
+	items := bnItemsOf(b)
+	if len(items) != 1 || items[0].Max != 0 || !items[0].PricedIndividual {
+		t.Fatalf("saved bundled items: %+v", items)
+	}
+	if err := srv.gooSetExtension(ctx, bnKey, true); err != nil {
+		t.Fatal(err)
+	}
+	itemID := strconv.Itoa(items[0].ID)
+	qtyField := "bundle_quantity_" + itemID
+	sound := func(where string, cart *gooCart) {
+		t.Helper()
+		for _, it := range cart.Items {
+			if it.Quantity < 1 || it.Quantity > gooMaxLineQty || it.LineSubtotal < 0 || it.LineTotal < 0 {
+				t.Errorf("%s: line %d has quantity %d, subtotal %v, total %v", where, it.ProductID, it.Quantity, it.LineSubtotal, it.LineTotal)
+			}
+		}
+	}
+	childOf := func(cart *gooCart, key string) *gooCartItem {
+		for _, it := range cart.Items {
+			if bnBundledBy(it) == key {
+				return it
+			}
+		}
+		return nil
+	}
+
+	// The reported request: 5 widgets, then 3 kits with 6148914691236516864 parts each.
+	c := gooTestCtx()
+	cart := srv.gooCartFor(c)
+	if _, err := cart.Add(ctx, widget.ID, 5, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range []string{"6148914691236516864", "9223372036854775807", "99999999999999999999", "1000001", "-1"} {
+		if _, err := cart.Add(ctx, b.ID, 3, 0, nil, map[string][]string{qtyField: {n}}, nil); err == nil {
+			t.Errorf("%s = %s was accepted", qtyField, n)
+		}
+	}
+	// Each quantity is under the cap, the kits' line (400000 × 3) is not.
+	if _, err := cart.Add(ctx, b.ID, 3, 0, nil, map[string][]string{qtyField: {"400000"}}, nil); err == nil {
+		t.Error("a bundled line over the quantity cap was accepted")
+	}
+	sound("after the refused bundles", cart)
+	if len(cart.Items) != 1 || cart.Total != 500 {
+		t.Fatalf("cart after the refused bundles: %d lines, total %v", len(cart.Items), cart.Total)
+	}
+
+	// Ordinary quantities still work: 2 parts per kit × 3 kits.
+	key, err := cart.Add(ctx, b.ID, 3, 0, nil, map[string][]string{qtyField: {"2"}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if child := childOf(cart, key); child == nil || child.Quantity != 6 {
+		t.Fatalf("bundled line: %+v", child)
+	}
+	gooAlmost(t, "subtotal with 3 kits", cart.Subtotal, 500+600)
+	sound("with 3 kits", cart)
+
+	// The same numbers forged into the session's stamp: the kit and its parts leave the cart, the
+	// checkout stops once to say so, then places the order at the widgets' full price.
+	st, _ := bnStamp(cart.Item(key))[itemID].(map[string]any)
+	if st == nil {
+		t.Fatalf("stamp: %+v", bnStamp(cart.Item(key)))
+	}
+	st["quantity"] = float64(6148914691236516864)
+	forged := &gooCart{s: srv, c: c, sess: cart.sess}
+	forged.load(ctx)
+	forged.Calculate()
+	sound("forged stamp", forged)
+	if len(forged.Items) != 1 || forged.Items[0].ProductID != widget.ID || forged.Total != 500 {
+		t.Fatalf("cart with a forged stamp: %d lines, total %v", len(forged.Items), forged.Total)
+	}
+	if len(forged.sess.Data.Cart) != 1 {
+		t.Errorf("the forged bundle stayed in the session: %d lines", len(forged.sess.Data.Cart))
+	}
+	c.Set("goo.cart", forged)
+	if o, errs := gxCheckout(t, srv, c, "goo_test"); o != nil || !strings.Contains(strings.Join(errs, " "), "Parts kit") {
+		t.Fatalf("checkout right after the forged bundle was dropped: order %v, notices %v", o, errs)
+	}
+	o, errs := gxCheckout(t, srv, c, "goo_test")
+	if len(errs) > 0 || o == nil {
+		t.Fatalf("checkout: %v", errs)
+	}
+	gooAlmost(t, "order total", o.Total, 500)
+	for _, li := range o.ItemsOf("line_item") {
+		if li.Quantity <= 0 || li.Total < 0 {
+			t.Errorf("order line %s: quantity %v, total %v", li.Name, li.Quantity, li.Total)
+		}
+	}
+
+	// Other forged stamps: fractional or negative quantities drop the kit too; 0 keeps the kit
+	// without that item's line.
+	for _, q := range []float64{1.5, -2, 0} {
+		c2 := gooTestCtx()
+		cart2 := srv.gooCartFor(c2)
+		k2, err := cart2.Add(ctx, b.ID, 1, 0, nil, map[string][]string{qtyField: {"1"}}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bnStamp(cart2.Item(k2))[itemID].(map[string]any)["quantity"] = q
+		again := &gooCart{s: srv, c: c2, sess: cart2.sess}
+		again.load(ctx)
+		again.Calculate()
+		sound("stamp quantity "+gxFmt(q), again)
+		if want := map[bool]int{true: 1, false: 0}[q == 0]; len(again.Items) != want {
+			t.Errorf("stamp quantity %v: %d lines, want %d", q, len(again.Items), want)
+		}
+	}
+
+	// A kit quantity raised past what its parts can follow (2 × 600000): the kit leaves the cart
+	// instead of its parts' line passing the cap.
+	c3 := gooTestCtx()
+	cart3 := srv.gooCartFor(c3)
+	k3, err := cart3.Add(ctx, b.ID, 1, 0, nil, map[string][]string{qtyField: {"2"}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = cart3.SetQuantity(ctx, k3, 600000)
+	sound("kit quantity over what its parts can follow", cart3)
+	if cart3.Item(k3) != nil || childOf(cart3, k3) != nil {
+		t.Errorf("kit kept with %d lines", len(cart3.Items))
+	}
+
+	// The backstops: Calculate drops a line with an invalid quantity and never keeps a negative unit
+	// price; an order is never created from a line with a bad quantity or a negative total.
+	c4 := gooTestCtx()
+	cart4 := srv.gooCartFor(c4)
+	if _, err := cart4.Add(ctx, widget.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cart4.Add(ctx, part.ID, 1, 0, nil, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	cart4.Items[1].Quantity = -24
+	cart4.Calculate()
+	sound("negative line", cart4)
+	if len(cart4.Items) != 1 || cart4.Total != 100 || len(cart4.sess.Data.Cart) != 1 || len(cart4.Errors()) == 0 {
+		t.Fatalf("negative line kept: %d lines, total %v", len(cart4.Items), cart4.Total)
+	}
+	cart4.Items[0].Price = -100
+	cart4.dropInvalidLines()
+	if cart4.Items[0].Price != 0 {
+		t.Errorf("negative unit price kept: %v", cart4.Items[0].Price)
+	}
+	cart4.Calculate()
+	if err := srv.gooCheckOrderLines(cart4); err != nil {
+		t.Fatalf("a valid cart refused: %v", err)
+	}
+	for name, mut := range map[string]func(it *gooCartItem){
+		"zero quantity":     func(it *gooCartItem) { it.Quantity = 0 },
+		"negative quantity": func(it *gooCartItem) { it.Quantity = -24 },
+		"quantity over cap": func(it *gooCartItem) { it.Quantity = gooMaxLineQty + 1 },
+		"negative total":    func(it *gooCartItem) { it.LineTotal = -2400 },
+		"negative subtotal": func(it *gooCartItem) { it.LineSubtotal = -2400 },
+	} {
+		cart4.Items[0].Quantity = 1
+		cart4.Calculate()
+		mut(cart4.Items[0])
+		if err := srv.gooCheckOrderLines(cart4); err == nil {
+			t.Errorf("%s: order lines accepted", name)
+		}
 	}
 }

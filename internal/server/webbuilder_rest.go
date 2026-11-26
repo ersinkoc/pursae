@@ -1434,10 +1434,11 @@ func (s *Server) wbLocalizeFonts(needs []webbuilder.FontNeed) {
 			return
 		}
 		wg.Add(1)
-		go func(family string) {
+		family := f.Family
+		safeGo("webbuilder_rest.wbLocalizeFonts", func() {
 			defer wg.Done()
 			s.gfontEnsure(family, wbFontsWait)
-		}(f.Family)
+		})
 	}
 	wg.Wait()
 }

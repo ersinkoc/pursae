@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"html"
 	"html/template"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -145,8 +147,17 @@ func (s *Server) login(c *gin.Context) {
 		fail("<strong>Error:</strong> The password field is empty.")
 		return
 	}
+	// An account under a distributed password attack asks a network it does not know for the CAPTCHA
+	// too, when keys are configured (login_captcha.go); a missing answer is no guess and is not counted.
+	if widget, msg := s.loginPressureCaptcha(c, login); widget != "" {
+		v.Captcha = widget
+		if msg != "" {
+			fail(string(msg))
+			return
+		}
+	}
 	// Core throttle: the attempt is recorded (as a failure) before the password is checked, so parallel
-	// guesses cannot all slip past the count; see auth.BeginAttempt.
+	// guesses cannot all slip past the count; see auth.BeginLogin.
 	var attemptID int64
 	attemptKey := login
 	if secOn { // Pursae Security: the same count-first rule against its own limits
@@ -267,17 +278,36 @@ func (s *Server) logout(c *gin.Context) {
 	c.Redirect(http.StatusFound, safeRedirect(c.Query("redirect_to"), s.loginPath()+"?loggedout=true"))
 }
 
-// coreBeginAttempt is auth.BeginAttempt keyed by the account (its lowercased login) when the typed
+// coreBeginAttempt is auth.BeginLogin keyed by the account (its lowercased login) when the typed
 // name or e-mail address resolves to one, so the username and the e-mail share one per-login budget.
-// A storage error refuses the attempt instead of letting it through unthrottled.
+// At an account under attack it waits the delay BeginLogin asks for before returning (the password is
+// checked after it). A storage error refuses the attempt instead of letting it through unthrottled.
 func (s *Server) coreBeginAttempt(c *gin.Context, typed string) (id int64, key string, throttled bool) {
 	u, _ := s.store.UserByLoginOrEmail(c, typed)
 	key = s.asNormLogin(c, typed, u)
-	id, throttled, err := s.auth.BeginAttempt(c, clientIP(c), key)
+	a, err := s.auth.BeginLogin(c, clientIP(c), key)
 	if err != nil {
 		log.Printf("wpgo: login throttle: %v; attempt refused", err)
-		s.auth.DropAttempt(c, id)
+		s.auth.DropAttempt(c, a.ID)
 		return 0, key, true
 	}
-	return id, key, throttled
+	if a.Throttled {
+		return 0, key, true
+	}
+	loginSlowdown(c.Request.Context(), a.Delay)
+	return a.ID, key, false
+}
+
+// loginSlowdown waits d before a password is checked at an account under attack (auth.BeginLogin), or
+// until the client goes away. A variable for tests.
+var loginSlowdown = func(ctx context.Context, d time.Duration) {
+	if d <= 0 {
+		return
+	}
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-t.C:
+	case <-ctx.Done():
+	}
 }

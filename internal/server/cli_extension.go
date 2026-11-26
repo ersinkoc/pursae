@@ -313,25 +313,46 @@ func pluginNotFound(rows []pluginRow, slug string) error {
 	return cli.Errorf("the '%s' plugin could not be found", slug)
 }
 
-// grantedPermissions is what activate grants a Wasm plugin: every permission its manifest asks
-// for (as REST and MCP do), or the --grant list ("none" grants nothing). Names the manifest does
-// not declare are refused.
+// safePluginPermissions are the permissions a manifest declares minus the dangerous ones
+// (content:html, admin:scripts: the equivalent of an administrator's session). It is what the REST
+// API, MCP and the CLI grant when no permissions are named; the consent screen leaves the dangerous
+// ones unticked as well, so they are granted only when someone names them.
+func safePluginPermissions(declared []permRow) []string {
+	out := make([]string, 0, len(declared))
+	for _, p := range declared {
+		if !p.Danger && !plugins.Permission(p.Name).Dangerous() {
+			out = append(out, p.Name)
+		}
+	}
+	return out
+}
+
+// grantedPermissions is what activate grants a Wasm plugin: without --grant every permission its
+// manifest asks for except the dangerous ones (as REST and MCP do); with --grant the names listed,
+// where "all" stands for every non-dangerous one and "none" (alone) grants nothing. A dangerous
+// permission is granted only when it is named. Names the manifest does not declare are refused.
 func grantedPermissions(declared []permRow, grant []string, given bool) ([]string, error) {
 	all := make([]string, 0, len(declared))
 	for _, p := range declared {
 		all = append(all, p.Name)
 	}
+	safe := safePluginPermissions(declared)
 	if !given {
-		return all, nil
+		return safe, nil
 	}
 	if len(grant) == 1 && (grant[0] == "none" || grant[0] == "") {
 		return []string{}, nil
 	}
-	if len(grant) == 1 && grant[0] == "all" {
-		return all, nil
-	}
 	out := []string{}
 	for _, g := range grant {
+		if g == "all" {
+			for _, p := range safe {
+				if !slices.Contains(out, p) {
+					out = append(out, p)
+				}
+			}
+			continue
+		}
 		if !slices.Contains(all, g) {
 			if len(all) == 0 {
 				return nil, cli.Usagef("unknown permission %q: the plugin asks for none", g)
@@ -518,12 +539,14 @@ func registerPluginCLI(r *cli.Registry, e *cliEnv) {
 		Short: "Activate one or more plugins.",
 		Long: "Runs the Plugins screen's activation: a built-in plugin is switched on with its side effects\n" +
 			"(scheduled events, roles, content types, pages); a Wasm package is verified, loaded and its\n" +
-			"activate hook runs. A Wasm plugin is granted every permission its manifest asks for, like the\n" +
-			"REST API, unless --grant names them (--grant=none grants nothing). Plugins it requires must be\n" +
-			"active first. Running servers load a Wasm plugin within about 20 seconds.",
+			"activate hook runs. A Wasm plugin is granted every permission its manifest asks for except the\n" +
+			"dangerous ones (content:html, admin:scripts: the equivalent of an administrator's session), like\n" +
+			"the REST API; --grant names the permissions instead (all = every non-dangerous one, none =\n" +
+			"nothing), and a dangerous permission is granted only when --grant names it. Plugins it requires\n" +
+			"must be active first. Running servers load a Wasm plugin within about 20 seconds.",
 		Args:     []cli.Arg{{Name: "plugin", Usage: "Plugin slug.", Optional: true, Repeat: true}},
-		Flags:    actionFlags(cli.Flag{Name: "grant", Usage: "Permissions to grant a Wasm plugin, comma-separated; all (default) or none."}),
-		Examples: []string{"plugin activate seo-go", "plugin activate my-plugin --grant=options:read,content:read", "plugin activate --all"},
+		Flags:    actionFlags(cli.Flag{Name: "grant", Usage: "Permissions to grant a Wasm plugin, comma-separated: names, all (every non-dangerous one; the default) or none. content:html and admin:scripts only when named."}),
+		Examples: []string{"plugin activate seo-go", "plugin activate my-plugin --grant=options:read,content:filter", "plugin activate my-plugin --grant=all,content:html", "plugin activate --all"},
 		Run: func(c *cli.Ctx) error {
 			return e.pluginActivate(c, c.Bool("all"))
 		},
@@ -566,7 +589,7 @@ func registerPluginCLI(r *cli.Registry, e *cliEnv) {
 		Flags: []cli.Flag{
 			{Name: "activate", Bool: true, Usage: "Activate the plugins after installing them."},
 			{Name: "force", Bool: true, Usage: "Replace an installed plugin even with an older version or another signer."},
-			{Name: "grant", Usage: "With --activate: permissions to grant, comma-separated; all (default) or none."},
+			{Name: "grant", Usage: "With --activate: permissions to grant, comma-separated: names, all (every non-dangerous one; the default) or none. content:html and admin:scripts only when named."},
 		},
 		Examples: []string{"plugin install ./my-plugin-1.2.0.zip --activate", "plugin install hello-dolly", "plugin install - < my-plugin.zip"},
 		Run:      e.pluginInstall,
@@ -759,6 +782,11 @@ func (e *cliEnv) activatePlugins(c *cli.Ctx, s *Server, targets []pluginRow) err
 		if !r.Native {
 			if perms, err = grantedPermissions(r.Permissions, c.List("grant"), c.Has("grant")); err != nil {
 				return err
+			}
+			for _, p := range r.Permissions {
+				if plugins.Permission(p.Name).Dangerous() && !slices.Contains(perms, p.Name) {
+					c.Warning("plugin '%s' asks for %s (%s): not granted; name it with --grant to grant it.", r.Slug, p.Name, p.Description)
+				}
 			}
 		}
 		if err := s.cliPluginAction(c.Context, u, "activate", r.Slug, perms); err != nil {

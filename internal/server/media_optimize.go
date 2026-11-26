@@ -314,7 +314,7 @@ func (s *Server) optimizeAllAsync(resume bool) bool {
 	optimizeLive = &j
 	optimizeMu.Unlock()
 	s.optimizePersist(ctx, j)
-	go func() {
+	safeGo("media_optimize.optimizeAllAsync", func() {
 		defer optimizeRunning.Store(false)
 		for _, id := range todo {
 			if optimizeStop.Load() {
@@ -350,7 +350,7 @@ func (s *Server) optimizeAllAsync(resume bool) bool {
 		s.purgeAll(ctx) // pages show the new image URLs
 		s.announceMediaChange(ctx)
 		slog.Info("optimize images finished", "done", snap.Done, "skipped", snap.Skipped, "failed", snap.Failed, "stopped", snap.Stopped)
-	}()
+	})
 	return true
 }
 

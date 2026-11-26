@@ -405,7 +405,7 @@ func (s *Server) pixelDispatch(ev pixelServerEvent) {
 			}
 			continue
 		}
-		go func() {
+		safeGo("pixelgo_capi.pixelDispatch", func() {
 			defer pixelQueued.Add(-1)
 			if claim != "" {
 				defer pixelInflight.Delete(claim)
@@ -419,7 +419,7 @@ func (s *Server) pixelDispatch(ev pixelServerEvent) {
 			if status != "skipped" || ev.Test {
 				s.pixelLog(ctx, &st, def.Key, ev, status, code, msg)
 			}
-		}()
+		})
 	}
 }
 

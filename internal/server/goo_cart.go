@@ -733,6 +733,7 @@ func (cart *gooCart) Calculate() {
 			h(s, ctx, cart, it)
 		}
 	}
+	cart.dropInvalidLines()
 	for _, it := range cart.Items {
 		it.Subtotal = it.Price * float64(it.Quantity)
 		it.LineSubtotalTaxes = map[int64]float64{}
@@ -932,6 +933,31 @@ func (cart *gooCart) Calculate() {
 	}
 	cart.Subtotal, cart.SubtotalTax = gooRound(cart.Subtotal, dp), gooRound(cart.SubtotalTax, dp)
 	cart.CartContentsTotal, cart.CartContentsTax = gooRound(cart.CartContentsTotal, dp), gooRound(cart.CartContentsTax, dp)
+}
+
+// dropInvalidLines keeps a line total from ever being negative: a line whose quantity is outside
+// 1…gooMaxLineQty (Add, SetQuantity and load never let one in, but a module's price hook may set
+// it: bundled items follow their container) leaves the cart, and a negative unit price counts as 0.
+func (cart *gooCart) dropInvalidLines() {
+	keep := make([]*gooCartItem, 0, len(cart.Items))
+	for _, it := range cart.Items {
+		if it.Quantity < 1 || it.Quantity > gooMaxLineQty {
+			name := "A product"
+			if it.product != nil {
+				name = it.product.Name
+			}
+			cart.errors = append(cart.errors, fmt.Sprintf("%s has been removed from your cart because its quantity is not valid.", html.EscapeString(name)))
+			continue
+		}
+		if !(it.Price >= 0) { // negative or NaN
+			it.Price = 0
+		}
+		keep = append(keep, it)
+	}
+	if len(keep) != len(cart.Items) {
+		cart.Items = keep
+		cart.persist()
+	}
 }
 
 // inheritedShippingTaxClass is the shipping tax class from the cart items: standard when any item

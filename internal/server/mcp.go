@@ -360,8 +360,8 @@ var mcpTools = func() []*mcpTool {
 
 	slug := map[string]any{"slug": str("Plugin slug (see list_plugins).")}
 	add(&mcpTool{Name: "list_plugins", Desc: "List plugins: built-in (native) ones and installed Wasm packages, with active state.", Method: http.MethodGet, Path: "/pursae/v1/plugins"})
-	add(&mcpTool{Name: "activate_plugin", Desc: "Activate a plugin. A Wasm plugin gets the permissions in permissions (default: all its manifest asks for).",
-		Method: http.MethodPost, Path: "/pursae/v1/plugins/{slug}/activate", Props: map[string]any{"slug": slug["slug"], "permissions": strList("Wasm permissions to grant.")}, Required: []string{"slug"}})
+	add(&mcpTool{Name: "activate_plugin", Desc: "Activate a plugin. A Wasm plugin gets the permissions in permissions (default: all its manifest asks for except the dangerous content:html and admin:scripts, which give it the equivalent of an administrator's session and are granted only when listed; ask the user first).",
+		Method: http.MethodPost, Path: "/pursae/v1/plugins/{slug}/activate", Props: map[string]any{"slug": slug["slug"], "permissions": strList("Wasm permissions to grant (replaces the default; list content:html or admin:scripts only with the user's consent).")}, Required: []string{"slug"}})
 	add(&mcpTool{Name: "deactivate_plugin", Desc: "Deactivate a plugin.", Method: http.MethodPost, Path: "/pursae/v1/plugins/{slug}/deactivate", Props: slug, Required: []string{"slug"}})
 	add(&mcpTool{Name: "install_plugin", Desc: "Install a signed Wasm plugin package (zip, base64). It is installed inactive.", Method: http.MethodPost, Path: "/pursae/v1/plugins",
 		Props: map[string]any{"package": str("The package zip, base64.")}, Required: []string{"package"}})

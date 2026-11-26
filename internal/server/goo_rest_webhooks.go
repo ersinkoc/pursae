@@ -59,11 +59,11 @@ var (
 func gooWebhookEnqueue(t *gooWebhookTask) {
 	gooWebhookStartOnce.Do(func() {
 		for range gooWebhookWorkers {
-			go func() {
+			safeGo("goo_rest_webhooks.gooWebhookEnqueue", func() {
 				for t := range gooWebhookQueue {
 					t.run()
 				}
-			}()
+			})
 		}
 	})
 	select {

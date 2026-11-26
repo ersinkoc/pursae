@@ -232,7 +232,13 @@ var optionGroups = map[string]optionGroup{
 			return s.msSave(ctx, v)
 		}),
 	"maintenance": groupOf(maintSlug, "Pursae Maintenance", (*Server).maintLoad,
-		func(s *Server, ctx context.Context, v maintSettings) error { return s.maintSave(ctx, v) }, (*Server).maintCheckRaw),
+		func(s *Server, ctx context.Context, v maintSettings) error {
+			// A new site password is stored only as its hash, as the settings form stores it (D16).
+			if err := maintHashNewPassword(s.maintLoad().SitePassword, &v); err != nil {
+				return err
+			}
+			return s.maintSave(ctx, v)
+		}, (*Server).maintCheckRaw, (*Server).maintCheckAPIPassword),
 	"headless": groupOf(hgSlug, "Pursae Headless", (*Server).hgLoad,
 		func(s *Server, ctx context.Context, v hgSettings) error { return s.hgSaveSettings(ctx, v) }),
 }

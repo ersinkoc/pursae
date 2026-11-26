@@ -283,18 +283,23 @@ func (s *Server) oauthAuthorize(c *gin.Context) {
 		}
 		c.Redirect(http.StatusFound, redirect+sep+q.Encode())
 	}
+	// Errors found before the user decided are shown here, never sent to redirect_uri: clients register
+	// themselves anonymously (oauthRegister), so a registered redirect_uri proves nothing about where it
+	// leads, and redirecting a malformed request to it would make this site an open redirector (RFC 9700
+	// §4.11; OAuth 2.1 sends errors to the client only once client and redirect are trusted). Only the
+	// user's own answer on the consent screen (approve, deny) goes back to the client.
 	if f.Get("response_type") != "code" {
-		back(url.Values{"error": {"unsupported_response_type"}})
+		fail("Unsupported response_type: only \"code\" is supported.")
 		return
 	}
 	challenge := f.Get("code_challenge")
 	if f.Get("code_challenge_method") != "S256" || len(challenge) < 43 || len(challenge) > 128 {
-		back(url.Values{"error": {"invalid_request"}, "error_description": {"PKCE with code_challenge_method=S256 is required."}})
+		fail("Invalid request: PKCE with code_challenge_method=S256 is required.")
 		return
 	}
 	resource, ok := s.oauthCanonicalResource(c, f.Get("resource"))
 	if !ok {
-		back(url.Values{"error": {"invalid_target"}})
+		fail("Invalid resource: this server only issues tokens for its MCP endpoint.")
 		return
 	}
 	asked := normalizeAppScopes(strings.Fields(strings.ReplaceAll(f.Get("scope"), ",", " ")))

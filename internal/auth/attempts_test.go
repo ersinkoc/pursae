@@ -124,7 +124,9 @@ func TestBeginAttemptIsAtomic(t *testing.T) {
 	}
 }
 
-// Guesses at one user name spread over many addresses are bounded too.
+// Guesses at one user name spread over many addresses put it under attack: a fresh address is slowed
+// down and gets fewer guesses there, but is not refused outright (that would let anyone lock the owner
+// out); see TestDistributedFailuresDoNotLockOwner.
 func TestBeginAttemptPerLogin(t *testing.T) {
 	m := attemptsManager(t)
 	ctx := context.Background()
@@ -133,11 +135,11 @@ func TestBeginAttemptPerLogin(t *testing.T) {
 			t.Fatalf("attempt %d throttled too early", i)
 		}
 	}
-	if _, throttled, _ := m.BeginAttempt(ctx, "192.0.2.1", "admin"); !throttled {
-		t.Fatal("a fresh address guessing a user name with 20 recent failures was not throttled")
+	if a, err := m.BeginLogin(ctx, "192.0.2.1", "admin"); err != nil || a.Throttled || a.Delay <= 0 {
+		t.Fatalf("a fresh address at a user name with 20 recent failures: %+v %v, want a delayed attempt", a, err)
 	}
-	if _, throttled, _ := m.BeginAttempt(ctx, "192.0.2.1", "someone-else"); throttled {
-		t.Fatal("another user name from a fresh address was throttled")
+	if a, _ := m.BeginLogin(ctx, "192.0.2.1", "someone-else"); a.Throttled || a.Delay != 0 {
+		t.Fatalf("another user name from a fresh address: %+v", a)
 	}
 	// A success turns the attempt into a success and clears that login's failures from the address.
 	id, _, _ := m.BeginAttempt(ctx, "192.0.2.9", "carol")

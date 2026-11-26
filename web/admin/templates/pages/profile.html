@@ -269,6 +269,7 @@
 	.application-password-scopes tbody td.column-allows{color:#50575e}
 	.application-password-scopes tbody tr.is-checked{background:#f0f6fc}
 	.application-password-scopes .scopes-summary{margin:6px 0 0}
+	.application-password-scopes .scope-full{color:#b32d2e}
 	@media screen and (max-width:782px){.application-password-scopes .column-area{width:7em}.application-password-scopes .check-column{width:2.5em}}
 	</style>
 	<p class="scopes-title">Limit access to</p>
@@ -282,7 +283,7 @@
 	{{range .Scopes}}<tr{{if .Checked}} class="is-checked"{{end}}>
 		<th scope="row" class="check-column"><input type="checkbox" id="scope-{{$n}}-{{.Slug}}" name="{{$n}}" value="{{.Slug}}"{{if .Checked}} checked{{end}} /></th>
 		<td class="column-area"><label for="scope-{{$n}}-{{.Slug}}">{{.Label}}</label></td>
-		<td class="column-allows">{{.Description}}</td>
+		<td class="column-allows">{{.Description}}{{if .FullEquivalent}} <strong class="scope-full">Equivalent to full access</strong> on an administrator&#8217;s account.{{end}}</td>
 	</tr>
 	{{end}}</tbody>
 	</table>

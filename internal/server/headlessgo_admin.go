@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1518,25 +1519,27 @@ func (s *Server) hgGQLTranslateErrors(c *gin.Context, out map[string]any) {
 // hgAdminCaps maps an entry action of the admin screen to WordPress capabilities: publishing,
 // unpublishing and scheduling need publish_posts, changing another user's entry needs
 // edit_others_posts, deleting needs delete_posts (delete_others_posts for another user's entry).
-// Administrators (manage_options) are always allowed.
+// Taking over another editor's lock and submitting for review are changes too (edit_others_posts
+// for another user's entry). Administrators (manage_options) are always allowed.
 func (s *Server) hgAdminCaps(c *gin.Context, u *store.User, sc *hgSchema, do, doc, loc string) error {
 	if u.Can("manage_options", nil) {
 		return nil
 	}
 	action := strings.TrimPrefix(do, "bulk:")
-	var own = true
 	if sc.IsSingle() {
 		doc = s.hgSingleDoc(c, sc.UID)
 	}
-	if doc != "" {
-		if e, err := s.hgGetEntry(c, sc.UID, doc, loc); err == nil && e.CreatedBy != u.ID {
-			own = false
-		}
-	}
+	// Deleting, and a bulk action with "all languages", act on every locale version of the document.
+	all := !sc.Localized || c.PostForm("all_locales") == "1" && (strings.HasPrefix(do, "bulk:") || action == "delete_entry")
+	own := s.hgOwnsDoc(c, u, sc, doc, loc, all)
 	deny := errors.New("Sorry, you are not allowed to do that.")
 	switch action {
-	case "lock_takeover", "submit_review", "approve_review", "reject_review":
-		return nil // approve/reject are gated by hgCanReview
+	case "approve_review", "reject_review":
+		return nil // gated by hgCanReview
+	case "lock_takeover", "submit_review":
+		if !own && !u.Can("edit_others_posts", nil) {
+			return deny
+		}
 	case "publish_entry", "unpublish_entry", "schedule_entry", "publish", "unpublish":
 		if !u.Can("publish_posts", nil) || (!own && !u.Can("edit_others_posts", nil)) {
 			return deny
@@ -1558,4 +1561,30 @@ func (s *Server) hgAdminCaps(c *gin.Context, u *store.User, sc *hgSchema, do, do
 		}
 	}
 	return nil
+}
+
+// hgOwnsDoc reports whether u owns what an action on a document changes: a new entry (no document
+// yet) is theirs; otherwise the locale version addressed (or, when it does not exist yet, every
+// version of the document) must have been created by u, and with all every locale version must.
+// A document that does not exist is not owned: a missing version is never a reason to skip the
+// edit_others_posts / delete_others_posts check.
+func (s *Server) hgOwnsDoc(ctx context.Context, u *store.User, sc *hgSchema, doc, loc string, all bool) bool {
+	if doc == "" {
+		return true
+	}
+	versions := s.hgDocLocales(ctx, sc.UID, doc)
+	if len(versions) == 0 {
+		return false
+	}
+	if !all {
+		if e, ok := versions[loc]; ok {
+			return e.CreatedBy == u.ID
+		}
+	}
+	for _, e := range versions {
+		if e.CreatedBy != u.ID {
+			return false
+		}
+	}
+	return true
 }

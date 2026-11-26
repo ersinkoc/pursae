@@ -140,7 +140,7 @@ markup rather than building them from the file name.
 | `kses s` | `wp_kses_post()`: print user-written HTML (post meta, excerpts) with only the tags and safe styles post content may hold |
 | `date t format` | format a `time.Time` in the site's time zone with a WordPress format string (`"F j, Y"`); `""` uses the site's date format |
 | `dateFormat`, `timeFormat` | the site's formats |
-| `setting key`, `settingStr key`, `settingBool key`, `settingInt key`, `settingID key` | read an option (`settingStr "blogname"`, `settingBool "show_avatars"`) |
+| `setting key`, `settingStr key`, `settingBool key`, `settingInt key`, `settingID key` | read a **public** option (`settingStr "blogname"`, `settingBool "show_avatars"`): WordPress' public settings (`blogname`, `blogdescription`, `siteurl`, `home`, `WPLANG`, `timezone_string`, `gmt_offset`, `date_format`, `time_format`, `start_of_week`, `posts_per_page`, `posts_per_rss`, `rss_use_excerpt`, `show_on_front`, `page_on_front`, `page_for_posts`, `wp_page_for_privacy_policy`, `site_icon`, `site_logo`, `sticky_posts`, `blog_public`, `users_can_register`, the comment, avatar, image size and permalink settings, `template`, `stylesheet`, …) and `theme_mods_<active theme>`. Any other key (keys, secrets, licenses, the admin e-mail, plugin settings) reads as `""`, `false`, `0` or `nil`, and the server logs the key once. Prefer the view: `.SiteName`, `.Description`, `.HomeURL`, `.CustomLogo`, `theme_mod` |
 | `plural n one many` | `"%s post"` / `"%s posts"` with the number inserted |
 | `num n` | number with thousands separators |
 | `add a b`, `sub a b`, `seq from to` | arithmetic and ranges (`{{range seq 1 .TotalPages}}`) |

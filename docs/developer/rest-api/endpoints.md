@@ -88,7 +88,7 @@ The routes AI agents and scripts use to run a site. Each checks the capability o
 |-------|---------|-------|
 | `/pursae/v1/plugins` | GET, POST | list built-in and Wasm plugins (`activate_plugins`); `POST {"package": "<base64 zip>"}` installs a signed package, inactive (`install_plugins`) |
 | `/pursae/v1/plugins/{slug}` | GET, DELETE | one plugin; `DELETE` removes an installed Wasm plugin (`delete_plugins`; built-in plugins only deactivate) |
-| `/pursae/v1/plugins/{slug}/activate`, `/deactivate` | POST | the Plugins screen's own action; a Wasm plugin gets `permissions` (array; default: all its manifest asks for) |
+| `/pursae/v1/plugins/{slug}/activate`, `/deactivate` | POST | the Plugins screen's own action; a Wasm plugin gets `permissions` (array; default: all its manifest asks for except the dangerous `content:html` and `admin:scripts`, which give it the equivalent of an administrator's session and are granted only when listed, as the consent screen leaves them unticked) |
 | `/pursae/v1/themes` | GET, POST | list themes (`switch_themes`); `POST {"package": "<base64 zip>", "activate": true}` installs a [theme package](../themes/index.md) (`install_themes`) |
 | `/pursae/v1/themes/{slug}` | DELETE | delete an inactive theme (`delete_themes`) |
 | `/pursae/v1/themes/{slug}/activate` | POST | switch theme |

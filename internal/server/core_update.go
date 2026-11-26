@@ -347,7 +347,7 @@ func (s *Server) coreRestartInto(c *gin.Context, target, version string, reinsta
 // coreRestartLater hands the site over to the binary at target a second from now (after the answer has
 // left); coreBusy is released only when the hand-over did not happen.
 func (s *Server) coreRestartLater(target string) {
-	go func() {
+	safeGo("core_update.coreRestartLater", func() {
 		defer coreBusy.Store(false) // reached only when the exec did not happen (or in tests)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		s.hubFlushEvents(ctx)
@@ -364,7 +364,7 @@ func (s *Server) coreRestartLater(target string) {
 				coreExit(1)
 			}
 		}
-	}()
+	})
 }
 
 // coreTryBinary runs the downloaded binary once (`version`) before it replaces the running one: a

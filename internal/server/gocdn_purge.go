@@ -273,11 +273,11 @@ func (q *cdnPurgeQueue) flush(ctx context.Context, s *Server) {
 	}
 	q.mu.Unlock()
 	done := make(chan struct{})
-	go func() {
+	safeGo("gocdn_purge.flush", func() {
 		q.drain(s)  // runs the pending batch, or returns at once when a purge is in flight …
 		q.wg.Wait() // … which then picks the batch up
 		close(done)
-	}()
+	})
 	select {
 	case <-done:
 	case <-ctx.Done():
@@ -303,10 +303,10 @@ func (s *Server) gocdnCDNPurgeEach(ctx context.Context, st gocdnSettings, urls [
 		}
 		res[i] = gocdnPurgeResult{Provider: t.Provider, Name: name}
 		wg.Add(1)
-		go func() {
+		safeGo("gocdn_purge.gocdnCDNPurgeEach", func() {
 			defer wg.Done()
 			res[i].Err = s.gocdnPurgeOne(ctx, st, t, urls)
-		}()
+		})
 	}
 	wg.Wait()
 	return res

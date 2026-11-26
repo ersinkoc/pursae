@@ -260,7 +260,7 @@ func (s *Server) resolve(c *gin.Context, path string) (*siteQuery, error) {
 		}
 		return s.singular(c, q, p)
 	case v.Get("s") != "" || v.Has("s"):
-		q.Kind, q.Search = "search", strings.TrimSpace(v.Get("s"))
+		q.Kind, q.Search = "search", strings.TrimSpace(store.ValidText(v.Get("s"))) // ?s=%FF: no results, not a database error
 		return q, nil
 	case v.Get("cat") != "":
 		id, _ := strconv.ParseInt(v.Get("cat"), 10, 64)
@@ -409,7 +409,7 @@ func (s *Server) resolvePretty(c *gin.Context, q *siteQuery, path string) (*site
 		return q, nil
 	case strings.HasPrefix(path, "search/"):
 		raw, _ := url.PathUnescape(strings.TrimPrefix(path, "search/"))
-		q.Kind, q.Search = "search", strings.ReplaceAll(raw, "+", " ")
+		q.Kind, q.Search = "search", store.ValidText(strings.ReplaceAll(raw, "+", " "))
 		return q, nil
 	}
 

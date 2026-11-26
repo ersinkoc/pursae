@@ -199,11 +199,22 @@ func bnAddToCart(s *Server, ctx context.Context, p *gooProduct, qty int, form ma
 		if n < it.Min {
 			return gooCartErr("The quantity of &quot;%s&quot; cannot be lower than %d.", name, it.Min)
 		}
+		if n < 0 {
+			return gooCartErr("The quantity of &quot;%s&quot; cannot be lower than %d.", name, max(it.Min, 0))
+		}
+		// The admin's max is optional (0 = no limit), the line cap is not: the child line is n × the
+		// bundle's quantity, and an unbounded n wraps it to a negative quantity (a free order).
+		if n > gooMaxLineQty {
+			return gooCartErr("You cannot add that amount to the cart.")
+		}
 		if it.Max > 0 && n > it.Max {
 			return gooCartErr("The quantity of &quot;%s&quot; cannot be higher than %d.", name, it.Max)
 		}
 		if n <= 0 {
 			continue
+		}
+		if qty > 0 && n > gooMaxLineQty/qty {
+			return gooCartErr("You cannot add that amount to the cart.")
 		}
 		buy := cp
 		var varID int64
@@ -277,12 +288,46 @@ func bnStamp(it *gooCartItem) map[string]any {
 
 func bnBundledBy(it *gooCartItem) string { return gxStr(it.Data["bundled_by"]) }
 
+// bnChildQty is a bundled item's line quantity: the stamp's quantity per bundle × the container's
+// quantity. ok is false when no add-to-cart could have produced it (a quantity per bundle that is
+// negative, fractional or over the line cap, or a product over the line cap): a damaged or forged
+// session, or a container quantity raised past what its children can follow.
+func bnChildQty(st map[string]any, containerQty int) (int, bool) {
+	q := gxNum(st["quantity"])
+	if !(q >= 0 && q <= gooMaxLineQty) || q != math.Trunc(q) || containerQty < 1 || containerQty > gooMaxLineQty {
+		return 0, false
+	}
+	n := int(q)
+	if n > gooMaxLineQty/containerQty { // n × containerQty, without overflowing
+		return 0, false
+	}
+	return n * containerQty, true
+}
+
+// bnStampValid reports whether every bundled item of a container has a valid line quantity.
+func bnStampValid(container *gooCartItem) bool {
+	for _, v := range bnStamp(container) {
+		st, _ := v.(map[string]any)
+		if _, ok := bnChildQty(st, container.Quantity); !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // bnReconcile keeps the cart's bundles consistent: orphan children go, missing children come back,
-// child quantities follow their container.
+// child quantities follow their container. A bundle whose child quantities are invalid (see
+// bnChildQty) is removed with its children.
 func (s *Server) bnReconcile(ctx context.Context, cart *gooCart) {
 	containers := map[string]*gooCartItem{}
+	damaged := map[string]bool{}
 	for _, it := range cart.Items {
 		if it.product != nil && it.product.Type == bnType && bnStamp(it) != nil {
+			if !bnStampValid(it) {
+				damaged[it.Key] = true
+				cart.errors = append(cart.errors, fmt.Sprintf("%s has been removed from your cart because the quantities of its bundled items are not valid.", html.EscapeString(it.product.Name)))
+				continue
+			}
 			containers[it.Key] = it
 		}
 	}
@@ -290,6 +335,10 @@ func (s *Server) bnReconcile(ctx context.Context, cart *gooCart) {
 	var items []*gooCartItem
 	have := map[string]*gooCartItem{} // container key + item id → child
 	for _, it := range cart.Items {
+		if damaged[it.Key] {
+			changed = true
+			continue
+		}
 		if by := bnBundledBy(it); by != "" {
 			if containers[by] == nil {
 				changed = true // the container was removed: so are its items
@@ -321,8 +370,12 @@ func (s *Server) bnReconcile(ctx context.Context, cart *gooCart) {
 		sort.Slice(ids, func(i, j int) bool { return gxAtoi(ids[i]) < gxAtoi(ids[j]) })
 		for _, id := range ids {
 			st, _ := stamp[id].(map[string]any)
-			want := int(gxNum(st["quantity"])) * it.Quantity
+			want, _ := bnChildQty(st, it.Quantity) // checked by bnStampValid
 			child := have[it.Key+"|"+id]
+			if want == 0 {
+				changed = changed || child != nil // an item chosen 0 times has no line
+				continue
+			}
 			if child == nil {
 				child = s.bnNewChild(ctx, it, id, st, bundleItems[id])
 				if child == nil {

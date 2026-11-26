@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/caps"
 	"wpgo/internal/store"
 )
 
@@ -36,6 +37,16 @@ const (
 
 	acfgoAssets = "/wp-admin/assets/acfgo/"
 )
+
+// Field groups, post types, taxonomies and options pages are site configuration, edited only on
+// ACF-Go's screens (manage_options): every post meta capability on them requires manage_options,
+// so the core's generic post handlers (Quick Edit, Custom Fields, REST revisions, …) cannot be
+// used to switch them on or off, rename them or read them with the post capabilities.
+func init() {
+	for _, t := range []string{acfgoGroupType, acfgoPostType, acfgoTaxType, acfgoOptionsType} {
+		caps.RegisterTypeCap(t, "manage_options")
+	}
+}
 
 // acfgoRegisterAssets adds ACF-Go's script and style handles to the registry (after assets.go's
 // init has loaded it, hence not in an init of this file).

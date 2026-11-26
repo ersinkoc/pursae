@@ -358,12 +358,22 @@ func sanitizeSlug(t string) string {
 	return strings.Trim(b.String(), "-")
 }
 
+// seogoMetaType reports whether posts of type typ have SEO fields (the types seogoEditor adds its
+// box to; products only while Commerce is on).
+func (s *Server) seogoMetaType(typ string) bool {
+	return typ == "post" || typ == "page" || typ == "product" && s.gooOn() || siteCPT(typ) != nil
+}
+
 // seogoRESTMeta reads or writes the SEO fields of a post (the Gotenberg sidebar saves with it).
+//
+// Only the types that have SEO fields (Search Appearance's content types: posts, pages, products
+// while Commerce is on, Pursae Custom Fields post types) are served: the route takes any post id,
+// and a contact form, a field group or a template is not content to describe to search engines.
 func (s *Server) seogoRESTMeta(c *gin.Context, r *restRequest) {
 	ctx := c.Request.Context()
 	u := restCurrent(c)
 	p, err := s.store.GetPost(ctx, r.ID())
-	if err != nil || !u.Can("edit_post", p) {
+	if err != nil || !s.seogoMetaType(p.Type) || !u.Can("edit_post", p) {
 		restErr(c, http.StatusForbidden, "rest_forbidden", "Sorry, you are not allowed to edit this post.")
 		return
 	}

@@ -516,7 +516,7 @@ lets Claude, Cursor and other MCP clients run the site:
 
 - **Plugins** are Go compiled to signed Wasm, sandboxed and permission-gated — [plugin docs](docs/developer/plugins/index.md), [signing](docs/developer/plugins/packaging-and-signing.md).
 - **Built in**: the [18 plugins above](#built-in-plugins) ([what each replaces](docs/developer/benchmarks.md#whats-built-in)).
-- **Themes** are zip packages of templates and assets with no code in them — [theme packages](docs/theme-package.md); a marketplace of both on the [Hub](docs/developer/hub/index.md).
+- **Themes** are zip packages of templates and assets with no Go code in them — [theme packages](docs/theme-package.md); a marketplace of both on the [Hub](docs/developer/hub/index.md). A theme can still ship JavaScript that runs on your site, so install only themes you trust; the settings functions of theme templates return only the site's public settings.
 
 ## Performance benchmarks
 
@@ -556,12 +556,23 @@ updates, the theme and plugin marketplace and licenses. Here is everything it se
 
 | When | What |
 |------|------|
-| Once a day (and a minute after a core update) | the site's URL, Pursae version, language, OS and CPU architecture, license key (if you entered one), active theme, and the list of installed plugins and themes with their versions, whether they are active, and where they came from (built in, from the Hub, uploaded) |
-| As it happens (sent in batches) | what was done with packages: a plugin installed, updated, activated, deactivated or deleted; a theme installed, updated, activated, previewed or deleted; a demo imported; the core updated — each with the slug, version and time |
-| On every request to the Hub | the site's URL and license key as headers; the Hub also sees the server's IP address, as any web server does |
+| Once a day (also right after installation and a minute after a core update) | the site's URL, Pursae version and license key (if you entered one). With **usage statistics** on (the default) also: language, OS and CPU architecture, active theme, and the list of installed plugins and themes with their versions, whether they are active, and where they came from (built in, from the Hub, uploaded) |
+| In the same daily ping, only for users who opted in | the **e-mail address, display name and role** of each user who asked for Pursae product update e-mails: the unticked box on the install screen, or the "Pursae updates" switch in that user's own profile. Only users who work in the admin (`edit_posts`) are asked, at most 50 per site; the time of consent is kept on the site. This is a per-user choice, separate from the statistics switch, and sent whatever that switch says; when a user turns it off, the next ping removes the address from the Manager. Nobody is opted in by default, and subscribers and shop customers are never asked nor sent |
+| As it happens (sent in batches), only with usage statistics on | what was done with packages: a plugin installed, updated, activated, deactivated or deleted; a theme installed, updated, activated, previewed or deleted; a demo imported; the core updated — each with the slug, version and time |
+| On every request to the Hub | the site's URL and license key as headers (`X-Pursae-Site`, `X-Pursae-License`) and the site's URL in the User-Agent; the Hub also sees the server's IP address, as any web server does |
+
+**Usage statistics** can be switched off under **Settings › License** ("Send usage statistics to Pursae
+Manager", the `pursae_send_stats` option). Off, the daily ping carries only the site's URL, version
+and license key (and the opted-in contacts above), and no events are queued.
+
+**Local sites report nothing.** A site whose address is local (`localhost`, `*.localhost`, `*.local`,
+`*.test`, or a loopback, private or link-local IP) sends no daily ping, no contacts and no events. It
+still reads the Manager's catalogue and update information (with the headers of the last row), but
+development and test installs never show up among the Manager's sites or in its statistics.
 
 The Hub uses this for the numbers you see on it (theme and plugin download and install counts, which
-versions sites run) and to decide what a license unlocks. **It never receives your content, users,
+versions sites run), to decide what a license unlocks, and to send product update e-mails to the users
+who asked for them. **Apart from those opted-in contacts it never receives your content, users,
 e-mail addresses, passwords, visitors, orders or anything else from your database.**
 
 What a site gets back:

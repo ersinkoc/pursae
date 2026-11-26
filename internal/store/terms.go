@@ -156,7 +156,7 @@ func (s *Store) QueryTerms(ctx context.Context, q TermQuery) ([]*Term, int, erro
 	args := []any{q.Taxonomy}
 	conds := []string{"taxonomy = $1"}
 	if q.Search != "" {
-		args = append(args, likeContains(q.Search))
+		args = append(args, likeContains(ValidText(q.Search)))
 		conds = append(conds, "(name ILIKE $"+strconv.Itoa(len(args))+" OR slug ILIKE $"+strconv.Itoa(len(args))+")")
 	}
 	if q.HideEmpty {

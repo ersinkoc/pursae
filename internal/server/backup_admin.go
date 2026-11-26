@@ -249,11 +249,11 @@ func (s *Server) bmgrPostBackup(c *gin.Context) {
 		c.Redirect(http.StatusFound, s.bmgrBack("&tab=create&bmgr-error="+url.QueryEscape(err.Error())))
 		return
 	}
-	go func() {
+	safeGo("backup_admin.bmgrPostBackup", func() {
 		name, err := s.bmgrRunBackup(s.bmgrCancelable(j), j, sel)
 		s.bmgrUpdate(j, func(j *bmgrJob) { j.File = name })
 		s.bmgrFinish(j, err)
-	}()
+	})
 	c.Redirect(http.StatusFound, s.bmgrBack("&tab=create&job="+j.ID))
 }
 
@@ -278,7 +278,7 @@ func (s *Server) bmgrPostRestore(c *gin.Context) {
 		c.Redirect(http.StatusFound, back+"&bmgr-error="+url.QueryEscape(err.Error()))
 		return
 	}
-	go func() { s.bmgrFinish(j, s.bmgrRunRestore(context.Background(), j, req)) }()
+	safeGo("backup_admin.bmgrPostRestore", func() { s.bmgrFinish(j, s.bmgrRunRestore(context.Background(), j, req)) })
 	c.Redirect(http.StatusFound, back+"&job="+j.ID)
 }
 

@@ -27,7 +27,11 @@ import (
 // pursae-manager/API.md. Every request carries the site's home URL and, when one is entered, its
 // license key (hubNewRequest); the answers may depend on the license, so the cached ones are keyed by it.
 // Once a day the site pings the Manager with its version and inventory and sends the events it queued
-// (hub_telemetry.go); statistics are always on.
+// (hub_telemetry.go). The statistics (inventory, platform, events) are on by default and switched off
+// with pursae_send_stats (Settings › License); the ping then carries only the site, version and license.
+// Either way it carries the opted-in update e-mail contacts (hub_contacts.go). A site with a local
+// address sends no ping and no events at all (hubSiteIsLocal). README.md › "What Pursae sends to
+// hub.pursae.com" lists all of it for site owners; keep the two in step.
 
 const (
 	hubCacheTTL   = 12 * time.Hour

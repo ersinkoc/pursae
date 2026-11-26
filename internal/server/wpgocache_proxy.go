@@ -132,9 +132,9 @@ func (s *Server) forwardProxyPurge(p cache.Purge) {
 	if err != nil || req == nil {
 		return
 	}
-	go func() {
+	safeGo("wpgocache_proxy.forwardProxyPurge", func() {
 		if err := sendProxyPurge(req); err != nil {
 			slog.Warn("page cache: forwarding a purge to the front proxy", "err", err)
 		}
-	}()
+	})
 }

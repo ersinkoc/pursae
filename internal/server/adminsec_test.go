@@ -676,10 +676,12 @@ func TestAdminSecAppPasswordsBypass2FA(t *testing.T) {
 	if code, _, _, _ := rc.do("GET", "/wp/v2/users/me", nil); code != http.StatusUnauthorized {
 		t.Errorf("account password on the API: %d", code)
 	}
-	// Lockouts apply to the API too.
+	// The lockout of the client's network applies to the API too. (Wrong Application Passwords alone lock
+	// nothing: they are throttled in their own per-network bucket, app_password_auth.go.)
 	asConfigure(t, srv, func(st *asSettings) { st.IPMaxFailures = 2 })
-	rc.basic[1] = "wrong"
-	rc.do("GET", "/wp/v2/users/me", nil)
+	for i := 0; i < 2; i++ {
+		asLogin(t, asNewClient(), base, "/wp-login", "admin", "wrong")
+	}
 	rc.basic[1] = shown[1]
 	if code, _, _, _ := rc.do("GET", "/wp/v2/users/me", nil); code != http.StatusTooManyRequests {
 		t.Errorf("locked-out IP on the API: %d", code)

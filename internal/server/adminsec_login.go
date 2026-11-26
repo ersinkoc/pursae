@@ -280,12 +280,36 @@ func (s *Server) adminsecGate(c *gin.Context, u *store.User) bool {
 }
 
 // --- lockouts ----------------------------------------------------------------------------
+//
+// What Pursae Security counts and locks (see auth/throttle.go for the core's own limits):
+//
+//   - ip_max_failures per client network (auth.ClientNet: an IPv4 address, an IPv6 /64): an "ip" lockout
+//     of the network. A lockout an administrator made for a single address is honoured too.
+//   - user_max_failures per account AND client network: a "user" lockout whose value is
+//     "<login> from <network>". Failing at an account from one network never locks the account for the
+//     other networks, so nobody can lock the owner (an administrator, say) out by failing at their
+//     username. Lockouts made per account alone by earlier versions are no longer created or enforced.
+//   - user_max_failures failures at an account from every network within fail_window put it "under
+//     attack" (asAccountPressure): a network that has not signed in to it within a day, and is no
+//     remembered device of the account, then waits up to auth.MaxAccountDelay before its password is
+//     checked, gets at most auth.MaxFailedPerLoginNetUnderAttack failures there, and on /wp-login is asked
+//     for the CAPTCHA when keys are configured (login_captcha.go). A correct password from a network
+//     that has not failed still signs in.
 
 // asLockedUntil returns the end of an active lockout of kind/value.
 func (s *Server) asLockedUntil(ctx context.Context, kind, value string) (time.Time, bool) {
 	var until time.Time
 	err := s.store.Pool.QueryRow(ctx, `SELECT until FROM adminsec_lockouts WHERE kind = $1 AND value = $2 AND until > now() AND NOT released
 		ORDER BY until DESC LIMIT 1`, kind, value).Scan(&until)
+	return until, err == nil
+}
+
+// asNetLockedUntil returns the end of an active lockout of the client's network, or of its own address
+// (an administrator's "Lock IP").
+func (s *Server) asNetLockedUntil(ctx context.Context, ip string) (time.Time, bool) {
+	var until time.Time
+	err := s.store.Pool.QueryRow(ctx, `SELECT until FROM adminsec_lockouts WHERE kind = 'ip' AND value IN ($1, $2) AND until > now() AND NOT released
+		ORDER BY until DESC LIMIT 1`, auth.ClientNet(ip), strings.TrimSpace(ip)).Scan(&until)
 	return until, err == nil
 }
 
@@ -300,6 +324,10 @@ func asWait(until time.Time) string {
 	return "a minute"
 }
 
+func asLockedMsg(until time.Time) template.HTML {
+	return template.HTML("<strong>Error:</strong> Too many failed login attempts. Please try again in " + asWait(until) + ".")
+}
+
 // asNormLogin is the username a login attempt is counted against: the account's login when the
 // name or e-mail belongs to one, else what was typed, lowercased.
 func (s *Server) asNormLogin(ctx context.Context, login string, u *store.User) string {
@@ -309,8 +337,33 @@ func (s *Server) asNormLogin(ctx context.Context, login string, u *store.User) s
 	return strings.ToLower(strings.TrimSpace(login))
 }
 
-// adminsecPreLogin checks a login attempt before the password: the block list, then IP and
-// username lockouts (the allow list skips lockouts). It returns the error to show, or "".
+// asBucket is what a lockout counts failures in: adminsec_lockouts kind/value, and the login_attempts
+// rows that belong to it.
+type asBucket struct {
+	kind, value string
+	login, net  string // login_attempts filter: lower(login) (when set) and ip, the client network
+}
+
+func asNetBucket(net string) asBucket { return asBucket{kind: "ip", value: net, net: net} }
+
+// asUserBucket is one account seen from one client network (no bucket without a name).
+func asUserBucket(name, net string) asBucket {
+	if name == "" || net == "" {
+		return asBucket{kind: "user"}
+	}
+	return asBucket{kind: "user", value: name + " from " + net, login: name, net: net}
+}
+
+func (b asBucket) where() (string, []any) {
+	if b.login != "" {
+		return "ip = $1 AND lower(login) = $2", []any{b.net, b.login}
+	}
+	return "ip = $1", []any{b.net}
+}
+
+// adminsecPreLogin checks a login attempt before the password: the block list, then the lockouts of the
+// client network and of the account from this network (the allow list skips lockouts). It returns the
+// error to show, or "".
 func (s *Server) adminsecPreLogin(c *gin.Context, login string) template.HTML {
 	st := s.asLoad()
 	ip := clientIP(c)
@@ -321,88 +374,114 @@ func (s *Server) adminsecPreLogin(c *gin.Context, login string) template.HTML {
 	if maintIPAllowed(st.AllowList, ip) {
 		return ""
 	}
-	if until, ok := s.asLockedUntil(c, "ip", ip); ok {
-		return template.HTML("<strong>Error:</strong> Too many failed login attempts. Please try again in " + asWait(until) + ".")
+	if until, ok := s.asNetLockedUntil(c, ip); ok {
+		return asLockedMsg(until)
 	}
 	if login != "" {
 		u, _ := s.store.UserByLoginOrEmail(c, login)
-		if until, ok := s.asLockedUntil(c, "user", s.asNormLogin(c, login, u)); ok {
-			return template.HTML("<strong>Error:</strong> Too many failed login attempts. Please try again in " + asWait(until) + ".")
+		if b := asUserBucket(s.asNormLogin(c, login, u), auth.ClientNet(ip)); b.value != "" {
+			if until, ok := s.asLockedUntil(c, b.kind, b.value); ok {
+				return asLockedMsg(until)
+			}
 		}
 	}
 	return ""
 }
 
 // adminsecBeginAttempt counts a password attempt before the password is checked, as the core throttle does
-// (auth.BeginAttempt): parallel guesses cannot all pass adminsecPreLogin before any is recorded. The attempt is
+// (auth.BeginLogin): parallel guesses cannot all pass adminsecPreLogin before any is recorded. The attempt is
 // stored as pending first; when the recent failures plus the attempts in flight (this one included) go past
-// the IP or username limit, this request alone is refused without checking its password, so at most max
-// passwords are checked per window. In-flight attempts never start a lockout: only adminsecLoginFailed does,
-// once a password was really checked and was wrong (parallel requests with a correct password must not lock
-// anyone out). It returns the stored attempt (pass it to adminsecLoginFailed, or drop it on a correct
-// password) or the message to show.
+// the network or the account-from-this-network limit, this request alone is refused without checking its
+// password, so at most max passwords are checked per window. In-flight attempts never start a lockout: only
+// adminsecLoginFailed does, once a password was really checked and was wrong (parallel requests with a correct
+// password must not lock anyone out). At an account under attack (asAccountPressure) a network it does not
+// know gets a smaller budget and waits before its password is checked. It returns the stored attempt (pass it
+// to adminsecLoginFailed, or drop it on a correct password) or the message to show.
 func (s *Server) adminsecBeginAttempt(c *gin.Context, login string) (int64, template.HTML) {
 	st := s.asLoad()
 	ip := clientIP(c)
+	net := auth.ClientNet(ip)
+	allowed := maintIPAllowed(st.AllowList, ip)
 	u, _ := s.store.UserByLoginOrEmail(c, login)
 	name := s.asNormLogin(c, login, u)
-	for _, kv := range [][2]string{{"ip", ip}, {"user", name}} {
-		if kv[1] == "" {
-			continue
+	user := asUserBucket(name, net)
+	if !allowed {
+		if until, ok := s.asNetLockedUntil(c, ip); ok {
+			return 0, asLockedMsg(until)
 		}
-		if until, ok := s.asLockedUntil(c, kv[0], kv[1]); ok && !maintIPAllowed(st.AllowList, ip) {
-			return 0, template.HTML("<strong>Error:</strong> Too many failed login attempts. Please try again in " + asWait(until) + ".")
+		if user.value != "" {
+			if until, ok := s.asLockedUntil(c, user.kind, user.value); ok {
+				return 0, asLockedMsg(until)
+			}
 		}
 	}
 	id, err := s.auth.ProvisionalAttempt(c, ip, name)
 	if err != nil {
 		return 0, "" // adminsecLoginFailed records the failure the old way
 	}
-	if maintIPAllowed(st.AllowList, ip) {
+	if allowed {
 		return id, ""
 	}
-	if s.asAttemptsOver(c, st, "ip", ip, st.IPMaxFailures) || s.asAttemptsOver(c, st, "user", name, st.UserMaxFailures) {
+	if s.asAttemptsOver(c, st, asNetBucket(net), st.IPMaxFailures) || s.asAttemptsOver(c, st, user, st.UserMaxFailures) {
 		s.auth.DropAttempt(c, id) // refused unchecked: not a guess, and no lockout
 		return 0, "<strong>Error:</strong> Too many login attempts. Please try again in a minute."
+	}
+	if p, hot := s.asAccountPressure(c, st, name, u, id); hot {
+		if p.NetFailures >= min(auth.MaxFailedPerLoginNetUnderAttack, st.UserMaxFailures) {
+			s.auth.DropAttempt(c, id)
+			return 0, template.HTML(fmt.Sprintf("<strong>Error:</strong> Too many failed login attempts. Please try again in %d minutes.", max1(st.FailWindow)))
+		}
+		loginSlowdown(c.Request.Context(), auth.AccountDelay(p.Failures, st.UserMaxFailures))
 	}
 	return id, ""
 }
 
-// asFailWindowStart is where the failures counted for kind/value begin: the failure window, or the last
-// lockout when it is more recent (failures before it were already counted by it).
-func (s *Server) asFailWindowStart(c *gin.Context, st asSettings, kind, value string) time.Time {
+// asAccountPressure reports whether the account name is under attack as seen from this request: at least
+// user_max_failures failures at it from every network within fail_window (leaving out the attempt exclude),
+// from a network that has not signed in to it recently and without a remembered-device cookie of the account.
+func (s *Server) asAccountPressure(c *gin.Context, st asSettings, name string, u *store.User, exclude int64) (auth.Pressure, bool) {
+	if st.UserMaxFailures <= 0 || name == "" {
+		return auth.Pressure{}, false
+	}
+	p, err := s.auth.LoginPressure(c, clientIP(c), name, time.Duration(max1(st.FailWindow))*time.Minute, exclude)
+	if err != nil || p.KnownNet || p.Failures < st.UserMaxFailures {
+		return p, false
+	}
+	if u != nil && s.asRememberedDevice(c, u) {
+		return p, false
+	}
+	return p, true
+}
+
+// asFailWindowStart is where the failures counted for a bucket begin: the failure window, or the bucket's
+// last lockout when it is more recent (failures before it were already counted by it).
+func (s *Server) asFailWindowStart(c *gin.Context, st asSettings, b asBucket) time.Time {
 	since := time.Now().Add(-time.Duration(max1(st.FailWindow)) * time.Minute)
 	var last time.Time
-	if err := s.store.Pool.QueryRow(c, `SELECT max(created_at) FROM adminsec_lockouts WHERE kind = $1 AND value = $2`, kind, value).Scan(&last); err == nil && last.After(since) {
+	if err := s.store.Pool.QueryRow(c, `SELECT max(created_at) FROM adminsec_lockouts WHERE kind = $1 AND value = $2`, b.kind, b.value).Scan(&last); err == nil && last.After(since) {
 		since = last
 	}
 	return since
 }
 
-func asAttemptCol(kind string) string {
-	if kind == "user" {
-		return "lower(login) = $1"
-	}
-	return "ip = $1"
-}
-
-// asAttemptsOver reports whether the recent failures of kind/value plus the attempts still in flight go
-// past max (the caller's own pending attempt is one of them).
-func (s *Server) asAttemptsOver(c *gin.Context, st asSettings, kind, value string, max int) bool {
-	if max <= 0 || value == "" {
+// asAttemptsOver reports whether the recent failures in b plus the attempts still in flight go past max
+// (the caller's own pending attempt is one of them).
+func (s *Server) asAttemptsOver(c *gin.Context, st asSettings, b asBucket, max int) bool {
+	if max <= 0 || b.value == "" {
 		return false
 	}
+	where, args := b.where()
 	var n int
-	if err := s.store.Pool.QueryRow(c, `SELECT count(*) FROM login_attempts WHERE `+asAttemptCol(kind)+` AND NOT success AND attempted_at > $2`,
-		value, s.asFailWindowStart(c, st, kind, value)).Scan(&n); err != nil {
+	if err := s.store.Pool.QueryRow(c, `SELECT count(*) FROM login_attempts WHERE `+where+` AND NOT success AND attempted_at > $`+strconv.Itoa(len(args)+1),
+		append(args, s.asFailWindowStart(c, st, b))...).Scan(&n); err != nil {
 		return false
 	}
 	return n > max
 }
 
-// adminsecLoginFailed records a failed attempt (wrong user, password or code) and locks the IP
-// or the username out once it has too many recent failures. attemptID is the attempt
-// adminsecBeginAttempt stored as pending (0: record it now); it becomes a completed failure here.
+// adminsecLoginFailed records a failed attempt (wrong user, password or code) and locks the client
+// network, or the account from this network, out once it has too many recent failures. attemptID is the
+// attempt adminsecBeginAttempt stored as pending (0: record it now); it becomes a completed failure here.
 func (s *Server) adminsecLoginFailed(c *gin.Context, login string, u *store.User, reason string, attemptID int64) {
 	st := s.asLoad()
 	ip := clientIP(c)
@@ -418,27 +497,29 @@ func (s *Server) adminsecLoginFailed(c *gin.Context, login string, u *store.User
 	if maintIPAllowed(st.AllowList, ip) {
 		return
 	}
-	s.asMaybeLock(c, st, "ip", ip, st.IPMaxFailures)
-	s.asMaybeLock(c, st, "user", name, st.UserMaxFailures)
+	net := auth.ClientNet(ip)
+	s.asMaybeLock(c, st, asNetBucket(net), st.IPMaxFailures)
+	s.asMaybeLock(c, st, asUserBucket(name, net), st.UserMaxFailures)
 }
 
-func (s *Server) asMaybeLock(c *gin.Context, st asSettings, kind, value string, max int) {
-	if max <= 0 || value == "" {
+func (s *Server) asMaybeLock(c *gin.Context, st asSettings, b asBucket, max int) {
+	if max <= 0 || b.value == "" {
 		return
 	}
 	asMu.Lock()
 	defer asMu.Unlock()
-	if _, ok := s.asLockedUntil(c, kind, value); ok {
+	if _, ok := s.asLockedUntil(c, b.kind, b.value); ok {
 		return
 	}
 	// Completed failures only: attempts still being checked (pending) may turn out to be correct passwords.
+	where, args := b.where()
 	var n int
-	if err := s.store.Pool.QueryRow(c, `SELECT count(*) FROM login_attempts WHERE `+asAttemptCol(kind)+` AND NOT success AND NOT pending AND attempted_at > $2`,
-		value, s.asFailWindowStart(c, st, kind, value)).Scan(&n); err != nil || n < max {
+	if err := s.store.Pool.QueryRow(c, `SELECT count(*) FROM login_attempts WHERE `+where+` AND NOT success AND NOT pending AND attempted_at > $`+strconv.Itoa(len(args)+1),
+		append(args, s.asFailWindowStart(c, st, b))...).Scan(&n); err != nil || n < max {
 		return
 	}
 	var recent int
-	_ = s.store.Pool.QueryRow(c, `SELECT count(*) FROM adminsec_lockouts WHERE kind = $1 AND value = $2 AND created_at > now() - interval '24 hours'`, kind, value).Scan(&recent)
+	_ = s.store.Pool.QueryRow(c, `SELECT count(*) FROM adminsec_lockouts WHERE kind = $1 AND value = $2 AND created_at > now() - interval '24 hours'`, b.kind, b.value).Scan(&recent)
 	dur := time.Duration(max1(st.LockoutMinutes)) * time.Minute
 	long := st.LongLockoutAfter > 0 && recent+1 >= st.LongLockoutAfter
 	if long {
@@ -447,16 +528,40 @@ func (s *Server) asMaybeLock(c *gin.Context, st asSettings, kind, value string, 
 	until := time.Now().Add(dur)
 	reason := fmt.Sprintf("%d failed login attempts", n)
 	if _, err := s.store.Pool.Exec(c, `INSERT INTO adminsec_lockouts (kind, value, reason, failures, long_lock, until) VALUES ($1,$2,$3,$4,$5,$6)`,
-		kind, value, reason, n, long, until); err != nil {
+		b.kind, b.value, reason, n, long, until); err != nil {
 		return
 	}
-	label := "IP address " + value
-	if kind == "user" {
-		label = "username " + value
+	label := "IP address " + b.value
+	if b.kind == "user" {
+		label = "username " + b.value
 	}
-	s.asAudit(c, asEvent{Event: "lockout", Severity: "warning", Username: map[bool]string{true: value}[kind == "user"], Object: label,
+	s.asAudit(c, asEvent{Event: "lockout", Severity: "warning", Username: b.login, Object: label,
 		Message: fmt.Sprintf("Locked out until %s after %s.", until.UTC().Format("2006-01-02 15:04 UTC"), reason)})
-	s.asLockoutAlert(c, kind, value, until, n)
+	if b.kind == "user" {
+		s.asUserNetLockoutAlert(c, b, until, n)
+	} else {
+		s.asLockoutAlert(c, b.kind, b.value, until, n)
+	}
+}
+
+// asUserNetLockoutAlert is asLockoutAlert for a lockout of one account from one network: it says that only
+// that network is locked out, so the mail does not read as if the account itself were.
+func (s *Server) asUserNetLockoutAlert(c *gin.Context, b asBucket, until time.Time, failures int) {
+	st := s.asLoad()
+	if !st.AlertLockout {
+		return
+	}
+	if _, err := s.store.UserByLoginOrEmail(c, b.login); err != nil { // a made-up username is not worth a mail
+		return
+	}
+	if !asLockoutAlertSlot(time.Now()) {
+		return
+	}
+	site := s.settings.String("blogname")
+	body := fmt.Sprintf("The network %s was locked out of the username %s on %s after %d failed login attempts. "+
+		"Sign-ins to that account from other networks are not affected.\n\nLocked until: %s\nLast attempt from: %s\n\nLockouts: %s\n",
+		b.net, strconv.Quote(b.login), site, failures, until.UTC().Format(time.RFC1123), clientIP(c), s.links(c).HomeURL("/wp-admin/admin?page=adminsecgo-lockouts"))
+	s.sendMail(c, mail.Message{To: []string{s.asAlertTo(st)}, Subject: "[" + site + "] Login lockout", Body: body})
 }
 
 func max1(v int) int {
@@ -937,9 +1042,18 @@ func (s *Server) adminsecLogout(c *gin.Context) {
 	}
 }
 
-// adminsecRESTLocked reports whether REST Basic authentication (Application Passwords, which
-// deliberately skip the second factor, as in WordPress' Two Factor plugin) is refused by a block
-// or lockout; adminsecLoginFailed counts its wrong passwords like any failed login.
+// adminsecRESTLocked reports whether an API sign-in is refused by a block or lockout. REST Basic
+// authentication with an Application Password (which deliberately skips the second factor, as in
+// WordPress' Two Factor plugin) obeys the block list and the lockout of the client network only: no
+// account lockout stops a client that holds a valid Application Password, and its wrong passwords are
+// limited per network in a bucket of their own (app_password_auth.go). A password sign-in through the
+// API (the Headless API's /auth/local) obeys every lockout, as the login form does.
 func (s *Server) adminsecRESTLocked(c *gin.Context, user string) bool {
-	return s.adminsecOn() && s.adminsecPreLogin(c, user) != ""
+	if !s.adminsecOn() {
+		return false
+	}
+	if appPasswordAttempt(c, user) {
+		return s.adminsecPreLogin(c, "") != ""
+	}
+	return s.adminsecPreLogin(c, user) != ""
 }

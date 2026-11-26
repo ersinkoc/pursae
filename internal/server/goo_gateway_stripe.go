@@ -997,7 +997,15 @@ func (s *Server) gooStripeApplySetup(ctx context.Context, sess map[string]any, a
 		return 0, nil
 	}
 	sub, err := s.gsubGet(ctx, subID)
-	if err != nil || sub.CustomerID != userID || sub.Status == "cancelled" || sub.Status == "expired" {
+	if err != nil {
+		if gooNotFound(err) { // deleted since: nothing to move to the card
+			return 0, nil
+		}
+		// The webhook already claimed the event: returning the error releases it, so Stripe sends it
+		// again instead of the subscription silently keeping its old payment method.
+		return 0, err
+	}
+	if sub.CustomerID != userID || sub.Status == "cancelled" || sub.Status == "expired" {
 		return 0, nil
 	}
 	if sub.PaymentMethod == gooStripeID && gxaStr(sub.Meta, "_payment_token") == pmID {

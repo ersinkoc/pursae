@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/subtle"
 	"fmt"
 	"html"
 	"net/http"
@@ -456,11 +457,17 @@ func (s *Server) gooRunCheckout(c *gin.Context, form url.Values) (*gooPaymentRes
 
 // Order received --------------------------------------------------------------------------------------------------
 
+// gooOrderKeyMatches compares the order key a visitor gave with the order's in constant time. An empty
+// key on either side never matches.
+func gooOrderKeyMatches(stored, given string) bool {
+	return stored != "" && given != "" && subtle.ConstantTimeCompare([]byte(stored), []byte(given)) == 1
+}
+
 // gooThankYouHTML is thankyou.php; a wrong key shows no order details.
 func (s *Server) gooThankYouHTML(c *gin.Context, id int64) string {
 	ctx := c.Request.Context()
 	o, err := s.gooGetOrder(ctx, id)
-	if err != nil || o.Type != "shop_order" || o.OrderKey == "" || c.Query("key") != o.OrderKey {
+	if err != nil || o.Type != "shop_order" || !gooOrderKeyMatches(o.OrderKey, c.Query("key")) {
 		return `<div class="woocommerce-order"><p class="woocommerce-notice woocommerce-notice--success woocommerce-thankyou-order-received">Thank you. Your order has been received.</p></div>`
 	}
 	u := currentUser(c)
@@ -662,7 +669,7 @@ func (s *Server) gooOrderDetailsHTML(c *gin.Context, o *gooOrder, account bool) 
 // gooPayableOrder loads an order the visitor may pay (key check, ownership, status).
 func (s *Server) gooPayableOrder(c *gin.Context, id int64, key string) (*gooOrder, string) {
 	o, err := s.gooGetOrder(c.Request.Context(), id)
-	if err != nil || o.Type != "shop_order" || key == "" || o.OrderKey != key {
+	if err != nil || o.Type != "shop_order" || !gooOrderKeyMatches(o.OrderKey, key) {
 		return nil, "Sorry, this order is invalid and cannot be paid for."
 	}
 	u := currentUser(c)

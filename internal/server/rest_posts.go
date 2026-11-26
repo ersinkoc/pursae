@@ -371,7 +371,10 @@ func (api *restAPI) embedPost(c *gin.Context, p *store.Post, item map[string]any
 		emb["author"] = []any{api.s.restUser(c, u, "embed")}
 	}
 	if p.FeaturedMediaID != 0 {
-		if a, err := api.s.attachment(ctx, p.FeaturedMediaID); err == nil {
+		// The same rule as /wp/v2/media/<id>: an attachment of an unpublished post stays hidden
+		// from those who do not browse the library, whichever post names it as its image.
+		if a, err := api.s.attachment(ctx, p.FeaturedMediaID); err == nil &&
+			(a.PostID == p.ID && p.Status == "publish" && p.Password == "" || api.mediaReadable(c, a)) {
 			emb["wp:featuredmedia"] = []any{api.s.restMedia(c, a, "embed")}
 		}
 	}
@@ -933,7 +936,11 @@ func (api *restAPI) listAutosaves(c *gin.Context, r *restRequest, typ string) {
 		pid, _ = strconv.ParseInt(r.Params["parent"], 10, 64)
 	}
 	p, err := s.store.GetPost(c, pid)
-	if err != nil || u == nil || !u.Can("edit_post", p) {
+	if err != nil || p.Type != typ { // /wp/v2/posts/<id> of a product, a contact form, … is not a post
+		restErr(c, http.StatusNotFound, "rest_post_invalid_parent", "Invalid post parent ID.")
+		return
+	}
+	if u == nil || !u.Can("edit_post", p) {
 		restErr(c, http.StatusForbidden, "rest_cannot_read", "Sorry, you are not allowed to view autosaves of this post.")
 		return
 	}
@@ -956,7 +963,11 @@ func (api *restAPI) createAutosave(c *gin.Context, r *restRequest, typ string) {
 	s := api.s
 	u := restCurrent(c)
 	p, err := s.store.GetPost(c, r.ID())
-	if err != nil || !u.Can("edit_post", p) {
+	if err != nil || p.Type != typ {
+		restErr(c, http.StatusNotFound, "rest_post_invalid_id", "Invalid post ID.")
+		return
+	}
+	if !u.Can("edit_post", p) {
 		restErr(c, http.StatusForbidden, "rest_cannot_edit", "Sorry, you are not allowed to edit this post.")
 		return
 	}
@@ -1032,7 +1043,11 @@ func (api *restAPI) listRevisions(c *gin.Context, r *restRequest, typ string) {
 	s := api.s
 	u := restCurrent(c)
 	p, err := s.store.GetPost(c, r.ID())
-	if err != nil || !u.Can("edit_post", p) {
+	if err != nil || p.Type != typ {
+		restErr(c, http.StatusNotFound, "rest_post_invalid_parent", "Invalid post parent ID.")
+		return
+	}
+	if !u.Can("edit_post", p) {
 		restErr(c, http.StatusForbidden, "rest_cannot_read", "Sorry, you are not allowed to view revisions of this post.")
 		return
 	}

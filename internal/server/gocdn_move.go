@@ -151,7 +151,7 @@ func (s *Server) gocdnTrackConn(st gocdnSettings) gocdnSettings {
 		st.Previous = gocdnWithPrevious(st.Previous, *pending, cur)
 	}
 	if changed {
-		go s.gocdnPersistSeen(cur, prev)
+		safeGo("gocdn_move.gocdnPersistSeen", func() { s.gocdnPersistSeen(cur, prev) })
 	}
 	return st
 }

@@ -100,7 +100,7 @@ func (s *Store) QueryUsers(ctx context.Context, q UserQuery) ([]*User, int, erro
 	if q.Role != "" {
 		where = append(where, `EXISTS (SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = u.id AND r.slug = `+arg(q.Role)+`)`)
 	}
-	if term := strings.Trim(q.Search, "*"); term != "" {
+	if term := strings.Trim(ValidText(q.Search), "*"); term != "" {
 		p := arg("%" + likeEscaper.Replace(strings.ToLower(term)) + "%")
 		like := func(col string) string { return "lower(" + col + ") LIKE " + p + ` ESCAPE '\'` }
 		if q.PublicSearch {

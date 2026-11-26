@@ -1249,7 +1249,7 @@ func (s *Server) seogoIndexNow(ctx context.Context, urls []string) {
 	}
 	body, _ := json.Marshal(map[string]any{"host": home.Host, "key": o.IndexNowKey, "keyLocation": lb.HomeURL("/" + o.IndexNowKey + ".txt"), "urlList": urls})
 	endpoint := seogoIndexNowEndpoint
-	go func() {
+	safeGo("seogo_front.seogoIndexNow", func() {
 		cl := indexNowClient(endpoint)
 		status := ""
 		for attempt := 0; attempt < seogoIndexNowAttempts; attempt++ {
@@ -1270,7 +1270,7 @@ func (s *Server) seogoIndexNow(ctx context.Context, urls []string) {
 			}
 		}
 		s.seogoIndexNowRecord(urls, status)
-	}()
+	})
 }
 
 func (s *Server) seogoIndexNowRecord(urls []string, status string) {

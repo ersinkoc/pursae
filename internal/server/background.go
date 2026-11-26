@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"log/slog"
+	"reflect"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -32,17 +34,26 @@ func (r *runtimeState) startBackground(ctx context.Context) {
 	r.bgCtx, r.bgCancel = context.WithCancel(ctx)
 }
 
-// goBackground runs fn on a goroutine Close waits for; fn must return once ctx ends.
+// goBackground runs fn on a goroutine Close waits for; fn must return once ctx ends. A panic in fn
+// is logged and ends only that loop (safeGo).
 func (s *Server) goBackground(fn func(ctx context.Context)) {
 	ctx := s.rt.bgCtx
 	if ctx == nil { // not started through New (a sandbox, a bare test Server): nothing owns it
 		return
 	}
 	s.rt.bg.Add(1)
-	go func() {
+	safeGo(funcName(fn), func() {
 		defer s.rt.bg.Done()
 		fn(ctx)
-	}()
+	})
+}
+
+// funcName is the name of fn for logs (package path, receiver and closure number included).
+func funcName(fn any) string {
+	if f := runtime.FuncForPC(reflect.ValueOf(fn).Pointer()); f != nil {
+		return f.Name()
+	}
+	return "background"
 }
 
 // stopBackground cancels the long-lived loops and waits for them to return, or until ctx ends.

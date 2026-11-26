@@ -222,7 +222,7 @@ func (s *Server) regenerateAllAsync(resume ...bool) bool {
 	regenerateLive = &j
 	regenerateMu.Unlock()
 	s.regeneratePersist(ctx, j)
-	go func() {
+	safeGo("media_regenerate.regenerateAllAsync", func() {
 		defer regenerateRunning.Store(false)
 		for _, id := range todo {
 			if regenerateStop.Load() {
@@ -256,7 +256,7 @@ func (s *Server) regenerateAllAsync(resume ...bool) bool {
 		regenerateMu.Unlock()
 		s.regeneratePersist(ctx, snap)
 		slog.Info("regenerate thumbnails finished", "done", snap.Done, "skipped", snap.Skipped, "failed", snap.Failed, "stopped", snap.Stopped)
-	}()
+	})
 	return true
 }
 

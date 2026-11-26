@@ -187,8 +187,8 @@ func (s *Server) uploadReserved(ctx context.Context) func(sub string) []string {
 // replaced or re-cropped under the same name carries its version (?v=…, media_replace.go): uploads
 // are cached as immutable, so the changed file needs a URL of its own.
 func (s *Server) uploadURL(c context.Context, rel string) string {
-	if mediaIsPrivateRel(rel) { // a private file has no public URL: a signed link for those who manage media
-		if s.mediaPrivateViewer(c) {
+	if mediaIsPrivateRel(rel) { // a private file has no public URL: a signed link for those who may edit it
+		if s.mediaPrivateSigner(c, rel) {
 			return s.mediaPrivateAdminURL(c, rel)
 		}
 		return s.links(c).HomeURL("/wp-content/uploads/" + rel)
@@ -229,7 +229,8 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 		name = n
 	}
 	var st *media.Stored
-	if c.PostForm("type") == "downloadable_product" {
+	download := c.PostForm("type") == "downloadable_product"
+	if download {
 		// Pursae Commerce's "Choose file" for a downloadable file (WooCommerce's woocommerce_uploads):
 		// the file goes straight into the protected folder and never has a public URL (media_private.go).
 		sub := mediaPrivateDir
@@ -246,6 +247,9 @@ func (s *Server) saveUpload(c *gin.Context, field string, postID int64) (*store.
 	title := strings.TrimSuffix(filepath.Base(st.Original), filepath.Ext(st.Original))
 	a := &store.Attachment{UploaderID: u.ID, PostID: postID, FilePath: st.RelPath, Mime: st.Mime, FileSize: st.Size,
 		Title: title, Slug: wp.SanitizeTitle(title), Meta: map[string]any{"filesize": st.Size}}
+	if download {
+		a.Meta[mediaCommerceDownloadMeta] = true // signed links only for store managers (mediaPrivateSigner)
+	}
 	if strings.HasPrefix(st.Mime, "image/") {
 		if w := s.createImageSubsizes(c, a); w != "" {
 			c.Set("upload_warning", w)
@@ -465,6 +469,10 @@ func jsonError(c *gin.Context, status int, msg any) {
 func (s *Server) asyncUpload(c *gin.Context) {
 	u := currentUser(c)
 	if c.Request.Method == http.MethodGet || c.PostForm("fetch") != "" {
+		if !u.Can("upload_files", nil) { // async-upload.php: upload_files, whatever the request
+			c.String(http.StatusForbidden, "Sorry, you are not allowed to upload files.")
+			return
+		}
 		id, _ := strconv.ParseInt(c.DefaultQuery("attachment_id", c.PostForm("attachment_id")), 10, 64)
 		a, err := s.store.GetAttachment(c, id)
 		if err != nil {
@@ -631,7 +639,13 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 			}
 		}
 		if v, ok := c.GetPostForm("changes[parent]"); ok {
-			a.PostID, _ = strconv.ParseInt(v, 10, 64)
+			parent, _ := strconv.ParseInt(v, 10, 64)
+			parent = max(parent, 0)
+			if !s.mayAttachTo(c, u, a.PostID, parent) {
+				jsonError(c, http.StatusOK, nil)
+				return true
+			}
+			a.PostID = parent
 		}
 		if v, ok := c.GetPostForm("changes[menuOrder]"); ok {
 			a.MenuOrder, _ = strconv.Atoi(v)
@@ -675,7 +689,13 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 		}
 		c.String(http.StatusOK, "0")
 	case "send-attachment-to-editor":
+		// wp_ajax_send_attachment_to_editor(): the media modal's nonce (settings.nonce.sendToEditor),
+		// and only for someone who browses the library: the markup names the file's path.
 		id, _ := strconv.ParseInt(c.PostForm("attachment[id]"), 10, 64)
+		if !s.checkNonceValue(c, c.PostForm("nonce"), "media-send-to-editor") || !u.Can("upload_files", nil) {
+			jsonError(c, http.StatusOK, nil)
+			return true
+		}
 		a, err := s.store.GetAttachment(c, id)
 		if err != nil {
 			jsonError(c, http.StatusOK, nil)
@@ -686,7 +706,7 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 		postID, _ := strconv.ParseInt(c.PostForm("post_id"), 10, 64)
 		thumbID, _ := strconv.ParseInt(c.PostForm("thumbnail_id"), 10, 64)
 		p, err := s.store.GetPost(c, postID)
-		if err != nil || !u.Can("edit_post", p) {
+		if err != nil || !genericEditType(p.Type) || !u.Can("edit_post", p) {
 			c.String(http.StatusOK, "-1")
 			return true
 		}
@@ -712,6 +732,18 @@ func (s *Server) mediaAjax(c *gin.Context, action string) bool {
 		return false
 	}
 	return true
+}
+
+// mayAttachTo reports whether u may make parent the post an attachment belongs to (the edit_post
+// check WordPress makes on the post an upload goes to): keeping the parent and detaching are
+// always allowed, any other post must exist and be one u may edit, so nobody adds files to the
+// gallery or attachments of another user's post.
+func (s *Server) mayAttachTo(ctx context.Context, u *store.User, current, parent int64) bool {
+	if parent == current || parent <= 0 {
+		return true
+	}
+	p, err := s.store.GetPost(ctx, parent)
+	return err == nil && u.Can("edit_post", p)
 }
 
 func nullable64(id int64) any {

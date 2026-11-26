@@ -347,7 +347,7 @@ func opsFollowBackupLog(c *cli.Ctx, s *Server, j *bmgrJob, quiet bool) (stop fun
 	done := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func() {
+	safeGo("cli_ops_site.opsFollowBackupLog", func() {
 		defer wg.Done()
 		t := time.NewTicker(500 * time.Millisecond)
 		defer t.Stop()
@@ -360,7 +360,7 @@ func opsFollowBackupLog(c *cli.Ctx, s *Server, j *bmgrJob, quiet bool) (stop fun
 				flush()
 			}
 		}
-	}()
+	})
 	return func() {
 		close(done)
 		wg.Wait()

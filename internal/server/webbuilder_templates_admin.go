@@ -423,8 +423,8 @@ func (s *Server) wbTemplatesDialogs(c *gin.Context, d *wbTemplatesData, site web
 		"reservedSingular": webbuilder.ReservedSingularWords,
 		"reservedArchive":  webbuilder.ReservedArchiveWords,
 	}
-	b, _ := json.Marshal(cfg)
-	d.Config = template.JS(strings.NewReplacer("<", `<`, ">", `>`, "&", `&`).Replace(string(b)))
+	b, _ := json.Marshal(cfg) // json.Marshal escapes <, > and & (\u003c …): safe inside the <script> element
+	d.Config = template.JS(b)
 }
 
 // wbTemplatesNotices are the result notices of an action (query arguments of the redirect).

@@ -881,22 +881,28 @@ func (api *restAPI) updateUser(c *gin.Context, r *restRequest) {
 	api.saveUser(c, r, u)
 }
 
-// restScopedCredentialField is the first of email, password and roles that the request tries to set
-// while authenticated by a scoped Application Password without the "users" scope ("" when none).
-func restScopedCredentialField(c *gin.Context, r *restRequest) string {
+// restScopedCredentialField is the first of email, password and roles of target that the request
+// tries to set while authenticated by a scoped credential that may not (appScopeCredentialNeed), and
+// the scope it would need ("users" or "full_access"); "" when none.
+func restScopedCredentialField(c *gin.Context, r *restRequest, target *store.User) (field, need string) {
 	scopes := restScopes(c)
-	if len(scopes) == 0 || slices.Contains(scopes, "users") {
-		return ""
+	if len(scopes) == 0 {
+		return "", ""
 	}
-	for _, f := range []string{"email", "password"} {
-		if _, ok := r.Str(c, f); ok {
-			return f
+	for _, f := range []string{"email", "password", "roles"} {
+		var set bool
+		if f == "roles" {
+			_, set = r.roles(c)
+		} else {
+			_, set = r.Str(c, f)
+		}
+		if set {
+			if need := appScopeCredentialNeed(scopes, restCurrent(c), target, f); need != "" {
+				return f, need
+			}
 		}
 	}
-	if _, ok := r.roles(c); ok {
-		return "roles"
-	}
-	return ""
+	return "", ""
 }
 
 // restRoles reads the roles parameter (a list or a comma string).
@@ -984,11 +990,12 @@ func (api *restAPI) saveUser(c *gin.Context, r *restRequest, u *store.User) {
 		restErr(c, http.StatusBadRequest, "rest_user_invalid_argument", "Username is not editable.")
 		return
 	}
-	if field := restScopedCredentialField(c, r); field != "" {
+	if field, need := restScopedCredentialField(c, r, u); field != "" {
 		// /users/me is open to every scoped Application Password, and editing one's own profile needs no
-		// capability: the credentials of the account still need the "users" scope.
+		// capability: the account's own email and password still need the "users" scope, and roles or
+		// another user's credentials need full access.
 		restErr(c, http.StatusForbidden, "rest_scope_forbidden", "This application password is not allowed to change the user's "+field+".",
-			map[string]any{"required_scope": "users", "scopes": restScopes(c)})
+			map[string]any{"required_scope": need, "scopes": restScopes(c)})
 		return
 	}
 	if v, ok := r.Str(c, "email"); ok {
@@ -1442,13 +1449,22 @@ func (api *restAPI) uploadMedia(c *gin.Context, r *restRequest) {
 	}
 	postID, _ := strconv.ParseInt(c.PostForm("post"), 10, 64)
 	param := c.GetPostForm
-	var a *store.Attachment
-	var err error
-	if name, ok := restRawUploadName(c); ok {
+	name, raw := restRawUploadName(c)
+	if raw {
 		// The raw request body is the file, named by Content-Disposition (WP_REST_Attachments_Controller::upload_from_data);
 		// the other fields come as query parameters.
 		param = c.GetQuery
 		postID, _ = strconv.ParseInt(c.Query("post"), 10, 64)
+	}
+	postID = max(postID, 0)
+	// create_item_permissions_check(): the post the file is attached to must be one the user may edit.
+	if !s.mayAttachTo(c, u, 0, postID) {
+		restErr(c, http.StatusForbidden, "rest_cannot_edit", "Sorry, you are not allowed to upload media to this post.")
+		return
+	}
+	var a *store.Attachment
+	var err error
+	if raw {
 		a, err = s.insertAttachmentFile(c, name, c.Request.Body, u.ID, postID)
 	} else {
 		a, err = s.saveUpload(c, "file", postID)
@@ -1528,6 +1544,12 @@ func (api *restAPI) updateMedia(c *gin.Context, r *restRequest) {
 		}
 	}
 	if v, ok := r.Int(c, "post"); ok {
+		v = max(v, 0)
+		// Moving the file to another post needs edit_post on that post, as uploading to it does.
+		if !s.mayAttachTo(c, u, a.PostID, v) {
+			restErr(c, http.StatusForbidden, "rest_cannot_edit", "Sorry, you are not allowed to attach media to this post.")
+			return
+		}
 		a.PostID = v
 	}
 	ksesAttachmentText(u, a)

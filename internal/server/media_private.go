@@ -80,8 +80,20 @@ func (s *Server) mediaPrivateAdminURL(ctx context.Context, rel string) string {
 	return s.mediaPrivateURL(ctx, rel, exp, false)
 }
 
-// mediaPrivateViewer reports whether the request's user may be handed links to private files.
-func (s *Server) mediaPrivateViewer(ctx context.Context) bool {
+// mediaCommerceDownloadMeta marks an attachment uploaded as a Pursae Commerce downloadable file
+// (the product editor's "Choose file", saveUpload).
+const mediaCommerceDownloadMeta = "_goo_download"
+
+// mediaPrivateSignKey memoises mediaPrivateSigner for one request: uploads path -> decision.
+const mediaPrivateSignKey = "wpgo.mediaPrivateSign"
+
+// mediaPrivateSigner reports whether the request's user may be handed a signed link to the private
+// file rel. A signed link opens the file for anyone who has it, so it is handed only to someone who
+// may edit the attachment the file belongs to (edit_post on it: upload_files and their own upload
+// or edit_others_posts, canEditAttachment), and for a Pursae Commerce downloadable file (uploaded
+// as one, or a product's download) only to someone who also manages the store's products
+// (manage_woocommerce or edit_products). A file that belongs to no attachment gets no signature.
+func (s *Server) mediaPrivateSigner(ctx context.Context, rel string) bool {
 	c, ok := ctx.(*gin.Context)
 	if !ok || c == nil {
 		return false
@@ -90,7 +102,74 @@ func (s *Server) mediaPrivateViewer(ctx context.Context) bool {
 	if u == nil {
 		u = restCurrent(c)
 	}
-	return u != nil && u.Can("upload_files", nil)
+	if u == nil || !u.Can("upload_files", nil) {
+		return false
+	}
+	var memo map[string]bool
+	if v, ok := c.Get(mediaPrivateSignKey); ok {
+		memo, _ = v.(map[string]bool)
+	}
+	if memo == nil {
+		memo = map[string]bool{}
+		c.Set(mediaPrivateSignKey, memo)
+	}
+	if v, ok := memo[rel]; ok {
+		return v
+	}
+	a := s.mediaPrivateOwner(c, rel)
+	allowed := a != nil && canEditAttachment(u, a) &&
+		(!s.mediaCommerceDownload(c, a) || u.Can("manage_woocommerce", nil) || u.Can("edit_products", nil))
+	memo[rel] = allowed
+	if a != nil {
+		for _, f := range gocdnAttachmentFiles(a) { // its sizes and original need no lookup of their own
+			memo[f] = allowed
+		}
+	}
+	return allowed
+}
+
+// mediaPrivateOwner is the attachment a private uploads path belongs to: its main file, one of its
+// sizes, or the original of a "-scaled"/"-rotated" image. nil when no attachment has it.
+func (s *Server) mediaPrivateOwner(ctx context.Context, rel string) *store.Attachment {
+	var id int64
+	err := s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE file_path = $1
+		UNION ALL SELECT media_id FROM media_variants WHERE file_path = $1 LIMIT 1`, rel).Scan(&id)
+	if err != nil {
+		// The original of a big or rotated image keeps its name next to "<name>-scaled.<ext>".
+		dir, file := path.Split(rel)
+		ext := path.Ext(file)
+		stem := strings.TrimSuffix(file, ext)
+		cands := []string{dir + stem + "-scaled" + ext, dir + stem + "-rotated" + ext}
+		if s.store.Pool.QueryRow(ctx, `SELECT id FROM media WHERE file_path = ANY($1) AND meta->>'original_image' = $2 LIMIT 1`,
+			cands, file).Scan(&id) != nil {
+			return nil
+		}
+	}
+	a, err := s.store.GetAttachment(ctx, id)
+	if err != nil {
+		return nil
+	}
+	return a
+}
+
+// mediaCommerceDownload reports whether an attachment is a Pursae Commerce downloadable file: it
+// was uploaded as one, or a product's downloads name one of its files (by the private URL or by
+// the public URL it had before it was made private, as products keep the URL they were saved with).
+func (s *Server) mediaCommerceDownload(ctx context.Context, a *store.Attachment) bool {
+	if v, _ := a.Meta[mediaCommerceDownloadMeta].(bool); v {
+		return true
+	}
+	var refs []string
+	for _, f := range gocdnAttachmentFiles(a) {
+		refs = append(refs, "/wp-content/uploads/"+f, "/wp-content/uploads/"+mediaPrivatePath(f, false))
+	}
+	var found bool
+	if err := s.store.Pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM goo_products p, jsonb_array_elements(p.downloads) d
+		WHERE jsonb_typeof(p.downloads) = 'array' AND p.downloads <> '[]'::jsonb
+		AND EXISTS (SELECT 1 FROM unnest($1::text[]) r WHERE strpos(d->>'file', r) > 0))`, refs).Scan(&found); err != nil {
+		return true // unknown: treat it as a store file, the stricter rule
+	}
+	return found
 }
 
 // mediaPrivateServe answers /wp-content/uploads/private/…: the file for a valid signed link, 403 otherwise.

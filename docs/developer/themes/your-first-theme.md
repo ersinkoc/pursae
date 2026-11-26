@@ -5,7 +5,8 @@ weight: 20
 section: themes
 ---
 
-A theme package is a directory with no code in it:
+A theme package is a directory with no Go code in it (its JavaScript, if any, runs on the site
+like any other script):
 
 ```text
 starter/

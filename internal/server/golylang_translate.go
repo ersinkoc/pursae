@@ -504,10 +504,10 @@ func (s *Server) pllJobStart(ctx context.Context, label string, total int, fn fu
 		return true
 	}
 	bg, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Hour)
-	go func() {
+	safeGo("golylang_translate.pllJobStart", func() {
 		defer cancel()
 		run(bg)
-	}()
+	})
 	return true
 }
 

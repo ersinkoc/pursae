@@ -358,14 +358,14 @@ func (s *Server) startLongJob(ctx, wctx context.Context, worker string, handlers
 		return
 	}
 	s.longJobs.Add(1)
-	go func() {
+	safeGo("scheduler.startLongJob", func() {
 		defer s.longJobs.Done()
 		defer s.longBusy.Store(false)
 		stop := s.jobHeartbeat(wctx, worker)
 		defer stop()
 		runErr := s.runJob(ctx, handlers, j)
 		s.finishJob(wctx, ctx, worker, j, runErr)
-	}()
+	})
 }
 
 // runJob runs one job's handler (or the plugin action of that name); a panic is the job's error.
@@ -437,7 +437,7 @@ func (s *Server) jobHeartbeat(ctx context.Context, worker string) (stop func()) 
 	done := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func() {
+	safeGo("scheduler.jobHeartbeat", func() {
 		defer wg.Done()
 		t := time.NewTicker(jobHeartbeatEvery)
 		defer t.Stop()
@@ -449,7 +449,7 @@ func (s *Server) jobHeartbeat(ctx context.Context, worker string) (stop func()) 
 				_, _ = s.store.Pool.Exec(ctx, `UPDATE jobs SET locked_at = now() WHERE status = 'running' AND locked_by = $1`, worker)
 			}
 		}
-	}()
+	})
 	return func() {
 		close(done)
 		wg.Wait()

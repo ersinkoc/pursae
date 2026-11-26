@@ -54,8 +54,9 @@ request.
 
 ## Application Password scopes
 
-A password can be limited to **scopes**. A password without scopes has all of its user's
-capabilities (WordPress behaviour); a password with scopes is narrowed twice:
+A password is limited to **scopes**. Only a password created with **Full access** (`full_access`)
+has all of its user's capabilities; one created without scopes gets `content` and `media`, the
+OAuth default. A password with scopes is narrowed twice:
 
 1. the user's capabilities are cut down to the ones the scopes need, so every capability check
    in a handler sees the smaller set, and
@@ -68,36 +69,51 @@ scope still cannot activate plugins.
 
 | Scope | Routes | Capabilities kept |
 |-------|--------|-------------------|
-| `content` | `/wp/v2/posts`, `pages`, `blocks`, `categories`, `tags`, `comments`, `types`, `taxonomies`, `search`, `block-renderer`, `/web-builder/v2`, `/pll/v1`, `/batch/v1`, `/pursae/v1/forum` | post and page caps, `manage_categories`, `moderate_comments`, `unfiltered_html` (raw HTML in posts and pages; see below for site-wide code) |
+| `content` | `/wp/v2/posts`, `pages`, `blocks`, `categories`, `tags`, `comments`, `types`, `taxonomies`, `search`, `block-renderer`, `/web-builder/v2`, `/pll/v1`, `/batch/v1`, `/pursae/v1/forum` | post and page caps, `manage_categories`, `moderate_comments` (HTML is filtered as for a user without `unfiltered_html`; see below) |
 | `media` | `/wp/v2/media` | `upload_files` and the post caps attachments use |
-| `themes` | `/wp/v2/templates`, `template-parts`, `global-styles`, `themes`, `menus`, `menu-items`, `menu-locations`, `navigation`, `sidebars`, `widgets`, `/pursae/v1/themes` | `switch_themes`, `edit_theme_options`, `edit_themes`, `install_themes`, `delete_themes` |
+| `themes` | `/wp/v2/templates`, `template-parts`, `global-styles`, `themes`, `menus`, `menu-items`, `menu-locations`, `navigation`, `sidebars`, `widgets`, `/pursae/v1/themes` | `switch_themes`, `edit_theme_options`, `edit_themes`, `install_themes`, `delete_themes`, `unfiltered_html` |
 | `plugins` | `/pursae/v1/plugins`, `/pursae/v1/updates` | `activate_plugins`, `install_plugins`, `delete_plugins` |
 | `cache` | `/pursae/v1/cache` | `manage_options` |
 | `seo` | `/seogo/v1`, `/pursae/v1/seo` | post caps, `manage_options`, the `seogo_*` caps |
 | `settings` | `/wp/v2/settings`, `/pursae/v1/options`, `/pursae/v1/headless`, `/pursae/v1/health`, `/pursae/v1/backups`, `/pursae/v1/mcp/activity` | `manage_options` |
 | `commerce` | `/wc/v3` | `manage_woocommerce`, `view_woocommerce_reports`, the product and shop order caps, `manage_product_terms`, `moderate_comments` |
-| `users` | `/wp/v2/users` | `list_users`, `create_users`, `edit_users`, `promote_users`, `delete_users` |
+| `users` | `/wp/v2/users` | `list_users`, `create_users`, `edit_users`, `delete_users` (roles, and other users' `email` and `password`, need full access; see below) |
 
-**Site-wide code needs `themes`.** `unfiltered_html` in the `content` scope covers what WordPress
-gives it, raw HTML in posts and pages. A design's own HTML, CSS and JavaScript that pages load site
-wide needs the `themes` scope as well (or full access): Pursae Web Builder html and code sections and
-custom CSS (a `content`-only password publishes the page without them, or keeps the stored ones),
-code imports (`web_builder_import_html` method `code`; method `exact` works with `content`), site
-imports, design kits and their class and variable overrides. The contact form routes
-(`/contact-form-7/v1`, which set a form's mail recipients and headers) belong to no scope: they need
-full access.
+**Raw HTML and site-wide code need `themes`.** `unfiltered_html` belongs to the `themes` scope only.
+A password without it (for example `content` alone, or the OAuth default `content` and `media`) writes
+posts, pages, comments, products and Web Builder documents through the same KSES filter as a user
+without `unfiltered_html`, even on an administrator's account: no `<script>`, event handlers or
+iframes. A stolen or prompt-injected token with the default scopes therefore cannot plant a script
+that runs for an administrator. Raw HTML, and a design's own HTML, CSS and JavaScript that pages load
+site wide, need the `themes` scope as well (or full access): raw HTML in posts and pages, Pursae Web
+Builder html and code sections and custom CSS (a `content`-only password publishes the page without
+them, or keeps the stored ones), code imports (`web_builder_import_html` method `code`; method `exact`
+works with `content`), site imports, design kits and their class and variable overrides. The contact
+form routes (`/contact-form-7/v1`, which set a form's mail recipients and headers) belong to no scope:
+they need full access.
+
+**`themes`, `plugins` and `users` are equivalent to full access** on an administrator's account, and
+the scope picker says so: `themes` edits theme files and writes scripts that run on every page,
+`plugins` installs plugins and can grant them the dangerous permissions (`content:html`,
+`admin:scripts`) by naming them, and `users` can change the account's own email and password. Give
+them only to a client you would give full access.
 
 Every scoped password may also read the REST index, `/wp/v2/users/me` and use the MCP endpoint
 `/pursae/v1/mcp` (whose tools are checked route by route). Batch requests (`/batch/v1`) re-check
 each inner request. On `/wp/v2/users/me` a scoped password may edit the profile fields (name, URL,
-description, …) but changing `email`, `password` or `roles` needs the `users` scope
-(`403 rest_scope_forbidden` otherwise). A password whose stored scopes are all unknown (for example a
-scope removed in a later release) is refused rather than given full access.
+description, …) but changing the account's own `email` or `password` needs the `users` scope, and
+roles (the account's own or another user's) or another user's `email` or `password` need full access:
+`403 rest_scope_forbidden` with `data.required_scope` (`users` or `full_access`) otherwise. No scope
+keeps `promote_users`, so a scoped password that creates a user with a `roles` value gets
+`403 rest_cannot_edit_roles`; without `roles` the new user gets the site's default role. A password
+whose stored scopes are all unknown (for example a scope removed in a later release) is refused
+rather than given full access.
 
 Set scopes with the checkboxes under **Profile › Application Passwords › Limit access to**, or
 through REST: `scopes` is an array (or a comma list) on `POST /wp/v2/users/me/application-passwords`
-and on `POST …/application-passwords/{uuid}`; the responses include `scopes` (`[]` means full
-access). A scoped password cannot create, change or revoke Application Passwords.
+and on `POST …/application-passwords/{uuid}`, or `"full_access": true` instead; the responses include
+`scopes` (`["full_access"]` for full access). A scoped password cannot create, change or revoke
+Application Passwords.
 
 ```bash
 curl -u admin:… -H 'Content-Type: application/json' \
@@ -130,7 +146,7 @@ Application Password and are narrowed by scopes the same way; Basic auth keeps w
   revokes the grant its first exchange created.
 - A user keeps at most 20 grants: a new one ends the oldest. Grants whose refresh token has expired are
   deleted, and so are clients left without a grant.
-- Scopes are the same names as above. For an Application Password, unticked means all of the user's permissions. The OAuth consent screen preselects `content` and `media` when the client asks for no scope, treats an empty selection as those two, and gives everything only when the separate **Full access** box is ticked. The Pursae Headless delivery API (`/wp-json/headlessgo/v1`) has its own API tokens and does not accept Application Passwords or OAuth tokens; manage Headless content types and entries with `/pursae/v1/headless/...` instead.
+- Scopes are the same names as above, with the same rules (no raw HTML without `themes`; `themes`, `plugins` and `users` marked as equivalent to full access). As for an Application Password, nothing ticked means `content` and `media`, not all of the user's permissions. The OAuth consent screen preselects `content` and `media` when the client asks for no scope, treats an empty selection as those two, and gives everything only when the separate **Full access** box is ticked. The Pursae Headless delivery API (`/wp-json/headlessgo/v1`) has its own API tokens and does not accept Application Passwords or OAuth tokens; manage Headless content types and entries with `/pursae/v1/headless/...` instead.
 - An unauthenticated request to `/wp-json/pursae/v1/mcp` gets `401` with
   `WWW-Authenticate: Bearer resource_metadata="…"`, which is how clients find the flow. A bad or
   expired token gets `error="invalid_token"`.

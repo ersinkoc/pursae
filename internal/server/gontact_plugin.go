@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/caps"
 	"wpgo/internal/store"
 )
 
@@ -37,6 +38,12 @@ const (
 
 // gontactOn reports whether Gontact Form is active.
 func (s *Server) gontactOn() bool { return s.settings.Bool(gontactSetting) }
+
+// Contact forms are site configuration (mail recipients and headers, integrations), edited on the
+// Contact screens: every post meta capability on them requires manage_options, so the core's
+// generic post handlers (Quick Edit, Custom Fields, REST revisions, …) cannot be used to change,
+// unpublish or read one with the post capabilities. The Contact screens keep their own checks.
+func init() { caps.RegisterTypeCap(gontactPostType, "manage_options") }
 
 // gontactOnly is the middleware of Gontact Form's own routes: 404 while the plugin is off.
 func (s *Server) gontactOnly() gin.HandlerFunc {

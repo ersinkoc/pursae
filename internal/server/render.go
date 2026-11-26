@@ -37,7 +37,7 @@ func newTemplates(s *Server) (*templates, error) {
 }
 
 func (t *templates) load() error {
-	admin, err := parseTree(t.s.web, "admin/templates", t.funcs())
+	admin, err := parseTree(t.s.web, "admin/templates", t.adminFuncs())
 	if err != nil {
 		return fmt.Errorf("admin templates: %w", err)
 	}
@@ -139,6 +139,9 @@ func (s *Server) renderTemplateFiltered(c *gin.Context, status int, set *templat
 	c.Data(status, "text/html; charset=UTF-8", s.asStripVersion(c, s.golylangHTML(c, out)))
 }
 
+// funcs are the functions of every template set except the admin's: themes (bundled, packages,
+// library previews), ACF blocks and the plugins' own templates. Their setting* functions read only
+// the public settings (themeSettingFuncs); adminFuncs adds full access for the core admin screens.
 func (t *templates) funcs() template.FuncMap {
 	s := t.s
 	m := themeTemplateFuncs() // nav_menu, dynamic_sidebar, theme_mod, … (theme_package.go)
@@ -160,8 +163,19 @@ func (t *templates) funcs() template.FuncMap {
 	return m
 }
 
+// adminFuncs are the functions of the core admin templates (web/admin/templates, embedded in the
+// binary): funcs with setting* reading any setting, since the option screens show private values.
+func (t *templates) adminFuncs() template.FuncMap {
+	m := t.funcs()
+	for k, f := range t.s.adminSettingFuncs() {
+		m[k] = f
+	}
+	return m
+}
+
+// coreFuncs are the functions every template set shares; setting* read the public settings only.
 func (t *templates) coreFuncs(s *Server) template.FuncMap {
-	return template.FuncMap{
+	m := template.FuncMap{
 		"customizerOn":      func() bool { return !s.wbOn() }, // the Customizer is hidden while the Web Builder is active
 		"customizeURL":      s.customizeURL,
 		"wbThemeBuilderURL": wbThemeBuilderURL,
@@ -209,17 +223,12 @@ func (t *templates) coreFuncs(s *Server) template.FuncMap {
 			}
 			return out
 		},
-		"query":       func(v string) string { return url.QueryEscape(v) },
-		"loginURL":    func() string { return s.loginPath() }, // wp_login_url(): AdminSecGo may move it
-		"setting":     func(key string) any { return s.settings.Get(key) },
-		"settingStr":  func(key string) string { return s.settings.String(key) },
-		"settingBool": func(key string) bool { return s.settings.Bool(key) },
-		"settingInt":  func(key string) int { return s.settings.Int(key) },
-		"settingID":   func(key string) int64 { return int64(s.settings.Int(key)) },
-		"repeat":      strings.Repeat,
-		"contains":    strings.Contains,
-		"lower":       strings.ToLower,
-		"texturize":   func(v string) template.HTML { return template.HTML(wp.Texturize(wp.EscText(v))) },
+		"query":     func(v string) string { return url.QueryEscape(v) },
+		"loginURL":  func() string { return s.loginPath() }, // wp_login_url(): AdminSecGo may move it
+		"repeat":    strings.Repeat,
+		"contains":  strings.Contains,
+		"lower":     strings.ToLower,
+		"texturize": func(v string) template.HTML { return template.HTML(wp.Texturize(wp.EscText(v))) },
 		"dict": func(kv ...any) map[string]any {
 			m := map[string]any{}
 			for i := 0; i+1 < len(kv); i += 2 {
@@ -244,6 +253,10 @@ func (t *templates) coreFuncs(s *Server) template.FuncMap {
 		},
 		"trimSlash": func(v string) string { return strings.TrimRight(v, "/") },
 	}
+	for k, f := range s.themeSettingFuncs() { // setting, settingStr, …: public settings only (theme_template_settings.go)
+		m[k] = f
+	}
+	return m
 }
 
 // formatNumber is number_format_i18n() for English: thousands separated by commas.

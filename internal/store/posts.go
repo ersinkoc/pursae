@@ -339,6 +339,7 @@ func (q *PostQuery) where(args *[]any) string {
 		conds = append(conds, "coalesce(parent_id,0) = "+add(*q.ParentID))
 	}
 	if q.Search != "" {
+		q.Search = ValidText(q.Search)
 		// The term and the searched text are folded alike by the database (lower(), then ı, İ → i; migration
 		// 0105), so "IŞIK" finds "ışık" whatever the database collation lower-cases I to.
 		q.searchArg, q.searchLikeArg = FoldedArgSQL(add(q.Search)), FoldedArgSQL(add(likeContains(q.Search)))

@@ -336,13 +336,13 @@ func (s *Server) installLanguage(ctx context.Context, locale string) error {
 			return err
 		}
 	}
-	go func() {
+	safeGo("i18n.installLanguage", func() {
 		bg, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 		if err := s.lang.Install(bg, in, locale, langPluginPacks); err != nil {
 			slog.Warn("language packs", "locale", locale, "err", err)
 		}
-	}()
+	})
 	return nil
 }
 

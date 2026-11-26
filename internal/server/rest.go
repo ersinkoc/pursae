@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"sort"
@@ -28,6 +29,11 @@ type restError struct {
 }
 
 func restErr(c *gin.Context, status int, code, msg string, extra ...map[string]any) {
+	if restInternalError(code, msg) {
+		// The database's own words (engine, table and column names, the failing value) stay in the log.
+		slog.Error("rest: request failed", "code", code, "status", status, "method", c.Request.Method, "path", c.Request.URL.Path, "err", msg)
+		msg = restInternalMessage
+	}
 	data := map[string]any{"status": status}
 	for _, e := range extra {
 		for k, v := range e {
@@ -35,6 +41,16 @@ func restErr(c *gin.Context, status int, code, msg string, extra ...map[string]a
 		}
 	}
 	c.AbortWithStatusJSON(status, restError{Code: code, Message: msg, Data: data})
+}
+
+// restInternalMessage replaces the message of an error that carried database detail (restInternalError).
+const restInternalMessage = "The request could not be completed because of a database error."
+
+// restInternalError reports whether an error message must not reach the client: rest_query_error
+// carries a store error, and any message with a PostgreSQL SQLSTATE is the server's text
+// (pgconn.PgError.Error()), whatever the code the handler chose.
+func restInternalError(code, msg string) bool {
+	return code == "rest_query_error" || strings.Contains(msg, "(SQLSTATE ")
 }
 
 // restRoute describes one registered route for routing, OPTIONS and the index.
@@ -384,14 +400,8 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 			restErr(c, http.StatusNotFound, "rest_no_route", "No route was found matching the URL and request method.")
 			return
 		}
-		if ct := c.ContentType(); ct == "application/json" {
-			body, _ := io.ReadAll(io.LimitReader(c.Request.Body, 32<<20))
-			if len(body) > 0 {
-				if err := json.Unmarshal(body, &req.Body); err != nil {
-					restErr(c, http.StatusBadRequest, "rest_invalid_json", "Invalid JSON body passed.")
-					return
-				}
-			}
+		if ct := c.ContentType(); ct == "application/json" && !restDecodeJSON(c, u, req) {
+			return
 		}
 		if req.Body == nil {
 			req.Body = map[string]any{}
@@ -404,6 +414,95 @@ func (api *restAPI) serve(c *gin.Context, route string) {
 		return
 	}
 	restErr(c, http.StatusNotFound, "rest_no_route", "No route was found matching the URL and request method.")
+}
+
+// REST JSON bodies are decoded into map[string]any before the handler runs, so before the handler's
+// own permission check, and that decode costs many times the body for small values: 31 MB of "0,"
+// once took 1 GB. How much is read therefore depends on who is asking. Visitors and front-end members
+// (frontEndOnly: subscribers, customers, forum members, whom anyone can become on an open site) send
+// comments, cart changes, consent and form posts and get restJSONSmallMax. Back-office users and API
+// credentials get restJSONMax: the largest bodies a core route takes are below it (Web Builder publish
+// 4 MB, design-kit files 24 MB, live canvas and AI 8 MB, base64 packages, batch/v1). Whoever sends it,
+// a body holds at most restJSONMaxValues values, which bounds the decode to some 100 MB.
+const (
+	restJSONSmallMax  = 1 << 20
+	restJSONMax       = 32 << 20
+	restJSONMaxValues = 2 << 20
+)
+
+// restJSONLimit is the largest JSON body serve reads for u (nil: anonymous).
+func restJSONLimit(u *store.User) int64 {
+	if frontEndOnly(u) {
+		return restJSONSmallMax
+	}
+	return restJSONMax
+}
+
+// restDecodeJSON reads the application/json body of the request into req.Body. A body over the
+// caller's limit is refused with 413 before it is read (Content-Length) or as soon as the limit is
+// passed (a chunked body), and before anything is decoded; so is a body with too many values. It
+// reports false when it answered the request.
+func restDecodeJSON(c *gin.Context, u *store.User, req *restRequest) bool {
+	limit := restJSONLimit(u)
+	tooLarge := func() bool {
+		restErr(c, http.StatusRequestEntityTooLarge, "rest_request_too_large", "The request body is too large.", map[string]any{"limit": limit})
+		return false
+	}
+	if c.Request.ContentLength > limit {
+		return tooLarge()
+	}
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, limit+1))
+	if int64(len(body)) > limit {
+		return tooLarge()
+	}
+	if err != nil {
+		var maxErr *http.MaxBytesError // the server-wide body limit (ops_http.go)
+		if errors.As(err, &maxErr) {
+			return tooLarge()
+		}
+		restErr(c, http.StatusBadRequest, "rest_invalid_json", "Invalid JSON body passed.")
+		return false
+	}
+	if len(body) == 0 {
+		return true
+	}
+	if !jsonValuesWithin(body, restJSONMaxValues) {
+		restErr(c, http.StatusRequestEntityTooLarge, "rest_request_too_large", "The request body holds too many values.", map[string]any{"limit_values": restJSONMaxValues})
+		return false
+	}
+	if err := json.Unmarshal(body, &req.Body); err != nil {
+		restErr(c, http.StatusBadRequest, "rest_invalid_json", "Invalid JSON body passed.")
+		return false
+	}
+	return true
+}
+
+// jsonValuesWithin reports whether the JSON text b holds at most about max values, without
+// allocating: it counts the arrays, objects and commas outside strings, which is the number of
+// values decoding allocates give or take one per non-empty container. Malformed text is left to the
+// decoder.
+func jsonValuesWithin(b []byte, max int) bool {
+	n, inString, escaped := 0, false, false
+	for _, ch := range b {
+		switch {
+		case inString:
+			switch {
+			case escaped:
+				escaped = false
+			case ch == '\\':
+				escaped = true
+			case ch == '"':
+				inString = false
+			}
+		case ch == '"':
+			inString = true
+		case ch == ',' || ch == '[' || ch == '{':
+			if n++; n > max {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // options answers OPTIONS with the Allow header the editor's canUser() checks.

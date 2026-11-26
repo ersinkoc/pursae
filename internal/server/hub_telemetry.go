@@ -86,10 +86,10 @@ func (s *Server) hubEvent(typ, kind, slug, version string) {
 	}
 	q.mu.Unlock()
 	if n >= hubEventsBatch && q.batch.CompareAndSwap(false, true) {
-		go func() {
+		safeGo("hub_telemetry.hubEvent", func() {
 			defer q.batch.Store(false)
 			s.hubFlushEvents(context.Background())
-		}()
+		})
 	}
 }
 

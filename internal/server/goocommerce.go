@@ -13,10 +13,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"wpgo/internal/caps"
 	"wpgo/internal/store"
 	"wpgo/web"
 )
@@ -39,6 +41,28 @@ const (
 
 // gooOn reports whether Goocommerce is active: one cached option read.
 func (s *Server) gooOn() bool { return s.settings.Bool(gooSetting) }
+
+// gooCapServer is the server whose plugin state the product capabilities follow (one per
+// process; set by registerGoocommerce).
+var gooCapServer atomic.Pointer[Server]
+
+// gooCapsOn reports whether products and variations have their own capabilities: only while the
+// plugin is on, so a same-named post type of another source (a Pursae Custom Fields "product")
+// keeps the core rules.
+func gooCapsOn() bool {
+	s := gooCapServer.Load()
+	return s != nil && s.gooOn()
+}
+
+// Like WooCommerce's register_post_type( 'product', capability_type 'product', map_meta_cap ):
+// edit_post, delete_post, publish_post and read_post on a product or a variation map to
+// edit_products, edit_others_products, publish_products, read_private_products, delete_products…
+// (administrators and shop managers have them, migration 0015), not to the post capabilities an
+// editor has.
+func init() {
+	caps.RegisterTypePluralWhen("product", "products", gooCapsOn)
+	caps.RegisterTypePluralWhen("product_variation", "products", gooCapsOn)
+}
 
 // gooOnly is the middleware of Goocommerce's own routes: 404 while the plugin is off.
 func (s *Server) gooOnly() gin.HandlerFunc {
@@ -361,6 +385,7 @@ var gooExtAdminPages = map[string]func(s *Server, c *gin.Context){}
 
 // registerGoocommerce wires the plugin's routes; every one answers 404 while it is off.
 func (s *Server) registerGoocommerce(r *gin.Engine, admin *gin.RouterGroup) {
+	gooCapServer.Store(s)
 	s.static(r, gooAssets, "goocommerce/assets", s.gooOnly())
 	admin.GET("/goocommerce", s.gooOnly(), s.gooAdmin)
 	admin.POST("/goocommerce", s.gooOnly(), s.gooAdmin)

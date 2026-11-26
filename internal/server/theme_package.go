@@ -285,7 +285,10 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 		}
 	}
 
-	checkAssets := func(field string, list []themeAsset) {
+	// remote: the list may name http(s) URLs. Styles may (a font host the site allows); scripts may
+	// not: they get the response's CSP nonce, so a remote script would run code that is not in the
+	// package, that can change after install and that the 'strict-dynamic' policy lets through.
+	checkAssets := func(field string, list []themeAsset, remote bool) {
 		handles := map[string]bool{}
 		for i, a := range list {
 			if !themeHandleRe.MatchString(a.Handle) {
@@ -294,8 +297,12 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 				bad("%s[%d].handle %q is listed twice", field, i, a.Handle)
 			}
 			handles[a.Handle] = true
-			if !isHTTPURL(a.Src) && !themeAssetPathOK(a.Src) {
+			switch {
+			case themeAssetPathOK(a.Src), remote && isHTTPURL(a.Src):
+			case remote:
 				bad("%s[%d].src %q must be a path under assets/ or an http(s) URL", field, i, a.Src)
+			default:
+				bad("%s[%d].src %q must be a path under assets/: a theme's scripts ship in the package, remote URLs are not allowed", field, i, a.Src)
 			}
 			for _, d := range a.Deps {
 				if !themeHandleRe.MatchString(d) {
@@ -310,8 +317,8 @@ func parseThemeManifest(b []byte) (*themeManifest, error) {
 			bad("%s: %v", field, err)
 		}
 	}
-	checkAssets("styles", m.Styles)
-	checkAssets("scripts", m.Scripts)
+	checkAssets("styles", m.Styles, true)
+	checkAssets("scripts", m.Scripts, false)
 	for i, f := range m.EditorStyles {
 		if !themeAssetPathOK(f) || !strings.HasSuffix(f, ".css") {
 			bad("editor_styles[%d] %q must be a .css file under assets/", i, f)
@@ -714,6 +721,15 @@ func (pkg *themePackage) assetURL(t *Theme, src string) string {
 	return t.URI() + "/" + strings.TrimPrefix(src, "assets/") + "?ver=" + url.QueryEscape(t.Version)
 }
 
+// scriptTag is the <script> of one of the theme's scripts, with the response's nonce. Only files of
+// the package are printed: the manifest refuses remote scripts, this keeps it so for anything else.
+func (pkg *themePackage) scriptTag(t *Theme, sc themeAsset) string {
+	if !themeAssetPathOK(sc.Src) {
+		return ""
+	}
+	return fmt.Sprintf("<script%s src=\"%s\" id=\"%s-js\"></script>\n", cspNonceAttr(), html.EscapeString(pkg.assetURL(t, sc.Src)), sc.Handle)
+}
+
 func (pkg *themePackage) head(s *Server, c *gin.Context, v *siteView) string {
 	var sb strings.Builder
 	// preload_fonts, like Twenty Twenty-Five's own preload: on every page, also those the page cache
@@ -733,7 +749,7 @@ func (pkg *themePackage) head(s *Server, c *gin.Context, v *siteView) string {
 	sb.WriteString(inlineStyle(v.Theme.Slug+"-vars", pkg.cssVars(v)))
 	for _, sc := range pkg.scripts {
 		if !sc.InFooter {
-			fmt.Fprintf(&sb, "<script%s src=\"%s\" id=\"%s-js\"></script>\n", cspNonceAttr(), html.EscapeString(pkg.assetURL(v.Theme, sc.Src)), sc.Handle)
+			sb.WriteString(pkg.scriptTag(v.Theme, sc))
 		}
 	}
 	return sb.String()
@@ -743,7 +759,7 @@ func (pkg *themePackage) footer(s *Server, c *gin.Context, v *siteView) string {
 	var sb strings.Builder
 	for _, sc := range pkg.scripts {
 		if sc.InFooter {
-			fmt.Fprintf(&sb, "<script%s src=\"%s\" id=\"%s-js\"></script>\n", cspNonceAttr(), html.EscapeString(pkg.assetURL(v.Theme, sc.Src)), sc.Handle)
+			sb.WriteString(pkg.scriptTag(v.Theme, sc))
 		}
 	}
 	if v.Customize != nil {

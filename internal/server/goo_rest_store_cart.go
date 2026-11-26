@@ -948,7 +948,7 @@ func (s *Server) gooStoreOrderGet(c *gin.Context, req *restRequest) {
 		return
 	}
 	o, err := s.gooGetOrder(ctx, req.ID())
-	if err != nil || o.Type != "shop_order" || o.OrderKey != key {
+	if err != nil || o.Type != "shop_order" || !gooOrderKeyMatches(o.OrderKey, key) {
 		s.gooOrderGetFailed(c, key)
 		restErr(c, http.StatusNotFound, "woocommerce_rest_invalid_order", "Invalid order ID or key provided.")
 		return

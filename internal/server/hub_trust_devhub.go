@@ -11,3 +11,7 @@ func devTrustHubKeys() bool { return config.Env("TRUST_HUB_KEYS") == "1" }
 // devTrustDevKey is the development opt-in (PURSAE_TRUST_DEV_KEY=1): trust the demo signing key
 // (dev-key.pub) of the bundled example plugins.
 func devTrustDevKey() bool { return config.Env("TRUST_DEV_KEY") == "1" }
+
+// devLocalHubs: a development build may run against a local Pursae Manager (PURSAE_DEV_HUB_URL), so
+// localhost, *.localhost, *.test and loopback addresses are reachable over http (localDevHost).
+func devLocalHubs() bool { return true }

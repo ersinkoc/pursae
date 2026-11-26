@@ -484,7 +484,7 @@ func (s *Server) preinstallThemesAsync() {
 	if s.themeLibrary != nil || s.hubBase() == "" || s.sandbox != nil {
 		return
 	}
-	go func() {
+	safeGo("theme_library.preinstallThemesAsync", func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 		defer cancel()
 		done, err := s.preinstallThemes(ctx)
@@ -494,7 +494,7 @@ func (s *Server) preinstallThemesAsync() {
 		if len(done) > 0 {
 			slog.Info("theme preinstall", "installed", strings.Join(done, ", "))
 		}
-	}()
+	})
 }
 
 // preinstallThemes installs every Manager library theme marked preinstall that is not installed yet

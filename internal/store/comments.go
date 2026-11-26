@@ -180,6 +180,7 @@ func (s *Store) RecentComments(ctx context.Context, limit int, includePending bo
 }
 
 func (s *Store) InsertComment(ctx context.Context, c *Comment) error {
+	validComment(c)
 	if c.Type == "" {
 		c.Type = "comment"
 	}
@@ -208,6 +209,7 @@ func (s *Store) HasApprovedComment(ctx context.Context, name, email string) (boo
 	if name == "" || email == "" {
 		return false, nil
 	}
+	name, email = ValidText(name), ValidText(email)
 	var ok bool
 	err := s.Pool.QueryRow(ctx, `WITH u AS (SELECT id FROM users WHERE lower(email) = lower($2) ORDER BY id LIMIT 1)
 		SELECT CASE WHEN EXISTS(SELECT 1 FROM u)
@@ -221,6 +223,9 @@ func (s *Store) HasApprovedComment(ctx context.Context, name, email string) (boo
 // same user, or the same name and, when one was given, e-mail) in reply to the same comment.
 func (s *Store) IsDuplicateComment(ctx context.Context, c *Comment) (bool, error) {
 	var ok bool
+	cp := *c
+	c = &cp
+	validComment(c)
 	err := s.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM comments WHERE post_id = $1 AND coalesce(parent_id, 0) = $5
 		AND content = $2 AND status <> 'trash'
 		AND ((user_id IS NOT NULL AND user_id = $4) OR (author_name = $6 AND ($3 = '' OR author_email = $3))))`,
@@ -233,6 +238,7 @@ func (s *Store) IsDuplicateComment(ctx context.Context, c *Comment) (bool, error
 func (s *Store) LastCommentAt(ctx context.Context, ip, email string, userID int64) (time.Time, bool, error) {
 	var t time.Time
 	var err error
+	ip, email = ValidText(ip), ValidText(email)
 	if userID != 0 {
 		err = s.Pool.QueryRow(ctx, `SELECT created_at FROM comments WHERE created_at >= now() - interval '1 hour'
 			AND (user_id = $1 OR author_email = $2) ORDER BY created_at DESC LIMIT 1`, userID, email).Scan(&t)

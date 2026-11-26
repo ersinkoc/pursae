@@ -11,7 +11,7 @@ import (
 // It runs at start-up and after Settings › General or the installer changes the language.
 func (s *Server) syncSearchStemAsync() {
 	locale := s.settings.String("WPLANG")
-	go func() {
+	safeGo("search_stem.syncSearchStemAsync", func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
 		defer cancel()
 		start := time.Now()
@@ -22,5 +22,5 @@ func (s *Server) syncSearchStemAsync() {
 		case rebuilt:
 			slog.Info("search stemming rebuilt", "locale", locale, "took", time.Since(start).Round(time.Millisecond))
 		}
-	}()
+	})
 }

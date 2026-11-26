@@ -53,7 +53,9 @@ import (
 // Hub. The site serves it under /wp-admin/theme-preview/<slug>/ to administrators only: every request
 // reaches it as an anonymous visitor (no cookies in, none out), only GET and HEAD, and never its
 // wp-admin, login or comment posting. The sandbox believes it lives at the site's own address; the
-// prefix is added to its responses (links, assets, uploads, redirects) on the way out.
+// prefix is added to its responses (links, assets, uploads, redirects) on the way out. Its responses
+// carry a CSP sandbox (opaque origin), and browsers are sent on to the token-checked
+// /wp-content/theme-preview/<slug>/<token>/… (theme_preview_frame.go).
 
 const (
 	previewCap        = 8                         // sandboxes kept
@@ -252,7 +254,7 @@ func (m *previewManager) ensure(src *previewSource, retry bool) (*previewBox, er
 	b := &previewBox{slug: slug, schema: previewSchema(slug), dir: filepath.Join(m.root(), slug), key: key,
 		library: src.Library, done: make(chan struct{}), cancel: cancel}
 	m.boxes[slug] = b
-	go m.build(ctx, b, old, pkg)
+	safeGo("theme_preview.build", func() { m.build(ctx, b, old, pkg) })
 	return b, nil
 }
 
@@ -731,6 +733,15 @@ func (s *Server) themePreviewSite(c *gin.Context) {
 		c.String(http.StatusForbidden, msg)
 		return
 	}
+	if s.previewFrameRedirect(c, u, slug, sub) { // a browser: on to the sandboxed address (theme_preview_frame.go)
+		return
+	}
+	s.previewServe(c, u, slug, sub, previewPrefix+"/"+slug)
+}
+
+// previewServe answers u's request for sub of slug's sandbox with every URL of the site moved under
+// prefix, or with the Preparing preview page while the sandbox is built.
+func (s *Server) previewServe(c *gin.Context, u *store.User, slug, sub, prefix string) {
 	b := s.previews.get(slug)
 	if b == nil || b.state() == "missing" {
 		src, err := s.previewSourceFor(c, slug, "", canPreview(u, true))
@@ -759,7 +770,7 @@ func (s *Server) themePreviewSite(c *gin.Context) {
 		return
 	}
 	s.previews.touchLater(slug)
-	serveSandbox(c, b.handler, b.srv.settings.String("home"), previewPrefix+"/"+slug, sub)
+	serveSandbox(c, b.handler, b.srv.settings.String("home"), prefix, sub)
 }
 
 // touchLater marks a sandbox used, at most once a minute.
@@ -883,10 +894,11 @@ func serveSandbox(c *gin.Context, h http.Handler, home, prefix, sub string) {
 		out[k] = vs
 	}
 	out.Set("X-Robots-Tag", "noindex, nofollow")
+	previewSandboxHeaders(out) // the theme's code runs in an opaque origin (theme_preview_frame.go)
 	body := w.body.Bytes()
 	if ct := w.header.Get("Content-Type"); previewRewritable(ct) {
 		body = rw.body(body, strings.HasPrefix(ct, "text/html") || strings.HasPrefix(ct, "text/css"))
-		out.Set("Cache-Control", "no-cache")
+		out.Set("Cache-Control", "private, no-cache")
 	}
 	c.Status(w.code)
 	if c.Request.Method == http.MethodHead {

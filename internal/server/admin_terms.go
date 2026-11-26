@@ -50,6 +50,17 @@ func taxLabelsFor(tax string) (taxLabels, bool) {
 	return acfgoTaxLabels(tax) // ACF-Go taxonomies
 }
 
+// termsCap is the capability that manages a taxonomy's terms on these screens (its manage_terms,
+// edit_terms and delete_terms): manage_product_terms for Pursae Commerce's product taxonomies
+// (categories, tags, shipping classes, attributes), as WooCommerce registers them, so a role that
+// manages the blog's categories does not reorganise the store; manage_categories for the others.
+func termsCap(tax string) string {
+	if _, ok := gooTaxLabels(tax); ok {
+		return "manage_product_terms"
+	}
+	return "manage_categories"
+}
+
 type termRow struct {
 	*store.Term
 	Indent             template.HTML
@@ -94,7 +105,7 @@ func (s *Server) termsList(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid taxonomy.")
 		return
 	}
-	if !u.Can("manage_categories", nil) {
+	if !u.Can(termsCap(lab.Tax), nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to manage terms in this taxonomy.")
 		return
 	}
@@ -198,7 +209,7 @@ func (s *Server) inlineSaveTax(c *gin.Context) {
 		return
 	}
 	id, _ := strconv.ParseInt(c.PostForm("tax_ID"), 10, 64)
-	if id == 0 || !currentUser(c).Can("manage_categories", nil) {
+	if id == 0 || !currentUser(c).Can(termsCap(lab.Tax), nil) {
 		c.String(http.StatusOK, "-1")
 		return
 	}
@@ -285,7 +296,7 @@ func (s *Server) termsAction(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Invalid taxonomy.")
 		return
 	}
-	if !u.Can("manage_categories", nil) {
+	if !u.Can(termsCap(lab.Tax), nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to manage terms in this taxonomy.")
 		return
 	}
@@ -356,7 +367,7 @@ func (s *Server) termEdit(c *gin.Context) {
 	ctx := c.Request.Context()
 	u := currentUser(c)
 	lab, ok := taxLabelsFor(c.Query("taxonomy"))
-	if !ok || !u.Can("manage_categories", nil) {
+	if !ok || !u.Can(termsCap(lab.Tax), nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit this item.")
 		return
 	}
@@ -394,7 +405,7 @@ func (s *Server) termSave(c *gin.Context) {
 	ctx := c.Request.Context()
 	u := currentUser(c)
 	lab, ok := taxLabelsFor(c.PostForm("taxonomy"))
-	if !ok || !u.Can("manage_categories", nil) {
+	if !ok || !u.Can(termsCap(lab.Tax), nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to edit this item.")
 		return
 	}
@@ -441,7 +452,7 @@ func (s *Server) termDeleteFromQuery(c *gin.Context) bool {
 	ctx := c.Request.Context()
 	lab, ok := taxLabelsFor(c.Query("taxonomy"))
 	id, _ := strconv.ParseInt(c.Query("tag_ID"), 10, 64)
-	if !ok || !currentUser(c).Can("manage_categories", nil) {
+	if !ok || !currentUser(c).Can(termsCap(lab.Tax), nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to delete this item.")
 		return true
 	}
@@ -471,7 +482,7 @@ func (s *Server) termOrderAjax(c *gin.Context) {
 		c.String(http.StatusForbidden, "-1")
 		return
 	}
-	if !currentUser(c).Can("manage_categories", nil) {
+	if !currentUser(c).Can(termsCap(lab.Tax), nil) {
 		c.String(http.StatusForbidden, "Sorry, you are not allowed to manage terms in this taxonomy.")
 		return
 	}

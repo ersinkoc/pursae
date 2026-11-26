@@ -116,7 +116,7 @@ func (s *Server) gfontEnsure(family string, wait time.Duration) bool {
 	if prev, loaded := gfontJobs.LoadOrStore(job, ch); loaded {
 		ch = prev.(chan struct{})
 	} else {
-		go func() {
+		safeGo("gfonts.gfontEnsure", func() {
 			defer func() {
 				close(ch)
 				gfontJobs.Delete(job)
@@ -126,7 +126,7 @@ func (s *Server) gfontEnsure(family string, wait time.Duration) bool {
 			if err := s.gfontDownload(ctx, f); err != nil {
 				gfontFailures.Store(job, time.Now())
 			}
-		}()
+		})
 	}
 	select {
 	case <-ch:
@@ -197,7 +197,7 @@ func (s *Server) gfontDownload(ctx context.Context, f webbuilder.FontFamily) err
 	sem := make(chan struct{}, 6)
 	out := make(chan result, len(urls))
 	for _, orig := range urls {
-		go func(orig string) {
+		safeGo("gfonts.gfontDownload", func() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			clean := orig
@@ -227,7 +227,7 @@ func (s *Server) gfontDownload(ctx context.Context, f webbuilder.FontFamily) err
 				return
 			}
 			out <- result{orig: orig, local: "../fonts/" + name}
-		}(orig)
+		})
 	}
 	for range urls {
 		r := <-out

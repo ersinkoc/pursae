@@ -59,9 +59,10 @@ Cursor and other clients that support remote MCP with OAuth need only the URL.
 
 ### Create an Application Password
 
-Users › Profile › Application Passwords: give it a name (e.g. "Claude"), tick the scopes it needs —
-or none for all of your permissions — and copy the password (it is shown once). Use a user whose
-role fits the job: an Editor for content work, an Administrator for themes, plugins and settings.
+Users › Profile › Application Passwords: give it a name (e.g. "Claude"), tick the scopes it needs
+(nothing ticked means Content and Media) or the separate **Full access** box, and copy the password
+(it is shown once). Use a user whose role fits the job: an Editor for content work, an Administrator
+for themes, plugins and settings.
 
 Recommended scopes:
 
@@ -70,7 +71,14 @@ Recommended scopes:
 | Writing and publishing | `content`, `media`, `seo` |
 | Design work | `themes`, `media`, `cache` |
 | Importing HTML designs and sites (code sections, design kits) | `content`, `themes`, `media` |
-| Running the whole site | none (full access) |
+| Running the whole site | Full access |
+
+Without `themes`, HTML the agent writes into posts, pages, comments and Web Builder documents goes
+through the same KSES filter as a user without `unfiltered_html`, even on an administrator's account
+(no scripts, event handlers or iframes). `themes`, `plugins` and `users` are each equivalent to full
+access on an administrator's account (theme files and site-wide scripts; plugins with dangerous
+permissions; the account's own password) and the scope picker marks them so; see
+[scopes](../rest-api/authentication.md#application-password-scopes).
 
 Revoke the password on the same screen to cut the agent off at once.
 
@@ -188,7 +196,7 @@ go to stderr.
 | Pursae Forum (`content` scope) | `forum_list`, `forum_create`, `forum_update`, `forum_delete`, `forum_create_topic`; the design of the views: `forum_list_templates`, `forum_get_template`, `forum_set_template`, `forum_delete_template` (administrators; [forum themes](../themes/forum.md#site-templates)); settings with `get_options` / `update_options` group `forum` |
 | Contact forms (full access: the forms set mail recipients and headers) | `contact_list_forms`, `contact_create_form`, `contact_update_form` (Pursae Contact Form, CF7-compatible) |
 | Pursae SEO | `seo_get_meta`, `seo_update_meta`, `seo_analyze`, `seo_get_settings`, `seo_update_settings`, `seo_list_redirects`, `seo_create_redirect`, `seo_delete_redirect` |
-| Plugins | `list_plugins`, `activate_plugin`, `deactivate_plugin`, `install_plugin`, `delete_plugin` |
+| Plugins | `list_plugins`, `activate_plugin`, `deactivate_plugin`, `install_plugin`, `delete_plugin`. `activate_plugin` grants a Wasm plugin the permissions its manifest asks for except `content:html` and `admin:scripts` (the equivalent of an administrator's session), which it grants only when its `permissions` argument names them |
 | Site operations | `site_health`, `list_updates`, `run_update` (plugin, theme or core), `list_backups`, `create_backup`, `delete_theme`, `ai_activity` |
 | Themes | `list_themes`, `activate_theme`, `install_theme`, `list_theme_files`, `read_theme_file`, `write_theme_file`, `restore_theme_file` |
 | Pursae Cache | `cache_status`, `cache_purge`, `cache_get_settings`, `cache_update_settings` |
@@ -285,7 +293,12 @@ python3 scripts/pursae_mcp.py import-html design.html method=exact title="Home" 
 - An hourly job drops expired OAuth grants and authorization codes, clients left without a grant, and activity past its retention.
 - Tools that change or remove existing data are marked `destructiveHint`; only purely additive ones (create post/page/term/menu item/user/comment/product, upload, create backup) are not, so clients ask before the rest.
 - Tool answers over 400 KB are cut on a character boundary and then carry no `structuredContent`.
-- Give the agent the narrowest scopes and the least powerful user that does the job.
+- Give the agent the narrowest scopes and the least powerful user that does the job. With the
+  default scopes (Content and Media) a compromised or prompt-injected agent cannot store scripts;
+  `themes`, `plugins` and `users` are equivalent to full access.
+- Activating a plugin (REST, MCP or `pursae plugin activate`) never grants `content:html` or
+  `admin:scripts` unless they are named (`permissions`, `--grant`); the Plugins screen's consent step
+  leaves them unticked as well.
 - `write_theme_file` checks templates before keeping them (the change is rolled back if the site
   stops rendering), and `restore_theme_file` undoes edits. Set `PURSAE_DISALLOW_FILE_EDIT=1` or turn
   on "Disable file editing" in Pursae Security to forbid theme file changes entirely.

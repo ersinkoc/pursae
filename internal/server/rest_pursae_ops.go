@@ -244,11 +244,11 @@ func (s *Server) pursaeBackupCreate(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusConflict, "rest_backup_busy", err.Error())
 		return
 	}
-	go func() {
+	safeGo("rest_pursae_ops.pursaeBackupCreate", func() {
 		name, err := s.bmgrRunBackup(context.Background(), j, sel)
 		s.bmgrUpdate(j, func(j *bmgrJob) { j.File = name })
 		s.bmgrFinish(j, err)
-	}()
+	})
 	restJSON(c, http.StatusAccepted, map[string]any{"job": j.ID, "state": "running"})
 }
 
@@ -296,12 +296,12 @@ func (s *Server) pursaeBackupRemoteUpload(c *gin.Context, r *restRequest) {
 		restErr(c, http.StatusConflict, "rest_backup_busy", err.Error())
 		return
 	}
-	go func() {
+	safeGo("rest_pursae_ops.pursaeBackupRemoteUpload", func() {
 		s.bmgrUpdate(j, func(j *bmgrJob) { j.File = file })
 		key, err := s.bmgrRemoteUpload(s.bmgrCancelable(j), file, func(f string, a ...any) { s.bmgrLog(j, f, a...) },
 			func(p int) { s.bmgrProgress(j, "Uploading to remote storage", p) })
 		s.bmgrUpdate(j, func(j *bmgrJob) { j.Remote = key })
 		s.bmgrFinish(j, err)
-	}()
+	})
 	restJSON(c, http.StatusAccepted, map[string]any{"job": j.ID, "state": "running"})
 }

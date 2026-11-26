@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"maps"
 	"path"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -32,19 +34,38 @@ type acfObject struct {
 }
 
 // get reads a meta value (for options: the <prefix>_<key> option).
+//
+// Options are the site's settings table, which also holds auth_secret, license and payment keys: any
+// string post_id is an options prefix (get_field "secret" "auth" would read auth_secret), and a theme's
+// acf-json may declare an options page with any post_id. So an option is read only when it is ACF's:
+// its reference "_<prefix>_<key>" holds a field key (acfgoCommit always writes both); a reference read
+// returns only a field key.
 func (s *Server) acfgoGet(o *acfObject, key string) (any, bool) {
 	if o == nil {
 		return nil, false
 	}
 	if o.Kind == "option" {
-		v := s.settings.Get(o.Prefix + "_" + key)
-		if strings.HasPrefix(key, "_") {
-			v = s.settings.Get("_" + o.Prefix + "_" + strings.TrimPrefix(key, "_"))
+		ref := s.acfgoOptionRef(o.Prefix, strings.TrimPrefix(key, "_"))
+		if ref == "" {
+			return nil, false
 		}
+		if strings.HasPrefix(key, "_") {
+			return ref, true
+		}
+		v := s.settings.Get(o.Prefix + "_" + key)
 		return v, v != nil
 	}
 	v, ok := o.meta[key]
 	return v, ok && v != nil
+}
+
+// acfgoOptionRef is the field key stored as the reference of option <prefix>_<name>, "" when there is
+// none (the option, if any, is not an ACF value).
+func (s *Server) acfgoOptionRef(prefix, name string) string {
+	if ref, _ := s.settings.Get("_" + prefix + "_" + name).(string); strings.HasPrefix(ref, "field_") {
+		return ref
+	}
+	return ""
 }
 
 // acfgoObject resolves ACF's post_id argument. current is the post of the loop, used when id is nil.
@@ -184,6 +205,14 @@ func (s *Server) acfgoCommit(ctx context.Context, o *acfObject, w *acfWrite) err
 	}
 	sort.Strings(dels)
 	if o.Kind == "option" {
+		// Never overwrite or delete a setting that is not an ACF value (an options page whose post_id
+		// makes <prefix>_<name> a core setting such as auth_secret): it exists without a reference.
+		for _, k := range append(slices.Collect(maps.Keys(w.set)), dels...) {
+			name := strings.TrimPrefix(k, "_")
+			if s.settings.Get(o.Prefix+"_"+name) != nil && s.acfgoOptionRef(o.Prefix, name) == "" {
+				return fmt.Errorf("acf-go: %s_%s is a site setting, not a field value", o.Prefix, name)
+			}
+		}
 		vals := map[string]any{}
 		for k, v := range w.set {
 			if strings.HasPrefix(k, "_") {

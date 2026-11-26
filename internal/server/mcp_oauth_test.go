@@ -113,7 +113,8 @@ func TestMCPOAuthAndSSE(t *testing.T) {
 	if code, _, _ := get(t, c, authURL("https://evil.example/cb", challenge)); code != 400 {
 		t.Errorf("unregistered redirect: %d", code)
 	}
-	if code, _, loc := get(t, c, authURL("http://localhost:9999/cb", "")); code != 302 || !strings.Contains(loc, "error=invalid_request") || !strings.Contains(loc, "state=xyz") {
+	// A malformed request is answered here, not redirected to the (self-registered) client (D7).
+	if code, body, loc := get(t, c, authURL("http://localhost:9999/cb", "")); code != 400 || loc != "" || !strings.Contains(body, "PKCE") {
 		t.Errorf("no PKCE: %d %s", code, loc)
 	}
 	_, page, _ := get(t, c, authURL("http://localhost:9999/cb", challenge))

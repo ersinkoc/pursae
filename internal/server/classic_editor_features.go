@@ -51,7 +51,7 @@ func (s *Server) heartbeatAutosave(c *gin.Context, out gin.H) {
 	}
 	fail := func(msg string) { out["wp_autosave"] = gin.H{"success": false, "message": msg} }
 	p, err := s.store.GetPost(c, id)
-	if err != nil || !u.Can("edit_post", p) || !s.checkNonceValue(c, data["_wpnonce"], "update-post_"+itoa64(p.ID)) {
+	if err != nil || !genericEditType(p.Type) || !u.Can("edit_post", p) || !s.checkNonceValue(c, data["_wpnonce"], "update-post_"+itoa64(p.ID)) {
 		fail("Error while saving.")
 		return
 	}

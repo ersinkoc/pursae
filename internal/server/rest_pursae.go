@@ -172,7 +172,9 @@ func (s *Server) pursaePluginInstall(c *gin.Context, r *restRequest) {
 
 // pursaePluginAction runs the Plugins screen's own action (pluginAction) for one plugin, so native
 // switches, Wasm loading, auditing and statistics behave exactly as in the admin. A Wasm plugin is
-// granted the permissions in "permissions" (default: every permission its manifest asks for).
+// granted the permissions in "permissions"; without it, every permission its manifest asks for
+// except the dangerous ones (content:html, admin:scripts: the equivalent of an administrator's
+// session), which the consent screen leaves unticked too and which must be named to be granted.
 func (s *Server) pursaePluginAction(action string) restHandler {
 	return func(c *gin.Context, r *restRequest) {
 		slug := r.Params["slug"]
@@ -194,8 +196,8 @@ func (s *Server) pursaePluginAction(action string) restHandler {
 					}
 				}
 			} else {
-				for _, p := range row.Permissions {
-					form.Add("permissions[]", p.Name)
+				for _, p := range safePluginPermissions(row.Permissions) {
+					form.Add("permissions[]", p)
 				}
 			}
 		}

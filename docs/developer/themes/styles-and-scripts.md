@@ -26,7 +26,7 @@ query so browsers refetch after an update.
 | Field | Meaning |
 |-------|---------|
 | `handle` | the tag id: `<handle>-css`, `<handle>-js` |
-| `src` | a path inside the package (served at `/wp-content/themes/<slug>/<path>`) or an absolute URL. Remote URLs must be allowed by the site's Content Security Policy (`style-src 'self'`; remote stylesheets are not allowed by default, remote scripts never) — ship fonts and scripts in the package. The site owner can allow a stylesheet or font host, and the APIs your scripts `fetch()` from (`connect-src`), under Settings › Security › Allowed external sources ([security](../operations/security.md)); say in your theme's readme which hosts it needs |
+| `src` | a path inside the package under `assets/` (served at `/wp-content/themes/<slug>/<path>`). A **style** may also be an absolute URL, which must be allowed by the site's Content Security Policy (`style-src 'self'`; remote stylesheets are not allowed by default) — ship fonts in the package. A **script** must be a file of the package: a remote script URL is refused at install (scripts get the page's CSP nonce, so a remote one would run code that is not in the package and can change after it was installed). The site owner can allow a stylesheet or font host, and the APIs your scripts `fetch()` from (`connect-src`), under Settings › Security › Allowed external sources ([security](../operations/security.md)); say in your theme's readme which hosts it needs |
 | `deps` | handles loaded first: the theme's own or core ones |
 | `media` | `all` (default), `print`, `screen and (min-width: …)` |
 | `in_footer` | print the script before `</body>` |

@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	wpmail "wpgo/internal/mail"
 	"wpgo/internal/store"
 )
@@ -236,6 +238,38 @@ func (s *Server) maintMailVars(ctx context.Context, v string) string {
 func maintPasswordHash(pw string) (string, error) {
 	h, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 	return string(h), err
+}
+
+// A save that does not come through the settings form (the REST / MCP option group "maintenance") gets
+// the form's site-password rule: a value that differs from the stored one is a new password in plain
+// text, checked like the form checks it (maintCheckAPIPassword) and stored only as its bcrypt hash
+// (maintHashNewPassword); an unchanged value (the stored hash, which the merge keeps when the update
+// leaves the masked password out) stays as it is, and "" removes the password.
+
+// maintCheckAPIPassword refuses a new site password the settings form would refuse.
+func (s *Server) maintCheckAPIPassword(_ *gin.Context, old, st maintSettings) []string {
+	switch pw := st.SitePassword; {
+	case pw == old.SitePassword || pw == "":
+		return nil
+	case len(pw) < maintMinPassword:
+		return []string{fmt.Sprintf("The site password must have at least %d characters.", maintMinPassword)}
+	case len(pw) > 72: // bcrypt's limit (maintPasswordHash)
+		return []string{"The site password is too long (72 bytes at most)."}
+	}
+	return nil
+}
+
+// maintHashNewPassword replaces a new plain-text site password in st by its hash (old: the stored value).
+func maintHashNewPassword(old string, st *maintSettings) error {
+	if st.SitePassword == old || st.SitePassword == "" {
+		return nil
+	}
+	h, err := maintPasswordHash(st.SitePassword)
+	if err != nil {
+		return err
+	}
+	st.SitePassword = h
+	return nil
 }
 
 // maintPasswordOK compares a typed password with the stored one: a bcrypt hash, or (settings saved

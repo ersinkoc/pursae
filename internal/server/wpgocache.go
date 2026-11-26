@@ -605,7 +605,7 @@ func (s *Server) runWarmup(ctx context.Context) {
 	}
 	s.warm.running = true
 	s.warm.mu.Unlock()
-	go func() {
+	safeGo("wpgocache.runWarmup", func() {
 		urls := s.warmupURLs(ctx)
 		prog, err := cc.Warm(ctx, s.appHandler(), urls, cache.WarmupOptions{Concurrency: 2, RatePerSecond: 8})
 		if err != nil {
@@ -620,7 +620,7 @@ func (s *Server) runWarmup(ctx context.Context) {
 			defer cancel()
 			_ = s.settings.Set(sctx, map[string]any{"wpgo_cache_warm_result": string(raw)})
 		}
-	}()
+	})
 }
 
 // warmResult is the stored outcome of the last crawler run.
