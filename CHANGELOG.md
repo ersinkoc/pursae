@@ -10,6 +10,66 @@ under a new `## [x.y.z] - YYYY-MM-DD` heading, which `tools/release.sh` publishe
 
 ## [Unreleased]
 
+## [0.5.9] - 2026-11-26
+
+### Security
+
+This release fixes security issues found in an internal review of 0.5.8. GitHub security advisories with
+the details will follow. Upgrade every site; sites that run Pursae Commerce should upgrade right away.
+
+- **Pursae Commerce:** cart lines are checked again before an order is placed. Order keys are compared in
+  constant time, and a failed database read in a Stripe webhook is retried instead of ignored.
+- **Themes:** theme templates read only public settings, theme scripts load only from the theme itself, and
+  Live Preview runs the previewed theme in a sandbox.
+- **REST API:** callers who are not signed in can send smaller request bodies, and responses no longer show
+  database errors.
+- **Sign-in limits:** failed attempts are counted per client network, so failures from one network no longer
+  lock an account out everywhere.
+- **Roles and credentials:** authors and editors get stricter checks for private media, products and other
+  content types. Scoped Application Passwords and OAuth tokens get stricter checks too.
+- **Hardening:**
+  - admin and signed-in responses are not cached;
+  - password-reset requests take the same time whether or not the account exists;
+  - an OAuth error before consent shows a local page instead of redirecting;
+  - the maintenance password set over REST is stored hashed;
+  - background tasks recover from panics;
+  - a release build no longer trusts a Pursae Manager on a local address.
+
+### Changed
+
+These fixes change what some sites do. Check the ones that apply to you:
+
+- **Editors and products:** editors can no longer edit products or open the product category and tag screens.
+  Shop managers and administrators can. A custom role that should edit products needs the `*_products`
+  capabilities.
+- **Content of disabled plugins:** while Pursae Commerce is off, the generic edit endpoints no longer open
+  products, for administrators too. Forum types behave the same way while the forum is off, and so do
+  disabled Custom Fields types.
+- **Contact forms:** on the generic endpoints, contact forms (`wpcf7_contact_form`) need `manage_options`. The
+  contact form screens themselves are unchanged.
+- **Content-scoped credentials:** Application Passwords and OAuth tokens that hold only the **content** scope
+  (the MCP default included) save HTML filtered at the Author level. Saving raw HTML or script needs the
+  **themes** scope. The scope picker marks the themes, plugins and users scopes as equal to full access.
+- **Users-scoped credentials:** credentials with the **users** scope can no longer change other accounts'
+  e-mail address, password or role.
+- **Plugin permissions:** activating a plugin over REST, MCP or `pursae plugin activate` grants only its
+  non-dangerous permissions unless you name more. `--grant=all` now means every non-dangerous permission.
+  Grant `content:html` and `admin:scripts` by name.
+- **Theme package scripts:** a theme package whose manifest loads a script from a remote URL is refused. The
+  site falls back to the default theme and the admin shows a notice. No bundled or library theme does this.
+- **Sign-in limits (core and Pursae Security):**
+  - Failures are counted per client network: an IPv4 address, or an IPv6 /64.
+  - Pursae Security's "Per username" lockout locks the account only for the network that failed. A
+    remembered device of the account is exempt.
+  - An account with many recent failures from all networks counts as under attack. A network that has not
+    signed in to it within a day then waits up to 3 seconds before its password is checked, gets two
+    failures, and sees the CAPTCHA on `/wp-login` when keys are set.
+  - Application Passwords have a budget of their own per network.
+  - Per-account lockouts made by earlier versions are no longer enforced.
+- **Request body size:** REST JSON bodies are limited to 1 MiB for visitors and front-end members
+  (subscribers, customers, forum members), and to 32 MiB for signed-in staff and API credentials. Larger
+  bodies get 413 `rest_request_too_large`.
+
 ## [0.5.8] - 2026-11-26
 
 ### Changed
